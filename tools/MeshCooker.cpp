@@ -27,7 +27,7 @@ namespace ember {
 namespace {
 
 // Bump when the cooked output changes for the same source (forces a re-cook of every mesh).
-constexpr uint32_t kMeshCookerRevision = 3;  // 2: attribute_protect_mask, 3: error edge limit
+constexpr uint32_t kMeshCookerRevision = 4;  // 2: attribute_protect_mask, 3: error edge limit, 4: authored LODs skipped
 
 // One material's triangles, transforms baked in, one entry per unique vertex.
 struct Part {
@@ -97,6 +97,24 @@ const cgltf_accessor* findAttribute(const cgltf_primitive& prim, cgltf_attribute
   return nullptr;
 }
 
+// Authored levels of detail beyond the first (glTF extras {"lod": n > 0}, or a name ending in _LOD1.._LOD9):
+// the cooker builds its own cluster LOD from the most detailed level, so the others must not be drawn too.
+bool isLowerAuthoredLod(const cgltf_data& data, const cgltf_node& node) {
+  if (node.name) {
+    const std::string name = node.name;
+    const size_t at = name.rfind("_LOD");
+    if (at != std::string::npos && at + 5 == name.size() && name[at + 4] >= '1' && name[at + 4] <= '9') return true;
+  }
+  cgltf_size size = 0;
+  if (cgltf_copy_extras_json(&data, &node.extras, nullptr, &size) != cgltf_result_success || size == 0) return false;
+  std::string json(size, ' ');
+  if (cgltf_copy_extras_json(&data, &node.extras, json.data(), &size) != cgltf_result_success) return false;
+  const size_t key = json.find("\"lod\"");
+  if (key == std::string::npos) return false;
+  const size_t value = json.find_first_of("0123456789", json.find(':', key));
+  return value != std::string::npos && json[value] != '0';
+}
+
 // Every triangle primitive of every node, in mesh space (node transforms baked in), split by material.
 // Material index == materials_count collects primitives without a material.
 std::vector<Part> gatherParts(const cgltf_data& data, uint64_t& sourceTriangles) {
@@ -104,6 +122,10 @@ std::vector<Part> gatherParts(const cgltf_data& data, uint64_t& sourceTriangles)
   for (cgltf_size n = 0; n < data.nodes_count; ++n) {
     const cgltf_node& node = data.nodes[n];
     if (!node.mesh) continue;
+    if (isLowerAuthoredLod(data, node)) {
+      logInfo("  skipped authored LOD node '{}' (cluster LOD replaces it)", node.name ? node.name : "");
+      continue;
+    }
     float m[16];
     cgltf_node_transform_world(&node, m);
     // Normals use the inverse transpose of the upper 3x3 (cofactor matrix: same direction, no division).

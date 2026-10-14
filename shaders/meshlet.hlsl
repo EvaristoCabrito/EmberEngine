@@ -8,7 +8,7 @@
 
 struct Push {
   uint64_t frame;
-  uint pass;  // 0 early: cluster-list entries [0, early); 1 late: [early, total), tested against the depth pyramid
+  uint pass;  // 0 early: cluster-list entries [0, early); 1 late: [early, total) + the early pass's retest list
 };
 [[vk::push_constant]] Push push;
 
@@ -29,9 +29,16 @@ void ASMain(uint thread : SV_GroupIndex, uint3 group : SV_GroupID) {
   const uint linearGroup = group.x + group.y * 65535u;
   const uint early = work(f).Load(kCounterEarlyClusters * 4);
   const uint total = min(work(f).Load(kCounterClusters * 4), f.maxClusters);
-  const uint slot = (push.pass == 0 ? 0 : early) + linearGroup * kTaskGroup + thread;
-  const uint end = push.pass == 0 ? early : total;
-  if (slot < end) {
+  const uint index = linearGroup * kTaskGroup + thread;
+  uint slot = ~0u;
+  if (push.pass == 0) {
+    if (index < early) slot = index;
+  } else {
+    const uint late = total - early, retest = min(work(f).Load(kCounterRetest * 4), f.maxClusters);
+    if (index < late) slot = early + index;
+    else if (index < late + retest) slot = work(f).Load(retestListOffset(f) + (index - late) * 4);
+  }
+  if (slot != ~0u) {
     const uint2 item = work(f).Load2(clusterListOffset(f) + slot * 8);
     const InstanceGpu inst = loadInstance(f, item.x);
     const MeshGpu mesh = loadMesh(f, inst.mesh);
@@ -46,6 +53,14 @@ void ASMain(uint thread : SV_GroupIndex, uint3 group : SV_GroupID) {
       const float3 axis = normalize(transformDirection(inst, float3(cone.xyz) / 127.0));
       const float3 toCluster = center - f.cameraPosition;
       visible = dot(toCluster, axis) < float(cone.w) / 127.0 * length(toCluster) + radius;
+    }
+    if (visible && push.pass == 0 && f.earlyOcclusion != 0 &&
+        !sphereVisibleHiZ(f, center, radius, f.previousView, f.previousProjectionX, f.previousProjectionY)) {
+      // Hidden last frame: not drawn now, re-tested in the late pass against this frame's pyramid.
+      uint at;
+      work(f).InterlockedAdd(kCounterRetest * 4, 1, at);
+      if (at < f.maxClusters) work(f).Store(retestListOffset(f) + at * 4, slot);
+      visible = false;
     }
     // Late pass: clusters hidden behind what the early pass drew.
     if (visible && push.pass == 1) visible = sphereVisibleHiZ(f, center, radius);
@@ -87,6 +102,7 @@ void MSMain(uint thread : SV_GroupIndex, uint3 group : SV_GroupID, in payload Pa
   const MeshCluster cluster = loadCluster(mesh, item.y);
   const uint vertexCount = clusterVertexCount(cluster), triangleCount = clusterTriangleCount(cluster);
   SetMeshOutputCounts(vertexCount, triangleCount);
+  if (thread == 0) work(f).InterlockedAdd(kCounterTriangles * 4, triangleCount);
 
   if (thread < vertexCount) {
     const MeshVertex v = loadVertex(mesh, loadClusterVertex(mesh, cluster.vertexOffset + thread));

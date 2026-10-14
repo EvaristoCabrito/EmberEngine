@@ -78,14 +78,19 @@ struct MeshFrame {
   glm::vec2 hizSize;
   uint32_t instanceVisibility;
   uint32_t pad2;
+  glm::mat4 previousView;
+  float previousProjectionX;
+  float previousProjectionY;
+  uint32_t earlyOcclusion;
+  uint32_t pad3;
 };
-static_assert(sizeof(MeshFrame) == 384 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, view) == 288);
+static_assert(sizeof(MeshFrame) == 464 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384);
 
 // Work buffer layout (shaders/scene.hlsli): counters, indirect arguments, two queues, the cluster list.
 constexpr VkDeviceSize kWorkHeaderBytes = 128;
 constexpr VkDeviceSize kTraverseArgsOffset = 64;
 constexpr VkDeviceSize kDrawArgsOffset = 80;
-constexpr VkDeviceSize kCounterBytes = 32;
+constexpr VkDeviceSize kCounterBytes = 48;
 
 struct HizPush {
   uint32_t source;
@@ -178,7 +183,7 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
     frame.meshFrame = createDeviceBuffer(context, sizeof(MeshFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     frame.meshCounters = createReadbackBuffer(context, kCounterBytes);
   }
-  meshWork_ = createDeviceBuffer(context, kWorkHeaderBytes + VkDeviceSize{kMaxQueue} * 8 * 2 + VkDeviceSize{kMaxClusters} * 8,
+  meshWork_ = createDeviceBuffer(context, kWorkHeaderBytes + VkDeviceSize{kMaxQueue} * 8 * 2 + VkDeviceSize{kMaxClusters} * (8 + 4),
                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT |
                                      VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
   meshWorkIndex_ = bindless_.addStorageBuffer(meshWork_.buffer);
@@ -320,6 +325,7 @@ void Renderer::createTargets(VkExtent2D size) {
   visibility_ = createImage(context_, {kVisibilityFormat, size, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT});
   // Depth pyramid: power-of-two below the screen size, full mip chain, one storage view per level.
   hizSize_ = {previousPowerOfTwo(size.width), previousPowerOfTwo(size.height)};
+  hizValid_ = false;
   uint32_t hizLevels = 1;
   while ((std::max(hizSize_.width, hizSize_.height) >> hizLevels) > 0) ++hizLevels;
   ImageDesc hizDesc{VK_FORMAT_R32_SFLOAT, hizSize_, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT};
@@ -380,10 +386,10 @@ Renderer::Frame& Renderer::beginFrame() {
   lastWaitMs_ = millisecondsSince(start);
   gpuTimer_.beginFrame(frameIndex_);
   if (frame.countersPending) {
-    uint32_t c[8];
+    uint32_t c[12];
     VK_CHECK(vmaInvalidateAllocation(context_.allocator, frame.meshCounters.allocation, 0, VK_WHOLE_SIZE));
     std::memcpy(c, frame.meshCounters.mapped, sizeof(c));
-    meshStats_ = {c[5], std::min(c[2], kMaxClusters), c[3], c[4], c[6], c[7]};
+    meshStats_ = {c[5], std::min(c[2], kMaxClusters), c[3], c[4], c[6], c[7], c[8], c[9]};
     frame.countersPending = false;
   }
   return frame;
@@ -500,6 +506,11 @@ void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
   f.hizSampler = minSamplerIndex_;
   f.hizSize = {static_cast<float>(hizSize_.width), static_cast<float>(hizSize_.height)};
   f.instanceVisibility = instanceVisibilityIndex_;
+  f.previousView = previousCamera_.view;
+  f.previousProjectionX = previousCamera_.projection[0][0];
+  f.previousProjectionY = std::abs(previousCamera_.projection[1][1]);
+  f.earlyOcclusion = hizValid_ ? 1u : 0u;
+  previousCamera_ = camera_;
   // The previous frame's passes may still read these buffers.
   memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT,
                 VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
@@ -572,6 +583,7 @@ void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
   // --- Depth pyramid of what the early pass drew -------------------------------------------------
   scope = gpuTimer_.begin(cmd, "depth pyramid");
   recordDepthPyramid(cmd);
+  hizValid_ = true;
   gpuTimer_.end(cmd, scope);
 
   // --- Late: everything else, tested against the pyramid ------------------------------------
@@ -651,7 +663,7 @@ void Renderer::recordDepthPyramid(VkCommandBuffer cmd) {
               VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
   // Last frame's late culling sampled the pyramid; its contents are rebuilt from scratch.
   transition(cmd, hiz_.image, hiz_.aspect,
-             {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT,
+             {hizValid_ ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT,
               VK_ACCESS_2_NONE, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
   vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, hizPipeline_);
   for (uint32_t level = 0; level < hizLevelIndices_.size(); ++level) {

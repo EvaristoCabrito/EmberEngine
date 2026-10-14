@@ -135,7 +135,7 @@ void CSPrepareDraw() {
   const uint total = min(work(f).Load(kCounterClusters * 4), f.maxClusters);
   uint count = total;
   if (push.pass == 0) work(f).Store(kCounterEarlyClusters * 4, total);
-  else count = total - work(f).Load(kCounterEarlyClusters * 4);
+  else count = total - work(f).Load(kCounterEarlyClusters * 4) + min(work(f).Load(kCounterRetest * 4), f.maxClusters);
   const uint groups = (count + kGroupSize - 1) / kGroupSize;
   // Task workgroups: x stays within the minimum every GPU supports (65535); y carries the rest.
   const uint x = min(groups, 65535u);

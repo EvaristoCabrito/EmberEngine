@@ -62,7 +62,7 @@ class Renderer {
   // What the GPU did with the meshes, read back from a frame that finished (a few frames old).
   struct MeshStats {
     uint32_t visibleInstances = 0, clusters = 0, queueOverflow = 0, clusterOverflow = 0;
-    uint32_t earlyClusters = 0, occludedInstances = 0;
+    uint32_t earlyClusters = 0, occludedInstances = 0, retestedClusters = 0, triangles = 0;
   };
   MeshStats meshStats() const { return meshStats_; }
 
@@ -149,6 +149,8 @@ class Renderer {
   Buffer instanceVisibility_;
   uint32_t instanceVisibilityIndex_ = kNoIndex;
   uint64_t visibilityVersion_ = ~0ull;
+  bool hizValid_ = false;  // the pyramid holds last frame's depth (false after a resize)
+  Camera previousCamera_;
   VkPipeline cullInstancesLatePipeline_ = VK_NULL_HANDLE, hizPipeline_ = VK_NULL_HANDLE;
   VkPipeline cullInstancesPipeline_ = VK_NULL_HANDLE, cullPreparePipeline_ = VK_NULL_HANDLE,
              cullTraversePipeline_ = VK_NULL_HANDLE, cullPrepareDrawPipeline_ = VK_NULL_HANDLE,

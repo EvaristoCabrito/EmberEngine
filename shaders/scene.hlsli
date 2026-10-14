@@ -119,6 +119,13 @@ struct MeshFrame {
   float2 hizSize;           // pyramid level 0 size in texels
   uint instanceVisibility;  // gBuffers index: one uint per instance, 1 = visible last frame
   uint pad2;
+  // Early-pass cluster occlusion: last frame's camera and pyramid (still in the pyramid image when
+  // the early pass runs). Clusters it hides are re-tested in the late pass against this frame's.
+  float4x4 previousView;
+  float previousProjectionX;
+  float previousProjectionY;
+  uint earlyOcclusion;  // 0 when last frame's pyramid is not usable (first frame, resize)
+  uint pad3;
 };
 
 // The work buffer: counters, indirect arguments, then the queues.
@@ -130,6 +137,8 @@ static const uint kCounterClusterOverflow = 4;
 static const uint kCounterInstances = 5;
 static const uint kCounterEarlyClusters = 6;
 static const uint kCounterOccludedInstances = 7;
+static const uint kCounterRetest = 8;     // early-pass clusters hidden by last frame's pyramid
+static const uint kCounterTriangles = 9;  // triangles sent to the rasteriser (statistics)
 static const uint kTraverseArgs = 64;   // byte offsets
 static const uint kDrawArgs = 80;
 static const uint kQueuesOffset = 128;
@@ -137,6 +146,7 @@ static const uint kQueuesOffset = 128;
 // Byte offsets in the work buffer.
 uint queueOffset(MeshFrame f, uint queue) { return kQueuesOffset + queue * f.maxQueue * 8; }
 uint clusterListOffset(MeshFrame f) { return kQueuesOffset + 2 * f.maxQueue * 8; }
+uint retestListOffset(MeshFrame f) { return clusterListOffset(f) + f.maxClusters * 8; }
 RWByteAddressBuffer work(MeshFrame f) { return gBuffers[NonUniformResourceIndex(f.workBuffer)]; }
 
 MeshFrame loadFrame(uint64_t address) { return vk::RawBufferLoad<MeshFrame>(address); }
@@ -222,18 +232,22 @@ bool projectSphere(float3 c, float r, float zNear, float p00, float p11, out flo
   return true;
 }
 
-// Is a world-space sphere possibly visible against the depth pyramid? Reversed-Z: larger is nearer.
-bool sphereVisibleHiZ(MeshFrame f, float3 worldCenter, float radius) {
-  const float3 v = mul(float4(worldCenter, 1.0), f.view).xyz;
+// Is a world-space sphere possibly visible against the depth pyramid, seen from a camera? Reversed-Z:
+// larger is nearer.
+bool sphereVisibleHiZ(MeshFrame f, float3 worldCenter, float radius, float4x4 view, float projectionX, float projectionY) {
+  const float3 v = mul(float4(worldCenter, 1.0), view).xyz;
   const float3 c = float3(v.x, v.y, -v.z);  // forward = +z
   float4 aabb;
-  if (!projectSphere(c, radius, f.zNear, f.projectionX, f.projectionY, aabb)) return true;
+  if (!projectSphere(c, radius, f.zNear, projectionX, projectionY, aabb)) return true;
   const float width = (aabb.z - aabb.x) * f.hizSize.x, height = (aabb.w - aabb.y) * f.hizSize.y;
   const float level = ceil(log2(max(width, height)));
   const float farthest = gTextures[NonUniformResourceIndex(f.hizTexture)]
                              .SampleLevel(gSamplers[f.hizSampler], (aabb.xy + aabb.zw) * 0.5, level).r;
   const float nearest = f.zNear / (c.z - radius);
   return nearest >= farthest;
+}
+bool sphereVisibleHiZ(MeshFrame f, float3 worldCenter, float radius) {
+  return sphereVisibleHiZ(f, worldCenter, radius, f.view, f.projectionX, f.projectionY);
 }
 
 #endif

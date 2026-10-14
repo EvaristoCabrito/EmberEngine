@@ -59,7 +59,15 @@ class BattleStage final : public Stage {
     if (phase_ == Phase::Loading && !placed_ && sprites_.ready() &&
         std::all_of(meshIds_.begin(), meshIds_.end(), [&](const auto& m) { return meshes_.header(m.id) != nullptr; }))
       place();
-    if (phase_ == Phase::Loading && placed_ && meshes_.ready() && meshes_.view().instanceCount == meshCount_) startPhase(Phase::ZoomedOut, now);
+    // Like a battle's loading screen: the map's decor streams in before the battle starts.
+    if (phase_ == Phase::Loading && placed_) {
+      bool decorResident = true;
+      for (const SpriteClipId clip : decorClips_) {
+        sprites_.request(clip, SpriteSystem::kSoon);
+        decorResident = decorResident && sprites_.texture(clip).full;
+      }
+      if (decorResident && meshes_.ready() && meshes_.view().instanceCount == meshCount_) startPhase(Phase::ZoomedOut, now);
+    }
 
     const double t = std::chrono::duration<double>(now - phaseStart_).count();
     if (phase_ != Phase::Loading && phase_ != Phase::Done && t >= phaseSeconds(phase_))
@@ -92,6 +100,7 @@ class BattleStage final : public Stage {
     m.sumBusy += busyMs;
     const Renderer::MeshStats g = renderer_.meshStats();
     m.maxClusters = std::max(m.maxClusters, g.clusters);
+    m.maxTriangles = std::max(m.maxTriangles, g.triangles);
     m.maxCards = std::max<uint32_t>(m.maxCards, static_cast<uint32_t>(drawList_.size()));
     m.overflow += g.queueOverflow + g.clusterOverflow;
   }
@@ -120,7 +129,7 @@ class BattleStage final : public Stage {
   struct Measure {
     uint64_t frames = 0;
     double worstBusy = 0.0, worstGpu = 0.0, sumBusy = 0.0, sumGpu = 0.0;
-    uint32_t maxClusters = 0, maxCards = 0;
+    uint32_t maxClusters = 0, maxCards = 0, maxTriangles = 0;
     uint64_t overflow = 0;
   };
   struct Card {
@@ -212,6 +221,7 @@ class BattleStage final : public Stage {
         for (int i = cardCount(rng); i > 0 && !decor.empty(); --i) {
           const SpriteClipId clip = decor[static_cast<size_t>(unit(rng) * decor.size()) % decor.size()];
           cards_.push_back({jitter(c), clip, kHexRadius * 1.55f * 1.2f});  // Ember's single-hex card width
+          if (std::find(decorClips_.begin(), decorClips_.end(), clip) == decorClips_.end()) decorClips_.push_back(clip);
         }
       }
     meshCount_ = static_cast<uint32_t>(instances.size());
@@ -287,9 +297,9 @@ class BattleStage final : public Stage {
       const bool ok = m.frames > 0 && m.worstBusy <= kBudgetMs && m.worstGpu <= kBudgetMs && m.overflow == 0;
       passed_ = passed_ && ok;
       const std::string line = std::format(
-          "{}: {} frames, main thread avg {:.2f} / worst {:.2f} ms, GPU avg {:.2f} / worst {:.2f} ms, up to {} clusters, {} cards{} -> {}",
+          "{}: {} frames, main thread avg {:.2f} / worst {:.2f} ms, GPU avg {:.2f} / worst {:.2f} ms, up to {} clusters / {:.1f} M triangles, {} cards{} -> {}",
           phaseName(phase_), m.frames, m.sumBusy / std::max<uint64_t>(1, m.frames), m.worstBusy, m.sumGpu / std::max<uint64_t>(1, m.frames),
-          m.worstGpu, m.maxClusters, m.maxCards, m.overflow ? std::format(", {} OVERFLOWED", m.overflow) : "", ok ? "PASS" : "FAIL");
+          m.worstGpu, m.maxClusters, m.maxTriangles / 1e6, m.maxCards, m.overflow ? std::format(", {} OVERFLOWED", m.overflow) : "", ok ? "PASS" : "FAIL");
       report_.push_back(line);
       logInfo("battle: {}", line);
     } else if (phase_ == Phase::Loading) {
@@ -314,6 +324,7 @@ class BattleStage final : public Stage {
   std::vector<Card> cards_;
   std::vector<Unit> units_;
   std::vector<SpriteClipId> unitClips_;
+  std::vector<SpriteClipId> decorClips_;  // every decor clip the map uses (prefetched while loading)
   std::vector<SpriteInstance> drawList_;
   uint32_t meshCount_ = 0;
   bool placed_ = false, passed_ = true;
