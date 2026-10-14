@@ -3,6 +3,9 @@
 #define EMBER_COMMON_HLSLI
 
 [[vk::binding(0, 0)]] Texture2D gTextures[];
+// The same descriptors seen as texture arrays (sprite clips: one layer per frame). Each index is
+// read only through the type it was created with.
+[[vk::binding(0, 0)]] Texture2DArray gTextureArrays[];
 [[vk::binding(1, 0)]] SamplerState gSamplers[];
 [[vk::binding(2, 0)]] RWTexture2D<float4> gStorageImages[];
 

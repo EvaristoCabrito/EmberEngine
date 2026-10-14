@@ -11,12 +11,7 @@ bool isDepthFormat(VkFormat format) {
 }
 }  // namespace
 
-Image createImage(VulkanContext& context, const ImageDesc& desc) {
-  Image out;
-  out.format = desc.format;
-  out.extent = desc.extent;
-  out.aspect = isDepthFormat(desc.format) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
-
+VkImageCreateInfo imageCreateInfo(VulkanContext& context, const ImageDesc& desc, uint32_t (&families)[2]) {
   VkImageCreateInfo info{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
   info.imageType = VK_IMAGE_TYPE_2D;
   info.format = desc.format;
@@ -27,19 +22,52 @@ Image createImage(VulkanContext& context, const ImageDesc& desc) {
   info.tiling = VK_IMAGE_TILING_OPTIMAL;
   info.usage = desc.usage;
   info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  families[0] = context.queueFamily;
+  families[1] = context.transferFamily;
+  if (desc.sharedWithTransfer && context.dedicatedTransfer()) {
+    // Concurrent sharing: no queue-family ownership transfers between the copy and the first use.
+    info.sharingMode = VK_SHARING_MODE_CONCURRENT;
+    info.queueFamilyIndexCount = 2;
+    info.pQueueFamilyIndices = families;
+  }
+  return info;
+}
+
+bool tryCreateImage(VulkanContext& context, const ImageDesc& desc, Image& out) {
+  out = {};
+  out.format = desc.format;
+  out.extent = desc.extent;
+  out.aspect = isDepthFormat(desc.format) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+
+  uint32_t families[2];
+  const VkImageCreateInfo info = imageCreateInfo(context, desc, families);
   VmaAllocationCreateInfo alloc{};
-  alloc.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
-  // Render targets get their own memory block (the driver can then compress them better).
-  if (desc.usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT))
-    alloc.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
-  VK_CHECK(vmaCreateImage(context.allocator, &info, &alloc, &out.image, &out.allocation, nullptr));
+  alloc.pool = desc.pool;
+  if (!desc.pool) {
+    alloc.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+    // Render targets get their own memory block (the driver can then compress them better).
+    if (desc.usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT))
+      alloc.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+  }
+  const VkResult result = vmaCreateImage(context.allocator, &info, &alloc, &out.image, &out.allocation, nullptr);
+  if (result == VK_ERROR_OUT_OF_DEVICE_MEMORY || result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+    out = {};
+    return false;
+  }
+  VK_CHECK(result);
 
   VkImageViewCreateInfo viewInfo{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
   viewInfo.image = out.image;
-  viewInfo.viewType = desc.layers > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
+  viewInfo.viewType = desc.layers > 1 || desc.arrayView ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
   viewInfo.format = desc.format;
   viewInfo.subresourceRange = {out.aspect, 0, desc.mipLevels, 0, desc.layers};
   VK_CHECK(vkCreateImageView(context.device, &viewInfo, nullptr, &out.view));
+  return true;
+}
+
+Image createImage(VulkanContext& context, const ImageDesc& desc) {
+  Image out;
+  EMBER_CHECK(tryCreateImage(context, desc, out), "Out of GPU memory creating an image");
   return out;
 }
 
@@ -62,6 +90,27 @@ Buffer createReadbackBuffer(VulkanContext& context, VkDeviceSize size) {
   VK_CHECK(vmaCreateBuffer(context.allocator, &info, &alloc, &out.buffer, &out.allocation, &allocInfo));
   out.mapped = allocInfo.pMappedData;
   return out;
+}
+
+Buffer createHostBuffer(VulkanContext& context, VkDeviceSize size, VkBufferUsageFlags usage) {
+  Buffer out;
+  out.size = size;
+  VkBufferCreateInfo info{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+  info.size = size;
+  info.usage = usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+  VmaAllocationCreateInfo alloc{};
+  alloc.usage = VMA_MEMORY_USAGE_AUTO;
+  alloc.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+  VmaAllocationInfo allocInfo;
+  VK_CHECK(vmaCreateBuffer(context.allocator, &info, &alloc, &out.buffer, &out.allocation, &allocInfo));
+  out.mapped = allocInfo.pMappedData;
+  return out;
+}
+
+VkDeviceAddress bufferAddress(VulkanContext& context, const Buffer& buffer) {
+  VkBufferDeviceAddressInfo info{VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO};
+  info.buffer = buffer.buffer;
+  return vkGetBufferDeviceAddress(context.device, &info);
 }
 
 void destroyBuffer(VulkanContext& context, Buffer& buffer) {

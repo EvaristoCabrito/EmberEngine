@@ -23,6 +23,7 @@ struct GraphicsPipelineDesc {
   VkCullModeFlags cullMode = VK_CULL_MODE_NONE;
   VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
   bool alphaBlend = false;
+  bool premultipliedAlpha = false;  // with alphaBlend: colour is already multiplied by alpha
 };
 
 // Dynamic-rendering pipeline on the shared bindless layout; viewport and scissor are dynamic.

@@ -3,6 +3,7 @@
 #include <stb_image_write.h>
 
 #include <chrono>
+#include <cstring>
 
 #include "render/DebugUi.h"
 #include "rhi/Pipeline.h"
@@ -27,6 +28,21 @@ struct TonemapPush {
   uint32_t sampler;
   float exposure;
 };
+
+struct GroundPush {
+  glm::mat4 viewProjection;
+  float halfExtent;
+};
+
+struct SpritePush {
+  glm::mat4 viewProjection;
+  glm::vec3 cameraRight;
+  uint32_t sampler;
+  VkDeviceAddress instances;
+};
+static_assert(sizeof(SpritePush) <= Bindless::kPushConstantBytes);
+
+constexpr VkShaderStageFlags kPushStages = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT;
 
 double millisecondsSince(std::chrono::steady_clock::time_point start) {
   return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
@@ -58,6 +74,7 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
     VK_CHECK(vkCreateFence(context.device, &fenceInfo, nullptr, &frame.done));
     VkSemaphoreCreateInfo semaphoreInfo{VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
     VK_CHECK(vkCreateSemaphore(context.device, &semaphoreInfo, nullptr, &frame.imageAcquired));
+    frame.sprites = createHostBuffer(context, sizeof(SpriteInstance) * kMaxSprites, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
   }
 
   VkSamplerCreateInfo samplerInfo{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
@@ -68,6 +85,11 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
   VK_CHECK(vkCreateSampler(context.device, &samplerInfo, nullptr, &linearClamp_));
   linearClampIndex_ = bindless_.addSampler(linearClamp_);
+  // Sprites are seen at many sizes: trilinear + anisotropic so frames stay crisp without shimmer.
+  samplerInfo.anisotropyEnable = VK_TRUE;
+  samplerInfo.maxAnisotropy = std::min(16.0f, context.gpuProperties.limits.maxSamplerAnisotropy);
+  VK_CHECK(vkCreateSampler(context.device, &samplerInfo, nullptr, &spriteSampler_));
+  spriteSamplerIndex_ = bindless_.addSampler(spriteSampler_);
 
   createTargets(size);
 
@@ -85,18 +107,49 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   tonemap.fragmentShader = "tonemap.PSMain";
   tonemap.colorFormats = {kOutputFormat};
   tonemapPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), tonemap);
+
+  GraphicsPipelineDesc ground;
+  ground.vertexShader = "ground.VSMain";
+  ground.fragmentShader = "ground.PSMain";
+  ground.colorFormats = {kSceneColorFormat};
+  ground.depthFormat = kDepthFormat;
+  ground.depthTest = true;
+  ground.depthWrite = true;
+  groundPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), ground);
+
+  // Sprites: depth-tested against the world, blended premultiplied, drawn back to front.
+  GraphicsPipelineDesc sprites;
+  sprites.vertexShader = "sprites.VSMain";
+  sprites.fragmentShader = "sprites.PSMain";
+  sprites.colorFormats = {kSceneColorFormat};
+  sprites.depthFormat = kDepthFormat;
+  sprites.depthTest = true;
+  sprites.depthWrite = false;
+  sprites.alphaBlend = true;
+  sprites.premultipliedAlpha = true;
+  spritePipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), sprites);
+}
+
+void Renderer::setScene(const Camera& camera, std::span<const SpriteInstance> sprites) {
+  hasScene_ = true;
+  camera_ = camera;
+  sprites_.assign(sprites.begin(), sprites.begin() + std::min<size_t>(sprites.size(), kMaxSprites));
 }
 
 Renderer::~Renderer() {
   vkDeviceWaitIdle(context_.device);
   vkDestroyPipeline(context_.device, trianglePipeline_, nullptr);
   vkDestroyPipeline(context_.device, tonemapPipeline_, nullptr);
+  vkDestroyPipeline(context_.device, groundPipeline_, nullptr);
+  vkDestroyPipeline(context_.device, spritePipeline_, nullptr);
+  vkDestroySampler(context_.device, spriteSampler_, nullptr);
   destroyTargets();
   vkDestroySampler(context_.device, linearClamp_, nullptr);
   for (Frame& frame : frames_) {
     vkDestroySemaphore(context_.device, frame.imageAcquired, nullptr);
     vkDestroyFence(context_.device, frame.done, nullptr);
     vkDestroyCommandPool(context_.device, frame.pool, nullptr);
+    destroyBuffer(context_, frame.sprites);
   }
 }
 
@@ -154,22 +207,20 @@ bool Renderer::renderFrame(float time) {
 
   VK_CHECK(vkResetFences(context_.device, 1, &frame.done));
   VK_CHECK(vkResetCommandPool(context_.device, frame.pool, 0));
-  record(frame.cmd, time, swapImage, nullptr);
+  record(frame, time, swapImage, nullptr);
 
   VkCommandBufferSubmitInfo cmdInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO};
   cmdInfo.commandBuffer = frame.cmd;
-  VkSemaphoreSubmitInfo wait{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO};
+  std::array<VkSemaphoreSubmitInfo, 2> waits{};
   VkSemaphoreSubmitInfo signal{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO};
   VkSubmitInfo2 submit{VK_STRUCTURE_TYPE_SUBMIT_INFO_2};
   submit.commandBufferInfoCount = 1;
   submit.pCommandBufferInfos = &cmdInfo;
+  submit.waitSemaphoreInfoCount = gatherWaits(frame, swapchain_ != nullptr, waits);
+  submit.pWaitSemaphoreInfos = waits.data();
   if (swapchain_) {
-    wait.semaphore = frame.imageAcquired;
-    wait.stageMask = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
     signal.semaphore = swapchain_->renderFinished(imageIndex);
     signal.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-    submit.waitSemaphoreInfoCount = 1;
-    submit.pWaitSemaphoreInfos = &wait;
     submit.signalSemaphoreInfoCount = 1;
     submit.pSignalSemaphoreInfos = &signal;
   }
@@ -196,13 +247,16 @@ void Renderer::captureFrame(float time, const std::string& path) {
   VK_CHECK(vkResetFences(context_.device, 1, &frame.done));
   VK_CHECK(vkResetCommandPool(context_.device, frame.pool, 0));
   Buffer readback = createReadbackBuffer(context_, VkDeviceSize{size_.width} * size_.height * 4);
-  record(frame.cmd, time, VK_NULL_HANDLE, &readback);
+  record(frame, time, VK_NULL_HANDLE, &readback);
 
   VkCommandBufferSubmitInfo cmdInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO};
   cmdInfo.commandBuffer = frame.cmd;
+  std::array<VkSemaphoreSubmitInfo, 2> waits{};
   VkSubmitInfo2 submit{VK_STRUCTURE_TYPE_SUBMIT_INFO_2};
   submit.commandBufferInfoCount = 1;
   submit.pCommandBufferInfos = &cmdInfo;
+  submit.waitSemaphoreInfoCount = gatherWaits(frame, false, waits);
+  submit.pWaitSemaphoreInfos = waits.data();
   VK_CHECK(vkQueueSubmit2(context_.queue, 1, &submit, frame.done));
   VK_CHECK(vkWaitForFences(context_.device, 1, &frame.done, VK_TRUE, UINT64_MAX));
   frameIndex_ = (frameIndex_ + 1) % kFramesInFlight;
@@ -215,7 +269,27 @@ void Renderer::captureFrame(float time, const std::string& path) {
   logInfo("captured {}x{} -> {}", size_.width, size_.height, path);
 }
 
-void Renderer::record(VkCommandBuffer cmd, float time, VkImage swapImage, const Buffer* readback) {
+uint32_t Renderer::gatherWaits(Frame& frame, bool swapImage, std::array<VkSemaphoreSubmitInfo, 2>& waits) const {
+  uint32_t count = 0;
+  if (swapImage) {
+    waits[count] = {VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO};
+    waits[count].semaphore = frame.imageAcquired;
+    waits[count].stageMask = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
+    ++count;
+  }
+  if (waitTimeline_ && waitValue_) {
+    // Already signalled when the textures were published: makes the copies visible, costs nothing.
+    waits[count] = {VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO};
+    waits[count].semaphore = waitTimeline_;
+    waits[count].value = waitValue_;
+    waits[count].stageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    ++count;
+  }
+  return count;
+}
+
+void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer* readback) {
+  VkCommandBuffer cmd = frame.cmd;
   VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
   begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
   VK_CHECK(vkBeginCommandBuffer(cmd, &begin));
@@ -256,11 +330,25 @@ void Renderer::record(VkCommandBuffer cmd, float time, VkImage swapImage, const 
   const uint32_t sceneScope = gpuTimer_.begin(cmd, "scene");
   vkCmdBeginRendering(cmd, &scene);
   setViewport(cmd, size_);
-  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, trianglePipeline_);
-  const TrianglePush trianglePush{time, static_cast<float>(size_.width) / static_cast<float>(size_.height)};
-  vkCmdPushConstants(cmd, bindless_.pipelineLayout(), VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                     sizeof(trianglePush), &trianglePush);
-  vkCmdDraw(cmd, 3, 1, 0, 0);
+  if (hasScene_) {
+    const glm::mat4 viewProjection = camera_.viewProjection();
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, groundPipeline_);
+    const GroundPush groundPush{viewProjection, 80.0f};
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(groundPush), &groundPush);
+    vkCmdDraw(cmd, 6, 1, 0, 0);
+    if (!sprites_.empty()) {
+      std::memcpy(frame.sprites.mapped, sprites_.data(), sprites_.size() * sizeof(SpriteInstance));
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spritePipeline_);
+      const SpritePush spritePush{viewProjection, camera_.right, spriteSamplerIndex_, bufferAddress(context_, frame.sprites)};
+      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(spritePush), &spritePush);
+      vkCmdDraw(cmd, 6, static_cast<uint32_t>(sprites_.size()), 0, 0);
+    }
+  } else {
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, trianglePipeline_);
+    const TrianglePush trianglePush{time, static_cast<float>(size_.width) / static_cast<float>(size_.height)};
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(trianglePush), &trianglePush);
+    vkCmdDraw(cmd, 3, 1, 0, 0);
+  }
   vkCmdEndRendering(cmd);
   gpuTimer_.end(cmd, sceneScope);
 

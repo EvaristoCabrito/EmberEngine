@@ -15,13 +15,24 @@ Every number below was measured from the game's real data, not guessed.
 | Largest map | 64×52 hexes (`frozen-tundra-crossing003`), median 26×20 | Whole map lived in memory as one blob; no streaming |
 | Ground | one blend weight per tile per vertex | Hard cap on terrain types per area |
 
-The planned game is far past this. The user's figure (2026-10-14): **double the sprite numbers** once all
-remaining animations, expressions and cutscene-exclusive sprites exist. Sizing targets for the finished game:
+The planned game is far past this. **Finished-game sprite workload (the user's figures, 2026-10-14):**
 
-| What | Today | Finished game (×2) |
+- **A. Each main character (MC) carries 2× today's sprite data** (remaining animations, layered
+  expressions, cutscene-exclusive sprites), at full source resolution.
+- **B. Today's roster is ~10% of the finished game.** The ×10 test pack (today's roster cooked 10 times
+  under distinct names) already includes A for every MC represented today. It must not be doubled again.
+- **C. MCs come and go from the group: at most 8 in the party at once,** varied characters rotating
+  through. Asked for a count of MCs beyond today's roster, the user's answer was "keep 10": the ×10 pack is
+  the finished-game capacity target. What a battle or cutscene needs at one moment is set by the 8-MC
+  party plus enemies on screen, not by the total roster.
+
+| What | Today (measured) | Finished game = ×10 (cooked test pack) |
 |---|---|---|
-| `neera` raw RGBA8 in GPU memory | ~449 MB | **~900 MB** |
-| Character sprite source on disk | 3.6 GB PNG | **~7+ GB PNG** |
+| Sprite clips | 375 | 3,750 |
+| GPU data, full mip chains (BC7) | 2.63 GB | 26.3 GB (streamed, never all resident) |
+| Always-resident tails | 19 MB | 192 MB |
+| Cooked on disk | 934 MB | 9.34 GB |
+| `neera` raw RGBA8 (Engine2's way) | ~449 MB | |
 
 Plus sprites at full source resolution, and maps/dungeons many times the largest Ember map.
 No GPU holds that all at once, so streaming is not an optimisation here; it is the only way the game runs.
@@ -81,17 +92,65 @@ Dependencies only point downward. `rhi` knows nothing about sprites; `render` kn
 - **Residency manager:** per-pool budgets (GPU textures, GPU geometry, CPU audio), priority from distance /
   "this cutscene is next" hints, LRU eviction, uploads through a dedicated transfer queue with a per-frame
   upload cap so streaming never stalls a frame.
+- **GPU texture pools (built in M2):** streamed textures are created inside a pool allocated once at
+  load (budget + one 64 MB block of slack), never with fresh driver memory: a fresh allocation took up
+  to 12 ms on the main thread. When the pool has the bytes but no hole big enough, eviction frees a run
+  of neighbouring textures (least recently drawn first) instead of scattered ones. Measured with a
+  512 MB budget: blind LRU eviction in the same pool left 150 frames drawing a tail late; hole-making
+  eviction left none, matching a pool 50% over budget. Uploads are capped at 8 MB per frame
+  (480 MB/s at 60 Hz); 24 MB per frame cost up to 4.5 ms of staging copies per frame.
 - **Hot reload (dev):** the editor watches source folders, re-cooks a changed file and swaps it in live.
 
 ## 5. Character sprites (the system Engine2 could not carry)
 
 Characters are the only 2D thing in the game; everything else is real 3D. They get first-class support.
 
+**Source = the animation videos (user, 2026-10-14).** The user's videos have the motion they want;
+Engine2's sprites lost it in three ways: each pose keeps a fixed 36 frames whatever its length (a
+4.75 s idle becomes ~7.6 fps), each frame is cut out of its background separately (edges shimmer), and
+the body is recentred every frame while the game slides the unit at an unrelated speed (feet glide).
+EmberEngine's video-to-sprite pipeline therefore:
+- keeps **every frame** at the video's own rate, so playback matches the video exactly;
+- cuts the character out with a **temporally consistent video matting** model (chosen after research);
+- finds **loop points** automatically and blends across them;
+- measures **root motion**: the planted foot must not move relative to the ground, so its slide gives
+  the true travel per frame. Each clip stores that track, and the game moves units by it. Feet stay
+  locked to the ground; a different travel speed changes the playback rate, never the slide;
+- optionally interpolates frames (48/60 fps), judged side by side against the video before it is used.
+Videos live in `content/video/<Character>/<move>.mp4`.
+
+**Measured roster (2026-10-14, Engine2's 305 poses, 8,127 frames in use):** 3.2 G pixels at native size,
+1.86 G after trimming. Uploaded raw like Engine2 did: **9.25 GB** with mips. Cooked to BC7 with mips:
+**2.31 GB**; the finished game is ×10 of the full cooked roster (2.63 GB, §1), **26.3 GB**. No consumer GPU holds the finished roster at
+once, which is why residency is per clip. Largest single clip today: ~37 MB (BirolhoLegs2 cast, 36 frames
+of 1249×655).
+
 **Cooking** (per character, per animation clip):
-1. Trim every frame to its visible pixels (measured on `neera`: the trimmed area is ~64% of the frame).
-2. Pack trimmed frames into clip atlases; store per-frame offset so the pivot never moves.
-3. Compress to **BC7** (1 byte/pixel, read directly by the GPU, near-lossless for painted art), with mips.
-4. Generate a normal/depth hint per frame so sprites are lit by the scene's lights and cast real shadows.
+1. **Trim** to the union of the clip's visible pixels (+4 px), the same rule Engine2 uses: every frame
+   keeps its place and the pivot never moves. Dimensions round up to a multiple of 4 (BC7 blocks).
+2. **One texture array per clip:** each frame is a layer. Measured alternative: trimming each frame
+   tightly into an atlas would save a further 20% of pixels, but atlas pages pack at roughly 85–90%,
+   BC7 needs 4-pixel alignment and mips need gutters, so most of that comes back. Atlases also let
+   neighbouring frames bleed into each other at small mip sizes. Arrays: one bindless index per clip,
+   frame = layer, no bleeding.
+3. **Edges:** every alpha value is kept exactly as authored. Colour is dilated into the whole transparent
+   area, so no mip or filter ever pulls in black or white fringes.
+4. **Mips** are filtered in linear light, weighted by alpha (equivalent to filtering premultiplied
+   colour), then stored with straight alpha. The shader premultiplies after sampling, and blending is
+   premultiplied.
+5. **BC7, sRGB** (`VK_FORMAT_BC7_SRGB_BLOCK`, 1 byte/pixel), encoded with **bc7e** (Binomial's
+   high-quality BC7 encoder, Apache 2.0), using its pure C++ port `basisu_bc7e_scalar` from Basis
+   Universal v2.50 (released 2026-08-03): no ISPC compiler needed. Perceptual error metric and alpha
+   modes on; cooking runs on every core.
+6. **Two assets per clip in the archive:** `tail` = every frame at small size (largest side ≤ 64 px),
+   always resident (19 MB for today's roster as cooked, 192 MB at ×10, the finished game); `full` = the whole mip chain, streamed.
+   A clip never shows a hole: it draws from the tail until the full version lands.
+7. Later (M5): a normal/depth hint per frame so sprites are lit by the scene's lights and cast real shadows.
+
+**Uploads:** a staging ring in host memory and the GPU's **dedicated transfer queue** (the copy engine),
+tracked with a timeline semaphore. Rendering never waits: a clip switches from its tail to its full image
+only once the transfer queue reports the copy done. A per-frame upload cap keeps the copy engine from
+starving the frame.
 
 Result for `neera`, all clips, BC7 trimmed:
 
@@ -166,7 +225,7 @@ Each milestone ends with a test on real game data, not a demo scene.
 |---|---|---|
 | M0 | Vulkan 1.3 foundation: bindless, HDR target, tonemap, off-screen capture | ✅ triangle renders with zero validation errors |
 | M1 | Core: job system, allocators, async file IO, `.pak` archive, asset handles, profiler overlay | ✅ 10,000 assets (332 MB, 172 MB compressed) all requested in one frame, streamed in ~0.1 s at ~1.6 GB/s from disk, every byte verified against its source; worst main-thread frame 3.4–8.6 ms against the 16.7 ms budget (release build, Ryzen 9 5950X, NVMe) |
-| M2 | Sprite cooker + sprite residency | **all 97 characters** cooked; cycling every animation of every character stays under a fixed GPU budget with no hitch — and still does with a synthetic ×2 data set standing in for the finished game |
+| M2 | Sprite cooker + sprite residency | **every character in Engine2's manifest** cooked; a parade that plays every clip of every character stays under a fixed GPU budget smaller than the roster, with no frame over budget and no clip seen at tail quality when it was requested ahead — at the finished-game workload (×10, §1). **Measured (2026-10-14, RX 6400, 60 Hz, 512 MB budget, clips in a fixed-seed shuffled order):** today's roster, 375 clips (2.63 GB GPU): PASS, 0 late frames, worst main-thread frame 3.9 ms, peak demand 227 MB, 306 evictions; debug with Vulkan validation: PASS, 0 errors. **×10 = finished game, 3,750 clips (26.3 GB GPU): PASS, 0 late frames, worst frame 4.6 ms, peak demand 322 MB, 3,668 evictions, 0 requests without room.** Earlier runs, kept for the record: ×2 (a misreading of the workload) passed; ×10 in roster order failed (421 late frames) because the pack's 10 copies of one clip shared the stage, ~900 MB in one frame, more than the budget, which no real scene does. |
 | M3 | 3D meshes: GLB → meshlets, GPU-driven culling, PBR | 100,000 instanced Blender props in view at 60 fps on the dev GPU |
 | M4 | World cells + terrain | a world 10× the largest Ember map streams while flying across it, no hitches |
 | M5 | Lighting and atmosphere | sprites and 3D lit by the same lights and shadows, fog, sky, moon |

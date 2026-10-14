@@ -62,7 +62,7 @@ VkPipeline createGraphicsPipeline(VulkanContext& context, VkPipelineLayout layou
                        VK_COLOR_COMPONENT_A_BIT;
     if (desc.alphaBlend) {
       a.blendEnable = VK_TRUE;
-      a.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+      a.srcColorBlendFactor = desc.premultipliedAlpha ? VK_BLEND_FACTOR_ONE : VK_BLEND_FACTOR_SRC_ALPHA;
       a.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
       a.colorBlendOp = VK_BLEND_OP_ADD;
       a.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;

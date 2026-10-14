@@ -16,12 +16,16 @@ Swapchain::~Swapchain() {
   if (swapchain_) vkDestroySwapchainKHR(context_.device, swapchain_, nullptr);
 }
 
-void Swapchain::recreate(uint32_t width, uint32_t height) {
+bool Swapchain::recreate(uint32_t width, uint32_t height) {
+  VkSurfaceCapabilitiesKHR caps;
+  VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(context_.gpu, context_.surface, &caps));
+  if (caps.currentExtent.width == 0 || caps.currentExtent.height == 0) return false;
   vkDeviceWaitIdle(context_.device);
   destroyPerImage();
   VkSwapchainKHR old = swapchain_;
   create(width, height, old);
   vkDestroySwapchainKHR(context_.device, old, nullptr);
+  return true;
 }
 
 void Swapchain::destroyPerImage() {

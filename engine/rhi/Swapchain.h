@@ -17,7 +17,8 @@ class Swapchain {
   Swapchain(const Swapchain&) = delete;
   Swapchain& operator=(const Swapchain&) = delete;
 
-  void recreate(uint32_t width, uint32_t height);
+  // False (and the old swapchain kept) while the surface has no area, e.g. mid-minimise.
+  bool recreate(uint32_t width, uint32_t height);
 
   VkSwapchainKHR handle() const { return swapchain_; }
   VkFormat format() const { return format_; }

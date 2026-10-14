@@ -57,7 +57,29 @@ FetchContent_Declare(zstd
   GIT_SHALLOW TRUE
   SOURCE_SUBDIR build/cmake)
 
-FetchContent_MakeAvailable(SDL3 volk vma glm stb imgui zstd)
+# --- Cooking tools only (never linked into the game) ---------------------------------------------
+
+# BC7 encoder: bc7e's pure C++ port inside Basis Universal (only those two files are built)
+FetchContent_Declare(basisu
+  GIT_REPOSITORY https://github.com/BinomialLLC/basis_universal.git
+  GIT_TAG v2_50
+  GIT_SHALLOW TRUE
+  SOURCE_SUBDIR do-not-build)
+
+# BC7 decoder, to measure compression quality at cook time (only bc7decomp is built)
+FetchContent_Declare(bc7enc_rdo
+  GIT_REPOSITORY https://github.com/richgel999/bc7enc_rdo.git
+  GIT_TAG b9438627eef73a1157e84201b6fa6eb2ffd6d9f0
+  SOURCE_SUBDIR do-not-build)
+
+# JSON for source manifests (header only)
+FetchContent_Declare(nlohmann_json
+  GIT_REPOSITORY https://github.com/nlohmann/json.git
+  GIT_TAG v3.12.0
+  GIT_SHALLOW TRUE
+  SOURCE_SUBDIR do-not-build)
+
+FetchContent_MakeAvailable(SDL3 volk vma glm stb imgui zstd basisu bc7enc_rdo nlohmann_json)
 
 add_library(vma INTERFACE)
 target_include_directories(vma SYSTEM INTERFACE ${vma_SOURCE_DIR}/include)
@@ -79,3 +101,14 @@ target_compile_definitions(imgui PUBLIC VK_NO_PROTOTYPES IMGUI_IMPL_VULKAN_USE_V
 target_link_libraries(imgui PUBLIC SDL3::SDL3 volk)
 
 add_library(zstd ALIAS libzstd_static)
+
+add_library(bc7 STATIC
+  ${basisu_SOURCE_DIR}/encoder/basisu_bc7e_scalar.cpp
+  ${bc7enc_rdo_SOURCE_DIR}/bc7decomp.cpp)
+target_include_directories(bc7 SYSTEM PUBLIC ${basisu_SOURCE_DIR}/encoder ${bc7enc_rdo_SOURCE_DIR})
+if(MSVC)
+  target_compile_options(bc7 PRIVATE /W0)
+endif()
+
+add_library(nlohmann_json INTERFACE)
+target_include_directories(nlohmann_json SYSTEM INTERFACE ${nlohmann_json_SOURCE_DIR}/single_include)

@@ -82,6 +82,7 @@ const char* requireFeatures(const FeatureChain& have, FeatureChain& wanted) {
   EMBER_REQUIRE(v13, dynamicRendering)
   EMBER_REQUIRE(v13, synchronization2)
   EMBER_REQUIRE(v13, maintenance4)
+  EMBER_REQUIRE(v13, shaderDemoteToHelperInvocation)  // HLSL clip()/discard
 #undef EMBER_REQUIRE
   return nullptr;
 }
@@ -220,24 +221,44 @@ void VulkanContext::createDevice() {
   vkGetPhysicalDeviceFeatures2(gpu, &have.core);
   requireFeatures(have, wanted);
 
+  // A transfer-only family is the GPU's DMA engine: copies there don't take time from rendering.
+  uint32_t familyCount = 0;
+  vkGetPhysicalDeviceQueueFamilyProperties(gpu, &familyCount, nullptr);
+  std::vector<VkQueueFamilyProperties> families(familyCount);
+  vkGetPhysicalDeviceQueueFamilyProperties(gpu, &familyCount, families.data());
+  transferFamily = queueFamily;
+  for (uint32_t i = 0; i < familyCount; ++i) {
+    const VkQueueFlags flags = families[i].queueFlags;
+    if ((flags & VK_QUEUE_TRANSFER_BIT) && !(flags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT))) {
+      transferFamily = i;
+      break;
+    }
+  }
+
   const float priority = 1.0f;
-  VkDeviceQueueCreateInfo queueInfo{VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
-  queueInfo.queueFamilyIndex = queueFamily;
-  queueInfo.queueCount = 1;
-  queueInfo.pQueuePriorities = &priority;
+  VkDeviceQueueCreateInfo queueInfos[2]{{VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO}, {VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO}};
+  queueInfos[0].queueFamilyIndex = queueFamily;
+  queueInfos[0].queueCount = 1;
+  queueInfos[0].pQueuePriorities = &priority;
+  queueInfos[1].queueFamilyIndex = transferFamily;
+  queueInfos[1].queueCount = 1;
+  queueInfos[1].pQueuePriorities = &priority;
 
   std::vector<const char*> extensions;
   if (surface) extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
   VkDeviceCreateInfo info{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
   info.pNext = &wanted.core;
-  info.queueCreateInfoCount = 1;
-  info.pQueueCreateInfos = &queueInfo;
+  info.queueCreateInfoCount = dedicatedTransfer() ? 2 : 1;
+  info.pQueueCreateInfos = queueInfos;
   info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
   info.ppEnabledExtensionNames = extensions.data();
   VK_CHECK(vkCreateDevice(gpu, &info, nullptr, &device));
   volkLoadDevice(device);
   vkGetDeviceQueue(device, queueFamily, 0, &queue);
+  vkGetDeviceQueue(device, transferFamily, 0, &transferQueue);
+  logInfo("transfer queue: {}", dedicatedTransfer() ? std::format("dedicated (family {})", transferFamily)
+                                                    : std::string("shared with graphics"));
 
   VmaVulkanFunctions functions{};
   functions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;

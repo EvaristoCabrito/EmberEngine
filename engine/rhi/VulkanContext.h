@@ -37,6 +37,11 @@ class VulkanContext {
   VkDevice device = VK_NULL_HANDLE;
   VkQueue queue = VK_NULL_HANDLE;
   uint32_t queueFamily = 0;
+  // The GPU's copy engine (a transfer-only queue family) when it has one, so streaming copies run
+  // beside rendering. Falls back to the graphics queue (then transferFamily == queueFamily).
+  VkQueue transferQueue = VK_NULL_HANDLE;
+  uint32_t transferFamily = 0;
+  bool dedicatedTransfer() const { return transferFamily != queueFamily; }
   VkSurfaceKHR surface = VK_NULL_HANDLE;
   VmaAllocator allocator = VK_NULL_HANDLE;
 

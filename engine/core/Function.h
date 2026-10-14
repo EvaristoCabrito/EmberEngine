@@ -24,10 +24,10 @@ class InlineFunction<R(Args...), InlineBytes> {
     using Fn = std::remove_cvref_t<F>;
     if constexpr (fitsInline<Fn>()) {
       new (storage_) Fn(std::forward<F>(f));
-      ops_ = &kInlineOps<Fn>;
+      ops_ = inlineOps<Fn>();
     } else {
       *reinterpret_cast<Fn**>(storage_) = new Fn(std::forward<F>(f));
-      ops_ = &kHeapOps<Fn>;
+      ops_ = heapOps<Fn>();
     }
   }
 
@@ -71,20 +71,33 @@ class InlineFunction<R(Args...), InlineBytes> {
            std::is_nothrow_move_constructible_v<Fn>;
   }
 
+  // Function templates and function-local tables: MSVC (C4268) can zero-fill a static data member
+  // template instantiated for some lambda types, which would crash the first call.
   template <class Fn>
-  static constexpr Ops kInlineOps{
-      [](void* s, Args&&... args) -> R { return (*static_cast<Fn*>(s))(std::forward<Args>(args)...); },
-      [](void* dst, void* src) {
-        new (dst) Fn(std::move(*static_cast<Fn*>(src)));
-        std::destroy_at(static_cast<Fn*>(src));
-      },
-      [](void* s) { std::destroy_at(static_cast<Fn*>(s)); }};
+  static R callInline(void* s, Args&&... args) { return (*static_cast<Fn*>(s))(std::forward<Args>(args)...); }
+  template <class Fn>
+  static void moveInline(void* dst, void* src) {
+    new (dst) Fn(std::move(*static_cast<Fn*>(src)));
+    std::destroy_at(static_cast<Fn*>(src));
+  }
+  template <class Fn>
+  static void destroyInline(void* s) { std::destroy_at(static_cast<Fn*>(s)); }
+  template <class Fn>
+  static R callHeap(void* s, Args&&... args) { return (**static_cast<Fn**>(s))(std::forward<Args>(args)...); }
+  static void moveHeap(void* dst, void* src) { *static_cast<void**>(dst) = *static_cast<void**>(src); }
+  template <class Fn>
+  static void destroyHeap(void* s) { delete *static_cast<Fn**>(s); }
 
   template <class Fn>
-  static constexpr Ops kHeapOps{
-      [](void* s, Args&&... args) -> R { return (**static_cast<Fn**>(s))(std::forward<Args>(args)...); },
-      [](void* dst, void* src) { *static_cast<Fn**>(dst) = *static_cast<Fn**>(src); },
-      [](void* s) { delete *static_cast<Fn**>(s); }};
+  static const Ops* inlineOps() {
+    static constexpr Ops ops{&callInline<Fn>, &moveInline<Fn>, &destroyInline<Fn>};
+    return &ops;
+  }
+  template <class Fn>
+  static const Ops* heapOps() {
+    static constexpr Ops ops{&callHeap<Fn>, &moveHeap, &destroyHeap<Fn>};
+    return &ops;
+  }
 
   alignas(std::max_align_t) std::byte storage_[InlineBytes];
   const Ops* ops_ = nullptr;

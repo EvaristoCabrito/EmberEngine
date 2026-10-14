@@ -1,0 +1,4257 @@
+{
+ "sets": [
+  {
+   "clips": [
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/Asherah/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "Asherah"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/BaseCrossbowman/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/BaseCrossbowman/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/BaseCrossbowman/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 27.5,
+     "frames": {
+      "count": 22,
+      "pattern": "sprites-clean/BaseCrossbowman/hit-{}.png"
+     },
+     "mode": "once",
+     "name": "hit",
+     "pack": "combat"
+    },
+    {
+     "fps": 7.578999996185303,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/BaseCrossbowman/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 7.578999996185303,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/BaseCrossbowman/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "BaseCrossbowman"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/BasePikeman/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/BasePikeman/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/BasePikeman/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 25.0,
+     "frames": {
+      "count": 20,
+      "pattern": "sprites-clean/BasePikeman/hit-{}.png"
+     },
+     "mode": "once",
+     "name": "hit",
+     "pack": "combat"
+    },
+    {
+     "fps": 20.570999145507813,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/BasePikeman/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 15.451000213623047,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/BasePikeman/move-down-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-down",
+     "pack": "field"
+    },
+    {
+     "fps": 7.199999809265137,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/BasePikeman/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "BasePikeman"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/BirolhoLegs/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/BirolhoLegs/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 16.0,
+     "frames": {
+      "count": 48,
+      "pattern": "sprites/BirolhoLegs/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/BirolhoLegs/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/BirolhoLegs/move-down-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-down",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/BirolhoLegs/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/BirolhoLegs/move-up-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-up",
+     "pack": "field"
+    }
+   ],
+   "name": "BirolhoLegs"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/BirolhoLegs2/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/BirolhoLegs2/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/BirolhoLegs2/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/BirolhoLegs2/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/BirolhoLegs2/move-down-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-down",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/BirolhoLegs2/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "BirolhoLegs2"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/BrigandCrossbowman/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/BrigandCrossbowman/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/BrigandCrossbowman/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 25.0,
+     "frames": {
+      "count": 20,
+      "pattern": "sprites-clean/BrigandCrossbowman/hit-{}.png"
+     },
+     "mode": "once",
+     "name": "hit",
+     "pack": "combat"
+    },
+    {
+     "fps": 11.07699966430664,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/BrigandCrossbowman/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 11.07699966430664,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/BrigandCrossbowman/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "BrigandCrossbowman"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/EmberedWraith/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/EmberedWraith/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/EmberedWraith/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/EmberedWraith/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/EmberedWraith/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "EmberedWraith"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/Kael_Final/kael-final-002/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/Kael_Final/kael-final-002/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/Kael_Final/kael-final-002/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "Kael_Final/kael-final-002"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/RoccoTheBird/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/RoccoTheBird/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/RoccoTheBird/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/RoccoTheBird/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "RoccoTheBird"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/StagWolf/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/StagWolf/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/StagWolf/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/StagWolf/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 25.0,
+     "frames": {
+      "count": 20,
+      "pattern": "sprites-clean/StagWolf/hit-{}.png"
+     },
+     "mode": "once",
+     "name": "hit",
+     "pack": "combat"
+    },
+    {
+     "fps": 9.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/StagWolf/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 9.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/StagWolf/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "StagWolf"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/aldric/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/aldric/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/aldric/atk-left-{}.png"
+     },
+     "mode": "once",
+     "name": "atk-left",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/aldric/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/aldric/cast-left-{}.png"
+     },
+     "mode": "once",
+     "name": "cast-left",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/aldric/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/aldric/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "aldric"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/ancient-golem/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/ancient-golem/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/ancient-golem/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "ancient-golem"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/apparition/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 60,
+      "pattern": "sprites/apparition/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/apparition/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/apparition/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/apparition/hit-{}.png"
+     },
+     "mode": "once",
+     "name": "hit",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/apparition/hit2-{}.png"
+     },
+     "mode": "once",
+     "name": "hit2",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/apparition/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "apparition"
+  },
+  {
+   "clips": [
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/archerRecruit/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 5.0,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/archerRecruit/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    }
+   ],
+   "name": "archerRecruit"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/beberrao/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "beberrao"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/bellCollector/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "bellCollector"
+  },
+  {
+   "clips": [
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/big-blue-ox-002/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/big-blue-ox-002/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/big-blue-ox-002/atk2-{}.png"
+     },
+     "mode": "once",
+     "name": "atk2",
+     "pack": "combat"
+    },
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/big-blue-ox-002/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/big-blue-ox-002/hit-{}.png"
+     },
+     "mode": "once",
+     "name": "hit",
+     "pack": "combat"
+    },
+    {
+     "fps": 21.33300018310547,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/big-blue-ox-002/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "big-blue-ox-002"
+  },
+  {
+   "clips": [
+    {
+     "fps": 10.0,
+     "frames": {
+      "count": 8,
+      "pattern": "sprites/big-blue-ox-ai-003/hit-{}.png"
+     },
+     "mode": "once",
+     "name": "hit",
+     "pack": "combat"
+    }
+   ],
+   "name": "big-blue-ox-ai-003"
+  },
+  {
+   "clips": [
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/big-blue-ox-ai-004/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/big-blue-ox-ai-004/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/big-blue-ox-ai-004/atk2-{}.png"
+     },
+     "mode": "once",
+     "name": "atk2",
+     "pack": "combat"
+    },
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/big-blue-ox-ai-004/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/big-blue-ox-ai-004/hit-{}.png"
+     },
+     "mode": "once",
+     "name": "hit",
+     "pack": "combat"
+    },
+    {
+     "fps": 21.33300018310547,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/big-blue-ox-ai-004/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "big-blue-ox-ai-004"
+  },
+  {
+   "clips": [
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/big-blue-ox-ai-005/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/big-blue-ox-ai-005/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/big-blue-ox-ai-005/atk2-{}.png"
+     },
+     "mode": "once",
+     "name": "atk2",
+     "pack": "combat"
+    },
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/big-blue-ox-ai-005/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/big-blue-ox-ai-005/hit-{}.png"
+     },
+     "mode": "once",
+     "name": "hit",
+     "pack": "combat"
+    },
+    {
+     "fps": 21.33300018310547,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/big-blue-ox-ai-005/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "big-blue-ox-ai-005"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/big-blue-ox-ai-006/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/big-blue-ox-ai-006/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/big-blue-ox-ai-006/atk2-{}.png"
+     },
+     "mode": "once",
+     "name": "atk2",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/big-blue-ox-ai-006/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/big-blue-ox-ai-006/hit-{}.png"
+     },
+     "mode": "once",
+     "name": "hit",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/big-blue-ox-ai-006/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "big-blue-ox-ai-006"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/birolho/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 5.0,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/birolho/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 3.75,
+     "frames": {
+      "count": 3,
+      "pattern": "sprites/birolho/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 1.0,
+     "frames": {
+      "file": "sprites/birolho/back.png"
+     },
+     "mode": "loop",
+     "name": "back",
+     "pack": "field"
+    }
+   ],
+   "name": "birolho"
+  },
+  {
+   "clips": [
+    {
+     "fps": 13.07699966430664,
+     "frames": {
+      "count": 18,
+      "pattern": "sprites/birolho2/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 5.0,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/birolho2/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 3.75,
+     "frames": {
+      "count": 3,
+      "pattern": "sprites/birolho2/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 1.0,
+     "frames": {
+      "file": "sprites/birolho2/back.png"
+     },
+     "mode": "loop",
+     "name": "back",
+     "pack": "field"
+    }
+   ],
+   "name": "birolho2"
+  },
+  {
+   "clips": [
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/birolho3/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 22.5,
+     "frames": {
+      "count": 18,
+      "pattern": "sprites/birolho3/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 27.273000717163086,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/birolho3/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "birolho3"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/breadLady/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "breadLady"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/brigand/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "brigand"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/brue/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "brue"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/captain/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "captain"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/carnivorous-plant-001/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/carnivorous-plant-001/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/carnivorous-plant-001/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/carnivorous-plant-001/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites-clean/carnivorous-plant-001/hit-{}.png"
+     },
+     "mode": "once",
+     "name": "hit",
+     "pack": "combat"
+    }
+   ],
+   "name": "carnivorous-plant-001"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/charcoalBurner/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "charcoalBurner"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/cobalt-blue-deer/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 5.0,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/cobalt-blue-deer/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 5.0,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/cobalt-blue-deer/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 5.0,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/cobalt-blue-deer/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 9.090999603271484,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/cobalt-blue-deer/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 9.090999603271484,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/cobalt-blue-deer/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "cobalt-blue-deer"
+  },
+  {
+   "clips": [
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/conjurer/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 7.5,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/conjurer/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 7.5,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/conjurer/atk-left-{}.png"
+     },
+     "mode": "once",
+     "name": "atk-left",
+     "pack": "combat"
+    },
+    {
+     "fps": 13.63599967956543,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/conjurer/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 13.63599967956543,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/conjurer/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "conjurer"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/conjurer/conjurer-complete-001/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/conjurer/conjurer-complete-001/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/conjurer/conjurer-complete-001/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/conjurer/conjurer-complete-001/talk-{}.png"
+     },
+     "mode": "pingpong",
+     "name": "talk",
+     "pack": "field"
+    }
+   ],
+   "name": "conjurer/conjurer-complete-001"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/conjurer/conjurer-complete-002/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/conjurer/conjurer-complete-002/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/conjurer/conjurer-complete-002/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/conjurer/conjurer-complete-002/talk-{}.png"
+     },
+     "mode": "pingpong",
+     "name": "talk",
+     "pack": "field"
+    }
+   ],
+   "name": "conjurer/conjurer-complete-002"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/conjurer/conjurer-complete-003/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/conjurer/conjurer-complete-003/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/conjurer/conjurer-complete-003/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/conjurer/conjurer-complete-003/talk-{}.png"
+     },
+     "mode": "pingpong",
+     "name": "talk",
+     "pack": "field"
+    }
+   ],
+   "name": "conjurer/conjurer-complete-003"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/crazyLady/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "crazyLady"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/cultist-v2/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/cultist-v2/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/cultist-v2/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/cultist-v2/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/cultist-v2/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "cultist-v2"
+  },
+  {
+   "clips": [
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/defaultLancer/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 6.25,
+     "frames": {
+      "count": 5,
+      "pattern": "sprites/defaultLancer/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 6.25,
+     "frames": {
+      "count": 5,
+      "pattern": "sprites/defaultLancer/atk-left-{}.png"
+     },
+     "mode": "once",
+     "name": "atk-left",
+     "pack": "combat"
+    },
+    {
+     "fps": 13.63599967956543,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/defaultLancer/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 13.63599967956543,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/defaultLancer/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "defaultLancer"
+  },
+  {
+   "clips": [
+    {
+     "fps": 5.5,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/familiar/{}.png"
+     },
+     "mode": "loop",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 10.0,
+     "frames": {
+      "count": 8,
+      "pattern": "sprites/familiar/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 18.18199920654297,
+     "frames": {
+      "count": 8,
+      "pattern": "sprites/familiar/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "familiar"
+  },
+  {
+   "clips": [
+    {
+     "fps": 16.5,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar2/{}.png"
+     },
+     "mode": "loop",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar2/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar2/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar2/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar2/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "familiar2"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar3/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar3/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar3/atk2-{}.png"
+     },
+     "mode": "once",
+     "name": "atk2",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar3/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar3/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar3/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar3/move2-{}.png"
+     },
+     "mode": "loop",
+     "name": "move2",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar3/move2-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move2-left",
+     "pack": "field"
+    }
+   ],
+   "name": "familiar3"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar3-v1-backup/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar3-v1-backup/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar3-v1-backup/atk2-{}.png"
+     },
+     "mode": "once",
+     "name": "atk2",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar3-v1-backup/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar3-v1-backup/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "familiar3-v1-backup"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar4/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar4/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar4/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/familiar4/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "familiar4"
+  },
+  {
+   "clips": [
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/healerRecruit/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 5.0,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/healerRecruit/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    }
+   ],
+   "name": "healerRecruit"
+  },
+  {
+   "clips": [
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/horror/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "horror"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/jacare/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/jacare/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/jacare/atk2-{}.png"
+     },
+     "mode": "once",
+     "name": "atk2",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/jacare/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/jacare/hit-{}.png"
+     },
+     "mode": "once",
+     "name": "hit",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/jacare/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "jacare"
+  },
+  {
+   "clips": [
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/kael/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 15.0,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/kael/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 1.25,
+     "frames": {
+      "file": "sprites/kael/drink-1.png"
+     },
+     "mode": "once",
+     "name": "drink",
+     "pack": "field"
+    },
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/kael/idle-{}.png"
+     },
+     "mode": "pingpong",
+     "name": "idle",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/kael/stand-{}.png"
+     },
+     "mode": "pingpong",
+     "name": "stand",
+     "pack": "field"
+    },
+    {
+     "fps": 9.090999603271484,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/kael/walk-{}.png"
+     },
+     "mode": "loop",
+     "name": "walk",
+     "pack": "field"
+    },
+    {
+     "fps": 1.0,
+     "frames": {
+      "file": "sprites/kael/walk-front.png"
+     },
+     "mode": "loop",
+     "name": "walk-front",
+     "pack": "field"
+    },
+    {
+     "fps": 1.0,
+     "frames": {
+      "file": "sprites/kael/walk-back.png"
+     },
+     "mode": "loop",
+     "name": "walk-back",
+     "pack": "field"
+    },
+    {
+     "fps": 1.0,
+     "frames": {
+      "file": "sprites/kael/walk-side.png"
+     },
+     "mode": "loop",
+     "name": "walk-side",
+     "pack": "field"
+    }
+   ],
+   "name": "kael"
+  },
+  {
+   "clips": [
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/kael-v2/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 15.0,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/kael-v2/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/kael-v2/stand-{}.png"
+     },
+     "mode": "pingpong",
+     "name": "stand",
+     "pack": "field"
+    }
+   ],
+   "name": "kael-v2"
+  },
+  {
+   "clips": [
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/lancer/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 7.5,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/lancer/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 7.5,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/lancer/atk-left-{}.png"
+     },
+     "mode": "once",
+     "name": "atk-left",
+     "pack": "combat"
+    },
+    {
+     "fps": 13.63599967956543,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/lancer/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 13.63599967956543,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/lancer/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "lancer"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/lostCourier/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "lostCourier"
+  },
+  {
+   "clips": [
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/mageRecruit/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 5.0,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/mageRecruit/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    }
+   ],
+   "name": "mageRecruit"
+  },
+  {
+   "clips": [
+    {
+     "fps": 10.800000190734863,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/malrec/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 10.800000190734863,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/malrec/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 10.800000190734863,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/malrec/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 10.800000190734863,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/malrec/idle2-{}.png"
+     },
+     "mode": "pingpong",
+     "name": "idle2",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/malrec/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/malrec/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "malrec"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/marshTrapper/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "marshTrapper"
+  },
+  {
+   "clips": [
+    {
+     "fps": 8.402999877929688,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/militia-v2/{}.png"
+     },
+     "mode": "loop",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/militia-v2/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/militia-v2/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/militia-v2/hit-{}.png"
+     },
+     "mode": "once",
+     "name": "hit",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/militia-v2/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/militia-v2/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "militia-v2"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/minor-horror-001/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/minor-horror-001/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/minor-horror-001/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/minor-horror-001/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "minor-horror-001"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/minor-horror-002/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/minor-horror-002/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/minor-horror-002/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/minor-horror-002/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "minor-horror-002"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/minor-horror-003/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/minor-horror-003/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/minor-horror-003/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/minor-horror-003/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/minor-horror-003/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "minor-horror-003"
+  },
+  {
+   "clips": [
+    {
+     "fps": 5.385000228881836,
+     "frames": {
+      "count": 8,
+      "pattern": "sprites/mordavian-wolf/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 8.75,
+     "frames": {
+      "count": 7,
+      "pattern": "sprites/mordavian-wolf/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 18.18199920654297,
+     "frames": {
+      "count": 8,
+      "pattern": "sprites/mordavian-wolf/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "mordavian-wolf"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/mordavian-wolf-final/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/mordavian-wolf-final/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/mordavian-wolf-final/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/mordavian-wolf-final/hit-{}.png"
+     },
+     "mode": "once",
+     "name": "hit",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/mordavian-wolf-final/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/mordavian-wolf-final/move-down-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-down",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/mordavian-wolf-final/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/mordavian-wolf-final/move-up-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-up",
+     "pack": "field"
+    }
+   ],
+   "name": "mordavian-wolf-final"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/morvenian-wolf/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 7.5,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/morvenian-wolf/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 13.63599967956543,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/morvenian-wolf/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 15.909000396728516,
+     "frames": {
+      "count": 7,
+      "pattern": "sprites/morvenian-wolf/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "morvenian-wolf"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/mothKeeper/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "mothKeeper"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/mudinho/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "mudinho"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/mushroomForager/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "mushroomForager"
+  },
+  {
+   "clips": [
+    {
+     "fps": 10.204000473022461,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/neera/{}.png"
+     },
+     "mode": "loop",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/neera/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/neera/atk-left-{}.png"
+     },
+     "mode": "once",
+     "name": "atk-left",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/neera/atk2-{}.png"
+     },
+     "mode": "once",
+     "name": "atk2",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/neera/atk2-left-{}.png"
+     },
+     "mode": "once",
+     "name": "atk2-left",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/neera/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 10.204000473022461,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/neera/idle-{}.png"
+     },
+     "mode": "loop",
+     "name": "idle",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/neera/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "neera"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/neera/neera-v2-001/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/neera/neera-v2-001/atk-left-{}.png"
+     },
+     "mode": "once",
+     "name": "atk-left",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/neera/neera-v2-001/atk-short-{}.png"
+     },
+     "mode": "once",
+     "name": "atk-short",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/neera/neera-v2-001/atk2-{}.png"
+     },
+     "mode": "once",
+     "name": "atk2",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/neera/neera-v2-001/atk2-left-{}.png"
+     },
+     "mode": "once",
+     "name": "atk2-left",
+     "pack": "combat"
+    },
+    {
+     "fps": 10.204000473022461,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/neera/neera-v2-001/idle-{}.png"
+     },
+     "mode": "loop",
+     "name": "idle",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/neera/neera-v2-001/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/neera/neera-v2-001/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "neera/neera-v2-001"
+  },
+  {
+   "clips": [
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/nira-v2/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 15.0,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/nira-v2/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/nira-v2/stand-{}.png"
+     },
+     "mode": "pingpong",
+     "name": "stand",
+     "pack": "field"
+    }
+   ],
+   "name": "nira-v2"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/oldHealer/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "oldHealer"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/peasant1/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "peasant1"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/pikeman/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "pikeman"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/plague-bearing-cattle/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/plague-bearing-cattle/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/plague-bearing-cattle/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/plague-bearing-cattle/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/plague-bearing-cattle/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "plague-bearing-cattle"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/punisher/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 5.0,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/punisher/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 1.0,
+     "frames": {
+      "file": "sprites/punisher/front.png"
+     },
+     "mode": "loop",
+     "name": "front",
+     "pack": "field"
+    },
+    {
+     "fps": 1.0,
+     "frames": {
+      "file": "sprites/punisher/back.png"
+     },
+     "mode": "loop",
+     "name": "back",
+     "pack": "field"
+    }
+   ],
+   "name": "punisher"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/ratCatcher/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "ratCatcher"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/roadCartographer/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "roadCartographer"
+  },
+  {
+   "clips": [
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/salazar/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 5.0,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/salazar/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    }
+   ],
+   "name": "salazar"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/salazar-final/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/salazar-final/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/salazar-final/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/salazar-final/heal-{}.png"
+     },
+     "mode": "once",
+     "name": "heal",
+     "pack": "combat"
+    },
+    {
+     "fps": 18.94700050354004,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/salazar-final/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 18.94700050354004,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/salazar-final/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "salazar-final"
+  },
+  {
+   "clips": [
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/salazar-v2/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 15.0,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/salazar-v2/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/salazar-v2/stand-{}.png"
+     },
+     "mode": "pingpong",
+     "name": "stand",
+     "pack": "field"
+    }
+   ],
+   "name": "salazar-v2"
+  },
+  {
+   "clips": [
+    {
+     "fps": 5.385000228881836,
+     "frames": {
+      "count": 8,
+      "pattern": "sprites/sandoval/sandoval-complete-001/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 7.5,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/sandoval/sandoval-complete-001/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 7.5,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/sandoval/sandoval-complete-001/atk-left-{}.png"
+     },
+     "mode": "once",
+     "name": "atk-left",
+     "pack": "combat"
+    },
+    {
+     "fps": 13.63599967956543,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/sandoval/sandoval-complete-001/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 13.63599967956543,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/sandoval/sandoval-complete-001/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "sandoval/sandoval-complete-001"
+  },
+  {
+   "clips": [
+    {
+     "fps": 5.385000228881836,
+     "frames": {
+      "count": 8,
+      "pattern": "sprites/sandoval/source-sheets/sandoval-complete-001/engine/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 7.5,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/sandoval/source-sheets/sandoval-complete-001/engine/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 7.5,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/sandoval/source-sheets/sandoval-complete-001/engine/atk-left-{}.png"
+     },
+     "mode": "once",
+     "name": "atk-left",
+     "pack": "combat"
+    },
+    {
+     "fps": 13.63599967956543,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/sandoval/source-sheets/sandoval-complete-001/engine/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 13.63599967956543,
+     "frames": {
+      "count": 6,
+      "pattern": "sprites/sandoval/source-sheets/sandoval-complete-001/engine/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "sandoval/source-sheets/sandoval-complete-001/engine"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/sapling-001/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/sapling-001/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/sapling-001/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/sapling-001/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/sapling-001/hit-{}.png"
+     },
+     "mode": "once",
+     "name": "hit",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/sapling-001/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "sapling-001"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/shadowScholar/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "shadowScholar"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/shadyPatron/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "shadyPatron"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/soldier/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "soldier"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/sorcerer/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "sorcerer"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/soupLady/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "soupLady"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/swamp-blue-calf/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/swamp-blue-calf/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/swamp-blue-calf/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 21.33300018310547,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/swamp-blue-calf/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "swamp-blue-calf"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/swampFerryman/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "swampFerryman"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/theButcher/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/theButcher/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/theButcher/counter-{}.png"
+     },
+     "mode": "once",
+     "name": "counter",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/theButcher/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/theButcher/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "theButcher"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/travelingMerchant/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/travelingMerchant/idle-{}.png"
+     },
+     "mode": "pingpong",
+     "name": "idle",
+     "pack": "field"
+    }
+   ],
+   "name": "travelingMerchant"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/troll/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "troll"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/troll2/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/troll2/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/troll2/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/troll2/move-down-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-down",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/troll2/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/troll2/move-up-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-up",
+     "pack": "field"
+    }
+   ],
+   "name": "troll2"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/undeadOx/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/undeadOx/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/undeadOx/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/undeadOx/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/undeadOx/hit-{}.png"
+     },
+     "mode": "once",
+     "name": "hit",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/undeadOx/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "undeadOx"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/villagerF1/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "villagerF1"
+  },
+  {
+   "clips": [
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/voss/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 5.0,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/voss/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    }
+   ],
+   "name": "voss"
+  },
+  {
+   "clips": [
+    {
+     "fps": 21.33300018310547,
+     "frames": {
+      "count": 64,
+      "pattern": "sprites/voss-final/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 21.33300018310547,
+     "frames": {
+      "count": 64,
+      "pattern": "sprites/voss-final/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 21.33300018310547,
+     "frames": {
+      "count": 64,
+      "pattern": "sprites/voss-final/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 21.33300018310547,
+     "frames": {
+      "count": 64,
+      "pattern": "sprites/voss-final/counter-{}.png"
+     },
+     "mode": "once",
+     "name": "counter",
+     "pack": "combat"
+    },
+    {
+     "fps": 20.847000122070313,
+     "frames": {
+      "count": 64,
+      "pattern": "sprites/voss-final/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 20.847000122070313,
+     "frames": {
+      "count": 64,
+      "pattern": "sprites/voss-final/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "voss-final"
+  },
+  {
+   "clips": [
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/voss-v2/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 15.0,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/voss-v2/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 8.461999893188477,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/voss-v2/stand-{}.png"
+     },
+     "mode": "pingpong",
+     "name": "stand",
+     "pack": "field"
+    }
+   ],
+   "name": "voss-v2"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/wanderingTinker/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "wanderingTinker"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/wardog/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "wardog"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/wardog2/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/wardog2/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/wardog2/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/wardog2/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/wardog2/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "wardog2"
+  },
+  {
+   "clips": [
+    {
+     "fps": 2.308000087738037,
+     "frames": {
+      "count": 4,
+      "pattern": "sprites/woodsman/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    }
+   ],
+   "name": "woodsman"
+  },
+  {
+   "clips": [
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/zombie/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 10.666999816894531,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/zombie/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 21.33300018310547,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/zombie/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    },
+    {
+     "fps": 21.33300018310547,
+     "frames": {
+      "count": 32,
+      "pattern": "sprites/zombie/move-left-{}.png"
+     },
+     "mode": "loop",
+     "name": "move-left",
+     "pack": "field"
+    }
+   ],
+   "name": "zombie"
+  },
+  {
+   "clips": [
+    {
+     "fps": 7.691999912261963,
+     "frames": {
+      "count": 11,
+      "pattern": "sprites/zombie2/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.5,
+     "frames": {
+      "count": 10,
+      "pattern": "sprites/zombie2/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 27.273000717163086,
+     "frames": {
+      "count": 12,
+      "pattern": "sprites/zombie2/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "zombie2"
+  },
+  {
+   "clips": [
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/zombieDog/{}.png"
+     },
+     "mode": "pingpong",
+     "name": "base",
+     "pack": "field"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/zombieDog/atk-{}.png"
+     },
+     "mode": "once",
+     "name": "atk",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/zombieDog/cast-{}.png"
+     },
+     "mode": "once",
+     "name": "cast",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/zombieDog/death-{}.png"
+     },
+     "mode": "once",
+     "name": "death",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/zombieDog/death2-{}.png"
+     },
+     "mode": "once",
+     "name": "death2",
+     "pack": "combat"
+    },
+    {
+     "fps": 12.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/zombieDog/hit-{}.png"
+     },
+     "mode": "once",
+     "name": "hit",
+     "pack": "combat"
+    },
+    {
+     "fps": 24.0,
+     "frames": {
+      "count": 36,
+      "pattern": "sprites/zombieDog/move-{}.png"
+     },
+     "mode": "loop",
+     "name": "move",
+     "pack": "field"
+    }
+   ],
+   "name": "zombieDog"
+  }
+ ],
+ "version": 1
+}

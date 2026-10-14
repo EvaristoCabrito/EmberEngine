@@ -14,8 +14,10 @@ add_library(EmberEngine STATIC
   rhi/Bindless.cpp
   rhi/Pipeline.cpp
   rhi/GpuTimer.cpp
+  rhi/UploadQueue.cpp
   render/Renderer.cpp
   render/DebugUi.cpp
+  render/SpriteSystem.cpp
   debug/PerfOverlay.cpp
 )
 

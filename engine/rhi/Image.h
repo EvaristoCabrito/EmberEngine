@@ -12,6 +12,9 @@ struct ImageDesc {
   VkImageUsageFlags usage = 0;
   uint32_t mipLevels = 1;
   uint32_t layers = 1;
+  bool arrayView = false;       // 2D_ARRAY view even for one layer (shaders read it as Texture2DArray)
+  bool sharedWithTransfer = false;  // written by the transfer queue, read by graphics (concurrent sharing)
+  VmaPool pool = VK_NULL_HANDLE;    // allocate from this pre-made pool (no driver allocation at runtime)
 };
 
 // A GPU image with its default view and VMA allocation.
@@ -25,6 +28,10 @@ struct Image {
 };
 
 Image createImage(VulkanContext& context, const ImageDesc& desc);
+// Like createImage, but returns false instead of stopping when memory (or the pool) is full.
+bool tryCreateImage(VulkanContext& context, const ImageDesc& desc, Image& out);
+// The VkImageCreateInfo createImage would use (for choosing memory types and pools).
+VkImageCreateInfo imageCreateInfo(VulkanContext& context, const ImageDesc& desc, uint32_t (&families)[2]);
 void destroyImage(VulkanContext& context, Image& image);
 
 struct Buffer {
@@ -33,6 +40,11 @@ struct Buffer {
   void* mapped = nullptr;  // set for host-visible buffers
   VkDeviceSize size = 0;
 };
+
+// Host-visible buffer the CPU writes every frame and shaders read through its device address
+// (per-frame instance data).
+Buffer createHostBuffer(VulkanContext& context, VkDeviceSize size, VkBufferUsageFlags usage);
+VkDeviceAddress bufferAddress(VulkanContext& context, const Buffer& buffer);
 
 // Host-visible buffer the CPU reads after the GPU writes it (frame capture, GPU queries).
 Buffer createReadbackBuffer(VulkanContext& context, VkDeviceSize size);

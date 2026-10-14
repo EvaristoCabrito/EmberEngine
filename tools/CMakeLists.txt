@@ -2,10 +2,12 @@
 # and (later) the editor's hot reload. Never linked into the shipped game.
 add_library(EmberTools STATIC
   PakWriter.cpp
+  SpriteSource.cpp
+  SpriteCooker.cpp
 )
 
 target_include_directories(EmberTools PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(EmberTools PUBLIC EmberEngine PRIVATE zstd)
+target_link_libraries(EmberTools PUBLIC EmberEngine PRIVATE zstd bc7 nlohmann_json)
 
 if(MSVC)
   target_compile_options(EmberTools PRIVATE /W4 /permissive- /utf-8 /Zc:__cplusplus)

@@ -1,0 +1,524 @@
+#include "SpriteCooker.h"
+
+#include <basisu_bc7e_scalar.h>
+#include <bc7decomp.h>
+#include <stb_image.h>
+#include <stb_image_write.h>
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include <stb_image_resize2.h>
+
+#include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <cmath>
+#include <cstring>
+#include <fstream>
+#include <mutex>
+
+#include "core/Jobs.h"
+#include "core/Log.h"
+
+namespace ember {
+
+namespace {
+
+// Bump whenever cooked pixels change for the same input: every clip then re-cooks.
+constexpr uint32_t kCookerVersion = 1;
+constexpr uint32_t kTrimMargin = 4;      // pixels kept around the visible area (room for filtering)
+constexpr uint32_t kBlocksPerTask = 2048;  // BC7 blocks encoded per job
+
+struct Rgba8Image {
+  uint32_t width = 0, height = 0;
+  std::vector<uint8_t> pixels;  // RGBA, straight alpha, sRGB colour
+};
+
+// Everything about a cooked clip that depends only on its pixels. Stored next to the cooked
+// textures, so timing and pack changes rewrite the small .clip header without re-cooking.
+struct CookedLayout {
+  uint64_t key;
+  uint32_t frames, width, height, mipCount, tailFirstMip;
+  uint32_t contentWidth, contentHeight, sourceWidth, sourceHeight;
+  int32_t cropX, cropY;
+  uint64_t fullBytes, tailBytes;
+  double colorPsnr, alphaPsnr;
+};
+
+uint64_t fnv(uint64_t hash, const void* data, size_t size) {
+  const auto* bytes = static_cast<const uint8_t*>(data);
+  for (size_t i = 0; i < size; ++i) hash = (hash ^ bytes[i]) * 0x100000001b3ull;
+  return hash;
+}
+
+uint64_t textureKey(const SpriteClipSource& clip, const SpriteCookOptions& options) {
+  uint64_t hash = 0xcbf29ce484222325ull;
+  hash = fnv(hash, &kCookerVersion, sizeof(kCookerVersion));
+  hash = fnv(hash, &options.quality, sizeof(options.quality));
+  for (const std::string& frame : clip.frames) {
+    const std::filesystem::path file = options.sourceRoot / frame;
+    std::error_code error;
+    const uint64_t size = std::filesystem::file_size(file, error);
+    const auto time = std::filesystem::last_write_time(file, error).time_since_epoch().count();
+    hash = fnv(hash, frame.data(), frame.size());
+    hash = fnv(hash, &size, sizeof(size));
+    hash = fnv(hash, &time, sizeof(time));
+  }
+  return hash;
+}
+
+// Gives every fully transparent pixel the colour of the nearest visible art (push-pull over a
+// pyramid). Alpha is untouched. Filtering and mips can then never pull black or white into edges.
+void dilate(uint8_t* pixels, uint32_t width, uint32_t height) {
+  struct Level {
+    uint32_t w, h;
+    std::vector<float> sums;  // r*weight, g*weight, b*weight, weight
+  };
+  std::vector<Level> levels;
+  levels.push_back({width, height, std::vector<float>(size_t{width} * height * 4)});
+  bool anyVisible = false, anyHidden = false;
+  for (size_t i = 0; i < size_t{width} * height; ++i) {
+    float* s = &levels[0].sums[i * 4];
+    if (pixels[i * 4 + 3] > 0) {
+      s[0] = pixels[i * 4];
+      s[1] = pixels[i * 4 + 1];
+      s[2] = pixels[i * 4 + 2];
+      s[3] = 1.0f;
+      anyVisible = true;
+    } else {
+      anyHidden = true;
+    }
+  }
+  if (!anyVisible || !anyHidden) return;
+
+  // Push: each level sums its four children.
+  while (levels.back().w > 1 || levels.back().h > 1) {
+    const Level& child = levels.back();
+    Level parent{(child.w + 1) / 2, (child.h + 1) / 2, {}};
+    parent.sums.assign(size_t{parent.w} * parent.h * 4, 0.0f);
+    for (uint32_t y = 0; y < child.h; ++y)
+      for (uint32_t x = 0; x < child.w; ++x) {
+        const float* c = &child.sums[(size_t{y} * child.w + x) * 4];
+        float* p = &parent.sums[(size_t{y / 2} * parent.w + x / 2) * 4];
+        for (int k = 0; k < 4; ++k) p[k] += c[k];
+      }
+    levels.push_back(std::move(parent));
+  }
+
+  // Pull: empty pixels take their parent's average colour, from the top down.
+  for (size_t l = levels.size() - 1; l-- > 0;) {
+    Level& level = levels[l];
+    const Level& parent = levels[l + 1];
+    for (uint32_t y = 0; y < level.h; ++y)
+      for (uint32_t x = 0; x < level.w; ++x) {
+        float* s = &level.sums[(size_t{y} * level.w + x) * 4];
+        if (s[3] > 0.0f) continue;
+        const float* p = &parent.sums[(size_t{y / 2} * parent.w + x / 2) * 4];
+        for (int k = 0; k < 3; ++k) s[k] = p[k] / p[3];
+        s[3] = 1.0f;
+      }
+  }
+  const Level& top = levels[0];
+  for (size_t i = 0; i < size_t{width} * height; ++i) {
+    if (pixels[i * 4 + 3] > 0) continue;
+    const float* s = &top.sums[i * 4];
+    for (int k = 0; k < 3; ++k) pixels[i * 4 + k] = static_cast<uint8_t>(std::clamp(s[k] / s[3] + 0.5f, 0.0f, 255.0f));
+  }
+}
+
+void bc7Params(Bc7Quality quality, bc7e_scalar::bc7e_compress_block_params& params) {
+  static std::once_flag once;
+  std::call_once(once, [] { bc7e_scalar::bc7e_compress_block_init(); });
+  switch (quality) {
+    case Bc7Quality::Fast: bc7e_scalar::bc7e_compress_block_params_init_veryfast(&params, true); break;
+    case Bc7Quality::Basic: bc7e_scalar::bc7e_compress_block_params_init_basic(&params, true); break;
+    case Bc7Quality::Slow: bc7e_scalar::bc7e_compress_block_params_init_slow(&params, true); break;
+  }
+}
+
+// Squared error over visible pixels, for PSNR.
+struct ErrorSums {
+  double color = 0.0, alpha = 0.0;
+  uint64_t pixels = 0;
+};
+
+// Encodes blocks [first, first+count) of one mip image (row-major block order) into `out`.
+// Pixels outside the image repeat the edge, as the GPU never samples them.
+void encodeBlocks(const Rgba8Image& image, uint32_t first, uint32_t count, const bc7e_scalar::bc7e_compress_block_params& params,
+                  uint8_t* out, ErrorSums* errors) {
+  const uint32_t blocksX = (image.width + 3) / 4;
+  std::vector<uint32_t> texels(size_t{count} * 16);
+  for (uint32_t b = 0; b < count; ++b) {
+    const uint32_t bx = (first + b) % blocksX, by = (first + b) / blocksX;
+    for (uint32_t py = 0; py < 4; ++py)
+      for (uint32_t px = 0; px < 4; ++px) {
+        const uint32_t x = std::min(bx * 4 + px, image.width - 1), y = std::min(by * 4 + py, image.height - 1);
+        std::memcpy(&texels[size_t{b} * 16 + py * 4 + px], &image.pixels[(size_t{y} * image.width + x) * 4], 4);
+      }
+  }
+  bc7e_scalar::bc7e_compress_blocks(count, reinterpret_cast<uint64_t*>(out), texels.data(), &params);
+  if (!errors) return;
+
+  // Compare what the GPU will decode with the source, as the player sees it: premultiplied colour.
+  bc7decomp::color_rgba decoded[16];
+  for (uint32_t b = 0; b < count; ++b) {
+    bc7decomp::unpack_bc7(out + size_t{b} * kBc7BlockBytes, decoded);
+    const uint32_t bx = (first + b) % blocksX, by = (first + b) / blocksX;
+    for (uint32_t i = 0; i < 16; ++i) {
+      const uint32_t x = bx * 4 + i % 4, y = by * 4 + i / 4;
+      if (x >= image.width || y >= image.height) continue;
+      const uint8_t* s = reinterpret_cast<const uint8_t*>(&texels[size_t{b} * 16 + i]);
+      const bc7decomp::color_rgba& d = decoded[i];
+      if (s[3] == 0 && d.a == 0) continue;
+      for (int c = 0; c < 3; ++c) {
+        const double e = (s[c] * s[3] - d.m_comps[c] * d.a) / 255.0;
+        errors->color += e * e;
+      }
+      const double ea = static_cast<double>(s[3]) - d.a;
+      errors->alpha += ea * ea;
+      ++errors->pixels;
+    }
+  }
+}
+
+double psnr(double squaredError, uint64_t samples) {
+  if (samples == 0 || squaredError <= 0.0) return 99.0;
+  return 10.0 * std::log10(255.0 * 255.0 / (squaredError / static_cast<double>(samples)));
+}
+
+bool writeFile(const std::filesystem::path& path, const void* data, size_t size) {
+  std::filesystem::create_directories(path.parent_path());
+  std::ofstream file(path, std::ios::binary | std::ios::trunc);
+  file.write(static_cast<const char*>(data), static_cast<std::streamsize>(size));
+  return static_cast<bool>(file);
+}
+
+bool readLayout(const std::filesystem::path& path, CookedLayout& out) {
+  std::ifstream file(path, std::ios::binary);
+  return file && file.read(reinterpret_cast<char*>(&out), sizeof(out)) && file.gcount() == sizeof(out);
+}
+
+std::string assetBase(const std::string& set, const std::string& clip) { return normalizeAssetPath("sprites/" + set + "/" + clip); }
+
+// Cooks one clip's textures into <cache>/<asset>.full / .tail and its layout into .layout.
+bool cookClipTextures(JobSystem& jobs, const std::string& setName, const SpriteClipSource& clip,
+                      const SpriteCookOptions& options, uint64_t key, CookedLayout& layout) {
+  const std::string label = setName + "/" + clip.name;
+  const size_t frameCount = clip.frames.size();
+
+  // 1. Load every frame.
+  std::vector<Rgba8Image> frames(frameCount);
+  std::atomic<bool> loadFailed{false};
+  jobs.parallelFor(static_cast<uint32_t>(frameCount), 1, [&](uint32_t begin, uint32_t end) {
+    for (uint32_t i = begin; i < end; ++i) {
+      int w = 0, h = 0, n = 0;
+      const std::string path = (options.sourceRoot / clip.frames[i]).string();
+      uint8_t* data = stbi_load(path.c_str(), &w, &h, &n, 4);
+      if (!data) {
+        logError("{}: cannot read {} ({})", label, path, stbi_failure_reason());
+        loadFailed = true;
+        continue;
+      }
+      frames[i].width = static_cast<uint32_t>(w);
+      frames[i].height = static_cast<uint32_t>(h);
+      frames[i].pixels.assign(data, data + size_t(w) * h * 4);
+      stbi_image_free(data);
+    }
+  });
+  if (loadFailed) return false;
+  // One clip shares one canvas. Frames drawn at different sizes are placed on the largest one,
+  // anchored bottom-centre (where a character's feet are).
+  uint32_t sourceW = 0, sourceH = 0;
+  for (const Rgba8Image& frame : frames) {
+    sourceW = std::max(sourceW, frame.width);
+    sourceH = std::max(sourceH, frame.height);
+  }
+  bool resized = false;
+  for (Rgba8Image& frame : frames) {
+    if (frame.width == sourceW && frame.height == sourceH) continue;
+    resized = true;
+    std::vector<uint8_t> canvas(size_t{sourceW} * sourceH * 4, 0);
+    const uint32_t ox = (sourceW - frame.width) / 2, oy = sourceH - frame.height;
+    for (uint32_t y = 0; y < frame.height; ++y)
+      std::memcpy(&canvas[(size_t{y + oy} * sourceW + ox) * 4], &frame.pixels[size_t{y} * frame.width * 4], size_t{frame.width} * 4);
+    frame = {sourceW, sourceH, std::move(canvas)};
+  }
+  if (resized) logWarn("{}: frames are drawn at different sizes; placed on one {}x{} canvas, feet aligned", label, sourceW, sourceH);
+
+  // 2. Trim to the union of visible pixels over the whole clip, so frames keep their places.
+  uint32_t x0 = sourceW, y0 = sourceH, x1 = 0, y1 = 0;
+  for (const Rgba8Image& frame : frames)
+    for (uint32_t y = 0; y < sourceH; ++y)
+      for (uint32_t x = 0; x < sourceW; ++x)
+        if (frame.pixels[(size_t{y} * sourceW + x) * 4 + 3] > 0) {
+          x0 = std::min(x0, x); y0 = std::min(y0, y);
+          x1 = std::max(x1, x); y1 = std::max(y1, y);
+        }
+  if (x0 > x1) {  // nothing visible at all
+    x0 = y0 = 0;
+    x1 = sourceW - 1;
+    y1 = sourceH - 1;
+  }
+  x0 = x0 > kTrimMargin ? x0 - kTrimMargin : 0;
+  y0 = y0 > kTrimMargin ? y0 - kTrimMargin : 0;
+  x1 = std::min(sourceW - 1, x1 + kTrimMargin);
+  y1 = std::min(sourceH - 1, y1 + kTrimMargin);
+  const uint32_t contentW = x1 - x0 + 1, contentH = y1 - y0 + 1;
+  const uint32_t width = (contentW + 3) & ~3u, height = (contentH + 3) & ~3u;
+  uint32_t mipCount = 1;
+  while ((width >> mipCount) > 0 || (height >> mipCount) > 0) ++mipCount;
+  uint32_t tailFirstMip = 0;
+  while (std::max(std::max(1u, width >> tailFirstMip), std::max(1u, height >> tailFirstMip)) > kSpriteTailSize) ++tailFirstMip;
+
+  // 3. Per frame: crop into the texture, dilate, build every mip.
+  std::vector<std::vector<Rgba8Image>> mips(frameCount);
+  jobs.parallelFor(static_cast<uint32_t>(frameCount), 1, [&](uint32_t begin, uint32_t end) {
+    for (uint32_t f = begin; f < end; ++f) {
+      std::vector<Rgba8Image>& chain = mips[f];
+      chain.resize(mipCount);
+      Rgba8Image& base = chain[0];
+      base.width = width;
+      base.height = height;
+      base.pixels.assign(size_t{width} * height * 4, 0);
+      for (uint32_t y = 0; y < contentH; ++y)
+        std::memcpy(&base.pixels[size_t{y} * width * 4], &frames[f].pixels[(size_t{y + y0} * sourceW + x0) * 4], size_t{contentW} * 4);
+      frames[f].pixels = {};
+      dilate(base.pixels.data(), width, height);
+      for (uint32_t m = 1; m < mipCount; ++m) {
+        Rgba8Image& mip = chain[m];
+        mip.width = std::max(1u, width >> m);
+        mip.height = std::max(1u, height >> m);
+        mip.pixels.resize(size_t{mip.width} * mip.height * 4);
+        // From the top level each time (sharper than chaining), alpha-weighted in linear light.
+        stbir_resize(base.pixels.data(), static_cast<int>(width), static_cast<int>(height), static_cast<int>(width * 4),
+                     mip.pixels.data(), static_cast<int>(mip.width), static_cast<int>(mip.height), static_cast<int>(mip.width * 4),
+                     STBIR_RGBA, STBIR_TYPE_UINT8_SRGB, STBIR_EDGE_CLAMP, STBIR_FILTER_MITCHELL);
+        dilate(mip.pixels.data(), mip.width, mip.height);
+      }
+    }
+  });
+
+  // 4. BC7, spread over every core: tasks of up to kBlocksPerTask blocks of one mip of one frame.
+  std::vector<uint64_t> mipOffset(mipCount + 1, 0);
+  for (uint32_t m = 0; m < mipCount; ++m) mipOffset[m + 1] = mipOffset[m] + bc7MipBytes(width, height, m, static_cast<uint32_t>(frameCount));
+  std::vector<uint8_t> data(mipOffset[mipCount]);
+  struct Task {
+    uint32_t frame, mip, first, count;
+  };
+  std::vector<Task> tasks;
+  for (uint32_t m = 0; m < mipCount; ++m) {
+    const uint32_t blocks = ((std::max(1u, width >> m) + 3) / 4) * ((std::max(1u, height >> m) + 3) / 4);
+    for (uint32_t f = 0; f < frameCount; ++f)
+      for (uint32_t first = 0; first < blocks; first += kBlocksPerTask)
+        tasks.push_back({f, m, first, std::min(kBlocksPerTask, blocks - first)});
+  }
+  bc7e_scalar::bc7e_compress_block_params params;
+  bc7Params(options.quality, params);
+  std::vector<ErrorSums> errors(tasks.size());
+  jobs.parallelFor(static_cast<uint32_t>(tasks.size()), 1, [&](uint32_t begin, uint32_t end) {
+    for (uint32_t t = begin; t < end; ++t) {
+      const Task& task = tasks[t];
+      const uint64_t layerBytes = bc7MipBytes(width, height, task.mip, 1);
+      uint8_t* out = data.data() + mipOffset[task.mip] + task.frame * layerBytes + uint64_t{task.first} * kBc7BlockBytes;
+      encodeBlocks(mips[task.frame][task.mip], task.first, task.count, params, out, task.mip == 0 ? &errors[t] : nullptr);
+    }
+  });
+  ErrorSums total;
+  for (const ErrorSums& e : errors) {
+    total.color += e.color;
+    total.alpha += e.alpha;
+    total.pixels += e.pixels;
+  }
+
+  // 5. Write the full chain, the tail and the layout.
+  const std::filesystem::path base = options.cacheDir / assetBase(setName, clip.name);
+  const uint64_t tailOffset = mipOffset[tailFirstMip];
+  layout = {key, static_cast<uint32_t>(frameCount), width, height, mipCount, tailFirstMip, contentW, contentH,
+            sourceW, sourceH, static_cast<int32_t>(x0), static_cast<int32_t>(y0), data.size(), data.size() - tailOffset,
+            psnr(total.color, total.pixels * 3), psnr(total.alpha, total.pixels)};
+  return writeFile(std::filesystem::path(base).concat(".full"), data.data(), data.size()) &&
+         writeFile(std::filesystem::path(base).concat(".tail"), data.data() + tailOffset, data.size() - tailOffset) &&
+         writeFile(std::filesystem::path(base).concat(".layout"), &layout, sizeof(layout));
+}
+
+void copyName(char (&out)[48], const std::string& text) {
+  std::memset(out, 0, sizeof(out));
+  std::memcpy(out, text.data(), std::min(text.size(), sizeof(out) - 1));
+}
+
+}  // namespace
+
+bool writeSpritePreview(const SpriteManifest& manifest, const SpriteCookOptions& options, const std::string& setName,
+                        const std::string& clipName, uint32_t frame, const std::filesystem::path& out) {
+  const SpriteClipSource* clip = nullptr;
+  for (const SpriteSetSource& set : manifest.sets)
+    if (set.name == setName)
+      for (const SpriteClipSource& c : set.clips)
+        if (c.name == clipName) clip = &c;
+  if (!clip || frame >= clip->frames.size()) {
+    logError("preview: no frame {} in {}/{}", frame, setName, clipName);
+    return false;
+  }
+  const std::filesystem::path cached = options.cacheDir / assetBase(setName, clipName);
+  CookedLayout layout{};
+  std::ifstream fullFile(std::filesystem::path(cached).concat(".full"), std::ios::binary);
+  if (!readLayout(std::filesystem::path(cached).concat(".layout"), layout) || !fullFile) {
+    logError("preview: {}/{} is not cooked in {}", setName, clipName, options.cacheDir.string());
+    return false;
+  }
+  std::vector<uint8_t> full(layout.fullBytes);
+  fullFile.read(reinterpret_cast<char*>(full.data()), static_cast<std::streamsize>(full.size()));
+
+  int sw = 0, sh = 0, sn = 0;
+  uint8_t* source = stbi_load((options.sourceRoot / clip->frames[frame]).string().c_str(), &sw, &sh, &sn, 4);
+  if (!source) return false;
+
+  // Decodes one mip of the frame back to pixels, as the GPU will.
+  const auto decode = [&](uint32_t mip, Rgba8Image& image) {
+    image.width = std::max(1u, layout.width >> mip);
+    image.height = std::max(1u, layout.height >> mip);
+    image.pixels.assign(size_t{image.width} * image.height * 4, 0);
+    uint64_t offset = 0;
+    for (uint32_t m = 0; m < mip; ++m) offset += bc7MipBytes(layout.width, layout.height, m, layout.frames);
+    offset += frame * bc7MipBytes(layout.width, layout.height, mip, 1);
+    const uint32_t blocksX = (image.width + 3) / 4, blocksY = (image.height + 3) / 4;
+    bc7decomp::color_rgba texels[16];
+    for (uint32_t by = 0; by < blocksY; ++by)
+      for (uint32_t bx = 0; bx < blocksX; ++bx) {
+        bc7decomp::unpack_bc7(full.data() + offset + (size_t{by} * blocksX + bx) * kBc7BlockBytes, texels);
+        for (uint32_t i = 0; i < 16; ++i) {
+          const uint32_t x = bx * 4 + i % 4, y = by * 4 + i / 4;
+          if (x < image.width && y < image.height) std::memcpy(&image.pixels[(size_t{y} * image.width + x) * 4], &texels[i], 4);
+        }
+      }
+  };
+
+  // Panels: source (trimmed area) | decoded mip 0 | decoded mip 1 | decoded mip 2; light row, dark row.
+  Rgba8Image panels[4];
+  panels[0].width = layout.width;
+  panels[0].height = layout.height;
+  panels[0].pixels.assign(size_t{layout.width} * layout.height * 4, 0);
+  for (uint32_t y = 0; y < layout.contentHeight; ++y)
+    std::memcpy(&panels[0].pixels[size_t{y} * layout.width * 4], &source[(size_t{y + uint32_t(layout.cropY)} * sw + uint32_t(layout.cropX)) * 4],
+                size_t{layout.contentWidth} * 4);
+  stbi_image_free(source);
+  for (uint32_t i = 1; i < 4; ++i) decode(std::min(i - 1, layout.mipCount - 1), panels[i]);
+
+  const uint32_t gap = 16, cellW = layout.width + gap, cellH = layout.height + gap;
+  const uint32_t outW = cellW * 4 + gap, outH = cellH * 2 + gap;
+  std::vector<uint8_t> image(size_t{outW} * outH * 3, 128);
+  const uint8_t backgrounds[2][3] = {{214, 214, 210}, {24, 26, 32}};
+  for (uint32_t row = 0; row < 2; ++row)
+    for (uint32_t p = 0; p < 4; ++p) {
+      const Rgba8Image& panel = panels[p];
+      const uint32_t ox = gap + p * cellW, oy = gap + row * cellH;
+      for (uint32_t y = 0; y < layout.height; ++y)
+        for (uint32_t x = 0; x < layout.width; ++x) {
+          uint8_t* d = &image[(size_t{oy + y} * outW + ox + x) * 3];
+          // Smaller mips are shown at their own size (top-left), like the art seen further away.
+          const bool inside = x < panel.width && y < panel.height;
+          const uint8_t* s = inside ? &panel.pixels[(size_t{y} * panel.width + x) * 4] : nullptr;
+          const float a = s ? s[3] / 255.0f : 0.0f;
+          for (int c = 0; c < 3; ++c)
+            d[c] = static_cast<uint8_t>(std::lround((s ? s[c] : 0) * a + backgrounds[row][c] * (1.0f - a)));
+        }
+    }
+  std::filesystem::create_directories(out.parent_path().empty() ? "." : out.parent_path());
+  return stbi_write_png(out.string().c_str(), static_cast<int>(outW), static_cast<int>(outH), 3, image.data(),
+                        static_cast<int>(outW * 3)) != 0;
+}
+
+bool cookSprites(JobSystem& jobs, const SpriteManifest& manifest, const SpriteCookOptions& options,
+                 std::vector<PakSource>& out, SpriteCookReport& report) {
+  const auto start = std::chrono::steady_clock::now();
+  report = {};
+  std::vector<AssetId> roster;
+
+  for (const SpriteSetSource& set : manifest.sets) {
+    if (!options.only.empty() &&
+        std::none_of(options.only.begin(), options.only.end(), [&](const std::string& p) { return set.name.starts_with(p); }))
+      continue;
+    for (const SpriteClipSource& clip : set.clips) {
+      if (clip.frames.empty()) continue;
+      const std::string base = assetBase(set.name, clip.name);
+      const std::filesystem::path cached = options.cacheDir / base;
+      const uint64_t key = textureKey(clip, options);
+
+      CookedLayout layout{};
+      const bool hit = readLayout(std::filesystem::path(cached).concat(".layout"), layout) && layout.key == key &&
+                       std::filesystem::exists(std::filesystem::path(cached).concat(".full")) &&
+                       std::filesystem::exists(std::filesystem::path(cached).concat(".tail"));
+      if (hit) {
+        ++report.fromCache;
+      } else {
+        const auto clipStart = std::chrono::steady_clock::now();
+        if (!cookClipTextures(jobs, set.name, clip, options, key, layout)) {
+          ++report.failed;
+          continue;
+        }
+        ++report.cooked;
+        report.quality.push_back({set.name + "/" + clip.name, layout.colorPsnr, layout.alphaPsnr});
+        logInfo("cooked {}/{}: {} x {}x{} -> {:.1f} MB, colour {:.1f} dB, alpha {:.1f} dB, {:.1f}s", set.name, clip.name,
+                layout.frames, layout.width, layout.height, static_cast<double>(layout.fullBytes) / (1 << 20), layout.colorPsnr,
+                layout.alphaPsnr, std::chrono::duration<double>(std::chrono::steady_clock::now() - clipStart).count());
+      }
+
+      ++report.clips;
+      report.frames += layout.frames;
+      report.sourcePixels += uint64_t{layout.sourceWidth} * layout.sourceHeight * layout.frames;
+      report.texturePixels += uint64_t{layout.width} * layout.height * layout.frames;
+
+      // The header carries timing and pack: rewritten every run, never part of the cache key.
+      for (uint32_t copy = 1; copy <= std::max(1u, options.copies); ++copy) {
+        const std::string setName = copy == 1 ? set.name : set.name + "~" + std::to_string(copy);
+        const std::string asset = assetBase(setName, clip.name);
+        SpriteClipHeader header{};
+        header.magic = kSpriteClipMagic;
+        header.version = kSpriteFormatVersion;
+        header.frames = layout.frames;
+        header.width = layout.width;
+        header.height = layout.height;
+        header.mipCount = layout.mipCount;
+        header.tailFirstMip = layout.tailFirstMip;
+        header.contentWidth = layout.contentWidth;
+        header.contentHeight = layout.contentHeight;
+        header.sourceWidth = layout.sourceWidth;
+        header.sourceHeight = layout.sourceHeight;
+        header.cropX = layout.cropX;
+        header.cropY = layout.cropY;
+        header.mode = clip.mode;
+        header.fps = clip.fps;
+        header.fullAsset = assetId(asset + ".full");
+        header.tailAsset = assetId(asset + ".tail");
+        header.fullBytes = layout.fullBytes;
+        header.tailBytes = layout.tailBytes;
+        copyName(header.pack, clip.pack);
+        copyName(header.name, clip.name);
+        const std::filesystem::path headerFile = std::filesystem::path(options.cacheDir / asset).concat(".clip");
+        if (!writeFile(headerFile, &header, sizeof(header))) {
+          logError("cannot write {}", headerFile.string());
+          return false;
+        }
+        out.push_back({asset + ".clip", headerFile});
+        out.push_back({asset + ".full", std::filesystem::path(cached).concat(".full")});
+        out.push_back({asset + ".tail", std::filesystem::path(cached).concat(".tail")});
+        roster.push_back(assetId(asset + ".clip"));
+        report.fullBytes += layout.fullBytes;
+        report.tailBytes += layout.tailBytes;
+      }
+    }
+  }
+
+  std::vector<uint8_t> rosterBytes(sizeof(SpriteRosterHeader) + roster.size() * sizeof(AssetId));
+  const SpriteRosterHeader rosterHeader{kSpriteRosterMagic, kSpriteFormatVersion, static_cast<uint32_t>(roster.size()), 0};
+  std::memcpy(rosterBytes.data(), &rosterHeader, sizeof(rosterHeader));
+  std::memcpy(rosterBytes.data() + sizeof(rosterHeader), roster.data(), roster.size() * sizeof(AssetId));
+  const std::filesystem::path rosterFile = options.cacheDir / "sprites/roster";
+  if (!writeFile(rosterFile, rosterBytes.data(), rosterBytes.size())) return false;
+  out.push_back({"sprites/roster", rosterFile});
+
+  std::sort(report.quality.begin(), report.quality.end(),
+            [](const SpriteClipQuality& a, const SpriteClipQuality& b) { return a.colorPsnr < b.colorPsnr; });
+  report.seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+  return report.failed == 0;
+}
+
+}  // namespace ember

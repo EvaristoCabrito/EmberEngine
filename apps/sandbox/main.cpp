@@ -9,6 +9,10 @@
 //        how many reads the disk gets at once.
 //        With --capture it saves the frame once the test ends and exits with code 3 if it failed;
 //        in a window, R runs it again.
+//   Sandbox.exe --sprites roster.pak [--budget MB]
+//        Sprite streaming test (M2): plays every clip of every character, a few at a time, under a GPU
+//        budget (default 512 MB) smaller than the roster. With --capture it runs at 60 Hz, saves the
+//        frame once every clip has played and exits with code 3 if it failed.
 // A capture exits with code 2 if the Vulkan validation layer reported any error.
 
 #include <SDL3/SDL.h>
@@ -33,7 +37,10 @@
 #include "platform/Window.h"
 #include "render/DebugUi.h"
 #include "render/Renderer.h"
+#include "render/SpriteSystem.h"
 #include "rhi/Swapchain.h"
+#include "rhi/UploadQueue.h"
+#include "SpriteParade.h"
 #include "rhi/VulkanContext.h"
 
 namespace {
@@ -47,6 +54,8 @@ struct Options {
   std::string capture;
   std::string stream;
   std::string verify;
+  std::string sprites;
+  uint64_t spriteBudgetMb = 512;
   uint32_t width = 1600, height = 900;
   int frames = 3;
   uint32_t ioDepth = 64;
@@ -71,6 +80,8 @@ Options parse(int argc, char** argv) {
     if (arg == "--capture" && hasValue) o.capture = argv[++i];
     else if (arg == "--stream" && hasValue) o.stream = argv[++i];
     else if (arg == "--verify" && hasValue) o.verify = argv[++i];
+    else if (arg == "--sprites" && hasValue) o.sprites = argv[++i];
+    else if (arg == "--budget" && hasValue) o.spriteBudgetMb = static_cast<uint64_t>(std::max(16, std::atoi(argv[++i])));
     else if (arg == "--size" && hasValue) parseSize(argv[++i], o);
     else if (arg == "--frames" && hasValue) o.frames = std::atoi(argv[++i]);
     else if (arg == "--io-depth" && hasValue) o.ioDepth = static_cast<uint32_t>(std::max(1, std::atoi(argv[++i])));
@@ -232,28 +243,62 @@ struct Services {
   PerfOverlay perf;
 
   explicit Services(const Options& o) : io(jobs, o.ioDepth), assets(jobs, io, {}) {
+    if (!o.sprites.empty() && !assets.mount(o.sprites)) fatal(std::format("Cannot mount {}", o.sprites));
     if (o.stream.empty()) return;
     if (!assets.mount(o.stream)) fatal(std::format("Cannot mount {}", o.stream));
     streamTest = std::make_unique<StreamTest>(assets, io, o.verify);
   }
 
+  struct SpriteStage;
+
   // One frame of engine work around the render call. Returns the renderer's result.
   template <class Render>
-  bool frame(DebugUi& ui, Renderer& renderer, VkExtent2D size, float dt, const Render& render) {
-    const auto start = Clock::now();
-    if (streamTest) streamTest->beginFrame();
-    assets.update();
-    ui.newFrame(size, dt);
-    perf.draw({&jobs, &io, &assets, &renderer});
-    if (streamTest) streamTest->drawPanel();
-    const bool ok = render();
-    const double frameMs = msSince(start);
-    const double busyMs = std::max(0.0, frameMs - renderer.lastWaitMilliseconds());
-    perf.addFrame(frameMs, busyMs);
-    if (streamTest) streamTest->endFrame(busyMs);
-    return ok;
+  bool frame(DebugUi& ui, Renderer& renderer, SpriteStage* stage, VkExtent2D size, float dt, const Render& render);
+};
+
+// Sprite streaming on the GPU: needs the renderer, so it is created after it (and destroyed before it).
+struct Services::SpriteStage {
+  UploadQueue uploads;
+  SpriteSystem sprites;
+  SpriteParade parade;
+  std::vector<SpriteInstance> instances;
+  Clock::time_point start = Clock::now();
+
+  SpriteStage(VulkanContext& context, Renderer& renderer, AssetManager& assets, uint64_t budgetMb)
+      : uploads(context), sprites(context, renderer.bindless(), assets, uploads, {budgetMb << 20}), parade(sprites) {
+    sprites.start();
+  }
+
+  void frame(Renderer& renderer, VkExtent2D size) {
+    const double now = std::chrono::duration<double>(Clock::now() - start).count();
+    parade.request(now);
+    sprites.update();
+    const Camera camera = SpriteParade::camera(static_cast<float>(size.width) / static_cast<float>(size.height));
+    parade.build(now, camera, instances);
+    uploads.flush();
+    renderer.waitFor(uploads.timeline(), sprites.uploadWaitValue());
+    renderer.setScene(camera, instances);
   }
 };
+
+template <class Render>
+bool Services::frame(DebugUi& ui, Renderer& renderer, SpriteStage* stage, VkExtent2D size, float dt, const Render& render) {
+  const auto start = Clock::now();
+  if (streamTest) streamTest->beginFrame();
+  assets.update();
+  if (stage) stage->frame(renderer, size);
+  ui.newFrame(size, dt);
+  perf.draw({&jobs, &io, &assets, &renderer});
+  if (streamTest) streamTest->drawPanel();
+  if (stage) stage->parade.drawPanel();
+  const bool ok = render();
+  const double frameMs = msSince(start);
+  const double busyMs = std::max(0.0, frameMs - renderer.lastWaitMilliseconds());
+  perf.addFrame(frameMs, busyMs);
+  if (streamTest) streamTest->endFrame(busyMs);
+  if (stage) stage->parade.endFrame(busyMs);
+  return ok;
+}
 
 int runCapture(const Options& o) {
   Services services(o);
@@ -263,23 +308,36 @@ int runCapture(const Options& o) {
     DebugUi ui(context, nullptr, Renderer::outputFormat());
     Renderer renderer(context, nullptr, {o.width, o.height});
     renderer.setUi(&ui);
+    std::unique_ptr<Services::SpriteStage> stage;
+    if (!o.sprites.empty()) stage = std::make_unique<Services::SpriteStage>(context, renderer, services.assets, o.spriteBudgetMb);
     const VkExtent2D size{o.width, o.height};
-    if (services.streamTest) {
+    const auto testDone = [&] { return (services.streamTest && services.streamTest->done()) || (stage && stage->parade.done()); };
+    if (services.streamTest || stage) {
       // Run until the test ends, plus a few frames so the overlay shows final numbers.
+      // The sprite parade runs at 60 Hz like the game (streaming per second depends on the frame rate).
       int after = 0;
+      auto next = Clock::now();
       while (after < kFramesInFlight + 2) {
-        services.frame(ui, renderer, size, 1.0f / 60.0f, [&] { return renderer.renderFrame(o.time); });
-        if (services.streamTest->done()) ++after;
+        services.frame(ui, renderer, stage.get(), size, 1.0f / 60.0f, [&] { return renderer.renderFrame(o.time); });
+        if (testDone()) ++after;
+        if (stage) {
+          next += std::chrono::microseconds(16667);
+          const auto now = Clock::now();
+          if (next > now) SDL_DelayPrecise(static_cast<Uint64>(std::chrono::nanoseconds(next - now).count()));
+          else next = now;
+        }
       }
-      passed = services.streamTest->passed();
+      passed = services.streamTest ? services.streamTest->passed() : stage->parade.passed();
     } else {
       for (int i = 0; i < o.frames; ++i)
-        services.frame(ui, renderer, size, 1.0f / 60.0f, [&] { return renderer.renderFrame(o.time); });
+        services.frame(ui, renderer, nullptr, size, 1.0f / 60.0f, [&] { return renderer.renderFrame(o.time); });
     }
     ui.newFrame(size, 1.0f / 60.0f);
     services.perf.draw({&services.jobs, &services.io, &services.assets, &renderer});
     if (services.streamTest) services.streamTest->drawPanel();
+    if (stage) stage->parade.drawPanel();
     renderer.captureFrame(o.time, o.capture);
+    stage.reset();
   }
   if (context.validationErrors()) {
     logError("{} validation error(s)", context.validationErrors());
@@ -298,6 +356,8 @@ int runWindow(const Options& o) {
   DebugUi ui(context, window.handle(), Renderer::outputFormat());
   Renderer renderer(context, swapchain.get(), swapchain->extent());
   renderer.setUi(&ui);
+  std::unique_ptr<Services::SpriteStage> stage;
+  if (!o.sprites.empty()) stage = std::make_unique<Services::SpriteStage>(context, renderer, services.assets, o.spriteBudgetMb);
 
   window.setEventHook([&](const SDL_Event& event) {
     if (ui.processEvent(event) || event.type != SDL_EVENT_KEY_DOWN || event.key.repeat) return;
@@ -315,12 +375,9 @@ int runWindow(const Options& o) {
     last = now;
     const float time = std::chrono::duration<float>(now - start).count();
     const bool resized = window.consumeResized();
-    const bool presented = !resized && services.frame(ui, renderer, swapchain->extent(), dt,
+    const bool presented = !resized && services.frame(ui, renderer, stage.get(), swapchain->extent(), dt,
                                                       [&] { return renderer.renderFrame(time); });
-    if (!presented) {
-      swapchain->recreate(width, height);
-      renderer.resize(swapchain->extent());
-    }
+    if (!presented && swapchain->recreate(width, height)) renderer.resize(swapchain->extent());
   }
   return 0;
 }

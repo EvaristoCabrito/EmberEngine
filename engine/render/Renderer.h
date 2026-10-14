@@ -1,8 +1,12 @@
 #pragma once
 
 #include <array>
+#include <span>
 #include <string>
+#include <vector>
 
+#include "render/Camera.h"
+#include "render/SpriteDraw.h"
 #include "rhi/Bindless.h"
 #include "rhi/GpuTimer.h"
 #include "rhi/Image.h"
@@ -37,6 +41,18 @@ class Renderer {
   void setUi(DebugUi* ui) { ui_ = ui; }
   static constexpr VkFormat outputFormat() { return VK_FORMAT_R8G8B8A8_UNORM; }
 
+  // The 3D scene for the next frame: camera and sprite cards (drawn in the given order, so pass them
+  // back to front). Without a scene the renderer draws its bring-up triangle.
+  void setScene(const Camera& camera, std::span<const SpriteInstance> sprites);
+  // The next frame's GPU work waits for `value` on `timeline` (texture uploads it samples).
+  void waitFor(VkSemaphore timeline, uint64_t value) {
+    waitTimeline_ = timeline;
+    waitValue_ = value;
+  }
+
+  Bindless& bindless() { return bindless_; }
+  static constexpr uint32_t kMaxSprites = 1u << 16;
+
   const GpuTimer& gpuTimer() const { return gpuTimer_; }
   // Time the last frame's CPU spent blocked on the GPU (fence) and on the window (acquire).
   double lastWaitMilliseconds() const { return lastWaitMs_; }
@@ -47,12 +63,15 @@ class Renderer {
     VkCommandBuffer cmd = VK_NULL_HANDLE;
     VkFence done = VK_NULL_HANDLE;
     VkSemaphore imageAcquired = VK_NULL_HANDLE;
+    Buffer sprites;  // this frame's SpriteInstance[] (host-visible, read by device address)
   };
 
   void createTargets(VkExtent2D size);
   void destroyTargets();
   Frame& beginFrame();
-  void record(VkCommandBuffer cmd, float time, VkImage swapImage, const Buffer* readback);
+  void record(Frame& frame, float time, VkImage swapImage, const Buffer* readback);
+  // Waits for the frame: the swapchain image (if any) and the texture-upload timeline (if set).
+  uint32_t gatherWaits(Frame& frame, bool swapImage, std::array<VkSemaphoreSubmitInfo, 2>& waits) const;
 
   VulkanContext& context_;
   Swapchain* swapchain_;
@@ -73,6 +92,16 @@ class Renderer {
 
   VkPipeline trianglePipeline_ = VK_NULL_HANDLE;
   VkPipeline tonemapPipeline_ = VK_NULL_HANDLE;
+  VkPipeline groundPipeline_ = VK_NULL_HANDLE;
+  VkPipeline spritePipeline_ = VK_NULL_HANDLE;
+  VkSampler spriteSampler_ = VK_NULL_HANDLE;
+  uint32_t spriteSamplerIndex_ = 0;
+
+  bool hasScene_ = false;
+  Camera camera_;
+  std::vector<SpriteInstance> sprites_;
+  VkSemaphore waitTimeline_ = VK_NULL_HANDLE;
+  uint64_t waitValue_ = 0;
 };
 
 }  // namespace ember

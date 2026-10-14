@@ -3,6 +3,11 @@
 //   Cooker list <file.pak>                                           print an archive's contents
 //   Cooker synth <out dir> [--count N] [--min BYTES] [--max BYTES] [--seed S]
 //                                                                    write synthetic test files
+//   Cooker import-engine2 <engine2 root> <out.sprites.json>         sprite manifest from Engine2's tables
+//   Cooker sprites <manifest.sprites.json> <source root> <out.pak>  cook sprite clips (BC7) into an archive
+//          [--only <set prefix>]... [--quality fast|basic|slow] [--copies N] [--cache <dir>]
+//   Cooker sprite-preview <manifest> <source root> <cache dir> <set> <clip> <frame> <out.png>
+//                                                                    source vs. GPU-decoded frame, side by side
 
 #include <algorithm>
 #include <atomic>
@@ -15,6 +20,8 @@
 #include <vector>
 
 #include "PakWriter.h"
+#include "SpriteCooker.h"
+#include "SpriteSource.h"
 #include "assets/Pak.h"
 #include "core/Jobs.h"
 #include "core/Log.h"
@@ -116,6 +123,74 @@ int synth(const std::vector<std::string_view>& args) {
   return 0;
 }
 
+int importEngine2(const std::vector<std::string_view>& args) {
+  if (args.size() != 2) fatal("usage: Cooker import-engine2 <engine2 root> <out.sprites.json>");
+  SpriteManifest manifest;
+  if (!importEngine2Sprites(std::filesystem::path(args[0]), manifest)) return 1;
+  if (!saveSpriteManifest(std::filesystem::path(args[1]), manifest)) return 1;
+  logInfo("wrote {}", args[1]);
+  return 0;
+}
+
+int sprites(const std::vector<std::string_view>& args) {
+  if (args.size() < 3) fatal("usage: Cooker sprites <manifest.sprites.json> <source root> <out.pak> [options]");
+  SpriteCookOptions options;
+  options.sourceRoot = std::filesystem::path(args[1]);
+  const std::filesystem::path out(args[2]);
+  options.cacheDir = (out.parent_path().empty() ? std::filesystem::path(".") : out.parent_path()) / "cook-cache";
+  for (size_t i = 3; i < args.size(); ++i) {
+    if (i + 1 >= args.size()) fatal(std::format("Missing value for {}", args[i]));
+    const std::string_view value = args[++i];
+    if (args[i - 1] == "--only") options.only.emplace_back(value);
+    else if (args[i - 1] == "--copies") options.copies = static_cast<uint32_t>(parseNumber(value));
+    else if (args[i - 1] == "--cache") options.cacheDir = std::filesystem::path(value);
+    else if (args[i - 1] == "--quality") {
+      if (value == "fast") options.quality = Bc7Quality::Fast;
+      else if (value == "basic") options.quality = Bc7Quality::Basic;
+      else if (value == "slow") options.quality = Bc7Quality::Slow;
+      else fatal(std::format("Unknown quality {}", value));
+    } else {
+      fatal(std::format("Unknown argument {}", args[i - 1]));
+    }
+  }
+
+  SpriteManifest manifest;
+  if (!loadSpriteManifest(std::filesystem::path(args[0]), manifest)) return 1;
+  JobSystem jobs;
+  std::vector<PakSource> sources;
+  SpriteCookReport report;
+  const bool cooked = cookSprites(jobs, manifest, options, sources, report);
+  logInfo("sprites: {} clips, {} frames ({} cooked, {} from cache, {} failed) in {:.1f}s", report.clips, report.frames,
+          report.cooked, report.fromCache, report.failed, report.seconds);
+  logInfo("  pixels: {:.2f} G at source size, {:.2f} G trimmed; GPU: {:.1f} MB full chains, {:.1f} MB tails",
+          static_cast<double>(report.sourcePixels) / 1e9, static_cast<double>(report.texturePixels) / 1e9,
+          megabytes(report.fullBytes), megabytes(report.tailBytes));
+  for (size_t i = 0; i < std::min<size_t>(report.quality.size(), 10); ++i)
+    logInfo("  lowest quality #{}: {} colour {:.1f} dB, alpha {:.1f} dB", i + 1, report.quality[i].name,
+            report.quality[i].colorPsnr, report.quality[i].alphaPsnr);
+  if (!cooked) return 1;
+
+  PakWriteReport pak;
+  if (!writePak(jobs, std::move(sources), out, {}, pak)) return 1;
+  logInfo("packed {} assets: {:.1f} MB -> {:.1f} MB on disk in {:.1f}s", pak.entries, megabytes(pak.sourceBytes),
+          megabytes(pak.storedBytes), pak.seconds);
+  return 0;
+}
+
+int spritePreview(const std::vector<std::string_view>& args) {
+  if (args.size() != 7) fatal("usage: Cooker sprite-preview <manifest> <source root> <cache dir> <set> <clip> <frame> <out.png>");
+  SpriteManifest manifest;
+  if (!loadSpriteManifest(std::filesystem::path(args[0]), manifest)) return 1;
+  SpriteCookOptions options;
+  options.sourceRoot = std::filesystem::path(args[1]);
+  options.cacheDir = std::filesystem::path(args[2]);
+  if (!writeSpritePreview(manifest, options, std::string(args[3]), std::string(args[4]),
+                          static_cast<uint32_t>(parseNumber(args[5])), std::filesystem::path(args[6])))
+    return 1;
+  logInfo("wrote {}", args[6]);
+  return 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -128,6 +203,9 @@ int main(int argc, char** argv) {
   if (command == "pack") return pack(args);
   if (command == "list") return list(args);
   if (command == "synth") return synth(args);
+  if (command == "import-engine2") return importEngine2(args);
+  if (command == "sprites") return sprites(args);
+  if (command == "sprite-preview") return spritePreview(args);
   ember::logError("unknown command {}", command);
   return 1;
 }
