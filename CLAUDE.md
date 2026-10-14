@@ -24,7 +24,7 @@ engine sizes every system for the finished game from day one.
 - **Commit** locally once the user approves a change. **Never push** unless they ask in that moment.
   Git identity is repo-local: EvaristoCabrito <evaristo172@gmail.com>. Remote: github.com/EvaristoCabrito/EmberEngine.
 - **Research before building** big visual features (how shipped games do it). Never show raw test renders as progress.
-- Only **characters are 2D**; everything else is real 3D (Blender 5.2.2 is installed, plus a `blender` MCP server).
+- **2D/3D split (Engine2's logic, the only part of Engine2 carried over):** characters, props and decor are photoreal 2D cards; houses/buildings and terrain shape are real 3D; ground is photoreal texture on 3D terrain. Blender 5.2.2 + `blender` MCP available.
 - Fold mid-turn messages into the work; don't stop to ask.
 - Never touch `C:\emberashes03D-main` (Ember 3D). `C:\Engine2` is **read-only reference**.
 - Measure before fixing. Guesses that didn't pan out (thread priorities) were measured and reverted;
@@ -62,7 +62,7 @@ build.bat release          # or debug; output in build/<config>/bin
 ## Status (2026-10-14)
 
 - **M0 + M1 done**, committed and pushed as `67410f0` (Vulkan foundation; jobs, IO, pak, asset streaming, overlay).
-- **M2 (sprite cooker + residency) done**, committed locally as `98c727a` (not pushed).
+- **M2 (sprite cooker + residency) done**, committed as `98c727a` and pushed.
   - Cooker: 375 clips / 9,849 frames → BC7 (bc7e scalar, perceptual) with alpha-weighted linear mips, colour
     dilation, union trim, bottom-centre canvas for mixed-size frames, quality report (PSNR), preview images.
     2.63 GB GPU, 19 MB tails, 934 MB on disk. Visual check: decoded frames match the source (no fringes).

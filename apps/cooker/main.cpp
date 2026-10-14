@@ -6,11 +6,14 @@
 //   Cooker import-engine2 <engine2 root> <out.sprites.json>         sprite manifest from Engine2's tables
 //   Cooker sprites <manifest.sprites.json> <source root> <out.pak>  cook sprite clips (BC7) into an archive
 //          [--only <set prefix>]... [--quality fast|basic|slow] [--copies N] [--cache <dir>]
+//   Cooker meshes <source root> <out.pak> [--quality fast|basic|slow] [--cache <dir>]
+//                                                                    cook every GLB under a folder (cluster LOD + textures)
 //   Cooker sprite-preview <manifest> <source root> <cache dir> <set> <clip> <frame> <out.png>
 //                                                                    source vs. GPU-decoded frame, side by side
 
 #include <algorithm>
 #include <atomic>
+#include <cctype>
 #include <charconv>
 #include <cstdlib>
 #include <filesystem>
@@ -20,6 +23,7 @@
 #include <vector>
 
 #include "PakWriter.h"
+#include "MeshCooker.h"
 #include "SpriteCooker.h"
 #include "SpriteSource.h"
 #include "assets/Pak.h"
@@ -177,6 +181,53 @@ int sprites(const std::vector<std::string_view>& args) {
   return 0;
 }
 
+int meshes(const std::vector<std::string_view>& args) {
+  if (args.size() < 2) fatal("usage: Cooker meshes <source root> <out.pak> [--quality fast|basic|slow] [--cache <dir>]");
+  MeshCookOptions options;
+  options.sourceRoot = std::filesystem::path(args[0]);
+  const std::filesystem::path out(args[1]);
+  options.cacheDir = (out.parent_path().empty() ? std::filesystem::path(".") : out.parent_path()) / "cook-cache";
+  for (size_t i = 2; i < args.size(); ++i) {
+    if (i + 1 >= args.size()) fatal(std::format("Missing value for {}", args[i]));
+    const std::string_view value = args[++i];
+    if (args[i - 1] == "--cache") options.cacheDir = std::filesystem::path(value);
+    else if (args[i - 1] == "--quality") {
+      if (value == "fast") options.quality = Bc7Quality::Fast;
+      else if (value == "basic") options.quality = Bc7Quality::Basic;
+      else if (value == "slow") options.quality = Bc7Quality::Slow;
+      else fatal(std::format("Unknown quality {}", value));
+    } else {
+      fatal(std::format("Unknown argument {}", args[i - 1]));
+    }
+  }
+
+  // Every .glb under the root, in a stable order.
+  std::vector<std::filesystem::path> files;
+  for (const auto& entry : std::filesystem::recursive_directory_iterator(options.sourceRoot)) {
+    std::string ext = entry.path().extension().string();
+    for (char& c : ext) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    if (entry.is_regular_file() && ext == ".glb") files.push_back(std::filesystem::relative(entry.path(), options.sourceRoot));
+  }
+  std::sort(files.begin(), files.end());
+
+  JobSystem jobs;
+  std::vector<PakSource> sources;
+  MeshCookReport report;
+  const bool cooked = cookMeshes(jobs, files, options, sources, report);
+  logInfo("meshes: {} ({} cooked, {} from cache, {} failed) in {:.1f}s", report.meshes, report.cooked, report.fromCache,
+          report.failed, report.seconds);
+  logInfo("  {} source triangles, {} clusters, {} triangles across all LOD levels; geometry {:.1f} MB, {} textures {:.1f} MB",
+          report.sourceTriangles, report.clusters, report.dagTriangles, megabytes(report.geometryBytes), report.textures,
+          megabytes(report.textureBytes));
+  if (!cooked) return 1;
+
+  PakWriteReport pak;
+  if (!writePak(jobs, std::move(sources), out, {}, pak)) return 1;
+  logInfo("packed {} assets: {:.1f} MB -> {:.1f} MB on disk in {:.1f}s", pak.entries, megabytes(pak.sourceBytes),
+          megabytes(pak.storedBytes), pak.seconds);
+  return 0;
+}
+
 int spritePreview(const std::vector<std::string_view>& args) {
   if (args.size() != 7) fatal("usage: Cooker sprite-preview <manifest> <source root> <cache dir> <set> <clip> <frame> <out.png>");
   SpriteManifest manifest;
@@ -206,6 +257,7 @@ int main(int argc, char** argv) {
   if (command == "import-engine2") return importEngine2(args);
   if (command == "sprites") return sprites(args);
   if (command == "sprite-preview") return spritePreview(args);
+  if (command == "meshes") return meshes(args);
   ember::logError("unknown command {}", command);
   return 1;
 }

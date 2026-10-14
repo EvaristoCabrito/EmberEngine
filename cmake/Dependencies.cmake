@@ -79,7 +79,24 @@ FetchContent_Declare(nlohmann_json
   GIT_SHALLOW TRUE
   SOURCE_SUBDIR do-not-build)
 
-FetchContent_MakeAvailable(SDL3 volk vma glm stb imgui zstd basisu bc7enc_rdo nlohmann_json)
+# Mesh cooking: meshlets, cluster LOD, simplification, tangents (only the library is built; clusterlod.h
+# is a single-header add-on in demo/)
+set(MESHOPT_BUILD_DEMO OFF CACHE BOOL "" FORCE)
+set(MESHOPT_BUILD_GLTFPACK OFF CACHE BOOL "" FORCE)
+set(MESHOPT_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(meshoptimizer
+  GIT_REPOSITORY https://github.com/zeux/meshoptimizer.git
+  GIT_TAG v1.3
+  GIT_SHALLOW TRUE)
+
+# glTF / GLB reader (single header)
+FetchContent_Declare(cgltf
+  GIT_REPOSITORY https://github.com/jkuhlmann/cgltf.git
+  GIT_TAG v1.15
+  GIT_SHALLOW TRUE
+  SOURCE_SUBDIR do-not-build)
+
+FetchContent_MakeAvailable(SDL3 volk vma glm stb imgui zstd basisu bc7enc_rdo nlohmann_json meshoptimizer cgltf)
 
 add_library(vma INTERFACE)
 target_include_directories(vma SYSTEM INTERFACE ${vma_SOURCE_DIR}/include)
@@ -104,11 +121,19 @@ add_library(zstd ALIAS libzstd_static)
 
 add_library(bc7 STATIC
   ${basisu_SOURCE_DIR}/encoder/basisu_bc7e_scalar.cpp
-  ${bc7enc_rdo_SOURCE_DIR}/bc7decomp.cpp)
+  ${bc7enc_rdo_SOURCE_DIR}/bc7decomp.cpp
+  ${bc7enc_rdo_SOURCE_DIR}/rgbcx.cpp)
 target_include_directories(bc7 SYSTEM PUBLIC ${basisu_SOURCE_DIR}/encoder ${bc7enc_rdo_SOURCE_DIR})
 if(MSVC)
   target_compile_options(bc7 PRIVATE /W0)
 endif()
+
+add_library(cgltf INTERFACE)
+target_include_directories(cgltf SYSTEM INTERFACE ${cgltf_SOURCE_DIR})
+
+add_library(clusterlod INTERFACE)
+target_include_directories(clusterlod SYSTEM INTERFACE ${meshoptimizer_SOURCE_DIR}/demo)
+target_link_libraries(clusterlod INTERFACE meshoptimizer)
 
 add_library(nlohmann_json INTERFACE)
 target_include_directories(nlohmann_json SYSTEM INTERFACE ${nlohmann_json_SOURCE_DIR}/single_include)

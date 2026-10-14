@@ -57,6 +57,11 @@ The engine has to treat **memory as something it manages**, not something it hop
 7. **Libraries, never an engine.** Open-source libraries for solved problems (window, physics, mesh
    optimisation, texture compression, UI); the engine itself is ours. Every version is checked against the
    project's real latest release when it is added.
+9. **The vision is the standard** (the user, 2026-10-14). Build toward the 2.75D image the user already
+   sees, never shrink it to fit a first implementation. Prototypes test the actual vision (a lighting
+   prototype shows sprites, depth and environment interacting, not a light on a flat sprite); performance
+   tests measure the real game's workload; when an approach reaches its limits, a better architecture is
+   researched before the art is reduced.
 8. **Simple tools on top.** The editor hides the complexity: drag a character in, paint terrain, place a
    house. The person using it never sees a mip level or a meshlet.
 
@@ -103,7 +108,7 @@ Dependencies only point downward. `rhi` knows nothing about sprites; `render` kn
 
 ## 5. Character sprites (the system Engine2 could not carry)
 
-Characters are the only 2D thing in the game; everything else is real 3D. They get first-class support.
+Characters are 2D (photoreal, from video), and so are some props (painted or photographic), mixed with real 3D objects (user, 2026-10-14). 2D art gets first-class support: the same lit-sprite path serves characters and 2D props.
 
 **Source = the animation videos (user, 2026-10-14).** The user's videos have the motion they want;
 Engine2's sprites lost it in three ways: each pose keeps a fixed 36 frames whatever its length (a
@@ -209,6 +214,99 @@ barriers and reuses memory for transient targets.
   depth of field (incl. the HD-2D tilt-shift look), colour grading, tonemapping (exists).
 - Every pass shows up in a GPU timing overlay.
 
+### 7.0 Visual target (the user, 2026-10-14)
+
+**Not Unreal, not HD-2D, not conventional 2.5D.** The reference is the spirit of Square Enix's **Luminous
+Engine** (Agni's Philosophy, Final Fantasy XV): real-time images that approach pre-rendered CGI, a renderer
+built around one artistic vision rather than a general engine with a style applied afterwards. Square Enix
+abandoned it as too hard to build and port; this project bets that AI-assisted development makes that
+engineering affordable for one person. AI lowers the cost, not the complexity: GPU differences, shader
+behaviour, memory and performance still get deliberate architecture and measurement.
+
+What Square Enix published about FFXV's rendering (SIGGRAPH 2016 talk, "Rendering techniques of Final
+Fantasy XV"): physically based rendering; dynamic weather and time of day; procedural sky and clouds wired
+into lighting and weather; hybrid global illumination (dynamic + static) for bounced light. Ember takes that
+direction into **2.75D as a first-class paradigm**: 2D characters, spatial depth and world-space lighting
+designed as one system. The defining milestone is the first scene where they convincingly work as one
+(Demonstration 1, §9). The papers are read in full before M5 is designed.
+
+**The picture (the user, 2026-10-14): it does not exist yet in any game.** "Hexed Tactics Ogre with HD-2D
+and Ember's style of photorealistic sprites and cinematic feel. Dramatic light and shadow work, incredible
+spell effects, realistic ground textures, 2D props combined with real 3D objects."
+
+**Visual requirements (draft, from that picture; each becomes a pass/fail check in D1–D3):**
+- R1 **Tactics on hexes in a diorama world:** a hex battlefield under a free-orbit, zooming tactics camera
+  (Tactics Ogre), framed like a miniature set (HD-2D depth of field / tilt-shift), cinematic in motion.
+- R2 **Photoreal 2D characters** (from video) that belong in the 3D light: lit, shadowed, occluded, feet
+  planted, never looking pasted on.
+- R3 **Dramatic light and shadow:** strong key lights, deep shadows, torches, spell light, soft-to-hard
+  shadow transitions, light shafts in fog. Shadows from sprites and 3D alike.
+- R4 **Incredible spell effects:** effects that emit real light onto characters, ground and props, with
+  particles, distortion, glow and volumetrics; the cinematic stress scene (D3) measures them.
+- R5 **Realistic ground:** photographic-quality terrain materials (height-blended layers, wetness,
+  detail at the tactics camera's distance), the hex grid laid over them, not painted into them.
+- R6 **2D props and real 3D objects together:** photoreal 2D prop cards mixed with real 3D buildings
+  in one consistent light (the 2D/3D split in §7.1).
+
+### 7.1 The 2.75D frame: 2D art in real light (researched 2026-10-14, to be validated)
+
+**Status:** none of this exists yet. Today the engine draws unlit sprites on a flat ground. M5 is not
+"add lights to sprites". It has to settle how world-space lighting meets 2D artwork, depth, terrain,
+materials, shadows and volumetrics while keeping the look. A conventional 3D pipeline does not give that
+for free. The design below is the hypothesis; Demonstration 1 (§9) proves or breaks it before M5 is built
+on it.
+
+**What shipped games do (public sources only; none of these studios published a full technical talk):**
+- *Octopath Traveler / Dragon Quest III HD-2D* (Unreal): 2D sprites in 3D scenes; point lights added with
+  effects make characters cast shadows on the environment; depth of field and tilt-shift give the
+  diorama look. How the shadows are cast is not public (outside guesses: invisible 3D shapes).
+- *Sea of Stars* (Unity, custom render pipeline): sprites dynamically lit with **normal maps**, **pixel
+  depth writing**, shadow receiving, **shadow-casting sprites**, volumetric lighting, screen-space indirect
+  light, height fog (the studio's own feature list).
+- Painted-sprite tools (Sprite Lamp) derive a normal map and a depth map per sprite; a SIGGRAPH 2014
+  poster self-shadows sprites from such a depth map and merges projected shadows first, self-shadows second.
+- Known billboard failures: a camera-facing card casts stretched or vanishing shadows when the light is at
+  a right angle to the view; the usual fix is a separate light-facing shadow proxy; alpha must be clipped
+  in the shadow pass or the card casts a rectangle.
+
+**What is 2D and what is 3D (taken from Engine2; only this logic carries over, the user, 2026-10-14).**
+Engine2 was dropped, so its rendering is not a reference; its split between 2D and 3D is ("some things lose
+too much richness in full 3D no matter the quality"):
+- **Photoreal 2D cards:** characters, and props and decor (the more detailed objects), standing upright in
+  the 3D world. Photoreal 2D reaches a realism 3D props did not.
+- **Real 3D:** houses and buildings, and the terrain's shape and height.
+- **Ground:** photoreal texture art on the real 3D terrain.
+- **3D where it is not seen as 3D:** terrain shape and height, light, fog, shadows, collision.
+
+**Camera (the user, 2026-10-14): free until the user settles the angles, then locked;** cinematic moves in
+cutscenes and spells on top. The engine supports a free orbiting camera now; 2D art must look right at
+the angles finally chosen.
+
+**Design for the frame (hypothesis for D1):**
+1. **Cards are lit by the world** through the same clustered light list and shadow maps as the 3D world.
+   How a card responds to light (one shading normal per card, or per-pixel normal / depth layers estimated
+   from the video frames with Meta's *Sapiens* / *Sapiens2*) is decided in D1 by comparing them side by
+   side on real frames; the photoreal look must survive the lighting. Per-pixel layers cost sprite memory
+   and streaming ×2.5 (×10 roster: 26.3 GB -> ~66 GB, peak demand 322 MB -> ~800 MB); temporally consistent
+   human models (*From Frames to Sequences* 2026, *GeoMan* 2025) have no released weights yet, so flicker
+   must be measured.
+2. **Depth:** cards write depth, so 3D buildings and terrain occlude them correctly and they occlude each
+   other; feet meet the ground.
+3. **Shadows:** alpha-clipped casters into the same shadow maps; the caster faces the light, not the camera,
+   so moving the free camera never moves a shadow. Contact shadows at the feet.
+4. **Volumetric fog** lit by the same lights and shadow maps; spell effects emit real light.
+5. **The look on top** (tilt-shift, bloom, grading, day/night): tuned after D2, never before.
+
+**Open questions only a prototype answers:** shadow quality of light-facing casters at low sun angles;
+how the cards read at the angles the user picks; whether 2D props need extra views for the cinematic camera.
+
+**3D geometry (M3), chosen to feed this frame:** meshes cooked into meshlets with meshoptimizer v1.3
+(cluster LOD via `clusterlod.h`), drawn by task + mesh shaders (`VK_EXT_mesh_shader`, supported on the dev
+GPU, RX 6400: up to 256 vertices / 256 primitives; AMD recommends 64–128 per meshlet on RDNA 2), culled
+on the GPU per instance and per meshlet against the frustum and the previous frame's depth pyramid
+(two-phase occlusion), written to a visibility buffer. A compute-culling + multi-draw-indirect path is built
+too and measured against it on the dev GPU; the faster one is kept.
+
 ## 8. Gameplay and tools
 
 - **ECS** for game objects; battle rules, campaign and saves port from Engine2's logic (rules, not its renderer).
@@ -226,8 +324,20 @@ Each milestone ends with a test on real game data, not a demo scene.
 | M0 | Vulkan 1.3 foundation: bindless, HDR target, tonemap, off-screen capture | ✅ triangle renders with zero validation errors |
 | M1 | Core: job system, allocators, async file IO, `.pak` archive, asset handles, profiler overlay | ✅ 10,000 assets (332 MB, 172 MB compressed) all requested in one frame, streamed in ~0.1 s at ~1.6 GB/s from disk, every byte verified against its source; worst main-thread frame 3.4–8.6 ms against the 16.7 ms budget (release build, Ryzen 9 5950X, NVMe) |
 | M2 | Sprite cooker + sprite residency | **every character in Engine2's manifest** cooked; a parade that plays every clip of every character stays under a fixed GPU budget smaller than the roster, with no frame over budget and no clip seen at tail quality when it was requested ahead — at the finished-game workload (×10, §1). **Measured (2026-10-14, RX 6400, 60 Hz, 512 MB budget, clips in a fixed-seed shuffled order):** today's roster, 375 clips (2.63 GB GPU): PASS, 0 late frames, worst main-thread frame 3.9 ms, peak demand 227 MB, 306 evictions; debug with Vulkan validation: PASS, 0 errors. **×10 = finished game, 3,750 clips (26.3 GB GPU): PASS, 0 late frames, worst frame 4.6 ms, peak demand 322 MB, 3,668 evictions, 0 requests without room.** Earlier runs, kept for the record: ×2 (a misreading of the workload) passed; ×10 in roster order failed (421 late frames) because the pack's 10 copies of one clip shared the stage, ~900 MB in one frame, more than the budget, which no real scene does. |
-| M3 | 3D meshes: GLB → meshlets, GPU-driven culling, PBR | 100,000 instanced Blender props in view at 60 fps on the dev GPU |
+| M3 | 3D meshes: GLB → cluster LOD, GPU-driven culling, PBR; 2D cards at scale | **a large-battle scene with real assets at real density, every frame ≤ 16.7 ms (CPU and GPU) on this PC (RX 6400), quality never lowered to pass, 0 validation errors in debug** (the user, 2026-10-14). Measured from the 243 Ember maps (Engine2's copies): largest map 64×52 hexes; densest 3D architecture 0.20 pieces/hex (deep crypt: 392 on 1,920); densest 2D decor 0.21 cards/hex (wisp forest: 335 on 1,584); most units 33 (30 enemies). **Those maps were bare and Engine2 already stuttered on them (the user, 2026-10-14), so they are a floor, not the finished game's density.** The scene: a battlefield of 128×104 hexes (4× the largest map's area) dressed at **10× the measured densities, both at once**: ~27,000 real 3D building pieces (2.0/hex; the cooked GLBs until Meshy buildings exist) and ~28,000 2D decor cards (2.1/hex) from the 443 decoration images at full native resolution, plus 8 MCs and 64 enemies (2× the largest measured enemy count) animating from the M2 sprite pipeline; measured zoomed out with the whole field in view, at the default zoom, and during a free-orbit sweep. Scope numbers can be raised by the user, never lowered to pass. |
 | M4 | World cells + terrain | a world 10× the largest Ember map streams while flying across it, no hitches |
 | M5 | Lighting and atmosphere | sprites and 3D lit by the same lights and shadows, fog, sky, moon |
 | M6 | Editor | build a map without touching code |
 | M7 | Gameplay port + cutscene timeline | a battle and a cutscene playable end to end |
+
+### Demonstrations (the user's progress gates, 2026-10-14)
+
+Passing engineering tests (like M2's streaming) is foundation work, not evidence of the lighting or
+environments the game needs. Visual progress is judged by three demonstrations. None exists yet; each is reached only
+when it is measured and shown, never claimed.
+
+| # | Demonstration | Shows | Built on |
+|---|---|---|---|
+| D1 | **Lit sprites in a spatial world** | a dynamic light visibly lights a character and the terrain near it, with coherent depth and occlusion (the character stands in the world, passes in front of and behind things, casts and receives shadow) | M3 + a test terrain + the §7.1 card lighting inside one clustered light pass; it validates §7.1 before M5 is built on it |
+| D2 | **A complete environmental scene** | terrain, props, atmospheric depth, shadows and lighting working together | M4 + M5 |
+| D3 | **A cinematic stress scene** | multiple dynamic lights, spell effects, particles and animated characters together, inside a measured frame budget on the dev GPU | M5 + effects/particles |
