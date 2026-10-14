@@ -14,6 +14,8 @@ Every number below was measured from the game's real data, not guessed.
 | All character sprites | `sprites/` 1.7 GB + `sprites-e2/` 1.9 GB of PNG on disk, 97 characters | Everything loaded up front, decoded on the CPU, uploaded raw |
 | Largest map | 64×52 hexes (`frozen-tundra-crossing003`), median 26×20 | Whole map lived in memory as one blob; no streaming |
 | Ground | one blend weight per tile per vertex | Hard cap on terrain types per area |
+| Spell effects (the user, 2026-10-14) | stutters on any spell effect | |
+| Sprite animation (the user, 2026-10-14) | mostly subpar | |
 
 The planned game is far past this. **Finished-game sprite workload (the user's figures, 2026-10-14):**
 
@@ -270,12 +272,14 @@ spell effects, realistic ground textures, 2D props combined with real 3D objects
   scattering read the visibility mask; none bypasses it.** Acceptance: the next visual prototype (D1)
   shows all three states together with a moving light and a spell effect, and proves neither reveals
   unexplored terrain.
-- R8 **Two board modes, the player's choice (the user, 2026-10-14):** a **hexed board** (each hex a
-  column at its own height, stepped like Tactics Ogre / Triangle Strategy) or a **seamless board**
-  (one continuous natural terrain with the hex grid drawn over it). One map, authored once, renders both
-  ways; switching is a player setting at runtime, not a different map. Gameplay is identical in both:
-  the same hexes, heights, ranges and line of sight; a unit stands at the same height on its hex in either
-  mode. Lighting, shadows, fog of war (R7), terrain materials, props and buildings work in both.
+- R8 **Two board looks, the player's choice (the user, 2026-10-14), as Engine2 already defines them
+  (`C:/Engine2/src/render/terrainMesh.ts`, editor elevation brushes in `src/editor/terrainTools.ts`):**
+  **hard** = a crisp hex cliff at every height step, same-level ground flowing seamlessly (the stepped
+  Tactics Ogre read); **smooth** = one continuous heightfield in which terraces and shores wander naturally
+  around the hex layout. Both read the same cells (per-hex elevation + terrain), so one map authored once
+  renders both ways and gameplay is identical: same hexes, heights, ranges, line of sight. Switching is a
+  player setting at runtime. Lighting, shadows, fog of war (R7), terrain materials, props and buildings work
+  in both. Engine2 is the reference for *what* the two looks are, not for how they are rendered.
 
 ### 7.1 The 2.75D frame: 2D art in real light (researched 2026-10-14, to be validated)
 
@@ -389,6 +393,12 @@ placeholders. The unfinished bake (xatlas atlas, ray-cast bake, proxy format; no
 kept on the branch `wip/proxy-bake`.
 
 ## 8. Gameplay and tools
+
+**Engine2's game design is sound (the user, 2026-10-14: "nothing else is wrong with its game design"); its
+engine is what failed (spell effects stutter, sprite animation subpar, §1).** So its rules, maps, board looks
+(R8), editor features and authored content are the reference and are ported faithfully; the technology
+(renderer, card lighting, camera, VFX, animation) is built fresh here. Its maps and dialogues come across with
+an importer, so nothing authored in the old editor is lost.
 
 - **ECS** for game objects; battle rules, campaign and saves port from Engine2's logic (rules, not its renderer).
 - **Physics/collision:** Jolt Physics.

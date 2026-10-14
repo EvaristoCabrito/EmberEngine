@@ -26,7 +26,10 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   The message states exactly what is and is not verified. **Never push** unless asked in that moment.
   Git identity repo-local: EvaristoCabrito <evaristo172@gmail.com>. Remote: github.com/EvaristoCabrito/EmberEngine.
 - **Research before building** big visual features. Never show raw test renders as progress.
-- **2D/3D split (the only thing carried over from Engine2):** characters, props and decor = photoreal 2D cards;
+- **Engine2: game design yes, technology no** (user, 2026-10-14: "nothing else is wrong with its game
+  design"; its engine stutters on spell effects and its sprite animation is subpar). Port its rules, maps,
+  board looks (R8: smooth/hard hex edges), editor features and content faithfully; build all tech fresh.
+- **2D/3D split (the one piece of Engine2's tech carried over):** characters, props and decor = photoreal 2D cards;
   houses/buildings and terrain shape = real 3D (Meshy for buildings); ground = photoreal texture on 3D terrain.
   Do not port Engine2's lighting/camera/ground rules, and do not ask what is 2D vs 3D.
 - **Camera:** free (orbit + zoom + cinematic moves) until the user picks the angles; then locked.
@@ -114,9 +117,9 @@ build.bat release          # or debug; output in build/<config>/bin
   representative assets (Engine2 sprites, Blender-made building/terrain/props). Research the card lighting
   (§7.1) before code.
 - New requirements in ARCHITECTURE §7.0: **R7 fog of war** (three states; tactical visibility is a mask
-  every light, shadow, VFX and fog reads) and **R8 two board modes** (hexed stepped columns or seamless
-  terrain, the player's runtime choice, one map, identical gameplay).
-- Open question raised: an importer for the old editor's maps and dialogues (not yet in the plan; asked).
+  every light, shadow, VFX and fog reads) and **R8 two board looks** (Engine2's hard / smooth hex edges, the
+  player's runtime choice, one map, identical gameplay).
+- Old editor's maps and dialogues come across with an importer (ARCHITECTURE §8), with M6/M7.
 
 ## Waiting on the user
 
