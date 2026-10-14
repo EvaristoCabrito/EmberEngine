@@ -1,0 +1,5 @@
+add_executable(Cooker main.cpp)
+target_link_libraries(Cooker PRIVATE EmberTools)
+if(MSVC)
+  target_compile_options(Cooker PRIVATE /W4 /permissive- /utf-8)
+endif()

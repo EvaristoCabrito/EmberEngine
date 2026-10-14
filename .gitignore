@@ -1,0 +1,6 @@
+build/
+captures/
+*.user
+.vs/
+build-log.txt
+build-log-release.txt
