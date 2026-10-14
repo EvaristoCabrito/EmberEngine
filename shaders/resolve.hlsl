@@ -68,7 +68,7 @@ void CSResolve(uint2 pixel : SV_DispatchThreadID) {
   const uint vis = gStorageImagesR32ui[NonUniformResourceIndex(push.visibilityImage)][pixel];
   RWTexture2D<float4> color = gStorageImagesRgba16f[NonUniformResourceIndex(push.colorImage)];
   if (vis == ~0u) {
-    color[pixel] = push.clearColor;
+    color[pixel] = f.debugView != 0 ? float4(0.0, 0.0, 0.0, 1.0) : push.clearColor;
     return;
   }
 
@@ -142,5 +142,13 @@ void CSResolve(uint2 pixel : SV_DispatchThreadID) {
                      f.sunColor * f.sunIntensity;
   const float3 hemisphere = lerp(f.groundColor, f.skyColor, n.y * 0.5 + 0.5);
   const float3 ambient = (diffuseColor + f0 * (1.0 - roughness) * 0.25) * hemisphere * f.ambientIntensity * occlusion;
+  if (f.debugView == 1) {
+    color[pixel] = float4(normal * 0.5 + 0.5, 1.0);
+    return;
+  }
+  if (f.debugView == 2) {
+    color[pixel] = float4(n * 0.5 + 0.5, 1.0);
+    return;
+  }
   color[pixel] = float4(sun + ambient + emissive, 1.0);
 }

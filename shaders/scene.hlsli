@@ -125,7 +125,10 @@ struct MeshFrame {
   float previousProjectionX;
   float previousProjectionY;
   uint earlyOcclusion;  // 0 when last frame's pyramid is not usable (first frame, resize)
-  uint pad3;
+  uint costSplit;       // measurement only: 0 normal, 1 task shaders only (no mesh work), 2 mesh shaders
+                        // run but every triangle is culled (no rasterisation)
+  uint debugView;       // 0 shaded, 1 geometric normal, 2 shading normal (normal map applied): xyz * 0.5 + 0.5
+  uint pad4, pad5, pad6;
 };
 
 // The work buffer: counters, indirect arguments, then the queues.

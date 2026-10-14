@@ -27,7 +27,7 @@ namespace ember {
 namespace {
 
 // Bump when the cooked output changes for the same source (forces a re-cook of every mesh).
-constexpr uint32_t kMeshCookerRevision = 4;  // 2: attribute_protect_mask, 3: error edge limit, 4: authored LODs skipped
+constexpr uint32_t kMeshCookerRevision = 5;  // 2: protect mask, 3: edge limit, 4: authored LODs skipped, 5: proxy without texture slots
 
 // One material's triangles, transforms baked in, one entry per unique vertex.
 struct Part {
@@ -260,6 +260,41 @@ bool loadImage(const cgltf_image* image, const std::filesystem::path& gltfDir, I
   return true;
 }
 
+// Proxy-LOD experiment: a part replaced by its voxel remesh (meshopt_remesh, solved positions), welded,
+// with smooth area-weighted normals. UVs are zero and colours white (no texture transfer yet).
+void remeshPart(Part& part, int resolution) {
+  const size_t bound = meshopt_remesh(nullptr, 0, part.indices.data(), part.indices.size(), part.positions.data(),
+                                      part.positions.size() / 3, 12, resolution, meshopt_RemeshSolve);
+  std::vector<float> corners(bound * 9);
+  const size_t tris = meshopt_remesh(corners.data(), bound, part.indices.data(), part.indices.size(), part.positions.data(),
+                                     part.positions.size() / 3, 12, resolution, meshopt_RemeshSolve);
+  corners.resize(tris * 9);
+  std::vector<uint32_t> remap(tris * 3);
+  const size_t unique = meshopt_generateVertexRemap(remap.data(), nullptr, tris * 3, corners.data(), tris * 3, 12);
+  Part out;
+  out.positions.resize(unique * 3);
+  meshopt_remapVertexBuffer(out.positions.data(), corners.data(), tris * 3, 12, remap.data());
+  out.indices = std::move(remap);
+  out.normals.assign(unique * 3, 0.0f);
+  for (size_t i = 0; i < out.indices.size(); i += 3) {
+    const float* a = &out.positions[out.indices[i] * 3];
+    const float* b = &out.positions[out.indices[i + 1] * 3];
+    const float* c = &out.positions[out.indices[i + 2] * 3];
+    const float e1[3] = {b[0] - a[0], b[1] - a[1], b[2] - a[2]}, e2[3] = {c[0] - a[0], c[1] - a[1], c[2] - a[2]};
+    const float n[3] = {e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]};
+    for (int k = 0; k < 3; ++k)
+      for (int j = 0; j < 3; ++j) out.normals[out.indices[i + k] * 3 + j] += n[j];
+  }
+  for (size_t v = 0; v < unique; ++v) normalize3(&out.normals[v * 3]);
+  out.uvs.assign(unique * 2, 0.0f);
+  out.tangents.assign(unique * 4, 0.0f);
+  for (size_t v = 0; v < unique; ++v) out.tangents[v * 4] = out.tangents[v * 4 + 3] = 1.0f;
+  out.colors.assign(unique * 4, 1.0f);
+  out.hasTangents = true;
+  logInfo("  remesh at {}: {} -> {} triangles", resolution, part.indices.size() / 3, tris);
+  part = std::move(out);
+}
+
 class MeshBuilder {
  public:
   MeshBuilder(JobSystem& jobs, const MeshCookOptions& options, std::string assetBase, std::filesystem::path gltfDir)
@@ -279,8 +314,10 @@ class MeshBuilder {
       if (part.indices.empty()) continue;
       const uint16_t materialIndex = static_cast<uint16_t>(used.size());
       used.push_back(materials_[m]);
-      if (materials_[m].normalTexture && !part.hasTangents) generateTangents(part);
-      if (!addPart(part, materialIndex, (materials_[m].flags & kMaterialDoubleSided) != 0, materials_[m].baseColorTexture != 0))
+      const bool remeshed = options_.remeshResolution > 0;
+      if (remeshed) remeshPart(part, options_.remeshResolution);
+      else if (materials_[m].normalTexture && !part.hasTangents) generateTangents(part);
+      if (!addPart(part, materialIndex, (materials_[m].flags & kMaterialDoubleSided) != 0, materials_[m].baseColorTexture != 0, remeshed))
         return false;
     }
     if (clusters_.empty()) {
@@ -347,7 +384,7 @@ class MeshBuilder {
   }
 
  private:
-  bool addPart(const Part& part, uint16_t materialIndex, bool doubleSided, bool textured) {
+  bool addPart(const Part& part, uint16_t materialIndex, bool doubleSided, bool textured, bool positionError) {
     const uint32_t vertexBase = static_cast<uint32_t>(vertices_.size());
     const size_t vertexCount = part.positions.size() / 3;
     for (size_t v = 0; v < vertexCount; ++v) {
@@ -373,7 +410,9 @@ class MeshBuilder {
       std::memcpy(&attributes[v * stride + 5], &part.colors[v * 4], 16);
     }
     const float uvWeight = textured ? 0.5f : 0.0f, colorWeight = part.hasColors ? 0.5f : 0.0f;
-    const float weights[9] = {0.5f, 0.5f, 0.5f, uvWeight, uvWeight, colorWeight, colorWeight, colorWeight, 0.0f};
+    // A remeshed proxy's normals come from the voxel surface and are noisy: its error is positional only.
+    const float normalWeight = positionError ? 0.0f : 0.5f;
+    const float weights[9] = {normalWeight, normalWeight, normalWeight, uvWeight, uvWeight, colorWeight, colorWeight, colorWeight, 0.0f};
 
     clodConfig config = clodDefaultConfig(kMeshClusterMaxTriangles);
     config.max_vertices = kMeshClusterMaxVertices;
@@ -459,6 +498,15 @@ class MeshBuilder {
   MeshMaterial material(const cgltf_data& data, const cgltf_material& src, size_t index, Cooked& out) {
     MeshMaterial m = defaultMaterial();
     const std::string name = src.name ? src.name : std::to_string(index);
+    if (options_.remeshResolution > 0) {
+      // A remeshed proxy has no UVs (yet): factors only, no texture slots that would sample garbage.
+      if (src.has_pbr_metallic_roughness) {
+        std::memcpy(m.baseColor, src.pbr_metallic_roughness.base_color_factor, 16);
+        m.metallic = src.pbr_metallic_roughness.metallic_factor;
+        m.roughness = src.pbr_metallic_roughness.roughness_factor;
+      }
+      return m;
+    }
     if (src.has_pbr_metallic_roughness) {
       const cgltf_pbr_metallic_roughness& pbr = src.pbr_metallic_roughness;
       std::memcpy(m.baseColor, pbr.base_color_factor, 16);
@@ -580,7 +628,8 @@ bool cookMeshes(JobSystem& jobs, const std::vector<std::filesystem::path>& sourc
     }
     // The cache key covers the source bytes, the formats and the settings; the manifest lists the cooked files.
     uint64_t key = fnv(0xcbf29ce484222325ull, bytes.data(), bytes.size());
-    const uint32_t versions[] = {kMeshCookerRevision, kMeshFormatVersion, kTextureFormatVersion, static_cast<uint32_t>(options.quality)};
+    const uint32_t versions[] = {kMeshCookerRevision, kMeshFormatVersion, kTextureFormatVersion, static_cast<uint32_t>(options.quality),
+                                 static_cast<uint32_t>(options.remeshResolution)};
     key = fnv(key, versions, sizeof(versions));
     const std::filesystem::path manifest = std::filesystem::path(cached).concat(".cooked");
 

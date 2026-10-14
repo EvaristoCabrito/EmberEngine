@@ -65,6 +65,12 @@ class Renderer {
     uint32_t earlyClusters = 0, occludedInstances = 0, retestedClusters = 0, triangles = 0;
   };
   MeshStats meshStats() const { return meshStats_; }
+  // Measurement only: 0 normal, 1 task shaders only, 2 mesh shaders without rasterisation.
+  void setCostSplit(uint32_t mode) { costSplit_ = mode; }
+  // Measurement only: 0 shaded, 1 geometric normals, 2 shading normals (into the scene colour, background black).
+  void setDebugView(uint32_t view) { debugView_ = view; }
+  // LOD threshold in pixels (1 = the engine's rule; ~0 forces full detail for reference images).
+  void setLodPixelError(float pixels) { lodPixelError_ = pixels; }
 
   // The next frame's GPU work waits for `value` on `timeline` (texture uploads it samples).
   void waitFor(VkSemaphore timeline, uint64_t value) {
@@ -149,7 +155,10 @@ class Renderer {
   Buffer instanceVisibility_;
   uint32_t instanceVisibilityIndex_ = kNoIndex;
   uint64_t visibilityVersion_ = ~0ull;
-  bool hizValid_ = false;  // the pyramid holds last frame's depth (false after a resize)
+  bool hizValid_ = false;
+  uint32_t costSplit_ = 0;
+  uint32_t debugView_ = 0;
+  float lodPixelError_ = 1.0f;  // the pyramid holds last frame's depth (false after a resize)
   Camera previousCamera_;
   VkPipeline cullInstancesLatePipeline_ = VK_NULL_HANDLE, hizPipeline_ = VK_NULL_HANDLE;
   VkPipeline cullInstancesPipeline_ = VK_NULL_HANDLE, cullPreparePipeline_ = VK_NULL_HANDLE,

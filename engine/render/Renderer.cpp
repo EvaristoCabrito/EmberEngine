@@ -82,9 +82,11 @@ struct MeshFrame {
   float previousProjectionX;
   float previousProjectionY;
   uint32_t earlyOcclusion;
-  uint32_t pad3;
+  uint32_t costSplit;
+  uint32_t debugView;
+  uint32_t pad4, pad5, pad6;
 };
-static_assert(sizeof(MeshFrame) == 464 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384);
+static_assert(sizeof(MeshFrame) == 480 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384);
 
 // Work buffer layout (shaders/scene.hlsli): counters, indirect arguments, two queues, the cluster list.
 constexpr VkDeviceSize kWorkHeaderBytes = 128;
@@ -480,8 +482,8 @@ void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
   f.viewProjection = camera_.viewProjection();
   frustumPlanes(f.viewProjection, f.frustum);
   f.cameraPosition = camera_.position;
-  constexpr float kPixelError = 1.0f;  // a cluster is detailed enough once its simplification error is under a pixel
-  f.lodScale = std::abs(camera_.projection[1][1]) * 0.5f * static_cast<float>(size_.height) / kPixelError;
+  // A cluster is detailed enough once its simplification error is under lodPixelError_ pixels (1 by default).
+  f.lodScale = std::abs(camera_.projection[1][1]) * 0.5f * static_cast<float>(size_.height) / lodPixelError_;
   f.screenSize = {static_cast<float>(size_.width), static_cast<float>(size_.height)};
   f.zNear = camera_.projection[3][2];
   f.instanceCount = std::min(meshView_.instanceCount, kMaxInstances);
@@ -510,6 +512,8 @@ void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
   f.previousProjectionX = previousCamera_.projection[0][0];
   f.previousProjectionY = std::abs(previousCamera_.projection[1][1]);
   f.earlyOcclusion = hizValid_ ? 1u : 0u;
+  f.costSplit = costSplit_;
+  f.debugView = debugView_;
   previousCamera_ = camera_;
   // The previous frame's passes may still read these buffers.
   memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT,
@@ -610,6 +614,18 @@ void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
   scope = gpuTimer_.begin(cmd, "draw late");
   recordVisibilityPass(cmd, frameAddress, 1);
   gpuTimer_.end(cmd, scope);
+
+  // The pyramid again, from the complete depth: next frame's early pass tests clusters against it. Built
+  // from the early pass alone it misses what the late pass drew, and frames alternate between culling
+  // too little and too much (measured: 15.8 / 5.6 ms, frame after frame, with a still camera).
+  scope = gpuTimer_.begin(cmd, "depth pyramid (next frame)");
+  recordDepthPyramid(cmd);
+  gpuTimer_.end(cmd, scope);
+  transition(cmd, depth_.image, depth_.aspect,
+             {VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+              VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+              VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+              VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT});
 
   // --- Resolve: materials shaded into the HDR scene colour -----------------------------------
   transition(cmd, visibility_.image, visibility_.aspect,
@@ -796,7 +812,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   vkCmdBeginRendering(cmd, &display);
   setViewport(cmd, size_);
   vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, tonemapPipeline_);
-  const TonemapPush tonemapPush{sceneColorIndex_, linearClampIndex_, 1.0f};
+  const TonemapPush tonemapPush{sceneColorIndex_, linearClampIndex_, debugView_ != 0 ? -1.0f : 1.0f};
   vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0,
                      sizeof(tonemapPush), &tonemapPush);
   vkCmdDraw(cmd, 3, 1, 0, 0);

@@ -9,9 +9,14 @@
 //        how many reads the disk gets at once.
 //        With --capture it saves the frame once the test ends and exits with code 3 if it failed;
 //        in a window, R runs it again.
-//   Sandbox.exe --battle --meshes meshes.pak --sprites battle.pak [--budget MB]
+//   Sandbox.exe --battle --meshes meshes.pak --sprites battle.pak [--budget MB] [--content all|3d|cards] [--cost-split 0|1|2]
+//        (--cost-split, measurement only: 1 task shaders only, 2 mesh shaders without rasterisation;
+//         --unpaced: frames back to back instead of 60 Hz, so GPU times are not stretched by power saving)
 //        M3 exit test: a 128 x 104-hex battle at 10x the measured Ember densities, timed in three
 //        camera phases (see apps/sandbox/BattleStage.h). With --capture it exits with code 3 if it failed.
+//   Sandbox.exe --compare <pakA> <meshA asset> <pakB> <meshB asset> <out dir>
+//        Proxy-quality images: mesh A (reference = full detail, original = engine LOD) vs mesh B (proxy), at
+//        several widths; tools/compare_meshes.py measures silhouette and normal error.
 //   Sandbox.exe --meshes meshes.pak [--grid N]
 //        Mesh scene (M3 bring-up): every cooked mesh in the archive on an N x N grid, drawn GPU-driven.
 //   Sandbox.exe --sprites roster.pak [--budget MB]
@@ -28,6 +33,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <memory>
 #include <string>
@@ -46,6 +52,7 @@
 #include "rhi/Swapchain.h"
 #include "rhi/UploadQueue.h"
 #include "BattleStage.h"
+#include "MeshCompare.h"
 #include "MeshStage.h"
 #include "SpriteParade.h"
 #include "Stage.h"
@@ -67,6 +74,10 @@ struct Options {
   std::string meshes;
   uint32_t meshGrid = 8;
   bool battle = false;
+  std::string battleContent = "all";
+  uint32_t costSplit = 0;
+  bool unpaced = false;
+  std::vector<std::string> compare;  // pakA assetA pakB assetB outDir  // measurement: frames back to back, so the GPU never idles and keeps its full clock
   bool budgetSet = false;
   uint32_t width = 1600, height = 900;
   int frames = 3;
@@ -95,6 +106,10 @@ Options parse(int argc, char** argv) {
     else if (arg == "--sprites" && hasValue) o.sprites = argv[++i];
     else if (arg == "--meshes" && hasValue) o.meshes = argv[++i];
     else if (arg == "--battle") o.battle = true;
+    else if (arg == "--content" && hasValue) o.battleContent = argv[++i];
+    else if (arg == "--unpaced") o.unpaced = true;
+    else if (arg == "--compare" && i + 5 < argc) o.compare.assign(argv + i + 1, argv + i + 6), i += 5;
+    else if (arg == "--cost-split" && hasValue) o.costSplit = static_cast<uint32_t>(std::atoi(argv[++i]));
     else if (arg == "--grid" && hasValue) o.meshGrid = static_cast<uint32_t>(std::max(1, std::atoi(argv[++i])));
     else if (arg == "--budget" && hasValue) o.spriteBudgetMb = static_cast<uint64_t>(std::max(16, std::atoi(argv[++i]))), o.budgetSet = true;
     else if (arg == "--size" && hasValue) parseSize(argv[++i], o);
@@ -263,6 +278,8 @@ struct Services {
   explicit Services(const Options& o) : io(jobs, o.ioDepth), assets(jobs, io, {}) {
     if (!o.sprites.empty() && !assets.mount(o.sprites)) fatal(std::format("Cannot mount {}", o.sprites));
     if (!o.meshes.empty() && !assets.mount(o.meshes)) fatal(std::format("Cannot mount {}", o.meshes));
+    for (size_t k = 0; k < o.compare.size() && k < 4; k += 2)
+      if (!assets.mount(o.compare[k])) fatal(std::format("Cannot mount {}", o.compare[k]));
     if (o.stream.empty()) return;
     if (!assets.mount(o.stream)) fatal(std::format("Cannot mount {}", o.stream));
     streamTest = std::make_unique<StreamTest>(assets, io, o.verify);
@@ -303,7 +320,12 @@ struct SpriteStage final : Stage {
 };
 
 std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Renderer& renderer, AssetManager& assets) {
-  if (o.battle) return std::make_unique<BattleStage>(context, renderer, assets, o.spriteBudgetMb);
+  if (o.battle) {
+    const BattleStage::Content content = o.battleContent == "3d"      ? BattleStage::Content::Meshes
+                                         : o.battleContent == "cards" ? BattleStage::Content::Cards
+                                                                      : BattleStage::Content::All;
+    return std::make_unique<BattleStage>(context, renderer, assets, o.spriteBudgetMb, content, o.costSplit);
+  }
   if (!o.sprites.empty()) return std::make_unique<SpriteStage>(context, renderer, assets, o.spriteBudgetMb);
   if (!o.meshes.empty()) return std::make_unique<MeshStage>(context, renderer, assets, o.meshGrid, o.capture.empty());
   return nullptr;
@@ -328,6 +350,22 @@ bool Services::frame(DebugUi& ui, Renderer& renderer, Stage* stage, VkExtent2D s
   return ok;
 }
 
+int runCompare(const Options& o) {
+  Services services(o);
+  VulkanContext context({o.validation, nullptr});
+  bool ok = false;
+  {
+    Renderer renderer(context, nullptr, {o.width, o.height});
+    ok = runMeshCompare(context, renderer, services.assets, assetId(o.compare[1]), assetId(o.compare[3]),
+                        std::filesystem::path(o.compare[4]), {o.width, o.height});
+  }
+  if (context.validationErrors()) {
+    logError("{} validation error(s)", context.validationErrors());
+    return 2;
+  }
+  return ok ? 0 : 1;
+}
+
 int runCapture(const Options& o) {
   Services services(o);
   VulkanContext context({o.validation, nullptr});
@@ -347,7 +385,7 @@ int runCapture(const Options& o) {
       while (after < kFramesInFlight + 2) {
         services.frame(ui, renderer, stage.get(), size, 1.0f / 60.0f, [&] { return renderer.renderFrame(o.time); });
         if (testDone()) ++after;
-        if (stage) {
+        if (stage && !o.unpaced) {
           next += std::chrono::microseconds(16667);
           const auto now = Clock::now();
           if (next > now) SDL_DelayPrecise(static_cast<Uint64>(std::chrono::nanoseconds(next - now).count()));
@@ -412,5 +450,6 @@ int runWindow(const Options& o) {
 
 int main(int argc, char** argv) {
   const Options options = parse(argc, argv);
+  if (!options.compare.empty()) return runCompare(options);
   return options.capture.empty() ? runWindow(options) : runCapture(options);
 }

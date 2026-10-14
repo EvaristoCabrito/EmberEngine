@@ -11,10 +11,13 @@
 //   units     72 animated character cards (8 + 64), each cycling through character clips
 // Phases: load -> zoomed out (whole field in view) -> default tactics zoom -> free-orbit sweep.
 // Pass: every measured frame's main-thread time and GPU time <= 16.7 ms.
+// Content can be limited (3D only / cards only) to isolate where GPU time goes; the exit test is "all".
+// The report gives each GPU pass's average and worst time per phase.
 
 #include <imgui.h>
 
 #include <algorithm>
+#include <cstdio>
 #include <chrono>
 #include <cmath>
 #include <format>
@@ -42,8 +45,12 @@ class BattleStage final : public Stage {
   static constexpr float kSegment = 3.0f;  // metres: the widest side of a building piece
   static constexpr double kBudgetMs = 1000.0 / 60.0;
 
-  BattleStage(VulkanContext& context, Renderer& renderer, AssetManager& assets, uint64_t spriteBudgetMb)
+  enum class Content { All, Meshes, Cards };
+
+  BattleStage(VulkanContext& context, Renderer& renderer, AssetManager& assets, uint64_t spriteBudgetMb, Content content,
+              uint32_t costSplit = 0)
       : renderer_(renderer),
+        content_(content),
         uploads_(context),
         meshes_(context, renderer.bindless(), assets, uploads_, {.geometryBytes = 256ull << 20}),
         sprites_(context, renderer.bindless(), assets, uploads_, {spriteBudgetMb << 20}) {
@@ -51,6 +58,7 @@ class BattleStage final : public Stage {
       if (assets.name(id).ends_with(".mesh")) meshIds_.push_back({meshes_.add(id), std::string(assets.name(id))});
     sprites_.start();
     renderer.setGroundExtent(std::max(width(), depth()) * 0.6f);
+    renderer.setCostSplit(costSplit);
     logInfo("battle: {} meshes, sprite budget {} MB", meshIds_.size(), spriteBudgetMb);
   }
 
@@ -66,7 +74,8 @@ class BattleStage final : public Stage {
         sprites_.request(clip, SpriteSystem::kSoon);
         decorResident = decorResident && sprites_.texture(clip).full;
       }
-      if (decorResident && meshes_.ready() && meshes_.view().instanceCount == meshCount_) startPhase(Phase::ZoomedOut, now);
+      if (decorResident && meshes_.ready() && (meshCount_ == 0 || meshes_.view().instanceCount == meshCount_))
+        startPhase(Phase::ZoomedOut, now);
     }
 
     const double t = std::chrono::duration<double>(now - phaseStart_).count();
@@ -97,6 +106,21 @@ class BattleStage final : public Stage {
     m.worstBusy = std::max(m.worstBusy, busyMs);
     m.worstGpu = std::max(m.worstGpu, gpu);
     m.sumGpu += gpu;
+    m.gpuFrames.push_back(gpu);
+    {
+      const Renderer::MeshStats s = renderer_.meshStats();
+      std::string row = std::format("{:.3f},{},{},{},{},{}", gpu, s.clusters, s.earlyClusters, s.retestedClusters, s.triangles,
+                                    s.visibleInstances);
+      for (const auto& r : renderer_.gpuTimer().results()) row += std::format(",{}={:.2f}", r.name, r.milliseconds);
+      m.rows.push_back(row);
+    }
+    for (const auto& r : renderer_.gpuTimer().results()) {
+      auto it = std::find_if(m.passes.begin(), m.passes.end(), [&](const PassTime& t) { return t.name == r.name; });
+      if (it == m.passes.end()) it = m.passes.insert(m.passes.end(), {r.name, 0.0, 0.0, 0});
+      it->sum += r.milliseconds;
+      it->worst = std::max(it->worst, r.milliseconds);
+      ++it->frames;
+    }
     m.sumBusy += busyMs;
     const Renderer::MeshStats g = renderer_.meshStats();
     m.maxClusters = std::max(m.maxClusters, g.clusters);
@@ -126,7 +150,15 @@ class BattleStage final : public Stage {
 
  private:
   enum class Phase { Loading, ZoomedOut, Default, Orbit, Done };
+  struct PassTime {
+    std::string name;
+    double sum, worst;
+    uint64_t frames;
+  };
   struct Measure {
+    std::vector<PassTime> passes;
+    std::vector<double> gpuFrames;
+    std::vector<std::string> rows;  // per frame: gpu ms, clusters, early clusters, retested, triangles, instances drawn
     uint64_t frames = 0;
     double worstBusy = 0.0, worstGpu = 0.0, sumBusy = 0.0, sumGpu = 0.0;
     uint32_t maxClusters = 0, maxCards = 0, maxTriangles = 0;
@@ -202,7 +234,8 @@ class BattleStage final : public Stage {
     for (int row = 0; row < kRows; ++row)
       for (int col = 0; col < kCols; ++col) {
         const glm::vec3 c = hexCenter(col, row);
-        for (int i = houses.empty() ? 0 : meshCount(rng); i > 0; --i) {
+        const int pieces = meshCount(rng);  // drawn always, so the layout is the same whatever the content
+        for (int i = houses.empty() || content_ == Content::Cards ? 0 : pieces; i > 0; --i) {
           const MeshId m = houses[static_cast<size_t>(unit(rng) * houses.size()) % houses.size()];
           const MeshHeader& h = *meshes_.header(m);
           // A building segment: the model's widest side scaled to kSegment metres.
@@ -218,7 +251,8 @@ class BattleStage final : public Stage {
           inst.scale = s;
           instances.push_back(inst);
         }
-        for (int i = cardCount(rng); i > 0 && !decor.empty(); --i) {
+        const int cards = cardCount(rng);
+        for (int i = content_ == Content::Meshes ? 0 : cards; i > 0 && !decor.empty(); --i) {
           const SpriteClipId clip = decor[static_cast<size_t>(unit(rng) * decor.size()) % decor.size()];
           cards_.push_back({jitter(c), clip, kHexRadius * 1.55f * 1.2f});  // Ember's single-hex card width
           if (std::find(decorClips_.begin(), decorClips_.end(), clip) == decorClips_.end()) decorClips_.push_back(clip);
@@ -227,7 +261,7 @@ class BattleStage final : public Stage {
     meshCount_ = static_cast<uint32_t>(instances.size());
     meshes_.setInstances(instances);
     // Two armies facing each other across the middle.
-    for (int i = 0; i < kUnits && !characters.empty(); ++i) {
+    for (int i = 0; i < kUnits && !characters.empty() && content_ != Content::Meshes; ++i) {
       const int col = kCols / 2 - 6 + (i % 12), row = kRows / 2 + (i < 36 ? -3 : 3) + (i % 36) / 12 * (i < 36 ? -1 : 1);
       Unit u{hexCenter(col, row), characters[static_cast<size_t>(unit(rng) * characters.size()) % characters.size()],
              characters[static_cast<size_t>(unit(rng) * characters.size()) % characters.size()], 0.0, 0.0};
@@ -301,6 +335,25 @@ class BattleStage final : public Stage {
           phaseName(phase_), m.frames, m.sumBusy / std::max<uint64_t>(1, m.frames), m.worstBusy, m.sumGpu / std::max<uint64_t>(1, m.frames),
           m.worstGpu, m.maxClusters, m.maxTriangles / 1e6, m.maxCards, m.overflow ? std::format(", {} OVERFLOWED", m.overflow) : "", ok ? "PASS" : "FAIL");
       report_.push_back(line);
+      std::vector<double> sorted = m.gpuFrames;
+      std::sort(sorted.begin(), sorted.end());
+      const auto at = [&](double q) { return sorted.empty() ? 0.0 : sorted[std::min(sorted.size() - 1, static_cast<size_t>(q * sorted.size()))]; };
+      const auto over = std::count_if(sorted.begin(), sorted.end(), [](double v) { return v > kBudgetMs; });
+      const std::string distribution = std::format("  GPU frame: median {:.2f}, 99th percentile {:.2f}, worst {:.2f} ms, {} of {} frames over {:.1f} ms",
+                                                   at(0.5), at(0.99), sorted.empty() ? 0.0 : sorted.back(), over, sorted.size(), kBudgetMs);
+      report_.push_back(distribution);
+      // Every frame's GPU time, for looking at the pattern (build/battle-<phase>.csv).
+      if (std::FILE* csv = std::fopen(std::format("build/battle-{}.csv", static_cast<int>(phase_)).c_str(), "w")) {
+        std::fprintf(csv, "gpu_ms,clusters,early,retest,triangles,instances\n");
+        for (const std::string& row : m.rows) std::fprintf(csv, "%s\n", row.c_str());
+        std::fclose(csv);
+      }
+      logInfo("battle: {}", distribution);
+      std::string passes = "  GPU passes (avg / worst ms):";
+      for (const PassTime& t : m.passes)
+        passes += std::format(" {} {:.2f} / {:.2f},", t.name, t.sum / std::max<uint64_t>(1, t.frames), t.worst);
+      report_.push_back(passes);
+      logInfo("battle: {}", passes);
       logInfo("battle: {}", line);
     } else if (phase_ == Phase::Loading) {
       logInfo("battle: loaded in {:.1f} s", std::chrono::duration<double>(now - start_).count());
@@ -317,6 +370,7 @@ class BattleStage final : public Stage {
   };
 
   Renderer& renderer_;
+  Content content_;
   UploadQueue uploads_;
   MeshScene meshes_;
   SpriteSystem sprites_;

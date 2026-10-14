@@ -23,5 +23,6 @@ float3 linearToSrgb(float3 c) {
 
 float4 PSMain(FullscreenOut i) : SV_Target0 {
   const float3 hdr = gTextures[push.source].SampleLevel(gSamplers[push.samplerIndex], i.uv, 0).rgb;
+  if (push.exposure < 0.0) return float4(hdr, 1.0);  // debug views: values written as they are
   return float4(linearToSrgb(acesFitted(hdr * push.exposure)), 1.0);
 }

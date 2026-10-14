@@ -6,7 +6,8 @@
 //   Cooker import-engine2 <engine2 root> <out.sprites.json>         sprite manifest from Engine2's tables
 //   Cooker sprites <manifest.sprites.json> <source root> <out.pak>  cook sprite clips (BC7) into an archive
 //          [--only <set prefix>]... [--quality fast|basic|slow] [--copies N] [--cache <dir>]
-//   Cooker meshes <source root> <out.pak> [--quality fast|basic|slow] [--cache <dir>]
+//   Cooker meshes <source root> <out.pak> [--quality fast|basic|slow] [--cache <dir>] [--remesh N]
+//          (--remesh: proxy-LOD experiment, every mesh replaced by its voxel remesh; separate archive)
 //                                                                    cook every GLB under a folder (cluster LOD + textures)
 //   Cooker sprite-preview <manifest> <source root> <cache dir> <set> <clip> <frame> <out.png>
 //                                                                    source vs. GPU-decoded frame, side by side
@@ -182,7 +183,7 @@ int sprites(const std::vector<std::string_view>& args) {
 }
 
 int meshes(const std::vector<std::string_view>& args) {
-  if (args.size() < 2) fatal("usage: Cooker meshes <source root> <out.pak> [--quality fast|basic|slow] [--cache <dir>]");
+  if (args.size() < 2) fatal("usage: Cooker meshes <source root> <out.pak> [--quality fast|basic|slow] [--cache <dir>] [--remesh N]");
   MeshCookOptions options;
   options.sourceRoot = std::filesystem::path(args[0]);
   const std::filesystem::path out(args[1]);
@@ -191,6 +192,7 @@ int meshes(const std::vector<std::string_view>& args) {
     if (i + 1 >= args.size()) fatal(std::format("Missing value for {}", args[i]));
     const std::string_view value = args[++i];
     if (args[i - 1] == "--cache") options.cacheDir = std::filesystem::path(value);
+    else if (args[i - 1] == "--remesh") options.remeshResolution = static_cast<int>(parseNumber(value));
     else if (args[i - 1] == "--quality") {
       if (value == "fast") options.quality = Bc7Quality::Fast;
       else if (value == "basic") options.quality = Bc7Quality::Basic;
@@ -200,6 +202,8 @@ int meshes(const std::vector<std::string_view>& args) {
       fatal(std::format("Unknown argument {}", args[i - 1]));
     }
   }
+  if (options.remeshResolution != 0 && (options.remeshResolution < 4 || options.remeshResolution > 256))
+    fatal("--remesh takes a resolution in 4..256");
 
   // Every .glb under the root, in a stable order.
   std::vector<std::filesystem::path> files;

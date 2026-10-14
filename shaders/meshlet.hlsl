@@ -71,7 +71,7 @@ void ASMain(uint thread : SV_GroupIndex, uint3 group : SV_GroupID) {
     }
   }
   GroupMemoryBarrierWithGroupSync();
-  DispatchMesh(survivors, 1, 1, payload);
+  DispatchMesh(f.costSplit == 1 ? 0 : survivors, 1, 1, payload);
 }
 
 struct VertexOut {
@@ -127,7 +127,7 @@ void MSMain(uint thread : SV_GroupIndex, uint3 group : SV_GroupID, in payload Pa
       const float area = (pb.x - pa.x) * (pc.y - pa.y) - (pb.y - pa.y) * (pc.x - pa.x);
       cull = area * kFrontFaceSign <= 0.0;
     }
-    prims[thread].cull = cull;
+    prims[thread].cull = cull || f.costSplit == 2;
   }
 }
 

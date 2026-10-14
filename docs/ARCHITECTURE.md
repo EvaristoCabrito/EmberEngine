@@ -307,6 +307,51 @@ on the GPU per instance and per meshlet against the frustum and the previous fra
 (two-phase occlusion), written to a visibility buffer. A compute-culling + multi-draw-indirect path is built
 too and measured against it on the dev GPU; the faster one is kept.
 
+### 7.2 M3 measurements so far (2026-10-14, RX 6400, 1600x900; M3 is not done)
+
+Built: GPU-driven meshes (instance culling, cluster-LOD BVH traversal, task + mesh shaders, R32 visibility
+buffer, analytic-derivative resolve), two-phase occlusion culling per instance and per cluster (early
+clusters hidden by last frame's pyramid are re-tested late), the battle test (`Sandbox --battle`), GPU
+cost split (`--content`, `--cost-split`), proxy quality images (`--compare`, `tools/scripts/compare_meshes.py`).
+
+**How to read GPU times.** At 60 Hz an under-loaded GPU drops its clock (power saving), so a frame that
+costs 4 ms at full clock is measured at up to ~16 ms, alternating frame to frame (every pass slows by the
+same factor, even fixed-cost tonemapping). Cost at full clock is measured with `--unpaced`. Whether the
+power governor ever makes a paced frame miss its vblank must be measured in a window with vsync (open).
+
+**Battle test results (128x104 hexes, 26.5k 3D pieces, 28k cards, 72 units):**
+
+| Meshes | GPU at full clock (median / worst) | Triangles drawn | Verdict |
+|---|---|---|---|
+| Cooked originals (Engine2 cottages) | 50-116 ms | 39-134 M, cluster list overflows | fails |
+| Voxel-remesh proxies (position error only, `Cooker --remesh 128`) | 2.5-4.1 / 4.2 ms | 1.6-4.1 M | fast enough, but see quality |
+
+Where the time goes (proxies, default view): drawing the visibility buffer ~75% (task shaders 13%, mesh
+shaders 55%, rasterisation 32% of it), material resolve ~20%, culling + LOD + pyramids <10%, 2D cards
+0.15-0.4 ms. CPU main thread worst 3.8-5.9 ms.
+
+**Why the originals fail.** The cottage (Engine2, baked from a 215k-triangle source) is 1,170 separate
+pieces (bricks, planks, tiles, ~30 cm). Cluster LOD can only remove whole pieces, so its levels report
+0.25 / 0.41 / 0.72 m errors on a 6.5 m house, and at 1 px the LOD keeps ~25k of 34k triangles even when the
+house is 20 px wide. Generated building models are likely to be built the same way.
+
+**Proxy quality (`--compare`, cottage v01, vs the full-detail original):**
+
+| Width | Silhouette IoU (proxy) | Shading-normal error, proxy: mean (95th pct) | Original at engine LOD |
+|---|---|---|---|
+| 400 px | 0.998 | 24.2 deg (83.9) | 0.0 deg |
+| 200 px | 0.998 | 27.7 deg (83.4) | 0.0 deg |
+| 100 px | 0.996 | 31.3 deg (82.1) | 1.6 deg |
+| 50 px | 0.972 | 45.0 deg (104.3) | 5.9 deg |
+| 25 px | 0.952 | 53.0 deg (108.9) | 23.9 deg |
+
+Silhouettes hold; surface normals do not: the proxy averages the bricks' and tiles' real geometry into
+a smooth voxel surface, and it would be used below ~260 px (where its 2.5 cm error is under a pixel), i.e.
+in the 200-50 px rows. Lighting on those buildings would visibly change. **The position-only proxy is not
+acceptable as is.** Its silhouette and speed are; its normals (and its missing colour) need to come from
+the original: normal, colour and ORM maps baked from the original onto the proxy, then measured again
+with the same tool against the same numbers.
+
 ## 8. Gameplay and tools
 
 - **ECS** for game objects; battle rules, campaign and saves port from Engine2's logic (rules, not its renderer).
