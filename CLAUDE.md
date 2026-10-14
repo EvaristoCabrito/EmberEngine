@@ -62,7 +62,7 @@ build.bat release          # or debug; output in build/<config>/bin
 ## Status (2026-10-14)
 
 - **M0 + M1 done**, committed and pushed as `67410f0` (Vulkan foundation; jobs, IO, pak, asset streaming, overlay).
-- **M2 (sprite cooker + residency) built and measured, uncommitted (awaiting the user's approval to commit).**
+- **M2 (sprite cooker + residency) done**, committed locally as `98c727a` (not pushed).
   - Cooker: 375 clips / 9,849 frames → BC7 (bc7e scalar, perceptual) with alpha-weighted linear mips, colour
     dilation, union trim, bottom-centre canvas for mixed-size frames, quality report (PSNR), preview images.
     2.63 GB GPU, 19 MB tails, 934 MB on disk. Visual check: decoded frames match the source (no fringes).
