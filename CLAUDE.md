@@ -21,7 +21,7 @@ engine sizes every system for the finished game from day one.
 - **Short answers**, ownership first. Own mistakes in one line, then fix them. No excuses.
 - **Check the real latest version** of any library before adding it (`git ls-remote --tags` / GitHub
   releases API) and say where the version came from. Never from memory.
-- **Commit** locally once the user approves a change. **Never push** unless they ask in that moment.
+- **Commit** locally on your own once a change is verified working (builds clean, its test passes); the user granted this 2026-10-14 ("if it's working you can commit"). Say exactly what is and is not verified in the message. **Never push** unless they ask in that moment.
   Git identity is repo-local: EvaristoCabrito <evaristo172@gmail.com>. Remote: github.com/EvaristoCabrito/EmberEngine.
 - **Research before building** big visual features (how shipped games do it). Never show raw test renders as progress.
 - **2D/3D split (Engine2's logic, the only part of Engine2 carried over):** characters, props and decor are photoreal 2D cards; houses/buildings and terrain shape are real 3D; ground is photoreal texture on 3D terrain. Blender 5.2.2 + `blender` MCP available.
