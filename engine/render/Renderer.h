@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "render/Camera.h"
+#include "render/MeshScene.h"
 #include "render/SpriteDraw.h"
 #include "rhi/Bindless.h"
 #include "rhi/GpuTimer.h"
@@ -44,6 +45,26 @@ class Renderer {
   // The 3D scene for the next frame: camera and sprite cards (drawn in the given order, so pass them
   // back to front). Without a scene the renderer draws its bring-up triangle.
   void setScene(const Camera& camera, std::span<const SpriteInstance> sprites);
+  // 3D meshes for the next frame (drawn GPU-driven: culling, cluster LOD, visibility buffer). An empty
+  // view draws none.
+  struct Lighting {  // provisional: one sun and a sky/ground ambient until the lighting model (D1)
+    glm::vec3 sunDirection = glm::normalize(glm::vec3(-0.45f, 0.75f, 0.5f));  // towards the sun
+    glm::vec3 sunColor{1.0f, 0.95f, 0.88f};
+    float sunIntensity = 3.0f;
+    glm::vec3 skyColor{0.45f, 0.55f, 0.7f};
+    glm::vec3 groundColor{0.25f, 0.22f, 0.18f};
+    float ambientIntensity = 1.0f;
+  };
+  void setMeshes(const MeshSceneView& view, const Lighting& lighting = {}) {
+    meshView_ = view;
+    lighting_ = lighting;
+  }
+  // What the GPU did with the meshes, read back from a frame that finished (a few frames old).
+  struct MeshStats {
+    uint32_t visibleInstances = 0, clusters = 0, queueOverflow = 0, clusterOverflow = 0;
+  };
+  MeshStats meshStats() const { return meshStats_; }
+
   // The next frame's GPU work waits for `value` on `timeline` (texture uploads it samples).
   void waitFor(VkSemaphore timeline, uint64_t value) {
     waitTimeline_ = timeline;
@@ -64,9 +85,13 @@ class Renderer {
     VkFence done = VK_NULL_HANDLE;
     VkSemaphore imageAcquired = VK_NULL_HANDLE;
     Buffer sprites;  // this frame's SpriteInstance[] (host-visible, read by device address)
+    Buffer meshFrame;     // MeshFrame for the mesh passes (device-local, written by vkCmdUpdateBuffer)
+    Buffer meshCounters;  // the work buffer's counters, copied back for meshStats()
+    bool countersPending = false;
   };
 
   void createTargets(VkExtent2D size);
+  void recordMeshes(Frame& frame, VkCommandBuffer cmd);
   void destroyTargets();
   Frame& beginFrame();
   void record(Frame& frame, float time, VkImage swapImage, const Buffer* readback);
@@ -96,6 +121,22 @@ class Renderer {
   VkPipeline spritePipeline_ = VK_NULL_HANDLE;
   VkSampler spriteSampler_ = VK_NULL_HANDLE;
   uint32_t spriteSamplerIndex_ = 0;
+
+  // Mesh passes.
+  static constexpr uint32_t kMaxQueue = 1u << 21;     // traversal items per queue (instance, BVH node)
+  static constexpr uint32_t kMaxClusters = 1u << 22;  // clusters drawn per frame
+  Image visibility_;
+  uint32_t visibilityIndex_ = kNoIndex, sceneColorStorageIndex_ = kNoIndex;
+  Buffer meshWork_;
+  uint32_t meshWorkIndex_ = kNoIndex;
+  VkSampler materialSampler_ = VK_NULL_HANDLE;
+  uint32_t materialSamplerIndex_ = 0;
+  VkPipeline cullInstancesPipeline_ = VK_NULL_HANDLE, cullPreparePipeline_ = VK_NULL_HANDLE,
+             cullTraversePipeline_ = VK_NULL_HANDLE, cullPrepareDrawPipeline_ = VK_NULL_HANDLE,
+             meshletPipeline_ = VK_NULL_HANDLE, resolvePipeline_ = VK_NULL_HANDLE;
+  MeshSceneView meshView_;
+  Lighting lighting_;
+  MeshStats meshStats_;
 
   bool hasScene_ = false;
   Camera camera_;

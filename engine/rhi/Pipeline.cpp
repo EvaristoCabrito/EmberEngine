@@ -27,16 +27,46 @@ VkShaderModule loadShader(VulkanContext& context, const std::string& name) {
   return module;
 }
 
+namespace {
+std::string entryOf(const std::string& shader) { return shader.substr(shader.find('.') + 1); }
+}  // namespace
+
+VkPipeline createComputePipeline(VulkanContext& context, VkPipelineLayout layout, const std::string& shader) {
+  VkShaderModule module = loadShader(context, shader);
+  const std::string entry = entryOf(shader);
+  VkComputePipelineCreateInfo info{VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO};
+  info.stage = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0, VK_SHADER_STAGE_COMPUTE_BIT, module, entry.c_str(), nullptr};
+  info.layout = layout;
+  VkPipeline pipeline;
+  VK_CHECK(vkCreateComputePipelines(context.device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline));
+  vkDestroyShaderModule(context.device, module, nullptr);
+  return pipeline;
+}
+
 VkPipeline createGraphicsPipeline(VulkanContext& context, VkPipelineLayout layout, const GraphicsPipelineDesc& desc) {
-  VkShaderModule vs = loadShader(context, desc.vertexShader);
-  VkShaderModule fs = loadShader(context, desc.fragmentShader);
   // DXC keeps the HLSL entry point name in the SPIR-V.
-  const std::string vsEntry = desc.vertexShader.substr(desc.vertexShader.find('.') + 1);
-  const std::string fsEntry = desc.fragmentShader.substr(desc.fragmentShader.find('.') + 1);
-  const std::array<VkPipelineShaderStageCreateInfo, 2> stages{{
-      {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0, VK_SHADER_STAGE_VERTEX_BIT, vs, vsEntry.c_str(), nullptr},
-      {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0, VK_SHADER_STAGE_FRAGMENT_BIT, fs, fsEntry.c_str(), nullptr},
-  }};
+  struct Stage {
+    VkShaderStageFlagBits stage;
+    const std::string* shader;
+  };
+  std::vector<Stage> wanted;
+  if (desc.meshShader.empty()) {
+    wanted.push_back({VK_SHADER_STAGE_VERTEX_BIT, &desc.vertexShader});
+  } else {
+    if (!desc.taskShader.empty()) wanted.push_back({VK_SHADER_STAGE_TASK_BIT_EXT, &desc.taskShader});
+    wanted.push_back({VK_SHADER_STAGE_MESH_BIT_EXT, &desc.meshShader});
+  }
+  wanted.push_back({VK_SHADER_STAGE_FRAGMENT_BIT, &desc.fragmentShader});
+  std::vector<VkShaderModule> modules;
+  std::vector<std::string> entries;
+  entries.reserve(wanted.size());
+  std::vector<VkPipelineShaderStageCreateInfo> stages;
+  for (const Stage& w : wanted) {
+    modules.push_back(loadShader(context, *w.shader));
+    entries.push_back(entryOf(*w.shader));
+  }
+  for (size_t i = 0; i < wanted.size(); ++i)
+    stages.push_back({VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0, wanted[i].stage, modules[i], entries[i].c_str(), nullptr});
 
   VkPipelineVertexInputStateCreateInfo vertexInput{VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
   VkPipelineInputAssemblyStateCreateInfo assembly{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
@@ -88,8 +118,8 @@ VkPipeline createGraphicsPipeline(VulkanContext& context, VkPipelineLayout layou
   info.pNext = &rendering;
   info.stageCount = static_cast<uint32_t>(stages.size());
   info.pStages = stages.data();
-  info.pVertexInputState = &vertexInput;
-  info.pInputAssemblyState = &assembly;
+  info.pVertexInputState = desc.meshShader.empty() ? &vertexInput : nullptr;
+  info.pInputAssemblyState = desc.meshShader.empty() ? &assembly : nullptr;
   info.pViewportState = &viewport;
   info.pRasterizationState = &raster;
   info.pMultisampleState = &multisample;
@@ -99,8 +129,7 @@ VkPipeline createGraphicsPipeline(VulkanContext& context, VkPipelineLayout layou
   info.layout = layout;
   VkPipeline pipeline;
   VK_CHECK(vkCreateGraphicsPipelines(context.device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline));
-  vkDestroyShaderModule(context.device, vs, nullptr);
-  vkDestroyShaderModule(context.device, fs, nullptr);
+  for (VkShaderModule module : modules) vkDestroyShaderModule(context.device, module, nullptr);
   return pipeline;
 }
 

@@ -8,6 +8,11 @@
 [[vk::binding(0, 0)]] Texture2DArray gTextureArrays[];
 [[vk::binding(1, 0)]] SamplerState gSamplers[];
 [[vk::binding(2, 0)]] RWTexture2D<float4> gStorageImages[];
+// Typed views of the same storage images (one format per image).
+[[vk::binding(2, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> gStorageImagesRgba16f[];
+[[vk::binding(2, 0)]] [[vk::image_format("r32ui")]] RWTexture2D<uint> gStorageImagesR32ui[];
+// Storage buffers, for atomics and counters (plain reads go through device addresses).
+[[vk::binding(3, 0)]] RWByteAddressBuffer gBuffers[];
 
 // Fullscreen triangle from SV_VertexID (no vertex buffer). uv (0,0) = top-left.
 struct FullscreenOut {

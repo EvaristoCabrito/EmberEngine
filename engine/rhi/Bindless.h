@@ -17,7 +17,11 @@ class Bindless {
   static constexpr uint32_t kSampledImageBinding = 0;
   static constexpr uint32_t kSamplerBinding = 1;
   static constexpr uint32_t kStorageImageBinding = 2;
+  static constexpr uint32_t kStorageBufferBinding = 3;  // for atomics and indirect counters (plain reads use device addresses)
   static constexpr uint32_t kPushConstantBytes = 128;
+  // Every stage sees the tables and the push constants (vertex, fragment, compute, task and mesh).
+  static constexpr VkShaderStageFlags kStages = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT |
+                                                VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT;
 
   explicit Bindless(VulkanContext& context);
   ~Bindless();
@@ -33,6 +37,9 @@ class Bindless {
   void removeStorageImage(uint32_t index);
 
   uint32_t addSampler(VkSampler sampler);
+
+  uint32_t addStorageBuffer(VkBuffer buffer, VkDeviceSize size = VK_WHOLE_SIZE);
+  void removeStorageBuffer(uint32_t index);
 
   void bind(VkCommandBuffer cmd, VkPipelineBindPoint point) const;
   VkPipelineLayout pipelineLayout() const { return pipelineLayout_; }
@@ -55,7 +62,7 @@ class Bindless {
   VkDescriptorPool pool_ = VK_NULL_HANDLE;
   VkDescriptorSet set_ = VK_NULL_HANDLE;
   VkPipelineLayout pipelineLayout_ = VK_NULL_HANDLE;
-  Slots sampled_, storage_, samplers_;
+  Slots sampled_, storage_, samplers_, buffers_;
 };
 
 }  // namespace ember

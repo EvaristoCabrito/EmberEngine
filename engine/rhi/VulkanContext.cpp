@@ -38,11 +38,13 @@ struct FeatureChain {
   VkPhysicalDeviceVulkan11Features v11{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES};
   VkPhysicalDeviceVulkan12Features v12{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
   VkPhysicalDeviceVulkan13Features v13{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
+  VkPhysicalDeviceMeshShaderFeaturesEXT mesh{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT};
 
   FeatureChain() {
     core.pNext = &v11;
     v11.pNext = &v12;
     v12.pNext = &v13;
+    v13.pNext = &mesh;
   }
   FeatureChain(const FeatureChain&) = delete;
   FeatureChain& operator=(const FeatureChain&) = delete;
@@ -83,6 +85,8 @@ const char* requireFeatures(const FeatureChain& have, FeatureChain& wanted) {
   EMBER_REQUIRE(v13, synchronization2)
   EMBER_REQUIRE(v13, maintenance4)
   EMBER_REQUIRE(v13, shaderDemoteToHelperInvocation)  // HLSL clip()/discard
+  EMBER_REQUIRE(mesh, taskShader)                      // GPU-driven geometry (VK_EXT_mesh_shader)
+  EMBER_REQUIRE(mesh, meshShader)
 #undef EMBER_REQUIRE
   return nullptr;
 }
@@ -176,6 +180,7 @@ void VulkanContext::pickGpu() {
     vkGetPhysicalDeviceProperties(candidate, &props);
     if (props.apiVersion < VK_API_VERSION_1_3) continue;
     if (surface && !hasDeviceExtension(candidate, VK_KHR_SWAPCHAIN_EXTENSION_NAME)) continue;
+    if (!hasDeviceExtension(candidate, VK_EXT_MESH_SHADER_EXTENSION_NAME)) continue;
 
     FeatureChain have, wanted;
     vkGetPhysicalDeviceFeatures2(candidate, &have.core);
@@ -246,6 +251,7 @@ void VulkanContext::createDevice() {
 
   std::vector<const char*> extensions;
   if (surface) extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+  extensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
 
   VkDeviceCreateInfo info{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
   info.pNext = &wanted.core;

@@ -107,6 +107,24 @@ Buffer createHostBuffer(VulkanContext& context, VkDeviceSize size, VkBufferUsage
   return out;
 }
 
+Buffer createDeviceBuffer(VulkanContext& context, VkDeviceSize size, VkBufferUsageFlags usage, bool sharedWithTransfer) {
+  Buffer out;
+  out.size = size;
+  VkBufferCreateInfo info{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+  info.size = size;
+  info.usage = usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+  const uint32_t families[2] = {context.queueFamily, context.transferFamily};
+  if (sharedWithTransfer && context.dedicatedTransfer()) {
+    info.sharingMode = VK_SHARING_MODE_CONCURRENT;
+    info.queueFamilyIndexCount = 2;
+    info.pQueueFamilyIndices = families;
+  }
+  VmaAllocationCreateInfo alloc{};
+  alloc.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+  VK_CHECK(vmaCreateBuffer(context.allocator, &info, &alloc, &out.buffer, &out.allocation, nullptr));
+  return out;
+}
+
 VkDeviceAddress bufferAddress(VulkanContext& context, const Buffer& buffer) {
   VkBufferDeviceAddressInfo info{VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO};
   info.buffer = buffer.buffer;

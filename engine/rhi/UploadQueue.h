@@ -12,14 +12,18 @@ namespace ember {
 
 class VulkanContext;
 
-// One image upload: the whole mip chain of a (possibly array) block-compressed texture, from bytes in
-// the engine's mip-major layout (per mip, every layer contiguous). Owned by the caller, who keeps it,
-// the image and the source bytes alive until finished() or cancel().
+// One upload, owned by the caller, who keeps it, the destination and the source bytes alive until
+// finished() or cancel(). Either
+//  - an image: the whole mip chain of a (possibly array) block-compressed texture, from bytes in the
+//    engine's mip-major layout (per mip, every layer contiguous), or
+//  - a buffer (`buffer` set, `image` null): `data` copied to `bufferOffset`, split across frames like images.
 struct ImageUpload {
   VkImage image = VK_NULL_HANDLE;
   uint32_t width = 0, height = 0, mipCount = 1, layers = 1;
   uint32_t blockBytes = 16;  // bytes per 4x4 block (BC7: 16)
   std::span<const std::byte> data;
+  VkBuffer buffer = VK_NULL_HANDLE;
+  VkDeviceSize bufferOffset = 0;
 
   // Progress, managed by the queue.
   uint32_t nextMip = 0, nextLayer = 0;

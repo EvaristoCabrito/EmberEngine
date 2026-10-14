@@ -15,6 +15,9 @@ VkShaderModule loadShader(VulkanContext& context, const std::string& name);
 struct GraphicsPipelineDesc {
   std::string vertexShader;    // e.g. "triangle.VSMain"
   std::string fragmentShader;  // e.g. "triangle.PSMain"
+  // Mesh shading instead of a vertex shader (VK_EXT_mesh_shader): task (optional) + mesh.
+  std::string taskShader;
+  std::string meshShader;
   std::vector<VkFormat> colorFormats;
   VkFormat depthFormat = VK_FORMAT_UNDEFINED;
   bool depthTest = false;
@@ -28,5 +31,8 @@ struct GraphicsPipelineDesc {
 
 // Dynamic-rendering pipeline on the shared bindless layout; viewport and scissor are dynamic.
 VkPipeline createGraphicsPipeline(VulkanContext& context, VkPipelineLayout layout, const GraphicsPipelineDesc& desc);
+
+// Compute pipeline on the shared bindless layout, e.g. "cull.CSInstances".
+VkPipeline createComputePipeline(VulkanContext& context, VkPipelineLayout layout, const std::string& shader);
 
 }  // namespace ember

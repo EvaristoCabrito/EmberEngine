@@ -18,6 +18,7 @@ add_library(EmberEngine STATIC
   render/Renderer.cpp
   render/DebugUi.cpp
   render/SpriteSystem.cpp
+  render/MeshScene.cpp
   debug/PerfOverlay.cpp
 )
 

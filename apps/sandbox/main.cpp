@@ -9,6 +9,8 @@
 //        how many reads the disk gets at once.
 //        With --capture it saves the frame once the test ends and exits with code 3 if it failed;
 //        in a window, R runs it again.
+//   Sandbox.exe --meshes meshes.pak [--grid N]
+//        Mesh scene (M3 bring-up): every cooked mesh in the archive on an N x N grid, drawn GPU-driven.
 //   Sandbox.exe --sprites roster.pak [--budget MB]
 //        Sprite streaming test (M2): plays every clip of every character, a few at a time, under a GPU
 //        budget (default 512 MB) smaller than the roster. With --capture it runs at 60 Hz, saves the
@@ -40,7 +42,9 @@
 #include "render/SpriteSystem.h"
 #include "rhi/Swapchain.h"
 #include "rhi/UploadQueue.h"
+#include "MeshStage.h"
 #include "SpriteParade.h"
+#include "Stage.h"
 #include "rhi/VulkanContext.h"
 
 namespace {
@@ -56,6 +60,8 @@ struct Options {
   std::string verify;
   std::string sprites;
   uint64_t spriteBudgetMb = 512;
+  std::string meshes;
+  uint32_t meshGrid = 8;
   uint32_t width = 1600, height = 900;
   int frames = 3;
   uint32_t ioDepth = 64;
@@ -81,6 +87,8 @@ Options parse(int argc, char** argv) {
     else if (arg == "--stream" && hasValue) o.stream = argv[++i];
     else if (arg == "--verify" && hasValue) o.verify = argv[++i];
     else if (arg == "--sprites" && hasValue) o.sprites = argv[++i];
+    else if (arg == "--meshes" && hasValue) o.meshes = argv[++i];
+    else if (arg == "--grid" && hasValue) o.meshGrid = static_cast<uint32_t>(std::max(1, std::atoi(argv[++i])));
     else if (arg == "--budget" && hasValue) o.spriteBudgetMb = static_cast<uint64_t>(std::max(16, std::atoi(argv[++i])));
     else if (arg == "--size" && hasValue) parseSize(argv[++i], o);
     else if (arg == "--frames" && hasValue) o.frames = std::atoi(argv[++i]);
@@ -244,20 +252,19 @@ struct Services {
 
   explicit Services(const Options& o) : io(jobs, o.ioDepth), assets(jobs, io, {}) {
     if (!o.sprites.empty() && !assets.mount(o.sprites)) fatal(std::format("Cannot mount {}", o.sprites));
+    if (!o.meshes.empty() && !assets.mount(o.meshes)) fatal(std::format("Cannot mount {}", o.meshes));
     if (o.stream.empty()) return;
     if (!assets.mount(o.stream)) fatal(std::format("Cannot mount {}", o.stream));
     streamTest = std::make_unique<StreamTest>(assets, io, o.verify);
   }
 
-  struct SpriteStage;
-
   // One frame of engine work around the render call. Returns the renderer's result.
   template <class Render>
-  bool frame(DebugUi& ui, Renderer& renderer, SpriteStage* stage, VkExtent2D size, float dt, const Render& render);
+  bool frame(DebugUi& ui, Renderer& renderer, Stage* stage, VkExtent2D size, float dt, const Render& render);
 };
 
 // Sprite streaming on the GPU: needs the renderer, so it is created after it (and destroyed before it).
-struct Services::SpriteStage {
+struct SpriteStage final : Stage {
   UploadQueue uploads;
   SpriteSystem sprites;
   SpriteParade parade;
@@ -269,7 +276,7 @@ struct Services::SpriteStage {
     sprites.start();
   }
 
-  void frame(Renderer& renderer, VkExtent2D size) {
+  void frame(Renderer& renderer, VkExtent2D size) override {
     const double now = std::chrono::duration<double>(Clock::now() - start).count();
     parade.request(now);
     sprites.update();
@@ -279,10 +286,20 @@ struct Services::SpriteStage {
     renderer.waitFor(uploads.timeline(), sprites.uploadWaitValue());
     renderer.setScene(camera, instances);
   }
+  void drawPanel() override { parade.drawPanel(); }
+  void endFrame(double busyMs) override { parade.endFrame(busyMs); }
+  bool done() const override { return parade.done(); }
+  bool passed() const override { return parade.passed(); }
 };
 
+std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Renderer& renderer, AssetManager& assets) {
+  if (!o.sprites.empty()) return std::make_unique<SpriteStage>(context, renderer, assets, o.spriteBudgetMb);
+  if (!o.meshes.empty()) return std::make_unique<MeshStage>(context, renderer, assets, o.meshGrid, o.capture.empty());
+  return nullptr;
+}
+
 template <class Render>
-bool Services::frame(DebugUi& ui, Renderer& renderer, SpriteStage* stage, VkExtent2D size, float dt, const Render& render) {
+bool Services::frame(DebugUi& ui, Renderer& renderer, Stage* stage, VkExtent2D size, float dt, const Render& render) {
   const auto start = Clock::now();
   if (streamTest) streamTest->beginFrame();
   assets.update();
@@ -290,13 +307,13 @@ bool Services::frame(DebugUi& ui, Renderer& renderer, SpriteStage* stage, VkExte
   ui.newFrame(size, dt);
   perf.draw({&jobs, &io, &assets, &renderer});
   if (streamTest) streamTest->drawPanel();
-  if (stage) stage->parade.drawPanel();
+  if (stage) stage->drawPanel();
   const bool ok = render();
   const double frameMs = msSince(start);
   const double busyMs = std::max(0.0, frameMs - renderer.lastWaitMilliseconds());
   perf.addFrame(frameMs, busyMs);
   if (streamTest) streamTest->endFrame(busyMs);
-  if (stage) stage->parade.endFrame(busyMs);
+  if (stage) stage->endFrame(busyMs);
   return ok;
 }
 
@@ -308,10 +325,9 @@ int runCapture(const Options& o) {
     DebugUi ui(context, nullptr, Renderer::outputFormat());
     Renderer renderer(context, nullptr, {o.width, o.height});
     renderer.setUi(&ui);
-    std::unique_ptr<Services::SpriteStage> stage;
-    if (!o.sprites.empty()) stage = std::make_unique<Services::SpriteStage>(context, renderer, services.assets, o.spriteBudgetMb);
+    std::unique_ptr<Stage> stage = makeStage(o, context, renderer, services.assets);
     const VkExtent2D size{o.width, o.height};
-    const auto testDone = [&] { return (services.streamTest && services.streamTest->done()) || (stage && stage->parade.done()); };
+    const auto testDone = [&] { return (services.streamTest && services.streamTest->done()) || (stage && stage->done()); };
     if (services.streamTest || stage) {
       // Run until the test ends, plus a few frames so the overlay shows final numbers.
       // The sprite parade runs at 60 Hz like the game (streaming per second depends on the frame rate).
@@ -327,7 +343,7 @@ int runCapture(const Options& o) {
           else next = now;
         }
       }
-      passed = services.streamTest ? services.streamTest->passed() : stage->parade.passed();
+      passed = services.streamTest ? services.streamTest->passed() : stage->passed();
     } else {
       for (int i = 0; i < o.frames; ++i)
         services.frame(ui, renderer, nullptr, size, 1.0f / 60.0f, [&] { return renderer.renderFrame(o.time); });
@@ -335,7 +351,7 @@ int runCapture(const Options& o) {
     ui.newFrame(size, 1.0f / 60.0f);
     services.perf.draw({&services.jobs, &services.io, &services.assets, &renderer});
     if (services.streamTest) services.streamTest->drawPanel();
-    if (stage) stage->parade.drawPanel();
+    if (stage) stage->drawPanel();
     renderer.captureFrame(o.time, o.capture);
     stage.reset();
   }
@@ -356,8 +372,7 @@ int runWindow(const Options& o) {
   DebugUi ui(context, window.handle(), Renderer::outputFormat());
   Renderer renderer(context, swapchain.get(), swapchain->extent());
   renderer.setUi(&ui);
-  std::unique_ptr<Services::SpriteStage> stage;
-  if (!o.sprites.empty()) stage = std::make_unique<Services::SpriteStage>(context, renderer, services.assets, o.spriteBudgetMb);
+  std::unique_ptr<Stage> stage = makeStage(o, context, renderer, services.assets);
 
   window.setEventHook([&](const SDL_Event& event) {
     if (ui.processEvent(event) || event.type != SDL_EVENT_KEY_DOWN || event.key.repeat) return;

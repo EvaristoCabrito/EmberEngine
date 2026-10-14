@@ -46,6 +46,10 @@ struct Buffer {
 Buffer createHostBuffer(VulkanContext& context, VkDeviceSize size, VkBufferUsageFlags usage);
 VkDeviceAddress bufferAddress(VulkanContext& context, const Buffer& buffer);
 
+// Device-local buffer read by shaders through its device address. `sharedWithTransfer`: filled by the
+// transfer queue (UploadQueue) and read by graphics (concurrent sharing, no ownership transfers).
+Buffer createDeviceBuffer(VulkanContext& context, VkDeviceSize size, VkBufferUsageFlags usage, bool sharedWithTransfer = false);
+
 // Host-visible buffer the CPU reads after the GPU writes it (frame capture, GPU queries).
 Buffer createReadbackBuffer(VulkanContext& context, VkDeviceSize size);
 void destroyBuffer(VulkanContext& context, Buffer& buffer);

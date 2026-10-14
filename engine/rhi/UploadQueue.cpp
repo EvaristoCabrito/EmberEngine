@@ -118,6 +118,23 @@ void UploadQueue::flush() {
   auto* staging = static_cast<std::byte*>(staging_.mapped);
   while (!pending_.empty() && budget > 0) {
     ImageUpload& up = *pending_.front();
+    if (up.buffer) {
+      // Plain bytes: as much as the frame's budget and the ring allow.
+      uint64_t bytes = std::min<uint64_t>(up.data.size() - up.dataOffset, budget), offset = 0;
+      while (bytes > 0 && !reserve(bytes, offset)) bytes /= 2;
+      if (bytes == 0) break;  // ring full: the rest goes next frame
+      std::memcpy(staging + offset, up.data.data() + up.dataOffset, bytes);
+      const VkBufferCopy region{offset, up.bufferOffset + up.dataOffset, bytes};
+      vkCmdCopyBuffer(slot.cmd, staging_.buffer, up.buffer, 1, &region);
+      up.dataOffset += bytes;
+      budget -= bytes;
+      bytesLastFlush_ += bytes;
+      if (up.dataOffset == up.data.size()) {
+        pending_.pop_front();
+        completedUploads.push_back(&up);
+      }
+      continue;
+    }
     const uint32_t mipW = std::max(1u, up.width >> up.nextMip), mipH = std::max(1u, up.height >> up.nextMip);
     const uint64_t layerBytes = uint64_t{(mipW + 3) / 4} * ((mipH + 3) / 4) * up.blockBytes;
     // As many whole layers of this mip as the frame's budget allows; at least one per frame, so a

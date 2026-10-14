@@ -11,7 +11,7 @@ namespace {
 constexpr uint32_t kWantedSampledImages = 1u << 18;  // 262,144 textures
 constexpr uint32_t kWantedStorageImages = 1u << 14;
 constexpr uint32_t kWantedSamplers = 256;
-constexpr VkShaderStageFlags kAllStages = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT;
+constexpr uint32_t kWantedStorageBuffers = 1u << 12;
 }  // namespace
 
 uint32_t Bindless::Slots::take() {
@@ -37,18 +37,21 @@ Bindless::Bindless(VulkanContext& context) : context_(context) {
                                 v12.maxPerStageDescriptorUpdateAfterBindStorageImages});
   samplers_.capacity = std::min({kWantedSamplers, v12.maxDescriptorSetUpdateAfterBindSamplers,
                                  v12.maxPerStageDescriptorUpdateAfterBindSamplers});
-  logInfo("bindless: {} textures, {} storage images, {} samplers", sampled_.capacity, storage_.capacity,
-          samplers_.capacity);
+  buffers_.capacity = std::min({kWantedStorageBuffers, v12.maxDescriptorSetUpdateAfterBindStorageBuffers,
+                                v12.maxPerStageDescriptorUpdateAfterBindStorageBuffers});
+  logInfo("bindless: {} textures, {} storage images, {} samplers, {} storage buffers", sampled_.capacity, storage_.capacity,
+          samplers_.capacity, buffers_.capacity);
 
-  const std::array<VkDescriptorSetLayoutBinding, 3> bindings{{
-      {kSampledImageBinding, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, sampled_.capacity, kAllStages, nullptr},
-      {kSamplerBinding, VK_DESCRIPTOR_TYPE_SAMPLER, samplers_.capacity, kAllStages, nullptr},
-      {kStorageImageBinding, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, storage_.capacity, kAllStages, nullptr},
+  const std::array<VkDescriptorSetLayoutBinding, 4> bindings{{
+      {kSampledImageBinding, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, sampled_.capacity, kStages, nullptr},
+      {kSamplerBinding, VK_DESCRIPTOR_TYPE_SAMPLER, samplers_.capacity, kStages, nullptr},
+      {kStorageImageBinding, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, storage_.capacity, kStages, nullptr},
+      {kStorageBufferBinding, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffers_.capacity, kStages, nullptr},
   }};
   const VkDescriptorBindingFlags flags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
                                          VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
                                          VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
-  const std::array<VkDescriptorBindingFlags, 3> bindingFlags{flags, flags, flags};
+  const std::array<VkDescriptorBindingFlags, 4> bindingFlags{flags, flags, flags, flags};
   VkDescriptorSetLayoutBindingFlagsCreateInfo flagsInfo{
       VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO};
   flagsInfo.bindingCount = static_cast<uint32_t>(bindingFlags.size());
@@ -60,10 +63,11 @@ Bindless::Bindless(VulkanContext& context) : context_(context) {
   layoutInfo.pBindings = bindings.data();
   VK_CHECK(vkCreateDescriptorSetLayout(context.device, &layoutInfo, nullptr, &setLayout_));
 
-  const std::array<VkDescriptorPoolSize, 3> sizes{{
+  const std::array<VkDescriptorPoolSize, 4> sizes{{
       {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, sampled_.capacity},
       {VK_DESCRIPTOR_TYPE_SAMPLER, samplers_.capacity},
       {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, storage_.capacity},
+      {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffers_.capacity},
   }};
   VkDescriptorPoolCreateInfo poolInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
   poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
@@ -78,7 +82,7 @@ Bindless::Bindless(VulkanContext& context) : context_(context) {
   allocInfo.pSetLayouts = &setLayout_;
   VK_CHECK(vkAllocateDescriptorSets(context.device, &allocInfo, &set_));
 
-  const VkPushConstantRange push{kAllStages, 0, kPushConstantBytes};
+  const VkPushConstantRange push{kStages, 0, kPushConstantBytes};
   VkPipelineLayoutCreateInfo pipelineLayoutInfo{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
   pipelineLayoutInfo.setLayoutCount = 1;
   pipelineLayoutInfo.pSetLayouts = &setLayout_;
@@ -136,6 +140,22 @@ uint32_t Bindless::addSampler(VkSampler sampler) {
   write(kSamplerBinding, index, VK_DESCRIPTOR_TYPE_SAMPLER, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED, sampler);
   return index;
 }
+
+uint32_t Bindless::addStorageBuffer(VkBuffer buffer, VkDeviceSize size) {
+  const uint32_t index = buffers_.take();
+  VkDescriptorBufferInfo info{buffer, 0, size};
+  VkWriteDescriptorSet write{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+  write.dstSet = set_;
+  write.dstBinding = kStorageBufferBinding;
+  write.dstArrayElement = index;
+  write.descriptorCount = 1;
+  write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+  write.pBufferInfo = &info;
+  vkUpdateDescriptorSets(context_.device, 1, &write, 0, nullptr);
+  return index;
+}
+
+void Bindless::removeStorageBuffer(uint32_t index) { buffers_.free.push_back(index); }
 
 void Bindless::bind(VkCommandBuffer cmd, VkPipelineBindPoint point) const {
   vkCmdBindDescriptorSets(cmd, point, pipelineLayout_, 0, 1, &set_, 0, nullptr);
