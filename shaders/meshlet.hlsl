@@ -8,6 +8,7 @@
 
 struct Push {
   uint64_t frame;
+  uint pass;  // 0 early: cluster-list entries [0, early); 1 late: [early, total), tested against the depth pyramid
 };
 [[vk::push_constant]] Push push;
 
@@ -26,9 +27,11 @@ void ASMain(uint thread : SV_GroupIndex, uint3 group : SV_GroupID) {
   GroupMemoryBarrierWithGroupSync();
 
   const uint linearGroup = group.x + group.y * 65535u;
-  const uint slot = linearGroup * kTaskGroup + thread;
-  const uint count = min(work(f).Load(kCounterClusters * 4), f.maxClusters);
-  if (slot < count) {
+  const uint early = work(f).Load(kCounterEarlyClusters * 4);
+  const uint total = min(work(f).Load(kCounterClusters * 4), f.maxClusters);
+  const uint slot = (push.pass == 0 ? 0 : early) + linearGroup * kTaskGroup + thread;
+  const uint end = push.pass == 0 ? early : total;
+  if (slot < end) {
     const uint2 item = work(f).Load2(clusterListOffset(f) + slot * 8);
     const InstanceGpu inst = loadInstance(f, item.x);
     const MeshGpu mesh = loadMesh(f, inst.mesh);
@@ -44,6 +47,8 @@ void ASMain(uint thread : SV_GroupIndex, uint3 group : SV_GroupID) {
       const float3 toCluster = center - f.cameraPosition;
       visible = dot(toCluster, axis) < float(cone.w) / 127.0 * length(toCluster) + radius;
     }
+    // Late pass: clusters hidden behind what the early pass drew.
+    if (visible && push.pass == 1) visible = sphereVisibleHiZ(f, center, radius);
     if (visible) {
       uint index;
       InterlockedAdd(survivors, 1, index);

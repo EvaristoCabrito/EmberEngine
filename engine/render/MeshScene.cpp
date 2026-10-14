@@ -225,6 +225,7 @@ void MeshScene::updateTable(Table& table) {
   if (table.writing >= 0 && uploads_.finished(table.upload)) {
     table.active = table.writing;
     table.activeBytes = table.snapshot.size();
+    ++table.version;
     table.writing = -1;
     table.switchedFrame = frame_;
     uploadWaitValue_ = std::max(uploadWaitValue_, table.upload.signalValue);
@@ -283,6 +284,7 @@ MeshSceneView MeshScene::view() const {
   v.instances = bufferAddress(context_, instanceTable_.copies[instanceTable_.active]);
   v.instanceCount = static_cast<uint32_t>(instanceTable_.activeBytes / sizeof(InstanceGpu));
   v.meshCount = static_cast<uint32_t>(meshTable_.activeBytes / sizeof(MeshGpu));
+  v.instancesVersion = instanceTable_.version;
   return v;
 }
 

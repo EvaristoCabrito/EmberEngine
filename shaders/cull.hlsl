@@ -1,17 +1,22 @@
 // GPU-driven visibility for the mesh scene, before any triangle is drawn:
-//   CSInstances   one thread per instance: frustum test, then the roots of the mesh's per-level BVHs go
+//   CSInstancesEarly / CSInstancesLate
+//                 one thread per instance. Two-phase occlusion culling: the early pass draws what was
+//                 visible last frame; a depth pyramid is built from it; the late pass tests every instance
+//                 against the pyramid, records the verdict for the next frame, and draws what is visible
+//                 now but was not drawn early. Drawn instances put the roots of their mesh's per-level BVHs
 //                 into queue 0.
 //   CSPrepare     one thread: indirect arguments for the next traversal pass; clears its output queue.
 //   CSTraverse    one thread per queue item (instance, BVH node): a node whose screen error is over the
 //                 threshold is opened: an inner node queues its children, a leaf picks the clusters of its
 //                 group that are exactly detailed enough (cluster LOD rule, MeshFormat.h) into the list.
-//   CSPrepareDraw one thread: task-shader arguments for the cluster list.
+//   CSPrepareDraw one thread: task-shader arguments for this pass's part of the cluster list (the late
+//                 pass appends after the early one).
 // Queues hold uint2 (instance, node); the cluster list holds uint2 (instance, cluster).
 #include "scene.hlsli"
 
 struct Push {
   uint64_t frame;
-  uint pass;  // traversal pass: reads queue (pass & 1), writes queue (pass & 1) ^ 1
+  uint pass;  // traversal: reads queue (pass & 1), writes queue (pass & 1) ^ 1; CSPrepareDraw: 0 early, 1 late
 };
 [[vk::push_constant]] Push push;
 
@@ -38,21 +43,46 @@ void emitCluster(MeshFrame f, uint instance, uint cluster) {
   work(f).Store2(clusterListOffset(f) + slot * 8, uint2(instance, cluster));
 }
 
-[numthreads(kGroupSize, 1, 1)]
-void CSInstances(uint id : SV_DispatchThreadID) {
+void pushRoots(MeshFrame f, uint instance, MeshGpu mesh) {
+  const uint first = reserveQueue(f, 0, mesh.levelCount);
+  if (first == ~0u) return;
+  for (uint level = 0; level < mesh.levelCount; ++level)
+    work(f).Store2(queueOffset(f, 0) + (first + level) * 8, uint2(instance, level));
+}
+
+void cullInstance(uint id, bool late) {
   const MeshFrame f = loadFrame(push.frame);
   if (id >= f.instanceCount) return;
   const InstanceGpu inst = loadInstance(f, id);
   if (inst.mesh >= f.meshCount) return;
   const MeshGpu mesh = loadMesh(f, inst.mesh);
   if (mesh.ready == 0) return;
-  if (!sphereInFrustum(f, transformPoint(inst, mesh.sphere.xyz), mesh.sphere.w * inst.scale)) return;
-  work(f).InterlockedAdd(kCounterInstances * 4, 1);
-  const uint first = reserveQueue(f, 0, mesh.levelCount);
-  if (first == ~0u) return;
-  for (uint level = 0; level < mesh.levelCount; ++level)
-    work(f).Store2(queueOffset(f, 0) + (first + level) * 8, uint2(id, level));
+  RWByteAddressBuffer visibility = gBuffers[NonUniformResourceIndex(f.instanceVisibility)];
+  const bool wasVisible = visibility.Load(id * 4) != 0;
+  const float3 center = transformPoint(inst, mesh.sphere.xyz);
+  const float radius = mesh.sphere.w * inst.scale;
+  const bool inFrustum = sphereInFrustum(f, center, radius);
+  if (!late) {
+    if (inFrustum && wasVisible) {
+      work(f).InterlockedAdd(kCounterInstances * 4, 1);
+      pushRoots(f, id, mesh);
+    }
+    return;
+  }
+  const bool visible = inFrustum && sphereVisibleHiZ(f, center, radius);
+  visibility.Store(id * 4, visible ? 1u : 0u);
+  if (inFrustum && !visible) work(f).InterlockedAdd(kCounterOccludedInstances * 4, 1);
+  if (visible && !wasVisible) {
+    work(f).InterlockedAdd(kCounterInstances * 4, 1);
+    pushRoots(f, id, mesh);
+  }
 }
+
+[numthreads(kGroupSize, 1, 1)]
+void CSInstancesEarly(uint id : SV_DispatchThreadID) { cullInstance(id, false); }
+
+[numthreads(kGroupSize, 1, 1)]
+void CSInstancesLate(uint id : SV_DispatchThreadID) { cullInstance(id, true); }
 
 [numthreads(1, 1, 1)]
 void CSPrepare() {
@@ -102,7 +132,10 @@ void CSTraverse(uint id : SV_DispatchThreadID) {
 [numthreads(1, 1, 1)]
 void CSPrepareDraw() {
   const MeshFrame f = loadFrame(push.frame);
-  const uint count = min(work(f).Load(kCounterClusters * 4), f.maxClusters);
+  const uint total = min(work(f).Load(kCounterClusters * 4), f.maxClusters);
+  uint count = total;
+  if (push.pass == 0) work(f).Store(kCounterEarlyClusters * 4, total);
+  else count = total - work(f).Load(kCounterEarlyClusters * 4);
   const uint groups = (count + kGroupSize - 1) / kGroupSize;
   // Task workgroups: x stays within the minimum every GPU supports (65535); y carries the rest.
   const uint x = min(groups, 65535u);

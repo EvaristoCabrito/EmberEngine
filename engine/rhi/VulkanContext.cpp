@@ -81,6 +81,7 @@ const char* requireFeatures(const FeatureChain& have, FeatureChain& wanted) {
   EMBER_REQUIRE(v12, scalarBlockLayout)
   EMBER_REQUIRE(v12, drawIndirectCount)
   EMBER_REQUIRE(v12, hostQueryReset)
+  EMBER_REQUIRE(v12, samplerFilterMinmax)  // depth pyramid: one sample = the farthest of 2x2
   EMBER_REQUIRE(v13, dynamicRendering)
   EMBER_REQUIRE(v13, synchronization2)
   EMBER_REQUIRE(v13, maintenance4)

@@ -11,6 +11,7 @@
 // Typed views of the same storage images (one format per image).
 [[vk::binding(2, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> gStorageImagesRgba16f[];
 [[vk::binding(2, 0)]] [[vk::image_format("r32ui")]] RWTexture2D<uint> gStorageImagesR32ui[];
+[[vk::binding(2, 0)]] [[vk::image_format("r32f")]] RWTexture2D<float> gStorageImagesR32f[];
 // Storage buffers, for atomics and counters (plain reads go through device addresses).
 [[vk::binding(3, 0)]] RWByteAddressBuffer gBuffers[];
 

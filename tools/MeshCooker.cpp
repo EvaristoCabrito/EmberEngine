@@ -27,7 +27,7 @@ namespace ember {
 namespace {
 
 // Bump when the cooked output changes for the same source (forces a re-cook of every mesh).
-constexpr uint32_t kMeshCookerRevision = 1;
+constexpr uint32_t kMeshCookerRevision = 3;  // 2: attribute_protect_mask, 3: error edge limit
 
 // One material's triangles, transforms baked in, one entry per unique vertex.
 struct Part {
@@ -356,6 +356,9 @@ class MeshBuilder {
     clodConfig config = clodDefaultConfig(kMeshClusterMaxTriangles);
     config.max_vertices = kMeshClusterMaxVertices;
     config.optimize_bounds = true;
+    // A group's error never exceeds its own triangles' size: once they are under a pixel the simpler
+    // version is used, even where seams or disconnected pieces make the measured error large.
+    config.simplify_error_edge_limit = 1.0f;
     clodMesh mesh{};
     mesh.indices = part.indices.data();
     mesh.index_count = part.indices.size();
@@ -366,6 +369,11 @@ class MeshBuilder {
     mesh.vertex_attributes_stride = stride * sizeof(float);
     mesh.attribute_weights = weights;
     mesh.attribute_count = stride;
+    // clusterlod simplifies permissively (it may collapse across attribute discontinuities); the seams
+    // that must survive are flagged here: UV seams when a texture uses them, colour seams on
+    // vertex-coloured models. Without this, meshes split at every face (common in generated models)
+    // simplify badly and report errors far above the real ones.
+    mesh.attribute_protect_mask = (textured ? (1u << 3) | (1u << 4) : 0u) | (part.hasColors ? (1u << 5) | (1u << 6) | (1u << 7) : 0u);
 
     bool ok = true;
     clodBuild(config, mesh, [&](clodGroup group, const clodCluster* clusters, size_t count) -> int {

@@ -26,6 +26,7 @@ struct MeshSceneView {
   uint64_t instances = 0;  // InstanceGpu[]
   uint32_t instanceCount = 0;
   uint32_t meshCount = 0;  // entries of meshes[] (instances naming a later mesh are skipped)
+  uint64_t instancesVersion = 0;  // changes whenever a new instance list becomes active
   explicit operator bool() const { return instanceCount != 0 && meshes && materials && instances; }
 };
 
@@ -103,6 +104,7 @@ class MeshScene {
     std::vector<std::byte> cpu, snapshot;
     uint64_t usedBytes = 0;    // sent up to here
     uint64_t activeBytes = 0;  // valid bytes in the active copy
+    uint64_t version = 0;      // switches so far
     ImageUpload upload;
   };
 

@@ -9,6 +9,9 @@
 //        how many reads the disk gets at once.
 //        With --capture it saves the frame once the test ends and exits with code 3 if it failed;
 //        in a window, R runs it again.
+//   Sandbox.exe --battle --meshes meshes.pak --sprites battle.pak [--budget MB]
+//        M3 exit test: a 128 x 104-hex battle at 10x the measured Ember densities, timed in three
+//        camera phases (see apps/sandbox/BattleStage.h). With --capture it exits with code 3 if it failed.
 //   Sandbox.exe --meshes meshes.pak [--grid N]
 //        Mesh scene (M3 bring-up): every cooked mesh in the archive on an N x N grid, drawn GPU-driven.
 //   Sandbox.exe --sprites roster.pak [--budget MB]
@@ -42,6 +45,7 @@
 #include "render/SpriteSystem.h"
 #include "rhi/Swapchain.h"
 #include "rhi/UploadQueue.h"
+#include "BattleStage.h"
 #include "MeshStage.h"
 #include "SpriteParade.h"
 #include "Stage.h"
@@ -62,6 +66,8 @@ struct Options {
   uint64_t spriteBudgetMb = 512;
   std::string meshes;
   uint32_t meshGrid = 8;
+  bool battle = false;
+  bool budgetSet = false;
   uint32_t width = 1600, height = 900;
   int frames = 3;
   uint32_t ioDepth = 64;
@@ -88,8 +94,9 @@ Options parse(int argc, char** argv) {
     else if (arg == "--verify" && hasValue) o.verify = argv[++i];
     else if (arg == "--sprites" && hasValue) o.sprites = argv[++i];
     else if (arg == "--meshes" && hasValue) o.meshes = argv[++i];
+    else if (arg == "--battle") o.battle = true;
     else if (arg == "--grid" && hasValue) o.meshGrid = static_cast<uint32_t>(std::max(1, std::atoi(argv[++i])));
-    else if (arg == "--budget" && hasValue) o.spriteBudgetMb = static_cast<uint64_t>(std::max(16, std::atoi(argv[++i])));
+    else if (arg == "--budget" && hasValue) o.spriteBudgetMb = static_cast<uint64_t>(std::max(16, std::atoi(argv[++i]))), o.budgetSet = true;
     else if (arg == "--size" && hasValue) parseSize(argv[++i], o);
     else if (arg == "--frames" && hasValue) o.frames = std::atoi(argv[++i]);
     else if (arg == "--io-depth" && hasValue) o.ioDepth = static_cast<uint32_t>(std::max(1, std::atoi(argv[++i])));
@@ -97,6 +104,9 @@ Options parse(int argc, char** argv) {
     else if (arg == "--no-validation") o.validation = false;
     else fatal(std::format("Unknown argument {}", arg));
   }
+  if (o.battle && (o.meshes.empty() || o.sprites.empty())) fatal("--battle needs --meshes <pak> and --sprites <pak>");
+  // The battle draws every decor card and 72 units at once: a larger sprite budget unless given.
+  if (o.battle && !o.budgetSet) o.spriteBudgetMb = 1536;
   return o;
 }
 
@@ -293,6 +303,7 @@ struct SpriteStage final : Stage {
 };
 
 std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Renderer& renderer, AssetManager& assets) {
+  if (o.battle) return std::make_unique<BattleStage>(context, renderer, assets, o.spriteBudgetMb);
   if (!o.sprites.empty()) return std::make_unique<SpriteStage>(context, renderer, assets, o.spriteBudgetMb);
   if (!o.meshes.empty()) return std::make_unique<MeshStage>(context, renderer, assets, o.meshGrid, o.capture.empty());
   return nullptr;

@@ -62,6 +62,7 @@ class Renderer {
   // What the GPU did with the meshes, read back from a frame that finished (a few frames old).
   struct MeshStats {
     uint32_t visibleInstances = 0, clusters = 0, queueOverflow = 0, clusterOverflow = 0;
+    uint32_t earlyClusters = 0, occludedInstances = 0;
   };
   MeshStats meshStats() const { return meshStats_; }
 
@@ -70,6 +71,9 @@ class Renderer {
     waitTimeline_ = timeline;
     waitValue_ = value;
   }
+
+  // Half the side of the square ground plane under the scene (metres, centred on the origin).
+  void setGroundExtent(float halfExtent) { groundHalfExtent_ = halfExtent; }
 
   Bindless& bindless() { return bindless_; }
   static constexpr uint32_t kMaxSprites = 1u << 16;
@@ -92,6 +96,8 @@ class Renderer {
 
   void createTargets(VkExtent2D size);
   void recordMeshes(Frame& frame, VkCommandBuffer cmd);
+  void recordDepthPyramid(VkCommandBuffer cmd);
+  void recordVisibilityPass(VkCommandBuffer cmd, VkDeviceAddress frameAddress, uint32_t pass);
   void destroyTargets();
   Frame& beginFrame();
   void record(Frame& frame, float time, VkImage swapImage, const Buffer* readback);
@@ -131,6 +137,19 @@ class Renderer {
   uint32_t meshWorkIndex_ = kNoIndex;
   VkSampler materialSampler_ = VK_NULL_HANDLE;
   uint32_t materialSamplerIndex_ = 0;
+  // Occlusion culling: depth pyramid of the early pass, and each instance's verdict from last frame.
+  static constexpr uint32_t kMaxInstances = 1u << 18;  // = MeshScene::Capacity::instances
+  Image hiz_;
+  std::vector<VkImageView> hizLevelViews_;
+  std::vector<uint32_t> hizLevelIndices_;
+  uint32_t hizIndex_ = kNoIndex, depthIndex_ = kNoIndex;
+  VkExtent2D hizSize_{};
+  VkSampler minSampler_ = VK_NULL_HANDLE;
+  uint32_t minSamplerIndex_ = 0;
+  Buffer instanceVisibility_;
+  uint32_t instanceVisibilityIndex_ = kNoIndex;
+  uint64_t visibilityVersion_ = ~0ull;
+  VkPipeline cullInstancesLatePipeline_ = VK_NULL_HANDLE, hizPipeline_ = VK_NULL_HANDLE;
   VkPipeline cullInstancesPipeline_ = VK_NULL_HANDLE, cullPreparePipeline_ = VK_NULL_HANDLE,
              cullTraversePipeline_ = VK_NULL_HANDLE, cullPrepareDrawPipeline_ = VK_NULL_HANDLE,
              meshletPipeline_ = VK_NULL_HANDLE, resolvePipeline_ = VK_NULL_HANDLE;
@@ -138,6 +157,7 @@ class Renderer {
   Lighting lighting_;
   MeshStats meshStats_;
 
+  float groundHalfExtent_ = 80.0f;
   bool hasScene_ = false;
   Camera camera_;
   std::vector<SpriteInstance> sprites_;

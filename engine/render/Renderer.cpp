@@ -70,8 +70,16 @@ struct MeshFrame {
   uint32_t pad0;
   glm::vec3 groundColor;
   uint32_t pad1;
+  glm::mat4 view;
+  float projectionX;
+  float projectionY;
+  uint32_t hizTexture;
+  uint32_t hizSampler;
+  glm::vec2 hizSize;
+  uint32_t instanceVisibility;
+  uint32_t pad2;
 };
-static_assert(sizeof(MeshFrame) == 288 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, sunDirection) == 224);
+static_assert(sizeof(MeshFrame) == 384 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, view) == 288);
 
 // Work buffer layout (shaders/scene.hlsli): counters, indirect arguments, two queues, the cluster list.
 constexpr VkDeviceSize kWorkHeaderBytes = 128;
@@ -79,12 +87,27 @@ constexpr VkDeviceSize kTraverseArgsOffset = 64;
 constexpr VkDeviceSize kDrawArgsOffset = 80;
 constexpr VkDeviceSize kCounterBytes = 32;
 
+struct HizPush {
+  uint32_t source;
+  uint32_t sampler;
+  uint32_t destination;
+  float sourceLevel;
+  uint32_t width, height;
+};
+
+uint32_t previousPowerOfTwo(uint32_t v) {
+  uint32_t r = 1;
+  while (r * 2 <= v) r *= 2;
+  return r;
+}
+
 struct CullPush {
   VkDeviceAddress frame;
   uint32_t pass;
 };
 struct MeshletPush {
   VkDeviceAddress frame;
+  uint32_t pass;
 };
 struct ResolvePush {
   VkDeviceAddress frame;
@@ -159,6 +182,9 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT |
                                      VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
   meshWorkIndex_ = bindless_.addStorageBuffer(meshWork_.buffer);
+  instanceVisibility_ = createDeviceBuffer(context, VkDeviceSize{kMaxInstances} * 4,
+                                           VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+  instanceVisibilityIndex_ = bindless_.addStorageBuffer(instanceVisibility_.buffer);
 
   VkSamplerCreateInfo samplerInfo{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
   samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -177,6 +203,17 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   samplerInfo.addressModeU = samplerInfo.addressModeV = samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
   VK_CHECK(vkCreateSampler(context.device, &samplerInfo, nullptr, &materialSampler_));
   materialSamplerIndex_ = bindless_.addSampler(materialSampler_);
+  // Depth pyramid reads: a bilinear footprint reduced to its minimum (the farthest depth, reversed-Z).
+  VkSamplerReductionModeCreateInfo reduction{VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO};
+  reduction.reductionMode = VK_SAMPLER_REDUCTION_MODE_MIN;
+  VkSamplerCreateInfo minInfo{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
+  minInfo.pNext = &reduction;
+  minInfo.magFilter = minInfo.minFilter = VK_FILTER_LINEAR;
+  minInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+  minInfo.addressModeU = minInfo.addressModeV = minInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+  minInfo.maxLod = VK_LOD_CLAMP_NONE;
+  VK_CHECK(vkCreateSampler(context.device, &minInfo, nullptr, &minSampler_));
+  minSamplerIndex_ = bindless_.addSampler(minSampler_);
 
   createTargets(size);
 
@@ -218,7 +255,9 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
 
   // Mesh passes.
   const VkPipelineLayout layout = bindless_.pipelineLayout();
-  cullInstancesPipeline_ = createComputePipeline(context, layout, "cull.CSInstances");
+  cullInstancesPipeline_ = createComputePipeline(context, layout, "cull.CSInstancesEarly");
+  cullInstancesLatePipeline_ = createComputePipeline(context, layout, "cull.CSInstancesLate");
+  hizPipeline_ = createComputePipeline(context, layout, "hiz.CSDownsample");
   cullPreparePipeline_ = createComputePipeline(context, layout, "cull.CSPrepare");
   cullTraversePipeline_ = createComputePipeline(context, layout, "cull.CSTraverse");
   cullPrepareDrawPipeline_ = createComputePipeline(context, layout, "cull.CSPrepareDraw");
@@ -246,9 +285,12 @@ Renderer::~Renderer() {
   vkDestroyPipeline(context_.device, tonemapPipeline_, nullptr);
   vkDestroyPipeline(context_.device, groundPipeline_, nullptr);
   vkDestroyPipeline(context_.device, spritePipeline_, nullptr);
-  for (VkPipeline p : {cullInstancesPipeline_, cullPreparePipeline_, cullTraversePipeline_, cullPrepareDrawPipeline_,
-                       meshletPipeline_, resolvePipeline_})
+  for (VkPipeline p : {cullInstancesPipeline_, cullInstancesLatePipeline_, hizPipeline_, cullPreparePipeline_,
+                       cullTraversePipeline_, cullPrepareDrawPipeline_, meshletPipeline_, resolvePipeline_})
     vkDestroyPipeline(context_.device, p, nullptr);
+  vkDestroySampler(context_.device, minSampler_, nullptr);
+  bindless_.removeStorageBuffer(instanceVisibilityIndex_);
+  destroyBuffer(context_, instanceVisibility_);
   vkDestroySampler(context_.device, materialSampler_, nullptr);
   bindless_.removeStorageBuffer(meshWorkIndex_);
   destroyBuffer(context_, meshWork_);
@@ -276,12 +318,34 @@ void Renderer::createTargets(VkExtent2D size) {
                                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
                                        VK_IMAGE_USAGE_SAMPLED_BIT});
   visibility_ = createImage(context_, {kVisibilityFormat, size, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT});
+  // Depth pyramid: power-of-two below the screen size, full mip chain, one storage view per level.
+  hizSize_ = {previousPowerOfTwo(size.width), previousPowerOfTwo(size.height)};
+  uint32_t hizLevels = 1;
+  while ((std::max(hizSize_.width, hizSize_.height) >> hizLevels) > 0) ++hizLevels;
+  ImageDesc hizDesc{VK_FORMAT_R32_SFLOAT, hizSize_, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT};
+  hizDesc.mipLevels = hizLevels;
+  hiz_ = createImage(context_, hizDesc);
+  for (uint32_t level = 0; level < hizLevels; ++level) {
+    VkImageViewCreateInfo viewInfo{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+    viewInfo.image = hiz_.image;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = VK_FORMAT_R32_SFLOAT;
+    viewInfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, level, 1, 0, 1};
+    VkImageView view;
+    VK_CHECK(vkCreateImageView(context_.device, &viewInfo, nullptr, &view));
+    hizLevelViews_.push_back(view);
+    hizLevelIndices_.push_back(bindless_.addStorageImage(view));
+  }
   // Targets keep their bindless slots for the renderer's lifetime; a resize repoints them.
   if (sceneColorIndex_ == kNoIndex) {
+    hizIndex_ = bindless_.addSampledImage(hiz_.view, VK_IMAGE_LAYOUT_GENERAL);
+    depthIndex_ = bindless_.addSampledImage(depth_.view, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
     sceneColorIndex_ = bindless_.addSampledImage(sceneColor_.view);
     sceneColorStorageIndex_ = bindless_.addStorageImage(sceneColor_.view);
     visibilityIndex_ = bindless_.addStorageImage(visibility_.view);
   } else {
+    bindless_.setSampledImage(hizIndex_, hiz_.view, VK_IMAGE_LAYOUT_GENERAL);
+    bindless_.setSampledImage(depthIndex_, depth_.view, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
     bindless_.setSampledImage(sceneColorIndex_, sceneColor_.view);
     bindless_.setStorageImage(sceneColorStorageIndex_, sceneColor_.view);
     bindless_.setStorageImage(visibilityIndex_, visibility_.view);
@@ -293,6 +357,13 @@ void Renderer::destroyTargets() {
   destroyImage(context_, depth_);
   destroyImage(context_, output_);
   destroyImage(context_, visibility_);
+  for (size_t i = 0; i < hizLevelViews_.size(); ++i) {
+    bindless_.removeStorageImage(hizLevelIndices_[i]);
+    vkDestroyImageView(context_.device, hizLevelViews_[i], nullptr);
+  }
+  hizLevelViews_.clear();
+  hizLevelIndices_.clear();
+  destroyImage(context_, hiz_);
 }
 
 void Renderer::resize(VkExtent2D size) {
@@ -312,7 +383,7 @@ Renderer::Frame& Renderer::beginFrame() {
     uint32_t c[8];
     VK_CHECK(vmaInvalidateAllocation(context_.allocator, frame.meshCounters.allocation, 0, VK_WHOLE_SIZE));
     std::memcpy(c, frame.meshCounters.mapped, sizeof(c));
-    meshStats_ = {c[5], std::min(c[2], kMaxClusters), c[3], c[4]};
+    meshStats_ = {c[5], std::min(c[2], kMaxClusters), c[3], c[4], c[6], c[7]};
     frame.countersPending = false;
   }
   return frame;
@@ -407,7 +478,7 @@ void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
   f.lodScale = std::abs(camera_.projection[1][1]) * 0.5f * static_cast<float>(size_.height) / kPixelError;
   f.screenSize = {static_cast<float>(size_.width), static_cast<float>(size_.height)};
   f.zNear = camera_.projection[3][2];
-  f.instanceCount = meshView_.instanceCount;
+  f.instanceCount = std::min(meshView_.instanceCount, kMaxInstances);
   f.meshCount = meshView_.meshCount;
   f.maxQueue = kMaxQueue;
   f.maxClusters = kMaxClusters;
@@ -422,11 +493,24 @@ void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
   f.ambientIntensity = lighting_.ambientIntensity;
   f.skyColor = lighting_.skyColor;
   f.groundColor = lighting_.groundColor;
+  f.view = camera_.view;
+  f.projectionX = camera_.projection[0][0];
+  f.projectionY = std::abs(camera_.projection[1][1]);
+  f.hizTexture = hizIndex_;
+  f.hizSampler = minSamplerIndex_;
+  f.hizSize = {static_cast<float>(hizSize_.width), static_cast<float>(hizSize_.height)};
+  f.instanceVisibility = instanceVisibilityIndex_;
   // The previous frame's passes may still read these buffers.
   memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT,
                 VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
   vkCmdUpdateBuffer(cmd, frame.meshFrame.buffer, 0, sizeof(f), &f);
   vkCmdFillBuffer(cmd, meshWork_.buffer, 0, kWorkHeaderBytes, 0);
+  // A new instance list: last frame's verdicts belong to other instances; everything starts unknown
+  // (not visible), so the late pass tests it all against the pyramid.
+  if (meshView_.instancesVersion != visibilityVersion_) {
+    vkCmdFillBuffer(cmd, instanceVisibility_.buffer, 0, VK_WHOLE_SIZE, 0);
+    visibilityVersion_ = meshView_.instancesVersion;
+  }
   memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
                 VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT |
                     VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
@@ -438,40 +522,40 @@ void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
                   VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
                   VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
   };
-
-  // Instances, then the BVH traversal one level per pass.
-  const uint32_t cullScope = gpuTimer_.begin(cmd, "cull + lod");
-  CullPush push{frameAddress, 0};
-  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cullInstancesPipeline_);
-  vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
-  vkCmdDispatch(cmd, (meshView_.instanceCount + 63) / 64, 1, 1);
-  for (uint32_t pass = 0; pass < MeshScene::kMaxTraversalDepth; ++pass) {
-    push.pass = pass;
+  // Instances (early or late), then the BVH traversal one level per pass, then the draw arguments.
+  const auto cull = [&](VkPipeline instances, uint32_t drawPass) {
+    CullPush push{frameAddress, 0};
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, instances);
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+    vkCmdDispatch(cmd, (f.instanceCount + 63) / 64, 1, 1);
+    for (uint32_t pass = 0; pass < MeshScene::kMaxTraversalDepth; ++pass) {
+      push.pass = pass;
+      computeToCompute();
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cullPreparePipeline_);
+      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+      vkCmdDispatch(cmd, 1, 1, 1);
+      computeToCompute();
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cullTraversePipeline_);
+      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+      vkCmdDispatchIndirect(cmd, meshWork_.buffer, kTraverseArgsOffset);
+    }
     computeToCompute();
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cullPreparePipeline_);
+    push.pass = drawPass;
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cullPrepareDrawPipeline_);
     vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
     vkCmdDispatch(cmd, 1, 1, 1);
-    computeToCompute();
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cullTraversePipeline_);
-    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
-    vkCmdDispatchIndirect(cmd, meshWork_.buffer, kTraverseArgsOffset);
-  }
-  computeToCompute();
-  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cullPrepareDrawPipeline_);
-  vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
-  vkCmdDispatch(cmd, 1, 1, 1);
-  memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
-                VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT |
-                    VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
-                    VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT,
-                VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_TRANSFER_READ_BIT);
-  // Counters back to the CPU for meshStats() once this frame's fence signals.
-  const VkBufferCopy counters{0, 0, kCounterBytes};
-  vkCmdCopyBuffer(cmd, meshWork_.buffer, frame.meshCounters.buffer, 1, &counters);
-  frame.countersPending = true;
-  gpuTimer_.end(cmd, cullScope);
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+                  VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT |
+                      VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
+                      VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT,
+                  VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
+                      VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT);
+  };
 
-  // Visibility buffer + depth.
+  // --- Early: what was visible last frame ---------------------------------------------------
+  uint32_t scope = gpuTimer_.begin(cmd, "cull early");
+  cull(cullInstancesPipeline_, 0);
+  gpuTimer_.end(cmd, scope);
   transition(cmd, visibility_.image, visibility_.aspect,
              {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
               VK_ACCESS_2_NONE, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT});
@@ -481,16 +565,68 @@ void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
               VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
               VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
               VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT});
+  scope = gpuTimer_.begin(cmd, "draw early");
+  recordVisibilityPass(cmd, frameAddress, 0);
+  gpuTimer_.end(cmd, scope);
+
+  // --- Depth pyramid of what the early pass drew -------------------------------------------------
+  scope = gpuTimer_.begin(cmd, "depth pyramid");
+  recordDepthPyramid(cmd);
+  gpuTimer_.end(cmd, scope);
+
+  // --- Late: everything else, tested against the pyramid ------------------------------------
+  memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT,
+                VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT,
+                VK_ACCESS_2_TRANSFER_WRITE_BIT);
+  vkCmdFillBuffer(cmd, meshWork_.buffer, 0, 8, 0);  // both traversal queues empty again
+  memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT);
+  scope = gpuTimer_.begin(cmd, "cull late");
+  cull(cullInstancesLatePipeline_, 1);
+  gpuTimer_.end(cmd, scope);
+  // Counters back to the CPU for meshStats() once this frame's fence signals.
+  const VkBufferCopy counters{0, 0, kCounterBytes};
+  vkCmdCopyBuffer(cmd, meshWork_.buffer, frame.meshCounters.buffer, 1, &counters);
+  frame.countersPending = true;
+  transition(cmd, depth_.image, depth_.aspect,
+             {VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+              VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+              VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+              VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT});
+  memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
+  scope = gpuTimer_.begin(cmd, "draw late");
+  recordVisibilityPass(cmd, frameAddress, 1);
+  gpuTimer_.end(cmd, scope);
+
+  // --- Resolve: materials shaded into the HDR scene colour -----------------------------------
+  transition(cmd, visibility_.image, visibility_.aspect,
+             {VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+              VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_READ_BIT});
+  // The previous frame may still be sampling scene colour in its tonemap pass.
+  transition(cmd, sceneColor_.image, sceneColor_.aspect,
+             {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_NONE,
+              VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
+  scope = gpuTimer_.begin(cmd, "resolve");
+  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, resolvePipeline_);
+  const ResolvePush resolvePush{frameAddress, visibilityIndex_, sceneColorStorageIndex_, kClearColor};
+  vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(resolvePush), &resolvePush);
+  vkCmdDispatch(cmd, (size_.width + 7) / 8, (size_.height + 7) / 8, 1);
+  gpuTimer_.end(cmd, scope);
+}
+
+void Renderer::recordVisibilityPass(VkCommandBuffer cmd, VkDeviceAddress frameAddress, uint32_t pass) {
+  const bool clear = pass == 0;
   VkRenderingAttachmentInfo vis{VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
   vis.imageView = visibility_.view;
   vis.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-  vis.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  vis.loadOp = clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
   vis.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
   vis.clearValue.color.uint32[0] = 0xFFFFFFFFu;  // empty
   VkRenderingAttachmentInfo depth{VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
   depth.imageView = depth_.view;
   depth.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-  depth.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  depth.loadOp = clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
   depth.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
   depth.clearValue.depthStencil = {0.0f, 0};
   VkRenderingInfo rendering{VK_STRUCTURE_TYPE_RENDERING_INFO};
@@ -499,30 +635,35 @@ void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
   rendering.colorAttachmentCount = 1;
   rendering.pColorAttachments = &vis;
   rendering.pDepthAttachment = &depth;
-  const uint32_t visScope = gpuTimer_.begin(cmd, "visibility");
   vkCmdBeginRendering(cmd, &rendering);
   setViewport(cmd, size_);
   vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, meshletPipeline_);
-  const MeshletPush meshletPush{frameAddress};
-  vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(meshletPush), &meshletPush);
+  const MeshletPush push{frameAddress, pass};
+  vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
   vkCmdDrawMeshTasksIndirectEXT(cmd, meshWork_.buffer, kDrawArgsOffset, 1, 12);
   vkCmdEndRendering(cmd);
-  gpuTimer_.end(cmd, visScope);
+}
 
-  // Resolve: materials shaded into the HDR scene colour.
-  transition(cmd, visibility_.image, visibility_.aspect,
-             {VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-              VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_READ_BIT});
-  // The previous frame may still be sampling scene colour in its tonemap pass.
-  transition(cmd, sceneColor_.image, sceneColor_.aspect,
-             {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_NONE,
-              VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
-  const uint32_t resolveScope = gpuTimer_.begin(cmd, "resolve");
-  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, resolvePipeline_);
-  const ResolvePush resolvePush{frameAddress, visibilityIndex_, sceneColorStorageIndex_, kClearColor};
-  vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(resolvePush), &resolvePush);
-  vkCmdDispatch(cmd, (size_.width + 7) / 8, (size_.height + 7) / 8, 1);
-  gpuTimer_.end(cmd, resolveScope);
+void Renderer::recordDepthPyramid(VkCommandBuffer cmd) {
+  transition(cmd, depth_.image, depth_.aspect,
+             {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+              VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+              VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
+  // Last frame's late culling sampled the pyramid; its contents are rebuilt from scratch.
+  transition(cmd, hiz_.image, hiz_.aspect,
+             {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT,
+              VK_ACCESS_2_NONE, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
+  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, hizPipeline_);
+  for (uint32_t level = 0; level < hizLevelIndices_.size(); ++level) {
+    const uint32_t w = std::max(1u, hizSize_.width >> level), h = std::max(1u, hizSize_.height >> level);
+    const HizPush push{level == 0 ? depthIndex_ : hizIndex_, minSamplerIndex_, hizLevelIndices_[level],
+                       level == 0 ? 0.0f : static_cast<float>(level - 1), w, h};
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+    vkCmdDispatch(cmd, (w + 7) / 8, (h + 7) / 8, 1);
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+                  VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT,
+                  VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
+  }
 }
 
 uint32_t Renderer::gatherWaits(Frame& frame, bool swapImage, std::array<VkSemaphoreSubmitInfo, 2>& waits) const {
@@ -600,7 +741,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   if (hasScene_) {
     const glm::mat4 viewProjection = camera_.viewProjection();
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, groundPipeline_);
-    const GroundPush groundPush{viewProjection, 80.0f};
+    const GroundPush groundPush{viewProjection, groundHalfExtent_};
     vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(groundPush), &groundPush);
     vkCmdDraw(cmd, 6, 1, 0, 0);
     if (!sprites_.empty()) {
