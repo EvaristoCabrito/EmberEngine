@@ -192,6 +192,9 @@ over any body clip.
 
 - **Gameplay grid ≠ render structure.** The hex grid is a gameplay layer (movement, targeting, footprints)
   laid over a real 3D world. Map size is not tied to hex count.
+- **Two board modes from one map (R8):** the map stores per-hex gameplay data (height, terrain type) plus
+  the natural ground; the terrain system renders it either as stepped hex columns or as seamless ground,
+  switchable at runtime, with every hex centre at the same height in both.
 - **World cells:** the world is divided into fixed-size cells streamed by distance; a map or dungeon is a
   set of cells. Positions are stored relative to cell origins so precision holds at any world size.
 - **Terrain:** height via GPU clipmaps; materials by **index** (each texel stores material ids + blend, not
@@ -247,6 +250,32 @@ spell effects, realistic ground textures, 2D props combined with real 3D objects
   detail at the tactics camera's distance), the hex grid laid over them, not painted into them.
 - R6 **2D props and real 3D objects together:** photoreal 2D prop cards mixed with real 3D buildings
   in one consistent light (the 2D/3D split in §7.1).
+- R7 **Fog of war (the user's specification, 2026-10-14): a rendering requirement and an acceptance test
+  for the world renderer.** Three states per hex/area:
+  1. *Unexplored:* absolute black. Dense, literal fog may gather along the boundary as an uncertain
+     transition. Nothing beyond the boundary (terrain, units) is ever revealed by lights, spells or
+     atmospheric effects; unexplored space stays black even where fog would otherwise be lit.
+  2. *Explored, out of line of sight:* remembered territory, recognisable under strong darkening, shown in
+     its last-known state; current enemies, moving units and other dynamic details are hidden until line of
+     sight returns. Dense fog adds depth and obscures distant detail. Light from visible areas must not
+     reveal hidden objects.
+  3. *Visible:* full world rendering (dynamic lighting, environmental effects). Atmospheric fog may exist
+     here but must never be confused with the tactical mask.
+  The literal fog is **world-space volumetric fog constrained by tactical visibility**, not a translucent
+  plane over hidden tiles: visible depth, soft density variation, subtle drift; it gathers in valleys,
+  corridors and around ruins near the explored boundary. Discovery makes the black boundary recede and
+  reveals the environment through the fog; losing line of sight fades terrain to its dark remembered state
+  while dynamic entities disappear. **The separation is the rule: tactical visibility decides what the
+  player may see; volumetric fog decides how the visible atmosphere looks. Lighting, shadows, VFX and fog
+  scattering read the visibility mask; none bypasses it.** Acceptance: the next visual prototype (D1)
+  shows all three states together with a moving light and a spell effect, and proves neither reveals
+  unexplored terrain.
+- R8 **Two board modes, the player's choice (the user, 2026-10-14):** a **hexed board** (each hex a
+  column at its own height, stepped like Tactics Ogre / Triangle Strategy) or a **seamless board**
+  (one continuous natural terrain with the hex grid drawn over it). One map, authored once, renders both
+  ways; switching is a player setting at runtime, not a different map. Gameplay is identical in both:
+  the same hexes, heights, ranges and line of sight; a unit stands at the same height on its hex in either
+  mode. Lighting, shadows, fog of war (R7), terrain materials, props and buildings work in both.
 
 ### 7.1 The 2.75D frame: 2D art in real light (researched 2026-10-14, to be validated)
 
@@ -352,6 +381,13 @@ acceptable as is.** Its silhouette and speed are; its normals (and its missing c
 the original: normal, colour and ORM maps baked from the original onto the proxy, then measured again
 with the same tool against the same numbers.
 
+**Paused (the user, 2026-10-14): none of these assets are final.** Whether proxies are needed at all
+depends on how the final buildings are made: one continuous surface (typical of generated models)
+simplifies under cluster LOD; kit-bashed pieces like this cottage do not. The question is settled with a
+representative building (made in Blender, one continuous mesh) in the battle test, not by optimising
+placeholders. The unfinished bake (xatlas atlas, ray-cast bake, proxy format; not compiled, not run) is
+kept on the branch `wip/proxy-bake`.
+
 ## 8. Gameplay and tools
 
 - **ECS** for game objects; battle rules, campaign and saves port from Engine2's logic (rules, not its renderer).
@@ -370,7 +406,7 @@ Each milestone ends with a test on real game data, not a demo scene.
 | M1 | Core: job system, allocators, async file IO, `.pak` archive, asset handles, profiler overlay | ✅ 10,000 assets (332 MB, 172 MB compressed) all requested in one frame, streamed in ~0.1 s at ~1.6 GB/s from disk, every byte verified against its source; worst main-thread frame 3.4–8.6 ms against the 16.7 ms budget (release build, Ryzen 9 5950X, NVMe) |
 | M2 | Sprite cooker + sprite residency | **every character in Engine2's manifest** cooked; a parade that plays every clip of every character stays under a fixed GPU budget smaller than the roster, with no frame over budget and no clip seen at tail quality when it was requested ahead — at the finished-game workload (×10, §1). **Measured (2026-10-14, RX 6400, 60 Hz, 512 MB budget, clips in a fixed-seed shuffled order):** today's roster, 375 clips (2.63 GB GPU): PASS, 0 late frames, worst main-thread frame 3.9 ms, peak demand 227 MB, 306 evictions; debug with Vulkan validation: PASS, 0 errors. **×10 = finished game, 3,750 clips (26.3 GB GPU): PASS, 0 late frames, worst frame 4.6 ms, peak demand 322 MB, 3,668 evictions, 0 requests without room.** Earlier runs, kept for the record: ×2 (a misreading of the workload) passed; ×10 in roster order failed (421 late frames) because the pack's 10 copies of one clip shared the stage, ~900 MB in one frame, more than the budget, which no real scene does. |
 | M3 | 3D meshes: GLB → cluster LOD, GPU-driven culling, PBR; 2D cards at scale | **a large-battle scene with real assets at real density, every frame ≤ 16.7 ms (CPU and GPU) on this PC (RX 6400), quality never lowered to pass, 0 validation errors in debug** (the user, 2026-10-14). Measured from the 243 Ember maps (Engine2's copies): largest map 64×52 hexes; densest 3D architecture 0.20 pieces/hex (deep crypt: 392 on 1,920); densest 2D decor 0.21 cards/hex (wisp forest: 335 on 1,584); most units 33 (30 enemies). **Those maps were bare and Engine2 already stuttered on them (the user, 2026-10-14), so they are a floor, not the finished game's density.** The scene: a battlefield of 128×104 hexes (4× the largest map's area) dressed at **10× the measured densities, both at once**: ~27,000 real 3D building pieces (2.0/hex; the cooked GLBs until Meshy buildings exist) and ~28,000 2D decor cards (2.1/hex) from the 443 decoration images at full native resolution, plus 8 MCs and 64 enemies (2× the largest measured enemy count) animating from the M2 sprite pipeline; measured zoomed out with the whole field in view, at the default zoom, and during a free-orbit sweep. Scope numbers can be raised by the user, never lowered to pass. |
-| M4 | World cells + terrain | a world 10× the largest Ember map streams while flying across it, no hitches |
+| M4 | World cells + terrain | a world 10× the largest Ember map streams while flying across it, no hitches, in both board modes (R8), switched at runtime without a reload |
 | M5 | Lighting and atmosphere | sprites and 3D lit by the same lights and shadows, fog, sky, moon |
 | M6 | Editor | build a map without touching code |
 | M7 | Gameplay port + cutscene timeline | a battle and a cutscene playable end to end |
@@ -383,6 +419,6 @@ when it is measured and shown, never claimed.
 
 | # | Demonstration | Shows | Built on |
 |---|---|---|---|
-| D1 | **Lit sprites in a spatial world** | a dynamic light visibly lights a character and the terrain near it, with coherent depth and occlusion (the character stands in the world, passes in front of and behind things, casts and receives shadow) | M3 + a test terrain + the §7.1 card lighting inside one clustered light pass; it validates §7.1 before M5 is built on it |
+| D1 | **Lit sprites in a spatial world** | a dynamic light visibly lights a character and the terrain near it, with coherent depth and occlusion (the character stands in the world, passes in front of and behind things, casts and receives shadow); and the fog of war (R7): unexplored, remembered and visible areas together, with a moving light and a spell effect, neither revealing unexplored terrain or hidden units | M3 + a test terrain + the §7.1 card lighting inside one clustered light pass + the tactical visibility mask and volumetric fog (R7); it validates §7.1 before M5 is built on it |
 | D2 | **A complete environmental scene** | terrain, props, atmospheric depth, shadows and lighting working together | M4 + M5 |
 | D3 | **A cinematic stress scene** | multiple dynamic lights, spell effects, particles and animated characters together, inside a measured frame budget on the dev GPU | M5 + effects/particles |

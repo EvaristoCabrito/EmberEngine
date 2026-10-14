@@ -104,15 +104,19 @@ build.bat release          # or debug; output in build/<config>/bin
     the lighting). All in ARCHITECTURE.md §7.2.
   - Lighting in the resolve is a stand-in; the 2D-card lighting model is undecided (D1 decides it, §7.1).
 
-## Next (the user chooses; both offered)
+## Next
 
-1. **Proxy LOD for real:** keep the proxy's shape/speed, bake normal + colour + ORM maps from the original onto
-   it (UV atlas for the proxy, ray-cast bake), switch per instance once the proxy's error is under a pixel; then
-   re-run `--compare` (target: shading-normal error near the original-at-LOD rows) and `--battle --unpaced`.
-   Check library versions first (e.g. a UV-atlas library such as xatlas).
-2. **Vsync check:** run the battle in a window with vsync to see whether GPU power saving ever makes a frame
-   miss its vblank (off-screen pacing can't show it).
-Then: M3 exit test passing with real (or properly proxied) buildings → D1 (lit sprites in a spatial world).
+- **Proxy bake paused** (the user, 2026-10-14: none of the assets are final). Unfinished code (xatlas,
+  ray-cast bake, format v2; not compiled, not run) is on branch `wip/proxy-bake`, off main. Whether proxies
+  are needed is settled later with a representative building (Blender, one continuous mesh, as Meshy
+  makes them) in the battle test. Meshy stays unconnected until the engine is worth paying for.
+- **Offered, waiting on the user's go:** D1 (lit sprites in a spatial world + fog of war R7) with free
+  representative assets (Engine2 sprites, Blender-made building/terrain/props). Research the card lighting
+  (§7.1) before code.
+- New requirements in ARCHITECTURE §7.0: **R7 fog of war** (three states; tactical visibility is a mask
+  every light, shadow, VFX and fog reads) and **R8 two board modes** (hexed stepped columns or seamless
+  terrain, the player's runtime choice, one map, identical gameplay).
+- Open question raised: an importer for the old editor's maps and dialogues (not yet in the plan; asked).
 
 ## Waiting on the user
 
