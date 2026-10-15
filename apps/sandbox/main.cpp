@@ -26,7 +26,8 @@
 //        [--measure SECONDS]: camera turn + zoom with everything animating; frame times; exit 3 if any frame > 16.7 ms.
 //        Fog of war (R7): [--fog 0|1] (default: the map's own flag) [--scout] (the first party unit walks to the
 //        farthest enemy and back). Pixel checks: [--scene-time T] (scene clock pinned) [--no-ui] [--debug-view 3]
-//        (the fog mask each surface read), then tools/scripts/check_fog.py. [--volume 0]: no volumetric fog.
+//        (the fog mask each surface read), then tools/scripts/check_fog.py. [--volume 0]: no volumetric fog;
+//        [--fog-look N]: which saved fog look (render/FogLooks.h; F9 cycles them in a window).
 //   Sandbox.exe --meshes meshes.pak [--grid N]
 //        Mesh scene (M3 bring-up): every cooked mesh in the archive on an N x N grid, drawn GPU-driven.
 //   Sandbox.exe --sprites roster.pak [--budget MB]
@@ -95,6 +96,7 @@ struct Options {
   float measureSeconds = 0.0f;
   int fog = -1;
   bool scout = false, noUi = false, volume = true;
+  int fogLook = 3;
   float sceneTime = -1.0f;
   uint32_t debugView = 0;
   std::string scene;
@@ -143,6 +145,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--fog" && hasValue) o.fog = std::atoi(argv[++i]);
     else if (arg == "--scout") o.scout = true;
     else if (arg == "--volume" && hasValue) o.volume = std::atoi(argv[++i]) != 0;
+    else if (arg == "--fog-look" && hasValue) o.fogLook = std::atoi(argv[++i]);
     else if (arg == "--scene-time" && hasValue) o.sceneTime = static_cast<float>(std::atof(argv[++i]));
     else if (arg == "--debug-view" && hasValue) o.debugView = static_cast<uint32_t>(std::atoi(argv[++i]));
     else if (arg == "--no-ui") o.noUi = true;
@@ -393,6 +396,7 @@ std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Rende
     m.fog = o.fog;
     m.scout = o.scout;
     m.volume = o.volume;
+    m.fogLook = o.fogLook;
     m.sceneTime = o.sceneTime;
     renderer.setDebugView(o.debugView);
     return std::make_unique<MapStage>(context, renderer, assets, m);

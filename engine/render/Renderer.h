@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "render/BoardGround.h"
+#include "render/FogLooks.h"
 #include "render/Camera.h"
 #include "render/MeshScene.h"
 #include "render/SpriteDraw.h"
@@ -139,20 +140,12 @@ class Renderer {
     float meanGround = 0.0f;                  // ground height where the board has none
   };
   void setVolumetricFog(const VolumetricFog& fog) { volumetric_ = fog; }
-  // The fog of war's fog (R7; shaders/cloud.hlsl): soft volumetric fog, densest over never-seen ground,
-  // thinner over remembered ground, none in sight. Drawn only while a fog-of-war mask is set.
+  // The fog of war's mist (R7): one of the numbered looks in render/FogLooks.h (each frozen in its own
+  // shader, shaders/fog_lookNNN.hlsl), drawn only while a fog-of-war mask is set.
   struct FogBank {
     bool enabled = false;
-    glm::vec2 boardCenter{0.0f};
-    float baseY = 0.0f, topY = 5.0f;       // the slab the fog fills (it thins to nothing below topY)
-    float extinction = 0.75f;              // per world unit at full density (black still shows through)
-    float scaleHeight = 1.1f;              // density falls by e over this height above the ground
-    float fadeRadius = 60.0f;              // thins into the dark this far from the board's centre
-    float rememberedCover = 0.3f;          // density over remembered ground, relative to never-seen
-    glm::vec3 wind{0.35f, 0.0f, 0.15f};    // drift, world units per second
-    float noiseScale = 0.06f;              // variation frequency per world unit
-    glm::vec3 albedo{0.5f, 0.52f, 0.56f};  // grey, faintly cool
-    float ambient = 0.8f;
+    uint32_t look = 2;  // index into fogLooks(); 2 = look 003 (the one the user kept)
+    FogScene scene;
   };
   void setFogBank(const FogBank& bank) { fogBank_ = bank; }
   // Half the side of the square ground plane under the scene (metres, centred on the origin).
@@ -237,11 +230,15 @@ class Renderer {
   glm::mat4 previousVolumeViewProjection_{1.0f};
   // Fog bank: the tiling noise volume (made once), the half-resolution march result.
   FogBank fogBank_;
-  Image bankNoise_, bankMarch_;
-  Buffer bankNoiseStaging_;
-  uint32_t bankNoiseIndex_ = kNoIndex, bankMarchStorage_ = kNoIndex, bankMarchSampled_ = kNoIndex;
-  VkPipeline bankMarchPipeline_ = VK_NULL_HANDLE, bankCompositePipeline_ = VK_NULL_HANDLE;
-  bool bankNoiseUploaded_ = false, bankThisFrame_ = false;
+  Image bankMarch_;
+  Image bankNoise_[static_cast<size_t>(FogNoise::Count)];
+  Buffer bankNoiseStaging_[static_cast<size_t>(FogNoise::Count)];
+  uint32_t bankNoiseIndex_[static_cast<size_t>(FogNoise::Count)] = {kNoIndex, kNoIndex, kNoIndex};
+  bool bankNoiseUploaded_[static_cast<size_t>(FogNoise::Count)] = {};
+  uint32_t bankMarchStorage_ = kNoIndex, bankMarchSampled_ = kNoIndex;
+  std::vector<VkPipeline> bankMarchPipelines_, bankCompositePipelines_;  // per look
+  bool bankThisFrame_ = false;
+  uint32_t bankLook_ = 0;  // the look this frame draws
   uint32_t bankFrameIndex_ = 0;
   // Fog of war: the CPU copy of the mask (also used to dim local lights by their source's sight), its image.
   bool fogOn_ = false, fogUploadPending_ = false;

@@ -33,6 +33,7 @@
 #include "Stage.h"
 #include "core/Log.h"
 #include "render/BoardGround.h"
+#include "render/FogLooks.h"
 #include "render/Renderer.h"
 #include "rhi/UploadQueue.h"
 #include "render/MeshScene.h"
@@ -70,6 +71,7 @@ struct MapStageOptions {
   bool scout = false;
   // Volumetric fog (R7's literal fog, shaders/volume.hlsl): on unless switched off (--volume 0).
   bool volume = true;
+  int fogLook = 3;  // the fog look shown first (render/FogLooks.h numbers)
   // Scene clock pinned to this many seconds (< 0 = real time): identical frames for paired captures.
   float sceneTime = -1.0f;
 };
@@ -86,6 +88,8 @@ class MapStage final : public Stage {
         look_(options.look),
         options_(options) {
     yaw_ += glm::radians(options.turnDegrees);
+    for (uint32_t i = 0; i < fogLooks().size(); ++i)
+      if (options.fogLook == std::atoi(fogLooks()[i].number)) fogLook_ = i;
     pitch_ += glm::radians(options.tiltDegrees);
     layers_ = options.layers;
     data_ = e2::BoardData::load(options.boardData);
@@ -113,9 +117,10 @@ class MapStage final : public Stage {
     boardWidth_ = static_cast<float>(b.x1 - b.x0);
     boardDepth_ = static_cast<float>(b.z1 - b.z0);
     // The sun's shadow covers the board's bounding sphere (ground from y = 0 to its highest cell).
-    double top = 0;
-    for (const e2::Cell& c : board_->cells()) top = std::max(top, c.groundY);
+    double top = 0, low = 1e9;
+    for (const e2::Cell& c : board_->cells()) top = std::max(top, c.groundY), low = std::min(low, c.groundY);
     boardTop_ = static_cast<float>(top);
+    groundLow_ = static_cast<float>(low);
     boardCenter_ = {target_.x, static_cast<float>(top * 0.5), target_.z};
     boardRadius_ = 0.5f * std::sqrt(boardWidth_ * boardWidth_ + boardDepth_ * boardDepth_ + static_cast<float>(top * top)) + 1.0f;
     target_.x += options.offset.x * boardWidth_;
@@ -193,12 +198,18 @@ class MapStage final : public Stage {
     // The froxel fog is the air's haze in sight; the fog of war's bank is drawn by the fog bank pass.
     volume.boundaryDensity = 0.0f;
     renderer.setVolumetricFog(volume);
+    // The fog of war's mist: the numbered look on show (render/FogLooks.h; F9 cycles them).
     Renderer::FogBank bank;
     bank.enabled = fog_.has_value() && options_.volume;
-    bank.boardCenter = {boardCenter_.x, boardCenter_.z};
-    bank.baseY = meanGround_ - 1.0f;
-    bank.topY = boardTop_ + 3.0f;
-    bank.fadeRadius = boardRadius_ * 2.2f;
+    bank.look = fogLook_;
+    bank.scene.boardCenter = {boardCenter_.x, boardCenter_.z};
+    bank.scene.boardRadius = boardRadius_;
+    bank.scene.meanGround = meanGround_;
+    bank.scene.groundLow = groundLow_;
+    bank.scene.groundHigh = boardTop_;
+    const e2::Board::Bounds bb = board_->bounds();
+    bank.scene.board = {bb.x0, bb.z0, bb.x1, bb.z1};
+    bank.scene.partyCenter = partyCenter();
     renderer.setFogBank(bank);
     renderer.waitFor(uploads_.timeline(),
                      std::max({ground_.uploadWaitValue(), sprites_.uploadWaitValue(), meshes_.uploadWaitValue()}));
@@ -252,6 +263,7 @@ class MapStage final : public Stage {
         case SDLK_F6: layers_ ^= 2u; break;  // shadows
         case SDLK_F7: layers_ ^= 4u; break;  // indirect
         case SDLK_F8: layers_ ^= 8u; break;  // local lights
+        case SDLK_F9: fogLook_ = (fogLook_ + 1) % static_cast<uint32_t>(fogLooks().size()); break;  // next fog look
         default: break;
       }
     }
@@ -277,6 +289,8 @@ class MapStage final : public Stage {
                   scene_->cards.size(), scene_->units.size(), missing_, scene_->cards.size() + scene_->units.size(), modelCount_,
                   ss.residentBytes / 1048576.0);
     }
+    if (fog_ && options_.volume)
+      ImGui::Text("fog look %s (F9 next, %zu saved): %s", fogLooks()[fogLook_].number, fogLooks().size(), fogLooks()[fogLook_].note);
     if (fog_)
       ImGui::Text("fog of war: %d in sight, %d remembered, %d never seen; %u enemies hidden; last update %.2f ms", fogCounts_[2],
                   fogCounts_[1], fogCounts_[0], hiddenUnits_, lastFogMs_);
@@ -525,6 +539,20 @@ class MapStage final : public Stage {
     }
   }
 
+  // Where the party stands (the swirl turns round it): the middle of the living player units.
+  glm::vec2 partyCenter() const {
+    if (!scene_) return {boardCenter_.x, boardCenter_.z};
+    glm::vec2 sum{0.0f};
+    int n = 0;
+    for (size_t i = 0; i < scene_->units.size(); ++i) {
+      const e2::SceneUnit& u = scene_->units[i];
+      if (u.side != "player") continue;
+      sum += static_cast<int>(i) == hero_ ? glm::vec2(heroAt_.x, heroAt_.z) : glm::vec2(u.x, u.z);
+      ++n;
+    }
+    return n ? sum / static_cast<float>(n) : glm::vec2(boardCenter_.x, boardCenter_.z);
+  }
+
   // The party: the first player unit is the hero (test lights, the scout); its walk goes to the farthest enemy.
   void setUpParty() {
     for (size_t i = 0; i < scene_->units.size(); ++i)
@@ -714,7 +742,8 @@ class MapStage final : public Stage {
   int hero_ = -1;
   glm::vec3 heroAt_{0.0f};
   e2::HexPoint heroHex_;
-  float meanGround_ = 0.0f, boardTop_ = 0.0f;
+  float meanGround_ = 0.0f, boardTop_ = 0.0f, groundLow_ = 0.0f;
+  uint32_t fogLook_ = 2;  // index into fogLooks(): look 003 unless --fog-look says otherwise
   std::array<int, 3> fogCounts_{};
   uint32_t hiddenUnits_ = 0;
   double lastFogMs_ = 0.0;
