@@ -1,0 +1,722 @@
+{
+ "source": "Exported from Engine2 (src/map/board.ts, src/ember/tileVariants.ts, src/render/groundSets.ts) by tools/scripts/engine2/export_board.ts",
+ "constants": {
+  "R": 1,
+  "STEP": 1,
+  "MOUNTAIN_ROCK": 7,
+  "MOUNTAIN_SNOW": 11,
+  "LEVEL_MIN": -1,
+  "LEVEL_MAX": 15,
+  "BASE_LEVELS": 2
+ },
+ "surfaces": {
+  "grass": 0,
+  "forest": 1,
+  "pavers": 2,
+  "snow": 3,
+  "rock": 4,
+  "gravel": 5,
+  "ash": 6,
+  "plains049": 7
+ },
+ "terrain": {
+  "plains": {
+   "name": "Planície",
+   "surface": "grass",
+   "passable": true
+  },
+  "woods": {
+   "name": "Bosque",
+   "surface": "forest",
+   "passable": true
+  },
+  "ruins": {
+   "name": "Ruínas",
+   "surface": "pavers",
+   "passable": true
+  },
+  "water": {
+   "name": "Água",
+   "surface": "gravel",
+   "passable": false
+  },
+  "ember": {
+   "name": "Brasa",
+   "surface": "ash",
+   "passable": true
+  },
+  "hill": {
+   "name": "Colina",
+   "surface": "grass",
+   "passable": true,
+   "minLevel": 1
+  },
+  "flame": {
+   "name": "Chama",
+   "surface": "ash",
+   "passable": true
+  },
+  "column": {
+   "name": "Coluna",
+   "surface": "rock",
+   "passable": false,
+   "raise": 4
+  },
+  "nave": {
+   "name": "Laje",
+   "surface": "pavers",
+   "passable": true
+  },
+  "barricade": {
+   "name": "Barricada",
+   "surface": "grass",
+   "passable": false
+  },
+  "door": {
+   "name": "Porta trancada",
+   "surface": "pavers",
+   "passable": false
+  },
+  "void": {
+   "name": "Vazio",
+   "surface": "void",
+   "passable": false
+  },
+  "snow": {
+   "name": "Neve",
+   "surface": "snow",
+   "passable": true
+  }
+ },
+ "groundLayerTerrains": [
+  "plains",
+  "woods",
+  "ruins",
+  "water",
+  "ember",
+  "hill",
+  "flame",
+  "column",
+  "nave",
+  "barricade",
+  "door",
+  "snow"
+ ],
+ "groundLayerCount": 40,
+ "groundLayers": [
+  {
+   "index": 0,
+   "key": "plains",
+   "color": "/game/ground-claude/plains-v2/color.png",
+   "normal": "/game/ground-claude/plains-v2/normal.png",
+   "rough": "/game/ground-claude/plains-v2/rough.png"
+  },
+  {
+   "index": 1,
+   "key": "woods",
+   "color": "/game/ground-claude/woods/color.png",
+   "normal": "/game/ground-claude/woods/normal.png",
+   "rough": "/game/ground-claude/woods/rough.png"
+  },
+  {
+   "index": 2,
+   "key": "ruins",
+   "color": "/game/ground-claude/ruins/color.png",
+   "normal": "/game/ground-claude/ruins/normal.png",
+   "rough": "/game/ground-claude/ruins/rough.png"
+  },
+  {
+   "index": 3,
+   "key": "water",
+   "color": "/game/ground-claude/water/color.png",
+   "normal": "/game/ground-claude/water/normal.png",
+   "rough": "/game/ground-claude/water/rough.png"
+  },
+  {
+   "index": 4,
+   "key": "ember",
+   "color": "/game/ground-claude/ember/color.png",
+   "normal": "/game/ground-claude/ember/normal.png",
+   "rough": "/game/ground-claude/ember/rough.png"
+  },
+  {
+   "index": 5,
+   "key": "hill",
+   "color": "/game/ground-claude/hill/color.png",
+   "normal": "/game/ground-claude/hill/normal.png",
+   "rough": "/game/ground-claude/hill/rough.png"
+  },
+  {
+   "index": 6,
+   "key": "flame",
+   "color": "/game/ground-claude/flame/color.png",
+   "normal": "/game/ground-claude/flame/normal.png",
+   "rough": "/game/ground-claude/flame/rough.png"
+  },
+  {
+   "index": 7,
+   "key": "column",
+   "color": "/game/ground-claude/column/color.png",
+   "normal": "/game/ground-claude/column/normal.png",
+   "rough": "/game/ground-claude/column/rough.png"
+  },
+  {
+   "index": 8,
+   "key": "nave",
+   "color": "/game/ground-claude/nave/color.png",
+   "normal": "/game/ground-claude/nave/normal.png",
+   "rough": "/game/ground-claude/nave/rough.png"
+  },
+  {
+   "index": 9,
+   "key": "barricade",
+   "color": "/game/ground-claude/barricade/color.png",
+   "normal": "/game/ground-claude/barricade/normal.png",
+   "rough": "/game/ground-claude/barricade/rough.png"
+  },
+  {
+   "index": 10,
+   "key": "door",
+   "color": "/game/ground-claude/door/color.png",
+   "normal": "/game/ground-claude/door/normal.png",
+   "rough": "/game/ground-claude/door/rough.png"
+  },
+  {
+   "index": 11,
+   "key": "snow",
+   "color": "/game/ground-claude/snow/color.png",
+   "normal": "/game/ground-claude/snow/normal.png",
+   "rough": "/game/ground-claude/snow/rough.png"
+  },
+  {
+   "index": 12,
+   "key": "city",
+   "absent": true
+  },
+  {
+   "index": 13,
+   "key": "shallow-water",
+   "absent": true
+  },
+  {
+   "index": 14,
+   "key": "river-rocks",
+   "absent": true
+  },
+  {
+   "index": 15,
+   "key": "variant-plains-meadow-v2",
+   "relief": 0.08,
+   "color": "/game/ground-variant-tiles/plains-meadow-v2.png",
+   "normal": "/game/ground-variants-3d/variant-plains-meadow-v2/normal.png",
+   "rough": "/game/ground-variants-3d/variant-plains-meadow-v2/rough.png",
+   "reliefGrid": "/game/ground-variants-3d/variant-plains-meadow-v2/relief.json"
+  },
+  {
+   "index": 16,
+   "key": "variant-plains-vivid",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/plains-vivid.png",
+   "normal": "/game/ground-variants-3d/variant-plains-vivid/normal.png",
+   "rough": "/game/ground-variants-3d/variant-plains-vivid/rough.png",
+   "reliefGrid": null
+  },
+  {
+   "index": 17,
+   "key": "variant-barricade-earth-v2",
+   "relief": 0.12,
+   "color": "/game/ground-variant-tiles/barricade-earth-v2.png",
+   "normal": "/game/ground-variants-3d/variant-barricade-earth-v2/normal.png",
+   "rough": "/game/ground-variants-3d/variant-barricade-earth-v2/rough.png",
+   "reliefGrid": "/game/ground-variants-3d/variant-barricade-earth-v2/relief.json"
+  },
+  {
+   "index": 18,
+   "key": "variant-woods-floor-v2",
+   "relief": 0.1,
+   "color": "/game/ground-variant-tiles/woods-floor-v2.png",
+   "normal": "/game/ground-variants-3d/variant-woods-floor-v2/normal.png",
+   "rough": "/game/ground-variants-3d/variant-woods-floor-v2/rough.png",
+   "reliefGrid": "/game/ground-variants-3d/variant-woods-floor-v2/relief.json"
+  },
+  {
+   "index": 19,
+   "key": "photo-plains",
+   "relief": 0.08,
+   "color": "/game/ground-variant-tiles/../ground-engine2-v4/plains/color.png",
+   "normal": "/game/ground-variants-3d/photo-plains/normal.png",
+   "rough": "/game/ground-variants-3d/photo-plains/rough.png",
+   "reliefGrid": "/game/ground-variants-3d/photo-plains/relief.json"
+  },
+  {
+   "index": 20,
+   "key": "photo-city",
+   "relief": 0.06,
+   "color": "/game/ground-variant-tiles/../ground-engine2-v4/city/color.png",
+   "normal": "/game/ground-variants-3d/photo-city/normal.png",
+   "rough": "/game/ground-variants-3d/photo-city/rough.png",
+   "reliefGrid": "/game/ground-variants-3d/photo-city/relief.json"
+  },
+  {
+   "index": 21,
+   "key": "photo-woods",
+   "relief": 0.12,
+   "color": "/game/ground-variant-tiles/../ground-engine2-v4/woods/color.png",
+   "normal": "/game/ground-variants-3d/photo-woods/normal.png",
+   "rough": "/game/ground-variants-3d/photo-woods/rough.png",
+   "reliefGrid": "/game/ground-variants-3d/photo-woods/relief.json"
+  },
+  {
+   "index": 22,
+   "key": "photo-ruins",
+   "relief": 0.16,
+   "color": "/game/ground-variant-tiles/../ground-engine2-v4/ruins/color.png",
+   "normal": "/game/ground-variants-3d/photo-ruins/normal.png",
+   "rough": "/game/ground-variants-3d/photo-ruins/rough.png",
+   "reliefGrid": "/game/ground-variants-3d/photo-ruins/relief.json"
+  },
+  {
+   "index": 23,
+   "key": "photo-shallow-water",
+   "relief": 0.1,
+   "color": "/game/ground-variant-tiles/../ground-engine2-v4/shallow-water/color.png",
+   "normal": "/game/ground-variants-3d/photo-shallow-water/normal.png",
+   "rough": "/game/ground-variants-3d/photo-shallow-water/rough.png",
+   "reliefGrid": "/game/ground-variants-3d/photo-shallow-water/relief.json"
+  },
+  {
+   "index": 24,
+   "key": "photo-river-rocks",
+   "relief": 0.24,
+   "color": "/game/ground-variant-tiles/../ground-engine2-v4/river-rocks/color.png",
+   "normal": "/game/ground-variants-3d/photo-river-rocks/normal.png",
+   "rough": "/game/ground-variants-3d/photo-river-rocks/rough.png",
+   "reliefGrid": "/game/ground-variants-3d/photo-river-rocks/relief.json"
+  },
+  {
+   "index": 25,
+   "key": "photo-ember",
+   "relief": 0.1,
+   "color": "/game/ground-variant-tiles/../ground-engine2-v4/ember/color.png",
+   "normal": "/game/ground-variants-3d/photo-ember/normal.png",
+   "rough": "/game/ground-variants-3d/photo-ember/rough.png",
+   "reliefGrid": "/game/ground-variants-3d/photo-ember/relief.json"
+  },
+  {
+   "index": 26,
+   "key": "photo-hill",
+   "relief": 0.12,
+   "color": "/game/ground-variant-tiles/../ground-engine2-v4/hill/color.png",
+   "normal": "/game/ground-variants-3d/photo-hill/normal.png",
+   "rough": "/game/ground-variants-3d/photo-hill/rough.png",
+   "reliefGrid": "/game/ground-variants-3d/photo-hill/relief.json"
+  },
+  {
+   "index": 27,
+   "key": "photo-flame",
+   "relief": 0.1,
+   "color": "/game/ground-variant-tiles/../ground-engine2-v4/flame/color.png",
+   "normal": "/game/ground-variants-3d/photo-flame/normal.png",
+   "rough": "/game/ground-variants-3d/photo-flame/rough.png",
+   "reliefGrid": "/game/ground-variants-3d/photo-flame/relief.json"
+  },
+  {
+   "index": 28,
+   "key": "photo-column",
+   "relief": 0.16,
+   "color": "/game/ground-variant-tiles/../ground-engine2-v4/column/color.png",
+   "normal": "/game/ground-variants-3d/photo-column/normal.png",
+   "rough": "/game/ground-variants-3d/photo-column/rough.png",
+   "reliefGrid": "/game/ground-variants-3d/photo-column/relief.json"
+  },
+  {
+   "index": 29,
+   "key": "photo-nave",
+   "relief": 0.06,
+   "color": "/game/ground-variant-tiles/../ground-engine2-v4/nave/color.png",
+   "normal": "/game/ground-variants-3d/photo-nave/normal.png",
+   "rough": "/game/ground-variants-3d/photo-nave/rough.png",
+   "reliefGrid": "/game/ground-variants-3d/photo-nave/relief.json"
+  },
+  {
+   "index": 30,
+   "key": "photo-door",
+   "relief": 0.06,
+   "color": "/game/ground-variant-tiles/../ground-engine2-v4/door/color.png",
+   "normal": "/game/ground-variants-3d/photo-door/normal.png",
+   "rough": "/game/ground-variants-3d/photo-door/rough.png",
+   "reliefGrid": "/game/ground-variants-3d/photo-door/relief.json"
+  },
+  {
+   "index": 31,
+   "key": "variant-plains-smooth",
+   "procedural": "smooth-plains"
+  },
+  {
+   "index": 32,
+   "key": "variant-plains-real-grass",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/plains-real-grass-008-reference.png",
+   "normal": null,
+   "rough": null,
+   "reliefGrid": null
+  },
+  {
+   "index": 33,
+   "key": "variant-plains-real-grass-009",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/plains-real-grass-009.png",
+   "normal": null,
+   "rough": null,
+   "reliefGrid": null
+  },
+  {
+   "index": 34,
+   "key": "variant-plains-meadow-3d",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/plains-real-grass-008-reference.png",
+   "normal": null,
+   "rough": null,
+   "reliefGrid": null
+  },
+  {
+   "index": 35,
+   "key": "variant-plains-tall-3d",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/plains-real-grass-008-reference.png",
+   "normal": null,
+   "rough": null,
+   "reliefGrid": null
+  },
+  {
+   "index": 36,
+   "key": "variant-flame-005-fire",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/flame-005-fire.png",
+   "normal": null,
+   "rough": null,
+   "reliefGrid": null
+  },
+  {
+   "index": 37,
+   "key": "city-stone-paving",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/city-stone-paving.png",
+   "normal": null,
+   "rough": null,
+   "reliefGrid": null
+  },
+  {
+   "index": 38,
+   "key": "city-indoor-wood",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/city-indoor-wood.png",
+   "normal": null,
+   "rough": null,
+   "reliefGrid": null
+  },
+  {
+   "index": 39,
+   "key": "laje-021-stone-slabs",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/laje-021-stone-slabs.png",
+   "normal": null,
+   "rough": null,
+   "reliefGrid": null
+  }
+ ],
+ "groundVariantLayers": [
+  {
+   "key": "variant-plains-meadow-v2",
+   "terrain": "plains",
+   "variant": 52,
+   "file": "plains-meadow-v2.png",
+   "label": "Meadow II",
+   "relief": 0.08
+  },
+  {
+   "key": "variant-plains-vivid",
+   "terrain": "plains",
+   "variant": 55,
+   "file": "plains-vivid.png",
+   "label": "Planície vívida",
+   "relief": 0
+  },
+  {
+   "key": "variant-barricade-earth-v2",
+   "terrain": "woods",
+   "variant": 16,
+   "file": "barricade-earth-v2.png",
+   "label": "Barricade Earth II",
+   "relief": 0.12
+  },
+  {
+   "key": "variant-woods-floor-v2",
+   "terrain": "woods",
+   "variant": 14,
+   "file": "woods-floor-v2.png",
+   "label": "Forest Floor II",
+   "relief": 0.1
+  },
+  {
+   "key": "photo-plains",
+   "terrain": "plains",
+   "variant": 53,
+   "file": "../ground-engine2-v4/plains/color.png",
+   "label": "Planície · Photo 3D",
+   "relief": 0.08
+  },
+  {
+   "key": "photo-city",
+   "terrain": "plains",
+   "variant": 54,
+   "file": "../ground-engine2-v4/city/color.png",
+   "label": "City · Photo 3D",
+   "relief": 0.06
+  },
+  {
+   "key": "photo-woods",
+   "terrain": "woods",
+   "variant": 15,
+   "file": "../ground-engine2-v4/woods/color.png",
+   "label": "Bosque · Photo 3D",
+   "relief": 0.12
+  },
+  {
+   "key": "photo-ruins",
+   "terrain": "ruins",
+   "variant": 10,
+   "file": "../ground-engine2-v4/ruins/color.png",
+   "label": "Ruínas · Photo 3D",
+   "relief": 0.16
+  },
+  {
+   "key": "photo-shallow-water",
+   "terrain": "water",
+   "variant": 29,
+   "file": "../ground-engine2-v4/shallow-water/color.png",
+   "label": "Água rasa · Photo 3D",
+   "relief": 0.1
+  },
+  {
+   "key": "photo-river-rocks",
+   "terrain": "water",
+   "variant": 30,
+   "file": "../ground-engine2-v4/river-rocks/color.png",
+   "label": "Pedras do vau · Photo 3D",
+   "relief": 0.24
+  },
+  {
+   "key": "photo-ember",
+   "terrain": "ember",
+   "variant": 8,
+   "file": "../ground-engine2-v4/ember/color.png",
+   "label": "Brasa · Photo 3D",
+   "relief": 0.1
+  },
+  {
+   "key": "photo-hill",
+   "terrain": "hill",
+   "variant": 7,
+   "file": "../ground-engine2-v4/hill/color.png",
+   "label": "Colina · Photo 3D",
+   "relief": 0.12
+  },
+  {
+   "key": "photo-flame",
+   "terrain": "flame",
+   "variant": 6,
+   "file": "../ground-engine2-v4/flame/color.png",
+   "label": "Chama · Photo 3D",
+   "relief": 0.1
+  },
+  {
+   "key": "photo-column",
+   "terrain": "column",
+   "variant": 5,
+   "file": "../ground-engine2-v4/column/color.png",
+   "label": "Coluna · Photo 3D",
+   "relief": 0.16
+  },
+  {
+   "key": "photo-nave",
+   "terrain": "nave",
+   "variant": 21,
+   "file": "../ground-engine2-v4/nave/color.png",
+   "label": "Laje · Photo 3D",
+   "relief": 0.06
+  },
+  {
+   "key": "photo-door",
+   "terrain": "door",
+   "variant": 3,
+   "file": "../ground-engine2-v4/door/color.png",
+   "label": "Porta · Photo 3D",
+   "relief": 0.06
+  },
+  {
+   "key": "variant-plains-smooth",
+   "terrain": "plains",
+   "variant": 56,
+   "file": "../ground-claude/049-plains/color.png",
+   "label": "Planicie suave 007",
+   "relief": 0
+  },
+  {
+   "key": "variant-plains-real-grass",
+   "terrain": "plains",
+   "variant": 57,
+   "file": "plains-real-grass-008-reference.png",
+   "label": "Planicie real 008",
+   "relief": 0
+  },
+  {
+   "key": "variant-plains-real-grass-009",
+   "terrain": "plains",
+   "variant": 58,
+   "file": "plains-real-grass-009.png",
+   "label": "Planicie real 009",
+   "relief": 0
+  },
+  {
+   "key": "variant-plains-meadow-3d",
+   "terrain": "plains",
+   "variant": 59,
+   "file": "plains-real-grass-008-reference.png",
+   "label": "Prado 3D 010",
+   "relief": 0
+  },
+  {
+   "key": "variant-plains-tall-3d",
+   "terrain": "plains",
+   "variant": 60,
+   "file": "plains-real-grass-008-reference.png",
+   "label": "Grama alta 3D 011",
+   "relief": 0
+  },
+  {
+   "key": "variant-flame-005-fire",
+   "terrain": "flame",
+   "variant": 4,
+   "file": "flame-005-fire.png",
+   "label": "005",
+   "relief": 0
+  },
+  {
+   "key": "city-stone-paving",
+   "terrain": "plains",
+   "variant": 50,
+   "file": "city-stone-paving.png",
+   "label": "Stone paving",
+   "relief": 0
+  },
+  {
+   "key": "city-indoor-wood",
+   "terrain": "plains",
+   "variant": 61,
+   "file": "city-indoor-wood.png",
+   "label": "Indoor wood",
+   "relief": 0
+  },
+  {
+   "key": "laje-021-stone-slabs",
+   "terrain": "nave",
+   "variant": 20,
+   "file": "laje-021-stone-slabs.png",
+   "label": "021",
+   "relief": 0
+  }
+ ],
+ "engine2V3GroundVariants": [
+  {
+   "key": "flame",
+   "terrain": "flame",
+   "variant": 5,
+   "folder": "flame",
+   "label": "Chama"
+  },
+  {
+   "key": "city",
+   "terrain": "plains",
+   "variant": 50,
+   "folder": "city",
+   "label": "City"
+  },
+  {
+   "key": "hill",
+   "terrain": "hill",
+   "variant": 6,
+   "folder": "hill",
+   "label": "Colina"
+  },
+  {
+   "key": "nave",
+   "terrain": "nave",
+   "variant": 20,
+   "folder": "nave",
+   "label": "Laje"
+  },
+  {
+   "key": "door",
+   "terrain": "door",
+   "variant": 2,
+   "folder": "door",
+   "label": "Porta trancada"
+  }
+ ],
+ "engine2V3CityVariant": 50,
+ "claudeVariant": {
+  "plains": 49,
+  "woods": 12,
+  "ruins": 8,
+  "ember": 6,
+  "hill": 5,
+  "flame": 4,
+  "column": 3,
+  "nave": 19,
+  "barricade": 1,
+  "door": 1,
+  "snow": 21
+ },
+ "architectureDecorations": [
+  "castle-3d-battlement",
+  "castle-3d-gate",
+  "castle-3d-gate-open",
+  "castle-3d-ruined",
+  "castle-3d-thick",
+  "castle-3d-thick-ruined",
+  "castle-3d-thick-tower",
+  "door-3d-closed",
+  "door-3d-dungeon-oak",
+  "door-3d-dungeon-oak-open",
+  "door-3d-frame",
+  "door-3d-iron",
+  "door-3d-iron-frame",
+  "door-3d-reinforced",
+  "door-3d-reinforced-frame",
+  "door-3d-steel",
+  "door-3d-steel-frame",
+  "door-3d-stone-oak",
+  "door-3d-stone-oak-open",
+  "dungeon-3d-thick-basalt",
+  "dungeon-3d-thick-reference",
+  "secret-door-3d-frame",
+  "secret-door-3d-hidden",
+  "temple-3d-niche",
+  "temple-3d-plain",
+  "temple-3d-relief",
+  "wall-3d-castle",
+  "wall-3d-cave",
+  "wall-3d-city",
+  "wall-3d-crypt",
+  "wall-3d-dungeon",
+  "wall-3d-farmland-aged-plaster-014",
+  "wall-3d-farmland-plaster-013",
+  "wall-3d-low",
+  "wall-3d-stone",
+  "wall-3d-tavern",
+  "wall-3d-temple",
+  "wall-3d-tower",
+  "watchtower-stone-open-door-2hex"
+ ]
+}

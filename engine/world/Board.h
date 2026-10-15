@@ -1,0 +1,145 @@
+#pragma once
+
+// An Ember map and its board, as Engine2 builds them (C:/Engine2/src/map/board.ts, ember/tileVariants.ts),
+// ported to C++. Engine2's game design is the reference: same cells, elevations, surfaces and ground
+// layers, so every saved map keeps its look and its rules.
+//
+// The tables come from content/engine2/board.json, exported from Engine2's own source
+// (tools/scripts/engine2/export_board.ts); the rules that read them are here.
+
+#include <filesystem>
+#include <map>
+#include <optional>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+#include "world/Hex.h"
+
+namespace ember::e2 {
+
+struct TerrainInfo {
+  std::string name;
+  std::string surface;  // "grass", "forest", ..., "void"
+  bool passable = true;
+  double minLevel = 0;  // built-in minimum level (hill: 1)
+  double raise = 0;     // extra levels the ground rises (column: 4)
+};
+
+struct GroundLayerSource {
+  std::string key;
+  bool absent = false;
+  std::string procedural;           // "smooth-plains": generated, no file
+  std::string color, normal, rough;  // URLs under Engine2's public/ ("/game/..."); empty = none
+  double relief = 0;                 // vertex relief height (world units) when reliefGrid is set
+  std::string reliefGrid;
+};
+
+struct GroundVariantLayer {
+  std::string key, terrain;
+  int variant = 0;
+  double relief = 0;
+};
+
+// Engine2's board and ground tables.
+struct BoardData {
+  int baseLevels = 2;
+  double mountainRock = 7, mountainSnow = 11;
+  std::unordered_map<std::string, int> surfaces;  // grass 0 ... plains049 7
+  std::unordered_map<std::string, TerrainInfo> terrain;
+  std::vector<std::string> groundLayerTerrains;    // the 12 base terrain layers
+  int groundLayerCount = 0;                         // base + city, shallow water, river rocks + variant layers
+  std::vector<GroundLayerSource> groundLayers;      // groundLayerCount entries
+  std::vector<GroundVariantLayer> groundVariantLayers;
+  std::vector<std::pair<std::string, int>> engine2V3;  // (terrain, variant), in table order; key "city" first match
+  std::vector<std::string> engine2V3Keys;
+  int engine2V3CityVariant = 50;
+  std::unordered_map<std::string, int> claudeVariant;
+  std::vector<std::string> architectureDecorations;  // sorted
+
+  static std::optional<BoardData> load(const std::filesystem::path& boardJson);
+  int groundVariantLayer(const std::string& terrain, int variant) const;
+  int baseLayerIndex(const std::string& terrain) const;
+  bool isArchitecture(const std::string& decorationId) const;
+};
+
+struct MapDecoration {
+  std::string id;
+  int x = 0, y = 0;
+  double rot = 0;
+};
+
+struct MapSpawn {
+  std::string name, classId;
+  int x = 0, y = 0;
+};
+
+// An Ember map file ({serial, savedAt, draft}); only the fields EmberEngine reads so far.
+struct MapDraft {
+  std::string id, title;
+  int cols = 0, rows = 0;
+  std::vector<std::string> tiles;
+  std::vector<std::optional<int>> tileVariants;          // per cell; empty when the map has none
+  std::vector<std::optional<double>> terrainElevations;  // per cell; empty when the map has none
+  std::vector<MapDecoration> decorations;
+  std::vector<MapSpawn> playerSpawns, enemySpawns, neutralSpawns;
+  std::string environment, timeOfDay;
+
+  static std::optional<MapDraft> load(const std::filesystem::path& mapJson);
+  int variant(int i) const { return i < static_cast<int>(tileVariants.size()) && tileVariants[i] ? *tileVariants[i] : 0; }
+  bool hasVariant(int i) const { return i < static_cast<int>(tileVariants.size()) && tileVariants[i].has_value(); }
+};
+
+struct Cell {
+  int c = 0, r = 0, i = 0;
+  double x = 0, z = 0;
+  std::string type;
+  double level = 0;   // gameplay elevation (Ember's rule)
+  int surface = -1;   // surface index for the ground material, -1 = void
+  int ground = -1;    // baked ground layer, -1 = the procedural surface only
+  double groundY = 0; // world height of the ground's top
+  bool water = false;
+  double waterY = 0;  // water cells: world height of the surface
+};
+
+// Height grid of a photographic ground layer's real relief (ground-variants-3d/<key>/relief.json).
+struct ReliefGrid {
+  int size = 0;
+  std::vector<double> values;  // 0..255
+};
+
+class Board {
+ public:
+  Board(const BoardData& data, MapDraft draft);
+
+  const BoardData& data() const { return data_; }
+  const MapDraft& draft() const { return draft_; }
+  const HexLayout& layout() const { return layout_; }
+  const std::vector<Cell>& cells() const { return cells_; }
+  const Cell& cell(int c, int r) const { return cells_[indexOf(layout_, c, r)]; }
+  const Cell& cellAt(double x, double z) const {
+    const auto [c, r] = hexAt(layout_, x, z);
+    return cell(c, r);
+  }
+  bool hasWater() const;
+
+  struct Bounds {
+    double x0, x1, z0, z1;
+  };
+  Bounds bounds() const { return {-layout_.ox, layout_.ox, -layout_.oz - 0.6, layout_.oz + 0.6}; }
+
+  // Relief grids for the photographic layers this map uses (Engine2: prepareTerrainRelief), read from
+  // Engine2's public/ folder. False when a needed grid is missing or damaged.
+  bool loadRelief(const std::filesystem::path& engine2Public);
+  // Engine2's terrainReliefAt: real relief of the photographic layers under a point.
+  double reliefAt(double x, double z) const;
+
+ private:
+  const BoardData& data_;
+  MapDraft draft_;
+  HexLayout layout_;
+  std::vector<Cell> cells_;
+  std::map<int, ReliefGrid> relief_;  // variant layer index -> grid
+};
+
+}  // namespace ember::e2

@@ -9,6 +9,8 @@
 //   Cooker meshes <source root> <out.pak> [--quality fast|basic|slow] [--cache <dir>] [--remesh N]
 //          (--remesh: proxy-LOD experiment, every mesh replaced by its voxel remesh; separate archive)
 //                                                                    cook every GLB under a folder (cluster LOD + textures)
+//   Cooker check-ground <board.json> <map.json> <engine2 public> <reference dir>
+//                                                                    compare the C++ board/ground with Engine2's export
 //   Cooker sprite-preview <manifest> <source root> <cache dir> <set> <clip> <frame> <out.png>
 //                                                                    source vs. GPU-decoded frame, side by side
 
@@ -24,6 +26,7 @@
 #include <vector>
 
 #include "PakWriter.h"
+#include "GroundCheck.h"
 #include "MeshCooker.h"
 #include "SpriteCooker.h"
 #include "SpriteSource.h"
@@ -246,6 +249,14 @@ int spritePreview(const std::vector<std::string_view>& args) {
   return 0;
 }
 
+int checkGroundCommand(const std::vector<std::string_view>& args) {
+  if (args.size() != 4) fatal("usage: Cooker check-ground <board.json> <map.json> <engine2 public> <reference dir>");
+  return checkGround(std::filesystem::path(args[0]), std::filesystem::path(args[1]), std::filesystem::path(args[2]),
+                     std::filesystem::path(args[3]))
+             ? 0
+             : 1;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -262,6 +273,7 @@ int main(int argc, char** argv) {
   if (command == "sprites") return sprites(args);
   if (command == "sprite-preview") return spritePreview(args);
   if (command == "meshes") return meshes(args);
+  if (command == "check-ground") return checkGroundCommand(args);
   ember::logError("unknown command {}", command);
   return 1;
 }

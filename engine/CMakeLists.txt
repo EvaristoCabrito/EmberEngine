@@ -19,11 +19,13 @@ add_library(EmberEngine STATIC
   render/DebugUi.cpp
   render/SpriteSystem.cpp
   render/MeshScene.cpp
+  world/Board.cpp
+  world/GroundMesh.cpp
   debug/PerfOverlay.cpp
 )
 
 target_include_directories(EmberEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(EmberEngine PUBLIC SDL3::SDL3 volk glm::glm vma stb imgui PRIVATE zstd)
+target_link_libraries(EmberEngine PUBLIC SDL3::SDL3 volk glm::glm vma stb imgui PRIVATE zstd nlohmann_json)
 target_compile_definitions(EmberEngine PUBLIC
   VK_NO_PROTOTYPES
   VMA_STATIC_VULKAN_FUNCTIONS=0
