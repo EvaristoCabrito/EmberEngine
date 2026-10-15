@@ -18,11 +18,14 @@ struct Camera {
 
   glm::mat4 viewProjection() const { return projection * view; }
 
-  static Camera lookAt(glm::vec3 eye, glm::vec3 target, float verticalFovRadians, float aspect, float nearPlane = 0.1f) {
+  // upHint: the world direction that shows as up on screen; it must not be parallel to the line of sight (a camera
+  // looking straight down passes the board's far side, -z).
+  static Camera lookAt(glm::vec3 eye, glm::vec3 target, float verticalFovRadians, float aspect, float nearPlane = 0.1f,
+                       glm::vec3 upHint = {0.0f, 1.0f, 0.0f}) {
     Camera c;
     c.position = eye;
     c.forward = glm::normalize(target - eye);
-    c.right = glm::normalize(glm::cross(c.forward, glm::vec3(0.0f, 1.0f, 0.0f)));
+    c.right = glm::normalize(glm::cross(c.forward, upHint));
     const glm::vec3 up = glm::cross(c.right, c.forward);
     c.view = glm::mat4(1.0f);
     c.view[0] = glm::vec4(c.right.x, up.x, -c.forward.x, 0.0f);

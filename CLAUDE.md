@@ -214,7 +214,8 @@ build.bat release          # or debug; output in build/<config>/bin
       battle.pak) with Engine2's boxes and pacing → `build/engine2-scenes/roster.json` (`--heroes <file>`); panel
       "Animação" (Parado, Andar, Atacar, Conjurar, Curar, ...): one-shot poses replay every 3.5 s. Units are laid in
       rows of 12 at the board centre. The user then said: **just repopulate the map as it is** (the map's own units,
-      each playing the chosen pose from its own catalog entry: look it up by the scene unit's `key`) - NOT done.
+      each playing the chosen pose from its own catalog entry: look it up by the scene unit's `key`) - written in the
+      cloud session (see Next 3), not built yet.
     - Panel "Escolhas" (Segoe UI from the Windows fonts folder via GetWindowsDirectoryA; the WINDIR variable is
       missing when launched via PowerShell Start-Process, which left the pixel font); performance overlay hidden in
       map windows; camera buttons box (top right) for the free camera.
@@ -237,13 +238,33 @@ build.bat release          # or debug; output in build/<config>/bin
 The user's verdict (2026-10-15): the engine as seen is worse than Engine2 ("worst colours and render I've ever
 seen", camera "nonsense", stutters with all units, sprites washed out, nothing visible improved). Order, each step
 only on the user's explicit "faz", shown live in the window:
-1. **Camera: new orbit camera built (2026-10-15), waiting for the user's verdict in the window.** MapStage.h
+1. **Camera: new orbit camera built (2026-10-15); the user: "more or less right, skip it for now".** MapStage.h
    top comment: glide on every input, right-drag turn/tilt free (5-89.5 deg), middle-drag grab, wheel zoom to
    cursor, WASD/arrows slide with the pivot clamped to the board (edge reaches screen centre, user's rule), eye
-   kept above ground and 3D pieces, small bar ▼ ▲ ◀ ▶ Voltar at the bottom. Free fly camera and big box removed.
+   kept above ground and 3D pieces. Free fly camera and big box removed.
+   **Camera bar + Tática (2D view), user's explicit request (2026-10-15): "the bar can't sit at the bottom: top of
+   the screen, right side, copy 1:1 from Engine2"; "2D mode is a must have".** This overrides the "never copy
+   Engine2's UI" rule for this bar only. Written in a cloud session (Linux, no GPU): NOT BUILT, NOT RUN, shaders
+   not compiled; C++ passed `clang++ -fsyntax-only` only. Source: Engine2 `src/game/GameApp.tsx` (HUD bar),
+   `src/render/cameraRig.ts` (`flat`, FLAT_FOV 1, FLAT_ROW_STEP 0.002), `src/world/decor.ts face()` +
+   `src/units/actor.ts update()` (flat cards), `src/ember-ui/styles.css .ember-plate`. Bar top right, 8 px from
+   the corner: [NORMAL/TÁTICA] ▼ ▲ (tilt 5°) ◀ ▶ (turn 15°) ↺ (normal angle, leaves Tática, zoom/pan kept); ImGui
+   draws the plates and lucide icons by hand. Engine2's sound / Opções buttons were left out (no such features).
+   Tática: eye straight above the pivot through a 1° lens at distance × tan15°/tan0.5°, near = distance − 200,
+   up hint −z (`Camera::lookAt` gained `upHint`); no turning; cards and units `kSpriteFlat` (shaders/sprites.hlsl:
+   height along −z, normal +y) at boardTop + z × 0.002 (units + half a step), no shadows, no unit depth pull;
+   aerial perspective (kmPerUnit 0) and froxel haze off. Renderer: light-cluster slices now start at the near
+   plane (`clusterNear = max(2, near)`, far = near + 398; normal lens unchanged at 2..400). To check on the PC:
+   build, toggle Tática on aldeia015 (cards readable, rows overlap right, lights still lit, mist OK), debug run
+   with validation.
 2. **Measure and fix the stutter** (asked, not started; confirm first): frame times with every unit on screen, sprite
    residency vs the 1 GB budget; fix the real cause (budget sized for the real workload, not fewer units).
-3. **Repopulate the map as it is** with the Animação choice driving the map's own units.
+3. **Repopulate the map as it is** with the Animação choice driving the map's own units. Written in the cloud
+   session, NOT BUILT: `--heroes build/engine2-scenes/roster.json` is now the pose catalog (`Hero::key`, read
+   from export_heroes.ts's `key`); each scene unit finds its entry by `key` and plays the chosen pose with that
+   pose's box / foot / pacing (one-shots: doneAt + 0.5 s, then again), keeping its own mirror; units without the
+   pose stay idle; unknown keys logged. The panel lists only poses some map unit has, Parado first. The rows of
+   97 test units and their camera override are gone. The existing `roster.json` already carries `key`.
 4. **Combat control** (asked "faz" earlier, only the study begun): select a unit, movement range (Engine2
    pathfinding.ts computeReachable: footprintCost, terrain moveCost, occupancy), click to walk the path with the walk
    animation, attack with attack / hit / death, then enemy turns (engine.ts BattleEngine). Engine2 = game design.

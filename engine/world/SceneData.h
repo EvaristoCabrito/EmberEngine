@@ -74,7 +74,7 @@ struct SceneData {
   static std::optional<SceneData> load(const std::filesystem::path& sceneJson);
 };
 
-// The six heroes with every pose they have (tools/scripts/engine2/export_heroes.ts: Engine2's unit tables).
+// Every unit with every pose it has (tools/scripts/engine2/export_heroes.ts: Engine2's unit tables).
 struct HeroPose {
   std::string pose, label;   // Engine2's pose id ("attack") and its Portuguese label ("Atacar")
   std::string set, clip;     // the cooked sprite clip
@@ -85,6 +85,7 @@ struct HeroPose {
 };
 struct Hero {
   std::string name;
+  std::string key;           // the unit's catalog key: a scene unit with the same key is this unit
   bool reversed = false;     // drawn facing left (Engine2 UnitActor.drawnReversed)
   std::vector<HeroPose> poses;
   const HeroPose* find(const std::string& pose) const;

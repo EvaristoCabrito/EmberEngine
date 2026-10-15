@@ -31,8 +31,8 @@
 //        [--lighting 0|1|2]: old prototype day / Engine2's presets / physical atmosphere (default; also in the panel).
 //        Night maps: [--moon-phase NAME] (Engine2's moonPhase.ts: new .. waningCrescent, blood) [--moon-path 0|1|2]
 //        (where the disc and its light stand: MapStage.h moonPlacement) [--star-look N] (looks/stars).
-//        [--heroes <heroes.json>]: the six heroes in a row, every pose chosen in the panel (tools/scripts/engine2/
-//        export_heroes.ts). In a window
+//        [--heroes <roster.json>]: every unit's poses (tools/scripts/engine2/export_heroes.ts); the map's own units
+//        play the pose chosen in the panel ("Animação"). In a window
 //        every setting is a dropdown / checkbox in the Map panel (no keyboard shortcuts).
 //   Sandbox.exe --meshes meshes.pak [--grid N]
 //        Mesh scene (M3 bring-up): every cooked mesh in the archive on an N x N grid, drawn GPU-driven.

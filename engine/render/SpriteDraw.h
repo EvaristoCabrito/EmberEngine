@@ -27,5 +27,6 @@ inline constexpr uint32_t kSpriteMirrored = 1;
 inline constexpr uint32_t kSpriteLit = 2;    // lit by the scene (lighting.hlsli; Engine2's card model)
 inline constexpr uint32_t kSpriteFront = 4;  // a unit: drawn 1.2 units nearer the camera in depth only
 inline constexpr uint32_t kSpriteCastsShadow = 8;  // drawn into the sun's card shadow map
+inline constexpr uint32_t kSpriteFlat = 16;  // lies flat facing up, its top toward -z (the 2D view, Tática)
 
 }  // namespace ember

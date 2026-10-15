@@ -10,7 +10,10 @@
 // whole board. It always turns around a pivot on the ground and glides to every input. Right-drag turns and
 // tilts (5 to 89.5 deg), middle-drag grabs the ground, the wheel zooms toward the cursor, WASD/arrows slide the
 // board (the pivot stays on the board: at most its edge reaches the screen centre); the eye never goes into the
-// ground or a 3D piece. The small bar (bottom centre) tilts / turns a step per click and goes back (Voltar).
+// ground or a 3D piece. The camera bar (top right, Engine2's battle HUD copied 1:1 at the user's request): Normal /
+// Tática, tilt 5 deg down / up, turn 15 deg left / right, back to the normal angle. Tática is the old-school 2D view
+// (Engine2 CameraRig.flat): straight overhead through a 1 deg lens from far away (no visible perspective), no
+// turning; cards and units lie flat facing up just over the highest ground, nearer rows drawn over farther ones.
 //
 // Fog of war (R7, world/FogOfWar.h) on maps that use it (or forced with --fog 1): the party's sight with
 // occlusion; enemies out of sight are not drawn; the renderer darkens and masks everything by the mask.
@@ -86,8 +89,8 @@ struct MapStageOptions {
   // the night's own strength) and where the moon's disc and light stand (see moonPlacement()); also in the panel.
   std::string moonPhase;
   int moonPath = 0;
-  // The six heroes in a row in front of the camera, every pose chosen in the panel (tools/scripts/engine2/
-  // export_heroes.ts output; empty = none).
+  // Every unit's poses (tools/scripts/engine2/export_heroes.ts output; empty = idle only): the map's own units
+  // play the pose chosen in the panel, each from its own catalog entry (found by the scene unit's key).
   std::filesystem::path heroes;
   int starLook = 3;  // the star field's saved look (looks/stars/README.md; also in the panel)
 };
@@ -165,7 +168,7 @@ class MapStage final : public Stage {
       logInfo("scene {}: {} cards, {} models, {} units, {} architecture pieces (not drawn yet)", scene_->map, scene_->cards.size(),
               scene_->models.size(), scene_->units.size(), scene_->architecture);
       setUpParty();
-      if (!options.heroes.empty()) setUpHeroes(options.heroes);
+      if (!options.heroes.empty()) setUpPoses(options.heroes);
       if (!scene_->backdrop.empty()) ground_.requestTexture(e2::backdropAsset(scene_->backdrop));
       background_ = scene_->backdrop.empty() ? 1 : 0;
       if (e2::timeOfDay(scene_->timeOfDay).moon && scene_->environment != "indoor")
@@ -193,7 +196,6 @@ class MapStage final : public Stage {
       const float tanHalf = std::tan(glm::radians(kFov * 0.5f));
       maxDistance_ = std::max(40.0f, std::max(boardWidth_, boardDepth_) * 2.2f);
       distance_ = std::min(maxDistance_, std::max(boardWidth_ / (2 * tanHalf * aspect), boardDepth_ * 1.35f) * 1.05f) / options_.zoom;
-      if (!heroes_.empty()) distance_ = 48.0f / options_.zoom;  // the rows of units fill the view
     }
     // Measurement: a full turn and two zooms in and out (to 35% of the framing distance) over the run.
     float yaw = yaw_, distance = distance_;
@@ -227,7 +229,7 @@ class MapStage final : public Stage {
     // The ground under the pivot (the camera always turns around a point on the board), and the eye never inside
     // the ground or a 3D piece: the tilt rises just enough to clear it.
     cam_.target.y = pivotHeight(cam_.target);
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 8 && !flat_; ++i) {
       const glm::vec3 eye = eyeOf(cam_);
       const float floor = clearanceAt(eye.x, eye.z) + kEyeClearance;
       if (eye.y >= floor) break;
@@ -235,7 +237,12 @@ class MapStage final : public Stage {
       cam_.pitch = std::min(std::max(cam_.pitch, need + 0.002f), kMaxPitch);
       if (pitch_ < cam_.pitch) pitch_ = cam_.pitch;  // the goal does not pull it back into the ground
     }
-    const Camera camera = Camera::lookAt(eyeOf(cam_), cam_.target, glm::radians(kFov), aspect, kNear);
+    // Tática: straight down from far away through the long lens, framing what the normal lens frames at this distance;
+    // the top of the screen is the board's far side (-z). Its near plane hugs the board (Engine2: distance - 200).
+    const float flatDistance = cam_.distance * std::tan(glm::radians(kFov * 0.5f)) / std::tan(glm::radians(kFlatFov * 0.5f));
+    const Camera camera = flat_ ? Camera::lookAt(cam_.target + glm::vec3(0.0f, flatDistance, 0.0f), cam_.target, glm::radians(kFlatFov), aspect,
+                                                 std::max(kNear, flatDistance - 200.0f), {0.0f, 0.0f, -1.0f})
+                                : Camera::lookAt(eyeOf(cam_), cam_.target, glm::radians(kFov), aspect, kNear);
     lastCamera_ = camera;
     drawList_.clear();
     if (scene_ && sprites_.ready()) buildCards(camera, time);
@@ -248,6 +255,8 @@ class MapStage final : public Stage {
       const float az = glm::radians(options_.sunAzimuth), el = glm::radians(options_.sunElevation);
       lighting.sunDirection = {std::cos(el) * std::cos(az), std::sin(el), std::cos(el) * std::sin(az)};
     }
+    // Tática looks from far above: no air between the eye and the board (Engine2 drops its distance fog there).
+    if (flat_) lighting.kmPerUnit = 0.0f;
     renderer.setMeshes(scene_ ? meshes_.view() : MeshSceneView{}, lighting);
     renderer.setTerrain(ground_.view(look_));
     renderer.setWater(ground_.water(look_));
@@ -263,7 +272,7 @@ class MapStage final : public Stage {
     Renderer::VolumetricFog volume;
     // The froxel haze belongs to the old lighting (mode 0, where every saved fog look was captured); under the
     // brighter physical light it reads as a milky veil (2026-10-15), so it stays off there.
-    volume.enabled = options_.volume && lightingMode_ == 0;
+    volume.enabled = options_.volume && lightingMode_ == 0 && !flat_;
     volume.meanGround = meanGround_;
     // The froxel fog is the air's haze in sight; the fog of war's bank is drawn by the fog bank pass.
     volume.boundaryDensity = 0.0f;
@@ -313,7 +322,7 @@ class MapStage final : public Stage {
   // zooms toward the point under the cursor. The left button stays free for the game. Clicks on the panel and the
   // camera bar never reach here (ImGui takes them).
   void event(const SDL_Event& e) override {
-    if (e.type == SDL_EVENT_MOUSE_MOTION && (e.motion.state & SDL_BUTTON_RMASK)) {
+    if (e.type == SDL_EVENT_MOUSE_MOTION && (e.motion.state & SDL_BUTTON_RMASK) && !flat_) {  // Tática never turns
       yaw_ -= e.motion.xrel * kTurnPerPixel;
       pitch_ = std::clamp(pitch_ + e.motion.yrel * kTurnPerPixel, kMinPitch, kMaxPitch);
     }
@@ -340,7 +349,8 @@ class MapStage final : public Stage {
     if (ImGui::GetCurrentContext() && ImGui::GetIO().WantTextInput) return;  // only typing into a text field takes the keys
     const bool* k = SDL_GetKeyboardState(nullptr);
     if (!k) return;
-    const glm::vec3 forward{-std::sin(yaw_), 0.0f, -std::cos(yaw_)}, right{std::cos(yaw_), 0.0f, -std::sin(yaw_)};
+    const float yaw = flat_ ? 0.0f : yaw_;  // Tática: up on screen is the board's far side
+    const glm::vec3 forward{-std::sin(yaw), 0.0f, -std::cos(yaw)}, right{std::cos(yaw), 0.0f, -std::sin(yaw)};
     glm::vec3 move{0.0f};
     if (k[SDL_SCANCODE_W] || k[SDL_SCANCODE_UP]) move += forward;
     if (k[SDL_SCANCODE_S] || k[SDL_SCANCODE_DOWN]) move -= forward;
@@ -392,7 +402,7 @@ class MapStage final : public Stage {
     int w = 0, h = 0;
     SDL_Window* window = SDL_GetWindowFromID(id);
     if (!window || !SDL_GetWindowSize(window, &w, &h) || w <= 0 || h <= 0) return std::nullopt;
-    const float tanHalf = std::tan(glm::radians(kFov * 0.5f));
+    const float tanHalf = std::tan(glm::radians((flat_ ? kFlatFov : kFov) * 0.5f));
     const float nx = 2.0f * mx / static_cast<float>(w) - 1.0f, ny = 1.0f - 2.0f * my / static_cast<float>(h);
     const glm::vec3 up = glm::cross(lastCamera_.right, lastCamera_.forward);
     const glm::vec3 dir = glm::normalize(lastCamera_.forward + lastCamera_.right * (nx * tanHalf * aspect_) + up * (ny * tanHalf));
@@ -419,34 +429,137 @@ class MapStage final : public Stage {
   // The window shows only the choices, in plain Portuguese words, large (user, 2026-10-15: "the only information I
   // want on that screen are the CHOICES, very visible"; no numbers, no statistics). Look numbers stay in the code
   // and the looks/ READMEs.
-  // The camera bar (small, bottom centre): tilt down / up, turn left / right by one step per click (held: repeats),
-  // each step glides; Voltar glides back to the first view.
+  // Engine2's ember-plate (src/ember-ui/styles.css): a near-black gradient (rgba 28,28,28,.94 to 10,10,10,.95), a 1 px
+  // gold border (190,150,95,.45) inside a 1 px black ring, an 8 px inner shadow, a soft drop shadow 6 px down, 2 px
+  // corners; on hover the text turns #ffe0b4, the border (226,170,100,.85) and an orange glow (255,110,40,.3) come on.
+  // paint(drawList, min, max, ink) draws the face. True when clicked.
+  template <typename Paint>
+  static bool plate(const char* id, ImVec2 size, Paint paint) {
+    const bool clicked = ImGui::InvisibleButton(id, size);
+    const bool hover = ImGui::IsItemHovered();
+    const ImVec2 a = ImGui::GetItemRectMin(), b = ImGui::GetItemRectMax();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    // Drop shadow (0 6px 18px rgba(0,0,0,.6)) and, on hover, the glow (0 0 14px rgba(255,110,40,.3)): blurred by layers.
+    for (int i = 6; i >= 1; --i) {
+      const float spread = 1.5f * static_cast<float>(i);
+      dl->AddRectFilled({a.x - spread, a.y + 6.0f - spread}, {b.x + spread, b.y + 6.0f + spread}, IM_COL32(0, 0, 0, 14), 2.0f + spread);
+    }
+    if (hover)
+      for (int i = 5; i >= 1; --i) {
+        const float spread = 1.4f * static_cast<float>(i);
+        dl->AddRectFilled({a.x - spread, a.y - spread}, {b.x + spread, b.y + spread}, IM_COL32(255, 110, 40, 12), 2.0f + spread);
+      }
+    dl->AddRect({a.x - 1.0f, a.y - 1.0f}, {b.x + 1.0f, b.y + 1.0f}, IM_COL32(0, 0, 0, 255), 3.0f);  // 0 0 0 1px #000
+    const ImU32 top = IM_COL32(28, 28, 28, 240), bottom = IM_COL32(10, 10, 10, 242);
+    dl->AddRectFilledMultiColor(a, b, top, top, bottom, bottom);
+    for (int i = 0; i < 4; ++i) {  // inset 0 0 8px rgba(0,0,0,.85)
+      const float d = 1.0f + 2.0f * static_cast<float>(i);
+      dl->AddRect({a.x + d, a.y + d}, {b.x - d, b.y - d}, IM_COL32(0, 0, 0, 90 - 20 * i), 1.0f, 0, 2.0f);
+    }
+    dl->AddRect(a, b, hover ? IM_COL32(226, 170, 100, 217) : IM_COL32(190, 150, 95, 115), 2.0f);
+    paint(dl, a, b, hover ? IM_COL32(255, 224, 180, 255) : IM_COL32(240, 240, 240, 255));
+    return clicked;
+  }
+
+  // A lucide icon's 24 px box drawn at 14 px (Engine2: size-3.5), centred on the button, stroke 2 at that scale.
+  struct IconBox {
+    ImVec2 origin;
+    float scale = 14.0f / 24.0f;
+    IconBox(ImVec2 a, ImVec2 b) : origin{(a.x + b.x) * 0.5f - 7.0f, (a.y + b.y) * 0.5f - 7.0f} {}
+    ImVec2 at(float x, float y) const { return {origin.x + x * scale, origin.y + y * scale}; }
+    float stroke() const { return std::max(1.0f, 2.0f * scale); }
+  };
+  // lucide Chevron*: a polyline of three points in the 24 px box.
+  static auto chevron(float x0, float y0, float x1, float y1, float x2, float y2) {
+    return [=](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32 ink) {
+      const IconBox box(a, b);
+      const ImVec2 p[3] = {box.at(x0, y0), box.at(x1, y1), box.at(x2, y2)};
+      dl->AddPolyline(p, 3, ink, 0, box.stroke());
+    };
+  }
+  // Text with Engine2's 0.14 em letter spacing (tracking-[0.14em]), one glyph at a time.
+  static float spacedWidth(const char* text) {
+    float w = 0.0f;
+    int glyphs = 0;
+    for (const char* p = text; *p;) {
+      const char* next = p + 1;
+      while ((*next & 0xC0) == 0x80) ++next;  // whole UTF-8 sequence
+      w += ImGui::CalcTextSize(p, next).x;
+      ++glyphs;
+      p = next;
+    }
+    return w + kPlateText * 0.14f * static_cast<float>(std::max(0, glyphs - 1));
+  }
+  static void drawSpaced(ImDrawList* dl, ImVec2 at, ImU32 ink, const char* text) {
+    for (const char* p = text; *p;) {
+      const char* next = p + 1;
+      while ((*next & 0xC0) == 0x80) ++next;
+      dl->AddText(at, ink, p, next);
+      at.x += ImGui::CalcTextSize(p, next).x + kPlateText * 0.14f;
+      p = next;
+    }
+  }
+
+  // The camera bar, top right: Engine2's battle HUD (GameApp.tsx), copied 1:1 at the user's request (2026-10-15).
+  // Normal / Tática (the 2D view), tilt down / up 5 deg, turn left / right 15 deg, back to the normal angle (leaves
+  // Tática; zoom and pan stay, like Engine2's resetAngle). Each click glides.
   void drawCameraBar() {
     const ImGuiIO& io = ImGui::GetIO();
-    ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, io.DisplaySize.y - 12.0f}, ImGuiCond_Always, {0.5f, 1.0f});
-    ImGui::SetNextWindowBgAlpha(0.75f);
+    // The window's padding (room for the shadow) sits outside the 8 px inset.
+    ImGui::SetNextWindowPos({io.DisplaySize.x - kBarInset + kPlateGlow, kBarInset - kPlateGlow}, ImGuiCond_Always, {1.0f, 0.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {kPlateGlow, kPlateGlow});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {kBarGap, kBarGap});
     ImGui::Begin("##camerabar", nullptr,
-                 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
+                 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground |
                      ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoSavedSettings);
-    ImGui::PushFont(nullptr, 20.0f);
-    ImGui::PushItemFlag(ImGuiItemFlags_ButtonRepeat, true);
-    if (ImGui::ArrowButton("##down", ImGuiDir_Down)) pitch_ = std::clamp(pitch_ - kTiltStep, kMinPitch, kMaxPitch);
+    ImGui::PushFont(nullptr, kPlateText);
+    // Engine2: h-7 px-2, 10 px uppercase, letter spacing 0.14 em.
+    const char* label = flat_ ? "TÁTICA" : "NORMAL";
+    if (plate("##view", {spacedWidth(label) + 16.0f, kPlate}, [&](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32 ink) {
+          const float w = spacedWidth(label);
+          drawSpaced(dl, {std::round((a.x + b.x - w) * 0.5f), std::round((a.y + b.y - ImGui::GetTextLineHeight()) * 0.5f)}, ink, label);
+        }))
+      setFlat(!flat_);
     ImGui::SameLine();
-    if (ImGui::ArrowButton("##up", ImGuiDir_Up)) pitch_ = std::clamp(pitch_ + kTiltStep, kMinPitch, kMaxPitch);
+    if (plate("##down", {kPlate, kPlate}, chevron(6, 9, 12, 15, 18, 9))) pitch_ = std::clamp(pitch_ - kTiltStep, kMinPitch, kMaxPitch);
     ImGui::SameLine();
-    if (ImGui::ArrowButton("##left", ImGuiDir_Left)) yaw_ += kTurnStep;
+    if (plate("##up", {kPlate, kPlate}, chevron(18, 15, 12, 9, 6, 15))) pitch_ = std::clamp(pitch_ + kTiltStep, kMinPitch, kMaxPitch);
     ImGui::SameLine();
-    if (ImGui::ArrowButton("##right", ImGuiDir_Right)) yaw_ -= kTurnStep;
-    ImGui::PopItemFlag();
+    if (plate("##left", {kPlate, kPlate}, chevron(15, 18, 9, 12, 15, 6))) yaw_ += kTurnStep;
     ImGui::SameLine();
-    if (ImGui::Button("Voltar")) {
-      // The shortest way round to the first turn.
+    if (plate("##right", {kPlate, kPlate}, chevron(9, 18, 15, 12, 9, 6))) yaw_ -= kTurnStep;
+    ImGui::SameLine();
+    if (plate("##reset", {kPlate, kPlate}, [](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32 ink) {
+          // lucide RotateCcw: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" + "M3 3v5h5" (24 px box, 14 px icon)
+          const IconBox box(a, b);
+          dl->PathArcTo(box.at(12, 12), 9.0f * box.scale, std::numbers::pi_v<float>, -0.75f * std::numbers::pi_v<float>, 24);
+          dl->PathLineTo(box.at(3, 8));
+          dl->PathStroke(ink, 0, box.stroke());
+          const ImVec2 arrow[3] = {box.at(3, 3), box.at(3, 8), box.at(8, 8)};
+          dl->AddPolyline(arrow, 3, ink, 0, box.stroke());
+        })) {
+      if (flat_) setFlat(false);
+      // The shortest way round to the normal turn; zoom and pan stay.
       const float twoPi = 2.0f * std::numbers::pi_v<float>;
       yaw_ = homeYaw_ + twoPi * std::round((yaw_ - homeYaw_) / twoPi);
-      pitch_ = homePitch_, target_ = homeTarget_, distance_ = homeDistance_;
+      pitch_ = homePitch_;
     }
     ImGui::PopFont();
     ImGui::End();
+    ImGui::PopStyleVar(3);
+  }
+
+  // Tática on / off (Engine2 DioramaView.setFlat + Battle3D): leaving it lands on the normal view's angle at once;
+  // zoom and pan stay where they are.
+  void setFlat(bool on) {
+    if (on == flat_) return;
+    flat_ = on;
+    if (on) return;
+    const float twoPi = 2.0f * std::numbers::pi_v<float>;
+    yaw_ = homeYaw_ + twoPi * std::round((yaw_ - homeYaw_) / twoPi);
+    pitch_ = homePitch_;
+    cam_.yaw = yaw_, cam_.pitch = pitch_;
   }
 
   void drawPanel() override {
@@ -457,8 +570,8 @@ class MapStage final : public Stage {
     ImGui::Begin("Escolhas", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
     ImGui::PushFont(nullptr, 24.0f);  // large (ImGui 1.93: size per push)
     ImGui::PushItemWidth(220.0f);
-    if (!heroPoses_.empty())
-      dropdown("Animação", heroPose_, static_cast<int>(heroPoses_.size()), [this](int i) { return heroPoses_[static_cast<size_t>(i)].second; });
+    if (!poseChoices_.empty())
+      dropdown("Animação", poseChoice_, static_cast<int>(poseChoices_.size()), [this](int i) { return poseChoices_[static_cast<size_t>(i)].second; });
     {
       int look = static_cast<int>(look_);
       static const char* kLooks[3] = {"suave", "hexágonos", "mesa"};
@@ -527,6 +640,11 @@ class MapStage final : public Stage {
 
  private:
   static constexpr float kFov = 30.0f, kNear = 0.5f;  // Engine2's normal lens
+  static constexpr float kFlatFov = 1.0f;             // Engine2 FLAT_FOV: Tática's long lens
+  static constexpr float kFlatRowStep = 0.002f;       // Engine2 FLAT_ROW_STEP: Tática's height step per unit of depth
+  // The camera bar (Engine2 GameApp.tsx + ember-plate): 28 px plates (size-7), 4 px apart (gap-1), 8 px from the
+  // corner (inset-x-2, top 0.5rem), 10 px text; the window's padding leaves room for the shadow and glow.
+  static constexpr float kPlate = 28.0f, kBarGap = 4.0f, kBarInset = 8.0f, kPlateText = 10.0f, kPlateGlow = 10.0f;
   static constexpr float kFlameEmit = 2.5f;           // Engine2 FLAME_EMIT
 
   // Median, 99th percentile and worst; frames over the 60 Hz budget.
@@ -633,9 +751,11 @@ class MapStage final : public Stage {
     const float cx = (static_cast<float>(c.cropX) + c.contentWidth * 0.5f) / sw - 0.5f;
     const float cy = 1.0f - (static_cast<float>(c.cropY) + c.contentHeight) / sh;
     const float x = (local.x + cx * w) * (mirror ? -1.0f : 1.0f);
-    const glm::vec3 facing{-right.z, 0.0f, right.x};
+    const bool flat = (flags & kSpriteFlat) != 0;  // lying face up: its height runs toward -z
+    const glm::vec3 facing = flat ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(-right.z, 0.0f, right.x);
+    const glm::vec3 up = flat ? glm::vec3(0.0f, 0.0f, -1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
     SpriteInstance s{};
-    s.origin = anchor + right * x + glm::vec3(0, local.y + cy * h, 0) + facing * local.z;
+    s.origin = anchor + right * x + up * (local.y + cy * h) + facing * local.z;
     s.width = w * c.contentWidth / sw;
     s.height = h * c.contentHeight / sh;
     s.textureIndex = tex.index;
@@ -668,23 +788,28 @@ class MapStage final : public Stage {
         ++missing_;
         continue;
       }
-      const float yaw = d.lockedYaw.value_or(0.0f);
+      // Tática (Engine2 DecorLayer.face with flatTop): every card lies flat square to the screen, just over the highest
+      // ground, each row of depth a step higher so nearer rows cover farther ones; no layer step, no shadow.
+      const float yaw = flat_ ? 0.0f : d.lockedYaw.value_or(0.0f);
       const glm::vec3 right{std::cos(yaw), 0.0f, -std::sin(yaw)};
-      const glm::vec3 anchor{d.x, groundOf(d.groundSmooth, d.groundHard), d.z};
-      const glm::vec3 local{(0.5f - d.art.baseU) * d.w, -d.art.baseV * d.h, d.nudge};
+      const glm::vec3 anchor{d.x, flat_ ? boardTop_ + d.z * kFlatRowStep : groundOf(d.groundSmooth, d.groundHard), d.z};
+      const glm::vec3 local{(0.5f - d.art.baseU) * d.w, -d.art.baseV * d.h, flat_ ? 0.0f : d.nudge};
       SpriteInstance emit{};
       if (d.light) {
         emit.emitColor = {d.light->color[0], d.light->color[1], d.light->color[2]};
         emit.emitLevel = kFlameEmit * flicker(time, d.light->seed, d.light->flicker);
         emit.emitAt = {d.art.flameFound ? d.art.flameU : 0.5f, d.art.flameFound ? d.art.flameV : 0.7f, 0.0f};
       }
-      addCard(clip, anchor, right, d.w, d.h, local, d.mirror, 0, kSpriteLit | (d.castShadow ? kSpriteCastsShadow : 0u), d.light ? &emit : nullptr);
+      const uint32_t flags = flat_ ? kSpriteLit | kSpriteFlat : kSpriteLit | (d.castShadow ? kSpriteCastsShadow : 0u);
+      addCard(clip, anchor, right, d.w, d.h, local, d.mirror, 0, flags, d.light ? &emit : nullptr);
     }
-    // Units: Engine2's UnitActor idle. They turn to face the camera; Engine2's box for the original frame,
-    // its foot line on the ground, the frame paced by Engine2's framePace.
+    // Units: the pose chosen in the panel from each unit's own catalog entry (its idle when it has none). They turn
+    // to face the camera; Engine2's box for the pose, its foot line on the ground, the frame paced by Engine2's
+    // framePace. One-shot poses (attacks, casts) play through, hold half a second, and start again.
+    const std::string& chosen = poseChoices_.empty() ? kIdle : poseChoices_[static_cast<size_t>(poseChoice_)].first;
     glm::vec3 right = camera.right;
     right.y = 0.0f;
-    right = glm::length(right) > 0.0f ? glm::normalize(right) : glm::vec3(1, 0, 0);
+    right = glm::length(right) > 0.0f && !flat_ ? glm::normalize(right) : glm::vec3(1, 0, 0);
     hiddenUnits_ = 0;
     for (size_t ui = 0; ui < scene_->units.size(); ++ui) {
       const e2::SceneUnit& u = scene_->units[ui];
@@ -698,36 +823,33 @@ class MapStage final : public Stage {
           continue;
         }
       }
-      const SpriteClipId clip = sprites_.find(u.set, u.clip);
+      // The scene's own idle unless the unit's catalog entry has the chosen pose. The mirror stays the scene's:
+      // its side's facing against the unit's drawn direction, which is the same for every pose.
+      const e2::HeroPose* p = nullptr;
+      if (chosen != kIdle && ui < unitCatalog_.size() && unitCatalog_[ui]) {
+        p = unitCatalog_[ui]->find(chosen);
+        if (p && p->pace.empty()) p = nullptr;
+      }
+      const SpriteClipId clip = p ? sprites_.find(p->set, p->clip) : sprites_.find(u.set, u.clip);
       if (clip == kNoSpriteClip) {
         ++missing_;
         continue;
       }
       uint32_t frame = 0;
-      if (!u.pace.empty()) {
+      if (p) {
+        const size_t period = p->doneAt >= 0 ? static_cast<size_t>(p->doneAt) + 120 : pacePeriod(p->pace);
+        const size_t tick = static_cast<size_t>(time * 240.0f) % period;
+        frame = static_cast<uint32_t>(p->pace[std::min(tick, p->pace.size() - 1)]);
+      } else if (!u.pace.empty()) {
         const size_t period = pacePeriod(u.pace);
         frame = static_cast<uint32_t>(u.pace[static_cast<size_t>(time * 240.0f) % period]);
       }
-      const glm::vec3 anchor = static_cast<int>(ui) == hero_ ? heroAt_ : glm::vec3{u.x, groundOf(u.groundSmooth, u.groundHard), u.z};
-      addCard(clip, anchor, right, u.boxW, u.boxH, {0.0f, -u.foot, 0.0f}, u.mirror, frame, kSpriteLit | kSpriteFront | kSpriteCastsShadow, nullptr);
-    }
-    // The heroes in their row, each playing the pose chosen in the panel (its idle when it has none). One-shot
-    // poses (attacks, casts) play through, hold half a second, and start again.
-    for (size_t hi = 0; hi < heroes_.size(); ++hi) {
-      const e2::Hero& h = heroes_[hi];
-      const e2::HeroPose* p = h.find(heroPoses_.empty() ? std::string("idle") : heroPoses_[static_cast<size_t>(heroPose_)].first);
-      if (!p) p = h.find("idle");
-      if (!p || p->pace.empty()) continue;
-      const SpriteClipId clip = sprites_.find(p->set, p->clip);
-      if (clip == kNoSpriteClip) {
-        ++missing_;
-        continue;
-      }
-      const size_t period = p->doneAt >= 0 ? static_cast<size_t>(p->doneAt) + 120 : pacePeriod(p->pace);
-      const size_t tick = static_cast<size_t>(time * 240.0f) % period;
-      const uint32_t frame = static_cast<uint32_t>(p->pace[std::min(tick, p->pace.size() - 1)]);
-      addCard(clip, heroAnchors_[hi], right, p->boxW, p->boxH, {0.0f, -p->foot, 0.0f}, h.reversed, frame,
-              kSpriteLit | kSpriteFront | kSpriteCastsShadow, nullptr);
+      const float boxW = p ? p->boxW : u.boxW, boxH = p ? p->boxH : u.boxH, foot = p ? p->foot : u.foot;
+      glm::vec3 anchor = static_cast<int>(ui) == hero_ ? heroAt_ : glm::vec3{u.x, groundOf(u.groundSmooth, u.groundHard), u.z};
+      // Tática (Engine2 UnitActor.update with flatTop): flat over its own row's cards by half a row step, no shadow.
+      if (flat_) anchor.y = boardTop_ + anchor.z * kFlatRowStep + kFlatRowStep * 0.5f;
+      const uint32_t flags = flat_ ? kSpriteLit | kSpriteFlat : kSpriteLit | kSpriteFront | kSpriteCastsShadow;
+      addCard(clip, anchor, right, boxW, boxH, {0.0f, -foot, 0.0f}, u.mirror, frame, flags, nullptr);
     }
     const glm::vec3 eye = camera.position, fwd = camera.forward;
     std::sort(drawList_.begin(), drawList_.end(),
@@ -895,44 +1017,34 @@ class MapStage final : public Stage {
     return n ? sum / static_cast<float>(n) : glm::vec2(boardCenter_.x, boardCenter_.z);
   }
 
-  // The six heroes in a row across the view, 3 units apart, at the board's centre on the ground; the camera looks at
-  // them. The panel's poses: every pose any hero has, in Engine2's order of first appearance, with its label.
-  void setUpHeroes(const std::filesystem::path& path) {
-    std::optional<std::vector<e2::Hero>> heroes = e2::loadHeroes(path);
-    if (!heroes) return;
-    heroes_ = std::move(*heroes);
-    for (const e2::Hero& h : heroes_)
-      for (const e2::HeroPose& p : h.poses)
-        if (std::none_of(heroPoses_.begin(), heroPoses_.end(), [&](const auto& q) { return q.first == p.pose; }))
-          heroPoses_.emplace_back(p.pose, p.label);
-    // Rows of 12 across the view, each unit given room for its own width, rows 5 units apart going away from the
-    // camera; the block centred on the board.
-    const glm::vec3 right{std::cos(yaw_), 0.0f, -std::sin(yaw_)}, away{-std::sin(yaw_), 0.0f, -std::cos(yaw_)};
-    const glm::vec3 centre{boardCenter_.x, 0.0f, boardCenter_.z};
-    constexpr size_t kPerRow = 12;
-    const size_t rows = (heroes_.size() + kPerRow - 1) / kPerRow;
-    for (size_t row = 0; row < rows; ++row) {
-      const size_t first = row * kPerRow, last = std::min(heroes_.size(), first + kPerRow);
-      std::vector<float> widths;
-      float total = 0.0f;
-      for (size_t i = first; i < last; ++i) {
-        const e2::HeroPose* idle = heroes_[i].find("idle");
-        widths.push_back(std::max(2.6f, (idle ? idle->boxW : heroes_[i].poses.front().boxW) * 0.8f));
-        total += widths.back();
-      }
-      float x = -0.5f * total;
-      for (size_t i = first; i < last; ++i) {
-        x += 0.5f * widths[i - first];
-        glm::vec3 at = centre + right * x + away * ((static_cast<float>(row) - 0.5f * static_cast<float>(rows - 1)) * 5.0f);
-        at.y = static_cast<float>(e2::groundHeightAt(*board_, look_, at.x, at.z));
-        heroAnchors_.push_back(at);
-        x += 0.5f * widths[i - first];
-      }
+  // The map's units find their own catalog entry by key. The panel's poses: those at least one of the map's units
+  // has, in the catalog's order of first appearance with its label, the idle ("Parado") first.
+  void setUpPoses(const std::filesystem::path& path) {
+    std::optional<std::vector<e2::Hero>> catalog = e2::loadHeroes(path);
+    if (!catalog) return;
+    catalog_ = std::move(*catalog);
+    std::unordered_map<std::string, const e2::Hero*> byKey;
+    for (const e2::Hero& h : catalog_)
+      if (!h.key.empty()) byKey.emplace(h.key, &h);
+    unitCatalog_.assign(scene_->units.size(), nullptr);
+    std::vector<std::string> unknown;
+    for (size_t i = 0; i < scene_->units.size(); ++i) {
+      const auto it = byKey.find(scene_->units[i].key);
+      if (it != byKey.end()) unitCatalog_[i] = it->second;
+      else unknown.push_back(scene_->units[i].name + " (" + scene_->units[i].key + ")");
     }
-    target_ = centre;
-    target_.y = heroAnchors_.empty() ? target_.y : heroAnchors_[heroAnchors_.size() / 2].y + 1.6f;
-    pitch_ = glm::radians(12.0f);
-    logInfo("heroes: {} with {} poses between them", heroes_.size(), heroPoses_.size());
+    for (const e2::Hero& h : catalog_) {
+      if (std::find(unitCatalog_.begin(), unitCatalog_.end(), &h) == unitCatalog_.end()) continue;
+      for (const e2::HeroPose& p : h.poses)
+        if (std::none_of(poseChoices_.begin(), poseChoices_.end(), [&](const auto& q) { return q.first == p.pose; }))
+          poseChoices_.emplace_back(p.pose, p.label.empty() ? p.pose : p.label);
+    }
+    const auto idle = std::find_if(poseChoices_.begin(), poseChoices_.end(), [](const auto& q) { return q.first == kIdle; });
+    if (idle != poseChoices_.end()) std::rotate(poseChoices_.begin(), idle, idle + 1);
+    else if (!poseChoices_.empty()) poseChoices_.insert(poseChoices_.begin(), {kIdle, "Parado"});
+    logInfo("poses: {} of {} map units in the catalog, {} poses between them", scene_->units.size() - unknown.size(), scene_->units.size(),
+            poseChoices_.size());
+    for (const std::string& u : unknown) logWarn("poses: {} not in the catalog: idle only", u);
   }
 
   // The party: the first player unit is the hero (test lights, the scout); its walk goes to the farthest enemy.
@@ -1175,10 +1287,11 @@ class MapStage final : public Stage {
   MeshScene meshes_;
   AssetManager& assets_;
   std::optional<e2::SceneData> scene_;
-  std::vector<e2::Hero> heroes_;  // the hero row (setUpHeroes)
-  std::vector<glm::vec3> heroAnchors_;
-  std::vector<std::pair<std::string, std::string>> heroPoses_;  // pose id, label
-  int heroPose_ = 0;
+  inline static const std::string kIdle = "idle";
+  std::vector<e2::Hero> catalog_;                  // every unit's poses (setUpPoses)
+  std::vector<const e2::Hero*> unitCatalog_;       // per scene unit: its catalog entry (null = idle only)
+  std::vector<std::pair<std::string, std::string>> poseChoices_;  // the panel's "Animação": pose id, label
+  int poseChoice_ = 0;
   int background_ = 0;  // the panel's "Fundo": 0 the map's painted backdrop, 1 the sky, 2 black
   std::unordered_map<std::string, MeshId> modelMeshes_;
   std::unordered_map<const std::vector<int>*, size_t> periods_;
@@ -1213,10 +1326,11 @@ class MapStage final : public Stage {
   std::vector<PieceBox> pieceBoxes_;
   static constexpr float kGlide = 10.0f;  // 1/s: ~90% of a move in 0.23 s, no overshoot
   static constexpr float kMinPitch = 0.0873f, kMaxPitch = 1.5621f;  // 5 deg (nearly level) to 89.5 deg (straight down)
-  static constexpr float kTiltStep = 0.1745f, kTurnStep = 0.5236f;  // 10 deg; 30 deg (the hex's half-symmetry)
+  static constexpr float kTiltStep = 0.0873f, kTurnStep = 0.2618f;  // Engine2's bar: 5 deg; 15 deg
   static constexpr float kTurnPerPixel = 0.005f, kZoomStep = 0.85f, kPanPerSecond = 0.9f;
   static constexpr float kMinDistance = 3.0f, kEyeClearance = 0.8f;
-  bool captured_ = false;  // the first view is remembered for Voltar
+  bool captured_ = false;  // the first view is remembered: the bar's reset goes back to its angle
+  bool flat_ = false;      // Tática: the old-school 2D view (the bar's Normal / Tática)
   float homeYaw_ = 0.0f, homePitch_ = 0.0f, homeDistance_ = 0.0f;
   glm::vec3 homeTarget_{0.0f};
   std::chrono::steady_clock::time_point lastFrame_ = std::chrono::steady_clock::now();

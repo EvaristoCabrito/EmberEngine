@@ -57,7 +57,10 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
   const SpriteInstance s = loadSprite(instance);
   const float2 c = corners[vertex];
   const float3 right = dot(s.right, s.right) > 0.0 ? float3(s.right.x, 0.0, s.right.y) : push.cameraRight;
-  const float3 world = s.origin + right * ((c.x - 0.5) * s.width) + float3(0, 1, 0) * (c.y * s.height);
+  // A flat card (the 2D view) lies facing up with its top toward -z, the top of the screen.
+  const bool flat = (s.flags & 16u) != 0;
+  const float3 up = flat ? float3(0, 0, -1) : float3(0, 1, 0);
+  const float3 world = s.origin + right * ((c.x - 0.5) * s.width) + up * (c.y * s.height);
   // The card's facing (three.js: a plane turned by yaw faces (sin yaw, 0, cos yaw)), tilted upward.
   const float3 facing = float3(-right.z, 0.0, right.x);
   VSOut o;
@@ -76,7 +79,7 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
   o.uv = float2(u, 1.0 - c.y) * s.uvScale;
   o.instance = instance;
   o.world = world;
-  o.normal = normalize(facing + float3(0.0, kTilt, 0.0));
+  o.normal = flat ? float3(0.0, 1.0, 0.0) : normalize(facing + float3(0.0, kTilt, 0.0));
   return o;
 }
 
@@ -133,7 +136,7 @@ ShadowOut VSShadow(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
     const float2 sun = f.sunDirection.xz;
     right = dot(sun, sun) > 1e-6 ? normalize(float3(sun.y, 0.0, -sun.x)) : float3(1, 0, 0);
   }
-  const float3 world = s.origin + right * ((c.x - 0.5) * s.width) + float3(0, 1, 0) * (c.y * s.height);
+  const float3 world = s.origin + right * ((c.x - 0.5) * s.width) + ((s.flags & 16u) ? float3(0, 0, -1) : float3(0, 1, 0)) * (c.y * s.height);
   ShadowOut o;
   // Non-casters fall off the map; so does a card standing on never-seen ground (R7: it reveals nothing).
   const bool casts = (s.flags & 8u) && !neverSeen(f, s.origin);
