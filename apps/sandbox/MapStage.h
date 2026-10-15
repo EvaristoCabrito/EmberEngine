@@ -6,9 +6,11 @@
 // (docs/ENGINE2_AUDIT.md). Engine2 stays read-only: maps and relief grids are read from it; textures,
 // sprites and meshes come from the cooked packs (Cooker ground / sprites / meshes).
 //
-// Camera, as Engine2's CameraRig: opens on the normal view (turned -30 deg, tilted 20 deg, 30 deg lens),
-// framing the whole board. In a window: right-drag turns and tilts, the wheel zooms, WASD/arrows pan,
-// 1 / 2 switch between the smooth and hard looks (Engine2's keys).
+// Camera (Ember's own orbit camera, 2026-10-15): opens turned -30 deg, tilted 20 deg, 30 deg lens, framing the
+// whole board. It always turns around a pivot on the ground and glides to every input. Right-drag turns and
+// tilts (5 to 89.5 deg), middle-drag grabs the ground, the wheel zooms toward the cursor, WASD/arrows slide the
+// board (the pivot stays on the board: at most its edge reaches the screen centre); the eye never goes into the
+// ground or a 3D piece. The small bar (bottom centre) tilts / turns a step per click and goes back (Voltar).
 //
 // Fog of war (R7, world/FogOfWar.h) on maps that use it (or forced with --fog 1): the party's sight with
 // occlusion; enemies out of sight are not drawn; the renderer darkens and masks everything by the mask.
@@ -202,18 +204,39 @@ class MapStage final : public Stage {
       distance = distance_ * glm::mix(0.35f, 1.0f, 0.5f + 0.5f * std::cos(k * 4.0f * std::numbers::pi_v<float>));
       if (t >= options_.measureSeconds) finishMeasure();
     }
-    // Engine2: orientation from turn then tilt; the camera sits `distance` behind the target.
-    const glm::vec3 back{distance * std::cos(pitch_) * std::sin(yaw), distance * std::sin(pitch_), distance * std::cos(pitch_) * std::cos(yaw)};
-    orbitEye_ = target_ + back;
-    // The free camera (user, 2026-10-15: "move the camera at will"): once the user moves it, it flies from where the
-    // framing was; captures and measurements keep the framing above.
+    // The orbit camera: yaw_ / pitch_ / distance_ / target_ are where the user sends it; cam_ follows them with a
+    // critically damped glide every frame, so every input (drag, wheel, keys, the bar) moves without a jump.
     const float dt = std::min(std::chrono::duration<float>(std::chrono::steady_clock::now() - lastFrame_).count(), 0.1f);
     lastFrame_ = std::chrono::steady_clock::now();
-    lastDt_ = dt;
-    if (!measuring_) flyKeys(dt);
-    if (!captured_) captured_ = true, homeYaw_ = yaw_, homePitch_ = pitch_, homeTarget_ = target_, homeDistance_ = distance_;
-    const Camera camera = free_ && !measuring_ ? Camera::lookAt(eye_, eye_ + lookDirection(), glm::radians(kFov), aspect, kNear)
-                                               : Camera::lookAt(orbitEye_, target_, glm::radians(kFov), aspect, kNear);
+    aspect_ = aspect;
+    if (!captured_) {
+      captured_ = true, homeYaw_ = yaw_, homePitch_ = pitch_, homeTarget_ = target_, homeDistance_ = distance_;
+      cam_ = {target_, yaw_, pitch_, distance_};
+    }
+    if (!measuring_) panKeys(dt);
+    clampGoal();
+    if (measuring_) {
+      cam_ = {target_, yaw, pitch_, distance};  // measurements and captures: exactly the asked view
+    } else {
+      const float k = 1.0f - std::exp(-dt * kGlide);
+      cam_.target += (target_ - cam_.target) * k;
+      cam_.yaw += (yaw_ - cam_.yaw) * k;
+      cam_.pitch += (pitch_ - cam_.pitch) * k;
+      cam_.distance *= std::pow(distance_ / cam_.distance, k);  // zoom glides evenly in scale
+    }
+    // The ground under the pivot (the camera always turns around a point on the board), and the eye never inside
+    // the ground or a 3D piece: the tilt rises just enough to clear it.
+    cam_.target.y = pivotHeight(cam_.target);
+    for (int i = 0; i < 8; ++i) {
+      const glm::vec3 eye = eyeOf(cam_);
+      const float floor = clearanceAt(eye.x, eye.z) + kEyeClearance;
+      if (eye.y >= floor) break;
+      const float need = std::asin(std::clamp((floor - cam_.target.y) / cam_.distance, -1.0f, 1.0f));
+      cam_.pitch = std::min(std::max(cam_.pitch, need + 0.002f), kMaxPitch);
+      if (pitch_ < cam_.pitch) pitch_ = cam_.pitch;  // the goal does not pull it back into the ground
+    }
+    const Camera camera = Camera::lookAt(eyeOf(cam_), cam_.target, glm::radians(kFov), aspect, kNear);
+    lastCamera_ = camera;
     drawList_.clear();
     if (scene_ && sprites_.ready()) buildCards(camera, time);
     renderer.setScene(camera, drawList_);
@@ -286,54 +309,97 @@ class MapStage final : public Stage {
     fogUpdatedThisFrame_ = false;
   }
 
-  // The free camera: drag with any mouse button to look anywhere (the sky too), the wheel flies forward and back.
-  // Clicks on the panel never reach here (ImGui takes them).
+  // Mouse: right-drag turns and tilts around the pivot, middle-drag grabs the ground and slides the board, the wheel
+  // zooms toward the point under the cursor. The left button stays free for the game. Clicks on the panel and the
+  // camera bar never reach here (ImGui takes them).
   void event(const SDL_Event& e) override {
-    if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN) looking_ = true;
-    if (e.type == SDL_EVENT_MOUSE_BUTTON_UP) looking_ = false;
-    if (e.type == SDL_EVENT_MOUSE_MOTION && looking_ && (e.motion.state & (SDL_BUTTON_LMASK | SDL_BUTTON_RMASK | SDL_BUTTON_MMASK))) {
-      beginFree();
-      lookYaw_ -= e.motion.xrel * 0.004f;
-      lookPitch_ = std::clamp(lookPitch_ - e.motion.yrel * 0.004f, glm::radians(-89.0f), glm::radians(89.0f));
+    if (e.type == SDL_EVENT_MOUSE_MOTION && (e.motion.state & SDL_BUTTON_RMASK)) {
+      yaw_ -= e.motion.xrel * kTurnPerPixel;
+      pitch_ = std::clamp(pitch_ + e.motion.yrel * kTurnPerPixel, kMinPitch, kMaxPitch);
     }
-    if (e.type == SDL_EVENT_MOUSE_WHEEL) {
-      beginFree();
-      eye_ += lookDirection() * e.wheel.y * flySpeed() * 0.25f;
+    if (e.type == SDL_EVENT_MOUSE_MOTION && (e.motion.state & SDL_BUTTON_MMASK)) {
+      // The ground point under the cursor stays under it (the board follows the hand).
+      const std::optional<glm::vec3> a = groundUnder(e.motion.windowID, e.motion.x - e.motion.xrel, e.motion.y - e.motion.yrel);
+      const std::optional<glm::vec3> b = groundUnder(e.motion.windowID, e.motion.x, e.motion.y);
+      if (a && b) target_ += glm::vec3{a->x - b->x, 0.0f, a->z - b->z}, cam_.target += glm::vec3{a->x - b->x, 0.0f, a->z - b->z};
+    }
+    if (e.type == SDL_EVENT_MOUSE_WHEEL && e.wheel.y != 0.0f) {
+      const float next = std::clamp(distance_ * std::pow(kZoomStep, e.wheel.y), kMinDistance, maxDistance_);
+      // Toward the cursor: the pivot moves to the cursor's ground point by the share of the distance zoomed.
+      if (const std::optional<glm::vec3> p = groundUnder(e.wheel.windowID, e.wheel.mouse_x, e.wheel.mouse_y)) {
+        const float share = 1.0f - next / distance_;
+        target_.x += (p->x - target_.x) * share;
+        target_.z += (p->z - target_.z) * share;
+      }
+      distance_ = next;
     }
   }
 
-  // Keys held move the free camera smoothly every frame: W A S D / arrows along the view, Q down, E up, Shift faster.
-  void flyKeys(float dt) {
+  // Arrows / WASD slide the board along the view (level, whatever the tilt), faster when zoomed out; Shift doubles.
+  void panKeys(float dt) {
     if (ImGui::GetCurrentContext() && ImGui::GetIO().WantTextInput) return;  // only typing into a text field takes the keys
     const bool* k = SDL_GetKeyboardState(nullptr);
     if (!k) return;
-    // Level moves (a game's camera): the arrows / WASD walk across the board, Q and E change the height.
-    const glm::vec3 forward{-std::sin(lookYaw_), 0.0f, -std::cos(lookYaw_)}, right{std::cos(lookYaw_), 0.0f, -std::sin(lookYaw_)};
+    const glm::vec3 forward{-std::sin(yaw_), 0.0f, -std::cos(yaw_)}, right{std::cos(yaw_), 0.0f, -std::sin(yaw_)};
     glm::vec3 move{0.0f};
     if (k[SDL_SCANCODE_W] || k[SDL_SCANCODE_UP]) move += forward;
     if (k[SDL_SCANCODE_S] || k[SDL_SCANCODE_DOWN]) move -= forward;
     if (k[SDL_SCANCODE_D] || k[SDL_SCANCODE_RIGHT]) move += right;
     if (k[SDL_SCANCODE_A] || k[SDL_SCANCODE_LEFT]) move -= right;
-    if (k[SDL_SCANCODE_E]) move.y += 1.0f;
-    if (k[SDL_SCANCODE_Q]) move.y -= 1.0f;
     if (glm::length(move) < 1e-4f) return;
-    beginFree();
-    const float fast = k[SDL_SCANCODE_LSHIFT] || k[SDL_SCANCODE_RSHIFT] ? 3.0f : 1.0f;
-    eye_ += glm::normalize(move) * flySpeed() * fast * dt;
+    const float fast = k[SDL_SCANCODE_LSHIFT] || k[SDL_SCANCODE_RSHIFT] ? 2.0f : 1.0f;
+    target_ += glm::normalize(move) * std::max(distance_, 6.0f) * kPanPerSecond * fast * dt;
   }
 
-  // The first move starts the free camera exactly where the framing camera was, looking the same way.
-  void beginFree() {
-    if (free_) return;
-    free_ = true;
-    eye_ = orbitEye_;
-    lookYaw_ = yaw_;
-    lookPitch_ = -pitch_;
+  // The board never leaves the screen: the pivot stays on the board, so at most the edge reaches the screen's
+  // centre (the edge hexes whole, from any angle); tilt and zoom stay in range.
+  void clampGoal() {
+    const e2::Board::Bounds b = board_->bounds();
+    target_.x = std::clamp(target_.x, static_cast<float>(b.x0), static_cast<float>(b.x1));
+    target_.z = std::clamp(target_.z, static_cast<float>(b.z0), static_cast<float>(b.z1));
+    pitch_ = std::clamp(pitch_, kMinPitch, kMaxPitch);
+    distance_ = std::clamp(distance_, kMinDistance, maxDistance_);
   }
-  glm::vec3 lookDirection() const {
-    return {-std::cos(lookPitch_) * std::sin(lookYaw_), std::sin(lookPitch_), -std::cos(lookPitch_) * std::cos(lookYaw_)};
+
+  struct OrbitView {
+    glm::vec3 target{0.0f};
+    float yaw = 0.0f, pitch = 0.0f, distance = 1.0f;
+  };
+  static glm::vec3 eyeOf(const OrbitView& v) {
+    return v.target + glm::vec3{v.distance * std::cos(v.pitch) * std::sin(v.yaw), v.distance * std::sin(v.pitch),
+                                v.distance * std::cos(v.pitch) * std::cos(v.yaw)};
   }
-  float flySpeed() const { return std::max(8.0f, std::max(boardWidth_, boardDepth_) * 0.35f); }  // units per second
+  float groundAt(float x, float z) const { return static_cast<float>(board_->cellAt(x, z).groundY); }
+  // The pivot's height: the ground averaged over about a hex around it, so it glides over steps instead of jumping.
+  float pivotHeight(glm::vec3 p) const {
+    float sum = 0.0f;
+    for (int i = 0; i < 7; ++i) {
+      const float a = static_cast<float>(i) * 1.0472f, r = i == 6 ? 0.0f : 1.2f;
+      sum += groundAt(p.x + r * std::cos(a), p.z + r * std::sin(a));
+    }
+    return sum / 7.0f;
+  }
+  // The highest solid thing at (x, z): the ground on the board, and the top of any 3D piece standing there.
+  float clearanceAt(float x, float z) const {
+    const e2::Board::Bounds b = board_->bounds();
+    float top = x < b.x0 || x > b.x1 || z < b.z0 || z > b.z1 ? groundLow_ : groundAt(x, z);
+    for (const PieceBox& p : pieceBoxes_)
+      if (std::abs(x - p.x) < p.radius && std::abs(z - p.z) < p.radius) top = std::max(top, p.top);
+    return top;
+  }
+  // The ground point under a window position (window coordinates), on the pivot's level; none above the horizon.
+  std::optional<glm::vec3> groundUnder(SDL_WindowID id, float mx, float my) const {
+    int w = 0, h = 0;
+    SDL_Window* window = SDL_GetWindowFromID(id);
+    if (!window || !SDL_GetWindowSize(window, &w, &h) || w <= 0 || h <= 0) return std::nullopt;
+    const float tanHalf = std::tan(glm::radians(kFov * 0.5f));
+    const float nx = 2.0f * mx / static_cast<float>(w) - 1.0f, ny = 1.0f - 2.0f * my / static_cast<float>(h);
+    const glm::vec3 up = glm::cross(lastCamera_.right, lastCamera_.forward);
+    const glm::vec3 dir = glm::normalize(lastCamera_.forward + lastCamera_.right * (nx * tanHalf * aspect_) + up * (ny * tanHalf));
+    if (dir.y > -1e-3f) return std::nullopt;
+    const float t = (cam_.target.y - lastCamera_.position.y) / dir.y;
+    return lastCamera_.position + dir * t;
+  }
 
   // A dropdown: `count` choices named by name(i); true when the choice changed.
   template <typename Name>
@@ -353,57 +419,39 @@ class MapStage final : public Stage {
   // The window shows only the choices, in plain Portuguese words, large (user, 2026-10-15: "the only information I
   // want on that screen are the CHOICES, very visible"; no numbers, no statistics). Look numbers stay in the code
   // and the looks/ READMEs.
-  // The camera's on-screen controls (top right): hold a button and the camera keeps moving; Voltar returns to the
-  // first view.
-  void drawCameraButtons() {
-    ImGui::SetNextWindowPos({ImGui::GetIO().DisplaySize.x - 12.0f, 12.0f}, ImGuiCond_Always, {1.0f, 0.0f});
-    ImGui::SetNextWindowBgAlpha(0.9f);
-    ImGui::Begin("Câmera", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoMove);
-    ImGui::PushFont(nullptr, 24.0f);
-    const ImVec2 b{120.0f, 52.0f};
-    const float dt = lastDt_, move = flySpeed() * dt, turn = 1.4f * dt;
-    const glm::vec3 fwd{-std::sin(lookYaw_), 0.0f, -std::cos(lookYaw_)}, right{std::cos(lookYaw_), 0.0f, -std::sin(lookYaw_)};
-    const auto hold = [&](const char* label, auto action) {
-      ImGui::Button(label, b);
-      if (ImGui::IsItemActive()) {
-        beginFree();
-        action();
-      }
-    };
-    // Row 1: turn left, forward, turn right, up
-    hold("girar ←##tl", [&] { lookYaw_ += turn; });
+  // The camera bar (small, bottom centre): tilt down / up, turn left / right by one step per click (held: repeats),
+  // each step glides; Voltar glides back to the first view.
+  void drawCameraBar() {
+    const ImGuiIO& io = ImGui::GetIO();
+    ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, io.DisplaySize.y - 12.0f}, ImGuiCond_Always, {0.5f, 1.0f});
+    ImGui::SetNextWindowBgAlpha(0.75f);
+    ImGui::Begin("##camerabar", nullptr,
+                 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
+                     ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoSavedSettings);
+    ImGui::PushFont(nullptr, 20.0f);
+    ImGui::PushItemFlag(ImGuiItemFlags_ButtonRepeat, true);
+    if (ImGui::ArrowButton("##down", ImGuiDir_Down)) pitch_ = std::clamp(pitch_ - kTiltStep, kMinPitch, kMaxPitch);
     ImGui::SameLine();
-    hold("\u2191##f", [&] { eye_ += fwd * move; });
+    if (ImGui::ArrowButton("##up", ImGuiDir_Up)) pitch_ = std::clamp(pitch_ + kTiltStep, kMinPitch, kMaxPitch);
     ImGui::SameLine();
-    hold("girar →##tr", [&] { lookYaw_ -= turn; });
+    if (ImGui::ArrowButton("##left", ImGuiDir_Left)) yaw_ += kTurnStep;
     ImGui::SameLine();
-    hold("+##in", [&] { eye_ += lookDirection() * move; });
-    // Row 2: left, back, right, out
-    hold("\u2190##l", [&] { eye_ -= right * move; });
+    if (ImGui::ArrowButton("##right", ImGuiDir_Right)) yaw_ -= kTurnStep;
+    ImGui::PopItemFlag();
     ImGui::SameLine();
-    hold("\u2193##b", [&] { eye_ -= fwd * move; });
-    ImGui::SameLine();
-    hold("\u2192##r", [&] { eye_ += right * move; });
-    ImGui::SameLine();
-    hold("-##out", [&] { eye_ -= lookDirection() * move; });
-    // Row 3: look up, look down, rise, sink
-    hold("olhar \u2191##lu", [&] { lookPitch_ = std::min(lookPitch_ + turn, glm::radians(89.0f)); });
-    ImGui::SameLine();
-    hold("olhar \u2193##ld", [&] { lookPitch_ = std::max(lookPitch_ - turn, glm::radians(-89.0f)); });
-    hold("subir##up", [&] { eye_.y += move; });
-    ImGui::SameLine();
-    hold("descer##dn", [&] { eye_.y -= move; });
-    if (ImGui::Button("Voltar", {b.x * 4.0f + ImGui::GetStyle().ItemSpacing.x * 3.0f, b.y})) {
-      free_ = false;
-      yaw_ = homeYaw_, pitch_ = homePitch_, target_ = homeTarget_, distance_ = homeDistance_;
+    if (ImGui::Button("Voltar")) {
+      // The shortest way round to the first turn.
+      const float twoPi = 2.0f * std::numbers::pi_v<float>;
+      yaw_ = homeYaw_ + twoPi * std::round((yaw_ - homeYaw_) / twoPi);
+      pitch_ = homePitch_, target_ = homeTarget_, distance_ = homeDistance_;
     }
     ImGui::PopFont();
     ImGui::End();
   }
 
   void drawPanel() override {
-    drawCameraButtons();
     if (!board_) return;
+    drawCameraBar();
     ImGui::SetNextWindowPos({12, 12}, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowBgAlpha(0.9f);
     ImGui::Begin("Escolhas", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
@@ -543,6 +591,7 @@ class MapStage final : public Stage {
   void placeModels() {
     modelsPlaced_ = true;
     std::vector<InstanceGpu> instances;
+    pieceBoxes_.clear();
     for (const e2::SceneModel& m : scene_->models) {
       std::string asset = m.file.substr(std::string("/game/").size());
       asset = "meshes/" + asset.substr(0, asset.size() - 4) + ".mesh";
@@ -563,6 +612,8 @@ class MapStage final : public Stage {
       inst.mesh = modelMeshes_.at(asset);
       inst.scale = k;
       instances.push_back(inst);
+      const float half = 0.5f * k * std::max(h->boundsMax[0] - h->boundsMin[0], h->boundsMax[2] - h->boundsMin[2]);
+      pieceBoxes_.push_back({m.x, m.z, half, t.y + m.height});
     }
     modelCount_ = static_cast<uint32_t>(instances.size());
     meshes_.setInstances(instances);
@@ -1152,11 +1203,19 @@ class MapStage final : public Stage {
   float boardWidth_ = 1.0f, boardDepth_ = 1.0f;
   float yaw_ = glm::radians(-30.0f), pitch_ = glm::radians(20.0f);
   float distance_ = 0.0f, maxDistance_ = 40.0f;
-  // The free camera (event / flyKeys / beginFree).
-  bool free_ = false, looking_ = false;
-  glm::vec3 eye_{0.0f}, orbitEye_{0.0f};
-  float lookYaw_ = 0.0f, lookPitch_ = 0.0f;
-  float lastDt_ = 0.0f;  // the last frame's time step (the camera buttons move by it)
+  // The orbit camera: the goal above (yaw_ ... target_), the view on show gliding to it, its limits and steps.
+  OrbitView cam_;
+  Camera lastCamera_{};
+  float aspect_ = 1.0f;
+  struct PieceBox {
+    float x, z, radius, top;  // a 3D piece's footprint (square around its centre) and top, world units
+  };
+  std::vector<PieceBox> pieceBoxes_;
+  static constexpr float kGlide = 10.0f;  // 1/s: ~90% of a move in 0.23 s, no overshoot
+  static constexpr float kMinPitch = 0.0873f, kMaxPitch = 1.5621f;  // 5 deg (nearly level) to 89.5 deg (straight down)
+  static constexpr float kTiltStep = 0.1745f, kTurnStep = 0.5236f;  // 10 deg; 30 deg (the hex's half-symmetry)
+  static constexpr float kTurnPerPixel = 0.005f, kZoomStep = 0.85f, kPanPerSecond = 0.9f;
+  static constexpr float kMinDistance = 3.0f, kEyeClearance = 0.8f;
   bool captured_ = false;  // the first view is remembered for Voltar
   float homeYaw_ = 0.0f, homePitch_ = 0.0f, homeDistance_ = 0.0f;
   glm::vec3 homeTarget_{0.0f};

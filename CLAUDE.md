@@ -93,8 +93,8 @@ build.bat release          # or debug; output in build/<config>/bin
   3. `Sandbox --map C:/Engine2/maps/ember/aldeia015.json --ground build/ground/ground.pak --scene
      build/engine2-scenes/aldeia015.scene.json --sprites build/sprites/battle.pak --meshes build/meshes/props.pak
      [--look smooth|hard] [--moving-light] [--spell-light] [--measure 20] [--zoom F --turn D --tilt D --offset X Z]
-     [--sun AZ EL] [--layers MASK: 1 sun 2 shadows 4 indirect 8 local]`. Window keys: right-drag turn/tilt, wheel
-     zoom, WASD pan, 1/2 looks, F5–F8 lighting layers, Home = Engine2's normal view. Proof maps: aldeia015
+     [--sun AZ EL] [--layers MASK: 1 sun 2 shadows 4 indirect 8 local]`. Window: right-drag turn/tilt, middle-drag
+     grab, wheel zoom to cursor, WASD/arrows slide, camera bar at the bottom (MapStage.h top comment). Proof maps: aldeia015
      (lights, houses, photo ground), random-rimewater-shrine001 (water, 3D trees); stress: wisp-forest-2004.
 - **M3 exit test:** `Sandbox --battle --meshes <pak> --sprites build/sprites/battle.pak --capture x.png
   [--content all|3d|cards] [--unpaced] [--cost-split 0|1|2]`. Reports per phase: GPU median / 99th / worst,
@@ -237,10 +237,10 @@ build.bat release          # or debug; output in build/<config>/bin
 The user's verdict (2026-10-15): the engine as seen is worse than Engine2 ("worst colours and render I've ever
 seen", camera "nonsense", stutters with all units, sprites washed out, nothing visible improved). Order, each step
 only on the user's explicit "faz", shown live in the window:
-1. **Camera: restore the original camera** (orbit: right-drag turn/tilt, wheel zoom, arrows/WASD pan; see git
-   history of MapStage.h before the free camera: `event()` with turning_/yaw_/pitch_/distance_/target_) and remove
-   the free fly camera (event / flyKeys / beginFree / drawCameraButtons). Before doing even that, confirm with the
-   user exactly what they want (the "tactical camera" was NOT accepted; they asked to discuss its meaning).
+1. **Camera: new orbit camera built (2026-10-15), waiting for the user's verdict in the window.** MapStage.h
+   top comment: glide on every input, right-drag turn/tilt free (5-89.5 deg), middle-drag grab, wheel zoom to
+   cursor, WASD/arrows slide with the pivot clamped to the board (edge reaches screen centre, user's rule), eye
+   kept above ground and 3D pieces, small bar ▼ ▲ ◀ ▶ Voltar at the bottom. Free fly camera and big box removed.
 2. **Measure and fix the stutter** (asked, not started; confirm first): frame times with every unit on screen, sprite
    residency vs the 1 GB budget; fix the real cause (budget sized for the real workload, not fewer units).
 3. **Repopulate the map as it is** with the Animação choice driving the map's own units.
