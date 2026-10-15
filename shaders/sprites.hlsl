@@ -90,6 +90,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
     surface.specular = 0.0;
     // Shadows from the ground and 3D pieces, not from the cards' own map (a flat card would shadow itself).
     surface.receivesCardShadow = 0.0;
+    if (s.flags & 4u) surface.twoSidedLocal = 1.0;  // units (Engine2: pointLightsOnBothSides)
     color = min(shade(f, surface), c.rgb * kMaxLit * f.exposure);
     if (s.emitLevel > 0.0) {
       // Engine2's flame mask: bright, saturated pixels close to the light's colour glow, and so does the lit

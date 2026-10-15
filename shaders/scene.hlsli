@@ -141,7 +141,39 @@ struct MeshFrame {
   uint lightingLayers;       // lighting.hlsli kLayer*: layers switched on
   float time;                // seconds (animated materials: water ripples)
   uint pad8;
+  // Local lights (lights.hlsl): the list and its clusters.
+  uint64_t lights;           // LocalLight[lightCount] (device address)
+  uint lightCount;
+  uint clusterBuffer;        // gBuffers index: per cluster, a count then up to kClusterMaxLights indices
+  float clusterNear;         // view depth of the first slice's far side... see clusterSliceDepth
+  float clusterFar;
+  uint64_t clusters;         // the same cluster buffer by device address: read-only (fragment shaders may not
+                             // bind a writable storage buffer without fragmentStoresAndAtomics)
 };
+
+// One local light (Engine2's CarriedLight: a three.js point light). 32 bytes.
+struct LocalLight {
+  float3 position;
+  float range;     // influence ends here (three.js cutoff distance)
+  float3 color;    // linear radiometric colour x intensity (before exposure)
+  float decay;     // distance falloff exponent (Engine2: 1.25)
+};
+
+static const uint kClusterX = 16, kClusterY = 9, kClusterZ = 24;
+static const uint kClusterCount = kClusterX * kClusterY * kClusterZ;
+static const uint kClusterMaxLights = 63;
+
+LocalLight loadLight(MeshFrame f, uint i) { return vk::RawBufferLoad<LocalLight>(f.lights + uint64_t(i) * 32); }
+uint clusterOffset(uint cluster) { return cluster * (kClusterMaxLights + 1) * 4; }
+// View depth where slice `i` begins: logarithmic between clusterNear and clusterFar (slice 0 starts at 0).
+float clusterSliceDepth(MeshFrame f, uint i) {
+  if (i == 0) return 0.0;
+  return f.clusterNear * pow(f.clusterFar / f.clusterNear, float(i - 1) / float(kClusterZ - 1));
+}
+uint clusterSlice(MeshFrame f, float depth) {
+  if (depth < f.clusterNear) return 0;
+  return min(kClusterZ - 1, 1 + uint(log(depth / f.clusterNear) / log(f.clusterFar / f.clusterNear) * float(kClusterZ - 1)));
+}
 
 // The work buffer: counters, indirect arguments, then the queues.
 static const uint kCounterQueue0 = 0;

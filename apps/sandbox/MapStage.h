@@ -21,6 +21,8 @@
 #include <chrono>
 #include <numbers>
 #include <unordered_map>
+#include <format>
+#include <string_view>
 
 #include "Stage.h"
 #include "core/Log.h"
@@ -49,12 +51,19 @@ struct MapStageOptions {
   uint32_t layers = 0xFFFFFFFFu;
   // Sun direction override (degrees; elevation < 0 = keep the default): azimuth from +x towards +z.
   float sunAzimuth = 0.0f, sunElevation = -1.0f;
+  // Test lights for the proof scene: a torch carried around the party, a spell's light flying from the
+  // party's caster to the nearest enemy and flashing on impact.
+  bool movingLight = false, spellLight = false;
+  // Gameplay measurement: for this many seconds the camera turns a full circle and zooms in and out twice
+  // while units animate and lights move and flicker; every frame's main-thread and GPU time is recorded.
+  float measureSeconds = 0.0f;
 };
 
 class MapStage final : public Stage {
  public:
   MapStage(VulkanContext& context, Renderer& renderer, AssetManager& assets, const MapStageOptions& options)
-      : uploads_(context),
+      : renderer_(renderer),
+        uploads_(context),
         ground_(context, renderer.bindless(), assets, uploads_),
         sprites_(context, renderer.bindless(), assets, uploads_, {options.spriteBudgetMb << 20}),
         meshes_(context, renderer.bindless(), assets, uploads_, {.geometryBytes = 256ull << 20}),
@@ -127,14 +136,25 @@ class MapStage final : public Stage {
       maxDistance_ = std::max(40.0f, std::max(boardWidth_, boardDepth_) * 2.2f);
       distance_ = std::min(maxDistance_, std::max(boardWidth_ / (2 * tanHalf * aspect), boardDepth_ * 1.35f) * 1.05f) / options_.zoom;
     }
+    // Measurement: a full turn and two zooms in and out (to 35% of the framing distance) over the run.
+    float yaw = yaw_, distance = distance_;
+    if (measuring_) {
+      const float t = std::chrono::duration<float>(std::chrono::steady_clock::now() - measureStart_).count();
+      const float k = std::min(t / options_.measureSeconds, 1.0f);
+      yaw = yaw_ + k * 2.0f * std::numbers::pi_v<float>;
+      distance = distance_ * glm::mix(0.35f, 1.0f, 0.5f + 0.5f * std::cos(k * 4.0f * std::numbers::pi_v<float>));
+      if (t >= options_.measureSeconds) finishMeasure();
+    }
     // Engine2: orientation from turn then tilt; the camera sits `distance` behind the target.
-    const glm::vec3 back{distance_ * std::cos(pitch_) * std::sin(yaw_), distance_ * std::sin(pitch_),
-                         distance_ * std::cos(pitch_) * std::cos(yaw_)};
+    const glm::vec3 back{distance * std::cos(pitch_) * std::sin(yaw), distance * std::sin(pitch_), distance * std::cos(pitch_) * std::cos(yaw)};
     const Camera camera = Camera::lookAt(target_ + back, target_, glm::radians(kFov), aspect, kNear);
     const float time = std::chrono::duration<float>(std::chrono::steady_clock::now() - start_).count();
     drawList_.clear();
     if (scene_ && sprites_.ready()) buildCards(camera, time);
     renderer.setScene(camera, drawList_);
+    lights_.clear();
+    if (scene_) buildLights(time);
+    renderer.setLights(lights_);
     Renderer::Lighting lighting;
     if (options_.sunElevation >= 0.0f) {
       const float az = glm::radians(options_.sunAzimuth), el = glm::radians(options_.sunElevation);
@@ -148,6 +168,24 @@ class MapStage final : public Stage {
     renderer.waitFor(uploads_.timeline(),
                      std::max({ground_.uploadWaitValue(), sprites_.uploadWaitValue(), meshes_.uploadWaitValue()}));
     if (ground_.ready() && sceneReady()) ++readyFrames_;
+    if (options_.measureSeconds > 0.0f && !measuring_ && !measured_ && readyFrames_ >= 30) {
+      measuring_ = true;
+      measureStart_ = std::chrono::steady_clock::now();
+    }
+  }
+
+  void endFrame(double busyMs) override {
+    if (!measuring_) return;
+    if (++measureFrames_ <= 4) return;  // the GPU result is a few frames old
+    double gpu = 0.0;
+    for (const auto& r : renderer_.gpuTimer().results()) {
+      if (std::string_view(r.name) == "frame") gpu = r.milliseconds;
+      auto it = std::find_if(passes_.begin(), passes_.end(), [&](const auto& p) { return p.first == r.name; });
+      if (it == passes_.end()) it = passes_.insert(passes_.end(), {std::string(r.name), 0.0});
+      it->second += r.milliseconds;
+    }
+    busy_.push_back(busyMs);
+    gpu_.push_back(gpu);
   }
 
   void event(const SDL_Event& e) override {
@@ -173,6 +211,7 @@ class MapStage final : public Stage {
         case SDLK_F5: layers_ ^= 1u; break;  // sun
         case SDLK_F6: layers_ ^= 2u; break;  // shadows
         case SDLK_F7: layers_ ^= 4u; break;  // indirect
+        case SDLK_F8: layers_ ^= 8u; break;  // local lights
         default: break;
       }
     }
@@ -190,8 +229,8 @@ class MapStage final : public Stage {
                 s.triangles[look_ == e2::EdgeStyle::Smooth ? 0 : 1], s.layers, s.texturesReady, s.textures, s.textureBytes / 1048576.0,
                 s.geometryBytes / 1048576.0);
     ImGui::Text("camera: turn %.0f, tilt %.0f, distance %.1f", glm::degrees(yaw_), glm::degrees(pitch_), distance_);
-    ImGui::Text("lighting: sun %s (F5), shadows %s (F6), indirect %s (F7)", layers_ & 1u ? "on" : "off", layers_ & 2u ? "on" : "off",
-                layers_ & 4u ? "on" : "off");
+    ImGui::Text("lighting: sun %s (F5), shadows %s (F6), indirect %s (F7), local lights %s (F8): %zu lights", layers_ & 1u ? "on" : "off",
+                layers_ & 2u ? "on" : "off", layers_ & 4u ? "on" : "off", layers_ & 8u ? "on" : "off", lights_.size());
     if (scene_) {
       const SpriteSystem::Stats ss = sprites_.stats();
       ImGui::Text("scene: %zu cards, %zu units drawn (%u of %zu missing art), %u models; sprites %.0f MB resident",
@@ -201,12 +240,44 @@ class MapStage final : public Stage {
     ImGui::End();
   }
 
-  bool done() const override { return failed_ || readyFrames_ >= 30; }
-  bool passed() const override { return !failed_ && ground_.ready(); }
+  bool done() const override { return failed_ || (options_.measureSeconds > 0.0f ? measured_ : readyFrames_ >= 30); }
+  bool passed() const override { return !failed_ && ground_.ready() && measurePassed_; }
 
  private:
   static constexpr float kFov = 30.0f, kNear = 0.5f;  // Engine2's normal lens
   static constexpr float kFlameEmit = 2.5f;           // Engine2 FLAME_EMIT
+
+  // Median, 99th percentile and worst; frames over the 60 Hz budget.
+  struct Spread {
+    double median = 0, p99 = 0, worst = 0;
+    size_t over = 0;
+  };
+  static Spread spread(std::vector<double> v) {
+    Spread s;
+    if (v.empty()) return s;
+    std::sort(v.begin(), v.end());
+    s.median = v[v.size() / 2];
+    s.p99 = v[std::min(v.size() - 1, v.size() * 99 / 100)];
+    s.worst = v.back();
+    s.over = static_cast<size_t>(std::count_if(v.begin(), v.end(), [](double x) { return x > 1000.0 / 60.0; }));
+    return s;
+  }
+
+  void finishMeasure() {
+    measuring_ = false;
+    measured_ = true;
+    const Spread cpu = spread(busy_), gpu = spread(gpu_);
+    const size_t n = busy_.size();
+    measurePassed_ = n > 0 && cpu.worst <= 1000.0 / 60.0 && gpu.worst <= 1000.0 / 60.0;
+    logInfo("measure {}: {} frames over {:.0f} s (camera turn + zoom, {} units animating, {} lights)", scene_ ? scene_->map : std::string("map"), n,
+            options_.measureSeconds, scene_ ? scene_->units.size() : 0, lights_.size());
+    logInfo("  main thread: median {:.2f}, 99th {:.2f}, worst {:.2f} ms; {} frames over 16.7 ms", cpu.median, cpu.p99, cpu.worst, cpu.over);
+    logInfo("  GPU:         median {:.2f}, 99th {:.2f}, worst {:.2f} ms; {} frames over 16.7 ms", gpu.median, gpu.p99, gpu.worst, gpu.over);
+    std::string line = "  GPU passes (average):";
+    for (const auto& [name, sum] : passes_) line += std::format(" {} {:.2f}", name, sum / std::max<size_t>(1, n));
+    logInfo("{}", line);
+    logInfo("  {}", measurePassed_ ? "PASS: every frame within 16.7 ms" : "FAIL: frames over the 16.7 ms budget");
+  }
 
   bool sceneReady() const {
     if (!scene_) return true;
@@ -337,6 +408,67 @@ class MapStage final : public Stage {
               [&](const SpriteInstance& a, const SpriteInstance& b) { return glm::dot(a.origin - eye, fwd) > glm::dot(b.origin - eye, fwd); });
   }
 
+  // Engine2's CarriedLight: three.js point light, decay 1.25, cut off at hypot(radius, height) x 2.5, colour x
+  // intensity x 3.2 x flicker.
+  static LocalLight carried(glm::vec3 at, const std::array<float, 3>& color, float intensity, float radius, float height, float flick) {
+    LocalLight l;
+    l.position = at;
+    l.range = std::hypot(radius, height) * 2.5f;
+    l.color = glm::vec3(color[0], color[1], color[2]) * intensity * 3.2f * flick;
+    l.decay = 1.25f;
+    return l;
+  }
+
+  void buildLights(float time) {
+    for (const e2::SceneCard& d : scene_->cards) {
+      if (!d.light) continue;
+      const float yaw = d.lockedYaw.value_or(0.0f);
+      const glm::vec3 right{std::cos(yaw), 0.0f, -std::sin(yaw)};
+      const float height = std::max(d.light->minHeight, (d.art.flameV - d.art.baseV) * d.h);
+      const float side = (d.art.flameU - d.art.baseU) * d.w * (d.mirror ? -1.0f : 1.0f);
+      const glm::vec3 at = glm::vec3(d.x, groundOf(d.groundSmooth, d.groundHard), d.z) + right * side + glm::vec3(0, height, 0);
+      lights_.push_back(carried(at, d.light->color, d.light->intensity, d.light->radius, height, flicker(time, d.light->seed, d.light->flicker)));
+    }
+    const e2::SceneUnit* hero = nullptr;
+    for (const e2::SceneUnit& u : scene_->units)
+      if (u.side == "player") {
+        hero = &u;
+        break;
+      }
+    if (!hero) return;
+    const glm::vec3 base{hero->x, groundOf(hero->groundSmooth, hero->groundHard), hero->z};
+    if (options_.movingLight) {
+      // A torch (Engine2's NORMAL_FIRE: colour (1, 0.58, 0.26), intensity 8, radius 3.6, full flicker) carried
+      // around the hero at hand height.
+      const float a = time * 0.6f;
+      const glm::vec3 at = base + glm::vec3(std::cos(a) * 2.5f, 1.6f, std::sin(a) * 2.5f);
+      lights_.push_back(carried(at, {1.0f, 0.58f, 0.26f}, 8.0f, 3.6f, 1.6f, flicker(time, 1.7f, 1.0f)));
+    }
+    if (options_.spellLight) {
+      // A violet arcane bolt from the hero to the nearest enemy: 1.2 s of flight, 0.5 s of impact flash.
+      const e2::SceneUnit* target = nullptr;
+      float best = 1e30f;
+      for (const e2::SceneUnit& u : scene_->units) {
+        if (u.side != "enemy") continue;
+        const float d = glm::length(glm::vec2(u.x - hero->x, u.z - hero->z));
+        if (d < best) best = d, target = &u;
+      }
+      if (target) {
+        const glm::vec3 to{target->x, groundOf(target->groundSmooth, target->groundHard), target->z};
+        const float cycle = std::fmod(time, 2.0f);
+        const std::array<float, 3> violet{0.62f, 0.32f, 1.0f};
+        if (cycle < 1.2f) {
+          const float t = cycle / 1.2f;
+          const glm::vec3 at = glm::mix(base, to, t) + glm::vec3(0, 1.8f + std::sin(t * 3.14159f) * 1.2f, 0);
+          lights_.push_back(carried(at, violet, 10.0f, 3.5f, 1.8f, 1.0f));
+        } else if (cycle < 1.7f) {
+          const float k = 1.0f - (cycle - 1.2f) / 0.5f;
+          lights_.push_back(carried(to + glm::vec3(0, 1.4f, 0), violet, 24.0f * k * k, 4.5f, 1.4f, 1.0f));
+        }
+      }
+    }
+  }
+
   // The shortest repeat of Engine2's sampled frame pacing (the whole sample when it does not repeat).
   size_t pacePeriod(const std::vector<int>& pace) {
     auto it = periods_.find(&pace);
@@ -351,6 +483,7 @@ class MapStage final : public Stage {
     return best;
   }
 
+  Renderer& renderer_;
   UploadQueue uploads_;
   BoardGround ground_;
   SpriteSystem sprites_;
@@ -360,10 +493,16 @@ class MapStage final : public Stage {
   std::unordered_map<std::string, MeshId> modelMeshes_;
   std::unordered_map<const std::vector<int>*, size_t> periods_;
   std::vector<SpriteInstance> drawList_;
+  std::vector<LocalLight> lights_;
   bool modelsPlaced_ = false;
   e2::EdgeStyle placedLook_ = e2::EdgeStyle::Smooth;
   uint32_t modelCount_ = 0, missing_ = 0, fullFrames_ = 0;
   std::chrono::steady_clock::time_point start_ = std::chrono::steady_clock::now();
+  bool measuring_ = false, measured_ = false, measurePassed_ = true;
+  std::chrono::steady_clock::time_point measureStart_;
+  uint32_t measureFrames_ = 0;
+  std::vector<double> busy_, gpu_;
+  std::vector<std::pair<std::string, double>> passes_;
   std::optional<e2::BoardData> data_;
   std::unique_ptr<e2::Board> board_;
   e2::EdgeStyle look_;

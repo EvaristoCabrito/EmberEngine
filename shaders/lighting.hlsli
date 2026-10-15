@@ -17,6 +17,7 @@ static const float kPi = 3.14159265;
 static const uint kLayerSun = 1u;
 static const uint kLayerShadows = 2u;
 static const uint kLayerIndirect = 4u;
+static const uint kLayerLocal = 8u;
 
 struct Surface {
   float3 position;         // world
@@ -31,6 +32,7 @@ struct Surface {
   float specular;          // 1 = full specular lobe, 0 = diffuse only (2D cards)
   float receivesShadow;    // 1 = the sun's shadow maps darken it, 0 = not
   float receivesCardShadow; // 1 = cards' shadows too, 0 = only the ground's and 3D pieces' (cards themselves)
+  float twoSidedLocal;     // 1 = local lights reach it from both sides (a character card stands for a body)
 };
 
 Surface defaultSurface(float3 position, float3 normal, float3 albedo) {
@@ -47,6 +49,7 @@ Surface defaultSurface(float3 position, float3 normal, float3 albedo) {
   s.specular = 1.0;
   s.receivesShadow = 1.0;
   s.receivesCardShadow = 1.0;
+  s.twoSidedLocal = 0.0;
   return s;
 }
 
@@ -101,6 +104,41 @@ float sunShadow(MeshFrame f, Surface s) {
   return lit / 16.0;
 }
 
+// Local lights through the cluster this point falls in. Engine2's falloff (three.js punctual lights):
+// 1 / max(d^decay, 0.01), windowed to zero at the range by (1 - (d / range)^4)^2.
+float3 localLights(MeshFrame f, Surface s, float3 view, float3 diffuseColor, float3 f0, float a, float nv) {
+  if ((f.lightingLayers & kLayerLocal) == 0 || f.lightCount == 0) return 0.0;
+  const float4 clip = mul(float4(s.position, 1.0), f.viewProjection);
+  if (clip.w <= 0.0) return 0.0;
+  const float2 ndc = clip.xy / clip.w;
+  const uint2 tile = uint2(clamp((ndc * 0.5 + 0.5) * float2(kClusterX, kClusterY), 0.0, float2(kClusterX, kClusterY) - 1.0));
+  const float depth = -mul(float4(s.position, 1.0), f.view).z;
+  const uint cluster = tile.x + tile.y * kClusterX + clusterSlice(f, depth) * kClusterX * kClusterY;
+  const uint64_t list = f.clusters + clusterOffset(cluster);
+  const uint count = vk::RawBufferLoad<uint>(list);
+  float3 color = 0.0;
+  for (uint k = 0; k < count; ++k) {
+    const LocalLight light = loadLight(f, vk::RawBufferLoad<uint>(list + 4 + k * 4));
+    const float3 toLight = light.position - s.position;
+    const float d = length(toLight);
+    if (d >= light.range) continue;
+    const float3 l = toLight / max(d, 1e-4);
+    const float ratio = d / light.range;
+    const float window = saturate(1.0 - ratio * ratio * ratio * ratio);
+    const float falloff = window * window / max(pow(d, light.decay), 0.01);
+    float3 n = s.normal;
+    if (s.twoSidedLocal > 0.0 && dot(n, l) < 0.0) n = -n;
+    const float nlRaw = dot(n, l);
+    const float nl = saturate(nlRaw), nlDiffuse = saturate((nlRaw + s.wrap) / (1.0 + s.wrap));
+    if (nlDiffuse <= 0.0) continue;
+    const float3 h = normalize(l + view);
+    const float3 F = fresnelSchlick(f0, saturate(dot(view, h))) * s.specular;
+    color += (diffuseColor * (1.0 - F) / kPi * nlDiffuse + F * ggx(saturate(dot(n, h)), a) * smithVisibility(nv, nl, a) * nl) *
+             light.color * f.exposure * falloff;
+  }
+  return color;
+}
+
 // --- Indirect light (the interface stays when probes and the sky arrive) --------------------------------
 
 // Irradiance E arriving at the surface from everywhere but the direct lights.
@@ -141,6 +179,7 @@ float3 shade(MeshFrame f, Surface s) {
                f.sunIntensity * shadow;
     }
   }
+  color += localLights(f, s, view, diffuseColor, f0, a, nv);
   if (f.lightingLayers & kLayerIndirect) {
     // Lambert returns albedo * E / pi; the specular lobe sees the environment's radiance through the
     // split-sum BRDF.

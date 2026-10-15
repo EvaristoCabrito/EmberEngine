@@ -21,7 +21,9 @@
 //        D1 port: a real Ember map from Engine2, its board and ground (docs/ENGINE2_AUDIT.md).
 //        [--scene <scene.json> --sprites <battle.pak> --meshes <props.pak>]: its decorations, 3D models and units.
 //        Captures: [--zoom F] [--turn DEG] [--tilt DEG] [--offset X Z] (board widths/depths) [--layers MASK]
-//        (lighting layers on: 1 sun, 2 shadows, 4 indirect; shaders/lighting.hlsli) [--sun AZIMUTH ELEVATION] (degrees).
+//        (lighting layers on: 1 sun, 2 shadows, 4 indirect; shaders/lighting.hlsli) [--sun AZIMUTH ELEVATION] (degrees)
+//        [--moving-light] [--spell-light] (test lights; 8 in --layers = local lights)
+//        [--measure SECONDS]: camera turn + zoom with everything animating; frame times; exit 3 if any frame > 16.7 ms.
 //   Sandbox.exe --meshes meshes.pak [--grid N]
 //        Mesh scene (M3 bring-up): every cooked mesh in the archive on an N x N grid, drawn GPU-driven.
 //   Sandbox.exe --sprites roster.pak [--budget MB]
@@ -86,6 +88,8 @@ struct Options {
   float mapZoom = 1.0f, mapTurn = 0.0f, mapTilt = 0.0f, mapOffsetX = 0.0f, mapOffsetZ = 0.0f;
   uint32_t lightingLayers = 0xFFFFFFFFu;
   float sunAzimuth = 0.0f, sunElevation = -1.0f;
+  bool movingLight = false, spellLight = false;
+  float measureSeconds = 0.0f;
   std::string scene;
   std::string map, ground, look = "smooth", boardData = "content/engine2/board.json", engine2 = "C:/Engine2/public";
   std::vector<std::string> compare;  // pakA assetA pakB assetB outDir  // measurement: frames back to back, so the GPU never idles and keeps its full clock
@@ -126,6 +130,9 @@ Options parse(int argc, char** argv) {
     else if (arg == "--tilt" && hasValue) o.mapTilt = static_cast<float>(std::atof(argv[++i]));
     else if (arg == "--offset" && i + 2 < argc) o.mapOffsetX = static_cast<float>(std::atof(argv[++i])), o.mapOffsetZ = static_cast<float>(std::atof(argv[++i]));
     else if (arg == "--sun" && i + 2 < argc) o.sunAzimuth = static_cast<float>(std::atof(argv[++i])), o.sunElevation = static_cast<float>(std::atof(argv[++i]));
+    else if (arg == "--moving-light") o.movingLight = true;
+    else if (arg == "--measure" && hasValue) o.measureSeconds = static_cast<float>(std::atof(argv[++i]));
+    else if (arg == "--spell-light") o.spellLight = true;
     else if (arg == "--layers" && hasValue) o.lightingLayers = static_cast<uint32_t>(std::strtoul(argv[++i], nullptr, 0));
     else if (arg == "--board" && hasValue) o.boardData = argv[++i];
     else if (arg == "--engine2" && hasValue) o.engine2 = argv[++i];
@@ -367,6 +374,9 @@ std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Rende
     m.layers = o.lightingLayers;
     m.sunAzimuth = o.sunAzimuth;
     m.sunElevation = o.sunElevation;
+    m.movingLight = o.movingLight;
+    m.spellLight = o.spellLight;
+    m.measureSeconds = o.measureSeconds;
     return std::make_unique<MapStage>(context, renderer, assets, m);
   }
   if (!o.sprites.empty() && o.map.empty()) return std::make_unique<SpriteStage>(context, renderer, assets, o.spriteBudgetMb);

@@ -40,6 +40,15 @@ constexpr uint32_t kShadowSize = 4096;
 constexpr VkFormat kShadowFormat = VK_FORMAT_D32_SFLOAT;
 constexpr VkFormat kCardShadowFormat = VK_FORMAT_D16_UNORM;  // cards: 16 bits is plenty, half the memory
 
+// Clustered lights (shaders/scene.hlsli): 16 x 9 tiles x 24 slices, 63 lights per cluster.
+constexpr uint32_t kClusterCount = 16 * 9 * 24;
+constexpr VkDeviceSize kClusterBytes = VkDeviceSize{kClusterCount} * 64 * 4;
+static_assert(sizeof(LocalLight) == 32);
+
+struct LightsPush {
+  VkDeviceAddress frame;
+};
+
 struct TerrainPush {
   VkDeviceAddress frame;
   VkDeviceAddress record;
@@ -116,8 +125,14 @@ struct MeshFrame {
   uint32_t lightingLayers;
   float time;
   uint32_t pad8;
+  uint64_t lights;
+  uint32_t lightCount;
+  uint32_t clusterBuffer;
+  float clusterNear;
+  float clusterFar;
+  uint64_t clusters;
 };
-static_assert(sizeof(MeshFrame) == 576 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384 &&
+static_assert(sizeof(MeshFrame) == 608 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384 &&
               offsetof(MeshFrame, shadowMatrix) == 480);
 
 // Work buffer layout (shaders/scene.hlsli): counters, indirect arguments, two queues, the cluster list.
@@ -216,6 +231,7 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
     frame.sprites = createHostBuffer(context, sizeof(SpriteInstance) * kMaxSprites, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     frame.meshFrame = createDeviceBuffer(context, sizeof(MeshFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     frame.shadowFrame = createDeviceBuffer(context, sizeof(MeshFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    frame.lights = createHostBuffer(context, sizeof(LocalLight) * kMaxLights, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     frame.meshCounters = createReadbackBuffer(context, kCounterBytes);
   }
   meshWork_ = createDeviceBuffer(context, kWorkHeaderBytes + VkDeviceSize{kMaxQueue} * 8 * 2 + VkDeviceSize{kMaxClusters} * (8 + 4),
@@ -225,6 +241,8 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   instanceVisibility_ = createDeviceBuffer(context, VkDeviceSize{kMaxInstances} * 4,
                                            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
   instanceVisibilityIndex_ = bindless_.addStorageBuffer(instanceVisibility_.buffer);
+  clusters_ = createDeviceBuffer(context, kClusterBytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT);
+  clusterBufferIndex_ = bindless_.addStorageBuffer(clusters_.buffer);
 
   VkSamplerCreateInfo samplerInfo{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
   samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -346,6 +364,7 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   cullTraversePipeline_ = createComputePipeline(context, layout, "cull.CSTraverse");
   cullPrepareDrawPipeline_ = createComputePipeline(context, layout, "cull.CSPrepareDraw");
   resolvePipeline_ = createComputePipeline(context, layout, "resolve.CSResolve");
+  lightsPipeline_ = createComputePipeline(context, layout, "lights.CSClusters");
   GraphicsPipelineDesc meshlet;
   meshlet.taskShader = "meshlet.ASMain";
   meshlet.meshShader = "meshlet.MSMain";
@@ -397,6 +416,8 @@ Renderer::~Renderer() {
   bindless_.removeSampledImage(cardShadowMapIndex_);
   destroyImage(context_, cardShadowMap_);
   vkDestroyPipeline(context_.device, meshShadowPipeline_, nullptr);
+  vkDestroyPipeline(context_.device, lightsPipeline_, nullptr);
+  destroyBuffer(context_, clusters_);
   vkDestroyPipeline(context_.device, spriteShadowPipeline_, nullptr);
   vkDestroySampler(context_.device, shadowSampler_, nullptr);
   vkDestroyPipeline(context_.device, spritePipeline_, nullptr);
@@ -420,6 +441,7 @@ Renderer::~Renderer() {
     destroyBuffer(context_, frame.meshFrame);
     destroyBuffer(context_, frame.meshCounters);
     destroyBuffer(context_, frame.shadowFrame);
+    destroyBuffer(context_, frame.lights);
   }
 }
 
@@ -629,6 +651,13 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
   previousCamera_ = camera_;
   f.lightingLayers = lightingLayers_;
   f.time = time;
+  f.lights = bufferAddress(context_, frame.lights);
+  f.lightCount = static_cast<uint32_t>(lights_.size());
+  f.clusterBuffer = clusterBufferIndex_;
+  f.clusterNear = 2.0f;
+  f.clusterFar = 400.0f;
+  f.clusters = bufferAddress(context_, clusters_);
+  if (!lights_.empty()) std::memcpy(frame.lights.mapped, lights_.data(), lights_.size() * sizeof(LocalLight));
   f.shadowMap = kNoTextureIndex;
   if (shadowRadius_ > 0.0f && terrain_) {
     // An orthographic sun camera around the board's bounding sphere, pulled back along the sun direction.
@@ -889,6 +918,19 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   // --- 3D meshes: cull, pick cluster LODs, rasterise visibility + depth, resolve materials -----
   const bool meshes = hasScene_ && static_cast<bool>(meshView_);
   if (hasScene_) writeFrame(frame, cmd, time);
+  // --- Local lights: each cluster's list (read by every lit surface) -------------------------------
+  if (hasScene_ && !lights_.empty()) {
+    const uint32_t lightScope = gpuTimer_.begin(cmd, "light clusters");
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
+                  VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, lightsPipeline_);
+    const LightsPush push{bufferAddress(context_, frame.meshFrame)};
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+    vkCmdDispatch(cmd, (kClusterCount + 63) / 64, 1, 1);
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+                  VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
+    gpuTimer_.end(cmd, lightScope);
+  }
   // --- Sun shadow: the board's ground from the sun (before the meshes: their resolve reads it) ---------------------------------------------
   if (shadowsThisFrame_) {
     const uint32_t shadowScope = gpuTimer_.begin(cmd, "shadow");

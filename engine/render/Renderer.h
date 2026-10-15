@@ -18,6 +18,14 @@
 namespace ember {
 
 class VulkanContext;
+
+// One local light (Engine2's CarriedLight: a three.js point light). Matches LocalLight in shaders/scene.hlsli.
+struct LocalLight {
+  glm::vec3 position;
+  float range;     // influence ends here
+  glm::vec3 color; // linear colour x intensity
+  float decay;     // distance falloff exponent (Engine2: 1.25)
+};
 class Swapchain;
 class DebugUi;
 
@@ -95,6 +103,9 @@ class Renderer {
   void setTerrain(const TerrainView& terrain) { terrain_ = terrain; }
   // The board's water (BoardGround::water); empty = none.
   void setWater(const WaterView& water) { water_ = water; }
+  // Local lights for the next frame (at most kMaxLights; the rest are dropped).
+  void setLights(std::span<const LocalLight> lights) { lights_.assign(lights.begin(), lights.begin() + std::min<size_t>(lights.size(), kMaxLights)); }
+  static constexpr uint32_t kMaxLights = 1024;
   // The sun's shadow map covers this sphere (world space); radius 0 = no sun shadows.
   void setSunShadowBounds(glm::vec3 center, float radius) {
     shadowCenter_ = center;
@@ -123,6 +134,7 @@ class Renderer {
     Buffer sprites;  // this frame's SpriteInstance[] (host-visible, read by device address)
     Buffer meshFrame;     // MeshFrame for the mesh passes (device-local, written by vkCmdUpdateBuffer)
     Buffer shadowFrame;   // MeshFrame of the meshes' pass from the sun (when the cached shadow map is redrawn)
+    Buffer lights;        // this frame's LocalLight[] (host-visible)
     Buffer meshCounters;  // the work buffer's counters, copied back for meshStats()
     bool countersPending = false;
   };
@@ -162,12 +174,15 @@ class Renderer {
   VkPipeline terrainPipeline_ = VK_NULL_HANDLE;
   VkPipeline terrainShadowPipeline_ = VK_NULL_HANDLE;
   VkPipeline waterPipeline_ = VK_NULL_HANDLE;
-  VkPipeline meshShadowPipeline_ = VK_NULL_HANDLE, spriteShadowPipeline_ = VK_NULL_HANDLE;
+  VkPipeline meshShadowPipeline_ = VK_NULL_HANDLE, spriteShadowPipeline_ = VK_NULL_HANDLE, lightsPipeline_ = VK_NULL_HANDLE;
+  std::vector<LocalLight> lights_;
+  Buffer clusters_;
+  uint32_t clusterBufferIndex_ = kNoIndex;
   Image cardShadowMap_;
   uint32_t cardShadowMapIndex_ = kNoIndex;
   bool cardShadowsThisFrame_ = false;
   uint64_t shadowMeshKey_ = 0;
-  alignas(16) std::array<std::byte, 576> shadowFrameStorage_{};
+  alignas(16) std::array<std::byte, 608> shadowFrameStorage_{};
   WaterView water_;
   Image shadowMap_;
   uint32_t shadowMapIndex_ = kNoIndex;
