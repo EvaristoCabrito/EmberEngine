@@ -30,6 +30,8 @@ Cube cubeRound(double q, double r, double s) {
   return {rq, rr, rs};
 }
 
+}  // namespace
+
 // pathfinding.ts hexLine: the hexes a straight line from a to b crosses, a first.
 std::vector<BattleHex> hexLine(BattleHex a, BattleHex b) {
   const int n = Battle::distance(a, b);
@@ -46,6 +48,8 @@ std::vector<BattleHex> hexLine(BattleHex a, BattleHex b) {
   return out;
 }
 
+namespace {
+
 // The cell as hexDef reads it: with the decorations folded in, or the bare tile (an empty overlay).
 int heightOf(const BattleCell& c, bool decorations) { return decorations ? c.shot.height : c.raw.height; }
 bool blocksShotOf(const BattleCell& c, bool decorations) { return decorations ? c.shot.blocksShot : c.raw.blocksShot; }
@@ -61,6 +65,8 @@ const BattleCell& cellByIndex(const Battle& b, BattleHex p) {
   const int i = p.y * b.cols() + p.x;
   return i >= 0 && i < b.cols() * b.rows() ? b.cell(i % b.cols(), i / b.cols()) : kPlains;
 }
+
+}  // namespace
 
 // pathfinding.ts shotBlocker == null.
 bool clearShot(const Battle& b, BattleHex from, BattleHex to, bool arrow, bool decorations) {
@@ -81,6 +87,8 @@ bool clearShot(const Battle& b, BattleHex from, BattleHex to, bool arrow, bool d
   }
   return true;
 }
+
+namespace {
 
 // pathfinding.ts canHitFrom for a unit with these ranges and magic, standing at `from`, against a foe standing at `at`.
 bool hitFrom(const Battle& b, const BattleUnit& u, int minRange, int maxRange, double mag, BattleHex from, const BattleUnit& foe, BattleHex at,
@@ -110,7 +118,12 @@ bool hitFrom(const Battle& b, const BattleUnit& u, int minRange, int maxRange, d
 
 const BattleCell::Terrain& tileAt(const Battle& b, int x, int y) { return b.cell(x, y).raw; }
 
+}  // namespace
+
 double powerOf(const Fighter& f) { return std::floor((f.mag > 0 ? f.mag : f.atk) / 2); }
+
+namespace {
+
 double protOf(const Fighter& a, const Fighter& d) { return std::floor((a.mag > 0 ? 0 : d.def) / 2); }
 
 // combat.ts terrainBonus: the defender's ground (and cover from shots), the attacker's high ground (+10% of its stat).
@@ -149,10 +162,14 @@ bool isRearAttack(const Fighter& a, const Fighter& d) {
   return false;
 }
 
+}  // namespace
+
 double elementalDamage(double base, double resistance, double mag) {
   const double effective = std::max(-50.0, std::min(100.0, resistance - 0 - mag / 2));
   return std::max(0.0, base) * (1 - effective / 100);
 }
+
+namespace {
 
 struct Preview {
   int dmg = 0;
@@ -255,26 +272,40 @@ Forecast forecast(const Battle& b, size_t attacker, BattleHex from, size_t defen
   return f;
 }
 
-Hit rollHit(const Battle& b, const Fighter& a, const Fighter& d, Mulberry32& rng) {
+Hit rollDamage(const Battle& b, const Fighter& a, const Fighter& d, Mulberry32& rng, bool useWeaponSkill, const CustomDice* custom) {
   const CombatProfile& p = b.units()[a.unit].combat;
   const BattleCell::Terrain &att = tileAt(b, a.x, a.y), &def = tileAt(b, d.x, d.y);
   const auto [bonusAtk, bonusDef] = terrainBonus(b, a, att, def);
-  const bool rear = isRearAttack(a, d);
+  const bool rear = useWeaponSkill && isRearAttack(a, d);
+  // weaponModifiers, or { accuracy 100, damage 1 } when the hit does not use the weapon's mastery
+  const double accuracy = useWeaponSkill ? (custom ? p.offAccuracy : p.accuracy) : 100;
+  const double damageMul = useWeaponSkill ? (custom ? p.offDamageMul : p.damageMul) : 1;
+  auto roll = [&](int dice, int faces) {  // rollDice(dice, faces, 0, rng)
+    double rolled = 0;
+    for (int i = 0; i < dice; ++i) rolled += 1 + std::floor(rng() * faces);
+    return rolled;
+  };
   double weapon = 0;
-  if (p.hasWeapon) {
-    double rolled = 0;  // rollDice(dice, faces, 0, rng)
-    for (int i = 0; i < p.dice; ++i) rolled += 1 + std::floor(rng() * p.faces);
-    weapon = rolled * p.damageMul + p.bonus + p.enh;
-  }
+  if (custom) weapon = roll(custom->dice, custom->faces) * damageMul + custom->bonus;  // rollDamageCustom
+  else if (p.hasWeapon) weapon = roll(p.dice, p.faces) * damageMul + p.bonus + p.enh;
   Hit h;
-  h.hitChance = std::max(0.0, std::min(100.0, p.accuracy + (rear ? 10 : 0) - d.dex));
+  h.hitChance = useWeaponSkill ? std::max(0.0, std::min(100.0, accuracy + (rear ? 10 : 0) - d.dex)) : 100;
   const double raw = powerOf(a) + weapon + bonusAtk - protOf(a, d) - bonusDef;
-  h.preCritDmg = static_cast<int>(std::max(1.0, std::floor(std::max(1.0, raw) * (p.classBonus ? 1.1 : 1) * (rear ? 1.1 : 1))));
+  const double classMul = !custom && p.classBonus ? 1.1 : 1;
+  h.preCritDmg = static_cast<int>(std::max(1.0, std::floor(std::max(1.0, raw) * classMul * (rear ? 1.1 : 1))));
   double dmg = h.preCritDmg;
   h.crit = rng() < 0.08;
   if (h.crit) dmg = std::max(1.0, std::floor(dmg * 1.5));
   h.landed = h.hitChance >= 100 || rng() * 100 < h.hitChance;
   h.rolled = static_cast<int>(dmg);
+  h.dmg = h.rolled;
+  return h;
+}
+
+Hit rollHit(const Battle& b, const Fighter& a, const Fighter& d, Mulberry32& rng) {
+  const CombatProfile& p = b.units()[a.unit].combat;
+  Hit h = rollDamage(b, a, d, rng, true, nullptr);
+  double dmg = h.rolled;
   // The engine's hit stage: an arcane caster's bolt and a staff's element pass through the target's resistance.
   if (h.landed && ((!p.arrow && p.arcane) || p.staff)) {
     const std::string element = p.staff ? p.staffElement : "arcane";

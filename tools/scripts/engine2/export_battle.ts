@@ -41,6 +41,7 @@ const skills = await import(`${E2}/src/game/weaponSkills.ts`);
 const resist = await import(`${E2}/src/game/resistances.ts`);
 const staff = await import(`${E2}/src/ember/mageStaffMagic.ts`);
 const affinity = await import(`${E2}/src/game/affinity.ts`);
+const available = await import(`${E2}/src/rules/available-spells.ts`);
 
 const draft = JSON.parse(readFileSync(mapPath, 'utf8')).draft;
 const mission = store.draftToMission(draft);
@@ -57,7 +58,7 @@ for (let y = 0; y < e.rows; y++)
     const bits = e.decorOverlay[y * e.cols + x] ?? 0;
     const raw = data.TERRAIN[e.tiles[y * e.cols + x]] ?? data.TERRAIN.plains;
     cells.push({ terrain: e.tiles[y * e.cols + x], passable: !!def.passable, moveCost: def.moveCost, def: def.def ?? 0, atk: def.atk ?? 0,
-      blocked: (bits & hexprops.HEX_BLOCKED) !== 0,
+      blocked: (bits & hexprops.HEX_BLOCKED) !== 0, cover: def.cover ?? 0, hazardDice: def.hazardDice ?? 0, hazardFaces: def.hazardFaces ?? 8,
       // combat: the tile's own terrain (combat.ts terrainBonus, effectiveMaxRange) and, for shots, the cell with the
       // decorations folded in (shotBlocker)
       raw: { def: raw.def ?? 0, atk: raw.atk ?? 0, height: raw.height ?? 0, cover: raw.cover ?? 0, blocksShot: !!raw.blocksShot },
@@ -82,13 +83,27 @@ for (const u of e.units) {
     minRange: u.minRange ?? 1, maxRange: u.maxRange ?? 1, size: u.size ?? 1, summoned: !!u.summoned, level: u.level ?? 1,
     footprintOffsets: u.footprintOffsets ?? null, footprintW: u.footprintW ?? null, footprintH: u.footprintH ?? null, reach: cellsOut,
     initiativeBonus: (u.initiative ?? 0) - (u.initiativeRoll ?? 0),
+    // Spells: what the unit may cast (classSpells), its charges, and what its weapon practises (weaponSkills.ts).
+    spells: u.spells, spellList: available.classSpells(u.classId, u.level ?? 1, u.name), shockCharges: u.shockCharges ?? 0,
+    frostCharges: u.frostCharges ?? 0, fantomForceCharges: u.fantomForceCharges ?? 0,
+    fantomForceDice: data.fantomForceDice ? data.fantomForceDice(u.level ?? 1) : null,
+    xp: u.xp ?? 0, guaranteedDrop: !!u.guaranteedDrop,
+    weaponType: skills.equippedWeaponType(u) ?? null,
+    trainsWeapon: !!(skills.equippedWeaponType(u) && skills.weaponTypesForClass(u.classId).includes(skills.equippedWeaponType(u))),
+    weaponSkill: skills.equippedWeaponType(u) ? (u.weaponSkills?.[skills.equippedWeaponType(u)] ?? 0) : 0,
+    healingSkill: u.healingSkill ?? 0,
+    // Level-ups (levelUpUnit): the class's stats and spell uses at every level, and what gear adds over them.
+    growth: u.side === 'player' ? Array.from({ length: 30 }, (_, i) => {
+      const st = data.statsFor(u.classId, i + 1);
+      return [st.hp, st.atk, st.mag, st.def, st.dex, ...Array.from({ length: 10 }, (_, t) => data.tierUses(u.classId, t + 1, i + 1)), st.mov];
+    }) : null,
     combat: {
       weapon: w ? { dice: w.dice, faces: w.faces, bonus: w.bonus ?? 0, ranged: !!w.ranged, classBonus: w.bonusClass === u.classId } : null,
       weaponEnh: u.weaponEnh ?? 0,
       mastery: skills.weaponModifiers(u, skills.equippedWeaponType(u)),
       offMastery: skills.weaponModifiers(u, skills.equippedWeaponType(u, true)),
       offHand: off ? { kind: off.kind, minRange: off.minRange ?? 1, maxRange: off.maxRange ?? 1, dice: off.dice ?? 1, faces: off.faces ?? 4, bonus: off.bonus ?? 0 } : null,
-      staff: magic ? { element, bonusPct: magic.elementalBonusPct?.[element] ?? 0 } : null,
+      staff: magic ? { element, bonusPct: magic.elementalBonusPct?.[element] ?? 0, bonuses: magic.elementalBonusPct ?? {}, lifeSteal: magic.lifeStealPct ?? 0 } : null,
       arcane: e.isArcaneCaster(u),
       arrow: e.isArrowAttack(u),
       resistances: u.resistances ?? {},
@@ -143,12 +158,14 @@ for (let i = 0; i < e.units.length; i++) {
   fresh.queue = [];
   fresh.runAiFor(u);
   let path: number[][] = [], target = -1, other = '';
+  const spells: unknown[] = [];
   for (const q of fresh.queue) {
     if (q.type === 'move' && q.id === u.id) path = q.path.map((p: { x: number; y: number }) => [p.x, p.y]);
     else if (q.type === 'combat' && q.att === u.id) target = fresh.units.findIndex((v: { id: string }) => v.id === q.def);
+    else if (q.type === 'spell' && q.att === u.id) spells.push({ kind: q.spellKind, ids: q.ids.map((id: string) => fresh.units.findIndex((v: { id: string }) => v.id === id)), tiles: q.tiles.map((p: { x: number; y: number }) => [p.x, p.y]) });
     else if (q.type !== 'delay') other = q.type;
   }
-  ai.push({ unit: i, path, target, other });
+  ai.push({ unit: i, path, target, other, spells });
 }
 // The same enemies placed two hexes from the first party member (the first free, open hex at that distance), so the
 // attack decision is checked too.
@@ -168,16 +185,99 @@ for (let i = 0; lead && i < e.units.length; i++) {
   fresh.queue = [];
   fresh.runAiFor(u);
   let path: number[][] = [], target = -1, other = '';
+  const spells: unknown[] = [];
   for (const q of fresh.queue) {
     if (q.type === 'move' && q.id === u.id) path = q.path.map((p: { x: number; y: number }) => [p.x, p.y]);
     else if (q.type === 'combat' && q.att === u.id) target = fresh.units.findIndex((v: { id: string }) => v.id === q.def);
+    else if (q.type === 'spell' && q.att === u.id) spells.push({ kind: q.spellKind, ids: q.ids.map((id: string) => fresh.units.findIndex((v: { id: string }) => v.id === id)), tiles: q.tiles.map((p: { x: number; y: number }) => [p.x, p.y]) });
     else if (q.type !== 'delay') other = q.type;
   }
-  near.push({ unit: i, at: [spot.x, spot.y], path, target, other });
+  near.push({ unit: i, at: [spot.x, spot.y], path, target, other, spells });
+}
+
+// Spell casts: every unit, every spell it may cast that EmberEngine ports, aimed at every hex within 9; Engine2 checks the
+// aim (spellAimValid) and, when valid, casts it with a seeded mulberry32 and plays it out (tick) on a copy of the battle.
+// Recorded: valid or not, how many random numbers it drew, and every unit's HP / life / lightning echo afterwards plus
+// the caster's charges.
+const PORTED = ['magicMissile', 'longShot', 'piercing', 'piercingThrust', 'doubleStrike', 'lightning', 'frost', 'cureMinor', 'shock'];
+const CAST: Record<string, string> = { magicMissile: 'castMagicMissile', longShot: 'castLongShot', piercing: 'castPiercing', piercingThrust: 'castPiercingThrust',
+  doubleStrike: 'castDoubleStrike', lightning: 'castLightning', frost: 'castFrost', shock: 'castShock' };
+// The engine's effects draw from the battle's own random numbers; here they draw from Math.random instead, so only the
+// rules count.
+const FX = ['emitParticle', 'emitLevelUpFx', 'emitPotionZeroFx', 'emitHolyFx', 'queueElementalFx', 'emitFireballBurstFx', 'emitMissileFx',
+  'emitLightningFx', 'emitPortalFx', 'emitWarpFx', 'spawnMiss', 'spawnHit', 'emitBladeFx'];
+const casts: unknown[] = [];
+{
+  const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels: {} }, 1) as unknown as Record<string, any>;
+  const base = fresh();
+  const pristine = structuredClone(base.units);
+  let castSeed = 1000;
+  for (let ci = 0; ci < base.units.length; ci++) {
+    const me = base.units[ci];
+    const kinds = new Set<string>(available.classSpells(me.classId, me.level ?? 1, me.name));
+    if (me.side === 'enemy') {
+      // enemies cast from their AI's own charge pools
+      if ((me.spells?.tier1 ?? 0) > 0) { kinds.add('magicMissile'); kinds.add('longShot'); }
+      if ((me.spells?.tier2 ?? 0) > 0) { kinds.add('lightning'); kinds.add('piercing'); }
+      if ((me.frostCharges ?? 0) > 0) kinds.add('frost');
+      if ((me.shockCharges ?? 0) > 0) kinds.add('shock');
+    }
+    // Where it casts from: where it stands, and (a size-1 caster) the first free open hex 2 from the nearest foe.
+    const spots: { x: number; y: number }[] = [{ x: me.x, y: me.y }];
+    if ((me.size ?? 1) === 1) {
+      const occ = pathfinding.occupancy(base.units);
+      let foe: any = null;
+      for (const v of base.units) if (v.alive && v.side !== me.side && v.side !== 'neutral' && (!foe || pathfinding.hexDist(v, me) < pathfinding.hexDist(foe, me))) foe = v;
+      let spot: { x: number; y: number } | null = null;
+      for (let y = 0; foe && y < base.rows && !spot; y++)
+        for (let x = 0; x < base.cols && !spot; x++)
+          if (pathfinding.hexDist({ x, y }, foe) === 2 && hexprops.hexDef(base.tiles, base.cols, x, y, base.decorOverlay).passable && !occ.has(pathfinding.key(x, y))) spot = { x, y };
+      if (spot) spots.push(spot);
+    }
+    for (const kind of kinds) {
+      if (!PORTED.includes(kind)) continue;
+      for (const at of spots)
+        for (let y = 0; y < base.rows; y++)
+          for (let x = 0; x < base.cols; x++) {
+            if (pathfinding.hexDist({ x, y }, at) > 9) continue;
+            const b = fresh();
+            b.units = structuredClone(pristine);
+            const u = b.units[ci];
+            u.x = at.x, u.y = at.y, u.drawX = at.x, u.drawY = at.y;
+            b.selectedId = u.id;
+            b.spellKind = kind;
+            b.mode = 'awaitSpell';
+            b.missileTargets = [];
+            if (!b.spellAimValid(u, { x, y })) { casts.push([ci, kind, x, y, 0, at.x, at.y]); continue; }
+            const s = castSeed++;
+            const gen = combat.mulberry32(s);
+            let calls = 0;
+            b.rng = () => { calls++; return gen(); };
+            for (const name of FX) {
+              const original = b[name];
+              if (typeof original !== 'function') continue;
+              b[name] = (...args: unknown[]) => { const keep = b.rng; b.rng = Math.random; try { return original.apply(b, args); } finally { b.rng = keep; } };
+            }
+            // Played out until the cast's last step completes (finishCombat with nothing queued): later ticks belong
+            // to whatever the battle does next.
+            let done = false, doneCalls = 0;
+            const finish = b.finishCombat.bind(b);
+            b.finishCombat = (att: unknown) => { finish(att); if (!b.queue.length && !done) { done = true; doneCalls = calls; } };
+            b.queue = [];
+            if (kind === 'cureMinor') b.castHeal(u, { x, y }, 'cureMinor');
+            else b[CAST[kind]](u, { x, y });
+            if (!b.queue.length && !b.active) { castSeed--; casts.push([ci, kind, x, y, 0, at.x, at.y]); continue; }  // nothing cast
+            for (let i = 0; i < 4000 && !done && (b.active || b.queue.length); i++) b.tick(0.05);
+            if (done) calls = doneCalls;
+            const after = b.units.map((v: any) => [v.hp, v.alive ? 1 : 0, v.shock ? [v.shock.dice, v.shock.faces, v.shock.bonus, v.shock.mag] : 0, v.maxHp, v.level, v.xp ?? 0]);
+            casts.push([ci, kind, x, y, 1, at.x, at.y, s, calls, after, u.spells, u.shockCharges ?? 0, u.frostCharges ?? 0]);
+          }
+    }
+  }
 }
 
 mkdirSync(dirname(outPath), { recursive: true });
 writeFileSync(outPath, JSON.stringify({ source: 'Engine2 src/game/engine.ts BattleEngine via tools/scripts/engine2/export_battle.ts',
-  map: draft.id, cols: e.cols, rows: e.rows, cells, units, affinityBonus, forecasts, rolls, ai, aiNear: near }));
+  map: draft.id, cols: e.cols, rows: e.rows, cells, units, affinityBonus, forecasts, rolls, ai, aiNear: near, casts }));
 console.log(`${draft.id}: ${e.cols}x${e.rows}, ${units.length} units (${units.map((u) => `${u.name} mov ${u.mov}`).join(', ')})`);
 process.exit(0);  // the engine leaves timers running

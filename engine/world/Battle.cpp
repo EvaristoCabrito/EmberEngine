@@ -77,6 +77,9 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     o.def = integer(c, "def");
     o.atk = integer(c, "atk");
     o.blocked = yes(c, "blocked");
+    o.cover = integer(c, "cover");
+    o.hazardDice = integer(c, "hazardDice");
+    o.hazardFaces = integer(c, "hazardFaces", 8);
     if (c.contains("raw")) {
       const json& r = c["raw"];
       o.raw = {integer(r, "def"), integer(r, "atk"), integer(r, "height"), integer(r, "cover"), yes(r, "blocksShot")};
@@ -133,6 +136,10 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
         p.staff = true;
         p.staffElement = text(c["staff"], "element");
         p.staffBonusPct = number(c["staff"], "bonusPct");
+        p.staffLifeStealPct = number(c["staff"], "lifeSteal");
+        if (c["staff"].contains("bonuses") && c["staff"]["bonuses"].is_object())
+          for (const auto& [k, v] : c["staff"]["bonuses"].items())
+            if (v.is_number()) p.staffBonuses.emplace_back(k, v.get<double>());
       }
       p.arcane = yes(c, "arcane"), p.arrow = yes(c, "arrow");
       if (c.contains("resistances") && c["resistances"].is_object())
@@ -146,6 +153,34 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
       std::vector<BattleHex> offsets;
       for (const json& f : u["footprintOffsets"]) offsets.push_back({integer(f, "dx"), integer(f, "dy")});
       o.footprintOffsets = std::move(offsets);
+    }
+    if (u.contains("spells") && u["spells"].is_object())
+      for (int t = 0; t < 10; ++t) o.spells[t] = integer(u["spells"], ("tier" + std::to_string(t + 1)).c_str());
+    if (u.contains("spellList") && u["spellList"].is_array())
+      for (const json& k : u["spellList"])
+        if (k.is_string()) o.spellList.push_back(k.get<std::string>());
+    o.shockCharges = integer(u, "shockCharges");
+    o.frostCharges = integer(u, "frostCharges");
+    o.fantomForceCharges = integer(u, "fantomForceCharges");
+    if (u.contains("fantomForceDice") && u["fantomForceDice"].is_object())
+      o.fantomDice = integer(u["fantomForceDice"], "dice"), o.fantomFaces = integer(u["fantomForceDice"], "faces");
+    o.xp = integer(u, "xp");
+    o.guaranteedDrop = yes(u, "guaranteedDrop");
+    o.weaponType = text(u, "weaponType");
+    o.trainsWeapon = yes(u, "trainsWeapon");
+    o.weaponSkill = number(u, "weaponSkill");
+    o.healingSkill = number(u, "healingSkill");
+    if (u.contains("growth") && u["growth"].is_array()) {
+      for (const json& row : u["growth"]) {
+        std::array<int, 16> r{};
+        for (size_t i = 0; i < 16 && i < row.size(); ++i) r[i] = row[i].get<int>();
+        o.growth.push_back(r);
+      }
+      if (o.level >= 1 && static_cast<size_t>(o.level) <= o.growth.size()) {
+        const std::array<int, 16>& g = o.growth[static_cast<size_t>(o.level - 1)];
+        o.gearHp = o.maxHp - g[0], o.gearAtk = o.atk - g[1], o.gearMag = o.mag - g[2], o.gearDef = o.def - g[3], o.gearDex = o.dex - g[4];
+        o.gearMov = o.mov - g[15];
+      }
     }
     o.footprintW = integer(u, "footprintW", 2);
     o.footprintH = integer(u, "footprintH", 4);
@@ -169,15 +204,47 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
       if (r.is_array() && r.size() == 11)
         b.rollRefs_.push_back({r[0].get<int>(), r[1].get<int>(), r[2].get<int>(), r[3].get<int>(), r[4].get<uint32_t>(), r[5].get<int>(),
                                r[6].get<int>() != 0, r[7].get<int>() != 0, r[8].get<double>(), r[9].get<int>(), r[10].get<int>()});
+  if (j.contains("casts"))
+    for (const json& c : j["casts"]) {
+      if (!c.is_array() || c.size() < 7) continue;
+      CastReference r;
+      r.caster = c[0].get<int>();
+      r.kind = c[1].get<std::string>();
+      r.cell = {c[2].get<int>(), c[3].get<int>()};
+      r.valid = c[4].get<int>() != 0;
+      r.at = {c[5].get<int>(), c[6].get<int>()};
+      if (r.valid && c.size() >= 13) {
+        r.seed = c[7].get<uint32_t>();
+        r.calls = c[8].get<int>();
+        for (const json& a : c[9]) {
+          CastReference::After o;
+          o.hp = a[0].get<int>(), o.alive = a[1].get<int>() != 0;
+          if (a[2].is_array()) o.shock = BattleUnit::Echo{a[2][0].get<int>(), a[2][1].get<int>(), a[2][2].get<int>(), a[2][3].get<double>()};
+          o.maxHp = a[3].get<int>(), o.level = a[4].get<int>(), o.xp = a[5].get<int>();
+          r.after.push_back(o);
+        }
+        for (int t = 0; t < 10; ++t) r.spells[t] = integer(c[10], ("tier" + std::to_string(t + 1)).c_str());
+        r.shockCharges = c[11].get<int>(), r.frostCharges = c[12].get<int>();
+      }
+      b.castRefs_.push_back(std::move(r));
+    }
   auto readAi = [&](const json& list, bool near) {
     for (const json& a : list) {
       AiReference r;
       r.unit = integer(a, "unit");
+      if (a.contains("spells") && a["spells"].is_array())
+        for (const json& s : a["spells"]) {
+          AiReference::Cast cast;
+          cast.kind = text(s, "kind");
+          for (const json& i : s["ids"]) cast.ids.push_back(i.get<int>());
+          for (const json& t : s["tiles"]) cast.tiles.push_back({t[0].get<int>(), t[1].get<int>()});
+          r.casts.push_back(std::move(cast));
+        }
       if (near && a.contains("at") && a["at"].is_array()) r.at = BattleHex{a["at"][0].get<int>(), a["at"][1].get<int>()};
       if (a.contains("path") && a["path"].is_array())
         for (const json& p : a["path"]) r.plan.path.push_back({p[0].get<int>(), p[1].get<int>()});
       r.plan.target = integer(a, "target", -1);
-      r.spell = !text(a, "other").empty();
+      r.spell = !text(a, "other").empty() || !r.casts.empty();
       b.aiRefs_.push_back(std::move(r));
     }
   };

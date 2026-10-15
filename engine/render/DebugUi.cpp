@@ -1,4 +1,5 @@
 #include "render/DebugUi.h"
+#include "render/UiArt.h"
 
 #include <SDL3/SDL.h>
 #include <imgui.h>
@@ -48,6 +49,7 @@ DebugUi::DebugUi(VulkanContext& context, SDL_Window* window, VkFormat targetForm
   std::error_code error;
   if (std::filesystem::exists(segoe, error)) io.FontDefault = io.Fonts->AddFontFromFileTTF(segoe.c_str(), 18.0f);
   else logError("UI font not found: {}", segoe);
+  loadUiFonts();  // Engine2's own fonts for the menus and HUD (render/UiArt.h)
   ImGuiStyle& style = ImGui::GetStyle();
   style.FramePadding = {10.0f, 6.0f};
   style.ItemSpacing = {10.0f, 8.0f};

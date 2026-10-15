@@ -15,6 +15,7 @@ constexpr double kEnmityCap = 10000;            // enmity.ts ENMITY.cap
 constexpr double kVolatileDecayPerRound = 300;  // ENMITY.volatileDecayPerRound
 constexpr double kDamageTakenCe = 2;            // ENMITY.damageTakenCe
 constexpr double kWeaponCe = 1, kWeaponVe = 3;  // ENMITY.weapon
+constexpr double kSpellCe = 1.5, kSpellVe = 6;  // ENMITY.spell
 double capped(double v) { return std::max(0.0, std::min(kEnmityCap, v)); }
 }  // namespace
 
@@ -61,18 +62,34 @@ std::string Battle::result() const {
   return {};
 }
 
-void Battle::noteWeaponDamage(size_t attacker, size_t target, int dmg) {
+void Battle::noteWeaponDamage(size_t attacker, size_t target, int dmg) { noteDamage(attacker, target, dmg, false); }
+
+void Battle::noteAware(size_t hero, double ce, double ve) {
+  if (units_[hero].side != "player") return;
+  for (size_t f = 0; f < units_.size(); ++f) {
+    const BattleUnit& foe = units_[f];
+    if (foe.side != "enemy" || !foe.alive) continue;
+    if (!units_[hero].alive) continue;  // addEnmity: both must still stand
+    bool found = false;
+    for (Enmity& e : enmity_)
+      if (e.enemy == f && e.hero == hero) e.ce = capped(e.ce + ce), e.ve = capped(e.ve + ve), found = true;
+    if (!found) enmity_.push_back({f, hero, capped(ce), capped(ve)});
+  }
+}
+
+void Battle::noteDamage(size_t attacker, size_t target, int dmg, bool spell) {
   if (dmg <= 0) return;
   const BattleUnit &a = units_[attacker], &t = units_[target];
+  const double kCe = spell ? kSpellCe : kWeaponCe, kVe = spell ? kSpellVe : kWeaponVe;
   if (a.side == "player" && t.side == "enemy") {
     // A hero hurting an enemy draws its attention (addEnmity: both must still stand).
     if (!a.alive || !t.alive) return;
     for (Enmity& e : enmity_)
       if (e.enemy == target && e.hero == attacker) {
-        e.ce = capped(e.ce + dmg * kWeaponCe), e.ve = capped(e.ve + dmg * kWeaponVe);
+        e.ce = capped(e.ce + dmg * kCe), e.ve = capped(e.ve + dmg * kVe);
         return;
       }
-    enmity_.push_back({target, attacker, capped(dmg * kWeaponCe), capped(dmg * kWeaponVe)});
+    enmity_.push_back({target, attacker, capped(dmg * kCe), capped(dmg * kVe)});
   } else if (a.side == "enemy" && t.side == "player") {
     // An enemy hurting a hero wears that hero's lasting enmity down.
     for (Enmity& e : enmity_)

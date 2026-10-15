@@ -17,6 +17,7 @@ add_library(EmberEngine STATIC
   rhi/UploadQueue.cpp
   render/Renderer.cpp
   render/DebugUi.cpp
+  render/UiArt.cpp
   render/SpriteSystem.cpp
   render/MeshScene.cpp
   render/BoardGround.cpp
@@ -28,6 +29,7 @@ add_library(EmberEngine STATIC
   world/Battle.cpp
   world/Combat.cpp
   world/BattleTurns.cpp
+  world/Spells.cpp
   debug/PerfOverlay.cpp
 )
 

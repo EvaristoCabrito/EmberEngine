@@ -7,6 +7,7 @@
 //
 // Hexes are (column, row) on Ember's odd-r board: odd rows sit half a hex to the right.
 
+#include <array>
 #include <filesystem>
 #include <optional>
 #include <cstdint>
@@ -28,6 +29,8 @@ struct BattleCell {
   int moveCost = 1;
   int def = 0, atk = 0;
   bool blocked = false;  // a decoration stands here and stops walking (HEX_BLOCKED)
+  int cover = 0;         // cover with the decorations folded in (hexDef: a spell's target cover)
+  int hazardDice = 0, hazardFaces = 8;  // standing here hurts at the start of each own turn (flames, embers)
   // Combat: the tile's own terrain (combat.ts terrainBonus, effectiveMaxRange; counters' line of fire) and the cell
   // with the decorations folded in (a shot's line of fire).
   struct Terrain {
@@ -53,6 +56,8 @@ struct CombatProfile {
   bool staff = false;  // staff magic: its element and bonus
   std::string staffElement = "arcane";
   double staffBonusPct = 0;
+  std::vector<std::pair<std::string, double>> staffBonuses;  // the staff's bonus % per element (spells too)
+  double staffLifeStealPct = 0;
   bool arcane = false;  // an arcane caster: its plain attack is an arcane bolt
   bool arrow = false;   // its plain attack is an arrow
   std::vector<std::pair<std::string, double>> resistances;
@@ -87,6 +92,28 @@ struct BattleUnit {
   std::optional<std::vector<BattleHex>> footprintOffsets;  // an authored body shape (dx, dy), else by size
   int footprintW = 2, footprintH = 4;                       // the size >= 4 rectangle
   std::vector<ReachCell> reference;                         // Engine2's reach at the start (the check's reference)
+
+  // --- Spells, training, experience (Engine2 spell-source / BattleEngine) ---
+  int spells[10] = {};  // uses left per tier (Engine2 Unit.spells tier1..tier10)
+  std::vector<std::string> spellList;  // what it may cast (classSpells for its class, level and name)
+  int shockCharges = 0, frostCharges = 0, fantomForceCharges = 0;
+  int fantomDice = 0, fantomFaces = 0;
+  int xp = 0;
+  bool guaranteedDrop = false;
+  bool hidden = false;  // under the fog of war for the party: cannot be aimed at (unitHidden)
+  std::string weaponType;     // its weapon's type ("bow", "sword", ...), empty = none
+  bool trainsWeapon = false;  // a hero whose weapon type its class trains (weaponSkills.ts)
+  double weaponSkill = 0, healingSkill = 0;
+  std::vector<std::pair<std::string, double>> skills;  // trained skills by id ("fireResistance", ...)
+  // A hero's growth: per level 1..30 the class's hp atk mag def dex and its uses per tier (levelUpUnit), and what its
+  // gear adds over the class's stats.
+  std::vector<std::array<int, 16>> growth;  // hp atk mag def dex, tier1..tier10 uses, mov
+  int gearHp = 0, gearAtk = 0, gearMag = 0, gearDef = 0, gearDex = 0, gearMov = 0;
+  struct Echo {
+    int dice = 0, faces = 0, bonus = 0;
+    double mag = 0;
+  };
+  std::optional<Echo> shock;  // a lightning echo that strikes when its own turn begins
 };
 
 // An enemy's decision (Engine2 runAiFor's plain branch): the walk (start first; empty = stays) and the foe it strikes.
@@ -98,7 +125,32 @@ struct AiReference {
   int unit = 0;
   std::optional<BattleHex> at;  // placed here first (the near-party scenario)
   AiPlan plan;
-  bool spell = false;           // Engine2 cast something instead (not ported yet: skipped by the check)
+  bool spell = false;           // Engine2 cast something instead
+  struct Cast {
+    std::string kind;
+    std::vector<int> ids;
+    std::vector<BattleHex> tiles;
+  };
+  std::vector<Cast> casts;      // what it cast (its spell steps)
+};
+// One reference cast (export_battle.ts casts): the caster placed at `at`, the spell aimed at `cell`; when valid, the
+// seed it was cast with, how many random numbers it drew and every unit afterwards (hp, alive, echo, maxHp, level, xp)
+// plus the caster's charges.
+struct CastReference {
+  int caster = 0;
+  std::string kind;
+  BattleHex cell, at;
+  bool valid = false;
+  uint32_t seed = 0;
+  int calls = 0;
+  struct After {
+    int hp = 0, maxHp = 0, level = 0, xp = 0;
+    bool alive = false;
+    std::optional<BattleUnit::Echo> shock;
+  };
+  std::vector<After> after;
+  int spells[10] = {};
+  int shockCharges = 0, frostCharges = 0;
 };
 
 // Engine2's reference answers for the combat check (export_battle.ts).
@@ -146,6 +198,10 @@ class Battle {
   const std::vector<ForecastReference>& forecastReferences() const { return forecastRefs_; }
   const std::vector<RollReference>& rollReferences() const { return rollRefs_; }
   const std::vector<AiReference>& aiReferences() const { return aiRefs_; }
+  const std::vector<CastReference>& castReferences() const { return castRefs_; }
+  // Engine2's enmity hooks for spells and support (spell damage, heals noticed by every enemy).
+  void noteDamage(size_t attacker, size_t target, int dmg, bool spell);
+  void noteAware(size_t hero, double ce, double ve);
 
   // --- Turns (Engine2 BattleEngine: one battle-opening initiative roll, a round in initiative order) ---
   // Every unit that takes turns (alive, not neutral) rolls 1d20 + its bonus; the order is highest first, the party
@@ -191,6 +247,7 @@ class Battle {
   std::vector<ForecastReference> forecastRefs_;
   std::vector<RollReference> rollRefs_;
   std::vector<AiReference> aiRefs_;
+  std::vector<CastReference> castRefs_;
   void sortTurnOrder();
   std::vector<size_t> turnOrder_;
   int round_ = 1;

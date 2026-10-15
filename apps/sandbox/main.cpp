@@ -73,6 +73,7 @@
 #include "BattleStage.h"
 #include "MeshCompare.h"
 #include "MapStage.h"
+#include "TitleStage.h"
 #include "MeshStage.h"
 #include "SpriteParade.h"
 #include "Stage.h"
@@ -112,6 +113,10 @@ struct Options {
   int starLook = 3;
   std::string heroes;
   std::string battleRules;
+  // The title screen (Engine2's, TitleStage.h): its mission list is every imported scene in `scenes` whose map is in
+  // `maps` (default: Engine2's maps/ember beside its public folder).
+  bool title = false;
+  std::string scenes = "build/engine2-scenes", maps;
   uint32_t debugView = 0;
   std::string scene;
   std::string map, ground, look = "smooth", boardData = "content/engine2/board.json", engine2 = "C:/Engine2/public";
@@ -167,6 +172,9 @@ Options parse(int argc, char** argv) {
     else if (arg == "--star-look" && hasValue) o.starLook = std::atoi(argv[++i]);
     else if (arg == "--heroes" && hasValue) o.heroes = argv[++i];
     else if (arg == "--battle-rules" && hasValue) o.battleRules = argv[++i];
+    else if (arg == "--title") o.title = true;
+    else if (arg == "--scenes" && hasValue) o.scenes = argv[++i];
+    else if (arg == "--maps" && hasValue) o.maps = argv[++i];
     else if (arg == "--debug-view" && hasValue) o.debugView = static_cast<uint32_t>(std::atoi(argv[++i]));
     else if (arg == "--no-ui") o.noUi = true;
     else if (arg == "--layers" && hasValue) o.lightingLayers = static_cast<uint32_t>(std::strtoul(argv[++i], nullptr, 0));
@@ -388,6 +396,8 @@ struct SpriteStage final : Stage {
   bool passed() const override { return parade.passed(); }
 };
 
+MapStageOptions mapOptions(const Options& o);
+
 std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Renderer& renderer, AssetManager& assets, JobSystem& jobs) {
   if (o.battle) {
     const BattleStage::Content content = o.battleContent == "3d"      ? BattleStage::Content::Meshes
@@ -396,6 +406,16 @@ std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Rende
     return std::make_unique<BattleStage>(context, renderer, assets, o.spriteBudgetMb, content, o.costSplit);
   }
   if (!o.map.empty()) {
+    renderer.setDebugView(o.debugView);
+    return std::make_unique<MapStage>(context, renderer, assets, jobs, mapOptions(o));
+  }
+  if (!o.sprites.empty() && o.map.empty()) return std::make_unique<SpriteStage>(context, renderer, assets, o.spriteBudgetMb);
+  if (!o.meshes.empty()) return std::make_unique<MeshStage>(context, renderer, assets, o.meshGrid, o.capture.empty());
+  return nullptr;
+}
+
+MapStageOptions mapOptions(const Options& o) {
+  {
     MapStageOptions m;
     m.map = o.map;
     m.scene = o.scene;
@@ -424,12 +444,8 @@ std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Rende
     m.starLook = o.starLook;
     m.heroes = o.heroes;
     m.battle = o.battleRules;
-    renderer.setDebugView(o.debugView);
-    return std::make_unique<MapStage>(context, renderer, assets, jobs, m);
+    return m;
   }
-  if (!o.sprites.empty() && o.map.empty()) return std::make_unique<SpriteStage>(context, renderer, assets, o.spriteBudgetMb);
-  if (!o.meshes.empty()) return std::make_unique<MeshStage>(context, renderer, assets, o.meshGrid, o.capture.empty());
-  return nullptr;
 }
 
 template <class Render>
@@ -522,8 +538,25 @@ int runWindow(const Options& o) {
   DebugUi ui(context, window.handle(), Renderer::outputFormat());
   Renderer renderer(context, swapchain.get(), swapchain->extent());
   renderer.setUi(&ui);
-  std::unique_ptr<Stage> stage = makeStage(o, context, renderer, services.assets, services.jobs);
-  if (!o.map.empty()) services.perf.visible = false;  // a map window shows only its choices (MapStage::drawPanel)
+  // The title screen when asked (or when nothing else is): its "Nova campanha" list starts a map in this window.
+  std::optional<MissionEntry> pending;
+  bool backToTitle = false;
+  std::unique_ptr<Stage> stage;
+  auto makeTitle = [&] {
+    TitleStage::Paths paths;
+    paths.engine2Public = o.engine2;
+    paths.maps = !o.maps.empty() ? std::filesystem::path(o.maps) : std::filesystem::path(o.engine2).parent_path() / "maps" / "ember";
+    paths.scenes = o.scenes;
+    return std::make_unique<TitleStage>(paths, [&](const MissionEntry& m) { pending = m; }, [] {
+      SDL_Event quit{};
+      quit.type = SDL_EVENT_QUIT;
+      SDL_PushEvent(&quit);
+    });
+  };
+  const bool titleMode = o.title || (o.map.empty() && !o.battle && o.sprites.empty() && o.meshes.empty() && o.stream.empty());
+  if (titleMode) stage = makeTitle();
+  else stage = makeStage(o, context, renderer, services.assets, services.jobs);
+  services.perf.visible = false;  // the game shows only its own screens (F1 brings the numbers back)
 
   window.setEventHook([&](const SDL_Event& event) {
     if (ui.processEvent(event)) return;
@@ -546,6 +579,24 @@ int runWindow(const Options& o) {
     const bool presented = !resized && services.frame(ui, renderer, stage.get(), swapchain->extent(), dt,
                                                       [&] { return renderer.renderFrame(time); });
     if (!presented && swapchain->recreate(width, height)) renderer.resize(swapchain->extent());
+    // Screen changes happen between frames, with the GPU idle: the old screen's resources go before the new one loads.
+    if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && map->wantsTitle()) backToTitle = true;
+    if (pending || backToTitle) {
+      vkDeviceWaitIdle(context.device);
+      stage.reset();
+      if (pending) {
+        Options mission = o;
+        mission.map = pending->map.string();
+        mission.scene = pending->scene.string();
+        mission.battleRules = pending->battle.string();
+        renderer.setDebugView(o.debugView);
+        stage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, mapOptions(mission));
+      } else {
+        stage = makeTitle();
+      }
+      pending.reset();
+      backToTitle = false;
+    }
   }
   return 0;
 }

@@ -13,23 +13,21 @@ if not exist "%EXE%" (
   goto :fim
 )
 
-set "MAP=C:\Engine2\maps\ember\aldeia015.json"
 set "GROUND=%ART%\ground\ground-v2.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground.pak"
-set "SCENE=%ART%\engine2-scenes\aldeia015.scene.json"
 set "HEROES="
 if exist "%ART%\engine2-scenes\roster.json" set "HEROES=--heroes %ART%\engine2-scenes\roster.json"
 
-for %%P in ("%MAP%" "%GROUND%" "%SCENE%" "%ART%\sprites\battle.pak" "%ART%\meshes\props.pak") do (
+for %%P in ("%GROUND%" "%ART%\sprites\battle.pak" "%ART%\meshes\props.pak" "%ART%\engine2-scenes" "C:\Engine2\maps\ember") do (
   if not exist %%P (
-    echo Falta o arquivo %%~P
+    echo Falta %%~P
     echo Tire uma foto desta tela e mande para o Claude.
     goto :fim
   )
 )
 
 echo Abrindo o Ember...
-"%EXE%" --map "%MAP%" --ground "%GROUND%" --scene "%SCENE%" --sprites "%ART%\sprites\battle.pak" --meshes "%ART%\meshes\props.pak" %HEROES% --battle-rules content\engine2\battles\aldeia015.battle.json > "%HERE%\JOGAR-log.txt" 2>&1
+"%EXE%" --title --ground "%GROUND%" --sprites "%ART%\sprites\battle.pak" --meshes "%ART%\meshes\props.pak" --scenes "%ART%\engine2-scenes" --maps "C:\Engine2\maps\ember" %HEROES% > "%HERE%\JOGAR-log.txt" 2>&1
 set "RUNERR=%ERRORLEVEL%"
 if not "%RUNERR%"=="0" (
   echo.

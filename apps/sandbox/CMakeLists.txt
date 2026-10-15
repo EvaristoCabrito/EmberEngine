@@ -1,5 +1,5 @@
 add_executable(Sandbox main.cpp)
-target_link_libraries(Sandbox PRIVATE EmberEngine)
+target_link_libraries(Sandbox PRIVATE EmberEngine nlohmann_json)
 if(MSVC)
   target_compile_options(Sandbox PRIVATE /W4 /permissive- /utf-8)
 endif()

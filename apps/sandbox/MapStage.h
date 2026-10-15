@@ -385,7 +385,10 @@ class MapStage final : public Stage {
       const std::optional<glm::vec3> b = groundUnder(e.motion.windowID, e.motion.x, e.motion.y);
       if (a && b) target_ += glm::vec3{a->x - b->x, 0.0f, a->z - b->z}, cam_.target += glm::vec3{a->x - b->x, 0.0f, a->z - b->z};
     }
-    if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.key == SDLK_ESCAPE) select(-1);
+    if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.key == SDLK_ESCAPE) {
+      if (selected_ >= 0 && result_.empty()) select(-1);
+      else pauseOpen_ = !pauseOpen_;  // nothing picked: the pause menu (Continuar / Menu principal)
+    }
     if (e.type == SDL_EVENT_MOUSE_MOTION && (e.motion.state & SDL_BUTTON_RMASK) && !flat_) {  // Tática never turns
       yaw_ -= e.motion.xrel * kTurnPerPixel;
       pitch_ = std::clamp(pitch_ + e.motion.yrel * kTurnPerPixel, kMinPitch, kMaxPitch);
@@ -645,6 +648,7 @@ class MapStage final : public Stage {
     drawMarks();
     drawCameraBar();
     drawTurnBar();
+    drawPauseMenu();
     ImGui::SetNextWindowPos({12, 12}, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowBgAlpha(0.9f);
     ImGui::Begin("Escolhas", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
@@ -714,6 +718,9 @@ class MapStage final : public Stage {
     ImGui::PopFont();
     ImGui::End();
   }
+
+  // The player asked to leave for the title screen (pause menu, or after the battle's end).
+  bool wantsTitle() const { return titleRequested_; }
 
   bool done() const override { return failed_ || (options_.measureSeconds > 0.0f ? measured_ : readyFrames_ >= 30); }
   bool passed() const override { return !failed_ && ground_.ready() && measurePassed_; }
@@ -1851,6 +1858,32 @@ class MapStage final : public Stage {
     ImGui::PopStyleVar(2);
   }
 
+  // Esc's pause menu, and after the battle's end its way out: ember plates in the middle of the screen.
+  void drawPauseMenu() {
+    if (!pauseOpen_ && result_.empty()) return;
+    const ImGuiIO& io = ImGui::GetIO();
+    const bool end = !result_.empty();
+    ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, io.DisplaySize.y * (end ? 0.55f : 0.5f)}, ImGuiCond_Always, {0.5f, 0.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {kPlateGlow, kPlateGlow});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {0.0f, 10.0f});
+    ImGui::Begin("##pause", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
+                                         ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings);
+    ImGui::PushFont(nullptr, 18.0f);
+    auto button = [&](const char* id, const char* label) {
+      const float w = 240.0f, h = 40.0f;
+      return plate(id, {w, h}, [&](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32 ink) {
+        const ImVec2 t = ImGui::CalcTextSize(label);
+        dl->AddText({std::round((a.x + b.x - t.x) * 0.5f), std::round((a.y + b.y - t.y) * 0.5f)}, ink, label);
+      });
+    };
+    if (!end && button("##continue", "Continuar")) pauseOpen_ = false;
+    if (button("##title", end ? "Voltar ao menu" : "Menu principal")) titleRequested_ = true;
+    ImGui::PopFont();
+    ImGui::End();
+    ImGui::PopStyleVar(3);
+  }
+
   void drawTurnPlate() {
     const ImGuiIO& io = ImGui::GetIO();
     std::string text;
@@ -2207,6 +2240,7 @@ class MapStage final : public Stage {
   std::optional<EnemyTurn> enemyTurn_;
   std::unordered_set<int> awake_;         // enemies that have seen the party (fog)
   std::string result_;                    // "victory" / "defeat" once the battle is over
+  bool pauseOpen_ = false, titleRequested_ = false;
   std::vector<OneShot> unitShot_;         // per scene unit: a one-shot pose over its own
   std::vector<float> unitDiedAt_;         // per scene unit: when it fell (-1 = alive)
   std::optional<Exchange> exchange_;

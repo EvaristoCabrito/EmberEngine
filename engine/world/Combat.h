@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "world/Battle.h"
 
@@ -46,6 +47,22 @@ struct Hit {
   int preCritDmg = 0;
   int rolled = 0;  // rollDamage's own damage, before that step
 };
+
+// Explicit dice in place of the main-hand weapon (an off-hand weapon: rollDamageCustom).
+struct CustomDice {
+  int dice = 1, faces = 4, bonus = 0;
+};
+
+// combat.ts rollDamage (rollDamageCustom with `custom`): no element step. useWeaponSkill = false drops the weapon's
+// mastery and the rear bonus and always lands (spell-like hits).
+Hit rollDamage(const Battle& b, const Fighter& attacker, const Fighter& defender, Mulberry32& rng, bool useWeaponSkill = true,
+               const CustomDice* custom = nullptr);
+// pathfinding.ts hexLine / shotBlocker == null (`arrow` = an arrow's flight, else a bolt; decorations folded in or not).
+std::vector<BattleHex> hexLine(BattleHex a, BattleHex b);
+bool clearShot(const Battle& b, BattleHex from, BattleHex to, bool arrow, bool decorations = true);
+// combat.ts powerOf; resistances.ts elementalDamage (resistance in %, softened by the caster's MAG / 2).
+double powerOf(const Fighter& f);
+double elementalDamage(double base, double resistance, double mag);
 
 // The unit placed at (x, y), with the affinity bonus its party neighbours there give it (BattleEngine.affinityUnit).
 Fighter fighterAt(const Battle& b, size_t unit, int x, int y);
