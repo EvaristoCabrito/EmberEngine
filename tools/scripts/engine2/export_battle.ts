@@ -78,7 +78,7 @@ for (const u of e.units) {
   const magic = e.staffMagic(u);
   const element = magic?.attackElement ?? 'arcane';
   const off = u.offHandId ? data.EQUIPMENT[u.offHandId] : undefined;
-  units.push({ id: u.id, side: u.side, name: u.name, classId: u.classId, sprite: u.sprite, x: u.x, y: u.y, alive: !!u.alive,
+  units.push({ id: u.id, side: u.side, name: u.name, classId: u.classId, className: u.className ?? '', sprite: u.sprite, x: u.x, y: u.y, alive: !!u.alive,
     mov: e.effectiveUnitForReach(u).mov, hp: u.hp, maxHp: u.maxHp, atk: u.atk, def: u.def, mag: u.mag, dex: u.dex ?? 0,
     minRange: u.minRange ?? 1, maxRange: u.maxRange ?? 1, size: u.size ?? 1, summoned: !!u.summoned, level: u.level ?? 1,
     footprintOffsets: u.footprintOffsets ?? null, footprintW: u.footprintW ?? null, footprintH: u.footprintH ?? null, reach: cellsOut,
@@ -207,7 +207,8 @@ const CAST: Record<string, string> = { magicMissile: 'castMagicMissile', longSho
 const FX = ['emitParticle', 'emitLevelUpFx', 'emitPotionZeroFx', 'emitHolyFx', 'queueElementalFx', 'emitFireballBurstFx', 'emitMissileFx',
   'emitLightningFx', 'emitPortalFx', 'emitWarpFx', 'spawnMiss', 'spawnHit', 'emitBladeFx'];
 const casts: unknown[] = [];
-{
+// SPELL_REFS=1: the cast references for Cooker check-battle (large; the game itself does not read them).
+if (process.env.SPELL_REFS === '1') {
   const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels: {} }, 1) as unknown as Record<string, any>;
   const base = fresh();
   const pristine = structuredClone(base.units);

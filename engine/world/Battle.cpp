@@ -97,6 +97,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     o.side = text(u, "side");
     o.name = text(u, "name");
     o.classId = text(u, "classId");
+    o.className = text(u, "className");
     o.sprite = text(u, "sprite");
     o.x = integer(u, "x");
     o.y = integer(u, "y");

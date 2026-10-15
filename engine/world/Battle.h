@@ -75,7 +75,7 @@ struct ReachCell {
 };
 
 struct BattleUnit {
-  std::string id, side, name, classId, sprite;
+  std::string id, side, name, classId, sprite, className;
   int x = 0, y = 0;  // the anchor hex: for a big body, its front row (closest to the player)
   bool alive = true;
   int mov = 0, moveUsed = 0;  // movement this turn and what is spent of it

@@ -63,6 +63,8 @@
 #include "render/SpriteSystem.h"
 #include "world/Battle.h"
 #include "world/Combat.h"
+#include "world/Spells.h"
+#include "render/UiArt.h"
 #include "world/Board.h"
 #include "world/FogOfWar.h"
 #include "world/TimeOfDay.h"
@@ -386,7 +388,9 @@ class MapStage final : public Stage {
       if (a && b) target_ += glm::vec3{a->x - b->x, 0.0f, a->z - b->z}, cam_.target += glm::vec3{a->x - b->x, 0.0f, a->z - b->z};
     }
     if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.key == SDLK_ESCAPE) {
-      if (selected_ >= 0 && result_.empty()) select(-1);
+      if (!spellMode_.empty()) spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
+      else if (attackMode_) attackMode_ = false;
+      else if (selected_ >= 0 && result_.empty()) select(-1);
       else pauseOpen_ = !pauseOpen_;  // nothing picked: the pause menu (Continuar / Menu principal)
     }
     if (e.type == SDL_EVENT_MOUSE_MOTION && (e.motion.state & SDL_BUTTON_RMASK) && !flat_) {  // Tática never turns
@@ -649,7 +653,8 @@ class MapStage final : public Stage {
     drawCameraBar();
     drawTurnBar();
     drawPauseMenu();
-    ImGui::SetNextWindowPos({12, 12}, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos({8, 44}, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowBgAlpha(0.9f);
     ImGui::Begin("Escolhas", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
     ImGui::PushFont(nullptr, 24.0f);  // large (ImGui 1.93: size per push)
@@ -1452,6 +1457,10 @@ class MapStage final : public Stage {
     if (!battle_ || !scene_) return;
     const std::optional<e2::BattleHex> hex = pick(id, mx, my);
     if (busy()) return;  // a walk, a strike or an enemy's turn is playing
+    if (!spellMode_.empty()) {
+      if (hex && myTurn()) aimSpell(*hex);
+      return;
+    }
     if (!hex) return select(-1);
     // A marked foe: the unit whose turn it is strikes it, walking first to the hex it strikes from.
     if (const int foe = sceneUnitOf(battle_->unitAt(hex->x, hex->y)); foe >= 0 && myTurn())
@@ -1476,7 +1485,46 @@ class MapStage final : public Stage {
 
   void select(int ui) {
     selected_ = ui;
+    spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
+    attackMode_ = false;
     refreshReach();
+  }
+
+  // The battle bar picked a spell: every hex it may be aimed at is marked.
+  void startSpell(const std::string& kind) {
+    if (selected_ < 0) return;
+    if (spellMode_ == kind) {  // the same socket again lets it go
+      spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
+      return;
+    }
+    spellMode_ = kind;
+    spellCells_.clear();
+    spellAim_.clear();
+    const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
+    const e2::BattleUnit& u = battle_->units()[b];
+    for (int y = 0; y < battle_->rows(); ++y)
+      for (int x = 0; x < battle_->cols(); ++x)
+        if (e2::Battle::distance({u.x, u.y}, {x, y}) <= 9 && e2::spellAimValid(*battle_, b, kind, {x, y})) spellAim_.push_back({x, y});
+  }
+
+  // A hex clicked while a spell is aimed: one more target (Míssil Mágico takes one per missile), then the cast.
+  void aimSpell(e2::BattleHex hex) {
+    const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
+    std::string why;
+    if (!e2::spellAimValid(*battle_, b, spellMode_, hex, &why)) {
+      tip_ = why, tipAt_ = now_;
+      return;
+    }
+    spellCells_.push_back(hex);
+    if (static_cast<int>(spellCells_.size()) < e2::spellTargetCount(*battle_, b, spellMode_)) return;
+    std::optional<std::vector<e2::BattleStep>> steps = e2::castSpell(*battle_, b, spellMode_, spellCells_, &why);
+    const std::string kind = spellMode_;
+    spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
+    if (!steps) {
+      tip_ = why, tipAt_ = now_;
+      return;
+    }
+    play(std::move(*steps), static_cast<size_t>(selected_));
   }
 
   void refreshReach() {
@@ -1534,6 +1582,13 @@ class MapStage final : public Stage {
     if (enemyTurn_) {
       EnemyTurn t = *enemyTurn_;
       enemyTurn_.reset();
+      if (!t.steps.empty() && !t.struck && battle_->units()[static_cast<size_t>(unitBattle_[t.unit])].alive) {
+        t.struck = true;
+        std::vector<e2::BattleStep> steps = t.steps;
+        enemyTurn_ = t;
+        play(std::move(steps), t.unit);
+        return;
+      }
       if (t.target >= 0 && !t.struck && battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(t.target)])].alive &&
           battle_->units()[static_cast<size_t>(unitBattle_[t.unit])].alive) {
         t.struck = true;
@@ -1554,6 +1609,16 @@ class MapStage final : public Stage {
     if (active == turnUnit_) return;
     turnUnit_ = active;
     battle_->beginTurn(static_cast<size_t>(active));
+    {
+      // The start of its own turn: a lightning echo, the ground's flames.
+      std::vector<e2::BattleEffect> fx;
+      e2::startOfTurnEffects(*battle_, static_cast<size_t>(active), rng_, fx);
+      showEffects(fx);
+      if (!battle_->units()[static_cast<size_t>(active)].alive) {
+        battle_->units()[static_cast<size_t>(active)].moved = true;
+        return;
+      }
+    }
     const int ui = sceneUnitOf(active);
     const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(active)];
     if (ui < 0) {  // a unit with no card in this scene sits its turns out
@@ -1572,6 +1637,14 @@ class MapStage final : public Stage {
       awake_.insert(active);
     }
     select(-1);
+    if (std::optional<e2::AiCast> cast = e2::planEnemyCast(*battle_, static_cast<size_t>(active))) {
+      EnemyTurn t;
+      t.unit = static_cast<size_t>(ui);
+      t.steps = cast->steps;
+      enemyTurn_ = t;
+      if (cast->path.size() > 1) walkAlong(static_cast<size_t>(ui), cast->path);
+      return;
+    }
     const e2::AiPlan plan = battle_->planEnemy(static_cast<size_t>(active));
     EnemyTurn t;
     t.unit = static_cast<size_t>(ui);
@@ -1604,12 +1677,15 @@ class MapStage final : public Stage {
     float start = 0.0f;
     bool hold = false;  // keeps its last frame (death)
   };
-  // An attack and its counter in play.
+  // An action in play (Engine2's queue): its steps one after another (a strike and its counter, a spell's hits, a
+  // heal), each a pose with the rules applied at its impact.
   struct Exchange {
-    size_t attacker = 0, defender = 0;
+    std::vector<e2::BattleStep> steps;
+    size_t step = 0;
     bool counter = false;  // the defender's strike back is playing
-    float start = 0.0f, impact = 0.0f, end = 0.0f;
-    bool landed = false;   // this strike's roll is in
+    float impact = 0.0f, end = 0.0f;
+    bool landed = false;   // this step's roll is in
+    size_t owner = 0;      // the scene unit whose action this is
   };
 
   // How long a unit's pose plays (its one-shot end, else its loop), seconds; 0.8 s when it has none.
@@ -1635,64 +1711,103 @@ class MapStage final : public Stage {
   }
 
   void attack(size_t attackerUi, size_t defenderUi) {
-    Exchange x;
-    x.attacker = attackerUi, x.defender = defenderUi;
-    startStrike(x, attackerUi, defenderUi);
-    exchange_ = x;
-    reach_.clear(), reachPaths_.clear(), targets_.clear();
+    e2::BattleStep strike;
+    strike.type = e2::BattleStep::Type::Combat;
+    strike.att = static_cast<size_t>(unitBattle_[attackerUi]);
+    strike.def = static_cast<size_t>(unitBattle_[defenderUi]);
+    play({strike}, attackerUi);
   }
 
-  void startStrike(Exchange& x, size_t striker, size_t target) {
-    faceToward(striker, target), faceToward(target, striker);
-    const float length = poseSeconds(striker, "attack");
-    x.start = now_;
+  void play(std::vector<e2::BattleStep> steps, size_t ownerUi) {
+    if (steps.empty()) return;
+    Exchange x;
+    x.steps = std::move(steps);
+    x.owner = ownerUi;
+    exchange_ = std::move(x);
+    reach_.clear(), reachPaths_.clear(), targets_.clear();
+    spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
+    startStep(*exchange_);
+  }
+
+  // The step's pose starts: the striker turns to its target (and a struck foe to the striker).
+  void startStep(Exchange& x) {
+    const e2::BattleStep& s = x.steps[x.step];
+    const int striker = sceneUnitOf(static_cast<int>(x.counter ? s.def : s.att));
+    int target = -1;
+    if (s.type != e2::BattleStep::Type::Spell) target = sceneUnitOf(static_cast<int>(x.counter ? s.att : s.def));
+    else if (!s.ids.empty()) target = sceneUnitOf(static_cast<int>(s.ids[0]));
+    if (striker >= 0 && target >= 0 && striker != target) {
+      faceToward(static_cast<size_t>(striker), static_cast<size_t>(target));
+      if (s.type != e2::BattleStep::Type::Heal) faceToward(static_cast<size_t>(target), static_cast<size_t>(striker));
+    }
+    std::string pose = s.type == e2::BattleStep::Type::Combat ? "attack" : e2::spellPose(s.kind);
+    if (striker >= 0 && !hasPose(static_cast<size_t>(striker), pose)) pose = hasPose(static_cast<size_t>(striker), "cast") ? "cast" : "attack";
+    const float length = striker >= 0 ? poseSeconds(static_cast<size_t>(striker), pose) : 0.6f;
     x.impact = now_ + length * kImpactShare;
     x.end = now_ + length + kExchangeGap;
     x.landed = false;
-    unitShot_[striker] = {"attack", now_, false};
+    if (striker >= 0) unitShot_[static_cast<size_t>(striker)] = {pose, now_, false};
   }
 
-  // Every frame: the impact lands, then the counter, then the attacker's turn ends.
+  bool hasPose(size_t ui, const std::string& pose) const {
+    const e2::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
+    return entry && entry->find(pose);
+  }
+
+  // What a step did, on screen: numbers, misses, heals, the struck unit's hit or death pose.
+  void showEffects(const std::vector<e2::BattleEffect>& fx) {
+    for (const e2::BattleEffect& e : fx) {
+      const int ui = sceneUnitOf(static_cast<int>(e.unit));
+      if (ui < 0) continue;
+      const size_t u = static_cast<size_t>(ui);
+      if (e.miss) {
+        popups_.push_back({u, "Errou", IM_COL32(200, 200, 200, 255), now_, false});
+        continue;
+      }
+      if (e.heal) {
+        popups_.push_back({u, "+" + std::to_string(e.amount), IM_COL32(170, 226, 150, 255), now_, false});
+        continue;
+      }
+      popups_.push_back({u, std::to_string(e.amount), e.crit ? IM_COL32(255, 214, 102, 255) : IM_COL32(255, 255, 255, 255), now_, e.crit});
+      if (e.died) {
+        unitShot_[u] = {"death", now_, true};
+        unitDiedAt_[u] = now_;
+      } else {
+        unitShot_[u] = {"hit", now_, false};
+      }
+    }
+  }
+
+  // Every frame: each step's impact lands, a strike's counter follows, then the next step; at the end the action is
+  // over (Engine2 finishAction).
   void updateExchange() {
     if (!exchange_) return;
     Exchange& x = *exchange_;
-    const size_t striker = x.counter ? x.defender : x.attacker, target = x.counter ? x.attacker : x.defender;
+    const e2::BattleStep& s = x.steps[x.step];
     if (!x.landed && now_ >= x.impact) {
       x.landed = true;
-      const size_t sb = static_cast<size_t>(unitBattle_[striker]), tb = static_cast<size_t>(unitBattle_[target]);
-      e2::BattleUnit& t = battle_->units()[tb];
-      const e2::Fighter a = e2::fighterAt(*battle_, sb, battle_->units()[sb].x, battle_->units()[sb].y);
-      const e2::Fighter d = e2::fighterAt(*battle_, tb, t.x, t.y);
-      const e2::Hit hit = e2::rollHit(*battle_, a, d, rng_);
-      if (!hit.landed) {
-        popups_.push_back({target, "Errou", IM_COL32(200, 200, 200, 255), now_, false});
+      std::vector<e2::BattleEffect> fx;
+      if (s.type == e2::BattleStep::Type::Combat) {
+        if (battle_->units()[s.att].alive && battle_->units()[s.def].alive) e2::resolveStrike(*battle_, s, x.counter, rng_, fx);
       } else {
-        t.hp = std::max(0, t.hp - hit.dmg);
-        battle_->noteWeaponDamage(sb, tb, hit.dmg);
-        popups_.push_back({target, std::to_string(hit.dmg), hit.crit ? IM_COL32(255, 214, 102, 255) : IM_COL32(255, 255, 255, 255), now_, hit.crit});
-        if (t.hp <= 0) {
-          t.alive = false;
-          unitShot_[target] = {"death", now_, true};
-          unitDiedAt_[target] = now_;
-        } else {
-          unitShot_[target] = {"hit", now_, false};
-        }
+        e2::resolveStep(*battle_, s, rng_, fx);
       }
+      showEffects(fx);
     }
     if (now_ < x.end) return;
-    // The defender strikes back once, when it lives and reaches the attacker (canCounter).
-    if (!x.counter) {
-      const size_t ab = static_cast<size_t>(unitBattle_[x.attacker]), db = static_cast<size_t>(unitBattle_[x.defender]);
-      const e2::BattleUnit &au = battle_->units()[ab], &du = battle_->units()[db];
-      const e2::Fighter a = e2::fighterAt(*battle_, ab, au.x, au.y), d = e2::fighterAt(*battle_, db, du.x, du.y);
-      if (du.alive && au.alive && e2::canCounter(*battle_, a, {au.x, au.y}, d)) {
-        x.counter = true;
-        startStrike(x, x.defender, x.attacker);
-        return;
-      }
+    if (s.type == e2::BattleStep::Type::Combat && !x.counter && e2::strikesBack(*battle_, s)) {
+      x.counter = true;
+      startStep(x);
+      return;
+    }
+    if (x.step + 1 < x.steps.size()) {
+      ++x.step;
+      x.counter = false;
+      startStep(x);
+      return;
     }
     // Engine2 finishAction: it has acted; its turn ends unless it is a hero with movement left (it stays picked).
-    e2::BattleUnit& au = battle_->units()[static_cast<size_t>(unitBattle_[x.attacker])];
+    e2::BattleUnit& au = battle_->units()[static_cast<size_t>(unitBattle_[x.owner])];
     au.acted = true;
     exchange_.reset();
     if (!au.alive || au.side != "player" || au.mov - au.moveUsed <= 0) {
@@ -1725,12 +1840,26 @@ class MapStage final : public Stage {
     };
     auto border = [](float r) { return r * kBorderInner; };
     const bool walking = selected_ >= 0 && !unitWalk_[static_cast<size_t>(selected_)].points.empty();
-    if (selected_ >= 0 && !walking) {
+    if (selected_ >= 0 && !walking && !spellMode_.empty()) {
+      // Engine2's spell aim: every hex it may be aimed at washed, the hovered aim's area bright, chosen targets ringed.
+      const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
+      for (const e2::BattleHex& c : spellAim_) add(c, IM_COL32(176, 124, 232, 34), 1.0f), add(c, IM_COL32(176, 124, 232, 110), 0.94f, border(0.94f));
+      if (hover_) {
+        if (e2::spellAimValid(*battle_, b, spellMode_, *hover_))
+          for (const e2::BattleHex& c : e2::spellArea(*battle_, b, spellMode_, *hover_)) add(c, IM_COL32(214, 168, 255, 96), 1.0f);
+        add(*hover_, IM_COL32(8, 12, 16, 242), 0.985f, border(0.985f));
+        add(*hover_, e2::spellAimValid(*battle_, b, spellMode_, *hover_) ? IM_COL32(236, 214, 255, 255) : IM_COL32(231, 133, 115, 242), 0.94f, border(0.94f));
+      }
+      for (const e2::BattleHex& c : spellCells_) add(c, IM_COL32(255, 214, 102, 255), 0.7f, border(0.7f));
+      const e2::BattleUnit& u = battle_->units()[b];
+      add({u.x, u.y}, IM_COL32(220, 226, 235, 71), 0.94f, border(0.94f));
+    } else if (selected_ >= 0 && !walking) {
       const bool player = scene_->units[static_cast<size_t>(selected_)].side == "player";
       const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
       // The reach (tacticalGridStyle): the movement wash with its edges for the party, the enemy's wash for a foe.
       for (const e2::ReachCell& c : reach_) {
         if (c.x == u.x && c.y == u.y) continue;
+        if (attackMode_) break;  // "Atacar": only the foes it can strike
         add({c.x, c.y}, player ? IM_COL32(112, 174, 220, 20) : IM_COL32(231, 133, 115, 31), 1.0f);
         if (player) add({c.x, c.y}, IM_COL32(112, 174, 220, 92), 0.94f, border(0.94f));
       }
@@ -1781,7 +1910,6 @@ class MapStage final : public Stage {
     if (!battle_ || !scene_) return;
     const ImGuiIO& io = ImGui::GetIO();
     drawPopups(ImGui::GetBackgroundDrawList(), io.DisplaySize.x, io.DisplaySize.y);
-    drawForecast();
   }
 
   // The numbers over a struck unit: up 0.6 units over 1.2 s while they fade (crits larger and gold; "Errou" for a miss).
@@ -1831,31 +1959,350 @@ class MapStage final : public Stage {
     ImGui::PopStyleVar();
   }
 
-  // "Fim do turno" (Engine2's battle footer): the party's unit whose turn it is ends it. Bottom right, an ember plate.
-  // Top centre: the round and whose turn it is; Vitória / Derrota at the end.
+  // --- Engine2's battle HUD (GameApp.tsx footer .ember-hud-bar, battleHud3d.ts health bars, the turn order) -----------
+
+  // GameApp portraitFor: a hero's own portrait, an enemy's head-and-shoulders cut, else its sprite's first frame.
+  const UiImage* portraitOf(const e2::BattleUnit& u) const {
+    static const std::pair<const char*, const char*> kHero[] = {
+        {"defaultWarrior", "game/portraits/kael.png"}, {"kaelFinal", "game/portraits/kael-final-face-001.jpg"},
+        {"neera", "game/portraits/NeeraProperSide-profile.jpg"}, {"voss", "game/portraits/voss.png"},
+        {"salazar", "game/portraits/salazar-v2-bust.jpg"}, {"aldric", "game/portraits/aldric-profile-001.jpg"},
+        {"defaultLancer", "game/portraits/aldric-profile-001.jpg"}, {"sandoval", "game/portraits/sandoval-001.jpg"},
+        {"conjurer", "game/portraits/conjurer-002.png"}, {"malrec", "game/portraits/conjurer-002.png"},
+        {"theButcher", "game/portraits/the-butcher-portrait-001.jpg"}, {"familiar3", "game/portraits/familiar3-profile.jpeg"},
+        {"familiar", "game/portraits/familiar1-profile.png"}};
+    const std::filesystem::path root = options_.engine2Public;
+    for (const auto& [sprite, file] : kHero)
+      if (u.sprite == sprite) return uiImage(root / file);
+    std::error_code error;
+    const std::filesystem::path cut = root / "game/portraits/sprites" / (u.sprite + ".png");
+    if (std::filesystem::exists(cut, error)) return uiImage(cut);
+    const std::filesystem::path frame = root / "game/sprites" / u.sprite / "1.png";
+    if (std::filesystem::exists(frame, error)) return uiImage(frame);
+    return nullptr;
+  }
+
+  // GameApp slotIcon / data.ts spellIcon.
+  const UiImage* spellIconOf(const std::string& kind) const {
+    static const std::pair<const char*, const char*> kIcons[] = {
+        {"doubleStrike", "refresh-001/spells/cleave-crossed-blades.png"}, {"cleave", "refresh-001/spells/cleave.png"},
+        {"fireball", "refresh-001/spells/fireball.png"}, {"frost", "frost.jpg"}, {"iceStorm", "ice-storm.jpg"},
+        {"causticVenom", "refresh-001/spells/caustic-venom.png"}, {"minorVenom", "refresh-001/spells/caustic-venom.png"},
+        {"divineBolt", "divine-bolt.jpg"}, {"lightning", "refresh-001/spells/lightning.png"}, {"lightningTier3", "refresh-001/spells/lightning.png"},
+        {"shock", "refresh-001/spells/lightning.png"}, {"magicMissile", "refresh-001/spells/magic-missile.png"},
+        {"longShot", "refresh-001/spells/long-shot.png"}, {"bloodyShot", "bloody-shot-002.jpg"}, {"piercing", "refresh-001/spells/piercing.png"},
+        {"cureMinor", "refresh-006/healing/cure-light-new-006.png"}, {"cureWounds", "refresh-007/healing/cure-medium-golden-bowl-007.png"},
+        {"cureDisease", "refresh-007/healing/cure-disease-green-lantern-007.png"}, {"piercingThrust", "refresh-001/spells/piercing-thrust.png"},
+        {"sweep", "refresh-001/spells/sweep.png"}, {"trip", "refresh-001/spells/trip.png"}, {"summonFamiliar", "refresh-001/spells/summon-familiar.png"},
+        {"phantasmalForce", "phantasmal-force.png"}, {"summonFamiliar2", "summon-familiar2.png"}, {"summonFamiliar3", "summon-familiar3.png"},
+        {"summonFamiliar4", "summon-familiar4.png"}, {"summonZombieDog", "summon-zombie-dog-002.png"}, {"webOfDreams", "refresh-001/spells/web-of-dreams.png"},
+        {"warp", "warp-portal.png"}, {"lifeDrain", "refresh-001/spells/life-drain.png"}, {"multiShot", "refresh-006/combat/multi-shot-006.png"},
+        {"cureLight", "refresh-006/healing/cure-light-new-006.png"}, {"bless", "refresh-001/spells/bless.png"}, {"provoke", "provoke.jpg"},
+        {"bullRush", "bull-rush.png"}, {"executionerStrike", "executioner-strike-002.png"}, {"shieldBash", "shield-bash.png"},
+        {"burningHands", "burning-hands.png"}, {"poisonBreath", "poison-breath.png"}, {"createFoodAndWater", "create-food-and-water.png"},
+        {"turnUndead", "turn-undead.jpg"}};
+    for (const auto& [k, file] : kIcons)
+      if (kind == k) return uiImage(options_.engine2Public / "game/icons" / file);
+    return nullptr;
+  }
+
+  // .ember-btn.ember-btn-sm: Pirata One, primary (the ember gradient) or ghost (dark iron, an ember underline on hover).
+  bool emberButton(const char* id, const char* label, bool primary, bool enabled, float height = 32.0f) {
+    ImFont* font = uiFont(UiFont::Mark);
+    const float size = 16.0f;
+    const float w = spacedTextWidth(font, size, label, 0.06f) + 28.0f;
+    ImGui::BeginDisabled(!enabled);
+    const bool clicked = ImGui::InvisibleButton(id, {w, height});
+    const bool hover = enabled && ImGui::IsItemHovered();
+    ImGui::EndDisabled();
+    const ImVec2 a = ImGui::GetItemRectMin(), b = ImGui::GetItemRectMax();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const int fade = enabled ? 255 : 102;
+    auto k = [&](int r, int g, int bl) {
+      const float m = hover ? 1.1f : 1.0f;
+      return IM_COL32(std::min(255, static_cast<int>(r * m)), std::min(255, static_cast<int>(g * m)), std::min(255, static_cast<int>(bl * m)), fade);
+    };
+    for (int i = 4; i >= 1; --i) dl->AddRectFilled({a.x - i, a.y + i * 2.0f}, {b.x + i, b.y + i * 2.0f}, IM_COL32(0, 0, 0, enabled ? 28 : 12), 3.0f);
+    dl->AddRect({a.x - 1, a.y - 1}, {b.x + 1, b.y + 1}, IM_COL32(0, 0, 0, fade), 2.0f);
+    if (primary) {
+      if (hover) for (int i = 3; i >= 1; --i) dl->AddRect({a.x - i * 3.0f, a.y - i * 3.0f}, {b.x + i * 3.0f, b.y + i * 3.0f}, IM_COL32(255, 120, 35, 22), 4.0f, 3.0f);
+      verticalGradient(dl, a, b, {{0.0f, k(0xd9, 0x62, 0x1c)}, {0.55f, k(0x9c, 0x2f, 0x10)}, {1.0f, k(0x56, 0x17, 0x08)}});
+      dl->AddLine({a.x + 1, a.y + 1}, {b.x - 1, a.y + 1}, IM_COL32(255, 225, 160, enabled ? 140 : 50));
+      dl->AddRect(a, b, IM_COL32(255, 200, 130, enabled ? 128 : 50), 2.0f);
+    } else {
+      verticalGradient(dl, a, b, {{0.0f, k(0x23, 0x23, 0x23)}, {0.55f, k(0x0a, 0x0a, 0x0a)}, {1.0f, k(0x1a, 0x1a, 0x1a)}});
+      dl->AddRect(a, b, hover ? IM_COL32(226, 170, 100, 216) : IM_COL32(190, 150, 95, enabled ? 128 : 60), 2.0f);
+      if (hover) {
+        const float l = a.x + (b.x - a.x) * 0.18f, r = b.x - (b.x - a.x) * 0.18f, y = b.y - 3.0f;
+        dl->AddRectFilledMultiColor({l, y}, {(l + r) * 0.5f, y + 1}, IM_COL32(226, 104, 30, 0), IM_COL32(226, 104, 30, 255), IM_COL32(226, 104, 30, 255), IM_COL32(226, 104, 30, 0));
+        dl->AddRectFilledMultiColor({(l + r) * 0.5f, y}, {r, y + 1}, IM_COL32(226, 104, 30, 255), IM_COL32(226, 104, 30, 0), IM_COL32(226, 104, 30, 0), IM_COL32(226, 104, 30, 255));
+      }
+    }
+    const float tw = spacedTextWidth(font, size, label, 0.06f);
+    const ImVec2 p{std::round((a.x + b.x - tw) * 0.5f), std::round((a.y + b.y - size) * 0.5f)};
+    const ImU32 ink = primary ? IM_COL32(255, 241, 216, fade) : hover ? IM_COL32(255, 224, 180, 255) : IM_COL32(226, 194, 148, fade);
+    spacedText(dl, font, size, {p.x, p.y + 1}, IM_COL32(0, 0, 0, fade), label, 0.06f, false);
+    spacedText(dl, font, size, p, ink, label, 0.06f, false);
+    return clicked && enabled;
+  }
+
+  // .ember-socket: a spell's icon with its uses left in the corner (lit while it is being aimed).
+  bool spellSocket(const char* id, const std::string& kind, int uses, bool enabled, bool active) {
+    const float side = 36.0f;
+    ImGui::BeginDisabled(!enabled);
+    const bool clicked = ImGui::InvisibleButton(id, {side, side});
+    const bool hover = enabled && ImGui::IsItemHovered();
+    ImGui::EndDisabled();
+    const ImVec2 a = ImGui::GetItemRectMin(), b = ImGui::GetItemRectMax();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    verticalGradient(dl, a, b, {{0.0f, IM_COL32(12, 12, 12, 255)}, {1.0f, IM_COL32(5, 5, 5, 255)}});
+    const int fade = enabled ? 255 : 102;
+    if (const UiImage* icon = spellIconOf(kind)) dl->AddImage(icon->texture, {a.x + 6, a.y + 6}, {b.x - 6, b.y - 6}, {0, 0}, {1, 1}, IM_COL32(255, 255, 255, fade));
+    if (active) for (int i = 3; i >= 1; --i) dl->AddRect({a.x - i * 2.0f, a.y - i * 2.0f}, {b.x + i * 2.0f, b.y + i * 2.0f}, IM_COL32(255, 110, 30, 40), 3.0f, 2.0f);
+    dl->AddRect(a, b, active ? IM_COL32(226, 104, 30, 255) : hover ? IM_COL32(226, 170, 100, 216) : IM_COL32(190, 150, 95, 89), 2.0f);
+    const std::string count = std::to_string(uses);
+    ImFont* font = uiFont(UiFont::Ui);
+    const ImVec2 t = font->CalcTextSizeA(10.0f, FLT_MAX, 0.0f, count.c_str());
+    const ImVec2 c{b.x - t.x - 2.0f, b.y - t.y + 2.0f};
+    dl->AddRectFilled({c.x - 2, c.y - 1}, {b.x + 3, b.y + 3}, IM_COL32(28, 28, 28, 255), 2.0f);
+    dl->AddRect({c.x - 2, c.y - 1}, {b.x + 3, b.y + 3}, IM_COL32(74, 74, 74, 255), 2.0f);
+    dl->AddText(font, 10.0f, c, IM_COL32(240, 240, 240, fade), count.c_str());
+    if (hover) {
+      ImGui::BeginTooltip();
+      ImGui::PushFont(uiFont(UiFont::Ui), 15.0f);
+      ImGui::TextUnformatted(e2::spellName(kind).c_str());
+      if (!e2::spellPorted(kind)) ImGui::TextDisabled("ainda não existe no Ember");
+      ImGui::PopFont();
+      ImGui::EndTooltip();
+    }
+    return clicked && enabled;
+  }
+
+  // The unit the bar describes: the one under the cursor, else the one picked, else whoever's turn it is.
+  int hudUnit() const {
+    if (hover_) {
+      const int b = battle_->unitAt(hover_->x, hover_->y);
+      const int ui = sceneUnitOf(b);
+      if (ui >= 0 && unitCard_[static_cast<size_t>(ui)].drawn && battle_->units()[static_cast<size_t>(b)].alive) return b;
+    }
+    if (selected_ >= 0 && unitBattle_[static_cast<size_t>(selected_)] >= 0) return unitBattle_[static_cast<size_t>(selected_)];
+    return battle_->activeUnit();
+  }
+
+  static std::string sheetLine(const e2::BattleUnit& u) {
+    const std::string range = u.minRange == u.maxRange ? std::to_string(u.maxRange) : std::format("{}-{}", u.minRange, u.maxRange);
+    return std::format("AT {} · MAG {} · DF {} · DEX {} · Mov {} · Alc {}", u.atk, u.mag, u.def, u.dex, u.mov, range);
+  }
+
   void drawTurnBar() {
     if (!battle_) return;
     drawTurnPlate();
-    if (!myTurn() || busy()) return;
+    drawHealthBars();
+    drawTurnOrder();
+    drawHudBar();
+  }
+
+  // GameApp's footer: portrait, name · level · XP, class, HP bar, the sheet line or the forecast; then the actions.
+  void drawHudBar() {
     const ImGuiIO& io = ImGui::GetIO();
-    ImGui::SetNextWindowPos({io.DisplaySize.x - kBarInset + kPlateGlow, io.DisplaySize.y - kBarInset + kPlateGlow}, ImGuiCond_Always, {1.0f, 1.0f});
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {kPlateGlow, kPlateGlow});
+    const float height = 132.0f;
+    ImGui::SetNextWindowPos({0.0f, io.DisplaySize.y - height});
+    ImGui::SetNextWindowSize({io.DisplaySize.x, height});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {10.0f, 8.0f});
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    ImGui::Begin("##turnbar", nullptr,
-                 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground |
-                     ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoSavedSettings);
-    ImGui::PushFont(nullptr, kPlateText);
-    const char* label = "FIM DO TURNO";
-    if (plate("##endturn", {spacedWidth(label) + 16.0f, kPlate}, [&](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32 ink) {
-          const float tw = spacedWidth(label);
-          drawSpaced(dl, {std::round((a.x + b.x - tw) * 0.5f), std::round((a.y + b.y - ImGui::GetTextLineHeight()) * 0.5f)}, ink, label);
-        })) {
-      battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])].moved = true;
-      select(-1);
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {6.0f, 4.0f});
+    ImGui::Begin("##hudbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground |
+                                          ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar);
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec2 a = ImGui::GetWindowPos(), b{a.x + io.DisplaySize.x, a.y + height};
+    for (int i = 10; i >= 1; --i) dl->AddRectFilled({a.x, a.y - i * 2.4f}, {b.x, a.y}, IM_COL32(0, 0, 0, 9));  // 0 -10px 24px
+    verticalGradient(dl, a, b, {{0.0f, IM_COL32(24, 24, 24, 255)}, {1.0f, IM_COL32(10, 10, 10, 255)}});
+    dl->AddLine({a.x, a.y - 1}, {b.x, a.y - 1}, IM_COL32(0, 0, 0, 255));
+    dl->AddLine(a, {b.x, a.y}, IM_COL32(190, 150, 95, 115));
+    {  // the ember seam along the top, 20% in from each side
+      const float l = a.x + io.DisplaySize.x * 0.2f, r = b.x - io.DisplaySize.x * 0.2f, m = (l + r) * 0.5f;
+      for (int g = 3; g >= 0; --g) {
+        const int al = g == 0 ? 255 : 40;
+        dl->AddRectFilledMultiColor({l, a.y - g}, {m, a.y + 1 + g}, IM_COL32(226, 104, 30, 0), IM_COL32(226, 104, 30, al), IM_COL32(226, 104, 30, al), IM_COL32(226, 104, 30, 0));
+        dl->AddRectFilledMultiColor({m, a.y - g}, {r, a.y + 1 + g}, IM_COL32(226, 104, 30, al), IM_COL32(226, 104, 30, 0), IM_COL32(226, 104, 30, 0), IM_COL32(226, 104, 30, al));
+      }
     }
-    ImGui::PopFont();
+    ImFont* text = uiFont(UiFont::Ui);
+    const int ub = hudUnit();
+    const float rowY = a.y + 8.0f;
+    if (ub >= 0) {
+      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(ub)];
+      float x = a.x + 10.0f;
+      if (const UiImage* face = portraitOf(u)) {
+        const ImVec2 p{x, rowY}, q{x + 56.0f, rowY + 80.0f};
+        dl->AddRectFilled(p, q, IM_COL32(17, 17, 17, 255), 6.0f);
+        imageCover(dl, *face, p, q, 0.5f, 0.3f);
+        dl->AddRect(p, q, IM_COL32(74, 74, 74, 255), 6.0f);
+        x = q.x + 10.0f;
+      }
+      const float right = b.x - 10.0f;
+      ImGui::PushFont(text, 14.0f);
+      const std::string name = std::format("{} · Nv {}", u.name, u.level);
+      dl->AddText(text, 15.0f, {x, rowY + 2.0f}, IM_COL32(240, 240, 240, 255), name.c_str());
+      float nx = x + text->CalcTextSizeA(15.0f, FLT_MAX, 0.0f, name.c_str()).x + 6.0f;
+      if (u.side == "player") {
+        const std::string xp = u.level >= 30 ? "· NÍVEL MÁX." : std::format("· {}/{} XP", u.xp, xpToLevel(u.level));
+        dl->AddText(text, 12.0f, {nx, rowY + 4.5f}, IM_COL32(180, 180, 180, 255), xp.c_str());
+      }
+      const std::string cls = u.className.empty() ? u.classId : u.className;
+      const float cw = text->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, cls.c_str()).x;
+      dl->AddText(text, 12.0f, {right - cw, rowY + 4.5f}, u.side == "enemy" ? IM_COL32(181, 74, 50, 255) : IM_COL32(180, 180, 180, 255), cls.c_str());
+      // HP bar (.hp-fill: accent for the party, danger for foes)
+      const std::string hp = std::format("{}/{}", u.hp, u.maxHp);
+      const float hw = text->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, hp.c_str()).x;
+      const float barY = rowY + 28.0f, barR = right - hw - 8.0f;
+      dl->AddRectFilled({x, barY}, {barR, barY + 6.0f}, IM_COL32(74, 74, 74, 255), 3.0f);
+      const float f = u.maxHp > 0 ? std::clamp(static_cast<float>(u.hp) / static_cast<float>(u.maxHp), 0.0f, 1.0f) : 0.0f;
+      if (f > 0.0f) dl->AddRectFilled({x, barY}, {x + (barR - x) * f, barY + 6.0f}, u.side == "enemy" ? IM_COL32(181, 74, 50, 255) : IM_COL32(216, 216, 216, 255), 3.0f);
+      dl->AddText(text, 12.0f, {right - hw, barY - 4.0f}, IM_COL32(240, 240, 240, 255), hp.c_str());
+      // the sheet line, or the strike's forecast while a marked foe is under the cursor
+      std::string line = sheetLine(u);
+      if (selected_ >= 0 && hover_ && !targets_.empty()) {
+        const int foe = sceneUnitOf(battle_->unitAt(hover_->x, hover_->y));
+        const auto t = std::find_if(targets_.begin(), targets_.end(), [&](const auto& q) { return q.first == foe; });
+        if (foe >= 0 && t != targets_.end()) {
+          const size_t ab = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), db = static_cast<size_t>(unitBattle_[static_cast<size_t>(foe)]);
+          const e2::Forecast fc = e2::forecast(*battle_, ab, t->second, db);
+          line = fc.canCounter ? std::format("{:.0f}% em {} · contra {:.0f}%", fc.hitOut, battle_->units()[db].name, fc.hitBack)
+                               : std::format("{:.0f}% em {} · sem contra", fc.hitOut, battle_->units()[db].name);
+        }
+      }
+      dl->AddText(text, 11.5f, {x, barY + 12.0f}, IM_COL32(180, 180, 180, 255), line.c_str());
+      if (!tip_.empty() && now_ - tipAt_ < 3.0f) dl->AddText(text, 12.0f, {x, barY + 30.0f}, IM_COL32(224, 189, 128, 255), tip_.c_str());
+      ImGui::PopFont();
+    } else {
+      dl->AddText(text, 12.0f, {a.x + 10.0f, rowY + 4.0f}, IM_COL32(180, 180, 180, 255),
+                  battle_->activeUnit() >= 0 && battle_->units()[static_cast<size_t>(battle_->activeUnit())].side == "enemy"
+                      ? "O inimigo age…"
+                      : "Clique num aliado ou num inimigo para ver o status.");
+    }
+    // the actions row
+    ImGui::SetCursorScreenPos({a.x + 10.0f, b.y - 32.0f - 10.0f});
+    const bool mine = myTurn() && !busy();
+    const e2::BattleUnit* actor = mine ? &battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])] : nullptr;
+    const bool canAct = actor && !actor->acted;
+    if (emberButton("##attack", "Atacar", true, canAct && !targets_.empty() && spellMode_.empty())) attackMode_ = !attackMode_;
+    ImGui::SameLine();
+    if (emberButton("##wait", "Esperar", false, mine)) endUnitTurn();
+    ImGui::SameLine();
+    if (emberButton("##cancel", "Cancelar", false, mine && (!spellMode_.empty() || attackMode_))) {
+      spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
+      attackMode_ = false;
+    }
+    if (actor) {
+      int n = 0;
+      for (const std::string& kind : actor->spellList) {
+        ImGui::SameLine();
+        const int uses = e2::spellUsesLeft(*battle_, static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), kind);
+        const bool ok = canAct && e2::spellPorted(kind) && uses > 0;
+        if (spellSocket(std::format("##spell{}", n++).c_str(), kind, uses, ok, spellMode_ == kind)) startSpell(kind);
+      }
+    }
+    const float endW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, "Fim do turno", 0.06f) + 28.0f;
+    ImGui::SameLine(io.DisplaySize.x - endW - 20.0f);
+    if (emberButton("##endturn", "Fim do turno", false, mine)) endUnitTurn();
     ImGui::End();
-    ImGui::PopStyleVar(2);
+    ImGui::PopStyleVar(3);
+  }
+
+  static int xpToLevel(int level) {
+    const int c = std::max(1, std::min(29, level));
+    return c >= 28 ? 600 : c >= 23 ? 500 : c >= 18 ? 400 : c >= 13 ? 300 : c >= 8 ? 225 : c >= 3 ? 150 : 100;
+  }
+
+  void endUnitTurn() {
+    if (selected_ < 0) return;
+    battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])].moved = true;
+    select(-1);
+  }
+
+  // battleHud3d.ts healthBars: a bar and the HP over each unit's head, sized by its hex on screen.
+  void drawHealthBars() {
+    const ImGuiIO& io = ImGui::GetIO();
+    ImDrawList* dl = ImGui::GetBackgroundDrawList();
+    const float w = io.DisplaySize.x, h = io.DisplaySize.y;
+    for (size_t i = 0; i < scene_->units.size(); ++i) {
+      const int b = unitBattle_[i];
+      if (b < 0 || !unitCard_[i].drawn) continue;
+      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(b)];
+      if (!u.alive) continue;
+      const CardRect& c = unitCard_[i];
+      const glm::vec3 up = c.flat ? glm::vec3(0.0f, 0.0f, -1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
+      const glm::vec3 head = c.origin + up * c.height;
+      const std::optional<ImVec2> at = screenOf(head, w, h);
+      const std::optional<ImVec2> side = screenOf(head + glm::vec3(1.0f, 0.0f, 0.0f), w, h);
+      const std::optional<ImVec2> deep = screenOf(head + glm::vec3(0.0f, 0.0f, 1.0f), w, h);
+      if (!at || !side || !deep) continue;
+      const float px = std::max(std::hypot(side->x - at->x, side->y - at->y), std::hypot(deep->x - at->x, deep->y - at->y));
+      const float cell = px * 1.7320508f;
+      const float gap = cell * 0.12f;
+      const float width = cell * (u.size >= 4 ? 1.35f : u.size == 2 ? 0.9f : 0.62f);
+      const float height = std::max(3.0f, cell * 0.07f);
+      const float left = at->x - width * 0.5f, top = at->y - gap - height;
+      const int alpha = u.moved && u.side == "player" ? 230 : 255;
+      dl->AddRectFilled({left - 1, top - 1}, {left + width + 1, top + height + 1}, IM_COL32(12, 11, 10, 209 * alpha / 255));
+      dl->AddRectFilled({left, top}, {left + width, top + height}, IM_COL32(44, 40, 36, alpha));
+      const ImU32 fill = u.side == "player" ? IM_COL32(200, 196, 188, alpha) : u.side == "neutral" ? IM_COL32(95, 158, 82, alpha) : IM_COL32(181, 74, 50, alpha);
+      const float f = u.maxHp > 0 ? std::clamp(static_cast<float>(u.hp) / static_cast<float>(u.maxHp), 0.0f, 1.0f) : 0.0f;
+      if (f > 0.0f) dl->AddRectFilled({left, top}, {left + width * f, top + height}, fill);
+      if (cell >= 32.0f) {
+        ImFont* font = uiFont(UiFont::Ui);
+        const float size = std::max(10.0f, std::round(cell * 0.22f));
+        const std::string hp = std::to_string(u.hp);
+        const ImVec2 t = font->CalcTextSizeA(size, FLT_MAX, 0.0f, hp.c_str());
+        const ImVec2 p{at->x - t.x * 0.5f, top - 1.0f - t.y};
+        for (int dx = -1; dx <= 1; ++dx)
+          for (int dy = -1; dy <= 1; ++dy)
+            if (dx || dy) dl->AddText(font, size, {p.x + dx, p.y + dy}, IM_COL32(12, 11, 10, 230), hp.c_str());
+        dl->AddText(font, size, p, IM_COL32(240, 235, 227, 255), hp.c_str());
+      }
+    }
+  }
+
+  // GameApp's "Ordem": a small button top left that unfolds this round's order.
+  void drawTurnOrder() {
+    ImGui::SetNextWindowPos({8.0f, 8.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.0f, 0.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {2.0f, 4.0f});
+    ImGui::Begin("##order", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
+                                         ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings);
+    ImFont* font = uiFont(UiFont::Ui);
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    auto chip = [&](const char* id, const std::string& label, ImU32 ink, ImU32 bg, bool button) {
+      const ImVec2 t = font->CalcTextSizeA(11.0f, FLT_MAX, 0.0f, label.c_str());
+      const ImVec2 size{t.x + 14.0f, t.y + 9.0f};
+      bool clicked = false;
+      if (button) clicked = ImGui::InvisibleButton(id, size);
+      else ImGui::Dummy(size);
+      const ImVec2 a = ImGui::GetItemRectMin(), b = ImGui::GetItemRectMax();
+      dl->AddRectFilled(a, b, bg, 6.0f);
+      dl->AddRect(a, b, IM_COL32(255, 255, 255, 38), 6.0f);
+      dl->AddText(font, 11.0f, {a.x + 7.0f, a.y + 4.5f}, ink, label.c_str());
+      return clicked;
+    };
+    if (chip("##ordem", "Ordem", IM_COL32(203, 213, 225, 255), IM_COL32(17, 27, 34, 242), true)) showTurnOrder_ = !showTurnOrder_;
+    if (showTurnOrder_) {
+      const int active = battle_->activeUnit();
+      int n = 1;
+      bool first = true;
+      for (size_t b : battle_->turnOrder()) {
+        const e2::BattleUnit& u = battle_->units()[b];
+        if (!u.alive) continue;
+        if (!first) ImGui::SameLine();
+        first = false;
+        const bool now = static_cast<int>(b) == active;
+        const ImU32 ink = now ? IM_COL32(255, 224, 180, 255) : u.moved ? IM_COL32(100, 116, 139, 255) : u.side == "enemy" ? IM_COL32(231, 133, 115, 255) : IM_COL32(203, 213, 225, 255);
+        chip(std::format("##q{}", b).c_str(), std::format("{} {}", n++, u.name), ink, now ? IM_COL32(37, 49, 59, 242) : IM_COL32(17, 27, 34, 217), false);
+      }
+    }
+    ImGui::End();
+    ImGui::PopStyleVar(3);
   }
 
   // Esc's pause menu, and after the battle's end its way out: ember plates in the middle of the screen.
@@ -2236,11 +2683,19 @@ class MapStage final : public Stage {
     size_t unit = 0;    // scene unit
     int target = -1;    // scene unit it strikes after its walk
     bool struck = false;
+    std::vector<e2::BattleStep> steps;  // or the spell it casts after its walk
   };
   std::optional<EnemyTurn> enemyTurn_;
   std::unordered_set<int> awake_;         // enemies that have seen the party (fog)
   std::string result_;                    // "victory" / "defeat" once the battle is over
   bool pauseOpen_ = false, titleRequested_ = false;
+  std::string spellMode_;                 // the spell being aimed (battle bar), empty = none
+  std::vector<e2::BattleHex> spellCells_; // its targets chosen so far
+  std::vector<e2::BattleHex> spellAim_;   // every hex it may be aimed at
+  bool attackMode_ = false;               // "Atacar": only the foes it can strike are marked
+  bool showTurnOrder_ = false;
+  std::string tip_;                       // why a click did nothing (Engine2's tip line)
+  float tipAt_ = -10.0f;
   std::vector<OneShot> unitShot_;         // per scene unit: a one-shot pose over its own
   std::vector<float> unitDiedAt_;         // per scene unit: when it fell (-1 = alive)
   std::optional<Exchange> exchange_;
