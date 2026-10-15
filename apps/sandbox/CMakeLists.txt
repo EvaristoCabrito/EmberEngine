@@ -18,7 +18,6 @@ ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/fog_look004.hlsl STAGES c
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/fog_look005.hlsl STAGES cs:CSMarch cs:CSComposite)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/fog_look006.hlsl STAGES cs:CSMarch cs:CSComposite)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/fog_look007.hlsl STAGES cs:CSMarch cs:CSComposite)
-ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/fog_look008.hlsl STAGES cs:CSMarch cs:CSComposite)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/cull.hlsl STAGES cs:CSInstancesEarly cs:CSInstancesLate cs:CSPrepare cs:CSTraverse cs:CSPrepareDraw)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/meshlet.hlsl STAGES as:ASMain ms:MSMain ps:PSMain ps:PSShadow)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/resolve.hlsl STAGES cs:CSResolve cs:CSSky)

@@ -327,14 +327,8 @@ class MapStage final : public Stage {
     renderer.setVolumetricFog(volume);
     // The fog of war's mist: the numbered look on show (render/FogLooks.h; chosen in the Map panel).
     Renderer::FogBank bank;
-    // Over a fog of war: the chosen mist look; without one, the map's own mist (look 008, Engine2's Névoas).
-    const e2::MapDraft& draft = board_->draft();
-    const bool mapMist = !draft.mistType.empty() && draft.mistIntensity > 0.0f;
-    bank.enabled = options_.volume && !noFog_ && (fog_.has_value() || mapMist);
-    bank.look = fog_ ? fogLook_ : mapMistLook();
-    bank.scene.mistType = draft.mistType;
-    bank.scene.mistIntensity = draft.mistIntensity;
-    bank.scene.mistSpeed = draft.mistSpeed;
+    bank.enabled = options_.volume && fog_.has_value() && !noFog_;
+    bank.look = fogLook_;
     bank.scene.boardCenter = {boardCenter_.x, boardCenter_.z};
     bank.scene.boardRadius = boardRadius_;
     bank.scene.meanGround = meanGround_;
@@ -718,19 +712,15 @@ class MapStage final : public Stage {
         if (!starsOff_) starLook_ = star;
       }
     }
-    if (!fog_ && options_.volume && !board_->draft().mistType.empty() && board_->draft().mistIntensity > 0.0f) {
-      int look = noFog_ ? 0 : 1;  // the map's own mist, or none
-      if (dropdown("Névoa", look, 2, [](int i) { return std::string(i == 0 ? "OFF" : "do mapa"); })) noFog_ = look == 0;
-    }
     if (fog_ && options_.volume) {
       // First "no fog at all" (no mist and no fog of war: the whole map seen, every unit drawn), then the saved
       // mist looks (looks/fog/README.md, in order).
-      static const char* kFog[8] = {"nuvens", "lençol", "bancos", "bloco", "bloco + giro", "mist4", "mist4 + giro", "do mapa"};
+      static const char* kFog[7] = {"nuvens", "lençol", "bancos", "bloco", "bloco + giro", "mist4", "mist4 + giro"};
       int look = noFog_ ? 0 : static_cast<int>(fogLook_) + 1;
       const int count = static_cast<int>(fogLooks().size());
       if (dropdown("Névoa", look, count + 1, [count](int i) {
             if (i == 0) return std::string("OFF");
-            return count == 8 ? std::string(kFog[i - 1]) : std::string(fogLooks()[i - 1].note);
+            return count == 7 ? std::string(kFog[i - 1]) : std::string(fogLooks()[i - 1].note);
           })) {
         noFog_ = look == 0;
         if (!noFog_) fogLook_ = static_cast<uint32_t>(look - 1);
@@ -739,14 +729,6 @@ class MapStage final : public Stage {
     ImGui::PopItemWidth();
     ImGui::PopFont();
     ImGui::End();
-  }
-
-  // The map's own mist look (008) in the saved series.
-  static uint32_t mapMistLook() {
-    const auto looks = fogLooks();
-    for (uint32_t i = 0; i < looks.size(); ++i)
-      if (std::string_view(looks[i].number) == "008") return i;
-    return static_cast<uint32_t>(looks.size() - 1);
   }
 
   // The player asked to leave for the title screen (pause menu, or after the battle's end), or to fight it again.

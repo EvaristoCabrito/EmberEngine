@@ -977,8 +977,7 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
   vkCmdUpdateBuffer(cmd, frame.meshFrame.buffer, 0, sizeof(f), &f);
   if (volumeThisFrame_) vkCmdUpdateBuffer(cmd, frame.volumeFrame.buffer, 0, sizeof(vf), &vf);
   // The fog bank: only over a fog-of-war mask.
-  bankThisFrame_ = fogBank_.enabled && !fogLooks().empty() &&
-                   (f.fogMask != kNoTextureIndex || !fogLooks()[std::min<size_t>(fogBank_.look, fogLooks().size() - 1)].needsMask);
+  bankThisFrame_ = fogBank_.enabled && f.fogMask != kNoTextureIndex && !fogLooks().empty();
   if (bankThisFrame_) {
     bankLook_ = std::min<uint32_t>(fogBank_.look, static_cast<uint32_t>(fogLooks().size()) - 1);
     const FogLook& look = fogLooks()[bankLook_];
