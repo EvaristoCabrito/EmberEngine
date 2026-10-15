@@ -17,7 +17,7 @@ echo Vulkan SDK: %VULKAN_SDK%
 rem Visual Studio: pergunta ao vswhere; se nao der, tenta os caminhos comuns.
 set "VCVARS="
 set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
-if exist "%VSWHERE%" for /f "usebackq delims=" %%I in (`"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VCVARS=%%I\VC\Auxiliary\Build\vcvars64.bat"
+if exist "%VSWHERE%" for /f "usebackq delims=" %%I in (`call "%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VCVARS=%%I\VC\Auxiliary\Build\vcvars64.bat"
 set "PF86=%ProgramFiles(x86)%"
 set "PF=%ProgramFiles%"
 for %%E in (BuildTools Community Professional Enterprise) do (
@@ -29,7 +29,7 @@ if not defined VCVARS (
   exit /b 1
 )
 if not exist "%VCVARS%" (
-  echo [ERRO] Nao existe: %VCVARS%
+  echo [ERRO] Nao existe: "%VCVARS%"
   exit /b 1
 )
 echo Visual Studio: %VCVARS%
