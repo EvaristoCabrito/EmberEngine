@@ -316,8 +316,19 @@ only on the user's explicit "faz", shown live in the window:
    side has nobody standing (Engine2 mission win rules like bosses / waypoints not ported). Not yet: spells and
    abilities (cultists, crossbow long shot, ...), off-hand strikes, XP / level-ups, poison / bleed / status, hazards,
    neutrals, undo move.
-5. Sprite look in light (cards washed out / flat), then the AAA light plan (ARCHITECTURE §7.6, step A designed:
-   physical units, EV100 metering + adaptation + night compensation, inverse-square lamps).
+5. **AAA light, step A written in the cloud session (user: "I want the atmosphere, the light"), NOT BUILT / NOT
+   RUN:** light mode 3 "real" (default; panel "Luz": protótipo / Engine2 / física / real; `--lighting 3`): sun
+   128,000 lux above the air through the atmosphere's transmittance, the physical sky (Hillaire tables lit by the
+   same sun) as the ambient (`Lighting::physicalSky`, Renderer ambientTarget < 0 = the sky's own SH x multiplier,
+   atmosphere.hlsl), full moon 0.5 lux x phase, indoor fill 3 lux + ambient 1.5 lux, map sliders as multipliers;
+   dawn / dusk sun at 6 / 4 degrees; lamps: Engine2 intensity x reach^2 x 12 lm (lantern ~915 lm, fire ~1240,
+   forge ~1700, candle ~200) as flux / 4pi cd with 1/d^2 falloff (shader's decay 2), range at 0.03 lux; physical
+   camera: incident meter EV100 = log2(E / 2.5), darkening curve (0 by day, 0.3-0.4 stops at dawn / dusk, ~3.3 at
+   full moon, ~3.7 on a dark night), eye adaptation 1.5 / s, exposure 1 / (1.2 x 2^EV); painted flames glow
+   exposure-relative (0.15 by day, full at night). Expected (computed here, ACES display values, ground albedo
+   0.25): day ground 0.41, dusk 0.31, moonlit ground 0.02 with a lantern pool 0.64 at 2 m / 0.13 at 5 m. Not yet:
+   GPU metering (the meter is computed from the light, not the frame), night vision, bloom, AO (steps B-C).
+   Then sprite look in light (cards washed out / flat).
 6. Tabletop pieces as specified above; the redo of the sprite path if it still falls short of Engine2.
 Skipped until final assets exist (user, 2026-10-15): the ground material's cost.
 

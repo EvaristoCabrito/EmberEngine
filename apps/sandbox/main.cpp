@@ -28,7 +28,8 @@
 //        farthest enemy and back). Pixel checks: [--scene-time T] (scene clock pinned) [--no-ui] [--debug-view 3]
 //        (the fog mask each surface read), then tools/scripts/check_fog.py. [--volume 0]: no volumetric fog;
 //        [--fog-look N]: which saved fog look (render/FogLooks.h; in a window, the Map panel's dropdown).
-//        [--lighting 0|1|2]: old prototype day / Engine2's presets / physical atmosphere (default; also in the panel).
+//        [--lighting 0|1|2|3]: old prototype day / Engine2's presets / physical sky with Engine2's strengths / real
+//        (default: lux, physical camera, eye adaptation, inverse-square lamps; also in the panel as "Luz").
 //        Night maps: [--moon-phase NAME] (Engine2's moonPhase.ts: new .. waningCrescent, blood) [--moon-path 0|1|2]
 //        (where the disc and its light stand: MapStage.h moonPlacement) [--star-look N] (looks/stars).
 //        [--heroes <roster.json>]: every unit's poses (tools/scripts/engine2/export_heroes.ts); the map's own units
@@ -104,7 +105,7 @@ struct Options {
   int fog = -1;
   bool scout = false, noUi = false, volume = true;
   int fogLook = 3;
-  int lighting = 2;
+  int lighting = 3;
   float sceneTime = -1.0f;
   std::string moonPhase;
   int moonPath = 0;

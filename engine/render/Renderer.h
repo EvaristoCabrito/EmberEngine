@@ -93,6 +93,10 @@ class Renderer {
     uint32_t moonTexture = 0xFFFFFFFFu;         // bindless sRGB + alpha; none = no disc
     float moonRadius = 0.0f;                    // angular radius, radians
     float moonGlow = 0.0f;                      // the disc's radiance = the art x this (before exposure)
+    // Light mode "real" (ARCHITECTURE 7.6 step A): the sky's ambient is what the physical sky gives (lux), times
+    // this multiplier (the map's ambient slider), instead of being scaled to ambientIntensity.
+    bool physicalSky = false;
+    float ambientMul = 1.0f;
   };
   void setMeshes(const MeshSceneView& view, const Lighting& lighting = {}) {
     meshView_ = view;

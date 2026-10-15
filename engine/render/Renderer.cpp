@@ -844,6 +844,8 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
     a.moonGlow = lighting_.moonGlow;
     const glm::vec3 sky = lighting_.skyColor;
     a.ambientTarget = lighting_.ambientIntensity * lighting_.exposure * (0.2126f * sky.r + 0.7152f * sky.g + 0.0722f * sky.b);
+    // A negative target = keep the sky's own irradiance, times -target (the physical light mode; exposure included).
+    if (lighting_.physicalSky) a.ambientTarget = -lighting_.ambientMul * lighting_.exposure;
     a.transmittance = atmoSampled_[0], a.transmittanceStorage = atmoStorage_[0];
     a.multiScattering = atmoSampled_[1], a.multiScatteringStorage = atmoStorage_[1];
     a.skyView = atmoSampled_[2], a.skyViewStorage = atmoStorage_[2];

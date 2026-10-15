@@ -204,6 +204,8 @@ void CSAmbient(uint thread : SV_GroupIndex) {
   shBasis(float3(0, 1, 0), bUp);
   float3 upIrradiance = 0.0;
   [unroll] for (uint c = 0; c < 9; ++c) upIrradiance += e[c] * bUp[c];
-  const float scale = a.ambientTarget / max(dot(upIrradiance, float3(0.2126, 0.7152, 0.0722)), 1e-8);
+  // ambientTarget >= 0: scaled so an upward surface receives that luminance; < 0: the sky's own irradiance x -target.
+  const float scale = a.ambientTarget >= 0.0 ? a.ambientTarget / max(dot(upIrradiance, float3(0.2126, 0.7152, 0.0722)), 1e-8)
+                                            : -a.ambientTarget;
   [unroll] for (uint c = 0; c < 9; ++c) vk::RawBufferStore<float4>(a.ambient + c * 16, float4(e[c] * scale, 0.0));
 }

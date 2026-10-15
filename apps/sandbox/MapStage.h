@@ -49,6 +49,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <format>
+#include <limits>
 #include <string_view>
 
 #include "Stage.h"
@@ -99,8 +100,8 @@ struct MapStageOptions {
   bool volume = true;
   int fogLook = 3;  // the fog look shown first (render/FogLooks.h numbers)
   // Lighting (also in the panel): 0 the old prototype day (every capture before 2026-10-15), 1 Engine2's 3D presets for
-  // the map's time of day (the floor), 2 physical: the map's time of day and sliders through the atmosphere.
-  int lighting = 2;
+  // the map's time of day (the floor), 2 physical sky with Engine2's strengths, 3 real (default): lux, physical camera.
+  int lighting = 3;
   // Scene clock pinned to this many seconds (< 0 = real time): identical frames for paired captures.
   float sceneTime = -1.0f;
   // Night: tonight's moon phase (Engine2's moonPhase.ts names; "" = Engine2's stage default: the full moon's art at
@@ -128,7 +129,7 @@ class MapStage final : public Stage {
         options_(options),
         jobs_(jobs) {
     yaw_ += glm::radians(options.turnDegrees);
-    lightingMode_ = std::clamp(options.lighting, 0, 2);
+    lightingMode_ = std::clamp(options.lighting, 0, 3);
     moonPath_ = std::clamp(options.moonPath, 0, 2);
     starLook_ = std::clamp(options.starLook, 1, kStarLooks);
     for (int i = 0; i < static_cast<int>(std::size(e2::kMoonPhases)); ++i)
@@ -279,6 +280,17 @@ class MapStage final : public Stage {
     if (scene_) buildLights(time);
     renderer.setLights(lights_);
     Renderer::Lighting lighting = mapLighting(time);
+    if (lightingMode_ == 3) {
+      // The physical camera (ARCHITECTURE 7.6 step A): EV100 from the light metered on the board (incident meter:
+      // EV100 = log2(E / 2.5)), darker at night by up to 2.5 stops so night reads as night, and the eye adapting to
+      // it (about a second); exposure = 1 / (1.2 x 2^EV) as a camera's.
+      const float ev = std::log2(std::max(meterLux_, 1e-4f) / 2.5f);
+      const float target = ev + nightDarkening(ev);
+      if (std::isnan(adaptedEv_) || measuring_) adaptedEv_ = target;
+      adaptedEv_ += (target - adaptedEv_) * (1.0f - std::exp(-dt * kAdaptPerSecond));
+      lighting.exposure = 1.0f / (1.2f * std::exp2(adaptedEv_));
+    }
+    exposure_ = lighting.exposure;
     if (options_.sunElevation >= 0.0f) {
       const float az = glm::radians(options_.sunAzimuth), el = glm::radians(options_.sunElevation);
       lighting.sunDirection = {std::cos(el) * std::cos(az), std::sin(el), std::cos(el) * std::sin(az)};
@@ -644,8 +656,8 @@ class MapStage final : public Stage {
       dropdown("Fundo", background_, 3, [](int i) { return std::string(kBackgrounds[i]); });
     }
     {
-      static const char* kModes[3] = {"protótipo", "Engine2", "física"};
-      dropdown("Luz", lightingMode_, 3, [](int i) { return std::string(kModes[i]); });
+      static const char* kModes[4] = {"protótipo", "Engine2", "física", "real"};
+      dropdown("Luz", lightingMode_, 4, [](int i) { return std::string(kModes[i]); });
     }
     {
       static const char* kLayers[4] = {"sol / lua", "sombras", "luz do céu", "tochas e fogo"};
@@ -708,6 +720,13 @@ class MapStage final : public Stage {
   // corner (inset-x-2, top 0.5rem), 10 px text; the window's padding leaves room for the shadow and glow.
   static constexpr float kPlate = 28.0f, kBarGap = 4.0f, kBarInset = 8.0f, kPlateText = 10.0f, kPlateGlow = 10.0f;
   static constexpr float kFlameEmit = 2.5f;           // Engine2 FLAME_EMIT
+  // Light mode "real" (ARCHITECTURE 7.6 step A).
+  static constexpr float kSunLux = 128000.0f;       // the sun above the atmosphere
+  static constexpr float kFullMoonLux = 0.5f;       // a full moon (real 0.25, lifted so moonlit ground reads)
+  static constexpr float kIndoorFillLux = 3.0f, kIndoorAmbientLux = 1.5f;
+  static constexpr float kLumensPerUnit = 12.0f;    // Engine2 intensity x reach^2 -> lumens
+  static constexpr float kNightStops = 2.5f;        // the camera's darkening at night
+  static constexpr float kAdaptPerSecond = 1.5f;    // eye adaptation rate
 
   // Median, 99th percentile and worst; frames over the 60 Hz budget.
   struct Spread {
@@ -860,6 +879,7 @@ class MapStage final : public Stage {
       if (d.light) {
         emit.emitColor = {d.light->color[0], d.light->color[1], d.light->color[2]};
         emit.emitLevel = kFlameEmit * flicker(time, d.light->seed, d.light->flicker);
+        if (lightingMode_ == 3) emit.emitLevel *= flameGlow() / std::max(exposure_, 1e-9f);
         emit.emitAt = {d.art.flameFound ? d.art.flameU : 0.5f, d.art.flameFound ? d.art.flameV : 0.7f, 0.0f};
       }
       const uint32_t flags = flat_ ? kSpriteLit | kSpriteFlat : kSpriteLit | (d.castShadow ? kSpriteCastsShadow : 0u);
@@ -948,9 +968,21 @@ class MapStage final : public Stage {
 
   // Engine2's CarriedLight: three.js point light, decay 1.25, cut off at hypot(radius, height) x 2.5, colour x
   // intensity x 3.2 x flicker.
-  static LocalLight carried(glm::vec3 at, const std::array<float, 3>& color, float intensity, float radius, float height, float flick) {
+  LocalLight carried(glm::vec3 at, const std::array<float, 3>& color, float intensity, float radius, float height, float flick) const {
     LocalLight l;
     l.position = at;
+    if (lightingMode_ == 3) {
+      // Real light: Engine2's intensity and reach read as a luminous flux (lantern ~900 lm, fire ~1200 lm, forge
+      // ~1700 lm, candle ~200 lm), an isotropic source of flux / 4pi candela falling off as 1 / d^2 (lux), its
+      // range where it drops under 0.03 lux.
+      const float reach = radius / 1.3f;  // Engine2 LIGHT_RADIUS_MUL is already in the scene's radius
+      const float lumens = intensity * reach * reach * kLumensPerUnit;
+      const float candela = lumens / (4.0f * std::numbers::pi_v<float>);
+      l.color = glm::vec3(color[0], color[1], color[2]) * candela * flick;
+      l.decay = 2.0f;
+      l.range = std::clamp(std::sqrt(candela / 0.03f), 2.0f, 48.0f);
+      return l;
+    }
     l.range = std::hypot(radius, height) * 2.5f;
     l.color = glm::vec3(color[0], color[1], color[2]) * intensity * 3.2f * flick;
     l.decay = 1.25f;
@@ -1051,6 +1083,7 @@ class MapStage final : public Stage {
       e2::lightDirection(t.stageAzimuth, t.elevationDeg >= 0.0f ? glm::radians(t.elevationDeg) : t.stageElevation, dir);
       l.sunDirection = glm::normalize(glm::vec3(dir[0], dir[1], dir[2]));
     }
+    if (lightingMode_ == 3) return realLighting(t, moon, phase, placed, time);
     if (lightingMode_ == 1) {  // Engine2's 3D stage, as it drew (at night: the moon's light from Engine2's side)
       if (t.moon) l.sunDirection = glm::normalize(moonPlacement(time).light);
       l.sunColor = Renderer::srgb(t.moon && moon.color ? moon.color : t.stageSun);
@@ -1091,6 +1124,76 @@ class MapStage final : public Stage {
       l.moonGlow = 2.3f;
     }
     return l;
+  }
+
+  // Light mode "real" (ARCHITECTURE 7.6 step A): sun, sky, moon and lamps on one physical scale (lux), the map's
+  // sliders as multipliers on it. The sun outside the air gives 128,000 lux; the atmosphere's transmittance takes its
+  // share and colours it; the physical sky (Hillaire tables) lit by the same sun gives the sky's own ambient. A full moon
+  // gives 0.5 lux (twice the real 0.25, the usual art lift so moonlit ground still reads), times tonight's phase.
+  // Dawn and dusk put the sun low (6 and 4 degrees) so they look like dawn and dusk. Indoors: a dim fill (3 lux) and
+  // ambient (1.5 lux), so the torches carry the room. The camera meters what lands on the board (meterLux_).
+  Renderer::Lighting realLighting(const e2::TimeOfDayLight& t, const e2::Moonlight& moon, const char* phase, const MoonPlacement& placed,
+                                 float /*time*/) const {
+    Renderer::Lighting l;
+    const float keyMul = scene_ && scene_->sunIntensity ? *scene_->sunIntensity / t.key : 1.0f;
+    const float ambientMul = scene_ && scene_->ambientIntensity && t.ambient > 0.0f ? *scene_->ambientIntensity / t.ambient : 1.0f;
+    const bool indoor = scene_ && scene_->environment == "indoor";
+    if (t.moon) {
+      l.sunDirection = placed.light;
+    } else {
+      const std::string_view name = t.name;
+      const float elevation = name == "dawn" ? glm::radians(6.0f) : name == "dusk" ? glm::radians(4.0f) : t.stageElevation;
+      float dir[3];
+      e2::lightDirection(t.stageAzimuth, elevation, dir);
+      l.sunDirection = glm::normalize(glm::vec3(dir[0], dir[1], dir[2]));
+    }
+    const glm::vec3 keyColor = t.moon ? Renderer::srgb(moon.color ? moon.color : t.keyColor) : glm::vec3(1.0f);
+    const float outside = (t.moon ? kFullMoonLux * moon.strength : kSunLux) * keyMul;  // the key light above the air
+    const float sinElevation = std::max(l.sunDirection.y, 0.0f);
+    if (indoor) {
+      l.sunColor = Renderer::srgb(t.moon && moon.color ? moon.color : t.keyColor);
+      l.sunIntensity = kIndoorFillLux * keyMul;
+      l.skyColor = Renderer::srgb(t.moon && moon.sky ? moon.sky : t.skyColor);
+      l.groundColor = Renderer::srgb(t.stageGround);
+      l.ambientIntensity = kIndoorAmbientLux * ambientMul;
+      meterLux_ = l.sunIntensity * std::max(sinElevation, 0.3f) + l.ambientIntensity;
+      return l;
+    }
+    // Through the air: the key light's colour (luminance 1) and how much of it reaches the ground.
+    const glm::vec3 c = atmosphereTransmittance(AtmosphereFrame{}, l.sunDirection) * keyColor;
+    const float lum = 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b;
+    l.sunColor = lum > 1e-6f ? c / lum : keyColor;
+    l.sunIntensity = outside * lum;
+    l.atmosphere = true;
+    l.skyIlluminance = keyColor * outside;
+    l.skyScale = 1.0f;
+    l.physicalSky = true;
+    l.ambientMul = ambientMul;
+    l.ambientIntensity = 0.0f;  // (not read: the sky gives the ambient)
+    // The meter: the key light on level ground plus the sky (about a fifth of the key that gets through).
+    meterLux_ = l.sunIntensity * std::max(sinElevation, 0.05f) + 0.2f * l.sunIntensity * ambientMul;
+    if (t.moon) {
+      l.sunDisc = false;
+      l.stars = starsOff_ ? 0.0f : 1.0f;
+      l.starLook = static_cast<uint32_t>(starLook_);
+      l.moonDirection = placed.disc;
+      l.moonTexture = ground_.textureIndex(e2::skyMoonAsset(phase));
+      l.moonRadius = moonOff_ ? 0.0f : glm::radians(kMoonSizes[moonSize_]);
+      l.moonGlow = 2.3f;
+    }
+    return l;
+  }
+
+  // How many stops darker than the meter the camera exposes (Unreal's exposure compensation curve by scene
+  // brightness): none in full daylight, up to 0.75 as the sun sinks (dawn, dusk), then 2.5 by a moonlit night and more
+  // on a darker one, so dusk reads as dusk and night as night, not as a dim day.
+  static float nightDarkening(float ev100) {
+    return 0.75f * std::clamp((14.0f - ev100) / 4.0f, 0.0f, 1.0f) + kNightStops * std::clamp((10.0f - ev100) / 12.5f, 0.0f, 1.3f);
+  }
+  // The painted flames' glow on screen: faint in daylight, full at night (from the camera's EV).
+  float flameGlow() const {
+    if (std::isnan(adaptedEv_)) return 1.0f;
+    return glm::mix(0.15f, 1.0f, std::clamp((12.0f - adaptedEv_) / 12.0f, 0.0f, 1.0f));
   }
 
   // Where the party stands (the swirl turns round it): the middle of the living player units.
@@ -2172,7 +2275,11 @@ class MapStage final : public Stage {
   e2::HexPoint heroHex_;
   float meanGround_ = 0.0f, boardTop_ = 0.0f, groundLow_ = 0.0f;
   uint32_t fogLook_ = 2;  // index into fogLooks(): look 003 unless --fog-look says otherwise
-  int lightingMode_ = 2;   // 0 old prototype day, 1 Engine2 presets, 2 physical
+  int lightingMode_ = 3;   // 0 old prototype day, 1 Engine2 presets, 2 physical sky (Engine2 strengths), 3 real (lux + camera)
+  // Light mode "real": the camera's exposure, adapted towards the scene's (EV100), and what was metered.
+  float adaptedEv_ = std::numeric_limits<float>::quiet_NaN();
+  mutable float meterLux_ = 1.0f;
+  float exposure_ = 1.0f;  // the exposure in use (last frame's), for the painted flames' glow
   int moonPath_ = 0;       // moonPlacement()
   static constexpr int kStarLooks = 3;  // saved star looks (looks/stars/README.md)
   int starLook_ = 3;
