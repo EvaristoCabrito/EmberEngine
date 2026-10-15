@@ -687,7 +687,7 @@ class MapStage final : public Stage {
           fogStates_[static_cast<size_t>(e2::indexOf(L, c, r))] = s;
           ++fogCounts_[s];
         }
-      countHoles();
+      countHoles(time);
       lastFogMs_ = fogJobMs_;
       fogDeliverMs_.push_back(std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count());
       fogUpdatedThisFrame_ = true;
@@ -728,9 +728,10 @@ class MapStage final : public Stage {
 
   // Holes: groups of never-seen hexes enclosed by explored ground (touching neither the board's edge nor the
   // big never-seen area). Each shows as a black pit in the middle of the map.
-  void countHoles() {
+  void countHoles(float time) {
     const e2::HexLayout& L = board_->layout();
     std::vector<int> group(static_cast<size_t>(L.cols * L.rows), -1);
+    std::vector<std::pair<int, int>> holeList;
     holes_ = 0;
     holeHexes_ = 0;
     for (int r = 0; r < L.rows; ++r)
@@ -749,9 +750,31 @@ class MapStage final : public Stage {
             if (g < 0 && fog_->state(nx, ny) == e2::kFogUnseen) g = 1, stack.push_back({nx, ny});
           }
         }
-        if (!edge && members.size() <= 12) ++holes_, holeHexes_ += static_cast<int>(members.size());
+        if (!edge && members.size() <= 12) {
+          ++holes_, holeHexes_ += static_cast<int>(members.size());
+          holeList.insert(holeList.end(), members.begin(), members.end());
+        }
       }
     worstHoles_ = std::max(worstHoles_, holes_);
+    // Where they are: each new set of holes goes to captures/fog/holes.txt with the whole board's states
+    // (. never seen, r remembered, v in sight, H hole, S the scout), for tools/scripts/draw_fog_holes.py.
+    std::sort(holeList.begin(), holeList.end());
+    if (holeList.empty() || holeList == lastHoles_) return;
+    lastHoles_ = holeList;
+    std::FILE* file = std::fopen("captures/fog/holes.txt", holesLogged_ ? "a" : "w");
+    if (!file) return;
+    holesLogged_ = true;
+    std::fprintf(file, "time %.2f scout %d %d holes %d\n", time, heroHex_.c, heroHex_.r, holes_);
+    for (int r = 0; r < L.rows; ++r) {
+      for (int c = 0; c < L.cols; ++c) {
+        char ch = ".rv"[fog_->state(c, r)];
+        if (std::binary_search(holeList.begin(), holeList.end(), std::make_pair(c, r))) ch = 'H';
+        if (path_.size() > 1 && heroHex_.c == c && heroHex_.r == r) ch = 'S';
+        std::fputc(ch, file);
+      }
+      std::fputc('\n', file);
+    }
+    std::fclose(file);
   }
 
   void relight(const std::vector<e2::HexPoint>& party) {
@@ -831,6 +854,8 @@ class MapStage final : public Stage {
   uint32_t fogLook_ = 2;  // index into fogLooks(): look 003 unless --fog-look says otherwise
   std::array<int, 3> fogCounts_{};
   int holes_ = 0, holeHexes_ = 0, worstHoles_ = 0;
+  std::vector<std::pair<int, int>> lastHoles_;
+  bool holesLogged_ = false;
   uint32_t hiddenUnits_ = 0;
   double lastFogMs_ = 0.0;
   std::vector<double> fogUpdateMs_;

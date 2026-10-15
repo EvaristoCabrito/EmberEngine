@@ -11,7 +11,9 @@
 //           line grazing a corner is not decided by rounding; any clear ray sees. Gameplay heights (cell
 //           ground), so all board looks see the same (R8). Only wide things block (kBlockWidth: walls,
 //           houses, big trees; not lamp posts or signposts), and a hex every one of whose neighbours is in
-//           sight is in sight too: nothing hides alone in the middle of open ground (the user, 2026-10-15).
+//           sight is in sight too: nothing hides alone in the middle of open ground (the user, 2026-10-15);
+//           an enclosed group of up to 3 never-seen hexes with only explored neighbours counts as seen
+//           (in sight if they all are, remembered otherwise).
 //   mask    Engine2's look (src/render/fogOfWar.ts + battleAtmosphere3d.ts syncFog): per-texel darkness
 //           (never seen = 1, remembered = 0.6, in sight = 0), feathered only inside remembered hexes, and
 //           never any fog within one hex of a party unit.

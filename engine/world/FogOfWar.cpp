@@ -130,6 +130,35 @@ void FogOfWar::relight(std::span<const Eye> eyes) {
         pockets.push_back(static_cast<size_t>(indexOf(layout_, x, y)));
     }
   for (const size_t i : pockets) cells_[i] = kFogVisible;
+  // Enclosed holes (the user, 2026-10-15): a group of up to 3 never-seen hexes whose every neighbour is
+  // explored (and which does not touch the board's edge: off the board counts as never seen) counts as seen.
+  // It joins its surroundings: in sight if they all are, remembered otherwise (so it shows no enemy the party
+  // could not have seen).
+  std::vector<int> group(cells_.size(), -1);
+  for (int y = 0; y < layout_.rows; y++)
+    for (int x = 0; x < layout_.cols; x++) {
+      const size_t start = static_cast<size_t>(indexOf(layout_, x, y));
+      if (cells_[start] != kFogUnseen || group[start] >= 0) continue;
+      std::vector<std::pair<int, int>> stack{{x, y}}, members;
+      group[start] = 1;
+      bool edge = false, allSight = true;
+      while (!stack.empty()) {  // the whole group, however big: a part of a big one must never pass as small
+        const auto [cx, cy] = stack.back();
+        stack.pop_back();
+        members.push_back({cx, cy});
+        if (cx == 0 || cy == 0 || cx == layout_.cols - 1 || cy == layout_.rows - 1) edge = true;
+        for (const auto& [nx, ny] : neighbors(layout_, cx, cy)) {
+          const size_t i = static_cast<size_t>(indexOf(layout_, nx, ny));
+          if (cells_[i] == kFogUnseen) {
+            if (group[i] < 0) group[i] = 1, stack.push_back({nx, ny});
+          } else if (cells_[i] != kFogVisible) {
+            allSight = false;
+          }
+        }
+      }
+      if (edge || members.size() > 3) continue;
+      for (const auto& [mx, my] : members) cells_[static_cast<size_t>(indexOf(layout_, mx, my))] = allSight ? kFogVisible : kFogExplored;
+    }
   ++version_;
 }
 
