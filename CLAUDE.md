@@ -152,8 +152,9 @@ build.bat release          # or debug; output in build/<config>/bin
     --no-ui [--debug-view 3]` (pairs) → `python -I tools/scripts/check_fog.py shaded.png mask.png ...`.
   - Stale `Sandbox.exe` processes from crashes can lock `build/<config>/bin/Sandbox.exe` and refuse to die
     (access denied): rename the locked exe aside, then build.
+  - Never-seen ground, water, 3D pieces and cards are not drawn at all (user's choice); pieces/cards by anchor hex.
 - **Not done (hooks only or missing):** volumetric fog (R7's literal fog, appearance) and the mask's open points
-  (§7.4: never-seen meshes/terrain drawn black can outline over lit ground; walls not imported so block nothing); indirect
+  (§7.4: walls not imported so block nothing; sight update on the main thread); indirect
   light is the hemisphere (no probes / GI); no sky, fog, bloom, tilt-shift; local lights cast no shadows; cards
   do not receive card shadows; walls/doors (architecture), floor waypoints, stand-on-log heights, the third
   board look (tabletop tiles, R8) not ported; unit animation is the idle only; no spell VFX; the ground material
@@ -162,7 +163,7 @@ build.bat release          # or debug; output in build/<config>/bin
 ## Next
 
 1. R7's literal fog: world-space volumetric fog (froxels) constrained by the mask, gathering at the explored
-   boundary; settle with the user how never-seen 3D/terrain outlines are handled (§7.4).
+   boundary (§7.4).
 2. Profile and cut the ground material cost (photo layers + two 16-tap shadow lookups).
 3. Sky + aerial perspective (Hillaire 2020) feeding indirectDiffuse/Specular; bloom; tilt-shift; then compare
    side by side with the prototype's colour (the floor).

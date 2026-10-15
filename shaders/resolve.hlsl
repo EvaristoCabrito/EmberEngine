@@ -133,5 +133,6 @@ void CSResolve(uint2 pixel : SV_DispatchThreadID) {
   surface.metallic = metallic;
   surface.occlusion = occlusion;
   surface.emissive = emissive;
+  surface.sightAt = instanceAnchor(inst);  // a piece takes the fog of war of where it stands, whole (like a card)
   color[pixel] = float4(shade(f, surface), 1.0);
 }

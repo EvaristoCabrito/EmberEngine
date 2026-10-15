@@ -516,9 +516,13 @@ three states on screen each time; 0 validation errors in debug (pinned and walki
 Per sight change: sight + mask on the main thread median 2.4, worst 3.4 ms (34 updates); sun-shadow redraw up to 1.74 ms
 GPU at full clock (33 redraws). Fog on is cheaper on average (no local light on remembered / never-seen ground).
 
-**Not done:** the literal fog (volumetric, gathering at the boundary: appearance, separate from the mask); 3D meshes and
-terrain on never-seen ground are drawn black, so over lit ground behind them their outline can show (cards are not
-drawn); walls/doors are not imported, so they block nothing yet; large units' footprints (an enemy is hidden by its
+**Never seen is not drawn at all (the user, 2026-10-14):** terrain and water on never-seen ground are discarded per
+pixel; 3D pieces and cards are skipped whole by their anchor's hex (instance culling, so neither the camera nor the
+sun draws them); the black background shows, so nothing there can outline over lit ground. Re-measured at full clock
+with fog + scout: GPU median 3.78 / 99th 5.11 / worst 5.69 ms (never-seen ground costs nothing), shadow redraw worst
+0.58 ms, sight update 2.3 / 3.1 ms; `check_fog.py` PASS at the same 4 moments; 0 validation errors.
+
+**Not done:** the literal fog (volumetric, gathering at the boundary: appearance, separate from the mask); walls/doors are not imported, so they block nothing yet; large units' footprints (an enemy is hidden by its
 anchor hex only); the sight update runs on the main thread (move it to a job if 3.4 ms spikes matter); enemies' own
 sight (waking) is not ported.
 

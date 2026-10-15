@@ -57,6 +57,9 @@ void cullInstance(uint id, bool late) {
   if (inst.mesh >= f.meshCount) return;
   const MeshGpu mesh = loadMesh(f, inst.mesh);
   if (mesh.ready == 0) return;
+  // Fog of war (R7): a piece standing on never-seen ground is neither drawn nor casts a shadow. Like a card, a
+  // piece is seen whole by its anchor's hex (no house cut in half at the boundary).
+  if (neverSeen(f, instanceAnchor(inst))) return;
   RWByteAddressBuffer visibility = gBuffers[NonUniformResourceIndex(f.instanceVisibility)];
   const bool wasVisible = visibility.Load(id * 4) != 0;
   const float3 center = transformPoint(inst, mesh.sphere.xyz);

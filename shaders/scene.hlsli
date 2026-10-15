@@ -240,6 +240,8 @@ float3 transformPoint(InstanceGpu inst, float3 p) {
   const float4 h = float4(p, 1.0);
   return float3(dot(inst.rows[0], h), dot(inst.rows[1], h), dot(inst.rows[2], h));
 }
+// Where the instance stands (its transform's translation): the fog of war reads it there.
+float3 instanceAnchor(InstanceGpu inst) { return float3(inst.rows[0].w, inst.rows[1].w, inst.rows[2].w); }
 float3 transformDirection(InstanceGpu inst, float3 v) {
   return float3(dot(inst.rows[0].xyz, v), dot(inst.rows[1].xyz, v), dot(inst.rows[2].xyz, v));
 }

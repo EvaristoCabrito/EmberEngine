@@ -36,6 +36,7 @@ float rippleHeight(float2 p) {
 
 float4 PSMain(VSOut i) : SV_Target0 {
   const MeshFrame f = loadFrame(push.frame);
+  if (neverSeen(f, i.world)) discard;  // never-seen water is not drawn (R7)
   const float2 uv = i.world.xz / 4.0 + float2(0.02, 0.013) * f.time;
   const float2 p = frac(uv) * 128.0;
   // Engine2's texel normal: (-(dH/dx), -(dH/dy), 2), central differences one texel apart.

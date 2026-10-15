@@ -2,8 +2,9 @@
 
 Takes pairs of captures of the same frame (Sandbox --map ... --fog 1 --scene-time T --no-ui): the shaded
 frame and the same frame with --debug-view 3 (the mask the front surface read: red = darkness, green =
-local-light sight, blue = a surface was drawn). For every pixel whose front surface is fully never seen
-(debug red 255, blue 255), the shaded frame must be exactly black, whatever lights, spells or shadows do.
+local-light sight, blue = a surface was drawn). Every pixel whose front surface is fully never seen (debug red
+255, blue 255) or where nothing was drawn (never-seen surfaces are not drawn; off the board) must be exactly
+black in the shaded frame, whatever lights, spells or shadows do.
 
     python -I tools/scripts/check_fog.py shaded.png debug.png [shaded2.png debug2.png ...]
 
@@ -43,7 +44,8 @@ def check(shaded_path, debug_path):
                 remembered += 1
     print(f"{shaded_path}: in sight {sight}, remembered {remembered}, never seen {never}, background {background} px; "
           f"never-seen pixels not black: {leaks}" + (f" (brightest {worst[0]} at {worst[1]})" if leaks else ""))
-    return leaks == 0 and never > 0 and remembered > 0 and sight > 0
+    # Never-seen ground is not drawn at all, so it shows as background (black under fog).
+    return leaks == 0 and never + background > 0 and remembered > 0 and sight > 0
 
 
 def main():

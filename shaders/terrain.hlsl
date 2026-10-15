@@ -132,6 +132,9 @@ float4 PSMain(VSOut i) : SV_Target0 {
   g.dx = ddx(tuv), g.dy = ddy(tuv);
   gzy.dx = ddx(wp.zy / 2.0), gzy.dy = ddy(wp.zy / 2.0);
   gxy.dx = ddx(wp.xy / 2.0), gxy.dy = ddy(wp.xy / 2.0);
+  // Never-seen ground is not drawn at all (R7): the black background shows, so no outline over lit ground.
+  // (After the derivatives: neighbouring pixels may still need this one's.)
+  if (neverSeen(f, wp)) discard;
   const float4 sA = i.surfacesA, sB = i.surfacesB;
   const float total = dot(sA, 1.0) + dot(sB, 1.0);
   // Engine2 samples every surface everywhere; a surface with no weight adds nothing, so it is skipped.
