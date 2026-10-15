@@ -7,6 +7,8 @@ add_library(EmberTools STATIC
   TextureCooker.cpp
   MeshCooker.cpp
   GroundCheck.cpp
+  GroundCooker.cpp
+  Engine2Textures.cpp
 )
 
 target_include_directories(EmberTools PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

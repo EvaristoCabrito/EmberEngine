@@ -9,6 +9,8 @@
 //   Cooker meshes <source root> <out.pak> [--quality fast|basic|slow] [--cache <dir>] [--remesh N]
 //          (--remesh: proxy-LOD experiment, every mesh replaced by its voxel remesh; separate archive)
 //                                                                    cook every GLB under a folder (cluster LOD + textures)
+//   Cooker ground <board.json> <engine2 public> <out.pak> [--cache <dir>] [--check <dir>] [--quality fast|basic|slow]
+//                                                                    Engine2's ground textures (procedural + photo layers)
 //   Cooker check-ground <board.json> <map.json> <engine2 public> <reference dir>
 //                                                                    compare the C++ board/ground with Engine2's export
 //   Cooker sprite-preview <manifest> <source root> <cache dir> <set> <clip> <frame> <out.png>
@@ -27,6 +29,7 @@
 
 #include "PakWriter.h"
 #include "GroundCheck.h"
+#include "GroundCooker.h"
 #include "MeshCooker.h"
 #include "SpriteCooker.h"
 #include "SpriteSource.h"
@@ -249,6 +252,41 @@ int spritePreview(const std::vector<std::string_view>& args) {
   return 0;
 }
 
+int ground(const std::vector<std::string_view>& args) {
+  if (args.size() < 3) fatal("usage: Cooker ground <board.json> <engine2 public> <out.pak> [--cache <dir>] [--check <dir>] [--quality fast|basic|slow]");
+  GroundCookOptions options;
+  options.boardJson = std::filesystem::path(args[0]);
+  options.engine2Public = std::filesystem::path(args[1]);
+  const std::filesystem::path out(args[2]);
+  options.cacheDir = (out.parent_path().empty() ? std::filesystem::path(".") : out.parent_path()) / "cook-cache";
+  for (size_t i = 3; i < args.size(); ++i) {
+    if (i + 1 >= args.size()) fatal(std::format("Missing value for {}", args[i]));
+    const std::string_view value = args[++i];
+    if (args[i - 1] == "--cache") options.cacheDir = std::filesystem::path(value);
+    else if (args[i - 1] == "--check") options.checkDir = std::filesystem::path(value);
+    else if (args[i - 1] == "--quality") {
+      if (value == "fast") options.quality = Bc7Quality::Fast;
+      else if (value == "basic") options.quality = Bc7Quality::Basic;
+      else if (value == "slow") options.quality = Bc7Quality::Slow;
+      else fatal(std::format("Unknown quality {}", value));
+    } else {
+      fatal(std::format("Unknown argument {}", args[i - 1]));
+    }
+  }
+  JobSystem jobs;
+  std::vector<PakSource> sources;
+  GroundCookReport report;
+  const bool cooked = cookGround(jobs, options, sources, report);
+  logInfo("ground: {} textures ({} cooked, {} from cache, {} failed), {:.1f} MB, in {:.1f}s", report.textures, report.cooked,
+          report.fromCache, report.failed, megabytes(report.bytes), report.seconds);
+  if (!cooked) return 1;
+  PakWriteReport pak;
+  if (!writePak(jobs, std::move(sources), out, {}, pak)) return 1;
+  logInfo("packed {} assets: {:.1f} MB -> {:.1f} MB on disk in {:.1f}s", pak.entries, megabytes(pak.sourceBytes),
+          megabytes(pak.storedBytes), pak.seconds);
+  return 0;
+}
+
 int checkGroundCommand(const std::vector<std::string_view>& args) {
   if (args.size() != 4) fatal("usage: Cooker check-ground <board.json> <map.json> <engine2 public> <reference dir>");
   return checkGround(std::filesystem::path(args[0]), std::filesystem::path(args[1]), std::filesystem::path(args[2]),
@@ -274,6 +312,7 @@ int main(int argc, char** argv) {
   if (command == "sprite-preview") return spritePreview(args);
   if (command == "meshes") return meshes(args);
   if (command == "check-ground") return checkGroundCommand(args);
+  if (command == "ground") return ground(args);
   ember::logError("unknown command {}", command);
   return 1;
 }
