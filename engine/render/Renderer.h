@@ -127,6 +127,22 @@ class Renderer {
 
   // The board's ground (BoardGround::view); replaces the placeholder ground plane. Empty = none.
   void setTerrain(const TerrainView& terrain) { terrain_ = terrain; }
+  // Marks painted on the ground (the battle grid: reach, route, cursor), drawn by the terrain pass so whatever stands
+  // in front covers them. Per hex, up to kMarkLayers fills / rings in order (painter's), colours sRGB + alpha as on
+  // screen (blended after tone mapping, so they keep their exact colour in any light). Radii in hex radii (1 = the
+  // hex's corners); rIn 0 = a full fill. The board's columns / rows locate the hexes.
+  struct GroundMark {
+    uint32_t cell;   // row * cols + column
+    uint32_t color;  // ImGui IM_COL32 order: r | g << 8 | b << 16 | a << 24
+    float rOut, rIn;
+  };
+  static constexpr uint32_t kMarkLayers = 8;
+  static constexpr uint32_t kMaxMarkCells = 128 * 128;
+  void setGroundMarks(std::span<const GroundMark> marks, int cols, int rows) {
+    marks_.assign(marks.begin(), marks.end());
+    markCols_ = cols;
+    markRows_ = rows;
+  }
   // The board's water (BoardGround::water); empty = none.
   void setWater(const WaterView& water) { water_ = water; }
   // Local lights for the next frame (at most kMaxLights; the rest are dropped).
@@ -200,6 +216,7 @@ class Renderer {
     Buffer meshFrame;     // MeshFrame for the mesh passes (device-local, written by vkCmdUpdateBuffer)
     Buffer shadowFrame;   // MeshFrame of the meshes' pass from the sun (when the cached shadow map is redrawn)
     Buffer lights;        // this frame's LocalLight[] (host-visible)
+    Buffer marks;         // this frame's ground marks: per hex kMarkLayers x (colour, half2 radii) (host-visible)
     Buffer meshCounters;  // the work buffer's counters, copied back for meshStats()
     Buffer fogStaging;    // the fog mask's texels on their way to fogMask_ (host-visible, grown on demand)
     Buffer volumeFrame;   // VolumeFrame for the volumetric fog passes (device-local)
@@ -245,6 +262,8 @@ class Renderer {
   VkPipeline waterPipeline_ = VK_NULL_HANDLE;
   VkPipeline meshShadowPipeline_ = VK_NULL_HANDLE, spriteShadowPipeline_ = VK_NULL_HANDLE, lightsPipeline_ = VK_NULL_HANDLE;
   std::vector<LocalLight> lights_;
+  std::vector<GroundMark> marks_;
+  int markCols_ = 0, markRows_ = 0;
   Buffer clusters_;
   uint32_t clusterBufferIndex_ = kNoIndex;
   Image cardShadowMap_;

@@ -300,6 +300,11 @@ class MapStage final : public Stage {
     if (flat_) lighting.kmPerUnit = 0.0f;
     renderer.setMeshes(scene_ ? meshes_.view() : MeshSceneView{}, lighting);
     renderer.setTerrain(ground_.view(look_));
+    {
+      groundMarks_.clear();
+      collectMarks(groundMarks_);
+      renderer.setGroundMarks(groundMarks_, board_ ? board_->layout().cols : 0, board_ ? board_->layout().rows : 0);
+    }
     renderer.setWater(ground_.water(look_));
     renderer.setSunShadowBounds(boardCenter_, boardRadius_);
     renderer.setLightingLayers(layers_);
@@ -1701,18 +1706,16 @@ class MapStage final : public Stage {
     refreshReach();        // what is left of its movement, shown once it arrives
   }
 
-  // Engine2's battle grid (Battle3D gridMarks over ThreeBattleRenderer): the movement wash and edges, the route, the
-  // picked unit's marker and the cursor; fills and hex borders in its exact colours, radii in hex radii, level on each
-  // hex's ground. Drawn over the scene; never on ground the party has not seen.
-  void drawMarks() {
-    if (!battle_ || !scene_) return;
-    struct Mark {
-      e2::BattleHex at;
-      ImU32 color;
-      float rOut, rIn;
+  // The battle grid (Battle3D gridMarks' colours): the movement wash and edges, the route, the picked unit's marker
+  // and the cursor; fills and hex borders, radii in hex radii. Painted on the ground by the terrain pass
+  // (Renderer::setGroundMarks), so units, trees and houses in front cover them; never on ground not yet seen.
+  void collectMarks(std::vector<Renderer::GroundMark>& marks) const {
+    if (!battle_ || !scene_ || !board_) return;
+    const e2::HexLayout& layout = board_->layout();
+    auto add = [&](e2::BattleHex at, ImU32 color, float rOut, float rIn = 0.0f) {
+      if (!e2::inBoard(layout, at.x, at.y)) return;
+      marks.push_back({static_cast<uint32_t>(e2::indexOf(layout, at.x, at.y)), color, rOut, rIn});
     };
-    std::vector<Mark> marks;
-    auto add = [&](e2::BattleHex at, ImU32 color, float rOut, float rIn = 0.0f) { marks.push_back({at, color, rOut, rIn}); };
     auto border = [](float r) { return r * kBorderInner; };
     const bool walking = selected_ >= 0 && !unitWalk_[static_cast<size_t>(selected_)].points.empty();
     if (selected_ >= 0 && !walking) {
@@ -1762,35 +1765,15 @@ class MapStage final : public Stage {
       add(*hover_, IM_COL32(8, 12, 16, 242), 0.985f, border(0.985f));
       add(*hover_, blocked ? IM_COL32(231, 133, 115, 242) : IM_COL32(220, 226, 235, 255), 0.94f, border(0.94f));
     }
+    if (fog_ && !noFog_ && fogReady_)
+      std::erase_if(marks, [&](const Renderer::GroundMark& m) { return m.cell < fogStates_.size() && fogStates_[m.cell] == e2::kFogUnseen; });
+  }
+
+  // Over the scene: the numbers popping off struck units and the strike forecast.
+  void drawMarks() {
+    if (!battle_ || !scene_) return;
     const ImGuiIO& io = ImGui::GetIO();
-    ImDrawList* dl = ImGui::GetBackgroundDrawList();
-    const float w = io.DisplaySize.x, h = io.DisplaySize.y;
-    for (const Mark& m : marks) {
-      if (fog_ && !noFog_ && fogReady_) {
-        const size_t i = static_cast<size_t>(e2::indexOf(board_->layout(), m.at.x, m.at.y));
-        if (i < fogStates_.size() && fogStates_[i] == e2::kFogUnseen) continue;
-      }
-      const e2::Cell& cell = board_->cell(m.at.x, m.at.y);
-      auto ring = [&](float r, ImVec2 (&out)[6]) {
-        for (int k = 0; k < 6; ++k) {
-          const auto [x, z] = e2::corner(cell.x, cell.z, k, e2::kHexRadius * r);
-          const glm::vec3 p{static_cast<float>(x), static_cast<float>(e2::groundHeightAt(*board_, look_, x, z)) + kMarkLift, static_cast<float>(z)};
-          const std::optional<ImVec2> s = screenOf(p, w, h);
-          if (!s) return false;
-          out[k] = *s;
-        }
-        return true;
-      };
-      ImVec2 outer[6], inner[6];
-      if (!ring(m.rOut, outer)) continue;
-      if (m.rIn <= 0.0f) {
-        dl->AddConvexPolyFilled(outer, 6, m.color);
-        continue;
-      }
-      if (!ring(m.rIn, inner)) continue;
-      for (int k = 0; k < 6; ++k) dl->AddQuadFilled(outer[k], outer[(k + 1) % 6], inner[(k + 1) % 6], inner[k], m.color);
-    }
-    drawPopups(dl, w, h);
+    drawPopups(ImGui::GetBackgroundDrawList(), io.DisplaySize.x, io.DisplaySize.y);
     drawForecast();
   }
 
@@ -2245,7 +2228,7 @@ class MapStage final : public Stage {
   float now_ = 0.0f;  // this frame's scene clock
   static constexpr float kStepSeconds = 0.22f;      // Engine2 STEP_SECONDS: one hex of walking
   static constexpr float kBorderInner = 0.47f / 0.5f;  // Engine2 BORDER_INNER: a hex border's inner edge
-  static constexpr float kMarkLift = 0.03f;         // grid marks sit just over the ground
+  std::vector<Renderer::GroundMark> groundMarks_;  // this frame's battle grid (collectMarks)
   // Engine2 DIR_ACTION_WALK: sprites whose walks are drawn for each side, never mirrored while moving.
   inline static const std::unordered_set<std::string> kDirectionalWalk = {"aldric", "defaultLancer", "lancer", "sandoval", "theButcher",
       "familiar2", "familiar3", "cultist-v2", "militia-v2", "salazar", "cobalt-blue-deer", "neera"};

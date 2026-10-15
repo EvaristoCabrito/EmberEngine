@@ -13,7 +13,10 @@ struct Push {
   uint64_t vertices;  // TerrainVertex[] (48 bytes each)
   uint64_t indices;   // uint[]; 0 = one triangle per 3 vertices
   float seamStep;     // tabletop look: a dark seam on the walls at every this many units of height (0 = none)
-  uint pad;
+  uint markCols;      // the board's columns; 0 = no ground marks
+  uint64_t marks;     // per hex kMarkLayers x uint2: colour (sRGB + alpha, r in the low byte), half2 rOut / rIn
+  uint markRows;
+  uint3 pad;
 };
 [[vk::push_constant]] Push push;
 
@@ -119,6 +122,73 @@ float3 grassNoTile(float2 uv, Grad gr, SamplerState s) {
   return acc / wsum;
 }
 
+// Ground marks (Renderer::setGroundMarks): the battle grid painted on the ground after lighting, in display colours.
+static const uint kMarkLayers = 8;
+static const float kSqrt3 = 1.7320508;
+
+// three.js ACES fit (tonemap.hlsl) and its inverse, to blend a mark in display space and hand back scene colour.
+float3 acesFit(float3 color) {
+  const float3x3 inputMat = float3x3(0.59719, 0.35458, 0.04823, 0.07600, 0.90834, 0.01566, 0.02840, 0.13383, 0.83777);
+  const float3x3 outputMat = float3x3(1.60475, -0.53108, -0.07367, -0.10208, 1.10813, -0.00605, -0.00327, -0.07276, 1.07602);
+  const float3 v = mul(inputMat, color / 0.6);
+  return saturate(mul(outputMat, (v * (v + 0.0245786) - 0.000090537) / (v * (0.983729 * v + 0.4329510) + 0.238081)));
+}
+float3 acesFitInverse(float3 display) {
+  const float3x3 outputInv = float3x3(0.643038, 0.311187, 0.045775, 0.059269, 0.931436, 0.009295, 0.005962, 0.063929, 0.930118);
+  const float3x3 inputInv = float3x3(1.764741, -0.675778, -0.088963, -0.147028, 1.160252, -0.013224, -0.036337, -0.162436, 1.198773);
+  const float3 y = clamp(mul(outputInv, display), 0.0, 0.985);
+  // y = (v^2 + 0.0245786 v - 0.000090537) / (0.983729 v^2 + 0.432951 v + 0.238081), solved for v >= 0
+  const float3 a = 1.0 - 0.983729 * y, b = 0.0245786 - 0.432951 * y, c = -(0.000090537 + 0.238081 * y);
+  const float3 v = (-b + sqrt(max(b * b - 4.0 * a * c, 0.0))) / (2.0 * a);
+  return max(mul(inputInv, v) * 0.6, 0.0);
+}
+float3 toSrgb(float3 c) { return select(c <= 0.0031308, c * 12.92, 1.055 * pow(max(c, 0.0), 1.0 / 2.4) - 0.055); }
+float3 fromSrgb(float3 c) { return select(c <= 0.04045, c / 12.92, pow((c + 0.055) / 1.055, 2.4)); }
+
+// The hex under a world point (Hex.h hexAt) and the point's hex distance from its centre (1 = on the corners'
+// hexagon, pointy-top), or -1 off the board.
+float hexDistance(float2 xz, out uint cell) {
+  cell = 0;
+  const float ox = kSqrt3 * (float(push.markCols) - 0.5) * 0.5, oz = 0.75 * (float(push.markRows) - 1.0);
+  const float rf = (xz.y + oz) / 1.5, qf = (xz.x + ox) / kSqrt3 - rf * 0.5, sf = -qf - rf;
+  float q = floor(qf + 0.5), r = floor(rf + 0.5);
+  const float s = floor(sf + 0.5);
+  const float dq = abs(q - qf), dr = abs(r - rf), ds = abs(s - sf);
+  if (dq > dr && dq > ds) q = -r - s;
+  else if (dr > ds) r = -q - s;
+  const int ri = int(r);
+  const int ci = int(q + (r - float(ri & 1)) * 0.5);
+  if (ci < 0 || ri < 0 || ci >= int(push.markCols) || ri >= int(push.markRows)) return -1.0;
+  cell = uint(ri) * push.markCols + uint(ci);
+  const float2 centre = float2(kSqrt3 * (float(ci) + 0.5 * float(ri & 1)) - ox, 1.5 * float(ri) - oz);
+  const float2 p = xz - centre;
+  const float e = max(abs(p.x), max(abs(0.5 * p.x + 0.8660254 * p.y), abs(0.5 * p.x - 0.8660254 * p.y)));
+  return e / 0.8660254;
+}
+
+float3 applyGroundMarks(float3 hdr, float3 wp, float flatness) {
+  if (push.markCols == 0 || push.marks == 0 || flatness <= 0.0) return hdr;
+  uint cell;
+  const float d = hexDistance(wp.xz, cell);
+  if (d < 0.0) return hdr;
+  const float aa = max(fwidth(d), 1e-4);
+  float3 display = toSrgb(acesFit(hdr));
+  bool any = false;
+  for (uint k = 0; k < kMarkLayers; ++k) {
+    const uint2 m = vk::RawBufferLoad<uint2>(push.marks + (uint64_t(cell) * kMarkLayers + k) * 8);
+    if (m.x == 0) break;
+    const float2 radii = f16tof32(uint2(m.y & 0xFFFF, m.y >> 16));
+    const float4 c = unpackUnorm8(m.x);
+    float cover = 1.0 - smoothstep(radii.x - aa, radii.x + aa, d);
+    if (radii.y > 0.0) cover *= smoothstep(radii.y - aa, radii.y + aa, d);
+    const float alpha = c.a * cover * flatness;
+    if (alpha <= 0.0) continue;
+    display = lerp(display, c.rgb, alpha);
+    any = true;
+  }
+  return any ? acesFitInverse(fromSrgb(display)) : hdr;
+}
+
 float3 sideTex(uint layer, float3 n, float3 wp, Grad zy, Grad xy, SamplerState s) {
   const float wx = n.x * n.x, wz = n.z * n.z;
   return (proto(layer, wp.zy / 2.0, zy, s) * wx + proto(layer, wp.xy / 2.0, xy, s) * wz) / max(wx + wz, 1e-4);
@@ -207,5 +277,5 @@ float4 PSMain(VSOut i) : SV_Target0 {
   Surface surface = defaultSurface(wp, n, albedo);
   surface.normal = shading;
   surface.roughness = roughness;
-  return float4(shade(f, surface), 1.0);
+  return float4(applyGroundMarks(shade(f, surface), wp, smoothstep(0.5, 0.7, n.y)), 1.0);
 }

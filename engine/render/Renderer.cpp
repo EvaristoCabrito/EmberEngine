@@ -1,5 +1,7 @@
 #include "render/Renderer.h"
 
+#include <cstring>
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/packing.hpp>
 
@@ -56,8 +58,14 @@ struct TerrainPush {
   VkDeviceAddress vertices;
   VkDeviceAddress indices;
   float seamStep;
-  uint32_t pad;
+  uint32_t markCols;      // the board's columns (0 = no ground marks)
+  VkDeviceAddress marks;  // per hex Renderer::kMarkLayers x uint2 (colour, half2 rOut / rIn)
+  uint32_t markRows;
+  uint32_t pad[3];
 };
+static_assert(sizeof(TerrainPush) == 64);
+
+uint32_t packHalf2(float a, float b) { return glm::packHalf2x16(glm::vec2(a, b)); }
 
 struct SpritePush {
   glm::mat4 viewProjection;
@@ -282,6 +290,7 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
     frame.meshFrame = createDeviceBuffer(context, sizeof(MeshFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     frame.shadowFrame = createDeviceBuffer(context, sizeof(MeshFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     frame.lights = createHostBuffer(context, sizeof(LocalLight) * kMaxLights, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    frame.marks = createHostBuffer(context, sizeof(uint32_t) * 2 * kMarkLayers * kMaxMarkCells, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     frame.meshCounters = createReadbackBuffer(context, kCounterBytes);
     frame.volumeFrame = createDeviceBuffer(context, sizeof(VolumeFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     frame.cloudFrame = createDeviceBuffer(context, kMaxFogLookFrameBytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
@@ -571,6 +580,7 @@ Renderer::~Renderer() {
     destroyBuffer(context_, frame.meshCounters);
     destroyBuffer(context_, frame.shadowFrame);
     destroyBuffer(context_, frame.lights);
+    destroyBuffer(context_, frame.marks);
     destroyBuffer(context_, frame.fogStaging);
     destroyBuffer(context_, frame.volumeFrame);
     destroyBuffer(context_, frame.cloudFrame);
@@ -891,6 +901,20 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
 
   // Local lights through the fog of war (R7): a light reaches as far as its source is in sight. A torch or a
   // spell out of sight lights nothing, so light never reveals what the party cannot see.
+  // Ground marks: every hex's layers cleared, then filled in the order given.
+  if (markCols_ > 0 && markRows_ > 0 && static_cast<uint32_t>(markCols_ * markRows_) <= kMaxMarkCells) {
+    auto* slots = static_cast<uint32_t*>(frame.marks.mapped);
+    const size_t cells = static_cast<size_t>(markCols_) * static_cast<size_t>(markRows_);
+    std::memset(slots, 0, cells * kMarkLayers * 2 * sizeof(uint32_t));
+    std::vector<uint8_t> used(cells, 0);
+    for (const GroundMark& m : marks_) {
+      if (m.cell >= cells || used[m.cell] >= kMarkLayers || (m.color >> 24) == 0) continue;
+      uint32_t* slot = slots + (static_cast<size_t>(m.cell) * kMarkLayers + used[m.cell]++) * 2;
+      slot[0] = m.color;
+      slot[1] = packHalf2(m.rOut, m.rIn);
+    }
+  }
+
   uint32_t lightCount = 0;
   auto* lights = static_cast<LocalLight*>(frame.lights.mapped);
   for (const LocalLight& light : lights_) {
@@ -1306,7 +1330,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     vkCmdBeginRendering(cmd, &shadowPass);
     setViewport(cmd, {kShadowSize, kShadowSize});
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, terrainShadowPipeline_);
-    const TerrainPush push{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices, terrain_.seamStep, 0};
+    const TerrainPush push{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices, terrain_.seamStep, 0, 0, 0, {}};
     vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
     vkCmdDraw(cmd, terrain_.count, 1, 0, 0);
     if (meshes) {
@@ -1466,7 +1490,10 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       // The board's ground (Engine2's terrain), depth-tested against the 3D meshes.
       const uint32_t terrainScope = gpuTimer_.begin(cmd, "terrain");
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, terrainPipeline_);
-      const TerrainPush terrainPush{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices, terrain_.seamStep, 0};
+      const bool marks = markCols_ > 0 && markRows_ > 0 && static_cast<uint32_t>(markCols_ * markRows_) <= kMaxMarkCells;
+      const TerrainPush terrainPush{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices, terrain_.seamStep,
+                                    marks ? static_cast<uint32_t>(markCols_) : 0u, marks ? bufferAddress(context_, frame.marks) : 0,
+                                    static_cast<uint32_t>(markRows_), {}};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(terrainPush), &terrainPush);
       vkCmdDraw(cmd, terrain_.count, 1, 0, 0);
       gpuTimer_.end(cmd, terrainScope);
