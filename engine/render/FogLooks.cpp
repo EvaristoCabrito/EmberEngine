@@ -319,6 +319,54 @@ std::vector<uint8_t> makeFogNoise(FogNoise kind) {
   return out;
 }
 
+// 008: the map's own mist (Engine2 mist3d.ts PRESETS, density x intensity^1.5, the map's speed).
+struct Look008Frame {
+  Look006Frame vortex;
+  uint32_t kind;  // 0 the whole board, 1 mist4's vortex, 2 fog1 (unrevealed ground only)
+  uint32_t pad[3];
+};
+static_assert(sizeof(Look008Frame) == 288);
+void writeLook008(const FogLookInputs& in, void* out) {
+  struct Preset {
+    const char* type;
+    float height, density;
+    glm::vec3 scale, wind;
+    glm::vec2 contrast;
+    float floor, heightPow;
+  };
+  static const Preset kPresets[] = {
+      {"mist2", 3.2f, 0.6f, {0.12f, 0.3f, 0.12f}, {0.05f, 0.01f, 0.03f}, {0.15f, 0.85f}, 0.45f, 1.2f},
+      {"mist3", 2.6f, 0.9f, {0.3f, 0.5f, 0.3f}, {0.08f, 0.015f, 0.05f}, {0.42f, 0.68f}, 0.05f, 1.6f},
+      {"mist4", 3.5f, 0.9f, {0.18f, 0.35f, 0.18f}, {0.03f, 0.01f, 0.02f}, {0.3f, 0.75f}, 0.2f, 1.3f},
+      {"fog1", 3.0f, 1.4f, {0.2f, 0.4f, 0.2f}, {0.04f, 0.01f, 0.03f}, {0.25f, 0.8f}, 0.4f, 1.0f},
+      {"fog5", 0.9f, 2.2f, {0.09f, 1.6f, 0.45f}, {0.1f, 0.0f, 0.02f}, {0.45f, 0.7f}, 0.0f, 2.5f},
+  };
+  const Preset* p = &kPresets[1];
+  for (const Preset& q : kPresets)
+    if (in.scene.mistType == q.type) p = &q;
+  Look008Frame f{};
+  Look004Frame& m = f.vortex.mist;
+  m = engine2Mist(in);
+  m.thickness = p->height;
+  m.top = in.scene.groundHigh + p->height;
+  m.density = p->density * std::pow(std::max(in.scene.mistIntensity, 0.0f), 1.5f);
+  m.speed = in.scene.mistSpeed;
+  m.scale = p->scale;
+  m.wind = p->wind;
+  m.contrast = p->contrast;
+  m.floorShare = p->floor;
+  m.heightPow = p->heightPow;
+  const bool vortex = in.scene.mistType == "mist4", fog1 = in.scene.mistType == "fog1";
+  m.reach = fog1 ? 14.0f : 10.0f;
+  f.vortex.center = in.scene.boardCenter;
+  const float half = std::min(in.scene.board.z - in.scene.board.x, in.scene.board.w - in.scene.board.y) * 0.5f;
+  f.vortex.swirl = vortex ? 0.12f : 0.0f;
+  f.vortex.clearRadius = vortex ? half * 0.45f : 0.0f;
+  f.vortex.edgeRadius = vortex ? half * 1.1f : 0.0f;
+  f.kind = vortex ? 1u : fog1 ? 2u : 0u;
+  std::memcpy(out, &f, sizeof(f));
+}
+
 std::span<const FogLook> fogLooks() {
   static const FogLook looks[] = {
       {"001", "fog_look001", "thick puffy billows, self-shadowed (user: too puffy, cartoony)", FogNoise::CellularBillows, sizeof(Look001Frame), writeLook001},
@@ -328,6 +376,7 @@ std::span<const FogLook> fogLooks() {
       {"005", "fog_look005", "swirl round the party (Claude's take) - not yet seen", FogNoise::WhiteLattice, sizeof(Look005Frame), writeLook005},
       {"006", "fog_look006", "Engine2's mist4 as in the user's reference (vortex, clear centre) - not yet seen", FogNoise::WhiteLattice, sizeof(Look006Frame), writeLook006},
       {"007", "fog_look007", "swirl round the party on mist4's real values, fog-of-war coverage - not yet seen", FogNoise::WhiteLattice, sizeof(Look005Frame), writeLook007},
+      {"008", "fog_look008", "the map's own mist (Engine2's Névoas: type, intensity, speed) - not yet seen", FogNoise::WhiteLattice, sizeof(Look008Frame), writeLook008, false},
   };
   return looks;
 }

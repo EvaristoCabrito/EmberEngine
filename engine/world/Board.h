@@ -85,6 +85,12 @@ struct MapDraft {
   std::vector<MapSpawn> playerSpawns, enemySpawns, neutralSpawns;
   std::string environment, timeOfDay;
   bool fog = false;  // the mission hides what the party has not seen (Engine2 mission.fog)
+  // The map editor's atmosphere (Engine2 Mission): its mist (Névoa type, intensity, speed), wisps and bloom.
+  std::string mistType;
+  float mistIntensity = 0.0f, mistSpeed = 1.0f;
+  float wispIntensity = 0.0f, wispSpeed = 1.0f;
+  unsigned wispColor = 0xffa552;
+  float bloomIntensity = 0.0f;
 
   static std::optional<MapDraft> load(const std::filesystem::path& mapJson);
   int variant(int i) const { return i < static_cast<int>(tileVariants.size()) && tileVariants[i] ? *tileVariants[i] : 0; }

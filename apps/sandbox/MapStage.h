@@ -327,8 +327,14 @@ class MapStage final : public Stage {
     renderer.setVolumetricFog(volume);
     // The fog of war's mist: the numbered look on show (render/FogLooks.h; chosen in the Map panel).
     Renderer::FogBank bank;
-    bank.enabled = fog_.has_value() && options_.volume && !noFog_;
-    bank.look = fogLook_;
+    // Over a fog of war: the chosen mist look; without one, the map's own mist (look 008, Engine2's Névoas).
+    const e2::MapDraft& draft = board_->draft();
+    const bool mapMist = !draft.mistType.empty() && draft.mistIntensity > 0.0f;
+    bank.enabled = options_.volume && !noFog_ && (fog_.has_value() || mapMist);
+    bank.look = fog_ ? fogLook_ : mapMistLook();
+    bank.scene.mistType = draft.mistType;
+    bank.scene.mistIntensity = draft.mistIntensity;
+    bank.scene.mistSpeed = draft.mistSpeed;
     bank.scene.boardCenter = {boardCenter_.x, boardCenter_.z};
     bank.scene.boardRadius = boardRadius_;
     bank.scene.meanGround = meanGround_;
@@ -650,6 +656,7 @@ class MapStage final : public Stage {
   void drawPanel() override {
     if (!board_) return;
     if (!result_.empty() && now_ - resultAt_ > kResultDelay) return drawResultScreen();
+    drawAirParticles();
     drawMarks();
     drawCameraBar();
     drawTurnBar();
@@ -706,15 +713,19 @@ class MapStage final : public Stage {
         if (!starsOff_) starLook_ = star;
       }
     }
+    if (!fog_ && options_.volume && !board_->draft().mistType.empty() && board_->draft().mistIntensity > 0.0f) {
+      int look = noFog_ ? 0 : 1;  // the map's own mist, or none
+      if (dropdown("Névoa", look, 2, [](int i) { return std::string(i == 0 ? "OFF" : "do mapa"); })) noFog_ = look == 0;
+    }
     if (fog_ && options_.volume) {
       // First "no fog at all" (no mist and no fog of war: the whole map seen, every unit drawn), then the saved
       // mist looks (looks/fog/README.md, in order).
-      static const char* kFog[7] = {"nuvens", "lençol", "bancos", "bloco", "bloco + giro", "mist4", "mist4 + giro"};
+      static const char* kFog[8] = {"nuvens", "lençol", "bancos", "bloco", "bloco + giro", "mist4", "mist4 + giro", "do mapa"};
       int look = noFog_ ? 0 : static_cast<int>(fogLook_) + 1;
       const int count = static_cast<int>(fogLooks().size());
       if (dropdown("Névoa", look, count + 1, [count](int i) {
             if (i == 0) return std::string("OFF");
-            return count == 7 ? std::string(kFog[i - 1]) : std::string(fogLooks()[i - 1].note);
+            return count == 8 ? std::string(kFog[i - 1]) : std::string(fogLooks()[i - 1].note);
           })) {
         noFog_ = look == 0;
         if (!noFog_) fogLook_ = static_cast<uint32_t>(look - 1);
@@ -723,6 +734,14 @@ class MapStage final : public Stage {
     ImGui::PopItemWidth();
     ImGui::PopFont();
     ImGui::End();
+  }
+
+  // The map's own mist look (008) in the saved series.
+  static uint32_t mapMistLook() {
+    const auto looks = fogLooks();
+    for (uint32_t i = 0; i < looks.size(); ++i)
+      if (std::string_view(looks[i].number) == "008") return i;
+    return static_cast<uint32_t>(looks.size() - 1);
   }
 
   // The player asked to leave for the title screen (pause menu, or after the battle's end), or to fight it again.
@@ -1967,6 +1986,72 @@ class MapStage final : public Stage {
   }
 
   // --- Engine2's battle HUD (GameApp.tsx footer .ember-hud-bar, battleHud3d.ts health bars, the turn order) -----------
+
+  // Engine2 ThreeAtmosphereV2: the map's rising wisps (wispIntensity x 2000, wispSpeed, wispColor) and the dust
+  // motes always in the air (brighter in sunlight); additive and over everything, as there (no depth test).
+  void drawAirParticles() {
+    if (!scene_ || flat_) return;
+    const e2::MapDraft& d = board_->draft();
+    static std::vector<float> wispSeeds, dustSeeds;
+    if (wispSeeds.empty()) {
+      e2::Mulberry32 a(0x5eed2), b(0x5eed1);
+      for (int i = 0; i < 2000 * 4; ++i) wispSeeds.push_back(static_cast<float>(a()));
+      for (int i = 0; i < 280 * 4; ++i) dustSeeds.push_back(static_cast<float>(b()));
+    }
+    const ImGuiIO& io = ImGui::GetIO();
+    ImDrawList* dl = ImGui::GetBackgroundDrawList();
+    const float w = io.DisplaySize.x, h = io.DisplaySize.y;
+    const e2::Board::Bounds bb = board_->bounds();
+    auto disc = [&](glm::vec3 p, float size, ImU32 rgb, float alpha) {
+      const std::optional<ImVec2> at = screenOf(p, w, h);
+      const std::optional<ImVec2> side = screenOf(p + glm::vec3(size, 0.0f, 0.0f), w, h);
+      if (!at || !side || alpha <= 0.003f) return;
+      const float r = std::max(1.0f, std::hypot(side->x - at->x, side->y - at->y));
+      // a soft disc: smoothstep(1, 0, d)^2 as three rings
+      for (int k = 0; k < 3; ++k) {
+        const float rr = r * (1.0f - 0.3f * k), aa = alpha * (0.25f + 0.25f * k);
+        dl->AddCircleFilled(*at, rr, (rgb & 0x00FFFFFFu) | (static_cast<ImU32>(std::clamp(aa, 0.0f, 1.0f) * 255.0f) << IM_COL32_A_SHIFT), 12);
+      }
+    };
+    // Wisps: each rises 1.6 hexes from the ground over its life, wavering, fading in and out.
+    const int wisps = static_cast<int>(std::round(std::clamp(d.wispIntensity, 0.0f, 1.0f) * 2000.0f));
+    if (wisps > 0) {
+      const float t = now_ * d.wispSpeed, size = 0.1f, rise = 1.6f, pad = 3.0f;
+      const float ox = static_cast<float>(bb.x0) - pad, oz = static_cast<float>(bb.z0) - pad;
+      const float ax = static_cast<float>(bb.x1 - bb.x0) + 2 * pad, az = static_cast<float>(bb.z1 - bb.z0) + 2 * pad;
+      const ImU32 rgb = IM_COL32((d.wispColor >> 16) & 255, (d.wispColor >> 8) & 255, d.wispColor & 255, 0);
+      for (int i = 0; i < wisps; ++i) {
+        const float* sd = &wispSeeds[static_cast<size_t>(i) * 4];
+        float phase = sd[3] + t * 0.055f * (0.6f + sd[2] * 0.8f);
+        phase -= std::floor(phase);
+        const float x = ox + sd[0] * ax + std::sin(t * 0.7f + sd[2] * 40.0f) * size * 2.5f * phase;
+        const float z = oz + sd[1] * az + std::cos(t * 0.5f + sd[3] * 30.0f) * size * 2.5f * phase;
+        const float y = groundAt(std::clamp(x, static_cast<float>(bb.x0), static_cast<float>(bb.x1)), std::clamp(z, static_cast<float>(bb.z0), static_cast<float>(bb.z1))) + phase * rise;
+        const float alpha = std::sin(phase * 3.14159f) * (0.6f + 0.4f * std::sin(t * 3.0f + sd[2] * 60.0f)) * 0.9f;
+        disc({x, y, z}, size * (0.7f + sd[2] * 0.6f), rgb, alpha);
+      }
+    }
+    // Dust motes drifting with the wind over the board, twinkling.
+    {
+      const float t = now_, size = 0.06f, height = 2.2f;
+      const float ox = static_cast<float>(bb.x0) - 2.0f, oz = static_cast<float>(bb.z0) - 2.0f;
+      const float ax = static_cast<float>(bb.x1 - bb.x0) + 4.0f, az = static_cast<float>(bb.z1 - bb.z0) + 4.0f;
+      const float sun = layers_ & 1u ? 0.6f : 0.0f;  // brighter in sunlight
+      for (int i = 0; i < 280; ++i) {
+        const float* sd = &dustSeeds[static_cast<size_t>(i) * 4];
+        float wx = sd[0] * ax + 0.12f * t * (0.6f + sd[2] * 0.8f) + std::sin(t * 0.21f + sd[3] * 31.0f) * size * 3.0f;
+        float wz = sd[1] * az + 0.05f * t * (0.6f + sd[2] * 0.8f) + std::cos(t * 0.17f + sd[2] * 23.0f) * size * 3.0f;
+        wx = std::fmod(wx, ax), wz = std::fmod(wz, az);
+        const float x = ox + wx, z = oz + wz;
+        const float ground = groundAt(std::clamp(x, static_cast<float>(bb.x0), static_cast<float>(bb.x1)), std::clamp(z, static_cast<float>(bb.z0), static_cast<float>(bb.z1)));
+        const float y = ground + height * (0.15f + sd[2] * 0.85f) + std::sin(t * 0.35f + sd[3] * 19.0f) * size * 2.0f;
+        const float twinkle = 0.5f + 0.5f * std::sin(t * (0.5f + sd[3] * 0.9f) + sd[2] * 40.0f);
+        const float edge = std::clamp(std::min({wx, ax - wx, wz, az - wz}) / (std::min(ax, az) * 0.08f), 0.0f, 1.0f);
+        const float alpha = (0.25f + 0.75f * twinkle * twinkle) * edge * (0.22f + 0.4f * sun);
+        disc({x, y, z}, size * (0.55f + sd[3] * 0.9f), IM_COL32(255, 242, 217, 0), alpha * 0.6f);
+      }
+    }
+  }
 
   // GameApp portraitFor: a hero's own portrait, an enemy's head-and-shoulders cut, else its sprite's first frame.
   const UiImage* portraitOf(const e2::BattleUnit& u) const {

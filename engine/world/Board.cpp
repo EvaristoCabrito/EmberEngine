@@ -131,6 +131,14 @@ std::optional<MapDraft> MapDraft::load(const std::filesystem::path& mapJson) {
   m.environment = str(d, "environment");
   m.timeOfDay = str(d, "timeOfDay");
   m.fog = d.contains("fog") && d["fog"].is_boolean() && d["fog"].get<bool>();
+  m.mistType = str(d, "mistType");
+  auto num = [&](const char* k, float fallback) { return d.contains(k) && d[k].is_number() ? d[k].get<float>() : fallback; };
+  m.mistIntensity = num("mistIntensity", m.mistType.empty() ? 0.0f : 0.2f);
+  m.mistSpeed = num("mistSpeed", 1.0f);
+  m.wispIntensity = num("wispIntensity", 0.0f);
+  m.wispSpeed = num("wispSpeed", 1.0f);
+  if (d.contains("wispColor") && d["wispColor"].is_number()) m.wispColor = d["wispColor"].get<unsigned>();
+  m.bloomIntensity = num("bloomIntensity", 0.0f);
   return m;
 }
 

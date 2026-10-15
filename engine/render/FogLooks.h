@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <span>
+#include <string>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -21,6 +22,9 @@ struct FogScene {
   float meanGround = 0.0f, groundLow = 0.0f, groundHigh = 0.0f;
   glm::vec4 board{0.0f};  // x0, z0, x1, z1
   glm::vec2 partyCenter{0.0f};  // where the party stands (the swirl turns around it)
+  // The map's own mist (look 008: Engine2's Névoas): type, intensity and speed as the map editor set them.
+  std::string mistType;  // mist2 mist3 mist4 fog1 fog5; empty = none
+  float mistIntensity = 0.2f, mistSpeed = 1.0f;
 };
 
 // What the renderer hands a look each frame.
@@ -44,6 +48,7 @@ struct FogLook {
   FogNoise noise;
   uint32_t frameBytes;  // size of its frame record
   void (*write)(const FogLookInputs&, void* frame);
+  bool needsMask = true;  // drawn only over a fog of war (looks 001-007); look 008 needs none
 };
 inline constexpr uint32_t kMaxFogLookFrameBytes = 512;
 std::span<const FogLook> fogLooks();
