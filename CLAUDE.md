@@ -72,12 +72,12 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
 
 ## Build and run (Windows, MSVC 2022 Build Tools, Vulkan SDK 1.4.363.0, CMake + Ninja)
 
-**The user downloads the repo ZIP and double-clicks `JOGAR.bat` (2026-10-15: "I won't type any command").** It runs the
-ready-made `jogo/Sandbox.exe` (+ `jogo/shaders/*.spv`), built in the cloud on Linux with zig (x86_64-windows-gnu) and
-DXC built from source (`tools/cross/README.md`; the cloud session keeps the build in /home/user/xbuild): no Visual
-Studio needed. It opens Engine2's **title screen** (`--title`), with the art packs from `C:\EmberEngine\build` and
-Engine2's art/maps from `C:\Engine2`. **Rebuild `jogo/` and push after every engine/shader change** (the user only gets
-what is in the repo). `build.bat` / MSVC still work for local development.
+**Work is local on this PC again (user, 2026-10-15 night: "estamos trabalhando local agora, esquece o jogar").**
+Build with `build.bat` / MSVC here and open `build\release\bin\Sandbox.exe` for the user (rule above). JOGAR.bat and
+`jogo/` (the cloud zig build, `tools/cross/README.md`) are no longer maintained: do not rebuild `jogo/` or push for it.
+The game opens Engine2's **title screen** with `--title --ground build/ground/ground-v2.pak --sprites
+build/sprites/battle.pak --meshes build/meshes/props.pak --scenes build/engine2-scenes --maps C:/Engine2/maps/ember
+--heroes build/engine2-scenes/roster.json`.
 
 ```
 build.bat release          # or debug; output in build/<config>/bin
