@@ -292,8 +292,8 @@ class MapStage final : public Stage {
     if (fog_ && options_.volume)
       ImGui::Text("fog look %s (F9 next, %zu saved): %s", fogLooks()[fogLook_].number, fogLooks().size(), fogLooks()[fogLook_].note);
     if (fog_)
-      ImGui::Text("fog of war: %d in sight, %d remembered, %d never seen; %u enemies hidden; last update %.2f ms", fogCounts_[2],
-                  fogCounts_[1], fogCounts_[0], hiddenUnits_, lastFogMs_);
+      ImGui::Text("fog of war: %d in sight, %d remembered, %d never seen; %d enclosed holes (%d hexes); %u enemies hidden; last update %.2f ms",
+                  fogCounts_[2], fogCounts_[1], fogCounts_[0], holes_, holeHexes_, hiddenUnits_, lastFogMs_);
     ImGui::End();
   }
 
@@ -338,6 +338,7 @@ class MapStage final : public Stage {
     logInfo("{}", line);
     if (fog_) {
       const Spread fu = spread(fogUpdateMs_);
+      logInfo("  fog of war: worst {} enclosed never-seen holes at once", worstHoles_);
       logInfo("  fog of war: {} mask updates (sight + mask on the main thread): median {:.2f}, worst {:.2f} ms", fogUpdateMs_.size(), fu.median,
               fu.worst);
     }
@@ -578,7 +579,7 @@ class MapStage final : public Stage {
   }
 
   // What stands on the board and blocks sight: 3D models over their footprint, standing cards at least
-  // kBlockHeight tall along their width. (Walls and doors are not imported yet: they block nothing.)
+  // kBlockHeight tall and kBlockWidth wide along their width; 3D models at least kBlockWidth across. (Walls and doors are not imported yet: they block nothing.)
   void addOccluders() {
     for (const e2::SceneModel& m : scene_->models) {
       std::string asset = m.file.substr(std::string("/game/").size());
@@ -587,6 +588,7 @@ class MapStage final : public Stage {
       if (!h) continue;
       const float k = m.height / std::max(h->boundsMax[1] - h->boundsMin[1], 1e-4f);
       const float hx = (h->boundsMax[0] - h->boundsMin[0]) * 0.5f * k, hz = (h->boundsMax[2] - h->boundsMin[2]) * 0.5f * k;
+      if (2.0f * std::max(hx, hz) < e2::kBlockWidth) continue;  // a thin model (a post) does not block
       const float c = std::cos(m.rotY), sn = std::sin(m.rotY);
       // The footprint (rotated box, centred on the anchor as placeModels centres it), sampled every 0.25.
       for (float a = -hx; a <= hx; a += 0.25f)
@@ -594,7 +596,7 @@ class MapStage final : public Stage {
       fog_->block(m.x, m.z, m.height);
     }
     for (const e2::SceneCard& d : scene_->cards) {
-      if (d.onFloor || d.h < e2::kBlockHeight) continue;
+      if (d.onFloor || d.h < e2::kBlockHeight || d.w < e2::kBlockWidth) continue;  // thin props do not block
       const float yaw = d.lockedYaw.value_or(0.0f);
       const glm::vec2 right{std::cos(yaw), -std::sin(yaw)};
       const float half = d.w * 0.5f;
@@ -674,9 +676,38 @@ class MapStage final : public Stage {
       fogCounts_ = {0, 0, 0};
       for (int r = 0; r < board_->layout().rows; ++r)
         for (int c = 0; c < board_->layout().cols; ++c) ++fogCounts_[fog_->state(c, r)];
+      countHoles();
       lastFogMs_ = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count();
       fogUpdatedThisFrame_ = true;
     }
+  }
+
+  // Holes: groups of never-seen hexes enclosed by explored ground (touching neither the board's edge nor the
+  // big never-seen area). Each shows as a black pit in the middle of the map.
+  void countHoles() {
+    const e2::HexLayout& L = board_->layout();
+    std::vector<int> group(static_cast<size_t>(L.cols * L.rows), -1);
+    holes_ = 0;
+    holeHexes_ = 0;
+    for (int r = 0; r < L.rows; ++r)
+      for (int c = 0; c < L.cols; ++c) {
+        if (fog_->state(c, r) != e2::kFogUnseen || group[static_cast<size_t>(e2::indexOf(L, c, r))] >= 0) continue;
+        std::vector<std::pair<int, int>> stack{{c, r}}, members;
+        group[static_cast<size_t>(e2::indexOf(L, c, r))] = 1;
+        bool edge = false;
+        while (!stack.empty()) {
+          const auto [x, y] = stack.back();
+          stack.pop_back();
+          members.push_back({x, y});
+          if (x == 0 || y == 0 || x == L.cols - 1 || y == L.rows - 1) edge = true;
+          for (const auto& [nx, ny] : e2::neighbors(L, x, y)) {
+            int& g = group[static_cast<size_t>(e2::indexOf(L, nx, ny))];
+            if (g < 0 && fog_->state(nx, ny) == e2::kFogUnseen) g = 1, stack.push_back({nx, ny});
+          }
+        }
+        if (!edge && members.size() <= 12) ++holes_, holeHexes_ += static_cast<int>(members.size());
+      }
+    worstHoles_ = std::max(worstHoles_, holes_);
   }
 
   void relight(const std::vector<e2::HexPoint>& party) {
@@ -745,6 +776,7 @@ class MapStage final : public Stage {
   float meanGround_ = 0.0f, boardTop_ = 0.0f, groundLow_ = 0.0f;
   uint32_t fogLook_ = 2;  // index into fogLooks(): look 003 unless --fog-look says otherwise
   std::array<int, 3> fogCounts_{};
+  int holes_ = 0, holeHexes_ = 0, worstHoles_ = 0;
   uint32_t hiddenUnits_ = 0;
   double lastFogMs_ = 0.0;
   std::vector<double> fogUpdateMs_;

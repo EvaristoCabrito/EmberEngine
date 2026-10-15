@@ -9,7 +9,9 @@
 //           stands on it: buildings, trees, tall cards) rises above the ray blocks it. The blocker itself is
 //           seen (you see the wall, not past it). Three rays (centre and either side of the hexes) so a
 //           line grazing a corner is not decided by rounding; any clear ray sees. Gameplay heights (cell
-//           ground), so all board looks see the same (R8).
+//           ground), so all board looks see the same (R8). Only wide things block (kBlockWidth: walls,
+//           houses, big trees; not lamp posts or signposts), and a hex every one of whose neighbours is in
+//           sight is in sight too: nothing hides alone in the middle of open ground (the user, 2026-10-15).
 //   mask    Engine2's look (src/render/fogOfWar.ts + battleAtmosphere3d.ts syncFog): per-texel darkness
 //           (never seen = 1, remembered = 0.6, in sight = 0), feathered only inside remembered hexes, and
 //           never any fog within one hex of a party unit.
@@ -29,7 +31,8 @@ inline constexpr int kSightRadius = 7;            // Engine2 SIGHT_RADIUS
 inline constexpr float kExploredAlpha = 0.6f;      // Engine2 EXPLORED_ALPHA (darkness over remembered ground)
 inline constexpr float kEyeHeight = 1.6f;          // eyes above their hex's ground (world units = hex radii)
 inline constexpr float kTargetHeight = 0.8f;       // a hex is seen when a body standing there is (half its height)
-inline constexpr float kBlockHeight = 1.2f;        // a standing card at least this tall blocks sight
+inline constexpr float kBlockHeight = 1.2f;        // a standing card at least this tall blocks sight ...
+inline constexpr float kBlockWidth = 1.2f;         // ... and at least this wide (most of a hex: a lamp post does not)
 
 struct HexPoint {
   int c = 0, r = 0;

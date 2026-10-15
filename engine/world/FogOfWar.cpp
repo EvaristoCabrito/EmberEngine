@@ -117,6 +117,19 @@ void FogOfWar::relight(std::span<const Eye> eyes) {
         if (v != kFogVisible && hexDistance(eye.at, {x, y}) <= eye.radius && sightReaches(eye.at, {x, y})) v = kFogVisible;
       }
   }
+  // Pockets: a hex not in sight whose every neighbour is in sight is in sight (decided on the sight above, so
+  // filling one pocket never spreads into the next).
+  std::vector<size_t> pockets;
+  for (int y = 0; y < layout_.rows; y++)
+    for (int x = 0; x < layout_.cols; x++) {
+      if (cells_[static_cast<size_t>(indexOf(layout_, x, y))] == kFogVisible) continue;
+      const auto around = neighbors(layout_, x, y);
+      if (!around.empty() && std::all_of(around.begin(), around.end(), [&](const auto& n) {
+            return cells_[static_cast<size_t>(indexOf(layout_, n.first, n.second))] == kFogVisible;
+          }))
+        pockets.push_back(static_cast<size_t>(indexOf(layout_, x, y)));
+    }
+  for (const size_t i : pockets) cells_[i] = kFogVisible;
   ++version_;
 }
 
