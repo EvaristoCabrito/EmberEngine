@@ -109,7 +109,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
       mask = max(mask, smoothstep(0.12, 0.4, eMax) * smoothstep(0.08, 0.3, eSat) * smoothstep(0.75, 0.9, eSim) * near * 0.75);
       color += c.rgb * mask * s.emitLevel * f.exposure;
     }
-    color *= sight.color;
+    color = applyVolume(f, color * sight.color, i.world);
   }
   return float4(color * c.a, c.a);
 }

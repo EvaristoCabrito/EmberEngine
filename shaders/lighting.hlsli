@@ -75,6 +75,12 @@ float3 envBrdfApprox(float3 f0, float roughness, float nv) {
   return f0 * ab.x + ab.y;
 }
 
+// Henyey-Greenstein phase function (participating media: fog, clouds).
+float phaseHG(float cosTheta, float g) {
+  const float g2 = g * g;
+  return (1.0 - g2) / (4.0 * kPi * pow(max(1.0 + g2 - 2.0 * g * cosTheta, 1e-4), 1.5));
+}
+
 // --- Direct light ------------------------------------------------------------------------------------
 
 // The sun's shadow map: one orthographic map fitted to the board, 16 hardware-filtered taps on a Poisson
@@ -207,13 +213,26 @@ float3 shadeInSight(MeshFrame f, Surface s, Sight sight) {
   return color;
 }
 
+// The volumetric fog between the camera and a surface (volume.hlsl): what reaches the eye.
+float3 applyVolume(MeshFrame f, float3 color, float3 position) {
+  if (f.volume == kNoTexture) return color;
+  const float4 c = mul(float4(position, 1.0), f.viewProjection);
+  if (c.w <= 0.0) return color;
+  const float w = froxelSlice(f, c.w);
+  // Each slice holds the fog up to its far side; in front of the first, it thins to none at the eye.
+  const float3 uvw = float3(c.xy / c.w * 0.5 + 0.5, w - 0.5 / float(kFroxelZ));
+  float4 fog = gTextures3D[NonUniformResourceIndex(f.volume)].SampleLevel(gSamplers[f.volumeSampler], saturate(uvw), 0);
+  fog = lerp(float4(0.0, 0.0, 0.0, 1.0), fog, saturate(w * float(kFroxelZ) + 0.5));
+  return color * fog.a + fog.rgb;
+}
+
 // Debug view 3 (fog of war): mask darkness in red, local-light sight in green, blue = a surface was drawn.
 static const uint kDebugFog = 3u;
 
 float3 shade(MeshFrame f, Surface s) {
   const Sight sight = tacticalSight(f, s.sightAt);
   if (f.debugView == kDebugFog) return float3(1.0 - sight.color, sight.local, 1.0);
-  return shadeInSight(f, s, sight) * sight.color;
+  return applyVolume(f, shadeInSight(f, s, sight) * sight.color, s.position);
 }
 
 #endif

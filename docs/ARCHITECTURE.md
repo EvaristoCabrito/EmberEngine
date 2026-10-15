@@ -254,9 +254,11 @@ spell effects, realistic ground textures, 2D props combined with real 3D objects
   in one consistent light (the 2D/3D split in §7.1).
 - R7 **Fog of war (the user's specification, 2026-10-14): a rendering requirement and an acceptance test
   for the world renderer.** Three states per hex/area:
-  1. *Unexplored:* absolute black. Dense, literal fog may gather along the boundary as an uncertain
-     transition. Nothing beyond the boundary (terrain, units) is ever revealed by lights, spells or
-     atmospheric effects; unexplored space stays black even where fog would otherwise be lit.
+  1. *Unexplored:* hidden under a thick, lit, moving cloud blanket (the user's reference image and
+     answers, 2026-10-14, replacing "absolute black"): a sea of grey cloud swirling around the party's
+     clearing, also drawn thinner over the boundary and remembered ground. Nothing underneath shows through
+     it: no terrain detail, units, lights or spells, and no shapes (no building silhouettes, no board outline;
+     the cloud reaches past the board and fades into the dark). The cloud is lit by sun/moon and sky only.
   2. *Explored, out of line of sight:* remembered territory, recognisable under strong darkening, shown in
      its last-known state; current enemies, moving units and other dynamic details are hidden until line of
      sight returns. Dense fog adds depth and obscures distant detail. Light from visible areas must not
@@ -264,8 +266,8 @@ spell effects, realistic ground textures, 2D props combined with real 3D objects
   3. *Visible:* full world rendering (dynamic lighting, environmental effects). Atmospheric fog may exist
      here but must never be confused with the tactical mask.
   The literal fog is **world-space volumetric fog constrained by tactical visibility**, not a translucent
-  plane over hidden tiles: visible depth, soft density variation, subtle drift; it gathers in valleys,
-  corridors and around ruins near the explored boundary. Discovery makes the black boundary recede and
+  plane over hidden tiles: visible depth, soft density variation, drift and swirl; it gathers in valleys,
+  corridors and around ruins near the explored boundary. Discovery makes the cloud boundary recede and
   reveals the environment through the fog; losing line of sight fades terrain to its dark remembered state
   while dynamic entities disappear. **The separation is the rule: tactical visibility decides what the
   player may see; volumetric fog decides how the visible atmosphere looks. Lighting, shadows, VFX and fog

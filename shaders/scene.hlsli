@@ -151,9 +151,15 @@ struct MeshFrame {
                              // bind a writable storage buffer without fragmentStoresAndAtomics)
   // Fog of war (R7, world/FogOfWar.h): the darkness mask over the board.
   float4 fogRect;            // world x0, z0, 1 / width, 1 / depth
-  uint fogMask;              // R8 texture: 0 in sight, 0.6 remembered, 1 never seen; kNoTexture = no fog of war
+  uint fogMask;              // RGBA16F: r darkness (0 in sight, 0.6 remembered, 1 never seen), then the volumetric
+                             // fog's boundary, ground, valley (FogMask); kNoTexture = no fog of war
   uint fogSampler;
   uint2 pad9;
+  // Volumetric fog (volume.hlsl): the integrated froxel volume surfaces read at their depth.
+  uint volume;               // sampled 3D texture (scattered light, transmittance); kNoTexture = none
+  uint volumeSampler;        // linear, clamped
+  float volumeNear;          // view depth of the first slice boundary
+  float volumeFar;           // ... and of the last
 };
 
 // One local light (Engine2's CarriedLight: a three.js point light). 32 bytes.
@@ -174,6 +180,12 @@ float fogAlpha(MeshFrame f, float3 position) {
 }
 // Never seen: nothing there is drawn lit, and nothing there casts a shadow.
 bool neverSeen(MeshFrame f, float3 position) { return fogAlpha(f, position) >= 254.5 / 255.0; }
+
+// Froxels (volume.hlsl): screen tiles x logarithmic depth slices.
+static const uint kFroxelX = 160, kFroxelY = 90, kFroxelZ = 64;
+// View depth at slice coordinate w (0..1), and back.
+float froxelDepth(MeshFrame f, float w) { return f.volumeNear * pow(f.volumeFar / f.volumeNear, w); }
+float froxelSlice(MeshFrame f, float depth) { return log(max(depth, 1e-4) / f.volumeNear) / log(f.volumeFar / f.volumeNear); }
 
 static const uint kClusterX = 16, kClusterY = 9, kClusterZ = 24;
 static const uint kClusterCount = kClusterX * kClusterY * kClusterZ;

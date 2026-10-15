@@ -51,6 +51,10 @@ struct FogMask {
   int width = 0, height = 0;
   float x0 = 0, z0 = 0, worldWidth = 0, worldDepth = 0;
   std::vector<uint8_t> alpha;     // 0 = in sight, ~153 = remembered, 255 = never seen
+  // For the volumetric fog (its look, not visibility): where the dense fog gathers.
+  std::vector<float> boundary;    // never-seen ground blurred over about a hex and a half: 1 deep inside, 0.5 at its edge
+  std::vector<float> ground;      // ground height; never-seen ground reads the board's mean (reveals no shape)
+  std::vector<float> valley;      // how far the ground lies below its surroundings (about 3 hexes around), >= 0
 };
 
 class FogOfWar {

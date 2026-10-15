@@ -159,6 +159,33 @@ FogMask FogOfWar::paint(const Board& board, std::span<const HexPoint> party) con
     const float a = texelState[i] == kFogVisible ? 0.0f : texelState[i] == kFogUnseen ? 1.0f : std::min(kExploredAlpha, alpha[i]);
     m.alpha[i] = static_cast<uint8_t>(jsRound(255.0 * a));
   }
+
+  // The volumetric fog's fields. Boundary: never seen, blurred about a hex and a half (fog fades across it).
+  const auto blur = [&](std::vector<float>& v, int radius, int passes) {
+    for (int p = 0; p < passes; p++) {
+      boxBlur(v, tmp, m.width, m.height, radius, true);
+      boxBlur(tmp, v, m.width, m.height, radius, false);
+    }
+  };
+  m.boundary.resize(n);
+  for (size_t i = 0; i < n; i++) m.boundary[i] = texelState[i] == kFogUnseen ? 1.0f : 0.0f;
+  blur(m.boundary, FogMask::kRes * 3 / 4, 3);
+  // Ground: each texel's hex, softened a little; never-seen hexes read the board's mean height.
+  double mean = 0;
+  for (const float g : ground_) mean += g;
+  mean /= std::max<size_t>(1, ground_.size());
+  m.ground.resize(n);
+  for (int y = 0; y < m.height; y++)
+    for (int x = 0; x < m.width; x++) {
+      const size_t i = static_cast<size_t>(y) * m.width + x;
+      const auto [c, r] = hexAt(layout_, m.x0 + (x + 0.5) / FogMask::kRes, m.z0 + (y + 0.5) / FogMask::kRes);
+      m.ground[i] = texelState[i] == kFogUnseen ? static_cast<float>(mean) : ground_[static_cast<size_t>(indexOf(layout_, c, r))];
+    }
+  blur(m.ground, FogMask::kRes / 4, 2);
+  // Valleys: the ground's surroundings (about 3 hexes) above it.
+  m.valley = m.ground;
+  blur(m.valley, FogMask::kRes * 3 / 2, 2);
+  for (size_t i = 0; i < n; i++) m.valley[i] = std::max(0.0f, m.valley[i] - m.ground[i]);
   return m;
 }
 

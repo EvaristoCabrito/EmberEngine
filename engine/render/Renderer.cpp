@@ -1,6 +1,7 @@
 #include "render/Renderer.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/packing.hpp>
 
 #include <stb_image_write.h>
 
@@ -132,12 +133,117 @@ struct MeshFrame {
   float clusterFar;
   uint64_t clusters;
   glm::vec4 fogRect;   // fog of war mask: world x0, z0, 1 / width, 1 / depth
-  uint32_t fogMask;    // bindless R8 texture; kNoTextureIndex = no fog of war
+  uint32_t fogMask;    // bindless RGBA16F texture (darkness, boundary, ground, valley); kNoTextureIndex = no fog of war
   uint32_t fogSampler;
   uint32_t pad9[2];
+  uint32_t volume;     // integrated froxel volume (sampled); kNoTextureIndex = no volumetric fog
+  uint32_t volumeSampler;
+  float volumeNear;
+  float volumeFar;
 };
-static_assert(sizeof(MeshFrame) == 640 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384 &&
+static_assert(sizeof(MeshFrame) == 656 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384 &&
               offsetof(MeshFrame, shadowMatrix) == 480);
+
+// Matches VolumeFrame in shaders/volume.hlsl.
+struct VolumeFrame {
+  glm::mat4 inverseViewProjection;
+  glm::mat4 previousViewProjection;
+  glm::vec3 wind;
+  float time;
+  glm::vec3 albedo;
+  float density;
+  float scaleHeight;
+  float valley;
+  float boundaryDensity;
+  float boundaryHeight;
+  float noiseScale;
+  float anisotropy;
+  float historyWeight;
+  float jitter;
+  uint32_t injected;
+  uint32_t history;
+  uint32_t integrated;
+  uint32_t historyValid;
+  float meanGround;
+  uint32_t pad[3];
+};
+static_assert(sizeof(VolumeFrame) == 224);
+
+struct VolumePush {
+  VkDeviceAddress frame;
+  VkDeviceAddress volume;
+};
+
+// Matches CloudFrame in shaders/cloud.hlsl.
+struct CloudFrame {
+  glm::mat4 inverseViewProjection;
+  glm::vec2 boardCenter;
+  float time;
+  float baseY;
+  float topY;
+  float extinction;
+  float fadeRadius;
+  float rememberedCover;
+  glm::vec3 wind;
+  float noiseScale;
+  float scaleHeight;
+  glm::vec3 pad0;
+  glm::vec3 albedo;
+  float ambient;
+  uint32_t noise;
+  uint32_t depth;
+  uint32_t march;
+  uint32_t marchSampled;
+  uint32_t color;
+  uint32_t frameIndex;
+  glm::uvec2 halfSize;
+  glm::uvec2 fullSize;
+  glm::uvec2 pad;
+};
+static_assert(sizeof(CloudFrame) == 192);
+
+// The fog's noise: 64^3, tiling: periodic value-noise fBm (soft variation, no lumps), repeating without seams.
+constexpr uint32_t kBankNoiseSize = 64;
+std::vector<uint8_t> makeBankNoise() {
+  constexpr int n = static_cast<int>(kBankNoiseSize);
+  const auto hash = [](int x, int y, int z, int seed) {
+    uint32_t h = static_cast<uint32_t>(x) * 73856093u ^ static_cast<uint32_t>(y) * 19349663u ^ static_cast<uint32_t>(z) * 83492791u ^
+                 static_cast<uint32_t>(seed) * 2654435761u;
+    h ^= h >> 13;
+    h *= 0x5bd1e995u;
+    h ^= h >> 15;
+    return (h & 0xFFFFFFu) / static_cast<float>(0xFFFFFF);
+  };
+  const auto wrap = [](int v, int period) { return ((v % period) + period) % period; };
+  // Periodic value noise with `cells` cells across the volume.
+  const auto value = [&](float x, float y, float z, int cells, int seed) {
+    const float fx = x * cells, fy = y * cells, fz = z * cells;
+    const int ix = static_cast<int>(std::floor(fx)), iy = static_cast<int>(std::floor(fy)), iz = static_cast<int>(std::floor(fz));
+    const auto s = [](float t) { return t * t * t * (t * (t * 6 - 15) + 10); };
+    const float ux = s(fx - ix), uy = s(fy - iy), uz = s(fz - iz);
+    float c[2][2][2];
+    for (int a = 0; a < 2; ++a)
+      for (int b = 0; b < 2; ++b)
+        for (int d = 0; d < 2; ++d) c[a][b][d] = hash(wrap(ix + a, cells), wrap(iy + b, cells), wrap(iz + d, cells), seed);
+    const auto lerp = [](float a, float b, float t) { return a + (b - a) * t; };
+    return lerp(lerp(lerp(c[0][0][0], c[1][0][0], ux), lerp(c[0][1][0], c[1][1][0], ux), uy),
+                lerp(lerp(c[0][0][1], c[1][0][1], ux), lerp(c[0][1][1], c[1][1][1], ux), uy), uz);
+  };
+  std::vector<uint8_t> out(static_cast<size_t>(n) * n * n);
+  for (int z = 0; z < n; ++z)
+    for (int y = 0; y < n; ++y)
+      for (int x = 0; x < n; ++x) {
+        const float u = (x + 0.5f) / n, v = (y + 0.5f) / n, w = (z + 0.5f) / n;
+        const float fbm = value(u, v, w, 4, 1) * 0.47f + value(u, v, w, 8, 2) * 0.27f + value(u, v, w, 16, 3) * 0.17f +
+                          value(u, v, w, 32, 4) * 0.09f;
+        const float k = std::clamp((fbm - 0.5f) * 1.6f + 0.5f, 0.0f, 1.0f);  // spread over the range
+        out[(static_cast<size_t>(z) * n + y) * n + x] = static_cast<uint8_t>(k * 255.0f + 0.5f);
+      }
+  return out;
+}
+
+// Froxel grid (shaders/scene.hlsli kFroxel*).
+constexpr uint32_t kFroxelX = 160, kFroxelY = 90, kFroxelZ = 64;
 
 // Work buffer layout (shaders/scene.hlsli): counters, indirect arguments, two queues, the cluster list.
 constexpr VkDeviceSize kWorkHeaderBytes = 128;
@@ -239,7 +345,21 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
     frame.shadowFrame = createDeviceBuffer(context, sizeof(MeshFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     frame.lights = createHostBuffer(context, sizeof(LocalLight) * kMaxLights, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     frame.meshCounters = createReadbackBuffer(context, kCounterBytes);
+    frame.volumeFrame = createDeviceBuffer(context, sizeof(VolumeFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    frame.cloudFrame = createDeviceBuffer(context, sizeof(CloudFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
   }
+  bankNoise_ = createImage(context, {.format = VK_FORMAT_R8_UNORM, .extent = {kBankNoiseSize, kBankNoiseSize},
+                                     .usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, .depth = kBankNoiseSize});
+  bankNoiseIndex_ = bindless_.addSampledImage(bankNoise_.view);
+  // Volumetric fog: froxel volumes, kept in GENERAL layout (written as storage, read as textures).
+  for (int i = 0; i < 2; ++i) {
+    volumes_[i] = createImage(context, {.format = VK_FORMAT_R16G16B16A16_SFLOAT, .extent = {kFroxelX, kFroxelY}, .usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, .depth = kFroxelZ});
+    volumeStorage_[i] = bindless_.addStorageImage(volumes_[i].view);
+    volumeSampled_[i] = bindless_.addSampledImage(volumes_[i].view, VK_IMAGE_LAYOUT_GENERAL);
+  }
+  volumeIntegrated_ = createImage(context, {.format = VK_FORMAT_R16G16B16A16_SFLOAT, .extent = {kFroxelX, kFroxelY}, .usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, .depth = kFroxelZ});
+  volumeIntegratedStorage_ = bindless_.addStorageImage(volumeIntegrated_.view);
+  volumeIntegratedSampled_ = bindless_.addSampledImage(volumeIntegrated_.view, VK_IMAGE_LAYOUT_GENERAL);
   meshWork_ = createDeviceBuffer(context, kWorkHeaderBytes + VkDeviceSize{kMaxQueue} * 8 * 2 + VkDeviceSize{kMaxClusters} * (8 + 4),
                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT |
                                      VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
@@ -372,6 +492,10 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   cullPrepareDrawPipeline_ = createComputePipeline(context, layout, "cull.CSPrepareDraw");
   resolvePipeline_ = createComputePipeline(context, layout, "resolve.CSResolve");
   lightsPipeline_ = createComputePipeline(context, layout, "lights.CSClusters");
+  volumeInjectPipeline_ = createComputePipeline(context, layout, "volume.CSInject");
+  volumeIntegratePipeline_ = createComputePipeline(context, layout, "volume.CSIntegrate");
+  bankMarchPipeline_ = createComputePipeline(context, layout, "cloud.CSMarch");
+  bankCompositePipeline_ = createComputePipeline(context, layout, "cloud.CSComposite");
   GraphicsPipelineDesc meshlet;
   meshlet.taskShader = "meshlet.ASMain";
   meshlet.meshShader = "meshlet.MSMain";
@@ -471,7 +595,17 @@ Renderer::~Renderer() {
     destroyBuffer(context_, frame.shadowFrame);
     destroyBuffer(context_, frame.lights);
     destroyBuffer(context_, frame.fogStaging);
+    destroyBuffer(context_, frame.volumeFrame);
+    destroyBuffer(context_, frame.cloudFrame);
   }
+  vkDestroyPipeline(context_.device, bankMarchPipeline_, nullptr);
+  vkDestroyPipeline(context_.device, bankCompositePipeline_, nullptr);
+  destroyImage(context_, bankNoise_);
+  destroyBuffer(context_, bankNoiseStaging_);
+  vkDestroyPipeline(context_.device, volumeInjectPipeline_, nullptr);
+  vkDestroyPipeline(context_.device, volumeIntegratePipeline_, nullptr);
+  for (int i = 0; i < 2; ++i) destroyImage(context_, volumes_[i]);
+  destroyImage(context_, volumeIntegrated_);
   if (fogMaskIndex_ != kNoIndex) bindless_.removeSampledImage(fogMaskIndex_);
   destroyImage(context_, fogMask_);
 }
@@ -487,6 +621,9 @@ void Renderer::createTargets(VkExtent2D size) {
                                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
                                        VK_IMAGE_USAGE_SAMPLED_BIT});
   visibility_ = createImage(context_, {kVisibilityFormat, size, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT});
+  // The fog bank's half-resolution march result.
+  bankMarch_ = createImage(context_, {VK_FORMAT_R16G16B16A16_SFLOAT, {(size.width + 1) / 2, (size.height + 1) / 2},
+                                      VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT});
   // Depth pyramid: power-of-two below the screen size, full mip chain, one storage view per level.
   hizSize_ = {previousPowerOfTwo(size.width), previousPowerOfTwo(size.height)};
   hizValid_ = false;
@@ -513,12 +650,16 @@ void Renderer::createTargets(VkExtent2D size) {
     sceneColorIndex_ = bindless_.addSampledImage(sceneColor_.view);
     sceneColorStorageIndex_ = bindless_.addStorageImage(sceneColor_.view);
     visibilityIndex_ = bindless_.addStorageImage(visibility_.view);
+    bankMarchStorage_ = bindless_.addStorageImage(bankMarch_.view);
+    bankMarchSampled_ = bindless_.addSampledImage(bankMarch_.view, VK_IMAGE_LAYOUT_GENERAL);
   } else {
     bindless_.setSampledImage(hizIndex_, hiz_.view, VK_IMAGE_LAYOUT_GENERAL);
     bindless_.setSampledImage(depthIndex_, depth_.view, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
     bindless_.setSampledImage(sceneColorIndex_, sceneColor_.view);
     bindless_.setStorageImage(sceneColorStorageIndex_, sceneColor_.view);
     bindless_.setStorageImage(visibilityIndex_, visibility_.view);
+    bindless_.setStorageImage(bankMarchStorage_, bankMarch_.view);
+    bindless_.setSampledImage(bankMarchSampled_, bankMarch_.view, VK_IMAGE_LAYOUT_GENERAL);
   }
 }
 
@@ -527,6 +668,7 @@ void Renderer::destroyTargets() {
   destroyImage(context_, depth_);
   destroyImage(context_, output_);
   destroyImage(context_, visibility_);
+  destroyImage(context_, bankMarch_);
   for (size_t i = 0; i < hizLevelViews_.size(); ++i) {
     bindless_.removeStorageImage(hizLevelIndices_[i]);
     vkDestroyImageView(context_.device, hizLevelViews_[i], nullptr);
@@ -693,6 +835,45 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
     f.fogSampler = linearClampIndex_;
     f.fogRect = {fog_.x0, fog_.z0, 1.0f / fog_.worldWidth, 1.0f / fog_.worldDepth};
   }
+  // Volumetric fog: this frame's froxel volume (written below), last frame's for the history.
+  volumeThisFrame_ = volumetric_.enabled;
+  f.volume = kNoTextureIndex;
+  f.volumeSampler = linearClampIndex_;
+  f.volumeNear = volumetric_.nearDepth;
+  f.volumeFar = volumetric_.farDepth;
+  VolumeFrame vf{};
+  if (volumeThisFrame_) {
+    f.volume = volumeIntegratedSampled_;
+    const glm::mat4 viewProjection = camera_.viewProjection();
+    vf.inverseViewProjection = glm::inverse(viewProjection);
+    vf.previousViewProjection = previousVolumeViewProjection_;
+    previousVolumeViewProjection_ = viewProjection;
+    vf.wind = volumetric_.wind;
+    vf.time = time;
+    vf.albedo = volumetric_.albedo;
+    vf.density = volumetric_.density;
+    vf.scaleHeight = volumetric_.scaleHeight;
+    vf.valley = volumetric_.valley;
+    vf.boundaryDensity = volumetric_.boundaryDensity;
+    vf.boundaryHeight = volumetric_.boundaryHeight;
+    vf.noiseScale = volumetric_.noiseScale;
+    vf.anisotropy = volumetric_.anisotropy;
+    vf.historyWeight = volumetric_.historyWeight;
+    // Halton (base 2) slice offsets: every frame samples the slices at a different depth.
+    uint32_t n = ++volumeFrameIndex_ % 64 + 1;
+    float halton = 0.0f, scale = 0.5f;
+    for (; n; n >>= 1, scale *= 0.5f) halton += (n & 1) * scale;
+    vf.jitter = halton - 0.5f;
+    volumeCurrent_ ^= 1u;
+    vf.injected = volumeStorage_[volumeCurrent_];
+    vf.history = volumeSampled_[volumeCurrent_ ^ 1u];
+    vf.integrated = volumeIntegratedStorage_;
+    vf.historyValid = volumeHistoryValid_ ? 1u : 0u;
+    vf.meanGround = volumetric_.meanGround;
+  } else {
+    volumeHistoryValid_ = false;
+  }
+
   // Local lights through the fog of war (R7): a light reaches as far as its source is in sight. A torch or a
   // spell out of sight lights nothing, so light never reveals what the party cannot see.
   uint32_t lightCount = 0;
@@ -754,6 +935,34 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
   memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT,
                 VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
   vkCmdUpdateBuffer(cmd, frame.meshFrame.buffer, 0, sizeof(f), &f);
+  if (volumeThisFrame_) vkCmdUpdateBuffer(cmd, frame.volumeFrame.buffer, 0, sizeof(vf), &vf);
+  // The fog bank: only over a fog-of-war mask.
+  bankThisFrame_ = fogBank_.enabled && f.fogMask != kNoTextureIndex;
+  if (bankThisFrame_) {
+    CloudFrame cf{};
+    cf.inverseViewProjection = glm::inverse(camera_.viewProjection());
+    cf.boardCenter = fogBank_.boardCenter;
+    cf.time = time;
+    cf.baseY = fogBank_.baseY;
+    cf.topY = fogBank_.topY;
+    cf.extinction = fogBank_.extinction;
+    cf.fadeRadius = fogBank_.fadeRadius;
+    cf.rememberedCover = fogBank_.rememberedCover;
+    cf.wind = fogBank_.wind;
+    cf.noiseScale = fogBank_.noiseScale;
+    cf.scaleHeight = fogBank_.scaleHeight;
+    cf.albedo = fogBank_.albedo;
+    cf.ambient = fogBank_.ambient;
+    cf.noise = bankNoiseIndex_;
+    cf.depth = depthIndex_;
+    cf.march = bankMarchStorage_;
+    cf.marchSampled = bankMarchSampled_;
+    cf.color = sceneColorStorageIndex_;
+    cf.frameIndex = ++bankFrameIndex_;
+    cf.halfSize = {(size_.width + 1) / 2, (size_.height + 1) / 2};
+    cf.fullSize = {size_.width, size_.height};
+    vkCmdUpdateBuffer(cmd, frame.cloudFrame.buffer, 0, sizeof(cf), &cf);
+  }
   if (shadowsThisFrame_ && meshView_) vkCmdUpdateBuffer(cmd, frame.shadowFrame.buffer, 0, sizeof(MeshFrame), shadowFrameStorage_.data());
   vkCmdFillBuffer(cmd, meshWork_.buffer, 0, kWorkHeaderBytes, 0);
   // A new instance list: last frame's verdicts belong to other instances; everything starts unknown
@@ -963,6 +1172,23 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   const uint32_t frameScope = gpuTimer_.begin(cmd, "frame");
   // This frame's cards (host-visible): read by the card shadow pass and the scene pass.
   if (hasScene_ && !sprites_.empty()) std::memcpy(frame.sprites.mapped, sprites_.data(), sprites_.size() * sizeof(SpriteInstance));
+  // --- Fog bank noise: made once, uploaded on first use --------------------------------------------------
+  if (fogBank_.enabled && !bankNoiseUploaded_) {
+    bankNoiseUploaded_ = true;
+    const std::vector<uint8_t> noise = makeBankNoise();
+    bankNoiseStaging_ = createHostBuffer(context_, noise.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    std::memcpy(bankNoiseStaging_.mapped, noise.data(), noise.size());
+    transition(cmd, bankNoise_.image, bankNoise_.aspect,
+               {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE,
+                VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT});
+    VkBufferImageCopy copy{};
+    copy.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy.imageExtent = {kBankNoiseSize, kBankNoiseSize, kBankNoiseSize};
+    vkCmdCopyBufferToImage(cmd, bankNoiseStaging_.buffer, bankNoise_.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+    transition(cmd, bankNoise_.image, bankNoise_.aspect,
+               {VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT,
+                VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
+  }
   // --- Fog of war: a new mask goes up before any pass reads it ------------------------------------------
   if (fogOn_ && fogUploadPending_) {
     fogUploadPending_ = false;
@@ -972,14 +1198,22 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       vkDeviceWaitIdle(context_.device);
       if (fogMaskIndex_ != kNoIndex) bindless_.removeSampledImage(fogMaskIndex_);
       destroyImage(context_, fogMask_);
-      fogMask_ = createImage(context_, {VK_FORMAT_R8_UNORM, extent, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT});
+      fogMask_ = createImage(context_, {VK_FORMAT_R16G16B16A16_SFLOAT, extent, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT});
       fogMaskIndex_ = bindless_.addSampledImage(fogMask_.view);
     }
-    if (frame.fogStaging.size < fog_.alpha.size()) {
+    // Per texel, half floats: darkness (the tactical mask), then the volumetric fog's boundary, ground, valley.
+    const size_t texels = fog_.alpha.size();
+    if (frame.fogStaging.size < texels * 8) {
       destroyBuffer(context_, frame.fogStaging);
-      frame.fogStaging = createHostBuffer(context_, fog_.alpha.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+      frame.fogStaging = createHostBuffer(context_, texels * 8, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     }
-    std::memcpy(frame.fogStaging.mapped, fog_.alpha.data(), fog_.alpha.size());
+    auto* half = static_cast<uint16_t*>(frame.fogStaging.mapped);
+    for (size_t i = 0; i < texels; ++i) {
+      half[i * 4 + 0] = glm::packHalf1x16(fog_.alpha[i] / 255.0f);
+      half[i * 4 + 1] = glm::packHalf1x16(fog_.boundary.empty() ? 0.0f : fog_.boundary[i]);
+      half[i * 4 + 2] = glm::packHalf1x16(fog_.ground.empty() ? 0.0f : fog_.ground[i]);
+      half[i * 4 + 3] = glm::packHalf1x16(fog_.valley.empty() ? 0.0f : fog_.valley[i]);
+    }
     transition(cmd, fogMask_.image, fogMask_.aspect,
                {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
@@ -1092,6 +1326,35 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     gpuTimer_.end(cmd, cardScope);
   }
 
+  // --- Volumetric fog: froxels lit (sun shadows, clusters and the fog mask are ready), then integrated ---------
+  if (hasScene_ && volumeThisFrame_) {
+    const uint32_t volumeScope = gpuTimer_.begin(cmd, "volume");
+    if (!volumesReady_) {
+      volumesReady_ = true;
+      for (Image* v : {&volumes_[0], &volumes_[1], &volumeIntegrated_})
+        transition(cmd, v->image, v->aspect,
+                   {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE,
+                    VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
+    }
+    // The previous frame's surfaces and passes may still read what is written now.
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                  VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                  VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
+    const VolumePush push{bufferAddress(context_, frame.meshFrame), bufferAddress(context_, frame.volumeFrame)};
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, volumeInjectPipeline_);
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+    vkCmdDispatch(cmd, (kFroxelX + 7) / 8, (kFroxelY + 7) / 8, kFroxelZ);
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                  VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, volumeIntegratePipeline_);
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+    vkCmdDispatch(cmd, (kFroxelX + 7) / 8, (kFroxelY + 7) / 8, 1);
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+                  VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
+    volumeHistoryValid_ = true;
+    gpuTimer_.end(cmd, volumeScope);
+  }
+
   if (meshes) {
     recordMeshes(frame, cmd);
     transition(cmd, sceneColor_.image, sceneColor_.aspect,
@@ -1176,10 +1439,39 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   vkCmdEndRendering(cmd);
   gpuTimer_.end(cmd, sceneScope);
 
+  // --- Fog bank (fog of war): marched at half resolution, composited over the finished scene ---------------
+  const bool bank = hasScene_ && bankThisFrame_;
+  if (bank) {
+    const uint32_t bankScope = gpuTimer_.begin(cmd, "fog bank");
+    transition(cmd, sceneColor_.image, sceneColor_.aspect,
+               {VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
+    transition(cmd, depth_.image, depth_.aspect,
+               {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+                VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
+    // Last frame's composite may still read the march result.
+    transition(cmd, bankMarch_.image, bankMarch_.aspect,
+               {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_NONE,
+                VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
+    const VolumePush push{bufferAddress(context_, frame.meshFrame), bufferAddress(context_, frame.cloudFrame)};
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, bankMarchPipeline_);
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+    vkCmdDispatch(cmd, ((size_.width + 1) / 2 + 7) / 8, ((size_.height + 1) / 2 + 7) / 8, 1);
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                  VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, bankCompositePipeline_);
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+    vkCmdDispatch(cmd, (size_.width + 7) / 8, (size_.height + 7) / 8, 1);
+    gpuTimer_.end(cmd, bankScope);
+  }
+
   // --- Tonemap pass: HDR -> display ---------------------------------------------------------
   transition(cmd, sceneColor_.image, sceneColor_.aspect,
-             {VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-              VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+             {bank ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+              bank ? VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT : VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+              bank ? VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT : VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
               VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
   // The previous frame may still be copying the output image to the window.
   transition(cmd, output_.image, output_.aspect,

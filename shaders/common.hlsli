@@ -6,6 +6,8 @@
 // The same descriptors seen as texture arrays (sprite clips: one layer per frame). Each index is
 // read only through the type it was created with.
 [[vk::binding(0, 0)]] Texture2DArray gTextureArrays[];
+// ... and as volumes (froxel grids).
+[[vk::binding(0, 0)]] Texture3D gTextures3D[];
 [[vk::binding(1, 0)]] SamplerState gSamplers[];
 // The same samplers seen as comparison samplers (shadow maps); only those created with compareEnable.
 [[vk::binding(1, 0)]] SamplerComparisonState gComparisonSamplers[];
@@ -14,6 +16,7 @@
 [[vk::binding(2, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> gStorageImagesRgba16f[];
 [[vk::binding(2, 0)]] [[vk::image_format("r32ui")]] RWTexture2D<uint> gStorageImagesR32ui[];
 [[vk::binding(2, 0)]] [[vk::image_format("r32f")]] RWTexture2D<float> gStorageImagesR32f[];
+[[vk::binding(2, 0)]] [[vk::image_format("rgba16f")]] RWTexture3D<float4> gStorageVolumes[];
 // Storage buffers, for atomics and counters (plain reads go through device addresses).
 [[vk::binding(3, 0)]] RWByteAddressBuffer gBuffers[];
 

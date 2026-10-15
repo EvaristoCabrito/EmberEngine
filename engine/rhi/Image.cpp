@@ -13,9 +13,9 @@ bool isDepthFormat(VkFormat format) {
 
 VkImageCreateInfo imageCreateInfo(VulkanContext& context, const ImageDesc& desc, uint32_t (&families)[2]) {
   VkImageCreateInfo info{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
-  info.imageType = VK_IMAGE_TYPE_2D;
+  info.imageType = desc.depth > 1 ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
   info.format = desc.format;
-  info.extent = {desc.extent.width, desc.extent.height, 1};
+  info.extent = {desc.extent.width, desc.extent.height, desc.depth};
   info.mipLevels = desc.mipLevels;
   info.arrayLayers = desc.layers;
   info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -58,7 +58,9 @@ bool tryCreateImage(VulkanContext& context, const ImageDesc& desc, Image& out) {
 
   VkImageViewCreateInfo viewInfo{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
   viewInfo.image = out.image;
-  viewInfo.viewType = desc.layers > 1 || desc.arrayView ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
+  viewInfo.viewType = desc.depth > 1                         ? VK_IMAGE_VIEW_TYPE_3D
+                      : desc.layers > 1 || desc.arrayView ? VK_IMAGE_VIEW_TYPE_2D_ARRAY
+                                                          : VK_IMAGE_VIEW_TYPE_2D;
   viewInfo.format = desc.format;
   viewInfo.subresourceRange = {out.aspect, 0, desc.mipLevels, 0, desc.layers};
   VK_CHECK(vkCreateImageView(context.device, &viewInfo, nullptr, &out.view));

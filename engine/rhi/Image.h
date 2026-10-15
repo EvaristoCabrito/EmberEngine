@@ -12,6 +12,7 @@ struct ImageDesc {
   VkImageUsageFlags usage = 0;
   uint32_t mipLevels = 1;
   uint32_t layers = 1;
+  uint32_t depth = 1;           // > 1: a 3D image (volumes: froxel grids)
   bool arrayView = false;       // 2D_ARRAY view even for one layer (shaders read it as Texture2DArray)
   bool sharedWithTransfer = false;  // written by the transfer queue, read by graphics (concurrent sharing)
   VmaPool pool = VK_NULL_HANDLE;    // allocate from this pre-made pool (no driver allocation at runtime)

@@ -68,6 +68,8 @@ struct MapStageOptions {
   // Fog of war: -1 = as the map says, 0 off, 1 on. scout: the walk above.
   int fog = -1;
   bool scout = false;
+  // Volumetric fog (R7's literal fog, shaders/volume.hlsl): on unless switched off (--volume 0).
+  bool volume = true;
   // Scene clock pinned to this many seconds (< 0 = real time): identical frames for paired captures.
   float sceneTime = -1.0f;
 };
@@ -107,11 +109,13 @@ class MapStage final : public Stage {
     for (const e2::Cell& c : board_->cells()) avgY += c.groundY;
     avgY /= static_cast<double>(board_->cells().size());
     target_ = {static_cast<float>((b.x0 + b.x1) / 2), static_cast<float>(avgY), static_cast<float>((b.z0 + b.z1) / 2)};
+    meanGround_ = static_cast<float>(avgY);
     boardWidth_ = static_cast<float>(b.x1 - b.x0);
     boardDepth_ = static_cast<float>(b.z1 - b.z0);
     // The sun's shadow covers the board's bounding sphere (ground from y = 0 to its highest cell).
     double top = 0;
     for (const e2::Cell& c : board_->cells()) top = std::max(top, c.groundY);
+    boardTop_ = static_cast<float>(top);
     boardCenter_ = {target_.x, static_cast<float>(top * 0.5), target_.z};
     boardRadius_ = 0.5f * std::sqrt(boardWidth_ * boardWidth_ + boardDepth_ * boardDepth_ + static_cast<float>(top * top)) + 1.0f;
     target_.x += options.offset.x * boardWidth_;
@@ -183,6 +187,19 @@ class MapStage final : public Stage {
     renderer.setSunShadowBounds(boardCenter_, boardRadius_);
     renderer.setLightingLayers(layers_);
     renderer.setFogOfWar(fogReady_ ? &fogMask_ : nullptr, maskVersion_);
+    Renderer::VolumetricFog volume;
+    volume.enabled = options_.volume;
+    volume.meanGround = meanGround_;
+    // The froxel fog is the air's haze in sight; the fog of war's bank is drawn by the fog bank pass.
+    volume.boundaryDensity = 0.0f;
+    renderer.setVolumetricFog(volume);
+    Renderer::FogBank bank;
+    bank.enabled = fog_.has_value() && options_.volume;
+    bank.boardCenter = {boardCenter_.x, boardCenter_.z};
+    bank.baseY = meanGround_ - 1.0f;
+    bank.topY = boardTop_ + 3.0f;
+    bank.fadeRadius = boardRadius_ * 2.2f;
+    renderer.setFogBank(bank);
     renderer.waitFor(uploads_.timeline(),
                      std::max({ground_.uploadWaitValue(), sprites_.uploadWaitValue(), meshes_.uploadWaitValue()}));
     if (ground_.ready() && sceneReady() && (!fog_ || fogReady_)) ++readyFrames_;
@@ -697,6 +714,7 @@ class MapStage final : public Stage {
   int hero_ = -1;
   glm::vec3 heroAt_{0.0f};
   e2::HexPoint heroHex_;
+  float meanGround_ = 0.0f, boardTop_ = 0.0f;
   std::array<int, 3> fogCounts_{};
   uint32_t hiddenUnits_ = 0;
   double lastFogMs_ = 0.0;

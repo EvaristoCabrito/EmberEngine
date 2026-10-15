@@ -121,6 +121,40 @@ class Renderer {
   // bypasses it: never seen = black and casts nothing, remembered = darkened without local light, in
   // sight = full lighting. Uploaded when `version` changes; null = no fog of war.
   void setFogOfWar(const e2::FogMask* mask, uint64_t version);
+  // Volumetric fog (R7's literal fog: how the visible air looks, never what may be seen; shaders/volume.hlsl).
+  // Defaults are a first look, to be tuned against the vision.
+  struct VolumetricFog {
+    bool enabled = false;
+    glm::vec3 wind{0.25f, 0.02f, 0.12f};      // drift, world units per second
+    glm::vec3 albedo{0.90f, 0.93f, 0.97f};    // scattering / extinction (slightly cool)
+    float density = 0.035f;                   // extinction per world unit at the ground
+    float scaleHeight = 1.5f;                 // falls by e over this height above the ground
+    float valley = 0.6f;                      // extra density per unit the ground lies below its surroundings
+    float boundaryDensity = 0.6f;             // the dense fog along the edge of never-seen ground
+    float boundaryHeight = 2.5f;
+    float noiseScale = 0.3f;
+    float anisotropy = 0.35f;                 // Henyey-Greenstein g (forward scattering: shafts towards the sun)
+    float historyWeight = 0.9f;               // temporal smoothing
+    float nearDepth = 1.0f, farDepth = 200.0f;  // froxel slices span these view depths
+    float meanGround = 0.0f;                  // ground height where the board has none
+  };
+  void setVolumetricFog(const VolumetricFog& fog) { volumetric_ = fog; }
+  // The fog of war's fog (R7; shaders/cloud.hlsl): soft volumetric fog, densest over never-seen ground,
+  // thinner over remembered ground, none in sight. Drawn only while a fog-of-war mask is set.
+  struct FogBank {
+    bool enabled = false;
+    glm::vec2 boardCenter{0.0f};
+    float baseY = 0.0f, topY = 5.0f;       // the slab the fog fills (it thins to nothing below topY)
+    float extinction = 0.75f;              // per world unit at full density (black still shows through)
+    float scaleHeight = 1.1f;              // density falls by e over this height above the ground
+    float fadeRadius = 60.0f;              // thins into the dark this far from the board's centre
+    float rememberedCover = 0.3f;          // density over remembered ground, relative to never-seen
+    glm::vec3 wind{0.35f, 0.0f, 0.15f};    // drift, world units per second
+    float noiseScale = 0.06f;              // variation frequency per world unit
+    glm::vec3 albedo{0.5f, 0.52f, 0.56f};  // grey, faintly cool
+    float ambient = 0.8f;
+  };
+  void setFogBank(const FogBank& bank) { fogBank_ = bank; }
   // Half the side of the square ground plane under the scene (metres, centred on the origin).
   void setGroundExtent(float halfExtent) { groundHalfExtent_ = halfExtent; }
 
@@ -143,6 +177,8 @@ class Renderer {
     Buffer lights;        // this frame's LocalLight[] (host-visible)
     Buffer meshCounters;  // the work buffer's counters, copied back for meshStats()
     Buffer fogStaging;    // the fog mask's texels on their way to fogMask_ (host-visible, grown on demand)
+    Buffer volumeFrame;   // VolumeFrame for the volumetric fog passes (device-local)
+    Buffer cloudFrame;    // CloudFrame for the fog bank passes (device-local)
     bool countersPending = false;
   };
 
@@ -189,7 +225,24 @@ class Renderer {
   uint32_t cardShadowMapIndex_ = kNoIndex;
   bool cardShadowsThisFrame_ = false;
   uint64_t shadowMeshKey_ = 0;
-  alignas(16) std::array<std::byte, 640> shadowFrameStorage_{};
+  alignas(16) std::array<std::byte, 656> shadowFrameStorage_{};
+  // Volumetric fog: two froxel volumes (this frame's and last frame's, swapped), the integrated one.
+  VolumetricFog volumetric_;
+  Image volumes_[2], volumeIntegrated_;
+  uint32_t volumeStorage_[2] = {kNoIndex, kNoIndex}, volumeSampled_[2] = {kNoIndex, kNoIndex};
+  uint32_t volumeIntegratedStorage_ = kNoIndex, volumeIntegratedSampled_ = kNoIndex;
+  VkPipeline volumeInjectPipeline_ = VK_NULL_HANDLE, volumeIntegratePipeline_ = VK_NULL_HANDLE;
+  uint32_t volumeCurrent_ = 0, volumeFrameIndex_ = 0;
+  bool volumesReady_ = false, volumeThisFrame_ = false, volumeHistoryValid_ = false;
+  glm::mat4 previousVolumeViewProjection_{1.0f};
+  // Fog bank: the tiling noise volume (made once), the half-resolution march result.
+  FogBank fogBank_;
+  Image bankNoise_, bankMarch_;
+  Buffer bankNoiseStaging_;
+  uint32_t bankNoiseIndex_ = kNoIndex, bankMarchStorage_ = kNoIndex, bankMarchSampled_ = kNoIndex;
+  VkPipeline bankMarchPipeline_ = VK_NULL_HANDLE, bankCompositePipeline_ = VK_NULL_HANDLE;
+  bool bankNoiseUploaded_ = false, bankThisFrame_ = false;
+  uint32_t bankFrameIndex_ = 0;
   // Fog of war: the CPU copy of the mask (also used to dim local lights by their source's sight), its image.
   bool fogOn_ = false, fogUploadPending_ = false;
   e2::FogMask fog_;
