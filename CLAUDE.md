@@ -102,13 +102,17 @@ build.bat release          # or debug; output in build/<config>/bin
 - `engine/rhi`: VulkanContext (requires VK_EXT_mesh_shader, samplerFilterMinmax), Bindless (sampled/storage
   images, samplers, **storage buffers** for atomics; push constants reach task/mesh), Image (+createDeviceBuffer),
   Pipeline (graphics incl. task/mesh, compute), Swapchain, GpuTimer, UploadQueue (images **and buffers**).
-- `engine/render`: Renderer (frame constants → light clusters → sun shadow (cached: ground + meshes) → card
-  shadow (per frame) → mesh passes → ground → water → cards → tonemap → UI), Camera, SpriteFormat/SpriteDraw
+- `engine/render`: Renderer (frame constants → light clusters → **atmosphere tables + SH ambient** → sun shadow
+  (cached: ground + meshes) → card shadow (per frame) → froxel haze → mesh passes (sky behind them in resolve) →
+  ground → water → cards → **fog-of-war mist (FogLooks)** → tonemap → UI), **Atmosphere.h** (Hillaire constants,
+  CPU sun transmittance), **FogLooks** (numbered mist looks), Camera, SpriteFormat/SpriteDraw
   (80-byte cards: own axis, unit depth pull, flame glow, lit flag, casts flag)/SpriteSystem (M2), MeshFormat,
   TextureFormat, MeshGpu, MeshScene, **BoardGround** (both ground looks + water on the GPU, map palette of
   baked layers), DebugUi.
 - `engine/world` (D1 port): **Noise/Hex/Board/GroundMesh** (Engine2's board and ground, bit-exact),
-  **GroundAssets** (ground texture names), **SceneData** (imported scene: cards, models, units, lights).
+  **GroundAssets** (ground texture names), **SceneData** (imported scene: cards, models, units, lights, the map's
+  lighting sliders + mist type), **FogOfWar** (sight, mask; R7), **TimeOfDay.h** (Engine2's time-of-day data:
+  battleLight + stage presets + moon pose).
 - `tools`: PakWriter, SpriteSource, SpriteCooker, TextureCooker, MeshCooker, **GroundCooker** + **Engine2Textures**
   (Engine2's procedural ground, byte-identical), **GroundCheck**, `tools/scripts/compare_meshes.py`,
   `tools/scripts/engine2/*` (exporters + importer above).
@@ -120,7 +124,9 @@ build.bat release          # or debug; output in build/<config>/bin
   `resolve.hlsl` (barycentrics + PBR), **`lighting.hlsli` = the lighting contract** (Surface + shade(): sun with
   two shadow maps, clustered local lights, indirect hooks (hemisphere today), visibility hook (R7, returns 1),
   layer switches), `terrain.hlsl` (Engine2's ground material), `water.hlsl`, `sprites.hlsl` (lit cards, card
-  shadows), `lights.hlsl` (cluster build), `tonemap.hlsl` (three.js's ACES fit, like the prototype).
+  shadows), `lights.hlsl` (cluster build), `tonemap.hlsl` (three.js's ACES fit, like the prototype),
+  **`atmosphere.hlsl(i)`** (sky tables, SH ambient, sky background), `volume.hlsl` (froxel haze),
+  **`fog_lookNNN.hlsl`** (frozen mist looks).
 - Vulkan gotcha found: fragment shaders may not bind a writable storage buffer here (no
   fragmentStoresAndAtomics): read GPU-written lists through device addresses (`vk::RawBufferLoad`).
 - DXC gotchas found: `clip` and `triangle` are reserved names; per-primitive PS inputs need
@@ -164,24 +170,39 @@ build.bat release          # or debug; output in build/<config>/bin
   - **Fog of war mist (R7's literal fog): 7 saved looks** (`looks/fog/README.md`, F9 / `--fog-look N`, tags
     `fog-look-NNN`, pushed). The user kept 003 (default); 004-007 not yet judged; 006 = Engine2's mist4 from the
     user's reference. Cost at full clock: look 003 3.9 ms avg GPU (frame 8.8 ms median, 11.0 worst with fog +
-    scout). Froxel haze (`volume.hlsl`) is on with the mist; it has an unexplained vertical streak.
-- **Not done (hooks only or missing):** the user's choice among the fog looks; walls not imported (block no
-  sight); indirect
-  light is the hemisphere (no probes / GI); no sky, fog, bloom, tilt-shift; local lights cast no shadows; cards
+    scout). Froxel haze (`volume.hlsl`) is on only in lighting mode 0 (it has an unexplained vertical streak).
+    The user keeps every look as a library (different scenarios, different fog); none get deleted.
+  - **Sky + atmosphere (ARCHITECTURE §7.5, `de72f3c`), built, first look only:** Hillaire 2020 tables rebuilt
+    every frame, SH sky ambient (scaled to the map's ambient slider), sky behind the board (sun disc, stars),
+    aerial perspective (0.025 km per world unit). Lighting modes (F10, `--lighting N`): 0 old prototype day
+    (+ froxel haze: reproduces every saved capture), 1 Engine2's 3D presets for the map's time of day (floor),
+    2 physical (default): time of day places the sun/moon, the map's sliders set the strengths (Engine2's 3D
+    never applied them: the user had suspected it), the air colours the light; indoor maps keep the hemisphere.
+    Captures: `captures/sky/*.png` (aldeia015 is **dusk**).
+- **Not done (hooks only or missing):** walls not imported (block no sight); the sky step's open items
+  (see Next 1); bloom; depth of field / tilt-shift; local lights cast no shadows; cards
   do not receive card shadows; walls/doors (architecture), floor waypoints, stand-on-log heights, the third
   board look (tabletop tiles, R8) not ported; unit animation is the idle only; no spell VFX; the ground material
   costs 4.1 ms at full clock on photo-layer maps (profile it before optimising).
 
 ## Next
 
-1. The user judges the fog looks live and deletes the ones they don't want; then the chosen look's cost
-   (3.9 ms today: the biggest pass after the ground) and the froxel haze streak.
-2. Profile and cut the ground material cost (photo layers + two 16-tap shadow lookups; 3.7 ms avg, 5.1 worst).
-3. Sky + aerial perspective (Hillaire 2020) feeding indirectDiffuse/Specular; bloom; tilt-shift; then compare
-   side by side with the prototype's colour (the floor).
-4. Tabletop tiles look (R8 third look, `diorama.html` buildHexTerrain(true)); walls/doors.
-5. Spell VFX on the GPU (one Engine2 spell end to end, no stutter), unit poses beyond idle.
-Then D1 is shown to the user (§9).
+The user asked for all three of the sky step (2026-10-15): real sky outdoors (black indoors), physical light
+colour with Engine2's presets as the floor, real depth of field for the tilt-shift look (Engine2's screen band
+kept as a switchable look). Continue in this order:
+1. **Finish the sky step:** (a) the user decides dusk/dawn warmth: physics at Engine2's 15 deg dusk sun gives
+   #ffdfb4, Engine2 painted #ffb47e (= a sun ~5 deg up), so physical dusk is paler than the floor; (b) the
+   moon disc at night (Engine2's moon-phase icons, `public/game/ui/moon`, moon.ts pose; currently only the moon
+   light) and a night map exported to test (e.g. cemiterio-esquecidos003: brightNight, fog, the user's mist4
+   reference); (c) debug validation + cost of the atmosphere passes; (d) the night sky's look (skyScale 0.04).
+2. **Bloom** (Jimenez 2014: 13-tap downsample, Karis average, tent upsample, energy-conserving mix; the map's
+   bloomIntensity slider; Engine2's threshold-2.0 look kept switchable).
+3. **Depth of field** focused on the board (circle of confusion from depth, gather at half resolution, cards'
+   soft edges handled; Engine2's screen-band tilt-shift as a switchable look; T toggles as in Engine2).
+4. Side-by-side with Engine2's prototype colour (the floor) in every time of day.
+5. Tabletop tiles look (R8); walls/doors (they will also block sight). Spell VFX; unit poses. Then D1 (§9).
+Skipped until final assets exist (user, 2026-10-15): the ground material's cost (3.7 ms avg; the shadow taps
+and the smooth ground's tiny triangles are engine-side and can be done later).
 
 ## Waiting on the user
 
