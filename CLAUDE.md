@@ -45,6 +45,10 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   World density: the Ember maps are a floor ("bare naked and started stuttering"); M3 tests 10× their density.
 - **Progress gates are the user's three demonstrations** (§9): D1 lit sprites in a spatial world, D2 complete
   environmental scene, D3 cinematic stress scene. Engineering tests are foundation, not visual progress.
+- **Never throw visual work away (user, 2026-10-14: "everything always degrades the more you try").** Every
+  look is saved in a numbered series (fog: `looks/fog/README.md`, `shaders/fog_lookNNN.hlsl`, tag
+  `fog-look-NNN`), switchable live, and kept until the user deletes it after seeing it. A change is a new
+  look; never edit or overwrite a saved one. Commit before trying the next idea.
 - Fold mid-turn messages into the work. Never touch `C:\emberashes03D-main`. `C:\Engine2` is read-only.
 - **Measure before fixing.** Guesses get measured and reverted if wrong (thread priorities; the occlusion
   "fix" for the 15.8/5.6 ms alternation, which was really GPU power saving).
