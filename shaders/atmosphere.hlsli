@@ -123,24 +123,80 @@ float3 skyRadiance(AtmosphereFrame a, float3 dir) {
   return gTextures[NonUniformResourceIndex(a.skyView)].SampleLevel(gSamplers[a.linearSampler], skyViewUv(a, viewZenith, azimuthCos), 0).rgb;
 }
 
-// What shows where nothing was drawn: the sky (outdoors), a small sun disc, and stars once the sun is down.
+// The view direction through a pixel (centre at +0.5).
+float3 skyDirection(MeshFrame f, AtmosphereFrame a, float2 pixel) {
+  const float2 uv = pixel / f.screenSize;
+  const float4 h = mul(float4(uv * 2.0 - 1.0, 1.0, 1.0), a.inverseViewProjection);
+  return normalize(h.xyz / h.w - f.cameraPosition);
+}
+
+// The star field's saved looks (looks/stars/README.md; never edited, a change is a new look): the stars' radiance
+// in `dir` before the air's transmittance. `pixelAngle`: one pixel's width (radians).
+float starHash(float3 cell) { return frac(sin(dot(cell, float3(12.9898, 78.233, 37.719))) * 43758.5453); }
+float3 starField(uint look, float3 dir, float pixelAngle) {
+  if (look == 1) {  // 001 (de72f3c): one star in 0.25% of the cells of a 300-per-unit grid, each a whole cell (squares)
+    const float n = starHash(floor(dir * 300.0));
+    return n > 0.9975 ? (n - 0.9975) * 400.0 : 0.0;
+  }
+  if (look == 2) {  // 002: the same stars as points about a pixel wide at a random spot in their cells
+    const float3 cell = floor(dir * 300.0);
+    const float n = starHash(cell);
+    if (n <= 0.9975) return 0.0;
+    const float3 jitter = frac(sin(cell.yzx * float3(91.17, 47.53, 13.71) + n * 113.0) * 24634.6345);
+    const float d = length(dir - normalize((cell + 0.2 + 0.6 * jitter) / 300.0)) / max(pixelAngle, 1e-5);
+    return (n - 0.9975) * 1200.0 * exp(-d * d * 1.5);
+  }
+  // 003: dense (2% of a 400-per-unit grid, ~15x 002), brightness spread like a real sky (most faint, a few bright)
+  // and colour from blue-white to orange; points about a pixel wide.
+  const float3 cell = floor(dir * 400.0);
+  const float n = starHash(cell);
+  if (n <= 0.98) return 0.0;
+  const float r = (n - 0.98) / 0.02;
+  const float3 jitter = frac(sin(cell.yzx * float3(91.17, 47.53, 13.71) + n * 113.0) * 24634.6345);
+  const float d = length(dir - normalize((cell + 0.2 + 0.6 * jitter) / 400.0)) / max(pixelAngle, 1e-5);
+  const float t = frac(jitter.x * 7.31 + jitter.z * 3.17);
+  const float3 tint = t < 0.5 ? lerp(float3(0.75, 0.85, 1.15), 1.0, t * 2.0) : lerp(1.0, float3(1.15, 0.9, 0.7), t * 2.0 - 1.0);
+  return tint * (0.12 + 3.5 * pow(r, 5.0)) * exp(-d * d * 1.5);
+}
+
+// The moon's disc over `radiance`: tonight's phase art (Engine2's icons: the disc fills 80% of the image), upright
+// in the sky, its brightness the art x glow, seen through the air (`air`: transmittance towards it). `pixelAngle`:
+// one pixel's width (radians). Takes the moon's fields one by one: with the AtmosphereFrame passed by value, DXC
+// (Vulkan SDK 1.4.363.0) read moonTexture wrong inside the function (2026-10-15, found with raw buffer probes).
+float3 moonDisc(float3 dir, float pixelAngle, float3 radiance, float3 moonDirection, uint moonTexture, float tanRadius,
+                float glow, uint linearSampler, float3 air) {
+  const float c = dot(dir, moonDirection);
+  if (moonTexture == kNoTexture || c <= 0.0) return radiance;
+  const float3 right = normalize(cross(moonDirection, float3(0.0, 1.0, 0.0)));
+  const float3 up = cross(right, moonDirection);
+  const float2 p = float2(dot(dir, right), dot(dir, up)) / (c * tanRadius);  // +-1 on the disc's edge
+  if (any(abs(p) > 1.25)) return radiance;
+  uint width, height;
+  gTextures[NonUniformResourceIndex(moonTexture)].GetDimensions(width, height);
+  const float lod = log2(max(pixelAngle * 0.4 * float(width) / tanRadius, 1e-4));
+  const float4 art = gTextures[NonUniformResourceIndex(moonTexture)].SampleLevel(gSamplers[linearSampler],
+                                                                                 0.5 + float2(p.x, -p.y) * 0.4, max(lod, 0.0));
+  return lerp(radiance, art.rgb * glow * air, art.a);
+}
+
+// What shows where nothing was drawn: the sky (outdoors), the sun's small disc by day, stars at night (or once the
+// sun is down) and the moon's disc.
 float3 skyBackground(MeshFrame f, uint2 pixel) {
   const AtmosphereFrame a = loadAtmosphere(f);
-  const float2 uv = (float2(pixel) + 0.5) / f.screenSize;
-  const float4 h = mul(float4(uv * 2.0 - 1.0, 1.0, 1.0), a.inverseViewProjection);
-  const float3 dir = normalize(h.xyz / h.w - f.cameraPosition);
+  const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);
   float3 radiance = skyRadiance(a, dir) * a.skyScale;
   if (dir.y > 0.0) {
     // The sun's disc (0.53 degrees across), seen through the air.
     const float c = dot(dir, a.sunDirection);
-    if (c > 0.99998918 && a.sunDirection.y > -0.02)
+    if (a.sunDisc != 0 && c > 0.99998918 && a.sunDirection.y > -0.02)
       radiance += a.sunIlluminance * transmittanceToTop(a, a.viewHeight, dir.y) * 20.0;
-    // Stars: a sparse field fixed to the sky, fading in as the sun goes down.
-    const float night = 1.0 - smoothstep(-0.12, 0.02, a.sunDirection.y);
-    if (night > 0.0) {
-      const float3 cell = floor(dir * 300.0);
-      const float n = frac(sin(dot(cell, float3(12.9898, 78.233, 37.719))) * 43758.5453);
-      if (n > 0.9975) radiance += (n - 0.9975) * 400.0 * night * transmittanceToTop(a, a.viewHeight, dir.y);
+    const float pixelAngle = length(skyDirection(f, a, float2(pixel) + float2(1.5, 0.5)) - dir);
+    // Stars, fixed to the sky: at night, or fading in as the sun goes down (the saved look in starLook).
+    const float night = max(a.stars, a.sunDisc != 0 ? 1.0 - smoothstep(-0.12, 0.02, a.sunDirection.y) : 0.0);
+    if (night > 0.0) radiance += starField(a.starLook, dir, pixelAngle) * night * transmittanceToTop(a, a.viewHeight, dir.y);
+    if (a.moonTexture != kNoTexture) {
+      radiance = moonDisc(dir, pixelAngle, radiance, a.moonDirection, a.moonTexture, a.moonTanRadius, a.moonGlow, a.linearSampler,
+                          transmittanceToTop(a, a.viewHeight, dir.y));
     }
   }
   return radiance * f.exposure;

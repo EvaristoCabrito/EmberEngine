@@ -27,8 +27,11 @@
 //        Fog of war (R7): [--fog 0|1] (default: the map's own flag) [--scout] (the first party unit walks to the
 //        farthest enemy and back). Pixel checks: [--scene-time T] (scene clock pinned) [--no-ui] [--debug-view 3]
 //        (the fog mask each surface read), then tools/scripts/check_fog.py. [--volume 0]: no volumetric fog;
-//        [--fog-look N]: which saved fog look (render/FogLooks.h; F9 cycles them in a window).
-//        [--lighting 0|1|2]: old prototype day / Engine2's presets / physical atmosphere (default; F10 cycles).
+//        [--fog-look N]: which saved fog look (render/FogLooks.h; in a window, the Map panel's dropdown).
+//        [--lighting 0|1|2]: old prototype day / Engine2's presets / physical atmosphere (default; also in the panel).
+//        Night maps: [--moon-phase NAME] (Engine2's moonPhase.ts: new .. waningCrescent, blood) [--moon-path 0|1|2]
+//        (where the disc and its light stand: MapStage.h moonPlacement) [--star-look N] (looks/stars). In a window
+//        every setting is a dropdown / checkbox in the Map panel (no keyboard shortcuts).
 //   Sandbox.exe --meshes meshes.pak [--grid N]
 //        Mesh scene (M3 bring-up): every cooked mesh in the archive on an N x N grid, drawn GPU-driven.
 //   Sandbox.exe --sprites roster.pak [--budget MB]
@@ -100,6 +103,9 @@ struct Options {
   int fogLook = 3;
   int lighting = 2;
   float sceneTime = -1.0f;
+  std::string moonPhase;
+  int moonPath = 0;
+  int starLook = 3;
   uint32_t debugView = 0;
   std::string scene;
   std::string map, ground, look = "smooth", boardData = "content/engine2/board.json", engine2 = "C:/Engine2/public";
@@ -150,6 +156,9 @@ Options parse(int argc, char** argv) {
     else if (arg == "--fog-look" && hasValue) o.fogLook = std::atoi(argv[++i]);
     else if (arg == "--lighting" && hasValue) o.lighting = std::atoi(argv[++i]);
     else if (arg == "--scene-time" && hasValue) o.sceneTime = static_cast<float>(std::atof(argv[++i]));
+    else if (arg == "--moon-phase" && hasValue) o.moonPhase = argv[++i];
+    else if (arg == "--moon-path" && hasValue) o.moonPath = std::atoi(argv[++i]);
+    else if (arg == "--star-look" && hasValue) o.starLook = std::atoi(argv[++i]);
     else if (arg == "--debug-view" && hasValue) o.debugView = static_cast<uint32_t>(std::atoi(argv[++i]));
     else if (arg == "--no-ui") o.noUi = true;
     else if (arg == "--layers" && hasValue) o.lightingLayers = static_cast<uint32_t>(std::strtoul(argv[++i], nullptr, 0));
@@ -402,6 +411,9 @@ std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Rende
     m.fogLook = o.fogLook;
     m.lighting = o.lighting;
     m.sceneTime = o.sceneTime;
+    m.moonPhase = o.moonPhase;
+    m.moonPath = o.moonPath;
+    m.starLook = o.starLook;
     renderer.setDebugView(o.debugView);
     return std::make_unique<MapStage>(context, renderer, assets, jobs, m);
   }

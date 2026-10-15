@@ -197,6 +197,14 @@ struct AtmosphereFrame {
   uint64_t ambient;           // SH9 irradiance (9 x float4), written by CSAmbient
   uint linearSampler;
   float skyScale;             // the sky behind the board: brightness relative to the lit air (dark at night)
+  float3 moonDirection;       // the moon's disc (its phase art) in the sky, towards it
+  uint moonTexture;           // the phase art (sRGB, alpha); kNoTextureIndex = no disc
+  float moonTanRadius;        // tan of the disc's angular radius
+  float moonGlow;             // the disc's radiance: the art x this (before exposure)
+  float stars;                // star field strength (1 at night)
+  uint sunDisc;               // 1: the key light is the sun (its small disc is drawn; stars come out as it sets)
+  uint starLook;              // the star field's saved look (looks/stars/README.md)
+  uint pad0;
 };
 
 AtmosphereFrame loadAtmosphere(MeshFrame f) { return vk::RawBufferLoad<AtmosphereFrame>(f.atmosphere); }

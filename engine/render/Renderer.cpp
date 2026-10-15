@@ -443,6 +443,7 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   cullTraversePipeline_ = createComputePipeline(context, layout, "cull.CSTraverse");
   cullPrepareDrawPipeline_ = createComputePipeline(context, layout, "cull.CSPrepareDraw");
   resolvePipeline_ = createComputePipeline(context, layout, "resolve.CSResolve");
+  skyPipeline_ = createComputePipeline(context, layout, "resolve.CSSky");
   lightsPipeline_ = createComputePipeline(context, layout, "lights.CSClusters");
   volumeInjectPipeline_ = createComputePipeline(context, layout, "volume.CSInject");
   {
@@ -546,7 +547,7 @@ Renderer::~Renderer() {
   vkDestroySampler(context_.device, shadowSampler_, nullptr);
   vkDestroyPipeline(context_.device, spritePipeline_, nullptr);
   for (VkPipeline p : {cullInstancesPipeline_, cullInstancesLatePipeline_, hizPipeline_, cullPreparePipeline_,
-                       cullTraversePipeline_, cullPrepareDrawPipeline_, meshletPipeline_, resolvePipeline_})
+                       cullTraversePipeline_, cullPrepareDrawPipeline_, meshletPipeline_, resolvePipeline_, skyPipeline_})
     vkDestroyPipeline(context_.device, p, nullptr);
   vkDestroySampler(context_.device, minSampler_, nullptr);
   bindless_.removeStorageBuffer(instanceVisibilityIndex_);
@@ -829,6 +830,13 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
     a.sunIlluminance = lighting_.skyIlluminance;
     a.kmPerUnit = lighting_.kmPerUnit;
     a.skyScale = lighting_.skyScale;
+    a.sunDisc = lighting_.sunDisc ? 1u : 0u;
+    a.stars = lighting_.stars;
+    a.starLook = lighting_.starLook;
+    a.moonDirection = glm::normalize(lighting_.moonDirection);
+    a.moonTexture = lighting_.moonRadius > 0.0f ? lighting_.moonTexture : 0xFFFFFFFFu;
+    a.moonTanRadius = std::tan(lighting_.moonRadius);
+    a.moonGlow = lighting_.moonGlow;
     const glm::vec3 sky = lighting_.skyColor;
     a.ambientTarget = lighting_.ambientIntensity * lighting_.exposure * (0.2126f * sky.r + 0.7152f * sky.g + 0.0722f * sky.b);
     a.transmittance = atmoSampled_[0], a.transmittanceStorage = atmoStorage_[0];
@@ -1384,6 +1392,28 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
                {VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
                 VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                 VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT});
+  } else if (hasScene_ && atmoThisFrame_) {
+    // --- No 3D meshes, so no resolve: the sky alone, then the ground and cards over it -------------------------
+    // The previous frame may still be sampling scene colour in its tonemap pass.
+    transition(cmd, sceneColor_.image, sceneColor_.aspect,
+               {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_NONE,
+                VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
+    const uint32_t skyScope = gpuTimer_.begin(cmd, "sky");
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, skyPipeline_);
+    const ResolvePush skyPush{bufferAddress(context_, frame.meshFrame), visibilityIndex_, sceneColorStorageIndex_, kClearColor};
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(skyPush), &skyPush);
+    vkCmdDispatch(cmd, (size_.width + 7) / 8, (size_.height + 7) / 8, 1);
+    gpuTimer_.end(cmd, skyScope);
+    transition(cmd, sceneColor_.image, sceneColor_.aspect,
+               {VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT});
+    transition(cmd, depth_.image, depth_.aspect,
+               {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT});
   } else {
     // --- Scene pass: HDR colour + reversed-Z depth --------------------------------------------
     // The previous frame may still be sampling scene colour in its tonemap pass.
@@ -1402,7 +1432,8 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   VkRenderingAttachmentInfo color{VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
   color.imageView = sceneColor_.view;
   color.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-  color.loadOp = meshes ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR;  // keep the resolved 3D
+  const bool skyAlone = !meshes && hasScene_ && atmoThisFrame_;
+  color.loadOp = meshes || skyAlone ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR;  // keep the resolved 3D / sky
   color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
   const glm::vec4 background = fogOn_ ? kNeverSeenColor : kClearColor;
   color.clearValue.color = {{background.r, background.g, background.b, background.a}};

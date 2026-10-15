@@ -10,7 +10,7 @@
 
 namespace ember {
 
-// Matches AtmosphereFrame in shaders/scene.hlsli. 240 bytes.
+// Matches AtmosphereFrame in shaders/scene.hlsli. 280 bytes.
 struct AtmosphereFrame {
   glm::mat4 inverseViewProjection{1.0f};
   glm::vec3 rayleighScattering{5.802e-3f, 13.558e-3f, 33.1e-3f};
@@ -36,8 +36,16 @@ struct AtmosphereFrame {
   uint64_t ambient = 0;
   uint32_t linearSampler = 0;
   float skyScale = 1.0f;
+  glm::vec3 moonDirection{0.0f, 1.0f, 0.0f};
+  uint32_t moonTexture = 0xFFFFFFFFu;  // kNoTextureIndex: no disc
+  float moonTanRadius = 0.0f;
+  float moonGlow = 0.0f;
+  float stars = 0.0f;
+  uint32_t sunDisc = 1;
+  uint32_t starLook = 3;
+  uint32_t pad0 = 0;
 };
-static_assert(sizeof(AtmosphereFrame) == 240);
+static_assert(sizeof(AtmosphereFrame) == 280);
 
 // The air's transmittance from the ground to its top towards `direction` (world, +y up), on the CPU (the same
 // integral as CSTransmittance): the colour the sun or moon arrives with.

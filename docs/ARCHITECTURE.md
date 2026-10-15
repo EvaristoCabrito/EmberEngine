@@ -564,6 +564,18 @@ where real air shows no haze at all. Visible aerial perspective therefore needs 
 renderer's metres per world unit for the atmosphere only), the way Engine2 used its black distance fog.
 
 **Decisions taken with the user before building:** listed in the reply that proposed this section (2026-10-15).
+**Dusk and dawn warmth (user, 2026-10-15): physical.** The air colours the sun at Engine2's heights (dusk 15 deg
+gives #ffdfb4, paler than Engine2's painted #ffb47e, which is what a sun ~5 deg up looks like). A warmer dusk is
+made by lowering the sun (longer shadows), never by painting the colour: `--sun AZ EL` today, a per-map sun height
+in the editor (M6).
+
+**Night (built 2026-10-15).** The key light is the moon: Engine2's phase art on a disc in the sky (Engine2's
+apparent size from its normal view, ~2.7 deg radius; GLOW 2.3; the air's transmittance), crossing the sky in
+600 s, strength and the blood moon's red cast from moonPhase.ts; stars come out (numbered looks,
+`looks/stars/`). Engine2 drew the disc ahead of the view but lit the board from the mirrored side (light from the
+disc lit only the backs of units); in a real sky both cannot hold and the orbit camera never looks above ~13 deg,
+so three placements are kept until the user picks: Engine2's (disc and light disagree), disc on the light behind
+the view (never seen), disc on the light ahead and low (seen; long shadows; units backlit).
 
 ## 8. Gameplay and tools
 

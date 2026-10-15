@@ -270,6 +270,11 @@ void BoardGround::update() {
   if (recordQueued_ && uploads_.finished(recordUpload_)) uploadWaitValue_ = std::max(uploadWaitValue_, recordUpload_.signalValue);
 }
 
+uint32_t BoardGround::textureIndex(const std::string& asset) const {
+  const auto it = textures_.find(asset);
+  return it != textures_.end() && it->second->index != UINT32_MAX ? it->second->index : kNoTextureIndex;
+}
+
 bool BoardGround::ready() const {
   if (!recordQueued_ || !uploads_.finished(recordUpload_)) return false;
   for (const Mesh& m : meshes_) {

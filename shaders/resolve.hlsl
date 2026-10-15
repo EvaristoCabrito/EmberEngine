@@ -139,3 +139,12 @@ void CSResolve(uint2 pixel : SV_DispatchThreadID) {
   surface.sightAt = instanceAnchor(inst);  // a piece takes the fog of war of where it stands, whole (like a card)
   color[pixel] = float4(shade(f, surface), 1.0);
 }
+
+// A frame without 3D meshes (no resolve): the sky alone behind the ground and cards, when the atmosphere is on.
+[numthreads(8, 8, 1)]
+void CSSky(uint2 pixel : SV_DispatchThreadID) {
+  const MeshFrame f = loadFrame(push.frame);
+  if (any(pixel >= uint2(f.screenSize))) return;
+  RWTexture2D<float4> color = gStorageImagesRgba16f[NonUniformResourceIndex(push.colorImage)];
+  color[pixel] = f.debugView != 0 ? float4(0.0, 0.0, 0.0, 1.0) : float4(skyBackground(f, pixel), 1.0);
+}

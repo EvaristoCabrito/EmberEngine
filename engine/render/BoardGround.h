@@ -72,6 +72,9 @@ class BoardGround {
   // Once per frame: streaming.
   void update();
   bool ready() const;
+  // Another texture from the ground pack (the moon's phase art: GroundAssets.h), resident with the ground.
+  void requestTexture(const std::string& asset) { texture(asset); }
+  uint32_t textureIndex(const std::string& asset) const;  // bindless; kNoTextureIndex until resident
   TerrainView view(e2::EdgeStyle style) const;
   WaterView water(e2::EdgeStyle style) const;  // empty when the map has none
   // The renderer must wait for this upload-timeline value before drawing the ground.

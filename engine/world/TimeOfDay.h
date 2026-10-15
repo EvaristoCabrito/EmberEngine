@@ -7,9 +7,11 @@
 //   stage        C:/Engine2/src/render/stage.ts TIME_PRESETS: what Engine2's 3D stage actually drew (key light
 //                direction and colour, hemisphere sky/ground; it ignored the map's sliders). EmberEngine keeps it
 //                as the "Engine2" lighting mode, the floor to compare against.
-//   moon         C:/Engine2/src/render/moon.ts: at night the key light is the moon, at its pose in the night.
+//   moon         C:/Engine2/src/render/moon.ts: at night the key light is the moon, at its pose in the night;
+//                C:/Engine2/src/game/moonPhase.ts: tonight's phase (its art on the disc, its light's strength).
 
 #include <cmath>
+#include <string>
 #include <string_view>
 
 namespace ember::e2 {
@@ -54,6 +56,27 @@ inline MoonPose moonPose(float progress) {
   const float p = progress < 0.0f ? 0.0f : progress > 1.0f ? 1.0f : progress;
   const float height = std::sin(3.14159265f * p);
   return {ahead + 0.5f * (1.0f - 2.0f * p), 0.45f + (0.75f - 0.45f) * height};
+}
+
+// Engine2's moon phases (moonPhase.ts): an 8-day cycle, and the blood moon in place of every third full moon.
+inline constexpr const char* kMoonPhases[] = {"new",  "waxingCrescent", "firstQuarter", "waxingGibbous", "full",
+                                              "waningGibbous", "lastQuarter", "waningCrescent", "blood"};
+// The phase's art in Engine2's public folder (moonPhaseIcon).
+inline std::string moonPhaseIcon(std::string_view phase) {
+  return phase == "full" ? std::string("game/ui/moon/moon-full-v2.png") : "game/ui/moon/moon-" + std::string(phase) + ".png";
+}
+// Tonight's moonlight (moonlightFor): its strength (x the night's), and the blood moon's red cast (light, sky).
+struct Moonlight {
+  float strength = 1.0f;
+  unsigned color = 0, sky = 0;  // 0 = the night's own
+};
+inline Moonlight moonlightFor(std::string_view phase) {
+  if (phase == "blood") return {1.35f, 0xe0a49c, 0x86707c};
+  int i = 4;  // full
+  for (int k = 0; k < 8; ++k)
+    if (phase == kMoonPhases[k]) i = k;
+  const float lit = (1.0f - std::cos(i / 8.0f * 2.0f * 3.14159265f)) / 2.0f;
+  return {0.5f + 0.9f * lit};
 }
 
 // Towards the light, for an Engine2 azimuth / elevation (stage.ts placeLight: x = sin az cos el, z = cos az cos el).

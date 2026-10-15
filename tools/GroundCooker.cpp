@@ -14,6 +14,7 @@
 #include "render/TextureFormat.h"
 #include "world/Board.h"
 #include "world/GroundAssets.h"
+#include "world/TimeOfDay.h"
 
 namespace ember {
 
@@ -110,6 +111,8 @@ bool cookGround(JobSystem& jobs, const GroundCookOptions& options, std::vector<P
   work.push_back({e2::groundPlains049Asset("color"), TextureFormat::Bc7Srgb, plains049 / "color.png", {}});
   work.push_back({e2::groundPlains049Asset("normal"), TextureFormat::Bc5Unorm, plains049 / "normal.png", {}});
   work.push_back({e2::groundPlains049Asset("rough"), TextureFormat::Bc7Unorm, plains049 / "rough.png", {}});
+  for (const char* phase : e2::kMoonPhases)
+    work.push_back({e2::skyMoonAsset(phase), TextureFormat::Bc7Srgb, publicFile(options.engine2Public, e2::moonPhaseIcon(phase)), {}});
   for (const e2::GroundLayerSource& layer : data->groundLayers) {
     if (layer.absent) continue;
     if (!layer.procedural.empty()) {

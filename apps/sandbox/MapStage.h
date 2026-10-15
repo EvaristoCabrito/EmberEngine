@@ -42,6 +42,7 @@
 #include "world/Board.h"
 #include "world/FogOfWar.h"
 #include "world/TimeOfDay.h"
+#include "world/GroundAssets.h"
 #include "world/GroundMesh.h"
 #include "world/SceneData.h"
 
@@ -74,11 +75,16 @@ struct MapStageOptions {
   // Volumetric fog (R7's literal fog, shaders/volume.hlsl): on unless switched off (--volume 0).
   bool volume = true;
   int fogLook = 3;  // the fog look shown first (render/FogLooks.h numbers)
-  // Lighting (F10 cycles): 0 the old prototype day (every capture before 2026-10-15), 1 Engine2's 3D presets for
+  // Lighting (also in the panel): 0 the old prototype day (every capture before 2026-10-15), 1 Engine2's 3D presets for
   // the map's time of day (the floor), 2 physical: the map's time of day and sliders through the atmosphere.
   int lighting = 2;
   // Scene clock pinned to this many seconds (< 0 = real time): identical frames for paired captures.
   float sceneTime = -1.0f;
+  // Night: tonight's moon phase (Engine2's moonPhase.ts names; "" = Engine2's stage default: the full moon's art at
+  // the night's own strength) and where the moon's disc and light stand (see moonPlacement()); also in the panel.
+  std::string moonPhase;
+  int moonPath = 0;
+  int starLook = 3;  // the star field's saved look (looks/stars/README.md; also in the panel)
 };
 
 class MapStage final : public Stage {
@@ -95,6 +101,10 @@ class MapStage final : public Stage {
         jobs_(jobs) {
     yaw_ += glm::radians(options.turnDegrees);
     lightingMode_ = std::clamp(options.lighting, 0, 2);
+    moonPath_ = std::clamp(options.moonPath, 0, 2);
+    starLook_ = std::clamp(options.starLook, 1, kStarLooks);
+    for (int i = 0; i < static_cast<int>(std::size(e2::kMoonPhases)); ++i)
+      if (options.moonPhase == e2::kMoonPhases[i]) moonPhase_ = i;
     for (uint32_t i = 0; i < fogLooks().size(); ++i)
       if (options.fogLook == std::atoi(fogLooks()[i].number)) fogLook_ = i;
     pitch_ += glm::radians(options.tiltDegrees);
@@ -150,6 +160,8 @@ class MapStage final : public Stage {
       logInfo("scene {}: {} cards, {} models, {} units, {} architecture pieces (not drawn yet)", scene_->map, scene_->cards.size(),
               scene_->models.size(), scene_->units.size(), scene_->architecture);
       setUpParty();
+      if (e2::timeOfDay(scene_->timeOfDay).moon && scene_->environment != "indoor")
+        for (const char* phase : e2::kMoonPhases) ground_.requestTexture(e2::skyMoonAsset(phase));  // 0.1 MB each
     }
   }
 
@@ -192,7 +204,7 @@ class MapStage final : public Stage {
     lights_.clear();
     if (scene_) buildLights(time);
     renderer.setLights(lights_);
-    Renderer::Lighting lighting = mapLighting();
+    Renderer::Lighting lighting = mapLighting(time);
     if (options_.sunElevation >= 0.0f) {
       const float az = glm::radians(options_.sunAzimuth), el = glm::radians(options_.sunElevation);
       lighting.sunDirection = {std::cos(el) * std::cos(az), std::sin(el), std::cos(el) * std::sin(az)};
@@ -211,7 +223,7 @@ class MapStage final : public Stage {
     // The froxel fog is the air's haze in sight; the fog of war's bank is drawn by the fog bank pass.
     volume.boundaryDensity = 0.0f;
     renderer.setVolumetricFog(volume);
-    // The fog of war's mist: the numbered look on show (render/FogLooks.h; F9 cycles them).
+    // The fog of war's mist: the numbered look on show (render/FogLooks.h; chosen in the Map panel).
     Renderer::FogBank bank;
     bank.enabled = fog_.has_value() && options_.volume;
     bank.look = fogLook_;
@@ -268,47 +280,89 @@ class MapStage final : public Stage {
         case SDLK_S: case SDLK_DOWN: target_ -= forward * step; break;
         case SDLK_A: case SDLK_LEFT: target_ -= right * step; break;
         case SDLK_D: case SDLK_RIGHT: target_ += right * step; break;
-        case SDLK_1: look_ = e2::EdgeStyle::Smooth; break;
-        case SDLK_2: look_ = e2::EdgeStyle::Hard; break;
-        case SDLK_HOME: yaw_ = glm::radians(-30.0f), pitch_ = glm::radians(20.0f); break;
-        // Lighting layers on and off, to see and measure each alone (lighting.hlsli kLayer*).
-        case SDLK_F5: layers_ ^= 1u; break;  // sun
-        case SDLK_F6: layers_ ^= 2u; break;  // shadows
-        case SDLK_F7: layers_ ^= 4u; break;  // indirect
-        case SDLK_F8: layers_ ^= 8u; break;  // local lights
-        case SDLK_F9: fogLook_ = (fogLook_ + 1) % static_cast<uint32_t>(fogLooks().size()); break;  // next fog look
-        case SDLK_F10: lightingMode_ = (lightingMode_ + 1) % 3; break;                                   // next lighting
-        default: break;
+        default: break;  // settings and looks are chosen in the Map panel (drawPanel), never by keys
       }
     }
   }
 
+  // A dropdown: `count` choices named by name(i); true when the choice changed.
+  template <typename Name>
+  static bool dropdown(const char* label, int& current, int count, Name name) {
+    bool changed = false;
+    if (ImGui::BeginCombo(label, name(current).c_str())) {
+      for (int i = 0; i < count; ++i) {
+        const bool selected = i == current;
+        if (ImGui::Selectable(name(i).c_str(), selected)) current = i, changed = true;
+        if (selected) ImGui::SetItemDefaultFocus();
+      }
+      ImGui::EndCombo();
+    }
+    return changed;
+  }
+
+  // Every setting and saved look is chosen here (dropdowns, checkboxes, buttons; no keyboard shortcuts).
   void drawPanel() override {
     if (!board_) return;
     const BoardGround::Stats s = ground_.stats();
     ImGui::SetNextWindowPos({12, 420}, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowBgAlpha(0.82f);
     ImGui::Begin("Map", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
-    ImGui::Text("%s  %dx%d hexes  look: %s (keys 1/2)", board_->draft().id.c_str(), board_->layout().cols, board_->layout().rows,
-                look_ == e2::EdgeStyle::Smooth ? "smooth" : "hard");
+    ImGui::Text("%s  %dx%d hexes", board_->draft().id.c_str(), board_->layout().cols, board_->layout().rows);
     ImGui::Text("ground: %u triangles, %u baked layers, textures %u / %u (%.1f MB), geometry %.1f MB",
                 s.triangles[look_ == e2::EdgeStyle::Smooth ? 0 : 1], s.layers, s.texturesReady, s.textures, s.textureBytes / 1048576.0,
                 s.geometryBytes / 1048576.0);
-    ImGui::Text("camera: turn %.0f, tilt %.0f, distance %.1f", glm::degrees(yaw_), glm::degrees(pitch_), distance_);
-    ImGui::Text("lighting: sun %s (F5), shadows %s (F6), indirect %s (F7), local lights %s (F8): %zu lights", layers_ & 1u ? "on" : "off",
-                layers_ & 2u ? "on" : "off", layers_ & 4u ? "on" : "off", layers_ & 8u ? "on" : "off", lights_.size());
+    ImGui::PushItemWidth(420.0f);
+    {
+      int look = look_ == e2::EdgeStyle::Smooth ? 0 : 1;
+      static const char* kLooks[2] = {"smooth", "hard"};
+      if (dropdown("board look", look, 2, [](int i) { return std::string(kLooks[i]); }))
+        look_ = look == 0 ? e2::EdgeStyle::Smooth : e2::EdgeStyle::Hard;
+    }
+    ImGui::Text("camera: turn %.0f, tilt %.0f, distance %.1f (right-drag turn/tilt, wheel zoom, WASD pan)", glm::degrees(yaw_),
+                glm::degrees(pitch_), distance_);
+    ImGui::SameLine();
+    if (ImGui::Button("Engine2's normal view")) yaw_ = glm::radians(-30.0f), pitch_ = glm::radians(20.0f);
+    {
+      static const char* kModes[3] = {"0  old prototype day", "1  Engine2's presets (the floor)", "2  physical atmosphere"};
+      dropdown("lighting", lightingMode_, 3, [](int i) { return std::string(kModes[i]); });
+      ImGui::Text("time of day: %s%s", scene_ ? scene_->timeOfDay.c_str() : "day", scene_ && scene_->environment == "indoor" ? " (indoor)" : "");
+    }
+    {
+      // Lighting layers on and off, to see and measure each alone (lighting.hlsli kLayer*).
+      static const char* kLayers[4] = {"sun", "shadows", "indirect", "local lights"};
+      for (uint32_t i = 0; i < 4; ++i) {
+        bool on = (layers_ >> i) & 1u;
+        if (i) ImGui::SameLine();
+        if (ImGui::Checkbox(kLayers[i], &on)) layers_ ^= 1u << i;
+      }
+      ImGui::SameLine();
+      ImGui::Text("(%zu lights)", lights_.size());
+    }
+    if (scene_ && e2::timeOfDay(scene_->timeOfDay).moon) {
+      static const char* kPaths[3] = {"0  Engine2's: disc ahead in view, light from behind (they disagree)",
+                                      "1  high: disc on the light, behind the normal view (never on screen)",
+                                      "2  low ahead: disc on the light, in view; units lit from behind"};
+      dropdown("moon placement", moonPath_, 3, [](int i) { return std::string(kPaths[i]); });
+      int phase = moonPhase_ + 1;
+      if (dropdown("moon phase", phase, 1 + static_cast<int>(std::size(e2::kMoonPhases)),
+                   [](int i) { return i == 0 ? std::string("full (Engine2's default: the night's own strength)") : std::string(e2::kMoonPhases[i - 1]); }))
+        moonPhase_ = phase - 1;
+      static const char* kStars[kStarLooks] = {"001  sparse squares (first look)", "002  sparse points", "003  dense, varied brightness and colour"};
+      int star = starLook_ - 1;
+      if (dropdown("star look", star, kStarLooks, [](int i) { return std::string(kStars[i]); })) starLook_ = star + 1;
+    }
+    if (fog_ && options_.volume) {
+      int look = static_cast<int>(fogLook_);
+      if (dropdown("fog look", look, static_cast<int>(fogLooks().size()),
+                   [](int i) { return std::string(fogLooks()[i].number) + "  " + fogLooks()[i].note; }))
+        fogLook_ = static_cast<uint32_t>(look);
+    }
+    ImGui::PopItemWidth();
     if (scene_) {
       const SpriteSystem::Stats ss = sprites_.stats();
       ImGui::Text("scene: %zu cards, %zu units drawn (%u of %zu missing art), %u models; sprites %.0f MB resident",
                   scene_->cards.size(), scene_->units.size(), missing_, scene_->cards.size() + scene_->units.size(), modelCount_,
                   ss.residentBytes / 1048576.0);
-    }
-    if (fog_ && options_.volume)
-      ImGui::Text("fog look %s (F9 next, %zu saved): %s", fogLooks()[fogLook_].number, fogLooks().size(), fogLooks()[fogLook_].note);
-    {
-      static const char* kModes[3] = {"old prototype day", "Engine2 presets", "physical atmosphere"};
-      ImGui::Text("lighting (F10): %s; time of day %s%s", kModes[lightingMode_], scene_ ? scene_->timeOfDay.c_str() : "day",
-                  scene_ && scene_->environment == "indoor" ? " (indoor)" : "");
     }
     if (fog_)
       ImGui::Text("fog of war: %d in sight, %d remembered, %d never seen; %d enclosed holes (%d hexes); %u enemies hidden; last update %.2f ms",
@@ -563,37 +617,71 @@ class MapStage final : public Stage {
     }
   }
 
+  // The moon tonight (ARCHITECTURE 7.5): it crosses the sky in Engine2's 600 s (moon.ts, stage.ts
+  // MOON_CROSSING_SECONDS), starting at Engine2's 0.35 of the way. Engine2 drew the disc ahead of the normal view
+  // but lit the board from the mirrored side (stage.ts moveMoon: light from ahead lit only the backs of units);
+  // with a real sky the two cannot both hold, so three placements are kept, chosen in the panel until the user picks:
+  //   0 Engine2's: disc ahead, low enough to show above the board; light from Engine2's side (26-43 deg up)
+  //   1 high: disc and light together on Engine2's light (behind the normal view; the orbit camera never sees it)
+  //   2 low ahead: disc and light together ahead and low (in view when the camera tilts low; units lit from behind)
+  struct MoonPlacement {
+    glm::vec3 light{0.0f, 1.0f, 0.0f}, disc{0.0f, 1.0f, 0.0f};  // towards each
+  };
+  MoonPlacement moonPlacement(float time) const {
+    constexpr float kCrossingSeconds = 600.0f, kStart = 0.35f;
+    // The low path (ours): rising and setting 4 deg up, 10 deg at its highest, so the whole disc shows under the top
+    // of the view at the camera's lowest tilt (2 deg down, 30 deg field: 13 deg up).
+    const float lowRise = glm::radians(4.0f), lowHigh = glm::radians(10.0f);
+    const float progress = std::fmod(kStart + time / kCrossingSeconds, 1.0f);
+    const e2::MoonPose pose = e2::moonPose(progress);
+    const float height = std::sin(std::numbers::pi_v<float> * progress);
+    float d[3];
+    e2::lightDirection(pose.azimuth + std::numbers::pi_v<float>, pose.elevation, d);
+    const glm::vec3 behind{d[0], d[1], d[2]};
+    e2::lightDirection(pose.azimuth, lowRise + (lowHigh - lowRise) * height, d);
+    const glm::vec3 lowAhead{d[0], d[1], d[2]};
+    switch (moonPath_) {
+      case 1: return {behind, behind};
+      case 2: return {lowAhead, lowAhead};
+      default: return {behind, lowAhead};
+    }
+  }
+
   // The map's light (ARCHITECTURE 7.5) in the chosen mode. Time of day picks sun or moon and where it stands;
   // the map's own sliders set the strengths (Engine2's 3D ignored them); the atmosphere colours the light.
-  Renderer::Lighting mapLighting() const {
+  Renderer::Lighting mapLighting(float time) const {
     using e2::TimeOfDayLight;
     Renderer::Lighting l;
     if (lightingMode_ == 0) return l;  // the old prototype day
     const TimeOfDayLight& t = e2::timeOfDay(scene_ ? scene_->timeOfDay : std::string());
-    float dir[3];
+    const char* phase = moonPhase_ < 0 ? "full" : e2::kMoonPhases[moonPhase_];
+    const e2::Moonlight moon = moonPhase_ < 0 ? e2::Moonlight{} : e2::moonlightFor(phase);
+    MoonPlacement placed;
     if (t.moon) {
-      const e2::MoonPose pose = e2::moonPose(0.35f);  // Engine2's stage default
-      e2::lightDirection(pose.azimuth, pose.elevation, dir);
+      placed = moonPlacement(time);
+      l.sunDirection = placed.light;
     } else {
+      float dir[3];
       e2::lightDirection(t.stageAzimuth, t.elevationDeg >= 0.0f ? glm::radians(t.elevationDeg) : t.stageElevation, dir);
+      l.sunDirection = glm::normalize(glm::vec3(dir[0], dir[1], dir[2]));
     }
-    l.sunDirection = glm::normalize(glm::vec3(dir[0], dir[1], dir[2]));
-    if (lightingMode_ == 1) {  // Engine2's 3D stage, as it drew
-      l.sunColor = Renderer::srgb(t.stageSun);
-      l.sunIntensity = t.stageSunIntensity * (t.moon ? 1.5f : 1.0f);  // MOON_BRIGHTNESS x a full moon
-      l.skyColor = Renderer::srgb(t.stageSky);
+    if (lightingMode_ == 1) {  // Engine2's 3D stage, as it drew (at night: the moon's light from Engine2's side)
+      if (t.moon) l.sunDirection = glm::normalize(moonPlacement(time).light);
+      l.sunColor = Renderer::srgb(t.moon && moon.color ? moon.color : t.stageSun);
+      l.sunIntensity = t.stageSunIntensity * (t.moon ? 1.5f * moon.strength : 1.0f);  // MOON_BRIGHTNESS x tonight's phase
+      l.skyColor = Renderer::srgb(t.moon && moon.sky ? moon.sky : t.stageSky);
       l.groundColor = Renderer::srgb(t.stageGround);
       l.ambientIntensity = t.stageHemi;
       return l;
     }
-    const float key = scene_ && scene_->sunIntensity ? *scene_->sunIntensity : t.key;
+    const float key = (scene_ && scene_->sunIntensity ? *scene_->sunIntensity : t.key) * (t.moon ? moon.strength : 1.0f);
     const float ambient = scene_ && scene_->ambientIntensity ? *scene_->ambientIntensity : t.ambient;
-    const glm::vec3 keyColor = t.moon ? Renderer::srgb(t.keyColor) : glm::vec3(1.0f);
+    const glm::vec3 keyColor = t.moon ? Renderer::srgb(moon.color ? moon.color : t.keyColor) : glm::vec3(1.0f);
     l.sunIntensity = key;
     l.ambientIntensity = ambient;
-    l.skyColor = Renderer::srgb(t.skyColor);
+    l.skyColor = Renderer::srgb(t.moon && moon.sky ? moon.sky : t.skyColor);
     if (scene_ && scene_->environment == "indoor") {  // no sky indoors: the tuned colours on the hemisphere
-      l.sunColor = Renderer::srgb(t.keyColor);
+      l.sunColor = Renderer::srgb(t.moon && moon.color ? moon.color : t.keyColor);
       l.groundColor = Renderer::srgb(t.stageGround);
       return l;
     }
@@ -603,7 +691,19 @@ class MapStage final : public Stage {
     l.sunColor = lum > 1e-6f ? c / lum : keyColor;
     l.atmosphere = true;
     l.skyIlluminance = keyColor * key;
-    l.skyScale = t.moon ? 0.04f : 1.0f;  // a moonlit sky is dark: stars show
+    l.skyScale = t.moon ? 0.04f : 1.0f;  // a moonlit sky is dark
+    if (t.moon) {
+      // Night: stars, no sun disc, and the moon's disc with tonight's art. Its size is Engine2's disc as seen from
+      // its normal view (moon.ts RADIUS 0.14 board half-sizes, ~3 half-sizes from the camera: ~2.7 deg radius; the
+      // real moon's 0.26 would leave the phase unreadable); its brightness Engine2's GLOW (2.3 x the art).
+      l.sunDisc = false;
+      l.stars = 1.0f;
+      l.starLook = static_cast<uint32_t>(starLook_);
+      l.moonDirection = placed.disc;
+      l.moonTexture = ground_.textureIndex(e2::skyMoonAsset(phase));
+      l.moonRadius = glm::radians(2.7f);
+      l.moonGlow = 2.3f;
+    }
     return l;
   }
 
@@ -909,7 +1009,11 @@ class MapStage final : public Stage {
   e2::HexPoint heroHex_;
   float meanGround_ = 0.0f, boardTop_ = 0.0f, groundLow_ = 0.0f;
   uint32_t fogLook_ = 2;  // index into fogLooks(): look 003 unless --fog-look says otherwise
-  int lightingMode_ = 2;   // 0 old prototype day, 1 Engine2 presets, 2 physical (F10)
+  int lightingMode_ = 2;   // 0 old prototype day, 1 Engine2 presets, 2 physical
+  int moonPath_ = 0;       // moonPlacement()
+  static constexpr int kStarLooks = 3;  // saved star looks (looks/stars/README.md)
+  int starLook_ = 3;
+  int moonPhase_ = -1;  // index in e2::kMoonPhases; -1 = Engine2's default (the full moon's art, the night's strength)
   std::array<int, 3> fogCounts_{};
   int holes_ = 0, holeHexes_ = 0, worstHoles_ = 0;
   std::vector<std::pair<int, int>> lastHoles_;

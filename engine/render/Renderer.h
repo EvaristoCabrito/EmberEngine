@@ -85,6 +85,14 @@ class Renderer {
     glm::vec3 skyIlluminance{1.0f};  // the key light outside the air (colour x strength) that lights the sky
     float kmPerUnit = 0.025f;         // aerial perspective scale (km of air per world unit; a board ~1 km of air)
     float skyScale = 1.0f;            // the sky behind the board (dark at night)
+    // Night (the key light is the moon): no sun disc, stars out, and the moon's disc with tonight's phase art.
+    bool sunDisc = true;
+    float stars = 0.0f;
+    uint32_t starLook = 3;  // the star field's saved look (looks/stars/README.md)
+    glm::vec3 moonDirection{0.0f, 1.0f, 0.0f};  // towards the disc
+    uint32_t moonTexture = 0xFFFFFFFFu;         // bindless sRGB + alpha; none = no disc
+    float moonRadius = 0.0f;                    // angular radius, radians
+    float moonGlow = 0.0f;                      // the disc's radiance = the art x this (before exposure)
   };
   void setMeshes(const MeshSceneView& view, const Lighting& lighting = {}) {
     meshView_ = view;
@@ -312,7 +320,7 @@ class Renderer {
   VkPipeline cullInstancesLatePipeline_ = VK_NULL_HANDLE, hizPipeline_ = VK_NULL_HANDLE;
   VkPipeline cullInstancesPipeline_ = VK_NULL_HANDLE, cullPreparePipeline_ = VK_NULL_HANDLE,
              cullTraversePipeline_ = VK_NULL_HANDLE, cullPrepareDrawPipeline_ = VK_NULL_HANDLE,
-             meshletPipeline_ = VK_NULL_HANDLE, resolvePipeline_ = VK_NULL_HANDLE;
+             meshletPipeline_ = VK_NULL_HANDLE, resolvePipeline_ = VK_NULL_HANDLE, skyPipeline_ = VK_NULL_HANDLE;
   MeshSceneView meshView_;
   Lighting lighting_;
   MeshStats meshStats_;

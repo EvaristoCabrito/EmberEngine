@@ -179,6 +179,22 @@ build.bat release          # or debug; output in build/<config>/bin
     2 physical (default): time of day places the sun/moon, the map's sliders set the strengths (Engine2's 3D
     never applied them: the user had suspected it), the air colours the light; indoor maps keep the hemisphere.
     Captures: `captures/sky/*.png` (aldeia015 is **dusk**).
+  - **Night sky (2026-10-15), built, 0 validation errors in debug; cost not measured (energy rule):** the moon's
+    disc with Engine2's phase art (9 phases cooked into ground.pak as `sky/moon/<phase>.tex`), Engine2's size as
+    seen from its normal view (~2.7 deg radius) and GLOW 2.3, through the air; it crosses the sky in 600 s; phase
+    strength / blood moon from moonPhase.ts (`--moon-phase`). **Three moon placements, user to pick**
+    (`--moon-path`, `captures/moon/placements.png`): 0 Engine2's (disc ahead, light from behind: they disagree),
+    1 disc on the light behind the view (never on screen), 2 disc on the light ahead and low (in view, long
+    shadows, units backlit). Mode 1 now lights from Engine2's real (mirrored) moon side. **Star looks**
+    (`looks/stars/README.md`, `--star-look N`): 001 squares, 002 sparse points, 003 dense (default, not judged).
+    The sky is now drawn on maps without 3D models too (it lived only in the mesh resolve: cemiterio had none).
+  - **The Map panel holds every setting** (dropdowns, checkboxes, a normal-view button); the setting keys are
+    gone (user: no keyboard shortcuts). The user cannot open the Sandbox window: show work as images.
+  - DXC gotcha: passing the AtmosphereFrame (has a uint64_t) to a function by value read `moonTexture` wrong;
+    pass fields one by one (`moonDisc`).
+  - **Power cuts here (user, 2026-10-15):** build with `CMAKE_BUILD_PARALLEL_LEVEL=4`, no full-clock GPU runs
+    unless asked, commit often; after a crash, scan recent files for zero-filled content (346 build outputs were
+    zeroed and set aside in `build/release-zeroed-20261015`). The paced 60 Hz FAIL ran under power saving.
 - **Not done (hooks only or missing):** walls not imported (block no sight); the sky step's open items
   (see Next 1); bloom; depth of field / tilt-shift; local lights cast no shadows; cards
   do not receive card shadows; walls/doors (architecture), floor waypoints, stand-on-log heights, the third
@@ -190,11 +206,12 @@ build.bat release          # or debug; output in build/<config>/bin
 The user asked for all three of the sky step (2026-10-15): real sky outdoors (black indoors), physical light
 colour with Engine2's presets as the floor, real depth of field for the tilt-shift look (Engine2's screen band
 kept as a switchable look). Continue in this order:
-1. **Finish the sky step:** (a) the user decides dusk/dawn warmth: physics at Engine2's 15 deg dusk sun gives
-   #ffdfb4, Engine2 painted #ffb47e (= a sun ~5 deg up), so physical dusk is paler than the floor; (b) the
-   moon disc at night (Engine2's moon-phase icons, `public/game/ui/moon`, moon.ts pose; currently only the moon
-   light) and a night map exported to test (e.g. cemiterio-esquecidos003: brightNight, fog, the user's mist4
-   reference); (c) debug validation + cost of the atmosphere passes; (d) the night sky's look (skyScale 0.04).
+1. **Finish the sky step:** (a) decided (user, 2026-10-15): **dusk/dawn stay physical**: the air colours the sun
+   at Engine2's heights (15 deg dusk = #ffdfb4, paler than Engine2's painted #ffb47e); a warmer dusk = a lower sun
+   (longer shadows), `--sun AZ EL` now, a per-map sun height in the editor later (M6); (b) moon disc built:
+   the user picks the placement (0/1/2) and judges star look 003; (c) cost of the atmosphere + sky passes (not
+   measured: energy rule); (d) **the night's look**: cemiterio's own moon strength (3.5) reads as daylight green;
+   research a cinematic night (exposure, scotopic shift) as a new numbered look.
 2. **Bloom** (Jimenez 2014: 13-tap downsample, Karis average, tent upsample, energy-conserving mix; the map's
    bloomIntensity slider; Engine2's threshold-2.0 look kept switchable).
 3. **Depth of field** focused on the board (circle of confusion from depth, gather at half resolution, cards'
