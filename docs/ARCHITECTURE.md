@@ -471,6 +471,22 @@ representative building (made in Blender, one continuous mesh) in the battle tes
 placeholders. The unfinished bake (xatlas atlas, ray-cast bake, proxy format; not compiled, not run) is
 kept on the branch `wip/proxy-bake`.
 
+### 7.3 D1 port measurements (2026-10-14, RX 6400, 1600x900, release)
+
+Engine2's map `aldeia015` in EmberEngine: Engine2's ground (smooth look, 246,600 triangles, 7 photo layers),
+68 decor cards, 12 3D trees, 14 units animating, 14 local lights (12 of the map's own + a carried torch + a spell
+light), sun shadows (ground + meshes cached, cards every frame). `Sandbox --map ... --measure 20`: the camera
+turns a full circle and zooms in and out twice.
+
+| | Main thread median / 99th / worst | GPU median / 99th / worst | Frames over 16.7 ms |
+|---|---|---|---|
+| Full GPU clock (`--unpaced`) | 0.30 / 0.74 / 1.60 ms | 6.74 / 7.22 / 16.15 ms | 0 of 2,929 |
+| Paced at 60 Hz | 0.41 / 1.30 / 1.57 ms | 9.48 / 19.47 / 22.60 ms | 318 of 1,196 (GPU) |
+
+The ground material is 5.2 of the 6.7 ms at full clock (more when zoomed in: it covers the screen). Paced
+numbers are stretched by the GPU's power saving (§7.2); whether those frames miss a vblank is still to be
+measured in a window with vsync. Either way the ground is the first cost to cut.
+
 ## 8. Gameplay and tools
 
 **Engine2's game design is sound (the user, 2026-10-14: "nothing else is wrong with its game design"); its

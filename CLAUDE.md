@@ -9,7 +9,7 @@ A game engine built from zero (C++20 + Vulkan 1.3, native Windows .exe, not thre
 game *Ember*: hex-grid tactics ("Tactics Ogre with HD-2D") with photorealistic 2D characters in a real 3D world,
 cinematic feel, dramatic light and shadow, incredible spell effects, realistic ground. **Visual target: the
 spirit of Square Enix's Luminous Engine (Agni's Philosophy, FFXV), taken into 2.75D: not Unreal, not HD-2D.**
-The user has the image in mind; the vision is the standard (ARCHITECTURE.md §2 principle 9, §7.0 R1–R6).
+The user has the image in mind; the vision is the standard (ARCHITECTURE.md §2 principle 9, §7.0 R1–R8).
 Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
 
 ## How to work with this user (hard rules)
@@ -28,7 +28,15 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
 - **Research before building** big visual features. Never show raw test renders as progress.
 - **Engine2: game design yes, technology no** (user, 2026-10-14: "nothing else is wrong with its game
   design"; its engine stutters on spell effects and its sprite animation is subpar). Port its rules, maps,
-  board looks (R8: smooth/hard hex edges), editor features and content faithfully; build all tech fresh.
+  board looks (R8: smooth / hard / tabletop), editor features and content faithfully; build all tech fresh.
+  **Use Engine2's real assets for every test** (maps, ground, decor, models, sprites, fx): never placeholders.
+- **Priorities (user, 2026-10-14):** stability (no crashes, validation errors, streaming failures) → smooth
+  gameplay (consistent frame times while moving the camera, animating, casting; not averages) → streaming →
+  rendering foundation (2.75D depth, occlusion, real dynamic light) → final content. Keep "a hook exists"
+  separate from "the feature works": every report says which.
+- **Lighting direction (user, 2026-10-14):** a hybrid Luminous (FFXV) + Unreal-lessons system, our own C++ /
+  Vulkan, no HW ray tracing required; the prototype's colour (Engine2 `diorama.html`) is the floor, not the
+  ceiling (ARCHITECTURE §7.1b).
 - **2D/3D split (the one piece of Engine2's tech carried over):** characters, props and decor = photoreal 2D cards;
   houses/buildings and terrain shape = real 3D (Meshy for buildings); ground = photoreal texture on 3D terrain.
   Do not port Engine2's lighting/camera/ground rules, and do not ask what is 2D vs 3D.
@@ -51,6 +59,22 @@ build.bat release          # or debug; output in build/<config>/bin
 - M1: `Sandbox --stream build/stream-test/stream-test.pak --verify build/stream-test/src`.
 - M2: `Sandbox --sprites build/sprites/roster.pak [--budget 512]` (×10: `roster-x10.pak`; exit 3 = fail).
 - M3 bring-up: `Sandbox --meshes build/meshes/props.pak --grid N`.
+- **D1 port (current): a real Engine2 map in EmberEngine.**
+  1. Engine2 data (runs Engine2's TypeScript read-only with its own vite-node; cache in the scratchpad):
+     `node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch> tools/scripts/engine2/export_board.ts
+     -- <map.json> content/engine2 build/engine2-ref` (board tables + reference geometry);
+     `... export_scene.ts -- <map.json> build/engine2-scenes/<map>.scene.json` then
+     `python -I tools/scripts/engine2/measure_art.py <scene.json> C:/Engine2/public` (the map importer);
+     `... export_textures.ts -- build/engine2-ref/textures` (procedural ground reference).
+  2. `Cooker check-ground content/engine2/board.json <map.json> C:/Engine2/public build/engine2-ref` (C++ board /
+     ground vs Engine2: must print "ground matches Engine2"); `Cooker ground content/engine2/board.json
+     C:/Engine2/public build/ground/ground.pak [--check build/engine2-ref/textures]`.
+  3. `Sandbox --map C:/Engine2/maps/ember/aldeia015.json --ground build/ground/ground.pak --scene
+     build/engine2-scenes/aldeia015.scene.json --sprites build/sprites/battle.pak --meshes build/meshes/props.pak
+     [--look smooth|hard] [--moving-light] [--spell-light] [--measure 20] [--zoom F --turn D --tilt D --offset X Z]
+     [--sun AZ EL] [--layers MASK: 1 sun 2 shadows 4 indirect 8 local]`. Window keys: right-drag turn/tilt, wheel
+     zoom, WASD pan, 1/2 looks, F5–F8 lighting layers, Home = Engine2's normal view. Proof maps: aldeia015
+     (lights, houses, photo ground), random-rimewater-shrine001 (water, 3D trees); stress: wisp-forest-2004.
 - **M3 exit test:** `Sandbox --battle --meshes <pak> --sprites build/sprites/battle.pak --capture x.png
   [--content all|3d|cards] [--unpaced] [--cost-split 0|1|2]`. Reports per phase: GPU median / 99th / worst,
   per-pass averages, frames over budget; per-frame CSV in `build/battle-<phase>.csv`. **`--unpaced` = cost at
@@ -74,18 +98,27 @@ build.bat release          # or debug; output in build/<config>/bin
 - `engine/rhi`: VulkanContext (requires VK_EXT_mesh_shader, samplerFilterMinmax), Bindless (sampled/storage
   images, samplers, **storage buffers** for atomics; push constants reach task/mesh), Image (+createDeviceBuffer),
   Pipeline (graphics incl. task/mesh, compute), Swapchain, GpuTimer, UploadQueue (images **and buffers**).
-- `engine/render`: Renderer (mesh passes → ground → sprites → tonemap → UI), Camera, SpriteFormat/SpriteDraw/
-  SpriteSystem (M2), **MeshFormat** (cooked cluster-LOD mesh), **TextureFormat**, **MeshGpu** (GPU records),
-  **MeshScene** (meshes/textures/instances on the GPU, double-buffered tables), DebugUi.
-- `tools`: PakWriter, SpriteSource, SpriteCooker, **TextureCooker** (BC7 sRGB/linear, BC5, correct mips),
-  **MeshCooker** (cgltf → transforms baked, authored LOD1+ skipped, tangents, clusterlod DAG + BVH, protect
-  mask, edge limit, `--remesh` experiment), `tools/scripts/compare_meshes.py`.
-- `apps/sandbox`: Stage.h (test-scene interface), SpriteParade.h, MeshStage.h, **BattleStage.h** (M3 exit test),
-  **MeshCompare.h**, StreamTest in main.cpp. `apps/cooker`: the Cooker CLI.
+- `engine/render`: Renderer (frame constants → light clusters → sun shadow (cached: ground + meshes) → card
+  shadow (per frame) → mesh passes → ground → water → cards → tonemap → UI), Camera, SpriteFormat/SpriteDraw
+  (80-byte cards: own axis, unit depth pull, flame glow, lit flag, casts flag)/SpriteSystem (M2), MeshFormat,
+  TextureFormat, MeshGpu, MeshScene, **BoardGround** (both ground looks + water on the GPU, map palette of
+  baked layers), DebugUi.
+- `engine/world` (D1 port): **Noise/Hex/Board/GroundMesh** (Engine2's board and ground, bit-exact),
+  **GroundAssets** (ground texture names), **SceneData** (imported scene: cards, models, units, lights).
+- `tools`: PakWriter, SpriteSource, SpriteCooker, TextureCooker, MeshCooker, **GroundCooker** + **Engine2Textures**
+  (Engine2's procedural ground, byte-identical), **GroundCheck**, `tools/scripts/compare_meshes.py`,
+  `tools/scripts/engine2/*` (exporters + importer above).
+- `apps/sandbox`: Stage.h (test-scene interface + window events), SpriteParade.h, MeshStage.h, BattleStage.h (M3 exit
+  test), MeshCompare.h, **MapStage.h** (D1: a real Engine2 map, its scene, lights, `--measure`), StreamTest in main.cpp. `apps/cooker`: the Cooker CLI.
 - `shaders`: HLSL via DXC (`-Zpr`: `mul(v, M)` with glm). `scene.hlsli` = GPU layouts shared with MeshGpu.h /
   MeshFormat.h / MeshFrame (Renderer.cpp, static_asserted); `cull.hlsl` (early/late instance culling, BVH
   traversal, draw args), `meshlet.hlsl` (task/mesh/pixel → visibility buffer), `hiz.hlsl` (depth pyramid),
-  `resolve.hlsl` (barycentrics + PBR; **provisional sun + sky lighting**; debug normal views).
+  `resolve.hlsl` (barycentrics + PBR), **`lighting.hlsli` = the lighting contract** (Surface + shade(): sun with
+  two shadow maps, clustered local lights, indirect hooks (hemisphere today), visibility hook (R7, returns 1),
+  layer switches), `terrain.hlsl` (Engine2's ground material), `water.hlsl`, `sprites.hlsl` (lit cards, card
+  shadows), `lights.hlsl` (cluster build), `tonemap.hlsl` (three.js's ACES fit, like the prototype).
+- Vulkan gotcha found: fragment shaders may not bind a writable storage buffer here (no
+  fragmentStoresAndAtomics): read GPU-written lists through device addresses (`vk::RawBufferLoad`).
 - DXC gotchas found: `clip` and `triangle` are reserved names; per-primitive PS inputs need
   `[[vk::ext_decorate(5271)]]` + `[[vk::ext_capability(5283)]]` (DXC issue #6862).
 - Shell gotcha: writing C++ through bash heredocs + Python mangled `'\0'` and `"\n"` twice; write patch scripts
@@ -93,40 +126,46 @@ build.bat release          # or debug; output in build/<config>/bin
 
 ## Status (2026-10-14)
 
-- **M0 + M1 done**, pushed (`67410f0`). **M2 done**, pushed (`98c727a`, `c08ec38`): sprite cooker + residency;
-  ×10 roster (3,750 clips, 26.3 GB) PASS, worst frame 4.6 ms, 0 validation errors.
-- **M3 in progress, committed locally, NOT pushed** (`a4861c7` … `3f5639e`):
-  - Built and verified (0 validation errors in debug): mesh cooker; GPU-driven meshes (instance culling →
-    cluster-LOD BVH traversal at 1 px → task/mesh shaders → visibility buffer → resolve); two-phase occlusion
-    per instance and per cluster (early clusters hidden by last frame's pyramid are re-tested late; pyramid
-    rebuilt after the late pass); battle test; GPU cost split; proxy compare tool.
-  - **Battle test (unpaced = full GPU clock):** original meshes 50–116 ms (fail; LOD can't simplify the
-    cottage, which is 1,170 disconnected pieces); voxel-remesh proxies 2.5–4.2 ms (fast). Cards cost 0.15–0.4 ms.
-  - **Proxy quality:** silhouette IoU 0.95–0.998, but shading-normal error 24–53° mean (p95 83–109°) vs the
-    full-detail original → **not acceptable as is** (the user's point: silhouettes AND normals must hold for
-    the lighting). All in ARCHITECTURE.md §7.2.
-  - Lighting in the resolve is a stand-in; the 2D-card lighting model is undecided (D1 decides it, §7.1).
+- **M0–M2 done**, pushed. **M3** GPU-driven meshes built and verified, committed locally (battle test numbers
+  and the proxy findings in ARCHITECTURE §7.2). **Proxy bake paused** (assets not final): unfinished code on
+  branch `wip/proxy-bake`; settle it later with a representative final-quality building.
+- **D1 port, committed locally, NOT pushed** (`93f5920` … latest). Verified, 0 validation errors in debug:
+  - Engine2's board + smooth/hard ground + water + heights in C++, identical to Engine2's own output on 5 maps;
+    its 105 ground textures cooked (procedural ones byte-identical).
+  - Real maps drawn: ground (Engine2's material), water, decor cards, 3D trees, units from spawns with Engine2's
+    sizes, anchors, facing and idle timing (map importer).
+  - Lighting contract; correct energy (1/pi on indirect), exposure in the lights, three.js ACES; sun shadows
+    (4096, soft, cached for ground + meshes; cards per frame, units casting toward the sun); clustered local
+    lights with Engine2's falloff (14 on aldeia: braziers, forge, burning houses, lanterns + test torch + spell).
+  - Gameplay measurement (aldeia015, 20 s camera turn + zoom, 14 units animating, 14 lights, release):
+    full GPU clock: main thread worst 1.60 ms; GPU median 6.74 / 99th 7.22 / worst 16.15 ms; 0 frames over
+    16.7 ms (PASS). Paced 60 Hz: GPU median 9.48 / 99th 19.47 / worst 22.60 ms; 318 of 1196 frames over
+    16.7 ms (FAIL: the RX 6400 down-clocks when paced; whether frames miss vblank needs the windowed vsync
+    test). The ground material is 5.2 of 6.7 ms at full clock: the first thing to cut. 14 lights (12 map
+    light sources + test torch + spell light).
+- **Not done (hooks only or missing):** fog of war (visibility hook returns 1, no pass enforces R7); indirect
+  light is the hemisphere (no probes / GI); no sky, fog, bloom, tilt-shift; local lights cast no shadows; cards
+  do not receive card shadows; walls/doors (architecture), floor waypoints, stand-on-log heights, the third
+  board look (tabletop tiles, R8) not ported; unit animation is the idle only; no spell VFX; the ground material
+  costs 4.1 ms at full clock on photo-layer maps (profile it before optimising).
 
 ## Next
 
-- **Proxy bake paused** (the user, 2026-10-14: none of the assets are final). Unfinished code (xatlas,
-  ray-cast bake, format v2; not compiled, not run) is on branch `wip/proxy-bake`, off main. Whether proxies
-  are needed is settled later with a representative building (Blender, one continuous mesh, as Meshy
-  makes them) in the battle test. Meshy stays unconnected until the engine is worth paying for.
-- **Offered, waiting on the user's go:** D1 (lit sprites in a spatial world + fog of war R7) with free
-  representative assets (Engine2 sprites, Blender-made building/terrain/props). Research the card lighting
-  (§7.1) before code.
-- New requirements in ARCHITECTURE §7.0: **R7 fog of war** (three states; tactical visibility is a mask
-  every light, shadow, VFX and fog reads) and **R8 two board looks** (Engine2's hard / smooth hex edges, the
-  player's runtime choice, one map, identical gameplay).
-- Old editor's maps and dialogues come across with an importer (ARCHITECTURE §8), with M6/M7.
+1. Fog of war (R7) for real: Engine2's per-hex sight → a visibility mask every pass reads (lights, shadows,
+   cards, water, later fog and VFX); test: unexplored stays black under the moving and spell lights.
+2. Profile and cut the ground material cost (photo layers + two 16-tap shadow lookups).
+3. Sky + aerial perspective (Hillaire 2020) feeding indirectDiffuse/Specular; bloom; tilt-shift; then compare
+   side by side with the prototype's colour (the floor).
+4. Tabletop tiles look (R8 third look, `diorama.html` buildHexTerrain(true)); walls/doors.
+5. Spell VFX on the GPU (one Engine2 spell end to end, no stutter), unit poses beyond idle.
+Then D1 is shown to the user (§9).
 
 ## Waiting on the user
 
 - Video → sprite pipeline (their earlier top priority, ARCHITECTURE §5): needs their videos organised as
   `content/video/<Character>/<move>.mp4` (they sit in `Downloads` / `Desktop\Characters` with generated names;
   don't guess the mapping). ffmpeg 9.0.1 and Python + PIL are installed.
-- Reference images / one clearly described moment, to turn R1–R6 into D1 pass/fail criteria.
+- Reference images / one clearly described moment, to turn R1–R8 into D1 pass/fail criteria.
 - The final camera angles (camera stays free until then).
 
 ## Later milestones
