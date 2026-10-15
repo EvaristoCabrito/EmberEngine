@@ -25,6 +25,7 @@ add_library(EmberEngine STATIC
   render/FogLooks.cpp
   world/GroundMesh.cpp
   world/SceneData.cpp
+  world/Battle.cpp
   debug/PerfOverlay.cpp
 )
 

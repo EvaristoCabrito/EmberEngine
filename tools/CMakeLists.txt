@@ -7,6 +7,7 @@ add_library(EmberTools STATIC
   TextureCooker.cpp
   MeshCooker.cpp
   GroundCheck.cpp
+  BattleCheck.cpp
   GroundCooker.cpp
   Engine2Textures.cpp
 )

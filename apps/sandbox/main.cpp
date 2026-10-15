@@ -32,7 +32,8 @@
 //        Night maps: [--moon-phase NAME] (Engine2's moonPhase.ts: new .. waningCrescent, blood) [--moon-path 0|1|2]
 //        (where the disc and its light stand: MapStage.h moonPlacement) [--star-look N] (looks/stars).
 //        [--heroes <roster.json>]: every unit's poses (tools/scripts/engine2/export_heroes.ts); the map's own units
-//        play the pose chosen in the panel ("Animação"). In a window
+//        play the pose chosen in the panel ("Animação"). [--battle-rules <map.battle.json>]: combat (tools/scripts/
+//        engine2/export_battle.ts): pick a unit, its reach, walk it (MapStage.h). In a window
 //        every setting is a dropdown / checkbox in the Map panel (no keyboard shortcuts).
 //   Sandbox.exe --meshes meshes.pak [--grid N]
 //        Mesh scene (M3 bring-up): every cooked mesh in the archive on an N x N grid, drawn GPU-driven.
@@ -109,6 +110,7 @@ struct Options {
   int moonPath = 0;
   int starLook = 3;
   std::string heroes;
+  std::string battleRules;
   uint32_t debugView = 0;
   std::string scene;
   std::string map, ground, look = "smooth", boardData = "content/engine2/board.json", engine2 = "C:/Engine2/public";
@@ -163,6 +165,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--moon-path" && hasValue) o.moonPath = std::atoi(argv[++i]);
     else if (arg == "--star-look" && hasValue) o.starLook = std::atoi(argv[++i]);
     else if (arg == "--heroes" && hasValue) o.heroes = argv[++i];
+    else if (arg == "--battle-rules" && hasValue) o.battleRules = argv[++i];
     else if (arg == "--debug-view" && hasValue) o.debugView = static_cast<uint32_t>(std::atoi(argv[++i]));
     else if (arg == "--no-ui") o.noUi = true;
     else if (arg == "--layers" && hasValue) o.lightingLayers = static_cast<uint32_t>(std::strtoul(argv[++i], nullptr, 0));
@@ -419,6 +422,7 @@ std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Rende
     m.moonPath = o.moonPath;
     m.starLook = o.starLook;
     m.heroes = o.heroes;
+    m.battle = o.battleRules;
     renderer.setDebugView(o.debugView);
     return std::make_unique<MapStage>(context, renderer, assets, jobs, m);
   }

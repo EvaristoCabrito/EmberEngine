@@ -15,6 +15,11 @@
 // (Engine2 CameraRig.flat): straight overhead through a 1 deg lens from far away (no visible perspective), no
 // turning; cards and units lie flat facing up just over the highest ground, nearer rows drawn over farther ones.
 //
+// Combat (world/Battle.h, --battle-rules <map.battle.json> from tools/scripts/engine2/export_battle.ts): the left button
+// picks a unit (its card or its hex) and shows its movement reach as Engine2's battle grid does; hovering a reachable hex
+// shows the route, clicking it walks the unit there one hex per 0.22 s with Engine2's walk poses (UnitActor); "Fim do
+// turno" gives every unit its movement back. Esc lets go of the unit.
+//
 // Fog of war (R7, world/FogOfWar.h) on maps that use it (or forced with --fog 1): the party's sight with
 // occlusion; enemies out of sight are not drawn; the renderer darkens and masks everything by the mask.
 // --scout walks the first party unit to the farthest enemy and back (a hex every 0.6 s), so never-seen,
@@ -32,6 +37,7 @@
 #include <numbers>
 #include <map>
 #include <unordered_map>
+#include <unordered_set>
 #include <format>
 #include <string_view>
 
@@ -44,6 +50,7 @@
 #include "rhi/UploadQueue.h"
 #include "render/MeshScene.h"
 #include "render/SpriteSystem.h"
+#include "world/Battle.h"
 #include "world/Board.h"
 #include "world/FogOfWar.h"
 #include "world/TimeOfDay.h"
@@ -93,6 +100,8 @@ struct MapStageOptions {
   // play the pose chosen in the panel, each from its own catalog entry (found by the scene unit's key).
   std::filesystem::path heroes;
   int starLook = 3;  // the star field's saved look (looks/stars/README.md; also in the panel)
+  // The battle's rules and units (tools/scripts/engine2/export_battle.ts output; empty = no combat).
+  std::filesystem::path battle;
 };
 
 class MapStage final : public Stage {
@@ -167,8 +176,10 @@ class MapStage final : public Stage {
       }
       logInfo("scene {}: {} cards, {} models, {} units, {} architecture pieces (not drawn yet)", scene_->map, scene_->cards.size(),
               scene_->models.size(), scene_->units.size(), scene_->architecture);
+      initUnits();
       setUpParty();
       if (!options.heroes.empty()) setUpPoses(options.heroes);
+      if (!options.battle.empty()) setUpBattle(options.battle);
       if (!scene_->backdrop.empty()) ground_.requestTexture(e2::backdropAsset(scene_->backdrop));
       background_ = scene_->backdrop.empty() ? 1 : 0;
       if (e2::timeOfDay(scene_->timeOfDay).moon && scene_->environment != "indoor")
@@ -216,6 +227,9 @@ class MapStage final : public Stage {
       cam_ = {target_, yaw_, pitch_, distance_};
     }
     if (!measuring_) panKeys(dt);
+    now_ = time;
+    updateUnits(dt);
+    updateHover();
     clampGoal();
     if (measuring_) {
       cam_ = {target_, yaw, pitch_, distance};  // measurements and captures: exactly the asked view
@@ -322,6 +336,9 @@ class MapStage final : public Stage {
   // zooms toward the point under the cursor. The left button stays free for the game. Clicks on the panel and the
   // camera bar never reach here (ImGui takes them).
   void event(const SDL_Event& e) override {
+    if (e.type == SDL_EVENT_MOUSE_MOTION) mouse_ = {e.motion.x, e.motion.y}, mouseWindow_ = e.motion.windowID;
+    if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && e.button.button == SDL_BUTTON_LEFT) click(e.button.windowID, e.button.x, e.button.y);
+    if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.key == SDLK_ESCAPE) select(-1);
     if (e.type == SDL_EVENT_MOUSE_MOTION && (e.motion.state & SDL_BUTTON_RMASK) && !flat_) {  // Tática never turns
       yaw_ -= e.motion.xrel * kTurnPerPixel;
       pitch_ = std::clamp(pitch_ + e.motion.yrel * kTurnPerPixel, kMinPitch, kMaxPitch);
@@ -564,7 +581,9 @@ class MapStage final : public Stage {
 
   void drawPanel() override {
     if (!board_) return;
+    drawMarks();
     drawCameraBar();
+    drawTurnBar();
     ImGui::SetNextWindowPos({12, 12}, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowBgAlpha(0.9f);
     ImGui::Begin("Escolhas", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
@@ -811,11 +830,12 @@ class MapStage final : public Stage {
     right.y = 0.0f;
     right = glm::length(right) > 0.0f && !flat_ ? glm::normalize(right) : glm::vec3(1, 0, 0);
     hiddenUnits_ = 0;
+    for (CardRect& c : unitCard_) c.drawn = false;
     for (size_t ui = 0; ui < scene_->units.size(); ++ui) {
       const e2::SceneUnit& u = scene_->units[ui];
       // Fog of war: a unit not in the party's sight is not drawn at all (and casts no shadow).
       if (fog_ && !noFog_ && u.side != "player") {
-        const auto [c, r] = e2::hexAt(board_->layout(), u.x, u.z);
+        const auto [c, r] = e2::hexAt(board_->layout(), unitPos_[ui].x, unitPos_[ui].y);
         // The states the shown mask was painted from (all hidden until the first mask arrives).
         const size_t i = static_cast<size_t>(e2::indexOf(board_->layout(), c, r));
         if (i >= fogStates_.size() || fogStates_[i] != e2::kFogVisible) {
@@ -825,10 +845,17 @@ class MapStage final : public Stage {
       }
       // The scene's own idle unless the unit's catalog entry has the chosen pose. The mirror stays the scene's:
       // its side's facing against the unit's drawn direction, which is the same for every pose.
+      // A walking unit shows Engine2's walk for its direction (UnitActor.walkShown), timed from the walk's start.
+      const e2::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
+      const bool walking = !unitWalk_[ui].points.empty();
+      std::string shown = kIdle;
       const e2::HeroPose* p = nullptr;
-      if (chosen != kIdle && ui < unitCatalog_.size() && unitCatalog_[ui]) {
-        p = unitCatalog_[ui]->find(chosen);
+      if (walking && entry) {
+        p = walkPose(*entry, unitWalk_[ui].dir, unitFacing_[ui], u.sprite, shown);
+      } else if (chosen != kIdle && entry) {
+        p = entry->find(chosen);
         if (p && p->pace.empty()) p = nullptr;
+        if (p) shown = chosen;
       }
       const SpriteClipId clip = p ? sprites_.find(p->set, p->clip) : sprites_.find(u.set, u.clip);
       if (clip == kNoSpriteClip) {
@@ -838,18 +865,25 @@ class MapStage final : public Stage {
       uint32_t frame = 0;
       if (p) {
         const size_t period = p->doneAt >= 0 ? static_cast<size_t>(p->doneAt) + 120 : pacePeriod(p->pace);
-        const size_t tick = static_cast<size_t>(time * 240.0f) % period;
+        const float clock = walking ? std::max(0.0f, time - unitWalk_[ui].start) : time;
+        const size_t tick = static_cast<size_t>(clock * 240.0f) % period;
         frame = static_cast<uint32_t>(p->pace[std::min(tick, p->pace.size() - 1)]);
       } else if (!u.pace.empty()) {
         const size_t period = pacePeriod(u.pace);
         frame = static_cast<uint32_t>(u.pace[static_cast<size_t>(time * 240.0f) % period]);
       }
       const float boxW = p ? p->boxW : u.boxW, boxH = p ? p->boxH : u.boxH, foot = p ? p->foot : u.foot;
-      glm::vec3 anchor = static_cast<int>(ui) == hero_ ? heroAt_ : glm::vec3{u.x, groundOf(u.groundSmooth, u.groundHard), u.z};
+      glm::vec3 anchor = static_cast<int>(ui) == hero_ && path_.size() > 1 ? heroAt_ : unitWorld(ui);
+      // Engine2's mirroring: the art's facing against the unit's, except cuts drawn for the left (and directional
+      // walks while moving), which are never mirrored.
+      const bool leftCut = shown == "walkLeft" || shown == "attackLeft" || shown == "attack2Left" || shown == "castLeft" ||
+                           (walking && kDirectionalWalk.contains(u.sprite));
+      const bool mirror = !leftCut && ((unitFacing_[ui] == -1) != (unitReversed_[ui] != 0));
       // Tática (Engine2 UnitActor.update with flatTop): flat over its own row's cards by half a row step, no shadow.
       if (flat_) anchor.y = boardTop_ + anchor.z * kFlatRowStep + kFlatRowStep * 0.5f;
       const uint32_t flags = flat_ ? kSpriteLit | kSpriteFlat : kSpriteLit | kSpriteFront | kSpriteCastsShadow;
-      addCard(clip, anchor, right, boxW, boxH, {0.0f, -foot, 0.0f}, u.mirror, frame, flags, nullptr);
+      addCard(clip, anchor, right, boxW, boxH, {0.0f, -foot, 0.0f}, mirror, frame, flags, nullptr);
+      unitCard_[ui] = {anchor - (flat_ ? glm::vec3(0.0f, 0.0f, -foot) : glm::vec3(0.0f, foot, 0.0f)), boxW, boxH, flat_, true};
     }
     const glm::vec3 eye = camera.position, fwd = camera.forward;
     std::sort(drawList_.begin(), drawList_.end(),
@@ -1011,7 +1045,7 @@ class MapStage final : public Stage {
     for (size_t i = 0; i < scene_->units.size(); ++i) {
       const e2::SceneUnit& u = scene_->units[i];
       if (u.side != "player") continue;
-      sum += static_cast<int>(i) == hero_ ? glm::vec2(heroAt_.x, heroAt_.z) : glm::vec2(u.x, u.z);
+      sum += static_cast<int>(i) == hero_ ? glm::vec2(heroAt_.x, heroAt_.z) : unitPos_[i];
       ++n;
     }
     return n ? sum / static_cast<float>(n) : glm::vec2(boardCenter_.x, boardCenter_.z);
@@ -1045,6 +1079,347 @@ class MapStage final : public Stage {
     logInfo("poses: {} of {} map units in the catalog, {} poses between them", scene_->units.size() - unknown.size(), scene_->units.size(),
             poseChoices_.size());
     for (const std::string& u : unknown) logWarn("poses: {} not in the catalog: idle only", u);
+  }
+
+  // Every scene unit's live state: where it stands, its facing, its art's own facing (from the scene's mirror rule).
+  void initUnits() {
+    const size_t n = scene_->units.size();
+    unitPos_.resize(n), unitMoved_.assign(n, 0), unitFacing_.resize(n), unitReversed_.resize(n);
+    unitWalk_.assign(n, {}), unitCard_.assign(n, {}), unitBattle_.assign(n, -1);
+    for (size_t i = 0; i < n; ++i) {
+      const e2::SceneUnit& u = scene_->units[i];
+      unitPos_[i] = {u.x, u.z};
+      unitFacing_[i] = u.facing < 0 ? -1 : 1;
+      unitReversed_[i] = u.mirror != (u.facing == -1) ? 1 : 0;
+    }
+  }
+
+  // The battle: each scene unit finds its battle unit by side and name, in spawn order.
+  void setUpBattle(const std::filesystem::path& path) {
+    battle_ = e2::Battle::load(path);
+    if (!battle_) return;
+    if (battle_->cols() != board_->layout().cols || battle_->rows() != board_->layout().rows) {
+      logError("battle {}: {}x{} does not fit the map's {}x{} board", path.string(), battle_->cols(), battle_->rows(), board_->layout().cols,
+               board_->layout().rows);
+      battle_.reset();
+      return;
+    }
+    std::vector<uint8_t> taken(battle_->units().size(), 0);
+    size_t matched = 0;
+    for (size_t i = 0; i < scene_->units.size(); ++i)
+      for (size_t b = 0; b < battle_->units().size(); ++b)
+        if (!taken[b] && battle_->units()[b].side == scene_->units[i].side && battle_->units()[b].name == scene_->units[i].name) {
+          unitBattle_[i] = static_cast<int>(b), taken[b] = 1, ++matched;
+          break;
+        }
+    logInfo("battle {}: {} of {} units in play", battle_->map(), matched, scene_->units.size());
+  }
+
+  int sceneUnitOf(int battleUnit) const {
+    for (size_t i = 0; i < unitBattle_.size(); ++i)
+      if (unitBattle_[i] == battleUnit && battleUnit >= 0) return static_cast<int>(i);
+    return -1;
+  }
+
+  // Where a unit's feet are now: its spawn's measured ground until it moves, then the ground under it.
+  glm::vec3 unitWorld(size_t i) const {
+    const e2::SceneUnit& u = scene_->units[i];
+    const glm::vec2 p = unitPos_[i];
+    const float y = unitMoved_[i] ? static_cast<float>(e2::groundHeightAt(*board_, look_, p.x, p.y)) : groundOf(u.groundSmooth, u.groundHard);
+    return {p.x, y, p.y};
+  }
+
+  // Where a battle unit's feet stand with its anchor on a hex: the middle of its body's front row (Ember's footprint
+  // centroid, as the map importer places the spawns).
+  glm::vec2 anchorWorld(const e2::BattleUnit& u, e2::BattleHex at) const {
+    glm::vec2 sum{0.0f};
+    int n = 0;
+    for (const e2::BattleHex& p : e2::Battle::footprint(u, at.x, at.y)) {
+      if (p.y != at.y || !battle_->inBounds(p.x, p.y)) continue;
+      const e2::Cell& c = board_->cell(p.x, p.y);
+      sum += glm::vec2(static_cast<float>(c.x), static_cast<float>(c.z));
+      ++n;
+    }
+    if (!n) {
+      const e2::Cell& c = board_->cell(at.x, at.y);
+      return {static_cast<float>(c.x), static_cast<float>(c.z)};
+    }
+    return sum / static_cast<float>(n);
+  }
+
+  // Engine2 UnitActor.update for walking units: one hex every 0.22 s; facing and walk direction relative to the camera.
+  void updateUnits(float dt) {
+    if (!scene_) return;
+    const float yaw = flat_ ? 0.0f : cam_.yaw;
+    for (size_t i = 0; i < unitWalk_.size(); ++i) {
+      Walk& w = unitWalk_[i];
+      if (w.points.empty()) continue;
+      glm::vec2& p = unitPos_[i];
+      const glm::vec2 d = w.points.front() - p;
+      const float dist = glm::length(d);
+      const float screenX = d.x * std::cos(yaw) - d.y * std::sin(yaw);
+      if (std::abs(screenX) > 0.05f) unitFacing_[i] = screenX > 0.0f ? 1 : -1;
+      const float away = -(d.x * std::sin(yaw) + d.y * std::cos(yaw));
+      if (dist > 1e-4f) w.dir = std::abs(away) > dist * 0.5f ? (away > 0.0f ? kWalkBack : kWalkFront) : kWalkSide;
+      const float move = std::min(dist, std::sqrt(3.0f) / kStepSeconds * dt);
+      if (dist > 1e-4f) p += d / dist * move;
+      unitMoved_[i] = 1;
+      if (dist - move < 1e-3f) w.points.erase(w.points.begin());
+    }
+    if (hero_ >= 0 && path_.size() <= 1) heroAt_ = unitWorld(static_cast<size_t>(hero_));  // the test lights follow it
+  }
+
+  // Engine2 UnitActor.walkShown: a still for the direction, else the up / down cycle, else the side walk (its own left
+  // cut when facing left; the Lancer's cuts are swapped).
+  static const e2::HeroPose* walkPose(const e2::Hero& h, int dir, int facing, const std::string& sprite, std::string& shown) {
+    auto has = [&](const char* pose) -> const e2::HeroPose* {
+      const e2::HeroPose* p = h.find(pose);
+      if (!p || p->pace.empty()) return nullptr;
+      shown = pose;
+      return p;
+    };
+    static const char* kStill[3] = {"walkBack", "walkFront", "walkSide"};
+    if (const e2::HeroPose* p = has(kStill[dir])) return p;
+    if (dir == kWalkBack)
+      if (const e2::HeroPose* p = has("walkUp")) return p;
+    if (dir == kWalkFront)
+      if (const e2::HeroPose* p = has("walkDown")) return p;
+    const bool wantLeft = sprite == "lancer" ? facing == 1 : facing == -1;
+    if (wantLeft)
+      if (const e2::HeroPose* p = has("walkLeft")) return p;
+    if (const e2::HeroPose* p = has("walk")) return p;
+    shown = kIdle;
+    return nullptr;
+  }
+
+  // The hex under the cursor: a drawn unit's card first (nearest wins), else the ground the view ray meets.
+  std::optional<e2::BattleHex> pick(SDL_WindowID id, float mx, float my) const {
+    int w = 0, h = 0;
+    SDL_Window* window = SDL_GetWindowFromID(id);
+    if (!window || !SDL_GetWindowSize(window, &w, &h) || w <= 0 || h <= 0) return std::nullopt;
+    const ImVec2 cursor{mx, my};
+    float best = 1e30f;
+    std::optional<e2::BattleHex> hit;
+    const glm::vec3 right = glm::length(glm::vec3(lastCamera_.right.x, 0.0f, lastCamera_.right.z)) > 0.0f && !flat_
+                                ? glm::normalize(glm::vec3(lastCamera_.right.x, 0.0f, lastCamera_.right.z))
+                                : glm::vec3(1.0f, 0.0f, 0.0f);
+    for (size_t i = 0; i < unitCard_.size(); ++i) {
+      const CardRect& c = unitCard_[i];
+      if (!c.drawn || unitBattle_[i] < 0) continue;
+      const glm::vec3 up = c.flat ? glm::vec3(0.0f, 0.0f, -1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
+      const glm::vec3 corners[4] = {c.origin - right * (c.width * 0.5f), c.origin + right * (c.width * 0.5f),
+                                    c.origin + right * (c.width * 0.5f) + up * c.height, c.origin - right * (c.width * 0.5f) + up * c.height};
+      ImVec2 q[4];
+      bool ok = true;
+      for (int k = 0; k < 4 && ok; ++k)
+        if (const std::optional<ImVec2> s = screenOf(corners[k], static_cast<float>(w), static_cast<float>(h))) q[k] = *s;
+        else ok = false;
+      if (!ok || !insideQuad(q, cursor)) continue;
+      const float d = glm::length(c.origin - lastCamera_.position);
+      if (d < best) best = d, hit = e2::BattleHex{battle_->units()[static_cast<size_t>(unitBattle_[i])].x, battle_->units()[static_cast<size_t>(unitBattle_[i])].y};
+    }
+    if (hit) return hit;
+    // The ground: march the view ray down from just above the highest ground, then refine where it goes under.
+    const float tanHalf = std::tan(glm::radians((flat_ ? kFlatFov : kFov) * 0.5f));
+    const float nx = 2.0f * mx / static_cast<float>(w) - 1.0f, ny = 1.0f - 2.0f * my / static_cast<float>(h);
+    const glm::vec3 camUp = glm::cross(lastCamera_.right, lastCamera_.forward);
+    const glm::vec3 dir = glm::normalize(lastCamera_.forward + lastCamera_.right * (nx * tanHalf * aspect_) + camUp * (ny * tanHalf));
+    if (dir.y > -1e-4f) return std::nullopt;
+    const glm::vec3 o = lastCamera_.position;
+    const e2::Board::Bounds b = board_->bounds();
+    auto under = [&](float t) {
+      const glm::vec3 p = o + dir * t;
+      if (p.x < b.x0 || p.x > b.x1 || p.z < b.z0 || p.z > b.z1) return false;
+      return p.y <= static_cast<float>(board_->cellAt(p.x, p.z).groundY);
+    };
+    float t = std::max(0.0f, (o.y - (boardTop_ + 2.0f)) / -dir.y);
+    const float end = (o.y - (groundLow_ - 2.0f)) / -dir.y;
+    for (; t < end; t += 0.15f)
+      if (under(t)) {
+        float lo = t - 0.15f, hi = t;
+        for (int k = 0; k < 12; ++k) (under((lo + hi) * 0.5f) ? hi : lo) = (lo + hi) * 0.5f;
+        const glm::vec3 p = o + dir * hi;
+        const auto [c, r] = e2::hexAt(board_->layout(), p.x, p.z);
+        if (!battle_->inBounds(c, r)) return std::nullopt;
+        return e2::BattleHex{c, r};
+      }
+    return std::nullopt;
+  }
+
+  static bool insideQuad(const ImVec2 (&q)[4], ImVec2 p) {
+    int sign = 0;
+    for (int k = 0; k < 4; ++k) {
+      const ImVec2 a = q[k], b = q[(k + 1) % 4];
+      const float cross = (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+      const int s = cross > 0.0f ? 1 : cross < 0.0f ? -1 : 0;
+      if (s && sign && s != sign) return false;
+      if (s) sign = s;
+    }
+    return true;
+  }
+
+  // A world point on screen (window coordinates), or none behind the eye.
+  std::optional<ImVec2> screenOf(glm::vec3 p, float w, float h) const {
+    const glm::vec4 clip = lastCamera_.viewProjection() * glm::vec4(p, 1.0f);
+    if (clip.w <= 1e-4f) return std::nullopt;
+    return ImVec2{(clip.x / clip.w * 0.5f + 0.5f) * w, (clip.y / clip.w * 0.5f + 0.5f) * h};
+  }
+
+  void updateHover() {
+    hover_.reset();
+    if (!battle_ || mouse_.x < 0.0f) return;
+    if (ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureMouse) return;
+    hover_ = pick(mouseWindow_, mouse_.x, mouse_.y);
+  }
+
+  // The left button: a reachable hex walks the picked player unit there; a unit picks it; anything else lets go.
+  void click(SDL_WindowID id, float mx, float my) {
+    if (!battle_ || !scene_) return;
+    const std::optional<e2::BattleHex> hex = pick(id, mx, my);
+    if (!hex) return select(-1);
+    if (selected_ >= 0 && unitWalk_[static_cast<size_t>(selected_)].points.empty() && scene_->units[static_cast<size_t>(selected_)].side == "player") {
+      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
+      const bool own = hex->x == u.x && hex->y == u.y;
+      if (!own && std::any_of(reach_.begin(), reach_.end(), [&](const e2::ReachCell& c) { return c.x == hex->x && c.y == hex->y; }))
+        return walkTo(static_cast<size_t>(selected_), *hex);
+    }
+    const int ui = sceneUnitOf(battle_->unitAt(hex->x, hex->y));
+    if (ui >= 0 && ui != selected_ && unitCard_[static_cast<size_t>(ui)].drawn) return select(ui);
+    select(-1);
+  }
+
+  void select(int ui) {
+    selected_ = ui;
+    refreshReach();
+  }
+
+  void refreshReach() {
+    reach_.clear(), reachPaths_.clear();
+    if (!battle_ || selected_ < 0 || unitBattle_[static_cast<size_t>(selected_)] < 0) return;
+    const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
+    reach_ = battle_->reachable(b, true);
+    reachPaths_ = battle_->reachable(b, false);  // routes may pass a friend's hex (Engine2: walk reach unpruned)
+  }
+
+  // The move is decided at once (the battle's state), the walk then plays it hex by hex.
+  void walkTo(size_t ui, e2::BattleHex to) {
+    const size_t b = static_cast<size_t>(unitBattle_[ui]);
+    const std::vector<e2::BattleHex> route = e2::Battle::path(reachPaths_, to.x, to.y);
+    if (route.size() < 2 || !battle_->move(b, to.x, to.y)) return;
+    Walk w;
+    for (size_t k = 1; k < route.size(); ++k) w.points.push_back(anchorWorld(battle_->units()[b], route[k]));
+    w.start = now_;
+    unitWalk_[ui] = std::move(w);
+    refreshReach();  // what is left of its movement, shown once it arrives
+  }
+
+  // Engine2's battle grid (Battle3D gridMarks over ThreeBattleRenderer): the movement wash and edges, the route, the
+  // picked unit's marker and the cursor; fills and hex borders in its exact colours, radii in hex radii, level on each
+  // hex's ground. Drawn over the scene; never on ground the party has not seen.
+  void drawMarks() {
+    if (!battle_ || !scene_) return;
+    struct Mark {
+      e2::BattleHex at;
+      ImU32 color;
+      float rOut, rIn;
+    };
+    std::vector<Mark> marks;
+    auto add = [&](e2::BattleHex at, ImU32 color, float rOut, float rIn = 0.0f) { marks.push_back({at, color, rOut, rIn}); };
+    auto border = [](float r) { return r * kBorderInner; };
+    const bool walking = selected_ >= 0 && !unitWalk_[static_cast<size_t>(selected_)].points.empty();
+    if (selected_ >= 0 && !walking) {
+      const bool player = scene_->units[static_cast<size_t>(selected_)].side == "player";
+      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
+      // The reach (tacticalGridStyle): the movement wash with its edges for the party, the enemy's wash for a foe.
+      for (const e2::ReachCell& c : reach_) {
+        if (c.x == u.x && c.y == u.y) continue;
+        add({c.x, c.y}, player ? IM_COL32(112, 174, 220, 20) : IM_COL32(231, 133, 115, 31), 1.0f);
+        if (player) add({c.x, c.y}, IM_COL32(112, 174, 220, 92), 0.94f, border(0.94f));
+      }
+      // The route to the hovered hex.
+      if (player && hover_ && !(hover_->x == u.x && hover_->y == u.y) &&
+          std::any_of(reach_.begin(), reach_.end(), [&](const e2::ReachCell& c) { return c.x == hover_->x && c.y == hover_->y; })) {
+        const std::vector<e2::BattleHex> route = e2::Battle::path(reachPaths_, hover_->x, hover_->y);
+        for (size_t i = 1; i < route.size(); ++i) {
+          const bool last = i + 1 == route.size();
+          if (last) {
+            add(route[i], IM_COL32(8, 12, 16, 242), 0.985f, border(0.985f));
+            add(route[i], IM_COL32(220, 226, 235, 31), 1.01f, border(1.01f));
+            add(route[i], IM_COL32(220, 226, 235, 255), 0.94f, border(0.94f));
+          } else {
+            add(route[i], IM_COL32(8, 12, 16, 242), 0.16f);
+            add(route[i], IM_COL32(220, 226, 235, 255), 0.12f);
+          }
+        }
+      }
+      // The picked unit's marker (Engine2's active-turn highlight).
+      const e2::BattleHex at{u.x, u.y};
+      if (player) {
+        add(at, IM_COL32(220, 226, 235, 3), 1.035f, border(1.035f));
+        add(at, IM_COL32(220, 226, 235, 6), 1.01f, border(1.01f));
+        add(at, IM_COL32(220, 226, 235, 10), 0.985f, border(0.985f));
+      }
+      add(at, IM_COL32(12, 20, 25, 217), 0.98f, border(0.98f));
+      add(at, player ? IM_COL32(220, 226, 235, 71) : IM_COL32(231, 133, 115, 255), 0.94f, border(0.94f));
+    }
+    // The cursor: red where nothing can stand.
+    if (hover_) {
+      const bool blocked = !battle_->cell(hover_->x, hover_->y).passable;
+      add(*hover_, IM_COL32(8, 12, 16, 242), 0.985f, border(0.985f));
+      add(*hover_, blocked ? IM_COL32(231, 133, 115, 242) : IM_COL32(220, 226, 235, 255), 0.94f, border(0.94f));
+    }
+    const ImGuiIO& io = ImGui::GetIO();
+    ImDrawList* dl = ImGui::GetBackgroundDrawList();
+    const float w = io.DisplaySize.x, h = io.DisplaySize.y;
+    for (const Mark& m : marks) {
+      if (fog_ && !noFog_ && fogReady_) {
+        const size_t i = static_cast<size_t>(e2::indexOf(board_->layout(), m.at.x, m.at.y));
+        if (i < fogStates_.size() && fogStates_[i] == e2::kFogUnseen) continue;
+      }
+      const e2::Cell& cell = board_->cell(m.at.x, m.at.y);
+      auto ring = [&](float r, ImVec2 (&out)[6]) {
+        for (int k = 0; k < 6; ++k) {
+          const auto [x, z] = e2::corner(cell.x, cell.z, k, e2::kHexRadius * r);
+          const glm::vec3 p{static_cast<float>(x), static_cast<float>(e2::groundHeightAt(*board_, look_, x, z)) + kMarkLift, static_cast<float>(z)};
+          const std::optional<ImVec2> s = screenOf(p, w, h);
+          if (!s) return false;
+          out[k] = *s;
+        }
+        return true;
+      };
+      ImVec2 outer[6], inner[6];
+      if (!ring(m.rOut, outer)) continue;
+      if (m.rIn <= 0.0f) {
+        dl->AddConvexPolyFilled(outer, 6, m.color);
+        continue;
+      }
+      if (!ring(m.rIn, inner)) continue;
+      for (int k = 0; k < 6; ++k) dl->AddQuadFilled(outer[k], outer[(k + 1) % 6], inner[(k + 1) % 6], inner[k], m.color);
+    }
+  }
+
+  // "Fim do turno" (Engine2's battle footer): every unit's movement is whole again. Bottom right, an ember plate.
+  void drawTurnBar() {
+    if (!battle_) return;
+    const ImGuiIO& io = ImGui::GetIO();
+    ImGui::SetNextWindowPos({io.DisplaySize.x - kBarInset + kPlateGlow, io.DisplaySize.y - kBarInset + kPlateGlow}, ImGuiCond_Always, {1.0f, 1.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {kPlateGlow, kPlateGlow});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::Begin("##turnbar", nullptr,
+                 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground |
+                     ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoSavedSettings);
+    ImGui::PushFont(nullptr, kPlateText);
+    const char* label = "FIM DO TURNO";
+    if (plate("##endturn", {spacedWidth(label) + 16.0f, kPlate}, [&](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32 ink) {
+          const float tw = spacedWidth(label);
+          drawSpaced(dl, {std::round((a.x + b.x - tw) * 0.5f), std::round((a.y + b.y - ImGui::GetTextLineHeight()) * 0.5f)}, ink, label);
+        })) {
+      battle_->newTurn();
+      refreshReach();
+    }
+    ImGui::PopFont();
+    ImGui::End();
+    ImGui::PopStyleVar(2);
   }
 
   // The party: the first player unit is the hero (test lights, the scout); its walk goes to the farthest enemy.
@@ -1135,7 +1510,7 @@ class MapStage final : public Stage {
         party.push_back(heroHex_);
         continue;
       }
-      const auto [c, r] = e2::hexAt(board_->layout(), u.x, u.z);
+      const auto [c, r] = e2::hexAt(board_->layout(), unitPos_[i].x, unitPos_[i].y);
       party.push_back({c, r});
     }
     if (changed || party != lastParty_) {
@@ -1331,6 +1706,39 @@ class MapStage final : public Stage {
   static constexpr float kMinDistance = 3.0f, kEyeClearance = 0.8f;
   bool captured_ = false;  // the first view is remembered: the bar's reset goes back to its angle
   bool flat_ = false;      // Tática: the old-school 2D view (the bar's Normal / Tática)
+  // Combat (world/Battle.h): the battle, each scene unit's battle unit and live state, the picked unit and its reach.
+  std::optional<e2::Battle> battle_;
+  std::vector<int> unitBattle_;        // per scene unit: its battle unit, -1 = none
+  std::vector<glm::vec2> unitPos_;     // per scene unit: where its feet are now (x, z)
+  std::vector<uint8_t> unitMoved_;     // it has left its spawn: its height is the ground under it
+  std::vector<int> unitFacing_;        // 1 right, -1 left, on screen
+  std::vector<uint8_t> unitReversed_;  // its art faces left (Engine2 drawnReversed)
+  static constexpr int kWalkBack = 0, kWalkFront = 1, kWalkSide = 2;  // Engine2 WalkDir: up the map, down it, along a row
+  struct Walk {
+    std::vector<glm::vec2> points;  // the hexes still ahead (feet positions)
+    float start = 0.0f;             // scene clock when it set off (the walk cycle's time)
+    int dir = kWalkSide;
+  };
+  std::vector<Walk> unitWalk_;
+  struct CardRect {  // a unit's card as drawn this frame, for picking
+    glm::vec3 origin{0.0f};  // bottom centre
+    float width = 0.0f, height = 0.0f;
+    bool flat = false, drawn = false;
+  };
+  std::vector<CardRect> unitCard_;
+  int selected_ = -1;                     // the picked scene unit
+  std::vector<e2::ReachCell> reach_;      // where it can stop
+  std::vector<e2::ReachCell> reachPaths_; // every hex it can pass (its routes)
+  std::optional<e2::BattleHex> hover_;    // the hex under the cursor
+  glm::vec2 mouse_{-1.0f};
+  SDL_WindowID mouseWindow_ = 0;
+  float now_ = 0.0f;  // this frame's scene clock
+  static constexpr float kStepSeconds = 0.22f;      // Engine2 STEP_SECONDS: one hex of walking
+  static constexpr float kBorderInner = 0.47f / 0.5f;  // Engine2 BORDER_INNER: a hex border's inner edge
+  static constexpr float kMarkLift = 0.03f;         // grid marks sit just over the ground
+  // Engine2 DIR_ACTION_WALK: sprites whose walks are drawn for each side, never mirrored while moving.
+  inline static const std::unordered_set<std::string> kDirectionalWalk = {"aldric", "defaultLancer", "lancer", "sandoval", "theButcher",
+      "familiar2", "familiar3", "cultist-v2", "militia-v2", "salazar", "cobalt-blue-deer", "neera"};
   float homeYaw_ = 0.0f, homePitch_ = 0.0f, homeDistance_ = 0.0f;
   glm::vec3 homeTarget_{0.0f};
   std::chrono::steady_clock::time_point lastFrame_ = std::chrono::steady_clock::now();

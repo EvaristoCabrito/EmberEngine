@@ -96,6 +96,10 @@ build.bat release          # or debug; output in build/<config>/bin
      [--sun AZ EL] [--layers MASK: 1 sun 2 shadows 4 indirect 8 local]`. Window: right-drag turn/tilt, middle-drag
      grab, wheel zoom to cursor, WASD/arrows slide, camera bar at the bottom (MapStage.h top comment). Proof maps: aldeia015
      (lights, houses, photo ground), random-rimewater-shrine001 (water, 3D trees); stress: wisp-forest-2004.
+  4. Combat: `... export_battle.ts -- <map.json> content/engine2/battles/<map>.battle.json` (Engine2's BattleEngine
+     run headless: cells as movement sees them, units, Engine2's reach per unit; ENGINE2=<dir> for another checkout);
+     `Cooker check-battle content/engine2/battles/*.battle.json` (must print "reach matches Engine2" per map); then
+     Sandbox ... `--heroes build/engine2-scenes/roster.json --battle-rules content/engine2/battles/aldeia015.battle.json`.
 - **M3 exit test:** `Sandbox --battle --meshes <pak> --sprites build/sprites/battle.pak --capture x.png
   [--content all|3d|cards] [--unpaced] [--cost-split 0|1|2]`. Reports per phase: GPU median / 99th / worst,
   per-pass averages, frames over budget; per-frame CSV in `build/battle-<phase>.csv`. **`--unpaced` = cost at
@@ -265,9 +269,21 @@ only on the user's explicit "faz", shown live in the window:
    pose's box / foot / pacing (one-shots: doneAt + 0.5 s, then again), keeping its own mirror; units without the
    pose stay idle; unknown keys logged. The panel lists only poses some map unit has, Parado first. The rows of
    97 test units and their camera override are gone. The existing `roster.json` already carries `key`.
-4. **Combat control** (asked "faz" earlier, only the study begun): select a unit, movement range (Engine2
-   pathfinding.ts computeReachable: footprintCost, terrain moveCost, occupancy), click to walk the path with the walk
-   animation, attack with attack / hit / death, then enemy turns (engine.ts BattleEngine). Engine2 = game design.
+4. **Combat control** (user: "it's to create the damn game", 2026-10-15). **Step 1 written in the cloud session:**
+   `engine/world/Battle.h/.cpp` = Engine2 pathfinding.ts (footprint, footprintCost, computeReachable incl. its stable
+   re-sorted queue and neighbour order, reconstructPath) + move / newTurn. **Verified here (Linux, no GPU):** C++ reach
+   identical to Engine2's (hexes, costs, parents) for every unit of aldeia015, random-rimewater-shrine001,
+   wisp-forest-2004 (56 units, 2487 hexes; and the all-maps run, see below); paths and spent movement checked.
+   Data: `tools/scripts/engine2/export_battle.ts` (runs Engine2's own BattleEngine headless with vite-node; the three
+   proof maps' output is committed in `content/engine2/battles/`, from Engine2's GitHub HEAD, Oct 14: re-export from
+   C:/Engine2 if its maps changed). MapStage (`--battle-rules`), **NOT BUILT / NOT RUN**: left click picks a unit (its
+   card, or its hex) and shows its reach in Engine2's battle-grid colours (Battle3D gridMarks: movement wash + edges,
+   enemy wash, route, active marker, cursor; drawn as an ImGui background overlay, so it lies over unit feet: a ground
+   decal pass is the proper home later); hovering a reachable hex shows the route; clicking walks it (Engine2
+   UnitActor: 0.22 s per hex, facing and back/front/side walk cuts relative to the camera, directional-walk sprites
+   never mirrored, Lancer's swapped cuts); remaining movement can be used again; "Fim do turno" (bottom right plate)
+   restores movement; Esc lets go. Units keep live positions (fog sight follows them). Next steps: attack (target
+   cells, forecast, attack / hit / death poses, damage from Engine2 combat.ts), then enemy turns (engine.ts AI).
 5. Sprite look in light (cards washed out / flat), then the AAA light plan (ARCHITECTURE §7.6, step A designed:
    physical units, EV100 metering + adaptation + night compensation, inverse-square lamps).
 6. Tabletop pieces as specified above; the redo of the sprite path if it still falls short of Engine2.

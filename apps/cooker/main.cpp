@@ -13,6 +13,7 @@
 //                                                                    Engine2's ground textures (procedural + photo layers)
 //   Cooker check-ground <board.json> <map.json> <engine2 public> <reference dir>
 //                                                                    compare the C++ board/ground with Engine2's export
+//   Cooker check-battle <map.battle.json>                            compare the C++ movement reach with Engine2's export
 //   Cooker sprite-preview <manifest> <source root> <cache dir> <set> <clip> <frame> <out.png>
 //                                                                    source vs. GPU-decoded frame, side by side
 
@@ -28,6 +29,7 @@
 #include <vector>
 
 #include "PakWriter.h"
+#include "BattleCheck.h"
 #include "GroundCheck.h"
 #include "GroundCooker.h"
 #include "MeshCooker.h"
@@ -295,6 +297,13 @@ int checkGroundCommand(const std::vector<std::string_view>& args) {
              : 1;
 }
 
+int checkBattleCommand(const std::vector<std::string_view>& args) {
+  if (args.empty()) fatal("usage: Cooker check-battle <map.battle.json>...");
+  bool ok = true;
+  for (std::string_view a : args) ok = checkBattle(std::filesystem::path(a)) && ok;
+  return ok ? 0 : 1;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -312,6 +321,7 @@ int main(int argc, char** argv) {
   if (command == "sprite-preview") return spritePreview(args);
   if (command == "meshes") return meshes(args);
   if (command == "check-ground") return checkGroundCommand(args);
+  if (command == "check-battle") return checkBattleCommand(args);
   if (command == "ground") return ground(args);
   ember::logError("unknown command {}", command);
   return 1;
