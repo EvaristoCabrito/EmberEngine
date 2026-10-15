@@ -151,3 +151,16 @@ uint PSMain(VertexOut v, PrimitiveIn p) : SV_Target0 {
   }
   return p.visibility;
 }
+
+// The sun's shadow map: depth only; alpha-tested materials still cut their holes.
+[[vk::ext_extension("SPV_EXT_mesh_shader")]] [[vk::ext_capability(5283)]]
+void PSShadow(VertexOut v, PrimitiveIn p) {
+  if (p.material != ~0u) {
+    const MeshFrame f = loadFrame(push.frame);
+    const MaterialGpu m = loadMaterial(f, p.material);
+    float alpha = m.baseColor.a;
+    if (m.baseColorTexture != kNoTexture)
+      alpha *= gTextures[NonUniformResourceIndex(m.baseColorTexture)].Sample(gSamplers[f.materialSampler], v.uv).a;
+    clip(alpha - m.alphaCutoff);
+  }
+}

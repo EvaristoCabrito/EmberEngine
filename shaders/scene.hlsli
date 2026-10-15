@@ -128,7 +128,9 @@ struct MeshFrame {
   uint costSplit;       // measurement only: 0 normal, 1 task shaders only (no mesh work), 2 mesh shaders
                         // run but every triangle is culled (no rasterisation)
   uint debugView;       // 0 shaded, 1 geometric normal, 2 shading normal (normal map applied): xyz * 0.5 + 0.5
-  uint pad4, pad5, pad6;
+  uint shadowPass;      // 1: this frame record drives the meshes' pass from the sun (frustum only, no occlusion)
+  uint cardShadowMap;   // bindless depth texture: the cards' shadows this frame; kNoTexture = none
+  uint pad6;
   // Sun shadow (lighting.hlsli sunShadow): one orthographic map fitted to the board.
   float4x4 shadowMatrix;     // world -> light clip: x, y in -1..1, z in 0..1 (0 = nearest the sun)
   uint shadowMap;            // bindless depth texture; kNoTexture = no shadows

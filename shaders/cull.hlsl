@@ -62,6 +62,14 @@ void cullInstance(uint id, bool late) {
   const float3 center = transformPoint(inst, mesh.sphere.xyz);
   const float radius = mesh.sphere.w * inst.scale;
   const bool inFrustum = sphereInFrustum(f, center, radius);
+  if (f.shadowPass != 0) {
+    // From the sun: everything in its frustum casts (no occlusion history for this view).
+    if (!late && inFrustum) {
+      work(f).InterlockedAdd(kCounterInstances * 4, 1);
+      pushRoots(f, id, mesh);
+    }
+    return;
+  }
   if (!late) {
     if (inFrustum && wasVisible) {
       work(f).InterlockedAdd(kCounterInstances * 4, 1);

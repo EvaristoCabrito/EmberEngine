@@ -7,7 +7,8 @@
 // (lighting.hlsli) with Engine2's card model as the baseline (src/units/spriteMaterial.ts): the shading
 // normal faces out of the card tilted upward (y 0.55 against z 1), diffuse light wraps around (0.85), no
 // specular, and a lit card never exceeds twice its painted colour. Painted flames glow (Engine2's emit
-// mask). Cards do not receive the sun's shadow yet (a flat card would shadow itself; ARCHITECTURE §7.1).
+// mask). Cards receive the sun's shadow from the ground and 3D pieces, but not from other cards (their
+// shadow map holds the card itself, which would shadow itself; ARCHITECTURE §7.1).
 #include "lighting.hlsli"
 
 // Matches ember::SpriteInstance (render/SpriteDraw.h). 80 bytes.
@@ -87,7 +88,8 @@ float4 PSMain(VSOut i) : SV_Target0 {
     Surface surface = defaultSurface(i.world, i.normal, c.rgb);
     surface.wrap = kWrap;
     surface.specular = 0.0;
-    surface.receivesShadow = 0.0;
+    // Shadows from the ground and 3D pieces, not from the cards' own map (a flat card would shadow itself).
+    surface.receivesCardShadow = 0.0;
     color = min(shade(f, surface), c.rgb * kMaxLit * f.exposure);
     if (s.emitLevel > 0.0) {
       // Engine2's flame mask: bright, saturated pixels close to the light's colour glow, and so does the lit
@@ -104,4 +106,38 @@ float4 PSMain(VSOut i) : SV_Target0 {
     color *= visibility(f, i.world);
   }
   return float4(color * c.a, c.a);
+}
+
+// Cards in the sun's shadow (the card shadow map, redrawn every frame): alpha-tested at half coverage. A card
+// that turns to face the camera (a unit) casts facing the sun instead, so moving the camera never moves its
+// shadow (ARCHITECTURE §7.1); fixed cards cast as they stand.
+struct ShadowOut {
+  float4 position : SV_Position;
+  float2 uv : TEXCOORD0;
+  nointerpolation uint instance : TEXCOORD1;
+};
+
+ShadowOut VSShadow(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
+  const float2 corners[6] = { float2(0, 0), float2(1, 0), float2(1, 1), float2(0, 0), float2(1, 1), float2(0, 1) };
+  const SpriteInstance s = loadSprite(instance);
+  const MeshFrame f = loadFrame(push.frame);
+  const float2 c = corners[vertex];
+  float3 right = float3(s.right.x, 0.0, s.right.y);
+  if (dot(s.right, s.right) == 0.0) {
+    const float2 sun = f.sunDirection.xz;
+    right = dot(sun, sun) > 1e-6 ? normalize(float3(sun.y, 0.0, -sun.x)) : float3(1, 0, 0);
+  }
+  const float3 world = s.origin + right * ((c.x - 0.5) * s.width) + float3(0, 1, 0) * (c.y * s.height);
+  ShadowOut o;
+  o.position = (s.flags & 8u) ? mul(float4(world, 1.0), f.shadowMatrix) : float4(0, 0, -1, 1);  // non-casters fall off the map
+  const float u = (s.flags & 1u) ? 1.0 - c.x : c.x;
+  o.uv = float2(u, 1.0 - c.y) * s.uvScale;
+  o.instance = instance;
+  return o;
+}
+
+void PSShadow(ShadowOut i) {
+  const SpriteInstance s = loadSprite(i.instance);
+  const float a = gTextureArrays[NonUniformResourceIndex(s.textureIndex)].Sample(gSamplers[push.samplerIndex], float3(i.uv, s.layer)).a;
+  clip(a - 0.5);
 }

@@ -38,6 +38,7 @@ struct GroundPush {
 
 constexpr uint32_t kShadowSize = 4096;
 constexpr VkFormat kShadowFormat = VK_FORMAT_D32_SFLOAT;
+constexpr VkFormat kCardShadowFormat = VK_FORMAT_D16_UNORM;  // cards: 16 bits is plenty, half the memory
 
 struct TerrainPush {
   VkDeviceAddress frame;
@@ -103,7 +104,9 @@ struct MeshFrame {
   uint32_t earlyOcclusion;
   uint32_t costSplit;
   uint32_t debugView;
-  uint32_t pad4, pad5, pad6;
+  uint32_t shadowPass;
+  uint32_t cardShadowMap;
+  uint32_t pad6;
   glm::mat4 shadowMatrix;
   uint32_t shadowMap;
   uint32_t shadowSampler;
@@ -212,6 +215,7 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
     VK_CHECK(vkCreateSemaphore(context.device, &semaphoreInfo, nullptr, &frame.imageAcquired));
     frame.sprites = createHostBuffer(context, sizeof(SpriteInstance) * kMaxSprites, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     frame.meshFrame = createDeviceBuffer(context, sizeof(MeshFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    frame.shadowFrame = createDeviceBuffer(context, sizeof(MeshFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     frame.meshCounters = createReadbackBuffer(context, kCounterBytes);
   }
   meshWork_ = createDeviceBuffer(context, kWorkHeaderBytes + VkDeviceSize{kMaxQueue} * 8 * 2 + VkDeviceSize{kMaxClusters} * (8 + 4),
@@ -262,6 +266,8 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   shadowSamplerIndex_ = bindless_.addSampler(shadowSampler_);
   shadowMap_ = createImage(context, {kShadowFormat, {kShadowSize, kShadowSize}, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT});
   shadowMapIndex_ = bindless_.addSampledImage(shadowMap_.view, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
+  cardShadowMap_ = createImage(context, {kCardShadowFormat, {kShadowSize, kShadowSize}, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT});
+  cardShadowMapIndex_ = bindless_.addSampledImage(cardShadowMap_.view, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
 
   createTargets(size);
 
@@ -349,6 +355,27 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   meshlet.depthTest = true;
   meshlet.depthWrite = true;
   meshletPipeline_ = createGraphicsPipeline(context, layout, meshlet);
+  GraphicsPipelineDesc meshShadow;
+  meshShadow.taskShader = "meshlet.ASMain";
+  meshShadow.meshShader = "meshlet.MSMain";
+  meshShadow.fragmentShader = "meshlet.PSShadow";
+  meshShadow.depthFormat = kShadowFormat;
+  meshShadow.depthTest = true;
+  meshShadow.depthWrite = true;
+  meshShadow.depthCompare = VK_COMPARE_OP_LESS_OR_EQUAL;
+  meshShadow.depthBiasConstant = 1.0f;
+  meshShadow.depthBiasSlope = 1.5f;
+  meshShadowPipeline_ = createGraphicsPipeline(context, layout, meshShadow);
+  GraphicsPipelineDesc spriteShadow;
+  spriteShadow.vertexShader = "sprites.VSShadow";
+  spriteShadow.fragmentShader = "sprites.PSShadow";
+  spriteShadow.depthFormat = kCardShadowFormat;
+  spriteShadow.depthTest = true;
+  spriteShadow.depthWrite = true;
+  spriteShadow.depthCompare = VK_COMPARE_OP_LESS_OR_EQUAL;
+  spriteShadow.depthBiasConstant = 1.0f;
+  spriteShadow.depthBiasSlope = 1.5f;
+  spriteShadowPipeline_ = createGraphicsPipeline(context, layout, spriteShadow);
 }
 
 void Renderer::setScene(const Camera& camera, std::span<const SpriteInstance> sprites) {
@@ -367,6 +394,10 @@ Renderer::~Renderer() {
   vkDestroyPipeline(context_.device, waterPipeline_, nullptr);
   bindless_.removeSampledImage(shadowMapIndex_);
   destroyImage(context_, shadowMap_);
+  bindless_.removeSampledImage(cardShadowMapIndex_);
+  destroyImage(context_, cardShadowMap_);
+  vkDestroyPipeline(context_.device, meshShadowPipeline_, nullptr);
+  vkDestroyPipeline(context_.device, spriteShadowPipeline_, nullptr);
   vkDestroySampler(context_.device, shadowSampler_, nullptr);
   vkDestroyPipeline(context_.device, spritePipeline_, nullptr);
   for (VkPipeline p : {cullInstancesPipeline_, cullInstancesLatePipeline_, hizPipeline_, cullPreparePipeline_,
@@ -388,6 +419,7 @@ Renderer::~Renderer() {
     destroyBuffer(context_, frame.sprites);
     destroyBuffer(context_, frame.meshFrame);
     destroyBuffer(context_, frame.meshCounters);
+    destroyBuffer(context_, frame.shadowFrame);
   }
 }
 
@@ -615,15 +647,36 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
   const bool shadows = f.shadowMap != kNoTextureIndex && (lightingLayers_ & 2u) != 0;
   const std::array<float, 8> key{lighting_.sunDirection.x, lighting_.sunDirection.y, lighting_.sunDirection.z, shadowCenter_.x,
                                  shadowCenter_.y, shadowCenter_.z, shadowRadius_, static_cast<float>(terrain_.vertices % 1000003u)};
-  shadowsThisFrame_ = shadows && (key != shadowKey_ || terrain_.vertices != shadowTerrain_);
+  // The 3D pieces belong to the cached map too: a new instance list (or new meshes) redraws it.
+  const uint64_t meshKey = meshView_ ? (meshView_.instancesVersion * 1000003ull) ^ meshView_.meshes ^ meshView_.meshCount : 0;
+  shadowsThisFrame_ = shadows && (key != shadowKey_ || terrain_.vertices != shadowTerrain_ || meshKey != shadowMeshKey_);
   if (shadowsThisFrame_) {
     shadowKey_ = key;
     shadowTerrain_ = terrain_.vertices;
+    shadowMeshKey_ = meshKey;
+  }
+  // Cards cast into their own map, every frame (units move and animate).
+  cardShadowsThisFrame_ = shadows && std::any_of(sprites_.begin(), sprites_.end(), [](const SpriteInstance& c) { return (c.flags & kSpriteCastsShadow) != 0; });
+  f.cardShadowMap = cardShadowsThisFrame_ ? cardShadowMapIndex_ : kNoTextureIndex;
+  if (shadowsThisFrame_ && meshView_) {
+    // The meshes' pass from the sun: its orthographic view, frustum only, LOD at the shadow map's texel size.
+    MeshFrame sf = f;
+    const glm::vec3 sun = glm::normalize(lighting_.sunDirection);
+    sf.viewProjection = f.shadowMatrix;
+    frustumPlanes(sf.viewProjection, sf.frustum);
+    sf.cameraPosition = shadowCenter_ + sun * shadowRadius_ * 2.0f;
+    sf.lodScale = 2.0f * shadowRadius_ / f.shadowTexelWorld;
+    sf.shadowPass = 1;
+    sf.earlyOcclusion = 0;
+    sf.costSplit = 0;
+    sf.debugView = 0;
+    std::memcpy(shadowFrameStorage_.data(), &sf, sizeof(sf));
   }
   // The previous frame's passes may still read these buffers.
   memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT,
                 VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
   vkCmdUpdateBuffer(cmd, frame.meshFrame.buffer, 0, sizeof(f), &f);
+  if (shadowsThisFrame_ && meshView_) vkCmdUpdateBuffer(cmd, frame.shadowFrame.buffer, 0, sizeof(MeshFrame), shadowFrameStorage_.data());
   vkCmdFillBuffer(cmd, meshWork_.buffer, 0, kWorkHeaderBytes, 0);
   // A new instance list: last frame's verdicts belong to other instances; everything starts unknown
   // (not visible), so the late pass tests it all against the pyramid.
@@ -638,47 +691,47 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
                 VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT);
 }
 
-void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
-  const uint32_t instanceCount = std::min(meshView_.instanceCount, kMaxInstances);
-  const VkDeviceAddress frameAddress = bufferAddress(context_, frame.meshFrame);
+// Instances (early or late), then the BVH traversal one level per pass, then the draw arguments.
+void Renderer::cullPass(VkCommandBuffer cmd, VkDeviceAddress frameAddress, VkPipeline instances, uint32_t drawPass, uint32_t instanceCount) {
   const auto computeToCompute = [&] {
     memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
                   VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
                   VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
   };
-  // Instances (early or late), then the BVH traversal one level per pass, then the draw arguments.
-  const auto cull = [&](VkPipeline instances, uint32_t drawPass) {
-    CullPush push{frameAddress, 0};
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, instances);
-    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
-    vkCmdDispatch(cmd, (instanceCount + 63) / 64, 1, 1);
-    for (uint32_t pass = 0; pass < MeshScene::kMaxTraversalDepth; ++pass) {
-      push.pass = pass;
-      computeToCompute();
-      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cullPreparePipeline_);
-      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
-      vkCmdDispatch(cmd, 1, 1, 1);
-      computeToCompute();
-      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cullTraversePipeline_);
-      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
-      vkCmdDispatchIndirect(cmd, meshWork_.buffer, kTraverseArgsOffset);
-    }
+  CullPush push{frameAddress, 0};
+  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, instances);
+  vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+  vkCmdDispatch(cmd, (instanceCount + 63) / 64, 1, 1);
+  for (uint32_t pass = 0; pass < MeshScene::kMaxTraversalDepth; ++pass) {
+    push.pass = pass;
     computeToCompute();
-    push.pass = drawPass;
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cullPrepareDrawPipeline_);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cullPreparePipeline_);
     vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
     vkCmdDispatch(cmd, 1, 1, 1);
-    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
-                  VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT |
-                      VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
-                      VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT,
-                  VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
-                      VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT);
-  };
+    computeToCompute();
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cullTraversePipeline_);
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+    vkCmdDispatchIndirect(cmd, meshWork_.buffer, kTraverseArgsOffset);
+  }
+  computeToCompute();
+  push.pass = drawPass;
+  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cullPrepareDrawPipeline_);
+  vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+  vkCmdDispatch(cmd, 1, 1, 1);
+  memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+                VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT |
+                    VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
+                    VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT,
+                VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
+                    VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT);
+}
 
+void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
+  const uint32_t instanceCount = std::min(meshView_.instanceCount, kMaxInstances);
+  const VkDeviceAddress frameAddress = bufferAddress(context_, frame.meshFrame);
   // --- Early: what was visible last frame ---------------------------------------------------
   uint32_t scope = gpuTimer_.begin(cmd, "cull early");
-  cull(cullInstancesPipeline_, 0);
+  cullPass(cmd, frameAddress, cullInstancesPipeline_, 0, instanceCount);
   gpuTimer_.end(cmd, scope);
   transition(cmd, visibility_.image, visibility_.aspect,
              {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
@@ -707,7 +760,7 @@ void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
   memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
                 VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT);
   scope = gpuTimer_.begin(cmd, "cull late");
-  cull(cullInstancesLatePipeline_, 1);
+  cullPass(cmd, frameAddress, cullInstancesLatePipeline_, 1, instanceCount);
   gpuTimer_.end(cmd, scope);
   // Counters back to the CPU for meshStats() once this frame's fence signals.
   const VkBufferCopy counters{0, 0, kCounterBytes};
@@ -830,6 +883,8 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   bindless_.bind(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS);
   bindless_.bind(cmd, VK_PIPELINE_BIND_POINT_COMPUTE);
   const uint32_t frameScope = gpuTimer_.begin(cmd, "frame");
+  // This frame's cards (host-visible): read by the card shadow pass and the scene pass.
+  if (hasScene_ && !sprites_.empty()) std::memcpy(frame.sprites.mapped, sprites_.data(), sprites_.size() * sizeof(SpriteInstance));
 
   // --- 3D meshes: cull, pick cluster LODs, rasterise visibility + depth, resolve materials -----
   const bool meshes = hasScene_ && static_cast<bool>(meshView_);
@@ -837,6 +892,8 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   // --- Sun shadow: the board's ground from the sun (before the meshes: their resolve reads it) ---------------------------------------------
   if (shadowsThisFrame_) {
     const uint32_t shadowScope = gpuTimer_.begin(cmd, "shadow");
+    const VkDeviceAddress shadowFrameAddress = bufferAddress(context_, frame.shadowFrame);
+    if (meshes) cullPass(cmd, shadowFrameAddress, cullInstancesPipeline_, 0, std::min(meshView_.instanceCount, kMaxInstances));
     transition(cmd, shadowMap_.image, shadowMap_.aspect,
                {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
                 VK_ACCESS_2_NONE, VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
@@ -857,12 +914,60 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     const TerrainPush push{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices};
     vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
     vkCmdDraw(cmd, terrain_.count, 1, 0, 0);
+    if (meshes) {
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, meshShadowPipeline_);
+      const MeshletPush meshPush{shadowFrameAddress, 0};
+      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(meshPush), &meshPush);
+      vkCmdDrawMeshTasksIndirectEXT(cmd, meshWork_.buffer, kDrawArgsOffset, 1, 12);
+    }
     vkCmdEndRendering(cmd);
+    if (meshes) {
+      // The main pass starts from empty counters and queues again.
+      memoryBarrier(cmd, VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT | VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
+                             VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
+                    VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT,
+                    VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
+      vkCmdFillBuffer(cmd, meshWork_.buffer, 0, kWorkHeaderBytes, 0);
+      memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                    VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT | VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT,
+                    VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT);
+    }
     transition(cmd, shadowMap_.image, shadowMap_.aspect,
                {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
                 VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                 VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
     gpuTimer_.end(cmd, shadowScope);
+  }
+  // --- Card shadows: every card that casts, every frame -----------------------------------------
+  if (cardShadowsThisFrame_) {
+    const uint32_t cardScope = gpuTimer_.begin(cmd, "card shadow");
+    transition(cmd, cardShadowMap_.image, cardShadowMap_.aspect,
+               {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                VK_ACCESS_2_NONE, VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT});
+    VkRenderingAttachmentInfo cardDepth{VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
+    cardDepth.imageView = cardShadowMap_.view;
+    cardDepth.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    cardDepth.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    cardDepth.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    cardDepth.clearValue.depthStencil = {1.0f, 0};
+    VkRenderingInfo cardPass{VK_STRUCTURE_TYPE_RENDERING_INFO};
+    cardPass.renderArea = {{0, 0}, {kShadowSize, kShadowSize}};
+    cardPass.layerCount = 1;
+    cardPass.pDepthAttachment = &cardDepth;
+    vkCmdBeginRendering(cmd, &cardPass);
+    setViewport(cmd, {kShadowSize, kShadowSize});
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spriteShadowPipeline_);
+    const SpritePush push{camera_.viewProjection(), camera_.right, spriteSamplerIndex_, bufferAddress(context_, frame.sprites),
+                          bufferAddress(context_, frame.meshFrame)};
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+    vkCmdDraw(cmd, 6, static_cast<uint32_t>(sprites_.size()), 0, 0);
+    vkCmdEndRendering(cmd);
+    transition(cmd, cardShadowMap_.image, cardShadowMap_.aspect,
+               {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+                VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
+    gpuTimer_.end(cmd, cardScope);
   }
 
   if (meshes) {
@@ -933,7 +1038,6 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       gpuTimer_.end(cmd, waterScope);
     }
     if (!sprites_.empty()) {
-      std::memcpy(frame.sprites.mapped, sprites_.data(), sprites_.size() * sizeof(SpriteInstance));
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spritePipeline_);
       const SpritePush spritePush{viewProjection, camera_.right, spriteSamplerIndex_, bufferAddress(context_, frame.sprites),
                                   bufferAddress(context_, frame.meshFrame)};

@@ -29,7 +29,8 @@ struct Surface {
   float3 emissive;         // linear, before exposure
   float wrap;              // diffuse wrap-around (0 = Lambert; 2D cards: light from the side dims gently)
   float specular;          // 1 = full specular lobe, 0 = diffuse only (2D cards)
-  float receivesShadow;    // 1 = the sun's shadow map darkens it, 0 = not (a flat card would shadow itself)
+  float receivesShadow;    // 1 = the sun's shadow maps darken it, 0 = not
+  float receivesCardShadow; // 1 = cards' shadows too, 0 = only the ground's and 3D pieces' (cards themselves)
 };
 
 Surface defaultSurface(float3 position, float3 normal, float3 albedo) {
@@ -45,6 +46,7 @@ Surface defaultSurface(float3 position, float3 normal, float3 albedo) {
   s.wrap = 0.0;
   s.specular = 1.0;
   s.receivesShadow = 1.0;
+  s.receivesCardShadow = 1.0;
   return s;
 }
 
@@ -86,9 +88,16 @@ float sunShadow(MeshFrame f, Surface s) {
   if (any(uvz.xy < 0.0) || any(uvz.xy > 1.0) || uvz.z > 1.0) return 1.0;
   Texture2D map = gTextures[NonUniformResourceIndex(f.shadowMap)];
   SamplerComparisonState cmp = gComparisonSamplers[f.shadowSampler];
+  const bool cards = s.receivesCardShadow > 0.0 && f.cardShadowMap != kNoTexture;
+  Texture2D cardMap = gTextures[NonUniformResourceIndex(cards ? f.cardShadowMap : f.shadowMap)];
   float lit = 0.0;
   const float radius = f.shadowFilterTexels / f.shadowSize;
-  [unroll] for (uint i = 0; i < 16; ++i) lit += map.SampleCmpLevelZero(cmp, uvz.xy + kPoisson16[i] * radius, uvz.z);
+  [unroll] for (uint i = 0; i < 16; ++i) {
+    const float2 uv = uvz.xy + kPoisson16[i] * radius;
+    float t = map.SampleCmpLevelZero(cmp, uv, uvz.z);
+    if (cards) t = min(t, cardMap.SampleCmpLevelZero(cmp, uv, uvz.z));
+    lit += t;
+  }
   return lit / 16.0;
 }
 

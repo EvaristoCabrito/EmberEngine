@@ -311,7 +311,7 @@ class MapStage final : public Stage {
         emit.emitLevel = kFlameEmit * flicker(time, d.light->seed, d.light->flicker);
         emit.emitAt = {d.art.flameFound ? d.art.flameU : 0.5f, d.art.flameFound ? d.art.flameV : 0.7f, 0.0f};
       }
-      addCard(clip, anchor, right, d.w, d.h, local, d.mirror, 0, kSpriteLit, d.light ? &emit : nullptr);
+      addCard(clip, anchor, right, d.w, d.h, local, d.mirror, 0, kSpriteLit | (d.castShadow ? kSpriteCastsShadow : 0u), d.light ? &emit : nullptr);
     }
     // Units: Engine2's UnitActor idle. They turn to face the camera; Engine2's box for the original frame,
     // its foot line on the ground, the frame paced by Engine2's framePace.
@@ -330,7 +330,7 @@ class MapStage final : public Stage {
         frame = static_cast<uint32_t>(u.pace[static_cast<size_t>(time * 240.0f) % period]);
       }
       const glm::vec3 anchor{u.x, groundOf(u.groundSmooth, u.groundHard), u.z};
-      addCard(clip, anchor, right, u.boxW, u.boxH, {0.0f, -u.foot, 0.0f}, u.mirror, frame, kSpriteLit | kSpriteFront, nullptr);
+      addCard(clip, anchor, right, u.boxW, u.boxH, {0.0f, -u.foot, 0.0f}, u.mirror, frame, kSpriteLit | kSpriteFront | kSpriteCastsShadow, nullptr);
     }
     const glm::vec3 eye = camera.position, fwd = camera.forward;
     std::sort(drawList_.begin(), drawList_.end(),

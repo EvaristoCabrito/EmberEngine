@@ -122,6 +122,7 @@ class Renderer {
     VkSemaphore imageAcquired = VK_NULL_HANDLE;
     Buffer sprites;  // this frame's SpriteInstance[] (host-visible, read by device address)
     Buffer meshFrame;     // MeshFrame for the mesh passes (device-local, written by vkCmdUpdateBuffer)
+    Buffer shadowFrame;   // MeshFrame of the meshes' pass from the sun (when the cached shadow map is redrawn)
     Buffer meshCounters;  // the work buffer's counters, copied back for meshStats()
     bool countersPending = false;
   };
@@ -129,6 +130,7 @@ class Renderer {
   void createTargets(VkExtent2D size);
   void writeFrame(Frame& frame, VkCommandBuffer cmd, float time);
   void recordMeshes(Frame& frame, VkCommandBuffer cmd);
+  void cullPass(VkCommandBuffer cmd, VkDeviceAddress frameAddress, VkPipeline instances, uint32_t drawPass, uint32_t instanceCount);
   void recordDepthPyramid(VkCommandBuffer cmd);
   void recordVisibilityPass(VkCommandBuffer cmd, VkDeviceAddress frameAddress, uint32_t pass);
   void destroyTargets();
@@ -160,6 +162,12 @@ class Renderer {
   VkPipeline terrainPipeline_ = VK_NULL_HANDLE;
   VkPipeline terrainShadowPipeline_ = VK_NULL_HANDLE;
   VkPipeline waterPipeline_ = VK_NULL_HANDLE;
+  VkPipeline meshShadowPipeline_ = VK_NULL_HANDLE, spriteShadowPipeline_ = VK_NULL_HANDLE;
+  Image cardShadowMap_;
+  uint32_t cardShadowMapIndex_ = kNoIndex;
+  bool cardShadowsThisFrame_ = false;
+  uint64_t shadowMeshKey_ = 0;
+  alignas(16) std::array<std::byte, 576> shadowFrameStorage_{};
   WaterView water_;
   Image shadowMap_;
   uint32_t shadowMapIndex_ = kNoIndex;
