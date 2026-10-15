@@ -6,6 +6,7 @@
 // (docs/ENGINE2_AUDIT.md). Engine2 stays read-only: maps and relief grids are read from it; textures,
 // sprites and meshes come from the cooked packs (Cooker ground / sprites / meshes).
 //
+// Left button (Engine2's protected rule): hold 0.5 s, then drag to pan the board; a short click acts in the game.
 // Camera (Ember's own orbit camera, 2026-10-15): opens turned -30 deg, tilted 20 deg, 30 deg lens, framing the
 // whole board. It always turns around a pivot on the ground and glides to every input. Right-drag turns and
 // tilts (5 to 89.5 deg), middle-drag grabs the ground, the wheel zooms toward the cursor, WASD/arrows slide the
@@ -237,6 +238,7 @@ class MapStage final : public Stage {
       cam_ = {target_, yaw_, pitch_, distance_};
     }
     if (!measuring_) panKeys(dt);
+    updatePanHold();
     now_ = time;
     updateUnits(dt);
     updateExchange();
@@ -349,7 +351,22 @@ class MapStage final : public Stage {
   // camera bar never reach here (ImGui takes them).
   void event(const SDL_Event& e) override {
     if (e.type == SDL_EVENT_MOUSE_MOTION) mouse_ = {e.motion.x, e.motion.y}, mouseWindow_ = e.motion.windowID;
-    if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && e.button.button == SDL_BUTTON_LEFT) click(e.button.windowID, e.button.x, e.button.y);
+    // Left button, Engine2's protected rule (cameraRig): held still for 0.5 s it arms panning (the grabbing hand) and
+    // the board then follows the drag; a short click (released before, within 5 px) is a game click.
+    if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && e.button.button == SDL_BUTTON_LEFT)
+      leftDown_ = LeftPress{e.button.x, e.button.y, std::chrono::steady_clock::now()};
+    if (e.type == SDL_EVENT_MOUSE_BUTTON_UP && e.button.button == SDL_BUTTON_LEFT) {
+      const bool wasPanning = panning_;
+      endPan();
+      if (leftDown_ && !wasPanning && std::hypot(e.button.x - leftDown_->x, e.button.y - leftDown_->y) <= kClickSlop)
+        click(e.button.windowID, e.button.x, e.button.y);
+      leftDown_.reset();
+    }
+    if (e.type == SDL_EVENT_MOUSE_MOTION && panning_ && (e.motion.state & SDL_BUTTON_LMASK)) {
+      const std::optional<glm::vec3> a = groundUnder(e.motion.windowID, e.motion.x - e.motion.xrel, e.motion.y - e.motion.yrel);
+      const std::optional<glm::vec3> b = groundUnder(e.motion.windowID, e.motion.x, e.motion.y);
+      if (a && b) target_ += glm::vec3{a->x - b->x, 0.0f, a->z - b->z}, cam_.target += glm::vec3{a->x - b->x, 0.0f, a->z - b->z};
+    }
     if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.key == SDLK_ESCAPE) select(-1);
     if (e.type == SDL_EVENT_MOUSE_MOTION && (e.motion.state & SDL_BUTTON_RMASK) && !flat_) {  // Tática never turns
       yaw_ -= e.motion.xrel * kTurnPerPixel;
@@ -371,6 +388,20 @@ class MapStage final : public Stage {
       }
       distance_ = next;
     }
+  }
+
+  // The left button held still long enough arms the pan (called every frame).
+  void updatePanHold() {
+    if (!leftDown_ || panning_) return;
+    if (std::chrono::steady_clock::now() - leftDown_->at < std::chrono::milliseconds(kHoldMs)) return;
+    panning_ = true;
+    if (!grabCursor_) grabCursor_ = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_MOVE);
+    if (grabCursor_) SDL_SetCursor(grabCursor_);
+  }
+  void endPan() {
+    if (!panning_) return;
+    panning_ = false;
+    SDL_SetCursor(SDL_GetDefaultCursor());
   }
 
   // Arrows / WASD slide the board along the view (level, whatever the tilt), faster when zoomed out; Shift doubles.
@@ -2044,6 +2075,16 @@ class MapStage final : public Stage {
   static constexpr float kMinDistance = 3.0f, kEyeClearance = 0.8f;
   bool captured_ = false;  // the first view is remembered: the bar's reset goes back to its angle
   bool flat_ = false;      // Tática: the old-school 2D view (the bar's Normal / Tática)
+  // Left-button pan (Engine2 cameraRig: HOLD_MS 500, CLICK_SLOP 5).
+  struct LeftPress {
+    float x = 0.0f, y = 0.0f;
+    std::chrono::steady_clock::time_point at;
+  };
+  std::optional<LeftPress> leftDown_;
+  bool panning_ = false;
+  SDL_Cursor* grabCursor_ = nullptr;
+  static constexpr int kHoldMs = 500;
+  static constexpr float kClickSlop = 5.0f;
   // Combat (world/Battle.h): the battle, each scene unit's battle unit and live state, the picked unit and its reach.
   std::optional<e2::Battle> battle_;
   std::vector<int> unitBattle_;        // per scene unit: its battle unit, -1 = none
