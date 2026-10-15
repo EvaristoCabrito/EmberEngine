@@ -160,6 +160,8 @@ class Renderer {
   // kBlackBackground = black, else a bindless sRGB image (a painted backdrop), fitted to cover the screen.
   static constexpr uint32_t kBlackBackground = 0xFFFFFFFEu;
   void setBackground(uint32_t background) { background_ = background; }
+  // Full-scene bloom strength (Engine2: the map's bloomIntensity, default 0.16); 0 = none.
+  void setBloom(float strength) { bloom_ = strength; }
   uint32_t lightingLayers() const { return lightingLayers_; }
   // Tactical visibility (fog of war, ARCHITECTURE §7.0 R7): Engine2's darkness mask over the board
   // (world/FogOfWar.h). Every lit surface, card, water, shadow caster and local light reads it, none
@@ -262,6 +264,7 @@ class Renderer {
   VkPipeline waterPipeline_ = VK_NULL_HANDLE;
   VkPipeline meshShadowPipeline_ = VK_NULL_HANDLE, spriteShadowPipeline_ = VK_NULL_HANDLE, lightsPipeline_ = VK_NULL_HANDLE;
   std::vector<LocalLight> lights_;
+  float bloom_ = 0.0f;
   std::vector<GroundMark> marks_;
   int markCols_ = 0, markRows_ = 0;
   Buffer clusters_;

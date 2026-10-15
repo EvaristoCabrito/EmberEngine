@@ -59,6 +59,7 @@ class TitleStage : public Stage {
     renderer.setVolumetricFog({});
     renderer.setFogBank({});
     renderer.setBackground(Renderer::kBlackBackground);
+    renderer.setBloom(0.0f);
   }
 
   void event(const SDL_Event& e) override {

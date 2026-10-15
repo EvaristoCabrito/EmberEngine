@@ -344,6 +344,7 @@ class MapStage final : public Stage {
     bank.scene.board = {bb.x0, bb.z0, bb.x1, bb.z1};
     bank.scene.partyCenter = partyCenter();
     renderer.setFogBank(bank);
+    renderer.setBloom(bloomOn_ ? (board_->draft().bloomIntensity > 0.0f ? board_->draft().bloomIntensity : 0.16f) : 0.0f);
     renderer.waitFor(uploads_.timeline(),
                      std::max({ground_.uploadWaitValue(), sprites_.uploadWaitValue(), meshes_.uploadWaitValue()}));
     if (ground_.ready() && sceneReady() && (!fog_ || fogReady_)) ++readyFrames_;
@@ -681,6 +682,10 @@ class MapStage final : public Stage {
     {
       static const char* kModes[4] = {"protótipo", "Engine2", "física", "real"};
       dropdown("Luz", lightingMode_, 4, [](int i) { return std::string(kModes[i]); });
+    }
+    {
+      int bloom = bloomOn_ ? 1 : 0;
+      if (dropdown("Brilho", bloom, 2, [](int i) { return std::string(i == 0 ? "OFF" : "Engine2"); })) bloomOn_ = bloom == 1;
     }
     {
       static const char* kLayers[4] = {"sol / lua", "sombras", "luz do céu", "tochas e fogo"};
@@ -2856,6 +2861,7 @@ class MapStage final : public Stage {
   std::unordered_set<int> awake_;         // enemies that have seen the party (fog)
   std::string result_;                    // "victory" / "defeat" once the battle is over
   bool pauseOpen_ = false, titleRequested_ = false, retryRequested_ = false;
+  bool bloomOn_ = true;  // panel "Brilho" (Engine2's full-scene bloom)
   float resultAt_ = 0.0f;                  // when the battle ended (the result screen follows after a breath)
   static constexpr float kResultDelay = 1.8f;
   std::vector<std::pair<int, int>> startLevel_;  // per battle unit: level and XP when the battle began

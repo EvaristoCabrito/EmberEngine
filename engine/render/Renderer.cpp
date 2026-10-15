@@ -32,6 +32,7 @@ struct TonemapPush {
   uint32_t source;
   uint32_t sampler;
   float exposure;
+  float bloom;
 };
 
 struct GroundPush {
@@ -1582,7 +1583,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   vkCmdBeginRendering(cmd, &display);
   setViewport(cmd, size_);
   vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, tonemapPipeline_);
-  const TonemapPush tonemapPush{sceneColorIndex_, linearClampIndex_, debugView_ != 0 ? -1.0f : 1.0f};
+  const TonemapPush tonemapPush{sceneColorIndex_, linearClampIndex_, debugView_ != 0 ? -1.0f : 1.0f, debugView_ != 0 ? 0.0f : bloom_};
   vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0,
                      sizeof(tonemapPush), &tonemapPush);
   vkCmdDraw(cmd, 3, 1, 0, 0);
