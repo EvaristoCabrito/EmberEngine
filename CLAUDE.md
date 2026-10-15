@@ -72,6 +72,11 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
 
 ## Build and run (Windows, MSVC 2022 Build Tools, Vulkan SDK 1.4.363.0, CMake + Ninja)
 
+**`JOGAR.bat` (the user's one-click way, 2026-10-15: "I won't type any command"):** run from a downloaded copy of the
+repo, it commits C:\EmberEngine's current state, copies this code over it (robocopy, nothing deleted; `build/` with
+the art packs stays), runs `build.bat release` and opens aldeia015 with ground / scene / sprites / meshes / roster /
+battle rules (whichever exist). Stops with a message and `pause` on a build error or a missing art file.
+
 ```
 build.bat release          # or debug; output in build/<config>/bin
 ```
