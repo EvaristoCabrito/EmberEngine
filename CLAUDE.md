@@ -26,10 +26,11 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   The message states exactly what is and is not verified. **Never push** unless asked in that moment.
   Git identity repo-local: EvaristoCabrito <evaristo172@gmail.com>. Remote: github.com/EvaristoCabrito/EmberEngine.
 - **Research before building** big visual features. Never show raw test renders as progress.
-- **Engine2: game design yes, technology no** (user, 2026-10-14: "nothing else is wrong with its game
-  design"; its engine stutters on spell effects and its sprite animation is subpar). Port its rules, maps,
-  board looks (R8: smooth / hard / tabletop), editor features and content faithfully; build all tech fresh.
-  **Use Engine2's real assets for every test** (maps, ground, decor, models, sprites, fx): never placeholders.
+- **`C:\Engine2` = asset source only, NOT a reference** (user, 2026-10-15, replaces the 2026-10-14 "game design
+  yes" rule): "there is no engine 2, it's EMBER ENGINE"; "never alter anything there"; "it only serves to extract
+  assets"; "use nothing from there, create new and better, triple-A". Never copy or propose copying its camera,
+  buttons, UI, rules or design; design every feature new to an AAA standard. Never call the project Engine2.
+  **Use its real assets for every test** (maps, ground, decor, models, sprites, fx): never placeholders.
 - **Priorities (user, 2026-10-14):** stability (no crashes, validation errors, streaming failures) → smooth
   gameplay (consistent frame times while moving the camera, animating, casting; not averages) → streaming →
   rendering foundation (2.75D depth, occlusion, real dynamic light) → final content. Keep "a hook exists"
