@@ -149,6 +149,11 @@ struct MeshFrame {
   float clusterFar;
   uint64_t clusters;         // the same cluster buffer by device address: read-only (fragment shaders may not
                              // bind a writable storage buffer without fragmentStoresAndAtomics)
+  // Fog of war (R7, world/FogOfWar.h): the darkness mask over the board.
+  float4 fogRect;            // world x0, z0, 1 / width, 1 / depth
+  uint fogMask;              // R8 texture: 0 in sight, 0.6 remembered, 1 never seen; kNoTexture = no fog of war
+  uint fogSampler;
+  uint2 pad9;
 };
 
 // One local light (Engine2's CarriedLight: a three.js point light). 32 bytes.
@@ -158,6 +163,17 @@ struct LocalLight {
   float3 color;    // linear radiometric colour x intensity (before exposure)
   float decay;     // distance falloff exponent (Engine2: 1.25)
 };
+
+// Darkness of the fog of war over a world point (0 in sight .. 0.6 remembered .. 1 never seen); outside the
+// mask = never seen.
+float fogAlpha(MeshFrame f, float3 position) {
+  if (f.fogMask == kNoTexture) return 0.0;
+  const float2 uv = (position.xz - f.fogRect.xy) * f.fogRect.zw;
+  if (any(uv < 0.0) || any(uv > 1.0)) return 1.0;
+  return gTextures[NonUniformResourceIndex(f.fogMask)].SampleLevel(gSamplers[f.fogSampler], uv, 0).r;
+}
+// Never seen: nothing there is drawn lit, and nothing there casts a shadow.
+bool neverSeen(MeshFrame f, float3 position) { return fogAlpha(f, position) >= 254.5 / 255.0; }
 
 static const uint kClusterX = 16, kClusterY = 9, kClusterZ = 24;
 static const uint kClusterCount = kClusterX * kClusterY * kClusterZ;

@@ -487,6 +487,41 @@ The ground material is 5.2 of the 6.7 ms at full clock (more when zoomed in: it 
 numbers are stretched by the GPU's power saving (§7.2); whether those frames miss a vblank is still to be
 measured in a window with vsync. Either way the ground is the first cost to cut.
 
+### 7.4 Fog of war, tactical mask (R7), 2026-10-14
+
+Built (`engine/world/FogOfWar.*`, `shaders/lighting.hlsli` tacticalSight, `Renderer::setFogOfWar`):
+- **States and mask from Engine2:** never seen / remembered / in sight, remembered never reverts; darkness 1 / 0.6 / 0,
+  8 texels per hex radius, feathered only inside remembered hexes, clear within one hex of the party.
+- **Line of sight is EmberEngine's own** (Engine2's was never finished; the user chose occlusion): range 7 hexes; a ray
+  from 1.6 above the eye's hex to 0.8 above the target's ground, blocked by any hex it crosses whose top (gameplay
+  ground + 3D models over their footprint + standing cards at least 1.2 tall) rises above it; the blocker is seen;
+  three parallel rays (centre, +-0.45 sideways), any clear one sees. Same heights in every board look (R8).
+- **Every pass reads it:** terrain, meshes, cards, water through `shade()` (never seen = exactly 0, remembered = x0.4 and
+  no local light); cards take the state of the hex they stand on and are not drawn at all on never-seen ground;
+  local lights are dimmed by their source's sight (out of sight = dropped); never-seen ground, pieces and cards cast
+  no sun shadow (the cached map redraws when sight changes); off the board is black under fog; enemies out of sight
+  are not drawn (no card, no shadow).
+
+Verified: `tools/scripts/check_fog.py` on aldeia015 (fog forced on, scout walking, moving torch + spell light) at four
+moments (spell in flight, impact flash, scout at the far end, on the way back): **0 never-seen pixels not black**, all
+three states on screen each time; 0 validation errors in debug (pinned and walking, 14 mask uploads). Occlusion hides
+33-38 of 106 in-range hexes per party unit at aldeia015's start, 12-22 at random-rimewater-shrine001.
+
+| aldeia015, 20 s turn + zoom, scout walking, 14 lights | GPU median / 99th / worst | Main thread worst | Over 16.7 ms |
+|---|---|---|---|
+| Full GPU clock, fog off | 7.11 / 7.67 / 7.74 ms | 1.19 ms | 0 |
+| Full GPU clock, fog on | 5.92 / 6.72 / 8.33 ms | 4.03 ms | 0 |
+| Paced 60 Hz, fog off / on | 9.08 / 20.04 / 22.54 · 10.66 / 21.00 / 23.83 ms | 1.76 · 3.40 ms | 328 · 334 |
+
+Per sight change: sight + mask on the main thread median 2.4, worst 3.4 ms (34 updates); sun-shadow redraw up to 1.74 ms
+GPU at full clock (33 redraws). Fog on is cheaper on average (no local light on remembered / never-seen ground).
+
+**Not done:** the literal fog (volumetric, gathering at the boundary: appearance, separate from the mask); 3D meshes and
+terrain on never-seen ground are drawn black, so over lit ground behind them their outline can show (cards are not
+drawn); walls/doors are not imported, so they block nothing yet; large units' footprints (an enemy is hidden by its
+anchor hex only); the sight update runs on the main thread (move it to a job if 3.4 ms spikes matter); enemies' own
+sight (waking) is not ported.
+
 ## 8. Gameplay and tools
 
 **Engine2's game design is sound (the user, 2026-10-14: "nothing else is wrong with its game design"); its

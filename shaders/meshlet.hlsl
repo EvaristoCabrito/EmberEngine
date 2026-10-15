@@ -77,6 +77,7 @@ void ASMain(uint thread : SV_GroupIndex, uint3 group : SV_GroupID) {
 struct VertexOut {
   float4 position : SV_Position;
   float2 uv : TEXCOORD0;
+  float3 world : TEXCOORD3;  // the sun's pass: pieces on never-seen ground cast nothing (R7)
 };
 
 struct PrimitiveOut {
@@ -106,8 +107,10 @@ void MSMain(uint thread : SV_GroupIndex, uint3 group : SV_GroupID, in payload Pa
 
   if (thread < vertexCount) {
     const MeshVertex v = loadVertex(mesh, loadClusterVertex(mesh, cluster.vertexOffset + thread));
-    const float4 clipPos = mul(float4(transformPoint(inst, v.position), 1.0), f.viewProjection);
+    const float3 world = transformPoint(inst, v.position);
+    const float4 clipPos = mul(float4(world, 1.0), f.viewProjection);
     verts[thread].position = clipPos;
+    verts[thread].world = world;
     verts[thread].uv = v.uv;
     clipPositions[thread] = clipPos;
   }
@@ -155,8 +158,9 @@ uint PSMain(VertexOut v, PrimitiveIn p) : SV_Target0 {
 // The sun's shadow map: depth only; alpha-tested materials still cut their holes.
 [[vk::ext_extension("SPV_EXT_mesh_shader")]] [[vk::ext_capability(5283)]]
 void PSShadow(VertexOut v, PrimitiveIn p) {
+  const MeshFrame f = loadFrame(push.frame);
+  if (neverSeen(f, v.world)) discard;
   if (p.material != ~0u) {
-    const MeshFrame f = loadFrame(push.frame);
     const MaterialGpu m = loadMaterial(f, p.material);
     float alpha = m.baseColor.a;
     if (m.baseColorTexture != kNoTexture)

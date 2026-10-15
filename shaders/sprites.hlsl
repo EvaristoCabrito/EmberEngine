@@ -70,6 +70,8 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
     drawn = eye + d * (1.0 - min(kUnitFront / max(length(d), 1e-3), 0.9));
   }
   o.position = mul(float4(drawn, 1.0), push.viewProjection);  // -Zpr: glm's column-major matrix reads as its transpose
+  // A card standing on never-seen ground is not drawn: even black, its outline over lit ground would show (R7).
+  if (push.frame != 0 && neverSeen(loadFrame(push.frame), s.origin)) o.position = float4(0, 0, -1, 1);
   const float u = (s.flags & 1u) ? 1.0 - c.x : c.x;
   o.uv = float2(u, 1.0 - c.y) * s.uvScale;
   o.instance = instance;
@@ -91,7 +93,10 @@ float4 PSMain(VSOut i) : SV_Target0 {
     // Shadows from the ground and 3D pieces, not from the cards' own map (a flat card would shadow itself).
     surface.receivesCardShadow = 0.0;
     if (s.flags & 4u) surface.twoSidedLocal = 1.0;  // units (Engine2: pointLightsOnBothSides)
-    color = min(shade(f, surface), c.rgb * kMaxLit * f.exposure);
+    // The whole card takes the fog of war where it stands (Engine2's DecorLayer.shade).
+    const Sight sight = tacticalSight(f, s.origin);
+    if (f.debugView == kDebugFog) return float4(float3(1.0 - sight.color, sight.local, 1.0) * c.a, c.a);
+    color = min(shadeInSight(f, surface, sight), c.rgb * kMaxLit * f.exposure);
     if (s.emitLevel > 0.0) {
       // Engine2's flame mask: bright, saturated pixels close to the light's colour glow, and so does the lit
       // glass just around where the light sits on the card.
@@ -104,7 +109,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
       mask = max(mask, smoothstep(0.12, 0.4, eMax) * smoothstep(0.08, 0.3, eSat) * smoothstep(0.75, 0.9, eSim) * near * 0.75);
       color += c.rgb * mask * s.emitLevel * f.exposure;
     }
-    color *= visibility(f, i.world);
+    color *= sight.color;
   }
   return float4(color * c.a, c.a);
 }
@@ -130,7 +135,9 @@ ShadowOut VSShadow(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
   }
   const float3 world = s.origin + right * ((c.x - 0.5) * s.width) + float3(0, 1, 0) * (c.y * s.height);
   ShadowOut o;
-  o.position = (s.flags & 8u) ? mul(float4(world, 1.0), f.shadowMatrix) : float4(0, 0, -1, 1);  // non-casters fall off the map
+  // Non-casters fall off the map; so does a card standing on never-seen ground (R7: it reveals nothing).
+  const bool casts = (s.flags & 8u) && !neverSeen(f, s.origin);
+  o.position = casts ? mul(float4(world, 1.0), f.shadowMatrix) : float4(0, 0, -1, 1);
   const float u = (s.flags & 1u) ? 1.0 - c.x : c.x;
   o.uv = float2(u, 1.0 - c.y) * s.uvScale;
   o.instance = instance;

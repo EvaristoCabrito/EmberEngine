@@ -130,6 +130,7 @@ std::optional<MapDraft> MapDraft::load(const std::filesystem::path& mapJson) {
   m.neutralSpawns = spawns(d, "neutralSpawns");
   m.environment = str(d, "environment");
   m.timeOfDay = str(d, "timeOfDay");
+  m.fog = d.contains("fog") && d["fog"].is_boolean() && d["fog"].get<bool>();
   return m;
 }
 

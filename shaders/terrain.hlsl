@@ -73,11 +73,21 @@ struct Grad {
   float2 dx, dy;
 };
 
-// The ground seen from the sun (depth only): the sun's shadow map.
-float4 VSShadow(uint id : SV_VertexID) : SV_Position {
+// The ground seen from the sun (depth only): the sun's shadow map. Never-seen ground casts nothing (R7).
+struct ShadowOut {
+  float4 position : SV_Position;
+  float3 world : TEXCOORD0;
+};
+ShadowOut VSShadow(uint id : SV_VertexID) {
   const MeshFrame f = loadFrame(push.frame);
   const uint index = push.indices != 0 ? vk::RawBufferLoad<uint>(push.indices + uint64_t(id) * 4) : id;
-  return mul(float4(vk::RawBufferLoad<float3>(push.vertices + uint64_t(index) * 48), 1.0), f.shadowMatrix);
+  ShadowOut o;
+  o.world = vk::RawBufferLoad<float3>(push.vertices + uint64_t(index) * 48);
+  o.position = mul(float4(o.world, 1.0), f.shadowMatrix);
+  return o;
+}
+void PSShadow(ShadowOut i) {
+  if (neverSeen(loadFrame(push.frame), i.world)) discard;
 }
 
 float3 proto(uint layer, float2 uv, Grad g, SamplerState s) {

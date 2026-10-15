@@ -131,8 +131,12 @@ struct MeshFrame {
   float clusterNear;
   float clusterFar;
   uint64_t clusters;
+  glm::vec4 fogRect;   // fog of war mask: world x0, z0, 1 / width, 1 / depth
+  uint32_t fogMask;    // bindless R8 texture; kNoTextureIndex = no fog of war
+  uint32_t fogSampler;
+  uint32_t pad9[2];
 };
-static_assert(sizeof(MeshFrame) == 608 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384 &&
+static_assert(sizeof(MeshFrame) == 640 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384 &&
               offsetof(MeshFrame, shadowMatrix) == 480);
 
 // Work buffer layout (shaders/scene.hlsli): counters, indirect arguments, two queues, the cluster list.
@@ -172,6 +176,8 @@ struct ResolvePush {
 static_assert(sizeof(ResolvePush) <= Bindless::kPushConstantBytes);
 
 constexpr glm::vec4 kClearColor{0.012f, 0.014f, 0.02f, 1.0f};
+// Under the fog of war, off the board is never seen (Engine2: the black must not trace the map's outline).
+constexpr glm::vec4 kNeverSeenColor{0.0f, 0.0f, 0.0f, 1.0f};
 
 void memoryBarrier(VkCommandBuffer cmd, VkPipelineStageFlags2 srcStage, VkAccessFlags2 srcAccess, VkPipelineStageFlags2 dstStage,
                    VkAccessFlags2 dstAccess) {
@@ -325,6 +331,7 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
 
   GraphicsPipelineDesc terrainShadow;
   terrainShadow.vertexShader = "terrain.VSShadow";
+  terrainShadow.fragmentShader = "terrain.PSShadow";  // never-seen ground casts no shadow (R7)
   terrainShadow.depthFormat = kShadowFormat;
   terrainShadow.depthTest = true;
   terrainShadow.depthWrite = true;
@@ -397,6 +404,27 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   spriteShadowPipeline_ = createGraphicsPipeline(context, layout, spriteShadow);
 }
 
+void Renderer::setFogOfWar(const e2::FogMask* mask, uint64_t version) {
+  fogOn_ = mask && mask->width > 0 && mask->height > 0;
+  if (!fogOn_ || version == fogVersion_) return;
+  fog_ = *mask;
+  fogVersion_ = version;
+  fogUploadPending_ = true;
+}
+
+// The mask as the shaders sample it (bilinear, clamped; outside it = never seen), as sight for local lights.
+float Renderer::fogSight(glm::vec3 position) const {
+  const float u = (position.x - fog_.x0) / fog_.worldWidth, v = (position.z - fog_.z0) / fog_.worldDepth;
+  if (u < 0.0f || v < 0.0f || u > 1.0f || v > 1.0f) return 0.0f;
+  const float x = std::clamp(u * fog_.width - 0.5f, 0.0f, fog_.width - 1.0f), y = std::clamp(v * fog_.height - 0.5f, 0.0f, fog_.height - 1.0f);
+  const int x0 = static_cast<int>(x), y0 = static_cast<int>(y);
+  const int x1 = std::min(x0 + 1, fog_.width - 1), y1 = std::min(y0 + 1, fog_.height - 1);
+  const float fx = x - x0, fy = y - y0;
+  const auto at = [&](int tx, int ty) { return fog_.alpha[static_cast<size_t>(ty) * fog_.width + tx] / 255.0f; };
+  const float a = glm::mix(glm::mix(at(x0, y0), at(x1, y0), fx), glm::mix(at(x0, y1), at(x1, y1), fx), fy);
+  return std::clamp(1.0f - a / e2::kExploredAlpha, 0.0f, 1.0f);
+}
+
 void Renderer::setScene(const Camera& camera, std::span<const SpriteInstance> sprites) {
   hasScene_ = true;
   camera_ = camera;
@@ -442,7 +470,10 @@ Renderer::~Renderer() {
     destroyBuffer(context_, frame.meshCounters);
     destroyBuffer(context_, frame.shadowFrame);
     destroyBuffer(context_, frame.lights);
+    destroyBuffer(context_, frame.fogStaging);
   }
+  if (fogMaskIndex_ != kNoIndex) bindless_.removeSampledImage(fogMaskIndex_);
+  destroyImage(context_, fogMask_);
 }
 
 void Renderer::createTargets(VkExtent2D size) {
@@ -652,12 +683,27 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
   f.lightingLayers = lightingLayers_;
   f.time = time;
   f.lights = bufferAddress(context_, frame.lights);
-  f.lightCount = static_cast<uint32_t>(lights_.size());
   f.clusterBuffer = clusterBufferIndex_;
   f.clusterNear = 2.0f;
   f.clusterFar = 400.0f;
   f.clusters = bufferAddress(context_, clusters_);
-  if (!lights_.empty()) std::memcpy(frame.lights.mapped, lights_.data(), lights_.size() * sizeof(LocalLight));
+  f.fogMask = kNoTextureIndex;
+  if (fogOn_ && fogMaskIndex_ != kNoIndex) {
+    f.fogMask = fogMaskIndex_;
+    f.fogSampler = linearClampIndex_;
+    f.fogRect = {fog_.x0, fog_.z0, 1.0f / fog_.worldWidth, 1.0f / fog_.worldDepth};
+  }
+  // Local lights through the fog of war (R7): a light reaches as far as its source is in sight. A torch or a
+  // spell out of sight lights nothing, so light never reveals what the party cannot see.
+  uint32_t lightCount = 0;
+  auto* lights = static_cast<LocalLight*>(frame.lights.mapped);
+  for (const LocalLight& light : lights_) {
+    const float sight = f.fogMask != kNoTextureIndex ? fogSight(light.position) : 1.0f;
+    if (sight <= 0.0f) continue;
+    lights[lightCount] = light;
+    lights[lightCount++].color *= sight;
+  }
+  f.lightCount = lightCount;
   f.shadowMap = kNoTextureIndex;
   if (shadowRadius_ > 0.0f && terrain_) {
     // An orthographic sun camera around the board's bounding sphere, pulled back along the sun direction.
@@ -678,8 +724,11 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
                                  shadowCenter_.y, shadowCenter_.z, shadowRadius_, static_cast<float>(terrain_.vertices % 1000003u)};
   // The 3D pieces belong to the cached map too: a new instance list (or new meshes) redraws it.
   const uint64_t meshKey = meshView_ ? (meshView_.instancesVersion * 1000003ull) ^ meshView_.meshes ^ meshView_.meshCount : 0;
-  shadowsThisFrame_ = shadows && (key != shadowKey_ || terrain_.vertices != shadowTerrain_ || meshKey != shadowMeshKey_);
+  // Never-seen ground and pieces cast no shadow (R7): new sight redraws it too.
+  const uint64_t fogKey = f.fogMask != kNoTextureIndex ? fogVersion_ : 0;
+  shadowsThisFrame_ = shadows && (key != shadowKey_ || terrain_.vertices != shadowTerrain_ || meshKey != shadowMeshKey_ || fogKey != shadowFogVersion_);
   if (shadowsThisFrame_) {
+    shadowFogVersion_ = fogKey;
     shadowKey_ = key;
     shadowTerrain_ = terrain_.vertices;
     shadowMeshKey_ = meshKey;
@@ -828,7 +877,7 @@ void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
               VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
   scope = gpuTimer_.begin(cmd, "resolve");
   vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, resolvePipeline_);
-  const ResolvePush resolvePush{frameAddress, visibilityIndex_, sceneColorStorageIndex_, kClearColor};
+  const ResolvePush resolvePush{frameAddress, visibilityIndex_, sceneColorStorageIndex_, fogOn_ ? kNeverSeenColor : kClearColor};
   vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(resolvePush), &resolvePush);
   vkCmdDispatch(cmd, (size_.width + 7) / 8, (size_.height + 7) / 8, 1);
   gpuTimer_.end(cmd, scope);
@@ -914,6 +963,37 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   const uint32_t frameScope = gpuTimer_.begin(cmd, "frame");
   // This frame's cards (host-visible): read by the card shadow pass and the scene pass.
   if (hasScene_ && !sprites_.empty()) std::memcpy(frame.sprites.mapped, sprites_.data(), sprites_.size() * sizeof(SpriteInstance));
+  // --- Fog of war: a new mask goes up before any pass reads it ------------------------------------------
+  if (fogOn_ && fogUploadPending_) {
+    fogUploadPending_ = false;
+    const VkExtent2D extent{static_cast<uint32_t>(fog_.width), static_cast<uint32_t>(fog_.height)};
+    if (fogMask_.extent.width != extent.width || fogMask_.extent.height != extent.height) {
+      // A new board: the old mask may still be read by frames in flight.
+      vkDeviceWaitIdle(context_.device);
+      if (fogMaskIndex_ != kNoIndex) bindless_.removeSampledImage(fogMaskIndex_);
+      destroyImage(context_, fogMask_);
+      fogMask_ = createImage(context_, {VK_FORMAT_R8_UNORM, extent, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT});
+      fogMaskIndex_ = bindless_.addSampledImage(fogMask_.view);
+    }
+    if (frame.fogStaging.size < fog_.alpha.size()) {
+      destroyBuffer(context_, frame.fogStaging);
+      frame.fogStaging = createHostBuffer(context_, fog_.alpha.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    }
+    std::memcpy(frame.fogStaging.mapped, fog_.alpha.data(), fog_.alpha.size());
+    transition(cmd, fogMask_.image, fogMask_.aspect,
+               {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                VK_ACCESS_2_NONE, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT});
+    VkBufferImageCopy copy{};
+    copy.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy.imageExtent = {extent.width, extent.height, 1};
+    vkCmdCopyBufferToImage(cmd, frame.fogStaging.buffer, fogMask_.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+    transition(cmd, fogMask_.image, fogMask_.aspect,
+               {VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT,
+                VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
+  }
 
   // --- 3D meshes: cull, pick cluster LODs, rasterise visibility + depth, resolve materials -----
   const bool meshes = hasScene_ && static_cast<bool>(meshView_);
@@ -1038,7 +1118,8 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   color.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
   color.loadOp = meshes ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR;  // keep the resolved 3D
   color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-  color.clearValue.color = {{kClearColor.r, kClearColor.g, kClearColor.b, kClearColor.a}};
+  const glm::vec4 background = fogOn_ ? kNeverSeenColor : kClearColor;
+  color.clearValue.color = {{background.r, background.g, background.b, background.a}};
   VkRenderingAttachmentInfo depth{VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
   depth.imageView = depth_.view;
   depth.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;

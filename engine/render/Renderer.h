@@ -14,6 +14,7 @@
 #include "rhi/GpuTimer.h"
 #include "rhi/Image.h"
 #include "rhi/VkCommon.h"
+#include "world/FogOfWar.h"
 
 namespace ember {
 
@@ -115,6 +116,11 @@ class Renderer {
   // measuring each alone.
   void setLightingLayers(uint32_t layers) { lightingLayers_ = layers; }
   uint32_t lightingLayers() const { return lightingLayers_; }
+  // Tactical visibility (fog of war, ARCHITECTURE §7.0 R7): Engine2's darkness mask over the board
+  // (world/FogOfWar.h). Every lit surface, card, water, shadow caster and local light reads it, none
+  // bypasses it: never seen = black and casts nothing, remembered = darkened without local light, in
+  // sight = full lighting. Uploaded when `version` changes; null = no fog of war.
+  void setFogOfWar(const e2::FogMask* mask, uint64_t version);
   // Half the side of the square ground plane under the scene (metres, centred on the origin).
   void setGroundExtent(float halfExtent) { groundHalfExtent_ = halfExtent; }
 
@@ -136,6 +142,7 @@ class Renderer {
     Buffer shadowFrame;   // MeshFrame of the meshes' pass from the sun (when the cached shadow map is redrawn)
     Buffer lights;        // this frame's LocalLight[] (host-visible)
     Buffer meshCounters;  // the work buffer's counters, copied back for meshStats()
+    Buffer fogStaging;    // the fog mask's texels on their way to fogMask_ (host-visible, grown on demand)
     bool countersPending = false;
   };
 
@@ -182,7 +189,14 @@ class Renderer {
   uint32_t cardShadowMapIndex_ = kNoIndex;
   bool cardShadowsThisFrame_ = false;
   uint64_t shadowMeshKey_ = 0;
-  alignas(16) std::array<std::byte, 608> shadowFrameStorage_{};
+  alignas(16) std::array<std::byte, 640> shadowFrameStorage_{};
+  // Fog of war: the CPU copy of the mask (also used to dim local lights by their source's sight), its image.
+  bool fogOn_ = false, fogUploadPending_ = false;
+  e2::FogMask fog_;
+  uint64_t fogVersion_ = 0, shadowFogVersion_ = 0;
+  Image fogMask_;
+  uint32_t fogMaskIndex_ = kNoIndex;
+  float fogSight(glm::vec3 position) const;  // 1 = in sight .. 0 = remembered or never seen (lighting.hlsli)
   WaterView water_;
   Image shadowMap_;
   uint32_t shadowMapIndex_ = kNoIndex;

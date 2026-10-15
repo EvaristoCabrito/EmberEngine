@@ -84,6 +84,7 @@ struct MapDraft {
   std::vector<MapDecoration> decorations;
   std::vector<MapSpawn> playerSpawns, enemySpawns, neutralSpawns;
   std::string environment, timeOfDay;
+  bool fog = false;  // the mission hides what the party has not seen (Engine2 mission.fog)
 
   static std::optional<MapDraft> load(const std::filesystem::path& mapJson);
   int variant(int i) const { return i < static_cast<int>(tileVariants.size()) && tileVariants[i] ? *tileVariants[i] : 0; }

@@ -143,7 +143,17 @@ build.bat release          # or debug; output in build/<config>/bin
     16.7 ms (FAIL: the RX 6400 down-clocks when paced; whether frames miss vblank needs the windowed vsync
     test). The ground material is 5.2 of 6.7 ms at full clock: the first thing to cut. 14 lights (12 map
     light sources + test torch + spell light).
-- **Not done (hooks only or missing):** fog of war (visibility hook returns 1, no pass enforces R7); indirect
+  - **Fog of war, tactical mask (R7), ARCHITECTURE §7.4:** Engine2's states and mask look; **line of sight is
+    our own, occlusion-based** (Engine2's was never finished; user chose occlusion: terrain height + 3D models +
+    cards >= 1.2 tall block). Every pass reads the mask; lights dimmed by their source's sight; never-seen casts no
+    shadow; hidden enemies not drawn. `check_fog.py` PASS (0 never-seen pixels lit at 4 moments), 0 validation
+    errors; full clock with fog + scout: GPU worst 8.33 ms, sight update 3.4 ms worst on the main thread.
+  - Fog test: `Sandbox --map .../aldeia015.json ... --fog 1 --scout --moving-light --spell-light --scene-time T
+    --no-ui [--debug-view 3]` (pairs) → `python -I tools/scripts/check_fog.py shaded.png mask.png ...`.
+  - Stale `Sandbox.exe` processes from crashes can lock `build/<config>/bin/Sandbox.exe` and refuse to die
+    (access denied): rename the locked exe aside, then build.
+- **Not done (hooks only or missing):** volumetric fog (R7's literal fog, appearance) and the mask's open points
+  (§7.4: never-seen meshes/terrain drawn black can outline over lit ground; walls not imported so block nothing); indirect
   light is the hemisphere (no probes / GI); no sky, fog, bloom, tilt-shift; local lights cast no shadows; cards
   do not receive card shadows; walls/doors (architecture), floor waypoints, stand-on-log heights, the third
   board look (tabletop tiles, R8) not ported; unit animation is the idle only; no spell VFX; the ground material
@@ -151,8 +161,8 @@ build.bat release          # or debug; output in build/<config>/bin
 
 ## Next
 
-1. Fog of war (R7) for real: Engine2's per-hex sight → a visibility mask every pass reads (lights, shadows,
-   cards, water, later fog and VFX); test: unexplored stays black under the moving and spell lights.
+1. R7's literal fog: world-space volumetric fog (froxels) constrained by the mask, gathering at the explored
+   boundary; settle with the user how never-seen 3D/terrain outlines are handled (§7.4).
 2. Profile and cut the ground material cost (photo layers + two 16-tap shadow lookups).
 3. Sky + aerial perspective (Hillaire 2020) feeding indirectDiffuse/Specular; bloom; tilt-shift; then compare
    side by side with the prototype's colour (the floor).

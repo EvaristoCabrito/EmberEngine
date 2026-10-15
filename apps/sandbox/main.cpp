@@ -24,6 +24,9 @@
 //        (lighting layers on: 1 sun, 2 shadows, 4 indirect; shaders/lighting.hlsli) [--sun AZIMUTH ELEVATION] (degrees)
 //        [--moving-light] [--spell-light] (test lights; 8 in --layers = local lights)
 //        [--measure SECONDS]: camera turn + zoom with everything animating; frame times; exit 3 if any frame > 16.7 ms.
+//        Fog of war (R7): [--fog 0|1] (default: the map's own flag) [--scout] (the first party unit walks to the
+//        farthest enemy and back). Pixel checks: [--scene-time T] (scene clock pinned) [--no-ui] [--debug-view 3]
+//        (the fog mask each surface read), then tools/scripts/check_fog.py.
 //   Sandbox.exe --meshes meshes.pak [--grid N]
 //        Mesh scene (M3 bring-up): every cooked mesh in the archive on an N x N grid, drawn GPU-driven.
 //   Sandbox.exe --sprites roster.pak [--budget MB]
@@ -90,6 +93,10 @@ struct Options {
   float sunAzimuth = 0.0f, sunElevation = -1.0f;
   bool movingLight = false, spellLight = false;
   float measureSeconds = 0.0f;
+  int fog = -1;
+  bool scout = false, noUi = false;
+  float sceneTime = -1.0f;
+  uint32_t debugView = 0;
   std::string scene;
   std::string map, ground, look = "smooth", boardData = "content/engine2/board.json", engine2 = "C:/Engine2/public";
   std::vector<std::string> compare;  // pakA assetA pakB assetB outDir  // measurement: frames back to back, so the GPU never idles and keeps its full clock
@@ -133,6 +140,11 @@ Options parse(int argc, char** argv) {
     else if (arg == "--moving-light") o.movingLight = true;
     else if (arg == "--measure" && hasValue) o.measureSeconds = static_cast<float>(std::atof(argv[++i]));
     else if (arg == "--spell-light") o.spellLight = true;
+    else if (arg == "--fog" && hasValue) o.fog = std::atoi(argv[++i]);
+    else if (arg == "--scout") o.scout = true;
+    else if (arg == "--scene-time" && hasValue) o.sceneTime = static_cast<float>(std::atof(argv[++i]));
+    else if (arg == "--debug-view" && hasValue) o.debugView = static_cast<uint32_t>(std::atoi(argv[++i]));
+    else if (arg == "--no-ui") o.noUi = true;
     else if (arg == "--layers" && hasValue) o.lightingLayers = static_cast<uint32_t>(std::strtoul(argv[++i], nullptr, 0));
     else if (arg == "--board" && hasValue) o.boardData = argv[++i];
     else if (arg == "--engine2" && hasValue) o.engine2 = argv[++i];
@@ -377,6 +389,10 @@ std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Rende
     m.movingLight = o.movingLight;
     m.spellLight = o.spellLight;
     m.measureSeconds = o.measureSeconds;
+    m.fog = o.fog;
+    m.scout = o.scout;
+    m.sceneTime = o.sceneTime;
+    renderer.setDebugView(o.debugView);
     return std::make_unique<MapStage>(context, renderer, assets, m);
   }
   if (!o.sprites.empty() && o.map.empty()) return std::make_unique<SpriteStage>(context, renderer, assets, o.spriteBudgetMb);
@@ -426,7 +442,7 @@ int runCapture(const Options& o) {
   {
     DebugUi ui(context, nullptr, Renderer::outputFormat());
     Renderer renderer(context, nullptr, {o.width, o.height});
-    renderer.setUi(&ui);
+    if (!o.noUi) renderer.setUi(&ui);  // --no-ui: the scene alone (pixel checks)
     std::unique_ptr<Stage> stage = makeStage(o, context, renderer, services.assets);
     const VkExtent2D size{o.width, o.height};
     const auto testDone = [&] { return (services.streamTest && services.streamTest->done()) || (stage && stage->done()); };

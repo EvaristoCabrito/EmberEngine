@@ -33,6 +33,7 @@ struct Surface {
   float receivesShadow;    // 1 = the sun's shadow maps darken it, 0 = not
   float receivesCardShadow; // 1 = cards' shadows too, 0 = only the ground's and 3D pieces' (cards themselves)
   float twoSidedLocal;     // 1 = local lights reach it from both sides (a character card stands for a body)
+  float3 sightAt;          // where the fog of war is read (the surface itself; a card: its foot, so it is seen whole)
 };
 
 Surface defaultSurface(float3 position, float3 normal, float3 albedo) {
@@ -50,6 +51,7 @@ Surface defaultSurface(float3 position, float3 normal, float3 albedo) {
   s.receivesShadow = 1.0;
   s.receivesCardShadow = 1.0;
   s.twoSidedLocal = 0.0;
+  s.sightAt = position;
   return s;
 }
 
@@ -108,6 +110,7 @@ float sunShadow(MeshFrame f, Surface s) {
 // 1 / max(d^decay, 0.01), windowed to zero at the range by (1 - (d / range)^4)^2.
 float3 localLights(MeshFrame f, Surface s, float3 view, float3 diffuseColor, float3 f0, float a, float nv) {
   if ((f.lightingLayers & kLayerLocal) == 0 || f.lightCount == 0) return 0.0;
+  // (Each light already carries its source's sight: Renderer dims or drops lights out of sight.)
   const float4 clip = mul(float4(s.position, 1.0), f.viewProjection);
   if (clip.w <= 0.0) return 0.0;
   const float2 ndc = clip.xy / clip.w;
@@ -153,13 +156,27 @@ float3 indirectSpecular(MeshFrame f, Surface s, float3 reflected) {
 
 // --- Tactical visibility (R7) -------------------------------------------------------------------------
 
-// 1 = in sight. The fog-of-war mask plugs in here (unexplored = 0: nothing lit, nothing shown; remembered =
-// darkened, no dynamic light); every light, bounce, fog and effect goes through it.
-float visibility(MeshFrame f, float3 position) { return 1.0; }
+// What the fog of war lets through at a point (world/FogOfWar.h):
+//   color  multiplies the finished colour: 1 in sight, 0.4 remembered (60% dark), 0 never seen
+//   local  multiplies local light: 1 in sight, fading to 0 across the feather into remembered ground (memory
+//          shows the last-known state, never a torch or spell lighting it now)
+// The mask decides what the player may see; atmospheric fog (later) only decides how the visible air looks.
+struct Sight {
+  float color;
+  float local;
+};
+Sight tacticalSight(MeshFrame f, float3 position) {
+  const float a = fogAlpha(f, position);
+  Sight s;
+  s.color = a >= 254.5 / 255.0 ? 0.0 : 1.0 - a;  // never seen: exactly black
+  s.local = saturate(1.0 - a / 0.6);              // 0.6 = FogOfWar.h kExploredAlpha
+  return s;
+}
 
 // --- The surface's colour --------------------------------------------------------------------------------
 
-float3 shade(MeshFrame f, Surface s) {
+// Lit colour before the fog of war's darkening (`sight` limits local light); shade() applies all of it.
+float3 shadeInSight(MeshFrame f, Surface s, Sight sight) {
   const float3 view = normalize(f.cameraPosition - s.position);
   const float a = max(s.roughness * s.roughness, 0.002);
   const float3 diffuseColor = s.albedo * (1.0 - s.metallic);
@@ -179,7 +196,7 @@ float3 shade(MeshFrame f, Surface s) {
                f.sunIntensity * shadow;
     }
   }
-  color += localLights(f, s, view, diffuseColor, f0, a, nv);
+  if (sight.local > 0.0) color += localLights(f, s, view, diffuseColor, f0, a, nv) * sight.local;
   if (f.lightingLayers & kLayerIndirect) {
     // Lambert returns albedo * E / pi; the specular lobe sees the environment's radiance through the
     // split-sum BRDF.
@@ -187,7 +204,16 @@ float3 shade(MeshFrame f, Surface s) {
               envBrdfApprox(f0, s.roughness, nv) * s.specular * indirectSpecular(f, s, reflect(-view, s.normal))) * s.occlusion;
   }
   color += s.emissive * f.exposure;
-  return color * visibility(f, s.position);
+  return color;
+}
+
+// Debug view 3 (fog of war): mask darkness in red, local-light sight in green, blue = a surface was drawn.
+static const uint kDebugFog = 3u;
+
+float3 shade(MeshFrame f, Surface s) {
+  const Sight sight = tacticalSight(f, s.sightAt);
+  if (f.debugView == kDebugFog) return float3(1.0 - sight.color, sight.local, 1.0);
+  return shadeInSight(f, s, sight) * sight.color;
 }
 
 #endif
