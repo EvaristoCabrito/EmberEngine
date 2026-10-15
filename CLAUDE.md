@@ -128,7 +128,7 @@ build.bat release          # or debug; output in build/<config>/bin
 - Shell gotcha: writing C++ through bash heredocs + Python mangled `'\0'` and `"\n"` twice; write patch scripts
   with the Write tool into the scratchpad and run them with `python -I`.
 
-## Status (2026-10-14)
+## Status (2026-10-15)
 
 - **M0–M2 done**, pushed. **M3** GPU-driven meshes built and verified, committed locally (battle test numbers
   and the proxy findings in ARCHITECTURE §7.2). **Proxy bake paused** (assets not final): unfinished code on
@@ -157,8 +157,16 @@ build.bat release          # or debug; output in build/<config>/bin
   - Stale `Sandbox.exe` processes from crashes can lock `build/<config>/bin/Sandbox.exe` and refuse to die
     (access denied): rename the locked exe aside, then build.
   - Never-seen ground, water, 3D pieces and cards are not drawn at all (user's choice); pieces/cards by anchor hex.
-- **Not done (hooks only or missing):** volumetric fog (R7's literal fog, appearance) and the mask's open points
-  (§7.4: walls not imported so block nothing; sight update on the main thread); indirect
+  - Sight rules since (2026-10-15): only things >= 1.2 wide block (no lamp posts); a never-seen hex with all
+    neighbours in sight, and any enclosed never-seen group of <= 3 hexes, counts as seen (0 holes on the scout
+    walk; `captures/fog/holes.txt` + `tools/scripts/draw_fog_holes.py` map any that appear). Sight + mask run
+    on a worker (`2522456`): main thread worst 1.2-2.0 ms with fog + scout.
+  - **Fog of war mist (R7's literal fog): 7 saved looks** (`looks/fog/README.md`, F9 / `--fog-look N`, tags
+    `fog-look-NNN`, pushed). The user kept 003 (default); 004-007 not yet judged; 006 = Engine2's mist4 from the
+    user's reference. Cost at full clock: look 003 3.9 ms avg GPU (frame 8.8 ms median, 11.0 worst with fog +
+    scout). Froxel haze (`volume.hlsl`) is on with the mist; it has an unexplained vertical streak.
+- **Not done (hooks only or missing):** the user's choice among the fog looks; walls not imported (block no
+  sight); indirect
   light is the hemisphere (no probes / GI); no sky, fog, bloom, tilt-shift; local lights cast no shadows; cards
   do not receive card shadows; walls/doors (architecture), floor waypoints, stand-on-log heights, the third
   board look (tabletop tiles, R8) not ported; unit animation is the idle only; no spell VFX; the ground material
@@ -166,9 +174,9 @@ build.bat release          # or debug; output in build/<config>/bin
 
 ## Next
 
-1. R7's literal fog: world-space volumetric fog (froxels) constrained by the mask, gathering at the explored
-   boundary (§7.4).
-2. Profile and cut the ground material cost (photo layers + two 16-tap shadow lookups).
+1. The user judges the fog looks live and deletes the ones they don't want; then the chosen look's cost
+   (3.9 ms today: the biggest pass after the ground) and the froxel haze streak.
+2. Profile and cut the ground material cost (photo layers + two 16-tap shadow lookups; 3.7 ms avg, 5.1 worst).
 3. Sky + aerial perspective (Hillaire 2020) feeding indirectDiffuse/Specular; bloom; tilt-shift; then compare
    side by side with the prototype's colour (the floor).
 4. Tabletop tiles look (R8 third look, `diorama.html` buildHexTerrain(true)); walls/doors.
