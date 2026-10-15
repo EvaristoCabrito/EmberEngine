@@ -649,6 +649,7 @@ class MapStage final : public Stage {
 
   void drawPanel() override {
     if (!board_) return;
+    if (!result_.empty() && now_ - resultAt_ > kResultDelay) return drawResultScreen();
     drawMarks();
     drawCameraBar();
     drawTurnBar();
@@ -724,8 +725,10 @@ class MapStage final : public Stage {
     ImGui::End();
   }
 
-  // The player asked to leave for the title screen (pause menu, or after the battle's end).
+  // The player asked to leave for the title screen (pause menu, or after the battle's end), or to fight it again.
   bool wantsTitle() const { return titleRequested_; }
+  bool wantsRetry() const { return retryRequested_; }
+  const MapStageOptions& options() const { return options_; }
 
   bool done() const override { return failed_ || (options_.measureSeconds > 0.0f ? measured_ : readyFrames_ >= 30); }
   bool passed() const override { return !failed_ && ground_.ready() && measurePassed_; }
@@ -1293,6 +1296,7 @@ class MapStage final : public Stage {
     logInfo("battle {}: {} of {} units in play", battle_->map(), matched, scene_->units.size());
     rng_ = e2::Mulberry32(static_cast<uint32_t>(std::chrono::steady_clock::now().time_since_epoch().count()));
     battle_->rollInitiative(rng_);
+    for (const e2::BattleUnit& u : battle_->units()) startLevel_.emplace_back(u.level, u.xp);
   }
 
   int sceneUnitOf(int battleUnit) const {
@@ -1598,7 +1602,10 @@ class MapStage final : public Stage {
       }
       battle_->units()[static_cast<size_t>(unitBattle_[t.unit])].moved = true;
     }
-    if (result_ = battle_->result(); !result_.empty()) return select(-1);
+    if (result_ = battle_->result(); !result_.empty()) {
+      resultAt_ = now_;
+      return select(-1);
+    }
     int active = battle_->activeUnit();
     if (active < 0) {
       battle_->startNewRound();
@@ -2307,7 +2314,7 @@ class MapStage final : public Stage {
 
   // Esc's pause menu, and after the battle's end its way out: ember plates in the middle of the screen.
   void drawPauseMenu() {
-    if (!pauseOpen_ && result_.empty()) return;
+    if (!pauseOpen_ || !result_.empty()) return;
     const ImGuiIO& io = ImGui::GetIO();
     const bool end = !result_.empty();
     ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, io.DisplaySize.y * (end ? 0.55f : 0.5f)}, ImGuiCond_Always, {0.5f, 0.0f});
@@ -2329,6 +2336,81 @@ class MapStage final : public Stage {
     ImGui::PopFont();
     ImGui::End();
     ImGui::PopStyleVar(3);
+  }
+
+  // GameApp ResultScreen: the mission's art, "Vitória · T3" / "Derrota", its title and line, each hero's growth (level,
+  // XP bar, HP after the fight), then the way on.
+  void drawResultScreen() {
+    const ImGuiIO& io = ImGui::GetIO();
+    const ImVec2 size = io.DisplaySize;
+    const float rem = 16.0f * std::clamp(size.y / 900.0f, 0.85f, 2.0f);
+    ImGui::SetNextWindowPos({0, 0});
+    ImGui::SetNextWindowSize(size);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::Begin("##result", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings);
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const bool win = result_ == "victory";
+    const float k = std::clamp((now_ - resultAt_ - kResultDelay) / 0.5f, 0.0f, 1.0f);  // fades in
+    dl->AddRectFilled({0, 0}, size, IM_COL32(17, 17, 17, static_cast<int>(255 * k)));
+    const char* art = engine2BriefArt(board_->draft().id);
+    if (*art)
+      if (const UiImage* image = uiImage(options_.engine2Public / std::filesystem::u8path(art))) {
+        imageCover(dl, *image, {0, 0}, size, 0.5f, 0.5f, IM_COL32(255, 255, 255, static_cast<int>(255 * k)));
+        verticalGradient(dl, {0, 0}, size, {{0.0f, IM_COL32(17, 17, 17, 51)}, {0.5f, IM_COL32(17, 17, 17, 102)}, {1.0f, IM_COL32(17, 17, 17, 230)}});
+      }
+    const float x = rem, z = 0.75f;  // the screen's own zoom: 0.75
+    float y = 2.0f * rem;
+    const std::string kicker = win ? std::format("VITÓRIA · T{}", battle_->round()) : std::format("DERROTA · T{}", battle_->round());
+    emberKicker(dl, {x, y}, 0.875f * rem, kicker.c_str(), !win);
+    y += 0.875f * rem * 1.4f + 0.5f * rem;
+    const std::string title = board_->draft().title.empty() ? board_->draft().id : board_->draft().title;
+    emberTitle(dl, {x, y}, 3.0f * rem, title.c_str());
+    y += 3.0f * rem * 1.1f + 0.5f * rem;
+    ImFont* ui = uiFont(UiFont::Ui);
+    dl->AddText(ui, 1.125f * rem, {x, y}, IM_COL32(180, 180, 180, 255), win ? "O campo ficou em silêncio." : "A linha quebrou.");
+    y += 1.125f * rem * 1.5f + 1.5f * rem * z;
+    // growth: one trough per hero
+    const float rowW = std::min(34.0f * rem, size.x - 2.0f * rem);
+    for (size_t i = 0; i < battle_->units().size(); ++i) {
+      const e2::BattleUnit& u = battle_->units()[i];
+      if (u.side != "player" || u.summoned || i >= startLevel_.size()) continue;
+      const auto [fromLevel, fromXp] = startLevel_[i];
+      const float rowH = 4.6f * rem;
+      const ImVec2 p{x, y}, q{x + rowW, y + rowH};
+      emberSlot(dl, p, q);
+      float ty = p.y + 0.6f * rem;
+      std::string head = u.level != fromLevel ? std::format("{} · Nv {} → {}", u.name, fromLevel, u.level) : std::format("{} · Nv {}", u.name, u.level);
+      if (!u.alive) head += " · caiu";
+      dl->AddText(ui, 1.125f * rem, {p.x + 0.75f * rem, ty}, IM_COL32(240, 240, 240, 255), head.c_str());
+      ty += 1.125f * rem * 1.35f;
+      // the XP bar: what it had (dim) and what it earned (bright)
+      const float barW = 12.0f * rem, barH = 0.4f * rem;
+      const int next = xpToLevel(u.level);
+      dl->AddRectFilled({p.x + 0.75f * rem, ty + 0.3f * rem}, {p.x + 0.75f * rem + barW, ty + 0.3f * rem + barH}, IM_COL32(74, 74, 74, 255), 2.0f);
+      const float had = u.level == fromLevel ? std::clamp(static_cast<float>(fromXp) / next, 0.0f, 1.0f) : 0.0f;
+      const float now = std::clamp(static_cast<float>(u.xp) / next, 0.0f, 1.0f);
+      if (now > 0.0f)
+        dl->AddRectFilled({p.x + 0.75f * rem, ty + 0.3f * rem}, {p.x + 0.75f * rem + barW * now, ty + 0.3f * rem + barH}, IM_COL32(226, 140, 60, 255), 2.0f);
+      if (had > 0.0f)
+        dl->AddRectFilled({p.x + 0.75f * rem, ty + 0.3f * rem}, {p.x + 0.75f * rem + barW * had, ty + 0.3f * rem + barH}, IM_COL32(216, 216, 216, 255), 2.0f);
+      const std::string xp = std::format("{}/{} XP{}", u.xp, next, u.level != fromLevel ? " · subiu" : "");
+      dl->AddText(ui, 0.875f * rem, {p.x + 0.75f * rem + barW + 0.5f * rem, ty}, IM_COL32(180, 180, 180, 255), xp.c_str());
+      ty += 0.875f * rem * 1.45f;
+      dl->AddText(ui, 0.875f * rem, {p.x + 0.75f * rem, ty}, IM_COL32(180, 180, 180, 255), std::format("Combate: {}/{}", u.hp, u.maxHp).c_str());
+      y += rowH + 0.5f * rem;
+    }
+    // the way on
+    const float bw = std::min(16.0f * rem, (size.x - 3.0f * rem) * 0.5f), bh = 3.0f * rem;
+    const float by = size.y - rem - bh;
+    if (!win) {
+      if (emberBigButton("##retry", "TENTAR DE NOVO", {x, by}, {bw, bh}, true, rem)) retryRequested_ = true;
+      if (emberBigButton("##map", "MAPA", {x + bw + rem, by}, {bw, bh}, false, rem)) titleRequested_ = true;
+    } else if (emberBigButton("##map", "MAPA", {x, by}, {bw, bh}, true, rem)) {
+      titleRequested_ = true;
+    }
+    ImGui::End();
+    ImGui::PopStyleVar(2);
   }
 
   void drawTurnPlate() {
@@ -2688,7 +2770,10 @@ class MapStage final : public Stage {
   std::optional<EnemyTurn> enemyTurn_;
   std::unordered_set<int> awake_;         // enemies that have seen the party (fog)
   std::string result_;                    // "victory" / "defeat" once the battle is over
-  bool pauseOpen_ = false, titleRequested_ = false;
+  bool pauseOpen_ = false, titleRequested_ = false, retryRequested_ = false;
+  float resultAt_ = 0.0f;                  // when the battle ended (the result screen follows after a breath)
+  static constexpr float kResultDelay = 1.8f;
+  std::vector<std::pair<int, int>> startLevel_;  // per battle unit: level and XP when the battle began
   std::string spellMode_;                 // the spell being aimed (battle bar), empty = none
   std::vector<e2::BattleHex> spellCells_; // its targets chosen so far
   std::vector<e2::BattleHex> spellAim_;   // every hex it may be aimed at

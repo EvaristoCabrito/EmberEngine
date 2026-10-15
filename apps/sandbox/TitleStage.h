@@ -30,6 +30,7 @@ namespace ember {
 // What the title screen knows how to start: a map with its imported scene and (when exported) its battle.
 struct MissionEntry {
   std::string id, title, place;
+  std::string draftId, briefing, objective;  // the map's own mission text (Engine2 Mission)
   std::filesystem::path map, scene, battle;
 };
 
@@ -64,6 +65,7 @@ class TitleStage : public Stage {
     if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.key == SDLK_ESCAPE) {
       if (dialog_ != Dialog::None) dialog_ = Dialog::None;
       else if (screen_ == Screen::Missions) screen_ = Screen::Title;
+      else if (screen_ == Screen::Briefing) screen_ = Screen::Missions;
     }
   }
 
@@ -78,7 +80,8 @@ class TitleStage : public Stage {
                  ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings |
                      ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoScrollWithMouse);
     if (screen_ == Screen::Title) drawTitle(io.DisplaySize);
-    else drawMissions(io.DisplaySize);
+    else if (screen_ == Screen::Missions) drawMissions(io.DisplaySize);
+    else drawBriefing(io.DisplaySize);
     ImGui::End();
     ImGui::PopStyleVar(2);
     if (dialog_ == Dialog::Options) drawOptions(io.DisplaySize);
@@ -86,7 +89,7 @@ class TitleStage : public Stage {
   }
 
  private:
-  enum class Screen { Title, Missions };
+  enum class Screen { Title, Missions, Briefing };
   enum class Dialog { None, Options, Help };
 
   // --- title.css ---------------------------------------------------------------------------------------------------
@@ -233,13 +236,63 @@ class TitleStage : public Stage {
       ty += 1.15f * rem_ * 1.15f;
       cl->AddText(uiFont(UiFont::Ui), 0.76f * rem_, {p.x + pad, ty}, IM_COL32(196, 183, 164, 255),
                   m.battle.empty() ? "Sem combate exportado (só o mapa)" : "Batalha");
-      if (clicked && play_) play_(m);
+      if (clicked) chosen_ = i, screen_ = Screen::Briefing;
     }
     if (missions_.empty())
       cl->AddText(uiFont(UiFont::Ui), 0.9f * rem_, {x0, top}, IM_COL32(224, 189, 128, 255),
                   ("Nenhuma cena encontrada em " + paths_.scenes.string() + " (export_scene.ts).").c_str());
     ImGui::Dummy({1.0f, top - headerH + listH + rem_});
     ImGui::EndChild();
+  }
+
+  // --- GameApp BriefingScreen: the mission's art, its place and title, the briefing and objective, "Entrar em combate".
+
+  void drawBriefing(ImVec2 size) {
+    if (chosen_ >= missions_.size()) {
+      screen_ = Screen::Missions;
+      return;
+    }
+    const MissionEntry& m = missions_[chosen_];
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec2 a{0, 0}, b = size;
+    dl->AddRectFilled(a, b, IM_COL32(28, 28, 28, 255));  // bg-surface
+    const char* art = engine2BriefArt(m.draftId);
+    if (*art)
+      if (const UiImage* image = uiImage(paths_.engine2Public / std::filesystem::u8path(art))) {
+        imageCover(dl, *image, a, b, 0.5f, 0.5f);
+        // bg-gradient-to-t from-bg/90 via-bg/45 to-transparent
+        verticalGradient(dl, a, b, {{0.0f, IM_COL32(17, 17, 17, 0)}, {0.5f, IM_COL32(17, 17, 17, 115)}, {1.0f, IM_COL32(17, 17, 17, 230)}});
+      }
+    // header: the back button, the place (kicker) and the title
+    const float pad = size.x >= 640.0f ? 1.5f * rem_ : rem_;
+    ImGui::SetCursorScreenPos({pad, rem_});
+    if (plateButton("##briefback", {2.5f * rem_, 2.5f * rem_}, "‹")) screen_ = Screen::Missions;
+    const float hx = pad + 2.5f * rem_ + 0.75f * rem_;
+    emberKicker(dl, {hx, rem_ - 0.1f * rem_}, 0.875f * rem_, upperOf(m.place.empty() ? "Ember" : m.place).c_str());
+    emberTitle(dl, {hx, rem_ + 0.95f * rem_}, 1.875f * rem_, m.title.c_str());
+    // the panel: max-w-xl, p-5
+    const float width = std::min(36.0f * rem_, size.x - 2.0f * pad);
+    const float inner = width - 2.5f * rem_;
+    ImFont* ui = uiFont(UiFont::Ui);
+    const float body = 1.125f * rem_;
+    const std::string briefing = m.briefing.empty() ? "Sem briefing." : m.briefing;
+    const ImVec2 bodySize = ui->CalcTextSizeA(body, FLT_MAX, inner, briefing.c_str());
+    const ImVec2 objSize = ui->CalcTextSizeA(rem_, FLT_MAX, inner, m.objective.c_str());
+    const float panelH = 1.25f * rem_ + bodySize.y + 1.25f * rem_ + rem_ + 0.75f * rem_ + 0.25f * rem_ + objSize.y + 1.25f * rem_;
+    const ImVec2 p{pad, 5.5f * rem_}, q{pad + width, 5.5f * rem_ + panelH};
+    emberPanel(dl, p, q);
+    float y = p.y + 1.25f * rem_;
+    dl->AddText(ui, body, {p.x + 1.25f * rem_, y}, IM_COL32(240, 240, 240, 255), briefing.c_str(), nullptr, inner);
+    y += bodySize.y + 1.25f * rem_;
+    emberRule(dl, p.x + 1.25f * rem_, q.x - 1.25f * rem_, y);
+    y += rem_;
+    emberKicker(dl, {p.x + 1.25f * rem_, y}, 0.75f * rem_, "OBJETIVO");
+    y += 0.75f * rem_ + 0.25f * rem_;
+    dl->AddText(ui, rem_, {p.x + 1.25f * rem_, y}, IM_COL32(216, 216, 216, 255), m.objective.c_str(), nullptr, inner);
+    // "Entrar em combate"
+    const float bh = 3.5f * rem_;
+    if (emberBigButton("##enter", m.battle.empty() ? "ENTRAR" : "ENTRAR EM COMBATE", {pad, size.y - rem_ - bh}, {width, bh}, true, 1.15f * rem_) && play_)
+      play_(m);
   }
 
   // .ember-plate as a button (Engine2's small iron plates: back buttons, the battle bar).
@@ -366,6 +419,9 @@ class TitleStage : public Stage {
         const nlohmann::json& d = j["draft"];
         if (d.contains("title") && d["title"].is_string() && !d["title"].get<std::string>().empty()) m.title = d["title"].get<std::string>();
         if (d.contains("place") && d["place"].is_string()) m.place = d["place"].get<std::string>();
+        if (d.contains("id") && d["id"].is_string()) m.draftId = d["id"].get<std::string>();
+        if (d.contains("briefing") && d["briefing"].is_string()) m.briefing = d["briefing"].get<std::string>();
+        if (d.contains("objective") && d["objective"].is_string()) m.objective = d["objective"].get<std::string>();
       }
       missions_.push_back(std::move(m));
     }
@@ -381,6 +437,7 @@ class TitleStage : public Stage {
   std::function<void()> quit_;
   std::vector<MissionEntry> missions_;
   Screen screen_ = Screen::Title;
+  size_t chosen_ = 0;
   Dialog dialog_ = Dialog::None;
   float rem_ = 16.0f;
 };

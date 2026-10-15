@@ -580,7 +580,16 @@ int runWindow(const Options& o) {
                                                       [&] { return renderer.renderFrame(time); });
     if (!presented && swapchain->recreate(width, height)) renderer.resize(swapchain->extent());
     // Screen changes happen between frames, with the GPU idle: the old screen's resources go before the new one loads.
-    if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && map->wantsTitle()) backToTitle = true;
+    std::optional<MapStageOptions> retry;
+    if (auto* map = dynamic_cast<MapStage*>(stage.get())) {
+      if (map->wantsTitle()) backToTitle = true;
+      if (map->wantsRetry()) retry = map->options();
+    }
+    if (retry) {
+      vkDeviceWaitIdle(context.device);
+      stage.reset();
+      stage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, *retry);
+    }
     if (pending || backToTitle) {
       vkDeviceWaitIdle(context.device);
       stage.reset();

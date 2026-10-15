@@ -125,4 +125,93 @@ void spacedText(ImDrawList* dl, ImFont* font, float size, ImVec2 at, ImU32 color
   }
 }
 
+void emberPanel(ImDrawList* dl, ImVec2 a, ImVec2 b) {
+  for (int i = 8; i >= 1; --i) dl->AddRectFilled({a.x - i, a.y + i * 1.8f}, {b.x + i, b.y + i * 2.2f}, IM_COL32(0, 0, 0, 16), 4.0f);  // 0 18px 48px
+  dl->AddRect({a.x - 1, a.y - 1}, {b.x + 1, b.y + 1}, IM_COL32(0, 0, 0, 255), 3.0f);
+  verticalGradient(dl, a, b, {{0.0f, IM_COL32(30, 30, 30, 242)}, {0.6f, IM_COL32(10, 10, 10, 245)}, {1.0f, IM_COL32(24, 24, 24, 242)}});
+  dl->AddRect({a.x + 1, a.y + 1}, {b.x - 1, b.y - 1}, IM_COL32(255, 220, 160, 15), 3.0f);
+  dl->AddRect(a, b, IM_COL32(190, 150, 95, 115), 3.0f);
+  const ImU32 c = IM_COL32(224, 192, 140, 191);
+  const float i = 5.0f, l = 16.0f;
+  const ImVec2 p{a.x + i, a.y + i}, q{b.x - i, b.y - i};
+  dl->AddLine(p, {p.x + l, p.y}, c), dl->AddLine(p, {p.x, p.y + l}, c);
+  dl->AddLine({q.x, p.y}, {q.x - l, p.y}, c), dl->AddLine({q.x, p.y}, {q.x, p.y + l}, c);
+  dl->AddLine({p.x, q.y}, {p.x + l, q.y}, c), dl->AddLine({p.x, q.y}, {p.x, q.y - l}, c);
+  dl->AddLine(q, {q.x - l, q.y}, c), dl->AddLine(q, {q.x, q.y - l}, c);
+  const float w = b.x - a.x, s0 = a.x + w * 0.18f, s1 = b.x - w * 0.18f, m = (s0 + s1) * 0.5f;
+  for (int g = 2; g >= 0; --g) {
+    const int al = g == 0 ? 255 : 50;
+    dl->AddRectFilledMultiColor({s0, a.y - 1 - g}, {m, a.y + g}, IM_COL32(226, 104, 30, 0), IM_COL32(226, 104, 30, al), IM_COL32(226, 104, 30, al), IM_COL32(226, 104, 30, 0));
+    dl->AddRectFilledMultiColor({m, a.y - 1 - g}, {s1, a.y + g}, IM_COL32(226, 104, 30, al), IM_COL32(226, 104, 30, 0), IM_COL32(226, 104, 30, 0), IM_COL32(226, 104, 30, al));
+  }
+}
+
+void emberRule(ImDrawList* dl, float x0, float x1, float y) {
+  const float a = x0 + (x1 - x0) * 0.2f, b = x1 - (x1 - x0) * 0.2f;
+  const ImU32 gold = IM_COL32(190, 150, 95, 153), clear = IM_COL32(190, 150, 95, 0);
+  dl->AddRectFilledMultiColor({x0, y}, {a, y + 1}, clear, gold, gold, clear);
+  dl->AddRectFilled({a, y}, {b, y + 1}, gold);
+  dl->AddRectFilledMultiColor({b, y}, {x1, y + 1}, gold, clear, clear, gold);
+  const float m = (x0 + x1) * 0.5f, r = 4.5f;
+  const ImVec2 d[4] = {{m, y - r}, {m + r, y}, {m, y + r}, {m - r, y}};
+  dl->AddConvexPolyFilled(d, 4, IM_COL32(0, 0, 0, 255));
+  const ImVec2 e[4] = {{m, y - r + 1}, {m + r - 1, y}, {m, y + r - 1}, {m - r + 1, y}};
+  dl->AddQuadFilled(e[0], e[1], e[2], e[3], IM_COL32(160, 136, 100, 255));
+}
+
+void emberSlot(ImDrawList* dl, ImVec2 a, ImVec2 b, bool hover) {
+  if (hover) for (int k = 3; k >= 1; --k) dl->AddRect({a.x - k * 3.0f, a.y - k * 3.0f}, {b.x + k * 3.0f, b.y + k * 3.0f}, IM_COL32(255, 110, 40, 14), 4.0f, 3.0f);
+  verticalGradient(dl, a, b, {{0.0f, IM_COL32(12, 12, 12, 230)}, {1.0f, IM_COL32(5, 5, 5, 230)}});
+  dl->AddRectFilledMultiColor(a, {b.x, a.y + 8}, IM_COL32(0, 0, 0, 200), IM_COL32(0, 0, 0, 200), IM_COL32(0, 0, 0, 0), IM_COL32(0, 0, 0, 0));
+  dl->AddRect(a, b, hover ? IM_COL32(226, 170, 100, 191) : IM_COL32(190, 150, 95, 71), 2.0f);
+}
+
+void emberKicker(ImDrawList* dl, ImVec2 at, float size, const char* text, bool defeat) {
+  ImFont* f = uiFont(UiFont::Mark);
+  spacedText(dl, f, size, {at.x, at.y + 1}, IM_COL32(0, 0, 0, 200), text, 0.3f, false);
+  spacedText(dl, f, size, at, defeat ? IM_COL32(201, 122, 98, 255) : IM_COL32(184, 154, 112, 255), text, 0.3f, false);
+}
+
+void emberTitle(ImDrawList* dl, ImVec2 at, float size, const char* text) {
+  ImFont* f = uiFont(UiFont::Mark);
+  for (int k = 3; k >= 1; --k) dl->AddText(f, size, {at.x, at.y + 1.0f + k * 0.6f}, IM_COL32(0, 0, 0, 70), text);
+  dl->AddText(f, size, at, IM_COL32(241, 220, 192, 255), text);
+}
+
+bool emberBigButton(const char* id, const char* label, ImVec2 at, ImVec2 size, bool primary, float fontSize) {
+  ImGui::SetCursorScreenPos(at);
+  const bool clicked = ImGui::InvisibleButton(id, size);
+  const bool hover = ImGui::IsItemHovered();
+  ImDrawList* dl = ImGui::GetWindowDrawList();
+  const ImVec2 a = at, b{at.x + size.x, at.y + size.y};
+  auto k = [&](int r, int g, int bl) {
+    const float m = hover ? 1.1f : 1.0f;
+    return IM_COL32(std::min(255, static_cast<int>(r * m)), std::min(255, static_cast<int>(g * m)), std::min(255, static_cast<int>(bl * m)), 255);
+  };
+  for (int i = 6; i >= 1; --i) dl->AddRectFilled({a.x - i, a.y + i * 1.6f}, {b.x + i, b.y + i * 1.8f}, IM_COL32(0, 0, 0, 22), 3.0f + i);
+  if (primary) for (int i = 4; i >= 1; --i) dl->AddRect({a.x - i * 4.0f, a.y - i * 4.0f}, {b.x + i * 4.0f, b.y + i * 4.0f}, IM_COL32(255, 110, 30, hover ? 22 : 12), 4.0f + i * 4.0f, 4.0f);
+  dl->AddRect({a.x - 1, a.y - 1}, {b.x + 1, b.y + 1}, IM_COL32(0, 0, 0, 255), 2.0f);
+  if (primary) {
+    verticalGradient(dl, a, b, {{0.0f, k(0xd9, 0x62, 0x1c)}, {0.55f, k(0x9c, 0x2f, 0x10)}, {1.0f, k(0x56, 0x17, 0x08)}});
+    dl->AddLine({a.x + 1, a.y + 1}, {b.x - 1, a.y + 1}, IM_COL32(255, 225, 160, 140));
+    dl->AddRect(a, b, IM_COL32(255, 200, 130, 128), 2.0f);
+  } else {
+    verticalGradient(dl, a, b, {{0.0f, k(0x23, 0x23, 0x23)}, {0.55f, k(0x0a, 0x0a, 0x0a)}, {1.0f, k(0x1a, 0x1a, 0x1a)}});
+    dl->AddRect(a, b, hover ? IM_COL32(226, 170, 100, 216) : IM_COL32(190, 150, 95, 128), 2.0f);
+  }
+  // the gold diamond caps on both ends
+  for (int side = 0; side < 2; ++side) {
+    const float cx = side ? b.x + 1.0f : a.x - 1.0f, cy = (a.y + b.y) * 0.5f, r = 6.0f;
+    const ImVec2 d[4] = {{cx, cy - r}, {cx + r, cy}, {cx, cy + r}, {cx - r, cy}};
+    dl->AddConvexPolyFilled(d, 4, IM_COL32(0, 0, 0, 255));
+    dl->AddQuadFilled({cx, cy - r + 1}, {cx + r - 1, cy}, {cx, cy + r - 1}, {cx - r + 1, cy}, IM_COL32(176, 146, 100, 255));
+  }
+  ImFont* f = uiFont(UiFont::Mark);
+  const float tw = spacedTextWidth(f, fontSize, label, 0.2f);
+  const ImVec2 p{std::round((a.x + b.x - tw) * 0.5f), std::round((a.y + b.y - fontSize) * 0.5f)};
+  spacedText(dl, f, fontSize, {p.x, p.y + 1}, primary ? IM_COL32(50, 8, 0, 230) : IM_COL32(0, 0, 0, 255), label, 0.2f, false);
+  spacedText(dl, f, fontSize, p, primary ? IM_COL32(255, 241, 216, 255) : hover ? IM_COL32(255, 224, 180, 255) : IM_COL32(226, 194, 148, 255), label, 0.2f, false);
+  return clicked;
+}
+
 }  // namespace ember
