@@ -101,7 +101,7 @@ struct MeshFrame {
   glm::vec3 skyColor;
   float exposure;
   glm::vec3 groundColor;
-  uint32_t pad1;
+  float litCap;
   glm::mat4 view;
   float projectionX;
   float projectionY;
@@ -791,6 +791,7 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
   f.ambientIntensity = lighting_.ambientIntensity * lighting_.exposure;
   f.skyColor = lighting_.skyColor;
   f.groundColor = lighting_.groundColor;
+  f.litCap = lighting_.litScale * lighting_.exposure;
   f.view = camera_.view;
   f.projectionX = camera_.projection[0][0];
   f.projectionY = std::abs(camera_.projection[1][1]);

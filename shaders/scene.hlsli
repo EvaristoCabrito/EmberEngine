@@ -109,7 +109,7 @@ struct MeshFrame {
   float3 skyColor;
   float exposure;           // already multiplied into sun and ambient; emissive surfaces multiply it in
   float3 groundColor;
-  uint pad1;
+  float litCap;             // the brightest a lit card may get, x its colour x kMaxLit (exposure in)
   // Occlusion culling (two-phase): last frame's verdict per instance, this frame's depth pyramid.
   float4x4 view;
   float projectionX;        // projection[0][0]

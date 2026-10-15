@@ -97,6 +97,9 @@ class Renderer {
     // this multiplier (the map's ambient slider), instead of being scaled to ambientIntensity.
     bool physicalSky = false;
     float ambientMul = 1.0f;
+    // Lit cards stop at kMaxLit x their colour x this x exposure (Engine2 MAX_LIT, written for lights near 1;
+    // the physical mode sets it to the metered light so exposure x litScale stays near 1 by day).
+    float litScale = 1.0f;
   };
   void setMeshes(const MeshSceneView& view, const Lighting& lighting) {
     meshView_ = view;

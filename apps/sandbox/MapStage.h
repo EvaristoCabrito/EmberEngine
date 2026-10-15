@@ -289,6 +289,7 @@ class MapStage final : public Stage {
       if (std::isnan(adaptedEv_) || measuring_) adaptedEv_ = target;
       adaptedEv_ += (target - adaptedEv_) * (1.0f - std::exp(-dt * kAdaptPerSecond));
       lighting.exposure = 1.0f / (1.2f * std::exp2(adaptedEv_));
+      lighting.litScale = std::max(meterLux_, 1e-4f) * 1.2f / 2.5f;  // exposure x this = 1 at the metered EV
     }
     exposure_ = lighting.exposure;
     if (options_.sunElevation >= 0.0f) {
