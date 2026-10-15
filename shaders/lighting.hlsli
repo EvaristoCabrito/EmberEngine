@@ -27,6 +27,9 @@ struct Surface {
   float metallic;
   float occlusion;         // baked or screen-space ambient occlusion
   float3 emissive;         // linear, before exposure
+  float wrap;              // diffuse wrap-around (0 = Lambert; 2D cards: light from the side dims gently)
+  float specular;          // 1 = full specular lobe, 0 = diffuse only (2D cards)
+  float receivesShadow;    // 1 = the sun's shadow map darkens it, 0 = not (a flat card would shadow itself)
 };
 
 Surface defaultSurface(float3 position, float3 normal, float3 albedo) {
@@ -39,6 +42,9 @@ Surface defaultSurface(float3 position, float3 normal, float3 albedo) {
   s.metallic = 0.0;
   s.occlusion = 1.0;
   s.emissive = 0.0;
+  s.wrap = 0.0;
+  s.specular = 1.0;
+  s.receivesShadow = 1.0;
   return s;
 }
 
@@ -116,18 +122,21 @@ float3 shade(MeshFrame f, Surface s) {
   float3 color = 0.0;
   if (f.lightingLayers & kLayerSun) {
     const float3 l = f.sunDirection, h = normalize(l + view);
-    const float nl = saturate(dot(s.normal, l)), nh = saturate(dot(s.normal, h)), vh = saturate(dot(view, h));
-    if (nl > 0.0) {
-      const float3 F = fresnelSchlick(f0, vh);
-      color += (diffuseColor * (1.0 - F) / kPi + F * ggx(nh, a) * smithVisibility(nv, nl, a)) * nl * f.sunColor * f.sunIntensity *
-               sunShadow(f, s);
+    const float nlRaw = dot(s.normal, l);
+    const float nl = saturate(nlRaw), nh = saturate(dot(s.normal, h)), vh = saturate(dot(view, h));
+    const float nlDiffuse = saturate((nlRaw + s.wrap) / (1.0 + s.wrap));
+    if (nlDiffuse > 0.0) {
+      const float3 F = fresnelSchlick(f0, vh) * s.specular;
+      const float shadow = s.receivesShadow > 0.0 ? lerp(1.0, sunShadow(f, s), s.receivesShadow) : 1.0;
+      color += (diffuseColor * (1.0 - F) / kPi * nlDiffuse + F * ggx(nh, a) * smithVisibility(nv, nl, a) * nl) * f.sunColor *
+               f.sunIntensity * shadow;
     }
   }
   if (f.lightingLayers & kLayerIndirect) {
     // Lambert returns albedo * E / pi; the specular lobe sees the environment's radiance through the
     // split-sum BRDF.
     color += (diffuseColor * indirectDiffuse(f, s) / kPi +
-              envBrdfApprox(f0, s.roughness, nv) * indirectSpecular(f, s, reflect(-view, s.normal))) * s.occlusion;
+              envBrdfApprox(f0, s.roughness, nv) * s.specular * indirectSpecular(f, s, reflect(-view, s.normal))) * s.occlusion;
   }
   color += s.emissive * f.exposure;
   return color * visibility(f, s.position);

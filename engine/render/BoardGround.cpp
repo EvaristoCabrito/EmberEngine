@@ -62,6 +62,10 @@ BoardGround::~BoardGround() {
     uploads_.cancel(m.vertexUpload);
     uploads_.cancel(m.indexUpload);
   }
+  for (Water& w : water_) {
+    uploads_.cancel(w.vertexUpload);
+    uploads_.cancel(w.indexUpload);
+  }
   uploads_.cancel(recordUpload_);
   for (auto& [asset, t] : textures_) uploads_.cancel(t->upload);
   vkDeviceWaitIdle(context_.device);  // copies and draws may still use the buffers and images
@@ -73,6 +77,10 @@ BoardGround::~BoardGround() {
   for (Mesh& m : meshes_) {
     destroyBuffer(context_, m.vertexBuffer);
     destroyBuffer(context_, m.indexBuffer);
+  }
+  for (Water& w : water_) {
+    destroyBuffer(context_, w.vertexBuffer);
+    destroyBuffer(context_, w.indexBuffer);
   }
   destroyBuffer(context_, recordBuffer_);
 }
@@ -126,6 +134,30 @@ bool BoardGround::build(const e2::Board& board) {
     upload(meshes_[i]);
     stats_.vertices[i] = static_cast<uint32_t>(looks[i].vertexCount());
     stats_.triangles[i] = meshes_[i].count / 3;
+  }
+  // Water, both looks (its sheet follows each look's shore).
+  const VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+  for (int i = 0; i < 2; ++i) {
+    const e2::WaterGeometry g = e2::buildWater(board, i == 0 ? e2::EdgeStyle::Smooth : e2::EdgeStyle::Hard);
+    if (g.indices.empty()) continue;
+    Water& w = water_[i];
+    w.vertices.resize(g.positions.size() / 3);
+    for (size_t v = 0; v < w.vertices.size(); ++v) {
+      std::memcpy(w.vertices[v].position, &g.positions[v * 3], 12);
+      w.vertices[v].normal = octEncode(&g.normals[v * 3]);
+    }
+    w.indices = g.indices;
+    w.vertexBuffer = createDeviceBuffer(context_, w.vertices.size() * sizeof(WaterVertexGpu), usage, true);
+    w.indexBuffer = createDeviceBuffer(context_, w.indices.size() * sizeof(uint32_t), usage, true);
+    w.vertexUpload = {};
+    w.vertexUpload.buffer = w.vertexBuffer.buffer;
+    w.vertexUpload.data = std::as_bytes(std::span(w.vertices));
+    w.indexUpload = {};
+    w.indexUpload.buffer = w.indexBuffer.buffer;
+    w.indexUpload.data = std::as_bytes(std::span(w.indices));
+    uploads_.enqueue(w.vertexUpload);
+    uploads_.enqueue(w.indexUpload);
+    stats_.geometryBytes += w.vertices.size() * sizeof(WaterVertexGpu) + w.indices.size() * 4;
   }
   return true;
 }
@@ -219,6 +251,9 @@ void BoardGround::update() {
   for (const Mesh& m : meshes_)
     for (const ImageUpload* u : {&m.vertexUpload, &m.indexUpload})
       if (u->buffer && uploads_.finished(*u)) uploadWaitValue_ = std::max(uploadWaitValue_, u->signalValue);
+  for (const Water& w : water_)
+    for (const ImageUpload* u : {&w.vertexUpload, &w.indexUpload})
+      if (u->buffer && uploads_.finished(*u)) uploadWaitValue_ = std::max(uploadWaitValue_, u->signalValue);
   // Every texture resident: the record gets its bindless indices and goes up once.
   if (!recordQueued_ && ready == textures_.size() && !textures_.empty()) {
     for (const auto& [asset, word] : slots_) {
@@ -242,6 +277,12 @@ bool BoardGround::ready() const {
     if (m.indexUpload.buffer && !uploads_.finished(m.indexUpload)) return false;
   }
   return true;
+}
+
+WaterView BoardGround::water(e2::EdgeStyle style) const {
+  const Water& w = water_[style == e2::EdgeStyle::Smooth ? 0 : 1];
+  if (!w.vertexBuffer.buffer || !uploads_.finished(w.vertexUpload) || !uploads_.finished(w.indexUpload)) return {};
+  return {bufferAddress(context_, w.vertexBuffer), bufferAddress(context_, w.indexBuffer), static_cast<uint32_t>(w.indices.size())};
 }
 
 TerrainView BoardGround::view(e2::EdgeStyle style) const {

@@ -137,7 +137,8 @@ struct MeshFrame {
   float shadowTexelWorld;    // world size of one texel
   float shadowFilterTexels;  // radius of the soft filter, in texels
   uint lightingLayers;       // lighting.hlsli kLayer*: layers switched on
-  uint pad7, pad8;
+  float time;                // seconds (animated materials: water ripples)
+  uint pad8;
 };
 
 // The work buffer: counters, indirect arguments, then the queues.
@@ -207,6 +208,7 @@ float3 decodeNormal(uint packed) { return octDecode(snorm16x2(packed)); }
 float4 decodeTangent(uint packed) { return float4(octDecode(snorm16x2(packed & 0xFFFEFFFFu)), (packed & 0x10000u) ? -1.0 : 1.0); }
 
 float srgbToLinear(float c) { return c <= 0.04045 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4); }
+float3 srgbToLinear3(float3 c) { return float3(srgbToLinear(c.r), srgbToLinear(c.g), srgbToLinear(c.b)); }
 float4 decodeColor(uint packed) {
   const float4 c = float4(packed & 0xFF, (packed >> 8) & 0xFF, (packed >> 16) & 0xFF, packed >> 24) / 255.0;
   return float4(srgbToLinear(c.r), srgbToLinear(c.g), srgbToLinear(c.b), c.a);

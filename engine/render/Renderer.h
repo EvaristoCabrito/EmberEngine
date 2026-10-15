@@ -93,6 +93,8 @@ class Renderer {
 
   // The board's ground (BoardGround::view); replaces the placeholder ground plane. Empty = none.
   void setTerrain(const TerrainView& terrain) { terrain_ = terrain; }
+  // The board's water (BoardGround::water); empty = none.
+  void setWater(const WaterView& water) { water_ = water; }
   // The sun's shadow map covers this sphere (world space); radius 0 = no sun shadows.
   void setSunShadowBounds(glm::vec3 center, float radius) {
     shadowCenter_ = center;
@@ -125,7 +127,7 @@ class Renderer {
   };
 
   void createTargets(VkExtent2D size);
-  void writeFrame(Frame& frame, VkCommandBuffer cmd);
+  void writeFrame(Frame& frame, VkCommandBuffer cmd, float time);
   void recordMeshes(Frame& frame, VkCommandBuffer cmd);
   void recordDepthPyramid(VkCommandBuffer cmd);
   void recordVisibilityPass(VkCommandBuffer cmd, VkDeviceAddress frameAddress, uint32_t pass);
@@ -157,6 +159,8 @@ class Renderer {
   VkPipeline groundPipeline_ = VK_NULL_HANDLE;
   VkPipeline terrainPipeline_ = VK_NULL_HANDLE;
   VkPipeline terrainShadowPipeline_ = VK_NULL_HANDLE;
+  VkPipeline waterPipeline_ = VK_NULL_HANDLE;
+  WaterView water_;
   Image shadowMap_;
   uint32_t shadowMapIndex_ = kNoIndex;
   VkSampler shadowSampler_ = VK_NULL_HANDLE;

@@ -51,6 +51,13 @@ struct SpritePush {
   glm::vec3 cameraRight;
   uint32_t sampler;
   VkDeviceAddress instances;
+  VkDeviceAddress frame;  // MeshFrame: scene lighting for lit cards
+};
+
+struct WaterPush {
+  VkDeviceAddress frame;
+  VkDeviceAddress vertices;
+  VkDeviceAddress indices;
 };
 static_assert(sizeof(SpritePush) <= Bindless::kPushConstantBytes);
 
@@ -104,7 +111,8 @@ struct MeshFrame {
   float shadowTexelWorld;
   float shadowFilterTexels;
   uint32_t lightingLayers;
-  uint32_t pad7, pad8;
+  float time;
+  uint32_t pad8;
 };
 static_assert(sizeof(MeshFrame) == 576 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384 &&
               offsetof(MeshFrame, shadowMatrix) == 480);
@@ -301,6 +309,17 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   terrainShadow.depthBiasSlope = 1.5f;
   terrainShadowPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), terrainShadow);
 
+  GraphicsPipelineDesc water;
+  water.vertexShader = "water.VSMain";
+  water.fragmentShader = "water.PSMain";
+  water.colorFormats = {kSceneColorFormat};
+  water.depthFormat = kDepthFormat;
+  water.depthTest = true;
+  water.depthWrite = false;
+  water.alphaBlend = true;
+  water.premultipliedAlpha = true;
+  waterPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), water);
+
   GraphicsPipelineDesc sprites;
   sprites.vertexShader = "sprites.VSMain";
   sprites.fragmentShader = "sprites.PSMain";
@@ -345,6 +364,7 @@ Renderer::~Renderer() {
   vkDestroyPipeline(context_.device, groundPipeline_, nullptr);
   vkDestroyPipeline(context_.device, terrainPipeline_, nullptr);
   vkDestroyPipeline(context_.device, terrainShadowPipeline_, nullptr);
+  vkDestroyPipeline(context_.device, waterPipeline_, nullptr);
   bindless_.removeSampledImage(shadowMapIndex_);
   destroyImage(context_, shadowMap_);
   vkDestroySampler(context_.device, shadowSampler_, nullptr);
@@ -534,7 +554,7 @@ void Renderer::captureFrame(float time, const std::string& path) {
 }
 
 // The frame's constants (MeshFrame: camera, lighting, mesh-pass state), read by every scene pass.
-void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd) {
+void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
   // Frame constants and cleared counters.
   MeshFrame f{};
   f.viewProjection = camera_.viewProjection();
@@ -576,6 +596,7 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd) {
   f.debugView = debugView_;
   previousCamera_ = camera_;
   f.lightingLayers = lightingLayers_;
+  f.time = time;
   f.shadowMap = kNoTextureIndex;
   if (shadowRadius_ > 0.0f && terrain_) {
     // An orthographic sun camera around the board's bounding sphere, pulled back along the sun direction.
@@ -812,7 +833,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
 
   // --- 3D meshes: cull, pick cluster LODs, rasterise visibility + depth, resolve materials -----
   const bool meshes = hasScene_ && static_cast<bool>(meshView_);
-  if (hasScene_) writeFrame(frame, cmd);
+  if (hasScene_) writeFrame(frame, cmd, time);
   // --- Sun shadow: the board's ground from the sun (before the meshes: their resolve reads it) ---------------------------------------------
   if (shadowsThisFrame_) {
     const uint32_t shadowScope = gpuTimer_.begin(cmd, "shadow");
@@ -902,10 +923,20 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(groundPush), &groundPush);
       vkCmdDraw(cmd, 6, 1, 0, 0);
     }
+    if (terrain_ && water_) {
+      // The board's water: transparent, over the ground, under the cards.
+      const uint32_t waterScope = gpuTimer_.begin(cmd, "water");
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, waterPipeline_);
+      const WaterPush waterPush{bufferAddress(context_, frame.meshFrame), water_.vertices, water_.indices};
+      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(waterPush), &waterPush);
+      vkCmdDraw(cmd, water_.count, 1, 0, 0);
+      gpuTimer_.end(cmd, waterScope);
+    }
     if (!sprites_.empty()) {
       std::memcpy(frame.sprites.mapped, sprites_.data(), sprites_.size() * sizeof(SpriteInstance));
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spritePipeline_);
-      const SpritePush spritePush{viewProjection, camera_.right, spriteSamplerIndex_, bufferAddress(context_, frame.sprites)};
+      const SpritePush spritePush{viewProjection, camera_.right, spriteSamplerIndex_, bufferAddress(context_, frame.sprites),
+                                  bufferAddress(context_, frame.meshFrame)};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(spritePush), &spritePush);
       vkCmdDraw(cmd, 6, static_cast<uint32_t>(sprites_.size()), 0, 0);
     }

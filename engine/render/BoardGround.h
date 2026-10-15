@@ -40,6 +40,18 @@ struct TerrainGpu {
 };
 static_assert(sizeof(TerrainGpu) == 108 * 4);
 
+struct WaterVertexGpu {
+  float position[3];
+  uint32_t normal;  // octahedral, 2 x snorm16
+};
+static_assert(sizeof(WaterVertexGpu) == 16);
+
+struct WaterView {
+  VkDeviceAddress vertices = 0, indices = 0;
+  uint32_t count = 0;  // indices
+  explicit operator bool() const { return vertices != 0 && count != 0; }
+};
+
 // What the renderer draws (device addresses; empty until everything is resident).
 struct TerrainView {
   VkDeviceAddress record = 0, vertices = 0, indices = 0;
@@ -61,6 +73,7 @@ class BoardGround {
   void update();
   bool ready() const;
   TerrainView view(e2::EdgeStyle style) const;
+  WaterView water(e2::EdgeStyle style) const;  // empty when the map has none
   // The renderer must wait for this upload-timeline value before drawing the ground.
   uint64_t uploadWaitValue() const { return uploadWaitValue_; }
 
@@ -103,6 +116,13 @@ class BoardGround {
   ImageUpload recordUpload_;
   bool recordQueued_ = false;
   Mesh meshes_[2];  // smooth, hard
+  struct Water {
+    std::vector<WaterVertexGpu> vertices;
+    std::vector<uint32_t> indices;
+    Buffer vertexBuffer, indexBuffer;
+    ImageUpload vertexUpload, indexUpload;
+  };
+  Water water_[2];
   uint64_t uploadWaitValue_ = 0;
   Stats stats_;
 };
