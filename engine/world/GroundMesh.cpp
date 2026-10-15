@@ -304,8 +304,58 @@ GroundGeometry buildHardGround(const Board& b) {
   return g;
 }
 
+GroundGeometry buildTabletopGround(const Board& b) {
+  constexpr double kTop = 0.93, kSide = 0.985, kBevel = 0.07;  // diorama.html buildHexTerrain(true)
+  const uint32_t stride = strideOf(b);
+  std::vector<double> pos, nor;
+  std::vector<float> spl, tmp(stride);
+  using P = std::array<double, 3>;
+  const auto face = [&](const P& a, const P& bb, const P& c) {
+    const double ux = bb[0] - a[0], uy = bb[1] - a[1], uz = bb[2] - a[2], wx = c[0] - a[0], wy = c[1] - a[1], wz = c[2] - a[2];
+    const double nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx;
+    double l = std::hypot(nx, ny, nz);
+    if (l == 0) l = 1;
+    for (const P* p : {&a, &bb, &c}) {
+      pos.insert(pos.end(), p->begin(), p->end());
+      nor.insert(nor.end(), {nx / l, ny / l, nz / l});
+      splat(b, (*p)[0], (*p)[2], 0.2, tmp.data(), nullptr);
+      spl.insert(spl.end(), tmp.begin(), tmp.end());
+    }
+  };
+  const auto quad = [&](const P& a0, const P& b0, const P& b1, const P& a1) {
+    face(a0, b0, b1);
+    face(a0, b1, a1);
+  };
+  const auto mid = [](const P& p, const P& q) { return P{(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2}; };
+  const auto at = [](const Cell& c, int k, double r, double y) {
+    const auto [x, z] = corner(c.x, c.z, k, kHexRadius * r);
+    return P{x, y, z};
+  };
+  double base = 0;  // the board's base: the hard look's outer walls end at 0 too
+  for (const Cell& cell : b.cells()) base = std::min(base, cell.groundY);
+  for (const Cell& cell : b.cells()) {
+    const double y1 = cell.groundY, yBevel = y1 - kBevel;
+    const P C{cell.x, y1, cell.z};
+    for (int k = 0; k < 6; k++) {
+      const P A = at(cell, k, kTop, y1), Bc = at(cell, k + 1, kTop, y1), mA = mid(C, A), mB = mid(C, Bc), mAB = mid(A, Bc);
+      face(C, mA, mB);
+      face(mA, A, mAB);
+      face(mA, mAB, mB);
+      face(mB, mAB, Bc);
+      quad(at(cell, k, kSide, yBevel), at(cell, k + 1, kSide, yBevel), Bc, A);  // the bevel
+      if (yBevel > base) quad(at(cell, k, kSide, base), at(cell, k + 1, kSide, base), at(cell, k + 1, kSide, yBevel), at(cell, k, kSide, yBevel));
+    }
+  }
+  GroundGeometry g;
+  g.stride = stride;
+  g.positions = toFloat(pos);
+  g.normals = toFloat(nor);
+  g.weights = std::move(spl);
+  return g;
+}
+
 double groundHeightAt(const Board& b, EdgeStyle style, double x, double z) {
-  if (style == EdgeStyle::Hard) return b.cellAt(x, z).groundY;
+  if (style != EdgeStyle::Smooth) return b.cellAt(x, z).groundY;  // hard and tabletop: the cell's own level
   const auto [wx, wz] = warp(x, z);
   return b.cellAt(wx, wz).groundY + b.reliefAt(x, z);
 }

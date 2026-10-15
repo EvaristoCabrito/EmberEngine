@@ -29,6 +29,7 @@ const { MODELS } = await import(`${E2}/src/world/models.ts`);
 const lighting = await import(`${E2}/src/ember/lighting.ts`);
 const catalog = await import(`${E2}/src/units/catalog.ts`);
 const visual = await import(`${E2}/src/units/visual.ts`);
+const backgrounds = await import(`${E2}/src/editor/mapBackgrounds.ts`);
 const decorFiles: string[] = JSON.parse(readFileSync(`${E2}/src/world/decor-files.json`, 'utf8'));
 const prepared: Record<string, { n: number; natW: number; natH: number; x: number; y: number; w: number; h: number }> =
   JSON.parse(readFileSync(`${E2}/src/units/prepared.json`, 'utf8'));
@@ -161,6 +162,9 @@ const out = {
   map: draft.id, title: draft.title, cols: draft.cols, rows: draft.rows,
   lighting: { timeOfDay: draft.timeOfDay ?? 'day', sunIntensity: draft.sunIntensity ?? null, ambientIntensity: draft.ambientIntensity ?? null,
     environment: draft.environment ?? 'outdoor', bloomIntensity: draft.bloomIntensity ?? null, mistType: draft.mistType ?? null },
+  // The painted backdrop behind the board (Engine2 editor/mapBackgrounds.ts resolvedMapBackground: the map's own
+  // pick, else Ember's routing by map id), a file in public/game/map-backgrounds; null = none.
+  backdrop: backgrounds.resolvedMapBackground(draft)?.file ?? null,
   decor, units, skipped,
 };
 mkdirSync(dirname(outPath), { recursive: true });

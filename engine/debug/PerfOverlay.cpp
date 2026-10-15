@@ -53,7 +53,9 @@ void PerfOverlay::draw(const Sources& sources) {
   sampleRates(sources);
   if (!visible) return;
 
-  ImGui::SetNextWindowPos({12, 12}, ImGuiCond_FirstUseEver);
+  // Top right, folded to its title bar at first: the stage's own panel (settings) owns the top left.
+  ImGui::SetNextWindowPos({ImGui::GetIO().DisplaySize.x - 12.0f, 12.0f}, ImGuiCond_FirstUseEver, {1.0f, 0.0f});
+  ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
   ImGui::SetNextWindowBgAlpha(0.82f);
   if (!ImGui::Begin("Performance  [F1]", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing)) {
     ImGui::End();

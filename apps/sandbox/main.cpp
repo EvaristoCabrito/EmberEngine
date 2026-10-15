@@ -17,7 +17,7 @@
 //   Sandbox.exe --compare <pakA> <meshA asset> <pakB> <meshB asset> <out dir>
 //        Proxy-quality images: mesh A (reference = full detail, original = engine LOD) vs mesh B (proxy), at
 //        several widths; tools/compare_meshes.py measures silhouette and normal error.
-//   Sandbox.exe --map <Engine2 map.json> --ground <ground.pak> [--look smooth|hard] [--board <board.json>] [--engine2 <public dir>]
+//   Sandbox.exe --map <Engine2 map.json> --ground <ground.pak> [--look smooth|hard|tabletop] [--board <board.json>] [--engine2 <public dir>]
 //        D1 port: a real Ember map from Engine2, its board and ground (docs/ENGINE2_AUDIT.md).
 //        [--scene <scene.json> --sprites <battle.pak> --meshes <props.pak>]: its decorations, 3D models and units.
 //        Captures: [--zoom F] [--turn DEG] [--tilt DEG] [--offset X Z] (board widths/depths) [--layers MASK]
@@ -30,7 +30,9 @@
 //        [--fog-look N]: which saved fog look (render/FogLooks.h; in a window, the Map panel's dropdown).
 //        [--lighting 0|1|2]: old prototype day / Engine2's presets / physical atmosphere (default; also in the panel).
 //        Night maps: [--moon-phase NAME] (Engine2's moonPhase.ts: new .. waningCrescent, blood) [--moon-path 0|1|2]
-//        (where the disc and its light stand: MapStage.h moonPlacement) [--star-look N] (looks/stars). In a window
+//        (where the disc and its light stand: MapStage.h moonPlacement) [--star-look N] (looks/stars).
+//        [--heroes <heroes.json>]: the six heroes in a row, every pose chosen in the panel (tools/scripts/engine2/
+//        export_heroes.ts). In a window
 //        every setting is a dropdown / checkbox in the Map panel (no keyboard shortcuts).
 //   Sandbox.exe --meshes meshes.pak [--grid N]
 //        Mesh scene (M3 bring-up): every cooked mesh in the archive on an N x N grid, drawn GPU-driven.
@@ -106,6 +108,7 @@ struct Options {
   std::string moonPhase;
   int moonPath = 0;
   int starLook = 3;
+  std::string heroes;
   uint32_t debugView = 0;
   std::string scene;
   std::string map, ground, look = "smooth", boardData = "content/engine2/board.json", engine2 = "C:/Engine2/public";
@@ -159,6 +162,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--moon-phase" && hasValue) o.moonPhase = argv[++i];
     else if (arg == "--moon-path" && hasValue) o.moonPath = std::atoi(argv[++i]);
     else if (arg == "--star-look" && hasValue) o.starLook = std::atoi(argv[++i]);
+    else if (arg == "--heroes" && hasValue) o.heroes = argv[++i];
     else if (arg == "--debug-view" && hasValue) o.debugView = static_cast<uint32_t>(std::atoi(argv[++i]));
     else if (arg == "--no-ui") o.noUi = true;
     else if (arg == "--layers" && hasValue) o.lightingLayers = static_cast<uint32_t>(std::strtoul(argv[++i], nullptr, 0));
@@ -179,7 +183,7 @@ Options parse(int argc, char** argv) {
   }
   if (o.battle && (o.meshes.empty() || o.sprites.empty())) fatal("--battle needs --meshes <pak> and --sprites <pak>");
   if (!o.map.empty() && o.ground.empty()) fatal("--map needs --ground <ground.pak> (Cooker ground)");
-  if (o.look != "smooth" && o.look != "hard") fatal("--look is smooth or hard");
+  if (o.look != "smooth" && o.look != "hard" && o.look != "tabletop") fatal("--look is smooth, hard or tabletop");
   // The battle draws every decor card and 72 units at once: a larger sprite budget unless given.
   if (o.battle && !o.budgetSet) o.spriteBudgetMb = 1536;
   return o;
@@ -394,7 +398,7 @@ std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Rende
     m.spriteBudgetMb = o.spriteBudgetMb;
     m.boardData = o.boardData;
     m.engine2Public = o.engine2;
-    m.look = o.look == "hard" ? e2::EdgeStyle::Hard : e2::EdgeStyle::Smooth;
+    m.look = o.look == "hard" ? e2::EdgeStyle::Hard : o.look == "tabletop" ? e2::EdgeStyle::Tabletop : e2::EdgeStyle::Smooth;
     m.zoom = o.mapZoom;
     m.turnDegrees = o.mapTurn;
     m.tiltDegrees = o.mapTilt;
@@ -414,6 +418,7 @@ std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Rende
     m.moonPhase = o.moonPhase;
     m.moonPath = o.moonPath;
     m.starLook = o.starLook;
+    m.heroes = o.heroes;
     renderer.setDebugView(o.debugView);
     return std::make_unique<MapStage>(context, renderer, assets, jobs, m);
   }
@@ -513,6 +518,7 @@ int runWindow(const Options& o) {
   Renderer renderer(context, swapchain.get(), swapchain->extent());
   renderer.setUi(&ui);
   std::unique_ptr<Stage> stage = makeStage(o, context, renderer, services.assets, services.jobs);
+  if (!o.map.empty()) services.perf.visible = false;  // a map window shows only its choices (MapStage::drawPanel)
 
   window.setEventHook([&](const SDL_Event& event) {
     if (ui.processEvent(event)) return;

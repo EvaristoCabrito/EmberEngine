@@ -127,9 +127,9 @@ bool BoardGround::build(const e2::Board& board) {
   }
   stats_.textures = static_cast<uint32_t>(textures_.size());
 
-  // Geometry, both looks.
-  const e2::GroundGeometry looks[2] = {e2::buildSmoothGround(board), e2::buildHardGround(board)};
-  for (int i = 0; i < 2; ++i) {
+  // Geometry, every look.
+  const e2::GroundGeometry looks[3] = {e2::buildSmoothGround(board), e2::buildHardGround(board), e2::buildTabletopGround(board)};
+  for (int i = 0; i < 3; ++i) {
     pack(looks[i], palette, meshes_[i]);
     upload(meshes_[i]);
     stats_.vertices[i] = static_cast<uint32_t>(looks[i].vertexCount());
@@ -292,12 +292,13 @@ WaterView BoardGround::water(e2::EdgeStyle style) const {
 
 TerrainView BoardGround::view(e2::EdgeStyle style) const {
   if (!ready()) return {};
-  const Mesh& m = meshes_[style == e2::EdgeStyle::Smooth ? 0 : 1];
+  const Mesh& m = meshes_[style == e2::EdgeStyle::Smooth ? 0 : style == e2::EdgeStyle::Hard ? 1 : 2];
   TerrainView v;
   v.record = bufferAddress(context_, recordBuffer_);
   v.vertices = bufferAddress(context_, m.vertexBuffer);
   v.indices = m.indices.empty() ? 0 : bufferAddress(context_, m.indexBuffer);
   v.count = m.count;
+  v.seamStep = style == e2::EdgeStyle::Tabletop ? static_cast<float>(e2::kStep) : 0.0f;
   return v;
 }
 

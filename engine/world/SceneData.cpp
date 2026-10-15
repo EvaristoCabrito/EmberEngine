@@ -47,6 +47,7 @@ std::optional<SceneData> SceneData::load(const std::filesystem::path& sceneJson)
   }
   SceneData s;
   s.map = str(j, "map");
+  s.backdrop = str(j, "backdrop");
   s.title = str(j, "title");
   if (j.contains("lighting")) {
     s.timeOfDay = str(j["lighting"], "timeOfDay");
@@ -129,6 +130,41 @@ std::optional<SceneData> SceneData::load(const std::filesystem::path& sceneJson)
     s.units.push_back(std::move(o));
   }
   return s;
+}
+
+const HeroPose* Hero::find(const std::string& pose) const {
+  for (const HeroPose& p : poses)
+    if (p.pose == pose) return &p;
+  return nullptr;
+}
+
+std::optional<std::vector<Hero>> loadHeroes(const std::filesystem::path& heroesJson) {
+  std::ifstream in(heroesJson, std::ios::binary);
+  const json j = in ? json::parse(in, nullptr, false) : json();
+  if (!in || j.is_discarded() || !j.contains("heroes")) {
+    logError("heroes: cannot read {} (export it with tools/scripts/engine2/export_heroes.ts)", heroesJson.string());
+    return std::nullopt;
+  }
+  std::vector<Hero> heroes;
+  for (const json& h : j["heroes"]) {
+    Hero o;
+    o.name = str(h, "name");
+    o.reversed = flag(h, "reversed");
+    for (const json& p : h["poses"]) {
+      HeroPose q;
+      q.pose = str(p, "pose");
+      q.label = str(p, "label");
+      q.set = str(p, "set");
+      q.clip = str(p, "clip");
+      if (p.contains("box")) q.boxW = num(p["box"], "w", 1), q.boxH = num(p["box"], "h", 1), q.foot = num(p["box"], "foot");
+      q.frames = static_cast<int>(num(p, "frames", 1));
+      if (p.contains("pace") && p["pace"].is_array()) q.pace = p["pace"].get<std::vector<int>>();
+      q.doneAt = static_cast<int>(num(p, "doneAt", -1));
+      o.poses.push_back(std::move(q));
+    }
+    heroes.push_back(std::move(o));
+  }
+  return heroes;
 }
 
 }  // namespace ember::e2

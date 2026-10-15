@@ -56,6 +56,7 @@ struct WaterView {
 struct TerrainView {
   VkDeviceAddress record = 0, vertices = 0, indices = 0;
   uint32_t count = 0;  // vertices to draw (indices when indexed)
+  float seamStep = 0.0f;  // tabletop: a dark seam on the walls at every this many units of height (0 = none)
   explicit operator bool() const { return record != 0 && count != 0; }
 };
 
@@ -81,7 +82,7 @@ class BoardGround {
   uint64_t uploadWaitValue() const { return uploadWaitValue_; }
 
   struct Stats {
-    uint32_t vertices[2]{}, triangles[2]{};
+    uint32_t vertices[3]{}, triangles[3]{};
     uint32_t textures = 0, texturesReady = 0, layers = 0;
     uint64_t geometryBytes = 0, textureBytes = 0;
   };
@@ -118,7 +119,7 @@ class BoardGround {
   Buffer recordBuffer_;
   ImageUpload recordUpload_;
   bool recordQueued_ = false;
-  Mesh meshes_[2];  // smooth, hard
+  Mesh meshes_[3];  // smooth, hard, tabletop
   struct Water {
     std::vector<WaterVertexGpu> vertices;
     std::vector<uint32_t> indices;

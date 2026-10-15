@@ -12,6 +12,8 @@ struct Push {
   uint64_t record;    // TerrainGpu
   uint64_t vertices;  // TerrainVertex[] (48 bytes each)
   uint64_t indices;   // uint[]; 0 = one triangle per 3 vertices
+  float seamStep;     // tabletop look: a dark seam on the walls at every this many units of height (0 = none)
+  uint pad;
 };
 [[vk::push_constant]] Push push;
 
@@ -182,7 +184,12 @@ float4 PSMain(VSOut i) : SV_Target0 {
     if (rw > 0.0) cliffC += sideTex(8, n, wp, gzy, gxy, s) * rw;
     cliffC /= max(ew + rw, 1e-4);
   }
-  const float3 ground = lerp(cliffC, topC, flatness);
+  float3 ground = lerp(cliffC, topC, flatness);
+  if (push.seamStep > 0.0) {
+    // Tabletop pieces: a dark seam where each stacked level meets the next (diorama.html GROOVE).
+    const float gy = frac(wp.y / push.seamStep);
+    ground *= 1.0 - (1.0 - flatness) * 0.5 * (1.0 - smoothstep(0.0, 0.07, gy));
+  }
   const float3 albedo = lerp(float3(0.035, 0.03, 0.03), ground, smoothstep(0.02, 0.2, total));
 
   float roughness = 0.92;

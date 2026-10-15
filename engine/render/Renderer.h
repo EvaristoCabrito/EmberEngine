@@ -132,6 +132,10 @@ class Renderer {
   // Lighting layers switched on (shaders/lighting.hlsli kLayer*: 1 sun, 2 shadows, 4 indirect), for
   // measuring each alone.
   void setLightingLayers(uint32_t layers) { lightingLayers_ = layers; }
+  // What shows behind everything: kNoTextureIndex = the sky (with the atmosphere) or the clear colour,
+  // kBlackBackground = black, else a bindless sRGB image (a painted backdrop), fitted to cover the screen.
+  static constexpr uint32_t kBlackBackground = 0xFFFFFFFEu;
+  void setBackground(uint32_t background) { background_ = background; }
   uint32_t lightingLayers() const { return lightingLayers_; }
   // Tactical visibility (fog of war, ARCHITECTURE §7.0 R7): Engine2's darkness mask over the board
   // (world/FogOfWar.h). Every lit surface, card, water, shadow caster and local light reads it, none
@@ -285,6 +289,7 @@ class Renderer {
   bool shadowsThisFrame_ = false;          // the shadow map is drawn this frame
   std::array<float, 8> shadowKey_{};       // what the cached shadow map was drawn for
   VkDeviceAddress shadowTerrain_ = 0;
+  uint32_t background_ = 0xFFFFFFFFu;  // setBackground
   uint32_t lightingLayers_ = 0xFFFFFFFFu;
   TerrainView terrain_;
   VkPipeline spritePipeline_ = VK_NULL_HANDLE;

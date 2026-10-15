@@ -55,6 +55,8 @@ struct TerrainPush {
   VkDeviceAddress record;
   VkDeviceAddress vertices;
   VkDeviceAddress indices;
+  float seamStep;
+  uint32_t pad;
 };
 
 struct SpritePush {
@@ -212,6 +214,8 @@ struct ResolvePush {
   uint32_t visibilityImage;
   uint32_t colorImage;
   glm::vec4 clearColor;
+  uint32_t background;  // kNoTextureIndex: the sky (atmosphere) or clearColor; kBlackBackground: black; else a backdrop
+  uint32_t pad[3];
 };
 static_assert(sizeof(ResolvePush) <= Bindless::kPushConstantBytes);
 
@@ -1087,7 +1091,7 @@ void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
               VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
   scope = gpuTimer_.begin(cmd, "resolve");
   vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, resolvePipeline_);
-  const ResolvePush resolvePush{frameAddress, visibilityIndex_, sceneColorStorageIndex_, fogOn_ ? kNeverSeenColor : kClearColor};
+  const ResolvePush resolvePush{frameAddress, visibilityIndex_, sceneColorStorageIndex_, fogOn_ ? kNeverSeenColor : kClearColor, background_, {}};
   vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(resolvePush), &resolvePush);
   vkCmdDispatch(cmd, (size_.width + 7) / 8, (size_.height + 7) / 8, 1);
   gpuTimer_.end(cmd, scope);
@@ -1298,7 +1302,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     vkCmdBeginRendering(cmd, &shadowPass);
     setViewport(cmd, {kShadowSize, kShadowSize});
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, terrainShadowPipeline_);
-    const TerrainPush push{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices};
+    const TerrainPush push{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices, terrain_.seamStep, 0};
     vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
     vkCmdDraw(cmd, terrain_.count, 1, 0, 0);
     if (meshes) {
@@ -1392,7 +1396,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
                {VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
                 VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                 VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT});
-  } else if (hasScene_ && atmoThisFrame_) {
+  } else if (hasScene_ && (atmoThisFrame_ || background_ != kNoTextureIndex)) {
     // --- No 3D meshes, so no resolve: the sky alone, then the ground and cards over it -------------------------
     // The previous frame may still be sampling scene colour in its tonemap pass.
     transition(cmd, sceneColor_.image, sceneColor_.aspect,
@@ -1400,7 +1404,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
                 VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
     const uint32_t skyScope = gpuTimer_.begin(cmd, "sky");
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, skyPipeline_);
-    const ResolvePush skyPush{bufferAddress(context_, frame.meshFrame), visibilityIndex_, sceneColorStorageIndex_, kClearColor};
+    const ResolvePush skyPush{bufferAddress(context_, frame.meshFrame), visibilityIndex_, sceneColorStorageIndex_, kClearColor, background_, {}};
     vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(skyPush), &skyPush);
     vkCmdDispatch(cmd, (size_.width + 7) / 8, (size_.height + 7) / 8, 1);
     gpuTimer_.end(cmd, skyScope);
@@ -1432,7 +1436,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   VkRenderingAttachmentInfo color{VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
   color.imageView = sceneColor_.view;
   color.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-  const bool skyAlone = !meshes && hasScene_ && atmoThisFrame_;
+  const bool skyAlone = !meshes && hasScene_ && (atmoThisFrame_ || background_ != kNoTextureIndex);
   color.loadOp = meshes || skyAlone ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR;  // keep the resolved 3D / sky
   color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
   const glm::vec4 background = fogOn_ ? kNeverSeenColor : kClearColor;
@@ -1458,7 +1462,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       // The board's ground (Engine2's terrain), depth-tested against the 3D meshes.
       const uint32_t terrainScope = gpuTimer_.begin(cmd, "terrain");
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, terrainPipeline_);
-      const TerrainPush terrainPush{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices};
+      const TerrainPush terrainPush{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices, terrain_.seamStep, 0};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(terrainPush), &terrainPush);
       vkCmdDraw(cmd, terrain_.count, 1, 0, 0);
       gpuTimer_.end(cmd, terrainScope);

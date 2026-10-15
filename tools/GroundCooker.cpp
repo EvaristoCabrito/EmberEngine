@@ -2,6 +2,7 @@
 
 #include <stb_image.h>
 
+#include <algorithm>
 #include <chrono>
 #include <cstring>
 #include <format>
@@ -111,6 +112,18 @@ bool cookGround(JobSystem& jobs, const GroundCookOptions& options, std::vector<P
   work.push_back({e2::groundPlains049Asset("color"), TextureFormat::Bc7Srgb, plains049 / "color.png", {}});
   work.push_back({e2::groundPlains049Asset("normal"), TextureFormat::Bc5Unorm, plains049 / "normal.png", {}});
   work.push_back({e2::groundPlains049Asset("rough"), TextureFormat::Bc7Unorm, plains049 / "rough.png", {}});
+  // The painted backdrops (screen backgrounds: basic BC7 is plenty, and much less work than slow).
+  std::vector<std::string> backdropAssets;
+  {
+    std::error_code error;
+    for (const auto& entry : std::filesystem::directory_iterator(options.engine2Public / "game/map-backgrounds", error)) {
+      const std::string ext = entry.path().extension().string();
+      if (ext != ".jpg" && ext != ".jpeg" && ext != ".png") continue;
+      const std::u8string name = entry.path().filename().u8string();
+      work.push_back({e2::backdropAsset(std::string(name.begin(), name.end())), TextureFormat::Bc7Srgb, entry.path(), {}});
+      backdropAssets.push_back(work.back().asset);
+    }
+  }
   for (const char* phase : e2::kMoonPhases)
     work.push_back({e2::skyMoonAsset(phase), TextureFormat::Bc7Srgb, publicFile(options.engine2Public, e2::moonPhaseIcon(phase)), {}});
   for (const e2::GroundLayerSource& layer : data->groundLayers) {
@@ -153,7 +166,8 @@ bool cookGround(JobSystem& jobs, const GroundCookOptions& options, std::vector<P
         continue;
       }
       const auto t0 = std::chrono::steady_clock::now();
-      const std::vector<uint8_t> texture = cookTexture(jobs, image, job.format, options.quality);
+      const bool backdrop = std::find(backdropAssets.begin(), backdropAssets.end(), job.asset) != backdropAssets.end();
+      const std::vector<uint8_t> texture = cookTexture(jobs, image, job.format, backdrop ? Bc7Quality::Basic : options.quality);
       if (!writeFile(cooked, texture.data(), texture.size()) || !writeFile(keyFile, &key, sizeof(key))) {
         logError("ground: cannot write to the cache {}", options.cacheDir.string());
         ++report.failed;

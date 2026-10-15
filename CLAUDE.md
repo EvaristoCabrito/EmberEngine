@@ -34,13 +34,29 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   gameplay (consistent frame times while moving the camera, animating, casting; not averages) → streaming →
   rendering foundation (2.75D depth, occlusion, real dynamic light) → final content. Keep "a hook exists"
   separate from "the feature works": every report says which.
-- **Lighting direction (user, 2026-10-14):** a hybrid Luminous (FFXV) + Unreal-lessons system, our own C++ /
-  Vulkan, no HW ray tracing required; the prototype's colour (Engine2 `diorama.html`) is the floor, not the
-  ceiling (ARCHITECTURE §7.1b).
+- **Lighting direction (user, 2026-10-15, replaces the Engine2 floor for light):** realistic, AAA standard
+  (physical light units, physical camera exposure, ARCHITECTURE §7.6); Engine2 is NOT a reference for light or
+  sky ("so bad I threw it away"). Our own C++ / Vulkan, no HW ray tracing required.
+- **Sprites (user, 2026-10-15):** the engine exists to fix Engine2's sprite animation; sprites must look at least
+  as good as Engine2's (sharpness, colour, clean alpha) and every animation must play. **Sprites and combat come
+  before any more sky / fog / atmosphere work** (I spent a day on moon/stars/fog the user could not even see).
+- **The user cannot run the Sandbox.** After building something visible, OPEN THE WINDOW FOR THEM:
+  `Start-Process build\release\bin\Sandbox.exe -WorkingDirectory C:\EmberEngine -ArgumentList ...` then bring it to
+  the front (user32 ShowWindow/SetForegroundWindow via Add-Type). Never close their windows (they refused);
+  rename a locked exe/pak aside and build/write a new one instead.
+- **No photos** to the user (they judge only live in the window). Never offer choices that look the same in play.
+- **Start work only on an explicit "faz" / "pode fazer".** A confirmation, a pasted spec, a complaint or a question
+  is not a go-ahead ("who authorized starting anything?"). Ask one short question when unsure; never guess twice.
+- **The window shows only choices** (the "Escolhas" panel: big Segoe UI font, short Portuguese names, OFF first
+  where it applies, no numbers, no statistics); no keyboard shortcuts for settings. Every feature gets an OFF.
+- **The user speaks Portuguese** (and is often furious): answer in Portuguese, short, ownership first.
 - **2D/3D split (the one piece of Engine2's tech carried over):** characters, props and decor = photoreal 2D cards;
   houses/buildings and terrain shape = real 3D (Meshy for buildings); ground = photoreal texture on 3D terrain.
   Do not port Engine2's lighting/camera/ground rules, and do not ask what is 2D vs 3D.
-- **Camera:** free (orbit + zoom + cinematic moves) until the user picks the angles; then locked.
+- **Camera:** the user had NO trouble with the original camera (Engine2-style orbit: right-drag turn/tilt, wheel
+  zoom, arrows/WASD pan the target; MapStage before the 2026-10-15 afternoon). The free fly camera + on-screen
+  buttons I built that day broke it ("insanity"). A "tactical camera" was proposed but NOT accepted. Any camera
+  change: discuss exactly what it means with the user first, build only on "faz".
 - **Workload:** finished game = ×10 today's sprite roster (MCs at 2× data, max party 8; "testing ×10 is enough").
   World density: the Ember maps are a floor ("bare naked and started stuttering"); M3 tests 10× their density.
 - **Progress gates are the user's three demonstrations** (§9): D1 lit sprites in a spatial world, D2 complete
@@ -179,22 +195,36 @@ build.bat release          # or debug; output in build/<config>/bin
     2 physical (default): time of day places the sun/moon, the map's sliders set the strengths (Engine2's 3D
     never applied them: the user had suspected it), the air colours the light; indoor maps keep the hemisphere.
     Captures: `captures/sky/*.png` (aldeia015 is **dusk**).
-  - **Night sky (2026-10-15), built, 0 validation errors in debug; cost not measured (energy rule):** the moon's
-    disc with Engine2's phase art (9 phases cooked into ground.pak as `sky/moon/<phase>.tex`), Engine2's size as
-    seen from its normal view (~2.7 deg radius) and GLOW 2.3, through the air; it crosses the sky in 600 s; phase
-    strength / blood moon from moonPhase.ts (`--moon-phase`). **Three moon placements, user to pick**
-    (`--moon-path`, `captures/moon/placements.png`): 0 Engine2's (disc ahead, light from behind: they disagree),
-    1 disc on the light behind the view (never on screen), 2 disc on the light ahead and low (in view, long
-    shadows, units backlit). Mode 1 now lights from Engine2's real (mirrored) moon side. **Star looks**
-    (`looks/stars/README.md`, `--star-look N`): 001 squares, 002 sparse points, 003 dense (default, not judged).
-    The sky is now drawn on maps without 3D models too (it lived only in the mesh resolve: cemiterio had none).
-  - **The Map panel holds every setting** (dropdowns, checkboxes, a normal-view button); the setting keys are
-    gone (user: no keyboard shortcuts). The user cannot open the Sandbox window: show work as images.
-  - DXC gotcha: passing the AtmosphereFrame (has a uint64_t) to a function by value read `moonTexture` wrong;
-    pass fields one by one (`moonDisc`).
+  - **2026-10-15 afternoon, committed locally, NOT pushed, NOT accepted by the user ("I accepted nothing"):**
+    - Night sky: moon disc with Engine2's phase art (`sky/moon/<phase>.tex` in the ground pack), 3 placements
+      (`--moon-path`; the user found them identical in play: the sky is off screen), moon size choice, star looks
+      001-003 (`looks/stars/`, tags `star-look-NNN`), sky on mesh-less maps (CSSky pass). Low value: the game
+      camera never sees the sky.
+    - **Painted map backdrops** (the big visible win): Engine2's `public/game/map-backgrounds/*` (39 images) cooked
+      into the ground pack as `backdrop/<file>.tex`; `export_scene.ts` writes the map's `backdrop` (Engine2
+      `editor/mapBackgrounds.ts resolvedMapBackground`); drawn behind everything, cover-fit (resolve.hlsl
+      `backgroundAt`); panel "Fundo": imagem do mapa / céu / OFF. aldeia015 = aldeia-bg.jpg, cemiterio =
+      CemiteryBackground.jpg. **Use `build/ground/ground-v2.pak`** (ground.pak was locked by an open window).
+    - Third board look **"mesa" (tabletop)**: `GroundMesh::buildTabletopGround` (diorama.html look 3: top at 0.93,
+      bevel 0.07, walls 0.985 to the base, seam every height step in terrain.hlsl). The user then specified real
+      pieces (NOT built, not authorized yet): each hex one pure piece of its own terrain, texture fitted per piece
+      with per-piece rotation/offset, sides of that terrain's material, stacked levels.
+    - Unit viewer: `tools/scripts/engine2/export_heroes.ts` exports every Engine2 unit (97, 293 poses, all in
+      battle.pak) with Engine2's boxes and pacing → `build/engine2-scenes/roster.json` (`--heroes <file>`); panel
+      "Animação" (Parado, Andar, Atacar, Conjurar, Curar, ...): one-shot poses replay every 3.5 s. Units are laid in
+      rows of 12 at the board centre. The user then said: **just repopulate the map as it is** (the map's own units,
+      each playing the chosen pose from its own catalog entry: look it up by the scene unit's `key`) - NOT done.
+    - Panel "Escolhas" (Segoe UI from the Windows fonts folder via GetWindowsDirectoryA; the WINDIR variable is
+      missing when launched via PowerShell Start-Process, which left the pixel font); performance overlay hidden in
+      map windows; camera buttons box (top right) for the free camera.
+    - Measured: sprites are NOT damaged by cooking (sprite-preview: cooked mip 0 identical to the source); in game
+      Aldric is ~1.7x brighter with more contrast than his art (the lighting washes cards out). 97 units on screen
+      stutter: likely the 1 GB sprite budget (full clips 30-60 MB each) thrashing - not measured yet.
   - **Power cuts here (user, 2026-10-15):** build with `CMAKE_BUILD_PARALLEL_LEVEL=4`, no full-clock GPU runs
     unless asked, commit often; after a crash, scan recent files for zero-filled content (346 build outputs were
     zeroed and set aside in `build/release-zeroed-20261015`). The paced 60 Hz FAIL ran under power saving.
+  - DXC gotcha: passing the AtmosphereFrame (has a uint64_t) to a function by value read `moonTexture` wrong;
+    pass fields one by one (`moonDisc`). ImGui is 1.93: `PushFont(nullptr, size)` (no SetWindowFontScale).
 - **Not done (hooks only or missing):** walls not imported (block no sight); the sky step's open items
   (see Next 1); bloom; depth of field / tilt-shift; local lights cast no shadows; cards
   do not receive card shadows; walls/doors (architecture), floor waypoints, stand-on-log heights, the third
@@ -203,23 +233,23 @@ build.bat release          # or debug; output in build/<config>/bin
 
 ## Next
 
-The user asked for all three of the sky step (2026-10-15): real sky outdoors (black indoors), physical light
-colour with Engine2's presets as the floor, real depth of field for the tilt-shift look (Engine2's screen band
-kept as a switchable look). Continue in this order:
-1. **Finish the sky step:** (a) decided (user, 2026-10-15): **dusk/dawn stay physical**: the air colours the sun
-   at Engine2's heights (15 deg dusk = #ffdfb4, paler than Engine2's painted #ffb47e); a warmer dusk = a lower sun
-   (longer shadows), `--sun AZ EL` now, a per-map sun height in the editor later (M6); (b) moon disc built:
-   the user picks the placement (0/1/2) and judges star look 003; (c) cost of the atmosphere + sky passes (not
-   measured: energy rule); (d) **the night's look**: cemiterio's own moon strength (3.5) reads as daylight green;
-   research a cinematic night (exposure, scotopic shift) as a new numbered look.
-2. **Bloom** (Jimenez 2014: 13-tap downsample, Karis average, tent upsample, energy-conserving mix; the map's
-   bloomIntensity slider; Engine2's threshold-2.0 look kept switchable).
-3. **Depth of field** focused on the board (circle of confusion from depth, gather at half resolution, cards'
-   soft edges handled; Engine2's screen-band tilt-shift as a switchable look; T toggles as in Engine2).
-4. Side-by-side with Engine2's prototype colour (the floor) in every time of day.
-5. Tabletop tiles look (R8); walls/doors (they will also block sight). Spell VFX; unit poses. Then D1 (§9).
-Skipped until final assets exist (user, 2026-10-15): the ground material's cost (3.7 ms avg; the shadow taps
-and the smooth ground's tiny triangles are engine-side and can be done later).
+The user's verdict (2026-10-15): the engine as seen is worse than Engine2 ("worst colours and render I've ever
+seen", camera "nonsense", stutters with all units, sprites washed out, nothing visible improved). Order, each step
+only on the user's explicit "faz", shown live in the window:
+1. **Camera: restore the original camera** (orbit: right-drag turn/tilt, wheel zoom, arrows/WASD pan; see git
+   history of MapStage.h before the free camera: `event()` with turning_/yaw_/pitch_/distance_/target_) and remove
+   the free fly camera (event / flyKeys / beginFree / drawCameraButtons). Before doing even that, confirm with the
+   user exactly what they want (the "tactical camera" was NOT accepted; they asked to discuss its meaning).
+2. **Measure and fix the stutter** (asked, not started; confirm first): frame times with every unit on screen, sprite
+   residency vs the 1 GB budget; fix the real cause (budget sized for the real workload, not fewer units).
+3. **Repopulate the map as it is** with the Animação choice driving the map's own units.
+4. **Combat control** (asked "faz" earlier, only the study begun): select a unit, movement range (Engine2
+   pathfinding.ts computeReachable: footprintCost, terrain moveCost, occupancy), click to walk the path with the walk
+   animation, attack with attack / hit / death, then enemy turns (engine.ts BattleEngine). Engine2 = game design.
+5. Sprite look in light (cards washed out / flat), then the AAA light plan (ARCHITECTURE §7.6, step A designed:
+   physical units, EV100 metering + adaptation + night compensation, inverse-square lamps).
+6. Tabletop pieces as specified above; the redo of the sprite path if it still falls short of Engine2.
+Skipped until final assets exist (user, 2026-10-15): the ground material's cost.
 
 ## Waiting on the user
 
@@ -227,7 +257,7 @@ and the smooth ground's tiny triangles are engine-side and can be done later).
   `content/video/<Character>/<move>.mp4` (they sit in `Downloads` / `Desktop\Characters` with generated names;
   don't guess the mapping). ffmpeg 9.0.1 and Python + PIL are installed.
 - Reference images / one clearly described moment, to turn R1–R8 into D1 pass/fail criteria.
-- The final camera angles (camera stays free until then).
+- The final camera angles.
 
 ## Later milestones
 

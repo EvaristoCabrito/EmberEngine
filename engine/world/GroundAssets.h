@@ -5,6 +5,7 @@
 //   ground/plains049/<role>.tex        the plains049 surface's photo maps (color, normal, rough)
 //   ground/layer/<key>/<role>.tex      each baked ground layer present in the set (color, normal, rough)
 //   sky/moon/<phase>.tex               the moon's phase art (Engine2's icons, BC7 sRGB with alpha, 256 px)
+//   backdrop/<file>.tex                every painted map backdrop (public/game/map-backgrounds, BC7 sRGB)
 // Roles: color = BC7 sRGB, normal = BC5 (X, Y of the stored normal), rough = BC7 linear (R used).
 
 #include <string>
@@ -18,6 +19,7 @@ inline std::string groundLayerAsset(std::string_view key, std::string_view role)
   return "ground/layer/" + std::string(key) + "/" + std::string(role) + ".tex";
 }
 
+inline std::string backdropAsset(std::string_view file) { return "backdrop/" + std::string(file) + ".tex"; }
 inline std::string skyMoonAsset(std::string_view phase) { return "sky/moon/" + std::string(phase) + ".tex"; }
 
 }  // namespace ember::e2

@@ -65,6 +65,7 @@ struct SceneData {
   // the time of day's default) and its mist type (the fog look for the scenario).
   std::optional<float> sunIntensity, ambientIntensity, bloomIntensity;
   std::string mistType;
+  std::string backdrop;  // the painted backdrop's file name in public/game/map-backgrounds (UTF-8); empty = none
   std::vector<SceneCard> cards;
   std::vector<SceneModel> models;
   std::vector<SceneUnit> units;
@@ -72,5 +73,22 @@ struct SceneData {
 
   static std::optional<SceneData> load(const std::filesystem::path& sceneJson);
 };
+
+// The six heroes with every pose they have (tools/scripts/engine2/export_heroes.ts: Engine2's unit tables).
+struct HeroPose {
+  std::string pose, label;   // Engine2's pose id ("attack") and its Portuguese label ("Atacar")
+  std::string set, clip;     // the cooked sprite clip
+  float boxW = 1, boxH = 1, foot = 0;  // Engine2 unitBox for this pose
+  int frames = 1;
+  std::vector<int> pace;     // frame shown at each 1/240 s (Engine2 framePace)
+  int doneAt = -1;           // one-shot poses: the 1/240 s tick it finishes (-1 = loops)
+};
+struct Hero {
+  std::string name;
+  bool reversed = false;     // drawn facing left (Engine2 UnitActor.drawnReversed)
+  std::vector<HeroPose> poses;
+  const HeroPose* find(const std::string& pose) const;
+};
+std::optional<std::vector<Hero>> loadHeroes(const std::filesystem::path& heroesJson);
 
 }  // namespace ember::e2

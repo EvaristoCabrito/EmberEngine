@@ -577,6 +577,79 @@ disc lit only the backs of units); in a real sky both cannot hold and the orbit 
 so three placements are kept until the user picks: Engine2's (disc and light disagree), disc on the light behind
 the view (never seen), disc on the light ahead and low (seen; long shadows; units backlit).
 
+### 7.6 Realistic light and sky, AAA standard: diagnosis and plan (2026-10-15)
+
+**The user (2026-10-15), replacing the Engine2 floor for light:** "I want the sky and the luminosity to be
+realistic; this is a AAA; put triple effort into understanding how light works in a AAA game." Engine2 is no
+longer the reference for light or sky ("Engine2 is so bad I threw it away in less than a week"). The user's
+verdict on the current state, seen live on cemiterio-esquecidos003 (bright night): "the fakest light I've ever
+seen", "a blue day: no night is ever this bright", lamps drowned in moonlight, colours bad "from the ground to the
+sky", the sky makes no sense (a planet's sky over a board floating in black).
+
+**How AAA games light a world (sources below).** One chain, every link physical, art direction on top:
+1. **Physical units everywhere.** Lights in lux / lumens / candela, the sky in cd/m^2, from the same scale:
+   direct sun ~100,000 lux, clear sky ~20,000 lux (Frostbite 2014, "Sunny 16"), full moon ~0.1-0.3 lux,
+   starlight/airglow ~1e-3 lux; a torch or lantern hundreds of lumens. FFXV: "sun = moon x 400,000".
+2. **A physical camera.** Exposure from EV100 (UE: exposure = 1 / 2^(EV100 + compensation)); eye adaptation
+   meters the frame and moves EV100 slowly, clamped (UE's default range -8 starlight .. 18 sun), plus an
+   artistic **compensation curve by scene brightness**: night is exposed brighter than physics but kept
+   several stops darker than day, so it *reads* as night. Because sun, moon and lamps share one scale, a moonlit
+   night is dark and the lamps are the brightest things in it: the contrast comes for free.
+3. **Inverse-square light.** Point lights fall off as 1/d^2 (with a window at the range). Engine2's 1/d^1.25
+   spreads light too far and too evenly: lamplight never pools.
+4. **Sky light with occlusion.** The sky's ambient is blocked by everything (FFXV: PRT transfer in probe grids
+   + SSAO; modern: GTAO, Jimenez 2016, ~0.5 ms, plus specular occlusion). Without it every surface gets the same
+   sky light: flat, floating, no contact.
+5. **Shadows for every important light.** Sun cascades, local-light shadow maps in an atlas (FFXV), screen-space
+   contact shadows for fine detail; light never passes through walls.
+6. **A sky that belongs to a world.** Physical atmosphere (Hillaire 2020; FFXV: LUTs fitted to photos),
+   volumetric clouds lit by sun/moon with Beer-powder and multiple-scattering octaves (Schneider 2015, Hillaire
+   2016; FFXV: 7 noise octaves, ray-marched, cloud shadows on the ground), celestial bodies (moon disc with
+   halo, stars by magnitude, the Milky Way, airglow: Jensen et al. 2001), and **terrain to the horizon** so the
+   sky has ground under it.
+7. **Night vision.** Below ~0.1 cd/m^2 the rods take over: colour fades, blue shift (Purkinje), less fine
+   detail (Jensen et al. 2000; Kirk & O'Brien 2011).
+8. **A hue-stable display transform + bloom.** ACES fits skew bright saturated light (orange to yellow, blue to
+   purple) and clip saturated greens/yellows; AgX-style transforms desaturate highlights toward white with stable
+   hue. Physically based bloom (Jimenez 2014) so bright sources glow. Grading after.
+
+**What EmberEngine does today, link by link (why it looks fake):**
+| Link | Today | Effect |
+|---|---|---|
+| 1 units | Engine2's numbers: moon key 3.5 on cemiterio (map slider), sun ~3, lamps 10-24 "intensity" | night as bright as day; lamps drown |
+| 2 camera | fixed exposure 1, no metering, no adaptation, no night compensation | every time of day equally bright |
+| 3 falloff | Engine2's 1/d^1.25 | no pools of lamplight; flat spread |
+| 4 sky occlusion | SH sky ambient with no occlusion, no AO | flat, objects float |
+| 5 shadows | sun only (+ card shadows); lamps cast none | light passes through walls and people |
+| 6 sky | atmosphere OK; no clouds; small moon; sparse stars; board floats in black under a horizon | "makes no sense" |
+| 7 night vision | none | moonlit green stays saturated neon |
+| 8 display | three.js ACES fit, no bloom | neon greens/yellows, lamps do not glow |
+
+**Plan, in order of what the user will see change (each a new numbered look, switchable live in the window's
+"Escolhas" panel with OFF; old looks kept):**
+- **A. Physical light units + physical camera + eye adaptation + inverse-square local lights** (links 1-3): sun,
+  sky, moon, stars and lamps in lux/lumens from one table; the map's sliders become multipliers on them; EV100
+  metering with clamped adaptation and a night compensation curve. First visible result: a dark night where the
+  lamps pool warm light, a bright day, believable dusk.
+- **B. Night vision + hue-stable display transform + physically based bloom** (links 7-8).
+- **C. GTAO + sky-light occlusion + contact shadows** (link 4, part of 5).
+- **D. Local-light shadows** (atlas, the important lamps and spells first) (link 5).
+- **E. A world under the sky**: terrain continuing to the horizon around the board (distant ground, silhouettes,
+  aerial perspective), then **volumetric clouds** lit by sun and moon with cloud shadows, then the full night sky
+  (moon halo and size, stars by magnitude, Milky Way) (link 6).
+- **F. Bounce light** from local lights (probe grid), after D1.
+Every step: researched first, measured (GPU cost), 0 validation errors, shown live, judged by the user.
+
+**Sources:** Lagarde & de Rousiers, *Moving Frostbite to Physically Based Rendering 3.0* (SIGGRAPH 2014 course
+notes, light units, physical camera); Elcott et al., *Rendering Techniques of Final Fantasy XV* (SIGGRAPH 2016);
+Epic, *Auto Exposure* (EV100, compensation curve) docs; Hillaire, *Physically Based Sky, Atmosphere and Cloud
+Rendering in Frostbite* (2016) and *A Scalable and Production Ready Sky and Atmosphere* (EGSR 2020); Schneider,
+*The Real-time Volumetric Cloudscapes of Horizon Zero Dawn* (2015) and *Nubis* (2017, 2023); Bauer, *Creating the
+Atmospheric World of Red Dead Redemption 2* (SIGGRAPH 2019); Jimenez et al., *Practical Real-Time Strategies for
+Accurate Indirect Occlusion* (2016); Olsson et al., *Efficient Virtual Shadow Maps for Many Lights* (2014);
+Jensen et al., *Night Rendering* (2000) and *A Physically-Based Night Sky Model* (2001); Kirk & O'Brien,
+*Perceptually Based Tone Mapping for Low-Light Conditions* (2011).
+
 ## 8. Gameplay and tools
 
 **Engine2's game design is sound (the user, 2026-10-14: "nothing else is wrong with its game design"); its

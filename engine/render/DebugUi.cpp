@@ -5,6 +5,19 @@
 #include <imgui_impl_sdl3.h>
 #include <imgui_impl_vulkan.h>
 
+#include <filesystem>
+#include <string>
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+
+#include "core/Log.h"
+
 #include "rhi/VulkanContext.h"
 
 namespace ember {
@@ -23,8 +36,24 @@ DebugUi::DebugUi(VulkanContext& context, SDL_Window* window, VkFormat targetForm
   ImGui::CreateContext();
   ImGuiIO& io = ImGui::GetIO();
   io.IniFilename = nullptr;  // layouts are saved deliberately by the editor, not on every exit
-  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // no keyboard navigation: the arrows and WASD always move the camera
   ImGui::StyleColorsDark();
+  // A readable font (user, 2026-10-15: ImGui's pixel font refused): Windows' own Segoe UI, read from the system's
+  // fonts folder at run time (nothing bundled); ImGui's built-in font if it is missing.
+  // The fonts folder from Windows itself: the WINDIR variable is missing when the window is started from some
+  // shells, which left the pixel font on screen (2026-10-15).
+  char windows[MAX_PATH] = {};
+  const UINT length = GetWindowsDirectoryA(windows, MAX_PATH);
+  const std::string segoe = (length > 0 && length < MAX_PATH ? std::string(windows) : std::string("C:\\Windows")) + "\\Fonts\\segoeui.ttf";
+  std::error_code error;
+  if (std::filesystem::exists(segoe, error)) io.FontDefault = io.Fonts->AddFontFromFileTTF(segoe.c_str(), 18.0f);
+  else logError("UI font not found: {}", segoe);
+  ImGuiStyle& style = ImGui::GetStyle();
+  style.FramePadding = {10.0f, 6.0f};
+  style.ItemSpacing = {10.0f, 8.0f};
+  style.WindowPadding = {14.0f, 12.0f};
+  style.FrameRounding = 4.0f;
+  style.WindowRounding = 6.0f;
 
   if (window) EMBER_CHECK(ImGui_ImplSDL3_InitForVulkan(window), "ImGui SDL3 backend failed to start");
 

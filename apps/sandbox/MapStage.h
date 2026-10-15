@@ -84,6 +84,9 @@ struct MapStageOptions {
   // the night's own strength) and where the moon's disc and light stand (see moonPlacement()); also in the panel.
   std::string moonPhase;
   int moonPath = 0;
+  // The six heroes in a row in front of the camera, every pose chosen in the panel (tools/scripts/engine2/
+  // export_heroes.ts output; empty = none).
+  std::filesystem::path heroes;
   int starLook = 3;  // the star field's saved look (looks/stars/README.md; also in the panel)
 };
 
@@ -160,6 +163,9 @@ class MapStage final : public Stage {
       logInfo("scene {}: {} cards, {} models, {} units, {} architecture pieces (not drawn yet)", scene_->map, scene_->cards.size(),
               scene_->models.size(), scene_->units.size(), scene_->architecture);
       setUpParty();
+      if (!options.heroes.empty()) setUpHeroes(options.heroes);
+      if (!scene_->backdrop.empty()) ground_.requestTexture(e2::backdropAsset(scene_->backdrop));
+      background_ = scene_->backdrop.empty() ? 1 : 0;
       if (e2::timeOfDay(scene_->timeOfDay).moon && scene_->environment != "indoor")
         for (const char* phase : e2::kMoonPhases) ground_.requestTexture(e2::skyMoonAsset(phase));  // 0.1 MB each
     }
@@ -185,6 +191,7 @@ class MapStage final : public Stage {
       const float tanHalf = std::tan(glm::radians(kFov * 0.5f));
       maxDistance_ = std::max(40.0f, std::max(boardWidth_, boardDepth_) * 2.2f);
       distance_ = std::min(maxDistance_, std::max(boardWidth_ / (2 * tanHalf * aspect), boardDepth_ * 1.35f) * 1.05f) / options_.zoom;
+      if (!heroes_.empty()) distance_ = 48.0f / options_.zoom;  // the rows of units fill the view
     }
     // Measurement: a full turn and two zooms in and out (to 35% of the framing distance) over the run.
     float yaw = yaw_, distance = distance_;
@@ -197,7 +204,16 @@ class MapStage final : public Stage {
     }
     // Engine2: orientation from turn then tilt; the camera sits `distance` behind the target.
     const glm::vec3 back{distance * std::cos(pitch_) * std::sin(yaw), distance * std::sin(pitch_), distance * std::cos(pitch_) * std::cos(yaw)};
-    const Camera camera = Camera::lookAt(target_ + back, target_, glm::radians(kFov), aspect, kNear);
+    orbitEye_ = target_ + back;
+    // The free camera (user, 2026-10-15: "move the camera at will"): once the user moves it, it flies from where the
+    // framing was; captures and measurements keep the framing above.
+    const float dt = std::min(std::chrono::duration<float>(std::chrono::steady_clock::now() - lastFrame_).count(), 0.1f);
+    lastFrame_ = std::chrono::steady_clock::now();
+    lastDt_ = dt;
+    if (!measuring_) flyKeys(dt);
+    if (!captured_) captured_ = true, homeYaw_ = yaw_, homePitch_ = pitch_, homeTarget_ = target_, homeDistance_ = distance_;
+    const Camera camera = free_ && !measuring_ ? Camera::lookAt(eye_, eye_ + lookDirection(), glm::radians(kFov), aspect, kNear)
+                                               : Camera::lookAt(orbitEye_, target_, glm::radians(kFov), aspect, kNear);
     drawList_.clear();
     if (scene_ && sprites_.ready()) buildCards(camera, time);
     renderer.setScene(camera, drawList_);
@@ -214,7 +230,13 @@ class MapStage final : public Stage {
     renderer.setWater(ground_.water(look_));
     renderer.setSunShadowBounds(boardCenter_, boardRadius_);
     renderer.setLightingLayers(layers_);
-    renderer.setFogOfWar(fogReady_ ? &fogMask_ : nullptr, maskVersion_, &fogTexels_);
+    {
+      uint32_t bg = kNoTextureIndex;  // the sky (or the clear colour)
+      if (background_ == 2) bg = Renderer::kBlackBackground;
+      if (background_ == 0 && scene_ && !scene_->backdrop.empty()) bg = ground_.textureIndex(e2::backdropAsset(scene_->backdrop));
+      renderer.setBackground(bg);
+    }
+    renderer.setFogOfWar(fogReady_ && !noFog_ ? &fogMask_ : nullptr, maskVersion_, &fogTexels_);
     Renderer::VolumetricFog volume;
     // The froxel haze belongs to the old lighting (mode 0, where every saved fog look was captured); under the
     // brighter physical light it reads as a milky veil (2026-10-15), so it stays off there.
@@ -225,7 +247,7 @@ class MapStage final : public Stage {
     renderer.setVolumetricFog(volume);
     // The fog of war's mist: the numbered look on show (render/FogLooks.h; chosen in the Map panel).
     Renderer::FogBank bank;
-    bank.enabled = fog_.has_value() && options_.volume;
+    bank.enabled = fog_.has_value() && options_.volume && !noFog_;
     bank.look = fogLook_;
     bank.scene.boardCenter = {boardCenter_.x, boardCenter_.z};
     bank.scene.boardRadius = boardRadius_;
@@ -264,26 +286,54 @@ class MapStage final : public Stage {
     fogUpdatedThisFrame_ = false;
   }
 
+  // The free camera: drag with any mouse button to look anywhere (the sky too), the wheel flies forward and back.
+  // Clicks on the panel never reach here (ImGui takes them).
   void event(const SDL_Event& e) override {
-    if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && e.button.button == SDL_BUTTON_RIGHT) turning_ = true;
-    if (e.type == SDL_EVENT_MOUSE_BUTTON_UP && e.button.button == SDL_BUTTON_RIGHT) turning_ = false;
-    if (e.type == SDL_EVENT_MOUSE_MOTION && turning_) {
-      yaw_ -= e.motion.xrel * 0.005f;
-      pitch_ = std::clamp(pitch_ + e.motion.yrel * 0.005f, glm::radians(2.0f), glm::radians(89.0f));
+    if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN) looking_ = true;
+    if (e.type == SDL_EVENT_MOUSE_BUTTON_UP) looking_ = false;
+    if (e.type == SDL_EVENT_MOUSE_MOTION && looking_ && (e.motion.state & (SDL_BUTTON_LMASK | SDL_BUTTON_RMASK | SDL_BUTTON_MMASK))) {
+      beginFree();
+      lookYaw_ -= e.motion.xrel * 0.004f;
+      lookPitch_ = std::clamp(lookPitch_ - e.motion.yrel * 0.004f, glm::radians(-89.0f), glm::radians(89.0f));
     }
-    if (e.type == SDL_EVENT_MOUSE_WHEEL) distance_ = std::clamp(distance_ * std::pow(0.9f, e.wheel.y), 3.0f, maxDistance_);
-    if (e.type == SDL_EVENT_KEY_DOWN) {
-      const float step = distance_ * 0.05f;
-      const glm::vec3 forward{-std::sin(yaw_), 0.0f, -std::cos(yaw_)}, right{std::cos(yaw_), 0.0f, -std::sin(yaw_)};
-      switch (e.key.key) {
-        case SDLK_W: case SDLK_UP: target_ += forward * step; break;
-        case SDLK_S: case SDLK_DOWN: target_ -= forward * step; break;
-        case SDLK_A: case SDLK_LEFT: target_ -= right * step; break;
-        case SDLK_D: case SDLK_RIGHT: target_ += right * step; break;
-        default: break;  // settings and looks are chosen in the Map panel (drawPanel), never by keys
-      }
+    if (e.type == SDL_EVENT_MOUSE_WHEEL) {
+      beginFree();
+      eye_ += lookDirection() * e.wheel.y * flySpeed() * 0.25f;
     }
   }
+
+  // Keys held move the free camera smoothly every frame: W A S D / arrows along the view, Q down, E up, Shift faster.
+  void flyKeys(float dt) {
+    if (ImGui::GetCurrentContext() && ImGui::GetIO().WantTextInput) return;  // only typing into a text field takes the keys
+    const bool* k = SDL_GetKeyboardState(nullptr);
+    if (!k) return;
+    // Level moves (a game's camera): the arrows / WASD walk across the board, Q and E change the height.
+    const glm::vec3 forward{-std::sin(lookYaw_), 0.0f, -std::cos(lookYaw_)}, right{std::cos(lookYaw_), 0.0f, -std::sin(lookYaw_)};
+    glm::vec3 move{0.0f};
+    if (k[SDL_SCANCODE_W] || k[SDL_SCANCODE_UP]) move += forward;
+    if (k[SDL_SCANCODE_S] || k[SDL_SCANCODE_DOWN]) move -= forward;
+    if (k[SDL_SCANCODE_D] || k[SDL_SCANCODE_RIGHT]) move += right;
+    if (k[SDL_SCANCODE_A] || k[SDL_SCANCODE_LEFT]) move -= right;
+    if (k[SDL_SCANCODE_E]) move.y += 1.0f;
+    if (k[SDL_SCANCODE_Q]) move.y -= 1.0f;
+    if (glm::length(move) < 1e-4f) return;
+    beginFree();
+    const float fast = k[SDL_SCANCODE_LSHIFT] || k[SDL_SCANCODE_RSHIFT] ? 3.0f : 1.0f;
+    eye_ += glm::normalize(move) * flySpeed() * fast * dt;
+  }
+
+  // The first move starts the free camera exactly where the framing camera was, looking the same way.
+  void beginFree() {
+    if (free_) return;
+    free_ = true;
+    eye_ = orbitEye_;
+    lookYaw_ = yaw_;
+    lookPitch_ = -pitch_;
+  }
+  glm::vec3 lookDirection() const {
+    return {-std::cos(lookPitch_) * std::sin(lookYaw_), std::sin(lookPitch_), -std::cos(lookPitch_) * std::cos(lookYaw_)};
+  }
+  float flySpeed() const { return std::max(8.0f, std::max(boardWidth_, boardDepth_) * 0.35f); }  // units per second
 
   // A dropdown: `count` choices named by name(i); true when the choice changed.
   template <typename Name>
@@ -300,73 +350,127 @@ class MapStage final : public Stage {
     return changed;
   }
 
-  // Every setting and saved look is chosen here (dropdowns, checkboxes, buttons; no keyboard shortcuts).
-  void drawPanel() override {
-    if (!board_) return;
-    const BoardGround::Stats s = ground_.stats();
-    ImGui::SetNextWindowPos({12, 420}, ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowBgAlpha(0.82f);
-    ImGui::Begin("Map", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
-    ImGui::Text("%s  %dx%d hexes", board_->draft().id.c_str(), board_->layout().cols, board_->layout().rows);
-    ImGui::Text("ground: %u triangles, %u baked layers, textures %u / %u (%.1f MB), geometry %.1f MB",
-                s.triangles[look_ == e2::EdgeStyle::Smooth ? 0 : 1], s.layers, s.texturesReady, s.textures, s.textureBytes / 1048576.0,
-                s.geometryBytes / 1048576.0);
-    ImGui::PushItemWidth(420.0f);
-    {
-      int look = look_ == e2::EdgeStyle::Smooth ? 0 : 1;
-      static const char* kLooks[2] = {"smooth", "hard"};
-      if (dropdown("board look", look, 2, [](int i) { return std::string(kLooks[i]); }))
-        look_ = look == 0 ? e2::EdgeStyle::Smooth : e2::EdgeStyle::Hard;
-    }
-    ImGui::Text("camera: turn %.0f, tilt %.0f, distance %.1f (right-drag turn/tilt, wheel zoom, WASD pan)", glm::degrees(yaw_),
-                glm::degrees(pitch_), distance_);
+  // The window shows only the choices, in plain Portuguese words, large (user, 2026-10-15: "the only information I
+  // want on that screen are the CHOICES, very visible"; no numbers, no statistics). Look numbers stay in the code
+  // and the looks/ READMEs.
+  // The camera's on-screen controls (top right): hold a button and the camera keeps moving; Voltar returns to the
+  // first view.
+  void drawCameraButtons() {
+    ImGui::SetNextWindowPos({ImGui::GetIO().DisplaySize.x - 12.0f, 12.0f}, ImGuiCond_Always, {1.0f, 0.0f});
+    ImGui::SetNextWindowBgAlpha(0.9f);
+    ImGui::Begin("Câmera", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoMove);
+    ImGui::PushFont(nullptr, 24.0f);
+    const ImVec2 b{120.0f, 52.0f};
+    const float dt = lastDt_, move = flySpeed() * dt, turn = 1.4f * dt;
+    const glm::vec3 fwd{-std::sin(lookYaw_), 0.0f, -std::cos(lookYaw_)}, right{std::cos(lookYaw_), 0.0f, -std::sin(lookYaw_)};
+    const auto hold = [&](const char* label, auto action) {
+      ImGui::Button(label, b);
+      if (ImGui::IsItemActive()) {
+        beginFree();
+        action();
+      }
+    };
+    // Row 1: turn left, forward, turn right, up
+    hold("girar ←##tl", [&] { lookYaw_ += turn; });
     ImGui::SameLine();
-    if (ImGui::Button("Engine2's normal view")) yaw_ = glm::radians(-30.0f), pitch_ = glm::radians(20.0f);
+    hold("\u2191##f", [&] { eye_ += fwd * move; });
+    ImGui::SameLine();
+    hold("girar →##tr", [&] { lookYaw_ -= turn; });
+    ImGui::SameLine();
+    hold("+##in", [&] { eye_ += lookDirection() * move; });
+    // Row 2: left, back, right, out
+    hold("\u2190##l", [&] { eye_ -= right * move; });
+    ImGui::SameLine();
+    hold("\u2193##b", [&] { eye_ -= fwd * move; });
+    ImGui::SameLine();
+    hold("\u2192##r", [&] { eye_ += right * move; });
+    ImGui::SameLine();
+    hold("-##out", [&] { eye_ -= lookDirection() * move; });
+    // Row 3: look up, look down, rise, sink
+    hold("olhar \u2191##lu", [&] { lookPitch_ = std::min(lookPitch_ + turn, glm::radians(89.0f)); });
+    ImGui::SameLine();
+    hold("olhar \u2193##ld", [&] { lookPitch_ = std::max(lookPitch_ - turn, glm::radians(-89.0f)); });
+    hold("subir##up", [&] { eye_.y += move; });
+    ImGui::SameLine();
+    hold("descer##dn", [&] { eye_.y -= move; });
+    if (ImGui::Button("Voltar", {b.x * 4.0f + ImGui::GetStyle().ItemSpacing.x * 3.0f, b.y})) {
+      free_ = false;
+      yaw_ = homeYaw_, pitch_ = homePitch_, target_ = homeTarget_, distance_ = homeDistance_;
+    }
+    ImGui::PopFont();
+    ImGui::End();
+  }
+
+  void drawPanel() override {
+    drawCameraButtons();
+    if (!board_) return;
+    ImGui::SetNextWindowPos({12, 12}, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowBgAlpha(0.9f);
+    ImGui::Begin("Escolhas", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
+    ImGui::PushFont(nullptr, 24.0f);  // large (ImGui 1.93: size per push)
+    ImGui::PushItemWidth(220.0f);
+    if (!heroPoses_.empty())
+      dropdown("Animação", heroPose_, static_cast<int>(heroPoses_.size()), [this](int i) { return heroPoses_[static_cast<size_t>(i)].second; });
     {
-      static const char* kModes[3] = {"0  old prototype day", "1  Engine2's presets (the floor)", "2  physical atmosphere"};
-      dropdown("lighting", lightingMode_, 3, [](int i) { return std::string(kModes[i]); });
-      ImGui::Text("time of day: %s%s", scene_ ? scene_->timeOfDay.c_str() : "day", scene_ && scene_->environment == "indoor" ? " (indoor)" : "");
+      int look = static_cast<int>(look_);
+      static const char* kLooks[3] = {"suave", "hexágonos", "mesa"};
+      if (dropdown("Chão", look, 3, [](int i) { return std::string(kLooks[i]); })) look_ = static_cast<e2::EdgeStyle>(look);
     }
     {
-      // Lighting layers on and off, to see and measure each alone (lighting.hlsli kLayer*).
-      static const char* kLayers[4] = {"sun", "shadows", "indirect", "local lights"};
+      static const char* kBackgrounds[3] = {"imagem do mapa", "céu", "OFF"};
+      dropdown("Fundo", background_, 3, [](int i) { return std::string(kBackgrounds[i]); });
+    }
+    {
+      static const char* kModes[3] = {"protótipo", "Engine2", "física"};
+      dropdown("Luz", lightingMode_, 3, [](int i) { return std::string(kModes[i]); });
+    }
+    {
+      static const char* kLayers[4] = {"sol / lua", "sombras", "luz do céu", "tochas e fogo"};
       for (uint32_t i = 0; i < 4; ++i) {
         bool on = (layers_ >> i) & 1u;
         if (i) ImGui::SameLine();
         if (ImGui::Checkbox(kLayers[i], &on)) layers_ ^= 1u << i;
       }
-      ImGui::SameLine();
-      ImGui::Text("(%zu lights)", lights_.size());
     }
     if (scene_ && e2::timeOfDay(scene_->timeOfDay).moon) {
-      static const char* kPaths[3] = {"0  Engine2's: disc ahead in view, light from behind (they disagree)",
-                                      "1  high: disc on the light, behind the normal view (never on screen)",
-                                      "2  low ahead: disc on the light, in view; units lit from behind"};
-      dropdown("moon placement", moonPath_, 3, [](int i) { return std::string(kPaths[i]); });
+      static const char* kPaths[3] = {"Engine2", "atrás", "na frente"};
+      int moon = moonOff_ ? 0 : moonPath_ + 1;
+      if (dropdown("Lua", moon, 4, [](int i) { return i == 0 ? std::string("OFF") : std::string(kPaths[i - 1]); })) {
+        moonOff_ = moon == 0;
+        if (!moonOff_) moonPath_ = moon - 1;
+      }
+      // moonPhase.ts MOON_PHASE_LABEL, in kMoonPhases order
+      static const char* kPhases[9] = {"nova", "crescente", "quarto cresc.", "gibosa cresc.", "cheia",
+                                       "gibosa ming.", "quarto ming.", "minguante", "sangue"};
       int phase = moonPhase_ + 1;
-      if (dropdown("moon phase", phase, 1 + static_cast<int>(std::size(e2::kMoonPhases)),
-                   [](int i) { return i == 0 ? std::string("full (Engine2's default: the night's own strength)") : std::string(e2::kMoonPhases[i - 1]); }))
+      if (dropdown("Fase da lua", phase, 10,
+                   [](int i) { return i == 0 ? std::string("padrão") : std::string(kPhases[i - 1]); }))
         moonPhase_ = phase - 1;
-      static const char* kStars[kStarLooks] = {"001  sparse squares (first look)", "002  sparse points", "003  dense, varied brightness and colour"};
-      int star = starLook_ - 1;
-      if (dropdown("star look", star, kStarLooks, [](int i) { return std::string(kStars[i]); })) starLook_ = star + 1;
+      static const char* kSizes[4] = {"pequena", "média", "grande", "enorme"};
+      dropdown("Tamanho da lua", moonSize_, 4, [](int i) { return std::string(kSizes[i]); });
+      static const char* kStars[kStarLooks] = {"quadradas", "poucas", "muitas"};
+      int star = starsOff_ ? 0 : starLook_;
+      if (dropdown("Estrelas", star, kStarLooks + 1, [](int i) { return i == 0 ? std::string("OFF") : std::string(kStars[i - 1]); })) {
+        starsOff_ = star == 0;
+        if (!starsOff_) starLook_ = star;
+      }
     }
     if (fog_ && options_.volume) {
-      int look = static_cast<int>(fogLook_);
-      if (dropdown("fog look", look, static_cast<int>(fogLooks().size()),
-                   [](int i) { return std::string(fogLooks()[i].number) + "  " + fogLooks()[i].note; }))
-        fogLook_ = static_cast<uint32_t>(look);
+      // First "no fog at all" (no mist and no fog of war: the whole map seen, every unit drawn), then the saved
+      // mist looks (looks/fog/README.md, in order).
+      static const char* kFog[7] = {"nuvens", "lençol", "bancos", "bloco", "bloco + giro", "mist4", "mist4 + giro"};
+      int look = noFog_ ? 0 : static_cast<int>(fogLook_) + 1;
+      const int count = static_cast<int>(fogLooks().size());
+      if (dropdown("Névoa", look, count + 1, [count](int i) {
+            if (i == 0) return std::string("OFF");
+            return count == 7 ? std::string(kFog[i - 1]) : std::string(fogLooks()[i - 1].note);
+          })) {
+        noFog_ = look == 0;
+        if (!noFog_) fogLook_ = static_cast<uint32_t>(look - 1);
+      }
     }
     ImGui::PopItemWidth();
-    if (scene_) {
-      const SpriteSystem::Stats ss = sprites_.stats();
-      ImGui::Text("scene: %zu cards, %zu units drawn (%u of %zu missing art), %u models; sprites %.0f MB resident",
-                  scene_->cards.size(), scene_->units.size(), missing_, scene_->cards.size() + scene_->units.size(), modelCount_,
-                  ss.residentBytes / 1048576.0);
-    }
-    if (fog_)
-      ImGui::Text("fog of war: %d in sight, %d remembered, %d never seen; %d enclosed holes (%d hexes); %u enemies hidden; last update %.2f ms",
-                  fogCounts_[2], fogCounts_[1], fogCounts_[0], holes_, holeHexes_, hiddenUnits_, lastFogMs_);
+    ImGui::PopFont();
     ImGui::End();
   }
 
@@ -534,7 +638,7 @@ class MapStage final : public Stage {
     for (size_t ui = 0; ui < scene_->units.size(); ++ui) {
       const e2::SceneUnit& u = scene_->units[ui];
       // Fog of war: a unit not in the party's sight is not drawn at all (and casts no shadow).
-      if (fog_ && u.side != "player") {
+      if (fog_ && !noFog_ && u.side != "player") {
         const auto [c, r] = e2::hexAt(board_->layout(), u.x, u.z);
         // The states the shown mask was painted from (all hidden until the first mask arrives).
         const size_t i = static_cast<size_t>(e2::indexOf(board_->layout(), c, r));
@@ -555,6 +659,24 @@ class MapStage final : public Stage {
       }
       const glm::vec3 anchor = static_cast<int>(ui) == hero_ ? heroAt_ : glm::vec3{u.x, groundOf(u.groundSmooth, u.groundHard), u.z};
       addCard(clip, anchor, right, u.boxW, u.boxH, {0.0f, -u.foot, 0.0f}, u.mirror, frame, kSpriteLit | kSpriteFront | kSpriteCastsShadow, nullptr);
+    }
+    // The heroes in their row, each playing the pose chosen in the panel (its idle when it has none). One-shot
+    // poses (attacks, casts) play through, hold half a second, and start again.
+    for (size_t hi = 0; hi < heroes_.size(); ++hi) {
+      const e2::Hero& h = heroes_[hi];
+      const e2::HeroPose* p = h.find(heroPoses_.empty() ? std::string("idle") : heroPoses_[static_cast<size_t>(heroPose_)].first);
+      if (!p) p = h.find("idle");
+      if (!p || p->pace.empty()) continue;
+      const SpriteClipId clip = sprites_.find(p->set, p->clip);
+      if (clip == kNoSpriteClip) {
+        ++missing_;
+        continue;
+      }
+      const size_t period = p->doneAt >= 0 ? static_cast<size_t>(p->doneAt) + 120 : pacePeriod(p->pace);
+      const size_t tick = static_cast<size_t>(time * 240.0f) % period;
+      const uint32_t frame = static_cast<uint32_t>(p->pace[std::min(tick, p->pace.size() - 1)]);
+      addCard(clip, heroAnchors_[hi], right, p->boxW, p->boxH, {0.0f, -p->foot, 0.0f}, h.reversed, frame,
+              kSpriteLit | kSpriteFront | kSpriteCastsShadow, nullptr);
     }
     const glm::vec3 eye = camera.position, fwd = camera.forward;
     std::sort(drawList_.begin(), drawList_.end(),
@@ -629,9 +751,10 @@ class MapStage final : public Stage {
   };
   MoonPlacement moonPlacement(float time) const {
     constexpr float kCrossingSeconds = 600.0f, kStart = 0.35f;
-    // The low path (ours): rising and setting 4 deg up, 10 deg at its highest, so the whole disc shows under the top
-    // of the view at the camera's lowest tilt (2 deg down, 30 deg field: 13 deg up).
-    const float lowRise = glm::radians(4.0f), lowHigh = glm::radians(10.0f);
+    // The low path (ours): the disc's lower edge 2 deg above the horizon at rise and set, 6 deg more at its highest,
+    // so the whole disc always shows above the board, whatever its size.
+    const float radius = glm::radians(kMoonSizes[moonSize_]);
+    const float lowRise = radius + glm::radians(2.0f), lowHigh = radius + glm::radians(8.0f);
     const float progress = std::fmod(kStart + time / kCrossingSeconds, 1.0f);
     const e2::MoonPose pose = e2::moonPose(progress);
     const float height = std::sin(std::numbers::pi_v<float> * progress);
@@ -697,11 +820,11 @@ class MapStage final : public Stage {
       // its normal view (moon.ts RADIUS 0.14 board half-sizes, ~3 half-sizes from the camera: ~2.7 deg radius; the
       // real moon's 0.26 would leave the phase unreadable); its brightness Engine2's GLOW (2.3 x the art).
       l.sunDisc = false;
-      l.stars = 1.0f;
+      l.stars = starsOff_ ? 0.0f : 1.0f;
       l.starLook = static_cast<uint32_t>(starLook_);
       l.moonDirection = placed.disc;
       l.moonTexture = ground_.textureIndex(e2::skyMoonAsset(phase));
-      l.moonRadius = glm::radians(2.7f);
+      l.moonRadius = moonOff_ ? 0.0f : glm::radians(kMoonSizes[moonSize_]);  // off: no disc (its light stays: "sol / lua")
       l.moonGlow = 2.3f;
     }
     return l;
@@ -719,6 +842,46 @@ class MapStage final : public Stage {
       ++n;
     }
     return n ? sum / static_cast<float>(n) : glm::vec2(boardCenter_.x, boardCenter_.z);
+  }
+
+  // The six heroes in a row across the view, 3 units apart, at the board's centre on the ground; the camera looks at
+  // them. The panel's poses: every pose any hero has, in Engine2's order of first appearance, with its label.
+  void setUpHeroes(const std::filesystem::path& path) {
+    std::optional<std::vector<e2::Hero>> heroes = e2::loadHeroes(path);
+    if (!heroes) return;
+    heroes_ = std::move(*heroes);
+    for (const e2::Hero& h : heroes_)
+      for (const e2::HeroPose& p : h.poses)
+        if (std::none_of(heroPoses_.begin(), heroPoses_.end(), [&](const auto& q) { return q.first == p.pose; }))
+          heroPoses_.emplace_back(p.pose, p.label);
+    // Rows of 12 across the view, each unit given room for its own width, rows 5 units apart going away from the
+    // camera; the block centred on the board.
+    const glm::vec3 right{std::cos(yaw_), 0.0f, -std::sin(yaw_)}, away{-std::sin(yaw_), 0.0f, -std::cos(yaw_)};
+    const glm::vec3 centre{boardCenter_.x, 0.0f, boardCenter_.z};
+    constexpr size_t kPerRow = 12;
+    const size_t rows = (heroes_.size() + kPerRow - 1) / kPerRow;
+    for (size_t row = 0; row < rows; ++row) {
+      const size_t first = row * kPerRow, last = std::min(heroes_.size(), first + kPerRow);
+      std::vector<float> widths;
+      float total = 0.0f;
+      for (size_t i = first; i < last; ++i) {
+        const e2::HeroPose* idle = heroes_[i].find("idle");
+        widths.push_back(std::max(2.6f, (idle ? idle->boxW : heroes_[i].poses.front().boxW) * 0.8f));
+        total += widths.back();
+      }
+      float x = -0.5f * total;
+      for (size_t i = first; i < last; ++i) {
+        x += 0.5f * widths[i - first];
+        glm::vec3 at = centre + right * x + away * ((static_cast<float>(row) - 0.5f * static_cast<float>(rows - 1)) * 5.0f);
+        at.y = static_cast<float>(e2::groundHeightAt(*board_, look_, at.x, at.z));
+        heroAnchors_.push_back(at);
+        x += 0.5f * widths[i - first];
+      }
+    }
+    target_ = centre;
+    target_.y = heroAnchors_.empty() ? target_.y : heroAnchors_[heroAnchors_.size() / 2].y + 1.6f;
+    pitch_ = glm::radians(12.0f);
+    logInfo("heroes: {} with {} poses between them", heroes_.size(), heroPoses_.size());
   }
 
   // The party: the first player unit is the hero (test lights, the scout); its walk goes to the farthest enemy.
@@ -961,6 +1124,11 @@ class MapStage final : public Stage {
   MeshScene meshes_;
   AssetManager& assets_;
   std::optional<e2::SceneData> scene_;
+  std::vector<e2::Hero> heroes_;  // the hero row (setUpHeroes)
+  std::vector<glm::vec3> heroAnchors_;
+  std::vector<std::pair<std::string, std::string>> heroPoses_;  // pose id, label
+  int heroPose_ = 0;
+  int background_ = 0;  // the panel's "Fundo": 0 the map's painted backdrop, 1 the sky, 2 black
   std::unordered_map<std::string, MeshId> modelMeshes_;
   std::unordered_map<const std::vector<int>*, size_t> periods_;
   std::vector<SpriteInstance> drawList_;
@@ -984,7 +1152,15 @@ class MapStage final : public Stage {
   float boardWidth_ = 1.0f, boardDepth_ = 1.0f;
   float yaw_ = glm::radians(-30.0f), pitch_ = glm::radians(20.0f);
   float distance_ = 0.0f, maxDistance_ = 40.0f;
-  bool turning_ = false;
+  // The free camera (event / flyKeys / beginFree).
+  bool free_ = false, looking_ = false;
+  glm::vec3 eye_{0.0f}, orbitEye_{0.0f};
+  float lookYaw_ = 0.0f, lookPitch_ = 0.0f;
+  float lastDt_ = 0.0f;  // the last frame's time step (the camera buttons move by it)
+  bool captured_ = false;  // the first view is remembered for Voltar
+  float homeYaw_ = 0.0f, homePitch_ = 0.0f, homeDistance_ = 0.0f;
+  glm::vec3 homeTarget_{0.0f};
+  std::chrono::steady_clock::time_point lastFrame_ = std::chrono::steady_clock::now();
   glm::vec3 boardCenter_{0.0f};
   float boardRadius_ = 0.0f;
   uint32_t layers_ = 0xFFFFFFFFu;
@@ -1014,11 +1190,17 @@ class MapStage final : public Stage {
   static constexpr int kStarLooks = 3;  // saved star looks (looks/stars/README.md)
   int starLook_ = 3;
   int moonPhase_ = -1;  // index in e2::kMoonPhases; -1 = Engine2's default (the full moon's art, the night's strength)
+  // The disc's angular radius (degrees), chosen in the panel. 2.7 = Engine2's disc as seen from its normal view; the
+  // user found it "millions of km away" (2026-10-15), so the panel starts at the large one.
+  static constexpr float kMoonSizes[4] = {2.7f, 6.0f, 10.0f, 15.0f};
+  int moonSize_ = 2;
   std::array<int, 3> fogCounts_{};
   int holes_ = 0, holeHexes_ = 0, worstHoles_ = 0;
   std::vector<std::pair<int, int>> lastHoles_;
   bool holesLogged_ = false;
   uint32_t hiddenUnits_ = 0;
+  bool noFog_ = false;  // "sem névoa" in the panel: no mist and no fog of war (sight still runs underneath)
+  bool moonOff_ = false, starsOff_ = false;  // "sem lua no céu" / "sem estrelas" in the panel
   double lastFogMs_ = 0.0;
   std::vector<double> fogUpdateMs_;
   std::map<std::string, std::pair<double, size_t>> passWorst_;
