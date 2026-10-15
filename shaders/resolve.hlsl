@@ -6,7 +6,7 @@
 // Lighting here is provisional (one sun + sky/ground ambient, physically based materials): the frame's
 // real lighting model (clustered lights, shadows, how 2D cards and 3D share light) is decided by
 // Demonstration 1, see docs/ARCHITECTURE.md §7.1.
-#include "scene.hlsli"
+#include "lighting.hlsli"
 
 struct Push {
   uint64_t frame;
@@ -15,8 +15,6 @@ struct Push {
   float4 clearColor;
 };
 [[vk::push_constant]] Push push;
-
-static const float kPi = 3.14159265;
 
 struct Barycentrics {
   float3 lambda;
@@ -48,17 +46,6 @@ Barycentrics barycentrics(float4 p0, float4 p1, float4 p2, float2 ndc, float2 sc
   b.ddx = wx * (b.lambda * interpInvW + ddx) - b.lambda;
   b.ddy = wy * (b.lambda * interpInvW + ddy) - b.lambda;
   return b;
-}
-
-float3 fresnelSchlick(float3 f0, float vh) { return f0 + (1.0 - f0) * pow(1.0 - vh, 5.0); }
-float ggx(float nh, float a) {
-  const float a2 = a * a, d = nh * nh * (a2 - 1.0) + 1.0;
-  return a2 / (kPi * d * d);
-}
-float smithVisibility(float nv, float nl, float a) {  // height-correlated, includes 1 / (4 nv nl)
-  const float a2 = a * a;
-  const float v = nl * sqrt(nv * nv * (1.0 - a2) + a2), l = nv * sqrt(nl * nl * (1.0 - a2) + a2);
-  return 0.5 / max(v + l, 1e-5);
 }
 
 [numthreads(8, 8, 1)]
@@ -129,19 +116,9 @@ void CSResolve(uint2 pixel : SV_DispatchThreadID) {
   if (m.emissiveTexture != kNoTexture)
     emissive *= gTextures[NonUniformResourceIndex(m.emissiveTexture)].SampleGrad(s, uv, uvDx, uvDy).rgb;
 
-  // Provisional lighting: sun (GGX specular + Lambert diffuse) and a sky/ground hemisphere.
+  // Provisional lighting (lighting.hlsli): sun and a sky/ground hemisphere.
   const float3 view = normalize(f.cameraPosition - position);
   if (dot(n, view) < 0.0 && (m.flags & kMaterialDoubleSided)) n = -n;
-  const float a = max(roughness * roughness, 0.002);
-  const float3 diffuseColor = baseColor.rgb * (1.0 - metallic);
-  const float3 f0 = lerp(0.04, baseColor.rgb, metallic);
-  const float3 l = f.sunDirection, h = normalize(l + view);
-  const float nl = saturate(dot(n, l)), nv = max(dot(n, view), 1e-4), nh = saturate(dot(n, h)), vh = saturate(dot(view, h));
-  const float3 F = fresnelSchlick(f0, vh);
-  const float3 sun = (diffuseColor * (1.0 - F) / kPi + F * ggx(nh, a) * smithVisibility(nv, nl, a)) * nl *
-                     f.sunColor * f.sunIntensity;
-  const float3 hemisphere = lerp(f.groundColor, f.skyColor, n.y * 0.5 + 0.5);
-  const float3 ambient = (diffuseColor + f0 * (1.0 - roughness) * 0.25) * hemisphere * f.ambientIntensity * occlusion;
   if (f.debugView == 1) {
     color[pixel] = float4(normal * 0.5 + 0.5, 1.0);
     return;
@@ -150,5 +127,5 @@ void CSResolve(uint2 pixel : SV_DispatchThreadID) {
     color[pixel] = float4(n * 0.5 + 0.5, 1.0);
     return;
   }
-  color[pixel] = float4(sun + ambient + emissive, 1.0);
+  color[pixel] = float4(shadeSurface(f, position, n, baseColor.rgb, roughness, metallic, occlusion) + emissive, 1.0);
 }

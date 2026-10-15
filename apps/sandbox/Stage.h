@@ -2,6 +2,8 @@
 
 #include "rhi/VkCommon.h"
 
+union SDL_Event;
+
 namespace ember {
 
 class Renderer;
@@ -11,6 +13,8 @@ struct Stage {
   virtual ~Stage() = default;
   // Before rendering: update streaming, set the renderer's scene.
   virtual void frame(Renderer& renderer, VkExtent2D size) = 0;
+  // Window input the UI did not take (window mode only).
+  virtual void event(const SDL_Event& e) { (void)e; }
   // Inside the UI frame.
   virtual void drawPanel() {}
   // After rendering, with the frame's main-thread time (excluding waits on the GPU and the window).

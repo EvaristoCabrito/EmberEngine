@@ -19,6 +19,7 @@ add_library(EmberEngine STATIC
   render/DebugUi.cpp
   render/SpriteSystem.cpp
   render/MeshScene.cpp
+  render/BoardGround.cpp
   world/Board.cpp
   world/GroundMesh.cpp
   debug/PerfOverlay.cpp

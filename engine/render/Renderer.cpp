@@ -34,6 +34,13 @@ struct GroundPush {
   float halfExtent;
 };
 
+struct TerrainPush {
+  VkDeviceAddress frame;
+  VkDeviceAddress record;
+  VkDeviceAddress vertices;
+  VkDeviceAddress indices;
+};
+
 struct SpritePush {
   glm::mat4 viewProjection;
   glm::vec3 cameraRight;
@@ -249,6 +256,15 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   groundPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), ground);
 
   // Sprites: depth-tested against the world, blended premultiplied, drawn back to front.
+  GraphicsPipelineDesc terrain;
+  terrain.vertexShader = "terrain.VSMain";
+  terrain.fragmentShader = "terrain.PSMain";
+  terrain.colorFormats = {kSceneColorFormat};
+  terrain.depthFormat = kDepthFormat;
+  terrain.depthTest = true;
+  terrain.depthWrite = true;
+  terrainPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), terrain);
+
   GraphicsPipelineDesc sprites;
   sprites.vertexShader = "sprites.VSMain";
   sprites.fragmentShader = "sprites.PSMain";
@@ -291,6 +307,7 @@ Renderer::~Renderer() {
   vkDestroyPipeline(context_.device, trianglePipeline_, nullptr);
   vkDestroyPipeline(context_.device, tonemapPipeline_, nullptr);
   vkDestroyPipeline(context_.device, groundPipeline_, nullptr);
+  vkDestroyPipeline(context_.device, terrainPipeline_, nullptr);
   vkDestroyPipeline(context_.device, spritePipeline_, nullptr);
   for (VkPipeline p : {cullInstancesPipeline_, cullInstancesLatePipeline_, hizPipeline_, cullPreparePipeline_,
                        cullTraversePipeline_, cullPrepareDrawPipeline_, meshletPipeline_, resolvePipeline_})
@@ -476,7 +493,8 @@ void Renderer::captureFrame(float time, const std::string& path) {
   logInfo("captured {}x{} -> {}", size_.width, size_.height, path);
 }
 
-void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
+// The frame's constants (MeshFrame: camera, lighting, mesh-pass state), read by every scene pass.
+void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd) {
   // Frame constants and cleared counters.
   MeshFrame f{};
   f.viewProjection = camera_.viewProjection();
@@ -528,9 +546,13 @@ void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
   }
   memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
                 VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT |
-                    VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                    VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT | VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT |
+                    VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
                 VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT);
+}
 
+void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
+  const uint32_t instanceCount = std::min(meshView_.instanceCount, kMaxInstances);
   const VkDeviceAddress frameAddress = bufferAddress(context_, frame.meshFrame);
   const auto computeToCompute = [&] {
     memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
@@ -542,7 +564,7 @@ void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
     CullPush push{frameAddress, 0};
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, instances);
     vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
-    vkCmdDispatch(cmd, (f.instanceCount + 63) / 64, 1, 1);
+    vkCmdDispatch(cmd, (instanceCount + 63) / 64, 1, 1);
     for (uint32_t pass = 0; pass < MeshScene::kMaxTraversalDepth; ++pass) {
       push.pass = pass;
       computeToCompute();
@@ -724,6 +746,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
 
   // --- 3D meshes: cull, pick cluster LODs, rasterise visibility + depth, resolve materials -----
   const bool meshes = hasScene_ && static_cast<bool>(meshView_);
+  if (hasScene_) writeFrame(frame, cmd);
   if (meshes) {
     recordMeshes(frame, cmd);
     transition(cmd, sceneColor_.image, sceneColor_.aspect,
@@ -768,10 +791,18 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   setViewport(cmd, size_);
   if (hasScene_) {
     const glm::mat4 viewProjection = camera_.viewProjection();
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, groundPipeline_);
-    const GroundPush groundPush{viewProjection, groundHalfExtent_};
-    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(groundPush), &groundPush);
-    vkCmdDraw(cmd, 6, 1, 0, 0);
+    if (terrain_) {
+      // The board's ground (Engine2's terrain), depth-tested against the 3D meshes.
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, terrainPipeline_);
+      const TerrainPush terrainPush{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices};
+      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(terrainPush), &terrainPush);
+      vkCmdDraw(cmd, terrain_.count, 1, 0, 0);
+    } else {
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, groundPipeline_);
+      const GroundPush groundPush{viewProjection, groundHalfExtent_};
+      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(groundPush), &groundPush);
+      vkCmdDraw(cmd, 6, 1, 0, 0);
+    }
     if (!sprites_.empty()) {
       std::memcpy(frame.sprites.mapped, sprites_.data(), sprites_.size() * sizeof(SpriteInstance));
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spritePipeline_);

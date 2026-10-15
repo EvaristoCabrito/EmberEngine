@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "render/BoardGround.h"
 #include "render/Camera.h"
 #include "render/MeshScene.h"
 #include "render/SpriteDraw.h"
@@ -78,6 +79,8 @@ class Renderer {
     waitValue_ = value;
   }
 
+  // The board's ground (BoardGround::view); replaces the placeholder ground plane. Empty = none.
+  void setTerrain(const TerrainView& terrain) { terrain_ = terrain; }
   // Half the side of the square ground plane under the scene (metres, centred on the origin).
   void setGroundExtent(float halfExtent) { groundHalfExtent_ = halfExtent; }
 
@@ -101,6 +104,7 @@ class Renderer {
   };
 
   void createTargets(VkExtent2D size);
+  void writeFrame(Frame& frame, VkCommandBuffer cmd);
   void recordMeshes(Frame& frame, VkCommandBuffer cmd);
   void recordDepthPyramid(VkCommandBuffer cmd);
   void recordVisibilityPass(VkCommandBuffer cmd, VkDeviceAddress frameAddress, uint32_t pass);
@@ -130,6 +134,8 @@ class Renderer {
   VkPipeline trianglePipeline_ = VK_NULL_HANDLE;
   VkPipeline tonemapPipeline_ = VK_NULL_HANDLE;
   VkPipeline groundPipeline_ = VK_NULL_HANDLE;
+  VkPipeline terrainPipeline_ = VK_NULL_HANDLE;
+  TerrainView terrain_;
   VkPipeline spritePipeline_ = VK_NULL_HANDLE;
   VkSampler spriteSampler_ = VK_NULL_HANDLE;
   uint32_t spriteSamplerIndex_ = 0;

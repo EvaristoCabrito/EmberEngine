@@ -17,6 +17,8 @@
 //   Sandbox.exe --compare <pakA> <meshA asset> <pakB> <meshB asset> <out dir>
 //        Proxy-quality images: mesh A (reference = full detail, original = engine LOD) vs mesh B (proxy), at
 //        several widths; tools/compare_meshes.py measures silhouette and normal error.
+//   Sandbox.exe --map <Engine2 map.json> --ground <ground.pak> [--look smooth|hard] [--board <board.json>] [--engine2 <public dir>]
+//        D1 port: a real Ember map from Engine2, its board and ground (docs/ENGINE2_AUDIT.md).
 //   Sandbox.exe --meshes meshes.pak [--grid N]
 //        Mesh scene (M3 bring-up): every cooked mesh in the archive on an N x N grid, drawn GPU-driven.
 //   Sandbox.exe --sprites roster.pak [--budget MB]
@@ -53,6 +55,7 @@
 #include "rhi/UploadQueue.h"
 #include "BattleStage.h"
 #include "MeshCompare.h"
+#include "MapStage.h"
 #include "MeshStage.h"
 #include "SpriteParade.h"
 #include "Stage.h"
@@ -77,6 +80,7 @@ struct Options {
   std::string battleContent = "all";
   uint32_t costSplit = 0;
   bool unpaced = false;
+  std::string map, ground, look = "smooth", boardData = "content/engine2/board.json", engine2 = "C:/Engine2/public";
   std::vector<std::string> compare;  // pakA assetA pakB assetB outDir  // measurement: frames back to back, so the GPU never idles and keeps its full clock
   bool budgetSet = false;
   uint32_t width = 1600, height = 900;
@@ -106,6 +110,11 @@ Options parse(int argc, char** argv) {
     else if (arg == "--sprites" && hasValue) o.sprites = argv[++i];
     else if (arg == "--meshes" && hasValue) o.meshes = argv[++i];
     else if (arg == "--battle") o.battle = true;
+    else if (arg == "--map" && hasValue) o.map = argv[++i];
+    else if (arg == "--ground" && hasValue) o.ground = argv[++i];
+    else if (arg == "--look" && hasValue) o.look = argv[++i];
+    else if (arg == "--board" && hasValue) o.boardData = argv[++i];
+    else if (arg == "--engine2" && hasValue) o.engine2 = argv[++i];
     else if (arg == "--content" && hasValue) o.battleContent = argv[++i];
     else if (arg == "--unpaced") o.unpaced = true;
     else if (arg == "--compare" && i + 5 < argc) o.compare.assign(argv + i + 1, argv + i + 6), i += 5;
@@ -120,6 +129,8 @@ Options parse(int argc, char** argv) {
     else fatal(std::format("Unknown argument {}", arg));
   }
   if (o.battle && (o.meshes.empty() || o.sprites.empty())) fatal("--battle needs --meshes <pak> and --sprites <pak>");
+  if (!o.map.empty() && o.ground.empty()) fatal("--map needs --ground <ground.pak> (Cooker ground)");
+  if (o.look != "smooth" && o.look != "hard") fatal("--look is smooth or hard");
   // The battle draws every decor card and 72 units at once: a larger sprite budget unless given.
   if (o.battle && !o.budgetSet) o.spriteBudgetMb = 1536;
   return o;
@@ -278,6 +289,7 @@ struct Services {
   explicit Services(const Options& o) : io(jobs, o.ioDepth), assets(jobs, io, {}) {
     if (!o.sprites.empty() && !assets.mount(o.sprites)) fatal(std::format("Cannot mount {}", o.sprites));
     if (!o.meshes.empty() && !assets.mount(o.meshes)) fatal(std::format("Cannot mount {}", o.meshes));
+    if (!o.ground.empty() && !assets.mount(o.ground)) fatal(std::format("Cannot mount {}", o.ground));
     for (size_t k = 0; k < o.compare.size() && k < 4; k += 2)
       if (!assets.mount(o.compare[k])) fatal(std::format("Cannot mount {}", o.compare[k]));
     if (o.stream.empty()) return;
@@ -325,6 +337,14 @@ std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Rende
                                          : o.battleContent == "cards" ? BattleStage::Content::Cards
                                                                       : BattleStage::Content::All;
     return std::make_unique<BattleStage>(context, renderer, assets, o.spriteBudgetMb, content, o.costSplit);
+  }
+  if (!o.map.empty()) {
+    MapStageOptions m;
+    m.map = o.map;
+    m.boardData = o.boardData;
+    m.engine2Public = o.engine2;
+    m.look = o.look == "hard" ? e2::EdgeStyle::Hard : e2::EdgeStyle::Smooth;
+    return std::make_unique<MapStage>(context, renderer, assets, m);
   }
   if (!o.sprites.empty()) return std::make_unique<SpriteStage>(context, renderer, assets, o.spriteBudgetMb);
   if (!o.meshes.empty()) return std::make_unique<MeshStage>(context, renderer, assets, o.meshGrid, o.capture.empty());
@@ -424,7 +444,9 @@ int runWindow(const Options& o) {
   std::unique_ptr<Stage> stage = makeStage(o, context, renderer, services.assets);
 
   window.setEventHook([&](const SDL_Event& event) {
-    if (ui.processEvent(event) || event.type != SDL_EVENT_KEY_DOWN || event.key.repeat) return;
+    if (ui.processEvent(event)) return;
+    if (stage) stage->event(event);
+    if (event.type != SDL_EVENT_KEY_DOWN || event.key.repeat) return;
     if (event.key.key == SDLK_F1) services.perf.visible = !services.perf.visible;
     if (event.key.key == SDLK_R && services.streamTest) services.streamTest->restart();
   });
