@@ -127,5 +127,11 @@ void CSResolve(uint2 pixel : SV_DispatchThreadID) {
     color[pixel] = float4(n * 0.5 + 0.5, 1.0);
     return;
   }
-  color[pixel] = float4(shadeSurface(f, position, n, baseColor.rgb, roughness, metallic, occlusion) + emissive, 1.0);
+  Surface surface = defaultSurface(position, normal, baseColor.rgb);
+  surface.normal = n;
+  surface.roughness = roughness;
+  surface.metallic = metallic;
+  surface.occlusion = occlusion;
+  surface.emissive = emissive;
+  color[pixel] = float4(shade(f, surface), 1.0);
 }

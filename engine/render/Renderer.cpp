@@ -1,5 +1,7 @@
 #include "render/Renderer.h"
 
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <stb_image_write.h>
 
 #include <chrono>
@@ -33,6 +35,9 @@ struct GroundPush {
   glm::mat4 viewProjection;
   float halfExtent;
 };
+
+constexpr uint32_t kShadowSize = 4096;
+constexpr VkFormat kShadowFormat = VK_FORMAT_D32_SFLOAT;
 
 struct TerrainPush {
   VkDeviceAddress frame;
@@ -74,7 +79,7 @@ struct MeshFrame {
   glm::vec3 sunColor;
   float ambientIntensity;
   glm::vec3 skyColor;
-  uint32_t pad0;
+  float exposure;
   glm::vec3 groundColor;
   uint32_t pad1;
   glm::mat4 view;
@@ -92,8 +97,17 @@ struct MeshFrame {
   uint32_t costSplit;
   uint32_t debugView;
   uint32_t pad4, pad5, pad6;
+  glm::mat4 shadowMatrix;
+  uint32_t shadowMap;
+  uint32_t shadowSampler;
+  float shadowSize;
+  float shadowTexelWorld;
+  float shadowFilterTexels;
+  uint32_t lightingLayers;
+  uint32_t pad7, pad8;
 };
-static_assert(sizeof(MeshFrame) == 480 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384);
+static_assert(sizeof(MeshFrame) == 576 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384 &&
+              offsetof(MeshFrame, shadowMatrix) == 480);
 
 // Work buffer layout (shaders/scene.hlsli): counters, indirect arguments, two queues, the cluster list.
 constexpr VkDeviceSize kWorkHeaderBytes = 128;
@@ -228,6 +242,18 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   minInfo.maxLod = VK_LOD_CLAMP_NONE;
   VK_CHECK(vkCreateSampler(context.device, &minInfo, nullptr, &minSampler_));
   minSamplerIndex_ = bindless_.addSampler(minSampler_);
+  // Sun shadow: comparison sampler (hardware 2x2 filtering of the depth test) and the map itself.
+  VkSamplerCreateInfo shadowInfo{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
+  shadowInfo.magFilter = shadowInfo.minFilter = VK_FILTER_LINEAR;
+  shadowInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+  shadowInfo.addressModeU = shadowInfo.addressModeV = shadowInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+  shadowInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+  shadowInfo.compareEnable = VK_TRUE;
+  shadowInfo.compareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+  VK_CHECK(vkCreateSampler(context.device, &shadowInfo, nullptr, &shadowSampler_));
+  shadowSamplerIndex_ = bindless_.addSampler(shadowSampler_);
+  shadowMap_ = createImage(context, {kShadowFormat, {kShadowSize, kShadowSize}, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT});
+  shadowMapIndex_ = bindless_.addSampledImage(shadowMap_.view, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
 
   createTargets(size);
 
@@ -264,6 +290,16 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   terrain.depthTest = true;
   terrain.depthWrite = true;
   terrainPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), terrain);
+
+  GraphicsPipelineDesc terrainShadow;
+  terrainShadow.vertexShader = "terrain.VSShadow";
+  terrainShadow.depthFormat = kShadowFormat;
+  terrainShadow.depthTest = true;
+  terrainShadow.depthWrite = true;
+  terrainShadow.depthCompare = VK_COMPARE_OP_LESS_OR_EQUAL;
+  terrainShadow.depthBiasConstant = 1.0f;
+  terrainShadow.depthBiasSlope = 1.5f;
+  terrainShadowPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), terrainShadow);
 
   GraphicsPipelineDesc sprites;
   sprites.vertexShader = "sprites.VSMain";
@@ -308,6 +344,10 @@ Renderer::~Renderer() {
   vkDestroyPipeline(context_.device, tonemapPipeline_, nullptr);
   vkDestroyPipeline(context_.device, groundPipeline_, nullptr);
   vkDestroyPipeline(context_.device, terrainPipeline_, nullptr);
+  vkDestroyPipeline(context_.device, terrainShadowPipeline_, nullptr);
+  bindless_.removeSampledImage(shadowMapIndex_);
+  destroyImage(context_, shadowMap_);
+  vkDestroySampler(context_.device, shadowSampler_, nullptr);
   vkDestroyPipeline(context_.device, spritePipeline_, nullptr);
   for (VkPipeline p : {cullInstancesPipeline_, cullInstancesLatePipeline_, hizPipeline_, cullPreparePipeline_,
                        cullTraversePipeline_, cullPrepareDrawPipeline_, meshletPipeline_, resolvePipeline_})
@@ -514,9 +554,11 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd) {
   f.materials = meshView_.materials;
   f.instances = meshView_.instances;
   f.sunDirection = glm::normalize(lighting_.sunDirection);
-  f.sunIntensity = lighting_.sunIntensity;
+  // Exposure is multiplied into the lights (Luminous: keeps fp16 scene colour in range), never applied in post.
+  f.exposure = lighting_.exposure;
+  f.sunIntensity = lighting_.sunIntensity * lighting_.exposure;
   f.sunColor = lighting_.sunColor;
-  f.ambientIntensity = lighting_.ambientIntensity;
+  f.ambientIntensity = lighting_.ambientIntensity * lighting_.exposure;
   f.skyColor = lighting_.skyColor;
   f.groundColor = lighting_.groundColor;
   f.view = camera_.view;
@@ -533,6 +575,30 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd) {
   f.costSplit = costSplit_;
   f.debugView = debugView_;
   previousCamera_ = camera_;
+  f.lightingLayers = lightingLayers_;
+  f.shadowMap = kNoTextureIndex;
+  if (shadowRadius_ > 0.0f && terrain_) {
+    // An orthographic sun camera around the board's bounding sphere, pulled back along the sun direction.
+    const glm::vec3 sun = glm::normalize(lighting_.sunDirection);
+    const glm::vec3 up = std::abs(sun.y) > 0.99f ? glm::vec3(0, 0, 1) : glm::vec3(0, 1, 0);
+    const glm::mat4 view = glm::lookAt(shadowCenter_ + sun * shadowRadius_ * 2.0f, shadowCenter_, up);
+    const glm::mat4 projection = glm::ortho(-shadowRadius_, shadowRadius_, -shadowRadius_, shadowRadius_, 0.0f, shadowRadius_ * 4.0f);
+    f.shadowMatrix = projection * view;
+    f.shadowMap = shadowMapIndex_;
+    f.shadowSampler = shadowSamplerIndex_;
+    f.shadowSize = static_cast<float>(kShadowSize);
+    f.shadowTexelWorld = 2.0f * shadowRadius_ / static_cast<float>(kShadowSize);
+    f.shadowFilterTexels = 1.6f;
+  }
+  // The static board's shadow is cached: drawn again only when the sun, the bounds or the ground change.
+  const bool shadows = f.shadowMap != kNoTextureIndex && (lightingLayers_ & 2u) != 0;
+  const std::array<float, 8> key{lighting_.sunDirection.x, lighting_.sunDirection.y, lighting_.sunDirection.z, shadowCenter_.x,
+                                 shadowCenter_.y, shadowCenter_.z, shadowRadius_, static_cast<float>(terrain_.vertices % 1000003u)};
+  shadowsThisFrame_ = shadows && (key != shadowKey_ || terrain_.vertices != shadowTerrain_);
+  if (shadowsThisFrame_) {
+    shadowKey_ = key;
+    shadowTerrain_ = terrain_.vertices;
+  }
   // The previous frame's passes may still read these buffers.
   memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT,
                 VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
@@ -747,6 +813,37 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   // --- 3D meshes: cull, pick cluster LODs, rasterise visibility + depth, resolve materials -----
   const bool meshes = hasScene_ && static_cast<bool>(meshView_);
   if (hasScene_) writeFrame(frame, cmd);
+  // --- Sun shadow: the board's ground from the sun (before the meshes: their resolve reads it) ---------------------------------------------
+  if (shadowsThisFrame_) {
+    const uint32_t shadowScope = gpuTimer_.begin(cmd, "shadow");
+    transition(cmd, shadowMap_.image, shadowMap_.aspect,
+               {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                VK_ACCESS_2_NONE, VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT});
+    VkRenderingAttachmentInfo shadowDepth{VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
+    shadowDepth.imageView = shadowMap_.view;
+    shadowDepth.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    shadowDepth.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    shadowDepth.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    shadowDepth.clearValue.depthStencil = {1.0f, 0};
+    VkRenderingInfo shadowPass{VK_STRUCTURE_TYPE_RENDERING_INFO};
+    shadowPass.renderArea = {{0, 0}, {kShadowSize, kShadowSize}};
+    shadowPass.layerCount = 1;
+    shadowPass.pDepthAttachment = &shadowDepth;
+    vkCmdBeginRendering(cmd, &shadowPass);
+    setViewport(cmd, {kShadowSize, kShadowSize});
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, terrainShadowPipeline_);
+    const TerrainPush push{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices};
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+    vkCmdDraw(cmd, terrain_.count, 1, 0, 0);
+    vkCmdEndRendering(cmd);
+    transition(cmd, shadowMap_.image, shadowMap_.aspect,
+               {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+                VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
+    gpuTimer_.end(cmd, shadowScope);
+  }
+
   if (meshes) {
     recordMeshes(frame, cmd);
     transition(cmd, sceneColor_.image, sceneColor_.aspect,
@@ -793,10 +890,12 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     const glm::mat4 viewProjection = camera_.viewProjection();
     if (terrain_) {
       // The board's ground (Engine2's terrain), depth-tested against the 3D meshes.
+      const uint32_t terrainScope = gpuTimer_.begin(cmd, "terrain");
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, terrainPipeline_);
       const TerrainPush terrainPush{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(terrainPush), &terrainPush);
       vkCmdDraw(cmd, terrain_.count, 1, 0, 0);
+      gpuTimer_.end(cmd, terrainScope);
     } else {
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, groundPipeline_);
       const GroundPush groundPush{viewProjection, groundHalfExtent_};

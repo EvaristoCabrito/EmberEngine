@@ -73,6 +73,13 @@ struct Grad {
   float2 dx, dy;
 };
 
+// The ground seen from the sun (depth only): the sun's shadow map.
+float4 VSShadow(uint id : SV_VertexID) : SV_Position {
+  const MeshFrame f = loadFrame(push.frame);
+  const uint index = push.indices != 0 ? vk::RawBufferLoad<uint>(push.indices + uint64_t(id) * 4) : id;
+  return mul(float4(vk::RawBufferLoad<float3>(push.vertices + uint64_t(index) * 48), 1.0), f.shadowMatrix);
+}
+
 float3 proto(uint layer, float2 uv, Grad g, SamplerState s) {
   return gTextures[NonUniformResourceIndex(recordWord(kProto + layer))].SampleGrad(s, uv, g.dx, g.dy).rgb;
 }
@@ -177,5 +184,8 @@ float4 PSMain(VSOut i) : SV_Target0 {
   }
   if (f.debugView == 1) return float4(n * 0.5 + 0.5, 1.0);
   if (f.debugView == 2) return float4(shading * 0.5 + 0.5, 1.0);
-  return float4(shadeSurface(f, wp, shading, albedo, roughness, 0.0, 1.0), 1.0);
+  Surface surface = defaultSurface(wp, n, albedo);
+  surface.normal = shading;
+  surface.roughness = roughness;
+  return float4(shade(f, surface), 1.0);
 }

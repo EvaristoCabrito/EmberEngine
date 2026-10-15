@@ -14,7 +14,7 @@ VkShaderModule loadShader(VulkanContext& context, const std::string& name);
 
 struct GraphicsPipelineDesc {
   std::string vertexShader;    // e.g. "triangle.VSMain"
-  std::string fragmentShader;  // e.g. "triangle.PSMain"
+  std::string fragmentShader;  // e.g. "triangle.PSMain"; empty = depth only (shadow maps)
   // Mesh shading instead of a vertex shader (VK_EXT_mesh_shader): task (optional) + mesh.
   std::string taskShader;
   std::string meshShader;
@@ -24,6 +24,7 @@ struct GraphicsPipelineDesc {
   bool depthWrite = false;
   VkCompareOp depthCompare = VK_COMPARE_OP_GREATER_OR_EQUAL;  // reversed-Z: near = 1, far = 0
   VkCullModeFlags cullMode = VK_CULL_MODE_NONE;
+  float depthBiasConstant = 0.0f, depthBiasSlope = 0.0f;  // shadow casters
   VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
   bool alphaBlend = false;
   bool premultipliedAlpha = false;  // with alphaBlend: colour is already multiplied by alpha

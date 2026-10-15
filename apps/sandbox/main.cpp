@@ -19,6 +19,8 @@
 //        several widths; tools/compare_meshes.py measures silhouette and normal error.
 //   Sandbox.exe --map <Engine2 map.json> --ground <ground.pak> [--look smooth|hard] [--board <board.json>] [--engine2 <public dir>]
 //        D1 port: a real Ember map from Engine2, its board and ground (docs/ENGINE2_AUDIT.md).
+//        Captures: [--zoom F] [--turn DEG] [--tilt DEG] [--offset X Z] (board widths/depths) [--layers MASK]
+//        (lighting layers on: 1 sun, 2 shadows, 4 indirect; shaders/lighting.hlsli) [--sun AZIMUTH ELEVATION] (degrees).
 //   Sandbox.exe --meshes meshes.pak [--grid N]
 //        Mesh scene (M3 bring-up): every cooked mesh in the archive on an N x N grid, drawn GPU-driven.
 //   Sandbox.exe --sprites roster.pak [--budget MB]
@@ -80,6 +82,9 @@ struct Options {
   std::string battleContent = "all";
   uint32_t costSplit = 0;
   bool unpaced = false;
+  float mapZoom = 1.0f, mapTurn = 0.0f, mapTilt = 0.0f, mapOffsetX = 0.0f, mapOffsetZ = 0.0f;
+  uint32_t lightingLayers = 0xFFFFFFFFu;
+  float sunAzimuth = 0.0f, sunElevation = -1.0f;
   std::string map, ground, look = "smooth", boardData = "content/engine2/board.json", engine2 = "C:/Engine2/public";
   std::vector<std::string> compare;  // pakA assetA pakB assetB outDir  // measurement: frames back to back, so the GPU never idles and keeps its full clock
   bool budgetSet = false;
@@ -113,6 +118,12 @@ Options parse(int argc, char** argv) {
     else if (arg == "--map" && hasValue) o.map = argv[++i];
     else if (arg == "--ground" && hasValue) o.ground = argv[++i];
     else if (arg == "--look" && hasValue) o.look = argv[++i];
+    else if (arg == "--zoom" && hasValue) o.mapZoom = std::max(0.1f, static_cast<float>(std::atof(argv[++i])));
+    else if (arg == "--turn" && hasValue) o.mapTurn = static_cast<float>(std::atof(argv[++i]));
+    else if (arg == "--tilt" && hasValue) o.mapTilt = static_cast<float>(std::atof(argv[++i]));
+    else if (arg == "--offset" && i + 2 < argc) o.mapOffsetX = static_cast<float>(std::atof(argv[++i])), o.mapOffsetZ = static_cast<float>(std::atof(argv[++i]));
+    else if (arg == "--sun" && i + 2 < argc) o.sunAzimuth = static_cast<float>(std::atof(argv[++i])), o.sunElevation = static_cast<float>(std::atof(argv[++i]));
+    else if (arg == "--layers" && hasValue) o.lightingLayers = static_cast<uint32_t>(std::strtoul(argv[++i], nullptr, 0));
     else if (arg == "--board" && hasValue) o.boardData = argv[++i];
     else if (arg == "--engine2" && hasValue) o.engine2 = argv[++i];
     else if (arg == "--content" && hasValue) o.battleContent = argv[++i];
@@ -344,6 +355,13 @@ std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Rende
     m.boardData = o.boardData;
     m.engine2Public = o.engine2;
     m.look = o.look == "hard" ? e2::EdgeStyle::Hard : e2::EdgeStyle::Smooth;
+    m.zoom = o.mapZoom;
+    m.turnDegrees = o.mapTurn;
+    m.tiltDegrees = o.mapTilt;
+    m.offset = {o.mapOffsetX, o.mapOffsetZ};
+    m.layers = o.lightingLayers;
+    m.sunAzimuth = o.sunAzimuth;
+    m.sunElevation = o.sunElevation;
     return std::make_unique<MapStage>(context, renderer, assets, m);
   }
   if (!o.sprites.empty()) return std::make_unique<SpriteStage>(context, renderer, assets, o.spriteBudgetMb);

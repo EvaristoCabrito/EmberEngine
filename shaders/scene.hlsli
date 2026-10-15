@@ -107,7 +107,7 @@ struct MeshFrame {
   float3 sunColor;
   float ambientIntensity;
   float3 skyColor;
-  uint pad0;
+  float exposure;           // already multiplied into sun and ambient; emissive surfaces multiply it in
   float3 groundColor;
   uint pad1;
   // Occlusion culling (two-phase): last frame's verdict per instance, this frame's depth pyramid.
@@ -129,6 +129,15 @@ struct MeshFrame {
                         // run but every triangle is culled (no rasterisation)
   uint debugView;       // 0 shaded, 1 geometric normal, 2 shading normal (normal map applied): xyz * 0.5 + 0.5
   uint pad4, pad5, pad6;
+  // Sun shadow (lighting.hlsli sunShadow): one orthographic map fitted to the board.
+  float4x4 shadowMatrix;     // world -> light clip: x, y in -1..1, z in 0..1 (0 = nearest the sun)
+  uint shadowMap;            // bindless depth texture; kNoTexture = no shadows
+  uint shadowSampler;        // comparison sampler (lit when depth <= stored)
+  float shadowSize;          // texels per side
+  float shadowTexelWorld;    // world size of one texel
+  float shadowFilterTexels;  // radius of the soft filter, in texels
+  uint lightingLayers;       // lighting.hlsli kLayer*: layers switched on
+  uint pad7, pad8;
 };
 
 // The work buffer: counters, indirect arguments, then the queues.

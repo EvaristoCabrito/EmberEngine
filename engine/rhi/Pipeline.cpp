@@ -56,7 +56,7 @@ VkPipeline createGraphicsPipeline(VulkanContext& context, VkPipelineLayout layou
     if (!desc.taskShader.empty()) wanted.push_back({VK_SHADER_STAGE_TASK_BIT_EXT, &desc.taskShader});
     wanted.push_back({VK_SHADER_STAGE_MESH_BIT_EXT, &desc.meshShader});
   }
-  wanted.push_back({VK_SHADER_STAGE_FRAGMENT_BIT, &desc.fragmentShader});
+  if (!desc.fragmentShader.empty()) wanted.push_back({VK_SHADER_STAGE_FRAGMENT_BIT, &desc.fragmentShader});  // none: depth only
   std::vector<VkShaderModule> modules;
   std::vector<std::string> entries;
   entries.reserve(wanted.size());
@@ -79,6 +79,9 @@ VkPipeline createGraphicsPipeline(VulkanContext& context, VkPipelineLayout layou
   raster.cullMode = desc.cullMode;
   raster.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
   raster.lineWidth = 1.0f;
+  raster.depthBiasEnable = desc.depthBiasSlope != 0.0f || desc.depthBiasConstant != 0.0f;
+  raster.depthBiasConstantFactor = desc.depthBiasConstant;
+  raster.depthBiasSlopeFactor = desc.depthBiasSlope;
   VkPipelineMultisampleStateCreateInfo multisample{VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
   multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
   VkPipelineDepthStencilStateCreateInfo depth{VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};

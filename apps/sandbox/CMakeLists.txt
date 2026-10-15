@@ -12,4 +12,4 @@ ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/hiz.hlsl STAGES cs:CSDown
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/cull.hlsl STAGES cs:CSInstancesEarly cs:CSInstancesLate cs:CSPrepare cs:CSTraverse cs:CSPrepareDraw)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/meshlet.hlsl STAGES as:ASMain ms:MSMain ps:PSMain)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/resolve.hlsl STAGES cs:CSResolve)
-ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/terrain.hlsl STAGES vs:VSMain ps:PSMain)
+ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/terrain.hlsl STAGES vs:VSMain ps:PSMain vs:VSShadow)

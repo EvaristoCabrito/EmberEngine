@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cmath>
 #include <span>
 #include <string>
 #include <vector>
@@ -48,13 +49,24 @@ class Renderer {
   void setScene(const Camera& camera, std::span<const SpriteInstance> sprites);
   // 3D meshes for the next frame (drawn GPU-driven: culling, cluster LOD, visibility buffer). An empty
   // view draws none.
-  struct Lighting {  // provisional: one sun and a sky/ground ambient until the lighting model (D1)
-    glm::vec3 sunDirection = glm::normalize(glm::vec3(-0.45f, 0.75f, 0.5f));  // towards the sun
-    glm::vec3 sunColor{1.0f, 0.95f, 0.88f};
+  // One sun and a sky/ground hemisphere until the sky exists (ARCHITECTURE.md §7.1b). Defaults are the
+  // floor: Engine2's diorama prototype (sun #fff0d4 x3 from (-30, 42, 20), hemisphere #d4e6ff / #5d4b33 x1).
+  // Colours are linear; srgb() converts authored hex colours.
+  static glm::vec3 srgb(uint32_t hex) {
+    const auto c = [](uint32_t v) {
+      const float x = static_cast<float>(v) / 255.0f;
+      return x <= 0.04045f ? x / 12.92f : std::pow((x + 0.055f) / 1.055f, 2.4f);
+    };
+    return {c((hex >> 16) & 255), c((hex >> 8) & 255), c(hex & 255)};
+  }
+  struct Lighting {
+    glm::vec3 sunDirection = glm::normalize(glm::vec3(-30.0f, 42.0f, 20.0f));  // towards the sun
+    glm::vec3 sunColor = srgb(0xfff0d4);
     float sunIntensity = 3.0f;
-    glm::vec3 skyColor{0.45f, 0.55f, 0.7f};
-    glm::vec3 groundColor{0.25f, 0.22f, 0.18f};
+    glm::vec3 skyColor = srgb(0xd4e6ff);
+    glm::vec3 groundColor = srgb(0x5d4b33);
     float ambientIntensity = 1.0f;
+    float exposure = 1.0f;  // multiplied into every light
   };
   void setMeshes(const MeshSceneView& view, const Lighting& lighting = {}) {
     meshView_ = view;
@@ -81,6 +93,15 @@ class Renderer {
 
   // The board's ground (BoardGround::view); replaces the placeholder ground plane. Empty = none.
   void setTerrain(const TerrainView& terrain) { terrain_ = terrain; }
+  // The sun's shadow map covers this sphere (world space); radius 0 = no sun shadows.
+  void setSunShadowBounds(glm::vec3 center, float radius) {
+    shadowCenter_ = center;
+    shadowRadius_ = radius;
+  }
+  // Lighting layers switched on (shaders/lighting.hlsli kLayer*: 1 sun, 2 shadows, 4 indirect), for
+  // measuring each alone.
+  void setLightingLayers(uint32_t layers) { lightingLayers_ = layers; }
+  uint32_t lightingLayers() const { return lightingLayers_; }
   // Half the side of the square ground plane under the scene (metres, centred on the origin).
   void setGroundExtent(float halfExtent) { groundHalfExtent_ = halfExtent; }
 
@@ -135,6 +156,17 @@ class Renderer {
   VkPipeline tonemapPipeline_ = VK_NULL_HANDLE;
   VkPipeline groundPipeline_ = VK_NULL_HANDLE;
   VkPipeline terrainPipeline_ = VK_NULL_HANDLE;
+  VkPipeline terrainShadowPipeline_ = VK_NULL_HANDLE;
+  Image shadowMap_;
+  uint32_t shadowMapIndex_ = kNoIndex;
+  VkSampler shadowSampler_ = VK_NULL_HANDLE;
+  uint32_t shadowSamplerIndex_ = 0;
+  glm::vec3 shadowCenter_{0.0f};
+  float shadowRadius_ = 0.0f;
+  bool shadowsThisFrame_ = false;          // the shadow map is drawn this frame
+  std::array<float, 8> shadowKey_{};       // what the cached shadow map was drawn for
+  VkDeviceAddress shadowTerrain_ = 0;
+  uint32_t lightingLayers_ = 0xFFFFFFFFu;
   TerrainView terrain_;
   VkPipeline spritePipeline_ = VK_NULL_HANDLE;
   VkSampler spriteSampler_ = VK_NULL_HANDLE;

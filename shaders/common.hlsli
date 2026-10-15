@@ -7,6 +7,8 @@
 // read only through the type it was created with.
 [[vk::binding(0, 0)]] Texture2DArray gTextureArrays[];
 [[vk::binding(1, 0)]] SamplerState gSamplers[];
+// The same samplers seen as comparison samplers (shadow maps); only those created with compareEnable.
+[[vk::binding(1, 0)]] SamplerComparisonState gComparisonSamplers[];
 [[vk::binding(2, 0)]] RWTexture2D<float4> gStorageImages[];
 // Typed views of the same storage images (one format per image).
 [[vk::binding(2, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> gStorageImagesRgba16f[];

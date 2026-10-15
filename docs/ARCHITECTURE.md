@@ -349,6 +349,76 @@ on the GPU per instance and per meshlet against the frustum and the previous fra
 (two-phase occlusion), written to a visibility buffer. A compute-culling + multi-draw-indirect path is built
 too and measured against it on the dev GPU; the faster one is kept.
 
+### 7.1b Lighting design (researched 2026-10-14; built step by step for D1 on Engine2's maps)
+
+**Sources read in full:** Square Enix, *Rendering Techniques of Final Fantasy XV* (SIGGRAPH 2016 talk
+paper, Elcott, Chang, Miyamoto, Metaaphanon, https://www.jp.square-enix.com/tech/library/pdf/SEJ-Siggraph2016_Graphics_short.pdf)
+and its 83-slide deck (https://www.jp.square-enix.com/tech/library/pdf/s16_final.pdf). The Luminous
+Engine's lighting, as published:
+
+| FFXV (Luminous) | What it does |
+|---|---|
+| Physically based shading: GGX, Schlick-Smith masking, Schlick Fresnel, Lambert diffuse; roughness/metallic | the BRDF |
+| Linear workflow, real sky values (sun = moon x 400,000); exposure multiplied into every light, sky and fog, not applied in post (fp16 precision) | units and exposure |
+| Procedural sky: precomputed scattering LUTs (fitted to photographed skies), Rayleigh + Mie phase, separate overcast model (CIE); procedural clouds (7 noise octaves, ray-marched, cloud shadows on the ground); stars, moon | the sky drives the light |
+| Sky diffuse via PRT (sky SH x baked transfer, order 3) in probe grids placed on nav meshes / height maps; irradiance volumes for static local lights; probes blended in layers | indirect diffuse |
+| Tiered specular: dynamic sky cubemap (filtered over frames, 6 faces x 8 mips), local cubemaps relit by time of day (sky/local split), half-res SSR | reflections |
+| Cascaded sun shadows + height-map ray marching far away; local shadow maps in an atlas | shadows |
+| Tiled + 32 logarithmic depth-slice light culling; IES lights | local lights |
+| Volumetric fog in a 160x90x64 froxel grid (~100 m), lit by sun (blurred shadow -> light shafts), local lights and probes; noise and wind | atmosphere |
+| Aerial perspective: inscatter + Beer transmittance, artist-tinted mid-ground | depth |
+| Half-res SSAO (8 samples, temporal) + analytic AO spheres on foliage and heroes | contact |
+| Weather: wetness (darker diffuse, lower roughness, more specular), puddles, ripples, rain particles with depth collision | weather |
+| Artists calibrated every parameter against 24 hours of HDR photographs of a real sky | calibration |
+
+**EmberEngine's plan.** The same structure, with the newer published techniques where they are better,
+always our own implementation (no outside engine):
+1. **BRDF and energy** (now): GGX / height-correlated Smith / Schlick, Lambert with (1 - F); indirect light
+   divided by pi like direct light (the provisional lighting forgot this: the source of the washed-out ground).
+   Light colours authored in sRGB and converted to linear. Exposure multiplied into the lights.
+2. **Sun shadows** (now): one 4096 map fitted to the board (Engine2's setup) with soft filtering, then cascades
+   when the camera can see past the board (M4). Cards cast alpha-tested shadows.
+3. **Sky** (next): physically based atmosphere (Hillaire 2020: transmittance, multi-scattering and sky-view LUTs,
+   aerial perspective volume), which has twilight and runs in well under a millisecond, calibrated to
+   photographs as FFXV did; its SH projection is the ambient light, its filtered cubemap the reflections.
+4. **Local lights**: clustered (FFXV's 32 log slices), spell and torch light, through the fog-of-war mask (R7).
+5. **Volumetric fog** in froxels lit by sun shadow and local lights (R7's literal fog). 6. **AO** (GTAO).
+7. **Probes / GI**, clouds and weather after D1.
+
+**Hybrid architecture (the user, 2026-10-14: "a hybrid Luminous + Unreal lighting system ... our own
+implementation in C++ and Vulkan").** Luminous's lesson: combine dynamic effects with cached lighting
+(probes, PRT) instead of recomputing everything every frame. Unreal's published lesson (Lumen): update indirect
+light selectively, account for occlusion, use several scene representations (screen traces + cached probes)
+at lower resolution. Hardware ray tracing is never required (the dev GPU has it but it is slow); any tracing or
+probe method is measured against Ember's geometry and camera before it is kept.
+
+| Layer | Treatment |
+|---|---|
+| Direct: sun / moon, torches, moving spell and combat lights | rasterised, every frame where visible; shadow maps (cached or rate-limited where nothing moves) |
+| Broad environment light | cached spatial irradiance probes, updated where the scene changes |
+| Bounce from changing lights (a spell, a torch carried by) | selective probe updates; responsiveness measured (no visible lag or popping) |
+| Contact detail, small-scale occlusion | screen-space (AO, contact shadows) |
+| Fog and light scattering | GPU froxel pass, reading the visibility mask |
+| Unexplored fog of war | strict mask (R7): no light, shadow, bounce, fog or effect reveals it |
+
+**The lighting contract (fixed before more materials depend on it; `shaders/lighting.hlsli`).** Every lit
+surface (terrain, 3D meshes, 2D cards, later water and effects) fills one `Surface` (world position, geometric
+normal, shading normal, albedo, roughness, metallic, occlusion, emissive, and for cards their depth / normal /
+material masks) and calls one `shade()`. Inside it: direct light (sun with its shadow, the local-light list),
+then `indirectDiffuse()` and `indirectSpecular()` (today the hemisphere; later probes and the sky cubemap: the
+interface does not change), then the visibility mask (R7) applied to light and to colour. Units: linear
+radiometric RGB, sun and sky in the same scale as local lights, exposure multiplied into every light. Each
+layer has its own GPU timer and an on/off switch for measuring it alone.
+
+**Proof scene (D1 foundation):** an existing Engine2 map with a character (a real sprite), elevated terrain,
+water, a building or wall, a moving light and a spell light, lit together with coherent shadows and depth,
+before anything is scaled up.
+
+**The floor (the user, 2026-10-14):** never less saturated, warm or shadowed than Engine2's prototype
+(`diorama.html`: sun #fff0d4 x3.0 from (-30, 42, 20), hemisphere #d4e6ff / #5d4b33 x1.0, 4096 soft shadow, ACES
+filmic (three.js's fit, exposure / 0.6), bloom 0.3 / 0.55 / 0.9, fog #9fc2dd 85-175). Until the sky exists,
+those are the default lights, so every step is compared against the prototype under the same light.
+
 ### 7.2 M3 measurements so far (2026-10-14, RX 6400, 1600x900; M3 is not done)
 
 Built: GPU-driven meshes (instance culling, cluster-LOD BVH traversal, task + mesh shaders, R32 visibility
