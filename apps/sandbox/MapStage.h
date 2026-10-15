@@ -18,7 +18,16 @@
 // Combat (world/Battle.h, --battle-rules <map.battle.json> from tools/scripts/engine2/export_battle.ts): the left button
 // picks a unit (its card or its hex) and shows its movement reach as Engine2's battle grid does; hovering a reachable hex
 // shows the route, clicking it walks the unit there one hex per 0.22 s with Engine2's walk poses (UnitActor); "Fim do
-// turno" gives every unit its movement back. Esc lets go of the unit.
+// turno" gives every unit its movement back. Esc lets go of the unit. Foes the picked party unit can hit from where it
+// stands are marked (Engine2's target red); hovering one shows Engine2's forecast, clicking attacks: both turn to face,
+// the attack pose plays, at its impact Ember's roll lands (world/Combat.h: damage, hit chance, crit, the arcane / staff
+// element), the target shows its hit or death pose and the number, then it strikes back when it can.
+// Turns are Engine2's: one battle-opening initiative roll per unit (1d20 + class bonus), a round in that order, each
+// unit once. The party's unit whose turn it is gets picked; it walks (its movement pool can be split) and strikes once;
+// a foe it can reach from any hex of its walk is marked too, and clicking it walks there and strikes. "Fim do turno"
+// ends its turn (so does striking with no movement left). Enemies take their turns on their own (Engine2 runAiFor's
+// plain branch: strike the best foe they can reach, else close in on the nearest hero; enmity picks their focus).
+// Other units can be inspected (their reach) at any time. Vitória / Derrota when one side has nobody standing.
 //
 // Fog of war (R7, world/FogOfWar.h) on maps that use it (or forced with --fog 1): the party's sight with
 // occlusion; enemies out of sight are not drawn; the renderer darkens and masks everything by the mask.
@@ -51,6 +60,7 @@
 #include "render/MeshScene.h"
 #include "render/SpriteSystem.h"
 #include "world/Battle.h"
+#include "world/Combat.h"
 #include "world/Board.h"
 #include "world/FogOfWar.h"
 #include "world/TimeOfDay.h"
@@ -229,6 +239,8 @@ class MapStage final : public Stage {
     if (!measuring_) panKeys(dt);
     now_ = time;
     updateUnits(dt);
+    updateExchange();
+    updateTurns();
     updateHover();
     clampGoal();
     if (measuring_) {
@@ -850,7 +862,18 @@ class MapStage final : public Stage {
       const bool walking = !unitWalk_[ui].points.empty();
       std::string shown = kIdle;
       const e2::HeroPose* p = nullptr;
-      if (walking && entry) {
+      // The fallen: their death plays out, holds, then they are gone.
+      if (ui < unitDiedAt_.size() && unitDiedAt_[ui] >= 0.0f && time - unitDiedAt_[ui] > poseSeconds(ui, "death") + kCorpseSeconds) continue;
+      const OneShot* shot = ui < unitShot_.size() && !unitShot_[ui].pose.empty() ? &unitShot_[ui] : nullptr;
+      if (shot && entry) {
+        // Engine2 UnitActor.play: the left-facing cut when it faces left and has one.
+        const std::string left = shot->pose + "Left";
+        const e2::HeroPose* l = unitFacing_[ui] == -1 ? entry->find(left) : nullptr;
+        p = l && !l->pace.empty() ? l : entry->find(shot->pose);
+        if (p && p->pace.empty()) p = nullptr;
+        if (p) shown = p == l ? left : shot->pose;
+        if (!shot->hold && time - shot->start > poseSeconds(ui, shot->pose)) unitShot_[ui].pose.clear();
+      } else if (walking && entry) {
         p = walkPose(*entry, unitWalk_[ui].dir, unitFacing_[ui], u.sprite, shown);
       } else if (chosen != kIdle && entry) {
         p = entry->find(chosen);
@@ -865,8 +888,10 @@ class MapStage final : public Stage {
       uint32_t frame = 0;
       if (p) {
         const size_t period = p->doneAt >= 0 ? static_cast<size_t>(p->doneAt) + 120 : pacePeriod(p->pace);
-        const float clock = walking ? std::max(0.0f, time - unitWalk_[ui].start) : time;
-        const size_t tick = static_cast<size_t>(clock * 240.0f) % period;
+        const float clock = shot ? std::max(0.0f, time - shot->start) : walking ? std::max(0.0f, time - unitWalk_[ui].start) : time;
+        // A one-shot pose plays through once and keeps its last frame.
+        const size_t tick = shot ? std::min(static_cast<size_t>(clock * 240.0f), p->doneAt >= 0 ? static_cast<size_t>(p->doneAt) : p->pace.size() - 1)
+                                 : static_cast<size_t>(clock * 240.0f) % period;
         frame = static_cast<uint32_t>(p->pace[std::min(tick, p->pace.size() - 1)]);
       } else if (!u.pace.empty()) {
         const size_t period = pacePeriod(u.pace);
@@ -1086,6 +1111,7 @@ class MapStage final : public Stage {
     const size_t n = scene_->units.size();
     unitPos_.resize(n), unitMoved_.assign(n, 0), unitFacing_.resize(n), unitReversed_.resize(n);
     unitWalk_.assign(n, {}), unitCard_.assign(n, {}), unitBattle_.assign(n, -1);
+    unitShot_.assign(n, {}), unitDiedAt_.assign(n, -1.0f);
     for (size_t i = 0; i < n; ++i) {
       const e2::SceneUnit& u = scene_->units[i];
       unitPos_[i] = {u.x, u.z};
@@ -1113,6 +1139,8 @@ class MapStage final : public Stage {
           break;
         }
     logInfo("battle {}: {} of {} units in play", battle_->map(), matched, scene_->units.size());
+    rng_ = e2::Mulberry32(static_cast<uint32_t>(std::chrono::steady_clock::now().time_since_epoch().count()));
+    battle_->rollInitiative(rng_);
   }
 
   int sceneUnitOf(int battleUnit) const {
@@ -1276,15 +1304,26 @@ class MapStage final : public Stage {
   void click(SDL_WindowID id, float mx, float my) {
     if (!battle_ || !scene_) return;
     const std::optional<e2::BattleHex> hex = pick(id, mx, my);
+    if (busy()) return;  // a walk, a strike or an enemy's turn is playing
     if (!hex) return select(-1);
-    if (selected_ >= 0 && unitWalk_[static_cast<size_t>(selected_)].points.empty() && scene_->units[static_cast<size_t>(selected_)].side == "player") {
+    // A marked foe: the unit whose turn it is strikes it, walking first to the hex it strikes from.
+    if (const int foe = sceneUnitOf(battle_->unitAt(hex->x, hex->y)); foe >= 0 && myTurn())
+      for (const auto& [t, from] : targets_)
+        if (t == foe) {
+          const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
+          if (from.x == u.x && from.y == u.y) return attack(static_cast<size_t>(selected_), static_cast<size_t>(foe));
+          pendingStrike_ = foe;
+          return walkTo(static_cast<size_t>(selected_), from);
+        }
+    if (myTurn()) {
       const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
       const bool own = hex->x == u.x && hex->y == u.y;
       if (!own && std::any_of(reach_.begin(), reach_.end(), [&](const e2::ReachCell& c) { return c.x == hex->x && c.y == hex->y; }))
         return walkTo(static_cast<size_t>(selected_), *hex);
     }
     const int ui = sceneUnitOf(battle_->unitAt(hex->x, hex->y));
-    if (ui >= 0 && ui != selected_ && unitCard_[static_cast<size_t>(ui)].drawn) return select(ui);
+    if (ui >= 0 && ui != selected_ && unitCard_[static_cast<size_t>(ui)].drawn && battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(ui)])].alive)
+      return select(ui);
     select(-1);
   }
 
@@ -1294,23 +1333,237 @@ class MapStage final : public Stage {
   }
 
   void refreshReach() {
-    reach_.clear(), reachPaths_.clear();
+    reach_.clear(), reachPaths_.clear(), targets_.clear();
     if (!battle_ || selected_ < 0 || unitBattle_[static_cast<size_t>(selected_)] < 0) return;
     const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
-    reach_ = battle_->reachable(b, true);
-    reachPaths_ = battle_->reachable(b, false);  // routes may pass a friend's hex (Engine2: walk reach unpruned)
+    const e2::BattleUnit& u = battle_->units()[b];
+    if (!u.alive) return;
+    // Its reach: the movement left for the unit whose turn it is, a whole pool for one being inspected.
+    e2::Battle look = *battle_;
+    if (!myTurn()) look.units()[b].moveUsed = 0;
+    reach_ = look.reachable(b, true);
+    reachPaths_ = look.reachable(b, false);  // routes may pass a friend's hex (Engine2: walk reach unpruned)
+    // The foes it can strike from some hex of its reach, each from the first such hex (Engine2 attackableEnemies),
+    // and that the party can see; only for the party's unit whose turn it is and that has not struck yet.
+    if (!myTurn() || u.acted) return;
+    for (const e2::ReachCell& c : reach_)
+      for (size_t i = 0; i < scene_->units.size(); ++i) {
+        const int fb = unitBattle_[i];
+        if (fb < 0 || !unitCard_[i].drawn) continue;
+        const e2::BattleUnit& f = battle_->units()[static_cast<size_t>(fb)];
+        if (!f.alive || f.side == u.side) continue;
+        if (std::any_of(targets_.begin(), targets_.end(), [&](const auto& t) { return t.first == static_cast<int>(i); })) continue;
+        if (e2::canHitFrom(*battle_, b, {c.x, c.y}, static_cast<size_t>(fb))) targets_.push_back({static_cast<int>(i), e2::BattleHex{c.x, c.y}});
+      }
+  }
+
+  // The party's unit whose turn it is, picked.
+  bool myTurn() const {
+    if (!battle_ || selected_ < 0 || unitBattle_[static_cast<size_t>(selected_)] < 0) return false;
+    const int active = battle_->activeUnit();
+    return active == unitBattle_[static_cast<size_t>(selected_)] && battle_->units()[static_cast<size_t>(active)].side == "player" && result_.empty();
+  }
+
+  // Something is playing that input must not cut into: a walk, a strike, an enemy's turn, the battle's end.
+  bool busy() const {
+    if (exchange_ || enemyTurn_ || !result_.empty()) return true;
+    return std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
+  }
+
+  // Engine2's turn loop (tick / beginUnitTurn / startNewRound): whoever is next in the round acts; when everyone has
+  // gone a new round starts. The party's unit is picked and waits for the player; an enemy plays its own turn.
+  void updateTurns() {
+    if (!battle_ || !scene_ || !result_.empty()) return;
+    const bool walking = std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
+    if (exchange_ || walking) return;
+    // A strike the player asked for once the walk to its hex is over.
+    if (pendingStrike_ >= 0) {
+      const int foe = pendingStrike_;
+      pendingStrike_ = -1;
+      if (selected_ >= 0 && battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(foe)])].alive)
+        return attack(static_cast<size_t>(selected_), static_cast<size_t>(foe));
+    }
+    // An enemy's turn: its walk is over; now its strike, then its turn ends.
+    if (enemyTurn_) {
+      EnemyTurn t = *enemyTurn_;
+      enemyTurn_.reset();
+      if (t.target >= 0 && !t.struck && battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(t.target)])].alive &&
+          battle_->units()[static_cast<size_t>(unitBattle_[t.unit])].alive) {
+        t.struck = true;
+        enemyTurn_ = t;
+        attack(t.unit, static_cast<size_t>(t.target));
+        return;
+      }
+      battle_->units()[static_cast<size_t>(unitBattle_[t.unit])].moved = true;
+    }
+    if (result_ = battle_->result(); !result_.empty()) return select(-1);
+    int active = battle_->activeUnit();
+    if (active < 0) {
+      battle_->startNewRound();
+      turnUnit_ = -1;
+      active = battle_->activeUnit();
+      if (active < 0) return;
+    }
+    if (active == turnUnit_) return;
+    turnUnit_ = active;
+    battle_->beginTurn(static_cast<size_t>(active));
+    const int ui = sceneUnitOf(active);
+    const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(active)];
+    if (ui < 0) {  // a unit with no card in this scene sits its turns out
+      battle_->units()[static_cast<size_t>(active)].moved = true;
+      return;
+    }
+    if (u.side == "player") return select(ui);
+    // Under fog an enemy that has not seen the party yet holds its ground (Engine2 wakeIfSeesParty; here: once the
+    // party sees its hex).
+    if (fog_ && !noFog_ && !awake_.contains(active)) {
+      const size_t i = static_cast<size_t>(e2::indexOf(board_->layout(), u.x, u.y));
+      if (i >= fogStates_.size() || fogStates_[i] != e2::kFogVisible) {
+        battle_->units()[static_cast<size_t>(active)].moved = true;
+        return;
+      }
+      awake_.insert(active);
+    }
+    select(-1);
+    const e2::AiPlan plan = battle_->planEnemy(static_cast<size_t>(active));
+    EnemyTurn t;
+    t.unit = static_cast<size_t>(ui);
+    t.target = plan.target >= 0 ? sceneUnitOf(plan.target) : -1;
+    enemyTurn_ = t;
+    if (plan.path.size() > 1) walkAlong(static_cast<size_t>(ui), plan.path);
+  }
+
+  // Walk a unit along a route (start first): the battle's state moves at once, the walk then plays it.
+  void walkAlong(size_t ui, const std::vector<e2::BattleHex>& route) {
+    const size_t b = static_cast<size_t>(unitBattle_[ui]);
+    e2::BattleUnit& u = battle_->units()[b];
+    // Its cost along the route (the step costs of the reach it was planned on).
+    for (const e2::ReachCell& c : battle_->reachable(b, false))
+      if (c.x == route.back().x && c.y == route.back().y) u.moveUsed += c.cost;
+    u.x = route.back().x, u.y = route.back().y;
+    Walk w;
+    for (size_t k = 1; k < route.size(); ++k) w.points.push_back(anchorWorld(u, route[k]));
+    const auto [hx, hy] = e2::heading(route[route.size() - 2], route.back());
+    u.faceDx = hx, u.faceDy = hy;
+    w.start = now_;
+    unitWalk_[ui] = std::move(w);
+  }
+
+  // --- The exchange: an attack and, when it can, the counter (Engine2 BattleEngine's combat queue for a plain attack). ---
+
+  // A pose played once over the unit's own (attack, hit, death), from `start` on the scene clock.
+  struct OneShot {
+    std::string pose;
+    float start = 0.0f;
+    bool hold = false;  // keeps its last frame (death)
+  };
+  // An attack and its counter in play.
+  struct Exchange {
+    size_t attacker = 0, defender = 0;
+    bool counter = false;  // the defender's strike back is playing
+    float start = 0.0f, impact = 0.0f, end = 0.0f;
+    bool landed = false;   // this strike's roll is in
+  };
+
+  // How long a unit's pose plays (its one-shot end, else its loop), seconds; 0.8 s when it has none.
+  float poseSeconds(size_t ui, const std::string& pose) const {
+    const e2::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
+    const e2::HeroPose* p = entry ? entry->find(pose) : nullptr;
+    if (!p || p->pace.empty()) return 0.8f;
+    return static_cast<float>(p->doneAt >= 0 ? p->doneAt : static_cast<int>(p->pace.size())) / 240.0f;
+  }
+
+  // Turn a unit to face a hex: on screen (its card) and on the board (Engine2 faceSpriteToward).
+  void faceToward(size_t ui, size_t otherUi) {
+    const size_t b = static_cast<size_t>(unitBattle_[ui]), o = static_cast<size_t>(unitBattle_[otherUi]);
+    e2::BattleUnit& u = battle_->units()[b];
+    const e2::BattleUnit& v = battle_->units()[o];
+    if (u.x == v.x && u.y == v.y) return;
+    const auto [hx, hy] = e2::heading({u.x, u.y}, {v.x, v.y});
+    u.faceDx = hx, u.faceDy = hy;
+    const glm::vec2 d = unitPos_[otherUi] - unitPos_[ui];
+    const float yaw = flat_ ? 0.0f : cam_.yaw;
+    const float screenX = d.x * std::cos(yaw) - d.y * std::sin(yaw);
+    if (std::abs(screenX) > 0.05f) unitFacing_[ui] = screenX > 0.0f ? 1 : -1;
+  }
+
+  void attack(size_t attackerUi, size_t defenderUi) {
+    Exchange x;
+    x.attacker = attackerUi, x.defender = defenderUi;
+    startStrike(x, attackerUi, defenderUi);
+    exchange_ = x;
+    reach_.clear(), reachPaths_.clear(), targets_.clear();
+  }
+
+  void startStrike(Exchange& x, size_t striker, size_t target) {
+    faceToward(striker, target), faceToward(target, striker);
+    const float length = poseSeconds(striker, "attack");
+    x.start = now_;
+    x.impact = now_ + length * kImpactShare;
+    x.end = now_ + length + kExchangeGap;
+    x.landed = false;
+    unitShot_[striker] = {"attack", now_, false};
+  }
+
+  // Every frame: the impact lands, then the counter, then the attacker's turn ends.
+  void updateExchange() {
+    if (!exchange_) return;
+    Exchange& x = *exchange_;
+    const size_t striker = x.counter ? x.defender : x.attacker, target = x.counter ? x.attacker : x.defender;
+    if (!x.landed && now_ >= x.impact) {
+      x.landed = true;
+      const size_t sb = static_cast<size_t>(unitBattle_[striker]), tb = static_cast<size_t>(unitBattle_[target]);
+      e2::BattleUnit& t = battle_->units()[tb];
+      const e2::Fighter a = e2::fighterAt(*battle_, sb, battle_->units()[sb].x, battle_->units()[sb].y);
+      const e2::Fighter d = e2::fighterAt(*battle_, tb, t.x, t.y);
+      const e2::Hit hit = e2::rollHit(*battle_, a, d, rng_);
+      if (!hit.landed) {
+        popups_.push_back({target, "Errou", IM_COL32(200, 200, 200, 255), now_, false});
+      } else {
+        t.hp = std::max(0, t.hp - hit.dmg);
+        battle_->noteWeaponDamage(sb, tb, hit.dmg);
+        popups_.push_back({target, std::to_string(hit.dmg), hit.crit ? IM_COL32(255, 214, 102, 255) : IM_COL32(255, 255, 255, 255), now_, hit.crit});
+        if (t.hp <= 0) {
+          t.alive = false;
+          unitShot_[target] = {"death", now_, true};
+          unitDiedAt_[target] = now_;
+        } else {
+          unitShot_[target] = {"hit", now_, false};
+        }
+      }
+    }
+    if (now_ < x.end) return;
+    // The defender strikes back once, when it lives and reaches the attacker (canCounter).
+    if (!x.counter) {
+      const size_t ab = static_cast<size_t>(unitBattle_[x.attacker]), db = static_cast<size_t>(unitBattle_[x.defender]);
+      const e2::BattleUnit &au = battle_->units()[ab], &du = battle_->units()[db];
+      const e2::Fighter a = e2::fighterAt(*battle_, ab, au.x, au.y), d = e2::fighterAt(*battle_, db, du.x, du.y);
+      if (du.alive && au.alive && e2::canCounter(*battle_, a, {au.x, au.y}, d)) {
+        x.counter = true;
+        startStrike(x, x.defender, x.attacker);
+        return;
+      }
+    }
+    // Engine2 finishAction: it has acted; its turn ends unless it is a hero with movement left (it stays picked).
+    e2::BattleUnit& au = battle_->units()[static_cast<size_t>(unitBattle_[x.attacker])];
+    au.acted = true;
+    exchange_.reset();
+    if (!au.alive || au.side != "player" || au.mov - au.moveUsed <= 0) {
+      if (au.side == "player") au.moved = true;
+      return select(-1);
+    }
+    refreshReach();
   }
 
   // The move is decided at once (the battle's state), the walk then plays it hex by hex.
   void walkTo(size_t ui, e2::BattleHex to) {
     const size_t b = static_cast<size_t>(unitBattle_[ui]);
     const std::vector<e2::BattleHex> route = e2::Battle::path(reachPaths_, to.x, to.y);
-    if (route.size() < 2 || !battle_->move(b, to.x, to.y)) return;
-    Walk w;
-    for (size_t k = 1; k < route.size(); ++k) w.points.push_back(anchorWorld(battle_->units()[b], route[k]));
-    w.start = now_;
-    unitWalk_[ui] = std::move(w);
-    refreshReach();  // what is left of its movement, shown once it arrives
+    if (route.size() < 2) return;
+    if (!std::any_of(reach_.begin(), reach_.end(), [&](const e2::ReachCell& c) { return c.x == to.x && c.y == to.y; })) return;
+    (void)b;
+    walkAlong(ui, route);  // the battle's heading becomes the last step's (Engine2 stepMove), for attacks from behind
+    refreshReach();        // what is left of its movement, shown once it arrives
   }
 
   // Engine2's battle grid (Battle3D gridMarks over ThreeBattleRenderer): the movement wash and edges, the route, the
@@ -1362,6 +1615,12 @@ class MapStage final : public Stage {
       add(at, IM_COL32(12, 20, 25, 217), 0.98f, border(0.98f));
       add(at, player ? IM_COL32(220, 226, 235, 71) : IM_COL32(231, 133, 115, 255), 0.94f, border(0.94f));
     }
+    // The foes in reach of a strike (Engine2 GRID_ENEMY_TARGET: its fill and border).
+    for (const auto& [t, from] : targets_) {
+      const e2::BattleUnit& f = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(t)])];
+      add({f.x, f.y}, IM_COL32(110, 0, 8, 217), 1.0f);
+      add({f.x, f.y}, IM_COL32(110, 0, 8, 255), 0.94f, border(0.94f));
+    }
     // The cursor: red where nothing can stand.
     if (hover_) {
       const bool blocked = !battle_->cell(hover_->x, hover_->y).passable;
@@ -1396,11 +1655,63 @@ class MapStage final : public Stage {
       if (!ring(m.rIn, inner)) continue;
       for (int k = 0; k < 6; ++k) dl->AddQuadFilled(outer[k], outer[(k + 1) % 6], inner[(k + 1) % 6], inner[k], m.color);
     }
+    drawPopups(dl, w, h);
+    drawForecast();
   }
 
-  // "Fim do turno" (Engine2's battle footer): every unit's movement is whole again. Bottom right, an ember plate.
+  // The numbers over a struck unit: up 0.6 units over 1.2 s while they fade (crits larger and gold; "Errou" for a miss).
+  void drawPopups(ImDrawList* dl, float w, float h) {
+    std::erase_if(popups_, [&](const Popup& p) { return now_ - p.start > kPopupSeconds; });
+    for (const Popup& p : popups_) {
+      const CardRect& c = unitCard_[p.unit];
+      const float k = (now_ - p.start) / kPopupSeconds;
+      const glm::vec3 up = c.flat ? glm::vec3(0.0f, 0.0f, -1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
+      const std::optional<ImVec2> at = screenOf(c.origin + up * (c.height + 0.6f * k), w, h);
+      if (!at) continue;
+      const float size = p.big ? 34.0f : 26.0f;
+      ImGui::PushFont(nullptr, size);
+      const ImVec2 t = ImGui::CalcTextSize(p.text.c_str());
+      const ImU32 alpha = static_cast<ImU32>(255.0f * std::clamp(1.5f - 1.5f * k, 0.0f, 1.0f));
+      const ImVec2 pos{at->x - t.x * 0.5f, at->y - t.y};
+      dl->AddText(nullptr, size, {pos.x + 2, pos.y + 2}, (alpha << IM_COL32_A_SHIFT), p.text.c_str());
+      dl->AddText(nullptr, size, pos, (p.color & ~IM_COL32_A_MASK) | (alpha << IM_COL32_A_SHIFT), p.text.c_str());
+      ImGui::PopFont();
+    }
+  }
+
+  // Engine2's forecast for the hovered target: the strike and the counter, as an ember plate by the cursor.
+  void drawForecast() {
+    if (!hover_ || selected_ < 0 || exchange_) return;
+    const int foe = sceneUnitOf(battle_->unitAt(hover_->x, hover_->y));
+    const auto target = std::find_if(targets_.begin(), targets_.end(), [&](const auto& t) { return t.first == foe; });
+    if (foe < 0 || target == targets_.end()) return;
+    const size_t ab = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), db = static_cast<size_t>(unitBattle_[static_cast<size_t>(foe)]);
+    const e2::BattleUnit &a = battle_->units()[ab], &d = battle_->units()[db];
+    const e2::Forecast f = e2::forecast(*battle_, ab, target->second, db);  // from the hex it would strike from
+    ImGui::SetNextWindowPos({mouse_.x + 18.0f, mouse_.y + 18.0f}, ImGuiCond_Always);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {12.0f, 10.0f});
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(14, 14, 14, 240));
+    ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(190, 150, 95, 115));
+    ImGui::Begin("##forecast", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoInputs |
+                                            ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoSavedSettings);
+    ImGui::PushFont(nullptr, 20.0f);
+    ImGui::TextColored(ImVec4(1.0f, 0.88f, 0.7f, 1.0f), "%s  ->  %s", a.name.c_str(), d.name.c_str());
+    ImGui::Text("Vida %d / %d", d.hp, d.maxHp);
+    ImGui::Text("Dano %d  ·  %.0f%%%s", f.dmgOut, f.hitOut, f.kill ? "  ·  mata" : "");
+    if (f.canCounter) ImGui::Text("Contra-ataque %d  ·  %.0f%%", f.dmgBack, f.hitBack);
+    else ImGui::TextDisabled("Sem contra-ataque");
+    ImGui::PopFont();
+    ImGui::End();
+    ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar();
+  }
+
+  // "Fim do turno" (Engine2's battle footer): the party's unit whose turn it is ends it. Bottom right, an ember plate.
+  // Top centre: the round and whose turn it is; Vitória / Derrota at the end.
   void drawTurnBar() {
     if (!battle_) return;
+    drawTurnPlate();
+    if (!myTurn() || busy()) return;
     const ImGuiIO& io = ImGui::GetIO();
     ImGui::SetNextWindowPos({io.DisplaySize.x - kBarInset + kPlateGlow, io.DisplaySize.y - kBarInset + kPlateGlow}, ImGuiCond_Always, {1.0f, 1.0f});
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {kPlateGlow, kPlateGlow});
@@ -1414,9 +1725,35 @@ class MapStage final : public Stage {
           const float tw = spacedWidth(label);
           drawSpaced(dl, {std::round((a.x + b.x - tw) * 0.5f), std::round((a.y + b.y - ImGui::GetTextLineHeight()) * 0.5f)}, ink, label);
         })) {
-      battle_->newTurn();
-      refreshReach();
+      battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])].moved = true;
+      select(-1);
     }
+    ImGui::PopFont();
+    ImGui::End();
+    ImGui::PopStyleVar(2);
+  }
+
+  void drawTurnPlate() {
+    const ImGuiIO& io = ImGui::GetIO();
+    std::string text;
+    if (result_ == "victory") text = "Vitória";
+    else if (result_ == "defeat") text = "Derrota";
+    else if (const int a = battle_->activeUnit(); a >= 0)
+      text = std::format("Rodada {}  ·  vez de {}", battle_->round(), battle_->units()[static_cast<size_t>(a)].name);
+    if (text.empty()) return;
+    const bool end = !result_.empty();
+    ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, end ? io.DisplaySize.y * 0.4f : kBarInset}, ImGuiCond_Always, {0.5f, end ? 0.5f : 0.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {kPlateGlow, kPlateGlow});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::Begin("##turnplate", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
+                                             ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoFocusOnAppearing |
+                                             ImGuiWindowFlags_NoSavedSettings);
+    const float size = end ? 40.0f : 18.0f;
+    ImGui::PushFont(nullptr, size);
+    const ImVec2 t = ImGui::CalcTextSize(text.c_str());
+    plate("##turnplatebox", {t.x + (end ? 64.0f : 28.0f), t.y + (end ? 28.0f : 12.0f)}, [&](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32 ink) {
+      dl->AddText({std::round((a.x + b.x - t.x) * 0.5f), std::round((a.y + b.y - t.y) * 0.5f)}, ink, text.c_str());
+    });
     ImGui::PopFont();
     ImGui::End();
     ImGui::PopStyleVar(2);
@@ -1510,6 +1847,7 @@ class MapStage final : public Stage {
         party.push_back(heroHex_);
         continue;
       }
+      if (battle_ && unitBattle_[i] >= 0 && !battle_->units()[static_cast<size_t>(unitBattle_[i])].alive) continue;
       const auto [c, r] = e2::hexAt(board_->layout(), unitPos_[i].x, unitPos_[i].y);
       party.push_back({c, r});
     }
@@ -1730,6 +2068,33 @@ class MapStage final : public Stage {
   std::vector<e2::ReachCell> reach_;      // where it can stop
   std::vector<e2::ReachCell> reachPaths_; // every hex it can pass (its routes)
   std::optional<e2::BattleHex> hover_;    // the hex under the cursor
+  std::vector<std::pair<int, e2::BattleHex>> targets_;  // scene units the unit whose turn it is can strike, and from where
+  int pendingStrike_ = -1;                // the foe to strike once the walk to its hex is over
+  int turnUnit_ = -1;                     // the battle unit whose turn has begun
+  struct EnemyTurn {
+    size_t unit = 0;    // scene unit
+    int target = -1;    // scene unit it strikes after its walk
+    bool struck = false;
+  };
+  std::optional<EnemyTurn> enemyTurn_;
+  std::unordered_set<int> awake_;         // enemies that have seen the party (fog)
+  std::string result_;                    // "victory" / "defeat" once the battle is over
+  std::vector<OneShot> unitShot_;         // per scene unit: a one-shot pose over its own
+  std::vector<float> unitDiedAt_;         // per scene unit: when it fell (-1 = alive)
+  std::optional<Exchange> exchange_;
+  struct Popup {
+    size_t unit = 0;
+    std::string text;
+    ImU32 color = 0;
+    float start = 0.0f;
+    bool big = false;
+  };
+  std::vector<Popup> popups_;
+  e2::Mulberry32 rng_{1};
+  static constexpr float kImpactShare = 0.55f;   // a strike lands this far into the attack pose
+  static constexpr float kExchangeGap = 0.15f;   // a breath between the strike and the counter
+  static constexpr float kCorpseSeconds = 1.5f;  // the fallen lie this long after their death pose
+  static constexpr float kPopupSeconds = 1.2f;
   glm::vec2 mouse_{-1.0f};
   SDL_WindowID mouseWindow_ = 0;
   float now_ = 0.0f;  // this frame's scene clock

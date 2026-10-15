@@ -283,8 +283,39 @@ only on the user's explicit "faz", shown live in the window:
    decal pass is the proper home later); hovering a reachable hex shows the route; clicking walks it (Engine2
    UnitActor: 0.22 s per hex, facing and back/front/side walk cuts relative to the camera, directional-walk sprites
    never mirrored, Lancer's swapped cuts); remaining movement can be used again; "Fim do turno" (bottom right plate)
-   restores movement; Esc lets go. Units keep live positions (fog sight follows them). Next steps: attack (target
-   cells, forecast, attack / hit / death poses, damage from Engine2 combat.ts), then enemy turns (engine.ts AI).
+   restores movement; Esc lets go. Units keep live positions (fog sight follows them).
+   **Step 2, attack (cloud session):** `engine/world/Combat.h/.cpp` = Engine2 combat.ts (makeForecast,
+   previewDamage, rollDamage, canCounter, isRearAttack, terrainBonus) + pathfinding.ts canHitFrom / clearShot /
+   shotBlocker / hexLine + BattleEngine.affinityUnit and its arcane / staff element step on a hit, with JS number
+   rules and Engine2's mulberry32. export_battle.ts now also writes each unit's combat profile (weapon, mastery,
+   off-hand, staff magic, resistances, heading), the party's affinity bonuses, and reference forecasts + seeded rolls
+   for every pair of foes (from the attacker's hex and every hex around the defender). **Verified here:** aldeia015
+   462 forecasts + 462 seeded rolls identical (all-maps run: see the commit message / check output); a simulated
+   fight runs to a death with counters. MapStage, **NOT BUILT / NOT RUN**: foes the picked party unit can hit from
+   where it stands are marked in Engine2's target red; hovering one shows the forecast (ember plate by the cursor:
+   names, target HP, damage + hit %, "mata", counter or "Sem contra-ataque"); clicking attacks: both face each other
+   (board heading too, for rear attacks), attack pose (left cut when facing left), roll at 55% of the pose, number
+   pops (gold, larger on a crit; "Errou"), hit pose or death pose (held 1.5 s, then the body is gone; the dead stop
+   seeing and stop blocking), then the counter when canCounter. Attacking ends the unit's turn (acted; Fim do turno
+   restores it).
+   **Step 3, turns + enemies (cloud session):** `engine/world/BattleTurns.cpp` = Engine2 sortByInitiative (one
+   battle-opening 1d20 + class bonus per unit, exported as `initiativeBonus`; highest first, party wins a draw, then id;
+   id order is byte order here vs JS localeCompare, which only matters on an exact draw), activeTurnUnit,
+   startNewRound (volatile enmity -300, everyone acts again, order re-sorted), beginUnitTurn (movement pool whole),
+   enmity.ts (weapon damage: hero->enemy +1 ce +3 ve per point; enemy->hero -2 ce; cap 10000), terrainDistanceField
+   (bucket Dijkstra) and runAiFor's plain branch (best strike over its reach: (maxHp-hp)*3 + ground def*2 + 20 if the
+   foe has <= 8 HP; else close in on the nearest hero by walking distance). export_battle.ts runs Engine2's own runAiFor
+   per enemy on a fresh battle (at the start, and placed 2 hexes from the lead hero). **Verified here:** C++ decisions
+   identical (walk + target) on the proof maps: 57 decisions, 19 casts skipped (spells not ported: those enemies swing
+   their weapon instead). A headless C++ battle on aldeia015 runs rounds in initiative order to a result.
+   MapStage, **NOT BUILT / NOT RUN**: the party's unit whose turn it is gets picked; it walks (pool can be split),
+   strikes once (Engine2 finishAction: the turn ends when no movement is left), foes reachable from any hex of its reach
+   are marked (attackableEnemies: first hex in reach order), clicking one walks there and strikes; "Fim do turno" ends
+   its turn; enemies play their turns (walk, then strike + counter); fog: an enemy holds until the party sees its hex
+   (stand-in for Engine2 wakeIfSeesParty); top-centre plate "Rodada N · vez de X", centre "Vitória" / "Derrota" when a
+   side has nobody standing (Engine2 mission win rules like bosses / waypoints not ported). Not yet: spells and
+   abilities (cultists, crossbow long shot, ...), off-hand strikes, XP / level-ups, poison / bleed / status, hazards,
+   neutrals, undo move.
 5. Sprite look in light (cards washed out / flat), then the AAA light plan (ARCHITECTURE §7.6, step A designed:
    physical units, EV100 metering + adaptation + night compensation, inverse-square lamps).
 6. Tabletop pieces as specified above; the redo of the sprite path if it still falls short of Engine2.

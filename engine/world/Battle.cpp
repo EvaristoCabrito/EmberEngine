@@ -16,6 +16,7 @@ using json = nlohmann::json;
 
 int integer(const json& j, const char* key, int fallback = 0) { return j.contains(key) && j[key].is_number() ? j[key].get<int>() : fallback; }
 std::string text(const json& j, const char* key) { return j.contains(key) && j[key].is_string() ? j[key].get<std::string>() : std::string(); }
+double number(const json& j, const char* key, double fallback = 0) { return j.contains(key) && j[key].is_number() ? j[key].get<double>() : fallback; }
 bool yes(const json& j, const char* key) { return j.contains(key) && j[key].is_boolean() && j[key].get<bool>(); }
 
 // pathfinding.ts footprintFrontRow for a unit with no authored shape: `width` hexes centred on (x, y).
@@ -76,6 +77,11 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     o.def = integer(c, "def");
     o.atk = integer(c, "atk");
     o.blocked = yes(c, "blocked");
+    if (c.contains("raw")) {
+      const json& r = c["raw"];
+      o.raw = {integer(r, "def"), integer(r, "atk"), integer(r, "height"), integer(r, "cover"), yes(r, "blocksShot")};
+    }
+    if (c.contains("shot")) o.shot = {integer(c["shot"], "height"), yes(c["shot"], "blocksShot")};
     b.cells_.push_back(std::move(o));
   }
   if (b.cells_.size() != static_cast<size_t>(b.cols_ * b.rows_)) {
@@ -102,6 +108,40 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     o.minRange = integer(u, "minRange", 1);
     o.maxRange = integer(u, "maxRange", 1);
     o.size = integer(u, "size", 1);
+    o.initiativeBonus = integer(u, "initiativeBonus");
+    o.level = integer(u, "level", 1);
+    o.summoned = yes(u, "summoned");
+    if (u.contains("combat") && u["combat"].is_object()) {
+      const json& c = u["combat"];
+      CombatProfile& p = o.combat;
+      if (c.contains("weapon") && c["weapon"].is_object()) {
+        const json& w = c["weapon"];
+        p.hasWeapon = true;
+        p.dice = integer(w, "dice"), p.faces = integer(w, "faces"), p.bonus = integer(w, "bonus");
+        p.ranged = yes(w, "ranged"), p.classBonus = yes(w, "classBonus");
+      }
+      p.enh = integer(c, "weaponEnh");
+      if (c.contains("mastery")) p.accuracy = number(c["mastery"], "accuracy", 100), p.damageMul = number(c["mastery"], "damage", 1);
+      if (c.contains("offMastery")) p.offAccuracy = number(c["offMastery"], "accuracy", 100), p.offDamageMul = number(c["offMastery"], "damage", 1);
+      if (c.contains("offHand") && c["offHand"].is_object()) {
+        const json& h = c["offHand"];
+        p.offHandWeapon = text(h, "kind") == "weapon";
+        p.offMinRange = integer(h, "minRange", 1), p.offMaxRange = integer(h, "maxRange", 1);
+        p.offDice = integer(h, "dice", 1), p.offFaces = integer(h, "faces", 4), p.offBonus = integer(h, "bonus");
+      }
+      if (c.contains("staff") && c["staff"].is_object()) {
+        p.staff = true;
+        p.staffElement = text(c["staff"], "element");
+        p.staffBonusPct = number(c["staff"], "bonusPct");
+      }
+      p.arcane = yes(c, "arcane"), p.arrow = yes(c, "arrow");
+      if (c.contains("resistances") && c["resistances"].is_object())
+        for (const auto& [k, v] : c["resistances"].items())
+          if (v.is_number()) p.resistances.emplace_back(k, v.get<double>());
+      if (c.contains("faceDx") && c["faceDx"].is_number()) o.faceDx = c["faceDx"].get<double>();
+      if (c.contains("faceDy") && c["faceDy"].is_number()) o.faceDy = c["faceDy"].get<double>();
+      o.facing = integer(c, "facing", 1);
+    }
     if (u.contains("footprintOffsets") && u["footprintOffsets"].is_array()) {
       std::vector<BattleHex> offsets;
       for (const json& f : u["footprintOffsets"]) offsets.push_back({integer(f, "dx"), integer(f, "dy")});
@@ -115,6 +155,34 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
           o.reference.push_back({r[0].get<int>(), r[1].get<int>(), r[2].get<int>(), r[3].get<int>(), r[4].get<int>()});
     b.units_.push_back(std::move(o));
   }
+  if (j.contains("affinityBonus") && j["affinityBonus"].is_object())
+    for (const auto& [a, row] : j["affinityBonus"].items())
+      for (const auto& [n, v] : row.items())
+        if (v.is_number()) b.affinity_.emplace_back(a, n, v.get<double>());
+  if (j.contains("forecasts"))
+    for (const json& f : j["forecasts"])
+      if (f.is_array() && f.size() == 11)
+        b.forecastRefs_.push_back({f[0].get<int>(), f[1].get<int>(), f[2].get<int>(), f[3].get<int>(), f[4].get<int>(), f[5].get<int>(),
+                                   f[6].get<double>(), f[7].get<double>(), f[8].get<int>() != 0, f[9].get<int>() != 0, f[10].get<int>() != 0});
+  if (j.contains("rolls"))
+    for (const json& r : j["rolls"])
+      if (r.is_array() && r.size() == 11)
+        b.rollRefs_.push_back({r[0].get<int>(), r[1].get<int>(), r[2].get<int>(), r[3].get<int>(), r[4].get<uint32_t>(), r[5].get<int>(),
+                               r[6].get<int>() != 0, r[7].get<int>() != 0, r[8].get<double>(), r[9].get<int>(), r[10].get<int>()});
+  auto readAi = [&](const json& list, bool near) {
+    for (const json& a : list) {
+      AiReference r;
+      r.unit = integer(a, "unit");
+      if (near && a.contains("at") && a["at"].is_array()) r.at = BattleHex{a["at"][0].get<int>(), a["at"][1].get<int>()};
+      if (a.contains("path") && a["path"].is_array())
+        for (const json& p : a["path"]) r.plan.path.push_back({p[0].get<int>(), p[1].get<int>()});
+      r.plan.target = integer(a, "target", -1);
+      r.spell = !text(a, "other").empty();
+      b.aiRefs_.push_back(std::move(r));
+    }
+  };
+  if (j.contains("ai") && j["ai"].is_array()) readAi(j["ai"], false);
+  if (j.contains("aiNear") && j["aiNear"].is_array()) readAi(j["aiNear"], true);
   return b;
 }
 
@@ -253,8 +321,14 @@ bool Battle::move(size_t unit, int x, int y) {
   return false;
 }
 
+double Battle::affinityBonus(const std::string& a, const std::string& b) const {
+  for (const auto& [x, y, v] : affinity_)
+    if (x == a && y == b) return v;
+  return 0;
+}
+
 void Battle::newTurn() {
-  for (BattleUnit& u : units_) u.moveUsed = 0;
+  for (BattleUnit& u : units_) u.moveUsed = 0, u.acted = false;
 }
 
 }  // namespace ember::e2
