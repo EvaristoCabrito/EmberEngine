@@ -273,7 +273,8 @@ only on the user's explicit "faz", shown live in the window:
    `engine/world/Battle.h/.cpp` = Engine2 pathfinding.ts (footprint, footprintCost, computeReachable incl. its stable
    re-sorted queue and neighbour order, reconstructPath) + move / newTurn. **Verified here (Linux, no GPU):** C++ reach
    identical to Engine2's (hexes, costs, parents) for every unit of aldeia015, random-rimewater-shrine001,
-   wisp-forest-2004 (56 units, 2487 hexes; and the all-maps run, see below); paths and spent movement checked.
+   wisp-forest-2004 (56 units, 2487 hexes) and on all 242 maps in Engine2's maps/ember (2682 units, 246304
+   hexes, 0 differences); paths and spent movement checked.
    Data: `tools/scripts/engine2/export_battle.ts` (runs Engine2's own BattleEngine headless with vite-node; the three
    proof maps' output is committed in `content/engine2/battles/`, from Engine2's GitHub HEAD, Oct 14: re-export from
    C:/Engine2 if its maps changed). MapStage (`--battle-rules`), **NOT BUILT / NOT RUN**: left click picks a unit (its
