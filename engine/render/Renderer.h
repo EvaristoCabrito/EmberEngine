@@ -98,10 +98,11 @@ class Renderer {
     bool physicalSky = false;
     float ambientMul = 1.0f;
   };
-  void setMeshes(const MeshSceneView& view, const Lighting& lighting = {}) {
+  void setMeshes(const MeshSceneView& view, const Lighting& lighting) {
     meshView_ = view;
     lighting_ = lighting;
   }
+  void setMeshes(const MeshSceneView& view) { setMeshes(view, Lighting{}); }
   // What the GPU did with the meshes, read back from a frame that finished (a few frames old).
   struct MeshStats {
     uint32_t visibleInstances = 0, clusters = 0, queueOverflow = 0, clusterOverflow = 0;

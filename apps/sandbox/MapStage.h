@@ -526,7 +526,7 @@ class MapStage final : public Stage {
     dl->AddRectFilledMultiColor(a, b, top, top, bottom, bottom);
     for (int i = 0; i < 4; ++i) {  // inset 0 0 8px rgba(0,0,0,.85)
       const float d = 1.0f + 2.0f * static_cast<float>(i);
-      dl->AddRect({a.x + d, a.y + d}, {b.x - d, b.y - d}, IM_COL32(0, 0, 0, 90 - 20 * i), 1.0f, 0, 2.0f);
+      dl->AddRect({a.x + d, a.y + d}, {b.x - d, b.y - d}, IM_COL32(0, 0, 0, 90 - 20 * i), 1.0f, 2.0f);
     }
     dl->AddRect(a, b, hover ? IM_COL32(226, 170, 100, 217) : IM_COL32(190, 150, 95, 115), 2.0f);
     paint(dl, a, b, hover ? IM_COL32(255, 224, 180, 255) : IM_COL32(240, 240, 240, 255));
@@ -546,7 +546,7 @@ class MapStage final : public Stage {
     return [=](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32 ink) {
       const IconBox box(a, b);
       const ImVec2 p[3] = {box.at(x0, y0), box.at(x1, y1), box.at(x2, y2)};
-      dl->AddPolyline(p, 3, ink, 0, box.stroke());
+      dl->AddPolyline(p, 3, ink, box.stroke());
     };
   }
   // Text with Engine2's 0.14 em letter spacing (tracking-[0.14em]), one glyph at a time.
@@ -607,9 +607,9 @@ class MapStage final : public Stage {
           const IconBox box(a, b);
           dl->PathArcTo(box.at(12, 12), 9.0f * box.scale, std::numbers::pi_v<float>, -0.75f * std::numbers::pi_v<float>, 24);
           dl->PathLineTo(box.at(3, 8));
-          dl->PathStroke(ink, 0, box.stroke());
+          dl->PathStroke(ink, box.stroke());
           const ImVec2 arrow[3] = {box.at(3, 3), box.at(3, 8), box.at(8, 8)};
-          dl->AddPolyline(arrow, 3, ink, 0, box.stroke());
+          dl->AddPolyline(arrow, 3, ink, box.stroke());
         })) {
       if (flat_) setFlat(false);
       // The shortest way round to the normal turn; zoom and pan stay.
