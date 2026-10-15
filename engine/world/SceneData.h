@@ -61,6 +61,10 @@ struct SceneUnit {
 struct SceneData {
   std::string map, title;
   std::string timeOfDay, environment;
+  // The map's own lighting sliders (Engine2 Mission.sunIntensity / ambientIntensity / bloomIntensity; absent =
+  // the time of day's default) and its mist type (the fog look for the scenario).
+  std::optional<float> sunIntensity, ambientIntensity, bloomIntensity;
+  std::string mistType;
   std::vector<SceneCard> cards;
   std::vector<SceneModel> models;
   std::vector<SceneUnit> units;

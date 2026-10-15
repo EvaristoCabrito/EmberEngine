@@ -151,12 +151,26 @@ float3 localLights(MeshFrame f, Surface s, float3 view, float3 diffuseColor, flo
 // --- Indirect light (the interface stays when probes and the sky arrive) --------------------------------
 
 // Irradiance E arriving at the surface from everywhere but the direct lights.
+// The sky's irradiance on a surface facing n: 9 spherical harmonics (atmosphere.hlsl CSAmbient), already scaled to
+// the map's ambient strength.
+float3 skyIrradiance(MeshFrame f, float3 n) {
+  const uint64_t sh = loadAtmosphere(f).ambient;
+  const float b[9] = {0.282095, 0.488603 * n.y, 0.488603 * n.z, 0.488603 * n.x, 1.092548 * n.x * n.y, 1.092548 * n.y * n.z,
+                      0.315392 * (3.0 * n.z * n.z - 1.0), 1.092548 * n.x * n.z, 0.546274 * (n.x * n.x - n.y * n.y)};
+  float3 e = 0.0;
+  [unroll] for (uint c = 0; c < 9; ++c) e += vk::RawBufferLoad<float4>(sh + c * 16).rgb * b[c];
+  return max(e, 0.0);
+}
+
 float3 indirectDiffuse(MeshFrame f, Surface s) {
+  if (f.atmosphere != 0) return skyIrradiance(f, s.normal);
   return lerp(f.groundColor, f.skyColor, s.normal.y * 0.5 + 0.5) * f.ambientIntensity;
 }
 
-// Prefiltered radiance along the reflection direction (the hemisphere: uniform radiance E / pi).
+// Prefiltered radiance along the reflection direction (the hemisphere: uniform radiance E / pi; with the
+// atmosphere, the sky's irradiance there / pi: a rough reflection until a filtered sky cube exists).
 float3 indirectSpecular(MeshFrame f, Surface s, float3 reflected) {
+  if (f.atmosphere != 0) return skyIrradiance(f, reflected) / kPi;
   return lerp(f.groundColor, f.skyColor, reflected.y * 0.5 + 0.5) * f.ambientIntensity / kPi;
 }
 
@@ -215,9 +229,18 @@ float3 shadeInSight(MeshFrame f, Surface s, Sight sight) {
 
 // The volumetric fog between the camera and a surface (volume.hlsl): what reaches the eye.
 float3 applyVolume(MeshFrame f, float3 color, float3 position) {
-  if (f.volume == kNoTexture) return color;
   const float4 c = mul(float4(position, 1.0), f.viewProjection);
   if (c.w <= 0.0) return color;
+  if (f.atmosphere != 0) {
+    // Aerial perspective (the air between the camera and the surface, at the artistic scale), the farther layer.
+    const AtmosphereFrame a = loadAtmosphere(f);
+    const float w = length(position - f.cameraPosition) * a.kmPerUnit / a.aerialMaxKm;
+    const float3 uvw = float3(c.xy / c.w * 0.5 + 0.5, w - 0.5 / 32.0);
+    float4 air = gTextures3D[NonUniformResourceIndex(a.aerial)].SampleLevel(gSamplers[a.linearSampler], saturate(uvw), 0);
+    air = lerp(float4(0.0, 0.0, 0.0, 1.0), air, saturate(w * 32.0 + 0.5));
+    color = color * air.a + air.rgb * f.exposure;
+  }
+  if (f.volume == kNoTexture) return color;
   const float w = froxelSlice(f, c.w);
   // Each slice holds the fog up to its far side; in front of the first, it thins to none at the eye.
   const float3 uvw = float3(c.xy / c.w * 0.5 + 0.5, w - 0.5 / float(kFroxelZ));

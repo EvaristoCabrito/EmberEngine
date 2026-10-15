@@ -140,8 +140,10 @@ struct MeshFrame {
   uint32_t volumeSampler;
   float volumeNear;
   float volumeFar;
+  uint64_t atmosphere;  // AtmosphereFrame (device address); 0 = the hemisphere, no sky, no aerial perspective
+  uint32_t pad10[2];
 };
-static_assert(sizeof(MeshFrame) == 656 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384 &&
+static_assert(sizeof(MeshFrame) == 672 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384 &&
               offsetof(MeshFrame, shadowMatrix) == 480);
 
 // Matches VolumeFrame in shaders/volume.hlsl.
@@ -279,6 +281,21 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
     frame.meshCounters = createReadbackBuffer(context, kCounterBytes);
     frame.volumeFrame = createDeviceBuffer(context, sizeof(VolumeFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     frame.cloudFrame = createDeviceBuffer(context, kMaxFogLookFrameBytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    frame.atmosphereFrame = createDeviceBuffer(context, sizeof(AtmosphereFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+  }
+  // The atmosphere's tables (GENERAL layout: written as storage, read as textures) and its SH ambient.
+  {
+    const VkImageUsageFlags usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    atmoTransmittance_ = createImage(context, {.format = VK_FORMAT_R16G16B16A16_SFLOAT, .extent = {256, 64}, .usage = usage});
+    atmoMultiScattering_ = createImage(context, {.format = VK_FORMAT_R16G16B16A16_SFLOAT, .extent = {32, 32}, .usage = usage});
+    atmoSkyView_ = createImage(context, {.format = VK_FORMAT_R16G16B16A16_SFLOAT, .extent = {192, 108}, .usage = usage});
+    atmoAerial_ = createImage(context, {.format = VK_FORMAT_R16G16B16A16_SFLOAT, .extent = {32, 32}, .usage = usage, .depth = 32});
+    const Image* tables[4] = {&atmoTransmittance_, &atmoMultiScattering_, &atmoSkyView_, &atmoAerial_};
+    for (int i = 0; i < 4; ++i) {
+      atmoSampled_[i] = bindless_.addSampledImage(tables[i]->view, VK_IMAGE_LAYOUT_GENERAL);
+      atmoStorage_[i] = bindless_.addStorageImage(tables[i]->view);
+    }
+    atmoAmbient_ = createDeviceBuffer(context, 9 * 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT);
   }
   // The fog looks' noise volumes (filled the first time a look needs one).
   for (size_t k = 0; k < static_cast<size_t>(FogNoise::Count); ++k) {
@@ -428,6 +445,11 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   resolvePipeline_ = createComputePipeline(context, layout, "resolve.CSResolve");
   lightsPipeline_ = createComputePipeline(context, layout, "lights.CSClusters");
   volumeInjectPipeline_ = createComputePipeline(context, layout, "volume.CSInject");
+  {
+    const char* passes[5] = {"atmosphere.CSTransmittance", "atmosphere.CSMultiScattering", "atmosphere.CSSkyView", "atmosphere.CSAerial",
+                             "atmosphere.CSAmbient"};
+    for (int i = 0; i < 5; ++i) atmoPipelines_[i] = createComputePipeline(context, layout, passes[i]);
+  }
   volumeIntegratePipeline_ = createComputePipeline(context, layout, "volume.CSIntegrate");
   for (const FogLook& look : fogLooks()) {
     bankMarchPipelines_.push_back(createComputePipeline(context, layout, std::string(look.shader) + ".CSMarch"));
@@ -547,7 +569,11 @@ Renderer::~Renderer() {
     destroyBuffer(context_, frame.fogStaging);
     destroyBuffer(context_, frame.volumeFrame);
     destroyBuffer(context_, frame.cloudFrame);
+    destroyBuffer(context_, frame.atmosphereFrame);
   }
+  for (VkPipeline p : atmoPipelines_) vkDestroyPipeline(context_.device, p, nullptr);
+  for (Image* table : {&atmoTransmittance_, &atmoMultiScattering_, &atmoSkyView_, &atmoAerial_}) destroyImage(context_, *table);
+  destroyBuffer(context_, atmoAmbient_);
   for (VkPipeline p : bankMarchPipelines_) vkDestroyPipeline(context_.device, p, nullptr);
   for (VkPipeline p : bankCompositePipelines_) vkDestroyPipeline(context_.device, p, nullptr);
   for (size_t k = 0; k < static_cast<size_t>(FogNoise::Count); ++k) {
@@ -793,6 +819,27 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
   f.volumeSampler = linearClampIndex_;
   f.volumeNear = volumetric_.nearDepth;
   f.volumeFar = volumetric_.farDepth;
+  // The atmosphere: this frame's record (the tables are rebuilt from it in record()).
+  atmoThisFrame_ = lighting_.atmosphere;
+  f.atmosphere = 0;
+  if (atmoThisFrame_) {
+    AtmosphereFrame a;
+    a.inverseViewProjection = glm::inverse(camera_.viewProjection());
+    a.sunDirection = glm::normalize(lighting_.sunDirection);
+    a.sunIlluminance = lighting_.skyIlluminance;
+    a.kmPerUnit = lighting_.kmPerUnit;
+    a.skyScale = lighting_.skyScale;
+    const glm::vec3 sky = lighting_.skyColor;
+    a.ambientTarget = lighting_.ambientIntensity * lighting_.exposure * (0.2126f * sky.r + 0.7152f * sky.g + 0.0722f * sky.b);
+    a.transmittance = atmoSampled_[0], a.transmittanceStorage = atmoStorage_[0];
+    a.multiScattering = atmoSampled_[1], a.multiScatteringStorage = atmoStorage_[1];
+    a.skyView = atmoSampled_[2], a.skyViewStorage = atmoStorage_[2];
+    a.aerial = atmoSampled_[3], a.aerialStorage = atmoStorage_[3];
+    a.ambient = bufferAddress(context_, atmoAmbient_);
+    a.linearSampler = linearClampIndex_;
+    vkCmdUpdateBuffer(cmd, frame.atmosphereFrame.buffer, 0, sizeof(a), &a);
+    f.atmosphere = bufferAddress(context_, frame.atmosphereFrame);
+  }
   VolumeFrame vf{};
   if (volumeThisFrame_) {
     f.volume = volumeIntegratedSampled_;
@@ -1188,6 +1235,38 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
                   VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
     gpuTimer_.end(cmd, lightScope);
+  }
+  // --- The atmosphere: its tables and SH ambient, rebuilt every frame (read by every lit surface, the sky) ------
+  if (hasScene_ && atmoThisFrame_) {
+    const uint32_t atmoScope = gpuTimer_.begin(cmd, "atmosphere");
+    if (!atmoReady_) {
+      atmoReady_ = true;
+      for (Image* table : {&atmoTransmittance_, &atmoMultiScattering_, &atmoSkyView_, &atmoAerial_})
+        transition(cmd, table->image, table->aspect,
+                   {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE,
+                    VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
+    }
+    // Last frame's surfaces may still read the tables and the ambient.
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                  VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                  VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT);
+    const VolumePush push{bufferAddress(context_, frame.meshFrame), bufferAddress(context_, frame.atmosphereFrame)};
+    const auto pass = [&](int i, uint32_t x, uint32_t y, uint32_t z) {
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, atmoPipelines_[i]);
+      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+      vkCmdDispatch(cmd, x, y, z);
+      memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                    VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
+    };
+    pass(0, 256 / 8, 64 / 8, 1);    // transmittance
+    pass(1, 32 / 8, 32 / 8, 1);     // multiple scattering (reads transmittance)
+    pass(2, 192 / 8, 108 / 8 + 1, 1);  // sky view (reads both)
+    pass(3, 32 / 8, 32 / 8, 1);     // aerial perspective
+    pass(4, 1, 1, 1);               // SH ambient (reads the sky view)
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+                  VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                  VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
+    gpuTimer_.end(cmd, atmoScope);
   }
   // --- Sun shadow: the board's ground from the sun (before the meshes: their resolve reads it) ---------------------------------------------
   if (shadowsThisFrame_) {

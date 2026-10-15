@@ -41,6 +41,7 @@
 #include "render/SpriteSystem.h"
 #include "world/Board.h"
 #include "world/FogOfWar.h"
+#include "world/TimeOfDay.h"
 #include "world/GroundMesh.h"
 #include "world/SceneData.h"
 
@@ -73,6 +74,9 @@ struct MapStageOptions {
   // Volumetric fog (R7's literal fog, shaders/volume.hlsl): on unless switched off (--volume 0).
   bool volume = true;
   int fogLook = 3;  // the fog look shown first (render/FogLooks.h numbers)
+  // Lighting (F10 cycles): 0 the old prototype day (every capture before 2026-10-15), 1 Engine2's 3D presets for
+  // the map's time of day (the floor), 2 physical: the map's time of day and sliders through the atmosphere.
+  int lighting = 2;
   // Scene clock pinned to this many seconds (< 0 = real time): identical frames for paired captures.
   float sceneTime = -1.0f;
 };
@@ -90,6 +94,7 @@ class MapStage final : public Stage {
         options_(options),
         jobs_(jobs) {
     yaw_ += glm::radians(options.turnDegrees);
+    lightingMode_ = std::clamp(options.lighting, 0, 2);
     for (uint32_t i = 0; i < fogLooks().size(); ++i)
       if (options.fogLook == std::atoi(fogLooks()[i].number)) fogLook_ = i;
     pitch_ += glm::radians(options.tiltDegrees);
@@ -187,7 +192,7 @@ class MapStage final : public Stage {
     lights_.clear();
     if (scene_) buildLights(time);
     renderer.setLights(lights_);
-    Renderer::Lighting lighting;
+    Renderer::Lighting lighting = mapLighting();
     if (options_.sunElevation >= 0.0f) {
       const float az = glm::radians(options_.sunAzimuth), el = glm::radians(options_.sunElevation);
       lighting.sunDirection = {std::cos(el) * std::cos(az), std::sin(el), std::cos(el) * std::sin(az)};
@@ -199,7 +204,9 @@ class MapStage final : public Stage {
     renderer.setLightingLayers(layers_);
     renderer.setFogOfWar(fogReady_ ? &fogMask_ : nullptr, maskVersion_, &fogTexels_);
     Renderer::VolumetricFog volume;
-    volume.enabled = options_.volume;
+    // The froxel haze belongs to the old lighting (mode 0, where every saved fog look was captured); under the
+    // brighter physical light it reads as a milky veil (2026-10-15), so it stays off there.
+    volume.enabled = options_.volume && lightingMode_ == 0;
     volume.meanGround = meanGround_;
     // The froxel fog is the air's haze in sight; the fog of war's bank is drawn by the fog bank pass.
     volume.boundaryDensity = 0.0f;
@@ -270,6 +277,7 @@ class MapStage final : public Stage {
         case SDLK_F7: layers_ ^= 4u; break;  // indirect
         case SDLK_F8: layers_ ^= 8u; break;  // local lights
         case SDLK_F9: fogLook_ = (fogLook_ + 1) % static_cast<uint32_t>(fogLooks().size()); break;  // next fog look
+        case SDLK_F10: lightingMode_ = (lightingMode_ + 1) % 3; break;                                   // next lighting
         default: break;
       }
     }
@@ -297,6 +305,11 @@ class MapStage final : public Stage {
     }
     if (fog_ && options_.volume)
       ImGui::Text("fog look %s (F9 next, %zu saved): %s", fogLooks()[fogLook_].number, fogLooks().size(), fogLooks()[fogLook_].note);
+    {
+      static const char* kModes[3] = {"old prototype day", "Engine2 presets", "physical atmosphere"};
+      ImGui::Text("lighting (F10): %s; time of day %s%s", kModes[lightingMode_], scene_ ? scene_->timeOfDay.c_str() : "day",
+                  scene_ && scene_->environment == "indoor" ? " (indoor)" : "");
+    }
     if (fog_)
       ImGui::Text("fog of war: %d in sight, %d remembered, %d never seen; %d enclosed holes (%d hexes); %u enemies hidden; last update %.2f ms",
                   fogCounts_[2], fogCounts_[1], fogCounts_[0], holes_, holeHexes_, hiddenUnits_, lastFogMs_);
@@ -548,6 +561,50 @@ class MapStage final : public Stage {
         }
       }
     }
+  }
+
+  // The map's light (ARCHITECTURE 7.5) in the chosen mode. Time of day picks sun or moon and where it stands;
+  // the map's own sliders set the strengths (Engine2's 3D ignored them); the atmosphere colours the light.
+  Renderer::Lighting mapLighting() const {
+    using e2::TimeOfDayLight;
+    Renderer::Lighting l;
+    if (lightingMode_ == 0) return l;  // the old prototype day
+    const TimeOfDayLight& t = e2::timeOfDay(scene_ ? scene_->timeOfDay : std::string());
+    float dir[3];
+    if (t.moon) {
+      const e2::MoonPose pose = e2::moonPose(0.35f);  // Engine2's stage default
+      e2::lightDirection(pose.azimuth, pose.elevation, dir);
+    } else {
+      e2::lightDirection(t.stageAzimuth, t.elevationDeg >= 0.0f ? glm::radians(t.elevationDeg) : t.stageElevation, dir);
+    }
+    l.sunDirection = glm::normalize(glm::vec3(dir[0], dir[1], dir[2]));
+    if (lightingMode_ == 1) {  // Engine2's 3D stage, as it drew
+      l.sunColor = Renderer::srgb(t.stageSun);
+      l.sunIntensity = t.stageSunIntensity * (t.moon ? 1.5f : 1.0f);  // MOON_BRIGHTNESS x a full moon
+      l.skyColor = Renderer::srgb(t.stageSky);
+      l.groundColor = Renderer::srgb(t.stageGround);
+      l.ambientIntensity = t.stageHemi;
+      return l;
+    }
+    const float key = scene_ && scene_->sunIntensity ? *scene_->sunIntensity : t.key;
+    const float ambient = scene_ && scene_->ambientIntensity ? *scene_->ambientIntensity : t.ambient;
+    const glm::vec3 keyColor = t.moon ? Renderer::srgb(t.keyColor) : glm::vec3(1.0f);
+    l.sunIntensity = key;
+    l.ambientIntensity = ambient;
+    l.skyColor = Renderer::srgb(t.skyColor);
+    if (scene_ && scene_->environment == "indoor") {  // no sky indoors: the tuned colours on the hemisphere
+      l.sunColor = Renderer::srgb(t.keyColor);
+      l.groundColor = Renderer::srgb(t.stageGround);
+      return l;
+    }
+    // The key light through the air: its colour (luminance 1; the map's strength sets how bright).
+    glm::vec3 c = atmosphereTransmittance(AtmosphereFrame{}, l.sunDirection) * keyColor;
+    const float lum = 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b;
+    l.sunColor = lum > 1e-6f ? c / lum : keyColor;
+    l.atmosphere = true;
+    l.skyIlluminance = keyColor * key;
+    l.skyScale = t.moon ? 0.04f : 1.0f;  // a moonlit sky is dark: stars show
+    return l;
   }
 
   // Where the party stands (the swirl turns round it): the middle of the living player units.
@@ -852,6 +909,7 @@ class MapStage final : public Stage {
   e2::HexPoint heroHex_;
   float meanGround_ = 0.0f, boardTop_ = 0.0f, groundLow_ = 0.0f;
   uint32_t fogLook_ = 2;  // index into fogLooks(): look 003 unless --fog-look says otherwise
+  int lightingMode_ = 2;   // 0 old prototype day, 1 Engine2 presets, 2 physical (F10)
   std::array<int, 3> fogCounts_{};
   int holes_ = 0, holeHexes_ = 0, worstHoles_ = 0;
   std::vector<std::pair<int, int>> lastHoles_;

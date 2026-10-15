@@ -6,7 +6,7 @@
 // Lighting here is provisional (one sun + sky/ground ambient, physically based materials): the frame's
 // real lighting model (clustered lights, shadows, how 2D cards and 3D share light) is decided by
 // Demonstration 1, see docs/ARCHITECTURE.md §7.1.
-#include "lighting.hlsli"
+#include "atmosphere.hlsli"
 
 struct Push {
   uint64_t frame;
@@ -55,7 +55,10 @@ void CSResolve(uint2 pixel : SV_DispatchThreadID) {
   const uint vis = gStorageImagesR32ui[NonUniformResourceIndex(push.visibilityImage)][pixel];
   RWTexture2D<float4> color = gStorageImagesRgba16f[NonUniformResourceIndex(push.colorImage)];
   if (vis == ~0u) {
-    color[pixel] = f.debugView != 0 ? float4(0.0, 0.0, 0.0, 1.0) : push.clearColor;
+    // Nothing here (the ground and cards are drawn over this later): the sky, or the background colour.
+    float4 background = f.debugView != 0 ? float4(0.0, 0.0, 0.0, 1.0) : push.clearColor;
+    if (f.atmosphere != 0 && f.debugView == 0) background = float4(skyBackground(f, pixel), 1.0);
+    color[pixel] = background;
     return;
   }
 

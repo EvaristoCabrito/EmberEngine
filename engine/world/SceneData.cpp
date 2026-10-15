@@ -51,6 +51,12 @@ std::optional<SceneData> SceneData::load(const std::filesystem::path& sceneJson)
   if (j.contains("lighting")) {
     s.timeOfDay = str(j["lighting"], "timeOfDay");
     s.environment = str(j["lighting"], "environment");
+    const json& l = j["lighting"];
+    const auto opt = [&](const char* key) { return l.contains(key) && l[key].is_number() ? std::optional<float>(l[key].get<float>()) : std::nullopt; };
+    s.sunIntensity = opt("sunIntensity");
+    s.ambientIntensity = opt("ambientIntensity");
+    s.bloomIntensity = opt("bloomIntensity");
+    s.mistType = str(l, "mistType");
   }
   for (const json& d : j["decor"]) {
     const std::string kind = str(d, "kind");

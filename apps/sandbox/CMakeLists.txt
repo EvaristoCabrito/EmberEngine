@@ -9,6 +9,7 @@ ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/tonemap.hlsl STAGES vs:VS
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/ground.hlsl STAGES vs:VSMain ps:PSMain)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/sprites.hlsl STAGES vs:VSMain ps:PSMain vs:VSShadow ps:PSShadow)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/hiz.hlsl STAGES cs:CSDownsample)
+ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/atmosphere.hlsl STAGES cs:CSTransmittance cs:CSMultiScattering cs:CSSkyView cs:CSAerial cs:CSAmbient)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/volume.hlsl STAGES cs:CSInject cs:CSIntegrate)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/fog_look001.hlsl STAGES cs:CSMarch cs:CSComposite)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/fog_look002.hlsl STAGES cs:CSMarch cs:CSComposite)

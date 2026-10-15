@@ -528,6 +528,43 @@ with fog + scout: GPU median 3.78 / 99th 5.11 / worst 5.69 ms (never-seen ground
 anchor hex only); the sight update runs on the main thread (move it to a job if 3.4 ms spikes matter); enemies' own
 sight (waking) is not ported.
 
+### 7.5 Sky, aerial perspective, bloom, tilt-shift: research (2026-10-15, not built)
+
+**What Engine2 does (the look reference; `src/render/stage.ts`, `moon.ts`, `diorama.html`).**
+- Six time-of-day presets per map (`timeOfDay`): day, noon, dawn, dusk, brightNight, darkNight: each a key light
+  (colour, strength, azimuth, elevation) and a sky/ground hemisphere fill. Nights: no sky fill; the key light is the
+  **moon**, a disc with the campaign's moon-phase art crossing the sky in 600 s, light and shadows following it.
+  Indoor maps (`environment`): no moon disc. The game's background is **black**, its distance fog black
+  (3-7 board half-sizes); the prototype's blue sky colour (#9fc2dd) is only in `diorama.html`.
+- The 242 maps: 143 day (79 set + 64 unset), 64 nights (38 bright, 26 dark), 22 dusk, 13 dawn; 87 indoor.
+  **aldeia015 is dusk** (EmberEngine lights it with the day preset today).
+- Per-map `sunIntensity` / `ambientIntensity` / `bloomIntensity` / `mistType` exist; the 3D stage reads only the
+  presets (the per-map numbers drive the editor and 2D view), and each map names its mist type (fog looks per
+  scenario: §7.4).
+- Bloom: three.js UnrealBloomPass strength 0.3, radius 0.55, **threshold 2.0** (only flames and emissives glow).
+  Tilt-shift: a screen-band blur (focus 0.5, band 0.13, two passes each way), off by default (T). Grade: neutral,
+  vignette 0.15.
+
+**Published techniques (our own implementation of each):**
+- Sky and aerial perspective: Hillaire 2020, "A Scalable and Production Ready Sky and Atmosphere Rendering
+  Technique" (EGSR / CGF 39-4, doi 10.1111/cgf.14050; Unreal's SkyAtmosphere): a transmittance LUT, a multiple-
+  scattering LUT (isotropic higher orders as a geometric series), a sky-view LUT (low-frequency sky, sampled per
+  pixel) and a 32^3 aerial-perspective froxel volume (in-scattering rgb, transmittance a) read by opaque and
+  transparent surfaces; all cheap enough to recompute every frame, so time of day and weather can change live. The
+  sky's light feeds the ambient (an SH projection of the sky-view LUT: `indirectDiffuse`) and reflections.
+- Bloom: Jimenez 2014, "Next Generation Post Processing in Call of Duty: Advanced Warfare" (SIGGRAPH Advances):
+  a mip chain, 13-tap downsample (Karis average on the first to kill fireflies), tent upsample; physically based
+  (no threshold, a small energy-conserving mix) rather than a cut-off.
+- Depth of field: the same talk's scatter-as-you-gather DOF (handles transparency: cards' soft edges), with the
+  circle of confusion from depth; a tilt-shift look = focus on the board's plane with a wide aperture, which a free
+  camera keeps correct where a screen band does not.
+
+**Ember's scale.** One world unit is one hex radius, about a metre (a house is 6.5 units): a board is ~50 m across,
+where real air shows no haze at all. Visible aerial perspective therefore needs an artistic distance scale (the
+renderer's metres per world unit for the atmosphere only), the way Engine2 used its black distance fog.
+
+**Decisions taken with the user before building:** listed in the reply that proposed this section (2026-10-15).
+
 ## 8. Gameplay and tools
 
 **Engine2's game design is sound (the user, 2026-10-14: "nothing else is wrong with its game design"); its

@@ -160,7 +160,47 @@ struct MeshFrame {
   uint volumeSampler;        // linear, clamped
   float volumeNear;          // view depth of the first slice boundary
   float volumeFar;           // ... and of the last
+  // The atmosphere (atmosphere.hlsli): sky, ambient light, aerial perspective. 0 = none (the hemisphere).
+  uint64_t atmosphere;       // AtmosphereFrame
+  uint2 pad10;
 };
+
+// Matches ember::AtmosphereFrame (render/Atmosphere.h). 240 bytes.
+struct AtmosphereFrame {
+  float4x4 inverseViewProjection;
+  float3 rayleighScattering;  // per km at sea level
+  float rayleighScaleHeight;  // km
+  float3 mieScattering;
+  float mieScaleHeight;
+  float3 mieExtinction;
+  float mieG;                 // Cornette-Shanks asymmetry
+  float3 ozoneAbsorption;
+  float ozoneCenter;          // km: a tent of ozone peaking here ...
+  float3 groundAlbedo;
+  float ozoneWidth;           // ... this wide
+  float3 sunIlluminance;      // the key light outside the air (colour x strength, before exposure)
+  float bottomRadius;         // km
+  float3 sunDirection;        // towards the sun or moon
+  float topRadius;
+  float viewHeight;           // km from the planet's centre (the board's ground)
+  float kmPerUnit;            // aerial perspective: kilometres per world unit (artistic scale)
+  float aerialMaxKm;          // the aerial-perspective volume reaches this far
+  float ambientTarget;        // luminance of the ambient light falling on an upward surface (exposure in)
+  uint transmittance;         // sampled / storage indices of the tables
+  uint transmittanceStorage;
+  uint multiScattering;
+  uint multiScatteringStorage;
+  uint skyView;
+  uint skyViewStorage;
+  uint aerial;
+  uint aerialStorage;
+  uint64_t ambient;           // SH9 irradiance (9 x float4), written by CSAmbient
+  uint linearSampler;
+  float skyScale;             // the sky behind the board: brightness relative to the lit air (dark at night)
+};
+
+AtmosphereFrame loadAtmosphere(MeshFrame f) { return vk::RawBufferLoad<AtmosphereFrame>(f.atmosphere); }
+
 
 // One local light (Engine2's CarriedLight: a three.js point light). 32 bytes.
 struct LocalLight {

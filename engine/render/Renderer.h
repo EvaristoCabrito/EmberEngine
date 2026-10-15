@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "render/BoardGround.h"
+#include "render/Atmosphere.h"
 #include "render/FogLooks.h"
 #include "render/Camera.h"
 #include "render/MeshScene.h"
@@ -77,6 +78,13 @@ class Renderer {
     glm::vec3 groundColor = srgb(0x5d4b33);
     float ambientIntensity = 1.0f;
     float exposure = 1.0f;  // multiplied into every light
+    // The atmosphere (ARCHITECTURE 7.5): when on, the sky's light replaces the hemisphere (scaled so an upward
+    // surface receives ambientIntensity x the luminance of skyColor, as the hemisphere did), the sky is drawn
+    // behind the board and the air between camera and surfaces (aerial perspective) is applied.
+    bool atmosphere = false;
+    glm::vec3 skyIlluminance{1.0f};  // the key light outside the air (colour x strength) that lights the sky
+    float kmPerUnit = 0.025f;         // aerial perspective scale (km of air per world unit; a board ~1 km of air)
+    float skyScale = 1.0f;            // the sky behind the board (dark at night)
   };
   void setMeshes(const MeshSceneView& view, const Lighting& lighting = {}) {
     meshView_ = view;
@@ -176,6 +184,7 @@ class Renderer {
     Buffer fogStaging;    // the fog mask's texels on their way to fogMask_ (host-visible, grown on demand)
     Buffer volumeFrame;   // VolumeFrame for the volumetric fog passes (device-local)
     Buffer cloudFrame;    // CloudFrame for the fog bank passes (device-local)
+    Buffer atmosphereFrame;  // AtmosphereFrame (device-local)
     bool countersPending = false;
   };
 
@@ -222,7 +231,7 @@ class Renderer {
   uint32_t cardShadowMapIndex_ = kNoIndex;
   bool cardShadowsThisFrame_ = false;
   uint64_t shadowMeshKey_ = 0;
-  alignas(16) std::array<std::byte, 656> shadowFrameStorage_{};
+  alignas(16) std::array<std::byte, 672> shadowFrameStorage_{};
   // Volumetric fog: two froxel volumes (this frame's and last frame's, swapped), the integrated one.
   VolumetricFog volumetric_;
   Image volumes_[2], volumeIntegrated_;
@@ -232,6 +241,12 @@ class Renderer {
   uint32_t volumeCurrent_ = 0, volumeFrameIndex_ = 0;
   bool volumesReady_ = false, volumeThisFrame_ = false, volumeHistoryValid_ = false;
   glm::mat4 previousVolumeViewProjection_{1.0f};
+  // The atmosphere: its tables (transmittance, multiple scattering, sky view, aerial perspective) and SH ambient.
+  Image atmoTransmittance_, atmoMultiScattering_, atmoSkyView_, atmoAerial_;
+  uint32_t atmoSampled_[4] = {kNoIndex, kNoIndex, kNoIndex, kNoIndex}, atmoStorage_[4] = {kNoIndex, kNoIndex, kNoIndex, kNoIndex};
+  Buffer atmoAmbient_;
+  VkPipeline atmoPipelines_[5] = {};  // transmittance, multiple scattering, sky view, aerial, ambient
+  bool atmoReady_ = false, atmoThisFrame_ = false;
   // Fog bank: the tiling noise volume (made once), the half-resolution march result.
   FogBank fogBank_;
   Image bankMarch_;
