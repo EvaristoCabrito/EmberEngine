@@ -72,10 +72,12 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
 
 ## Build and run (Windows, MSVC 2022 Build Tools, Vulkan SDK 1.4.363.0, CMake + Ninja)
 
-**`JOGAR.bat` (the user's one-click way, 2026-10-15: "I won't type any command"):** run from a downloaded copy of the
-repo, it commits C:\EmberEngine's current state, copies this code over it (robocopy, nothing deleted; `build/` with
-the art packs stays), runs `build.bat release` and opens aldeia015 with ground / scene / sprites / meshes / roster /
-battle rules (whichever exist). Stops with a message and `pause` on a build error or a missing art file.
+**The user downloads the repo ZIP and double-clicks `JOGAR.bat` (2026-10-15: "I won't type any command").** It runs the
+ready-made `jogo/Sandbox.exe` (+ `jogo/shaders/*.spv`), built in the cloud on Linux with zig (x86_64-windows-gnu) and
+DXC built from source (`tools/cross/README.md`; the cloud session keeps the build in /home/user/xbuild): no Visual
+Studio needed. It opens Engine2's **title screen** (`--title`), with the art packs from `C:\EmberEngine\build` and
+Engine2's art/maps from `C:\Engine2`. **Rebuild `jogo/` and push after every engine/shader change** (the user only gets
+what is in the repo). `build.bat` / MSVC still work for local development.
 
 ```
 build.bat release          # or debug; output in build/<config>/bin
@@ -241,6 +243,30 @@ build.bat release          # or debug; output in build/<config>/bin
   do not receive card shadows; walls/doors (architecture), floor waypoints, stand-on-log heights, the third
   board look (tabletop tiles, R8) not ported; unit animation is the idle only; no spell VFX; the ground material
   costs 4.1 ms at full clock on photo-layer maps (profile it before optimising).
+
+## Cloud session 2026-10-15 (evening): the game around the map, copied from Engine2 (user: "copiar do engine 2",
+"todo conteúdo gráfico"; built, NOT run here: no GPU)
+
+- **Title** (`apps/sandbox/TitleStage.h`, Engine2 index.html + title.css): title-bg.jpg under the veil, EMBER ASHES, Ember,
+  ember menu buttons (Nova campanha / Como jogar / Opções / Sair); mission list on the save-board art (every scene in
+  `build/engine2-scenes` whose map exists; battles first); **briefing** (BRIEF_ART, briefing + objective, Entrar em combate).
+  Fonts bundled (`content/fonts`: Pirata One, Newsreader, Figtree, OFL); Engine2 art read at run time via ImGui user
+  textures (`render/UiArt`: images, ember-panel / rule / slot / kicker / title / big ember button).
+- **Screens switch in `main.cpp`** (title -> map -> back); Esc pause menu (Continuar / Menu principal); **result screen**
+  (Engine2 ResultScreen: Vitória/Derrota · T, hero growth, Mapa / Tentar de novo).
+- **Battle HUD** (Engine2 GameApp footer): portrait, name · Nv · XP, class, HP, sheet line / forecast; Atacar / Esperar /
+  Cancelar / spell sockets with Engine2 icons + uses / Fim do turno; HP bars over units (battleHud3d.ts); "Ordem" chips.
+  The battle grid is painted on the ground by the terrain pass (`Renderer::setGroundMarks`).
+- **Spells** (`engine/world/Spells`): Míssil Mágico, Tiro Longo, Tiro Perfurante, Investida Perfurante, Golpe Duplo,
+  Relâmpago (+echo), Frost (game/frost.ts), Choque, Cura Menor; training, XP, level-ups, staff element/drain, kill-drop rolls,
+  start-of-turn echo + hazards; enemy AI casts (cultists, crossbowmen). Verified against Engine2's game/engine.ts with
+  `SPELL_REFS=1 export_battle.ts` + `Cooker check-battle` (every aim, board afterwards, random-number count) on the proof
+  maps. The user told me to stop exporting all 242 maps ("most are badly made and not final"): proof maps only.
+  Not ported: area / summon / status spells (fireball, cleave, bless, poison, bleeding, sleep, ...).
+- **Atmosphere**: fog look 008 = the map's own mist (Engine2 mist3d presets, intensity, speed; no fog of war needed);
+  Engine2 wisps + dust motes; full-scene bloom (map bloomIntensity) in the tonemap pass. Real light: lit cards' cap fixed
+  (sprites were black). The user: sky / moon / stars **later** ("deixa o céu para depois"); they want the painting at the
+  horizon with the real sky above it (not done).
 
 ## Next
 
