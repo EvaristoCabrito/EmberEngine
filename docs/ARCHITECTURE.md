@@ -272,14 +272,23 @@ spell effects, realistic ground textures, 2D props combined with real 3D objects
   scattering read the visibility mask; none bypasses it.** Acceptance: the next visual prototype (D1)
   shows all three states together with a moving light and a spell effect, and proves neither reveals
   unexplored terrain.
-- R8 **Two board looks, the player's choice (the user, 2026-10-14), as Engine2 already defines them
-  (`C:/Engine2/src/render/terrainMesh.ts`, editor elevation brushes in `src/editor/terrainTools.ts`):**
-  **hard** = a crisp hex cliff at every height step, same-level ground flowing seamlessly (the stepped
-  Tactics Ogre read); **smooth** = one continuous heightfield in which terraces and shores wander naturally
-  around the hex layout. Both read the same cells (per-hex elevation + terrain), so one map authored once
-  renders both ways and gameplay is identical: same hexes, heights, ranges, line of sight. Switching is a
-  player setting at runtime. Lighting, shadows, fog of war (R7), terrain materials, props and buildings work
-  in both. Engine2 is the reference for *what* the two looks are, not for how they are rendered.
+- R8 **Three board looks, the player's choice (the user, 2026-10-14), as Engine2 defines them**
+  (`C:/Engine2/src/render/terrainMesh.ts` for the game's two, `C:/Engine2/diorama.html` keys 1/2/3 for all
+  three; editor elevation brushes in `src/editor/terrainTools.ts`): **smooth** = one continuous heightfield in
+  which terraces and shores wander naturally around the hex layout; **hard** = a crisp hex cliff at every
+  height step, same-level ground flowing seamlessly (the stepped Tactics Ogre read); **tabletop tiles** =
+  each hex a separate bevelled piece with a gap between neighbours and a dark seam where stacked levels
+  meet (`buildHexTerrain(tabletop)` in diorama.html). All read the same cells (per-hex elevation + terrain),
+  so one map authored once renders every way and gameplay is identical: same hexes, heights, ranges, line
+  of sight. Switching is a player setting at runtime. Lighting, shadows, fog of war (R7), terrain materials,
+  props and buildings work in all three. Engine2 is the reference for *what* the looks are, not for how
+  they are rendered.
+- **Colour reference (the user, 2026-10-14):** the saturated, warm, shadowed colour of Engine2's hex diorama
+  prototype (`diorama.html`: sun #fff0d4 x3.0, hemisphere #d4e6ff / #5d4b33 x1.0, 4096 soft sun shadows,
+  ACES filmic tonemapping, bloom, distance fog, optional tilt-shift) is the floor, not the ceiling: the user
+  asked for better lighting than Engine2's, built with the modern techniques high-end engines publish
+  (our own implementation; no outside engine). EmberEngine's first ground port looked washed out next to
+  it: its provisional lighting skipped the 1/pi on the sky fill and had no shadows.
 
 ### 7.1 The 2.75D frame: 2D art in real light (researched 2026-10-14, to be validated)
 
