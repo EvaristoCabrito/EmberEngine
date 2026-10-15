@@ -368,7 +368,7 @@ struct SpriteStage final : Stage {
   bool passed() const override { return parade.passed(); }
 };
 
-std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Renderer& renderer, AssetManager& assets) {
+std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Renderer& renderer, AssetManager& assets, JobSystem& jobs) {
   if (o.battle) {
     const BattleStage::Content content = o.battleContent == "3d"      ? BattleStage::Content::Meshes
                                          : o.battleContent == "cards" ? BattleStage::Content::Cards
@@ -399,7 +399,7 @@ std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Rende
     m.fogLook = o.fogLook;
     m.sceneTime = o.sceneTime;
     renderer.setDebugView(o.debugView);
-    return std::make_unique<MapStage>(context, renderer, assets, m);
+    return std::make_unique<MapStage>(context, renderer, assets, jobs, m);
   }
   if (!o.sprites.empty() && o.map.empty()) return std::make_unique<SpriteStage>(context, renderer, assets, o.spriteBudgetMb);
   if (!o.meshes.empty()) return std::make_unique<MeshStage>(context, renderer, assets, o.meshGrid, o.capture.empty());
@@ -449,7 +449,7 @@ int runCapture(const Options& o) {
     DebugUi ui(context, nullptr, Renderer::outputFormat());
     Renderer renderer(context, nullptr, {o.width, o.height});
     if (!o.noUi) renderer.setUi(&ui);  // --no-ui: the scene alone (pixel checks)
-    std::unique_ptr<Stage> stage = makeStage(o, context, renderer, services.assets);
+    std::unique_ptr<Stage> stage = makeStage(o, context, renderer, services.assets, services.jobs);
     const VkExtent2D size{o.width, o.height};
     const auto testDone = [&] { return (services.streamTest && services.streamTest->done()) || (stage && stage->done()); };
     if (services.streamTest || stage) {
@@ -496,7 +496,7 @@ int runWindow(const Options& o) {
   DebugUi ui(context, window.handle(), Renderer::outputFormat());
   Renderer renderer(context, swapchain.get(), swapchain->extent());
   renderer.setUi(&ui);
-  std::unique_ptr<Stage> stage = makeStage(o, context, renderer, services.assets);
+  std::unique_ptr<Stage> stage = makeStage(o, context, renderer, services.assets, services.jobs);
 
   window.setEventHook([&](const SDL_Event& event) {
     if (ui.processEvent(event)) return;

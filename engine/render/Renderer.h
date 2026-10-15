@@ -120,8 +120,12 @@ class Renderer {
   // Tactical visibility (fog of war, ARCHITECTURE §7.0 R7): Engine2's darkness mask over the board
   // (world/FogOfWar.h). Every lit surface, card, water, shadow caster and local light reads it, none
   // bypasses it: never seen = black and casts nothing, remembered = darkened without local light, in
-  // sight = full lighting. Uploaded when `version` changes; null = no fog of war.
-  void setFogOfWar(const e2::FogMask* mask, uint64_t version);
+  // sight = full lighting. Uploaded when `version` changes; null = no fog of war. `texels`, when given, is
+  // fogTexels(*mask) packed ahead of time (on a worker), so the upload is a copy.
+  void setFogOfWar(const e2::FogMask* mask, uint64_t version, const std::vector<uint16_t>* texels = nullptr);
+  // The mask as the GPU stores it, four half floats per texel: darkness, then the volumetric fog's
+  // boundary, ground, valley. Thread-safe (reads only the mask).
+  static void fogTexels(const e2::FogMask& mask, std::vector<uint16_t>& out);
   // Volumetric fog (R7's literal fog: how the visible air looks, never what may be seen; shaders/volume.hlsl).
   // Defaults are a first look, to be tuned against the vision.
   struct VolumetricFog {
@@ -243,6 +247,7 @@ class Renderer {
   // Fog of war: the CPU copy of the mask (also used to dim local lights by their source's sight), its image.
   bool fogOn_ = false, fogUploadPending_ = false;
   e2::FogMask fog_;
+  std::vector<uint16_t> fogTexels_;  // fog_ packed for the GPU (fogTexels)
   uint64_t fogVersion_ = 0, shadowFogVersion_ = 0;
   Image fogMask_;
   uint32_t fogMaskIndex_ = kNoIndex;

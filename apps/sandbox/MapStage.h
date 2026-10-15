@@ -31,6 +31,7 @@
 #include <string_view>
 
 #include "Stage.h"
+#include "core/Jobs.h"
 #include "core/Log.h"
 #include "render/BoardGround.h"
 #include "render/FogLooks.h"
@@ -78,7 +79,7 @@ struct MapStageOptions {
 
 class MapStage final : public Stage {
  public:
-  MapStage(VulkanContext& context, Renderer& renderer, AssetManager& assets, const MapStageOptions& options)
+  MapStage(VulkanContext& context, Renderer& renderer, AssetManager& assets, JobSystem& jobs, const MapStageOptions& options)
       : renderer_(renderer),
         uploads_(context),
         ground_(context, renderer.bindless(), assets, uploads_),
@@ -86,7 +87,8 @@ class MapStage final : public Stage {
         meshes_(context, renderer.bindless(), assets, uploads_, {.geometryBytes = 256ull << 20}),
         assets_(assets),
         look_(options.look),
-        options_(options) {
+        options_(options),
+        jobs_(jobs) {
     yaw_ += glm::radians(options.turnDegrees);
     for (uint32_t i = 0; i < fogLooks().size(); ++i)
       if (options.fogLook == std::atoi(fogLooks()[i].number)) fogLook_ = i;
@@ -146,6 +148,10 @@ class MapStage final : public Stage {
     }
   }
 
+  ~MapStage() override {
+    if (fogBusy_) jobs_.wait(fogJob_);  // the sight job uses this stage's board and fog
+  }
+
   void frame(Renderer& renderer, VkExtent2D size) override {
     ground_.update();
     if (scene_) {
@@ -191,7 +197,7 @@ class MapStage final : public Stage {
     renderer.setWater(ground_.water(look_));
     renderer.setSunShadowBounds(boardCenter_, boardRadius_);
     renderer.setLightingLayers(layers_);
-    renderer.setFogOfWar(fogReady_ ? &fogMask_ : nullptr, maskVersion_);
+    renderer.setFogOfWar(fogReady_ ? &fogMask_ : nullptr, maskVersion_, &fogTexels_);
     Renderer::VolumetricFog volume;
     volume.enabled = options_.volume;
     volume.meanGround = meanGround_;
@@ -339,8 +345,10 @@ class MapStage final : public Stage {
     if (fog_) {
       const Spread fu = spread(fogUpdateMs_);
       logInfo("  fog of war: worst {} enclosed never-seen holes at once", worstHoles_);
-      logInfo("  fog of war: {} mask updates (sight + mask on the main thread): median {:.2f}, worst {:.2f} ms", fogUpdateMs_.size(), fu.median,
+      const Spread fd = spread(fogDeliverMs_);
+      logInfo("  fog of war: {} mask updates (sight + mask on a worker): median {:.2f}, worst {:.2f} ms", fogUpdateMs_.size(), fu.median,
               fu.worst);
+      logInfo("  fog of war: taking each result on the main thread: median {:.2f}, worst {:.2f} ms", fd.median, fd.worst);
     }
     logInfo("  {}", measurePassed_ ? "PASS: every frame within 16.7 ms" : "FAIL: frames over the 16.7 ms budget");
   }
@@ -461,7 +469,9 @@ class MapStage final : public Stage {
       // Fog of war: a unit not in the party's sight is not drawn at all (and casts no shadow).
       if (fog_ && u.side != "player") {
         const auto [c, r] = e2::hexAt(board_->layout(), u.x, u.z);
-        if (!fog_->visible(c, r)) {
+        // The states the shown mask was painted from (all hidden until the first mask arrives).
+        const size_t i = static_cast<size_t>(e2::indexOf(board_->layout(), c, r));
+        if (i >= fogStates_.size() || fogStates_[i] != e2::kFogVisible) {
           ++hiddenUnits_;
           continue;
         }
@@ -627,24 +637,11 @@ class MapStage final : public Stage {
       heroHex_ = {hc, hr};
     }
     if (!fog_ || !scene_ || !modelsPlaced_) return;
-    const auto started = std::chrono::steady_clock::now();
     bool changed = false;
-    if (!fogReady_) {
+    if (!occludersAdded_) {
       addOccluders();
-      fogReady_ = true;
+      occludersAdded_ = true;
       changed = true;
-      // How much the line of sight hides from each party unit where it starts.
-      const e2::HexLayout& L = board_->layout();
-      for (const e2::SceneUnit& u : scene_->units) {
-        if (u.side != "player") continue;
-        const auto [c, r] = e2::hexAt(L, u.x, u.z);
-        int inRange = 0, seen = 0;
-        for (int y = 0; y < L.rows; ++y)
-          for (int x = 0; x < L.cols; ++x)
-            if (e2::hexDistance({c, r}, {x, y}) <= e2::kSightRadius) ++inRange, seen += fog_->sightReaches({c, r}, {x, y}) ? 1 : 0;
-        logInfo("sight: {} at ({}, {}) sees {} of the {} hexes in range ({} hidden by ground or what stands on it)", u.name, c, r, seen,
-                inRange, inRange - seen);
-      }
     }
     // The party's eyes: each living player unit's hex (the scout's where it is now).
     std::vector<e2::HexPoint> party;
@@ -666,20 +663,67 @@ class MapStage final : public Stage {
         for (int s = 0; s < steps; ++s) {
           std::vector<e2::HexPoint> eyes = party;
           eyes[0] = path_[walkAt(s)];  // the hero is the first player unit
-          relight(eyes);
+          fogQueue_.push_back(std::move(eyes));
         }
       }
-      relight(party);
+      fogQueue_.push_back(party);
       lastParty_ = party;
-      fogMask_ = fog_->paint(*board_, party);
+    }
+    // Sight and the mask are worked out on a worker (6-10 ms on aldeia015); the main thread never waits on it.
+    // While a job runs it alone touches fog_; its mask reaches the renderer the frame after it finishes.
+    if (fogBusy_ && fogJob_.done()) {
+      const auto started = std::chrono::steady_clock::now();
+      fogBusy_ = false;
+      fogMask_ = std::move(fogNext_);
+      fogTexels_.swap(fogNextTexels_);
       ++maskVersion_;
+      fogReady_ = true;
+      const e2::HexLayout& L = board_->layout();
+      fogStates_.resize(static_cast<size_t>(L.cols * L.rows));
       fogCounts_ = {0, 0, 0};
-      for (int r = 0; r < board_->layout().rows; ++r)
-        for (int c = 0; c < board_->layout().cols; ++c) ++fogCounts_[fog_->state(c, r)];
+      for (int r = 0; r < L.rows; ++r)
+        for (int c = 0; c < L.cols; ++c) {
+          const uint8_t s = fog_->state(c, r);
+          fogStates_[static_cast<size_t>(e2::indexOf(L, c, r))] = s;
+          ++fogCounts_[s];
+        }
       countHoles();
-      lastFogMs_ = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count();
+      lastFogMs_ = fogJobMs_;
+      fogDeliverMs_.push_back(std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count());
       fogUpdatedThisFrame_ = true;
     }
+    if (!fogBusy_ && !fogQueue_.empty()) {
+      // Every party position queued since the last job relights in order, so what is remembered is exactly
+      // what one relight per change would leave; the mask is painted once, for the latest.
+      fogJobEyes_ = std::move(fogQueue_);
+      fogQueue_.clear();
+      fogBusy_ = true;
+      jobs_.run([this] { runFogJob(); }, &fogJob_);
+    }
+  }
+
+  // On a worker: relight every queued party position, then paint the mask for the last one.
+  void runFogJob() {
+    const auto started = std::chrono::steady_clock::now();
+    if (!sightLogged_) {
+      sightLogged_ = true;
+      // How much the line of sight hides from each party unit where it starts.
+      const e2::HexLayout& L = board_->layout();
+      for (const e2::SceneUnit& u : scene_->units) {
+        if (u.side != "player") continue;
+        const auto [c, r] = e2::hexAt(L, u.x, u.z);
+        int inRange = 0, seen = 0;
+        for (int y = 0; y < L.rows; ++y)
+          for (int x = 0; x < L.cols; ++x)
+            if (e2::hexDistance({c, r}, {x, y}) <= e2::kSightRadius) ++inRange, seen += fog_->sightReaches({c, r}, {x, y}) ? 1 : 0;
+        logInfo("sight: {} at ({}, {}) sees {} of the {} hexes in range ({} hidden by ground or what stands on it)", u.name, c, r, seen,
+                inRange, inRange - seen);
+      }
+    }
+    for (const std::vector<e2::HexPoint>& eyes : fogJobEyes_) relight(eyes);
+    fogNext_ = fog_->paint(*board_, fogJobEyes_.back());
+    Renderer::fogTexels(fogNext_, fogNextTexels_);  // the GPU's half floats, so the main thread only copies
+    fogJobMs_ = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count();
   }
 
   // Holes: groups of never-seen hexes enclosed by explored ground (touching neither the board's edge nor the
@@ -767,7 +811,17 @@ class MapStage final : public Stage {
   // Fog of war and the party.
   std::optional<e2::FogOfWar> fog_;
   e2::FogMask fogMask_;
-  bool fogReady_ = false, replayed_ = false, fogUpdatedThisFrame_ = false;
+  bool fogReady_ = false, replayed_ = false, fogUpdatedThisFrame_ = false, occludersAdded_ = false;
+  std::vector<uint8_t> fogStates_;  // per hex, as of the mask on show (main thread)
+  // The sight job (runFogJob): while fogBusy_, only the worker touches fog_, fogJobEyes_, fogNext_, fogJobMs_.
+  JobSystem& jobs_;
+  JobCounter fogJob_;
+  bool fogBusy_ = false, sightLogged_ = false;
+  std::vector<std::vector<e2::HexPoint>> fogQueue_, fogJobEyes_;  // party positions waiting / being relit, in order
+  e2::FogMask fogNext_;
+  std::vector<uint16_t> fogTexels_, fogNextTexels_;  // fogMask_ / fogNext_ packed for the GPU (Renderer::fogTexels)
+  double fogJobMs_ = 0.0;
+  std::vector<double> fogDeliverMs_;  // main-thread cost of taking a finished job's result
   uint64_t maskVersion_ = 0;
   std::vector<e2::HexPoint> path_, lastParty_;
   int hero_ = -1;

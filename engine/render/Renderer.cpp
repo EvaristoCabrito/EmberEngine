@@ -465,12 +465,25 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   spriteShadowPipeline_ = createGraphicsPipeline(context, layout, spriteShadow);
 }
 
-void Renderer::setFogOfWar(const e2::FogMask* mask, uint64_t version) {
+void Renderer::setFogOfWar(const e2::FogMask* mask, uint64_t version, const std::vector<uint16_t>* texels) {
   fogOn_ = mask && mask->width > 0 && mask->height > 0;
   if (!fogOn_ || version == fogVersion_) return;
   fog_ = *mask;
+  if (texels && texels->size() == mask->alpha.size() * 4) fogTexels_ = *texels;
+  else fogTexels(*mask, fogTexels_);
   fogVersion_ = version;
   fogUploadPending_ = true;
+}
+
+void Renderer::fogTexels(const e2::FogMask& mask, std::vector<uint16_t>& out) {
+  const size_t texels = mask.alpha.size();
+  out.resize(texels * 4);
+  for (size_t i = 0; i < texels; ++i) {
+    out[i * 4 + 0] = glm::packHalf1x16(mask.alpha[i] / 255.0f);
+    out[i * 4 + 1] = glm::packHalf1x16(mask.boundary.empty() ? 0.0f : mask.boundary[i]);
+    out[i * 4 + 2] = glm::packHalf1x16(mask.ground.empty() ? 0.0f : mask.ground[i]);
+    out[i * 4 + 3] = glm::packHalf1x16(mask.valley.empty() ? 0.0f : mask.valley[i]);
+  }
 }
 
 // The mask as the shaders sample it (bilinear, clamped; outside it = never seen), as sight for local lights.
@@ -1144,13 +1157,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       destroyBuffer(context_, frame.fogStaging);
       frame.fogStaging = createHostBuffer(context_, texels * 8, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     }
-    auto* half = static_cast<uint16_t*>(frame.fogStaging.mapped);
-    for (size_t i = 0; i < texels; ++i) {
-      half[i * 4 + 0] = glm::packHalf1x16(fog_.alpha[i] / 255.0f);
-      half[i * 4 + 1] = glm::packHalf1x16(fog_.boundary.empty() ? 0.0f : fog_.boundary[i]);
-      half[i * 4 + 2] = glm::packHalf1x16(fog_.ground.empty() ? 0.0f : fog_.ground[i]);
-      half[i * 4 + 3] = glm::packHalf1x16(fog_.valley.empty() ? 0.0f : fog_.valley[i]);
-    }
+    std::memcpy(frame.fogStaging.mapped, fogTexels_.data(), texels * 8);  // packed by setFogOfWar / fogTexels
     transition(cmd, fogMask_.image, fogMask_.aspect,
                {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
