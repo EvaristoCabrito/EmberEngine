@@ -268,6 +268,15 @@ build.bat release          # or debug; output in build/<config>/bin
   (sprites were black). The user: sky / moon / stars **later** ("deixa o céu para depois"); they want the painting at the
   horizon with the real sky above it (not done).
 
+## Local session 2026-10-15 (night): the cloud code built on the PC
+
+- Release + debug build clean (MSVC). Fog look 008 (the map's own mist) removed (`ace00d8`): it lost the GPU
+  (VK_ERROR_DEVICE_LOST) on every map; cause not found.
+- Debug + validation: aldeia015 with scene, units, poses, battle rules: capture exit 0, 0 errors; title screen
+  window 25 s: 0 errors. **Not verified:** clicking through title → mission → battle, Tática, combat play.
+- `jogo/Sandbox.exe` now the local MSVC release build (needs the VC++ runtime, present on this PC); shaders
+  unchanged. The previous cloud exe still had look 008. Tested: aldeia015 capture exit 0. NOT pushed yet.
+
 ## Next
 
 The user's verdict (2026-10-15): the engine as seen is worse than Engine2 ("worst colours and render I've ever
