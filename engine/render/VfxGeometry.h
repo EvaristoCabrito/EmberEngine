@@ -64,6 +64,13 @@ inline std::vector<VfxVertex> icosahedron(float radius, int detailLevel) {
   return detail::polyhedron(v, i, radius, detailLevel);
 }
 
+// TetrahedronGeometry(radius, detail).
+inline std::vector<VfxVertex> tetrahedron(float radius, int detailLevel) {
+  const std::vector<glm::vec3> v = {{1, 1, 1}, {-1, -1, 1}, {-1, 1, -1}, {1, -1, -1}};
+  const std::vector<int> i = {2, 1, 0, 0, 3, 2, 1, 3, 0, 2, 3, 1};
+  return detail::polyhedron(v, i, radius, detailLevel);
+}
+
 // OctahedronGeometry(radius, detail).
 inline std::vector<VfxVertex> octahedron(float radius, int detailLevel) {
   const std::vector<glm::vec3> v = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};

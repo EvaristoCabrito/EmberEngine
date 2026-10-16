@@ -60,7 +60,9 @@ int SpellEffects::looks(const std::string& kind) {
   // 02: Engine2's own effect, ported (render/vfx/*).
   if (kind == "magicMissile" || kind == "magicMissileV2") return 2;
   // 01 of a spell with no flipbook-card version: Engine2's own effect, ported.
-  if (kind == "fireball" || kind == "bless" || kind == "causticVenom" || kind == "phantasmalForce") return 1;
+  if (kind == "fireball" || kind == "bless" || kind == "causticVenom" || kind == "phantasmalForce" ||
+      kind == "webOfDreams")
+    return 1;
   static const char* kVersion01[] = {"lightning", "lightningTier3", "shock", "frost", "cureMinor", "longShot", "piercing", "piercingThrust",
                                      "doubleStrike"};
   for (const char* k : kVersion01)
@@ -74,6 +76,7 @@ int SpellEffects::engine2Look(const std::string& kind) {
   if (kind == "bless") return 1;                                     // BlessVFX
   if (kind == "causticVenom") return 1;                              // CausticVenomVFX
   if (kind == "phantasmalForce") return 1;                           // PhantasmalForceVFX
+  if (kind == "webOfDreams") return 1;                               // WebOfDreamsVFX
   return 0;
 }
 
@@ -112,6 +115,7 @@ float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& c
     return MagicMissileV2::impactDelay(engine2Origin(caster), targets.front().body);
   if (kind == "fireball" && look == 1 && !targets.empty()) return Fireball::travelSeconds(engine2Origin(caster), fireballTarget(targets));
   if (kind == "phantasmalForce" && look == 1) return PhantasmalForce::kImpactAt;
+  if (kind == "webOfDreams" && look == 1) return WebOfDreams::kShotTravel;
   if (kind == "causticVenom" && look == 1 && !targets.empty())
     return CausticVenom::kCharge + CausticVenom::travelSeconds(engine2Origin(caster), fireballTarget(targets));
   if (kind == "bless" && look == 1) {
@@ -138,6 +142,13 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
   if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2) missiles_.emplace_back(engine2Origin(caster), targets.front().body, start);
   else if (kind == "fireball") fireballs_.emplace_back(engine2Origin(caster), fireballTarget(targets), fireballArea(targets), start);
   else if (kind == "phantasmalForce") phantasms_.emplace_back(targets.front().body, start);
+  else if (kind == "webOfDreams") {
+    // The zone on the aimed hex (WEB_OF_DREAMS.size 1: webZoneRadiusTiles = sqrt 3 + 1); the units in it wrapped. It holds
+    // as Engine2's preview does (2.6 s after the cast), then releases.
+    std::vector<glm::vec3> wrapped;
+    for (const Spot& s : targets) wrapped.push_back(engine2Origin(s));
+    webs_.emplace_back(targets.front().feet + glm::vec3(0.0f, 0.04f, 0.0f), std::sqrt(3.0f) + 1.0f, wrapped, start, start + 2.6f);
+  }
   else if (kind == "causticVenom") {
     std::vector<glm::vec3> hexes;
     for (const Spot& s : targets) hexes.push_back(s.feet + glm::vec3(0.0f, 0.04f, 0.0f));
@@ -414,6 +425,7 @@ bool SpellEffects::active(float now) const {
   if (std::any_of(blesses_.begin(), blesses_.end(), [&](const Bless& b) { return !b.done(now); })) return true;
   if (std::any_of(venoms_.begin(), venoms_.end(), [&](const CausticVenom& v) { return !v.done(now); })) return true;
   if (std::any_of(phantasms_.begin(), phantasms_.end(), [&](const PhantasmalForce& p) { return !p.done(now); })) return true;
+  if (std::any_of(webs_.begin(), webs_.end(), [&](const WebOfDreams& w) { return !w.done(now); })) return true;
   return std::any_of(elements_.begin(), elements_.end(), [&](const Element& e) { return e.end > now; });
 }
 
@@ -430,6 +442,8 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   std::erase_if(venoms_, [&](const CausticVenom& v) { return v.done(now); });
   std::erase_if(phantasms_, [&](const PhantasmalForce& p) { return p.done(now); });
   for (PhantasmalForce& p : phantasms_) p.build(now, camera, vfx_, vfxLights);
+  std::erase_if(webs_, [&](const WebOfDreams& w) { return w.done(now); });
+  for (WebOfDreams& w : webs_) w.build(now, camera, vfx_, vfxLights);
   if (!venoms_.empty()) {
     const ElementSpritesV2 poison = elementV2(VfxElement::Poison);
     for (CausticVenom& v : venoms_) v.build(now, camera, poison, vfx_, vfxLights);

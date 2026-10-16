@@ -38,7 +38,7 @@ struct VfxInstance {
 static const uint kMaterialBasic = 0, kMaterialMissileCore = 1, kMaterialMissileShell = 2, kMaterialMissileTrail = 3,
                   kMaterialStandard = 4, kMaterialFlame = 5, kMaterialImpactParticle = 6, kMaterialImpactFlash = 7,
                   kMaterialBlessWave = 8, kMaterialSpriteSheet = 9, kMaterialVenomSmoke = 10, kMaterialPfTendril = 11, kMaterialPfCore = 12,
-                  kMaterialPfShell = 13;
+                  kMaterialPfShell = 13, kMaterialWebThread = 14;
 
 struct Push {
   uint64_t vertices;   // VfxVertex[]
@@ -232,6 +232,24 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
     p.xz += float2(wave2, wave) * splineNoise * sin(along * 3.14159);
     p *= lerp(1.0, 0.07, collapse);
   }
+  float webPulse = 0.0, webVisible = 0.0;
+  if (d.material == kMaterialWebThread) {
+    // THREAD_VERTEX: a thread grows in from its delay, waves, tightens, carries a travelling pulse. aAlong = u;
+    // aDelay / aPhase unpacked from v.
+    const float t = d.params0.x, pulseSpeed = d.params0.y, formation = d.params0.z, tightening = d.params0.w, displacement = d.params1.x;
+    const float along = v.u;
+    const float k = floor(v.v / 2.0);
+    const float delay = v.v - 2.0 * k, phase = k / 1000.0 * 6.2831853;
+    webVisible = smoothstep(delay, delay + 0.18, formation - along * 0.2);
+    const float wave = sin(t * 2.7 + along * 17.0 + phase) * displacement;
+    const float wave2 = cos(t * 1.9 - along * 12.0 + phase * 1.7) * displacement;
+    p.x += wave * (0.25 + along);
+    p.y += wave2 * (0.35 + along);
+    p.z += sin(t * 2.1 + along * 9.0 + phase) * displacement * 1.6;
+    p.xy *= lerp(1.0, 1.0 - tightening, smoothstep(0.68, 0.92, formation));
+    const float pulse = frac(t * pulseSpeed * 0.27 + along + phase);
+    webPulse = smoothstep(0.0, 0.07, pulse) * (1.0 - smoothstep(0.11, 0.19, pulse));
+  }
   if (d.material == kMaterialPfCore || d.material == kMaterialPfShell) {
     // CORE_VERTEX / SHELL_VERTEX: the surface pushed along its normal by a moving interference; vWarp rides in heat.
     const float t = d.params0.x, distortion = d.params0.y;
@@ -260,7 +278,7 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
   world = mul(world, d.model);
   normal = mul(normal, d.model);
   o.position = mul(world, f.viewProjection);
-  o.local = p;
+  o.local = d.material == kMaterialWebThread ? float3(webVisible, webPulse, 0.0) : p;  // THREAD: vVisible, vPulse
   o.world = world.xyz;
   o.normal = normalize(normal.xyz + 1e-6);
   if (sight.local <= 0.0) o.position = float4(0, 0, -1, 1);  // out of sight: nothing (an effect is light)
@@ -380,6 +398,23 @@ float4 PSMain(VSOut i) : SV_Target0 {
     const float edge = pow(1.0 - abs(viewZ), 1.5);
     c = lerp(float3(0.28, 0.16, 0.96), float3(0.86, 0.75, 1.0), saturate(edge + abs(i.heat) * distortion)) * 2.3;
     a = opacity * (0.2 + edge * 0.8);
+  } else if (d.material == kMaterialWebThread) {
+    // THREAD_FRAGMENT: indigo to lavender along the thread, a bevel and a rim in view space.
+    const MeshFrame f = loadFrame(push.frame);
+    const float energy = d.params1.y, opacity = d.params1.z;
+    const float along = i.uv.x, visible = i.local.x, pulse = i.local.y;
+    const float3 indigo = float3(0.12, 0.075, 0.68), violet = float3(0.42, 0.18, 0.94), lavender = float3(0.78, 0.66, 1.0),
+                 cyanLavender = float3(0.57, 0.78, 1.0);
+    float3 color = lerp(indigo, violet, smoothstep(0.02, 0.72, along));
+    color = lerp(color, lavender, saturate(pulse * 0.92 + smoothstep(0.76, 1.0, along) * 0.16));
+    color = lerp(color, cyanLavender, pulse * 0.12);
+    const float3 viewNormal = normalize(mul(float4(normalize(i.normal), 0.0), f.view).xyz);
+    const float3 viewDirection = normalize(-mul(float4(i.world, 1.0), f.view).xyz);
+    const float bevel = 0.42 + 0.58 * abs(dot(viewNormal, normalize(float3(-0.36, 0.48, 0.8))));
+    const float rim = pow(1.0 - abs(dot(viewNormal, viewDirection)), 2.0);
+    color = color * bevel + lavender * rim * 0.62;
+    a = opacity * visible * (0.48 + pulse * 0.5);
+    c = color * energy * (0.72 + pulse * 1.6);
   } else if (d.material == kMaterialSpriteSheet) {
     // SpriteMaterial (map = the sheet's cell, colour = a scalar, opacity, alphaTest 0.02), additive.
     const float4 texel = gTextureArrays[NonUniformResourceIndex(d.texture)].Sample(gSamplers[push.samplerIndex], float3(cellToTexture(d, i.uv), i.particleB.y));

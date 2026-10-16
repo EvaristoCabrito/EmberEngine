@@ -41,6 +41,8 @@ enum class VfxMaterial : uint32_t {
   PfTendril = 11,      // PhantasmalForceVFX TENDRIL_VERTEX + TENDRIL_FRAGMENT (uv.x = aAlong)
   PfCore = 12,         // PhantasmalForceVFX CORE_VERTEX + CORE_FRAGMENT
   PfShell = 13,        // PhantasmalForceVFX SHELL_VERTEX + SHELL_FRAGMENT
+  WebThread = 14,      // WebOfDreamsVFX THREAD_VERTEX + THREAD_FRAGMENT (u = aAlong; v packs aDelay and aPhase:
+                       // v = delay + 2 x round(phase / 2pi x 1000))
 };
 
 // Per-instance data (three InstancedMesh matrices, or a particle's attributes). Matches VfxInstance in vfx.hlsl. For
