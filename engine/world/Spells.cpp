@@ -215,11 +215,11 @@ int firstAt(const Battle& b, BattleHex c) {
     if (b.units()[i].alive && occupies(b.units()[i], c.x, c.y)) return static_cast<int>(i);
   return -1;
 }
-// targetable: the party may aim at it (alive, an enemy or neutral, not under the fog).
+// targetable: the party may aim at it (alive, an enemy or neutral, not under the fog; debugFreeCast: any side).
 bool targetable(const Battle& b, int u) {
   if (u < 0) return false;
   const BattleUnit& v = b.units()[static_cast<size_t>(u)];
-  return v.alive && (v.side == "enemy" || v.side == "neutral") && !v.hidden;
+  return v.alive && (b.debugFreeCast() || v.side == "enemy" || v.side == "neutral") && !v.hidden;
 }
 
 // piercingRay: stops at a barricade, a shot-blocking hex, or high ground the shooter is not on.
@@ -514,7 +514,7 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
     // magicMissileTargetError, then targetable
     if (here < 0 || !b.units()[static_cast<size_t>(here)].alive || b.units()[static_cast<size_t>(here)].hidden) return fail("Não há inimigo visível nessa casa.");
     const std::string& side = b.units()[static_cast<size_t>(here)].side;
-    if (side != "enemy" && side != "neutral") return fail("Míssil Mágico não pode mirar em aliados.");
+    if (!b.debugFreeCast() && side != "enemy" && side != "neutral") return fail("Míssil Mágico não pode mirar em aliados.");
     if (d > kMissileRange) return fail("Alvo fora de alcance (máximo 5 hexes).");
     if (!clearShot(b, from, cell, false)) return fail("O tiro está bloqueado.");
     return targetable(b, here) ? true : fail("Não há inimigo visível nessa casa.");
@@ -529,6 +529,7 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
     if (d > kCureMinorRange) return fail("Alvo fora de alcance (máximo 2 hexes).");
     if (here < 0 || !b.units()[static_cast<size_t>(here)].alive) return fail("Escolha uma aliada na casa selecionada.");
     const BattleUnit& w = b.units()[static_cast<size_t>(here)];
+    if (b.debugFreeCast()) return true;  // validHealTarget: anyone alive in range
     if (w.side != "player") return fail("Essa cura só pode ser usada em uma aliada.");
     return w.hp < w.maxHp ? true : fail("Essa aliada está com a vida cheia.");
   }

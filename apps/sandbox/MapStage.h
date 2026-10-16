@@ -105,6 +105,7 @@ struct MapStageOptions {
   bool scout = false;
   // Volumetric fog (R7's literal fog, shaders/volume.hlsl): on unless switched off (--volume 0).
   bool volume = true;
+  bool airParticles = true;  // the map's wisps and dust motes (Dev Controls "Efeitos atmosféricos" off: none)
   int fogLook = 3;  // the fog look shown first (render/FogLooks.h numbers)
   // Lighting (also in the panel): 0 the old prototype day (every capture before 2026-10-15), 1 Engine2's 3D presets for
   // the map's time of day (the floor), 2 physical sky with Engine2's strengths, 3 real (default): lux, physical camera.
@@ -2093,7 +2094,7 @@ class MapStage final : public Stage {
   // Engine2 ThreeAtmosphereV2: the map's rising wisps (wispIntensity x 2000, wispSpeed, wispColor) and the dust
   // motes always in the air (brighter in sunlight); additive and over everything, as there (no depth test).
   void drawAirParticles() {
-    if (!scene_ || flat_) return;
+    if (!scene_ || flat_ || !options_.airParticles) return;
     const e2::MapDraft& d = board_->draft();
     static std::vector<float> wispSeeds, dustSeeds;
     if (wispSeeds.empty()) {

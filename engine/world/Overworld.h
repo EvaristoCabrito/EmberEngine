@@ -74,18 +74,22 @@ class Overworld {
   bool heroRecruited(const std::string& hero, const Json& save) const;
   int maxHp(const Json& save, const std::string& hero) const;  // statsFor(class, level).hp, 0 without a class
   bool wispForestUncleared(const Json& save) const;
-  bool canStep(const Json& save, OverworldHex from, OverworldHex to) const;  // canStepOverworld (campaign, not test)
+  // `test` everywhere below: Engine2's Modo teste (GameApp testMode): every hex walkable, every hero counts as in the
+  // party, every mission and location open.
+  bool canStep(const Json& save, OverworldHex from, OverworldHex to, bool test = false) const;  // canStepOverworld
   // stepOverworld: the save after one hex step and what happened on the way; the save unchanged (and no event, no
   // random number) when the step is not allowed.
-  Json step(const Json& save, OverworldHex to, Mulberry32& rng, std::optional<OverworldEvent>& event) const;
+  Json step(const Json& save, OverworldHex to, Mulberry32& rng, std::optional<OverworldEvent>& event, bool test = false) const;
+  // teleportOverworld (Modo teste only): straight to any hex, no adjacency check, no day / ration / HP cost.
+  static Json teleport(const Json& save, OverworldHex to);
 
   // progression.ts / access.ts
   int currentChapter(const Json& save) const;
-  std::string missionAccess(const std::string& id, const Json& save) const;  // hidden / revealed / available / completed
-  std::string missionStatus(const std::string& id, const Json& save, const std::vector<std::string>& order) const;  // locked / available / done
-  std::string locationStatus(const MapLocation& location, const Json& save) const;
-  std::vector<const MapMission*> visibleMissionsOf(const MapLocation& location, const Json& save) const;
-  bool locationVisible(const MapLocation& location, const Json& save) const;  // mapVisibleLocations
+  std::string missionAccess(const std::string& id, const Json& save, bool test = false) const;  // hidden / revealed / available / completed
+  std::string missionStatus(const std::string& id, const Json& save, const std::vector<std::string>& order, bool test = false) const;  // locked / available / done
+  std::string locationStatus(const MapLocation& location, const Json& save, bool test = false) const;
+  std::vector<const MapMission*> visibleMissionsOf(const MapLocation& location, const Json& save, bool test = false) const;
+  bool locationVisible(const MapLocation& location, const Json& save, bool test = false) const;  // mapVisibleLocations
 
   // Small helpers the map screen shows.
   static std::string travelTimeLabel(int hours);
@@ -95,8 +99,8 @@ class Overworld {
   static std::string timeOfDay(int hour);     // campaignTime.ts campaignTimeOfDay
 
   const Json& tables() const { return tables_; }
-  // data.ts partyBagHasRoom (save, extra) for the campaign (not test mode).
-  bool bagHasRoom(const Json& save, int extra) const;
+  // data.ts partyBagHasRoom (save, extra, test): test mode counts all six heroes' bags.
+  bool bagHasRoom(const Json& save, int extra, bool test = false) const;
   // progression.ts evaluate: a quest's availability, a gate's condition.
   bool conditionHolds(const Json& condition, const Json& save) const { return evaluate(condition, save, false); }
 
@@ -114,7 +118,7 @@ class Overworld {
   int missionIndex(const std::string& id) const;
   bool evaluate(const Json& condition, const Json& save, bool storedChapter) const;
   int questStage(const std::string& questId, const Json& save) const;
-  bool lockedMission(const std::string& id, const Json& save, const std::vector<std::string>& order) const;
+  bool lockedMission(const std::string& id, const Json& save, const std::vector<std::string>& order, bool test) const;
   const MapLocation* previousPopulatedLocation(const MapLocation& location) const;
 
   std::vector<OverworldCell> cells_;

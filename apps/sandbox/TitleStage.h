@@ -4,7 +4,7 @@
 // (public/game/title/title-bg.jpg, centre 42%, under the dark veil), the "EMBER ASHES" mark, the eyebrow, the big
 // "Ember", the tagline and the ember menu buttons. "Nova campanha" and "Continuar" open the six save slots on Engine2's
 // save-board art (public/game/ui/old-ember-save-board.png, CampaignUi.h SlotScreen); a chosen slot starts its campaign
-// on the world map (OverworldStage). "Modo teste" (bottom left) is Engine2's test entry: every exported map.
+// on the world map (OverworldStage). "Modo teste" (bottom left) is Engine2's test entry (TestModeStage.h).
 // "Opções" and "Como jogar" open Engine2's dialogs.
 // Engine2's art is read at run time from its public folder; the fonts are bundled (content/fonts).
 
@@ -45,6 +45,8 @@ class TitleStage : public Stage {
       : paths_(std::move(paths)), campaign_(campaign), play_(std::move(play)), startCampaign_(std::move(startCampaign)), quit_(std::move(quit)) {
     findMissions();
   }
+  // "Modo teste" opens Engine2's test menu through this (without it: the old list of every exported map).
+  void onTestMode(std::function<void()> open) { testMode_ = std::move(open); }
   // Captures end after a second of frames (time for Engine2's art to load).
   bool done() const override { return frames_ > 60; }
   // Captures: the slot screen as "Nova campanha" (false) or "Continuar" (true) opens it.
@@ -183,7 +185,10 @@ class TitleStage : public Stage {
       const bool hover = ImGui::IsItemHovered();
       spacedText(dl, uiFont(UiFont::Ui), text, {at.x + 0.45f * rem_, at.y + 0.3f * rem_},
                  hover ? IM_COL32(239, 212, 165, 255) : IM_COL32(220, 203, 177, 117), label, 0.14f, false);
-      if (clicked) screen_ = Screen::Missions;
+      if (clicked) {
+        if (testMode_) testMode_();  // Engine2's test menu (TestModeStage.h)
+        else screen_ = Screen::Missions;
+      }
     }
   }
 
@@ -452,6 +457,7 @@ class TitleStage : public Stage {
   std::function<void(const MissionEntry&)> play_;
   std::function<void()> startCampaign_;
   std::function<void()> quit_;
+  std::function<void()> testMode_;
   std::vector<MissionEntry> missions_;
   Screen screen_ = Screen::Title;
   size_t chosen_ = 0;

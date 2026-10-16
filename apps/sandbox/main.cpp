@@ -79,6 +79,7 @@
 #include "MapStage.h"
 #include "TitleStage.h"
 #include "OverworldStage.h"
+#include "TestModeStage.h"
 #include "world/Campaign.h"
 #include "world/Overworld.h"
 #include "MeshStage.h"
@@ -123,6 +124,7 @@ struct Options {
   int starLook = 3;
   std::string heroes;
   std::string battleRules;
+  std::string devGfx;  // captures: Dev Controls' switches from this file (DevGfx.h) applied to the map
   // The title screen (Engine2's, TitleStage.h): its mission list is every imported scene in `scenes` whose map is in
   // `maps` (default: Engine2's maps/ember beside its public folder).
   bool title = false;
@@ -188,6 +190,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--star-look" && hasValue) o.starLook = std::atoi(argv[++i]);
     else if (arg == "--heroes" && hasValue) o.heroes = argv[++i];
     else if (arg == "--battle-rules" && hasValue) o.battleRules = argv[++i];
+    else if (arg == "--dev-gfx" && hasValue) o.devGfx = argv[++i];
     else if (arg == "--title") o.title = true;
     else if (arg == "--save-bank" && hasValue) o.saveBank = argv[++i];
     else if (arg == "--map-ui" && hasValue) o.mapUi = argv[++i];
@@ -428,7 +431,9 @@ std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Rende
   }
   if (!o.map.empty()) {
     renderer.setDebugView(o.debugView);
-    return std::make_unique<MapStage>(context, renderer, assets, jobs, mapOptions(o));
+    MapStageOptions options = mapOptions(o);
+    if (!o.devGfx.empty()) DevGfx::load(o.devGfx).apply(options, renderer);
+    return std::make_unique<MapStage>(context, renderer, assets, jobs, options);
   }
   if (!o.sprites.empty() && o.map.empty()) return std::make_unique<SpriteStage>(context, renderer, assets, o.spriteBudgetMb);
   if (!o.meshes.empty()) return std::make_unique<MeshStage>(context, renderer, assets, o.meshGrid, o.capture.empty());
@@ -520,6 +525,8 @@ int runCapture(const Options& o) {
     const bool hasCampaign = o.title && campaign.open("content/engine2/campaign.json", o.saveBank.empty() ? e2::Campaign::savePath() : std::filesystem::path(o.saveBank));
     std::unique_ptr<Stage> stage;
     e2::Overworld world;
+    std::optional<TestSession> testSession;
+    DevGfx devGfx;  // captures: Engine2's defaults, never the PC's saved switches
     CampaignPaths campaignPaths;
     campaignPaths.engine2Public = o.engine2;
     campaignPaths.maps = !o.maps.empty() ? std::filesystem::path(o.maps) : std::filesystem::path(o.engine2).parent_path() / "maps" / "ember";
@@ -529,6 +536,22 @@ int runCapture(const Options& o) {
       auto map = std::make_unique<OverworldStage>(campaignPaths, campaign, world, OverworldStage::Callbacks{});
       if (!o.mapUi.empty()) map->preview(o.mapUi);
       stage = std::move(map);
+    } else if (o.title && o.titleScreen.starts_with("test") && hasCampaign && world.load("content/engine2/overworld.json")) {
+      // --title-screen test / test-choice / test-classic / test-scenarios / test-rpg / test-dev: Modo teste's screens (--map-ui
+      // location:<id> opens a place's panel on the classic map; on the RPG map the usual --map-ui panels).
+      testSession = freshTestSession(campaign);
+      using S = TestModeStage::Screen;
+      if (o.titleScreen == "test-rpg") {
+        testSession->mapMode = "rpg";
+        auto map = std::make_unique<OverworldStage>(campaignPaths, campaign, world, OverworldStage::Callbacks{}, std::string{}, &testSession->save);
+        if (!o.mapUi.empty()) map->preview(o.mapUi);
+        stage = std::move(map);
+      } else {
+        const S screen = o.titleScreen == "test-dev" ? S::DevControls : o.titleScreen == "test-choice" ? S::MapChoice : o.titleScreen == "test-classic" ? S::WorldMap : o.titleScreen == "test-scenarios" ? S::Scenarios : S::Menu;
+        auto test = std::make_unique<TestModeStage>(campaignPaths, campaign, world, *testSession, devGfx, TestModeStage::Callbacks{}, screen);
+        if (o.mapUi.starts_with("location:")) test->previewLocation(o.mapUi.substr(9));
+        stage = std::move(test);
+      }
     } else if (o.title) {
       TitleStage::Paths paths;
       paths.engine2Public = o.engine2, paths.maps = campaignPaths.maps, paths.scenes = o.scenes;
@@ -595,12 +618,23 @@ int runWindow(const Options& o) {
   const bool hasCampaign = campaign.open("content/engine2/campaign.json", o.saveBank.empty() ? e2::Campaign::savePath() : std::filesystem::path(o.saveBank));
   e2::Overworld world;
   const bool hasWorld = world.load("content/engine2/overworld.json");
+  // Dev Controls' switches (Modo teste), applied to every map opened here.
+  DevGfx devGfx = DevGfx::load();
   std::string playing;        // the campaign mission being fought (its result goes into the active slot)
   std::string campaignNote;   // what the world map says when the fight is left
   CampaignPaths paths;
   paths.engine2Public = o.engine2;
   paths.maps = !o.maps.empty() ? std::filesystem::path(o.maps) : std::filesystem::path(o.engine2).parent_path() / "maps" / "ember";
   paths.scenes = o.scenes;
+  // Engine2's Modo teste (TestModeStage.h): the session (its own save, the travel style) from the title's "Modo teste"
+  // until the player goes back to the title; nothing of it is written to the bank.
+  std::optional<TestSession> testSession;
+  std::optional<TestModeStage::Screen> openTest;  // a test-mode screen to open
+  bool openTestRpg = false;                       // the RPG map on the test session's save
+  auto toggleFullscreen = [&] {
+    const bool full = (SDL_GetWindowFlags(window.handle()) & SDL_WINDOW_FULLSCREEN) != 0;
+    SDL_SetWindowFullscreen(window.handle(), !full);
+  };
   auto makeTitle = [&] {
     TitleStage::Paths titlePaths;
     titlePaths.engine2Public = paths.engine2Public, titlePaths.maps = paths.maps, titlePaths.scenes = paths.scenes;
@@ -611,8 +645,28 @@ int runWindow(const Options& o) {
           quit.type = SDL_EVENT_QUIT;
           SDL_PushEvent(&quit);
         });
+    if (hasCampaign && hasWorld)
+      title->onTestMode([&] {
+        testSession = freshTestSession(campaign);  // GameApp ?start=test: a fresh test session every entry
+        openTest = TestModeStage::Screen::Menu;
+      });
     if (!campaignNote.empty()) title->showCampaign(std::exchange(campaignNote, {}));
     return title;
+  };
+  auto makeTest = [&](TestModeStage::Screen screen) -> std::unique_ptr<Stage> {
+    TestModeStage::Callbacks callbacks;
+    callbacks.title = [&] { backToTitle = true; };
+    callbacks.rpgMap = [&] { openTestRpg = true; };
+    callbacks.play = [&](const MissionEntry& m) { pending = m; };
+    callbacks.fullscreen = toggleFullscreen;
+    return std::make_unique<TestModeStage>(paths, campaign, world, *testSession, devGfx, std::move(callbacks), screen);
+  };
+  auto makeTestRpg = [&]() -> std::unique_ptr<Stage> {
+    OverworldStage::Callbacks callbacks;
+    callbacks.play = [&](const MissionEntry& m) { pending = m; };
+    callbacks.title = [&] { openTest = TestModeStage::Screen::Menu; };  // onBack / Voltar à tela inicial: the test menu
+    callbacks.fullscreen = toggleFullscreen;
+    return std::make_unique<OverworldStage>(paths, campaign, world, std::move(callbacks), std::string{}, &testSession->save);
   };
   auto makeMap = [&]() -> std::unique_ptr<Stage> {
     if (!hasWorld) {
@@ -622,10 +676,7 @@ int runWindow(const Options& o) {
     OverworldStage::Callbacks callbacks;
     callbacks.play = [&](const MissionEntry& m) { pending = m; };
     callbacks.title = [&] { backToTitle = true; };
-    callbacks.fullscreen = [&] {
-      const bool full = (SDL_GetWindowFlags(window.handle()) & SDL_WINDOW_FULLSCREEN) != 0;
-      SDL_SetWindowFullscreen(window.handle(), !full);
-    };
+    callbacks.fullscreen = toggleFullscreen;
     return std::make_unique<OverworldStage>(paths, campaign, world, std::move(callbacks), std::exchange(campaignNote, {}));
   };
   // campaign.ts finishBattle (its heroes part and the mission's completion): each hero's level, XP and HP into the
@@ -688,8 +739,15 @@ int runWindow(const Options& o) {
     std::optional<MapStageOptions> retry;
     if (auto* map = dynamic_cast<MapStage*>(stage.get())) {
       if (map->wantsTitle()) {
-        if (!playing.empty() && !map->battleResult().empty()) finishCampaignFight(*map);
-        else backToTitle = true;
+        if (testSession) {
+          // A test battle never writes anything (GameApp: every save write is !testMode); back to the test map.
+          if (testSession->mapMode == "rpg") openTestRpg = true;
+          else openTest = TestModeStage::Screen::WorldMap;
+        } else if (!playing.empty() && !map->battleResult().empty()) {
+          finishCampaignFight(*map);
+        } else {
+          backToTitle = true;
+        }
       }
       if (map->wantsRetry()) {
         retry = map->options();
@@ -701,12 +759,17 @@ int runWindow(const Options& o) {
       stage.reset();
       stage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, *retry);
     }
-    if (pending || backToTitle || openMap) {
+    if (pending || backToTitle || openMap || openTest || openTestRpg) {
       vkDeviceWaitIdle(context.device);
       stage.reset();
       if (backToTitle) {
         playing.clear();
+        testSession.reset();  // GameApp goToTitle: every trace of test mode wiped
         stage = makeTitle();
+      } else if (openTest && testSession) {
+        stage = makeTest(*openTest);
+      } else if (openTestRpg && testSession) {
+        stage = makeTestRpg();
       } else if (pending) {
         Options mission = o;
         mission.map = pending->map.string();
@@ -714,6 +777,7 @@ int runWindow(const Options& o) {
         mission.battleRules = pending->battle.string();
         renderer.setDebugView(o.debugView);
         MapStageOptions options = mapOptions(mission);
+        devGfx.apply(options, renderer);
         playing = pending->campaignId;
         if (!playing.empty()) {
           // The heroes as the save has them (levels and XP).
@@ -727,7 +791,8 @@ int runWindow(const Options& o) {
         stage = makeMap();
       }
       pending.reset();
-      backToTitle = false, openMap = false;
+      openTest.reset();
+      backToTitle = false, openMap = false, openTestRpg = false;
     }
   }
   return 0;

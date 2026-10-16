@@ -251,10 +251,17 @@ float3 applyVolume(MeshFrame f, float3 color, float3 position) {
 
 // Debug view 3 (fog of war): mask darkness in red, local-light sight in green, blue = a surface was drawn.
 static const uint kDebugFog = 3u;
+// Dev Controls "Fog of war — debug" (Engine2 fogDebug): the fog's states as flat colours instead of the feathered
+// mask: green = in sight, amber = explored, red = never seen (FogOfWar.h alphas 0 / 0.6 / 1).
+static const uint kDebugFogStates = 4u;
+float3 fogStateColor(float alpha) {
+  return alpha < 0.3 ? float3(0.2, 0.8, 0.25) : alpha < 0.8 ? float3(0.95, 0.65, 0.15) : float3(0.85, 0.15, 0.1);
+}
 
 float3 shade(MeshFrame f, Surface s) {
   const Sight sight = tacticalSight(f, s.sightAt);
   if (f.debugView == kDebugFog) return float3(1.0 - sight.color, sight.local, 1.0);
+  if (f.debugView == kDebugFogStates) return fogStateColor(fogAlpha(f, s.sightAt));
   return applyVolume(f, shadeInSight(f, s, sight) * sight.color, s.position);
 }
 

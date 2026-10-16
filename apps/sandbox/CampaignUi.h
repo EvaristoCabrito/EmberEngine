@@ -33,6 +33,7 @@ struct CampaignPaths {
   std::filesystem::path maps;                                 // Engine2's maps/ember
   std::filesystem::path scenes;                               // build/engine2-scenes (export_scene.ts)
   std::filesystem::path battles = "content/engine2/battles";  // export_battle.ts
+  std::filesystem::path test = "build/engine2-test";          // Modo teste's missions (export_test_missions.sh)
 };
 
 // CSS text-transform: uppercase, for ASCII and the accented Latin letters (UTF-8 C3 A0-BE).
@@ -70,6 +71,28 @@ inline std::optional<MissionEntry> campaignMission(const e2::Campaign& campaign,
   }
   if (const std::filesystem::path battle = paths.battles / (stem + ".battle.json"); std::filesystem::exists(battle, ec)) e.battle = battle;
   e.campaignId = m->id;
+  return e;
+}
+
+// The same mission as Engine2's Modo teste fights it (tools/scripts/engine2/export_test_missions.sh: all six heroes,
+// level 15, a new save's gear): its scene and battle from build/engine2-test. No campaignId: nothing is written back.
+inline std::optional<MissionEntry> testMission(const e2::Campaign& campaign, const CampaignPaths& paths, const std::string& id, std::string& error) {
+  const e2::CampaignMission* m = campaign.data().mission(id);
+  if (!m || m->mapFile.empty()) {
+    error = "A missão " + id + " não tem mapa salvo no Engine2.";
+    return std::nullopt;
+  }
+  const std::string stem = std::filesystem::path(m->mapFile).stem().string();
+  MissionEntry e;
+  e.id = stem, e.title = m->title, e.place = m->place, e.draftId = m->id, e.briefing = m->briefing, e.objective = m->objective;
+  e.map = paths.maps / m->mapFile;
+  e.scene = paths.test / "scenes" / (stem + ".scene.json");
+  e.battle = paths.test / "battles" / (stem + ".battle.json");
+  std::error_code ec;
+  if (!std::filesystem::exists(e.map, ec) || !std::filesystem::exists(e.scene, ec) || !std::filesystem::exists(e.battle, ec)) {
+    error = "O mapa " + stem + " (" + m->title + ") ainda não foi importado para o modo teste (export_test_missions.sh).";
+    return std::nullopt;
+  }
   return e;
 }
 

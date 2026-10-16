@@ -161,6 +161,11 @@ class Renderer {
     shadowCenter_ = center;
     shadowRadius_ = radius;
   }
+  // The sun's (and the cards') shadow map edge in texels, 512..4096 (Dev Controls / graphics quality: 1024, 2048,
+  // 4096); a change waits for the GPU and remakes both maps. The soft filter's radius in texels (1.6 by default).
+  void setShadowResolution(uint32_t size);
+  uint32_t shadowResolution() const { return shadowSize_; }
+  void setShadowFilter(float texels) { shadowFilterTexels_ = texels; }
   // Lighting layers switched on (shaders/lighting.hlsli kLayer*: 1 sun, 2 shadows, 4 indirect), for
   // measuring each alone.
   void setLightingLayers(uint32_t layers) { lightingLayers_ = layers; }
@@ -325,6 +330,8 @@ class Renderer {
   uint32_t shadowSamplerIndex_ = 0;
   glm::vec3 shadowCenter_{0.0f};
   float shadowRadius_ = 0.0f;
+  uint32_t shadowSize_ = 4096;
+  float shadowFilterTexels_ = 1.6f;
   bool shadowsThisFrame_ = false;          // the shadow map is drawn this frame
   std::array<float, 8> shadowKey_{};       // what the cached shadow map was drawn for
   VkDeviceAddress shadowTerrain_ = 0;

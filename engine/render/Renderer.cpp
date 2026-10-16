@@ -385,9 +385,9 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   shadowInfo.compareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
   VK_CHECK(vkCreateSampler(context.device, &shadowInfo, nullptr, &shadowSampler_));
   shadowSamplerIndex_ = bindless_.addSampler(shadowSampler_);
-  shadowMap_ = createImage(context, {kShadowFormat, {kShadowSize, kShadowSize}, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT});
+  shadowMap_ = createImage(context, {kShadowFormat, {shadowSize_, shadowSize_}, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT});
   shadowMapIndex_ = bindless_.addSampledImage(shadowMap_.view, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
-  cardShadowMap_ = createImage(context, {kCardShadowFormat, {kShadowSize, kShadowSize}, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT});
+  cardShadowMap_ = createImage(context, {kCardShadowFormat, {shadowSize_, shadowSize_}, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT});
   cardShadowMapIndex_ = bindless_.addSampledImage(cardShadowMap_.view, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
 
   createTargets(size);
@@ -563,6 +563,22 @@ void Renderer::setScene(const Camera& camera, std::span<const SpriteInstance> sp
   hasScene_ = true;
   camera_ = camera;
   sprites_.assign(sprites.begin(), sprites.begin() + std::min<size_t>(sprites.size(), kMaxSprites));
+}
+
+void Renderer::setShadowResolution(uint32_t size) {
+  size = std::clamp(size, 512u, kShadowSize);
+  if (size == shadowSize_) return;
+  vkDeviceWaitIdle(context_.device);
+  bindless_.removeSampledImage(shadowMapIndex_);
+  destroyImage(context_, shadowMap_);
+  bindless_.removeSampledImage(cardShadowMapIndex_);
+  destroyImage(context_, cardShadowMap_);
+  shadowSize_ = size;
+  shadowMap_ = createImage(context_, {kShadowFormat, {shadowSize_, shadowSize_}, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT});
+  shadowMapIndex_ = bindless_.addSampledImage(shadowMap_.view, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
+  cardShadowMap_ = createImage(context_, {kCardShadowFormat, {shadowSize_, shadowSize_}, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT});
+  cardShadowMapIndex_ = bindless_.addSampledImage(cardShadowMap_.view, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
+  shadowKey_.fill(std::numeric_limits<float>::quiet_NaN());  // the new map is empty: draw it on the next frame
 }
 
 Renderer::~Renderer() {
@@ -960,9 +976,9 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
     f.shadowMatrix = projection * view;
     f.shadowMap = shadowMapIndex_;
     f.shadowSampler = shadowSamplerIndex_;
-    f.shadowSize = static_cast<float>(kShadowSize);
-    f.shadowTexelWorld = 2.0f * shadowRadius_ / static_cast<float>(kShadowSize);
-    f.shadowFilterTexels = 1.6f;
+    f.shadowSize = static_cast<float>(shadowSize_);
+    f.shadowTexelWorld = 2.0f * shadowRadius_ / static_cast<float>(shadowSize_);
+    f.shadowFilterTexels = shadowFilterTexels_;
   }
   // The static board's shadow is cached: drawn again only when the sun, the bounds or the ground change.
   const bool shadows = f.shadowMap != kNoTextureIndex && (lightingLayers_ & 2u) != 0;
@@ -1351,11 +1367,11 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     shadowDepth.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     shadowDepth.clearValue.depthStencil = {1.0f, 0};
     VkRenderingInfo shadowPass{VK_STRUCTURE_TYPE_RENDERING_INFO};
-    shadowPass.renderArea = {{0, 0}, {kShadowSize, kShadowSize}};
+    shadowPass.renderArea = {{0, 0}, {shadowSize_, shadowSize_}};
     shadowPass.layerCount = 1;
     shadowPass.pDepthAttachment = &shadowDepth;
     vkCmdBeginRendering(cmd, &shadowPass);
-    setViewport(cmd, {kShadowSize, kShadowSize});
+    setViewport(cmd, {shadowSize_, shadowSize_});
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, terrainShadowPipeline_);
     const TerrainPush push{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices, terrain_.seamStep, 0, 0, 0, {}};
     vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
@@ -1398,11 +1414,11 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     cardDepth.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     cardDepth.clearValue.depthStencil = {1.0f, 0};
     VkRenderingInfo cardPass{VK_STRUCTURE_TYPE_RENDERING_INFO};
-    cardPass.renderArea = {{0, 0}, {kShadowSize, kShadowSize}};
+    cardPass.renderArea = {{0, 0}, {shadowSize_, shadowSize_}};
     cardPass.layerCount = 1;
     cardPass.pDepthAttachment = &cardDepth;
     vkCmdBeginRendering(cmd, &cardPass);
-    setViewport(cmd, {kShadowSize, kShadowSize});
+    setViewport(cmd, {shadowSize_, shadowSize_});
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spriteShadowPipeline_);
     const SpritePush push{camera_.viewProjection(), camera_.right, spriteSamplerIndex_, bufferAddress(context_, frame.sprites),
                           bufferAddress(context_, frame.meshFrame)};

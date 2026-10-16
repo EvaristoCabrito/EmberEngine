@@ -67,6 +67,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
   }
   Battle b;
   b.map_ = text(j, "map");
+  b.debugFreeCast_ = j.value("debugFreeCast", false);
   b.cols_ = integer(j, "cols");
   b.rows_ = integer(j, "rows");
   for (const json& c : j["cells"]) {

@@ -47,8 +47,27 @@ const draft = JSON.parse(readFileSync(mapPath, 'utf8')).draft;
 const mission = store.draftToMission(draft);
 // No art is drawn: every art table reads as empty.
 const art = new Proxy({}, { get: () => new Proxy({}, { get: () => [] }) });
+// TEST_LEVEL=N: Engine2's Modo teste battle (GameApp startBattle with testMode): every party spawn at level N
+// (DEFAULT_TEST_LEVEL is 15) and the engine's test flag (debugFreeCast). The map given is then the test-mode map
+// (make_test_map.ts: the missing heroes added). NO_REFS=1 leaves out the reference answers (the game never reads them).
+const testLevel = Number(process.env.TEST_LEVEL ?? 0);
+const levels: Record<string, number> = testLevel ? Object.fromEntries(mission.playerSpawns.map((s: { name: string }) => [s.name, testLevel])) : {};
+const noRefs = process.env.NO_REFS === '1';
+// Test battles fight with a brand-new save's gear (GameApp freshTestOverworld + startBattle's roster): the starter weapon
+// in hand, Neera's dagger in the off-hand, nothing else owned.
+const gear: Record<string, unknown> = {};
+if (testLevel) {
+  const fresh = (await import(`${E2}/src/game/save.ts`)).emptySave(false);
+  gear.weapons = Object.fromEntries(Object.entries(fresh.equipped as Record<string, string>).map(([hero, id]) => [hero, { id, enh: fresh.weapons[id] ?? 0 }]));
+  gear.offHand = Object.fromEntries(Object.entries(fresh.equipment as Record<string, { offHand?: string }>).map(([hero, eq]) => [hero, eq.offHand] as const).filter((p) => !!p[1]));
+  gear.equipment = fresh.equipment;
+  gear.statPointAllocations = fresh.statPointAllocations;
+  gear.ownedWeaponIds = Object.keys(fresh.weapons);
+  gear.bags = fresh.bags;
+  gear.promotions = fresh.promotions;
+}
 // The editor's preview battle (MapPreviewCanvas): fog off, a fresh party.
-const engine = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels: {} }, 1);
+const engine = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, ...gear }, 1, testLevel > 0);
 const e = engine as unknown as Record<string, any>;
 
 const cells: Record<string, unknown>[] = [];
@@ -123,7 +142,7 @@ for (const a of e.units) for (const b of e.units)
 const forecasts: unknown[] = [];
 const rolls: unknown[] = [];
 let seed = 1;
-for (let ai = 0; ai < e.units.length; ai++)
+for (let ai = 0; !noRefs && ai < e.units.length; ai++)
   for (let bi = 0; bi < e.units.length; bi++) {
     const a = e.units[ai], b = e.units[bi];
     if (a.side === b.side || !a.alive || !b.alive) continue;
@@ -151,9 +170,9 @@ for (let ai = 0; ai < e.units.length; ai++)
 
 // Each enemy's opening move from Engine2's AI, on a fresh battle so no other decision changes the board.
 const ai: unknown[] = [];
-for (let i = 0; i < e.units.length; i++) {
+for (let i = 0; !noRefs && i < e.units.length; i++) {
   if (e.units[i].side !== 'enemy' || !e.units[i].alive) continue;
-  const fresh = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels: {} }, 1) as unknown as Record<string, any>;
+  const fresh = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
   const u = fresh.units[i];
   fresh.queue = [];
   fresh.runAiFor(u);
@@ -171,9 +190,9 @@ for (let i = 0; i < e.units.length; i++) {
 // attack decision is checked too.
 const lead = e.units.find((u: { side: string; alive: boolean }) => u.side === 'player' && u.alive);
 const near: unknown[] = [];
-for (let i = 0; lead && i < e.units.length; i++) {
+for (let i = 0; !noRefs && lead && i < e.units.length; i++) {
   if (e.units[i].side !== 'enemy' || !e.units[i].alive || (e.units[i].size ?? 1) > 1) continue;
-  const fresh = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels: {} }, 1) as unknown as Record<string, any>;
+  const fresh = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
   const u = fresh.units[i];
   const occ = pathfinding.occupancy(fresh.units);
   let spot: { x: number; y: number } | null = null;
@@ -209,7 +228,7 @@ const FX = ['emitParticle', 'emitLevelUpFx', 'emitPotionZeroFx', 'emitHolyFx', '
 const casts: unknown[] = [];
 // SPELL_REFS=1: the cast references for Cooker check-battle (large; the game itself does not read them).
 if (process.env.SPELL_REFS === '1') {
-  const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels: {} }, 1) as unknown as Record<string, any>;
+  const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
   const base = fresh();
   const pristine = structuredClone(base.units);
   let castSeed = 1000;
@@ -266,7 +285,10 @@ if (process.env.SPELL_REFS === '1') {
             b.finishCombat = (att: unknown) => { finish(att); if (!b.queue.length && !done) { done = true; doneCalls = calls; } };
             b.queue = [];
             if (kind === 'cureMinor') b.castHeal(u, { x, y }, 'cureMinor');
-            else b[CAST[kind]](u, { x, y });
+            else if (kind === 'magicMissile') {
+              // Every dart picked on the same hex (magicMissileCount(level) clicks, as a player repeats a target).
+              for (let k = 0; k < 16 && !b.queue.length && !b.active && b.spellKind === 'magicMissile'; k++) b[CAST[kind]](u, { x, y });
+            } else b[CAST[kind]](u, { x, y });
             if (!b.queue.length && !b.active) { castSeed--; casts.push([ci, kind, x, y, 0, at.x, at.y]); continue; }  // nothing cast
             for (let i = 0; i < 4000 && !done && (b.active || b.queue.length); i++) b.tick(0.05);
             if (done) calls = doneCalls;
@@ -279,6 +301,6 @@ if (process.env.SPELL_REFS === '1') {
 
 mkdirSync(dirname(outPath), { recursive: true });
 writeFileSync(outPath, JSON.stringify({ source: 'Engine2 src/game/engine.ts BattleEngine via tools/scripts/engine2/export_battle.ts',
-  map: draft.id, cols: e.cols, rows: e.rows, cells, units, affinityBonus, forecasts, rolls, ai, aiNear: near, casts }));
+  map: draft.id, cols: e.cols, rows: e.rows, debugFreeCast: testLevel > 0, cells, units, affinityBonus, forecasts, rolls, ai, aiNear: near, casts }));
 console.log(`${draft.id}: ${e.cols}x${e.rows}, ${units.length} units (${units.map((u) => `${u.name} mov ${u.mov}`).join(', ')})`);
 process.exit(0);  // the engine leaves timers running

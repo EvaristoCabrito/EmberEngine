@@ -197,6 +197,46 @@ for (const v of variants) {
   }
 }
 
+// Modo teste (GameApp testMode): the same questions with test = true.
+const testLocationRefs = saves.map((s) => {
+  const acc = (id: string) => progression.missionAccess(id, s, access.progressionExtras(s), true);
+  return {
+    save: s,
+    locations: (mapstore.ALL_LOCATIONS as Record<string, any>[]).map((l) => ({
+      id: l.id,
+      status: access.locationStatus(l, s.completed, true, mapstore.ALL_LOCATIONS, acc),
+      missions: mapstore.missionsForLocation(l).map((m: { id: string }) => ({
+        id: m.id, access: acc(m.id),
+        status: access.missionStatus(m.id, s.completed, true, mapstore.ALL_LOCATIONS, mapstore.missionsForLocation(l).map((x: { id: string }) => x.id), acc),
+      })),
+    })),
+  };
+});
+const testCanStepRefs = [saves[0], saves[3]].map((s) => {
+  const allowed: string[] = [];
+  for (const c of cells)
+    for (const n of ow.neighborsOf(c.col, c.row))
+      if (ow.canStepOverworld(s, { x: c.col, y: c.row }, n, true)) allowed.push(`${c.col},${c.row}>${n.x},${n.y}`);
+  return { save: s, allowed };
+});
+const testStepRefs: unknown[] = [];
+for (const v of variants) {
+  const from = v.overworldPos as { col: number; row: number };
+  const starts = [from, ...cells.filter((_, i) => i % 61 === 0).map((c) => ({ col: c.col, row: c.row }))];
+  for (const start of starts) {
+    const s = { ...clone(v), overworldPos: start };
+    for (const n of ow.neighborsOf(start.col, start.row)) {
+      if (!ow.canStepOverworld(s, { x: start.col, y: start.row }, n, true)) continue;
+      seed = (seed * 1103515245 + 12345) >>> 0;
+      let calls = 0;
+      const rng0 = combat.mulberry32(seed);
+      const rng = () => { calls++; return rng0(); };
+      const { save: after, event } = ow.stepOverworld(clone(s), n.x, n.y, mapstore.ALL_LOCATIONS, true, rng);
+      testStepRefs.push({ save: s, to: { col: n.x, row: n.y }, seed, calls, after, event });
+    }
+  }
+}
+
 const out = {
   board: {
     startHex: { col: ow.OVERWORLD_START_HEX.x, row: ow.OVERWORLD_START_HEX.y },
@@ -215,5 +255,6 @@ const out = {
 mkdirSync(dirname(outPath), { recursive: true });
 writeFileSync(outPath, JSON.stringify(out));
 mkdirSync(dirname(refPath), { recursive: true });
-writeFileSync(refPath, JSON.stringify({ locations: locationRefs, canStep: canStepRefs, steps: stepRefs }));
-console.log(`overworld: ${cells.length} cells, ${locations.length} locations, ${Object.keys(classes).length} classes, ${stepRefs.length} reference steps -> ${outPath}`);
+writeFileSync(refPath, JSON.stringify({ locations: locationRefs, canStep: canStepRefs, steps: stepRefs,
+  test: { locations: testLocationRefs, canStep: testCanStepRefs, steps: testStepRefs } }));
+console.log(`overworld: ${cells.length} cells, ${locations.length} locations, ${Object.keys(classes).length} classes, ${stepRefs.length} reference steps, ${testStepRefs.length} test-mode steps -> ${outPath}`);

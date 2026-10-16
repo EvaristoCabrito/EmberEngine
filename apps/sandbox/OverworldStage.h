@@ -51,10 +51,13 @@ class OverworldStage : public Stage {
     std::function<void()> fullscreen;               // Opções: Tela cheia
   };
 
-  OverworldStage(CampaignPaths paths, e2::Campaign& campaign, const e2::Overworld& world, Callbacks callbacks, std::string notice = {})
-      : paths_(std::move(paths)), campaign_(campaign), world_(world), callbacks_(std::move(callbacks)), notice_(std::move(notice)) {
+  // `testSave`: Engine2's Modo teste (GameApp testMode): the map runs on that save (held by the caller for the whole
+  // test session, never the real bank) and every travel / party / mission restriction is lifted (Overworld `test`).
+  OverworldStage(CampaignPaths paths, e2::Campaign& campaign, const e2::Overworld& world, Callbacks callbacks, std::string notice = {},
+                 e2::Json* testSave = nullptr)
+      : paths_(std::move(paths)), campaign_(campaign), world_(world), callbacks_(std::move(callbacks)), notice_(std::move(notice)), testSave_(testSave) {
     hasInn_ = innData_.load("content/engine2/inn.json");
-    save_ = campaign_.activeSave();
+    save_ = testSave_ ? *testSave_ : campaign_.activeSave();
     const e2::Json& pos = save_["overworldPos"];
     prevCol_ = pos.value("col", 0);
     partyX_ = -1;  // placed on the first frame
@@ -134,7 +137,8 @@ class OverworldStage : public Stage {
       if (back) slots_.reset();
       else if (chosen >= 0) {
         if (slots_->mode() == SlotScreen::Mode::Load) {
-          save_ = campaign_.activeSave();
+          // Modo teste keeps reading its own save (GameApp readMapSave): the slot is selected in the bank only.
+          if (!test()) save_ = campaign_.activeSave();
           notice_ = slots_->status();
           slots_.reset();
           const e2::Json& pos = save_["overworldPos"];
@@ -164,7 +168,8 @@ class OverworldStage : public Stage {
 
   // --- the save -------------------------------------------------------------------------------------------------------
 
-  bool recruited(const std::string& hero) const { return world_.heroRecruited(hero, save_); }
+  bool test() const { return testSave_ != nullptr; }
+  bool recruited(const std::string& hero) const { return test() || world_.heroRecruited(hero, save_); }
   std::vector<std::string> partyHeroes() const {
     std::vector<std::string> out;
     for (const char* h : kHeroes)
@@ -178,6 +183,10 @@ class OverworldStage : public Stage {
     return "Kael";
   }
   void write() {
+    if (testSave_) {  // Modo teste: the session's own save, never the real bank
+      *testSave_ = save_;
+      return;
+    }
     if (!campaign_.saveActive(save_)) notice_ = "Não foi possível gravar o progresso (" + e2::Campaign::savePath().string() + ").";
   }
   double num(const e2::Json& obj, const std::string& key, double fallback) const {
@@ -206,8 +215,8 @@ class OverworldStage : public Stage {
   // GameApp openMission: gated missions must be open; a finished mission only re-opens when it is a dungeon.
   void openMission(const std::string& id, bool fromSave = false) {
     if (!fromSave) {
-      if (const e2::MapMission* m = world_.mission(id); m && m->gated && world_.missionAccess(id, save_) != "available") return;
-      if (completed(id)) {
+      if (const e2::MapMission* m = world_.mission(id); !test() && m && m->gated && world_.missionAccess(id, save_) != "available") return;
+      if (!test() && completed(id)) {
         const e2::MapMission* done = world_.mission(id);
         if (!done || !done->keepsSpawns) {
           notice_ = "Você não pode repetir missões já completadas.";
@@ -217,7 +226,8 @@ class OverworldStage : public Stage {
       if (id == "estalagem") return enterInn();
     }
     std::string error;
-    if (std::optional<MissionEntry> e = campaignMission(campaign_, paths_, id, error)) briefing_ = std::move(e);
+    if (std::optional<MissionEntry> e = test() ? testMission(campaign_, paths_, id, error) : campaignMission(campaign_, paths_, id, error))
+      briefing_ = std::move(e);
     else notice_ = error;
   }
 
@@ -248,7 +258,7 @@ class OverworldStage : public Stage {
     std::random_device device;
     e2::Mulberry32 rng(device());
     std::optional<e2::OverworldEvent> ev;
-    e2::Json next = world_.step(save_, {col, row}, rng, ev);
+    e2::Json next = world_.step(save_, {col, row}, rng, ev, test());
     if (next == save_) return;
     save_ = std::move(next);
     write();
@@ -329,8 +339,16 @@ class OverworldStage : public Stage {
   float drawHeader(ImVec2 size) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     const float top = 16.0f;
-    emberKicker(dl, {16.0f, top + 4.0f}, 14.0f, "CAMPANHA · RPG");
-    emberTitle(dl, {16.0f, top + 22.0f}, 30.0f, "Mapa");
+    float left = 16.0f;
+    if (test()) {  // Modo teste: the back button (ember-icon-btn, ChevronLeft) before the title, to the test menu
+      ImGui::SetCursorScreenPos({16.0f, top + 6.0f});
+      if (emberPlate("##back", {40, 40}, [](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32 ink) { iconChevronLeft(d, {(a.x + b.x) / 2, (a.y + b.y) / 2}, 20, ink); }) &&
+          callbacks_.title)
+        callbacks_.title();
+      left += 40.0f + 12.0f;
+    }
+    emberKicker(dl, {left, top + 4.0f}, 14.0f, test() ? "MODO TESTE · RPG" : "CAMPANHA · RPG");
+    emberTitle(dl, {left, top + 22.0f}, 30.0f, "Mapa");
     // The plates, right to left.
     ImFont* ui = uiFont(UiFont::Ui);
     const float h = 36.0f, gap = 12.0f;
@@ -481,7 +499,7 @@ class OverworldStage : public Stage {
     // Reachable: the party's hex and every neighbour it may step to.
     std::vector<e2::OverworldHex> dots;
     for (const e2::OverworldHex& n : e2::Overworld::neighbors(col, row))
-      if (world_.isCell(n.col, n.row) && world_.canStep(save_, {col, row}, n)) dots.push_back(n);
+      if (world_.isCell(n.col, n.row) && world_.canStep(save_, {col, row}, n, test())) dots.push_back(n);
     auto walkable = [&](int c, int r) {
       if (c == col && r == row) return true;
       return std::any_of(dots.begin(), dots.end(), [&](const e2::OverworldHex& d) { return d.col == c && d.row == r; });
@@ -494,22 +512,22 @@ class OverworldStage : public Stage {
     // Pins.
     std::vector<std::pair<const e2::MapLocation*, std::string>> pins;
     for (const e2::MapLocation& loc : world_.locations()) {
-      if (!world_.locationVisible(loc, save_)) continue;
-      // isExplored: Stone Bridge before O Vau, the Inn, where the party stands, or a hex it has stood on.
-      bool explored = (!completed("vau") && loc.id == "stonebridge") || loc.id == "estalagem" || (standing && standing->id == loc.id);
+      if (!test() && !world_.locationVisible(loc, save_)) continue;  // GameApp mapVisibleLocations: test mode shows all
+      // isExplored: Stone Bridge before O Vau, the Inn, where the party stands, or a hex it has stood on (test: all).
+      bool explored = test() || (!completed("vau") && loc.id == "stonebridge") || loc.id == "estalagem" || (standing && standing->id == loc.id);
       for (const e2::Json& h : save_.value("exploredHexes", e2::Json::array()))
         if (h.is_string() && h.get<std::string>() == std::format("{},{}", loc.col, loc.row)) explored = true;
       if (!explored) continue;
-      pins.push_back({&loc, world_.locationStatus(loc, save_)});
+      pins.push_back({&loc, world_.locationStatus(loc, save_, test())});
     }
     for (const auto& [loc, st] : pins) {
       const ImVec2 c = at(loc->x, loc->y);
-      const bool reachable = walkable(loc->col, loc->row) || (!completed("vau") && loc->id == "stonebridge");
+      const bool reachable = test() || walkable(loc->col, loc->row) || (!completed("vau") && loc->id == "stonebridge");
       const float r = 20.0f;
       const bool hover = std::hypot(mouse.x - c.x, mouse.y - c.y) <= r && overViewport;
       const float s = hover ? 1.1f : 1.0f;
       const int alpha = reachable ? 255 : 178;
-      const auto missions = world_.visibleMissionsOf(*loc, save_);
+      const auto missions = world_.visibleMissionsOf(*loc, save_, test());
       const bool hub = std::any_of(missions.begin(), missions.end(), [](const e2::MapMission* m) { return m->hub; });
       ImU32 border = kAccent;
       if (st == "locked") border = IM_COL32(74, 74, 74, 128);
@@ -587,16 +605,20 @@ class OverworldStage : public Stage {
   void walkTo(int col, int row) {
     if (!movementOpen_) return;
     const e2::Json& pos = save_["overworldPos"];
-    if (!world_.canStep(save_, {pos.value("col", 0), pos.value("row", 0)}, {col, row})) return;
+    if (!world_.canStep(save_, {pos.value("col", 0), pos.value("row", 0)}, {col, row}, test())) return;
     movementOpen_ = false;
     step(col, row);
   }
 
   void pinClicked(const e2::MapLocation& loc, const std::string& st, bool walkable, const e2::MapLocation* standing) {
-    if (!completed("vau") && loc.id == "stonebridge") return openMission("vau");
+    if (!test() && !completed("vau") && loc.id == "stonebridge") return openMission("vau");
     if (standing && standing->id == loc.id) return enterLocation(loc, st);
     if (walkable) return walkTo(loc.col, loc.row);
-    showHint("Ande até lá primeiro.");
+    if (!test()) return showHint("Ande até lá primeiro.");
+    // Modo teste: a distant pin is a free jump (teleportOverworld), then the place opens.
+    save_ = e2::Overworld::teleport(save_, {loc.col, loc.row});
+    write();
+    enterLocation(loc, st);
   }
 
   void enterLocation(const e2::MapLocation& loc, const std::string& st) {
@@ -605,7 +627,7 @@ class OverworldStage : public Stage {
       flashId_ = loc.id, flashAt_ = now_;
       return;
     }
-    const auto missions = world_.visibleMissionsOf(loc, save_);
+    const auto missions = world_.visibleMissionsOf(loc, save_, test());
     if (missions.size() > 1) {
       open_ = loc.id;
       return;
@@ -614,7 +636,7 @@ class OverworldStage : public Stage {
       const e2::MapMission* m = missions[0];
       std::vector<std::string> order;
       for (const e2::MapMission* x : world_.missionsOf(loc)) order.push_back(x->id);
-      if (m->crossing && world_.missionStatus(m->id, save_, order) == "done") open_ = loc.id;
+      if (m->crossing && world_.missionStatus(m->id, save_, order, test()) == "done") open_ = loc.id;
       else openMission(m->id);
     }
   }
@@ -716,7 +738,7 @@ class OverworldStage : public Stage {
     const e2::MapLocation* standing = world_.locationAt(pos.value("col", 0), pos.value("row", 0));
     std::string line;
     const auto wisp = world_.wispHex();
-    if (wisp && world_.wispForestUncleared(save_) && pos.value("col", 0) == wisp->col && pos.value("row", 0) == wisp->row)
+    if (wisp && !test() && world_.wispForestUncleared(save_) && pos.value("col", 0) == wisp->col && pos.value("row", 0) == wisp->row)
       line = "Limpe a Wisp Forest para poder seguir viagem para o leste.";
     else
       line = movementOpen_ ? "Escolha um hexágono · o tempo depende do terreno" : "Clique em " + leader() + " para mover";
@@ -767,7 +789,7 @@ class OverworldStage : public Stage {
     if (standing) {
       const std::string label = "Explorar " + standing->name;
       ImGui::SetCursorScreenPos({a.x + pad, b.y - pad - 44.0f});
-      if (ImGui::InvisibleButton("##explore", {ui->CalcTextSizeA(12.0f, FLT_MAX, 0, label.c_str()).x, 44.0f})) enterLocation(*standing, world_.locationStatus(*standing, save_));
+      if (ImGui::InvisibleButton("##explore", {ui->CalcTextSizeA(12.0f, FLT_MAX, 0, label.c_str()).x, 44.0f})) enterLocation(*standing, world_.locationStatus(*standing, save_, test()));
       dl->AddText(ui, 12.0f, {a.x + pad, b.y - pad - 28.0f}, kAccent, label.c_str());
     }
   }
@@ -875,9 +897,9 @@ class OverworldStage : public Stage {
     for (const e2::MapMission* m : world_.missionsOf(*loc)) order.push_back(m->id);
     int i = 0;
     std::string pick;
-    for (const e2::MapMission* m : world_.visibleMissionsOf(*loc, save_)) {
+    for (const e2::MapMission* m : world_.visibleMissionsOf(*loc, save_, test())) {
       ++i;
-      const std::string st = world_.missionStatus(m->id, save_, order);
+      const std::string st = world_.missionStatus(m->id, save_, order, test());
       const bool optionalCrossing = st == "done" && m->crossing;
       const e2::CampaignMission* cm = campaign_.data().mission(m->id);
       const std::string place = cm ? cm->place : std::string();
@@ -1087,9 +1109,16 @@ class OverworldStage : public Stage {
         }
         while (!out.empty() && out.back() == "") out.erase(out.size() - 1);
         save_["partyFormation"] = out;
-        const bool ok = campaign_.saveActive(save_) && campaign_.activeSave().value("partyFormation", e2::Json::array()) == out;
-        formationSaved_ = ok ? "saved" : "failed";
+        if (test()) {
+          write();
+          formationSaved_ = "test";
+        } else {
+          const bool ok = campaign_.saveActive(save_) && campaign_.activeSave().value("partyFormation", e2::Json::array()) == out;
+          formationSaved_ = ok ? "saved" : "failed";
+        }
       }
+      if (formationSaved_ == "test")
+        dl->AddText(ui, 14.0f, {a.x + 204, a.y + 86}, kAccent, "✓ Formação salva nesta sessão de teste (o modo teste nunca grava no save real).");
       if (formationSaved_ == "saved") dl->AddText(ui, 14.0f, {a.x + 204, a.y + 86}, kAccent, "✓ Formação salva — conferida no arquivo do save.");
       if (formationSaved_ == "failed") dl->AddText(ui, 14.0f, {a.x + 204, a.y + 86}, kDanger, "Não foi possível salvar a formação. Tente de novo.");
       const float cx = a.x + inner / 2;
@@ -1368,17 +1397,19 @@ class OverworldStage : public Stage {
     const ImVec2 a = ImGui::GetCursorScreenPos();
     slot(a, {a.x + colW, a.y + 170});
     emberTitle(ImGui::GetWindowDrawList(), {a.x + 12, a.y + 8}, 16.0f, "Jogo");
-    if (emberBigButton("##optsave", "SALVAR JOGO", {a.x + 12, a.y + 36}, {colW - 24, 36}, false, 11.0f)) {
+    // Modo teste has no Salvar jogo (GameApp passes onSaveGame only outside test mode).
+    const float shift = test() ? 44.0f : 0.0f;
+    if (!test() && emberBigButton("##optsave", "SALVAR JOGO", {a.x + 12, a.y + 36}, {colW - 24, 36}, false, 11.0f)) {
       options_ = false;
       slots_.emplace();
       slots_->open(SlotScreen::Mode::Save, true);
     }
-    if (emberBigButton("##optload", "CARREGAR JOGO", {a.x + 12, a.y + 80}, {colW - 24, 36}, false, 11.0f)) {
+    if (emberBigButton("##optload", "CARREGAR JOGO", {a.x + 12, a.y + 80 - shift}, {colW - 24, 36}, false, 11.0f)) {
       options_ = false;
       slots_.emplace();
       slots_->open(SlotScreen::Mode::Load, true);
     }
-    if (emberBigButton("##opttitle", "VOLTAR À TELA INICIAL", {a.x + 12, a.y + 124}, {colW - 24, 36}, false, 11.0f) && callbacks_.title) callbacks_.title();
+    if (emberBigButton("##opttitle", "VOLTAR À TELA INICIAL", {a.x + 12, a.y + 124 - shift}, {colW - 24, 36}, false, 11.0f) && callbacks_.title) callbacks_.title();
     const ImVec2 g{a.x + colW + 8, a.y};
     slot(g, {g.x + colW, g.y + 82});
     emberTitle(ImGui::GetWindowDrawList(), {g.x + 12, g.y + 8}, 16.0f, "Gráficos");
@@ -1416,6 +1447,7 @@ class OverworldStage : public Stage {
   std::vector<std::string> formation_;
   int formationPick_ = -1;
   std::string formationSaved_;
+  e2::Json* testSave_ = nullptr;  // Modo teste: the session's save (see the constructor)
   std::string flashId_;
   float flashAt_ = -10;
   int zoom_ = 3;

@@ -99,6 +99,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
     // The whole card takes the fog of war where it stands (Engine2's DecorLayer.shade).
     const Sight sight = tacticalSight(f, s.origin);
     if (f.debugView == kDebugFog) return float4(float3(1.0 - sight.color, sight.local, 1.0) * c.a, c.a);
+    if (f.debugView == kDebugFogStates) return float4(fogStateColor(fogAlpha(f, s.origin)) * c.a, c.a);
     color = min(shadeInSight(f, surface, sight), c.rgb * kMaxLit * f.litCap);
     if (s.emitLevel > 0.0) {
       // Engine2's flame mask: bright, saturated pixels close to the light's colour glow, and so does the lit

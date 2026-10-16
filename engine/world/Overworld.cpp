@@ -281,8 +281,9 @@ double Overworld::gearResistance(const Json& save, const std::string& hero, cons
   return total;
 }
 
-// data.ts partyBagHasRoom: loose weapons + loose gear + ration stacks against 10 per recruited hero + pouches.
-bool Overworld::bagHasRoom(const Json& save, int extra) const {
+// data.ts partyBagHasRoom: loose weapons + loose gear + ration stacks against 10 per recruited hero (test: per hero of
+// all six) + pouches.
+bool Overworld::bagHasRoom(const Json& save, int extra, bool test) const {
   std::set<std::string> worn;
   for (const auto& [hero, id] : child(save, "equipped").items())
     if (id.is_string()) worn.insert(id.get<std::string>());
@@ -295,7 +296,7 @@ bool Overworld::bagHasRoom(const Json& save, int extra) const {
   const double stacks = std::ceil(rations / tables_.value("rationStackMax", 30));
   int heroes = 0;
   for (const char* h : kHeroes)
-    if (heroRecruited(h, save)) ++heroes;
+    if (test || heroRecruited(h, save)) ++heroes;
   double pouches = 0;
   for (const auto& [hero, slots] : child(save, "equipment").items()) {
     const Json& waist = child(slots, "waist");
@@ -319,10 +320,11 @@ bool Overworld::wispForestUncleared(const Json& save) const {
   return false;
 }
 
-// overworld.ts canStepOverworld (test = false).
-bool Overworld::canStep(const Json& save, OverworldHex from, OverworldHex to) const {
+// overworld.ts canStepOverworld.
+bool Overworld::canStep(const Json& save, OverworldHex from, OverworldHex to, bool test) const {
   if (!isCell(to.col, to.row)) return false;
   if (to == ashenBlocked_) return false;
+  if (test) return true;  // Modo teste: the whole grid open (removed cells stay excluded)
   const Json& completed = child(save, "completed");
   if (!has(completed, "vau")) return false;
   if (wisp_ && from.col <= wisp_->col && to.col > wisp_->col && wispForestUncleared(save)) return false;
@@ -336,13 +338,19 @@ bool Overworld::canStep(const Json& save, OverworldHex from, OverworldHex to) co
   return to.col > from.col;
 }
 
-// overworld.ts stepOverworld (test = false).
-Json Overworld::step(const Json& save, OverworldHex to, Mulberry32& rng, std::optional<OverworldEvent>& event) const {
+Json Overworld::teleport(const Json& save, OverworldHex to) {
+  Json out = save;
+  out["overworldPos"] = Json{{"col", to.col}, {"row", to.row}};
+  return out;
+}
+
+// overworld.ts stepOverworld.
+Json Overworld::step(const Json& save, OverworldHex to, Mulberry32& rng, std::optional<OverworldEvent>& event, bool test) const {
   event.reset();
   const Json& pos = child(save, "overworldPos");
   const OverworldHex from{pos.value("col", 0), pos.value("row", 0)};
   const std::vector<OverworldHex> around = neighbors(from.col, from.row);
-  if (!isCell(to.col, to.row) || std::find(around.begin(), around.end(), to) == around.end() || !canStep(save, from, to)) return save;
+  if (!isCell(to.col, to.row) || std::find(around.begin(), around.end(), to) == around.end() || !canStep(save, from, to, test)) return save;
 
   const Json& completed = child(save, "completed");
   Json heroHunger = child(save, "heroHunger").is_object() ? child(save, "heroHunger") : Json::object();
@@ -350,7 +358,9 @@ Json Overworld::step(const Json& save, OverworldHex to, Mulberry32& rng, std::op
   const int totalHours = campaignHour(save) + travelHours;
   const std::string arrivalTime = timeOfDay(totalHours % 24);
   const int elapsedDays = totalHours / 24;
+  // Modo teste: everyone shown in the party ages, recruited or not, whatever their HP record says.
   auto ages = [&](const std::string& hero) {
+    if (test) return true;
     if (!heroRecruited(hero, save)) return false;
     const std::optional<double> hp = num(child(save, "unitHp"), hero);
     return (hp ? *hp : static_cast<double>(maxHp(save, hero))) > 0;
@@ -505,7 +515,7 @@ Json Overworld::step(const Json& save, OverworldHex to, Mulberry32& rng, std::op
       for (const Json& p : tables_["potions"])
         if (p["id"].get<std::string>() == potionKind) potion = &p;
       for (const char* hero : kHeroes) {
-        if (!heroRecruited(hero, save)) continue;
+        if (!test && !heroRecruited(hero, save)) continue;
         if (num(child(bags, hero), potionKind).value_or(0.0) >= (*potion)["carryMax"].get<double>()) continue;
         Json bag = child(bags, hero).is_object() ? child(bags, hero) : tables_["emptyBag"];
         bag[potionKind] = number(num(child(bags, hero), potionKind).value_or(0.0) + 1);
@@ -540,7 +550,7 @@ Json Overworld::step(const Json& save, OverworldHex to, Mulberry32& rng, std::op
           probe["looseEquipment"] = looseEquipment;
           probe["looseEquipment"][drop->id] = number(num(looseEquipment, drop->id).value_or(0.0) + 1);
         }
-        if (bagHasRoom(probe, 0)) {
+        if (bagHasRoom(probe, 0, test)) {
           if (drop->weapon) weapons[drop->id] = 0;
           else looseEquipment[drop->id] = number(num(looseEquipment, drop->id).value_or(0.0) + 1);
           found.push_back(drop->name);
@@ -720,10 +730,10 @@ int Overworld::currentChapter(const Json& save) const {
   return chapter;
 }
 
-std::string Overworld::missionAccess(const std::string& id, const Json& save) const {
+std::string Overworld::missionAccess(const std::string& id, const Json& save, bool test) const {
   if (has(child(save, "completed"), id)) return "completed";
   const Json& gates = tables_["progression"]["missionGates"];
-  if (!gates.contains(id)) return "available";
+  if (test || !gates.contains(id)) return "available";
   const Json& gate = gates[id];
   if (!evaluate(child(gate, "visible"), save, false)) return "hidden";
   if (!evaluate(child(gate, "unlock"), save, false)) return "revealed";
@@ -740,7 +750,8 @@ const MapLocation* Overworld::previousPopulatedLocation(const MapLocation& locat
   return nullptr;
 }
 
-bool Overworld::lockedMission(const std::string& id, const Json& save, const std::vector<std::string>& order) const {
+bool Overworld::lockedMission(const std::string& id, const Json& save, const std::vector<std::string>& order, bool test) const {
+  if (test) return false;
   const Json& completed = child(save, "completed");
   if (has(completed, id)) return true;
   if (const MapMission* m = mission(id); m && m->gated) return missionAccess(id, save) != "available";
@@ -775,34 +786,35 @@ bool Overworld::lockedMission(const std::string& id, const Json& save, const std
   return false;
 }
 
-std::string Overworld::missionStatus(const std::string& id, const Json& save, const std::vector<std::string>& order) const {
+std::string Overworld::missionStatus(const std::string& id, const Json& save, const std::vector<std::string>& order, bool test) const {
   if (has(child(save, "completed"), id)) return "done";
-  return lockedMission(id, save, order) ? "locked" : "available";
+  return lockedMission(id, save, order, test) ? "locked" : "available";
 }
 
-std::vector<const MapMission*> Overworld::visibleMissionsOf(const MapLocation& location, const Json& save) const {
+std::vector<const MapMission*> Overworld::visibleMissionsOf(const MapLocation& location, const Json& save, bool test) const {
   std::vector<const MapMission*> out;
   for (const MapMission* m : missionsOf(location))
-    if (missionAccess(m->id, save) != "hidden") out.push_back(m);
+    if (test || missionAccess(m->id, save) != "hidden") out.push_back(m);
   return out;
 }
 
-bool Overworld::locationVisible(const MapLocation& location, const Json& save) const {
+bool Overworld::locationVisible(const MapLocation& location, const Json& save, bool test) const {
   for (const std::string& id : location.missionIds)
-    if (missionAccess(id, save) != "hidden") return true;
+    if (test || missionAccess(id, save) != "hidden") return true;
   return false;
 }
 
-std::string Overworld::locationStatus(const MapLocation& location, const Json& save) const {
-  const std::vector<const MapMission*> missions = visibleMissionsOf(location, save);
+// access.ts locationStatus. Debug mode opens every location, even one with no missions yet.
+std::string Overworld::locationStatus(const MapLocation& location, const Json& save, bool test) const {
+  const std::vector<const MapMission*> missions = visibleMissionsOf(location, save, test);
   std::vector<const MapMission*> pending;
   for (const MapMission* m : missions)
     if (!has(child(save, "completed"), m->id)) pending.push_back(m);
-  if (pending.empty()) return missions.empty() ? "locked" : "done";
+  if (pending.empty()) return !missions.empty() ? "done" : test ? "available" : "locked";
   std::vector<std::string> order;
   for (const MapMission* m : missionsOf(location)) order.push_back(m->id);
   for (const MapMission* m : pending)
-    if (missionStatus(m->id, save, order) != "locked") return "available";
+    if (missionStatus(m->id, save, order, test) != "locked") return "available";
   return "locked";
 }
 
@@ -854,11 +866,14 @@ int checkOverworld(const Overworld& world, const std::filesystem::path& referenc
   auto report = [&](const std::string& what) {
     if (++differences <= 20) logError("overworld differs: {}", what);
   };
+  int statusChecks = 0, stepPairs = 0, steps = 0, events = 0;
+  // One block of answers: the campaign's (test false) or Modo teste's (test true).
+  auto checkBlock = [&](const Json& block, bool test) {
+  const std::string tag = test ? "test " : "";
   // Location and mission status.
-  int statusChecks = 0;
-  for (const Json& r : refs["locations"]) {
+  for (const Json& r : block["locations"]) {
     const Json& save = r["save"];
-    if (world.currentChapter(save) != r["chapter"].get<int>()) report("chapter");
+    if (r.contains("chapter") && world.currentChapter(save) != r["chapter"].get<int>()) report("chapter");
     for (const Json& l : r["locations"]) {
       const MapLocation* loc = nullptr;
       for (const MapLocation& x : world.locations())
@@ -868,60 +883,64 @@ int checkOverworld(const Overworld& world, const std::filesystem::path& referenc
         continue;
       }
       ++statusChecks;
-      if (world.locationStatus(*loc, save) != l["status"].get<std::string>())
-        report(std::format("location {} status: C++ {} vs Engine2 {}", loc->id, world.locationStatus(*loc, save), l["status"].get<std::string>()));
-      if (world.locationVisible(*loc, save) != l["visible"].get<bool>()) report("location " + loc->id + " visibility");
+      if (world.locationStatus(*loc, save, test) != l["status"].get<std::string>())
+        report(std::format("{}location {} status: C++ {} vs Engine2 {}", tag, loc->id, world.locationStatus(*loc, save, test), l["status"].get<std::string>()));
+      if (l.contains("visible") && world.locationVisible(*loc, save, test) != l["visible"].get<bool>()) report(tag + "location " + loc->id + " visibility");
       std::vector<std::string> order;
       for (const MapMission* m : world.missionsOf(*loc)) order.push_back(m->id);
-      const std::vector<const MapMission*> visible = world.visibleMissionsOf(*loc, save);
-      if (visible.size() != l["missions"].size()) report("location " + loc->id + " visible missions");
+      const std::vector<const MapMission*> visible = world.visibleMissionsOf(*loc, save, test);
+      if (visible.size() != l["missions"].size()) report(tag + "location " + loc->id + " visible missions");
       for (const Json& m : l["missions"]) {
         const std::string id = m["id"].get<std::string>();
-        if (world.missionAccess(id, save) != m["access"].get<std::string>()) report("mission " + id + " access");
-        if (world.missionStatus(id, save, order) != m["status"].get<std::string>()) report("mission " + id + " status");
+        if (world.missionAccess(id, save, test) != m["access"].get<std::string>()) report(tag + "mission " + id + " access");
+        if (world.missionStatus(id, save, order, test) != m["status"].get<std::string>()) report(tag + "mission " + id + " status");
       }
     }
   }
   // Allowed steps.
-  int stepPairs = 0;
-  for (const Json& r : refs["canStep"]) {
+  for (const Json& r : block["canStep"]) {
     std::set<std::string> expected;
     for (const Json& a : r["allowed"]) expected.insert(a.get<std::string>());
     for (const OverworldCell& c : world.cells())
       for (const OverworldHex& n : Overworld::neighbors(c.col, c.row)) {
         const std::string k = std::format("{},{}>{},{}", c.col, c.row, n.col, n.row);
         ++stepPairs;
-        if (world.canStep(r["save"], {c.col, c.row}, n) != expected.contains(k)) report("canStep " + k);
+        if (world.canStep(r["save"], {c.col, c.row}, n, test) != expected.contains(k)) report(tag + "canStep " + k);
       }
   }
   // Seeded steps: the save afterwards, the event, and how many random numbers were drawn.
-  int steps = 0, events = 0;
-  for (const Json& r : refs["steps"]) {
+  for (const Json& r : block["steps"]) {
     ++steps;
     Mulberry32 base(r["seed"].get<uint32_t>());
     int calls = 0;
     Mulberry32 rng(r["seed"].get<uint32_t>());
     std::optional<OverworldEvent> event;
-    const Json after = world.step(r["save"], {r["to"]["col"].get<int>(), r["to"]["row"].get<int>()}, rng, event);
+    const Json after = world.step(r["save"], {r["to"]["col"].get<int>(), r["to"]["row"].get<int>()}, rng, event, test);
     // How many draws the port made: step a second generator until it matches the first one's next value.
     {
       const double next = rng();
       for (calls = 0; calls < 64 && base() != next; ++calls) {
       }
     }
-    if (calls != r["calls"].get<int>()) report(std::format("step {}: {} random numbers vs Engine2 {}", steps, calls, r["calls"].get<int>()));
-    if (!same(after, r["after"])) report(std::format("step {}: save {}", steps, firstDifference(after, r["after"])));
+    if (calls != r["calls"].get<int>()) report(std::format("{}step {}: {} random numbers vs Engine2 {}", tag, steps, calls, r["calls"].get<int>()));
+    if (!same(after, r["after"])) report(std::format("{}step {}: save {}", tag, steps, firstDifference(after, r["after"])));
     const Json& e = r["event"];
     if (e.is_null() != !event.has_value()) {
-      report(std::format("step {}: event {} vs Engine2 {}", steps, event ? event->text : "none", e.dump()));
+      report(std::format("{}step {}: event {} vs Engine2 {}", tag, steps, event ? event->text : "none", e.dump()));
     } else if (event) {
       ++events;
       if (event->kind != e.value("kind", "") || event->text != e.value("text", "") || event->missionId != e.value("missionId", ""))
-        report(std::format("step {}: event '{}' vs Engine2 '{}'", steps, event->text, e.value("text", "")));
+        report(std::format("{}step {}: event '{}' vs Engine2 '{}'", tag, steps, event->text, e.value("text", "")));
     }
   }
+  };
+  checkBlock(refs, false);
+  const int campaignSteps = steps;
+  if (refs.contains("test")) checkBlock(refs["test"], true);
+  else report("no Modo teste answers in the references (re-run export_overworld.ts)");
   if (!differences)
-    logInfo("overworld matches Engine2 ({} location checks, {} step pairs, {} seeded steps with {} events)", statusChecks, stepPairs, steps, events);
+    logInfo("overworld matches Engine2 ({} location checks, {} step pairs, {} seeded steps ({} in Modo teste) with {} events)", statusChecks,
+            stepPairs, steps, steps - campaignSteps, events);
   else
     logError("overworld: {} differences", differences);
   return differences;
