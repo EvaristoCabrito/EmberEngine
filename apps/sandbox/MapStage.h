@@ -125,7 +125,14 @@ struct MapStageOptions {
   bool airParticles = true;  // the map's wisps and dust motes (Dev Controls "Efeitos atmosféricos" off: none)
   int fogLook = 3;  // the fog look shown first (render/FogLooks.h numbers)
   // Atmosfera volumétrica v1: the panel's "Atmosfera" at the start (0 OFF, 1 cinema, 2 alta, 3 desempenho; --atmos N).
+  // ON by default at "alta" (user, 2026-10-16: "padrão on"); the choice stays in the panel.
   int atmos = 2;
+  // The panel's "Fundo" at the start (-1 as the map says: its painting, or the sky without one; 0 the painting, 1 the
+  // sky, 2 OFF = black; --background N): captures that must keep never-seen ground exactly black (check_fog.py) use 2.
+  int background = -1;
+  // The fog of war's mist bank (the numbered looks) on at the start; --mist 0 leaves only the fog of war's mask (check_fog.py
+  // needs never-seen ground exactly black) while the volumetric atmosphere may stay on.
+  bool mist = true;
   // Lighting (also in the panel): 0 the old prototype day (every capture before 2026-10-15), 1 Engine2's 3D presets for
   // the map's time of day (the floor), 2 physical sky with Engine2's strengths, 3 real (default): lux, physical camera.
   int lighting = 3;
@@ -271,7 +278,7 @@ class MapStage final : public Stage {
       if (!options.heroes.empty()) setUpPoses(options.heroes);
       if (!options.battle.empty()) setUpBattle(options.battle);
       if (!scene_->backdrop.empty()) ground_.requestTexture(e2::backdropAsset(scene_->backdrop));
-      background_ = scene_->backdrop.empty() ? 1 : 0;
+      background_ = options.background >= 0 ? std::min(options.background, 2) : scene_->backdrop.empty() ? 1 : 0;
       if (e2::timeOfDay(scene_->timeOfDay).moon && scene_->environment != "indoor")
         for (const char* phase : e2::kMoonPhases) ground_.requestTexture(e2::skyMoonAsset(phase));  // 0.1 MB each
     }
@@ -433,7 +440,7 @@ class MapStage final : public Stage {
     }
     // The fog of war's mist: the numbered look on show (render/FogLooks.h; chosen in the Map panel).
     Renderer::FogBank bank;
-    bank.enabled = options_.volume && fog_.has_value() && !noFog_;
+    bank.enabled = options_.volume && options_.mist && fog_.has_value() && !noFog_;
     bank.look = fogLook_;
     bank.scene.boardCenter = {boardCenter_.x, boardCenter_.z};
     bank.scene.boardRadius = boardRadius_;

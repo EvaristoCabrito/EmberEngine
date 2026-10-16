@@ -158,7 +158,14 @@ build.bat release          # or debug; output in build/<config>/bin
 - Vulkan gotcha found: fragment shaders may not bind a writable storage buffer here (no
   fragmentStoresAndAtomics): read GPU-written lists through device addresses (`vk::RawBufferLoad`).
 - DXC gotchas found: `clip` and `triangle` are reserved names; per-primitive PS inputs need
-  `[[vk::ext_decorate(5271)]]` + `[[vk::ext_capability(5283)]]` (DXC issue #6862).
+  `[[vk::ext_decorate(5271)]]` + `[[vk::ext_capability(5283)]]` (DXC issue #6862). A 3D-texture `SampleLevel` whose
+  coordinate was built inline (`float3(uv, 1.0 - 0.5 / float(max(f.volumeSlices, 1u)))`) read 0 on one code path
+  while a debug branch read the right value at the same coordinate (2026-10-16, lighting.hlsli): compute the
+  coordinate into a local first, in a small helper (`volumeFarSample`).
+- Git after a power cut / app crash (2026-10-16): `.git/index`, `refs/heads/main`, `COMMIT_EDITMSG` and the reflog tails
+  came back zero-filled while the commit objects survived; the repair = write the last commit's hash into
+  `refs/heads/main` (find it with `git fsck --lost-found` / the objects written last) and `git reset` to rebuild the
+  index. Backups of the damaged files were kept as `*.corrupt-20261016`.
 - Shell gotcha: writing C++ through bash heredocs + Python mangled `'\0'` and `"\n"` twice; write patch scripts
   with the Write tool into the scratchpad and run them with `python -I`.
 
@@ -372,6 +379,39 @@ inventory / equipment, dialogs / intros)
   Carregar jogo) resumes it straight into the fight (GameApp enterFromSave; `OverworldStage::Callbacks::resume`); a
   fight entered from its briefing starts afresh, as in Engine2. Check: `Sandbox --battle-save-check <battle.json>
   [out]` (round trip must match), `--resume <snapshot.json>` capture.
+
+## Atmosfera volumétrica v1 (2026-10-16; user: the pasted spec "cinematic atmospheric rendering system" + "upgrade
+no engine gráfico", Luminous identity, UE5 as the technical reference, old assets kept, everything versioned with OFF)
+
+Read `docs/ATMOSPHERE.md` first (audit of the renderer, measured baseline, design, integration points, validation).
+- **Built:** `engine/render/Volumetrics.h/.cpp` (froxel fog module: per-level volume sets kept once made, regional
+  profiles blended over seconds, up to 16 local fog boxes, adaptive quality with hysteresis, history invalidated on camera
+  cuts and ramped in over 30 frames so it never flickers at the start), `shaders/volumetrics_v1.hlsl` (Koschmieder
+  density, height falloff, fbm wind noise, valleys, sun through both shadow maps with 1 / 4 taps, sky SH in-scatter,
+  cluster local lights occluded by the relief, the fog of war's rules, temporal history, Hillaire integration),
+  `content/atmosphere/v1/profiles.json` (padrão, campo aberto, inverno, floresta, caverna, templo, terra devastada;
+  `maps` substrings pick the map's own). Integration (reversible, documented in ATMOSPHERE.md §4): MeshFrame
+  `volumeSlices` / `volumeFlags`, `applyVolume` by slice count, `volumeTransmittance` on additive effects / VFX,
+  `volumeOverBackground` on the sky / painting, Renderer owns a `Volumetrics` and records the "volumetrics" scope after
+  the card shadows (the old mode-0 haze stays off while it runs). Panel "Escolhas": **Atmosfera** (OFF / cinema / alta /
+  desempenho; default alta) and **Clima** (the profiles). CLI: `--atmos N`, `--background N`, `--debug-view 15..19`
+  (the volume's slices), `--capture-sequence FROM:EVERY:COUNT` (consecutive frames of one run).
+- **Measured (release, 60 Hz paced, aldeia015 + fog of war):** "volumetrics" alta 0.59 ms avg (worst 2.85), cinema 1.86
+  (worst 7.7); frame median 12.8 ms vs 11.7 base. The fog bank (look 003) still costs 6.4-6.7 ms = half the frame.
+- **Verified:** debug + validation captures exit 0 on aldeia015 (every level, OFF, Tática); the fog lights the sky /
+  painting, surfaces, effects; cemiterio's lanterns glow in the air. See ATMOSPHERE.md §6 for the rest of the checks
+  and what is still open (density tuning by eye is the user's; never-seen bank in the volume optional, off).
+- **The user's reports (2026-10-16):** "um leve glitch na cor quando move a tela" → later "não tem glitch de cor, é só
+  esse flickering mesmo, que agora apareceu alguns segundos mais tarde": the flicker was the history restarting (the
+  opening, then the adaptive level switches); fixed by the ramp + adaptive off by default. Then "não mudou nada,
+  podemos desencanar disso?" and "padrão on": the atmosphere stays ON at "alta" by default, the user does not want
+  more time spent on it now. Default profile densities are light (visibility 300-1400 units): the visible change on
+  aldeia015 (dusk) is subtle; cemiterio (night) shows the lantern glow in the air.
+- **Shared checkout, 2026-10-16 afternoon:** another session edited the sprite path (SpriteFormat / SpriteSystem /
+  sprites.hlsl / SpriteCooker, "Sprites 3D" relief) in this checkout while this work ran; a release built from the
+  mixed working tree failed to load the sprite pack ("damaged roster") and its captures never finished. This work was
+  therefore verified from a scratch worktree holding HEAD + only its own staged hunks (`git worktree add --detach`,
+  `git diff --cached | git apply`), and committed from that index.
 
 ## Next
 

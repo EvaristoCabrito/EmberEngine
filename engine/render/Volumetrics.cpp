@@ -170,40 +170,43 @@ Volumetrics::Volumetrics(VulkanContext& context, Bindless& bindless) : context_(
 }
 
 Volumetrics::~Volumetrics() {
-  destroyVolumes();
+  for (Set& s : sets_) destroySet(s);
   vkDestroyPipeline(context_.device, inject_, nullptr);
   vkDestroyPipeline(context_.device, integrate_, nullptr);
   for (Buffer& b : frames_) destroyBuffer(context_, b);
 }
 
-void Volumetrics::createVolumes() {
+Volumetrics::Set& Volumetrics::set(Quality q) {
+  Set& s = sets_[static_cast<size_t>(q)];
+  if (s.grid.x != 0) return s;
+  s.grid = level(q).grid;
   const ImageDesc desc{.format = VK_FORMAT_R16G16B16A16_SFLOAT,
-                       .extent = {grid_.x, grid_.y},
+                       .extent = {s.grid.x, s.grid.y},
                        .usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                       .depth = grid_.z};
+                       .depth = s.grid.z};
   for (int i = 0; i < 2; ++i) {
-    froxels_[i] = createImage(context_, desc);
-    froxelStorage_[i] = bindless_.addStorageImage(froxels_[i].view);
-    froxelSampled_[i] = bindless_.addSampledImage(froxels_[i].view, VK_IMAGE_LAYOUT_GENERAL);
+    s.froxels[i] = createImage(context_, desc);
+    s.froxelStorage[i] = bindless_.addStorageImage(s.froxels[i].view);
+    s.froxelSampled[i] = bindless_.addSampledImage(s.froxels[i].view, VK_IMAGE_LAYOUT_GENERAL);
   }
-  integrated_ = createImage(context_, desc);
-  integratedStorage_ = bindless_.addStorageImage(integrated_.view);
-  integratedSampled_ = bindless_.addSampledImage(integrated_.view, VK_IMAGE_LAYOUT_GENERAL);
-  volumesReady_ = false;
-  historyValid_ = false;
+  s.integrated = createImage(context_, desc);
+  s.integratedStorage = bindless_.addStorageImage(s.integrated.view);
+  s.integratedSampled = bindless_.addSampledImage(s.integrated.view, VK_IMAGE_LAYOUT_GENERAL);
+  s.ready = false;
+  return s;
 }
 
-void Volumetrics::destroyVolumes() {
-  if (grid_.x == 0) return;
+void Volumetrics::destroySet(Set& s) {
+  if (s.grid.x == 0) return;
   for (int i = 0; i < 2; ++i) {
-    bindless_.removeStorageImage(froxelStorage_[i]);
-    bindless_.removeSampledImage(froxelSampled_[i]);
-    destroyImage(context_, froxels_[i]);
+    bindless_.removeStorageImage(s.froxelStorage[i]);
+    bindless_.removeSampledImage(s.froxelSampled[i]);
+    destroyImage(context_, s.froxels[i]);
   }
-  bindless_.removeStorageImage(integratedStorage_);
-  bindless_.removeSampledImage(integratedSampled_);
-  destroyImage(context_, integrated_);
-  grid_ = glm::uvec3(0);
+  bindless_.removeStorageImage(s.integratedStorage);
+  bindless_.removeSampledImage(s.integratedSampled);
+  destroyImage(context_, s.integrated);
+  s.grid = glm::uvec3(0);
 }
 
 void Volumetrics::setQuality(Quality q) {
@@ -266,12 +269,9 @@ bool Volumetrics::prepare(const Camera& camera, float time, VkCommandBuffer cmd,
     return false;
   }
   const Level lv = level(effective_);
-  if (lv.grid != grid_) {
-    vkDeviceWaitIdle(context_.device);
-    destroyVolumes();
-    grid_ = lv.grid;
-    createVolumes();
-  }
+  Set& s = set(effective_);
+  if (active_ != &s) historyValid_ = false;  // another grid: its history is stale (or never written)
+  active_ = &s;
   // The profile blend.
   const float dt = lastTime_ < 0.0f ? 0.0f : std::clamp(time - lastTime_, 0.0f, 0.25f);
   lastTime_ = time;
@@ -286,6 +286,13 @@ bool Volumetrics::prepare(const Camera& camera, float time, VkCommandBuffer cmd,
   if (moved > 25.0f || turned < 0.85f) historyValid_ = false;
   previousEye_ = camera.position;
   previousForward_ = camera.forward;
+  // The first frames after a reset (and the first of all): no history to smooth the slice jitter, so the jitter and
+  // the history's weight ramp up together over about half a second instead of flickering until the history fills.
+  // The history's weight is back near full within four frames (so the jittered samples are averaged at once); the
+  // jitter itself grows over thirty, so no frame shows raw slices: no flicker after a reset.
+  framesSinceReset_ = historyValid_ ? framesSinceReset_ + 1 : 0;
+  const float weightRamp = std::min(static_cast<float>(framesSinceReset_) / 4.0f, 1.0f);
+  const float jitterRamp = std::min(static_cast<float>(framesSinceReset_) / 30.0f, 1.0f);
 
   const float near = std::max(camera.projection[3][2], 0.25f);
   const float far = near + (tactical_ ? std::max(current_.maxDistance, 450.0f) : current_.maxDistance);
@@ -295,12 +302,12 @@ bool Volumetrics::prepare(const Camera& camera, float time, VkCommandBuffer cmd,
   v.inverseViewProjection = glm::inverse(viewProjection);
   v.previousViewProjection = previousViewProjection_;
   previousViewProjection_ = viewProjection;
-  v.grid = grid_;
+  v.grid = s.grid;
   // Halton (base 2) slice offsets: every frame samples the slices at a different depth.
   uint32_t n = ++frameCounter_ % 64 + 1;
   float halton = 0.0f, scale = 0.5f;
   for (; n; n >>= 1, scale *= 0.5f) halton += static_cast<float>(n & 1) * scale;
-  v.jitter = halton - 0.5f;
+  v.jitter = (halton - 0.5f) * jitterRamp;
   v.wind = current_.wind;
   v.time = time;
   v.albedo = current_.albedo;
@@ -314,7 +321,7 @@ bool Volumetrics::prepare(const Camera& camera, float time, VkCommandBuffer cmd,
   v.sunScale = current_.sunScale;
   v.skyScale = current_.skyScale;
   v.localScale = current_.localScale;
-  v.historyWeight = lv.historyWeight;
+  v.historyWeight = lv.historyWeight * weightRamp;
   v.meanGround = meanGround_;
   v.bankDensity = current_.bankDensity * (tactical_ ? current_.tacticalScale : 1.0f);
   v.bankHeight = current_.bankHeight;
@@ -322,9 +329,9 @@ bool Volumetrics::prepare(const Camera& camera, float time, VkCommandBuffer cmd,
   v.occlusionTaps = lv.occlusionTaps;
   v.historyValid = historyValid_ ? 1u : 0u;
   current_slot_ ^= 1u;
-  v.injected = froxelStorage_[current_slot_];
-  v.history = froxelSampled_[current_slot_ ^ 1u];
-  v.integrated = integratedStorage_;
+  v.injected = s.froxelStorage[current_slot_];
+  v.history = s.froxelSampled[current_slot_ ^ 1u];
+  v.integrated = s.integratedStorage;
   v.volumeCount = static_cast<uint32_t>(volumes_.size());
   v.nearFade = std::max(current_.nearFade, 0.1f);
   v.shadowSoftness = 0.6f;
@@ -336,18 +343,19 @@ bool Volumetrics::prepare(const Camera& camera, float time, VkCommandBuffer cmd,
   barrier(cmd, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_MEMORY_READ_BIT, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
   vkCmdUpdateBuffer(cmd, frames_[frameSlot].buffer, 0, kRecordBytes, record.data());
 
-  out.integrated = integratedSampled_;
-  out.slices = grid_.z;
+  out.integrated = s.integratedSampled;
+  out.slices = s.grid.z;
   out.near = near;
   out.far = far;
   return true;
 }
 
 void Volumetrics::record(VkCommandBuffer cmd, VkDeviceAddress meshFrame, uint32_t frameSlot) {
-  if (!thisFrame_) return;
-  if (!volumesReady_) {
-    volumesReady_ = true;
-    for (Image* v : {&froxels_[0], &froxels_[1], &integrated_})
+  if (!thisFrame_ || !active_) return;
+  Set& s = *active_;
+  if (!s.ready) {
+    s.ready = true;
+    for (Image* v : {&s.froxels[0], &s.froxels[1], &s.integrated})
       transition(cmd, v->image, v->aspect,
                  {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE,
                   VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
@@ -360,12 +368,12 @@ void Volumetrics::record(VkCommandBuffer cmd, VkDeviceAddress meshFrame, uint32_
   const Push push{meshFrame, bufferAddress(context_, frames_[frameSlot])};
   vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, inject_);
   vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
-  vkCmdDispatch(cmd, (grid_.x + 7) / 8, (grid_.y + 7) / 8, grid_.z);
+  vkCmdDispatch(cmd, (s.grid.x + 7) / 8, (s.grid.y + 7) / 8, s.grid.z);
   barrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
           VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
   vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, integrate_);
   vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
-  vkCmdDispatch(cmd, (grid_.x + 7) / 8, (grid_.y + 7) / 8, 1);
+  vkCmdDispatch(cmd, (s.grid.x + 7) / 8, (s.grid.y + 7) / 8, 1);
   barrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
           VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
   historyValid_ = true;

@@ -128,15 +128,31 @@ Nada dos looks salvos (001–007), de `volume.hlsl`, da atmosfera Hillaire, dos 
 - **Orçamento**: esperado 0,5–1,5 ms por nível nesta GPU (medido: a grade antiga 0,39 ms); se a cinematográfica
   passar de 2 ms, a adaptativa recua.
 
-## 6. Plano de validação
+## 6. Validação (2026-10-16, o que foi feito e o resultado)
 
-1. Debug + validação: capturas de aldeia015 com o v1 em cada qualidade e com OFF (saída 0, 0 erros).
-2. Rollback: v1 OFF deve dar imagem byte-idêntica à captura de base (`captures/atmos/baseline-aldeia015-real.png`
-   com o mesmo `--scene-time`).
-3. Fog of war: `tools/scripts/check_fog.py` nos 4 momentos (0 pixels nunca vistos iluminados) com o v1 ligado.
-4. Temporal: `--capture-sequence` com a câmera girando (ghosting, cintilação) e ao alternar Tática.
-5. Custo: `--measure 20` por qualidade; números na tabela da seção 2 (coluna nova).
-6. Tática: captura `--tatica` com o v1 ligado (cards legíveis, véu coerente).
+1. **Debug + validação:** capturas de aldeia015 com `--atmos 0/1/2/3` e `--tatica`: saída 0, 0 erros de validação.
+2. **Rollback:** `Sandbox.exe --atmos 0` (release novo) contra o exe de antes da mudança (`Sandbox-locked-1432.exe`,
+   mesmos shaders novos, mesmo `--scene-time`, sem regras de batalha): **0 pixels diferentes** (o próprio exe antigo
+   varia 632 k pixels entre duas execuções suas por causa do ruído por quadro do banco de névoa; a comparação é
+   contra a execução idêntica). O OFF devolve a imagem de antes.
+3. **Fog of war:** `check_fog.py` com o banco de névoa ligado FALHA já no OFF (o banco pinta sobre o fundo preto, e
+   com "imagem do mapa" a pintura aparece no nunca visto: o teste é de 2026-10-14, antes dos looks e do fundo); por
+   isso o teste corre com `--mist 0 --background 2` (máscara e atmosfera ligadas, sem o banco), 4 momentos com
+   batedor, tocha e feitiço: **OFF 34 pixels não pretos (brilho máximo 10 de 765) num momento, atmosfera "alta" 30
+   (máximo 7)**: a mesma fuga mínima de antes (não é da atmosfera: com ela há menos), 0 nos outros três momentos.
+   Regra mantida no v1: ar nunca visto não espalha nada (só absorve) e o ar lembrado é escurecido ×0,4 sem luz
+   local; luzes locais fora de vista já não chegam ao GPU; o fundo preto do nunca visto não recebe névoa.
+4. **Temporal:** `--capture-sequence 80:1:10` com a câmera girando (`--measure 6`): diferenças quadro a quadro com a
+   névoa ligada iguais às do OFF (movimento da câmera), nenhuma instabilidade extra. O usuário viu tremulação nos
+   primeiros segundos e de novo segundos depois (2026-10-16): o reinício do histórico (jitter sem histórico) na
+   abertura e nas trocas de nível da qualidade adaptativa. Correção: adaptativa desligada por padrão; a cada reinício
+   o peso do histórico volta em 4 quadros e o jitter cresce em 30 (nenhum quadro mostra fatias cruas). A confirmar
+   pelo usuário na janela.
+5. **Custo (release, 60 Hz pacado, aldeia015, fog of war, regras de batalha):** "volumetrics" alta 0,59 ms (pior
+   2,85), cinema 1,86 (pior 7,69); quadro mediano 12,8 ms contra 11,7 de base. Dentro da meta (≤ 2 ms em alta).
+6. **Tática:** `--tatica --atmos 2`: captura sai, 0 erros; o véu segue a escala do perfil (`tacticalScale`).
+7. **DXC:** a amostra da última fatia com a coordenada montada inline no `float3` lia 0 num caminho e o valor certo
+   noutro; corrigido com `volumeFarSample` (coordenada numa variável). Anotado no CLAUDE.md.
 
 ## 7. O upgrade gráfico, além da névoa (pedido do usuário; a mesma série versionada)
 

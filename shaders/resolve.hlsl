@@ -22,7 +22,7 @@ static const uint kBlackBackground = 0xFFFFFFFEu;
 // What shows where nothing was drawn: the painted backdrop (fitted to cover the screen, like a photo behind a
 // stage), black, the sky, or the clear colour.
 float4 backgroundAt(MeshFrame f, uint2 pixel) {
-  if (f.debugView >= 5u && f.debugView <= 21u) return float4(volumeOverBackground(f, 0.0, pixel), 1.0);  // TEMP diagnostic
+  if (f.debugView >= kDebugVolumeFirst && f.debugView <= kDebugVolumeLast) return float4(volumeOverBackground(f, 0.0, pixel), 1.0);  // the volume's debug views
   if (f.debugView != 0 || push.background == kBlackBackground) return float4(0.0, 0.0, 0.0, 1.0);
   if (push.background != kNoTexture) {
     uint w, h;

@@ -131,6 +131,8 @@ struct Options {
   bool windowed = false;  // --windowed or --size: a window instead of the whole screen
   int fogLook = 3;
   int atmos = 2;  // --atmos N: Atmosfera volumétrica v1 at the start (0 OFF, 1 cinema, 2 alta, 3 desempenho)
+  int background = -1;  // --background N: the panel's "Fundo" (-1 as the map says, 0 the painting, 1 the sky, 2 OFF = black)
+  bool mist = true;    // --mist 0: the fog of war's mist bank off (its mask and the volumetric atmosphere stay)
   int lighting = 3;
   float sceneTime = -1.0f;
   std::string moonPhase;
@@ -204,6 +206,8 @@ Options parse(int argc, char** argv) {
     else if (arg == "--volume" && hasValue) o.volume = std::atoi(argv[++i]) != 0;
     else if (arg == "--fog-look" && hasValue) o.fogLook = std::atoi(argv[++i]);
     else if (arg == "--atmos" && hasValue) o.atmos = std::atoi(argv[++i]);
+    else if (arg == "--background" && hasValue) o.background = std::atoi(argv[++i]);
+    else if (arg == "--mist" && hasValue) o.mist = std::atoi(argv[++i]) != 0;
     else if (arg == "--lighting" && hasValue) o.lighting = std::atoi(argv[++i]);
     else if (arg == "--scene-time" && hasValue) o.sceneTime = static_cast<float>(std::atof(argv[++i]));
     else if (arg == "--moon-phase" && hasValue) o.moonPhase = argv[++i];
@@ -506,6 +510,8 @@ MapStageOptions mapOptions(const Options& o) {
     m.volume = o.volume;
     m.fogLook = o.fogLook;
     m.atmos = o.atmos;
+    m.background = o.background;
+    m.mist = o.mist;
     m.lighting = o.lighting;
     m.sceneTime = o.sceneTime;
     m.moonPhase = o.moonPhase;

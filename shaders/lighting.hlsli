@@ -34,6 +34,7 @@ struct Surface {
   float receivesCardShadow; // 1 = cards' shadows too, 0 = only the ground's and 3D pieces' (cards themselves)
   float twoSidedLocal;     // 1 = local lights reach it from both sides (a character card stands for a body)
   float3 sightAt;          // where the fog of war is read (the surface itself; a card: its foot, so it is seen whole)
+  float sunVisibility;     // the sun seen from the surface itself (a card's own relief shadowing it), 1 = whole
 };
 
 Surface defaultSurface(float3 position, float3 normal, float3 albedo) {
@@ -52,6 +53,7 @@ Surface defaultSurface(float3 position, float3 normal, float3 albedo) {
   s.receivesCardShadow = 1.0;
   s.twoSidedLocal = 0.0;
   s.sightAt = position;
+  s.sunVisibility = 1.0;
   return s;
 }
 
@@ -211,7 +213,7 @@ float3 shadeInSight(MeshFrame f, Surface s, Sight sight) {
     const float nlDiffuse = saturate((nlRaw + s.wrap) / (1.0 + s.wrap));
     if (nlDiffuse > 0.0) {
       const float3 F = fresnelSchlick(f0, vh) * s.specular;
-      const float shadow = s.receivesShadow > 0.0 ? lerp(1.0, sunShadow(f, s), s.receivesShadow) : 1.0;
+      const float shadow = (s.receivesShadow > 0.0 ? lerp(1.0, sunShadow(f, s), s.receivesShadow) : 1.0) * s.sunVisibility;
       color += (diffuseColor * (1.0 - F) / kPi * nlDiffuse + F * ggx(nh, a) * smithVisibility(nv, nl, a) * nl) * f.sunColor *
                f.sunIntensity * shadow;
     }
@@ -264,41 +266,29 @@ float volumeTransmittance(MeshFrame f, float3 position) {
   return lerp(1.0, t, saturate(w * slices + 0.5));
 }
 // (volumeFlags bit 2) The fog all the way out, over what shows behind everything (the sky, a painted backdrop).
-// TEMP diagnostic (debug views 15..19): the integrated volume at a screen uv, slice 5 / 90 / 93 / 97 / 99.5 %:
-// (T, scatter x4, 1 if any component is NaN or inf (by bits: fast-math folds isnan)).
+// The volume's far slice at a screen uv (the fog all the way out).
+float4 volumeFarSample(MeshFrame f, float2 uv) {
+  const float w = 1.0 - 0.5 / float(max(f.volumeSlices, 1u));
+  return gTextures3D[NonUniformResourceIndex(f.volume)].SampleLevel(gSamplers[f.volumeSampler], float3(uv, w), 0);
+}
+// Debug views 15..19 (--debug-view N): the integrated volume at a screen uv, slices 5 / 90 / 93 / 97 / 99.5 %:
+// (transmittance, scattered luminance x4, 1 where a component is NaN or inf, tested by bits: fast-math folds isnan).
+static const uint kDebugVolumeFirst = 15u, kDebugVolumeLast = 19u;
 float3 debugVolume(MeshFrame f, float2 uv) {
   if (f.volume == kNoTexture) return float3(0.0, 0.0, 1.0);
   const float ws[5] = {0.05, 0.9, 0.93, 0.97, 0.995};
-  float w = ws[clamp(f.debugView, 15u, 19u) - 15u];
-  if (f.debugView == 20u) w = 1.0 - 0.5 / float(max(f.volumeSlices, 1u));
-  if (f.debugView == 21u) return float3(float(f.volumeSlices) / 128.0, 1.0 - 0.5 / float(max(f.volumeSlices, 1u)), 0.0);
+  const float w = ws[clamp(f.debugView, kDebugVolumeFirst, kDebugVolumeLast) - kDebugVolumeFirst];
   const float4 s = gTextures3D[NonUniformResourceIndex(f.volume)].SampleLevel(gSamplers[f.volumeSampler], float3(uv, w), 0);
   const uint4 bits = asuint(s) & 0x7f800000u;
-  const bool bad = any(bits == 0x7f800000u);
-  return float3(s.a, dot(s.rgb, 0.333) * 4.0, bad ? 1.0 : 0.0);
+  return float3(s.a, dot(s.rgb, 0.333) * 4.0, any(bits == 0x7f800000u) ? 1.0 : 0.0);
 }
+// (volumeFlags bit 2) The fog all the way out, over what shows behind everything (the sky, a painted backdrop).
+// DXC gotcha (2026-10-16): with the slice coordinate built inline in the float3 of the SampleLevel call, this read 0
+// on the normal path (while the same coordinate read the fog in a debug branch): keep the sample in volumeFarSample.
 float3 volumeOverBackground(MeshFrame f, float3 color, uint2 pixel) {
-  if (f.debugView >= 15u && f.debugView <= 21u) return debugVolume(f, (float2(pixel) + 0.5) / f.screenSize);
-  if (f.debugView == 13u) return float3(1.0, 0.0, 1.0);  // TEMP diagnostic: is this reached at all
-  if (f.debugView == 14u) return float3((f.volumeFlags & 1u) ? 1.0 : 0.0, (f.volumeFlags & 2u) ? 1.0 : 0.0, f.volume == kNoTexture ? 1.0 : 0.0);
+  if (f.debugView >= kDebugVolumeFirst && f.debugView <= kDebugVolumeLast) return debugVolume(f, (float2(pixel) + 0.5) / f.screenSize);
   if (f.volume == kNoTexture || (f.volumeFlags & 2u) == 0) return color;
-  const float3 uvw = float3((float2(pixel) + 0.5) / f.screenSize, 1.0 - 0.5 / float(max(f.volumeSlices, 1u)));
-  Texture3D volume = gTextures3D[NonUniformResourceIndex(f.volume)];
-  const float4 fog = volume.SampleLevel(gSamplers[f.volumeSampler], uvw, 0);
-  if (f.debugView == 5u) return fog.rgb * 4.0;        // TEMP diagnostic: the far slice's in-scatter
-  if (f.debugView == 6u) return fog.aaa;              // TEMP diagnostic: the far slice's transmittance
-  if (f.debugView == 7u) return float3(uvw.xy, 0.0);  // TEMP diagnostic: the lookup
-  if (f.debugView >= 8u && f.debugView <= 10u) {      // TEMP diagnostic: slices at 25 / 50 / 75 %: (nan?, T, scatter luminance x4)
-    const float4 s = gTextures3D[NonUniformResourceIndex(f.volume)].SampleLevel(gSamplers[f.volumeSampler], float3(uvw.xy, 0.25 * float(f.debugView - 7u)), 0);
-    return float3(any(isnan(s)) ? 1.0 : 0.0, s.a, dot(s.rgb, 0.333) * 4.0);
-  }
-  if (f.debugView == 11u) return float3(any(isnan(fog)) ? 1.0 : 0.0, any(isinf(fog)) ? 1.0 : 0.0, 0.0);
-  if (f.debugView == 12u) {  // TEMP diagnostic: the first slice (T, scatter), and the far froxel's clip w / 100
-    const float4 s = gTextures3D[NonUniformResourceIndex(f.volume)].SampleLevel(gSamplers[f.volumeSampler], float3(uvw.xy, 0.5 / float(max(f.volumeSlices, 1u))), 0);
-    const AtmosphereFrame a = loadAtmosphere(f);
-    const float4 h = mul(float4(uvw.xy * 2.0 - 1.0, f.zNear / f.volumeFar, 1.0), a.inverseViewProjection);
-    return float3(s.a, dot(s.rgb, 0.333) * 4.0, h.w / 100.0);
-  }
+  const float4 fog = volumeFarSample(f, (float2(pixel) + 0.5) / f.screenSize);
   return color * fog.a + fog.rgb;
 }
 
@@ -312,7 +302,7 @@ float3 fogStateColor(float alpha) {
 }
 
 float3 shade(MeshFrame f, Surface s) {
-  if (f.debugView >= 15u && f.debugView <= 19u) {  // TEMP diagnostic
+  if (f.debugView >= kDebugVolumeFirst && f.debugView <= kDebugVolumeLast) {
     const float4 c = mul(float4(s.position, 1.0), f.viewProjection);
     return debugVolume(f, c.xy / c.w * 0.5 + 0.5);
   }

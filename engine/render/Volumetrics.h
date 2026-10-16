@@ -117,12 +117,21 @@ class Volumetrics {
     float historyWeight, budgetMs;
   };
   static Level level(Quality q);
-  void createVolumes();
-  void destroyVolumes();
+  // One set of volumes per quality level, made the first time the level runs and kept (switching levels then costs
+  // nothing: no wait for the GPU, no reallocation; the history starts afresh).
+  struct Set {
+    glm::uvec3 grid{0};
+    Image froxels[2], integrated;
+    uint32_t froxelStorage[2] = {0xFFFFFFFFu, 0xFFFFFFFFu}, froxelSampled[2] = {0xFFFFFFFFu, 0xFFFFFFFFu};
+    uint32_t integratedStorage = 0xFFFFFFFFu, integratedSampled = 0xFFFFFFFFu;
+    bool ready = false;  // layouts set
+  };
+  Set& set(Quality q);
+  void destroySet(Set& s);
 
   VulkanContext& context_;
   Bindless& bindless_;
-  bool enabled_ = false, adaptive_ = true;
+  bool enabled_ = false, adaptive_ = false;  // adaptive off by default: a level change restarts the history (user, 2026-10-16: flicker)
   Quality quality_ = Quality::High, effective_ = Quality::High;
   int overBudgetFrames_ = 0, underBudgetFrames_ = 0;
   Profile current_, from_, target_;
@@ -132,12 +141,9 @@ class Volumetrics {
   bool tactical_ = false;
   float lastTime_ = -1.0f;
 
-  glm::uvec3 grid_{0};
-  Image froxels_[2], integrated_;
-  uint32_t froxelStorage_[2] = {0xFFFFFFFFu, 0xFFFFFFFFu}, froxelSampled_[2] = {0xFFFFFFFFu, 0xFFFFFFFFu};
-  uint32_t integratedStorage_ = 0xFFFFFFFFu, integratedSampled_ = 0xFFFFFFFFu;
-  bool volumesReady_ = false;  // layouts set
-  uint32_t current_slot_ = 0, frameCounter_ = 0;
+  std::array<Set, 3> sets_{};
+  Set* active_ = nullptr;  // the set this frame draws with
+  uint32_t current_slot_ = 0, frameCounter_ = 0, framesSinceReset_ = 0;
   bool historyValid_ = false, thisFrame_ = false;
   glm::mat4 previousViewProjection_{1.0f};
   glm::vec3 previousEye_{0.0f}, previousForward_{0.0f, 0.0f, -1.0f};
