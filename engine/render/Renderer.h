@@ -229,6 +229,10 @@ class Renderer {
   void setBackground(uint32_t background) { background_ = background; }
   // Full-scene bloom strength (Engine2: the map's bloomIntensity, default 0.16); 0 = none.
   void setBloom(float strength) { bloom_ = strength; }
+  // Cards lean back with the camera's tilt so they project upright anywhere on screen (sprites.hlsl VSMain); off =
+  // vertical cards, which converge under a tilted camera. Panel "Cards".
+  void setCardLean(bool on) { cardLean_ = on; }
+  bool cardLean() const { return cardLean_; }
   uint32_t lightingLayers() const { return lightingLayers_; }
   // Tactical visibility (fog of war, ARCHITECTURE §7.0 R7): Engine2's darkness mask over the board
   // (world/FogOfWar.h). Every lit surface, card, water, shadow caster and local light reads it, none
@@ -339,6 +343,7 @@ class Renderer {
   VkPipeline meshShadowPipeline_ = VK_NULL_HANDLE, spriteShadowPipeline_ = VK_NULL_HANDLE, lightsPipeline_ = VK_NULL_HANDLE;
   std::vector<LocalLight> lights_;
   float bloom_ = 0.0f;
+  bool cardLean_ = true;
   std::vector<GroundMark> marks_;
   int markCols_ = 0, markRows_ = 0;
   std::vector<GridCell> grid_;

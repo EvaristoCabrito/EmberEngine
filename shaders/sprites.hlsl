@@ -2,8 +2,9 @@
 // a texture array (one layer per frame), straight alpha in sRGB BC7; colour is premultiplied after sampling
 // and blended premultiplied, so edges never fringe.
 //
-// A card stands upright: either turning about the vertical axis to face the camera (units) or along a fixed
-// axis (decorations stand square to the hex rows, as in Engine2). Lit cards go through the lighting contract
+// A card stands on its feet: either turning about the vertical axis to face the camera (units) or along a fixed
+// axis (decorations stand square to the hex rows, as in Engine2); by default it leans back with the camera's tilt so
+// it projects upright anywhere on screen (Push.lean; panel "Cards"). Lit cards go through the lighting contract
 // (lighting.hlsli) with Engine2's card model as the baseline (src/units/spriteMaterial.ts): the shading
 // normal faces out of the card tilted upward (y 0.55 against z 1), diffuse light wraps around (0.85), no
 // specular, and a lit card never exceeds twice its painted colour. Painted flames glow (Engine2's emit
@@ -33,6 +34,8 @@ struct Push {
   uint samplerIndex;
   uint64_t instances;  // device address of SpriteInstance[]
   uint64_t frame;      // MeshFrame (camera, lights); 0 = no scene lighting
+  float3 cameraForward;
+  uint lean;           // 1: a card's up is the world's vertical projected onto the image plane (see VSMain)
 };
 [[vk::push_constant]] Push push;
 
@@ -57,9 +60,17 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
   const SpriteInstance s = loadSprite(instance);
   const float2 c = corners[vertex];
   const float3 right = dot(s.right, s.right) > 0.0 ? float3(s.right.x, 0.0, s.right.y) : push.cameraRight;
-  // A flat card (the 2D view) lies facing up with its top toward -z, the top of the screen.
+  // A flat card (the 2D view) lies facing up with its top toward -z, the top of the screen. Otherwise, with
+  // push.lean, the card's up is the world's vertical projected onto the image plane: the card leans back by the
+  // camera's tilt with its feet in place, so it projects upright anywhere on screen (vertical cards converge
+  // under a tilted camera: the user saw every decoration "crooked" at the screen's sides). Without it, vertical.
   const bool flat = (s.flags & 16u) != 0;
-  const float3 up = flat ? float3(0, 0, -1) : float3(0, 1, 0);
+  float3 up = float3(0, 1, 0);
+  if (flat) up = float3(0, 0, -1);
+  else if (push.lean != 0) {
+    const float3 v = float3(0, 1, 0) - push.cameraForward * push.cameraForward.y;
+    if (dot(v, v) > 1e-6) up = normalize(v);
+  }
   const float3 world = s.origin + right * ((c.x - 0.5) * s.width) + up * (c.y * s.height);
   // The card's facing (three.js: a plane turned by yaw faces (sin yaw, 0, cos yaw)), tilted upward.
   const float3 facing = float3(-right.z, 0.0, right.x);

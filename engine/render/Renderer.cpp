@@ -80,7 +80,10 @@ struct SpritePush {
   uint32_t sampler;
   VkDeviceAddress instances;
   VkDeviceAddress frame;  // MeshFrame: scene lighting for lit cards
+  glm::vec3 cameraForward;
+  uint32_t lean;          // Renderer::setCardLean: cards lean back with the camera's tilt (upright on screen)
 };
+static_assert(sizeof(SpritePush) == 112);
 
 struct EffectPush {
   VkDeviceAddress instances;
@@ -1507,7 +1510,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     setViewport(cmd, {shadowSize_, shadowSize_});
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spriteShadowPipeline_);
     const SpritePush push{camera_.viewProjection(), camera_.right, spriteSamplerIndex_, bufferAddress(context_, frame.sprites),
-                          bufferAddress(context_, frame.meshFrame)};
+                          bufferAddress(context_, frame.meshFrame), camera_.forward, cardLean_ ? 1u : 0u};
     vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
     vkCmdDraw(cmd, 6, static_cast<uint32_t>(sprites_.size()), 0, 0);
     vkCmdEndRendering(cmd);
@@ -1667,7 +1670,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     if (!sprites_.empty()) {
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spritePipeline_);
       const SpritePush spritePush{viewProjection, camera_.right, spriteSamplerIndex_, bufferAddress(context_, frame.sprites),
-                                  bufferAddress(context_, frame.meshFrame)};
+                                  bufferAddress(context_, frame.meshFrame), camera_.forward, cardLean_ ? 1u : 0u};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(spritePush), &spritePush);
       vkCmdDraw(cmd, 6, static_cast<uint32_t>(sprites_.size()), 0, 0);
     }
@@ -1732,7 +1735,8 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     if (!frontCards_.empty()) {
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spritePipeline_);
       const SpritePush frontPush{camera_.viewProjection(), camera_.right, spriteSamplerIndex_,
-                                 bufferAddress(context_, frame.sprites) + sprites_.size() * sizeof(SpriteInstance), bufferAddress(context_, frame.meshFrame)};
+                                 bufferAddress(context_, frame.sprites) + sprites_.size() * sizeof(SpriteInstance), bufferAddress(context_, frame.meshFrame),
+                                 camera_.forward, cardLean_ ? 1u : 0u};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(frontPush), &frontPush);
       vkCmdDraw(cmd, 6, static_cast<uint32_t>(frontCards_.size()), 0, 0);
     }

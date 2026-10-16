@@ -126,6 +126,7 @@ struct MapStageOptions {
   bool airParticles = true;  // the map's wisps and dust motes (Dev Controls "Efeitos atmosféricos" off: none)
   int fogLook = 3;  // the fog look shown first (render/FogLooks.h numbers)
   int gridLook = 2;  // the panel's "Grade" at the start: 0 OFF, 1 antiga (the marks), 2 = look 001 (--grid-look N)
+  int cardStance = 1;  // the panel's "Cards" at the start: 0 em pé (vertical), 1 para a câmera (--cards N)
   // Atmosfera volumétrica v1: the panel's "Atmosfera" at the start (0 OFF, 1 cinema, 2 alta, 3 desempenho; --atmos N).
   // ON by default at "alta" (user, 2026-10-16: "padrão on"); the choice stays in the panel.
   int atmos = 2;
@@ -211,6 +212,7 @@ class MapStage final : public Stage {
     flat_ = options.tatica;
     atmosChoice_ = std::clamp(options.atmos, 0, 3);
     gridLook_ = std::clamp(options.gridLook, 0, 2);
+    cardStance_ = std::clamp(options.cardStance, 0, 1);
     spellsMenu_.load("content/fx/spell-looks.json", "content/fx.sprites.json");
     layers_ = options.layers;
     data_ = e2::BoardData::load(options.boardData);
@@ -461,6 +463,7 @@ class MapStage final : public Stage {
     bank.scene.partyCenter = partyCenter();
     renderer.setFogBank(bank);
     renderer.setBloom(bloomOn_ ? (board_->draft().bloomIntensity > 0.0f ? board_->draft().bloomIntensity : 0.16f) : 0.0f);
+    renderer.setCardLean(cardStance_ == 1);
     renderer.waitFor(uploads_.timeline(),
                      std::max({ground_.uploadWaitValue(), sprites_.uploadWaitValue(), meshes_.uploadWaitValue()}));
     if (ground_.ready() && sceneReady() && (!fog_ || fogReady_)) ++readyFrames_;
@@ -826,6 +829,12 @@ class MapStage final : public Stage {
     {
       static const char* kBackgrounds[3] = {"imagem do mapa", "céu", "OFF"};
       dropdown("Fundo", background_, 3, [](int i) { return std::string(kBackgrounds[i]); });
+    }
+    {
+      // Cards vertical (they converge under the tilted camera: "crooked"), or leaning back with the camera's tilt so
+      // every card stands upright on screen (sprites.hlsl VSMain).
+      static const char* kStance[2] = {"em pé", "para a câmera"};
+      dropdown("Cards", cardStance_, 2, [](int i) { return std::string(kStance[i]); });
     }
     if (battle_) {
       // The battle grid: the old marks, or a saved look (looks/grid/README.md).
@@ -1900,6 +1909,19 @@ class MapStage final : public Stage {
   }
 
   // The hex under the cursor: a drawn unit's card first (nearest wins), else the ground the view ray meets.
+  // A card's up as drawn (sprites.hlsl VSMain): flat in Tática; vertical, or leaning back with the camera's tilt
+  // (panel "Cards": para a câmera) so it stands upright on screen; for picking, the health bars, the popups.
+  struct CardRect;
+  glm::vec3 cardUp(const CardRect& c) const {
+    if (c.flat) return {0.0f, 0.0f, -1.0f};
+    if (cardStance_ == 1) {
+      const glm::vec3 f = lastCamera_.forward;
+      const glm::vec3 v = glm::vec3(0.0f, 1.0f, 0.0f) - f * f.y;
+      if (glm::dot(v, v) > 1e-6f) return glm::normalize(v);
+    }
+    return {0.0f, 1.0f, 0.0f};
+  }
+
   std::optional<e2::BattleHex> pick(SDL_WindowID id, float mx, float my) const {
     int w = 0, h = 0;
     SDL_Window* window = SDL_GetWindowFromID(id);
@@ -1914,7 +1936,7 @@ class MapStage final : public Stage {
     for (size_t i = 0; i < unitCard_.size(); ++i) {
       const CardRect& c = unitCard_[i];
       if (!c.drawn || (unitBattle_[i] < 0 && !(options_.editorClick && scene_ && i < scene_->units.size()))) continue;
-      const glm::vec3 up = c.flat ? glm::vec3(0.0f, 0.0f, -1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
+      const glm::vec3 up = cardUp(c);
       const glm::vec3 corners[4] = {c.origin - right * (c.width * 0.5f), c.origin + right * (c.width * 0.5f),
                                     c.origin + right * (c.width * 0.5f) + up * c.height, c.origin - right * (c.width * 0.5f) + up * c.height};
       ImVec2 q[4];
@@ -2883,7 +2905,7 @@ class MapStage final : public Stage {
     for (const Popup& p : popups_) {
       const CardRect& c = unitCard_[p.unit];
       const float k = (now_ - p.start) / kPopupSeconds;
-      const glm::vec3 up = c.flat ? glm::vec3(0.0f, 0.0f, -1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
+      const glm::vec3 up = cardUp(c);
       const std::optional<ImVec2> at = screenOf(c.origin + up * (c.height + 0.6f * k), w, h);
       if (!at) continue;
       const float size = p.big ? 34.0f : 26.0f;
@@ -3299,7 +3321,7 @@ class MapStage final : public Stage {
       const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(b)];
       if (!u.alive) continue;
       const CardRect& c = unitCard_[i];
-      const glm::vec3 up = c.flat ? glm::vec3(0.0f, 0.0f, -1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
+      const glm::vec3 up = cardUp(c);
       const glm::vec3 head = c.origin + up * c.height;
       const std::optional<ImVec2> at = screenOf(head, w, h);
       const std::optional<ImVec2> side = screenOf(head + glm::vec3(1.0f, 0.0f, 0.0f), w, h);
@@ -4053,6 +4075,7 @@ class MapStage final : public Stage {
   std::vector<Renderer::GroundMark> groundMarks_;  // this frame's battle grid (collectMarks)
   std::vector<Renderer::GridCell> gridCells_;      // ... for the numbered looks (collectGrid)
   int gridLook_ = 2;  // panel "Grade": 0 OFF, 1 antiga (the marks), 2.. = look 001.. (looks/grid/README.md)
+  int cardStance_ = 1;  // panel "Cards": 0 em pé (vertical), 1 para a câmera (leaning back with the tilt, upright on screen)
   // Engine2 DIR_ACTION_WALK: sprites whose walks are drawn for each side, never mirrored while moving.
   inline static const std::unordered_set<std::string> kDirectionalWalk = {"aldric", "defaultLancer", "lancer", "sandoval", "theButcher",
       "familiar2", "familiar3", "cultist-v2", "militia-v2", "salazar", "cobalt-blue-deer", "neera"};
