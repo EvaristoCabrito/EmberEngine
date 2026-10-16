@@ -15,8 +15,8 @@ if not exist "%EXE%" (
 
 set "GROUND=%ART%\ground\ground-v2.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground.pak"
-set "SPRITES=%ART%\sprites\battle-v2.pak"
-if not exist "%SPRITES%" set "SPRITES=%ART%\sprites\battle.pak"
+rem battle.pak = sprites sem relevo (o usuario rejeitou o Sprites 3D em 2026-10-16; battle-v2.pak fica guardado).
+set "SPRITES=%ART%\sprites\battle.pak"
 set "HEROES="
 if exist "%ART%\engine2-scenes\roster.json" set "HEROES=--heroes %ART%\engine2-scenes\roster.json"
 
