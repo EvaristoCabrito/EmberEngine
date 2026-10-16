@@ -109,6 +109,7 @@ struct MapStageOptions {
   std::string fxTest;
   bool tatica = false;  // open in the 2D view (Tática), for captures
   bool spellsMenu = true;  // the Magias window (every spell's effect version, loose effects; test mode)
+  bool choicesPanel = true;  // the Escolhas window (the look switches; test mode)
   bool spellsMenuOpen = false;  // ... opened with every list unfolded (captures)
   // Gameplay measurement: for this many seconds the camera turns a full circle and zooms in and out twice
   // while units animate and lights move and flicker; every frame's main-thread and GPU time is recorded.
@@ -733,6 +734,19 @@ class MapStage final : public Stage {
     drawCameraBar();
     drawTurnBar();
     drawPauseMenu();
+    if (options_.choicesPanel) drawChoices();
+    if (options_.spellsMenu && scene_ && menuCaster() >= 0) {
+      spellsMenu_.draw([this](const std::string& kind, int look) { testCast(static_cast<size_t>(menuCaster()), kind, look, now_); },
+                       [this](const std::string& clip) {
+                         const size_t caster = static_cast<size_t>(menuCaster());
+                         spellFx_.play(clip, unitSpot(nearestTarget(caster, false)), now_);
+                       },
+                       options_.spellsMenuOpen);
+    }
+  }
+
+  // The Escolhas window: the look switches (only in Modo teste's battles; a campaign battle shows only the game).
+  void drawChoices() {
     ImGui::SetNextWindowPos({8, 44}, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowBgAlpha(0.9f);
@@ -806,14 +820,6 @@ class MapStage final : public Stage {
     ImGui::PopItemWidth();
     ImGui::PopFont();
     ImGui::End();
-    if (options_.spellsMenu && scene_ && menuCaster() >= 0) {
-      spellsMenu_.draw([this](const std::string& kind, int look) { testCast(static_cast<size_t>(menuCaster()), kind, look, now_); },
-                       [this](const std::string& clip) {
-                         const size_t caster = static_cast<size_t>(menuCaster());
-                         spellFx_.play(clip, unitSpot(nearestTarget(caster, false)), now_);
-                       },
-                       options_.spellsMenuOpen);
-    }
   }
 
   // Where the camera looks (the map editor carries it over when its preview is rebuilt for an edit).

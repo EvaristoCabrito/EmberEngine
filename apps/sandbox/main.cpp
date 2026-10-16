@@ -574,7 +574,9 @@ int runCapture(const Options& o) {
       logInfo("mission {}: {} / {} / {}", id, m->map.generic_string(), m->scene.generic_string(), m->battle.generic_string());
       Options mission = o;
       mission.map = m->map.string(), mission.scene = m->scene.string(), mission.battleRules = m->battle.string();
-      stage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, mapOptions(mission));
+      MapStageOptions options = mapOptions(mission);
+      options.spellsMenu = options.choicesPanel = test;  // Modo teste's tools, as in the game
+      stage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
     } else if (o.title && o.titleScreen.starts_with("test") && hasCampaign && world.load("content/engine2/overworld.json")) {
       // --title-screen test / test-choice / test-classic / test-scenarios / test-rpg / test-dev / test-editor: Modo teste's screens (--map-ui
       // location:<id> opens a place's panel on the classic map; on the RPG map the usual --map-ui panels).
@@ -837,13 +839,13 @@ int runWindow(const Options& o) {
   const bool titleMode = o.title || (o.map.empty() && !o.battle && o.sprites.empty() && o.meshes.empty() && o.stream.empty());
   if (titleMode) stage = makeTitle();
   else stage = makeStage(o, context, renderer, services.assets, services.jobs);
-  services.perf.visible = false;  // the game shows only its own screens (F1 brings the numbers back)
+  services.perf.visible = false;  // the game shows only its own screens (F1 brings the numbers back, in Modo teste)
 
   window.setEventHook([&](const SDL_Event& event) {
     if (ui.processEvent(event)) return;
     if (stage) stage->event(event);
     if (event.type != SDL_EVENT_KEY_DOWN || event.key.repeat) return;
-    if (event.key.key == SDLK_F1) services.perf.visible = !services.perf.visible;
+    if (event.key.key == SDLK_F1 && testSession) services.perf.visible = !services.perf.visible;  // Modo teste only
     if (event.key.key == SDLK_R && services.streamTest) services.streamTest->restart();
   });
 
@@ -935,6 +937,7 @@ int runWindow(const Options& o) {
       } else if (backToTitle) {
         playing.clear();
         testSession.reset();  // GameApp goToTitle: every trace of test mode wiped
+        services.perf.visible = false;  // the numbers are Modo teste's too
         stage = makeTitle();
       } else if (openEditor && testSession) {
         inEditorTest = false;
@@ -952,6 +955,8 @@ int runWindow(const Options& o) {
         MapStageOptions options = mapOptions(mission);
         devGfx.apply(options, renderer);
         playing = pending->campaignId;
+        // Magias and Escolhas are Modo teste's tools: a campaign battle shows only the game (user 2026-10-16).
+        options.spellsMenu = options.choicesPanel = testSession.has_value() || playing.empty();
         if (!playing.empty()) {
           // The heroes as the save has them (levels and XP).
           const e2::Json save = campaign.activeSave();
