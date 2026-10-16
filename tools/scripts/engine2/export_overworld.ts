@@ -34,6 +34,9 @@ const skills = await import(`${E2}/src/campaign/skills.ts`);
 const hunger = await import(`${E2}/src/campaign/hunger.ts`);
 const combat = await import(`${E2}/src/game/combat.ts`);
 const resist = await import(`${E2}/src/ember/resistances.ts`);
+const weaponSkills = await import(`${E2}/src/campaign/weaponSkills.ts`);
+const leaderBounds = await import(`${E2}/src/game/leaderFrameBounds.ts`);
+const assets = await import(`${E2}/src/game/assets.ts`);
 const progressionConfig = JSON.parse(readFileSync(`${E2}/src/campaign/progression.json`, 'utf8'));
 
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v));
@@ -60,7 +63,7 @@ const wisp = (mapstore.ALL_LOCATIONS as { id: string; missionIds: string[] }[]).
 // --- missions as the map needs them --------------------------------------------------------------------------------
 const missionInfo = (mapstore.ALL_MISSIONS as Record<string, unknown>[]).map((m) => ({
   id: m.id, index: m.index, title: m.title, win: m.win ?? null, hub: !!m.hub,
-  crossing: mapstore.isCrossingDungeon(m), gated: progression.isGatedMission(m.id as string),
+  crossing: mapstore.isCrossingDungeon(m), keepsSpawns: mapstore.keepsDefeatedSpawns(m), gated: progression.isGatedMission(m.id as string),
   locationMissions: undefined,
 }));
 
@@ -92,8 +95,8 @@ for (const c of Object.keys(data.CLASSES)) { const id = data.starterWeaponFor(c)
 const weapons = Object.values(data.WEAPONS as Record<string, { id: string; name: string; price: number }>).map((w) => ({
   id: w.id, name: w.name, price: w.price, power: data.gearPowerLevel(w.price), starting: startingWeapons.has(w.id),
 }));
-const equipment = Object.values(data.EQUIPMENT as Record<string, { id: string; name: string; price?: number; slot: string; resistances?: Record<string, number> }>).map((e) => ({
-  id: e.id, name: e.name, price: e.price ?? 60, power: data.gearPowerLevel(e.price ?? 60), starting: startingWeapons.has(e.id), slot: e.slot,
+const equipment = Object.values(data.EQUIPMENT as Record<string, { id: string; name: string; price?: number; slot: string; hp?: number; resistances?: Record<string, number> }>).map((e) => ({
+  id: e.id, name: e.name, hp: e.hp ?? 0, price: e.price ?? 60, power: data.gearPowerLevel(e.price ?? 60), starting: startingWeapons.has(e.id), slot: e.slot,
   resistances: clone(e.resistances ?? {}), pouch: (data.POUCH_UPGRADE_BONUS as Record<string, number>)[e.id] ?? 0,
 }));
 const potions = Object.entries(data.POTION_LOOT_WEIGHT as Record<string, number>).map(([id, weight]) => ({
@@ -114,6 +117,12 @@ const tables = {
   skillCap: skills.SKILL_CAP, skillGain: skills.SKILL_GAIN, travelTrainingHours: skills.TRAVEL_TRAINING_HOURS,
   progression: progressionConfig,
   quests: clone(quests.QUESTS),
+  // The map screen's art: each hero's portrait (assets.ts portraitFor of OverworldMapScreen's HERO_PORTRAIT_SPRITE) and
+  // the leader marker's idle frames' crop boxes (leaderFrameBounds.ts).
+  portraits: Object.fromEntries(Object.entries({ Kael: 'kaelFinal', Neera: 'neera', Voss: 'voss', Salazar: 'salazar', Aldric: 'aldric', Malrec: 'conjurer' }).map(([h, sprite]) => [h, assets.portraitFor(sprite)])),
+  leaderFrameBounds: clone(leaderBounds.LEADER_FRAME_BOUNDS),
+  // weaponSkills.ts weaponTypesForClass: the weapon skills each hero class trains (Party · Skills).
+  classWeaponTypes: Object.fromEntries([...classIds].map((c) => [c, weaponSkills.weaponTypesForClass(c)])),
 };
 
 // --- references ----------------------------------------------------------------------------------------------------

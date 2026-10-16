@@ -23,6 +23,8 @@
 //        Captures: [--zoom F] [--turn DEG] [--tilt DEG] [--offset X Z] (board widths/depths) [--layers MASK]
 //        (lighting layers on: 1 sun, 2 shadows, 4 indirect; shaders/lighting.hlsli) [--sun AZIMUTH ELEVATION] (degrees)
 //        [--moving-light] [--spell-light] (test lights; 8 in --layers = local lights)
+//        [--fx-test KIND|all] (the hero casts a spell's visual at the nearest enemy every 3 s: magicMissile, lightning,
+//        frost, cureMinor, longShot, piercing, shock, doubleStrike; visuals only) [--tatica] (opens in the 2D view)
 //        [--measure SECONDS]: camera turn + zoom with everything animating; frame times; exit 3 if any frame > 16.7 ms.
 //        Fog of war (R7): [--fog 0|1] (default: the map's own flag) [--scout] (the first party unit walks to the
 //        farthest enemy and back). Pixel checks: [--scene-time T] (scene clock pinned) [--no-ui] [--debug-view 3]
@@ -76,7 +78,9 @@
 #include "MeshCompare.h"
 #include "MapStage.h"
 #include "TitleStage.h"
+#include "OverworldStage.h"
 #include "world/Campaign.h"
+#include "world/Overworld.h"
 #include "MeshStage.h"
 #include "SpriteParade.h"
 #include "Stage.h"
@@ -105,6 +109,8 @@ struct Options {
   uint32_t lightingLayers = 0xFFFFFFFFu;
   float sunAzimuth = 0.0f, sunElevation = -1.0f;
   bool movingLight = false, spellLight = false;
+  std::string fxTest;
+  bool tatica = false;
   float measureSeconds = 0.0f;
   int fog = -1;
   bool scout = false, noUi = false, volume = true;
@@ -121,6 +127,7 @@ struct Options {
   // `maps` (default: Engine2's maps/ember beside its public folder).
   bool title = false;
   std::string saveBank;     // the campaign bank file (default: %LOCALAPPDATA%\Ember\ember-save-bank.json)
+  std::string mapUi;        // captures on the world map: a panel opened (OverworldStage::preview)
   int titlePick = -1;       // captures: that slot chosen (0-based) on the --title-screen slots
   std::string titleScreen;  // captures: "new" / "load" open the save slots ("" the title itself)
   std::string scenes = "build/engine2-scenes", maps;
@@ -168,6 +175,8 @@ Options parse(int argc, char** argv) {
     else if (arg == "--moving-light") o.movingLight = true;
     else if (arg == "--measure" && hasValue) o.measureSeconds = static_cast<float>(std::atof(argv[++i]));
     else if (arg == "--spell-light") o.spellLight = true;
+    else if (arg == "--fx-test" && hasValue) o.fxTest = argv[++i];
+    else if (arg == "--tatica") o.tatica = true;
     else if (arg == "--fog" && hasValue) o.fog = std::atoi(argv[++i]);
     else if (arg == "--scout") o.scout = true;
     else if (arg == "--volume" && hasValue) o.volume = std::atoi(argv[++i]) != 0;
@@ -181,6 +190,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--battle-rules" && hasValue) o.battleRules = argv[++i];
     else if (arg == "--title") o.title = true;
     else if (arg == "--save-bank" && hasValue) o.saveBank = argv[++i];
+    else if (arg == "--map-ui" && hasValue) o.mapUi = argv[++i];
     else if (arg == "--title-pick" && hasValue) o.titlePick = std::atoi(argv[++i]);
     else if (arg == "--title-screen" && hasValue) o.titleScreen = argv[++i], o.title = true;
     else if (arg == "--scenes" && hasValue) o.scenes = argv[++i];
@@ -443,6 +453,8 @@ MapStageOptions mapOptions(const Options& o) {
     m.sunElevation = o.sunElevation;
     m.movingLight = o.movingLight;
     m.spellLight = o.spellLight;
+    m.fxTest = o.fxTest;
+    m.tatica = o.tatica;
     m.measureSeconds = o.measureSeconds;
     m.fog = o.fog;
     m.scout = o.scout;
@@ -507,12 +519,20 @@ int runCapture(const Options& o) {
     e2::Campaign campaign;
     const bool hasCampaign = o.title && campaign.open("content/engine2/campaign.json", o.saveBank.empty() ? e2::Campaign::savePath() : std::filesystem::path(o.saveBank));
     std::unique_ptr<Stage> stage;
-    if (o.title) {
+    e2::Overworld world;
+    CampaignPaths campaignPaths;
+    campaignPaths.engine2Public = o.engine2;
+    campaignPaths.maps = !o.maps.empty() ? std::filesystem::path(o.maps) : std::filesystem::path(o.engine2).parent_path() / "maps" / "ember";
+    campaignPaths.scenes = o.scenes;
+    if (o.title && o.titleScreen == "map" && hasCampaign && world.load("content/engine2/overworld.json")) {
+      // --title-screen map: the active slot's world map (--map-ui: party / quests / options / event / location opened).
+      auto map = std::make_unique<OverworldStage>(campaignPaths, campaign, world, OverworldStage::Callbacks{});
+      if (!o.mapUi.empty()) map->preview(o.mapUi);
+      stage = std::move(map);
+    } else if (o.title) {
       TitleStage::Paths paths;
-      paths.engine2Public = o.engine2;
-      paths.maps = !o.maps.empty() ? std::filesystem::path(o.maps) : std::filesystem::path(o.engine2).parent_path() / "maps" / "ember";
-      paths.scenes = o.scenes;
-      auto title = std::make_unique<TitleStage>(paths, hasCampaign ? &campaign : nullptr, [](const MissionEntry&) {}, [] {});
+      paths.engine2Public = o.engine2, paths.maps = campaignPaths.maps, paths.scenes = o.scenes;
+      auto title = std::make_unique<TitleStage>(paths, hasCampaign ? &campaign : nullptr, [](const MissionEntry&) {}, [] {}, [] {});
       if (o.titleScreen == "new" || o.titleScreen == "load") title->previewSlots(o.titleScreen == "load");
       if (o.titlePick >= 0) title->previewPick(o.titlePick);
       stage = std::move(title);
@@ -565,27 +585,48 @@ int runWindow(const Options& o) {
   DebugUi ui(context, window.handle(), Renderer::outputFormat());
   Renderer renderer(context, swapchain.get(), swapchain->extent());
   renderer.setUi(&ui);
-  // The title screen when asked (or when nothing else is): its "Nova campanha" list starts a map in this window.
+  // The title screen when asked (or when nothing else is). Its save slots open the campaign's world map; a mission
+  // from there (or a test-mode map) plays in this window, then the world map comes back.
   std::optional<MissionEntry> pending;
-  bool backToTitle = false;
+  bool backToTitle = false, openMap = false;
   std::unique_ptr<Stage> stage;
-  // The campaign's save bank (save.ts): Engine2's tables and the six slots on disk.
+  // The campaign's save bank (save.ts) and the world map's rules (overworld.ts), Engine2's tables.
   e2::Campaign campaign;
   const bool hasCampaign = campaign.open("content/engine2/campaign.json", o.saveBank.empty() ? e2::Campaign::savePath() : std::filesystem::path(o.saveBank));
+  e2::Overworld world;
+  const bool hasWorld = world.load("content/engine2/overworld.json");
   std::string playing;        // the campaign mission being fought (its result goes into the active slot)
-  std::string campaignNote;   // what the slot screen says when the fight is left
+  std::string campaignNote;   // what the world map says when the fight is left
+  CampaignPaths paths;
+  paths.engine2Public = o.engine2;
+  paths.maps = !o.maps.empty() ? std::filesystem::path(o.maps) : std::filesystem::path(o.engine2).parent_path() / "maps" / "ember";
+  paths.scenes = o.scenes;
   auto makeTitle = [&] {
-    TitleStage::Paths paths;
-    paths.engine2Public = o.engine2;
-    paths.maps = !o.maps.empty() ? std::filesystem::path(o.maps) : std::filesystem::path(o.engine2).parent_path() / "maps" / "ember";
-    paths.scenes = o.scenes;
-    auto title = std::make_unique<TitleStage>(paths, hasCampaign ? &campaign : nullptr, [&](const MissionEntry& m) { pending = m; }, [] {
-      SDL_Event quit{};
-      quit.type = SDL_EVENT_QUIT;
-      SDL_PushEvent(&quit);
-    });
+    TitleStage::Paths titlePaths;
+    titlePaths.engine2Public = paths.engine2Public, titlePaths.maps = paths.maps, titlePaths.scenes = paths.scenes;
+    auto title = std::make_unique<TitleStage>(
+        titlePaths, hasCampaign ? &campaign : nullptr, [&](const MissionEntry& m) { pending = m; }, [&] { openMap = true; },
+        [] {
+          SDL_Event quit{};
+          quit.type = SDL_EVENT_QUIT;
+          SDL_PushEvent(&quit);
+        });
     if (!campaignNote.empty()) title->showCampaign(std::exchange(campaignNote, {}));
     return title;
+  };
+  auto makeMap = [&]() -> std::unique_ptr<Stage> {
+    if (!hasWorld) {
+      campaignNote = "Sem dados do mapa do mundo (content/engine2/overworld.json).";
+      return makeTitle();
+    }
+    OverworldStage::Callbacks callbacks;
+    callbacks.play = [&](const MissionEntry& m) { pending = m; };
+    callbacks.title = [&] { backToTitle = true; };
+    callbacks.fullscreen = [&] {
+      const bool full = (SDL_GetWindowFlags(window.handle()) & SDL_WINDOW_FULLSCREEN) != 0;
+      SDL_SetWindowFullscreen(window.handle(), !full);
+    };
+    return std::make_unique<OverworldStage>(paths, campaign, world, std::move(callbacks), std::exchange(campaignNote, {}));
   };
   // campaign.ts finishBattle (its heroes part and the mission's completion): each hero's level, XP and HP into the
   // active slot, the pending mission cleared, and on a victory the mission completed. Loot, ember, rations, quests and
@@ -615,6 +656,7 @@ int runWindow(const Options& o) {
                    : won ? name + ": vitória gravada no espaço " + std::to_string(campaign.bank().lastSlot + 1) + "."
                          : name + ": derrota. O combate fica pendente no espaço " + std::to_string(campaign.bank().lastSlot + 1) + ".";
     playing.clear();
+    openMap = true;  // GameApp ResultScreen "Mapa": back to the world map
   };
   const bool titleMode = o.title || (o.map.empty() && !o.battle && o.sprites.empty() && o.meshes.empty() && o.stream.empty());
   if (titleMode) stage = makeTitle();
@@ -645,7 +687,10 @@ int runWindow(const Options& o) {
     // Screen changes happen between frames, with the GPU idle: the old screen's resources go before the new one loads.
     std::optional<MapStageOptions> retry;
     if (auto* map = dynamic_cast<MapStage*>(stage.get())) {
-      if (map->wantsTitle()) backToTitle = true, finishCampaignFight(*map);
+      if (map->wantsTitle()) {
+        if (!playing.empty() && !map->battleResult().empty()) finishCampaignFight(*map);
+        else backToTitle = true;
+      }
       if (map->wantsRetry()) {
         retry = map->options();
         // Tentar de novo: the same mission again, from the save as it stands (the lost fight is not written).
@@ -656,10 +701,13 @@ int runWindow(const Options& o) {
       stage.reset();
       stage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, *retry);
     }
-    if (pending || backToTitle) {
+    if (pending || backToTitle || openMap) {
       vkDeviceWaitIdle(context.device);
       stage.reset();
-      if (pending) {
+      if (backToTitle) {
+        playing.clear();
+        stage = makeTitle();
+      } else if (pending) {
         Options mission = o;
         mission.map = pending->map.string();
         mission.scene = pending->scene.string();
@@ -676,10 +724,10 @@ int runWindow(const Options& o) {
         }
         stage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
       } else {
-        stage = makeTitle();
+        stage = makeMap();
       }
       pending.reset();
-      backToTitle = false;
+      backToTitle = false, openMap = false;
     }
   }
   return 0;

@@ -278,6 +278,30 @@ build.bat release          # or debug; output in build/<config>/bin
 - `jogo/Sandbox.exe` now the local MSVC release build (needs the VC++ runtime, present on this PC); shaders
   unchanged. The previous cloud exe still had look 008. Tested: aldeia015 capture exit 0. NOT pushed yet.
 
+## Local session 2026-10-15/16: Engine2's menus, in order (user: "faz nessa ordem": slots, world map, Inn,
+inventory / equipment, dialogs / intros)
+
+- **Menus readable:** one UI canvas 720 tall zoomed to the window (DebugUi::kUiHeight); full screen by default
+  (`--windowed` / `--size` for a window). JOGAR.bat runs `build\release\bin\Sandbox.exe` (every release build reaches the
+  user). Cancelar undoes walks one at a time.
+- **Save slots (done, `2844fac`):** `engine/world/Campaign` = save.ts bank (6 slots, SaveData v19 as insertion-ordered
+  JSON, `%LOCALAPPDATA%\Ember\ember-save-bank.json`, temp + rename); `Cooker check-campaign` (slotProgress = Engine2).
+  Title: Nova campanha / Continuar / Como jogar / Opções / Sair + "Modo teste" (old map list). `CampaignUi.h` SlotScreen
+  (new / load / in-game save), briefing, ember plates, lucide icons.
+- **World map (rules `861ea11`, screen after):** `engine/world/Overworld` = overworld.ts + access / progression /
+  quests / hunger / poison / skills / loot helpers, `Cooker check-overworld content/engine2/overworld.json
+  build/engine2-ref/overworld-refs.json` (matches Engine2: 1155 seeded steps, 349 events, 4746 step pairs, 105 status
+  checks). `export_overworld.ts` writes both. `apps/sandbox/OverworldStage.h` = OverworldMapScreen: header plates,
+  world-map.jpg at 4 zooms + drag, fog, time tint, pins, leader idle sprite, step hexes, party panel, events, location
+  list, quest log, Party (leader, formation, affinities, Skills training), first-visit explainer, Opções (Salvar /
+  Carregar / Voltar / Tela cheia), briefing → fight → back to the map (main.cpp finishCampaignFight: levels / XP / HP,
+  completed). Captures: `--title-screen map --save-bank F [--map-ui party|skills|quests|options|move|location:<id>|save]`.
+  Campaign maps exported so far: vau029, bosque005, aldeia015, thebridge022, wisp-forest-crossing012 (scene + battle).
+- **Not ported yet:** field spells (Create Food and Water, Warp), inventory / status panels, the Inn (next), intros /
+  cutscenes / dialogs / epilogue, battle snapshots (a saved fight restarts from its briefing), finishBattle's loot /
+  ember / rations / quests / progression, formation applied to battle spawns, unitHp at battle start, sound.
+- **Testing:** never drive the user's PC (computer-use) — captures and Cooker checks only; the user plays it.
+
 ## Next
 
 The user's verdict (2026-10-15): the engine as seen is worse than Engine2 ("worst colours and render I've ever

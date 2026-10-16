@@ -147,6 +147,7 @@ bool Overworld::load(const std::filesystem::path& file) {
     x.id = m.value("id", ""), x.title = m.value("title", ""), x.index = m.value("index", 0);
     x.win = m.contains("win") && m["win"].is_string() ? m["win"].get<std::string>() : std::string();
     x.hub = m.value("hub", false), x.crossing = m.value("crossing", false), x.gated = m.value("gated", false);
+    x.keepsSpawns = m.value("keepsSpawns", false);
     missions_.push_back(std::move(x));
   }
   tables_ = j["tables"];

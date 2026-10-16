@@ -39,6 +39,7 @@ struct MapMission {
   std::string id, title, win;
   int index = 0;
   bool hub = false, crossing = false, gated = false;
+  bool keepsSpawns = false;  // mapstore keepsDefeatedSpawns: a dungeon, enterable again once done
 };
 
 // A travel event (overworld.ts OverworldEvent): kind "encounter" / "hungry" / "battle" (battle: missionId to launch).
