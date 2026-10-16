@@ -25,6 +25,7 @@
 //        [--moving-light] [--spell-light] (test lights; 8 in --layers = local lights)
 //        [--fx-test KIND|all] (the hero casts a spell's visual at the nearest enemy every 3 s: magicMissile, lightning,
 //        frost, cureMinor, longShot, piercing, shock, doubleStrike; visuals only) [--tatica] (opens in the 2D view)
+//        [--spells-menu-open] (the Magias window opened, every list unfolded)
 //        [--measure SECONDS]: camera turn + zoom with everything animating; frame times; exit 3 if any frame > 16.7 ms.
 //        Fog of war (R7): [--fog 0|1] (default: the map's own flag) [--scout] (the first party unit walks to the
 //        farthest enemy and back). Pixel checks: [--scene-time T] (scene clock pinned) [--no-ui] [--debug-view 3]
@@ -112,6 +113,7 @@ struct Options {
   bool movingLight = false, spellLight = false;
   std::string fxTest;
   bool tatica = false;
+  bool spellsMenuOpen = false;
   float measureSeconds = 0.0f;
   int fog = -1;
   bool scout = false, noUi = false, volume = true;
@@ -179,6 +181,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--spell-light") o.spellLight = true;
     else if (arg == "--fx-test" && hasValue) o.fxTest = argv[++i];
     else if (arg == "--tatica") o.tatica = true;
+    else if (arg == "--spells-menu-open") o.spellsMenuOpen = true;
     else if (arg == "--fog" && hasValue) o.fog = std::atoi(argv[++i]);
     else if (arg == "--scout") o.scout = true;
     else if (arg == "--volume" && hasValue) o.volume = std::atoi(argv[++i]) != 0;
@@ -460,6 +463,7 @@ MapStageOptions mapOptions(const Options& o) {
     m.spellLight = o.spellLight;
     m.fxTest = o.fxTest;
     m.tatica = o.tatica;
+    m.spellsMenuOpen = o.spellsMenuOpen;
     m.measureSeconds = o.measureSeconds;
     m.fog = o.fog;
     m.scout = o.scout;

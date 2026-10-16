@@ -56,7 +56,16 @@ glm::vec3 SpellEffects::position(const Element& e, float now) const {
   return glm::mix(e.from, e.to, t) + glm::vec3(0.0f, e.arc * 4.0f * t * (1.0f - t), 0.0f);
 }
 
-bool SpellEffects::cast(const std::string& kind, const Spot& caster, const std::vector<Spot>& targets, float start, float impact) {
+int SpellEffects::looks(const std::string& kind) {
+  static const char* kVersion01[] = {"magicMissile", "magicMissileV2", "lightning", "lightningTier3", "shock", "frost", "cureMinor",
+                                     "longShot", "piercing", "piercingThrust", "doubleStrike"};
+  for (const char* k : kVersion01)
+    if (kind == k) return 1;
+  return 0;
+}
+
+bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact) {
+  if (look < 1 || look > looks(kind)) return false;
   impact = std::max(impact, start + 0.05f);
   if (targets.empty() && kind != "piercingThrust" && kind != "doubleStrike") return false;
   if (kind == "magicMissile" || kind == "magicMissileV2") magicMissile(caster, targets.front(), start, impact);
@@ -273,6 +282,44 @@ void SpellEffects::arrow(const Spot& caster, const std::vector<Spot>& targets, f
 // strike() when each one lands.
 void SpellEffects::bladeSkill(const Spot& caster, float start, float impact) {
   burst("ember-v3-particles-flipbook-4x4", caster.body, std::max(start, impact - 0.2f), 0.35f, 1.0f, glm::vec3(0.9f), 0.8f);
+}
+
+void SpellEffects::play(const std::string& clipName, const Spot& at, float start) {
+  const SpriteClipId id = clip(clipName.c_str());
+  if (id == kNoSpriteClip) return;
+  const auto has = [&](const char* s) { return clipName.find(s) != std::string::npos; };
+  Element& e = add(clipName.c_str(), start, 1.2f);
+  e.fadeOut = 0.25f;
+  e.pull = 1.2f, e.softness = 0.3f;
+  if (has("secondary") || has("webfloor") || has("portal")) {  // rings, the web on the floor, a gate: around the feet
+    e.from = e.to = at.feet;
+    e.pivot = {0.5f, 0.45f};
+    e.height = 2.2f;
+  } else if (has("particles") || has("impact") || has("arrow") || has("core-v2") || clipName == "arcane-flipbook-4x4") {
+    e.from = e.to = at.body;  // bursts, sparks, an orb, a projectile's art: on the body
+    e.pivot = {0.5f, 0.5f};
+    e.height = 1.8f;
+    e.opacity = has("arrow") ? 1.0f : 0.0f;
+    e.lit = has("arrow");
+  } else if (has("lightning-core")) {
+    e.from = e.to = at.feet;
+    e.pivot = {0.5f, 0.03f};
+    e.height = 6.5f;
+  } else {  // pillars, flames, smoke, cores, references: standing on the feet
+    e.from = e.to = at.feet;
+    e.pivot = {0.5f, 0.06f};
+    e.height = 2.6f;
+  }
+  // Its light: the element's colour (Engine2's light colours), a moderate glow.
+  std::array<float, 3> color{1.0f, 0.9f, 0.75f};
+  if (has("arcane") || has("warp")) color = kViolet;
+  else if (has("lightning")) color = kBolt;
+  else if (has("frost") || has("blizzard")) color = kFrost;
+  else if (has("holy")) color = kHoly;
+  else if (has("fire") || has("ember")) color = {1.0f, 0.58f, 0.26f};
+  else if (has("poison") || has("venom")) color = {0.55f, 1.0f, 0.35f};
+  else if (has("shadow")) color = {0.45f, 0.3f, 0.75f};
+  if (!has("arrow")) e.lightColor = color, e.lightIntensity = 10.0f, e.lightRadius = 3.5f, e.lightDecay = 1.0f;
 }
 
 void SpellEffects::strike(const Spot& target, float at, bool crit) {

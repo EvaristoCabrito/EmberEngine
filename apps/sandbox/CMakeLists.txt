@@ -1,7 +1,7 @@
 add_executable(Sandbox main.cpp)
 target_link_libraries(Sandbox PRIVATE EmberEngine nlohmann_json)
 if(MSVC)
-  target_compile_options(Sandbox PRIVATE /W4 /permissive- /utf-8)
+  target_compile_options(Sandbox PRIVATE /W4 /permissive- /utf-8 /bigobj)  # main.cpp holds every stage (header-only): too many sections in debug
 endif()
 
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/triangle.hlsl STAGES vs:VSMain ps:PSMain)

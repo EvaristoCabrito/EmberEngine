@@ -40,10 +40,17 @@ class SpellEffects {
     float intensity = 0.0f, radius = 3.0f, height = 1.0f;
   };
 
-  // A spell or weapon skill (Engine2 kinds: magicMissile, lightning, shock, frost, cureMinor, longShot, piercing,
-  // piercingThrust, doubleStrike): the caster's pose starts at `start`, its first hit lands at `impact`. `targets`
-  // are the hexes / units it reaches in the rules' order (Frost: its whole area). False = no visual for this kind.
-  bool cast(const std::string& kind, const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
+  // Every spell's saved versions ("looks"), numbered from 1 per spell and never renumbered or removed (the Spells menu
+  // shows them as "Míssil Mágico 01", ...; content/fx/README.md lists what each one is). 0 = OFF. Version 01 of every
+  // spell that has one is this file's flipbook-card set (2026-10-16).
+  static int looks(const std::string& kind);
+  // A spell or weapon skill (Engine2 kinds) in version `look`: the caster's pose starts at `start`, its first hit
+  // lands at `impact`. `targets` are the hexes / units it reaches in the rules' order (Frost: its whole area). False =
+  // nothing drawn (OFF, or no such version).
+  bool cast(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
+  // One fx clip on its own (the Spells menu's loose effects): played once at the spot, placed by what the art is
+  // (a pillar stands on the feet, a ring lies around them, a burst sits on the body), with a light of its colour.
+  void play(const std::string& clipName, const Spot& at, float start);
   // A weapon blow that landed (a plain attack, a counter, a blade skill's strike): sparks on the body.
   void strike(const Spot& target, float at, bool crit);
   // Lightning's echo striking again at the start of the struck unit's turn.

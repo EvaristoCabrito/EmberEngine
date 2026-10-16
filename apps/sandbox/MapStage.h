@@ -60,6 +60,7 @@
 #include "render/Renderer.h"
 #include "rhi/UploadQueue.h"
 #include "render/MeshScene.h"
+#include "SpellsMenu.h"
 #include "render/SpellEffects.h"
 #include "render/SpriteSystem.h"
 #include "world/Battle.h"
@@ -97,6 +98,8 @@ struct MapStageOptions {
   // nearest enemy every kFxTestCycle seconds, visuals only (no rules); for captures with --scene-time.
   std::string fxTest;
   bool tatica = false;  // open in the 2D view (Tática), for captures
+  bool spellsMenu = true;  // the Magias window (every spell's effect version, loose effects; test mode)
+  bool spellsMenuOpen = false;  // ... opened with every list unfolded (captures)
   // Gameplay measurement: for this many seconds the camera turns a full circle and zooms in and out twice
   // while units animate and lights move and flicker; every frame's main-thread and GPU time is recorded.
   float measureSeconds = 0.0f;
@@ -154,6 +157,7 @@ class MapStage final : public Stage {
       if (options.fogLook == std::atoi(fogLooks()[i].number)) fogLook_ = i;
     pitch_ += glm::radians(options.tiltDegrees);
     flat_ = options.tatica;
+    spellsMenu_.load("content/fx/spell-looks.json", "content/fx.sprites.json");
     layers_ = options.layers;
     data_ = e2::BoardData::load(options.boardData);
     std::optional<e2::MapDraft> draft = e2::MapDraft::load(options.map);
@@ -753,6 +757,14 @@ class MapStage final : public Stage {
     ImGui::PopItemWidth();
     ImGui::PopFont();
     ImGui::End();
+    if (options_.spellsMenu && scene_ && menuCaster() >= 0) {
+      spellsMenu_.draw([this](const std::string& kind, int look) { testCast(static_cast<size_t>(menuCaster()), kind, look, now_); },
+                       [this](const std::string& clip) {
+                         const size_t caster = static_cast<size_t>(menuCaster());
+                         spellFx_.play(clip, unitSpot(nearestTarget(caster, false)), now_);
+                       },
+                       options_.spellsMenuOpen);
+    }
   }
 
   // The player asked to leave for the title screen (pause menu, or after the battle's end), or to fight it again.
@@ -1810,7 +1822,7 @@ class MapStage final : public Stage {
       } else if (target >= 0) {
         spots.push_back(unitSpot(static_cast<size_t>(target)));
       }
-      spellFx_.cast(s.kind, unitSpot(static_cast<size_t>(striker)), spots, now_, x.impact);
+      spellFx_.cast(s.kind, spellLook(s.kind), unitSpot(static_cast<size_t>(striker)), spots, now_, x.impact);
     }
   }
 
@@ -1846,29 +1858,46 @@ class MapStage final : public Stage {
     static const char* kKinds[] = {"magicMissile", "lightning", "frost", "cureMinor", "longShot", "piercing", "shock", "doubleStrike"};
     std::string kind = options_.fxTest;
     if (kind == "all") kind = kKinds[static_cast<size_t>(cycle) % std::size(kKinds)];
-    const size_t hero = static_cast<size_t>(hero_);
+    logInfo("fx test: {} at {:.1f} s", kind, static_cast<float>(cycle) * kFxTestCycle);
+    testCast(static_cast<size_t>(hero_), kind, std::max(spellLook(kind), 1), static_cast<float>(cycle) * kFxTestCycle);
+  }
+
+  // The unit the Spells menu casts from: the picked one, else the party's first.
+  int menuCaster() const { return selected_ >= 0 ? selected_ : hero_; }
+  // The nearest living unit on the other side (on its own side for a heal), the caster itself when none.
+  size_t nearestTarget(size_t caster, bool friendly) const {
+    const std::string& side = scene_->units[caster].side;
     int best = -1;
     float bestDistance = 1e30f;
     for (size_t i = 0; i < scene_->units.size(); ++i) {
-      if (scene_->units[i].side != (kind == "cureMinor" ? "player" : "enemy") || i == hero) continue;
-      const float d = glm::length(unitWorld(i) - unitWorld(hero));
+      if (i == caster || (scene_->units[i].side == side) != friendly) continue;
+      if (unitBattle_.size() > i && unitBattle_[i] >= 0 && !battle_->units()[static_cast<size_t>(unitBattle_[i])].alive) continue;
+      const float d = glm::length(unitWorld(i) - unitWorld(caster));
       if (d < bestDistance) bestDistance = d, best = static_cast<int>(i);
     }
-    if (best < 0) return;
-    const float start = static_cast<float>(cycle) * kFxTestCycle;
-    std::vector<SpellEffects::Spot> spots{unitSpot(static_cast<size_t>(best))};
+    return best < 0 ? caster : static_cast<size_t>(best);
+  }
+  // A spell's visual (version `look`) from `caster` at its nearest target, visuals only (no rules): the Spells menu's
+  // Testar and --fx-test. Lines (Frost, piercing shots) reach three hexes past the target.
+  void testCast(size_t caster, const std::string& kind, int look, float start) {
+    const size_t hero = caster;
+    const size_t target = nearestTarget(caster, spellOnFriend(kind));
+    std::vector<SpellEffects::Spot> spots{unitSpot(target)};
     if (kind == "frost" || kind == "piercing") {
       // A line of hexes from the hero through the target (three more hexes beyond it).
-      const glm::vec3 a = unitWorld(hero), b = unitWorld(static_cast<size_t>(best));
+      const glm::vec3 a = unitWorld(hero), b = unitWorld(target);
       for (int k = 1; k <= 3; ++k) {
         const glm::vec3 p = b + (b - a) * (0.35f * static_cast<float>(k)) / std::max(glm::length(b - a), 1e-3f) * 1.73f;
         spots.push_back({{p.x, groundAt(p.x, p.z), p.z}, {p.x, groundAt(p.x, p.z) + 0.9f, p.z}});
       }
     }
-    logInfo("fx test: {} at {:.1f} s", kind, start);
-    spellFx_.cast(kind, unitSpot(hero), spots, start, start + 0.6f);
-    if (kind == "doubleStrike" || kind == "longShot" || kind == "piercing") spellFx_.strike(spots.front(), start + 0.6f, cycle % 2 == 0);
+    spellFx_.cast(kind, look, unitSpot(hero), spots, start, start + 0.6f);
+    if (weaponStrikeKind(kind)) spellFx_.strike(spots.front(), start + 0.6f, false);
   }
+  static bool weaponStrikeKind(const std::string& kind) {
+    return kind == "doubleStrike" || kind == "longShot" || kind == "piercing" || kind == "piercingThrust";
+  }
+  int spellLook(const std::string& kind) const { return spellsMenu_.look(kind); }
 
   bool hasPose(size_t ui, const std::string& pose) const {
     const e2::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
@@ -2887,6 +2916,7 @@ class MapStage final : public Stage {
   BoardGround ground_;
   SpriteSystem sprites_;
   SpellEffects spellFx_{sprites_};  // spell and strike visuals (the fx clips)
+  SpellsMenu spellsMenu_;           // the Magias window: each spell's effect version, loose effects
   std::vector<EffectInstance> effectList_;
   std::vector<SpellEffects::Light> fxLights_;
   int fxTestCycle_ = -1;
