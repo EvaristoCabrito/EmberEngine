@@ -56,7 +56,9 @@
 #include <fstream>
 #include <memory>
 #include <string>
+#include <optional>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "assets/AssetManager.h"
@@ -74,6 +76,7 @@
 #include "MeshCompare.h"
 #include "MapStage.h"
 #include "TitleStage.h"
+#include "world/Campaign.h"
 #include "MeshStage.h"
 #include "SpriteParade.h"
 #include "Stage.h"
@@ -117,6 +120,9 @@ struct Options {
   // The title screen (Engine2's, TitleStage.h): its mission list is every imported scene in `scenes` whose map is in
   // `maps` (default: Engine2's maps/ember beside its public folder).
   bool title = false;
+  std::string saveBank;     // the campaign bank file (default: %LOCALAPPDATA%\Ember\ember-save-bank.json)
+  int titlePick = -1;       // captures: that slot chosen (0-based) on the --title-screen slots
+  std::string titleScreen;  // captures: "new" / "load" open the save slots ("" the title itself)
   std::string scenes = "build/engine2-scenes", maps;
   uint32_t debugView = 0;
   std::string scene;
@@ -174,6 +180,9 @@ Options parse(int argc, char** argv) {
     else if (arg == "--heroes" && hasValue) o.heroes = argv[++i];
     else if (arg == "--battle-rules" && hasValue) o.battleRules = argv[++i];
     else if (arg == "--title") o.title = true;
+    else if (arg == "--save-bank" && hasValue) o.saveBank = argv[++i];
+    else if (arg == "--title-pick" && hasValue) o.titlePick = std::atoi(argv[++i]);
+    else if (arg == "--title-screen" && hasValue) o.titleScreen = argv[++i], o.title = true;
     else if (arg == "--scenes" && hasValue) o.scenes = argv[++i];
     else if (arg == "--maps" && hasValue) o.maps = argv[++i];
     else if (arg == "--debug-view" && hasValue) o.debugView = static_cast<uint32_t>(std::atoi(argv[++i]));
@@ -493,7 +502,23 @@ int runCapture(const Options& o) {
     DebugUi ui(context, nullptr, Renderer::outputFormat());
     Renderer renderer(context, nullptr, {o.width, o.height});
     if (!o.noUi) renderer.setUi(&ui);  // --no-ui: the scene alone (pixel checks)
-    std::unique_ptr<Stage> stage = makeStage(o, context, renderer, services.assets, services.jobs);
+    // --title: the title screen off-screen (--title-screen new / load: its save slots, read from the real bank, nothing
+    // written), to check its layout.
+    e2::Campaign campaign;
+    const bool hasCampaign = o.title && campaign.open("content/engine2/campaign.json", o.saveBank.empty() ? e2::Campaign::savePath() : std::filesystem::path(o.saveBank));
+    std::unique_ptr<Stage> stage;
+    if (o.title) {
+      TitleStage::Paths paths;
+      paths.engine2Public = o.engine2;
+      paths.maps = !o.maps.empty() ? std::filesystem::path(o.maps) : std::filesystem::path(o.engine2).parent_path() / "maps" / "ember";
+      paths.scenes = o.scenes;
+      auto title = std::make_unique<TitleStage>(paths, hasCampaign ? &campaign : nullptr, [](const MissionEntry&) {}, [] {});
+      if (o.titleScreen == "new" || o.titleScreen == "load") title->previewSlots(o.titleScreen == "load");
+      if (o.titlePick >= 0) title->previewPick(o.titlePick);
+      stage = std::move(title);
+    } else {
+      stage = makeStage(o, context, renderer, services.assets, services.jobs);
+    }
     const VkExtent2D size{o.width, o.height};
     const auto testDone = [&] { return (services.streamTest && services.streamTest->done()) || (stage && stage->done()); };
     if (services.streamTest || stage) {
@@ -544,16 +569,52 @@ int runWindow(const Options& o) {
   std::optional<MissionEntry> pending;
   bool backToTitle = false;
   std::unique_ptr<Stage> stage;
+  // The campaign's save bank (save.ts): Engine2's tables and the six slots on disk.
+  e2::Campaign campaign;
+  const bool hasCampaign = campaign.open("content/engine2/campaign.json", o.saveBank.empty() ? e2::Campaign::savePath() : std::filesystem::path(o.saveBank));
+  std::string playing;        // the campaign mission being fought (its result goes into the active slot)
+  std::string campaignNote;   // what the slot screen says when the fight is left
   auto makeTitle = [&] {
     TitleStage::Paths paths;
     paths.engine2Public = o.engine2;
     paths.maps = !o.maps.empty() ? std::filesystem::path(o.maps) : std::filesystem::path(o.engine2).parent_path() / "maps" / "ember";
     paths.scenes = o.scenes;
-    return std::make_unique<TitleStage>(paths, [&](const MissionEntry& m) { pending = m; }, [] {
+    auto title = std::make_unique<TitleStage>(paths, hasCampaign ? &campaign : nullptr, [&](const MissionEntry& m) { pending = m; }, [] {
       SDL_Event quit{};
       quit.type = SDL_EVENT_QUIT;
       SDL_PushEvent(&quit);
     });
+    if (!campaignNote.empty()) title->showCampaign(std::exchange(campaignNote, {}));
+    return title;
+  };
+  // campaign.ts finishBattle (its heroes part and the mission's completion): each hero's level, XP and HP into the
+  // active slot, the pending mission cleared, and on a victory the mission completed. Loot, ember, rations, quests and
+  // story progression are not ported yet.
+  auto finishCampaignFight = [&](const MapStage& map) {
+    if (playing.empty() || map.battleResult().empty()) return;
+    nlohmann::json save = campaign.activeSave();
+    for (const HeroOutcome& h : map.heroOutcomes()) {
+      save["levels"][h.name] = h.level;
+      save["xp"][h.name] = h.xp;
+      save["unitHp"][h.name] = h.hp;
+    }
+    save["pendingMission"] = nullptr;
+    save["battle"] = nullptr;
+    const bool won = map.battleResult() == "victory";
+    if (won) {
+      nlohmann::json& done = save["completed"];
+      if (!done.is_array()) done = nlohmann::json::array();
+      if (std::find(done.begin(), done.end(), playing) == done.end()) done.push_back(playing);
+    } else {
+      save["pendingMission"] = playing;  // a lost fight is played again from its briefing
+    }
+    const bool ok = campaign.saveActive(std::move(save));
+    const e2::CampaignMission* m = campaign.data().mission(playing);
+    const std::string name = m ? m->title : playing;
+    campaignNote = !ok ? "Não foi possível gravar o progresso (" + e2::Campaign::savePath().string() + ")."
+                   : won ? name + ": vitória gravada no espaço " + std::to_string(campaign.bank().lastSlot + 1) + "."
+                         : name + ": derrota. O combate fica pendente no espaço " + std::to_string(campaign.bank().lastSlot + 1) + ".";
+    playing.clear();
   };
   const bool titleMode = o.title || (o.map.empty() && !o.battle && o.sprites.empty() && o.meshes.empty() && o.stream.empty());
   if (titleMode) stage = makeTitle();
@@ -584,8 +645,11 @@ int runWindow(const Options& o) {
     // Screen changes happen between frames, with the GPU idle: the old screen's resources go before the new one loads.
     std::optional<MapStageOptions> retry;
     if (auto* map = dynamic_cast<MapStage*>(stage.get())) {
-      if (map->wantsTitle()) backToTitle = true;
-      if (map->wantsRetry()) retry = map->options();
+      if (map->wantsTitle()) backToTitle = true, finishCampaignFight(*map);
+      if (map->wantsRetry()) {
+        retry = map->options();
+        // Tentar de novo: the same mission again, from the save as it stands (the lost fight is not written).
+      }
     }
     if (retry) {
       vkDeviceWaitIdle(context.device);
@@ -601,7 +665,16 @@ int runWindow(const Options& o) {
         mission.scene = pending->scene.string();
         mission.battleRules = pending->battle.string();
         renderer.setDebugView(o.debugView);
-        stage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, mapOptions(mission));
+        MapStageOptions options = mapOptions(mission);
+        playing = pending->campaignId;
+        if (!playing.empty()) {
+          // The heroes as the save has them (levels and XP).
+          const nlohmann::json save = campaign.activeSave();
+          const nlohmann::json levels = save.value("levels", nlohmann::json::object()), xp = save.value("xp", nlohmann::json::object());
+          for (const auto& [name, level] : levels.items())
+            if (level.is_number_integer()) options.heroProgress[name] = {level.get<int>(), xp.value(name, 0)};
+        }
+        stage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
       } else {
         stage = makeTitle();
       }

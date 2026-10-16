@@ -30,11 +30,12 @@ add_library(EmberEngine STATIC
   world/Combat.cpp
   world/BattleTurns.cpp
   world/Spells.cpp
+  world/Campaign.cpp
   debug/PerfOverlay.cpp
 )
 
 target_include_directories(EmberEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(EmberEngine PUBLIC SDL3::SDL3 volk glm::glm vma stb imgui PRIVATE zstd nlohmann_json)
+target_link_libraries(EmberEngine PUBLIC SDL3::SDL3 volk glm::glm vma stb imgui nlohmann_json PRIVATE zstd)
 target_compile_definitions(EmberEngine PUBLIC
   VK_NO_PROTOTYPES
   VMA_STATIC_VULKAN_FUNCTIONS=0

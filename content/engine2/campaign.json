@@ -1,0 +1,6499 @@
+{
+ "saveVersion": 19,
+ "slotCount": 6,
+ "startHex": {
+  "col": 1,
+  "row": 8
+ },
+ "emptySave": {
+  "version": 19,
+  "completed": [],
+  "crossingDefeatedSpawns": {},
+  "unitHp": {},
+  "levels": {
+   "Kael": 1,
+   "Neera": 1,
+   "Voss": 1,
+   "Salazar": 1
+  },
+  "xp": {
+   "Kael": 0,
+   "Neera": 0,
+   "Voss": 0,
+   "Salazar": 0
+  },
+  "statPointAllocations": {},
+  "bags": {
+   "Kael": {
+    "mid": 2,
+    "weak": 2,
+    "potent": 1,
+    "disease": 1,
+    "manaSmall": 1,
+    "manaMid": 0,
+    "manaLarge": 0,
+    "lockpick": 3
+   },
+   "Neera": {
+    "mid": 2,
+    "weak": 2,
+    "potent": 1,
+    "disease": 1,
+    "manaSmall": 1,
+    "manaMid": 0,
+    "manaLarge": 0,
+    "lockpick": 3
+   },
+   "Voss": {
+    "mid": 2,
+    "weak": 2,
+    "potent": 1,
+    "disease": 1,
+    "manaSmall": 1,
+    "manaMid": 0,
+    "manaLarge": 0,
+    "lockpick": 3
+   },
+   "Salazar": {
+    "mid": 0,
+    "weak": 0,
+    "potent": 0,
+    "disease": 0,
+    "manaSmall": 0,
+    "manaMid": 0,
+    "manaLarge": 0,
+    "lockpick": 3
+   }
+  },
+  "promotions": {},
+  "weapons": {
+   "espada-larga": 0,
+   "arco-composto": 0,
+   "cajado-de-osso": 0,
+   "cajado-da-galhada": 0,
+   "lanca": 0
+  },
+  "equipped": {
+   "Kael": "espada-larga",
+   "Neera": "arco-composto",
+   "Voss": "cajado-de-osso",
+   "Salazar": "cajado-da-galhada",
+   "Aldric": "lanca",
+   "Malrec": "cajado-de-osso"
+  },
+  "equipment": {
+   "Neera": {
+    "offHand": "punhal-curvo"
+   }
+  },
+  "looseEquipment": {},
+  "spellUses": {},
+  "ember": 0,
+  "emberSeeded": true,
+  "muted": false,
+  "updatedAt": 0,
+  "pendingMission": null,
+  "battle": null,
+  "seenSmithIntro": false,
+  "seenOverworldIntro": false,
+  "seenWispForestIntro": false,
+  "seenInnArrivalIntro": false,
+  "overworldPos": {
+   "col": 1,
+   "row": 8
+  },
+  "gameClock": 0,
+  "affinityScores": {},
+  "overworldMoveBudgetUsed": 0,
+  "heroHunger": {},
+  "heroDiseases": {},
+  "heroPoisons": {},
+  "rations": 20,
+  "hungerStreak": 0,
+  "alertStreak": 0,
+  "lastRoadEncounterId": null,
+  "roadEncountersSeen": [],
+  "exploredHexes": [
+   "1,8"
+  ]
+ },
+ "missions": [
+  {
+   "id": "vau",
+   "index": 0,
+   "title": "O Vau",
+   "place": "Rio de cinza",
+   "briefing": "O rio ainda corta a planície queimada. Três sobreviventes. Do outro lado, a milícia que os persegue. Atravessem o vau e abram caminho.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "vau029.json"
+  },
+  {
+   "id": "bosque",
+   "index": 1,
+   "title": "Bosque Morto",
+   "place": "Troncos secos",
+   "briefing": "As árvores não têm folhas há duas estações. O bosque aperta o passo e esconde besteiros. No charco fareja um Swamp Blue Calf. Não deixem Kael sozinho na frente.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "bosque005.json"
+  },
+  {
+   "id": "aldeia",
+   "index": 2,
+   "title": "Aldeia Queimada",
+   "place": "Casario em ruína",
+   "briefing": "A aldeia ainda fumega e os saqueadores montaram acampamento atrás da paliçada, ao norte. Casas em chamas custam o passo e queimam quem atravessa — 1d8. Besteiros vigiam da encosta a leste; cães de guerra rondam a praça. O Carniceiro espera no acampamento.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "aldeia015.json"
+  },
+  {
+   "id": "muralha",
+   "index": 3,
+   "title": "Muralha Rasa",
+   "place": "Porta da fortaleza",
+   "briefing": "A muralha baixa ainda segura o caminho. Besteiros no adarve, soldados no vão do portão. Três cães de guerra — carne de rito, ferro uruk no focinho — tomam duas casas cada. Não deixem cercar Kael.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "muralha001.json"
+  },
+  {
+   "id": "fortaleza",
+   "index": 4,
+   "title": "Fortaleza de Cinzas",
+   "place": "Pátio interior",
+   "briefing": "O capitão espera no pátio. Derrubem ele — a guarda se dispersa. Voss e Neera acertam de longe, sem contra-ataque. Não encostem no chefe. Usem bosque e ruína.",
+   "objective": "Derrube o capitão",
+   "win": "rout",
+   "mapFile": "fortaleza004.json"
+  },
+  {
+   "id": "templo",
+   "index": 5,
+   "title": "As Jaulas da Lua Carmim",
+   "place": "Nave enforcada",
+   "briefing": "A lua de sangue pende sobre a nave. Gaiolas de ferro e carne. O rito já acabou — Asherah ocupa o altar. Matem todos. Se ela alcançar Voss, ele cai.",
+   "objective": "Derrote Asherah e os feiticeiros",
+   "win": "rout",
+   "mapFile": "templo002.json"
+  },
+  {
+   "id": "cripta",
+   "index": 6,
+   "title": "Cripta de Cinzas",
+   "place": "Sob o templo",
+   "briefing": "Asherah caiu. O prisioneiro do rito anda — Salazar, clérigo sem poções. Duas curas menores e uma cura simples por combate. A cripta ainda tem culto. Não deixem cercá-lo.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "cripta002.json"
+  },
+  {
+   "id": "estalagem",
+   "index": 7,
+   "title": "A Estalagem do Osso Seco",
+   "place": "Pousada à margem da cinza",
+   "briefing": "A estrada acaba num copo. O Osso Seco ainda serve, se Gold pagar. Brue vende o que restou da adega. O mudo escreve. A hóspede do porão só fala. Ninguém ataca aqui.",
+   "objective": "Descanso, conversa e troca",
+   "win": "rout",
+   "mapFile": "estalagem006.json"
+  },
+  {
+   "id": "colina",
+   "index": 8,
+   "title": "A Colina Morta",
+   "place": "Encosta seca",
+   "briefing": "Uma colina ampla, coberta de vegetação morta. Árvores retorcidas, capim amarelado, pedras antigas. O caminho sobe. Quanto mais alto, mais a encosta vira paredão. No cume, a silhueta de uma construção fortificada. A superfície acaba.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "colina004.json"
+  },
+  {
+   "id": "passagem",
+   "index": 9,
+   "title": "A Passagem Antiga",
+   "place": "Caverna talhada",
+   "briefing": "A única passagem pelo paredão é uma caverna escavada há muito tempo. Paredes talhadas, blocos de pedra, nichos e plataformas sem função. Raízes no teto. No escuro vive um troll da caverna, em armadura grosseira. Ele parte barricadas. Desce e sobe através da montanha.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "passagem001.json"
+  },
+  {
+   "id": "profundezas",
+   "index": 10,
+   "title": "As Profundezas Famintas",
+   "place": "Câmaras mais fundas da caverna",
+   "briefing": "A passagem continua abaixo, mais funda que qualquer mapa registrado. O ar cheira a cinza fria. Pilares talhados sustentam um teto que não deveria existir a essa profundidade. Algo aqui não come há muito tempo — e não é comida que procura.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "profundezas009.json"
+  },
+  {
+   "id": "vertente",
+   "index": 11,
+   "title": "R1",
+   "place": "Face norte da colina",
+   "briefing": "A passagem desemboca na outra face. Pouco muda no chão. Muda a vista: a elevação inteira acima, e no topo o Templo Fortificado, nítido pela primeira vez. Não parece abandonado. A encosta é pior deste lado.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout"
+  },
+  {
+   "id": "portao",
+   "index": 12,
+   "title": "R2",
+   "place": "Portões do cume",
+   "briefing": "O caminho acaba diante da entrada. Muralhas espessas, torres no corpo da igreja, portão monumental. Antigo e preservado. A escadaria sobe até as portas. O interior fica para depois.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout"
+  },
+  {
+   "id": "ashen-forest-crossing",
+   "index": 7,
+   "title": "Ashen Forest Crossing",
+   "place": "Ashen Forest — Eastern Trail",
+   "briefing": "Beyond the Inn, a long trail winds through pale trunks, broad ash clearings and a dry ravine. The woodland is more open than Wisp Forest, but the eastern exit lies far away. Follow the markers through the woods; the southeastern shortcut is impassable.",
+   "objective": "Follow the long ashwood trail and reach the eastern exit.",
+   "win": "escape",
+   "mapFile": "ashen-forest-crossing001.json"
+  },
+  {
+   "id": "cemetery-ground-deep-crypt-1",
+   "index": 13,
+   "title": "Cripta Profunda — Andar 1: Vestíbulo dos Sepultados",
+   "place": "Cripta Profunda — Andar 1: Vestíbulo dos Sepultados",
+   "briefing": "Salões funerários cercam uma nave ampla. As escadas ao sul voltam ao cemitério; as do norte descem ao ossuário.",
+   "objective": "Explore as câmaras e use as passagens para avançar ou voltar.",
+   "win": "escape",
+   "mapFile": "cemetery-ground-deep-crypt-1001.json"
+  },
+  {
+   "id": "cemetery-ground-deep-crypt-2",
+   "index": 13,
+   "title": "Cripta Profunda — Andar 2: Galerias do Ossuário",
+   "place": "Cripta Profunda — Andar 2: Galerias do Ossuário",
+   "briefing": "Quatro ossuários se abrem para uma galeria central. Patrulhas guardam as passagens laterais e a descida ao reservatório.",
+   "objective": "Explore as câmaras e use as passagens para avançar ou voltar.",
+   "win": "escape",
+   "mapFile": "cemetery-ground-deep-crypt-2001.json"
+  },
+  {
+   "id": "cemetery-ground-deep-crypt-3",
+   "index": 13,
+   "title": "Cripta Profunda — Andar 3: Reservatório dos Esquecidos",
+   "place": "Cripta Profunda — Andar 3: Reservatório dos Esquecidos",
+   "briefing": "Águas antigas ocupam as alas externas. Uma travessia seca cruza o reservatório e conduz ao santuário inferior.",
+   "objective": "Explore as câmaras e use as passagens para avançar ou voltar.",
+   "win": "escape",
+   "mapFile": "cemetery-ground-deep-crypt-3001.json"
+  },
+  {
+   "id": "cemetery-ground-deep-crypt-4",
+   "index": 13,
+   "title": "Cripta Profunda — Andar 4: Santuário da Última Vigília",
+   "place": "Cripta Profunda — Andar 4: Santuário da Última Vigília",
+   "briefing": "No fundo da cripta, um santuário elevado domina a nave. O guardião da última vigília protege os sarcófagos e o tesouro; retorne pelas escadas ao sul.",
+   "objective": "Explore o santuário e seu tesouro; retorne aos andares superiores pela escadaria sul.",
+   "win": "escape",
+   "mapFile": "cemetery-ground-deep-crypt-4001.json"
+  },
+  {
+   "id": "cemetery-ground-part-ii",
+   "index": 13,
+   "title": "Cemetery Ground Part II",
+   "place": "Cemetery Ground Part II",
+   "briefing": "Além do arco oriental, longas alamedas dividem os jardins funerários. Um lago escuro contorna a capela arruinada; no extremo norte, a Cripta Profunda desce por quatro vastos andares. A passagem oeste retorna ao primeiro cemitério.",
+   "objective": "Explore o segundo cemitério e os quatro andares da Cripta Profunda; volte pela passagem oeste.",
+   "win": "escape",
+   "mapFile": "cemetery-ground-part-ii001.json"
+  },
+  {
+   "id": "cemiterio-esquecidos-cripta-2",
+   "index": 13,
+   "title": "Cemitério dos Esquecidos — Câmara Profunda",
+   "place": "Câmara Profunda",
+   "briefing": "No fundo da cripta, uma câmara funerária sem nome. Algo que já foi guardado aqui agora guarda o lugar.",
+   "objective": "Explore a câmara — a passagem ao sul volta ao primeiro andar",
+   "win": "escape",
+   "mapFile": "cemiterio-esquecidos-cripta-2001.json"
+  },
+  {
+   "id": "cemiterio-esquecidos-cripta",
+   "index": 13,
+   "title": "Cemitério dos Esquecidos — Cripta",
+   "place": "Cripta sob a colina",
+   "briefing": "Galerias estreitas de ossos empilhados. Os guardiões ainda mantêm as velas acesas, e a escadaria ao norte desce mais fundo.",
+   "objective": "Explore a cripta — a escadaria ao norte desce; a passagem ao sul volta ao cemitério",
+   "win": "escape",
+   "mapFile": "cemiterio-esquecidos-cripta001.json"
+  },
+  {
+   "id": "cemiterio-esquecidos-mausoleu",
+   "index": 13,
+   "title": "Cemitério dos Esquecidos — Mausoléu",
+   "place": "Mausoléu das Velhas Famílias",
+   "briefing": "Nichos de mármore e sarcófagos selados. Uma sentinela de pedra ainda cumpre a última ordem que recebeu.",
+   "objective": "Explore o mausoléu — a escada ao sul volta ao cemitério",
+   "win": "escape",
+   "mapFile": "cemiterio-esquecidos-mausoleu001.json"
+  },
+  {
+   "id": "cemiterio-esquecidos-ruinas",
+   "index": 13,
+   "title": "Cemitério dos Esquecidos — Ruínas Submersas",
+   "place": "Ruínas sob a capela",
+   "briefing": "O chão da capela cedeu para uma nave antiga, meio alagada. Saqueadores chegaram antes — e alguma coisa grande respira sob a água.",
+   "objective": "Explore as ruínas — a encosta de entulho volta ao cemitério",
+   "win": "escape",
+   "mapFile": "cemiterio-esquecidos-ruinas001.json"
+  },
+  {
+   "id": "cemiterio-esquecidos",
+   "index": 13,
+   "title": "Cemitério dos Esquecidos",
+   "place": "Cemitério dos Esquecidos",
+   "briefing": "Muros góticos cercam campos de lápides sem nome. Sob a colina, uma cripta; ao norte, a capela desabada; a leste, os mausoléus das velhas famílias. Todos descem para algum lugar. A alameda a leste atravessa um arco de pedra e continua em Cemetery Ground Part II, onde a Cripta Profunda guarda quatro andares.",
+   "objective": "Explore o cemitério e desça às criptas, ruínas e mausoléus e atravesse a alameda leste para Cemetery Ground Part II",
+   "win": "escape",
+   "mapFile": "cemiterio-esquecidos005.json"
+  },
+  {
+   "id": "cripta-esquecida",
+   "index": 13,
+   "title": "A Cripta Esquecida",
+   "place": "Cripta Esquecida",
+   "briefing": "Escadas descem sob pedra rachada até um salão de guarda ainda ocupado. Duas portas trancadas guardam o que restou de um cofre e de uma cripta — e algo maior espera mais fundo, além delas.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "cripta-esquecida001.json"
+  },
+  {
+   "id": "crypt-of-whispers-2",
+   "index": 13,
+   "title": "Cripta dos Ecos · 2º Andar",
+   "place": "Cripta dos Ecos",
+   "briefing": "O ossário se abre em galerias baixas, onde os nomes foram raspados das lápides. As luzes errantes conduzem mais fundo, mas alguma coisa desperta sob as pedras.",
+   "objective": "Atravesse a cripta e encontre a passagem para o próximo andar",
+   "win": "escape",
+   "mapFile": "crypt-of-whispers-2001.json"
+  },
+  {
+   "id": "crypt-of-whispers-3",
+   "index": 13,
+   "title": "Cripta dos Ecos · 3º Andar",
+   "place": "Cripta dos Ecos",
+   "briefing": "No sepulcro inferior, as brasas suspensas orbitam um guardião de pedra. Atravessem a câmara e encontrem a saída antes que a cripta os prenda para sempre.",
+   "objective": "Atravesse a cripta e encontre a passagem para o próximo andar",
+   "win": "escape",
+   "mapFile": "crypt-of-whispers-3001.json"
+  },
+  {
+   "id": "crypt-of-whispers",
+   "index": 13,
+   "title": "Cripta dos Ecos · 1º Andar",
+   "place": "Cripta dos Ecos",
+   "briefing": "Sob o cemitério, luzes cor de brasa ainda flutuam entre os túmulos. Os guardiões da entrada protegem a escadaria que desce ao ossário.",
+   "objective": "Atravesse a cripta e encontre a passagem para o próximo andar",
+   "win": "escape",
+   "mapFile": "crypt-of-whispers001.json"
+  },
+  {
+   "id": "custom-mv7ex4ph",
+   "index": 0,
+   "title": "Test Units",
+   "place": "",
+   "briefing": "",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "custom-mv7ex4ph001.json"
+  },
+  {
+   "id": "deep-mist",
+   "index": 13,
+   "title": "Deep Mist",
+   "place": "Misty Cave",
+   "briefing": "A névoa rasteja por galerias de pedra, celas esquecidas e um lago subterrâneo. Dois sobreviventes conhecem os caminhos; os mortos guardam o que os mineiros deixaram. Ao norte, um antigo santuário oferece a única saída.",
+   "objective": "Alcance a saída do santuário ao norte. Explore os depósitos e converse com Dario e Iria.",
+   "win": "escape",
+   "mapFile": "deep-mist002.json"
+  },
+  {
+   "id": "estalagem-andar-2",
+   "index": 7,
+   "title": "Estalagem do Osso Seco · Andar II · Quartos",
+   "place": "Estalagem do Osso Seco — Andar II · Quartos",
+   "briefing": "O corredor do andar de cima corta a estalagem ao meio, com quartos de um lado e do outro. Poucas camas, muitos hóspedes. Ninguém ataca aqui, e quase ninguém dorme.",
+   "objective": "Quartos, hóspedes e conversa",
+   "win": "rout",
+   "mapFile": "estalagem-andar-2003.json"
+  },
+  {
+   "id": "farmlands-apothecary",
+   "index": 57,
+   "title": "Botica de Lia",
+   "place": "Farmlands",
+   "briefing": "Tenho poções para curar feridas, tratar doença e recuperar energia mágica.",
+   "objective": "Converse com os moradores e use os serviços.",
+   "win": "rout",
+   "mapFile": "farmlands-apothecary002.json"
+  },
+  {
+   "id": "farmlands-elevation-day",
+   "index": 55,
+   "title": "Farmlands — Elevation Daylight",
+   "place": "Campos e pequenas casas",
+   "briefing": "Daylight elevation inspection: solid terraces with vertical faces. No fog or mist.",
+   "objective": "Explore os campos e visite as casas.",
+   "win": "rout",
+   "mapFile": "farmlands-elevation-day001.json"
+  },
+  {
+   "id": "farmlands-general-store",
+   "index": 58,
+   "title": "Armazém dos Campos",
+   "place": "Farmlands",
+   "briefing": "Bento guarda provisões e gazuas num armazém gasto pelo tempo.",
+   "objective": "Converse com os moradores e use os serviços.",
+   "win": "rout",
+   "mapFile": "farmlands-general-store001.json"
+  },
+  {
+   "id": "farmlands-inn",
+   "index": 59,
+   "title": "A Pequena Pousada",
+   "place": "Farmlands",
+   "briefing": "Há camas e sossego. Descansem um pouco e conversem com seus companheiros.",
+   "objective": "Converse com os moradores e use os serviços.",
+   "win": "rout",
+   "mapFile": "farmlands-inn002.json"
+  },
+  {
+   "id": "farmlands-smith",
+   "index": 56,
+   "title": "Ferraria de Duarte",
+   "place": "Farmlands",
+   "briefing": "Trabalho com armas de qualidade intermediária e algumas peças mais fortes. Posso mostrar o estoque.",
+   "objective": "Converse com os moradores e use os serviços.",
+   "win": "rout",
+   "mapFile": "farmlands-smith002.json"
+  },
+  {
+   "id": "farmlands-tavern",
+   "index": 58,
+   "title": "A Taberna dos Campos",
+   "place": "Farmlands",
+   "briefing": "Posso separar provisões para o grupo. A estrada não alimenta ninguém.",
+   "objective": "Converse com os moradores e use os serviços.",
+   "win": "rout",
+   "mapFile": "farmlands-tavern001.json"
+  },
+  {
+   "id": "farmlands-villagers",
+   "index": 60,
+   "title": "Casa dos Moradores",
+   "place": "Farmlands",
+   "briefing": "Moradores estranhos se reúnem nesta casa. Escute suas histórias antes de voltar aos campos.",
+   "objective": "Converse com os moradores e use os serviços.",
+   "win": "rout",
+   "mapFile": "farmlands-villagers001.json"
+  },
+  {
+   "id": "farmlands",
+   "index": 55,
+   "title": "Farmlands",
+   "place": "Campos e pequenas casas",
+   "briefing": "Campos abertos cercam um povoado inquietante. Três lojas oferecem armas, remédios e provisões. A pequena pousada abriga o grupo; a casa dos moradores guarda histórias estranhas.",
+   "objective": "Explore os campos e visite as casas.",
+   "win": "rout",
+   "mapFile": "farmlands002.json"
+  },
+  {
+   "id": "frozen-swamp-1-hidden-cellar",
+   "index": 0,
+   "title": "Frozen Swamp 1 — Hidden Cellar",
+   "place": "Frozen Swamp",
+   "briefing": "A forgotten cellar beneath a secret entrance. Two chambers flank a frozen cistern; another hidden wall conceals an untouched store.",
+   "objective": "Explore the underground chambers and return to the crossing.",
+   "win": "escape",
+   "mapFile": "frozen-swamp-1-hidden-cellar001.json"
+  },
+  {
+   "id": "frozen-swamp-1-sunk-vault",
+   "index": 0,
+   "title": "Frozen Swamp 1 — Sunk Vault",
+   "place": "Frozen Swamp",
+   "briefing": "The sunk vault branches around a flooded burial basin. Ancient guards hold the far hall, and a secret door protects the old treasury.",
+   "objective": "Explore the underground chambers and return to the crossing.",
+   "win": "escape",
+   "mapFile": "frozen-swamp-1-sunk-vault001.json"
+  },
+  {
+   "id": "frozen-swamp-2-hidden-cellar",
+   "index": 0,
+   "title": "Frozen Swamp 2 — Hidden Cellar",
+   "place": "Frozen Swamp",
+   "briefing": "A forgotten cellar beneath a secret entrance. Two chambers flank a frozen cistern; another hidden wall conceals an untouched store.",
+   "objective": "Explore the underground chambers and return to the crossing.",
+   "win": "escape",
+   "mapFile": "frozen-swamp-2-hidden-cellar001.json"
+  },
+  {
+   "id": "frozen-swamp-2-sunk-vault",
+   "index": 0,
+   "title": "Frozen Swamp 2 — Sunk Vault",
+   "place": "Frozen Swamp",
+   "briefing": "The sunk vault branches around a flooded burial basin. Ancient guards hold the far hall, and a secret door protects the old treasury.",
+   "objective": "Explore the underground chambers and return to the crossing.",
+   "win": "escape",
+   "mapFile": "frozen-swamp-2-sunk-vault001.json"
+  },
+  {
+   "id": "frozen-swamp-3-hidden-cellar",
+   "index": 0,
+   "title": "Frozen Swamp 3 — Hidden Cellar",
+   "place": "Frozen Swamp",
+   "briefing": "A forgotten cellar beneath a secret entrance. Two chambers flank a frozen cistern; another hidden wall conceals an untouched store.",
+   "objective": "Explore the underground chambers and return to the crossing.",
+   "win": "escape",
+   "mapFile": "frozen-swamp-3-hidden-cellar001.json"
+  },
+  {
+   "id": "frozen-swamp-3-sunk-vault",
+   "index": 0,
+   "title": "Frozen Swamp 3 — Sunk Vault",
+   "place": "Frozen Swamp",
+   "briefing": "The sunk vault branches around a flooded burial basin. Ancient guards hold the far hall, and a secret door protects the old treasury.",
+   "objective": "Explore the underground chambers and return to the crossing.",
+   "win": "escape",
+   "mapFile": "frozen-swamp-3-sunk-vault001.json"
+  },
+  {
+   "id": "frozen-swamp-crossing-1",
+   "index": 0,
+   "title": "Frozen Swamp Crossing — Part 1: The Drowned Causeway",
+   "place": "Frozen Swamp",
+   "briefing": "An immense frozen marsh stretches between drowned trees and broken causeways. Part 1 contains two optional underground sites, a sealed cache and alternate island routes. Follow solid snow and stone; the dark channels remain impassable. Secret doors can be discovered and opened using the game's normal exploration rules.",
+   "objective": "Find the crossing to the next part; explore the optional ruins.",
+   "win": "escape",
+   "mapFile": "frozen-swamp-crossing-1001.json"
+  },
+  {
+   "id": "frozen-swamp-crossing-2",
+   "index": 0,
+   "title": "Frozen Swamp Crossing — Part 2: The Hollow Reed Basin",
+   "place": "Frozen Swamp",
+   "briefing": "An immense frozen marsh stretches between drowned trees and broken causeways. Part 2 contains two optional underground sites, a sealed cache and alternate island routes. Follow solid snow and stone; the dark channels remain impassable. Secret doors can be discovered and opened using the game's normal exploration rules.",
+   "objective": "Find the crossing to the next part; explore the optional ruins.",
+   "win": "escape",
+   "mapFile": "frozen-swamp-crossing-2001.json"
+  },
+  {
+   "id": "frozen-swamp-crossing-3",
+   "index": 0,
+   "title": "Frozen Swamp Crossing — Part 3: The Pale Beacon",
+   "place": "Frozen Swamp",
+   "briefing": "An immense frozen marsh stretches between drowned trees and broken causeways. Part 3 contains two optional underground sites, a sealed cache and alternate island routes. Follow solid snow and stone; the dark channels remain impassable. Secret doors can be discovered and opened using the game's normal exploration rules.",
+   "objective": "Reach the pale beacon and the exit; explore the optional ruins.",
+   "win": "escape",
+   "mapFile": "frozen-swamp-crossing-3001.json"
+  },
+  {
+   "id": "frozen-tundra-crossing",
+   "index": 13,
+   "title": "Travessia da Tundra Congelada",
+   "place": "Frozen Swamp",
+   "briefing": "Uma antiga estrada de pedra corta a tundra, desaparecendo sob lagos congelados e neve profunda. Wisps azulados marcam o caminho entre ruínas soterradas, enquanto criaturas do frio cercam a passagem. Alcancem a saída do outro lado.",
+   "objective": "Atravesse a tundra e alcance a saída a leste",
+   "win": "escape",
+   "mapFile": "frozen-tundra-crossing003.json"
+  },
+  {
+   "id": "grotto-1",
+   "index": 11,
+   "title": "Grotto 1",
+   "place": "Câmara dos pilares",
+   "briefing": "Pilares de basalto quebrados cercam uma grande câmara. A luz dos braseiros revela um horror e seus guardiões.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "grotto-1004.json"
+  },
+  {
+   "id": "grotto-2",
+   "index": 11,
+   "title": "Grotto 2",
+   "place": "Gruta de basalto",
+   "briefing": "Uma entrada estreita leva a uma câmara de rocha escura. Estalactites pendem das paredes; entre as formações, um troll e mortos-vivos guardam a gruta.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "grotto-2004.json"
+  },
+  {
+   "id": "grotto-3",
+   "index": 11,
+   "title": "Grotto 3",
+   "place": "Gruta profunda",
+   "briefing": "Uma galeria de rocha fraturada se abre numa câmara ampla. Dois fogos revelam o troll e os mortos-vivos que aguardam entre os escombros.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "grotto-3004.json"
+  },
+  {
+   "id": "grotto-4",
+   "index": 11,
+   "title": "Grotto 4",
+   "place": "Galeria de estalactites",
+   "briefing": "Um corredor estreito desemboca numa câmara alta. Formações de pedra cercam uma trilha aberta entre duas fogueiras.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "grotto-4004.json"
+  },
+  {
+   "id": "grotto-5",
+   "index": 11,
+   "title": "Grotto 5",
+   "place": "Gruta de ametista",
+   "briefing": "Cristais violetas iluminam uma câmara de pedra rachada. Ossadas cobrem um nicho e água escura se acumula junto à parede.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "grotto-5004.json"
+  },
+  {
+   "id": "grotto-6",
+   "index": 11,
+   "title": "Grotto 6",
+   "place": "Gruta do lago",
+   "briefing": "Uma nascente forma um lago no centro da gruta. Musgo cresce entre os blocos úmidos; os caminhos contornam a água.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "grotto-6004.json"
+  },
+  {
+   "id": "misty-blackwater-shelf",
+   "index": 16,
+   "title": "Misty Cave — Profundidade 3: As Margens do Rio Negro",
+   "place": "Subsolo de Mordavia",
+   "briefing": "Um rio subterrâneo divide terraços de rocha. Duas pontes naturais cruzam o leito; as galerias do sul conduzem à Colônia do Micélio Profundo.",
+   "objective": "Explore as galerias e encontre a passagem inferior.",
+   "win": "escape",
+   "mapFile": "misty-blackwater-shelf001.json"
+  },
+  {
+   "id": "misty-cave-dungeon",
+   "index": 13,
+   "title": "As Profundezas Enevoadas",
+   "place": "Misty Cave",
+   "briefing": "A névoa engole a luz das tochas assim que a caverna se aprofunda. Passagens se ramificam em todas as direções — algumas seladas por portas antigas, uma delas afundada, e algo grande espera no fim de todas elas.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "misty-cave-dungeon002.json"
+  },
+  {
+   "id": "misty-deep-mycelium",
+   "index": 16,
+   "title": "Micélio Profundo — Colônia dos Homens-Fungo",
+   "place": "Subsolo de Mordavia",
+   "briefing": "Pequeno assentamento de homens-fungo. Habitantes e serviços usam placeholders editáveis enquanto a espécie é desenvolvida.",
+   "objective": "Converse com os habitantes e retorne à descida.",
+   "win": "escape",
+   "mapFile": "misty-deep-mycelium001.json"
+  },
+  {
+   "id": "misty-hollow-earth",
+   "index": 17,
+   "title": "Misty Cave — Profundidade 4: O Céu de Pedra",
+   "place": "Subsolo de Mordavia",
+   "briefing": "A caverna abre num vasto vazio sob o continente elevado. Ruínas em terraços e pilares naturais sustentam o teto; uma rampa leva ao último limiar.",
+   "objective": "Explore as galerias e encontre a passagem inferior.",
+   "win": "escape",
+   "mapFile": "misty-hollow-earth001.json"
+  },
+  {
+   "id": "misty-root-descent",
+   "index": 14,
+   "title": "Misty Cave — Profundidade 1: A Garganta das Raízes",
+   "place": "Subsolo de Mordavia",
+   "briefing": "Raízes da superfície pendem sobre uma garganta de pedra. Duas galerias contornam o abismo e convergem na escada inferior.",
+   "objective": "Explore as galerias e encontre a passagem inferior.",
+   "win": "escape",
+   "mapFile": "misty-root-descent001.json"
+  },
+  {
+   "id": "misty-spore-basin",
+   "index": 15,
+   "title": "Misty Cave — Profundidade 2: A Bacia dos Esporos",
+   "place": "Subsolo de Mordavia",
+   "briefing": "Uma floresta subterrânea de cogumelos ilumina as galerias. Uma ramificação leva ao pequeno refúgio Esporabrigo; a passagem principal continua descendo.",
+   "objective": "Explore as galerias e encontre a passagem inferior.",
+   "win": "escape",
+   "mapFile": "misty-spore-basin001.json"
+  },
+  {
+   "id": "misty-sporehaven",
+   "index": 15,
+   "title": "Esporabrigo — Aldeia dos Homens-Fungo",
+   "place": "Subsolo de Mordavia",
+   "briefing": "Pequeno assentamento de homens-fungo. Habitantes e serviços usam placeholders editáveis enquanto a espécie é desenvolvida.",
+   "objective": "Converse com os habitantes e retorne à descida.",
+   "win": "escape",
+   "mapFile": "misty-sporehaven001.json"
+  },
+  {
+   "id": "mordavia-underdark",
+   "index": 18,
+   "title": "Misty Cave — Profundidade 5: Underdark de Mordavia",
+   "place": "Subsolo de Mordavia",
+   "briefing": "A primeira região do submundo de Mordavia: um mar interior, ilhas de ruínas e bosques de fungos sob um teto que parece outro céu. Este é o início de futuras expansões.",
+   "objective": "Explore as galerias e encontre a passagem inferior.",
+   "win": "escape",
+   "mapFile": "mordavia-underdark001.json"
+  },
+  {
+   "id": "mordavian-woods-floor-1",
+   "index": 0,
+   "title": "Mordavian Woods — 1 — Rootbound Vestibule",
+   "place": "Mordavian Woods",
+   "briefing": "Ancient roots split the entrance galleries. The first descent lies beyond a wide ceremonial hall.",
+   "objective": "Find the passage to the next floor.",
+   "win": "escape",
+   "mapFile": "mordavian-woods-floor-1001.json"
+  },
+  {
+   "id": "mordavian-woods-floor-2",
+   "index": 0,
+   "title": "Mordavian Woods — 2 — The Silted Archive",
+   "place": "Mordavian Woods",
+   "briefing": "A drowned archive opens into a maze of long reading halls. A lone figure waits among the collapsed shelves.",
+   "objective": "Find the passage to the next floor.",
+   "win": "escape",
+   "mapFile": "mordavian-woods-floor-2001.json"
+  },
+  {
+   "id": "mordavian-woods-floor-3",
+   "index": 0,
+   "title": "Mordavian Woods — 3 — The Broken Aqueduct",
+   "place": "Mordavian Woods",
+   "briefing": "A dry aqueduct cuts through the ruins. Side channels are fractured, but the old service bridge still reaches the next stair.",
+   "objective": "Find the passage to the next floor.",
+   "win": "escape",
+   "mapFile": "mordavian-woods-floor-3001.json"
+  },
+  {
+   "id": "mordavian-woods-floor-4",
+   "index": 0,
+   "title": "Mordavian Woods — 4 — The Ashen Reliquary",
+   "place": "Mordavian Woods",
+   "briefing": "Ash coats the reliquary halls. Sealed alcoves surround a central chamber where the stonework begins to breathe.",
+   "objective": "Find the passage to the next floor.",
+   "win": "escape",
+   "mapFile": "mordavian-woods-floor-4001.json"
+  },
+  {
+   "id": "mordavian-woods-floor-5",
+   "index": 0,
+   "title": "Mordavian Woods — 5 — The Worldroot Sanctum",
+   "place": "Mordavian Woods",
+   "briefing": "At the deepest level, the ruin opens into a vast sanctum wrapped around a petrified root. A final passage leads back to the upper floors.",
+   "objective": "Find the passage to the next floor.",
+   "win": "escape",
+   "mapFile": "mordavian-woods-floor-5001.json"
+  },
+  {
+   "id": "mordavian-woods",
+   "index": 0,
+   "title": "Mordavian Woods",
+   "place": "Mordavian Woods",
+   "briefing": "An immense forest presses against the edge of the known world. A broken trail winds through the trees to a buried stone entrance; hostile watchers move between the old trunks.",
+   "objective": "Cross the forest trail and reach the underground ruins.",
+   "win": "escape",
+   "mapFile": "mordavian-woods001.json"
+  },
+  {
+   "id": "npc-cast-showcase",
+   "index": 22,
+   "title": "Os Doze Viajantes",
+   "place": "Clareira dos Viajantes",
+   "briefing": "Converse com os doze viajantes. Todos estão disponíveis no pincel NPC do editor.",
+   "objective": "Explore a clareira e converse com os viajantes.",
+   "win": "rout",
+   "mapFile": "npc-cast-showcase001.json"
+  },
+  {
+   "id": "random-amanita-glade",
+   "index": 37,
+   "title": "Amanita Glade",
+   "place": "Amanita Glade",
+   "briefing": "Old broadleaf trees close around a sunlit glade ringed with red-capped mushrooms. Poachers have made camp in the clearing, and their leashed wolves already have your scent.",
+   "objective": "Defeat all enemies and clear the forest trail.",
+   "win": "rout",
+   "mapFile": "random-amanita-glade001.json"
+  },
+  {
+   "id": "random-backward-hunt",
+   "index": 21,
+   "title": "A Caçada sem Fim",
+   "place": "A Caçada sem Fim",
+   "briefing": "Caçadores amaldiçoados cercam uma trilha de tundra. Um lago divide o campo; as rotas ao norte e ao sul permitem flanquear os arqueiros.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-backward-hunt002.json"
+  },
+  {
+   "id": "random-bell-beneath-ice",
+   "index": 18,
+   "title": "O Sino sob o Gelo",
+   "place": "O Sino sob o Gelo",
+   "briefing": "Um sino ressoa sob o lago congelado. Duas passagens de neve levam à capela em ruínas; os mortos guardam suas colunas e o pátio central.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-bell-beneath-ice002.json"
+  },
+  {
+   "id": "random-blightwood-verge",
+   "index": 38,
+   "title": "Blightwood Verge",
+   "place": "Blightwood Verge",
+   "briefing": "Where the green wood ends, every trunk beyond is grey and dead. Candles burn at a ruined wayside shrine, and the things kneeling before it rise as you step onto the trail.",
+   "objective": "Defeat all enemies and put out the blight shrine.",
+   "win": "rout",
+   "mapFile": "random-blightwood-verge001.json"
+  },
+  {
+   "id": "random-broken-antler-grove",
+   "index": 23,
+   "title": "O Bosque do Chifre Partido",
+   "place": "O Bosque do Chifre Partido",
+   "briefing": "Um círculo antigo foi ocupado por profanadores. As ruínas centrais oferecem abrigo, mas as alas de vegetação alta escondem os flancos. Um baú grande guarda as oferendas roubadas.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-broken-antler-grove002.json"
+  },
+  {
+   "id": "random-cairnkeepers-rise",
+   "index": 20,
+   "title": "Cairnkeeper’s Rise",
+   "place": "Cairnkeeper’s Rise",
+   "briefing": "Old cairns climb a windswept slope among dead oaks. Grave robbers have disturbed the stones, and the mountain’s guardian rises with the buried dead.",
+   "objective": "Defeat all enemies and secure the mountain trail.",
+   "win": "rout",
+   "mapFile": "random-cairnkeepers-rise001.json"
+  },
+  {
+   "id": "random-caravan-green-road",
+   "index": 22,
+   "title": "A Caravana da Estrada Verde",
+   "place": "A Caravana da Estrada Verde",
+   "briefing": "Carroças de mantimentos estão cercadas por salteadores. Mara, Tomás e Ilda se abrigam na clareira. Vença todos os atacantes e conclua a missão para receber 400 Gold e 12 rações, com os três viajantes vivos. Clique nos NPCs para conversar.",
+   "objective": "Derrote todos os salteadores e ajude Mara, Tomás e Ilda.",
+   "win": "rout",
+   "mapFile": "random-caravan-green-road001.json"
+  },
+  {
+   "id": "random-coldwind-saddle",
+   "index": 20,
+   "title": "Coldwind Saddle",
+   "place": "Coldwind Saddle",
+   "briefing": "Cold wind whistles through hollow trunks on a rocky saddle. Toll collectors emerge from both ridges and demand your winter supplies.",
+   "objective": "Defeat all enemies and secure the mountain trail.",
+   "win": "rout",
+   "mapFile": "random-coldwind-saddle001.json"
+  },
+  {
+   "id": "random-crystal-ossuary",
+   "index": 17,
+   "title": "O Ossário de Ametista",
+   "place": "O Ossário de Ametista",
+   "briefing": "Uma galeria de cristais desemboca em duas salas de masmorra. Um lago subterrâneo divide o salão; as passagens ao norte e ao sul permitem cercar os guardiões do ossário.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-crystal-ossuary001.json"
+  },
+  {
+   "id": "random-encounter-1",
+   "index": 13,
+   "title": "Emboscada na Clareira dos Sussurros",
+   "place": "Clareira dos Sussurros",
+   "briefing": "A trilha se abre numa clareira cercada por árvores antigas. Passos entre os troncos respondem aos seus — bandidos usam o bosque como cobertura.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "random-encounter-1-001.json"
+  },
+  {
+   "id": "random-encounter-10",
+   "index": 14,
+   "title": "Clareira do Trevo",
+   "place": "Clareira do Trevo",
+   "briefing": "Uma clareira tranquila demais, coberta de trevos. No centro, um menir rúnico — e ao redor dele, uivos que se aproximam de todos os lados.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "random-encounter-10001.json"
+  },
+  {
+   "id": "random-encounter-11",
+   "index": 15,
+   "title": "A Parada do Mercador",
+   "place": "Estrada Velha",
+   "briefing": "Uma carroça carregada está parada num recuo da estrada. O viajante oferece provisões, poções e gazuas antes que a marcha recomece.",
+   "objective": "Converse com o mercador e siga quando estiver pronto",
+   "win": "rout",
+   "mapFile": "random-encounter-11005.json"
+  },
+  {
+   "id": "random-encounter-12",
+   "index": 16,
+   "title": "Curva dos Salteadores",
+   "place": "Curva do Carvalho",
+   "briefing": "A estrada estreita passa entre carvalhos antigos. Bandidos bloquearam a curva e esperam que a caravana se aproxime.",
+   "objective": "Derrote os salteadores",
+   "win": "rout",
+   "mapFile": "random-encounter-12001.json"
+  },
+  {
+   "id": "random-encounter-13",
+   "index": 17,
+   "title": "Ruínas da Ponte Velha",
+   "place": "Ponte Velha",
+   "briefing": "A antiga ponte desabou junto às ruínas da guarita. Há movimento entre as pedras e o caminho adiante está fechado.",
+   "objective": "Derrote os inimigos que ocupam a ponte",
+   "win": "rout",
+   "mapFile": "random-encounter-13001.json"
+  },
+  {
+   "id": "random-encounter-14",
+   "index": 18,
+   "title": "O Mercador do Alto Passo",
+   "place": "Passo Gelado",
+   "briefing": "Entre as montanhas cobertas de neve, uma carroça reforçada virou abrigo contra o vento. O mercador oferece equipamento de viagem e peças raras aos que chegaram até aqui.",
+   "objective": "Converse com o mercador e veja o equipamento de viagem",
+   "win": "rout",
+   "mapFile": "random-encounter-14001.json"
+  },
+  {
+   "id": "random-encounter-2",
+   "index": 14,
+   "title": "A Fera da Raiz Antiga",
+   "place": "Pântano da Raiz Antiga",
+   "briefing": "Névoa verde cobre um pântano de raízes expostas. Uma ponte de pedra partida é o único caminho seguro; algo grande se move sob a água escura.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "random-encounter-2-001.json"
+  },
+  {
+   "id": "random-encounter-3",
+   "index": 13,
+   "title": "A Carroça Virada",
+   "place": "Estrada do Vau Velho",
+   "briefing": "Uma carroça virada bloqueia a estrada e o silêncio é grande demais para ser natural. Besteiros usam as árvores da beira como cobertura enquanto um capitão comanda a emboscada.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "random-encounter-3-001.json"
+  },
+  {
+   "id": "random-encounter-4",
+   "index": 14,
+   "title": "Os Olhos na Névoa",
+   "place": "Vau Enevoado",
+   "briefing": "A névoa baixa sobre poças escuras e raízes retorcidas. Algo pastando entre a água ergue a cabeça — um Cobalt Blue Deer, e não está sozinho.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "random-encounter-4-001.json"
+  },
+  {
+   "id": "random-encounter-5",
+   "index": 13,
+   "title": "Sangue na Encruzilhada",
+   "place": "Encruzilhada dos Viajantes",
+   "briefing": "Quatro estradas se cruzam num campo aberto. Um viajante ferido se apoia numa placa de madeira — e ladrões de estrada observam de longe, esperando o momento de atacar.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "random-encounter-5002.json"
+  },
+  {
+   "id": "random-encounter-6",
+   "index": 13,
+   "title": "Emboscada no Vau Raso",
+   "place": "Vau Raso",
+   "briefing": "A estrada mergulha num riacho largo e lento. No meio da água, uma carroça virada ainda pinga sangue fresco na correnteza — e os responsáveis não foram longe.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "random-encounter-6001.json"
+  },
+  {
+   "id": "random-encounter-7",
+   "index": 13,
+   "title": "O Andarilho Encapuzado",
+   "place": "Cruzamento do Santuário Caído",
+   "briefing": "Um santuário rachado marca onde duas trilhas se cruzam. Uma figura encapuzada espera sentada nas pedras — e não está sozinha por acaso.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "random-encounter-7001.json"
+  },
+  {
+   "id": "random-encounter-8",
+   "index": 13,
+   "title": "Uivos ao Anoitecer",
+   "place": "Trecho Uivante",
+   "briefing": "O sol se põe atrás dos pinheiros e um uivo responde a outro, e a outro. A matilha já sentiu o cheiro da coluna.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "random-encounter-8001.json"
+  },
+  {
+   "id": "random-encounter-9",
+   "index": 13,
+   "title": "Trilha Enlameada",
+   "place": "Trilha dos Lenhadores",
+   "briefing": "A velha trilha dos lenhadores virou lama. Pegadas frescas cruzam o caminho — botas e patas, e nenhuma delas é de vocês.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "random-encounter-9001.json"
+  },
+  {
+   "id": "random-forest011-cedar-glade",
+   "index": 51,
+   "title": "Bosque — Clareira dos Cedros",
+   "place": "Bosque",
+   "briefing": "Uma matilha caça nas margens da clareira. Os troncos caídos permitem separar seus ataques.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-forest011-cedar-glade002.json"
+  },
+  {
+   "id": "random-forest011-hemlock-trail",
+   "index": 52,
+   "title": "Bosque — Trilha das Tsugas",
+   "place": "Bosque",
+   "briefing": "Saqueadores guardam uma trilha que se abre em duas rotas largas entre árvores e troncos.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-forest011-hemlock-trail002.json"
+  },
+  {
+   "id": "random-forest011-hollow-grove",
+   "index": 53,
+   "title": "Bosque — O Bosque Silencioso",
+   "place": "Bosque",
+   "briefing": "Um feiticeiro reuniu mortos-vivos entre as árvores. Contorne os troncos para alcançar a retaguarda.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-forest011-hollow-grove002.json"
+  },
+  {
+   "id": "random-forest011-needle-crossing",
+   "index": 54,
+   "title": "Bosque — Travessia das Agulhas",
+   "place": "Bosque",
+   "briefing": "Vigias do culto controlam a travessia. Uma passagem central e dois flancos amplos permitem cercá-los.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-forest011-needle-crossing002.json"
+  },
+  {
+   "id": "random-frostbound-sanctuary",
+   "index": 16,
+   "title": "O Santuário sob a Geada",
+   "place": "O Santuário sob a Geada",
+   "briefing": "Entre tundra e neve, um templo antigo ainda guarda o seu pátio de basalto. Os mortos cercam a nave central, enquanto sentinelas controlam as alas de calcário.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-frostbound-sanctuary001.json"
+  },
+  {
+   "id": "random-greycairn-plateau",
+   "index": 40,
+   "title": "Greycairn Plateau",
+   "place": "Greycairn Plateau",
+   "briefing": "A ring of old cairns crowns a wind-scoured plateau. Hunters have staked their wolves at the top, and only two ramps climb the crumbling rim.",
+   "objective": "Defeat all enemies and take the cairn circle.",
+   "win": "rout",
+   "mapFile": "random-greycairn-plateau001.json"
+  },
+  {
+   "id": "random-hollow-pine-basin",
+   "index": 20,
+   "title": "Hollow Pine Basin",
+   "place": "Hollow Pine Basin",
+   "briefing": "The hollow pines amplify every footstep. A hungry pack circles the shallow basin, moving between broken trunks and the bare hills.",
+   "objective": "Defeat all enemies and secure the mountain trail.",
+   "win": "rout",
+   "mapFile": "random-hollow-pine-basin001.json"
+  },
+  {
+   "id": "random-hollow-root-den",
+   "index": 25,
+   "title": "A Toca das Raízes Ocas",
+   "place": "A Toca das Raízes Ocas",
+   "briefing": "Lobos e saqueadores disputam um acampamento abandonado. Um barranco separa a clareira em duas rotas, com abrigo de pedra ao norte e vegetação alta ao sul.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-hollow-root-den002.json"
+  },
+  {
+   "id": "random-icelands-blue-antlers",
+   "index": 35,
+   "title": "Icelands — Os Chifres Azuis",
+   "place": "Icelands",
+   "briefing": "Cervos de cobalto guardam um círculo de pedras na tundra. Um lago estreito separa as margens; as passagens de neve ao norte e sul permitem evitar o centro exposto.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-icelands-blue-antlers001.json"
+  },
+  {
+   "id": "random-icelands-i10",
+   "index": 46,
+   "title": "Icelands I10 — Rastro dos Lobos",
+   "place": "Icelands",
+   "briefing": "Saqueadores guardam uma passagem ampla entre rochas baixas.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-icelands-i10002.json"
+  },
+  {
+   "id": "random-icelands-i1",
+   "index": 37,
+   "title": "Icelands I1 — Afloramentos da Geada",
+   "place": "Icelands",
+   "briefing": "Lobos patrulham os afloramentos cobertos de neve. Há espaço para contornar as pedras.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-icelands-i1002.json"
+  },
+  {
+   "id": "random-icelands-i11",
+   "index": 47,
+   "title": "Icelands I11 — Vale do Granito",
+   "place": "Icelands",
+   "briefing": "Mortos-vivos ocupam a bacia silenciosa. Use os dois flancos para chegar ao feiticeiro.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-icelands-i11002.json"
+  },
+  {
+   "id": "random-icelands-i12",
+   "index": 48,
+   "title": "Icelands I12 — Vigias da Nevasca",
+   "place": "Icelands",
+   "briefing": "O vento abriu uma campina entre blocos de granito. Vigias espreitam junto aos afloramentos.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-icelands-i12002.json"
+  },
+  {
+   "id": "random-icelands-i13",
+   "index": 49,
+   "title": "Icelands I13 — Abrigo Perdido",
+   "place": "Icelands",
+   "briefing": "Lobos patrulham os afloramentos cobertos de neve. Há espaço para contornar as pedras.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-icelands-i13002.json"
+  },
+  {
+   "id": "random-icelands-i14",
+   "index": 50,
+   "title": "Icelands I14 — Última Campina",
+   "place": "Icelands",
+   "briefing": "Saqueadores guardam uma passagem ampla entre rochas baixas.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-icelands-i14002.json"
+  },
+  {
+   "id": "random-icelands-i2",
+   "index": 38,
+   "title": "Icelands I2 — Passagem Branca",
+   "place": "Icelands",
+   "briefing": "Saqueadores guardam uma passagem ampla entre rochas baixas.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-icelands-i2002.json"
+  },
+  {
+   "id": "random-icelands-i3",
+   "index": 39,
+   "title": "Icelands I3 — Bacia Silenciosa",
+   "place": "Icelands",
+   "briefing": "Mortos-vivos ocupam a bacia silenciosa. Use os dois flancos para chegar ao feiticeiro.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-icelands-i3002.json"
+  },
+  {
+   "id": "random-icelands-i4",
+   "index": 40,
+   "title": "Icelands I4 — Campo Esculpido pelo Vento",
+   "place": "Icelands",
+   "briefing": "O vento abriu uma campina entre blocos de granito. Vigias espreitam junto aos afloramentos.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-icelands-i4002.json"
+  },
+  {
+   "id": "random-icelands-i5",
+   "index": 41,
+   "title": "Icelands I5 — Morena Partida",
+   "place": "Icelands",
+   "briefing": "Lobos patrulham os afloramentos cobertos de neve. Há espaço para contornar as pedras.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-icelands-i5002.json"
+  },
+  {
+   "id": "random-icelands-i6",
+   "index": 42,
+   "title": "Icelands I6 — Estrada Sob a Neve",
+   "place": "Icelands",
+   "briefing": "Saqueadores guardam uma passagem ampla entre rochas baixas.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-icelands-i6002.json"
+  },
+  {
+   "id": "random-icelands-i7",
+   "index": 43,
+   "title": "Icelands I7 — Pedras do Norte",
+   "place": "Icelands",
+   "briefing": "Mortos-vivos ocupam a bacia silenciosa. Use os dois flancos para chegar ao feiticeiro.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-icelands-i7002.json"
+  },
+  {
+   "id": "random-icelands-i8",
+   "index": 44,
+   "title": "Icelands I8 — Travessia da Crosta",
+   "place": "Icelands",
+   "briefing": "O vento abriu uma campina entre blocos de granito. Vigias espreitam junto aos afloramentos.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-icelands-i8002.json"
+  },
+  {
+   "id": "random-icelands-i9",
+   "index": 45,
+   "title": "Icelands I9 — Encosta Deserta",
+   "place": "Icelands",
+   "briefing": "Lobos patrulham os afloramentos cobertos de neve. Há espaço para contornar as pedras.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-icelands-i9002.json"
+  },
+  {
+   "id": "random-icelands-last-beacon",
+   "index": 36,
+   "title": "Icelands — A Última Baliza",
+   "place": "Icelands",
+   "briefing": "A baliza de uma antiga estação ainda queima entre ruínas congeladas. Mortos e saqueadores cercam o abrigo. Os corredores de basalto fornecem cobertura entre as duas encostas.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-icelands-last-beacon001.json"
+  },
+  {
+   "id": "random-mora-hollow-stream",
+   "index": 32,
+   "title": "Mora — O Riacho dos Troncos Ocos",
+   "place": "Floresta Mora",
+   "briefing": "Uma trilha segue um riacho entre troncos ocos. Dois vaus ligam as margens; lobos cercam a passagem e saqueadores vigiam a colina da outra margem.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-mora-hollow-stream001.json"
+  },
+  {
+   "id": "random-mora-rootwatch",
+   "index": 31,
+   "title": "Mora — A Vigília das Raízes",
+   "place": "Floresta Mora",
+   "briefing": "Raízes antigas cercam um santuário ocupado por profanadores. A clareira central é exposta; as trilhas laterais permitem alcançar os vigias pelos flancos.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-mora-rootwatch001.json"
+  },
+  {
+   "id": "random-photographic-grassland",
+   "index": 26,
+   "title": "Campina — A Encosta dos Vigias",
+   "place": "Planícies",
+   "briefing": "Vigias dominam uma campina irregular. O grupo pode avançar pelo centro ou contornar os afloramentos.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-photographic-grassland001.json"
+  },
+  {
+   "id": "random-photographic-meadow",
+   "index": 25,
+   "title": "Prado — A Travessia Verde",
+   "place": "Planícies",
+   "briefing": "Uma faixa de rochas divide o prado em duas rotas largas. Guardas hostis ocupam a passagem.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-photographic-meadow001.json"
+  },
+  {
+   "id": "random-photographic-prairie",
+   "index": 24,
+   "title": "Pradaria — Emboscada no Capim",
+   "place": "Planícies",
+   "briefing": "Salteadores espreitam uma pradaria aberta. Rochas nas bordas oferecem cobertura e o centro permite flanquear.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-photographic-prairie001.json"
+  },
+  {
+   "id": "random-plains-broken-caravan",
+   "index": 13,
+   "title": "Planícies — A Caravana Dispersa",
+   "place": "Planícies",
+   "briefing": "Salteadores cercam carroças abandonadas. Contorne as cargas para alcançar os arqueiros.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-plains-broken-caravan001.json"
+  },
+  {
+   "id": "random-plains-hill-patrol",
+   "index": 17,
+   "title": "Planícies — A Patrulha do Espigão",
+   "place": "Planícies",
+   "briefing": "Uma companhia hostil domina o espigão. Escolha entre o corredor central e os flancos abertos para desalojar os arqueiros.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-plains-hill-patrol001.json"
+  },
+  {
+   "id": "random-plains-old-stones",
+   "index": 15,
+   "title": "Planícies — As Pedras do Sol Poente",
+   "place": "Planícies",
+   "briefing": "Um círculo de pedras antigas virou altar de um culto. Interrompa o ritual usando as colinas para flanquear os vigias.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-plains-old-stones001.json"
+  },
+  {
+   "id": "random-plains-silent-harvest",
+   "index": 16,
+   "title": "Planícies — A Colheita Silenciosa",
+   "place": "Planícies",
+   "briefing": "Os campos deixados pelos lavradores escondem mortos inquietos. Corredores entre ruínas e vegetação dividem o combate.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-plains-silent-harvest001.json"
+  },
+  {
+   "id": "random-plains-sunken-ford",
+   "index": 14,
+   "title": "Planícies — O Vau da Campina",
+   "place": "Planícies",
+   "briefing": "Um riacho atravessa a planície. Dois vaus oferecem passagem, mas lanceiros guardam a margem distante.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-plains-sunken-ford001.json"
+  },
+  {
+   "id": "random-plains-windgrass",
+   "index": 12,
+   "title": "Planícies — Capim ao Vento",
+   "place": "Planícies",
+   "briefing": "Uma matilha caça entre faixas de capim alto. As elevações laterais permitem vigiar a campina.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-plains-windgrass001.json"
+  },
+  {
+   "id": "random-rimewater-shrine",
+   "index": 20,
+   "title": "Rimewater Shrine",
+   "place": "Rimewater Shrine",
+   "briefing": "A thin skin of frost rims an unfrozen mountain spring. Dead trees shelter a forgotten shrine, where an ash cult prepares a sacrifice beneath the hollow branches.",
+   "objective": "Defeat all enemies and secure the mountain trail.",
+   "win": "rout",
+   "mapFile": "random-rimewater-shrine001.json"
+  },
+  {
+   "id": "random-river-rope-ambush",
+   "index": 24,
+   "title": "A Emboscada do Vau das Cordas",
+   "place": "A Emboscada do Vau das Cordas",
+   "briefing": "Saqueadores fingiram deixar uma travessia vazia. O rio divide o campo e duas passagens rasas permitem cruzá-lo; os arqueiros controlam a elevação na margem oposta.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-river-rope-ambush002.json"
+  },
+  {
+   "id": "random-road-broken-milepost",
+   "index": 34,
+   "title": "Estrada — O Marco Quebrado",
+   "place": "Estrada das Três Rotas",
+   "briefing": "Um marco derrubado bloqueia a curva. Arqueiros ocupam a elevação e uma patrulha de saqueadores controla a ponte baixa. A trilha do acostamento permite cercar a emboscada.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-road-broken-milepost001.json"
+  },
+  {
+   "id": "random-road-three-routes-market",
+   "index": 33,
+   "title": "Estrada — O Mercador das Três Rotas",
+   "place": "Estrada das Três Rotas",
+   "briefing": "Elias mantém sua carroça junto ao marco das três rotas. Converse com ele para comprar suprimentos ou equipamentos intermediários (320–1300 Gold), ouvir rumores e conhecer sua história. Salteadores ocupam a saída norte.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-road-three-routes-market001.json"
+  },
+  {
+   "id": "random-small-toll-collector",
+   "index": 19,
+   "title": "O Pequeno Cobrador de Pedágio",
+   "place": "O Pequeno Cobrador de Pedágio",
+   "briefing": "Um cobrador de pedágio e seus comparsas ocupam uma passagem estreita. Contorne as barricadas pelo sul ou avance pelo corredor central; arqueiros vigiam as colinas.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-small-toll-collector002.json"
+  },
+  {
+   "id": "random-splintered-trunk-pass",
+   "index": 20,
+   "title": "Splintered Trunk Pass",
+   "place": "Splintered Trunk Pass",
+   "briefing": "A dead forest has toppled across the mountain pass. Hunters use its hollow logs as blinds, trapping travellers between a broken rock wall and the fallen trunks.",
+   "objective": "Defeat all enemies and secure the mountain trail.",
+   "win": "rout",
+   "mapFile": "random-splintered-trunk-pass001.json"
+  },
+  {
+   "id": "random-stoneshelf-pass",
+   "index": 39,
+   "title": "Stoneshelf Pass",
+   "place": "Stoneshelf Pass",
+   "briefing": "The trail squeezes between two shelves of layered stone and leaves through a natural arch. Bowmen on the high ledge have the whole pass in their sights, and the arch is held.",
+   "objective": "Defeat all enemies and take the stone arch.",
+   "win": "rout",
+   "mapFile": "random-stoneshelf-pass001.json"
+  },
+  {
+   "id": "random-walking-campfire",
+   "index": 20,
+   "title": "A Fogueira Andante",
+   "place": "A Fogueira Andante",
+   "briefing": "Um antigo construto conduz viajantes por uma clareira de braseiros. Saqueadores cercam o abrigo: enfrente-os entre as ruínas, antes de continuar até o templo.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-walking-campfire002.json"
+  },
+  {
+   "id": "random-whispering-reeds",
+   "index": 15,
+   "title": "Emboscada no Rio dos Sussurros",
+   "place": "Emboscada no Rio dos Sussurros",
+   "briefing": "O capim alto encobre saqueadores nas duas margens. Duas passagens rasas cortam o rio; a colina ao norte oferece uma posição de tiro, mas também revela quem a ocupa.",
+   "objective": "Derrote todos os inimigos.",
+   "win": "rout",
+   "mapFile": "random-whispering-reeds001.json"
+  },
+  {
+   "id": "teste-house",
+   "index": 0,
+   "title": "Teste House",
+   "place": "",
+   "briefing": "",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "teste-house005.json"
+  },
+  {
+   "id": "thebridge",
+   "index": 3,
+   "title": "A Ponte de Pedra",
+   "place": "Cruzando a Ponte para Mordavia",
+   "briefing": "A travessia pela antiga Ponte de Pedra rumo a Mordavia exige coragem absoluta,\n\nUm nevoeiro denso cobre o abismo abaixo enquanto forças hostis bloqueiam o único acesso seguro para a terra desconhecida, \n\nPara garantir passagem livre e avançar na jornada, elimine cada um dos oponentes que guardam o caminho",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "thebridge022.json"
+  },
+  {
+   "id": "watchtower-barracks",
+   "index": 18,
+   "title": "Andar 1 · Caserna e Arsenal",
+   "place": "Torre de Vigia — Andar II · Caserna e Arsenal",
+   "briefing": "A caserna divide o piso entre uma ala de madeira e um arsenal de pedra. Os pilares centrais mantêm abertas duas rotas para a escada norte.",
+   "objective": "Explore o andar e use as passagens para continuar pela torre.",
+   "win": "escape",
+   "mapFile": "watchtower-barracks001.json"
+  },
+  {
+   "id": "watchtower-beacon",
+   "index": 18,
+   "title": "Andar 3 · O Farol Apagado",
+   "place": "Torre de Vigia — Andar IV · O Farol Apagado",
+   "briefing": "No topo, uma plataforma de basalto sustenta o antigo braseiro de sinalização. O vento e a luz fria atravessam o último posto de vigia. Vença os sentinelas e encerre a expedição.",
+   "objective": "Derrote a guarda do farol ou retorne pelos andares inferiores.",
+   "win": "escape",
+   "mapFile": "watchtower-beacon001.json"
+  },
+  {
+   "id": "watchtower-command",
+   "index": 18,
+   "title": "Andar 2 · Câmara do Comandante",
+   "place": "Torre de Vigia — Andar III · Câmara do Comandante",
+   "briefing": "Calcário antigo e basalto marcam a câmara do comandante. Uma mesa de guerra domina a ala norte, mas as passagens laterais permanecem livres para manobras.",
+   "objective": "Explore o andar e use as passagens para continuar pela torre.",
+   "win": "escape",
+   "mapFile": "watchtower-command001.json"
+  },
+  {
+   "id": "watchtower-gate-floor",
+   "index": 18,
+   "title": "Andar 0 · Guarnição do Portão",
+   "place": "Torre de Vigia — Andar I · Guarnição do Portão",
+   "briefing": "O piso térreo organiza o acesso à torre: depósitos a oeste, uma sala de guarda ao norte e escadas para as fundações e os andares superiores.",
+   "objective": "Explore o andar e use as passagens para continuar pela torre.",
+   "win": "escape",
+   "mapFile": "watchtower-gate-floor006.json"
+  },
+  {
+   "id": "watchtower-prison",
+   "index": 18,
+   "title": "Andar -2 · A Prisão Silenciosa",
+   "place": "Torre de Vigia — Subsolo II · A Prisão Silenciosa",
+   "briefing": "A segunda fundação abriga quatro blocos de celas. Grades e pilares separam os pátios do corredor central. Gaiolas esquecidas, instrumentos de tortura e um ossário revelam o destino dos prisioneiros.",
+   "objective": "Explore o andar e use as passagens para continuar pela torre.",
+   "win": "escape",
+   "mapFile": "watchtower-prison002.json"
+  },
+  {
+   "id": "watchtower-undercroft",
+   "index": 18,
+   "title": "Andar -1 · Salões das Fundações",
+   "place": "Torre de Vigia — Subsolo I · Salões das Fundações",
+   "briefing": "Sob a torre, arcadas antigas dividem depósitos, uma cisterna e um santuário de basalto. A passagem nordeste desce à prisão; a escada sudoeste retorna à guarnição.",
+   "objective": "Explore o andar e use as passagens para continuar pela torre.",
+   "win": "escape",
+   "mapFile": "watchtower-undercroft001.json"
+  },
+  {
+   "id": "wisp-forest-2",
+   "index": 4,
+   "title": "Wisp Forest 2",
+   "place": "Deep Wisp Forest",
+   "briefing": "Past the last lantern the trails fork and fold back on themselves. Wolves den among the roots, brigands camp by the black pond, and older things keep the sunken ruins further in. Somewhere past them, a shrine the forest was never meant to give back.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "wisp-forest-2004.json"
+  },
+  {
+   "id": "wisp-forest-crossing-boss",
+   "index": 4,
+   "title": "Wisp Forest Crossing · Andar 1 · Planta Carnívora",
+   "place": "Wisp Forest · Covil da Planta Carnívora",
+   "briefing": "Uma Planta Carnívora guarda o fim da travessia. A mata cerrada protege suas costas e seus flancos; o único acesso conduz diretamente à área de suas gavinhas.",
+   "objective": "Derrote a Planta Carnívora para concluir Wisp Forest Crossing.",
+   "win": "boss",
+   "mapFile": "wisp-forest-crossing-boss005.json"
+  },
+  {
+   "id": "wisp-forest-crossing",
+   "index": 4,
+   "title": "Wisp Forest Crossing",
+   "place": "Deep Wisp Forest",
+   "briefing": "Past the last lantern the trails fork and fold back on themselves. Wolves den among the roots, brigands camp by the black pond, and older things keep the sunken ruins further in. Somewhere past them, a shrine the forest was never meant to give back.",
+   "objective": "Encontre a passagem e derrote a Planta Carnívora para concluir a travessia.",
+   "win": "escape",
+   "mapFile": "wisp-forest-crossing012.json"
+  },
+  {
+   "id": "wisp-forest",
+   "index": 0,
+   "title": "Wisp Forest",
+   "place": "",
+   "briefing": "The Wisp Forest is an ancient, lightless woodland of towering trees, tangled roots and forgotten paths. Ember-red wisps hang in the cold air beneath the canopy, drifting through dead clearings and half-buried ruins. Far from the roads of Mordavia, the forest grows darker and more hostile with every step inward.",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "wisp-forest006.json"
+  },
+  {
+   "id": "zona-de-teste",
+   "index": 0,
+   "title": "Zona de Teste",
+   "place": "",
+   "briefing": "",
+   "objective": "Derrote todos os inimigos",
+   "win": "rout",
+   "mapFile": "zona-de-teste009.json"
+  }
+ ],
+ "locations": [
+  {
+   "id": "stonebridge",
+   "name": "Stone Bridge",
+   "x": 14,
+   "y": 62,
+   "missionIds": [
+    "vau",
+    "aldeia"
+   ],
+   "warpCity": true,
+   "col": 2,
+   "row": 8
+  },
+  {
+   "id": "ruins",
+   "name": "Ruins",
+   "x": 77.94,
+   "y": 30,
+   "missionIds": [
+    "muralha",
+    "fortaleza",
+    "templo",
+    "cripta"
+   ],
+   "col": 9,
+   "row": 4
+  },
+  {
+   "id": "estalagem",
+   "name": "Inn",
+   "x": 51.96,
+   "y": 60,
+   "missionIds": [
+    "estalagem"
+   ],
+   "col": 6,
+   "row": 8
+  },
+  {
+   "id": "ashen-forest",
+   "name": "Ashen Forest Crossing",
+   "x": 73.61215932167728,
+   "y": 52.5,
+   "missionIds": [
+    "ashen-forest-crossing"
+   ],
+   "openAccess": true,
+   "col": 8,
+   "row": 7
+  },
+  {
+   "id": "dungeon",
+   "name": "The Sunken Ruins",
+   "x": 12.99,
+   "y": 82.5,
+   "missionIds": [
+    "colina",
+    "passagem",
+    "profundezas"
+   ],
+   "col": 1,
+   "row": 11
+  },
+  {
+   "id": "watchtower",
+   "name": "Watchtower",
+   "x": 24,
+   "y": 50,
+   "missionIds": [
+    "bosque"
+   ],
+   "col": 2,
+   "row": 7
+  },
+  {
+   "id": "vertente",
+   "name": "Fortified Temple Complex",
+   "x": 51.96,
+   "y": 15,
+   "missionIds": [],
+   "col": 6,
+   "row": 2
+  },
+  {
+   "id": "village",
+   "name": "Village",
+   "x": 22,
+   "y": 25,
+   "missionIds": [],
+   "col": 2,
+   "row": 3
+  },
+  {
+   "id": "farm",
+   "name": "Farm",
+   "x": 14,
+   "y": 38,
+   "missionIds": [
+    "farmlands"
+   ],
+   "openAccess": true,
+   "submaps": [
+    {
+     "missionId": "farmlands-smith",
+     "floor": 1
+    },
+    {
+     "missionId": "farmlands-apothecary",
+     "floor": 1
+    },
+    {
+     "missionId": "farmlands-tavern",
+     "floor": 1
+    },
+    {
+     "missionId": "farmlands-inn",
+     "floor": 1
+    }
+   ],
+   "col": 1,
+   "row": 5
+  },
+  {
+   "id": "mordavian-woods",
+   "name": "Mordavian Woods",
+   "x": 8.66,
+   "y": 30,
+   "missionIds": [
+    "mordavian-woods"
+   ],
+   "encountersAllowed": true,
+   "openAccess": true,
+   "submaps": [
+    {
+     "missionId": "mordavian-woods-floor-1",
+     "floor": 1
+    },
+    {
+     "missionId": "mordavian-woods-floor-2",
+     "floor": 2
+    },
+    {
+     "missionId": "mordavian-woods-floor-3",
+     "floor": 3
+    },
+    {
+     "missionId": "mordavian-woods-floor-4",
+     "floor": 4
+    },
+    {
+     "missionId": "mordavian-woods-floor-5",
+     "floor": 5
+    }
+   ],
+   "col": 1,
+   "row": 4
+  },
+  {
+   "id": "misty-cave",
+   "name": "Misty Cave",
+   "x": 51.96,
+   "y": 45,
+   "missionIds": [],
+   "col": 6,
+   "row": 6
+  },
+  {
+   "id": "cemetery",
+   "name": "Cemetery",
+   "x": 86,
+   "y": 52,
+   "missionIds": [],
+   "col": 9,
+   "row": 7
+  },
+  {
+   "id": "frozen-swamp",
+   "name": "Frozen Swamp",
+   "x": 51.96,
+   "y": 75,
+   "missionIds": [
+    "frozen-swamp-crossing-1"
+   ],
+   "openAccess": true,
+   "submaps": [
+    {
+     "missionId": "frozen-swamp-crossing-2",
+     "floor": 2
+    },
+    {
+     "missionId": "frozen-swamp-crossing-3",
+     "floor": 3
+    },
+    {
+     "missionId": "frozen-swamp-1-sunk-vault",
+     "floor": 1
+    },
+    {
+     "missionId": "frozen-swamp-1-hidden-cellar",
+     "floor": 1
+    },
+    {
+     "missionId": "frozen-swamp-2-sunk-vault",
+     "floor": 2
+    },
+    {
+     "missionId": "frozen-swamp-2-hidden-cellar",
+     "floor": 2
+    },
+    {
+     "missionId": "frozen-swamp-3-sunk-vault",
+     "floor": 3
+    },
+    {
+     "missionId": "frozen-swamp-3-hidden-cellar",
+     "floor": 3
+    }
+   ],
+   "col": 6,
+   "row": 10
+  },
+  {
+   "id": "forest",
+   "name": "The Verdant Refuge",
+   "x": 82.27,
+   "y": 82.5,
+   "missionIds": [],
+   "col": 9,
+   "row": 11
+  },
+  {
+   "id": "wisp-forest",
+   "name": "Wisp Forest",
+   "x": 34.64,
+   "y": 60,
+   "missionIds": [],
+   "col": 4,
+   "row": 8
+  }
+ ],
+ "slotProgress": [
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "Vazio",
+   "detail": "Nenhuma campanha"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": "vau",
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "O Vau",
+   "detail": "Início do combate"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": "bosque",
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "Bosque Morto",
+   "detail": "Início do combate"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": "aldeia",
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "Aldeia Queimada",
+   "detail": "Início do combate"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": "muralha",
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "Muralha Rasa",
+   "detail": "Início do combate"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": "fortaleza",
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "Fortaleza de Cinzas",
+   "detail": "Início do combate"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": "templo",
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "As Jaulas da Lua Carmim",
+   "detail": "Início do combate"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": {
+     "missionId": "vau",
+     "turn": 3
+    },
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "O Vau",
+   "detail": "Em combate · turno 3"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 2,
+     "row": 8
+    },
+    "gameClock": 4,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ],
+    "mapMode": "rpg"
+   },
+   "title": "Stone Bridge",
+   "detail": "Dia 4 · mapa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 9,
+     "row": 4
+    },
+    "gameClock": 4,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ],
+    "mapMode": "rpg"
+   },
+   "title": "Ruins",
+   "detail": "Dia 4 · mapa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 6,
+     "row": 8
+    },
+    "gameClock": 4,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ],
+    "mapMode": "rpg"
+   },
+   "title": "Inn",
+   "detail": "Dia 4 · mapa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 8,
+     "row": 7
+    },
+    "gameClock": 4,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ],
+    "mapMode": "rpg"
+   },
+   "title": "Ashen Forest Crossing",
+   "detail": "Dia 4 · mapa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 11
+    },
+    "gameClock": 4,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ],
+    "mapMode": "rpg"
+   },
+   "title": "The Sunken Ruins",
+   "detail": "Dia 4 · mapa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 2,
+     "row": 7
+    },
+    "gameClock": 4,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ],
+    "mapMode": "rpg"
+   },
+   "title": "Watchtower",
+   "detail": "Dia 4 · mapa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 6,
+     "row": 2
+    },
+    "gameClock": 4,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ],
+    "mapMode": "rpg"
+   },
+   "title": "Fortified Temple Complex",
+   "detail": "Dia 4 · mapa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 2,
+     "row": 3
+    },
+    "gameClock": 4,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ],
+    "mapMode": "rpg"
+   },
+   "title": "Village",
+   "detail": "Dia 4 · mapa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 5
+    },
+    "gameClock": 4,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ],
+    "mapMode": "rpg"
+   },
+   "title": "Farm",
+   "detail": "Dia 4 · mapa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 4
+    },
+    "gameClock": 4,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ],
+    "mapMode": "rpg"
+   },
+   "title": "Mordavian Woods",
+   "detail": "Dia 4 · mapa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 6,
+     "row": 6
+    },
+    "gameClock": 4,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ],
+    "mapMode": "rpg"
+   },
+   "title": "Misty Cave",
+   "detail": "Dia 4 · mapa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 9,
+     "row": 7
+    },
+    "gameClock": 4,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ],
+    "mapMode": "rpg"
+   },
+   "title": "Cemetery",
+   "detail": "Dia 4 · mapa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 6,
+     "row": 10
+    },
+    "gameClock": 4,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ],
+    "mapMode": "rpg"
+   },
+   "title": "Frozen Swamp",
+   "detail": "Dia 4 · mapa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 9,
+     "row": 11
+    },
+    "gameClock": 4,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ],
+    "mapMode": "rpg"
+   },
+   "title": "The Verdant Refuge",
+   "detail": "Dia 4 · mapa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 4,
+     "row": 8
+    },
+    "gameClock": 4,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ],
+    "mapMode": "rpg"
+   },
+   "title": "Wisp Forest",
+   "detail": "Dia 4 · mapa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 0,
+     "row": 0
+    },
+    "gameClock": 2,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ],
+    "mapMode": "rpg"
+   },
+   "title": "Estrada perto de Village",
+   "detail": "Dia 2 · mapa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 5,
+     "row": 9
+    },
+    "gameClock": 2,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ],
+    "mapMode": "rpg"
+   },
+   "title": "Estrada perto de Inn",
+   "detail": "Dia 2 · mapa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 20,
+     "row": 14
+    },
+    "gameClock": 2,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ],
+    "mapMode": "rpg"
+   },
+   "title": "Estrada perto de The Verdant Refuge",
+   "detail": "Dia 2 · mapa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 33,
+     "row": 2
+    },
+    "gameClock": 2,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ],
+    "mapMode": "rpg"
+   },
+   "title": "Estrada perto de Ruins",
+   "detail": "Dia 2 · mapa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [
+     "vau"
+    ],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "Bosque Morto",
+   "detail": "Após O Vau"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [
+     "vau",
+     "bosque"
+    ],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "Aldeia Queimada",
+   "detail": "Após Bosque Morto"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [
+     "vau",
+     "bosque",
+     "aldeia"
+    ],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "Muralha Rasa",
+   "detail": "Após Aldeia Queimada"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [
+     "vau",
+     "bosque",
+     "aldeia",
+     "muralha"
+    ],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "Fortaleza de Cinzas",
+   "detail": "Após Muralha Rasa"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [
+     "vau",
+     "bosque",
+     "aldeia",
+     "muralha",
+     "fortaleza"
+    ],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "As Jaulas da Lua Carmim",
+   "detail": "Após Fortaleza de Cinzas"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [
+     "vau",
+     "bosque",
+     "aldeia",
+     "muralha",
+     "fortaleza",
+     "templo"
+    ],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "Cripta de Cinzas",
+   "detail": "Após As Jaulas da Lua Carmim"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [
+     "vau",
+     "bosque",
+     "aldeia",
+     "muralha",
+     "fortaleza",
+     "templo",
+     "cripta"
+    ],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "A Estalagem do Osso Seco",
+   "detail": "Após Cripta de Cinzas"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [
+     "vau",
+     "bosque",
+     "aldeia",
+     "muralha",
+     "fortaleza",
+     "templo",
+     "cripta",
+     "estalagem"
+    ],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "A Colina Morta",
+   "detail": "Após A Estalagem do Osso Seco"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [
+     "vau",
+     "bosque",
+     "aldeia",
+     "muralha",
+     "fortaleza",
+     "templo",
+     "cripta",
+     "estalagem",
+     "colina"
+    ],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "A Passagem Antiga",
+   "detail": "Após A Colina Morta"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [
+     "vau",
+     "bosque",
+     "aldeia",
+     "muralha",
+     "fortaleza",
+     "templo",
+     "cripta",
+     "estalagem",
+     "colina",
+     "passagem"
+    ],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "As Profundezas Famintas",
+   "detail": "Após A Passagem Antiga"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [
+     "vau",
+     "bosque",
+     "aldeia",
+     "muralha",
+     "fortaleza",
+     "templo",
+     "cripta",
+     "estalagem",
+     "colina",
+     "passagem",
+     "profundezas"
+    ],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "R1",
+   "detail": "Após As Profundezas Famintas"
+  },
+  {
+   "save": {
+    "version": 19,
+    "completed": [
+     "vau",
+     "bosque",
+     "aldeia",
+     "muralha",
+     "fortaleza",
+     "templo",
+     "cripta",
+     "estalagem",
+     "colina",
+     "passagem",
+     "profundezas",
+     "vertente"
+    ],
+    "crossingDefeatedSpawns": {},
+    "unitHp": {},
+    "levels": {
+     "Kael": 1,
+     "Neera": 1,
+     "Voss": 1,
+     "Salazar": 1
+    },
+    "xp": {
+     "Kael": 0,
+     "Neera": 0,
+     "Voss": 0,
+     "Salazar": 0
+    },
+    "statPointAllocations": {},
+    "bags": {
+     "Kael": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Neera": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Voss": {
+      "mid": 2,
+      "weak": 2,
+      "potent": 1,
+      "disease": 1,
+      "manaSmall": 1,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     },
+     "Salazar": {
+      "mid": 0,
+      "weak": 0,
+      "potent": 0,
+      "disease": 0,
+      "manaSmall": 0,
+      "manaMid": 0,
+      "manaLarge": 0,
+      "lockpick": 3
+     }
+    },
+    "promotions": {},
+    "weapons": {
+     "espada-larga": 0,
+     "arco-composto": 0,
+     "cajado-de-osso": 0,
+     "cajado-da-galhada": 0,
+     "lanca": 0
+    },
+    "equipped": {
+     "Kael": "espada-larga",
+     "Neera": "arco-composto",
+     "Voss": "cajado-de-osso",
+     "Salazar": "cajado-da-galhada",
+     "Aldric": "lanca",
+     "Malrec": "cajado-de-osso"
+    },
+    "equipment": {
+     "Neera": {
+      "offHand": "punhal-curvo"
+     }
+    },
+    "looseEquipment": {},
+    "spellUses": {},
+    "ember": 0,
+    "emberSeeded": true,
+    "muted": false,
+    "updatedAt": 0,
+    "pendingMission": null,
+    "battle": null,
+    "seenSmithIntro": false,
+    "seenOverworldIntro": false,
+    "seenWispForestIntro": false,
+    "seenInnArrivalIntro": false,
+    "overworldPos": {
+     "col": 1,
+     "row": 8
+    },
+    "gameClock": 0,
+    "affinityScores": {},
+    "overworldMoveBudgetUsed": 0,
+    "heroHunger": {},
+    "heroDiseases": {},
+    "heroPoisons": {},
+    "rations": 20,
+    "hungerStreak": 0,
+    "alertStreak": 0,
+    "lastRoadEncounterId": null,
+    "roadEncountersSeen": [],
+    "exploredHexes": [
+     "1,8"
+    ]
+   },
+   "title": "R2",
+   "detail": "Após R1"
+  }
+ ]
+}

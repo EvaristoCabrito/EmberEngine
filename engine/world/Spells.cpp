@@ -378,6 +378,15 @@ void levelUp(BattleUnit& u) {
   }
 }
 
+}  // namespace
+
+void raiseToLevel(BattleUnit& u, int level, int xp) {
+  while (u.level < std::min(level, kMaxLevel)) levelUp(u);
+  u.xp = u.level >= kMaxLevel ? 0 : std::max(0, xp);
+}
+
+namespace {
+
 void grantExp(BattleUnit& u, int amount) {
   if (u.level >= kMaxLevel || amount <= 0) return;
   u.xp += amount;

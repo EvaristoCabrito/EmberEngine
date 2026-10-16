@@ -116,6 +116,14 @@ struct MapStageOptions {
   int starLook = 3;  // the star field's saved look (looks/stars/README.md; also in the panel)
   // The battle's rules and units (tools/scripts/engine2/export_battle.ts output; empty = no combat).
   std::filesystem::path battle;
+  // A campaign fight: each hero's level and XP from the save (save.ts levels / xp), by name.
+  std::map<std::string, std::pair<int, int>> heroProgress;
+};
+
+// What a fight leaves for the campaign save (campaign.ts finishBattle's heroes part): each hero's level, XP and HP.
+struct HeroOutcome {
+  std::string name;
+  int level = 1, xp = 0, hp = 0;
 };
 
 class MapStage final : public Stage {
@@ -733,6 +741,15 @@ class MapStage final : public Stage {
 
   // The player asked to leave for the title screen (pause menu, or after the battle's end), or to fight it again.
   bool wantsTitle() const { return titleRequested_; }
+  // "victory" / "defeat" once the fight is over, else empty.
+  const std::string& battleResult() const { return result_; }
+  std::vector<HeroOutcome> heroOutcomes() const {
+    std::vector<HeroOutcome> out;
+    if (!battle_) return out;
+    for (const e2::BattleUnit& u : battle_->units())
+      if (u.side == "player" && !u.summoned) out.push_back({u.name, u.level, u.xp, u.alive ? u.hp : 0});
+    return out;
+  }
   bool wantsRetry() const { return retryRequested_; }
   const MapStageOptions& options() const { return options_; }
 
@@ -1285,6 +1302,9 @@ class MapStage final : public Stage {
   void setUpBattle(const std::filesystem::path& path) {
     battle_ = e2::Battle::load(path);
     if (!battle_) return;
+    for (e2::BattleUnit& u : battle_->units())
+      if (const auto it = options_.heroProgress.find(u.name); it != options_.heroProgress.end() && u.side == "player")
+        e2::raiseToLevel(u, it->second.first, it->second.second);
     if (battle_->cols() != board_->layout().cols || battle_->rows() != board_->layout().rows) {
       logError("battle {}: {}x{} does not fit the map's {}x{} board", path.string(), battle_->cols(), battle_->rows(), board_->layout().cols,
                board_->layout().rows);

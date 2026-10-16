@@ -1,9 +1,11 @@
 #pragma once
 
-// The title screen and the mission list, copied from Engine2 (index.html + src/title/title.css): its background art
+// The title screen, copied from Engine2 (index.html + src/title/title.css + main.ts): its background art
 // (public/game/title/title-bg.jpg, centre 42%, under the dark veil), the "EMBER ASHES" mark, the eyebrow, the big
-// "Ember", the tagline and the ember menu buttons; "Nova campanha" opens the mission list on Engine2's save-board art
-// (public/game/ui/old-ember-save-board.png) with its card style; "Opções" and "Como jogar" open Engine2's dialogs.
+// "Ember", the tagline and the ember menu buttons. "Nova campanha" and "Continuar" open the six save slots on Engine2's
+// save-board art (public/game/ui/old-ember-save-board.png); a chosen slot starts its campaign (GameApp start=new /
+// continue: the pending mission's briefing). "Modo teste" (bottom left) is Engine2's test entry: every exported map.
+// "Opções" and "Como jogar" open Engine2's dialogs.
 // Engine2's art is read at run time from its public folder; the fonts are bundled (content/fonts).
 
 #include <SDL3/SDL.h>
@@ -24,6 +26,7 @@
 #include "render/MeshScene.h"
 #include "render/Renderer.h"
 #include "render/UiArt.h"
+#include "world/Campaign.h"
 
 namespace ember {
 
@@ -32,6 +35,7 @@ struct MissionEntry {
   std::string id, title, place;
   std::string draftId, briefing, objective;  // the map's own mission text (Engine2 Mission)
   std::filesystem::path map, scene, battle;
+  std::string campaignId;  // a campaign mission (its result goes into the active save slot); empty in test mode
 };
 
 class TitleStage : public Stage {
@@ -42,13 +46,27 @@ class TitleStage : public Stage {
     std::filesystem::path scenes;                               // build/engine2-scenes (export_scene.ts)
     std::filesystem::path battles = "content/engine2/battles";  // export_battle.ts
   };
-  TitleStage(Paths paths, std::function<void(const MissionEntry&)> play, std::function<void()> quit)
-      : paths_(std::move(paths)), play_(std::move(play)), quit_(std::move(quit)) {
+  TitleStage(Paths paths, e2::Campaign* campaign, std::function<void(const MissionEntry&)> play, std::function<void()> quit)
+      : paths_(std::move(paths)), campaign_(campaign), play_(std::move(play)), quit_(std::move(quit)) {
     findMissions();
+  }
+  // Captures end after a second of frames (time for Engine2's art to load).
+  bool done() const override { return frames_ > 60; }
+  // Captures: the slot screen as "Nova campanha" (false) or "Continuar" (true) opens it.
+  void previewSlots(bool load) { openSlots(load); }
+  // Captures: a slot chosen as a click would (writes the bank given with --save-bank).
+  void previewPick(int index) { chooseSlot(index); }
+  // Back from a campaign fight: the slot screen opens on the campaign, its status line saying where it stands.
+  void showCampaign(std::string text) {
+    loadFlow_ = true;
+    overwriteSlot_ = -1;
+    status_ = std::move(text);
+    screen_ = Screen::Slots;
   }
 
   // Nothing of a map is drawn behind the menus (and nothing a closed map owned is left in the renderer's hands).
   void frame(Renderer& renderer, VkExtent2D) override {
+    ++frames_;
     renderer.setScene(Camera{}, {});
     renderer.setMeshes(MeshSceneView{});
     renderer.setTerrain({});
@@ -65,8 +83,8 @@ class TitleStage : public Stage {
   void event(const SDL_Event& e) override {
     if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.key == SDLK_ESCAPE) {
       if (dialog_ != Dialog::None) dialog_ = Dialog::None;
-      else if (screen_ == Screen::Missions) screen_ = Screen::Title;
-      else if (screen_ == Screen::Briefing) screen_ = Screen::Missions;
+      else if (screen_ == Screen::Missions || screen_ == Screen::Slots) screen_ = Screen::Title;
+      else if (screen_ == Screen::Briefing) screen_ = briefingFromCampaign_ ? Screen::Title : Screen::Missions;
     }
   }
 
@@ -81,6 +99,7 @@ class TitleStage : public Stage {
                  ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings |
                      ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoScrollWithMouse);
     if (screen_ == Screen::Title) drawTitle(io.DisplaySize);
+    else if (screen_ == Screen::Slots) drawSlots(io.DisplaySize);
     else if (screen_ == Screen::Missions) drawMissions(io.DisplaySize);
     else drawBriefing(io.DisplaySize);
     ImGui::End();
@@ -90,7 +109,7 @@ class TitleStage : public Stage {
   }
 
  private:
-  enum class Screen { Title, Missions, Briefing };
+  enum class Screen { Title, Slots, Missions, Briefing };
   enum class Dialog { None, Options, Help };
 
   // --- title.css ---------------------------------------------------------------------------------------------------
@@ -110,8 +129,13 @@ class TitleStage : public Stage {
     const float x = (size.x - width) * 0.5f;
     const float eyebrow = 0.76f * rem_, h1 = std::clamp(size.x * 0.0825f, 3.3f * rem_, 5.25f * rem_), version = 0.65f * rem_, tagline = rem_;
     const float button = 3.15f * rem_, gap = 0.72f * rem_;
-    const char* buttons[] = {"NOVA CAMPANHA", "COMO JOGAR", "OPÇÕES", "SAIR"};
-    const int count = static_cast<int>(std::size(buttons));
+    // Engine2's menu: Nova campanha, Continuar (only with a save), Como jogar, Opções; Sair closes the game (a browser
+    // tab had no need of it).
+    enum Action { New, Continue, Help, Options, Quit };
+    std::vector<std::pair<const char*, Action>> menu = {{"NOVA CAMPANHA", New}};
+    if (campaign_ && campaign_->hasAnySave()) menu.push_back({"CONTINUAR", Continue});
+    menu.push_back({"COMO JOGAR", Help}), menu.push_back({"OPÇÕES", Options}), menu.push_back({"SAIR", Quit});
+    const int count = static_cast<int>(menu.size());
     const float taglineLines = 2;
     const float total = eyebrow * 1.2f + 0.7f * rem_ + h1 * 0.92f + 0.75f * rem_ + version * 1.2f + rem_ + tagline * 1.65f * taglineLines + 1.7f * rem_ +
                         count * button + (count - 1) * gap;
@@ -134,14 +158,220 @@ class TitleStage : public Stage {
     y += tagline * 1.65f * taglineLines + 1.7f * rem_;
     const float menuWidth = std::min(25.0f * rem_, width);
     for (int i = 0; i < count; ++i) {
-      if (menuButton(buttons[i], {x, y}, {menuWidth, button}, i == 0)) {
-        if (i == 0) screen_ = Screen::Missions;
-        if (i == 1) dialog_ = Dialog::Help;
-        if (i == 2) dialog_ = Dialog::Options;
-        if (i == 3 && quit_) quit_();
+      if (menuButton(menu[static_cast<size_t>(i)].first, {x, y}, {menuWidth, button}, i == 0)) {
+        switch (menu[static_cast<size_t>(i)].second) {
+          case New: openSlots(false); break;
+          case Continue: openSlots(true); break;
+          case Help: dialog_ = Dialog::Help; break;
+          case Options: dialog_ = Dialog::Options; break;
+          case Quit:
+            if (quit_) quit_();
+            break;
+        }
       }
       y += button + gap;
     }
+    // .test-entry: "Modo teste", bottom left, faint uppercase; every exported map.
+    {
+      const char* label = "MODO TESTE";
+      const float text = 0.62f * rem_;
+      const float tw = spacedTextWidth(uiFont(UiFont::Ui), text, label, 0.14f);
+      const ImVec2 at{0.55f * rem_, size.y - 0.55f * rem_ - text - 0.6f * rem_};
+      ImGui::SetCursorScreenPos(at);
+      const bool clicked = ImGui::InvisibleButton("##testmode", {tw + 0.9f * rem_, text + 0.6f * rem_});
+      const bool hover = ImGui::IsItemHovered();
+      spacedText(dl, uiFont(UiFont::Ui), text, {at.x + 0.45f * rem_, at.y + 0.3f * rem_},
+                 hover ? IM_COL32(239, 212, 165, 255) : IM_COL32(220, 203, 177, 117), label, 0.14f, false);
+      if (clicked) screen_ = Screen::Missions;
+    }
+  }
+
+  // --- the save slots (main.ts renderSaveSlots / openSaveSlots / chooseSaveSlot, title.css .save-slot*) ----------
+
+  void openSlots(bool load) {
+    loadFlow_ = load;
+    overwriteSlot_ = -1;
+    status_.clear();
+    screen_ = Screen::Slots;
+  }
+
+  void drawSlots(ImVec2 size) {
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec2 a{0, 0}, b = size;
+    dl->AddRectFilled(a, b, IM_COL32(8, 10, 13, 255));
+    if (const UiImage* board = uiImage(paths_.engine2Public / "game/ui/old-ember-save-board.png")) imageCover(dl, *board, a, b, 0.5f, 0.5f);
+    dl->AddRectFilled(a, b, IM_COL32(0, 0, 0, 51));  // .save-slots-wash
+    // .save-slots-header: padding .75rem 1.75rem, the back plate, the kicker, the title and the intro
+    const float title = std::clamp(size.x * 0.04f, 1.45f * rem_, 1.9f * rem_);
+    const float headerH = 0.75f * rem_ + 0.65f * rem_ * 1.2f + 0.25f * rem_ + title + 0.3f * rem_ + 0.78f * rem_ * 1.35f + 0.75f * rem_;
+    dl->AddRectFilled(a, {b.x, headerH}, IM_COL32(0, 0, 0, 51));
+    dl->AddLine({0, headerH}, {b.x, headerH}, IM_COL32(255, 255, 255, 26));
+    const float padX = 1.75f * rem_;
+    ImGui::SetCursorScreenPos({padX, (headerH - 2.25f * rem_) * 0.5f});
+    if (plateButton("##slotsback", {5.5f * rem_, 2.25f * rem_}, "‹  Voltar")) screen_ = Screen::Title;
+    const float hx = padX + 5.5f * rem_ + 0.75f * rem_;
+    float hy = 0.75f * rem_;
+    spacedText(dl, uiFont(UiFont::Ui), 0.65f * rem_, {hx, hy}, IM_COL32(184, 154, 112, 255), "ARQUIVOS", 0.18f, false);
+    hy += 0.65f * rem_ * 1.2f + 0.25f * rem_;
+    const char* heading = loadFlow_ ? "Carregar campanha" : "Nova campanha";
+    dl->AddText(uiFont(UiFont::Display), title, {hx, hy + 2.0f}, IM_COL32(0, 0, 0, 255), heading);
+    dl->AddText(uiFont(UiFont::Display), title, {hx, hy}, IM_COL32(241, 220, 192, 255), heading);
+    hy += title + 0.3f * rem_;
+    dl->AddText(uiFont(UiFont::Ui), 0.78f * rem_, {hx, hy}, IM_COL32(196, 183, 164, 255),
+                loadFlow_ ? "O último usado vem marcado. Escolha uma campanha para continuar."
+                          : "Escolha um espaço. Um espaço ocupado será substituído.");
+    if (!campaign_) {
+      dl->AddText(uiFont(UiFont::Ui), rem_, {padX, headerH + rem_}, IM_COL32(224, 189, 128, 255),
+                  "Sem dados de campanha (content/engine2/campaign.json).");
+      return;
+    }
+    // .save-slots-list: 3 columns, gap .75rem, max 64rem, centred in what is left; .save-slot min-height 8rem
+    const e2::SaveBank& bank = campaign_->bank();
+    const int cols = size.x >= 640.0f ? 3 : 2;
+    const float gapC = (cols == 3 ? 0.75f : 0.5f) * rem_;
+    const float listW = std::min(64.0f * rem_, size.x - 1.5f * rem_);
+    const float cardW = (listW - gapC * static_cast<float>(cols - 1)) / static_cast<float>(cols), cardH = 8.0f * rem_;
+    const int rows = (static_cast<int>(bank.slots.size()) + cols - 1) / cols;
+    const float listH = static_cast<float>(rows) * cardH + static_cast<float>(rows - 1) * gapC;
+    const float x0 = (size.x - listW) * 0.5f;
+    const float top = headerH + std::max(0.75f * rem_, (size.y - headerH - listH) * 0.5f);
+    const bool any = campaign_->hasAnySave();
+    for (size_t i = 0; i < bank.slots.size(); ++i) {
+      const std::optional<nlohmann::json>& slot = bank.slots[i];
+      const bool empty = !e2::Campaign::occupied(slot);
+      const bool last = static_cast<int>(i) == bank.lastSlot && any && !empty;
+      const bool confirming = overwriteSlot_ == static_cast<int>(i);
+      const bool disabled = loadFlow_ && empty;
+      const int c = static_cast<int>(i) % cols, r = static_cast<int>(i) / cols;
+      const ImVec2 p{x0 + static_cast<float>(c) * (cardW + gapC), top + static_cast<float>(r) * (cardH + gapC)};
+      const ImVec2 q{p.x + cardW, p.y + cardH};
+      ImGui::SetCursorScreenPos(p);
+      ImGui::PushID(static_cast<int>(i));
+      ImGui::BeginDisabled(disabled);
+      const bool clicked = ImGui::InvisibleButton("##slot", {cardW, cardH});
+      ImGui::EndDisabled();
+      const bool hover = !disabled && ImGui::IsItemHovered();
+      ImGui::PopID();
+      // background, inset shadow, border; hover / last-used glow; last used: 3 px ember bar on the left
+      verticalGradient(dl, p, q, {{0.0f, IM_COL32(12, 12, 12, 230)}, {1.0f, IM_COL32(5, 5, 5, 230)}});
+      for (int k = 1; k <= 4; ++k) dl->AddRect({p.x + k, p.y + k}, {q.x - k, q.y - k}, IM_COL32(0, 0, 0, 50), 2.0f);
+      if (hover || last)
+        for (int k = 3; k >= 1; --k)
+          dl->AddRect({p.x - k * 3.0f, p.y - k * 3.0f}, {q.x + k * 3.0f, q.y + k * 3.0f}, IM_COL32(255, 110, 40, hover ? 16 : 13), 4.0f, 3.0f);
+      dl->AddRect(p, q, hover ? IM_COL32(226, 170, 100, 191) : last ? IM_COL32(226, 170, 100, 179) : IM_COL32(190, 150, 95, 71), 2.0f);
+      if (last) dl->AddRectFilled(p, {p.x + 3.0f, q.y}, IM_COL32(217, 98, 28, 255));
+      const int fade = disabled ? 128 : 255;
+      auto ink = [&](int rr, int gg, int bb) { return IM_COL32(rr, gg, bb, fade); };
+      // .save-slot: padding .75rem 1rem, contents centred vertically with .18rem gaps
+      const e2::SlotProgress progress = campaign_->progress(slot);
+      const std::string name = empty ? "Vazio" : progress.title;
+      const std::string detail = empty ? "Nenhuma campanha salva" : progress.detail;
+      const std::string date = empty ? std::string() : e2::Campaign::formatSaveDate(slot->value("updatedAt", 0.0));
+      const float inner = cardW - 2.0f * rem_;
+      ImFont* ui = uiFont(UiFont::Ui);
+      const ImVec2 detailSize = ui->CalcTextSizeA(0.76f * rem_, FLT_MAX, inner, detail.c_str());
+      const float detailH = std::min(detailSize.y, 2.0f * 0.76f * rem_ * 1.3f);
+      float h = 0.62f * rem_ * 1.3f + 0.18f * rem_ + 0.15f * rem_ + 1.15f * rem_ * 1.15f + 0.18f * rem_ + detailH;
+      if (!date.empty()) h += 0.18f * rem_ + 0.12f * rem_ + 0.65f * rem_ * 1.3f;
+      if (confirming) h += 0.18f * rem_ + 0.15f * rem_ + 0.68f * rem_ * 1.3f;
+      float ty = p.y + std::max(0.75f * rem_, (cardH - h) * 0.5f);
+      const float tx = p.x + rem_;
+      spacedText(dl, ui, 0.62f * rem_, {tx, ty}, ink(184, 154, 112), std::format("ESPAÇO {}", i + 1).c_str(), 0.15f, false);
+      if (last) {
+        const float w = spacedTextWidth(ui, 0.55f * rem_, "ÚLTIMO USADO", 0.1f);
+        spacedText(dl, ui, 0.55f * rem_, {q.x - rem_ - w, ty + 0.05f * rem_}, ink(223, 191, 142), "ÚLTIMO USADO", 0.1f, false);
+      }
+      ty += 0.62f * rem_ * 1.3f + 0.18f * rem_ + 0.15f * rem_;
+      dl->PushClipRect(p, {q.x - rem_, q.y}, true);
+      dl->AddText(uiFont(UiFont::Display), 1.15f * rem_, {tx, ty}, ink(241, 220, 192), name.c_str());
+      ty += 1.15f * rem_ * 1.15f + 0.18f * rem_;
+      dl->PushClipRect({p.x, ty}, {q.x, ty + detailH}, true);
+      dl->AddText(ui, 0.76f * rem_, {tx, ty}, ink(196, 183, 164), detail.c_str(), nullptr, inner);
+      dl->PopClipRect();
+      ty += detailH;
+      if (!date.empty()) {
+        ty += 0.18f * rem_ + 0.12f * rem_;
+        dl->AddText(ui, 0.65f * rem_, {tx, ty}, ink(169, 155, 136), date.c_str());
+        ty += 0.65f * rem_ * 1.3f;
+      }
+      if (confirming) {
+        ty += 0.18f * rem_ + 0.15f * rem_;
+        dl->AddText(ui, 0.68f * rem_, {tx, ty}, IM_COL32(223, 191, 142, 255), "Toque de novo para substituir.");
+      }
+      dl->PopClipRect();
+      if (clicked) {
+        if (!loadFlow_ && !empty && !confirming) overwriteSlot_ = static_cast<int>(i);
+        else chooseSlot(static_cast<int>(i));
+      }
+    }
+    // .save-slots-status: bottom centre, gold
+    if (!status_.empty()) {
+      const float t = 0.75f * rem_;
+      const float wrap = size.x - 2.0f * rem_;
+      const ImVec2 ts = uiFont(UiFont::Ui)->CalcTextSizeA(t, FLT_MAX, wrap, status_.c_str());
+      dl->AddText(uiFont(UiFont::Ui), t, {(size.x - ts.x) * 0.5f, size.y - 0.5f * rem_ - ts.y}, IM_COL32(224, 189, 128, 255), status_.c_str(), nullptr, wrap);
+    }
+  }
+
+  // main.ts chooseSaveSlot, then GameApp's start: a new campaign is written with the first mission pending
+  // (pendingMission "vau", mapMode "rpg"); Continue selects the slot. Either way the save's pending mission (or the
+  // fight it was saved in) opens its briefing.
+  void chooseSlot(int index) {
+    const int number = index + 1;
+    if (!loadFlow_) {
+      nlohmann::json save = campaign_->emptySave();
+      save["pendingMission"] = "vau";
+      save["mapMode"] = "rpg";
+      overwriteSlot_ = -1;
+      if (!campaign_->writeSlot(index, std::move(save))) {
+        status_ = "Não foi possível gravar o espaço (" + e2::Campaign::savePath().string() + ").";
+        return;
+      }
+      status_ = std::format("Campanha criada e salva no espaço {}.", number);
+    } else {
+      if (!e2::Campaign::occupied(campaign_->bank().slots[static_cast<size_t>(index)])) return;
+      if (!campaign_->selectSlot(index)) {
+        status_ = "Não foi possível selecionar o espaço.";
+        return;
+      }
+      const e2::SlotProgress p = campaign_->progress(campaign_->activeSave());
+      status_ = std::format("Espaço {} carregado: {} · {}.", number, p.title, p.detail);
+    }
+    startCampaign();
+  }
+
+  // GameApp start: the fight the save was made in (from its briefing: battle snapshots are not ported yet), else the
+  // pending mission's briefing; with neither, the world map (not ported yet: the status line says so).
+  void startCampaign() {
+    const nlohmann::json save = campaign_->activeSave();
+    std::string id;
+    if (save.contains("battle") && save["battle"].is_object()) id = save["battle"].value("missionId", "");
+    if (id.empty() && save.contains("pendingMission") && save["pendingMission"].is_string()) id = save["pendingMission"].get<std::string>();
+    if (id.empty()) {
+      status_ += " O mapa do mundo ainda não existe no Ember: é o próximo passo.";
+      return;
+    }
+    const e2::CampaignMission* m = campaign_->data().mission(id);
+    if (!m || m->mapFile.empty()) {
+      status_ = "A missão " + id + " não tem mapa salvo no Engine2.";
+      return;
+    }
+    const std::string stem = std::filesystem::path(m->mapFile).stem().string();
+    MissionEntry e;
+    e.id = stem, e.title = m->title, e.place = m->place, e.draftId = m->id, e.briefing = m->briefing, e.objective = m->objective;
+    e.map = paths_.maps / m->mapFile;
+    e.scene = paths_.scenes / (stem + ".scene.json");
+    const std::filesystem::path battle = paths_.battles / (stem + ".battle.json");
+    std::error_code error;
+    if (!std::filesystem::exists(e.map, error) || !std::filesystem::exists(e.scene, error)) {
+      status_ = "O mapa " + stem + " ainda não foi importado para o Ember (export_scene.ts).";
+      return;
+    }
+    if (std::filesystem::exists(battle, error)) e.battle = battle;
+    e.campaignId = m->id;
+    campaignMission_ = std::move(e);
+    briefingFromCampaign_ = true;
+    screen_ = Screen::Briefing;
   }
 
   // .menu-button (.primary: the ember gradient; .secondary: dark iron with a gold edge); hover brightens and lifts 1px.
@@ -237,7 +467,7 @@ class TitleStage : public Stage {
       ty += 1.15f * rem_ * 1.15f;
       cl->AddText(uiFont(UiFont::Ui), 0.76f * rem_, {p.x + pad, ty}, IM_COL32(196, 183, 164, 255),
                   m.battle.empty() ? "Sem combate exportado (só o mapa)" : "Batalha");
-      if (clicked) chosen_ = i, screen_ = Screen::Briefing;
+      if (clicked) chosen_ = i, briefingFromCampaign_ = false, screen_ = Screen::Briefing;
     }
     if (missions_.empty())
       cl->AddText(uiFont(UiFont::Ui), 0.9f * rem_, {x0, top}, IM_COL32(224, 189, 128, 255),
@@ -249,11 +479,11 @@ class TitleStage : public Stage {
   // --- GameApp BriefingScreen: the mission's art, its place and title, the briefing and objective, "Entrar em combate".
 
   void drawBriefing(ImVec2 size) {
-    if (chosen_ >= missions_.size()) {
+    if (!briefingFromCampaign_ && chosen_ >= missions_.size()) {
       screen_ = Screen::Missions;
       return;
     }
-    const MissionEntry& m = missions_[chosen_];
+    const MissionEntry& m = briefingFromCampaign_ ? campaignMission_ : missions_[chosen_];
     ImDrawList* dl = ImGui::GetWindowDrawList();
     const ImVec2 a{0, 0}, b = size;
     dl->AddRectFilled(a, b, IM_COL32(28, 28, 28, 255));  // bg-surface
@@ -267,7 +497,7 @@ class TitleStage : public Stage {
     // header: the back button, the place (kicker) and the title
     const float pad = size.x >= 640.0f ? 1.5f * rem_ : rem_;
     ImGui::SetCursorScreenPos({pad, rem_});
-    if (plateButton("##briefback", {2.5f * rem_, 2.5f * rem_}, "‹")) screen_ = Screen::Missions;
+    if (plateButton("##briefback", {2.5f * rem_, 2.5f * rem_}, "‹")) screen_ = briefingFromCampaign_ ? Screen::Title : Screen::Missions;
     const float hx = pad + 2.5f * rem_ + 0.75f * rem_;
     emberKicker(dl, {hx, rem_ - 0.1f * rem_}, 0.875f * rem_, upperOf(m.place.empty() ? "Ember" : m.place).c_str());
     emberTitle(dl, {hx, rem_ + 0.95f * rem_}, 1.875f * rem_, m.title.c_str());
@@ -434,6 +664,12 @@ class TitleStage : public Stage {
   }
 
   Paths paths_;
+  e2::Campaign* campaign_ = nullptr;
+  bool loadFlow_ = false;
+  int overwriteSlot_ = -1;
+  std::string status_;
+  MissionEntry campaignMission_;
+  bool briefingFromCampaign_ = false;
   std::function<void(const MissionEntry&)> play_;
   std::function<void()> quit_;
   std::vector<MissionEntry> missions_;
@@ -441,6 +677,7 @@ class TitleStage : public Stage {
   size_t chosen_ = 0;
   Dialog dialog_ = Dialog::None;
   float rem_ = 16.0f;
+  int frames_ = 0;
 };
 
 }  // namespace ember

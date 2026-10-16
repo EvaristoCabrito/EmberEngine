@@ -82,4 +82,8 @@ struct AiCast {
 };
 std::optional<AiCast> planEnemyCast(Battle& b, size_t unit);
 
+// A hero brought to the campaign's level and XP before the fight (save.ts levels / xp): Engine2's levelUpUnit once per
+// level above the battle's own, so its class stats, HP and tier uses grow as they did in play.
+void raiseToLevel(BattleUnit& u, int level, int xp);
+
 }  // namespace ember::e2
