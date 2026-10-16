@@ -4,3 +4,4 @@ captures/
 .vs/
 build-log.txt
 build-log-release.txt
+__pycache__/
