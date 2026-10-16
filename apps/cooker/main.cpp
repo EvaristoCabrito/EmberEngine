@@ -34,6 +34,7 @@
 
 #include "world/SceneBuilder.h"
 #include "world/MapDressing.h"
+#include "world/Architecture.h"
 #include "PakWriter.h"
 #include "BattleCheck.h"
 #include "world/Campaign.h"
@@ -337,6 +338,13 @@ int checkSceneBuilderCommand(const std::vector<std::string_view>& args) {
   return ember::e2::checkSceneBuilder(*data, catalog, maps, std::filesystem::path(args[3]), std::filesystem::path(args[2])) == 0 ? 0 : 1;
 }
 
+int checkArchitectureCommand(const std::vector<std::string_view>& args) {
+  if (args.size() != 2) fatal("usage: Cooker check-architecture <editor-catalog.json> <architecture-refs.json (export_architecture_refs.ts)>");
+  ember::e2::ArchitectureDefs defs;
+  if (!defs.load(std::filesystem::path(args[0]))) return 1;
+  return ember::e2::checkArchitecture(std::filesystem::path(args[1]), defs) == 0 ? 0 : 1;
+}
+
 int checkDressCommand(const std::vector<std::string_view>& args) {
   if (args.size() != 2) fatal("usage: Cooker check-dress <editor-catalog.json> <dress-refs.json (export_dress_refs.ts)>");
   ember::e2::EditorCatalog catalog;
@@ -367,6 +375,7 @@ int main(int argc, char** argv) {
   if (command == "check-overworld") return checkOverworldCommand(args);
   if (command == "check-scene-builder") return checkSceneBuilderCommand(args);
   if (command == "check-dress") return checkDressCommand(args);
+  if (command == "check-architecture") return checkArchitectureCommand(args);
   if (command == "ground") return ground(args);
   ember::logError("unknown command {}", command);
   return 1;

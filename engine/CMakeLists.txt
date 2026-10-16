@@ -39,6 +39,8 @@ add_library(EmberEngine STATIC
   world/SceneData.cpp
   world/SceneBuilder.cpp
   world/MapDressing.cpp
+  world/ThreeGeometry.cpp
+  world/Architecture.cpp
   world/Battle.cpp
   world/BattleSave.cpp
   world/Combat.cpp

@@ -249,6 +249,12 @@ Object.assign(editor, {
   decoMeta,
   // MapEditorScreen architectureOptions: every model3d piece in DECORATIONS' own order (the palette sorts walls last)
   architectureOrder: Object.values(DECORATIONS).filter((d: Def) => !!d.model3d).map((d: Def) => d.id),
+  // the fields createWallGeometry reads, for every piece export_scene.ts calls architecture (world/Architecture.cpp)
+  architectureDefs: Object.fromEntries(Object.values(DECORATIONS).filter((d: Def) => d.model3d && ARCHITECTURE.has(d.model3d) && !d.propModel).map((d: Def) => [d.id, {
+    model3d: d.model3d, heightScale: d.heightScale ?? 1, wallThicknessScale: d.wallThicknessScale ?? 1, architectureSpan: d.architectureSpan ?? null,
+    doorStyle: d.doorStyle ?? null, rockStyle: d.rockStyle ?? null, templeStyle: d.templeStyle ?? null, castleStyle: d.castleStyle ?? null,
+    thickWall: !!d.thickWall, dungeonReference: !!d.dungeonReference, wallTexture: d.wallTexture ? String(d.wallTexture).split('?')[0] : null,
+    connects: !(d.rockStyle || d.treeModel || d.propModel) }])),
   doorVariants: data.THREE_D_DOOR_VARIANTS,
   tileVariantNames,
   tileChar: data.TILE_CHAR,
