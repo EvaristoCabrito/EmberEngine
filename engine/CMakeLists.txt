@@ -27,6 +27,8 @@ add_library(EmberEngine STATIC
   render/vfx/ElementSprites.cpp
   render/vfx/PhantasmalForce.cpp
   render/vfx/WebOfDreams.cpp
+  render/vfx/ParticleEmitter.cpp
+  render/vfx/BurningHands.cpp
   render/MeshScene.cpp
   render/BoardGround.cpp
   world/Board.cpp

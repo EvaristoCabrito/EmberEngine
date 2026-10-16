@@ -22,6 +22,7 @@
 #include "render/SpriteSystem.h"
 #include "render/VfxDraw.h"
 #include "render/vfx/Bless.h"
+#include "render/vfx/BurningHands.h"
 #include "render/vfx/CausticVenom.h"
 #include "render/vfx/Fireball.h"
 #include "render/vfx/MagicMissileV2.h"
@@ -72,7 +73,7 @@ class SpellEffects {
   void build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out, std::vector<Light>& lights);
   const VfxFrame& vfx() const { return vfx_; }
   bool active(float now) const;
-  void clear() { elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(); }
+  void clear() { elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), burns_.clear(); }
   // A version that keeps Engine2's own timeline decides when the hit lands: seconds from the cast (Míssil Mágico 02:
   // Engine2's charge, then the flight). Below 0: the version lands on the caller's impact (the pose's).
   float impactDelay(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const;
@@ -127,6 +128,7 @@ class SpellEffects {
   std::vector<CausticVenom> venoms_; // Veneno Cáustico 01 = CausticVenomVFX
   std::vector<PhantasmalForce> phantasms_;  // Força Fantasmagórica 01 = PhantasmalForceVFX
   std::vector<WebOfDreams> webs_;           // Teia dos Sonhos 01 = WebOfDreamsVFX
+  std::vector<std::pair<BurningHands, bool>> burns_;  // Mãos Flamejantes 01 / Sopro Venenoso 01 (poison) = BurningHandsV2VFX
   // An fx clip of the battle pack as the effect runtime samples it (requested on screen; empty while not loaded).
   VfxFlipbook flipbook(const char* clipName);
   ElementSpritesV2 elementV2(VfxElement element);

@@ -38,7 +38,7 @@ struct VfxInstance {
 static const uint kMaterialBasic = 0, kMaterialMissileCore = 1, kMaterialMissileShell = 2, kMaterialMissileTrail = 3,
                   kMaterialStandard = 4, kMaterialFlame = 5, kMaterialImpactParticle = 6, kMaterialImpactFlash = 7,
                   kMaterialBlessWave = 8, kMaterialSpriteSheet = 9, kMaterialVenomSmoke = 10, kMaterialPfTendril = 11, kMaterialPfCore = 12,
-                  kMaterialPfShell = 13, kMaterialWebThread = 14;
+                  kMaterialPfShell = 13, kMaterialWebThread = 14, kMaterialFlipbookParticle = 15;
 
 struct Push {
   uint64_t vertices;   // VfxVertex[]
@@ -188,7 +188,7 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
     if (sight.local <= 0.0) o.position = float4(0, 0, -1, 1);
     return o;
   }
-  if (d.material == kMaterialImpactParticle) {
+  if (d.material == kMaterialImpactParticle || d.material == kMaterialFlipbookParticle) {
     // A camera-facing quad (PlaneGeometry 1x1) around the particle's centre, turned and sized in view space.
     const VfxInstance inst = loadInstance(d.firstInstance + instance);
     const float cs = cos(inst.b.x), sn = sin(inst.b.x);
@@ -435,6 +435,18 @@ float4 PSMain(VSOut i) : SV_Target0 {
     if (a < 0.018) discard;
     const float variation = smoothstep(0.28, 0.8, field);
     c = lerp(float3(0.04, 0.2, 0.03), float3(0.2, 0.44, 0.075), variation);
+  } else if (d.material == kMaterialFlipbookParticle) {
+    // ParticleEmitter's fragment: the sheet's cell, its uv rippled a little, x tint x emissive x uIntensity.
+    const float frameValue = i.particleB.y, alpha = i.particleB.z, emissive = i.particleB.w * d.params0.x;
+    const float frame = floor(fmod(frameValue, 16.0));
+    float2 localUv = clamp(i.uv, 0.02, 0.98);
+    const float turbulence = sin(localUv.y * 13.0 + frameValue * 0.37) * sin(localUv.x * 9.0 - frameValue * 0.29);
+    localUv += float2(turbulence * 0.014, turbulence * 0.006);
+    const float4 flame = gTextureArrays[NonUniformResourceIndex(d.texture)].Sample(gSamplers[push.samplerIndex],
+                                                                                   float3(cellToTexture(d, clamp(localUv, 0.02, 0.98)), frame));
+    a = flame.a * alpha;
+    if (a < 0.006) discard;
+    c = flame.rgb * i.particleC.rgb * emissive;
   } else if (d.material == kMaterialImpactFlash) {
     const float opacity = d.params0.x, intensity = d.params0.y;
     const float dd = length((i.uv - 0.5) * float2(1.0, 1.15));

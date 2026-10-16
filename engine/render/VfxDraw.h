@@ -43,6 +43,7 @@ enum class VfxMaterial : uint32_t {
   PfShell = 13,        // PhantasmalForceVFX SHELL_VERTEX + SHELL_FRAGMENT
   WebThread = 14,      // WebOfDreamsVFX THREAD_VERTEX + THREAD_FRAGMENT (u = aAlong; v packs aDelay and aPhase:
                        // v = delay + 2 x round(phase / 2pi x 1000))
+  FlipbookParticle = 15,  // ThreeVfxSystem ParticleEmitter (camera-facing quads over a 4x4 sheet, uv turbulence)
 };
 
 // Per-instance data (three InstancedMesh matrices, or a particle's attributes). Matches VfxInstance in vfx.hlsl. For
