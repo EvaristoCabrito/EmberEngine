@@ -1639,8 +1639,7 @@ class MapStage final : public Stage {
       return;
     }
     if (u.side == "player") {
-      turnStart_ = TurnStart{static_cast<size_t>(ui), u.x, u.y, u.moveUsed, u.faceDx, u.faceDy, unitPos_[static_cast<size_t>(ui)],
-                             unitFacing_[static_cast<size_t>(ui)], unitMoved_[static_cast<size_t>(ui)]};
+      undo_.clear();
       return select(ui);
     }
     // Under fog an enemy that has not seen the party yet holds its ground (Engine2 wakeIfSeesParty; here: once the
@@ -1840,7 +1839,9 @@ class MapStage final : public Stage {
     const std::vector<e2::BattleHex> route = e2::Battle::path(reachPaths_, to.x, to.y);
     if (route.size() < 2) return;
     if (!std::any_of(reach_.begin(), reach_.end(), [&](const e2::ReachCell& c) { return c.x == to.x && c.y == to.y; })) return;
-    (void)b;
+    const e2::BattleUnit& u = battle_->units()[b];
+    if (myTurn() && static_cast<int>(ui) == selected_)  // Cancelar takes this walk back
+      undo_.push_back(BeforeWalk{ui, u.x, u.y, u.moveUsed, u.acted, u.faceDx, u.faceDy, unitPos_[ui], unitFacing_[ui], unitMoved_[ui]});
     walkAlong(ui, route);  // the battle's heading becomes the last step's (Engine2 stepMove), for attacks from behind
     refreshReach();        // what is left of its movement, shown once it arrives
   }
@@ -2274,11 +2275,10 @@ class MapStage final : public Stage {
     ImGui::SameLine();
     if (emberButton("##wait", "Esperar", false, mine)) endUnitTurn();
     ImGui::SameLine();
-    // Cancelar: leaves the attack / spell aim; else puts the unit back where its turn began (walk undone, movement
-    // whole again) while it has not acted.
+    // Cancelar: leaves the attack / spell aim; else takes back the last walk (one per click, each giving back only
+    // its own movement). A walk made before an action cannot be taken back once the unit has acted.
     const bool aiming = !spellMode_.empty() || attackMode_;
-    const bool canUndo = canAct && turnStart_ && turnStart_->unit == static_cast<size_t>(selected_) &&
-                         (actor->x != turnStart_->x || actor->y != turnStart_->y || actor->moveUsed != turnStart_->moveUsed);
+    const bool canUndo = actor && !undo_.empty() && undo_.back().unit == static_cast<size_t>(selected_) && undo_.back().acted == actor->acted;
     if (emberButton("##cancel", "Cancelar", false, mine && (aiming || canUndo))) {
       if (aiming) {
         spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
@@ -2308,10 +2308,11 @@ class MapStage final : public Stage {
     return c >= 28 ? 600 : c >= 23 ? 500 : c >= 18 ? 400 : c >= 13 ? 300 : c >= 8 ? 225 : c >= 3 ? 150 : 100;
   }
 
-  // Back to where the unit's turn began (Cancelar): its hex, heading, movement and where it stands on screen.
+  // Cancelar: the last walk taken back: its hex, heading, the movement it spent and where it stood on screen.
   void undoMove() {
-    if (!turnStart_ || selected_ < 0) return;
-    const TurnStart& t = *turnStart_;
+    if (undo_.empty() || selected_ < 0) return;
+    const BeforeWalk t = undo_.back();
+    undo_.pop_back();
     e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[t.unit])];
     u.x = t.x, u.y = t.y, u.moveUsed = t.moveUsed, u.faceDx = t.faceDx, u.faceDy = t.faceDy;
     unitWalk_[t.unit] = Walk{};
@@ -2835,16 +2836,17 @@ class MapStage final : public Stage {
   std::optional<e2::Battle> battle_;
   std::vector<int> unitBattle_;        // per scene unit: its battle unit, -1 = none
   std::vector<glm::vec2> unitPos_;     // per scene unit: where its feet are now (x, z)
-  // Where the party's unit stood when its turn began (Cancelar puts it back).
-  struct TurnStart {
+  // The party's unit before each walk this turn, latest last (Cancelar takes them back one at a time).
+  struct BeforeWalk {
     size_t unit = 0;
     int x = 0, y = 0, moveUsed = 0;
+    bool acted = false;
     std::optional<double> faceDx, faceDy;
     glm::vec2 pos{0.0f};
     int facing = 1;
     uint8_t leftSpawn = 0;
   };
-  std::optional<TurnStart> turnStart_;
+  std::vector<BeforeWalk> undo_;
   std::vector<uint8_t> unitMoved_;     // it has left its spawn: its height is the ground under it
   std::vector<int> unitFacing_;        // 1 right, -1 left, on screen
   std::vector<uint8_t> unitReversed_;  // its art faces left (Engine2 drawnReversed)
