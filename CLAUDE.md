@@ -41,10 +41,9 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
 - **Sprites (user, 2026-10-15):** the engine exists to fix Engine2's sprite animation; sprites must look at least
   as good as Engine2's (sharpness, colour, clean alpha) and every animation must play. **Sprites and combat come
   before any more sky / fog / atmosphere work** (I spent a day on moon/stars/fog the user could not even see).
-- **The user cannot run the Sandbox.** After building something visible, OPEN THE WINDOW FOR THEM:
-  `Start-Process build\release\bin\Sandbox.exe -WorkingDirectory C:\EmberEngine -ArgumentList ...` then bring it to
-  the front (user32 ShowWindow/SetForegroundWindow via Add-Type). Never close their windows (they refused);
-  rename a locked exe/pak aside and build/write a new one instead.
+- **Do not open the game window for the user anymore** (user, 2026-10-16: "não precisa mais abrir a janela, eu tenho
+  um executável"): they run JOGAR.bat (= the latest `build\release\bin\Sandbox.exe`), so finish with a release build
+  and say where to look. Never close their windows; rename a locked exe/pak aside and build a new one instead.
 - **No photos** to the user (they judge only live in the window). Never offer choices that look the same in play.
 - **Start work only on an explicit "faz" / "pode fazer".** A confirmation, a pasted spec, a complaint or a question
   is not a go-ahead ("who authorized starting anything?"). Ask one short question when unsure; never guess twice.
