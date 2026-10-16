@@ -79,6 +79,7 @@
 #include "BattleStage.h"
 #include "MeshCompare.h"
 #include "MapStage.h"
+#include "HeroHandoff.h"
 #include "TitleStage.h"
 #include "media/AudioMixer.h"
 #include "OverworldStage.h"
@@ -117,6 +118,7 @@ struct Options {
   float sunAzimuth = 0.0f, sunElevation = -1.0f;
   bool movingLight = false, spellLight = false;
   std::string fxTest;
+  std::string battleScript;  // --battle-script: MapStage::runScript's steps
   bool tatica = false;
   bool spellsMenuOpen = false;
   float measureSeconds = 0.0f;
@@ -189,6 +191,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--measure" && hasValue) o.measureSeconds = static_cast<float>(std::atof(argv[++i]));
     else if (arg == "--spell-light") o.spellLight = true;
     else if (arg == "--fx-test" && hasValue) o.fxTest = argv[++i];
+    else if (arg == "--battle-script" && hasValue) o.battleScript = argv[++i];
     else if (arg == "--tatica") o.tatica = true;
     else if (arg == "--spells-menu-open") o.spellsMenuOpen = true;
     else if (arg == "--fog" && hasValue) o.fog = std::atoi(argv[++i]);
@@ -480,6 +483,7 @@ MapStageOptions mapOptions(const Options& o) {
     m.movingLight = o.movingLight;
     m.spellLight = o.spellLight;
     m.fxTest = o.fxTest;
+    m.battleScript = o.battleScript;
     m.tatica = o.tatica;
     m.spellsMenuOpen = o.spellsMenuOpen;
     m.measureSeconds = o.measureSeconds;
@@ -816,19 +820,9 @@ int runWindow(const Options& o) {
       save["levels"][h.name] = h.level;
       save["xp"][h.name] = h.xp;
       save["unitHp"][h.name] = h.hp;
-      // the potions left (remainingBags; the bag's lockpicks stay as they were), disease and poison
-      // (mergeBattleDiseases / mergeBattlePoisons) and hunger (battlePlayerHunger)
-      e2::Json& bag = save["bags"][h.name];
-      if (!bag.is_object()) bag = e2::Json::object();
-      for (int k = 0; k < 7; ++k) bag[e2::kPotionIds[k]] = h.bag[static_cast<size_t>(k)];
-      if (h.diseased) save["heroDiseases"][h.name] = true;
-      else if (save["heroDiseases"].is_object()) save["heroDiseases"].erase(h.name);
-      if (!h.poison.empty()) save["heroPoisons"][h.name] = h.poison;
-      else if (save["heroPoisons"].is_object()) save["heroPoisons"].erase(h.name);
-      if (h.fullness) save["heroHunger"][h.name] = *h.fullness;
     }
-    // Criar Comida e Água's rations join the party's (finishBattle: save.rations + engine.lootRations)
-    if (map.lootRations() > 0) save["rations"] = save.value("rations", 0) + map.lootRations();
+    // potions left, disease, poison, hunger, rations (finishBattle; HeroHandoff.h)
+    writeHeroConditions(save, map.heroOutcomes(), map.lootRations());
     save["pendingMission"] = nullptr;
     save["battle"] = nullptr;
     const bool won = map.battleResult() == "victory";
@@ -975,26 +969,8 @@ int runWindow(const Options& o) {
           const e2::Json levels = save.value("levels", e2::Json::object()), xp = save.value("xp", e2::Json::object());
           for (const auto& [name, level] : levels.items())
             if (level.is_number_integer()) options.heroProgress[name] = {level.get<int>(), xp.value(name, 0)};
-          // ... and their condition (GameApp startBattle's roster: hp, bags, heroDiseases, heroPoisons, heroHunger,
-          // hungerPenaltyFor(hungerStreak) on whoever is starving).
-          const double penalty = e2::Overworld::hungerPenalty(save.value("hungerStreak", 0.0));
-          const e2::Json hp = save.value("unitHp", e2::Json::object()), bags = save.value("bags", e2::Json::object());
-          const e2::Json sick = save.value("heroDiseases", e2::Json::object()), poisons = save.value("heroPoisons", e2::Json::object());
-          const e2::Json hunger = save.value("heroHunger", e2::Json::object());
-          for (const auto& [name, level] : levels.items()) {
-            MapStageOptions::HeroState& s = options.heroState[name];
-            if (hp.contains(name) && hp[name].is_number()) s.hp = hp[name].get<int>();
-            if (bags.contains(name) && bags[name].is_object()) {
-              std::array<int, 7> bag{};
-              for (int k = 0; k < 7; ++k) bag[static_cast<size_t>(k)] = bags[name].value(e2::kPotionIds[k], 0);
-              s.bag = bag;
-            }
-            s.diseased = sick.contains(name) && sick[name] == true;
-            if (poisons.contains(name) && poisons[name].is_string()) s.poison = poisons[name].get<std::string>();
-            else if (poisons.contains(name) && !poisons[name].is_null() && poisons[name] != false) s.poison = "lesser";
-            s.fullness = e2::Overworld::fullness(hunger.contains(name) ? hunger[name] : e2::Json());  // spawnUnit: always a number
-            if (*s.fullness <= 0) s.hungerPenalty = std::min(0.9, std::max(0.0, penalty));
-          }
+          // ... and their condition (GameApp startBattle's roster; HeroHandoff.h).
+          options.heroState = heroStatesFromSave(save);
         }
         auto map = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
         map->setMenus(toggleFullscreen, &devGfx);
@@ -1049,6 +1025,11 @@ int battleSaveCheck(const char* file, const char* out) {
   e2::BattleUnit& h = u[static_cast<size_t>(hero)];
   h.hp -= 7, h.xp += 30, h.acted = true;
   if (h.spells[0] > 0) --h.spells[0];
+  // a potion drunk, sick, poisoned, hungry, rations conjured
+  h.bag[1] = 1, h.bag[4] = 2;
+  h.diseased = true, h.diseaseBase = e2::BattleUnit::Stats{h.atk + 1, h.mag + 1, h.def + 1, h.dex + 1, h.mov + 1};
+  h.poisoned = true, h.poisonTier = "lesser", h.fullness = 40.0, h.hungerPenaltyPct = 0.2, h.offWeaponSkill = 3.5;
+  a->addLootRations(3);
   u[static_cast<size_t>(foe)].alive = false, u[static_cast<size_t>(foe)].hp = 0;
   a->noteWeaponDamage(static_cast<size_t>(hero), static_cast<size_t>(foe2), 5);
   a->startNewRound();
@@ -1071,8 +1052,75 @@ int battleSaveCheck(const char* file, const char* out) {
 }
 }  // namespace
 
+namespace {
+// --roster-check <battle.json> <engine2 battle.json> <save.json>: the heroes as a campaign save brings them
+// (heroStatesFromSave + MapStage::applyHeroState on the plain export) must be Engine2's own (the same map exported with
+// export_battle.ts SAVE=<the save>): HP, stats, disease, poison, hunger, potions. Then a fight's end written back
+// (writeHeroConditions) must leave the save as Engine2's finishBattle merges would.
+int rosterCheck(const char* plainFile, const char* engine2File, const char* saveFile) {
+  std::optional<e2::Battle> plain = e2::Battle::load(plainFile), ref = e2::Battle::load(engine2File);
+  std::ifstream in(saveFile, std::ios::binary);
+  if (!plain || !ref || !in || plain->units().size() != ref->units().size()) return 1;
+  const e2::Json save = e2::Json::parse(in);
+  const auto states = heroStatesFromSave(save);
+  int diffs = 0, heroes = 0;
+  for (size_t i = 0; i < plain->units().size(); ++i) {
+    e2::BattleUnit& u = plain->units()[i];
+    const e2::BattleUnit& r = ref->units()[i];
+    if (u.side != "player") continue;
+    if (const auto it = states.find(u.name); it != states.end()) MapStage::applyHeroState(u, it->second);
+    ++heroes;
+    std::string d;
+    auto same = [&](const char* what, double a, double b) {
+      if (std::abs(a - b) > 1e-9) d += std::format(" {} {} vs {}", what, a, b);
+    };
+    same("hp", u.hp, r.hp), same("maxHp", u.maxHp, r.maxHp), same("atk", u.atk, r.atk), same("mag", u.mag, r.mag), same("def", u.def, r.def);
+    same("dex", u.dex, r.dex), same("mov", u.mov, r.mov), same("diseased", u.diseased, r.diseased), same("poisoned", u.poisoned, r.poisoned);
+    same("fullness", u.fullness.value_or(100), r.fullness.value_or(100)), same("hungerPenalty", u.hungerPenaltyPct, r.hungerPenaltyPct);
+    for (int k = 0; k < 7; ++k) same(e2::kPotionIds[k], u.bag[k], r.bag[k]);
+    same("diseaseBase", u.diseaseBase.has_value(), r.diseaseBase.has_value());
+    if (u.diseaseBase && r.diseaseBase)
+      same("baseAtk", u.diseaseBase->atk, r.diseaseBase->atk), same("baseMov", u.diseaseBase->mov, r.diseaseBase->mov);
+    if (u.poisonTier != r.poisonTier) d += " poisonTier " + u.poisonTier + " vs " + r.poisonTier;
+    if (!d.empty()) ++diffs, std::printf("  %s:%s\n", u.name.c_str(), d.c_str());
+  }
+  // The fight's end: the first hero drank a mid potion and was cured, the second fed to 120 and poisoned, 4 rations.
+  std::vector<HeroOutcome> out;
+  for (const e2::BattleUnit& u : plain->units())
+    if (u.side == "player" && !u.summoned) {
+      HeroOutcome h{u.name, u.level, u.xp, u.hp};
+      std::copy(std::begin(u.bag), std::end(u.bag), h.bag.begin());
+      h.diseased = u.diseased, h.poison = u.poisoned ? u.poisonTier : "", h.fullness = u.fullness;
+      out.push_back(h);
+    }
+  int writeDiffs = 0;
+  if (out.size() >= 2) {
+    out[0].bag[1] -= 1, out[0].diseased = false, out[0].poison.clear();
+    out[1].fullness = 120.0, out[1].poison = "lesser";
+    e2::Json after = save;
+    writeHeroConditions(after, out, 4);
+    auto expect = [&](bool ok, const std::string& what) {
+      if (!ok) ++writeDiffs, std::printf("  write-back: %s\n", what.c_str());
+    };
+    expect(after["bags"][out[0].name]["mid"] == out[0].bag[1], "first hero's mid potions");
+    expect(!after["heroDiseases"].contains(out[0].name), "first hero still sick in the save");
+    expect(!after["heroPoisons"].contains(out[0].name), "first hero still poisoned in the save");
+    expect(after["heroHunger"][out[1].name] == 120.0, "second hero's hunger");
+    expect(after["heroPoisons"][out[1].name] == "lesser", "second hero's poison");
+    expect(after.value("rations", 0) == save.value("rations", 0) + 4, "rations");
+    if (save.contains("bags") && save["bags"].contains(out[0].name) && save["bags"][out[0].name].contains("lockpick"))
+      expect(after["bags"][out[0].name]["lockpick"] == save["bags"][out[0].name]["lockpick"], "lockpicks kept");
+  }
+  const bool pass = diffs == 0 && writeDiffs == 0 && heroes > 0;
+  std::printf("roster check %s: %s (%d heroes, %d differ from Engine2, %d write-back errors)\n", plainFile, pass ? "PASS" : "FAIL", heroes, diffs,
+              writeDiffs);
+  return pass ? 0 : 1;
+}
+}  // namespace
+
 int main(int argc, char** argv) {
   if (argc >= 3 && std::string_view(argv[1]) == "--battle-save-check") return battleSaveCheck(argv[2], argc >= 4 ? argv[3] : nullptr);
+  if (argc >= 5 && std::string_view(argv[1]) == "--roster-check") return rosterCheck(argv[2], argv[3], argv[4]);
   // --audio-check [engine2 public folder]: decode every effect and the start of every track (exit 1 if any fails).
   if (argc >= 2 && std::string_view(argv[1]) == "--audio-check")
     return ember::AudioMixer::check(argc >= 3 ? argv[2] : "C:/Engine2/public") == 0 ? 0 : 1;

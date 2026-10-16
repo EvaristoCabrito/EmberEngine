@@ -70,6 +70,8 @@ std::optional<BattleStep> usePotion(const Battle& b, size_t actor, const std::st
 void inflictDisease(BattleUnit& u);
 // Engine2 reapplyGear: the stats again from its class at its level and its gear, less hunger and disease.
 void reapplyGear(BattleUnit& u);
+// Engine2 spawnUnit's stats for a hero brought into a fight hungry or sick (its own rounding, not reapplyGear's).
+void spawnConditions(BattleUnit& u);
 // The support casts' reference scene (export_battle.ts hurtScene): every living unit at half HP, the party's even-indexed
 // units diseased, every third unit poisoned, everyone hungry (fullness 0), every tier's uses halved.
 void hurtScene(Battle& b);

@@ -107,6 +107,9 @@ struct MapStageOptions {
   // Spell effects test: the hero casts this spell's visual (Engine2 kind, or "all" for each ported one in turn) at the
   // nearest enemy every kFxTestCycle seconds, visuals only (no rules); for captures with --scene-time.
   std::string fxTest;
+  // Battle test (runScript): steps run through the battle bar's own calls, each checked when it has played; the
+  // run fails (exit 3) if any check fails. "hurt; cast:Salazar:cureWounds:Kael; food:Salazar; potion:Kael:mid:Kael".
+  std::string battleScript;
   bool tatica = false;  // open in the 2D view (Tática), for captures
   bool spellsMenu = true;  // the Magias window (every spell's effect version, loose effects; test mode)
   bool choicesPanel = true;  // the Escolhas window (the look switches; test mode)
@@ -143,6 +146,7 @@ struct MapStageOptions {
   struct HeroState {
     std::optional<int> hp;
     std::optional<std::array<int, 7>> bag;  // in e2::kPotionIds order
+    bool starterBag = false;                // the save has bags but none for it: its class's starting bag
     bool diseased = false;
     std::string poison;                     // heroPoisons' tier, empty = not poisoned
     std::optional<double> fullness;
@@ -302,6 +306,7 @@ class MapStage final : public Stage {
     now_ = time;
     updateUnits(dt);
     updateExchange();
+    runScript();
     updateTurns();
     updateHover();
     clampGoal();
@@ -992,13 +997,32 @@ class MapStage final : public Stage {
       }
     return out;
   }
+  // A hero as the save brings it (Engine2 spawnUnit): its bag, disease, poison, hunger; disease and the starving
+  // penalty taken off its stats (reapplyGear's sums); its HP capped by the save's.
+  static void applyHeroState(e2::BattleUnit& u, const MapStageOptions::HeroState& s) {
+    if (s.bag) std::copy(s.bag->begin(), s.bag->end(), u.bag);
+    // spawnUnit: roster.bags[name] ?? (a healer: EMPTY_BAG, else STARTING_BAG)
+    static constexpr int kStartingBag[7] = {2, 2, 1, 1, 1, 0, 0};  // weak mid potent disease manaSmall manaMid manaLarge
+    if (!s.bag && s.starterBag)
+      for (int k = 0; k < 7; ++k) u.bag[k] = u.classId == "healer" ? 0 : kStartingBag[k];
+    u.diseased = s.diseased;
+    u.poisoned = !s.poison.empty(), u.poisonTier = s.poison;
+    u.fullness = s.fullness;
+    u.hungerPenaltyPct = s.hungerPenalty;
+    e2::spawnConditions(u);
+    u.hp = s.hp && *s.hp > 0 ? std::min(u.maxHp, *s.hp) : u.maxHp;
+  }
   // Rations Criar Comida e Água conjured in this fight (Engine2 lootRations).
   int lootRations() const { return battle_ ? battle_->lootRations() : 0; }
   bool wantsRetry() const { return retryRequested_; }
   const MapStageOptions& options() const { return options_; }
 
-  bool done() const override { return failed_ || (options_.measureSeconds > 0.0f ? measured_ : readyFrames_ >= 30); }
-  bool passed() const override { return !failed_ && ground_.ready() && measurePassed_; }
+  bool done() const override {
+    if (failed_) return true;
+    if (!options_.battleScript.empty()) return scriptDone_ && readyFrames_ >= 30;
+    return options_.measureSeconds > 0.0f ? measured_ : readyFrames_ >= 30;
+  }
+  bool passed() const override { return !failed_ && ground_.ready() && measurePassed_ && !scriptFailed_; }
 
  private:
   static constexpr float kFov = 30.0f, kNear = 0.5f;  // Engine2's normal lens
@@ -1705,14 +1729,7 @@ class MapStage final : public Stage {
     for (e2::BattleUnit& u : battle_->units()) {
       const auto it = options_.heroState.find(u.name);
       if (it == options_.heroState.end() || u.side != "player") continue;
-      const MapStageOptions::HeroState& s = it->second;
-      if (s.bag) std::copy(s.bag->begin(), s.bag->end(), u.bag);
-      u.diseased = s.diseased;
-      u.poisoned = !s.poison.empty(), u.poisonTier = s.poison;
-      u.fullness = s.fullness;
-      u.hungerPenaltyPct = s.hungerPenalty;
-      e2::reapplyGear(u);
-      u.hp = s.hp && *s.hp > 0 ? std::min(u.maxHp, *s.hp) : u.maxHp;
+      applyHeroState(u, it->second);
     }
     if (battle_->cols() != board_->layout().cols || battle_->rows() != board_->layout().rows) {
       logError("battle {}: {}x{} does not fit the map's {}x{} board", path.string(), battle_->cols(), battle_->rows(), board_->layout().cols,
@@ -1732,6 +1749,7 @@ class MapStage final : public Stage {
     rng_ = e2::Mulberry32(static_cast<uint32_t>(std::chrono::steady_clock::now().time_since_epoch().count()));
     battle_->rollInitiative(rng_);
     for (const e2::BattleUnit& u : battle_->units()) startLevel_.emplace_back(u.level, u.xp);
+    if (!options_.battleScript.empty()) holdTurns = true;  // --battle-script plays every action itself
   }
 
   int sceneUnitOf(int battleUnit) const {
@@ -2326,6 +2344,148 @@ class MapStage final : public Stage {
     if (look <= 0) look = std::max(spellLook(kind, static_cast<size_t>(hero_)), 1);
     logInfo("fx test: {} {:02} at {:.1f} s", kind, look, static_cast<float>(cycle) * kFxTestCycle);
     testCast(static_cast<size_t>(hero_), kind, look, static_cast<float>(cycle) * kFxTestCycle);
+  }
+
+  // --battle-script: each step played through the battle bar's own calls (select, startSpell, aimSpell; the turn loop
+  // held), then checked once its action has played. Steps (names are the units' own):
+  //   hurt                      e2::hurtScene: every unit at half HP, some sick / poisoned, all hungry, uses halved
+  //   cast:CASTER:KIND:TARGET   the target is first stood beside the caster
+  //   food:CASTER               Criar Comida e Água (its allies within 2 hexes fed)
+  //   potion:ACTOR:ID:TARGET    the target is first stood beside the actor (or the actor itself)
+  //   refuse:<a step>           the game must refuse it (nothing played, nothing spent)
+  int sceneUnitNamed(const std::string& name) const {
+    for (size_t i = 0; i < scene_->units.size(); ++i)
+      if (unitBattle_[i] >= 0 && battle_->units()[static_cast<size_t>(unitBattle_[i])].name == name &&
+          battle_->units()[static_cast<size_t>(unitBattle_[i])].alive)
+        return static_cast<int>(i);
+    return -1;
+  }
+  bool placeBeside(size_t ui, size_t other) {
+    e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[ui])];
+    const e2::BattleUnit& o = battle_->units()[static_cast<size_t>(unitBattle_[other])];
+    if (e2::Battle::distance({u.x, u.y}, {o.x, o.y}) == 1) return true;
+    for (const e2::BattleHex& h : e2::Battle::neighbors(o.x, o.y)) {
+      if (!battle_->inBounds(h.x, h.y) || !battle_->cell(h.x, h.y).passable || battle_->unitAt(h.x, h.y) >= 0) continue;
+      u.x = h.x, u.y = h.y;
+      const e2::Cell& c = board_->cell(h.x, h.y);
+      unitPos_[ui] = {static_cast<float>(c.x), static_cast<float>(c.z)};
+      unitWalk_[ui] = Walk{};
+      return true;
+    }
+    return false;
+  }
+  void runScript() {
+    if (options_.battleScript.empty() || scriptDone_ || !battle_ || !scene_ || readyFrames_ < 10) return;
+    holdTurns = true;
+    if (busy()) return;
+    if (scriptCheck_) {
+      const std::string why = scriptCheck_();
+      scriptCheck_ = nullptr;
+      if (why.empty()) logInfo("battle script: {}: PASS", scriptLabel_);
+      else logError("battle script: {}: FAIL ({})", scriptLabel_, why), scriptFailed_ = true;
+    }
+    std::vector<std::string> steps;
+    for (size_t at = 0; at <= options_.battleScript.size();) {
+      size_t end = options_.battleScript.find(';', at);
+      if (end == std::string::npos) end = options_.battleScript.size();
+      std::string s = options_.battleScript.substr(at, end - at);
+      s.erase(0, s.find_first_not_of(' '));
+      s.erase(s.find_last_not_of(' ') + 1);
+      if (!s.empty()) steps.push_back(s);
+      at = end + 1;
+    }
+    if (scriptStep_ >= steps.size()) {
+      scriptDone_ = true;
+      logInfo("battle script: {} ({} steps)", scriptFailed_ ? "FAIL" : "PASS", steps.size());
+      return;
+    }
+    scriptLabel_ = steps[scriptStep_++];
+    std::vector<std::string> p;
+    for (size_t at = 0; at <= scriptLabel_.size();) {
+      size_t end = scriptLabel_.find(':', at);
+      if (end == std::string::npos) end = scriptLabel_.size();
+      p.push_back(scriptLabel_.substr(at, end - at));
+      at = end + 1;
+    }
+    auto fail = [&](const std::string& why) { logError("battle script: {}: FAIL ({})", scriptLabel_, why), scriptFailed_ = true; };
+    const bool refuse = p[0] == "refuse";
+    if (refuse) p.erase(p.begin());
+    if (p.empty()) return fail("empty step");
+    if (p[0] == "hurt") {
+      // the scene's wounds, sickness and hunger; the spell uses it halves are given back (the steps cast them)
+      std::vector<std::array<int, 10>> uses;
+      for (const e2::BattleUnit& v : battle_->units()) uses.push_back(std::to_array(v.spells));
+      e2::hurtScene(*battle_);
+      for (size_t i = 0; i < uses.size(); ++i) std::copy(uses[i].begin(), uses[i].end(), battle_->units()[i].spells);
+      return logInfo("battle script: hurt: every unit at half HP, some sick / poisoned, everyone hungry");
+    }
+    const int ci = p.size() > 1 ? sceneUnitNamed(p[1]) : -1;
+    if (ci < 0) return fail("no such unit");
+    const size_t cb = static_cast<size_t>(unitBattle_[static_cast<size_t>(ci)]);
+    e2::BattleUnit& caster = battle_->units()[cb];
+    caster.acted = false, caster.moved = false;
+    int ti = ci;
+    if ((p[0] == "cast" && p.size() > 3) || (p[0] == "potion" && p.size() > 3)) {
+      ti = sceneUnitNamed(p[3]);
+      if (ti < 0) return fail("no such target");
+      if (ti != ci && !placeBeside(static_cast<size_t>(ti), static_cast<size_t>(ci))) return fail("no free hex beside the caster");
+    }
+    const size_t tb = static_cast<size_t>(unitBattle_[static_cast<size_t>(ti)]);
+    const e2::BattleUnit before = battle_->units()[tb];
+    const e2::BattleUnit casterBefore = caster;
+    const int rationsBefore = battle_->lootRations();
+    std::vector<std::pair<size_t, double>> fedBefore;  // allies within 2 hexes and their hunger
+    for (size_t i = 0; i < battle_->units().size(); ++i) {
+      const e2::BattleUnit& v = battle_->units()[i];
+      if (v.alive && v.side == caster.side && e2::Battle::distance({v.x, v.y}, {caster.x, caster.y}) <= 2) fedBefore.push_back({i, v.fullness.value_or(100)});
+    }
+    select(ci);
+    std::string kind;
+    if (p[0] == "cast" && p.size() > 3) kind = p[2];
+    else if (p[0] == "food") kind = "createFoodAndWater";
+    else if (p[0] == "potion" && p.size() > 3) kind = "potion:" + p[2];
+    else return fail("unknown step");
+    const int usesBefore = p[0] == "potion" ? 0 : e2::spellUsesLeft(*battle_, cb, kind);
+    startSpell(kind);
+    if (!spellMode_.empty()) aimSpell({battle_->units()[tb].x, battle_->units()[tb].y});
+    if (refuse) {
+      if (exchange_) return fail("played, should have been refused");
+      const e2::BattleUnit& c = battle_->units()[cb];
+      if (std::equal(std::begin(c.bag), std::end(c.bag), std::begin(casterBefore.bag)) && std::equal(std::begin(c.spells), std::end(c.spells), std::begin(casterBefore.spells)) &&
+          !c.acted)
+        return logInfo("battle script: {}: PASS (refused: {})", scriptLabel_, tip_);
+      return fail("refused but something was spent");
+    }
+    if (!exchange_) return fail("nothing played: " + tip_);
+    if (!spellFx_.active(now_ + 0.5f)) return fail("no effect playing");
+    scriptCheck_ = [this, kind, cb, tb, before, casterBefore, usesBefore, rationsBefore, fedBefore]() -> std::string {
+      const e2::BattleUnit& t = battle_->units()[tb];
+      const e2::BattleUnit& c = battle_->units()[cb];
+      if (!c.acted) return "the action did not spend the turn";
+      if (const std::optional<std::string> potion = potionOf(kind)) {
+        const int slot = e2::potionIndex(*potion);
+        if (c.bag[slot] != casterBefore.bag[slot] - 1) return std::format("bag {} -> {}", casterBefore.bag[slot], c.bag[slot]);
+        if (*potion == "disease") return t.diseased || t.poisoned ? "still sick" : "";
+        if (potion->starts_with("mana")) {
+          for (int k = 0; k < 10; ++k)
+            if (t.spells[k] > before.spells[k]) return "";
+          return "no spell use restored";
+        }
+        return t.hp > before.hp ? "" : std::format("hp {} -> {}", before.hp, t.hp);
+      }
+      if (e2::spellUsesLeft(*battle_, cb, kind) != usesBefore - 1) return std::format("uses {} -> {}", usesBefore, e2::spellUsesLeft(*battle_, cb, kind));
+      if (kind == "cureDisease") return t.diseased || t.poisoned ? "still sick" : "";
+      if (kind == "createFoodAndWater") {
+        for (const auto& [i, full] : fedBefore) {
+          const e2::BattleUnit& v = battle_->units()[i];
+          if (v.fullness.value_or(100) <= full || v.hungerPenaltyPct != 0.0) return v.name + " not fed";
+        }
+        // rations from level 3 on (createFoodAndWaterPower)
+        return c.level < 3 || battle_->lootRations() > rationsBefore ? "" : "no rations conjured";
+      }
+      return t.hp > before.hp ? std::string() : std::format("hp {} -> {}", before.hp, t.hp);
+    };
+    logInfo("battle script: {}: cast", scriptLabel_);
   }
 
   // The unit the Spells menu casts from: the picked one, else the party's first.
@@ -3444,6 +3604,11 @@ class MapStage final : public Stage {
   std::vector<EffectInstance> effectList_;
   std::vector<SpellEffects::Light> fxLights_;
   int fxTestCycle_ = -1;
+  // runScript
+  size_t scriptStep_ = 0;
+  bool scriptDone_ = false, scriptFailed_ = false, scriptStarted_ = false;
+  std::function<std::string()> scriptCheck_;  // the playing step's check (empty = passed)
+  std::string scriptLabel_;
   MeshScene meshes_;
   AssetManager& assets_;
   std::optional<e2::SceneData> scene_;

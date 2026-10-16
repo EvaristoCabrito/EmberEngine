@@ -35,6 +35,20 @@ nlohmann::json Battle::snapshot() const {
         {"weaponSkill", u.weaponSkill},             {"skills", skills},
         // levelUpUnit's growth also moves these
         {"gear", {{"hp", u.gearHp}, {"atk", u.gearAtk}, {"mag", u.gearMag}, {"def", u.gearDef}, {"dex", u.gearDex}, {"mov", u.gearMov}}}};
+    // What it carries and its conditions (Engine2 Unit.bag / diseased / diseaseBase / poisoned / poisonTier / fullness /
+    // hungerPenaltyPct); the off-hand weapon's trained value (ours, as weaponSkill).
+    nlohmann::json bag = nlohmann::json::object();
+    for (int k = 0; k < 7; ++k) bag[kPotionIds[k]] = u.bag[k];
+    s["bag"] = bag;
+    s["diseased"] = u.diseased;
+    s["diseaseBase"] = u.diseaseBase ? nlohmann::json{{"atk", u.diseaseBase->atk}, {"mag", u.diseaseBase->mag}, {"def", u.diseaseBase->def},
+                                                       {"dex", u.diseaseBase->dex}, {"mov", u.diseaseBase->mov}}
+                                     : nlohmann::json();
+    s["poisoned"] = u.poisoned;
+    s["poisonTier"] = u.poisonTier.empty() ? nlohmann::json() : nlohmann::json(u.poisonTier);
+    s["fullness"] = u.fullness ? nlohmann::json(*u.fullness) : nlohmann::json();
+    s["hungerPenaltyPct"] = u.hungerPenaltyPct;
+    s["offWeaponSkill"] = u.offWeaponSkill;
     if (u.faceDx) s["faceDx"] = *u.faceDx;
     if (u.faceDy) s["faceDy"] = *u.faceDy;
     s["shock"] = u.shock ? nlohmann::json{{"dice", u.shock->dice}, {"faces", u.shock->faces}, {"bonus", u.shock->bonus}, {"mag", u.shock->mag}}
@@ -46,7 +60,7 @@ nlohmann::json Battle::snapshot() const {
   // enmity.ts EnmitySnapshot: { enemyId: { heroId: [ce, ve] } }
   nlohmann::json enmity = nlohmann::json::object();
   for (const Enmity& e : enmity_) enmity[units_[e.enemy].id][units_[e.hero].id] = nlohmann::json::array({e.ce, e.ve});
-  return {{"turn", round_}, {"units", units}, {"turnOrder", order}, {"enmity", enmity}};
+  return {{"turn", round_}, {"units", units}, {"turnOrder", order}, {"enmity", enmity}, {"lootRations", lootRations_}};
 }
 
 bool Battle::applySnapshot(const nlohmann::json& snap) {
@@ -90,6 +104,22 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       u.gearHp = g.value("hp", u.gearHp), u.gearAtk = g.value("atk", u.gearAtk), u.gearMag = g.value("mag", u.gearMag);
       u.gearDef = g.value("def", u.gearDef), u.gearDex = g.value("dex", u.gearDex), u.gearMov = g.value("mov", u.gearMov);
     }
+    if (s.contains("bag") && s["bag"].is_object())
+      for (int k = 0; k < 7; ++k) u.bag[k] = s["bag"].value(kPotionIds[k], u.bag[k]);
+    u.diseased = s.value("diseased", u.diseased);
+    if (s.contains("diseaseBase")) {
+      const nlohmann::json& d = s["diseaseBase"];
+      if (d.is_object()) u.diseaseBase = BattleUnit::Stats{d.value("atk", 0), d.value("mag", 0), d.value("def", 0), d.value("dex", 0), d.value("mov", 0)};
+      else u.diseaseBase.reset();
+    }
+    u.poisoned = s.value("poisoned", u.poisoned);
+    if (s.contains("poisonTier")) u.poisonTier = s["poisonTier"].is_string() ? s["poisonTier"].get<std::string>() : std::string();
+    if (s.contains("fullness")) {
+      if (s["fullness"].is_number()) u.fullness = s["fullness"].get<double>();
+      else u.fullness.reset();
+    }
+    u.hungerPenaltyPct = s.value("hungerPenaltyPct", u.hungerPenaltyPct);
+    u.offWeaponSkill = s.value("offWeaponSkill", u.offWeaponSkill);
     if (s.contains("faceDx") && s["faceDx"].is_number()) u.faceDx = s["faceDx"].get<double>();
     if (s.contains("faceDy") && s["faceDy"].is_number()) u.faceDy = s["faceDy"].get<double>();
     u.shock.reset();
@@ -99,6 +129,7 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
     }
   }
   round_ = snap.value("turn", round_);
+  lootRations_ = snap.value("lootRations", lootRations_);
   if (snap.contains("turnOrder") && snap["turnOrder"].is_array()) {
     turnOrder_.clear();
     for (const nlohmann::json& id : snap["turnOrder"])

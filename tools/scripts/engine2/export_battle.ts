@@ -96,6 +96,17 @@ if (testLevel) {
 // PROMOTIONS='{"Kael":"paladin"}': heroes promoted as a save carries them (save.promotions), for references of a
 // promoted class's spells (Mãos Curativas is the paladin's).
 if (process.env.PROMOTIONS) gear.promotions = { ...(gear.promotions as Record<string, string> ?? {}), ...JSON.parse(process.env.PROMOTIONS) };
+// SAVE='{"unitHp":{..},"bags":{..},"heroDiseases":{..},"heroPoisons":{..},"heroHunger":{..},"hungerStreak":N}': the heroes as a
+// campaign save brings them (GameApp startBattle's roster: hp, bags, heroDiseases, heroPoisons, heroHunger and
+// hungerPenaltyFor(hungerStreak)), for Sandbox --roster-check.
+if (process.env.SAVE) {
+  const s = JSON.parse(process.env.SAVE);
+  const ow = await import(`${E2}/src/game/overworld.ts`);
+  if (s.unitHp) gear.hp = s.unitHp;
+  if (s.bags) gear.bags = s.bags;
+  gear.heroDiseases = s.heroDiseases ?? {}, gear.heroPoisons = s.heroPoisons ?? {}, gear.heroHunger = s.heroHunger ?? {};
+  gear.hungerPenaltyPct = ow.hungerPenaltyFor(s.hungerStreak ?? 0);
+}
 // The editor's preview battle (MapPreviewCanvas): fog off, a fresh party.
 const engine = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0);
 const e = engine as unknown as Record<string, any>;
@@ -146,7 +157,7 @@ for (const u of e.units) {
     healingSkill: u.healingSkill ?? 0,
     // What it carries into the fight and its conditions (potions, disease, poison, hunger).
     bag: u.bag ?? null, diseased: !!u.diseased, diseaseBase: u.diseaseBase ?? null, poisoned: !!u.poisoned, poisonTier: u.poisonTier ?? null,
-    fullness: typeof u.fullness === 'number' ? u.fullness : null,
+    fullness: typeof u.fullness === 'number' ? u.fullness : null, hungerPenaltyPct: u.hungerPenaltyPct ?? 0,
     // Level-ups (levelUpUnit): the class's stats and spell uses at every level, and what gear adds over them.
     growth: u.side === 'player' ? Array.from({ length: 30 }, (_, i) => {
       const st = data.statsFor(u.classId, i + 1);

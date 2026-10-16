@@ -664,6 +664,22 @@ void reapplyGear(BattleUnit& u) {
   u.hp = std::min(u.maxHp, u.hp);
 }
 
+void spawnConditions(BattleUnit& u) {
+  if (u.level < 1 || static_cast<size_t>(u.level) > u.growth.size()) return;
+  const std::array<int, 16>& g = u.growth[static_cast<size_t>(u.level - 1)];
+  const double keep = 1 - u.hungerPenaltyPct, sick = u.diseased ? 1 - kDiseasePenalty : 1;
+  auto r = [](double v) { return static_cast<int>(jsRound(v)); };
+  // spawnUnit: one rounding of class + points + gear, x hunger x disease (reapplyGear rounds twice)
+  u.maxHp = r((g[0] + u.gearHp) * keep);
+  u.atk = r((g[1] + u.gearAtk) * keep * sick), u.mag = r((g[2] + u.gearMag) * keep * sick);
+  u.def = r((g[3] + u.gearDef) * keep * sick), u.dex = r((g[4] + u.gearDex) * keep * sick);
+  u.mov = u.diseased ? std::max(1, r((g[15] + u.gearMov) * sick)) : g[15] + u.gearMov;
+  u.diseaseBase = u.diseased ? std::optional(BattleUnit::Stats{r((g[1] + u.gearAtk) * keep), r((g[2] + u.gearMag) * keep), r((g[3] + u.gearDef) * keep),
+                                                               r((g[4] + u.gearDex) * keep), g[15] + u.gearMov})
+                             : std::nullopt;
+  u.hp = std::min(u.hp, u.maxHp);
+}
+
 void hurtScene(Battle& b) {
   for (size_t i = 0; i < b.units().size(); ++i) {
     BattleUnit& u = b.units()[i];

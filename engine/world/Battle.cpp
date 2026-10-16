@@ -185,6 +185,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     o.poisoned = yes(u, "poisoned");
     o.poisonTier = text(u, "poisonTier");
     if (u.contains("fullness") && u["fullness"].is_number()) o.fullness = u["fullness"].get<double>();
+    o.hungerPenaltyPct = number(u, "hungerPenaltyPct");
     if (u.contains("growth") && u["growth"].is_array()) {
       for (const json& row : u["growth"]) {
         std::array<int, 16> r{};
