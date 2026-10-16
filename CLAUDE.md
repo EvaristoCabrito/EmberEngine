@@ -468,9 +468,12 @@ everything", the C++ one was "awful")
   (`MapStage::cardUp`). Panel "Cards": em pé / para a câmera (default); `--cards 0|1`. Verified: debug + validation
   captures exit 0 (both stances at the screen's edge: `captures/cards/`); release built in the worktree and placed for
   JOGAR. Not verified: the look in the window; tall cards leaning into 3D pieces behind them at steep tilts.
-- **The user asked (2026-10-16, question only, no "faz"):** health bars and numbers block the view at some angles; what
-  options to hide them while the camera moves, or only those near the camera. Options given in the answer (fade by
-  distance to the eye, fade while the camera moves, hide behind a hold key / the active unit only). Nothing built.
+- **Health bars near the camera fade (the user's "faz", 2026-10-16 evening):** `drawHealthBars`: a unit whose card
+  fills more than 30% of the screen's height fades its bar and HP number, gone at 45% (`kBarsFadeFrom / To`), back as
+  the camera moves away; the share follows the camera continuously, so nothing pops. Panel "Vida perto": OFF (always
+  shown) / somem (default); `--bars-fade 0|1`. Verified: debug + validation captures exit 0 (`captures/cards/030-032`);
+  release built in the worktree and placed for JOGAR. Not verified: the thresholds in play (the user judges). The other
+  two options offered (fade while the camera moves; only the active unit's bar) were not built.
 
 ## Next
 
