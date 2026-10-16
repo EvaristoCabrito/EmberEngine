@@ -141,12 +141,14 @@ class TitleStage : public Stage {
     // .title-veil
     verticalGradient(dl, a, b, {{0.0f, IM_COL32(8, 8, 8, 69)}, {0.36f, IM_COL32(10, 10, 10, 99)}, {0.72f, IM_COL32(10, 10, 10, 219)}, {1.0f, IM_COL32(14, 14, 14, 255)}});
     // .title-topline .title-mark
-    spacedText(dl, uiFont(UiFont::Mark), 0.95f * rem_, {1.25f * rem_, 1.25f * rem_ + 0.4f * rem_}, IM_COL32(231, 199, 150, 191), "EMBER ASHES", 0.18f);
+    spacedText(dl, uiFont(UiFont::Mark), 0.95f * kTitleText * rem_, {1.25f * rem_, 1.25f * rem_ + 0.4f * rem_}, IM_COL32(231, 199, 150, 191), "EMBER ASHES", 0.18f);
 
     // .title-content: min(32rem, 100% - 2.5rem) wide, centred, its bottom 6.6rem above the screen's.
     const float width = std::min(32.0f * rem_, size.x - 2.5f * rem_);
     const float x = (size.x - width) * 0.5f;
-    const float eyebrow = 0.76f * rem_, h1 = std::clamp(size.x * 0.0825f, 3.3f * rem_, 5.25f * rem_), version = 0.65f * rem_, tagline = rem_;
+    // every text 1.4x Engine2's but the "Ember" heading (user 2026-10-16: "all fonts too small"; boxes unchanged)
+    const float eyebrow = 0.76f * kTitleText * rem_, h1 = std::clamp(size.x * 0.0825f, 3.3f * rem_, 5.25f * rem_), version = 0.65f * kTitleText * rem_,
+                tagline = kTitleText * rem_;
     const float button = 3.15f * rem_, gap = 0.72f * rem_;
     // Engine2's menu: Nova campanha, Continuar (only with a save), Como jogar, Opções; Sair closes the game (a browser
     // tab had no need of it).
@@ -196,7 +198,7 @@ class TitleStage : public Stage {
     {
       const std::string labelText = upperUtf8(tr("Modo teste", "Test mode"));
       const char* label = labelText.c_str();
-      const float text = 0.62f * rem_;
+      const float text = 0.62f * kTitleText * rem_;
       const float tw = spacedTextWidth(uiFont(UiFont::Ui), text, label, 0.14f);
       const ImVec2 at{0.55f * rem_, size.y - 0.55f * rem_ - text - 0.6f * rem_};
       ImGui::SetCursorScreenPos(at);
@@ -262,7 +264,7 @@ class TitleStage : public Stage {
       dl->AddRect(a, b, hover ? IM_COL32(226, 170, 100, 216) : IM_COL32(190, 150, 95, 133), 2.0f);
     }
     const std::string upper = label;
-    const float text = 1.05f * rem_;
+    const float text = 1.05f * kTitleText * rem_;
     ImFont* font = uiFont(UiFont::Mark);
     const float tw = spacedTextWidth(font, text, upper.c_str(), 0.17f);
     const ImVec2 p{std::round((a.x + b.x - tw) * 0.5f), std::round((a.y + b.y - text) * 0.5f)};
@@ -418,6 +420,7 @@ class TitleStage : public Stage {
   std::function<void()> fullscreen_;
   DevGfx* gfx_ = nullptr;
   float rem_ = 16.0f;
+  static constexpr float kTitleText = 1.4f;  // the title page's text over Engine2's sizes
   int frames_ = 0;
 };
 

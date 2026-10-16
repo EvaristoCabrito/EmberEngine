@@ -156,6 +156,13 @@ inline float richText(ImDrawList* dl, ImFont* font, float size, float lineHeight
   return lineEmpty && x == 0.0f && y > 0.0f ? y : y + lineHeight;
 }
 inline float textWidth(ImFont* f, float size, const std::string& s) { return f->CalcTextSizeA(size, FLT_MAX, 0.0f, s.c_str()).x; }
+// `size`, or smaller when the text would not fit in `room` (the boxes keep their size).
+inline float fitSize(ImFont* f, float size, const std::string& s, float room) {
+  const float w = textWidth(f, size, s);
+  return w > room && w > 0.0f ? size * room / w : size;
+}
+// The Opções window's text, 1.4x Engine2's (user 2026-10-16: "all fonts too small"; boxes unchanged).
+inline constexpr float kOptScale = 1.4f;
 // Text with letter spacing (em), as spacedText but without its shadow.
 inline void tracked(ImDrawList* dl, ImFont* f, float size, ImVec2 at, ImU32 ink, const std::string& s, float em) {
   spacedText(dl, f, size, at, ink, s.c_str(), em, false);
@@ -318,7 +325,7 @@ inline bool emberRange(const char* id, float& value, float width, bool disabled 
 // .game-options select: min(55%, 11rem) wide, 1.9rem tall, .8rem text, the gold chevron; its list opens below it.
 // `options`: label + whether it can be picked (a disabled one is listed greyed).
 inline bool emberSelect(const char* id, int& value, const std::vector<std::pair<std::string, bool>>& options, float width) {
-  const float h = 30.4f, text = 12.8f;
+  const float h = 30.4f, text = 12.8f * kOptScale;
   const bool clicked = ImGui::InvisibleButton(id, {width, h});
   const bool hover = ImGui::IsItemHovered();
   const ImVec2 a = ImGui::GetItemRectMin(), b = ImGui::GetItemRectMax();
@@ -329,7 +336,8 @@ inline bool emberSelect(const char* id, int& value, const std::vector<std::pair<
   dl->AddRect(a, b, hover ? IM_COL32(226, 170, 100, 191) : IM_COL32(190, 150, 95, 89), 2.0f);
   const std::string& label = options[static_cast<size_t>(std::clamp(value, 0, static_cast<int>(options.size()) - 1))].first;
   dl->PushClipRect(a, {b.x - 28, b.y}, true);
-  dl->AddText(ui(), text, {a.x + 8.8f, std::round((a.y + b.y - text) * 0.5f)}, kOptText, label.c_str());
+  const float fit = fitSize(ui(), text, label, width - 8.8f - 28.0f);
+  dl->AddText(ui(), fit, {a.x + 8.8f, std::round((a.y + b.y - fit) * 0.5f)}, kOptText, label.c_str());
   dl->PopClipRect();
   iconChevronDown(dl, {b.x - 9.6f - 7.2f, (a.y + b.y) * 0.5f}, 14.4f, kGold);
   const std::string popup = std::string(id) + "_list";
@@ -716,20 +724,22 @@ class OptionsDialog {
       std::vector<Row> rows;
     };
     std::vector<Section> sections;
-    auto label = [](ImVec2 at, float h, const std::string& s, ImU32 ink = kOptText) {
-      ImGui::GetWindowDrawList()->AddText(ui(), 12.8f, {at.x, std::round(at.y + (h - 12.8f) * 0.5f)}, ink, s.c_str());
+    const float text = 12.8f * kOptScale;
+    auto label = [=](ImVec2 at, float h, const std::string& s, ImU32 ink = kOptText, float room = FLT_MAX) {
+      const float size = fitSize(ui(), text, s, room);
+      ImGui::GetWindowDrawList()->AddText(ui(), size, {at.x, std::round(at.y + (h - size) * 0.5f)}, ink, s.c_str());
     };
     auto toggle = [&](const char* id, const std::string& name, bool& value, bool disabled, bool* changed) {
       return Row{30.4f, [=, &value](ImVec2 at, float rw) {
-                   label(at, 30.4f, name, disabled ? IM_COL32(234, 220, 201, 102) : kOptText);
+                   label(at, 30.4f, name, disabled ? IM_COL32(234, 220, 201, 102) : kOptText, rw - 16.0f - 8.0f);
                    ImGui::SetCursorScreenPos({at.x + rw - 16.0f, at.y + 7.2f});
                    if (emberCheckbox(id, value, disabled)) *changed = true;
                  }};
     };
     auto select = [&](const char* id, const std::string& name, int current, std::vector<std::pair<std::string, bool>> options, std::function<void(int)> set) {
       return Row{30.4f, [=](ImVec2 at, float rw) {
-                   label(at, 30.4f, name);
                    const float sw = std::min(rw * 0.55f, 176.0f);
+                   label(at, 30.4f, name, kOptText, rw - sw - 8.0f);
                    ImGui::SetCursorScreenPos({at.x + rw - sw, at.y});
                    int v = current;
                    if (emberSelect(id, v, options, sw)) set(v);
@@ -741,7 +751,7 @@ class OptionsDialog {
                    const ImU32 ink = disabled ? IM_COL32(234, 220, 201, 102) : kOptText;
                    label(at, 18.3f, name, ink);
                    const std::string pct = std::to_string(static_cast<int>(std::round(value * 100.0f))) + "%";
-                   label({at.x + rw - textWidth(ui(), 12.8f, pct), at.y}, 18.3f, pct, ink);
+                   label({at.x + rw - textWidth(ui(), text, pct), at.y}, 18.3f, pct, ink);
                    ImGui::SetCursorScreenPos({at.x, at.y + 18.3f + 6.4f - 3.0f});
                    if (emberRange(id, value, rw, disabled)) *changed = true;
                  }};
@@ -752,7 +762,7 @@ class OptionsDialog {
       auto button = [&](const char* id, std::string text, std::function<void()> fn, Btn style) {
         return Row{40.0f, [=, this](ImVec2 at, float rw) {
                      ImGui::SetCursorScreenPos(at);
-                     if (emberButton(id, text, {rw, 40.0f}, style, style == Btn::Ghost ? false : false, 16.0f) && fn) {
+                     if (emberButton(id, text, {rw, 40.0f}, style, style == Btn::Ghost ? false : false, 16.0f * kOptScale) && fn) {
                        open_ = false;
                        fn();
                      }
@@ -773,7 +783,7 @@ class OptionsDialog {
       // Tela cheia: ember-btn ember-btn-ghost ember-btn-sm w-full py-1.5 mt-1
       s.rows.push_back(Row{36.0f, [&](ImVec2 at, float rw) {
                              ImGui::SetCursorScreenPos(at);
-                             if (emberButton("##optfull", tr("Tela cheia"), {rw, 36.0f}, Btn::Ghost, true, 16.0f, !actions.fullscreen)) actions.fullscreen();
+                             if (emberButton("##optfull", tr("Tela cheia"), {rw, 36.0f}, Btn::Ghost, true, 16.0f * kOptScale, !actions.fullscreen)) actions.fullscreen();
                            }});
       sections.push_back(std::move(s));
     }
@@ -844,11 +854,11 @@ class OptionsDialog {
     emberPanel(dl, a, {a.x + w, a.y + natural});
     float y = a.y + pad;
     // header: Opções (ember-title text-2xl) and Fechar (ember-btn-ghost ember-btn-sm px-4 py-2)
-    emberTitle(dl, {a.x + pad, y + 8.0f}, 24.0f, tr("Opções").c_str());
+    emberTitle(dl, {a.x + pad, y + 3.0f}, 24.0f * kOptScale, tr("Opções").c_str());
     const std::string closeLabel = tr("Fechar");
     const float closeW = spacedTextWidth(mark(), 16.0f, closeLabel.c_str(), 0.06f) + 32.0f;
     ImGui::SetCursorScreenPos({a.x + w - pad - closeW, y});
-    if (emberButton("##optclose", closeLabel, {closeW, 40.0f}, Btn::Ghost, true, 16.0f)) open_ = false;
+    if (emberButton("##optclose", closeLabel, {closeW, 40.0f}, Btn::Ghost, true, 16.0f * kOptScale)) open_ = false;
     y += 40.0f + 12.0f;
     dl->AddLine({a.x + pad, y}, {a.x + w - pad, y}, IM_COL32(190, 150, 95, 77));
     y += 1.0f + 12.0f;
@@ -866,7 +876,7 @@ class OptionsDialog {
           s.icon(dl, {hx + 8.8f, sa.y + 8.0f + headingH * 0.5f}, 17.6f, kGold);
           hx += 17.6f + 10.4f;
         }
-        emberTitle(dl, {hx, sa.y + 8.0f + (headingH - 17.6f) * 0.5f}, 17.6f, s.title.c_str());
+        emberTitle(dl, {hx, sa.y + 8.0f + (headingH - 17.6f * kOptScale) * 0.5f}, 17.6f * kOptScale, s.title.c_str());
         float ry = sa.y + 8.0f + headingH;
         for (size_t r = 0; r < s.rows.size(); ++r) {
           ry += 4.0f;
@@ -883,10 +893,11 @@ class OptionsDialog {
     emberRule(dl, a.x + pad, a.x + w - pad, y);
     y += 12.0f;
     const std::string saved = prefsOk_ && gfxOk_ ? tr("Alterações salvas automaticamente.") : tr("Não foi possível gravar as alterações.", "The changes could not be saved.");
-    const float tw = textWidth(ui(), 12.0f, saved), total = 14.0f + 8.0f + tw;
+    const float footText = 12.0f * kOptScale;
+    const float tw = textWidth(ui(), footText, saved), total = 14.0f + 8.0f + tw;
     const float fx = a.x + (w - total) * 0.5f;
     iconCheck(dl, {fx + 7.0f, y + 9.6f}, 14.0f, kGold);
-    dl->AddText(ui(), 12.0f, {fx + 22.0f, y + 3.6f}, kOptMuted, saved.c_str());
+    dl->AddText(ui(), footText, {fx + 22.0f, std::round(y + 9.6f - footText * 0.5f)}, kOptMuted, saved.c_str());
     ImGui::SetCursorScreenPos({a.x, a.y + natural - 1.0f});
     ImGui::Dummy({1.0f, 1.0f});
     ImGui::End();
