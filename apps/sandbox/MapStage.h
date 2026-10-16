@@ -383,7 +383,11 @@ class MapStage final : public Stage {
       renderer.setGroundMarks(groundMarks_, board_ ? board_->layout().cols : 0, board_ ? board_->layout().rows : 0);
     }
     renderer.setWater(ground_.water(look_));
-    renderer.setWater3d(ground_.water3d(look_));
+    {
+      Water3DView water3d = water3dLook_ == 0 ? Water3DView{} : ground_.water3d(look_);
+      water3d.look = static_cast<uint32_t>(water3dLook_ - 1);
+      renderer.setWater3d(water3d);
+    }
     renderer.setSunShadowBounds(boardCenter_, boardRadius_);
     renderer.setLightingLayers(layers_);
     {
@@ -785,6 +789,10 @@ class MapStage final : public Stage {
     {
       static const char* kBackgrounds[3] = {"imagem do mapa", "céu", "OFF"};
       dropdown("Fundo", background_, 3, [](int i) { return std::string(kBackgrounds[i]); });
+    }
+    if (board_ && board_->draft().water3d.any()) {
+      static const char* kWater3d[3] = {"OFF", "rio", "leito"};
+      dropdown("Água 3D", water3dLook_, 3, [](int i) { return std::string(kWater3d[i]); });
     }
     {
       static const char* kModes[4] = {"protótipo", "Engine2", "física", "real"};
@@ -3619,6 +3627,7 @@ class MapStage final : public Stage {
   std::vector<std::pair<std::string, std::string>> poseChoices_;  // the panel's "Animação": pose id, label
   int poseChoice_ = 0;
   int background_ = 0;  // the panel's "Fundo": 0 the map's painted backdrop, 1 the sky, 2 black
+  int water3dLook_ = 1;  // the panel's "Água 3D": 0 OFF, 1 rio (the board's river material), 2 leito (Engine2's ThreeWater)
   std::unordered_map<std::string, MeshId> modelMeshes_;
   std::unordered_map<const std::vector<int>*, size_t> periods_;
   std::vector<SpriteInstance> drawList_;

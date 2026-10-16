@@ -13,6 +13,10 @@
 // colour scaled by this frame's real sky light (the lighting contract) instead of a fixed number, so water darkens
 // at night like everything else. Heights: Engine2's battle board rises 1.5 tile per level, this board 1, so
 // the sheet's heights are divided by 1.5 (BoardGround); the swell too.
+// Two looks (Escolhas "Agua 3D"; the user, 2026-10-16: "azul como a agua do rio do mapa"):
+//   0 rio    the board's own water material (water.hlsl: Engine2's diorama water, #2f86a8), so painted water and the
+//            map's river look the same; edges still fade with the brush coverage
+//   1 leito  Engine2's ThreeWater material above, with the river-bed stand-in texture (dark slate)
 #include "lighting.hlsli"
 
 struct Push {
@@ -22,8 +26,14 @@ struct Push {
   uint colorMap, normalMap, roughMap;  // bindless (kNoTexture: none)
   float colorR, colorG, colorB;        // material colour (linear)
   float opacity, normalScale, roughness, modern, v4, repeat;
+  uint look;  // 0 rio, 1 leito
 };
 [[vk::push_constant]] Push push;
+
+// water.hlsl's ripple height field, in texels of Engine2's 128 px tile
+float riverRipple(float2 p) {
+  return sin(p.x * 0.19 + sin(p.y * 0.11) * 2.0) * 0.5 + sin(p.y * 0.23 + p.x * 0.07) * 0.5 + sin((p.x + p.y) * 0.31) * 0.25;
+}
 
 struct VSOut {
   float4 position : SV_Position;
@@ -96,6 +106,20 @@ float4 PSMain(VSOut i) : SV_Target0 {
   const float roughTexel = sampleMap(push.roughMap, s, uv, 1.0).r;
   if (i.coverage < 0.05) discard;
   if (neverSeen(f, i.world)) discard;  // never-seen water is not drawn (R7)
+
+  if (push.look == 0) {  // rio: water.hlsl's material on this sheet
+    const float2 ruv = i.world.xz / 4.0 + float2(0.02, 0.013) * t;
+    const float2 rp = frac(ruv) * 128.0;
+    const float3 tn = normalize(float3(-(riverRipple(rp + float2(1, 0)) - riverRipple(rp - float2(1, 0))),
+                                       -(riverRipple(rp + float2(0, 1)) - riverRipple(rp - float2(0, 1))), 2.0));
+    const float3 up = float3(0.0, 1.0, 0.0);
+    Surface river = defaultSurface(i.world, up, srgbToLinear3(float3(0x2f, 0x86, 0xa8) / 255.0));
+    river.normal = normalize(up + float3(tn.x, 0.0, tn.y) * 0.6 / max(tn.z, 1e-3));
+    river.roughness = 0.5;
+    river.metallic = 0.05;
+    const float opacity = 0.74 * smoothstep(0.05, 0.55, i.coverage);
+    return float4(shade(f, river) * opacity, opacity);
+  }
 
   // normal_fragment_maps: tangent along board x, bitangent along three's +y (= -z here)
   const float3 n = normalize(i.normal);

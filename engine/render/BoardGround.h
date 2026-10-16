@@ -69,6 +69,7 @@ struct Water3DView {
   uint32_t colorMap = 0, normalMap = 0, roughMap = 0;  // bindless
   float color[3]{};    // linear
   float opacity = 0, normalScale = 0, roughness = 0, modern = 0, v4 = 0, repeat = 1;
+  uint32_t look = 0;  // shaders/water3d.hlsl: 0 rio (the board's river material), 1 leito (Engine2's ThreeWater)
   explicit operator bool() const { return vertices != 0 && count != 0; }
 };
 
