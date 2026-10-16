@@ -9,7 +9,8 @@ namespace ember {
 Window::Window(const WindowDesc& desc) {
   EMBER_CHECK(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD), SDL_GetError());
   window_ = SDL_CreateWindow(desc.title, static_cast<int>(desc.width), static_cast<int>(desc.height),
-                             SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+                             SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY |
+                                 (desc.fullscreen ? SDL_WINDOW_FULLSCREEN : 0));
   EMBER_CHECK(window_, SDL_GetError());
 }
 

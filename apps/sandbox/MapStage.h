@@ -660,8 +660,8 @@ class MapStage final : public Stage {
     ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowBgAlpha(0.9f);
     ImGui::Begin("Escolhas", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
-    ImGui::PushFont(nullptr, 24.0f);  // large (ImGui 1.93: size per push)
-    ImGui::PushItemWidth(220.0f);
+    ImGui::PushFont(nullptr, 16.0f);  // 24 px at 1080 (the UI canvas is zoomed: DebugUi::kUiHeight)
+    ImGui::PushItemWidth(150.0f);
     if (!poseChoices_.empty())
       dropdown("Animação", poseChoice_, static_cast<int>(poseChoices_.size()), [this](int i) { return poseChoices_[static_cast<size_t>(i)].second; });
     {
@@ -745,7 +745,7 @@ class MapStage final : public Stage {
   static constexpr float kFlatRowStep = 0.002f;       // Engine2 FLAT_ROW_STEP: Tática's height step per unit of depth
   // The camera bar (Engine2 GameApp.tsx + ember-plate): 28 px plates (size-7), 4 px apart (gap-1), 8 px from the
   // corner (inset-x-2, top 0.5rem), 10 px text; the window's padding leaves room for the shadow and glow.
-  static constexpr float kPlate = 28.0f, kBarGap = 4.0f, kBarInset = 8.0f, kPlateText = 10.0f, kPlateGlow = 10.0f;
+  static constexpr float kPlate = 28.0f, kBarGap = 4.0f, kBarInset = 8.0f, kPlateText = 12.0f, kPlateGlow = 10.0f;
   static constexpr float kFlameEmit = 2.5f;           // Engine2 FLAME_EMIT
   // Light mode "real" (ARCHITECTURE 7.6 step A).
   static constexpr float kSunLux = 128000.0f;       // the sun above the atmosphere
@@ -1954,7 +1954,8 @@ class MapStage final : public Stage {
     const size_t ab = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), db = static_cast<size_t>(unitBattle_[static_cast<size_t>(foe)]);
     const e2::BattleUnit &a = battle_->units()[ab], &d = battle_->units()[db];
     const e2::Forecast f = e2::forecast(*battle_, ab, target->second, db);  // from the hex it would strike from
-    ImGui::SetNextWindowPos({mouse_.x + 18.0f, mouse_.y + 18.0f}, ImGuiCond_Always);
+    const ImVec2 cursor = ImGui::GetIO().MousePos;  // canvas units (mouse_ is in window pixels)
+    ImGui::SetNextWindowPos({cursor.x + 18.0f, cursor.y + 18.0f}, ImGuiCond_Always);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {12.0f, 10.0f});
     ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(14, 14, 14, 240));
     ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(190, 150, 95, 115));
@@ -2141,11 +2142,11 @@ class MapStage final : public Stage {
     dl->AddRect(a, b, active ? IM_COL32(226, 104, 30, 255) : hover ? IM_COL32(226, 170, 100, 216) : IM_COL32(190, 150, 95, 89), 2.0f);
     const std::string count = std::to_string(uses);
     ImFont* font = uiFont(UiFont::Ui);
-    const ImVec2 t = font->CalcTextSizeA(10.0f, FLT_MAX, 0.0f, count.c_str());
+    const ImVec2 t = font->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, count.c_str());
     const ImVec2 c{b.x - t.x - 2.0f, b.y - t.y + 2.0f};
     dl->AddRectFilled({c.x - 2, c.y - 1}, {b.x + 3, b.y + 3}, IM_COL32(28, 28, 28, 255), 2.0f);
     dl->AddRect({c.x - 2, c.y - 1}, {b.x + 3, b.y + 3}, IM_COL32(74, 74, 74, 255), 2.0f);
-    dl->AddText(font, 10.0f, c, IM_COL32(240, 240, 240, fade), count.c_str());
+    dl->AddText(font, 12.0f, c, IM_COL32(240, 240, 240, fade), count.c_str());
     if (hover) {
       ImGui::BeginTooltip();
       ImGui::PushFont(uiFont(UiFont::Ui), 15.0f);
@@ -2251,7 +2252,7 @@ class MapStage final : public Stage {
                                : std::format("{:.0f}% em {} · sem contra", fc.hitOut, battle_->units()[db].name);
         }
       }
-      dl->AddText(text, 11.5f, {x, barY + 12.0f}, IM_COL32(180, 180, 180, 255), line.c_str());
+      dl->AddText(text, 13.0f, {x, barY + 12.0f}, IM_COL32(180, 180, 180, 255), line.c_str());
       if (!tip_.empty() && now_ - tipAt_ < 3.0f) dl->AddText(text, 12.0f, {x, barY + 30.0f}, IM_COL32(224, 189, 128, 255), tip_.c_str());
       ImGui::PopFont();
     } else {
@@ -2331,7 +2332,7 @@ class MapStage final : public Stage {
       if (f > 0.0f) dl->AddRectFilled({left, top}, {left + width * f, top + height}, fill);
       if (cell >= 32.0f) {
         ImFont* font = uiFont(UiFont::Ui);
-        const float size = std::max(10.0f, std::round(cell * 0.22f));
+        const float size = std::max(13.0f, std::round(cell * 0.3f));
         const std::string hp = std::to_string(u.hp);
         const ImVec2 t = font->CalcTextSizeA(size, FLT_MAX, 0.0f, hp.c_str());
         const ImVec2 p{at->x - t.x * 0.5f, top - 1.0f - t.y};
@@ -2354,7 +2355,7 @@ class MapStage final : public Stage {
     ImFont* font = uiFont(UiFont::Ui);
     ImDrawList* dl = ImGui::GetWindowDrawList();
     auto chip = [&](const char* id, const std::string& label, ImU32 ink, ImU32 bg, bool button) {
-      const ImVec2 t = font->CalcTextSizeA(11.0f, FLT_MAX, 0.0f, label.c_str());
+      const ImVec2 t = font->CalcTextSizeA(13.0f, FLT_MAX, 0.0f, label.c_str());
       const ImVec2 size{t.x + 14.0f, t.y + 9.0f};
       bool clicked = false;
       if (button) clicked = ImGui::InvisibleButton(id, size);
@@ -2362,7 +2363,7 @@ class MapStage final : public Stage {
       const ImVec2 a = ImGui::GetItemRectMin(), b = ImGui::GetItemRectMax();
       dl->AddRectFilled(a, b, bg, 6.0f);
       dl->AddRect(a, b, IM_COL32(255, 255, 255, 38), 6.0f);
-      dl->AddText(font, 11.0f, {a.x + 7.0f, a.y + 4.5f}, ink, label.c_str());
+      dl->AddText(font, 13.0f, {a.x + 7.0f, a.y + 4.5f}, ink, label.c_str());
       return clicked;
     };
     if (chip("##ordem", "Ordem", IM_COL32(203, 213, 225, 255), IM_COL32(17, 27, 34, 242), true)) showTurnOrder_ = !showTurnOrder_;

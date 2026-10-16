@@ -1,5 +1,5 @@
 // Sandbox: opens the game window and runs the renderer.
-//   Sandbox.exe                         interactive window (F1 toggles the performance overlay)
+//   Sandbox.exe                         the whole screen (F1 toggles the performance overlay; --windowed or --size: a window)
 //   Sandbox.exe --capture out.png       off-screen: renders, saves a PNG, exits
 //                [--size 1920x1080] [--frames 3] [--time 1.5] [--no-validation]
 //   Sandbox.exe --stream test.pak [--verify <content dir>] [--io-depth N]
@@ -105,6 +105,7 @@ struct Options {
   float measureSeconds = 0.0f;
   int fog = -1;
   bool scout = false, noUi = false, volume = true;
+  bool windowed = false;  // --windowed or --size: a window instead of the whole screen
   int fogLook = 3;
   int lighting = 3;
   float sceneTime = -1.0f;
@@ -177,6 +178,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--maps" && hasValue) o.maps = argv[++i];
     else if (arg == "--debug-view" && hasValue) o.debugView = static_cast<uint32_t>(std::atoi(argv[++i]));
     else if (arg == "--no-ui") o.noUi = true;
+    else if (arg == "--windowed") o.windowed = true;
     else if (arg == "--layers" && hasValue) o.lightingLayers = static_cast<uint32_t>(std::strtoul(argv[++i], nullptr, 0));
     else if (arg == "--board" && hasValue) o.boardData = argv[++i];
     else if (arg == "--engine2" && hasValue) o.engine2 = argv[++i];
@@ -186,7 +188,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--cost-split" && hasValue) o.costSplit = static_cast<uint32_t>(std::atoi(argv[++i]));
     else if (arg == "--grid" && hasValue) o.meshGrid = static_cast<uint32_t>(std::max(1, std::atoi(argv[++i])));
     else if (arg == "--budget" && hasValue) o.spriteBudgetMb = static_cast<uint64_t>(std::max(16, std::atoi(argv[++i]))), o.budgetSet = true;
-    else if (arg == "--size" && hasValue) parseSize(argv[++i], o);
+    else if (arg == "--size" && hasValue) parseSize(argv[++i], o), o.windowed = true;
     else if (arg == "--frames" && hasValue) o.frames = std::atoi(argv[++i]);
     else if (arg == "--io-depth" && hasValue) o.ioDepth = static_cast<uint32_t>(std::max(1, std::atoi(argv[++i])));
     else if (arg == "--time" && hasValue) o.time = static_cast<float>(std::atof(argv[++i]));
@@ -530,7 +532,7 @@ int runCapture(const Options& o) {
 
 int runWindow(const Options& o) {
   Services services(o);
-  Window window({"Ember", o.width, o.height});
+  Window window({"Ember", o.width, o.height, !o.windowed});
   VulkanContext context({o.validation, window.handle()});
   uint32_t width = 0, height = 0;
   window.pixelSize(width, height);

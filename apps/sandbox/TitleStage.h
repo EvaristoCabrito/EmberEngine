@@ -72,7 +72,7 @@ class TitleStage : public Stage {
 
   void drawPanel() override {
     const ImGuiIO& io = ImGui::GetIO();
-    rem_ = 16.0f * std::clamp(io.DisplaySize.y / 900.0f, 0.85f, 2.0f);
+    rem_ = 16.0f;  // canvas units: the UI is zoomed to the window (DebugUi::kUiHeight), 24 px at 1080
     ImGui::SetNextWindowPos({0, 0});
     ImGui::SetNextWindowSize(io.DisplaySize);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});

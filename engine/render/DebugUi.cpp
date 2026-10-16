@@ -84,7 +84,14 @@ DebugUi::~DebugUi() {
 }
 
 bool DebugUi::processEvent(const SDL_Event& event) {
-  ImGui_ImplSDL3_ProcessEvent(&event);
+  if (event.type == SDL_EVENT_MOUSE_MOTION) {
+    // The pointer in canvas units (newFrame's zoom).
+    SDL_Event scaled = event;
+    scaled.motion.x /= zoom_, scaled.motion.y /= zoom_;
+    ImGui_ImplSDL3_ProcessEvent(&scaled);
+  } else {
+    ImGui_ImplSDL3_ProcessEvent(&event);
+  }
   const ImGuiIO& io = ImGui::GetIO();
   switch (event.type) {
     case SDL_EVENT_KEY_DOWN:
@@ -104,13 +111,23 @@ bool DebugUi::processEvent(const SDL_Event& event) {
 void DebugUi::newFrame(VkExtent2D size, float deltaSeconds) {
   if (frameOpen_) ImGui::EndFrame();  // last frame was never drawn (e.g. the swapchain was out of date)
   ImGui_ImplVulkan_NewFrame();
+  ImGuiIO& io = ImGui::GetIO();
   if (hasWindow_) {
     ImGui_ImplSDL3_NewFrame();
   } else {
-    ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = {static_cast<float>(size.width), static_cast<float>(size.height)};
+    io.DisplayFramebufferScale = {1.0f, 1.0f};
     io.DeltaTime = deltaSeconds > 0.0f ? deltaSeconds : 1.0f / 60.0f;
   }
+  // The canvas: kUiHeight tall, drawn at the real pixel height (fonts are rasterised at that density, so they stay sharp).
+  const float pixelHeight = io.DisplaySize.y * io.DisplayFramebufferScale.y;
+  const float zoom = pixelHeight > 0.0f ? pixelHeight / kUiHeight : 1.0f;
+  const float logical = zoom / io.DisplayFramebufferScale.y;  // window units per canvas unit
+  if (io.DisplaySize.y > 0.0f) {
+    io.DisplaySize = {io.DisplaySize.x / logical, io.DisplaySize.y / logical};
+    io.DisplayFramebufferScale = {zoom, zoom};
+  }
+  zoom_ = logical > 0.0f ? logical : 1.0f;
   ImGui::NewFrame();
   frameOpen_ = true;
 }

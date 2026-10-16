@@ -28,8 +28,13 @@ class DebugUi {
   // newFrame() was not called since the last record.
   void record(VkCommandBuffer cmd, VkImageView target, VkExtent2D size);
 
+  // Every screen is laid out on a canvas kUiHeight tall; the UI is drawn zoomed to the real height (user,
+  // 2026-10-15: menus too small to read), so text, buttons and plates grow together with the window.
+  static constexpr float kUiHeight = 720.0f;
+
  private:
   bool hasWindow_ = false;
+  float zoom_ = 1.0f;
   bool frameOpen_ = false;
   VkFormat targetFormat_;
 };

@@ -13,6 +13,7 @@ struct WindowDesc {
   const char* title = "Ember";
   uint32_t width = 1600;
   uint32_t height = 900;
+  bool fullscreen = true;  // the whole screen (borderless, desktop resolution); false: a window of width x height
 };
 
 // The game window (SDL3). Owns SDL's video subsystem for its lifetime.
