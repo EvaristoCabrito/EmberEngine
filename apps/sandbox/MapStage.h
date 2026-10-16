@@ -54,6 +54,8 @@
 #include <limits>
 #include <string_view>
 #include <utility>
+#include <array>
+#include <set>
 
 #include "Stage.h"
 #include "core/Jobs.h"
@@ -78,6 +80,9 @@
 #include "world/GroundAssets.h"
 #include "world/GroundMesh.h"
 #include "world/SceneData.h"
+#include "render/MeshBuild.h"
+#include "world/Architecture.h"
+#include "world/SceneBuilder.h"
 
 namespace ember {
 
@@ -222,8 +227,9 @@ class MapStage final : public Stage {
         asset = "meshes/" + asset.substr(0, asset.size() - 4) + ".mesh";
         if (!modelMeshes_.contains(asset)) modelMeshes_[asset] = meshes_.add(assetId(asset));
       }
-      logInfo("scene {}: {} cards, {} models, {} units, {} architecture pieces (not drawn yet)", scene_->map, scene_->cards.size(),
-              scene_->models.size(), scene_->units.size(), scene_->architecture);
+      buildArchitecture();
+      logInfo("scene {}: {} cards, {} models, {} units, {} architecture pieces ({} built)", scene_->map, scene_->cards.size(),
+              scene_->models.size(), scene_->units.size(), scene_->architecture, arch_.size());
       initUnits();
       setUpParty();
       if (!options.heroes.empty()) setUpPoses(options.heroes);
@@ -1037,6 +1043,142 @@ class MapStage final : public Stage {
     return 1.0f + v * amount;
   }
 
+  // Ember's 3D architecture (world/Architecture.h = Engine2 decor.ts addArchitecture over Ember's createWallGeometry):
+  // one mesh per piece, built here in the cooked format (render/MeshBuild) so it is culled, lit and shadowed like the
+  // models; its wall texture from build/meshes/architecture.pak (Cooker architecture). Walls, closed doors and secret
+  // doors block sight; open doorways do not.
+  struct ArchPiece {
+    MeshId mesh = 0;
+    float x = 0, z = 0, groundSmooth = 0, groundHard = 0, half = 0, top = 0;
+    bool blocks = false;
+    std::vector<std::pair<float, float>> footprint;  // sight samples (world x, z) under its top faces
+  };
+  static const e2::EditorCatalog& architectureCatalog() {
+    static const e2::EditorCatalog catalog = [] {
+      e2::EditorCatalog c;
+      c.load("content/engine2/editor-catalog.json");
+      return c;
+    }();
+    return catalog;
+  }
+  static const e2::ArchitectureDefs& architectureDefs() {
+    static const e2::ArchitectureDefs defs = [] {
+      e2::ArchitectureDefs d;
+      if (!d.load("content/engine2/editor-catalog.json")) logError("architecture: content/engine2/editor-catalog.json has no architectureDefs");
+      return d;
+    }();
+    return defs;
+  }
+  void buildArchitecture() {
+    arch_.clear();
+    if (scene_->pieces.empty()) return;
+    const e2::EditorCatalog& catalog = architectureCatalog();
+    const e2::ArchitectureDefs& defs = architectureDefs();
+    const e2::HexLayout& L = board_->layout();
+    const double sq3 = std::sqrt(3.0);
+    auto inBoard = [&](int c, int r) { return c >= 0 && r >= 0 && c < L.cols && r < L.rows; };
+    // architectureWorld: every row at the same x, no odd-row half-hex shift, so walls run straight
+    auto archAt = [&](int c, int r) { return std::pair<double, double>{sq3 * c - L.ox, board_->cell(c, r).z}; };
+    std::set<std::pair<int, int>> joins;  // the cells a wall joins (architecture, not rocks): anchors, an entrance's two cells
+    for (const e2::SceneArchitecture& p : scene_->pieces) {
+      const e2::ArchitectureDef* def = defs.find(p.id);
+      const e2::CatalogDecoration* cd = catalog.decoration(p.id);
+      if (!def || !cd || !def->connects) continue;
+      if (p.id == "watchtower-stone-open-door-2hex")
+        for (const e2::FootOffset& f : e2::placedFootprint(*cd, p.x, p.y, p.rot)) joins.insert({p.x + f.dx, p.y + f.dy});
+      else
+        joins.insert({p.x, p.y});
+    }
+    size_t missing = 0;
+    for (const e2::SceneArchitecture& p : scene_->pieces) {
+      const e2::ArchitectureDef* def = defs.find(p.id);
+      const e2::CatalogDecoration* cd = catalog.decoration(p.id);
+      if (!def || !cd) {
+        ++missing;
+        continue;
+      }
+      double x = 0, z = 0;
+      int n = 0;
+      for (const e2::FootOffset& f : e2::placedFootprint(*cd, p.x, p.y, p.rot))
+        if (inBoard(p.x + f.dx, p.y + f.dy)) {
+          const auto [ax, az] = archAt(p.x + f.dx, p.y + f.dy);
+          x += ax, z += az, ++n;
+        }
+      if (!n) continue;
+      x /= n, z /= n;
+      std::vector<std::pair<double, double>> connections;
+      for (const auto& [c, r] : {std::pair{p.x - 1, p.y}, std::pair{p.x + 1, p.y}, std::pair{p.x, p.y - 1}, std::pair{p.x, p.y + 1}})
+        if (inBoard(c, r) && joins.contains({c, r})) {
+          const auto [nx, nz] = archAt(c, r);
+          connections.push_back({nx - x, -(nz - z)});
+        }
+      const e2::three::Geometry g = e2::pieceGeometry(*def, p.rot, connections, {x, -z});
+      // flat shading (Engine2's material): each triangle's own normal; equal corners welded
+      MeshBuildPart part;
+      std::map<std::array<float, 8>, uint32_t> weld;
+      float minY = std::numeric_limits<float>::max(), maxY = -minY, minX = minY, maxX = maxY, minZ = minY, maxZ = maxY;
+      ArchPiece piece;
+      for (size_t t = 0; t + 2 < g.count(); t += 3) {
+        const glm::vec3 a{g.position[t * 3], g.position[t * 3 + 1], g.position[t * 3 + 2]}, b{g.position[t * 3 + 3], g.position[t * 3 + 4], g.position[t * 3 + 5]},
+            c{g.position[t * 3 + 6], g.position[t * 3 + 7], g.position[t * 3 + 8]};
+        const glm::vec3 cross = glm::cross(b - a, c - a);
+        if (glm::length(cross) <= 0.0f) continue;
+        const glm::vec3 normal = glm::normalize(cross);
+        if (normal.y > 0.5f) {  // a top face: sight is blocked under it
+          const float x0 = std::min({a.x, b.x, c.x}), x1 = std::max({a.x, b.x, c.x}), z0 = std::min({a.z, b.z, c.z}), z1 = std::max({a.z, b.z, c.z});
+          for (float sx = x0; sx <= x1 + 1e-4f; sx += 0.25f)
+            for (float sz = z0; sz <= z1 + 1e-4f; sz += 0.25f) piece.footprint.push_back({static_cast<float>(x) + sx, static_cast<float>(z) + sz});
+        }
+        for (size_t k = 0; k < 3; ++k) {
+          const size_t v = t + k;
+          // three's TextureLoader flips the image (v up from its bottom row); cooked textures start at the top
+          const std::array<float, 8> key{g.position[v * 3], g.position[v * 3 + 1], g.position[v * 3 + 2], normal.x, normal.y, normal.z,
+                                         g.uv[v * 2], 1.0f - g.uv[v * 2 + 1]};
+          auto [it, fresh] = weld.try_emplace(key, static_cast<uint32_t>(part.positions.size() / 3));
+          if (fresh) {
+            part.positions.insert(part.positions.end(), {key[0], key[1], key[2]});
+            part.normals.insert(part.normals.end(), {key[3], key[4], key[5]});
+            part.uvs.insert(part.uvs.end(), {key[6], key[7]});
+            part.tangents.insert(part.tangents.end(), {1.0f, 0.0f, 0.0f, 1.0f});
+            part.colors.insert(part.colors.end(), {1.0f, 1.0f, 1.0f, 1.0f});
+            minX = std::min(minX, key[0]), maxX = std::max(maxX, key[0]), minY = std::min(minY, key[1]), maxY = std::max(maxY, key[1]);
+            minZ = std::min(minZ, key[2]), maxZ = std::max(maxZ, key[2]);
+          }
+          part.indices.push_back(it->second);
+        }
+      }
+      if (part.indices.empty()) continue;
+      // MeshStandardMaterial({map, color: map ? white : the piece's colour, roughness, metalness}) (three colours are sRGB)
+      const bool metal = def->doorStyle == "iron" || def->doorStyle == "steel";
+      const uint32_t hex = metal ? (def->doorStyle == "iron" ? 0x555b60u : 0x9ca7b0u) : def->model3d == "door" ? 0x925b32u : def->model3d == "doorway" ? 0xb7a27cu : 0x8b8b86u;
+      auto linear = [](uint32_t c) {
+        const float s = static_cast<float>(c) / 255.0f;
+        return s <= 0.04045f ? s / 12.92f : std::pow((s + 0.055f) / 1.055f, 2.4f);
+      };
+      MeshMaterial m{};
+      const bool textured = !def->wallTexture.empty();
+      for (int k = 0; k < 3; ++k) m.baseColor[k] = textured ? 1.0f : linear((hex >> (16 - 8 * k)) & 255u);
+      m.baseColor[3] = 1.0f;
+      m.metallic = metal ? 0.5f : 0.0f;
+      m.roughness = metal ? 0.52f : 0.94f;
+      m.normalScale = 1.0f, m.occlusionStrength = 1.0f, m.alphaCutoff = 0.5f;
+      if (textured) m.baseColorTexture = assetId(e2::architectureTextureAsset(def->wallTexture));
+      MeshBuild build;
+      if (!build.addPart(part, 0, false, textured, false)) continue;
+      std::vector<uint8_t> bytes = build.finish({m}, part.indices.size() / 3);
+      if (bytes.empty()) continue;
+      piece.mesh = meshes_.addBuilt(std::move(bytes));
+      piece.x = static_cast<float>(x), piece.z = static_cast<float>(z);
+      piece.groundSmooth = static_cast<float>(e2::groundHeightAt(*board_, e2::EdgeStyle::Smooth, x, z));
+      piece.groundHard = static_cast<float>(e2::groundHeightAt(*board_, e2::EdgeStyle::Hard, x, z));
+      piece.half = std::max({std::abs(minX), std::abs(maxX), std::abs(minZ), std::abs(maxZ)});
+      piece.top = maxY;
+      piece.blocks = def->model3d == "wall" || def->model3d == "door" || def->model3d == "secretDoor";
+      arch_.push_back(std::move(piece));
+    }
+    if (missing) logWarn("architecture: {} pieces not in the editor catalog", missing);
+  }
+
   // Engine2's models.ts: scaled uniformly to their height, base centred on the anchor, turned by rotY.
   void placeModels() {
     modelsPlaced_ = true;
@@ -1066,6 +1208,18 @@ class MapStage final : public Stage {
       pieceBoxes_.push_back({m.x, m.z, half, t.y + m.height});
     }
     modelCount_ = static_cast<uint32_t>(instances.size());
+    // Ember's architecture: each piece's own mesh, stood on the ground the board shows.
+    for (const ArchPiece& a : arch_) {
+      const float y = groundOf(a.groundSmooth, a.groundHard);
+      InstanceGpu inst{};
+      inst.rows[0] = {1, 0, 0, a.x};
+      inst.rows[1] = {0, 1, 0, y};
+      inst.rows[2] = {0, 0, 1, a.z};
+      inst.mesh = a.mesh;
+      inst.scale = 1;
+      instances.push_back(inst);
+      pieceBoxes_.push_back({a.x, a.z, a.half, y + a.top});
+    }
     meshes_.setInstances(instances);
     placedLook_ = look_;
   }
@@ -2972,6 +3126,9 @@ class MapStage final : public Stage {
   // What stands on the board and blocks sight: 3D models over their footprint, standing cards at least
   // kBlockHeight tall and kBlockWidth wide along their width; 3D models at least kBlockWidth across. (Walls and doors are not imported yet: they block nothing.)
   void addOccluders() {
+    for (const ArchPiece& a : arch_)
+      if (a.blocks)
+        for (const auto& [x, z] : a.footprint) fog_->block(x, z, a.top);
     for (const e2::SceneModel& m : scene_->models) {
       std::string asset = m.file.substr(std::string("/game/").size());
       asset = "meshes/" + asset.substr(0, asset.size() - 4) + ".mesh";
@@ -3230,6 +3387,7 @@ class MapStage final : public Stage {
     float x, z, radius, top;  // a 3D piece's footprint (square around its centre) and top, world units
   };
   std::vector<PieceBox> pieceBoxes_;
+  std::vector<ArchPiece> arch_;  // Ember's walls, doors and gates (buildArchitecture)
   static constexpr float kGlide = 10.0f;  // 1/s: ~90% of a move in 0.23 s, no overshoot
   static constexpr float kMinPitch = 0.0873f, kMaxPitch = 1.5621f;  // 5 deg (nearly level) to 89.5 deg (straight down)
   static constexpr float kTiltStep = 0.0873f, kTurnStep = 0.2618f;  // Engine2's bar: 5 deg; 15 deg

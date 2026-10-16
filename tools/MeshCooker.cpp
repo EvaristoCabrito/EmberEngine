@@ -3,8 +3,6 @@
 #define CGLTF_IMPLEMENTATION
 #include <cgltf.h>
 #include <meshoptimizer.h>
-#define CLUSTERLOD_IMPLEMENTATION
-#include <clusterlod.h>
 #include <stb_image.h>
 
 #include <algorithm>
@@ -20,6 +18,7 @@
 #include "TextureCooker.h"
 #include "core/Jobs.h"
 #include "core/Log.h"
+#include "render/MeshBuild.h"
 #include "render/MeshFormat.h"
 
 namespace ember {
@@ -60,29 +59,6 @@ bool writeFile(const std::filesystem::path& path, const void* data, size_t size)
   std::ofstream file(path, std::ios::binary | std::ios::trunc);
   file.write(static_cast<const char*>(data), static_cast<std::streamsize>(size));
   return static_cast<bool>(file);
-}
-
-int16_t snorm16(float v) { return static_cast<int16_t>(std::lround(std::clamp(v, -1.0f, 1.0f) * 32767.0f)); }
-
-// Octahedral unit-vector encoding, 2 x snorm16.
-uint32_t octEncode(const float* n, bool negativeSign = false) {
-  const float l1 = std::abs(n[0]) + std::abs(n[1]) + std::abs(n[2]);
-  float x = l1 > 0.0f ? n[0] / l1 : 0.0f, y = l1 > 0.0f ? n[1] / l1 : 0.0f;
-  if (n[2] < 0.0f) {
-    const float ox = (1.0f - std::abs(y)) * (x >= 0.0f ? 1.0f : -1.0f);
-    const float oy = (1.0f - std::abs(x)) * (y >= 0.0f ? 1.0f : -1.0f);
-    x = ox;
-    y = oy;
-  }
-  uint16_t ux = static_cast<uint16_t>(snorm16(x)), uy = static_cast<uint16_t>(snorm16(y));
-  uy = static_cast<uint16_t>((uy & ~1u) | (negativeSign ? 1u : 0u));
-  return ux | (uint32_t{uy} << 16);
-}
-
-uint8_t srgbByte(float linear) {
-  const float c = std::clamp(linear, 0.0f, 1.0f);
-  const float s = c <= 0.0031308f ? c * 12.92f : 1.055f * std::pow(c, 1.0f / 2.4f) - 0.055f;
-  return static_cast<uint8_t>(std::lround(s * 255.0f));
 }
 
 void normalize3(float* v) {
@@ -320,169 +296,28 @@ class MeshBuilder {
       if (!addPart(part, materialIndex, (materials_[m].flags & kMaterialDoubleSided) != 0, materials_[m].baseColorTexture != 0, remeshed))
         return false;
     }
-    if (clusters_.empty()) {
+    if (mesh_.clusterCount() == 0) {
       logError("  no triangles");
       return false;
     }
 
-    // BVH over the groups, one tree per DAG level.
-    uint32_t levels = 0;
-    for (const clodGroup& g : clodGroups_) levels = std::max(levels, static_cast<uint32_t>(g.depth) + 1);
-    std::vector<clodNode> nodes(clodBuildHierarchyBound(clodGroups_.size(), kMeshNodeWidth, levels));
-    nodes.resize(clodBuildHierarchy(nodes.data(), clodGroups_.data(), clodGroups_.size(), kMeshNodeWidth, levels));
-
-    MeshHeader header{};
-    header.magic = kMeshMagic;
-    header.version = kMeshFormatVersion;
-    header.vertexCount = static_cast<uint32_t>(vertices_.size());
-    header.clusterVertexCount = static_cast<uint32_t>(clusterVertices_.size());
-    header.triangleBytes = static_cast<uint32_t>(clusterTriangles_.size());
-    header.clusterCount = static_cast<uint32_t>(clusters_.size());
-    header.groupCount = static_cast<uint32_t>(groups_.size());
-    header.nodeCount = static_cast<uint32_t>(nodes.size());
-    header.levelCount = levels;
-    header.materialCount = static_cast<uint32_t>(used.size());
-    header.sourceTriangles = static_cast<uint32_t>(sourceTriangles);
-    float lo[3] = {FLT_MAX, FLT_MAX, FLT_MAX}, hi[3] = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
-    for (const MeshVertex& v : vertices_)
-      for (int i = 0; i < 3; ++i) lo[i] = std::min(lo[i], v.position[i]), hi[i] = std::max(hi[i], v.position[i]);
-    float radius = 0.0f;
-    for (int i = 0; i < 3; ++i) {
-      header.boundsMin[i] = lo[i];
-      header.boundsMax[i] = hi[i];
-      header.boundsCenter[i] = (lo[i] + hi[i]) * 0.5f;
-    }
-    for (const MeshVertex& v : vertices_) {
-      float d2 = 0.0f;
-      for (int i = 0; i < 3; ++i) d2 += (v.position[i] - header.boundsCenter[i]) * (v.position[i] - header.boundsCenter[i]);
-      radius = std::max(radius, d2);
-    }
-    header.boundsRadius = std::sqrt(radius);
-
-    const MeshSections s = meshSections(header);
-    out.mesh.assign(s.end, 0);
-    std::memcpy(out.mesh.data(), &header, sizeof(header));
-    std::memcpy(out.mesh.data() + s.vertices, vertices_.data(), vertices_.size() * sizeof(MeshVertex));
-    std::memcpy(out.mesh.data() + s.clusterVertices, clusterVertices_.data(), clusterVertices_.size() * sizeof(uint32_t));
-    std::memcpy(out.mesh.data() + s.clusterTriangles, clusterTriangles_.data(), clusterTriangles_.size());
-    std::memcpy(out.mesh.data() + s.clusters, clusters_.data(), clusters_.size() * sizeof(MeshCluster));
-    std::memcpy(out.mesh.data() + s.groups, groups_.data(), groups_.size() * sizeof(MeshGroup));
-    for (size_t i = 0; i < nodes.size(); ++i) {
-      const clodNode& c = nodes[i];
-      const MeshNode node{{c.bounds.center[0], c.bounds.center[1], c.bounds.center[2]}, c.bounds.radius, c.bounds.error,
-                          c.group, c.child_offset, c.child_count};
-      std::memcpy(out.mesh.data() + s.nodes + i * sizeof(MeshNode), &node, sizeof(node));
-    }
-    std::memcpy(out.mesh.data() + s.materials, used.data(), used.size() * sizeof(MeshMaterial));
+    out.mesh = mesh_.finish(used, sourceTriangles);
 
     report.sourceTriangles += sourceTriangles;
-    report.dagTriangles += dagTriangles_;
-    report.clusters += clusters_.size();
+    report.dagTriangles += mesh_.dagTriangles();
+    report.clusters += mesh_.clusterCount();
     logInfo("  {} triangles -> {} clusters in {} groups, {} levels, {} triangles across all levels, {:.1f} MB",
-            sourceTriangles, clusters_.size(), groups_.size(), levels, dagTriangles_, out.mesh.size() / 1048576.0);
+            sourceTriangles, mesh_.clusterCount(), mesh_.groupCount(), mesh_.levelCount(), mesh_.dagTriangles(), out.mesh.size() / 1048576.0);
     return true;
   }
 
  private:
   bool addPart(const Part& part, uint16_t materialIndex, bool doubleSided, bool textured, bool positionError) {
-    const uint32_t vertexBase = static_cast<uint32_t>(vertices_.size());
-    const size_t vertexCount = part.positions.size() / 3;
-    for (size_t v = 0; v < vertexCount; ++v) {
-      MeshVertex out{};
-      std::memcpy(out.position, &part.positions[v * 3], 12);
-      out.normal = octEncode(&part.normals[v * 3]);
-      out.tangent = octEncode(&part.tangents[v * 4], part.tangents[v * 4 + 3] < 0.0f);
-      out.uv[0] = part.uvs[v * 2];
-      out.uv[1] = part.uvs[v * 2 + 1];
-      const float* c = &part.colors[v * 4];
-      out.color = srgbByte(c[0]) | (uint32_t{srgbByte(c[1])} << 8) | (uint32_t{srgbByte(c[2])} << 16) |
-                  (uint32_t(std::lround(std::clamp(c[3], 0.0f, 1.0f) * 255.0f)) << 24);
-      vertices_.push_back(out);
-    }
-
-    // Attributes the simplifier keeps faithful: normals always; UVs when a texture uses them; colours
-    // when the model is vertex-coloured (the trees).
-    const size_t stride = 9;
-    std::vector<float> attributes(vertexCount * stride, 0.0f);
-    for (size_t v = 0; v < vertexCount; ++v) {
-      std::memcpy(&attributes[v * stride], &part.normals[v * 3], 12);
-      std::memcpy(&attributes[v * stride + 3], &part.uvs[v * 2], 8);
-      std::memcpy(&attributes[v * stride + 5], &part.colors[v * 4], 16);
-    }
-    const float uvWeight = textured ? 0.5f : 0.0f, colorWeight = part.hasColors ? 0.5f : 0.0f;
-    // A remeshed proxy's normals come from the voxel surface and are noisy: its error is positional only.
-    const float normalWeight = positionError ? 0.0f : 0.5f;
-    const float weights[9] = {normalWeight, normalWeight, normalWeight, uvWeight, uvWeight, colorWeight, colorWeight, colorWeight, 0.0f};
-
-    clodConfig config = clodDefaultConfig(kMeshClusterMaxTriangles);
-    config.max_vertices = kMeshClusterMaxVertices;
-    config.optimize_bounds = true;
-    // A group's error never exceeds its own triangles' size: once they are under a pixel the simpler
-    // version is used, even where seams or disconnected pieces make the measured error large.
-    config.simplify_error_edge_limit = 1.0f;
-    clodMesh mesh{};
-    mesh.indices = part.indices.data();
-    mesh.index_count = part.indices.size();
-    mesh.vertex_count = vertexCount;
-    mesh.vertex_positions = part.positions.data();
-    mesh.vertex_positions_stride = 12;
-    mesh.vertex_attributes = attributes.data();
-    mesh.vertex_attributes_stride = stride * sizeof(float);
-    mesh.attribute_weights = weights;
-    mesh.attribute_count = stride;
-    // clusterlod simplifies permissively (it may collapse across attribute discontinuities); the seams
-    // that must survive are flagged here: UV seams when a texture uses them, colour seams on
-    // vertex-coloured models. Without this, meshes split at every face (common in generated models)
-    // simplify badly and report errors far above the real ones.
-    mesh.attribute_protect_mask = (textured ? (1u << 3) | (1u << 4) : 0u) | (part.hasColors ? (1u << 5) | (1u << 6) | (1u << 7) : 0u);
-
-    bool ok = true;
-    clodBuild(config, mesh, [&](clodGroup group, const clodCluster* clusters, size_t count) -> int {
-      const int groupIndex = static_cast<int>(groups_.size());
-      MeshGroup g{};
-      for (int i = 0; i < 3; ++i) g.center[i] = group.simplified.center[i];
-      g.radius = group.simplified.radius;
-      g.error = group.simplified.error;
-      g.depth = static_cast<uint32_t>(group.depth);
-      g.firstCluster = static_cast<uint32_t>(clusters_.size());
-      g.clusterCount = static_cast<uint32_t>(count);
-      groups_.push_back(g);
-      clodGroups_.push_back(group);
-
-      unsigned int local[256];
-      unsigned char triangles[kMeshClusterMaxTriangles * 3];
-      for (size_t c = 0; c < count; ++c) {
-        const clodCluster& cluster = clusters[c];
-        const size_t triangleCount = cluster.index_count / 3;
-        if (cluster.vertex_count > kMeshClusterMaxVertices || triangleCount > kMeshClusterMaxTriangles) {
-          logError("  cluster over the limits ({} vertices, {} triangles)", cluster.vertex_count, triangleCount);
-          ok = false;
-          continue;
-        }
-        const size_t unique = clodLocalIndices(local, triangles, cluster.indices, cluster.index_count);
-        MeshCluster out{};
-        for (int i = 0; i < 3; ++i) out.center[i] = cluster.bounds.center[i];
-        out.radius = cluster.bounds.radius;
-        const meshopt_Bounds cone = meshopt_computeClusterBounds(cluster.indices, cluster.index_count, part.positions.data(),
-                                                                 vertexCount, 12);
-        for (int i = 0; i < 3; ++i) out.coneAxis[i] = cone.cone_axis_s8[i];
-        out.coneCutoff = doubleSided ? int8_t{127} : cone.cone_cutoff_s8;
-        out.vertexOffset = static_cast<uint32_t>(clusterVertices_.size());
-        out.triangleOffset = static_cast<uint32_t>(clusterTriangles_.size());
-        out.vertexCount = static_cast<uint8_t>(unique);
-        out.triangleCount = static_cast<uint8_t>(triangleCount);
-        out.material = materialIndex;
-        out.refinedGroup = cluster.refined;
-        out.group = static_cast<uint32_t>(groupIndex);
-        for (size_t i = 0; i < unique; ++i) clusterVertices_.push_back(vertexBase + local[i]);
-        clusterTriangles_.insert(clusterTriangles_.end(), triangles, triangles + triangleCount * 3);
-        while (clusterTriangles_.size() % 4) clusterTriangles_.push_back(0);
-        clusters_.push_back(out);
-        dagTriangles_ += triangleCount;
-      }
-      return groupIndex;  // becomes `refined` of the clusters simplified from this group
-    });
-    return ok;
+    MeshBuildPart p;
+    p.positions = part.positions, p.normals = part.normals, p.uvs = part.uvs, p.tangents = part.tangents, p.colors = part.colors;
+    p.indices = part.indices;
+    p.hasColors = part.hasColors;
+    return mesh_.addPart(p, materialIndex, doubleSided, textured, positionError);
   }
 
   MeshMaterial defaultMaterial() const {
@@ -597,13 +432,7 @@ class MeshBuilder {
   std::filesystem::path gltfDir_;
   std::vector<MeshMaterial> materials_;
   std::map<std::tuple<std::string, ptrdiff_t, ptrdiff_t>, AssetId> textures_;
-  std::vector<MeshVertex> vertices_;
-  std::vector<uint32_t> clusterVertices_;
-  std::vector<uint8_t> clusterTriangles_;
-  std::vector<MeshCluster> clusters_;
-  std::vector<MeshGroup> groups_;
-  std::vector<clodGroup> clodGroups_;
-  uint64_t dagTriangles_ = 0;
+  MeshBuild mesh_;
 };
 
 }  // namespace

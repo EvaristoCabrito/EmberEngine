@@ -102,6 +102,11 @@ std::optional<SceneData> SceneData::load(const std::filesystem::path& sceneJson)
       s.models.push_back(std::move(m));
     } else if (kind == "architecture") {
       ++s.architecture;
+      SceneArchitecture a;
+      a.id = str(d, "id");
+      if (d.contains("at") && d["at"].is_array() && d["at"].size() == 2) a.x = d["at"][0].get<int>(), a.y = d["at"][1].get<int>();
+      a.rot = d.contains("rot") && d["rot"].is_number() ? static_cast<int>(d["rot"].get<double>()) : 0;
+      s.pieces.push_back(std::move(a));
     }
   }
   for (const json& u : j["units"]) {

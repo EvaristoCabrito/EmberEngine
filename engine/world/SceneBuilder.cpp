@@ -251,6 +251,7 @@ SceneData buildScene(const Board& board, const EditorCatalog& catalog, std::map<
     };
     if (def->architecture) {
       ++s.architecture;
+      s.pieces.push_back({p.id, p.x, p.y, static_cast<int>(p.rot)});
       continue;
     }
     if (def->model) {

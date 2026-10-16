@@ -51,7 +51,8 @@ MeshScene::~MeshScene() {
     destroyImage(context_, texture->image);
     assets_.release(texture->handle);
   }
-  for (auto& mesh : meshes_) assets_.release(mesh->handle);
+  for (auto& mesh : meshes_)
+    if (mesh->built.empty()) assets_.release(mesh->handle);
   for (Table* table : {&meshTable_, &materialTable_, &instanceTable_})
     for (Buffer& b : table->copies) destroyBuffer(context_, b);
   destroyBuffer(context_, geometry_);
@@ -70,6 +71,16 @@ MeshId MeshScene::add(AssetId meshAsset) {
   meshes_.push_back(std::move(mesh));
   const MeshId id = static_cast<MeshId>(meshes_.size() - 1);
   EMBER_CHECK(id < capacity_.meshes, "MeshScene: mesh capacity reached");
+  return id;
+}
+
+MeshId MeshScene::addBuilt(std::vector<uint8_t> bytes) {
+  auto mesh = std::make_unique<Mesh>();
+  mesh->built = std::move(bytes);
+  meshes_.push_back(std::move(mesh));
+  const MeshId id = static_cast<MeshId>(meshes_.size() - 1);
+  EMBER_CHECK(id < capacity_.meshes, "MeshScene: mesh capacity reached");
+  parse(*meshes_.back(), id);
   return id;
 }
 
@@ -93,7 +104,8 @@ void MeshScene::setInstances(std::span<const InstanceGpu> instances) {
 }
 
 void MeshScene::parse(Mesh& mesh, MeshId id) {
-  const std::span<const std::byte> bytes = assets_.data(mesh.handle);
+  const std::span<const std::byte> bytes =
+      mesh.built.empty() ? assets_.data(mesh.handle) : std::span<const std::byte>(reinterpret_cast<const std::byte*>(mesh.built.data()), mesh.built.size());
   MeshHeader& h = mesh.header;
   if (bytes.size() >= sizeof(MeshHeader)) std::memcpy(&h, bytes.data(), sizeof(MeshHeader));
   const MeshSections s = meshSections(h);
@@ -259,7 +271,8 @@ void MeshScene::update() {
     if (uploads_.finished(mesh.upload)) {
       mesh.uploaded = true;
       uploadWaitValue_ = std::max(uploadWaitValue_, mesh.upload.signalValue);
-      assets_.release(mesh.handle);  // the GPU copy is the only one needed
+      if (mesh.built.empty()) assets_.release(mesh.handle);  // the GPU copy is the only one needed
+      else mesh.built = {};
       mesh.handle = {};
       tableData<MeshGpu>(meshTable_)[id].ready = 1;
       meshTable_.dirty = true;

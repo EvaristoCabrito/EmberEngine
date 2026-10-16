@@ -57,6 +57,9 @@ class MeshScene {
 
   // Starts loading a cooked mesh (asset "meshes/<path>.mesh"). Its instances draw once it is resident.
   MeshId add(AssetId meshAsset);
+  // A mesh built in memory in the same format (render/MeshBuild.h: the game's own meshes, e.g. Ember's architecture);
+  // its textures still come from the packs by asset id.
+  MeshId addBuilt(std::vector<uint8_t> bytes);
   bool ready() const;  // every added mesh's geometry and textures are on the GPU
   const MeshHeader* header(MeshId id) const;  // null until its asset arrived
 
@@ -88,6 +91,7 @@ class MeshScene {
   struct Mesh {
     AssetId asset = 0;
     AssetHandle handle;
+    std::vector<uint8_t> built;  // addBuilt's bytes (no asset)
     MeshHeader header{};
     bool parsed = false, failed = false;
     uint64_t offset = 0;  // in the geometry buffer

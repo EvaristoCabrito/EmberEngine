@@ -393,6 +393,12 @@ struct Services {
   explicit Services(const Options& o) : io(jobs, o.ioDepth), assets(jobs, io, {}) {
     if (!o.sprites.empty() && !assets.mount(o.sprites)) fatal(std::format("Cannot mount {}", o.sprites));
     if (!o.meshes.empty() && !assets.mount(o.meshes)) fatal(std::format("Cannot mount {}", o.meshes));
+    // Ember's wall, door and gate textures (Cooker architecture), beside the mesh pack.
+    if (!o.meshes.empty()) {
+      const std::filesystem::path architecture = std::filesystem::path(o.meshes).parent_path() / "architecture.pak";
+      std::error_code ec;
+      if (std::filesystem::exists(architecture, ec) && !assets.mount(architecture.string())) fatal(std::format("Cannot mount {}", architecture.string()));
+    }
     if (!o.ground.empty() && !assets.mount(o.ground)) fatal(std::format("Cannot mount {}", o.ground));
     for (size_t k = 0; k < o.compare.size() && k < 4; k += 2)
       if (!assets.mount(o.compare[k])) fatal(std::format("Cannot mount {}", o.compare[k]));

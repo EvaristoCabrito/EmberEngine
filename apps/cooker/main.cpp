@@ -34,6 +34,7 @@
 
 #include "world/SceneBuilder.h"
 #include "world/MapDressing.h"
+#include "ArchitectureCooker.h"
 #include "world/Architecture.h"
 #include "PakWriter.h"
 #include "BattleCheck.h"
@@ -338,6 +339,29 @@ int checkSceneBuilderCommand(const std::vector<std::string_view>& args) {
   return ember::e2::checkSceneBuilder(*data, catalog, maps, std::filesystem::path(args[3]), std::filesystem::path(args[2])) == 0 ? 0 : 1;
 }
 
+int architecture(const std::vector<std::string_view>& args) {
+  if (args.size() < 3) fatal("usage: Cooker architecture <editor-catalog.json> <engine2 public> <out.pak> [--cache <dir>] [--quality fast|basic|slow]");
+  ArchitectureCookOptions options;
+  options.catalog = std::filesystem::path(args[0]);
+  options.engine2Public = std::filesystem::path(args[1]);
+  const std::filesystem::path out(args[2]);
+  options.cacheDir = (out.parent_path().empty() ? std::filesystem::path(".") : out.parent_path()) / "cook-cache";
+  for (size_t i = 3; i < args.size(); ++i) {
+    if (i + 1 >= args.size()) fatal(std::format("Missing value for {}", args[i]));
+    const std::string_view value = args[++i];
+    if (args[i - 1] == "--cache") options.cacheDir = std::filesystem::path(value);
+    else if (args[i - 1] == "--quality") options.quality = value == "fast" ? Bc7Quality::Fast : value == "basic" ? Bc7Quality::Basic : Bc7Quality::Slow;
+    else fatal(std::format("Unknown argument {}", args[i - 1]));
+  }
+  JobSystem jobs;
+  std::vector<PakSource> sources;
+  if (!cookArchitecture(jobs, options, sources)) return 1;
+  PakWriteReport pak;
+  if (!writePak(jobs, std::move(sources), out, {}, pak)) return 1;
+  logInfo("packed {} assets: {:.1f} MB -> {:.1f} MB on disk in {:.1f}s", pak.entries, megabytes(pak.sourceBytes), megabytes(pak.storedBytes), pak.seconds);
+  return 0;
+}
+
 int checkArchitectureCommand(const std::vector<std::string_view>& args) {
   if (args.size() != 2) fatal("usage: Cooker check-architecture <editor-catalog.json> <architecture-refs.json (export_architecture_refs.ts)>");
   ember::e2::ArchitectureDefs defs;
@@ -376,6 +400,7 @@ int main(int argc, char** argv) {
   if (command == "check-scene-builder") return checkSceneBuilderCommand(args);
   if (command == "check-dress") return checkDressCommand(args);
   if (command == "check-architecture") return checkArchitectureCommand(args);
+  if (command == "architecture") return architecture(args);
   if (command == "ground") return ground(args);
   ember::logError("unknown command {}", command);
   return 1;

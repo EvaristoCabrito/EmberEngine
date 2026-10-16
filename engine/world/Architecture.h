@@ -39,6 +39,14 @@ struct ArchitectureDefs {
 three::Geometry wallGeometry(const ArchitectureDef& def, double tile, int rotation, const std::vector<std::pair<double, double>>& connections,
                              std::pair<double, double> origin, bool projectHeight, double textureHeightScale);
 
+// A piece's wall texture as a cooked asset (Cooker architecture): "/game/textures/walls/crypt-v2.png" ->
+// "architecture/textures/walls/crypt-v2.tex" in build/meshes/architecture.pak.
+inline std::string architectureTextureAsset(const std::string& wallTexture) {
+  std::string path = wallTexture.starts_with("/game/") ? wallTexture.substr(6) : wallTexture;
+  if (const size_t dot = path.rfind('.'); dot != std::string::npos) path.resize(dot);
+  return "architecture/" + path + ".tex";
+}
+
 // One placed piece in the world (decor.ts addArchitecture): its solid in board space (Y up) and where it stands.
 struct ArchitecturePiece {
   std::string id;

@@ -58,6 +58,13 @@ struct SceneUnit {
   std::optional<SceneLight> light;
 };
 
+// Ember's 3D architecture (walls, doorways, doors, gates): the piece, its anchor hex and quarter turn; its solid is
+// built from them (world/Architecture.h) when the map opens.
+struct SceneArchitecture {
+  std::string id;
+  int x = 0, y = 0, rot = 0;
+};
+
 struct SceneData {
   std::string map, title;
   std::string timeOfDay, environment;
@@ -69,7 +76,8 @@ struct SceneData {
   std::vector<SceneCard> cards;
   std::vector<SceneModel> models;
   std::vector<SceneUnit> units;
-  size_t architecture = 0;  // walls / doors not drawn yet
+  size_t architecture = 0;  // walls / doors / gates (pieces below)
+  std::vector<SceneArchitecture> pieces;
 
   static std::optional<SceneData> load(const std::filesystem::path& sceneJson);
 };

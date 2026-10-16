@@ -31,6 +31,7 @@ add_library(EmberEngine STATIC
   render/vfx/BurningHands.cpp
   render/vfx/Sweeps.cpp
   render/MeshScene.cpp
+  render/MeshBuild.cpp
   render/BoardGround.cpp
   world/Board.cpp
   world/FogOfWar.cpp
@@ -57,6 +58,7 @@ add_library(EmberEngine STATIC
 
 target_include_directories(EmberEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(EmberEngine PUBLIC SDL3::SDL3 volk glm::glm vma stb imgui nlohmann_json PRIVATE zstd)
+target_link_libraries(EmberEngine PRIVATE meshoptimizer clusterlod)
 # Films (media/VideoPlayer): Windows Media Foundation.
 target_link_libraries(EmberEngine PRIVATE mfplat mfreadwrite mfuuid ole32)
 target_compile_definitions(EmberEngine PUBLIC
