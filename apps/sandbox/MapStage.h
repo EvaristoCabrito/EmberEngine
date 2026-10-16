@@ -60,6 +60,7 @@
 #include "render/Renderer.h"
 #include "rhi/UploadQueue.h"
 #include "render/MeshScene.h"
+#include "render/SpellEffects.h"
 #include "render/SpriteSystem.h"
 #include "world/Battle.h"
 #include "world/Combat.h"
@@ -92,6 +93,10 @@ struct MapStageOptions {
   // Test lights for the proof scene: a torch carried around the party, a spell's light flying from the
   // party's caster to the nearest enemy and flashing on impact.
   bool movingLight = false, spellLight = false;
+  // Spell effects test: the hero casts this spell's visual (Engine2 kind, or "all" for each ported one in turn) at the
+  // nearest enemy every kFxTestCycle seconds, visuals only (no rules); for captures with --scene-time.
+  std::string fxTest;
+  bool tatica = false;  // open in the 2D view (Tática), for captures
   // Gameplay measurement: for this many seconds the camera turns a full circle and zooms in and out twice
   // while units animate and lights move and flicker; every frame's main-thread and GPU time is recorded.
   float measureSeconds = 0.0f;
@@ -147,6 +152,7 @@ class MapStage final : public Stage {
     for (uint32_t i = 0; i < fogLooks().size(); ++i)
       if (options.fogLook == std::atoi(fogLooks()[i].number)) fogLook_ = i;
     pitch_ += glm::radians(options.tiltDegrees);
+    flat_ = options.tatica;
     layers_ = options.layers;
     data_ = e2::BoardData::load(options.boardData);
     std::optional<e2::MapDraft> draft = e2::MapDraft::load(options.map);
@@ -288,6 +294,15 @@ class MapStage final : public Stage {
     renderer.setScene(camera, drawList_);
     lights_.clear();
     if (scene_) buildLights(time);
+    effectList_.clear();
+    fxLights_.clear();
+    if (scene_ && sprites_.ready()) {
+      runFxTest(time);
+      // Tática: the effects lie face up just above every flat card (cards: boardTop + z x the row step).
+      spellFx_.build(time, camera, flat_, boardTop_ + 0.2f, effectList_, fxLights_);
+    }
+    for (const SpellEffects::Light& l : fxLights_) lights_.push_back(carried(l.at, l.color, l.intensity, l.radius, l.height, 1.0f));
+    renderer.setEffects(effectList_);
     renderer.setLights(lights_);
     Renderer::Lighting lighting = mapLighting(time);
     if (lightingMode_ == 3) {
@@ -1645,7 +1660,9 @@ class MapStage final : public Stage {
     {
       // The start of its own turn: a lightning echo, the ground's flames.
       std::vector<e2::BattleEffect> fx;
+      const bool echo = battle_->units()[static_cast<size_t>(active)].shock.has_value();
       e2::startOfTurnEffects(*battle_, static_cast<size_t>(active), rng_, fx);
+      if (const int ui = sceneUnitOf(active); echo && ui >= 0 && !fx.empty()) spellFx_.echo(unitSpot(static_cast<size_t>(ui)), now_);
       showEffects(fx);
       if (!battle_->units()[static_cast<size_t>(active)].alive) {
         battle_->units()[static_cast<size_t>(active)].moved = true;
@@ -1783,6 +1800,73 @@ class MapStage final : public Stage {
     x.end = now_ + length + kExchangeGap;
     x.landed = false;
     if (striker >= 0) unitShot_[static_cast<size_t>(striker)] = {pose, now_, false};
+    // The spell's visual, laid out so it lands on the impact (a counter or a plain attack has none: its blow's sparks
+    // come when it lands).
+    if (striker >= 0 && !x.counter && !s.kind.empty()) {
+      std::vector<SpellEffects::Spot> spots;
+      if (s.type == e2::BattleStep::Type::Spell) {
+        for (const e2::BattleHex& h : s.tiles) spots.push_back(hexSpot(h));
+      } else if (target >= 0) {
+        spots.push_back(unitSpot(static_cast<size_t>(target)));
+      }
+      spellFx_.cast(s.kind, unitSpot(static_cast<size_t>(striker)), spots, now_, x.impact);
+    }
+  }
+
+  // Where an effect meets a scene unit: its feet and the middle of its body (its card as drawn, else Engine2's chest
+  // height 0.9).
+  SpellEffects::Spot unitSpot(size_t ui) const {
+    const glm::vec3 feet = unitWorld(ui);
+    const CardRect& c = unitCard_[ui];
+    const float body = c.drawn && !c.flat ? std::clamp(c.height * 0.45f, 0.5f, 1.4f) : 0.9f;
+    return {feet, feet + glm::vec3(0.0f, body, 0.0f)};
+  }
+  // ... and a hex: the unit standing on it, else its ground.
+  SpellEffects::Spot hexSpot(e2::BattleHex h) const {
+    for (size_t i = 0; i < unitBattle_.size(); ++i) {
+      if (unitBattle_[i] < 0) continue;
+      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[i])];
+      if (u.alive && u.x == h.x && u.y == h.y) return unitSpot(i);
+    }
+    const e2::Cell& c = board_->cell(h.x, h.y);
+    const float x = static_cast<float>(c.x), z = static_cast<float>(c.z);
+    const glm::vec3 feet{x, static_cast<float>(e2::groundHeightAt(*board_, look_, x, z)), z};
+    return {feet, feet + glm::vec3(0.0f, 0.9f, 0.0f)};
+  }
+
+  // --fx-test: the hero casts the visual at the nearest enemy at the start of every cycle (once per cycle, so a fixed
+  // --scene-time shows one moment of it).
+  static constexpr float kFxTestCycle = 3.0f;
+  void runFxTest(float time) {
+    if (options_.fxTest.empty() || hero_ < 0) return;
+    const int cycle = static_cast<int>(std::floor(time / kFxTestCycle));
+    if (cycle == fxTestCycle_) return;
+    fxTestCycle_ = cycle;
+    static const char* kKinds[] = {"magicMissile", "lightning", "frost", "cureMinor", "longShot", "piercing", "shock", "doubleStrike"};
+    std::string kind = options_.fxTest;
+    if (kind == "all") kind = kKinds[static_cast<size_t>(cycle) % std::size(kKinds)];
+    const size_t hero = static_cast<size_t>(hero_);
+    int best = -1;
+    float bestDistance = 1e30f;
+    for (size_t i = 0; i < scene_->units.size(); ++i) {
+      if (scene_->units[i].side != (kind == "cureMinor" ? "player" : "enemy") || i == hero) continue;
+      const float d = glm::length(unitWorld(i) - unitWorld(hero));
+      if (d < bestDistance) bestDistance = d, best = static_cast<int>(i);
+    }
+    if (best < 0) return;
+    const float start = static_cast<float>(cycle) * kFxTestCycle;
+    std::vector<SpellEffects::Spot> spots{unitSpot(static_cast<size_t>(best))};
+    if (kind == "frost" || kind == "piercing") {
+      // A line of hexes from the hero through the target (three more hexes beyond it).
+      const glm::vec3 a = unitWorld(hero), b = unitWorld(static_cast<size_t>(best));
+      for (int k = 1; k <= 3; ++k) {
+        const glm::vec3 p = b + (b - a) * (0.35f * static_cast<float>(k)) / std::max(glm::length(b - a), 1e-3f) * 1.73f;
+        spots.push_back({{p.x, groundAt(p.x, p.z), p.z}, {p.x, groundAt(p.x, p.z) + 0.9f, p.z}});
+      }
+    }
+    logInfo("fx test: {} at {:.1f} s", kind, start);
+    spellFx_.cast(kind, unitSpot(hero), spots, start, start + 0.6f);
+    if (kind == "doubleStrike" || kind == "longShot" || kind == "piercing") spellFx_.strike(spots.front(), start + 0.6f, cycle % 2 == 0);
   }
 
   bool hasPose(size_t ui, const std::string& pose) const {
@@ -1829,6 +1913,12 @@ class MapStage final : public Stage {
         e2::resolveStep(*battle_, s, rng_, fx);
       }
       showEffects(fx);
+      // A blow that landed (a weapon, an arrow, a blade skill): sparks on the struck body. Magic brings its own burst.
+      const bool magic = s.type == e2::BattleStep::Type::Spell && s.kind != "longShot" && s.kind != "piercing" && s.kind != "piercingThrust";
+      for (const e2::BattleEffect& e : fx) {
+        const int ui = sceneUnitOf(static_cast<int>(e.unit));
+        if (ui >= 0 && !e.miss && !e.heal && !magic) spellFx_.strike(unitSpot(static_cast<size_t>(ui)), now_, e.crit);
+      }
     }
     if (now_ < x.end) return;
     if (s.type == e2::BattleStep::Type::Combat && !x.counter && e2::strikesBack(*battle_, s)) {
@@ -2795,6 +2885,10 @@ class MapStage final : public Stage {
   UploadQueue uploads_;
   BoardGround ground_;
   SpriteSystem sprites_;
+  SpellEffects spellFx_{sprites_};  // spell and strike visuals (the fx clips)
+  std::vector<EffectInstance> effectList_;
+  std::vector<SpellEffects::Light> fxLights_;
+  int fxTestCycle_ = -1;
   MeshScene meshes_;
   AssetManager& assets_;
   std::optional<e2::SceneData> scene_;

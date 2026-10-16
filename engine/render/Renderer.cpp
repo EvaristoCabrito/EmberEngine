@@ -76,6 +76,16 @@ struct SpritePush {
   VkDeviceAddress frame;  // MeshFrame: scene lighting for lit cards
 };
 
+struct EffectPush {
+  VkDeviceAddress instances;
+  VkDeviceAddress frame;
+  uint32_t sampler;
+  uint32_t depthTexture;
+  float brightness;
+  uint32_t pad;
+};
+static_assert(sizeof(EffectInstance) == 96);
+
 struct WaterPush {
   VkDeviceAddress frame;
   VkDeviceAddress vertices;
@@ -288,6 +298,7 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
     VkSemaphoreCreateInfo semaphoreInfo{VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
     VK_CHECK(vkCreateSemaphore(context.device, &semaphoreInfo, nullptr, &frame.imageAcquired));
     frame.sprites = createHostBuffer(context, sizeof(SpriteInstance) * kMaxSprites, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    frame.effects = createHostBuffer(context, sizeof(EffectInstance) * kMaxEffects, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     frame.meshFrame = createDeviceBuffer(context, sizeof(MeshFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     frame.shadowFrame = createDeviceBuffer(context, sizeof(MeshFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     frame.lights = createHostBuffer(context, sizeof(LocalLight) * kMaxLights, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
@@ -448,6 +459,18 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   sprites.premultipliedAlpha = true;
   spritePipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), sprites);
 
+  // Spell effects: over everything, depth-tested against it (read-only depth, also sampled for the soft fade).
+  GraphicsPipelineDesc effects;
+  effects.vertexShader = "effects.VSMain";
+  effects.fragmentShader = "effects.PSMain";
+  effects.colorFormats = {kSceneColorFormat};
+  effects.depthFormat = kDepthFormat;
+  effects.depthTest = true;
+  effects.depthWrite = false;
+  effects.alphaBlend = true;
+  effects.premultipliedAlpha = true;
+  effectPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), effects);
+
   // Mesh passes.
   const VkPipelineLayout layout = bindless_.pipelineLayout();
   cullInstancesPipeline_ = createComputePipeline(context, layout, "cull.CSInstancesEarly");
@@ -560,6 +583,7 @@ Renderer::~Renderer() {
   vkDestroyPipeline(context_.device, spriteShadowPipeline_, nullptr);
   vkDestroySampler(context_.device, shadowSampler_, nullptr);
   vkDestroyPipeline(context_.device, spritePipeline_, nullptr);
+  vkDestroyPipeline(context_.device, effectPipeline_, nullptr);
   for (VkPipeline p : {cullInstancesPipeline_, cullInstancesLatePipeline_, hizPipeline_, cullPreparePipeline_,
                        cullTraversePipeline_, cullPrepareDrawPipeline_, meshletPipeline_, resolvePipeline_, skyPipeline_})
     vkDestroyPipeline(context_.device, p, nullptr);
@@ -577,6 +601,7 @@ Renderer::~Renderer() {
     vkDestroyFence(context_.device, frame.done, nullptr);
     vkDestroyCommandPool(context_.device, frame.pool, nullptr);
     destroyBuffer(context_, frame.sprites);
+    destroyBuffer(context_, frame.effects);
     destroyBuffer(context_, frame.meshFrame);
     destroyBuffer(context_, frame.meshCounters);
     destroyBuffer(context_, frame.shadowFrame);
@@ -1206,6 +1231,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   const uint32_t frameScope = gpuTimer_.begin(cmd, "frame");
   // This frame's cards (host-visible): read by the card shadow pass and the scene pass.
   if (hasScene_ && !sprites_.empty()) std::memcpy(frame.sprites.mapped, sprites_.data(), sprites_.size() * sizeof(SpriteInstance));
+  if (hasScene_ && !effects_.empty()) std::memcpy(frame.effects.mapped, effects_.data(), effects_.size() * sizeof(EffectInstance));
   // --- Fog bank noise: made once, uploaded on first use --------------------------------------------------
   if (fogBank_.enabled && !fogLooks().empty()) {
     const size_t kind = static_cast<size_t>(fogLooks()[std::min<size_t>(fogBank_.look, fogLooks().size() - 1)].noise);
@@ -1529,6 +1555,45 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   vkCmdEndRendering(cmd);
   gpuTimer_.end(cmd, sceneScope);
 
+  // --- Spell effects: over the finished surfaces, depth read-only (tested and sampled for the soft fade) -----------
+  const bool effects = hasScene_ && !effects_.empty();
+  if (effects) {
+    const uint32_t effectScope = gpuTimer_.begin(cmd, "effects");
+    transition(cmd, depth_.image, depth_.aspect,
+               {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+                VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                  VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
+    VkRenderingAttachmentInfo fxColor{VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
+    fxColor.imageView = sceneColor_.view;
+    fxColor.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    fxColor.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    fxColor.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    VkRenderingAttachmentInfo fxDepth{VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
+    fxDepth.imageView = depth_.view;
+    fxDepth.imageLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+    fxDepth.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    fxDepth.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
+    VkRenderingInfo fxPass{VK_STRUCTURE_TYPE_RENDERING_INFO};
+    fxPass.renderArea = {{0, 0}, size_};
+    fxPass.layerCount = 1;
+    fxPass.colorAttachmentCount = 1;
+    fxPass.pColorAttachments = &fxColor;
+    fxPass.pDepthAttachment = &fxDepth;
+    vkCmdBeginRendering(cmd, &fxPass);
+    setViewport(cmd, size_);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, effectPipeline_);
+    const EffectPush effectPush{bufferAddress(context_, frame.effects), bufferAddress(context_, frame.meshFrame), spriteSamplerIndex_,
+                                depthIndex_, effectBrightness_, 0};
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(effectPush), &effectPush);
+    vkCmdDraw(cmd, 6, static_cast<uint32_t>(effects_.size()), 0, 0);
+    vkCmdEndRendering(cmd);
+    gpuTimer_.end(cmd, effectScope);
+  }
+
   // --- Fog bank (fog of war): marched at half resolution, composited over the finished scene ---------------
   const bool bank = hasScene_ && bankThisFrame_;
   if (bank) {
@@ -1538,7 +1603,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
                 VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
                 VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
     transition(cmd, depth_.image, depth_.aspect,
-               {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+               {effects ? VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
                 VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
                 VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
     // Last frame's composite may still read the march result.

@@ -19,6 +19,7 @@ add_library(EmberEngine STATIC
   render/DebugUi.cpp
   render/UiArt.cpp
   render/SpriteSystem.cpp
+  render/SpellEffects.cpp
   render/MeshScene.cpp
   render/BoardGround.cpp
   world/Board.cpp

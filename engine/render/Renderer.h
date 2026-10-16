@@ -10,6 +10,7 @@
 #include "render/Atmosphere.h"
 #include "render/FogLooks.h"
 #include "render/Camera.h"
+#include "render/EffectDraw.h"
 #include "render/MeshScene.h"
 #include "render/SpriteDraw.h"
 #include "rhi/Bindless.h"
@@ -58,6 +59,13 @@ class Renderer {
   // The 3D scene for the next frame: camera and sprite cards (drawn in the given order, so pass them
   // back to front). Without a scene the renderer draws its bring-up triangle.
   void setScene(const Camera& camera, std::span<const SpriteInstance> sprites);
+  // Spell effects for the next frame (render/EffectDraw.h; at most kMaxEffects). `brightness` multiplies every
+  // effect's colour: the light mode's glow rule (display-relative art, scaled like painted flames).
+  void setEffects(std::span<const EffectInstance> effects, float brightness = 1.0f) {
+    effects_.assign(effects.begin(), effects.begin() + std::min<size_t>(effects.size(), kMaxEffects));
+    effectBrightness_ = brightness;
+  }
+  static constexpr uint32_t kMaxEffects = 1u << 13;
   // 3D meshes for the next frame (drawn GPU-driven: culling, cluster LOD, visibility buffer). An empty
   // view draws none.
   // One sun and a sky/ground hemisphere until the sky exists (ARCHITECTURE.md §7.1b). Defaults are the
@@ -215,6 +223,7 @@ class Renderer {
     VkFence done = VK_NULL_HANDLE;
     VkSemaphore imageAcquired = VK_NULL_HANDLE;
     Buffer sprites;  // this frame's SpriteInstance[] (host-visible, read by device address)
+    Buffer effects;  // this frame's EffectInstance[] (host-visible)
     Buffer meshFrame;     // MeshFrame for the mesh passes (device-local, written by vkCmdUpdateBuffer)
     Buffer shadowFrame;   // MeshFrame of the meshes' pass from the sun (when the cached shadow map is redrawn)
     Buffer lights;        // this frame's LocalLight[] (host-visible)
@@ -323,6 +332,9 @@ class Renderer {
   uint32_t lightingLayers_ = 0xFFFFFFFFu;
   TerrainView terrain_;
   VkPipeline spritePipeline_ = VK_NULL_HANDLE;
+  VkPipeline effectPipeline_ = VK_NULL_HANDLE;
+  std::vector<EffectInstance> effects_;
+  float effectBrightness_ = 1.0f;
   VkSampler spriteSampler_ = VK_NULL_HANDLE;
   uint32_t spriteSamplerIndex_ = 0;
 
