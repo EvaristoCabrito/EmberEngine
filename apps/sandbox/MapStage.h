@@ -383,6 +383,7 @@ class MapStage final : public Stage {
       renderer.setGroundMarks(groundMarks_, board_ ? board_->layout().cols : 0, board_ ? board_->layout().rows : 0);
     }
     renderer.setWater(ground_.water(look_));
+    renderer.setWater3d(ground_.water3d(look_));
     renderer.setSunShadowBounds(boardCenter_, boardRadius_);
     renderer.setLightingLayers(layers_);
     {

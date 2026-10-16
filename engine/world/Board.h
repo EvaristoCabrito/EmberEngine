@@ -16,6 +16,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include "world/Water3D.h"
 #include "world/Hex.h"
 
 namespace ember::e2 {
@@ -100,6 +101,8 @@ struct MapDraft {
   // sliders as authored (absent = the time of day's default).
   std::optional<std::string> backgroundImage;
   std::optional<double> sunIntensity, ambientIntensity, bloomSlider;
+  // Ember's 3D water (the Map Editor's Água 3D: waterLevels, waterFootprints, waterPatches, waterVersion).
+  Water3DMap water3d;
 
   static std::optional<MapDraft> load(const std::filesystem::path& mapJson);
   // The same from a draft already in memory (Engine2's MapDraft JSON: the map editor's working copy).

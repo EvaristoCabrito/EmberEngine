@@ -103,6 +103,14 @@ struct WaterPush {
   VkDeviceAddress vertices;
   VkDeviceAddress indices;
 };
+
+struct Water3DPush {  // shaders/water3d.hlsl
+  VkDeviceAddress frame, vertices, indices;
+  uint32_t colorMap, normalMap, roughMap;
+  float color[3];
+  float opacity, normalScale, roughness, modern, v4, repeat;
+};
+static_assert(sizeof(Water3DPush) == 72 && sizeof(Water3DPush) <= Bindless::kPushConstantBytes);
 static_assert(sizeof(SpritePush) <= Bindless::kPushConstantBytes);
 
 constexpr VkShaderStageFlags kPushStages = Bindless::kStages;
@@ -462,6 +470,9 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   water.alphaBlend = true;
   water.premultipliedAlpha = true;
   waterPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), water);
+  water.vertexShader = "water3d.VSMain";
+  water.fragmentShader = "water3d.PSMain";
+  water3dPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), water);
 
   GraphicsPipelineDesc sprites;
   sprites.vertexShader = "sprites.VSMain";
@@ -613,6 +624,7 @@ Renderer::~Renderer() {
   vkDestroyPipeline(context_.device, terrainPipeline_, nullptr);
   vkDestroyPipeline(context_.device, terrainShadowPipeline_, nullptr);
   vkDestroyPipeline(context_.device, waterPipeline_, nullptr);
+  vkDestroyPipeline(context_.device, water3dPipeline_, nullptr);
   bindless_.removeSampledImage(shadowMapIndex_);
   destroyImage(context_, shadowMap_);
   bindless_.removeSampledImage(cardShadowMapIndex_);
@@ -1593,6 +1605,17 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(waterPush), &waterPush);
       vkCmdDraw(cmd, water_.count, 1, 0, 0);
       gpuTimer_.end(cmd, waterScope);
+    }
+    if (terrain_ && water3d_) {
+      // Ember's 3D water (the Map Editor's Agua 3D): transparent, over the ground and the board's water, under the cards.
+      const uint32_t scope = gpuTimer_.begin(cmd, "water3d");
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, water3dPipeline_);
+      const Water3DView& w = water3d_;
+      const Water3DPush push{bufferAddress(context_, frame.meshFrame), w.vertices, w.indices, w.colorMap, w.normalMap, w.roughMap,
+                             {w.color[0], w.color[1], w.color[2]}, w.opacity, w.normalScale, w.roughness, w.modern, w.v4, w.repeat};
+      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+      vkCmdDraw(cmd, w.count, 1, 0, 0);
+      gpuTimer_.end(cmd, scope);
     }
     if (!sprites_.empty()) {
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spritePipeline_);

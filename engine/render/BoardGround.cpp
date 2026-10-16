@@ -66,6 +66,10 @@ BoardGround::~BoardGround() {
     uploads_.cancel(w.vertexUpload);
     uploads_.cancel(w.indexUpload);
   }
+  for (Water3D& w : water3d_) {
+    uploads_.cancel(w.vertexUpload);
+    uploads_.cancel(w.indexUpload);
+  }
   uploads_.cancel(recordUpload_);
   for (auto& [asset, t] : textures_) uploads_.cancel(t->upload);
   vkDeviceWaitIdle(context_.device);  // copies and draws may still use the buffers and images
@@ -79,6 +83,10 @@ BoardGround::~BoardGround() {
     destroyBuffer(context_, m.indexBuffer);
   }
   for (Water& w : water_) {
+    destroyBuffer(context_, w.vertexBuffer);
+    destroyBuffer(context_, w.indexBuffer);
+  }
+  for (Water3D& w : water3d_) {
     destroyBuffer(context_, w.vertexBuffer);
     destroyBuffer(context_, w.indexBuffer);
   }
@@ -159,7 +167,88 @@ bool BoardGround::build(const e2::Board& board) {
     uploads_.enqueue(w.indexUpload);
     stats_.geometryBytes += w.vertices.size() * sizeof(WaterVertexGpu) + w.indices.size() * 4;
   }
+  buildWater3D(board);
   return true;
+}
+
+// Ember's 3D water: Engine2's sheet (world/Water3D, in its battle board's tile frame) moved onto this board. Engine2's
+// battle ground rises 1.5 tile per level, this one 1 (kStep): heights are divided by 1.5, the ground's depth under
+// the water multiplied back. Its textures (public/game/textures/water*/water-*.png) are not in Engine2's repository:
+// the ground pack's own water layer (ground-claude/water) stands in.
+void BoardGround::buildWater3D(const e2::Board& board) {
+  const e2::Water3DMap& map = board.draft().water3d;
+  if (!map.any()) return;
+  const e2::HexLayout& L = board.layout();
+  const double base = board.data().baseLevels * e2::kStep;
+  const double toX = -e2::kSqrt3 * 0.5 - L.ox, toZ = -3.4 - L.oz;  // Engine2 board (x, y) -> this world (x, z)
+  const VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+  for (int i = 0; i < 2; ++i) {
+    const e2::EdgeStyle style = i == 0 ? e2::EdgeStyle::Smooth : e2::EdgeStyle::Hard;
+    // landscape.heightAt(x, -y) in Engine2's tiles
+    const auto ground = [&](double x3, double y3) {
+      return (e2::groundHeightAt(board, style, x3 + toX, -y3 + toZ) - base) / e2::kStep * 1.5;
+    };
+    const e2::Water3DSheet sheet = e2::buildWater3D(map, ground);
+    if (sheet.empty()) continue;
+    Water3D& w = water3d_[i];
+    w.vertices.resize(sheet.coverage.size());
+    for (size_t v = 0; v < w.vertices.size(); ++v) {
+      Water3DVertexGpu& o = w.vertices[v];
+      const float x3 = sheet.position[v * 3], y3 = sheet.position[v * 3 + 1], z3 = sheet.position[v * 3 + 2];
+      o.position[0] = static_cast<float>(x3 + toX);
+      o.position[1] = static_cast<float>(base + z3 / 1.5 * e2::kStep);
+      o.position[2] = static_cast<float>(-y3 + toZ);
+      o.coverage = sheet.coverage[v];
+      o.depth = sheet.depth[v];
+      o.point[0] = x3, o.point[1] = y3;
+      o.pad = 0;
+    }
+    w.indices = sheet.indices;
+    w.vertexBuffer = createDeviceBuffer(context_, w.vertices.size() * sizeof(Water3DVertexGpu), usage, true);
+    w.indexBuffer = createDeviceBuffer(context_, w.indices.size() * sizeof(uint32_t), usage, true);
+    w.vertexUpload = {};
+    w.vertexUpload.buffer = w.vertexBuffer.buffer;
+    w.vertexUpload.data = std::as_bytes(std::span(w.vertices));
+    w.indexUpload = {};
+    w.indexUpload.buffer = w.indexBuffer.buffer;
+    w.indexUpload.data = std::as_bytes(std::span(w.indices));
+    uploads_.enqueue(w.vertexUpload);
+    uploads_.enqueue(w.indexUpload);
+    stats_.geometryBytes += w.vertices.size() * sizeof(Water3DVertexGpu) + w.indices.size() * 4;
+    size_t above = 0;
+    for (const Water3DVertexGpu& o : w.vertices) above += o.coverage >= 0.05f && o.depth > 0.0f ? 1 : 0;
+    logInfo("3D water ({}): {} vertices, {} triangles, {} covered points above the ground", i == 0 ? "smooth" : "hard", w.vertices.size(),
+            w.indices.size() / 3, above);
+  }
+  for (const char* role : {"color", "normal", "rough"}) texture(e2::groundLayerAsset("water", role));
+  stats_.textures = static_cast<uint32_t>(textures_.size());
+  // ThreeWater.setVersion's numbers (colours are sRGB hex)
+  const std::string& v = map.version;
+  const bool v1 = v == "v1", v3 = v == "v3", v4 = v == "v4", modern = !v1;
+  const uint32_t hex = v3 || v4 ? 0xffffffu : modern ? 0xc5d9dbu : 0x278d9eu;
+  for (int k = 0; k < 3; ++k) {
+    const float c = static_cast<float>((hex >> (16 - 8 * k)) & 255u) / 255.0f;
+    water3dMaterial_.color[k] = c <= 0.04045f ? c / 12.92f : std::pow((c + 0.055f) / 1.055f, 2.4f);
+  }
+  water3dMaterial_.opacity = v4 ? 0.9f : v3 ? 0.94f : modern ? 0.92f : 0.8f;
+  water3dMaterial_.normalScale = v4 ? 1.0f : v3 ? 0.9f : modern ? 0.72f : 0.48f;
+  water3dMaterial_.roughness = v4 ? 1.0f : v3 ? 0.9f : modern ? 0.85f : 0.42f;
+  water3dMaterial_.modern = modern ? 1.0f : 0.0f;
+  water3dMaterial_.v4 = v4 ? 1.0f : 0.0f;
+  water3dMaterial_.repeat = v3 ? 0.5f : v4 ? 0.75f : 1.0f;
+}
+
+Water3DView BoardGround::water3d(e2::EdgeStyle style) const {
+  const Water3D& w = water3d_[style == e2::EdgeStyle::Smooth ? 0 : 1];
+  if (!w.vertexBuffer.buffer || !uploads_.finished(w.vertexUpload) || !uploads_.finished(w.indexUpload)) return {};
+  Water3DView view = water3dMaterial_;
+  view.vertices = bufferAddress(context_, w.vertexBuffer);
+  view.indices = bufferAddress(context_, w.indexBuffer);
+  view.count = static_cast<uint32_t>(w.indices.size());
+  view.colorMap = textureIndex(e2::groundLayerAsset("water", "color"));
+  view.normalMap = textureIndex(e2::groundLayerAsset("water", "normal"));
+  view.roughMap = textureIndex(e2::groundLayerAsset("water", "rough"));
+  return view;
 }
 
 void BoardGround::pack(const e2::GroundGeometry& g, const std::vector<int>& palette, Mesh& out) {
@@ -252,6 +341,9 @@ void BoardGround::update() {
     for (const ImageUpload* u : {&m.vertexUpload, &m.indexUpload})
       if (u->buffer && uploads_.finished(*u)) uploadWaitValue_ = std::max(uploadWaitValue_, u->signalValue);
   for (const Water& w : water_)
+    for (const ImageUpload* u : {&w.vertexUpload, &w.indexUpload})
+      if (u->buffer && uploads_.finished(*u)) uploadWaitValue_ = std::max(uploadWaitValue_, u->signalValue);
+  for (const Water3D& w : water3d_)
     for (const ImageUpload* u : {&w.vertexUpload, &w.indexUpload})
       if (u->buffer && uploads_.finished(*u)) uploadWaitValue_ = std::max(uploadWaitValue_, u->signalValue);
   // Every texture resident: the record gets its bindless indices and goes up once.

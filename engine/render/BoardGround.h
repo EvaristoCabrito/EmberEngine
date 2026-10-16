@@ -52,6 +52,26 @@ struct WaterView {
   explicit operator bool() const { return vertices != 0 && count != 0; }
 };
 
+// Ember's 3D water (world/Water3D: the Map Editor's Agua 3D), in this board's world, and Engine2's material
+// numbers for the map's water version (ThreeWater.setVersion).
+struct Water3DVertexGpu {
+  float position[3];  // the still surface
+  float coverage;     // brush coverage (edges fade, < 0.05 not drawn)
+  float depth;        // above the ground, in Engine2 tiles (shore foam)
+  float point[2];     // Engine2's tile frame (x, -y): waves and patterns
+  float pad;
+};
+static_assert(sizeof(Water3DVertexGpu) == 32);
+
+struct Water3DView {
+  VkDeviceAddress vertices = 0, indices = 0;
+  uint32_t count = 0;  // indices
+  uint32_t colorMap = 0, normalMap = 0, roughMap = 0;  // bindless
+  float color[3]{};    // linear
+  float opacity = 0, normalScale = 0, roughness = 0, modern = 0, v4 = 0, repeat = 1;
+  explicit operator bool() const { return vertices != 0 && count != 0; }
+};
+
 // What the renderer draws (device addresses; empty until everything is resident).
 struct TerrainView {
   VkDeviceAddress record = 0, vertices = 0, indices = 0;
@@ -78,6 +98,7 @@ class BoardGround {
   uint32_t textureIndex(const std::string& asset) const;  // bindless; kNoTextureIndex until resident
   TerrainView view(e2::EdgeStyle style) const;
   WaterView water(e2::EdgeStyle style) const;  // empty when the map has none
+  Water3DView water3d(e2::EdgeStyle style) const;  // empty when the map has no 3D water
   // The renderer must wait for this upload-timeline value before drawing the ground.
   uint64_t uploadWaitValue() const { return uploadWaitValue_; }
 
@@ -107,6 +128,7 @@ class BoardGround {
   void texture(const std::string& asset);  // requests it once
   void pack(const e2::GroundGeometry& g, const std::vector<int>& palette, Mesh& out);
   void upload(Mesh& mesh);
+  void buildWater3D(const e2::Board& board);
   void updateTexture(Texture& t);
 
   VulkanContext& context_;
@@ -127,6 +149,14 @@ class BoardGround {
     ImageUpload vertexUpload, indexUpload;
   };
   Water water_[2];
+  struct Water3D {
+    std::vector<Water3DVertexGpu> vertices;
+    std::vector<uint32_t> indices;
+    Buffer vertexBuffer, indexBuffer;
+    ImageUpload vertexUpload, indexUpload;
+  };
+  Water3D water3d_[2];  // smooth, hard (tabletop uses hard's)
+  Water3DView water3dMaterial_;
   uint64_t uploadWaitValue_ = 0;
   Stats stats_;
 };

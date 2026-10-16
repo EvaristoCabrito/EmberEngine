@@ -172,6 +172,8 @@ class Renderer {
   }
   // The board's water (BoardGround::water); empty = none.
   void setWater(const WaterView& water) { water_ = water; }
+  // Ember's 3D water (BoardGround::water3d); empty = none.
+  void setWater3d(const Water3DView& water) { water3d_ = water; }
   // Local lights for the next frame (at most kMaxLights; the rest are dropped).
   void setLights(std::span<const LocalLight> lights) { lights_.assign(lights.begin(), lights.begin() + std::min<size_t>(lights.size(), kMaxLights)); }
   static constexpr uint32_t kMaxLights = 1024;
@@ -296,6 +298,7 @@ class Renderer {
   VkPipeline terrainPipeline_ = VK_NULL_HANDLE;
   VkPipeline terrainShadowPipeline_ = VK_NULL_HANDLE;
   VkPipeline waterPipeline_ = VK_NULL_HANDLE;
+  VkPipeline water3dPipeline_ = VK_NULL_HANDLE;
   VkPipeline meshShadowPipeline_ = VK_NULL_HANDLE, spriteShadowPipeline_ = VK_NULL_HANDLE, lightsPipeline_ = VK_NULL_HANDLE;
   std::vector<LocalLight> lights_;
   float bloom_ = 0.0f;
@@ -344,6 +347,7 @@ class Renderer {
   uint32_t fogMaskIndex_ = kNoIndex;
   float fogSight(glm::vec3 position) const;  // 1 = in sight .. 0 = remembered or never seen (lighting.hlsli)
   WaterView water_;
+  Water3DView water3d_;
   Image shadowMap_;
   uint32_t shadowMapIndex_ = kNoIndex;
   VkSampler shadowSampler_ = VK_NULL_HANDLE;
