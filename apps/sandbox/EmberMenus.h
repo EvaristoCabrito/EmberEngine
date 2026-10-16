@@ -476,7 +476,7 @@ class HelpModal {
 
     // Entendi: Button md primary, full width
     ImGui::SetCursorScreenPos({a.x + pad, b.y - pad - buttonH});
-    if (emberButton("##helpok", d.value("close", tr("Entendi")), {inner, buttonH}, Btn::Primary, false, 14.0f)) open_ = false;
+    if (emberButton("##helpok", d.value("close", tr("Entendi")), {inner, buttonH}, Btn::Primary, false, 20.0f)) open_ = false;
     ImGui::End();
     ImGui::PopStyleColor();
     ImGui::PopStyleVar(2);
