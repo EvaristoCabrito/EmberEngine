@@ -127,6 +127,7 @@ struct MapStageOptions {
   int fogLook = 3;  // the fog look shown first (render/FogLooks.h numbers)
   int gridLook = 2;  // the panel's "Grade" at the start: 0 OFF, 1 antiga (the marks), 2 = look 001 (--grid-look N)
   int cardStance = 1;  // the panel's "Cards" at the start: 0 em pé (vertical), 1 para a câmera (--cards N)
+  int barsFade = 1;    // the panel's "Vida perto" at the start: 0 OFF, 1 bars near the camera fade (--bars-fade N)
   // Atmosfera volumétrica v1: the panel's "Atmosfera" at the start (0 OFF, 1 cinema, 2 alta, 3 desempenho; --atmos N).
   // ON by default at "alta" (user, 2026-10-16: "padrão on"); the choice stays in the panel.
   int atmos = 2;
@@ -213,6 +214,7 @@ class MapStage final : public Stage {
     atmosChoice_ = std::clamp(options.atmos, 0, 3);
     gridLook_ = std::clamp(options.gridLook, 0, 2);
     cardStance_ = std::clamp(options.cardStance, 0, 1);
+    barsFade_ = std::clamp(options.barsFade, 0, 1);
     spellsMenu_.load("content/fx/spell-looks.json", "content/fx.sprites.json");
     layers_ = options.layers;
     data_ = e2::BoardData::load(options.boardData);
@@ -840,6 +842,10 @@ class MapStage final : public Stage {
       // The battle grid: the old marks, or a saved look (looks/grid/README.md).
       static const char* kGrid[3] = {"OFF", "antiga", "001"};
       dropdown("Grade", gridLook_, 3, [](int i) { return std::string(kGrid[i]); });
+      // Health bars and numbers of the units near the camera: shown always, or fading away as their card fills the
+      // screen (drawHealthBars).
+      static const char* kBars[2] = {"OFF", "somem"};
+      dropdown("Vida perto", barsFade_, 2, [](int i) { return std::string(kBars[i]); });
     }
     if (board_ && board_->draft().water3d.any()) {
       static const char* kWater3d[3] = {"OFF", "rio", "leito"};
@@ -3327,6 +3333,21 @@ class MapStage final : public Stage {
       const std::optional<ImVec2> side = screenOf(head + glm::vec3(1.0f, 0.0f, 0.0f), w, h);
       const std::optional<ImVec2> deep = screenOf(head + glm::vec3(0.0f, 0.0f, 1.0f), w, h);
       if (!at || !side || !deep) continue;
+      // Near the camera the bar and the number would block the view (the user, 2026-10-16): a unit whose card fills
+      // more than kBarsFadeFrom of the screen's height fades them, gone at kBarsFadeTo; back as it moves away.
+      float near = 1.0f;
+      if (barsFade_ == 1) {
+        const std::optional<ImVec2> feet = screenOf(c.origin, w, h);
+        if (feet) {
+          const float share = std::abs(feet->y - at->y) / std::max(h, 1.0f);
+          near = 1.0f - glm::smoothstep(kBarsFadeFrom, kBarsFadeTo, share);
+        }
+      }
+      if (near <= 0.01f) continue;
+      auto faded = [near](ImU32 color) {
+        const ImU32 a = static_cast<ImU32>(std::round(static_cast<float>(color >> IM_COL32_A_SHIFT) * near));
+        return (color & ~IM_COL32_A_MASK) | (a << IM_COL32_A_SHIFT);
+      };
       const float px = std::max(std::hypot(side->x - at->x, side->y - at->y), std::hypot(deep->x - at->x, deep->y - at->y));
       const float cell = px * 1.7320508f;
       const float gap = cell * 0.12f;
@@ -3334,11 +3355,11 @@ class MapStage final : public Stage {
       const float height = std::max(3.0f, cell * 0.07f);
       const float left = at->x - width * 0.5f, top = at->y - gap - height;
       const int alpha = u.moved && u.side == "player" ? 230 : 255;
-      dl->AddRectFilled({left - 1, top - 1}, {left + width + 1, top + height + 1}, IM_COL32(12, 11, 10, 209 * alpha / 255));
-      dl->AddRectFilled({left, top}, {left + width, top + height}, IM_COL32(44, 40, 36, alpha));
+      dl->AddRectFilled({left - 1, top - 1}, {left + width + 1, top + height + 1}, faded(IM_COL32(12, 11, 10, 209 * alpha / 255)));
+      dl->AddRectFilled({left, top}, {left + width, top + height}, faded(IM_COL32(44, 40, 36, alpha)));
       const ImU32 fill = u.side == "player" ? IM_COL32(200, 196, 188, alpha) : u.side == "neutral" ? IM_COL32(95, 158, 82, alpha) : IM_COL32(181, 74, 50, alpha);
       const float f = u.maxHp > 0 ? std::clamp(static_cast<float>(u.hp) / static_cast<float>(u.maxHp), 0.0f, 1.0f) : 0.0f;
-      if (f > 0.0f) dl->AddRectFilled({left, top}, {left + width * f, top + height}, fill);
+      if (f > 0.0f) dl->AddRectFilled({left, top}, {left + width * f, top + height}, faded(fill));
       if (cell >= 32.0f) {
         ImFont* font = uiFont(UiFont::Ui);
         const float size = std::max(13.0f, std::round(cell * 0.3f));
@@ -3347,8 +3368,8 @@ class MapStage final : public Stage {
         const ImVec2 p{at->x - t.x * 0.5f, top - 1.0f - t.y};
         for (int dx = -1; dx <= 1; ++dx)
           for (int dy = -1; dy <= 1; ++dy)
-            if (dx || dy) dl->AddText(font, size, {p.x + dx, p.y + dy}, IM_COL32(12, 11, 10, 230), hp.c_str());
-        dl->AddText(font, size, p, IM_COL32(240, 235, 227, 255), hp.c_str());
+            if (dx || dy) dl->AddText(font, size, {p.x + dx, p.y + dy}, faded(IM_COL32(12, 11, 10, 230)), hp.c_str());
+        dl->AddText(font, size, p, faded(IM_COL32(240, 235, 227, 255)), hp.c_str());
       }
     }
   }
@@ -4076,6 +4097,8 @@ class MapStage final : public Stage {
   std::vector<Renderer::GridCell> gridCells_;      // ... for the numbered looks (collectGrid)
   int gridLook_ = 2;  // panel "Grade": 0 OFF, 1 antiga (the marks), 2.. = look 001.. (looks/grid/README.md)
   int cardStance_ = 1;  // panel "Cards": 0 em pé (vertical), 1 para a câmera (leaning back with the tilt, upright on screen)
+  int barsFade_ = 1;    // panel "Vida perto": 0 OFF (bars always shown), 1 the bars of units near the camera fade away
+  static constexpr float kBarsFadeFrom = 0.30f, kBarsFadeTo = 0.45f;  // the card's share of the screen's height
   // Engine2 DIR_ACTION_WALK: sprites whose walks are drawn for each side, never mirrored while moving.
   inline static const std::unordered_set<std::string> kDirectionalWalk = {"aldric", "defaultLancer", "lancer", "sandoval", "theButcher",
       "familiar2", "familiar3", "cultist-v2", "militia-v2", "salazar", "cobalt-blue-deer", "neera"};
