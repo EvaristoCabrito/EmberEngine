@@ -460,10 +460,17 @@ everything", the C++ one was "awful")
   <commit> -- <your files>` so its next commit does not carry stale copies of them.
 - **Decor "crooked" (the user, 2026-10-16, two screenshots: chest / wheel / fences leaning):** cards stand vertical
   (sprites.hlsl VSMain `up = (0,1,0)`), so under the pitched camera their verticals converge (keystone): at the
-  screen's sides a card's top leans toward the centre, ~11 deg at the edge of the 30 deg lens at a 25 deg tilt. The fix
-  on the table (NOT built, awaiting "faz"): the card's up = world up projected onto the image plane (the card leans back
-  by the camera's tilt, feet in place; every card projects upright anywhere on screen, ~10% taller than now at 25 deg;
-  the sun-shadow card pass keeps its own orientation). Own-axis cards (fences) take the same up.
+  screen's sides a card's top leans toward the centre, ~11 deg at the edge of the 30 deg lens at a 25 deg tilt. **Built on
+  the user's "faz" (2026-10-16 evening):** the card's up = world up projected onto the image plane (sprites.hlsl VSMain,
+  `SpritePush` cameraForward + lean, `Renderer::setCardLean`): the card leans back by the camera's tilt, feet in place,
+  upright anywhere on screen, ~10% taller at 25 deg; own-axis cards (fences) take the same up; flat cards (Tática) and
+  the sun-shadow card pass (turned to the sun, vertical) unchanged; picking, health bars and popups follow
+  (`MapStage::cardUp`). Panel "Cards": em pé / para a câmera (default); `--cards 0|1`. Verified: debug + validation
+  captures exit 0 (both stances at the screen's edge: `captures/cards/`); release built in the worktree and placed for
+  JOGAR. Not verified: the look in the window; tall cards leaning into 3D pieces behind them at steep tilts.
+- **The user asked (2026-10-16, question only, no "faz"):** health bars and numbers block the view at some angles; what
+  options to hide them while the camera moves, or only those near the camera. Options given in the answer (fade by
+  distance to the eye, fade while the camera moves, hide behind a hold key / the active unit only). Nothing built.
 
 ## Next
 
