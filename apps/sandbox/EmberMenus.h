@@ -448,7 +448,7 @@ class HelpModal {
       const int c = static_cast<int>(i) % cols, r = static_cast<int>(i) / cols;
       ImGui::SetCursorScreenPos({a.x + pad + c * (tabW + 4.0f), tabY + r * (tabsH + 4.0f)});
       ImGui::PushID(static_cast<int>(i));
-      if (emberButton("##tab", tabs[i].value("label", std::string()), {tabW, tabsH}, static_cast<int>(i) == tab_ ? Btn::Primary : Btn::Ghost, true, 12.0f) &&
+      if (emberButton("##tab", tabs[i].value("label", std::string()), {tabW, tabsH}, static_cast<int>(i) == tab_ ? Btn::Primary : Btn::Ghost, true, 16.0f) &&
           tab_ != static_cast<int>(i))
         tab_ = static_cast<int>(i), scrollTop_ = true;
       ImGui::PopID();
