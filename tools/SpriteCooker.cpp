@@ -16,8 +16,6 @@
 #include <fstream>
 #include <mutex>
 
-#include <nlohmann/json.hpp>
-
 #include "core/Jobs.h"
 #include "core/Log.h"
 
@@ -29,8 +27,6 @@ namespace {
 constexpr uint32_t kCookerVersion = 1;
 // Grid-sheet cells (FrameSpec) are part of the key through their frame names; bump this when their slicing changes.
 constexpr uint32_t kCellVersion = 3;
-// Bump whenever cooked relief pixels change for the same input (the relief chain has its own cache next to the colour's).
-constexpr uint32_t kReliefVersion = 2;  // 2: half resolution (the colour's mips from level 1 on)
 constexpr uint32_t kTrimMargin = 4;      // pixels kept around the visible area (room for filtering)
 constexpr uint32_t kBlocksPerTask = 2048;  // BC7 blocks encoded per job
 
@@ -142,9 +138,7 @@ uint64_t textureKey(const SpriteClipSource& clip, const SpriteCookOptions& optio
 
 // Gives every fully transparent pixel the colour of the nearest visible art (push-pull over a
 // pyramid). Alpha is untouched. Filtering and mips can then never pull black or white into edges.
-// `mask`, when given, says which pixels are art (its alpha > 0) instead of the pixels' own alpha: the relief
-// maps carry height in alpha, so they are dilated by the colour frame's coverage.
-void dilate(uint8_t* pixels, uint32_t width, uint32_t height, const uint8_t* mask = nullptr) {
+void dilate(uint8_t* pixels, uint32_t width, uint32_t height) {
   struct Level {
     uint32_t w, h;
     std::vector<float> sums;  // r*weight, g*weight, b*weight, weight
@@ -152,10 +146,9 @@ void dilate(uint8_t* pixels, uint32_t width, uint32_t height, const uint8_t* mas
   std::vector<Level> levels;
   levels.push_back({width, height, std::vector<float>(size_t{width} * height * 4)});
   bool anyVisible = false, anyHidden = false;
-  const uint8_t* coverage = mask ? mask : pixels;
   for (size_t i = 0; i < size_t{width} * height; ++i) {
     float* s = &levels[0].sums[i * 4];
-    if (coverage[i * 4 + 3] > 0) {
+    if (pixels[i * 4 + 3] > 0) {
       s[0] = pixels[i * 4];
       s[1] = pixels[i * 4 + 1];
       s[2] = pixels[i * 4 + 2];
@@ -196,30 +189,19 @@ void dilate(uint8_t* pixels, uint32_t width, uint32_t height, const uint8_t* mas
   }
   const Level& top = levels[0];
   for (size_t i = 0; i < size_t{width} * height; ++i) {
-    if (coverage[i * 4 + 3] > 0) continue;
+    if (pixels[i * 4 + 3] > 0) continue;
     const float* s = &top.sums[i * 4];
     for (int k = 0; k < 3; ++k) pixels[i * 4 + k] = static_cast<uint8_t>(std::clamp(s[k] / s[3] + 0.5f, 0.0f, 255.0f));
   }
 }
 
-// The relief maps keep every channel (height in alpha) where there is no art: the nearest art's values, so BC7
-// blocks and mips at the edge never mix in the void. Push-pull on all four channels.
-void dilateRelief(uint8_t* pixels, uint32_t width, uint32_t height, const uint8_t* mask) {
-  std::vector<uint8_t> swapped(pixels, pixels + size_t{width} * height * 4);
-  // Dilate x, y, occlusion with the mask; then height, moved into a colour slot.
-  dilate(pixels, width, height, mask);
-  for (size_t i = 0; i < size_t{width} * height; ++i) swapped[i * 4] = pixels[i * 4 + 3];
-  dilate(swapped.data(), width, height, mask);
-  for (size_t i = 0; i < size_t{width} * height; ++i) pixels[i * 4 + 3] = swapped[i * 4];
-}
-
-void bc7Params(Bc7Quality quality, bc7e_scalar::bc7e_compress_block_params& params, bool perceptual = true) {
+void bc7Params(Bc7Quality quality, bc7e_scalar::bc7e_compress_block_params& params) {
   static std::once_flag once;
   std::call_once(once, [] { bc7e_scalar::bc7e_compress_block_init(); });
   switch (quality) {
-    case Bc7Quality::Fast: bc7e_scalar::bc7e_compress_block_params_init_veryfast(&params, perceptual); break;
-    case Bc7Quality::Basic: bc7e_scalar::bc7e_compress_block_params_init_basic(&params, perceptual); break;
-    case Bc7Quality::Slow: bc7e_scalar::bc7e_compress_block_params_init_slow(&params, perceptual); break;
+    case Bc7Quality::Fast: bc7e_scalar::bc7e_compress_block_params_init_veryfast(&params, true); break;
+    case Bc7Quality::Basic: bc7e_scalar::bc7e_compress_block_params_init_basic(&params, true); break;
+    case Bc7Quality::Slow: bc7e_scalar::bc7e_compress_block_params_init_slow(&params, true); break;
   }
 }
 
@@ -287,43 +269,14 @@ bool readLayout(const std::filesystem::path& path, CookedLayout& out) {
 
 std::string assetBase(const std::string& set, const std::string& clip) { return normalizeAssetPath("sprites/" + set + "/" + clip); }
 
-// Loads one file per frame (a plain RGBA8 image, no cell or alpha rules), for the relief maps.
-bool loadPlainImage(const std::filesystem::path& file, Rgba8Image& out) {
-  int w = 0, h = 0, n = 0;
-  uint8_t* data = stbi_load(file.string().c_str(), &w, &h, &n, 4);
-  if (!data) return false;
-  out.width = static_cast<uint32_t>(w);
-  out.height = static_cast<uint32_t>(h);
-  out.pixels.assign(data, data + size_t{out.width} * out.height * 4);
-  stbi_image_free(data);
-  return true;
-}
-
-// Puts every frame of a clip on one canvas: frames drawn at different sizes are placed on the largest one,
-// anchored bottom-centre (where a character's feet are). `sourceW/H` is that canvas.
-void placeOnCanvas(std::vector<Rgba8Image>& frames, uint32_t& sourceW, uint32_t& sourceH, bool& resized) {
-  sourceW = sourceH = 0;
-  resized = false;
-  for (const Rgba8Image& frame : frames) {
-    sourceW = std::max(sourceW, frame.width);
-    sourceH = std::max(sourceH, frame.height);
-  }
-  for (Rgba8Image& frame : frames) {
-    if (frame.width == sourceW && frame.height == sourceH) continue;
-    resized = true;
-    std::vector<uint8_t> canvas(size_t{sourceW} * sourceH * 4, 0);
-    const uint32_t ox = (sourceW - frame.width) / 2, oy = sourceH - frame.height;
-    for (uint32_t y = 0; y < frame.height; ++y)
-      std::memcpy(&canvas[(size_t{y + oy} * sourceW + ox) * 4], &frame.pixels[size_t{y} * frame.width * 4], size_t{frame.width} * 4);
-    frame = {sourceW, sourceH, std::move(canvas)};
-  }
-}
-
-// Loads every frame of a clip onto its canvas (loadFrame + placeOnCanvas).
-bool loadClipFrames(JobSystem& jobs, const std::string& label, const SpriteClipSource& clip, const SpriteCookOptions& options,
-                    std::vector<Rgba8Image>& frames, uint32_t& sourceW, uint32_t& sourceH) {
+// Cooks one clip's textures into <cache>/<asset>.full / .tail and its layout into .layout.
+bool cookClipTextures(JobSystem& jobs, const std::string& setName, const SpriteClipSource& clip,
+                      const SpriteCookOptions& options, uint64_t key, CookedLayout& layout) {
+  const std::string label = setName + "/" + clip.name;
   const size_t frameCount = clip.frames.size();
-  frames.assign(frameCount, {});
+
+  // 1. Load every frame.
+  std::vector<Rgba8Image> frames(frameCount);
   std::atomic<bool> loadFailed{false};
   jobs.parallelFor(static_cast<uint32_t>(frameCount), 1, [&](uint32_t begin, uint32_t end) {
     for (uint32_t i = begin; i < end; ++i) {
@@ -334,22 +287,24 @@ bool loadClipFrames(JobSystem& jobs, const std::string& label, const SpriteClipS
     }
   });
   if (loadFailed) return false;
-  bool resized = false;
-  placeOnCanvas(frames, sourceW, sourceH, resized);
-  if (resized) logWarn("{}: frames are drawn at different sizes; placed on one {}x{} canvas, feet aligned", label, sourceW, sourceH);
-  return true;
-}
-
-// Cooks one clip's textures into <cache>/<asset>.full / .tail and its layout into .layout.
-bool cookClipTextures(JobSystem& jobs, const std::string& setName, const SpriteClipSource& clip,
-                      const SpriteCookOptions& options, uint64_t key, CookedLayout& layout) {
-  const std::string label = setName + "/" + clip.name;
-  const size_t frameCount = clip.frames.size();
-
-  // 1. Load every frame onto one canvas.
-  std::vector<Rgba8Image> frames;
+  // One clip shares one canvas. Frames drawn at different sizes are placed on the largest one,
+  // anchored bottom-centre (where a character's feet are).
   uint32_t sourceW = 0, sourceH = 0;
-  if (!loadClipFrames(jobs, label, clip, options, frames, sourceW, sourceH)) return false;
+  for (const Rgba8Image& frame : frames) {
+    sourceW = std::max(sourceW, frame.width);
+    sourceH = std::max(sourceH, frame.height);
+  }
+  bool resized = false;
+  for (Rgba8Image& frame : frames) {
+    if (frame.width == sourceW && frame.height == sourceH) continue;
+    resized = true;
+    std::vector<uint8_t> canvas(size_t{sourceW} * sourceH * 4, 0);
+    const uint32_t ox = (sourceW - frame.width) / 2, oy = sourceH - frame.height;
+    for (uint32_t y = 0; y < frame.height; ++y)
+      std::memcpy(&canvas[(size_t{y + oy} * sourceW + ox) * 4], &frame.pixels[size_t{y} * frame.width * 4], size_t{frame.width} * 4);
+    frame = {sourceW, sourceH, std::move(canvas)};
+  }
+  if (resized) logWarn("{}: frames are drawn at different sizes; placed on one {}x{} canvas, feet aligned", label, sourceW, sourceH);
 
   // 2. Trim to the union of visible pixels over the whole clip, so frames keep their places.
   uint32_t x0 = sourceW, y0 = sourceH, x1 = 0, y1 = 0;
@@ -447,185 +402,12 @@ bool cookClipTextures(JobSystem& jobs, const std::string& setName, const SpriteC
          writeFile(std::filesystem::path(base).concat(".layout"), &layout, sizeof(layout));
 }
 
-// --- Relief (tools/scripts/sprites/relief.py): a second chain with the colour's layout -------------------------
-
-std::vector<std::filesystem::path> reliefFiles(const SpriteClipSource& clip, const SpriteCookOptions& options) {
-  std::vector<std::filesystem::path> files;
-  files.reserve(clip.frames.size());
-  for (const std::string& frame : clip.frames) files.push_back(options.reliefDir / spriteReliefPath(frame));
-  return files;
-}
-
-// The relief chain's cache key: the colour key (crop and canvas come from it), the relief files and the version.
-uint64_t reliefKey(uint64_t colourKey, const std::vector<std::filesystem::path>& files) {
-  uint64_t hash = fnv(0xcbf29ce484222325ull, &kReliefVersion, sizeof(kReliefVersion));
-  hash = fnv(hash, &colourKey, sizeof(colourKey));
-  for (const std::filesystem::path& file : files) {
-    std::error_code error;
-    const uint64_t size = std::filesystem::file_size(file, error);
-    const auto time = std::filesystem::last_write_time(file, error).time_since_epoch().count();
-    hash = fnv(hash, &size, sizeof(size));
-    hash = fnv(hash, &time, sizeof(time));
-  }
-  return hash;
-}
-
-// Cooks a clip's relief maps into <cache>/<asset>.rfull / .rtail (the colour chain's layout: same crop, mips and
-// bytes) and the key into .rkey. The colour frames give the coverage the relief is dilated by.
-bool cookClipRelief(JobSystem& jobs, const std::string& setName, const SpriteClipSource& clip, const SpriteCookOptions& options,
-                    const CookedLayout& layout, const std::vector<std::filesystem::path>& files, uint64_t key) {
-  const std::string label = setName + "/" + clip.name;
-  const size_t frameCount = clip.frames.size();
-  std::vector<Rgba8Image> colour, relief(frameCount);
-  uint32_t sourceW = 0, sourceH = 0;
-  if (!loadClipFrames(jobs, label, clip, options, colour, sourceW, sourceH)) return false;
-  if (sourceW != layout.sourceWidth || sourceH != layout.sourceHeight) {
-    logError("{}: relief: the frames no longer match the cooked colour ({}x{} vs {}x{})", label, sourceW, sourceH, layout.sourceWidth,
-             layout.sourceHeight);
-    return false;
-  }
-  std::atomic<bool> failed{false};
-  jobs.parallelFor(static_cast<uint32_t>(frameCount), 1, [&](uint32_t begin, uint32_t end) {
-    for (uint32_t i = begin; i < end; ++i)
-      if (!loadPlainImage(files[i], relief[i])) {
-        logError("{}: relief: cannot read {}", label, files[i].string());
-        failed = true;
-      }
-  });
-  if (failed) return false;
-  // Each relief map is the size of its own frame (before the canvas); place them the same way.
-  bool resized = false;
-  uint32_t rw = 0, rh = 0;
-  placeOnCanvas(relief, rw, rh, resized);
-  if (rw != sourceW || rh != sourceH) {
-    logError("{}: relief maps are {}x{}, the frames {}x{}: regenerate them (relief.py)", label, rw, rh, sourceW, sourceH);
-    return false;
-  }
-
-  const uint32_t width = layout.width, height = layout.height, mipCount = layout.mipCount;
-  const uint32_t contentW = layout.contentWidth, contentH = layout.contentHeight;
-  const uint32_t x0 = static_cast<uint32_t>(layout.cropX), y0 = static_cast<uint32_t>(layout.cropY);
-
-  // Per frame: crop both, dilate the relief by the colour's coverage, build every mip the same way.
-  std::vector<std::vector<Rgba8Image>> mips(frameCount);
-  jobs.parallelFor(static_cast<uint32_t>(frameCount), 1, [&](uint32_t begin, uint32_t end) {
-    for (uint32_t f = begin; f < end; ++f) {
-      Rgba8Image mask, base;
-      mask.width = base.width = width;
-      mask.height = base.height = height;
-      mask.pixels.assign(size_t{width} * height * 4, 0);
-      base.pixels.assign(size_t{width} * height * 4, 0);
-      for (uint32_t y = 0; y < contentH; ++y) {
-        std::memcpy(&mask.pixels[size_t{y} * width * 4], &colour[f].pixels[(size_t{y + y0} * sourceW + x0) * 4], size_t{contentW} * 4);
-        std::memcpy(&base.pixels[size_t{y} * width * 4], &relief[f].pixels[(size_t{y + y0} * sourceW + x0) * 4], size_t{contentW} * 4);
-      }
-      colour[f].pixels = {};
-      relief[f].pixels = {};
-      dilate(mask.pixels.data(), width, height);
-      dilateRelief(base.pixels.data(), width, height, mask.pixels.data());
-      std::vector<Rgba8Image>& chain = mips[f];
-      chain.resize(mipCount);
-      chain[0] = base;
-      for (uint32_t m = 1; m < mipCount; ++m) {
-        Rgba8Image& mip = chain[m];
-        mip.width = std::max(1u, width >> m);
-        mip.height = std::max(1u, height >> m);
-        mip.pixels.resize(size_t{mip.width} * mip.height * 4);
-        // Linear data, no alpha weighting (alpha is height); the coverage mip comes from the colour, as the colour cook makes it.
-        stbir_resize(base.pixels.data(), static_cast<int>(width), static_cast<int>(height), static_cast<int>(width * 4),
-                     mip.pixels.data(), static_cast<int>(mip.width), static_cast<int>(mip.height), static_cast<int>(mip.width * 4),
-                     STBIR_4CHANNEL, STBIR_TYPE_UINT8, STBIR_EDGE_CLAMP, STBIR_FILTER_MITCHELL);
-        Rgba8Image maskMip;
-        maskMip.width = mip.width;
-        maskMip.height = mip.height;
-        maskMip.pixels.resize(size_t{mip.width} * mip.height * 4);
-        stbir_resize(mask.pixels.data(), static_cast<int>(width), static_cast<int>(height), static_cast<int>(width * 4),
-                     maskMip.pixels.data(), static_cast<int>(mip.width), static_cast<int>(mip.height), static_cast<int>(mip.width * 4),
-                     STBIR_RGBA, STBIR_TYPE_UINT8_SRGB, STBIR_EDGE_CLAMP, STBIR_FILTER_MITCHELL);
-        dilateRelief(mip.pixels.data(), mip.width, mip.height, maskMip.pixels.data());
-      }
-    }
-  });
-
-  // BC7 (not perceptual: these are vectors and heights), the colour chain's block order.
-  std::vector<uint64_t> mipOffset(mipCount + 1, 0);
-  for (uint32_t m = 0; m < mipCount; ++m) mipOffset[m + 1] = mipOffset[m] + bc7MipBytes(width, height, m, static_cast<uint32_t>(frameCount));
-  std::vector<uint8_t> data(mipOffset[mipCount]);
-  if (data.size() != layout.fullBytes) {
-    logError("{}: relief: layout mismatch ({} vs {} bytes)", label, data.size(), layout.fullBytes);
-    return false;
-  }
-  struct Task {
-    uint32_t frame, mip, first, count;
-  };
-  std::vector<Task> tasks;
-  for (uint32_t m = 0; m < mipCount; ++m) {
-    const uint32_t blocks = ((std::max(1u, width >> m) + 3) / 4) * ((std::max(1u, height >> m) + 3) / 4);
-    for (uint32_t f = 0; f < frameCount; ++f)
-      for (uint32_t first = 0; first < blocks; first += kBlocksPerTask)
-        tasks.push_back({f, m, first, std::min(kBlocksPerTask, blocks - first)});
-  }
-  bc7e_scalar::bc7e_compress_block_params params;
-  bc7Params(options.quality == Bc7Quality::Slow ? Bc7Quality::Basic : options.quality, params, false);
-  jobs.parallelFor(static_cast<uint32_t>(tasks.size()), 1, [&](uint32_t begin, uint32_t end) {
-    for (uint32_t t = begin; t < end; ++t) {
-      const Task& task = tasks[t];
-      const uint64_t layerBytes = bc7MipBytes(width, height, task.mip, 1);
-      uint8_t* out = data.data() + mipOffset[task.mip] + task.frame * layerBytes + uint64_t{task.first} * kBc7BlockBytes;
-      encodeBlocks(mips[task.frame][task.mip], task.first, task.count, params, out, nullptr);
-    }
-  });
-
-  // Half resolution: the chain from mip 1 on (normals, height and occlusion are smooth; a quarter of the colour's
-  // bytes). The tail starts where the colour's does, or at mip 1 when the colour's tail is the whole chain.
-  if (mipCount < 2) {
-    logWarn("{}: relief: the clip is too small for a half-resolution chain", label);
-    return false;
-  }
-  const std::filesystem::path base = options.cacheDir / assetBase(setName, clip.name);
-  const uint64_t fullStart = mipOffset[1];
-  const uint64_t tailOffset = mipOffset[std::max(layout.tailFirstMip, 1u)];
-  return writeFile(std::filesystem::path(base).concat(".rfull"), data.data() + fullStart, data.size() - fullStart) &&
-         writeFile(std::filesystem::path(base).concat(".rtail"), data.data() + tailOffset, data.size() - tailOffset) &&
-         writeFile(std::filesystem::path(base).concat(".rkey"), &key, sizeof(key));
-}
-
-bool readReliefKey(const std::filesystem::path& path, uint64_t& out) {
-  std::ifstream file(path, std::ios::binary);
-  return file && file.read(reinterpret_cast<char*>(&out), sizeof(out)) && file.gcount() == sizeof(out);
-}
-
 void copyName(char (&out)[48], const std::string& text) {
   std::memset(out, 0, sizeof(out));
   std::memcpy(out, text.data(), std::min(text.size(), sizeof(out) - 1));
 }
 
 }  // namespace
-
-std::string spriteReliefPath(const std::string& frameSpec) {
-  std::string path = frameSpec;
-  for (char& c : path)
-    if (c == '#' || c == ':' || c == '!') c = '_';
-  return path + ".relief.png";
-}
-
-bool writeSpriteFrames(const SpriteManifest& manifest, const std::filesystem::path& out) {
-  nlohmann::json clips = nlohmann::json::array();
-  for (const SpriteSetSource& set : manifest.sets)
-    for (const SpriteClipSource& clip : set.clips) {
-      if (clip.frames.empty()) continue;
-      nlohmann::json frames = nlohmann::json::array();
-      for (const std::string& frame : clip.frames) {
-        const FrameSpec spec = parseFrame(frame);
-        frames.push_back({{"spec", frame}, {"file", spec.file}, {"cols", spec.cols}, {"rows", spec.rows}, {"cell", spec.cell},
-                          {"black", spec.alphaFromBlack}, {"relief", spriteReliefPath(frame)}});
-      }
-      clips.push_back({{"set", set.name}, {"clip", clip.name}, {"frames", std::move(frames)}});
-    }
-  const nlohmann::json doc = {{"version", 1}, {"clips", std::move(clips)}};
-  const std::string text = doc.dump(1);
-  return writeFile(out, text.data(), text.size());
-}
 
 bool writeSpritePreview(const SpriteManifest& manifest, const SpriteCookOptions& options, const std::string& setName,
                         const std::string& clipName, uint32_t frame, const std::filesystem::path& out) {
@@ -747,34 +529,6 @@ bool cookSprites(JobSystem& jobs, const SpriteManifest& manifest, const SpriteCo
       report.sourcePixels += uint64_t{layout.sourceWidth} * layout.sourceHeight * layout.frames;
       report.texturePixels += uint64_t{layout.width} * layout.height * layout.frames;
 
-      // The relief chain, when every frame has its map (relief.py): its own cache next to the colour's.
-      bool relief = false;
-      if (!options.reliefDir.empty()) {
-        const std::vector<std::filesystem::path> files = reliefFiles(clip, options);
-        const bool complete = std::all_of(files.begin(), files.end(), [](const std::filesystem::path& f) { return std::filesystem::exists(f); });
-        if (complete) {
-          const uint64_t rkey = reliefKey(key, files);
-          uint64_t cachedKey = 0;
-          const bool rhit = readReliefKey(std::filesystem::path(cached).concat(".rkey"), cachedKey) && cachedKey == rkey &&
-                            std::filesystem::exists(std::filesystem::path(cached).concat(".rfull")) &&
-                            std::filesystem::exists(std::filesystem::path(cached).concat(".rtail"));
-          if (rhit) {
-            relief = true;
-          } else {
-            const auto reliefStart = std::chrono::steady_clock::now();
-            relief = cookClipRelief(jobs, set.name, clip, options, layout, files, rkey);
-            if (relief) {
-              ++report.reliefCooked;
-              logInfo("cooked relief {}/{}: {} frames, {:.1f}s", set.name, clip.name, layout.frames,
-                      std::chrono::duration<double>(std::chrono::steady_clock::now() - reliefStart).count());
-            } else {
-              logWarn("{}/{}: relief not cooked; the clip stays flat", set.name, clip.name);
-            }
-          }
-        }
-        if (relief) ++report.reliefClips;
-      }
-
       // The header carries timing and pack: rewritten every run, never part of the cache key.
       for (uint32_t copy = 1; copy <= std::max(1u, options.copies); ++copy) {
         const std::string setName = copy == 1 ? set.name : set.name + "~" + std::to_string(copy);
@@ -801,8 +555,6 @@ bool cookSprites(JobSystem& jobs, const SpriteManifest& manifest, const SpriteCo
         header.tailBytes = layout.tailBytes;
         copyName(header.pack, clip.pack);
         copyName(header.name, clip.name);
-        header.reliefFullAsset = relief ? assetId(asset + ".rfull") : 0;
-        header.reliefTailAsset = relief ? assetId(asset + ".rtail") : 0;
         const std::filesystem::path headerFile = std::filesystem::path(options.cacheDir / asset).concat(".clip");
         if (!writeFile(headerFile, &header, sizeof(header))) {
           logError("cannot write {}", headerFile.string());
@@ -811,12 +563,6 @@ bool cookSprites(JobSystem& jobs, const SpriteManifest& manifest, const SpriteCo
         out.push_back({asset + ".clip", headerFile});
         out.push_back({asset + ".full", std::filesystem::path(cached).concat(".full")});
         out.push_back({asset + ".tail", std::filesystem::path(cached).concat(".tail")});
-        if (relief) {
-          out.push_back({asset + ".rfull", std::filesystem::path(cached).concat(".rfull")});
-          out.push_back({asset + ".rtail", std::filesystem::path(cached).concat(".rtail")});
-          report.fullBytes += layout.fullBytes - bc7MipBytes(layout.width, layout.height, 0, layout.frames);
-          report.tailBytes += layout.tailFirstMip == 0 ? layout.tailBytes - bc7MipBytes(layout.width, layout.height, 0, layout.frames) : layout.tailBytes;
-        }
         roster.push_back(assetId(asset + ".clip"));
         report.fullBytes += layout.fullBytes;
         report.tailBytes += layout.tailBytes;

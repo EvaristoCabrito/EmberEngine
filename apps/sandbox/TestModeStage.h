@@ -68,7 +68,7 @@ inline TestSession freshTestSession(const e2::Campaign& campaign) {
 
 class TestModeStage : public Stage {
  public:
-  enum class Screen { Menu, MapChoice, WorldMap, Scenarios, Briefing, DevControls, Sprites3D };
+  enum class Screen { Menu, MapChoice, WorldMap, Scenarios, Briefing, DevControls };
   struct Callbacks {
     std::function<void()> title;                    // Voltar from the menu: the title screen (the session ends)
     std::function<void()> rpgMap;                   // the RPG map with the session's save
@@ -115,7 +115,6 @@ class TestModeStage : public Stage {
     else if (screen_ == Screen::Briefing) screen_ = briefingFrom_;
     else if (screen_ == Screen::Scenarios) screen_ = Screen::WorldMap;
     else if (screen_ == Screen::DevControls) screen_ = Screen::Menu;
-    else if (screen_ == Screen::Sprites3D) screen_ = Screen::DevControls;
     else if (screen_ == Screen::WorldMap) options_ = true;  // OptionsButton escapeKey
   }
 
@@ -135,7 +134,6 @@ class TestModeStage : public Stage {
       case Screen::WorldMap: drawWorldMap(io.DisplaySize); break;
       case Screen::Scenarios: drawScenarios(io.DisplaySize); break;
       case Screen::DevControls: drawDevControls(io.DisplaySize); break;
-      case Screen::Sprites3D: drawSprites3D(io.DisplaySize); break;
       case Screen::Briefing:
         if (briefing_) {
           const int r = drawBriefing(io.DisplaySize, kRem, *briefing_, paths_.engine2Public);
@@ -659,18 +657,6 @@ class TestModeStage : public Stage {
       dl->AddText(sans(), 12.0f, {x + 12, ty + 8}, kMuted, note2);
       y += h + 12;
     }
-    // Ours: the cards' relief features, in their own window.
-    {
-      const char* hint = "Relevo, profundidade por pixel e oclusão dos sprites, cada um com ON e OFF.";
-      const float hintH = sans()->CalcTextSizeA(14.0f, FLT_MAX, w - 40 - 44 - 16, hint).y;
-      const float h = 16 + 20 * 1.25f + 4 + hintH + 16;
-      if (cardButton("##sprites3d", {x, y}, {w, h}, IM_COL32(17, 17, 17, 102), kAccent)) screen_ = Screen::Sprites3D;
-      dl->AddText(display(), 20.0f, {x + 20, y + 16}, kFg, "Sprites 3D");
-      wrapped(dl, sans(), 14.0f, {x + 20, y + 16 + 25 + 4}, kMuted, hint, w - 40 - 44 - 16);
-      const ImVec2 ts = display()->CalcTextSizeA(20.0f, FLT_MAX, 0, "→");
-      dl->AddText(display(), 20.0f, {x + w - 20 - ts.x, y + (h - 25) / 2}, kFg, "→");
-      y += h + 12;
-    }
     caps(dl, {x, y}, 14.0f, kMuted, "Sombras", 0.14f);
     y += 28;
     if (switchRow("##realShadows", x, y, w, "Sombras reais", "Sombra projetada pelo sol (unidades e props).", g.realShadows))
@@ -711,71 +697,6 @@ class TestModeStage : public Stage {
       y += 36 + 12;
     }
     wrapped(dl, sans(), 12.0f, {x, y + 4}, kMuted, "Salvo neste computador. Vale em qualquer combate aberto depois.", w);
-    ImGui::SetCursorScreenPos({x, y + 24});
-    ImGui::Dummy({1, 20});
-    ImGui::EndChild();
-    if (changed && !g.save()) notice_ = "Não foi possível gravar " + DevGfx::path().string() + ".";
-  }
-
-  // --- Sprites 3D (ours): the cards' relief features, each with ON and OFF, so the look and the cost can be weighed -----
-
-  void drawSprites3D(ImVec2 size) {
-    ImDrawList* dl = ImGui::GetWindowDrawList();
-    dl->AddRectFilled({0, 0}, size, kBg);
-    const float headerH = 16 + 40 + 16;
-    dl->AddLine({0, headerH}, {size.x, headerH}, kBorder);
-    if (backButton("##s3dback", {16, 16})) screen_ = Screen::DevControls;
-    caps(dl, {16 + 40 + 12, 17}, 14.0f, kMuted, "Dev Controls", 0.18f);
-    dl->AddText(display(), 30.0f, {16 + 40 + 12, 17 + 20}, kFg, "Sprites 3D");
-    ImGui::SetCursorScreenPos({0, headerH + 1});
-    ImGui::BeginChild("##sprites3d", {size.x, size.y - headerH - 1}, 0, ImGuiWindowFlags_NoBackground);
-    dl = ImGui::GetWindowDrawList();
-    const float w = std::min(768.0f, size.x - 40.0f) - 40.0f;
-    const float x = (size.x - w) * 0.5f;
-    float y = ImGui::GetCursorScreenPos().y + 20;
-    DevGfx& g = devGfx_;
-    bool changed = false;
-    wrapped(dl, sans(), 14.0f, {x, y}, kMuted,
-            "Cada sprite tem um mapa de relevo em meia resolução (normal, profundidade e oclusão por pixel, gerado dos próprios "
-            "frames). Tudo sutil: a pintura continua a pintura. Cada recurso liga e desliga sozinho.",
-            w);
-    y += 52;
-    caps(dl, {x, y}, 14.0f, kMuted, "Recursos", 0.14f);
-    y += 28;
-    if (switchRow("##spNormals", x, y, w, "Relevo (luz por pixel)",
-                  "O sol e as lanternas iluminam cada parte do corpo pela sua normal: ombros pro sol, o lado da luz mais claro.", g.spriteNormals))
-      g.spriteNormals = !g.spriteNormals, changed = true;
-    if (switchRow("##spDepth", x, y, w, "Profundidade por pixel",
-                  "Cada pixel escreve a própria profundidade: o corpo cruza cercas, grama e outros sprites, não o plano.", g.spriteDepth))
-      g.spriteDepth = !g.spriteDepth, changed = true;
-    if (switchRow("##spOcclusion", x, y, w, "Oclusão", "Dobras e cavidades recebem menos luz do céu.", g.spriteOcclusion))
-      g.spriteOcclusion = !g.spriteOcclusion, changed = true;
-    caps(dl, {x, y}, 14.0f, kMuted, "Onde", 0.14f);
-    y += 28;
-    if (switchRow("##spDecor", x, y, w, "Decorações também", "Desligado: só as unidades. Ligado: árvores, cercas, barris e o resto também.",
-                  g.spriteDecor))
-      g.spriteDecor = !g.spriteDecor, changed = true;
-    // Thickness: how far the body stands out of its plane, as a share of the card's width.
-    {
-      const float h = 16 + 25 + 8 + 24 + 16;
-      dl->AddRectFilled({x, y}, {x + w, y + h}, IM_COL32(17, 17, 17, 102));
-      dl->AddRect({x, y}, {x + w, y + h}, kBorder);
-      dl->AddText(display(), 20.0f, {x + 20, y + 16}, kFg, "Espessura do corpo");
-      const char* word = g.spriteThickness < 0.2f ? "fina" : g.spriteThickness < 0.35f ? "normal" : g.spriteThickness < 0.5f ? "média" : "grossa";
-      const ImVec2 vs = display()->CalcTextSizeA(20.0f, FLT_MAX, 0, word);
-      dl->AddText(display(), 20.0f, {x + w - 20 - vs.x, y + 16}, kMuted, word);
-      ImGui::SetCursorScreenPos({x + 20, y + 16 + 25 + 8});
-      ImGui::PushItemWidth(w - 40);
-      ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(74, 74, 74, 255));
-      ImGui::PushStyleColor(ImGuiCol_SliderGrab, kAccent);
-      ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, kFg);
-      if (ImGui::SliderFloat("##spThickness", &g.spriteThickness, 0.1f, 0.6f, "", ImGuiSliderFlags_AlwaysClamp)) changed = true;
-      ImGui::PopStyleColor(3);
-      ImGui::PopItemWidth();
-      y += h + 12;
-    }
-    wrapped(dl, sans(), 12.0f, {x, y + 4}, kMuted,
-            "Salvo neste computador. Vale em qualquer combate aberto depois; num combate aberto, Opções → Gráficos aplica na hora.", w);
     ImGui::SetCursorScreenPos({x, y + 24});
     ImGui::Dummy({1, 20});
     ImGui::EndChild();

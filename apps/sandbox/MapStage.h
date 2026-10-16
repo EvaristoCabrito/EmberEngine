@@ -950,9 +950,6 @@ class MapStage final : public Stage {
     layers_ = g.realShadows ? layers_ | 2u : layers_ & ~2u;
     layers_ = g.localLights ? layers_ | 8u : layers_ & ~8u;
     options_.volume = g.atmosphericFx, options_.airParticles = g.atmosphericFx;
-    // Sprites 3D: the features on the cards, and no relief streamed at all while every one is off.
-    renderer_.setSpriteFeatures(g.spriteFeatures(), g.spriteThickness);
-    sprites_.setReliefWanted((g.spriteFeatures() & 63u) != 0);
   }
   // --- Save / Load in battle (GameApp's battle menu Save and Load, Engine2's BattleSnapshot) ---
   // The campaign this fight belongs to: its slots, the campaign mission id and the map's key (a fight saved on another
@@ -1361,7 +1358,6 @@ class MapStage final : public Stage {
     s.width = w * c.contentWidth / sw;
     s.height = h * c.contentHeight / sh;
     s.textureIndex = tex.index;
-    s.reliefIndex = tex.relief;
     s.layer = std::min(frame, c.frames - 1);
     s.flags = flags | (mirror ? kSpriteMirrored : 0u);
     s.uvScale = {static_cast<float>(c.contentWidth) / c.width, static_cast<float>(c.contentHeight) / c.height};

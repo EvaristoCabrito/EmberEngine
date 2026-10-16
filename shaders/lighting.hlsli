@@ -34,7 +34,6 @@ struct Surface {
   float receivesCardShadow; // 1 = cards' shadows too, 0 = only the ground's and 3D pieces' (cards themselves)
   float twoSidedLocal;     // 1 = local lights reach it from both sides (a character card stands for a body)
   float3 sightAt;          // where the fog of war is read (the surface itself; a card: its foot, so it is seen whole)
-  float sunVisibility;     // the sun seen from the surface itself (a card's own relief shadowing it), 1 = whole
 };
 
 Surface defaultSurface(float3 position, float3 normal, float3 albedo) {
@@ -53,7 +52,6 @@ Surface defaultSurface(float3 position, float3 normal, float3 albedo) {
   s.receivesCardShadow = 1.0;
   s.twoSidedLocal = 0.0;
   s.sightAt = position;
-  s.sunVisibility = 1.0;
   return s;
 }
 
@@ -213,7 +211,7 @@ float3 shadeInSight(MeshFrame f, Surface s, Sight sight) {
     const float nlDiffuse = saturate((nlRaw + s.wrap) / (1.0 + s.wrap));
     if (nlDiffuse > 0.0) {
       const float3 F = fresnelSchlick(f0, vh) * s.specular;
-      const float shadow = (s.receivesShadow > 0.0 ? lerp(1.0, sunShadow(f, s), s.receivesShadow) : 1.0) * s.sunVisibility;
+      const float shadow = s.receivesShadow > 0.0 ? lerp(1.0, sunShadow(f, s), s.receivesShadow) : 1.0;
       color += (diffuseColor * (1.0 - F) / kPi * nlDiffuse + F * ggx(nh, a) * smithVisibility(nv, nl, a) * nl) * f.sunColor *
                f.sunIntensity * shadow;
     }

@@ -12,12 +12,7 @@ namespace ember {
 //   sprites/<set>/<clip>.clip   SpriteClipHeader: placement, timing, texture layout
 //   sprites/<set>/<clip>.tail   BC7 blocks of the small mips (largest side <= kSpriteTailSize), always resident
 //   sprites/<set>/<clip>.full   BC7 blocks of the whole mip chain, streamed on demand
-// and, for a clip cooked with relief (tools/scripts/sprites/relief.py), two more at half resolution (the colour's
-// mips from level 1 on, so the same uv reads them; the tail from max(tailFirstMip, 1)), linear BC7: R, G =
-// tangent-space normal x, y; B = occlusion; A = height (1 = nearest the viewer):
-//   sprites/<set>/<clip>.rtail / .rfull
 // plus one index for everything: sprites/roster (SpriteRosterHeader + AssetId[clipCount]).
-// Version 2 appended the relief assets to the header; version 1 headers (192 bytes) still load, without relief.
 //
 // Texture data is mip-major: for each mip (largest first), every layer (frame) in order, each layer a
 // row-major grid of 16-byte BC7 blocks. A mip's layers are contiguous, so one copy region per mip
@@ -25,8 +20,7 @@ namespace ember {
 
 inline constexpr uint32_t kSpriteClipMagic = 0x50494C43;    // "CLIP"
 inline constexpr uint32_t kSpriteRosterMagic = 0x52545352;  // "RSTR"
-inline constexpr uint32_t kSpriteFormatVersion = 2;
-inline constexpr uint32_t kSpriteFormatVersion1 = 1;  // no relief fields (192-byte header)
+inline constexpr uint32_t kSpriteFormatVersion = 1;
 inline constexpr uint32_t kSpriteTailSize = 64;  // largest side of the always-resident version
 inline constexpr uint32_t kBc7BlockBytes = 16;
 
@@ -59,12 +53,8 @@ struct SpriteClipHeader {
   uint64_t tailBytes;
   char pack[48];          // zero-terminated
   char name[48];
-  // Version 2: the relief chain (same mips, layers and bytes as the colour); 0 = the clip has no relief.
-  AssetId reliefFullAsset;
-  AssetId reliefTailAsset;
 };
-static_assert(sizeof(SpriteClipHeader) == 208);
-inline constexpr size_t kSpriteClipHeaderV1Bytes = 192;
+static_assert(sizeof(SpriteClipHeader) == 192);
 
 struct SpriteRosterHeader {
   uint32_t magic;

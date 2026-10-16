@@ -5,9 +5,7 @@
 //                                                                    write synthetic test files
 //   Cooker import-engine2 <engine2 root> <out.sprites.json>         sprite manifest from Engine2's tables
 //   Cooker sprites <manifest.sprites.json> <source root> <out.pak>  cook sprite clips (BC7) into an archive
-//          [--only <set prefix>]... [--quality fast|basic|slow] [--copies N] [--cache <dir>] [--relief <dir>]
-//          (--relief: the relief maps relief.py wrote; clips with every frame's map get a relief chain)
-//   Cooker sprite-frames <manifest.sprites.json> <out.json>         the frame list tools/scripts/sprites/relief.py reads
+//          [--only <set prefix>]... [--quality fast|basic|slow] [--copies N] [--cache <dir>]
 //   Cooker meshes <source root> <out.pak> [--quality fast|basic|slow] [--cache <dir>] [--remesh N]
 //          (--remesh: proxy-LOD experiment, every mesh replaced by its voxel remesh; separate archive)
 //                                                                    cook every GLB under a folder (cluster LOD + textures)
@@ -170,7 +168,6 @@ int sprites(const std::vector<std::string_view>& args) {
     if (args[i - 1] == "--only") options.only.emplace_back(value);
     else if (args[i - 1] == "--copies") options.copies = static_cast<uint32_t>(parseNumber(value));
     else if (args[i - 1] == "--cache") options.cacheDir = std::filesystem::path(value);
-    else if (args[i - 1] == "--relief") options.reliefDir = std::filesystem::path(value);
     else if (args[i - 1] == "--quality") {
       if (value == "fast") options.quality = Bc7Quality::Fast;
       else if (value == "basic") options.quality = Bc7Quality::Basic;
@@ -189,8 +186,6 @@ int sprites(const std::vector<std::string_view>& args) {
   const bool cooked = cookSprites(jobs, manifest, options, sources, report);
   logInfo("sprites: {} clips, {} frames ({} cooked, {} from cache, {} failed) in {:.1f}s", report.clips, report.frames,
           report.cooked, report.fromCache, report.failed, report.seconds);
-  if (!options.reliefDir.empty())
-    logInfo("  relief: {} of {} clips have a relief chain ({} cooked in this run)", report.reliefClips, report.clips, report.reliefCooked);
   logInfo("  pixels: {:.2f} G at source size, {:.2f} G trimmed; GPU: {:.1f} MB full chains, {:.1f} MB tails",
           static_cast<double>(report.sourcePixels) / 1e9, static_cast<double>(report.texturePixels) / 1e9,
           megabytes(report.fullBytes), megabytes(report.tailBytes));
@@ -253,18 +248,6 @@ int meshes(const std::vector<std::string_view>& args) {
   if (!writePak(jobs, std::move(sources), out, {}, pak)) return 1;
   logInfo("packed {} assets: {:.1f} MB -> {:.1f} MB on disk in {:.1f}s", pak.entries, megabytes(pak.sourceBytes),
           megabytes(pak.storedBytes), pak.seconds);
-  return 0;
-}
-
-int spriteFrames(const std::vector<std::string_view>& args) {
-  if (args.size() != 2) fatal("usage: Cooker sprite-frames <manifest.sprites.json> <out.json>");
-  SpriteManifest manifest;
-  if (!loadSpriteManifest(std::filesystem::path(args[0]), manifest)) return 1;
-  if (!writeSpriteFrames(manifest, std::filesystem::path(args[1]))) {
-    logError("cannot write {}", args[1]);
-    return 1;
-  }
-  logInfo("wrote {}", args[1]);
   return 0;
 }
 
@@ -415,7 +398,6 @@ int main(int argc, char** argv) {
   if (command == "import-engine2") return importEngine2(args);
   if (command == "sprites") return sprites(args);
   if (command == "sprite-preview") return spritePreview(args);
-  if (command == "sprite-frames") return spriteFrames(args);
   if (command == "meshes") return meshes(args);
   if (command == "check-ground") return checkGroundCommand(args);
   if (command == "check-battle") return checkBattleCommand(args);

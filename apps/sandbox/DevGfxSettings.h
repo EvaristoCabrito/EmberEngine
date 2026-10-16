@@ -14,12 +14,9 @@
 //   atmosphericFx     the map's mist, haze, wisps and dust motes
 //   sun               a fixed sun (Engine2's sliders: azimuth = the screen direction shadows fall, 0 right, 90 down;
 //                     elevation above the horizon) instead of the time of day's sun, once a slider is moved
-//   sprite*           Sprites 3D (ours, not Engine2's): the cards' relief features, each alone (SpriteDraw.h kSpriteFx*,
-//                     shaders/sprites.hlsl), the thickness of the body, and whether decor cards take them too
 // Not in EmberEngine yet, so not offered: contact shadows, ambient occlusion, render scale (maxDpr), the moon's
 // sliders (the moon stands where MapStage's moon placement puts it).
 
-#include <algorithm>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
@@ -45,12 +42,6 @@ struct DevGfx {
   bool atmosphericFx = true;
   bool sunMoved = false;  // the sliders were moved: a fixed sun
   float sunAzimuth = 53.13f, sunElevation = 45.0f;
-  // Sprites 3D.
-  bool spriteNormals = true, spriteDepth = true, spriteOcclusion = true, spriteDecor = true;
-  float spriteThickness = 0.3f;  // share of the card's smaller side
-  uint32_t spriteFeatures() const {
-    return (spriteNormals ? 1u : 0u) | (spriteDepth ? 2u : 0u) | (spriteOcclusion ? 16u : 0u) | (spriteDecor ? 64u : 0u);
-  }
 
   // graphicsQuality.ts profiles (only the switches EmberEngine has).
   struct Profile {
@@ -95,20 +86,13 @@ struct DevGfx {
     g.sunMoved = j.value("sunMoved", g.sunMoved);
     g.sunAzimuth = j.value("sunAzimuth", g.sunAzimuth);
     g.sunElevation = j.value("sunElevation", g.sunElevation);
-    g.spriteNormals = j.value("spriteNormals", g.spriteNormals);
-    g.spriteDepth = j.value("spriteDepth", g.spriteDepth);
-    g.spriteOcclusion = j.value("spriteOcclusion", g.spriteOcclusion);
-    g.spriteDecor = j.value("spriteDecor", g.spriteDecor);
-    g.spriteThickness = std::clamp(j.value("spriteThickness", g.spriteThickness), 0.1f, 0.6f);
     return g;
   }
   bool save() const {
     const nlohmann::json j = {{"quality", quality},     {"realShadows", realShadows}, {"shadowResolution", shadowResolution},
                               {"softShadows", softShadows}, {"localLights", localLights}, {"fogOfWar", fogOfWar},
                               {"fogDebug", fogDebug},   {"atmosphericFx", atmosphericFx}, {"sunMoved", sunMoved},
-                              {"sunAzimuth", sunAzimuth}, {"sunElevation", sunElevation},
-                              {"spriteNormals", spriteNormals}, {"spriteDepth", spriteDepth}, {"spriteOcclusion", spriteOcclusion},
-                              {"spriteDecor", spriteDecor}, {"spriteThickness", spriteThickness}};
+                              {"sunAzimuth", sunAzimuth}, {"sunElevation", sunElevation}};
     std::error_code ec;
     std::filesystem::create_directories(path().parent_path(), ec);
     const std::filesystem::path tmp = path().string() + ".tmp";

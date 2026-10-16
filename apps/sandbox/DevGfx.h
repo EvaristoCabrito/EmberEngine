@@ -21,7 +21,6 @@ inline void DevGfx::apply(MapStageOptions& m, Renderer& renderer) const {
   }
   renderer.setShadowResolution(shadowResolution);
   renderer.setShadowFilter(softShadows ? 4.0f : 1.6f);
-  renderer.setSpriteFeatures(spriteFeatures(), spriteThickness);
   if (fogDebug) renderer.setDebugView(4);
 }
 

@@ -21,18 +21,7 @@ struct SpriteCookOptions {
   // Stand-in for a bigger game: every clip is added `copies` times under distinct names
   // ("<set>~2", "<set>~3", ...). Cooked once, stored N times. For streaming tests only.
   uint32_t copies = 1;
-  // Relief maps written by tools/scripts/sprites/relief.py (one per frame, at spriteReliefPath(frame)); empty =
-  // no relief. A clip gets a relief chain only when every one of its frames has its map.
-  std::filesystem::path reliefDir;
 };
-
-// Where a frame's relief map lives under the relief folder: the frame spec with '#', ':' and '!' turned into '_',
-// plus ".relief.png" (relief.py writes the same).
-std::string spriteReliefPath(const std::string& frameSpec);
-
-// Writes the frame list relief.py reads: every clip with its frames (file, grid cell, alpha from black) and the
-// relief path the cooker will look for.
-bool writeSpriteFrames(const SpriteManifest& manifest, const std::filesystem::path& out);
 
 struct SpriteClipQuality {
   std::string name;
@@ -42,7 +31,6 @@ struct SpriteClipQuality {
 
 struct SpriteCookReport {
   size_t clips = 0, frames = 0, cooked = 0, fromCache = 0, failed = 0;
-  size_t reliefClips = 0, reliefCooked = 0;  // clips with a relief chain; cooked in this run
   uint64_t sourcePixels = 0;   // frames at their original size
   uint64_t texturePixels = 0;  // trimmed, top mip
   uint64_t fullBytes = 0, tailBytes = 0;

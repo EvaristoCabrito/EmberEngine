@@ -6,7 +6,7 @@
 
 namespace ember {
 
-// One sprite card to draw this frame. Matches SpriteInstance in shaders/sprites.hlsl (96 bytes).
+// One sprite card to draw this frame. Matches SpriteInstance in shaders/sprites.hlsl (80 bytes).
 struct SpriteInstance {
   glm::vec3 origin;  // world position of the trimmed picture's bottom centre
   float width;       // world size of the trimmed picture
@@ -20,24 +20,13 @@ struct SpriteInstance {
   float emitLevel = 0.0f;     // 0 = nothing glows; Engine2 FLAME_EMIT = 2.5 at full flicker
   glm::vec3 emitAt{0.0f};     // where the light sits on the card (texture u, v); z: texture u -> card heights
   float emitScaleV = 0.0f;    // texture v -> card heights (the glow's radius is 0.1 card heights)
-  uint32_t reliefIndex = 0xFFFFFFFFu;  // the clip's relief array (SpriteFormat.h), kNoTexture = none: flat card
-  uint32_t reserved[3] = {};
 };
-static_assert(sizeof(SpriteInstance) == 96);
+static_assert(sizeof(SpriteInstance) == 80);
 
 inline constexpr uint32_t kSpriteMirrored = 1;
 inline constexpr uint32_t kSpriteLit = 2;    // lit by the scene (lighting.hlsli; Engine2's card model)
 inline constexpr uint32_t kSpriteFront = 4;  // a unit: drawn 1.2 units nearer the camera in depth only
 inline constexpr uint32_t kSpriteCastsShadow = 8;  // drawn into the sun's card shadow map
 inline constexpr uint32_t kSpriteFlat = 16;  // lies flat facing up, its top toward -z (the 2D view, Tática)
-
-// Sprite relief features (Renderer::setSpriteFeatures; Dev Controls "Sprites 3D"): each one switchable alone. A
-// card without a relief array ignores them all; decor cards (no kSpriteFront) ignore them unless kSpriteFxDecor.
-inline constexpr uint32_t kSpriteFxNormals = 1;      // per-pixel shading normal from the relief (subtle)
-inline constexpr uint32_t kSpriteFxDepth = 2;        // per-pixel depth written (the body intersects the world)
-inline constexpr uint32_t kSpriteFxOcclusion = 16;   // baked occlusion dims the indirect light
-inline constexpr uint32_t kSpriteFxDecor = 64;       // the above on decor cards too, not only units
-inline constexpr uint32_t kSpriteFxAll = kSpriteFxNormals | kSpriteFxDepth | kSpriteFxOcclusion | kSpriteFxDecor;
-// (4 parallax, 8 self-shadow and 32 specular were tried and taken out: they tore and smeared the figures.)
 
 }  // namespace ember

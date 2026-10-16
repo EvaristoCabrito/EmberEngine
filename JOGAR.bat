@@ -15,12 +15,10 @@ if not exist "%EXE%" (
 
 set "GROUND=%ART%\ground\ground-v2.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground.pak"
-rem battle.pak = sprites sem relevo (o usuario rejeitou o Sprites 3D em 2026-10-16; battle-v2.pak fica guardado).
-set "SPRITES=%ART%\sprites\battle.pak"
 set "HEROES="
 if exist "%ART%\engine2-scenes\roster.json" set "HEROES=--heroes %ART%\engine2-scenes\roster.json"
 
-for %%P in ("%GROUND%" "%SPRITES%" "%ART%\meshes\props.pak" "%ART%\engine2-scenes" "C:\Engine2\maps\ember") do (
+for %%P in ("%GROUND%" "%ART%\sprites\battle.pak" "%ART%\meshes\props.pak" "%ART%\engine2-scenes" "C:\Engine2\maps\ember") do (
   if not exist %%P (
     echo Falta %%~P
     echo Tire uma foto desta tela e mande para o Claude.
@@ -29,7 +27,7 @@ for %%P in ("%GROUND%" "%SPRITES%" "%ART%\meshes\props.pak" "%ART%\engine2-scene
 )
 
 echo Abrindo o Ember...
-"%EXE%" --title --ground "%GROUND%" --sprites "%SPRITES%" --meshes "%ART%\meshes\props.pak" --scenes "%ART%\engine2-scenes" --maps "C:\Engine2\maps\ember" %HEROES% > "%HERE%\JOGAR-log.txt" 2>&1
+"%EXE%" --title --ground "%GROUND%" --sprites "%ART%\sprites\battle.pak" --meshes "%ART%\meshes\props.pak" --scenes "%ART%\engine2-scenes" --maps "C:\Engine2\maps\ember" %HEROES% > "%HERE%\JOGAR-log.txt" 2>&1
 set "RUNERR=%ERRORLEVEL%"
 if not "%RUNERR%"=="0" (
   echo.
