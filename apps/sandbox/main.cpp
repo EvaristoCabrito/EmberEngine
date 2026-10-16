@@ -635,6 +635,7 @@ int runWindow(const Options& o) {
   std::optional<TestSession> testSession;
   std::optional<TestModeStage::Screen> openTest;  // a test-mode screen to open
   bool openTestRpg = false;                       // the RPG map on the test session's save
+  bool openSpells = false, inSpells = false;      // Teste de Magias: the spells test battle (open it / it is open)
   auto toggleFullscreen = [&] {
     const bool full = (SDL_GetWindowFlags(window.handle()) & SDL_WINDOW_FULLSCREEN) != 0;
     SDL_SetWindowFullscreen(window.handle(), !full);
@@ -662,6 +663,7 @@ int runWindow(const Options& o) {
     callbacks.title = [&] { backToTitle = true; };
     callbacks.rpgMap = [&] { openTestRpg = true; };
     callbacks.play = [&](const MissionEntry& m) { pending = m; };
+    callbacks.spells = [&] { openSpells = true; };
     callbacks.fullscreen = toggleFullscreen;
     return std::make_unique<TestModeStage>(paths, campaign, world, *testSession, devGfx, std::move(callbacks), screen);
   };
@@ -743,7 +745,9 @@ int runWindow(const Options& o) {
     std::optional<MapStageOptions> retry;
     if (auto* map = dynamic_cast<MapStage*>(stage.get())) {
       if (map->wantsTitle()) {
-        if (testSession) {
+        if (inSpells) {
+          openTest = TestModeStage::Screen::Menu;  // Teste de Magias: back to the test menu
+        } else if (testSession) {
           // A test battle never writes anything (GameApp: every save write is !testMode); back to the test map.
           if (testSession->mapMode == "rpg") openTestRpg = true;
           else openTest = TestModeStage::Screen::WorldMap;
@@ -763,10 +767,24 @@ int runWindow(const Options& o) {
       stage.reset();
       stage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, *retry);
     }
-    if (pending || backToTitle || openMap || openTest || openTestRpg) {
+    if (pending || backToTitle || openMap || openTest || openTestRpg || openSpells) {
       vkDeviceWaitIdle(context.device);
       stage.reset();
-      if (backToTitle) {
+      inSpells = false;
+      if (openSpells && testSession) {
+        // Teste de Magias: aldeia015's battle with the Magias window open (every spell's effect versions, Testar,
+        // the loose effects), as the test zone of 2026-10-16.
+        Options spells = o;
+        spells.map = (paths.maps / "aldeia015.json").string();
+        spells.scene = (std::filesystem::path(o.scenes) / "aldeia015.scene.json").string();
+        spells.battleRules = "content/engine2/battles/aldeia015.battle.json";
+        renderer.setDebugView(o.debugView);
+        MapStageOptions options = mapOptions(spells);
+        options.spellsMenuOpen = true;
+        devGfx.apply(options, renderer);
+        stage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
+        inSpells = true;
+      } else if (backToTitle) {
         playing.clear();
         testSession.reset();  // GameApp goToTitle: every trace of test mode wiped
         stage = makeTitle();
@@ -796,7 +814,7 @@ int runWindow(const Options& o) {
       }
       pending.reset();
       openTest.reset();
-      backToTitle = false, openMap = false, openTestRpg = false;
+      backToTitle = false, openMap = false, openTestRpg = false, openSpells = false;
     }
   }
   return 0;

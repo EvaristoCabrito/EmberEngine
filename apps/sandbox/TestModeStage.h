@@ -71,6 +71,7 @@ class TestModeStage : public Stage {
     std::function<void()> rpgMap;                   // the RPG map with the session's save
     std::function<void(const MissionEntry&)> play;  // a mission's test battle
     std::function<void()> editor;                   // Map Editor
+    std::function<void()> spells;                   // Teste de Magias (ours, user 2026-10-16): the spells test battle
     std::function<void()> fullscreen;               // Opções: Tela cheia
   };
 
@@ -210,26 +211,29 @@ class TestModeStage : public Stage {
     if (backButton("##menuback", {16, 16}) && callbacks_.title) callbacks_.title();
     caps(dl, {16 + 40 + 12, 17}, 14.0f, kMuted, "Modo teste", 0.18f);
     dl->AddText(display(), 30.0f, {16 + 40 + 12, 17 + 20}, kFg, "O que abrir?");
-    // the three choices: max-w-md, centred, gap-3, p-5
+    // the choices: max-w-md, centred, gap-3, p-5 (Engine2's three, then ours: Teste de Magias)
     struct Choice {
       const char* title;
       const char* text;
       std::function<void()> go;
     };
-    const Choice choices[3] = {
+    constexpr int kChoices = 4;
+    const Choice choices[kChoices] = {
         {"Debug", "Joga qualquer missão da campanha, sem travar progresso — o de sempre.", [this] { goToMap(); }},
         {"Map Editor", "Pinta terreno, posiciona spawns, testa na hora e exporta pra colar no jogo.", callbacks_.editor},
         {"Dev Controls", "Liga/desliga sombras do renderizador 3D pra comparar em combate.", [this] { screen_ = Screen::DevControls; }},
+        {"Teste de Magias", "Campo de teste com todas as magias e habilidades: escolhe a versão de cada efeito e testa na hora.",
+         callbacks_.spells},
     };
     const float w = std::min(448.0f, size.x - 40.0f) - 40.0f;
     const float x = (size.x - w) * 0.5f;
-    float heights[3], total = 0;
-    for (int i = 0; i < 3; ++i) {
+    float heights[kChoices], total = 0;
+    for (int i = 0; i < kChoices; ++i) {
       heights[i] = 16 + 24 * 1.25f + 4 + sans()->CalcTextSizeA(14.0f, FLT_MAX, w - 40, choices[i].text).y + 16;
       total += heights[i] + (i ? 12 : 0);
     }
     float y = headerH + std::max(20.0f, (size.y - headerH - total) * 0.5f);
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < kChoices; ++i) {
       ImGui::PushID(i);
       const bool clicked = cardButton("##choice", {x, y}, {w, heights[i]}, IM_COL32(17, 17, 17, 102), kBorder, !choices[i].go);
       ImGui::PopID();
