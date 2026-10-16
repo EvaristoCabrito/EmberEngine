@@ -66,7 +66,9 @@ DebugUi::DebugUi(VulkanContext& context, SDL_Window* window, VkFormat targetForm
   info.Device = context.device;
   info.QueueFamily = context.queueFamily;
   info.Queue = context.queue;
-  info.DescriptorPoolSize = 64;  // backend-owned pool: font atlas + debug images
+  // Backend-owned pool: one set per UI image (font atlas, Engine2's art: portraits, every weapon and gear icon the shops
+  // and the inventory show).
+  info.DescriptorPoolSize = 4096;
   info.MinImageCount = kFramesInFlight;
   info.ImageCount = kFramesInFlight;
   info.UseDynamicRendering = true;

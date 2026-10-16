@@ -1,0 +1,93 @@
+#pragma once
+
+// The Inn's rules, ported from Engine2's GameApp Inn handlers (src/game/GameApp.tsx InnScreen props), hunger.ts
+// buyInnMeal and inventory.ts equipSharedWeapon / unequipSharedWeapon: meals, the Adega's potions and lockpicks,
+// rations, a night's rest, the healer's Cura Média and cures, Vargan's weapons and gear (buy, enhance, sell, equip),
+// the NPCs' quests (talk, accept, hand in). Each action takes the save and returns the new save, or nothing when Engine2
+// would refuse. Prices and item tables come from tools/scripts/engine2/export_inn.ts (content/engine2/inn.json).
+
+#include <filesystem>
+#include <map>
+#include <optional>
+#include <string>
+#include <vector>
+
+#include "world/Campaign.h"
+#include "world/Overworld.h"
+
+namespace ember::e2 {
+
+struct InnPotion {
+  std::string id, label, tooltip;
+  int price = 0, carryMax = 5;
+};
+struct InnWeapon {
+  std::string id, name, bonusClass, bonusClassName, magic, dice, range, icon;
+  int price = 0;
+  std::optional<int> recommendedLevel;
+  double power = 0;
+  std::vector<std::string> usableBy, tooltip;  // tooltip per enhancement 0..max
+  std::vector<int> sell;                       // sell value per enhancement 0..max
+};
+struct InnGear {
+  std::string id, name, slot, typeSlot, tooltip, icon;
+  int price = 0, hp = 0;
+  bool pouch = false;
+  std::optional<std::vector<std::string>> usableBy;
+};
+
+struct InnData {
+  int mealPrice = 2, innFullness = 120, restPrice = 8, healerCastPrice = 5, healerAilmentPrice = 7, lockpickPrice = 6, rationsPrice = 3;
+  int bagMax = 5, rationStackMax = 30, weaponMaxEnh = 5;
+  std::vector<int> enhCost;  // cost of rank 1..max
+  std::vector<InnPotion> potions;
+  std::string lockpickTooltip, rationsIcon, bagIcon;
+  std::vector<InnWeapon> weapons;
+  std::vector<InnGear> equipment;
+  std::map<std::string, std::string> classNames;
+
+  bool load(const std::filesystem::path& file);
+  const InnPotion* potion(const std::string& id) const;
+  const InnWeapon* weapon(const std::string& id) const;
+  const InnGear* gear(const std::string& id) const;
+};
+
+class InnRules {
+ public:
+  InnRules(const InnData& data, const Overworld& world) : data_(data), world_(world) {}
+
+  std::string heroClass(const Json& save, const std::string& hero) const;  // promotion, else the base class
+  // GameApp mapStatusUnit: max HP (class at the hero's level + gear, less hunger when the hero's bar is empty), HP now.
+  int statusMaxHp(const Json& save, const std::string& hero) const;
+  int statusHp(const Json& save, const std::string& hero) const;
+  bool diseased(const Json& save, const std::string& hero) const;
+  bool poisoned(const Json& save, const std::string& hero) const;
+
+  std::optional<Json> buyMeal(const Json& save, const std::string& hero) const;  // hunger.ts buyInnMeal
+  std::optional<Json> pay(const Json& save, const std::string& hero, const std::map<std::string, int>& cart, int lockpicks) const;
+  std::optional<Json> buyRations(const Json& save, int qty) const;
+  // A night: everyone in `heroes` pays, a day passes (08:00 on the travel clock), 75 % of lost HP back, spells restored.
+  std::optional<Json> passNight(const Json& save, const std::vector<std::string>& heroes, int& healed) const;
+  std::optional<Json> healerCast(const Json& save, const std::string& hero, int& amount) const;  // Cura Média: 25 % max HP
+  std::optional<Json> cureAilments(const Json& save, const std::vector<std::string>& heroes, int& count) const;
+  std::optional<Json> buyWeapon(const Json& save, const std::string& weaponId) const;
+  std::optional<Json> buyEquipment(const Json& save, const std::string& itemId) const;
+  std::optional<Json> upgradeWeapon(const Json& save, const std::string& weaponId) const;
+  std::optional<Json> sellWeapon(const Json& save, const std::string& weaponId, int& value) const;
+  std::optional<Json> equipWeapon(const Json& save, const std::string& hero, const std::string& weaponId) const;  // "" = unequip
+  Json talkToNpc(const Json& save, const std::string& npc) const;
+  bool questOffered(const Json& save, const std::string& questId) const;
+  std::optional<Json> acceptQuest(const Json& save, const std::string& questId) const;
+  std::optional<Json> turnInQuest(const Json& save, const std::string& questId) const;
+  // quests.ts questStatus / questProgress.
+  std::string questStatus(const Json& save, const Json& quest) const;
+  void questProgress(const Json& save, const Json& quest, int& have, int& total) const;
+  std::vector<const Json*> questsFor(const std::string& npc) const;
+
+ private:
+  int ember(const Json& save) const;
+  const InnData& data_;
+  const Overworld& world_;
+};
+
+}  // namespace ember::e2

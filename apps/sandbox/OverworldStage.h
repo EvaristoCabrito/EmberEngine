@@ -12,8 +12,8 @@
 // events; the location's mission list; the quest log; the Party menu (leader, formation, affinities, road training);
 // the first-visit explainer. A mission opens its briefing, then its fight (main.cpp).
 //
-// Not ported yet: field spells (Create Food and Water, Warp), the inventory and status panels, the Inn, intro
-// cutscenes, sound.
+// The Inn's pin opens the Inn (InnScreen.h). Not ported yet: field spells (Create Food and Water, Warp), the inventory
+// and status panels, the Inn's arrival film and walkable room, intro cutscenes, sound.
 
 #include <SDL3/SDL.h>
 #include <imgui.h>
@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "CampaignUi.h"
+#include "InnScreen.h"
 #include "Stage.h"
 #include "render/Camera.h"
 #include "render/MeshScene.h"
@@ -37,6 +38,7 @@
 #include "render/UiArt.h"
 #include "world/Campaign.h"
 #include "world/Combat.h"
+#include "world/Inn.h"
 #include "world/Overworld.h"
 
 namespace ember {
@@ -51,6 +53,7 @@ class OverworldStage : public Stage {
 
   OverworldStage(CampaignPaths paths, e2::Campaign& campaign, const e2::Overworld& world, Callbacks callbacks, std::string notice = {})
       : paths_(std::move(paths)), campaign_(campaign), world_(world), callbacks_(std::move(callbacks)), notice_(std::move(notice)) {
+    hasInn_ = innData_.load("content/engine2/inn.json");
     save_ = campaign_.activeSave();
     const e2::Json& pos = save_["overworldPos"];
     prevCol_ = pos.value("col", 0);
@@ -71,6 +74,10 @@ class OverworldStage : public Stage {
     if (what == "move") movementOpen_ = true;
     if (what.starts_with("location:")) open_ = what.substr(9);
     if (what == "save") slots_.emplace(), slots_->open(SlotScreen::Mode::Save, true);
+    if (what.starts_with("inn") && hasInn_) {
+      inn_.emplace();
+      if (what.size() > 4) inn_->preview(what.substr(4));
+    }
   }
   // Captures end after a second of frames (time for Engine2's art to load).
   bool done() const override { return frames_ > 60; }
@@ -114,7 +121,10 @@ class OverworldStage : public Stage {
     ImGui::Begin("##overworld", nullptr,
                  ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings |
                      ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoScrollWithMouse);
-    if (briefing_) {
+    if (inn_) {
+      InnScreen::Context context{save_, [this] { write(); }, innRules_, innData_, world_, paths_.engine2Public};
+      if (inn_->draw(io.DisplaySize, context)) inn_.reset();  // GameApp returnToCurrentMap
+    } else if (briefing_) {
       const int r = drawBriefing(io.DisplaySize, kRem, *briefing_, paths_.engine2Public);
       if (r < 0) briefing_.reset();
       else if (r > 0 && callbacks_.play) callbacks_.play(*briefing_);
@@ -204,14 +214,33 @@ class OverworldStage : public Stage {
           return;
         }
       }
-      if (const e2::MapMission* m = world_.mission(id); m && m->hub) {
-        notice_ = "A Estalagem ainda não existe no Ember: é o próximo passo.";
-        return;
-      }
+      if (id == "estalagem") return enterInn();
     }
     std::string error;
     if (std::optional<MissionEntry> e = campaignMission(campaign_, paths_, id, error)) briefing_ = std::move(e);
     else notice_ = error;
+  }
+
+  // GameApp beginMission("estalagem"): the visit is recorded (mission completed, the Inn's hex explored), then the Inn.
+  // Engine2 plays the arrival film first and then walks the party into the Inn's own room; neither is ported, so the
+  // Inn's menus open straight away.
+  void enterInn() {
+    if (!hasInn_) {
+      notice_ = "Sem dados da Estalagem (content/engine2/inn.json).";
+      return;
+    }
+    if (!completed("estalagem")) save_["completed"].push_back("estalagem");
+    for (const e2::MapLocation& l : world_.locations())
+      if (l.id == "estalagem") {
+        const std::string k = std::format("{},{}", l.col, l.row);
+        bool seen = false;
+        for (const e2::Json& h : save_.value("exploredHexes", e2::Json::array())) seen = seen || h == k;
+        if (!seen) save_["exploredHexes"].push_back(k);
+      }
+    save_["pendingMission"] = nullptr;
+    save_["battle"] = nullptr;
+    write();
+    inn_.emplace();
   }
 
   // GameApp onOverworldStep: stepOverworld, written at once; a road battle opens its mission, anything else its notice.
@@ -1378,6 +1407,10 @@ class OverworldStage : public Stage {
   std::optional<std::string> open_;  // the location whose mission list is open
   std::optional<MissionEntry> briefing_;
   std::optional<SlotScreen> slots_;
+  e2::InnData innData_;
+  e2::InnRules innRules_{innData_, world_};
+  bool hasInn_ = false;
+  std::optional<InnScreen> inn_;
   bool movementOpen_ = false, questLog_ = false, party_ = false, options_ = false;
   int partyTab_ = 0;
   std::vector<std::string> formation_;

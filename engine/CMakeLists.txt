@@ -32,6 +32,7 @@ add_library(EmberEngine STATIC
   world/Spells.cpp
   world/Campaign.cpp
   world/Overworld.cpp
+  world/Inn.cpp
   debug/PerfOverlay.cpp
 )
 

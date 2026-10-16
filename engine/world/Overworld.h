@@ -95,6 +95,10 @@ class Overworld {
   static std::string timeOfDay(int hour);     // campaignTime.ts campaignTimeOfDay
 
   const Json& tables() const { return tables_; }
+  // data.ts partyBagHasRoom (save, extra) for the campaign (not test mode).
+  bool bagHasRoom(const Json& save, int extra) const;
+  // progression.ts evaluate: a quest's availability, a gate's condition.
+  bool conditionHolds(const Json& condition, const Json& save) const { return evaluate(condition, save, false); }
 
  private:
   struct LootEntry {
@@ -107,7 +111,6 @@ class Overworld {
   int classHp(const std::string& classId, int level) const;
   double classResistance(const std::string& classId, const std::string& element) const;
   double gearResistance(const Json& save, const std::string& hero, const std::string& element) const;
-  bool bagHasRoom(const Json& save, int extra) const;
   int missionIndex(const std::string& id) const;
   bool evaluate(const Json& condition, const Json& save, bool storedChapter) const;
   int questStage(const std::string& questId, const Json& save) const;

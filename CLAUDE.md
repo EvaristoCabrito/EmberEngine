@@ -297,7 +297,15 @@ inventory / equipment, dialogs / intros)
   Carregar / Voltar / Tela cheia), briefing → fight → back to the map (main.cpp finishCampaignFight: levels / XP / HP,
   completed). Captures: `--title-screen map --save-bank F [--map-ui party|skills|quests|options|move|location:<id>|save]`.
   Campaign maps exported so far: vau029, bosque005, aldeia015, thebridge022, wisp-forest-crossing012 (scene + battle).
-- **Not ported yet:** field spells (Create Food and Water, Warp), inventory / status panels, the Inn (next), intros /
+- **The Inn (done):** `engine/world/Inn` (GameApp's Inn handlers: meals, Adega potions / lockpicks, rations, night's rest,
+  healer Cura Média + cures, Vargan buy / enhance / sell / equip, NPC talk / quests) on `content/engine2/inn.json`
+  (`export_inn.ts`); `apps/sandbox/InnScreen.h` (salão with Brue / O Mudo / Cliente Suspeito / A Hóspede, rest, quests,
+  Adega, Ferreiro, Curandeiro). The Inn pin opens it. Engine2 reaches Vargan and the healer by walking the Inn's own map
+  (not ported): both are header buttons here. Captures `--map-ui inn|inn:smith|inn:healer|inn:scrollN`. UI image pool
+  raised to 4096 (DebugUi). Not verified against Engine2 by a check (simple arithmetic, read off GameApp).
+- **Another session works in this checkout** (spell effects: MapStage.h, Renderer, SpellEffects, effects.hlsl,
+  apps/sandbox/CMakeLists.txt): never stage or commit its files.
+- **Not ported yet:** field spells (Create Food and Water, Warp), inventory / status panels (next), intros /
   cutscenes / dialogs / epilogue, battle snapshots (a saved fight restarts from its briefing), finishBattle's loot /
   ember / rations / quests / progression, formation applied to battle spawns, unitHp at battle start, sound.
 - **Testing:** never drive the user's PC (computer-use) — captures and Cooker checks only; the user plays it.
