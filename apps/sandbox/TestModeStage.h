@@ -661,7 +661,7 @@ class TestModeStage : public Stage {
     }
     // Ours: the cards' relief features, in their own window.
     {
-      const char* hint = "Relevo, profundidade, paralaxe, auto-sombra, oclusão e especular dos sprites, cada um com ON e OFF.";
+      const char* hint = "Relevo, profundidade por pixel e oclusão dos sprites, cada um com ON e OFF.";
       const float hintH = sans()->CalcTextSizeA(14.0f, FLT_MAX, w - 40 - 44 - 16, hint).y;
       const float h = 16 + 20 * 1.25f + 4 + hintH + 16;
       if (cardButton("##sprites3d", {x, y}, {w, h}, IM_COL32(17, 17, 17, 102), kAccent)) screen_ = Screen::Sprites3D;
@@ -736,8 +736,8 @@ class TestModeStage : public Stage {
     DevGfx& g = devGfx_;
     bool changed = false;
     wrapped(dl, sans(), 14.0f, {x, y}, kMuted,
-            "Cada sprite tem um mapa de relevo (normal, profundidade e oclusão por pixel, gerado dos próprios frames). "
-            "Cada recurso liga e desliga sozinho, pra ver o visual e pesar o custo nesta máquina.",
+            "Cada sprite tem um mapa de relevo em meia resolução (normal, profundidade e oclusão por pixel, gerado dos próprios "
+            "frames). Tudo sutil: a pintura continua a pintura. Cada recurso liga e desliga sozinho.",
             w);
     y += 52;
     caps(dl, {x, y}, 14.0f, kMuted, "Recursos", 0.14f);
@@ -748,15 +748,8 @@ class TestModeStage : public Stage {
     if (switchRow("##spDepth", x, y, w, "Profundidade por pixel",
                   "Cada pixel escreve a própria profundidade: o corpo cruza cercas, grama e outros sprites, não o plano.", g.spriteDepth))
       g.spriteDepth = !g.spriteDepth, changed = true;
-    if (switchRow("##spParallax", x, y, w, "Paralaxe", "As partes mais próximas deslizam com a câmera: o card ganha espessura ao girar.",
-                  g.spriteParallax))
-      g.spriteParallax = !g.spriteParallax, changed = true;
-    if (switchRow("##spSelfShadow", x, y, w, "Auto-sombra", "O próprio relevo faz sombra: um braço erguido sombreia o peito.", g.spriteSelfShadow))
-      g.spriteSelfShadow = !g.spriteSelfShadow, changed = true;
     if (switchRow("##spOcclusion", x, y, w, "Oclusão", "Dobras e cavidades recebem menos luz do céu.", g.spriteOcclusion))
       g.spriteOcclusion = !g.spriteOcclusion, changed = true;
-    if (switchRow("##spSpecular", x, y, w, "Especular", "Brilho da luz na superfície (pele, metal, couro).", g.spriteSpecular))
-      g.spriteSpecular = !g.spriteSpecular, changed = true;
     caps(dl, {x, y}, 14.0f, kMuted, "Onde", 0.14f);
     y += 28;
     if (switchRow("##spDecor", x, y, w, "Decorações também", "Desligado: só as unidades. Ligado: árvores, cercas, barris e o resto também.",
@@ -768,7 +761,7 @@ class TestModeStage : public Stage {
       dl->AddRectFilled({x, y}, {x + w, y + h}, IM_COL32(17, 17, 17, 102));
       dl->AddRect({x, y}, {x + w, y + h}, kBorder);
       dl->AddText(display(), 20.0f, {x + 20, y + 16}, kFg, "Espessura do corpo");
-      const char* word = g.spriteThickness < 0.25f ? "fina" : g.spriteThickness < 0.4f ? "média" : g.spriteThickness < 0.6f ? "normal" : "grossa";
+      const char* word = g.spriteThickness < 0.2f ? "fina" : g.spriteThickness < 0.35f ? "normal" : g.spriteThickness < 0.5f ? "média" : "grossa";
       const ImVec2 vs = display()->CalcTextSizeA(20.0f, FLT_MAX, 0, word);
       dl->AddText(display(), 20.0f, {x + w - 20 - vs.x, y + 16}, kMuted, word);
       ImGui::SetCursorScreenPos({x + 20, y + 16 + 25 + 8});
@@ -776,7 +769,7 @@ class TestModeStage : public Stage {
       ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(74, 74, 74, 255));
       ImGui::PushStyleColor(ImGuiCol_SliderGrab, kAccent);
       ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, kFg);
-      if (ImGui::SliderFloat("##spThickness", &g.spriteThickness, 0.1f, 1.0f, "", ImGuiSliderFlags_AlwaysClamp)) changed = true;
+      if (ImGui::SliderFloat("##spThickness", &g.spriteThickness, 0.1f, 0.6f, "", ImGuiSliderFlags_AlwaysClamp)) changed = true;
       ImGui::PopStyleColor(3);
       ImGui::PopItemWidth();
       y += h + 12;

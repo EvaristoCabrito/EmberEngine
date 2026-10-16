@@ -22,7 +22,11 @@ uint64_t clipBytes(const SpriteClipHeader& h, uint32_t firstMip) {
   return bytes;
 }
 
-bool hasRelief(const SpriteClipHeader& h) { return h.reliefFullAsset != 0 && h.reliefTailAsset != 0; }
+bool hasRelief(const SpriteClipHeader& h) { return h.reliefFullAsset != 0 && h.reliefTailAsset != 0 && h.mipCount > 1; }
+
+// The relief chain is the colour's from mip 1 on (SpriteFormat.h): its first mip for a given colour mip.
+uint32_t reliefFirstMip(uint32_t colourFirstMip) { return std::max(colourFirstMip, 1u); }
+uint64_t reliefBytes(const SpriteClipHeader& h, uint32_t colourFirstMip) { return clipBytes(h, reliefFirstMip(colourFirstMip)); }
 
 }  // namespace
 
@@ -93,11 +97,12 @@ SpriteSystem::Texture SpriteSystem::texture(SpriteClipId id) const {
 }
 
 ImageDesc SpriteSystem::clipImageDesc(const SpriteClipHeader& h, uint32_t firstMip, bool relief) const {
+  const uint32_t first = relief ? reliefFirstMip(firstMip) : firstMip;
   ImageDesc desc;
   desc.format = relief ? VK_FORMAT_BC7_UNORM_BLOCK : VK_FORMAT_BC7_SRGB_BLOCK;
-  desc.extent = {std::max(1u, h.width >> firstMip), std::max(1u, h.height >> firstMip)};
+  desc.extent = {std::max(1u, h.width >> first), std::max(1u, h.height >> first)};
   desc.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-  desc.mipLevels = h.mipCount - firstMip;
+  desc.mipLevels = h.mipCount - first;
   desc.layers = h.frames;
   desc.arrayView = true;
   desc.sharedWithTransfer = true;
@@ -200,7 +205,8 @@ void SpriteSystem::updateStartup() {
     if (handle && !image.image) {
       const AssetState state = assets_.state(handle);
       const std::span<const std::byte> bytes = assets_.data(handle);
-      if (state == AssetState::Failed || (state == AssetState::Ready && bytes.size() != clipBytes(clip.header, clip.header.tailFirstMip))) {
+      const uint64_t expected = relief ? reliefBytes(clip.header, clip.header.tailFirstMip) : clipBytes(clip.header, clip.header.tailFirstMip);
+      if (state == AssetState::Failed || (state == AssetState::Ready && bytes.size() != expected)) {
         logError("sprites: {}tail of {} is missing or damaged", relief ? "relief " : "", clip.header.name);
         assets_.release(handle);
         handle = {};
@@ -208,8 +214,8 @@ void SpriteSystem::updateStartup() {
       }
       if (state != AssetState::Ready) return false;
       image = createImage(context_, clipImageDesc(clip.header, clip.header.tailFirstMip, relief));
-      upload = {image.image, image.extent.width, image.extent.height, clip.header.mipCount - clip.header.tailFirstMip, clip.header.frames,
-                kBc7BlockBytes, bytes};
+      const uint32_t first = relief ? reliefFirstMip(clip.header.tailFirstMip) : clip.header.tailFirstMip;
+      upload = {image.image, image.extent.width, image.extent.height, clip.header.mipCount - first, clip.header.frames, kBc7BlockBytes, bytes};
       uploads_.enqueue(upload);
       tailBytes_ += bytes.size();
     }
@@ -368,8 +374,8 @@ bool SpriteSystem::startUpload(Clip& clip) {
       makeHole(clip);
       return false;
     }
-    clip.reliefFullUpload = {clip.reliefFullImage.image, clip.header.width, clip.header.height, clip.header.mipCount, clip.header.frames,
-                             kBc7BlockBytes, assets_.data(clip.reliefFullHandle)};
+    clip.reliefFullUpload = {clip.reliefFullImage.image, clip.reliefFullImage.extent.width, clip.reliefFullImage.extent.height,
+                             clip.header.mipCount - 1, clip.header.frames, kBc7BlockBytes, assets_.data(clip.reliefFullHandle)};
     uploads_.enqueue(clip.reliefFullUpload);
   }
   clip.fullUpload = {clip.fullImage.image, clip.header.width, clip.header.height, clip.header.mipCount,
@@ -401,8 +407,8 @@ void SpriteSystem::update() {
       bool ready = state == AssetState::Ready;
       if (clip.reliefLoading) {
         const AssetState reliefState = assets_.state(clip.reliefFullHandle);
-        const std::span<const std::byte> reliefBytes = assets_.data(clip.reliefFullHandle);
-        damaged = damaged || reliefState == AssetState::Failed || (reliefState == AssetState::Ready && reliefBytes.size() != clip.header.fullBytes);
+        const std::span<const std::byte> reliefData = assets_.data(clip.reliefFullHandle);
+        damaged = damaged || reliefState == AssetState::Failed || (reliefState == AssetState::Ready && reliefData.size() != reliefBytes(clip.header, 0));
         ready = ready && reliefState == AssetState::Ready;
       }
       if (damaged || abandoned) {
@@ -442,7 +448,7 @@ void SpriteSystem::update() {
     Clip& clip = *clips_[id];
     if (clip.state != State::Idle || !clip.headerReady || !fullPool_) continue;
     const bool withRelief = reliefWanted_ && hasRelief(clip.header);
-    const uint64_t bytes = clip.header.fullBytes * (withRelief ? 2 : 1);
+    const uint64_t bytes = clip.header.fullBytes + (withRelief ? reliefBytes(clip.header, 0) : 0);
     if (!makeRoom(bytes)) {
       ++starved_;
       continue;

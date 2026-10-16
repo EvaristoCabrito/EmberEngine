@@ -12,8 +12,9 @@ namespace ember {
 //   sprites/<set>/<clip>.clip   SpriteClipHeader: placement, timing, texture layout
 //   sprites/<set>/<clip>.tail   BC7 blocks of the small mips (largest side <= kSpriteTailSize), always resident
 //   sprites/<set>/<clip>.full   BC7 blocks of the whole mip chain, streamed on demand
-// and, for a clip cooked with relief (tools/scripts/sprites/relief.py), two more with the same layout and byte
-// counts, linear BC7: R, G = tangent-space normal x, y; B = occlusion; A = height (1 = nearest the viewer):
+// and, for a clip cooked with relief (tools/scripts/sprites/relief.py), two more at half resolution (the colour's
+// mips from level 1 on, so the same uv reads them; the tail from max(tailFirstMip, 1)), linear BC7: R, G =
+// tangent-space normal x, y; B = occlusion; A = height (1 = nearest the viewer):
 //   sprites/<set>/<clip>.rtail / .rfull
 // plus one index for everything: sprites/roster (SpriteRosterHeader + AssetId[clipCount]).
 // Version 2 appended the relief assets to the header; version 1 headers (192 bytes) still load, without relief.

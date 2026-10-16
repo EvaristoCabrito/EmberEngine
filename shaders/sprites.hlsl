@@ -10,16 +10,16 @@
 // mask). Cards receive the sun's shadow from the ground and 3D pieces, but not from other cards (their
 // shadow map holds the card itself, which would shadow itself; ARCHITECTURE §7.1).
 //
-// Relief (SpriteFormat.h: a second array per clip, R G = tangent-space normal, B = occlusion, A = height, 1 = nearest;
-// tools/scripts/sprites/relief.py): with it a card is a body of thickness Push.thickness x its width standing in
-// front of its plane. Each feature is a switch (SpriteDraw.h kSpriteFx*, Dev Controls "Sprites 3D"):
-//   normals      the relief's normal lights every pixel on its own (shoulders toward the sun, lamps wrapping)
+// Relief (SpriteFormat.h: a second array per clip at half resolution, R G = tangent-space normal, B = occlusion,
+// A = height, 1 = nearest; tools/scripts/sprites/relief.py): with it a card is a body of thickness Push.thickness x its
+// smaller side standing in front of its plane. Each feature is a switch (SpriteDraw.h kSpriteFx*, Dev Controls
+// "Sprites 3D"), all of them subtle by design (the painting stays the painting):
+//   normals      the relief's normal bends the lighting a little per pixel (shoulders toward the sun, lamps wrapping)
 //   depth        each pixel writes its own depth (PSMainDepth) and is lit where it stands: the body intersects
 //                fences, grass and other cards instead of the plane doing it
-//   parallax     parallax occlusion mapping along the view: nearer parts shift with the camera
-//   self-shadow  the sun marched through the height field: a raised arm shadows the chest
-//   occlusion    the baked occlusion dims the indirect light
-//   specular     a specular lobe (roughness 0.5) on the relief
+//   occlusion    the baked occlusion dims the indirect light in folds
+// Parallax mapping and a marched self-shadow were tried (2026-10-16) and taken out: at this camera they tear and
+// double the figures and smear them in motion.
 // The plane is the body's back (height 0); the height field reaches out toward the viewer, so feet stay put.
 #include "lighting.hlsli"
 
@@ -60,8 +60,9 @@ static const float kMaxLit = 2.0;     // Engine2 MAX_LIT
 static const float kUnitFront = 1.2;  // Engine2 UNIT_FRONT
 static const float kGlowRadius = 0.1; // Engine2 GLOW_RADIUS
 
-static const uint kFxNormals = 1u, kFxDepth = 2u, kFxParallax = 4u, kFxSelfShadow = 8u, kFxOcclusion = 16u, kFxSpecular = 32u,
-                  kFxDecor = 64u;
+static const uint kFxNormals = 1u, kFxDepth = 2u, kFxOcclusion = 16u, kFxDecor = 64u;
+static const float kReliefNormal = 0.6;     // how far the shading normal bends toward the relief's
+static const float kReliefOcclusion = 0.7;  // how much of the baked occlusion dims the indirect light
 
 struct VSOut {
   float4 position : SV_Position;
@@ -129,51 +130,15 @@ float4 cardColor(VSOut i, out float depth) {
   if ((s.flags & 4u) == 0 && (fx & kFxDecor) == 0) fx = 0u;
   const CardBasis b = cardBasis(s);
   const float mirrorSign = (s.flags & 1u) ? -1.0 : 1.0;
-  // Texture uv per world unit along the card's axes (v runs down the picture).
-  const float2 uvPerWorld = float2(mirrorSign * s.uvScale.x / max(s.width, 1e-4), -s.uvScale.y / max(s.height, 1e-4));
-  const float thickness = push.thickness * s.width;
-
-  float2 uv = i.uv;
-  float3 view = 0.0;
-  float3 viewT = 0.0;
+  // The body's thickness: a share of the card's smaller side (a hound's card is wide, a man's tall).
+  const float thickness = push.thickness * min(s.width, s.height);
+  const float2 uv = i.uv;
   MeshFrame f;
-  if (push.frame != 0) {
-    f = loadFrame(push.frame);
-    view = normalize(f.cameraPosition - i.world);
-    viewT = float3(dot(view, b.right), dot(view, b.up), dot(view, b.facing));
-  }
-  if ((fx & kFxParallax) && viewT.z > 0.05) {
-    // Parallax occlusion mapping: the eye's ray enters the body's front (height 1) and sinks until it meets the
-    // height field; the plane (height 0) keeps its place, nearer parts slide along the view.
-    const float2 slide = viewT.xy / viewT.z * thickness * uvPerWorld;  // uv shift per unit of height
-    const uint steps = uint(lerp(14.0, 6.0, viewT.z));
-    const float layer = 1.0 / float(steps);
-    float h = 1.0;
-    float prevH = 1.0, prevSurface = 0.0;
-    float2 prevUv = uv + slide;
-    float surface = sampleRelief(s, prevUv).a;
-    bool hit = false;
-    for (uint k = 0; k < steps; ++k) {
-      prevH = h;
-      prevSurface = surface;
-      prevUv = uv + h * slide;
-      h -= layer;
-      const float2 at = uv + h * slide;
-      surface = sampleRelief(s, at).a;
-      if (surface >= h) {
-        // Where the ray crossed between the two samples.
-        const float a = prevH - prevSurface, c = surface - h;
-        const float t = a / max(a + c, 1e-4);
-        uv = lerp(prevUv, at, t);
-        hit = true;
-        break;
-      }
-    }
-    if (!hit) uv = uv;  // reached the plane: the plane's own pixel
-  }
+  if (push.frame != 0) f = loadFrame(push.frame);
 
   float4 c = gTextureArrays[NonUniformResourceIndex(s.textureIndex)].Sample(gSamplers[push.samplerIndex], float3(uv, s.layer));
   clip(c.a - 1.0 / 255.0);
+  // The relief array holds the colour's mips from level 1 on (half resolution): the same uv reads it.
   float4 relief = fx != 0u ? sampleRelief(s, uv) : float4(0.5, 0.5, 1.0, 0.0);
   const float height = relief.a;
   float3 position = i.world;
@@ -189,42 +154,22 @@ float4 cardColor(VSOut i, out float depth) {
   if ((s.flags & 2u) && push.frame != 0) {
     float3 normal = i.normal;
     if (fx & kFxNormals) {
+      // The relief's normal, kept subtle: a little over half of the way from the card's own normal, so the light
+      // models the body without turning the painting into a bas-relief.
       float3 n = float3(relief.xy * 2.0 - 1.0, 0.0);
       n.x *= mirrorSign;
       n.z = sqrt(saturate(1.0 - dot(n.xy, n.xy)));
-      normal = normalize(n.x * b.right + n.y * b.up + n.z * i.normal);
+      const float3 bent = normalize(n.x * b.right + n.y * b.up + n.z * i.normal);
+      normal = normalize(lerp(i.normal, bent, kReliefNormal));
     }
     Surface surface = defaultSurface(position, normal, c.rgb);
     surface.geometricNormal = i.normal;
     surface.wrap = kWrap;
     surface.specular = 0.0;
-    if (fx & kFxSpecular) {
-      surface.specular = 0.5;
-      surface.roughness = 0.5;
-    }
-    if (fx & kFxOcclusion) surface.occlusion = relief.b;
+    if (fx & kFxOcclusion) surface.occlusion = lerp(1.0, relief.b, kReliefOcclusion);
     // Shadows from the ground and 3D pieces, not from the cards' own map (a flat card would shadow itself).
     surface.receivesCardShadow = 0.0;
     if (s.flags & 4u) surface.twoSidedLocal = 1.0;  // units (Engine2: pointLightsOnBothSides)
-    if (fx & kFxSelfShadow) {
-      // The sun marched through the height field from this pixel: where the field rises over the ray, the sun is hidden.
-      const float3 l = f.sunDirection;
-      const float3 lt = float3(dot(l, b.right), dot(l, b.up), dot(l, b.facing));
-      if (lt.z > 0.02) {
-        const float maxWorld = min((1.0 - height) * thickness / lt.z, 0.75 * s.width);
-        const uint steps = 8;
-        float occluded = 0.0;
-        [unroll] for (uint k = 1; k <= steps; ++k) {
-          const float t = maxWorld * float(k) / float(steps);
-          const float rayH = height + lt.z * t / max(thickness, 1e-4) + 0.02;
-          const float2 at = uv + lt.xy * t * uvPerWorld;
-          const float4 r = sampleRelief(s, at);
-          const float fieldH = r.a;
-          occluded = max(occluded, (fieldH - rayH) * 6.0);
-        }
-        surface.sunVisibility = 1.0 - saturate(occluded);
-      }
-    }
     // The whole card takes the fog of war where it stands (Engine2's DecorLayer.shade).
     const Sight sight = tacticalSight(f, s.origin);
     if (f.debugView == kDebugFog) return float4(float3(1.0 - sight.color, sight.local, 1.0) * c.a, c.a);

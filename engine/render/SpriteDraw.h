@@ -33,13 +33,11 @@ inline constexpr uint32_t kSpriteFlat = 16;  // lies flat facing up, its top tow
 
 // Sprite relief features (Renderer::setSpriteFeatures; Dev Controls "Sprites 3D"): each one switchable alone. A
 // card without a relief array ignores them all; decor cards (no kSpriteFront) ignore them unless kSpriteFxDecor.
-inline constexpr uint32_t kSpriteFxNormals = 1;      // per-pixel shading normal from the relief
+inline constexpr uint32_t kSpriteFxNormals = 1;      // per-pixel shading normal from the relief (subtle)
 inline constexpr uint32_t kSpriteFxDepth = 2;        // per-pixel depth written (the body intersects the world)
-inline constexpr uint32_t kSpriteFxParallax = 4;     // the picture shifts with the view by its height (POM)
-inline constexpr uint32_t kSpriteFxSelfShadow = 8;   // the sun shadowed by the card's own relief
 inline constexpr uint32_t kSpriteFxOcclusion = 16;   // baked occlusion dims the indirect light
-inline constexpr uint32_t kSpriteFxSpecular = 32;    // a specular lobe on the relief
 inline constexpr uint32_t kSpriteFxDecor = 64;       // the above on decor cards too, not only units
-inline constexpr uint32_t kSpriteFxAll = 127;
+inline constexpr uint32_t kSpriteFxAll = kSpriteFxNormals | kSpriteFxDepth | kSpriteFxOcclusion | kSpriteFxDecor;
+// (4 parallax, 8 self-shadow and 32 specular were tried and taken out: they tore and smeared the figures.)
 
 }  // namespace ember

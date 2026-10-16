@@ -30,7 +30,7 @@ constexpr uint32_t kCookerVersion = 1;
 // Grid-sheet cells (FrameSpec) are part of the key through their frame names; bump this when their slicing changes.
 constexpr uint32_t kCellVersion = 3;
 // Bump whenever cooked relief pixels change for the same input (the relief chain has its own cache next to the colour's).
-constexpr uint32_t kReliefVersion = 1;
+constexpr uint32_t kReliefVersion = 2;  // 2: half resolution (the colour's mips from level 1 on)
 constexpr uint32_t kTrimMargin = 4;      // pixels kept around the visible area (room for filtering)
 constexpr uint32_t kBlocksPerTask = 2048;  // BC7 blocks encoded per job
 
@@ -576,9 +576,16 @@ bool cookClipRelief(JobSystem& jobs, const std::string& setName, const SpriteCli
     }
   });
 
+  // Half resolution: the chain from mip 1 on (normals, height and occlusion are smooth; a quarter of the colour's
+  // bytes). The tail starts where the colour's does, or at mip 1 when the colour's tail is the whole chain.
+  if (mipCount < 2) {
+    logWarn("{}: relief: the clip is too small for a half-resolution chain", label);
+    return false;
+  }
   const std::filesystem::path base = options.cacheDir / assetBase(setName, clip.name);
-  const uint64_t tailOffset = mipOffset[layout.tailFirstMip];
-  return writeFile(std::filesystem::path(base).concat(".rfull"), data.data(), data.size()) &&
+  const uint64_t fullStart = mipOffset[1];
+  const uint64_t tailOffset = mipOffset[std::max(layout.tailFirstMip, 1u)];
+  return writeFile(std::filesystem::path(base).concat(".rfull"), data.data() + fullStart, data.size() - fullStart) &&
          writeFile(std::filesystem::path(base).concat(".rtail"), data.data() + tailOffset, data.size() - tailOffset) &&
          writeFile(std::filesystem::path(base).concat(".rkey"), &key, sizeof(key));
 }
@@ -807,8 +814,8 @@ bool cookSprites(JobSystem& jobs, const SpriteManifest& manifest, const SpriteCo
         if (relief) {
           out.push_back({asset + ".rfull", std::filesystem::path(cached).concat(".rfull")});
           out.push_back({asset + ".rtail", std::filesystem::path(cached).concat(".rtail")});
-          report.fullBytes += layout.fullBytes;
-          report.tailBytes += layout.tailBytes;
+          report.fullBytes += layout.fullBytes - bc7MipBytes(layout.width, layout.height, 0, layout.frames);
+          report.tailBytes += layout.tailFirstMip == 0 ? layout.tailBytes - bc7MipBytes(layout.width, layout.height, 0, layout.frames) : layout.tailBytes;
         }
         roster.push_back(assetId(asset + ".clip"));
         report.fullBytes += layout.fullBytes;

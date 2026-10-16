@@ -105,8 +105,8 @@ class SpriteSystem {
     VkDeviceSize memoryBytes = 0, memoryAlignment = 1;  // the full image's real GPU footprint
     uint64_t chargedBytes = 0;                          // what this clip counts against the budget while not Idle
 
-    // The relief chain (header.reliefFullAsset != 0): its tail always resident, its full chain streamed with the
-    // colour's when wanted (setReliefWanted).
+    // The relief chain (header.reliefFullAsset != 0; the colour's mips from level 1 on, SpriteFormat.h): its tail
+    // always resident, its full chain streamed with the colour's when wanted (setReliefWanted).
     AssetHandle reliefTailHandle;
     Image reliefTailImage;
     ImageUpload reliefTailUpload;
