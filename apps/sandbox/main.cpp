@@ -80,6 +80,7 @@
 #include "MeshCompare.h"
 #include "MapStage.h"
 #include "TitleStage.h"
+#include "media/AudioMixer.h"
 #include "OverworldStage.h"
 #include "BattleTalk.h"
 #include "MapEditorStage.h"
@@ -141,6 +142,7 @@ struct Options {
   std::string titleScreen;  // captures: "new" / "load" open the save slots ("" the title itself); "help[:tab[:scroll]]" /
                             // "options": Como jogar / Opções over the title
   std::string lang;         // captures: the interface, dialogues and subtitles in "pt" / "en" (Opções' languages, not saved)
+  std::string resume;       // captures: a saved fight (BattleSnapshot JSON) resumed on the battle (MapStage::resume)
   std::string scenes = "build/engine2-scenes", maps;
   uint32_t debugView = 0;
   std::string scene;
@@ -208,6 +210,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--title-pick" && hasValue) o.titlePick = std::atoi(argv[++i]);
     else if (arg == "--title-screen" && hasValue) o.titleScreen = argv[++i], o.title = true;
     else if (arg == "--lang" && hasValue) o.lang = argv[++i];
+    else if (arg == "--resume" && hasValue) o.resume = argv[++i];
     else if (arg == "--scenes" && hasValue) o.scenes = argv[++i];
     else if (arg == "--maps" && hasValue) o.maps = argv[++i];
     else if (arg == "--debug-view" && hasValue) o.debugView = static_cast<uint32_t>(std::atoi(argv[++i]));
@@ -615,6 +618,13 @@ int runCapture(const Options& o) {
       // --map-ui menu / options: the battle's Esc menu or Opções open.
       if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && (o.mapUi == "menu" || o.mapUi == "options"))
         map->previewMenu(o.mapUi);
+      // --resume <snapshot.json>: the battle as that saved fight left it.
+      if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && !o.resume.empty()) {
+        std::ifstream in(o.resume, std::ios::binary);
+        const e2::Json snap = e2::Json::parse(in, nullptr, false);
+        map->setCampaign(nullptr, snap.is_object() ? snap.value("missionId", std::string()) : std::string(), std::string(), false);
+        if (!map->resume(snap)) fatal("--resume: the snapshot does not fit this battle");
+      }
       // --map-ui talk:<mission>[:outro]: that mission's intro (or outro) conversation over the battle, nothing recorded.
       if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && o.mapUi.starts_with("talk:")) {
         std::string mission = o.mapUi.substr(5);
@@ -674,6 +684,7 @@ int runWindow(const Options& o) {
   DebugUi ui(context, window.handle(), Renderer::outputFormat());
   Renderer renderer(context, swapchain.get(), swapchain->extent());
   renderer.setUi(&ui);
+  AudioMixer::get().setRoot(o.engine2);  // music and effects from Engine2's public folder (captures stay silent)
   // The title screen when asked (or when nothing else is). Its save slots open the campaign's world map; a mission
   // from there (or a test-mode map) plays in this window, then the world map comes back.
   std::optional<MissionEntry> pending;
@@ -712,6 +723,9 @@ int runWindow(const Options& o) {
   // GameApp's editorDraft).
   bool openEditor = false, inEditorTest = false;
   std::optional<e2::Json> editorDraft;
+  // GameApp enterFromSave: the world map opened from Continuar / a load resumes a fight saved mid-way (resumeOnMap);
+  // the battle then opened takes the save's snapshot (resumeNext).
+  bool resumeOnMap = false, resumeNext = false;
   auto toggleFullscreen = [&] {
     const bool full = (SDL_GetWindowFlags(window.handle()) & SDL_WINDOW_FULLSCREEN) != 0;
     SDL_SetWindowFullscreen(window.handle(), !full);
@@ -720,7 +734,7 @@ int runWindow(const Options& o) {
     TitleStage::Paths titlePaths;
     titlePaths.engine2Public = paths.engine2Public, titlePaths.maps = paths.maps, titlePaths.scenes = paths.scenes;
     auto title = std::make_unique<TitleStage>(
-        titlePaths, hasCampaign ? &campaign : nullptr, [&](const MissionEntry& m) { pending = m; }, [&] { openMap = true; },
+        titlePaths, hasCampaign ? &campaign : nullptr, [&](const MissionEntry& m) { pending = m; }, [&] { openMap = true, resumeOnMap = true; },
         [] {
           SDL_Event quit{};
           quit.type = SDL_EVENT_QUIT;
@@ -780,6 +794,8 @@ int runWindow(const Options& o) {
     callbacks.title = [&] { backToTitle = true; };
     callbacks.fullscreen = toggleFullscreen;
     callbacks.gfx = &devGfx;
+    callbacks.resume = [&](const MissionEntry& m) { pending = m, resumeNext = true; };
+    callbacks.resumeSaved = std::exchange(resumeOnMap, false);
     return std::make_unique<OverworldStage>(paths, campaign, world, std::move(callbacks), std::exchange(campaignNote, {}));
   };
   // campaign.ts finishBattle (its heroes part and the mission's completion): each hero's level, XP and HP into the
@@ -837,11 +853,25 @@ int runWindow(const Options& o) {
     const bool resized = window.consumeResized();
     const bool presented = !resized && services.frame(ui, renderer, stage.get(), swapchain->extent(), dt,
                                                       [&] { return renderer.renderFrame(time); });
+    // The sound (audio.ts): Opções' volumes, the screen's music (GameApp's chain), delays and fades.
+    {
+      const GamePrefs& prefs = gamePrefs();
+      AudioMixer& mixer = AudioMixer::get();
+      mixer.setVolumes(prefs.music, prefs.sfx, prefs.muted);
+      const Stage::Music m = stage ? stage->music() : Stage::Music{};
+      if (m.file.empty() || prefs.muted) mixer.stopMusic();
+      else mixer.playMusic(m.file, m.base);
+      mixer.update(dt);
+    }
     if (!presented && swapchain->recreate(width, height)) renderer.resize(swapchain->extent());
     // Screen changes happen between frames, with the GPU idle: the old screen's resources go before the new one loads.
     std::optional<MapStageOptions> retry;
     if (auto* map = dynamic_cast<MapStage*>(stage.get())) {
-      if (map->wantsHome()) {
+      if (map->wantsLoad()) {
+        // The battle menu's Load: the chosen slot's campaign, where it stands (GameApp enterFromSave; test mode ends).
+        playing.clear(), testSession.reset(), inEditorTest = false, inSpells = false;
+        openMap = true, resumeOnMap = true;
+      } else if (map->wantsHome()) {
         backToTitle = true;  // the battle menu's "Tela inicial" (GameApp goToTitle)
       } else if (map->wantsTitle()) {
         if (inEditorTest) {
@@ -871,6 +901,7 @@ int runWindow(const Options& o) {
       stage.reset();
       auto again = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, *retry);
       again->setMenus(toggleFullscreen, &devGfx);
+      again->setCampaign(hasCampaign ? &campaign : nullptr, playing, std::filesystem::path(retry->map).stem().string(), testSession.has_value());
       again->setPlaytest(inEditorTest);
       if (!playing.empty() && dialogs.is_object())
         attachBattleTalk(*again, playing, dialogs, paths.engine2Public, world, testSession ? nullptr : &campaign);
@@ -925,9 +956,18 @@ int runWindow(const Options& o) {
         auto map = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
         map->setMenus(toggleFullscreen, &devGfx);
         map->setPlaytest(inEditorTest);
+        map->setCampaign(hasCampaign ? &campaign : nullptr, playing, pending->id, testSession.has_value() || playing.empty());
+        // A fight saved mid-way, resumed (GameApp startBattle with resume: applySnapshot); its intro already played.
+        bool resumed = false;
+        if (std::exchange(resumeNext, false) && !playing.empty()) {
+          const e2::Json save = campaign.activeSave();
+          resumed = save.contains("battle") && map->resume(save["battle"]);
+          if (!resumed) logWarn("{}: the saved fight does not fit this map; it starts afresh", playing);
+        }
         // The mission's intro conversation, its outro on a victory, and the campaign's epilogue films.
         if (!playing.empty() && dialogs.is_object())
-          attachBattleTalk(*map, playing, dialogs, paths.engine2Public, world, testSession ? nullptr : &campaign);
+          if (auto talk = attachBattleTalk(*map, playing, dialogs, paths.engine2Public, world, testSession ? nullptr : &campaign); talk && resumed)
+            talk->introDone = true;
         stage = std::move(map);
       } else {
         stage = makeMap();
@@ -937,12 +977,62 @@ int runWindow(const Options& o) {
       backToTitle = false, openMap = false, openTestRpg = false, openSpells = false, openEditor = false;
     }
   }
+  AudioMixer::get().shutdown();  // before SDL closes with the window
   return 0;
 }
 
 }  // namespace
 
+namespace {
+// --battle-save-check <battle.json> [out snapshot]: a fight's state saved (Battle::snapshot) and laid on a fresh copy
+// of the same battle (applySnapshot) must give the same snapshot back. The state: a round played into (initiative,
+// the first hero walked to the far end of its reach, hurt, its XP and a tier-1 use spent), an enemy fallen, enmity
+// noted, a second round started.
+int battleSaveCheck(const char* file, const char* out) {
+  std::optional<e2::Battle> a = e2::Battle::load(file);
+  if (!a) return 1;
+  e2::Mulberry32 rng(7);
+  a->rollInitiative(rng);
+  std::vector<e2::BattleUnit>& u = a->units();
+  int hero = -1, foe = -1, foe2 = -1;
+  for (size_t i = 0; i < u.size(); ++i) {
+    if (u[i].side == "player" && hero < 0) hero = static_cast<int>(i);
+    else if (u[i].side == "enemy" && foe < 0) foe = static_cast<int>(i);
+    else if (u[i].side == "enemy" && foe2 < 0) foe2 = static_cast<int>(i);
+  }
+  if (hero < 0 || foe < 0 || foe2 < 0) return 1;
+  const std::vector<e2::ReachCell> reach = a->reachable(static_cast<size_t>(hero));
+  if (!reach.empty()) a->move(static_cast<size_t>(hero), reach.back().x, reach.back().y);
+  e2::BattleUnit& h = u[static_cast<size_t>(hero)];
+  h.hp -= 7, h.xp += 30, h.acted = true;
+  if (h.spells[0] > 0) --h.spells[0];
+  u[static_cast<size_t>(foe)].alive = false, u[static_cast<size_t>(foe)].hp = 0;
+  a->noteWeaponDamage(static_cast<size_t>(hero), static_cast<size_t>(foe2), 5);
+  a->startNewRound();
+  const nlohmann::json s1 = a->snapshot();
+  std::optional<e2::Battle> b = e2::Battle::load(file);
+  e2::Mulberry32 other(99);
+  b->rollInitiative(other);
+  const bool applied = b->applySnapshot(s1);
+  const nlohmann::json s2 = b->snapshot();
+  const bool same = applied && s1 == s2;
+  std::printf("battle save check %s: %s (%zu units, round %d, hero %s at %d,%d hp %d)\n", file, same ? "PASS" : "FAIL", u.size(),
+              s1.value("turn", 0), h.name.c_str(), h.x, h.y, h.hp);
+  if (!same) std::printf("%s\n%s\n", s1.dump().c_str(), s2.dump().c_str());
+  if (out) {
+    nlohmann::json snap = s1;
+    snap["missionId"] = "check", snap["introDialogDone"] = true, snap["phase"] = "player", snap["turnBegan"] = false;
+    std::ofstream(out, std::ios::binary) << snap.dump(1);
+  }
+  return same ? 0 : 1;
+}
+}  // namespace
+
 int main(int argc, char** argv) {
+  if (argc >= 3 && std::string_view(argv[1]) == "--battle-save-check") return battleSaveCheck(argv[2], argc >= 4 ? argv[3] : nullptr);
+  // --audio-check [engine2 public folder]: decode every effect and the start of every track (exit 1 if any fails).
+  if (argc >= 2 && std::string_view(argv[1]) == "--audio-check")
+    return ember::AudioMixer::check(argc >= 3 ? argv[2] : "C:/Engine2/public") == 0 ? 0 : 1;
   const Options options = parse(argc, argv);
   if (!options.compare.empty()) return runCompare(options);
   return options.capture.empty() ? runWindow(options) : runCapture(options);

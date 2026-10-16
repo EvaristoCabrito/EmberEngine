@@ -9,7 +9,7 @@
 //                   screen has them), Gráficos, Áudio, Idiomas, Acessibilidade, "Alterações salvas automaticamente."
 //                   Opened by the title, the world maps, Modo teste and the battle's Esc menu.
 //   BattleMenu      the battle's Esc menu (GameApp.tsx BattleScreen `paused`): Velocidade, Áudio, Opções, Continuar,
-//                   Desistir / Encerrar teste, Tela inicial.
+//                   Save, Load, Desistir / Encerrar teste, Tela inicial.
 // The player's choices (Engine2 gamePreferences.ts + audio.ts) live in %LOCALAPPDATA%\Ember\game-preferences.json; the
 // graphics switches are Dev Controls' own (DevGfxSettings.h, dev-gfx.json).
 //
@@ -18,9 +18,9 @@
 // Tamanho do diálogo and Diálogos on the conversations (DialogScreen: a line's own English when Engine2 has one, else
 // its Portuguese, Engine2's translatedText); Interface e nomes switches these windows, the title and the save slots
 // between Portuguese and English (tr(): Engine2's dictionary and the English its screens give inline; anything without
-// an English text stays Portuguese, Engine2's rule). EmberEngine plays no music and no sound effects yet, so Música,
-// Efeitos sonoros and Silenciar are kept but shown disabled.
-// Not ported: the battle menu's Zoom (Engine2's 3D camera ignored it), Save / Load in battle (no battle snapshots yet).
+// an English text stays Portuguese, Engine2's rule). Silenciar, Música and Efeitos sonoros act on the game's sound
+// (engine/media/AudioMixer, read every frame by the game loop).
+// Not ported: the battle menu's Zoom (left for later, user 2026-10-16).
 
 #include <imgui.h>
 
@@ -777,11 +777,10 @@ class OptionsDialog {
     }
     {
       Section s{tr("Áudio"), &iconVolume, {}};
-      // No music or sound effects in EmberEngine yet: those three stay as Engine2 shows them, disabled.
-      s.rows.push_back(toggle("##mute", tr("Silenciar"), prefs.muted, true, &prefsChanged));
+      s.rows.push_back(toggle("##mute", tr("Silenciar"), prefs.muted, false, &prefsChanged));
       s.rows.push_back(toggle("##cutsound", tr("Som das cutscenes"), prefs.cutsceneEnabled, false, &prefsChanged));
-      s.rows.push_back(range("##music", tr("Música"), prefs.music, true, &prefsChanged));
-      s.rows.push_back(range("##sfx", tr("Efeitos sonoros"), prefs.sfx, true, &prefsChanged));
+      s.rows.push_back(range("##music", tr("Música"), prefs.music, false, &prefsChanged));
+      s.rows.push_back(range("##sfx", tr("Efeitos sonoros"), prefs.sfx, false, &prefsChanged));
       s.rows.push_back(range("##cutvol", tr("Volume da cutscene"), prefs.cutscene, !prefs.cutsceneEnabled, &prefsChanged));
       sections.push_back(std::move(s));
     }
@@ -908,11 +907,12 @@ class OptionsDialog {
 
 class BattleMenu {
  public:
-  enum class Action { None, Resume, Options, Quit, Title };
+  enum class Action { None, Resume, Options, Save, Load, Quit, Title };
   enum class Speed { Slow, Normal, Fast };
 
-  // `playtest`: the Map Editor's Testar battle ("Encerrar teste" instead of "Desistir").
-  Action draw(ImVec2 screen, const std::filesystem::path& engine2Public, Speed& speed, bool playtest) {
+  // `playtest`: the Map Editor's Testar battle ("Encerrar teste" instead of "Desistir"). `canSave` / `canLoad`: the
+  // campaign's slots are there (Modo teste writes nothing: no Save).
+  Action draw(ImVec2 screen, const std::filesystem::path& engine2Public, Speed& speed, bool playtest, bool canSave = false, bool canLoad = false) {
     Action act = Action::None;
     // bg-bg/80 over the battle; a click outside the panel resumes
     ImGui::SetNextWindowPos({0, 0});
@@ -930,7 +930,7 @@ class BattleMenu {
     const float headH = 32.0f + 16.0f;
     const float speedH = 12.0f * 1.33f + 8.0f + 36.0f + 16.0f;
     const float audioH = 12.0f + 40.0f + (audioOpen_ ? 8.0f + 12.0f * 2 + 3 * 40.5f + 2 * 12.0f : 0.0f) + 16.0f;
-    const float buttonsH = 48.0f + 8.0f + 44.0f + 8.0f + 44.0f + 8.0f + 44.0f;
+    const float buttonsH = 48.0f + 8.0f + 44.0f + 8.0f + 44.0f + 8.0f + 44.0f + (canSave ? 52.0f : 0.0f) + (canLoad ? 52.0f : 0.0f);
     const float h = std::min(screen.y * 0.85f, pad + headH + speedH + audioH + buttonsH + pad);
     const ImVec2 a{std::round((screen.x - w) * 0.5f), std::round((screen.y - h) * 0.5f)}, b{a.x + w, a.y + h};
     ImGui::SetCursorScreenPos({0, 0});
@@ -991,8 +991,8 @@ class BattleMenu {
         std::string name;
         float* value;
         bool disabled;
-      } vols[3] = {{"##bmusic", upperUtf8(tr("Música")), &p.music, true},
-                     {"##bsfx", upperUtf8(tr("Efeitos", "Effects")), &p.sfx, true},
+      } vols[3] = {{"##bmusic", upperUtf8(tr("Música")), &p.music, false},
+                     {"##bsfx", upperUtf8(tr("Efeitos", "Effects")), &p.sfx, false},
                      {"##bcut", upperUtf8(tr("Cutscenes", "Cutscenes")), &p.cutscene, false}};
       float vy = y + 12.0f;
       for (const Vol& v : vols) {
@@ -1016,6 +1016,17 @@ class BattleMenu {
     ImGui::SetCursorScreenPos({a.x + pad, y});
     if (emberButton("##bresume", tr("Continuar"), {inner, 44.0f}, Btn::Primary, false, 14.0f)) act = Action::Resume;
     y += 44.0f + 8.0f;
+    // GameApp's own labels for these two ("Save", "Load").
+    if (canSave) {
+      ImGui::SetCursorScreenPos({a.x + pad, y});
+      if (emberButton("##bsave", "Save", {inner, 44.0f}, Btn::Ghost, false, 14.0f)) act = Action::Save;
+      y += 44.0f + 8.0f;
+    }
+    if (canLoad) {
+      ImGui::SetCursorScreenPos({a.x + pad, y});
+      if (emberButton("##bload", "Load", {inner, 44.0f}, Btn::Ghost, false, 14.0f)) act = Action::Load;
+      y += 44.0f + 8.0f;
+    }
     ImGui::SetCursorScreenPos({a.x + pad, y});
     if (emberButton("##bquit", playtest ? tr("Encerrar teste", "End test") : tr("Desistir", "Give up"), {inner, 44.0f}, Btn::Ghost, false, 14.0f)) act = Action::Quit;
     y += 44.0f + 8.0f;

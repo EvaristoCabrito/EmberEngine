@@ -75,6 +75,12 @@ class FogOfWar {
   // What was visible becomes remembered, then every hex within an eye's radius that it can see is visible.
   void relight(std::span<const Eye> eyes);
   uint8_t state(int c, int r) const { return cells_[static_cast<size_t>(indexOf(layout_, c, r))]; }
+  // A resumed fight's explored hexes (Engine2 restoreExplored): each marked seen comes back explored; what is in sight
+  // falls out of the next relight.
+  void restoreExplored(const std::vector<uint8_t>& seen) {
+    for (size_t i = 0; i < cells_.size() && i < seen.size(); ++i)
+      if (seen[i] && cells_[i] == kFogUnseen) cells_[i] = kFogExplored;
+  }
   bool visible(int c, int r) const { return state(c, r) == kFogVisible; }
   // Bumped by every relight: the mask (and the shadows that read it) must be redrawn.
   uint64_t version() const { return version_; }

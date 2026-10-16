@@ -7,6 +7,9 @@
 // every pair of foes, from where the attacker stands and from each hex around the defender, and seeded rolls
 // (rollDamage with mulberry32 + the engine's arcane / staff element step). For turns: each unit's initiative bonus,
 // and each enemy's opening decision from Engine2's own runAiFor (a fresh battle per enemy): its walk and its target.
+// Sound: each unit's cues as Engine2's engine.ts picks them through audio.ts (attack, counter, every spell it may cast,
+// heal, walk, hit, death; which file, volume, start offset, delay and player), recorded by a stand-in for the browser's
+// Audio element; the level-up cue; the mission's music (GameApp's music chain).
 //
 //   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
 //        tools/scripts/engine2/export_battle.ts -- <map.json> <out.battle.json>
@@ -27,6 +30,21 @@ g.cancelAnimationFrame = () => {};
 g.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
 g.Image = class { src = ''; width = 1; height = 1; onload: unknown = null; onerror: unknown = null; };
 g.document = { createElement: () => ({ getContext: () => null, style: {} }), documentElement: { classList: { add() {}, remove() {} } } };
+// audio.ts plays through HTMLAudioElement: this recorder stands in for it (a play is noted with its file, volume, start
+// offset, the delay a setTimeout put before it, and whether it is a fresh copy (cloneNode: playSfxFile) or the file's
+// one reused element (playSfxFileExclusive)).
+type Played = { src: string; volume: number; offset: number; delay: number; exclusive: boolean };
+const played: Played[] = [];
+let playDelay = 0;
+class RecordingAudio {
+  src: string; volume = 1; currentTime = 0; muted = false; paused = true; preload = ''; loop = false; layered = false;
+  dataset: Record<string, string> = {};
+  constructor(src = '') { this.src = src; }
+  load() {} addEventListener() {} setAttribute() {} pause() { this.paused = true; }
+  cloneNode() { const c = new RecordingAudio(this.src); c.layered = true; return c; }
+  play() { played.push({ src: this.src, volume: this.volume, offset: this.currentTime, delay: playDelay, exclusive: !this.layered }); this.paused = false; return Promise.resolve(); }
+}
+g.Audio = RecordingAudio;
 
 const [mapPath, outPath] = process.argv.slice(2).filter((a) => a !== '--');
 if (!mapPath || !outPath) throw new Error('usage: export_battle.ts -- <map.json> <out.battle.json>');
@@ -42,6 +60,8 @@ const resist = await import(`${E2}/src/game/resistances.ts`);
 const staff = await import(`${E2}/src/ember/mageStaffMagic.ts`);
 const affinity = await import(`${E2}/src/game/affinity.ts`);
 const available = await import(`${E2}/src/rules/available-spells.ts`);
+const audio = await import(`${E2}/src/game/audio.ts`);
+const gameResist = await import(`${E2}/src/game/resistances.ts`);
 
 const draft = JSON.parse(readFileSync(mapPath, 'utf8')).draft;
 const mission = store.draftToMission(draft);
@@ -307,7 +327,126 @@ if (process.env.SPELL_REFS === '1') {
 }
 
 mkdirSync(dirname(outPath), { recursive: true });
+// --- sound -------------------------------------------------------------------------------------------------------------
+// engine.ts's constants (module-private), read from its source.
+const engineSource = readFileSync(`${E2}/src/game/engine.ts`, 'utf8');
+const constant = (name: string) => Number(new RegExp(`const ${name} = ([0-9.]+);`).exec(engineSource)?.[1]);
+const LONG_ANIM_SECONDS = constant('LONG_ANIM_SECONDS'), KAEL_BLADE_SOUND_START = constant('KAEL_BLADE_SOUND_START');
+const LONG_ARROW_RELEASE_SECONDS = LONG_ANIM_SECONDS;  // engine.ts: const LONG_ARROW_RELEASE_SECONDS = LONG_ANIM_SECONDS
+const sfx = audio.sfxPlay as Record<string, (...a: unknown[]) => unknown>;
+const round = (v: number) => Math.round(v * 1000) / 1000;
+// What `fn` plays, through audio.ts (setTimeout runs its callback at once, its delay noted).
+function cues(fn: () => void) {
+  played.length = 0;
+  const timer = g.setTimeout;
+  g.setTimeout = ((cb: () => void, ms?: number) => { const before = playDelay; playDelay = (ms ?? 0) / 1000; cb(); playDelay = before; return 0; }) as unknown;
+  try { fn(); } finally { g.setTimeout = timer; }
+  return played.map((x) => ({ file: decodeURIComponent(x.src.split('/').pop() ?? ''), volume: round(x.volume), offset: round(x.offset),
+    delay: round(x.delay), exclusive: x.exclusive }));
+}
+const crossbows = ['brigand', 'baseCrossbowman', 'brigandCrossbowman'];
+const arrowSpells = ['longShot', 'bloodyShot', 'multiShot', 'piercing'];
+const meleeSkills = ['cleave', 'sweep', 'shoulderSmash', 'stampede', 'piercingThrust', 'trip', 'doubleStrike'];
+const monsterKind = (u: Record<string, any>, kind: string) => !!audio.hasMonsterSfx(u.sprite, kind);
+function soundsFor(u: Record<string, any>) {
+  const arrow = crossbows.includes(u.classId) || e.isArrowAttack(u), arcane = !arrow && e.isArcaneCaster(u);
+  // startSeq, a plain combat step (no custom dice, no skill): its cue as the attack begins.
+  const attackStart = cues(() => {
+    if (arrow) sfx.arrowAttack(u.sprite === 'neera', LONG_ARROW_RELEASE_SECONDS);
+    else if (e.isArcaneCaster(u)) { if (u.sprite === 'cultist-v2') sfx.cultistV2Attack(); else if (!sfx.monster(u.sprite, 'attack')) sfx.magicAttack(); }
+    else if (u.sprite !== 'kaelFinal') {
+      if (u.sprite === 'minor-horror-001') sfx.minorHorrorAttack();
+      else if (u.sprite === 'carnivorous-plant-001') sfx.carnivorousPlantAttack();
+      else if (u.sprite === 'sapling-001') sfx.saplingAttack();
+      else if (u.sprite === 'plague-bearing-cattle') sfx.plagueCattleAttack();
+      else if (e.monsterAttackCue(u)) { /* its own attack cue */ }
+      else e.playMeleeCue(u, false, undefined);
+    }
+  });
+  // stepCombat's lunge end: Kael's long swing is cued at the strike, KAEL_BLADE_SOUND_START into the recording.
+  const strike = u.sprite === 'kaelFinal' && !arrow && !arcane ? cues(() => e.playMeleeCue(u, false, undefined, KAEL_BLADE_SOUND_START)) : [];
+  // The counter (stepCombat, as the counter begins). A bow counter winds up like the unit's own shot.
+  const counterStart = cues(() => {
+    if (e.isArrowAttack(u)) sfx.arrowAttack(u.sprite === 'neera', LONG_ARROW_RELEASE_SECONDS);
+    else if (e.isArcaneCaster(u)) { if (u.sprite === 'cultist-v2') sfx.cultistV2Attack(); else if (!sfx.monster(u.sprite, 'attack')) sfx.magicAttack(); }
+    else if (u.sprite === 'minor-horror-001') sfx.minorHorrorAttack();
+    else if (u.sprite === 'carnivorous-plant-001') sfx.carnivorousPlantAttack();
+    else if (u.sprite === 'sapling-001') sfx.saplingAttack();
+    else if (u.sprite === 'plague-bearing-cattle') sfx.plagueCattleAttack();
+    else if (e.monsterAttackCue(u)) { /* its own attack cue */ }
+    else if (u.sprite !== 'kaelFinal') e.playMeleeCue(u, false);
+  });
+  // startSeq, a spell step: every spell the unit may cast.
+  const spells: Record<string, unknown> = {};
+  for (const kind of new Set<string>([...available.classSpells(u.classId, u.level ?? 1, u.name), 'shock', 'frost', 'fantomForce'])) {
+    spells[kind] = cues(() => {
+      if (arrowSpells.includes(kind)) sfx.arrowAttack(u.sprite === 'neera', LONG_ANIM_SECONDS);
+      else if (kind === 'tendrilSwipe') sfx.carnivorousPlantAttack();
+      else if (meleeSkills.includes(kind)) e.playMeleeCue(u, false, kind);
+      else if (kind === 'bless') sfx.healBy(u.sprite);
+      else {
+        const support = gameResist.SPELL_CLASSIFICATION[kind] === 'utility';
+        if (support && monsterKind(u, 'heal')) sfx.healBy(u.sprite);
+        else if (u.sprite === 'minor-horror-001') sfx.minorHorrorCast();
+        else if (u.sprite === 'carnivorous-plant-001') sfx.carnivorousPlantCast();
+        else if (u.sprite === 'sapling-001') sfx.saplingCast();
+        else if (u.sprite === 'plague-bearing-cattle') sfx.plagueCattleCast();
+        else if (sfx.monster(u.sprite, 'cast')) { /* its own cast cue */ }
+        else if (u.sprite === 'cultist-v2') sfx.cultistV2Spellcast();
+        else sfx.spell();
+      }
+    });
+  }
+  // emitMissileFx: Tiro Longo's arrow leaving the bow.
+  const release = cues(() => sfx.arrowRelease(u.sprite === 'neera'));
+  // startSeq, a heal / cure step.
+  const heal = cues(() => sfx.healBy(u.sprite));
+  // startSeq, a move: the walk cue (Cultist V2 by the first step's direction); faded out when the move ends.
+  const walkOf = (left: boolean) => cues(() => {
+    if (u.sprite === 'minor-horror-001') sfx.minorHorrorWalk();
+    else if (u.sprite === 'sapling-001') sfx.saplingWalk();
+    else if (u.sprite === 'plague-bearing-cattle') sfx.plagueCattleWalk();
+    else if (sfx.monster(u.sprite, 'walk')) { /* its own walk cue */ }
+    else if (u.sprite === 'cultist-v2') { if (left) sfx.cultistV2WalkLeft(); else sfx.cultistV2WalkRight(); }
+    else sfx.move();
+  });
+  const walkFade = u.sprite === 'plague-bearing-cattle' || monsterKind(u, 'walk');
+  // The hit and death cues (the engine's per-frame watch): plants, the cattle, MONSTER_SFX.
+  const plant = u.sprite === 'carnivorous-plant-001' || u.sprite === 'sapling-001';
+  const hit = cues(() => {
+    if (plant) { if (u.sprite === 'sapling-001') sfx.saplingHit(); else sfx.carnivorousPlantHit(); }
+    if (monsterKind(u, 'hit')) sfx.monster(u.sprite, 'hit');
+  });
+  const death = cues(() => {
+    if (plant) { if (u.sprite === 'sapling-001') sfx.saplingDeath(); else sfx.carnivorousPlantDeath(); }
+    if (u.sprite === 'plague-bearing-cattle') sfx.plagueCattleDeath();
+    if (monsterKind(u, 'death')) sfx.monster(u.sprite, 'death');
+  });
+  // The Big Blue Calf skips its hit cue when the blow kills it.
+  return { attack: attackStart, strike, counter: counterStart, spells, release, heal, walk: walkOf(false), walkLeft: walkOf(true), walkFade, hit,
+    hitOnDeath: u.classId !== 'bigBlueCalf', death };
+}
+for (let i = 0; i < e.units.length; i++) (units[i] as Record<string, unknown>).sounds = soundsFor(e.units[i]);
+const levelUp = cues(() => sfx.levelUp());
+// GameApp's music chain for a battle (its mission id is the map's draft id): the mission's own track when it names one
+// that exists, else the theme for its id (audio.ts getTrack: file and base volume).
+const THEMES: Record<string, [string, number]> = {
+  temple: ['temple.mp3', 0.42], aldeia: ['EMBERBattle01-Balanced-High.mp3', 0.4], siege: ['Absolute Mental Descruction 00-Balanced-High.mp3', 0.4],
+  inn: ['Connard The Barbarian 10.mp3', 0.4], hill: ['Long Space _Opera DJ  UMN+  022-Balanced-High.mp3', 0.4],
+  portao: ['TempleEntrance-Balanced-High.mp3', 0.4], early: ['LANDR-Absolute Mental Descruction umn3 10 (3)-Balanced-High.mp3', 0.4],
+};
+const missionMusic = (() => {
+  const named = mission.music;
+  if (named && (data.MUSIC_TRACKS as string[]).includes(named)) return { file: named, base: 0.4 };
+  const id = draft.id as string;
+  const theme = id === 'templo' ? 'temple' : id === 'aldeia' ? 'aldeia' : ['vau', 'bosque', 'cripta', 'vertente'].includes(id) ? 'early'
+    : id === 'estalagem' ? 'inn' : ['muralha', 'fortaleza'].includes(id) ? 'siege' : ['colina', 'passagem'].includes(id) ? 'hill'
+    : id === 'portao' ? 'portao' : 'early';
+  return { file: THEMES[theme][0], base: THEMES[theme][1], theme };
+})();
+
 writeFileSync(outPath, JSON.stringify({ source: 'Engine2 src/game/engine.ts BattleEngine via tools/scripts/engine2/export_battle.ts',
-  map: draft.id, cols: e.cols, rows: e.rows, debugFreeCast: testLevel > 0, cells, units, affinityBonus, forecasts, rolls, ai, aiNear: near, casts }));
+  map: draft.id, cols: e.cols, rows: e.rows, debugFreeCast: testLevel > 0, cells, units, affinityBonus, forecasts, rolls, ai, aiNear: near, casts,
+  sounds: { levelUp }, music: missionMusic }));
 console.log(`${draft.id}: ${e.cols}x${e.rows}, ${units.length} units (${units.map((u) => `${u.name} mov ${u.mov}`).join(', ')})`);
 process.exit(0);  // the engine leaves timers running

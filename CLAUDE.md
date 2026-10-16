@@ -319,8 +319,8 @@ inventory / equipment, dialogs / intros)
   0 errors. Not ported: battle NPC dialogs (hud.pendingDialog), companion conversations, Engine2's English tracks.
 - **Another session worked in this checkout on 2026-10-16** (spell effects, Modo teste; it touched OverworldStage.h,
   CampaignUi.h, Overworld.*): the user stopped it. Its uncommitted MapStage.h edits are its own: never commit them.
-- **Not ported yet:** field spells (Create Food and Water, Warp), the status sheet, battle snapshots (a saved fight restarts from its briefing), finishBattle's loot /
-  ember / rations / quests / progression, formation applied to battle spawns, unitHp at battle start, sound.
+- **Not ported yet:** field spells (Create Food and Water, Warp), the status sheet, finishBattle's loot /
+  ember / rations / quests / progression, formation applied to battle spawns, unitHp at battle start.
 - **Testing:** never drive the user's PC (computer-use) — captures and Cooker checks only; the user plays it.
 - **Modo teste (2026-10-16, `a06875c` / `954891e` / `0151cb0`; user: "finish test mode just like Engine2", all of it
   incl. the Map Editor):** the title's "MODO TESTE" opens `TestModeStage.h` (O que abrir?: Debug, Map Editor, Dev
@@ -349,9 +349,29 @@ inventory / equipment, dialogs / intros)
   in a battle, MapStage::applyGfx). Data: `export_help.ts -- content/engine2/help.json content/engine2/ui-text.json`.
   In English: title, save slots, these windows, film subtitles (`.en-v2.vtt`); dialogues use a line's translation
   when Engine2 has one (it has none yet: they stay Portuguese, Engine2's rule); other screens are still Portuguese.
-  Música / Efeitos sonoros / Silenciar shown disabled (no music or sound yet). Left out: battle Zoom, battle Save /
-  Load, and GameApp's "Regras" button (user: not wanted). Captures: `--lang pt|en`, `--title-screen help:T[:scroll]
-  | options`, `--map-ui menu|options` on a battle.
+  Left out: battle Zoom (user: later; the battle already zooms with the wheel) and GameApp's "Regras" button (user:
+  not wanted). Captures: `--lang pt|en`, `--title-screen help:T[:scroll] | options`, `--map-ui menu|options` on a battle.
+- **Sound + Save / Load in battle (2026-10-16/17), committed. Verified:** `--audio-check` 101/101 decoded;
+  `--battle-save-check` PASS on the 7 battles in content/engine2/battles; debug + validation captures exit 0 (battle,
+  resumed battle, Esc menu, Opções); battles re-exported with sounds (7 in content, 148 in build/engine2-test, only the
+  sound fields added). **Not verified:** hearing it in the window, clicking Save / Load through the slot screens.
+- **Sound = Engine2's audio.ts (2026-10-16, user: "important").** `engine/media/AudioMixer`: SDL3 device, MP3 by Media
+  Foundation (effects whole and cached, music streamed on a worker, looping, each track keeping its place), Engine2's
+  layered / exclusive players, delays, fades; Opções' Música / Efeitos / Silenciar act on it. Each screen's music is
+  `Stage::music()` (GameApp's chain; `apps/sandbox/GameMusic.h`: title page intro at base 1, world map, Inn, a
+  mission's track for briefing and battle; films, test menus and the battle's Esc menu silent), handed to the mixer
+  every frame by main.cpp. Battle cues are Engine2's own choice: `export_battle.ts` records, per unit, what audio.ts
+  plays (stand-in Audio element) for attack, Kael's strike, counter, every spell, heal, walk (+ fade), hit, death, and
+  the level-up cue and the mission's `music`; MapStage plays them (`sounds`, `playCues`). Battle files without them
+  are silent: re-export (content/engine2/battles and build/engine2-test were). Check: `Sandbox --audio-check`
+  (decodes all 101 files).
+- **Save / Load in battle = Engine2's BattleSnapshot (2026-10-16).** `e2::Battle::snapshot / applySnapshot`
+  (world/BattleSave.cpp: units' live state, round, initiative order, enmity, Engine2's field names) + MapStage
+  (`captureSnapshot`: in-flight action spent, explored fog base64, awake enemies, phase, turnBegan; `resume`). Esc menu
+  Save (campaign only, not Modo teste) writes it into a slot with pendingMission; Load (and Continuar / the world map's
+  Carregar jogo) resumes it straight into the fight (GameApp enterFromSave; `OverworldStage::Callbacks::resume`); a
+  fight entered from its briefing starts afresh, as in Engine2. Check: `Sandbox --battle-save-check <battle.json>
+  [out]` (round trip must match), `--resume <snapshot.json>` capture.
 
 ## Next
 

@@ -41,6 +41,7 @@
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <fstream>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -52,6 +53,7 @@
 #include <format>
 #include <limits>
 #include <string_view>
+#include <utility>
 
 #include "Stage.h"
 #include "core/Jobs.h"
@@ -63,6 +65,7 @@
 #include "render/MeshScene.h"
 #include "EmberMenus.h"
 #include "SpellsMenu.h"
+#include "media/AudioMixer.h"
 #include "render/SpellEffects.h"
 #include "render/SpriteSystem.h"
 #include "world/Battle.h"
@@ -840,6 +843,13 @@ class MapStage final : public Stage {
   bool wantsTitle() const { return titleRequested_; }
   // The battle menu's "Tela inicial": straight to the title screen.
   bool wantsHome() const { return homeRequested_; }
+  // GameApp's music while the battle is on screen (its result screen included): the mission's track, silent while the
+  // Esc menu is open (pauseMusic) or a film plays over it (musicHeld, set by BattleTalk).
+  Music music() const override {
+    if (pauseOpen_ || musicHeld) return {};
+    return music_;
+  }
+  bool musicHeld = false;
   // The Map Editor's Testar battle: its menu says "Encerrar teste" (GameApp playtest).
   void setPlaytest(bool on) { playtest_ = on; }
   // Opções (EmberMenus.h): Tela cheia and the game's graphics switches (DevGfxSettings.h), applied here at once when
@@ -850,6 +860,87 @@ class MapStage final : public Stage {
     layers_ = g.localLights ? layers_ | 8u : layers_ & ~8u;
     options_.volume = g.atmosphericFx, options_.airParticles = g.atmosphericFx;
   }
+  // --- Save / Load in battle (GameApp's battle menu Save and Load, Engine2's BattleSnapshot) ---
+  // The campaign this fight belongs to: its slots, the campaign mission id and the map's key (a fight saved on another
+  // map file is not resumed). `testMode`: Modo teste writes nothing, so its menu has no Save.
+  void setCampaign(e2::Campaign* campaign, std::string missionId, std::string mapKey, bool testMode) {
+    campaign_ = campaign, missionId_ = std::move(missionId), mapKey_ = std::move(mapKey), testMode_ = testMode;
+  }
+  // The fight as Engine2's BattleSnapshot (captureSnapshot): an action in flight spends the acting unit's action (and,
+  // an enemy's or one with no movement left, its turn), so it is neither replayed nor lost on load.
+  e2::Json captureSnapshot() const {
+    if (!battle_) return e2::Json();
+    e2::Json snap = battle_->snapshot();
+    const int active = battle_->activeUnit();
+    const bool inFlight = exchange_ || enemyTurn_ || pendingStrike_ >= 0 ||
+                          std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
+    if (active >= 0 && inFlight) {
+      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(active)];
+      for (e2::Json& su : snap["units"])
+        if (su.value("id", std::string()) == u.id) {
+          su["acted"] = true;
+          if (u.side == "enemy" || u.mov - u.moveUsed <= 0) su["moved"] = true;
+        }
+    }
+    snap["missionId"] = missionId_;
+    snap["mapKey"] = mapKey_;
+    snap["introDialogDone"] = true;
+    snap["phase"] = active >= 0 && battle_->units()[static_cast<size_t>(active)].side == "enemy" ? "enemy" : "player";
+    snap["activeUnitId"] = active >= 0 ? e2::Json(battle_->units()[static_cast<size_t>(active)].id) : e2::Json();
+    snap["turnBegan"] = active >= 0 && active == turnUnit_;
+    if (fog_) {  // the explored hexes, one bit each, row-major, base64 (snapshotExplored)
+      const e2::HexLayout& L = board_->layout();
+      std::vector<uint8_t> bits(static_cast<size_t>((L.cols * L.rows + 7) / 8), 0);
+      for (int r = 0; r < L.rows; ++r)
+        for (int c = 0; c < L.cols; ++c)
+          if (fog_->state(c, r) != e2::kFogUnseen) bits[static_cast<size_t>((r * L.cols + c) / 8)] |= static_cast<uint8_t>(1u << ((r * L.cols + c) % 8));
+      snap["explored"] = base64(bits);
+      e2::Json awake = e2::Json::array();
+      for (const int b : awake_) awake.push_back(battle_->units()[static_cast<size_t>(b)].id);
+      snap["awake"] = awake;
+    }
+    return snap;
+  }
+  // A saved fight resumed on this battle, before its first frame (applySnapshot); false (nothing changed) when it is
+  // another mission's, was saved on another map file, or its units are not this battle's.
+  bool resume(const e2::Json& snap) {
+    if (!battle_ || !snap.is_object()) return false;
+    if (snap.value("missionId", std::string()) != missionId_ || (!mapKey_.empty() && snap.value("mapKey", mapKey_) != mapKey_)) return false;
+    if (!battle_->applySnapshot(snap)) return false;
+    for (size_t i = 0; i < unitBattle_.size(); ++i) {
+      if (unitBattle_[i] < 0) continue;
+      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[i])];
+      unitPos_[i] = anchorWorld(u, {u.x, u.y});
+      unitMoved_[i] = 1;
+      unitFacing_[i] = u.facing < 0 ? -1 : 1;
+      if (!u.alive) unitDiedAt_[i] = -1000.0f;  // the fallen of the saved fight are gone
+    }
+    std::unordered_map<std::string, int> byId;
+    for (size_t b = 0; b < battle_->units().size(); ++b) byId[battle_->units()[b].id] = static_cast<int>(b);
+    awake_.clear();
+    if (snap.contains("awake") && snap["awake"].is_array())
+      for (const e2::Json& id : snap["awake"])
+        if (id.is_string())
+          if (const auto it = byId.find(id.get<std::string>()); it != byId.end()) awake_.insert(it->second);
+    if (fog_ && snap.contains("explored") && snap["explored"].is_string()) {
+      const std::vector<uint8_t> bits = unbase64(snap["explored"].get<std::string>());
+      const e2::HexLayout& L = board_->layout();
+      pendingExplored_.assign(static_cast<size_t>(L.cols * L.rows), 0);
+      for (int r = 0; r < L.rows; ++r)
+        for (int c = 0; c < L.cols; ++c) {
+          const size_t bit = static_cast<size_t>(r * L.cols + c);
+          if (bit / 8 < bits.size() && (bits[bit / 8] >> (bit % 8) & 1u)) pendingExplored_[static_cast<size_t>(e2::indexOf(L, c, r))] = 1;
+        }
+    }
+    // A turn that had begun is not begun again (Engine2 skipStartOfTurn: no second echo or burn).
+    turnUnit_ = snap.value("turnBegan", false) ? battle_->activeUnit() : -1;
+    levelSeen_.clear();  // the saved levels are not level-ups
+    tip_ = tr("Combate retomado.", "Battle resumed."), tipAt_ = now_;
+    return true;
+  }
+  // The battle menu's Load chose a slot: the game goes where that save stands (GameApp enterFromSave).
+  bool wantsLoad() const { return loadRequested_; }
+
   // Captures: the battle menu or Opções open.
   void previewMenu(const std::string& which) {
     if (which == "menu") pauseOpen_ = true;
@@ -1420,6 +1511,7 @@ class MapStage final : public Stage {
   // The battle: each scene unit finds its battle unit by side and name, in spawn order.
   void setUpBattle(const std::filesystem::path& path) {
     battle_ = e2::Battle::load(path);
+    loadSounds(path);
     if (!battle_) return;
     for (e2::BattleUnit& u : battle_->units())
       if (const auto it = options_.heroProgress.find(u.name); it != options_.heroProgress.end() && u.side == "player")
@@ -1494,6 +1586,16 @@ class MapStage final : public Stage {
       if (dist > 1e-4f) p += d / dist * move;
       unitMoved_[i] = 1;
       if (dist - move < 1e-3f) w.points.erase(w.points.begin());
+      if (w.points.empty() && !w.fadeSound.empty()) AudioMixer::get().fadeSfx(std::exchange(w.fadeSound, {}));
+    }
+    // A hero's level-up (levelUp: its cue once per level gained).
+    if (battle_) {
+      std::vector<e2::BattleUnit>& all = battle_->units();
+      levelSeen_.resize(all.size(), -1);
+      for (size_t b = 0; b < all.size(); ++b) {
+        if (levelSeen_[b] >= 0 && all[b].level > levelSeen_[b] && all[b].side == "player") playCues(levelUpSound_);
+        levelSeen_[b] = all[b].level;
+      }
     }
     if (hero_ >= 0 && path_.size() <= 1) heroAt_ = unitWorld(static_cast<size_t>(hero_));  // the test lights follow it
   }
@@ -1836,6 +1938,10 @@ class MapStage final : public Stage {
     const auto [hx, hy] = e2::heading(route[route.size() - 2], route.back());
     u.faceDx = hx, u.faceDy = hy;
     w.start = now_;
+    // startSeq's walk cue (Cultist V2 by its first step's side), faded when the walk ends if it is a monster's own.
+    const e2::Json& walk = sounds(b, route.size() > 1 && route[1].x < route[0].x ? "walkLeft" : "walk");
+    playCues(walk);
+    w.fadeSound = sounds(b, "walkFade") == e2::Json(true) && walk.is_array() && !walk.empty() ? walk[0].value("file", "") : "";
     unitWalk_[ui] = std::move(w);
   }
 
@@ -1918,6 +2024,13 @@ class MapStage final : public Stage {
     x.end = now_ + length + kExchangeGap / actionRate();
     x.landed = false;
     if (striker >= 0) unitShot_[static_cast<size_t>(striker)] = {pose, now_, false, actionRate()};
+    // Its sound as the pose begins (engine.ts startSeq; a counter's cue as the counter begins, stepCombat).
+    if (striker >= 0) {
+      const size_t sb = x.counter ? s.def : s.att;
+      if (s.type == e2::BattleStep::Type::Combat) playCues(sounds(sb, x.counter ? "counter" : "attack"));
+      else if (s.type == e2::BattleStep::Type::Heal) playCues(sounds(sb, "heal"));
+      else if (const e2::Json& spells = sounds(sb, "spells"); spells.is_object() && spells.contains(s.kind)) playCues(spells[s.kind]);
+    }
     // The spell's visual, laid out so it lands on the impact (a counter or a plain attack has none: its blow's sparks
     // come when it lands).
     if (striker >= 0 && !x.counter && !s.kind.empty()) {
@@ -2036,6 +2149,9 @@ class MapStage final : public Stage {
         continue;
       }
       popups_.push_back({u, std::to_string(e.amount), e.crit ? IM_COL32(255, 214, 102, 255) : IM_COL32(255, 255, 255, 255), now_, e.crit});
+      // The struck unit's own hit / death cues (the engine's per-frame watch of hitAt / diedAt).
+      if (!e.died || sounds(e.unit, "hitOnDeath") != e2::Json(false)) playCues(sounds(e.unit, "hit"));
+      if (e.died) playCues(sounds(e.unit, "death"));
       if (e.died) {
         unitShot_[u] = {"death", now_, true, actionRate()};
         unitDiedAt_[u] = now_;
@@ -2053,6 +2169,9 @@ class MapStage final : public Stage {
     const e2::BattleStep& s = x.steps[x.step];
     if (!x.landed && now_ >= x.impact) {
       x.landed = true;
+      // stepCombat's strike cue (Kael's long swing) and emitMissileFx's arrow release (Tiro Longo).
+      if (s.type == e2::BattleStep::Type::Combat) playCues(sounds(x.counter ? s.def : s.att, "strike"));
+      else if (s.kind == "longShot") playCues(sounds(s.att, "release"));
       std::vector<e2::BattleEffect> fx;
       if (s.type == e2::BattleStep::Type::Combat) {
         if (battle_->units()[s.att].alive && battle_->units()[s.def].alive) e2::resolveStrike(*battle_, s, x.counter, rng_, fx);
@@ -2671,8 +2790,44 @@ class MapStage final : public Stage {
   // (Como jogar over the battle) is left out (user, 2026-10-16).
   void drawPauseMenu() {
     const ImVec2 screen = ImGui::GetIO().DisplaySize;
+    if (battleSlots_ && campaign_) {  // GameApp's saveSlots screen over the battle (slotReturnScreen "battle")
+      ImGui::SetNextWindowPos({0, 0});
+      ImGui::SetNextWindowSize(screen);
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+      ImGui::Begin("##battleslots", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground |
+                                                 ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse);
+      bool back = false;
+      const int chosen = battleSlots_->draw(screen, 16.0f, *campaign_, options_.engine2Public, back, &slotSave_);
+      ImGui::End();
+      ImGui::PopStyleVar(2);
+      if (back) battleSlots_.reset();
+      else if (chosen >= 0) {
+        if (battleSlots_->mode() == SlotScreen::Mode::Load) loadRequested_ = true;
+        else pauseOpen_ = false;  // saved: back to the fight
+        battleSlots_.reset();
+      }
+      return;
+    }
     if (pauseOpen_ && result_.empty() && !menuOptions_.isOpen()) {
-      switch (battleMenu_.draw(screen, options_.engine2Public, speed_, playtest_)) {
+      switch (battleMenu_.draw(screen, options_.engine2Public, speed_, playtest_, campaign_ && !testMode_ && !missionId_.empty(), campaign_ != nullptr)) {
+        case menu::BattleMenu::Action::Save:
+          // The campaign as it stands with this fight in it (GameApp's save-slot write from the battle).
+          slotSave_ = campaign_->activeSave();
+          slotSave_["pendingMission"] = missionId_;
+          slotSave_["battle"] = captureSnapshot();
+          for (const HeroOutcome& h : heroOutcomes()) {
+            slotSave_["levels"][h.name] = h.level;
+            slotSave_["xp"][h.name] = h.xp;
+            slotSave_["unitHp"][h.name] = h.hp;
+          }
+          battleSlots_.emplace();
+          battleSlots_->open(SlotScreen::Mode::Save, true);
+          break;
+        case menu::BattleMenu::Action::Load:
+          battleSlots_.emplace();
+          battleSlots_->open(SlotScreen::Mode::Load, true);
+          break;
         case menu::BattleMenu::Action::Resume: pauseOpen_ = false; break;
         case menu::BattleMenu::Action::Options: menuOptions_.open(); break;
         case menu::BattleMenu::Action::Quit: titleRequested_ = true; break;
@@ -2919,6 +3074,7 @@ class MapStage final : public Stage {
       fogDeliverMs_.push_back(std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count());
       fogUpdatedThisFrame_ = true;
     }
+    if (!fogBusy_ && !pendingExplored_.empty()) fog_->restoreExplored(std::exchange(pendingExplored_, {}));  // a resumed fight
     if (!fogBusy_ && !fogQueue_.empty()) {
       // Every party position queued since the last job relights in order, so what is remembered is exactly
       // what one relight per change would leave; the mask is painted once, for the latest.
@@ -3123,6 +3279,7 @@ class MapStage final : public Stage {
     std::vector<glm::vec2> points;  // the hexes still ahead (feet positions)
     float start = 0.0f;             // scene clock when it set off (the walk cycle's time)
     int dir = kWalkSide;
+    std::string fadeSound;          // its walk cue, faded out when it arrives (a monster's own)
   };
   std::vector<Walk> unitWalk_;
   struct CardRect {  // a unit's card as drawn this frame, for picking
@@ -3150,11 +3307,69 @@ class MapStage final : public Stage {
   bool pauseOpen_ = false, titleRequested_ = false, retryRequested_ = false;
   // Engine2's menus over the battle (EmberMenus.h) and what they act on.
   bool homeRequested_ = false, playtest_ = false;
+  // Save / Load in battle: the campaign, this fight's mission and map key, the slot screen and the save it writes.
+  e2::Campaign* campaign_ = nullptr;
+  std::string missionId_, mapKey_;
+  bool testMode_ = false, loadRequested_ = false;
+  std::optional<SlotScreen> battleSlots_;
+  e2::Json slotSave_;
+  std::vector<uint8_t> pendingExplored_;  // a resumed fight's explored hexes, for the fog's next relight
+  static std::string base64(const std::vector<uint8_t>& bytes) {
+    static const char* const k = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    std::string out;
+    for (size_t i = 0; i < bytes.size(); i += 3) {
+      const uint32_t n = static_cast<uint32_t>(bytes[i]) << 16 | (i + 1 < bytes.size() ? static_cast<uint32_t>(bytes[i + 1]) << 8 : 0) |
+                         (i + 2 < bytes.size() ? bytes[i + 2] : 0);
+      out += k[n >> 18 & 63], out += k[n >> 12 & 63];
+      out += i + 1 < bytes.size() ? k[n >> 6 & 63] : '=';
+      out += i + 2 < bytes.size() ? k[n & 63] : '=';
+    }
+    return out;
+  }
+  static std::vector<uint8_t> unbase64(const std::string& text) {
+    std::vector<uint8_t> out;
+    uint32_t acc = 0;
+    int bits = 0;
+    for (const char ch : text) {
+      int v = ch >= 'A' && ch <= 'Z' ? ch - 'A' : ch >= 'a' && ch <= 'z' ? ch - 'a' + 26 : ch >= '0' && ch <= '9' ? ch - '0' + 52 : ch == '+' ? 62 : ch == '/' ? 63 : -1;
+      if (v < 0) continue;
+      acc = acc << 6 | static_cast<uint32_t>(v), bits += 6;
+      if (bits >= 8) bits -= 8, out.push_back(static_cast<uint8_t>(acc >> bits & 0xFF));
+    }
+    return out;
+  }
   menu::BattleMenu battleMenu_;
   menu::OptionsDialog menuOptions_;
   menu::BattleMenu::Speed speed_ = menu::BattleMenu::Speed::Normal;  // engine.ts speedMode, "normal" each battle
   std::function<void()> fullscreen_;
   DevGfx* gfx_ = nullptr;
+  // Engine2's sound for this battle (export_battle.ts: each unit's cues as Engine2 picks them, the level-up cue, the
+  // mission's music); a battle file from before them stays silent.
+  std::vector<e2::Json> unitSounds_;  // per battle unit (summoned units have none)
+  e2::Json levelUpSound_ = e2::Json::array();
+  Music music_;
+  std::vector<int> levelSeen_;
+  void loadSounds(const std::filesystem::path& file) {
+    std::ifstream in(file, std::ios::binary);
+    const e2::Json j = in ? e2::Json::parse(in, nullptr, false) : e2::Json();
+    if (!j.is_object()) return;
+    if (const auto units = j.find("units"); units != j.end() && units->is_array())
+      for (const e2::Json& u : *units) unitSounds_.push_back(u.value("sounds", e2::Json::object()));
+    if (const auto sounds = j.find("sounds"); sounds != j.end() && sounds->is_object()) levelUpSound_ = sounds->value("levelUp", e2::Json::array());
+    if (const auto music = j.find("music"); music != j.end() && music->is_object()) music_ = {music->value("file", std::string()), music->value("base", 0.4f)};
+  }
+  const e2::Json& sounds(size_t battleUnit, const char* key) const {
+    static const e2::Json none;
+    if (battleUnit >= unitSounds_.size()) return none;
+    const auto it = unitSounds_[battleUnit].find(key);
+    return it == unitSounds_[battleUnit].end() ? none : *it;
+  }
+  // audio.ts's players for a list of cues (file, volume, start offset, delay, exclusive or layered).
+  static void playCues(const e2::Json& list) {
+    if (!list.is_array()) return;
+    for (const e2::Json& c : list)
+      AudioMixer::get().playSfx(c.value("file", std::string()), c.value("volume", 0.55f), c.value("exclusive", true), c.value("offset", 0.0f), c.value("delay", 0.0f));
+  }
   float stepSeconds() const { return speed_ == menu::BattleMenu::Speed::Slow ? 0.36f : speed_ == menu::BattleMenu::Speed::Fast ? 0.12f : kStepSeconds; }
   float actionRate() const { return speed_ == menu::BattleMenu::Speed::Slow ? 0.4f : speed_ == menu::BattleMenu::Speed::Fast ? 1.0f : 0.65f; }
   bool bloomOn_ = true;  // panel "Brilho" (Engine2's full-scene bloom)

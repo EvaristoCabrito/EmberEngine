@@ -24,6 +24,7 @@
 
 #include "CampaignUi.h"
 #include "EmberMenus.h"
+#include "GameMusic.h"
 #include "Stage.h"
 #include "render/Camera.h"
 #include "render/MeshScene.h"
@@ -59,6 +60,12 @@ class TitleStage : public Stage {
   // Captures: the slot screen as "Nova campanha" (false) or "Continuar" (true) opens it.
   void previewSlots(bool load) { openSlots(load); }
   bool picked() const { return picked_; }
+  // The title page's own music (index.html menu-music), on through its save slots; a test briefing plays its mission's.
+  Music music() const override {
+    if (screen_ == Screen::Title || screen_ == Screen::Slots) return music::theme("title");
+    if (screen_ == Screen::Briefing && chosen_ < missions_.size()) return music::forMission(missions_[chosen_]);
+    return {};
+  }
   // Captures: a slot chosen as a click would (writes the bank given with --save-bank).
   void previewPick(int index) {
     if (campaign_ && slots_.choose(index, *campaign_)) picked_ = true;

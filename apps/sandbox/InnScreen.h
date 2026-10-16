@@ -32,6 +32,8 @@ namespace ember {
 
 class InnScreen {
  public:
+  // Vargan's first-visit film is on (GameApp: the Inn's music waits for it).
+  bool filmPlaying() const { return film_.has_value(); }
   struct Context {
     e2::Json& save;
     std::function<void()> write;  // persists `save`

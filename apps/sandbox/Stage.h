@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <string>
 
 #include "rhi/VkCommon.h"
 
@@ -24,6 +25,13 @@ struct Stage {
   // Off-screen runs stop once the stage is done; passed() is the exit code's verdict.
   virtual bool done() const { return false; }
   virtual bool passed() const { return true; }
+  // The music this screen plays (Engine2 GameApp's music chain, audio.ts): a file under Engine2's game/MUSIC and its base
+  // volume; an empty file is silence. The game loop hands it to AudioMixer every frame.
+  struct Music {
+    std::string file;
+    float base = 0.0f;
+  };
+  virtual Music music() const { return {}; }
   // Drawn over the stage's own panel in the same UI frame (a campaign dialog over a fight, say); set by its owner.
   std::function<void()> overlay;
 };

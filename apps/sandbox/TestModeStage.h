@@ -33,6 +33,7 @@
 #include "CampaignUi.h"
 #include "DevGfx.h"
 #include "EmberMenus.h"
+#include "GameMusic.h"
 #include "Stage.h"
 #include "render/Camera.h"
 #include "render/MeshScene.h"
@@ -97,6 +98,13 @@ class TestModeStage : public Stage {
     renderer.setFogBank({});
     renderer.setBackground(Renderer::kBlackBackground);
     renderer.setBloom(0.0f);
+  }
+
+  // GameApp's music chain: the classic world map plays its piece, a briefing its mission's track; the test menus none.
+  Music music() const override {
+    if (briefing_) return music::forMission(*briefing_);
+    if (screen_ == Screen::WorldMap) return music::theme("worldMap");
+    return {};
   }
 
   void event(const SDL_Event& e) override {

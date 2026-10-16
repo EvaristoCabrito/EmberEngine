@@ -33,6 +33,7 @@
 #include "CampaignUi.h"
 #include "CutsceneScreen.h"
 #include "EmberMenus.h"
+#include "GameMusic.h"
 #include "InnScreen.h"
 #include "Stage.h"
 #include "render/Camera.h"
@@ -53,6 +54,10 @@ class OverworldStage : public Stage {
     std::function<void()> title;                    // back to the title screen
     std::function<void()> fullscreen;               // Opções: Tela cheia
     DevGfx* gfx = nullptr;                          // Opções: Gráficos (the game's Dev Controls switches)
+    // GameApp enterFromSave: a fight saved mid-way is resumed (its mission's battle, the save's snapshot applied)
+    // when the campaign is entered from Continuar / a load (`resumeSaved`) or a slot is loaded here.
+    std::function<void(const MissionEntry&)> resume;
+    bool resumeSaved = false;
   };
 
   // `testSave`: Engine2's Modo teste (GameApp testMode): the map runs on that save (held by the caller for the whole
@@ -75,6 +80,7 @@ class OverworldStage : public Stage {
       playFilm("game/title-open.mp4", [this] { playFilm("game/vau-intro.mp4", [this] { openMission("vau", true); }); });
       return;
     }
+    if (!id.empty() && callbacks_.resumeSaved && resumeSavedFight(id)) return;
     if (!id.empty()) openMission(id, true);
   }
 
@@ -115,6 +121,15 @@ class OverworldStage : public Stage {
     renderer.setFogBank({});
     renderer.setBackground(Renderer::kBlackBackground);
     renderer.setBloom(0.0f);
+  }
+
+  // GameApp's music chain: films are silent, the in-game save slots too; the Inn plays its theme (not over Vargan's
+  // first film), a briefing its mission's track, the map its own piece.
+  Music music() const override {
+    if (film_ || slots_) return {};
+    if (inn_) return inn_->filmPlaying() ? Music{} : music::theme("inn");
+    if (briefing_) return music::forMission(*briefing_);
+    return music::theme("worldMap");
   }
 
   void event(const SDL_Event& e) override {
@@ -183,6 +198,7 @@ class OverworldStage : public Stage {
           std::string id;
           if (save_.contains("battle") && save_["battle"].is_object()) id = save_["battle"].value("missionId", "");
           if (id.empty() && save_.contains("pendingMission") && save_["pendingMission"].is_string()) id = save_["pendingMission"].get<std::string>();
+          if (!id.empty() && !test() && resumeSavedFight(id)) return;
           if (!id.empty()) openMission(id, true);
         } else {
           notice_ = slots_->status();
@@ -250,6 +266,17 @@ class OverworldStage : public Stage {
   }
 
   // GameApp openMission: gated missions must be open; a finished mission only re-opens when it is a dungeon.
+  // GameApp enterFromSave with a battle in the save: straight into that fight, resumed.
+  bool resumeSavedFight(const std::string& id) {
+    if (test() || !callbacks_.resume || !save_.contains("battle") || !save_["battle"].is_object() || save_["battle"].value("missionId", "") != id)
+      return false;
+    std::string error;
+    std::optional<MissionEntry> e = campaignMission(campaign_, paths_, id, error);
+    if (!e) return false;
+    callbacks_.resume(*e);
+    return true;
+  }
+
   void openMission(const std::string& id, bool fromSave = false) {
     if (!fromSave) {
       if (const e2::MapMission* m = world_.mission(id); !test() && m && m->gated && world_.missionAccess(id, save_) != "available") return;

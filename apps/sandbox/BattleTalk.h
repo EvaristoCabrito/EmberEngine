@@ -118,6 +118,7 @@ struct BattleTalk {
       ImGui::PopStyleVar();
     }
     map.holdTurns = dialog.has_value() || film.has_value();
+    map.musicHeld = film.has_value();  // GameApp: the epilogue film is a music-free screen
   }
 };
 

@@ -40,6 +40,7 @@ add_library(EmberEngine STATIC
   world/SceneBuilder.cpp
   world/MapDressing.cpp
   world/Battle.cpp
+  world/BattleSave.cpp
   world/Combat.cpp
   world/BattleTurns.cpp
   world/Spells.cpp
@@ -48,6 +49,7 @@ add_library(EmberEngine STATIC
   world/Overworld.cpp
   world/Inn.cpp
   media/VideoPlayer.cpp
+  media/AudioMixer.cpp
   debug/PerfOverlay.cpp
 )
 

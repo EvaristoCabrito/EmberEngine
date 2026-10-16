@@ -15,6 +15,8 @@
 #include <tuple>
 #include <vector>
 
+#include <nlohmann/json.hpp>
+
 namespace ember::e2 {
 
 struct BattleHex {
@@ -225,6 +227,12 @@ class Battle {
   const std::vector<size_t>& turnOrder() const { return turnOrder_; }
   // "victory" / "defeat" once one side has nobody standing, else empty.
   std::string result() const;
+
+  // --- A fight in progress, saved and resumed (Engine2 captureSnapshot / applySnapshot; world/BattleSave.cpp) ---
+  // The units' live state, the round ("turn"), its initiative order and the enmity tables, in BattleSnapshot's names.
+  nlohmann::json snapshot() const;
+  // Overlays a snapshot on this battle (just loaded); false, and nothing changed, when its units are not this battle's.
+  bool applySnapshot(const nlohmann::json& snap);
 
   // --- Enmity (Engine2 enmity.ts): who each enemy goes after ---
   void noteWeaponDamage(size_t attacker, size_t target, int dmg);

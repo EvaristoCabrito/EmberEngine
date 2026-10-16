@@ -30,7 +30,7 @@ class CutsceneScreen {
   CutsceneScreen(const std::filesystem::path& engine2Public, const std::string& film) {
     player_ = std::make_unique<VideoPlayer>();
     player_->open(engine2Public / film);
-    player_->setMuted(!soundOn());
+    player_->setMuted(!soundOn() || gamePrefs().muted);  // audio.ts setMuted silences videos too
     player_->setVolume(gamePrefs().cutscene);
     const std::string name = std::filesystem::path(film).stem().string();
     const std::filesystem::path dir = engine2Public / "game" / "subtitles";
@@ -73,7 +73,7 @@ class CutsceneScreen {
     if (ImGui::InvisibleButton("##filmsound", {36, 36})) {
       soundOn() = !soundOn();
       gamePrefs().save();
-      player_->setMuted(!soundOn());
+      player_->setMuted(!soundOn() || gamePrefs().muted);
     }
     {
       const bool hover = ImGui::IsItemHovered();
