@@ -545,6 +545,18 @@ int runCapture(const Options& o) {
       auto map = std::make_unique<OverworldStage>(campaignPaths, campaign, world, OverworldStage::Callbacks{});
       if (!o.mapUi.empty()) map->preview(o.mapUi);
       stage = std::move(map);
+    } else if (o.title && o.titleScreen.starts_with("mission") && hasCampaign) {
+      // --title-screen mission:<id> / mission-test:<id>: a campaign mission's battle, its files resolved as the campaign
+      // (or Modo teste) resolves them (CampaignUi.h: the Map Editor's newer save, else Engine2's newest).
+      const bool test = o.titleScreen.starts_with("mission-test:");
+      const std::string id = o.titleScreen.substr(o.titleScreen.find(':') + 1);
+      std::string error;
+      const std::optional<MissionEntry> m = test ? testMission(campaign, campaignPaths, id, error) : campaignMission(campaign, campaignPaths, id, error);
+      if (!m) fatal(error);
+      logInfo("mission {}: {} / {} / {}", id, m->map.generic_string(), m->scene.generic_string(), m->battle.generic_string());
+      Options mission = o;
+      mission.map = m->map.string(), mission.scene = m->scene.string(), mission.battleRules = m->battle.string();
+      stage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, mapOptions(mission));
     } else if (o.title && o.titleScreen.starts_with("test") && hasCampaign && world.load("content/engine2/overworld.json")) {
       // --title-screen test / test-choice / test-classic / test-scenarios / test-rpg / test-dev / test-editor: Modo teste's screens (--map-ui
       // location:<id> opens a place's panel on the classic map; on the RPG map the usual --map-ui panels).

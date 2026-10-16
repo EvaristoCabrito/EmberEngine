@@ -2,7 +2,7 @@
 
 // Pieces of Engine2's campaign screens shared by the title and the world map: the save-slot screen (src/title/main.ts
 // renderSaveSlots + GameApp's in-game saveSlots), the iron plate button (.ember-plate), a few lucide icons drawn by
-// hand, and a campaign mission's map / scene / battle files.
+// hand, and a campaign mission's map / scene / battle files (Engine2's newest, or the Map Editor's newer save).
 
 #include <imgui.h>
 
@@ -10,10 +10,13 @@
 #include <cmath>
 #include <filesystem>
 #include <format>
+#include <fstream>
 #include <functional>
 #include <numbers>
 #include <optional>
 #include <string>
+
+#include <nlohmann/json.hpp>
 
 #include "render/UiArt.h"
 #include "world/Campaign.h"
@@ -51,7 +54,60 @@ inline std::string upperUtf8(std::string s) {
   return s;
 }
 
-// A campaign mission's files: its newest saved map (campaign.json mapFile), the scene and battle exported from it.
+// --- the maps the Map Editor saves (MapEditorStage.h Salvar) ----------------------------------------------------------
+
+// Where they go: Engine2's own file format and names (<id><serial>.json), never in Engine2's folder.
+inline std::filesystem::path savedMapsDir() { return "content/maps/ember"; }
+
+// The highest serial of `<id>NNN.json` in a folder (Engine2 map-save-plugin nextSerial); 0 when there is none.
+inline int highestMapSerial(const std::filesystem::path& dir, const std::string& id) {
+  int best = 0;
+  std::error_code ec;
+  if (!std::filesystem::is_directory(dir, ec)) return 0;
+  for (const auto& e : std::filesystem::directory_iterator(dir, ec)) {
+    const std::string name = e.path().filename().string();
+    if (name.size() != id.size() + 8 || !name.starts_with(id) || !name.ends_with(".json")) continue;
+    const std::string digits = name.substr(id.size(), 3);
+    if (std::all_of(digits.begin(), digits.end(), [](char c) { return c >= '0' && c <= '9'; })) best = std::max(best, std::stoi(digits));
+  }
+  return best;
+}
+
+// A mission's map as the game plays it: the newest saved file of its id (Engine2 mapstore latestSavedDraft), the Map
+// Editor's own save when its serial is above the one campaign.json names (Engine2's newest), else Engine2's. `own` says
+// which; the draft's own texts replace campaign.json's when it is ours (an edit may have changed them).
+struct MissionMap {
+  std::filesystem::path file;
+  std::string stem;
+  bool own = false;
+};
+inline MissionMap missionMap(const CampaignPaths& paths, const e2::CampaignMission& m) {
+  const std::string engine2Stem = std::filesystem::path(m.mapFile).stem().string();
+  int engine2Serial = 0;
+  if (engine2Stem.size() >= 3) {
+    const std::string digits = engine2Stem.substr(engine2Stem.size() - 3);
+    if (std::all_of(digits.begin(), digits.end(), [](char c) { return c >= '0' && c <= '9'; })) engine2Serial = std::stoi(digits);
+  }
+  const int own = highestMapSerial(savedMapsDir(), m.id);
+  if (own > engine2Serial) {
+    const std::string stem = std::format("{}{:03}", m.id, own);
+    return {savedMapsDir() / (stem + ".json"), stem, true};
+  }
+  return {paths.maps / m.mapFile, engine2Stem, false};
+}
+// The texts of a mission entry from its map file's draft (title, place, briefing, objective).
+inline void missionTextsFromDraft(MissionEntry& e, const std::filesystem::path& mapFile) {
+  std::ifstream in(mapFile, std::ios::binary);
+  const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+  if (!j.is_object()) return;
+  const nlohmann::json& d = j.contains("draft") ? j["draft"] : j;
+  auto text = [&](const char* k, std::string& out) {
+    if (d.contains(k) && d[k].is_string()) out = d[k].get<std::string>();
+  };
+  text("title", e.title), text("place", e.place), text("briefing", e.briefing), text("objective", e.objective);
+}
+
+// A campaign mission's files: its newest saved map (missionMap), the scene and battle exported from it.
 // Empty with `error` saying why when the mission cannot be played here yet.
 inline std::optional<MissionEntry> campaignMission(const e2::Campaign& campaign, const CampaignPaths& paths, const std::string& id, std::string& error) {
   const e2::CampaignMission* m = campaign.data().mission(id);
@@ -59,38 +115,43 @@ inline std::optional<MissionEntry> campaignMission(const e2::Campaign& campaign,
     error = "A missão " + id + " não tem mapa salvo no Engine2.";
     return std::nullopt;
   }
-  const std::string stem = std::filesystem::path(m->mapFile).stem().string();
+  const MissionMap map = missionMap(paths, *m);
   MissionEntry e;
-  e.id = stem, e.title = m->title, e.place = m->place, e.draftId = m->id, e.briefing = m->briefing, e.objective = m->objective;
-  e.map = paths.maps / m->mapFile;
-  e.scene = paths.scenes / (stem + ".scene.json");
+  e.id = map.stem, e.title = m->title, e.place = m->place, e.draftId = m->id, e.briefing = m->briefing, e.objective = m->objective;
+  if (map.own) missionTextsFromDraft(e, map.file);
+  e.map = map.file;
+  e.scene = paths.scenes / (map.stem + ".scene.json");
   std::error_code ec;
   if (!std::filesystem::exists(e.map, ec) || !std::filesystem::exists(e.scene, ec)) {
-    error = "O mapa " + stem + " (" + m->title + ") ainda não foi importado para o Ember (export_scene.ts).";
+    error = map.own ? "O mapa " + map.stem + " foi salvo no editor mas ainda não foi preparado para o jogo (salve de novo no editor)."
+                    : "O mapa " + map.stem + " (" + m->title + ") ainda não foi importado para o Ember (export_scene.ts).";
     return std::nullopt;
   }
-  if (const std::filesystem::path battle = paths.battles / (stem + ".battle.json"); std::filesystem::exists(battle, ec)) e.battle = battle;
+  if (const std::filesystem::path battle = paths.battles / (map.stem + ".battle.json"); std::filesystem::exists(battle, ec)) e.battle = battle;
   e.campaignId = m->id;
   return e;
 }
 
-// The same mission as Engine2's Modo teste fights it (tools/scripts/engine2/export_test_missions.sh: all six heroes,
-// level 15, a new save's gear): its scene and battle from build/engine2-test. No campaignId: nothing is written back.
+// The same mission as Engine2's Modo teste fights it (all six heroes, level 15, a new save's gear: tools/scripts/engine2/
+// export_test_missions.sh for Engine2's maps, the Map Editor's Salvar for its own): its scene and battle from
+// build/engine2-test. No campaignId: nothing is written back.
 inline std::optional<MissionEntry> testMission(const e2::Campaign& campaign, const CampaignPaths& paths, const std::string& id, std::string& error) {
   const e2::CampaignMission* m = campaign.data().mission(id);
   if (!m || m->mapFile.empty()) {
     error = "A missão " + id + " não tem mapa salvo no Engine2.";
     return std::nullopt;
   }
-  const std::string stem = std::filesystem::path(m->mapFile).stem().string();
+  const MissionMap map = missionMap(paths, *m);
   MissionEntry e;
-  e.id = stem, e.title = m->title, e.place = m->place, e.draftId = m->id, e.briefing = m->briefing, e.objective = m->objective;
-  e.map = paths.maps / m->mapFile;
-  e.scene = paths.test / "scenes" / (stem + ".scene.json");
-  e.battle = paths.test / "battles" / (stem + ".battle.json");
+  e.id = map.stem, e.title = m->title, e.place = m->place, e.draftId = m->id, e.briefing = m->briefing, e.objective = m->objective;
+  if (map.own) missionTextsFromDraft(e, map.file);
+  e.map = map.file;
+  e.scene = paths.test / "scenes" / (map.stem + ".scene.json");
+  e.battle = paths.test / "battles" / (map.stem + ".battle.json");
   std::error_code ec;
   if (!std::filesystem::exists(e.map, ec) || !std::filesystem::exists(e.scene, ec) || !std::filesystem::exists(e.battle, ec)) {
-    error = "O mapa " + stem + " (" + m->title + ") ainda não foi importado para o modo teste (export_test_missions.sh).";
+    error = map.own ? "O mapa " + map.stem + " foi salvo no editor mas ainda não foi preparado para o modo teste (salve de novo no editor)."
+                    : "O mapa " + map.stem + " (" + m->title + ") ainda não foi importado para o modo teste (export_test_missions.sh).";
     return std::nullopt;
   }
   return e;

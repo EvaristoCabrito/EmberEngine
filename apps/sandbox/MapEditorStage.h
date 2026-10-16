@@ -41,6 +41,7 @@
 #include <vector>
 
 #include "CampaignUi.h"
+#include "MapExport.h"
 #include "MapStage.h"
 #include "Stage.h"
 #include "core/Log.h"
@@ -82,6 +83,7 @@ class MapEditorStage : public Stage {
   }
   ~MapEditorStage() override {
     if (playtest_.valid()) playtest_.wait();
+    if (saveExport_.valid()) saveExport_.wait();
     vkDeviceWaitIdle(services_.context.device);
   }
 
@@ -123,7 +125,7 @@ class MapEditorStage : public Stage {
       onCellClick(x, y);
     }
   }
-  bool done() const override { return frames_ > 240 && !playtest_.valid(); }  // captures: the preview and its art, a Testar finished
+  bool done() const override { return frames_ > 240 && !playtest_.valid() && !saveExport_.valid(); }  // captures: the preview and its art, a Testar finished
 
   void frame(Renderer& renderer, VkExtent2D size) override {
     ++frames_;
@@ -143,6 +145,7 @@ class MapEditorStage : public Stage {
       if (entry && callbacks_.play) callbacks_.play(*entry, draft_);
       else if (!entry) note(playtestError_);
     }
+    if (saveExport_.valid() && saveExport_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) note(saveExport_.get());
     if (preview_) preview_->frame(renderer, size);
     else {
       renderer.setScene(Camera{}, {});
@@ -695,21 +698,6 @@ class MapEditorStage : public Stage {
 
   // --- saving and opening ----------------------------------------------------------------------------------------------
 
-  static std::filesystem::path savedDir() { return "content/maps/ember"; }
-
-  // The highest serial of `<id>NNN.json` in a folder (map-save-plugin nextSerial).
-  static int highestSerial(const std::filesystem::path& dir, const std::string& id) {
-    int best = 0;
-    std::error_code ec;
-    if (!std::filesystem::is_directory(dir, ec)) return 0;
-    for (const auto& e : std::filesystem::directory_iterator(dir, ec)) {
-      const std::string name = e.path().filename().string();
-      if (name.size() != id.size() + 8 || !name.starts_with(id) || !name.ends_with(".json")) continue;
-      const std::string digits = name.substr(id.size(), 3);
-      if (std::all_of(digits.begin(), digits.end(), ::isdigit)) best = std::max(best, std::stoi(digits));
-    }
-    return best;
-  }
   // normalizeScenarioId: lowercase ASCII letters / digits / dashes, at most 64.
   static std::string scenarioId(std::string id) {
     std::string out;
@@ -728,10 +716,10 @@ class MapEditorStage : public Stage {
   void save() {
     draft_["id"] = scenarioId(draft_.value("id", "scenario"));
     const std::string id = draft_["id"].get<std::string>();
-    const int serial = std::max(highestSerial(savedDir(), id), highestSerial(paths_.maps, id)) + 1;
-    const std::filesystem::path file = savedDir() / std::format("{}{:03}.json", id, serial);
+    const int serial = std::max(highestMapSerial(savedMapsDir(), id), highestMapSerial(paths_.maps, id)) + 1;
+    const std::filesystem::path file = savedMapsDir() / std::format("{}{:03}.json", id, serial);
     std::error_code ec;
-    std::filesystem::create_directories(savedDir(), ec);
+    std::filesystem::create_directories(savedMapsDir(), ec);
     e2::Json out;
     out["serial"] = serial;
     out["savedAt"] = static_cast<long long>(e2::Campaign::nowMs());
@@ -749,6 +737,21 @@ class MapEditorStage : public Stage {
     const e2::Json saved = e2::Json::parse(back, nullptr, false);
     if (saved.is_discarded() || saved.value("serial", 0) != serial || saved["draft"] != draft_) return note("O arquivo gravado não confere: " + file.string());
     note(std::format("Salvo: {} (versão {}).", file.generic_string(), serial));
+    // A campaign mission: the campaign and Modo teste now play this file (CampaignUi.h missionMap), so its scene and
+    // rules are prepared at once, off the main thread (Engine2's exporters, a few seconds).
+    if (!campaign_.data().mission(id)) return;
+    if (saveExport_.valid()) saveExport_.wait();
+    const std::string stem = file.stem().string();
+    const std::filesystem::path engine2 = base_.engine2Public.parent_path();
+    note(std::format("Salvo: {} (versão {}). Preparando para o jogo…", file.generic_string(), serial));
+    saveExport_ = std::async(std::launch::async, [paths = paths_, file, stem, engine2]() -> std::string {
+      const std::filesystem::path log = std::filesystem::path("build/editor") / (stem + ".log");
+      const MapExportResult c = exportMap(file, stem, MapExportKind::Campaign, paths, engine2, log);
+      if (!c.ok) return "Salvo, mas a preparação para a campanha falhou (" + c.error + ").";
+      const MapExportResult t = exportMap(file, stem, MapExportKind::Test, paths, engine2, log);
+      if (!t.ok) return "Salvo e pronto na campanha; o modo teste falhou (" + t.error + ").";
+      return "Salvo " + stem + ": a campanha e o modo teste já jogam esta versão.";
+    });
   }
 
   // Every map that can be opened: the campaign's newest (Engine2), and every map saved here.
@@ -759,8 +762,8 @@ class MapEditorStage : public Stage {
   std::vector<OpenEntry> savedMaps() const {
     std::vector<OpenEntry> out;
     std::error_code ec;
-    if (std::filesystem::is_directory(savedDir(), ec))
-      for (const auto& e : std::filesystem::directory_iterator(savedDir(), ec))
+    if (std::filesystem::is_directory(savedMapsDir(), ec))
+      for (const auto& e : std::filesystem::directory_iterator(savedMapsDir(), ec))
         if (e.path().extension() == ".json") out.push_back({e.path().stem().string(), e.path()});
     std::sort(out.begin(), out.end(), [](const OpenEntry& a, const OpenEntry& b) { return a.label < b.label; });
     return out;
@@ -788,38 +791,26 @@ class MapEditorStage : public Stage {
     file["savedAt"] = static_cast<long long>(e2::Campaign::nowMs());
     file["draft"] = draft_;
     file["draft"]["id"] = id;
-    const std::string engine2 = base_.engine2Public.parent_path().generic_string();
+    const std::filesystem::path engine2 = base_.engine2Public.parent_path();
     const std::string title = draft_.value("title", id), place = draft_.value("place", ""), briefing = draft_.value("briefing", ""),
                       objective = draft_.value("objective", "");
     note("Preparando o teste…");
     playtest_ = std::async(std::launch::async, [this, dir, id, file, engine2, title, place, briefing, objective]() -> std::optional<MissionEntry> {
       std::error_code ec;
       std::filesystem::create_directories(dir, ec);
-      const std::filesystem::path source = dir / (id + ".draft.json"), map = dir / (id + ".json"), scene = dir / (id + ".scene.json"),
-                                  battle = dir / (id + ".battle.json"), log = dir / (id + ".log");
+      const std::filesystem::path source = dir / (id + ".draft.json");
       {
         std::ofstream f(source, std::ios::binary | std::ios::trunc);
         f << file.dump(2) << "\n";
       }
-      const std::string vn = std::format("node \"{}/node_modules/vite-node/vite-node.mjs\" --root \"{}\"", engine2, (dir / "cache").generic_string());
-      const std::string steps[4] = {
-          std::format("set KEEP_LEVELS=1&& {} tools/scripts/engine2/make_test_map.ts -- \"{}\" \"{}\"", vn, source.generic_string(), map.generic_string()),
-          std::format("{} tools/scripts/engine2/export_scene.ts -- \"{}\" \"{}\"", vn, map.generic_string(), scene.generic_string()),
-          std::format("python -I tools/scripts/engine2/measure_art.py \"{}\" \"{}/public\"", scene.generic_string(), engine2),
-          std::format("set TEST_LEVEL=15&& set LEVELS_FROM_DRAFT=1&& set NO_REFS=1&& {} tools/scripts/engine2/export_battle.ts -- \"{}\" \"{}\"", vn,
-                      map.generic_string(), battle.generic_string()),
-      };
-      for (const std::string& step : steps) {
-        // std::system runs cmd /c; the line starts unquoted, so its quotes are kept as written.
-        const std::string command = std::format("{} >> \"{}\" 2>&1", step, log.generic_string());
-        if (std::system(command.c_str()) != 0) {
-          playtestError_ = "O teste não pôde ser preparado (veja " + log.generic_string() + ").";
-          return std::nullopt;
-        }
+      const MapExportResult r = exportMap(source, id, MapExportKind::Playtest, paths_, engine2, dir / (id + ".log"), dir);
+      if (!r.ok) {
+        playtestError_ = "O teste não pôde ser preparado (" + r.error + ").";
+        return std::nullopt;
       }
       MissionEntry e;
       e.id = id, e.title = title, e.place = place, e.briefing = briefing, e.objective = objective, e.draftId = id;
-      e.map = map, e.scene = scene, e.battle = battle;
+      e.map = r.map, e.scene = r.scene, e.battle = r.battle;
       return e;
     });
   }
@@ -893,12 +884,7 @@ class MapEditorStage : public Stage {
       for (const e2::CampaignMission& m : campaign_.data().missions) {
         if (m.mapFile.empty()) continue;
         if (ImGui::Selectable(std::format("{}##{}", m.title, m.id).c_str())) {
-          // the newest file of the mission's id: EmberEngine's own save when it is newer than Engine2's
-          const std::string stem = std::filesystem::path(m.mapFile).stem().string();
-          const int own = highestSerial(savedDir(), m.id);
-          const int theirs = highestSerial(paths_.maps, m.id);
-          open(own > theirs ? savedDir() / std::format("{}{:03}.json", m.id, own) : paths_.maps / m.mapFile);
-          (void)stem;
+          open(missionMap(paths_, m).file);  // the file the game plays: the editor's own newer save, else Engine2's
         }
       }
       ImGui::EndCombo();
@@ -1288,6 +1274,7 @@ class MapEditorStage : public Stage {
   std::unique_ptr<MapStage> preview_;
   std::optional<std::pair<int, int>> pendingClick_;
   std::future<std::optional<MissionEntry>> playtest_;
+  std::future<std::string> saveExport_;  // Salvar's preparation for the game (its note when done)
   std::string playtestError_;
   std::string script_;  // captures: clicks to apply (previewEdits)
   std::string note_;
