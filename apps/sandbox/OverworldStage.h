@@ -32,6 +32,7 @@
 
 #include "CampaignUi.h"
 #include "CutsceneScreen.h"
+#include "EmberMenus.h"
 #include "InnScreen.h"
 #include "Stage.h"
 #include "render/Camera.h"
@@ -51,6 +52,7 @@ class OverworldStage : public Stage {
     std::function<void(const MissionEntry&)> play;  // a mission's fight
     std::function<void()> title;                    // back to the title screen
     std::function<void()> fullscreen;               // Opções: Tela cheia
+    DevGfx* gfx = nullptr;                          // Opções: Gráficos (the game's Dev Controls switches)
   };
 
   // `testSave`: Engine2's Modo teste (GameApp testMode): the map runs on that save (held by the caller for the whole
@@ -1445,43 +1447,26 @@ class OverworldStage : public Stage {
     endPanel();
   }
 
-  // Opções (OptionsDialog): Jogo (Salvar, Carregar, Voltar à tela inicial) and Gráficos (Tela cheia).
+  // Opções (EmberMenus.h OptionsDialog): Jogo (Salvar jogo, Carregar jogo, Voltar à tela inicial), Gráficos, Áudio, Idiomas,
+  // Acessibilidade.
   void drawOptions(ImVec2 size) {
-    if (veil(size, "##optionsveil")) {
-      options_ = false;
-      return;
-    }
-    beginPanel("##options", size, 704, size.y * 0.94f);
-    const float inner = 664;
-    const ImVec2 head = ImGui::GetCursorScreenPos();
-    title("Opções", 24.0f);
-    ImGui::SetCursorScreenPos({head.x + inner - 110, head.y});
-    if (emberBigButton("##optclose", "FECHAR", {head.x + inner - 110, head.y}, {110, 32}, false, 11.0f)) options_ = false;
-    ImGui::SetCursorScreenPos({head.x, head.y + 48});
-    const float colW = (inner - 8) / 2;
-    const ImVec2 a = ImGui::GetCursorScreenPos();
-    slot(a, {a.x + colW, a.y + 170});
-    emberTitle(ImGui::GetWindowDrawList(), {a.x + 12, a.y + 8}, 16.0f, "Jogo");
+    if (!optionsDialog_.isOpen()) optionsDialog_.open();
+    menu::OptionsDialog::Actions actions;
     // Modo teste has no Salvar jogo (GameApp passes onSaveGame only outside test mode).
-    const float shift = test() ? 44.0f : 0.0f;
-    if (!test() && emberBigButton("##optsave", "SALVAR JOGO", {a.x + 12, a.y + 36}, {colW - 24, 36}, false, 11.0f)) {
-      options_ = false;
-      slots_.emplace();
-      slots_->open(SlotScreen::Mode::Save, true);
-    }
-    if (emberBigButton("##optload", "CARREGAR JOGO", {a.x + 12, a.y + 80 - shift}, {colW - 24, 36}, false, 11.0f)) {
-      options_ = false;
+    if (!test())
+      actions.save = [this] {
+        slots_.emplace();
+        slots_->open(SlotScreen::Mode::Save, true);
+      };
+    actions.load = [this] {
       slots_.emplace();
       slots_->open(SlotScreen::Mode::Load, true);
-    }
-    if (emberBigButton("##opttitle", "VOLTAR À TELA INICIAL", {a.x + 12, a.y + 124 - shift}, {colW - 24, 36}, false, 11.0f) && callbacks_.title) callbacks_.title();
-    const ImVec2 g{a.x + colW + 8, a.y};
-    slot(g, {g.x + colW, g.y + 82});
-    emberTitle(ImGui::GetWindowDrawList(), {g.x + 12, g.y + 8}, 16.0f, "Gráficos");
-    if (emberBigButton("##optfull", "TELA CHEIA", {g.x + 12, g.y + 36}, {colW - 24, 32}, false, 11.0f) && callbacks_.fullscreen) callbacks_.fullscreen();
-    ImGui::SetCursorScreenPos({a.x, a.y + 178});
-    ImGui::Dummy({inner, 1});
-    endPanel();
+    };
+    actions.title = callbacks_.title;
+    actions.fullscreen = callbacks_.fullscreen;
+    actions.gfx = callbacks_.gfx;
+    optionsDialog_.draw(size, actions);
+    if (!optionsDialog_.isOpen()) options_ = false;
   }
 
   void portrait(ImDrawList* dl, const std::string& hero, ImVec2 a, ImVec2 b) {
@@ -1512,6 +1497,7 @@ class OverworldStage : public Stage {
   std::function<void()> afterFilm_;
   double previewFilmAt_ = 0;
   bool movementOpen_ = false, questLog_ = false, party_ = false, options_ = false;
+  menu::OptionsDialog optionsDialog_;  // Opções (EmberMenus.h), shown while options_
   int partyTab_ = 0;
   std::vector<std::string> formation_;
   int formationPick_ = -1;

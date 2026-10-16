@@ -61,6 +61,7 @@
 #include "render/Renderer.h"
 #include "rhi/UploadQueue.h"
 #include "render/MeshScene.h"
+#include "EmberMenus.h"
 #include "SpellsMenu.h"
 #include "render/SpellEffects.h"
 #include "render/SpriteSystem.h"
@@ -429,7 +430,7 @@ class MapStage final : public Stage {
       if (!spellMode_.empty()) spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
       else if (attackMode_) attackMode_ = false;
       else if (selected_ >= 0 && result_.empty()) select(-1);
-      else pauseOpen_ = !pauseOpen_;  // nothing picked: the pause menu (Continuar / Menu principal)
+      else if (!menuOptions_.isOpen()) pauseOpen_ = !pauseOpen_;  // nothing picked: the battle menu
     }
     if (e.type == SDL_EVENT_MOUSE_MOTION && (e.motion.state & SDL_BUTTON_RMASK) && !flat_) {  // Tática never turns
       yaw_ -= e.motion.xrel * kTurnPerPixel;
@@ -791,8 +792,26 @@ class MapStage final : public Stage {
   }
   bool failed() const { return failed_; }
 
-  // The player asked to leave for the title screen (pause menu, or after the battle's end), or to fight it again.
+  // The player asked to leave the fight (the battle menu's Desistir / Encerrar teste, or after the battle's end: back
+  // where it came from), or to fight it again.
   bool wantsTitle() const { return titleRequested_; }
+  // The battle menu's "Tela inicial": straight to the title screen.
+  bool wantsHome() const { return homeRequested_; }
+  // The Map Editor's Testar battle: its menu says "Encerrar teste" (GameApp playtest).
+  void setPlaytest(bool on) { playtest_ = on; }
+  // Opções (EmberMenus.h): Tela cheia and the game's graphics switches (DevGfxSettings.h), applied here at once when
+  // changed, the way Engine2's renderer read them every frame.
+  void setMenus(std::function<void()> fullscreen, DevGfx* gfx) { fullscreen_ = std::move(fullscreen), gfx_ = gfx; }
+  void applyGfx(const DevGfx& g) {
+    layers_ = g.realShadows ? layers_ | 2u : layers_ & ~2u;
+    layers_ = g.localLights ? layers_ | 8u : layers_ & ~8u;
+    options_.volume = g.atmosphericFx, options_.airParticles = g.atmosphericFx;
+  }
+  // Captures: the battle menu or Opções open.
+  void previewMenu(const std::string& which) {
+    if (which == "menu") pauseOpen_ = true;
+    else if (which == "options") menuOptions_.open();
+  }
   // "victory" / "defeat" once the fight is over, else empty.
   const std::string& battleResult() const { return result_; }
   // A conversation or film is open over the battle: nobody's turn moves on until it closes.
@@ -1012,7 +1031,7 @@ class MapStage final : public Stage {
       std::string shown = kIdle;
       const e2::HeroPose* p = nullptr;
       // The fallen: their death plays out, holds, then they are gone.
-      if (ui < unitDiedAt_.size() && unitDiedAt_[ui] >= 0.0f && time - unitDiedAt_[ui] > poseSeconds(ui, "death") + kCorpseSeconds) continue;
+      if (ui < unitDiedAt_.size() && unitDiedAt_[ui] >= 0.0f && time - unitDiedAt_[ui] > poseSeconds(ui, "death") / unitShot_[ui].rate + kCorpseSeconds) continue;
       const OneShot* shot = ui < unitShot_.size() && !unitShot_[ui].pose.empty() ? &unitShot_[ui] : nullptr;
       if (shot && entry) {
         // Engine2 UnitActor.play: the left-facing cut when it faces left and has one.
@@ -1021,7 +1040,7 @@ class MapStage final : public Stage {
         p = l && !l->pace.empty() ? l : entry->find(shot->pose);
         if (p && p->pace.empty()) p = nullptr;
         if (p) shown = p == l ? left : shot->pose;
-        if (!shot->hold && time - shot->start > poseSeconds(ui, shot->pose)) unitShot_[ui].pose.clear();
+        if (!shot->hold && time - shot->start > poseSeconds(ui, shot->pose) / shot->rate) unitShot_[ui].pose.clear();
       } else if (walking && entry) {
         p = walkPose(*entry, unitWalk_[ui].dir, unitFacing_[ui], u.sprite, shown);
       } else if (chosen != kIdle && entry) {
@@ -1037,7 +1056,7 @@ class MapStage final : public Stage {
       uint32_t frame = 0;
       if (p) {
         const size_t period = p->doneAt >= 0 ? static_cast<size_t>(p->doneAt) + 120 : pacePeriod(p->pace);
-        const float clock = shot ? std::max(0.0f, time - shot->start) : walking ? std::max(0.0f, time - unitWalk_[ui].start) : time;
+        const float clock = shot ? std::max(0.0f, time - shot->start) * shot->rate : walking ? std::max(0.0f, time - unitWalk_[ui].start) : time;
         // A one-shot pose plays through once and keeps its last frame.
         const size_t tick = shot ? std::min(static_cast<size_t>(clock * 240.0f), p->doneAt >= 0 ? static_cast<size_t>(p->doneAt) : p->pace.size() - 1)
                                  : static_cast<size_t>(clock * 240.0f) % period;
@@ -1428,7 +1447,7 @@ class MapStage final : public Stage {
       if (std::abs(screenX) > 0.05f) unitFacing_[i] = screenX > 0.0f ? 1 : -1;
       const float away = -(d.x * std::sin(yaw) + d.y * std::cos(yaw));
       if (dist > 1e-4f) w.dir = std::abs(away) > dist * 0.5f ? (away > 0.0f ? kWalkBack : kWalkFront) : kWalkSide;
-      const float move = std::min(dist, std::sqrt(3.0f) / kStepSeconds * dt);
+      const float move = std::min(dist, std::sqrt(3.0f) / stepSeconds() * dt);
       if (dist > 1e-4f) p += d / dist * move;
       unitMoved_[i] = 1;
       if (dist - move < 1e-3f) w.points.erase(w.points.begin());
@@ -1774,7 +1793,8 @@ class MapStage final : public Stage {
   struct OneShot {
     std::string pose;
     float start = 0.0f;
-    bool hold = false;  // keeps its last frame (death)
+    bool hold = false;   // keeps its last frame (death)
+    float rate = 1.0f;   // its pace (Velocidade)
   };
   // An action in play (Engine2's queue): its steps one after another (a strike and its counter, a spell's hits, a
   // heal), each a pose with the rules applied at its impact.
@@ -1841,11 +1861,11 @@ class MapStage final : public Stage {
     }
     std::string pose = s.type == e2::BattleStep::Type::Combat ? "attack" : e2::spellPose(s.kind);
     if (striker >= 0 && !hasPose(static_cast<size_t>(striker), pose)) pose = hasPose(static_cast<size_t>(striker), "cast") ? "cast" : "attack";
-    const float length = striker >= 0 ? poseSeconds(static_cast<size_t>(striker), pose) : 0.6f;
+    const float length = (striker >= 0 ? poseSeconds(static_cast<size_t>(striker), pose) : 0.6f) / actionRate();
     x.impact = now_ + length * kImpactShare;
-    x.end = now_ + length + kExchangeGap;
+    x.end = now_ + length + kExchangeGap / actionRate();
     x.landed = false;
-    if (striker >= 0) unitShot_[static_cast<size_t>(striker)] = {pose, now_, false};
+    if (striker >= 0) unitShot_[static_cast<size_t>(striker)] = {pose, now_, false, actionRate()};
     // The spell's visual, laid out so it lands on the impact (a counter or a plain attack has none: its blow's sparks
     // come when it lands).
     if (striker >= 0 && !x.counter && !s.kind.empty()) {
@@ -1965,10 +1985,10 @@ class MapStage final : public Stage {
       }
       popups_.push_back({u, std::to_string(e.amount), e.crit ? IM_COL32(255, 214, 102, 255) : IM_COL32(255, 255, 255, 255), now_, e.crit});
       if (e.died) {
-        unitShot_[u] = {"death", now_, true};
+        unitShot_[u] = {"death", now_, true, actionRate()};
         unitDiedAt_[u] = now_;
       } else {
-        unitShot_[u] = {"hit", now_, false};
+        unitShot_[u] = {"hit", now_, false, actionRate()};
       }
     }
   }
@@ -2595,30 +2615,26 @@ class MapStage final : public Stage {
     ImGui::PopStyleVar(3);
   }
 
-  // Esc's pause menu, and after the battle's end its way out: ember plates in the middle of the screen.
+  // GameApp BattleScreen's Esc menu (EmberMenus.h BattleMenu) and the Opções window it opens. GameApp's Regras button
+  // (Como jogar over the battle) is left out (user, 2026-10-16).
   void drawPauseMenu() {
-    if (!pauseOpen_ || !result_.empty()) return;
-    const ImGuiIO& io = ImGui::GetIO();
-    const bool end = !result_.empty();
-    ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, io.DisplaySize.y * (end ? 0.55f : 0.5f)}, ImGuiCond_Always, {0.5f, 0.0f});
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {kPlateGlow, kPlateGlow});
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {0.0f, 10.0f});
-    ImGui::Begin("##pause", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
-                                         ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings);
-    ImGui::PushFont(nullptr, 18.0f);
-    auto button = [&](const char* id, const char* label) {
-      const float w = 240.0f, h = 40.0f;
-      return plate(id, {w, h}, [&](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32 ink) {
-        const ImVec2 t = ImGui::CalcTextSize(label);
-        dl->AddText({std::round((a.x + b.x - t.x) * 0.5f), std::round((a.y + b.y - t.y) * 0.5f)}, ink, label);
-      });
+    const ImVec2 screen = ImGui::GetIO().DisplaySize;
+    if (pauseOpen_ && result_.empty() && !menuOptions_.isOpen()) {
+      switch (battleMenu_.draw(screen, options_.engine2Public, speed_, playtest_)) {
+        case menu::BattleMenu::Action::Resume: pauseOpen_ = false; break;
+        case menu::BattleMenu::Action::Options: menuOptions_.open(); break;
+        case menu::BattleMenu::Action::Quit: titleRequested_ = true; break;
+        case menu::BattleMenu::Action::Title: homeRequested_ = true; break;
+        case menu::BattleMenu::Action::None: break;
+      }
+    }
+    menu::OptionsDialog::Actions actions;
+    actions.fullscreen = fullscreen_;
+    actions.gfx = gfx_;
+    actions.gfxChanged = [this] {
+      if (gfx_) applyGfx(*gfx_);
     };
-    if (!end && button("##continue", "Continuar")) pauseOpen_ = false;
-    if (button("##title", end ? "Voltar ao menu" : "Menu principal")) titleRequested_ = true;
-    ImGui::PopFont();
-    ImGui::End();
-    ImGui::PopStyleVar(3);
+    menuOptions_.draw(screen, actions);
   }
 
   // GameApp ResultScreen: the mission's art, "Vitória · T3" / "Derrota", its title and line, each hero's growth (level,
@@ -3071,6 +3087,15 @@ class MapStage final : public Stage {
   std::unordered_set<int> awake_;         // enemies that have seen the party (fog)
   std::string result_;                    // "victory" / "defeat" once the battle is over
   bool pauseOpen_ = false, titleRequested_ = false, retryRequested_ = false;
+  // Engine2's menus over the battle (EmberMenus.h) and what they act on.
+  bool homeRequested_ = false, playtest_ = false;
+  menu::BattleMenu battleMenu_;
+  menu::OptionsDialog menuOptions_;
+  menu::BattleMenu::Speed speed_ = menu::BattleMenu::Speed::Normal;  // engine.ts speedMode, "normal" each battle
+  std::function<void()> fullscreen_;
+  DevGfx* gfx_ = nullptr;
+  float stepSeconds() const { return speed_ == menu::BattleMenu::Speed::Slow ? 0.36f : speed_ == menu::BattleMenu::Speed::Fast ? 0.12f : kStepSeconds; }
+  float actionRate() const { return speed_ == menu::BattleMenu::Speed::Slow ? 0.4f : speed_ == menu::BattleMenu::Speed::Fast ? 1.0f : 0.65f; }
   bool bloomOn_ = true;  // panel "Brilho" (Engine2's full-scene bloom)
   float resultAt_ = 0.0f;                  // when the battle ended (the result screen follows after a breath)
   static constexpr float kResultDelay = 1.8f;

@@ -53,6 +53,7 @@
 #include <algorithm>
 #include <charconv>
 #include <chrono>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -136,7 +137,9 @@ struct Options {
   std::string saveBank;     // the campaign bank file (default: %LOCALAPPDATA%\Ember\ember-save-bank.json)
   std::string mapUi;        // captures on the world map: a panel opened (OverworldStage::preview)
   int titlePick = -1;       // captures: that slot chosen (0-based) on the --title-screen slots
-  std::string titleScreen;  // captures: "new" / "load" open the save slots ("" the title itself)
+  std::string titleScreen;  // captures: "new" / "load" open the save slots ("" the title itself); "help[:tab[:scroll]]" /
+                            // "options": Como jogar / Opções over the title
+  std::string lang;         // captures: the interface, dialogues and subtitles in "pt" / "en" (Opções' languages, not saved)
   std::string scenes = "build/engine2-scenes", maps;
   uint32_t debugView = 0;
   std::string scene;
@@ -203,6 +206,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--map-ui" && hasValue) o.mapUi = argv[++i];
     else if (arg == "--title-pick" && hasValue) o.titlePick = std::atoi(argv[++i]);
     else if (arg == "--title-screen" && hasValue) o.titleScreen = argv[++i], o.title = true;
+    else if (arg == "--lang" && hasValue) o.lang = argv[++i];
     else if (arg == "--scenes" && hasValue) o.scenes = argv[++i];
     else if (arg == "--maps" && hasValue) o.maps = argv[++i];
     else if (arg == "--debug-view" && hasValue) o.debugView = static_cast<uint32_t>(std::atoi(argv[++i]));
@@ -522,6 +526,10 @@ int runCompare(const Options& o) {
 
 int runCapture(const Options& o) {
   Services services(o);
+  if (o.lang == "pt" || o.lang == "en") {
+    GamePrefs& prefs = gamePrefs();  // this run only: nothing written
+    prefs.uiLanguage = prefs.dialogueLanguage = prefs.subtitleLanguage = o.lang;
+  }
   VulkanContext context({o.validation, nullptr});
   bool passed = true;
   {
@@ -591,10 +599,21 @@ int runCapture(const Options& o) {
       paths.engine2Public = o.engine2, paths.maps = campaignPaths.maps, paths.scenes = o.scenes;
       auto title = std::make_unique<TitleStage>(paths, hasCampaign ? &campaign : nullptr, [](const MissionEntry&) {}, [] {}, [] {});
       if (o.titleScreen == "new" || o.titleScreen == "load") title->previewSlots(o.titleScreen == "load");
+      title->onOptions({}, &devGfx);  // Engine2's defaults (captures never write the PC's switches: nothing is clicked)
+      if (o.titleScreen == "options") title->previewOptions();
+      if (o.titleScreen.starts_with("help")) {  // help[:tab[:scroll]]
+        int tab = 0;
+        float scroll = 0.0f;
+        std::sscanf(o.titleScreen.c_str(), "help:%d:%f", &tab, &scroll);
+        title->previewHelp(tab, scroll);
+      }
       if (o.titlePick >= 0) title->previewPick(o.titlePick);
       stage = std::move(title);
     } else {
       stage = makeStage(o, context, renderer, services.assets, services.jobs);
+      // --map-ui menu / options: the battle's Esc menu or Opções open.
+      if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && (o.mapUi == "menu" || o.mapUi == "options"))
+        map->previewMenu(o.mapUi);
       // --map-ui talk:<mission>[:outro]: that mission's intro (or outro) conversation over the battle, nothing recorded.
       if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && o.mapUi.starts_with("talk:")) {
         std::string mission = o.mapUi.substr(5);
@@ -703,6 +722,7 @@ int runWindow(const Options& o) {
         testSession = freshTestSession(campaign);  // GameApp ?start=test: a fresh test session every entry
         openTest = TestModeStage::Screen::Menu;
       });
+    title->onOptions(toggleFullscreen, &devGfx);
     if (!campaignNote.empty()) title->showCampaign(std::exchange(campaignNote, {}));
     return title;
   };
@@ -737,6 +757,7 @@ int runWindow(const Options& o) {
     callbacks.play = [&](const MissionEntry& m) { pending = m; };
     callbacks.title = [&] { openTest = TestModeStage::Screen::Menu; };  // onBack / Voltar à tela inicial: the test menu
     callbacks.fullscreen = toggleFullscreen;
+    callbacks.gfx = &devGfx;
     return std::make_unique<OverworldStage>(paths, campaign, world, std::move(callbacks), std::string{}, &testSession->save);
   };
   auto makeMap = [&]() -> std::unique_ptr<Stage> {
@@ -748,6 +769,7 @@ int runWindow(const Options& o) {
     callbacks.play = [&](const MissionEntry& m) { pending = m; };
     callbacks.title = [&] { backToTitle = true; };
     callbacks.fullscreen = toggleFullscreen;
+    callbacks.gfx = &devGfx;
     return std::make_unique<OverworldStage>(paths, campaign, world, std::move(callbacks), std::exchange(campaignNote, {}));
   };
   // campaign.ts finishBattle (its heroes part and the mission's completion): each hero's level, XP and HP into the
@@ -809,7 +831,9 @@ int runWindow(const Options& o) {
     // Screen changes happen between frames, with the GPU idle: the old screen's resources go before the new one loads.
     std::optional<MapStageOptions> retry;
     if (auto* map = dynamic_cast<MapStage*>(stage.get())) {
-      if (map->wantsTitle()) {
+      if (map->wantsHome()) {
+        backToTitle = true;  // the battle menu's "Tela inicial" (GameApp goToTitle)
+      } else if (map->wantsTitle()) {
         if (inEditorTest) {
           openEditor = true;  // Encerrar teste: the editor again, on the same draft
         } else if (inSpells) {
@@ -820,6 +844,9 @@ int runWindow(const Options& o) {
           else openTest = TestModeStage::Screen::WorldMap;
         } else if (!playing.empty() && !map->battleResult().empty()) {
           finishCampaignFight(*map);
+        } else if (!playing.empty()) {
+          playing.clear();
+          openMap = true;  // Desistir: back to the world map, the mission still to fight
         } else {
           backToTitle = true;
         }
@@ -833,6 +860,8 @@ int runWindow(const Options& o) {
       vkDeviceWaitIdle(context.device);
       stage.reset();
       auto again = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, *retry);
+      again->setMenus(toggleFullscreen, &devGfx);
+      again->setPlaytest(inEditorTest);
       if (!playing.empty() && dialogs.is_object())
         attachBattleTalk(*again, playing, dialogs, paths.engine2Public, world, testSession ? nullptr : &campaign);
       stage = std::move(again);
@@ -852,7 +881,9 @@ int runWindow(const Options& o) {
         MapStageOptions options = mapOptions(spells);
         options.spellsMenuOpen = true;
         devGfx.apply(options, renderer);
-        stage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
+        auto spellsMap = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
+        spellsMap->setMenus(toggleFullscreen, &devGfx);
+        stage = std::move(spellsMap);
         inSpells = true;
       } else if (backToTitle) {
         playing.clear();
@@ -882,6 +913,8 @@ int runWindow(const Options& o) {
             if (level.is_number_integer()) options.heroProgress[name] = {level.get<int>(), xp.value(name, 0)};
         }
         auto map = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
+        map->setMenus(toggleFullscreen, &devGfx);
+        map->setPlaytest(inEditorTest);
         // The mission's intro conversation, its outro on a victory, and the campaign's epilogue films.
         if (!playing.empty() && dialogs.is_object())
           attachBattleTalk(*map, playing, dialogs, paths.engine2Public, world, testSession ? nullptr : &campaign);

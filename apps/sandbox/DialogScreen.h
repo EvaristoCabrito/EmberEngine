@@ -4,6 +4,8 @@
 // portrait, their name as a kicker, the line, and either "Próximo" / "Ok" or one button per reply. It starts at the
 // tree's startId, follows each line's or reply's `next`, and closes when there is none (or a line is missing). The
 // portraits are Engine2's own choice per line (export_dialogs.ts). A reply's affinity change is handed to the owner.
+// Opções: each speaker, line and reply in the Diálogos language when the line has that translation (translatedText,
+// else the original), the line's text at Tamanho do diálogo (1 / 1.15 / 1.3 em).
 
 #include <imgui.h>
 
@@ -13,6 +15,7 @@
 #include <string>
 
 #include "CampaignUi.h"
+#include "GamePrefs.h"
 #include "render/UiArt.h"
 #include "world/Campaign.h"
 
@@ -78,12 +81,14 @@ class DialogScreen {
     const float textW = inner - (textX - at.x);
     ImGui::SetCursorScreenPos({textX, at.y});
     ImGui::BeginGroup();
-    emberKicker(dl, ImGui::GetCursorScreenPos(), 15.0f, upperUtf8(line->value("speaker", "")).c_str());
+    const std::string lang = gamePrefs().dialogueLanguage;
+    const std::string speaker = translated(line->value("speaker", ""), line->value("speakerTranslations", e2::Json()), lang);
+    emberKicker(dl, ImGui::GetCursorScreenPos(), 15.0f, upperUtf8(speaker).c_str());
     ImGui::Dummy({1, 22});
-    ImGui::PushFont(uiFont(UiFont::Ui), 16.0f);
+    ImGui::PushFont(uiFont(UiFont::Ui), 16.0f * gamePrefs().dialogueScale);
     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(240, 240, 240, 255));
     ImGui::PushTextWrapPos(textX + textW);
-    ImGui::TextUnformatted(line->value("text", "").c_str());
+    ImGui::TextUnformatted(translated(line->value("text", ""), line->value("translations", e2::Json()), lang).c_str());
     ImGui::PopTextWrapPos();
     ImGui::PopStyleColor();
     ImGui::PopFont();
@@ -95,7 +100,7 @@ class DialogScreen {
     if (!replies.empty()) {
       int i = 0;
       for (const e2::Json& reply : replies) {
-        const std::string text = reply.value("text", "");
+        const std::string text = translated(reply.value("text", ""), reply.value("translations", e2::Json()), lang);
         ImFont* ui = uiFont(UiFont::Ui);
         const float th = ui->CalcTextSizeA(14.0f, FLT_MAX, textW - 24, text.c_str()).y;
         const float h = std::max(44.0f, th + 16);
@@ -117,7 +122,7 @@ class DialogScreen {
     } else {
       const bool hasNext = line->value("next", e2::Json()).is_string() && !line->value("next", "").empty();
       const ImVec2 p = ImGui::GetCursorScreenPos();
-      if (emberBigButton("##next", hasNext ? "PRÓXIMO" : "OK", p, {textW, 44}, true, 15.0f)) {
+      if (emberBigButton("##next", upperUtf8(hasNext ? tr("Próximo") : tr("Ok")).c_str(), p, {textW, 44}, true, 15.0f)) {
         next = hasNext ? line->value("next", "") : "";
         advance = true;
       }

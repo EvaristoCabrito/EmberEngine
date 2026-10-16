@@ -32,6 +32,7 @@
 
 #include "CampaignUi.h"
 #include "DevGfx.h"
+#include "EmberMenus.h"
 #include "Stage.h"
 #include "render/Camera.h"
 #include "render/MeshScene.h"
@@ -570,40 +571,16 @@ class TestModeStage : public Stage {
     }
   }
 
-  // OptionsButton (the map's gear): Voltar à tela inicial (onReturnToTitle = onBack: the test menu), Tela cheia.
+  // OptionsButton (the map's gear, EmberMenus.h OptionsDialog): Voltar à tela inicial (onReturnToTitle = onBack: the test
+  // menu), Gráficos (Dev Controls' own switches), Áudio, Idiomas, Acessibilidade.
   void drawOptions(ImVec2 size) {
-    if (veil(size, "##optveil")) {
-      options_ = false;
-      return;
-    }
-    const float w = std::min(704.0f, size.x - 32.0f), inner = w - 40;
-    ImGui::SetNextWindowPos({size.x * 0.5f, size.y * 0.5f}, ImGuiCond_Always, {0.5f, 0.5f});
-    ImGui::SetNextWindowSize({w, 0});
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {20, 20});
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, 0);
-    ImGui::Begin("##options", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize);
-    ImDrawList* dl = ImGui::GetWindowDrawList();
-    const ImVec2 wa = ImGui::GetWindowPos(), wb{wa.x + ImGui::GetWindowSize().x, wa.y + ImGui::GetWindowSize().y};
-    dl->PushClipRectFullScreen();
-    emberPanel(dl, wa, wb);
-    dl->PopClipRect();
-    const ImVec2 head = ImGui::GetCursorScreenPos();
-    emberTitle(dl, head, 24.0f, "Opções");
-    if (emberBigButton("##optclose", "FECHAR", {head.x + inner - 110, head.y}, {110, 32}, false, 11.0f)) options_ = false;
-    const float colW = (inner - 8) / 2;
-    const ImVec2 a{head.x, head.y + 48};
-    emberSlot(dl, a, {a.x + colW, a.y + 82});
-    emberTitle(dl, {a.x + 12, a.y + 8}, 16.0f, "Jogo");
-    if (emberBigButton("##opttitle", "VOLTAR À TELA INICIAL", {a.x + 12, a.y + 36}, {colW - 24, 36}, false, 11.0f)) options_ = false, screen_ = Screen::Menu;
-    const ImVec2 g{a.x + colW + 8, a.y};
-    emberSlot(dl, g, {g.x + colW, g.y + 82});
-    emberTitle(dl, {g.x + 12, g.y + 8}, 16.0f, "Gráficos");
-    if (emberBigButton("##optfull", "TELA CHEIA", {g.x + 12, g.y + 36}, {colW - 24, 32}, false, 11.0f) && callbacks_.fullscreen) callbacks_.fullscreen();
-    ImGui::SetCursorScreenPos({a.x, a.y + 90});
-    ImGui::Dummy({inner, 1});
-    ImGui::End();
-    ImGui::PopStyleColor();
-    ImGui::PopStyleVar();
+    if (!optionsDialog_.isOpen()) optionsDialog_.open();
+    menu::OptionsDialog::Actions actions;
+    actions.title = [this] { screen_ = Screen::Menu; };
+    actions.fullscreen = callbacks_.fullscreen;
+    actions.gfx = &devGfx_;
+    optionsDialog_.draw(size, actions);
+    if (!optionsDialog_.isOpen()) options_ = false;
   }
 
   // --- DevControlsScreen -----------------------------------------------------------------------------------------------
@@ -780,6 +757,7 @@ class TestModeStage : public Stage {
   bool realSaveRead_ = false;
   std::optional<std::string> open_;
   bool options_ = false;
+  menu::OptionsDialog optionsDialog_;  // Opções (EmberMenus.h), shown while options_
   std::string flashId_;
   float flashAt_ = -10.0f, now_ = 0.0f;
   int zoom_ = 3;  // opens at the biggest stop

@@ -1,10 +1,11 @@
 #pragma once
 
 // A film between screens, copied from Engine2 (GameApp CutsceneScreen + cutsceneSubtitles.ts + styles.css
-// .cutscene-stage): the picture covering the screen (object-fit: cover), its subtitles in Brazilian Portuguese
-// (public/game/subtitles/<film>.pt-BR.vtt, drawn like a browser's caption: white on a dark band, bottom centre), the
-// cutscene sound toggle top right (independent of the game's mute; kept for the session), "Pular" bottom right. It ends
-// at the film's own end, on Pular, or when the film never starts (8 s). Played by engine/media/VideoPlayer.
+// .cutscene-stage): the picture covering the screen (object-fit: cover), its subtitles in the language Opções picks
+// (public/game/subtitles/<film>.pt-BR.vtt or .en-v2.vtt, cutsceneSubtitles.ts; drawn like a browser's caption: white on a
+// dark band, bottom centre; none when Exibir legendas is off), the cutscene sound toggle top right (Opções' Som das
+// cutscenes, independent of the game's mute) at Opções' cutscene volume, "Pular" bottom right. It ends at the film's own
+// end, on Pular, or when the film never starts (8 s). Played by engine/media/VideoPlayer.
 
 #include <imgui.h>
 
@@ -17,6 +18,7 @@
 #include <vector>
 
 #include "CampaignUi.h"
+#include "GamePrefs.h"
 #include "media/VideoPlayer.h"
 #include "render/UiArt.h"
 
@@ -29,9 +31,16 @@ class CutsceneScreen {
     player_ = std::make_unique<VideoPlayer>();
     player_->open(engine2Public / film);
     player_->setMuted(!soundOn());
+    player_->setVolume(gamePrefs().cutscene);
     const std::string name = std::filesystem::path(film).stem().string();
-    loadSubtitles(engine2Public / "game" / "subtitles" / (name + ".pt-BR.vtt"));
-    if (cues_.empty()) loadSubtitles(engine2Public / "game" / "subtitles" / (name + ".pt.vtt"));
+    const std::filesystem::path dir = engine2Public / "game" / "subtitles";
+    if (gamePrefs().subtitleLanguage == "en") {
+      loadSubtitles(dir / (name + ".en-v2.vtt"));
+      if (cues_.empty()) loadSubtitles(dir / (name + ".en.vtt"));
+    } else {
+      loadSubtitles(dir / (name + ".pt-BR.vtt"));
+      if (cues_.empty()) loadSubtitles(dir / (name + ".pt.vtt"));
+    }
   }
 
   // Draws it full screen; true once it is over (ended, skipped, or never started).
@@ -47,7 +56,7 @@ class CutsceneScreen {
     std::vector<std::string> lines;
     for (const Cue& c : cues_)
       if (t >= c.from && t < c.to) lines.insert(lines.end(), c.lines.begin(), c.lines.end());
-    if (!lines.empty()) {
+    if (!lines.empty() && gamePrefs().subtitles) {
       ImFont* ui = uiFont(UiFont::Ui);
       const float fs = size.y * 0.05f;
       float y = size.y * 0.965f - static_cast<float>(lines.size()) * fs * 1.25f;  // the last band ~3.5% above the edge
@@ -63,6 +72,7 @@ class CutsceneScreen {
     ImGui::SetCursorScreenPos({size.x - 12 - 8 - 36, 12 + 8});
     if (ImGui::InvisibleButton("##filmsound", {36, 36})) {
       soundOn() = !soundOn();
+      gamePrefs().save();
       player_->setMuted(!soundOn());
     }
     {
@@ -75,14 +85,15 @@ class CutsceneScreen {
     bool skip = false;
     {
       ImFont* ui = uiFont(UiFont::Ui);
-      const ImVec2 ts = ui->CalcTextSizeA(16.0f, FLT_MAX, 0, "Pular");
+      const std::string skipLabel = tr("Pular");
+      const ImVec2 ts = ui->CalcTextSizeA(16.0f, FLT_MAX, 0, skipLabel.c_str());
       const ImVec2 bsz{ts.x + 40, 44};
       const ImVec2 a{size.x - 20 - bsz.x, size.y - 20 - bsz.y};
       ImGui::SetCursorScreenPos(a);
       skip = ImGui::InvisibleButton("##skipfilm", bsz);
       const bool hover = ImGui::IsItemHovered();
       if (hover) dl->AddRectFilled(a, {a.x + bsz.x, a.y + bsz.y}, IM_COL32(255, 255, 255, 26), 6);
-      dl->AddText(ui, 16.0f, {a.x + 20, a.y + (bsz.y - ts.y) / 2}, IM_COL32(240, 240, 240, 255), "Pular");
+      dl->AddText(ui, 16.0f, {a.x + 20, a.y + (bsz.y - ts.y) / 2}, IM_COL32(240, 240, 240, 255), skipLabel.c_str());
     }
     const bool stuck = !player_->image() && now - startedAt_ > 8.0f;
     return skip || player_->finished() || stuck;
@@ -97,11 +108,8 @@ class CutsceneScreen {
     std::vector<std::string> lines;
   };
 
-  // The cutscene sound setting (audio.ts getCutsceneAudioSettings().enabled), on until switched off.
-  static bool& soundOn() {
-    static bool on = true;
-    return on;
-  }
+  // The cutscene sound setting (audio.ts getCutsceneAudioSettings().enabled): Opções' Som das cutscenes.
+  static bool& soundOn() { return gamePrefs().cutsceneEnabled; }
 
   static double parseTime(const std::string& s) {
     int h = 0, m = 0, sec = 0, ms = 0;

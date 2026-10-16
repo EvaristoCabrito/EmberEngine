@@ -339,6 +339,19 @@ inventory / equipment, dialogs / intros)
   campaign does not read maps saved by the editor yet; Dev Controls' VFX lab / HD-2D scene / contact shadows / AO.
 - **Several sessions share this checkout:** commit only your own hunks (stage HEAD + your edits, build that index
   alone in a scratch folder, then commit); never `git add` a file another session is editing.
+- **Como jogar, Opções, battle Esc menu = Engine2's own, PT-BR + EN (2026-10-16; user: "both languages ported with
+  the options").** `apps/sandbox/EmberMenus.h`: HelpModal (GameApp HelpModal: Básicos / Usos / Dano / Fórmulas / Loot,
+  from `content/engine2/help.json`), OptionsDialog (OptionsMenu.tsx: Jogo, Gráficos, Áudio, Idiomas, Acessibilidade;
+  title, world maps, Modo teste, battle), BattleMenu (Velocidade 0.36/0.22/0.12 s per hex, poses at 0.4/0.65/1 pace;
+  Áudio; Opções; Continuar; Desistir = back to the world map / Encerrar teste; Tela inicial). `GamePrefs.h`: the
+  player's choices in `%LOCALAPPDATA%\Ember\game-preferences.json` + `tr()` (Engine2's uiText: its dictionary
+  `content/engine2/ui-text.json`, or inline English). `DevGfxSettings.h` = DevGfx without MapStage (Gráficos acts live
+  in a battle, MapStage::applyGfx). Data: `export_help.ts -- content/engine2/help.json content/engine2/ui-text.json`.
+  In English: title, save slots, these windows, film subtitles (`.en-v2.vtt`); dialogues use a line's translation
+  when Engine2 has one (it has none yet: they stay Portuguese, Engine2's rule); other screens are still Portuguese.
+  Música / Efeitos sonoros / Silenciar shown disabled (no music or sound yet). Left out: battle Zoom, battle Save /
+  Load, and GameApp's "Regras" button (user: not wanted). Captures: `--lang pt|en`, `--title-screen help:T[:scroll]
+  | options`, `--map-ui menu|options` on a battle.
 
 ## Next
 

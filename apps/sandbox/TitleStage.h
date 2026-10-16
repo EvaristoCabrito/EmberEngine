@@ -5,7 +5,8 @@
 // "Ember", the tagline and the ember menu buttons. "Nova campanha" and "Continuar" open the six save slots on Engine2's
 // save-board art (public/game/ui/old-ember-save-board.png, CampaignUi.h SlotScreen); a chosen slot starts its campaign
 // on the world map (OverworldStage). "Modo teste" (bottom left) is Engine2's test entry (TestModeStage.h).
-// "Opções" and "Como jogar" open Engine2's dialogs.
+// "Como jogar" and "Opções" open Engine2's own windows (EmberMenus.h HelpModal / OptionsDialog). Every text in Portuguese
+// or English (index.html data-pt / data-en), as Opções sets the interface.
 // Engine2's art is read at run time from its public folder; the fonts are bundled (content/fonts).
 
 #include <SDL3/SDL.h>
@@ -22,6 +23,7 @@
 #include <nlohmann/json.hpp>
 
 #include "CampaignUi.h"
+#include "EmberMenus.h"
 #include "Stage.h"
 #include "render/Camera.h"
 #include "render/MeshScene.h"
@@ -47,6 +49,11 @@ class TitleStage : public Stage {
   }
   // "Modo teste" opens Engine2's test menu through this (without it: the old list of every exported map).
   void onTestMode(std::function<void()> open) { testMode_ = std::move(open); }
+  // Opções: Tela cheia and Dev Controls' switches (Gráficos), as the game holds them.
+  void onOptions(std::function<void()> fullscreen, DevGfx* gfx) { fullscreen_ = std::move(fullscreen), gfx_ = gfx; }
+  // Captures: Como jogar (tab, scroll) or Opções opened.
+  void previewHelp(int tab, float scroll) { help_.preview(tab, scroll); }
+  void previewOptions() { options_.open(); }
   // Captures end after a second of frames (time for Engine2's art to load).
   bool done() const override { return frames_ > 60; }
   // Captures: the slot screen as "Nova campanha" (false) or "Continuar" (true) opens it.
@@ -81,8 +88,8 @@ class TitleStage : public Stage {
 
   void event(const SDL_Event& e) override {
     if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.key == SDLK_ESCAPE) {
-      if (dialog_ != Dialog::None) dialog_ = Dialog::None;
-      else if (screen_ == Screen::Missions || screen_ == Screen::Slots) screen_ = Screen::Title;
+      if (help_.isOpen() || options_.isOpen()) return;  // they close themselves
+      if (screen_ == Screen::Missions || screen_ == Screen::Slots) screen_ = Screen::Title;
       else if (screen_ == Screen::Briefing) screen_ = Screen::Missions;
     }
   }
@@ -107,13 +114,15 @@ class TitleStage : public Stage {
     }
     ImGui::End();
     ImGui::PopStyleVar(2);
-    if (dialog_ == Dialog::Options) drawOptions(io.DisplaySize);
-    if (dialog_ == Dialog::Help) drawHelp(io.DisplaySize);
+    menu::OptionsDialog::Actions actions;
+    actions.fullscreen = fullscreen_;
+    actions.gfx = gfx_;
+    options_.draw(io.DisplaySize, actions);
+    help_.draw(io.DisplaySize);
   }
 
  private:
   enum class Screen { Title, Slots, Missions, Briefing };
-  enum class Dialog { None, Options, Help };
 
   // --- title.css ---------------------------------------------------------------------------------------------------
 
@@ -135,15 +144,16 @@ class TitleStage : public Stage {
     // Engine2's menu: Nova campanha, Continuar (only with a save), Como jogar, Opções; Sair closes the game (a browser
     // tab had no need of it).
     enum Action { New, Continue, Help, Options, Quit };
-    std::vector<std::pair<const char*, Action>> menu = {{"NOVA CAMPANHA", New}};
-    if (campaign_ && campaign_->hasAnySave()) menu.push_back({"CONTINUAR", Continue});
-    menu.push_back({"COMO JOGAR", Help}), menu.push_back({"OPÇÕES", Options}), menu.push_back({"SAIR", Quit});
+    std::vector<std::pair<std::string, Action>> menu = {{upperUtf8(tr("Nova campanha", "New campaign")), New}};
+    if (campaign_ && campaign_->hasAnySave()) menu.push_back({upperUtf8(tr("Continuar", "Continue")), Continue});
+    menu.push_back({upperUtf8(tr("Como jogar", "How to play")), Help}), menu.push_back({upperUtf8(tr("Opções", "Options")), Options});
+    menu.push_back({upperUtf8(tr("Sair", "Quit")), Quit});
     const int count = static_cast<int>(menu.size());
     const float taglineLines = 2;
     const float total = eyebrow * 1.2f + 0.7f * rem_ + h1 * 0.92f + 0.75f * rem_ + version * 1.2f + rem_ + tagline * 1.65f * taglineLines + 1.7f * rem_ +
                         count * button + (count - 1) * gap;
     float y = size.y - 6.6f * rem_ - total;
-    spacedText(dl, uiFont(UiFont::Ui), eyebrow, {x, y}, IM_COL32(194, 167, 127, 255), "TÁTICAS EM CINZAS", 0.28f, false);
+    spacedText(dl, uiFont(UiFont::Ui), eyebrow, {x, y}, IM_COL32(194, 167, 127, 255), upperUtf8(tr("Táticas em cinzas", "Tactics in ashes")).c_str(), 0.28f, false);
     y += eyebrow * 1.2f + 0.7f * rem_;
     // h1: Newsreader, letter-spacing -.055em, shadow 0 3px 18px #000
     for (int k = 4; k >= 1; --k)
@@ -153,20 +163,21 @@ class TitleStage : public Stage {
     spacedText(dl, uiFont(UiFont::Ui), version, {x + 0.2f * rem_, y}, IM_COL32(221, 199, 164, 184), "EMBER ENGINE · C++ / VULKAN", 0.2f, false);
     y += version * 1.2f + rem_;
     ImGui::PushFont(uiFont(UiFont::Ui), tagline);
-    dl->AddText(uiFont(UiFont::Ui), tagline, {x, y + 2}, IM_COL32(0, 0, 0, 160), "Seis sobreviventes. Um tabuleiro de guerra.");
-    dl->AddText(uiFont(UiFont::Ui), tagline, {x, y}, IM_COL32(209, 194, 172, 255), "Seis sobreviventes. Um tabuleiro de guerra.");
-    dl->AddText(uiFont(UiFont::Ui), tagline, {x, y + tagline * 1.65f + 2}, IM_COL32(0, 0, 0, 160), "Cada casa conta.");
-    dl->AddText(uiFont(UiFont::Ui), tagline, {x, y + tagline * 1.65f}, IM_COL32(209, 194, 172, 255), "Cada casa conta.");
+    const std::string line1 = tr("Seis sobreviventes. Um tabuleiro de guerra.", "Six survivors. A battlefield."), line2 = tr("Cada casa conta.", "Every square counts.");
+    dl->AddText(uiFont(UiFont::Ui), tagline, {x, y + 2}, IM_COL32(0, 0, 0, 160), line1.c_str());
+    dl->AddText(uiFont(UiFont::Ui), tagline, {x, y}, IM_COL32(209, 194, 172, 255), line1.c_str());
+    dl->AddText(uiFont(UiFont::Ui), tagline, {x, y + tagline * 1.65f + 2}, IM_COL32(0, 0, 0, 160), line2.c_str());
+    dl->AddText(uiFont(UiFont::Ui), tagline, {x, y + tagline * 1.65f}, IM_COL32(209, 194, 172, 255), line2.c_str());
     ImGui::PopFont();
     y += tagline * 1.65f * taglineLines + 1.7f * rem_;
     const float menuWidth = std::min(25.0f * rem_, width);
     for (int i = 0; i < count; ++i) {
-      if (menuButton(menu[static_cast<size_t>(i)].first, {x, y}, {menuWidth, button}, i == 0)) {
+      if (menuButton(menu[static_cast<size_t>(i)].first.c_str(), {x, y}, {menuWidth, button}, i == 0)) {
         switch (menu[static_cast<size_t>(i)].second) {
           case New: openSlots(false); break;
           case Continue: openSlots(true); break;
-          case Help: dialog_ = Dialog::Help; break;
-          case Options: dialog_ = Dialog::Options; break;
+          case Help: help_.open(); break;
+          case Options: options_.open(); break;
           case Quit:
             if (quit_) quit_();
             break;
@@ -176,7 +187,8 @@ class TitleStage : public Stage {
     }
     // .test-entry: "Modo teste", bottom left, faint uppercase; every exported map.
     {
-      const char* label = "MODO TESTE";
+      const std::string labelText = upperUtf8(tr("Modo teste", "Test mode"));
+      const char* label = labelText.c_str();
       const float text = 0.62f * rem_;
       const float tw = spacedTextWidth(uiFont(UiFont::Ui), text, label, 0.14f);
       const ImVec2 at{0.55f * rem_, size.y - 0.55f * rem_ - text - 0.6f * rem_};
@@ -332,73 +344,6 @@ class TitleStage : public Stage {
     return clicked;
   }
 
-  // --- dialogs (.menu-dialog / .title-options-dialog) ----------------------------------------------------------------
-
-  bool beginDialog(const char* id, ImVec2 screen, float widthRem, const char* title) {
-    ImDrawList* bg = ImGui::GetForegroundDrawList();
-    (void)bg;
-    ImGui::SetNextWindowPos({0, 0});
-    ImGui::SetNextWindowSize(screen);
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(3, 3, 3, 209));  // ::backdrop
-    ImGui::Begin((std::string(id) + "_backdrop").c_str(), nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
-    if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(0)) dialog_ = Dialog::None;
-    ImGui::End();
-    ImGui::PopStyleColor();
-    const float w = std::min(widthRem * rem_, screen.x - 2.0f * rem_);
-    ImGui::SetNextWindowPos({screen.x * 0.5f, screen.y * 0.5f}, ImGuiCond_Always, {0.5f, 0.5f});
-    ImGui::SetNextWindowSize({w, 0});
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {1.75f * rem_, 1.5f * rem_});
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 3.0f);
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(20, 20, 20, 250));
-    ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(190, 150, 95, 133));
-    ImGui::Begin(id, nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::PushFont(uiFont(UiFont::Display), 2.2f * rem_);
-    ImGui::TextColored(ImColor(241, 223, 195), "%s", title);
-    ImGui::PopFont();
-    ImGui::PushStyleColor(ImGuiCol_Separator, IM_COL32(190, 150, 95, 77));
-    ImGui::Separator();
-    ImGui::PopStyleColor();
-    ImGui::Dummy({1, 0.5f * rem_});
-    ImGui::PushFont(uiFont(UiFont::Ui), 0.95f * rem_);
-    return true;
-  }
-  void endDialog() {
-    ImGui::Dummy({1, 0.5f * rem_});
-    ImGui::SetCursorPosX(ImGui::GetWindowWidth() - 1.75f * rem_ - 7.0f * rem_);
-    if (plateButton("##close", {7.0f * rem_, 2.5f * rem_}, "Fechar")) dialog_ = Dialog::None;
-    ImGui::PopFont();
-    ImGui::End();
-    ImGui::PopStyleColor(2);
-    ImGui::PopStyleVar(2);
-  }
-
-  void drawOptions(ImVec2 screen) {
-    beginDialog("##options", screen, 40.0f, "Opções");
-    ImGui::TextColored(ImColor(196, 156, 105), "Gráficos");
-    ImGui::TextColored(ImColor(183, 164, 140), "As escolhas de luz, céu, névoa e câmera ficam no painel do mapa durante a partida.");
-    ImGui::Dummy({1, 0.3f * rem_});
-    ImGui::TextColored(ImColor(196, 156, 105), "Áudio");
-    ImGui::TextColored(ImColor(183, 164, 140), "O Ember ainda não toca som.");
-    endDialog();
-  }
-
-  void drawHelp(ImVec2 screen) {
-    beginDialog("##help", screen, 46.0f, "Como jogar");
-    const char* lines[] = {
-        "Clique numa unidade sua para ver até onde ela anda; clique numa casa azul para andar.",
-        "Inimigos marcados em vermelho podem ser atacados: passe o mouse para ver a previsão, clique para atacar.",
-        "Cada unidade age uma vez por rodada, na ordem da iniciativa. \"Fim do turno\" passa a vez.",
-        "Botão direito gira a câmera, a roda aproxima, o botão esquerdo segurado arrasta o mapa.",
-        "No topo à direita: Normal / Tática (2D), inclinar, girar e voltar à vista padrão.",
-    };
-    for (const char* l : lines) {
-      ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + 40.0f * rem_);
-      ImGui::TextColored(ImColor(234, 220, 201), "·  %s", l);
-      ImGui::PopTextWrapPos();
-    }
-    endDialog();
-  }
-
   // --- missions ------------------------------------------------------------------------------------------------------
 
   // CSS text-transform: uppercase, for ASCII and the accented Latin letters (UTF-8 C3 A0-BE).
@@ -461,7 +406,10 @@ class TitleStage : public Stage {
   std::vector<MissionEntry> missions_;
   Screen screen_ = Screen::Title;
   size_t chosen_ = 0;
-  Dialog dialog_ = Dialog::None;
+  menu::HelpModal help_;
+  menu::OptionsDialog options_;
+  std::function<void()> fullscreen_;
+  DevGfx* gfx_ = nullptr;
   float rem_ = 16.0f;
   int frames_ = 0;
 };

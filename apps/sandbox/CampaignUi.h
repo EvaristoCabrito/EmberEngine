@@ -18,6 +18,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include "GamePrefs.h"
 #include "render/UiArt.h"
 #include "world/Campaign.h"
 
@@ -301,18 +302,19 @@ class SlotScreen {
     dl->AddLine({0, headerH}, {b.x, headerH}, IM_COL32(255, 255, 255, 26));
     const float padX = 1.75f * rem;
     ImGui::SetCursorScreenPos({padX, (headerH - 2.25f * rem) * 0.5f});
-    if (emberTextPlate("##slotsback", {5.5f * rem, 2.25f * rem}, "‹  Voltar", 0.8f * rem)) back = true;
+    if (emberTextPlate("##slotsback", {5.5f * rem, 2.25f * rem}, ("‹  " + tr("Voltar", "Back")).c_str(), 0.8f * rem)) back = true;
     const float hx = padX + 5.5f * rem + 0.75f * rem;
     float hy = 0.75f * rem;
-    spacedText(dl, uiFont(UiFont::Ui), 0.65f * rem, {hx, hy}, IM_COL32(184, 154, 112, 255), "ARQUIVOS", 0.18f, false);
+    spacedText(dl, uiFont(UiFont::Ui), 0.65f * rem, {hx, hy}, IM_COL32(184, 154, 112, 255), upperUtf8(tr("Arquivos", "Archives")).c_str(), 0.18f, false);
     hy += 0.65f * rem * 1.2f + 0.25f * rem;
-    const char* heading = mode_ == Mode::Load ? (inGame_ ? "Carregar jogo" : "Carregar campanha") : mode_ == Mode::Save ? "Salvar jogo" : "Nova campanha";
-    dl->AddText(uiFont(UiFont::Display), title, {hx, hy + 2.0f}, IM_COL32(0, 0, 0, 255), heading);
-    dl->AddText(uiFont(UiFont::Display), title, {hx, hy}, IM_COL32(241, 220, 192, 255), heading);
+    const std::string heading = mode_ == Mode::Load ? (inGame_ ? tr("Carregar jogo") : tr("Carregar campanha", "Load campaign"))
+                                : mode_ == Mode::Save ? tr("Salvar jogo") : tr("Nova campanha", "New campaign");
+    dl->AddText(uiFont(UiFont::Display), title, {hx, hy + 2.0f}, IM_COL32(0, 0, 0, 255), heading.c_str());
+    dl->AddText(uiFont(UiFont::Display), title, {hx, hy}, IM_COL32(241, 220, 192, 255), heading.c_str());
     hy += title + 0.3f * rem;
     dl->AddText(uiFont(UiFont::Ui), 0.78f * rem, {hx, hy}, IM_COL32(196, 183, 164, 255),
-                mode_ == Mode::Load ? "O último usado vem marcado. Escolha uma campanha para continuar."
-                                    : "Escolha um espaço. Um espaço ocupado será substituído.");
+                (mode_ == Mode::Load ? tr("O último usado vem marcado. Escolha uma campanha para continuar.", "The last used slot is marked. Choose a campaign to continue.")
+                                     : tr("Escolha um espaço. Um espaço ocupado será substituído.", "Choose a slot. An occupied slot will be overwritten.")).c_str());
     const e2::SaveBank& bank = campaign.bank();
     const int cols = size.x >= 640.0f ? 3 : 2;
     const float gapC = (cols == 3 ? 0.75f : 0.5f) * rem;
@@ -349,8 +351,8 @@ class SlotScreen {
       const int fade = disabled ? 128 : 255;
       auto ink = [&](int rr, int gg, int bb) { return IM_COL32(rr, gg, bb, fade); };
       const e2::SlotProgress progress = campaign.progress(slot);
-      const std::string name = empty ? "Vazio" : progress.title;
-      const std::string detail = empty ? "Nenhuma campanha salva" : progress.detail;
+      const std::string name = empty ? tr("Vazio", "Empty") : progress.title;
+      const std::string detail = empty ? tr("Nenhuma campanha salva", "No saved campaign") : progress.detail;
       const std::string date = empty ? std::string() : e2::Campaign::formatSaveDate(slot->value("updatedAt", 0.0));
       const float inner = cardW - 2.0f * rem;
       ImFont* ui = uiFont(UiFont::Ui);
@@ -361,10 +363,11 @@ class SlotScreen {
       if (confirming) h += 0.18f * rem + 0.15f * rem + 0.68f * rem * 1.3f;
       float ty = p.y + std::max(0.75f * rem, (cardH - h) * 0.5f);
       const float tx = p.x + rem;
-      spacedText(dl, ui, 0.62f * rem, {tx, ty}, ink(184, 154, 112), std::format("ESPAÇO {}", i + 1).c_str(), 0.15f, false);
+      spacedText(dl, ui, 0.62f * rem, {tx, ty}, ink(184, 154, 112), std::format("{} {}", upperUtf8(tr("Espaço", "Slot")), i + 1).c_str(), 0.15f, false);
       if (last) {
-        const float w = spacedTextWidth(ui, 0.55f * rem, "ÚLTIMO USADO", 0.1f);
-        spacedText(dl, ui, 0.55f * rem, {q.x - rem - w, ty + 0.05f * rem}, ink(223, 191, 142), "ÚLTIMO USADO", 0.1f, false);
+        const std::string lastUsed = upperUtf8(tr("Último usado", "Last used"));
+        const float w = spacedTextWidth(ui, 0.55f * rem, lastUsed.c_str(), 0.1f);
+        spacedText(dl, ui, 0.55f * rem, {q.x - rem - w, ty + 0.05f * rem}, ink(223, 191, 142), lastUsed.c_str(), 0.1f, false);
       }
       ty += 0.62f * rem * 1.3f + 0.18f * rem + 0.15f * rem;
       dl->PushClipRect(p, {q.x - rem, q.y}, true);
@@ -381,7 +384,7 @@ class SlotScreen {
       }
       if (confirming) {
         ty += 0.18f * rem + 0.15f * rem;
-        dl->AddText(ui, 0.68f * rem, {tx, ty}, IM_COL32(223, 191, 142, 255), "Toque de novo para substituir.");
+        dl->AddText(ui, 0.68f * rem, {tx, ty}, IM_COL32(223, 191, 142, 255), tr("Toque de novo para substituir.", "Select again to overwrite.").c_str());
       }
       dl->PopClipRect();
       if (clicked) {
@@ -407,28 +410,28 @@ class SlotScreen {
       save["pendingMission"] = "vau";
       save["mapMode"] = "rpg";
       if (!campaign.writeSlot(index, std::move(save))) {
-        status_ = "Não foi possível gravar o espaço (" + e2::Campaign::savePath().string() + ").";
+        status_ = tr("Não foi possível gravar o espaço", "The slot could not be saved") + " (" + e2::Campaign::savePath().string() + ").";
         return false;
       }
-      status_ = std::format("Campanha criada e salva no espaço {}.", number);
+      status_ = uiEnglish() ? std::format("Campaign created and saved in slot {}.", number) : std::format("Campanha criada e salva no espaço {}.", number);
       campaign.freshCampaign = true;
       return true;
     }
     if (mode_ == Mode::Save) {
       if (!current || !campaign.writeSlot(index, *current)) {
-        status_ = "Não foi possível gravar o espaço.";
+        status_ = tr("Não foi possível gravar o espaço.", "The slot could not be saved.");
         return false;
       }
-      status_ = std::format("Campanha salva no espaço {}.", number);
+      status_ = uiEnglish() ? std::format("Campaign saved in slot {}.", number) : std::format("Campanha salva no espaço {}.", number);
       return true;
     }
     if (!e2::Campaign::occupied(campaign.bank().slots[static_cast<size_t>(index)])) return false;
     if (!campaign.selectSlot(index)) {
-      status_ = "Não foi possível selecionar o espaço.";
+      status_ = tr("Não foi possível selecionar o espaço.", "The slot could not be selected.");
       return false;
     }
     const e2::SlotProgress p = campaign.progress(campaign.activeSave());
-    status_ = std::format("Espaço {} carregado: {} · {}.", number, p.title, p.detail);
+    status_ = uiEnglish() ? std::format("Slot {} loaded: {} · {}.", number, p.title, p.detail) : std::format("Espaço {} carregado: {} · {}.", number, p.title, p.detail);
     return true;
   }
 

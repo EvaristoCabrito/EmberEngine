@@ -37,6 +37,8 @@ class VideoPlayer {
   bool finished() const;
   bool failed() const { return failed_; }
   void setMuted(bool muted);
+  // The sound's level, 0..1 (Opções' cutscene volume); muting keeps it.
+  void setVolume(float volume);
   bool muted() const { return muted_; }
 
  private:
@@ -60,6 +62,7 @@ class VideoPlayer {
   double wallStart_ = -1, lastPts_ = 0;
   mutable double drainedAt_ = -1;  // when the last sound was heard (time() carries on from the wall clock)
   bool shown_ = false, muted_ = false;
+  std::atomic<float> volume_{1.0f};
   UiImage image_;
   void* texture_ = nullptr;  // ImTextureData, kept for reuse (see VideoPlayer.cpp)
 };

@@ -4,6 +4,7 @@
 #include <imgui.h>
 #include <imgui_internal.h>  // RegisterUserTexture (as render/UiArt.cpp)
 
+#include <algorithm>
 #include <chrono>
 #include <cstring>
 #include <map>
@@ -131,7 +132,7 @@ void VideoPlayer::decode(std::filesystem::path file) {
           audioChannels_ = static_cast<int>(MFGetAttributeUINT32(audio.p, MF_MT_AUDIO_NUM_CHANNELS, 2));
           SDL_AudioSpec spec{SDL_AUDIO_F32, audioChannels_, audioRate_};
           if (SDL_AudioStream* s = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, nullptr, nullptr)) {
-            if (muted_) SDL_SetAudioStreamGain(s, 0.0f);
+            SDL_SetAudioStreamGain(s, muted_ ? 0.0f : volume_.load());
             audio_ = s;
           } else {
             logError("film sound: {}", SDL_GetError());
@@ -262,7 +263,12 @@ bool VideoPlayer::finished() const {
 
 void VideoPlayer::setMuted(bool muted) {
   muted_ = muted;
-  if (SDL_AudioStream* s = audio_.load()) SDL_SetAudioStreamGain(s, muted ? 0.0f : 1.0f);
+  if (SDL_AudioStream* s = audio_.load()) SDL_SetAudioStreamGain(s, muted ? 0.0f : volume_.load());
+}
+
+void VideoPlayer::setVolume(float volume) {
+  volume_ = std::clamp(volume, 0.0f, 1.0f);
+  if (SDL_AudioStream* s = audio_.load()) SDL_SetAudioStreamGain(s, muted_ ? 0.0f : volume_.load());
 }
 
 }  // namespace ember
