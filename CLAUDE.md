@@ -440,8 +440,24 @@ everything", the C++ one was "awful")
 - **Verified:** debug + validation captures exit 0 (party reach + route + target, close-up, a foe's zone, antiga, OFF);
   release build. **Not verified:** the look in the window (the user judges), spell aim / chosen targets in the new
   look (code path only), cost (not measured).
-- The user (2026-10-16, mid-turn): "eu pretendo remover boa parte desse efeito, não deu certo, digo os sprites 3D" -
-  an intention, not a go-ahead; nothing removed.
+- **Zones (`f10dd44`; the user: "how do I even know where to target?? there is no targeting zone"):** a spell opened
+  shows its whole zone (`e2::spellZone`: range, min range, the shot's line, rays where valid) as the violet region even
+  with nobody in it; valid aims get a violet lock (kGridSpellTarget); "Atacar" opens always and shows the weapon's zone
+  from where the unit stands (kGridStrikeZone) plus the red locks. Script steps `spell:<unit>:<kind>`, `attack:<unit>`.
+  Verified: debug + validation captures exit 0 (Tiro Longo, Míssil Mágico with a foe locked, Golpe Duplo, Atacar).
+- **Shared checkout gotchas (2026-10-16 evening):** another session rebuilt `build/debug` while captures ran (exe
+  missing mid-link, SPIR-V interface errors from half-rebuilt shaders → DEVICE_LOST): verify from a scratch worktree with
+  its own build dir (`git worktree add --detach`, apply only your hunks, `cmake --preset ... -DFETCHCONTENT_SOURCE_DIR_*`
+  pointing at `build/release/_deps/*-src`, ~10 min at -j4). With the user's game open, captures need `--budget 160`
+  (two 576 MB sprite budgets do not fit the RX 6400). Commit through a temporary index (`GIT_INDEX_FILE`, read-tree
+  HEAD, apply --cached, commit-tree, update-ref) so the other session's staged work is untouched, then `git reset
+  <commit> -- <your files>` so its next commit does not carry stale copies of them.
+- **Decor "crooked" (the user, 2026-10-16, two screenshots: chest / wheel / fences leaning):** cards stand vertical
+  (sprites.hlsl VSMain `up = (0,1,0)`), so under the pitched camera their verticals converge (keystone): at the
+  screen's sides a card's top leans toward the centre, ~11 deg at the edge of the 30 deg lens at a 25 deg tilt. The fix
+  on the table (NOT built, awaiting "faz"): the card's up = world up projected onto the image plane (the card leans back
+  by the camera's tilt, feet in place; every card projects upright anywhere on screen, ~10% taller than now at 25 deg;
+  the sun-shadow card pass keeps its own orientation). Own-axis cards (fences) take the same up.
 
 ## Next
 

@@ -11,7 +11,15 @@ seeing it live. A change is a new look, never an edit of a saved one.
 - "antiga" = the first C++ grid (Renderer::setGroundMarks: flat fills and rings per hex, Engine2's Battle3D colours).
 - Captures: `Sandbox ... --battle-rules content/engine2/battles/aldeia015.battle.json
   --battle-script "near:Piqueiro:Kael; pick:Kael; aim:14:19" --zoom 2.2 --offset 0 0.25 --capture x.png`
-  (`near` puts a unit beside another, `pick` hands the turn to a unit, `aim` holds the cursor on a hex).
+  (`near` puts a unit beside another, `pick` hands the turn to a unit, `aim` holds the cursor on a hex,
+  `spell:<unit>:<kind>` opens a spell's aim, `attack:<unit>` the weapon's). With the user's game open, add
+  `--budget 160` (the RX 6400's 4 GB cannot hold two sprite budgets).
+- 001's zones (the user, 2026-10-16: "how do I even know where to target?"): a spell opened shows its whole zone
+  (e2::spellZone: range, min range, the shot's line, rays where valid) as the violet region even with nobody in it;
+  hexes it may be aimed at right now get a violet lock; "Atacar" opens always and shows the weapon's zone from where
+  the unit stands (ember, hazard stripes) plus red locks on foes it can strike after moving. Captures:
+  `001/spell-longshot.png` (Neera, Tiro Longo), `001/spell-missile.png` (Voss, Míssil Mágico, a foe locked),
+  `001/attack.png` (Kael, Atacar).
 
 | Look | What | Verdict |
 |---|---|---|
