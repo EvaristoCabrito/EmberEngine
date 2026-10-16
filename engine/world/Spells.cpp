@@ -710,6 +710,35 @@ int spellTargetCount(const Battle& b, size_t unit, const std::string& kind) {
   return kind == "magicMissile" || kind == "magicMissileV2" ? magicMissileCount(b.units()[unit].level) : 1;
 }
 
+std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::string& kind) {
+  const BattleUnit& u = b.units()[caster];
+  const BattleHex from{u.x, u.y};
+  std::vector<BattleHex> zone;
+  if (spellInstant(kind)) return zone;
+  int minRange = 0, maxRange = -1;
+  bool shot = false, arrow = false;
+  if (kind == "longShot") minRange = u.minRange, maxRange = kLongShotRange, shot = true, arrow = true;
+  else if (kind == "lightning") maxRange = kLightningRange;
+  else if (kind == "shock") maxRange = kShockRange;
+  else if (kind == "magicMissile" || kind == "magicMissileV2") maxRange = kMissileRange, shot = true;
+  else if (kind == "doubleStrike") minRange = u.minRange, maxRange = u.maxRange, shot = u.maxRange > 1, arrow = true;
+  else if (const CureData* cure = cureData(kind)) maxRange = cure->range;
+  else if (kind == "cureDisease") maxRange = kCureDiseaseRange;
+  for (int y = 0; y < b.rows(); ++y)
+    for (int x = 0; x < b.cols(); ++x) {
+      const BattleHex cell{x, y};
+      const int d = hexDist(from, cell);
+      if (maxRange < 0) {  // a ray: where it is valid
+        if (d <= 9 && spellAimValid(b, caster, kind, cell)) zone.push_back(cell);
+        continue;
+      }
+      if (d < minRange || d > maxRange) continue;
+      if (shot && d > 0 && !clearShot(b, from, cell, arrow)) continue;
+      zone.push_back(cell);
+    }
+  return zone;
+}
+
 bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, BattleHex cell, std::string* error) {
   const BattleUnit& u = b.units()[caster];
   const BattleHex from{u.x, u.y};

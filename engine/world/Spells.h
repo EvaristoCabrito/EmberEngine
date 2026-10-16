@@ -81,6 +81,10 @@ std::string spellPose(const std::string& kind);
 int spellUsesLeft(const Battle& b, size_t unit, const std::string& kind);
 // How many hexes the cast takes (Míssil Mágico: one per missile, which may repeat).
 int spellTargetCount(const Battle& b, size_t unit, const std::string& kind);
+// The spell's zone: every hex within its reach from the caster (range, the shot's line) before asking for a target in
+// it, so the window can show where it may be aimed even when nothing stands there; rays (Frost, Tiro / Investida
+// Perfurante) give the hexes where the ray is valid; empty for an instant spell.
+std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::string& kind);
 // Whether the unit may aim this spell at the hex (spellAimValid); `error` gets the window's reason when not.
 bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, BattleHex cell, std::string* error = nullptr);
 // The hexes the spell would cover aimed at `cell` (lines and Frost), for the aim marks; the cell itself otherwise.

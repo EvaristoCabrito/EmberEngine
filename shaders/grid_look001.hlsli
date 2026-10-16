@@ -9,7 +9,7 @@
 
 static const uint kGridReach = 1u, kGridReachFoe = 2u, kGridTarget = 4u, kGridSpellAim = 8u, kGridSpellArea = 16u,
                   kGridSpellChosen = 32u, kGridHover = 64u, kGridHoverBlocked = 128u, kGridActive = 256u,
-                  kGridActiveFoe = 512u, kGridRouteEnd = 1024u;
+                  kGridActiveFoe = 512u, kGridRouteEnd = 1024u, kGridSpellTarget = 2048u, kGridStrikeZone = 4096u;
 static const float kApothem = 0.8660254;
 static const float kTwoPi = 6.2831853;
 static const float kNoEdge = 9.0;
@@ -169,10 +169,9 @@ void gridPaintActive(inout float3 display, inout bool any, bool foe, float2 p, f
   gridGlow(display, any, color, (1.0 - smoothstep(0.0, 0.7, r)) * 0.12 * flat);
 }
 
-// A target lock on a foe the picked unit can strike: red hex, hazard stripes, four turning brackets; brighter and
-// faster under the cursor.
-void gridPaintTarget(inout float3 display, inout bool any, bool hovered, float2 p, float2 xz, float d, float t, float pix, float flat) {
-  const float3 red = float3(1.0, 0.24, 0.18), lock = float3(1.0, 0.6, 0.5);
+// A target lock on a foe the picked unit can strike (red), or on a hex a spell may be aimed at (violet): the hex
+// filled, hazard stripes, outline, four turning brackets; brighter and faster under the cursor.
+void gridPaintTarget(inout float3 display, inout bool any, bool hovered, float3 red, float3 lock, float2 p, float2 xz, float d, float t, float pix, float flat) {
   const float r = length(p);
   const float theta = atan2(p.y, p.x);
   const float beat = 0.5 + 0.5 * sin(t * (hovered ? 7.0 : 3.5));
@@ -254,6 +253,15 @@ bool gridLook001(inout float3 display, float2 xz, float flat, float t) {
       if (r.inside) gridPaint(display, any, float3(1.0, 0.45, 0.28), gridStripes(xz, t, pix) * 0.08 * flat);
     }
   }
+  // "Atacar": the weapon's zone from where the unit stands, ember with hazard stripes.
+  {
+    const GridRegion r = gridRegion(flags, nbFlags, kGridStrikeZone, p);
+    if (r.inside || r.edge < kNoEdge) {
+      const float pulse = 0.8 + 0.25 * sin(t * 2.2 + 0.5);
+      gridPaintRegion(display, any, r, float3(1.0, 0.38, 0.3), 0.12, float3(1.0, 0.55, 0.45), 0.9, 0.25, pulse, 0.14, d, pix, flat);
+      if (r.inside) gridPaint(display, any, float3(1.0, 0.38, 0.3), gridStripes(xz, t, pix) * 0.07 * flat);
+    }
+  }
   // Spell aim: violet region; the hovered aim's area bright.
   {
     const GridRegion r = gridRegion(flags, nbFlags, kGridSpellAim, p);
@@ -267,10 +275,11 @@ bool gridLook001(inout float3 display, float2 xz, float flat, float t) {
       gridPaintRegion(display, any, a, float3(0.86, 0.7, 1.0), 0.22 + 0.08 * breath, float3(0.95, 0.88, 1.0), 0.95, 0.2, 1.0, 0.0, d, pix, flat);
     }
   }
-  if (flags & kGridTarget) gridPaintTarget(display, any, (flags & kGridHover) != 0, p, xz, d, t, pix, flat);
+  if (flags & kGridTarget) gridPaintTarget(display, any, (flags & kGridHover) != 0, float3(1.0, 0.24, 0.18), float3(1.0, 0.6, 0.5), p, xz, d, t, pix, flat);
+  if (flags & kGridSpellTarget) gridPaintTarget(display, any, (flags & kGridHover) != 0, float3(0.72, 0.45, 1.0), float3(0.9, 0.78, 1.0), p, xz, d, t, pix, flat);
   gridPaintRoute(display, any, flags, cell.y | 0u, nbSteps, p, d, t, pix, flat);
   if (flags & kGridSpellChosen) gridPaintChosen(display, any, p, d, t, pix, flat);
   if (flags & (kGridActive | kGridActiveFoe)) gridPaintActive(display, any, (flags & kGridActiveFoe) != 0, p, d, t, pix, flat);
-  if ((flags & kGridHover) && !(flags & kGridTarget)) gridPaintHover(display, any, (flags & kGridHoverBlocked) != 0, p, d, t, pix, flat);
+  if ((flags & kGridHover) && !(flags & (kGridTarget | kGridSpellTarget))) gridPaintHover(display, any, (flags & kGridHoverBlocked) != 0, p, d, t, pix, flat);
   return any;
 }

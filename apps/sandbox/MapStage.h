@@ -2041,6 +2041,7 @@ class MapStage final : public Stage {
     spellMode_ = kind;
     spellCells_.clear();
     spellAim_.clear();
+    spellZone_.clear();
     const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
     const e2::BattleUnit& u = battle_->units()[b];
     // Criar Comida e Água has no aim: it is cast at once, around the caster.
@@ -2048,6 +2049,15 @@ class MapStage final : public Stage {
     for (int y = 0; y < battle_->rows(); ++y)
       for (int x = 0; x < battle_->cols(); ++x)
         if (e2::Battle::distance({u.x, u.y}, {x, y}) <= 9 && aimValid(b, {x, y})) spellAim_.push_back({x, y});
+    // The zone the grid shows: where the spell reaches (a potion: the caster and the hexes around it), whether or not
+    // something stands there (the user: "how do I even know where to target?").
+    if (potionOf(kind)) {
+      spellZone_.push_back({u.x, u.y});
+      for (const e2::BattleHex& h : e2::Battle::neighbors(u.x, u.y))
+        if (battle_->inBounds(h.x, h.y)) spellZone_.push_back(h);
+    } else {
+      spellZone_ = e2::spellZone(*battle_, b, kind);
+    }
   }
 
   // A potion being aimed is spellMode_ "potion:<id>" (Engine2 usePotion: the actor itself or an adjacent ally).
@@ -2495,15 +2505,19 @@ class MapStage final : public Stage {
       if (!placeBeside(static_cast<size_t>(ci), static_cast<size_t>(other))) return fail("no free hex beside it");
       return logInfo("battle script: near {} {}", p[1], p[2]);
     }
-    if (p[0] == "pick") {
-      // the unit picked as its turn: its reach, the foes it can strike (the units before it in the order have gone)
+    if (p[0] == "pick" || p[0] == "spell" || p[0] == "attack") {
+      // the unit picked as its turn: its reach, the foes it can strike (the units before it in the order have gone);
+      // "spell:<unit>:<kind>" then opens the spell's aim, "attack:<unit>" the weapon's
       for (size_t i : battle_->turnOrder()) {
         if (i == cb) break;
         battle_->units()[i].moved = true;
       }
       battle_->units()[cb].moved = false, battle_->units()[cb].acted = false, battle_->units()[cb].moveUsed = 0;
       select(ci);
-      return logInfo("battle script: pick {}: {} hexes in reach, {} targets", p[1], reach_.size(), targets_.size());
+      if (p[0] == "spell" && p.size() > 2) startSpell(p[2]);
+      if (p[0] == "attack") attackMode_ = true;
+      return logInfo("battle script: {} {}: {} hexes in reach, {} targets, aim {} of zone {}", p[0], p[1], reach_.size(), targets_.size(),
+                     spellAim_.size(), spellZone_.size());
     }
     e2::BattleUnit& caster = battle_->units()[cb];
     caster.acted = false, caster.moved = false;
@@ -2795,8 +2809,10 @@ class MapStage final : public Stage {
     };
     const bool walking = selected_ >= 0 && !unitWalk_[static_cast<size_t>(selected_)].points.empty();
     if (selected_ >= 0 && !walking && !spellMode_.empty()) {
+      // The spell's zone (where it reaches), the hexes it may be aimed at right now, the hovered aim's area.
       const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
-      for (const e2::BattleHex& c : spellAim_) flag(c, Renderer::kGridSpellAim);
+      for (const e2::BattleHex& c : spellZone_) flag(c, Renderer::kGridSpellAim);
+      for (const e2::BattleHex& c : spellAim_) flag(c, Renderer::kGridSpellAim | Renderer::kGridSpellTarget);
       if (hover_ && aimValid(b, *hover_))
         for (const e2::BattleHex& c : aimArea(b, *hover_)) flag(c, Renderer::kGridSpellArea);
       if (hover_) flag(*hover_, Renderer::kGridHover | (aimValid(b, *hover_) ? 0u : Renderer::kGridHoverBlocked));
@@ -2807,7 +2823,17 @@ class MapStage final : public Stage {
       const bool player = scene_->units[static_cast<size_t>(selected_)].side == "player";
       const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
       // The reach: the party's movement, or a foe's threat zone; each hex fainter towards the limit of the movement.
-      if (!attackMode_) {  // "Atacar": only the foes it can strike
+      // "Atacar": instead, the hexes its weapon reaches from where it stands, and the foes it can strike.
+      if (attackMode_) {
+        const bool arrow = u.maxRange > 1;
+        for (int y = 0; y < battle_->rows(); ++y)
+          for (int x = 0; x < battle_->cols(); ++x) {
+            const int d = e2::Battle::distance({u.x, u.y}, {x, y});
+            if (d < u.minRange || d > u.maxRange) continue;
+            if (d > 1 && !e2::clearShot(*battle_, {u.x, u.y}, {x, y}, arrow)) continue;
+            flag({x, y}, Renderer::kGridStrikeZone);
+          }
+      } else {
         int maxCost = 1;
         for (const e2::ReachCell& c : reach_) maxCost = std::max(maxCost, c.cost);
         for (const e2::ReachCell& c : reach_) {
@@ -3198,7 +3224,8 @@ class MapStage final : public Stage {
     const bool mine = myTurn() && !busy();
     const e2::BattleUnit* actor = mine ? &battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])] : nullptr;
     const bool canAct = actor && !actor->acted;
-    if (emberButton("##attack", "Atacar", true, canAct && !targets_.empty() && spellMode_.empty())) attackMode_ = !attackMode_;
+    // Atacar always opens (the grid shows the weapon's zone even with nobody in it), so the player sees its reach.
+    if (emberButton("##attack", "Atacar", true, canAct && spellMode_.empty())) attackMode_ = !attackMode_;
     ImGui::SameLine();
     if (emberButton("##wait", "Esperar", false, mine)) endUnitTurn();
     ImGui::SameLine();
@@ -3997,6 +4024,7 @@ class MapStage final : public Stage {
   std::string spellMode_;                 // the spell being aimed (battle bar), empty = none
   std::vector<e2::BattleHex> spellCells_; // its targets chosen so far
   std::vector<e2::BattleHex> spellAim_;   // every hex it may be aimed at
+  std::vector<e2::BattleHex> spellZone_;  // where it reaches, target or not (the grid's zone; e2::spellZone)
   bool attackMode_ = false;               // "Atacar": only the foes it can strike are marked
   bool showTurnOrder_ = false;
   std::string tip_;                       // why a click did nothing (Engine2's tip line)
