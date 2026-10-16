@@ -83,6 +83,7 @@
 #include "OverworldStage.h"
 #include "BattleTalk.h"
 #include "MapEditorStage.h"
+#include "world/Locais.h"
 #include "TestModeStage.h"
 #include "world/Campaign.h"
 #include "world/Overworld.h"
@@ -683,6 +684,14 @@ int runWindow(const Options& o) {
   const bool hasCampaign = campaign.open("content/engine2/campaign.json", o.saveBank.empty() ? e2::Campaign::savePath() : std::filesystem::path(o.saveBank));
   e2::Overworld world;
   const bool hasWorld = world.load("content/engine2/overworld.json");
+  // The Map Editor's saved Locais and R-Encounter (content/maps): the campaign and the world map play them, again
+  // whenever the editor saves them.
+  auto applyLocais = [&] {
+    const e2::Locais locais = e2::Locais::load("content/engine2/editor-catalog.json");
+    if (hasCampaign) e2::applyLocais(campaign.data(), locais, savedMapsDir());
+    if (hasWorld) world.applyLocais(locais, campaign.data());
+  };
+  applyLocais();
   // Every mission's intro / outro conversation (export_dialogs.ts).
   const e2::Json dialogs = loadDialogs("content/engine2/dialogs.json");
   // Dev Controls' switches (Modo teste), applied to every map opened here.
@@ -747,6 +756,7 @@ int runWindow(const Options& o) {
       pending = m;
       inEditorTest = true;
     };
+    callbacks.locaisSaved = applyLocais;
     MapStageOptions base = mapOptions(o);
     devGfx.apply(base, renderer);
     return std::make_unique<MapEditorStage>(MapEditorStage::Services{context, renderer, services.assets, services.jobs}, base, paths, campaign,

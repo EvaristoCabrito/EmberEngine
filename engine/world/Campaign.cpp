@@ -69,6 +69,7 @@ bool CampaignData::load(const std::filesystem::path& file) {
     locations.push_back(std::move(w));
   }
   slotProgressCases = j.value("slotProgress", Json::array());
+  shippedMissions = missions, shippedLocations = locations;
   return true;
 }
 

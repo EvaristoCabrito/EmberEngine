@@ -82,7 +82,22 @@ struct MissionMap {
   std::string stem;
   bool own = false;
 };
+// The Map Editor's "Ativar" (Engine2 activeVersions): the serial of an id the campaign plays instead of the newest, in
+// content/maps/active.json ({id: serial}); none when absent.
+inline std::filesystem::path activeMapsFile() { return "content/maps/active.json"; }
+inline std::optional<int> activeMapSerial(const std::string& id) {
+  std::ifstream in(activeMapsFile(), std::ios::binary);
+  const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+  if (!j.is_object() || !j.contains(id) || !j[id].is_number_integer()) return std::nullopt;
+  return j[id].get<int>();
+}
 inline MissionMap missionMap(const CampaignPaths& paths, const e2::CampaignMission& m) {
+  if (const std::optional<int> active = activeMapSerial(m.id)) {
+    const std::string stem = std::format("{}{:03}", m.id, *active);
+    std::error_code ec;
+    if (std::filesystem::exists(savedMapsDir() / (stem + ".json"), ec)) return {savedMapsDir() / (stem + ".json"), stem, true};
+    if (std::filesystem::exists(paths.maps / (stem + ".json"), ec)) return {paths.maps / (stem + ".json"), stem, false};
+  }
   const std::string engine2Stem = std::filesystem::path(m.mapFile).stem().string();
   int engine2Serial = 0;
   if (engine2Stem.size() >= 3) {
@@ -90,7 +105,7 @@ inline MissionMap missionMap(const CampaignPaths& paths, const e2::CampaignMissi
     if (std::all_of(digits.begin(), digits.end(), [](char c) { return c >= '0' && c <= '9'; })) engine2Serial = std::stoi(digits);
   }
   const int own = highestMapSerial(savedMapsDir(), m.id);
-  if (own > engine2Serial) {
+  if (own > engine2Serial || (m.own && own > 0)) {
     const std::string stem = std::format("{}{:03}", m.id, own);
     return {savedMapsDir() / (stem + ".json"), stem, true};
   }
@@ -112,7 +127,7 @@ inline void missionTextsFromDraft(MissionEntry& e, const std::filesystem::path& 
 // Empty with `error` saying why when the mission cannot be played here yet.
 inline std::optional<MissionEntry> campaignMission(const e2::Campaign& campaign, const CampaignPaths& paths, const std::string& id, std::string& error) {
   const e2::CampaignMission* m = campaign.data().mission(id);
-  if (!m || m->mapFile.empty()) {
+  if (!m || (m->mapFile.empty() && !m->own)) {
     error = "A missão " + id + " não tem mapa salvo no Engine2.";
     return std::nullopt;
   }
@@ -138,7 +153,7 @@ inline std::optional<MissionEntry> campaignMission(const e2::Campaign& campaign,
 // build/engine2-test. No campaignId: nothing is written back.
 inline std::optional<MissionEntry> testMission(const e2::Campaign& campaign, const CampaignPaths& paths, const std::string& id, std::string& error) {
   const e2::CampaignMission* m = campaign.data().mission(id);
-  if (!m || m->mapFile.empty()) {
+  if (!m || (m->mapFile.empty() && !m->own)) {
     error = "A missão " + id + " não tem mapa salvo no Engine2.";
     return std::nullopt;
   }

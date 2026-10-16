@@ -23,6 +23,7 @@ if (!outPath) throw new Error('usage: export_dress_refs.ts -- <out refs.json>');
 const data = await import(`${E2}/src/ember/data.ts`);
 const mapstore = await import(`${E2}/src/campaign/mapstore.ts`);
 const tv = await import(`${E2}/src/ember/tileVariants.ts`);
+const watchtower = await import(`${E2}/src/campaign/watchtowerDungeon.ts`);
 
 function mulberry32(seed: number): () => number {
   let a = seed | 0;
@@ -59,7 +60,10 @@ for (const { draft } of [...newest.values()].sort((a, b) => a.draft.id.localeCom
     const scattered = filled.decorations ?? [];
     const decorations = [...scattered, ...data.barricadeDecor(tiles, draft.cols, draft.rows, scattered)];
     const tileVariants = tiles.map((t: string, i: number) => Math.min(draft.tileVariants?.[i] ?? 0, (tv.TILE_VARIANT_COUNT[t] ?? 1) - 1));
-    cases.push({ seed: seed >>> 0, exclude, draft, tiles, tileVariants, decorations });
+    // mapstore normalizeDraft's two board repairs, as the editor's loads apply them
+    const walls = watchtower.closeWatchtowerWalls(draft.id, draft.tiles, draft.cols, draft.rows, draft.decorations ?? []);
+    const cleared = data.clearRockColumnTiles(draft.tiles, draft.cols, draft.rows, draft.decorations ?? [], draft.baseTile);
+    cases.push({ seed: seed >>> 0, exclude, draft, tiles, tileVariants, decorations, normalized: { decorations: JSON.parse(JSON.stringify(walls)), tiles: cleared } });
   }
   ++k;
 }

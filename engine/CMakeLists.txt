@@ -44,6 +44,7 @@ add_library(EmberEngine STATIC
   world/BattleTurns.cpp
   world/Spells.cpp
   world/Campaign.cpp
+  world/Locais.cpp
   world/Overworld.cpp
   world/Inn.cpp
   media/VideoPlayer.cpp

@@ -134,6 +134,11 @@ struct MapStageOptions {
   std::optional<e2::MapDraft> draftData;
   std::optional<e2::SceneData> sceneData;
   std::function<void(int x, int y)> editorClick;
+  // Engine2's MapPreviewCanvas gestures: a press on a unit or a decoration (the right button, or the left one when
+  // editorGrab says so) picks it up instead of turning the camera or painting; on release, editorRelease gets the hex
+  // under the cursor and whether the pointer travelled 6 px (a drag) or not (a plain pick-up).
+  std::function<bool(int x, int y, bool left)> editorGrab;
+  std::function<void(std::optional<std::pair<int, int>> hex, bool moved)> editorRelease;
 };
 
 // What a fight leaves for the campaign save (campaign.ts finishBattle's heroes part): each hero's level, XP and HP.
@@ -343,6 +348,7 @@ class MapStage final : public Stage {
     {
       groundMarks_.clear();
       collectMarks(groundMarks_);
+      groundMarks_.insert(groundMarks_.end(), editorMarks_.begin(), editorMarks_.end());
       renderer.setGroundMarks(groundMarks_, board_ ? board_->layout().cols : 0, board_ ? board_->layout().rows : 0);
     }
     renderer.setWater(ground_.water(look_));
@@ -410,6 +416,29 @@ class MapStage final : public Stage {
   // camera bar never reach here (ImGui takes them).
   void event(const SDL_Event& e) override {
     if (e.type == SDL_EVENT_MOUSE_MOTION) mouse_ = {e.motion.x, e.motion.y}, mouseWindow_ = e.motion.windowID;
+    // The map editor: a press on a unit or a decoration holds it (MapPreviewCanvas onPointerDownCapture); the camera
+    // and the brush never see that press.
+    if (options_.editorGrab && e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && (e.button.button == SDL_BUTTON_RIGHT || e.button.button == SDL_BUTTON_LEFT) &&
+        !(ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureMouse)) {
+      const bool left = e.button.button == SDL_BUTTON_LEFT;
+      if (const std::optional<e2::BattleHex> hex = pick(e.button.windowID, e.button.x, e.button.y); hex && options_.editorGrab(hex->x, hex->y, left)) {
+        editorHold_ = EditorHold{e.button.button, e.button.x, e.button.y, false};
+        return;
+      }
+    }
+    if (editorHold_) {
+      if (e.type == SDL_EVENT_MOUSE_MOTION) {
+        if (std::hypot(e.motion.x - editorHold_->x, e.motion.y - editorHold_->y) >= 6.0f) editorHold_->moved = true;
+        return;
+      }
+      if (e.type == SDL_EVENT_MOUSE_BUTTON_UP && e.button.button == editorHold_->button) {
+        const std::optional<e2::BattleHex> hex = pick(e.button.windowID, e.button.x, e.button.y);
+        const bool moved = editorHold_->moved;
+        editorHold_.reset();
+        if (options_.editorRelease) options_.editorRelease(hex ? std::optional<std::pair<int, int>>({hex->x, hex->y}) : std::nullopt, moved);
+        return;
+      }
+    }
     // Left button, Engine2's protected rule (cameraRig): held still for 0.5 s it arms panning (the grabbing hand) and
     // the board then follows the drag; a short click (released before, within 5 px) is a game click.
     if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && e.button.button == SDL_BUTTON_LEFT)
@@ -785,6 +814,20 @@ class MapStage final : public Stage {
     bool flat = false;
   };
   View view() const { return {target_, yaw_, pitch_, distance_, flat_}; }
+  // The map editor: the hex under the mouse (none over the panels or off the board), its rings, and whether a unit or
+  // decoration is held by the mouse right now.
+  std::optional<std::pair<int, int>> hexUnderMouse() const {
+    if (mouse_.x < 0.0f || (ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureMouse)) return std::nullopt;
+    const std::optional<e2::BattleHex> hex = pick(mouseWindow_, mouse_.x, mouse_.y);
+    return hex ? std::optional<std::pair<int, int>>({hex->x, hex->y}) : std::nullopt;
+  }
+  void setEditorMarks(std::vector<Renderer::GroundMark> marks) { editorMarks_ = std::move(marks); }
+  bool editorHolding() const { return editorHold_.has_value(); }
+  std::optional<glm::vec3> lastPickPoint() const { return lastPickPoint_; }
+  void editorDropHold() { editorHold_.reset(); }
+  // The camera bar's turn (Engine2's preview buttons ↶ ↷ ↓ ↑ and Reset).
+  void editorTurn(float degrees) { yaw_ += glm::radians(degrees); }
+  void editorTilt(float degrees) { pitch_ = std::clamp(pitch_ + glm::radians(degrees), kMinPitch, kMaxPitch); }
   void setView(const View& v) {
     target_ = v.target, yaw_ = v.yaw, pitch_ = v.pitch, distance_ = v.distance, flat_ = v.flat;
     cam_ = {target_, yaw_, pitch_, distance_};
@@ -1484,6 +1527,7 @@ class MapStage final : public Stage {
     SDL_Window* window = SDL_GetWindowFromID(id);
     if (!window || !SDL_GetWindowSize(window, &w, &h) || w <= 0 || h <= 0) return std::nullopt;
     const ImVec2 cursor{mx, my};
+    lastPickPoint_.reset();
     float best = 1e30f;
     std::optional<e2::BattleHex> hit;
     const glm::vec3 right = glm::length(glm::vec3(lastCamera_.right.x, 0.0f, lastCamera_.right.z)) > 0.0f && !flat_
@@ -1491,7 +1535,7 @@ class MapStage final : public Stage {
                                 : glm::vec3(1.0f, 0.0f, 0.0f);
     for (size_t i = 0; i < unitCard_.size(); ++i) {
       const CardRect& c = unitCard_[i];
-      if (!c.drawn || unitBattle_[i] < 0) continue;
+      if (!c.drawn || (unitBattle_[i] < 0 && !(options_.editorClick && scene_ && i < scene_->units.size()))) continue;
       const glm::vec3 up = c.flat ? glm::vec3(0.0f, 0.0f, -1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
       const glm::vec3 corners[4] = {c.origin - right * (c.width * 0.5f), c.origin + right * (c.width * 0.5f),
                                     c.origin + right * (c.width * 0.5f) + up * c.height, c.origin - right * (c.width * 0.5f) + up * c.height};
@@ -1502,7 +1546,14 @@ class MapStage final : public Stage {
         else ok = false;
       if (!ok || !insideQuad(q, cursor)) continue;
       const float d = glm::length(c.origin - lastCamera_.position);
-      if (d < best) best = d, hit = e2::BattleHex{battle_->units()[static_cast<size_t>(unitBattle_[i])].x, battle_->units()[static_cast<size_t>(unitBattle_[i])].y};
+      if (d >= best) continue;
+      best = d;
+      if (unitBattle_[i] >= 0) {
+        hit = e2::BattleHex{battle_->units()[static_cast<size_t>(unitBattle_[i])].x, battle_->units()[static_cast<size_t>(unitBattle_[i])].y};
+      } else {  // the map editor's preview (no battle): the hex the unit stands on
+        const auto [col, row] = e2::hexAt(board_->layout(), scene_->units[i].x, scene_->units[i].z);
+        hit = e2::BattleHex{col, row};
+      }
     }
     if (hit) return hit;
     // The ground: march the view ray down from just above the highest ground, then refine where it goes under.
@@ -1525,6 +1576,7 @@ class MapStage final : public Stage {
         float lo = t - 0.15f, hi = t;
         for (int k = 0; k < 12; ++k) (under((lo + hi) * 0.5f) ? hi : lo) = (lo + hi) * 0.5f;
         const glm::vec3 p = o + dir * hi;
+        lastPickPoint_ = p;  // the map editor's water brush: the exact ground point clicked
         const auto [c, r] = e2::hexAt(board_->layout(), p.x, p.z);
         if (c < 0 || r < 0 || c >= board_->layout().cols || r >= board_->layout().rows) return std::nullopt;
         return e2::BattleHex{c, r};
@@ -3035,6 +3087,15 @@ class MapStage final : public Stage {
     std::chrono::steady_clock::time_point at;
   };
   std::optional<LeftPress> leftDown_;
+  // The map editor's held unit / decoration (editorGrab): which button, where it went down, whether it travelled.
+  struct EditorHold {
+    uint8_t button = 0;
+    float x = 0.0f, y = 0.0f;
+    bool moved = false;
+  };
+  std::optional<EditorHold> editorHold_;
+  std::vector<Renderer::GroundMark> editorMarks_;  // the editor's rings (hover, the selected decoration)
+  mutable std::optional<glm::vec3> lastPickPoint_;  // where the last pick() met the ground (none: a unit's card)
   bool panning_ = false;
   SDL_Cursor* grabCursor_ = nullptr;
   static constexpr int kHoldMs = 500;

@@ -14,6 +14,7 @@
 #include <filesystem>
 #include <functional>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -30,6 +31,7 @@ struct DressTables {
   std::map<std::string, bool> passable;         // TERRAIN[t].passable
   std::map<std::string, int> variantCount;      // TILE_VARIANT_COUNT
   std::map<std::string, std::string> tileChar;  // TILE_CHAR
+  std::map<std::string, int> watchtowerFloors;  // WATCHTOWER_FLOORS
   struct Deco {
     std::string id, model3d, exitKind;
     bool chest = false, manual = false, solidRock = false, rockStyle = false;
@@ -50,6 +52,14 @@ struct DressResult {
 // (the editor's dice).
 DressResult dressDraft(const nlohmann::ordered_json& draft, const DressTables& tables, const EditorCatalog& catalog,
                        const std::set<std::string>& exclude, const std::function<double()>& random);
+
+// watchtowerDungeon.ts closeWatchtowerWalls (a watchtower floor's walls completed; other ids: unchanged) and
+// removeWallsUnderWatchtowerEntrances; data.ts clearRockColumnTiles (the column under a solid rock becomes ground).
+nlohmann::ordered_json closeWatchtowerWalls(const std::string& id, const std::vector<std::string>& tiles, int cols, int rows,
+                                            const nlohmann::ordered_json& placements, const DressTables& tables, const EditorCatalog& catalog);
+nlohmann::ordered_json removeWallsUnderWatchtowerEntrances(const nlohmann::ordered_json& placements, const DressTables& tables, const EditorCatalog& catalog);
+std::vector<std::string> clearRockColumnTiles(const std::vector<std::string>& tiles, int cols, int rows, const nlohmann::ordered_json& decorations,
+                                              const std::optional<std::string>& baseTile, const DressTables& tables, const EditorCatalog& catalog);
 
 // Cooker check-dress: each reference case (export_dress_refs.ts) run again here. Returns the number of differences.
 int checkDress(const std::filesystem::path& refs, const DressTables& tables, const EditorCatalog& catalog);

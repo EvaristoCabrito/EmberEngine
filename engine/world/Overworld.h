@@ -52,9 +52,15 @@ struct OverworldHex {
   bool operator==(const OverworldHex&) const = default;
 };
 
+struct Locais;
+struct CampaignData;
+
 class Overworld {
  public:
   bool load(const std::filesystem::path& file);
+  // The Map Editor's saved Locais (missions per location, campaign order) and R-Encounter regions (each travel cell's
+  // encounters by its region), over the shipped tables; missions only the editor knows come from `campaign`.
+  void applyLocais(const Locais& locais, const CampaignData& campaign);
 
   // --- the board ---------------------------------------------------------------------------------------------------
   const std::vector<OverworldCell>& cells() const { return cells_; }
@@ -105,6 +111,9 @@ class Overworld {
   bool conditionHolds(const Json& condition, const Json& save) const { return evaluate(condition, save, false); }
 
  private:
+  std::vector<MapLocation> shippedLocations_;
+  std::vector<MapMission> shippedMissions_;
+  std::vector<std::vector<std::string>> shippedEncounters_;
   struct LootEntry {
     bool weapon = true;
     std::string id, name;

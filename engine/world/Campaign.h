@@ -24,6 +24,7 @@ using Json = nlohmann::ordered_json;
 struct CampaignMission {
   std::string id, title, place, briefing, objective, win, mapFile;  // mapFile: the newest saved map for the id, if any
   int index = 0;
+  bool own = false;  // a mission only the Map Editor knows (placed in Locais): its map is the editor's newest save
 };
 
 struct WorldLocation {
@@ -38,6 +39,9 @@ struct CampaignData {
   Json emptySave;  // emptySave() with updatedAt 0
   std::vector<CampaignMission> missions;
   std::vector<WorldLocation> locations;
+  // As campaign.json ships them (applyLocais starts again from these when the editor's Locais change).
+  std::vector<CampaignMission> shippedMissions;
+  std::vector<WorldLocation> shippedLocations;
   Json slotProgressCases;  // export_campaign.ts reference answers
 
   bool load(const std::filesystem::path& file);
@@ -65,6 +69,7 @@ class Campaign {
   static std::filesystem::path savePath();
 
   const CampaignData& data() const { return data_; }
+  CampaignData& data() { return data_; }  // the Map Editor's Locais re-applied (applyLocais)
   // Set when "Nova campanha" has just written a slot: the campaign's opening films play once (GameApp boot ->
   // vauIntro), then it is cleared by whoever plays them.
   bool freshCampaign = false;

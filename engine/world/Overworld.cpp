@@ -1,4 +1,5 @@
 #include "world/Overworld.h"
+#include "world/Locais.h"
 
 #include <algorithm>
 #include <cmath>
@@ -156,7 +157,35 @@ bool Overworld::load(const std::filesystem::path& file) {
   for (const Json& e : tables_["equipment"])
     loot_.push_back({false, e["id"].get<std::string>(), e["name"].get<std::string>(), e["price"].get<double>(), e["power"].get<int>(), e["starting"].get<bool>()});
   logInfo("overworld: {} cells, {} locations, {} missions", cells_.size(), locations_.size(), missions_.size());
+  shippedLocations_ = locations_, shippedMissions_ = missions_;
+  shippedEncounters_.clear();
+  for (const OverworldCell& c : cells_) shippedEncounters_.push_back(c.encounters);
   return true;
+}
+
+void Overworld::applyLocais(const Locais& locais, const CampaignData& campaign) {
+  locations_ = shippedLocations_, missions_ = shippedMissions_;
+  for (size_t i = 0; i < cells_.size() && i < shippedEncounters_.size(); ++i) cells_[i].encounters = shippedEncounters_[i];
+  if (locais.own) {
+    std::vector<MapLocation> next;
+    for (const Locais::Base& b : locais.locations()) {
+      MapLocation m;
+      for (const MapLocation& s : shippedLocations_)
+        if (s.id == b.id) m = s;
+      if (m.id.empty()) m.id = b.id, m.name = b.name;
+      m.missionIds = b.missionIds;
+      next.push_back(std::move(m));
+    }
+    locations_ = std::move(next);
+    for (const CampaignMission& c : campaign.missions)
+      if (c.own && !mission(c.id)) missions_.push_back(MapMission{c.id, c.title, c.win, c.index});
+  }
+  if (locais.ownRegions)
+    for (OverworldCell& c : cells_) {
+      c.encounters.clear();
+      for (const EncounterRegion& r : locais.regions)
+        if (r.id == c.region) c.encounters = r.encounterIds;
+    }
 }
 
 // --- the board -----------------------------------------------------------------------------------------------------

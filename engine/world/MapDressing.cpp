@@ -89,15 +89,92 @@ class Dresser {
     return out;
   }
 
-  // watchtowerDungeon.ts closeWatchtowerWalls with no placements (what Gerar terreno hands draftToMission): the floor's
-  // boundary walled, diagonal ends joined.
-  ojson watchtowerWalls(const std::string& id, const std::vector<std::string>& tiles, int cols, int rows) const {
-    ojson result = ojson::array();
-    if (!id.starts_with("watchtower-")) return result;
+  // watchtowerDungeon.ts removeWallsUnderWatchtowerEntrances: an open entrance replaces the walls on its two cells.
+  ojson removeWallsUnderEntrances(const ojson& placements) const {
+    std::set<std::string> openings;
+    for (const ojson& p : placements)
+      if (p.value("id", "") == "watchtower-stone-open-door-2hex")
+        for (const FootOffset& f : footprint(p)) openings.insert(key(p.value("x", 0) + f.dx, p.value("y", 0) + f.dy));
+    ojson out = ojson::array();
+    for (const ojson& p : placements) {
+      const DressTables::Deco* d = t_.deco(p.value("id", ""));
+      bool under = false;
+      if (d && d->model3d == "wall")
+        for (const FootOffset& f : footprint(p)) under = under || openings.contains(key(p.value("x", 0) + f.dx, p.value("y", 0) + f.dy));
+      if (!under) out.push_back(p);
+    }
+    return out;
+  }
+
+  // data.ts floorConnectorDirection.
+  static std::string connectorDirection(const ojson& p) {
+    if (p.contains("connectorDirection") && p["connectorDirection"].is_string()) return p["connectorDirection"].get<std::string>();
+    const std::string id = p.value("id", "");
+    if (id == "stone-stairs-up-001") return "up";
+    if (id == "stone-stairs-down-001") return "down";
+    return p.contains("returnConnector") && p["returnConnector"].is_boolean() && p["returnConnector"].get<bool>() ? "up" : "down";
+  }
+
+  // watchtowerDungeon.ts closeWatchtowerWalls: a watchtower floor's boundary walled (diagonal ends joined), only the
+  // gate floor keeps exits, its connectors become the up / down stairs.
+  ojson closeWatchtowerWalls(const std::string& id, const std::vector<std::string>& tiles, int cols, int rows, const ojson& placements) const {
+    if (!id.starts_with("watchtower-")) return placements;
     auto floor = [&](int x, int y) { return x >= 0 && y >= 0 && x < cols && y < rows && tiles[y * cols + x] != "void"; };
     auto boundary = [&](int x, int y) { return floor(x, y) && (!floor(x - 1, y) || !floor(x + 1, y) || !floor(x, y - 1) || !floor(x, y + 1)); };
+    auto model3d = [&](const ojson& p) {
+      const DressTables::Deco* d = t_.deco(p.value("id", ""));
+      return d ? d->model3d : std::string();
+    };
+    auto exitKind = [&](const ojson& p) {
+      const DressTables::Deco* d = t_.deco(p.value("id", ""));
+      return d ? d->exitKind : std::string();
+    };
+    auto truthy = [](const ojson& p, const char* k) {
+      if (!p.contains(k) || p[k].is_null()) return false;
+      if (p[k].is_boolean()) return p[k].get<bool>();
+      if (p[k].is_string()) return !p[k].get<std::string>().empty();
+      if (p[k].is_number()) return p[k].get<double>() != 0;
+      return true;
+    };
+    const auto here = t_.watchtowerFloors.find(id);
+    ojson mapped = ojson::array();
+    for (const ojson& p : placements) {
+      if (truthy(p, "waypointStairs")) continue;
+      const std::string kind = exitKind(p);
+      if (!(id == "watchtower-gate-floor" || kind.empty() || kind == "connector")) continue;
+      ojson q = p;
+      if (!(p.contains("connectorDirection") && !p["connectorDirection"].is_null()) && p.value("id", "") == "floor-connector" && truthy(p, "targetMapId") &&
+          p["targetMapId"].is_string() && here != t_.watchtowerFloors.end()) {
+        const auto there = t_.watchtowerFloors.find(p["targetMapId"].get<std::string>());
+        if (there != t_.watchtowerFloors.end()) q["connectorDirection"] = there->second > here->second ? "up" : "down";
+      }
+      if (q.value("id", "") == "city-stone-banner-wall") q["id"] = "wall-3d-dungeon";
+      mapped.push_back(std::move(q));
+    }
+    ojson result = ojson::array();
+    for (size_t i = 0; i < mapped.size(); ++i) {
+      const ojson& p = mapped[i];
+      bool first = true;
+      if (model3d(p) == "wall")
+        for (size_t k = 0; k < i && first; ++k)
+          if (model3d(mapped[k]) == "wall" && mapped[k].value("x", 0) == p.value("x", 0) && mapped[k].value("y", 0) == p.value("y", 0)) first = false;
+      if (first) result.push_back(p);
+    }
+    std::set<std::string> entranceCells;
+    for (const ojson& p : result)
+      if (p.value("id", "") == "watchtower-stone-open-door-2hex")
+        for (const FootOffset& f : footprint(p)) entranceCells.insert(key(p.value("x", 0) + f.dx, p.value("y", 0) + f.dy));
+    result = removeWallsUnderEntrances(result);
     std::set<std::string> occupied;
-    const std::string wallId = "wall-3d-dungeon";
+    for (const ojson& p : result)
+      if (!model3d(p).empty()) occupied.insert(key(p.value("x", 0), p.value("y", 0)));
+    occupied.insert(entranceCells.begin(), entranceCells.end());
+    std::string wallId = "wall-3d-dungeon";
+    for (const ojson& p : result)
+      if (model3d(p) == "wall") {
+        wallId = p.value("id", wallId);
+        break;
+      }
     for (int y = 0; y < rows; ++y)
       for (int x = 0; x < cols; ++x)
         if (boundary(x, y) && !occupied.contains(key(x, y))) {
@@ -108,10 +185,8 @@ class Dresser {
       return static_cast<int>(occupied.contains(key(x - 1, y))) + occupied.contains(key(x + 1, y)) + occupied.contains(key(x, y - 1)) + occupied.contains(key(x, y + 1));
     };
     std::vector<Cell> ends;
-    for (const ojson& p : result) {
-      const DressTables::Deco* d = t_.deco(p.value("id", ""));
-      if (d && d->model3d == "wall" && degree(p.value("x", 0), p.value("y", 0)) < 2) ends.push_back({p.value("x", 0), p.value("y", 0)});
-    }
+    for (const ojson& p : result)
+      if (model3d(p) == "wall" && degree(p.value("x", 0), p.value("y", 0)) < 2) ends.push_back({p.value("x", 0), p.value("y", 0)});
     for (const Cell& a : ends)
       for (const Cell& b : ends) {
         if (std::abs(a.x - b.x) != 1 || std::abs(a.y - b.y) != 1) continue;
@@ -121,6 +196,13 @@ class Dresser {
             occupied.insert(key(j.x, j.y));
             break;
           }
+      }
+    for (ojson& p : result)
+      if (exitKind(p) == "connector") {
+        const std::string dir = connectorDirection(p);
+        p["id"] = dir == "up" ? "stone-stairs-up-001" : "stone-stairs-down-001";
+        p.erase("waypointStairs");
+        p["connectorDirection"] = dir;
       }
     return result;
   }
@@ -157,7 +239,7 @@ class Dresser {
     for (const ojson& t : d["tiles"]) tiles.push_back(t.is_string() ? t.get<std::string>() : "plains");
     tiles.resize(static_cast<size_t>(m.cols * m.rows), "plains");
     const std::optional<std::string> base = d.contains("baseTile") && d["baseTile"].is_string() ? std::optional(d["baseTile"].get<std::string>()) : std::nullopt;
-    m.decorations = watchtowerWalls(m.id, tiles, m.cols, m.rows);
+    m.decorations = closeWatchtowerWalls(m.id, tiles, m.cols, m.rows, ojson::array());
     tiles = clearRockColumnTiles(clearRockColumnTiles(tiles, m.cols, m.rows, m.decorations, base), m.cols, m.rows, m.decorations, base);
     // draftToMission writes TILE_CHAR[tile] with no fallback: a retired terrain id becomes the text "undefined", which
     // the passes then read as nine letters (scatterTactics re-squares the rows afterwards). Kept, as Engine2 does it.
@@ -511,6 +593,8 @@ bool DressTables::load(const std::filesystem::path& catalogFile) {
   for (const auto& [t, info] : e["terrainInfo"].items()) passable[t] = info.value("passable", false), variantCount[t] = info.value("variantCount", 1);
   for (const auto& [t, ch] : e["tileChar"].items()) tileChar[t] = ch.get<std::string>();
   auto s = [](const ojson& o, const char* k) { return o.contains(k) && o[k].is_string() ? o[k].get<std::string>() : std::string(); };
+  const ojson watchtowerFloorsTable = e.value("watchtowerFloors", ojson::object());  // a copy: items() of a temporary dangles
+  for (const auto& [id, f] : watchtowerFloorsTable.items()) watchtowerFloors[id] = f.get<int>();
   for (const auto& [id, d] : e["decoMeta"].items())
     decorations.push_back({id, s(d, "model3d"), s(d, "exitKind"), d.value("chest", false), d.value("manual", false), d.value("solidRock", false), d.value("rockStyle", false)});
   return true;
@@ -555,6 +639,18 @@ DressResult dressDraft(const nlohmann::ordered_json& draft, const DressTables& t
   return r;
 }
 
+nlohmann::ordered_json closeWatchtowerWalls(const std::string& id, const std::vector<std::string>& tiles, int cols, int rows,
+                                            const nlohmann::ordered_json& placements, const DressTables& tables, const EditorCatalog& catalog) {
+  return Dresser(tables, catalog).closeWatchtowerWalls(id, tiles, cols, rows, placements);
+}
+nlohmann::ordered_json removeWallsUnderWatchtowerEntrances(const nlohmann::ordered_json& placements, const DressTables& tables, const EditorCatalog& catalog) {
+  return Dresser(tables, catalog).removeWallsUnderEntrances(placements);
+}
+std::vector<std::string> clearRockColumnTiles(const std::vector<std::string>& tiles, int cols, int rows, const nlohmann::ordered_json& decorations,
+                                              const std::optional<std::string>& baseTile, const DressTables& tables, const EditorCatalog& catalog) {
+  return Dresser(tables, catalog).clearRockColumnTiles(tiles, cols, rows, decorations, baseTile);
+}
+
 int checkDress(const std::filesystem::path& refs, const DressTables& tables, const EditorCatalog& catalog) {
   std::ifstream in(refs, std::ios::binary);
   const ojson j = in ? ojson::parse(in, nullptr, false) : ojson();
@@ -575,6 +671,18 @@ int checkDress(const std::filesystem::path& refs, const DressTables& tables, con
     if (nlohmann::json::parse(r.decorations.dump()) != nlohmann::json::parse(c["decorations"].dump())) {
       ++bad;
       logError("check-dress: {}: decorations differ ({} here, {} in Engine2)", name, r.decorations.size(), c["decorations"].size());
+    }
+    if (c.contains("normalized")) {
+      const ojson& d = c["draft"];
+      std::vector<std::string> tiles;
+      for (const ojson& t : d["tiles"]) tiles.push_back(t.is_string() ? t.get<std::string>() : "plains");
+      const ojson decos = d.contains("decorations") && d["decorations"].is_array() ? d["decorations"] : ojson::array();
+      const std::optional<std::string> base = d.contains("baseTile") && d["baseTile"].is_string() ? std::optional(d["baseTile"].get<std::string>()) : std::nullopt;
+      const ojson walls = closeWatchtowerWalls(d.value("id", ""), tiles, d.value("cols", 0), d.value("rows", 0), decos, tables, catalog);
+      if (nlohmann::json::parse(walls.dump()) != nlohmann::json::parse(c["normalized"]["decorations"].dump())) ++bad, logError("check-dress: {}: watchtower walls differ", name);
+      if (nlohmann::json(clearRockColumnTiles(tiles, d.value("cols", 0), d.value("rows", 0), decos, base, tables, catalog)) !=
+          nlohmann::json::parse(c["normalized"]["tiles"].dump()))
+        ++bad, logError("check-dress: {}: rock column tiles differ", name);
     }
     if (const char* dump = std::getenv("EMBER_DRESS_DUMP"); dump && (nlohmann::json(r.tiles) != nlohmann::json::parse(c["tiles"].dump()) ||
                                                                        nlohmann::json::parse(r.decorations.dump()) != nlohmann::json::parse(c["decorations"].dump()))) {

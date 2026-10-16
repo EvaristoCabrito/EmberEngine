@@ -245,6 +245,7 @@ const tileVariantNames = Object.fromEntries(Object.keys(data.TERRAIN).map((t) =>
 const e2json = (file: string) => JSON.parse(readFileSync(`${E2}/src/campaign/${file}`, 'utf8'));
 Object.assign(editor, {
   maxLevel: data.MAX_LEVEL,
+  enemyLevels: Array.from({ length: 101 }, (_, i) => data.enemyLevelFor(i)),  // enemyLevelFor(mission index)
   decoMeta,
   // MapEditorScreen architectureOptions: every model3d piece in DECORATIONS' own order (the palette sorts walls last)
   architectureOrder: Object.values(DECORATIONS).filter((d: Def) => !!d.model3d).map((d: Def) => d.id),
