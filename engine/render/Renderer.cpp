@@ -75,6 +75,10 @@ struct SpritePush {
   uint32_t sampler;
   VkDeviceAddress instances;
   VkDeviceAddress frame;  // MeshFrame: scene lighting for lit cards
+  uint32_t features;      // kSpriteFx* (SpriteDraw.h)
+  float thickness;        // the body's thickness as a share of the card's width
+  float parallax = 1.0f;
+  uint32_t pad = 0;
 };
 
 struct EffectPush {
@@ -489,6 +493,14 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   sprites.alphaBlend = true;
   sprites.premultipliedAlpha = true;
   spritePipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), sprites);
+  // The relief's per-pixel depth: the same card writing its own depth (sorted back to front, so a nearer card still
+  // lands over a farther one), and the same test without writing for cards drawn again over the effects (the depth
+  // image is read-only there; GREATER_OR_EQUAL lets the second draw pass over its own depth).
+  sprites.fragmentShader = "sprites.PSMainDepth";
+  sprites.depthWrite = true;
+  spriteDepthPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), sprites);
+  sprites.depthWrite = false;
+  spriteDepthTestPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), sprites);
 
   // Spell effects: over everything, depth-tested against it (read-only depth, also sampled for the soft fade).
   GraphicsPipelineDesc effects;
@@ -640,6 +652,8 @@ Renderer::~Renderer() {
   vkDestroyPipeline(context_.device, spriteShadowPipeline_, nullptr);
   vkDestroySampler(context_.device, shadowSampler_, nullptr);
   vkDestroyPipeline(context_.device, spritePipeline_, nullptr);
+  vkDestroyPipeline(context_.device, spriteDepthPipeline_, nullptr);
+  vkDestroyPipeline(context_.device, spriteDepthTestPipeline_, nullptr);
   vkDestroyPipeline(context_.device, effectPipeline_, nullptr);
   for (VkPipeline p : vfxPipelines_) vkDestroyPipeline(context_.device, p, nullptr);
   for (VkPipeline p : {cullInstancesPipeline_, cullInstancesLatePipeline_, hizPipeline_, cullPreparePipeline_,
@@ -1493,7 +1507,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     setViewport(cmd, {shadowSize_, shadowSize_});
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spriteShadowPipeline_);
     const SpritePush push{camera_.viewProjection(), camera_.right, spriteSamplerIndex_, bufferAddress(context_, frame.sprites),
-                          bufferAddress(context_, frame.meshFrame)};
+                          bufferAddress(context_, frame.meshFrame), spriteFeatures_, spriteThickness_};
     vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
     vkCmdDraw(cmd, 6, static_cast<uint32_t>(sprites_.size()), 0, 0);
     vkCmdEndRendering(cmd);
@@ -1648,9 +1662,9 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       gpuTimer_.end(cmd, scope);
     }
     if (!sprites_.empty()) {
-      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spritePipeline_);
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, (spriteFeatures_ & kSpriteFxDepth) ? spriteDepthPipeline_ : spritePipeline_);
       const SpritePush spritePush{viewProjection, camera_.right, spriteSamplerIndex_, bufferAddress(context_, frame.sprites),
-                                  bufferAddress(context_, frame.meshFrame)};
+                                  bufferAddress(context_, frame.meshFrame), spriteFeatures_, spriteThickness_};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(spritePush), &spritePush);
       vkCmdDraw(cmd, 6, static_cast<uint32_t>(sprites_.size()), 0, 0);
     }
@@ -1713,9 +1727,10 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     }
     // Cards over the effects (a caster in front of its own spell): the same card drawing, read past the frame's cards.
     if (!frontCards_.empty()) {
-      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spritePipeline_);
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, (spriteFeatures_ & kSpriteFxDepth) ? spriteDepthTestPipeline_ : spritePipeline_);
       const SpritePush frontPush{camera_.viewProjection(), camera_.right, spriteSamplerIndex_,
-                                 bufferAddress(context_, frame.sprites) + sprites_.size() * sizeof(SpriteInstance), bufferAddress(context_, frame.meshFrame)};
+                                 bufferAddress(context_, frame.sprites) + sprites_.size() * sizeof(SpriteInstance), bufferAddress(context_, frame.meshFrame),
+                                 spriteFeatures_, spriteThickness_};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(frontPush), &frontPush);
       vkCmdDraw(cmd, 6, static_cast<uint32_t>(frontCards_.size()), 0, 0);
     }

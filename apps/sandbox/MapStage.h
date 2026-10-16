@@ -942,6 +942,9 @@ class MapStage final : public Stage {
     layers_ = g.realShadows ? layers_ | 2u : layers_ & ~2u;
     layers_ = g.localLights ? layers_ | 8u : layers_ & ~8u;
     options_.volume = g.atmosphericFx, options_.airParticles = g.atmosphericFx;
+    // Sprites 3D: the features on the cards, and no relief streamed at all while every one is off.
+    renderer_.setSpriteFeatures(g.spriteFeatures(), g.spriteThickness);
+    sprites_.setReliefWanted((g.spriteFeatures() & 63u) != 0);
   }
   // --- Save / Load in battle (GameApp's battle menu Save and Load, Engine2's BattleSnapshot) ---
   // The campaign this fight belongs to: its slots, the campaign mission id and the map's key (a fight saved on another
@@ -1350,6 +1353,7 @@ class MapStage final : public Stage {
     s.width = w * c.contentWidth / sw;
     s.height = h * c.contentHeight / sh;
     s.textureIndex = tex.index;
+    s.reliefIndex = tex.relief;
     s.layer = std::min(frame, c.frames - 1);
     s.flags = flags | (mirror ? kSpriteMirrored : 0u);
     s.uvScale = {static_cast<float>(c.contentWidth) / c.width, static_cast<float>(c.contentHeight) / c.height};
@@ -1448,15 +1452,17 @@ class MapStage final : public Stage {
       }
       uint32_t frame = 0;
       if (p) {
-        const size_t period = p->doneAt >= 0 ? static_cast<size_t>(p->doneAt) + 120 : pacePeriod(p->pace);
         const float clock = shot ? std::max(0.0f, time - shot->start) * shot->rate : walking ? std::max(0.0f, time - unitWalk_[ui].start) : time;
-        // A one-shot pose plays through once and keeps its last frame.
-        const size_t tick = shot ? std::min(static_cast<size_t>(clock * 240.0f), p->doneAt >= 0 ? static_cast<size_t>(p->doneAt) : p->pace.size() - 1)
-                                 : static_cast<size_t>(clock * 240.0f) % period;
-        frame = static_cast<uint32_t>(p->pace[std::min(tick, p->pace.size() - 1)]);
+        if (shot || p->doneAt >= 0) {
+          // A one-shot pose plays through once and keeps its last frame (replayed after 0.5 s when it is the chosen pose).
+          const size_t tick = shot ? std::min(static_cast<size_t>(clock * 240.0f), p->doneAt >= 0 ? static_cast<size_t>(p->doneAt) : p->pace.size() - 1)
+                                   : static_cast<size_t>(clock * 240.0f) % (static_cast<size_t>(p->doneAt) + 120);
+          frame = static_cast<uint32_t>(p->pace[std::min(tick, p->pace.size() - 1)]);
+        } else {
+          frame = loopFrame(p->pace, p->frames, clock * 240.0);
+        }
       } else if (!u.pace.empty()) {
-        const size_t period = pacePeriod(u.pace);
-        frame = static_cast<uint32_t>(u.pace[static_cast<size_t>(time * 240.0f) % period]);
+        frame = loopFrame(u.pace, u.frames, time * 240.0);
       }
       const float boxW = p ? p->boxW : u.boxW, boxH = p ? p->boxH : u.boxH, foot = p ? p->foot : u.foot;
       glm::vec3 anchor = static_cast<int>(ui) == hero_ && path_.size() > 1 ? heroAt_ : unitWorld(ui);
@@ -3631,18 +3637,63 @@ class MapStage final : public Stage {
     fog_->relight(eyes);
   }
 
-  // The shortest repeat of Engine2's sampled frame pacing (the whole sample when it does not repeat).
-  size_t pacePeriod(const std::vector<int>& pace) {
-    auto it = periods_.find(&pace);
-    if (it != periods_.end()) return it->second;
-    size_t best = pace.size();
-    for (size_t p = 1; p <= pace.size() / 2 && best == pace.size(); ++p) {
-      bool repeats = true;
-      for (size_t i = 0; i + p < pace.size() && repeats; ++i) repeats = pace[i] == pace[i + p];
-      if (repeats) best = p;
+  // How a looping pose repeats, read off Engine2's 6 s sample of its frame pacing (ticks of 1/240 s). The cycle is
+  // rarely a whole number of ticks (Neera's idle: 36 frames at 10.204 fps = 846.7) and can be longer than the sample
+  // (Malrec's idle bounces over 6.5 s), so it is measured from the runs of frames; wrapping at the sample's end cut
+  // those loops short every 6 s (Neera jumped from frame 25 back to 0).
+  struct PaceLoop {
+    enum Kind { kSample, kForward, kBounce } kind = kSample;
+    double period = 0;    // ticks per cycle
+    double perFrame = 0;  // kForward / kBounce: ticks per frame step
+  };
+
+  const PaceLoop& paceLoop(const std::vector<int>& pace, int frames) {
+    auto it = loops_.find(&pace);
+    if (it != loops_.end()) return it->second;
+    PaceLoop loop{PaceLoop::kSample, static_cast<double>(pace.size()), 0.0};
+    std::vector<std::pair<int, size_t>> runs;  // frame, first tick
+    for (size_t i = 0; i < pace.size(); ++i)
+      if (runs.empty() || runs.back().first != pace[i]) runs.push_back({pace[i], i});
+    const size_t n = runs.size();
+    if (n >= 3) {
+      // The shortest shift that lays the run sequence on itself; the period runs from run 1 (run 0 may begin
+      // mid-frame) over every whole cycle the sample holds.
+      bool found = false;
+      for (size_t q = 1; q + 1 < n && !found; ++q) {
+        bool same = true;
+        for (size_t j = 0; j + q < n && same; ++j) same = runs[j].first == runs[j + q].first;
+        const size_t k = (n - 2) / q;
+        if (same && k >= 1) {
+          loop.period = static_cast<double>(runs[1 + k * q].second - runs[1].second) / static_cast<double>(k);
+          found = true;
+        }
+      }
+      if (!found) {
+        // A cycle longer than the sample: carry its steps on, forward round the clip or bouncing between its ends.
+        const double perFrame = static_cast<double>(runs[n - 1].second - runs[1].second) / static_cast<double>(n - 2);
+        const int f = std::max(frames, 1), bounceLen = 2 * f - 2;
+        bool forward = true, bounce = f > 1;
+        for (size_t j = 0; j < n; ++j) {
+          forward = forward && (j == 0 || (runs[j - 1].first + 1) % f == runs[j].first);
+          const int s = bounce ? static_cast<int>(j % static_cast<size_t>(bounceLen)) : 0;
+          bounce = bounce && runs[j].first == (s < f ? s : bounceLen - s);
+        }
+        if (forward) loop = {PaceLoop::kForward, f * perFrame, perFrame};
+        else if (bounce) loop = {PaceLoop::kBounce, bounceLen * perFrame, perFrame};
+        else logWarn("map: a looping pose's pacing is neither a repeat nor a forward / bouncing cycle; it wraps at 6 s");
+      }
     }
-    periods_[&pace] = best;
-    return best;
+    return loops_[&pace] = loop;
+  }
+
+  uint32_t loopFrame(const std::vector<int>& pace, int frames, double tick) {
+    const PaceLoop& loop = paceLoop(pace, frames);
+    const double t = std::fmod(std::max(tick, 0.0), loop.period);
+    if (loop.kind == PaceLoop::kSample) return static_cast<uint32_t>(pace[std::min(static_cast<size_t>(t), pace.size() - 1)]);
+    const int f = std::max(frames, 1);
+    if (loop.kind == PaceLoop::kForward) return static_cast<uint32_t>(static_cast<int>(t / loop.perFrame) % f);
+    const int bounceLen = 2 * f - 2, s = std::min(static_cast<int>(t / loop.perFrame), bounceLen - 1);
+    return static_cast<uint32_t>(s < f ? s : bounceLen - s);
   }
 
   Renderer& renderer_;
@@ -3674,7 +3725,7 @@ class MapStage final : public Stage {
   int atmosChoice_ = 2, climaChoice_ = 0;
   std::vector<Volumetrics::Profile> atmosProfiles_;
   std::unordered_map<std::string, MeshId> modelMeshes_;
-  std::unordered_map<const std::vector<int>*, size_t> periods_;
+  std::unordered_map<const std::vector<int>*, PaceLoop> loops_;
   std::vector<SpriteInstance> drawList_;
   std::vector<SpriteInstance> frontCards_;  // casters drawn again over their own spell (Renderer::setFrontCards)
   std::vector<LocalLight> lights_;

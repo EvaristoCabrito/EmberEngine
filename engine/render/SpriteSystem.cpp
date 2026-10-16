@@ -22,6 +22,8 @@ uint64_t clipBytes(const SpriteClipHeader& h, uint32_t firstMip) {
   return bytes;
 }
 
+bool hasRelief(const SpriteClipHeader& h) { return h.reliefFullAsset != 0 && h.reliefTailAsset != 0; }
+
 }  // namespace
 
 SpriteSystem::SpriteSystem(VulkanContext& context, Bindless& bindless, AssetManager& assets, UploadQueue& uploads,
@@ -32,6 +34,8 @@ SpriteSystem::~SpriteSystem() {
   for (auto& clip : clips_) {
     uploads_.cancel(clip->tailUpload);
     uploads_.cancel(clip->fullUpload);
+    uploads_.cancel(clip->reliefTailUpload);
+    uploads_.cancel(clip->reliefFullUpload);
   }
   vkDeviceWaitIdle(context_.device);  // copies and draws may still use the images
   for (Retired& r : retired_) {
@@ -41,11 +45,17 @@ SpriteSystem::~SpriteSystem() {
   for (auto& clip : clips_) {
     destroyImage(context_, clip->tailImage);
     destroyImage(context_, clip->fullImage);
+    destroyImage(context_, clip->reliefTailImage);
+    destroyImage(context_, clip->reliefFullImage);
     if (clip->tailIndex != kNoTexture) bindless_.removeSampledImage(clip->tailIndex);
     if (clip->fullIndex != kNoTexture) bindless_.removeSampledImage(clip->fullIndex);
+    if (clip->reliefTailIndex != kNoTexture) bindless_.removeSampledImage(clip->reliefTailIndex);
+    if (clip->reliefFullIndex != kNoTexture) bindless_.removeSampledImage(clip->reliefFullIndex);
     assets_.release(clip->headerHandle);
     assets_.release(clip->tailHandle);
     assets_.release(clip->fullHandle);
+    assets_.release(clip->reliefTailHandle);
+    assets_.release(clip->reliefFullHandle);
   }
   if (fullPool_) vmaDestroyPool(context_.allocator, fullPool_);
   assets_.release(rosterHandle_);
@@ -77,13 +87,14 @@ void SpriteSystem::request(SpriteClipId id, int32_t priority) {
 SpriteSystem::Texture SpriteSystem::texture(SpriteClipId id) const {
   if (id >= clips_.size()) return {};
   const Clip& clip = *clips_[id];
-  if (clip.state == State::Resident) return {clip.fullIndex, true};
-  return {clip.tailIndex, false};
+  // A resident clip whose relief did not come along (not wanted then) draws its relief from the tail.
+  if (clip.state == State::Resident) return {clip.fullIndex, true, clip.reliefFullIndex != kNoTexture ? clip.reliefFullIndex : clip.reliefTailIndex};
+  return {clip.tailIndex, false, clip.reliefTailIndex};
 }
 
-ImageDesc SpriteSystem::clipImageDesc(const SpriteClipHeader& h, uint32_t firstMip) const {
+ImageDesc SpriteSystem::clipImageDesc(const SpriteClipHeader& h, uint32_t firstMip, bool relief) const {
   ImageDesc desc;
-  desc.format = VK_FORMAT_BC7_SRGB_BLOCK;
+  desc.format = relief ? VK_FORMAT_BC7_UNORM_BLOCK : VK_FORMAT_BC7_SRGB_BLOCK;
   desc.extent = {std::max(1u, h.width >> firstMip), std::max(1u, h.height >> firstMip)};
   desc.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
   desc.mipLevels = h.mipCount - firstMip;
@@ -162,8 +173,8 @@ void SpriteSystem::updateStartup() {
     const std::span<const std::byte> bytes = assets_.data(rosterHandle_);
     SpriteRosterHeader roster{};
     if (bytes.size() >= sizeof(roster)) std::memcpy(&roster, bytes.data(), sizeof(roster));
-    if (roster.magic != kSpriteRosterMagic || roster.version != kSpriteFormatVersion ||
-        bytes.size() < sizeof(roster) + uint64_t{roster.clipCount} * sizeof(AssetId)) {
+    const bool versionOk = roster.version == kSpriteFormatVersion || roster.version == kSpriteFormatVersion1;
+    if (roster.magic != kSpriteRosterMagic || !versionOk || bytes.size() < sizeof(roster) + uint64_t{roster.clipCount} * sizeof(AssetId)) {
       logError("sprites: damaged roster");
     } else {
       clips_.reserve(roster.clipCount);
@@ -182,6 +193,36 @@ void SpriteSystem::updateStartup() {
     rosterHandle_ = {};
   }
 
+  // A startup image (a tail): the asset arrived -> the image is created and its upload queued; the upload landed ->
+  // it becomes drawable. True once it is drawable, failed or never asked for.
+  const auto stageTail = [&](Clip& clip, AssetHandle& handle, Image& image, ImageUpload& upload, uint32_t& index, bool relief) {
+    if (!handle && !image.image) return true;
+    if (handle && !image.image) {
+      const AssetState state = assets_.state(handle);
+      const std::span<const std::byte> bytes = assets_.data(handle);
+      if (state == AssetState::Failed || (state == AssetState::Ready && bytes.size() != clipBytes(clip.header, clip.header.tailFirstMip))) {
+        logError("sprites: {}tail of {} is missing or damaged", relief ? "relief " : "", clip.header.name);
+        assets_.release(handle);
+        handle = {};
+        return true;
+      }
+      if (state != AssetState::Ready) return false;
+      image = createImage(context_, clipImageDesc(clip.header, clip.header.tailFirstMip, relief));
+      upload = {image.image, image.extent.width, image.extent.height, clip.header.mipCount - clip.header.tailFirstMip, clip.header.frames,
+                kBc7BlockBytes, bytes};
+      uploads_.enqueue(upload);
+      tailBytes_ += bytes.size();
+    }
+    if (image.image && index == kNoTexture) {
+      if (!uploads_.finished(upload)) return false;
+      index = bindless_.addSampledImage(image.view);
+      uploadWaitValue_ = std::max(uploadWaitValue_, upload.signalValue);
+      assets_.release(handle);
+      handle = {};
+    }
+    return true;
+  };
+
   for (auto& clipPtr : clips_) {
     Clip& clip = *clipPtr;
     // 2. Clip headers, then their tails.
@@ -189,9 +230,13 @@ void SpriteSystem::updateStartup() {
       const AssetState state = assets_.state(clip.headerHandle);
       if (state == AssetState::Ready || state == AssetState::Failed) {
         const std::span<const std::byte> bytes = assets_.data(clip.headerHandle);
-        if (state == AssetState::Ready && bytes.size() == sizeof(SpriteClipHeader)) {
-          std::memcpy(&clip.header, bytes.data(), sizeof(SpriteClipHeader));
-          clip.headerReady = clip.header.magic == kSpriteClipMagic && clip.header.version == kSpriteFormatVersion;
+        if (state == AssetState::Ready && (bytes.size() == sizeof(SpriteClipHeader) || bytes.size() == kSpriteClipHeaderV1Bytes)) {
+          clip.header = {};
+          std::memcpy(&clip.header, bytes.data(), bytes.size());
+          const bool v1 = bytes.size() == kSpriteClipHeaderV1Bytes && clip.header.version == kSpriteFormatVersion1;
+          const bool v2 = bytes.size() == sizeof(SpriteClipHeader) && clip.header.version == kSpriteFormatVersion;
+          clip.headerReady = clip.header.magic == kSpriteClipMagic && (v1 || v2);
+          if (v1) clip.header.reliefFullAsset = clip.header.reliefTailAsset = 0;
         }
         if (!clip.headerReady) logError("sprites: clip {:016x} has no valid header", clip.clipAsset);
         assets_.release(clip.headerHandle);
@@ -200,41 +245,31 @@ void SpriteSystem::updateStartup() {
         if (headersPending_ == 0) createFullPool();
         if (clip.headerReady) {
           clip.tailHandle = assets_.load(clip.header.tailAsset, kStartupPriority);
+          if (hasRelief(clip.header)) clip.reliefTailHandle = assets_.load(clip.header.reliefTailAsset, kStartupPriority);
           ++tailsPending_;
         }
       }
     }
-    // 3. A tail that arrived goes to the GPU; one that landed there becomes drawable.
-    if (clip.tailHandle && !clip.tailImage.image) {
-      const AssetState state = assets_.state(clip.tailHandle);
-      const std::span<const std::byte> bytes = assets_.data(clip.tailHandle);
-      if (state == AssetState::Failed || (state == AssetState::Ready && bytes.size() != clipBytes(clip.header, clip.header.tailFirstMip))) {
-        logError("sprites: tail of {} is missing or damaged", clip.header.name);
-        assets_.release(clip.tailHandle);
-        clip.tailHandle = {};
+    // 3. Tails that arrived go to the GPU; once both (colour, and the relief when the clip has one) landed there,
+    // the clip is drawable.
+    if (clip.headerReady && !clip.tailCounted) {
+      const bool colour = stageTail(clip, clip.tailHandle, clip.tailImage, clip.tailUpload, clip.tailIndex, false);
+      const bool relief = stageTail(clip, clip.reliefTailHandle, clip.reliefTailImage, clip.reliefTailUpload, clip.reliefTailIndex, true);
+      if (colour && relief) {
+        clip.tailCounted = true;
         --tailsPending_;
-      } else if (state == AssetState::Ready) {
-        clip.tailImage = createImage(context_, clipImageDesc(clip.header, clip.header.tailFirstMip));
-        clip.tailUpload = {clip.tailImage.image, clip.tailImage.extent.width, clip.tailImage.extent.height,
-                           clip.header.mipCount - clip.header.tailFirstMip, clip.header.frames, kBc7BlockBytes, bytes};
-        uploads_.enqueue(clip.tailUpload);
-        tailBytes_ += bytes.size();
       }
-    }
-    if (clip.tailImage.image && clip.tailIndex == kNoTexture && uploads_.finished(clip.tailUpload)) {
-      clip.tailIndex = bindless_.addSampledImage(clip.tailImage.view);
-      uploadWaitValue_ = std::max(uploadWaitValue_, clip.tailUpload.signalValue);
-      assets_.release(clip.tailHandle);
-      clip.tailHandle = {};
-      --tailsPending_;
     }
   }
 }
 
 void SpriteSystem::evict(Clip& clip) {
   retire(clip.fullImage, clip.fullIndex);
+  if (clip.reliefFullImage.image) retire(clip.reliefFullImage, clip.reliefFullIndex);
+  clip.reliefFullIndex = kNoTexture;
   clip.state = State::Idle;
-  residentBytes_ -= clip.header.fullBytes;
+  residentBytes_ -= clip.chargedBytes;
+  clip.chargedBytes = 0;
   ++evictions_;
 }
 
@@ -267,9 +302,11 @@ void SpriteSystem::makeHole(const Clip& want) {
     vmaGetAllocationInfo(context_.allocator, allocation, &info);
     blocks[info.deviceMemory].push_back({info.offset, info.size, kind, clip});
   };
-  for (auto& clip : clips_)
-    if (clip->fullImage.allocation)
-      add(clip->fullImage.allocation, clip->state == State::Resident && !clip->requestedThisFrame ? Evictable : Pinned, clip.get());
+  for (auto& clip : clips_) {
+    const Kind kind = clip->state == State::Resident && !clip->requestedThisFrame ? Evictable : Pinned;
+    if (clip->fullImage.allocation) add(clip->fullImage.allocation, kind, clip.get());
+    if (clip->reliefFullImage.allocation) add(clip->reliefFullImage.allocation, kind, clip.get());
+  }
   for (const Retired& r : retired_)
     if (r.image.allocation) add(r.image.allocation, Leaving, nullptr);
 
@@ -308,7 +345,7 @@ void SpriteSystem::makeHole(const Clip& want) {
   if (!found) return;  // everything in the way is in use: retry when it is not
   for (size_t i = best.first; i < best.end; ++i) {
     const Span& span = (*best.spans)[i];
-    if (span.kind == Evictable) evict(*span.clip);
+    if (span.kind == Evictable && span.clip->state == State::Resident) evict(*span.clip);
   }
 }
 
@@ -320,6 +357,20 @@ bool SpriteSystem::startUpload(Clip& clip) {
     ++poolRetries_;
     makeHole(clip);
     return false;
+  }
+  if (clip.reliefLoading) {
+    ImageDesc reliefDesc = clipImageDesc(clip.header, 0, true);
+    reliefDesc.pool = fullPool_;
+    if (!tryCreateImage(context_, reliefDesc, clip.reliefFullImage)) {
+      // No second hole: give the first back (freed once the GPU is surely past this frame) and retry.
+      retire(clip.fullImage, clip.fullIndex);
+      ++poolRetries_;
+      makeHole(clip);
+      return false;
+    }
+    clip.reliefFullUpload = {clip.reliefFullImage.image, clip.header.width, clip.header.height, clip.header.mipCount, clip.header.frames,
+                             kBc7BlockBytes, assets_.data(clip.reliefFullHandle)};
+    uploads_.enqueue(clip.reliefFullUpload);
   }
   clip.fullUpload = {clip.fullImage.image, clip.header.width, clip.header.height, clip.header.mipCount,
                      clip.header.frames, kBc7BlockBytes, assets_.data(clip.fullHandle)};
@@ -346,20 +397,40 @@ void SpriteSystem::update() {
       const AssetState state = assets_.state(clip.fullHandle);
       const std::span<const std::byte> bytes = assets_.data(clip.fullHandle);
       const bool abandoned = !clip.requestedThisFrame && frame_ - clip.lastRequested > kAbandonFrames;
-      if (state == AssetState::Failed || abandoned || (state == AssetState::Ready && bytes.size() != clip.header.fullBytes)) {
+      bool damaged = state == AssetState::Failed || (state == AssetState::Ready && bytes.size() != clip.header.fullBytes);
+      bool ready = state == AssetState::Ready;
+      if (clip.reliefLoading) {
+        const AssetState reliefState = assets_.state(clip.reliefFullHandle);
+        const std::span<const std::byte> reliefBytes = assets_.data(clip.reliefFullHandle);
+        damaged = damaged || reliefState == AssetState::Failed || (reliefState == AssetState::Ready && reliefBytes.size() != clip.header.fullBytes);
+        ready = ready && reliefState == AssetState::Ready;
+      }
+      if (damaged || abandoned) {
         if (!abandoned) logError("sprites: full clip {} is missing or damaged", clip.header.name);
         assets_.release(clip.fullHandle);
+        assets_.release(clip.reliefFullHandle);
         clip.fullHandle = {};
+        clip.reliefFullHandle = {};
+        clip.reliefLoading = false;
         clip.state = State::Idle;
-        residentBytes_ -= clip.header.fullBytes;
-      } else if (state == AssetState::Ready) {
+        residentBytes_ -= clip.chargedBytes;
+        clip.chargedBytes = 0;
+      } else if (ready) {
         startUpload(clip);  // stays Loading (and retries next frame) while the pool has no room
       }
-    } else if (clip.state == State::Uploading && uploads_.finished(clip.fullUpload)) {
+    } else if (clip.state == State::Uploading && uploads_.finished(clip.fullUpload) &&
+               (!clip.reliefLoading || uploads_.finished(clip.reliefFullUpload))) {
       clip.fullIndex = bindless_.addSampledImage(clip.fullImage.view);
       uploadWaitValue_ = std::max(uploadWaitValue_, clip.fullUpload.signalValue);
+      if (clip.reliefLoading) {
+        clip.reliefFullIndex = bindless_.addSampledImage(clip.reliefFullImage.view);
+        uploadWaitValue_ = std::max(uploadWaitValue_, clip.reliefFullUpload.signalValue);
+      }
       assets_.release(clip.fullHandle);  // the CPU copy is no longer needed
+      assets_.release(clip.reliefFullHandle);
       clip.fullHandle = {};
+      clip.reliefFullHandle = {};
+      clip.reliefLoading = false;
       clip.state = State::Resident;
     }
   }
@@ -370,13 +441,18 @@ void SpriteSystem::update() {
   for (const SpriteClipId id : requested_) {
     Clip& clip = *clips_[id];
     if (clip.state != State::Idle || !clip.headerReady || !fullPool_) continue;
-    if (!makeRoom(clip.header.fullBytes)) {
+    const bool withRelief = reliefWanted_ && hasRelief(clip.header);
+    const uint64_t bytes = clip.header.fullBytes * (withRelief ? 2 : 1);
+    if (!makeRoom(bytes)) {
       ++starved_;
       continue;
     }
     clip.fullHandle = assets_.load(clip.header.fullAsset, clip.priority);
+    clip.reliefLoading = withRelief;
+    if (withRelief) clip.reliefFullHandle = assets_.load(clip.header.reliefFullAsset, clip.priority);
     clip.state = State::Loading;
-    residentBytes_ += clip.header.fullBytes;
+    clip.chargedBytes = bytes;
+    residentBytes_ += bytes;
   }
   for (const SpriteClipId id : requested_) clips_[id]->requestedThisFrame = false;
   requested_.clear();

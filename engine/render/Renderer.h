@@ -189,6 +189,10 @@ class Renderer {
   void setShadowResolution(uint32_t size);
   uint32_t shadowResolution() const { return shadowSize_; }
   void setShadowFilter(float texels) { shadowFilterTexels_ = texels; }
+  // The cards' relief features (SpriteDraw.h kSpriteFx*, Dev Controls "Sprites 3D") and the body's thickness as a
+  // share of the card's width. Cards without a relief array are unchanged.
+  void setSpriteFeatures(uint32_t features, float thickness) { spriteFeatures_ = features, spriteThickness_ = thickness; }
+  uint32_t spriteFeatures() const { return spriteFeatures_; }
   // Lighting layers switched on (shaders/lighting.hlsli kLayer*: 1 sun, 2 shadows, 4 indirect), for
   // measuring each alone.
   void setLightingLayers(uint32_t layers) { lightingLayers_ = layers; }
@@ -368,6 +372,10 @@ class Renderer {
   uint32_t lightingLayers_ = 0xFFFFFFFFu;
   TerrainView terrain_;
   VkPipeline spritePipeline_ = VK_NULL_HANDLE;
+  VkPipeline spriteDepthPipeline_ = VK_NULL_HANDLE;      // writes the relief's per-pixel depth
+  VkPipeline spriteDepthTestPipeline_ = VK_NULL_HANDLE;  // tests it only (cards drawn again over the effects)
+  uint32_t spriteFeatures_ = kSpriteFxAll;
+  float spriteThickness_ = 0.45f;
   VkPipeline effectPipeline_ = VK_NULL_HANDLE;
   VkPipeline vfxPipelines_[2] = {};  // depth-tested, over everything
   std::vector<VfxVertex> vfxVertices_;

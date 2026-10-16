@@ -54,10 +54,15 @@ class SpriteSystem {
   void request(SpriteClipId id, int32_t priority);
 
   struct Texture {
-    uint32_t index = kNoTexture;  // bindless texture-array index; kNoTexture = not drawable yet
-    bool full = false;            // false: drawing from the tail
+    uint32_t index = kNoTexture;   // bindless texture-array index; kNoTexture = not drawable yet
+    bool full = false;             // false: drawing from the tail
+    uint32_t relief = kNoTexture;  // the relief chain at the same level (SpriteFormat.h); kNoTexture = flat card
   };
   Texture texture(SpriteClipId id) const;
+  // Whether full-quality relief chains stream in with their clips (Dev Controls "Sprites 3D": all off = no relief
+  // bytes on the GPU beyond the small tails). Clips already resident keep theirs until evicted.
+  void setReliefWanted(bool wanted) { reliefWanted_ = wanted; }
+  bool reliefWanted() const { return reliefWanted_; }
 
   // Once per frame, before rendering.
   void update();
@@ -90,6 +95,7 @@ class SpriteSystem {
     Image tailImage;
     ImageUpload tailUpload;
     uint32_t tailIndex = kNoTexture;
+    bool tailCounted = false;  // its startup load was taken off tailsPending_
 
     State state = State::Idle;
     AssetHandle fullHandle;
@@ -97,6 +103,19 @@ class SpriteSystem {
     ImageUpload fullUpload;
     uint32_t fullIndex = kNoTexture;
     VkDeviceSize memoryBytes = 0, memoryAlignment = 1;  // the full image's real GPU footprint
+    uint64_t chargedBytes = 0;                          // what this clip counts against the budget while not Idle
+
+    // The relief chain (header.reliefFullAsset != 0): its tail always resident, its full chain streamed with the
+    // colour's when wanted (setReliefWanted).
+    AssetHandle reliefTailHandle;
+    Image reliefTailImage;
+    ImageUpload reliefTailUpload;
+    uint32_t reliefTailIndex = kNoTexture;
+    AssetHandle reliefFullHandle;
+    Image reliefFullImage;
+    ImageUpload reliefFullUpload;
+    uint32_t reliefFullIndex = kNoTexture;
+    bool reliefLoading = false;  // this full load brings the relief along
 
     uint64_t lastRequested = 0;  // frame
     int32_t priority = 0;        // highest asked for this frame
@@ -109,7 +128,7 @@ class SpriteSystem {
     uint64_t frame;  // destroyed once the GPU is surely past this frame
   };
 
-  ImageDesc clipImageDesc(const SpriteClipHeader& header, uint32_t firstMip) const;
+  ImageDesc clipImageDesc(const SpriteClipHeader& header, uint32_t firstMip, bool relief = false) const;
   void createFullPool();
   void evict(Clip& clip);
   void retire(Image& image, uint32_t& index);
@@ -137,6 +156,7 @@ class SpriteSystem {
   VkDeviceSize fullPoolBlock_ = 0;
   uint64_t fullPoolBytes_ = 0;
 
+  bool reliefWanted_ = true;
   uint64_t frame_ = 0;
   uint64_t residentBytes_ = 0;
   uint64_t tailBytes_ = 0;
