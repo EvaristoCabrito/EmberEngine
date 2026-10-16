@@ -8,8 +8,8 @@
 // disease and poison). Rules: engine/world/Inn.
 //
 // Engine2 reaches Vargan and the healer by walking the Inn's own map and talking to them; that walkable Inn is not
-// ported, so both open from the header here. Not ported: Mochila / Equipar (the inventory screens are the next step),
-// the smith's intro film, sound, typing a ration count.
+// ported, so both open from the header here. Mochila / Equipar open the party's inventory (InventoryScreen.h) on the
+// hero chosen in the Adega or at the forge. Not ported: the smith's intro film, sound, typing a ration count.
 
 #include <imgui.h>
 
@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "CampaignUi.h"
+#include "InventoryScreen.h"
 #include "render/UiArt.h"
 #include "world/Inn.h"
 
@@ -42,6 +43,11 @@ class InnScreen {
   bool draw(ImVec2 size, Context& c) {
     now_ = static_cast<float>(ImGui::GetTime());
     stepHealing(c);
+    if (inventory_) {
+      InventoryScreen::Context ic{c.save, c.write, c.rules, c.data, c.world, c.engine2Public};
+      if (inventory_->draw(size, ic)) inventory_.reset();
+      return false;
+    }
     bool leave = false;
     if (view_ == View::Smith) drawSmith(size, c);
     else if (view_ == View::Healer) drawHealer(size, c);
@@ -188,6 +194,20 @@ class InnScreen {
       if (const UiImage* icon = uiImage(c.engine2Public / "game/icons/gold-coins-pile.png")) d->AddImage(icon->texture, {a.x + 8, a.y + 6}, {a.x + 32, a.y + 30});
       d->AddText(uiFont(UiFont::Ui), 14.0f, {a.x + 38, (a.y + b.y) / 2 - 8}, kMuted, gold.c_str());
     });
+    // Mochila / Equipar, on the hero chosen here (the forge's or the Adega's); the healer has neither.
+    if (view_ != View::Healer) {
+      const std::string& who = view_ == View::Smith ? smithHero_ : hero_;
+      x -= 12 + 96;
+      ImGui::SetCursorScreenPos({x, 14});
+      if (emberTextPlate("##equipar", {96, 44}, "EQUIPAR", 12.0f)) inventory_.emplace(who, false);
+      x -= 12 + 128;
+      ImGui::SetCursorScreenPos({x, 14});
+      if (emberPlate("##mochila", {128, 44}, [&](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32 ink) {
+            if (const UiImage* icon = art(c, c.data.bagIcon)) d->AddImage(icon->texture, {a.x + 8, a.y + 6}, {a.x + 40, a.y + 38});
+            d->AddText(uiFont(UiFont::Mark), 12.0f, {a.x + 48, (a.y + b.y) / 2 - 7}, ink, "MOCHILA");
+          }))
+        inventory_.emplace(who, true);
+    }
     if (showSmithHealer) {
       x -= 12 + 112;
       ImGui::SetCursorScreenPos({x, 16});
@@ -817,12 +837,15 @@ class InnScreen {
   int healingAmount_ = 0;
   float lastCast_ = -10;
   float scrollTo_ = -1;
+  std::optional<InventoryScreen> inventory_;
 
  public:
   // Captures: which room opens first.
   void preview(const std::string& what) {
     if (what == "smith") view_ = View::Smith;
     if (what == "healer") view_ = View::Healer;
+    if (what == "pack") inventory_.emplace("Kael", true);
+    if (what == "doll") inventory_.emplace("Kael", false);
     if (what.starts_with("scroll")) scrollTo_ = static_cast<float>(std::atof(what.c_str() + 6));
   }
 };

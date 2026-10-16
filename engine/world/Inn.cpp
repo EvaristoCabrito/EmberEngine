@@ -58,7 +58,9 @@ bool InnData::load(const std::filesystem::path& file) {
   lockpickPrice = p.value("lockpick", 6), rationsPrice = p.value("rations", 3);
   bagMax = j.value("bagMax", 5), rationStackMax = j.value("rationStackMax", 30), weaponMaxEnh = j.value("weaponMaxEnh", 5);
   for (const Json& c : j["enhCost"]) enhCost.push_back(c.get<int>());
-  for (const Json& x : j["potions"]) potions.push_back({x["id"], x["label"], x["tooltip"], x["price"].get<int>(), x["carryMax"].get<int>()});
+  for (const Json& x : j["potions"])
+    potions.push_back({x["id"], x["label"], x["tooltip"], x.value("effect", "heal"), x["price"].get<int>(), x["carryMax"].get<int>(), x.value("dice", 0),
+                       x.value("faces", 0), x.value("bonus", 0), x.value("manaRestore", 0)});
   lockpickTooltip = j.value("lockpickTooltip", ""), rationsIcon = j.value("rationsIcon", ""), bagIcon = j.value("bagIcon", "");
   for (const Json& w : j["weapons"]) {
     InnWeapon x;
@@ -66,6 +68,7 @@ bool InnData::load(const std::filesystem::path& file) {
     if (w["recommendedLevel"].is_number()) x.recommendedLevel = w["recommendedLevel"].get<int>();
     if (w["bonusClass"].is_string()) x.bonusClass = w["bonusClass"], x.bonusClassName = w["bonusClassName"].is_string() ? w["bonusClassName"].get<std::string>() : "";
     if (w["magic"].is_string()) x.magic = w["magic"];
+    x.twoHanded = w.value("twoHanded", false);
     x.power = w["power"].get<double>(), x.dice = w["dice"], x.range = w["range"], x.icon = w["icon"];
     for (const Json& u : w["usableBy"]) x.usableBy.push_back(u);
     for (const Json& t : w["tooltip"]) x.tooltip.push_back(t);
@@ -76,6 +79,11 @@ bool InnData::load(const std::filesystem::path& file) {
     InnGear x;
     x.id = e["id"], x.name = e["name"], x.slot = e["slot"], x.typeSlot = e["typeSlot"], x.tooltip = e["tooltip"], x.icon = e["icon"];
     x.price = e["price"].get<int>(), x.hp = e.value("hp", 0), x.pouch = e.value("pouch", false);
+    x.kind = e["kind"].is_string() ? e["kind"].get<std::string>() : "";
+    x.summary = e.value("summary", "");
+    if (e["dmgMul"].is_number()) x.dmgMul = e["dmgMul"].get<double>();
+    if (e["dice"].is_number()) x.dice = e["dice"].get<int>();
+    if (e["faces"].is_number()) x.faces = e["faces"].get<int>();
     if (e["usableBy"].is_array()) {
       x.usableBy.emplace();
       for (const Json& u : e["usableBy"]) x.usableBy->push_back(u);
@@ -83,6 +91,15 @@ bool InnData::load(const std::filesystem::path& file) {
     equipment.push_back(std::move(x));
   }
   for (const auto& [k, v] : j["classNames"].items()) classNames[k] = v.get<std::string>();
+  for (const Json& s : j.value("equipmentSlots", Json::array())) equipmentSlots.push_back({s["id"], s["label"]});
+  const Json tiers = j.value("tierUses", Json::object());  // a named copy: items() of a temporary dangles
+  for (const auto& [k, levels] : tiers.items()) {
+    auto& t = tierUses[k];
+    for (const Json& row : levels) {
+      t.emplace_back();
+      for (const Json& v : row) t.back().push_back(v.get<int>());
+    }
+  }
   logInfo("inn: {} weapons, {} gear, {} potions", weapons.size(), equipment.size(), potions.size());
   return true;
 }
@@ -110,8 +127,10 @@ int InnRules::ember(const Json& save) const { return static_cast<int>(num(save, 
 std::string InnRules::heroClass(const Json& save, const std::string& hero) const {
   const Json& promo = child(child(save, "promotions"), hero);
   if (promo.is_string()) return promo.get<std::string>();
-  const Json& base = child(world_.tables()["baseClass"], hero);
-  return base.is_string() ? base.get<std::string>() : "swordsman";
+  static const std::map<std::string, std::string> kBase = {{"Kael", "kaelFinal"}, {"Neera", "neera"}, {"Voss", "voss"},
+                                                           {"Salazar", "salazar"}, {"Aldric", "aldric"}, {"Malrec", "conjurer"}};
+  const auto it = kBase.find(hero);
+  return it == kBase.end() ? "swordsman" : it->second;
 }
 
 int InnRules::statusMaxHp(const Json& save, const std::string& hero) const {
@@ -325,6 +344,214 @@ std::optional<Json> InnRules::equipWeapon(const Json& save, const std::string& h
   }
   next["pendingMission"] = nullptr;
   return next;
+}
+
+// --- the inventory -------------------------------------------------------------------------------------------------
+
+bool InnRules::fitsSlot(const InnGear& item, const std::string& slot) {
+  if (item.slot == slot) return true;
+  if ((item.slot == "ring1" || item.slot == "ring2") && (slot == "ring1" || slot == "ring2")) return true;
+  return item.slot == "shoulders" && slot == "back";
+}
+
+bool InnRules::offHandBlocked(const Json& save, const std::string& hero) const {
+  const Json& id = child(child(save, "equipped"), hero);
+  const InnWeapon* w = id.is_string() ? data_.weapon(id.get<std::string>()) : nullptr;
+  return w && w->twoHanded;
+}
+
+// inventory.ts equipSharedItem / unequipSharedItem (and GameApp: unequipping needs room in the bag).
+std::optional<Json> InnRules::equipItem(const Json& save, const std::string& hero, const std::string& slot, const std::string& itemId) const {
+  Json next = save;
+  if (!next["equipment"].is_object()) next["equipment"] = Json::object();
+  if (!next["looseEquipment"].is_object()) next["looseEquipment"] = Json::object();
+  const Json& worn = child(child(save, "equipment"), hero);
+  const std::string current = child(worn, slot).is_string() ? child(worn, slot).get<std::string>() : "";
+  if (itemId.empty()) {
+    if (current.empty()) return std::nullopt;
+    next["equipment"][hero].erase(slot);
+    next["looseEquipment"][current] = static_cast<int>(num(next["looseEquipment"], current).value_or(0)) + 1;
+    if (!world_.bagHasRoom(next, 0)) return std::nullopt;
+    next["pendingMission"] = nullptr;
+    return next;
+  }
+  const InnGear* item = data_.gear(itemId);
+  if (!item || !fitsSlot(*item, slot)) return std::nullopt;
+  const int reserve = static_cast<int>(num(child(save, "looseEquipment"), itemId).value_or(0));
+  if (current == itemId) return save;
+  // A spare in the stash first; else the piece moves off another slot (another hero's, or this hero's other finger).
+  std::optional<std::pair<std::string, std::string>> source;
+  if (reserve <= 0)
+    for (const auto& [owner, slots] : child(save, "equipment").items()) {
+      for (const auto& [usedSlot, id] : slots.items())
+        if (id == itemId && !(owner == hero && usedSlot == slot)) {
+          source = std::pair<std::string, std::string>{owner, usedSlot};
+          break;
+        }
+      if (source) break;
+    }
+  if (!source && reserve <= 0) return std::nullopt;
+  if (source) next["equipment"][source->first].erase(source->second);
+  else if (reserve == 1) next["looseEquipment"].erase(itemId);
+  else next["looseEquipment"][itemId] = reserve - 1;
+  if (!current.empty()) next["looseEquipment"][current] = static_cast<int>(num(next["looseEquipment"], current).value_or(0)) + 1;
+  if (!next["equipment"][hero].is_object()) next["equipment"][hero] = Json::object();
+  next["equipment"][hero][slot] = itemId;
+  next["pendingMission"] = nullptr;
+  return next;
+}
+
+std::optional<Json> InnRules::discardWeapon(const Json& save, const std::string& weaponId) const {
+  if (!child(save, "weapons").contains(weaponId)) return std::nullopt;
+  Json next = save;
+  next["weapons"].erase(weaponId);
+  next["pendingMission"] = nullptr;
+  return next;
+}
+
+std::optional<Json> InnRules::discardEquipment(const Json& save, const std::string& itemId) const {
+  const int reserve = static_cast<int>(num(child(save, "looseEquipment"), itemId).value_or(0));
+  if (reserve <= 0) return std::nullopt;
+  Json next = save;
+  if (reserve <= 1) next["looseEquipment"].erase(itemId);
+  else next["looseEquipment"][itemId] = reserve - 1;
+  next["pendingMission"] = nullptr;
+  return next;
+}
+
+std::optional<Json> InnRules::discardRation(const Json& save) const {
+  const int rations = static_cast<int>(num(save, "rations").value_or(0));
+  if (rations <= 0) return std::nullopt;
+  Json next = save;
+  next["rations"] = rations - 1;
+  next["pendingMission"] = nullptr;
+  return next;
+}
+
+std::optional<Json> InnRules::discardBagItem(const Json& save, const std::string& hero, const std::string& kind) const {
+  const Json& bag = child(child(save, "bags"), hero);
+  if (!bag.is_object() || num(bag, kind).value_or(0) <= 0) return std::nullopt;
+  Json next = save;
+  next["bags"][hero][kind] = static_cast<int>(num(bag, kind).value_or(0)) - 1;
+  next["pendingMission"] = nullptr;
+  return next;
+}
+
+std::optional<Json> InnRules::usePotion(const Json& save, const std::string& hero, const std::string& kind, const std::function<double()>& rng) const {
+  const Json& bag = child(child(save, "bags"), hero);
+  if (!bag.is_object() || num(bag, kind).value_or(0) <= 0) return std::nullopt;
+  const InnPotion* p = data_.potion(kind);
+  if (!p) return std::nullopt;
+  Json next = save;
+  const int left = static_cast<int>(num(bag, kind).value_or(0)) - 1;
+  auto trainHealing = [&] {
+    // skills.ts rollSkillGain on Healing: chance (cap - value) / cap, +0.1 rounded to hundredths.
+    const double value = num(child(child(save, "heroSkills"), hero), "healing").value_or(0);
+    const double cap = world_.tables().value("skillCap", 100.0), gain = world_.tables().value("skillGain", 0.1);
+    if (rng() >= std::max(0.0, std::min(1.0, (cap - value) / cap))) return;
+    if (!next["heroSkills"].is_object()) next["heroSkills"] = Json::object();
+    if (!next["heroSkills"][hero].is_object()) next["heroSkills"][hero] = Json::object();
+    next["heroSkills"][hero]["healing"] = number(std::min(cap, jsRound((value + gain) * 100) / 100));
+  };
+  if (p->effect == "mana") {
+    // GameApp MAP_STATUS_CLASS for the tier table (the rules class, not the sprite one).
+    const Json& promo = child(child(save, "promotions"), hero);
+    const Json& base = child(world_.tables()["baseClass"], hero);
+    const std::string cls = promo.is_string() ? promo.get<std::string>() : base.is_string() ? base.get<std::string>() : "swordsman";
+    const int level = static_cast<int>(num(child(save, "levels"), hero).value_or(1));
+    const auto table = data_.tierUses.find(cls);
+    Json spent = child(child(save, "spellUses"), hero).is_object() ? child(child(save, "spellUses"), hero) : Json::object();
+    bool restored = false;
+    for (int t = 1; t <= 10; ++t) {
+      const std::string tk = "tier" + std::to_string(t);
+      const int uses = table == data_.tierUses.end() ? 0 : table->second[static_cast<size_t>(std::clamp(level, 1, 30) - 1)][static_cast<size_t>(t - 1)];
+      if (uses <= 0) continue;
+      const double cur = num(spent, tk).value_or(0);
+      if (cur <= 0) continue;
+      const double after = std::max(0.0, cur - p->manaRestore);
+      if (after != cur) restored = true;
+      spent[tk] = number(after);
+    }
+    if (!restored) return std::nullopt;
+    next["bags"][hero][kind] = left;
+    if (!next["spellUses"].is_object()) next["spellUses"] = Json::object();
+    next["spellUses"][hero] = std::move(spent);
+  } else if (p->effect == "disease") {
+    if (!diseased(save, hero) && !poisoned(save, hero)) return std::nullopt;
+    if (next["heroDiseases"].is_object()) next["heroDiseases"].erase(hero);
+    if (next["heroPoisons"].is_object()) next["heroPoisons"].erase(hero);
+    trainHealing();
+    next["bags"][hero][kind] = left;
+  } else {
+    // heroMaxHp: class + gear, less the party's hunger penalty.
+    double gear = 0;
+    for (const auto& [slot, id] : child(child(save, "equipment"), hero).items())
+      if (id.is_string())
+        if (const InnGear* g = data_.gear(id.get<std::string>())) gear += g->hp;
+    const double streak = num(save, "hungerStreak").value_or(0);
+    const int max = static_cast<int>(jsRound((world_.maxHp(save, hero) + gear) * (1 - std::min(0.9, std::max(0.0, streak - 3) * 0.1))));
+    const int current = static_cast<int>(num(child(save, "unitHp"), hero).value_or(max));
+    if (current >= max) return std::nullopt;
+    int rolled = p->bonus;
+    for (int i = 0; i < p->dice; ++i) rolled += 1 + static_cast<int>(std::floor(rng() * p->faces));
+    const double skill = std::clamp(num(child(child(save, "heroSkills"), hero), "healing").value_or(0), 0.0, world_.tables().value("skillCap", 100.0));
+    const int healed = static_cast<int>(std::floor(std::max(0, rolled) * (1 + skill / 100) + 1e-9));
+    const int gained = std::min(healed, max - current);
+    if (gained <= 0) return std::nullopt;
+    trainHealing();
+    if (!next["unitHp"].is_object()) next["unitHp"] = Json::object();
+    next["unitHp"][hero] = current + gained;
+    next["bags"][hero][kind] = left;
+  }
+  next["pendingMission"] = nullptr;
+  return next;
+}
+
+std::optional<Json> InnRules::useRation(const Json& save, const std::string& hero) const {
+  const int rations = static_cast<int>(num(save, "rations").value_or(0));
+  if (rations < 1 || num(child(save, "unitHp"), hero).value_or(1) <= 0 || Overworld::fullness(child(child(save, "heroHunger"), hero)) >= 100) return std::nullopt;
+  Json next = save;
+  next["rations"] = rations - 1;
+  if (!next["heroHunger"].is_object()) next["heroHunger"] = Json::object();
+  next["heroHunger"][hero] = 100;
+  if (num(next, "hungerStreak").value_or(0) > 0 || num(next, "hungerHours").value_or(0) > 0) {
+    // overworld.ts partyIsFed: every recruited, standing hero has some fullness.
+    bool fed = true;
+    for (const char* h : {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec"}) {
+      if (!world_.heroRecruited(h, next)) continue;
+      if (num(child(next, "unitHp"), h).value_or(world_.maxHp(next, h)) <= 0) continue;
+      if (!(num(child(next, "heroHunger"), h).value_or(100) > 0)) fed = false;
+    }
+    if (fed) next["hungerStreak"] = 0, next["hungerHours"] = 0;
+  }
+  next["pendingMission"] = nullptr;
+  return next;
+}
+
+int InnRules::bagUsed(const Json& save) const {
+  std::vector<std::string> worn;
+  for (const auto& [h, id] : child(save, "equipped").items())
+    if (id.is_string()) worn.push_back(id.get<std::string>());
+  int used = 0;
+  for (const auto& [id, enh] : child(save, "weapons").items())
+    if (std::find(worn.begin(), worn.end(), id) == worn.end()) ++used;
+  for (const auto& [id, qty] : child(save, "looseEquipment").items()) used += qty.is_number() ? qty.get<int>() : 0;
+  const int rations = static_cast<int>(num(save, "rations").value_or(0));
+  return used + (rations + data_.rationStackMax - 1) / data_.rationStackMax;
+}
+
+int InnRules::bagCapacity(const Json& save) const {
+  int heroes = 0;
+  for (const char* h : {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec"})
+    if (world_.heroRecruited(h, save)) ++heroes;
+  int pouches = 0;
+  for (const auto& [hero, slots] : child(save, "equipment").items()) {
+    const Json& waist = child(slots, "waist");
+    if (!waist.is_string()) continue;
+    for (const Json& e : world_.tables()["equipment"])
+      if (e["id"] == waist) pouches += e.value("pouch", 0);
+  }
+  return world_.tables().value("partyBagPerHero", 10) * std::max(1, heroes) + pouches;
 }
 
 // --- quests ------------------------------------------------------------------------------------------------------------

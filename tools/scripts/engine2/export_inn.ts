@@ -25,25 +25,30 @@ const innSource = readFileSync(`${E2}/src/game/InnScreen.tsx`, 'utf8');
 const innPrice = (name: string) => Number(new RegExp('export const ' + name + ' = ([0-9]+);').exec(innSource)?.[1]);
 const inn = { NIGHT_REST_PRICE: innPrice('NIGHT_REST_PRICE'), HEALER_CAST_PRICE: innPrice('HEALER_CAST_PRICE'), HEALER_AILMENT_PRICE: innPrice('HEALER_AILMENT_PRICE') };
 
-type Weapon = { id: string; name: string; price: number; usableBy: string[]; recommendedLevel?: number; bonusClass?: string; magic?: unknown };
-type Gear = { id: string; name: string; price?: number; slot: string; usableBy?: string[]; hp?: number };
+type Weapon = { id: string; name: string; price: number; usableBy: string[]; recommendedLevel?: number; bonusClass?: string; magic?: unknown; twoHanded?: boolean };
+type Gear = { id: string; name: string; price?: number; slot: string; usableBy?: string[]; hp?: number; kind?: string; dmgMul?: number; dice?: number; faces?: number };
 const maxEnh = data.WEAPON_MAX_ENH as number;
+const heroClasses = [...new Set(['swordsman', 'archer', 'mage', 'healer', 'aldric', 'conjurer', ...Object.values(data.PROMOTIONS as Record<string, string[]>).flat()])]
+  .filter((c) => (data.CLASSES as Record<string, unknown>)[c]);
 const weapons = Object.values(data.WEAPONS as Record<string, Weapon>).map((w) => ({
   id: w.id, name: w.name, price: w.price, usableBy: w.usableBy, recommendedLevel: w.recommendedLevel ?? null,
   bonusClass: w.bonusClass && data.isPlayableClassForDisplay(w.bonusClass) ? w.bonusClass : null,
   bonusClassName: w.bonusClass && data.isPlayableClassForDisplay(w.bonusClass) ? (data.CLASSES as Record<string, { name: string }>)[w.bonusClass]?.name ?? null : null,
   magic: w.magic ? data.weaponMagicSummary(w) : null,
-  power: data.weaponPower(w), dice: data.weaponDiceLabel(w.id), range: data.weaponRangeLabel(w.id), icon: data.weaponIcon(w.id),
+  twoHanded: !!w.twoHanded, power: data.weaponPower(w), dice: data.weaponDiceLabel(w.id), range: data.weaponRangeLabel(w.id), icon: data.weaponIcon(w.id),
   tooltip: Array.from({ length: maxEnh + 1 }, (_, e) => data.weaponTooltip(w, e)),
   sell: Array.from({ length: maxEnh + 1 }, (_, e) => data.weaponSellValue(w.id, e)),
 }));
 const equipment = Object.values(data.EQUIPMENT as Record<string, Gear>).map((e) => ({
   id: e.id, name: e.name, price: e.price ?? 0, slot: e.slot, usableBy: e.usableBy ?? null, hp: e.hp ?? 0, pouch: data.isPouch(e.id),
   typeSlot: data.equipmentTypeSlotName(e), tooltip: data.equipmentTooltip(e), icon: data.equipmentIcon(e.id),
+  kind: e.kind ?? null, dmgMul: e.dmgMul ?? null, dice: e.dice ?? null, faces: e.faces ?? null, summary: data.equipmentStatSummary(e),
 }));
 const potionIds = Object.keys(data.POTIONS);
 const potions = potionIds.map((id) => ({
-  id, label: data.potionLabel(id), tooltip: data.potionTooltip(id), price: (data.POTION_PRICE as Record<string, number>)[id],
+  id, label: data.potionLabel(id), tooltip: data.potionTooltip(id), effect: (data.POTIONS as Record<string, { effect: string }>)[id].effect,
+  dice: (data.POTIONS as Record<string, { dice: number }>)[id].dice, faces: (data.POTIONS as Record<string, { faces: number }>)[id].faces,
+  bonus: (data.POTIONS as Record<string, { bonus: number }>)[id].bonus, manaRestore: (data.POTIONS as Record<string, { manaRestore?: number }>)[id].manaRestore ?? 0, price: (data.POTION_PRICE as Record<string, number>)[id],
   carryMax: (data.POTION_CARRY_MAX as Record<string, number>)[id],
 }));
 
@@ -56,6 +61,9 @@ const out = {
   enhCost: Array.from({ length: maxEnh }, (_, i) => data.weaponEnhCost(i + 1)),
   potions, lockpickTooltip: data.lockpickTooltip(), rationsIcon: data.RATIONS_ICON, bagIcon: data.pouchIcon(null),
   weapons, equipment,
+  equipmentSlots: data.EQUIPMENT_SLOTS,
+  // tierUses(class, tier, level) for every hero class (base and promoted): [class][level - 1][tier - 1].
+  tierUses: Object.fromEntries(heroClasses.map((c) => [c, Array.from({ length: data.MAX_LEVEL as number }, (_, l) => Array.from({ length: 10 }, (_, t) => data.tierUses(c, t + 1, l + 1)))])),
   classNames: Object.fromEntries(Object.entries(data.CLASSES as Record<string, { name: string }>).map(([k, v]) => [k, v.name])),
 };
 mkdirSync(dirname(outPath), { recursive: true });

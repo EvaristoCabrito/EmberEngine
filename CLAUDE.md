@@ -303,9 +303,14 @@ inventory / equipment, dialogs / intros)
   Adega, Ferreiro, Curandeiro). The Inn pin opens it. Engine2 reaches Vargan and the healer by walking the Inn's own map
   (not ported): both are header buttons here. Captures `--map-ui inn|inn:smith|inn:healer|inn:scrollN`. UI image pool
   raised to 4096 (DebugUi). Not verified against Engine2 by a check (simple arithmetic, read off GameApp).
-- **Another session works in this checkout** (spell effects: MapStage.h, Renderer, SpellEffects, effects.hlsl,
-  apps/sandbox/CMakeLists.txt): never stage or commit its files.
-- **Not ported yet:** field spells (Create Food and Water, Warp), inventory / status panels (next), intros /
+- **Inventory (done):** `apps/sandbox/InventoryScreen.h` = InventoryScreens.tsx (Equipar: paper doll, 12 sockets,
+  picker; Mochila: party cells, hero's potions / lockpick, item sheet with Equipar em / Usar / Jogar Fora); rules in
+  InnRules (equipSharedItem / unequip, discards, useHeroPotion with healing training, useRation, bag used / capacity).
+  Opened from the map's portraits and the Inn / forge headers. Captures `--map-ui pack|doll|inn:pack`. No Status button.
+  Gotcha: never `for (... : json.value(k, ...).items())` - items() of a temporary dangles; bind the copy first.
+- **Another session worked in this checkout on 2026-10-16** (spell effects, Modo teste; it touched OverworldStage.h,
+  CampaignUi.h, Overworld.*): the user stopped it. Its uncommitted MapStage.h edits are its own: never commit them.
+- **Not ported yet:** field spells (Create Food and Water, Warp), the status sheet, intros /
   cutscenes / dialogs / epilogue, battle snapshots (a saved fight restarts from its briefing), finishBattle's loot /
   ember / rations / quests / progression, formation applied to battle spawns, unitHp at battle start, sound.
 - **Testing:** never drive the user's PC (computer-use) — captures and Cooker checks only; the user plays it.

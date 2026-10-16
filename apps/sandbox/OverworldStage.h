@@ -12,8 +12,9 @@
 // events; the location's mission list; the quest log; the Party menu (leader, formation, affinities, road training);
 // the first-visit explainer. A mission opens its briefing, then its fight (main.cpp).
 //
-// The Inn's pin opens the Inn (InnScreen.h). Not ported yet: field spells (Create Food and Water, Warp), the inventory
-// and status panels, the Inn's arrival film and walkable room, intro cutscenes, sound.
+// The Inn's pin opens the Inn (InnScreen.h); a portrait in the party panel opens that hero's Mochila (InventoryScreen.h).
+// Not ported yet: field spells (Create Food and Water, Warp), the status sheet, the Inn's arrival film and walkable room,
+// intro cutscenes, sound.
 
 #include <SDL3/SDL.h>
 #include <imgui.h>
@@ -77,6 +78,7 @@ class OverworldStage : public Stage {
     if (what == "move") movementOpen_ = true;
     if (what.starts_with("location:")) open_ = what.substr(9);
     if (what == "save") slots_.emplace(), slots_->open(SlotScreen::Mode::Save, true);
+    if ((what == "pack" || what == "doll") && hasInn_) inventory_.emplace("Kael", what == "pack");
     if (what.starts_with("inn") && hasInn_) {
       inn_.emplace();
       if (what.size() > 4) inn_->preview(what.substr(4));
@@ -124,7 +126,10 @@ class OverworldStage : public Stage {
     ImGui::Begin("##overworld", nullptr,
                  ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings |
                      ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoScrollWithMouse);
-    if (inn_) {
+    if (inventory_) {
+      InventoryScreen::Context context{save_, [this] { write(); }, innRules_, innData_, world_, paths_.engine2Public};
+      if (inventory_->draw(io.DisplaySize, context)) inventory_.reset();
+    } else if (inn_) {
       InnScreen::Context context{save_, [this] { write(); }, innRules_, innData_, world_, paths_.engine2Public};
       if (inn_->draw(io.DisplaySize, context)) inn_.reset();  // GameApp returnToCurrentMap
     } else if (briefing_) {
@@ -765,7 +770,7 @@ class OverworldStage : public Stage {
       if (const UiImage* img = uiImage(paths_.engine2Public / std::filesystem::path(reinterpret_cast<const char8_t*>(src.c_str())))) imageCover(dl, *img, {x, y}, {x + 40, y + 48});
       ImGui::SetCursorScreenPos({x, y});
       ImGui::PushID(hero.c_str());
-      ImGui::InvisibleButton("##portrait", {40, 48});
+      if (ImGui::InvisibleButton("##portrait", {40, 48}) && hasInn_) inventory_.emplace(hero, true);  // Inventário de <hero>
       if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", hero.c_str());
       ImGui::PopID();
       // HungerBar: 4 px, the first 100 of 120 in the accent (red at 25 or less), the overfed part gold.
@@ -1442,6 +1447,7 @@ class OverworldStage : public Stage {
   e2::InnRules innRules_{innData_, world_};
   bool hasInn_ = false;
   std::optional<InnScreen> inn_;
+  std::optional<InventoryScreen> inventory_;
   bool movementOpen_ = false, questLog_ = false, party_ = false, options_ = false;
   int partyTab_ = 0;
   std::vector<std::string> formation_;

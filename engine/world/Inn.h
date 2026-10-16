@@ -7,6 +7,7 @@
 // would refuse. Prices and item tables come from tools/scripts/engine2/export_inn.ts (content/engine2/inn.json).
 
 #include <filesystem>
+#include <functional>
 #include <map>
 #include <optional>
 #include <string>
@@ -18,20 +19,22 @@
 namespace ember::e2 {
 
 struct InnPotion {
-  std::string id, label, tooltip;
-  int price = 0, carryMax = 5;
+  std::string id, label, tooltip, effect;  // effect: heal / mana / disease
+  int price = 0, carryMax = 5, dice = 0, faces = 0, bonus = 0, manaRestore = 0;
 };
 struct InnWeapon {
   std::string id, name, bonusClass, bonusClassName, magic, dice, range, icon;
   int price = 0;
   std::optional<int> recommendedLevel;
   double power = 0;
+  bool twoHanded = false;
   std::vector<std::string> usableBy, tooltip;  // tooltip per enhancement 0..max
   std::vector<int> sell;                       // sell value per enhancement 0..max
 };
 struct InnGear {
-  std::string id, name, slot, typeSlot, tooltip, icon;
-  int price = 0, hp = 0;
+  std::string id, name, slot, typeSlot, tooltip, icon, kind, summary;  // kind: "", "weapon" or "shield" (off-hand)
+  int price = 0, hp = 0, dice = 0, faces = 0;
+  double dmgMul = 0.75;
   bool pouch = false;
   std::optional<std::vector<std::string>> usableBy;
 };
@@ -45,6 +48,8 @@ struct InnData {
   std::vector<InnWeapon> weapons;
   std::vector<InnGear> equipment;
   std::map<std::string, std::string> classNames;
+  std::vector<std::pair<std::string, std::string>> equipmentSlots;  // id, label (EQUIPMENT_SLOTS)
+  std::map<std::string, std::vector<std::vector<int>>> tierUses;  // [class][level - 1][tier - 1]
 
   bool load(const std::filesystem::path& file);
   const InnPotion* potion(const std::string& id) const;
@@ -56,7 +61,9 @@ class InnRules {
  public:
   InnRules(const InnData& data, const Overworld& world) : data_(data), world_(world) {}
 
-  std::string heroClass(const Json& save, const std::string& hero) const;  // promotion, else the base class
+  // The class the Inn and the inventory read for a hero (GameApp DEFAULT_HEROES / InventoryScreens HERO_BASE_CLASS:
+  // kaelFinal, neera, voss, salazar, aldric, conjurer), a promotion first.
+  std::string heroClass(const Json& save, const std::string& hero) const;
   // GameApp mapStatusUnit: max HP (class at the hero's level + gear, less hunger when the hero's bar is empty), HP now.
   int statusMaxHp(const Json& save, const std::string& hero) const;
   int statusHp(const Json& save, const std::string& hero) const;
@@ -75,6 +82,22 @@ class InnRules {
   std::optional<Json> upgradeWeapon(const Json& save, const std::string& weaponId) const;
   std::optional<Json> sellWeapon(const Json& save, const std::string& weaponId, int& value) const;
   std::optional<Json> equipWeapon(const Json& save, const std::string& hero, const std::string& weaponId) const;  // "" = unequip
+  // --- the inventory (inventory.ts, GameApp's Mochila handlers) ---
+  static bool fitsSlot(const InnGear& item, const std::string& slot);  // equipmentFitsSlot
+  bool offHandBlocked(const Json& save, const std::string& hero) const;  // a two-handed main weapon
+  // equipSharedItem (itemId) / unequipSharedItem ("" : the piece back into the stash, if the bag has room).
+  std::optional<Json> equipItem(const Json& save, const std::string& hero, const std::string& slot, const std::string& itemId) const;
+  std::optional<Json> discardWeapon(const Json& save, const std::string& weaponId) const;
+  std::optional<Json> discardEquipment(const Json& save, const std::string& itemId) const;
+  std::optional<Json> discardRation(const Json& save) const;
+  std::optional<Json> discardBagItem(const Json& save, const std::string& hero, const std::string& kind) const;
+  // useHeroPotion: heal (dice + healing skill, capped), mana (spent tier uses back), disease (cure); healing may train.
+  std::optional<Json> usePotion(const Json& save, const std::string& hero, const std::string& kind, const std::function<double()>& rng) const;
+  // GameApp consumeRation: hunger.ts useRation, the party's hunger streak cleared once everyone has eaten.
+  std::optional<Json> useRation(const Json& save, const std::string& hero) const;
+  int bagUsed(const Json& save) const;      // partyBagUsed
+  int bagCapacity(const Json& save) const;  // partyBagCapacity
+
   Json talkToNpc(const Json& save, const std::string& npc) const;
   bool questOffered(const Json& save, const std::string& questId) const;
   std::optional<Json> acceptQuest(const Json& save, const std::string& questId) const;
