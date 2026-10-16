@@ -60,7 +60,7 @@ int SpellEffects::looks(const std::string& kind) {
   // 02: Engine2's own effect, ported (render/vfx/*).
   if (kind == "magicMissile" || kind == "magicMissileV2") return 2;
   // 01 of a spell with no flipbook-card version: Engine2's own effect, ported.
-  if (kind == "fireball" || kind == "bless") return 1;
+  if (kind == "fireball" || kind == "bless" || kind == "causticVenom") return 1;
   static const char* kVersion01[] = {"lightning", "lightningTier3", "shock", "frost", "cureMinor", "longShot", "piercing", "piercingThrust",
                                      "doubleStrike"};
   for (const char* k : kVersion01)
@@ -72,7 +72,29 @@ int SpellEffects::engine2Look(const std::string& kind) {
   if (kind == "magicMissile" || kind == "magicMissileV2") return 2;  // MagicMissileV2VFX
   if (kind == "fireball") return 1;                                  // FireballVFX
   if (kind == "bless") return 1;                                     // BlessVFX
+  if (kind == "causticVenom") return 1;                              // CausticVenomVFX
   return 0;
+}
+
+VfxFlipbook SpellEffects::flipbook(const char* clipName) {
+  VfxFlipbook f;
+  const SpriteClipId id = clip(clipName);
+  if (id == kNoSpriteClip) return f;
+  sprites_.request(id, SpriteSystem::kOnScreen);
+  const SpriteSystem::Texture tex = sprites_.texture(id);
+  if (tex.index == kNoTexture) return f;
+  const SpriteClipHeader& h = sprites_.header(id);
+  return {tex.index, static_cast<float>(h.sourceWidth), static_cast<float>(h.sourceHeight), static_cast<float>(h.cropX), static_cast<float>(h.cropY),
+          static_cast<float>(h.width), static_cast<float>(h.height)};
+}
+
+ElementSpritesV2 SpellEffects::elementV2(VfxElement element) {
+  ElementSpritesV2 e = ElementSpritesV2::defaults(element);
+  const std::string name = vfxElementName(element);
+  e.main = flipbook((name + "-v2-main-flipbook-4x4").c_str());
+  e.secondary = flipbook((name + "-v2-secondary-flipbook-4x4").c_str());
+  e.particles = flipbook((name + "-v2-particles-flipbook-4x4").c_str());
+  return e;
 }
 
 std::vector<Bless::Ally> SpellEffects::blessAllies(const Spot& caster, const std::vector<Spot>& targets) {
@@ -88,6 +110,8 @@ float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& c
   if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2 && !targets.empty())
     return MagicMissileV2::impactDelay(engine2Origin(caster), targets.front().body);
   if (kind == "fireball" && look == 1 && !targets.empty()) return Fireball::travelSeconds(engine2Origin(caster), fireballTarget(targets));
+  if (kind == "causticVenom" && look == 1 && !targets.empty())
+    return CausticVenom::kCharge + CausticVenom::travelSeconds(engine2Origin(caster), fireballTarget(targets));
   if (kind == "bless" && look == 1) {
     // The blessing lands on the nearest ally as the wave reaches it.
     float first = Bless::reachSeconds(3.0f);
@@ -111,7 +135,11 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
   if (targets.empty() && kind != "piercingThrust" && kind != "doubleStrike") return false;
   if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2) missiles_.emplace_back(engine2Origin(caster), targets.front().body, start);
   else if (kind == "fireball") fireballs_.emplace_back(engine2Origin(caster), fireballTarget(targets), fireballArea(targets), start);
-  else if (kind == "bless") blesses_.emplace_back(caster.feet + glm::vec3(0.0f, 0.04f, 0.0f), 3.0f * std::sqrt(3.0f), blessAllies(caster, targets), start);
+  else if (kind == "causticVenom") {
+    std::vector<glm::vec3> hexes;
+    for (const Spot& s : targets) hexes.push_back(s.feet + glm::vec3(0.0f, 0.04f, 0.0f));
+    venoms_.emplace_back(engine2Origin(caster), fireballTarget(targets), hexes, start);
+  } else if (kind == "bless") blesses_.emplace_back(caster.feet + glm::vec3(0.0f, 0.04f, 0.0f), 3.0f * std::sqrt(3.0f), blessAllies(caster, targets), start);
   else if (kind == "magicMissile" || kind == "magicMissileV2") magicMissile(caster, targets.front(), start, impact);
   else if (kind == "lightning" || kind == "lightningTier3") lightning(caster, targets, start, impact, false);
   else if (kind == "shock") lightning(caster, targets, start, impact, true);
@@ -381,6 +409,7 @@ bool SpellEffects::active(float now) const {
   if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
   if (std::any_of(fireballs_.begin(), fireballs_.end(), [&](const Fireball& f) { return !f.done(now); })) return true;
   if (std::any_of(blesses_.begin(), blesses_.end(), [&](const Bless& b) { return !b.done(now); })) return true;
+  if (std::any_of(venoms_.begin(), venoms_.end(), [&](const CausticVenom& v) { return !v.done(now); })) return true;
   return std::any_of(elements_.begin(), elements_.end(), [&](const Element& e) { return e.end > now; });
 }
 
@@ -394,18 +423,15 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   vfx_.clear();
   std::vector<VfxLight> vfxLights;
   for (Bless& b : blesses_) b.build(now, camera, vfx_, vfxLights);
+  std::erase_if(venoms_, [&](const CausticVenom& v) { return v.done(now); });
+  if (!venoms_.empty()) {
+    const ElementSpritesV2 poison = elementV2(VfxElement::Poison);
+    for (CausticVenom& v : venoms_) v.build(now, camera, poison, vfx_, vfxLights);
+  }
   for (MagicMissileV2& m : missiles_) m.build(now, camera, vfx_, vfxLights);
   if (!fireballs_.empty()) {
     // The impact's fire flipbook (Engine2 loadFireFlipbook: fx/fire-flipbook-4x4.png), from the battle pack.
-    VfxFlipbook fire;
-    const SpriteClipId id = clip("fire-flipbook-4x4");
-    if (id != kNoSpriteClip) {
-      sprites_.request(id, SpriteSystem::kOnScreen);
-      const SpriteSystem::Texture tex = sprites_.texture(id);
-      const SpriteClipHeader& h = sprites_.header(id);
-      fire = {tex.index, static_cast<float>(h.sourceWidth), static_cast<float>(h.sourceHeight), static_cast<float>(h.cropX), static_cast<float>(h.cropY),
-              static_cast<float>(h.width), static_cast<float>(h.height)};
-    }
+    const VfxFlipbook fire = flipbook("fire-flipbook-4x4");
     for (Fireball& f : fireballs_) f.build(now, camera, fire, vfx_, vfxLights);
   }
   for (const VfxLight& l : vfxLights)

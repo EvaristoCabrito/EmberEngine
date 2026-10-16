@@ -20,14 +20,6 @@
 
 namespace ember {
 
-// A flipbook clip as the impact samples it: its texture array and how a cell's uv lands in the trimmed texture.
-struct VfxFlipbook {
-  uint32_t texture = 0xFFFFFFFFu;
-  float cellWidth = 1, cellHeight = 1;  // the clip's source frame (one atlas cell), pixels
-  float cropX = 0, cropY = 0;           // where the trimmed picture starts in it
-  float textureWidth = 1, textureHeight = 1;
-};
-
 class Fireball {
  public:
   // origin: Engine2's caster point (anchor + 0.9 up); target: the target hex's ground + 0.04; aoeRadius: the area's

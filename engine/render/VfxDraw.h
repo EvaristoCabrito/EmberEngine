@@ -36,6 +36,8 @@ enum class VfxMaterial : uint32_t {
   ImpactParticle = 6,  // FireballImpactVFX particles (camera-facing quads: flipbook, procedural flame, smoke)
   ImpactFlash = 7,     // FireballImpactVFX flash (a camera-facing glow)
   BlessWave = 8,       // BlessVFX WAVE_VERTEX + WAVE_FRAGMENT (the rippling golden ring)
+  SpriteSheet = 9,     // three Sprite + SpriteMaterial over a 4x4 fx sheet (ProceduralElementEmitter V2 layers)
+  VenomSmoke = 10,     // CausticVenomVFX VENOM_SMOKE_VERTEX + VENOM_SMOKE_FRAGMENT (procedural smoke lobes)
 };
 
 // Per-instance data (three InstancedMesh matrices, or a particle's attributes). Matches VfxInstance in vfx.hlsl.
@@ -85,6 +87,17 @@ struct VfxFrame {
     vertices.insert(vertices.end(), v.begin(), v.end());
     return first;
   }
+};
+
+// A flipbook clip (an fx sheet cooked into the battle pack, one layer per 4x4 cell) as the shaders sample it: its
+// texture array and how a cell's uv lands in the trimmed texture (vfx.hlsl cellToTexture: params1 = cell size and
+// crop in pixels, color.xy = 1 / texture size).
+struct VfxFlipbook {
+  uint32_t texture = 0xFFFFFFFFu;
+  float cellWidth = 1, cellHeight = 1;  // the clip's source frame (one atlas cell), pixels
+  float cropX = 0, cropY = 0;           // where the trimmed picture starts in it
+  float textureWidth = 1, textureHeight = 1;
+  explicit operator bool() const { return texture != 0xFFFFFFFFu; }
 };
 
 // A light an effect gives off this frame: Engine2's three.js PointLight (colour, intensity, distance), world space.

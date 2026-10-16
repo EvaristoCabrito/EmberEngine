@@ -95,6 +95,36 @@ inline std::vector<VfxVertex> torus(float radius, float tube, int radialSegments
   return out;
 }
 
+// SphereGeometry(radius, widthSegments, heightSegments) (full sphere).
+inline std::vector<VfxVertex> sphere(float radius, int widthSegments, int heightSegments) {
+  std::vector<std::vector<VfxVertex>> grid;
+  for (int iy = 0; iy <= heightSegments; ++iy) {
+    const float v = static_cast<float>(iy) / heightSegments;
+    const float theta = v * std::numbers::pi_v<float>;
+    const float y = radius * std::cos(theta);
+    const float ringRadius = std::sqrt(std::max(0.0f, radius * radius - y * y));
+    float uOffset = 0.0f;
+    if (iy == 0) uOffset = 0.5f / widthSegments;
+    else if (iy == heightSegments) uOffset = -0.5f / widthSegments;
+    std::vector<VfxVertex> row;
+    for (int ix = 0; ix <= widthSegments; ++ix) {
+      const float u = static_cast<float>(ix) / widthSegments;
+      const float phi = u * 2.0f * std::numbers::pi_v<float>;
+      const glm::vec3 p{-ringRadius * std::cos(phi), y, ringRadius * std::sin(phi)};
+      row.push_back({p, u + uOffset, glm::length(p) > 0.0f ? glm::normalize(p) : glm::vec3(0, 1, 0), 1.0f - v});
+    }
+    grid.push_back(row);
+  }
+  std::vector<VfxVertex> out;
+  for (int iy = 0; iy < heightSegments; ++iy)
+    for (int ix = 0; ix < widthSegments; ++ix) {
+      const VfxVertex a = grid[iy][ix + 1], b = grid[iy][ix], c = grid[iy + 1][ix], d = grid[iy + 1][ix + 1];
+      if (iy != 0) out.insert(out.end(), {a, b, d});
+      if (iy != heightSegments - 1) out.insert(out.end(), {b, c, d});
+    }
+  return out;
+}
+
 // TubeGeometry(path, tubularSegments, radius, radialSegments, false) as triangles (three::tubeRings for the rings).
 inline std::vector<VfxVertex> tube(const three::CatmullRom& path, int tubularSegments, float radius, int radialSegments) {
   std::vector<glm::vec3> normals;

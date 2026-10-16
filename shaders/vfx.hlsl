@@ -37,7 +37,7 @@ struct VfxInstance {
 
 static const uint kMaterialBasic = 0, kMaterialMissileCore = 1, kMaterialMissileShell = 2, kMaterialMissileTrail = 3,
                   kMaterialStandard = 4, kMaterialFlame = 5, kMaterialImpactParticle = 6, kMaterialImpactFlash = 7,
-                  kMaterialBlessWave = 8;
+                  kMaterialBlessWave = 8, kMaterialSpriteSheet = 9, kMaterialVenomSmoke = 10;
 
 struct Push {
   uint64_t vertices;   // VfxVertex[]
@@ -120,6 +120,31 @@ float noise2(float2 p) {
   return lerp(lerp(hash2(i), hash2(i + float2(1, 0)), f.x), lerp(hash2(i + float2(0, 1)), hash2(i + float2(1, 1)), f.x), f.y);
 }
 
+// A 4x4 fx sheet's cell (Engine2: frame 0 top left, uv v up) inside its cooked clip (VfxFlipbook): params1 = the cell's
+// size and the crop in pixels, color.xy = 1 / the texture's size.
+float2 cellToTexture(VfxDraw d, float2 uv) { return (float2(uv.x, 1.0 - uv.y) * d.params1.xy - d.params1.zw) * d.color.xy; }
+
+// CausticVenomVFX VENOM_SMOKE_FRAGMENT's noise.
+float hash31(float3 p) {
+  p = frac(p * 0.1031);
+  p += dot(p, p.yzx + 33.33);
+  return frac((p.x + p.y) * p.z);
+}
+float noise3(float3 p) {
+  const float3 i = floor(p);
+  float3 f = frac(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return lerp(lerp(lerp(hash31(i), hash31(i + float3(1.0, 0.0, 0.0)), f.x), lerp(hash31(i + float3(0.0, 1.0, 0.0)), hash31(i + float3(1.0, 1.0, 0.0)), f.x), f.y),
+              lerp(lerp(hash31(i + float3(0.0, 0.0, 1.0)), hash31(i + float3(1.0, 0.0, 1.0)), f.x), lerp(hash31(i + float3(0.0, 1.0, 1.0)), hash31(i + float3(1.0, 1.0, 1.0)), f.x), f.y),
+              f.z);
+}
+float smokeField(float3 p, float t) {
+  float n = noise3(p * 2.2) * 0.55;
+  n += noise3(p * 4.6 + float3(0.0, 0.0, t * 0.2)) * 0.3;
+  n += noise3(p * 8.0 - float3(t * 0.25, 0.0, 0.0)) * 0.15;
+  return n;
+}
+
 struct VSOut {
   float4 position : SV_Position;
   float3 local : TEXCOORD0;  // GLSL vP (the displaced, scaled object-space position)
@@ -144,6 +169,24 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
   o.particleC = 0.0;
   o.uv = float2(v.u, v.v);
   float3 p = v.position;
+  if (d.material == kMaterialSpriteSheet) {
+    // three's Sprite: a screen-aligned quad around the sprite's centre point, shifted by `center` (0.5, 0 = standing on
+    // its point), sized and turned in view space. a.xyz = the point, b = rotation, frame, opacity, colour scale,
+    // c = width, height, center y.
+    const VfxInstance inst = loadInstance(d.firstInstance + instance);
+    const float2 aligned = (v.position.xy - (float2(0.5, inst.c.z) - 0.5)) * inst.c.xy;
+    const float cs = cos(inst.b.x), sn = sin(inst.b.x);
+    const float2 q = float2(cs * aligned.x - sn * aligned.y, sn * aligned.x + cs * aligned.y);
+    const float3 right = float3(f.view[0].x, f.view[1].x, f.view[2].x), up = float3(f.view[0].y, f.view[1].y, f.view[2].y);
+    const float3 w = mul(float4(inst.a.xyz, 1.0), d.model).xyz + right * q.x + up * q.y;
+    o.position = mul(float4(w, 1.0), f.viewProjection);
+    o.local = v.position;
+    o.world = w;
+    o.normal = float3(0, 1, 0);
+    o.particleB = inst.b;
+    if (sight.local <= 0.0) o.position = float4(0, 0, -1, 1);
+    return o;
+  }
   if (d.material == kMaterialImpactParticle) {
     // A camera-facing quad (PlaneGeometry 1x1) around the particle's centre, turned and sized in view space.
     const VfxInstance inst = loadInstance(d.firstInstance + instance);
@@ -258,8 +301,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
       // The atlas cell (Engine2: frame 0 top left) is a layer of the cooked clip: params1 maps the cell's uv (v down)
       // into the trimmed texture (xy: cell size in pixels, zw: the crop), color.xy = 1 / texture size.
       const float frame = floor(fmod(frameValue, 16.0));
-      const float2 cell = clamp(uv, 0.015, 0.985);
-      const float2 tex = (float2(cell.x, 1.0 - cell.y) * d.params1.xy - d.params1.zw) * d.color.xy;
+      const float2 tex = cellToTexture(d, clamp(uv, 0.015, 0.985));
       const float4 texel = gTextureArrays[NonUniformResourceIndex(d.texture)].Sample(gSamplers[push.samplerIndex], float3(tex, frame));
       a = texel.a * alpha;
       color *= texel.rgb;
@@ -288,6 +330,26 @@ float4 PSMain(VSOut i) : SV_Target0 {
     const float flicker = 0.76 + 0.24 * sin(t * 15.0 + i.heat * 8.0);
     c *= emissive * flicker;
     a = opacity * (0.35 + streak * 0.65);
+  } else if (d.material == kMaterialSpriteSheet) {
+    // SpriteMaterial (map = the sheet's cell, colour = a scalar, opacity, alphaTest 0.02), additive.
+    const float4 texel = gTextureArrays[NonUniformResourceIndex(d.texture)].Sample(gSamplers[push.samplerIndex], float3(cellToTexture(d, i.uv), i.particleB.y));
+    a = texel.a * i.particleB.z;
+    if (a < 0.02) discard;
+    c = texel.rgb * i.particleB.w;
+  } else if (d.material == kMaterialVenomSmoke) {
+    // VENOM_SMOKE_FRAGMENT: ragged smoke lobes from the sphere's own surface, no texture.
+    const float t = d.params0.x, opacity = d.params0.y, seed = d.params0.z;
+    const float3 sp = i.local;
+    const float3 p = sp + float3(seed * 2.7, seed * 0.83, t * 0.18);
+    const float field = smokeField(p, t);
+    const float radius = length(sp);
+    const float ragged = 0.72 + field * 0.44;
+    const float edge = 1.0 - smoothstep(ragged, ragged + 0.24, radius);
+    const float pockets = smoothstep(0.28, 0.62, field);
+    a = edge * pockets * opacity;
+    if (a < 0.018) discard;
+    const float variation = smoothstep(0.28, 0.8, field);
+    c = lerp(float3(0.04, 0.2, 0.03), float3(0.2, 0.44, 0.075), variation);
   } else if (d.material == kMaterialImpactFlash) {
     const float opacity = d.params0.x, intensity = d.params0.y;
     const float dd = length((i.uv - 0.5) * float2(1.0, 1.15));

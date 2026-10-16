@@ -23,6 +23,8 @@ add_library(EmberEngine STATIC
   render/vfx/MagicMissileV2.cpp
   render/vfx/Fireball.cpp
   render/vfx/Bless.cpp
+  render/vfx/CausticVenom.cpp
+  render/vfx/ElementSprites.cpp
   render/MeshScene.cpp
   render/BoardGround.cpp
   world/Board.cpp
