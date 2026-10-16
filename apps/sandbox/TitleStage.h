@@ -147,7 +147,7 @@ class TitleStage : public Stage {
     const float width = std::min(32.0f * rem_, size.x - 2.5f * rem_);
     const float x = (size.x - width) * 0.5f;
     // every text 1.4x Engine2's but the "Ember" heading (user 2026-10-16: "all fonts too small"; boxes unchanged)
-    const float eyebrow = 0.76f * kTitleText * rem_, h1 = std::clamp(size.x * 0.0825f, 3.3f * rem_, 5.25f * rem_), version = 0.65f * kTitleText * rem_,
+    const float eyebrow = 0.76f * kTitleText * rem_, h1 = std::clamp(size.x * 0.0825f, 3.3f * rem_, 5.25f * rem_), version = 1.1f * rem_,
                 tagline = kTitleText * rem_;
     const float button = 3.15f * rem_, gap = 0.72f * rem_;
     // Engine2's menu: Nova campanha, Continuar (only with a save), Como jogar, Opções; Sair closes the game (a browser
@@ -169,7 +169,12 @@ class TitleStage : public Stage {
       spacedText(dl, uiFont(UiFont::Display), h1, {x, y + 3.0f + k}, IM_COL32(0, 0, 0, 40), "Ember", -0.055f, false);
     spacedText(dl, uiFont(UiFont::Display), h1, {x, y - h1 * 0.08f}, IM_COL32(243, 225, 194, 255), "Ember", -0.055f, false);
     y += h1 * 0.92f + 0.75f * rem_;
-    spacedText(dl, uiFont(UiFont::Ui), version, {x + 0.2f * rem_, y}, IM_COL32(221, 199, 164, 184), "EMBER ENGINE · C++ / VULKAN", 0.2f, false);
+    // the engine line, made readable over the art (user 2026-10-16): larger, tighter tracking, opaque, with the tagline's shadow
+    {
+      const char* engineLine = "EMBER ENGINE · C++ / VULKAN · VERSION 0.35";
+      spacedText(dl, uiFont(UiFont::Ui), version, {x + 0.2f * rem_, y + 2}, IM_COL32(0, 0, 0, 170), engineLine, 0.12f, false);
+      spacedText(dl, uiFont(UiFont::Ui), version, {x + 0.2f * rem_, y}, IM_COL32(232, 213, 182, 245), engineLine, 0.12f, false);
+    }
     y += version * 1.2f + rem_;
     ImGui::PushFont(uiFont(UiFont::Ui), tagline);
     const std::string line1 = tr("Seis sobreviventes. Um tabuleiro de guerra.", "Six survivors. A battlefield."), line2 = tr("Cada casa conta.", "Every square counts.");
@@ -198,7 +203,7 @@ class TitleStage : public Stage {
     {
       const std::string labelText = upperUtf8(tr("Modo teste", "Test mode"));
       const char* label = labelText.c_str();
-      const float text = 0.62f * kTitleText * rem_;
+      const float text = 0.62f * rem_;  // Engine2's size (user 2026-10-16: keep this one as it was)
       const float tw = spacedTextWidth(uiFont(UiFont::Ui), text, label, 0.14f);
       const ImVec2 at{0.55f * rem_, size.y - 0.55f * rem_ - text - 0.6f * rem_};
       ImGui::SetCursorScreenPos(at);

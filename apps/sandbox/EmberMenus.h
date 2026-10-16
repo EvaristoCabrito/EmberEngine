@@ -505,6 +505,9 @@ class HelpModal {
     return out;
   }
 
+  // The instructions' text, 2 px over Engine2's sizes (user 2026-10-16).
+  static constexpr float kPlus = 2.0f;
+
   // One tab's blocks top to bottom (draws when `dl` is given); returns the height.
   static float layout(ImDrawList* dl, ImVec2 at, float width, const Json& blocks) {
     float y = 0.0f;
@@ -520,12 +523,12 @@ class HelpModal {
         for (const Json& item : bl.value("items", Json::array())) {
           if (!firstItem) y += 12.0f;
           firstItem = false;
-          y += richText(dl, ui(), 14.0f, 22.75f, {at.x, at.y + y}, width, {{item.get<std::string>(), kMuted}});
+          y += richText(dl, ui(), 14.0f + kPlus, (14.0f + kPlus) * 1.625f, {at.x, at.y + y}, width, {{item.get<std::string>(), kMuted}});
         }
       } else if (t == "p") {
         const bool xs = bl.value("size", std::string("sm")) == "xs";
         const bool muted = bl.value("muted", false);
-        const float size = xs ? 12.0f : 14.0f;
+        const float size = (xs ? 12.0f : 14.0f) + kPlus;
         const float lh = muted || xs ? size * 1.625f : size * 1.43f;
         y += richText(dl, ui(), size, lh, p, width, spansOf(bl.value("spans", Json::array()), muted ? kMuted : kFg));
       } else if (t == "h3") {  // font-display text-lg ember-title
@@ -535,13 +538,13 @@ class HelpModal {
         float h = 8.0f;
         std::vector<std::vector<Span>> lines;
         for (const Json& line : bl.value("lines", Json::array())) lines.push_back(spansOf(line, kFg));
-        for (const auto& line : lines) h += richText(nullptr, ui(), 12.0f, 19.5f, {}, width - 16.0f, line);
+        for (const auto& line : lines) h += richText(nullptr, ui(), 12.0f + kPlus, (12.0f + kPlus) * 1.625f, {}, width - 16.0f, line);
         h += 8.0f;
         if (dl) {
           dl->AddRectFilled(p, {p.x + width, p.y + h}, kBg, 6.0f);
           dl->AddRect(p, {p.x + width, p.y + h}, kBorder, 6.0f);
           float ly = p.y + 8.0f;
-          for (const auto& line : lines) ly += richText(dl, ui(), 12.0f, 19.5f, {p.x + 8.0f, ly}, width - 16.0f, line);
+          for (const auto& line : lines) ly += richText(dl, ui(), 12.0f + kPlus, (12.0f + kPlus) * 1.625f, {p.x + 8.0f, ly}, width - 16.0f, line);
         }
         y += h;
       } else if (t == "table") {
@@ -553,7 +556,8 @@ class HelpModal {
 
   // A help table (w-full border-collapse text-xs): columns sized like a browser's automatic table layout (each column
   // between its longest word and its whole content, the room shared in proportion), header text muted.
-  static float table(ImDrawList* dl, ImVec2 at, float width, const Json& bl) {
+  // A table whose shortest columns are still wider than the window is drawn in smaller text, not cut off.
+  static float table(ImDrawList* dl, ImVec2 at, float width, const Json& bl, float size = 12.0f + kPlus) {
     const Json head = bl.value("head", Json::array());
     const Json rows = bl.value("rows", Json::array());
     const Json align = bl.value("align", Json::array());
@@ -561,7 +565,7 @@ class HelpModal {
     const bool tight = bl.value("size", std::string()) == "xs-tight";
     const size_t n = head.size();
     if (n == 0) return 0.0f;
-    const float size = 12.0f, lh = 16.0f, py = tight ? 2.0f : 4.0f;
+    const float lh = std::round(size * 4.0f / 3.0f), py = tight ? 2.0f : 4.0f;
     // padding: first column pr-2, middle px-1.5, last pl-1.5
     auto padL = [&](size_t c) { return c == 0 ? 0.0f : 6.0f; };
     auto padR = [&](size_t c) { return c == 0 ? 8.0f : c + 1 == n ? 0.0f : 6.0f; };
@@ -599,6 +603,7 @@ class HelpModal {
       minW[c] += padL(c) + padR(c), maxW[c] += padL(c) + padR(c);
       sumMin += minW[c], sumMax += maxW[c];
     }
+    if (sumMin > width + 0.5f && size > 9.0f) return table(dl, at, width, bl, std::max(9.0f, std::floor(size * width / sumMin * 10.0f) / 10.0f));
     if (sumMax <= width) {
       for (size_t c = 0; c < n; ++c) colW[c] = maxW[c] + (width - sumMax) * (maxW[c] / sumMax);
     } else {
