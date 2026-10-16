@@ -86,6 +86,18 @@ struct EffectPush {
 };
 static_assert(sizeof(EffectInstance) == 96);
 
+struct VfxPush {
+  VkDeviceAddress vertices;
+  VkDeviceAddress instances;
+  VkDeviceAddress draws;
+  VkDeviceAddress frame;
+  uint32_t drawIndex;
+  float brightness;
+  uint32_t sampler;
+  uint32_t pad;
+};
+static_assert(sizeof(VfxPush) <= Bindless::kPushConstantBytes);
+
 struct WaterPush {
   VkDeviceAddress frame;
   VkDeviceAddress vertices;
@@ -299,6 +311,9 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
     VK_CHECK(vkCreateSemaphore(context.device, &semaphoreInfo, nullptr, &frame.imageAcquired));
     frame.sprites = createHostBuffer(context, sizeof(SpriteInstance) * kMaxSprites, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     frame.effects = createHostBuffer(context, sizeof(EffectInstance) * kMaxEffects, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    frame.vfxVertices = createHostBuffer(context, sizeof(VfxVertex) * kMaxVfxVertices, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    frame.vfxInstances = createHostBuffer(context, sizeof(VfxInstance) * kMaxVfxInstances, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    frame.vfxDraws = createHostBuffer(context, sizeof(VfxDrawGpu) * kMaxVfxDraws, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     frame.meshFrame = createDeviceBuffer(context, sizeof(MeshFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     frame.shadowFrame = createDeviceBuffer(context, sizeof(MeshFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     frame.lights = createHostBuffer(context, sizeof(LocalLight) * kMaxLights, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
@@ -470,6 +485,15 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   effects.alphaBlend = true;
   effects.premultipliedAlpha = true;
   effectPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), effects);
+  // Engine2's ported effects (shaders/vfx.hlsl): the same blend; depth-tested or drawn over everything (Engine2 draws
+  // Magic Missile V2 in the foreground: depthTest false).
+  for (int depthTested = 0; depthTested < 2; ++depthTested) {
+    GraphicsPipelineDesc vfx = effects;
+    vfx.vertexShader = "vfx.VSMain";
+    vfx.fragmentShader = "vfx.PSMain";
+    vfx.depthTest = depthTested == 1;
+    vfxPipelines_[depthTested] = createGraphicsPipeline(context, bindless_.pipelineLayout(), vfx);
+  }
 
   // Mesh passes.
   const VkPipelineLayout layout = bindless_.pipelineLayout();
@@ -600,6 +624,7 @@ Renderer::~Renderer() {
   vkDestroySampler(context_.device, shadowSampler_, nullptr);
   vkDestroyPipeline(context_.device, spritePipeline_, nullptr);
   vkDestroyPipeline(context_.device, effectPipeline_, nullptr);
+  for (VkPipeline p : vfxPipelines_) vkDestroyPipeline(context_.device, p, nullptr);
   for (VkPipeline p : {cullInstancesPipeline_, cullInstancesLatePipeline_, hizPipeline_, cullPreparePipeline_,
                        cullTraversePipeline_, cullPrepareDrawPipeline_, meshletPipeline_, resolvePipeline_, skyPipeline_})
     vkDestroyPipeline(context_.device, p, nullptr);
@@ -618,6 +643,9 @@ Renderer::~Renderer() {
     vkDestroyCommandPool(context_.device, frame.pool, nullptr);
     destroyBuffer(context_, frame.sprites);
     destroyBuffer(context_, frame.effects);
+    destroyBuffer(context_, frame.vfxVertices);
+    destroyBuffer(context_, frame.vfxInstances);
+    destroyBuffer(context_, frame.vfxDraws);
     destroyBuffer(context_, frame.meshFrame);
     destroyBuffer(context_, frame.meshCounters);
     destroyBuffer(context_, frame.shadowFrame);
@@ -1248,6 +1276,15 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   // This frame's cards (host-visible): read by the card shadow pass and the scene pass.
   if (hasScene_ && !sprites_.empty()) std::memcpy(frame.sprites.mapped, sprites_.data(), sprites_.size() * sizeof(SpriteInstance));
   if (hasScene_ && !effects_.empty()) std::memcpy(frame.effects.mapped, effects_.data(), effects_.size() * sizeof(EffectInstance));
+  if (hasScene_ && !vfxDraws_.empty()) {
+    std::memcpy(frame.vfxVertices.mapped, vfxVertices_.data(), vfxVertices_.size() * sizeof(VfxVertex));
+    if (!vfxInstances_.empty()) std::memcpy(frame.vfxInstances.mapped, vfxInstances_.data(), vfxInstances_.size() * sizeof(VfxInstance));
+    auto* draws = static_cast<VfxDrawGpu*>(frame.vfxDraws.mapped);
+    for (size_t i = 0; i < vfxDraws_.size(); ++i) {
+      draws[i] = vfxDraws_[i].gpu;
+      draws[i].flags = (draws[i].flags & ~1u) | (vfxDraws_[i].blend == VfxBlend::Additive ? 1u : 0u);
+    }
+  }
   // --- Fog bank noise: made once, uploaded on first use --------------------------------------------------
   if (fogBank_.enabled && !fogLooks().empty()) {
     const size_t kind = static_cast<size_t>(fogLooks()[std::min<size_t>(fogBank_.look, fogLooks().size() - 1)].noise);
@@ -1572,7 +1609,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   gpuTimer_.end(cmd, sceneScope);
 
   // --- Spell effects: over the finished surfaces, depth read-only (tested and sampled for the soft fade) -----------
-  const bool effects = hasScene_ && !effects_.empty();
+  const bool effects = hasScene_ && (!effects_.empty() || !vfxDraws_.empty());
   if (effects) {
     const uint32_t effectScope = gpuTimer_.begin(cmd, "effects");
     transition(cmd, depth_.image, depth_.aspect,
@@ -1601,11 +1638,24 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     fxPass.pDepthAttachment = &fxDepth;
     vkCmdBeginRendering(cmd, &fxPass);
     setViewport(cmd, size_);
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, effectPipeline_);
-    const EffectPush effectPush{bufferAddress(context_, frame.effects), bufferAddress(context_, frame.meshFrame), spriteSamplerIndex_,
-                                depthIndex_, effectBrightness_, 0};
-    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(effectPush), &effectPush);
-    vkCmdDraw(cmd, 6, static_cast<uint32_t>(effects_.size()), 0, 0);
+    if (!effects_.empty()) {
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, effectPipeline_);
+      const EffectPush effectPush{bufferAddress(context_, frame.effects), bufferAddress(context_, frame.meshFrame), spriteSamplerIndex_,
+                                  depthIndex_, effectBrightness_, 0};
+      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(effectPush), &effectPush);
+      vkCmdDraw(cmd, 6, static_cast<uint32_t>(effects_.size()), 0, 0);
+    }
+    // Engine2's ported effects, in the order the effects gave them (three's render order).
+    VkPipeline bound = VK_NULL_HANDLE;
+    for (uint32_t i = 0; i < vfxDraws_.size(); ++i) {
+      const VfxDraw& d = vfxDraws_[i];
+      const VkPipeline pipeline = vfxPipelines_[d.depthTest ? 1 : 0];
+      if (pipeline != bound) vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, bound = pipeline);
+      const VfxPush push{bufferAddress(context_, frame.vfxVertices), bufferAddress(context_, frame.vfxInstances), bufferAddress(context_, frame.vfxDraws),
+                         bufferAddress(context_, frame.meshFrame), i, effectBrightness_, spriteSamplerIndex_, 0};
+      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+      vkCmdDraw(cmd, d.gpu.vertexCount, d.gpu.firstInstance == 0xFFFFFFFFu ? 1u : d.instances, 0, 0);
+    }
     vkCmdEndRendering(cmd);
     gpuTimer_.end(cmd, effectScope);
   }

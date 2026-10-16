@@ -13,7 +13,7 @@ reference"; "Magic Missile 01, make it serial").
 | Every effect image, numbered | `content/fx/effects-list.md` (generated: `python -I tools/scripts/fx_sprites.py`) |
 | The images | Engine2 `public/game/fx` (95) + `public/game/effects` (3), read only; cooked into `build/sprites/battle.pak`, sprite set `fx`, clip = file name without extension (`content/fx.sprites.json`) |
 | The spell versions' code | `engine/render/SpellEffects.cpp` (one function per recipe; `SpellEffects::looks()` = how many versions each spell has) |
-| How they are drawn | `engine/render/EffectDraw.h`, `shaders/effects.hlsl` (renderer pass "effects") |
+| How they are drawn | flipbook cards: `engine/render/EffectDraw.h`, `shaders/effects.hlsl`; Engine2's ported effects: the effect runtime `engine/render/VfxDraw.h` (draw lists), `VfxGeometry.h` (three.js shapes), `vfx/ThreeMath.h` (three.js curves, quaternions, colours), `shaders/vfx.hlsl` (Engine2's GLSL, one material per shader); both in the renderer pass "effects" |
 | Spells and skills listed | every Engine2 SpellKind (`src/vfx/spell-catalog.ts`): `allSpells()` in `SpellsMenu.h`; names marked `[ours]` there have no Portuguese name in Engine2 |
 
 Test without the menu: `Sandbox --map ... --fx-test KIND|all --scene-time T --capture x.png` (the party's first casts
@@ -25,6 +25,7 @@ at the nearest foe every 3 s), `--tatica` (2D view), `--spells-menu-open` (the M
 |---|---|---|---|
 | Míssil Mágico (`magicMissile`) | 01 | flipbook cards: arcane ring and gather at the caster, the arcane orb (Arcano 01) flying in an arch with a spark trail, burst + ring + violet flash on the body | `magicMissile()` |
 | Míssil Mágico V2 (`magicMissileV2`) | 01 | the same as Míssil Mágico 01 | `magicMissile()` |
+| Míssil Mágico, Míssil Mágico V2 | 02 | **Engine2's own MagicMissileV2VFX, ported**: the bolt gathers above the caster for 0.95 s (a distorted violet core in a banded shell, three arcane threads), flies a curved seeking path (0.8-1.3 s) trailing a fragmented ribbon, 28 crystal shards and a violet light, and hits with a burst ring, four spinning fracture arcs, swirling shards and a white flash (0.78 s). In battle the hit lands when the bolt arrives, as in Engine2. Drawn over everything (Engine2: depthTest false). Not carried over: its lights' shadows | `render/vfx/MagicMissileV2.cpp` |
 | Relâmpago (`lightning`) | 01 | flipbook cards: lightning ring at the caster; on the target the three bolt images swapped every 50 ms from the sky, the lightning eruption, ring, sparks, blue-white flash | `lightning()`, `bolt()` |
 | Relâmpago Maior (`lightningTier3`) | 01 | the same as Relâmpago 01 | `lightning()` |
 | Choque (`shock`) | 01 | Relâmpago 01 at 3/4 size | `lightning()` |
@@ -46,7 +47,7 @@ particles, point lights) that also use the images. Each one, when ported, become
 
 | Engine2 effect | File | Engine2 used it for |
 |---|---|---|
-| MagicMissileV2VFX | `vfx/legacy/three/MagicMissileV2VFX.ts` (+ `game/gfx/three/MagicMissileForeground.ts`) | Míssil Mágico V2 (the 3D one in battle); preview: long/bloody/piercing/multi shot, lightning, shock |
+| MagicMissileV2VFX | `vfx/legacy/three/MagicMissileV2VFX.ts` (+ `game/gfx/three/MagicMissileForeground.ts`) | Míssil Mágico V2 (the 3D one in battle); preview: long/bloody/piercing/multi shot, lightning, shock. **Ported: Míssil Mágico 02** (the Foreground variant not yet) |
 | legacy magic bolt | `game/engine.ts` missileFx / drawMissileFx | Míssil Mágico, arcane bolt (plain attack of casters), Força Fantasma |
 | FireballVFX + FireballImpactVFX | `vfx/legacy/three/` | Bola de Fogo |
 | OldFireBall | `vfx/legacy/three/OldFireBall.ts` | (older fireball) |

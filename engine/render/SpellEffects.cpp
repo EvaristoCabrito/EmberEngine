@@ -57,18 +57,27 @@ glm::vec3 SpellEffects::position(const Element& e, float now) const {
 }
 
 int SpellEffects::looks(const std::string& kind) {
-  static const char* kVersion01[] = {"magicMissile", "magicMissileV2", "lightning", "lightningTier3", "shock", "frost", "cureMinor",
-                                     "longShot", "piercing", "piercingThrust", "doubleStrike"};
+  // 02: Engine2's own effect, ported (render/vfx/*).
+  if (kind == "magicMissile" || kind == "magicMissileV2") return 2;
+  static const char* kVersion01[] = {"lightning", "lightningTier3", "shock", "frost", "cureMinor", "longShot", "piercing", "piercingThrust",
+                                     "doubleStrike"};
   for (const char* k : kVersion01)
     if (kind == k) return 1;
   return 0;
+}
+
+float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const {
+  if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2 && !targets.empty())
+    return MagicMissileV2::impactDelay(engine2Origin(caster), targets.front().body);
+  return -1.0f;
 }
 
 bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact) {
   if (look < 1 || look > looks(kind)) return false;
   impact = std::max(impact, start + 0.05f);
   if (targets.empty() && kind != "piercingThrust" && kind != "doubleStrike") return false;
-  if (kind == "magicMissile" || kind == "magicMissileV2") magicMissile(caster, targets.front(), start, impact);
+  if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2) missiles_.emplace_back(engine2Origin(caster), targets.front().body, start);
+  else if (kind == "magicMissile" || kind == "magicMissileV2") magicMissile(caster, targets.front(), start, impact);
   else if (kind == "lightning" || kind == "lightningTier3") lightning(caster, targets, start, impact, false);
   else if (kind == "shock") lightning(caster, targets, start, impact, true);
   else if (kind == "frost") frost(caster, targets, start, impact);
@@ -334,12 +343,20 @@ void SpellEffects::strike(const Spot& target, float at, bool crit) {
 }
 
 bool SpellEffects::active(float now) const {
+  if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
   return std::any_of(elements_.begin(), elements_.end(), [&](const Element& e) { return e.end > now; });
 }
 
 void SpellEffects::build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out,
                          std::vector<Light>& lights) {
   std::erase_if(elements_, [&](const Element& e) { return e.end <= now; });
+  // Engine2's ported effects: their own geometry and lights.
+  std::erase_if(missiles_, [&](const MagicMissileV2& m) { return m.done(now); });
+  vfx_.clear();
+  std::vector<VfxLight> vfxLights;
+  for (MagicMissileV2& m : missiles_) m.build(now, camera, vfx_, vfxLights);
+  for (const VfxLight& l : vfxLights)
+    if (l.intensity > 0.0f) lights.push_back({l.at, {l.color.r, l.color.g, l.color.b}, l.intensity, l.distance, std::max(l.at.y, 1.0f)});
   const size_t first = out.size();
   const glm::vec3 eye = camera.position, forward = camera.forward;
   glm::vec3 cameraRight{camera.right.x, 0.0f, camera.right.z};

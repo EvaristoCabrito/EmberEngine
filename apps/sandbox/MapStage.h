@@ -308,6 +308,7 @@ class MapStage final : public Stage {
     }
     for (const SpellEffects::Light& l : fxLights_) lights_.push_back(carried(l.at, l.color, l.intensity, l.radius, l.height, 1.0f));
     renderer.setEffects(effectList_);
+    renderer.setVfx(spellFx_.vfx());
     renderer.setLights(lights_);
     Renderer::Lighting lighting = mapLighting(time);
     if (lightingMode_ == 3) {
@@ -1822,7 +1823,13 @@ class MapStage final : public Stage {
       } else if (target >= 0) {
         spots.push_back(unitSpot(static_cast<size_t>(target)));
       }
-      spellFx_.cast(s.kind, spellLook(s.kind), unitSpot(static_cast<size_t>(striker)), spots, now_, x.impact);
+      // A version with Engine2's own timeline (Míssil Mágico 02) lands when it hits, as Engine2's rules wait for it.
+      const SpellEffects::Spot casterSpot = unitSpot(static_cast<size_t>(striker));
+      if (const float delay = spellFx_.impactDelay(s.kind, spellLook(s.kind), casterSpot, spots); delay > 0.0f) {
+        x.impact = now_ + delay;
+        x.end = std::max(x.end, x.impact + 0.8f + kExchangeGap);
+      }
+      spellFx_.cast(s.kind, spellLook(s.kind), casterSpot, spots, now_, x.impact);
     }
   }
 
@@ -1856,10 +1863,14 @@ class MapStage final : public Stage {
     if (cycle == fxTestCycle_) return;
     fxTestCycle_ = cycle;
     static const char* kKinds[] = {"magicMissile", "lightning", "frost", "cureMinor", "longShot", "piercing", "shock", "doubleStrike"};
+    // KIND or KIND:VERSION (the version number of the Magias menu; default the menu's choice, at least 01).
     std::string kind = options_.fxTest;
+    int look = 0;
+    if (const size_t colon = kind.find(':'); colon != std::string::npos) look = std::atoi(kind.c_str() + colon + 1), kind.resize(colon);
     if (kind == "all") kind = kKinds[static_cast<size_t>(cycle) % std::size(kKinds)];
-    logInfo("fx test: {} at {:.1f} s", kind, static_cast<float>(cycle) * kFxTestCycle);
-    testCast(static_cast<size_t>(hero_), kind, std::max(spellLook(kind), 1), static_cast<float>(cycle) * kFxTestCycle);
+    if (look <= 0) look = std::max(spellLook(kind), 1);
+    logInfo("fx test: {} {:02} at {:.1f} s", kind, look, static_cast<float>(cycle) * kFxTestCycle);
+    testCast(static_cast<size_t>(hero_), kind, look, static_cast<float>(cycle) * kFxTestCycle);
   }
 
   // The unit the Spells menu casts from: the picked one, else the party's first.

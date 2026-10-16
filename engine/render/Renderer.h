@@ -11,6 +11,7 @@
 #include "render/FogLooks.h"
 #include "render/Camera.h"
 #include "render/EffectDraw.h"
+#include "render/VfxDraw.h"
 #include "render/MeshScene.h"
 #include "render/SpriteDraw.h"
 #include "rhi/Bindless.h"
@@ -66,6 +67,19 @@ class Renderer {
     effectBrightness_ = brightness;
   }
   static constexpr uint32_t kMaxEffects = 1u << 13;
+  // Engine2's ported spell effects for the next frame (render/VfxDraw.h): drawn after the flipbook effects. Draws
+  // past the buffers' room are dropped.
+  void setVfx(const VfxFrame& frame) {
+    vfxVertices_.assign(frame.vertices.begin(), frame.vertices.begin() + std::min<size_t>(frame.vertices.size(), kMaxVfxVertices));
+    vfxInstances_.assign(frame.instances.begin(), frame.instances.begin() + std::min<size_t>(frame.instances.size(), kMaxVfxInstances));
+    vfxDraws_.clear();
+    for (const VfxDraw& d : frame.draws) {
+      if (vfxDraws_.size() >= kMaxVfxDraws || d.gpu.firstVertex + d.gpu.vertexCount > vfxVertices_.size()) continue;
+      if (d.gpu.firstInstance != 0xFFFFFFFFu && d.gpu.firstInstance + d.instances > vfxInstances_.size()) continue;
+      vfxDraws_.push_back(d);
+    }
+  }
+  static constexpr uint32_t kMaxVfxVertices = 1u << 18, kMaxVfxInstances = 1u << 12, kMaxVfxDraws = 1u << 12;
   // 3D meshes for the next frame (drawn GPU-driven: culling, cluster LOD, visibility buffer). An empty
   // view draws none.
   // One sun and a sky/ground hemisphere until the sky exists (ARCHITECTURE.md §7.1b). Defaults are the
@@ -229,6 +243,7 @@ class Renderer {
     VkSemaphore imageAcquired = VK_NULL_HANDLE;
     Buffer sprites;  // this frame's SpriteInstance[] (host-visible, read by device address)
     Buffer effects;  // this frame's EffectInstance[] (host-visible)
+    Buffer vfxVertices, vfxInstances, vfxDraws;  // this frame's VfxFrame (host-visible)
     Buffer meshFrame;     // MeshFrame for the mesh passes (device-local, written by vkCmdUpdateBuffer)
     Buffer shadowFrame;   // MeshFrame of the meshes' pass from the sun (when the cached shadow map is redrawn)
     Buffer lights;        // this frame's LocalLight[] (host-visible)
@@ -340,6 +355,10 @@ class Renderer {
   TerrainView terrain_;
   VkPipeline spritePipeline_ = VK_NULL_HANDLE;
   VkPipeline effectPipeline_ = VK_NULL_HANDLE;
+  VkPipeline vfxPipelines_[2] = {};  // depth-tested, over everything
+  std::vector<VfxVertex> vfxVertices_;
+  std::vector<VfxInstance> vfxInstances_;
+  std::vector<VfxDraw> vfxDraws_;
   std::vector<EffectInstance> effects_;
   float effectBrightness_ = 1.0f;
   VkSampler spriteSampler_ = VK_NULL_HANDLE;
