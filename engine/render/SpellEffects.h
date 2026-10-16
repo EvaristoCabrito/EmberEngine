@@ -21,6 +21,7 @@
 #include "render/EffectDraw.h"
 #include "render/SpriteSystem.h"
 #include "render/VfxDraw.h"
+#include "render/vfx/Fireball.h"
 #include "render/vfx/MagicMissileV2.h"
 
 namespace ember {
@@ -64,7 +65,7 @@ class SpellEffects {
   void build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out, std::vector<Light>& lights);
   const VfxFrame& vfx() const { return vfx_; }
   bool active(float now) const;
-  void clear() { elements_.clear(), missiles_.clear(); }
+  void clear() { elements_.clear(), missiles_.clear(), fireballs_.clear(); }
   // A version that keeps Engine2's own timeline decides when the hit lands: seconds from the cast (Míssil Mágico 02:
   // Engine2's charge, then the flight). Below 0: the version lands on the caller's impact (the pose's).
   float impactDelay(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const;
@@ -114,6 +115,11 @@ class SpellEffects {
   std::vector<Element> elements_;
   // Engine2's ported effects in play (Míssil Mágico 02 = MagicMissileV2VFX) and this frame's draws.
   std::vector<MagicMissileV2> missiles_;
+  std::vector<Fireball> fireballs_;  // Bola de Fogo 01 = FireballVFX
+  // Fireball's flight goes to the target hex's ground (BattleSpells3D at(): 0.04 up); its area's radius (the farthest
+  // struck cell + 1; one target alone = Engine2's FIREBALL.size, 2 hexes around it).
+  static glm::vec3 fireballTarget(const std::vector<Spot>& targets) { return targets.front().feet + glm::vec3(0.0f, 0.04f, 0.0f); }
+  static float fireballArea(const std::vector<Spot>& targets);
   VfxFrame vfx_;
   // Engine2's caster point (battleSpells3d unit(): the anchor, 0.9 above the ground).
   static glm::vec3 engine2Origin(const Spot& caster) { return caster.feet + glm::vec3(0.0f, 0.9f, 0.0f); }

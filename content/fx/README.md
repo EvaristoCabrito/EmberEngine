@@ -33,6 +33,7 @@ at the nearest foe every 3 s), `--tatica` (2D view), `--spells-menu-open` (the M
 | Cura Menor (`cureMinor`) | 01 | flipbook cards: gold ring under the caster; ring, pillar of light and motes on the healed unit, warm glow | `cure()` |
 | Tiro Longo (`longShot`) | 01 | the arrow (solid, lit by the scene) in a shallow arch, pointing where it flies; sparks on a hit | `arrow()` |
 | Tiro Perfurante (`piercing`) | 01 | Tiro Longo 01 flying on through the line | `arrow()` |
+| Bola de Fogo (`fireball`) | 01 | **Engine2's own FireballVFX, ported**: OldFireBall (a boiling icosphere of fire inside a flaring shell, a fire light) arcs from the caster to the target hex in 1.25-2.5 s; FireballImpactVFX: a flash, then 308 seeded particles (flames, rising flames, a ground ring of fire-flipbook flames, sparks, embers, smoke) held inside the area (2 hexes), with a flaring, flickering light. In battle the hit lands on arrival. As in Engine2, the burst is centred 0.04 above the ground and depth-tested, so the ground cuts its lower half | `render/vfx/Fireball.cpp` |
 | Investida Perfurante (`piercingThrust`), Golpe Duplo (`doubleStrike`) | 01 | an ember glint on the swing; sparks on every blow that lands | `bladeSkill()`, `strike()` |
 | every landed weapon blow | (always) | an impact spark (Impacto 01-04) on the body, embers on a critical, a warm flash | `strike()` |
 | lightning echo (start of the struck unit's turn) | (with Relâmpago) | Relâmpago 01's strike at 0.6 size | `echo()` |
@@ -49,7 +50,7 @@ particles, point lights) that also use the images. Each one, when ported, become
 |---|---|---|
 | MagicMissileV2VFX | `vfx/legacy/three/MagicMissileV2VFX.ts` (+ `game/gfx/three/MagicMissileForeground.ts`) | Míssil Mágico V2 (the 3D one in battle); preview: long/bloody/piercing/multi shot, lightning, shock. **Ported: Míssil Mágico 02** (the Foreground variant not yet) |
 | legacy magic bolt | `game/engine.ts` missileFx / drawMissileFx | Míssil Mágico, arcane bolt (plain attack of casters), Força Fantasma |
-| FireballVFX + FireballImpactVFX | `vfx/legacy/three/` | Bola de Fogo |
+| FireballVFX + FireballImpactVFX | `vfx/legacy/three/` | Bola de Fogo. **Ported: Bola de Fogo 01** |
 | OldFireBall | `vfx/legacy/three/OldFireBall.ts` | (older fireball) |
 | CausticVenomVFX | `vfx/legacy/three/` | Veneno Cáustico; preview: Tempestade de Gelo, Frost, Veneno Menor |
 | BlessVFX | `vfx/legacy/three/` | Bênção; preview: the cures, Raio Divino, Turn Undead, auras |
