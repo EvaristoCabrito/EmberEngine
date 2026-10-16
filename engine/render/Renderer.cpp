@@ -498,6 +498,10 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   sprites.alphaBlend = true;
   sprites.premultipliedAlpha = true;
   spritePipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), sprites);
+  // The cards' depth after all of them are drawn: the fog bank and effects stop at a character (sprites.PSDepth).
+  sprites.fragmentShader = "sprites.PSDepth";
+  sprites.depthWrite = true;
+  spriteDepthPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), sprites);
 
   // Spell effects: over everything, depth-tested against it (read-only depth, also sampled for the soft fade).
   GraphicsPipelineDesc effects;
@@ -649,6 +653,7 @@ Renderer::~Renderer() {
   vkDestroyPipeline(context_.device, spriteShadowPipeline_, nullptr);
   vkDestroySampler(context_.device, shadowSampler_, nullptr);
   vkDestroyPipeline(context_.device, spritePipeline_, nullptr);
+  vkDestroyPipeline(context_.device, spriteDepthPipeline_, nullptr);
   vkDestroyPipeline(context_.device, effectPipeline_, nullptr);
   for (VkPipeline p : vfxPipelines_) vkDestroyPipeline(context_.device, p, nullptr);
   for (VkPipeline p : {cullInstancesPipeline_, cullInstancesLatePipeline_, hizPipeline_, cullPreparePipeline_,
@@ -1672,6 +1677,8 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       const SpritePush spritePush{viewProjection, camera_.right, spriteSamplerIndex_, bufferAddress(context_, frame.sprites),
                                   bufferAddress(context_, frame.meshFrame), camera_.forward, cardLean_ ? 1u : 0u};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(spritePush), &spritePush);
+      vkCmdDraw(cmd, 6, static_cast<uint32_t>(sprites_.size()), 0, 0);
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spriteDepthPipeline_);
       vkCmdDraw(cmd, 6, static_cast<uint32_t>(sprites_.size()), 0, 0);
     }
   } else {

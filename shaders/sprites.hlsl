@@ -129,6 +129,17 @@ float4 PSMain(VSOut i) : SV_Target0 {
   return float4(color * c.a, c.a);
 }
 
+// The cards' depth, written after every card is drawn (so it never changes how cards blend over each other):
+// alpha-tested at half coverage like the card shadows. Passes after the cards (the fog bank, effects) then stop at
+// a character instead of reaching the ground behind it: the fog of war behind a unit no longer paints over it.
+// Writes no colour (premultiplied blend of zero).
+float4 PSDepth(VSOut i) : SV_Target0 {
+  const SpriteInstance s = loadSprite(i.instance);
+  const float a = gTextureArrays[NonUniformResourceIndex(s.textureIndex)].Sample(gSamplers[push.samplerIndex], float3(i.uv, s.layer)).a;
+  clip(a - 0.5);
+  return float4(0.0, 0.0, 0.0, 0.0);
+}
+
 // Cards in the sun's shadow (the card shadow map, redrawn every frame): alpha-tested at half coverage. A card
 // that turns to face the camera (a unit) casts facing the sun instead, so moving the camera never moves its
 // shadow (ARCHITECTURE §7.1); fixed cards cast as they stand.

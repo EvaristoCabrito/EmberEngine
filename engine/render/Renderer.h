@@ -410,6 +410,7 @@ class Renderer {
   uint32_t lightingLayers_ = 0xFFFFFFFFu;
   TerrainView terrain_;
   VkPipeline spritePipeline_ = VK_NULL_HANDLE;
+  VkPipeline spriteDepthPipeline_ = VK_NULL_HANDLE;  // the cards' depth, after the cards
   VkPipeline effectPipeline_ = VK_NULL_HANDLE;
   VkPipeline vfxPipelines_[2] = {};  // depth-tested, over everything
   std::vector<VfxVertex> vfxVertices_;
