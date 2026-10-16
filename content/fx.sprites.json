@@ -1,0 +1,2201 @@
+{
+ "version": 1,
+ "sets": [
+  {
+   "name": "fx",
+   "clips": [
+    {
+     "name": "arcane-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/arcane-flipbook-4x4.png#4x4:0",
+       "fx/arcane-flipbook-4x4.png#4x4:1",
+       "fx/arcane-flipbook-4x4.png#4x4:2",
+       "fx/arcane-flipbook-4x4.png#4x4:3",
+       "fx/arcane-flipbook-4x4.png#4x4:4",
+       "fx/arcane-flipbook-4x4.png#4x4:5",
+       "fx/arcane-flipbook-4x4.png#4x4:6",
+       "fx/arcane-flipbook-4x4.png#4x4:7",
+       "fx/arcane-flipbook-4x4.png#4x4:8",
+       "fx/arcane-flipbook-4x4.png#4x4:9",
+       "fx/arcane-flipbook-4x4.png#4x4:10",
+       "fx/arcane-flipbook-4x4.png#4x4:11",
+       "fx/arcane-flipbook-4x4.png#4x4:12",
+       "fx/arcane-flipbook-4x4.png#4x4:13",
+       "fx/arcane-flipbook-4x4.png#4x4:14",
+       "fx/arcane-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "arcane-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/arcane-particles-flipbook-4x4.png#4x4:0",
+       "fx/arcane-particles-flipbook-4x4.png#4x4:1",
+       "fx/arcane-particles-flipbook-4x4.png#4x4:2",
+       "fx/arcane-particles-flipbook-4x4.png#4x4:3",
+       "fx/arcane-particles-flipbook-4x4.png#4x4:4",
+       "fx/arcane-particles-flipbook-4x4.png#4x4:5",
+       "fx/arcane-particles-flipbook-4x4.png#4x4:6",
+       "fx/arcane-particles-flipbook-4x4.png#4x4:7",
+       "fx/arcane-particles-flipbook-4x4.png#4x4:8",
+       "fx/arcane-particles-flipbook-4x4.png#4x4:9",
+       "fx/arcane-particles-flipbook-4x4.png#4x4:10",
+       "fx/arcane-particles-flipbook-4x4.png#4x4:11",
+       "fx/arcane-particles-flipbook-4x4.png#4x4:12",
+       "fx/arcane-particles-flipbook-4x4.png#4x4:13",
+       "fx/arcane-particles-flipbook-4x4.png#4x4:14",
+       "fx/arcane-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "arcane-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/arcane-secondary-flipbook-4x4.png#4x4:0",
+       "fx/arcane-secondary-flipbook-4x4.png#4x4:1",
+       "fx/arcane-secondary-flipbook-4x4.png#4x4:2",
+       "fx/arcane-secondary-flipbook-4x4.png#4x4:3",
+       "fx/arcane-secondary-flipbook-4x4.png#4x4:4",
+       "fx/arcane-secondary-flipbook-4x4.png#4x4:5",
+       "fx/arcane-secondary-flipbook-4x4.png#4x4:6",
+       "fx/arcane-secondary-flipbook-4x4.png#4x4:7",
+       "fx/arcane-secondary-flipbook-4x4.png#4x4:8",
+       "fx/arcane-secondary-flipbook-4x4.png#4x4:9",
+       "fx/arcane-secondary-flipbook-4x4.png#4x4:10",
+       "fx/arcane-secondary-flipbook-4x4.png#4x4:11",
+       "fx/arcane-secondary-flipbook-4x4.png#4x4:12",
+       "fx/arcane-secondary-flipbook-4x4.png#4x4:13",
+       "fx/arcane-secondary-flipbook-4x4.png#4x4:14",
+       "fx/arcane-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "arcane-v2-main-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/arcane-v2-main-flipbook-4x4.png#4x4:0",
+       "fx/arcane-v2-main-flipbook-4x4.png#4x4:1",
+       "fx/arcane-v2-main-flipbook-4x4.png#4x4:2",
+       "fx/arcane-v2-main-flipbook-4x4.png#4x4:3",
+       "fx/arcane-v2-main-flipbook-4x4.png#4x4:4",
+       "fx/arcane-v2-main-flipbook-4x4.png#4x4:5",
+       "fx/arcane-v2-main-flipbook-4x4.png#4x4:6",
+       "fx/arcane-v2-main-flipbook-4x4.png#4x4:7",
+       "fx/arcane-v2-main-flipbook-4x4.png#4x4:8",
+       "fx/arcane-v2-main-flipbook-4x4.png#4x4:9",
+       "fx/arcane-v2-main-flipbook-4x4.png#4x4:10",
+       "fx/arcane-v2-main-flipbook-4x4.png#4x4:11",
+       "fx/arcane-v2-main-flipbook-4x4.png#4x4:12",
+       "fx/arcane-v2-main-flipbook-4x4.png#4x4:13",
+       "fx/arcane-v2-main-flipbook-4x4.png#4x4:14",
+       "fx/arcane-v2-main-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "arcane-v2-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/arcane-v2-particles-flipbook-4x4.png#4x4:0",
+       "fx/arcane-v2-particles-flipbook-4x4.png#4x4:1",
+       "fx/arcane-v2-particles-flipbook-4x4.png#4x4:2",
+       "fx/arcane-v2-particles-flipbook-4x4.png#4x4:3",
+       "fx/arcane-v2-particles-flipbook-4x4.png#4x4:4",
+       "fx/arcane-v2-particles-flipbook-4x4.png#4x4:5",
+       "fx/arcane-v2-particles-flipbook-4x4.png#4x4:6",
+       "fx/arcane-v2-particles-flipbook-4x4.png#4x4:7",
+       "fx/arcane-v2-particles-flipbook-4x4.png#4x4:8",
+       "fx/arcane-v2-particles-flipbook-4x4.png#4x4:9",
+       "fx/arcane-v2-particles-flipbook-4x4.png#4x4:10",
+       "fx/arcane-v2-particles-flipbook-4x4.png#4x4:11",
+       "fx/arcane-v2-particles-flipbook-4x4.png#4x4:12",
+       "fx/arcane-v2-particles-flipbook-4x4.png#4x4:13",
+       "fx/arcane-v2-particles-flipbook-4x4.png#4x4:14",
+       "fx/arcane-v2-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "arcane-v2-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/arcane-v2-secondary-flipbook-4x4.png#4x4:0",
+       "fx/arcane-v2-secondary-flipbook-4x4.png#4x4:1",
+       "fx/arcane-v2-secondary-flipbook-4x4.png#4x4:2",
+       "fx/arcane-v2-secondary-flipbook-4x4.png#4x4:3",
+       "fx/arcane-v2-secondary-flipbook-4x4.png#4x4:4",
+       "fx/arcane-v2-secondary-flipbook-4x4.png#4x4:5",
+       "fx/arcane-v2-secondary-flipbook-4x4.png#4x4:6",
+       "fx/arcane-v2-secondary-flipbook-4x4.png#4x4:7",
+       "fx/arcane-v2-secondary-flipbook-4x4.png#4x4:8",
+       "fx/arcane-v2-secondary-flipbook-4x4.png#4x4:9",
+       "fx/arcane-v2-secondary-flipbook-4x4.png#4x4:10",
+       "fx/arcane-v2-secondary-flipbook-4x4.png#4x4:11",
+       "fx/arcane-v2-secondary-flipbook-4x4.png#4x4:12",
+       "fx/arcane-v2-secondary-flipbook-4x4.png#4x4:13",
+       "fx/arcane-v2-secondary-flipbook-4x4.png#4x4:14",
+       "fx/arcane-v2-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "arcane-v3-main-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/arcane-v3-main-flipbook-4x4.png#4x4:0",
+       "fx/arcane-v3-main-flipbook-4x4.png#4x4:1",
+       "fx/arcane-v3-main-flipbook-4x4.png#4x4:2",
+       "fx/arcane-v3-main-flipbook-4x4.png#4x4:3",
+       "fx/arcane-v3-main-flipbook-4x4.png#4x4:4",
+       "fx/arcane-v3-main-flipbook-4x4.png#4x4:5",
+       "fx/arcane-v3-main-flipbook-4x4.png#4x4:6",
+       "fx/arcane-v3-main-flipbook-4x4.png#4x4:7",
+       "fx/arcane-v3-main-flipbook-4x4.png#4x4:8",
+       "fx/arcane-v3-main-flipbook-4x4.png#4x4:9",
+       "fx/arcane-v3-main-flipbook-4x4.png#4x4:10",
+       "fx/arcane-v3-main-flipbook-4x4.png#4x4:11",
+       "fx/arcane-v3-main-flipbook-4x4.png#4x4:12",
+       "fx/arcane-v3-main-flipbook-4x4.png#4x4:13",
+       "fx/arcane-v3-main-flipbook-4x4.png#4x4:14",
+       "fx/arcane-v3-main-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "arcane-v3-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/arcane-v3-particles-flipbook-4x4.png#4x4:0",
+       "fx/arcane-v3-particles-flipbook-4x4.png#4x4:1",
+       "fx/arcane-v3-particles-flipbook-4x4.png#4x4:2",
+       "fx/arcane-v3-particles-flipbook-4x4.png#4x4:3",
+       "fx/arcane-v3-particles-flipbook-4x4.png#4x4:4",
+       "fx/arcane-v3-particles-flipbook-4x4.png#4x4:5",
+       "fx/arcane-v3-particles-flipbook-4x4.png#4x4:6",
+       "fx/arcane-v3-particles-flipbook-4x4.png#4x4:7",
+       "fx/arcane-v3-particles-flipbook-4x4.png#4x4:8",
+       "fx/arcane-v3-particles-flipbook-4x4.png#4x4:9",
+       "fx/arcane-v3-particles-flipbook-4x4.png#4x4:10",
+       "fx/arcane-v3-particles-flipbook-4x4.png#4x4:11",
+       "fx/arcane-v3-particles-flipbook-4x4.png#4x4:12",
+       "fx/arcane-v3-particles-flipbook-4x4.png#4x4:13",
+       "fx/arcane-v3-particles-flipbook-4x4.png#4x4:14",
+       "fx/arcane-v3-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "arcane-v3-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/arcane-v3-secondary-flipbook-4x4.png#4x4:0",
+       "fx/arcane-v3-secondary-flipbook-4x4.png#4x4:1",
+       "fx/arcane-v3-secondary-flipbook-4x4.png#4x4:2",
+       "fx/arcane-v3-secondary-flipbook-4x4.png#4x4:3",
+       "fx/arcane-v3-secondary-flipbook-4x4.png#4x4:4",
+       "fx/arcane-v3-secondary-flipbook-4x4.png#4x4:5",
+       "fx/arcane-v3-secondary-flipbook-4x4.png#4x4:6",
+       "fx/arcane-v3-secondary-flipbook-4x4.png#4x4:7",
+       "fx/arcane-v3-secondary-flipbook-4x4.png#4x4:8",
+       "fx/arcane-v3-secondary-flipbook-4x4.png#4x4:9",
+       "fx/arcane-v3-secondary-flipbook-4x4.png#4x4:10",
+       "fx/arcane-v3-secondary-flipbook-4x4.png#4x4:11",
+       "fx/arcane-v3-secondary-flipbook-4x4.png#4x4:12",
+       "fx/arcane-v3-secondary-flipbook-4x4.png#4x4:13",
+       "fx/arcane-v3-secondary-flipbook-4x4.png#4x4:14",
+       "fx/arcane-v3-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "arrow-002",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "fx/arrow-002.png!black"
+     }
+    },
+    {
+     "name": "arrow-core-v1",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "fx/arrow-core-v1.png!black"
+     }
+    },
+    {
+     "name": "blizzard-impact-reference",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "fx/blizzard-impact-reference.png"
+     }
+    },
+    {
+     "name": "blizzard-wind-reference",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "fx/blizzard-wind-reference.png"
+     }
+    },
+    {
+     "name": "caustic-venom-core-v1",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "fx/caustic-venom-core-v1.png!black"
+     }
+    },
+    {
+     "name": "caustic-venom-core-v2",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "fx/caustic-venom-core-v2.png"
+     }
+    },
+    {
+     "name": "ember-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/ember-flipbook-4x4.png#4x4:0",
+       "fx/ember-flipbook-4x4.png#4x4:1",
+       "fx/ember-flipbook-4x4.png#4x4:2",
+       "fx/ember-flipbook-4x4.png#4x4:3",
+       "fx/ember-flipbook-4x4.png#4x4:4",
+       "fx/ember-flipbook-4x4.png#4x4:5",
+       "fx/ember-flipbook-4x4.png#4x4:6",
+       "fx/ember-flipbook-4x4.png#4x4:7",
+       "fx/ember-flipbook-4x4.png#4x4:8",
+       "fx/ember-flipbook-4x4.png#4x4:9",
+       "fx/ember-flipbook-4x4.png#4x4:10",
+       "fx/ember-flipbook-4x4.png#4x4:11",
+       "fx/ember-flipbook-4x4.png#4x4:12",
+       "fx/ember-flipbook-4x4.png#4x4:13",
+       "fx/ember-flipbook-4x4.png#4x4:14",
+       "fx/ember-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "ember-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/ember-particles-flipbook-4x4.png#4x4:0",
+       "fx/ember-particles-flipbook-4x4.png#4x4:1",
+       "fx/ember-particles-flipbook-4x4.png#4x4:2",
+       "fx/ember-particles-flipbook-4x4.png#4x4:3",
+       "fx/ember-particles-flipbook-4x4.png#4x4:4",
+       "fx/ember-particles-flipbook-4x4.png#4x4:5",
+       "fx/ember-particles-flipbook-4x4.png#4x4:6",
+       "fx/ember-particles-flipbook-4x4.png#4x4:7",
+       "fx/ember-particles-flipbook-4x4.png#4x4:8",
+       "fx/ember-particles-flipbook-4x4.png#4x4:9",
+       "fx/ember-particles-flipbook-4x4.png#4x4:10",
+       "fx/ember-particles-flipbook-4x4.png#4x4:11",
+       "fx/ember-particles-flipbook-4x4.png#4x4:12",
+       "fx/ember-particles-flipbook-4x4.png#4x4:13",
+       "fx/ember-particles-flipbook-4x4.png#4x4:14",
+       "fx/ember-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "ember-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/ember-secondary-flipbook-4x4.png#4x4:0",
+       "fx/ember-secondary-flipbook-4x4.png#4x4:1",
+       "fx/ember-secondary-flipbook-4x4.png#4x4:2",
+       "fx/ember-secondary-flipbook-4x4.png#4x4:3",
+       "fx/ember-secondary-flipbook-4x4.png#4x4:4",
+       "fx/ember-secondary-flipbook-4x4.png#4x4:5",
+       "fx/ember-secondary-flipbook-4x4.png#4x4:6",
+       "fx/ember-secondary-flipbook-4x4.png#4x4:7",
+       "fx/ember-secondary-flipbook-4x4.png#4x4:8",
+       "fx/ember-secondary-flipbook-4x4.png#4x4:9",
+       "fx/ember-secondary-flipbook-4x4.png#4x4:10",
+       "fx/ember-secondary-flipbook-4x4.png#4x4:11",
+       "fx/ember-secondary-flipbook-4x4.png#4x4:12",
+       "fx/ember-secondary-flipbook-4x4.png#4x4:13",
+       "fx/ember-secondary-flipbook-4x4.png#4x4:14",
+       "fx/ember-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "ember-v2-main-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/ember-v2-main-flipbook-4x4.png#4x4:0",
+       "fx/ember-v2-main-flipbook-4x4.png#4x4:1",
+       "fx/ember-v2-main-flipbook-4x4.png#4x4:2",
+       "fx/ember-v2-main-flipbook-4x4.png#4x4:3",
+       "fx/ember-v2-main-flipbook-4x4.png#4x4:4",
+       "fx/ember-v2-main-flipbook-4x4.png#4x4:5",
+       "fx/ember-v2-main-flipbook-4x4.png#4x4:6",
+       "fx/ember-v2-main-flipbook-4x4.png#4x4:7",
+       "fx/ember-v2-main-flipbook-4x4.png#4x4:8",
+       "fx/ember-v2-main-flipbook-4x4.png#4x4:9",
+       "fx/ember-v2-main-flipbook-4x4.png#4x4:10",
+       "fx/ember-v2-main-flipbook-4x4.png#4x4:11",
+       "fx/ember-v2-main-flipbook-4x4.png#4x4:12",
+       "fx/ember-v2-main-flipbook-4x4.png#4x4:13",
+       "fx/ember-v2-main-flipbook-4x4.png#4x4:14",
+       "fx/ember-v2-main-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "ember-v2-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/ember-v2-particles-flipbook-4x4.png#4x4:0",
+       "fx/ember-v2-particles-flipbook-4x4.png#4x4:1",
+       "fx/ember-v2-particles-flipbook-4x4.png#4x4:2",
+       "fx/ember-v2-particles-flipbook-4x4.png#4x4:3",
+       "fx/ember-v2-particles-flipbook-4x4.png#4x4:4",
+       "fx/ember-v2-particles-flipbook-4x4.png#4x4:5",
+       "fx/ember-v2-particles-flipbook-4x4.png#4x4:6",
+       "fx/ember-v2-particles-flipbook-4x4.png#4x4:7",
+       "fx/ember-v2-particles-flipbook-4x4.png#4x4:8",
+       "fx/ember-v2-particles-flipbook-4x4.png#4x4:9",
+       "fx/ember-v2-particles-flipbook-4x4.png#4x4:10",
+       "fx/ember-v2-particles-flipbook-4x4.png#4x4:11",
+       "fx/ember-v2-particles-flipbook-4x4.png#4x4:12",
+       "fx/ember-v2-particles-flipbook-4x4.png#4x4:13",
+       "fx/ember-v2-particles-flipbook-4x4.png#4x4:14",
+       "fx/ember-v2-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "ember-v2-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/ember-v2-secondary-flipbook-4x4.png#4x4:0",
+       "fx/ember-v2-secondary-flipbook-4x4.png#4x4:1",
+       "fx/ember-v2-secondary-flipbook-4x4.png#4x4:2",
+       "fx/ember-v2-secondary-flipbook-4x4.png#4x4:3",
+       "fx/ember-v2-secondary-flipbook-4x4.png#4x4:4",
+       "fx/ember-v2-secondary-flipbook-4x4.png#4x4:5",
+       "fx/ember-v2-secondary-flipbook-4x4.png#4x4:6",
+       "fx/ember-v2-secondary-flipbook-4x4.png#4x4:7",
+       "fx/ember-v2-secondary-flipbook-4x4.png#4x4:8",
+       "fx/ember-v2-secondary-flipbook-4x4.png#4x4:9",
+       "fx/ember-v2-secondary-flipbook-4x4.png#4x4:10",
+       "fx/ember-v2-secondary-flipbook-4x4.png#4x4:11",
+       "fx/ember-v2-secondary-flipbook-4x4.png#4x4:12",
+       "fx/ember-v2-secondary-flipbook-4x4.png#4x4:13",
+       "fx/ember-v2-secondary-flipbook-4x4.png#4x4:14",
+       "fx/ember-v2-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "ember-v3-main-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/ember-v3-main-flipbook-4x4.png#4x4:0",
+       "fx/ember-v3-main-flipbook-4x4.png#4x4:1",
+       "fx/ember-v3-main-flipbook-4x4.png#4x4:2",
+       "fx/ember-v3-main-flipbook-4x4.png#4x4:3",
+       "fx/ember-v3-main-flipbook-4x4.png#4x4:4",
+       "fx/ember-v3-main-flipbook-4x4.png#4x4:5",
+       "fx/ember-v3-main-flipbook-4x4.png#4x4:6",
+       "fx/ember-v3-main-flipbook-4x4.png#4x4:7",
+       "fx/ember-v3-main-flipbook-4x4.png#4x4:8",
+       "fx/ember-v3-main-flipbook-4x4.png#4x4:9",
+       "fx/ember-v3-main-flipbook-4x4.png#4x4:10",
+       "fx/ember-v3-main-flipbook-4x4.png#4x4:11",
+       "fx/ember-v3-main-flipbook-4x4.png#4x4:12",
+       "fx/ember-v3-main-flipbook-4x4.png#4x4:13",
+       "fx/ember-v3-main-flipbook-4x4.png#4x4:14",
+       "fx/ember-v3-main-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "ember-v3-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/ember-v3-particles-flipbook-4x4.png#4x4:0",
+       "fx/ember-v3-particles-flipbook-4x4.png#4x4:1",
+       "fx/ember-v3-particles-flipbook-4x4.png#4x4:2",
+       "fx/ember-v3-particles-flipbook-4x4.png#4x4:3",
+       "fx/ember-v3-particles-flipbook-4x4.png#4x4:4",
+       "fx/ember-v3-particles-flipbook-4x4.png#4x4:5",
+       "fx/ember-v3-particles-flipbook-4x4.png#4x4:6",
+       "fx/ember-v3-particles-flipbook-4x4.png#4x4:7",
+       "fx/ember-v3-particles-flipbook-4x4.png#4x4:8",
+       "fx/ember-v3-particles-flipbook-4x4.png#4x4:9",
+       "fx/ember-v3-particles-flipbook-4x4.png#4x4:10",
+       "fx/ember-v3-particles-flipbook-4x4.png#4x4:11",
+       "fx/ember-v3-particles-flipbook-4x4.png#4x4:12",
+       "fx/ember-v3-particles-flipbook-4x4.png#4x4:13",
+       "fx/ember-v3-particles-flipbook-4x4.png#4x4:14",
+       "fx/ember-v3-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "ember-v3-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/ember-v3-secondary-flipbook-4x4.png#4x4:0",
+       "fx/ember-v3-secondary-flipbook-4x4.png#4x4:1",
+       "fx/ember-v3-secondary-flipbook-4x4.png#4x4:2",
+       "fx/ember-v3-secondary-flipbook-4x4.png#4x4:3",
+       "fx/ember-v3-secondary-flipbook-4x4.png#4x4:4",
+       "fx/ember-v3-secondary-flipbook-4x4.png#4x4:5",
+       "fx/ember-v3-secondary-flipbook-4x4.png#4x4:6",
+       "fx/ember-v3-secondary-flipbook-4x4.png#4x4:7",
+       "fx/ember-v3-secondary-flipbook-4x4.png#4x4:8",
+       "fx/ember-v3-secondary-flipbook-4x4.png#4x4:9",
+       "fx/ember-v3-secondary-flipbook-4x4.png#4x4:10",
+       "fx/ember-v3-secondary-flipbook-4x4.png#4x4:11",
+       "fx/ember-v3-secondary-flipbook-4x4.png#4x4:12",
+       "fx/ember-v3-secondary-flipbook-4x4.png#4x4:13",
+       "fx/ember-v3-secondary-flipbook-4x4.png#4x4:14",
+       "fx/ember-v3-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "fire-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/fire-flipbook-4x4.png#4x4:0",
+       "fx/fire-flipbook-4x4.png#4x4:1",
+       "fx/fire-flipbook-4x4.png#4x4:2",
+       "fx/fire-flipbook-4x4.png#4x4:3",
+       "fx/fire-flipbook-4x4.png#4x4:4",
+       "fx/fire-flipbook-4x4.png#4x4:5",
+       "fx/fire-flipbook-4x4.png#4x4:6",
+       "fx/fire-flipbook-4x4.png#4x4:7",
+       "fx/fire-flipbook-4x4.png#4x4:8",
+       "fx/fire-flipbook-4x4.png#4x4:9",
+       "fx/fire-flipbook-4x4.png#4x4:10",
+       "fx/fire-flipbook-4x4.png#4x4:11",
+       "fx/fire-flipbook-4x4.png#4x4:12",
+       "fx/fire-flipbook-4x4.png#4x4:13",
+       "fx/fire-flipbook-4x4.png#4x4:14",
+       "fx/fire-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "fire-v2-flame-b",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "fx/fire-v2-flame-b.png"
+     }
+    },
+    {
+     "name": "fire-v2-flame-c",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "fx/fire-v2-flame-c.png"
+     }
+    },
+    {
+     "name": "fire-v2-main-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/fire-v2-main-flipbook-4x4.png#4x4:0",
+       "fx/fire-v2-main-flipbook-4x4.png#4x4:1",
+       "fx/fire-v2-main-flipbook-4x4.png#4x4:2",
+       "fx/fire-v2-main-flipbook-4x4.png#4x4:3",
+       "fx/fire-v2-main-flipbook-4x4.png#4x4:4",
+       "fx/fire-v2-main-flipbook-4x4.png#4x4:5",
+       "fx/fire-v2-main-flipbook-4x4.png#4x4:6",
+       "fx/fire-v2-main-flipbook-4x4.png#4x4:7",
+       "fx/fire-v2-main-flipbook-4x4.png#4x4:8",
+       "fx/fire-v2-main-flipbook-4x4.png#4x4:9",
+       "fx/fire-v2-main-flipbook-4x4.png#4x4:10",
+       "fx/fire-v2-main-flipbook-4x4.png#4x4:11",
+       "fx/fire-v2-main-flipbook-4x4.png#4x4:12",
+       "fx/fire-v2-main-flipbook-4x4.png#4x4:13",
+       "fx/fire-v2-main-flipbook-4x4.png#4x4:14",
+       "fx/fire-v2-main-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "fire-v2-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/fire-v2-particles-flipbook-4x4.png#4x4:0",
+       "fx/fire-v2-particles-flipbook-4x4.png#4x4:1",
+       "fx/fire-v2-particles-flipbook-4x4.png#4x4:2",
+       "fx/fire-v2-particles-flipbook-4x4.png#4x4:3",
+       "fx/fire-v2-particles-flipbook-4x4.png#4x4:4",
+       "fx/fire-v2-particles-flipbook-4x4.png#4x4:5",
+       "fx/fire-v2-particles-flipbook-4x4.png#4x4:6",
+       "fx/fire-v2-particles-flipbook-4x4.png#4x4:7",
+       "fx/fire-v2-particles-flipbook-4x4.png#4x4:8",
+       "fx/fire-v2-particles-flipbook-4x4.png#4x4:9",
+       "fx/fire-v2-particles-flipbook-4x4.png#4x4:10",
+       "fx/fire-v2-particles-flipbook-4x4.png#4x4:11",
+       "fx/fire-v2-particles-flipbook-4x4.png#4x4:12",
+       "fx/fire-v2-particles-flipbook-4x4.png#4x4:13",
+       "fx/fire-v2-particles-flipbook-4x4.png#4x4:14",
+       "fx/fire-v2-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "fire-v2-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/fire-v2-secondary-flipbook-4x4.png#4x4:0",
+       "fx/fire-v2-secondary-flipbook-4x4.png#4x4:1",
+       "fx/fire-v2-secondary-flipbook-4x4.png#4x4:2",
+       "fx/fire-v2-secondary-flipbook-4x4.png#4x4:3",
+       "fx/fire-v2-secondary-flipbook-4x4.png#4x4:4",
+       "fx/fire-v2-secondary-flipbook-4x4.png#4x4:5",
+       "fx/fire-v2-secondary-flipbook-4x4.png#4x4:6",
+       "fx/fire-v2-secondary-flipbook-4x4.png#4x4:7",
+       "fx/fire-v2-secondary-flipbook-4x4.png#4x4:8",
+       "fx/fire-v2-secondary-flipbook-4x4.png#4x4:9",
+       "fx/fire-v2-secondary-flipbook-4x4.png#4x4:10",
+       "fx/fire-v2-secondary-flipbook-4x4.png#4x4:11",
+       "fx/fire-v2-secondary-flipbook-4x4.png#4x4:12",
+       "fx/fire-v2-secondary-flipbook-4x4.png#4x4:13",
+       "fx/fire-v2-secondary-flipbook-4x4.png#4x4:14",
+       "fx/fire-v2-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "fire-v2-smoke-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/fire-v2-smoke-4x4.png#4x4:0",
+       "fx/fire-v2-smoke-4x4.png#4x4:1",
+       "fx/fire-v2-smoke-4x4.png#4x4:2",
+       "fx/fire-v2-smoke-4x4.png#4x4:3",
+       "fx/fire-v2-smoke-4x4.png#4x4:4",
+       "fx/fire-v2-smoke-4x4.png#4x4:5",
+       "fx/fire-v2-smoke-4x4.png#4x4:6",
+       "fx/fire-v2-smoke-4x4.png#4x4:7",
+       "fx/fire-v2-smoke-4x4.png#4x4:8",
+       "fx/fire-v2-smoke-4x4.png#4x4:9",
+       "fx/fire-v2-smoke-4x4.png#4x4:10",
+       "fx/fire-v2-smoke-4x4.png#4x4:11",
+       "fx/fire-v2-smoke-4x4.png#4x4:12",
+       "fx/fire-v2-smoke-4x4.png#4x4:13",
+       "fx/fire-v2-smoke-4x4.png#4x4:14",
+       "fx/fire-v2-smoke-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "fire-v3-main-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/fire-v3-main-flipbook-4x4.png#4x4:0",
+       "fx/fire-v3-main-flipbook-4x4.png#4x4:1",
+       "fx/fire-v3-main-flipbook-4x4.png#4x4:2",
+       "fx/fire-v3-main-flipbook-4x4.png#4x4:3",
+       "fx/fire-v3-main-flipbook-4x4.png#4x4:4",
+       "fx/fire-v3-main-flipbook-4x4.png#4x4:5",
+       "fx/fire-v3-main-flipbook-4x4.png#4x4:6",
+       "fx/fire-v3-main-flipbook-4x4.png#4x4:7",
+       "fx/fire-v3-main-flipbook-4x4.png#4x4:8",
+       "fx/fire-v3-main-flipbook-4x4.png#4x4:9",
+       "fx/fire-v3-main-flipbook-4x4.png#4x4:10",
+       "fx/fire-v3-main-flipbook-4x4.png#4x4:11",
+       "fx/fire-v3-main-flipbook-4x4.png#4x4:12",
+       "fx/fire-v3-main-flipbook-4x4.png#4x4:13",
+       "fx/fire-v3-main-flipbook-4x4.png#4x4:14",
+       "fx/fire-v3-main-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "fire-v3-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/fire-v3-particles-flipbook-4x4.png#4x4:0",
+       "fx/fire-v3-particles-flipbook-4x4.png#4x4:1",
+       "fx/fire-v3-particles-flipbook-4x4.png#4x4:2",
+       "fx/fire-v3-particles-flipbook-4x4.png#4x4:3",
+       "fx/fire-v3-particles-flipbook-4x4.png#4x4:4",
+       "fx/fire-v3-particles-flipbook-4x4.png#4x4:5",
+       "fx/fire-v3-particles-flipbook-4x4.png#4x4:6",
+       "fx/fire-v3-particles-flipbook-4x4.png#4x4:7",
+       "fx/fire-v3-particles-flipbook-4x4.png#4x4:8",
+       "fx/fire-v3-particles-flipbook-4x4.png#4x4:9",
+       "fx/fire-v3-particles-flipbook-4x4.png#4x4:10",
+       "fx/fire-v3-particles-flipbook-4x4.png#4x4:11",
+       "fx/fire-v3-particles-flipbook-4x4.png#4x4:12",
+       "fx/fire-v3-particles-flipbook-4x4.png#4x4:13",
+       "fx/fire-v3-particles-flipbook-4x4.png#4x4:14",
+       "fx/fire-v3-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "fire-v3-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/fire-v3-secondary-flipbook-4x4.png#4x4:0",
+       "fx/fire-v3-secondary-flipbook-4x4.png#4x4:1",
+       "fx/fire-v3-secondary-flipbook-4x4.png#4x4:2",
+       "fx/fire-v3-secondary-flipbook-4x4.png#4x4:3",
+       "fx/fire-v3-secondary-flipbook-4x4.png#4x4:4",
+       "fx/fire-v3-secondary-flipbook-4x4.png#4x4:5",
+       "fx/fire-v3-secondary-flipbook-4x4.png#4x4:6",
+       "fx/fire-v3-secondary-flipbook-4x4.png#4x4:7",
+       "fx/fire-v3-secondary-flipbook-4x4.png#4x4:8",
+       "fx/fire-v3-secondary-flipbook-4x4.png#4x4:9",
+       "fx/fire-v3-secondary-flipbook-4x4.png#4x4:10",
+       "fx/fire-v3-secondary-flipbook-4x4.png#4x4:11",
+       "fx/fire-v3-secondary-flipbook-4x4.png#4x4:12",
+       "fx/fire-v3-secondary-flipbook-4x4.png#4x4:13",
+       "fx/fire-v3-secondary-flipbook-4x4.png#4x4:14",
+       "fx/fire-v3-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "fireball-core-v1",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "fx/fireball-core-v1.png!black"
+     }
+    },
+    {
+     "name": "fireball-core-v2",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "fx/fireball-core-v2.png"
+     }
+    },
+    {
+     "name": "frost-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/frost-flipbook-4x4.png#4x4:0",
+       "fx/frost-flipbook-4x4.png#4x4:1",
+       "fx/frost-flipbook-4x4.png#4x4:2",
+       "fx/frost-flipbook-4x4.png#4x4:3",
+       "fx/frost-flipbook-4x4.png#4x4:4",
+       "fx/frost-flipbook-4x4.png#4x4:5",
+       "fx/frost-flipbook-4x4.png#4x4:6",
+       "fx/frost-flipbook-4x4.png#4x4:7",
+       "fx/frost-flipbook-4x4.png#4x4:8",
+       "fx/frost-flipbook-4x4.png#4x4:9",
+       "fx/frost-flipbook-4x4.png#4x4:10",
+       "fx/frost-flipbook-4x4.png#4x4:11",
+       "fx/frost-flipbook-4x4.png#4x4:12",
+       "fx/frost-flipbook-4x4.png#4x4:13",
+       "fx/frost-flipbook-4x4.png#4x4:14",
+       "fx/frost-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "frost-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/frost-particles-flipbook-4x4.png#4x4:0",
+       "fx/frost-particles-flipbook-4x4.png#4x4:1",
+       "fx/frost-particles-flipbook-4x4.png#4x4:2",
+       "fx/frost-particles-flipbook-4x4.png#4x4:3",
+       "fx/frost-particles-flipbook-4x4.png#4x4:4",
+       "fx/frost-particles-flipbook-4x4.png#4x4:5",
+       "fx/frost-particles-flipbook-4x4.png#4x4:6",
+       "fx/frost-particles-flipbook-4x4.png#4x4:7",
+       "fx/frost-particles-flipbook-4x4.png#4x4:8",
+       "fx/frost-particles-flipbook-4x4.png#4x4:9",
+       "fx/frost-particles-flipbook-4x4.png#4x4:10",
+       "fx/frost-particles-flipbook-4x4.png#4x4:11",
+       "fx/frost-particles-flipbook-4x4.png#4x4:12",
+       "fx/frost-particles-flipbook-4x4.png#4x4:13",
+       "fx/frost-particles-flipbook-4x4.png#4x4:14",
+       "fx/frost-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "frost-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/frost-secondary-flipbook-4x4.png#4x4:0",
+       "fx/frost-secondary-flipbook-4x4.png#4x4:1",
+       "fx/frost-secondary-flipbook-4x4.png#4x4:2",
+       "fx/frost-secondary-flipbook-4x4.png#4x4:3",
+       "fx/frost-secondary-flipbook-4x4.png#4x4:4",
+       "fx/frost-secondary-flipbook-4x4.png#4x4:5",
+       "fx/frost-secondary-flipbook-4x4.png#4x4:6",
+       "fx/frost-secondary-flipbook-4x4.png#4x4:7",
+       "fx/frost-secondary-flipbook-4x4.png#4x4:8",
+       "fx/frost-secondary-flipbook-4x4.png#4x4:9",
+       "fx/frost-secondary-flipbook-4x4.png#4x4:10",
+       "fx/frost-secondary-flipbook-4x4.png#4x4:11",
+       "fx/frost-secondary-flipbook-4x4.png#4x4:12",
+       "fx/frost-secondary-flipbook-4x4.png#4x4:13",
+       "fx/frost-secondary-flipbook-4x4.png#4x4:14",
+       "fx/frost-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "frost-v2-main-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/frost-v2-main-flipbook-4x4.png#4x4:0",
+       "fx/frost-v2-main-flipbook-4x4.png#4x4:1",
+       "fx/frost-v2-main-flipbook-4x4.png#4x4:2",
+       "fx/frost-v2-main-flipbook-4x4.png#4x4:3",
+       "fx/frost-v2-main-flipbook-4x4.png#4x4:4",
+       "fx/frost-v2-main-flipbook-4x4.png#4x4:5",
+       "fx/frost-v2-main-flipbook-4x4.png#4x4:6",
+       "fx/frost-v2-main-flipbook-4x4.png#4x4:7",
+       "fx/frost-v2-main-flipbook-4x4.png#4x4:8",
+       "fx/frost-v2-main-flipbook-4x4.png#4x4:9",
+       "fx/frost-v2-main-flipbook-4x4.png#4x4:10",
+       "fx/frost-v2-main-flipbook-4x4.png#4x4:11",
+       "fx/frost-v2-main-flipbook-4x4.png#4x4:12",
+       "fx/frost-v2-main-flipbook-4x4.png#4x4:13",
+       "fx/frost-v2-main-flipbook-4x4.png#4x4:14",
+       "fx/frost-v2-main-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "frost-v2-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/frost-v2-particles-flipbook-4x4.png#4x4:0",
+       "fx/frost-v2-particles-flipbook-4x4.png#4x4:1",
+       "fx/frost-v2-particles-flipbook-4x4.png#4x4:2",
+       "fx/frost-v2-particles-flipbook-4x4.png#4x4:3",
+       "fx/frost-v2-particles-flipbook-4x4.png#4x4:4",
+       "fx/frost-v2-particles-flipbook-4x4.png#4x4:5",
+       "fx/frost-v2-particles-flipbook-4x4.png#4x4:6",
+       "fx/frost-v2-particles-flipbook-4x4.png#4x4:7",
+       "fx/frost-v2-particles-flipbook-4x4.png#4x4:8",
+       "fx/frost-v2-particles-flipbook-4x4.png#4x4:9",
+       "fx/frost-v2-particles-flipbook-4x4.png#4x4:10",
+       "fx/frost-v2-particles-flipbook-4x4.png#4x4:11",
+       "fx/frost-v2-particles-flipbook-4x4.png#4x4:12",
+       "fx/frost-v2-particles-flipbook-4x4.png#4x4:13",
+       "fx/frost-v2-particles-flipbook-4x4.png#4x4:14",
+       "fx/frost-v2-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "frost-v2-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/frost-v2-secondary-flipbook-4x4.png#4x4:0",
+       "fx/frost-v2-secondary-flipbook-4x4.png#4x4:1",
+       "fx/frost-v2-secondary-flipbook-4x4.png#4x4:2",
+       "fx/frost-v2-secondary-flipbook-4x4.png#4x4:3",
+       "fx/frost-v2-secondary-flipbook-4x4.png#4x4:4",
+       "fx/frost-v2-secondary-flipbook-4x4.png#4x4:5",
+       "fx/frost-v2-secondary-flipbook-4x4.png#4x4:6",
+       "fx/frost-v2-secondary-flipbook-4x4.png#4x4:7",
+       "fx/frost-v2-secondary-flipbook-4x4.png#4x4:8",
+       "fx/frost-v2-secondary-flipbook-4x4.png#4x4:9",
+       "fx/frost-v2-secondary-flipbook-4x4.png#4x4:10",
+       "fx/frost-v2-secondary-flipbook-4x4.png#4x4:11",
+       "fx/frost-v2-secondary-flipbook-4x4.png#4x4:12",
+       "fx/frost-v2-secondary-flipbook-4x4.png#4x4:13",
+       "fx/frost-v2-secondary-flipbook-4x4.png#4x4:14",
+       "fx/frost-v2-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "frost-v3-main-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/frost-v3-main-flipbook-4x4.png#4x4:0",
+       "fx/frost-v3-main-flipbook-4x4.png#4x4:1",
+       "fx/frost-v3-main-flipbook-4x4.png#4x4:2",
+       "fx/frost-v3-main-flipbook-4x4.png#4x4:3",
+       "fx/frost-v3-main-flipbook-4x4.png#4x4:4",
+       "fx/frost-v3-main-flipbook-4x4.png#4x4:5",
+       "fx/frost-v3-main-flipbook-4x4.png#4x4:6",
+       "fx/frost-v3-main-flipbook-4x4.png#4x4:7",
+       "fx/frost-v3-main-flipbook-4x4.png#4x4:8",
+       "fx/frost-v3-main-flipbook-4x4.png#4x4:9",
+       "fx/frost-v3-main-flipbook-4x4.png#4x4:10",
+       "fx/frost-v3-main-flipbook-4x4.png#4x4:11",
+       "fx/frost-v3-main-flipbook-4x4.png#4x4:12",
+       "fx/frost-v3-main-flipbook-4x4.png#4x4:13",
+       "fx/frost-v3-main-flipbook-4x4.png#4x4:14",
+       "fx/frost-v3-main-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "frost-v3-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/frost-v3-particles-flipbook-4x4.png#4x4:0",
+       "fx/frost-v3-particles-flipbook-4x4.png#4x4:1",
+       "fx/frost-v3-particles-flipbook-4x4.png#4x4:2",
+       "fx/frost-v3-particles-flipbook-4x4.png#4x4:3",
+       "fx/frost-v3-particles-flipbook-4x4.png#4x4:4",
+       "fx/frost-v3-particles-flipbook-4x4.png#4x4:5",
+       "fx/frost-v3-particles-flipbook-4x4.png#4x4:6",
+       "fx/frost-v3-particles-flipbook-4x4.png#4x4:7",
+       "fx/frost-v3-particles-flipbook-4x4.png#4x4:8",
+       "fx/frost-v3-particles-flipbook-4x4.png#4x4:9",
+       "fx/frost-v3-particles-flipbook-4x4.png#4x4:10",
+       "fx/frost-v3-particles-flipbook-4x4.png#4x4:11",
+       "fx/frost-v3-particles-flipbook-4x4.png#4x4:12",
+       "fx/frost-v3-particles-flipbook-4x4.png#4x4:13",
+       "fx/frost-v3-particles-flipbook-4x4.png#4x4:14",
+       "fx/frost-v3-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "frost-v3-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/frost-v3-secondary-flipbook-4x4.png#4x4:0",
+       "fx/frost-v3-secondary-flipbook-4x4.png#4x4:1",
+       "fx/frost-v3-secondary-flipbook-4x4.png#4x4:2",
+       "fx/frost-v3-secondary-flipbook-4x4.png#4x4:3",
+       "fx/frost-v3-secondary-flipbook-4x4.png#4x4:4",
+       "fx/frost-v3-secondary-flipbook-4x4.png#4x4:5",
+       "fx/frost-v3-secondary-flipbook-4x4.png#4x4:6",
+       "fx/frost-v3-secondary-flipbook-4x4.png#4x4:7",
+       "fx/frost-v3-secondary-flipbook-4x4.png#4x4:8",
+       "fx/frost-v3-secondary-flipbook-4x4.png#4x4:9",
+       "fx/frost-v3-secondary-flipbook-4x4.png#4x4:10",
+       "fx/frost-v3-secondary-flipbook-4x4.png#4x4:11",
+       "fx/frost-v3-secondary-flipbook-4x4.png#4x4:12",
+       "fx/frost-v3-secondary-flipbook-4x4.png#4x4:13",
+       "fx/frost-v3-secondary-flipbook-4x4.png#4x4:14",
+       "fx/frost-v3-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "holy-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/holy-flipbook-4x4.png#4x4:0",
+       "fx/holy-flipbook-4x4.png#4x4:1",
+       "fx/holy-flipbook-4x4.png#4x4:2",
+       "fx/holy-flipbook-4x4.png#4x4:3",
+       "fx/holy-flipbook-4x4.png#4x4:4",
+       "fx/holy-flipbook-4x4.png#4x4:5",
+       "fx/holy-flipbook-4x4.png#4x4:6",
+       "fx/holy-flipbook-4x4.png#4x4:7",
+       "fx/holy-flipbook-4x4.png#4x4:8",
+       "fx/holy-flipbook-4x4.png#4x4:9",
+       "fx/holy-flipbook-4x4.png#4x4:10",
+       "fx/holy-flipbook-4x4.png#4x4:11",
+       "fx/holy-flipbook-4x4.png#4x4:12",
+       "fx/holy-flipbook-4x4.png#4x4:13",
+       "fx/holy-flipbook-4x4.png#4x4:14",
+       "fx/holy-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "holy-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/holy-particles-flipbook-4x4.png#4x4:0",
+       "fx/holy-particles-flipbook-4x4.png#4x4:1",
+       "fx/holy-particles-flipbook-4x4.png#4x4:2",
+       "fx/holy-particles-flipbook-4x4.png#4x4:3",
+       "fx/holy-particles-flipbook-4x4.png#4x4:4",
+       "fx/holy-particles-flipbook-4x4.png#4x4:5",
+       "fx/holy-particles-flipbook-4x4.png#4x4:6",
+       "fx/holy-particles-flipbook-4x4.png#4x4:7",
+       "fx/holy-particles-flipbook-4x4.png#4x4:8",
+       "fx/holy-particles-flipbook-4x4.png#4x4:9",
+       "fx/holy-particles-flipbook-4x4.png#4x4:10",
+       "fx/holy-particles-flipbook-4x4.png#4x4:11",
+       "fx/holy-particles-flipbook-4x4.png#4x4:12",
+       "fx/holy-particles-flipbook-4x4.png#4x4:13",
+       "fx/holy-particles-flipbook-4x4.png#4x4:14",
+       "fx/holy-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "holy-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/holy-secondary-flipbook-4x4.png#4x4:0",
+       "fx/holy-secondary-flipbook-4x4.png#4x4:1",
+       "fx/holy-secondary-flipbook-4x4.png#4x4:2",
+       "fx/holy-secondary-flipbook-4x4.png#4x4:3",
+       "fx/holy-secondary-flipbook-4x4.png#4x4:4",
+       "fx/holy-secondary-flipbook-4x4.png#4x4:5",
+       "fx/holy-secondary-flipbook-4x4.png#4x4:6",
+       "fx/holy-secondary-flipbook-4x4.png#4x4:7",
+       "fx/holy-secondary-flipbook-4x4.png#4x4:8",
+       "fx/holy-secondary-flipbook-4x4.png#4x4:9",
+       "fx/holy-secondary-flipbook-4x4.png#4x4:10",
+       "fx/holy-secondary-flipbook-4x4.png#4x4:11",
+       "fx/holy-secondary-flipbook-4x4.png#4x4:12",
+       "fx/holy-secondary-flipbook-4x4.png#4x4:13",
+       "fx/holy-secondary-flipbook-4x4.png#4x4:14",
+       "fx/holy-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "holy-v2-main-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/holy-v2-main-flipbook-4x4.png#4x4:0",
+       "fx/holy-v2-main-flipbook-4x4.png#4x4:1",
+       "fx/holy-v2-main-flipbook-4x4.png#4x4:2",
+       "fx/holy-v2-main-flipbook-4x4.png#4x4:3",
+       "fx/holy-v2-main-flipbook-4x4.png#4x4:4",
+       "fx/holy-v2-main-flipbook-4x4.png#4x4:5",
+       "fx/holy-v2-main-flipbook-4x4.png#4x4:6",
+       "fx/holy-v2-main-flipbook-4x4.png#4x4:7",
+       "fx/holy-v2-main-flipbook-4x4.png#4x4:8",
+       "fx/holy-v2-main-flipbook-4x4.png#4x4:9",
+       "fx/holy-v2-main-flipbook-4x4.png#4x4:10",
+       "fx/holy-v2-main-flipbook-4x4.png#4x4:11",
+       "fx/holy-v2-main-flipbook-4x4.png#4x4:12",
+       "fx/holy-v2-main-flipbook-4x4.png#4x4:13",
+       "fx/holy-v2-main-flipbook-4x4.png#4x4:14",
+       "fx/holy-v2-main-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "holy-v2-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/holy-v2-particles-flipbook-4x4.png#4x4:0",
+       "fx/holy-v2-particles-flipbook-4x4.png#4x4:1",
+       "fx/holy-v2-particles-flipbook-4x4.png#4x4:2",
+       "fx/holy-v2-particles-flipbook-4x4.png#4x4:3",
+       "fx/holy-v2-particles-flipbook-4x4.png#4x4:4",
+       "fx/holy-v2-particles-flipbook-4x4.png#4x4:5",
+       "fx/holy-v2-particles-flipbook-4x4.png#4x4:6",
+       "fx/holy-v2-particles-flipbook-4x4.png#4x4:7",
+       "fx/holy-v2-particles-flipbook-4x4.png#4x4:8",
+       "fx/holy-v2-particles-flipbook-4x4.png#4x4:9",
+       "fx/holy-v2-particles-flipbook-4x4.png#4x4:10",
+       "fx/holy-v2-particles-flipbook-4x4.png#4x4:11",
+       "fx/holy-v2-particles-flipbook-4x4.png#4x4:12",
+       "fx/holy-v2-particles-flipbook-4x4.png#4x4:13",
+       "fx/holy-v2-particles-flipbook-4x4.png#4x4:14",
+       "fx/holy-v2-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "holy-v2-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/holy-v2-secondary-flipbook-4x4.png#4x4:0",
+       "fx/holy-v2-secondary-flipbook-4x4.png#4x4:1",
+       "fx/holy-v2-secondary-flipbook-4x4.png#4x4:2",
+       "fx/holy-v2-secondary-flipbook-4x4.png#4x4:3",
+       "fx/holy-v2-secondary-flipbook-4x4.png#4x4:4",
+       "fx/holy-v2-secondary-flipbook-4x4.png#4x4:5",
+       "fx/holy-v2-secondary-flipbook-4x4.png#4x4:6",
+       "fx/holy-v2-secondary-flipbook-4x4.png#4x4:7",
+       "fx/holy-v2-secondary-flipbook-4x4.png#4x4:8",
+       "fx/holy-v2-secondary-flipbook-4x4.png#4x4:9",
+       "fx/holy-v2-secondary-flipbook-4x4.png#4x4:10",
+       "fx/holy-v2-secondary-flipbook-4x4.png#4x4:11",
+       "fx/holy-v2-secondary-flipbook-4x4.png#4x4:12",
+       "fx/holy-v2-secondary-flipbook-4x4.png#4x4:13",
+       "fx/holy-v2-secondary-flipbook-4x4.png#4x4:14",
+       "fx/holy-v2-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "holy-v3-main-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/holy-v3-main-flipbook-4x4.png#4x4:0",
+       "fx/holy-v3-main-flipbook-4x4.png#4x4:1",
+       "fx/holy-v3-main-flipbook-4x4.png#4x4:2",
+       "fx/holy-v3-main-flipbook-4x4.png#4x4:3",
+       "fx/holy-v3-main-flipbook-4x4.png#4x4:4",
+       "fx/holy-v3-main-flipbook-4x4.png#4x4:5",
+       "fx/holy-v3-main-flipbook-4x4.png#4x4:6",
+       "fx/holy-v3-main-flipbook-4x4.png#4x4:7",
+       "fx/holy-v3-main-flipbook-4x4.png#4x4:8",
+       "fx/holy-v3-main-flipbook-4x4.png#4x4:9",
+       "fx/holy-v3-main-flipbook-4x4.png#4x4:10",
+       "fx/holy-v3-main-flipbook-4x4.png#4x4:11",
+       "fx/holy-v3-main-flipbook-4x4.png#4x4:12",
+       "fx/holy-v3-main-flipbook-4x4.png#4x4:13",
+       "fx/holy-v3-main-flipbook-4x4.png#4x4:14",
+       "fx/holy-v3-main-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "holy-v3-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/holy-v3-particles-flipbook-4x4.png#4x4:0",
+       "fx/holy-v3-particles-flipbook-4x4.png#4x4:1",
+       "fx/holy-v3-particles-flipbook-4x4.png#4x4:2",
+       "fx/holy-v3-particles-flipbook-4x4.png#4x4:3",
+       "fx/holy-v3-particles-flipbook-4x4.png#4x4:4",
+       "fx/holy-v3-particles-flipbook-4x4.png#4x4:5",
+       "fx/holy-v3-particles-flipbook-4x4.png#4x4:6",
+       "fx/holy-v3-particles-flipbook-4x4.png#4x4:7",
+       "fx/holy-v3-particles-flipbook-4x4.png#4x4:8",
+       "fx/holy-v3-particles-flipbook-4x4.png#4x4:9",
+       "fx/holy-v3-particles-flipbook-4x4.png#4x4:10",
+       "fx/holy-v3-particles-flipbook-4x4.png#4x4:11",
+       "fx/holy-v3-particles-flipbook-4x4.png#4x4:12",
+       "fx/holy-v3-particles-flipbook-4x4.png#4x4:13",
+       "fx/holy-v3-particles-flipbook-4x4.png#4x4:14",
+       "fx/holy-v3-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "holy-v3-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/holy-v3-secondary-flipbook-4x4.png#4x4:0",
+       "fx/holy-v3-secondary-flipbook-4x4.png#4x4:1",
+       "fx/holy-v3-secondary-flipbook-4x4.png#4x4:2",
+       "fx/holy-v3-secondary-flipbook-4x4.png#4x4:3",
+       "fx/holy-v3-secondary-flipbook-4x4.png#4x4:4",
+       "fx/holy-v3-secondary-flipbook-4x4.png#4x4:5",
+       "fx/holy-v3-secondary-flipbook-4x4.png#4x4:6",
+       "fx/holy-v3-secondary-flipbook-4x4.png#4x4:7",
+       "fx/holy-v3-secondary-flipbook-4x4.png#4x4:8",
+       "fx/holy-v3-secondary-flipbook-4x4.png#4x4:9",
+       "fx/holy-v3-secondary-flipbook-4x4.png#4x4:10",
+       "fx/holy-v3-secondary-flipbook-4x4.png#4x4:11",
+       "fx/holy-v3-secondary-flipbook-4x4.png#4x4:12",
+       "fx/holy-v3-secondary-flipbook-4x4.png#4x4:13",
+       "fx/holy-v3-secondary-flipbook-4x4.png#4x4:14",
+       "fx/holy-v3-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "impact-1",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "fx/impact-1.png"
+     }
+    },
+    {
+     "name": "impact-2",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "fx/impact-2.png"
+     }
+    },
+    {
+     "name": "impact-3",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "fx/impact-3.png"
+     }
+    },
+    {
+     "name": "impact-4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "fx/impact-4.png"
+     }
+    },
+    {
+     "name": "lightning-core-v1",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "fx/lightning-core-v1.png!black"
+     }
+    },
+    {
+     "name": "lightning-core-v2",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "fx/lightning-core-v2.png!black"
+     }
+    },
+    {
+     "name": "lightning-core-v3",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "fx/lightning-core-v3.png!black"
+     }
+    },
+    {
+     "name": "lightning-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/lightning-flipbook-4x4.png#4x4:0",
+       "fx/lightning-flipbook-4x4.png#4x4:1",
+       "fx/lightning-flipbook-4x4.png#4x4:2",
+       "fx/lightning-flipbook-4x4.png#4x4:3",
+       "fx/lightning-flipbook-4x4.png#4x4:4",
+       "fx/lightning-flipbook-4x4.png#4x4:5",
+       "fx/lightning-flipbook-4x4.png#4x4:6",
+       "fx/lightning-flipbook-4x4.png#4x4:7",
+       "fx/lightning-flipbook-4x4.png#4x4:8",
+       "fx/lightning-flipbook-4x4.png#4x4:9",
+       "fx/lightning-flipbook-4x4.png#4x4:10",
+       "fx/lightning-flipbook-4x4.png#4x4:11",
+       "fx/lightning-flipbook-4x4.png#4x4:12",
+       "fx/lightning-flipbook-4x4.png#4x4:13",
+       "fx/lightning-flipbook-4x4.png#4x4:14",
+       "fx/lightning-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "lightning-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/lightning-particles-flipbook-4x4.png#4x4:0",
+       "fx/lightning-particles-flipbook-4x4.png#4x4:1",
+       "fx/lightning-particles-flipbook-4x4.png#4x4:2",
+       "fx/lightning-particles-flipbook-4x4.png#4x4:3",
+       "fx/lightning-particles-flipbook-4x4.png#4x4:4",
+       "fx/lightning-particles-flipbook-4x4.png#4x4:5",
+       "fx/lightning-particles-flipbook-4x4.png#4x4:6",
+       "fx/lightning-particles-flipbook-4x4.png#4x4:7",
+       "fx/lightning-particles-flipbook-4x4.png#4x4:8",
+       "fx/lightning-particles-flipbook-4x4.png#4x4:9",
+       "fx/lightning-particles-flipbook-4x4.png#4x4:10",
+       "fx/lightning-particles-flipbook-4x4.png#4x4:11",
+       "fx/lightning-particles-flipbook-4x4.png#4x4:12",
+       "fx/lightning-particles-flipbook-4x4.png#4x4:13",
+       "fx/lightning-particles-flipbook-4x4.png#4x4:14",
+       "fx/lightning-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "lightning-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/lightning-secondary-flipbook-4x4.png#4x4:0",
+       "fx/lightning-secondary-flipbook-4x4.png#4x4:1",
+       "fx/lightning-secondary-flipbook-4x4.png#4x4:2",
+       "fx/lightning-secondary-flipbook-4x4.png#4x4:3",
+       "fx/lightning-secondary-flipbook-4x4.png#4x4:4",
+       "fx/lightning-secondary-flipbook-4x4.png#4x4:5",
+       "fx/lightning-secondary-flipbook-4x4.png#4x4:6",
+       "fx/lightning-secondary-flipbook-4x4.png#4x4:7",
+       "fx/lightning-secondary-flipbook-4x4.png#4x4:8",
+       "fx/lightning-secondary-flipbook-4x4.png#4x4:9",
+       "fx/lightning-secondary-flipbook-4x4.png#4x4:10",
+       "fx/lightning-secondary-flipbook-4x4.png#4x4:11",
+       "fx/lightning-secondary-flipbook-4x4.png#4x4:12",
+       "fx/lightning-secondary-flipbook-4x4.png#4x4:13",
+       "fx/lightning-secondary-flipbook-4x4.png#4x4:14",
+       "fx/lightning-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "lightning-v2-main-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/lightning-v2-main-flipbook-4x4.png#4x4:0",
+       "fx/lightning-v2-main-flipbook-4x4.png#4x4:1",
+       "fx/lightning-v2-main-flipbook-4x4.png#4x4:2",
+       "fx/lightning-v2-main-flipbook-4x4.png#4x4:3",
+       "fx/lightning-v2-main-flipbook-4x4.png#4x4:4",
+       "fx/lightning-v2-main-flipbook-4x4.png#4x4:5",
+       "fx/lightning-v2-main-flipbook-4x4.png#4x4:6",
+       "fx/lightning-v2-main-flipbook-4x4.png#4x4:7",
+       "fx/lightning-v2-main-flipbook-4x4.png#4x4:8",
+       "fx/lightning-v2-main-flipbook-4x4.png#4x4:9",
+       "fx/lightning-v2-main-flipbook-4x4.png#4x4:10",
+       "fx/lightning-v2-main-flipbook-4x4.png#4x4:11",
+       "fx/lightning-v2-main-flipbook-4x4.png#4x4:12",
+       "fx/lightning-v2-main-flipbook-4x4.png#4x4:13",
+       "fx/lightning-v2-main-flipbook-4x4.png#4x4:14",
+       "fx/lightning-v2-main-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "lightning-v2-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/lightning-v2-particles-flipbook-4x4.png#4x4:0",
+       "fx/lightning-v2-particles-flipbook-4x4.png#4x4:1",
+       "fx/lightning-v2-particles-flipbook-4x4.png#4x4:2",
+       "fx/lightning-v2-particles-flipbook-4x4.png#4x4:3",
+       "fx/lightning-v2-particles-flipbook-4x4.png#4x4:4",
+       "fx/lightning-v2-particles-flipbook-4x4.png#4x4:5",
+       "fx/lightning-v2-particles-flipbook-4x4.png#4x4:6",
+       "fx/lightning-v2-particles-flipbook-4x4.png#4x4:7",
+       "fx/lightning-v2-particles-flipbook-4x4.png#4x4:8",
+       "fx/lightning-v2-particles-flipbook-4x4.png#4x4:9",
+       "fx/lightning-v2-particles-flipbook-4x4.png#4x4:10",
+       "fx/lightning-v2-particles-flipbook-4x4.png#4x4:11",
+       "fx/lightning-v2-particles-flipbook-4x4.png#4x4:12",
+       "fx/lightning-v2-particles-flipbook-4x4.png#4x4:13",
+       "fx/lightning-v2-particles-flipbook-4x4.png#4x4:14",
+       "fx/lightning-v2-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "lightning-v2-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/lightning-v2-secondary-flipbook-4x4.png#4x4:0",
+       "fx/lightning-v2-secondary-flipbook-4x4.png#4x4:1",
+       "fx/lightning-v2-secondary-flipbook-4x4.png#4x4:2",
+       "fx/lightning-v2-secondary-flipbook-4x4.png#4x4:3",
+       "fx/lightning-v2-secondary-flipbook-4x4.png#4x4:4",
+       "fx/lightning-v2-secondary-flipbook-4x4.png#4x4:5",
+       "fx/lightning-v2-secondary-flipbook-4x4.png#4x4:6",
+       "fx/lightning-v2-secondary-flipbook-4x4.png#4x4:7",
+       "fx/lightning-v2-secondary-flipbook-4x4.png#4x4:8",
+       "fx/lightning-v2-secondary-flipbook-4x4.png#4x4:9",
+       "fx/lightning-v2-secondary-flipbook-4x4.png#4x4:10",
+       "fx/lightning-v2-secondary-flipbook-4x4.png#4x4:11",
+       "fx/lightning-v2-secondary-flipbook-4x4.png#4x4:12",
+       "fx/lightning-v2-secondary-flipbook-4x4.png#4x4:13",
+       "fx/lightning-v2-secondary-flipbook-4x4.png#4x4:14",
+       "fx/lightning-v2-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "lightning-v3-main-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/lightning-v3-main-flipbook-4x4.png#4x4:0",
+       "fx/lightning-v3-main-flipbook-4x4.png#4x4:1",
+       "fx/lightning-v3-main-flipbook-4x4.png#4x4:2",
+       "fx/lightning-v3-main-flipbook-4x4.png#4x4:3",
+       "fx/lightning-v3-main-flipbook-4x4.png#4x4:4",
+       "fx/lightning-v3-main-flipbook-4x4.png#4x4:5",
+       "fx/lightning-v3-main-flipbook-4x4.png#4x4:6",
+       "fx/lightning-v3-main-flipbook-4x4.png#4x4:7",
+       "fx/lightning-v3-main-flipbook-4x4.png#4x4:8",
+       "fx/lightning-v3-main-flipbook-4x4.png#4x4:9",
+       "fx/lightning-v3-main-flipbook-4x4.png#4x4:10",
+       "fx/lightning-v3-main-flipbook-4x4.png#4x4:11",
+       "fx/lightning-v3-main-flipbook-4x4.png#4x4:12",
+       "fx/lightning-v3-main-flipbook-4x4.png#4x4:13",
+       "fx/lightning-v3-main-flipbook-4x4.png#4x4:14",
+       "fx/lightning-v3-main-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "lightning-v3-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/lightning-v3-particles-flipbook-4x4.png#4x4:0",
+       "fx/lightning-v3-particles-flipbook-4x4.png#4x4:1",
+       "fx/lightning-v3-particles-flipbook-4x4.png#4x4:2",
+       "fx/lightning-v3-particles-flipbook-4x4.png#4x4:3",
+       "fx/lightning-v3-particles-flipbook-4x4.png#4x4:4",
+       "fx/lightning-v3-particles-flipbook-4x4.png#4x4:5",
+       "fx/lightning-v3-particles-flipbook-4x4.png#4x4:6",
+       "fx/lightning-v3-particles-flipbook-4x4.png#4x4:7",
+       "fx/lightning-v3-particles-flipbook-4x4.png#4x4:8",
+       "fx/lightning-v3-particles-flipbook-4x4.png#4x4:9",
+       "fx/lightning-v3-particles-flipbook-4x4.png#4x4:10",
+       "fx/lightning-v3-particles-flipbook-4x4.png#4x4:11",
+       "fx/lightning-v3-particles-flipbook-4x4.png#4x4:12",
+       "fx/lightning-v3-particles-flipbook-4x4.png#4x4:13",
+       "fx/lightning-v3-particles-flipbook-4x4.png#4x4:14",
+       "fx/lightning-v3-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "lightning-v3-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/lightning-v3-secondary-flipbook-4x4.png#4x4:0",
+       "fx/lightning-v3-secondary-flipbook-4x4.png#4x4:1",
+       "fx/lightning-v3-secondary-flipbook-4x4.png#4x4:2",
+       "fx/lightning-v3-secondary-flipbook-4x4.png#4x4:3",
+       "fx/lightning-v3-secondary-flipbook-4x4.png#4x4:4",
+       "fx/lightning-v3-secondary-flipbook-4x4.png#4x4:5",
+       "fx/lightning-v3-secondary-flipbook-4x4.png#4x4:6",
+       "fx/lightning-v3-secondary-flipbook-4x4.png#4x4:7",
+       "fx/lightning-v3-secondary-flipbook-4x4.png#4x4:8",
+       "fx/lightning-v3-secondary-flipbook-4x4.png#4x4:9",
+       "fx/lightning-v3-secondary-flipbook-4x4.png#4x4:10",
+       "fx/lightning-v3-secondary-flipbook-4x4.png#4x4:11",
+       "fx/lightning-v3-secondary-flipbook-4x4.png#4x4:12",
+       "fx/lightning-v3-secondary-flipbook-4x4.png#4x4:13",
+       "fx/lightning-v3-secondary-flipbook-4x4.png#4x4:14",
+       "fx/lightning-v3-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "poison-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/poison-flipbook-4x4.png#4x4:0",
+       "fx/poison-flipbook-4x4.png#4x4:1",
+       "fx/poison-flipbook-4x4.png#4x4:2",
+       "fx/poison-flipbook-4x4.png#4x4:3",
+       "fx/poison-flipbook-4x4.png#4x4:4",
+       "fx/poison-flipbook-4x4.png#4x4:5",
+       "fx/poison-flipbook-4x4.png#4x4:6",
+       "fx/poison-flipbook-4x4.png#4x4:7",
+       "fx/poison-flipbook-4x4.png#4x4:8",
+       "fx/poison-flipbook-4x4.png#4x4:9",
+       "fx/poison-flipbook-4x4.png#4x4:10",
+       "fx/poison-flipbook-4x4.png#4x4:11",
+       "fx/poison-flipbook-4x4.png#4x4:12",
+       "fx/poison-flipbook-4x4.png#4x4:13",
+       "fx/poison-flipbook-4x4.png#4x4:14",
+       "fx/poison-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "poison-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/poison-particles-flipbook-4x4.png#4x4:0",
+       "fx/poison-particles-flipbook-4x4.png#4x4:1",
+       "fx/poison-particles-flipbook-4x4.png#4x4:2",
+       "fx/poison-particles-flipbook-4x4.png#4x4:3",
+       "fx/poison-particles-flipbook-4x4.png#4x4:4",
+       "fx/poison-particles-flipbook-4x4.png#4x4:5",
+       "fx/poison-particles-flipbook-4x4.png#4x4:6",
+       "fx/poison-particles-flipbook-4x4.png#4x4:7",
+       "fx/poison-particles-flipbook-4x4.png#4x4:8",
+       "fx/poison-particles-flipbook-4x4.png#4x4:9",
+       "fx/poison-particles-flipbook-4x4.png#4x4:10",
+       "fx/poison-particles-flipbook-4x4.png#4x4:11",
+       "fx/poison-particles-flipbook-4x4.png#4x4:12",
+       "fx/poison-particles-flipbook-4x4.png#4x4:13",
+       "fx/poison-particles-flipbook-4x4.png#4x4:14",
+       "fx/poison-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "poison-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/poison-secondary-flipbook-4x4.png#4x4:0",
+       "fx/poison-secondary-flipbook-4x4.png#4x4:1",
+       "fx/poison-secondary-flipbook-4x4.png#4x4:2",
+       "fx/poison-secondary-flipbook-4x4.png#4x4:3",
+       "fx/poison-secondary-flipbook-4x4.png#4x4:4",
+       "fx/poison-secondary-flipbook-4x4.png#4x4:5",
+       "fx/poison-secondary-flipbook-4x4.png#4x4:6",
+       "fx/poison-secondary-flipbook-4x4.png#4x4:7",
+       "fx/poison-secondary-flipbook-4x4.png#4x4:8",
+       "fx/poison-secondary-flipbook-4x4.png#4x4:9",
+       "fx/poison-secondary-flipbook-4x4.png#4x4:10",
+       "fx/poison-secondary-flipbook-4x4.png#4x4:11",
+       "fx/poison-secondary-flipbook-4x4.png#4x4:12",
+       "fx/poison-secondary-flipbook-4x4.png#4x4:13",
+       "fx/poison-secondary-flipbook-4x4.png#4x4:14",
+       "fx/poison-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "poison-v2-main-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/poison-v2-main-flipbook-4x4.png#4x4:0",
+       "fx/poison-v2-main-flipbook-4x4.png#4x4:1",
+       "fx/poison-v2-main-flipbook-4x4.png#4x4:2",
+       "fx/poison-v2-main-flipbook-4x4.png#4x4:3",
+       "fx/poison-v2-main-flipbook-4x4.png#4x4:4",
+       "fx/poison-v2-main-flipbook-4x4.png#4x4:5",
+       "fx/poison-v2-main-flipbook-4x4.png#4x4:6",
+       "fx/poison-v2-main-flipbook-4x4.png#4x4:7",
+       "fx/poison-v2-main-flipbook-4x4.png#4x4:8",
+       "fx/poison-v2-main-flipbook-4x4.png#4x4:9",
+       "fx/poison-v2-main-flipbook-4x4.png#4x4:10",
+       "fx/poison-v2-main-flipbook-4x4.png#4x4:11",
+       "fx/poison-v2-main-flipbook-4x4.png#4x4:12",
+       "fx/poison-v2-main-flipbook-4x4.png#4x4:13",
+       "fx/poison-v2-main-flipbook-4x4.png#4x4:14",
+       "fx/poison-v2-main-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "poison-v2-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/poison-v2-particles-flipbook-4x4.png#4x4:0",
+       "fx/poison-v2-particles-flipbook-4x4.png#4x4:1",
+       "fx/poison-v2-particles-flipbook-4x4.png#4x4:2",
+       "fx/poison-v2-particles-flipbook-4x4.png#4x4:3",
+       "fx/poison-v2-particles-flipbook-4x4.png#4x4:4",
+       "fx/poison-v2-particles-flipbook-4x4.png#4x4:5",
+       "fx/poison-v2-particles-flipbook-4x4.png#4x4:6",
+       "fx/poison-v2-particles-flipbook-4x4.png#4x4:7",
+       "fx/poison-v2-particles-flipbook-4x4.png#4x4:8",
+       "fx/poison-v2-particles-flipbook-4x4.png#4x4:9",
+       "fx/poison-v2-particles-flipbook-4x4.png#4x4:10",
+       "fx/poison-v2-particles-flipbook-4x4.png#4x4:11",
+       "fx/poison-v2-particles-flipbook-4x4.png#4x4:12",
+       "fx/poison-v2-particles-flipbook-4x4.png#4x4:13",
+       "fx/poison-v2-particles-flipbook-4x4.png#4x4:14",
+       "fx/poison-v2-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "poison-v2-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/poison-v2-secondary-flipbook-4x4.png#4x4:0",
+       "fx/poison-v2-secondary-flipbook-4x4.png#4x4:1",
+       "fx/poison-v2-secondary-flipbook-4x4.png#4x4:2",
+       "fx/poison-v2-secondary-flipbook-4x4.png#4x4:3",
+       "fx/poison-v2-secondary-flipbook-4x4.png#4x4:4",
+       "fx/poison-v2-secondary-flipbook-4x4.png#4x4:5",
+       "fx/poison-v2-secondary-flipbook-4x4.png#4x4:6",
+       "fx/poison-v2-secondary-flipbook-4x4.png#4x4:7",
+       "fx/poison-v2-secondary-flipbook-4x4.png#4x4:8",
+       "fx/poison-v2-secondary-flipbook-4x4.png#4x4:9",
+       "fx/poison-v2-secondary-flipbook-4x4.png#4x4:10",
+       "fx/poison-v2-secondary-flipbook-4x4.png#4x4:11",
+       "fx/poison-v2-secondary-flipbook-4x4.png#4x4:12",
+       "fx/poison-v2-secondary-flipbook-4x4.png#4x4:13",
+       "fx/poison-v2-secondary-flipbook-4x4.png#4x4:14",
+       "fx/poison-v2-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "poison-v3-main-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/poison-v3-main-flipbook-4x4.png#4x4:0",
+       "fx/poison-v3-main-flipbook-4x4.png#4x4:1",
+       "fx/poison-v3-main-flipbook-4x4.png#4x4:2",
+       "fx/poison-v3-main-flipbook-4x4.png#4x4:3",
+       "fx/poison-v3-main-flipbook-4x4.png#4x4:4",
+       "fx/poison-v3-main-flipbook-4x4.png#4x4:5",
+       "fx/poison-v3-main-flipbook-4x4.png#4x4:6",
+       "fx/poison-v3-main-flipbook-4x4.png#4x4:7",
+       "fx/poison-v3-main-flipbook-4x4.png#4x4:8",
+       "fx/poison-v3-main-flipbook-4x4.png#4x4:9",
+       "fx/poison-v3-main-flipbook-4x4.png#4x4:10",
+       "fx/poison-v3-main-flipbook-4x4.png#4x4:11",
+       "fx/poison-v3-main-flipbook-4x4.png#4x4:12",
+       "fx/poison-v3-main-flipbook-4x4.png#4x4:13",
+       "fx/poison-v3-main-flipbook-4x4.png#4x4:14",
+       "fx/poison-v3-main-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "poison-v3-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/poison-v3-particles-flipbook-4x4.png#4x4:0",
+       "fx/poison-v3-particles-flipbook-4x4.png#4x4:1",
+       "fx/poison-v3-particles-flipbook-4x4.png#4x4:2",
+       "fx/poison-v3-particles-flipbook-4x4.png#4x4:3",
+       "fx/poison-v3-particles-flipbook-4x4.png#4x4:4",
+       "fx/poison-v3-particles-flipbook-4x4.png#4x4:5",
+       "fx/poison-v3-particles-flipbook-4x4.png#4x4:6",
+       "fx/poison-v3-particles-flipbook-4x4.png#4x4:7",
+       "fx/poison-v3-particles-flipbook-4x4.png#4x4:8",
+       "fx/poison-v3-particles-flipbook-4x4.png#4x4:9",
+       "fx/poison-v3-particles-flipbook-4x4.png#4x4:10",
+       "fx/poison-v3-particles-flipbook-4x4.png#4x4:11",
+       "fx/poison-v3-particles-flipbook-4x4.png#4x4:12",
+       "fx/poison-v3-particles-flipbook-4x4.png#4x4:13",
+       "fx/poison-v3-particles-flipbook-4x4.png#4x4:14",
+       "fx/poison-v3-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "poison-v3-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/poison-v3-secondary-flipbook-4x4.png#4x4:0",
+       "fx/poison-v3-secondary-flipbook-4x4.png#4x4:1",
+       "fx/poison-v3-secondary-flipbook-4x4.png#4x4:2",
+       "fx/poison-v3-secondary-flipbook-4x4.png#4x4:3",
+       "fx/poison-v3-secondary-flipbook-4x4.png#4x4:4",
+       "fx/poison-v3-secondary-flipbook-4x4.png#4x4:5",
+       "fx/poison-v3-secondary-flipbook-4x4.png#4x4:6",
+       "fx/poison-v3-secondary-flipbook-4x4.png#4x4:7",
+       "fx/poison-v3-secondary-flipbook-4x4.png#4x4:8",
+       "fx/poison-v3-secondary-flipbook-4x4.png#4x4:9",
+       "fx/poison-v3-secondary-flipbook-4x4.png#4x4:10",
+       "fx/poison-v3-secondary-flipbook-4x4.png#4x4:11",
+       "fx/poison-v3-secondary-flipbook-4x4.png#4x4:12",
+       "fx/poison-v3-secondary-flipbook-4x4.png#4x4:13",
+       "fx/poison-v3-secondary-flipbook-4x4.png#4x4:14",
+       "fx/poison-v3-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "shadow-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/shadow-flipbook-4x4.png#4x4:0",
+       "fx/shadow-flipbook-4x4.png#4x4:1",
+       "fx/shadow-flipbook-4x4.png#4x4:2",
+       "fx/shadow-flipbook-4x4.png#4x4:3",
+       "fx/shadow-flipbook-4x4.png#4x4:4",
+       "fx/shadow-flipbook-4x4.png#4x4:5",
+       "fx/shadow-flipbook-4x4.png#4x4:6",
+       "fx/shadow-flipbook-4x4.png#4x4:7",
+       "fx/shadow-flipbook-4x4.png#4x4:8",
+       "fx/shadow-flipbook-4x4.png#4x4:9",
+       "fx/shadow-flipbook-4x4.png#4x4:10",
+       "fx/shadow-flipbook-4x4.png#4x4:11",
+       "fx/shadow-flipbook-4x4.png#4x4:12",
+       "fx/shadow-flipbook-4x4.png#4x4:13",
+       "fx/shadow-flipbook-4x4.png#4x4:14",
+       "fx/shadow-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "shadow-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/shadow-particles-flipbook-4x4.png#4x4:0",
+       "fx/shadow-particles-flipbook-4x4.png#4x4:1",
+       "fx/shadow-particles-flipbook-4x4.png#4x4:2",
+       "fx/shadow-particles-flipbook-4x4.png#4x4:3",
+       "fx/shadow-particles-flipbook-4x4.png#4x4:4",
+       "fx/shadow-particles-flipbook-4x4.png#4x4:5",
+       "fx/shadow-particles-flipbook-4x4.png#4x4:6",
+       "fx/shadow-particles-flipbook-4x4.png#4x4:7",
+       "fx/shadow-particles-flipbook-4x4.png#4x4:8",
+       "fx/shadow-particles-flipbook-4x4.png#4x4:9",
+       "fx/shadow-particles-flipbook-4x4.png#4x4:10",
+       "fx/shadow-particles-flipbook-4x4.png#4x4:11",
+       "fx/shadow-particles-flipbook-4x4.png#4x4:12",
+       "fx/shadow-particles-flipbook-4x4.png#4x4:13",
+       "fx/shadow-particles-flipbook-4x4.png#4x4:14",
+       "fx/shadow-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "shadow-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/shadow-secondary-flipbook-4x4.png#4x4:0",
+       "fx/shadow-secondary-flipbook-4x4.png#4x4:1",
+       "fx/shadow-secondary-flipbook-4x4.png#4x4:2",
+       "fx/shadow-secondary-flipbook-4x4.png#4x4:3",
+       "fx/shadow-secondary-flipbook-4x4.png#4x4:4",
+       "fx/shadow-secondary-flipbook-4x4.png#4x4:5",
+       "fx/shadow-secondary-flipbook-4x4.png#4x4:6",
+       "fx/shadow-secondary-flipbook-4x4.png#4x4:7",
+       "fx/shadow-secondary-flipbook-4x4.png#4x4:8",
+       "fx/shadow-secondary-flipbook-4x4.png#4x4:9",
+       "fx/shadow-secondary-flipbook-4x4.png#4x4:10",
+       "fx/shadow-secondary-flipbook-4x4.png#4x4:11",
+       "fx/shadow-secondary-flipbook-4x4.png#4x4:12",
+       "fx/shadow-secondary-flipbook-4x4.png#4x4:13",
+       "fx/shadow-secondary-flipbook-4x4.png#4x4:14",
+       "fx/shadow-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "shadow-v2-main-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/shadow-v2-main-flipbook-4x4.png#4x4:0",
+       "fx/shadow-v2-main-flipbook-4x4.png#4x4:1",
+       "fx/shadow-v2-main-flipbook-4x4.png#4x4:2",
+       "fx/shadow-v2-main-flipbook-4x4.png#4x4:3",
+       "fx/shadow-v2-main-flipbook-4x4.png#4x4:4",
+       "fx/shadow-v2-main-flipbook-4x4.png#4x4:5",
+       "fx/shadow-v2-main-flipbook-4x4.png#4x4:6",
+       "fx/shadow-v2-main-flipbook-4x4.png#4x4:7",
+       "fx/shadow-v2-main-flipbook-4x4.png#4x4:8",
+       "fx/shadow-v2-main-flipbook-4x4.png#4x4:9",
+       "fx/shadow-v2-main-flipbook-4x4.png#4x4:10",
+       "fx/shadow-v2-main-flipbook-4x4.png#4x4:11",
+       "fx/shadow-v2-main-flipbook-4x4.png#4x4:12",
+       "fx/shadow-v2-main-flipbook-4x4.png#4x4:13",
+       "fx/shadow-v2-main-flipbook-4x4.png#4x4:14",
+       "fx/shadow-v2-main-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "shadow-v2-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/shadow-v2-particles-flipbook-4x4.png#4x4:0",
+       "fx/shadow-v2-particles-flipbook-4x4.png#4x4:1",
+       "fx/shadow-v2-particles-flipbook-4x4.png#4x4:2",
+       "fx/shadow-v2-particles-flipbook-4x4.png#4x4:3",
+       "fx/shadow-v2-particles-flipbook-4x4.png#4x4:4",
+       "fx/shadow-v2-particles-flipbook-4x4.png#4x4:5",
+       "fx/shadow-v2-particles-flipbook-4x4.png#4x4:6",
+       "fx/shadow-v2-particles-flipbook-4x4.png#4x4:7",
+       "fx/shadow-v2-particles-flipbook-4x4.png#4x4:8",
+       "fx/shadow-v2-particles-flipbook-4x4.png#4x4:9",
+       "fx/shadow-v2-particles-flipbook-4x4.png#4x4:10",
+       "fx/shadow-v2-particles-flipbook-4x4.png#4x4:11",
+       "fx/shadow-v2-particles-flipbook-4x4.png#4x4:12",
+       "fx/shadow-v2-particles-flipbook-4x4.png#4x4:13",
+       "fx/shadow-v2-particles-flipbook-4x4.png#4x4:14",
+       "fx/shadow-v2-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "shadow-v2-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/shadow-v2-secondary-flipbook-4x4.png#4x4:0",
+       "fx/shadow-v2-secondary-flipbook-4x4.png#4x4:1",
+       "fx/shadow-v2-secondary-flipbook-4x4.png#4x4:2",
+       "fx/shadow-v2-secondary-flipbook-4x4.png#4x4:3",
+       "fx/shadow-v2-secondary-flipbook-4x4.png#4x4:4",
+       "fx/shadow-v2-secondary-flipbook-4x4.png#4x4:5",
+       "fx/shadow-v2-secondary-flipbook-4x4.png#4x4:6",
+       "fx/shadow-v2-secondary-flipbook-4x4.png#4x4:7",
+       "fx/shadow-v2-secondary-flipbook-4x4.png#4x4:8",
+       "fx/shadow-v2-secondary-flipbook-4x4.png#4x4:9",
+       "fx/shadow-v2-secondary-flipbook-4x4.png#4x4:10",
+       "fx/shadow-v2-secondary-flipbook-4x4.png#4x4:11",
+       "fx/shadow-v2-secondary-flipbook-4x4.png#4x4:12",
+       "fx/shadow-v2-secondary-flipbook-4x4.png#4x4:13",
+       "fx/shadow-v2-secondary-flipbook-4x4.png#4x4:14",
+       "fx/shadow-v2-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "shadow-v3-main-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/shadow-v3-main-flipbook-4x4.png#4x4:0",
+       "fx/shadow-v3-main-flipbook-4x4.png#4x4:1",
+       "fx/shadow-v3-main-flipbook-4x4.png#4x4:2",
+       "fx/shadow-v3-main-flipbook-4x4.png#4x4:3",
+       "fx/shadow-v3-main-flipbook-4x4.png#4x4:4",
+       "fx/shadow-v3-main-flipbook-4x4.png#4x4:5",
+       "fx/shadow-v3-main-flipbook-4x4.png#4x4:6",
+       "fx/shadow-v3-main-flipbook-4x4.png#4x4:7",
+       "fx/shadow-v3-main-flipbook-4x4.png#4x4:8",
+       "fx/shadow-v3-main-flipbook-4x4.png#4x4:9",
+       "fx/shadow-v3-main-flipbook-4x4.png#4x4:10",
+       "fx/shadow-v3-main-flipbook-4x4.png#4x4:11",
+       "fx/shadow-v3-main-flipbook-4x4.png#4x4:12",
+       "fx/shadow-v3-main-flipbook-4x4.png#4x4:13",
+       "fx/shadow-v3-main-flipbook-4x4.png#4x4:14",
+       "fx/shadow-v3-main-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "shadow-v3-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/shadow-v3-particles-flipbook-4x4.png#4x4:0",
+       "fx/shadow-v3-particles-flipbook-4x4.png#4x4:1",
+       "fx/shadow-v3-particles-flipbook-4x4.png#4x4:2",
+       "fx/shadow-v3-particles-flipbook-4x4.png#4x4:3",
+       "fx/shadow-v3-particles-flipbook-4x4.png#4x4:4",
+       "fx/shadow-v3-particles-flipbook-4x4.png#4x4:5",
+       "fx/shadow-v3-particles-flipbook-4x4.png#4x4:6",
+       "fx/shadow-v3-particles-flipbook-4x4.png#4x4:7",
+       "fx/shadow-v3-particles-flipbook-4x4.png#4x4:8",
+       "fx/shadow-v3-particles-flipbook-4x4.png#4x4:9",
+       "fx/shadow-v3-particles-flipbook-4x4.png#4x4:10",
+       "fx/shadow-v3-particles-flipbook-4x4.png#4x4:11",
+       "fx/shadow-v3-particles-flipbook-4x4.png#4x4:12",
+       "fx/shadow-v3-particles-flipbook-4x4.png#4x4:13",
+       "fx/shadow-v3-particles-flipbook-4x4.png#4x4:14",
+       "fx/shadow-v3-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "shadow-v3-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/shadow-v3-secondary-flipbook-4x4.png#4x4:0",
+       "fx/shadow-v3-secondary-flipbook-4x4.png#4x4:1",
+       "fx/shadow-v3-secondary-flipbook-4x4.png#4x4:2",
+       "fx/shadow-v3-secondary-flipbook-4x4.png#4x4:3",
+       "fx/shadow-v3-secondary-flipbook-4x4.png#4x4:4",
+       "fx/shadow-v3-secondary-flipbook-4x4.png#4x4:5",
+       "fx/shadow-v3-secondary-flipbook-4x4.png#4x4:6",
+       "fx/shadow-v3-secondary-flipbook-4x4.png#4x4:7",
+       "fx/shadow-v3-secondary-flipbook-4x4.png#4x4:8",
+       "fx/shadow-v3-secondary-flipbook-4x4.png#4x4:9",
+       "fx/shadow-v3-secondary-flipbook-4x4.png#4x4:10",
+       "fx/shadow-v3-secondary-flipbook-4x4.png#4x4:11",
+       "fx/shadow-v3-secondary-flipbook-4x4.png#4x4:12",
+       "fx/shadow-v3-secondary-flipbook-4x4.png#4x4:13",
+       "fx/shadow-v3-secondary-flipbook-4x4.png#4x4:14",
+       "fx/shadow-v3-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "warp-v2-main-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/warp-v2-main-flipbook-4x4.png#4x4:0",
+       "fx/warp-v2-main-flipbook-4x4.png#4x4:1",
+       "fx/warp-v2-main-flipbook-4x4.png#4x4:2",
+       "fx/warp-v2-main-flipbook-4x4.png#4x4:3",
+       "fx/warp-v2-main-flipbook-4x4.png#4x4:4",
+       "fx/warp-v2-main-flipbook-4x4.png#4x4:5",
+       "fx/warp-v2-main-flipbook-4x4.png#4x4:6",
+       "fx/warp-v2-main-flipbook-4x4.png#4x4:7",
+       "fx/warp-v2-main-flipbook-4x4.png#4x4:8",
+       "fx/warp-v2-main-flipbook-4x4.png#4x4:9",
+       "fx/warp-v2-main-flipbook-4x4.png#4x4:10",
+       "fx/warp-v2-main-flipbook-4x4.png#4x4:11",
+       "fx/warp-v2-main-flipbook-4x4.png#4x4:12",
+       "fx/warp-v2-main-flipbook-4x4.png#4x4:13",
+       "fx/warp-v2-main-flipbook-4x4.png#4x4:14",
+       "fx/warp-v2-main-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "warp-v2-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/warp-v2-particles-flipbook-4x4.png#4x4:0",
+       "fx/warp-v2-particles-flipbook-4x4.png#4x4:1",
+       "fx/warp-v2-particles-flipbook-4x4.png#4x4:2",
+       "fx/warp-v2-particles-flipbook-4x4.png#4x4:3",
+       "fx/warp-v2-particles-flipbook-4x4.png#4x4:4",
+       "fx/warp-v2-particles-flipbook-4x4.png#4x4:5",
+       "fx/warp-v2-particles-flipbook-4x4.png#4x4:6",
+       "fx/warp-v2-particles-flipbook-4x4.png#4x4:7",
+       "fx/warp-v2-particles-flipbook-4x4.png#4x4:8",
+       "fx/warp-v2-particles-flipbook-4x4.png#4x4:9",
+       "fx/warp-v2-particles-flipbook-4x4.png#4x4:10",
+       "fx/warp-v2-particles-flipbook-4x4.png#4x4:11",
+       "fx/warp-v2-particles-flipbook-4x4.png#4x4:12",
+       "fx/warp-v2-particles-flipbook-4x4.png#4x4:13",
+       "fx/warp-v2-particles-flipbook-4x4.png#4x4:14",
+       "fx/warp-v2-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "warp-v2-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/warp-v2-secondary-flipbook-4x4.png#4x4:0",
+       "fx/warp-v2-secondary-flipbook-4x4.png#4x4:1",
+       "fx/warp-v2-secondary-flipbook-4x4.png#4x4:2",
+       "fx/warp-v2-secondary-flipbook-4x4.png#4x4:3",
+       "fx/warp-v2-secondary-flipbook-4x4.png#4x4:4",
+       "fx/warp-v2-secondary-flipbook-4x4.png#4x4:5",
+       "fx/warp-v2-secondary-flipbook-4x4.png#4x4:6",
+       "fx/warp-v2-secondary-flipbook-4x4.png#4x4:7",
+       "fx/warp-v2-secondary-flipbook-4x4.png#4x4:8",
+       "fx/warp-v2-secondary-flipbook-4x4.png#4x4:9",
+       "fx/warp-v2-secondary-flipbook-4x4.png#4x4:10",
+       "fx/warp-v2-secondary-flipbook-4x4.png#4x4:11",
+       "fx/warp-v2-secondary-flipbook-4x4.png#4x4:12",
+       "fx/warp-v2-secondary-flipbook-4x4.png#4x4:13",
+       "fx/warp-v2-secondary-flipbook-4x4.png#4x4:14",
+       "fx/warp-v2-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "warp-v3-main-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/warp-v3-main-flipbook-4x4.png#4x4:0",
+       "fx/warp-v3-main-flipbook-4x4.png#4x4:1",
+       "fx/warp-v3-main-flipbook-4x4.png#4x4:2",
+       "fx/warp-v3-main-flipbook-4x4.png#4x4:3",
+       "fx/warp-v3-main-flipbook-4x4.png#4x4:4",
+       "fx/warp-v3-main-flipbook-4x4.png#4x4:5",
+       "fx/warp-v3-main-flipbook-4x4.png#4x4:6",
+       "fx/warp-v3-main-flipbook-4x4.png#4x4:7",
+       "fx/warp-v3-main-flipbook-4x4.png#4x4:8",
+       "fx/warp-v3-main-flipbook-4x4.png#4x4:9",
+       "fx/warp-v3-main-flipbook-4x4.png#4x4:10",
+       "fx/warp-v3-main-flipbook-4x4.png#4x4:11",
+       "fx/warp-v3-main-flipbook-4x4.png#4x4:12",
+       "fx/warp-v3-main-flipbook-4x4.png#4x4:13",
+       "fx/warp-v3-main-flipbook-4x4.png#4x4:14",
+       "fx/warp-v3-main-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "warp-v3-particles-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/warp-v3-particles-flipbook-4x4.png#4x4:0",
+       "fx/warp-v3-particles-flipbook-4x4.png#4x4:1",
+       "fx/warp-v3-particles-flipbook-4x4.png#4x4:2",
+       "fx/warp-v3-particles-flipbook-4x4.png#4x4:3",
+       "fx/warp-v3-particles-flipbook-4x4.png#4x4:4",
+       "fx/warp-v3-particles-flipbook-4x4.png#4x4:5",
+       "fx/warp-v3-particles-flipbook-4x4.png#4x4:6",
+       "fx/warp-v3-particles-flipbook-4x4.png#4x4:7",
+       "fx/warp-v3-particles-flipbook-4x4.png#4x4:8",
+       "fx/warp-v3-particles-flipbook-4x4.png#4x4:9",
+       "fx/warp-v3-particles-flipbook-4x4.png#4x4:10",
+       "fx/warp-v3-particles-flipbook-4x4.png#4x4:11",
+       "fx/warp-v3-particles-flipbook-4x4.png#4x4:12",
+       "fx/warp-v3-particles-flipbook-4x4.png#4x4:13",
+       "fx/warp-v3-particles-flipbook-4x4.png#4x4:14",
+       "fx/warp-v3-particles-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "warp-v3-secondary-flipbook-4x4",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "list": [
+       "fx/warp-v3-secondary-flipbook-4x4.png#4x4:0",
+       "fx/warp-v3-secondary-flipbook-4x4.png#4x4:1",
+       "fx/warp-v3-secondary-flipbook-4x4.png#4x4:2",
+       "fx/warp-v3-secondary-flipbook-4x4.png#4x4:3",
+       "fx/warp-v3-secondary-flipbook-4x4.png#4x4:4",
+       "fx/warp-v3-secondary-flipbook-4x4.png#4x4:5",
+       "fx/warp-v3-secondary-flipbook-4x4.png#4x4:6",
+       "fx/warp-v3-secondary-flipbook-4x4.png#4x4:7",
+       "fx/warp-v3-secondary-flipbook-4x4.png#4x4:8",
+       "fx/warp-v3-secondary-flipbook-4x4.png#4x4:9",
+       "fx/warp-v3-secondary-flipbook-4x4.png#4x4:10",
+       "fx/warp-v3-secondary-flipbook-4x4.png#4x4:11",
+       "fx/warp-v3-secondary-flipbook-4x4.png#4x4:12",
+       "fx/warp-v3-secondary-flipbook-4x4.png#4x4:13",
+       "fx/warp-v3-secondary-flipbook-4x4.png#4x4:14",
+       "fx/warp-v3-secondary-flipbook-4x4.png#4x4:15"
+      ]
+     }
+    },
+    {
+     "name": "webfloor",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "fx/webfloor.png"
+     }
+    },
+    {
+     "name": "warp-portal-v01",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "effects/warp-portal-v01.png"
+     }
+    },
+    {
+     "name": "warp-portal-v02-pixel",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "effects/warp-portal-v02-pixel.png"
+     }
+    },
+    {
+     "name": "warp-portal-v03-vortex-source",
+     "pack": "fx",
+     "mode": "once",
+     "fps": 24.0,
+     "frames": {
+      "file": "effects/warp-portal-v03-vortex-source.png"
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -11,6 +11,7 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <charconv>
 #include <cstring>
 #include <fstream>
 #include <mutex>
@@ -24,6 +25,8 @@ namespace {
 
 // Bump whenever cooked pixels change for the same input: every clip then re-cooks.
 constexpr uint32_t kCookerVersion = 1;
+// Grid-sheet cells (FrameSpec) are part of the key through their frame names; bump this when their slicing changes.
+constexpr uint32_t kCellVersion = 3;
 constexpr uint32_t kTrimMargin = 4;      // pixels kept around the visible area (room for filtering)
 constexpr uint32_t kBlocksPerTask = 2048;  // BC7 blocks encoded per job
 
@@ -49,12 +52,80 @@ uint64_t fnv(uint64_t hash, const void* data, size_t size) {
   return hash;
 }
 
+// A frame as the manifest names it (SpriteSource.h): a file, optionally one cell of a grid sheet ("#CxR:i", cells
+// row by row) and optionally lit from black ("!black": art on a black background, Engine2 deriveAlphaFromBlack).
+struct FrameSpec {
+  std::string file;
+  uint32_t cols = 1, rows = 1, cell = 0;
+  bool alphaFromBlack = false;
+};
+
+FrameSpec parseFrame(const std::string& frame) {
+  FrameSpec spec;
+  std::string rest = frame;
+  if (rest.size() > 6 && rest.ends_with("!black")) {
+    spec.alphaFromBlack = true;
+    rest.resize(rest.size() - 6);
+  }
+  const size_t hash = rest.rfind('#');
+  if (hash != std::string::npos) {
+    uint32_t c = 0, r = 0, i = 0;
+    const char* p = rest.data() + hash + 1;
+    const char* end = rest.data() + rest.size();
+    auto number = [&](uint32_t& v, char after) {
+      const auto [next, error] = std::from_chars(p, end, v);
+      if (error != std::errc{} || (after && (next == end || *next != after))) return false;
+      p = after ? next + 1 : next;
+      return true;
+    };
+    if (number(c, 'x') && number(r, ':') && number(i, 0) && p == end && c > 0 && r > 0 && i < c * r) {
+      spec.cols = c, spec.rows = r, spec.cell = i;
+      rest.resize(hash);
+    }
+  }
+  spec.file = rest;
+  return spec;
+}
+
+// Loads one frame as straight-alpha RGBA8: the file, its cell, its alpha.
+bool loadFrame(const std::filesystem::path& root, const std::string& frame, Rgba8Image& out) {
+  const FrameSpec spec = parseFrame(frame);
+  int w = 0, h = 0, n = 0;
+  uint8_t* data = stbi_load((root / spec.file).string().c_str(), &w, &h, &n, 4);
+  if (!data) return false;
+  // Cells start at floor(i * size / count) and all have the same size (floor(size / count)), so every frame keeps its
+  // place when a sheet's size does not divide evenly (at most a pixel of a cell's edge is left out).
+  const uint32_t cx = spec.cell % spec.cols, cy = spec.cell / spec.cols;
+  const uint32_t x0 = cx * uint32_t(w) / spec.cols, x1 = x0 + uint32_t(w) / spec.cols;
+  const uint32_t y0 = cy * uint32_t(h) / spec.rows, y1 = y0 + uint32_t(h) / spec.rows;
+  out.width = x1 - x0;
+  out.height = y1 - y0;
+  out.pixels.resize(size_t{out.width} * out.height * 4);
+  for (uint32_t y = 0; y < out.height; ++y)
+    std::memcpy(&out.pixels[size_t{y} * out.width * 4], &data[(size_t{y + y0} * uint32_t(w) + x0) * 4], size_t{out.width} * 4);
+  stbi_image_free(data);
+  if (spec.alphaFromBlack) {
+    // Alpha = the brightest channel x 4 (Engine2 used x 1, which left a dark arrow see-through over light ground);
+    // colour divided by it, so drawn premultiplied it gives back exactly the art over black (and adds exactly the
+    // art when drawn additively, as glows are).
+    for (size_t i = 0; i < out.pixels.size(); i += 4) {
+      uint8_t* p = &out.pixels[i];
+      const uint8_t a = static_cast<uint8_t>(std::min(255, 4 * std::max({p[0], p[1], p[2]})));
+      for (int c = 0; c < 3; ++c) p[c] = a ? static_cast<uint8_t>(std::min(255, (p[c] * 255 + a / 2) / a)) : 0;
+      p[3] = a;
+    }
+  }
+  return true;
+}
+
 uint64_t textureKey(const SpriteClipSource& clip, const SpriteCookOptions& options) {
   uint64_t hash = 0xcbf29ce484222325ull;
   hash = fnv(hash, &kCookerVersion, sizeof(kCookerVersion));
   hash = fnv(hash, &options.quality, sizeof(options.quality));
   for (const std::string& frame : clip.frames) {
-    const std::filesystem::path file = options.sourceRoot / frame;
+    const FrameSpec spec = parseFrame(frame);
+    const std::filesystem::path file = options.sourceRoot / spec.file;
+    if (spec.cols * spec.rows > 1 || spec.alphaFromBlack) hash = fnv(hash, &kCellVersion, sizeof(kCellVersion));
     std::error_code error;
     const uint64_t size = std::filesystem::file_size(file, error);
     const auto time = std::filesystem::last_write_time(file, error).time_since_epoch().count();
@@ -209,18 +280,10 @@ bool cookClipTextures(JobSystem& jobs, const std::string& setName, const SpriteC
   std::atomic<bool> loadFailed{false};
   jobs.parallelFor(static_cast<uint32_t>(frameCount), 1, [&](uint32_t begin, uint32_t end) {
     for (uint32_t i = begin; i < end; ++i) {
-      int w = 0, h = 0, n = 0;
-      const std::string path = (options.sourceRoot / clip.frames[i]).string();
-      uint8_t* data = stbi_load(path.c_str(), &w, &h, &n, 4);
-      if (!data) {
-        logError("{}: cannot read {} ({})", label, path, stbi_failure_reason());
+      if (!loadFrame(options.sourceRoot, clip.frames[i], frames[i])) {
+        logError("{}: cannot read {} ({})", label, (options.sourceRoot / clip.frames[i]).string(), stbi_failure_reason());
         loadFailed = true;
-        continue;
       }
-      frames[i].width = static_cast<uint32_t>(w);
-      frames[i].height = static_cast<uint32_t>(h);
-      frames[i].pixels.assign(data, data + size_t(w) * h * 4);
-      stbi_image_free(data);
     }
   });
   if (loadFailed) return false;
@@ -367,9 +430,10 @@ bool writeSpritePreview(const SpriteManifest& manifest, const SpriteCookOptions&
   std::vector<uint8_t> full(layout.fullBytes);
   fullFile.read(reinterpret_cast<char*>(full.data()), static_cast<std::streamsize>(full.size()));
 
-  int sw = 0, sh = 0, sn = 0;
-  uint8_t* source = stbi_load((options.sourceRoot / clip->frames[frame]).string().c_str(), &sw, &sh, &sn, 4);
-  if (!source) return false;
+  Rgba8Image sourceImage;
+  if (!loadFrame(options.sourceRoot, clip->frames[frame], sourceImage)) return false;
+  const uint8_t* source = sourceImage.pixels.data();
+  const uint32_t sw = sourceImage.width;
 
   // Decodes one mip of the frame back to pixels, as the GPU will.
   const auto decode = [&](uint32_t mip, Rgba8Image& image) {
@@ -399,7 +463,6 @@ bool writeSpritePreview(const SpriteManifest& manifest, const SpriteCookOptions&
   for (uint32_t y = 0; y < layout.contentHeight; ++y)
     std::memcpy(&panels[0].pixels[size_t{y} * layout.width * 4], &source[(size_t{y + uint32_t(layout.cropY)} * sw + uint32_t(layout.cropX)) * 4],
                 size_t{layout.contentWidth} * 4);
-  stbi_image_free(source);
   for (uint32_t i = 1; i < 4; ++i) decode(std::min(i - 1, layout.mipCount - 1), panels[i]);
 
   const uint32_t gap = 16, cellW = layout.width + gap, cellH = layout.height + gap;

@@ -16,7 +16,10 @@ namespace ember {
 //         "frames": { "pattern": "sprites/neera/idle-{}.png", "count": 36 } },
 //       { "name": "walk-back", "pack": "field", "mode": "loop", "fps": 1, "frames": { "file": "sprites/kael/walk-back.png" } } ] } ] }
 //
-// Frame paths are relative to a source root given to the cooker, so art can live anywhere.
+// Frame paths are relative to a source root given to the cooker, so art can live anywhere. A frame may name one
+// cell of a grid sheet, "fx/fire-flipbook-4x4.png#4x4:5" (columns x rows : cell, row by row), and may end in
+// "!black" for art painted on black (alpha from its brightest channel, like Engine2's deriveAlphaFromBlack but
+// reaching full at a quarter of white, so solid art such as an arrow is opaque).
 
 struct SpriteClipSource {
   std::string name;
