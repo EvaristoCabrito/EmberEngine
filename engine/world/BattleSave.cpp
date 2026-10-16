@@ -60,7 +60,7 @@ nlohmann::json Battle::snapshot() const {
   // enmity.ts EnmitySnapshot: { enemyId: { heroId: [ce, ve] } }
   nlohmann::json enmity = nlohmann::json::object();
   for (const Enmity& e : enmity_) enmity[units_[e.enemy].id][units_[e.hero].id] = nlohmann::json::array({e.ce, e.ve});
-  return {{"turn", round_}, {"units", units}, {"turnOrder", order}, {"enmity", enmity}, {"lootRations", lootRations_}};
+  return {{"turn", round_}, {"units", units}, {"turnOrder", order}, {"enmity", enmity}, {"lootRations", lootRations_}, {"roaming", roaming_}};
 }
 
 bool Battle::applySnapshot(const nlohmann::json& snap) {
@@ -130,6 +130,7 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
   }
   round_ = snap.value("turn", round_);
   lootRations_ = snap.value("lootRations", lootRations_);
+  roaming_ = roaming_ && snap.value("roaming", true);
   if (snap.contains("turnOrder") && snap["turnOrder"].is_array()) {
     turnOrder_.clear();
     for (const nlohmann::json& id : snap["turnOrder"])

@@ -336,6 +336,7 @@ class MapStage final : public Stage {
     updateUnits(dt);
     updateExchange();
     runScript();
+    updateRoaming();
     updateTurns();
     updateHover();
     clampGoal();
@@ -1876,7 +1877,10 @@ class MapStage final : public Stage {
       const float move = std::min(dist, std::sqrt(3.0f) / stepSeconds() * dt);
       if (dist > 1e-4f) p += d / dist * move;
       unitMoved_[i] = 1;
-      if (dist - move < 1e-3f) w.points.erase(w.points.begin());
+      if (dist - move < 1e-3f) {
+        w.points.erase(w.points.begin());
+        if (!w.hexes.empty()) w.hexes.erase(w.hexes.begin());
+      }
       if (w.points.empty() && !w.fadeSound.empty()) AudioMixer::get().fadeSfx(std::exchange(w.fadeSound, {}));
     }
     // A hero's level-up (levelUp: its cue once per level gained).
@@ -2143,7 +2147,7 @@ class MapStage final : public Stage {
     reachPaths_ = look.reachable(b, false);  // routes may pass a friend's hex (Engine2: walk reach unpruned)
     // The foes it can strike from some hex of its reach, each from the first such hex (Engine2 attackableEnemies),
     // and that the party can see; only for the party's unit whose turn it is and that has not struck yet.
-    if (!myTurn() || u.acted) return;
+    if (!myTurn() || u.acted || battle_->roaming()) return;
     for (const e2::ReachCell& c : reach_)
       for (size_t i = 0; i < scene_->units.size(); ++i) {
         const int fb = unitBattle_[i];
@@ -2158,6 +2162,10 @@ class MapStage final : public Stage {
   // The party's unit whose turn it is, picked.
   bool myTurn() const {
     if (!battle_ || selected_ < 0 || unitBattle_[static_cast<size_t>(selected_)] < 0) return false;
+    if (battle_->roaming()) {  // free roam: no turns, the party's picked unit leads
+      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
+      return u.side == "player" && u.alive && result_.empty();
+    }
     const int active = battle_->activeUnit();
     return active == unitBattle_[static_cast<size_t>(selected_)] && battle_->units()[static_cast<size_t>(active)].side == "player" && result_.empty();
   }
@@ -2171,7 +2179,7 @@ class MapStage final : public Stage {
   // Engine2's turn loop (tick / beginUnitTurn / startNewRound): whoever is next in the round acts; when everyone has
   // gone a new round starts. The party's unit is picked and waits for the player; an enemy plays its own turn.
   void updateTurns() {
-    if (!battle_ || !scene_ || !result_.empty() || holdTurns) return;
+    if (!battle_ || !scene_ || !result_.empty() || holdTurns || battle_->roaming()) return;
     const bool walking = std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
     if (exchange_ || walking) return;
     // A strike the player asked for once the walk to its hex is over.
@@ -2264,6 +2272,107 @@ class MapStage final : public Stage {
     if (plan.path.size() > 1) walkAlong(static_cast<size_t>(ui), plan.path);
   }
 
+  // --- Free roam (an explore mission, Engine2 mission.explore): no turns until the party meets an enemy ------------
+  // The user's rule (2026-10-16): the party walks freely, its picked unit leading and the others following in
+  // formation; an enemy coming into the party's sight starts the fight, in initiative order, with every unit's own
+  // movement. Engine2 roamed the whole mission; its free reach stays (Battle::reachable while roaming).
+  static constexpr int kRoamSight = 6;  // without fog of war: an enemy this many hexes from the party is met
+
+  void updateRoaming() {
+    if (!battle_ || !scene_ || !battle_->roaming() || !result_.empty()) return;
+    const e2::HexLayout& L = board_->layout();
+    // The party's eyes where its feet are now (mid-walk too).
+    std::vector<e2::BattleHex> eyes;
+    for (size_t i = 0; i < scene_->units.size(); ++i) {
+      const int b = unitBattle_[i];
+      if (b < 0 || battle_->units()[static_cast<size_t>(b)].side != "player" || !battle_->units()[static_cast<size_t>(b)].alive) continue;
+      const auto [c, r] = e2::hexAt(L, unitPos_[i].x, unitPos_[i].y);
+      eyes.push_back({c, r});
+    }
+    const bool fogged = fog_ && !noFog_;
+    std::vector<int> met;
+    for (size_t b = 0; b < battle_->units().size(); ++b) {
+      const e2::BattleUnit& e = battle_->units()[b];
+      if (!e.alive || e.side != "enemy") continue;
+      bool seen = false;
+      if (fogged) {
+        const size_t i = static_cast<size_t>(e2::indexOf(L, e.x, e.y));
+        seen = i < fogStates_.size() && fogStates_[i] == e2::kFogVisible;
+      } else {
+        seen = std::any_of(eyes.begin(), eyes.end(), [&](e2::BattleHex h) { return e2::Battle::distance(h, {e.x, e.y}) <= kRoamSight; });
+      }
+      if (seen) met.push_back(static_cast<int>(b));
+    }
+    if (met.empty()) {
+      // Someone of the party always leads: the last leader, else the party's first.
+      const bool leading = selected_ >= 0 && unitBattle_[static_cast<size_t>(selected_)] >= 0 && myTurn();
+      if (!leading && !busy()) {
+        int pick = roamLeader_;
+        auto fit = [&](int ui) {
+          if (ui < 0 || ui >= static_cast<int>(scene_->units.size()) || unitBattle_[static_cast<size_t>(ui)] < 0) return false;
+          const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(ui)])];
+          return u.side == "player" && u.alive;
+        };
+        for (int ui = 0; !fit(pick) && ui < static_cast<int>(scene_->units.size()); ++ui) pick = ui;
+        if (fit(pick)) select(pick);
+      }
+      if (selected_ >= 0 && myTurn()) roamLeader_ = selected_;
+      return;
+    }
+    // Met: every walk stops on the hex it is stepping onto (when nobody stands there), the enemies in sight wake, and
+    // the fight starts from the top of the initiative order with everyone's own movement whole.
+    battle_->endRoaming();
+    for (size_t i = 0; i < unitWalk_.size(); ++i) {
+      Walk& w = unitWalk_[i];
+      if (w.points.empty() || w.hexes.empty() || unitBattle_[i] < 0) continue;
+      e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[i])];
+      const e2::BattleHex next = w.hexes.front();
+      const int there = battle_->unitAt(next.x, next.y);
+      if (there >= 0 && there != unitBattle_[i]) continue;  // a friend stands there: it walks on to its own hex
+      u.x = next.x, u.y = next.y;
+      w.points.resize(1), w.hexes.resize(1);
+    }
+    for (e2::BattleUnit& u : battle_->units()) u.moveUsed = 0, u.acted = false, u.moved = false;
+    for (const int b : met) awake_.insert(b);
+    undo_.clear();
+    turnUnit_ = -1;
+    select(-1);
+    tip_ = "Inimigos à vista!", tipAt_ = now_;
+    logInfo("explore: {} in sight: the roaming ends, round {} begins", battle_->units()[static_cast<size_t>(met.front())].name, battle_->round());
+  }
+
+  // The party follows its leader in formation, more or less: each keeps its place relative to the leader (at most 2.5
+  // hexes out) and walks to the free hex nearest that place.
+  void followLeader(size_t leader, glm::vec2 from, e2::BattleHex to) {
+    const e2::Cell& dc = board_->cell(to.x, to.y);
+    const glm::vec2 dest{static_cast<float>(dc.x), static_cast<float>(dc.z)};
+    const e2::Cell& c0 = board_->cell(0, 0);
+    const e2::Cell& c1 = board_->cell(1, 0);
+    const float spacing = std::max(0.5f, glm::length(glm::vec2(static_cast<float>(c1.x - c0.x), static_cast<float>(c1.z - c0.z))));
+    for (size_t i = 0; i < scene_->units.size(); ++i) {
+      if (i == leader || unitBattle_[i] < 0 || !unitWalk_[i].points.empty()) continue;
+      const size_t b = static_cast<size_t>(unitBattle_[i]);
+      const e2::BattleUnit& f = battle_->units()[b];
+      if (!f.alive || f.side != "player") continue;
+      const e2::Cell& fc = board_->cell(f.x, f.y);
+      glm::vec2 offset = glm::vec2(static_cast<float>(fc.x), static_cast<float>(fc.z)) - from;
+      const float length = glm::length(offset), most = 2.5f * spacing;
+      if (length > most) offset *= most / length;
+      const glm::vec2 want = dest + offset;
+      std::optional<e2::BattleHex> best;
+      float bestScore = 0.0f;
+      for (const e2::ReachCell& c : battle_->reachable(b, true)) {
+        const e2::Cell& cc = board_->cell(c.x, c.y);
+        const glm::vec2 w{static_cast<float>(cc.x), static_cast<float>(cc.z)};
+        const float score = glm::dot(w - want, w - want) + 0.25f * glm::dot(w - dest, w - dest);
+        if (!best || score < bestScore) best = e2::BattleHex{c.x, c.y}, bestScore = score;
+      }
+      if (!best || (best->x == f.x && best->y == f.y)) continue;
+      const std::vector<e2::BattleHex> route = e2::Battle::path(battle_->reachable(b, false), best->x, best->y);
+      if (route.size() >= 2) walkAlong(i, route);
+    }
+  }
+
   // Walk a unit along a route (start first): the battle's state moves at once, the walk then plays it.
   void walkAlong(size_t ui, const std::vector<e2::BattleHex>& route) {
     const size_t b = static_cast<size_t>(unitBattle_[ui]);
@@ -2273,7 +2382,7 @@ class MapStage final : public Stage {
       if (c.x == route.back().x && c.y == route.back().y) u.moveUsed += c.cost;
     u.x = route.back().x, u.y = route.back().y;
     Walk w;
-    for (size_t k = 1; k < route.size(); ++k) w.points.push_back(anchorWorld(u, route[k]));
+    for (size_t k = 1; k < route.size(); ++k) w.points.push_back(anchorWorld(u, route[k])), w.hexes.push_back(route[k]);
     const auto [hx, hy] = e2::heading(route[route.size() - 2], route.back());
     u.faceDx = hx, u.faceDy = hy;
     w.start = now_;
@@ -2523,8 +2632,27 @@ class MapStage final : public Stage {
       scriptHover_ = e2::BattleHex{std::atoi(p[1].c_str()), std::atoi(p[2].c_str())};
       return logInfo("battle script: aim {} {}", scriptHover_->x, scriptHover_->y);
     }
+    if (p[0] == "where") {
+      // every unit's hex and whether the party still roams (free-roam captures)
+      std::string list;
+      for (size_t i = 0; i < scene_->units.size(); ++i)
+        if (unitBattle_[i] >= 0) {
+          const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[i])];
+          list += std::format(" {} ({}, {}){}", u.name, u.x, u.y, u.alive ? "" : " dead");
+        }
+      return logInfo("battle script: where: {} round {}:{}", battle_->roaming() ? "roaming" : "turns", battle_->round(), list);
+    }
     const int ci = p.size() > 1 ? sceneUnitNamed(p[1]) : -1;
     if (ci < 0) return fail("no such unit");
+    if (p[0] == "walk" && p.size() > 3) {
+      // the unit picked and walked to a hex (while roaming the party follows it)
+      select(ci);
+      const e2::BattleHex to{std::atoi(p[2].c_str()), std::atoi(p[3].c_str())};
+      if (!std::any_of(reach_.begin(), reach_.end(), [&](const e2::ReachCell& c) { return c.x == to.x && c.y == to.y; })) return fail("not in its reach");
+      walkTo(static_cast<size_t>(ci), to);
+      const auto walking = std::count_if(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
+      return logInfo("battle script: walk {} to {} {}: {} walking", p[1], to.x, to.y, walking);
+    }
     const size_t cb = static_cast<size_t>(unitBattle_[static_cast<size_t>(ci)]);
     if (p[0] == "near" && p.size() > 2) {
       // the unit placed beside another (a foe in reach of a strike, for captures)
@@ -2739,9 +2867,12 @@ class MapStage final : public Stage {
     if (route.size() < 2) return;
     if (!std::any_of(reach_.begin(), reach_.end(), [&](const e2::ReachCell& c) { return c.x == to.x && c.y == to.y; })) return;
     const e2::BattleUnit& u = battle_->units()[b];
-    if (myTurn() && static_cast<int>(ui) == selected_)  // Cancelar takes this walk back
+    const bool leads = battle_->roaming() && myTurn() && static_cast<int>(ui) == selected_;
+    const e2::Cell& from = board_->cell(u.x, u.y);
+    if (myTurn() && static_cast<int>(ui) == selected_ && !leads)  // Cancelar takes this walk back
       undo_.push_back(BeforeWalk{ui, u.x, u.y, u.moveUsed, u.acted, u.faceDx, u.faceDy, unitPos_[ui], unitFacing_[ui], unitMoved_[ui]});
     walkAlong(ui, route);  // the battle's heading becomes the last step's (Engine2 stepMove), for attacks from behind
+    if (leads) followLeader(ui, {static_cast<float>(from.x), static_cast<float>(from.z)}, to);
     refreshReach();        // what is left of its movement, shown once it arrives
   }
 
@@ -3255,7 +3386,8 @@ class MapStage final : public Stage {
     // Atacar always opens (the grid shows the weapon's zone even with nobody in it), so the player sees its reach.
     if (emberButton("##attack", "Atacar", true, canAct && spellMode_.empty())) attackMode_ = !attackMode_;
     ImGui::SameLine();
-    if (emberButton("##wait", "Esperar", false, mine)) endUnitTurn();
+    const bool turns = !battle_->roaming();  // free roam has no turns to end
+    if (emberButton("##wait", "Esperar", false, mine && turns)) endUnitTurn();
     ImGui::SameLine();
     // Cancelar: leaves the attack / spell aim; else takes back the last walk (one per click, each giving back only
     // its own movement). A walk made before an action cannot be taken back once the unit has acted.
@@ -3288,7 +3420,7 @@ class MapStage final : public Stage {
     }
     const float endW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, "Fim do turno", 0.06f) + 28.0f;
     ImGui::SameLine(io.DisplaySize.x - endW - 20.0f);
-    if (emberButton("##endturn", "Fim do turno", false, mine)) endUnitTurn();
+    if (emberButton("##endturn", "Fim do turno", false, mine && turns)) endUnitTurn();
     ImGui::End();
     ImGui::PopStyleVar(3);
   }
@@ -3553,6 +3685,7 @@ class MapStage final : public Stage {
     std::string text;
     if (result_ == "victory") text = "Vitória";
     else if (result_ == "defeat") text = "Derrota";
+    else if (battle_->roaming()) text = "Exploração";
     else if (const int a = battle_->activeUnit(); a >= 0)
       text = std::format("Rodada {}  ·  vez de {}", battle_->round(), battle_->units()[static_cast<size_t>(a)].name);
     if (text.empty()) return;
@@ -3965,7 +4098,8 @@ class MapStage final : public Stage {
   static constexpr int kWalkBack = 0, kWalkFront = 1, kWalkSide = 2;  // Engine2 WalkDir: up the map, down it, along a row
   struct Walk {
     std::vector<glm::vec2> points;  // the hexes still ahead (feet positions)
-    float start = 0.0f;             // scene clock when it set off (the walk cycle's time)
+    std::vector<e2::BattleHex> hexes;  // the same hexes on the board (a roaming walk stops on the next one)
+    float start = 0.0f;            // scene clock when it set off (the walk cycle's time)
     int dir = kWalkSide;
     std::string fadeSound;          // its walk cue, faded out when it arrives (a monster's own)
   };
@@ -3991,6 +4125,7 @@ class MapStage final : public Stage {
   };
   std::optional<EnemyTurn> enemyTurn_;
   std::unordered_set<int> awake_;         // enemies that have seen the party (fog)
+  int roamLeader_ = -1;                   // free roam: the scene unit the party follows
   std::string result_;                    // "victory" / "defeat" once the battle is over
   bool pauseOpen_ = false, titleRequested_ = false, retryRequested_ = false;
   // Engine2's menus over the battle (EmberMenus.h) and what they act on.

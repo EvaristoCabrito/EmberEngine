@@ -139,7 +139,8 @@ for (const u of e.units) {
   const element = magic?.attackElement ?? 'arcane';
   const off = u.offHandId ? data.EQUIPMENT[u.offHandId] : undefined;
   units.push({ id: u.id, side: u.side, name: u.name, classId: u.classId, className: u.className ?? '', sprite: u.sprite, x: u.x, y: u.y, alive: !!u.alive,
-    mov: e.effectiveUnitForReach(u).mov, hp: u.hp, maxHp: u.maxHp, atk: u.atk, def: u.def, mag: u.mag, dex: u.dex ?? 0,
+    // mov: the reach the battle shows (an explore mission's free roam: the whole board); baseMov: the unit's own.
+    mov: e.effectiveUnitForReach(u).mov, baseMov: u.mov, hp: u.hp, maxHp: u.maxHp, atk: u.atk, def: u.def, mag: u.mag, dex: u.dex ?? 0,
     minRange: u.minRange ?? 1, maxRange: u.maxRange ?? 1, size: u.size ?? 1, summoned: !!u.summoned, level: u.level ?? 1,
     footprintOffsets: u.footprintOffsets ?? null, footprintW: u.footprintW ?? null, footprintH: u.footprintH ?? null, reach: cellsOut,
     initiativeBonus: (u.initiative ?? 0) - (u.initiativeRoll ?? 0),
@@ -593,7 +594,7 @@ const missionMusic = (() => {
 })();
 
 writeFileSync(outPath, JSON.stringify({ source: 'Engine2 src/game/engine.ts BattleEngine via tools/scripts/engine2/export_battle.ts',
-  map: draft.id, cols: e.cols, rows: e.rows, debugFreeCast: testLevel > 0, cells, units, affinityBonus, forecasts, rolls, ai, aiNear: near, casts, supportCasts,
+  map: draft.id, cols: e.cols, rows: e.rows, debugFreeCast: testLevel > 0, explore: !!mission.explore, cells, units, affinityBonus, forecasts, rolls, ai, aiNear: near, casts, supportCasts,
   sounds: { levelUp }, music: missionMusic }));
 console.log(`${draft.id}: ${e.cols}x${e.rows}, ${units.length} units (${units.map((u) => `${u.name} mov ${u.mov}`).join(', ')})`);
 process.exit(0);  // the engine leaves timers running

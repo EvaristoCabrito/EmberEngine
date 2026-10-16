@@ -210,6 +210,10 @@ class Battle {
   // Engine2 BattleEngine debugFreeCast (Modo teste's battles, export_battle.ts TEST_LEVEL): spells may be aimed at any
   // visible unit, allies included, and cures at anyone, hurt or not.
   bool debugFreeCast() const { return debugFreeCast_; }
+  // An explore mission (Engine2 mission.explore) roams free: no turns, any reachable hex in one walk, until the party
+  // meets an enemy (Ember's rule, the user's: then the fight starts with every unit's own movement).
+  bool roaming() const { return roaming_; }
+  void endRoaming() { roaming_ = false; }
   const BattleCell& cell(int x, int y) const { return cells_[static_cast<size_t>(y * cols_ + x)]; }
   bool inBounds(int x, int y) const { return x >= 0 && y >= 0 && x < cols_ && y < rows_; }
   std::vector<BattleUnit>& units() { return units_; }
@@ -285,6 +289,7 @@ class Battle {
 
   std::string map_;
   bool debugFreeCast_ = false;
+  bool roaming_ = false;
   int cols_ = 0, rows_ = 0;
   std::vector<BattleCell> cells_;
   std::vector<BattleUnit> units_;

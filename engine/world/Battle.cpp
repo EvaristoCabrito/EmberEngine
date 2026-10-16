@@ -68,6 +68,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
   Battle b;
   b.map_ = text(j, "map");
   b.debugFreeCast_ = j.value("debugFreeCast", false);
+  b.roaming_ = j.value("explore", false);
   b.cols_ = integer(j, "cols");
   b.rows_ = integer(j, "rows");
   for (const json& c : j["cells"]) {
@@ -103,7 +104,8 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     o.x = integer(u, "x");
     o.y = integer(u, "y");
     o.alive = yes(u, "alive");
-    o.mov = integer(u, "mov");
+    // An explore mission's file gives the free-roam reach as "mov" and the unit's own as "baseMov".
+    o.mov = u.contains("baseMov") ? integer(u, "baseMov") : integer(u, "mov");
     o.hp = integer(u, "hp");
     o.maxHp = integer(u, "maxHp");
     o.atk = integer(u, "atk");
@@ -378,7 +380,8 @@ std::optional<int> Battle::stepCost(int x, int y, const BattleUnit& self, const 
 
 std::vector<ReachCell> Battle::reachable(size_t unit, bool pruneStops) const {
   const BattleUnit& u = units_[unit];
-  const int mov = std::max(0, u.mov - u.moveUsed);
+  // Free roam (Engine2 effectiveUnitForReach on an explore mission): any reachable hex, however far.
+  const int mov = roaming_ ? cols_ * rows_ : std::max(0, u.mov - u.moveUsed);
   const std::vector<int> occ = occupancy();
   // The reach in Engine2's insertion order (a Map there): `at` finds a hex's entry.
   std::vector<ReachCell> result;
