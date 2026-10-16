@@ -61,7 +61,7 @@ int SpellEffects::looks(const std::string& kind) {
   if (kind == "magicMissile" || kind == "magicMissileV2") return 2;
   // 01 of a spell with no flipbook-card version: Engine2's own effect, ported.
   if (kind == "fireball" || kind == "bless" || kind == "causticVenom" || kind == "phantasmalForce" ||
-      kind == "webOfDreams" || kind == "burningHands" || kind == "poisonBreath")
+      kind == "webOfDreams" || kind == "burningHands" || kind == "poisonBreath" || kind == "cleave" || kind == "sweep")
     return 1;
   static const char* kVersion01[] = {"lightning", "lightningTier3", "shock", "frost", "cureMinor", "longShot", "piercing", "piercingThrust",
                                      "doubleStrike"};
@@ -78,6 +78,8 @@ int SpellEffects::engine2Look(const std::string& kind) {
   if (kind == "phantasmalForce") return 1;                           // PhantasmalForceVFX
   if (kind == "webOfDreams") return 1;                               // WebOfDreamsVFX
   if (kind == "burningHands" || kind == "poisonBreath") return 1;    // BurningHandsV2VFX
+  if (kind == "cleave") return 1;                                    // CleaveSweepVFX
+  if (kind == "sweep") return 1;                                     // VarreduraVFX
   return 0;
 }
 
@@ -144,7 +146,15 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
   if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2) missiles_.emplace_back(engine2Origin(caster), targets.front().body, start);
   else if (kind == "fireball") fireballs_.emplace_back(engine2Origin(caster), fireballTarget(targets), fireballArea(targets), start);
   else if (kind == "phantasmalForce") phantasms_.emplace_back(targets.front().body, start);
-  else if (kind == "burningHands" || kind == "poisonBreath") {
+  else if (kind == "cleave" || kind == "sweep") {
+    // BattleSpells3D: Cleave's blade swings at weapon height (0.7) through its targets, Varredura's wave runs on the
+    // ground (0.04); both queued 0.18 s into the swing.
+    const float height = kind == "sweep" ? 0.04f : 0.7f;
+    std::vector<glm::vec3> hit;
+    for (const Spot& s : targets) hit.push_back(s.feet + glm::vec3(0.0f, height, 0.0f));
+    if (kind == "sweep") sweeps_.emplace_back(caster.feet + glm::vec3(0.0f, height, 0.0f), hit, start);
+    else cleaves_.emplace_back(caster.feet + glm::vec3(0.0f, height, 0.0f), hit, start);
+  } else if (kind == "burningHands" || kind == "poisonBreath") {
     std::vector<glm::vec3> cells;
     for (const Spot& s : targets) cells.push_back(s.feet + glm::vec3(0.0f, 0.04f, 0.0f));
     const bool poison = kind == "poisonBreath";
@@ -434,6 +444,8 @@ bool SpellEffects::active(float now) const {
   if (std::any_of(phantasms_.begin(), phantasms_.end(), [&](const PhantasmalForce& p) { return !p.done(now); })) return true;
   if (std::any_of(webs_.begin(), webs_.end(), [&](const WebOfDreams& w) { return !w.done(now); })) return true;
   if (std::any_of(burns_.begin(), burns_.end(), [&](const auto& b) { return !b.first.done(now); })) return true;
+  if (std::any_of(cleaves_.begin(), cleaves_.end(), [&](const CleaveSweep& c) { return !c.done(now); })) return true;
+  if (std::any_of(sweeps_.begin(), sweeps_.end(), [&](const Varredura& s) { return !s.done(now); })) return true;
   return std::any_of(elements_.begin(), elements_.end(), [&](const Element& e) { return e.end > now; });
 }
 
@@ -452,6 +464,10 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   for (PhantasmalForce& p : phantasms_) p.build(now, camera, vfx_, vfxLights);
   std::erase_if(webs_, [&](const WebOfDreams& w) { return w.done(now); });
   for (WebOfDreams& w : webs_) w.build(now, camera, vfx_, vfxLights);
+  std::erase_if(cleaves_, [&](const CleaveSweep& c) { return c.done(now); });
+  for (CleaveSweep& c : cleaves_) c.build(now, camera, vfx_, vfxLights);
+  std::erase_if(sweeps_, [&](const Varredura& s) { return s.done(now); });
+  for (Varredura& s : sweeps_) s.build(now, camera, vfx_, vfxLights);
   std::erase_if(burns_, [&](const auto& b) { return b.first.done(now); });
   if (!burns_.empty()) {
     const VfxFlipbook fireSheet = flipbook("fire-flipbook-4x4"), poisonSheet = flipbook("poison-v2-main-flipbook-4x4");

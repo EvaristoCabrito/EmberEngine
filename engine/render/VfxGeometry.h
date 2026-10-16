@@ -102,6 +102,59 @@ inline std::vector<VfxVertex> torus(float radius, float tube, int radialSegments
   return out;
 }
 
+// An indexed mesh expanded to triangles with three's computeVertexNormals (each vertex: the sum of its faces'
+// unnormalised normals, normalised).
+inline std::vector<VfxVertex> expandSmooth(const std::vector<glm::vec3>& positions, const std::vector<int>& indices) {
+  std::vector<glm::vec3> normals(positions.size(), glm::vec3(0.0f));
+  for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+    const glm::vec3 a = positions[indices[i]], b = positions[indices[i + 1]], c = positions[indices[i + 2]];
+    const glm::vec3 n = glm::cross(c - b, a - b);
+    normals[indices[i]] += n, normals[indices[i + 1]] += n, normals[indices[i + 2]] += n;
+  }
+  std::vector<VfxVertex> out;
+  for (int k : indices) out.push_back({positions[k], 0.0f, three::normalize(normals[k]), 0.0f});
+  return out;
+}
+
+// BoxGeometry(width, height, depth) (one segment per side): six flat faces.
+inline std::vector<VfxVertex> box(float width, float height, float depth) {
+  std::vector<VfxVertex> out;
+  // buildPlane(u, v, w, udir, vdir, width, height, depth) for px, nx, py, ny, pz, nz.
+  auto plane = [&](int u, int v, int w, float udir, float vdir, float pw, float ph, float pd) {
+    VfxVertex grid[2][2];
+    for (int iy = 0; iy < 2; ++iy)
+      for (int ix = 0; ix < 2; ++ix) {
+        glm::vec3 p{0.0f}, n{0.0f};
+        p[u] = (ix * pw - pw * 0.5f) * udir;
+        p[v] = (iy * ph - ph * 0.5f) * vdir;
+        p[w] = pd * 0.5f;
+        n[w] = pd > 0 ? 1.0f : -1.0f;
+        grid[iy][ix] = {p, static_cast<float>(ix), n, 1.0f - iy};
+      }
+    const VfxVertex a = grid[0][0], b = grid[1][0], c = grid[1][1], d = grid[0][1];
+    out.insert(out.end(), {a, b, d, b, c, d});
+  };
+  plane(2, 1, 0, -1, -1, depth, height, width);
+  plane(2, 1, 0, 1, -1, depth, height, -width);
+  plane(0, 2, 1, 1, 1, width, depth, height);
+  plane(0, 2, 1, 1, -1, width, depth, -height);
+  plane(0, 1, 2, 1, -1, width, height, depth);
+  plane(0, 1, 2, -1, -1, width, height, -depth);
+  return out;
+}
+
+// A three.js Line (1 px) as a camera-facing ribbon of the given half width (world points).
+inline std::vector<VfxVertex> lineRibbon(const std::vector<glm::vec3>& points, glm::vec3 eye, float halfWidth) {
+  std::vector<VfxVertex> out;
+  for (size_t i = 0; i + 1 < points.size(); ++i) {
+    const glm::vec3 a = points[i], b = points[i + 1];
+    const glm::vec3 side = three::normalize(glm::cross(b - a, eye - (a + b) * 0.5f)) * halfWidth;
+    const VfxVertex v0{a - side, 0, {0, 0, 1}, 0}, v1{a + side, 0, {0, 0, 1}, 1}, v2{b - side, 1, {0, 0, 1}, 0}, v3{b + side, 1, {0, 0, 1}, 1};
+    out.insert(out.end(), {v0, v1, v2, v1, v3, v2});
+  }
+  return out;
+}
+
 // SphereGeometry(radius, widthSegments, heightSegments) (full sphere).
 inline std::vector<VfxVertex> sphere(float radius, int widthSegments, int heightSegments) {
   std::vector<std::vector<VfxVertex>> grid;
