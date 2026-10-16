@@ -409,7 +409,9 @@ class HelpModal {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     emberVeil(dl, {0, 0}, screen);
     ImGui::SetCursorScreenPos({0, 0});
-    ImGui::InvisibleButton("##helpveil", screen);  // the veil takes the clicks (nothing under it reacts)
+    // the veil takes the clicks (nothing under it reacts); overlappable, so the window's own buttons drawn after it get theirs
+    ImGui::SetNextItemAllowOverlap();
+    ImGui::InvisibleButton("##helpveil", screen);
 
     // max-w-lg, max-h-[85dvh], p-6; header mb-4, tabs mb-4, the scrolling area, Entendi mt-5.
     const float pad = 24.0f, w = std::min(512.0f, screen.x - 32.0f), inner = w - 2 * pad;
@@ -934,7 +936,8 @@ class BattleMenu {
     const float h = std::min(screen.y * 0.85f, pad + headH + speedH + audioH + buttonsH + pad);
     const ImVec2 a{std::round((screen.x - w) * 0.5f), std::round((screen.y - h) * 0.5f)}, b{a.x + w, a.y + h};
     ImGui::SetCursorScreenPos({0, 0});
-    if (ImGui::InvisibleButton("##battleveil", screen)) act = Action::Resume;
+    ImGui::SetNextItemAllowOverlap();  // the panel's buttons drawn after the veil take their own clicks
+    if (ImGui::InvisibleButton("##battleveil", screen) && !ImGui::IsMouseHoveringRect(a, b)) act = Action::Resume;
     for (int i = 8; i >= 1; --i) dl->AddRectFilled({a.x - i * 1.5f, a.y + i * 2.0f}, {b.x + i * 1.5f, b.y + i * 2.6f}, IM_COL32(0, 0, 0, 16), 12.0f + i);
     dl->AddRectFilled(a, b, IM_COL32(28, 28, 28, 235), 12.0f);
     if (const UiImage* art = uiImage(engine2Public / "game/ui/status-background.jpg")) {
