@@ -146,9 +146,8 @@ class TitleStage : public Stage {
     // .title-content: min(32rem, 100% - 2.5rem) wide, centred, its bottom 6.6rem above the screen's.
     const float width = std::min(32.0f * rem_, size.x - 2.5f * rem_);
     const float x = (size.x - width) * 0.5f;
-    // every text 1.4x Engine2's but the "Ember" heading (user 2026-10-16: "all fonts too small"; boxes unchanged)
-    const float eyebrow = 0.76f * kTitleText * rem_, h1 = std::clamp(size.x * 0.0825f, 3.3f * rem_, 5.25f * rem_), version = 1.1f * rem_,
-                tagline = kTitleText * rem_;
+    // every text 1.4x Engine2's but the heading (user 2026-10-16: "all fonts too small"; boxes unchanged)
+    const float h1 = std::clamp(size.x * 0.0825f, 3.3f * rem_, 5.25f * rem_), version = 1.1f * rem_;
     const float button = 3.15f * rem_, gap = 0.72f * rem_;
     // Engine2's menu: Nova campanha, Continuar (only with a save), Como jogar, Opções; Sair closes the game (a browser
     // tab had no need of it).
@@ -158,16 +157,12 @@ class TitleStage : public Stage {
     menu.push_back({upperUtf8(tr("Como jogar", "How to play")), Help}), menu.push_back({upperUtf8(tr("Opções", "Options")), Options});
     menu.push_back({upperUtf8(tr("Sair", "Quit")), Quit});
     const int count = static_cast<int>(menu.size());
-    const float taglineLines = 2;
-    const float total = eyebrow * 1.2f + 0.7f * rem_ + h1 * 0.92f + 0.75f * rem_ + version * 1.2f + rem_ + tagline * 1.65f * taglineLines + 1.7f * rem_ +
-                        count * button + (count - 1) * gap;
+    const float total = h1 * 0.92f + 0.75f * rem_ + version * 1.2f + 1.7f * rem_ + count * button + (count - 1) * gap;
     float y = size.y - 6.6f * rem_ - total;
-    spacedText(dl, uiFont(UiFont::Ui), eyebrow, {x, y}, IM_COL32(194, 167, 127, 255), upperUtf8(tr("Táticas em cinzas", "Tactics in ashes")).c_str(), 0.28f, false);
-    y += eyebrow * 1.2f + 0.7f * rem_;
-    // h1: Newsreader, letter-spacing -.055em, shadow 0 3px 18px #000
+    // h1: only "Ember Ashes" in Pirata One (user 2026-10-16: no eyebrow, no Newsreader "Ember"), shadow 0 3px 18px #000
     for (int k = 4; k >= 1; --k)
-      spacedText(dl, uiFont(UiFont::Display), h1, {x, y + 3.0f + k}, IM_COL32(0, 0, 0, 40), "Ember", -0.055f, false);
-    spacedText(dl, uiFont(UiFont::Display), h1, {x, y - h1 * 0.08f}, IM_COL32(243, 225, 194, 255), "Ember", -0.055f, false);
+      spacedText(dl, uiFont(UiFont::Mark), h1, {x, y + 3.0f + k}, IM_COL32(0, 0, 0, 40), "Ember Ashes", 0.0f, false);
+    spacedText(dl, uiFont(UiFont::Mark), h1, {x, y - h1 * 0.08f}, IM_COL32(243, 225, 194, 255), "Ember Ashes", 0.0f, false);
     y += h1 * 0.92f + 0.75f * rem_;
     // the engine line, made readable over the art (user 2026-10-16): larger, tighter tracking, opaque, with the tagline's shadow
     {
@@ -175,15 +170,8 @@ class TitleStage : public Stage {
       spacedText(dl, uiFont(UiFont::Ui), version, {x + 0.2f * rem_, y + 2}, IM_COL32(0, 0, 0, 170), engineLine, 0.12f, false);
       spacedText(dl, uiFont(UiFont::Ui), version, {x + 0.2f * rem_, y}, IM_COL32(232, 213, 182, 245), engineLine, 0.12f, false);
     }
-    y += version * 1.2f + rem_;
-    ImGui::PushFont(uiFont(UiFont::Ui), tagline);
-    const std::string line1 = tr("Seis sobreviventes. Um tabuleiro de guerra.", "Six survivors. A battlefield."), line2 = tr("Cada casa conta.", "Every square counts.");
-    dl->AddText(uiFont(UiFont::Ui), tagline, {x, y + 2}, IM_COL32(0, 0, 0, 160), line1.c_str());
-    dl->AddText(uiFont(UiFont::Ui), tagline, {x, y}, IM_COL32(209, 194, 172, 255), line1.c_str());
-    dl->AddText(uiFont(UiFont::Ui), tagline, {x, y + tagline * 1.65f + 2}, IM_COL32(0, 0, 0, 160), line2.c_str());
-    dl->AddText(uiFont(UiFont::Ui), tagline, {x, y + tagline * 1.65f}, IM_COL32(209, 194, 172, 255), line2.c_str());
-    ImGui::PopFont();
-    y += tagline * 1.65f * taglineLines + 1.7f * rem_;
+    // no tagline under it (user 2026-10-16: only the title and the engine line)
+    y += version * 1.2f + 1.7f * rem_;
     const float menuWidth = std::min(25.0f * rem_, width);
     for (int i = 0; i < count; ++i) {
       if (menuButton(menu[static_cast<size_t>(i)].first.c_str(), {x, y}, {menuWidth, button}, i == 0)) {
