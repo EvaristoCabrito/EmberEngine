@@ -125,6 +125,7 @@ struct MapStageOptions {
   bool volume = true;
   bool airParticles = true;  // the map's wisps and dust motes (Dev Controls "Efeitos atmosféricos" off: none)
   int fogLook = 3;  // the fog look shown first (render/FogLooks.h numbers)
+  int gridLook = 2;  // the panel's "Grade" at the start: 0 OFF, 1 antiga (the marks), 2 = look 001 (--grid-look N)
   // Atmosfera volumétrica v1: the panel's "Atmosfera" at the start (0 OFF, 1 cinema, 2 alta, 3 desempenho; --atmos N).
   // ON by default at "alta" (user, 2026-10-16: "padrão on"); the choice stays in the panel.
   int atmos = 2;
@@ -209,6 +210,7 @@ class MapStage final : public Stage {
     pitch_ += glm::radians(options.tiltDegrees);
     flat_ = options.tatica;
     atmosChoice_ = std::clamp(options.atmos, 0, 3);
+    gridLook_ = std::clamp(options.gridLook, 0, 2);
     spellsMenu_.load("content/fx/spell-looks.json", "content/fx.sprites.json");
     layers_ = options.layers;
     data_ = e2::BoardData::load(options.boardData);
@@ -400,10 +402,16 @@ class MapStage final : public Stage {
     renderer.setMeshes(scene_ ? meshes_.view() : MeshSceneView{}, lighting);
     renderer.setTerrain(ground_.view(look_));
     {
+      // The battle grid: the old marks (panel "Grade" antiga) or a numbered look (looks/grid); the editor's rings
+      // always go through the marks.
+      const int cols = board_ ? board_->layout().cols : 0, rows = board_ ? board_->layout().rows : 0;
       groundMarks_.clear();
-      collectMarks(groundMarks_);
+      if (gridLook_ == 1) collectMarks(groundMarks_);
       groundMarks_.insert(groundMarks_.end(), editorMarks_.begin(), editorMarks_.end());
-      renderer.setGroundMarks(groundMarks_, board_ ? board_->layout().cols : 0, board_ ? board_->layout().rows : 0);
+      renderer.setGroundMarks(groundMarks_, cols, rows);
+      gridCells_.clear();
+      if (gridLook_ >= 2) collectGrid(gridCells_);
+      renderer.setGrid(gridCells_, cols, rows, gridLook_ >= 2 ? static_cast<uint32_t>(gridLook_ - 1) : 0u, now_);
     }
     renderer.setWater(ground_.water(look_));
     {
@@ -818,6 +826,11 @@ class MapStage final : public Stage {
     {
       static const char* kBackgrounds[3] = {"imagem do mapa", "céu", "OFF"};
       dropdown("Fundo", background_, 3, [](int i) { return std::string(kBackgrounds[i]); });
+    }
+    if (battle_) {
+      // The battle grid: the old marks, or a saved look (looks/grid/README.md).
+      static const char* kGrid[3] = {"OFF", "antiga", "001"};
+      dropdown("Grade", gridLook_, 3, [](int i) { return std::string(kGrid[i]); });
     }
     if (board_ && board_->draft().water3d.any()) {
       static const char* kWater3d[3] = {"OFF", "rio", "leito"};
@@ -1974,6 +1987,7 @@ class MapStage final : public Stage {
 
   void updateHover() {
     hover_.reset();
+    if (scriptHover_) hover_ = scriptHover_;  // a scripted cursor (captures of the grid)
     if (!battle_ || mouse_.x < 0.0f) return;
     if (ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureMouse) return;
     hover_ = pick(mouseWindow_, mouse_.x, mouse_.y);
@@ -2470,9 +2484,31 @@ class MapStage final : public Stage {
       for (size_t i = 0; i < uses.size(); ++i) std::copy(uses[i].begin(), uses[i].end(), battle_->units()[i].spells);
       return logInfo("battle script: hurt: every unit at half HP, some sick / poisoned, everyone hungry");
     }
+    if (p[0] == "aim" && p.size() > 2) {
+      // the cursor held on a hex from now on (the grid's route / target under it, for captures)
+      scriptHover_ = e2::BattleHex{std::atoi(p[1].c_str()), std::atoi(p[2].c_str())};
+      return logInfo("battle script: aim {} {}", scriptHover_->x, scriptHover_->y);
+    }
     const int ci = p.size() > 1 ? sceneUnitNamed(p[1]) : -1;
     if (ci < 0) return fail("no such unit");
     const size_t cb = static_cast<size_t>(unitBattle_[static_cast<size_t>(ci)]);
+    if (p[0] == "near" && p.size() > 2) {
+      // the unit placed beside another (a foe in reach of a strike, for captures)
+      const int other = sceneUnitNamed(p[2]);
+      if (other < 0) return fail("no such unit");
+      if (!placeBeside(static_cast<size_t>(ci), static_cast<size_t>(other))) return fail("no free hex beside it");
+      return logInfo("battle script: near {} {}", p[1], p[2]);
+    }
+    if (p[0] == "pick") {
+      // the unit picked as its turn: its reach, the foes it can strike (the units before it in the order have gone)
+      for (size_t i : battle_->turnOrder()) {
+        if (i == cb) break;
+        battle_->units()[i].moved = true;
+      }
+      battle_->units()[cb].moved = false, battle_->units()[cb].acted = false, battle_->units()[cb].moveUsed = 0;
+      select(ci);
+      return logInfo("battle script: pick {}: {} hexes in reach, {} targets", p[1], reach_.size(), targets_.size());
+    }
     e2::BattleUnit& caster = battle_->units()[cb];
     caster.acted = false, caster.moved = false;
     int ti = ci;
@@ -2746,6 +2782,70 @@ class MapStage final : public Stage {
     }
     if (fog_ && !noFog_ && fogReady_)
       std::erase_if(marks, [&](const Renderer::GroundMark& m) { return m.cell < fogStates_.size() && fogStates_[m.cell] == e2::kFogUnseen; });
+  }
+
+  // The battle grid for the numbered looks (Renderer::GridCell per hex, looks/grid/README.md): the same states as
+  // collectMarks, as flags; the terrain pass draws the look itself. Never on ground not yet seen.
+  void collectGrid(std::vector<Renderer::GridCell>& cells) const {
+    if (!battle_ || !scene_ || !board_) return;
+    const e2::HexLayout& layout = board_->layout();
+    cells.assign(static_cast<size_t>(layout.cols) * static_cast<size_t>(layout.rows), Renderer::GridCell{});
+    auto at = [&](e2::BattleHex h) -> Renderer::GridCell* {
+      if (!e2::inBoard(layout, h.x, h.y)) return nullptr;
+      return &cells[static_cast<size_t>(e2::indexOf(layout, h.x, h.y))];
+    };
+    auto flag = [&](e2::BattleHex h, uint32_t f) {
+      if (Renderer::GridCell* c = at(h)) c->flags |= f;
+    };
+    const bool walking = selected_ >= 0 && !unitWalk_[static_cast<size_t>(selected_)].points.empty();
+    if (selected_ >= 0 && !walking && !spellMode_.empty()) {
+      const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
+      for (const e2::BattleHex& c : spellAim_) flag(c, Renderer::kGridSpellAim);
+      if (hover_ && aimValid(b, *hover_))
+        for (const e2::BattleHex& c : aimArea(b, *hover_)) flag(c, Renderer::kGridSpellArea);
+      if (hover_) flag(*hover_, Renderer::kGridHover | (aimValid(b, *hover_) ? 0u : Renderer::kGridHoverBlocked));
+      for (const e2::BattleHex& c : spellCells_) flag(c, Renderer::kGridSpellChosen);
+      const e2::BattleUnit& u = battle_->units()[b];
+      flag({u.x, u.y}, Renderer::kGridActive);
+    } else if (selected_ >= 0 && !walking) {
+      const bool player = scene_->units[static_cast<size_t>(selected_)].side == "player";
+      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
+      // The reach: the party's movement, or a foe's threat zone; each hex fainter towards the limit of the movement.
+      if (!attackMode_) {  // "Atacar": only the foes it can strike
+        int maxCost = 1;
+        for (const e2::ReachCell& c : reach_) maxCost = std::max(maxCost, c.cost);
+        for (const e2::ReachCell& c : reach_) {
+          Renderer::GridCell* cell = at({c.x, c.y});
+          if (!cell) continue;
+          cell->flags |= player ? Renderer::kGridReach : Renderer::kGridReachFoe;
+          cell->extra |= static_cast<uint32_t>(std::clamp(255 * c.cost / maxCost, 0, 255)) << 8;
+        }
+      }
+      // The route to the hovered hex: steps numbered from the unit's own hex (1).
+      if (player && hover_ && !(hover_->x == u.x && hover_->y == u.y) &&
+          std::any_of(reach_.begin(), reach_.end(), [&](const e2::ReachCell& c) { return c.x == hover_->x && c.y == hover_->y; })) {
+        const std::vector<e2::BattleHex> route = e2::Battle::path(reachPaths_, hover_->x, hover_->y);
+        for (size_t i = 0; i < route.size() && i < 255; ++i)
+          if (Renderer::GridCell* cell = at(route[i])) {
+            cell->extra = (cell->extra & ~0xFFu) | static_cast<uint32_t>(i + 1);
+            if (i + 1 == route.size()) cell->flags |= Renderer::kGridRouteEnd;
+          }
+      }
+      flag({u.x, u.y}, player ? Renderer::kGridActive : Renderer::kGridActiveFoe);
+    }
+    // The foes in reach of a strike.
+    for (const auto& [t, from] : targets_) {
+      const e2::BattleUnit& f = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(t)])];
+      flag({f.x, f.y}, Renderer::kGridTarget);
+    }
+    // The cursor: marked where nothing can stand.
+    if (hover_ && spellMode_.empty()) {
+      const bool blocked = !battle_->cell(hover_->x, hover_->y).passable;
+      flag(*hover_, Renderer::kGridHover | (blocked ? Renderer::kGridHoverBlocked : 0u));
+    }
+    if (fog_ && !noFog_ && fogReady_)
+      for (size_t i = 0; i < cells.size() && i < fogStates_.size(); ++i)
+        if (fogStates_[i] == e2::kFogUnseen) cells[i] = Renderer::GridCell{};
   }
 
   // Over the scene: the numbers popping off struck units and the strike forecast.
@@ -3703,6 +3803,7 @@ class MapStage final : public Stage {
   // runScript
   size_t scriptStep_ = 0;
   bool scriptDone_ = false, scriptFailed_ = false, scriptStarted_ = false;
+  std::optional<e2::BattleHex> scriptHover_;  // "aim:x:y": the cursor held on a hex
   std::function<std::string()> scriptCheck_;  // the playing step's check (empty = passed)
   std::string scriptLabel_;
   MeshScene meshes_;
@@ -3926,6 +4027,8 @@ class MapStage final : public Stage {
   static constexpr float kStepSeconds = 0.22f;      // Engine2 STEP_SECONDS: one hex of walking
   static constexpr float kBorderInner = 0.47f / 0.5f;  // Engine2 BORDER_INNER: a hex border's inner edge
   std::vector<Renderer::GroundMark> groundMarks_;  // this frame's battle grid (collectMarks)
+  std::vector<Renderer::GridCell> gridCells_;      // ... for the numbered looks (collectGrid)
+  int gridLook_ = 2;  // panel "Grade": 0 OFF, 1 antiga (the marks), 2.. = look 001.. (looks/grid/README.md)
   // Engine2 DIR_ACTION_WALK: sprites whose walks are drawn for each side, never mirrored while moving.
   inline static const std::unordered_set<std::string> kDirectionalWalk = {"aldric", "defaultLancer", "lancer", "sandoval", "theButcher",
       "familiar2", "familiar3", "cultist-v2", "militia-v2", "salazar", "cobalt-blue-deer", "neera"};

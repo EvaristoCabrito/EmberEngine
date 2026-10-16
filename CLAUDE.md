@@ -441,6 +441,27 @@ recurso ... balancear a performance ... decidir qual é o melhor visual"; "aplic
   CPU: `python -I tools/scripts/sprites/relief.py build/sprites/frames.json C:/Engine2/public/game build/sprites/relief`,
   then recook battle-v2.pak).
 
+## Battle grid look 001 (2026-10-16; user: "modernize the movement grid ... targeting grid, enemy target zones and
+everything", the C++ one was "awful")
+
+- `looks/grid/README.md`. Panel "Grade": OFF / antiga (the first C++ marks) / 001 (default); `--grid-look N`.
+  Data: `Renderer::GridCell` per hex (flags + route step + reach cost share, `setGrid`), filled by
+  `MapStage::collectGrid` (same states as collectMarks); drawn by the terrain pass through `shaders/grid_look001.hlsli`
+  (signed-distance: region outlines with glow on both sides, lattice, flowing route chevrons + reticle, turning rings,
+  target locks with hazard stripes, cursor brackets; `TerrainPush` is 80 bytes now). The old marks still serve the
+  editor's rings.
+- **Bloom gotcha:** anything painted bright in display space on the ground blooms through the tonemap's sparse 3-ring
+  gather as crisp "sparks" over the cards in front (the user saw them on Neera's face). The grid is therefore capped
+  under the bloom threshold (terrain.hlsl applyGroundMarks: display luminance <= max(0.72, the ground's own)).
+- Battle script steps for captures: `near:<unit>:<other>` (placed beside), `pick:<unit>` (the turn handed to it),
+  `aim:<x>:<y>` (the cursor held on a hex). PowerShell mangles non-ASCII unit names in `--battle-script`: use ASCII
+  ones (Piqueiro, Kael).
+- **Verified:** debug + validation captures exit 0 (party reach + route + target, close-up, a foe's zone, antiga, OFF);
+  release build. **Not verified:** the look in the window (the user judges), spell aim / chosen targets in the new
+  look (code path only), cost (not measured).
+- The user (2026-10-16, mid-turn): "eu pretendo remover boa parte desse efeito, não deu certo, digo os sprites 3D" -
+  an intention, not a go-ahead; nothing removed.
+
 ## Next
 
 The user's verdict (2026-10-15): the engine as seen is worse than Engine2 ("worst colours and render I've ever

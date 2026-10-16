@@ -63,9 +63,14 @@ struct TerrainPush {
   uint32_t markCols;      // the board's columns (0 = no ground marks)
   VkDeviceAddress marks;  // per hex Renderer::kMarkLayers x uint2 (colour, half2 rOut / rIn)
   uint32_t markRows;
-  uint32_t pad[3];
+  uint32_t gridCols;      // the battle grid's board (0 = no grid look), its look number and clock
+  uint32_t gridRows;
+  uint32_t gridLook;
+  VkDeviceAddress grid;   // per hex Renderer::GridCell
+  float gridSeconds;
+  uint32_t pad;
 };
-static_assert(sizeof(TerrainPush) == 64);
+static_assert(sizeof(TerrainPush) == 80);
 
 uint32_t packHalf2(float a, float b) { return glm::packHalf2x16(glm::vec2(a, b)); }
 
@@ -333,6 +338,7 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
     frame.shadowFrame = createDeviceBuffer(context, sizeof(MeshFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     frame.lights = createHostBuffer(context, sizeof(LocalLight) * kMaxLights, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     frame.marks = createHostBuffer(context, sizeof(uint32_t) * 2 * kMarkLayers * kMaxMarkCells, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    frame.grid = createHostBuffer(context, sizeof(GridCell) * kMaxMarkCells, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     frame.meshCounters = createReadbackBuffer(context, kCounterBytes);
     frame.volumeFrame = createDeviceBuffer(context, sizeof(VolumeFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     frame.cloudFrame = createDeviceBuffer(context, kMaxFogLookFrameBytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
@@ -682,6 +688,7 @@ Renderer::~Renderer() {
     destroyBuffer(context_, frame.shadowFrame);
     destroyBuffer(context_, frame.lights);
     destroyBuffer(context_, frame.marks);
+    destroyBuffer(context_, frame.grid);
     destroyBuffer(context_, frame.fogStaging);
     destroyBuffer(context_, frame.volumeFrame);
     destroyBuffer(context_, frame.cloudFrame);
@@ -1030,6 +1037,13 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
       slot[0] = m.color;
       slot[1] = packHalf2(m.rOut, m.rIn);
     }
+  }
+  // The battle grid's cells, as given (the rest of the board cleared).
+  if (gridOn()) {
+    auto* cells = static_cast<GridCell*>(frame.grid.mapped);
+    const size_t count = static_cast<size_t>(gridCols_) * static_cast<size_t>(gridRows_);
+    std::memset(cells, 0, count * sizeof(GridCell));
+    std::memcpy(cells, grid_.data(), std::min(grid_.size(), count) * sizeof(GridCell));
   }
 
   uint32_t lightCount = 0;
@@ -1459,7 +1473,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     vkCmdBeginRendering(cmd, &shadowPass);
     setViewport(cmd, {shadowSize_, shadowSize_});
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, terrainShadowPipeline_);
-    const TerrainPush push{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices, terrain_.seamStep, 0, 0, 0, {}};
+    const TerrainPush push{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices, terrain_.seamStep, 0, 0, 0, 0, 0, 0, 0, 0.0f, 0};
     vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
     vkCmdDraw(cmd, terrain_.count, 1, 0, 0);
     if (meshes) {
@@ -1628,9 +1642,12 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       const uint32_t terrainScope = gpuTimer_.begin(cmd, "terrain");
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, terrainPipeline_);
       const bool marks = markCols_ > 0 && markRows_ > 0 && static_cast<uint32_t>(markCols_ * markRows_) <= kMaxMarkCells;
+      const bool grid = gridOn();
       const TerrainPush terrainPush{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices, terrain_.seamStep,
                                     marks ? static_cast<uint32_t>(markCols_) : 0u, marks ? bufferAddress(context_, frame.marks) : 0,
-                                    static_cast<uint32_t>(markRows_), {}};
+                                    static_cast<uint32_t>(markRows_),
+                                    grid ? static_cast<uint32_t>(gridCols_) : 0u, grid ? static_cast<uint32_t>(gridRows_) : 0u, grid ? gridLook_ : 0u,
+                                    grid ? bufferAddress(context_, frame.grid) : 0, gridSeconds_, 0};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(terrainPush), &terrainPush);
       vkCmdDraw(cmd, terrain_.count, 1, 0, 0);
       gpuTimer_.end(cmd, terrainScope);

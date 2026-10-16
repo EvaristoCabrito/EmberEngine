@@ -31,6 +31,7 @@
 //        farthest enemy and back). Pixel checks: [--scene-time T] (scene clock pinned) [--no-ui] [--debug-view 3]
 //        (the fog mask each surface read), then tools/scripts/check_fog.py. [--volume 0]: no volumetric fog;
 //        [--fog-look N]: which saved fog look (render/FogLooks.h; in a window, the Map panel's dropdown).
+//        [--grid-look N]: the battle grid (panel "Grade"): 0 OFF, 1 the old marks, 2 look 001 (looks/grid/README.md).
 //        [--lighting 0|1|2|3]: old prototype day / Engine2's presets / physical sky with Engine2's strengths / real
 //        (default: lux, physical camera, eye adaptation, inverse-square lamps; also in the panel as "Luz").
 //        Night maps: [--moon-phase NAME] (Engine2's moonPhase.ts: new .. waningCrescent, blood) [--moon-path 0|1|2]
@@ -130,6 +131,7 @@ struct Options {
   bool scout = false, noUi = false, volume = true;
   bool windowed = false;  // --windowed or --size: a window instead of the whole screen
   int fogLook = 3;
+  int gridLook = 2;  // --grid-look N: the battle grid (panel "Grade"): 0 OFF, 1 the old marks, 2 look 001
   int atmos = 2;  // --atmos N: Atmosfera volumétrica v1 at the start (0 OFF, 1 cinema, 2 alta, 3 desempenho)
   int background = -1;  // --background N: the panel's "Fundo" (-1 as the map says, 0 the painting, 1 the sky, 2 OFF = black)
   bool mist = true;    // --mist 0: the fog of war's mist bank off (its mask and the volumetric atmosphere stay)
@@ -205,6 +207,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--scout") o.scout = true;
     else if (arg == "--volume" && hasValue) o.volume = std::atoi(argv[++i]) != 0;
     else if (arg == "--fog-look" && hasValue) o.fogLook = std::atoi(argv[++i]);
+    else if (arg == "--grid-look" && hasValue) o.gridLook = std::atoi(argv[++i]);
     else if (arg == "--atmos" && hasValue) o.atmos = std::atoi(argv[++i]);
     else if (arg == "--background" && hasValue) o.background = std::atoi(argv[++i]);
     else if (arg == "--mist" && hasValue) o.mist = std::atoi(argv[++i]) != 0;
@@ -509,6 +512,7 @@ MapStageOptions mapOptions(const Options& o) {
     m.scout = o.scout;
     m.volume = o.volume;
     m.fogLook = o.fogLook;
+    m.gridLook = o.gridLook;
     m.atmos = o.atmos;
     m.background = o.background;
     m.mist = o.mist;

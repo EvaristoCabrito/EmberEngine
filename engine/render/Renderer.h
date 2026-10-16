@@ -172,6 +172,35 @@ class Renderer {
     markCols_ = cols;
     markRows_ = rows;
   }
+  // The battle grid's own looks (looks/grid/README.md, shaders/grid_lookNNN.hlsli): per hex a state word; the
+  // terrain pass draws region outlines with their glow, the cell lattice, the route's flowing chevrons, the cursor,
+  // the active unit's ring, target locks and pulses itself, from these flags and its clock. Same cell indexing and
+  // board as the marks (both may be set: the marks paint first). `look` 0 = off.
+  struct GridCell {
+    uint32_t flags = 0;  // kGrid* bits
+    uint32_t extra = 0;  // bits 0-7 route step (1 = the walker's hex, then 2, 3, ...; 0 = not on the route);
+                         // bits 8-15 reach cost share 0..255 (0 by the unit, 255 at the limit of its movement)
+  };
+  enum GridFlag : uint32_t {
+    kGridReach = 1u << 0,         // the picked party unit's movement
+    kGridReachFoe = 1u << 1,      // a foe's movement (its threat zone)
+    kGridTarget = 1u << 2,        // a foe the picked unit can strike
+    kGridSpellAim = 1u << 3,      // where the spell may be aimed
+    kGridSpellArea = 1u << 4,     // the hovered aim's area
+    kGridSpellChosen = 1u << 5,   // a spell target chosen so far
+    kGridHover = 1u << 6,         // the cursor
+    kGridHoverBlocked = 1u << 7,  // ... where nothing can stand
+    kGridActive = 1u << 8,        // the picked party unit's hex
+    kGridActiveFoe = 1u << 9,     // the picked foe's hex
+    kGridRouteEnd = 1u << 10,     // the route's destination
+  };
+  void setGrid(std::span<const GridCell> cells, int cols, int rows, uint32_t look, float seconds) {
+    grid_.assign(cells.begin(), cells.end());
+    gridCols_ = cols;
+    gridRows_ = rows;
+    gridLook_ = look;
+    gridSeconds_ = seconds;
+  }
   // The board's water (BoardGround::water); empty = none.
   void setWater(const WaterView& water) { water_ = water; }
   // Ember's 3D water (BoardGround::water3d); empty = none.
@@ -264,6 +293,7 @@ class Renderer {
     Buffer shadowFrame;   // MeshFrame of the meshes' pass from the sun (when the cached shadow map is redrawn)
     Buffer lights;        // this frame's LocalLight[] (host-visible)
     Buffer marks;         // this frame's ground marks: per hex kMarkLayers x (colour, half2 radii) (host-visible)
+    Buffer grid;          // this frame's battle grid: per hex GridCell (host-visible)
     Buffer meshCounters;  // the work buffer's counters, copied back for meshStats()
     Buffer fogStaging;    // the fog mask's texels on their way to fogMask_ (host-visible, grown on demand)
     Buffer volumeFrame;   // VolumeFrame for the volumetric fog passes (device-local)
@@ -313,6 +343,11 @@ class Renderer {
   float bloom_ = 0.0f;
   std::vector<GroundMark> marks_;
   int markCols_ = 0, markRows_ = 0;
+  std::vector<GridCell> grid_;
+  bool gridOn() const { return gridLook_ != 0 && gridCols_ > 0 && gridRows_ > 0 && static_cast<uint32_t>(gridCols_ * gridRows_) <= kMaxMarkCells; }
+  int gridCols_ = 0, gridRows_ = 0;
+  uint32_t gridLook_ = 0;
+  float gridSeconds_ = 0.0f;
   Buffer clusters_;
   uint32_t clusterBufferIndex_ = kNoIndex;
   Image cardShadowMap_;

@@ -16,7 +16,12 @@ struct Push {
   uint markCols;      // the board's columns; 0 = no ground marks
   uint64_t marks;     // per hex kMarkLayers x uint2: colour (sRGB + alpha, r in the low byte), half2 rOut / rIn
   uint markRows;
-  uint3 pad;
+  uint gridCols;      // the battle grid's board (0 = no grid look), its look number and clock (grid_lookNNN.hlsli)
+  uint gridRows;
+  uint gridLook;
+  uint64_t grid;      // per hex Renderer::GridCell: flags, extra
+  float gridSeconds;
+  uint pad;
 };
 [[vk::push_constant]] Push push;
 
@@ -145,11 +150,12 @@ float3 acesFitInverse(float3 display) {
 float3 toSrgb(float3 c) { return select(c <= 0.0031308, c * 12.92, 1.055 * pow(max(c, 0.0), 1.0 / 2.4) - 0.055); }
 float3 fromSrgb(float3 c) { return select(c <= 0.04045, c / 12.92, pow((c + 0.055) / 1.055, 2.4)); }
 
-// The hex under a world point (Hex.h hexAt) and the point's hex distance from its centre (1 = on the corners'
-// hexagon, pointy-top), or -1 off the board.
-float hexDistance(float2 xz, out uint cell) {
-  cell = 0;
-  const float ox = kSqrt3 * (float(push.markCols) - 0.5) * 0.5, oz = 0.75 * (float(push.markRows) - 1.0);
+// The hex under a world point (Hex.h hexAt) on a cols x rows board: its column / row and the point's offset from
+// its centre (hex radius 1, pointy-top, odd rows shifted +x). False off the board.
+bool hexLocate(float2 xz, uint cols, uint rows, out int2 cr, out float2 p) {
+  cr = int2(0, 0);
+  p = float2(0.0, 0.0);
+  const float ox = kSqrt3 * (float(cols) - 0.5) * 0.5, oz = 0.75 * (float(rows) - 1.0);
   const float rf = (xz.y + oz) / 1.5, qf = (xz.x + ox) / kSqrt3 - rf * 0.5, sf = -qf - rf;
   float q = floor(qf + 0.5), r = floor(rf + 0.5);
   const float s = floor(sf + 0.5);
@@ -158,33 +164,64 @@ float hexDistance(float2 xz, out uint cell) {
   else if (dr > ds) r = -q - s;
   const int ri = int(r);
   const int ci = int(q + (r - float(ri & 1)) * 0.5);
-  if (ci < 0 || ri < 0 || ci >= int(push.markCols) || ri >= int(push.markRows)) return -1.0;
-  cell = uint(ri) * push.markCols + uint(ci);
+  if (ci < 0 || ri < 0 || ci >= int(cols) || ri >= int(rows)) return false;
+  cr = int2(ci, ri);
   const float2 centre = float2(kSqrt3 * (float(ci) + 0.5 * float(ri & 1)) - ox, 1.5 * float(ri) - oz);
-  const float2 p = xz - centre;
+  p = xz - centre;
+  return true;
+}
+// A point's hex distance from its hex's centre: 1 on the corners' hexagon.
+float hexRadial(float2 p) {
   const float e = max(abs(p.x), max(abs(0.5 * p.x + 0.8660254 * p.y), abs(0.5 * p.x - 0.8660254 * p.y)));
   return e / 0.8660254;
 }
+// ... and the hex's cell index, or -1 off the board (the ground marks' lookup).
+float hexDistance(float2 xz, out uint cell) {
+  cell = 0;
+  int2 cr;
+  float2 p;
+  if (!hexLocate(xz, push.markCols, push.markRows, cr, p)) return -1.0;
+  cell = uint(cr.y) * push.markCols + uint(cr.x);
+  return hexRadial(p);
+}
+
+#include "grid_look001.hlsli"
 
 float3 applyGroundMarks(float3 hdr, float3 wp, float flatness) {
-  if (push.markCols == 0 || push.marks == 0 || flatness <= 0.0) return hdr;
-  uint cell;
-  const float d = hexDistance(wp.xz, cell);
-  if (d < 0.0) return hdr;
-  const float aa = max(fwidth(d), 1e-4);
+  const bool marks = push.markCols != 0 && push.marks != 0;
+  const bool grid = push.gridCols != 0 && push.grid != 0 && push.gridLook != 0;
+  if ((!marks && !grid) || flatness <= 0.0) return hdr;
   float3 display = toSrgb(acesFit(hdr));
   bool any = false;
-  for (uint k = 0; k < kMarkLayers; ++k) {
-    const uint2 m = vk::RawBufferLoad<uint2>(push.marks + (uint64_t(cell) * kMarkLayers + k) * 8);
-    if (m.x == 0) break;
-    const float2 radii = f16tof32(uint2(m.y & 0xFFFF, m.y >> 16));
-    const float4 c = unpackUnorm8(m.x);
-    float cover = 1.0 - smoothstep(radii.x - aa, radii.x + aa, d);
-    if (radii.y > 0.0) cover *= smoothstep(radii.y - aa, radii.y + aa, d);
-    const float alpha = c.a * cover * flatness;
-    if (alpha <= 0.0) continue;
-    display = lerp(display, c.rgb, alpha);
-    any = true;
+  uint cell;
+  const float d = marks ? hexDistance(wp.xz, cell) : -1.0;
+  if (d >= 0.0) {
+    const float aa = max(fwidth(d), 1e-4);
+    for (uint k = 0; k < kMarkLayers; ++k) {
+      const uint2 m = vk::RawBufferLoad<uint2>(push.marks + (uint64_t(cell) * kMarkLayers + k) * 8);
+      if (m.x == 0) break;
+      const float2 radii = f16tof32(uint2(m.y & 0xFFFF, m.y >> 16));
+      const float4 c = unpackUnorm8(m.x);
+      float cover = 1.0 - smoothstep(radii.x - aa, radii.x + aa, d);
+      if (radii.y > 0.0) cover *= smoothstep(radii.y - aa, radii.y + aa, d);
+      const float alpha = c.a * cover * flatness;
+      if (alpha <= 0.0) continue;
+      display = lerp(display, c.rgb, alpha);
+      any = true;
+    }
+  }
+  if (grid) {
+    // The grid stays under Engine2's bloom threshold (tonemap.hlsl bright: 0.75 of display luminance), so its bright
+    // lines never bloom over the cards standing in front of them (the user saw "sparks" on other characters' faces).
+    const float3 lin0 = fromSrgb(display);
+    const float before = dot(lin0, float3(0.2126, 0.7152, 0.0722));
+    if (gridLook001(display, wp.xz, flatness, push.gridSeconds)) {
+      const float3 lin = fromSrgb(display);
+      const float cap = max(0.72, before);
+      const float l = dot(lin, float3(0.2126, 0.7152, 0.0722));
+      if (l > cap) display = toSrgb(lin * (cap / l));
+      any = true;
+    }
   }
   return any ? acesFitInverse(fromSrgb(display)) : hdr;
 }
