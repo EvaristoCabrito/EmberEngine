@@ -413,6 +413,34 @@ Read `docs/ATMOSPHERE.md` first (audit of the renderer, measured baseline, desig
   therefore verified from a scratch worktree holding HEAD + only its own staged hunks (`git worktree add --detach`,
   `git diff --cached | git apply`), and committed from that index.
 
+## Sprites 3D: relief on the 2D cards (2026-10-16; user: "pode adicionar os outros recursos? ... ON e OFF de cada
+recurso ... balancear a performance ... decidir qual é o melhor visual"; "aplica e eu vejo no jogo depois")
+
+- **What:** each sprite frame gets a relief map (normal x/y, occlusion, height) made offline by
+  `tools/scripts/sprites/relief.py` (Depth Anything V2 Small, ONNX, onnx-community, Apache 2.0, fetched once into
+  `build/models/depth-anything-v2-small/model.onnx`, 99 MB; CPU, ~1.5-2.5 frames/s; depth normalised per clip, a
+  quarter-circle bevel at the silhouette, normals from the height at the body's thickness, occlusion at three radii;
+  resumes after a power cut and re-does unreadable PNGs). Frame list: `Cooker sprite-frames <manifest> <out.json>`.
+  Cook: `Cooker sprites ... --relief build/sprites/relief` → clips whose every frame has a map get `.rfull` / `.rtail`
+  (linear BC7, the colour chain's layout; **SpriteClipHeader v2, 208 bytes**; v1 packs still load, flat).
+  `build/sprites/battle-v2.pak` is the pack with relief (JOGAR.bat prefers it over battle.pak). SpriteSystem streams
+  the relief chain with the colour (budget charged twice; `setReliefWanted(false)` = no relief bytes while every
+  feature is off); `Texture::relief`; `SpriteInstance` is 96 bytes (`reliefIndex`).
+- **Shader** (`sprites.hlsl`, push `features` / `thickness`): per-pixel normal (tangent basis right / up / card facing
+  with Engine2's tilt), per-pixel depth (`PSMainDepth` + `spriteDepthPipeline_` writing depth, `spriteDepthTestPipeline_`
+  for the cards drawn again over the effects; the plane is the body's back, height reaches toward the viewer so feet stay
+  put), parallax occlusion mapping (6-14 steps), sun self-shadow marched through the height field (`Surface::sunVisibility`
+  in lighting.hlsli), baked occlusion on the indirect light, specular (roughness 0.5). Debug view 2 shows the cards'
+  shading normals.
+- **Switches:** Modo teste → Dev Controls → **Sprites 3D** (Relevo, Profundidade por pixel, Paralaxe, Auto-sombra,
+  Oclusão, Especular, Decorações também, Espessura do corpo; `dev-gfx.json` `sprite*`, all ON by default); live in a
+  battle through Opções → Gráficos (MapStage::applyGfx) and on every map opened after (DevGfx::apply).
+- **Verified:** debug + validation captures exit 0 on aldeia015 with everything on, everything off and the normal view;
+  release build clean. **Not verified:** the look (the user judges in the window), the cost (not measured), decor relief
+  (none generated yet: only Aldric + the aldeia015 units' sets have maps; the rest of the 9841 frames take ~1.5 h on the
+  CPU: `python -I tools/scripts/sprites/relief.py build/sprites/frames.json C:/Engine2/public/game build/sprites/relief`,
+  then recook battle-v2.pak).
+
 ## Next
 
 The user's verdict (2026-10-15): the engine as seen is worse than Engine2 ("worst colours and render I've ever
