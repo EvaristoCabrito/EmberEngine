@@ -6,7 +6,8 @@
 // check-battle casts every ported spell at every hex and compares the board afterwards with Engine2's own cast.
 //
 // Ported: Míssil Mágico, Tiro Longo, Tiro Perfurante, Investida Perfurante, Golpe Duplo, Relâmpago (+ its echo), Frost,
-// Choque (enemy charges), Cura Menor; weapon-skill / resistance / healing training, experience and level-ups, a death's
+// Choque (enemy charges), Cura Menor, Cura Média, Mãos Curativas, Curar Doença, Criar Comida e Água, the battle's potions,
+// the disease of a bite; weapon-skill / resistance / healing training, experience and level-ups, a death's
 // loot roll, start-of-turn echo and hazards. Not yet: the other spells (area, summons, status zones, poison, bleeding).
 
 #include <optional>
@@ -20,7 +21,7 @@ namespace ember::e2 {
 
 // One queued action (Engine2 Seq): a spell's hits, a weapon strike (Golpe Duplo, a plain attack) or a heal.
 struct BattleStep {
-  enum class Type { Spell, Combat, Heal };
+  enum class Type { Spell, Combat, Heal, CureDisease, Food, Potion };
   Type type = Type::Spell;
   size_t att = 0;
   std::string kind;  // the spell (empty = a plain attack)
@@ -36,6 +37,9 @@ struct BattleStep {
   size_t def = 0;
   bool noCounter = false;
   int bonusDice = 0, bonusDiceCount = 1, bonusFlat = 0;  // an extra die on a landed strike (bonusDice = faces)
+  // Food: the fullness it brings (its rations roll is dice / faces / bonus); Potion: the potion's id
+  double fullness = 0;
+  std::string potion;
 };
 
 // What a step did, for the window: a number over a unit, a miss, a heal, a death.
@@ -44,12 +48,31 @@ struct BattleEffect {
   int amount = 0;
   bool crit = false, miss = false, heal = false, died = false;
   bool counter = false;  // the defender striking back
+  std::string text;      // shown instead of the number ("curado", "+2 rações", ...)
 };
 
 // Spell names as the window shows them (Engine2's own Portuguese names).
 std::string spellName(const std::string& kind);
 // A spell EmberEngine casts (the rest of a unit's list is shown but not castable yet).
 bool spellPorted(const std::string& kind);
+// A spell cast at once, with no aim (Criar Comida e Água): cast it at the caster's own hex.
+bool spellInstant(const std::string& kind);
+
+// Potions (data.ts POTIONS; their ids in the bag's order: kPotionIds, Battle.h).
+int potionIndex(const std::string& id);  // -1 when unknown
+std::string potionName(const std::string& id);  // potionLabel: name and dice
+// A potion may go on the hex (validPotionTarget: the actor itself or an adjacent ally); `error` = potionTargetError.
+bool potionTargetValid(const Battle& b, size_t actor, BattleHex cell, std::string* error = nullptr);
+// Engine2 usePotion + confirmPotionAt: the step that drinks / hands the potion (applyPotion when it plays), or nothing with
+// the reason (applyPotion's own refusals included: full HP, not sick, spells full). It spends the actor's action.
+std::optional<BattleStep> usePotion(const Battle& b, size_t actor, const std::string& id, BattleHex cell, std::string* error = nullptr);
+// The disease's effect (maybeInflictDisease once its roll lands): 10% off atk / mag / def / dex / mov, kept to give back.
+void inflictDisease(BattleUnit& u);
+// Engine2 reapplyGear: the stats again from its class at its level and its gear, less hunger and disease.
+void reapplyGear(BattleUnit& u);
+// The support casts' reference scene (export_battle.ts hurtScene): every living unit at half HP, the party's even-indexed
+// units diseased, every third unit poisoned, everyone hungry (fullness 0), every tier's uses halved.
+void hurtScene(Battle& b);
 // The pose a cast plays (Engine2 startSeq: arrows and blade skills swing, cures heal, the rest cast).
 std::string spellPose(const std::string& kind);
 // Uses left (Engine2 remainingSpellUses).

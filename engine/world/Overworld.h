@@ -101,6 +101,7 @@ class Overworld {
   static std::string travelTimeLabel(int hours);
   static double travelHungerCost(int hours) { return 50.0 * hours / 24.0; }
   static double fullness(const Json& value);  // hunger.ts fullness: 0..120, 100 when unset
+  static double hungerPenalty(double streak);  // hunger.ts hungerPenaltyFor: a starving hero's stat loss
   static int campaignHour(const Json& save);
   static std::string timeOfDay(int hour);     // campaignTime.ts campaignTimeOfDay
 

@@ -240,6 +240,8 @@ std::string Overworld::travelTimeLabel(int hours) {
   return hours == 24 ? "1 dia" : hours == 36 ? "1 dia e 12 horas" : std::to_string(hours) + " horas";
 }
 
+double Overworld::hungerPenalty(double streak) { return hungerPenaltyFor(streak); }
+
 double Overworld::fullness(const Json& value) {
   return value.is_number() && std::isfinite(value.get<double>()) ? std::max(0.0, std::min(120.0, value.get<double>())) : 100.0;
 }

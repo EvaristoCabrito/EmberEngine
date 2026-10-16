@@ -138,6 +138,17 @@ struct MapStageOptions {
   std::filesystem::path battle;
   // A campaign fight: each hero's level and XP from the save (save.ts levels / xp), by name.
   std::map<std::string, std::pair<int, int>> heroProgress;
+  // ... and what each hero brings in from the save (Engine2 startBattle's roster: unitHp, bags, heroDiseases,
+  // heroPoisons, heroHunger and the starving penalty).
+  struct HeroState {
+    std::optional<int> hp;
+    std::optional<std::array<int, 7>> bag;  // in e2::kPotionIds order
+    bool diseased = false;
+    std::string poison;                     // heroPoisons' tier, empty = not poisoned
+    std::optional<double> fullness;
+    double hungerPenalty = 0;
+  };
+  std::map<std::string, HeroState> heroState;
   // The map editor's preview (MapEditorStage.h): the draft and its scene given in memory instead of `map` / `scene`,
   // and a left click on a hex handed to editorClick instead of played; only the camera bar is drawn.
   std::optional<e2::MapDraft> draftData;
@@ -150,10 +161,15 @@ struct MapStageOptions {
   std::function<void(std::optional<std::pair<int, int>> hex, bool moved)> editorRelease;
 };
 
-// What a fight leaves for the campaign save (campaign.ts finishBattle's heroes part): each hero's level, XP and HP.
+// What a fight leaves for the campaign save (campaign.ts finishBattle's heroes part): each hero's level, XP and HP, the
+// potions left, disease, poison and hunger.
 struct HeroOutcome {
   std::string name;
   int level = 1, xp = 0, hp = 0;
+  std::array<int, 7> bag{};  // in e2::kPotionIds order
+  bool diseased = false;
+  std::string poison;        // empty = not poisoned
+  std::optional<double> fullness;
 };
 
 class MapStage final : public Stage {
@@ -966,9 +982,18 @@ class MapStage final : public Stage {
     std::vector<HeroOutcome> out;
     if (!battle_) return out;
     for (const e2::BattleUnit& u : battle_->units())
-      if (u.side == "player" && !u.summoned) out.push_back({u.name, u.level, u.xp, u.alive ? u.hp : 0});
+      if (u.side == "player" && !u.summoned) {
+        HeroOutcome h{u.name, u.level, u.xp, u.alive ? u.hp : 0};
+        std::copy(std::begin(u.bag), std::end(u.bag), h.bag.begin());
+        h.diseased = u.diseased;
+        h.poison = u.poisoned ? (u.poisonTier.empty() ? "lesser" : u.poisonTier) : "";
+        h.fullness = u.fullness;
+        out.push_back(std::move(h));
+      }
     return out;
   }
+  // Rations Criar Comida e Água conjured in this fight (Engine2 lootRations).
+  int lootRations() const { return battle_ ? battle_->lootRations() : 0; }
   bool wantsRetry() const { return retryRequested_; }
   const MapStageOptions& options() const { return options_; }
 
@@ -1676,6 +1701,19 @@ class MapStage final : public Stage {
     for (e2::BattleUnit& u : battle_->units())
       if (const auto it = options_.heroProgress.find(u.name); it != options_.heroProgress.end() && u.side == "player")
         e2::raiseToLevel(u, it->second.first, it->second.second);
+    // The save's condition of each hero (Engine2 spawnUnit: hunger and disease off its stats, HP capped, its bag).
+    for (e2::BattleUnit& u : battle_->units()) {
+      const auto it = options_.heroState.find(u.name);
+      if (it == options_.heroState.end() || u.side != "player") continue;
+      const MapStageOptions::HeroState& s = it->second;
+      if (s.bag) std::copy(s.bag->begin(), s.bag->end(), u.bag);
+      u.diseased = s.diseased;
+      u.poisoned = !s.poison.empty(), u.poisonTier = s.poison;
+      u.fullness = s.fullness;
+      u.hungerPenaltyPct = s.hungerPenalty;
+      e2::reapplyGear(u);
+      u.hp = s.hp && *s.hp > 0 ? std::min(u.maxHp, *s.hp) : u.maxHp;
+    }
     if (battle_->cols() != board_->layout().cols || battle_->rows() != board_->layout().rows) {
       logError("battle {}: {}x{} does not fit the map's {}x{} board", path.string(), battle_->cols(), battle_->rows(), board_->layout().cols,
                board_->layout().rows);
@@ -1926,18 +1964,42 @@ class MapStage final : public Stage {
     spellAim_.clear();
     const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
     const e2::BattleUnit& u = battle_->units()[b];
+    // Criar Comida e Água has no aim: it is cast at once, around the caster.
+    if (e2::spellInstant(kind)) return aimSpell({u.x, u.y});
     for (int y = 0; y < battle_->rows(); ++y)
       for (int x = 0; x < battle_->cols(); ++x)
-        if (e2::Battle::distance({u.x, u.y}, {x, y}) <= 9 && e2::spellAimValid(*battle_, b, kind, {x, y})) spellAim_.push_back({x, y});
+        if (e2::Battle::distance({u.x, u.y}, {x, y}) <= 9 && aimValid(b, {x, y})) spellAim_.push_back({x, y});
+  }
+
+  // A potion being aimed is spellMode_ "potion:<id>" (Engine2 usePotion: the actor itself or an adjacent ally).
+  static std::optional<std::string> potionOf(const std::string& mode) {
+    return mode.rfind("potion:", 0) == 0 ? std::optional<std::string>(mode.substr(7)) : std::nullopt;
+  }
+  bool aimValid(size_t b, e2::BattleHex hex, std::string* why = nullptr) const {
+    if (potionOf(spellMode_)) return e2::potionTargetValid(*battle_, b, hex, why);
+    return e2::spellAimValid(*battle_, b, spellMode_, hex, why);
+  }
+  std::vector<e2::BattleHex> aimArea(size_t b, e2::BattleHex hex) const {
+    return potionOf(spellMode_) ? std::vector<e2::BattleHex>{hex} : e2::spellArea(*battle_, b, spellMode_, hex);
   }
 
   // A hex clicked while a spell is aimed: one more target (Míssil Mágico takes one per missile), then the cast.
   void aimSpell(e2::BattleHex hex) {
     const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
     std::string why;
-    if (!e2::spellAimValid(*battle_, b, spellMode_, hex, &why)) {
+    if (!aimValid(b, hex, &why)) {
       tip_ = why, tipAt_ = now_;
       return;
+    }
+    if (const std::optional<std::string> potion = potionOf(spellMode_)) {
+      std::optional<e2::BattleStep> step = e2::usePotion(*battle_, b, *potion, hex, &why);
+      spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
+      if (!step) {
+        tip_ = why, tipAt_ = now_;
+        return;
+      }
+      tip_ = e2::potionName(*potion), tipAt_ = now_;
+      return play({*step}, static_cast<size_t>(selected_));
     }
     spellCells_.push_back(hex);
     if (static_cast<int>(spellCells_.size()) < e2::spellTargetCount(*battle_, b, spellMode_)) return;
@@ -2170,33 +2232,42 @@ class MapStage final : public Stage {
   void startStep(Exchange& x) {
     const e2::BattleStep& s = x.steps[x.step];
     const int striker = sceneUnitOf(static_cast<int>(x.counter ? s.def : s.att));
+    using StepType = e2::BattleStep::Type;
+    const bool support = s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food || s.type == StepType::Potion;
     int target = -1;
-    if (s.type != e2::BattleStep::Type::Spell) target = sceneUnitOf(static_cast<int>(x.counter ? s.att : s.def));
+    if (s.type == StepType::Food) target = -1;  // around the caster: nobody to turn to
+    else if (s.type != StepType::Spell) target = sceneUnitOf(static_cast<int>(x.counter ? s.att : s.def));
     else if (!s.ids.empty()) target = sceneUnitOf(static_cast<int>(s.ids[0]));
     if (striker >= 0 && target >= 0 && striker != target) {
       faceToward(static_cast<size_t>(striker), static_cast<size_t>(target));
-      if (s.type != e2::BattleStep::Type::Heal) faceToward(static_cast<size_t>(target), static_cast<size_t>(striker));
+      if (!support) faceToward(static_cast<size_t>(target), static_cast<size_t>(striker));
     }
-    std::string pose = s.type == e2::BattleStep::Type::Combat ? "attack" : e2::spellPose(s.kind);
-    if (striker >= 0 && !hasPose(static_cast<size_t>(striker), pose)) pose = hasPose(static_cast<size_t>(striker), "cast") ? "cast" : "attack";
-    const float length = (striker >= 0 ? poseSeconds(static_cast<size_t>(striker), pose) : 0.6f) / actionRate();
+    // A potion is drunk or handed over with no pose of its own (Engine2 applyPotion); the cures and the food play the
+    // healing pose.
+    std::string pose = s.type == StepType::Combat ? "attack" : s.type == StepType::Potion ? "" : e2::spellPose(s.kind);
+    if (striker >= 0 && !pose.empty() && !hasPose(static_cast<size_t>(striker), pose)) pose = hasPose(static_cast<size_t>(striker), "cast") ? "cast" : "attack";
+    const float length = (striker >= 0 && !pose.empty() ? poseSeconds(static_cast<size_t>(striker), pose) : 0.6f) / actionRate();
     x.impact = now_ + length * kImpactShare;
     x.end = now_ + length + kExchangeGap / actionRate();
     x.landed = false;
-    if (striker >= 0) unitShot_[static_cast<size_t>(striker)] = {pose, now_, false, actionRate()};
-    // Its sound as the pose begins (engine.ts startSeq; a counter's cue as the counter begins, stepCombat).
+    if (striker >= 0 && !pose.empty()) unitShot_[static_cast<size_t>(striker)] = {pose, now_, false, actionRate()};
+    // Its sound as the pose begins (engine.ts startSeq; a counter's cue as the counter begins, stepCombat; the cures and
+    // Criar Comida e Água: healBy).
     if (striker >= 0) {
       const size_t sb = x.counter ? s.def : s.att;
-      if (s.type == e2::BattleStep::Type::Combat) playCues(sounds(sb, x.counter ? "counter" : "attack"));
-      else if (s.type == e2::BattleStep::Type::Heal) playCues(sounds(sb, "heal"));
+      if (s.type == StepType::Combat) playCues(sounds(sb, x.counter ? "counter" : "attack"));
+      else if (s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food) playCues(sounds(sb, "heal"));
       else if (const e2::Json& spells = sounds(sb, "spells"); spells.is_object() && spells.contains(s.kind)) playCues(spells[s.kind]);
     }
     // The spell's visual, laid out so it lands on the impact (a counter or a plain attack has none: its blow's sparks
     // come when it lands).
     if (striker >= 0 && !x.counter && !s.kind.empty()) {
       std::vector<SpellEffects::Spot> spots;
-      if (s.type == e2::BattleStep::Type::Spell) {
+      if (s.type == StepType::Spell) {
         for (const e2::BattleHex& h : s.tiles) spots.push_back(hexSpot(h));
+      } else if (s.type == StepType::Food) {
+        for (size_t id : s.ids)  // everyone it feeds
+          if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0) spots.push_back(unitSpot(static_cast<size_t>(ui)));
       } else if (target >= 0) {
         spots.push_back(unitSpot(static_cast<size_t>(target)));
       }
@@ -2207,7 +2278,13 @@ class MapStage final : public Stage {
         x.impact = now_ + delay;
         x.end = std::max(x.end, x.impact + 0.8f + kExchangeGap);
       }
-      spellFx_.cast(s.kind, look, casterSpot, spots, now_, x.impact, striker);
+      if (s.type == StepType::Potion && !spots.empty()) {
+        // its colour by what it does (Engine2 POTIONS effect)
+        const std::string effect = s.potion == "disease" ? "disease" : s.potion.starts_with("mana") ? "mana" : "heal";
+        spellFx_.potion(effect, look, spots.front(), now_, x.impact, striker);
+      } else {
+        spellFx_.cast(s.kind, look, casterSpot, spots, now_, x.impact, striker);
+      }
     }
   }
 
@@ -2217,7 +2294,7 @@ class MapStage final : public Stage {
     const glm::vec3 feet = unitWorld(ui);
     const CardRect& c = unitCard_[ui];
     const float body = c.drawn && !c.flat ? std::clamp(c.height * 0.45f, 0.5f, 1.4f) : 0.9f;
-    return {feet, feet + glm::vec3(0.0f, body, 0.0f)};
+    return {feet, feet + glm::vec3(0.0f, body, 0.0f), c.drawn && !c.flat ? c.height : 0.0f};
   }
   // ... and a hex: the unit standing on it, else its ground.
   SpellEffects::Spot hexSpot(e2::BattleHex h) const {
@@ -2305,7 +2382,8 @@ class MapStage final : public Stage {
         continue;
       }
       if (e.heal) {
-        popups_.push_back({u, "+" + std::to_string(e.amount), IM_COL32(170, 226, 150, 255), now_, false});
+        // a heal's +HP, else what a cure, a meal or a mana potion did ("curado", "+2 rações", "+3 magia")
+        popups_.push_back({u, e.text.empty() ? "+" + std::to_string(e.amount) : e.text, IM_COL32(170, 226, 150, 255), now_, false});
         continue;
       }
       popups_.push_back({u, std::to_string(e.amount), e.crit ? IM_COL32(255, 214, 102, 255) : IM_COL32(255, 255, 255, 255), now_, e.crit});
@@ -2399,10 +2477,10 @@ class MapStage final : public Stage {
       const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
       for (const e2::BattleHex& c : spellAim_) add(c, IM_COL32(176, 124, 232, 34), 1.0f), add(c, IM_COL32(176, 124, 232, 110), 0.94f, border(0.94f));
       if (hover_) {
-        if (e2::spellAimValid(*battle_, b, spellMode_, *hover_))
-          for (const e2::BattleHex& c : e2::spellArea(*battle_, b, spellMode_, *hover_)) add(c, IM_COL32(214, 168, 255, 96), 1.0f);
+        if (aimValid(b, *hover_))
+          for (const e2::BattleHex& c : aimArea(b, *hover_)) add(c, IM_COL32(214, 168, 255, 96), 1.0f);
         add(*hover_, IM_COL32(8, 12, 16, 242), 0.985f, border(0.985f));
-        add(*hover_, e2::spellAimValid(*battle_, b, spellMode_, *hover_) ? IM_COL32(236, 214, 255, 255) : IM_COL32(231, 133, 115, 242), 0.94f, border(0.94f));
+        add(*hover_, aimValid(b, *hover_) ? IM_COL32(236, 214, 255, 255) : IM_COL32(231, 133, 115, 242), 0.94f, border(0.94f));
       }
       for (const e2::BattleHex& c : spellCells_) add(c, IM_COL32(255, 214, 102, 255), 0.7f, border(0.7f));
       const e2::BattleUnit& u = battle_->units()[b];
@@ -2605,6 +2683,7 @@ class MapStage final : public Stage {
 
   // GameApp slotIcon / data.ts spellIcon.
   const UiImage* spellIconOf(const std::string& kind) const {
+    if (const std::optional<std::string> potion = potionOf(kind)) return uiImage(options_.engine2Public / "game/icons" / ("potion-" + *potion + ".png"));
     static const std::pair<const char*, const char*> kIcons[] = {
         {"doubleStrike", "refresh-001/spells/cleave-crossed-blades.png"}, {"cleave", "refresh-001/spells/cleave.png"},
         {"fireball", "refresh-001/spells/fireball.png"}, {"frost", "frost.jpg"}, {"iceStorm", "ice-storm.jpg"},
@@ -2691,8 +2770,13 @@ class MapStage final : public Stage {
     if (hover) {
       ImGui::BeginTooltip();
       ImGui::PushFont(uiFont(UiFont::Ui), 15.0f);
-      ImGui::TextUnformatted(e2::spellName(kind).c_str());
-      if (!e2::spellPorted(kind)) ImGui::TextDisabled("ainda não existe no Ember");
+      if (const std::optional<std::string> potion = potionOf(kind)) {
+        ImGui::TextUnformatted(e2::potionName(*potion).c_str());
+        ImGui::TextDisabled("%s", tr("você ou um aliado ao lado · gasta a ação", "yourself or an adjacent ally · uses the action").c_str());
+      } else {
+        ImGui::TextUnformatted(e2::spellName(kind).c_str());
+        if (!e2::spellPorted(kind)) ImGui::TextDisabled("ainda não existe no Ember");
+      }
       ImGui::PopFont();
       ImGui::EndTooltip();
     }
@@ -2831,6 +2915,14 @@ class MapStage final : public Stage {
         const bool ok = canAct && e2::spellPorted(kind) && uses > 0;
         if (spellSocket(std::format("##spell{}", n++).c_str(), kind, uses, ok, spellMode_ == kind)) startSpell(kind);
       }
+      // the potions it carries (GameApp's hotbar: the spells, then the potions; using one spends the action)
+      if (actor->side == "player")
+        for (int k = 0; k < 7; ++k) {
+          if (actor->bag[k] <= 0) continue;
+          ImGui::SameLine();
+          const std::string kind = std::string("potion:") + e2::kPotionIds[k];
+          if (spellSocket(std::format("##potion{}", k).c_str(), kind, actor->bag[k], canAct, spellMode_ == kind)) startSpell(kind);
+        }
     }
     const float endW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, "Fim do turno", 0.06f) + 28.0f;
     ImGui::SameLine(io.DisplaySize.x - endW - 20.0f);

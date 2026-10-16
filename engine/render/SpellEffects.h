@@ -25,6 +25,7 @@
 #include "render/vfx/BurningHands.h"
 #include "render/vfx/CausticVenom.h"
 #include "render/vfx/Fireball.h"
+#include "render/vfx/HolyLight.h"
 #include "render/vfx/MagicMissileV2.h"
 #include "render/vfx/PhantasmalForce.h"
 #include "render/vfx/Sweeps.h"
@@ -41,6 +42,7 @@ class SpellEffects {
   struct Spot {
     glm::vec3 feet{0.0f};
     glm::vec3 body{0.0f};
+    float cardHeight = 0.0f;  // the unit's card as drawn (0 = a hex, or not known)
   };
   // A light an effect gives off this frame, in Engine2's terms (the stage turns it into a LocalLight).
   struct Light {
@@ -53,8 +55,8 @@ class SpellEffects {
   // shows them as "Míssil Mágico 01", ...; content/fx/README.md lists what each one is). 0 = OFF. Version 01 of every
   // spell that has one is this file's flipbook-card set (2026-10-16).
   static int looks(const std::string& kind);
-  // The version that is Engine2's own effect, ported (render/vfx/*), or 0 when the spell has none yet: the heroes'
-  // default (user, 2026-10-16).
+  // The heroes' default version (user, 2026-10-16): Engine2's own effect, ported (render/vfx/*); for the cures, the meal
+  // and the potion, whose Engine2 art was 2D only, our 3D light (HolyLight); 0 = none (the first version).
   static int engine2Look(const std::string& kind);
   // A spell or weapon skill (Engine2 kinds) in version `look`: the caster's pose starts at `start`, its first hit
   // lands at `impact`. `targets` are the hexes / units it reaches in the rules' order (Frost: its whole area). False =
@@ -69,6 +71,9 @@ class SpellEffects {
   // One fx clip on its own (the Spells menu's loose effects): played once at the spot, placed by what the art is
   // (a pillar stands on the feet, a ring lies around them, a burst sits on the body), with a light of its colour.
   void play(const std::string& clipName, const Spot& at, float start);
+  // A potion handed over or drunk (kind "potion", version `look`): its colour by what it does (Engine2 POTIONS effect:
+  // "heal", "disease", "mana").
+  bool potion(const std::string& effect, int look, const Spot& target, float start, float impact, int owner = -1);
   // A weapon blow that landed (a plain attack, a counter, a blade skill's strike): sparks on the body.
   void strike(const Spot& target, float at, bool crit);
   // Lightning's echo striking again at the start of the struck unit's turn.
@@ -80,7 +85,7 @@ class SpellEffects {
   void build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out, std::vector<Light>& lights);
   const VfxFrame& vfx() const { return vfx_; }
   bool active(float now) const;
-  void clear() { elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(); }
+  void clear() { elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(); }
   // A version that keeps Engine2's own timeline decides when the hit lands: seconds from the cast (Míssil Mágico 02:
   // Engine2's charge, then the flight). Below 0: the version lands on the caller's impact (the pose's).
   float impactDelay(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const;
@@ -142,6 +147,8 @@ class SpellEffects {
   std::vector<WebOfDreams> webs_;           // Teia dos Sonhos 01 = WebOfDreamsVFX
   std::vector<CleaveSweep> cleaves_;  // Cleave 01 = CleaveSweepVFX
   std::vector<Varredura> sweeps_;     // Varredura 01 = VarreduraVFX
+  std::vector<HolyLight> holies_;     // the cures', the meal's and the potions' light (ours, 3D)
+  std::string potionEffect_ = "heal";  // the potion being cast (potion())
   std::vector<std::pair<BurningHands, bool>> burns_;  // Mãos Flamejantes 01 / Sopro Venenoso 01 (poison) = BurningHandsV2VFX
   // An fx clip of the battle pack as the effect runtime samples it (requested on screen; empty while not loaded).
   VfxFlipbook flipbook(const char* clipName);

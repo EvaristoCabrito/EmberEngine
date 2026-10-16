@@ -76,6 +76,9 @@ struct ReachCell {
   int parentX = -1, parentY = -1;
 };
 
+// Potions in the bag's order (Engine2 GameApp ALL_POTIONS; data.ts POTIONS).
+inline constexpr const char* kPotionIds[7] = {"weak", "mid", "potent", "disease", "manaSmall", "manaMid", "manaLarge"};
+
 struct BattleUnit {
   std::string id, side, name, classId, sprite, className;
   int x = 0, y = 0;  // the anchor hex: for a big body, its front row (closest to the player)
@@ -106,6 +109,10 @@ struct BattleUnit {
   std::string weaponType;     // its weapon's type ("bow", "sword", ...), empty = none
   bool trainsWeapon = false;  // a hero whose weapon type its class trains (weaponSkills.ts)
   double weaponSkill = 0, healingSkill = 0;
+  // its off-hand weapon's type, whether its class trains it, and its skill (an off-hand counter trains it)
+  std::string offWeaponType;
+  bool offTrainsWeapon = false;
+  double offWeaponSkill = 0;
   std::vector<std::pair<std::string, double>> skills;  // trained skills by id ("fireResistance", ...)
   // A hero's growth: per level 1..30 the class's hp atk mag def dex and its uses per tier (levelUpUnit), and what its
   // gear adds over the class's stats.
@@ -116,6 +123,18 @@ struct BattleUnit {
     double mag = 0;
   };
   std::optional<Echo> shock;  // a lightning echo that strikes when its own turn begins
+
+  // --- Items and conditions a hero brings into the fight (Engine2 Unit.bag / diseased / poisoned / fullness) ---
+  int bag[7] = {};  // potions carried, in kPotionIds order
+  bool diseased = false;
+  struct Stats {
+    int atk = 0, mag = 0, def = 0, dex = 0, mov = 0;
+  };
+  std::optional<Stats> diseaseBase;  // its stats before the disease's penalty (curePlayerDisease restores them)
+  bool poisoned = false;
+  std::string poisonTier;            // save.heroPoisons' value ("lesser", ...), kept for the save
+  std::optional<double> fullness;    // hunger.ts fullness 0..120; unset reads as 100
+  double hungerPenaltyPct = 0;       // a starving hero's stat loss (0..0.9), gone once fed
 };
 
 // An enemy's decision (Engine2 runAiFor's plain branch): the walk (start first; empty = stays) and the foe it strikes.
@@ -149,10 +168,21 @@ struct CastReference {
     int hp = 0, maxHp = 0, level = 0, xp = 0;
     bool alive = false;
     std::optional<BattleUnit::Echo> shock;
+    // the support casts' scene (`hurt`): conditions and hunger afterwards
+    bool hasStatus = false;
+    int atk = 0, mag = 0, def = 0, dex = 0, mov = 0;
+    bool diseased = false, poisoned = false;
+    double fullness = 100;
+    int spells[10] = {};
+    int bag[7] = {};
   };
   std::vector<After> after;
   int spells[10] = {};
   int shockCharges = 0, frostCharges = 0;
+  // Cast in the hurt scene (export_battle.ts hurtScene: everyone at half HP, some diseased / poisoned, all hungry).
+  bool hurt = false;
+  int lootRations = 0;
+  std::string potion;  // a potion used instead of a spell (its id; `kind` is then "potion")
 };
 
 // Engine2's reference answers for the combat check (export_battle.ts).
@@ -207,6 +237,9 @@ class Battle {
   // Engine2's enmity hooks for spells and support (spell damage, heals noticed by every enemy).
   void noteDamage(size_t attacker, size_t target, int dmg, bool spell);
   void noteAware(size_t hero, double ce, double ve);
+  // Rations conjured in this fight (Engine2 lootRations: Criar Comida e Água), added to the save's at its end.
+  int lootRations() const { return lootRations_; }
+  void addLootRations(int n) { lootRations_ += n; }
 
   // --- Turns (Engine2 BattleEngine: one battle-opening initiative roll, a round in initiative order) ---
   // Every unit that takes turns (alive, not neutral) rolls 1d20 + its bonus; the order is highest first, the party
@@ -258,6 +291,7 @@ class Battle {
   std::vector<std::tuple<std::string, std::string, double>> affinity_;
   std::vector<ForecastReference> forecastRefs_;
   std::vector<RollReference> rollRefs_;
+  int lootRations_ = 0;
   std::vector<AiReference> aiRefs_;
   std::vector<CastReference> castRefs_;
   void sortTurnOrder();

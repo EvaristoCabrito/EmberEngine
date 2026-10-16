@@ -172,6 +172,19 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     o.trainsWeapon = yes(u, "trainsWeapon");
     o.weaponSkill = number(u, "weaponSkill");
     o.healingSkill = number(u, "healingSkill");
+    o.offWeaponType = text(u, "offWeaponType");
+    o.offTrainsWeapon = yes(u, "offTrainsWeapon");
+    o.offWeaponSkill = number(u, "offWeaponSkill");
+    if (u.contains("bag") && u["bag"].is_object())
+      for (int k = 0; k < 7; ++k) o.bag[k] = integer(u["bag"], kPotionIds[k]);
+    o.diseased = yes(u, "diseased");
+    if (u.contains("diseaseBase") && u["diseaseBase"].is_object()) {
+      const json& d = u["diseaseBase"];
+      o.diseaseBase = BattleUnit::Stats{integer(d, "atk"), integer(d, "mag"), integer(d, "def"), integer(d, "dex"), integer(d, "mov")};
+    }
+    o.poisoned = yes(u, "poisoned");
+    o.poisonTier = text(u, "poisonTier");
+    if (u.contains("fullness") && u["fullness"].is_number()) o.fullness = u["fullness"].get<double>();
     if (u.contains("growth") && u["growth"].is_array()) {
       for (const json& row : u["growth"]) {
         std::array<int, 16> r{};
@@ -227,6 +240,44 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
         }
         for (int t = 0; t < 10; ++t) r.spells[t] = integer(c[10], ("tier" + std::to_string(t + 1)).c_str());
         r.shockCharges = c[11].get<int>(), r.frostCharges = c[12].get<int>();
+      }
+      b.castRefs_.push_back(std::move(r));
+    }
+  // The support casts and potions, in the hurt scene: [caster, kind, x, y, valid, at x, at y, seed, calls, after, spells,
+  // shock, frost, lootRations, potion]; each unit afterwards as [hp, alive, echo, maxHp, level, xp, atk, mag, def, dex,
+  // mov, diseased, poisoned, fullness, spells, bag].
+  if (j.contains("supportCasts"))
+    for (const json& c : j["supportCasts"]) {
+      if (!c.is_array() || c.size() < 7) continue;
+      CastReference r;
+      r.hurt = true;
+      r.caster = c[0].get<int>();
+      r.kind = c[1].get<std::string>();
+      r.cell = {c[2].get<int>(), c[3].get<int>()};
+      r.valid = c[4].get<int>() != 0;
+      r.at = {c[5].get<int>(), c[6].get<int>()};
+      if (c.size() >= 15 && c[14].is_string()) r.potion = c[14].get<std::string>();
+      if (r.valid && c.size() >= 14) {
+        r.seed = c[7].get<uint32_t>();
+        r.calls = c[8].get<int>();
+        for (const json& a : c[9]) {
+          CastReference::After o;
+          o.hp = a[0].get<int>(), o.alive = a[1].get<int>() != 0;
+          if (a[2].is_array()) o.shock = BattleUnit::Echo{a[2][0].get<int>(), a[2][1].get<int>(), a[2][2].get<int>(), a[2][3].get<double>()};
+          o.maxHp = a[3].get<int>(), o.level = a[4].get<int>(), o.xp = a[5].get<int>();
+          if (a.size() >= 16) {
+            o.hasStatus = true;
+            o.atk = a[6].get<int>(), o.mag = a[7].get<int>(), o.def = a[8].get<int>(), o.dex = a[9].get<int>(), o.mov = a[10].get<int>();
+            o.diseased = a[11].get<int>() != 0, o.poisoned = a[12].get<int>() != 0;
+            o.fullness = a[13].is_number() ? a[13].get<double>() : 100;
+            for (int t = 0; t < 10; ++t) o.spells[t] = integer(a[14], ("tier" + std::to_string(t + 1)).c_str());
+            for (int k = 0; k < 7; ++k) o.bag[k] = integer(a[15], kPotionIds[k]);
+          }
+          r.after.push_back(o);
+        }
+        for (int t = 0; t < 10; ++t) r.spells[t] = integer(c[10], ("tier" + std::to_string(t + 1)).c_str());
+        r.shockCharges = c[11].get<int>(), r.frostCharges = c[12].get<int>();
+        r.lootRations = c[13].get<int>();
       }
       b.castRefs_.push_back(std::move(r));
     }

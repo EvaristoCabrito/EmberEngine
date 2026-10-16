@@ -93,6 +93,9 @@ if (testLevel) {
   gear.bags = fresh.bags;
   gear.promotions = fresh.promotions;
 }
+// PROMOTIONS='{"Kael":"paladin"}': heroes promoted as a save carries them (save.promotions), for references of a
+// promoted class's spells (Mãos Curativas is the paladin's).
+if (process.env.PROMOTIONS) gear.promotions = { ...(gear.promotions as Record<string, string> ?? {}), ...JSON.parse(process.env.PROMOTIONS) };
 // The editor's preview battle (MapPreviewCanvas): fog off, a fresh party.
 const engine = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0);
 const e = engine as unknown as Record<string, any>;
@@ -137,7 +140,13 @@ for (const u of e.units) {
     weaponType: skills.equippedWeaponType(u) ?? null,
     trainsWeapon: !!(skills.equippedWeaponType(u) && skills.weaponTypesForClass(u.classId).includes(skills.equippedWeaponType(u))),
     weaponSkill: skills.equippedWeaponType(u) ? (u.weaponSkills?.[skills.equippedWeaponType(u)] ?? 0) : 0,
+    offWeaponType: skills.equippedWeaponType(u, true) ?? null,
+    offTrainsWeapon: !!(skills.equippedWeaponType(u, true) && skills.weaponTypesForClass(u.classId).includes(skills.equippedWeaponType(u, true))),
+    offWeaponSkill: skills.equippedWeaponType(u, true) ? (u.weaponSkills?.[skills.equippedWeaponType(u, true)] ?? 0) : 0,
     healingSkill: u.healingSkill ?? 0,
+    // What it carries into the fight and its conditions (potions, disease, poison, hunger).
+    bag: u.bag ?? null, diseased: !!u.diseased, diseaseBase: u.diseaseBase ?? null, poisoned: !!u.poisoned, poisonTier: u.poisonTier ?? null,
+    fullness: typeof u.fullness === 'number' ? u.fullness : null,
     // Level-ups (levelUpUnit): the class's stats and spell uses at every level, and what gear adds over them.
     growth: u.side === 'player' ? Array.from({ length: 30 }, (_, i) => {
       const st = data.statsFor(u.classId, i + 1);
@@ -326,6 +335,133 @@ if (process.env.SPELL_REFS === '1') {
   }
 }
 
+// The support casts (the cures, Curar Doença, Criar Comida e Água) and the potions, in a hurt scene so they have work to
+// do: every living unit at half HP, the party's even-indexed units diseased (maybeInflictDisease's own change), every
+// third unit poisoned, everyone hungry, every tier's uses halved (EmberEngine Spells hurtScene does the same). Recorded as
+// the casts above, plus each unit's stats, conditions, hunger, uses and potions afterwards and the rations conjured.
+const SUPPORT = ['cureMinor', 'cureWounds', 'cureLight', 'cureDisease', 'createFoodAndWater'];
+const supportCasts: unknown[] = [];
+if (process.env.SPELL_REFS === '1') {
+  const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
+  const base = fresh();
+  const pristine = structuredClone(base.units);
+  const hurtScene = (list: any[]) => list.forEach((v, i) => {
+    if (v.alive) v.hp = Math.max(1, Math.floor(v.maxHp / 2));
+    if (i % 2 === 0 && v.side === 'player') {
+      v.diseased = true;
+      v.diseaseBase = { atk: v.atk, mag: v.mag, def: v.def, dex: v.dex, mov: v.mov };
+      const pen = (n: number) => Math.round(n * (1 - data.DISEASE.statPenalty));
+      v.atk = pen(v.atk), v.mag = pen(v.mag), v.def = pen(v.def), v.dex = pen(v.dex), v.mov = Math.max(1, pen(v.mov));
+    }
+    if (i % 3 === 0) { v.poisoned = true; v.poisonTier = 'lesser'; }
+    v.fullness = 0;
+    for (const k of Object.keys(v.spells ?? {})) v.spells[k] = Math.floor(v.spells[k] / 2);
+  });
+  let castSeed = 50000;
+  // One run: `act` casts or uses on battle `b` (its random numbers counted); played out to the action's end.
+  const run = (ci: number, at: { x: number; y: number }, setup: (b: any, u: any) => void, act: (b: any, u: any) => void) => {
+    const b = fresh();
+    b.units = structuredClone(pristine);
+    hurtScene(b.units);
+    const u = b.units[ci];
+    u.x = at.x, u.y = at.y, u.drawX = at.x, u.drawY = at.y;
+    b.selectedId = u.id;
+    setup(b, u);
+    const s = castSeed++;
+    const gen = combat.mulberry32(s);
+    let calls = 0;
+    b.rng = () => { calls++; return gen(); };
+    for (const name of FX) {
+      const original = b[name];
+      if (typeof original !== 'function') continue;
+      b[name] = (...args: unknown[]) => { const keep = b.rng; b.rng = Math.random; try { return original.apply(b, args); } finally { b.rng = keep; } };
+    }
+    let done = false, doneCalls = 0;
+    const finish = b.finishCombat.bind(b);
+    b.finishCombat = (att: unknown) => { finish(att); if (!b.queue.length && !done) { done = true; doneCalls = calls; } };
+    // the action's end (finishAction) belongs to the turn loop, not to the rules checked here
+    b.finishAction = () => { if (!done) { done = true; doneCalls = calls; } };
+    b.queue = [];
+    const spellsBefore = JSON.stringify(u.spells), bagBefore = JSON.stringify(u.bag);
+    act(b, u);
+    for (let i = 0; i < 4000 && !done && (b.active || b.queue.length); i++) b.tick(0.05);
+    if (done) calls = doneCalls;
+    const acted = JSON.stringify(u.spells) !== spellsBefore || JSON.stringify(u.bag) !== bagBefore;
+    const after = b.units.map((v: any) => [v.hp, v.alive ? 1 : 0, v.shock ? [v.shock.dice, v.shock.faces, v.shock.bonus, v.shock.mag] : 0, v.maxHp, v.level, v.xp ?? 0,
+      v.atk, v.mag, v.def, v.dex, v.mov, v.diseased ? 1 : 0, v.poisoned ? 1 : 0, typeof v.fullness === 'number' ? v.fullness : null, v.spells ?? {}, v.bag ?? {}]);
+    return { acted, s, calls, after, u, b };
+  };
+  for (let ci = 0; ci < base.units.length; ci++) {
+    const me = base.units[ci];
+    if (me.side !== 'player' || !me.alive) continue;
+    const spots: { x: number; y: number }[] = [{ x: me.x, y: me.y }];
+    if ((me.size ?? 1) === 1) {
+      // beside the nearest ally (so cures and potions reach someone else)
+      const occ = pathfinding.occupancy(base.units);
+      let ally: any = null;
+      for (const v of base.units) if (v !== me && v.alive && v.side === 'player' && (!ally || pathfinding.hexDist(v, me) < pathfinding.hexDist(ally, me))) ally = v;
+      let spot: { x: number; y: number } | null = null;
+      for (let y = 0; ally && y < base.rows && !spot; y++)
+        for (let x = 0; x < base.cols && !spot; x++)
+          if (pathfinding.hexDist({ x, y }, ally) === 1 && hexprops.hexDef(base.tiles, base.cols, x, y, base.decorOverlay).passable && !occ.has(pathfinding.key(x, y))) spot = { x, y };
+      if (spot) spots.push(spot);
+    }
+    const kinds = new Set<string>(available.classSpells(me.classId, me.level ?? 1, me.name));
+    for (const kind of SUPPORT) {
+      if (!kinds.has(kind)) continue;
+      for (const at of spots) {
+        if (kind === 'createFoodAndWater') {
+          const r = run(ci, at, () => {}, (b) => b.startCreateFoodAndWater());
+          if (!r.acted) { castSeed--; supportCasts.push([ci, kind, at.x, at.y, 0, at.x, at.y]); continue; }
+          supportCasts.push([ci, kind, at.x, at.y, 1, at.x, at.y, r.s, r.calls, r.after, r.u.spells, r.u.shockCharges ?? 0, r.u.frostCharges ?? 0, r.b.lootRations ?? 0, null]);
+          continue;
+        }
+        for (let y = 0; y < base.rows; y++)
+          for (let x = 0; x < base.cols; x++) {
+            if (pathfinding.hexDist({ x, y }, at) > 4) continue;
+            let aimValid = false;
+            const r = run(ci, at, (b) => { b.spellKind = kind; b.mode = 'awaitSpell'; b.missileTargets = []; }, (b, u) => {
+              aimValid = b.spellAimValid(u, { x, y });
+              if (!aimValid) return;
+              if (kind === 'cureDisease') b.castCureDisease(u, { x, y });
+              else b.castHeal(u, { x, y }, kind);
+            });
+            if (!aimValid || !r.acted) { castSeed--; supportCasts.push([ci, kind, x, y, 0, at.x, at.y]); continue; }
+            supportCasts.push([ci, kind, x, y, 1, at.x, at.y, r.s, r.calls, r.after, r.u.spells, r.u.shockCharges ?? 0, r.u.frostCharges ?? 0, r.b.lootRations ?? 0, null]);
+          }
+      }
+    }
+    // Every potion, on the actor's own hex and every hex around it.
+    for (const kind of Object.keys(data.POTIONS)) {
+      for (const at of spots) {
+        const cells = [at, ...pathfinding.hexNeighbors(at.x, at.y).filter((p: { x: number; y: number }) => pathfinding.inBounds(p.x, p.y, base.cols, base.rows))];
+        for (const c of cells) {
+          const r = run(ci, at, (_b, u) => { u.bag = { ...data.EMPTY_BAG, ...(u.bag ?? {}), [kind]: 1 }; }, (b, u) => { b.potionAim = kind; b.confirmPotionAt(u, c); });
+          if (!r.acted) { castSeed--; supportCasts.push([ci, 'potion', c.x, c.y, 0, at.x, at.y, 0, 0, [], {}, 0, 0, 0, kind]); continue; }
+          supportCasts.push([ci, 'potion', c.x, c.y, 1, at.x, at.y, r.s, r.calls, r.after, r.u.spells, r.u.shockCharges ?? 0, r.u.frostCharges ?? 0, r.b.lootRations ?? 0, kind]);
+        }
+      }
+    }
+  }
+  // Bites and zombie blows (maybeInflictDisease): each such enemy placed beside each hero of the hurt party, striking it
+  // with a plain attack (kind "strike", the cell = the hero's hex).
+  const SICKENING = ['wardog', 'wardog2', 'zombie', 'zombie2', 'undeadOx', 'plagueBearingCattle'];
+  const occ = pathfinding.occupancy(base.units);
+  for (let ci = 0; ci < base.units.length; ci++) {
+    const me = base.units[ci];
+    if (me.side !== 'enemy' || !me.alive || !SICKENING.includes(me.classId)) continue;
+    for (let hi = 0; hi < base.units.length; hi++) {
+      const h = base.units[hi];
+      if (h.side !== 'player' || !h.alive) continue;
+      const spot = pathfinding.hexNeighbors(h.x, h.y).find((p: { x: number; y: number }) => pathfinding.inBounds(p.x, p.y, base.cols, base.rows) &&
+        hexprops.hexDef(base.tiles, base.cols, p.x, p.y, base.decorOverlay).passable && !occ.has(pathfinding.key(p.x, p.y)));
+      if (!spot) continue;
+      const r = run(ci, spot, () => {}, (b, u) => { b.queue.push({ type: 'combat', att: u.id, def: b.units[hi].id }); });
+      supportCasts.push([ci, 'strike', h.x, h.y, 1, spot.x, spot.y, r.s, r.calls, r.after, r.u.spells, r.u.shockCharges ?? 0, r.u.frostCharges ?? 0, r.b.lootRations ?? 0, null]);
+    }
+  }
+}
+
 mkdirSync(dirname(outPath), { recursive: true });
 // --- sound -------------------------------------------------------------------------------------------------------------
 // engine.ts's constants (module-private), read from its source.
@@ -446,7 +582,7 @@ const missionMusic = (() => {
 })();
 
 writeFileSync(outPath, JSON.stringify({ source: 'Engine2 src/game/engine.ts BattleEngine via tools/scripts/engine2/export_battle.ts',
-  map: draft.id, cols: e.cols, rows: e.rows, debugFreeCast: testLevel > 0, cells, units, affinityBonus, forecasts, rolls, ai, aiNear: near, casts,
+  map: draft.id, cols: e.cols, rows: e.rows, debugFreeCast: testLevel > 0, cells, units, affinityBonus, forecasts, rolls, ai, aiNear: near, casts, supportCasts,
   sounds: { levelUp }, music: missionMusic }));
 console.log(`${draft.id}: ${e.cols}x${e.rows}, ${units.length} units (${units.map((u) => `${u.name} mov ${u.mov}`).join(', ')})`);
 process.exit(0);  // the engine leaves timers running

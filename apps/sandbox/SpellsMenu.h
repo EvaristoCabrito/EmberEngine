@@ -1,12 +1,13 @@
 #pragma once
 
 // The Spells menu (user, 2026-10-16: "a Spells Menu in test mode with all spells and skills with a drop down menu so
-// I can pick and choose; Magic Missile 01, make it serial, for reference sake"). Three lists:
+// I can pick and choose; Magic Missile 01, make it serial, for reference sake"). Four lists:
 //   Magias / Habilidades  every Engine2 spell and weapon skill (src/vfx/spell-catalog.ts SPELL_ICON_ID: the heroes'
 //                         and the enemy-only ones), each with a dropdown of its saved effect versions, OFF first, then
 //                         "<name> 01", "<name> 02", ... (render/SpellEffects.h looks(); never renumbered), and Testar
 //                         (the picked unit, else the party's first, casts it at the nearest foe; heals at the nearest
 //                         friend). A spell with no version yet shows only OFF.
+//   Itens                 what a hero uses from the bag (Poção), with its versions the same way.
 //   Efeitos soltos        every effect image of Engine2 (public/game/fx and effects: the elemental flipbooks only its
 //                         dev controls reached, bolts, the arrow, sparks, portals, references), grouped by element and
 //                         numbered the same way ("Arcano 01"), each playable alone with Testar. The numbers follow
@@ -96,9 +97,16 @@ inline const std::vector<SpellEntry>& allSpells() {
   return kAll;
 }
 
-// A friend is the target (heals, blessings), not a foe.
+// What a hero uses from the bag in battle (Engine2 usePotion): kind, name.
+inline const std::vector<SpellEntry>& allItems() {
+  static const std::vector<SpellEntry> kAll = {{"potion", "Poção", false}};
+  return kAll;
+}
+
+// A friend is the target (heals, blessings, potions), not a foe.
 inline bool spellOnFriend(const std::string& kind) {
-  return kind.starts_with("cure") || kind == "bless" || kind == "secondWind" || kind == "auraOfProtection" || kind == "createFoodAndWater";
+  return kind.starts_with("cure") || kind == "bless" || kind == "secondWind" || kind == "auraOfProtection" || kind == "createFoodAndWater" ||
+         kind == "potion";
 }
 
 class SpellsMenu {
@@ -174,6 +182,8 @@ class SpellsMenu {
       for (const SpellEntry& s : allSpells())
         if (s.skill == (section == 1)) spellRow(s, test);
     }
+    if (ImGui::CollapsingHeader("Itens", unfold))
+      for (const SpellEntry& s : allItems()) spellRow(s, test);
     if (ImGui::CollapsingHeader("Efeitos soltos", unfold)) {
       for (const Group& g : groups_) {
         int& pick = loosePick_[g.name];

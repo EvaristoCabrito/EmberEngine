@@ -816,7 +816,19 @@ int runWindow(const Options& o) {
       save["levels"][h.name] = h.level;
       save["xp"][h.name] = h.xp;
       save["unitHp"][h.name] = h.hp;
+      // the potions left (remainingBags; the bag's lockpicks stay as they were), disease and poison
+      // (mergeBattleDiseases / mergeBattlePoisons) and hunger (battlePlayerHunger)
+      e2::Json& bag = save["bags"][h.name];
+      if (!bag.is_object()) bag = e2::Json::object();
+      for (int k = 0; k < 7; ++k) bag[e2::kPotionIds[k]] = h.bag[static_cast<size_t>(k)];
+      if (h.diseased) save["heroDiseases"][h.name] = true;
+      else if (save["heroDiseases"].is_object()) save["heroDiseases"].erase(h.name);
+      if (!h.poison.empty()) save["heroPoisons"][h.name] = h.poison;
+      else if (save["heroPoisons"].is_object()) save["heroPoisons"].erase(h.name);
+      if (h.fullness) save["heroHunger"][h.name] = *h.fullness;
     }
+    // Criar Comida e Água's rations join the party's (finishBattle: save.rations + engine.lootRations)
+    if (map.lootRations() > 0) save["rations"] = save.value("rations", 0) + map.lootRations();
     save["pendingMission"] = nullptr;
     save["battle"] = nullptr;
     const bool won = map.battleResult() == "victory";
@@ -963,6 +975,26 @@ int runWindow(const Options& o) {
           const e2::Json levels = save.value("levels", e2::Json::object()), xp = save.value("xp", e2::Json::object());
           for (const auto& [name, level] : levels.items())
             if (level.is_number_integer()) options.heroProgress[name] = {level.get<int>(), xp.value(name, 0)};
+          // ... and their condition (GameApp startBattle's roster: hp, bags, heroDiseases, heroPoisons, heroHunger,
+          // hungerPenaltyFor(hungerStreak) on whoever is starving).
+          const double penalty = e2::Overworld::hungerPenalty(save.value("hungerStreak", 0.0));
+          const e2::Json hp = save.value("unitHp", e2::Json::object()), bags = save.value("bags", e2::Json::object());
+          const e2::Json sick = save.value("heroDiseases", e2::Json::object()), poisons = save.value("heroPoisons", e2::Json::object());
+          const e2::Json hunger = save.value("heroHunger", e2::Json::object());
+          for (const auto& [name, level] : levels.items()) {
+            MapStageOptions::HeroState& s = options.heroState[name];
+            if (hp.contains(name) && hp[name].is_number()) s.hp = hp[name].get<int>();
+            if (bags.contains(name) && bags[name].is_object()) {
+              std::array<int, 7> bag{};
+              for (int k = 0; k < 7; ++k) bag[static_cast<size_t>(k)] = bags[name].value(e2::kPotionIds[k], 0);
+              s.bag = bag;
+            }
+            s.diseased = sick.contains(name) && sick[name] == true;
+            if (poisons.contains(name) && poisons[name].is_string()) s.poison = poisons[name].get<std::string>();
+            else if (poisons.contains(name) && !poisons[name].is_null() && poisons[name] != false) s.poison = "lesser";
+            s.fullness = e2::Overworld::fullness(hunger.contains(name) ? hunger[name] : e2::Json());  // spawnUnit: always a number
+            if (*s.fullness <= 0) s.hungerPenalty = std::min(0.9, std::max(0.0, penalty));
+          }
         }
         auto map = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
         map->setMenus(toggleFullscreen, &devGfx);

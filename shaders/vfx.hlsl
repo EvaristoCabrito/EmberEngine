@@ -38,7 +38,7 @@ struct VfxInstance {
 static const uint kMaterialBasic = 0, kMaterialMissileCore = 1, kMaterialMissileShell = 2, kMaterialMissileTrail = 3,
                   kMaterialStandard = 4, kMaterialFlame = 5, kMaterialImpactParticle = 6, kMaterialImpactFlash = 7,
                   kMaterialBlessWave = 8, kMaterialSpriteSheet = 9, kMaterialVenomSmoke = 10, kMaterialPfTendril = 11, kMaterialPfCore = 12,
-                  kMaterialPfShell = 13, kMaterialWebThread = 14, kMaterialFlipbookParticle = 15;
+                  kMaterialPfShell = 13, kMaterialWebThread = 14, kMaterialFlipbookParticle = 15, kMaterialHoly = 16;
 
 struct Push {
   uint64_t vertices;   // VfxVertex[]
@@ -188,7 +188,7 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
     if (sight.local <= 0.0) o.position = float4(0, 0, -1, 1);
     return o;
   }
-  if (d.material == kMaterialImpactParticle || d.material == kMaterialFlipbookParticle) {
+  if (d.material == kMaterialImpactParticle || d.material == kMaterialFlipbookParticle || (d.material == kMaterialHoly && d.params0.y > 1.5 && d.params0.y < 2.5)) {
     // A camera-facing quad (PlaneGeometry 1x1) around the particle's centre, turned and sized in view space.
     const VfxInstance inst = loadInstance(d.firstInstance + instance);
     const float cs = cos(inst.b.x), sn = sin(inst.b.x);
@@ -454,6 +454,45 @@ float4 PSMain(VSOut i) : SV_Target0 {
     a = (core + halo * 0.36) * opacity;
     if (a < 0.005) discard;
     c = lerp(float3(1.0, 0.46, 0.04), d.color.rgb, core) * a * intensity;
+  } else if (d.material == kMaterialHoly) {
+    // Ours (render/vfx/HolyLight): the cures', the meal's and the potions' light. params0 = time, mode, intensity,
+    // opacity; color.rgb = its colour; params1.rgb = the hot core's colour, params1.a = the ground ring's radius.
+    const MeshFrame f = loadFrame(push.frame);
+    const float t = d.params0.x, mode = d.params0.y, intensity = d.params0.z, opacity = d.params0.w;
+    if (mode < 0.5) {
+      // A shaft of light (an open cylinder, u around, v up): seen through as a volume, brightest where it faces the eye,
+      // faded toward its top, with rays rising through it.
+      const float facing = abs(dot(normalize(i.normal), normalize(f.cameraPosition - i.world)));
+      const float body = pow(facing, 1.6);
+      const float v = i.uv.y;
+      const float along = smoothstep(0.0, 0.1, v) * (1.0 - smoothstep(0.35, 1.0, v));
+      const float rays = noise2(float2(i.uv.x * 14.0, v * 3.0 - t * 1.6)) * 0.6 + noise2(float2(i.uv.x * 31.0, v * 6.0 - t * 2.7)) * 0.4;
+      a = body * along * (0.45 + 0.9 * smoothstep(0.35, 0.85, rays)) * opacity;
+      c = lerp(d.color.rgb, d.params1.rgb, saturate(body * body * body * 0.6)) * intensity;
+    } else if (mode < 1.5) {
+      // The ground's glow (a disc, u around, v out): a soft pool and a sparkling ring at params1.a of its radius.
+      const float r = i.uv.y, around = i.uv.x;
+      const float pool = pow(saturate(1.0 - r), 2.2) * 0.55;
+      const float ring = exp(-pow((r - d.params1.a) / 0.12, 2.0)) * 0.6;
+      const float sparkle = 0.65 + 0.35 * noise2(float2(around * 40.0 + t * 3.0, r * 6.0 - t * 2.0));
+      a = (pool + ring * sparkle) * opacity;
+      c = lerp(d.color.rgb, d.params1.rgb, ring * 0.5) * intensity;
+    } else if (mode < 2.5) {
+      // A mote: a soft dot of light facing the camera (instance b = rotation, -, alpha, intensity; c = its tint).
+      const float dd = length(i.uv - 0.5);
+      const float core = exp(-dd * dd * 90.0), halo = exp(-dd * dd * 18.0) * 0.45;
+      a = (core + halo) * i.particleB.z * opacity;
+      if (a < 0.004) discard;
+      c = lerp(i.particleC.rgb, d.params1.rgb, core) * i.particleB.w * intensity;
+    } else {
+      // A ribbon of light along a tube or a ring (u along): brightest where it faces the eye, faded at both ends, a
+      // current running along it.
+      const float facing = abs(dot(normalize(i.normal), normalize(f.cameraPosition - i.world)));
+      const float ends = mode < 3.5 ? smoothstep(0.0, 0.18, i.uv.x) * (1.0 - smoothstep(0.82, 1.0, i.uv.x)) : 1.0;
+      const float flow = 0.7 + 0.3 * sin(i.uv.x * 24.0 - t * 9.0);
+      a = (0.25 + 0.75 * facing) * ends * opacity;
+      c = lerp(d.color.rgb, d.params1.rgb, facing * facing * 0.5) * intensity * flow;
+    }
   } else if (d.material == kMaterialStandard) {
     // MeshStandardMaterial: lit by the scene like any surface, plus its emissive (display-relative, as Engine2's glow);
     // color.a = its opacity (a transparent material: NormalBlending).

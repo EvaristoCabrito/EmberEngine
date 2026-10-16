@@ -44,6 +44,12 @@ at the nearest foe every 3 s), `--tatica` (2D view), `--spells-menu-open` (the M
 | Cleave (`cleave`) | 01 | **Engine2's own CleaveSweepVFX, ported**: from 0.18 s into the swing a steel-blue crescent blade (bright edge, dim wake) grows across the struck arc at weapon height while a spearhead runs it with a trail and a light; stone debris kicks off each target and a light flashes on it as the arc reaches it | `render/vfx/Sweeps.cpp` |
 | Varredura (`sweep`) | 01 | **Engine2's own VarreduraVFX, ported**: a circular pressure wave on the ground (radius 3.2): bright outer ring, glowing inner ring, 42 shards riding it, a light orbiting its edge, a flash on each target as it arrives | `render/vfx/Sweeps.cpp` |
 | Investida Perfurante (`piercingThrust`), Golpe Duplo (`doubleStrike`) | 01 | an ember glint on the swing; sparks on every blow that lands | `bladeSkill()`, `strike()` |
+| Cura Menor (`cureMinor`) | 02 | **ours, 3D (HolyLight, 2026-10-17)**: a slim golden shaft of light comes down onto the healed unit (seen through, rays rising inside), the ground glows with a widening ring, motes rise round it, a warm real light. The heroes' default | `render/vfx/HolyLight.cpp` |
+| Cura Média (`cureWounds`) | 01 | **ours, 3D (HolyLight)**: a taller, wider golden shaft and a halo that settles from above the head to the feet, more motes, a stronger light | `render/vfx/HolyLight.cpp` |
+| Mãos Curativas (`cureLight`) | 01 | **ours, 3D (HolyLight)**: a short warm shaft and two cupped arcs of amber light closing round the body, motes drawn inward | `render/vfx/HolyLight.cpp` |
+| Curar Doença (`cureDisease`) | 01 | **ours, 3D (HolyLight)**: a pale teal shaft; the sickness leaves the body as dark motes drifting up and away; a clean ring spreads wide on the ground | `render/vfx/HolyLight.cpp` |
+| Criar Comida e Água (`createFoodAndWater`) | 01 | **ours, 3D (HolyLight)**: a cool shaft on every fed ally, bread-gold and water-blue motes spiralling into it | `render/vfx/HolyLight.cpp` |
+| Poção (`potion`, Itens) | 01 | **ours, 3D (HolyLight)**: a burst of light at the chest, bubbles rising, a splash ring; red-orange to heal, green to cure, blue for mana | `render/vfx/HolyLight.cpp` |
 | every landed weapon blow | (always) | an impact spark (Impacto 01-04) on the body, embers on a critical, a warm flash | `strike()` |
 | lightning echo (start of the struck unit's turn) | (with Relâmpago) | Relâmpago 01's strike at 0.6 size | `echo()` |
 
@@ -73,7 +79,7 @@ particles, point lights) that also use the images. Each one, when ported, become
 | Frost2D, Blizzard2D | `vfx/legacy/two-d/` | Frost, Tempestade de Gelo |
 | ProvokeVFX, TurnUndeadV1-V4, ApparitionLightningV1 | `vfx/legacy/two-d/` | Provocar, Expulsar Mortos-Vivos (4 versions), an apparition's lightning |
 | lightning strikes | `game/engine.ts` emitLightningFx / drawLightningFx | Choque, Relâmpago, Relâmpago Maior, Raio Divino (+ splash) |
-| holy light | `game/engine.ts` emitHolyFx | Cura Menor, Cura Média, Mãos Curativas, Curar Doença, potions, food |
+| holy light | `game/engine.ts` emitHolyFx | Cura Menor, Cura Média, Mãos Curativas, Curar Doença, potions, food. Its 2D canvas port was tried and set aside (branch `wip/2d-canvas-fx`, not working); the user chose new 3D versions instead: HolyLight above |
 | blade swooshes | `game/engine.ts` emitBladeFx (arc, ring, dash, rushTrail, rushImpact, execution, tripSweep, shockRing) | every warrior / lancer / knight skill |
 | portals | `game/engine.ts` emitPortalFx / emitWarpFx + `effects/warp-portal-*.png` | summons, Portal |
 | ground bursts | `game/engine.ts` emitFireballBurstFx | Bola de Fogo, Veneno Cáustico, Veneno Menor, Sopro Venenoso |

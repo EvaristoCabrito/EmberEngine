@@ -124,17 +124,34 @@ bool checkBattle(const std::filesystem::path& battleJson) {
   size_t castsChecked = 0, castsValid = 0;
   for (const e2::CastReference& r : battle->castReferences()) {
     e2::Battle copy = *battle;
+    if (r.hurt) e2::hurtScene(copy);
     e2::BattleUnit& u = copy.units()[static_cast<size_t>(r.caster)];
     u.x = r.at.x, u.y = r.at.y;
     ++castsChecked;
-    const bool valid = e2::spellAimValid(copy, static_cast<size_t>(r.caster), r.kind, r.cell);
-    // Engine2 records a cast that queued nothing (Choque without a player tier) as not valid.
     std::optional<std::vector<e2::BattleStep>> steps;
-    if (valid) {
-      std::string why;
-      // the reference casts straight through the cast method (no class / uses gate)
-      const int count = e2::spellTargetCount(copy, static_cast<size_t>(r.caster), r.kind);
-      steps = e2::castSpell(copy, static_cast<size_t>(r.caster), r.kind, std::vector<e2::BattleHex>(static_cast<size_t>(count), r.cell), &why, false);
+    bool valid = false;
+    if (r.kind == "strike") {
+      // a plain attack on the hero standing on the cell (its counter included)
+      e2::BattleStep s;
+      s.type = e2::BattleStep::Type::Combat;
+      s.att = static_cast<size_t>(r.caster);
+      s.def = static_cast<size_t>(copy.unitAt(r.cell.x, r.cell.y));
+      valid = true, steps = std::vector{s};
+    } else if (!r.potion.empty()) {
+      // a potion: the actor carries one (export_battle.ts), then usePotion + applyPotion
+      u.bag[e2::potionIndex(r.potion)] = 1;
+      if (std::optional<e2::BattleStep> s = e2::usePotion(copy, static_cast<size_t>(r.caster), r.potion, r.cell)) valid = true, steps = std::vector{*s};
+    } else {
+      valid = e2::spellAimValid(copy, static_cast<size_t>(r.caster), r.kind, r.cell);
+      // Engine2 records a cast that queued nothing (Choque without a player tier) as not valid.
+      if (valid) {
+        std::string why;
+        // the reference casts straight through the cast method (no class / uses gate), but Criar Comida e Água's start
+        // method checks its uses itself
+        const int count = e2::spellTargetCount(copy, static_cast<size_t>(r.caster), r.kind);
+        steps = e2::castSpell(copy, static_cast<size_t>(r.caster), r.kind, std::vector<e2::BattleHex>(static_cast<size_t>(count), r.cell), &why,
+                              e2::spellInstant(r.kind));
+      }
     }
     const bool cast = valid && steps.has_value();
     if (cast != r.valid) {
@@ -163,7 +180,19 @@ bool checkBattle(const std::filesystem::path& battleJson) {
                                           std::abs(v.shock->mag - t.shock->mag) < 1e-9));
       if (v.hp != t.hp || v.alive != t.alive || !echoSame || v.maxHp != t.maxHp || v.level != t.level || v.xp != t.xp)
         diff += std::format(" [{} hp {} alive {} lvl {} xp {} vs {} {} {} {}]", v.name, v.hp, v.alive, v.level, v.xp, t.hp, t.alive, t.level, t.xp);
+      if (t.hasStatus) {
+        const double full = v.fullness ? *v.fullness : 100;
+        if (v.atk != t.atk || v.mag != t.mag || v.def != t.def || v.dex != t.dex || v.mov != t.mov || v.diseased != t.diseased ||
+            v.poisoned != t.poisoned || std::abs(full - t.fullness) > 1e-9)
+          diff += std::format(" [{} atk {} mag {} def {} dex {} mov {} sick {} poison {} full {} vs {} {} {} {} {} {} {} {}]", v.name, v.atk, v.mag, v.def,
+                              v.dex, v.mov, v.diseased, v.poisoned, full, t.atk, t.mag, t.def, t.dex, t.mov, t.diseased, t.poisoned, t.fullness);
+        for (int k = 0; k < 10; ++k)
+          if (v.spells[k] != t.spells[k]) diff += std::format(" [{} tier{} {} vs {}]", v.name, k + 1, v.spells[k], t.spells[k]);
+        for (int k = 0; k < 7; ++k)
+          if (v.bag[k] != t.bag[k]) diff += std::format(" [{} {} {} vs {}]", v.name, e2::kPotionIds[k], v.bag[k], t.bag[k]);
+      }
     }
+    if (r.hurt && copy.lootRations() != r.lootRations) diff += std::format(" [rations {} vs {}]", copy.lootRations(), r.lootRations);
     for (int t = 0; t < 10; ++t)
       if (u.spells[t] != r.spells[t]) diff += std::format(" [tier{} {} vs {}]", t + 1, u.spells[t], r.spells[t]);
     if (u.frostCharges != r.frostCharges) diff += std::format(" [frost {} vs {}]", u.frostCharges, r.frostCharges);

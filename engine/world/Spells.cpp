@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <format>
 
 namespace ember::e2 {
 
@@ -30,6 +31,10 @@ constexpr SpellData kSpells[] = {
     {"frost", "Frost", 2, "ice", false},
     {"shock", "Choque", 0, "lightning", false},
     {"cureMinor", "Cura Menor", 1, "", false},
+    {"cureWounds", "Cura Média", 2, "", false},
+    {"cureLight", "Mãos Curativas", 4, "", false},  // Engine2 CURES.cureLight "Healing Hands"
+    {"cureDisease", "Curar Doença", 3, "", false},
+    {"createFoodAndWater", "Criar Comida e Água", 4, "", false},
     {"fantomForce", "Força Fantasma", 0, "arcane", false},
     // listed (a unit's own spell bar) but not ported yet
     {"bloodyShot", "Tiro Sangrento", 2, "", true},
@@ -46,12 +51,9 @@ constexpr SpellData kSpells[] = {
     {"causticVenom", "Veneno Cáustico", 5, "poison", false},
     {"poisonBreath", "Sopro Venenoso", 1, "poison", false},
     {"warp", "Portal", 3, "arcane", false},
-    {"cureWounds", "Cura Média", 2, "", false},
     {"bless", "Bênção", 1, "", false},
     {"burningHands", "Mãos Flamejantes", 2, "fire", false},
-    {"cureDisease", "Curar Doença", 3, "", false},
     {"turnUndead", "Expulsar Mortos-Vivos", 3, "holy", false},
-    {"createFoodAndWater", "Criar Comida e Água", 4, "", false},
     {"divineBolt", "Raio Divino", 4, "holy", false},
     {"summonFamiliar", "Invocar Familiar", 1, "", false},
     {"phantasmalForce", "Força Fantasmagórica", 1, "arcane", false},
@@ -125,9 +127,67 @@ FrostPower frostPower(int level) {
   const int lv = std::max(1, std::min(30, level));
   return {2 + std::max(0, lv - 5) / 4, 1 + std::max(0, lv - 5) / 6, 6, 1.1};
 }
-// CURES.cureMinor
-constexpr int kCureMinorDice = 1, kCureMinorFaces = 6, kCureMinorBonus = 0, kCureMinorRange = 2;
-constexpr double kCureMinorMul = 1.0;
+// CURES: rollCure = floor(floor(MAG / 2) * mul + dice)
+struct CureData {
+  const char* kind;
+  int dice, faces, bonus;
+  double mul;
+  int range;
+};
+constexpr CureData kCures[] = {
+    {"cureMinor", 1, 6, 0, 1.0, 2},
+    {"cureWounds", 2, 6, 0, 1.6, 3},
+    {"cureLight", 1, 8, 0, 1.2, 1},
+};
+const CureData* cureData(const std::string& kind) {
+  for (const CureData& c : kCures)
+    if (kind == c.kind) return &c;
+  return nullptr;
+}
+constexpr int kCureDiseaseRange = 2;  // CURE_DISEASE.range
+// DISEASE
+constexpr double kDiseaseBiteChance = 0.2, kDiseaseZombieChance = 0.3, kDiseasePenalty = 0.1;
+// CREATE_FOOD_AND_WATER, createFoodAndWaterPower (hunger.ts INN_FULLNESS 120 from level 10)
+constexpr int kFoodRadius = 2;
+constexpr double kInnFullness = 120;
+struct FoodPower {
+  int dice, faces, bonus;
+  double fullness;
+};
+FoodPower foodPower(int level) {
+  const double full = level >= 10 ? kInnFullness : 100;
+  if (level >= 15) return {2, 4, 2, full};
+  if (level >= 13) return {1, 6, 2, full};
+  if (level >= 11) return {1, 6, 1, full};
+  if (level >= 9) return {1, 4, 1, full};
+  if (level >= 7) return {1, 4, 0, full};
+  if (level >= 5) return {1, 3, 0, full};
+  if (level >= 3) return {1, 2, 0, full};
+  return {0, 0, 0, full};
+}
+double fullnessOf(const BattleUnit& u) { return u.fullness ? std::max(0.0, std::min(120.0, *u.fullness)) : 100; }  // hunger.ts fullness
+// POTIONS
+struct PotionData {
+  const char* id;
+  const char* name;
+  int dice, faces, bonus;
+  char effect;  // 'h' heal, 'd' disease, 'm' mana
+  int manaRestore;
+};
+constexpr PotionData kPotions[] = {
+    {"weak", "Poção Fraca", 1, 8, 2, 'h', 0},
+    {"mid", "Poção Média", 2, 8, 4, 'h', 0},
+    {"potent", "Poção De Cura Potente", 2, 12, 6, 'h', 0},
+    {"disease", "Poção De Curar Doenças", 0, 0, 0, 'd', 0},
+    {"manaSmall", "Poção De Mana Pequena", 0, 0, 0, 'm', 1},
+    {"manaMid", "Poção De Mana Média", 0, 0, 0, 'm', 2},
+    {"manaLarge", "Poção De Mana Grande", 0, 0, 0, 'm', 3},
+};
+const PotionData* potionData(const std::string& id) {
+  for (const PotionData& p : kPotions)
+    if (id == p.id) return &p;
+  return nullptr;
+}
 // Experience (data.ts)
 constexpr int kMaxLevel = 30;
 int expToLevel(int level) {
@@ -314,21 +374,33 @@ double skillGainChance(double v) { return std::max(0.0, std::min(1.0, (kSkillCap
 
 // Weapon mastery as weaponModifiers reads it for a hero (75 + skill accuracy, (100 + skill) % damage).
 void applyWeaponSkill(BattleUnit& u) {
-  if (u.side != "player" || !u.trainsWeapon) return;
-  const double v = std::max(0.0, std::min(100.0, u.weaponSkill));
-  u.combat.accuracy = 75 + v;
-  u.combat.damageMul = (100 + v) / 100;
+  if (u.side != "player") return;
+  if (u.trainsWeapon) {
+    const double v = std::max(0.0, std::min(100.0, u.weaponSkill));
+    u.combat.accuracy = 75 + v;
+    u.combat.damageMul = (100 + v) / 100;
+  }
+  if (u.offTrainsWeapon) {
+    const double v = std::max(0.0, std::min(100.0, u.offWeaponSkill));
+    u.combat.offAccuracy = 75 + v;
+    u.combat.offDamageMul = (100 + v) / 100;
+  }
 }
 
-void trainWeapon(BattleUnit& u, int enemyLevel, Mulberry32& rng) {
-  if (u.weaponType.empty() || u.side != "player" || u.summoned || !u.trainsWeapon) return;
+// trainWeapon: the weapon that struck (the off-hand one on an off-hand counter) may gain a skill point.
+void trainWeapon(BattleUnit& u, int enemyLevel, Mulberry32& rng, bool offHand = false) {
+  const std::string& type = offHand ? u.offWeaponType : u.weaponType;
+  if (type.empty() || u.side != "player" || u.summoned || !(offHand ? u.offTrainsWeapon : u.trainsWeapon)) return;
   bool skip = false;
   const std::optional<double> amount = trainingGain(u.level, enemyLevel, skip);
   if (skip) return;
-  const double current = std::max(0.0, std::min(100.0, u.weaponSkill));  // rollWeaponSkillGain
+  const double current = std::max(0.0, std::min(100.0, offHand ? u.offWeaponSkill : u.weaponSkill));  // rollWeaponSkillGain
   if (current >= kSkillCap || rng() >= skillGainChance(current)) return;
-  u.weaponSkill = std::min(kSkillCap, jsRound((current + amount.value_or(kSkillGain)) * 100) / 100);
-  *skillSlot(u, u.weaponType + "Weapon") = u.weaponSkill;
+  const double gained = std::min(kSkillCap, jsRound((current + amount.value_or(kSkillGain)) * 100) / 100);
+  // one skill per weapon type: both hands share it when they hold the same type
+  if (type == u.weaponType) u.weaponSkill = gained;
+  if (type == u.offWeaponType) u.offWeaponSkill = gained;
+  *skillSlot(u, type + "Weapon") = gained;
   applyWeaponSkill(u);
 }
 
@@ -356,6 +428,38 @@ void trainHealing(BattleUnit& u, Mulberry32& rng) {
   const double current = u.healingSkill;
   if (rng() >= skillGainChance(current)) return;
   u.healingSkill = std::min(kSkillCap, jsRound((current + kSkillGain) * 100) / 100);
+}
+
+// healingPower: healingAmount(base, healing skill) = +1% per skill point.
+int healingPower(const BattleUnit& u, int base) {
+  const double points = std::max(0.0, std::min(kSkillCap, u.healingSkill));
+  return static_cast<int>(std::floor(std::max(0, base) * (1 + points / 100) + 1e-9));
+}
+
+constexpr double kSupportCe = 20, kSupportVe = 120;  // enmity.ts ENMITY.support
+
+// curePlayerDisease: poison gone, the disease's stats given back.
+void curePlayerDisease(BattleUnit& u) {
+  u.poisoned = false;
+  u.poisonTier.clear();
+  if (!u.diseaseBase) {
+    u.diseased = false;
+    return;
+  }
+  u.atk = u.diseaseBase->atk, u.mag = u.diseaseBase->mag, u.def = u.diseaseBase->def, u.dex = u.diseaseBase->dex, u.mov = u.diseaseBase->mov;
+  u.diseaseBase.reset();
+  u.diseased = false;
+}
+
+// maybeInflictDisease: a wardog's bite (20%) or a zombie's hit (30%) sickens a surviving target.
+void maybeInflictDisease(const BattleUnit& actor, BattleUnit& target, Mulberry32& rng) {
+  const std::string& c = actor.classId;
+  const double chance = c == "wardog" || c == "wardog2"                                                     ? kDiseaseBiteChance
+                        : c == "zombie" || c == "zombie2" || c == "undeadOx" || c == "plagueBearingCattle" ? kDiseaseZombieChance
+                                                                                                             : 0;
+  if (chance <= 0 || !target.alive || target.diseased) return;
+  if (rng() >= chance) return;
+  inflictDisease(target);
 }
 
 // levelUpUnit: the next level's class stats (plus gear), the level's HP gain, and the tier uses it adds.
@@ -464,7 +568,111 @@ std::string spellName(const std::string& kind) {
 
 bool spellPorted(const std::string& kind) {
   return kind == "magicMissile" || kind == "longShot" || kind == "piercing" || kind == "piercingThrust" || kind == "doubleStrike" || kind == "lightning" ||
-         kind == "frost" || kind == "cureMinor";
+         kind == "frost" || kind == "cureMinor" || kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "createFoodAndWater";
+}
+
+bool spellInstant(const std::string& kind) { return kind == "createFoodAndWater"; }
+
+int potionIndex(const std::string& id) {
+  for (int i = 0; i < 7; ++i)
+    if (id == kPotionIds[i]) return i;
+  return -1;
+}
+
+std::string potionName(const std::string& id) {
+  const PotionData* p = potionData(id);
+  if (!p) return id;
+  return p->dice > 0 ? std::format("{} {}D{}{}", p->name, p->dice, p->faces, p->bonus ? std::format("+{}", p->bonus) : "") : p->name;  // potionLabel
+}
+
+bool potionTargetValid(const Battle& b, size_t actor, BattleHex cell, std::string* error) {
+  const BattleUnit& a = b.units()[actor];
+  auto fail = [&](const char* why) {
+    if (error) *error = why;
+    return false;
+  };
+  // validPotionTarget: an alive ally standing on the hex, the actor itself or one hex away; else potionTargetError.
+  for (const BattleUnit& t : b.units())
+    if (t.alive && t.side == "player" && t.x == cell.x && t.y == cell.y) {
+      if (&t == &a || hexDist({a.x, a.y}, cell) == 1) return true;
+      break;
+    }
+  const int occupant = firstAt(b, cell);
+  if (occupant < 0) return fail("Não há aliado nessa casa. Escolha você ou um aliado adjacente.");
+  const BattleUnit& o = b.units()[static_cast<size_t>(occupant)];
+  if (o.side != "player") return fail("Poções só podem ser usadas em você ou em um aliado.");
+  if (static_cast<size_t>(occupant) != actor && hexDist({a.x, a.y}, cell) != 1)
+    return fail("Esse aliado está longe demais; poções alcançam apenas o próprio personagem ou um aliado adjacente.");
+  return fail("Esse personagem não pode receber esta poção agora.");
+}
+
+std::optional<BattleStep> usePotion(const Battle& b, size_t actor, const std::string& id, BattleHex cell, std::string* error) {
+  const BattleUnit& a = b.units()[actor];
+  const PotionData* p = potionData(id);
+  const int slot = potionIndex(id);
+  auto fail = [&](const std::string& why) -> std::optional<BattleStep> {
+    if (error) *error = why;
+    return std::nullopt;
+  };
+  if (!p || slot < 0 || a.side != "player" || !a.alive || a.bag[slot] <= 0) return fail("Sem essa poção.");
+  if (!potionTargetValid(b, actor, cell, error)) return std::nullopt;
+  size_t target = actor;
+  for (size_t i = 0; i < b.units().size(); ++i)
+    if (b.units()[i].alive && b.units()[i].side == "player" && b.units()[i].x == cell.x && b.units()[i].y == cell.y) {
+      target = i;
+      break;
+    }
+  const BattleUnit& t = b.units()[target];
+  // applyPotion's refusals (nothing spent, the turn goes on)
+  if (p->effect == 'd' && !t.diseased && !t.poisoned) return fail(std::format("{} · {} não está doente.", p->name, t.name));
+  if (p->effect == 'm') {
+    bool room = false;
+    for (int k = 0; k < 10 && !room; ++k) {
+      const int cap = t.level >= 1 && static_cast<size_t>(t.level) <= t.growth.size() ? t.growth[static_cast<size_t>(t.level - 1)][static_cast<size_t>(5 + k)] : 0;
+      room = cap > 0 && t.spells[k] < cap;
+    }
+    if (!room) return fail(std::format("{} · magias de {} já estão no máximo.", p->name, t.name));
+  }
+  if (p->effect == 'h' && t.hp >= t.maxHp) return fail(std::format("{} já está com HP cheio.", t.name));
+  BattleStep s;
+  s.type = BattleStep::Type::Potion;
+  s.att = actor, s.def = target;
+  s.kind = "potion";
+  s.potion = id;
+  return s;
+}
+
+void inflictDisease(BattleUnit& u) {
+  u.diseased = true;
+  u.diseaseBase = BattleUnit::Stats{u.atk, u.mag, u.def, u.dex, u.mov};
+  auto pen = [](int n) { return static_cast<int>(jsRound(n * (1 - kDiseasePenalty))); };
+  u.atk = pen(u.atk), u.mag = pen(u.mag), u.def = pen(u.def), u.dex = pen(u.dex);
+  u.mov = std::max(1, pen(u.mov));
+}
+
+void reapplyGear(BattleUnit& u) {
+  if (u.level < 1 || static_cast<size_t>(u.level) > u.growth.size()) return;
+  const std::array<int, 16>& g = u.growth[static_cast<size_t>(u.level - 1)];
+  const double keep = 1 - u.hungerPenaltyPct, sick = u.diseased ? 1 - kDiseasePenalty : 1;
+  auto r = [](double v) { return static_cast<int>(jsRound(v)); };
+  u.maxHp = r((g[0] + u.gearHp) * keep);
+  const BattleUnit::Stats base{r((g[1] + u.gearAtk) * keep), r((g[2] + u.gearMag) * keep), r((g[3] + u.gearDef) * keep), r((g[4] + u.gearDex) * keep),
+                               g[15] + u.gearMov};
+  u.atk = r(base.atk * sick), u.mag = r(base.mag * sick), u.def = r(base.def * sick), u.dex = r(base.dex * sick);
+  u.mov = u.diseased ? std::max(1, r(base.mov * sick)) : base.mov;
+  u.diseaseBase = u.diseased ? std::optional(base) : std::nullopt;
+  u.hp = std::min(u.maxHp, u.hp);
+}
+
+void hurtScene(Battle& b) {
+  for (size_t i = 0; i < b.units().size(); ++i) {
+    BattleUnit& u = b.units()[i];
+    if (u.alive) u.hp = std::max(1, u.maxHp / 2);
+    if (i % 2 == 0 && u.side == "player") inflictDisease(u);
+    if (i % 3 == 0) u.poisoned = true, u.poisonTier = "lesser";
+    u.fullness = 0.0;
+    for (int t = 0; t < 10; ++t) u.spells[t] /= 2;
+  }
 }
 
 std::string spellPose(const std::string& kind) {
@@ -525,14 +733,27 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
     if (!f.alive || f.side == u.side) return fail("Essa habilidade não pode mirar em uma aliada.");
     return canHitFrom(b, caster, from, static_cast<size_t>(here)) ? true : fail("Esse inimigo não está ao alcance ou não pode ser atingido daqui.");
   }
-  if (kind == "cureMinor") {
-    if (d > kCureMinorRange) return fail("Alvo fora de alcance (máximo 2 hexes).");
+  if (const CureData* cure = cureData(kind)) {
+    if (d > cure->range) {
+      const std::string why = std::format("Alvo fora de alcance (máximo {} hexes).", cure->range);
+      if (error) *error = why;
+      return false;
+    }
     if (here < 0 || !b.units()[static_cast<size_t>(here)].alive) return fail("Escolha uma aliada na casa selecionada.");
     const BattleUnit& w = b.units()[static_cast<size_t>(here)];
     if (b.debugFreeCast()) return true;  // validHealTarget: anyone alive in range
     if (w.side != "player") return fail("Essa cura só pode ser usada em uma aliada.");
     return w.hp < w.maxHp ? true : fail("Essa aliada está com a vida cheia.");
   }
+  if (kind == "cureDisease") {  // validCureDiseaseTarget, spellAimError
+    if (d > kCureDiseaseRange) return fail("Alvo fora de alcance (máximo 2 hexes).");
+    if (here < 0 || !b.units()[static_cast<size_t>(here)].alive) return fail("Escolha uma aliada na casa selecionada.");
+    const BattleUnit& w = b.units()[static_cast<size_t>(here)];
+    if (b.debugFreeCast()) return true;
+    if (w.side != "player") return fail("A cura de doença só pode ser usada em uma aliada.");
+    return w.diseased || w.poisoned ? true : fail("Essa aliada não está doente nem envenenada.");
+  }
+  if (kind == "createFoodAndWater") return cell == from ? true : fail("Esta magia não precisa de alvo.");  // no aim: self-centred
   return fail("Esta habilidade ainda não existe aqui.");
 }
 
@@ -629,12 +850,26 @@ std::optional<std::vector<BattleStep>> castSpell(Battle& b, size_t caster, const
     s.tiles = area;
     s.dice = p.dice, s.faces = p.faces, s.bonus = 0, s.spellMul = p.mul;
     steps.push_back(s);
-  } else if (kind == "cureMinor") {
+  } else if (cureData(kind) || kind == "cureDisease") {
+    // castHeal / castCureDisease
     const int target = occAt(b, cell);
     if (target < 0) return fail("Spell was not cast.");
     spendTier(u, kind);
-    s.type = BattleStep::Type::Heal;
+    s.type = kind == "cureDisease" ? BattleStep::Type::CureDisease : BattleStep::Type::Heal;
     s.def = static_cast<size_t>(target);
+    steps.push_back(s);
+  } else if (kind == "createFoodAndWater") {
+    // startCreateFoodAndWater: the caster and every ally within 2 hexes who is hungrier than the spell feeds.
+    const FoodPower p = foodPower(u.level);
+    for (size_t i = 0; i < b.units().size(); ++i) {
+      const BattleUnit& t = b.units()[i];
+      if (t.alive && t.side == u.side && hexDist({u.x, u.y}, {t.x, t.y}) <= kFoodRadius && fullnessOf(t) < p.fullness) s.ids.push_back(i);
+    }
+    if (s.ids.empty()) return fail("Já está bem alimentado.");
+    spendTier(u, kind);
+    s.type = BattleStep::Type::Food;
+    s.tiles = {cell};
+    s.dice = p.dice, s.faces = p.faces, s.bonus = p.bonus, s.fullness = p.fullness;
     steps.push_back(s);
   } else {
     // Choque (no player tier), and everything not ported yet.
@@ -664,7 +899,7 @@ void resolveStrike(Battle& b, const BattleStep& step, bool counter, Mulberry32& 
   const bool arcaneBolt = !arrowShot && actor.combat.arcane;
   const Fighter A = fighterAt(b, ai, actor.x, actor.y), T = fighterAt(b, ti, target.x, target.y);
   Hit hit = rollDamage(b, A, T, rng, true, off ? &offDice : nullptr);
-  if (target.side == "enemy" && !off) trainWeapon(actor, target.level, rng);
+  if (target.side == "enemy") trainWeapon(actor, target.level, rng, off);  // the off-hand weapon on an off-hand counter
   const bool usesArcane = arcaneBolt && !off && (counter || step.kind.empty());
   const bool usesStaff = actor.combat.staff && !off && (counter || step.kind.empty());
   if (!hit.landed) {
@@ -693,6 +928,8 @@ void resolveStrike(Battle& b, const BattleStep& step, bool counter, Mulberry32& 
   if (target.hp <= 0) {
     markDead(target, rng);
     e.died = true;
+  } else if (hitStage) {
+    maybeInflictDisease(actor, target, rng);
   }
   out.push_back(e);
 }
@@ -714,10 +951,10 @@ void resolveStep(Battle& b, const BattleStep& step, Mulberry32& rng, std::vector
     BattleUnit& target = b.units()[step.def];
     if (!att.alive || !target.alive) return;
     const Fighter A = fighterAt(b, step.att, att.x, att.y);
-    // rollCure, then healingAmount (+1% per healing skill point)
-    const int base = static_cast<int>(std::floor(std::floor(A.mag / 2) * kCureMinorMul + rollDice(kCureMinorDice, kCureMinorFaces, kCureMinorBonus, rng)));
-    const double points = std::max(0.0, std::min(kSkillCap, att.healingSkill));
-    const int heal = static_cast<int>(std::floor(std::max(0, base) * (1 + points / 100) + 1e-9));
+    // rollCure (the cure's own numbers), then healingAmount (+1% per healing skill point)
+    const CureData& c = *cureData(step.kind);
+    const int base = static_cast<int>(std::floor(std::floor(A.mag / 2) * c.mul + rollDice(c.dice, c.faces, c.bonus, rng)));
+    const int heal = healingPower(att, base);
     const int gained = std::min(heal, target.maxHp - target.hp);
     target.hp += gained;
     if (gained > 0) {
@@ -725,6 +962,81 @@ void resolveStep(Battle& b, const BattleStep& step, Mulberry32& rng, std::vector
       b.noteAware(step.att, gained * kHealCe, gained * kHealVe);
     }
     gainExp(att, target.level, gained);
+    out.push_back({step.def, gained, false, false, true, false, false});
+    return;
+  }
+  if (step.type == BattleStep::Type::CureDisease) {  // stepCureDisease
+    BattleUnit& target = b.units()[step.def];
+    if (!att.alive || !target.alive) return;
+    curePlayerDisease(target);
+    trainHealing(att, rng);
+    b.noteAware(step.att, kSupportCe, kSupportVe);
+    BattleEffect e{step.def, 0, false, false, true, false, false};
+    e.text = "curado";
+    out.push_back(e);
+    return;
+  }
+  if (step.type == BattleStep::Type::Food) {  // startCreateFoodAndWater's effect
+    int gained = 0;
+    for (size_t id : step.ids) {
+      BattleUnit& t = b.units()[id];
+      t.fullness = step.fullness;
+      t.hungerPenaltyPct = 0;
+      reapplyGear(t);
+      gained += step.dice > 0 ? rollDice(step.dice, step.faces, step.bonus, rng) : 0;
+      BattleEffect e{id, 0, false, false, true, false, false};
+      e.text = "alimentado";
+      out.push_back(e);
+    }
+    b.addLootRations(gained);
+    b.noteAware(step.att, kSupportCe, kSupportVe);
+    if (gained > 0 && !step.ids.empty()) {
+      BattleEffect e{step.att, gained, false, false, true, false, false};
+      e.text = std::format("+{} {}", gained, gained == 1 ? "ração" : "rações");
+      out.push_back(e);
+    }
+    return;
+  }
+  if (step.type == BattleStep::Type::Potion) {  // applyPotion
+    BattleUnit& target = b.units()[step.def];
+    const PotionData* p = potionData(step.potion);
+    const int slot = potionIndex(step.potion);
+    if (!p || slot < 0 || !att.alive || !target.alive || att.bag[slot] <= 0) return;
+    if (p->effect == 'd') {
+      if (!target.diseased && !target.poisoned) return;
+      att.bag[slot] -= 1;
+      curePlayerDisease(target);
+      trainHealing(att, rng);
+      BattleEffect e{step.def, 0, false, false, true, false, false};
+      e.text = "curado";
+      out.push_back(e);
+      return;
+    }
+    if (p->effect == 'm') {
+      int restored = 0;
+      for (int t = 0; t < 10; ++t) {
+        const int cap = target.level >= 1 && static_cast<size_t>(target.level) <= target.growth.size()
+                            ? target.growth[static_cast<size_t>(target.level - 1)][static_cast<size_t>(5 + t)]
+                            : 0;  // tierUses(class, tier, level)
+        if (cap <= 0) continue;
+        const int next = std::min(cap, target.spells[t] + p->manaRestore);
+        restored += next - target.spells[t];
+        target.spells[t] = next;
+      }
+      if (restored <= 0) return;
+      att.bag[slot] -= 1;
+      BattleEffect e{step.def, restored, false, false, true, false, false};
+      e.text = std::format("+{} magia", restored);
+      out.push_back(e);
+      return;
+    }
+    if (target.hp >= target.maxHp) return;
+    const int heal = healingPower(att, rollDice(p->dice, p->faces, p->bonus, rng));
+    const int gained = std::min(heal, target.maxHp - target.hp);
+    target.hp += gained;
+    if (gained > 0) trainHealing(att, rng);
+    gainExp(att, target.level, gained);
+    att.bag[slot] -= 1;
     out.push_back({step.def, gained, false, false, true, false, false});
     return;
   }

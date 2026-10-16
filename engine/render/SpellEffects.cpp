@@ -57,6 +57,10 @@ glm::vec3 SpellEffects::position(const Element& e, float now) const {
 }
 
 int SpellEffects::looks(const std::string& kind) {
+  // Our 3D light (HolyLight, 2026-10-17): Cura Menor 02 after its flipbook cards; the first version of the other cures,
+  // the meal and the potion.
+  if (kind == "cureMinor") return 2;
+  if (kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "createFoodAndWater" || kind == "potion") return 1;
   // 02: Engine2's own effect, ported (render/vfx/*).
   if (kind == "magicMissile" || kind == "magicMissileV2") return 2;
   // 01 Engine2's BurningHandsV2VFX as it was, 02 its cone opening outward (ours).
@@ -73,6 +77,8 @@ int SpellEffects::looks(const std::string& kind) {
 }
 
 int SpellEffects::engine2Look(const std::string& kind) {
+  if (kind == "cureMinor") return 2;  // HolyLight (Engine2's own was 2D)
+  if (kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "createFoodAndWater" || kind == "potion") return 1;
   if (kind == "magicMissile" || kind == "magicMissileV2") return 2;  // MagicMissileV2VFX
   if (kind == "fireball") return 1;                                  // FireballVFX
   if (kind == "bless") return 1;                                     // BlessVFX
@@ -141,6 +147,13 @@ float SpellEffects::fireballArea(const std::vector<Spot>& targets) {
   return radius;
 }
 
+bool SpellEffects::potion(const std::string& effect, int look, const Spot& target, float start, float impact, int owner) {
+  potionEffect_ = effect;
+  const bool made = cast("potion", look, target, {target}, start, impact, owner);
+  potionEffect_ = "heal";
+  return made;
+}
+
 bool SpellEffects::casterInFront(int owner, float now) const {
   return owner >= 0 && std::any_of(casts_.begin(), casts_.end(), [&](const Cast& c) { return c.owner == owner && c.end > now; });
 }
@@ -149,7 +162,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
                         int owner) {
   // When everything this cast adds is over (the newest element or ported effect of each list), for casterInFront.
   const size_t before[] = {elements_.size(), missiles_.size(), fireballs_.size(), blesses_.size(), venoms_.size(), phantasms_.size(),
-                           webs_.size(),     burns_.size(),    cleaves_.size(),   sweeps_.size()};
+                           webs_.size(),     burns_.size(),    cleaves_.size(),   sweeps_.size(),  holies_.size()};
   const bool made = castEffect(kind, look, caster, targets, start, impact);
   if (made && owner >= 0) {
     float end = start;
@@ -159,6 +172,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     };
     latest(missiles_, before[1]), latest(fireballs_, before[2]), latest(blesses_, before[3]), latest(venoms_, before[4]);
     latest(phantasms_, before[5]), latest(webs_, before[6]), latest(cleaves_, before[8]), latest(sweeps_, before[9]);
+    latest(holies_, before[10]);
     for (size_t i = before[7]; i < burns_.size(); ++i) end = std::max(end, burns_[i].first.end());
     std::erase_if(casts_, [&](const Cast& c) { return c.end <= start; });
     casts_.push_back({owner, end});
@@ -170,6 +184,20 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
   if (look < 1 || look > looks(kind)) return false;
   impact = std::max(impact, start + 0.05f);
   if (targets.empty() && kind != "piercingThrust" && kind != "doubleStrike") return false;
+  // The cures', the meal's and the potion's light (HolyLight), on every unit it reaches.
+  const bool holy = (kind == "cureMinor" && look == 2) || kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" ||
+                    kind == "createFoodAndWater" || kind == "potion";
+  if (holy) {
+    using Style = HolyLight::Style;
+    const Style style = kind == "cureMinor" ? Style::Minor : kind == "cureWounds" ? Style::Medium : kind == "cureLight" ? Style::Hands
+                        : kind == "cureDisease" ? Style::Disease : kind == "createFoodAndWater" ? Style::Food
+                        : potionEffect_ == "disease" ? Style::PotionCure : potionEffect_ == "mana" ? Style::PotionMana : Style::PotionHeal;
+    std::vector<HolyLight::Target> reached;
+    for (const Spot& s : targets)  // its card's height, else what the body point says (Spot: body = 0.45 of the card)
+      reached.push_back({s.feet, s.cardHeight > 0.0f ? s.cardHeight : std::max(1.2f, (s.body.y - s.feet.y) / 0.45f)});
+    holies_.emplace_back(style, std::move(reached), impact, static_cast<uint32_t>(random() * 4294967295.0f));
+    return true;
+  }
   if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2) missiles_.emplace_back(engine2Origin(caster), targets.front().body, start);
   else if (kind == "fireball") fireballs_.emplace_back(engine2Origin(caster), fireballTarget(targets), fireballArea(targets), start);
   else if (kind == "phantasmalForce") phantasms_.emplace_back(targets.front().body, start);
@@ -467,6 +495,7 @@ bool SpellEffects::active(float now) const {
   if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
   if (std::any_of(fireballs_.begin(), fireballs_.end(), [&](const Fireball& f) { return !f.done(now); })) return true;
   if (std::any_of(blesses_.begin(), blesses_.end(), [&](const Bless& b) { return !b.done(now); })) return true;
+  if (std::any_of(holies_.begin(), holies_.end(), [&](const HolyLight& h) { return !h.done(now); })) return true;
   if (std::any_of(venoms_.begin(), venoms_.end(), [&](const CausticVenom& v) { return !v.done(now); })) return true;
   if (std::any_of(phantasms_.begin(), phantasms_.end(), [&](const PhantasmalForce& p) { return !p.done(now); })) return true;
   if (std::any_of(webs_.begin(), webs_.end(), [&](const WebOfDreams& w) { return !w.done(now); })) return true;
@@ -483,9 +512,11 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   std::erase_if(missiles_, [&](const MagicMissileV2& m) { return m.done(now); });
   std::erase_if(fireballs_, [&](const Fireball& f) { return f.done(now); });
   std::erase_if(blesses_, [&](const Bless& b) { return b.done(now); });
+  std::erase_if(holies_, [&](const HolyLight& h) { return h.done(now); });
   vfx_.clear();
   std::vector<VfxLight> vfxLights;
   for (Bless& b : blesses_) b.build(now, camera, vfx_, vfxLights);
+  for (HolyLight& h : holies_) h.build(now, camera, vfx_, vfxLights);
   std::erase_if(venoms_, [&](const CausticVenom& v) { return v.done(now); });
   std::erase_if(phantasms_, [&](const PhantasmalForce& p) { return p.done(now); });
   for (PhantasmalForce& p : phantasms_) p.build(now, camera, vfx_, vfxLights);
