@@ -11,7 +11,10 @@
 //                         dev controls reached, bolts, the arrow, sparks, portals, references), grouped by element and
 //                         numbered the same way ("Arcano 01"), each playable alone with Testar. The numbers follow
 //                         content/fx.sprites.json; content/fx/effects-list.md maps every number to its file.
-// The versions chosen are saved in content/fx/spell-looks.json and used by every cast in battle.
+// The versions chosen are saved in content/fx/spell-looks.json and used by every cast in battle, one choice for the
+// heroes and one for the enemies ("Para": Heróis / Inimigos). Heroes default to Engine2's own effect where one is
+// ported (user, 2026-10-16: "set these imported 3D with sprites effects like fireball as default for the player
+// characters": SpellEffects::engine2Look); enemies to the spell's first version.
 
 #include <imgui.h>
 
@@ -111,7 +114,14 @@ class SpellsMenu {
     if (std::ifstream in(choices); in) {
       try {
         const nlohmann::json j = nlohmann::json::parse(in);
-        for (const auto& [kind, look] : j.items()) looks_[kind] = look.get<int>();
+        if (j.contains("heroes") || j.contains("enemies")) {
+          for (int side = 0; side < 2; ++side)
+            if (const char* key = side == 0 ? "heroes" : "enemies"; j.contains(key) && j[key].is_object())
+              for (const auto& [kind, look] : j[key].items()) looks_[side][kind] = look.get<int>();
+        } else {
+          // The first file (one list, written before the sides): the enemies' choices; heroes start on the defaults.
+          for (const auto& [kind, look] : j.items()) looks_[1][kind] = look.get<int>();
+        }
       } catch (const std::exception& e) {
         logWarn("spells menu: {} unreadable ({}); every spell on its first version", choices.string(), e.what());
       }
@@ -128,12 +138,15 @@ class SpellsMenu {
     }
   }
 
-  // The version a spell plays: the saved choice, else its first (0 when it has none).
-  int look(const std::string& kind) const {
-    const auto it = looks_.find(kind);
+  // The version a spell plays for a hero or an enemy: the saved choice, else the default (heroes: Engine2's own effect
+  // where one is ported, else the first version; enemies: the first version; 0 when it has none).
+  int look(const std::string& kind, bool enemy) const {
+    const int side = enemy ? 1 : 0;
+    const auto it = looks_[side].find(kind);
     const int available = SpellEffects::looks(kind);
-    if (it == looks_.end()) return available > 0 ? 1 : 0;
-    return std::min(it->second, available);
+    if (it != looks_[side].end()) return std::min(it->second, available);
+    if (!enemy && SpellEffects::engine2Look(kind) > 0) return SpellEffects::engine2Look(kind);
+    return available > 0 ? 1 : 0;
   }
 
   // The window. test(kind, version) casts a spell's version; play(clip) plays one loose effect.
@@ -146,6 +159,16 @@ class SpellsMenu {
     ImGui::SetNextWindowBgAlpha(0.9f);
     ImGui::Begin("Magias", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
     ImGui::PushFont(nullptr, 16.0f);
+    {
+      // Which side the lists below choose for.
+      static const char* kSides[2] = {"Heróis", "Inimigos"};
+      ImGui::SetNextItemWidth(160.0f);
+      if (ImGui::BeginCombo("Para", kSides[side_])) {
+        for (int i = 0; i < 2; ++i)
+          if (ImGui::Selectable(kSides[i], i == side_)) side_ = i;
+        ImGui::EndCombo();
+      }
+    }
     for (int section = 0; section < 2; ++section) {
       if (!ImGui::CollapsingHeader(section == 0 ? "Magias" : "Habilidades", unfold)) continue;
       for (const SpellEntry& s : allSpells())
@@ -196,7 +219,7 @@ class SpellsMenu {
 
   void spellRow(const SpellEntry& s, const std::function<void(const std::string&, int)>& test) {
     const int available = SpellEffects::looks(s.kind);
-    int current = look(s.kind);
+    int current = look(s.kind, side_ == 1);
     ImGui::PushID(s.kind);
     ImGui::SetNextItemWidth(260.0f);
     const auto label = [&](int i) { return i == 0 ? std::format("{}: OFF", s.name) : std::format("{} {:02}", s.name, i); };
@@ -204,7 +227,7 @@ class SpellsMenu {
       for (int i = 0; i <= available; ++i)
         if (ImGui::Selectable(label(i).c_str(), i == current)) {
           current = i;
-          looks_[s.kind] = i;
+          looks_[side_][s.kind] = i;
           save();
         }
       ImGui::EndCombo();
@@ -221,8 +244,10 @@ class SpellsMenu {
   }
 
   void save() const {
-    nlohmann::json j = nlohmann::json::object();
-    for (const SpellEntry& s : allSpells()) j[s.kind] = look(s.kind);
+    // Only what was chosen is written (a spell left on its default follows the default as it changes).
+    nlohmann::json j = {{"heroes", nlohmann::json::object()}, {"enemies", nlohmann::json::object()}};
+    for (int side = 0; side < 2; ++side)
+      for (const auto& [kind, look] : looks_[side]) j[side == 0 ? "heroes" : "enemies"][kind] = look;
     std::error_code ec;
     std::filesystem::create_directories(file_.parent_path(), ec);
     std::ofstream out(file_);
@@ -231,7 +256,8 @@ class SpellsMenu {
   }
 
   std::filesystem::path file_;
-  std::map<std::string, int> looks_;
+  std::map<std::string, int> looks_[2];  // chosen versions: [0] heroes, [1] enemies
+  int side_ = 0;                          // the side the menu is choosing for
   std::vector<Group> groups_;
   std::map<std::string, int> loosePick_;
 };

@@ -21,6 +21,7 @@
 #include "render/EffectDraw.h"
 #include "render/SpriteSystem.h"
 #include "render/VfxDraw.h"
+#include "render/vfx/Bless.h"
 #include "render/vfx/Fireball.h"
 #include "render/vfx/MagicMissileV2.h"
 
@@ -47,6 +48,9 @@ class SpellEffects {
   // shows them as "Míssil Mágico 01", ...; content/fx/README.md lists what each one is). 0 = OFF. Version 01 of every
   // spell that has one is this file's flipbook-card set (2026-10-16).
   static int looks(const std::string& kind);
+  // The version that is Engine2's own effect, ported (render/vfx/*), or 0 when the spell has none yet: the heroes'
+  // default (user, 2026-10-16).
+  static int engine2Look(const std::string& kind);
   // A spell or weapon skill (Engine2 kinds) in version `look`: the caster's pose starts at `start`, its first hit
   // lands at `impact`. `targets` are the hexes / units it reaches in the rules' order (Frost: its whole area). False =
   // nothing drawn (OFF, or no such version).
@@ -65,7 +69,7 @@ class SpellEffects {
   void build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out, std::vector<Light>& lights);
   const VfxFrame& vfx() const { return vfx_; }
   bool active(float now) const;
-  void clear() { elements_.clear(), missiles_.clear(), fireballs_.clear(); }
+  void clear() { elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(); }
   // A version that keeps Engine2's own timeline decides when the hit lands: seconds from the cast (Míssil Mágico 02:
   // Engine2's charge, then the flight). Below 0: the version lands on the caller's impact (the pose's).
   float impactDelay(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const;
@@ -116,6 +120,9 @@ class SpellEffects {
   // Engine2's ported effects in play (Míssil Mágico 02 = MagicMissileV2VFX) and this frame's draws.
   std::vector<MagicMissileV2> missiles_;
   std::vector<Fireball> fireballs_;  // Bola de Fogo 01 = FireballVFX
+  std::vector<Bless> blesses_;       // Bênção 01 = BlessVFX
+  // Bless's allies as BlessVFX takes them: anchor + 0.9, hex distance from the caster.
+  static std::vector<Bless::Ally> blessAllies(const Spot& caster, const std::vector<Spot>& targets);
   // Fireball's flight goes to the target hex's ground (BattleSpells3D at(): 0.04 up); its area's radius (the farthest
   // struck cell + 1; one target alone = Engine2's FIREBALL.size, 2 hexes around it).
   static glm::vec3 fireballTarget(const std::vector<Spot>& targets) { return targets.front().feet + glm::vec3(0.0f, 0.04f, 0.0f); }

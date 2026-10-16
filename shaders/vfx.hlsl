@@ -36,7 +36,8 @@ struct VfxInstance {
 };
 
 static const uint kMaterialBasic = 0, kMaterialMissileCore = 1, kMaterialMissileShell = 2, kMaterialMissileTrail = 3,
-                  kMaterialStandard = 4, kMaterialFlame = 5, kMaterialImpactParticle = 6, kMaterialImpactFlash = 7;
+                  kMaterialStandard = 4, kMaterialFlame = 5, kMaterialImpactParticle = 6, kMaterialImpactFlash = 7,
+                  kMaterialBlessWave = 8;
 
 struct Push {
   uint64_t vertices;   // VfxVertex[]
@@ -167,6 +168,15 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
     o.heat = n;
     p = v.position + v.normal * n * amp;
   }
+  if (d.material == kMaterialBlessWave) {
+    // BlessVFX WAVE_VERTEX: the ring's radius ripples with its angle, its height waves; vEnergy rides in `heat`.
+    const float t = d.params0.x, noise = d.params0.y, height = d.params0.z, radius = d.params0.w;
+    const float a = atan2(v.position.y, v.position.x);
+    const float n = sin(a * 11.0 + t * 7.0) * 0.48 + sin(a * 23.0 - t * 4.0) * 0.22 + cos(a * 37.0 + t * 3.0) * 0.12;
+    p.xy *= radius + n * noise;
+    p.z += sin(a * 9.0 - t * 6.0) * noise * 0.16 + sin(a * 7.0 + t * 3.0) * height * 0.12;
+    o.heat = 0.52 + 0.48 * sin(a * 13.0 - t * 8.0 + n * 4.0);
+  }
   if (d.material == kMaterialMissileCore || d.material == kMaterialMissileShell) {
     // BOLT_VERTEX
     const float t = d.params0.x, distort = d.params0.y, scale = d.params0.z;
@@ -268,6 +278,16 @@ float4 PSMain(VSOut i) : SV_Target0 {
     }
     if (a < 0.004) discard;
     c = color * intensity;
+  } else if (d.material == kMaterialBlessWave) {
+    // BlessVFX WAVE_FRAGMENT
+    const float t = d.params0.x, opacity = d.params1.x, emissive = d.params1.y;
+    const float streak = smoothstep(0.26, 0.88, i.heat);
+    const float3 amber = float3(1.0, 0.28, 0.025), gold = float3(1.0, 0.67, 0.16), ivory = float3(1.0, 0.91, 0.62);
+    c = lerp(amber, gold, streak);
+    c = lerp(c, ivory, pow(streak, 5.0));
+    const float flicker = 0.76 + 0.24 * sin(t * 15.0 + i.heat * 8.0);
+    c *= emissive * flicker;
+    a = opacity * (0.35 + streak * 0.65);
   } else if (d.material == kMaterialImpactFlash) {
     const float opacity = d.params0.x, intensity = d.params0.y;
     const float dd = length((i.uv - 0.5) * float2(1.0, 1.15));
@@ -276,7 +296,8 @@ float4 PSMain(VSOut i) : SV_Target0 {
     if (a < 0.005) discard;
     c = lerp(float3(1.0, 0.46, 0.04), d.color.rgb, core) * a * intensity;
   } else if (d.material == kMaterialStandard) {
-    // MeshStandardMaterial: lit by the scene like any surface, plus its emissive (display-relative, as Engine2's glow).
+    // MeshStandardMaterial: lit by the scene like any surface, plus its emissive (display-relative, as Engine2's glow);
+    // color.a = its opacity (a transparent material: NormalBlending).
     const MeshFrame f = loadFrame(push.frame);
     float3 n = normalize(i.normal);
     if (dot(n, f.cameraPosition - i.world) < 0.0) n = -n;
@@ -287,7 +308,8 @@ float4 PSMain(VSOut i) : SV_Target0 {
     s.sightAt = d.sightAt;
     const Sight sight = tacticalSight(f, d.sightAt);
     c = shadeInSight(f, s, sight) + d.params1.rgb * d.params1.a * push.brightness;
-    return float4(c * i.sight, 1.0);
+    const float opacity = saturate(d.color.a);
+    return float4(c * i.sight * opacity, opacity);
   } else {
     // MeshBasicMaterial / LineBasicMaterial
     c = d.color.rgb;

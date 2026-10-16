@@ -35,6 +35,7 @@ enum class VfxMaterial : uint32_t {
   Flame = 5,           // OldFireBall flameMaterial (boiling fbm surface, heat colours; edge fade on the shell)
   ImpactParticle = 6,  // FireballImpactVFX particles (camera-facing quads: flipbook, procedural flame, smoke)
   ImpactFlash = 7,     // FireballImpactVFX flash (a camera-facing glow)
+  BlessWave = 8,       // BlessVFX WAVE_VERTEX + WAVE_FRAGMENT (the rippling golden ring)
 };
 
 // Per-instance data (three InstancedMesh matrices, or a particle's attributes). Matches VfxInstance in vfx.hlsl.

@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "render/VfxDraw.h"
+#include "render/vfx/ThreeMath.h"
 
 namespace ember::vfxgeo {
 
@@ -90,6 +91,23 @@ inline std::vector<VfxVertex> torus(float radius, float tube, int radialSegments
     for (int i = 1; i <= tubularSegments; ++i) {
       const int a = row * j + i - 1, b = row * (j - 1) + i - 1, c = row * (j - 1) + i, d = row * j + i;
       out.insert(out.end(), {grid[a], grid[b], grid[d], grid[b], grid[c], grid[d]});
+    }
+  return out;
+}
+
+// TubeGeometry(path, tubularSegments, radius, radialSegments, false) as triangles (three::tubeRings for the rings).
+inline std::vector<VfxVertex> tube(const three::CatmullRom& path, int tubularSegments, float radius, int radialSegments) {
+  std::vector<glm::vec3> normals;
+  const std::vector<glm::vec3> rings = three::tubeRings(path, tubularSegments, radius, radialSegments, &normals);
+  auto vertex = [&](int i, int j) {
+    const int k = i * (radialSegments + 1) + j;
+    return VfxVertex{rings[k], static_cast<float>(i) / tubularSegments, normals[k], static_cast<float>(j) / radialSegments};
+  };
+  std::vector<VfxVertex> out;
+  for (int j = 1; j <= tubularSegments; ++j)
+    for (int i = 1; i <= radialSegments; ++i) {
+      const VfxVertex a = vertex(j - 1, i - 1), b = vertex(j, i - 1), c = vertex(j, i), d = vertex(j - 1, i);
+      out.insert(out.end(), {a, b, d, b, c, d});
     }
   return out;
 }

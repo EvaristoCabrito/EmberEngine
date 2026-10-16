@@ -60,7 +60,7 @@ int SpellEffects::looks(const std::string& kind) {
   // 02: Engine2's own effect, ported (render/vfx/*).
   if (kind == "magicMissile" || kind == "magicMissileV2") return 2;
   // 01 of a spell with no flipbook-card version: Engine2's own effect, ported.
-  if (kind == "fireball") return 1;
+  if (kind == "fireball" || kind == "bless") return 1;
   static const char* kVersion01[] = {"lightning", "lightningTier3", "shock", "frost", "cureMinor", "longShot", "piercing", "piercingThrust",
                                      "doubleStrike"};
   for (const char* k : kVersion01)
@@ -68,10 +68,32 @@ int SpellEffects::looks(const std::string& kind) {
   return 0;
 }
 
+int SpellEffects::engine2Look(const std::string& kind) {
+  if (kind == "magicMissile" || kind == "magicMissileV2") return 2;  // MagicMissileV2VFX
+  if (kind == "fireball") return 1;                                  // FireballVFX
+  if (kind == "bless") return 1;                                     // BlessVFX
+  return 0;
+}
+
+std::vector<Bless::Ally> SpellEffects::blessAllies(const Spot& caster, const std::vector<Spot>& targets) {
+  std::vector<Bless::Ally> allies;
+  for (const Spot& s : targets) {
+    const glm::vec2 d{s.feet.x - caster.feet.x, s.feet.z - caster.feet.z};
+    allies.push_back({engine2Origin(s), std::round(glm::length(d) / std::sqrt(3.0f))});
+  }
+  return allies;
+}
+
 float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const {
   if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2 && !targets.empty())
     return MagicMissileV2::impactDelay(engine2Origin(caster), targets.front().body);
   if (kind == "fireball" && look == 1 && !targets.empty()) return Fireball::travelSeconds(engine2Origin(caster), fireballTarget(targets));
+  if (kind == "bless" && look == 1) {
+    // The blessing lands on the nearest ally as the wave reaches it.
+    float first = Bless::reachSeconds(3.0f);
+    for (const Bless::Ally& a : blessAllies(caster, targets)) first = std::min(first, Bless::reachSeconds(a.distanceHexes));
+    return first;
+  }
   return -1.0f;
 }
 
@@ -89,6 +111,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
   if (targets.empty() && kind != "piercingThrust" && kind != "doubleStrike") return false;
   if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2) missiles_.emplace_back(engine2Origin(caster), targets.front().body, start);
   else if (kind == "fireball") fireballs_.emplace_back(engine2Origin(caster), fireballTarget(targets), fireballArea(targets), start);
+  else if (kind == "bless") blesses_.emplace_back(caster.feet + glm::vec3(0.0f, 0.04f, 0.0f), 3.0f * std::sqrt(3.0f), blessAllies(caster, targets), start);
   else if (kind == "magicMissile" || kind == "magicMissileV2") magicMissile(caster, targets.front(), start, impact);
   else if (kind == "lightning" || kind == "lightningTier3") lightning(caster, targets, start, impact, false);
   else if (kind == "shock") lightning(caster, targets, start, impact, true);
@@ -357,6 +380,7 @@ void SpellEffects::strike(const Spot& target, float at, bool crit) {
 bool SpellEffects::active(float now) const {
   if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
   if (std::any_of(fireballs_.begin(), fireballs_.end(), [&](const Fireball& f) { return !f.done(now); })) return true;
+  if (std::any_of(blesses_.begin(), blesses_.end(), [&](const Bless& b) { return !b.done(now); })) return true;
   return std::any_of(elements_.begin(), elements_.end(), [&](const Element& e) { return e.end > now; });
 }
 
@@ -366,8 +390,10 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   // Engine2's ported effects: their own geometry and lights.
   std::erase_if(missiles_, [&](const MagicMissileV2& m) { return m.done(now); });
   std::erase_if(fireballs_, [&](const Fireball& f) { return f.done(now); });
+  std::erase_if(blesses_, [&](const Bless& b) { return b.done(now); });
   vfx_.clear();
   std::vector<VfxLight> vfxLights;
+  for (Bless& b : blesses_) b.build(now, camera, vfx_, vfxLights);
   for (MagicMissileV2& m : missiles_) m.build(now, camera, vfx_, vfxLights);
   if (!fireballs_.empty()) {
     // The impact's fire flipbook (Engine2 loadFireFlipbook: fx/fire-flipbook-4x4.png), from the battle pack.

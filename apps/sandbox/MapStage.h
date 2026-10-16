@@ -1852,11 +1852,12 @@ class MapStage final : public Stage {
       }
       // A version with Engine2's own timeline (Míssil Mágico 02) lands when it hits, as Engine2's rules wait for it.
       const SpellEffects::Spot casterSpot = unitSpot(static_cast<size_t>(striker));
-      if (const float delay = spellFx_.impactDelay(s.kind, spellLook(s.kind), casterSpot, spots); delay > 0.0f) {
+      const int look = spellLook(s.kind, static_cast<size_t>(striker));
+      if (const float delay = spellFx_.impactDelay(s.kind, look, casterSpot, spots); delay > 0.0f) {
         x.impact = now_ + delay;
         x.end = std::max(x.end, x.impact + 0.8f + kExchangeGap);
       }
-      spellFx_.cast(s.kind, spellLook(s.kind), casterSpot, spots, now_, x.impact);
+      spellFx_.cast(s.kind, look, casterSpot, spots, now_, x.impact);
     }
   }
 
@@ -1895,7 +1896,7 @@ class MapStage final : public Stage {
     int look = 0;
     if (const size_t colon = kind.find(':'); colon != std::string::npos) look = std::atoi(kind.c_str() + colon + 1), kind.resize(colon);
     if (kind == "all") kind = kKinds[static_cast<size_t>(cycle) % std::size(kKinds)];
-    if (look <= 0) look = std::max(spellLook(kind), 1);
+    if (look <= 0) look = std::max(spellLook(kind, static_cast<size_t>(hero_)), 1);
     logInfo("fx test: {} {:02} at {:.1f} s", kind, look, static_cast<float>(cycle) * kFxTestCycle);
     testCast(static_cast<size_t>(hero_), kind, look, static_cast<float>(cycle) * kFxTestCycle);
   }
@@ -1935,7 +1936,8 @@ class MapStage final : public Stage {
   static bool weaponStrikeKind(const std::string& kind) {
     return kind == "doubleStrike" || kind == "longShot" || kind == "piercing" || kind == "piercingThrust";
   }
-  int spellLook(const std::string& kind) const { return spellsMenu_.look(kind); }
+  // The effect version a scene unit's spell plays (the Magias menu: heroes and enemies choose apart).
+  int spellLook(const std::string& kind, size_t ui) const { return spellsMenu_.look(kind, scene_->units[ui].side != "player"); }
 
   bool hasPose(size_t ui, const std::string& pose) const {
     const e2::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;

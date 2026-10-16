@@ -69,7 +69,88 @@ struct CatmullRom {
     for (int d = 0; d <= divisions; ++d) out.push_back(getPoint(static_cast<float>(d) / divisions));
     return out;
   }
+
+  // Curve.getLengths (arcLengthDivisions 200), getUtoTmapping, getPointAt, getTangent, getTangentAt.
+  std::vector<float> getLengths(int divisions = 200) const {
+    std::vector<float> cache{0.0f};
+    glm::vec3 last = getPoint(0.0f);
+    float sum = 0.0f;
+    for (int p = 1; p <= divisions; ++p) {
+      const glm::vec3 current = getPoint(static_cast<float>(p) / divisions);
+      sum += glm::length(current - last);
+      cache.push_back(sum);
+      last = current;
+    }
+    return cache;
+  }
+  float getUtoTmapping(float u, const std::vector<float>& arcLengths) const {
+    const int il = static_cast<int>(arcLengths.size());
+    const float target = u * arcLengths[il - 1];
+    int low = 0, high = il - 1, i = 0;
+    while (low <= high) {
+      i = low + (high - low) / 2;
+      const float comparison = arcLengths[i] - target;
+      if (comparison < 0) low = i + 1;
+      else if (comparison > 0) high = i - 1;
+      else {
+        high = i;
+        break;
+      }
+    }
+    i = high;
+    if (arcLengths[i] == target) return static_cast<float>(i) / (il - 1);
+    const float before = arcLengths[i], after = arcLengths[i + 1];
+    return (i + (target - before) / (after - before)) / (il - 1);
+  }
+  glm::vec3 getTangent(float t) const {
+    const float delta = 0.0001f;
+    const float t1 = std::max(0.0f, t - delta), t2 = std::min(1.0f, t + delta);
+    return normalize(getPoint(t2) - getPoint(t1));
+  }
 };
+
+// TubeGeometry(path, tubularSegments, radius, radialSegments, closed = false): rings along the curve by arc length,
+// oriented by three's Frenet frames (computeFrenetFrames: a first normal off the tangent's smallest axis, then
+// parallel transport). Triangles (indices expanded).
+inline std::vector<glm::vec3> tubeRings(const CatmullRom& path, int tubularSegments, float radius, int radialSegments,
+                                         std::vector<glm::vec3>* normalsOut) {
+  const std::vector<float> lengths = path.getLengths();
+  std::vector<glm::vec3> tangents(tubularSegments + 1), normals(tubularSegments + 1), binormals(tubularSegments + 1);
+  for (int i = 0; i <= tubularSegments; ++i) tangents[i] = path.getTangent(path.getUtoTmapping(static_cast<float>(i) / tubularSegments, lengths));
+  float min = 3.4e38f;
+  glm::vec3 axis{0.0f};
+  const float tx = std::abs(tangents[0].x), ty = std::abs(tangents[0].y), tz = std::abs(tangents[0].z);
+  if (tx <= min) min = tx, axis = {1, 0, 0};
+  if (ty <= min) min = ty, axis = {0, 1, 0};
+  if (tz <= min) axis = {0, 0, 1};
+  glm::vec3 vec = normalize(glm::cross(tangents[0], axis));
+  normals[0] = glm::cross(tangents[0], vec);
+  binormals[0] = glm::cross(tangents[0], normals[0]);
+  for (int i = 1; i <= tubularSegments; ++i) {
+    normals[i] = normals[i - 1];
+    binormals[i] = binormals[i - 1];
+    vec = glm::cross(tangents[i - 1], tangents[i]);
+    if (glm::length(vec) > 1.1920929e-7f) {
+      vec = glm::normalize(vec);
+      const float theta = std::acos(std::clamp(glm::dot(tangents[i - 1], tangents[i]), -1.0f, 1.0f));
+      normals[i] = glm::vec3(glm::rotate(glm::mat4(1.0f), theta, vec) * glm::vec4(normals[i], 0.0f));
+    }
+    binormals[i] = glm::cross(tangents[i], normals[i]);
+  }
+  std::vector<glm::vec3> ringPoints, ringNormals;
+  for (int i = 0; i <= tubularSegments; ++i) {
+    const glm::vec3 p = path.getPoint(path.getUtoTmapping(static_cast<float>(i) / tubularSegments, lengths));
+    for (int j = 0; j <= radialSegments; ++j) {
+      const float v = static_cast<float>(j) / radialSegments * 2.0f * 3.14159265358979f;
+      const float sn = std::sin(v), cs = -std::cos(v);
+      const glm::vec3 n = normalize(cs * normals[i] + sn * binormals[i]);
+      ringNormals.push_back(n);
+      ringPoints.push_back(p + radius * n);
+    }
+  }
+  if (normalsOut) *normalsOut = ringNormals;
+  return ringPoints;
+}
 
 // Quaternion.setFromUnitVectors(from, to)
 inline glm::quat fromUnitVectors(glm::vec3 from, glm::vec3 to) {

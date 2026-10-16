@@ -22,6 +22,7 @@ add_library(EmberEngine STATIC
   render/SpellEffects.cpp
   render/vfx/MagicMissileV2.cpp
   render/vfx/Fireball.cpp
+  render/vfx/Bless.cpp
   render/MeshScene.cpp
   render/BoardGround.cpp
   world/Board.cpp
