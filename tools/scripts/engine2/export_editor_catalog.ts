@@ -131,9 +131,92 @@ for (const classId of Object.keys(data.CLASSES)) {
   if (e) classes[classId] = e;
 }
 
+// --- the editor's palettes (Engine2 src/editor/ember/MapEditorScreen.tsx; its module-private tables copied as written) ---
+const tv = await import(`${E2}/src/ember/tileVariants.ts`);
+const battleLight = await import(`${E2}/src/ember/battleLight.ts`);
+const npcs = await import(`${E2}/src/ember/encounter-npcs.ts`);
+const byName = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
+const BUILDER_TERRAIN = ['plains', 'woods', 'water', 'ruins', 'ember', 'hill', 'flame', 'nave', 'column', 'door', 'void', 'snow'];
+const TERRAIN_SWATCH: Record<string, string> = { plains: '#9c8f6f', woods: '#3f5c3a', ruins: '#6b6560', water: '#2c5f7a', ember: '#7a2c2c', hill: '#8a7a4f',
+  flame: '#b5501f', column: '#4a4a52', nave: '#26262c', barricade: '#5a4630', door: '#4a3524', void: '#000000', snow: '#d8dee2' };
+const HIDDEN_VARIANTS: Record<string, number[]> = { plains: [15, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38], water: [3, 7] };
+// thumbFor (the procedural plains 001 has no file: the swatch stands in) and groundVersions
+const thumbFor = (terrain: string, variant: number): string | null =>
+  terrain === 'void' ? null : terrain === 'plains' && variant === 48 ? '/game/ground-claude/049-plains/color.png'
+    : terrain === 'plains' && variant === 0 ? null : tv.tileVariantSrc(terrain, variant);
+function groundVersions(terrain: string) {
+  const list: { variant: number; thumb: string | null; label?: string }[] = [{ variant: 0, thumb: thumbFor(terrain, 0) }];
+  if (terrain === 'plains') list.push({ variant: 48, thumb: thumbFor('plains', 48) });
+  const claude = tv.CLAUDE_VARIANT[terrain];
+  if (claude !== undefined) list.push({ variant: claude, thumb: thumbFor(terrain, claude) });
+  for (const entry of tv.ENGINE2_V3_GROUND_VARIANTS.filter((item: any) => item.terrain === terrain && item.key !== 'city'))
+    list.push({ variant: entry.variant, thumb: thumbFor(terrain, entry.variant) });
+  for (const entry of tv.GROUND_VARIANT_LAYERS.filter((item: any) => item.terrain === terrain && item.key !== 'photo-city' && item.key !== 'city-stone-paving' && item.key !== 'city-indoor-wood' && item.key !== 'variant-flame-005-fire' && item.key !== 'laje-021-stone-slabs'))
+    list.push({ variant: entry.variant, thumb: thumbFor(terrain, entry.variant) });
+  if (terrain === 'plains') { const k = list.findIndex((v) => v.variant === 55); if (k > 1) list.splice(1, 0, ...list.splice(k, 1)); }
+  if (terrain === 'plains') return list.map((v, i) => ({ ...v, label: String(i + 1).padStart(3, '0') }));
+  return list.map((v) => ({ ...v, label: tv.GROUND_VARIANT_LAYERS.find((item: any) => item.terrain === terrain && item.variant === v.variant)?.label ?? String(v.variant + 1).padStart(3, '0') }));
+}
+// decorationSectionFor (as written in the editor)
+const decorationSectionFor = (id: string) => {
+  if (DECORATIONS[id]?.exitKind) return 'Waypoints';
+  if (id === 'merchant-covered-cart-001' || id === 'city-market-stall' || id === 'city-market-stall-2' || id === 'city-market-wagon-new') return 'Shops';
+  if (lighting.LIGHT_DEFS[id]) return 'Lights';
+  if (data.HOUSE_DECOR_IDS.has(id) || data.BIG_HOUSE_DECOR_IDS.has(id)) return 'Houses';
+  if (data.DEADWOODS_DECOR_IDS.has(id)) return 'Madeira Morta';
+  if (data.FOREST_DECOR_IDS.has(id)) return 'Forest';
+  if (['barricade', 'wooden-barricade-1', 'city-spike-barricade-low', 'city-palisade-frame', 'city-wattle-fence', 'city-wooden-barricade', 'city-palisade-banner',
+    'city-spike-barricade-large', 'city-spike-barricade', 'city-banner-barricade', 'city-stone-banner-wall'].includes(id)) return 'Barricada';
+  if (id.startsWith('wilds-')) return 'Wilds';
+  if (id.startsWith('cave-')) return 'Cave';
+  if (id.startsWith('torture-')) return 'Torture';
+  if (id.startsWith('city-')) return 'City';
+  if (id.includes('bridge') || id.includes('ember-channels')) return 'Pontes';
+  if (id.includes('mountain') || id.includes('ridge') || id.includes('rock') || id.includes('boulder') || id.includes('spike') || id.includes('cliff')) return 'Pedras e relevo';
+  if (id.includes('tree') || id.includes('forest') || id.includes('wood') || id.includes('log') || id.includes('mossy')) return 'Natureza';
+  if (id.includes('ruined') || id.includes('tower') || id.includes('mansion') || id.includes('wall') || id.includes('gate') || id.includes('shrine') || id.includes('house') || id.includes('hut') || id.includes('hamlet')) return 'Ruínas e construções';
+  return 'Objetos';
+};
+const terrainHint = (t: string) => {
+  const d = data.TERRAIN[t];
+  const parts = [d.name, d.passable ? `Mov ${d.moveCost}` : 'Intransponível', `Def +${d.def}`, `Atk +${d.atk}`];
+  if (d.blocksShot) parts.push('bloqueia tiro/visão');
+  if (d.hazardDice) parts.push(`dano ${d.hazardDice}D${d.hazardFaces} ao entrar e a cada turno`);
+  const note = data.terrainNote(t);
+  return note ? `${parts.join(' · ')} — ${note}` : parts.join(' · ');
+};
+const editor = {
+  minGrid: data.MIN_GRID, maxGrid: data.MAX_GRID, defaultTestLevel: 15, enemyLevel0: data.enemyLevelFor(0),
+  terrains: BUILDER_TERRAIN.map((t) => ({ id: t, name: data.TERRAIN[t].name, swatch: TERRAIN_SWATCH[t], variantCount: tv.TILE_VARIANT_COUNT[t] ?? 1,
+    height: data.TERRAIN[t].height ?? 0, hint: terrainHint(t), hidden: HIDDEN_VARIANTS[t] ?? [], versions: groundVersions(t) })),
+  terrainInfo: Object.fromEntries(Object.keys(data.TERRAIN).map((t) => [t, { name: data.TERRAIN[t].name, height: data.TERRAIN[t].height ?? 0,
+    passable: !!data.TERRAIN[t].passable, variantCount: tv.TILE_VARIANT_COUNT[t] ?? 1 }])),
+  decorationOrder: Object.values(DECORATIONS).filter((d: Def) => !d.model3d).sort((a: Def, b: Def) => byName(a.name, b.name)).map((d: Def) => d.id),
+  decorationSections: ['Todas', 'Barricada', 'Cave', 'City', 'Forest', 'Houses', 'Lights', 'Madeira Morta', 'Natureza', 'Objetos', 'Pedras e relevo', 'Pontes',
+    'Ruínas e construções', 'Shops', 'Torture', 'Waypoints', 'Wilds'],
+  decorationInfo: Object.fromEntries(Object.keys(DECORATIONS).map((id) => [id, { section: decorationSectionFor(id), tile: DECORATIONS[id].tile ?? null,
+    thumb: data.decorationImage(id).split('?')[0],
+    blocksByDefault: data.BARRICADE_LIKE_DECOR.has(id) || data.HOUSE_DECOR_IDS.has(id) || data.BIG_HOUSE_DECOR_IDS.has(id) || data.SOLID_HOUSE_DECOR_IDS.has(id) ||
+      data.SOLID_CART_DECOR_IDS.has(id) || data.SOLID_ROCK_DECOR_IDS.has(id) }])),
+  classes: Object.fromEntries(Object.keys(data.CLASSES).map((c) => [c, { name: data.CLASSES[c].name, role: data.CLASSES[c].role ?? '', summon: !!data.CLASSES[c].summon }])),
+  classOrder: Object.keys(data.CLASSES).sort((a, b) => byName(data.CLASSES[a].name, data.CLASSES[b].name)),
+  editorHeroes: [{ name: 'Kael', classId: 'kaelFinal' }, { name: 'Neera', classId: 'neera' }, { name: 'Voss', classId: 'voss' }, { name: 'Salazar', classId: 'salazar' },
+    { name: 'Aldric', classId: 'aldric' }, { name: 'Malrec', classId: 'conjurer' }].sort((a, b) => byName(a.name, b.name)),
+  npcs: ['breadLady', ...npcs.ENCOUNTER_NPC_IDS].map((id: string) => ({ id, name: data.CLASSES[id]?.name ?? id,
+    spawn: id === 'breadLady' ? null : npcs.encounterNpcSpawn(id, 0, 0) })),
+  timeOfDay: Object.fromEntries(Object.entries(battleLight.TIME_OF_DAY_LIGHT).map(([k, v]: [string, any]) => [k, { label: v.label, moon: v.moon, key: v.key, ambient: v.ambient }])),
+  defaults: { sun: battleLight.DEFAULT_SUN_INTENSITY, ambient: battleLight.DEFAULT_AMBIENT_INTENSITY, bloom: battleLight.DEFAULT_BLOOM_INTENSITY },
+  backgrounds: backgrounds.MAP_BACKGROUNDS.map((b: any) => ({ id: b.id, label: b.label, file: b.file })),
+  music: [...data.MUSIC_TRACKS].sort(byName),
+  // the City brush: plains with the city layers (Stone paving = ENGINE2_V3_CITY_VARIANT, then photo-city / indoor wood)
+  city: [{ variant: tv.ENGINE2_V3_CITY_VARIANT, label: 'Stone paving', thumb: thumbFor('plains', tv.ENGINE2_V3_CITY_VARIANT) },
+    ...tv.GROUND_VARIANT_LAYERS.filter((e: any) => e.key === 'photo-city' || e.key === 'city-indoor-wood').map((e: any) => ({ variant: e.variant, label: e.label, thumb: thumbFor('plains', e.variant) }))],
+  terrainThumb: Object.fromEntries(BUILDER_TERRAIN.map((t) => [t, thumbFor(t, 0)])),
+};
+
 const out = {
   source: 'Engine2 tables via tools/scripts/engine2/export_editor_catalog.ts',
-  decorations, facings, heroes, classes,
+  decorations, facings, heroes, classes, editor,
   backgrounds: { byMap: Object.fromEntries(backgrounds.MAP_BACKGROUNDS.flatMap((b: any) => (b.mapIds ?? []).map((m: string) => [m, b.file]))),
     byId: Object.fromEntries(backgrounds.MAP_BACKGROUNDS.map((b: any) => [b.id, b.file])) },
 };

@@ -72,7 +72,10 @@ if (!mission.explore) {
   }
 }
 
-draft.playerSpawns = [...draft.playerSpawns, ...added].map((s: Spawn) => ({ ...s, level: DEFAULT_TEST_LEVEL }));
+// KEEP_LEVELS=1 (the map editor's Testar, GameApp startBattle with an override): every authored spawn keeps its own
+// level (DEFAULT_TEST_LEVEL when it has none), only the heroes added here take DEFAULT_TEST_LEVEL.
+const keep = process.env.KEEP_LEVELS === '1';
+draft.playerSpawns = [...draft.playerSpawns, ...added].map((s: Spawn) => ({ ...s, level: keep ? s.level ?? DEFAULT_TEST_LEVEL : DEFAULT_TEST_LEVEL }));
 file.draft = draft;
 mkdirSync(dirname(outPath), { recursive: true });
 writeFileSync(outPath, JSON.stringify(file));

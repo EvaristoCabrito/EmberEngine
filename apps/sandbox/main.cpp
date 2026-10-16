@@ -81,6 +81,7 @@
 #include "TitleStage.h"
 #include "OverworldStage.h"
 #include "BattleTalk.h"
+#include "MapEditorStage.h"
 #include "TestModeStage.h"
 #include "world/Campaign.h"
 #include "world/Overworld.h"
@@ -128,6 +129,7 @@ struct Options {
   std::string heroes;
   std::string battleRules;
   std::string devGfx;  // captures: Dev Controls' switches from this file (DevGfx.h) applied to the map
+  std::string editorScript;  // captures: clicks on the Map Editor's board (MapEditorStage::previewEdits)
   // The title screen (Engine2's, TitleStage.h): its mission list is every imported scene in `scenes` whose map is in
   // `maps` (default: Engine2's maps/ember beside its public folder).
   bool title = false;
@@ -195,6 +197,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--heroes" && hasValue) o.heroes = argv[++i];
     else if (arg == "--battle-rules" && hasValue) o.battleRules = argv[++i];
     else if (arg == "--dev-gfx" && hasValue) o.devGfx = argv[++i];
+    else if (arg == "--editor-script" && hasValue) o.editorScript = argv[++i];
     else if (arg == "--title") o.title = true;
     else if (arg == "--save-bank" && hasValue) o.saveBank = argv[++i];
     else if (arg == "--map-ui" && hasValue) o.mapUi = argv[++i];
@@ -543,11 +546,24 @@ int runCapture(const Options& o) {
       if (!o.mapUi.empty()) map->preview(o.mapUi);
       stage = std::move(map);
     } else if (o.title && o.titleScreen.starts_with("test") && hasCampaign && world.load("content/engine2/overworld.json")) {
-      // --title-screen test / test-choice / test-classic / test-scenarios / test-rpg / test-dev: Modo teste's screens (--map-ui
+      // --title-screen test / test-choice / test-classic / test-scenarios / test-rpg / test-dev / test-editor: Modo teste's screens (--map-ui
       // location:<id> opens a place's panel on the classic map; on the RPG map the usual --map-ui panels).
       testSession = freshTestSession(campaign);
       using S = TestModeStage::Screen;
-      if (o.titleScreen == "test-rpg") {
+      if (o.titleScreen == "test-editor") {
+        // the Map Editor (--map-ui <map.json>: that map opened in it; --editor-script: clicks on its board)
+        MapStageOptions base = mapOptions(o);
+        std::optional<e2::Json> draft;
+        if (!o.mapUi.empty()) {
+          std::ifstream in(o.mapUi, std::ios::binary);
+          const e2::Json j = e2::Json::parse(in, nullptr, false);
+          if (!j.is_discarded()) draft = j.contains("draft") ? j["draft"] : j;
+        }
+        auto editor = std::make_unique<MapEditorStage>(MapEditorStage::Services{context, renderer, services.assets, services.jobs}, base, campaignPaths,
+                                                       campaign, MapEditorStage::Callbacks{}, draft);
+        if (!o.editorScript.empty()) editor->previewEdits(o.editorScript);
+        stage = std::move(editor);
+      } else if (o.titleScreen == "test-rpg") {
         testSession->mapMode = "rpg";
         auto map = std::make_unique<OverworldStage>(campaignPaths, campaign, world, OverworldStage::Callbacks{}, std::string{}, &testSession->save);
         if (!o.mapUi.empty()) map->preview(o.mapUi);
@@ -652,6 +668,10 @@ int runWindow(const Options& o) {
   std::optional<TestModeStage::Screen> openTest;  // a test-mode screen to open
   bool openTestRpg = false;                       // the RPG map on the test session's save
   bool openSpells = false, inSpells = false;      // Teste de Magias: the spells test battle (open it / it is open)
+  // Map Editor: open it / a Testar battle from it is open; the draft it was editing (kept while the game runs, as
+  // GameApp's editorDraft).
+  bool openEditor = false, inEditorTest = false;
+  std::optional<e2::Json> editorDraft;
   auto toggleFullscreen = [&] {
     const bool full = (SDL_GetWindowFlags(window.handle()) & SDL_WINDOW_FULLSCREEN) != 0;
     SDL_SetWindowFullscreen(window.handle(), !full);
@@ -680,8 +700,25 @@ int runWindow(const Options& o) {
     callbacks.rpgMap = [&] { openTestRpg = true; };
     callbacks.play = [&](const MissionEntry& m) { pending = m; };
     callbacks.spells = [&] { openSpells = true; };
+    callbacks.editor = [&] { openEditor = true; };
     callbacks.fullscreen = toggleFullscreen;
     return std::make_unique<TestModeStage>(paths, campaign, world, *testSession, devGfx, std::move(callbacks), screen);
+  };
+  auto makeEditor = [&]() -> std::unique_ptr<Stage> {
+    MapEditorStage::Callbacks callbacks;
+    callbacks.back = [&](const e2::Json& draft) {
+      editorDraft = draft;
+      openTest = TestModeStage::Screen::Menu;
+    };
+    callbacks.play = [&](const MissionEntry& m, const e2::Json& draft) {
+      editorDraft = draft;
+      pending = m;
+      inEditorTest = true;
+    };
+    MapStageOptions base = mapOptions(o);
+    devGfx.apply(base, renderer);
+    return std::make_unique<MapEditorStage>(MapEditorStage::Services{context, renderer, services.assets, services.jobs}, base, paths, campaign,
+                                            std::move(callbacks), editorDraft);
   };
   auto makeTestRpg = [&]() -> std::unique_ptr<Stage> {
     OverworldStage::Callbacks callbacks;
@@ -761,7 +798,9 @@ int runWindow(const Options& o) {
     std::optional<MapStageOptions> retry;
     if (auto* map = dynamic_cast<MapStage*>(stage.get())) {
       if (map->wantsTitle()) {
-        if (inSpells) {
+        if (inEditorTest) {
+          openEditor = true;  // Encerrar teste: the editor again, on the same draft
+        } else if (inSpells) {
           openTest = TestModeStage::Screen::Menu;  // Teste de Magias: back to the test menu
         } else if (testSession) {
           // A test battle never writes anything (GameApp: every save write is !testMode); back to the test map.
@@ -786,7 +825,7 @@ int runWindow(const Options& o) {
         attachBattleTalk(*again, playing, dialogs, paths.engine2Public, world, testSession ? nullptr : &campaign);
       stage = std::move(again);
     }
-    if (pending || backToTitle || openMap || openTest || openTestRpg || openSpells) {
+    if (pending || backToTitle || openMap || openTest || openTestRpg || openSpells || openEditor) {
       vkDeviceWaitIdle(context.device);
       stage.reset();
       inSpells = false;
@@ -807,6 +846,9 @@ int runWindow(const Options& o) {
         playing.clear();
         testSession.reset();  // GameApp goToTitle: every trace of test mode wiped
         stage = makeTitle();
+      } else if (openEditor && testSession) {
+        inEditorTest = false;
+        stage = makeEditor();
       } else if (openTest && testSession) {
         stage = makeTest(*openTest);
       } else if (openTestRpg && testSession) {
@@ -837,7 +879,7 @@ int runWindow(const Options& o) {
       }
       pending.reset();
       openTest.reset();
-      backToTitle = false, openMap = false, openTestRpg = false, openSpells = false;
+      backToTitle = false, openMap = false, openTestRpg = false, openSpells = false, openEditor = false;
     }
   }
   return 0;

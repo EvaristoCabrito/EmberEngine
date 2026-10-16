@@ -41,6 +41,7 @@
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <chrono>
@@ -127,6 +128,11 @@ struct MapStageOptions {
   std::filesystem::path battle;
   // A campaign fight: each hero's level and XP from the save (save.ts levels / xp), by name.
   std::map<std::string, std::pair<int, int>> heroProgress;
+  // The map editor's preview (MapEditorStage.h): the draft and its scene given in memory instead of `map` / `scene`,
+  // and a left click on a hex handed to editorClick instead of played; only the camera bar is drawn.
+  std::optional<e2::MapDraft> draftData;
+  std::optional<e2::SceneData> sceneData;
+  std::function<void(int x, int y)> editorClick;
 };
 
 // What a fight leaves for the campaign save (campaign.ts finishBattle's heroes part): each hero's level, XP and HP.
@@ -160,7 +166,7 @@ class MapStage final : public Stage {
     spellsMenu_.load("content/fx/spell-looks.json", "content/fx.sprites.json");
     layers_ = options.layers;
     data_ = e2::BoardData::load(options.boardData);
-    std::optional<e2::MapDraft> draft = e2::MapDraft::load(options.map);
+    std::optional<e2::MapDraft> draft = options.draftData ? options.draftData : e2::MapDraft::load(options.map);
     if (!data_ || !draft) {
       failed_ = true;
       return;
@@ -194,8 +200,8 @@ class MapStage final : public Stage {
     target_.z += options.offset.y * boardDepth_;
     if (options.fog == 1 || (options.fog < 0 && board_->draft().fog)) fog_.emplace(*board_);
 
-    if (!options.scene.empty()) {
-      scene_ = e2::SceneData::load(options.scene);
+    if (!options.scene.empty() || options.sceneData) {
+      scene_ = options.sceneData ? options.sceneData : e2::SceneData::load(options.scene);
       if (!scene_) {
         failed_ = true;
         return;
@@ -680,6 +686,7 @@ class MapStage final : public Stage {
   void drawPanel() override {
     if (!board_) return;
     if (!result_.empty() && now_ - resultAt_ > kResultDelay) return drawResultScreen();
+    if (options_.editorClick) return drawCameraBar();  // the map editor's preview: its own panels around it
     drawAirParticles();
     drawMarks();
     drawCameraBar();
@@ -767,6 +774,20 @@ class MapStage final : public Stage {
                        options_.spellsMenuOpen);
     }
   }
+
+  // Where the camera looks (the map editor carries it over when its preview is rebuilt for an edit).
+  struct View {
+    glm::vec3 target{0.0f};
+    float yaw = 0, pitch = 0, distance = 0;
+    bool flat = false;
+  };
+  View view() const { return {target_, yaw_, pitch_, distance_, flat_}; }
+  void setView(const View& v) {
+    target_ = v.target, yaw_ = v.yaw, pitch_ = v.pitch, distance_ = v.distance, flat_ = v.flat;
+    cam_ = {target_, yaw_, pitch_, distance_};
+    captured_ = true, homeYaw_ = yaw_, homePitch_ = pitch_, homeTarget_ = target_, homeDistance_ = distance_;
+  }
+  bool failed() const { return failed_; }
 
   // The player asked to leave for the title screen (pause menu, or after the battle's end), or to fight it again.
   bool wantsTitle() const { return titleRequested_; }
@@ -1481,7 +1502,7 @@ class MapStage final : public Stage {
         for (int k = 0; k < 12; ++k) (under((lo + hi) * 0.5f) ? hi : lo) = (lo + hi) * 0.5f;
         const glm::vec3 p = o + dir * hi;
         const auto [c, r] = e2::hexAt(board_->layout(), p.x, p.z);
-        if (!battle_->inBounds(c, r)) return std::nullopt;
+        if (c < 0 || r < 0 || c >= board_->layout().cols || r >= board_->layout().rows) return std::nullopt;
         return e2::BattleHex{c, r};
       }
     return std::nullopt;
@@ -1515,6 +1536,10 @@ class MapStage final : public Stage {
 
   // The left button: a reachable hex walks the picked player unit there; a unit picks it; anything else lets go.
   void click(SDL_WindowID id, float mx, float my) {
+    if (options_.editorClick) {
+      if (const std::optional<e2::BattleHex> hex = pick(id, mx, my)) options_.editorClick(hex->x, hex->y);
+      return;
+    }
     if (!battle_ || !scene_) return;
     const std::optional<e2::BattleHex> hex = pick(id, mx, my);
     if (busy()) return;  // a walk, a strike or an enemy's turn is playing

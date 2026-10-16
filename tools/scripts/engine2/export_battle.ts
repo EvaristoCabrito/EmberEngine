@@ -51,7 +51,14 @@ const art = new Proxy({}, { get: () => new Proxy({}, { get: () => [] }) });
 // (DEFAULT_TEST_LEVEL is 15) and the engine's test flag (debugFreeCast). The map given is then the test-mode map
 // (make_test_map.ts: the missing heroes added). NO_REFS=1 leaves out the reference answers (the game never reads them).
 const testLevel = Number(process.env.TEST_LEVEL ?? 0);
-const levels: Record<string, number> = testLevel ? Object.fromEntries(mission.playerSpawns.map((s: { name: string }) => [s.name, testLevel])) : {};
+// LEVELS_FROM_DRAFT=1 (the map editor's Testar): each spawn's own level from the draft (MapEditorScreen onPlaytest:
+// heroes by name, enemies and neutrals by their index in their list), TEST_LEVEL for a hero without one.
+const fromDraft = process.env.LEVELS_FROM_DRAFT === '1';
+const levels: Record<string, number> = fromDraft
+  ? Object.fromEntries(draft.playerSpawns.map((s: { name: string; level?: number }) => [s.name, s.level ?? testLevel]))
+  : testLevel ? Object.fromEntries(mission.playerSpawns.map((s: { name: string }) => [s.name, testLevel])) : {};
+const enemyLevels = fromDraft ? Object.fromEntries(draft.enemySpawns.map((s: { level?: number }, i: number) => [i, s.level])) : undefined;
+const neutralLevels = fromDraft ? Object.fromEntries((draft.neutralSpawns ?? []).map((s: { level?: number }, i: number) => [i, s.level])) : undefined;
 const noRefs = process.env.NO_REFS === '1';
 // Test battles fight with a brand-new save's gear (GameApp freshTestOverworld + startBattle's roster): the starter weapon
 // in hand, Neera's dagger in the off-hand, nothing else owned.
@@ -67,7 +74,7 @@ if (testLevel) {
   gear.promotions = fresh.promotions;
 }
 // The editor's preview battle (MapPreviewCanvas): fog off, a fresh party.
-const engine = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, ...gear }, 1, testLevel > 0);
+const engine = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0);
 const e = engine as unknown as Record<string, any>;
 
 const cells: Record<string, unknown>[] = [];
@@ -172,7 +179,7 @@ for (let ai = 0; !noRefs && ai < e.units.length; ai++)
 const ai: unknown[] = [];
 for (let i = 0; !noRefs && i < e.units.length; i++) {
   if (e.units[i].side !== 'enemy' || !e.units[i].alive) continue;
-  const fresh = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
+  const fresh = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
   const u = fresh.units[i];
   fresh.queue = [];
   fresh.runAiFor(u);
@@ -192,7 +199,7 @@ const lead = e.units.find((u: { side: string; alive: boolean }) => u.side === 'p
 const near: unknown[] = [];
 for (let i = 0; !noRefs && lead && i < e.units.length; i++) {
   if (e.units[i].side !== 'enemy' || !e.units[i].alive || (e.units[i].size ?? 1) > 1) continue;
-  const fresh = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
+  const fresh = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
   const u = fresh.units[i];
   const occ = pathfinding.occupancy(fresh.units);
   let spot: { x: number; y: number } | null = null;
@@ -228,7 +235,7 @@ const FX = ['emitParticle', 'emitLevelUpFx', 'emitPotionZeroFx', 'emitHolyFx', '
 const casts: unknown[] = [];
 // SPELL_REFS=1: the cast references for Cooker check-battle (large; the game itself does not read them).
 if (process.env.SPELL_REFS === '1') {
-  const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
+  const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
   const base = fresh();
   const pristine = structuredClone(base.units);
   let castSeed = 1000;
