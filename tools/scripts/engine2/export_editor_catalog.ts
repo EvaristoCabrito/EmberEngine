@@ -214,6 +214,56 @@ const editor = {
   terrainThumb: Object.fromEntries(BUILDER_TERRAIN.map((t) => [t, thumbFor(t, 0)])),
 };
 
+// --- the rest of the editor's tables (3D pieces, rule switches, Gerar terreno's pools, Locais, R-Encounter) ---
+const mapstore = await import(`${E2}/src/campaign/mapstore.ts`);
+const affinity = await import(`${E2}/src/campaign/affinity.ts`);
+// data.ts MANUAL_DECORATION_IDS (module-private): the stairs and exit, and every Wilds / Torture / City / 2026 prop.
+const dataSrc = readFileSync(`${E2}/src/ember/data.ts`, 'utf8');
+const between = (start: string, end: string) => {
+  const i = dataSrc.indexOf(start);
+  if (i < 0) throw new Error(`data.ts: ${start} not found`);
+  return dataSrc.slice(i, dataSrc.indexOf(end, i + start.length));
+};
+const manual = new Set<string>(['dungeon-exit-single', 'stone-stairs-up-001', 'stone-stairs-down-001']);
+for (const [start, end] of [['const WILDS_DECORATIONS = decorationSet([', '\n], WILDS_TWO_HEX);'], ['const CITY_DECORATIONS = decorationSet([', '\n], CITY_TWO_HEX);']])
+  for (const m of between(start, end).matchAll(/\["([A-Za-z0-9_-]+)",/g)) manual.add(m[1]!);
+for (let n = 1; n <= 44; n++) if (n !== 13 && n !== 22 && n !== 30) manual.add(`torture-gear-${String(n).padStart(2, '0')}`);
+// (a nested `key: {` inside an entry is no decoration id: only DECORATIONS' own keys count)
+for (const m of between('const NEW_DECOR_2026: Record<string, DecorationDef> = {', '\n};').matchAll(/^\s*"?([A-Za-z0-9_-]+)"?\s*:\s*\{/gm))
+  if (DECORATIONS[m[1]!]) manual.add(m[1]!);
+for (const id of manual) if (!DECORATIONS[id]) throw new Error(`manual decoration ${id} is not in DECORATIONS`);
+const decoMeta = Object.fromEntries(Object.keys(DECORATIONS).map((id) => {
+  const d = DECORATIONS[id]!;
+  return [id, { model3d: d.model3d ?? null, exitKind: d.exitKind ?? null, props3d: !!(d.rockStyle || d.treeModel || d.propModel), rockStyle: !!d.rockStyle,
+    thickWall: !!d.thickWall, doorStyle: d.doorStyle ?? null, wallTexture: d.wallTexture ? String(d.wallTexture).split('?')[0] : null,
+    solidHouse: data.HOUSE_DECOR_IDS.has(id) || data.BIG_HOUSE_DECOR_IDS.has(id) || data.SOLID_HOUSE_DECOR_IDS.has(id), solidCart: data.SOLID_CART_DECOR_IDS.has(id),
+    solidRock: data.SOLID_ROCK_DECOR_IDS.has(id), chest: data.CHEST_DECOR_IDS.has(id), manual: manual.has(id),
+    art: data.decorationImage(data.decorationPlacementArt({ id })).split('?')[0] }];
+}));
+const tileVariantNames = Object.fromEntries(Object.keys(data.TERRAIN).map((t) =>
+  [t, Array.from({ length: tv.TILE_VARIANT_COUNT[t] ?? 1 }, (_, v) => tv.tileVariantName(t, v))]));
+const e2json = (file: string) => JSON.parse(readFileSync(`${E2}/src/campaign/${file}`, 'utf8'));
+Object.assign(editor, {
+  maxLevel: data.MAX_LEVEL,
+  decoMeta,
+  // MapEditorScreen architectureOptions: every model3d piece in DECORATIONS' own order (the palette sorts walls last)
+  architectureOrder: Object.values(DECORATIONS).filter((d: Def) => !!d.model3d).map((d: Def) => d.id),
+  doorVariants: data.THREE_D_DOOR_VARIANTS,
+  tileVariantNames,
+  tileChar: data.TILE_CHAR,
+  classSprite: Object.fromEntries(Object.keys(data.CLASSES).map((c) => [c, data.CLASSES[c].sprite])),
+  affinityHeroes: [...affinity.AFFINITY_HEROES],
+  namedNonHeroes: [{ name: 'Sandoval', classId: 'sandoval' }],
+  // Locais / R-Encounter as Engine2 ships them (src/campaign/*.json through mapstore): the editor's starting point
+  // until EmberEngine's own copies exist (content/maps/locais.json, content/maps/random-encounters.json).
+  missions: (mapstore.ALL_MISSIONS as any[]).map((m) => ({ id: m.id, title: m.title, index: m.index, hub: !!m.hub })),
+  locations: (mapstore.ALL_LOCATIONS as any[]).map((l) => ({ id: l.id, name: l.name, missionIds: [...l.missionIds] })),
+  locais: { order: e2json('map-order.json'), slots: e2json('map-slots.json'), locationOrder: (mapstore.ALL_LOCATIONS as any[]).map((l) => l.id),
+    submaps: mapstore.DEFAULT_LOCATION_SUBMAPS },
+  encounterRegions: mapstore.RANDOM_ENCOUNTER_REGIONS,
+  watchtowerFloors: (await import(`${E2}/src/campaign/watchtowerDungeon.ts`)).WATCHTOWER_FLOORS,
+});
+
 const out = {
   source: 'Engine2 tables via tools/scripts/engine2/export_editor_catalog.ts',
   decorations, facings, heroes, classes, editor,

@@ -38,6 +38,7 @@ add_library(EmberEngine STATIC
   world/GroundMesh.cpp
   world/SceneData.cpp
   world/SceneBuilder.cpp
+  world/MapDressing.cpp
   world/Battle.cpp
   world/Combat.cpp
   world/BattleTurns.cpp
