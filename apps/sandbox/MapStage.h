@@ -772,6 +772,8 @@ class MapStage final : public Stage {
   bool wantsTitle() const { return titleRequested_; }
   // "victory" / "defeat" once the fight is over, else empty.
   const std::string& battleResult() const { return result_; }
+  // A conversation or film is open over the battle: nobody's turn moves on until it closes.
+  bool holdTurns = false;
   std::vector<HeroOutcome> heroOutcomes() const {
     std::vector<HeroOutcome> out;
     if (!battle_) return out;
@@ -1627,7 +1629,7 @@ class MapStage final : public Stage {
   // Engine2's turn loop (tick / beginUnitTurn / startNewRound): whoever is next in the round acts; when everyone has
   // gone a new round starts. The party's unit is picked and waits for the player; an enemy plays its own turn.
   void updateTurns() {
-    if (!battle_ || !scene_ || !result_.empty()) return;
+    if (!battle_ || !scene_ || !result_.empty() || holdTurns) return;
     const bool walking = std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
     if (exchange_ || walking) return;
     // A strike the player asked for once the walk to its hex is over.

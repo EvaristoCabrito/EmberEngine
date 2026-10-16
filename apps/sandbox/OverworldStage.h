@@ -31,6 +31,7 @@
 #include <vector>
 
 #include "CampaignUi.h"
+#include "CutsceneScreen.h"
 #include "InnScreen.h"
 #include "Stage.h"
 #include "render/Camera.h"
@@ -66,6 +67,12 @@ class OverworldStage : public Stage {
     std::string id;
     if (save_.contains("battle") && save_["battle"].is_object()) id = save_["battle"].value("missionId", "");
     if (id.empty() && save_.contains("pendingMission") && save_["pendingMission"].is_string()) id = save_["pendingMission"].get<std::string>();
+    // A new campaign opens with Engine2's films: the boot vignette, then O Vau's intro (GameApp boot -> vauIntro).
+    if (!testSave_ && campaign_.freshCampaign && id == "vau") {
+      campaign_.freshCampaign = false;
+      playFilm("game/title-open.mp4", [this] { playFilm("game/vau-intro.mp4", [this] { openMission("vau", true); }); });
+      return;
+    }
     if (!id.empty()) openMission(id, true);
   }
 
@@ -83,9 +90,15 @@ class OverworldStage : public Stage {
       inn_.emplace();
       if (what.size() > 4) inn_->preview(what.substr(4));
     }
+    // "film:<file under public>[@seconds]": a film playing, captured that far in (its subtitles at that moment).
+    if (what.starts_with("film:")) {
+      std::string film = what.substr(5);
+      if (const size_t at = film.find('@'); at != std::string::npos) previewFilmAt_ = std::stod(film.substr(at + 1)), film.resize(at);
+      playFilm(film.c_str(), [] {});
+    }
   }
-  // Captures end after a second of frames (time for Engine2's art to load).
-  bool done() const override { return frames_ > 60; }
+  // Captures end after a second of frames (time for Engine2's art to load), or once a previewed film got that far.
+  bool done() const override { return frames_ > 60 && (!film_ || film_->time() >= previewFilmAt_); }
 
   void frame(Renderer& renderer, VkExtent2D) override {
     ++frames_;
@@ -126,7 +139,12 @@ class OverworldStage : public Stage {
     ImGui::Begin("##overworld", nullptr,
                  ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings |
                      ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoScrollWithMouse);
-    if (inventory_) {
+    if (film_) {
+      if (film_->draw(io.DisplaySize)) {
+        film_.reset();
+        if (auto then = std::exchange(afterFilm_, {})) then();
+      }
+    } else if (inventory_) {
       InventoryScreen::Context context{save_, [this] { write(); }, innRules_, innData_, world_, paths_.engine2Public};
       if (inventory_->draw(io.DisplaySize, context)) inventory_.reset();
     } else if (inn_) {
@@ -135,7 +153,19 @@ class OverworldStage : public Stage {
     } else if (briefing_) {
       const int r = drawBriefing(io.DisplaySize, kRem, *briefing_, paths_.engine2Public);
       if (r < 0) briefing_.reset();
-      else if (r > 0 && callbacks_.play) callbacks_.play(*briefing_);
+      else if (r > 0 && callbacks_.play) {
+        // GameApp beginMission: some missions open with their film (bound to the mission id, not its position).
+        const std::string id = briefing_->draftId;
+        const char* film = id == "aldeia" ? "game/aldeia-intro.mp4" : id == "thebridge" ? "game/thebridge-intro.mp4" : id == "templo" ? "game/asherah-rite.mp4" : nullptr;
+        if (film && !test()) {
+          MissionEntry entry = *briefing_;
+          playFilm(film, [this, entry] {
+            if (callbacks_.play) callbacks_.play(entry);
+          });
+        } else {
+          callbacks_.play(*briefing_);
+        }
+      }
     } else if (slots_) {
       bool back = false;
       const int chosen = slots_->draw(io.DisplaySize, kRem, campaign_, paths_.engine2Public, back, &save_);
@@ -229,6 +259,23 @@ class OverworldStage : public Stage {
         }
       }
       if (id == "estalagem") return enterInn();
+      // Wisp Forest's entrance film, the first time the party goes into any of its missions (GameApp openMission).
+      if (!test() && !save_.value("seenWispForestIntro", false)) {
+        for (const e2::MapLocation& l : world_.locations()) {
+          if (l.id != "wisp-forest" || std::find(l.missionIds.begin(), l.missionIds.end(), id) == l.missionIds.end()) continue;
+          bool any = false;
+          for (const std::string& m : l.missionIds) any = any || completed(m);
+          if (any) break;
+          playFilm("game/wisp-entrance.mp4", [this, id] {
+            save_["seenWispForestIntro"] = true;
+            save_["pendingMission"] = nullptr;
+            save_["battle"] = nullptr;
+            write();
+            openMission(id, true);
+          });
+          return;
+        }
+      }
     }
     std::string error;
     if (std::optional<MissionEntry> e = test() ? testMission(campaign_, paths_, id, error) : campaignMission(campaign_, paths_, id, error))
@@ -236,12 +283,19 @@ class OverworldStage : public Stage {
     else notice_ = error;
   }
 
-  // GameApp beginMission("estalagem"): the visit is recorded (mission completed, the Inn's hex explored), then the Inn.
-  // Engine2 plays the arrival film first and then walks the party into the Inn's own room; neither is ported, so the
-  // Inn's menus open straight away.
+  // GameApp beginMission("estalagem"): the first visit plays the arrival film (finishInnArrivalIntro), then the visit is
+  // recorded (mission completed, the Inn's hex explored) and the Inn opens. Engine2 then walks the party into the Inn's
+  // own room; that room is not ported, so the Inn's menus open straight away.
   void enterInn() {
     if (!hasInn_) {
       notice_ = "Sem dados da Estalagem (content/engine2/inn.json).";
+      return;
+    }
+    if (!test() && !save_.value("seenInnArrivalIntro", false)) {
+      playFilm("game/inn-arrival.mp4", [this] {
+        save_["seenInnArrivalIntro"] = true;
+        enterInn();
+      });
       return;
     }
     if (!completed("estalagem")) save_["completed"].push_back("estalagem");
@@ -256,6 +310,12 @@ class OverworldStage : public Stage {
     save_["battle"] = nullptr;
     write();
     inn_.emplace();
+  }
+
+  // A film over everything, then `then`.
+  void playFilm(const char* film, std::function<void()> then) {
+    film_.emplace(paths_.engine2Public, film);
+    afterFilm_ = std::move(then);
   }
 
   // GameApp onOverworldStep: stepOverworld, written at once; a road battle opens its mission, anything else its notice.
@@ -1448,6 +1508,9 @@ class OverworldStage : public Stage {
   bool hasInn_ = false;
   std::optional<InnScreen> inn_;
   std::optional<InventoryScreen> inventory_;
+  std::optional<CutsceneScreen> film_;
+  std::function<void()> afterFilm_;
+  double previewFilmAt_ = 0;
   bool movementOpen_ = false, questLog_ = false, party_ = false, options_ = false;
   int partyTab_ = 0;
   std::vector<std::string> formation_;

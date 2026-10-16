@@ -80,6 +80,7 @@
 #include "MapStage.h"
 #include "TitleStage.h"
 #include "OverworldStage.h"
+#include "BattleTalk.h"
 #include "TestModeStage.h"
 #include "world/Campaign.h"
 #include "world/Overworld.h"
@@ -490,6 +491,7 @@ bool Services::frame(DebugUi& ui, Renderer& renderer, Stage* stage, VkExtent2D s
   perf.draw({&jobs, &io, &assets, &renderer});
   if (streamTest) streamTest->drawPanel();
   if (stage) stage->drawPanel();
+  if (stage && stage->overlay) stage->overlay();
   const bool ok = render();
   const double frameMs = msSince(start);
   const double busyMs = std::max(0.0, frameMs - renderer.lastWaitMilliseconds());
@@ -565,6 +567,17 @@ int runCapture(const Options& o) {
       stage = std::move(title);
     } else {
       stage = makeStage(o, context, renderer, services.assets, services.jobs);
+      // --map-ui talk:<mission>[:outro]: that mission's intro (or outro) conversation over the battle, nothing recorded.
+      if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && o.mapUi.starts_with("talk:")) {
+        std::string mission = o.mapUi.substr(5);
+        const bool outro = mission.ends_with(":outro");
+        if (outro) mission.resize(mission.size() - 6);
+        world.load("content/engine2/overworld.json");
+        if (auto talk = attachBattleTalk(*map, mission, loadDialogs("content/engine2/dialogs.json"), o.engine2, world, nullptr); talk && outro) {
+          talk->introDone = true;
+          talk->open("outro", "outroEnabled");
+        }
+      }
     }
     const VkExtent2D size{o.width, o.height};
     const auto testDone = [&] { return (services.streamTest && services.streamTest->done()) || (stage && stage->done()); };
@@ -592,6 +605,7 @@ int runCapture(const Options& o) {
     services.perf.draw({&services.jobs, &services.io, &services.assets, &renderer});
     if (services.streamTest) services.streamTest->drawPanel();
     if (stage) stage->drawPanel();
+    if (stage && stage->overlay) stage->overlay();
     renderer.captureFrame(o.time, o.capture);
     stage.reset();
   }
@@ -622,6 +636,8 @@ int runWindow(const Options& o) {
   const bool hasCampaign = campaign.open("content/engine2/campaign.json", o.saveBank.empty() ? e2::Campaign::savePath() : std::filesystem::path(o.saveBank));
   e2::Overworld world;
   const bool hasWorld = world.load("content/engine2/overworld.json");
+  // Every mission's intro / outro conversation (export_dialogs.ts).
+  const e2::Json dialogs = loadDialogs("content/engine2/dialogs.json");
   // Dev Controls' switches (Modo teste), applied to every map opened here.
   DevGfx devGfx = DevGfx::load();
   std::string playing;        // the campaign mission being fought (its result goes into the active slot)
@@ -765,7 +781,10 @@ int runWindow(const Options& o) {
     if (retry) {
       vkDeviceWaitIdle(context.device);
       stage.reset();
-      stage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, *retry);
+      auto again = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, *retry);
+      if (!playing.empty() && dialogs.is_object())
+        attachBattleTalk(*again, playing, dialogs, paths.engine2Public, world, testSession ? nullptr : &campaign);
+      stage = std::move(again);
     }
     if (pending || backToTitle || openMap || openTest || openTestRpg || openSpells) {
       vkDeviceWaitIdle(context.device);
@@ -808,7 +827,11 @@ int runWindow(const Options& o) {
           for (const auto& [name, level] : levels.items())
             if (level.is_number_integer()) options.heroProgress[name] = {level.get<int>(), xp.value(name, 0)};
         }
-        stage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
+        auto map = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
+        // The mission's intro conversation, its outro on a victory, and the campaign's epilogue films.
+        if (!playing.empty() && dialogs.is_object())
+          attachBattleTalk(*map, playing, dialogs, paths.engine2Public, world, testSession ? nullptr : &campaign);
+        stage = std::move(map);
       } else {
         stage = makeMap();
       }

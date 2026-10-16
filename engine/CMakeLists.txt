@@ -36,11 +36,14 @@ add_library(EmberEngine STATIC
   world/Campaign.cpp
   world/Overworld.cpp
   world/Inn.cpp
+  media/VideoPlayer.cpp
   debug/PerfOverlay.cpp
 )
 
 target_include_directories(EmberEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(EmberEngine PUBLIC SDL3::SDL3 volk glm::glm vma stb imgui nlohmann_json PRIVATE zstd)
+# Films (media/VideoPlayer): Windows Media Foundation.
+target_link_libraries(EmberEngine PRIVATE mfplat mfreadwrite mfuuid ole32)
 target_compile_definitions(EmberEngine PUBLIC
   VK_NO_PROTOTYPES
   VMA_STATIC_VULKAN_FUNCTIONS=0

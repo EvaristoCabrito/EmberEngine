@@ -65,6 +65,9 @@ class Campaign {
   static std::filesystem::path savePath();
 
   const CampaignData& data() const { return data_; }
+  // Set when "Nova campanha" has just written a slot: the campaign's opening films play once (GameApp boot ->
+  // vauIntro), then it is cleared by whoever plays them.
+  bool freshCampaign = false;
   const SaveBank& bank() const { return bank_; }
 
   Json emptySave() const;

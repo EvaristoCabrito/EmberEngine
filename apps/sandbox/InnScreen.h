@@ -9,7 +9,8 @@
 //
 // Engine2 reaches Vargan and the healer by walking the Inn's own map and talking to them; that walkable Inn is not
 // ported, so both open from the header here. Mochila / Equipar open the party's inventory (InventoryScreen.h) on the
-// hero chosen in the Adega or at the forge. Not ported: the smith's intro film, sound, typing a ration count.
+// hero chosen in the Adega or at the forge; the forge's first opening plays Vargan's film. Not ported: the Inn's music,
+// typing a ration count.
 
 #include <imgui.h>
 
@@ -22,6 +23,7 @@
 #include <vector>
 
 #include "CampaignUi.h"
+#include "CutsceneScreen.h"
 #include "InventoryScreen.h"
 #include "render/UiArt.h"
 #include "world/Inn.h"
@@ -43,6 +45,17 @@ class InnScreen {
   bool draw(ImVec2 size, Context& c) {
     now_ = static_cast<float>(ImGui::GetTime());
     stepHealing(c);
+    if (film_) {
+      // Vargan's intro film, the first time the forge opens (InnScreen SmithIntroScreen; its own 22 s cap).
+      if (film_->draw(size) || film_->time() > 22.0) {
+        film_.reset();
+        c.save["seenSmithIntro"] = true;
+        c.save["pendingMission"] = nullptr;
+        c.write();
+        view_ = View::Smith, smithNote_.clear();
+      }
+      return false;
+    }
     if (inventory_) {
       InventoryScreen::Context ic{c.save, c.write, c.rules, c.data, c.world, c.engine2Public};
       if (inventory_->draw(size, ic)) inventory_.reset();
@@ -214,7 +227,10 @@ class InnScreen {
       if (emberTextPlate("##healer", {112, 40}, "CURANDEIRO", 12.0f)) view_ = View::Healer, healerNote_.clear();
       x -= 12 + 100;
       ImGui::SetCursorScreenPos({x, 16});
-      if (emberTextPlate("##smith", {100, 40}, "FERREIRO", 12.0f)) view_ = View::Smith, smithNote_.clear();
+      if (emberTextPlate("##smith", {100, 40}, "FERREIRO", 12.0f)) {
+        if (!c.save.value("seenSmithIntro", false)) film_.emplace(c.engine2Public, "game/smith-intro.mp4");  // enterSmith
+        else view_ = View::Smith, smithNote_.clear();
+      }
     }
   }
 
@@ -838,6 +854,7 @@ class InnScreen {
   float lastCast_ = -10;
   float scrollTo_ = -1;
   std::optional<InventoryScreen> inventory_;
+  std::optional<CutsceneScreen> film_;
 
  public:
   // Captures: which room opens first.

@@ -350,6 +350,7 @@ class SlotScreen {
         return false;
       }
       status_ = std::format("Campanha criada e salva no espaço {}.", number);
+      campaign.freshCampaign = true;
       return true;
     }
     if (mode_ == Mode::Save) {

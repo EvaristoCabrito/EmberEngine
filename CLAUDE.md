@@ -308,10 +308,19 @@ inventory / equipment, dialogs / intros)
   InnRules (equipSharedItem / unequip, discards, useHeroPotion with healing training, useRation, bag used / capacity).
   Opened from the map's portraits and the Inn / forge headers. Captures `--map-ui pack|doll|inn:pack`. No Status button.
   Gotcha: never `for (... : json.value(k, ...).items())` - items() of a temporary dangles; bind the copy first.
+- **Films + dialogs (2026-10-16):** `engine/media/VideoPlayer` (Media Foundation decode on a worker, RGB32 rows by the
+  type's MF_MT_DEFAULT_STRIDE, SDL audio stream = the clock); `CutsceneScreen.h` (cover-fit picture, pt-BR WebVTT
+  subtitles near the bottom edge, sound toggle, Pular); films at: new campaign (title-open + vau-intro), first Wisp
+  Forest mission (wisp-entrance), first Inn visit (inn-arrival), first forge (smith-intro), aldeia / thebridge / templo
+  briefings, victory on templo / portao (epilogues). `DialogScreen.h` + `BattleTalk.h` (DialogOverlay): the mission's
+  intro as the battle opens, outro on victory, battle held (`MapStage::holdTurns`), recorded in dialogsSeen
+  (`intro:<mission>:<tree>`), reply affinity into the save (adjustHeroAffinity + changeAffinity); Modo teste records
+  nothing. Data: `export_dialogs.ts` → `content/engine2/dialogs.json` (38 missions, portraits per line). Captures:
+  `--map-ui film:game/<f>.mp4@<s>` on the world map, `--map-ui talk:<mission>[:outro]` on a battle. Debug + validation
+  0 errors. Not ported: battle NPC dialogs (hud.pendingDialog), companion conversations, Engine2's English tracks.
 - **Another session worked in this checkout on 2026-10-16** (spell effects, Modo teste; it touched OverworldStage.h,
   CampaignUi.h, Overworld.*): the user stopped it. Its uncommitted MapStage.h edits are its own: never commit them.
-- **Not ported yet:** field spells (Create Food and Water, Warp), the status sheet, intros /
-  cutscenes / dialogs / epilogue, battle snapshots (a saved fight restarts from its briefing), finishBattle's loot /
+- **Not ported yet:** field spells (Create Food and Water, Warp), the status sheet, battle snapshots (a saved fight restarts from its briefing), finishBattle's loot /
   ember / rations / quests / progression, formation applied to battle spawns, unitHp at battle start, sound.
 - **Testing:** never drive the user's PC (computer-use) — captures and Cooker checks only; the user plays it.
 

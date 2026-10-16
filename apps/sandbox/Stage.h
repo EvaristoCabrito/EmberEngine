@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "rhi/VkCommon.h"
 
 union SDL_Event;
@@ -22,6 +24,8 @@ struct Stage {
   // Off-screen runs stop once the stage is done; passed() is the exit code's verdict.
   virtual bool done() const { return false; }
   virtual bool passed() const { return true; }
+  // Drawn over the stage's own panel in the same UI frame (a campaign dialog over a fight, say); set by its owner.
+  std::function<void()> overlay;
 };
 
 }  // namespace ember
