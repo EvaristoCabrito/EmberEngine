@@ -23,6 +23,7 @@ class PhantasmalForce {
 
   static constexpr float kImpactAt = 0.82f, kEndAt = 1.35f;
   bool done(float now) const { return now - start_ >= kEndAt; }
+  float end() const { return start_ + kEndAt; }
 
   void build(float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
 

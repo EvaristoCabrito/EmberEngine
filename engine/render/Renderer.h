@@ -60,6 +60,11 @@ class Renderer {
   // The 3D scene for the next frame: camera and sprite cards (drawn in the given order, so pass them
   // back to front). Without a scene the renderer draws its bring-up triangle.
   void setScene(const Camera& camera, std::span<const SpriteInstance> sprites);
+  // Cards drawn again after the spell effects, over them (a caster in front of its own spell; back to front).
+  void setFrontCards(std::span<const SpriteInstance> cards) {
+    frontCards_.assign(cards.begin(), cards.begin() + std::min<size_t>(cards.size(), kMaxFrontCards));
+  }
+  static constexpr uint32_t kMaxFrontCards = 64;
   // Spell effects for the next frame (render/EffectDraw.h; at most kMaxEffects). `brightness` multiplies every
   // effect's colour: the light mode's glow rule (display-relative art, scaled like painted flames).
   void setEffects(std::span<const EffectInstance> effects, float brightness = 1.0f) {
@@ -402,6 +407,7 @@ class Renderer {
   bool hasScene_ = false;
   Camera camera_;
   std::vector<SpriteInstance> sprites_;
+  std::vector<SpriteInstance> frontCards_;  // stored after sprites_ in the frame's sprite buffer
   VkSemaphore waitTimeline_ = VK_NULL_HANDLE;
   uint64_t waitValue_ = 0;
 };

@@ -586,7 +586,7 @@ float Renderer::fogSight(glm::vec3 position) const {
 void Renderer::setScene(const Camera& camera, std::span<const SpriteInstance> sprites) {
   hasScene_ = true;
   camera_ = camera;
-  sprites_.assign(sprites.begin(), sprites.begin() + std::min<size_t>(sprites.size(), kMaxSprites));
+  sprites_.assign(sprites.begin(), sprites.begin() + std::min<size_t>(sprites.size(), kMaxSprites - kMaxFrontCards));
 }
 
 void Renderer::setShadowResolution(uint32_t size) {
@@ -1275,6 +1275,8 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   const uint32_t frameScope = gpuTimer_.begin(cmd, "frame");
   // This frame's cards (host-visible): read by the card shadow pass and the scene pass.
   if (hasScene_ && !sprites_.empty()) std::memcpy(frame.sprites.mapped, sprites_.data(), sprites_.size() * sizeof(SpriteInstance));
+  if (hasScene_ && !frontCards_.empty())
+    std::memcpy(static_cast<SpriteInstance*>(frame.sprites.mapped) + sprites_.size(), frontCards_.data(), frontCards_.size() * sizeof(SpriteInstance));
   if (hasScene_ && !effects_.empty()) std::memcpy(frame.effects.mapped, effects_.data(), effects_.size() * sizeof(EffectInstance));
   if (hasScene_ && !vfxDraws_.empty()) {
     std::memcpy(frame.vfxVertices.mapped, vfxVertices_.data(), vfxVertices_.size() * sizeof(VfxVertex));
@@ -1609,7 +1611,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   gpuTimer_.end(cmd, sceneScope);
 
   // --- Spell effects: over the finished surfaces, depth read-only (tested and sampled for the soft fade) -----------
-  const bool effects = hasScene_ && (!effects_.empty() || !vfxDraws_.empty());
+  const bool effects = hasScene_ && (!effects_.empty() || !vfxDraws_.empty() || !frontCards_.empty());
   if (effects) {
     const uint32_t effectScope = gpuTimer_.begin(cmd, "effects");
     transition(cmd, depth_.image, depth_.aspect,
@@ -1655,6 +1657,14 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
                          bufferAddress(context_, frame.meshFrame), i, effectBrightness_, spriteSamplerIndex_, 0};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
       vkCmdDraw(cmd, d.gpu.vertexCount, d.gpu.firstInstance == 0xFFFFFFFFu ? 1u : d.instances, 0, 0);
+    }
+    // Cards over the effects (a caster in front of its own spell): the same card drawing, read past the frame's cards.
+    if (!frontCards_.empty()) {
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spritePipeline_);
+      const SpritePush frontPush{camera_.viewProjection(), camera_.right, spriteSamplerIndex_,
+                                 bufferAddress(context_, frame.sprites) + sprites_.size() * sizeof(SpriteInstance), bufferAddress(context_, frame.meshFrame)};
+      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(frontPush), &frontPush);
+      vkCmdDraw(cmd, 6, static_cast<uint32_t>(frontCards_.size()), 0, 0);
     }
     vkCmdEndRendering(cmd);
     gpuTimer_.end(cmd, effectScope);

@@ -59,6 +59,8 @@ glm::vec3 SpellEffects::position(const Element& e, float now) const {
 int SpellEffects::looks(const std::string& kind) {
   // 02: Engine2's own effect, ported (render/vfx/*).
   if (kind == "magicMissile" || kind == "magicMissileV2") return 2;
+  // 01 Engine2's BurningHandsV2VFX as it was, 02 its cone opening outward (ours).
+  if (kind == "burningHands" || kind == "poisonBreath") return 2;
   // 01 of a spell with no flipbook-card version: Engine2's own effect, ported.
   if (kind == "fireball" || kind == "bless" || kind == "causticVenom" || kind == "phantasmalForce" ||
       kind == "webOfDreams" || kind == "burningHands" || kind == "poisonBreath" || kind == "cleave" || kind == "sweep")
@@ -77,7 +79,7 @@ int SpellEffects::engine2Look(const std::string& kind) {
   if (kind == "causticVenom") return 1;                              // CausticVenomVFX
   if (kind == "phantasmalForce") return 1;                           // PhantasmalForceVFX
   if (kind == "webOfDreams") return 1;                               // WebOfDreamsVFX
-  if (kind == "burningHands" || kind == "poisonBreath") return 1;    // BurningHandsV2VFX
+  if (kind == "burningHands" || kind == "poisonBreath") return 2;    // BurningHandsV2VFX, its cone opening outward (02)
   if (kind == "cleave") return 1;                                    // CleaveSweepVFX
   if (kind == "sweep") return 1;                                     // VarreduraVFX
   return 0;
@@ -119,7 +121,7 @@ float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& c
   if (kind == "fireball" && look == 1 && !targets.empty()) return Fireball::travelSeconds(engine2Origin(caster), fireballTarget(targets));
   if (kind == "phantasmalForce" && look == 1) return PhantasmalForce::kImpactAt;
   if (kind == "webOfDreams" && look == 1) return WebOfDreams::kShotTravel;
-  if ((kind == "burningHands" || kind == "poisonBreath") && look == 1) return BurningHands::kRelease;
+  if ((kind == "burningHands" || kind == "poisonBreath") && look >= 1) return BurningHands::kRelease;
   if (kind == "causticVenom" && look == 1 && !targets.empty())
     return CausticVenom::kCharge + CausticVenom::travelSeconds(engine2Origin(caster), fireballTarget(targets));
   if (kind == "bless" && look == 1) {
@@ -139,7 +141,32 @@ float SpellEffects::fireballArea(const std::vector<Spot>& targets) {
   return radius;
 }
 
-bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact) {
+bool SpellEffects::casterInFront(int owner, float now) const {
+  return owner >= 0 && std::any_of(casts_.begin(), casts_.end(), [&](const Cast& c) { return c.owner == owner && c.end > now; });
+}
+
+bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact,
+                        int owner) {
+  // When everything this cast adds is over (the newest element or ported effect of each list), for casterInFront.
+  const size_t before[] = {elements_.size(), missiles_.size(), fireballs_.size(), blesses_.size(), venoms_.size(), phantasms_.size(),
+                           webs_.size(),     burns_.size(),    cleaves_.size(),   sweeps_.size()};
+  const bool made = castEffect(kind, look, caster, targets, start, impact);
+  if (made && owner >= 0) {
+    float end = start;
+    for (size_t i = before[0]; i < elements_.size(); ++i) end = std::max(end, elements_[i].end);
+    auto latest = [&](const auto& list, size_t from) {
+      for (size_t i = from; i < list.size(); ++i) end = std::max(end, list[i].end());
+    };
+    latest(missiles_, before[1]), latest(fireballs_, before[2]), latest(blesses_, before[3]), latest(venoms_, before[4]);
+    latest(phantasms_, before[5]), latest(webs_, before[6]), latest(cleaves_, before[8]), latest(sweeps_, before[9]);
+    for (size_t i = before[7]; i < burns_.size(); ++i) end = std::max(end, burns_[i].first.end());
+    std::erase_if(casts_, [&](const Cast& c) { return c.end <= start; });
+    casts_.push_back({owner, end});
+  }
+  return made;
+}
+
+bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact) {
   if (look < 1 || look > looks(kind)) return false;
   impact = std::max(impact, start + 0.05f);
   if (targets.empty() && kind != "piercingThrust" && kind != "doubleStrike") return false;
@@ -158,7 +185,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     std::vector<glm::vec3> cells;
     for (const Spot& s : targets) cells.push_back(s.feet + glm::vec3(0.0f, 0.04f, 0.0f));
     const bool poison = kind == "poisonBreath";
-    burns_.emplace_back(BurningHands(engine2Origin(caster), cells, poison, start), poison);
+    burns_.emplace_back(BurningHands(engine2Origin(caster), cells, poison, start, look), poison);
   } else if (kind == "webOfDreams") {
     // The zone on the aimed hex (WEB_OF_DREAMS.size 1: webZoneRadiusTiles = sqrt 3 + 1); the units in it wrapped. It holds
     // as Engine2's preview does (2.6 s after the cast), then releases.

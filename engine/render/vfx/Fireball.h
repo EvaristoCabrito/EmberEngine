@@ -29,6 +29,7 @@ class Fireball {
   static float travelSeconds(glm::vec3 origin, glm::vec3 target);  // the flight: 1.25-2.5 s
   float impactTime() const { return start_ + travel_; }
   bool done(float now) const { return now - start_ > travel_ + duration_; }
+  float end() const { return start_ + travel_ + duration_; }
 
   void build(float now, const Camera& camera, const VfxFlipbook& fire, VfxFrame& frame, std::vector<VfxLight>& lights);
 

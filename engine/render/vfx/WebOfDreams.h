@@ -27,6 +27,7 @@ class WebOfDreams {
 
   static constexpr float kShotTravel = 0.85f, kFormation = 1.6f, kRelease = 0.9f;
   bool done(float now) const { return now >= releaseAt_ + kRelease; }
+  float end() const { return releaseAt_ + kRelease; }
 
   void build(float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
 

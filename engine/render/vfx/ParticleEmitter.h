@@ -25,6 +25,9 @@ struct FireEmitterSettings {
   bool flow = false;  // a steady jet (flowDirection / flowSpeed / flowSpread)
   glm::vec3 flowDirection{0.0f};
   float flowSpeed = 0.0f, flowSpread = 0.0f;
+  // Ours (Mãos Flamejantes 02): the jet runs in the x-z plane with y up (flowDirection.x / .y = world x / z), so flames
+  // rise up instead of drifting along the board as Engine2's did (its emitter's y was the board's y in Ember's frame).
+  bool groundFlow = false;
 };
 
 class ParticleEmitter {

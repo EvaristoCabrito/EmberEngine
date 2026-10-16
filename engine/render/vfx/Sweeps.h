@@ -23,6 +23,7 @@ class CleaveSweep {
   CleaveSweep(glm::vec3 origin, const std::vector<glm::vec3>& targets, float start);
   static constexpr float kQueued = 0.18f;  // stepSpell: queued 0.18 s into the swing
   bool done(float now) const { return now - start_ > 1.25f + 0.28f; }
+  float end() const { return start_ + 1.25f + 0.28f; }
   void build(float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
 
  private:
@@ -39,6 +40,7 @@ class Varredura {
   // origin / targets: anchors 0.04 above the ground. World space.
   Varredura(glm::vec3 origin, const std::vector<glm::vec3>& targets, float start);
   bool done(float now) const { return now - start_ > CleaveSweep::kQueued + 1.18f; }
+  float end() const { return start_ + CleaveSweep::kQueued + 1.18f; }
   void build(float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
 
  private:

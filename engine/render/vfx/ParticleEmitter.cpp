@@ -30,8 +30,11 @@ void ParticleEmitter::spawn(Particle& p, const FireEmitterSettings& s, float ini
   p.riseSpeed = s.velocity * (0.7f + random() * 0.55f);
   const float flowAngle = s.flow ? std::atan2(s.flowDirection.y, s.flowDirection.x) + (random() - 0.5f) * s.flowSpread : 0.0f;
   const float flowSpeed = s.flow ? s.flowSpeed : 0.0f;
-  p.velocity = {std::cos(angle) * radial + (s.flow ? std::cos(flowAngle) * flowSpeed : 0.0f), p.riseSpeed + (s.flow ? std::sin(flowAngle) * flowSpeed : 0.0f),
-                std::sin(angle) * radial + (s.flow ? s.flowDirection.z : 0.0f) * flowSpeed};
+  if (s.groundFlow)
+    p.velocity = {std::cos(angle) * radial + std::cos(flowAngle) * flowSpeed, p.riseSpeed, std::sin(angle) * radial + std::sin(flowAngle) * flowSpeed};
+  else
+    p.velocity = {std::cos(angle) * radial + (s.flow ? std::cos(flowAngle) * flowSpeed : 0.0f), p.riseSpeed + (s.flow ? std::sin(flowAngle) * flowSpeed : 0.0f),
+                  std::sin(angle) * radial + (s.flow ? s.flowDirection.z : 0.0f) * flowSpeed};
   p.position += p.velocity * p.age;
 }
 

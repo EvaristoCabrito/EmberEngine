@@ -29,6 +29,7 @@ class CausticVenom {
   static float travelSeconds(glm::vec3 origin, glm::vec3 target);
   float impactTime() const { return start_ + kCharge + travel_; }
   bool done(float now) const { return now - start_ >= kCharge + travel_ + kImpact; }
+  float end() const { return start_ + kCharge + travel_ + kImpact; }
 
   // poison: the Poison V2 sheets (main, secondary, particles).
   void build(float now, const Camera& camera, const ElementSpritesV2& poison, VfxFrame& frame, std::vector<VfxLight>& lights);

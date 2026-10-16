@@ -59,7 +59,13 @@ class SpellEffects {
   // A spell or weapon skill (Engine2 kinds) in version `look`: the caster's pose starts at `start`, its first hit
   // lands at `impact`. `targets` are the hexes / units it reaches in the rules' order (Frost: its whole area). False =
   // nothing drawn (OFF, or no such version).
-  bool cast(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
+  // `owner`: who casts it (the stage's unit index, -1 = nobody): while its effect plays, casterInFront(owner, now) is
+  // true and the stage draws that unit's card over the effects (user, 2026-10-16: the caster stays in front of its
+  // own spell).
+  bool cast(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact,
+            int owner = -1);
+  bool casterInFront(int owner, float now) const;
+  bool castEffect(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
   // One fx clip on its own (the Spells menu's loose effects): played once at the spot, placed by what the art is
   // (a pillar stands on the feet, a ring lies around them, a burst sits on the body), with a light of its colour.
   void play(const std::string& clipName, const Spot& at, float start);
@@ -122,6 +128,11 @@ class SpellEffects {
 
   SpriteSystem& sprites_;
   std::vector<Element> elements_;
+  struct Cast {
+    int owner;
+    float end;
+  };
+  std::vector<Cast> casts_;  // who is casting, until when
   // Engine2's ported effects in play (Míssil Mágico 02 = MagicMissileV2VFX) and this frame's draws.
   std::vector<MagicMissileV2> missiles_;
   std::vector<Fireball> fireballs_;  // Bola de Fogo 01 = FireballVFX

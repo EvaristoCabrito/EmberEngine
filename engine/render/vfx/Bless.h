@@ -30,6 +30,7 @@ class Bless {
   // When the wave reaches an ally this far away (Engine2 applies the blessing then).
   static float reachSeconds(float distanceHexes);
   bool done(float now) const { return now - start_ >= kDuration + 0.25f; }
+  float end() const { return start_ + kDuration + 0.25f; }
 
   void build(float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
 

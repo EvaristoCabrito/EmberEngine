@@ -301,8 +301,10 @@ class MapStage final : public Stage {
                                 : Camera::lookAt(eyeOf(cam_), cam_.target, glm::radians(kFov), aspect, kNear);
     lastCamera_ = camera;
     drawList_.clear();
+    frontCards_.clear();
     if (scene_ && sprites_.ready()) buildCards(camera, time);
     renderer.setScene(camera, drawList_);
+    renderer.setFrontCards(frontCards_);
     lights_.clear();
     if (scene_) buildLights(time);
     effectList_.clear();
@@ -1054,7 +1056,10 @@ class MapStage final : public Stage {
       // Tática (Engine2 UnitActor.update with flatTop): flat over its own row's cards by half a row step, no shadow.
       if (flat_) anchor.y = boardTop_ + anchor.z * kFlatRowStep + kFlatRowStep * 0.5f;
       const uint32_t flags = flat_ ? kSpriteLit | kSpriteFlat : kSpriteLit | kSpriteFront | kSpriteCastsShadow;
+      const size_t cardsBefore = drawList_.size();
       addCard(clip, anchor, right, boxW, boxH, {0.0f, -foot, 0.0f}, mirror, frame, flags, nullptr);
+      // A unit whose spell is playing stays in front of it (user, 2026-10-16): its card is drawn again over the effects.
+      if (drawList_.size() > cardsBefore && spellFx_.casterInFront(static_cast<int>(ui), time)) frontCards_.push_back(drawList_.back());
       unitCard_[ui] = {anchor - (flat_ ? glm::vec3(0.0f, 0.0f, -foot) : glm::vec3(0.0f, foot, 0.0f)), boxW, boxH, flat_, true};
     }
     const glm::vec3 eye = camera.position, fwd = camera.forward;
@@ -1857,7 +1862,7 @@ class MapStage final : public Stage {
         x.impact = now_ + delay;
         x.end = std::max(x.end, x.impact + 0.8f + kExchangeGap);
       }
-      spellFx_.cast(s.kind, look, casterSpot, spots, now_, x.impact);
+      spellFx_.cast(s.kind, look, casterSpot, spots, now_, x.impact, striker);
     }
   }
 
@@ -1930,7 +1935,7 @@ class MapStage final : public Stage {
         spots.push_back({{p.x, groundAt(p.x, p.z), p.z}, {p.x, groundAt(p.x, p.z) + 0.9f, p.z}});
       }
     }
-    spellFx_.cast(kind, look, unitSpot(hero), spots, start, start + 0.6f);
+    spellFx_.cast(kind, look, unitSpot(hero), spots, start, start + 0.6f, static_cast<int>(hero));
     if (weaponStrikeKind(kind)) spellFx_.strike(spots.front(), start + 0.6f, false);
   }
   static bool weaponStrikeKind(const std::string& kind) {
@@ -2972,6 +2977,7 @@ class MapStage final : public Stage {
   std::unordered_map<std::string, MeshId> modelMeshes_;
   std::unordered_map<const std::vector<int>*, size_t> periods_;
   std::vector<SpriteInstance> drawList_;
+  std::vector<SpriteInstance> frontCards_;  // casters drawn again over their own spell (Renderer::setFrontCards)
   std::vector<LocalLight> lights_;
   bool modelsPlaced_ = false;
   e2::EdgeStyle placedLook_ = e2::EdgeStyle::Smooth;

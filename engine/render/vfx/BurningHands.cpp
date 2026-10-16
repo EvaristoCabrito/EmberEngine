@@ -17,8 +17,8 @@ constexpr int kLights = 5;
 
 }  // namespace
 
-BurningHands::BurningHands(glm::vec3 origin, const std::vector<glm::vec3>& cells, bool poison, float start)
-    : origin_(vfxToEmber(origin)), start_(start), poison_(poison) {
+BurningHands::BurningHands(glm::vec3 origin, const std::vector<glm::vec3>& cells, bool poison, float start, int version)
+    : origin_(vfxToEmber(origin)), start_(start), poison_(poison), version_(version) {
   // BattleSpells3D: the cells' average sets the direction and length; the widest cell sideways sets the width.
   glm::vec3 average{0.0f};
   for (const glm::vec3& c : cells) average += vfxToEmber(c);
@@ -54,6 +54,15 @@ BurningHands::BurningHands(glm::vec3 origin, const std::vector<glm::vec3>& cells
   const uint32_t baseSeed = static_cast<uint32_t>((static_cast<uint64_t>(kTongueCount) * 2654435761ull + 18ull * 2246822519ull) & 0xFFFFFFFFull);
   const uint32_t seed = baseSeed ^ 0x85ebca6bu ^ (1u * 0x27d4eb2fu);
   emitter_.setSeed(seed ? seed : 1u);
+  if (version_ == 2) {
+    // The cone opening outward: a wide jet in the board's plane, flames growing as they travel, fading late.
+    settings_.groundFlow = true;
+    settings_.flowDirection = {direction_.x, -direction_.y, 0.0f};  // Ember (x, y) on the board = world (x, -z)
+    settings_.flowSpread = std::max(0.9f, settings_.flowSpread);
+    settings_.velocity = base.velocity * 0.3f;  // a gentle rise, not a climb
+    emitter_.curves.size = [](float t) { return 0.3f + 1.25f * t; };
+    emitter_.curves.opacity = [](float t) { return std::min(1.0f, t * 6.0f) * std::pow(1.0f - t, 1.3f); };
+  }
   if (poison_) {
     emitter_.curves.color = [](float t) { return glm::vec3(0.28f + t * 0.12f, 0.7f - t * 0.2f, 0.12f); };
     emitter_.curves.emissive = [](float) { return 0.35f; };
@@ -81,8 +90,10 @@ void BurningHands::build(float now, const Camera&, const VfxFlipbook& sheet, Vfx
   const glm::mat4 group = vfxEmberToWorld() * glm::translate(glm::mat4(1.0f), origin_);
   const glm::vec3 sight = vfxFromEmber(origin_);
   // The emitter's mesh: 0.2 above the hands, scale 1; NormalBlending, no depth test (Engine2's particle material).
-  drawParticleEmitter(emitter_, settings_, group * glm::translate(glm::mat4(1.0f), {0.0f, 0.0f, 0.2f}), sheet, settings_.coreIntensity, sight,
-                      VfxBlend::Alpha, false, frame);
+  // Version 2 simulates in the world frame (y up), at the hands 0.2 above the caster's point.
+  const glm::mat4 model = version_ == 2 ? glm::translate(glm::mat4(1.0f), vfxFromEmber(origin_) + glm::vec3(0.0f, 0.2f, 0.0f))
+                                        : group * glm::translate(glm::mat4(1.0f), {0.0f, 0.0f, 0.2f});
+  drawParticleEmitter(emitter_, settings_, model, sheet, settings_.coreIntensity, sight, VfxBlend::Alpha, false, frame);
 
   // updateWorldLights: two at the hands, three along the advancing front, flickering, fading after the spray.
   const float fadeOut = 1.0f - three::smoothstep(t, kSpray, kFinish);

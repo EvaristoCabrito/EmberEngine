@@ -40,6 +40,7 @@ class MagicMissileV2 {
   static float impactDelay(glm::vec3 origin, glm::vec3 target);
   float impactTime() const { return start_ + impactAt_; }
   bool done(float now) const { return now - start_ > impactAt_ + kImpactLife; }
+  float end() const { return start_ + impactAt_ + kImpactLife; }
 
   void build(float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
 
