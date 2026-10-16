@@ -1,11 +1,11 @@
 @echo off
-rem JOGAR.bat - dois cliques e o jogo abre. Nao compila nada: o Sandbox.exe ja vem pronto em jogo\.
-rem A arte (20 GB) vem da sua pasta C:\EmberEngine\build; nada nela e mudado.
+rem JOGAR.bat - dois cliques e o jogo abre: sempre o ultimo build local (build\release\bin\Sandbox.exe),
+rem o mesmo que o Claude compila depois de cada mudanca. A arte vem de C:\EmberEngine\build.
 setlocal EnableExtensions
 set "HERE=%~dp0"
 if "%HERE:~-1%"=="\" set "HERE=%HERE:~0,-1%"
 set "ART=C:\EmberEngine\build"
-set "EXE=%HERE%\jogo\Sandbox.exe"
+set "EXE=C:\EmberEngine\build\release\bin\Sandbox.exe"
 cd /d "%HERE%"
 
 if not exist "%EXE%" (

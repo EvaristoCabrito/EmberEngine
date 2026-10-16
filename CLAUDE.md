@@ -73,8 +73,9 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
 ## Build and run (Windows, MSVC 2022 Build Tools, Vulkan SDK 1.4.363.0, CMake + Ninja)
 
 **Work is local on this PC again (user, 2026-10-15 night: "estamos trabalhando local agora, esquece o jogar").**
-Build with `build.bat` / MSVC here and open `build\release\bin\Sandbox.exe` for the user (rule above). JOGAR.bat and
-`jogo/` (the cloud zig build, `tools/cross/README.md`) are no longer maintained: do not rebuild `jogo/` or push for it.
+Build with `build.bat` / MSVC here. **The user still double-clicks `JOGAR.bat`; it now runs
+`build\release\bin\Sandbox.exe`, so every release build reaches them by itself** ("tem que atualizar sozinho"):
+always finish a change with a release build. `jogo/` (the cloud zig build) is no longer used.
 The game opens Engine2's **title screen** with `--title --ground build/ground/ground-v2.pak --sprites
 build/sprites/battle.pak --meshes build/meshes/props.pak --scenes build/engine2-scenes --maps C:/Engine2/maps/ember
 --heroes build/engine2-scenes/roster.json`.
