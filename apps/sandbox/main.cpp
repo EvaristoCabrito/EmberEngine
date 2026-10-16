@@ -122,10 +122,15 @@ struct Options {
   bool tatica = false;
   bool spellsMenuOpen = false;
   float measureSeconds = 0.0f;
+  // --capture-sequence FROM:EVERY:COUNT (with --capture <prefix>): inside the one run, from frame FROM every EVERY
+  // frames, COUNT frames are saved as <prefix>-NNN.png (temporal checks: ghosting, shimmer, history; with --measure
+  // the camera turns while they are taken). The final --capture still happens.
+  int sequenceFrom = -1, sequenceEvery = 1, sequenceCount = 0;
   int fog = -1;
   bool scout = false, noUi = false, volume = true;
   bool windowed = false;  // --windowed or --size: a window instead of the whole screen
   int fogLook = 3;
+  int atmos = 2;  // --atmos N: Atmosfera volumétrica v1 at the start (0 OFF, 1 cinema, 2 alta, 3 desempenho)
   int lighting = 3;
   float sceneTime = -1.0f;
   std::string moonPhase;
@@ -198,6 +203,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--scout") o.scout = true;
     else if (arg == "--volume" && hasValue) o.volume = std::atoi(argv[++i]) != 0;
     else if (arg == "--fog-look" && hasValue) o.fogLook = std::atoi(argv[++i]);
+    else if (arg == "--atmos" && hasValue) o.atmos = std::atoi(argv[++i]);
     else if (arg == "--lighting" && hasValue) o.lighting = std::atoi(argv[++i]);
     else if (arg == "--scene-time" && hasValue) o.sceneTime = static_cast<float>(std::atof(argv[++i]));
     else if (arg == "--moon-phase" && hasValue) o.moonPhase = argv[++i];
@@ -224,6 +230,14 @@ Options parse(int argc, char** argv) {
     else if (arg == "--engine2" && hasValue) o.engine2 = argv[++i];
     else if (arg == "--content" && hasValue) o.battleContent = argv[++i];
     else if (arg == "--unpaced") o.unpaced = true;
+    else if (arg == "--capture-sequence" && hasValue) {
+      const std::string v = argv[++i];
+      const size_t a = v.find(':'), b = a == std::string::npos ? a : v.find(':', a + 1);
+      if (a == std::string::npos || b == std::string::npos) fatal("--capture-sequence FROM:EVERY:COUNT");
+      o.sequenceFrom = std::atoi(v.c_str());
+      o.sequenceEvery = std::max(1, std::atoi(v.c_str() + a + 1));
+      o.sequenceCount = std::atoi(v.c_str() + b + 1);
+    }
     else if (arg == "--compare" && i + 5 < argc) o.compare.assign(argv + i + 1, argv + i + 6), i += 5;
     else if (arg == "--cost-split" && hasValue) o.costSplit = static_cast<uint32_t>(std::atoi(argv[++i]));
     else if (arg == "--grid" && hasValue) o.meshGrid = static_cast<uint32_t>(std::max(1, std::atoi(argv[++i])));
@@ -491,6 +505,7 @@ MapStageOptions mapOptions(const Options& o) {
     m.scout = o.scout;
     m.volume = o.volume;
     m.fogLook = o.fogLook;
+    m.atmos = o.atmos;
     m.lighting = o.lighting;
     m.sceneTime = o.sceneTime;
     m.moonPhase = o.moonPhase;
@@ -654,9 +669,19 @@ int runCapture(const Options& o) {
     if (services.streamTest || stage) {
       // Run until the test ends, plus a few frames so the overlay shows final numbers.
       // The sprite parade runs at 60 Hz like the game (streaming per second depends on the frame rate).
-      int after = 0;
+      int after = 0, frameNo = 0, taken = 0;
       auto next = Clock::now();
       while (after < kFramesInFlight + 2) {
+        const bool inSequence = o.sequenceCount > 0 && taken < o.sequenceCount && frameNo >= o.sequenceFrom &&
+                                (frameNo - o.sequenceFrom) % o.sequenceEvery == 0;
+        ++frameNo;
+        if (inSequence) {
+          const std::string path = std::format("{}-{:03}.png", o.capture.ends_with(".png") ? o.capture.substr(0, o.capture.size() - 4) : o.capture, taken++);
+          services.frame(ui, renderer, stage.get(), size, 1.0f / 60.0f, [&] {
+            renderer.captureFrame(o.time, path);
+            return true;
+          });
+        } else
         services.frame(ui, renderer, stage.get(), size, 1.0f / 60.0f, [&] { return renderer.renderFrame(o.time); });
         if (testDone()) ++after;
         if (stage && !o.unpaced) {

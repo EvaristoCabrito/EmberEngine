@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cmath>
+#include <memory>
 #include <span>
 #include <string>
 #include <vector>
@@ -14,6 +15,7 @@
 #include "render/VfxDraw.h"
 #include "render/MeshScene.h"
 #include "render/SpriteDraw.h"
+#include "render/Volumetrics.h"
 #include "rhi/Bindless.h"
 #include "rhi/GpuTimer.h"
 #include "rhi/Image.h"
@@ -232,6 +234,9 @@ class Renderer {
     FogScene scene;
   };
   void setFogBank(const FogBank& bank) { fogBank_ = bank; }
+  // Atmosfera volumétrica v1 (render/Volumetrics.h, docs/ATMOSPHERE.md): the visible air as a lit 3D medium. Its own
+  // module; when enabled it owns the volume every surface reads (the old haze above stays off).
+  Volumetrics& volumetrics() { return *volumetrics_; }
   // Half the side of the square ground plane under the scene (metres, centred on the origin).
   void setGroundExtent(float halfExtent) { groundHalfExtent_ = halfExtent; }
 
@@ -414,6 +419,9 @@ class Renderer {
   std::vector<SpriteInstance> frontCards_;  // stored after sprites_ in the frame's sprite buffer
   VkSemaphore waitTimeline_ = VK_NULL_HANDLE;
   uint64_t waitValue_ = 0;
+  // Atmosfera volumétrica v1 (last: it releases its bindless slots before the tables go).
+  std::unique_ptr<Volumetrics> volumetrics_;
+  bool volumetricsThisFrame_ = false;
 };
 
 }  // namespace ember

@@ -37,6 +37,8 @@ add_library(EmberEngine STATIC
   world/Board.cpp
   world/FogOfWar.cpp
   render/FogLooks.cpp
+  render/Volumetrics.cpp
+  render/Volumetrics.cpp
   world/GroundMesh.cpp
   world/SceneData.cpp
   world/SceneBuilder.cpp

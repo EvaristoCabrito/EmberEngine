@@ -9,6 +9,7 @@
 
 #include <chrono>
 #include <cstring>
+#include <string_view>
 
 #include "render/DebugUi.h"
 #include "rhi/Pipeline.h"
@@ -183,7 +184,8 @@ struct MeshFrame {
   float volumeNear;
   float volumeFar;
   uint64_t atmosphere;  // AtmosphereFrame (device address); 0 = the hemisphere, no sky, no aerial perspective
-  uint32_t pad10[2];
+  uint32_t volumeSlices;  // slices of `volume` (kFroxelZ for volume.hlsl; Volumetrics' grid when it owns the volume)
+  uint32_t volumeFlags;   // scene.hlsli kVolume*: what else reads the volume (0 for volume.hlsl)
 };
 static_assert(sizeof(MeshFrame) == 672 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384 &&
               offsetof(MeshFrame, shadowMatrix) == 480);
@@ -332,6 +334,8 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
     frame.cloudFrame = createDeviceBuffer(context, kMaxFogLookFrameBytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     frame.atmosphereFrame = createDeviceBuffer(context, sizeof(AtmosphereFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
   }
+  // Atmosfera volumétrica v1: integration point 1 of 3 (docs/ATMOSPHERE.md §4).
+  volumetrics_ = std::make_unique<Volumetrics>(context, bindless_);
   // The atmosphere's tables (GENERAL layout: written as storage, read as textures) and its SH ambient.
   {
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -684,6 +688,7 @@ Renderer::~Renderer() {
   destroyImage(context_, volumeIntegrated_);
   if (fogMaskIndex_ != kNoIndex) bindless_.removeSampledImage(fogMaskIndex_);
   destroyImage(context_, fogMask_);
+  volumetrics_.reset();
 }
 
 void Renderer::createTargets(VkExtent2D size) {
@@ -767,6 +772,8 @@ Renderer::Frame& Renderer::beginFrame() {
   VK_CHECK(vkWaitForFences(context_.device, 1, &frame.done, VK_TRUE, UINT64_MAX));
   lastWaitMs_ = millisecondsSince(start);
   gpuTimer_.beginFrame(frameIndex_);
+  for (const GpuTimer::Result& r : gpuTimer_.results())
+    if (std::string_view(r.name) == "volumetrics") volumetrics_->reportGpuMilliseconds(r.milliseconds);
   if (frame.countersPending) {
     uint32_t c[12];
     VK_CHECK(vmaInvalidateAllocation(context_.allocator, frame.meshCounters.allocation, 0, VK_WHOLE_SIZE));
@@ -913,12 +920,25 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
     f.fogSampler = linearClampIndex_;
     f.fogRect = {fog_.x0, fog_.z0, 1.0f / fog_.worldWidth, 1.0f / fog_.worldDepth};
   }
+  // Atmosfera volumétrica v1 (render/Volumetrics.h): when on, it owns the volume every surface reads; the old haze
+  // (volume.hlsl) then stays off. Integration point 2 of 3 (docs/ATMOSPHERE.md §4).
+  Volumetrics::FrameOut vo;
+  volumetricsThisFrame_ = hasScene_ && volumetrics_->prepare(camera_, time, cmd, frameIndex_, vo);
   // Volumetric fog: this frame's froxel volume (written below), last frame's for the history.
-  volumeThisFrame_ = volumetric_.enabled;
+  volumeThisFrame_ = volumetric_.enabled && !volumetricsThisFrame_;
   f.volume = kNoTextureIndex;
   f.volumeSampler = linearClampIndex_;
   f.volumeNear = volumetric_.nearDepth;
   f.volumeFar = volumetric_.farDepth;
+  f.volumeSlices = kFroxelZ;
+  f.volumeFlags = 0;
+  if (volumetricsThisFrame_) {
+    f.volume = vo.integrated;
+    f.volumeNear = vo.near;
+    f.volumeFar = vo.far;
+    f.volumeSlices = vo.slices;
+    f.volumeFlags = 3;  // kVolumeEffects | kVolumeBackground
+  }
   // The atmosphere: this frame's record (the tables are rebuilt from it in record()).
   atmoThisFrame_ = lighting_.atmosphere;
   f.atmosphere = 0;
@@ -1482,6 +1502,14 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
                 VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                 VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
     gpuTimer_.end(cmd, cardScope);
+  }
+
+  // --- Atmosfera volumétrica v1: its froxels lit and integrated (shadows, clusters and the fog mask are ready) ---------
+  // Integration point 3 of 3 (docs/ATMOSPHERE.md §4).
+  if (hasScene_ && volumetricsThisFrame_) {
+    const uint32_t scope = gpuTimer_.begin(cmd, "volumetrics");
+    volumetrics_->record(cmd, bufferAddress(context_, frame.meshFrame), frameIndex_);
+    gpuTimer_.end(cmd, scope);
   }
 
   // --- Volumetric fog: froxels lit (sun shadows, clusters and the fog mask are ready), then integrated ---------

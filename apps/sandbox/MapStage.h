@@ -124,6 +124,8 @@ struct MapStageOptions {
   bool volume = true;
   bool airParticles = true;  // the map's wisps and dust motes (Dev Controls "Efeitos atmosféricos" off: none)
   int fogLook = 3;  // the fog look shown first (render/FogLooks.h numbers)
+  // Atmosfera volumétrica v1: the panel's "Atmosfera" at the start (0 OFF, 1 cinema, 2 alta, 3 desempenho; --atmos N).
+  int atmos = 2;
   // Lighting (also in the panel): 0 the old prototype day (every capture before 2026-10-15), 1 Engine2's 3D presets for
   // the map's time of day (the floor), 2 physical sky with Engine2's strengths, 3 real (default): lux, physical camera.
   int lighting = 3;
@@ -198,6 +200,7 @@ class MapStage final : public Stage {
       if (options.fogLook == std::atoi(fogLooks()[i].number)) fogLook_ = i;
     pitch_ += glm::radians(options.tiltDegrees);
     flat_ = options.tatica;
+    atmosChoice_ = std::clamp(options.atmos, 0, 3);
     spellsMenu_.load("content/fx/spell-looks.json", "content/fx.sprites.json");
     layers_ = options.layers;
     data_ = e2::BoardData::load(options.boardData);
@@ -222,6 +225,18 @@ class MapStage final : public Stage {
     avgY /= static_cast<double>(board_->cells().size());
     target_ = {static_cast<float>((b.x0 + b.x1) / 2), static_cast<float>(avgY), static_cast<float>((b.z0 + b.z1) / 2)};
     meanGround_ = static_cast<float>(avgY);
+    // Atmosfera volumétrica v1: the regional profiles; the map's own by its key (the first profile naming a piece of
+    // it), else the default.
+    atmosProfiles_ = Volumetrics::loadProfiles("content/atmosphere/v1/profiles.json");
+    if (atmosProfiles_.empty()) atmosProfiles_.push_back(Volumetrics::Profile{});
+    for (size_t i = 0; i < atmosProfiles_.size() && climaChoice_ == 0; ++i)
+      for (const std::string& piece : atmosProfiles_[i].maps)
+        if (!piece.empty() && board_->draft().id.find(piece) != std::string::npos) {
+          climaChoice_ = static_cast<int>(i);
+          break;
+        }
+    renderer_.volumetrics().setProfile(atmosProfiles_[static_cast<size_t>(climaChoice_)], 0.0f);
+    renderer_.volumetrics().invalidateHistory();
     boardWidth_ = static_cast<float>(b.x1 - b.x0);
     boardDepth_ = static_cast<float>(b.z1 - b.z0);
     // The sun's shadow covers the board's bounding sphere (ground from y = 0 to its highest cell).
@@ -405,6 +420,17 @@ class MapStage final : public Stage {
     // The froxel fog is the air's haze in sight; the fog of war's bank is drawn by the fog bank pass.
     volume.boundaryDensity = 0.0f;
     renderer.setVolumetricFog(volume);
+    // Atmosfera volumétrica v1: the panel's choice (Dev Controls' "FX atmosféricos" off = off), the region's profile
+    // reached over 1.5 s, Tática's readability scale.
+    {
+      Volumetrics& atmos = renderer.volumetrics();
+      atmos.setEnabled(options_.volume && atmosChoice_ > 0);
+      static const Volumetrics::Quality kQualities[4] = {Volumetrics::Quality::High, Volumetrics::Quality::Cinematic, Volumetrics::Quality::High,
+                                                          Volumetrics::Quality::Performance};
+      atmos.setQuality(kQualities[std::clamp(atmosChoice_, 0, 3)]);
+      atmos.setProfile(atmosProfiles_[static_cast<size_t>(std::clamp<int>(climaChoice_, 0, static_cast<int>(atmosProfiles_.size()) - 1))], 1.5f);
+      atmos.setScene(meanGround_, flat_);
+    }
     // The fog of war's mist: the numbered look on show (render/FogLooks.h; chosen in the Map panel).
     Renderer::FogBank bank;
     bank.enabled = options_.volume && fog_.has_value() && !noFog_;
@@ -744,6 +770,7 @@ class MapStage final : public Stage {
   void setFlat(bool on) {
     if (on == flat_) return;
     flat_ = on;
+    renderer_.volumetrics().invalidateHistory();  // a camera cut: the fog's history would smear across it
     if (on) return;
     const float twoPi = 2.0f * std::numbers::pi_v<float>;
     yaw_ = homeYaw_ + twoPi * std::round((yaw_ - homeYaw_) / twoPi);
@@ -801,6 +828,13 @@ class MapStage final : public Stage {
     {
       int bloom = bloomOn_ ? 1 : 0;
       if (dropdown("Brilho", bloom, 2, [](int i) { return std::string(i == 0 ? "OFF" : "Engine2"); })) bloomOn_ = bloom == 1;
+    }
+    if (options_.volume) {
+      // Atmosfera volumétrica v1 (docs/ATMOSPHERE.md): OFF, or its quality; then the region's profile.
+      static const char* kAtmos[4] = {"OFF", "cinema", "alta", "desempenho"};
+      dropdown("Atmosfera", atmosChoice_, 4, [](int i) { return std::string(kAtmos[i]); });
+      if (atmosChoice_ > 0 && atmosProfiles_.size() > 1)
+        dropdown("Clima", climaChoice_, static_cast<int>(atmosProfiles_.size()), [this](int i) { return atmosProfiles_[static_cast<size_t>(i)].label; });
     }
     {
       static const char* kLayers[4] = {"sol / lua", "sombras", "luz do céu", "tochas e fogo"};
@@ -3628,6 +3662,10 @@ class MapStage final : public Stage {
   int poseChoice_ = 0;
   int background_ = 0;  // the panel's "Fundo": 0 the map's painted backdrop, 1 the sky, 2 black
   int water3dLook_ = 1;  // the panel's "Água 3D": 0 OFF, 1 rio (the board's river material), 2 leito (Engine2's ThreeWater)
+  // Atmosfera volumétrica v1 (render/Volumetrics.h, docs/ATMOSPHERE.md): the panel's "Atmosfera" (0 OFF, 1 cinema,
+  // 2 alta, 3 desempenho) and "Clima" (index into atmosProfiles_; the map's own profile by its key at first).
+  int atmosChoice_ = 2, climaChoice_ = 0;
+  std::vector<Volumetrics::Profile> atmosProfiles_;
   std::unordered_map<std::string, MeshId> modelMeshes_;
   std::unordered_map<const std::vector<int>*, size_t> periods_;
   std::vector<SpriteInstance> drawList_;

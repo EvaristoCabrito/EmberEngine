@@ -508,13 +508,14 @@ float4 PSMain(VSOut i) : SV_Target0 {
     const Sight sight = tacticalSight(f, d.sightAt);
     c = shadeInSight(f, s, sight) + d.params1.rgb * d.params1.a * push.brightness;
     const float opacity = saturate(d.color.a);
-    return float4(c * i.sight * opacity, opacity);
+    return float4(applyVolume(f, c, i.world) * i.sight * opacity, opacity);
   } else {
     // MeshBasicMaterial / LineBasicMaterial
     c = d.color.rgb;
     a = d.color.a;
   }
-  c *= push.brightness * i.sight;
+  // Atmosfera volumétrica v1: the effect's light crosses the fog (1 when the volume does not ask for it).
+  c *= push.brightness * i.sight * volumeTransmittance(loadFrame(push.frame), i.world);
   a = max(a, 0.0);
   if (d.flags & 1u) return float4(c * a, 0.0);  // AdditiveBlending: src x srcAlpha + dst
   return float4(c * a, a);

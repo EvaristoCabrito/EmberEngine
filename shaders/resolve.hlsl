@@ -22,6 +22,7 @@ static const uint kBlackBackground = 0xFFFFFFFEu;
 // What shows where nothing was drawn: the painted backdrop (fitted to cover the screen, like a photo behind a
 // stage), black, the sky, or the clear colour.
 float4 backgroundAt(MeshFrame f, uint2 pixel) {
+  if (f.debugView >= 5u && f.debugView <= 21u) return float4(volumeOverBackground(f, 0.0, pixel), 1.0);  // TEMP diagnostic
   if (f.debugView != 0 || push.background == kBlackBackground) return float4(0.0, 0.0, 0.0, 1.0);
   if (push.background != kNoTexture) {
     uint w, h;
@@ -30,9 +31,10 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
     const float screenAspect = f.screenSize.x / f.screenSize.y, imageAspect = float(w) / float(h);
     if (screenAspect > imageAspect) uv.y = 0.5 + (uv.y - 0.5) * imageAspect / screenAspect;
     else uv.x = 0.5 + (uv.x - 0.5) * screenAspect / imageAspect;
-    return float4(gTextures[NonUniformResourceIndex(push.background)].SampleLevel(gSamplers[f.materialSampler], uv, 0).rgb, 1.0);
+    // Atmosfera volumétrica v1: the fog lies between the camera and the painting (nothing when it is off).
+    return float4(volumeOverBackground(f, gTextures[NonUniformResourceIndex(push.background)].SampleLevel(gSamplers[f.materialSampler], uv, 0).rgb, pixel), 1.0);
   }
-  if (f.atmosphere != 0) return float4(skyBackground(f, pixel), 1.0);
+  if (f.atmosphere != 0) return float4(volumeOverBackground(f, skyBackground(f, pixel), pixel), 1.0);
   return push.clearColor;
 }
 

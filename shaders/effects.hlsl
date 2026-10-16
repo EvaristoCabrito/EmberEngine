@@ -94,7 +94,8 @@ float4 PSMain(VSOut i) : SV_Target0 {
     surface.receivesCardShadow = 0.0;
     const Sight sight = tacticalSight(f, e.sightAt);
     const float3 lit = min(shadeInSight(f, surface, sight), albedo * 2.0 * f.litCap);
-    return float4(lit * c.a * fade, c.a * fade * e.opacity);
+    return float4(applyVolume(f, lit, i.world) * c.a * fade, c.a * fade * e.opacity);
   }
-  return float4(c.rgb * e.color * push.brightness * fade, c.a * fade * e.opacity);
+  // Atmosfera volumétrica v1: the effect's light crosses the fog (1 when the volume does not ask for it).
+  return float4(c.rgb * e.color * push.brightness * fade * volumeTransmittance(f, i.world), c.a * fade * e.opacity);
 }

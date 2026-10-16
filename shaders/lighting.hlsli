@@ -243,9 +243,62 @@ float3 applyVolume(MeshFrame f, float3 color, float3 position) {
   if (f.volume == kNoTexture) return color;
   const float w = froxelSlice(f, c.w);
   // Each slice holds the fog up to its far side; in front of the first, it thins to none at the eye.
-  const float3 uvw = float3(c.xy / c.w * 0.5 + 0.5, w - 0.5 / float(kFroxelZ));
+  const float slices = float(max(f.volumeSlices, 1u));
+  const float3 uvw = float3(c.xy / c.w * 0.5 + 0.5, w - 0.5 / slices);
   float4 fog = gTextures3D[NonUniformResourceIndex(f.volume)].SampleLevel(gSamplers[f.volumeSampler], saturate(uvw), 0);
-  fog = lerp(float4(0.0, 0.0, 0.0, 1.0), fog, saturate(w * float(kFroxelZ) + 0.5));
+  fog = lerp(float4(0.0, 0.0, 0.0, 1.0), fog, saturate(w * slices + 0.5));
+  return color * fog.a + fog.rgb;
+}
+
+// Atmosfera volumétrica v1 (volumeFlags bit 1): the fog's transmittance alone between the camera and a point, for
+// light that adds itself over the scene (effects): it crosses the fog but brings no in-scatter of its own. 1 when
+// no volume owns the frame.
+float volumeTransmittance(MeshFrame f, float3 position) {
+  if (f.volume == kNoTexture || (f.volumeFlags & 1u) == 0) return 1.0;
+  const float4 c = mul(float4(position, 1.0), f.viewProjection);
+  if (c.w <= 0.0) return 1.0;
+  const float w = froxelSlice(f, c.w);
+  const float slices = float(max(f.volumeSlices, 1u));
+  const float3 uvw = float3(c.xy / c.w * 0.5 + 0.5, w - 0.5 / slices);
+  const float t = gTextures3D[NonUniformResourceIndex(f.volume)].SampleLevel(gSamplers[f.volumeSampler], saturate(uvw), 0).a;
+  return lerp(1.0, t, saturate(w * slices + 0.5));
+}
+// (volumeFlags bit 2) The fog all the way out, over what shows behind everything (the sky, a painted backdrop).
+// TEMP diagnostic (debug views 15..19): the integrated volume at a screen uv, slice 5 / 90 / 93 / 97 / 99.5 %:
+// (T, scatter x4, 1 if any component is NaN or inf (by bits: fast-math folds isnan)).
+float3 debugVolume(MeshFrame f, float2 uv) {
+  if (f.volume == kNoTexture) return float3(0.0, 0.0, 1.0);
+  const float ws[5] = {0.05, 0.9, 0.93, 0.97, 0.995};
+  float w = ws[clamp(f.debugView, 15u, 19u) - 15u];
+  if (f.debugView == 20u) w = 1.0 - 0.5 / float(max(f.volumeSlices, 1u));
+  if (f.debugView == 21u) return float3(float(f.volumeSlices) / 128.0, 1.0 - 0.5 / float(max(f.volumeSlices, 1u)), 0.0);
+  const float4 s = gTextures3D[NonUniformResourceIndex(f.volume)].SampleLevel(gSamplers[f.volumeSampler], float3(uv, w), 0);
+  const uint4 bits = asuint(s) & 0x7f800000u;
+  const bool bad = any(bits == 0x7f800000u);
+  return float3(s.a, dot(s.rgb, 0.333) * 4.0, bad ? 1.0 : 0.0);
+}
+float3 volumeOverBackground(MeshFrame f, float3 color, uint2 pixel) {
+  if (f.debugView >= 15u && f.debugView <= 21u) return debugVolume(f, (float2(pixel) + 0.5) / f.screenSize);
+  if (f.debugView == 13u) return float3(1.0, 0.0, 1.0);  // TEMP diagnostic: is this reached at all
+  if (f.debugView == 14u) return float3((f.volumeFlags & 1u) ? 1.0 : 0.0, (f.volumeFlags & 2u) ? 1.0 : 0.0, f.volume == kNoTexture ? 1.0 : 0.0);
+  if (f.volume == kNoTexture || (f.volumeFlags & 2u) == 0) return color;
+  const float3 uvw = float3((float2(pixel) + 0.5) / f.screenSize, 1.0 - 0.5 / float(max(f.volumeSlices, 1u)));
+  Texture3D volume = gTextures3D[NonUniformResourceIndex(f.volume)];
+  const float4 fog = volume.SampleLevel(gSamplers[f.volumeSampler], uvw, 0);
+  if (f.debugView == 5u) return fog.rgb * 4.0;        // TEMP diagnostic: the far slice's in-scatter
+  if (f.debugView == 6u) return fog.aaa;              // TEMP diagnostic: the far slice's transmittance
+  if (f.debugView == 7u) return float3(uvw.xy, 0.0);  // TEMP diagnostic: the lookup
+  if (f.debugView >= 8u && f.debugView <= 10u) {      // TEMP diagnostic: slices at 25 / 50 / 75 %: (nan?, T, scatter luminance x4)
+    const float4 s = gTextures3D[NonUniformResourceIndex(f.volume)].SampleLevel(gSamplers[f.volumeSampler], float3(uvw.xy, 0.25 * float(f.debugView - 7u)), 0);
+    return float3(any(isnan(s)) ? 1.0 : 0.0, s.a, dot(s.rgb, 0.333) * 4.0);
+  }
+  if (f.debugView == 11u) return float3(any(isnan(fog)) ? 1.0 : 0.0, any(isinf(fog)) ? 1.0 : 0.0, 0.0);
+  if (f.debugView == 12u) {  // TEMP diagnostic: the first slice (T, scatter), and the far froxel's clip w / 100
+    const float4 s = gTextures3D[NonUniformResourceIndex(f.volume)].SampleLevel(gSamplers[f.volumeSampler], float3(uvw.xy, 0.5 / float(max(f.volumeSlices, 1u))), 0);
+    const AtmosphereFrame a = loadAtmosphere(f);
+    const float4 h = mul(float4(uvw.xy * 2.0 - 1.0, f.zNear / f.volumeFar, 1.0), a.inverseViewProjection);
+    return float3(s.a, dot(s.rgb, 0.333) * 4.0, h.w / 100.0);
+  }
   return color * fog.a + fog.rgb;
 }
 
@@ -259,6 +312,10 @@ float3 fogStateColor(float alpha) {
 }
 
 float3 shade(MeshFrame f, Surface s) {
+  if (f.debugView >= 15u && f.debugView <= 19u) {  // TEMP diagnostic
+    const float4 c = mul(float4(s.position, 1.0), f.viewProjection);
+    return debugVolume(f, c.xy / c.w * 0.5 + 0.5);
+  }
   const Sight sight = tacticalSight(f, s.sightAt);
   if (f.debugView == kDebugFog) return float3(1.0 - sight.color, sight.local, 1.0);
   if (f.debugView == kDebugFogStates) return fogStateColor(fogAlpha(f, s.sightAt));

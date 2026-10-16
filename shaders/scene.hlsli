@@ -162,8 +162,14 @@ struct MeshFrame {
   float volumeFar;           // ... and of the last
   // The atmosphere (atmosphere.hlsli): sky, ambient light, aerial perspective. 0 = none (the hemisphere).
   uint64_t atmosphere;       // AtmosphereFrame
-  uint2 pad10;
+  // Which volume `volume` is (Atmosfera volumétrica v1, docs/ATMOSPHERE.md): its slice count (kFroxelZ for
+  // volume.hlsl), and what else reads it: kVolumeEffects additive effects take its transmittance, kVolumeBackground
+  // the sky / backdrop take its last slice (both 0 for volume.hlsl, so the old haze draws as it always did).
+  uint volumeSlices;
+  uint volumeFlags;
 };
+static const uint kVolumeEffects = 1u;
+static const uint kVolumeBackground = 2u;
 
 // Matches ember::AtmosphereFrame (render/Atmosphere.h). 240 bytes.
 struct AtmosphereFrame {
