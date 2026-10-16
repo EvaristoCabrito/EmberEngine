@@ -61,6 +61,7 @@
 #include "core/Jobs.h"
 #include "core/Log.h"
 #include "render/BoardGround.h"
+#include "render/DebugUi.h"
 #include "render/FogLooks.h"
 #include "render/Renderer.h"
 #include "rhi/UploadQueue.h"
@@ -552,19 +553,13 @@ class MapStage final : public Stage {
     }
   }
 
-  // The left button held still long enough arms the pan (called every frame).
+  // The left button held still long enough arms the pan (called every frame). Engine2's gauntlet shows while the
+  // board is held: the armed left button, or the middle button's grab.
   void updatePanHold() {
-    if (!leftDown_ || panning_) return;
-    if (std::chrono::steady_clock::now() - leftDown_->at < std::chrono::milliseconds(kHoldMs)) return;
-    panning_ = true;
-    if (!grabCursor_) grabCursor_ = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_MOVE);
-    if (grabCursor_) SDL_SetCursor(grabCursor_);
+    if (leftDown_ && !panning_ && std::chrono::steady_clock::now() - leftDown_->at >= std::chrono::milliseconds(kHoldMs)) panning_ = true;
+    if (panning_ || (SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON_MMASK)) requestGrabCursor();
   }
-  void endPan() {
-    if (!panning_) return;
-    panning_ = false;
-    SDL_SetCursor(SDL_GetDefaultCursor());
-  }
+  void endPan() { panning_ = false; }
 
   // Arrows / WASD slide the board along the view (level, whatever the tilt), faster when zoomed out; Shift doubles.
   void panKeys(float dt) {
@@ -3780,7 +3775,6 @@ class MapStage final : public Stage {
   std::vector<Renderer::GroundMark> editorMarks_;  // the editor's rings (hover, the selected decoration)
   mutable std::optional<glm::vec3> lastPickPoint_;  // where the last pick() met the ground (none: a unit's card)
   bool panning_ = false;
-  SDL_Cursor* grabCursor_ = nullptr;
   static constexpr int kHoldMs = 500;
   static constexpr float kClickSlop = 5.0f;
   // Combat (world/Battle.h): the battle, each scene unit's battle unit and live state, the picked unit and its reach.

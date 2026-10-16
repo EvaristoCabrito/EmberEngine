@@ -36,6 +36,7 @@
 #include "GameMusic.h"
 #include "Stage.h"
 #include "render/Camera.h"
+#include "render/DebugUi.h"
 #include "render/MeshScene.h"
 #include "render/Renderer.h"
 #include "render/UiArt.h"
@@ -404,6 +405,7 @@ class TestModeStage : public Stage {
     const ImGuiIO& io = ImGui::GetIO();
     if (ImGui::IsItemActivated()) drag_ = {io.MousePos.x, io.MousePos.y, scrollX_, scrollY_}, dragMoved_ = false;
     if (ImGui::IsItemActive() && drag_) {
+      requestGrabCursor();  // Engine2 world-map-pan-grab: the gauntlet from the press on
       const float dx = io.MousePos.x - drag_->x, dy = io.MousePos.y - drag_->y;
       if (!dragMoved_ && (std::abs(dx) > 4 || std::abs(dy) > 4)) dragMoved_ = true;
       if (dragMoved_) scrollX_ = drag_->sx - dx, scrollY_ = drag_->sy - dy;

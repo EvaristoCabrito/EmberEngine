@@ -1155,6 +1155,8 @@ int main(int argc, char** argv) {
   // --audio-check [engine2 public folder]: decode every effect and the start of every track (exit 1 if any fails).
   if (argc >= 2 && std::string_view(argv[1]) == "--audio-check")
     return ember::AudioMixer::check(argc >= 3 ? argv[2] : "C:/Engine2/public") == 0 ? 0 : 1;
+  if (argc >= 2 && std::string_view(argv[1]) == "--cursor-check")
+    return ember::DebugUi::checkCursors(argc >= 3 ? argv[2] : "build/cursor-check");
   const Options options = parse(argc, argv);
   if (!options.compare.empty()) return runCompare(options);
   return options.capture.empty() ? runWindow(options) : runCapture(options);
