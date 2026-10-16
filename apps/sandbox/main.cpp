@@ -32,6 +32,7 @@
 //        (the fog mask each surface read), then tools/scripts/check_fog.py. [--volume 0]: no volumetric fog;
 //        [--fog-look N]: which saved fog look (render/FogLooks.h; in a window, the Map panel's dropdown).
 //        [--grid-look N]: the battle grid (panel "Grade"): 0 OFF, 1 the old marks, 2 look 001 (looks/grid/README.md).
+//        [--cards N]: 0 vertical cards, 1 (default) cards leaning back with the camera's tilt, upright on screen (panel "Cards").
 //        [--lighting 0|1|2|3]: old prototype day / Engine2's presets / physical sky with Engine2's strengths / real
 //        (default: lux, physical camera, eye adaptation, inverse-square lamps; also in the panel as "Luz").
 //        Night maps: [--moon-phase NAME] (Engine2's moonPhase.ts: new .. waningCrescent, blood) [--moon-path 0|1|2]
@@ -132,6 +133,7 @@ struct Options {
   bool windowed = false;  // --windowed or --size: a window instead of the whole screen
   int fogLook = 3;
   int gridLook = 2;  // --grid-look N: the battle grid (panel "Grade"): 0 OFF, 1 the old marks, 2 look 001
+  int cardStance = 1;  // --cards N: 0 vertical cards, 1 leaning back with the camera's tilt (panel "Cards")
   int atmos = 2;  // --atmos N: Atmosfera volumétrica v1 at the start (0 OFF, 1 cinema, 2 alta, 3 desempenho)
   int background = -1;  // --background N: the panel's "Fundo" (-1 as the map says, 0 the painting, 1 the sky, 2 OFF = black)
   bool mist = true;    // --mist 0: the fog of war's mist bank off (its mask and the volumetric atmosphere stay)
@@ -208,6 +210,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--volume" && hasValue) o.volume = std::atoi(argv[++i]) != 0;
     else if (arg == "--fog-look" && hasValue) o.fogLook = std::atoi(argv[++i]);
     else if (arg == "--grid-look" && hasValue) o.gridLook = std::atoi(argv[++i]);
+    else if (arg == "--cards" && hasValue) o.cardStance = std::atoi(argv[++i]);
     else if (arg == "--atmos" && hasValue) o.atmos = std::atoi(argv[++i]);
     else if (arg == "--background" && hasValue) o.background = std::atoi(argv[++i]);
     else if (arg == "--mist" && hasValue) o.mist = std::atoi(argv[++i]) != 0;
@@ -513,6 +516,7 @@ MapStageOptions mapOptions(const Options& o) {
     m.volume = o.volume;
     m.fogLook = o.fogLook;
     m.gridLook = o.gridLook;
+    m.cardStance = o.cardStance;
     m.atmos = o.atmos;
     m.background = o.background;
     m.mist = o.mist;
@@ -681,7 +685,8 @@ int runCapture(const Options& o) {
       // The sprite parade runs at 60 Hz like the game (streaming per second depends on the frame rate).
       int after = 0, frameNo = 0, taken = 0;
       auto next = Clock::now();
-      while (after < kFramesInFlight + 2) {
+      // A capture sequence keeps the run alive until its frames are taken (the stage may be done before FROM).
+      while (after < kFramesInFlight + 2 || (o.sequenceCount > 0 && taken < o.sequenceCount)) {
         const bool inSequence = o.sequenceCount > 0 && taken < o.sequenceCount && frameNo >= o.sequenceFrom &&
                                 (frameNo - o.sequenceFrom) % o.sequenceEvery == 0;
         ++frameNo;

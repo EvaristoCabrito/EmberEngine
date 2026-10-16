@@ -394,8 +394,14 @@ Read `docs/ATMOSPHERE.md` first (audit of the renderer, measured baseline, desig
   `volumeSlices` / `volumeFlags`, `applyVolume` by slice count, `volumeTransmittance` on additive effects / VFX,
   `volumeOverBackground` on the sky / painting, Renderer owns a `Volumetrics` and records the "volumetrics" scope after
   the card shadows (the old mode-0 haze stays off while it runs). Panel "Escolhas": **Atmosfera** (OFF / cinema / alta /
-  desempenho; default alta) and **Clima** (the profiles). CLI: `--atmos N`, `--background N`, `--debug-view 15..19`
-  (the volume's slices), `--capture-sequence FROM:EVERY:COUNT` (consecutive frames of one run).
+  desempenho; default alta) and **Clima** (the profiles). CLI: `--atmos N`, `--background N`, `--mist 0`, `--debug-view
+  15..19` (the volume's slices), `--capture-sequence FROM:EVERY:COUNT` (consecutive frames of one run; the run stays
+  alive until they are taken).
+- **No depth jitter (2026-10-16 evening):** the user showed the angle where "a fumaça treme sem parar" (low camera along
+  the board). Measured with static-camera sequences: jitter + exponential history boils for ever; without jitter the fog
+  adds no frame-to-frame change (ATMOSPHERE.md §6.4). The noise is filtered to the slice length; the light is read at
+  the slice centre; profiles lighter (visibility 600-2600 units, ground-hugging). The live shaders in
+  build/release/bin/shaders were replaced by hand with DXC (the exe there is the other session's build).
 - **Measured (release, 60 Hz paced, aldeia015 + fog of war):** "volumetrics" alta 0.59 ms avg (worst 2.85), cinema 1.86
   (worst 7.7); frame median 12.8 ms vs 11.7 base. The fog bank (look 003) still costs 6.4-6.7 ms = half the frame.
 - **Verified:** debug + validation captures exit 0 on aldeia015 (every level, OFF, Tática); the fog lights the sky /

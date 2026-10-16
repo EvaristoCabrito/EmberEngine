@@ -90,9 +90,11 @@ glm::vec3 readVec3(const nlohmann::json& j, const char* key, glm::vec3 fallback)
 
 Volumetrics::Level Volumetrics::level(Quality q) {
   switch (q) {
-    case Quality::Cinematic: return {{192, 108, 96}, 4, 3, 0.90f, 2.5f};
-    case Quality::High: return {{160, 90, 64}, 1, 2, 0.90f, 1.6f};
-    default: return {{96, 54, 48}, 1, 0, 0.93f, 1.0f};
+    // History weights: the jittered slices integrate over ~1 / (1 - w) frames; 0.94 = about 17 frames (the user saw the
+    // far slabs boil at 0.9 on a low camera looking along the board, 2026-10-16).
+    case Quality::Cinematic: return {{192, 108, 96}, 4, 3, 0.94f, 2.5f};
+    case Quality::High: return {{160, 90, 64}, 1, 2, 0.94f, 1.6f};
+    default: return {{96, 54, 48}, 1, 0, 0.95f, 1.0f};
   }
 }
 
@@ -307,7 +309,9 @@ bool Volumetrics::prepare(const Camera& camera, float time, VkCommandBuffer cmd,
   uint32_t n = ++frameCounter_ % 64 + 1;
   float halton = 0.0f, scale = 0.5f;
   for (; n; n >>= 1, scale *= 0.5f) halton += static_cast<float>(n & 1) * scale;
-  v.jitter = (halton - 0.5f) * jitterRamp;
+  // Depth jitter is off (0): jitter + the exponential history never settles (a residual boil the user saw on a low camera,
+  // 2026-10-16); the shader reads every slice at its centre. The Halton offset is still computed for a later look.
+  v.jitter = 0.0f * (halton - 0.5f) * jitterRamp;
   v.wind = current_.wind;
   v.time = time;
   v.albedo = current_.albedo;

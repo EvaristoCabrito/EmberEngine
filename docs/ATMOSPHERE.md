@@ -142,12 +142,16 @@ Nada dos looks salvos (001–007), de `volume.hlsl`, da atmosfera Hillaire, dos 
    (máximo 7)**: a mesma fuga mínima de antes (não é da atmosfera: com ela há menos), 0 nos outros três momentos.
    Regra mantida no v1: ar nunca visto não espalha nada (só absorve) e o ar lembrado é escurecido ×0,4 sem luz
    local; luzes locais fora de vista já não chegam ao GPU; o fundo preto do nunca visto não recebe névoa.
-4. **Temporal:** `--capture-sequence 80:1:10` com a câmera girando (`--measure 6`): diferenças quadro a quadro com a
-   névoa ligada iguais às do OFF (movimento da câmera), nenhuma instabilidade extra. O usuário viu tremulação nos
-   primeiros segundos e de novo segundos depois (2026-10-16): o reinício do histórico (jitter sem histórico) na
-   abertura e nas trocas de nível da qualidade adaptativa. Correção: adaptativa desligada por padrão; a cada reinício
-   o peso do histórico volta em 4 quadros e o jitter cresce em 30 (nenhum quadro mostra fatias cruas). A confirmar
-   pelo usuário na janela.
+4. **Temporal (a tremulação, 2026-10-16):** o usuário mostrou o ângulo (câmera baixa olhando ao longo do tabuleiro, ar
+   denso) onde "a fumaça treme sem parar". Medido com `--capture-sequence 70:1:12` e câmera parada (floresta, `--tilt
+   -12 --zoom 2`): diferença média entre quadros consecutivos OFF 0,63 (animação das unidades e wisps), névoa com
+   jitter 0,77 (terço de cima 0,18 → 0,32); filtrar o ruído ao tamanho da fatia e amostrar a luz no centro fixo da fatia
+   não mudaram nada; **sem jitter de profundidade: 0,57 (0,18)**, igual ao OFF. Causa: jitter + histórico exponencial
+   (Wronski / Frostbite) mantém para sempre um resíduo de (1 − peso) × a variação da fatia, que numa fatia distante e
+   densa é visível. Decisão v1: sem jitter (cena parada = quadros idênticos; 64–96 fatias lidas trilinearmente não
+   mostram bandas); o histórico (peso 0,94) fica só para suavizar o movimento da câmera e reinicia sem tremor (peso
+   volta em 4 quadros). O ruído filtrado por fatia ficou (é correto e barato). Qualidade adaptativa desligada por
+   padrão (as trocas de nível reiniciavam o histórico: "voltou alguns segundos depois"). A confirmar pelo usuário.
 5. **Custo (release, 60 Hz pacado, aldeia015, fog of war, regras de batalha):** "volumetrics" alta 0,59 ms (pior
    2,85), cinema 1,86 (pior 7,69); quadro mediano 12,8 ms contra 11,7 de base. Dentro da meta (≤ 2 ms em alta).
 6. **Tática:** `--tatica --atmos 2`: captura sai, 0 erros; o véu segue a escala do perfil (`tacticalScale`).

@@ -81,10 +81,14 @@ float valueNoise(float3 x) {
               lerp(lerp(hash3(i + float3(0, 0, 1)), hash3(i + float3(1, 0, 1)), u.x), lerp(hash3(i + float3(0, 1, 1)), hash3(i + float3(1, 1, 1)), u.x), u.y),
               u.z);
 }
-// Three octaves, the second and third drifting at their own speeds so the fog changes shape as it moves.
-float fbm(float3 p, float3 wind, float time) {
-  return valueNoise(p + wind * time) * 0.55 + valueNoise(p * 2.07 + 17.1 - wind * time * 0.6) * 0.3 +
-         valueNoise(p * 4.13 + 41.7 + wind * time * 1.7) * 0.15;
+// Three octaves, the second and third drifting at their own speeds so the fog changes shape as it moves. Each octave
+// is filtered to the froxel: `slab` is the slice's length along the ray in noise units (world length x frequency);
+// an octave whose period is shorter than the slab averages out to its mean (0.5) instead of being point-sampled
+// (point samples at the jittered depth differ from frame to frame and never settle: the far slabs boiled).
+float fbm(float3 p, float3 wind, float time, float slab) {
+  const float a0 = saturate(1.0 - 0.5 * slab), a1 = saturate(1.0 - 0.5 * slab * 2.07), a2 = saturate(1.0 - 0.5 * slab * 4.13);
+  return lerp(0.5, valueNoise(p + wind * time), a0) * 0.55 + lerp(0.5, valueNoise(p * 2.07 + 17.1 - wind * time * 0.6), a1) * 0.3 +
+         lerp(0.5, valueNoise(p * 4.13 + 41.7 + wind * time * 1.7), a2) * 0.15;
 }
 
 // The fog of war's fields at p.xz: darkness, boundary of the never-seen, ground height, valley depth.
@@ -100,9 +104,9 @@ float4 maskField(MeshFrame f, VolumetricsFrame v, float3 p) {
 
 // Extinction (sigma_t) per world unit at p: x = the air (lit by the fog of war's rules), y = the never-seen bank
 // (lit by sun and sky only: it reads the mask alone, so its light reveals nothing).
-float2 extinctionAt(MeshFrame f, VolumetricsFrame v, float3 p, float4 field) {
+float2 extinctionAt(MeshFrame f, VolumetricsFrame v, float3 p, float4 field, float slabLength) {
   const float h = max(p.y - field.z, 0.0);
-  const float n = fbm(p * v.noiseScale, v.wind * v.noiseScale, v.time);
+  const float n = fbm(p * v.noiseScale, v.wind * v.noiseScale, v.time, slabLength * v.noiseScale);
   const float variation = lerp(1.0 - v.noiseStrength, 1.0 + v.noiseStrength, n);
   float sigma = v.extinction * exp(-h / v.scaleHeight) * (1.0 + v.valley * field.w) * variation;
   // Local volumes: caves, clearings, corridors, mist over water (boxes with a feathered edge).
@@ -213,22 +217,30 @@ void CSInject(uint3 id : SV_DispatchThreadID) {
   if (any(id >= v.grid)) return;
   const MeshFrame f = loadFrame(push.frame);
   const float2 uv = (float2(id.xy) + 0.5) / float2(v.grid.xy);
-  const float3 p = froxelWorld(f, v, uv, (float(id.z) + 0.5 + v.jitter) / float(v.grid.z));
-  const float3 toCamera = normalize(f.cameraPosition - p);
+  // Everything is read at the slice's fixed centre: no depth jitter. Jitter + an exponential history (Wronski /
+  // Frostbite) keeps a residual boil of (1 - weight) x the slab's spread for ever, and the user sees it ("a fumaça
+  // treme sem parar", 2026-10-16); without jitter a still scene gives identical frames, and the slices (64-96, read
+  // trilinearly) are fine enough that no banding shows. v.jitter is kept in the record (always 0 now) for a later look.
+  const float3 p = froxelWorld(f, v, uv, (float(id.z) + 0.5) / float(v.grid.z));
+  const float3 pLight = p;
+  const float3 toCamera = normalize(f.cameraPosition - pLight);
 
+  // This slice's length along the ray (the froxel's depth extent), for the noise filter.
+  const float slabLength = (froxelDepth(f, float(id.z + 1) / float(v.grid.z)) - froxelDepth(f, float(id.z) / float(v.grid.z))) *
+                           length(p - f.cameraPosition) / max(froxelDepth(f, (float(id.z) + 0.5) / float(v.grid.z)), 1e-3);
   const float4 field = maskField(f, v, p);
-  const float2 sigma = extinctionAt(f, v, p, field);  // air, never-seen bank
-  const Sight sight = tacticalSight(f, p);
+  const float2 sigma = extinctionAt(f, v, p, field, slabLength);  // air, never-seen bank
+  const Sight sight = tacticalSight(f, pLight);
   float3 sunSky = 0.0;
   if (any(sigma > 0.0)) {
     if (f.lightingLayers & kLayerSun)
-      sunSky += f.sunColor * f.sunIntensity * v.sunScale * airShadow(f, v, p) * phase2(dot(f.sunDirection, -toCamera), v.anisotropy, v.backLobe);
+      sunSky += f.sunColor * f.sunIntensity * v.sunScale * airShadow(f, v, pLight) * phase2(dot(f.sunDirection, -toCamera), v.anisotropy, v.backLobe);
     sunSky += skyInScatter(f) * v.skyScale;
   }
   float3 light = 0.0;
   if (sight.color > 0.0 && sigma.x > 0.0) {
     light = sunSky;
-    if (sight.local > 0.0) light += airLocalLights(f, v, p, toCamera) * v.localScale * sight.local;
+    if (sight.local > 0.0) light += airLocalLights(f, v, pLight, toCamera) * v.localScale * sight.local;
     light *= sight.color;  // remembered air is as dark as remembered ground
   }
   float4 result = float4((light * sigma.x + sunSky * sigma.y) * v.albedo, sigma.x + sigma.y);
