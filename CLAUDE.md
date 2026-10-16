@@ -322,6 +322,23 @@ inventory / equipment, dialogs / intros)
 - **Not ported yet:** field spells (Create Food and Water, Warp), the status sheet, battle snapshots (a saved fight restarts from its briefing), finishBattle's loot /
   ember / rations / quests / progression, formation applied to battle spawns, unitHp at battle start, sound.
 - **Testing:** never drive the user's PC (computer-use) — captures and Cooker checks only; the user plays it.
+- **Modo teste (2026-10-16, `a06875c` / `954891e` / `0151cb0`; user: "finish test mode just like Engine2", all of it
+  incl. the Map Editor):** the title's "MODO TESTE" opens `TestModeStage.h` (O que abrir?: Debug, Map Editor, Dev
+  Controls, Teste de Magias). Debug = MapChoice (Classic / RPG, once per session), the classic WorldMapScreen +
+  Cenários, or OverworldStage on the session's own save (`TestSession`, never the bank; Overworld `test` flag, checked
+  by `Cooker check-overworld` incl. 335 test steps). Test battles: `build/engine2-test` for all 148 campaign maps
+  (`tools/scripts/engine2/export_test_missions.sh`: make_test_map.ts adds the missing heroes, level 15, new save's
+  gear, debugFreeCast). Dev Controls = `DevGfx.h` (quality presets, shadows / resolution / soft, map lights, fog, fog
+  debug view 4, sun sliders; `%LOCALAPPDATA%\Ember\dev-gfx.json`). **Map Editor** = `MapEditorStage.h`: Engine2's
+  panel + a live MapStage preview of the draft in memory (`engine/world/SceneBuilder`: scenes built in C++ from
+  `content/engine2/editor-catalog.json`, identical to export_scene.ts on 148 maps: `Cooker check-scene-builder`);
+  brushes, undo, Salvar to `content/maps/ember/<id><serial>.json` (Engine2's format; Engine2's folder untouched),
+  Testar (Engine2's exporters on the draft, ~6 s, then the battle; back to the editor after). Captures:
+  `--title-screen test|test-choice|test-classic|test-scenarios|test-rpg|test-dev|test-editor`, `--editor-script`,
+  `--dev-gfx FILE`. Not ported: water / 3D walls brushes, Gerar terreno, Locais / R-Encounter, dialog editor; the
+  campaign does not read maps saved by the editor yet; Dev Controls' VFX lab / HD-2D scene / contact shadows / AO.
+- **Several sessions share this checkout:** commit only your own hunks (stage HEAD + your edits, build that index
+  alone in a scratch folder, then commit); never `git add` a file another session is editing.
 
 ## Next
 
