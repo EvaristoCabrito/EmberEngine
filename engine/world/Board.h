@@ -14,6 +14,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include <nlohmann/json.hpp>
+
 #include "world/Hex.h"
 
 namespace ember::e2 {
@@ -67,6 +69,8 @@ struct MapDecoration {
   std::string id;
   int x = 0, y = 0;
   double rot = 0;
+  bool mirrorX = false, returnConnector = false;  // floor connectors: which way they lead
+  std::string connectorDirection;                 // "up" / "down" / "" (not set)
 };
 
 struct MapSpawn {
@@ -92,7 +96,14 @@ struct MapDraft {
   unsigned wispColor = 0xffa552;
   float bloomIntensity = 0.0f;
 
+  // The map's backdrop pick (Engine2 draft.backgroundImage: absent = the map's own, "" = none) and its lighting
+  // sliders as authored (absent = the time of day's default).
+  std::optional<std::string> backgroundImage;
+  std::optional<double> sunIntensity, ambientIntensity, bloomSlider;
+
   static std::optional<MapDraft> load(const std::filesystem::path& mapJson);
+  // The same from a draft already in memory (Engine2's MapDraft JSON: the map editor's working copy).
+  static std::optional<MapDraft> fromJson(const nlohmann::json& draft);
   int variant(int i) const { return i < static_cast<int>(tileVariants.size()) && tileVariants[i] ? *tileVariants[i] : 0; }
   bool hasVariant(int i) const { return i < static_cast<int>(tileVariants.size()) && tileVariants[i].has_value(); }
 };

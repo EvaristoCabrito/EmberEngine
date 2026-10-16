@@ -16,6 +16,8 @@
 //   Cooker check-battle <map.battle.json>                            compare the C++ movement reach with Engine2's export
 //   Cooker check-campaign <campaign.json>                            compare the C++ save slots (slotProgress) with Engine2's
 //   Cooker check-overworld <overworld.json> <references.json>        compare the C++ world-map rules with Engine2's answers
+//   Cooker check-scene-builder <board.json> <editor-catalog.json> <engine2 public> <scenes dir> <map.json...>
+//                                                                    compare the C++ scene builder with export_scene.ts
 //   Cooker sprite-preview <manifest> <source root> <cache dir> <set> <clip> <frame> <out.png>
 //                                                                    source vs. GPU-decoded frame, side by side
 
@@ -30,6 +32,7 @@
 #include <string_view>
 #include <vector>
 
+#include "world/SceneBuilder.h"
 #include "PakWriter.h"
 #include "BattleCheck.h"
 #include "world/Campaign.h"
@@ -323,6 +326,16 @@ int checkOverworldCommand(const std::vector<std::string_view>& args) {
   return ember::e2::checkOverworld(world, std::filesystem::path(args[1])) == 0 ? 0 : 1;
 }
 
+int checkSceneBuilderCommand(const std::vector<std::string_view>& args) {
+  if (args.size() < 5) fatal("usage: Cooker check-scene-builder <board.json> <editor-catalog.json> <engine2 public> <scenes dir> <map.json...>");
+  const std::optional<ember::e2::BoardData> data = ember::e2::BoardData::load(std::filesystem::path(args[0]));
+  ember::e2::EditorCatalog catalog;
+  if (!data || !catalog.load(std::filesystem::path(args[1]))) return 1;
+  std::vector<std::filesystem::path> maps;
+  for (size_t i = 4; i < args.size(); ++i) maps.emplace_back(args[i]);
+  return ember::e2::checkSceneBuilder(*data, catalog, maps, std::filesystem::path(args[3]), std::filesystem::path(args[2])) == 0 ? 0 : 1;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -343,6 +356,7 @@ int main(int argc, char** argv) {
   if (command == "check-battle") return checkBattleCommand(args);
   if (command == "check-campaign") return checkCampaignCommand(args);
   if (command == "check-overworld") return checkOverworldCommand(args);
+  if (command == "check-scene-builder") return checkSceneBuilderCommand(args);
   if (command == "ground") return ground(args);
   ember::logError("unknown command {}", command);
   return 1;

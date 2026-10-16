@@ -106,16 +106,18 @@ std::optional<MapDraft> MapDraft::load(const std::filesystem::path& mapJson) {
     logError("map: cannot read {}", mapJson.string());
     return std::nullopt;
   }
-  const json& d = file->contains("draft") ? (*file)["draft"] : *file;
+  std::optional<MapDraft> m = fromJson(file->contains("draft") ? (*file)["draft"] : *file);
+  if (!m) logError("map: {} has no board", mapJson.string());
+  return m;
+}
+
+std::optional<MapDraft> MapDraft::fromJson(const json& d) {
   MapDraft m;
   m.id = str(d, "id");
   m.title = str(d, "title");
   m.cols = static_cast<int>(num(d, "cols"));
   m.rows = static_cast<int>(num(d, "rows"));
-  if (m.cols <= 0 || m.rows <= 0 || !d.contains("tiles") || !d["tiles"].is_array()) {
-    logError("map: {} has no board", mapJson.string());
-    return std::nullopt;
-  }
+  if (m.cols <= 0 || m.rows <= 0 || !d.contains("tiles") || !d["tiles"].is_array()) return std::nullopt;
   for (const json& t : d["tiles"]) m.tiles.push_back(t.is_string() ? t.get<std::string>() : std::string("plains"));
   if (d.contains("tileVariants") && d["tileVariants"].is_array())
     for (const json& v : d["tileVariants"]) m.tileVariants.push_back(v.is_number() ? std::optional<int>(v.get<int>()) : std::nullopt);
@@ -123,8 +125,13 @@ std::optional<MapDraft> MapDraft::load(const std::filesystem::path& mapJson) {
     for (const json& v : d["terrainElevations"])
       m.terrainElevations.push_back(v.is_number() ? std::optional<double>(v.get<double>()) : std::nullopt);
   if (d.contains("decorations") && d["decorations"].is_array())
-    for (const json& p : d["decorations"])
-      m.decorations.push_back({str(p, "id"), static_cast<int>(num(p, "x")), static_cast<int>(num(p, "y")), num(p, "rot")});
+    for (const json& p : d["decorations"]) {
+      MapDecoration o{str(p, "id"), static_cast<int>(num(p, "x")), static_cast<int>(num(p, "y")), num(p, "rot")};
+      o.mirrorX = p.contains("mirrorX") && p["mirrorX"].is_boolean() && p["mirrorX"].get<bool>();
+      o.returnConnector = p.contains("returnConnector") && p["returnConnector"].is_boolean() && p["returnConnector"].get<bool>();
+      o.connectorDirection = str(p, "connectorDirection");
+      m.decorations.push_back(std::move(o));
+    }
   m.playerSpawns = spawns(d, "playerSpawns");
   m.enemySpawns = spawns(d, "enemySpawns");
   m.neutralSpawns = spawns(d, "neutralSpawns");
@@ -139,6 +146,10 @@ std::optional<MapDraft> MapDraft::load(const std::filesystem::path& mapJson) {
   m.wispSpeed = num("wispSpeed", 1.0f);
   if (d.contains("wispColor") && d["wispColor"].is_number()) m.wispColor = d["wispColor"].get<unsigned>();
   m.bloomIntensity = num("bloomIntensity", 0.0f);
+  if (d.contains("backgroundImage") && d["backgroundImage"].is_string()) m.backgroundImage = d["backgroundImage"].get<std::string>();
+  if (d.contains("sunIntensity") && d["sunIntensity"].is_number()) m.sunIntensity = d["sunIntensity"].get<double>();
+  if (d.contains("ambientIntensity") && d["ambientIntensity"].is_number()) m.ambientIntensity = d["ambientIntensity"].get<double>();
+  if (d.contains("bloomIntensity") && d["bloomIntensity"].is_number()) m.bloomSlider = d["bloomIntensity"].get<double>();
   return m;
 }
 

@@ -27,6 +27,7 @@ add_library(EmberEngine STATIC
   render/FogLooks.cpp
   world/GroundMesh.cpp
   world/SceneData.cpp
+  world/SceneBuilder.cpp
   world/Battle.cpp
   world/Combat.cpp
   world/BattleTurns.cpp

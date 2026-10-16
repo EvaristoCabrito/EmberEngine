@@ -8,6 +8,7 @@ measured upwards from the bottom like Engine2's flipped bitmap. The 256-wide cop
 resize (the browser's canvas smoothing is similar, not identical).
 
 Usage: python -I measure_art.py <scene.json> <engine2 public dir>
+       python -I measure_art.py --catalog <editor-catalog.json> <engine2 public dir>
 """
 import json
 import sys
@@ -54,7 +55,24 @@ def measure(path):
             'size': [img.width, img.height]}
 
 
+def measure_catalog(catalog_path, public):
+    """--catalog: every image the editor catalog's facings can show (export_editor_catalog.ts), measured once."""
+    catalog = json.loads(catalog_path.read_text(encoding='utf-8'))
+    measures = catalog.get('measures', {})
+    for faces in catalog['facings'].values():
+        for f in faces:
+            if f['art'] and f['image'] not in measures:
+                path = public / f['image'].lstrip('/')
+                if path.exists():
+                    measures[f['image']] = measure(path)
+    catalog['measures'] = measures
+    catalog_path.write_text(json.dumps(catalog), encoding='utf-8')
+    print(f'{catalog_path.name}: {len(measures)} images measured')
+
+
 def main():
+    if sys.argv[1] == '--catalog':
+        return measure_catalog(Path(sys.argv[2]), Path(sys.argv[3]))
     scene_path, public = Path(sys.argv[1]), Path(sys.argv[2])
     scene = json.loads(scene_path.read_text(encoding='utf-8'))
     cache = {}
