@@ -31,6 +31,7 @@ add_library(EmberEngine STATIC
   world/BattleTurns.cpp
   world/Spells.cpp
   world/Campaign.cpp
+  world/Overworld.cpp
   debug/PerfOverlay.cpp
 )
 

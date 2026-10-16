@@ -17,6 +17,10 @@
 
 namespace ember::e2 {
 
+// A save as Engine2 holds it: JSON that keeps its keys in insertion order (JS objects do, and Engine2's rules read
+// some of them in that order, e.g. which hero's bag loses a potion on the road).
+using Json = nlohmann::ordered_json;
+
 struct CampaignMission {
   std::string id, title, place, briefing, objective, win, mapFile;  // mapFile: the newest saved map for the id, if any
   int index = 0;
@@ -31,10 +35,10 @@ struct WorldLocation {
 // Engine2's campaign tables.
 struct CampaignData {
   int saveVersion = 19, slotCount = 6;
-  nlohmann::json emptySave;  // emptySave() with updatedAt 0
+  Json emptySave;  // emptySave() with updatedAt 0
   std::vector<CampaignMission> missions;
   std::vector<WorldLocation> locations;
-  nlohmann::json slotProgressCases;  // export_campaign.ts reference answers
+  Json slotProgressCases;  // export_campaign.ts reference answers
 
   bool load(const std::filesystem::path& file);
   const CampaignMission* mission(const std::string& id) const;
@@ -45,7 +49,7 @@ struct CampaignData {
 struct SaveBank {
   int lastSlot = 0;
   bool muted = false;
-  std::vector<std::optional<nlohmann::json>> slots;
+  std::vector<std::optional<Json>> slots;
 };
 
 // save.ts slotProgress: what a slot card says.
@@ -63,18 +67,18 @@ class Campaign {
   const CampaignData& data() const { return data_; }
   const SaveBank& bank() const { return bank_; }
 
-  nlohmann::json emptySave() const;
+  Json emptySave() const;
   // save.ts slotOccupied / hasAnySave / isSlotEmpty / slotProgress / activeSave.
-  static bool occupied(const std::optional<nlohmann::json>& slot);
+  static bool occupied(const std::optional<Json>& slot);
   bool hasAnySave() const;
-  SlotProgress progress(const std::optional<nlohmann::json>& slot) const;
-  nlohmann::json activeSave() const;
+  SlotProgress progress(const std::optional<Json>& slot) const;
+  Json activeSave() const;
 
   // save.ts writeSlot / selectSlot: the bank is written to disk at once; false when the file could not be written.
-  bool writeSlot(int index, nlohmann::json save);
+  bool writeSlot(int index, Json save);
   bool selectSlot(int index);
   // The active slot rewritten with `save` (writeSlot on lastSlot).
-  bool saveActive(nlohmann::json save) { return writeSlot(bank_.lastSlot, std::move(save)); }
+  bool saveActive(Json save) { return writeSlot(bank_.lastSlot, std::move(save)); }
 
   // Engine2 formatSaveDate (pt-BR, dateStyle medium + timeStyle short): "15 de out. de 2026, 21:40".
   static std::string formatSaveDate(double updatedAtMs);

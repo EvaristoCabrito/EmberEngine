@@ -15,6 +15,7 @@
 //                                                                    compare the C++ board/ground with Engine2's export
 //   Cooker check-battle <map.battle.json>                            compare the C++ movement reach with Engine2's export
 //   Cooker check-campaign <campaign.json>                            compare the C++ save slots (slotProgress) with Engine2's
+//   Cooker check-overworld <overworld.json> <references.json>        compare the C++ world-map rules with Engine2's answers
 //   Cooker sprite-preview <manifest> <source root> <cache dir> <set> <clip> <frame> <out.png>
 //                                                                    source vs. GPU-decoded frame, side by side
 
@@ -32,6 +33,7 @@
 #include "PakWriter.h"
 #include "BattleCheck.h"
 #include "world/Campaign.h"
+#include "world/Overworld.h"
 #include "GroundCheck.h"
 #include "GroundCooker.h"
 #include "MeshCooker.h"
@@ -314,6 +316,13 @@ int checkCampaignCommand(const std::vector<std::string_view>& args) {
   return ember::e2::checkSlotProgress(campaign) == 0 ? 0 : 1;
 }
 
+int checkOverworldCommand(const std::vector<std::string_view>& args) {
+  if (args.size() != 2) fatal("usage: Cooker check-overworld <overworld.json> <references.json>");
+  ember::e2::Overworld world;
+  if (!world.load(std::filesystem::path(args[0]))) return 1;
+  return ember::e2::checkOverworld(world, std::filesystem::path(args[1])) == 0 ? 0 : 1;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -333,6 +342,7 @@ int main(int argc, char** argv) {
   if (command == "check-ground") return checkGroundCommand(args);
   if (command == "check-battle") return checkBattleCommand(args);
   if (command == "check-campaign") return checkCampaignCommand(args);
+  if (command == "check-overworld") return checkOverworldCommand(args);
   if (command == "ground") return ground(args);
   ember::logError("unknown command {}", command);
   return 1;

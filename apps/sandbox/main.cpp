@@ -592,7 +592,7 @@ int runWindow(const Options& o) {
   // story progression are not ported yet.
   auto finishCampaignFight = [&](const MapStage& map) {
     if (playing.empty() || map.battleResult().empty()) return;
-    nlohmann::json save = campaign.activeSave();
+    e2::Json save = campaign.activeSave();
     for (const HeroOutcome& h : map.heroOutcomes()) {
       save["levels"][h.name] = h.level;
       save["xp"][h.name] = h.xp;
@@ -602,8 +602,8 @@ int runWindow(const Options& o) {
     save["battle"] = nullptr;
     const bool won = map.battleResult() == "victory";
     if (won) {
-      nlohmann::json& done = save["completed"];
-      if (!done.is_array()) done = nlohmann::json::array();
+      e2::Json& done = save["completed"];
+      if (!done.is_array()) done = e2::Json::array();
       if (std::find(done.begin(), done.end(), playing) == done.end()) done.push_back(playing);
     } else {
       save["pendingMission"] = playing;  // a lost fight is played again from its briefing
@@ -669,8 +669,8 @@ int runWindow(const Options& o) {
         playing = pending->campaignId;
         if (!playing.empty()) {
           // The heroes as the save has them (levels and XP).
-          const nlohmann::json save = campaign.activeSave();
-          const nlohmann::json levels = save.value("levels", nlohmann::json::object()), xp = save.value("xp", nlohmann::json::object());
+          const e2::Json save = campaign.activeSave();
+          const e2::Json levels = save.value("levels", e2::Json::object()), xp = save.value("xp", e2::Json::object());
           for (const auto& [name, level] : levels.items())
             if (level.is_number_integer()) options.heroProgress[name] = {level.get<int>(), xp.value(name, 0)};
         }

@@ -1,0 +1,131 @@
+#pragma once
+
+// The campaign's world map (Engine2's RPG overworld), ported from src/campaign/overworld.ts with the rules it reads
+// (access.ts, progression.ts, quests.ts, hunger.ts, poison.ts, skills.ts and the loot / bag helpers of ember/data.ts).
+// The board, the locations, the missions and every table come from tools/scripts/engine2/export_overworld.ts
+// (content/engine2/overworld.json); Cooker check-overworld compares this port with Engine2's own answers, step for
+// step and random number for random number.
+
+#include <cstdint>
+#include <filesystem>
+#include <optional>
+#include <string>
+#include <vector>
+
+#include "world/Campaign.h"
+
+namespace ember::e2 {
+
+class Mulberry32;
+
+struct OverworldCell {
+  int col = 0, row = 0;
+  int hours = 6;                         // travelHoursForHex
+  std::string region;                    // travelRegionAt
+  std::vector<std::string> encounters;   // travelEncounterIds
+  double x = 0, y = 0;                   // hexToWorld: percent of the world-map image
+};
+
+struct MapLocation {
+  std::string id, name;
+  double x = 0, y = 0;  // percent of the world-map image
+  int col = 0, row = 0;
+  std::vector<std::string> missionIds;
+  bool openAccess = false, encountersAllowed = false, warpCity = false;
+  std::optional<double> deadlineDay;
+};
+
+struct MapMission {
+  std::string id, title, win;
+  int index = 0;
+  bool hub = false, crossing = false, gated = false;
+};
+
+// A travel event (overworld.ts OverworldEvent): kind "encounter" / "hungry" / "battle" (battle: missionId to launch).
+struct OverworldEvent {
+  std::string kind, text, missionId;
+};
+
+struct OverworldHex {
+  int col = 0, row = 0;
+  bool operator==(const OverworldHex&) const = default;
+};
+
+class Overworld {
+ public:
+  bool load(const std::filesystem::path& file);
+
+  // --- the board ---------------------------------------------------------------------------------------------------
+  const std::vector<OverworldCell>& cells() const { return cells_; }
+  const OverworldCell* cell(int col, int row) const;
+  bool isCell(int col, int row) const { return cell(col, row) != nullptr; }
+  static std::vector<OverworldHex> neighbors(int col, int row);  // pathfinding.ts hexNeighbors (odd-r)
+  static void hexToWorld(int col, int row, double& x, double& y);
+  OverworldHex startHex() const { return start_; }
+  std::optional<OverworldHex> wispHex() const { return wisp_; }
+
+  const std::vector<MapLocation>& locations() const { return locations_; }
+  const MapLocation* locationAt(int col, int row) const;  // the later of two on one hex
+  const MapMission* mission(const std::string& id) const;
+  std::vector<const MapMission*> missionsOf(const MapLocation& location) const;  // missionsForLocation
+
+  // --- rules -------------------------------------------------------------------------------------------------------
+  bool heroRecruited(const std::string& hero, const Json& save) const;
+  int maxHp(const Json& save, const std::string& hero) const;  // statsFor(class, level).hp, 0 without a class
+  bool wispForestUncleared(const Json& save) const;
+  bool canStep(const Json& save, OverworldHex from, OverworldHex to) const;  // canStepOverworld (campaign, not test)
+  // stepOverworld: the save after one hex step and what happened on the way; the save unchanged (and no event, no
+  // random number) when the step is not allowed.
+  Json step(const Json& save, OverworldHex to, Mulberry32& rng, std::optional<OverworldEvent>& event) const;
+
+  // progression.ts / access.ts
+  int currentChapter(const Json& save) const;
+  std::string missionAccess(const std::string& id, const Json& save) const;  // hidden / revealed / available / completed
+  std::string missionStatus(const std::string& id, const Json& save, const std::vector<std::string>& order) const;  // locked / available / done
+  std::string locationStatus(const MapLocation& location, const Json& save) const;
+  std::vector<const MapMission*> visibleMissionsOf(const MapLocation& location, const Json& save) const;
+  bool locationVisible(const MapLocation& location, const Json& save) const;  // mapVisibleLocations
+
+  // Small helpers the map screen shows.
+  static std::string travelTimeLabel(int hours);
+  static double travelHungerCost(int hours) { return 50.0 * hours / 24.0; }
+  static double fullness(const Json& value);  // hunger.ts fullness: 0..120, 100 when unset
+  static int campaignHour(const Json& save);
+  static std::string timeOfDay(int hour);     // campaignTime.ts campaignTimeOfDay
+
+  const Json& tables() const { return tables_; }
+
+ private:
+  struct LootEntry {
+    bool weapon = true;
+    std::string id, name;
+    double price = 0;
+    int power = 1;
+    bool starting = false;
+  };
+  int classHp(const std::string& classId, int level) const;
+  double classResistance(const std::string& classId, const std::string& element) const;
+  double gearResistance(const Json& save, const std::string& hero, const std::string& element) const;
+  bool bagHasRoom(const Json& save, int extra) const;
+  int missionIndex(const std::string& id) const;
+  bool evaluate(const Json& condition, const Json& save, bool storedChapter) const;
+  int questStage(const std::string& questId, const Json& save) const;
+  bool lockedMission(const std::string& id, const Json& save, const std::vector<std::string>& order) const;
+  const MapLocation* previousPopulatedLocation(const MapLocation& location) const;
+
+  std::vector<OverworldCell> cells_;
+  std::vector<MapLocation> locations_;
+  std::vector<MapMission> missions_;
+  OverworldHex start_{}, inn_{}, ashenBlocked_{};
+  std::optional<OverworldHex> wisp_;
+  int westEdgeCol_ = 0;
+  std::vector<std::string> stoneBridgeMissionIds_;
+  std::vector<LootEntry> loot_;  // weapons then equipment, in Engine2's table order
+  Json tables_;
+};
+
+// Cooker check-overworld: location / mission status, allowed steps and seeded steps against Engine2's answers.
+// Returns the number of differences.
+int checkOverworld(const Overworld& world, const std::filesystem::path& references);
+
+}  // namespace ember::e2

@@ -237,7 +237,7 @@ class TitleStage : public Stage {
     const float top = headerH + std::max(0.75f * rem_, (size.y - headerH - listH) * 0.5f);
     const bool any = campaign_->hasAnySave();
     for (size_t i = 0; i < bank.slots.size(); ++i) {
-      const std::optional<nlohmann::json>& slot = bank.slots[i];
+      const std::optional<e2::Json>& slot = bank.slots[i];
       const bool empty = !e2::Campaign::occupied(slot);
       const bool last = static_cast<int>(i) == bank.lastSlot && any && !empty;
       const bool confirming = overwriteSlot_ == static_cast<int>(i);
@@ -319,7 +319,7 @@ class TitleStage : public Stage {
   void chooseSlot(int index) {
     const int number = index + 1;
     if (!loadFlow_) {
-      nlohmann::json save = campaign_->emptySave();
+      e2::Json save = campaign_->emptySave();
       save["pendingMission"] = "vau";
       save["mapMode"] = "rpg";
       overwriteSlot_ = -1;
@@ -343,7 +343,7 @@ class TitleStage : public Stage {
   // GameApp start: the fight the save was made in (from its briefing: battle snapshots are not ported yet), else the
   // pending mission's briefing; with neither, the world map (not ported yet: the status line says so).
   void startCampaign() {
-    const nlohmann::json save = campaign_->activeSave();
+    const e2::Json save = campaign_->activeSave();
     std::string id;
     if (save.contains("battle") && save["battle"].is_object()) id = save["battle"].value("missionId", "");
     if (id.empty() && save.contains("pendingMission") && save["pendingMission"].is_string()) id = save["pendingMission"].get<std::string>();
