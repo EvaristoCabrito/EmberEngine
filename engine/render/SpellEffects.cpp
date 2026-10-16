@@ -60,7 +60,7 @@ int SpellEffects::looks(const std::string& kind) {
   // 02: Engine2's own effect, ported (render/vfx/*).
   if (kind == "magicMissile" || kind == "magicMissileV2") return 2;
   // 01 of a spell with no flipbook-card version: Engine2's own effect, ported.
-  if (kind == "fireball" || kind == "bless" || kind == "causticVenom") return 1;
+  if (kind == "fireball" || kind == "bless" || kind == "causticVenom" || kind == "phantasmalForce") return 1;
   static const char* kVersion01[] = {"lightning", "lightningTier3", "shock", "frost", "cureMinor", "longShot", "piercing", "piercingThrust",
                                      "doubleStrike"};
   for (const char* k : kVersion01)
@@ -73,6 +73,7 @@ int SpellEffects::engine2Look(const std::string& kind) {
   if (kind == "fireball") return 1;                                  // FireballVFX
   if (kind == "bless") return 1;                                     // BlessVFX
   if (kind == "causticVenom") return 1;                              // CausticVenomVFX
+  if (kind == "phantasmalForce") return 1;                           // PhantasmalForceVFX
   return 0;
 }
 
@@ -110,6 +111,7 @@ float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& c
   if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2 && !targets.empty())
     return MagicMissileV2::impactDelay(engine2Origin(caster), targets.front().body);
   if (kind == "fireball" && look == 1 && !targets.empty()) return Fireball::travelSeconds(engine2Origin(caster), fireballTarget(targets));
+  if (kind == "phantasmalForce" && look == 1) return PhantasmalForce::kImpactAt;
   if (kind == "causticVenom" && look == 1 && !targets.empty())
     return CausticVenom::kCharge + CausticVenom::travelSeconds(engine2Origin(caster), fireballTarget(targets));
   if (kind == "bless" && look == 1) {
@@ -135,6 +137,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
   if (targets.empty() && kind != "piercingThrust" && kind != "doubleStrike") return false;
   if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2) missiles_.emplace_back(engine2Origin(caster), targets.front().body, start);
   else if (kind == "fireball") fireballs_.emplace_back(engine2Origin(caster), fireballTarget(targets), fireballArea(targets), start);
+  else if (kind == "phantasmalForce") phantasms_.emplace_back(targets.front().body, start);
   else if (kind == "causticVenom") {
     std::vector<glm::vec3> hexes;
     for (const Spot& s : targets) hexes.push_back(s.feet + glm::vec3(0.0f, 0.04f, 0.0f));
@@ -410,6 +413,7 @@ bool SpellEffects::active(float now) const {
   if (std::any_of(fireballs_.begin(), fireballs_.end(), [&](const Fireball& f) { return !f.done(now); })) return true;
   if (std::any_of(blesses_.begin(), blesses_.end(), [&](const Bless& b) { return !b.done(now); })) return true;
   if (std::any_of(venoms_.begin(), venoms_.end(), [&](const CausticVenom& v) { return !v.done(now); })) return true;
+  if (std::any_of(phantasms_.begin(), phantasms_.end(), [&](const PhantasmalForce& p) { return !p.done(now); })) return true;
   return std::any_of(elements_.begin(), elements_.end(), [&](const Element& e) { return e.end > now; });
 }
 
@@ -424,6 +428,8 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   std::vector<VfxLight> vfxLights;
   for (Bless& b : blesses_) b.build(now, camera, vfx_, vfxLights);
   std::erase_if(venoms_, [&](const CausticVenom& v) { return v.done(now); });
+  std::erase_if(phantasms_, [&](const PhantasmalForce& p) { return p.done(now); });
+  for (PhantasmalForce& p : phantasms_) p.build(now, camera, vfx_, vfxLights);
   if (!venoms_.empty()) {
     const ElementSpritesV2 poison = elementV2(VfxElement::Poison);
     for (CausticVenom& v : venoms_) v.build(now, camera, poison, vfx_, vfxLights);

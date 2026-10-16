@@ -37,7 +37,8 @@ struct VfxInstance {
 
 static const uint kMaterialBasic = 0, kMaterialMissileCore = 1, kMaterialMissileShell = 2, kMaterialMissileTrail = 3,
                   kMaterialStandard = 4, kMaterialFlame = 5, kMaterialImpactParticle = 6, kMaterialImpactFlash = 7,
-                  kMaterialBlessWave = 8, kMaterialSpriteSheet = 9, kMaterialVenomSmoke = 10;
+                  kMaterialBlessWave = 8, kMaterialSpriteSheet = 9, kMaterialVenomSmoke = 10, kMaterialPfTendril = 11, kMaterialPfCore = 12,
+                  kMaterialPfShell = 13;
 
 struct Push {
   uint64_t vertices;   // VfxVertex[]
@@ -220,6 +221,25 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
     p.z += sin(a * 9.0 - t * 6.0) * noise * 0.16 + sin(a * 7.0 + t * 3.0) * height * 0.12;
     o.heat = 0.52 + 0.48 * sin(a * 13.0 - t * 8.0 + n * 4.0);
   }
+  if (d.material == kMaterialPfTendril) {
+    // TENDRIL_VERTEX (aAlong = uv.x): waves along the strand, all of it drawn in as it collapses. vNoise rides in heat.
+    const float t = d.params0.x, collapse = d.params0.y, turbulence = d.params0.z, splineNoise = d.params0.w;
+    const float along = v.u;
+    const float wave = sin(t * 3.4 + along * 18.0 + v.position.z * 4.0);
+    const float wave2 = cos(t * 2.1 - along * 13.0 + v.position.x * 5.0);
+    o.heat = wave * 0.5 + wave2 * 0.5;
+    p.xy += float2(wave, wave2) * turbulence * (0.25 + along);
+    p.xz += float2(wave2, wave) * splineNoise * sin(along * 3.14159);
+    p *= lerp(1.0, 0.07, collapse);
+  }
+  if (d.material == kMaterialPfCore || d.material == kMaterialPfShell) {
+    // CORE_VERTEX / SHELL_VERTEX: the surface pushed along its normal by a moving interference; vWarp rides in heat.
+    const float t = d.params0.x, distortion = d.params0.y;
+    const float n = d.material == kMaterialPfCore ? sin(p.x * 18.0 + t * 9.0) * cos(p.y * 15.0 - t * 7.0) * sin(p.z * 17.0 + t * 5.0)
+                                                  : sin(p.x * 9.0 + t * 13.0) * cos(p.y * 8.0 - t * 9.0) * sin(p.z * 10.0 + t * 7.0);
+    p += v.normal * n * distortion;
+    o.heat = n;
+  }
   if (d.material == kMaterialMissileCore || d.material == kMaterialMissileShell) {
     // BOLT_VERTEX
     const float t = d.params0.x, distort = d.params0.y, scale = d.params0.z;
@@ -232,9 +252,10 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
   float4 world = float4(p, 1.0);
   float4 normal = float4(v.normal, 0.0);
   if (d.firstInstance != 0xFFFFFFFFu) {
-    const float4x4 inst = loadInstance(d.firstInstance + instance).matrix;
-    world = mul(world, inst);
-    normal = mul(normal, inst);
+    const VfxInstance inst = loadInstance(d.firstInstance + instance);
+    world = mul(world, inst.matrix);
+    normal = mul(normal, inst.matrix);
+    o.particleC = inst.c;  // instanceColor
   }
   world = mul(world, d.model);
   normal = mul(normal, d.model);
@@ -330,6 +351,35 @@ float4 PSMain(VSOut i) : SV_Target0 {
     const float flicker = 0.76 + 0.24 * sin(t * 15.0 + i.heat * 8.0);
     c *= emissive * flicker;
     a = opacity * (0.35 + streak * 0.65);
+  } else if (d.material == kMaterialPfTendril) {
+    // TENDRIL_FRAGMENT
+    const float t = d.params0.x, opacity = d.params1.x;
+    const float along = i.uv.x;
+    float pulse = smoothstep(0.0, 0.22, frac(t * 0.9 + along));
+    pulse *= 1.0 - smoothstep(0.28, 0.55, frac(t * 0.9 + along));
+    const float3 indigo = float3(0.12, 0.08, 0.72), violet = float3(0.42, 0.22, 1.0), lavender = float3(0.77, 0.63, 1.0);
+    float3 color = lerp(indigo, violet, smoothstep(0.0, 0.65, along));
+    color = lerp(color, lavender, saturate(pulse * 0.82 + smoothstep(0.78, 1.0, along) * 0.35));
+    const float flicker = 0.72 + 0.28 * sin(t * 11.0 + i.heat * 4.0);
+    a = opacity * flicker * (0.48 + pulse * 0.52);
+    c = color * (1.5 + pulse * 2.5);
+  } else if (d.material == kMaterialPfCore) {
+    // CORE_FRAGMENT
+    const float t = d.params0.x, emission = d.params1.x;
+    const float3 q = i.local;
+    const float turbulence = 0.5 + 0.5 * sin(q.x * 24.0 + t * 11.0) * cos(q.y * 22.0 - t * 8.0) * sin(q.z * 25.0 + t * 6.0);
+    float3 color = lerp(float3(0.33, 0.13, 1.0), float3(0.76, 0.61, 1.0), turbulence);
+    color = lerp(color, float3(1.0, 0.96, 1.0), smoothstep(0.75, 1.0, turbulence));
+    c = color * emission;
+    a = 0.98;
+  } else if (d.material == kMaterialPfShell) {
+    // SHELL_FRAGMENT: brighter toward the silhouette (the view-space normal's z).
+    const MeshFrame f = loadFrame(push.frame);
+    const float opacity = d.params1.x, distortion = d.params0.y;
+    const float viewZ = mul(float4(normalize(i.normal), 0.0), f.view).z;
+    const float edge = pow(1.0 - abs(viewZ), 1.5);
+    c = lerp(float3(0.28, 0.16, 0.96), float3(0.86, 0.75, 1.0), saturate(edge + abs(i.heat) * distortion)) * 2.3;
+    a = opacity * (0.2 + edge * 0.8);
   } else if (d.material == kMaterialSpriteSheet) {
     // SpriteMaterial (map = the sheet's cell, colour = a scalar, opacity, alphaTest 0.02), additive.
     const float4 texel = gTextureArrays[NonUniformResourceIndex(d.texture)].Sample(gSamplers[push.samplerIndex], float3(cellToTexture(d, i.uv), i.particleB.y));
@@ -363,7 +413,8 @@ float4 PSMain(VSOut i) : SV_Target0 {
     const MeshFrame f = loadFrame(push.frame);
     float3 n = normalize(i.normal);
     if (dot(n, f.cameraPosition - i.world) < 0.0) n = -n;
-    Surface s = defaultSurface(i.world, n, d.color.rgb);
+    const float3 albedo = d.color.rgb * (i.particleC.w > 0.5 ? i.particleC.rgb : 1.0);  // instanceColor x colour
+    Surface s = defaultSurface(i.world, n, albedo);
     s.roughness = d.params0.x;
     s.metallic = d.params0.y;
     s.receivesCardShadow = 0.0;

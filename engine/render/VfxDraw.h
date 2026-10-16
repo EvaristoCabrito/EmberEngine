@@ -38,9 +38,13 @@ enum class VfxMaterial : uint32_t {
   BlessWave = 8,       // BlessVFX WAVE_VERTEX + WAVE_FRAGMENT (the rippling golden ring)
   SpriteSheet = 9,     // three Sprite + SpriteMaterial over a 4x4 fx sheet (ProceduralElementEmitter V2 layers)
   VenomSmoke = 10,     // CausticVenomVFX VENOM_SMOKE_VERTEX + VENOM_SMOKE_FRAGMENT (procedural smoke lobes)
+  PfTendril = 11,      // PhantasmalForceVFX TENDRIL_VERTEX + TENDRIL_FRAGMENT (uv.x = aAlong)
+  PfCore = 12,         // PhantasmalForceVFX CORE_VERTEX + CORE_FRAGMENT
+  PfShell = 13,        // PhantasmalForceVFX SHELL_VERTEX + SHELL_FRAGMENT
 };
 
-// Per-instance data (three InstancedMesh matrices, or a particle's attributes). Matches VfxInstance in vfx.hlsl.
+// Per-instance data (three InstancedMesh matrices, or a particle's attributes). Matches VfxInstance in vfx.hlsl. For
+// a mesh instance, c = three's instanceColor (rgb, w = 1 when set: it multiplies the material's colour).
 struct VfxInstance {
   glm::mat4 matrix{1.0f};
   glm::vec4 a{0.0f}, b{0.0f}, c{0.0f};

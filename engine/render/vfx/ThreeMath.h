@@ -109,6 +109,70 @@ struct CatmullRom {
   }
 };
 
+// Curve.computeFrenetFrames(segments, false): tangents by arc length, a first normal off the tangent's smallest axis,
+// then parallel transport.
+inline void frenetFrames(const CatmullRom& path, int segments, std::vector<glm::vec3>& tangents, std::vector<glm::vec3>& normals,
+                         std::vector<glm::vec3>& binormals) {
+  const std::vector<float> lengths = path.getLengths();
+  tangents.assign(segments + 1, glm::vec3(0.0f));
+  normals.assign(segments + 1, glm::vec3(0.0f));
+  binormals.assign(segments + 1, glm::vec3(0.0f));
+  for (int i = 0; i <= segments; ++i) tangents[i] = path.getTangent(path.getUtoTmapping(static_cast<float>(i) / segments, lengths));
+  float min = 3.4e38f;
+  glm::vec3 axis{0.0f};
+  const float tx = std::abs(tangents[0].x), ty = std::abs(tangents[0].y), tz = std::abs(tangents[0].z);
+  if (tx <= min) min = tx, axis = {1, 0, 0};
+  if (ty <= min) min = ty, axis = {0, 1, 0};
+  if (tz <= min) axis = {0, 0, 1};
+  glm::vec3 vec = normalize(glm::cross(tangents[0], axis));
+  normals[0] = glm::cross(tangents[0], vec);
+  binormals[0] = glm::cross(tangents[0], normals[0]);
+  for (int i = 1; i <= segments; ++i) {
+    normals[i] = normals[i - 1];
+    binormals[i] = binormals[i - 1];
+    vec = glm::cross(tangents[i - 1], tangents[i]);
+    if (glm::length(vec) > 1.1920929e-7f) {
+      vec = glm::normalize(vec);
+      const float theta = std::acos(std::clamp(glm::dot(tangents[i - 1], tangents[i]), -1.0f, 1.0f));
+      normals[i] = glm::vec3(glm::rotate(glm::mat4(1.0f), theta, vec) * glm::vec4(normals[i], 0.0f));
+    }
+    binormals[i] = glm::cross(tangents[i], normals[i]);
+  }
+}
+// Curve.getPointAt(u): by arc length.
+inline glm::vec3 getPointAt(const CatmullRom& path, float u, const std::vector<float>& lengths) { return path.getPoint(path.getUtoTmapping(u, lengths)); }
+
+// Engine2's mulberry (PhantasmalForceVFX): state += 0x6d2b79f5, mixed, / 2^32.
+struct Mulberry {
+  uint32_t state = 0;
+  float next() {
+    state += 0x6d2b79f5u;
+    uint32_t v = state;
+    v = (v ^ (v >> 15)) * (v | 1u);
+    v ^= v + (v ^ (v >> 7)) * (v | 61u);
+    return static_cast<float>(static_cast<double>(v ^ (v >> 14)) / 4294967296.0);
+  }
+};
+
+// Color.setHSL(h, s, l) (the values land in the working colour space as they are).
+inline glm::vec3 hsl(float h, float s, float l) {
+  auto hue2rgb = [](float p, float q, float t) {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1.0f / 6.0f) return p + (q - p) * 6 * t;
+    if (t < 1.0f / 2.0f) return q;
+    if (t < 2.0f / 3.0f) return p + (q - p) * 6 * (2.0f / 3.0f - t);
+    return p;
+  };
+  h = h - std::floor(h);  // euclideanModulo(h, 1)
+  s = std::clamp(s, 0.0f, 1.0f);
+  l = std::clamp(l, 0.0f, 1.0f);
+  if (s == 0) return glm::vec3(l);
+  const float p = l <= 0.5f ? l * (1 + s) : l + s - l * s;
+  const float q = 2 * l - p;
+  return {hue2rgb(q, p, h + 1.0f / 3.0f), hue2rgb(q, p, h), hue2rgb(q, p, h - 1.0f / 3.0f)};
+}
+
 // TubeGeometry(path, tubularSegments, radius, radialSegments, closed = false): rings along the curve by arc length,
 // oriented by three's Frenet frames (computeFrenetFrames: a first normal off the tangent's smallest axis, then
 // parallel transport). Triangles (indices expanded).
