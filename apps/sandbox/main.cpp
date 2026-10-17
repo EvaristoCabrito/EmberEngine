@@ -1374,6 +1374,48 @@ int runWindow(const Options& o) {
 }  // namespace
 
 namespace {
+// --loadout-check <battle.json> <reference battle.json> <save.json>: every hero of the first battle equipped from the save
+// (e2::equipFromSave) must carry what Engine2 gave it in the reference (export_battle.ts with GEAR_SAVE=<save.json> on the same
+// map): weapon dice, enhancement, reach, off hand, staff magic, the arrow, both hands' mastery. Exit 3 on any difference.
+int loadoutCheck(const char* battleFile, const char* referenceFile, const char* saveFile) {
+  std::optional<e2::Battle> battle = e2::Battle::load(battleFile), reference = e2::Battle::load(referenceFile);
+  e2::Loadouts arms;
+  std::ifstream in(saveFile, std::ios::binary);
+  const e2::Json save = in ? e2::Json::parse(in, nullptr, false) : e2::Json();
+  if (!battle || !reference || !arms.load("content/engine2/weapons.json") || !save.is_object()) return 1;
+  int heroes = 0, differences = 0;
+  for (e2::BattleUnit& u : battle->units()) {
+    if (u.side != "player" || u.summoned) continue;
+    const auto ref = std::find_if(reference->units().begin(), reference->units().end(), [&](const e2::BattleUnit& r) { return r.id == u.id; });
+    if (ref == reference->units().end()) continue;
+    e2::equipFromSave(u, arms, save);
+    ++heroes;
+    const e2::CombatProfile &a = u.combat, &b = ref->combat;
+    std::string diff;
+    auto check = [&](const char* what, auto mine, auto theirs) {
+      if (mine != theirs) diff += std::format(" {} {} vs Engine2 {};", what, mine, theirs);
+    };
+    check("weapon", a.hasWeapon, b.hasWeapon), check("dice", a.dice, b.dice), check("faces", a.faces, b.faces), check("bonus", a.bonus, b.bonus);
+    check("enh", a.enh, b.enh), check("ranged", a.ranged, b.ranged), check("classBonus", a.classBonus, b.classBonus);
+    check("minRange", u.minRange, ref->minRange), check("maxRange", u.maxRange, ref->maxRange);
+    check("accuracy", a.accuracy, b.accuracy), check("damageMul", a.damageMul, b.damageMul);
+    check("offAccuracy", a.offAccuracy, b.offAccuracy), check("offDamageMul", a.offDamageMul, b.offDamageMul);
+    check("offWeapon", a.offHandWeapon, b.offHandWeapon), check("offShield", a.offHandShield, b.offHandShield);
+    check("offRange", a.offMaxRange, b.offMaxRange), check("offDice", a.offDice, b.offDice), check("offFaces", a.offFaces, b.offFaces);
+    check("offBonus", a.offBonus, b.offBonus), check("offShieldMul", a.offShieldMul, b.offShieldMul);
+    check("staff", a.staff, b.staff), check("staffElement", a.staffElement, b.staffElement), check("staffBonus", a.staffBonusPct, b.staffBonusPct);
+    check("lifeSteal", a.staffLifeStealPct, b.staffLifeStealPct), check("regen", a.staffRegen, b.staffRegen), check("arrow", a.arrow, b.arrow);
+    check("weaponType", u.weaponType, ref->weaponType), check("trains", u.trainsWeapon, ref->trainsWeapon), check("skill", u.weaponSkill, ref->weaponSkill);
+    check("offType", u.offWeaponType, ref->offWeaponType), check("offTrains", u.offTrainsWeapon, ref->offTrainsWeapon), check("offSkill", u.offWeaponSkill, ref->offWeaponSkill);
+    if (!diff.empty()) ++differences;
+    logInfo("loadout {} ({}): {}d{}+{} enh {}, reach {}-{}, accuracy {} x{}, off {}{}, staff {} -> {}", u.name, u.classId, a.dice, a.faces, a.bonus, a.enh,
+            u.minRange, u.maxRange, a.accuracy, a.damageMul, a.offHandWeapon ? "weapon" : a.offHandShield ? "shield" : "none",
+            a.offHandWeapon ? std::format(" {}d{}", a.offDice, a.offFaces) : std::string(), a.staff ? a.staffElement : "no", diff.empty() ? "matches Engine2" : "DIFFERS:" + diff);
+  }
+  logInfo("loadout check: {} heroes, {} differ from Engine2", heroes, differences);
+  return heroes && !differences ? 0 : 3;
+}
+
 // --battle-save-check <battle.json> [out snapshot]: a fight's state saved (Battle::snapshot) and laid on a fresh copy
 // of the same battle (applySnapshot) must give the same snapshot back. The state: a round played into (initiative,
 // the first hero walked to the far end of its reach, hurt, its XP and a tier-1 use spent), an enemy fallen, enmity
@@ -1506,6 +1548,7 @@ int rosterCheck(const char* plainFile, const char* engine2File, const char* save
 
 int main(int argc, char** argv) {
   if (argc >= 3 && std::string_view(argv[1]) == "--battle-save-check") return battleSaveCheck(argv[2], argc >= 4 ? argv[3] : nullptr);
+  if (argc >= 5 && std::string_view(argv[1]) == "--loadout-check") return loadoutCheck(argv[2], argv[3], argv[4]);
   if (argc >= 5 && std::string_view(argv[1]) == "--roster-check") return rosterCheck(argv[2], argv[3], argv[4]);
   // --audio-check [engine2 public folder]: decode every effect and the start of every track (exit 1 if any fails).
   if (argc >= 2 && std::string_view(argv[1]) == "--audio-check")

@@ -76,6 +76,7 @@
 #include "world/Battle.h"
 #include "world/Combat.h"
 #include "world/Inn.h"
+#include "world/Loadout.h"
 #include "world/Spells.h"
 #include "render/UiArt.h"
 #include "world/Board.h"
@@ -1082,8 +1083,15 @@ class MapStage final : public Stage {
     // DEX / movement), its HP as the save carries it (full when it carries none).
     if (!campaign_ || testMode_ || playtest_ || !battle_ || !ensureInnRules()) return;
     const e2::Json save = campaign_->activeSave();
+    static const e2::Loadouts arms = [] {
+      e2::Loadouts l;
+      l.load("content/engine2/weapons.json");
+      return l;
+    }();
     for (e2::BattleUnit& u : battle_->units()) {
       if (u.side != "player" || u.summoned || !u.alive) continue;
+      // ... and wields what it has equipped: main hand, off hand, their reach, staff magic and mastery (e2::equipFromSave)
+      if (!e2::equipFromSave(u, arms, save)) logWarn("{}: class {} has no weapon data: it keeps the battle file's weapon", u.name, u.classId);
       const bool full = u.hp >= u.maxHp;
       const e2::InnRules::GearBonus g = innRules_->gearBonus(save, u.name, u.classId);
       u.gearHp = g.hp, u.gearAtk = g.atk, u.gearMag = g.mag, u.gearDef = g.def, u.gearDex = g.dex, u.gearMov = g.mov;

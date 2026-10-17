@@ -100,6 +100,15 @@ if (testLevel) {
 // PROMOTIONS='{"Kael":"paladin"}': heroes promoted as a save carries them (save.promotions), for references of a
 // promoted class's spells (Mãos Curativas is the paladin's).
 if (process.env.PROMOTIONS) gear.promotions = { ...(gear.promotions as Record<string, string> ?? {}), ...JSON.parse(process.env.PROMOTIONS) };
+// GEAR_SAVE=<save.json>: the heroes' weapons, off hands and weapon skills as that save has them, built as GameApp startBattle builds
+// its roster (weapons from save.equipped with save.weapons' enhancement, offHand from save.equipment), for Sandbox --loadout-check.
+if (process.env.GEAR_SAVE) {
+  const s = JSON.parse(readFileSync(process.env.GEAR_SAVE, 'utf8'));
+  gear.weapons = Object.fromEntries(Object.entries((s.equipped ?? {}) as Record<string, string>).map(([hero, id]) => [hero, { id, enh: s.weapons?.[id] ?? 0 }]));
+  gear.offHand = Object.fromEntries(Object.entries((s.equipment ?? {}) as Record<string, { offHand?: string }>).map(([hero, eq]) => [hero, eq.offHand] as const).filter((p) => !!p[1]));
+  gear.equipment = s.equipment ?? {};
+  gear.heroSkills = s.heroSkills ?? {};
+}
 // SAVE='{"unitHp":{..},"bags":{..},"heroDiseases":{..},"heroPoisons":{..},"heroHunger":{..},"hungerStreak":N}': the heroes as a
 // campaign save brings them (GameApp startBattle's roster: hp, bags, heroDiseases, heroPoisons, heroHunger and
 // hungerPenaltyFor(hungerStreak)), for Sandbox --roster-check.
