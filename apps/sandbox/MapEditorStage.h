@@ -505,7 +505,7 @@ class MapEditorStage : public Stage {
     const auto now = std::chrono::steady_clock::now();
     if (now - lastEdit_ > std::chrono::milliseconds(600) || past_.empty()) {
       past_.push_back(draft_);
-      if (past_.size() > 10) past_.pop_front();
+      if (past_.size() > kHistory) past_.pop_front();
       future_.clear();
     }
     lastEdit_ = now;
@@ -514,7 +514,7 @@ class MapEditorStage : public Stage {
   void undo() {
     if (past_.empty()) return;
     future_.push_front(draft_);
-    if (future_.size() > 10) future_.pop_back();
+    if (future_.size() > kHistory) future_.pop_back();
     draft_ = past_.back();
     past_.pop_back();
     dirty_ = true, lastEdit_ = {};
@@ -1720,6 +1720,19 @@ class MapEditorStage : public Stage {
     iconChevronLeft(dl, {at.x + 20, at.y + 20}, 20, IM_COL32(240, 240, 240, 255));
     spacedText(dl, uiFont(UiFont::Ui), 13.0f, {at.x + 52, at.y}, IM_COL32(180, 180, 180, 255), "MODO TESTE", 0.18f, false);
     dl->AddText(uiFont(UiFont::Display), 24.0f, {at.x + 52, at.y + 16}, IM_COL32(240, 240, 240, 255), "Map Editor");
+    // Desfazer / Refazer stay on the top bar, always visible (up to kHistory steps; Ctrl+Z / Ctrl+Shift+Z do the same).
+    const float bw = 92.0f, gap = 6.0f, right = at.x + ImGui::GetContentRegionAvail().x;
+    ImGui::SetCursorScreenPos({right - bw * 2 - gap, at.y + 6});
+    ImGui::BeginDisabled(past_.empty());
+    if (ImGui::Button("Desfazer##top", {bw, 28})) undo();
+    ImGui::EndDisabled();
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) ImGui::SetTooltip("Desfaz a última ação (%d de até %d)", static_cast<int>(past_.size()), static_cast<int>(kHistory));
+    ImGui::SameLine(0, gap);
+    ImGui::BeginDisabled(future_.empty());
+    if (ImGui::Button("Refazer##top", {bw, 28})) redo();
+    ImGui::EndDisabled();
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) ImGui::SetTooltip("Refaz a ação desfeita (%d)", static_cast<int>(future_.size()));
+    ImGui::SetCursorScreenPos({at.x, at.y + 40});
     ImGui::Dummy({1, 4});
   }
 
@@ -3171,6 +3184,7 @@ class MapEditorStage : public Stage {
   e2::Locais locais_;
   std::map<std::string, std::vector<std::string>> order_;  // Locais: each location's missions as edited
   e2::Json draft_;
+  static constexpr size_t kHistory = 20;  // Desfazer / Refazer reach this many steps back
   std::deque<e2::Json> past_, future_;
   std::chrono::steady_clock::time_point lastEdit_{};
   bool dirty_ = false;
