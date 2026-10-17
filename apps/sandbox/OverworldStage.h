@@ -573,8 +573,9 @@ class OverworldStage : public Stage {
     scrollY_ = std::clamp(scrollY_, 0.0f, std::max(0.0f, contentH - vh));
     // Input over the viewport: drag (moved > 4 px) pans, wheel scrolls (shift: sideways).
     ImGui::SetCursorScreenPos(a);
+    ImGui::SetNextItemAllowOverlap();  // the zoom plates drawn after the viewport take their own clicks
     ImGui::InvisibleButton("##viewport", {vw, vh}, ImGuiButtonFlags_MouseButtonLeft);
-    const bool overViewport = ImGui::IsItemHovered();
+    const bool overViewport = ImGui::IsItemHovered() && !zoomBoxHovered(b);
     const ImGuiIO& io = ImGui::GetIO();
     if (ImGui::IsItemActivated()) drag_ = {io.MousePos.x, io.MousePos.y, scrollX_, scrollY_}, dragMoved_ = false;
     if (ImGui::IsItemActive() && drag_) {
@@ -901,6 +902,12 @@ class OverworldStage : public Stage {
       if (ImGui::InvisibleButton("##explore", {ui->CalcTextSizeA(12.0f, FLT_MAX, 0, label.c_str()).x, 44.0f})) enterLocation(*standing, world_.locationStatus(*standing, save_, test()));
       dl->AddText(ui, 12.0f, {a.x + pad, b.y - pad - 28.0f}, kAccent, label.c_str());
     }
+  }
+
+  // True while the mouse is over the zoom box (bottom right of the viewport), so the map under it ignores wheel / pins.
+  static bool zoomBoxHovered(ImVec2 size) {
+    const ImVec2 m = ImGui::GetIO().MousePos;
+    return m.x >= size.x - 16.0f - 52.0f && m.x <= size.x - 16.0f && m.y >= size.y - 16.0f - (44 * 2 + 20 + 8) && m.y <= size.y - 16.0f;
   }
 
   void drawZoom(ImVec2 size) {

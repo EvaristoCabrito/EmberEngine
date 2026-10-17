@@ -400,8 +400,9 @@ class TestModeStage : public Stage {
     }
     if (recentre_) scrollX_ = centreX_ * contentW - vw / 2, scrollY_ = centreY_ * contentH - vh / 2, recentre_ = false;
     ImGui::SetCursorScreenPos(a);
+    ImGui::SetNextItemAllowOverlap();  // the zoom plates drawn after the viewport take their own clicks
     ImGui::InvisibleButton("##viewport", {vw, vh}, ImGuiButtonFlags_MouseButtonLeft);
-    const bool over = ImGui::IsItemHovered();
+    const bool over = ImGui::IsItemHovered() && !zoomBoxHovered(b);
     const ImGuiIO& io = ImGui::GetIO();
     if (ImGui::IsItemActivated()) drag_ = {io.MousePos.x, io.MousePos.y, scrollX_, scrollY_}, dragMoved_ = false;
     if (ImGui::IsItemActive() && drag_) {
@@ -478,6 +479,12 @@ class TestModeStage : public Stage {
   }
 
   // Bottom right: ember-plate p-1 with Aproximar, "n/4" (counted from the wide end) and Afastar.
+  // True while the mouse is over the zoom box (bottom right of the viewport), so the map under it ignores wheel / pins.
+  static bool zoomBoxHovered(ImVec2 size) {
+    const ImVec2 m = ImGui::GetIO().MousePos;
+    return m.x >= size.x - 16.0f - 52.0f && m.x <= size.x - 16.0f && m.y >= size.y - 16.0f - (44 + 4 + 16 + 4 + 44 + 8) && m.y <= size.y - 16.0f;
+  }
+
   void drawZoom(ImVec2 size) {
     if (!uiImage(paths_.engine2Public / "game/assets/world-map.jpg")) return;
     const float w = 44 + 8, h = 44 + 4 + 16 + 4 + 44 + 8;
