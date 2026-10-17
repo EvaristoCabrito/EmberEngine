@@ -8,6 +8,8 @@
 // Hexes are (column, row) on Ember's odd-r board: odd rows sit half a hex to the right.
 
 #include <array>
+#include <map>
+#include <set>
 #include <filesystem>
 #include <optional>
 #include <cstdint>
@@ -94,6 +96,7 @@ struct BattleUnit {
   int level = 1;
   bool summoned = false;
   bool undead = false;  // creatureType "undead" (Expulsar Mortos-Vivos)
+  bool boss = false;    // a boss class: a "boss" mission is won when none stands
   CombatProfile combat;
   std::optional<double> faceDx, faceDy;  // its last heading on the board (Engine2 screen units), if any
   int facing = 1;
@@ -230,6 +233,7 @@ struct CastReference {
   nlohmann::json zones, enmity;
   int unitCount = 0;
   int patchTier = 0, patchValue = 0;  // the caster was given this tier's uses first (a start-method needs some)
+  nlohmann::json affinity;            // the pairs' scores afterwards
 };
 
 // A unit's turn beginning under a condition (export_battle.ts turnStarts): the board right after Engine2's beginUnitTurn.
@@ -291,8 +295,16 @@ class Battle {
   bool move(size_t unit, int x, int y);
   // A new turn: every unit's movement is whole again and it may act.
   void newTurn();
-  // The party's affinity bonus between two names (0 = none).
+  // The party's affinity bonus between two names (0 = none): from the pair's score (Engine2 affinity.ts affinityBonus: 25 -> 2%,
+  // 50 -> 5%, 90 -> 8%), or the file's own list for a battle file that carries no scores.
   double affinityBonus(const std::string& a, const std::string& b) const;
+  // The pairs' scores 0..100 ("A|B" with the names in order), which a fight moves (friendly fire -1, healing +0.2, fighting side by
+  // side +0.1) and the campaign's save keeps.
+  const std::map<std::string, double>& affinityScores() const { return affinityScores_; }
+  void setAffinityScores(std::map<std::string, double> scores) { affinityScores_ = std::move(scores), scoresKnown_ = true; }
+  // BattleEngine.adjustHeroAffinity: both must be of the six heroes; the score is kept to a tenth within 0..100; the change is logged.
+  void adjustAffinity(const std::string& a, const std::string& b, double delta);
+  std::map<size_t, std::set<size_t>>& supportRecipients() { return supportRecipients_; }
   // Drops Engine2's reference answers (a copy of the battle for one cast does not need them).
   void clearReferences() { forecastRefs_.clear(), rollRefs_.clear(), aiRefs_.clear(), castRefs_.clear(), turnRefs_.clear(); }
   const std::vector<ForecastReference>& forecastReferences() const { return forecastRefs_; }
@@ -425,8 +437,25 @@ class Battle {
   void beginTurn(size_t unit);
   int round() const { return round_; }
   const std::vector<size_t>& turnOrder() const { return turnOrder_; }
-  // "victory" / "defeat" once one side has nobody standing, else empty.
+  // Engine2 evaluateEnd: "defeat" once no hero stands (a summon does not count), "victory" once the mission was ended
+  // (confirmFinish); empty while it goes on. Winning does not end it by itself: winAvailable() offers the end.
   std::string result() const;
+  // The mission's win rule ("rout": no enemy stands; "boss": no boss stands; "escape": only a waypoint) and its waypoints.
+  const std::string& win() const { return win_; }
+  struct Exit {
+    std::string id, kind;  // "escape" (a DEX chance to get away), "dungeon" and "connector" (leave at once)
+    std::vector<BattleHex> cells;
+    std::string targetMapId;
+  };
+  const std::vector<Exit>& exits() const { return exits_; }
+  // The end is on offer: a hero stands on a waypoint, or the win rule is met.
+  bool winAvailable() const;
+  // The waypoint a living hero is standing on, if any, and that hero.
+  const Exit* activeExit(size_t* hero = nullptr) const;
+  // Engine2 fleeChance: min(100, 60 + DEX / 3) with the affinity bonus.
+  double fleeChance(size_t unit) const;
+  void setFinished() { finished_ = true; }
+  bool finished() const { return finished_; }
 
   // --- A fight in progress, saved and resumed (Engine2 captureSnapshot / applySnapshot; world/BattleSave.cpp) ---
   // The units' live state, the round ("turn"), its initiative order and the enmity tables, in BattleSnapshot's names.
@@ -474,6 +503,12 @@ class Battle {
   std::vector<Enmity> enmity_;
   std::vector<Zone> zones_, landed_;
   int zoneSerial_ = 0;
+  std::map<std::string, double> affinityScores_;
+  bool scoresKnown_ = false;
+  std::map<size_t, std::set<size_t>> supportRecipients_;  // who each unit has already helped this action (gainSupportAffinity)
+  std::string win_ = "rout";
+  std::vector<Exit> exits_;
+  bool finished_ = false;
   std::vector<WebZone> webZones_;
   std::vector<IceZone> iceZones_;
   std::vector<AuraZone> auraZones_;

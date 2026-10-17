@@ -1720,6 +1720,21 @@ void flushNotes(Battle& b) {
   gNotes.clear();
 }
 
+// adjustAffinity(a, b, delta): between two heroes of the party only (a summon is nobody's friend).
+void affinityDelta(Battle& b, size_t a, size_t t, double delta) {
+  const BattleUnit &x = b.units()[a], &y = b.units()[t];
+  if (a == t || x.side != "player" || y.side != "player" || x.summoned || y.summoned) return;
+  b.adjustAffinity(x.name, y.name, delta);
+}
+// gainSupportAffinity: +0.2 once per helped unit per action.
+void supportAffinity(Battle& b, size_t actor, size_t target) {
+  const BattleUnit &x = b.units()[actor], &y = b.units()[target];
+  if (x.side != "player" || y.side != "player" || x.summoned || y.summoned) return;
+  std::set<size_t>& seen = b.supportRecipients()[actor];
+  if (!seen.insert(target).second) return;
+  affinityDelta(b, actor, target, 0.2);
+}
+
 // applyTileHazard: flames and embers hurt whoever ends a step (or starts its turn) on them.
 void tileHazard(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) {
   BattleUnit& u = b.units()[unit];
@@ -1809,6 +1824,7 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
     trainResistance(target, element, actor.level, rng);
   }
   dmg = marked(target, dmg);  // Marca da Ruína
+  if (hitStage && !step.kind.empty() && dmg > 0) affinityDelta(b, ai, ti, -1);  // a skill that hurts a friend costs affinity
   const int actual = std::min(target.hp, dmg);
   target.hp = std::max(0, target.hp - dmg);
   if (target.side != actor.side && !useCustom) staffDrain(actor, actual);
@@ -1862,9 +1878,15 @@ void resolveStrike(Battle& b, const BattleStep& step, bool counter, Mulberry32& 
 
 void playSteps(Battle& b, const std::vector<BattleStep>& steps, Mulberry32& rng, std::vector<BattleEffect>& out) {
   std::vector<BattleStep> queue = steps;
+  bool finished = false;  // Engine2's first finishCombat -> finishAction: the action is done (acted) and builds +0.1 with its neighbours
   for (size_t i = 0; i < queue.size(); ++i) {
     const size_t before = out.size();
     resolveStep(b, queue[i], rng, out);
+    if (!finished && queue[i].type != BattleStep::Type::Move) {
+      finished = true;
+      // Engine2's auras are a banner, not a finishCombat: they build no affinity with the neighbours.
+      if (queue[i].kind != "auraOfProtection" && queue[i].kind != "intimidatingPresence") gainAdjacentAffinity(b, queue[i].att);
+    }
     bool abort = false;
     for (size_t k = before; k < out.size(); ++k) abort = abort || out[k].abortRush;
     if (!abort) continue;
@@ -2006,6 +2028,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     const int gained = std::min(heal, target.maxHp - target.hp);
     target.hp += gained;
     if (gained > 0) {
+      supportAffinity(b, step.att, step.def);
       trainHealing(att, rng);
       b.noteAware(step.att, gained * kHealCe, gained * kHealVe);
     }
@@ -2017,6 +2040,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     BattleUnit& target = b.units()[step.def];
     if (!att.alive || !target.alive) return;
     curePlayerDisease(target);
+    supportAffinity(b, step.att, step.def);
     trainHealing(att, rng);
     b.noteAware(step.att, kSupportCe, kSupportVe);
     BattleEffect e{step.def, 0, false, false, true, false, false};
@@ -2052,6 +2076,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     if (!p || slot < 0 || !att.alive || !target.alive || att.bag[slot] <= 0) return;
     if (p->effect == 'd') {
       if (!target.diseased && !target.poisoned) return;
+      supportAffinity(b, step.att, step.def);
       att.bag[slot] -= 1;
       curePlayerDisease(target);
       trainHealing(att, rng);
@@ -2083,7 +2108,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     if (target.cond.bleedTurns > 0) heal /= 2;  // Hemorragia
     const int gained = std::min(heal, target.maxHp - target.hp);
     target.hp += gained;
-    if (gained > 0) trainHealing(att, rng);
+    if (gained > 0) supportAffinity(b, step.att, step.def), trainHealing(att, rng);
     gainExp(att, target.level, gained);
     att.bag[slot] -= 1;
     out.push_back({step.def, gained, false, false, true, false, false});
@@ -2098,6 +2123,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
       const double pct = blessHitBonusPct(att.level) / 100.0;
       ally.blessedHitBonusPct = std::max(ally.blessedHitBonusPct, pct);
       ally.blessedRoundsLeft = blessDuration(att.level);
+      supportAffinity(b, step.att, id);
       out.push_back(statusEffect(id, std::format("Bênção +{}%", static_cast<int>(jsRound(pct * 100)))));
     }
     return;
@@ -2186,6 +2212,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
       dmg = static_cast<int>(std::floor(elementalDamage(staffed, foe.combat.resistance(element), fighterAt(b, step.att, att.x, att.y).mag)));
     }
     dmg = marked(foe, dmg);  // Marca da Ruína
+    if (dmg > 0 && !step.kind.empty()) affinityDelta(b, step.att, id, -1);
     const int actual = std::min(foe.hp, dmg);
     foe.hp = std::max(0, foe.hp - dmg);
     if (!element.empty() && foe.side != att.side) staffDrain(att, actual);
@@ -2450,6 +2477,46 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
 }
 
 void stepOnHex(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) { tileHazard(b, unit, rng, out); }
+
+void gainAdjacentAffinity(Battle& b, size_t unit) {
+  const BattleUnit& u = b.units()[unit];
+  if (u.acted || !u.alive || u.side != "player" || u.summoned) return;
+  const auto it = b.supportRecipients().find(unit);
+  const std::set<size_t> recipients = it == b.supportRecipients().end() ? std::set<size_t>() : it->second;
+  const std::vector<BattleHex> mine = Battle::footprint(u, u.x, u.y);
+  for (size_t i = 0; i < b.units().size(); ++i) {
+    const BattleUnit& v = b.units()[i];
+    if (i == unit || !v.alive || v.side != "player" || v.summoned) continue;
+    const std::vector<BattleHex> theirs = Battle::footprint(v, v.x, v.y);
+    const bool adjacent = std::any_of(mine.begin(), mine.end(), [&](const BattleHex& p) {
+      return std::any_of(theirs.begin(), theirs.end(), [&](const BattleHex& q) { return hexDist(p, q) == 1; });
+    });
+    if (adjacent && !recipients.count(i)) affinityDelta(b, unit, i, 0.1);
+  }
+  b.supportRecipients().erase(unit);
+}
+
+FinishOutcome confirmFinish(Battle& b, Mulberry32& rng) {
+  FinishOutcome r;
+  if (!b.winAvailable()) return r;
+  size_t hero = 0;
+  const Battle::Exit* exit = b.activeExit(&hero);
+  r.hero = hero;
+  if (exit && exit->kind == "escape") {
+    if (rng() * 100 < b.fleeChance(hero)) {
+      b.setFinished();
+      r.ended = true;
+    } else {
+      BattleUnit& u = b.units()[hero];
+      u.moved = true, u.acted = true;
+      r.escapeFailed = true;
+    }
+    return r;
+  }
+  b.setFinished();
+  r.ended = true;
+  return r;
+}
 
 std::optional<BattleUnit> summonSkeleton(const std::string& id, const std::string& classId) {
   const SummonData& data = summonData();

@@ -201,6 +201,17 @@ bool checkBattle(const std::filesystem::path& battleJson) {
         for (size_t k = 0; k < 4; ++k)
           if (std::abs(en[i][k].get<double>() - r.enmity[i][k].get<double>()) > 1e-6) sameEnmity = false;
       if (!sameEnmity) diff += std::format(" [enmity {} vs {}]", en.dump(), r.enmity.dump());
+      {  // the party's affinity scores (friendly fire, healing)
+        std::map<std::string, double> theirs;
+        if (r.affinity.is_object())
+          for (const auto& [k, v] : r.affinity.items()) theirs[k] = v.get<double>();
+        bool same = theirs.size() == copy.affinityScores().size();
+        for (const auto& [k, v] : theirs) {
+          const auto it = copy.affinityScores().find(k);
+          if (it == copy.affinityScores().end() || std::abs(it->second - v) > 1e-9) same = false;
+        }
+        if (!same) diff += " [affinity]";
+      }
       if (calls != r.calls) diff += std::format(" [draws {} vs {}]", calls, r.calls);
       if (!diff.empty())
         report(std::format("cast {} {} from ({},{}) at ({},{}) seed {}:{}", battle->units()[static_cast<size_t>(r.caster)].name, r.kind, r.at.x, r.at.y, r.cell.x,

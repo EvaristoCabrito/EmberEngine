@@ -125,6 +125,10 @@ for (let y = 0; y < e.rows; y++)
       shot: { height: def.height ?? 0, blocksShot: !!def.blocksShot } });
   }
 
+// The mission's waypoints (Engine2 evaluateEnd / exitDecorationHere): a living hero standing on one of an exit decoration's cells offers to
+// end the mission (an escape marker with its DEX chance, a dungeon exit or a floor connector outright).
+const exits = e.decorations.filter((d: any) => data.DECORATIONS[d.id]?.exitKind).map((d: any) => ({ id: d.id, kind: data.DECORATIONS[d.id].exitKind, x: d.x, y: d.y,
+  targetMapId: d.targetMapId ?? null, cells: data.placedFootprint(d).map((f: any) => [d.x + f.dx, d.y + f.dy]) }));
 const units: Record<string, unknown>[] = [];
 for (const u of e.units) {
   // The reach the battle shows for this unit (BattleEngine.effectiveUnitForReach + computeReachable).
@@ -143,7 +147,7 @@ for (const u of e.units) {
     mov: e.effectiveUnitForReach(u).mov, baseMov: u.mov, hp: u.hp, maxHp: u.maxHp, atk: u.atk, def: u.def, mag: u.mag, dex: u.dex ?? 0,
     minRange: u.minRange ?? 1, maxRange: u.maxRange ?? 1, size: u.size ?? 1, summoned: !!u.summoned, level: u.level ?? 1,
     footprintOffsets: u.footprintOffsets ?? null, footprintW: u.footprintW ?? null, footprintH: u.footprintH ?? null, reach: cellsOut,
-    undead: !!data.isUndeadClass(u.classId), stunned: !!u.stunned, stunTurns: u.stunTurns ?? 0, asleep: !!u.asleep, sleepTurns: u.sleepTurns ?? 0,
+    undead: !!data.isUndeadClass(u.classId), boss: !!data.isBossClass(u.classId), stunned: !!u.stunned, stunTurns: u.stunTurns ?? 0, asleep: !!u.asleep, sleepTurns: u.sleepTurns ?? 0,
     bleeding: !!u.bleeding, bleedRoundsLeft: u.bleedRoundsLeft ?? null, crippled: !!u.crippled, fearTurns: u.fearTurns ?? 0, fearSourceId: u.fearSourceId ?? null,
     blessedHitBonusPct: u.blessedHitBonusPct ?? 0, blessedRoundsLeft: u.blessedRoundsLeft ?? 0, summonerId: u.summonerId ?? null, spellCharges: u.spellCharges ?? 0,
     lifeDrainCharges: u.lifeDrainCharges ?? null,
@@ -485,7 +489,7 @@ if (process.env.SPELL_REFS === '1') {
             if (!cast) { castSeed--; skillCasts.push([ci, kindOut, x, y, 0, at.x, at.y]); continue; }
             for (let i = 0; i < 6000 && !done && (b.active || b.queue.length); i++) b.tick(0.05);
             if (done) calls = doneCalls;
-            skillCasts.push([ci, kindOut, x, y, 1, at.x, at.y, s, calls, b.units.map(unitExt), zonesExt(b), enmityExt(b), b.units.length, patched ? need : null]);
+            skillCasts.push([ci, kindOut, x, y, 1, at.x, at.y, s, calls, b.units.map(unitExt), zonesExt(b), enmityExt(b), b.units.length, patched ? need : null, { ...b.affinityScores }]);
           }
     }
   }
@@ -787,7 +791,7 @@ const missionMusic = (() => {
 })();
 
 writeFileSync(outPath, JSON.stringify({ source: 'Engine2 src/game/engine.ts BattleEngine via tools/scripts/engine2/export_battle.ts',
-  map: draft.id, cols: e.cols, rows: e.rows, debugFreeCast: testLevel > 0, explore: !!mission.explore, cells, units, affinityBonus, forecasts, rolls, ai, aiNear: near, casts, supportCasts, skillCasts, turnStarts,
+  map: draft.id, cols: e.cols, rows: e.rows, debugFreeCast: testLevel > 0, explore: !!mission.explore, cells, units, affinityBonus, win: mission.win ?? 'rout', exits, affinityScores: e.affinityScores ?? {}, forecasts, rolls, ai, aiNear: near, casts, supportCasts, skillCasts, turnStarts,
   sounds: { levelUp }, music: missionMusic }));
 console.log(`${draft.id}: ${e.cols}x${e.rows}, ${units.length} units (${units.map((u) => `${u.name} mov ${u.mov}`).join(', ')})`);
 process.exit(0);  // the engine leaves timers running

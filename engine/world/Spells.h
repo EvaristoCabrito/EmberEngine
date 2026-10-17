@@ -186,6 +186,16 @@ void playSteps(Battle& b, const std::vector<BattleStep>& steps, Mulberry32& rng,
 std::vector<double> unitStateNumbers(const BattleUnit& u);
 nlohmann::json zoneStateNumbers(const Battle& b);
 nlohmann::json enmityNumbers(const Battle& b);
+// BattleEngine.gainAdjacentAffinity: an action done by a hero builds +0.1 with each hero fighting beside it (not those it already helped
+// this action); the support recipients are then forgotten. Called as the action ends, before the unit counts as having acted.
+void gainAdjacentAffinity(Battle& b, size_t unit);
+// Engine2 confirmFinish: the player ends the mission. An escape waypoint rolls the hero's DEX chance (a failed try spends its turn and the fight
+// goes on); anything else ends it. `escapeChance` is the chance shown for an escape waypoint, `hero` who stands on it.
+struct FinishOutcome {
+  bool ended = false, escapeFailed = false;
+  size_t hero = 0;
+};
+FinishOutcome confirmFinish(Battle& b, Mulberry32& rng);
 // What a unit's turn becomes once it has begun (Engine2 beginUnitTurn after startOfTurnEffects): it plays on, it loses the turn
 // (dead, stunned, asleep) or it flees in fear along `fleePath` and cannot act.
 struct TurnStart {

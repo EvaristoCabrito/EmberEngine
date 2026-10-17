@@ -97,15 +97,38 @@ void Battle::beginTurn(size_t unit) {
 }
 
 std::string Battle::result() const {
-  bool party = false, foes = false;
-  for (const BattleUnit& u : units_) {
-    if (!u.alive) continue;
-    party = party || u.side == "player";
-    foes = foes || u.side == "enemy";
+  if (finished_) return "victory";
+  if (roaming_) return {};  // free roam has no defeat (Engine2 explore missions: only the waypoints)
+  const bool party = std::any_of(units_.begin(), units_.end(), [](const BattleUnit& u) { return u.alive && u.side == "player" && !u.summoned; });
+  return party ? std::string() : std::string("defeat");
+}
+
+const Battle::Exit* Battle::activeExit(size_t* hero) const {
+  for (size_t i = 0; i < units_.size(); ++i) {
+    const BattleUnit& u = units_[i];
+    if (u.side != "player" || !u.alive) continue;
+    for (const Exit& e : exits_)
+      for (const BattleHex& c : e.cells)
+        if (c.x == u.x && c.y == u.y) {
+          if (hero) *hero = i;
+          return &e;
+        }
   }
-  if (!party) return "defeat";
-  if (!foes) return "victory";
-  return {};
+  return nullptr;
+}
+
+bool Battle::winAvailable() const {
+  if (finished_) return false;
+  if (activeExit()) return true;
+  if (roaming_) return false;
+  const bool bossAlive = std::any_of(units_.begin(), units_.end(), [](const BattleUnit& u) { return u.side == "enemy" && u.alive && u.boss; });
+  const bool anyEnemy = std::any_of(units_.begin(), units_.end(), [](const BattleUnit& u) { return u.side == "enemy" && u.alive; });
+  return win_ == "boss" ? !bossAlive : win_ == "escape" ? false : !anyEnemy;
+}
+
+double Battle::fleeChance(size_t unit) const {
+  const BattleUnit& u = units_[unit];
+  return std::min(100.0, 60 + fighterAt(*this, unit, u.x, u.y).dex / 3);
 }
 
 void Battle::noteWeaponDamage(size_t attacker, size_t target, int dmg) { noteDamage(attacker, target, dmg, false); }

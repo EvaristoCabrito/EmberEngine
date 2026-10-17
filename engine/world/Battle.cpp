@@ -83,6 +83,21 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
   b.map_ = text(j, "map");
   b.debugFreeCast_ = j.value("debugFreeCast", false);
   b.roaming_ = j.value("explore", false);
+  b.win_ = j.value("win", std::string("rout"));
+  if (j.contains("affinityScores") && j["affinityScores"].is_object()) {
+    std::map<std::string, double> scores;
+    for (const auto& [k, v] : j["affinityScores"].items())
+      if (v.is_number()) scores[k] = v.get<double>();
+    b.setAffinityScores(std::move(scores));
+  }
+  if (j.contains("exits") && j["exits"].is_array())
+    for (const json& x : j["exits"]) {
+      Exit e;
+      e.id = text(x, "id"), e.kind = text(x, "kind"), e.targetMapId = text(x, "targetMapId");
+      if (x.contains("cells") && x["cells"].is_array())
+        for (const json& c : x["cells"]) e.cells.push_back({c[0].get<int>(), c[1].get<int>()});
+      b.exits_.push_back(std::move(e));
+    }
   // A file from before `explore` / `baseMov`: an explore mission shows as every unit carrying the whole board as its
   // movement (Engine2's free-roam reach). It roams like a new file, each unit moving as its class does, so every map
   // behaves the same whenever its file was made.
@@ -150,6 +165,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     o.level = integer(u, "level", 1);
     o.summoned = yes(u, "summoned");
     o.undead = yes(u, "undead");
+    o.boss = yes(u, "boss");
     if (u.contains("combat") && u["combat"].is_object()) {
       const json& c = u["combat"];
       CombatProfile& p = o.combat;
@@ -307,6 +323,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
         }
         r.zones = c[10], r.enmity = c[11], r.unitCount = c[12].get<int>();
         if (c.size() > 13 && c[13].is_array() && c[13].size() >= 2) r.patchTier = c[13][0].get<int>(), r.patchValue = c[13][1].get<int>();
+        if (c.size() > 14) r.affinity = c[14];
       }
       b.castRefs_.push_back(std::move(r));
     }
@@ -526,7 +543,29 @@ bool Battle::move(size_t unit, int x, int y) {
   return false;
 }
 
+namespace {
+std::string affinityPair(const std::string& a, const std::string& b) { return a < b ? a + "|" + b : b + "|" + a; }
+bool affinityHero(const std::string& n) {
+  return n == "Kael" || n == "Neera" || n == "Voss" || n == "Salazar" || n == "Aldric" || n == "Malrec";
+}
+}  // namespace
+
+void Battle::adjustAffinity(const std::string& a, const std::string& b, double delta) {
+  if (a == b || delta == 0 || !affinityHero(a) || !affinityHero(b)) return;
+  double& score = affinityScores_[affinityPair(a, b)];
+  score = std::max(0.0, std::min(100.0, std::floor((score + delta) * 10 + 0.5) / 10));
+  scoresKnown_ = true;
+  std::string d = std::format("{}", delta);
+  if (const size_t dot = d.find('.'); dot != std::string::npos) d[dot] = ',';
+  pushLog(std::format("Afinidade {} + {}: {}{}", a, b, delta > 0 ? "+" : "", d));
+}
+
 double Battle::affinityBonus(const std::string& a, const std::string& b) const {
+  if (scoresKnown_) {
+    const auto it = affinityScores_.find(affinityPair(a, b));
+    const double score = it == affinityScores_.end() ? 0 : it->second;
+    return score >= 90 ? 0.08 : score >= 50 ? 0.05 : score >= 25 ? 0.02 : 0;
+  }
   for (const auto& [x, y, v] : affinity_)
     if (x == a && y == b) return v;
   return 0;

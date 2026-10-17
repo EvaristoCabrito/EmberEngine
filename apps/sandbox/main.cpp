@@ -936,6 +936,7 @@ int runWindow(const Options& o) {
     }
     // potions left, disease, poison, hunger, rations (finishBattle; HeroHandoff.h)
     writeHeroConditions(save, map.heroOutcomes(), map.lootRations());
+    for (const auto& [pair, score] : map.affinityScoresNow()) save["affinityScores"][pair] = score;
     save["pendingMission"] = nullptr;
     save["battle"] = nullptr;
     const bool won = map.battleResult() == "victory";
@@ -1106,6 +1107,10 @@ int runWindow(const Options& o) {
               if (cls.is_string()) options.heroClass[name] = cls.get<std::string>();
           // ... and their condition (GameApp startBattle's roster; HeroHandoff.h).
           options.heroState = heroStatesFromSave(save);
+          // ... and the party's affinities (save.affinityScores): the bonus between neighbours follows them, and the fight moves them
+          if (const e2::Json scores = save.value("affinityScores", e2::Json::object()); scores.is_object())
+            for (const auto& [pair, v] : scores.items())
+              if (v.is_number()) options.affinityScores[pair] = v.get<double>();
         }
         curtainBeforeBattle();
         auto map = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);

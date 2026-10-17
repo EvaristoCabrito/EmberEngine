@@ -174,6 +174,7 @@ struct MapStageOptions {
     int lockpick = 0;                       // bags[name].lockpick
   };
   std::map<std::string, HeroState> heroState;
+  std::map<std::string, double> affinityScores;  // the save's party affinities (pair "A|B" -> 0..100), when a campaign fight starts
   // The world's tables, for the status sheet's Mochila / Equipar (the party's inventory over a fight).
   const e2::Overworld* world = nullptr;
   // The map editor's preview (MapEditorStage.h): the draft and its scene given in memory instead of `map` / `scene`,
@@ -1119,6 +1120,8 @@ class MapStage final : public Stage {
   }
   // A conversation or film is open over the battle: nobody's turn moves on until it closes.
   bool holdTurns = false;
+  // The party's affinities as the fight leaves them (friendly fire, healing, fighting side by side), for the save.
+  std::map<std::string, double> affinityScoresNow() const { return battle_ ? battle_->affinityScores() : std::map<std::string, double>(); }
   std::vector<HeroOutcome> heroOutcomes() const {
     std::vector<HeroOutcome> out;
     if (!battle_) return out;
@@ -1955,6 +1958,7 @@ class MapStage final : public Stage {
       if (const auto it = options_.heroClass.find(u.name); it != options_.heroClass.end() && u.side == "player") e2::setPromotion(u, it->second);
       e2::grantClassSpells(u);
     }
+    battle_->setAffinityScores(options_.affinityScores);  // the save's party affinities (none: no bonus yet)
     // The save's condition of each hero (Engine2 spawnUnit: hunger and disease off its stats, HP capped, its bag).
     for (e2::BattleUnit& u : battle_->units()) {
       const auto it = options_.heroState.find(u.name);
@@ -2353,6 +2357,59 @@ class MapStage final : public Stage {
         pendingStrike_ = foe;
         return walkTo(static_cast<size_t>(selected_), from);
       }
+  }
+
+  // The mission's end (Engine2 evaluateEnd / confirmFinish): winning only makes ending it an option. A hero on a waypoint offers it
+  // (an escape marker with its DEX chance), and so does a won rout / boss mission.
+  void confirmFinishNow() {
+    const e2::FinishOutcome o = e2::confirmFinish(*battle_, rng_);
+    if (o.escapeFailed) {
+      const e2::BattleUnit& u = battle_->units()[o.hero];
+      tip_ = u.name + tr(" não conseguiu fugir — o combate continua.", " could not get away: the fight goes on."), tipAt_ = now_;
+      battle_->pushLog(tip_);
+      winDismissed_ = true;
+      select(-1);
+    } else if (o.ended) {
+      tip_ = tr("Missão encerrada.", "Mission ended."), tipAt_ = now_;
+    }
+  }
+  void drawFinishPrompt() {
+    if (!battle_ || !result_.empty() || winDismissed_ || !battle_->winAvailable() || busy()) return;
+    size_t hero = 0;
+    const e2::Battle::Exit* exit = battle_->activeExit(&hero);
+    std::string text, yes, no;
+    if (exit && exit->kind == "escape") {
+      const std::string chance = std::format("{:g}", std::round(battle_->fleeChance(hero) * 100.0) / 100.0);
+      text = tr("Encontraram uma rota de fuga. Desejam tentar escapar? (" + chance + "% de chance)", "You found a way out. Try to escape? (" + chance + "% chance)");
+      yes = tr("Tentar escapar", "Try to escape"), no = tr("Ficar", "Stay");
+    } else if (exit) {
+      text = exit->kind == "dungeon" ? tr("Encontraram a saída da masmorra. Desejam sair?", "You found the dungeon exit. Leave?")
+                                     : tr("Encontraram uma passagem para o próximo andar. Deseja avançar?", "You found a way to the next floor. Go on?");
+      yes = tr("Sair", "Leave"), no = tr("Ficar", "Stay");
+    } else {
+      text = tr("Todos os inimigos caíram. Encerrar a missão?", "Every enemy has fallen. End the mission?");
+      yes = tr("Encerrar missão", "End mission"), no = tr("Continuar explorando", "Keep exploring");
+    }
+    const ImGuiIO& io = ImGui::GetIO();
+    ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, io.DisplaySize.y - 132.0f - 12.0f}, ImGuiCond_Always, {0.5f, 1.0f});
+    ImGui::SetNextWindowSize({520.0f, 0.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {16.0f, 12.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {8.0f, 8.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(14, 14, 14, 242));
+    ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(226, 150, 70, 170));
+    ImGui::Begin("##finishprompt", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing);
+    ImGui::PushFont(uiFont(UiFont::Ui), 15.0f);
+    ImGui::PushTextWrapPos(488.0f);
+    ImGui::TextUnformatted(text.c_str());
+    ImGui::PopTextWrapPos();
+    ImGui::PopFont();
+    if (emberButton("##finishyes", yes.c_str(), true, true)) confirmFinishNow();
+    ImGui::SameLine();
+    if (emberButton("##finishno", no.c_str(), false, true)) winDismissed_ = true;
+    ImGui::End();
+    ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar(3);
   }
 
   // Engine2's confirm panel (GameApp data-attack-confirm / data-skill-confirm): what is about to happen and its hit chance,
@@ -2796,6 +2853,7 @@ class MapStage final : public Stage {
     float impact = 0.0f, end = 0.0f;
     bool landed = false;   // this step's roll is in
     size_t owner = 0;      // the scene unit whose action this is
+    bool affinityDone = false;  // the action's first step is over: its neighbours' affinity was built
     bool bolt = false;     // this strike is an Arcano bolt (CombatFx): it lands when the bolt arrives
     std::string element;   // the bolt's element (its palette)
     bool arrow = false;    // this strike is a bow shot: the arrow flies and lands on the hit
@@ -3221,6 +3279,20 @@ class MapStage final : public Stage {
       for (size_t i = 0; i < uses.size(); ++i) std::copy(uses[i].begin(), uses[i].end(), battle_->units()[i].spells);
       return logInfo("battle script: hurt: every unit at half HP, some sick / poisoned, everyone hungry");
     }
+    if (p[0] == "wipe") {  // every enemy fallen: the end is on offer (Engine2 winAvailable)
+      for (e2::BattleUnit& v : battle_->units())
+        if (v.side == "enemy") v.alive = false, v.hp = 0;
+      return logInfo("battle script: wipe: win rule {}, end on offer {}", battle_->win(), battle_->winAvailable());
+    }
+    if (p[0] == "goto" && p.size() > 3) {  // "goto:<unit>:<x>:<y>": the unit set down on a hex (a waypoint, for captures)
+      const int gi = sceneUnitNamed(p[1]);
+      if (gi < 0) return fail("no such unit");
+      e2::BattleUnit& v = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(gi)])];
+      v.x = std::atoi(p[2].c_str()), v.y = std::atoi(p[3].c_str());
+      unitPos_[static_cast<size_t>(gi)] = anchorWorld(v, {v.x, v.y});
+      unitWalk_[static_cast<size_t>(gi)] = Walk{};
+      return logInfo("battle script: goto {} ({}, {}): exit {}", p[1], v.x, v.y, battle_->activeExit() ? battle_->activeExit()->kind : "none");
+    }
     if (p[0] == "aim" && p.size() > 2) {
       // the cursor held on a hex from now on (the grid's route / target under it, for captures)
       scriptHover_ = e2::BattleHex{std::atoi(p[1].c_str()), std::atoi(p[2].c_str())};
@@ -3626,6 +3698,11 @@ class MapStage final : public Stage {
       startStep(x);
       return;
     }
+    // The step is over (Engine2 finishCombat -> finishAction): the action is done, and fighting side by side builds affinity (+0.1)
+    if (!x.affinityDone && s.type != e2::BattleStep::Type::Move) {
+      x.affinityDone = true;
+      e2::gainAdjacentAffinity(*battle_, static_cast<size_t>(unitBattle_[x.owner]));
+    }
     if (x.step + 1 < x.steps.size()) {
       ++x.step;
       x.counter = false;
@@ -3634,6 +3711,8 @@ class MapStage final : public Stage {
     }
     // Engine2 finishAction: it has acted; its turn ends unless it is a hero with movement left (it stays picked).
     e2::BattleUnit& au = battle_->units()[static_cast<size_t>(unitBattle_[x.owner])];
+    // Every action costs a hero 2 points of fullness (Engine2 finishAction: drainHunger, ACTION_HUNGER_COST)
+    if (au.side == "player" && !au.summoned) au.fullness = std::max(0.0, std::min(120.0, au.fullness.value_or(100.0)) - 2.0);
     au.acted = true;
     exchange_.reset();
     if (!au.alive || au.side != "player" || au.mov - au.moveUsed <= 0) {
@@ -4317,6 +4396,7 @@ class MapStage final : public Stage {
     drawTurnOrder();
     drawHudBar();
     drawConfirm();
+    drawFinishPrompt();
     drawFullLog();
     drawStatusSheet();
     drawBattleInventory();
@@ -4472,6 +4552,16 @@ class MapStage final : public Stage {
       const std::string statusLabel = "Status";
       const float statusW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, statusLabel.c_str(), 0.06f) + 28.0f;
       const float endX = io.DisplaySize.x - endW - 20.0f, openX = endX - 6.0f - openW, logX = (showLog_ ? openX : endX) - 6.0f - logW;
+      // Engine2's footer: "Encerrar missão" / "Usar waypoint" once the end is on offer
+      if (battle_->winAvailable() && result_.empty()) {
+        const std::string finishLabel = battle_->activeExit() ? tr("Usar waypoint", "Use waypoint") : tr("Encerrar missão", "End mission");
+        const float finishW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, finishLabel.c_str(), 0.06f) + 28.0f;
+        ImGui::SameLine(logX - 6.0f - statusW - 6.0f - finishW);
+        if (emberButton("##finishbtn", finishLabel.c_str(), true, !busy())) {
+          if (battle_->activeExit()) winDismissed_ = false;
+          else confirmFinishNow();
+        }
+      }
       ImGui::SameLine(logX - 6.0f - statusW);
       if (emberButton("##statusbtn", statusLabel.c_str(), false, ub >= 0)) openStatus(ub);
       ImGui::SameLine(logX);
@@ -5179,6 +5269,7 @@ class MapStage final : public Stage {
   };
   std::vector<CardRect> unitCard_;
   bool offHandMode_ = false;         // "Mão Secundária" armed: the off-hand weapon is the one that strikes
+  bool winDismissed_ = false;        // the end was on offer and the player kept playing (the footer button brings it back)
   bool pickActiveOnResume_ = false;  // set by resume(): pick the active hero once the turn loop first runs
   BattleStatusSheet statusSheet_;                                    // the character status sheet
   e2::InnData innData_;                                              // the Mochila / Equipar over the fight
