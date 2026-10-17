@@ -2197,20 +2197,42 @@ class MapStage final : public Stage {
     if (scriptHover_) hover_ = scriptHover_;  // a scripted cursor (captures of the grid)
     if (!battle_ || mouse_.x < 0.0f) return;
     if (ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureMouse) return;
-    hover_ = pick(mouseWindow_, mouse_.x, mouse_.y);
+    int w = 0, h = 0;
+    SDL_Window* window = SDL_GetWindowFromID(mouseWindow_);
+    if (!window || !SDL_GetWindowSize(window, &w, &h) || w <= 0 || h <= 0) return;
+    hover_ = spellMode_.empty() ? pickAt(w, h, mouse_.x, mouse_.y) : aimPickAt(w, h, mouse_.x, mouse_.y);
+  }
+  // A spell being aimed: a foe's card under the cursor aims at its hex; a friend's card (the caster's own too) never hides
+  // the ground behind it (a click on a foe standing behind a friend picked the friend: Mãos Flamejantes burnt the party).
+  std::optional<e2::BattleHex> aimPickAt(int w, int h, float mx, float my) const {
+    const std::optional<e2::BattleHex> card = pickAt(w, h, mx, my);
+    if (card && selected_ >= 0) {
+      const int who = battle_->unitAt(card->x, card->y);
+      const e2::BattleUnit& me = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
+      if (who >= 0 && battle_->units()[static_cast<size_t>(who)].side != me.side) return card;
+    }
+    const std::optional<e2::BattleHex> ground = pickAt(w, h, mx, my, false);
+    return ground ? ground : card;
   }
 
   // The left button: a reachable hex walks the picked player unit there; a unit picks it; anything else lets go.
   void click(SDL_WindowID id, float mx, float my) {
+    int w = 0, h = 0;
+    SDL_Window* window = SDL_GetWindowFromID(id);
+    if (!window || !SDL_GetWindowSize(window, &w, &h) || w <= 0 || h <= 0) return;
+    clickAt(w, h, mx, my);
+  }
+  // The click on a screen of w x h (the battle script's "click" step comes through here too).
+  void clickAt(int w, int h, float mx, float my) {
     if (options_.editorClick) {
-      if (const std::optional<e2::BattleHex> hex = pick(id, mx, my)) options_.editorClick(hex->x, hex->y);
+      if (const std::optional<e2::BattleHex> hex = pickAt(w, h, mx, my)) options_.editorClick(hex->x, hex->y);
       return;
     }
     if (!battle_ || !scene_) return;
-    const std::optional<e2::BattleHex> hex = pick(id, mx, my);
+    const std::optional<e2::BattleHex> hex = pickAt(w, h, mx, my);
     if (busy()) return;  // a walk, a strike or an enemy's turn is playing
     if (!spellMode_.empty()) {
-      if (hex && myTurn()) aimSpell(*hex);
+      if (const std::optional<e2::BattleHex> aim = aimPickAt(w, h, mx, my); aim && myTurn()) aimSpell(*aim);
       return;
     }
     pendingFoe_ = -1;  // a staged strike is dropped by a click anywhere but on a foe (Engine2 handleCell)
@@ -2233,7 +2255,7 @@ class MapStage final : public Stage {
       // A card's rectangle is taller than the body: a click on the ground behind a friend's card is still a walk, not
       // a jump of the selection to that friend.
       if (!own)
-        if (const std::optional<e2::BattleHex> ground = pick(id, mx, my, false); ground && !(ground->x == u.x && ground->y == u.y) && reachable(*ground))
+        if (const std::optional<e2::BattleHex> ground = pickAt(w, h, mx, my, false); ground && !(ground->x == u.x && ground->y == u.y) && reachable(*ground))
           return walkTo(static_cast<size_t>(selected_), *ground);
       // Two left clicks on the unit being played end its turn (a single one keeps it picked).
       if (own && !battle_->roaming()) {
@@ -2283,7 +2305,7 @@ class MapStage final : public Stage {
       spellArmed_ = e2::BattleHex{u.x, u.y};
       return;
     }
-    spellPreview_.clear();
+    spellPreviewAim_.reset(), hitsKey_.clear();
     std::vector<e2::BattleHex> valid;
     for (int y = 0; y < battle_->rows(); ++y)
       for (int x = 0; x < battle_->cols(); ++x)
@@ -2319,7 +2341,7 @@ class MapStage final : public Stage {
         const e2::BattleUnit* n = nearest < 0 ? nullptr : &battle_->units()[static_cast<size_t>(foes[static_cast<size_t>(nearest)].first)];
         if (!n || e2::Battle::distance({u.x, u.y}, {f.x, f.y}) < e2::Battle::distance({u.x, u.y}, {n->x, n->y})) nearest = static_cast<int>(i);
       }
-      if (nearest >= 0) spellPreview_ = aimArea(b, foes[static_cast<size_t>(nearest)].second);
+      if (nearest >= 0) spellPreviewAim_ = foes[static_cast<size_t>(nearest)].second;
       return;
     }
     for (const e2::BattleHex& c : valid)
@@ -2345,6 +2367,23 @@ class MapStage final : public Stage {
   }
   std::vector<e2::BattleHex> aimArea(size_t b, e2::BattleHex hex) const {
     return potionOf(spellMode_) ? std::vector<e2::BattleHex>{hex} : e2::spellArea(*battle_, b, spellMode_, hex);
+  }
+  // Who the spell aimed at `hex` would hit, friends included (the cast itself run on a copy of the battle, so its own
+  // rules decide; the Tiro Perfurante's line hits the party too). Kept while the aim stays on the same hex.
+  const std::vector<size_t>& aimHits(size_t b, e2::BattleHex hex) const {
+    const std::string key = std::format("{}:{}:{}:{}", spellMode_, b, hex.x, hex.y);
+    if (key == hitsKey_) return hits_;
+    hitsKey_ = key, hits_.clear();
+    if (potionOf(spellMode_) || e2::spellTargetCount(*battle_, b, spellMode_) != 1) return hits_;
+    e2::Battle copy = *battle_;
+    if (const std::optional<std::vector<e2::BattleStep>> steps = e2::castSpell(copy, b, spellMode_, {hex}, nullptr, false))
+      for (const e2::BattleStep& s : *steps) {
+        std::vector<size_t> ids = s.ids;
+        if (s.type == e2::BattleStep::Type::Combat) ids.push_back(s.def);
+        for (size_t id : ids)
+          if (id != b && id < battle_->units().size() && std::find(hits_.begin(), hits_.end(), id) == hits_.end()) hits_.push_back(id);
+      }
+    return hits_;
   }
 
   // A hex clicked while a spell is aimed: one more target (Míssil Mágico takes one per missile), then the cast.
@@ -2511,6 +2550,16 @@ class MapStage final : public Stage {
     };
     centred(title.c_str(), uiFont(UiFont::Ui), 14.0f, IM_COL32(226, 150, 70, 255));
     if (hit) centred(tr(std::format("{}% de acerto", *hit), std::format("{}% to hit", *hit)).c_str(), uiFont(UiFont::Mark), 34.0f, IM_COL32(244, 232, 214, 255));
+    // Fogo amigo: the aimed spell would hit friends too (allowed; it costs their affinity with the caster).
+    if (pendingFoe_ < 0 && spellArmed_ && ready) {
+      std::string friends;
+      for (size_t id : aimHits(ab, *spellArmed_))
+        if (battle_->units()[id].side == battle_->units()[ab].side) friends += (friends.empty() ? "" : ", ") + battle_->units()[id].name;
+      if (!friends.empty()) {
+        centred(tr("Fogo amigo: ", "Friendly fire: ").append(friends).c_str(), uiFont(UiFont::Ui), 14.0f, IM_COL32(255, 112, 92, 255));
+        centred(tr("acerta o grupo e custa afinidade", "hits the party and costs affinity").c_str(), uiFont(UiFont::Ui), 12.0f, IM_COL32(214, 170, 150, 255));
+      }
+    }
     const std::string yes = tr("Confirmar", "Confirm"), no = tr("Cancelar", "Cancel");
     auto buttonW = [&](const std::string& l) { return spacedTextWidth(uiFont(UiFont::Mark), 16.0f, l.c_str(), 0.06f) + 28.0f; };
     ImGui::SetCursorPosX(std::max(0.0f, (width - 32.0f - buttonW(yes) - buttonW(no) - ImGui::GetStyle().ItemSpacing.x) * 0.5f) + 16.0f);
@@ -3354,6 +3403,56 @@ class MapStage final : public Stage {
       scriptHover_ = e2::BattleHex{std::atoi(p[1].c_str()), std::atoi(p[2].c_str())};
       return logInfo("battle script: aim {} {}", scriptHover_->x, scriptHover_->y);
     }
+    if (p[0] == "click" && p.size() > 1) {
+      // "click:<x>:<y>" or "click:<unit>": a left click on the hex's centre on screen, through the window's own click
+      // (pick, cards first)
+      e2::BattleHex at{-1, -1};
+      if (p.size() > 2) at = {std::atoi(p[1].c_str()), std::atoi(p[2].c_str())};
+      else if (const int who = sceneUnitNamed(p[1]); who >= 0 && unitBattle_[static_cast<size_t>(who)] >= 0)
+        at = {battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(who)])].x, battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(who)])].y};
+      if (!battle_->inBounds(at.x, at.y)) return fail("off the board");
+      const int w = 1920, h = std::max(1, static_cast<int>(std::lround(1920.0f / std::max(aspect_, 0.1f))));
+      const e2::Cell& c = board_->cell(at.x, at.y);
+      const glm::vec3 centre{static_cast<float>(c.x), static_cast<float>(e2::groundHeightAt(*board_, look_, static_cast<float>(c.x), static_cast<float>(c.z))),
+                             static_cast<float>(c.z)};
+      const std::optional<ImVec2> s = screenOf(centre, static_cast<float>(w), static_cast<float>(h));
+      if (!s || s->x < 0 || s->y < 0 || s->x >= w || s->y >= h) return fail("off screen");
+      const std::optional<e2::BattleHex> picked = spellMode_.empty() ? pickAt(w, h, s->x, s->y) : aimPickAt(w, h, s->x, s->y);
+      tip_.clear();
+      clickAt(w, h, s->x, s->y);
+      return logInfo("battle script: click {} {}: picked {}, spell '{}' armed {}{}, playing {}{}", at.x, at.y,
+                     picked ? std::format("{},{}", picked->x, picked->y) : "nothing", spellMode_,
+                     spellArmed_ ? std::format("{},{}", spellArmed_->x, spellArmed_->y) : "no", spellArmed_ ? std::format(" ({} hexes in its area)", aimArea(static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), *spellArmed_).size()) : "",
+                     exchange_ ? "yes" : "no", tip_.empty() ? "" : " - " + tip_);
+    }
+    if (p[0] == "confirm") {
+      // the confirm panel's Confirmar (drawConfirm), then, once it has played, who lost HP
+      if (!spellArmed_ && pendingFoe_ < 0) return fail("nothing waiting for Confirmar");
+      std::vector<int> hpBefore;
+      for (const e2::BattleUnit& v : battle_->units()) hpBefore.push_back(v.hp);
+      const std::string kind = spellMode_;
+      const int caster = selected_ >= 0 ? unitBattle_[static_cast<size_t>(selected_)] : -1;
+      const int usesBefore = caster >= 0 && !kind.empty() ? e2::spellUsesLeft(*battle_, static_cast<size_t>(caster), kind) : 0;
+      tip_.clear();
+      if (pendingFoe_ >= 0) confirmStrike();
+      else commitSpell(*spellArmed_);
+      if (!exchange_) return fail("nothing played: " + tip_);
+      scriptCheck_ = [this, hpBefore, kind, caster, usesBefore]() -> std::string {
+        std::string hurt;
+        bool foe = false;
+        for (size_t i = 0; i < battle_->units().size() && i < hpBefore.size(); ++i) {
+          const e2::BattleUnit& v = battle_->units()[i];
+          if (v.hp == hpBefore[i]) continue;
+          hurt += std::format(" {} ({}) {} -> {}", v.name, v.side, hpBefore[i], v.hp);
+          if (caster >= 0 && v.side != battle_->units()[static_cast<size_t>(caster)].side && v.hp < hpBefore[i]) foe = true;
+        }
+        const int uses = caster >= 0 && !kind.empty() ? e2::spellUsesLeft(*battle_, static_cast<size_t>(caster), kind) : 0;
+        logInfo("battle script: confirm {}: uses {} -> {}; HP changed:{}", kind, usesBefore, uses, hurt.empty() ? " nobody" : hurt);
+        if (!kind.empty() && uses != usesBefore - 1) return std::format("uses {} -> {}", usesBefore, uses);
+        return foe ? "" : "no foe hurt";
+      };
+      return logInfo("battle script: confirm: playing");
+    }
     if (p[0] == "where") {
       // every unit's hex and whether the party still roams (free-roam captures)
       std::string list;
@@ -3409,6 +3508,13 @@ class MapStage final : public Stage {
       if (other < 0) return fail("no such unit");
       if (!placeBeside(static_cast<size_t>(ci), static_cast<size_t>(other))) return fail("no free hex beside it");
       return logInfo("battle script: near {} {}", p[1], p[2]);
+    }
+    if (p[0] == "learn" && p.size() > 2) {
+      // "learn:<unit>:<kind>": a spell its class does not have, for a test (two uses of its tier when it has none)
+      e2::BattleUnit& v = battle_->units()[cb];
+      if (std::find(v.spellList.begin(), v.spellList.end(), p[2]) == v.spellList.end()) v.spellList.push_back(p[2]);
+      if (const int tier = e2::spellTierNumber(p[2]); tier > 0 && v.spells[tier - 1] < 1) v.spells[tier - 1] = 2;
+      return logInfo("battle script: learn {} {}: {} uses", p[1], p[2], e2::spellUsesLeft(*battle_, cb, p[2]));
     }
     if (p[0] == "flee") {  // "flee:<unit>": the unit picked and Fugir combate tried (logs why not, its chance, the roll's outcome)
       select(ci);
@@ -3900,19 +4006,20 @@ class MapStage final : public Stage {
       for (const e2::BattleHex& c : spellZone_) flag(c, Renderer::kGridSpellAim);
       const bool direction = e2::spellAimsDirection(spellMode_);
       for (const e2::BattleHex& c : spellAim_) flag(c, (direction ? 0u : Renderer::kGridSpellAim) | Renderer::kGridSpellTarget);
-      // The line / cone: under the cursor, or toward the nearest foe it reaches while the cursor is off the board; the foes
-      // standing in it locked.
-      const bool hoverAim = hover_ && aimValid(b, *hover_);
-      const std::vector<e2::BattleHex> area = hoverAim ? aimArea(b, *hover_) : direction && !hover_ ? spellPreview_ : std::vector<e2::BattleHex>{};
-      for (const e2::BattleHex& c : area) flag(c, Renderer::kGridSpellArea);
-      if (direction)
-        for (size_t i = 0; i < battle_->units().size(); ++i) {
-          const e2::BattleUnit& t = battle_->units()[i];
-          if (i == b || !t.alive || t.hidden || t.side == battle_->units()[b].side) continue;
-          const std::vector<e2::BattleHex> body = e2::Battle::footprint(t, t.x, t.y);
-          if (std::any_of(body.begin(), body.end(), [&](const e2::BattleHex& p) { return std::find(area.begin(), area.end(), p) != area.end(); }))
-            flag({t.x, t.y}, Renderer::kGridSpellTarget);
+      // The line / cone: under the cursor; else the one aimed and waiting for Confirmar (the cursor went to the button);
+      // else toward the nearest foe it reaches while the cursor is off the board. Everyone it would hit is locked: foes in
+      // violet, friends in red (a line or a cone that crosses the party hurts it).
+      std::optional<e2::BattleHex> aimed;
+      if (hover_ && aimValid(b, *hover_)) aimed = hover_;
+      else if (spellArmed_ && aimValid(b, *spellArmed_)) aimed = spellArmed_;
+      else if (direction && !hover_ && spellPreviewAim_) aimed = spellPreviewAim_;
+      if (aimed) {
+        for (const e2::BattleHex& c : aimArea(b, *aimed)) flag(c, Renderer::kGridSpellArea);
+        for (size_t id : aimHits(b, *aimed)) {
+          const e2::BattleUnit& t = battle_->units()[id];
+          if (t.alive && !t.hidden) flag({t.x, t.y}, t.side == battle_->units()[b].side ? Renderer::kGridTarget : Renderer::kGridSpellTarget);
         }
+      }
       if (hover_) flag(*hover_, Renderer::kGridHover | (aimValid(b, *hover_) ? 0u : Renderer::kGridHoverBlocked));
       for (const e2::BattleHex& c : spellCells_) flag(c, Renderer::kGridSpellChosen);
       const e2::BattleUnit& u = battle_->units()[b];
@@ -5501,7 +5608,9 @@ class MapStage final : public Stage {
   int pendingFoe_ = -1;                      // the foe a strike is staged on, waiting for Confirmar / Cancelar (stageAttack)
   std::vector<e2::BattleHex> spellAim_;   // every hex it may be aimed at
   std::vector<e2::BattleHex> spellZone_;  // where it reaches, target or not (the grid's zone; e2::spellZone)
-  std::vector<e2::BattleHex> spellPreview_;  // a line / cone spell: its area toward the nearest foe it reaches (cursor off the board)
+  std::optional<e2::BattleHex> spellPreviewAim_;  // a line / cone spell: the aim at the nearest foe it reaches (cursor off the board)
+  mutable std::string hitsKey_;              // aimHits' cache: the spell, caster and hex it was worked out for
+  mutable std::vector<size_t> hits_;
   bool attackMode_ = false;               // "Atacar": only the foes it can strike are marked
   bool showTurnOrder_ = false;
   std::string tip_;                       // why a click did nothing (Engine2's tip line)

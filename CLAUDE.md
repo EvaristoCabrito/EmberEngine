@@ -451,6 +451,10 @@ everything", the C++ one was "awful")
 - Battle script steps for captures: `near:<unit>:<other>` (placed beside), `pick:<unit>` (the turn handed to it),
   `aim:<x>:<y>` (the cursor held on a hex). PowerShell mangles non-ASCII unit names in `--battle-script`: use ASCII
   ones (Piqueiro, Kael).
+  Clicks as the player makes them (2026-10-17): `click:<x>:<y>` / `click:<unit>` (the hex's centre on screen through the
+  window's own click, cards first), `confirm` (the confirm panel's Confirmar; logs who lost HP, fails if no foe did),
+  `learn:<unit>:<kind>` (a spell the class lacks, for a test). Every line / cone spell, clicked: scratchpad `aimtest.ps1`
+  pattern = `near:Piqueiro:<caster>; spell:<caster>:<kind>; click:Piqueiro; confirm` (+ `--promote Voss=elementalist:25`).
 - **Verified:** debug + validation captures exit 0 (party reach + route + target, close-up, a foe's zone, antiga, OFF);
   release build. **Not verified:** the look in the window (the user judges), spell aim / chosen targets in the new
   look (code path only), cost (not measured).
