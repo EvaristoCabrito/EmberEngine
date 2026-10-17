@@ -554,6 +554,11 @@ efeitos e wire into the game")
   captures with the atmosphere on (`captures/promo/fx7-*.png`). **Not verified:** the look of each effect in the window
   (the user judges), the campaign's promotion screen in play, enemy warlocks (no AI casts), balance (the numbers are
   the design's).
+- **REJECTED by the user (2026-10-17): the 20 effects as flipbook cards.** "eu falei para fazer efeitos em 3D que bosta é
+  essa". The rules and the wiring stay; the card versions (01) stay in the library but are NOT the deliverable. **Every
+  spell effect is built in 3D on the effect runtime** (engine/render/vfx/*: meshes, instanced particles, shaders,
+  lights, like Fireball / CausticVenom / HolyLight), one spell at a time as a new numbered version, on the user's
+  "faz" ("depois você vai fazer certinho um por um"). Never again present a card effect as a spell's look.
 - **Shader bug found and fixed on the way (affects every spell effect, not only ours):** with the Atmosfera on (the
   default), `volumeTransmittance` read 0 and every flipbook / vfx effect was invisible since 2026-10-16 afternoon. See
   the DXC gotcha above. If the user says "the spells show nothing", this was why.
