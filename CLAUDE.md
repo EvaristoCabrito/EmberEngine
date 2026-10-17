@@ -567,6 +567,29 @@ efeitos e wire into the game")
 - Test lines: `tools: run_promo.ps1` pattern = `Sandbox ... --battle-rules build/engine2-test/battles/aldeia015.battle.json
   --promote Voss=warlock:25 --battle-script "cast:Voss:markOfRuin:Kael; ..."`; `--fx-test <kind>` for the visuals alone.
 
+## Session 2026-10-17 (night): fixes + the second Engine2 import wave (user: "continue importando tudo do engine 2"; both languages)
+
+- **Battle clicks (`88b85a0`):** a click on the ground behind a friend's card walks the active unit (cards are taller than bodies: `pick(..., cards=false)`);
+  two left clicks on the unit being played end its turn. **Resumed fight stuck mid-turn (`0bccd51`):** `resume()` set `turnUnit_`
+  to the active hero, so nobody was picked and Esperar / Fim do turno / spells were dead; `pickActiveOnResume_` picks it once.
+- **Map Editor (`e8dad59`):** Desfazer / Refazer on the header (always visible), history 10 -> 20 steps (`kHistory`).
+- **Combat log (`d05beb6`, `3c3caf8`, `0bccd51`):** `Battle::pushLog` (200 lines, in the snapshot as `log`); lines are made where effects resolve
+  (`resolveStrike` / `resolveStep` / `startOfTurnEffects` wrappers in Spells.cpp, `BattleEffect::cause` for ticks, `gNotes` for skill gains and
+  level-ups); `setCombatLogEnglish(uiEnglish())` each frame, so lines follow the language when written. HUD bar: Log / Status / Abrir log
+  (full screen); picking a unit or a new turn closes it (`select()`); the switch is the name row only. Not logged: Engine2's `Loot:` lines (loot is
+  not kept here yet) and its tip lines. `--map-ui log|fulllog` for captures.
+- **Companion conversations (`2bc0e3b`):** `world/Companions` + `export_companions.ts` (Engine2's own `buildCompanionDialogue`, 130 trees) ->
+  `content/engine2/companions.json`; **the Portuguese is our own translation** (`companions-pt.json`, 223 strings, Neera is the only woman) because
+  Engine2 has none. Party > Conversas tab + "Conversas" plate. Not checked against Engine2's `resolveCompanionReply` numbers yet (no Cooker check).
+- **Field spells (`a23529c`):** `world/FieldSpells`: Criar Comida e Água (healers) and Warp (mages 7+, wheel of explored locations, gate picture) behind the
+  field-spells icon of the world-map header. Engine2's Warp sound (summonFamiliar) is not played. No check against Engine2 yet.
+- **Gotchas found:** ImGui 1.93 `AddRect(a, b, col, rounding, thickness, flags)` (flags last; the old order is a deleted overload, error C2280);
+  `ImGui::SetNextItemAllowOverlap()` before a big InvisibleButton under other items; a const `nlohmann` `operator[]` on a missing key / index crashes
+  with 0xC0000409 (guard sizes); a battle's `Sandbox.exe` is locked while the user plays: rename it aside and rebuild; another session shares the checkout
+  (3D spell effects, Malrec's spells, world-map zoom): stage only your own hunks (`git diff -U0 | filter | git apply --cached --unidiff-zero`).
+- **Open, asked of the user:** the "flame effect" on braziers / lights ("precisa arrumar esse efeito em todos os pontos de luz"): which effect;
+  the world map's blocked paths (re-exported 2026-10-17: `content/engine2/overworld.json` is identical to Engine2's current output, so a path blocked here is blocked in Engine2 too, unless it is a UI / click problem: ask for the hex).
+
 ## Next
 
 The user's verdict (2026-10-15): the engine as seen is worse than Engine2 ("worst colours and render I've ever
