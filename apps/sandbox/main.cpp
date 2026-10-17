@@ -707,7 +707,7 @@ int runCapture(const Options& o) {
     } else {
       stage = makeStage(o, context, renderer, services.assets, services.jobs);
       // --map-ui menu / options: the battle's Esc menu or Opções open.
-      if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && (o.mapUi == "menu" || o.mapUi == "options"))
+      if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && (o.mapUi == "menu" || o.mapUi == "options" || o.mapUi == "log" || o.mapUi == "fulllog"))
         map->previewMenu(o.mapUi);
       // --resume <snapshot.json>: the battle as that saved fight left it.
       if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && !o.resume.empty()) {

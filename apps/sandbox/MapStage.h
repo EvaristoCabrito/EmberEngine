@@ -549,7 +549,8 @@ class MapStage final : public Stage {
       if (a && b) target_ += glm::vec3{a->x - b->x, 0.0f, a->z - b->z}, cam_.target += glm::vec3{a->x - b->x, 0.0f, a->z - b->z};
     }
     if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.key == SDLK_ESCAPE) {
-      if (!spellMode_.empty()) spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
+      if (logFull_) logFull_ = false;
+      else if (!spellMode_.empty()) spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
       else if (attackMode_) attackMode_ = false;
       else if (selected_ >= 0 && result_.empty()) select(-1);
       else if (!menuOptions_.isOpen()) pauseOpen_ = !pauseOpen_;  // nothing picked: the battle menu
@@ -1063,9 +1064,15 @@ class MapStage final : public Stage {
   void previewMenu(const std::string& which) {
     if (which == "menu") pauseOpen_ = true;
     else if (which == "options") menuOptions_.open();
+    else if (which == "log") showLog_ = true, logJustOpened_ = true, logKeep_ = true;  // a capture: the turns the script plays do not close it
+    else if (which == "fulllog") logFull_ = true, logFullJustOpened_ = true;
   }
   // "victory" / "defeat" once the fight is over, else empty.
   const std::string& battleResult() const { return result_; }
+  // A line for the combat log from outside the battle's own rules (a conversation's affinity change).
+  void battleLog(std::string line) {
+    if (battle_) battle_->pushLog(std::move(line));
+  }
   // A conversation or film is open over the battle: nobody's turn moves on until it closes.
   bool holdTurns = false;
   std::vector<HeroOutcome> heroOutcomes() const {
@@ -3452,12 +3459,63 @@ class MapStage final : public Stage {
     return std::format("AT {} · MAG {} · DF {} · DEX {} · Mov {} · Alc {}", u.atk, u.mag, u.def, u.dex, u.mov, range);
   }
 
+  // The combat log inside the HUD bar: the newest line at the bottom, following new lines while the reader is at the bottom.
+  void drawHudLog(ImVec2 from, ImVec2 to) {
+    ImGui::SetCursorScreenPos(from);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(0, 0, 0, 0));
+    ImGui::BeginChild("##hudlog", {to.x - from.x, to.y - from.y}, false);
+    const float maxY = ImGui::GetScrollMaxY();
+    if (!logJustOpened_) logPinned_ = maxY <= 0.0f || ImGui::GetScrollY() >= maxY - 8.0f;
+    const std::vector<std::string>& lines = battle_->log();
+    if (lines.empty()) {
+      ImGui::TextDisabled("Nada aconteceu ainda.");
+    } else {
+      for (const std::string& line : lines) {
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(180, 180, 180, 255));
+        ImGui::TextWrapped("%s", line.c_str());
+        ImGui::PopStyleColor();
+      }
+    }
+    if (logPinned_ || logJustOpened_) ImGui::SetScrollHereY(1.0f);
+    logJustOpened_ = false;
+    ImGui::EndChild();
+    ImGui::PopStyleColor();
+  }
+
+  // "Abrir log": the whole combat log full screen, opened at the newest line; a click anywhere (or Esc) closes it.
+  void drawFullLog() {
+    if (!logFull_ || !battle_) return;
+    const ImGuiIO& io = ImGui::GetIO();
+    ImGui::SetNextWindowPos({0, 0});
+    ImGui::SetNextWindowSize(io.DisplaySize);
+    ImGui::SetNextWindowFocus();  // above the panels, every frame while it is open
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(8, 8, 8, 232));
+    ImGui::Begin("##fullog", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+    ImGui::PushFont(uiFont(UiFont::Ui), 18.0f);
+    ImGui::TextColored(ImColor(240, 240, 240), "%s", tr("Log de combate", "Combat log").c_str());
+    ImGui::SameLine();
+    ImGui::TextDisabled("  %s", tr("Clique em qualquer lugar para fechar", "Click anywhere to close").c_str());
+    ImGui::Separator();
+    ImGui::BeginChild("##fullogbody", {0, 0}, false);
+    const std::vector<std::string>& lines = battle_->log();
+    if (lines.empty()) ImGui::TextDisabled("Nada aconteceu ainda.");
+    for (const std::string& line : lines) ImGui::TextWrapped("%s", line.c_str());
+    if (logFullJustOpened_) ImGui::SetScrollHereY(1.0f);
+    ImGui::EndChild();
+    if (!logFullJustOpened_ && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows)) logFull_ = false;
+    logFullJustOpened_ = false;
+    ImGui::PopFont();
+    ImGui::End();
+    ImGui::PopStyleColor();
+  }
+
   void drawTurnBar() {
     if (!battle_) return;
     drawTurnPlate();
     drawHealthBars();
     drawTurnOrder();
     drawHudBar();
+    drawFullLog();
   }
 
   // GameApp's footer: portrait, name · level · XP, class, HP bar, the sheet line or the forecast; then the actions.
@@ -3487,6 +3545,7 @@ class MapStage final : public Stage {
     }
     ImFont* text = uiFont(UiFont::Ui);
     const int ub = hudUnit();
+    if (const int act = battle_->activeUnit(); act != hudActive_) showLog_ = showLog_ && (hudActive_ == -2 || logKeep_), hudActive_ = act;  // a new turn: back to the sheet
     const float rowY = a.y + 8.0f;
     if (ub >= 0) {
       const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(ub)];
@@ -3499,6 +3558,10 @@ class MapStage final : public Stage {
         x = q.x + 10.0f;
       }
       const float right = b.x - 10.0f;
+      // The info area is the combat log's switch (GameApp: a click on the stat sheet opens the log, a click on the log closes it).
+      ImGui::SetCursorScreenPos({x, rowY});
+      if (ImGui::InvisibleButton("##logtoggle", {right - x, showLog_ ? 24.0f : 76.0f})) showLog_ = !showLog_, logPinned_ = true, logJustOpened_ = showLog_;
+      if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", showLog_ ? "Fechar o log e ver o status" : "Abrir o log de combate");
       ImGui::PushFont(text, 14.0f);
       const std::string name = std::format("{} · Nv {}", u.name, u.level);
       dl->AddText(text, 15.0f, {x, rowY + 2.0f}, IM_COL32(240, 240, 240, 255), name.c_str());
@@ -3510,6 +3573,9 @@ class MapStage final : public Stage {
       const std::string cls = u.className.empty() ? u.classId : u.className;
       const float cw = text->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, cls.c_str()).x;
       dl->AddText(text, 12.0f, {right - cw, rowY + 4.5f}, u.side == "enemy" ? IM_COL32(181, 74, 50, 255) : IM_COL32(180, 180, 180, 255), cls.c_str());
+      if (showLog_) {
+        drawHudLog({x, rowY + 26.0f}, {right, rowY + 80.0f});
+      } else {
       // HP bar (.hp-fill: accent for the party, danger for foes)
       const std::string hp = std::format("{}/{}", u.hp, u.maxHp);
       const float hw = text->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, hp.c_str()).x;
@@ -3534,6 +3600,7 @@ class MapStage final : public Stage {
       if (!tip_.empty() && now_ - tipAt_ < 3.0f) dl->AddText(text, 12.0f, {x, barY + 30.0f}, IM_COL32(224, 189, 128, 255), tip_.c_str());
       else if (const std::string cond = e2::conditionsText(u); !cond.empty())  // what ails it (our spells' conditions)
         dl->AddText(text, 12.0f, {x, barY + 30.0f}, IM_COL32(196, 150, 232, 255), cond.c_str());
+      }
       ImGui::PopFont();
     } else {
       dl->AddText(text, 12.0f, {a.x + 10.0f, rowY + 4.0f}, IM_COL32(180, 180, 180, 255),
@@ -3582,6 +3649,19 @@ class MapStage final : public Stage {
         }
     }
     const float endW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, "Fim do turno", 0.06f) + 28.0f;
+    {  // the combat log: its switch, and (while it shows) the whole log full screen
+      const std::string openLabel = tr("Abrir log", "Open log");
+      const char* logLabel = showLog_ ? "Status" : "Log";
+      const float openW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, openLabel.c_str(), 0.06f) + 28.0f;
+      const float logW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, logLabel, 0.06f) + 28.0f;
+      const float endX = io.DisplaySize.x - endW - 20.0f, openX = endX - 6.0f - openW, logX = (showLog_ ? openX : endX) - 6.0f - logW;
+      ImGui::SameLine(logX);
+      if (emberButton("##logbtn", logLabel, false, true)) showLog_ = !showLog_, logPinned_ = true, logJustOpened_ = showLog_;
+      if (showLog_) {
+        ImGui::SameLine(openX);
+        if (emberButton("##openlog", openLabel.c_str(), false, true)) logFull_ = true, logFullJustOpened_ = true;
+      }
+    }
     ImGui::SameLine(io.DisplaySize.x - endW - 20.0f);
     if (emberButton("##endturn", "Fim do turno", false, mine && turns)) endUnitTurn();
     ImGui::End();
@@ -4278,6 +4358,10 @@ class MapStage final : public Stage {
     bool flat = false, drawn = false;
   };
   std::vector<CardRect> unitCard_;
+  bool showLog_ = false, logPinned_ = true, logJustOpened_ = false;  // the combat log in the HUD bar
+  bool logFull_ = false, logFullJustOpened_ = false;                 // ... and full screen
+  bool logKeep_ = false;
+  int hudActive_ = -2;                                               // the active unit the HUD last saw (a new turn closes the log)
   int selected_ = -1;                     // the picked scene unit
   std::vector<e2::ReachCell> reach_;      // where it can stop
   std::vector<e2::ReachCell> reachPaths_; // every hex it can pass (its routes)

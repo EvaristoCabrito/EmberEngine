@@ -40,11 +40,12 @@ inline bool affinityHero(const std::string& name) {
 
 // BattleEngine.adjustHeroAffinity(from, to, delta, dialogue = true) on a save: the party leader's positive changes
 // catch up faster, then changeAffinity (sorted pair key, one decimal, 0..100). JS Math.round = floor(x + 0.5).
-inline void applyReplyAffinity(e2::Json& save, const e2::Overworld& world, const e2::Json& affinity) {
-  if (!affinity.is_object()) return;
+// Returns the combat log's line for it ("Afinidade Kael + Voss: +2,5"), empty when nothing changed.
+inline std::string applyReplyAffinity(e2::Json& save, const e2::Overworld& world, const e2::Json& affinity) {
+  if (!affinity.is_object()) return {};
   const std::string a = affinity.value("from", ""), b = affinity.value("to", "");
   double delta = affinity.value("delta", 0.0);
-  if (a == b || delta == 0 || !std::isfinite(delta) || !affinityHero(a) || !affinityHero(b)) return;
+  if (a == b || delta == 0 || !std::isfinite(delta) || !affinityHero(a) || !affinityHero(b)) return {};
   const std::string pair = a < b ? a + "|" + b : b + "|" + a;
   e2::Json& scores = save["affinityScores"];
   if (!scores.is_object()) scores = e2::Json::object();
@@ -56,6 +57,12 @@ inline void applyReplyAffinity(e2::Json& save, const e2::Overworld& world, const
     leader = l->get<std::string>();
   if (delta > 0 && (a == leader || b == leader)) delta = std::floor(delta * (2 - score / 100) * 100 + 0.5) / 100;
   scores[pair] = std::clamp(std::floor((score + delta) * 10 + 0.5) / 10, 0.0, 100.0);
+  // delta.toLocaleString("pt-BR"): up to 3 decimals, a comma
+  std::string d = std::format("{:.3f}", delta);
+  while (d.back() == '0') d.pop_back();
+  if (d.back() == '.') d.pop_back();
+  if (const size_t dot = d.find('.'); dot != std::string::npos) d[dot] = ',';
+  return std::format("Afinidade {} + {}: {}{}", a, b, delta > 0 ? "+" : "", d);
 }
 
 struct BattleTalk {
@@ -96,11 +103,12 @@ struct BattleTalk {
       open("outro", "outroEnabled");
     }
     if (dialog) {
-      const bool closed = dialog->draw(size, [this](const e2::Json& reply) {
-        if (!record || !reply.contains("affinity")) return;
-        e2::Json save = record->activeSave();
-        applyReplyAffinity(save, *world, reply["affinity"]);
-        record->saveActive(std::move(save));
+      const bool closed = dialog->draw(size, [this, &map](const e2::Json& reply) {
+        if (!reply.contains("affinity")) return;
+        e2::Json save = record ? record->activeSave() : e2::Json::object();  // Modo teste records nothing, but the log tells
+        const std::string line = applyReplyAffinity(save, *world, reply["affinity"]);
+        if (!line.empty()) map.battleLog(line);
+        if (record) record->saveActive(std::move(save));
       });
       if (closed) dialog.reset();
     } else if (won && !epilogueDone) {

@@ -80,6 +80,7 @@ struct BattleEffect {
   std::string text;      // shown instead of the number ("curado", "+2 rações", ...)
   bool status = false;   // a condition's word ("Marcado", "Envenenado", ...): no hit pose, its own colour
   bool pushed = false;   // the unit was moved to another hex (Vendaval Glacial): the window re-places its card
+  std::string cause;     // what hurt it at the start of its turn ("Sangramento fere", ...): the combat log's verb
 };
 
 // --- EmberEngine's own spells: the two promotions of the Mago Negro (user, 2026-10-16/17: "2 magias por tier do 6 ao

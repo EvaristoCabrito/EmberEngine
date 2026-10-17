@@ -528,6 +528,37 @@ double* skillSlot(BattleUnit& u, const std::string& id) {
   u.skills.emplace_back(id, 0.0);
   return &u.skills.back().second;
 }
+// The combat log's notes made while a step resolves (skill points gained, levels reached); the wrappers around
+// resolveStrike / resolveStep / startOfTurnEffects hand them to the battle's log (Engine2 logSkillGain, the level-up tip).
+std::vector<std::string> gNotes;
+// toLocaleString("pt-BR", { maximumFractionDigits: 2 }): a comma, no trailing zeros.
+std::string numberPt(double v, int digits = 2) {
+  std::string t = std::format("{:.{}f}", v, digits);
+  if (t.find('.') != std::string::npos) {
+    while (t.back() == '0') t.pop_back();
+    if (t.back() == '.') t.pop_back();
+  }
+  if (const size_t dot = t.find('.'); dot != std::string::npos) t[dot] = ',';
+  return t;
+}
+std::string weaponTypeLabelPt(const std::string& type) {
+  static const std::pair<const char*, const char*> kLabels[] = {{"sword", "Espadas"},   {"axe", "Machados"},  {"mace", "Maças"},
+                                                                {"hammer", "Martelos"}, {"staff", "Cajados"},  {"spear", "Lanças e Armas de Haste"},
+                                                                {"bow", "Arcos"},       {"crossbow", "Bestas"}, {"dagger", "Adagas"}};
+  for (const auto& [id, label] : kLabels)
+    if (type == id) return label;
+  return type;
+}
+std::string elementLabelPt(const std::string& element) {
+  static const std::pair<const char*, const char*> kLabels[] = {{"fire", "Fogo"},   {"lightning", "Raio"},   {"ice", "Gelo"},       {"arcane", "Arcana"},
+                                                                {"darkness", "Trevas"}, {"holy", "Sagrado"}, {"poison", "Veneno"}, {"ember", "Brasa"}};
+  for (const auto& [id, label] : kLabels)
+    if (element == id) return label;
+  return element;
+}
+void noteSkillGain(const BattleUnit& u, const std::string& skill, double before, double after) {
+  gNotes.push_back(std::format("{} melhorou {}: {} (+{})", u.name, skill, numberPt(after), numberPt(after - before)));
+}
 // trainingGainForLevel: none 10 levels above the foe, half 5 above, else the usual.
 std::optional<double> trainingGain(int unitLevel, int enemyLevel, bool& skip) {
   const int d = unitLevel - enemyLevel;
@@ -566,6 +597,7 @@ void trainWeapon(BattleUnit& u, int enemyLevel, Mulberry32& rng, bool offHand = 
   if (type == u.weaponType) u.weaponSkill = gained;
   if (type == u.offWeaponType) u.offWeaponSkill = gained;
   *skillSlot(u, type + "Weapon") = gained;
+  noteSkillGain(u, weaponTypeLabelPt(type), current, gained);
   applyWeaponSkill(u);
 }
 
@@ -582,6 +614,7 @@ void trainResistance(BattleUnit& u, const std::string& element, std::optional<in
   if (rng() >= skillGainChance(current)) return;  // rollSkillGain
   const double gained = std::min(kSkillCap, jsRound((current + amount.value_or(kSkillGain)) * 100) / 100);
   *slot = gained;
+  noteSkillGain(u, "Resistência a " + elementLabelPt(element), current, gained);
   bool found = false;
   for (auto& [e, v] : u.combat.resistances)
     if (e == element) v = jsRound((v + gained - current) * 100) / 100, found = true;  // Number(x.toFixed(2))
@@ -593,6 +626,7 @@ void trainHealing(BattleUnit& u, Mulberry32& rng) {
   const double current = u.healingSkill;
   if (rng() >= skillGainChance(current)) return;
   u.healingSkill = std::min(kSkillCap, jsRound((current + kSkillGain) * 100) / 100);
+  noteSkillGain(u, "Cura", current, u.healingSkill);
 }
 
 // healingPower: healingAmount(base, healing skill) = +1% per skill point.
@@ -664,6 +698,7 @@ void grantExp(BattleUnit& u, int amount) {
   while (u.xp >= expToLevel(u.level) && u.level < kMaxLevel) {
     u.xp -= expToLevel(u.level);
     levelUp(u);
+    gNotes.push_back(std::format("{} subiu para o nível {}!", u.name, u.level));
   }
   if (u.level >= kMaxLevel) u.xp = 0;
 }
@@ -858,13 +893,13 @@ void afterDeath(Battle& b, size_t dead, std::vector<BattleEffect>& out) {
 // its bleeding, its curse's tick and the curse's next step.
 void tickConditions(Battle& b, size_t id, Mulberry32& rng, std::vector<BattleEffect>& out, bool countDown) {
   BattleUnit& u = b.units()[id];
-  auto hurt = [&](int dmg, const std::string& element) {
+  auto hurt = [&](int dmg, const std::string& element, const char* cause) {
     if (!u.alive) return;
     dmg = marked(u, std::max(0, dmg));
     u.hp = std::max(0, u.hp - dmg);
     if (!element.empty()) trainResistance(u, element, std::nullopt, rng);
     BattleEffect e;
-    e.unit = id, e.amount = dmg;
+    e.unit = id, e.amount = dmg, e.cause = cause;
     if (u.hp <= 0) markDead(u, rng), e.died = true;
     out.push_back(e);
     if (!u.alive) afterDeath(b, id, out);
@@ -872,16 +907,16 @@ void tickConditions(Battle& b, size_t id, Mulberry32& rng, std::vector<BattleEff
   if (u.alive && u.poisoned)
     if (const PoisonTier* t = poisonTier(u.poisonTier)) {
       const int roll = rollDice(t->dice, t->faces, 0, rng);
-      hurt(static_cast<int>(std::floor(elementalDamage(roll, u.combat.resistance("poison") - t->penalty, u.cond.poisonMag))), "poison");
+      hurt(static_cast<int>(std::floor(elementalDamage(roll, u.combat.resistance("poison") - t->penalty, u.cond.poisonMag))), "poison", "Veneno consome");
     }
   if (u.alive && u.cond.bleedTurns > 0) {
-    hurt(rollDice(u.cond.bleedDice, u.cond.bleedFaces, 0, rng), "");
+    hurt(rollDice(u.cond.bleedDice, u.cond.bleedFaces, 0, rng), "", "Sangramento fere");
     if (countDown && --u.cond.bleedTurns <= 0) u.cond.bleedDice = u.cond.bleedFaces = 0;
   }
   if (u.alive && u.cond.decayTurns > 0) {
     const int roll = rollDice(u.cond.decayDice, u.cond.decayFaces, 0, rng);
     const int base = static_cast<int>(std::floor(std::floor(u.cond.decayMag / 2) * u.cond.decayMul)) + roll;
-    hurt(static_cast<int>(std::floor(elementalDamage(base, u.combat.resistance("darkness"), u.cond.decayMag))), "darkness");
+    hurt(static_cast<int>(std::floor(elementalDamage(base, u.combat.resistance("darkness"), u.cond.decayMag))), "darkness", "Decadência consome");
     if (countDown && u.alive) {
       if (--u.cond.decayTurns <= 0) {
         liftDecay(u);
@@ -907,7 +942,7 @@ void zoneEffects(Battle& b, size_t id, Mulberry32& rng, std::vector<BattleEffect
     u.hp = std::max(0, u.hp - dmg);
     trainResistance(u, z.element, std::nullopt, rng);
     BattleEffect e;
-    e.unit = id, e.amount = dmg;
+    e.unit = id, e.amount = dmg, e.cause = "Zona de " + elementLabelPt(z.element) + " fere";
     if (u.hp <= 0) markDead(u, rng), e.died = true;
     out.push_back(e);
     if (!u.alive) afterDeath(b, id, out);
@@ -942,7 +977,7 @@ void landMeteors(Battle& b, size_t caster, Mulberry32& rng, std::vector<BattleEf
       }
       first = false;
       BattleEffect e;
-      e.unit = i, e.amount = dmg;
+      e.unit = i, e.amount = dmg, e.cause = "Meteoro atinge";
       if (foe.hp <= 0) markDead(foe, rng), e.died = true;
       out.push_back(e);
       if (!foe.alive) afterDeath(b, i, out);
@@ -1580,7 +1615,44 @@ bool strikesBack(const Battle& b, const BattleStep& step) {
   return canCounter(b, a, {u.x, u.y}, d);
 }
 
-void resolveStrike(Battle& b, const BattleStep& step, bool counter, Mulberry32& rng, std::vector<BattleEffect>& out) {
+namespace {
+
+// The combat log's lines for the effects a step just produced (Engine2 engine.ts pushLog): `actor` is who acted (-1 for
+// what befalls a unit at the start of its turn, which carries its own verb in `cause`).
+void logEffects(Battle& b, const std::vector<BattleEffect>& out, size_t from, int actor, const BattleStep* step) {
+  const auto nameOf = [&](size_t i) { return b.units()[i].name; };
+  const std::string who = actor >= 0 ? nameOf(static_cast<size_t>(actor)) : std::string();
+  for (size_t k = from; k < out.size(); ++k) {
+    const BattleEffect& e = out[k];
+    const std::string target = nameOf(e.unit);
+    const std::string crit = e.crit ? " (crítico)" : "";
+    if (!e.cause.empty()) {
+      b.pushLog(std::format("{} {}: {} dano", e.cause, target, e.amount));
+    } else if (e.miss) {
+      b.pushLog(std::format("{} atacou {}: Missed", who, target));
+    } else if (e.heal) {
+      if (step && step->type == BattleStep::Type::Potion)
+        b.pushLog(e.text.empty() ? std::format("{} usou {} em {} e recuperou {} HP.", who, potionName(step->potion), target, e.amount)
+                                 : std::format("{} usou {} em {}: {}", who, potionName(step->potion), target, e.text));
+      else
+        b.pushLog(e.text.empty() ? std::format("{} curou {}: +{} HP", who, target, e.amount) : std::format("{}: {}", target, e.text));
+    } else if (e.status) {
+      b.pushLog(std::format("{}: {}", target, e.text));
+    } else if (step && step->type == BattleStep::Type::Spell) {
+      b.pushLog(std::format("{} atingiu {} com magia: {} dano{}", who, target, e.amount, crit));
+    } else {
+      b.pushLog(std::format("{} atacou {}: {} dano{}", who, target, e.amount, crit));
+    }
+    if (e.died) b.pushLog(std::format("{} foi derrotado.", target));
+  }
+}
+
+void flushNotes(Battle& b) {
+  for (std::string& n : gNotes) b.pushLog(std::move(n));
+  gNotes.clear();
+}
+
+void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry32& rng, std::vector<BattleEffect>& out) {
   const size_t ai = counter ? step.def : step.att, ti = counter ? step.att : step.def;
   BattleUnit& actor = b.units()[ai];
   BattleUnit& target = b.units()[ti];
@@ -1630,7 +1702,33 @@ void resolveStrike(Battle& b, const BattleStep& step, bool counter, Mulberry32& 
   if (!target.alive) afterDeath(b, ti, out);
 }
 
+void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::vector<BattleEffect>& out);
+
+}  // namespace
+
+void resolveStrike(Battle& b, const BattleStep& step, bool counter, Mulberry32& rng, std::vector<BattleEffect>& out) {
+  gNotes.clear();
+  const size_t from = out.size();
+  resolveStrikeImpl(b, step, counter, rng, out);
+  logEffects(b, out, from, static_cast<int>(counter ? step.def : step.att), &step);
+  flushNotes(b);
+}
+
 void resolveStep(Battle& b, const BattleStep& step, Mulberry32& rng, std::vector<BattleEffect>& out) {
+  if (step.type == BattleStep::Type::Combat) {  // its strikes (and the counter) log themselves
+    resolveStepImpl(b, step, rng, out);
+    return;
+  }
+  gNotes.clear();
+  const size_t from = out.size();
+  resolveStepImpl(b, step, rng, out);
+  logEffects(b, out, from, static_cast<int>(step.att), &step);
+  flushNotes(b);
+}
+
+namespace {
+
+void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::vector<BattleEffect>& out) {
   BattleUnit& att = b.units()[step.att];
   if (step.type == BattleStep::Type::Combat) {
     BattleUnit& def = b.units()[step.def];
@@ -1936,7 +2034,19 @@ void resolveStep(Battle& b, const BattleStep& step, Mulberry32& rng, std::vector
   if (leavesZone(step.kind)) layZone(b, step, A);
 }
 
+}  // namespace
+
+static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out);
+
 void startOfTurnEffects(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) {
+  gNotes.clear();
+  const size_t from = out.size();
+  startOfTurnEffectsImpl(b, unit, rng, out);
+  logEffects(b, out, from, -1, nullptr);
+  flushNotes(b);
+}
+
+static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) {
   BattleUnit& u = b.units()[unit];
   if (!u.alive) return;
   if (u.shock) {
@@ -1947,6 +2057,7 @@ void startOfTurnEffects(Battle& b, size_t unit, Mulberry32& rng, std::vector<Bat
     u.hp = std::max(0, u.hp - dmg);
     trainResistance(u, "lightning", std::nullopt, rng);
     BattleEffect e{unit, dmg, false, false, false, false, false};
+    e.cause = "Eco de relâmpago em";
     if (u.hp <= 0) markDead(u, rng), e.died = true;
     out.push_back(e);
     if (!u.alive) afterDeath(b, unit, out);
@@ -1962,6 +2073,7 @@ void startOfTurnEffects(Battle& b, size_t unit, Mulberry32& rng, std::vector<Bat
     u.hp = std::max(0, u.hp - dmg);
     if (!element.empty()) trainResistance(u, element, std::nullopt, rng);
     BattleEffect e{unit, dmg, false, false, false, false, false};
+    e.cause = c.terrain == "flame" ? "Chamas feriram" : "Brasas feriram";
     if (u.hp <= 0) markDead(u, rng), e.died = true;
     out.push_back(e);
     if (!u.alive) afterDeath(b, unit, out);

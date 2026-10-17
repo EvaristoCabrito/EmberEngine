@@ -261,6 +261,13 @@ class Battle {
   // Rations conjured in this fight (Engine2 lootRations: Criar Comida e Água), added to the save's at its end.
   int lootRations() const { return lootRations_; }
   void addLootRations(int n) { lootRations_ += n; }
+  // The combat log (Engine2 engine.ts log / pushLog): attacks, spells, heals, kills, conditions, skill gains and level-ups,
+  // newest last, capped at 200 lines. Saved in the snapshot.
+  const std::vector<std::string>& log() const { return log_; }
+  void pushLog(std::string line) {
+    log_.push_back(std::move(line));
+    if (log_.size() > 200) log_.erase(log_.begin());
+  }
 
   // --- Zones (EmberEngine's own: the Elementalista's burning ground and Meteoro, the Bruxo's Mortalha de Sombras) ---
   // A zone lies on the hexes within `radius` of its centre (`ring`: only at exactly that distance) for `rounds` rounds
@@ -356,6 +363,7 @@ class Battle {
   std::vector<ForecastReference> forecastRefs_;
   std::vector<RollReference> rollRefs_;
   int lootRations_ = 0;
+  std::vector<std::string> log_;
   std::vector<AiReference> aiRefs_;
   std::vector<CastReference> castRefs_;
   void sortTurnOrder();
