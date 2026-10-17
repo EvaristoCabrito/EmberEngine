@@ -1,7 +1,9 @@
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <memory>
+#include <utility>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -46,6 +48,12 @@ class SpriteSystem {
   void start();
   // True once every clip's header and tail are on the GPU.
   bool ready() const { return rosterRead_ && tailsPending_ == 0 && headersPending_ == 0; }
+  // How far start() has got: headers and tails on the GPU, out of two per clip (0 / 0 until the roster is read).
+  std::pair<uint32_t, uint32_t> startupProgress() const {
+    const uint32_t total = rosterRead_ ? static_cast<uint32_t>(clips_.size()) * 2u : 0u;
+    const uint32_t pending = std::min(total, headersPending_ + tailsPending_);
+    return {total - pending, total};
+  }
 
   SpriteClipId find(std::string_view set, std::string_view clip) const;
   size_t clipCount() const { return clips_.size(); }

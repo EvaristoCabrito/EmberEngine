@@ -4,6 +4,7 @@
 #include <memory>
 #include <span>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "assets/AssetManager.h"
@@ -61,6 +62,7 @@ class MeshScene {
   // its textures still come from the packs by asset id.
   MeshId addBuilt(std::vector<uint8_t> bytes);
   bool ready() const;  // every added mesh's geometry and textures are on the GPU
+  std::pair<uint32_t, uint32_t> progress() const;  // meshes and textures settled (on the GPU or failed), out of all added
   const MeshHeader* header(MeshId id) const;  // null until its asset arrived
 
   // Replaces every instance. The list becomes visible a few frames later (one upload).

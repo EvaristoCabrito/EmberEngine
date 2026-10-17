@@ -1157,6 +1157,22 @@ class MapStage final : public Stage {
     logInfo("  {}", measurePassed_ ? "PASS: every frame within 16.7 ms" : "FAIL: frames over the 16.7 ms budget");
   }
 
+  // Engine2's battle loading steps (GameApp battleLoadCaption, LoadingScreens.h): 0 the characters (every sprite clip's
+  // header and small version on the GPU: what the cards draw from), 1 the field (ground, the 3D pieces and their
+  // textures, models placed, the first fog-of-war mask, a first frame with full-quality cards).
+  Loading loading() const override {
+    if (scene_ && !sprites_.ready()) {
+      const auto [done, total] = sprites_.startupProgress();
+      return {0, done, total, false};
+    }
+    const auto [meshesDone, meshesTotal] = meshes_.progress();
+    const uint32_t ground = ground_.ready() ? 1u : 0u, placed = !scene_ || modelsPlaced_ ? 1u : 0u;
+    const uint32_t fog = !fog_ || fogReady_ ? 1u : 0u, drawn = !scene_ || fullFrames_ > 0 ? 1u : 0u;
+    Loading l{1, meshesDone + ground + placed + fog + drawn, meshesTotal + 4u, false};
+    l.ready = l.done >= l.total;
+    return l;
+  }
+
   bool sceneReady() const {
     if (!scene_) return true;
     return sprites_.ready() && modelsPlaced_ && fullFrames_ > 0;

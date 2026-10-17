@@ -96,6 +96,13 @@ bool MeshScene::ready() const {
   return true;
 }
 
+std::pair<uint32_t, uint32_t> MeshScene::progress() const {
+  uint32_t done = 0, total = 0;
+  for (const auto& mesh : meshes_) ++total, done += (mesh->failed || mesh->uploaded) ? 1u : 0u;
+  for (const auto& [id, texture] : textures_) ++total, done += (texture->failed || texture->index != kNoTextureIndex) ? 1u : 0u;
+  return {done, total};
+}
+
 void MeshScene::setInstances(std::span<const InstanceGpu> instances) {
   EMBER_CHECK(instances.size() <= capacity_.instances, "MeshScene: instance capacity reached");
   instanceCount_ = static_cast<uint32_t>(instances.size());

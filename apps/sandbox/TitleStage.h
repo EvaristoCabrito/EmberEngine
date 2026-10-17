@@ -14,9 +14,12 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
+#include <cwctype>
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -25,6 +28,7 @@
 #include "CampaignUi.h"
 #include "EmberMenus.h"
 #include "GameMusic.h"
+#include "LoadingScreens.h"
 #include "Stage.h"
 #include "render/Camera.h"
 #include "render/MeshScene.h"
@@ -47,6 +51,7 @@ class TitleStage : public Stage {
              std::function<void()> quit)
       : paths_(std::move(paths)), campaign_(campaign), play_(std::move(play)), startCampaign_(std::move(startCampaign)), quit_(std::move(quit)) {
     findMissions();
+    preload_ = std::make_unique<UiPreload>(titleArt());
   }
   // "Modo teste" opens Engine2's test menu through this (without it: the old list of every exported map).
   void onTestMode(std::function<void()> open) { testMode_ = std::move(open); }
@@ -103,6 +108,11 @@ class TitleStage : public Stage {
 
   void drawPanel() override {
     const ImGuiIO& io = ImGui::GetIO();
+    // The title's art load (title/main.ts loadTitleResources): the bar shows how much of it has settled.
+    if (preload_) {
+      const auto [done, total] = preload_->update();
+      loader_.set(total ? static_cast<float>(done) / static_cast<float>(total) : 1.0f, done >= total, ImGui::GetTime());
+    }
     rem_ = 16.0f;  // canvas units: the UI is zoomed to the window (DebugUi::kUiHeight), 24 px at 1080
     ImGui::SetNextWindowPos({0, 0});
     ImGui::SetNextWindowSize(io.DisplaySize);
@@ -174,7 +184,9 @@ class TitleStage : public Stage {
     y += version * 1.2f + 1.7f * rem_;
     const float menuWidth = std::min(25.0f * rem_, width);
     for (int i = 0; i < count; ++i) {
-      if (menuButton(menu[static_cast<size_t>(i)].first.c_str(), {x, y}, {menuWidth, button}, i == 0)) {
+      // index.html: "Nova campanha" stays disabled until the title's art has loaded (main.ts enables it at the end)
+      const bool enabled = menu[static_cast<size_t>(i)].second != New || loader_.ready();
+      if (menuButton(menu[static_cast<size_t>(i)].first.c_str(), {x, y}, {menuWidth, button}, i == 0, enabled)) {
         switch (menu[static_cast<size_t>(i)].second) {
           case New: openSlots(false); break;
           case Continue: openSlots(true); break;
@@ -187,6 +199,8 @@ class TitleStage : public Stage {
       }
       y += button + gap;
     }
+    // #title-loader under the menu column (same left edge; min(25rem, 100% - 2.5rem) wide)
+    loader_.draw(dl, size, x, std::min(25.0f * rem_, size.x - 2.5f * rem_), rem_, ImGui::GetTime(), ImGui::GetIO().DeltaTime);
     // .test-entry: "Modo teste", bottom left, faint uppercase; every exported map.
     {
       const std::string labelText = upperUtf8(tr("Modo teste", "Test mode"));
@@ -226,11 +240,11 @@ class TitleStage : public Stage {
   }
 
   // .menu-button (.primary: the ember gradient; .secondary: dark iron with a gold edge); hover brightens and lifts 1px.
-  bool menuButton(const char* label, ImVec2 at, ImVec2 size, bool primary) {
+  bool menuButton(const char* label, ImVec2 at, ImVec2 size, bool primary, bool enabled = true) {
     ImGui::SetCursorScreenPos(at);
     ImGui::PushID(label);
-    const bool clicked = ImGui::InvisibleButton("##b", size);
-    const bool hover = ImGui::IsItemHovered();
+    const bool clicked = ImGui::InvisibleButton("##b", size) && enabled;
+    const bool hover = ImGui::IsItemHovered() && enabled;
     ImGui::PopID();
     ImDrawList* dl = ImGui::GetWindowDrawList();
     const float lift = hover ? -1.0f : 0.0f;
@@ -263,7 +277,36 @@ class TitleStage : public Stage {
     const ImVec2 p{std::round((a.x + b.x - tw) * 0.5f), std::round((a.y + b.y - text) * 0.5f)};
     spacedText(dl, font, text, {p.x, p.y + 1}, primary ? IM_COL32(50, 8, 0, 230) : IM_COL32(0, 0, 0, 255), upper.c_str(), 0.17f, false);
     spacedText(dl, font, text, p, primary ? IM_COL32(242, 228, 208, 255) : IM_COL32(226, 194, 148, 255), upper.c_str(), 0.17f, false);
+    // .menu-button:disabled { opacity: .48 }: the screen's own dark showing through
+    if (!enabled) dl->AddRectFilled({a.x - 2, a.y - 2}, {b.x + 2, b.y + 2}, IM_COL32(14, 14, 14, 133), 2.0f);
     return clicked;
+  }
+
+  // What the title loads before the game opens (Engine2 loadTitleResources: the title art, the loading screen's art, the
+  // game's art): every menu picture of game/ui and game/title, the world map and the mission briefings, so the screens
+  // after the title open at once.
+  std::vector<std::filesystem::path> titleArt() const {
+    std::vector<std::filesystem::path> files;
+    auto add = [&](const std::filesystem::path& dir, const char* prefix) {
+      std::error_code ec;
+      for (const auto& e : std::filesystem::directory_iterator(paths_.engine2Public / dir, ec)) {
+        if (!e.is_regular_file()) continue;
+        // wide names: Engine2's art has names no narrow conversion survives ("✕", "—"), which are skipped
+        std::wstring ext = e.path().extension().wstring();
+        std::transform(ext.begin(), ext.end(), ext.begin(), [](wchar_t c) { return static_cast<wchar_t>(std::towlower(c)); });
+        if (ext != L".png" && ext != L".jpg" && ext != L".jpeg") continue;
+        const std::wstring name = e.path().filename().wstring();
+        if (std::any_of(name.begin(), name.end(), [](wchar_t c) { return c > 0x7e; })) continue;
+        if (prefix && name.rfind(std::wstring(prefix, prefix + std::strlen(prefix)), 0) != 0) continue;
+        if (!uiImageLoaded(e.path())) files.push_back(e.path());
+      }
+    };
+    add("game/title", nullptr);
+    add("game/ui", nullptr);
+    add("game/assets", "brief-");
+    if (const auto map = paths_.engine2Public / "game/assets/world-map.jpg"; !uiImageLoaded(map)) files.push_back(map);
+    std::sort(files.begin(), files.end());
+    return files;
   }
 
   // --- the mission list (.save-slots-screen) -----------------------------------------------------------------------
@@ -415,6 +458,8 @@ class TitleStage : public Stage {
   float rem_ = 16.0f;
   static constexpr float kTitleText = 1.4f;  // the title page's text over Engine2's sizes
   int frames_ = 0;
+  std::unique_ptr<UiPreload> preload_;
+  loading::TitleLoader loader_;
 };
 
 }  // namespace ember

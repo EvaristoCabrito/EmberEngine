@@ -32,6 +32,14 @@ struct Stage {
     float base = 0.0f;
   };
   virtual Music music() const { return {}; }
+  // What the screen still loads, for Engine2's loading curtain over it (LoadingScreens.h): the step it is on (each with
+  // its own count of real units, `done` of `total`; 0 / 0 when there is nothing to count) and whether it is ready.
+  struct Loading {
+    int step = 0;
+    uint32_t done = 0, total = 0;
+    bool ready = true;
+  };
+  virtual Loading loading() const { return {}; }
   // Drawn over the stage's own panel in the same UI frame (a campaign dialog over a fight, say); set by its owner.
   std::function<void()> overlay;
 };

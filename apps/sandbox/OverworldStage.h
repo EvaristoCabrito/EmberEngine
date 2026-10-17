@@ -126,6 +126,13 @@ class OverworldStage : public Stage {
 
   // GameApp's music chain: films are silent, the in-game save slots too; the Inn plays its theme (not over Vargan's
   // first film), a briefing its mission's track, the map its own piece.
+  // The world map opening under Engine2's loading curtain (MapLoadingOverlay "Carregando o mapa"): ready once the screen
+  // has drawn what it shows, the map with its picture in (a briefing, a film or the Inn shown first need no picture).
+  Loading loading() const override {
+    const bool ready = drawn_ > 0 && (!mapDrawn_ || uiImageLoaded(paths_.engine2Public / "game/assets/world-map.jpg"));
+    return {0, 0, 0, ready};
+  }
+
   Music music() const override {
     if (film_ || slots_) return {};
     if (inn_) return inn_->filmPlaying() ? Music{} : music::theme("inn");
@@ -150,6 +157,7 @@ class OverworldStage : public Stage {
   void drawPanel() override {
     const ImGuiIO& io = ImGui::GetIO();
     now_ = static_cast<float>(ImGui::GetTime());
+    ++drawn_;
     ImGui::SetNextWindowPos({0, 0});
     ImGui::SetNextWindowSize(io.DisplaySize);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
@@ -540,6 +548,7 @@ class OverworldStage : public Stage {
   void drawViewport(ImVec2 a, ImVec2 b) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     const UiImage* map = uiImage(paths_.engine2Public / "game/assets/world-map.jpg");
+    mapDrawn_ = true;
     const float vw = b.x - a.x, vh = b.y - a.y;
     const float imgW = vw * kZoomStops[zoom_] / 100.0f;
     const float imgH = map ? imgW * static_cast<float>(map->height) / static_cast<float>(map->width) : vh * 0.7f;
@@ -1507,6 +1516,8 @@ class OverworldStage : public Stage {
   }
 
   CampaignPaths paths_;
+  int drawn_ = 0;          // frames drawn (the loading curtain lifts once the screen is up)
+  bool mapDrawn_ = false;  // the world map itself has been drawn
   e2::Campaign& campaign_;
   const e2::Overworld& world_;
   Callbacks callbacks_;

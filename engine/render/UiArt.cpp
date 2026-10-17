@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <imgui_internal.h>
 #include <stb_image.h>
@@ -26,6 +27,8 @@ std::map<std::string, LoadedImage>& images() {
   static std::map<std::string, LoadedImage> cache;
   return cache;
 }
+// One key per file however its path was written ("a/b\c.png" and "a/b/c.png" are the same picture).
+std::string keyOf(const std::filesystem::path& file) { return file.lexically_normal().generic_string(); }
 
 }  // namespace
 
@@ -44,14 +47,17 @@ ImFont* uiFont(UiFont font) {
   return f ? f : ImGui::GetFont();
 }
 
-const UiImage* uiImage(const std::filesystem::path& file) {
-  LoadedImage& slot = images()[file.string()];
-  if (slot.failed) return nullptr;
-  if (slot.data) return &slot.image;
-  int w = 0, h = 0, n = 0;
-  stbi_uc* pixels = stbi_load(file.string().c_str(), &w, &h, &n, 4);
+namespace {
+
+// A decoded file handed to the cache (main thread): null pixels = it could not be read.
+const UiImage* adopt(const std::string& key, stbi_uc* pixels, int w, int h) {
+  LoadedImage& slot = images()[key];
+  if (slot.data || slot.failed) {  // already there (drawn before the preload reached it)
+    if (pixels) stbi_image_free(pixels);
+    return slot.failed ? nullptr : &slot.image;
+  }
   if (!pixels) {
-    logError("UI image not found: {}", file.string());
+    logError("UI image not found: {}", key);
     slot.failed = true;
     return nullptr;
   }
@@ -63,6 +69,54 @@ const UiImage* uiImage(const std::filesystem::path& file) {
   ImGui::RegisterUserTexture(slot.data.get());  // the Vulkan backend creates it on its next draw
   slot.image = {slot.data->GetTexRef(), w, h};
   return &slot.image;
+}
+
+}  // namespace
+
+const UiImage* uiImage(const std::filesystem::path& file) {
+  const std::string key = keyOf(file);
+  if (const auto it = images().find(key); it != images().end() && (it->second.data || it->second.failed))
+    return it->second.failed ? nullptr : &it->second.image;
+  int w = 0, h = 0, n = 0;
+  stbi_uc* pixels = stbi_load(file.string().c_str(), &w, &h, &n, 4);
+  return adopt(key, pixels, w, h);
+}
+
+bool uiImageLoaded(const std::filesystem::path& file) {
+  const auto it = images().find(keyOf(file));
+  return it != images().end() && (it->second.data || it->second.failed);
+}
+
+UiPreload::UiPreload(std::vector<std::filesystem::path> files) : files_(std::move(files)) {
+  worker_ = std::jthread([this](std::stop_token stop) {
+    for (const std::filesystem::path& f : files_) {
+      if (stop.stop_requested()) return;
+      Decoded d{keyOf(f)};
+      d.pixels = stbi_load(f.string().c_str(), &d.w, &d.h, &d.n, 4);
+      std::lock_guard lock(mutex_);
+      decoded_.push_back(d);
+    }
+  });
+}
+
+UiPreload::~UiPreload() {
+  worker_.request_stop();
+  if (worker_.joinable()) worker_.join();
+  for (Decoded& d : decoded_)
+    if (d.pixels) stbi_image_free(d.pixels);
+}
+
+std::pair<size_t, size_t> UiPreload::update() {
+  std::vector<Decoded> ready;
+  {
+    std::lock_guard lock(mutex_);
+    ready.swap(decoded_);
+  }
+  for (Decoded& d : ready) {
+    adopt(d.key, d.pixels, d.w, d.h);
+    ++done_;
+  }
+  return {done_, files_.size()};
 }
 
 void verticalGradient(ImDrawList* dl, ImVec2 a, ImVec2 b, std::initializer_list<GradientStop> stops) {

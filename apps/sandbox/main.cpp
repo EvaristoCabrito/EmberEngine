@@ -83,6 +83,7 @@
 #include "MeshCompare.h"
 #include "MapStage.h"
 #include "HeroHandoff.h"
+#include "LoadingScreens.h"
 #include "TitleStage.h"
 #include "media/AudioMixer.h"
 #include "OverworldStage.h"
@@ -158,6 +159,7 @@ struct Options {
                             // "options": Como jogar / Opções over the title
   std::string lang;         // captures: the interface, dialogues and subtitles in "pt" / "en" (Opções' languages, not saved)
   std::string resume;       // captures: a saved fight (BattleSnapshot JSON) resumed on the battle (MapStage::resume)
+  bool curtain = false;     // captures: Engine2's loading curtain over the battle / world map as it loads (LoadingScreens.h)
   std::string scenes = "build/engine2-scenes", maps;
   uint32_t debugView = 0;
   std::string scene;
@@ -237,6 +239,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--maps" && hasValue) o.maps = argv[++i];
     else if (arg == "--debug-view" && hasValue) o.debugView = static_cast<uint32_t>(std::atoi(argv[++i]));
     else if (arg == "--no-ui") o.noUi = true;
+    else if (arg == "--curtain") o.curtain = true;
     else if (arg == "--windowed") o.windowed = true;
     else if (arg == "--layers" && hasValue) o.lightingLayers = static_cast<uint32_t>(std::strtoul(argv[++i], nullptr, 0));
     else if (arg == "--board" && hasValue) o.boardData = argv[++i];
@@ -419,6 +422,7 @@ struct Services {
   AssetManager assets;
   std::unique_ptr<StreamTest> streamTest;
   PerfOverlay perf;
+  std::function<void()> curtain;  // Engine2's loading curtain, over everything (LoadingScreens.h)
 
   explicit Services(const Options& o) : io(jobs, o.ioDepth), assets(jobs, io, {}) {
     if (!o.sprites.empty() && !assets.mount(o.sprites)) fatal(std::format("Cannot mount {}", o.sprites));
@@ -469,6 +473,24 @@ struct SpriteStage final : Stage {
   void endFrame(double busyMs) override { parade.endFrame(busyMs); }
   bool done() const override { return parade.done(); }
   bool passed() const override { return parade.passed(); }
+};
+
+// Nothing drawn (and nothing a closed screen owned left in the renderer's hands): the frame that puts the loading curtain
+// up before a battle is built (its building blocks the main thread).
+struct BlankStage final : Stage {
+  void frame(Renderer& renderer, VkExtent2D) override {
+    renderer.setScene(Camera{}, {});
+    renderer.setMeshes(MeshSceneView{});
+    renderer.setTerrain({});
+    renderer.setWater({});
+    renderer.setLights({});
+    renderer.setGroundMarks({}, 0, 0);
+    renderer.setFogOfWar(nullptr, 0);
+    renderer.setVolumetricFog({});
+    renderer.setFogBank({});
+    renderer.setBackground(Renderer::kBlackBackground);
+    renderer.setBloom(0.0f);
+  }
 };
 
 MapStageOptions mapOptions(const Options& o);
@@ -546,6 +568,7 @@ bool Services::frame(DebugUi& ui, Renderer& renderer, Stage* stage, VkExtent2D s
   if (streamTest) streamTest->drawPanel();
   if (stage) stage->drawPanel();
   if (stage && stage->overlay) stage->overlay();
+  if (curtain) curtain();
   const bool ok = render();
   const double frameMs = msSince(start);
   const double busyMs = std::max(0.0, frameMs - renderer.lastWaitMilliseconds());
@@ -683,6 +706,23 @@ int runCapture(const Options& o) {
       }
     }
     const VkExtent2D size{o.width, o.height};
+    // --curtain: Engine2's loading curtain over the battle (its real steps) or the world map, as in the game; every change
+    // of its status is logged with the time.
+    loading::Curtain curtain;
+    const auto runStart = Clock::now();
+    std::string curtainShown;
+    if (o.curtain && stage) {
+      if (dynamic_cast<MapStage*>(stage.get())) curtain.open(loading::Curtain::Kind::Battle, 0.0);
+      else if (dynamic_cast<OverworldStage*>(stage.get())) curtain.open(loading::Curtain::Kind::Map, 0.0);
+      services.curtain = [&] { curtain.draw(o.engine2); };
+    }
+    const auto curtainStep = [&] {
+      if (!curtain.up()) return;
+      const double t = std::chrono::duration<double>(Clock::now() - runStart).count();
+      curtain.update(stage->loading(), t, 1.0f / 60.0f);
+      const std::string now = curtain.up() ? curtain.label() : std::string("lifted");
+      if (now != curtainShown) logInfo("curtain {:.2f} s: {}", t, now), curtainShown = now;
+    };
     const auto testDone = [&] { return (services.streamTest && services.streamTest->done()) || (stage && stage->done()); };
     if (services.streamTest || stage) {
       // Run until the test ends, plus a few frames so the overlay shows final numbers.
@@ -694,6 +734,7 @@ int runCapture(const Options& o) {
         const bool inSequence = o.sequenceCount > 0 && taken < o.sequenceCount && frameNo >= o.sequenceFrom &&
                                 (frameNo - o.sequenceFrom) % o.sequenceEvery == 0;
         ++frameNo;
+        curtainStep();
         if (inSequence) {
           const std::string path = std::format("{}-{:03}.png", o.capture.ends_with(".png") ? o.capture.substr(0, o.capture.size() - 4) : o.capture, taken++);
           services.frame(ui, renderer, stage.get(), size, 1.0f / 60.0f, [&] {
@@ -720,6 +761,7 @@ int runCapture(const Options& o) {
     if (services.streamTest) services.streamTest->drawPanel();
     if (stage) stage->drawPanel();
     if (stage && stage->overlay) stage->overlay();
+    if (services.curtain) services.curtain();
     renderer.captureFrame(o.time, o.capture);
     stage.reset();
   }
@@ -886,14 +928,26 @@ int runWindow(const Options& o) {
     playing.clear();
     openMap = true;  // GameApp ResultScreen "Mapa": back to the world map
   };
+  // Engine2's loading curtain (LoadingScreens.h): up before a battle is built, over the world map as it opens.
+  loading::Curtain curtain;
+  services.curtain = [&] { curtain.draw(paths.engine2Public); };
+  const auto loopStart = Clock::now();
+  const auto clockNow = [&] { return std::chrono::duration<double>(Clock::now() - loopStart).count(); };
+  // A battle: the curtain shown for one frame over a blank screen before the battle is built (building it blocks).
+  const auto curtainBeforeBattle = [&] {
+    curtain.open(loading::Curtain::Kind::Battle, clockNow());
+    stage = std::make_unique<BlankStage>();
+    services.frame(ui, renderer, stage.get(), swapchain->extent(), 0.0f, [&] { return renderer.renderFrame(static_cast<float>(clockNow())); });
+  };
   const bool titleMode = o.title || (o.map.empty() && !o.battle && o.sprites.empty() && o.meshes.empty() && o.stream.empty());
   if (titleMode) stage = makeTitle();
   else stage = makeStage(o, context, renderer, services.assets, services.jobs);
+  if (dynamic_cast<MapStage*>(stage.get())) curtain.open(loading::Curtain::Kind::Battle, clockNow());
   services.perf.visible = false;  // the game shows only its own screens (F1 brings the numbers back, in Modo teste)
 
   window.setEventHook([&](const SDL_Event& event) {
     if (ui.processEvent(event)) return;
-    if (stage) stage->event(event);
+    if (stage && !curtain.up()) stage->event(event);
     if (event.type != SDL_EVENT_KEY_DOWN || event.key.repeat) return;
     if (event.key.key == SDLK_F1 && testSession) services.perf.visible = !services.perf.visible;  // Modo teste only
     if (event.key.key == SDLK_R && services.streamTest) services.streamTest->restart();
@@ -909,6 +963,7 @@ int runWindow(const Options& o) {
     last = now;
     const float time = std::chrono::duration<float>(now - start).count();
     const bool resized = window.consumeResized();
+    if (curtain.up() && stage) curtain.update(stage->loading(), clockNow(), dt);
     const bool presented = !resized && services.frame(ui, renderer, stage.get(), swapchain->extent(), dt,
                                                       [&] { return renderer.renderFrame(time); });
     // The sound (audio.ts): Opções' volumes, the screen's music (GameApp's chain), delays and fades.
@@ -957,6 +1012,7 @@ int runWindow(const Options& o) {
     if (retry) {
       vkDeviceWaitIdle(context.device);
       stage.reset();
+      curtainBeforeBattle();
       auto again = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, *retry);
       again->setMenus(toggleFullscreen, &devGfx);
       again->setCampaign(hasCampaign ? &campaign : nullptr, playing, std::filesystem::path(retry->map).stem().string(), testSession.has_value());
@@ -980,6 +1036,7 @@ int runWindow(const Options& o) {
         MapStageOptions options = mapOptions(spells);
         options.spellsMenuOpen = true;
         devGfx.apply(options, renderer);
+        curtainBeforeBattle();
         auto spellsMap = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
         spellsMap->setMenus(toggleFullscreen, &devGfx);
         stage = std::move(spellsMap);
@@ -996,6 +1053,7 @@ int runWindow(const Options& o) {
         stage = makeTest(*openTest);
       } else if (openTestRpg && testSession) {
         stage = makeTestRpg();
+        curtain.open(loading::Curtain::Kind::Map, clockNow());
       } else if (pending) {
         Options mission = o;
         mission.map = pending->map.string();
@@ -1016,6 +1074,7 @@ int runWindow(const Options& o) {
           // ... and their condition (GameApp startBattle's roster; HeroHandoff.h).
           options.heroState = heroStatesFromSave(save);
         }
+        curtainBeforeBattle();
         auto map = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
         map->setMenus(toggleFullscreen, &devGfx);
         map->setPlaytest(inEditorTest);
@@ -1034,6 +1093,7 @@ int runWindow(const Options& o) {
         stage = std::move(map);
       } else {
         stage = makeMap();
+        curtain.open(loading::Curtain::Kind::Map, clockNow());
       }
       pending.reset();
       openTest.reset();

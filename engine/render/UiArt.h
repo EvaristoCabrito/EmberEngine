@@ -5,8 +5,11 @@
 // folder (title backgrounds, panels, portraits) and shown through Dear ImGui.
 
 #include <filesystem>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <utility>
+#include <vector>
 
 #include <imgui.h>
 
@@ -24,6 +27,33 @@ struct UiImage {
 };
 // An image file (PNG / JPG), loaded on first use and kept; null when it cannot be read.
 const UiImage* uiImage(const std::filesystem::path& file);
+// True once uiImage has the file (or knows it cannot be read): it then returns at once.
+bool uiImageLoaded(const std::filesystem::path& file);
+
+// The title screen's art load (Engine2 title/main.ts loadTitleResources): files decoded one after another on a
+// background thread and handed to uiImage's cache on the main thread, so the screens after the title open at once
+// and the loading bar shows the real count. Main thread: update() once per frame.
+class UiPreload {
+ public:
+  explicit UiPreload(std::vector<std::filesystem::path> files);
+  ~UiPreload();
+  UiPreload(const UiPreload&) = delete;
+  UiPreload& operator=(const UiPreload&) = delete;
+  // Adopts what is decoded; returns (files settled, files in all), a file that cannot be read counting as settled.
+  std::pair<size_t, size_t> update();
+
+ private:
+  struct Decoded {
+    std::string key;
+    unsigned char* pixels = nullptr;
+    int w = 0, h = 0, n = 0;
+  };
+  std::vector<std::filesystem::path> files_;
+  std::mutex mutex_;
+  std::vector<Decoded> decoded_;
+  size_t done_ = 0;
+  std::jthread worker_;  // last: started once everything it touches exists
+};
 
 // Engine2's title.css helpers for an ImGui draw list.
 // A vertical gradient through colour stops (position 0..1, colour).
