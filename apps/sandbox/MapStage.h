@@ -4916,6 +4916,14 @@ class MapStage final : public Stage {
         dl->AddRectFilled(p, q, IM_COL32(17, 17, 17, 255), 6.0f);
         imageCover(dl, *face, p, q, 0.5f, 0.3f);
         dl->AddRect(p, q, IM_COL32(74, 74, 74, 255), 6.0f);
+        // a click on the portrait opens the status sheet of that unit (any side)
+        ImGui::SetCursorScreenPos(p);
+        if (ImGui::InvisibleButton("##portraitstatus", {q.x - p.x, q.y - p.y})) openStatus(ub);
+        if (ImGui::IsItemHovered()) {
+          dl->AddRect(p, q, IM_COL32(226, 104, 30, 255), 6.0f, 2.0f, 0);
+          ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+          ImGui::SetTooltip("%s", tr("Ver status", "View status").c_str());
+        }
         x = q.x + 10.0f;
       }
       const float right = b.x - 10.0f;
