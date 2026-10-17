@@ -5647,6 +5647,11 @@ class MapStage final : public Stage {
         if (!waypoints.contains({n.x, n.y}) && !bodies.contains({n.x, n.y}) && cells.size() < party.size()) cells.push_back(n);
       }
     if (cells.size() < party.size()) return logWarn("arrival: not room enough beside the connector back to {}", options_.arrivedFrom);
+    // applyPartyFormation on those cells: the hero first in the formation takes the cell nearest an enemy, the last the farthest
+    if (options_.formation) {
+      std::stable_sort(party.begin(), party.end(), [&](size_t a, size_t b) { return formationRank(battle_->units()[a].name) < formationRank(battle_->units()[b].name); });
+      std::stable_sort(cells.begin(), cells.end(), [&](const e2::BattleHex& a, const e2::BattleHex& b) { return enemyDistance(a) < enemyDistance(b); });
+    }
     for (size_t k = 0; k < party.size(); ++k) {
       e2::BattleUnit& u = battle_->units()[party[k]];
       u.x = cells[k].x, u.y = cells[k].y;
@@ -5666,11 +5671,6 @@ class MapStage final : public Stage {
         double bestCost = 1e18;
         for (const e2::BattleHex& h : around)
           for (const e2::ReachCell& c : reach_)
-    // applyPartyFormation on those cells: the hero first in the formation takes the cell nearest an enemy, the last the farthest
-    if (options_.formation) {
-      std::stable_sort(party.begin(), party.end(), [&](size_t a, size_t b) { return formationRank(battle_->units()[a].name) < formationRank(battle_->units()[b].name); });
-      std::stable_sort(cells.begin(), cells.end(), [&](const e2::BattleHex& a, const e2::BattleHex& b) { return enemyDistance(a) < enemyDistance(b); });
-    }
             if (c.x == h.x && c.y == h.y && c.cost < bestCost && battle_->unitAt(h.x, h.y) < 0) best = h, bestCost = c.cost;
         if (best) {
           walkTo(static_cast<size_t>(selected_), *best);
@@ -5680,25 +5680,6 @@ class MapStage final : public Stage {
       }
     }
     talkRequest_ = npc;
-  }
-  // wispCrossing.ts routeWispCrossing: on the Wisp Forest crossing every dungeon exit and every connector to the lair leads to the
-  // carnivorous plant's lair (a floor connector up) until the crossing is finished, then outside (a dungeon exit, two hexes wide
-  // as Engine2's dungeon-exit decoration is).
-  static constexpr const char* kWispCrossing = "wisp-forest-crossing";
-  static constexpr const char* kWispBoss = "wisp-forest-crossing-boss";
-  void routeWispCrossing() {
-    if (!board_ || board_->draft().id != kWispCrossing) return;
-    for (e2::Battle::Exit& x : battle_->exits()) {
-      if (x.kind != "dungeon" && x.targetMapId != kWispBoss) continue;
-      x.returnConnector = false;
-      if (options_.wispCrossingDone) {
-        x.id = "dungeon-exit", x.kind = "dungeon", x.targetMapId.clear(), x.connectorDirection.clear();
-        x.cells = {{x.x, x.y}, {x.x + 1, x.y}};
-      } else {
-        x.id = "floor-connector", x.kind = "connector", x.targetMapId = kWispBoss, x.connectorDirection = "up";
-        x.cells = {{x.x, x.y}};
-      }
-    }
   }
   // --- the party's Formação inicial ---
   // The Party screen's board (OverworldStage: radius 2, rows 3-4-5-4-3 front to back, left to right): the saved cells, then every
@@ -5844,6 +5825,25 @@ class MapStage final : public Stage {
     }
     logInfo("formation: {} heroes at the entry ({}, {}), front turned {} sixths toward {}; {} moved to the nearest free ground", heroes.size(),
             entry.x, entry.y, facing, foe ? std::format("the enemy at ({}, {})", foe->x, foe->y) : std::string("no enemy"), moved);
+  }
+  // wispCrossing.ts routeWispCrossing: on the Wisp Forest crossing every dungeon exit and every connector to the lair leads to the
+  // carnivorous plant's lair (a floor connector up) until the crossing is finished, then outside (a dungeon exit, two hexes wide
+  // as Engine2's dungeon-exit decoration is).
+  static constexpr const char* kWispCrossing = "wisp-forest-crossing";
+  static constexpr const char* kWispBoss = "wisp-forest-crossing-boss";
+  void routeWispCrossing() {
+    if (!board_ || board_->draft().id != kWispCrossing) return;
+    for (e2::Battle::Exit& x : battle_->exits()) {
+      if (x.kind != "dungeon" && x.targetMapId != kWispBoss) continue;
+      x.returnConnector = false;
+      if (options_.wispCrossingDone) {
+        x.id = "dungeon-exit", x.kind = "dungeon", x.targetMapId.clear(), x.connectorDirection.clear();
+        x.cells = {{x.x, x.y}, {x.x + 1, x.y}};
+      } else {
+        x.id = "floor-connector", x.kind = "connector", x.targetMapId = kWispBoss, x.connectorDirection = "up";
+        x.cells = {{x.x, x.y}};
+      }
+    }
   }
   // The walkable Inn's two floors (Engine2's result screen names their stairs "Subir para o Segundo andar" / "Descer para o
   // Primeiro andar"); any other connector goes the way floorConnectorDirection says.
