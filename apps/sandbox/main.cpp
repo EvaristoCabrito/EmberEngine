@@ -88,6 +88,8 @@
 #include "media/AudioMixer.h"
 #include "OverworldStage.h"
 #include "BattleTalk.h"
+#include "NpcTalk.h"
+#include "GameMusic.h"
 #include "MapEditorStage.h"
 #include "world/Locais.h"
 #include "TestModeStage.h"
@@ -127,6 +129,9 @@ struct Options {
   // fight (tests of the promotions' spells; the campaign reads the save's promotions instead).
   std::map<std::string, std::string> promote;
   std::map<std::string, int> promoteLevel;
+  // --arrived-from <mission id>: the party comes in by the floor connector back to that map (MapStageOptions::arrivedFrom);
+  // --leader <hero>: that hero walks a free-roam map in the authored walker's place (MapStageOptions::leader).
+  std::string arrivedFrom, leader;
   bool tatica = false;
   bool spellsMenuOpen = false;
   float measureSeconds = 0.0f;
@@ -210,6 +215,8 @@ Options parse(int argc, char** argv) {
     else if (arg == "--measure" && hasValue) o.measureSeconds = static_cast<float>(std::atof(argv[++i]));
     else if (arg == "--spell-light") o.spellLight = true;
     else if (arg == "--fx-test" && hasValue) o.fxTest = argv[++i];
+    else if (arg == "--arrived-from" && hasValue) o.arrivedFrom = argv[++i];
+    else if (arg == "--leader" && hasValue) o.leader = argv[++i];
     else if (arg == "--promote" && hasValue) {
       std::string list = argv[++i];
       for (size_t at = 0; at <= list.size();) {
@@ -576,8 +583,24 @@ MapStageOptions mapOptions(const Options& o) {
     m.battle = o.battleRules;
     m.heroClass = o.promote;
     for (const auto& [name, level] : o.promoteLevel) m.heroProgress[name] = {level, 0};
+    m.arrivedFrom = o.arrivedFrom;
+    m.leader = o.leader;
     return m;
   }
+}
+
+// GameApp startBattle on a free-roam map (mission.explore, the walkable Inn): the companions not recruited yet are not seated
+// there (a campaign only: Modo teste seats everyone), and the save's party leader walks (partyLeaderOf: the saved leader
+// while recruited, else Kael).
+void setUpExplore(MapStageOptions& options, const e2::Json& save, const e2::Overworld& world, bool test) {
+  std::ifstream in(options.battle, std::ios::binary);
+  const e2::Json battle = in ? e2::Json::parse(in, nullptr, false) : e2::Json();
+  if (!battle.is_object() || !battle.value("explore", false)) return;
+  for (const char* hero : {"Neera", "Voss", "Salazar", "Aldric", "Malrec"})
+    if (!test && !world.heroRecruited(hero, save)) options.absentNeutrals.insert(hero);
+  if (options.leader.empty())
+    if (const auto l = save.find("partyLeader"); l != save.end() && l->is_string() && (test || world.heroRecruited(l->get<std::string>(), save)))
+      options.leader = l->get<std::string>();
 }
 
 template <class Render>
@@ -660,8 +683,14 @@ int runCapture(const Options& o) {
       MapStageOptions options = mapOptions(mission);
       options.spellsMenu = options.choicesPanel = test;  // Modo teste's tools, as in the game
       if (world.load("content/engine2/overworld.json")) options.world = &world;  // the status sheet's Mochila / Equipar
+      if (test) testSession = freshTestSession(campaign);
+      if (options.world) setUpExplore(options, test ? testSession->save : campaign.activeSave(), world, test);
       auto missionStage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
       missionStage->setCampaign(&campaign, test ? std::string() : id, id, test);  // the campaign's own save backs the inventory
+      // The people who talk (NpcTalk.h); a capture never writes the bank (no campaign record: the Inn's menus read a copy).
+      auto talk = attachNpcTalk(*missionStage, o.engine2, options.world, nullptr, test ? &testSession->save : nullptr, campaign.activeSave());
+      if (missionStage->draftId().rfind("estalagem", 0) == 0) missionStage->setMusic(music::theme("inn"));
+      if (o.mapUi.starts_with("npc:")) talk->preview(o.mapUi.substr(4));
       if (o.mapUi == "menu" || o.mapUi == "options" || o.mapUi == "log" || o.mapUi == "fulllog" || o.mapUi.starts_with("status") || o.mapUi.starts_with("inventory:") || o.mapUi.starts_with("synced:")) missionStage->previewMenu(o.mapUi);
       stage = std::move(missionStage);
     } else if (o.title && o.titleScreen.starts_with("test") && hasCampaign && world.load("content/engine2/overworld.json")) {
@@ -851,6 +880,8 @@ int runWindow(const Options& o) {
   // GameApp enterFromSave: the world map opened from Continuar / a load resumes a fight saved mid-way (resumeOnMap);
   // the battle then opened takes the save's snapshot (resumeNext).
   bool resumeOnMap = false, resumeNext = false;
+  // A floor connector taken (GameApp startBattle(target, ..., arrivedFrom)): the map it was taken on, for the next battle.
+  std::string arriveFrom;
   auto toggleFullscreen = [&] {
     const bool full = (SDL_GetWindowFlags(window.handle()) & SDL_WINDOW_FULLSCREEN) != 0;
     SDL_SetWindowFullscreen(window.handle(), !full);
@@ -973,6 +1004,16 @@ int runWindow(const Options& o) {
     playing.clear();
     openMap = true;  // GameApp ResultScreen "Mapa": back to the world map
   };
+  // GameApp onQuit on an explore map: the map's mission completed, no pending mission or resumable fight left in the slot.
+  auto markVisited = [&](const std::string& id) {
+    e2::Json save = campaign.activeSave();
+    e2::Json& done = save["completed"];
+    if (!done.is_array()) done = e2::Json::array();
+    if (std::find(done.begin(), done.end(), id) == done.end()) done.push_back(id);
+    save["pendingMission"] = nullptr;
+    save["battle"] = nullptr;
+    if (!campaign.saveActive(std::move(save))) logWarn("{}: the visit could not be written", id);
+  };
   // Engine2's loading curtain (LoadingScreens.h): up before a battle is built, over the world map as it opens.
   loading::Curtain curtain;
   services.curtain = [&] { curtain.draw(paths.engine2Public); };
@@ -1025,7 +1066,19 @@ int runWindow(const Options& o) {
     // Screen changes happen between frames, with the GPU idle: the old screen's resources go before the new one loads.
     std::optional<MapStageOptions> retry;
     if (auto* map = dynamic_cast<MapStage*>(stage.get())) {
-      if (map->wantsLoad()) {
+      if (const std::string floor = map->wantsFloor(); !floor.empty() && !pending) {
+        // A floor connector (GameApp: the result screen's Subir / Descer, then startBattle(target, ..., arrivedFrom)): the linked
+        // floor opens, the party beside the connector back.
+        map->clearFloor();
+        std::string error;
+        std::optional<MissionEntry> next = testSession || playing.empty() ? testMission(campaign, paths, floor, error) : campaignMission(campaign, paths, floor, error);
+        if (!next) {
+          logWarn("floor connector to {}: {}", floor, error);
+        } else {
+          arriveFrom = map->draftId();
+          pending = std::move(next);
+        }
+      } else if (map->wantsLoad()) {
         // The battle menu's Load: the chosen slot's campaign, where it stands (GameApp enterFromSave; test mode ends).
         playing.clear(), testSession.reset(), inEditorTest = false, inSpells = false;
         openMap = true, resumeOnMap = true;
@@ -1042,6 +1095,11 @@ int runWindow(const Options& o) {
           else openTest = TestModeStage::Screen::WorldMap;
         } else if (!playing.empty() && !map->battleResult().empty()) {
           finishCampaignFight(*map);
+        } else if (!playing.empty() && map->explores()) {
+          // Leaving a free-roam map (the walkable Inn's Sair): the visit recorded, no resumable snapshot left (GameApp onQuit).
+          markVisited(playing);
+          playing.clear();
+          openMap = true;
         } else if (!playing.empty()) {
           playing.clear();
           openMap = true;  // Desistir: back to the world map, the mission still to fight
@@ -1064,6 +1122,8 @@ int runWindow(const Options& o) {
       again->setPlaytest(inEditorTest);
       if (!playing.empty() && dialogs.is_object())
         attachBattleTalk(*again, playing, dialogs, paths.engine2Public, world, testSession ? nullptr : &campaign);
+      attachNpcTalk(*again, paths.engine2Public, &world, !testSession && !playing.empty() ? &campaign : nullptr, testSession ? &testSession->save : nullptr,
+                    campaign.emptySave());
       stage = std::move(again);
     }
     if (pending || backToTitle || openMap || openTest || openTestRpg || openSpells || openEditor) {
@@ -1129,6 +1189,9 @@ int runWindow(const Options& o) {
             for (const auto& [pair, v] : scores.items())
               if (v.is_number()) options.affinityScores[pair] = v.get<double>();
         }
+        // A free-roam map: who sits there and who walks (the campaign's save, or Modo teste's); where the party comes in.
+        if (hasWorld) setUpExplore(options, testSession ? testSession->save : campaign.activeSave(), world, testSession.has_value() || playing.empty());
+        options.arrivedFrom = std::exchange(arriveFrom, {});
         curtainBeforeBattle();
         auto map = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
         map->setMenus(toggleFullscreen, &devGfx);
@@ -1145,6 +1208,11 @@ int runWindow(const Options& o) {
         if (!playing.empty() && dialogs.is_object())
           if (auto talk = attachBattleTalk(*map, playing, dialogs, paths.engine2Public, world, testSession ? nullptr : &campaign); talk && resumed)
             talk->introDone = true;
+        // The people who talk on it (Brue's tavern, Vargan's forge, the old healer in the walkable Inn: NpcTalk.h).
+        attachNpcTalk(*map, paths.engine2Public, hasWorld ? &world : nullptr, !testSession && !playing.empty() ? &campaign : nullptr,
+                      testSession ? &testSession->save : nullptr, campaign.emptySave());
+        // Both of the walkable Inn's floors keep the Inn's theme (GameApp: walking in and out of its menus never switches tracks).
+        if (map->draftId().rfind("estalagem", 0) == 0) map->setMusic(music::theme("inn"));
         stage = std::move(map);
       } else {
         stage = makeMap();

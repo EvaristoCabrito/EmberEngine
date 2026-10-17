@@ -524,6 +524,10 @@ class Battle {
     std::string id, kind;  // "escape" (a DEX chance to get away), "dungeon" and "connector" (leave at once)
     std::vector<BattleHex> cells;
     std::string targetMapId;
+    // A floor connector: the way back to the floor it came from (Engine2 DecorationPlacement.returnConnector), and the
+    // direction the map author picked ("up" / "down", empty = floorConnectorDirection's own rule).
+    bool returnConnector = false;
+    std::string connectorDirection;
   };
   const std::vector<Exit>& exits() const { return exits_; }
   // The end is on offer: a hero stands on a waypoint, or the win rule is met.

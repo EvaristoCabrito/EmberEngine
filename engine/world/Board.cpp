@@ -33,8 +33,10 @@ std::string cleanUrl(const std::string& url) {
 std::vector<MapSpawn> spawns(const json& d, const char* key) {
   std::vector<MapSpawn> out;
   if (!d.contains(key) || !d[key].is_array()) return out;
-  for (const json& s : d[key])
+  for (const json& s : d[key]) {
     out.push_back({str(s, "name"), str(s, "classId"), static_cast<int>(num(s, "x")), static_cast<int>(num(s, "y"))});
+    if (s.is_object() && s.contains("dialog") && s["dialog"].is_object()) out.back().dialog = s["dialog"];
+  }
   return out;
 }
 

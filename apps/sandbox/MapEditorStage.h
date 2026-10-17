@@ -218,6 +218,9 @@ class MapEditorStage : public Stage {
         logError("map editor: reading the saved maps failed: {}", e.what());
       }
       refreshFiles();
+      std::string hubs;
+      for (const MapRef& m : cityHubs()) hubs += (hubs.empty() ? "" : ", ") + m.id;
+      logInfo("map editor: {} saved maps; CityHubs: {}", saved_.size(), hubs);
     }
     // The preview follows the draft a moment after the last edit (Engine2 setPreviewMission).
     const auto now = std::chrono::steady_clock::now();
@@ -1255,7 +1258,8 @@ class MapEditorStage : public Stage {
     std::string id, title;
     int index = 0;
     bool hub = false;
-    std::vector<SavedFile> files;  // by serial
+    std::vector<SavedFile> files;      // by serial
+    std::vector<std::string> floors;   // the maps its floor connectors lead to (newest draft's targetMapId)
   };
   // Every map id saved in Engine2's folder and in ours, with its newest draft's title / index / hub.
   static std::map<std::string, Scenario> scanSaved(const std::filesystem::path& engine2Maps) {
@@ -1282,6 +1286,11 @@ class MapEditorStage : public Stage {
           s.title = d.contains("title") && d["title"].is_string() ? d["title"].get<std::string>() : id;
           s.index = d.contains("index") && d["index"].is_number() ? d["index"].get<int>() : 0;
           s.hub = d.contains("hub") && d["hub"].is_boolean() && d["hub"].get<bool>();
+          s.floors.clear();
+          if (d.contains("decorations") && d["decorations"].is_array())
+            for (const e2::Json& deco : d["decorations"])
+              if (deco.is_object() && deco.contains("targetMapId") && deco["targetMapId"].is_string() && !deco["targetMapId"].get<std::string>().empty())
+                s.floors.push_back(deco["targetMapId"].get<std::string>());
         }
       }
     }
@@ -1568,12 +1577,25 @@ class MapEditorStage : public Stage {
     sortRefs(out);
     return out;
   }
+  // The hub maps (the Inn, towns) and every floor their connectors lead to, floor after floor (the Inn's second floor is no
+  // hub and sits in no Local: it is reached only by its stairs, so the editor lists it here with its Inn).
   std::vector<MapRef> cityHubs() const {
     std::map<std::string, MapRef> hubs;
     for (const MissionInfo& m : editor_.missions)
       if (m.hub) hubs[m.id] = {m.id, m.title, m.index};
     for (const auto& [id, s] : saved_)
       if (s.hub) hubs[id] = {id, s.title, s.index};
+    std::vector<std::string> todo;
+    for (const auto& [id, r] : hubs) todo.push_back(id);
+    while (!todo.empty()) {
+      const std::string id = todo.back();
+      todo.pop_back();
+      const auto it = saved_.find(id);
+      if (it == saved_.end()) continue;
+      for (const std::string& floor : it->second.floors)
+        if (!hubs.contains(floor))
+          if (const std::optional<MissionInfo> m = missionInfo(floor); m && saved_.contains(floor)) hubs[floor] = {floor, m->title, m->index}, todo.push_back(floor);
+    }
     std::vector<MapRef> out;
     for (auto& [id, r] : hubs) out.push_back(r);
     sortRefs(out);
@@ -1783,7 +1805,7 @@ class MapEditorStage : public Stage {
           if (ImGui::Selectable(std::format("{}##{}", m.title, m.id).c_str())) loadCampaignMap(m.id);
         ImGui::EndCombo();
       }
-      if (ImGui::IsItemHovered()) ImGui::SetTooltip("Mapas de hub (a Estalagem, cidades) — sem combate");
+      if (ImGui::IsItemHovered()) ImGui::SetTooltip("Mapas de hub (a Estalagem, cidades) e os andares ligados a eles por escada — sem combate");
     }
   }
 

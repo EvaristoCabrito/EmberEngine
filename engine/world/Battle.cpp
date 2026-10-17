@@ -144,6 +144,8 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     for (const json& x : j["exits"]) {
       Exit e;
       e.id = text(x, "id"), e.kind = text(x, "kind"), e.targetMapId = text(x, "targetMapId");
+      e.returnConnector = x.contains("returnConnector") && x["returnConnector"].is_boolean() && x["returnConnector"].get<bool>();
+      e.connectorDirection = text(x, "connectorDirection");
       if (x.contains("cells") && x["cells"].is_array())
         for (const json& c : x["cells"]) e.cells.push_back({c[0].get<int>(), c[1].get<int>()});
       b.exits_.push_back(std::move(e));

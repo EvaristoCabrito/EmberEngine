@@ -7,10 +7,10 @@
 // buy; rings; armour and accessories) and the old healer (Cura Média per cast, up to four per person, and the cure for
 // disease and poison). Rules: engine/world/Inn.
 //
-// Engine2 reaches Vargan and the healer by walking the Inn's own map and talking to them; that walkable Inn is not
-// ported, so both open from the header here. Mochila / Equipar open the party's inventory (InventoryScreen.h) on the
-// hero chosen in the Adega or at the forge; the forge's first opening plays Vargan's film. Not ported: the Inn's music,
-// typing a ration count.
+// As in Engine2 it opens from the walkable Inn (NpcTalk.h): talking to Brue opens the tavern (the Adega), to Vargan the
+// forge, to the old healer his service (GameApp innEntry: "tavern" / "smith" / "healer"); leaving goes back to the Inn's room.
+// The tavern keeps Engine2's Ferreiro button. Mochila / Equipar open the party's inventory (InventoryScreen.h) on the hero
+// chosen in the Adega or at the forge; the forge's first opening plays Vargan's film. Not ported: typing a ration count.
 
 #include <imgui.h>
 
@@ -32,6 +32,9 @@ namespace ember {
 
 class InnScreen {
  public:
+  // Who opened it in the walkable Inn (GameApp innEntry); Engine2's InnScreen startInSmith / startInHealer.
+  enum class Entry { Tavern, Smith, Healer };
+  explicit InnScreen(Entry entry = Entry::Tavern) : entry_(entry) {}
   // Vargan's first-visit film is on (GameApp: the Inn's music waits for it).
   bool filmPlaying() const { return film_.has_value(); }
   struct Context {
@@ -46,6 +49,14 @@ class InnScreen {
   // True when the player left the Inn.
   bool draw(ImVec2 size, Context& c) {
     now_ = static_cast<float>(ImGui::GetTime());
+    if (!started_) {
+      // InnScreen's first view: the healer's service, or the forge (Vargan's film first, the first time), or the tavern.
+      started_ = true;
+      if (entry_ == Entry::Healer) view_ = View::Healer;
+      else if (entry_ == Entry::Smith && !c.save.value("seenSmithIntro", false)) film_.emplace(c.engine2Public, "game/smith-intro.mp4");
+      else if (entry_ == Entry::Smith) view_ = View::Smith;
+    }
+    if (std::exchange(leaveNow_, false)) return true;
     stepHealing(c);
     if (film_) {
       // Vargan's intro film, the first time the forge opens (InnScreen SmithIntroScreen; its own 22 s cap).
@@ -229,9 +240,6 @@ class InnScreen {
         inventory_.emplace(who, true);
     }
     if (showSmithHealer) {
-      x -= 12 + 112;
-      ImGui::SetCursorScreenPos({x, 16});
-      if (emberTextPlate("##healer", {112, 40}, "CURANDEIRO", 12.0f)) view_ = View::Healer, healerNote_.clear();
       x -= 12 + 100;
       ImGui::SetCursorScreenPos({x, 16});
       if (emberTextPlate("##smith", {100, 40}, "FERREIRO", 12.0f)) {
@@ -501,7 +509,8 @@ class InnScreen {
     bool back = false;
     header(size, c, "‹ VOLTAR", "A forja no porão", "Vargan, o Ferreiro", back, false);
     if (back) {
-      view_ = View::Main;
+      if (entry_ == Entry::Smith) leaveNow_ = true;  // opened by Vargan: back to the Inn's room
+      else view_ = View::Main;
       return;
     }
     const std::vector<std::string> party = roster(c);
@@ -746,7 +755,8 @@ class InnScreen {
     bool back = false;
     header(size, c, "VOLTAR", "Curandeiro Ancião", "Cura Média", back, false);
     if (back && !busy) {
-      view_ = View::Main;
+      if (entry_ == Entry::Healer) leaveNow_ = true;  // opened by the healer: back to the Inn's room
+      else view_ = View::Main;
       return;
     }
     const std::vector<std::string> party = roster(c);
@@ -847,6 +857,8 @@ class InnScreen {
   }
 
   View view_ = View::Main;
+  Entry entry_ = Entry::Tavern;
+  bool started_ = false, leaveNow_ = false;
   int npc_ = 0;
   bool talked_ = false;
   std::string hero_ = "Kael", smithHero_ = "Kael";

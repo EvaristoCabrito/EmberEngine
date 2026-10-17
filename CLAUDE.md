@@ -599,6 +599,25 @@ efeitos e wire into the game")
 - **Open, asked of the user:** the "flame effect" on braziers / lights ("precisa arrumar esse efeito em todos os pontos de luz"): which effect;
   the world map's blocked paths (re-exported 2026-10-17: `content/engine2/overworld.json` is identical to Engine2's current output, so a path blocked here is blocked in Engine2 too, unless it is a UI / click problem: ask for the hex).
 
+## The walkable Inn, both floors (2026-10-17; user: the Inn opens in every mode as its map with free movement, the Adega only by talking to Brue, import the second floor, hook it in the editor)
+
+- Every mode opens the Inn's own map (estalagem006, explore = free roam): the RPG world map's pin (OverworldStage::enterInn, after the
+  arrival film), Modo teste's classic map (briefing "Entrar") and RPG map. Data: `content/engine2/battles/estalagem006` /
+  `estalagem-andar-2003.battle.json` (export_battle.ts now writes exits' `returnConnector` / `connectorDirection`), scenes in
+  build/engine2-scenes and build/engine2-test.
+- `apps/sandbox/NpcTalk.h` (on every mission's MapStage): a click on an NPC with a `dialog` (MapSpawn::dialog, read from the map) walks the
+  leader beside it, then the conversation (DialogScreen, portraits from `content/engine2/portraits.json` = export_portraits.ts); a reply's
+  action after it closes: tavern (InnScreen main = the Adega), smith (forge, Vargan's film the first time), healer, the hostage quest,
+  recruitAldric. InnScreen::Entry; leaving a menu returns to the room. The InnScreen header lost "Curandeiro" (Engine2 keeps Ferreiro).
+- MapStage: `absentNeutrals` (companions not recruited, campaign only), `leader` (save.partyLeader walks in Kael's place: the seated
+  hero, else its catalog art), `arrivedFrom` (GameApp arriveAtConnector); free roam's bar = hint + "Sair" (records the visit, GameApp
+  onQuit); a floor connector's prompt "Sim" -> `wantsFloor()` -> main.cpp opens the other floor. Both floors play the Inn's theme.
+- Map Editor: "CityHubs…" also lists maps reached by a hub's floor connectors (the Inn's Andar II).
+- Script steps `talk:<npc>`, `stairs`; captures `--title-screen mission:estalagem [--map-ui npc:tavern|smith|healer]`, `--arrived-from`,
+  `--leader`. DialogScreen's wrap was in screen space (lines clipped right in every conversation): fixed.
+- **Map defect (Engine2's own data, not fixed, asked):** on estalagem-andar-2003 the stairs room (cols 20-22, rows 10-14) has no doorway:
+  arriving upstairs, the party can only go back down. A door frame in the row-9 wall (Map Editor) opens it.
+
 ## Status sheet in battle (2026-10-17; user: "importa direito a ficha": images, details, point system, Mochila / Equipar, the same scroller)
 
 - `apps/sandbox/BattleStatus.h` = Engine2's StatusPanel (portrait + hunger, name / class / level / XP, condition badge + detail, HP, "Pontos de atributo"

@@ -347,8 +347,8 @@ class OverworldStage : public Stage {
   }
 
   // GameApp beginMission("estalagem"): the first visit plays the arrival film (finishInnArrivalIntro), then the visit is
-  // recorded (mission completed, the Inn's hex explored) and the Inn opens. Engine2 then walks the party into the Inn's
-  // own room; that room is not ported, so the Inn's menus open straight away.
+  // recorded (mission completed, the Inn's hex explored) and the party walks into the Inn's own room (its map, free roam:
+  // startBattle on an explore mission); talking to Brue, Vargan or the old healer there opens their menus (NpcTalk.h).
   void enterInn() {
     if (!hasInn_) {
       notice_ = "Sem dados da Estalagem (content/engine2/inn.json).";
@@ -372,7 +372,10 @@ class OverworldStage : public Stage {
     save_["pendingMission"] = nullptr;
     save_["battle"] = nullptr;
     write();
-    inn_.emplace();
+    std::string error;
+    const std::optional<MissionEntry> room = test() ? testMission(campaign_, paths_, "estalagem", error) : campaignMission(campaign_, paths_, "estalagem", error);
+    if (!room) notice_ = error;
+    else if (callbacks_.play) callbacks_.play(*room);
   }
 
   // A film over everything, then `then`.

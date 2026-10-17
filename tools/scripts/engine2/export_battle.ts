@@ -134,7 +134,7 @@ for (let y = 0; y < e.rows; y++)
 // The mission's waypoints (Engine2 evaluateEnd / exitDecorationHere): a living hero standing on one of an exit decoration's cells offers to
 // end the mission (an escape marker with its DEX chance, a dungeon exit or a floor connector outright).
 const exits = e.decorations.filter((d: any) => data.DECORATIONS[d.id]?.exitKind).map((d: any) => ({ id: d.id, kind: data.DECORATIONS[d.id].exitKind, x: d.x, y: d.y,
-  targetMapId: d.targetMapId ?? null, cells: data.placedFootprint(d).map((f: any) => [d.x + f.dx, d.y + f.dy]) }));
+  targetMapId: d.targetMapId ?? null, returnConnector: !!d.returnConnector, connectorDirection: d.connectorDirection ?? null, cells: data.placedFootprint(d).map((f: any) => [d.x + f.dx, d.y + f.dy]) }));
 
 // The locks (Engine2 adjacentLock / useLockpick): the door tiles, the door decorations and the chests, in the order adjacentLock looks at a
 // hex, each with the cells its opening changes (Engine2's own useLockpick, run on a copy with a hero set beside it and a Gazua in hand).

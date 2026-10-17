@@ -305,11 +305,8 @@ class TestModeStage : public Stage {
   const e2::CampaignMission* missionData(const std::string& id) const { return campaign_.data().mission(id); }
 
   void openMission(const std::string& id) {
-    // GameApp openMission / beginMission in test mode: nothing gated, finished missions open again.
-    if (id == "estalagem") {
-      notice_ = "A Estalagem abre pelo mapa RPG (o modo clássico não tem a estalagem andável ainda).";
-      return;
-    }
+    // GameApp openMission / beginMission in test mode: nothing gated, finished missions open again; the Inn's briefing says
+    // "Entrar" and opens the walkable Inn (its arrival film is not ported here).
     std::string error;
     if (std::optional<MissionEntry> e = testMission(campaign_, paths_, id, error)) {
       briefing_ = std::move(e);

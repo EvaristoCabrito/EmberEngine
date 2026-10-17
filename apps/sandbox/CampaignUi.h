@@ -480,7 +480,7 @@ inline int drawBriefing(ImVec2 size, float rem, const MissionEntry& m, const std
   y += 0.75f * rem + 0.25f * rem;
   dl->AddText(ui, rem, {p.x + 1.25f * rem, y}, IM_COL32(216, 216, 216, 255), m.objective.c_str(), nullptr, inner);
   const float bh = 3.5f * rem;
-  if (emberBigButton("##enter", m.battle.empty() ? "ENTRAR" : "ENTRAR EM COMBATE", {pad, size.y - rem - bh}, {width, bh}, true, 1.15f * rem)) result = 1;
+  if (emberBigButton("##enter", m.battle.empty() || m.draftId == "estalagem" ? "ENTRAR" : "ENTRAR EM COMBATE", {pad, size.y - rem - bh}, {width, bh}, true, 1.15f * rem)) result = 1;
   return result;
 }
 

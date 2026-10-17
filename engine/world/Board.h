@@ -77,6 +77,7 @@ struct MapDecoration {
 struct MapSpawn {
   std::string name, classId;
   int x = 0, y = 0;
+  nlohmann::json dialog;  // an NPC's conversation (Engine2 Spawn.dialog: a DialogTree), null when it has none
 };
 
 // An Ember map file ({serial, savedAt, draft}); only the fields EmberEngine reads so far.

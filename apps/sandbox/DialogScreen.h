@@ -87,7 +87,7 @@ class DialogScreen {
     ImGui::Dummy({1, 22});
     ImGui::PushFont(uiFont(UiFont::Ui), 16.0f * gamePrefs().dialogueScale);
     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(240, 240, 240, 255));
-    ImGui::PushTextWrapPos(textX + textW);
+    ImGui::PushTextWrapPos(textX + textW - ImGui::GetWindowPos().x);  // window-local (the panel is centred: screen x clipped the line)
     ImGui::TextUnformatted(translated(line->value("text", ""), line->value("translations", e2::Json()), lang).c_str());
     ImGui::PopTextWrapPos();
     ImGui::PopStyleColor();

@@ -155,6 +155,12 @@ struct MapStageOptions {
   int starLook = 3;  // the star field's saved look (looks/stars/README.md; also in the panel)
   // The battle's rules and units (tools/scripts/engine2/export_battle.ts output; empty = no combat).
   std::filesystem::path battle;
+  // A free-roam map (an explore mission: the walkable Inn) set up from the save as GameApp startBattle does: companions not
+  // recruited yet are not seated there (`absentNeutrals`, by name), a party leader other than the authored walker walks in
+  // its place (`leader`), and a floor connector taken on another map (`arrivedFrom`: that map's mission id) puts the party
+  // beside the connector leading back (arriveAtConnector) instead of on the authored spawns.
+  std::set<std::string> absentNeutrals;
+  std::string leader, arrivedFrom;
   // A campaign fight: each hero's level and XP from the save (save.ts levels / xp), by name.
   std::map<std::string, std::pair<int, int>> heroProgress;
   // ... and each hero's promotion (save.ts promotions: "warlock" / "elementalist"), by name: its class, class name and
@@ -295,6 +301,7 @@ class MapStage final : public Stage {
       buildArchitecture();
       logInfo("scene {}: {} cards, {} models, {} units, {} architecture pieces ({} built)", scene_->map, scene_->cards.size(),
               scene_->models.size(), scene_->units.size(), scene_->architecture, arch_.size());
+      arrangeScene();
       initUnits();
       setUpParty();
       if (!options.heroes.empty()) setUpPoses(options.heroes);
@@ -350,6 +357,7 @@ class MapStage final : public Stage {
     now_ = time;
     updateUnits(dt);
     updateExchange();
+    if (talkAfterWalk_ >= 0 && !busy()) talkRequest_ = std::exchange(talkAfterWalk_, -1);  // walked up to the NPC: they talk
     runScript();
     updateRoaming();
     updateTurns();
@@ -533,6 +541,10 @@ class MapStage final : public Stage {
   // camera bar never reach here (ImGui takes them).
   void event(const SDL_Event& e) override {
     if (e.type == SDL_EVENT_MOUSE_MOTION) mouse_ = {e.motion.x, e.motion.y}, mouseWindow_ = e.motion.windowID;
+    if (inputHeld) {  // a conversation or the Inn's menus over the map (NpcTalk.h): nothing reaches the board
+      leftDown_.reset(), endPan();
+      return;
+    }
     // The map editor: a press on a unit or a decoration holds it (MapPreviewCanvas onPointerDownCapture); the camera
     // and the brush never see that press.
     if (options_.editorGrab && e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && (e.button.button == SDL_BUTTON_RIGHT || e.button.button == SDL_BUTTON_LEFT) &&
@@ -828,6 +840,7 @@ class MapStage final : public Stage {
 
   void drawPanel() override {
     if (!board_) return;
+    if (hudHidden) return;  // the Inn's menus cover the whole screen (NpcTalk.h)
     if (!result_.empty() && now_ - resultAt_ > kResultDelay) return drawResultScreen();
     if (options_.editorClick) return drawCameraBar();  // the map editor's preview: its own panels around it
     drawAirParticles();
@@ -998,6 +1011,38 @@ class MapStage final : public Stage {
     return music_;
   }
   bool musicHeld = false;
+  // A conversation or one of the Inn's menus is over the map (NpcTalk.h): the board takes no input; with hudHidden the
+  // battle's own panels are not drawn either (the menu covers the whole screen).
+  bool inputHeld = false, hudHidden = false;
+  // The track while this map is on screen, replacing the battle file's (the walkable Inn's floors keep the Inn's theme).
+  void setMusic(Music m) { music_ = std::move(m); }
+  // An NPC's conversation asked for (Engine2 handleCell's dialog branch: a click on a neutral who has one; in free roam the
+  // leader walks up beside it first): its tree and who speaks, taken once.
+  struct Talk {
+    e2::Json tree;
+    std::string name;
+  };
+  std::optional<Talk> takeTalk() {
+    if (!talkRequest_ || !battle_ || *talkRequest_ >= battle_->units().size()) return talkRequest_.reset(), std::nullopt;
+    const size_t b = *std::exchange(talkRequest_, std::nullopt);
+    const auto it = npcDialog_.find(b);
+    if (it == npcDialog_.end()) return std::nullopt;
+    talked_ = true;
+    return Talk{it->second, battle_->units()[b].name};
+  }
+  // The units on the board, by name and sprite (DialogOverlay's characters: a line's portrait falls back to its speaker's).
+  std::vector<std::pair<std::string, std::string>> characters() const {
+    std::vector<std::pair<std::string, std::string>> out;
+    if (battle_)
+      for (const e2::BattleUnit& u : battle_->units()) out.emplace_back(u.name, u.sprite);
+    return out;
+  }
+  // A floor connector taken (the finish prompt's "Sim" on a connector to another map): that map's mission id, else empty.
+  const std::string& wantsFloor() const { return floorRequest_; }
+  void clearFloor() { floorRequest_.clear(); }
+  // The map's own id (its draft's: the mission id a floor connector names) and whether it is a free-roam map.
+  std::string draftId() const { return board_ ? board_->draft().id : std::string(); }
+  bool explores() const { return explores_; }
   // The Map Editor's Testar battle: its menu says "Encerrar teste" (GameApp playtest).
   void setPlaytest(bool on) { playtest_ = on; }
   // Opções (EmberMenus.h): Tela cheia and the game's graphics switches (DevGfxSettings.h), applied here at once when
@@ -2053,6 +2098,8 @@ class MapStage final : public Stage {
     battle_ = e2::Battle::load(path);
     loadSounds(path);
     if (!battle_) return;
+    explores_ = battle_->roaming();
+    arrangeBattle();
     for (e2::BattleUnit& u : battle_->units())
       if (const auto it = options_.heroProgress.find(u.name); it != options_.heroProgress.end() && u.side == "player")
         e2::raiseToLevel(u, it->second.first, it->second.second);
@@ -2084,6 +2131,8 @@ class MapStage final : public Stage {
           break;
         }
     logInfo("battle {}: {} of {} units in play", battle_->map(), matched, scene_->units.size());
+    findConversations();
+    if (!options_.arrivedFrom.empty()) arriveAtConnector();
     rng_ = e2::Mulberry32(static_cast<uint32_t>(std::chrono::steady_clock::now().time_since_epoch().count()));
     battle_->rollInitiative(rng_);
     for (const e2::BattleUnit& u : battle_->units()) startLevel_.emplace_back(u.level, u.xp);
@@ -2337,6 +2386,10 @@ class MapStage final : public Stage {
           tip_.clear();
           return;
         }
+    // An NPC with a conversation (Engine2 handleCell's dialog branch): in free roam the leader walks up beside it first.
+    if (const int npc = battle_->unitAt(hex->x, hex->y); npc >= 0 && npcDialog_.contains(static_cast<size_t>(npc)) &&
+                                                          battle_->units()[static_cast<size_t>(npc)].alive)
+      return talkTo(static_cast<size_t>(npc));
     if (myTurn()) {
       const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
       const bool own = hex->x == u.x && hex->y == u.y;
@@ -2558,11 +2611,19 @@ class MapStage final : public Stage {
     if (!battle_ || !result_.empty() || winDismissed_ || !battle_->winAvailable() || busy()) return;
     size_t hero = 0;
     const e2::Battle::Exit* exit = battle_->activeExit(&hero);
-    std::string text, yes, no;
+    std::string text, yes, no, floorExit;
     if (exit && exit->kind == "escape") {
       const std::string chance = std::format("{:g}", std::round(battle_->fleeChance(hero) * 100.0) / 100.0);
       text = tr("Encontraram uma rota de fuga. Desejam tentar escapar? (" + chance + "% de chance)", "You found a way out. Try to escape? (" + chance + "% chance)");
       yes = tr("Tentar escapar", "Try to escape"), no = tr("Ficar", "Stay");
+    } else if (exit && exit->kind == "connector" && !exit->targetMapId.empty()) {
+      const bool up = connectorUp(*exit);
+      text = up ? tr("Encontraram uma passagem para subir. Deseja subir?", "You found a way up. Go up?")
+                : tr("Encontraram uma passagem para descer. Deseja descer?", "You found a way down. Go down?");
+      if (exit->returnConnector && exit->connectorDirection.empty() && !innFloor())
+        text = tr("Encontraram a passagem de volta. Deseja voltar?", "You found the way back. Go back?");
+      yes = tr("Sim", "Yes"), no = tr("Não", "No");
+      floorExit = exit->targetMapId;
     } else if (exit) {
       text = exit->kind == "dungeon" ? tr("Encontraram a saída da masmorra. Desejam sair?", "You found the dungeon exit. Leave?")
                                      : tr("Encontraram uma passagem para o próximo andar. Deseja avançar?", "You found a way to the next floor. Go on?");
@@ -2585,7 +2646,12 @@ class MapStage final : public Stage {
     ImGui::TextUnformatted(text.c_str());
     ImGui::PopTextWrapPos();
     ImGui::PopFont();
-    if (emberButton("##finishyes", yes.c_str(), true, true)) confirmFinishNow();
+    if (emberButton("##finishyes", yes.c_str(), true, true)) {
+      // A floor connector leads straight onto the linked floor (GameApp: the result screen's "Subir" / "Descer", then
+      // startBattle(target, ..., arrivedFrom)); the battle does not end here.
+      if (!floorExit.empty()) floorRequest_ = floorExit, winDismissed_ = true;
+      else confirmFinishNow();
+    }
     ImGui::SameLine();
     if (emberButton("##finishno", no.c_str(), false, true)) winDismissed_ = true;
     ImGui::End();
@@ -3547,6 +3613,27 @@ class MapStage final : public Stage {
                      picked ? std::format("{},{}", picked->x, picked->y) : "nothing", spellMode_,
                      spellArmed_ ? std::format("{},{}", spellArmed_->x, spellArmed_->y) : "no", spellArmed_ ? std::format(" ({} hexes in its area)", aimArea(static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), *spellArmed_).size()) : "",
                      exchange_ ? "yes" : "no", tip_.empty() ? "" : " - " + tip_);
+    }
+    if (p[0] == "talk" && p.size() > 1) {
+      // "talk:<npc>": a left click on the NPC as the player makes it (the leader walks up in free roam), then the conversation opens
+      const int who = sceneUnitNamed(p[1]);
+      if (who < 0 || unitBattle_[static_cast<size_t>(who)] < 0) return fail("no such unit");
+      if (!npcDialog_.contains(static_cast<size_t>(unitBattle_[static_cast<size_t>(who)]))) return fail("has no conversation");
+      talked_ = false;
+      talkTo(static_cast<size_t>(unitBattle_[static_cast<size_t>(who)]));
+      scriptCheck_ = [this, name = p[1]]() -> std::string {
+        if (!talked_ && !talkRequest_) return name + "'s conversation never opened";
+        for (const e2::BattleUnit& u : battle_->units())
+          if (u.side == "player" && !u.summoned) return logInfo("battle script: talked to {}, {} at ({}, {})", name, u.name, u.x, u.y), std::string();
+        return "";
+      };
+      return logInfo("battle script: talk {}", p[1]);
+    }
+    if (p[0] == "stairs") {  // "stairs": the finish prompt's "Sim" on the floor connector a hero stands on
+      const e2::Battle::Exit* x = battle_->activeExit();
+      if (!x || x->kind != "connector" || x->targetMapId.empty()) return fail("no hero on a floor connector");
+      floorRequest_ = x->targetMapId;
+      return logInfo("battle script: stairs: {} to {}", connectorUp(*x) ? "up" : "down", floorRequest_);
     }
     if (p[0] == "confirm") {
       // the confirm panel's Confirmar (drawConfirm), then, once it has played, who lost HP
@@ -4816,6 +4903,51 @@ class MapStage final : public Stage {
                       ? "O inimigo age…"
                       : "Clique num aliado ou num inimigo para ver o status.");
     }
+    // the actions row; free roam (Engine2's explore missions) shows how to play it instead
+    if (battle_->roaming()) drawExploreRow(a, b);
+    else drawActionsRow(a, b);
+    const bool mine = myTurn() && !busy();
+    const bool turns = !battle_->roaming();  // free roam has no turns to end
+    const float endW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, "Fim do turno", 0.06f) + 28.0f;
+    {  // the combat log: its switch, and (while it shows) the whole log full screen
+      const std::string openLabel = tr("Abrir log", "Open log");
+      const char* logLabel = showLog_ ? "Resumo" : "Log";
+      const float openW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, openLabel.c_str(), 0.06f) + 28.0f;
+      const float logW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, logLabel, 0.06f) + 28.0f;
+      const std::string statusLabel = "Status";
+      const float statusW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, statusLabel.c_str(), 0.06f) + 28.0f;
+      const float endX = io.DisplaySize.x - endW - 20.0f, openX = endX - 6.0f - openW, logX = (showLog_ ? openX : endX) - 6.0f - logW;
+      // Engine2's footer: "Encerrar missão" / "Usar waypoint" once the end is on offer
+      if (battle_->winAvailable() && result_.empty()) {
+        const std::string finishLabel = battle_->activeExit() ? tr("Usar waypoint", "Use waypoint") : tr("Encerrar missão", "End mission");
+        const float finishW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, finishLabel.c_str(), 0.06f) + 28.0f;
+        ImGui::SameLine(logX - 6.0f - statusW - 6.0f - finishW);
+        if (emberButton("##finishbtn", finishLabel.c_str(), true, !busy())) {
+          if (battle_->activeExit()) winDismissed_ = false;
+          else confirmFinishNow();
+        }
+      }
+      ImGui::SameLine(logX - 6.0f - statusW);
+      if (emberButton("##statusbtn", statusLabel.c_str(), false, ub >= 0)) openStatus(ub);
+      ImGui::SameLine(logX);
+      if (emberButton("##logbtn", logLabel, false, true)) showLog_ = !showLog_, logPinned_ = true, logJustOpened_ = showLog_;
+      if (showLog_) {
+        ImGui::SameLine(openX);
+        if (emberButton("##openlog", openLabel.c_str(), false, true)) logFull_ = true, logFullJustOpened_ = true;
+      }
+    }
+    ImGui::SameLine(io.DisplaySize.x - endW - 20.0f);
+    if (!turns) {  // free roam: Engine2's "Sair" (onQuit) in place of Fim do turno
+      if (emberButton("##leave", tr("Sair", "Leave").c_str(), true, !busy())) titleRequested_ = true;
+    } else if (emberButton("##endturn", "Fim do turno", false, mine && turns)) {
+      endUnitTurn();
+    }
+    ImGui::End();
+    ImGui::PopStyleVar(3);
+  }
+
+  // The battle bar's actions: Atacar, the off-hand, Arrombar, Esperar, Cancelar, Fugir combate, the spells and potions.
+  void drawActionsRow(ImVec2 a, ImVec2 b) {
     // the actions row
     ImGui::SetCursorScreenPos({a.x + 10.0f, b.y - 32.0f - 10.0f});
     const bool mine = myTurn() && !busy();
@@ -4882,38 +5014,22 @@ class MapStage final : public Stage {
           if (spellSocket(std::format("##potion{}", k).c_str(), kind, actor->bag[k], canAct, spellMode_ == kind)) startSpell(kind);
         }
     }
-    const float endW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, "Fim do turno", 0.06f) + 28.0f;
-    {  // the combat log: its switch, and (while it shows) the whole log full screen
-      const std::string openLabel = tr("Abrir log", "Open log");
-      const char* logLabel = showLog_ ? "Resumo" : "Log";
-      const float openW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, openLabel.c_str(), 0.06f) + 28.0f;
-      const float logW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, logLabel, 0.06f) + 28.0f;
-      const std::string statusLabel = "Status";
-      const float statusW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, statusLabel.c_str(), 0.06f) + 28.0f;
-      const float endX = io.DisplaySize.x - endW - 20.0f, openX = endX - 6.0f - openW, logX = (showLog_ ? openX : endX) - 6.0f - logW;
-      // Engine2's footer: "Encerrar missão" / "Usar waypoint" once the end is on offer
-      if (battle_->winAvailable() && result_.empty()) {
-        const std::string finishLabel = battle_->activeExit() ? tr("Usar waypoint", "Use waypoint") : tr("Encerrar missão", "End mission");
-        const float finishW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, finishLabel.c_str(), 0.06f) + 28.0f;
-        ImGui::SameLine(logX - 6.0f - statusW - 6.0f - finishW);
-        if (emberButton("##finishbtn", finishLabel.c_str(), true, !busy())) {
-          if (battle_->activeExit()) winDismissed_ = false;
-          else confirmFinishNow();
-        }
-      }
-      ImGui::SameLine(logX - 6.0f - statusW);
-      if (emberButton("##statusbtn", statusLabel.c_str(), false, ub >= 0)) openStatus(ub);
-      ImGui::SameLine(logX);
-      if (emberButton("##logbtn", logLabel, false, true)) showLog_ = !showLog_, logPinned_ = true, logJustOpened_ = showLog_;
-      if (showLog_) {
-        ImGui::SameLine(openX);
-        if (emberButton("##openlog", openLabel.c_str(), false, true)) logFull_ = true, logFullJustOpened_ = true;
+  }
+
+  // Free roam (GameApp's explore row): how to play it; a Gazua still opens a chest or door beside the leader (Arrombar).
+  void drawExploreRow(ImVec2 a, ImVec2 b) {
+    ImGui::SetCursorScreenPos({a.x + 10.0f, b.y - 32.0f - 10.0f});
+    if (myTurn() && !busy()) {
+      const size_t me = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
+      if (battle_->units()[me].lockpick > 0 && battle_->adjacentLock(me) >= 0) {
+        if (emberButton("##lockpick", tr("Arrombar", "Pick lock").c_str(), false, true)) openLock();
+        ImGui::SameLine();
       }
     }
-    ImGui::SameLine(io.DisplaySize.x - endW - 20.0f);
-    if (emberButton("##endturn", "Fim do turno", false, mine && turns)) endUnitTurn();
-    ImGui::End();
-    ImGui::PopStyleVar(3);
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    const std::string hint = tr("Clique no chão para andar · clique em alguém para conversar.", "Click the ground to walk · click someone to talk.");
+    ImGui::GetWindowDrawList()->AddText(uiFont(UiFont::Ui), 13.0f, {p.x, p.y + 9.0f}, IM_COL32(180, 180, 180, 255), hint.c_str());
+    ImGui::Dummy({uiFont(UiFont::Ui)->CalcTextSizeA(13.0f, FLT_MAX, 0, hint.c_str()).x, 32.0f});
   }
 
   static int xpToLevel(int level) {
@@ -5235,6 +5351,161 @@ class MapStage final : public Stage {
   }
 
   // The party: the first player unit is the hero (test lights, the scout); its walk goes to the farthest enemy.
+  // --- The walkable Inn and other free-roam maps: who is there, where the party comes in, who talks ---------------------
+
+  static std::string lowerAscii(std::string s) {
+    for (char& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return s;
+  }
+  // GameApp startBattle's `seated` and `led` on the scene: companions not in the party leave; a leader other than the
+  // authored walker takes its place with its own art (the leader seated on this map, else its catalog entry, idle).
+  void arrangeScene() {
+    std::vector<e2::SceneUnit>& units = scene_->units;
+    std::erase_if(units, [&](const e2::SceneUnit& u) { return u.side == "neutral" && options_.absentNeutrals.contains(u.name); });
+    if (options_.leader.empty()) return;
+    const auto walker = std::find_if(units.begin(), units.end(), [](const e2::SceneUnit& u) { return u.side == "player"; });
+    if (walker == units.end() || walker->name == options_.leader) return;
+    const size_t w = static_cast<size_t>(walker - units.begin());
+    const auto seated = std::find_if(units.begin(), units.end(), [&](const e2::SceneUnit& u) { return u.side == "neutral" && u.name == options_.leader; });
+    e2::SceneUnit led = units[w];
+    if (seated != units.end()) {
+      const e2::SceneUnit& s = *seated;
+      led.classId = s.classId, led.key = s.key, led.sprite = s.sprite, led.set = s.set, led.clip = s.clip, led.facing = s.facing, led.mirror = s.mirror;
+      led.boxW = s.boxW, led.boxH = s.boxH, led.foot = s.foot, led.natW = s.natW, led.natH = s.natH, led.frames = s.frames, led.pace = s.pace;
+    } else {
+      const std::optional<std::vector<e2::Hero>> catalog = options_.heroes.empty() ? std::nullopt : e2::loadHeroes(options_.heroes);
+      const e2::Hero* entry = nullptr;
+      if (catalog)
+        for (const e2::Hero& h : *catalog)
+          if (h.key == lowerAscii(options_.leader)) entry = &h;
+      const e2::HeroPose* idle = entry ? entry->find(kIdle) : nullptr;
+      if (!idle) {
+        logWarn("party: leader {} has no art here (not seated, not in the catalog): {} walks", options_.leader, led.name);
+        return;
+      }
+      led.key = entry->key, led.set = idle->set, led.clip = idle->clip, led.boxW = idle->boxW, led.boxH = idle->boxH, led.foot = idle->foot;
+      led.frames = idle->frames, led.pace = idle->pace, led.facing = 1, led.mirror = entry->reversed, led.natW = led.natH = 0;
+    }
+    led.name = options_.leader;
+    units[w] = std::move(led);
+    std::erase_if(units, [&](const e2::SceneUnit& u) { return u.side == "neutral" && u.name == options_.leader; });
+    logInfo("party: {} leads (walks in the authored walker's place)", options_.leader);
+  }
+  // The same on the battle's own units (their sounds follow them).
+  void arrangeBattle() {
+    std::vector<e2::BattleUnit>& units = battle_->units();
+    while (unitSounds_.size() < units.size()) unitSounds_.push_back(e2::Json::object());
+    auto drop = [&](size_t b) {
+      units.erase(units.begin() + static_cast<std::ptrdiff_t>(b));
+      unitSounds_.erase(unitSounds_.begin() + static_cast<std::ptrdiff_t>(b));
+    };
+    for (size_t b = units.size(); b-- > 0;)
+      if (units[b].side == "neutral" && options_.absentNeutrals.contains(units[b].name)) drop(b);
+    if (options_.leader.empty()) return;
+    const auto walker = std::find_if(units.begin(), units.end(), [](const e2::BattleUnit& u) { return u.side == "player" && !u.summoned; });
+    if (walker == units.end() || walker->name == options_.leader) return;
+    const size_t w = static_cast<size_t>(walker - units.begin());
+    const auto seated = std::find_if(units.begin(), units.end(), [&](const e2::BattleUnit& u) { return u.side == "neutral" && u.name == options_.leader; });
+    if (seated == units.end()) {
+      // Not seated on this map: the walker carries the leader's name (its art from the catalog, arrangeScene).
+      if (std::any_of(scene_->units.begin(), scene_->units.end(), [&](const e2::SceneUnit& u) { return u.side == "player" && u.name == options_.leader; }))
+        units[w].name = options_.leader;
+      return;
+    }
+    e2::BattleUnit& s = *seated;
+    s.side = "player", s.x = units[w].x, s.y = units[w].y;
+    const size_t from = static_cast<size_t>(seated - units.begin());
+    std::swap(units[w], units[from]);
+    std::swap(unitSounds_[w], unitSounds_[from]);
+    drop(from);
+  }
+  // Each NPC's conversation: the map's neutral spawn of that name on that hex (Engine2 handleCell reads the unit's own).
+  void findConversations() {
+    npcDialog_.clear();
+    for (size_t b = 0; b < battle_->units().size(); ++b) {
+      const e2::BattleUnit& u = battle_->units()[b];
+      if (u.side != "neutral") continue;
+      for (const e2::MapSpawn& s : board_->draft().neutralSpawns)
+        if (s.name == u.name && s.x == u.x && s.y == u.y && s.dialog.is_object()) {
+          npcDialog_[b] = s.dialog;
+          break;
+        }
+    }
+    if (!npcDialog_.empty()) logInfo("conversations: {} NPCs talk", npcDialog_.size());
+  }
+  // GameApp arriveAtConnector: the party beside the connector that leads back where it came from, in walking order out from
+  // it (passable ground only, never on a waypoint or another body); the authored spawns when there is not room enough.
+  void arriveAtConnector() {
+    const auto& exits = battle_->exits();
+    const auto back = std::find_if(exits.begin(), exits.end(), [&](const e2::Battle::Exit& x) {
+      return x.kind == "connector" && x.targetMapId == options_.arrivedFrom && !x.cells.empty();
+    });
+    if (back == exits.end()) return logWarn("arrival: no connector back to {} on this map", options_.arrivedFrom);
+    std::vector<size_t> party;
+    std::set<std::pair<int, int>> waypoints, bodies;
+    for (size_t b = 0; b < battle_->units().size(); ++b) {
+      const e2::BattleUnit& u = battle_->units()[b];
+      if (u.side == "player" && !u.summoned) party.push_back(b);
+      else if (u.alive)
+        for (const e2::BattleHex& h : e2::Battle::footprint(u, u.x, u.y)) bodies.insert({h.x, h.y});
+    }
+    for (const e2::Battle::Exit& x : exits)
+      for (const e2::BattleHex& c : x.cells) waypoints.insert({c.x, c.y});
+    auto walkable = [&](int x, int y) {
+      if (x < 0 || y < 0 || x >= battle_->cols() || y >= battle_->rows()) return false;
+      const e2::BattleCell& c = battle_->cell(x, y);
+      return c.passable && !c.blocked;
+    };
+    std::vector<e2::BattleHex> cells, queue{back->cells.front()};
+    std::set<std::pair<int, int>> seen{{back->cells.front().x, back->cells.front().y}};
+    for (size_t q = 0; q < queue.size() && cells.size() < party.size(); ++q)
+      for (const e2::BattleHex& n : e2::Battle::neighbors(queue[q].x, queue[q].y)) {
+        if (seen.contains({n.x, n.y}) || !walkable(n.x, n.y)) continue;
+        seen.insert({n.x, n.y});
+        queue.push_back(n);
+        if (!waypoints.contains({n.x, n.y}) && !bodies.contains({n.x, n.y}) && cells.size() < party.size()) cells.push_back(n);
+      }
+    if (cells.size() < party.size()) return logWarn("arrival: not room enough beside the connector back to {}", options_.arrivedFrom);
+    for (size_t k = 0; k < party.size(); ++k) {
+      e2::BattleUnit& u = battle_->units()[party[k]];
+      u.x = cells[k].x, u.y = cells[k].y;
+      if (const int ui = sceneUnitOf(static_cast<int>(party[k])); ui >= 0) unitPos_[static_cast<size_t>(ui)] = anchorWorld(u, cells[k]), unitMoved_[static_cast<size_t>(ui)] = 1;
+    }
+    logInfo("arrival: {} beside the connector back to {}", party.size(), options_.arrivedFrom);
+  }
+  // A click on an NPC who talks: in free roam the leader walks to the free hex beside it its reach gets to cheapest, then they
+  // talk; already beside it (or nowhere free to stand) they talk from where the leader is.
+  void talkTo(size_t npc) {
+    const e2::BattleUnit& n = battle_->units()[npc];
+    if (battle_->roaming() && myTurn()) {
+      const e2::BattleUnit& me = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
+      const std::vector<e2::BattleHex> around = e2::Battle::neighbors(n.x, n.y);
+      if (std::none_of(around.begin(), around.end(), [&](const e2::BattleHex& h) { return h.x == me.x && h.y == me.y; })) {
+        std::optional<e2::BattleHex> best;
+        double bestCost = 1e18;
+        for (const e2::BattleHex& h : around)
+          for (const e2::ReachCell& c : reach_)
+            if (c.x == h.x && c.y == h.y && c.cost < bestCost && battle_->unitAt(h.x, h.y) < 0) best = h, bestCost = c.cost;
+        if (best) {
+          walkTo(static_cast<size_t>(selected_), *best);
+          talkAfterWalk_ = static_cast<int>(npc);
+          return;
+        }
+      }
+    }
+    talkRequest_ = npc;
+  }
+  // The walkable Inn's two floors (Engine2's result screen names their stairs "Subir para o Segundo andar" / "Descer para o
+  // Primeiro andar"); any other connector goes the way floorConnectorDirection says.
+  bool innFloor() const { return board_ && board_->draft().id.rfind("estalagem", 0) == 0; }
+  bool connectorUp(const e2::Battle::Exit& x) const {
+    if (innFloor() && x.connectorDirection.empty()) return !x.returnConnector;
+    if (!x.connectorDirection.empty()) return x.connectorDirection == "up";
+    if (x.id == "stone-stairs-up-001") return true;
+    if (x.id == "stone-stairs-down-001") return false;
+    return x.returnConnector;
+  }
+
   void setUpParty() {
     for (size_t i = 0; i < scene_->units.size(); ++i)
       if (scene_->units[i].side == "player") {
@@ -5652,6 +5923,12 @@ class MapStage final : public Stage {
   };
   std::vector<CardRect> unitCard_;
   bool offHandMode_ = false;         // "Mão Secundária" armed: the off-hand weapon is the one that strikes
+  std::map<size_t, e2::Json> npcDialog_;      // battle unit -> its conversation (findConversations)
+  int talkAfterWalk_ = -1;                     // the NPC the leader is walking up to, to talk once there
+  std::optional<size_t> talkRequest_;          // a conversation asked for (takeTalk)
+  std::string floorRequest_;                   // a floor connector taken: the linked map's mission id (wantsFloor)
+  bool talked_ = false;                        // a conversation was taken (the battle script's "talk" check)
+  bool explores_ = false;                      // an explore mission (it roamed when it opened)
   bool winDismissed_ = false;        // the end was on offer and the player kept playing (the footer button brings it back)
   bool pickActiveOnResume_ = false;  // set by resume(): pick the active hero once the turn loop first runs
   BattleStatusSheet statusSheet_;                                    // the character status sheet
