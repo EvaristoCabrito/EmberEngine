@@ -19,6 +19,9 @@ and stands it with its base centred on the anchor hex (MapStage::placeModels, En
    `build/meshes/src-v2/` (`models/`, `props/` = Engine2's GLBs; `ember/<kit>/` = this folder's GLBs), then
    `Cooker meshes build/meshes/src-v2 build/meshes/props-v2.pak --cache build/meshes/cook-cache`
    (the cache is keyed by file bytes: Engine2's 15 come back from the cache). `props.pak` (the old pack) is untouched.
+   Textures are shared by content (MeshCooker revision 6, 2026-10-17): each distinct image + format is cooked once as
+   `meshes/textures/<hash>.tex` and every material that uses it points there, so the kits' common photo textures sit in
+   the pack once.
 3. **Catalog**: `models.json` (this folder) lists EmberEngine's models (id `ember-*`, Portuguese name, file, authored
    height/width, footprint one/pair/triple, editor section, blocks movement). `python -I
    tools/scripts/models/catalog_models.py` merges them into `content/engine2/editor-catalog.json` (decorations of the
@@ -111,23 +114,6 @@ The extra kit (`blender/kit_extra.py`, 2026-10-16): the sprint's extra list, all
 subdivide after. Object `scale` acts in the object's own frame before its rotation (a torus turned on its side scales
 along world z through local x). Captures (local, git-ignored): `captures/models/005` (release) and `006` (debug +
 validation, exit 0) = the Map Editor showcase of all 47 models on aldeia015.
-
-### Wave 2 (2026-10-16 night; the user's list: "faz os que não existem"): 173 props in 8 kits, all v01
-
-Built the same way (`kit_nature | treasure | structures | interior | frost | crypt | mines | ember.py` on `kitlib.py`, the shared
-parametric builders: rocks, crystals, logs, trees, chests, barrels, shelves, tables, gears, chains, figures). Catalogued from
-the GLB bounds by `tools/scripts/models/add_kits_to_catalog.py` (names + per-asset overrides in `names.json`); "passável" =
-does not block movement (`blocks: false`). Kits: nature 19, treasure 20, structures 19,
-interior 22, frost 16, crypt 26, mines 31, ember 20.
-
-Hanging things (chandelier, chains, sign, lantern) stand on the ground like everything else: the engine has no ceiling anchor;
-their height is the full drop. Glowing parts (Ember crystals, coals, bio fungi, light crystal) are emissive materials, not
-light sources: a map light must be placed beside them.
-
-None
-Pack after wave 2: 235 meshes, 561 assets, 434 MB on disk (326 cooked textures, 483 MB: every asset embeds its own copy of
-the shared 1024² JPGs; a content-hash dedupe in MeshCooker would cut that by ~10x). Not built from the list: items that already
-existed (see above) and pure variants of them.
 
 ### Wave 2 (2026-10-16 night; the user's list: "faz os que não existem"): 173 props in 8 kits, all v01
 
@@ -317,6 +303,24 @@ light sources: a map light must be placed beside them.
 | ember-ember-ritual-vessel | Recipiente ritual 3D | ember/ritual-vessel-v01.glb | 0.79 × 1.32 | 1552 | one, passável |
 | ember-ember-unknown-machine | Máquina antiga 3D | ember/unknown-machine-v01.glb | 2.35 × 2.05 | 2004 | pair |
 
-Pack after wave 2: 235 meshes, 561 assets, 434 MB on disk (326 cooked textures, 483 MB: every asset embeds its own copy of
-the shared 1024² JPGs; a content-hash dedupe in MeshCooker would cut that by ~10x). Not built from the list: items that already
-existed (see above) and pure variants of them.
+Not built from the list: items that already existed (see above) and pure variants of them.
+
+## The pack (props-v2.pak)
+
+| | assets | textures | on disk | textures on the GPU |
+|---|---|---|---|---|
+| wave 2, per-mesh textures (kept as `build/meshes/props-v2-per-mesh-textures-20261017.pak`) | 561 | 326 (483 MB) | 434 MB | 482.7 MB |
+| textures shared by content (2026-10-17, now `props-v2.pak` = `props-v3.pak`) | 261 | 26 (58.7 MB) | 80.5 MB | 58.7 MB |
+
+235 meshes and 112.7 MB of geometry in both. The 26 shared textures are byte-identical to the 26 distinct ones of the old pack
+(md5), so the look is unchanged: the mines showcase in release differs from the old pack only on the animated units.
+
+## Known issue: vertex-coloured bark and leaves are ~3x too light (not fixed)
+
+`emberlib.vertex_colors` writes `attr.data[i].color`, which Blender treats as scene-linear, with values chosen as display
+(sRGB) colours (`kitlib.BARK = (0.30, 0.22, 0.15)`). The GLBs therefore carry linear 0.19-0.30 for bark (uprooted-tree
+0.30/0.22/0.15, fallen-log 0.25/0.19/0.13, dead-tree 0.19/0.16/0.13) where Engine2's trees carry ~0.09/0.07/0.05 (dead-oak,
+broadleaf, twisted-stump), and the noise variation is squashed with it: bark reads pale tan and flat in the game. The cooker
+and shader are right (glTF COLOR_0 is linear; cooked mesh colours match the GLB to 0.003). The fix is in the kits:
+`color_srgb` (or the values converted to linear) and every vertex-coloured asset re-exported as v02. Capture (local):
+`captures/models/028` (uprooted tree, fallen log, rotten log at zoom 3).

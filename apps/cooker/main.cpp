@@ -239,9 +239,10 @@ int meshes(const std::vector<std::string_view>& args) {
   const bool cooked = cookMeshes(jobs, files, options, sources, report);
   logInfo("meshes: {} ({} cooked, {} from cache, {} failed) in {:.1f}s", report.meshes, report.cooked, report.fromCache,
           report.failed, report.seconds);
-  logInfo("  {} source triangles, {} clusters, {} triangles across all LOD levels; geometry {:.1f} MB, {} textures {:.1f} MB",
+  logInfo("  {} source triangles, {} clusters, {} triangles across all LOD levels; geometry {:.1f} MB, {} textures {:.1f} MB "
+          "(+{} uses of a shared one)",
           report.sourceTriangles, report.clusters, report.dagTriangles, megabytes(report.geometryBytes), report.textures,
-          megabytes(report.textureBytes));
+          megabytes(report.textureBytes), report.sharedTextureUses);
   if (!cooked) return 1;
 
   PakWriteReport pak;

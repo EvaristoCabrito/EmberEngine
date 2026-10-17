@@ -13,6 +13,7 @@
 #include <format>
 #include <fstream>
 #include <map>
+#include <set>
 #include <string>
 
 #include "TextureCooker.h"
@@ -26,7 +27,8 @@ namespace ember {
 namespace {
 
 // Bump when the cooked output changes for the same source (forces a re-cook of every mesh).
-constexpr uint32_t kMeshCookerRevision = 5;  // 2: protect mask, 3: edge limit, 4: authored LODs skipped, 5: proxy without texture slots
+// 2: protect mask, 3: edge limit, 4: authored LODs skipped, 5: proxy without texture slots, 6: textures shared by content
+constexpr uint32_t kMeshCookerRevision = 6;
 
 // One material's triangles, transforms baked in, one entry per unique vertex.
 struct Part {
@@ -37,7 +39,8 @@ struct Part {
 
 struct Cooked {
   std::vector<uint8_t> mesh;
-  std::vector<std::pair<std::string, std::vector<uint8_t>>> textures;  // asset path, cooked texture
+  std::vector<std::string> textureAssets;                                 // every texture the materials use
+  std::vector<std::pair<std::string, std::vector<uint8_t>>> newTextures;  // the ones not in the cache yet: asset, bytes
 };
 
 uint64_t fnv(uint64_t hash, const void* data, size_t size) {
@@ -59,6 +62,15 @@ bool writeFile(const std::filesystem::path& path, const void* data, size_t size)
   std::ofstream file(path, std::ios::binary | std::ios::trunc);
   file.write(static_cast<const char*>(data), static_cast<std::streamsize>(size));
   return static_cast<bool>(file);
+}
+
+// Shared files are trusted by name alone (content-addressed): write them whole or not at all.
+bool writeFileAtomic(const std::filesystem::path& path, const void* data, size_t size) {
+  const std::filesystem::path temp = std::filesystem::path(path).concat(".part");
+  if (!writeFile(temp, data, size)) return false;
+  std::error_code error;
+  std::filesystem::rename(temp, path, error);
+  return !error;
 }
 
 void normalize3(float* v) {
@@ -273,8 +285,8 @@ void remeshPart(Part& part, int resolution) {
 
 class MeshBuilder {
  public:
-  MeshBuilder(JobSystem& jobs, const MeshCookOptions& options, std::string assetBase, std::filesystem::path gltfDir)
-      : jobs_(jobs), options_(options), assetBase_(std::move(assetBase)), gltfDir_(std::move(gltfDir)) {}
+  MeshBuilder(JobSystem& jobs, const MeshCookOptions& options, std::filesystem::path gltfDir)
+      : jobs_(jobs), options_(options), gltfDir_(std::move(gltfDir)) {}
 
   bool build(const cgltf_data& data, Cooked& out, MeshCookReport& report) {
     uint64_t sourceTriangles = 0;
@@ -378,7 +390,8 @@ class MeshBuilder {
   }
 
   // Cooks one texture role once per mesh. ORM combines glTF's metallic-roughness texture (G, B) with the
-  // occlusion texture (R).
+  // occlusion texture (R). The cooked texture is named by its content (pixels, size, format, quality):
+  // meshes/textures/<hash>.tex, shared by every mesh whose image is the same, cooked once into the cache.
   AssetId texture(const cgltf_data& data, const cgltf_texture* main, const cgltf_texture* occlusion, TextureFormat format,
                   const char* role, Cooked& out) {
     const cgltf_image* a = main ? main->image : nullptr;
@@ -417,18 +430,28 @@ class MeshBuilder {
       image.height = static_cast<uint32_t>(ia.height);
       image.pixels = std::move(ia.pixels);
     }
+    const uint32_t settings[] = {image.width, image.height, static_cast<uint32_t>(format), static_cast<uint32_t>(options_.quality),
+                                 kTextureFormatVersion};
+    const uint64_t hash = fnv(fnv(0xcbf29ce484222325ull, settings, sizeof(settings)), image.pixels.data(), image.pixels.size());
+    const std::string asset = std::format("meshes/textures/{:016x}.tex", hash);
+    const AssetId id = assetId(asset);
+    if (std::find(out.textureAssets.begin(), out.textureAssets.end(), asset) != out.textureAssets.end()) return textures_[key] = id;
+    out.textureAssets.push_back(asset);
+    std::error_code error;
+    if (std::filesystem::file_size(options_.cacheDir / asset, error) > 0 && !error) {
+      logInfo("  texture {} ({}): shared, already cooked", asset, role);
+      return textures_[key] = id;
+    }
     const auto start = std::chrono::steady_clock::now();
-    const std::string asset = assetBase_ + "/" + role + std::to_string(textures_.size()) + ".tex";
-    out.textures.emplace_back(asset, cookTexture(jobs_, image, format, options_.quality));
-    logInfo("  texture {}: {}x{} -> {:.1f} MB in {:.1f}s", asset, image.width, image.height,
-            out.textures.back().second.size() / 1048576.0,
+    out.newTextures.emplace_back(asset, cookTexture(jobs_, image, format, options_.quality));
+    logInfo("  texture {} ({}): {}x{} -> {:.1f} MB in {:.1f}s", asset, role, image.width, image.height,
+            out.newTextures.back().second.size() / 1048576.0,
             std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count());
-    return textures_[key] = assetId(asset);
+    return textures_[key] = id;
   }
 
   JobSystem& jobs_;
   const MeshCookOptions& options_;
-  std::string assetBase_;
   std::filesystem::path gltfDir_;
   std::vector<MeshMaterial> materials_;
   std::map<std::tuple<std::string, ptrdiff_t, ptrdiff_t>, AssetId> textures_;
@@ -441,6 +464,7 @@ bool cookMeshes(JobSystem& jobs, const std::vector<std::filesystem::path>& sourc
                 std::vector<PakSource>& out, MeshCookReport& report) {
   const auto start = std::chrono::steady_clock::now();
   report = {};
+  std::set<std::string> packed;  // assets already appended to `out` (shared textures appear in several manifests)
   for (const std::filesystem::path& relative : sources) {
     ++report.meshes;
     const std::filesystem::path source = options.sourceRoot / relative;
@@ -488,7 +512,7 @@ bool cookMeshes(JobSystem& jobs, const std::vector<std::filesystem::path>& sourc
         continue;
       }
       Cooked cooked;
-      MeshBuilder builder(jobs, options, base, source.parent_path());
+      MeshBuilder builder(jobs, options, source.parent_path());
       const bool built = builder.build(*data, cooked, report);
       cgltf_free(data);
       if (!built) {
@@ -497,10 +521,9 @@ bool cookMeshes(JobSystem& jobs, const std::vector<std::filesystem::path>& sourc
       }
       bool written = writeFile(options.cacheDir / (base + ".mesh"), cooked.mesh.data(), cooked.mesh.size());
       assets.push_back(base + ".mesh");
-      for (const auto& [asset, texture] : cooked.textures) {
-        written = written && writeFile(options.cacheDir / asset, texture.data(), texture.size());
-        assets.push_back(asset);
-      }
+      for (const auto& [asset, texture] : cooked.newTextures)
+        written = written && writeFileAtomic(options.cacheDir / asset, texture.data(), texture.size());
+      assets.insert(assets.end(), cooked.textureAssets.begin(), cooked.textureAssets.end());
       std::string list = std::format("{:016x}\n", key);
       for (const std::string& a : assets) list += a + "\n";
       if (!written || !writeFile(manifest, list.data(), list.size())) {
@@ -511,6 +534,10 @@ bool cookMeshes(JobSystem& jobs, const std::vector<std::filesystem::path>& sourc
       ++report.cooked;
     }
     for (const std::string& a : assets) {
+      if (!packed.insert(a).second) {
+        ++report.sharedTextureUses;  // a shared texture already handed to the pak by an earlier mesh
+        continue;
+      }
       const std::filesystem::path file = options.cacheDir / a;
       const uint64_t size = std::filesystem::file_size(file);
       if (a.ends_with(".tex")) {
