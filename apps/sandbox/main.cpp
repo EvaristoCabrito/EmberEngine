@@ -141,6 +141,7 @@ struct Options {
   int gridLook = 2;  // --grid-look N: the battle grid (panel "Grade"): 0 OFF, 1 the old marks, 2 look 001
   int cardStance = 1;  // --cards N: 0 vertical cards, 1 leaning back with the camera's tilt (panel "Cards")
   int barsFade = 1;    // --bars-fade N: 0 bars always shown, 1 the bars of units near the camera fade (panel "Vida perto")
+  int airFade = 1;     // --air-fade N: 0 wisps and dust motes always shown, 1 those near the camera fade (panel "Partículas perto")
   int atmos = 2;  // --atmos N: Atmosfera volumétrica v1 at the start (0 OFF, 1 cinema, 2 alta, 3 desempenho)
   int background = -1;  // --background N: the panel's "Fundo" (-1 as the map says, 0 the painting, 1 the sky, 2 OFF = black)
   bool mist = true;    // --mist 0: the fog of war's mist bank off (its mask and the volumetric atmosphere stay)
@@ -237,6 +238,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--grid-look" && hasValue) o.gridLook = std::atoi(argv[++i]);
     else if (arg == "--cards" && hasValue) o.cardStance = std::atoi(argv[++i]);
     else if (arg == "--bars-fade" && hasValue) o.barsFade = std::atoi(argv[++i]);
+    else if (arg == "--air-fade" && hasValue) o.airFade = std::atoi(argv[++i]);
     else if (arg == "--atmos" && hasValue) o.atmos = std::atoi(argv[++i]);
     else if (arg == "--background" && hasValue) o.background = std::atoi(argv[++i]);
     else if (arg == "--mist" && hasValue) o.mist = std::atoi(argv[++i]) != 0;
@@ -564,6 +566,7 @@ MapStageOptions mapOptions(const Options& o) {
     m.gridLook = o.gridLook;
     m.cardStance = o.cardStance;
     m.barsFade = o.barsFade;
+    m.airFade = o.airFade;
     m.atmos = o.atmos;
     m.background = o.background;
     m.mist = o.mist;
