@@ -403,6 +403,18 @@ class MapStage final : public Stage {
       spellFx_.build(time, camera, flat_, boardTop_ + 0.2f, effectList_, fxLights_);
     }
     for (const SpellEffects::Light& l : fxLights_) lights_.push_back(carried(l.at, l.color, l.intensity, l.radius, l.height, 1.0f));
+    // Malrec's point of light (the user, 2026-10-17): blue while he casts, yellow while he strikes or counters; it swells in with
+    // the pose and fades 0.25 s after it.
+    for (size_t i = 0; i < glows_.size();) {
+      const UnitGlow& g = glows_[i];
+      if (time > g.end + 0.25f || g.ui >= unitCard_.size()) {
+        glows_.erase(glows_.begin() + static_cast<std::ptrdiff_t>(i));
+        continue;
+      }
+      const float fade = std::clamp((time - g.start) / 0.15f, 0.0f, 1.0f) * std::clamp((g.end + 0.25f - time) / 0.25f, 0.0f, 1.0f);
+      lights_.push_back(carried(unitSpot(g.ui).body + glm::vec3(0.0f, 0.5f, 0.0f), g.color, 9.0f * fade, 3.4f, 1.6f, 1.0f));
+      ++i;
+    }
     renderer.setEffects(effectList_);
     renderer.setVfx(spellFx_.vfx());
     renderer.setLights(lights_);
@@ -3069,6 +3081,12 @@ class MapStage final : public Stage {
       }
       spellFx_.cast("longShot", std::max(spellLook("longShot", static_cast<size_t>(striker)), 1), unitSpot(static_cast<size_t>(striker)),
                     {unitSpot(static_cast<size_t>(target))}, now_, x.impact, striker);
+    if (striker >= 0 && !pose.empty() && static_cast<size_t>(striker) < unitCatalog_.size() && unitCatalog_[static_cast<size_t>(striker)] &&
+        unitCatalog_[static_cast<size_t>(striker)]->key == "malrec") {
+      const bool castLike = s.type != StepType::Combat && !x.counter && pose.rfind("attack", 0) != 0;
+      glows_.push_back({static_cast<size_t>(striker), now_, now_ + length,
+                        castLike ? std::array<float, 3>{0.30f, 0.55f, 1.0f} : std::array<float, 3>{1.0f, 0.82f, 0.28f}});
+    }
     }
     // Its sound as the pose begins (engine.ts startSeq; a counter's cue as the counter begins, stepCombat; the cures and
     // Criar Comida e Água: healBy).
@@ -3392,6 +3410,15 @@ class MapStage final : public Stage {
         pendingFoe_ = other;
         return logInfo("battle script: stage {} -> {}: strike staged, waiting for Confirmar", p[1], p[2]);
       }
+    if (p[0] == "flee") {  // "flee:<unit>": the unit picked and Fugir combate tried (logs why not, its chance, the roll's outcome)
+      select(ci);
+      const e2::BattleUnit& me = battle_->units()[cb];
+      const bool can = canFlee(me);
+      if (!can) return logInfo("battle script: flee {}: not offered (fleeable {}, hex {},{} of {}x{}, moved {})", p[1], fleeable(), me.x, me.y, battle_->cols(), battle_->rows(), me.moved);
+      const double chance = fleeChance(me);
+      const bool out = attemptFlee();
+      return logInfo("battle script: flee {}: offered at {:.2f}% -> {} (turn spent {}, leaving {})", p[1], chance, out ? "escaped" : "failed", me.moved, titleRequested_);
+    }
       startSpell(p[2]);
       const e2::BattleUnit& t = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(other)])];
       aimSpell({t.x, t.y});
@@ -4576,6 +4603,13 @@ class MapStage final : public Stage {
     ImGui::End();
     ImGui::PopStyleVar(3);
   }
+    // Fugir combate (Engine2 GameApp "fleeable" + engine canAttemptFlee / attemptFlee): a random encounter only, by the hero whose turn it
+    // is once any hex of its body is on the battlefield's edge; the roll is 60 + DEX / 3 % (DEX with the affinity bonus).
+    if (actor && canFlee(*actor)) {
+      ImGui::SameLine();
+      const std::string label = tr("Fugir combate · ", "Flee battle · ") + std::format("{:.0f}%", fleeChance(*actor));
+      if (emberButton("##flee", label.c_str(), false, canAct && !aiming)) attemptFlee();
+    }
 
   static int xpToLevel(int level) {
     const int c = std::max(1, std::min(29, level));
@@ -4644,6 +4678,42 @@ class MapStage final : public Stage {
       const ImU32 fill = u.side == "player" ? IM_COL32(200, 196, 188, alpha) : u.side == "neutral" ? IM_COL32(95, 158, 82, alpha) : IM_COL32(181, 74, 50, alpha);
       const float f = u.maxHp > 0 ? std::clamp(static_cast<float>(u.hp) / static_cast<float>(u.maxHp), 0.0f, 1.0f) : 0.0f;
       if (f > 0.0f) dl->AddRectFilled({left, top}, {left + width * f, top + height}, faded(fill));
+  // --- Fugir combate ---
+  bool fleeable() const {
+    return missionId_.rfind("random", 0) == 0 || mapKey_.rfind("random", 0) == 0 || std::filesystem::path(options_.map).stem().string().rfind("random", 0) == 0;
+  }
+  bool canFlee(const e2::BattleUnit& u) const {
+    if (!fleeable() || !battle_ || !result_.empty() || u.side != "player" || !u.alive || u.moved || u.summoned) return false;
+    for (const e2::BattleHex& c : e2::Battle::footprint(u, u.x, u.y))
+      if (c.x <= 0 || c.y <= 0 || c.x >= battle_->cols() - 1 || c.y >= battle_->rows() - 1) return true;
+    return false;
+  }
+  double fleeChance(const e2::BattleUnit& u) const {
+    const size_t b = static_cast<size_t>(&u - battle_->units().data());
+    return std::min(100.0, 60.0 + e2::fighterAt(*battle_, b, u.x, u.y).dex / 3.0);  // dexterity.ts dexEscapeChance
+  }
+  // Rolls the escape for the picked hero: a hit takes the party back where the fight came from (no victory, nothing completed); a
+  // miss spends the hero's turn and the foes carry on.
+  bool attemptFlee() {
+    if (selected_ < 0 || !battle_) return false;
+    e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
+    if (!canFlee(u)) return false;
+    std::random_device device;
+    e2::Mulberry32 rng(device());
+    const bool out = rng() * 100.0 < fleeChance(u);
+    const std::string line = out ? tr(u.name + " encontrou uma saída! O grupo foge do combate.", u.name + " found a way out! The party flees the battle.")
+                                 : tr(u.name + " não conseguiu fugir — o combate continua.", u.name + " failed to flee: the battle goes on.");
+    battle_->pushLog(line);
+    tip_ = line, tipAt_ = now_;
+    if (out) {
+      titleRequested_ = true;
+      return true;
+    }
+    u.moved = true;
+    select(-1);
+    return false;
+  }
+
       if (cell >= 32.0f) {
         ImFont* font = uiFont(UiFont::Ui);
         const float size = std::max(13.0f, std::round(cell * 0.3f));
@@ -5303,6 +5373,12 @@ class MapStage final : public Stage {
   // Save / Load in battle: the campaign, this fight's mission and map key, the slot screen and the save it writes.
   e2::Campaign* campaign_ = nullptr;
   std::string missionId_, mapKey_;
+  struct UnitGlow {  // a unit's coloured point of light for the length of its pose
+    size_t ui;
+    float start, end;
+    std::array<float, 3> color;
+  };
+  std::vector<UnitGlow> glows_;
   bool testMode_ = false, loadRequested_ = false;
   std::optional<SlotScreen> battleSlots_;
   e2::Json slotSave_;

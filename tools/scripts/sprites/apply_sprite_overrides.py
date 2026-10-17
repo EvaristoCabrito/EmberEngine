@@ -87,6 +87,22 @@ def main():
                 table[f"{c['set']}/{c['clip']}"] = c["strides"]
         print(f"{c['set']}/{c['clip']} -> {c['version']}: {count} frames at {c['frameMs']} ms, {len(c['poses'])} pose(s)")
 
+    # "speed": a pose's own clip played faster (its pace sampled `factor` times as fast, so the pose is that much shorter in
+    # the fight); marked on the pose so a second run does nothing.
+    for sp in over.get("speed", []):
+        for h in roster["heroes"]:
+            if h.get("key") != sp["hero"]:
+                continue
+            for p in h["poses"]:
+                if p["pose"] not in sp["poses"] or p.get("speed") == sp["factor"]:
+                    continue
+                old = p["pace"]
+                p["pace"] = [old[min(len(old) - 1, round(i * sp["factor"]))] for i in range(math.ceil(len(old) / sp["factor"]))]
+                if p.get("doneAt", -1) >= 0:
+                    p["doneAt"] = math.ceil(p["doneAt"] / sp["factor"])
+                p["speed"] = sp["factor"]
+                print(f"{sp['hero']} {p['pose']}: {sp['factor']}x as fast ({len(old)} -> {len(p['pace'])} ticks)")
+
     save(manifest_path, manifest, 1)
     save(roster_path, roster, None)
     for p, table in zip(strides_paths, strides):

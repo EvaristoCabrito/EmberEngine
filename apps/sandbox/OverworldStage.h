@@ -752,9 +752,10 @@ class OverworldStage : public Stage {
     }
     dl->PopClipRect();
 
-    // Clicks, in Engine2's order of priority (the leader's button sits on top).
-    if (clickedLeader) movementOpen_ = !movementOpen_;
-    else if (clickedDot) walkTo(clickedDot->col, clickedDot->row);
+    // Clicks: a step hex wins over the leader's button (the leader's own hex is never a step hex, so nothing is lost; a leader
+    // drawn over a neighbouring hex used to swallow the click and the party could not walk there).
+    if (clickedDot) walkTo(clickedDot->col, clickedDot->row);
+    else if (clickedLeader) movementOpen_ = !movementOpen_;
     else if (!clickedLocation.empty()) {
       for (const auto& [loc, st] : pins)
         if (loc->id == clickedLocation) pinClicked(*loc, st, walkable(loc->col, loc->row), standing);
