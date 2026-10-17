@@ -528,6 +528,8 @@ mesh, 391k tris, no UVs / material) was in no catalogue.
   lucide 0.510.0 = the version Engine2's lucide-react uses: `raw.githubusercontent.com/lucide-icons/lucide/0.510.0/
   icons/<name>.svg`) and call `uiIcon(dl, "<name>", centre, size, ink[, strokeWidth])`; an inline SVG (Engine2's CSS
   data-URIs) goes through `uiIconSvg`. lunasvg 3.5.0 rasterises it at the exact pixel size, snapped to the pixel grid.
+- Spell icons for EmberEngine's own spells: the user's art, `content/ui/spells/<kind>.jpg` (portrait 784 x 1168, drawn
+  centre-cropped by `imageCover` in the HUD socket; MapStage::spellIconOf looks there first). A new spell = a new file.
 - Sound button = `soundButton` (CampaignUi.h: GamePrefs muted, the same switch as Opções' Silenciar): title (top right),
   briefing, world maps (beside Opções), the Inn, the battle's camera bar (+ "Opções" = the Esc menu), as in Engine2.
 

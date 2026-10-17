@@ -3283,8 +3283,11 @@ class MapStage final : public Stage {
     return nullptr;
   }
 
-  // GameApp slotIcon / data.ts spellIcon.
+  // GameApp slotIcon / data.ts spellIcon. EmberEngine's own spells (the Mago Negro's promotions) take the user's art,
+  // content/ui/spells/<kind>.jpg (portrait, drawn centre-cropped), before any Engine2 icon of the same kind.
   const UiImage* spellIconOf(const std::string& kind) const {
+    if (!e2::emberSpellClass(kind).empty())
+      if (const UiImage* own = uiImage(std::filesystem::path("content/ui/spells") / (kind + ".jpg"))) return own;
     if (const std::optional<std::string> potion = potionOf(kind)) return uiImage(options_.engine2Public / "game/icons" / ("potion-" + *potion + ".png"));
     static const std::pair<const char*, const char*> kIcons[] = {
         {"doubleStrike", "refresh-001/spells/cleave-crossed-blades.png"}, {"cleave", "refresh-001/spells/cleave.png"},
@@ -3360,7 +3363,7 @@ class MapStage final : public Stage {
     verticalGradient(dl, a, b, {{0.0f, IM_COL32(12, 12, 12, 255)}, {1.0f, IM_COL32(5, 5, 5, 255)}});
     const int fade = enabled ? 255 : 102;
     if (const UiImage* icon = spellIconOf(kind)) {
-      dl->AddImage(icon->texture, {a.x + 6, a.y + 6}, {b.x - 6, b.y - 6}, {0, 0}, {1, 1}, IM_COL32(255, 255, 255, fade));
+      imageCover(dl, *icon, {a.x + 6, a.y + 6}, {b.x - 6, b.y - 6}, 0.5f, 0.5f, IM_COL32(255, 255, 255, fade));  // object-cover
     } else if (!e2::emberSpellClass(kind).empty()) {
       // Ours have no Engine2 icon yet: the element's colour behind the spell's initials.
       static const std::pair<const char*, ImU32> kElementColors[] = {{"darkness", IM_COL32(92, 48, 150, 255)}, {"poison", IM_COL32(60, 130, 40, 255)},
