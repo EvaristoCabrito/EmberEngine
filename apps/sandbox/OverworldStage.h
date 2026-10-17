@@ -575,7 +575,7 @@ class OverworldStage : public Stage {
     ImGui::SetCursorScreenPos(a);
     ImGui::SetNextItemAllowOverlap();  // the zoom plates drawn after the viewport take their own clicks
     ImGui::InvisibleButton("##viewport", {vw, vh}, ImGuiButtonFlags_MouseButtonLeft);
-    const bool overViewport = ImGui::IsItemHovered() && !zoomBoxHovered(b);
+    const bool overViewport = ImGui::IsItemHovered() && !worldMapZoomBoxHovered(b);
     const ImGuiIO& io = ImGui::GetIO();
     if (ImGui::IsItemActivated()) drag_ = {io.MousePos.x, io.MousePos.y, scrollX_, scrollY_}, dragMoved_ = false;
     if (ImGui::IsItemActive() && drag_) {
@@ -904,27 +904,8 @@ class OverworldStage : public Stage {
     }
   }
 
-  // True while the mouse is over the zoom box (bottom right of the viewport), so the map under it ignores wheel / pins.
-  static bool zoomBoxHovered(ImVec2 size) {
-    const ImVec2 m = ImGui::GetIO().MousePos;
-    return m.x >= size.x - 16.0f - 52.0f && m.x <= size.x - 16.0f && m.y >= size.y - 16.0f - (44 * 2 + 20 + 8) && m.y <= size.y - 16.0f;
-  }
-
   void drawZoom(ImVec2 size) {
-    ImDrawList* dl = ImGui::GetWindowDrawList();
-    const float x = size.x - 16.0f - 52.0f, y = size.y - 16.0f - (44 * 2 + 20 + 8);
-    // ember-plate p-1
-    dl->AddRectFilled({x, y}, {x + 52, y + 44 * 2 + 20 + 8}, IM_COL32(17, 17, 17, 240), 2.0f);
-    dl->AddRect({x, y}, {x + 52, y + 44 * 2 + 20 + 8}, IM_COL32(190, 150, 95, 115), 2.0f);
-    ImGui::SetCursorScreenPos({x + 4, y + 4});
-    if (emberPlate("##zoomin", {44, 44}, [&](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32 ink) { iconZoom(d, {(a.x + b.x) / 2, (a.y + b.y) / 2}, 20, ink, true); }, zoom_ >= 3))
-      zoom_ = std::min(3, zoom_ + 1), recentre_ = true;
-    const std::string label = std::format("{}/4", 4 - zoom_);
-    const ImVec2 ts = uiFont(UiFont::Ui)->CalcTextSizeA(10.0f, FLT_MAX, 0, label.c_str());
-    dl->AddText(uiFont(UiFont::Ui), 10.0f, {x + 26 - ts.x / 2, y + 4 + 44 + 4}, kMuted, label.c_str());
-    ImGui::SetCursorScreenPos({x + 4, y + 4 + 44 + 20});
-    if (emberPlate("##zoomout", {44, 44}, [&](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32 ink) { iconZoom(d, {(a.x + b.x) / 2, (a.y + b.y) / 2}, 20, ink, false); }, zoom_ <= 0))
-      zoom_ = std::max(0, zoom_ - 1), recentre_ = true;
+    if (worldMapZoomBox(size, zoom_)) recentre_ = true;
   }
 
   // --- dialogs ----------------------------------------------------------------------------------------------------------

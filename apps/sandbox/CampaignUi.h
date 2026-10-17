@@ -223,6 +223,30 @@ inline void iconBook(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, 
 inline void iconClock(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "clock", c, s, ink); }
 inline void iconGear(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "settings", c, s, ink); }
 inline void iconZoom(ImDrawList* dl, ImVec2 c, float s, ImU32 ink, bool in) { uiIcon(dl, in ? "zoom-in" : "zoom-out", c, s, ink); }
+// WorldMapScreen / OverworldMapScreen's zoom control: ember-plate p-1, bottom-4 right-4, Aproximar (44), "n/4" counted from the
+// wide end (10 px text, py-0.5), Afastar (44), gap-1. `zoom` is the stop index (0 = widest); true when a button changed it.
+inline ImVec2 worldMapZoomBoxMin(ImVec2 size) { return {size.x - 16.0f - 52.0f, size.y - 16.0f - 123.0f}; }
+inline bool worldMapZoomBoxHovered(ImVec2 size) {
+  const ImVec2 m = ImGui::GetIO().MousePos, a = worldMapZoomBoxMin(size);
+  return m.x >= a.x && m.x <= a.x + 52.0f && m.y >= a.y && m.y <= a.y + 123.0f;
+}
+inline bool worldMapZoomBox(ImVec2 size, int& zoom, int stops = 4) {
+  const ImVec2 a = worldMapZoomBoxMin(size);
+  bool changed = false;
+  ImGui::SetCursorScreenPos(a);
+  emberPlate("##zoombox", {52.0f, 123.0f}, [](ImDrawList*, ImVec2, ImVec2, ImU32) {}, true);  // disabled: only paints the plate
+  ImGui::SetCursorScreenPos({a.x + 4.0f, a.y + 4.0f});
+  if (emberPlate("##zoomin", {44, 44}, [](ImDrawList* d, ImVec2 p, ImVec2 q, ImU32 ink) { iconZoom(d, {(p.x + q.x) / 2, (p.y + q.y) / 2}, 20, ink, true); }, zoom >= stops - 1))
+    zoom = std::min(stops - 1, zoom + 1), changed = true;
+  const std::string label = std::format("{}/{}", stops - zoom, stops);
+  ImFont* font = uiFont(UiFont::Ui);
+  const ImVec2 ts = font->CalcTextSizeA(10.0f, FLT_MAX, 0, label.c_str());
+  ImGui::GetWindowDrawList()->AddText(font, 10.0f, {a.x + 26.0f - ts.x / 2, a.y + 4.0f + 44.0f + 4.0f + 9.5f - ts.y / 2}, IM_COL32(180, 180, 180, 255), label.c_str());
+  ImGui::SetCursorScreenPos({a.x + 4.0f, a.y + 4.0f + 44.0f + 4.0f + 19.0f + 4.0f});
+  if (emberPlate("##zoomout", {44, 44}, [](ImDrawList* d, ImVec2 p, ImVec2 q, ImU32 ink) { iconZoom(d, {(p.x + q.x) / 2, (p.y + q.y) / 2}, 20, ink, false); }, zoom <= 0))
+    zoom = std::max(0, zoom - 1), changed = true;
+  return changed;
+}
 inline void iconChevronLeft(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "chevron-left", c, s, ink); }
 inline void iconChevronRight(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "chevron-right", c, s, ink); }
 // lucide Volume2 / VolumeX (Engine2's sound buttons).

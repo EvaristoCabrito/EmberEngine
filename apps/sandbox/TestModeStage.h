@@ -402,7 +402,7 @@ class TestModeStage : public Stage {
     ImGui::SetCursorScreenPos(a);
     ImGui::SetNextItemAllowOverlap();  // the zoom plates drawn after the viewport take their own clicks
     ImGui::InvisibleButton("##viewport", {vw, vh}, ImGuiButtonFlags_MouseButtonLeft);
-    const bool over = ImGui::IsItemHovered() && !zoomBoxHovered(b);
+    const bool over = ImGui::IsItemHovered() && !worldMapZoomBoxHovered(b);
     const ImGuiIO& io = ImGui::GetIO();
     if (ImGui::IsItemActivated()) drag_ = {io.MousePos.x, io.MousePos.y, scrollX_, scrollY_}, dragMoved_ = false;
     if (ImGui::IsItemActive() && drag_) {
@@ -479,27 +479,9 @@ class TestModeStage : public Stage {
   }
 
   // Bottom right: ember-plate p-1 with Aproximar, "n/4" (counted from the wide end) and Afastar.
-  // True while the mouse is over the zoom box (bottom right of the viewport), so the map under it ignores wheel / pins.
-  static bool zoomBoxHovered(ImVec2 size) {
-    const ImVec2 m = ImGui::GetIO().MousePos;
-    return m.x >= size.x - 16.0f - 52.0f && m.x <= size.x - 16.0f && m.y >= size.y - 16.0f - (44 + 4 + 16 + 4 + 44 + 8) && m.y <= size.y - 16.0f;
-  }
-
   void drawZoom(ImVec2 size) {
     if (!uiImage(paths_.engine2Public / "game/assets/world-map.jpg")) return;
-    const float w = 44 + 8, h = 44 + 4 + 16 + 4 + 44 + 8;
-    const ImVec2 a{size.x - 16 - w, size.y - 16 - h};
-    ImGui::SetCursorScreenPos(a);
-    emberPlate("##zoombox", {w, h}, [](ImDrawList*, ImVec2, ImVec2, ImU32) {});
-    ImGui::SetCursorScreenPos({a.x + 4, a.y + 4});
-    if (emberPlate("##zoomin", {44, 44}, [](ImDrawList* d, ImVec2 p, ImVec2 q, ImU32 ink) { iconZoom(d, {(p.x + q.x) / 2, (p.y + q.y) / 2}, 20, ink, true); }, zoom_ >= 3))
-      zoom_ = std::min(3, zoom_ + 1), recentre_ = true;
-    const std::string label = std::format("{}/4", 4 - zoom_);
-    const ImVec2 ts = sans()->CalcTextSizeA(10.0f, FLT_MAX, 0, label.c_str());
-    ImGui::GetWindowDrawList()->AddText(sans(), 10.0f, {a.x + w / 2 - ts.x / 2, a.y + 4 + 44 + 4 + 3}, kMuted, label.c_str());
-    ImGui::SetCursorScreenPos({a.x + 4, a.y + 4 + 44 + 4 + 16 + 4});
-    if (emberPlate("##zoomout", {44, 44}, [](ImDrawList* d, ImVec2 p, ImVec2 q, ImU32 ink) { iconZoom(d, {(p.x + q.x) / 2, (p.y + q.y) / 2}, 20, ink, false); }, zoom_ <= 0))
-      zoom_ = std::max(0, zoom_ - 1), recentre_ = true;
+    if (worldMapZoomBox(size, zoom_)) recentre_ = true;
   }
 
   bool done(const std::string& id) {
