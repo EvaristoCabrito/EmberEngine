@@ -111,3 +111,212 @@ The extra kit (`blender/kit_extra.py`, 2026-10-16): the sprint's extra list, all
 subdivide after. Object `scale` acts in the object's own frame before its rotation (a torus turned on its side scales
 along world z through local x). Captures (local, git-ignored): `captures/models/005` (release) and `006` (debug +
 validation, exit 0) = the Map Editor showcase of all 47 models on aldeia015.
+
+### Wave 2 (2026-10-16 night; the user's list: "faz os que não existem"): 173 props in 8 kits, all v01
+
+Built the same way (`kit_nature | treasure | structures | interior | frost | crypt | mines | ember.py` on `kitlib.py`, the shared
+parametric builders: rocks, crystals, logs, trees, chests, barrels, shelves, tables, gears, chains, figures). Catalogued from
+the GLB bounds by `tools/scripts/models/add_kits_to_catalog.py` (names + per-asset overrides in `names.json`); "passável" =
+does not block movement (`blocks: false`). Kits: nature 19, treasure 20, structures 19,
+interior 22, frost 16, crypt 26, mines 31, ember 20.
+
+Hanging things (chandelier, chains, sign, lantern) stand on the ground like everything else: the engine has no ceiling anchor;
+their height is the full drop. Glowing parts (Ember crystals, coals, bio fungi, light crystal) are emissive materials, not
+light sources: a map light must be placed beside them.
+
+None
+Pack after wave 2: 235 meshes, 561 assets, 434 MB on disk (326 cooked textures, 483 MB: every asset embeds its own copy of
+the shared 1024² JPGs; a content-hash dedupe in MeshCooker would cut that by ~10x). Not built from the list: items that already
+existed (see above) and pure variants of them.
+
+### Wave 2 (2026-10-16 night; the user's list: "faz os que não existem"): 173 props in 8 kits, all v01
+
+Built the same way (`kit_nature | treasure | structures | interior | frost | crypt | mines | ember.py` on `kitlib.py`, the shared
+parametric builders: rocks, crystals, logs, trees, chests, barrels, shelves, tables, gears, chains, figures). Catalogued from
+the GLB bounds by `tools/scripts/models/add_kits_to_catalog.py` (names + per-asset overrides in `names.json`); "passável" =
+does not block movement (`blocks: false`). Kits: nature 19, treasure 20, structures 19,
+interior 22, frost 16, crypt 26, mines 31, ember 20.
+
+Hanging things (chandelier, chains, sign, lantern) stand on the ground like everything else: the engine has no ceiling anchor;
+their height is the full drop. Glowing parts (Ember crystals, coals, bio fungi, light crystal) are emissive materials, not
+light sources: a map light must be placed beside them.
+
+| id | name | file | w × h | tris | footprint |
+|---|---|---|---|---|---|
+| ember-nature-abandoned-nest | Ninho abandonado 3D | nature/abandoned-nest-v01.glb | 1.15 × 1.53 | 1800 | one, passável |
+| ember-nature-ancient-tree-roots | Árvore antiga com raízes expostas 3D | nature/ancient-tree-roots-v01.glb | 6.92 × 8.33 | 2992 | triple |
+| ember-nature-axe-cut-stump | Toco cortado a machado 3D | nature/axe-cut-stump-v01.glb | 1.79 × 0.88 | 1118 | one |
+| ember-nature-cracked-boulder | Rocha rachada 3D | nature/cracked-boulder-v01.glb | 2.78 × 1.82 | 1460 | pair |
+| ember-nature-dense-bush | Arbusto denso 3D | nature/dense-bush-v01.glb | 2.32 × 1.48 | 1920 | pair |
+| ember-nature-dry-branch-pile | Galhos secos empilhados 3D | nature/dry-branch-pile-v01.glb | 2.46 × 0.78 | 376 | pair, passável |
+| ember-nature-dry-bush | Arbusto seco 3D | nature/dry-bush-v01.glb | 2.55 × 1.30 | 1360 | pair, passável |
+| ember-nature-exposed-roots | Raízes expostas 3D | nature/exposed-roots-v01.glb | 2.73 × 1.04 | 7236 | pair, passável |
+| ember-nature-ferns | Samambaias 3D | nature/ferns-v01.glb | 1.57 × 0.96 | 288 | one, passável |
+| ember-nature-hollow-standing-tree | Árvore oca em pé 3D | nature/hollow-standing-tree-v01.glb | 5.46 × 5.83 | 2498 | triple |
+| ember-nature-leaf-litter | Folhas e galhos acumulados 3D | nature/leaf-litter-v01.glb | 2.21 × 0.14 | 188 | pair, passável |
+| ember-nature-lichen-rocks | Pedras com líquen 3D | nature/lichen-rocks-v01.glb | 2.19 × 0.71 | 1920 | pair, passável |
+| ember-nature-log-over-stream | Tronco sobre o riacho 3D | nature/log-over-stream-v01.glb | 7.24 × 1.40 | 1408 | triple |
+| ember-nature-root-arch | Arco de raízes 3D | nature/root-arch-v01.glb | 4.29 × 1.62 | 2228 | triple |
+| ember-nature-roots-with-mushrooms | Raízes com cogumelos 3D | nature/roots-with-mushrooms-v01.glb | 2.15 × 0.97 | 6944 | pair, passável |
+| ember-nature-rotten-fallen-log | Tronco caído apodrecido 3D | nature/rotten-fallen-log-v01.glb | 4.43 × 0.98 | 5936 | triple |
+| ember-nature-rotten-stump | Toco apodrecido 3D | nature/rotten-stump-v01.glb | 2.02 × 1.18 | 1244 | pair |
+| ember-nature-uprooted-tree | Árvore caída com raízes arrancadas 3D | nature/uprooted-tree-v01.glb | 6.10 × 2.44 | 1452 | triple |
+| ember-nature-wild-mushrooms | Cogumelos silvestres 3D | nature/wild-mushrooms-v01.glb | 0.88 × 0.48 | 7560 | one, passável |
+| ember-treasure-broken-barrel | Barril quebrado 3D | treasure/broken-barrel-v01.glb | 2.12 × 0.37 | 1016 | pair, passável |
+| ember-treasure-broken-chest | Baú destruído 3D | treasure/broken-chest-v01.glb | 2.19 × 0.85 | 328 | pair |
+| ember-treasure-broken-crate | Caixote quebrado 3D | treasure/broken-crate-v01.glb | 1.74 × 0.92 | 236 | one |
+| ember-treasure-ceramic-jars | Jarras de cerâmica 3D | treasure/ceramic-jars-v01.glb | 1.49 × 0.90 | 540 | one |
+| ember-treasure-coiled-rope | Corda enrolada 3D | treasure/coiled-rope-v01.glb | 1.23 × 0.34 | 3100 | one, passável |
+| ember-treasure-coin-pile | Pilha de moedas 3D | treasure/coin-pile-v01.glb | 1.13 × 0.25 | 3240 | one, passável |
+| ember-treasure-coin-purse | Sacola de moedas 3D | treasure/coin-purse-v01.glb | 0.79 × 0.45 | 872 | one, passável |
+| ember-treasure-hanging-lantern | Lanterna suspensa 3D | treasure/hanging-lantern-v01.glb | 0.83 × 2.40 | 932 | one, passável |
+| ember-treasure-jewel-box | Caixa de joias 3D | treasure/jewel-box-v01.glb | 0.45 × 0.31 | 484 | one, passável |
+| ember-treasure-leather-satchel | Bolsa de couro 3D | treasure/leather-satchel-v01.glb | 0.56 × 0.88 | 436 | one, passável |
+| ember-treasure-metal-safe | Cofre metálico 3D | treasure/metal-safe-v01.glb | 0.95 × 1.10 | 320 | one |
+| ember-treasure-open-barrel | Barril aberto 3D | treasure/open-barrel-v01.glb | 1.17 × 1.30 | 2516 | one |
+| ember-treasure-ornate-chest | Baú antigo ornamentado 3D | treasure/ornate-chest-v01.glb | 1.43 × 1.08 | 980 | one |
+| ember-treasure-plain-chest | Baú comum de madeira 3D | treasure/plain-chest-v01.glb | 1.30 × 1.00 | 168 | one |
+| ember-treasure-shield-stand | Estante de escudos 3D | treasure/shield-stand-v01.glb | 2.07 × 1.00 | 1644 | pair |
+| ember-treasure-stone-ark | Arca de pedra 3D | treasure/stone-ark-v01.glb | 1.72 × 1.05 | 136 | one |
+| ember-treasure-unlit-torch | Tocha apagada 3D | treasure/unlit-torch-v01.glb | 0.44 × 1.46 | 584 | one, passável |
+| ember-treasure-weapon-rack | Suporte de armas 3D | treasure/weapon-rack-v01.glb | 1.94 × 2.55 | 528 | one |
+| ember-treasure-wicker-baskets | Cestos de vime 3D | treasure/wicker-baskets-v01.glb | 1.40 × 0.81 | 536 | one |
+| ember-treasure-workbench | Mesa de trabalho 3D | treasure/workbench-v01.glb | 2.40 × 1.45 | 352 | pair |
+| ember-structures-animal-trough | Bebedouro de animais 3D | structures/animal-trough-v01.glb | 2.20 × 0.72 | 160 | pair |
+| ember-structures-barred-door | Porta de masmorra com barras 3D | structures/barred-door-v01.glb | 1.49 × 2.90 | 812 | one |
+| ember-structures-brick-pile | Pilha de tijolos 3D | structures/brick-pile-v01.glb | 2.63 × 0.49 | 1012 | pair, passável |
+| ember-structures-broken-column | Coluna quebrada 3D | structures/broken-column-v01.glb | 3.12 × 2.61 | 1286 | pair |
+| ember-structures-broken-window | Janela quebrada 3D | structures/broken-window-v01.glb | 1.21 × 1.40 | 424 | one |
+| ember-structures-cloth-awning | Toldo de tecido 3D | structures/cloth-awning-v01.glb | 2.90 × 2.69 | 508 | pair, passável |
+| ember-structures-flag-bracket | Suporte de bandeira 3D | structures/flag-bracket-v01.glb | 1.83 × 2.21 | 448 | one, passável |
+| ember-structures-hanging-sign-post | Poste com placa suspensa 3D | structures/hanging-sign-post-v01.glb | 1.14 × 2.90 | 1256 | one, passável |
+| ember-structures-road-marker | Marco de pedra na estrada 3D | structures/road-marker-v01.glb | 0.84 × 1.50 | 376 | one |
+| ember-structures-roof-debris | Escombros de telhado 3D | structures/roof-debris-v01.glb | 2.66 × 0.59 | 536 | pair |
+| ember-structures-scattered-blocks | Blocos de pedra espalhados 3D | structures/scattered-blocks-v01.glb | 2.84 × 0.55 | 308 | pair |
+| ember-structures-shuttered-window | Janela com venezianas 3D | structures/shuttered-window-v01.glb | 2.45 × 1.50 | 452 | pair |
+| ember-structures-stone-stairs | Escada de pedra 3D | structures/stone-stairs-v01.glb | 2.42 × 1.71 | 528 | pair |
+| ember-structures-street-brazier | Braseiro de rua 3D | structures/street-brazier-v01.glb | 1.22 × 1.09 | 844 | one |
+| ember-structures-vendor-cart | Carrinho de vendedor 3D | structures/vendor-cart-v01.glb | 3.20 × 2.50 | 2564 | pair |
+| ember-structures-window-frame | Caixilho de janela 3D | structures/window-frame-v01.glb | 1.20 × 1.40 | 276 | one |
+| ember-structures-wooden-gate | Portão de madeira 3D | structures/wooden-gate-v01.glb | 2.80 × 2.40 | 696 | pair |
+| ember-structures-wooden-gutter | Calha de madeira 3D | structures/wooden-gutter-v01.glb | 3.20 × 2.35 | 188 | pair, passável |
+| ember-structures-wooden-ladder | Escada de madeira 3D | structures/wooden-ladder-v01.glb | 1.10 × 3.27 | 312 | one, passável |
+| ember-interior-barrel-rack | Suporte para barris 3D | interior/barrel-rack-v01.glb | 2.60 × 1.15 | 4944 | pair |
+| ember-interior-beer-jug | Jarra de cerveja 3D | interior/beer-jug-v01.glb | 0.40 × 0.50 | 348 | one, passável |
+| ember-interior-bookshelf | Estante de madeira 3D | interior/bookshelf-v01.glb | 1.40 × 2.20 | 2596 | one |
+| ember-interior-cauldron | Caldeirão 3D | interior/cauldron-v01.glb | 1.04 × 1.50 | 1184 | one |
+| ember-interior-ceramic-bowl | Tigela de cerâmica 3D | interior/ceramic-bowl-v01.glb | 0.48 × 0.12 | 288 | one, passável |
+| ember-interior-cloth-curtain | Cortina de tecido 3D | interior/cloth-curtain-v01.glb | 2.49 × 2.58 | 2332 | pair, passável |
+| ember-interior-drink-shelf | Prateleira de bebidas 3D | interior/drink-shelf-v01.glb | 1.80 × 1.30 | 2856 | one |
+| ember-interior-fireplace-grate | Grade de lareira 3D | interior/fireplace-grate-v01.glb | 1.00 × 0.59 | 464 | one, passável |
+| ember-interior-folding-screen | Biombo de madeira 3D | interior/folding-screen-v01.glb | 2.35 × 1.90 | 564 | pair |
+| ember-interior-hanging-chandelier | Candelabro suspenso 3D | interior/hanging-chandelier-v01.glb | 1.31 × 1.45 | 5428 | one, passável |
+| ember-interior-iron-pot | Panela de ferro 3D | interior/iron-pot-v01.glb | 0.74 × 0.46 | 684 | one, passável |
+| ember-interior-kitchen-cabinet | Armário de cozinha 3D | interior/kitchen-cabinet-v01.glb | 1.38 × 1.56 | 328 | one |
+| ember-interior-long-bench | Banco comprido 3D | interior/long-bench-v01.glb | 2.40 × 0.62 | 144 | pair |
+| ember-interior-pantry-shelf | Prateleira de mantimentos 3D | interior/pantry-shelf-v01.glb | 1.65 × 1.80 | 3348 | one |
+| ember-interior-simple-bed | Cama simples 3D | interior/simple-bed-v01.glb | 2.68 × 1.10 | 760 | pair |
+| ember-interior-stool | Banquinho 3D | interior/stool-v01.glb | 0.60 × 0.64 | 152 | one |
+| ember-interior-table-candelabra | Candelabro de mesa 3D | interior/table-candelabra-v01.glb | 0.47 × 0.77 | 936 | one, passável |
+| ember-interior-utensils-set | Utensílios de cozinha 3D | interior/utensils-set-v01.glb | 0.84 × 0.11 | 524 | one, passável |
+| ember-interior-wine-bottle | Garrafa de vinho vazia 3D | interior/wine-bottle-v01.glb | 0.21 × 0.66 | 216 | one, passável |
+| ember-interior-wooden-mug | Caneca de madeira 3D | interior/wooden-mug-v01.glb | 0.23 × 0.42 | 312 | one, passável |
+| ember-interior-wooden-plate | Prato de madeira 3D | interior/wooden-plate-v01.glb | 0.54 × 0.04 | 240 | one, passável |
+| ember-interior-worn-rug | Tapete gasto 3D | interior/worn-rug-v01.glb | 2.40 × 0.04 | 704 | pair, passável |
+| ember-frost-abandoned-camp | Acampamento abandonado 3D | frost/abandoned-camp-v01.glb | 4.60 × 0.96 | 4540 | triple |
+| ember-frost-buried-fence | Cerca soterrada na neve 3D | frost/buried-fence-v01.glb | 4.28 × 1.65 | 1940 | triple |
+| ember-frost-frozen-barrel | Barril congelado 3D | frost/frozen-barrel-v01.glb | 1.17 × 1.30 | 2584 | one |
+| ember-frost-frozen-branches | Galhos congelados 3D | frost/frozen-branches-v01.glb | 2.30 × 0.61 | 352 | pair, passável |
+| ember-frost-frozen-bridge | Ponte de madeira congelada 3D | frost/frozen-bridge-v01.glb | 4.71 × 1.46 | 3096 | triple |
+| ember-frost-frozen-stump | Toco congelado 3D | frost/frozen-stump-v01.glb | 1.84 × 1.54 | 2516 | one |
+| ember-frost-frozen-well | Poço congelado 3D | frost/frozen-well-v01.glb | 2.20 × 3.56 | 1612 | pair |
+| ember-frost-ice-cracked-rocks | Pedras com gelo nas rachaduras 3D | frost/ice-cracked-rocks-v01.glb | 2.41 × 0.71 | 1920 | pair, passável |
+| ember-frost-ice-stalagmites | Estalagmites de gelo 3D | frost/ice-stalagmites-v01.glb | 2.05 × 1.80 | 2084 | pair |
+| ember-frost-icicles | Estalactites de gelo 3D | frost/icicles-v01.glb | 2.31 × 2.52 | 2904 | pair |
+| ember-frost-icy-post | Poste coberto de gelo 3D | frost/icy-post-v01.glb | 0.68 × 2.91 | 2064 | one, passável |
+| ember-frost-snow-abandoned-cart | Carrinho abandonado na neve 3D | frost/snow-abandoned-cart-v01.glb | 3.05 × 1.14 | 1932 | pair |
+| ember-frost-snow-crown-tree | Árvore com neve na copa 3D | frost/snow-crown-tree-v01.glb | 7.29 × 8.23 | 2908 | triple |
+| ember-frost-snow-drift | Monte de neve 3D | frost/snow-drift-v01.glb | 4.42 × 0.70 | 1280 | triple, passável |
+| ember-frost-snowy-dry-bush | Arbusto seco coberto de neve 3D | frost/snowy-dry-bush-v01.glb | 2.33 × 1.52 | 2160 | pair, passável |
+| ember-frost-snowy-grave-marker | Lápide coberta de neve 3D | frost/snowy-grave-marker-v01.glb | 1.94 × 1.53 | 2912 | one |
+| ember-crypt-ancient-bookshelf | Estante de livros antigos 3D | crypt/ancient-bookshelf-v01.glb | 1.58 × 2.31 | 1804 | one |
+| ember-crypt-ancient-tombstone | Lápide antiga 3D | crypt/ancient-tombstone-v01.glb | 1.50 × 2.05 | 3228 | one |
+| ember-crypt-artifact-pedestal | Pedestal para artefato 3D | crypt/artifact-pedestal-v01.glb | 1.10 × 1.30 | 556 | one |
+| ember-crypt-barred-gate | Portão de barras 3D | crypt/barred-gate-v01.glb | 2.38 × 3.02 | 410 | pair |
+| ember-crypt-chain-ring | Argola com corrente 3D | crypt/chain-ring-v01.glb | 0.42 × 1.83 | 2028 | one, passável |
+| ember-crypt-collapsed-ceiling | Entulho de teto desabado 3D | crypt/collapsed-ceiling-v01.glb | 3.01 × 1.27 | 816 | pair |
+| ember-crypt-column-base | Base de coluna destruída 3D | crypt/column-base-v01.glb | 1.70 × 1.22 | 1068 | one |
+| ember-crypt-cracked-pillar | Pilar rachado 3D | crypt/cracked-pillar-v01.glb | 1.69 × 4.22 | 2110 | one |
+| ember-crypt-deity-statue | Estátua de divindade 3D | crypt/deity-statue-v01.glb | 1.80 × 3.83 | 3928 | one |
+| ember-crypt-funeral-urns | Urnas funerárias 3D | crypt/funeral-urns-v01.glb | 1.41 × 1.02 | 616 | one |
+| ember-crypt-hook-chain | Corrente com gancho 3D | crypt/hook-chain-v01.glb | 0.69 × 2.54 | 2330 | one, passável |
+| ember-crypt-incomplete-skeleton | Esqueleto incompleto 3D | crypt/incomplete-skeleton-v01.glb | 2.67 × 0.43 | 2918 | pair, passável |
+| ember-crypt-inscribed-stones | Pedras com inscrições 3D | crypt/inscribed-stones-v01.glb | 2.91 × 1.96 | 2660 | pair |
+| ember-crypt-iron-grate | Grade de ferro no chão 3D | crypt/iron-grate-v01.glb | 1.50 × 0.08 | 172 | one, passável |
+| ember-crypt-iron-trapdoor | Alçapão de ferro 3D | crypt/iron-trapdoor-v01.glb | 1.50 × 0.13 | 416 | one, passável |
+| ember-crypt-lone-skull | Crânio 3D | crypt/lone-skull-v01.glb | 0.55 × 0.46 | 658 | one, passável |
+| ember-crypt-ritual-brazier | Braseiro ritualístico 3D | crypt/ritual-brazier-v01.glb | 1.36 × 1.31 | 1372 | one |
+| ember-crypt-ritual-table | Mesa de ritual 3D | crypt/ritual-table-v01.glb | 2.21 × 1.16 | 440 | pair |
+| ember-crypt-sarcophagus-broken-lid | Sarcófago com tampa quebrada 3D | crypt/sarcophagus-broken-lid-v01.glb | 3.38 × 1.68 | 3364 | pair |
+| ember-crypt-sarcophagus | Sarcófago fechado 3D | crypt/sarcophagus-v01.glb | 2.71 × 1.40 | 3320 | pair |
+| ember-crypt-secret-stone-door | Porta secreta de pedra 3D | crypt/secret-stone-door-v01.glb | 2.60 × 3.21 | 140 | pair |
+| ember-crypt-statue-fragments | Fragmentos de estátua 3D | crypt/statue-fragments-v01.glb | 2.34 × 1.39 | 1060 | pair |
+| ember-crypt-stone-capital | Capitel de pedra 3D | crypt/stone-capital-v01.glb | 1.44 × 1.12 | 764 | one |
+| ember-crypt-stone-pulpit | Púlpito de pedra 3D | crypt/stone-pulpit-v01.glb | 1.51 × 1.55 | 440 | one |
+| ember-crypt-stone-tomb | Túmulo de pedra 3D | crypt/stone-tomb-v01.glb | 2.45 × 0.89 | 136 | pair |
+| ember-crypt-wall-blocks | Blocos de muralha 3D | crypt/wall-blocks-v01.glb | 4.06 × 1.40 | 528 | pair |
+| ember-mines-ancient-fragments | Fragmentos arquitetônicos 3D | mines/ancient-fragments-v01.glb | 3.20 × 0.80 | 574 | pair |
+| ember-mines-bioluminescent-fungi | Fungos bioluminescentes 3D | mines/bioluminescent-fungi-v01.glb | 1.60 × 0.72 | 1280 | one, passável |
+| ember-mines-boat-wreck | Restos de embarcação 3D | mines/boat-wreck-v01.glb | 5.20 × 1.71 | 2410 | triple |
+| ember-mines-cargo-lift | Elevador de carga 3D | mines/cargo-lift-v01.glb | 2.75 × 4.35 | 3992 | pair |
+| ember-mines-dwarven-door | Porta de fortaleza anã 3D | mines/dwarven-door-v01.glb | 4.00 × 4.30 | 806 | pair |
+| ember-mines-dwarven-pillar | Pilar anão 3D | mines/dwarven-pillar-v01.glb | 1.80 × 4.40 | 464 | one |
+| ember-mines-ember-vein-wall | Veio de Ember na parede 3D | mines/ember-vein-wall-v01.glb | 2.60 × 2.40 | 1712 | pair |
+| ember-mines-giant-mushrooms | Cogumelos subterrâneos gigantes 3D | mines/giant-mushrooms-v01.glb | 3.21 × 2.65 | 4536 | pair |
+| ember-mines-large-crystal-formation | Grande formação cristalina 3D | mines/large-crystal-formation-v01.glb | 3.00 × 2.83 | 572 | pair |
+| ember-mines-lift-chain | Corrente de elevador 3D | mines/lift-chain-v01.glb | 2.10 × 3.12 | 3108 | pair, passável |
+| ember-mines-mine-barricade | Barricada de mineração 3D | mines/mine-barricade-v01.glb | 2.60 × 1.60 | 276 | pair |
+| ember-mines-mine-rails | Trilhos de mineração 3D | mines/mine-rails-v01.glb | 4.40 × 0.17 | 400 | triple, passável |
+| ember-mines-mine-walkway | Passarela de mineração 3D | mines/mine-walkway-v01.glb | 4.00 × 1.82 | 964 | triple |
+| ember-mines-mineral-crystals | Cristais minerais 3D | mines/mineral-crystals-v01.glb | 1.49 × 1.56 | 536 | one |
+| ember-mines-mining-shovel | Pá de mineração 3D | mines/mining-shovel-v01.glb | 1.51 × 1.47 | 232 | one |
+| ember-mines-narrow-wooden-bridge | Ponte estreita de madeira 3D | mines/narrow-wooden-bridge-v01.glb | 4.20 × 1.02 | 824 | triple, passável |
+| ember-mines-natural-stone-column | Coluna natural de pedra 3D | mines/natural-stone-column-v01.glb | 1.08 × 3.62 | 908 | one |
+| ember-mines-ore-cart | Carrinho de minério 3D | mines/ore-cart-v01.glb | 1.60 × 1.38 | 1124 | one |
+| ember-mines-ore-crates | Caixotes de minério 3D | mines/ore-crates-v01.glb | 1.95 × 0.73 | 1064 | one |
+| ember-mines-petrified-roots | Raízes petrificadas 3D | mines/petrified-roots-v01.glb | 2.41 × 1.13 | 6464 | pair, passável |
+| ember-mines-pickaxe-on-rock | Picareta na rocha 3D | mines/pickaxe-on-rock-v01.glb | 1.67 × 1.23 | 370 | one, passável |
+| ember-mines-powder-barrel | Barril de pólvora 3D | mines/powder-barrel-v01.glb | 1.06 × 1.04 | 2484 | one |
+| ember-mines-raw-ore-pile | Pilha de minério bruto 3D | mines/raw-ore-pile-v01.glb | 1.41 × 0.41 | 4480 | one, passável |
+| ember-mines-rock-arch-formation | Arco de pedra natural 3D | mines/rock-arch-formation-v01.glb | 5.29 × 2.56 | 2752 | triple |
+| ember-mines-stalactites | Estalactites 3D | mines/stalactites-v01.glb | 2.74 × 3.61 | 4416 | pair |
+| ember-mines-stalagmites | Estalagmites 3D | mines/stalagmites-v01.glb | 2.20 × 1.75 | 2912 | pair |
+| ember-mines-stone-brazier | Braseiro de pedra 3D | mines/stone-brazier-v01.glb | 1.56 × 1.29 | 872 | one |
+| ember-mines-tunnel-entrance | Entrada de túnel 3D | mines/tunnel-entrance-v01.glb | 7.04 × 5.27 | 2228 | triple |
+| ember-mines-tunnel-marker | Marco de túnel 3D | mines/tunnel-marker-v01.glb | 0.44 × 1.70 | 308 | one |
+| ember-mines-winch | Guincho 3D | mines/winch-v01.glb | 1.61 × 1.28 | 1720 | one |
+| ember-mines-wooden-platform | Plataforma de madeira 3D | mines/wooden-platform-v01.glb | 2.78 × 0.46 | 748 | pair, passável |
+| ember-ember-ancient-hull-fragment | Fragmento de casco antigo 3D | ember/ancient-hull-fragment-v01.glb | 4.53 × 1.20 | 432 | triple |
+| ember-ember-ancient-pedestal | Pedestal antigo 3D | ember/ancient-pedestal-v01.glb | 1.50 × 1.43 | 864 | one |
+| ember-ember-ancient-reliquary | Relicário antigo 3D | ember/ancient-reliquary-v01.glb | 0.74 × 0.67 | 1136 | one, passável |
+| ember-ember-containment-box | Caixa de contenção 3D | ember/containment-box-v01.glb | 1.06 × 0.68 | 282 | one |
+| ember-ember-cracked-ceremonial-stone | Pedra cerimonial rachada 3D | ember/cracked-ceremonial-stone-v01.glb | 1.22 × 2.72 | 506 | one |
+| ember-ember-cult-symbol-stone | Símbolo de culto em pedra 3D | ember/cult-symbol-stone-v01.glb | 1.80 × 1.90 | 840 | one |
+| ember-ember-ember-container | Recipiente de Ember 3D | ember/ember-container-v01.glb | 0.70 × 1.07 | 792 | one, passável |
+| ember-ember-ember-extraction-altar | Altar de extração de Ember 3D | ember/ember-extraction-altar-v01.glb | 2.20 × 2.50 | 1048 | pair |
+| ember-ember-ember-lantern | Lanterna de Ember 3D | ember/ember-lantern-v01.glb | 0.39 × 0.94 | 408 | one, passável |
+| ember-ember-ember-transformed-statue | Estátua transformada pelo Ember 3D | ember/ember-transformed-statue-v01.glb | 1.70 × 3.28 | 4188 | one |
+| ember-ember-god-king-transport | Transporte do God-King 3D | ember/god-king-transport-v01.glb | 5.20 × 2.77 | 3300 | triple |
+| ember-ember-lift-mechanism-part | Mecanismo de elevação 3D | ember/lift-mechanism-part-v01.glb | 1.77 × 1.48 | 1808 | one |
+| ember-ember-light-crystal | Cristal de iluminação 3D | ember/light-crystal-v01.glb | 0.84 × 1.55 | 504 | one, passável |
+| ember-ember-mechanical-parts | Peças mecânicas 3D | ember/mechanical-parts-v01.glb | 1.81 × 0.47 | 1270 | one, passável |
+| ember-ember-obelisk-fragment | Fragmento de obelisco 3D | ember/obelisk-fragment-v01.glb | 2.07 × 2.77 | 46 | pair |
+| ember-ember-raw-ember-deposit | Depósito de Ember bruto 3D | ember/raw-ember-deposit-v01.glb | 2.42 × 1.61 | 644 | pair |
+| ember-ember-refined-ember-shard | Fragmento de Ember refinado 3D | ember/refined-ember-shard-v01.glb | 0.52 × 1.02 | 192 | one, passável |
+| ember-ember-ritual-totem | Totem ritualístico 3D | ember/ritual-totem-v01.glb | 1.01 × 2.69 | 1628 | one |
+| ember-ember-ritual-vessel | Recipiente ritual 3D | ember/ritual-vessel-v01.glb | 0.79 × 1.32 | 1552 | one, passável |
+| ember-ember-unknown-machine | Máquina antiga 3D | ember/unknown-machine-v01.glb | 2.35 × 2.05 | 2004 | pair |
+
+Pack after wave 2: 235 meshes, 561 assets, 434 MB on disk (326 cooked textures, 483 MB: every asset embeds its own copy of
+the shared 1024² JPGs; a content-hash dedupe in MeshCooker would cut that by ~10x). Not built from the list: items that already
+existed (see above) and pure variants of them.

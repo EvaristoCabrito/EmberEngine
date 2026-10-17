@@ -1,17 +1,20 @@
 """A Map Editor draft that shows every EmberEngine 3D prop on a real map (the capture in captures/models): the given
 Engine2 map with its decorations replaced by one of each model, laid in rows around the board's centre.
 
-  python -I tools/scripts/models/make_showcase_draft.py <map.json> <out.json> [content/models/models.json]
+  python -I tools/scripts/models/make_showcase_draft.py <map.json> <out.json> [kit,kit,...] [content/models/models.json]
 """
 import json
 import sys
 
 
-def main(map_path, out_path, models_path='content/models/models.json'):
+def main(map_path, out_path, kits='', models_path='content/models/models.json'):
     with open(map_path, encoding='utf-8') as f:
         src = json.load(f)
     with open(models_path, encoding='utf-8') as f:
         models = json.load(f)['models']
+    if kits:
+        wanted = set(kits.split(','))
+        models = [m for m in models if m['kit'] in wanted]
     draft = dict(src['draft'] if 'draft' in src else src)
     cols, rows = draft['cols'], draft['rows']
     draft['decorations'] = []

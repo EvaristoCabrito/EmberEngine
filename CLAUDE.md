@@ -504,6 +504,16 @@ mesh, 391k tris, no UVs / material) was in no catalogue.
   Engine2's ids, so campaign maps with ember props must be saved by the editor / built by SceneBuilder). Not built: the
   extra list (fences, door, doorway, grave marker, wheel, firewood, bucket, torch bracket, crystal, mine supports,
   mushrooms).
+- **Extra kit (`ad4b169`, a side session):** the 12 extras above built (`kit_extra.py`, content/models/extra), catalogued, cooked.
+- **Wave 2 (2026-10-16 night; the user pasted a ~200-item list, "faz os que não existem"):** 173 more props in 8 kits
+  (nature 19, treasure 20, structures 19, interior 22, frost 16, crypt 26, mines 31, ember 20) on `kitlib.py` (shared
+  parametric builders). Catalogue: `content/models/names.json` (PT names + overrides) →
+  `tools/scripts/models/add_kits_to_catalog.py <kits>` (reads the GLB bounds) → `models.json` (220 models) →
+  `catalog_models.py` → editor catalog (686 decorations). `make_showcase_draft.py <map> <out> [kit,kit]` writes per-kit
+  showcases. Pack re-cooked (235 meshes, 0 failed, 434 MB: every asset embeds its own copy of the shared JPGs; a
+  content-hash texture dedupe in MeshCooker is the obvious follow-up). Verified: 8 per-kit Map Editor captures + the
+  full grid in release, debug + validation on two kits (see the commit). Not verified: the look in the window; cost
+  with many props on one map (not measured).
 
 ## UI icons and images (2026-10-16; the user: the gear "nojento", the gold "horrendo", every icon pixelated)
 
@@ -517,6 +527,31 @@ mesh, 391k tris, no UVs / material) was in no catalogue.
   data-URIs) goes through `uiIconSvg`. lunasvg 3.5.0 rasterises it at the exact pixel size, snapped to the pixel grid.
 - Sound button = `soundButton` (CampaignUi.h: GamePrefs muted, the same switch as Opções' Silenciar): title (top right),
   briefing, world maps (beside Opções), the Inn, the battle's camera bar (+ "Opções" = the Esc menu), as in Engine2.
+
+## Promoções do Mago Negro: Bruxo e Elementalista, magias T6–T10 (2026-10-17; the user: "pode criar todas elas os
+efeitos e wire into the game")
+
+- **Read `docs/SPELLS_PROMOTIONS.md`** (every number, the scaling 15–30, what is wired where, what is not done). 20 spells,
+  2 per tier T6–T10, EmberEngine's own (Engine2 has the classes and no spells for them): Bruxo = enfraquecimento e dano no
+  tempo (Marca da Ruína, Praga Rastejante, Dreno de Vida, Mortalha de Sombras, Hemorragia, Silêncio Profano, Peste Negra,
+  Maldição da Decadência, Colheita de Almas, Vazio Devorador); Elementalista = dano puro e área (Coluna de Fogo, Lança de
+  Gelo, Tempestade Elétrica, Meteoro, Zero Absoluto, Cadeia de Raios, Erupção, Vendaval Glacial, Fúria dos Céus, Brasa
+  Primordial). Learned at 15, 15, 16, 17, 18, 19, 21, 22, 23, 25.
+- Code: `engine/world/Spells.cpp` (`kEmberSpells`, `emberNumbers`, `castEmber`, `layZone`; conditions tick in
+  `startOfTurnEffects`: **poison now ticks** with Engine2's poisonTiers, bleeding, the curse, zones, a Meteoro landing),
+  `Battle.h` (`BattleUnit::Conditions`, `Battle::Zone`, `weakenAt` read by `fighterAt`), `BattleSave.cpp` (all of it in the
+  snapshot), `engine/render/SpellEffectsEmber.cpp` (version 01 of each effect, flipbook cards; `zoneStart` / `zoneEnd`
+  standing zones; `meteorFall`), `MapStage.h` (`syncZones`, `pendingFx_` for the Meteoro's numbers, sockets with initials
+  on the element's colour + `spellTooltip`, `conditionsText` in the sheet, Escolhas: each black mage's path live in test
+  mode, `--promote Name=class[:level]`), `OverworldStage.h` (Party → Grupo → "Caminho de classe": the campaign's choice at
+  level 15 → `save.promotions` → `MapStageOptions::heroClass` in main.cpp).
+- **Verified (debug + validation, exit 0):** all 20 cast through `--battle-script` on the aldeia015 test battle with Voss
+  at 25 (`captures/promo/*.log`: marks, poisons, bleeding, silence, curse, zones, pushes, hits); `--battle-save-check`
+  PASS; `Cooker check-battle` aldeia015 still matches Engine2 (reach, 462 forecasts + rolls). **Not verified:** the look
+  of each effect in the window (the user judges), the campaign's promotion screen in play, enemy warlocks (no AI casts),
+  balance (the numbers are the design's).
+- Test lines: `tools: run_promo.ps1` pattern = `Sandbox ... --battle-rules build/engine2-test/battles/aldeia015.battle.json
+  --promote Voss=warlock:25 --battle-script "cast:Voss:markOfRuin:Kael; ..."`; `--fx-test <kind>` for the visuals alone.
 
 ## Next
 

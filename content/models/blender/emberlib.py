@@ -139,6 +139,27 @@ def M(name):
         'clay': dict(flat=(0.45, 0.3, 0.2), roughness=0.8),
         'ember-crystal': dict(flat=(0.55, 0.06, 0.04), roughness=0.2, emission=(0.9, 0.12, 0.05, 1.5)),
         'fungus': dict(vertex_color=True, roughness=0.7),
+        # the second wave (2026-10-16 night: the user's long list)
+        'ice': dict(flat=(0.72, 0.84, 0.92), roughness=0.12),
+        'lichen': dict(color='mossy-ground', roughness=0.95, tint=(0.8, 0.85, 0.6, 1)),
+        'leather': dict(flat=(0.36, 0.22, 0.13), roughness=0.75),
+        'wicker': dict(color='planks-pale', roughness=0.9, tint=(0.95, 0.8, 0.55, 1)),
+        'cloth-red': dict(flat=(0.42, 0.1, 0.08), roughness=0.95),
+        'cloth-dark': dict(flat=(0.16, 0.14, 0.16), roughness=0.95),
+        'wool': dict(flat=(0.6, 0.55, 0.45), roughness=1.0),
+        'ember-glow': dict(flat=(0.7, 0.12, 0.04), roughness=0.25, emission=(1.0, 0.25, 0.05, 4.0)),
+        'bio-glow': dict(flat=(0.2, 0.75, 0.65), roughness=0.5, emission=(0.2, 0.9, 0.7, 2.5)),
+        'light-crystal': dict(flat=(0.6, 0.8, 0.95), roughness=0.15, emission=(0.5, 0.75, 1.0, 3.0)),
+        'pale-crystal': dict(flat=(0.78, 0.8, 0.84), roughness=0.2),
+        'amethyst': dict(flat=(0.4, 0.22, 0.55), roughness=0.2),
+        'gold': dict(flat=(0.85, 0.65, 0.25), roughness=0.3, metallic=1.0),
+        'silver': dict(flat=(0.75, 0.75, 0.78), roughness=0.35, metallic=1.0),
+        'bronze': dict(flat=(0.45, 0.3, 0.16), roughness=0.5, metallic=0.9),
+        'paper': dict(flat=(0.75, 0.68, 0.52), roughness=0.9),
+        'coal': dict(flat=(0.06, 0.06, 0.06), roughness=0.9),
+        'ore': dict(color='stone-rubble', roughness=0.8, tint=(0.6, 0.55, 0.5, 1)),
+        'petrified': dict(color='stone-rubble', roughness=0.9, tint=(0.55, 0.5, 0.45, 1)),
+        'passage-dark': dict(flat=(0.02, 0.018, 0.02), roughness=1.0),
     }
     return material(name, **table[name])
 
