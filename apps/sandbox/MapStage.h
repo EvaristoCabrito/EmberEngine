@@ -1053,6 +1053,7 @@ class MapStage final : public Stage {
     }
     // A turn that had begun is not begun again (Engine2 skipStartOfTurn: no second echo or burn).
     turnUnit_ = snap.value("turnBegan", false) ? battle_->activeUnit() : -1;
+    pickActiveOnResume_ = turnUnit_ >= 0;  // the turn is not begun again, but its hero must be picked again
     levelSeen_.clear();  // the saved levels are not level-ups
     tip_ = tr("Combate retomado.", "Battle resumed."), tipAt_ = now_;
     return true;
@@ -1518,8 +1519,13 @@ class MapStage final : public Stage {
       } else if (!u.pace.empty()) {
         frame = loopFrame(u.pace, u.frames, time * 240.0);
       }
-      const float boxW = p ? p->boxW : u.boxW, boxH = p ? p->boxH : u.boxH, foot = p ? p->foot : u.foot;
+      float boxW = p ? p->boxW : u.boxW, boxH = p ? p->boxH : u.boxH;
+      const float foot = p ? p->foot : u.foot;
       glm::vec3 anchor = static_cast<int>(ui) == hero_ && path_.size() > 1 ? heroAt_ : unitWorld(ui);
+      // The hit react: knocked back along the blow, squashed (a little wider as it is shorter).
+      float squash = 1.0f;
+      anchor += recoilOffset(ui, time, boxH, squash);
+      boxW *= 1.0f + (1.0f - squash) * 0.6f, boxH *= squash;
       // Engine2's mirroring: the art's facing against the unit's, except cuts drawn for the left (and directional
       // walks while moving), which are never mirrored.
       const bool leftCut = shown == "walkLeft" || shown == "attackLeft" || shown == "attack2Left" || shown == "castLeft" ||
@@ -1818,7 +1824,7 @@ class MapStage final : public Stage {
     const size_t n = scene_->units.size();
     unitPos_.resize(n), unitMoved_.assign(n, 0), unitFacing_.resize(n), unitReversed_.resize(n);
     unitWalk_.assign(n, {}), unitCard_.assign(n, {}), unitBattle_.assign(n, -1);
-    unitShot_.assign(n, {}), unitDiedAt_.assign(n, -1.0f);
+    unitShot_.assign(n, {}), unitDiedAt_.assign(n, -1.0f), unitRecoil_.assign(n, {});
     for (size_t i = 0; i < n; ++i) {
       const e2::SceneUnit& u = scene_->units[i];
       unitPos_[i] = {u.x, u.z};
@@ -2113,6 +2119,7 @@ class MapStage final : public Stage {
 
   void select(int ui) {
     selected_ = ui;
+    if (ui >= 0 && !logKeep_) showLog_ = false;  // a unit picked: its status shows, not the log
     spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
     attackMode_ = false;
     refreshReach();
@@ -2275,7 +2282,20 @@ class MapStage final : public Stage {
       active = battle_->activeUnit();
       if (active < 0) return;
     }
-    if (active == turnUnit_) return;
+    if (active == turnUnit_) {
+      // A saved fight resumed mid-turn: the hero whose turn it is stands picked again (else Esperar / Fim do turno and the
+      // actions stay dead until the player clicks it).
+      if (pickActiveOnResume_) {
+        pickActiveOnResume_ = false;
+        const int ui = sceneUnitOf(active);
+        if (ui >= 0 && battle_->units()[static_cast<size_t>(active)].side == "player") {
+          undo_.clear();
+          select(ui);
+        }
+      }
+      return;
+    }
+    pickActiveOnResume_ = false;
     turnUnit_ = active;
     battle_->beginTurn(static_cast<size_t>(active));
     {
@@ -2470,7 +2490,21 @@ class MapStage final : public Stage {
     float impact = 0.0f, end = 0.0f;
     bool landed = false;   // this step's roll is in
     size_t owner = 0;      // the scene unit whose action this is
+    bool bolt = false;     // this strike is an Arcano bolt (CombatFx): it lands when the bolt arrives
+    std::string element;   // the bolt's element (its palette)
   };
+
+  // A strike's blow is an arcane bolt (Combat.cpp resolveStrike: an arcane caster's plain attack or counter, never an
+  // arrow, never an off-hand counter); its element (the staff's, else arcane).
+  bool strikeIsBolt(const e2::BattleStep& s, bool counter, std::string& element) const {
+    if (s.type != e2::BattleStep::Type::Combat || (!counter && !s.kind.empty())) return false;
+    const e2::BattleUnit& actor = battle_->units()[counter ? s.def : s.att];
+    const e2::BattleUnit& target = battle_->units()[counter ? s.att : s.def];
+    const bool off = counter && actor.combat.offHandWeapon && e2::Battle::distance({actor.x, actor.y}, {target.x, target.y}) <= actor.combat.offMaxRange;
+    if (off || actor.combat.arrow || !(actor.combat.arcane || actor.combat.staff)) return false;
+    element = actor.combat.staff ? actor.combat.staffElement : "arcane";
+    return true;
+  }
 
   // How long a unit's pose plays (its one-shot end, else its loop), seconds; 0.8 s when it has none.
   float poseSeconds(size_t ui, const std::string& pose) const {
@@ -2536,6 +2570,16 @@ class MapStage final : public Stage {
     x.end = now_ + length + kExchangeGap / actionRate();
     x.landed = false;
     if (striker >= 0 && !pose.empty()) unitShot_[static_cast<size_t>(striker)] = {pose, now_, false, actionRate()};
+    // The Arcano attack: energy gathers at the hand while the pose winds up, the bolt leaves at the pose's release and
+    // the blow lands (the roll, the numbers, the hit react) when it arrives.
+    x.bolt = striker >= 0 && target >= 0 && strikeIsBolt(s, x.counter, x.element);
+    if (x.bolt) {
+      const SpellEffects::Spot from = unitSpot(static_cast<size_t>(striker)), to = unitSpot(static_cast<size_t>(target));
+      const float release = x.impact;
+      x.impact = release + CombatFx::flightSeconds(from.feet, to.feet);
+      x.end = std::max(x.end, x.impact + 0.6f + kExchangeGap / actionRate());
+      spellFx_.combat().bolt(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), now_, release, x.impact, CombatPalette::of(x.element.c_str()));
+    }
     // Its sound as the pose begins (engine.ts startSeq; a counter's cue as the counter begins, stepCombat; the cures and
     // Criar Comida e Água: healBy).
     if (striker >= 0) {
@@ -2611,6 +2655,8 @@ class MapStage final : public Stage {
     const float body = c.drawn && !c.flat ? std::clamp(c.height * 0.45f, 0.5f, 1.4f) : 0.9f;
     return {feet, feet + glm::vec3(0.0f, body, 0.0f), c.drawn && !c.flat ? c.height : 0.0f};
   }
+  // A spot's card height (a hex with nobody on it: a body's, from its body point).
+  static float cardHeightOf(const SpellEffects::Spot& s) { return s.cardHeight > 0.0f ? s.cardHeight : std::max(1.2f, (s.body.y - s.feet.y) / 0.45f); }
   // ... and a hex: the unit standing on it, else its ground.
   SpellEffects::Spot hexSpot(e2::BattleHex h) const {
     for (size_t i = 0; i < unitBattle_.size(); ++i) {
@@ -2643,6 +2689,7 @@ class MapStage final : public Stage {
     if (kind == "all") kind = kKinds[static_cast<size_t>(cycle) % std::size(kKinds)];
     if (look <= 0) look = std::max(spellLook(kind, static_cast<size_t>(hero_)), 1);
     logInfo("fx test: {} {:02} at {:.1f} s", kind, look, static_cast<float>(cycle) * kFxTestCycle);
+    if (testCombat(static_cast<size_t>(hero_), kind, static_cast<float>(cycle) * kFxTestCycle)) return;
     testCast(static_cast<size_t>(hero_), kind, look, static_cast<float>(cycle) * kFxTestCycle);
   }
 
@@ -2892,7 +2939,29 @@ class MapStage final : public Stage {
       }
     }
     spellFx_.cast(kind, look, unitSpot(hero), spots, start, start + 0.6f, static_cast<int>(hero));
-    if (weaponStrikeKind(kind)) spellFx_.strike(spots.front(), start + 0.6f, false);
+    if (weaponStrikeKind(kind))
+      spellFx_.combat().impact(CombatFx::Kind::Physical, spots.front().feet, cardHeightOf(spots.front()), unitWorld(hero), start + 0.6f);
+  }
+  // --fx-test hit | hitHeavy | arcaneAttack: the combat's own effects alone (no rules): a weapon blow, a heavy one, the
+  // Arcano attack (conjure 0.45 s, the bolt, the impact), each with the struck card's recoil.
+  bool testCombat(size_t hero, const std::string& kind, float start) {
+    if (kind != "hit" && kind != "hitHeavy" && kind != "arcaneAttack") return false;
+    const size_t target = nearestTarget(hero, false);
+    const SpellEffects::Spot from = unitSpot(hero), to = unitSpot(target);
+    float impact = start + 0.4f;
+    if (kind == "arcaneAttack") {
+      const float release = start + 0.45f;
+      impact = release + CombatFx::flightSeconds(from.feet, to.feet);
+      spellFx_.combat().bolt(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), start, release, impact);
+      spellFx_.combat().impact(CombatFx::Kind::Magical, to.feet, cardHeightOf(to), from.feet, impact);
+    } else {
+      spellFx_.combat().impact(kind == "hitHeavy" ? CombatFx::Kind::Heavy : CombatFx::Kind::Physical, to.feet, cardHeightOf(to), from.feet, impact);
+    }
+    glm::vec3 dir = to.feet - from.feet;
+    dir.y = 0.0f;
+    if (target < unitRecoil_.size() && target != hero)
+      unitRecoil_[target] = {impact, glm::dot(dir, dir) > 1e-6f ? glm::normalize(dir) : glm::vec3(0.0f), kind == "hitHeavy"};
+    return true;
   }
   static bool weaponStrikeKind(const std::string& kind) {
     return kind == "doubleStrike" || kind == "longShot" || kind == "piercing" || kind == "piercingThrust";
@@ -2962,11 +3031,31 @@ class MapStage final : public Stage {
         e2::resolveStep(*battle_, s, rng_, fx);
       }
       showEffects(fx);
-      // A blow that landed (a weapon, an arrow, a blade skill): sparks on the struck body. Magic brings its own burst.
+      // The impact (CombatFx) and the struck body's reaction, on the same instant as the numbers. A weapon, an arrow or
+      // a blade skill: the physical impact (heavy on a critical, a kill or a third of the body's life); the Arcano bolt:
+      // the magical one (its energy comes apart on a miss). Spells bring their own burst; every blow that hurts knocks
+      // the card back.
       const bool magic = s.type == e2::BattleStep::Type::Spell && s.kind != "longShot" && s.kind != "piercing" && s.kind != "piercingThrust";
+      const int striker = sceneUnitOf(static_cast<int>(x.counter ? s.def : s.att));
       for (const e2::BattleEffect& e : fx) {
         const int ui = sceneUnitOf(static_cast<int>(e.unit));
-        if (ui >= 0 && !e.miss && !e.heal && !magic) spellFx_.strike(unitSpot(static_cast<size_t>(ui)), now_, e.crit);
+        if (ui < 0 || e.heal || e.status) continue;
+        const size_t u = static_cast<size_t>(ui);
+        const SpellEffects::Spot struck = unitSpot(u);
+        const glm::vec3 from = striker >= 0 && striker != ui ? unitWorld(static_cast<size_t>(striker)) : struck.feet - glm::vec3(0.0f, 0.0f, 1.0f);
+        const e2::BattleUnit& bu = battle_->units()[e.unit];
+        const bool heavy = e.crit || e.died || (bu.maxHp > 0 && e.amount * 10 >= bu.maxHp * 3);
+        if (x.bolt) {
+          spellFx_.combat().impact(e.miss ? CombatFx::Kind::MagicalMiss : CombatFx::Kind::Magical, struck.feet, cardHeightOf(struck), from, now_,
+                                   CombatPalette::of(x.element.c_str()));
+        } else if (!magic && !e.miss) {
+          spellFx_.combat().impact(heavy ? CombatFx::Kind::Heavy : CombatFx::Kind::Physical, struck.feet, cardHeightOf(struck), from, now_);
+        }
+        if (!e.miss && e.amount > 0) {
+          glm::vec3 dir = struck.feet - from;
+          dir.y = 0.0f;
+          unitRecoil_[u] = {now_, glm::dot(dir, dir) > 1e-6f ? glm::normalize(dir) : glm::vec3(0.0f), heavy};
+        }
       }
     }
     if (now_ < x.end) return;
@@ -3560,7 +3649,7 @@ class MapStage final : public Stage {
       const float right = b.x - 10.0f;
       // The info area is the combat log's switch (GameApp: a click on the stat sheet opens the log, a click on the log closes it).
       ImGui::SetCursorScreenPos({x, rowY});
-      if (ImGui::InvisibleButton("##logtoggle", {right - x, showLog_ ? 24.0f : 76.0f})) showLog_ = !showLog_, logPinned_ = true, logJustOpened_ = showLog_;
+      if (ImGui::InvisibleButton("##logtoggle", {right - x, 24.0f})) showLog_ = !showLog_, logPinned_ = true, logJustOpened_ = showLog_;
       if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", showLog_ ? "Fechar o log e ver o status" : "Abrir o log de combate");
       ImGui::PushFont(text, 14.0f);
       const std::string name = std::format("{} · Nv {}", u.name, u.level);
@@ -4358,6 +4447,7 @@ class MapStage final : public Stage {
     bool flat = false, drawn = false;
   };
   std::vector<CardRect> unitCard_;
+  bool pickActiveOnResume_ = false;  // set by resume(): pick the active hero once the turn loop first runs
   bool showLog_ = false, logPinned_ = true, logJustOpened_ = false;  // the combat log in the HUD bar
   bool logFull_ = false, logFullJustOpened_ = false;                 // ... and full screen
   bool logKeep_ = false;
@@ -4461,6 +4551,30 @@ class MapStage final : public Stage {
   float tipAt_ = -10.0f;
   std::vector<OneShot> unitShot_;         // per scene unit: a one-shot pose over its own
   std::vector<float> unitDiedAt_;         // per scene unit: when it fell (-1 = alive)
+  // The struck body's reaction (2026-10-17, the hit react; the impact's light and particles are CombatFx's): the card
+  // is knocked back along the blow, squashed a little, and comes back; a heavy blow knocks it further, dips it and it
+  // staggers once before it settles. Drawn only (the board position never moves).
+  struct Recoil {
+    float start = -10.0f;
+    glm::vec3 dir{0.0f};  // the blow's way on the ground
+    bool heavy = false;
+  };
+  std::vector<Recoil> unitRecoil_;
+  // Where the card is pushed now and how much it is squashed (1 = not).
+  glm::vec3 recoilOffset(size_t ui, float time, float height, float& squash) const {
+    squash = 1.0f;
+    if (ui >= unitRecoil_.size()) return glm::vec3(0.0f);
+    const Recoil& r = unitRecoil_[ui];
+    const float t = (time - r.start) * actionRate();
+    if (t < 0.0f || t > (r.heavy ? 0.9f : 0.5f)) return glm::vec3(0.0f);
+    // An impulse response: out to its peak at tau, back without overshooting; a heavy blow's stagger is a second,
+    // smaller push a beat later.
+    const auto bump = [](float x, float tau) { return x <= 0.0f ? 0.0f : (x / tau) * std::exp(1.0f - x / tau); };
+    const float reach = r.heavy ? 0.3f : 0.13f;
+    const float k = r.heavy ? bump(t, 0.085f) + 0.35f * bump(t - 0.24f, 0.09f) : bump(t, 0.055f);
+    squash = 1.0f - (r.heavy ? 0.06f : 0.035f) * std::min(k, 1.0f);
+    return r.dir * (reach * k) + glm::vec3(0.0f, r.heavy ? -0.04f * height * std::min(k, 1.0f) : 0.0f, 0.0f);
+  }
   std::optional<Exchange> exchange_;
   struct Popup {
     size_t unit = 0;
