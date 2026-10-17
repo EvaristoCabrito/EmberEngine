@@ -2176,6 +2176,14 @@ class MapStage final : public Stage {
     offHandMode_ = false;
     // Criar Comida e Água has no aim: it is cast at once, around the caster.
     if (e2::spellInstant(kind)) return commitSpell({u.x, u.y});
+    // Varredura, Expulsar Mortos-Vivos: its area around the caster is shown at once and waits for Confirmar (Engine2
+    // startSweep / startTurnUndead arm the spell on the caster's own hex).
+    if (e2::spellSelfArea(kind)) {
+      spellAim_.push_back({u.x, u.y});
+      spellZone_ = e2::spellArea(*battle_, b, kind, {u.x, u.y});
+      spellArmed_ = e2::BattleHex{u.x, u.y};
+      return;
+    }
     for (int y = 0; y < battle_->rows(); ++y)
       for (int x = 0; x < battle_->cols(); ++x)
         if (e2::Battle::distance({u.x, u.y}, {x, y}) <= 9 && aimValid(b, {x, y})) spellAim_.push_back({x, y});
@@ -2453,7 +2461,8 @@ class MapStage final : public Stage {
       // The start of its own turn: a lightning echo, the ground's flames, our zones and conditions, a Meteoro it called.
       std::vector<e2::BattleEffect> fx;
       const bool echo = battle_->units()[static_cast<size_t>(active)].shock.has_value();
-      e2::startOfTurnEffects(*battle_, static_cast<size_t>(active), rng_, fx);
+      // Engine2 beginUnitTurn: those effects, then stun, the web's sleep roll, sleep and a flight in fear
+      const e2::TurnStart turn = e2::beginUnitTurn(*battle_, static_cast<size_t>(active), rng_, fx);
       if (const int ui = sceneUnitOf(active); echo && ui >= 0 && !fx.empty()) spellFx_.echo(unitSpot(static_cast<size_t>(ui)), now_);
       // A Meteoro that fell: the rock takes 0.9 s to land; the numbers wait for it.
       const std::vector<e2::Battle::Zone> fallen = battle_->takeLanded();
@@ -2462,6 +2471,12 @@ class MapStage final : public Stage {
       else pendingFx_.push_back({now_ + 0.9f, fx});
       if (!battle_->units()[static_cast<size_t>(active)].alive) {
         battle_->units()[static_cast<size_t>(active)].moved = true;
+        return;
+      }
+      if (turn.kind != e2::TurnStart::Kind::Normal) {  // it loses the turn (stunned, asleep) or runs from what it fears
+        const int ui = sceneUnitOf(active);
+        if (ui >= 0 && !turn.tip.empty()) tip_ = battle_->units()[static_cast<size_t>(active)].name + turn.tip, tipAt_ = now_;
+        if (ui >= 0 && turn.kind == e2::TurnStart::Kind::Fled && turn.fleePath.size() > 1) fleeAlong(static_cast<size_t>(ui), turn.fleePath);
         return;
       }
     }
@@ -2604,13 +2619,23 @@ class MapStage final : public Stage {
   }
 
   // Walk a unit along a route (start first): the battle's state moves at once, the walk then plays it.
-  void walkAlong(size_t ui, const std::vector<e2::BattleHex>& route) {
+  void walkAlong(size_t ui, const std::vector<e2::BattleHex>& planned) {
     const size_t b = static_cast<size_t>(unitBattle_[ui]);
     e2::BattleUnit& u = battle_->units()[b];
+    std::vector<e2::BattleEffect> fx;
+    // A bleeding unit opens its wound once per own turn when it walks (applyBleedingActionDamage)
+    if (!e2::bleedOnAction(*battle_, b, true, rng_, fx)) {
+      showEffects(fx);
+      u.moved = true;
+      return;
+    }
     // Its cost along the route (the step costs of the reach it was planned on).
     for (const e2::ReachCell& c : battle_->reachable(b, false))
-      if (c.x == route.back().x && c.y == route.back().y) u.moveUsed += c.cost;
-    u.x = route.back().x, u.y = route.back().y;
+      if (c.x == planned.back().x && c.y == planned.back().y) u.moveUsed += c.cost;
+    // Hex by hex: a flame underfoot burns, a warp gate carries it across (the route is cut / extended to what it walked)
+    std::vector<e2::BattleHex> route = planned;
+    walkHexes(b, route, fx);
+    pendingFx_.push_back({now_ + stepSeconds() * static_cast<float>(route.size()), fx});
     Walk w;
     for (size_t k = 1; k < route.size(); ++k) w.points.push_back(anchorWorld(u, route[k])), w.hexes.push_back(route[k]);
     const auto [hx, hy] = e2::heading(route[route.size() - 2], route.back());
@@ -2621,6 +2646,50 @@ class MapStage final : public Stage {
     playCues(walk);
     w.fadeSound = sounds(b, "walkFade") == e2::Json(true) && walk.is_array() && !walk.empty() ? walk[0].value("file", "") : "";
     unitWalk_[ui] = std::move(w);
+  }
+
+  // A unit running from what it fears: its state moves at once (a flame underfoot burns it on the way), the card follows.
+  void fleeAlong(size_t ui, std::vector<e2::BattleHex> route) {
+    const size_t b = static_cast<size_t>(unitBattle_[ui]);
+    std::vector<e2::BattleEffect> fx;
+    walkHexes(b, route, fx);
+    if (route.size() > 1) animateAlong(ui, route, stepSeconds());
+    pendingFx_.push_back({now_ + stepSeconds() * static_cast<float>(route.size()), fx});
+  }
+
+  // The rules of a walk, hex by hex (Engine2 stepActive "move"): the unit stands on each hex in turn, a hazard there hurts
+  // it (and may kill it: the walk stops there), a warp gate carries it across (it comes out beside the other). `route` is
+  // cut to what it really walked; the unit is left on its last hex.
+  void walkHexes(size_t b, std::vector<e2::BattleHex>& route, std::vector<e2::BattleEffect>& fx) {
+    e2::BattleUnit& u = battle_->units()[b];
+    for (size_t k = 1; k < route.size(); ++k) {
+      u.x = route[k].x, u.y = route[k].y;
+      e2::stepOnHex(*battle_, b, rng_, fx);
+      if (!u.alive) {
+        route.resize(k + 1);
+        return;
+      }
+      if (const std::optional<e2::BattleHex> across = e2::warpCrossing(*battle_, b)) {
+        route.resize(k + 1);  // the card walks to the gate; the unit is on the far side at once (the card follows when it arrives)
+        u.x = across->x, u.y = across->y;
+        e2::BattleEffect moved;
+        moved.unit = b, moved.moved = true, moved.pushed = true;
+        fx.push_back(moved);
+        return;
+      }
+    }
+  }
+
+  // A unit's card walked along a route the rules already played (a charge, a flight in fear): no state changes here.
+  float animateAlong(size_t ui, const std::vector<e2::BattleHex>& route, float secondsPerHex) {
+    if (route.size() < 2) return 0.0f;
+    const size_t b = static_cast<size_t>(unitBattle_[ui]);
+    const e2::BattleUnit& u = battle_->units()[b];
+    Walk w;
+    for (size_t k = 1; k < route.size(); ++k) w.points.push_back(anchorWorld(u, route[k])), w.hexes.push_back(route[k]);
+    w.start = now_;
+    unitWalk_[ui] = std::move(w);
+    return secondsPerHex * static_cast<float>(route.size() - 1);
   }
 
   // --- The exchange: an attack and, when it can, the counter (Engine2 BattleEngine's combat queue for a plain attack). ---
@@ -2751,6 +2820,19 @@ class MapStage final : public Stage {
     reach_.clear(), reachPaths_.clear(), targets_.clear();
     spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
     spellArmed_.reset(), pendingFoe_ = -1;
+    // A bleeding unit takes 1D8 whenever it acts (Engine2 applyBleedingActionDamage): once for the whole action.
+    {
+      const size_t ob = static_cast<size_t>(unitBattle_[ownerUi]);
+      std::vector<e2::BattleEffect> fx;
+      const bool alive = e2::bleedOnAction(*battle_, ob, false, rng_, fx);
+      showEffects(fx);
+      if (!alive) {  // bled out before the blow: the action is dropped
+        exchange_.reset();
+        battle_->units()[ob].moved = true;
+        select(-1);
+        return;
+      }
+    }
     startStep(*exchange_);
   }
 
@@ -2782,7 +2864,7 @@ class MapStage final : public Stage {
 
     const bool support = s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food || s.type == StepType::Potion;
     int target = -1;
-    if (s.type == StepType::Food) target = -1;  // around the caster: nobody to turn to
+    if (s.type == StepType::Food || s.type == StepType::Move || s.type == StepType::Effect) target = -1;  // around the caster / a walk: nobody to turn to
     else if (s.type != StepType::Spell) target = sceneUnitOf(static_cast<int>(x.counter ? s.att : s.def));
     else if (!s.ids.empty()) target = sceneUnitOf(static_cast<int>(s.ids[0]));
     if (striker >= 0 && target >= 0 && striker != target) {
@@ -2798,6 +2880,12 @@ class MapStage final : public Stage {
     x.impact = now_ + length * kImpactShare;
     x.end = now_ + length + kExchangeGap / actionRate();
     x.landed = false;
+    if (s.type == StepType::Move) {  // a charge: the rules play at once (the unit is on its last hex), the card dashes the route
+      const float dash = striker >= 0 ? animateAlong(static_cast<size_t>(striker), s.path, stepSeconds() * 0.5f) : 0.0f;
+      x.impact = now_;
+      x.end = now_ + dash + kExchangeGap / actionRate();
+      return;
+    }
     if (striker >= 0 && !pose.empty()) unitShot_[static_cast<size_t>(striker)] = {pose, now_, false, actionRate()};
     // The Arcano attack: energy gathers at the hand while the pose winds up, the bolt leaves at the pose's release and
     // the blow lands (the roll, the numbers, the hit react) when it arrives.
@@ -2839,7 +2927,7 @@ class MapStage final : public Stage {
     // come when it lands).
     if (striker >= 0 && !x.counter && !s.kind.empty()) {
       std::vector<SpellEffects::Spot> spots;
-      if (s.type == StepType::Spell) {
+      if (s.type == StepType::Spell || s.type == StepType::Effect) {
         for (const e2::BattleHex& h : s.tiles) spots.push_back(hexSpot(h));
       } else if (s.type == StepType::Food) {
         for (size_t id : s.ids)  // everyone it feeds
@@ -3298,6 +3386,7 @@ class MapStage final : public Stage {
         popups_.push_back({u, "Errou", IM_COL32(200, 200, 200, 255), now_, false});
         continue;
       }
+      if (e.moved && !e.pushed && e.amount == 0 && !e.died) continue;  // a charge's walk: nothing to say
       if (e.heal) {
         // a heal's +HP, else what a cure, a meal or a mana potion did ("curado", "+2 rações", "+3 magia")
         popups_.push_back({u, e.text.empty() ? "+" + std::to_string(e.amount) : e.text, IM_COL32(170, 226, 150, 255), now_, false});
@@ -3308,6 +3397,7 @@ class MapStage final : public Stage {
         unitPos_[u] = anchorWorld(bu, {bu.x, bu.y});
         unitWalk_[u] = Walk{};
         unitMoved_[u] = 1;
+        if (e.amount == 0 && !e.died && !e.status && e.text.empty()) continue;  // only its card moved
       }
       if (e.status && !e.died) {  // a condition's word (our spells): violet, no hit pose
         popups_.push_back({u, e.text, IM_COL32(196, 150, 232, 255), now_, false});
@@ -3345,6 +3435,16 @@ class MapStage final : public Stage {
         e2::resolveStep(*battle_, s, rng_, fx);
       }
       showEffects(fx);
+      // A missed Investida Touro shoves nobody aside: the rest of the charge is dropped (its walk and its other blows).
+      if (std::any_of(fx.begin(), fx.end(), [](const e2::BattleEffect& e) { return e.abortRush; })) {
+        const size_t actor = s.att;
+        // erased in place after this step, so `s` stays valid
+        x.steps.erase(std::remove_if(x.steps.begin() + static_cast<long>(x.step) + 1, x.steps.end(),
+                                     [&](const e2::BattleStep& q) {
+                                       return q.att == actor && (q.type == e2::BattleStep::Type::Move || (q.type == e2::BattleStep::Type::Combat && q.kind == "bullRush"));
+                                     }),
+                      x.steps.end());
+      }
       // The impact (CombatFx) and the struck body's reaction, on the same instant as the numbers. A weapon, an arrow or
       // a blade skill: the physical impact (heavy on a critical, a kill or a third of the body's life); the Arcano bolt:
       // the magical one (its energy comes apart on a miss). Spells bring their own burst; every blow that hurts knocks
@@ -3743,7 +3843,7 @@ class MapStage final : public Stage {
         {"sweep", "refresh-001/spells/sweep.png"}, {"trip", "refresh-001/spells/trip.png"}, {"summonFamiliar", "refresh-001/spells/summon-familiar.png"},
         {"phantasmalForce", "phantasmal-force.png"}, {"summonFamiliar2", "summon-familiar2.png"}, {"summonFamiliar3", "summon-familiar3.png"},
         {"summonFamiliar4", "summon-familiar4.png"}, {"summonZombieDog", "summon-zombie-dog-002.png"}, {"webOfDreams", "refresh-001/spells/web-of-dreams.png"},
-        {"warp", "warp-portal.png"}, {"lifeDrain", "refresh-001/spells/life-drain.png"}, {"multiShot", "refresh-006/combat/multi-shot-006.png"},
+        {"warp", "warp-portal.png"}, {"lifeDrain", "refresh-001/spells/life-drain.png"}, {"familiarLifeDrain", "refresh-001/spells/life-drain.png"}, {"multiShot", "refresh-006/combat/multi-shot-006.png"},
         {"cureLight", "refresh-006/healing/cure-light-new-006.png"}, {"bless", "refresh-001/spells/bless.png"}, {"provoke", "provoke.jpg"},
         {"bullRush", "bull-rush.png"}, {"executionerStrike", "executioner-strike-002.png"}, {"shieldBash", "shield-bash.png"},
         {"burningHands", "burning-hands.png"}, {"poisonBreath", "poison-breath.png"}, {"createFoodAndWater", "create-food-and-water.png"},

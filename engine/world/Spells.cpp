@@ -1200,6 +1200,14 @@ std::string conditionsText(const BattleUnit& u) {
   if (u.cond.silenceTurns > 0) add(std::format("Silenciado ({})", u.cond.silenceTurns));
   if (u.cond.decayTurns > 0) add(std::format("Decadência -{}% ({})", u.cond.decayPct, u.cond.decayTurns));
   if (u.diseased) add("Doente");
+  // Engine2's statuses
+  if (u.stunned) add(std::string(pick("Atordoado", "Stunned")) + std::format(" ({})", u.stunTurns));
+  if (u.asleep) add(std::string(pick("Adormecido", "Asleep")) + std::format(" ({})", u.sleepTurns));
+  if (u.bleeding) add(u.bleedRoundsLeft ? std::string(pick("Sangrando 1D8 por ação", "Bleeding 1D8 per action")) + std::format(" ({})", *u.bleedRoundsLeft)
+                                         : std::string(pick("Sangrando 1D8 por ação", "Bleeding 1D8 per action")));
+  if (u.crippled) add(pick("Aleijado -10%", "Crippled -10%"));
+  if (u.fearTurns > 0) add(std::string(pick("Com medo", "Afraid")) + std::format(" ({})", u.fearTurns));
+  if (u.blessedRoundsLeft > 0) add(std::string(pick("Abençoado", "Blessed")) + std::format(" +{}% ({})", static_cast<int>(jsRound(u.blessedHitBonusPct * 100)), u.blessedRoundsLeft));
   return s;
 }
 std::string spellTooltip(const BattleUnit& c, const std::string& kind) {
@@ -2595,6 +2603,29 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
     return single(*p, "shock", kShockDice, kShockFaces, kShockBonus, kShockMul, kShockEcho);
   };
   const std::string& c = u.classId;
+  // The Ox spends its three tier-1 charges on Investida Touro (runAiFor's first branch): the nearest body of a foe it can charge.
+  if (c == "bigBlueCalf" && !u.acted && tierRemaining(u, "bullRush") > 0) {
+    struct Target {
+      size_t foe;
+      BattleHex cell;
+    };
+    std::vector<Target> targets;
+    for (size_t h : heroes)
+      for (const BattleHex& cell : Battle::footprint(b.units()[h], b.units()[h].x, b.units()[h].y)) targets.push_back({h, cell});
+    std::stable_sort(targets.begin(), targets.end(), [&](const Target& p, const Target& q) {
+      const int dp = hexDist({u.x, u.y}, p.cell), dq = hexDist({u.x, u.y}, q.cell);
+      return dp != dq ? dp < dq : b.units()[p.foe].hp < b.units()[q.foe].hp;
+    });
+    for (const Target& t : targets)
+      if (bullRushCharge(b, unit, t.cell)) {
+        AiCast cast;
+        if (std::optional<std::vector<BattleStep>> steps = castE2(b, unit, "bullRush", {t.cell}, nullptr, false)) {
+          cast.steps = std::move(*steps);
+          return cast;
+        }
+        break;
+      }
+  }
   const bool cultist = c == "cultist" || c == "cultistV2" || c == "emberedWraith" || c == "swampBlueCalf";
   if (cultist && (u.spells[0] > 0 || u.spells[1] > 0 || u.shockCharges > 0 || u.fantomForceCharges > 0)) {
     if (u.spells[1] > 0)
@@ -2651,10 +2682,166 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
       }
     }
   }
+  // tryAiMinorVenom (the Undead Ox, the plague cattle): Veneno Menor on the splash that reaches the most foes
+  auto bestSplash = [&](const BoltData& d, bool bolt = true) {
+    struct SplashPick {
+      BattleHex at, from;
+      int score = 0;
+    };
+    std::optional<SplashPick> p;
+    for (const ReachCell& cell : reach)
+      for (size_t h : heroes) {
+        const BattleUnit& f = b.units()[h];
+        if (hexDist({cell.x, cell.y}, {f.x, f.y}) > d.range) continue;
+        if (bolt && !clearShot(b, {cell.x, cell.y}, {f.x, f.y}, false)) continue;
+        int hits = 0, sc = 0;
+        for (const BattleHex& t : hexAreaTiles(b, {f.x, f.y}, d.size))
+          for (size_t g : heroes) {
+            const BattleUnit& hit = b.units()[g];
+            if (hit.x != t.x || hit.y != t.y) continue;
+            ++hits;
+            sc += (hit.maxHp - hit.hp) + (hit.hp <= 8 ? 15 : 0);
+            break;
+          }
+        if (hits == 0) continue;
+        sc += hits * 10;
+        if (!p || sc > p->score) p = SplashPick{{f.x, f.y}, {cell.x, cell.y}, sc};
+      }
+    return p;
+  };
+  if ((c == "undeadOx" || c == "plagueBearingCattle") && tierRemaining(u, "minorVenom") > 0)
+    if (const auto p = bestSplash(kMinorVenom)) {
+      AiCast cast;
+      cast.path = walkTo(p->from);
+      if (std::optional<std::vector<BattleStep>> steps = castE2(b, unit, "minorVenom", {p->at}, nullptr, false)) {
+        cast.steps = std::move(*steps);
+        return cast;
+      }
+    }
   const bool birolho = c == "birolho" || c == "birolho2" || c == "birolho3" || c == "birolhoLegs" || c == "birolhoLegs2";
+  // Birolho: Relampago outranks Veneno Caustico outranks Choque outranks Missil Magico. (Engine2 tests its tier-4 uses and spends
+  // the venom's own tier 5: kept as it is.)
+  if (birolho && (u.spells[0] > 0 || u.spells[1] > 0 || u.spells[3] > 0 || u.shockCharges > 0)) {
+    if (u.spells[1] > 0)
+      if (const std::optional<Pick> p = best(kLightningRange, false)) {
+        spendTier(u, "lightning");
+        return single(*p, "lightning", kLightningDice, kLightningFaces, kLightningBonus, kLightningMul, kLightningEcho);
+      }
+    if (u.spells[3] > 0)
+      if (const auto p = bestSplash(kCausticVenom)) {
+        AiCast cast;
+        cast.path = walkTo(p->from);
+        if (std::optional<std::vector<BattleStep>> steps = castE2(b, unit, "causticVenom", {p->at}, nullptr, false)) {
+          cast.steps = std::move(*steps);
+          return cast;
+        }
+      }
+    if (std::optional<AiCast> s = shock()) return s;
+    if (u.spells[0] > 0)
+      if (const std::optional<Pick> p = best(kMissileRange, true)) {
+        spendTier(u, "magicMissile");
+        return single(*p, "magicMissile", kMissileDice, kMissileFaces, kMissileBonus, kMissileMul, std::nullopt);
+      }
+  }
+  // Rocco The Bird: Burning Beak (Maos Flamejantes) outranks Missil Magico outranks Choque; the cone is never aimed where it would
+  // also burn one of his own.
+  if (c == "roccoTheBird" && (u.spells[0] > 0 || u.spells[1] > 0 || u.shockCharges > 0)) {
+    if (u.spells[1] > 0) {
+      const ConeP power = burningHandsPower(u.level);
+      struct ConePick {
+        std::vector<BattleHex> tiles;
+        std::vector<size_t> ids;
+        BattleHex from;
+        int score = 0;
+      };
+      std::optional<ConePick> cone;
+      for (const ReachCell& cell : reach)
+        for (const CubeI& dir : kCubeDirs) {
+          const std::vector<BattleHex> tiles = coneSector(b, {cell.x, cell.y}, dir, power.radius);
+          std::vector<size_t> ids;
+          int sc = 0;
+          bool burnsAlly = false;
+          for (const BattleHex& t : tiles) {
+            const int who = firstAt(b, t);
+            if (who < 0 || static_cast<size_t>(who) == unit || std::find(ids.begin(), ids.end(), static_cast<size_t>(who)) != ids.end()) continue;
+            const BattleUnit& v = b.units()[static_cast<size_t>(who)];
+            if (v.side != "player") burnsAlly = true;
+            ids.push_back(static_cast<size_t>(who));
+            sc += 10 + (v.maxHp - v.hp) * 3 + (v.hp <= 8 ? 20 : 0);
+          }
+          if (burnsAlly || ids.empty()) continue;
+          if (!cone || sc > cone->score) cone = ConePick{tiles, ids, {cell.x, cell.y}, sc};
+        }
+      if (cone) {
+        AiCast cast;
+        cast.path = walkTo(cone->from);
+        spendTier(u, "burningHands");
+        BattleStep s;
+        s.att = unit, s.kind = "burningHands", s.tiles = cone->tiles, s.ids = cone->ids;
+        s.dice = power.dice, s.faces = power.faces, s.bonus = 0, s.spellMul = power.mul;
+        cast.steps.push_back(s);
+        return cast;
+      }
+    }
+    if (u.spells[0] > 0)
+      if (const std::optional<Pick> p = best(kMissileRange, true)) {
+        spendTier(u, "magicMissile");
+        return single(*p, "magicMissile", kMissileDice, kMissileFaces, kMissileBonus, kMissileMul, std::nullopt);
+      }
+    if (std::optional<AiCast> s = shock()) return s;
+  }
   // Any other enemy mage still gets Choque.
   if (!cultist && !birolho && c != "cultistV2" && u.shockCharges > 0)
     if (std::optional<AiCast> s = shock()) return s;
+  // The Brigand Crossbowman: Tiro Multiplo (tier 3) from the spot that reaches the most foes, else Tiro Sangrento (tier 2).
+  if (c == "brigandCrossbowman" && (u.spells[1] > 0 || u.spells[2] > 0)) {
+    const bool multi = u.spells[2] > 0;
+    const int range = multi ? kMultiShotRange : kBloodyShotRange;
+    struct VolleyPick {
+      BattleHex from;
+      std::vector<size_t> foes;
+      int score = 0;
+    };
+    std::optional<VolleyPick> pick;
+    for (const ReachCell& cell : reach) {
+      std::vector<std::pair<size_t, int>> ranked;
+      for (size_t h : heroes) {
+        const BattleUnit& f = b.units()[h];
+        const int d = hexDist({cell.x, cell.y}, {f.x, f.y});
+        if (d >= u.minRange && d <= range && clearShot(b, {cell.x, cell.y}, {f.x, f.y}, true)) ranked.emplace_back(h, score(h));
+      }
+      if (ranked.empty()) continue;
+      std::stable_sort(ranked.begin(), ranked.end(), [](const auto& p, const auto& q) { return p.second > q.second; });
+      int sc = 0;
+      if (multi) for (const auto& r : ranked) sc += r.second + 10;
+      else sc = ranked.front().second;
+      if (!pick || sc > pick->score) {
+        pick = VolleyPick{{cell.x, cell.y}, {}, sc};
+        for (const auto& r : ranked) pick->foes.push_back(r.first);
+      }
+    }
+    if (pick) {
+      AiCast cast;
+      cast.path = walkTo(pick->from);
+      spendTier(u, multi ? "multiShot" : "bloodyShot");
+      if (multi) {
+        const DiceFaces power = multiShotPower(u.level);
+        for (int i = 0; i < multiShotTargets(u.level); ++i) {
+          const size_t foe = pick->foes[static_cast<size_t>(i) % pick->foes.size()];
+          BattleStep s;
+          s.att = unit, s.kind = "multiShot", s.tiles = {{b.units()[foe].x, b.units()[foe].y}}, s.ids = {foe};
+          s.weaponBonusDice = power.dice, s.weaponBonusFaces = power.faces, s.weaponBonusBonus = 0;
+          cast.steps.push_back(s);
+        }
+      } else {
+        const size_t foe = pick->foes.front();
+        BattleStep s;
+        s.att = unit, s.kind = "bloodyShot", s.tiles = {{b.units()[foe].x, b.units()[foe].y}}, s.ids = {foe}, s.dmgMul = bloodyShotMul(u.level);
+        cast.steps.push_back(s);
+      }
+      return cast;
+    }
+  }
   // Crossbowmen: Tiro Perfurante while banked, else Tiro Longo.
   if ((c == "brigand" || c == "baseCrossbowman") && (u.spells[0] > 0 || u.spells[1] > 0)) {
     const bool piercing = u.spells[1] > 0;

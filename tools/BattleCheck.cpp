@@ -83,7 +83,8 @@ bool checkBattle(const std::filesystem::path& battleJson) {
     // a cast EmberEngine does not port yet (other monsters' spells): skipped
     const bool ported = std::all_of(r.casts.begin(), r.casts.end(), [](const e2::AiReference::Cast& c) {
       return c.kind == "lightning" || c.kind == "magicMissile" || c.kind == "shock" || c.kind == "fantomForce" || c.kind == "frost" || c.kind == "longShot" ||
-             c.kind == "piercing";
+             c.kind == "piercing" || c.kind == "bloodyShot" || c.kind == "multiShot" || c.kind == "causticVenom" || c.kind == "minorVenom" ||
+             c.kind == "burningHands";
     });
     if (!ported || (r.spell && r.casts.empty())) {
       ++aiSkipped;
