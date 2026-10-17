@@ -5501,6 +5501,7 @@ class MapStage final : public Stage {
   int pendingFoe_ = -1;                      // the foe a strike is staged on, waiting for Confirmar / Cancelar (stageAttack)
   std::vector<e2::BattleHex> spellAim_;   // every hex it may be aimed at
   std::vector<e2::BattleHex> spellZone_;  // where it reaches, target or not (the grid's zone; e2::spellZone)
+  std::vector<e2::BattleHex> spellPreview_;  // a line / cone spell: its area toward the nearest foe it reaches (cursor off the board)
   bool attackMode_ = false;               // "Atacar": only the foes it can strike are marked
   bool showTurnOrder_ = false;
   std::string tip_;                       // why a click did nothing (Engine2's tip line)
@@ -5577,7 +5578,6 @@ class MapStage final : public Stage {
   JobCounter fogJob_;
   bool fogBusy_ = false, sightLogged_ = false;
   std::vector<std::vector<e2::HexPoint>> fogQueue_, fogJobEyes_;  // party positions waiting / being relit, in order
-  std::vector<e2::BattleHex> spellPreview_;  // a line / cone spell: its area toward the nearest foe it reaches (cursor off the board)
   e2::FogMask fogNext_;
   std::vector<uint16_t> fogTexels_, fogNextTexels_;  // fogMask_ / fogNext_ packed for the GPU (Renderer::fogTexels)
   double fogJobMs_ = 0.0;
