@@ -4,7 +4,8 @@
 // vite-node, measure_art.py), as every campaign map was imported. Used by the Map Editor: Salvar prepares the saved map
 // for the campaign and for Modo teste; Testar prepares the draft as Engine2's playtest fights it.
 //
-//   Campaign   export_scene.ts + measure_art.py -> <scenes>/<stem>.scene.json, export_battle.ts -> <battles>/<stem>.battle.json
+//   Campaign   make_test_map.ts CAMPAIGN=1 (all six campaign heroes, no levels: the game keeps the save's recruited ones, at the
+//              save's levels, laid out by its formation) -> <campaign>/maps, then its scene and battle in <campaign>/scenes, battles
 //   Test       make_test_map.ts (the missing heroes, level 15) -> <test>/maps, then its scene and battle (TEST_LEVEL=15)
 //   Playtest   make_test_map.ts KEEP_LEVELS (the authored levels kept) and export_battle.ts LEVELS_FROM_DRAFT, in `dir`
 //
@@ -44,8 +45,10 @@ inline MapExportResult exportMap(const std::filesystem::path& mapFile, const std
   auto q = [](const std::filesystem::path& p) { return "\"" + p.generic_string() + "\""; };
   std::vector<std::string> steps;
   if (kind == MapExportKind::Campaign) {
-    r.map = mapFile, r.scene = paths.scenes / (stem + ".scene.json"), r.battle = paths.battles / (stem + ".battle.json");
-    std::filesystem::create_directories(paths.scenes, ec), std::filesystem::create_directories(paths.battles, ec);
+    r.map = paths.campaign / "maps" / (stem + ".json");
+    r.scene = paths.campaign / "scenes" / (stem + ".scene.json"), r.battle = paths.campaign / "battles" / (stem + ".battle.json");
+    for (const auto& p : {r.map, r.scene, r.battle}) std::filesystem::create_directories(p.parent_path(), ec);
+    steps.push_back(std::format("set CAMPAIGN=1&& {} tools/scripts/engine2/make_test_map.ts -- {} {}", vn, q(mapFile), q(r.map)));
     steps.push_back(std::format("{} tools/scripts/engine2/export_scene.ts -- {} {}", vn, q(r.map), q(r.scene)));
     steps.push_back(std::format("python -I tools/scripts/engine2/measure_art.py {} \"{}\"", q(r.scene), pub));
     steps.push_back(std::format("set NO_REFS=1&& {} tools/scripts/engine2/export_battle.ts -- {} {}", vn, q(r.map), q(r.battle)));

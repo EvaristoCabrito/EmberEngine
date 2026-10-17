@@ -30,6 +30,10 @@ struct MissionEntry {
   std::string draftId, briefing, objective;  // the map's own mission text (Engine2 Mission)
   std::filesystem::path map, scene, battle;
   std::string campaignId;  // a campaign mission (its result goes into the active save slot); empty in test mode
+  // A campaign mission whose game files are not made yet (or older than its map): made from `source` as the mission opens
+  // (MapExport.h Campaign), into `map` / `scene` / `battle`.
+  bool prepare = false;
+  std::filesystem::path source;
 };
 
 struct CampaignPaths {
@@ -38,6 +42,7 @@ struct CampaignPaths {
   std::filesystem::path scenes;                               // build/engine2-scenes (export_scene.ts)
   std::filesystem::path battles = "content/engine2/battles";  // export_battle.ts
   std::filesystem::path test = "build/engine2-test";          // Modo teste's missions (export_test_missions.sh)
+  std::filesystem::path campaign = "build/engine2-campaign";  // the campaign's missions, made as they open (MapExport.h Campaign)
 };
 
 // CSS text-transform: uppercase, for ASCII and the accented Latin letters (UTF-8 C3 A0-BE).
@@ -135,15 +140,20 @@ inline std::optional<MissionEntry> campaignMission(const e2::Campaign& campaign,
   MissionEntry e;
   e.id = map.stem, e.title = m->title, e.place = m->place, e.draftId = m->id, e.briefing = m->briefing, e.objective = m->objective;
   if (map.own) missionTextsFromDraft(e, map.file);
-  e.map = map.file;
-  e.scene = paths.scenes / (map.stem + ".scene.json");
   std::error_code ec;
-  if (!std::filesystem::exists(e.map, ec) || !std::filesystem::exists(e.scene, ec)) {
-    error = map.own ? "O mapa " + map.stem + " foi salvo no editor mas ainda não foi preparado para o jogo (salve de novo no editor)."
-                    : "O mapa " + map.stem + " (" + m->title + ") ainda não foi importado para o Ember (export_scene.ts).";
+  if (!std::filesystem::exists(map.file, ec)) {
+    error = "O mapa " + map.stem + " (" + m->title + ") não existe (" + map.file.generic_string() + ").";
     return std::nullopt;
   }
-  if (const std::filesystem::path battle = paths.battles / (map.stem + ".battle.json"); std::filesystem::exists(battle, ec)) e.battle = battle;
+  // Every mission in the Locais plays: its game files (the campaign's party on it, its scene, its rules) are made from its map the
+  // first time it opens and again whenever the map is newer than them (MapExport.h Campaign); nothing to do by hand.
+  e.source = map.file;
+  e.map = paths.campaign / "maps" / (map.stem + ".json");
+  e.scene = paths.campaign / "scenes" / (map.stem + ".scene.json");
+  e.battle = paths.campaign / "battles" / (map.stem + ".battle.json");
+  const auto stamp = [&](const std::filesystem::path& p) { return std::filesystem::exists(p, ec) ? std::filesystem::last_write_time(p, ec) : std::filesystem::file_time_type::min(); };
+  const auto made = std::min({stamp(e.map), stamp(e.scene), stamp(e.battle)});
+  e.prepare = made == std::filesystem::file_time_type::min() || made < stamp(map.file);
   e.campaignId = m->id;
   return e;
 }

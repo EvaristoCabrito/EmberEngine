@@ -135,6 +135,8 @@ struct Options {
   // --defeated-spawns <id,id,...>: those enemy / neutral spawns dead from an earlier visit (MapStageOptions::defeatedSpawns);
   // --knocked-out <Hero,Hero>: those heroes fell on the floor before and stay out (carried HP 0 + preserveKnockouts).
   std::string defeatedSpawns, knockedOut;
+  // --formation "Kael,,Neera,...": the Party screen's 19 board cells for a mission capture (front to back; empty = an empty cell).
+  std::string formation;
   bool tatica = false;
   bool spellsMenuOpen = false;
   float measureSeconds = 0.0f;
@@ -221,6 +223,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--arrived-from" && hasValue) o.arrivedFrom = argv[++i];
     else if (arg == "--defeated-spawns" && hasValue) o.defeatedSpawns = argv[++i];
     else if (arg == "--knocked-out" && hasValue) o.knockedOut = argv[++i];
+    else if (arg == "--formation" && hasValue) o.formation = argv[++i];
     else if (arg == "--leader" && hasValue) o.leader = argv[++i];
     else if (arg == "--promote" && hasValue) {
       std::string list = argv[++i];
@@ -524,6 +527,9 @@ struct BlankStage final : Stage {
     renderer.setBackground(Renderer::kBlackBackground);
     renderer.setBloom(0.0f);
   }
+  // A mission's game files still being made (main.cpp's `preparing`): the curtain stays up on its first step meanwhile.
+  bool preparing = false;
+  Loading loading() const override { return {0, 0, 0, !preparing}; }
 };
 
 MapStageOptions mapOptions(const Options& o);
@@ -619,6 +625,24 @@ void setUpExplore(MapStageOptions& options, const e2::Json& save, const e2::Over
       options.leader = l->get<std::string>();
 }
 
+// The party of a fight (campaignParty.ts: "campaign progression defines the party; editor spawns only provide entry positions"):
+// in the campaign the heroes the save has recruited (`campaign`), in Modo teste every hero of the battle file; laid out by the
+// save's Formação inicial at the map's entry (MapStage::placeFormation). Free-roam maps are setUpExplore's.
+void setUpParty(MapStageOptions& options, const e2::Json& save, const e2::Overworld& world, bool campaign) {
+  std::ifstream in(options.battle, std::ios::binary);
+  const e2::Json battle = in ? e2::Json::parse(in, nullptr, false) : e2::Json();
+  if (!battle.is_object() || battle.value("explore", false)) return;
+  if (campaign) {
+    std::set<std::string> roster;
+    for (const char* hero : {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec"})
+      if (world.heroRecruited(hero, save)) roster.insert(hero);
+    options.partyRoster = std::move(roster);
+  }
+  if (const auto f = save.find("partyFormation"); f != save.end() && f->is_array())
+    for (const e2::Json& cell : *f) options.partyFormation.push_back(cell.is_string() ? cell.get<std::string>() : std::string());
+  options.formation = true;
+}
+
 template <class Render>
 bool Services::frame(DebugUi& ui, Renderer& renderer, Stage* stage, VkExtent2D size, float dt, const Render& render) {
   const auto start = Clock::now();
@@ -691,8 +715,14 @@ int runCapture(const Options& o) {
       const bool test = o.titleScreen.starts_with("mission-test:");
       const std::string id = o.titleScreen.substr(o.titleScreen.find(':') + 1);
       std::string error;
-      const std::optional<MissionEntry> m = test ? testMission(campaign, campaignPaths, id, error) : campaignMission(campaign, campaignPaths, id, error);
+      std::optional<MissionEntry> m = test ? testMission(campaign, campaignPaths, id, error) : campaignMission(campaign, campaignPaths, id, error);
       if (!m) fatal(error);
+      if (m->prepare) {  // the campaign's game files made first, as the game makes them when the mission opens
+        const MapExportResult made = exportMap(m->source, m->id, MapExportKind::Campaign, campaignPaths, std::filesystem::path(o.engine2).parent_path(),
+                                               campaignPaths.campaign / "logs" / (m->id + ".log"));
+        if (!made.ok) fatal("mission " + id + ": its game files could not be made (" + made.error + ")");
+        logInfo("mission {}: game files made from {}", id, m->source.generic_string());
+      }
       logInfo("mission {}: {} / {} / {}", id, m->map.generic_string(), m->scene.generic_string(), m->battle.generic_string());
       Options mission = o;
       mission.map = m->map.string(), mission.scene = m->scene.string(), mission.battleRules = m->battle.string();
@@ -701,6 +731,18 @@ int runCapture(const Options& o) {
       if (world.load("content/engine2/overworld.json")) options.world = &world;  // the status sheet's Mochila / Equipar
       if (test) testSession = freshTestSession(campaign);
       if (options.world) setUpExplore(options, test ? testSession->save : campaign.activeSave(), world, test);
+      if (options.world) {  // the party and its formation (--formation "Kael,,Neera,...": the board's cells instead of the save's)
+        e2::Json save = test ? testSession->save : campaign.activeSave();
+        if (!o.formation.empty()) {
+          save["partyFormation"] = e2::Json::array();
+          for (size_t at = 0; at <= o.formation.size();) {
+            const size_t end = std::min(o.formation.find(',', at), o.formation.size());
+            save["partyFormation"].push_back(o.formation.substr(at, end - at));
+            at = end + 1;
+          }
+        }
+        setUpParty(options, save, world, !test);
+      }
       auto missionStage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
       missionStage->setCampaign(&campaign, test ? std::string() : id, id, test);  // the campaign's own save backs the inventory
       // The people who talk (NpcTalk.h); a capture never writes the bank (no campaign record: the Inn's menus read a copy).
@@ -858,6 +900,9 @@ int runWindow(const Options& o) {
   // The title screen when asked (or when nothing else is). Its save slots open the campaign's world map; a mission
   // from there (or a test-mode map) plays in this window, then the world map comes back.
   std::optional<MissionEntry> pending;
+  // A campaign mission's game files being made before it opens (MissionEntry::prepare), and that mission.
+  std::future<MapExportResult> preparing;
+  std::optional<MissionEntry> preparingEntry;
   bool backToTitle = false, openMap = false;
   std::unique_ptr<Stage> stage;
   // The campaign's save bank (save.ts) and the world map's rules (overworld.ts), Engine2's tables.
@@ -1179,6 +1224,37 @@ int runWindow(const Options& o) {
                     campaign.emptySave());
       stage = std::move(again);
     }
+    // A campaign mission whose game files are not made yet (MissionEntry::prepare): the loading curtain goes up and they are made
+    // off the main thread (MapExport.h Campaign: Engine2's exporters, a few seconds); then the mission opens as usual.
+    if (pending && pending->prepare && !preparing.valid()) {
+      vkDeviceWaitIdle(context.device);
+      stage.reset();
+      curtain.open(loading::Curtain::Kind::Battle, clockNow());
+      auto blank = std::make_unique<BlankStage>();
+      blank->preparing = true;
+      stage = std::move(blank);
+      preparingEntry = std::move(pending);
+      pending.reset();
+      logInfo("{}: making its game files from {}", preparingEntry->campaignId, preparingEntry->source.generic_string());
+      preparing = std::async(std::launch::async, [entry = *preparingEntry, paths, engine2 = std::filesystem::path(paths.engine2Public).parent_path()] {
+        return exportMap(entry.source, entry.id, MapExportKind::Campaign, paths, engine2, paths.campaign / "logs" / (entry.id + ".log"));
+      });
+    }
+    if (preparing.valid() && preparing.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+      const MapExportResult r = preparing.get();
+      if (r.ok) {
+        preparingEntry->prepare = false;
+        pending = std::move(preparingEntry);
+      } else {
+        logWarn("{}: its game files could not be made ({})", preparingEntry->campaignId, r.error);
+        campaignNote = "Não foi possível preparar " + preparingEntry->title + " (" + r.error + ").";
+        arriveFrom.clear(), preserveKnockouts = false;
+        playing.clear();
+        openMap = true;
+      }
+      preparingEntry.reset();
+    }
+    if (preparing.valid()) continue;  // still making them: the curtain stays up
     if (pending || backToTitle || openMap || openTest || openTestRpg || openSpells || openEditor) {
       vkDeviceWaitIdle(context.device);
       stage.reset();
@@ -1244,6 +1320,8 @@ int runWindow(const Options& o) {
         }
         // A free-roam map: who sits there and who walks (the campaign's save, or Modo teste's); where the party comes in.
         if (hasWorld) setUpExplore(options, testSession ? testSession->save : campaign.activeSave(), world, testSession.has_value() || playing.empty());
+        // The campaign's party (or Modo teste's), laid out by the Party screen's formation; the editor's Testar keeps the draft's places.
+        if (hasWorld && !inEditorTest) setUpParty(options, testSession ? testSession->save : campaign.activeSave(), world, !testSession && !playing.empty());
         options.arrivedFrom = std::exchange(arriveFrom, {});
         options.preserveKnockouts = std::exchange(preserveKnockouts, false);
         // A dungeon's dead stay dead (crossingDefeatedSpawns; a campaign only), and the Wisp crossing's exits lead to the lair until

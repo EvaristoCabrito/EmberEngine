@@ -32,7 +32,13 @@ const pathfinding = await import(`${E2}/src/game/pathfinding.ts`);
 
 // GameApp.tsx (module-private there, copied as written).
 const DEFAULT_TEST_LEVEL = 15;
-const TEST_PARTY_CLASS: Record<string, string> = { Kael: 'kaelFinal', Neera: 'neera', Voss: 'voss', Salazar: 'salazar', Aldric: 'aldric', Malrec: 'conjurer' };
+// CAMPAIGN=1: the campaign's own party instead (campaignParty.ts: "campaign progression defines the party; editor spawns only
+// provide entry positions"): every one of the six with its campaign class (CAMPAIGN_HERO_CLASSES), no level set (the save's
+// levels are raised to in the game), so the game keeps the ones the save has recruited and lets the others go.
+const campaign = process.env.CAMPAIGN === '1';
+const TEST_PARTY_CLASS: Record<string, string> = campaign
+  ? (await import(`${E2}/src/game/campaignParty.ts`)).CAMPAIGN_HERO_CLASSES
+  : { Kael: 'kaelFinal', Neera: 'neera', Voss: 'voss', Salazar: 'salazar', Aldric: 'aldric', Malrec: 'conjurer' };
 
 const file = JSON.parse(readFileSync(mapPath, 'utf8'));
 const draft = file.draft;
@@ -75,7 +81,9 @@ if (!mission.explore) {
 // KEEP_LEVELS=1 (the map editor's Testar, GameApp startBattle with an override): every authored spawn keeps its own
 // level (DEFAULT_TEST_LEVEL when it has none), only the heroes added here take DEFAULT_TEST_LEVEL.
 const keep = process.env.KEEP_LEVELS === '1';
-draft.playerSpawns = [...draft.playerSpawns, ...added].map((s: Spawn) => ({ ...s, level: keep ? s.level ?? DEFAULT_TEST_LEVEL : DEFAULT_TEST_LEVEL }));
+draft.playerSpawns = campaign
+  ? [...draft.playerSpawns, ...added]
+  : [...draft.playerSpawns, ...added].map((s: Spawn) => ({ ...s, level: keep ? s.level ?? DEFAULT_TEST_LEVEL : DEFAULT_TEST_LEVEL }));
 file.draft = draft;
 mkdirSync(dirname(outPath), { recursive: true });
 writeFileSync(outPath, JSON.stringify(file));

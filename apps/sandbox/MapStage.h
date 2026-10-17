@@ -166,6 +166,13 @@ struct MapStageOptions {
   // is 0 stay out of this floor.
   std::set<std::string> defeatedSpawns;
   bool preserveKnockouts = false;
+  // The party (campaignParty.ts: "campaign progression defines the party; editor spawns only provide entry positions"): the
+  // heroes the save has recruited (none set = every hero in the battle file: Modo teste), the others leave, and a neutral of a
+  // recruited hero's name (a prisoner already freed) is not seated. Then the Party screen's Formação inicial (save.partyFormation:
+  // 19 board cells front to back) lays them out at the map's entry; `formation` off = the file's own places.
+  std::optional<std::set<std::string>> partyRoster;
+  std::vector<std::string> partyFormation;
+  bool formation = false;
   // wispCrossing.ts routeWispCrossing: the Wisp Forest crossing's way on. Until the crossing is finished its exits lead to the
   // carnivorous plant's lair (a floor connector up to wisp-forest-crossing-boss); once finished they lead outside (dungeon exits).
   bool wispCrossingDone = false;
@@ -311,6 +318,10 @@ class MapStage final : public Stage {
       logInfo("scene {}: {} cards, {} models, {} units, {} architecture pieces ({} built)", scene_->map, scene_->cards.size(),
               scene_->models.size(), scene_->units.size(), scene_->architecture, arch_.size());
       arrangeScene();
+      if (options_.partyRoster)  // the campaign's party: the heroes not recruited leave, a freed hero is no longer seated as a neutral
+        std::erase_if(scene_->units, [&](const e2::SceneUnit& u) {
+          return (u.side == "player" && !options_.partyRoster->contains(u.name)) || (u.side == "neutral" && options_.partyRoster->contains(u.name));
+        });
       initUnits();
       setUpParty();
       if (!options.heroes.empty()) setUpPoses(options.heroes);
@@ -1067,6 +1078,18 @@ class MapStage final : public Stage {
   // map file is not resumed). `testMode`: Modo teste writes nothing, so its menu has no Save.
   void setCampaign(e2::Campaign* campaign, std::string missionId, std::string mapKey, bool testMode) {
     campaign_ = campaign, missionId_ = std::move(missionId), mapKey_ = std::move(mapKey), testMode_ = testMode;
+    // A campaign fight: each hero wears what the save has it wearing (Engine2 spawnUnit's gearStatBonus on HP / ATK / MAG / DEF /
+    // DEX / movement), its HP as the save carries it (full when it carries none).
+    if (!campaign_ || testMode_ || playtest_ || !battle_ || !ensureInnRules()) return;
+    const e2::Json save = campaign_->activeSave();
+    for (e2::BattleUnit& u : battle_->units()) {
+      if (u.side != "player" || u.summoned || !u.alive) continue;
+      const bool full = u.hp >= u.maxHp;
+      const e2::InnRules::GearBonus g = innRules_->gearBonus(save, u.name, u.classId);
+      u.gearHp = g.hp, u.gearAtk = g.atk, u.gearMag = g.mag, u.gearDef = g.def, u.gearDex = g.dex, u.gearMov = g.mov;
+      e2::reapplyGear(u);
+      u.hp = full ? u.maxHp : std::min(u.maxHp, u.hp);
+    }
   }
   // The fight as Engine2's BattleSnapshot (captureSnapshot): an action in flight spends the acting unit's action (and,
   // an enemy's or one with no movement left, its turn), so it is neither replayed nor lost on load.
@@ -2135,6 +2158,22 @@ class MapStage final : public Stage {
     if (!battle_) return;
     explores_ = battle_->roaming();
     arrangeBattle();
+    if (options_.partyRoster) {  // the same on the battle's units (their sounds follow them), each hero once
+      std::vector<e2::BattleUnit>& units = battle_->units();
+      while (unitSounds_.size() < units.size()) unitSounds_.push_back(e2::Json::object());
+      std::set<std::string> seen;
+      for (size_t b = 0; b < units.size();) {
+        const e2::BattleUnit& u = units[b];
+        const bool leaves = (u.side == "player" && !u.summoned && (!options_.partyRoster->contains(u.name) || !seen.insert(u.name).second)) ||
+                            (u.side == "neutral" && options_.partyRoster->contains(u.name));
+        if (!leaves) {
+          ++b;
+          continue;
+        }
+        units.erase(units.begin() + static_cast<std::ptrdiff_t>(b));
+        unitSounds_.erase(unitSounds_.begin() + static_cast<std::ptrdiff_t>(b));
+      }
+    }
     routeWispCrossing();
     for (e2::BattleUnit& u : battle_->units())
       if (const auto it = options_.heroProgress.find(u.name); it != options_.heroProgress.end() && u.side == "player")
@@ -2183,6 +2222,7 @@ class MapStage final : public Stage {
       if (unitBattle_[i] >= 0 && absent_.contains(battle_->units()[static_cast<size_t>(unitBattle_[i])].id)) unitDiedAt_[i] = -1000.0f;
     findConversations();
     if (!options_.arrivedFrom.empty()) arriveAtConnector();
+    else if (options_.formation && !explores_) placeFormation();
     rng_ = e2::Mulberry32(static_cast<uint32_t>(std::chrono::steady_clock::now().time_since_epoch().count()));
     battle_->rollInitiative(rng_);
     for (const e2::BattleUnit& u : battle_->units()) startLevel_.emplace_back(u.level, u.xp);
@@ -5601,6 +5641,11 @@ class MapStage final : public Stage {
         double bestCost = 1e18;
         for (const e2::BattleHex& h : around)
           for (const e2::ReachCell& c : reach_)
+    // applyPartyFormation on those cells: the hero first in the formation takes the cell nearest an enemy, the last the farthest
+    if (options_.formation) {
+      std::stable_sort(party.begin(), party.end(), [&](size_t a, size_t b) { return formationRank(battle_->units()[a].name) < formationRank(battle_->units()[b].name); });
+      std::stable_sort(cells.begin(), cells.end(), [&](const e2::BattleHex& a, const e2::BattleHex& b) { return enemyDistance(a) < enemyDistance(b); });
+    }
             if (c.x == h.x && c.y == h.y && c.cost < bestCost && battle_->unitAt(h.x, h.y) < 0) best = h, bestCost = c.cost;
         if (best) {
           walkTo(static_cast<size_t>(selected_), *best);
@@ -5629,6 +5674,151 @@ class MapStage final : public Stage {
         x.cells = {{x.x, x.y}};
       }
     }
+  }
+  // --- the party's Formação inicial ---
+  // The Party screen's board (OverworldStage: radius 2, rows 3-4-5-4-3 front to back, left to right): the saved cells, then every
+  // hero they leave out in the first empty cells, in the heroes' own order (as the screen shows it).
+  std::vector<std::string> formationCells() const {
+    static constexpr const char* kHeroes[] = {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec"};
+    std::vector<std::string> cells(19);
+    std::set<std::string> placed;
+    for (size_t i = 0; i < options_.partyFormation.size() && i < cells.size(); ++i)
+      if (!options_.partyFormation[i].empty() && placed.insert(options_.partyFormation[i]).second) cells[i] = options_.partyFormation[i];
+    for (const char* h : kHeroes)
+      if (!placed.contains(h))
+        if (const auto free = std::find(cells.begin(), cells.end(), std::string()); free != cells.end()) *free = h, placed.insert(h);
+    return cells;
+  }
+  size_t formationRank(const std::string& hero) const {
+    const std::vector<std::string> cells = formationCells();
+    return static_cast<size_t>(std::find(cells.begin(), cells.end(), hero) - cells.begin());
+  }
+  // Hexes to the nearest enemy still standing (a board-wide number without one).
+  int enemyDistance(e2::BattleHex at) const {
+    int best = 1 << 20;
+    for (const e2::BattleUnit& u : battle_->units())
+      if (u.side == "enemy" && u.alive) best = std::min(best, e2::Battle::distance(at, {u.x, u.y}));
+    return best;
+  }
+  // The party set down by its Formação inicial at the map's entry (the first party spawn the editor placed: the map only gives
+  // where the party comes in), the board's front row turned toward the nearest enemy. A cell that is not free ground (off the
+  // board, a wall, water, a decoration, a body, a waypoint, or cut off from the entry) gives way to the free cell nearest to it and
+  // to the entry, so a map too tight for the whole board keeps the group together.
+  void placeFormation() {
+    std::vector<e2::BattleUnit>& units = battle_->units();
+    std::map<std::string, size_t> heroes;
+    for (size_t b = 0; b < units.size(); ++b)
+      if (units[b].side == "player" && !units[b].summoned && units[b].alive) heroes[units[b].name] = b;
+    if (heroes.empty()) return;
+    const std::vector<e2::MapSpawn>& spawns = board_->draft().playerSpawns;
+    // A party the map splits on purpose (a scenario: its spawns fall into separate groups, none within 4 hexes of another group,
+    // Engine2's own "spread out" distance) stays split: every hero where the map puts it.
+    {
+      std::vector<int> group(spawns.size(), -1);
+      int groups = 0;
+      for (size_t s = 0; s < spawns.size(); ++s) {
+        if (group[s] >= 0) continue;
+        std::vector<size_t> stack{s};
+        group[s] = groups;
+        while (!stack.empty()) {
+          const size_t a = stack.back();
+          stack.pop_back();
+          for (size_t b = 0; b < spawns.size(); ++b)
+            if (group[b] < 0 && e2::Battle::distance({spawns[a].x, spawns[a].y}, {spawns[b].x, spawns[b].y}) <= 4) group[b] = groups, stack.push_back(b);
+        }
+        ++groups;
+      }
+      if (groups > 1) return logInfo("formation: the map splits the party into {} groups: every hero keeps the map's place", groups);
+    }
+    e2::BattleHex entry = spawns.empty() ? e2::BattleHex{units[heroes.begin()->second].x, units[heroes.begin()->second].y} : e2::BattleHex{spawns.front().x, spawns.front().y};
+    // free ground, and what stands on it
+    std::set<std::pair<int, int>> blocked;
+    for (const e2::BattleUnit& u : units)
+      if (u.side != "player" && u.alive)
+        for (const e2::BattleHex& h : e2::Battle::footprint(u, u.x, u.y)) blocked.insert({h.x, h.y});
+    for (const e2::Battle::Exit& x : battle_->exits())
+      for (const e2::BattleHex& c : x.cells) blocked.insert({c.x, c.y});
+    auto ground = [&](int x, int y) { return battle_->inBounds(x, y) && battle_->cell(x, y).passable && !battle_->cell(x, y).blocked; };
+    // the ground the entry reaches, with its walking distance from the entry (from the nearest ground when the entry is not)
+    std::map<std::pair<int, int>, int> reach;
+    {
+      std::vector<e2::BattleHex> queue{entry};
+      std::set<std::pair<int, int>> seen{{entry.x, entry.y}};
+      for (size_t q = 0; q < queue.size() && !ground(entry.x, entry.y); ++q)
+        for (const e2::BattleHex& n : e2::Battle::neighbors(queue[q].x, queue[q].y)) {
+          if (!battle_->inBounds(n.x, n.y) || !seen.insert({n.x, n.y}).second) continue;
+          if (ground(n.x, n.y)) {
+            entry = n;
+            break;
+          }
+          queue.push_back(n);
+        }
+      if (!ground(entry.x, entry.y)) return logWarn("formation: no ground near the entry; the party keeps the file's places");
+      queue = {entry};
+      reach[{entry.x, entry.y}] = 0;
+      for (size_t q = 0; q < queue.size(); ++q)
+        for (const e2::BattleHex& n : e2::Battle::neighbors(queue[q].x, queue[q].y))
+          if (ground(n.x, n.y) && !reach.contains({n.x, n.y})) reach[{n.x, n.y}] = reach[{queue[q].x, queue[q].y}] + 1, queue.push_back(n);
+    }
+    // the board's cells as axial offsets (pointy-top rows, front = up), turned by k sixths to face the nearest enemy
+    static constexpr int kRows[5][2] = {{0, 3}, {3, 4}, {7, 5}, {12, 4}, {16, 3}};
+    auto slotAxial = [](int i) {
+      for (int r = 0; r < 5; ++r)
+        if (i >= kRows[r][0] && i < kRows[r][0] + kRows[r][1]) {
+          const int R = r - 2, k = i - kRows[r][0];
+          return std::pair<int, int>{k - (4 - std::abs(R) + R) / 2, R};
+        }
+      return std::pair<int, int>{0, 0};
+    };
+    auto turn = [](std::pair<int, int> a, int k) {  // cube (q, r, s) -> (-r, -s, -q), k times
+      for (int t = 0; t < k; ++t) a = {-a.second, a.first + a.second};
+      return a;
+    };
+    auto pixel = [](double q, double r) { return glm::dvec2(q + r * 0.5, r * std::sqrt(3.0) * 0.5); };
+    auto offsetPixel = [](e2::BattleHex h) { return glm::dvec2(h.x + (h.y & 1) * 0.5, h.y * std::sqrt(3.0) * 0.5); };
+    int facing = 0;
+    std::optional<e2::BattleHex> foe;
+    for (const e2::BattleUnit& u : units)
+      if (u.side == "enemy" && u.alive && (!foe || e2::Battle::distance(entry, {u.x, u.y}) < e2::Battle::distance(entry, *foe))) foe = e2::BattleHex{u.x, u.y};
+    if (foe) {
+      const glm::dvec2 want = offsetPixel(*foe) - offsetPixel(entry);
+      double best = -1e18;
+      for (int k = 0; k < 6; ++k) {
+        const auto front = turn(slotAxial(1), k);
+        const double d = glm::dot(pixel(front.first, front.second), want);
+        if (d > best) best = d, facing = k;
+      }
+    }
+    const int q0 = entry.x - (entry.y - (entry.y & 1)) / 2, r0 = entry.y;
+    const std::vector<std::string> cells = formationCells();
+    std::set<std::pair<int, int>> taken;
+    int moved = 0;
+    for (int i = 0; i < static_cast<int>(cells.size()); ++i) {
+      const auto it = heroes.find(cells[static_cast<size_t>(i)]);
+      if (it == heroes.end()) continue;
+      const auto [dq, dr] = turn(slotAxial(i), facing);
+      const int r = r0 + dr, q = q0 + dq;
+      const e2::BattleHex want{q + (r - (r & 1)) / 2, r};
+      auto free = [&](const std::pair<int, int>& c) { return reach.contains(c) && !blocked.contains(c) && !taken.contains(c); };
+      std::pair<int, int> at{want.x, want.y};
+      if (!free(at)) {
+        ++moved;
+        int bestCost = 1 << 30;
+        for (const auto& [c, d] : reach)
+          if (free(c)) {
+            const int cost = e2::Battle::distance({c.first, c.second}, want) + d;
+            if (cost < bestCost) bestCost = cost, at = c;
+          }
+        if (bestCost == (1 << 30)) continue;  // nowhere left: the file's place
+      }
+      taken.insert(at);
+      e2::BattleUnit& u = units[it->second];
+      u.x = at.first, u.y = at.second;
+      if (const int ui = sceneUnitOf(static_cast<int>(it->second)); ui >= 0)
+        unitPos_[static_cast<size_t>(ui)] = anchorWorld(u, {u.x, u.y}), unitMoved_[static_cast<size_t>(ui)] = 1;
+    }
+    logInfo("formation: {} heroes at the entry ({}, {}), front turned {} sixths toward {}; {} moved to the nearest free ground", heroes.size(),
+            entry.x, entry.y, facing, foe ? std::format("the enemy at ({}, {})", foe->x, foe->y) : std::string("no enemy"), moved);
   }
   // The walkable Inn's two floors (Engine2's result screen names their stairs "Subir para o Segundo andar" / "Descer para o
   // Primeiro andar"); any other connector goes the way floorConnectorDirection says.
