@@ -1,0 +1,22 @@
+# Textures used by the Blender kits (content/models/blender)
+
+Downscaled copies (max 1024, JPEG q92) of Engine2 assets (C:/Engine2/public/game, read-only source). Name -> source:
+
+- `stone-sandstone.jpg` <- `textures/walls/cave-v2.png` (1024x1024)
+- `stone-rubble.jpg` <- `textures/doors/passage-stone.png` (1024x1024)
+- `masonry-grey.jpg` <- `textures/walls/tower-v2.png` (1024x1024)
+- `masonry-mossy.jpg` <- `textures/walls/dungeon-v2.png` (1024x1024)
+- `masonry-city.jpg` <- `textures/walls/city-v2.png` (1024x1024)
+- `masonry-crypt.jpg` <- `textures/walls/crypt-v2.png` (1024x1024)
+- `planks-pale.jpg` <- `textures/walls/tavern-v2.png` (1024x1024)
+- `planks-dark.jpg` <- `textures/doors/medieval-oak-door.png` (1024x1024)
+- `planks-iron.jpg` <- `textures/doors/reinforced-wood-door.png` (1024x1024)
+- `snow.jpg` <- `ground-claude/snow/color.png` (1024x1024)
+- `snow-normal.jpg` <- `ground-claude/snow/normal.png` (1024x1024)
+- `snow-rough.jpg` <- `ground-claude/snow/rough.png` (1024x1024)
+- `forest-floor.jpg` <- `ground-claude/woods/color.png` (1024x1024)
+- `forest-floor-normal.jpg` <- `ground-claude/woods/normal.png` (1024x1024)
+- `mossy-ground.jpg` <- `ground-claude/hill/color.png` (1024x1024)
+- `ruins-floor.jpg` <- `ground-claude/ruins/color.png` (1024x1024)
+- `ruins-floor-normal.jpg` <- `ground-claude/ruins/normal.png` (1024x1024)
+- `river-rocks.jpg` <- `ground-engine2-v3/river-rocks/color.png` (512x512)
