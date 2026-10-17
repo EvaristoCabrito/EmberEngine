@@ -2046,6 +2046,22 @@ class MapEditorStage : public Stage {
         ImGui::EndCombo();
       }
     }
+    {
+      // Clima: the volumetric fog's regional profile (content/atmosphere/v1/profiles.json), saved with the map. Automático =
+      // the profile whose map keys name this map (so a map needs nothing set here to get its own).
+      static const std::vector<Volumetrics::Profile> profiles = Volumetrics::loadProfiles("content/atmosphere/v1/profiles.json");
+      const std::string current = draft_.value("atmosphereProfile", std::string());
+      std::string shown = "Automático (pelo nome do mapa)";
+      for (const Volumetrics::Profile& p : profiles)
+        if (p.name == current) shown = p.label;
+      ImGui::SetNextItemWidth(-110);
+      if (ImGui::BeginCombo("Clima", shown.c_str())) {
+        if (ImGui::Selectable("Automático (pelo nome do mapa)", current.empty())) beginEdit(), draft_.erase("atmosphereProfile");
+        for (const Volumetrics::Profile& p : profiles)
+          if (ImGui::Selectable(p.label.c_str(), p.name == current)) beginEdit(), draft_["atmosphereProfile"] = p.name;
+        ImGui::EndCombo();
+      }
+    }
     slider("Névoa", "mistIntensity", 0, 1, 0);
     slider("Vel. da névoa", "mistSpeed", 0.1f, 4, 1);
     slider("Wisps", "wispIntensity", 0, 1, 0);

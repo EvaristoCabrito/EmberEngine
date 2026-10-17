@@ -128,7 +128,6 @@ struct MapStageOptions {
   int gridLook = 2;  // the panel's "Grade" at the start: 0 OFF, 1 antiga (the marks), 2 = look 001 (--grid-look N)
   int cardStance = 1;  // the panel's "Cards" at the start: 0 em pé (vertical), 1 para a câmera (--cards N)
   int barsFade = 1;    // the panel's "Vida perto" at the start: 0 OFF, 1 bars near the camera fade (--bars-fade N)
-  int airFade = 1;     // the panel's "Partículas perto" at the start: 0 OFF, 1 wisps / motes near the camera fade (--air-fade N)
   // Atmosfera volumétrica v1: the panel's "Atmosfera" at the start (0 OFF, 1 cinema, 2 alta, 3 desempenho; --atmos N).
   // ON by default at "alta" (user, 2026-10-16: "padrão on"); the choice stays in the panel.
   int atmos = 2;
@@ -219,7 +218,6 @@ class MapStage final : public Stage {
     gridLook_ = std::clamp(options.gridLook, 0, 2);
     cardStance_ = std::clamp(options.cardStance, 0, 1);
     barsFade_ = std::clamp(options.barsFade, 0, 1);
-    airFade_ = std::clamp(options.airFade, 0, 1);
     spellsMenu_.load("content/fx/spell-looks.json", "content/fx.sprites.json");
     layers_ = options.layers;
     data_ = e2::BoardData::load(options.boardData);
@@ -248,6 +246,10 @@ class MapStage final : public Stage {
     // it), else the default.
     atmosProfiles_ = Volumetrics::loadProfiles("content/atmosphere/v1/profiles.json");
     if (atmosProfiles_.empty()) atmosProfiles_.push_back(Volumetrics::Profile{});
+    // The climate the map itself carries (the Map Editor's "Clima" field) wins over the key's.
+    if (!board_->draft().atmosphereProfile.empty())
+      for (size_t i = 0; i < atmosProfiles_.size(); ++i)
+        if (atmosProfiles_[i].name == board_->draft().atmosphereProfile) climaChoice_ = static_cast<int>(i);
     for (size_t i = 0; i < atmosProfiles_.size() && climaChoice_ == 0; ++i)
       for (const std::string& piece : atmosProfiles_[i].maps)
         if (!piece.empty() && board_->draft().id.find(piece) != std::string::npos) {
@@ -863,8 +865,6 @@ class MapStage final : public Stage {
       // screen (drawHealthBars).
       static const char* kBars[2] = {"OFF", "somem"};
       dropdown("Vida perto", barsFade_, 2, [](int i) { return std::string(kBars[i]); });
-      // The wisps and dust motes that pass near the camera: shown always, or fading away like the bars (drawAirParticles).
-      dropdown("Partículas perto", airFade_, 2, [](int i) { return std::string(kBars[i]); });
     }
     if (board_ && board_->draft().water3d.any()) {
       static const char* kWater3d[3] = {"OFF", "rio", "leito"};
@@ -3582,7 +3582,7 @@ class MapStage final : public Stage {
       // Near the camera a wisp is a big yellow blot over the board (the user, 2026-10-17): the same fade as the health
       // bars. A world unit is `drawn / size` pixels here; kAirCardHeight of them is what a unit's card would measure, and
       // its share of the screen's height runs through the bars' thresholds (kBarsFadeFrom .. kBarsFadeTo).
-      if (airFade_ == 1) {
+      {  // always: no choice in the panel (the user: "quero que simplesmente funcione dessa maneira sempre")
         const float share = drawn / std::max(size, 1e-4f) * kAirCardHeight / std::max(h, 1.0f);
         alpha *= 1.0f - glm::smoothstep(kBarsFadeFrom, kBarsFadeTo, share);
         if (alpha <= 0.003f) return;
@@ -4867,7 +4867,6 @@ class MapStage final : public Stage {
   int barsFade_ = 1;    // panel "Vida perto": 0 OFF (bars always shown), 1 the bars of units near the camera fade away
   static constexpr float kBarsFadeFrom = 0.30f, kBarsFadeTo = 0.45f;  // the card's share of the screen's height
   static constexpr float kAirCardHeight = 2.0f;                         // world units: a unit's card, the yardstick of the particles' fade
-  int airFade_ = 1;                                                     // panel "Partículas perto": 0 OFF, 1 wisps / motes near the camera fade
   // Engine2 DIR_ACTION_WALK: sprites whose walks are drawn for each side, never mirrored while moving.
   inline static const std::unordered_set<std::string> kDirectionalWalk = {"aldric", "defaultLancer", "lancer", "sandoval", "theButcher",
       "familiar2", "familiar3", "cultist-v2", "militia-v2", "salazar", "cobalt-blue-deer", "neera"};

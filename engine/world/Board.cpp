@@ -140,6 +140,7 @@ std::optional<MapDraft> MapDraft::fromJson(const json& d) {
   m.timeOfDay = str(d, "timeOfDay");
   m.fog = d.contains("fog") && d["fog"].is_boolean() && d["fog"].get<bool>();
   m.mistType = str(d, "mistType");
+  m.atmosphereProfile = str(d, "atmosphereProfile");
   auto num = [&](const char* k, float fallback) { return d.contains(k) && d[k].is_number() ? d[k].get<float>() : fallback; };
   m.mistIntensity = num("mistIntensity", m.mistType.empty() ? 0.0f : 0.2f);
   m.mistSpeed = num("mistSpeed", 1.0f);

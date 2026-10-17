@@ -96,6 +96,9 @@ struct MapDraft {
   float wispIntensity = 0.0f, wispSpeed = 1.0f;
   unsigned wispColor = 0xffa552;
   float bloomIntensity = 0.0f;
+  // EmberEngine's own: the Atmosfera climate of this map (a profile's name in content/atmosphere/v1/profiles.json, picked
+  // in the Map Editor); empty = the profile whose map keys name this map.
+  std::string atmosphereProfile;
 
   // The map's backdrop pick (Engine2 draft.backgroundImage: absent = the map's own, "" = none) and its lighting
   // sliders as authored (absent = the time of day's default).
