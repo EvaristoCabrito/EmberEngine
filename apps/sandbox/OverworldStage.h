@@ -32,6 +32,7 @@
 
 #include "CampaignUi.h"
 #include "CutsceneScreen.h"
+#include "DialogScreen.h"
 #include "EmberMenus.h"
 #include "GameMusic.h"
 #include "InnScreen.h"
@@ -43,6 +44,7 @@
 #include "render/UiArt.h"
 #include "world/Campaign.h"
 #include "world/Combat.h"
+#include "world/Companions.h"
 #include "world/Inn.h"
 #include "world/Overworld.h"
 #include "world/Spells.h"
@@ -68,6 +70,7 @@ class OverworldStage : public Stage {
                  e2::Json* testSave = nullptr)
       : paths_(std::move(paths)), campaign_(campaign), world_(world), callbacks_(std::move(callbacks)), notice_(std::move(notice)), testSave_(testSave) {
     hasInn_ = innData_.load("content/engine2/inn.json");
+    hasCompanions_ = companions_.load("content/engine2/companions.json", "content/engine2/companions-pt.json");
     save_ = testSave_ ? *testSave_ : campaign_.activeSave();
     const e2::Json& pos = save_["overworldPos"];
     prevCol_ = pos.value("col", 0);
@@ -90,6 +93,20 @@ class OverworldStage : public Stage {
   void preview(const std::string& what) {
     if (what == "party") party_ = true;
     if (what == "skills") party_ = true, partyTab_ = 1;
+    if (what == "talk" || what.starts_with("talk:")) {  // "talk:<tier>": that tier's conversation of the first companion opens
+      party_ = true, partyTab_ = 2;
+      if (what.size() > 5 && hasCompanions_) {
+        const std::string lead = leader();
+        for (const std::string& hero : partyHeroes())
+          if (hero != lead) {
+            convCompanion_ = hero;
+            break;
+          }
+        const int tier = std::atoi(what.c_str() + 5);
+        const e2::Json tree = companions_.build(lead, convCompanion_, tier, save_, uiEnglish());
+        if (tree.is_object()) convLeader_ = lead, convDialog_.emplace(tree, companions_.portraits(), paths_.engine2Public);
+      }
+    }
     if (what == "quests") questLog_ = true;
     if (what == "options") options_ = true;
     if (what == "move") movementOpen_ = true;
@@ -144,7 +161,8 @@ class OverworldStage : public Stage {
   void event(const SDL_Event& e) override {
     if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.key == SDLK_ESCAPE) {
       // Esc: closes what is open; on the bare map it opens Opções (OptionsButton escapeKey).
-      if (briefing_) briefing_.reset();
+      if (convDialog_) convDialog_.reset();
+      else if (briefing_) briefing_.reset();
       else if (slots_) slots_.reset();
       else if (options_) options_ = false;
       else if (open_) open_.reset();
@@ -425,6 +443,12 @@ class OverworldStage : public Stage {
     if (questLog_) drawQuestLog(size);
     if (party_) drawParty(size);
     if (options_) drawOptions(size);
+    if (convDialog_) {  // a companion conversation, over everything: its replies change the affinity once
+      const bool closed = convDialog_->draw(size, [this](const e2::Json& reply) {
+        if (companions_.resolveReply(save_, reply, convLeader_)) write();
+      });
+      if (closed) convDialog_.reset();
+    }
     if (!save_.value("seenOverworldIntro", false)) drawIntro(size);
   }
 
@@ -537,6 +561,13 @@ class OverworldStage : public Stage {
             d->AddText(ui, 14.0f, {a.x + 36, (a.y + b.y) * 0.5f - 8}, ink, "Missões");
           }))
         questLog_ = true;
+    }
+    // Conversas (Engine2: the "Conversations" button of the map screens)
+    if (hasCompanions_) {
+      const std::string label = tr("Conversas", "Conversations");
+      const float w = ui->CalcTextSizeA(14.0f, FLT_MAX, 0.0f, label.c_str()).x + 24;
+      place(w);
+      if (emberTextPlate("##conversations", {w, h}, label.c_str(), 14.0f)) party_ = true, partyTab_ = 2, formationSaved_.clear(), formation_.clear();
     }
     // Party
     {
@@ -1138,10 +1169,12 @@ class OverworldStage : public Stage {
       const ImVec2 at = ImGui::GetCursorScreenPos();
       if (emberBigButton("##tabgroup", "GRUPO", at, {120, 32}, partyTab_ == 0, 12.0f)) partyTab_ = 0;
       if (emberBigButton("##tabskills", "SKILLS", {at.x + 128, at.y}, {120, 32}, partyTab_ == 1, 12.0f)) partyTab_ = 1;
+      if (hasCompanions_ && emberBigButton("##tabtalk", upperUtf8(tr("Conversas", "Conversations")).c_str(), {at.x + 256, at.y}, {150, 32}, partyTab_ == 2, 12.0f)) partyTab_ = 2;
       ImGui::SetCursorScreenPos({at.x, at.y + 44});
     }
     ImGui::BeginChild("##partybody", {inner, std::min(size.y * 0.82f - 200, 640.0f)}, 0, ImGuiWindowFlags_NoBackground);
     if (partyTab_ == 1) drawSkillsTab(heroes, inner - 16);
+    else if (partyTab_ == 2) drawConversationsTab(heroes, inner - 16);
     else drawGroupTab(heroes, inner - 16);
     ImGui::EndChild();
     endPanel();
@@ -1193,6 +1226,100 @@ class OverworldStage : public Stage {
       y += rowH;
     }
     ImGui::SetCursorScreenPos({a.x, a.y + 24 + rowH * static_cast<float>(mages.size())});
+  }
+
+  // Conversas de companheiros (Engine2 CompanionConversations.tsx): the leader, a companion, and that pair's topics (one per
+  // affinity tier); a topic opens the conversation, whose first reply changes the affinity for good.
+  void drawConversationsTab(const std::vector<std::string>& heroes, float inner) {
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    ImFont* ui = uiFont(UiFont::Ui);
+    const bool en = uiEnglish();
+    const std::string lead = leader();
+    kicker(tr("Conversas de companheiros", "Companion conversations"), 14.0f);
+    text(en ? std::format("Speak as {}. Each companion has a different relationship with every leader.", lead)
+            : std::format("Fale como {}. Cada companheiro tem uma relação diferente com cada líder.", lead),
+         14.0f, kMuted, UiFont::Ui, inner - 8);
+    ImGui::Dummy({1, 8});
+    kicker(tr("Líder do grupo", "Party leader"), 12.0f);
+    {
+      const ImVec2 a = ImGui::GetCursorScreenPos();
+      float x = a.x;
+      ImGui::PushID("convleader");
+      for (const std::string& hero : heroes) {
+        if (emberBigButton(hero.c_str(), upperUtf8(hero).c_str(), {x, a.y}, {108, 32}, hero == lead, 12.0f)) {
+          save_["partyLeader"] = hero;
+          write();
+          convCompanion_.clear();
+        }
+        x += 114;
+      }
+      ImGui::PopID();
+      ImGui::SetCursorScreenPos({a.x, a.y + 44});
+    }
+    std::vector<std::string> others;
+    for (const std::string& hero : heroes)
+      if (hero != lead) others.push_back(hero);
+    if (others.empty()) {
+      text(tr("As conversas ficam disponíveis quando outro companheiro entra no grupo.", "Conversations become available when another companion joins the party."), 14.0f, kMuted,
+           UiFont::Ui, inner - 8);
+      return;
+    }
+    if (std::find(others.begin(), others.end(), convCompanion_) == others.end()) convCompanion_ = others.front();
+    kicker(tr("Escolha um companheiro", "Choose a companion"), 12.0f);
+    {
+      const ImVec2 a = ImGui::GetCursorScreenPos();
+      float x = a.x;
+      ImGui::PushID("convcompanion");
+      for (const std::string& hero : others) {
+        if (emberBigButton(hero.c_str(), upperUtf8(hero).c_str(), {x, a.y}, {108, 32}, hero == convCompanion_, 12.0f)) convCompanion_ = hero;
+        x += 114;
+      }
+      ImGui::PopID();
+      ImGui::SetCursorScreenPos({a.x, a.y + 48});
+    }
+    {  // the pair
+      const ImVec2 a = ImGui::GetCursorScreenPos();
+      portrait(dl, convCompanion_, {a.x, a.y}, {a.x + 56, a.y + 64});
+      dl->AddRect({a.x, a.y}, {a.x + 56, a.y + 64}, kBorder, 4.0f);
+      dl->AddText(uiFont(UiFont::Display), 20.0f, {a.x + 70, a.y + 4}, kFg, (lead + " & " + convCompanion_).c_str());
+      const double points = e2::Companions::affinityScore(save_, lead, convCompanion_);
+      std::string shown = std::format("{:.1f}", points);
+      if (shown.size() > 2 && shown.substr(shown.size() - 2) == ".0") shown.resize(shown.size() - 2);
+      if (!en) std::replace(shown.begin(), shown.end(), '.', ',');
+      dl->AddText(ui, 14.0f, {a.x + 70, a.y + 34}, kMuted, std::format("{}: {}/100", en ? "Affinity" : "Afinidade", shown).c_str());
+      ImGui::SetCursorScreenPos({a.x, a.y + 80});
+    }
+    const std::vector<e2::Companions::Topic> topics = companions_.topics(lead, convCompanion_, save_, en);
+    for (const e2::Companions::Topic& t : topics) {
+      const ImVec2 a = ImGui::GetCursorScreenPos();
+      const float h = 66.0f;
+      ImGui::PushID(t.tier);
+      ImGui::BeginDisabled(!t.unlocked);
+      const bool clicked = ImGui::InvisibleButton("##topic", {inner, h});
+      ImGui::EndDisabled();
+      ImGui::PopID();
+      emberSlot(dl, a, {a.x + inner, a.y + h}, t.unlocked && ImGui::IsItemHovered());
+      const ImU32 fg = t.unlocked ? kFg : IM_COL32(240, 240, 240, 110), muted = t.unlocked ? kMuted : IM_COL32(180, 180, 180, 110);
+      dl->AddText(ui, 12.0f, {a.x + 14, a.y + 8}, muted,
+                  std::format("{} · {} {}", companions_.tierName(t.tier, en), t.threshold, en ? "affinity" : "afinidade").c_str());
+      dl->AddText(ui, 15.0f, {a.x + 14, a.y + 25}, fg, t.label.c_str());
+      const std::string state = !t.unlocked ? tr("Continue construindo essa relação para desbloquear", "Keep building this relationship to unlock")
+                                : t.resolved ? tr("Rever conversa", "Revisit conversation")
+                                             : tr("Nova conversa", "New conversation");
+      dl->AddText(ui, 12.0f, {a.x + 14, a.y + 46}, muted, state.c_str());
+      if (clicked) {
+        const e2::Json tree = companions_.build(lead, convCompanion_, t.tier, save_, en);
+        if (tree.is_object()) {
+          convLeader_ = lead;
+          convDialog_.emplace(tree, companions_.portraits(), paths_.engine2Public);
+        }
+      }
+      ImGui::SetCursorScreenPos({a.x, a.y + h + 8});
+    }
+    text(tr("Você pode rever conversas anteriores. Só a primeira resposta muda a afinidade. Deixar um assunto para depois não o resolve.",
+            "You can revisit earlier conversations. Only the first response changes affinity. Leaving a topic for later does not resolve it."),
+         12.0f, kMuted, UiFont::Ui, inner - 8);
+    ImGui::Dummy({1, 8});
   }
 
   void drawGroupTab(const std::vector<std::string>& heroes, float inner) {
@@ -1572,6 +1699,10 @@ class OverworldStage : public Stage {
   e2::InnData innData_;
   e2::InnRules innRules_{innData_, world_};
   bool hasInn_ = false;
+  e2::Companions companions_;
+  bool hasCompanions_ = false;
+  std::string convCompanion_, convLeader_;
+  std::optional<DialogScreen> convDialog_;
   std::optional<InnScreen> inn_;
   std::optional<InventoryScreen> inventory_;
   std::optional<CutsceneScreen> film_;
