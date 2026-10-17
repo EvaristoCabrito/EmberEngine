@@ -2638,7 +2638,7 @@ class MapStage final : public Stage {
       for (size_t i = 0; i < scene_->units.size(); ++i)
         if (unitBattle_[i] >= 0) {
           const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[i])];
-          list += std::format(" {} ({}, {}){}", u.name, u.x, u.y, u.alive ? "" : " dead");
+          list += std::format(" {} ({}, {}) mov {}{}", u.name, u.x, u.y, u.mov, u.alive ? "" : " dead");
         }
       return logInfo("battle script: where: {} round {}:{}", battle_->roaming() ? "roaming" : "turns", battle_->round(), list);
     }

@@ -56,6 +56,20 @@ bool fliesOverWater(const BattleUnit& u, const BattleCell& c) {
 
 bool isTroll(const BattleUnit& u) { return u.classId == "troll" || u.classId == "troll2"; }
 
+// Every class's own movement (Engine2's class table, tools/scripts/engine2/export_classes.ts), read once: -1 = unknown.
+int classMov(const std::string& classId) {
+  static const json table = [] {
+    std::ifstream in("content/engine2/classes.json", std::ios::binary);
+    json j = in ? json::parse(in, nullptr, false) : json();
+    if (!in || j.is_discarded() || !j.contains("classes")) {
+      logError("battle: cannot read content/engine2/classes.json (export it with tools/scripts/engine2/export_classes.ts)");
+      return json::object();
+    }
+    return j["classes"];
+  }();
+  return table.contains(classId) ? integer(table[classId], "mov", -1) : -1;
+}
+
 }  // namespace
 
 std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
@@ -69,6 +83,18 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
   b.map_ = text(j, "map");
   b.debugFreeCast_ = j.value("debugFreeCast", false);
   b.roaming_ = j.value("explore", false);
+  // A file from before `explore` / `baseMov`: an explore mission shows as every unit carrying the whole board as its
+  // movement (Engine2's free-roam reach). It roams like a new file, each unit moving as its class does, so every map
+  // behaves the same whenever its file was made.
+  bool olderExplore = false;
+  if (!j.contains("explore") && j["units"].is_array() && !j["units"].empty()) {
+    const int board = integer(j, "cols") * integer(j, "rows");
+    olderExplore = board > 0 && std::all_of(j["units"].begin(), j["units"].end(), [&](const json& u) { return integer(u, "mov") == board; });
+    if (olderExplore) {
+      b.roaming_ = true;
+      logInfo("battle {}: an explore file from before baseMov: each unit's movement from its class", b.map_);
+    }
+  }
   b.cols_ = integer(j, "cols");
   b.rows_ = integer(j, "rows");
   for (const json& c : j["cells"]) {
@@ -106,6 +132,11 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     o.alive = yes(u, "alive");
     // An explore mission's file gives the free-roam reach as "mov" and the unit's own as "baseMov".
     o.mov = u.contains("baseMov") ? integer(u, "baseMov") : integer(u, "mov");
+    if (olderExplore && !u.contains("baseMov")) {
+      const int own = classMov(text(u, "classId"));
+      if (own >= 0) o.mov = own;
+      else logError("battle {}: class '{}' of {} is not in content/engine2/classes.json", b.map_, text(u, "classId"), text(u, "name"));
+    }
     o.hp = integer(u, "hp");
     o.maxHp = integer(u, "maxHp");
     o.atk = integer(u, "atk");
