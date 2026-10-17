@@ -93,6 +93,21 @@ Ids are `ember-<kit>-<name>`; sizes in units (w = widest side, h = height); tris
 | ember-dungeon-altar | dungeon | dungeon/altar-v01.glb | 2.40 × 0.99 | 268 | crypt masonry, grooves, one fractured corner |
 | ember-dungeon-broken-arch | dungeon | dungeon/broken-arch-v01.glb | 4.65 × 4.04 | 880 | two piers, 7 voussoirs, right half fallen |
 | ember-dungeon-chains | dungeon | dungeon/chains-v01.glb | 0.90 × 1.88 | 2748 | wall plate, ring, 11 hanging links, 5 on the floor |
+| ember-extra-fence-segment | extra | extra/fence-segment-v01.glb | 3.00 × 1.65 | 340 | 2 worn posts, 3 rails, iron nails; pair footprint along x |
+| ember-extra-broken-fence | extra | extra/broken-fence-v01.glb | 3.04 × 1.65 | 276 | leaning snapped post, top rail hanging, bottom rail + splinters on the ground |
+| ember-extra-wooden-door | extra | extra/wooden-door-v01.glb | 1.52 × 2.90 | 948 | 5 dark planks, 3 iron straps with hinge knuckles + rivets, ring handle on a boss |
+| ember-extra-stone-doorway | extra | extra/stone-doorway-v01.glb | 2.84 × 3.51 | 324 | grey masonry jambs, lintel, keystone, mossy feet; crypt-masonry reveal set back, dark passage panel |
+| ember-extra-grave-marker | extra | extra/grave-marker-v01.glb | 1.96 × 1.53 | 2912 | round-topped mossy slab (union), chipped corner, 2 inscription grooves, tilted; earth mound |
+| ember-extra-broken-cart-wheel | extra | extra/broken-cart-wheel-v01.glb | 1.36 × 1.19 | 892 | rim with a 22% gap, 2 snapped spokes under it, iron hub; propped at 68°, 2 fragments on the ground |
+| ember-extra-firewood-stack | extra | extra/firewood-stack-v01.glb | 1.93 × 0.64 | 2296 | 12 split half-logs in 3 rows (bark vertex colour, pale cut faces), 2 rope ties with knots |
+| ember-extra-wooden-bucket | extra | extra/wooden-bucket-v01.glb | 0.65 × 0.97 | 944 | 16 faceted staves (lathe, real cavity), 2 iron hoops, ears, half-torus handle up |
+| ember-extra-torch-bracket | extra | extra/torch-bracket-v01.glb | 0.40 × 3.10 | 804 | rusted wall strap to the floor + plate, bolts, arm, ring; removable torch (shaft, burlap head, rope wraps), **unlit** |
+| ember-extra-ember-crystal-cluster | extra | extra/ember-crystal-cluster-v01.glb | 1.95 × 1.67 | 572 | 7 six-sided crystals (`ember-crystal`: dark red, emissive) on a displaced stone base |
+| ember-extra-mine-supports | extra | extra/mine-supports-v01.glb | 3.70 × 3.67 | 836 | 2 timber sets (posts + caps), knee braces, side stringers, X bracing on the side walls, 5 lagging planks; passage open |
+| ember-extra-mushroom-cluster | extra | extra/mushroom-cluster-v01.glb | 1.77 × 1.35 | 10584 | 7 lathe fungi (cap + curled lip + gills + stem in one), vertex colours: pale stems, violet caps with spots |
 
-Not built (the sprint's extra list): fence segment / broken fence, wooden door, stone doorway, grave marker, broken
-cart wheel, firewood stack, bucket, torch bracket, Ember crystal cluster, mine supports, mushroom cluster.
+The extra kit (`blender/kit_extra.py`, 2026-10-16): the sprint's extra list, all 12 built. Gotcha found there: a boolean cut
+(groove) on an already subdivided + displaced slab collapsed the mesh to 3 vertices with the exact solver; cut first,
+subdivide after. Object `scale` acts in the object's own frame before its rotation (a torus turned on its side scales
+along world z through local x). Captures (local, git-ignored): `captures/models/005` (release) and `006` (debug +
+validation, exit 0) = the Map Editor showcase of all 47 models on aldeia015.
