@@ -609,6 +609,22 @@ efeitos e wire into the game")
 - Verified: release + debug with validation (exit 0, 0 validation lines) on those captures; `--battle-save-check` PASS on the 7 battles; `Cooker check-battle`
   matches Engine2. Not verified: clicking in the window (Mochila / Equipar / +/- / scrollbar drag), points persisting through a real campaign save.
 
+## Combat rules port (2026-10-17; user: "porta todas as regras do combate", hit % + confirm, pathfinding)
+
+- **Confirm + hit %:** `MapStage::drawConfirm` (strike / spell shows the hit chance, Confirmar / Cancelar, as Engine2). Pathfinding: the
+  algorithm already matched Engine2; the bug was rim hexes that could not be clicked (`pickAt` edge padding, fixed). A hand-bent route would
+  be NEW behaviour: ask the user first.
+- **Ported and checked against Engine2 (`Cooker check-battle` on the 3 proof maps, all pass: reach, turn starts under 8 conditions, ~65k aims /
+  ~19k casts incl. affinity scores, enemy decisions, forecasts + seeded rolls):** every skill and spell in `engine/world/SpellsE2.inc`
+  (summons, zones, cleave, cones, bull rush ...), the status machine (stun / sleep / bleed / crippled / fear / bless), web / ice / aura / warp
+  zones, `beginUnitTurn`, enemy-cast AI branches, dynamic affinity (friendly fire -1, support +0.2, neighbours +0.1; auras build none).
+  Refs: `TEST_LEVEL=15 SPELL_REFS=1 node .../vite-node.mjs ... export_battle.ts -- build/engine2-test/maps/<map>.json build/engine2-ref/battles/<map>.refs.json` (~2 min a map).
+- **Ported, NOT checked against Engine2:** win rules (rout / boss / escape waypoints, `Battle::winAvailable`, `confirmFinish`, the finish prompt and
+  footer button), hunger drain per action, the save's `affinityScores`. Script steps `wipe`, `goto:<unit>:<x>:<y>` (in the working tree,
+  not in the commit) for captures. Not run in the window.
+- **Not ported:** chests / doors / lockpick, enemy warp pursuit, plant AI / tendril swipe, staff regeneration, off-hand shield bash action,
+  per-pose features. Debug + validation run of the whole thing not done.
+
 ## Next
 
 The user's verdict (2026-10-15): the engine as seen is worse than Engine2 ("worst colours and render I've ever
