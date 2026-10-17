@@ -1514,7 +1514,16 @@ class MapStage final : public Stage {
       }
       uint32_t frame = 0;
       if (p) {
-        const float clock = shot ? std::max(0.0f, time - shot->start) * shot->rate : walking ? std::max(0.0f, time - unitWalk_[ui].start) : time;
+        // A walk is timed by the ground covered, not by the clock, and the whole clip plays (nothing is cut): each
+        // full stride (both legs) spans kWalkStride world units for every character, heroes and foes alike, and the clip
+        // holds `strides` of them (walk-strides.json), so all step at one cadence (the user: everyone at the same pace;
+        // a stride scaled by the card's height gave Voss 0.72 s a stride against Kael's 0.44). Malrec's clip holds 3, Aldric's 2.
+        float walkClock = 0.0f;
+        if (walking && !shot) {
+          const double cycle = p->doneAt >= 0 ? static_cast<double>(p->doneAt) : paceLoop(p->pace, p->frames).period;
+          walkClock = static_cast<float>(unitWalk_[ui].travelled / (p->strides * kWalkStride) * cycle / 240.0);
+        }
+        const float clock = shot ? std::max(0.0f, time - shot->start) * shot->rate : walking ? walkClock : time;
         if (shot || p->doneAt >= 0) {
           // A one-shot pose plays through once and keeps its last frame (replayed after 0.5 s when it is the chosen pose).
           const size_t tick = shot ? std::min(static_cast<size_t>(clock * 240.0f), p->doneAt >= 0 ? static_cast<size_t>(p->doneAt) : p->pace.size() - 1)
@@ -1537,7 +1546,14 @@ class MapStage final : public Stage {
       // walks while moving), which are never mirrored.
       const bool leftCut = shown == "walkLeft" || shown == "attackLeft" || shown == "attack2Left" || shown == "castLeft" ||
                            (walking && kDirectionalWalk.contains(u.sprite));
-      const bool mirror = !leftCut && ((unitFacing_[ui] == -1) != (unitReversed_[ui] != 0));
+      // Engine2 UnitActor.drawnReversed: Kael Final's idle is drawn turned left, but his walk and attacks face right
+      // (and the old Kael's attacks), so those poses are not reversed: reading his idle for them walked him backwards.
+      static const std::unordered_set<std::string> kAttackPoses = {"attack", "attackLeft", "attack2", "attack2Left", "attackShort",
+                                                                   "cast", "castLeft", "heal", "counter"};
+      const bool attackPose = kAttackPoses.contains(shown);
+      const bool drawnRight = (u.sprite == "kaelFinal" && (walking || attackPose)) || (u.sprite == "defaultWarrior" && attackPose);
+      const bool reversed = unitReversed_[ui] != 0 && !drawnRight;
+      const bool mirror = !leftCut && ((unitFacing_[ui] == -1) != reversed);
       // Tática (Engine2 UnitActor.update with flatTop): flat over its own row's cards by half a row step, no shadow.
       if (flat_) anchor.y = boardTop_ + anchor.z * kFlatRowStep + kFlatRowStep * 0.5f;
       const uint32_t flags = flat_ ? kSpriteLit | kSpriteFlat : kSpriteLit | kSpriteFront | kSpriteCastsShadow;
@@ -1931,6 +1947,7 @@ class MapStage final : public Stage {
       if (dist > 1e-4f) w.dir = std::abs(away) > dist * 0.5f ? (away > 0.0f ? kWalkBack : kWalkFront) : kWalkSide;
       const float move = std::min(dist, std::sqrt(3.0f) / stepSeconds() * dt);
       if (dist > 1e-4f) p += d / dist * move;
+      w.travelled += move;
       unitMoved_[i] = 1;
       if (dist - move < 1e-3f) {
         w.points.erase(w.points.begin());
@@ -4763,7 +4780,8 @@ class MapStage final : public Stage {
   struct Walk {
     std::vector<glm::vec2> points;  // the hexes still ahead (feet positions)
     std::vector<e2::BattleHex> hexes;  // the same hexes on the board (a roaming walk stops on the next one)
-    float start = 0.0f;            // scene clock when it set off (the walk cycle's time)
+    float start = 0.0f;            // scene clock when it set off
+    float travelled = 0.0f;        // ground covered since (world units): the walk cycle's phase
     int dir = kWalkSide;
     std::string fadeSound;          // its walk cue, faded out when it arrives (a monster's own)
   };
@@ -4923,6 +4941,7 @@ class MapStage final : public Stage {
   SDL_WindowID mouseWindow_ = 0;
   float now_ = 0.0f;  // this frame's scene clock
   static constexpr float kStepSeconds = 0.22f;      // Engine2 STEP_SECONDS: one hex of walking
+  static constexpr float kWalkStride = 3.5f;        // ground one full stride covers, world units, every unit alike (0.44 s at 0.22 s a hex)
   static constexpr float kBorderInner = 0.47f / 0.5f;  // Engine2 BORDER_INNER: a hex border's inner edge
   std::vector<Renderer::GroundMark> groundMarks_;  // this frame's battle grid (collectMarks)
   std::vector<Renderer::GridCell> gridCells_;      // ... for the numbered looks (collectGrid)

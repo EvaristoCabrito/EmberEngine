@@ -150,6 +150,12 @@ std::optional<std::vector<Hero>> loadHeroes(const std::filesystem::path& heroesJ
     logError("heroes: cannot read {} (export it with tools/scripts/engine2/export_heroes.ts)", heroesJson.string());
     return std::nullopt;
   }
+  // The strides each walk clip holds, beside the roster ("set/clip": number); anything missing keeps the default.
+  json strides;
+  {
+    std::ifstream sin(heroesJson.parent_path() / "walk-strides.json", std::ios::binary);
+    if (sin) strides = json::parse(sin, nullptr, false);
+  }
   std::vector<Hero> heroes;
   for (const json& h : j["heroes"]) {
     Hero o;
