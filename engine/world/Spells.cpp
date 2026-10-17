@@ -2442,6 +2442,14 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
       out.push_back(e);
       if (!u.alive) afterDeath(b, unit, out);
     }
+  // The staff's regeneration (restoreStaffHp): HP back, capped to what is missing.
+  if (u.alive && u.combat.staff && u.combat.staffRegen > 0) {
+    const int heal = std::min(u.maxHp - u.hp, static_cast<int>(std::floor(u.combat.staffRegen)));
+    if (heal > 0) {
+      u.hp += heal;
+      out.push_back({unit, heal, false, false, true, false, false});
+    }
+  }
   // Fôlego Renovado (the paladin's passive): the first time its turn opens badly wounded with a tier-3 use banked
   if (u.alive && u.classId == "paladin" && u.maxHp > 0 && static_cast<double>(u.hp) / u.maxHp <= 0.3 && tierRemaining(u, "secondWind") > 0) {
     spendTier(u, "secondWind");
@@ -2481,6 +2489,141 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
 }
 
 void stepOnHex(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) { tileHazard(b, unit, rng, out); }
+
+namespace {
+// data.ts weightedLootPick: weapons (not owned) and gear by power, the rarer the dearer.
+const LootTables::Entry* weightedLootPick(const LootTables& t, Mulberry32& rng, int maxLevel, const std::set<std::string>& owned) {
+  auto build = [&](int level) {
+    std::vector<std::pair<const LootTables::Entry*, double>> entries;
+    for (const LootTables::Entry& e : t.entries)
+      if (!e.starting && e.power <= level && !(e.weapon && owned.count(e.id))) entries.push_back({&e, 1 / std::sqrt(std::max(1.0, e.price))});
+    return entries;
+  };
+  std::vector<std::pair<const LootTables::Entry*, double>> entries = build(maxLevel);
+  if (entries.empty()) entries = build(t.maxLevel);
+  if (entries.empty()) return nullptr;
+  double total = 0;
+  for (const auto& [e, w] : entries) total += w;
+  double roll = rng() * total;
+  for (const auto& [e, w] : entries) {
+    roll -= w;
+    if (roll <= 0) return e;
+  }
+  return entries.back().first;
+}
+}  // namespace
+
+bool useLockpick(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) {
+  BattleUnit& u = b.units()[unit];
+  if (u.side != "player" || !u.alive || u.lockpick <= 0) return false;
+  const int li = b.adjacentLock(unit);
+  if (li < 0) return false;
+  Battle::Lock& lock = b.locks()[static_cast<size_t>(li)];
+  const std::shared_ptr<const LootTables> tables = LootTables::shared();
+  lock.open = true;
+  for (const auto& [index, cell] : lock.after) b.setCell(index, cell);
+  u.lockpick -= 1;
+  if (lock.kind == "chest" && tables) {
+    // CHEST_LOOT's three tiers: the same pool and range, climbing odds and gear headroom
+    const std::string prefix = lock.tier == "best" ? "best" : lock.tier == "better" ? "better" : "";
+    auto value = [&](const char* name) {
+      std::string key = name;
+      if (!prefix.empty()) key[0] = static_cast<char>(std::toupper(key[0])), key = prefix + key;
+      return tables->chest.value(key, 0.0);
+    };
+    const int gain = static_cast<int>(value("emberBase") + std::floor(rng() * value("emberDice")));
+    b.addLootEmber(gain);
+    std::vector<Battle::ChestLoot::Item> found;
+    // weightedPotionPick, then givePotion: the opener first, then the turn order (wrapping), then anyone left; a full party discards it
+    std::string kind;
+    {
+      double total = 0;
+      for (const LootTables::Potion& p : tables->potions) total += p.weight;
+      double roll = rng() * total;
+      for (const LootTables::Potion& p : tables->potions) {
+        roll -= p.weight;
+        if (roll <= 0) {
+          kind = p.id;
+          break;
+        }
+      }
+      if (kind.empty() && !tables->potions.empty()) kind = tables->potions.back().id;
+    }
+    const LootTables::Potion* potion = nullptr;
+    for (const LootTables::Potion& p : tables->potions)
+      if (p.id == kind) potion = &p;
+    const int slot = potionIndex(kind);
+    if (potion && slot >= 0) {
+      std::vector<size_t> order = b.turnOrder();
+      if (order.empty())
+        for (size_t i = 0; i < b.units().size(); ++i) order.push_back(i);
+      size_t start = 0;
+      for (size_t i = 0; i < order.size(); ++i)
+        if (order[i] == unit) start = i;
+      std::vector<size_t> sequence;
+      std::set<size_t> seen;
+      for (size_t i = 0; i < order.size(); ++i) {
+        const size_t id = order[(start + i) % order.size()];
+        if (seen.insert(id).second) sequence.push_back(id);
+      }
+      for (size_t i = 0; i < b.units().size(); ++i)
+        if (!seen.count(i)) sequence.push_back(i);
+      std::optional<size_t> taker;
+      for (size_t t : sequence) {
+        BattleUnit& v = b.units()[t];
+        if (v.side != "player" || !v.alive || v.bag[slot] >= potion->carryMax) continue;
+        v.bag[slot] += 1;
+        taker = t;
+        break;
+      }
+      found.push_back({taker ? potion->name + (*taker != unit ? " → " + b.units()[*taker].name : std::string())
+                             : potion->name + pick(" (sem espaço — descartada)", " (no room — discarded)"),
+                       "potion", potion->id});
+    }
+    if (rng() < value("gearChance")) {
+      int highest = 1;
+      for (const BattleUnit& v : b.units())
+        if (v.side == "enemy") highest = std::max(highest, v.level);
+      const int gearLevel = std::max(1, std::min(tables->maxLevel, static_cast<int>(jsRound(highest * value("gearTierMul")))));
+      if (const LootTables::Entry* drop = weightedLootPick(*tables, rng, gearLevel, b.ownedWeapons())) {
+        if (drop->weapon) b.ownedWeapons().insert(drop->id), b.lootWeapons().push_back(drop->id);
+        else b.lootEquipment().push_back(drop->id);
+        found.push_back({drop->name, drop->weapon ? "weapon" : "gear", drop->id});
+      }
+    }
+    if (rng() < 0.4) {
+      const int qty = 1 + static_cast<int>(std::floor(rng() * 4));
+      b.addLootRations(qty);
+      found.push_back({pick("Rações ×", "Rations ×") + std::to_string(qty), "rations", ""});
+    }
+    std::string names;
+    for (size_t i = 0; i < found.size(); ++i) names += (i ? ", " : "") + found[i].name;
+    b.pushLog(std::format("{}{} · +{} Gold · {}{}.", u.name, pick(" arrombou o baú", " picked the chest's lock"), gain, pick("achou ", "found "), names));
+    b.setChestLoot({u.name, gain, found});
+  } else {
+    b.pushLog(u.name + pick(" arrombou a porta.", " picked the door's lock."));
+  }
+  bleedOnAction(b, unit, false, rng, out);  // using an item is an action: a bleeding opener takes the 1D8 too
+  gainAdjacentAffinity(b, unit);
+  u.acted = true;
+  return true;
+}
+
+std::optional<BattleStep> offHandStep(const Battle& b, size_t unit, size_t foe) {
+  const BattleUnit& u = b.units()[unit];
+  if (!u.combat.offHandWeapon && !u.combat.offHandShield) return std::nullopt;
+  if (!canOffHandAct(b, unit, {u.x, u.y}, foe)) return std::nullopt;
+  BattleStep s;
+  s.type = BattleStep::Type::Combat;
+  s.att = unit, s.def = foe;
+  if (u.combat.offHandShield) {
+    s.kind = "shieldBash", s.dmgMul = u.combat.offShieldMul, s.stunChance = 0.7;
+  } else {
+    s.customDice = true;
+    s.customDiceCount = u.combat.offDice, s.customFaces = u.combat.offFaces, s.customBonus = u.combat.offBonus;
+  }
+  return s;
+}
 
 void gainAdjacentAffinity(Battle& b, size_t unit) {
   const BattleUnit& u = b.units()[unit];
@@ -2890,6 +3033,108 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
         return single(*p, "magicMissile", kMissileDice, kMissileFaces, kMissileBonus, kMissileMul, std::nullopt);
       }
     if (std::optional<AiCast> s = shock()) return s;
+  }
+  // The Carnivorous Plant (runAiFor): with more than one foe in reach of her tendril swipe she swipes them all; else Veneno Caustico (her
+  // own tier 3), Sopro Venenoso (tier 1), Veneno Menor (tier 4). The Sapling has only its one Sopro Venenoso.
+  if (c == "carnivorousPlant" || c == "sapling") {
+    if (c == "carnivorousPlant") {
+      // tryAiPlantSwipe: the ring of hexes around her body (not the rows more than 2 above it)
+      struct Swipe {
+        std::vector<BattleHex> tiles;
+        std::vector<size_t> ids;
+        BattleHex from;
+        int score = 0;
+      };
+      std::optional<Swipe> swipe;
+      for (const ReachCell& cell : reach) {
+        const std::vector<BattleHex> body = Battle::footprint(u, cell.x, cell.y);
+        Swipe s;
+        s.from = {cell.x, cell.y};
+        for (const BattleHex& bh : body)
+          for (const BattleHex& p : Battle::neighbors(bh.x, bh.y)) {
+            if (p.y < cell.y - 2 || !b.inBounds(p.x, p.y) || std::find(body.begin(), body.end(), p) != body.end()) continue;
+            if (std::find(s.tiles.begin(), s.tiles.end(), p) == s.tiles.end()) s.tiles.push_back(p);
+          }
+        for (const BattleHex& t : s.tiles) {
+          const int who = firstAt(b, t);
+          if (who < 0) continue;
+          const BattleUnit& v = b.units()[static_cast<size_t>(who)];
+          if (static_cast<size_t>(who) == unit || v.side == u.side || std::find(s.ids.begin(), s.ids.end(), static_cast<size_t>(who)) != s.ids.end()) continue;
+          s.ids.push_back(static_cast<size_t>(who));
+          s.score += 10 + (v.maxHp - v.hp) * 3 + (v.hp <= 8 ? 20 : 0);
+        }
+        if (s.ids.size() < 2) continue;
+        if (!swipe || s.score > swipe->score) swipe = std::move(s);
+      }
+      if (swipe) {
+        AiCast cast;
+        cast.path = walkTo(swipe->from);
+        BattleStep s;
+        s.att = unit, s.kind = "tendrilSwipe", s.tiles = swipe->tiles, s.ids = swipe->ids;
+        cast.steps.push_back(s);
+        return cast;
+      }
+      if (u.spells[2] > 0)
+        if (const auto p = bestSplash(kCausticVenom)) {
+          std::array<int, 10> kept{};
+          std::copy(std::begin(u.spells), std::end(u.spells), kept.begin());
+          if (std::optional<std::vector<BattleStep>> steps = castE2(b, unit, "causticVenom", {p->at}, nullptr, false)) {
+            std::copy(kept.begin(), kept.end(), std::begin(u.spells));  // she pays from her own tier 3 (Veneno Menor keeps the tier 4)
+            u.spells[2] -= 1;
+            AiCast cast;
+            cast.path = walkTo(p->from);
+            cast.steps = std::move(*steps);
+            return cast;
+          }
+        }
+    }
+    if (u.spells[0] > 0) {
+      // tryAiPlantPoisonBreath: the cone is never aimed where it would also hit one of her own
+      const ConeP power = poisonBreathPower(u.level);
+      struct ConePick {
+        std::vector<BattleHex> tiles;
+        std::vector<size_t> ids;
+        BattleHex from;
+        int score = 0;
+      };
+      std::optional<ConePick> cone;
+      for (const ReachCell& cell : reach)
+        for (const CubeI& dir : kCubeDirs) {
+          const std::vector<BattleHex> tiles = coneSector(b, {cell.x, cell.y}, dir, power.radius);
+          std::vector<size_t> ids;
+          int sc = 0;
+          bool hitsAlly = false;
+          for (const BattleHex& t : tiles) {
+            const int who = firstAt(b, t);
+            if (who < 0 || static_cast<size_t>(who) == unit || std::find(ids.begin(), ids.end(), static_cast<size_t>(who)) != ids.end()) continue;
+            const BattleUnit& v = b.units()[static_cast<size_t>(who)];
+            if (v.side == u.side) hitsAlly = true;
+            ids.push_back(static_cast<size_t>(who));
+            sc += 10 + (v.maxHp - v.hp) * 3 + (v.hp <= 8 ? 20 : 0);
+          }
+          if (hitsAlly || ids.empty()) continue;
+          if (!cone || sc > cone->score) cone = ConePick{tiles, ids, {cell.x, cell.y}, sc};
+        }
+      if (cone) {
+        AiCast cast;
+        cast.path = walkTo(cone->from);
+        spendTier(u, "poisonBreath");
+        BattleStep s;
+        s.att = unit, s.kind = "poisonBreath", s.tiles = cone->tiles, s.ids = cone->ids;
+        s.dice = power.dice, s.faces = power.faces, s.bonus = 0, s.spellMul = power.mul, s.poison = true;
+        cast.steps.push_back(s);
+        return cast;
+      }
+    }
+    if (c == "carnivorousPlant" && tierRemaining(u, "minorVenom") > 0)
+      if (const auto p = bestSplash(kMinorVenom)) {
+        AiCast cast;
+        cast.path = walkTo(p->from);
+        if (std::optional<std::vector<BattleStep>> steps = castE2(b, unit, "minorVenom", {p->at}, nullptr, false)) {
+          cast.steps = std::move(*steps);
+          return cast;
+        }
+      }
   }
   // Any other enemy mage still gets Choque.
   if (!cultist && !birolho && c != "cultistV2" && u.shockCharges > 0)

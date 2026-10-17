@@ -1167,6 +1167,16 @@ class MapStage final : public Stage {
   }
   // Rations Criar Comida e Água conjured in this fight (Engine2 lootRations).
   int lootRations() const { return battle_ ? battle_->lootRations() : 0; }
+  // What the chests opened in this fight gave (Engine2 lootEmber / lootWeapons / lootEquipment), folded into the save on a victory.
+  int lootEmber() const { return battle_ ? battle_->lootEmber() : 0; }
+  const std::vector<std::string>& lootWeapons() const {
+    static const std::vector<std::string> none;
+    return battle_ ? battle_->lootWeapons() : none;
+  }
+  const std::vector<std::string>& lootEquipment() const {
+    static const std::vector<std::string> none;
+    return battle_ ? battle_->lootEquipment() : none;
+  }
   bool wantsRetry() const { return retryRequested_; }
   const MapStageOptions& options() const { return options_; }
 
@@ -1409,6 +1419,7 @@ class MapStage final : public Stage {
     std::vector<InstanceGpu> instances;
     pieceBoxes_.clear();
     for (const e2::SceneModel& m : scene_->models) {
+      if (lockOpened(m.id, "doorDecor", m.x, m.z)) continue;  // the door was picked open: its closed model is gone
       std::string asset = m.file.substr(std::string("/game/").size());
       asset = "meshes/" + asset.substr(0, asset.size() - 4) + ".mesh";
       const MeshHeader* h = meshes_.header(modelMeshes_.at(asset));
@@ -1484,6 +1495,86 @@ class MapStage final : public Stage {
     drawList_.push_back(s);
   }
 
+  // Whether the decoration `id` standing at world (x, z) is a lock of this kind already opened (the battle's locks sit on hexes).
+  bool lockOpened(const std::string& id, const char* kind, float x, float z) const {
+    if (!battle_ || !board_) return false;
+    bool any = false;
+    for (const e2::Battle::Lock& l : battle_->locks()) any = any || l.open;
+    if (!any) return false;
+    const auto [c, r] = e2::hexAt(board_->layout(), x, z);
+    for (const e2::Battle::Lock& l : battle_->locks())
+      if (l.open && l.kind == kind && l.id == id && l.x == c && l.y == r) return true;
+    return false;
+  }
+
+  // "Arrombar" (Engine2 useLockpick): the picked hero spends a Gazua on the chest or door beside it.
+  void openLock() {
+    if (!battle_ || selected_ < 0 || !myTurn() || busy()) return;
+    const size_t ui = static_cast<size_t>(selected_), ab = static_cast<size_t>(unitBattle_[ui]);
+    if (battle_->units()[ab].acted) return;
+    std::vector<e2::BattleEffect> fx;
+    if (!e2::useLockpick(*battle_, ab, rng_, fx)) return;
+    showEffects(fx);
+    e2::BattleUnit& au = battle_->units()[ab];
+    if (!au.summoned) au.fullness = std::max(0.0, std::min(120.0, au.fullness.value_or(100.0)) - 2.0);  // finishAction: every action costs 2 of fullness
+    tip_ = battle_->log().empty() ? std::string() : battle_->log().back(), tipAt_ = now_;
+    if (modelsPlaced_) placeModels();  // an opened door's closed model leaves
+    if (!au.alive || au.mov - au.moveUsed <= 0) {
+      if (au.side == "player") au.moved = true;
+      return select(-1);
+    }
+    refreshReach();
+  }
+
+  // Engine2's chest-loot popup: who opened it, the Ember and what else it held; stays until the player says Ok.
+  void drawChestLoot() {
+    if (!battle_ || !battle_->chestLoot()) return;
+    const e2::Battle::ChestLoot& loot = *battle_->chestLoot();
+    const ImGuiIO& io = ImGui::GetIO();
+    ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.42f}, ImGuiCond_Always, {0.5f, 0.5f});
+    ImGui::SetNextWindowSize({380.0f, 0.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {18.0f, 14.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {8.0f, 8.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(14, 14, 14, 244));
+    ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(226, 150, 70, 190));
+    ImGui::Begin("##chestloot", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::PushFont(uiFont(UiFont::Ui), 16.0f);
+    ImGui::TextUnformatted((loot.unit + tr(" arrombou o baú", " picked the chest's lock")).c_str());
+    ImGui::PopFont();
+    ImGui::PushFont(uiFont(UiFont::Ui), 15.0f);
+    {  // Engine2's GoldAmount: the pile of coins, then "+N Gold"
+      const ImVec2 at = ImGui::GetCursorScreenPos();
+      const float coin = 26.0f;
+      if (const UiImage* gold = uiImage(options_.engine2Public / "game/icons/gold-coins-pile.png")) imageContain(ImGui::GetWindowDrawList(), *gold, {at.x, at.y}, {at.x + coin, at.y + coin});
+      ImGui::SetCursorScreenPos({at.x + coin + 8.0f, at.y + (coin - ImGui::GetTextLineHeight()) * 0.5f});
+      ImGui::TextUnformatted(("+" + std::to_string(loot.ember) + " Gold").c_str());
+      ImGui::SetCursorScreenPos({at.x, at.y + coin + 4.0f});
+    }
+    ensureInnData();
+    for (const e2::Battle::ChestLoot::Item& item : loot.items) {  // each find with its own icon, as Engine2's popup draws them
+      std::string icon;
+      if (item.kind == "potion") icon = "game/icons/potion-" + item.id + ".png";
+      else if (item.kind == "rations") icon = "game/icons/rations.png";
+      else if (item.kind == "weapon") icon = innData_.weapon(item.id) ? innData_.weapon(item.id)->icon : "";
+      else if (const e2::InnGear* gear = innData_.gear(item.id)) icon = gear->icon;
+      if (const size_t q = icon.find('?'); q != std::string::npos) icon.resize(q);
+      if (!icon.empty() && icon[0] == '/') icon.erase(0, 1);
+      const UiImage* img = icon.empty() ? nullptr : uiImage(options_.engine2Public / std::filesystem::path(reinterpret_cast<const char8_t*>(icon.c_str())));
+      const ImVec2 at = ImGui::GetCursorScreenPos();
+      const float row = 40.0f;
+      if (img) ImGui::GetWindowDrawList()->AddImage(img->texture, {at.x, at.y}, {at.x + row, at.y + row});
+      ImGui::SetCursorScreenPos({at.x + row + 10.0f, at.y + (row - ImGui::GetTextLineHeight()) * 0.5f});
+      ImGui::TextUnformatted(item.name.c_str());
+      ImGui::SetCursorScreenPos({at.x, at.y + row + 4.0f});
+    }
+    ImGui::PopFont();
+    if (emberButton("##chestok", "Ok", true, true)) battle_->clearChestLoot();
+    ImGui::End();
+    ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar(3);
+  }
+
   void buildCards(const Camera& camera, float time) {
     missing_ = 0;
     fullFrames_ = 0;
@@ -1492,6 +1583,7 @@ class MapStage final : public Stage {
     // turn (barricades); the art's opaque base sits on the anchor; Ember's layer step moves them along their facing.
     for (const e2::SceneCard& d : scene_->cards) {
       if (d.onFloor) continue;  // waypoints lying on the floor: not drawn yet
+      if (lockOpened(d.id, "chest", d.x, d.z)) continue;  // a chest opened with a Gazua is gone (Engine2 drops its decoration)
       const std::string name = std::filesystem::path(d.image).stem().string();
       const SpriteClipId clip = sprites_.find("decor", name);
       if (clip == kNoSpriteClip) {
@@ -2514,7 +2606,7 @@ class MapStage final : public Stage {
       if (t == targets_.end()) return void(pendingFoe_ = -1);
       const size_t db = static_cast<size_t>(unitBattle_[static_cast<size_t>(pendingFoe_)]);
       title = tr("Atacar ", "Attack ") + battle_->units()[db].name;
-      hit = e2::forecast(*battle_, ab, t->second, db, offHandFrom(ab, db, t->second)).hitOut;
+      hit = forecastFor(ab, db, t->second).hitOut;
     } else if (!spellMode_.empty() && spellArmed_) {
       title = potionOf(spellMode_) ? e2::potionName(*potionOf(spellMode_)) : e2::spellName(spellMode_);
       ready = aimValid(ab, *spellArmed_);
@@ -2615,7 +2707,7 @@ class MapStage final : public Stage {
     }
     if (offHandMode_)
       targets_.erase(std::remove_if(targets_.begin(), targets_.end(),
-                                    [&](const auto& t) { return !e2::canOffHandHit(*battle_, b, {u.x, u.y}, static_cast<size_t>(unitBattle_[static_cast<size_t>(t.first)])); }),
+                                    [&](const auto& t) { return !e2::canOffHandAct(*battle_, b, {u.x, u.y}, static_cast<size_t>(unitBattle_[static_cast<size_t>(t.first)])); }),
                      targets_.end());
   }
 
@@ -3051,10 +3143,8 @@ class MapStage final : public Stage {
     strike.type = e2::BattleStep::Type::Combat;
     strike.att = static_cast<size_t>(unitBattle_[attackerUi]);
     strike.def = static_cast<size_t>(unitBattle_[defenderUi]);
-    if (offHand) {
-      const e2::CombatProfile& c = battle_->units()[strike.att].combat;
-      strike.customDice = true;
-      strike.customDiceCount = c.offDice, strike.customFaces = c.offFaces, strike.customBonus = c.offBonus;
+    if (offHand) {  // the dagger's own dice, or the shield's bash (a 70% chance to stun)
+      if (const std::optional<e2::BattleStep> off = e2::offHandStep(*battle_, strike.att, strike.def)) strike = *off;
     }
     offHandMode_ = false;
     play({strike}, attackerUi);
@@ -3065,9 +3155,16 @@ class MapStage final : public Stage {
   // with a dagger strikes with it by default whenever the foe is in its reach, it always outhits the arrow).
   bool offHandWanted(size_t unitBattle, size_t foeBattle) const {
     const e2::BattleUnit& u = battle_->units()[unitBattle];
-    if (!u.combat.offHandWeapon || u.combat.offHandShield) return false;
-    if (!e2::canOffHandHit(*battle_, unitBattle, {u.x, u.y}, foeBattle)) return false;
-    return offHandMode_ || u.combat.arrow;
+    if (!u.combat.offHandWeapon && !u.combat.offHandShield) return false;
+    if (!e2::canOffHandAct(*battle_, unitBattle, {u.x, u.y}, foeBattle)) return false;
+    return offHandMode_ || (u.combat.arrow && u.combat.offHandWeapon);
+  }
+  // The forecast of a plain attack (or of the off-hand action when it is the one wanted): a shield's bash is the main weapon's blow
+  // without its mastery (Engine2 makeForecast useWeaponSkill false).
+  e2::Forecast forecastFor(size_t unitBattle, size_t foeBattle, e2::BattleHex from) const {
+    const bool off = offHandFrom(unitBattle, foeBattle, from);
+    const bool shield = off && battle_->units()[unitBattle].combat.offHandShield;
+    return e2::forecast(*battle_, unitBattle, from, foeBattle, off && !shield, !shield);
   }
   // The forecast's off-hand flag for a strike from `from`: only the hex the unit stands on can be struck with the off hand.
   bool offHandFrom(size_t unitBattle, size_t foeBattle, e2::BattleHex from) const {
@@ -3397,6 +3494,32 @@ class MapStage final : public Stage {
       unitPos_[static_cast<size_t>(gi)] = anchorWorld(v, {v.x, v.y});
       unitWalk_[static_cast<size_t>(gi)] = Walk{};
       return logInfo("battle script: goto {} ({}, {}): exit {}", p[1], v.x, v.y, battle_->activeExit() ? battle_->activeExit()->kind : "none");
+    }
+    if (p[0] == "lockpick" && p.size() > 2) {  // "lockpick:<unit>:<lock>": the unit set beside the lock with a Gazua, picked, and the lock opened
+      const int gi = sceneUnitNamed(p[1]);
+      const size_t li = static_cast<size_t>(std::atoi(p[2].c_str()));
+      if (gi < 0 || li >= battle_->locks().size()) return fail("no such unit or lock");
+      const e2::Battle::Lock& lock = battle_->locks()[li];
+      const size_t ab = static_cast<size_t>(unitBattle_[static_cast<size_t>(gi)]);
+      e2::BattleUnit& v = battle_->units()[ab];
+      bool placed = false;
+      for (const e2::BattleHex& h : e2::Battle::neighbors(lock.x, lock.y)) {
+        if (!battle_->inBounds(h.x, h.y) || !battle_->cell(h.x, h.y).passable || (battle_->unitAt(h.x, h.y) >= 0 && battle_->unitAt(h.x, h.y) != static_cast<int>(ab))) continue;
+        v.x = h.x, v.y = h.y;
+        unitPos_[static_cast<size_t>(gi)] = anchorWorld(v, {v.x, v.y});
+        unitWalk_[static_cast<size_t>(gi)] = Walk{};
+        placed = true;
+        break;
+      }
+      if (!placed) return fail("no free hex beside the lock");
+      v.lockpick = std::max(v.lockpick, 1), v.acted = false, v.moved = false, v.moveUsed = 0;
+      for (size_t i : battle_->turnOrder()) {  // its turn: everyone before it in the order has gone
+        if (i == ab) break;
+        battle_->units()[i].moved = true;
+      }
+      select(gi);
+      openLock();
+      return logInfo("battle script: lockpick {} on lock {} ({} at {}, {}): open {}, Ember found {}", p[1], li, lock.kind, lock.x, lock.y, battle_->locks()[li].open, battle_->lootEmber());
     }
     if (p[0] == "aim" && p.size() > 2) {
       // the cursor held on a hex from now on (the grid's route / target under it, for captures)
@@ -4110,7 +4233,7 @@ class MapStage final : public Stage {
     if (foe < 0 || target == targets_.end()) return;
     const size_t ab = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), db = static_cast<size_t>(unitBattle_[static_cast<size_t>(foe)]);
     const e2::BattleUnit &a = battle_->units()[ab], &d = battle_->units()[db];
-    const e2::Forecast f = e2::forecast(*battle_, ab, target->second, db, offHandFrom(ab, db, target->second));  // from the hex it would strike from
+    const e2::Forecast f = forecastFor(ab, db, target->second);  // from the hex it would strike from
     const ImVec2 cursor = ImGui::GetIO().MousePos;  // canvas units (mouse_ is in window pixels)
     ImGui::SetNextWindowPos({cursor.x + 18.0f, cursor.y + 18.0f}, ImGuiCond_Always);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {12.0f, 10.0f});
@@ -4443,10 +4566,15 @@ class MapStage final : public Stage {
   bool ensureInnRules() {
     if (!options_.world) return false;
     if (!innRules_) {
-      if (!innData_.load("content/engine2/inn.json")) return false;
+      if (!ensureInnData()) return false;
       innRules_.emplace(innData_, *options_.world);
     }
     return true;
+  }
+  // The weapons' and gear's names and icons (content/engine2/inn.json), loaded once: the Mochila and the chest-loot popup read them.
+  bool ensureInnData() {
+    if (!innDataLoaded_) innDataLoaded_ = innData_.load("content/engine2/inn.json");
+    return innDataLoaded_;
   }
   e2::Json gearSave() const { return campaign_ ? (testMode_ || playtest_ ? campaign_->emptySave() : campaign_->activeSave()) : e2::Json::object(); }
 
@@ -4581,6 +4709,7 @@ class MapStage final : public Stage {
     drawHudBar();
     drawConfirm();
     drawFinishPrompt();
+    drawChestLoot();
     drawFullLog();
     drawStatusSheet();
     drawBattleInventory();
@@ -4659,7 +4788,7 @@ class MapStage final : public Stage {
         const auto t = std::find_if(targets_.begin(), targets_.end(), [&](const auto& q) { return q.first == foe; });
         if (foe >= 0 && t != targets_.end()) {
           const size_t ab = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), db = static_cast<size_t>(unitBattle_[static_cast<size_t>(foe)]);
-          const e2::Forecast fc = e2::forecast(*battle_, ab, t->second, db, offHandFrom(ab, db, t->second));
+          const e2::Forecast fc = forecastFor(ab, db, t->second);
           line = fc.canCounter ? std::format("{:.0f}% em {} · contra {:.0f}%", fc.hitOut, battle_->units()[db].name, fc.hitBack)
                                : std::format("{:.0f}% em {} · sem contra", fc.hitOut, battle_->units()[db].name);
         }
@@ -4683,13 +4812,17 @@ class MapStage final : public Stage {
     const bool canAct = actor && !actor->acted;
     // Atacar always opens (the grid shows the weapon's zone even with nobody in it), so the player sees its reach.
     if (emberButton("##attack", "Atacar", true, canAct && spellMode_.empty())) attackMode_ = !attackMode_, offHandMode_ = false, refreshReach();
-    if (actor && actor->combat.offHandWeapon && !actor->combat.offHandShield) {  // Engine2's "Mão Secundária": the dagger or katar strikes
+    if (actor && (actor->combat.offHandWeapon || actor->combat.offHandShield)) {  // Engine2's "Mão Secundária": the dagger or katar strikes, or the shield bashes
       ImGui::SameLine();
       if (emberButton("##offhand", tr("Mão Secundária", "Off-hand").c_str(), offHandMode_, canAct && spellMode_.empty())) {
         offHandMode_ = !offHandMode_;
         attackMode_ = false;
         refreshReach();
       }
+    }
+    if (actor && canAct && actor->lockpick > 0 && battle_->adjacentLock(static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])) >= 0) {
+      ImGui::SameLine();  // Engine2's "Arrombar": a Gazua opens the chest or door beside the hero
+      if (emberButton("##lockpick", tr("Arrombar", "Pick lock").c_str(), false, spellMode_.empty())) openLock();
     }
     ImGui::SameLine();
     const bool turns = !battle_->roaming();  // free roam has no turns to end
@@ -5506,6 +5639,7 @@ class MapStage final : public Stage {
   bool pickActiveOnResume_ = false;  // set by resume(): pick the active hero once the turn loop first runs
   BattleStatusSheet statusSheet_;                                    // the character status sheet
   e2::InnData innData_;                                              // the Mochila / Equipar over the fight
+  bool innDataLoaded_ = false;
   std::optional<e2::InnRules> innRules_;
   std::optional<InventoryScreen> battleInventory_;
   e2::Json inventorySave_;

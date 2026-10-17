@@ -114,7 +114,13 @@ nlohmann::json Battle::snapshot() const {
   // enmity.ts EnmitySnapshot: { enemyId: { heroId: [ce, ve] } }
   nlohmann::json enmity = nlohmann::json::object();
   for (const Enmity& e : enmity_) enmity[units_[e.enemy].id][units_[e.hero].id] = nlohmann::json::array({e.ce, e.ve});
-  return {{"turn", round_}, {"units", units}, {"turnOrder", order}, {"enmity", enmity}, {"lootRations", lootRations_}, {"roaming", roaming_},
+  // the locks opened so far and what the fight has found (Engine2 snapshots the decorations and the loot lists)
+  nlohmann::json opened = nlohmann::json::array();
+  for (size_t i = 0; i < locks_.size(); ++i)
+    if (locks_[i].open) opened.push_back(i);
+  return {{"locksOpen", opened}, {"lootEmber", lootEmber_}, {"lootWeapons", lootWeapons_}, {"lootEquipment", lootEquipment_},
+          {"ownedWeapons", nlohmann::json(ownedWeapons_)},
+          {"turn", round_}, {"units", units}, {"turnOrder", order}, {"enmity", enmity}, {"lootRations", lootRations_}, {"roaming", roaming_},
           {"zones", zones}, {"zoneSerial", zoneSerial_}, {"log", log_}, {"webZones", webs}, {"iceStormZones", ices}, {"auraZones", auras},
           {"warpGates", gates}, {"turnRestrained", turnRestrained_}};
 }
@@ -289,6 +295,16 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
   turnRestrained_ = snap.value("turnRestrained", false);
   round_ = snap.value("turn", round_);
   lootRations_ = snap.value("lootRations", lootRations_);
+  lootEmber_ = snap.value("lootEmber", lootEmber_);
+  if (snap.contains("lootWeapons") && snap["lootWeapons"].is_array()) lootWeapons_ = snap["lootWeapons"].get<std::vector<std::string>>();
+  if (snap.contains("lootEquipment") && snap["lootEquipment"].is_array()) lootEquipment_ = snap["lootEquipment"].get<std::vector<std::string>>();
+  if (snap.contains("ownedWeapons") && snap["ownedWeapons"].is_array()) ownedWeapons_ = snap["ownedWeapons"].get<std::set<std::string>>();
+  if (snap.contains("locksOpen") && snap["locksOpen"].is_array())
+    for (const nlohmann::json& i : snap["locksOpen"])
+      if (i.is_number_integer() && i.get<int>() >= 0 && static_cast<size_t>(i.get<int>()) < locks_.size()) {
+        locks_[static_cast<size_t>(i.get<int>())].open = true;
+        for (const auto& [index, cell] : locks_[static_cast<size_t>(i.get<int>())].after) cells_[static_cast<size_t>(index)] = cell;
+      }
   log_.clear();
   if (snap.contains("log") && snap["log"].is_array())
     for (const nlohmann::json& line : snap["log"])

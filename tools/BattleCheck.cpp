@@ -84,7 +84,7 @@ bool checkBattle(const std::filesystem::path& battleJson) {
     const bool ported = std::all_of(r.casts.begin(), r.casts.end(), [](const e2::AiReference::Cast& c) {
       return c.kind == "lightning" || c.kind == "magicMissile" || c.kind == "shock" || c.kind == "fantomForce" || c.kind == "frost" || c.kind == "longShot" ||
              c.kind == "piercing" || c.kind == "bloodyShot" || c.kind == "multiShot" || c.kind == "causticVenom" || c.kind == "minorVenom" ||
-             c.kind == "burningHands";
+             c.kind == "burningHands" || c.kind == "poisonBreath" || c.kind == "tendrilSwipe";
     });
     if (!ported || (r.spell && r.casts.empty())) {
       ++aiSkipped;
@@ -93,6 +93,7 @@ bool checkBattle(const std::filesystem::path& battleJson) {
     e2::Battle copy = *battle;
     e2::BattleUnit& u = copy.units()[static_cast<size_t>(r.unit)];
     if (r.at) u.x = r.at->x, u.y = r.at->y;
+    if (r.gates.size() == 2) copy.warpGates().push_back({r.gates[0], r.gates[1], 3, 12});
     const std::optional<e2::AiCast> cast = e2::planEnemyCast(copy, static_cast<size_t>(r.unit));
     if (cast || !r.casts.empty()) {
       ++aiChecked;
@@ -140,7 +141,21 @@ bool checkBattle(const std::filesystem::path& battleJson) {
     ++castsChecked;
     std::optional<std::vector<e2::BattleStep>> steps;
     bool valid = false;
-    if (r.kind == "strike") {
+    if (r.kind == "offHand") {
+      // the off-hand action: the caster is given the reference's item first, then strikes the foe standing on the cell
+      const nlohmann::json& h = r.offHand;
+      u.combat.offHandWeapon = h.value("kind", std::string()) == "weapon", u.combat.offHandShield = h.value("kind", std::string()) == "shield";
+      u.combat.offMinRange = h.value("minRange", 1), u.combat.offMaxRange = h.value("maxRange", 1);
+      u.combat.offDice = h.value("dice", 1), u.combat.offFaces = h.value("faces", 4), u.combat.offBonus = h.value("bonus", 0);
+      u.combat.offShieldMul = h.value("dmgMul", 0.75);
+      u.offWeaponType = h.contains("weaponType") && h["weaponType"].is_string() ? h["weaponType"].get<std::string>() : std::string();
+      u.offTrainsWeapon = h.value("trains", false), u.offWeaponSkill = h.value("skill", 0.0);
+      if (h.contains("mastery") && h["mastery"].is_object())
+        u.combat.offAccuracy = h["mastery"].value("accuracy", 100.0), u.combat.offDamageMul = h["mastery"].value("damage", 1.0);
+      const int foe = copy.unitAt(r.cell.x, r.cell.y);
+      if (foe >= 0)
+        if (std::optional<e2::BattleStep> s = e2::offHandStep(copy, static_cast<size_t>(r.caster), static_cast<size_t>(foe))) valid = true, steps = std::vector{*s};
+    } else if (r.kind == "strike") {
       // a plain attack on the hero standing on the cell (its counter included)
       e2::BattleStep s;
       s.type = e2::BattleStep::Type::Combat;
@@ -282,6 +297,10 @@ bool checkBattle(const std::filesystem::path& battleJson) {
       copy.iceZones().push_back({around(), 2, {u.x, u.y}, 1, 2, 6, 0.8, 30, 12, caster, "player"});
     }
     if (r.scenario == "echo") u.shock = e2::BattleUnit::Echo{1, 12, 2, 30};
+    if (r.scenario == "regen" || r.scenario == "regenNear") {
+      u.combat.staff = true, u.combat.staffRegen = 2;
+      u.hp = std::max(1, u.maxHp - (r.scenario == "regen" ? 5 : 1));
+    }
     e2::Mulberry32 rng(r.seed);
     std::vector<e2::BattleEffect> effects;
     u.moveUsed = 0;
@@ -308,7 +327,62 @@ bool checkBattle(const std::filesystem::path& battleJson) {
     if (calls != r.calls) diff += std::format(" [draws {} vs {}]", calls, r.calls);
     if (!diff.empty()) report(std::format("turn start {} {} seed {}:{}", u.name, r.scenario, r.seed, diff));
   }
-  if (turnsChecked && !combatFailed) logInfo("battle {}: turn starts match Engine2 ({} units under 8 conditions)", battle->map(), turnsChecked);
+  if (turnsChecked && !combatFailed) logInfo("battle {}: turn starts match Engine2 ({} units under 10 conditions)", battle->map(), turnsChecked);
+  // Opening each lock with a Gazua ("Arrombar"): the cells it changes, the loot, the bags, the draws.
+  size_t locksChecked = 0;
+  for (const e2::LockReference& r : battle->lockReferences()) {
+    e2::Battle copy = pristine;
+    const size_t ci = static_cast<size_t>(r.caster);
+    e2::BattleUnit& u = copy.units()[ci];
+    u.x = r.at.x, u.y = r.at.y;
+    u.lockpick = 1;
+    if (r.valid) copy.setTurnOrder(r.turnOrder);
+    e2::Mulberry32 rng(r.seed);
+    std::vector<e2::BattleEffect> effects;
+    const bool ok = e2::useLockpick(copy, ci, rng, effects);
+    if (ok != r.valid) {
+      report(std::format("lock {} opened by {} at ({},{}): ours {}, Engine2 {}", r.lock, u.name, r.at.x, r.at.y, ok ? "opened" : "stayed shut", r.valid ? "opened" : "stayed shut"));
+      continue;
+    }
+    if (!ok) continue;
+    ++locksChecked;
+    int calls = 0;
+    {
+      e2::Mulberry32 probe(r.seed), used = rng;
+      const double next = used();
+      while (calls < 100000 && probe() != next) ++calls;
+    }
+    std::string diff;
+    for (size_t i = 0; i < copy.units().size() && i < r.ext.size(); ++i) {
+      const std::vector<double> mine = e2::unitStateNumbers(copy.units()[i]);
+      for (size_t k = 0; k < mine.size() && k < r.ext[i].size(); ++k)
+        if (std::abs(mine[k] - r.ext[i][k]) > 1e-9) diff += std::format(" [{} #{} {} vs {}]", copy.units()[i].name, k, mine[k], r.ext[i][k]);
+    }
+    for (size_t i = 0; i < copy.units().size() && i < r.bags.size(); ++i) {
+      const e2::BattleUnit& v = copy.units()[i];
+      const nlohmann::json& theirs = r.bags[i];
+      if (theirs.value("lockpick", 0) != v.lockpick) diff += std::format(" [{} Gazuas {} vs {}]", v.name, v.lockpick, theirs.value("lockpick", 0));
+      for (int k = 0; k < 7; ++k)
+        if (theirs.value(e2::kPotionIds[k], 0) != v.bag[k]) diff += std::format(" [{} {} {} vs {}]", v.name, e2::kPotionIds[k], v.bag[k], theirs.value(e2::kPotionIds[k], 0));
+    }
+    auto list = [](const nlohmann::json& a) {
+      std::vector<std::string> out;
+      for (const nlohmann::json& s : a) out.push_back(s.get<std::string>());
+      return out;
+    };
+    if (copy.lootEmber() != r.loot.value("ember", 0)) diff += std::format(" [ember {} vs {}]", copy.lootEmber(), r.loot.value("ember", 0));
+    if (copy.lootRations() != r.loot.value("rations", 0)) diff += std::format(" [rations {} vs {}]", copy.lootRations(), r.loot.value("rations", 0));
+    if (copy.lootWeapons() != list(r.loot["weapons"])) diff += " [weapons]";
+    if (copy.lootEquipment() != list(r.loot["equipment"])) diff += " [gear]";
+    {
+      std::map<std::string, double> theirs;
+      for (const auto& [k, v] : r.affinity.items()) theirs[k] = v.get<double>();
+      if (theirs != copy.affinityScores()) diff += " [affinity]";
+    }
+    if (calls != r.calls) diff += std::format(" [draws {} vs {}]", calls, r.calls);
+    if (!diff.empty()) report(std::format("lock {} opened by {} at ({},{}) seed {}:{}", r.lock, u.name, r.at.x, r.at.y, r.seed, diff));
+  }
+  if (locksChecked && !combatFailed) logInfo("battle {}: locks open as in Engine2 ({} openings: loot, bags, draws)", battle->map(), locksChecked);
   if (combatFailed) {
     for (const auto& [kind, n] : seenKinds) logError("battle {}: {} x {}", battle->map(), n, kind.substr(0, 120));
     logError("battle {}: {} combat answers differ from Engine2", battle->map(), combatFailed);

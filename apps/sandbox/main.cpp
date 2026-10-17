@@ -941,6 +941,23 @@ int runWindow(const Options& o) {
     save["battle"] = nullptr;
     const bool won = map.battleResult() == "victory";
     if (won) {
+      // The chests opened in the fight (GameApp victory fold): their Ember, and the weapons / gear when the party's bags have room
+      if (map.lootEmber() > 0) save["ember"] = save.value("ember", 0) + map.lootEmber();
+      for (const std::string& id : map.lootWeapons()) {
+        if (save["weapons"].is_object() && save["weapons"].contains(id)) continue;
+        e2::Json probe = save;
+        probe["weapons"][id] = 0;
+        if (!world.bagHasRoom(probe, 1)) continue;
+        save["weapons"][id] = 0;
+      }
+      for (const std::string& id : map.lootEquipment()) {
+        const e2::Json& stash = save["looseEquipment"];
+        const int have = stash.is_object() ? stash.value(id, 0) : 0;
+        e2::Json probe = save;
+        probe["looseEquipment"][id] = have + 1;
+        if (!world.bagHasRoom(probe, 1)) continue;
+        save["looseEquipment"][id] = have + 1;
+      }
       e2::Json& done = save["completed"];
       if (!done.is_array()) done = e2::Json::array();
       if (std::find(done.begin(), done.end(), playing) == done.end()) done.push_back(playing);

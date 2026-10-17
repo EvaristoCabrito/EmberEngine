@@ -11,6 +11,7 @@
 #include <map>
 #include <set>
 #include <filesystem>
+#include <memory>
 #include <optional>
 #include <cstdint>
 #include <string>
@@ -48,6 +49,29 @@ struct BattleCell {
   } shot;
 };
 
+// The loot tables a chest rolls on (data.ts CHEST_LOOT, POTION_LOOT_WEIGHT, weightedLootPick's pool), read once from
+// content/engine2/overworld.json (the world map's tables hold the same ones).
+struct LootTables {
+  struct Entry {
+    bool weapon = true;
+    std::string id, name;
+    double price = 0;
+    int power = 1;
+    bool starting = false;
+  };
+  struct Potion {
+    std::string id, name;
+    double weight = 0;
+    int carryMax = 5;
+  };
+  std::vector<Entry> entries;  // weapons, then equipment, in Engine2's order
+  std::vector<Potion> potions;
+  nlohmann::json chest;
+  int maxLevel = 30;
+  // Null when the file is missing.
+  static std::shared_ptr<const LootTables> shared();
+};
+
 // What a unit fights with, as Engine2 resolves it (weapon tables, weapon skills, staff magic, off-hand).
 struct CombatProfile {
   bool hasWeapon = false;  // a weapon definition: its dice are rolled
@@ -59,11 +83,13 @@ struct CombatProfile {
   bool offHandWeapon = false;
   bool offHandShield = false;  // a shield in the off hand (Golpe de Escudo needs one; Investida de Ombro none)
   int offMinRange = 1, offMaxRange = 1, offDice = 1, offFaces = 4, offBonus = 0;
+  double offShieldMul = 0.75;  // a shield's blow: its damage multiplier (the off-hand action; Golpe de Escudo uses its own power)
   bool staff = false;  // staff magic: its element and bonus
   std::string staffElement = "arcane";
   double staffBonusPct = 0;
   std::vector<std::pair<std::string, double>> staffBonuses;  // the staff's bonus % per element (spells too)
   double staffLifeStealPct = 0;
+  double staffRegen = 0;  // the staff's regeneration: HP back at the start of its wielder's turn (cajado da renovação, da esperança ...)
   bool arcane = false;  // an arcane caster: its plain attack is an arcane bolt
   bool arrow = false;   // its plain attack is an arrow
   std::vector<std::pair<std::string, double>> resistances;
@@ -188,6 +214,7 @@ struct AiPlan {
 struct AiReference {
   int unit = 0;
   std::optional<BattleHex> at;  // placed here first (the near-party scenario)
+  std::vector<BattleHex> gates; // a Warp gate open on these two hexes (the pursuit scenario)
   AiPlan plan;
   bool spell = false;           // Engine2 cast something instead
   struct Cast {
@@ -234,9 +261,22 @@ struct CastReference {
   int unitCount = 0;
   int patchTier = 0, patchValue = 0;  // the caster was given this tier's uses first (a start-method needs some)
   nlohmann::json affinity;            // the pairs' scores afterwards
+  nlohmann::json offHand;             // an off-hand action: the item given to the caster first (kind, reach, dice, dmgMul, weapon type, mastery)
 };
 
 // A unit's turn beginning under a condition (export_battle.ts turnStarts): the board right after Engine2's beginUnitTurn.
+// Opening a lock with a Gazua (export_battle.ts lockCasts): the hero stands at `at`, one lock is opened; what Engine2 holds afterwards.
+struct LockReference {
+  int lock = 0, caster = 0;
+  BattleHex at;
+  bool valid = false;
+  uint32_t seed = 0;
+  int calls = 0;
+  std::vector<size_t> turnOrder;
+  std::vector<std::vector<double>> ext;
+  nlohmann::json bags, loot, affinity;
+};
+
 struct TurnStartReference {
   int unit = 0;
   std::string scenario;
@@ -306,12 +346,13 @@ class Battle {
   void adjustAffinity(const std::string& a, const std::string& b, double delta);
   std::map<size_t, std::set<size_t>>& supportRecipients() { return supportRecipients_; }
   // Drops Engine2's reference answers (a copy of the battle for one cast does not need them).
-  void clearReferences() { forecastRefs_.clear(), rollRefs_.clear(), aiRefs_.clear(), castRefs_.clear(), turnRefs_.clear(); }
+  void clearReferences() { forecastRefs_.clear(), rollRefs_.clear(), aiRefs_.clear(), castRefs_.clear(), turnRefs_.clear(), lockRefs_.clear(); }
   const std::vector<ForecastReference>& forecastReferences() const { return forecastRefs_; }
   const std::vector<RollReference>& rollReferences() const { return rollRefs_; }
   const std::vector<AiReference>& aiReferences() const { return aiRefs_; }
   const std::vector<CastReference>& castReferences() const { return castRefs_; }
   const std::vector<TurnStartReference>& turnStartReferences() const { return turnRefs_; }
+  const std::vector<LockReference>& lockReferences() const { return lockRefs_; }
   // Engine2's enmity hooks for spells and support (spell damage, heals noticed by every enemy).
   void noteDamage(size_t attacker, size_t target, int dmg, bool spell);
   void noteAware(size_t hero, double ce, double ve);
@@ -368,6 +409,43 @@ class Battle {
   const std::vector<IceZone>& iceZones() const { return iceZones_; }
   std::vector<AuraZone>& auraZones() { return auraZones_; }
   const std::vector<AuraZone>& auraZones() const { return auraZones_; }
+  // --- Engine2's locks (a chest, a door decoration or a door tile) and what the fight has found ---
+  struct Lock {
+    int x = 0, y = 0;
+    std::string kind;  // "doorTile" | "doorDecor" | "chest"
+    std::string id;    // the decoration
+    std::string tier;  // a chest's loot: "base" | "better" | "best"
+    std::vector<std::pair<int, BattleCell>> after;  // the cells opening it changes (index, the cell as it becomes)
+    bool open = false;
+  };
+  std::vector<Lock>& locks() { return locks_; }
+  const std::vector<Lock>& locks() const { return locks_; }
+  // Engine2 adjacentLock: the first neighbour (hexNeighbors order) of the unit's hex that holds a closed lock; its index, else -1.
+  int adjacentLock(size_t unit) const;
+  void setCell(int index, const BattleCell& c) { cells_[static_cast<size_t>(index)] = c; }
+  std::set<std::string>& ownedWeapons() { return ownedWeapons_; }
+  const std::set<std::string>& ownedWeapons() const { return ownedWeapons_; }
+  int lootEmber() const { return lootEmber_; }
+  void addLootEmber(int n) { lootEmber_ += n; }
+  std::vector<std::string>& lootWeapons() { return lootWeapons_; }
+  const std::vector<std::string>& lootWeapons() const { return lootWeapons_; }
+  std::vector<std::string>& lootEquipment() { return lootEquipment_; }
+  const std::vector<std::string>& lootEquipment() const { return lootEquipment_; }
+  // The chest just opened (Engine2 chestLoot): who, the Ember and what else it held; shown until the player says Ok.
+  struct ChestLoot {
+    struct Item {
+      std::string name;
+      std::string kind;  // "potion" | "weapon" | "gear" | "rations": which icon the popup draws
+      std::string id;    // the potion's / weapon's / gear's id
+    };
+    std::string unit;
+    int ember = 0;
+    std::vector<Item> items;
+  };
+  const std::optional<ChestLoot>& chestLoot() const { return chestLoot_; }
+  void setChestLoot(ChestLoot c) { chestLoot_ = std::move(c); }
+  void clearChestLoot() { chestLoot_.reset(); }
+  void setTurnOrder(std::vector<size_t> order) { turnOrder_ = std::move(order); }
   std::vector<WarpGate>& warpGates() { return warpGates_; }
   const std::vector<WarpGate>& warpGates() const { return warpGates_; }
   // engine.ts isWebCell / webCellSleepChance / zoneDamageMul
@@ -493,6 +571,7 @@ class Battle {
   std::vector<AiReference> aiRefs_;
   std::vector<CastReference> castRefs_;
   std::vector<TurnStartReference> turnRefs_;
+  std::vector<LockReference> lockRefs_;
   void sortTurnOrder();
   std::vector<size_t> turnOrder_;
   int round_ = 1;
@@ -513,6 +592,11 @@ class Battle {
   std::vector<IceZone> iceZones_;
   std::vector<AuraZone> auraZones_;
   std::vector<WarpGate> warpGates_;
+  std::vector<Lock> locks_;
+  std::set<std::string> ownedWeapons_;
+  int lootEmber_ = 0;
+  std::vector<std::string> lootWeapons_, lootEquipment_;
+  std::optional<ChestLoot> chestLoot_;
   bool turnRestrained_ = false;
 };
 

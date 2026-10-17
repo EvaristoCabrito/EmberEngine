@@ -65,6 +65,10 @@ const gameResist = await import(`${E2}/src/game/resistances.ts`);
 
 const draft = JSON.parse(readFileSync(mapPath, 'utf8')).draft;
 const mission = store.draftToMission(draft);
+// PLANT_TEST=1: the map's enemies swapped for Carnivorous Plants and Saplings (no proof map has any), for the plants' AI references
+// (tryAiPlantSwipe / CausticVenom / PoisonBreath); the units, their spells and the decisions all come from this variant.
+if (process.env.PLANT_TEST === '1')
+  mission.enemySpawns.forEach((s: any, i: number) => { if (i % 3 === 0) s.classId = 'carnivorousPlant'; else if (i % 3 === 1) s.classId = 'sapling'; });
 // No art is drawn: every art table reads as empty.
 const art = new Proxy({}, { get: () => new Proxy({}, { get: () => [] }) });
 // TEST_LEVEL=N: Engine2's Modo teste battle (GameApp startBattle with testMode): every party spawn at level N
@@ -111,24 +115,61 @@ if (process.env.SAVE) {
 const engine = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0);
 const e = engine as unknown as Record<string, any>;
 
+// One hex as the battle sees it (also the "after" of a lock that opens).
+const cellRecord = (eng: any, x: number, y: number): Record<string, unknown> => {
+  const def = hexprops.hexDef(eng.tiles, eng.cols, x, y, eng.decorOverlay);
+  const bits = eng.decorOverlay[y * eng.cols + x] ?? 0;
+  const raw = data.TERRAIN[eng.tiles[y * eng.cols + x]] ?? data.TERRAIN.plains;
+  return { terrain: eng.tiles[y * eng.cols + x], passable: !!def.passable, moveCost: def.moveCost, def: def.def ?? 0, atk: def.atk ?? 0,
+    blocked: (bits & hexprops.HEX_BLOCKED) !== 0, cover: def.cover ?? 0, hazardDice: def.hazardDice ?? 0, hazardFaces: def.hazardFaces ?? 8,
+    // combat: the tile's own terrain (combat.ts terrainBonus, effectiveMaxRange) and, for shots, the cell with the
+    // decorations folded in (shotBlocker)
+    raw: { def: raw.def ?? 0, atk: raw.atk ?? 0, height: raw.height ?? 0, cover: raw.cover ?? 0, blocksShot: !!raw.blocksShot },
+    shot: { height: def.height ?? 0, blocksShot: !!def.blocksShot } };
+};
 const cells: Record<string, unknown>[] = [];
 for (let y = 0; y < e.rows; y++)
-  for (let x = 0; x < e.cols; x++) {
-    const def = hexprops.hexDef(e.tiles, e.cols, x, y, e.decorOverlay);
-    const bits = e.decorOverlay[y * e.cols + x] ?? 0;
-    const raw = data.TERRAIN[e.tiles[y * e.cols + x]] ?? data.TERRAIN.plains;
-    cells.push({ terrain: e.tiles[y * e.cols + x], passable: !!def.passable, moveCost: def.moveCost, def: def.def ?? 0, atk: def.atk ?? 0,
-      blocked: (bits & hexprops.HEX_BLOCKED) !== 0, cover: def.cover ?? 0, hazardDice: def.hazardDice ?? 0, hazardFaces: def.hazardFaces ?? 8,
-      // combat: the tile's own terrain (combat.ts terrainBonus, effectiveMaxRange) and, for shots, the cell with the
-      // decorations folded in (shotBlocker)
-      raw: { def: raw.def ?? 0, atk: raw.atk ?? 0, height: raw.height ?? 0, cover: raw.cover ?? 0, blocksShot: !!raw.blocksShot },
-      shot: { height: def.height ?? 0, blocksShot: !!def.blocksShot } });
-  }
+  for (let x = 0; x < e.cols; x++) cells.push(cellRecord(e, x, y));
 
 // The mission's waypoints (Engine2 evaluateEnd / exitDecorationHere): a living hero standing on one of an exit decoration's cells offers to
 // end the mission (an escape marker with its DEX chance, a dungeon exit or a floor connector outright).
 const exits = e.decorations.filter((d: any) => data.DECORATIONS[d.id]?.exitKind).map((d: any) => ({ id: d.id, kind: data.DECORATIONS[d.id].exitKind, x: d.x, y: d.y,
   targetMapId: d.targetMapId ?? null, cells: data.placedFootprint(d).map((f: any) => [d.x + f.dx, d.y + f.dy]) }));
+
+// The locks (Engine2 adjacentLock / useLockpick): the door tiles, the door decorations and the chests, in the order adjacentLock looks at a
+// hex, each with the cells its opening changes (Engine2's own useLockpick, run on a copy with a hero set beside it and a Gazua in hand).
+const doorDeco = (d: any) => data.DECORATIONS[d.id]?.model3d === 'door' || data.DECORATIONS[d.id]?.model3d === 'secretDoor';
+const lockList: { x: number; y: number; kind: string; id: string; tier: string }[] = [];
+for (let y = 0; y < e.rows; y++) for (let x = 0; x < e.cols; x++) if (e.tiles[y * e.cols + x] === 'door') lockList.push({ x, y, kind: 'doorTile', id: 'door', tier: 'base' });
+for (const d of e.decorations) if (doorDeco(d)) lockList.push({ x: d.x, y: d.y, kind: 'doorDecor', id: d.id, tier: 'base' });
+for (const d of e.decorations) if (data.CHEST_DECOR_IDS.has(d.id)) {
+  const betterSpot = mission.betterChests?.some((c: any) => c.x === d.x && c.y === d.y) ?? false;
+  lockList.push({ x: d.x, y: d.y, kind: 'chest', id: d.id, tier: d.id === 'chest-large' ? 'best' : d.id === 'chest-medium' || betterSpot ? 'better' : 'base' });
+}
+const freshEngine = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
+// free, passable hexes around a lock where a hero could stand
+const standSpots = (eng: any, lk: { x: number; y: number }) => {
+  const occ = pathfinding.occupancy(eng.units);
+  return pathfinding.hexNeighbors(lk.x, lk.y).filter((p: any) => pathfinding.inBounds(p.x, p.y, eng.cols, eng.rows) && hexprops.hexDef(eng.tiles, eng.cols, p.x, p.y, eng.decorOverlay).passable && !occ.has(pathfinding.key(p.x, p.y)));
+};
+const locks: unknown[] = [];
+for (const lk of lockList) {
+  const f = freshEngine();
+  const spots = standSpots(f, lk);
+  const hero = f.units.find((v: any) => v.side === 'player' && v.alive && (v.size ?? 1) === 1);
+  let after: unknown[] = [];
+  if (spots.length && hero) {
+    hero.x = spots[0].x, hero.y = spots[0].y, hero.drawX = hero.x, hero.drawY = hero.y;
+    hero.bag.lockpick = 1;
+    f.selectedId = hero.id, f.mode = 'selected', f.phase = 'player';
+    f.useLockpick();
+    for (let i = 0; i < e.cols * e.rows; i++) {
+      const rec = cellRecord(f, i % e.cols, Math.floor(i / e.cols));
+      if (JSON.stringify(rec) !== JSON.stringify(cells[i])) after.push([i, rec]);
+    }
+  }
+  locks.push({ ...lk, after });
+}
 const units: Record<string, unknown>[] = [];
 for (const u of e.units) {
   // The reach the battle shows for this unit (BattleEngine.effectiveUnitForReach + computeReachable).
@@ -177,8 +218,8 @@ for (const u of e.units) {
       weaponEnh: u.weaponEnh ?? 0,
       mastery: skills.weaponModifiers(u, skills.equippedWeaponType(u)),
       offMastery: skills.weaponModifiers(u, skills.equippedWeaponType(u, true)),
-      offHand: off ? { kind: off.kind, minRange: off.minRange ?? 1, maxRange: off.maxRange ?? 1, dice: off.dice ?? 1, faces: off.faces ?? 4, bonus: off.bonus ?? 0 } : null,
-      staff: magic ? { element, bonusPct: magic.elementalBonusPct?.[element] ?? 0, bonuses: magic.elementalBonusPct ?? {}, lifeSteal: magic.lifeStealPct ?? 0 } : null,
+      offHand: off ? { kind: off.kind, minRange: off.minRange ?? 1, maxRange: off.maxRange ?? 1, dice: off.dice ?? 1, faces: off.faces ?? 4, bonus: off.bonus ?? 0, dmgMul: off.dmgMul ?? 0.75 } : null,
+      staff: magic ? { element, bonusPct: magic.elementalBonusPct?.[element] ?? 0, bonuses: magic.elementalBonusPct ?? {}, lifeSteal: magic.lifeStealPct ?? 0, regeneration: magic.regeneration ?? 0 } : null,
       arcane: e.isArcaneCaster(u),
       arrow: e.isArrowAttack(u),
       resistances: u.resistances ?? {},
@@ -247,7 +288,7 @@ for (let i = 0; !noRefs && i < e.units.length; i++) {
 const lead = e.units.find((u: { side: string; alive: boolean }) => u.side === 'player' && u.alive);
 const near: unknown[] = [];
 for (let i = 0; !noRefs && lead && i < e.units.length; i++) {
-  if (e.units[i].side !== 'enemy' || !e.units[i].alive || (e.units[i].size ?? 1) > 1) continue;
+  if (e.units[i].side !== 'enemy' || !e.units[i].alive || ((e.units[i].size ?? 1) > 1 && process.env.PLANT_TEST !== '1')) continue;
   const fresh = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
   const u = fresh.units[i];
   const occ = pathfinding.occupancy(fresh.units);
@@ -268,6 +309,36 @@ for (let i = 0; !noRefs && lead && i < e.units.length; i++) {
     else if (q.type !== 'delay') other = q.type;
   }
   near.push({ unit: i, at: [spot.x, spot.y], path, target, other, spells });
+}
+
+// With a Warp gate open (runAiFor: human-sized hostiles pursue the party through either mouth): the same enemies, two mouths set on free
+// hexes 3 and 5 away from the first party member.
+const aiWarp: unknown[] = [];
+for (let i = 0; !noRefs && lead && i < e.units.length; i++) {
+  if (e.units[i].side !== 'enemy' || !e.units[i].alive) continue;
+  const fresh = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
+  const u = fresh.units[i];
+  const occ = pathfinding.occupancy(fresh.units);
+  const freeAt = (d: number, not?: { x: number; y: number }) => {
+    for (let y = 0; y < fresh.rows; y++)
+      for (let x = 0; x < fresh.cols; x++)
+        if (pathfinding.hexDist({ x, y }, lead) === d && hexprops.hexDef(fresh.tiles, fresh.cols, x, y, fresh.decorOverlay).passable && !occ.has(pathfinding.key(x, y)) && !(not && not.x === x && not.y === y)) return { x, y };
+    return null;
+  };
+  const ga = freeAt(3), gb = ga ? freeAt(5, ga) : null;
+  if (!ga || !gb) continue;
+  fresh.warpGates.push({ a: { ...ga }, b: { ...gb }, roundsLeft: 3, level: 12, casterId: lead.id });
+  fresh.queue = [];
+  fresh.runAiFor(u);
+  let path: number[][] = [], target = -1, other = '';
+  const spells: unknown[] = [];
+  for (const q of fresh.queue) {
+    if (q.type === 'move' && q.id === u.id) path = q.path.map((p: { x: number; y: number }) => [p.x, p.y]);
+    else if (q.type === 'combat' && q.att === u.id) target = fresh.units.findIndex((v: { id: string }) => v.id === q.def);
+    else if (q.type === 'spell' && q.att === u.id) spells.push({ kind: q.spellKind, ids: q.ids.map((id: string) => fresh.units.findIndex((v: { id: string }) => v.id === id)), tiles: q.tiles.map((p: { x: number; y: number }) => [p.x, p.y]) });
+    else if (q.type !== 'delay') other = q.type;
+  }
+  aiWarp.push({ unit: i, gates: [[ga.x, ga.y], [gb.x, gb.y]], path, target, other, spells });
 }
 
 // Spell casts: every unit, every spell it may cast that EmberEngine ports, aimed at every hex within 9; Engine2 checks the
@@ -495,10 +566,109 @@ if (process.env.SPELL_REFS === '1') {
   }
 }
 
+// The off-hand action (commitOffHandAction, "Mão Secundária"): each party member that can wield a dagger or a shield is given one, then
+// strikes the two foes nearest to it from where it stands and from the hexes at 1 and 2 from the foe. Recorded like a skill cast, kind
+// "offHand", plus the item's numbers (index 15) so the check can give its own copy the same item.
+if (process.env.SPELL_REFS === '1') {
+  const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
+  const base = fresh();
+  const pristine = structuredClone(base.units);
+  let offSeed = 600000;
+  const items = [Object.values(data.EQUIPMENT).find((q: any) => q.kind === 'weapon' && q.slot === 'offHand'), data.EQUIPMENT.broquel].filter(Boolean) as any[];
+  for (let ci = 0; ci < base.units.length; ci++) {
+    const me = base.units[ci];
+    if (me.side !== 'player' || !me.alive || (me.size ?? 1) > 1) continue;
+    for (const item of items) {
+      if (item.usableBy?.length && !item.usableBy.includes(me.classId)) continue;
+      const foes = base.units.filter((v: any) => v.alive && v.side === 'enemy').sort((p: any, q: any) => pathfinding.hexDist(me, p) - pathfinding.hexDist(me, q)).slice(0, 2);
+      for (const foe of foes) {
+        const occ = pathfinding.occupancy(base.units);
+        const free = (d: number) => {
+          for (let y = 0; y < base.rows; y++)
+            for (let x = 0; x < base.cols; x++)
+              if (pathfinding.hexDist({ x, y }, foe) === d && hexprops.hexDef(base.tiles, base.cols, x, y, base.decorOverlay).passable && !occ.has(pathfinding.key(x, y))) return { x, y };
+          return null;
+        };
+        const spots = [{ x: me.x, y: me.y }, free(1), free(2)].filter(Boolean) as { x: number; y: number }[];
+        for (const at of spots) {
+          const b = fresh();
+          b.units = structuredClone(pristine);
+          const u = b.units[ci];
+          u.x = at.x, u.y = at.y, u.drawX = at.x, u.drawY = at.y;
+          u.offHandId = item.id;
+          const foeNow = b.units.find((v: any) => v.id === foe.id);
+          b.selectedId = u.id;
+          b.mode = 'awaitAction';
+          const type = skills.equippedWeaponType(u, true);
+          const patch = { kind: item.kind, minRange: item.minRange ?? 1, maxRange: item.maxRange ?? 1, dice: item.dice ?? 1, faces: item.faces ?? 4, bonus: item.bonus ?? 0,
+            dmgMul: item.dmgMul ?? 0.75, weaponType: type ?? null, trains: !!(type && skills.weaponTypesForClass(u.classId).includes(type)), skill: type ? (u.weaponSkills?.[type] ?? 0) : 0,
+            mastery: skills.weaponModifiers(u, type) };
+          const s = offSeed++;
+          const gen = combat.mulberry32(s);
+          let calls = 0;
+          b.rng = () => { calls++; return gen(); };
+          for (const name of FX) {
+            const original = b[name];
+            if (typeof original !== 'function') continue;
+            b[name] = (...args: unknown[]) => { const keep = b.rng; b.rng = Math.random; try { return original.apply(b, args); } finally { b.rng = keep; } };
+          }
+          let done = false, doneCalls = 0;
+          const finish = b.finishCombat.bind(b);
+          b.finishCombat = (att: unknown) => { finish(att); if (!b.queue.length && !done) { done = true; doneCalls = calls; } };
+          b.queue = [];
+          b.beginUnitTurn = () => {}, b.startNewRound = () => {};
+          b.commitOffHandAction(u, foeNow, { x: at.x, y: at.y });
+          if (!b.queue.length && !b.active) { offSeed--; skillCasts.push([ci, 'offHand', foe.x, foe.y, 0, at.x, at.y, null, null, null, null, null, null, null, null, patch]); continue; }
+          for (let i = 0; i < 6000 && !done && (b.active || b.queue.length); i++) b.tick(0.05);
+          if (done) calls = doneCalls;
+          skillCasts.push([ci, 'offHand', foe.x, foe.y, 1, at.x, at.y, s, calls, b.units.map(unitExt), zonesExt(b), enmityExt(b), b.units.length, null, { ...b.affinityScores }, patch]);
+        }
+      }
+    }
+  }
+}
+
+// Opening each lock ("Arrombar"): a hero with one Gazua stands on each free hex beside it (two heroes, three hexes), seeded; recorded: every unit
+// afterwards, the bags (potions and Gazuas), what the fight now holds (Ember, rations, weapons, gear), the affinity scores and the draws.
+const lockCasts: unknown[] = [];
+if (process.env.SPELL_REFS === '1') {
+  let lockSeed = 700000;
+  const potionIds = Object.keys(data.POTIONS);
+  const bagOf = (v: any) => Object.fromEntries(['lockpick', ...potionIds].map((k) => [k, v.bag?.[k] ?? 0]));
+  for (let li = 0; li < lockList.length; li++) {
+    const lk = lockList[li];
+    const heroes = freshEngine().units.map((v: any, i: number) => [v, i]).filter(([v]: any) => v.side === 'player' && v.alive && (v.size ?? 1) === 1).slice(0, 2);
+    for (const [, ci] of heroes as any[]) {
+      const spotsAll = standSpots(freshEngine(), lk).slice(0, 3);
+      for (const at of spotsAll) {
+        const b = freshEngine();
+        const u = b.units[ci];
+        u.x = at.x, u.y = at.y, u.drawX = at.x, u.drawY = at.y;
+        u.bag.lockpick = 1;
+        b.selectedId = u.id, b.mode = 'selected', b.phase = 'player';
+        const turnOrder = b.turnOrder.map((id: string) => b.units.findIndex((v: any) => v.id === id));
+        const s = lockSeed++;
+        const gen = combat.mulberry32(s);
+        let calls = 0;
+        b.rng = () => { calls++; return gen(); };
+        for (const name of FX) {
+          const original = b[name];
+          if (typeof original !== 'function') continue;
+          b[name] = (...args: unknown[]) => { const keep = b.rng; b.rng = Math.random; try { return original.apply(b, args); } finally { b.rng = keep; } };
+        }
+        b.useLockpick();
+        const valid = u.bag.lockpick === 0;
+        if (!valid) { lockSeed--; lockCasts.push({ lock: li, caster: ci, at: [at.x, at.y], valid: false }); continue; }
+        lockCasts.push({ lock: li, caster: ci, at: [at.x, at.y], valid: true, seed: s, calls, turnOrder, ext: b.units.map(unitExt), bags: b.units.map(bagOf),
+          loot: { ember: b.lootEmber, rations: b.lootRations, weapons: [...b.lootWeapons], equipment: [...b.lootEquipment] }, affinity: { ...b.affinityScores } });
+      }
+    }
+  }
+}
 
 // The start of a unit's own turn (beginUnitTurn): each unit under each condition, the board read right after (SPELL_REFS=1):
 // stunned, asleep, standing in a web, in fear, poisoned, in an ice storm, carrying a lightning echo, several at once.
-const TURN_SCENARIOS = ['stunned', 'asleep', 'web', 'fear', 'poison', 'ice', 'echo', 'mixed'];
+const TURN_SCENARIOS = ['stunned', 'asleep', 'web', 'fear', 'poison', 'ice', 'echo', 'mixed', 'regen', 'regenNear'];
 const turnStarts: unknown[] = [];
 if (process.env.SPELL_REFS === '1') {
   const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
@@ -524,6 +694,8 @@ if (process.env.SPELL_REFS === '1') {
       if (scenario === 'poison' || scenario === 'mixed') u.poisoned = true, u.poisonTier = 'lethal', u.poisonMag = 40;
       if (scenario === 'ice' || scenario === 'mixed') ice();
       if (scenario === 'echo') u.shock = { dice: 1, faces: 12, bonus: 2, mag: 30 };
+      // a staff with regeneration 2 in hand, hurt by 5 (or by 1: the heal is capped to the missing HP)
+      if (scenario === 'regen' || scenario === 'regenNear') { u.weaponId = 'cajado-da-renovacao'; b.staffMagic = () => ({ regeneration: 2 }); u.hp = Math.max(1, u.maxHp - (scenario === 'regen' ? 5 : 1)); }
       const s = turnSeed++;
       const gen = combat.mulberry32(s);
       let calls = 0;
@@ -791,7 +963,7 @@ const missionMusic = (() => {
 })();
 
 writeFileSync(outPath, JSON.stringify({ source: 'Engine2 src/game/engine.ts BattleEngine via tools/scripts/engine2/export_battle.ts',
-  map: draft.id, cols: e.cols, rows: e.rows, debugFreeCast: testLevel > 0, explore: !!mission.explore, cells, units, affinityBonus, win: mission.win ?? 'rout', exits, affinityScores: e.affinityScores ?? {}, forecasts, rolls, ai, aiNear: near, casts, supportCasts, skillCasts, turnStarts,
+  map: draft.id, cols: e.cols, rows: e.rows, debugFreeCast: testLevel > 0, explore: !!mission.explore, cells, units, affinityBonus, win: mission.win ?? 'rout', exits, affinityScores: e.affinityScores ?? {}, forecasts, rolls, ai, aiNear: near, aiWarp, locks, ownedWeapons: [...e.ownedWeapons], lockCasts, casts, supportCasts, skillCasts, turnStarts,
   sounds: { levelUp }, music: missionMusic }));
 console.log(`${draft.id}: ${e.cols}x${e.rows}, ${units.length} units (${units.map((u) => `${u.name} mov ${u.mov}`).join(', ')})`);
 process.exit(0);  // the engine leaves timers running

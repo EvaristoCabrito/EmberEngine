@@ -19,6 +19,25 @@ std::string text(const json& j, const char* key) { return j.contains(key) && j[k
 double number(const json& j, const char* key, double fallback = 0) { return j.contains(key) && j[key].is_number() ? j[key].get<double>() : fallback; }
 bool yes(const json& j, const char* key) { return j.contains(key) && j[key].is_boolean() && j[key].get<bool>(); }
 
+BattleCell parseCell(const json& c) {
+  BattleCell o;
+  o.terrain = text(c, "terrain");
+  o.passable = yes(c, "passable");
+  o.moveCost = integer(c, "moveCost", 1);
+  o.def = integer(c, "def");
+  o.atk = integer(c, "atk");
+  o.blocked = yes(c, "blocked");
+  o.cover = integer(c, "cover");
+  o.hazardDice = integer(c, "hazardDice");
+  o.hazardFaces = integer(c, "hazardFaces", 8);
+  if (c.contains("raw")) {
+    const json& r = c["raw"];
+    o.raw = {integer(r, "def"), integer(r, "atk"), integer(r, "height"), integer(r, "cover"), yes(r, "blocksShot")};
+  }
+  if (c.contains("shot")) o.shot = {integer(c["shot"], "height"), yes(c["shot"], "blocksShot")};
+  return o;
+}
+
 // pathfinding.ts footprintFrontRow for a unit with no authored shape: `width` hexes centred on (x, y).
 void frontRow(int x, int y, int width, std::vector<BattleHex>& out) {
   const int start = x - (width - 1) / 2;
@@ -72,6 +91,37 @@ int classMov(const std::string& classId) {
 
 }  // namespace
 
+int Battle::adjacentLock(size_t unit) const {
+  const BattleUnit& u = units_[unit];
+  for (const BattleHex& n : neighbors(u.x, u.y)) {
+    if (!inBounds(n.x, n.y)) continue;
+    for (size_t i = 0; i < locks_.size(); ++i)
+      if (!locks_[i].open && locks_[i].x == n.x && locks_[i].y == n.y) return static_cast<int>(i);
+  }
+  return -1;
+}
+
+std::shared_ptr<const LootTables> LootTables::shared() {
+  static const std::shared_ptr<const LootTables> tables = []() -> std::shared_ptr<const LootTables> {
+    std::ifstream in("content/engine2/overworld.json");
+    if (!in) return nullptr;
+    const json j = json::parse(in, nullptr, false);
+    if (j.is_discarded() || !j.contains("tables")) return nullptr;
+    const json& t = j["tables"];
+    auto out = std::make_shared<LootTables>();
+    out->maxLevel = integer(t, "maxLevel", 30);
+    if (t.contains("chestLoot")) out->chest = t["chestLoot"];
+    for (const char* list : {"weapons", "equipment"})
+      if (t.contains(list))
+        for (const json& w : t[list])
+          out->entries.push_back({std::string(list) == "weapons", text(w, "id"), text(w, "name"), number(w, "price"), integer(w, "power", 1), yes(w, "starting")});
+    if (t.contains("potions"))
+      for (const json& p : t["potions"]) out->potions.push_back({text(p, "id"), text(p, "name"), number(p, "weight"), integer(p, "carryMax", 5)});
+    return out;
+  }();
+  return tables;
+}
+
 std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
   std::ifstream in(battleJson, std::ios::binary);
   const json j = in ? json::parse(in, nullptr, false) : json();
@@ -112,24 +162,36 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
   }
   b.cols_ = integer(j, "cols");
   b.rows_ = integer(j, "rows");
-  for (const json& c : j["cells"]) {
-    BattleCell o;
-    o.terrain = text(c, "terrain");
-    o.passable = yes(c, "passable");
-    o.moveCost = integer(c, "moveCost", 1);
-    o.def = integer(c, "def");
-    o.atk = integer(c, "atk");
-    o.blocked = yes(c, "blocked");
-    o.cover = integer(c, "cover");
-    o.hazardDice = integer(c, "hazardDice");
-    o.hazardFaces = integer(c, "hazardFaces", 8);
-    if (c.contains("raw")) {
-      const json& r = c["raw"];
-      o.raw = {integer(r, "def"), integer(r, "atk"), integer(r, "height"), integer(r, "cover"), yes(r, "blocksShot")};
+  for (const json& c : j["cells"]) b.cells_.push_back(parseCell(c));
+  if (j.contains("locks") && j["locks"].is_array())
+    for (const json& l : j["locks"]) {
+      Lock k;
+      k.x = integer(l, "x"), k.y = integer(l, "y"), k.kind = text(l, "kind"), k.id = text(l, "id"), k.tier = text(l, "tier");
+      if (l.contains("after") && l["after"].is_array())
+        for (const json& a : l["after"]) k.after.push_back({a[0].get<int>(), parseCell(a[1])});
+      b.locks_.push_back(std::move(k));
     }
-    if (c.contains("shot")) o.shot = {integer(c["shot"], "height"), yes(c["shot"], "blocksShot")};
-    b.cells_.push_back(std::move(o));
-  }
+  if (j.contains("ownedWeapons") && j["ownedWeapons"].is_array())
+    for (const json& w : j["ownedWeapons"])
+      if (w.is_string()) b.ownedWeapons_.insert(w.get<std::string>());
+  if (j.contains("lockCasts") && j["lockCasts"].is_array())
+    for (const json& c : j["lockCasts"]) {
+      LockReference r;
+      r.lock = integer(c, "lock"), r.caster = integer(c, "caster");
+      r.at = {c["at"][0].get<int>(), c["at"][1].get<int>()};
+      r.valid = yes(c, "valid");
+      if (r.valid) {
+        r.seed = c["seed"].get<uint32_t>(), r.calls = integer(c, "calls");
+        for (const json& i : c["turnOrder"]) r.turnOrder.push_back(static_cast<size_t>(i.get<int>()));
+        for (const json& u : c["ext"]) {
+          std::vector<double> v;
+          for (const json& x : u) v.push_back(x.get<double>());
+          r.ext.push_back(std::move(v));
+        }
+        r.bags = c["bags"], r.loot = c["loot"], r.affinity = c["affinity"];
+      }
+      b.lockRefs_.push_back(std::move(r));
+    }
   if (b.cells_.size() != static_cast<size_t>(b.cols_ * b.rows_)) {
     logError("battle: {} has {} cells for a {}x{} board", battleJson.string(), b.cells_.size(), b.cols_, b.rows_);
     return std::nullopt;
@@ -184,12 +246,14 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
         p.offHandShield = text(h, "kind") == "shield";
         p.offMinRange = integer(h, "minRange", 1), p.offMaxRange = integer(h, "maxRange", 1);
         p.offDice = integer(h, "dice", 1), p.offFaces = integer(h, "faces", 4), p.offBonus = integer(h, "bonus");
+        p.offShieldMul = number(h, "dmgMul", 0.75);
       }
       if (c.contains("staff") && c["staff"].is_object()) {
         p.staff = true;
         p.staffElement = text(c["staff"], "element");
         p.staffBonusPct = number(c["staff"], "bonusPct");
         p.staffLifeStealPct = number(c["staff"], "lifeSteal");
+        p.staffRegen = number(c["staff"], "regeneration");
         if (c["staff"].contains("bonuses") && c["staff"]["bonuses"].is_object())
           for (const auto& [k, v] : c["staff"]["bonuses"].items())
             if (v.is_number()) p.staffBonuses.emplace_back(k, v.get<double>());
@@ -228,6 +292,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     o.offWeaponSkill = number(u, "offWeaponSkill");
     if (u.contains("bag") && u["bag"].is_object())
       for (int k = 0; k < 7; ++k) o.bag[k] = integer(u["bag"], kPotionIds[k]);
+    if (u.contains("bag") && u["bag"].is_object()) o.lockpick = integer(u["bag"], "lockpick");
     o.diseased = yes(u, "diseased");
     if (u.contains("diseaseBase") && u["diseaseBase"].is_object()) {
       const json& d = u["diseaseBase"];
@@ -325,6 +390,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
         if (c.size() > 13 && c[13].is_array() && c[13].size() >= 2) r.patchTier = c[13][0].get<int>(), r.patchValue = c[13][1].get<int>();
         if (c.size() > 14) r.affinity = c[14];
       }
+      if (c.size() > 15 && c[15].is_object()) r.offHand = c[15];
       b.castRefs_.push_back(std::move(r));
     }
   if (j.contains("turnStarts"))
@@ -393,6 +459,8 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
           r.casts.push_back(std::move(cast));
         }
       if (near && a.contains("at") && a["at"].is_array()) r.at = BattleHex{a["at"][0].get<int>(), a["at"][1].get<int>()};
+      if (a.contains("gates") && a["gates"].is_array())
+        for (const json& g : a["gates"]) r.gates.push_back({g[0].get<int>(), g[1].get<int>()});
       if (a.contains("path") && a["path"].is_array())
         for (const json& p : a["path"]) r.plan.path.push_back({p[0].get<int>(), p[1].get<int>()});
       r.plan.target = integer(a, "target", -1);
@@ -402,6 +470,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
   };
   if (j.contains("ai") && j["ai"].is_array()) readAi(j["ai"], false);
   if (j.contains("aiNear") && j["aiNear"].is_array()) readAi(j["aiNear"], true);
+  if (j.contains("aiWarp") && j["aiWarp"].is_array()) readAi(j["aiWarp"], false);
   return b;
 }
 

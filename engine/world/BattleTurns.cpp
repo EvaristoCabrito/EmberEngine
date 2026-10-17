@@ -259,6 +259,18 @@ AiPlan Battle::planEnemy(size_t unit) const {
   const std::vector<int>* nearest = &fields.front();
   for (const std::vector<int>& f : fields)
     if (at(f, u.x, u.y) < at(*nearest, u.x, u.y)) nearest = &f;
+  // Human-sized hostiles recognise either open Warp mouth as a way to pursue the party through (the walk to the nearer mouth by real
+  // distance); their ordinary pursuit resumes after the crossing.
+  std::vector<std::vector<int>> gateFields;
+  gateFields.reserve(warpGates_.size() * 2);
+  if (!warpGates_.empty() && u.side != "player" && footprint(u, u.x, u.y).size() == 1) {
+    double bestGate = std::numeric_limits<double>::infinity();
+    for (const WarpGate& g : warpGates_)
+      for (const BattleHex& opening : {g.a, g.b}) {
+        gateFields.push_back(distanceField(opening));
+        if (const double d = at(gateFields.back(), u.x, u.y); d < bestGate) bestGate = d, nearest = &gateFields.back();
+      }
+  }
   std::optional<BattleHex> closest;
   double dist = std::numeric_limits<double>::infinity();
   for (const ReachCell& c : reach)

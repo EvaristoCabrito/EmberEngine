@@ -623,11 +623,22 @@ efeitos e wire into the game")
   (summons, zones, cleave, cones, bull rush ...), the status machine (stun / sleep / bleed / crippled / fear / bless), web / ice / aura / warp
   zones, `beginUnitTurn`, enemy-cast AI branches, dynamic affinity (friendly fire -1, support +0.2, neighbours +0.1; auras build none).
   Refs: `TEST_LEVEL=15 SPELL_REFS=1 node .../vite-node.mjs ... export_battle.ts -- build/engine2-test/maps/<map>.json build/engine2-ref/battles/<map>.refs.json` (~2 min a map).
+- **Also checked against Engine2 on the 3 proof maps (2026-10-17 night, all pass):** the staff's regeneration (turn start under 10 conditions), the off-hand
+  action "Mão Secundária" (a dagger's own blow, a shield's bash: 75% damage, 70% to stun; `offHandStep`, `canOffHandAct`, forecast without mastery for a
+  shield), the Warp pursuit (human-sized hostiles walk to the nearer gate mouth), the plants' AI (tendril swipe, Veneno Cáustico from tier 3, Sopro
+  Venenoso, Veneno Menor; proven on `aldeia015` with its enemies swapped for plants: `PLANT_TEST=1`, `aldeia015.plants.refs.json`), and the locks:
+  `useLockpick` (chests in 3 tiers, door decorations, door tiles; Ember, potion for whoever has room, gear, rations; ~90 openings compared: bags, loot,
+  draws, affinity). Data: battle JSONs now carry `locks` (+ the cells each opening changes) and `ownedWeapons`: **re-export a battle file to get chests**
+  (the 7 in `content/engine2/battles` and the 3 proof maps in `build/engine2-test/battles` were; the other `build/engine2-test` battles were not: the user
+  said proof maps only). Loot tables are read from `content/engine2/overworld.json`. In the game: "Arrombar" beside a lock, the loot popup with icons,
+  the opened chest's card and an opened door's model leave the board, Ember / weapons / gear are folded into the save on a victory
+  (`finishCampaignFight`), saved with the fight's snapshot. Capture step `lockpick:<unit>:<lock>`.
 - **Ported, NOT checked against Engine2:** win rules (rout / boss / escape waypoints, `Battle::winAvailable`, `confirmFinish`, the finish prompt and
-  footer button), hunger drain per action, the save's `affinityScores`. Script steps `wipe`, `goto:<unit>:<x>:<y>` (in the working tree,
-  not in the commit) for captures. Not run in the window.
-- **Not ported:** chests / doors / lockpick, enemy warp pursuit, plant AI / tendril swipe, staff regeneration, off-hand shield bash action,
-  per-pose features. Debug + validation run of the whole thing not done.
+  footer button), hunger drain per action, the save's `affinityScores`, the loot fold into the save, the "Mão Secundária" button / door and chest visuals.
+  Script steps `wipe`, `goto:<unit>:<x>:<y>`, `lockpick:<unit>:<lock>`. Not tried in the window by a person.
+- **Not ported / limits:** a door TILE keeps its closed ground look after it opens (the ground is baked; the rules open it); an opened door's open-frame model is
+  not placed; kill drops are still not kept (only chests fill `lootWeapons` / `lootEquipment`); the weapon's "tip" text on the popup; enemy warp
+  crossing beyond the walk; per-pose features.
 
 ## Next
 

@@ -189,6 +189,14 @@ void playSteps(Battle& b, const std::vector<BattleStep>& steps, Mulberry32& rng,
 std::vector<double> unitStateNumbers(const BattleUnit& u);
 nlohmann::json zoneStateNumbers(const Battle& b);
 nlohmann::json enmityNumbers(const Battle& b);
+// Engine2 commitOffHandAction ("Mão Secundária"): the blow of what the off hand holds, from where the unit stands. A dagger / katar strikes with its
+// own dice (and its own sheet); a shield bashes (75% of the blow by default, a 70% chance to stun for a turn; Golpe de Escudo's stun on a hit). Empty when
+// the foe is out of its reach or the off hand holds neither.
+std::optional<BattleStep> offHandStep(const Battle& b, size_t unit, size_t foe);
+// Engine2 useLockpick ("Arrombar"): the unit spends a Gazua on the lock beside it. The cells it changes open up; a chest gives Ember, a potion for whoever has room
+// (the opener first, then the turn order), maybe a piece of gear and maybe rations, all of it rolled in Engine2's order; a bleeding opener pays the 1D8, and
+// the action is done (it builds affinity with its neighbours). False when there is nothing to open or no Gazua.
+bool useLockpick(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out);
 // BattleEngine.gainAdjacentAffinity: an action done by a hero builds +0.1 with each hero fighting beside it (not those it already helped
 // this action); the support recipients are then forgotten. Called as the action ends, before the unit counts as having acted.
 void gainAdjacentAffinity(Battle& b, size_t unit);

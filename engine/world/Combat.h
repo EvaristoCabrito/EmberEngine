@@ -71,8 +71,12 @@ bool canHitFrom(const Battle& b, size_t unit, BattleHex from, size_t foe, bool w
 // The same with the off-hand weapon's reach (Engine2 offHandReach: a dagger or katar beside a bow reaches by its own range,
 // the bow's minimum would leave an adjacent foe out of reach).
 bool canOffHandHit(const Battle& b, size_t unit, BattleHex from, size_t foe, bool withDecorations = true);
+// Whether the off-hand action ("Mão Secundária") reaches the foe from `from`: a dagger / katar by its own reach, a shield's bash by the
+// unit's own (commitOffHandAction).
+bool canOffHandAct(const Battle& b, size_t unit, BattleHex from, size_t foe, bool withDecorations = true);
 // The forecast the battle shows for an attack from `from` (makeForecast).
-Forecast forecast(const Battle& b, size_t attacker, BattleHex from, size_t defender, bool offHand = false);
+// `useSkill` false: a blow without the weapon's mastery (a shield's bash: 100% to hit, no rear bonus, no staff element).
+Forecast forecast(const Battle& b, size_t attacker, BattleHex from, size_t defender, bool offHand = false, bool useSkill = true);
 // A real plain attack's hit (rollDamage, then the arcane bolt / staff element step), drawing from `rng` in Engine2's
 // order. The attacker stands where it is.
 Hit rollHit(const Battle& b, const Fighter& attacker, const Fighter& defender, Mulberry32& rng);
