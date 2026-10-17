@@ -118,6 +118,11 @@ build.bat release          # or debug; output in build/<config>/bin
   - sprites: `Cooker sprites content/engine2.sprites.json C:/Engine2/public/game build/sprites/roster.pak`;
     battle pack = engine2 + `content/decor.sprites.json` (443 decor images) merged into
     `build/sprites/battle.sprites.json` → `battle.pak` (one pack: two packs both define `sprites/roster`).
+  - replaced art (the user's own frames for an Engine2 clip, e.g. Salazar's walk right v02): `content/sprite-overrides.json`
+    + `content/sprites/<set>/<clip>-vNN/`; run `python -I tools/scripts/sprites/apply_sprite_overrides.py` after
+    fx_sprites.py / export_heroes.ts (patches the manifest, the roster's pose box / pace, walk-strides), then cook again.
+  - walk cadence: one stride = `kWalkStride` world units for every unit (MapStage.h), clip strides in
+    `content/engine2/walk-strides.json` (also copied beside the roster); never scale it by the card's height again.
   - meshes: `Cooker meshes C:/Engine2/public/game build/meshes/props.pak` (15 GLBs);
     proxy experiment: `Cooker meshes C:/Engine2/public/game/props build/meshes/proxy128.pak --remesh 128
     --cache build/meshes/cook-cache-proxy` (cottages only, separate pack; originals untouched).
