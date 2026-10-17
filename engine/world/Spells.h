@@ -129,6 +129,9 @@ bool spellWeaponAbility(const std::string& kind);
 bool spellInstant(const std::string& kind);
 // A spell centred on its caster whose area is shown first, then confirmed (Varredura, Expulsar Mortos-Vivos).
 bool spellSelfArea(const std::string& kind);
+// A spell aimed by direction from the caster (a line or a cone through any hex): every hex is a valid aim, so the window
+// shows the line / cone under the cursor and the foes it can reach, not a zone.
+bool spellAimsDirection(const std::string& kind);
 
 // Potions (data.ts POTIONS; their ids in the bag's order: kPotionIds, Battle.h).
 int potionIndex(const std::string& id);  // -1 when unknown

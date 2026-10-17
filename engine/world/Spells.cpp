@@ -1263,6 +1263,10 @@ bool spellInstant(const std::string& kind) {
   return kind == "createFoodAndWater" || kind == "eruption" || kind == "auraOfProtection" || kind == "intimidatingPresence";
 }
 bool spellSelfArea(const std::string& kind) { return kind == "sweep" || kind == "turnUndead"; }
+bool spellAimsDirection(const std::string& kind) {
+  return kind == "piercing" || kind == "piercingThrust" || kind == "frost" || kind == "iceLance" || kind == "glacialGale" ||
+         kind == "burningHands" || kind == "poisonBreath" || kind == "divineWrath" || kind == "stampede";
+}
 
 int potionIndex(const std::string& id) {
   for (int i = 0; i < 7; ++i)

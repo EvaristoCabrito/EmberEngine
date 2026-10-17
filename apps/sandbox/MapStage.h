@@ -2283,9 +2283,47 @@ class MapStage final : public Stage {
       spellArmed_ = e2::BattleHex{u.x, u.y};
       return;
     }
+    spellPreview_.clear();
+    std::vector<e2::BattleHex> valid;
     for (int y = 0; y < battle_->rows(); ++y)
       for (int x = 0; x < battle_->cols(); ++x)
-        if (e2::Battle::distance({u.x, u.y}, {x, y}) <= 9 && aimValid(b, {x, y})) spellAim_.push_back({x, y});
+        if (e2::Battle::distance({u.x, u.y}, {x, y}) <= 9 && aimValid(b, {x, y})) valid.push_back({x, y});
+    // The locks go on units only: a hex of bare ground is shown by the zone, never as a target (the user, 2026-10-17, Tiro
+    // Perfurante: every hex locked, the board one violet sheet, "como eu vou mirar com essa bosta").
+    std::vector<int> standing(static_cast<size_t>(battle_->cols()) * static_cast<size_t>(battle_->rows()), -1);
+    for (size_t i = 0; i < battle_->units().size(); ++i) {
+      const e2::BattleUnit& t = battle_->units()[i];
+      if (i == b || !t.alive || t.hidden) continue;
+      for (const e2::BattleHex& p : e2::Battle::footprint(t, t.x, t.y))
+        if (battle_->inBounds(p.x, p.y)) standing[static_cast<size_t>(p.y) * static_cast<size_t>(battle_->cols()) + static_cast<size_t>(p.x)] = static_cast<int>(i);
+    }
+    auto unitOn = [&](e2::BattleHex c) {
+      return battle_->inBounds(c.x, c.y) ? standing[static_cast<size_t>(c.y) * static_cast<size_t>(battle_->cols()) + static_cast<size_t>(c.x)] : -1;
+    };
+    if (e2::spellAimsDirection(kind)) {
+      // A line or a cone through any hex: no zone. The locks = the foes some aim reaches; the grid draws the line under the
+      // cursor, and toward the nearest of those foes while the cursor is off the board.
+      std::vector<std::pair<int, e2::BattleHex>> foes;  // unit, the aim that reaches it (its own hex when that does)
+      for (const e2::BattleHex& aim : valid)
+        for (const e2::BattleHex& c : aimArea(b, aim)) {
+          const int who = unitOn(c);
+          if (who < 0 || battle_->units()[static_cast<size_t>(who)].side == u.side) continue;
+          auto it = std::find_if(foes.begin(), foes.end(), [&](const auto& f) { return f.first == who; });
+          if (it == foes.end()) foes.push_back({who, aim});
+          else if (aim == c) it->second = aim;
+        }
+      int nearest = -1;
+      for (size_t i = 0; i < foes.size(); ++i) {
+        const e2::BattleUnit& f = battle_->units()[static_cast<size_t>(foes[i].first)];
+        spellAim_.push_back({f.x, f.y});
+        const e2::BattleUnit* n = nearest < 0 ? nullptr : &battle_->units()[static_cast<size_t>(foes[static_cast<size_t>(nearest)].first)];
+        if (!n || e2::Battle::distance({u.x, u.y}, {f.x, f.y}) < e2::Battle::distance({u.x, u.y}, {n->x, n->y})) nearest = static_cast<int>(i);
+      }
+      if (nearest >= 0) spellPreview_ = aimArea(b, foes[static_cast<size_t>(nearest)].second);
+      return;
+    }
+    for (const e2::BattleHex& c : valid)
+      if (unitOn(c) >= 0) spellAim_.push_back(c);
     // The zone the grid shows: where the spell reaches (a potion: the caster and the hexes around it), whether or not
     // something stands there (the user: "how do I even know where to target?").
     if (potionOf(kind)) {
@@ -3860,9 +3898,21 @@ class MapStage final : public Stage {
       // The spell's zone (where it reaches), the hexes it may be aimed at right now, the hovered aim's area.
       const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
       for (const e2::BattleHex& c : spellZone_) flag(c, Renderer::kGridSpellAim);
-      for (const e2::BattleHex& c : spellAim_) flag(c, Renderer::kGridSpellAim | Renderer::kGridSpellTarget);
-      if (hover_ && aimValid(b, *hover_))
-        for (const e2::BattleHex& c : aimArea(b, *hover_)) flag(c, Renderer::kGridSpellArea);
+      const bool direction = e2::spellAimsDirection(spellMode_);
+      for (const e2::BattleHex& c : spellAim_) flag(c, (direction ? 0u : Renderer::kGridSpellAim) | Renderer::kGridSpellTarget);
+      // The line / cone: under the cursor, or toward the nearest foe it reaches while the cursor is off the board; the foes
+      // standing in it locked.
+      const bool hoverAim = hover_ && aimValid(b, *hover_);
+      const std::vector<e2::BattleHex> area = hoverAim ? aimArea(b, *hover_) : direction && !hover_ ? spellPreview_ : std::vector<e2::BattleHex>{};
+      for (const e2::BattleHex& c : area) flag(c, Renderer::kGridSpellArea);
+      if (direction)
+        for (size_t i = 0; i < battle_->units().size(); ++i) {
+          const e2::BattleUnit& t = battle_->units()[i];
+          if (i == b || !t.alive || t.hidden || t.side == battle_->units()[b].side) continue;
+          const std::vector<e2::BattleHex> body = e2::Battle::footprint(t, t.x, t.y);
+          if (std::any_of(body.begin(), body.end(), [&](const e2::BattleHex& p) { return std::find(area.begin(), area.end(), p) != area.end(); }))
+            flag({t.x, t.y}, Renderer::kGridSpellTarget);
+        }
       if (hover_) flag(*hover_, Renderer::kGridHover | (aimValid(b, *hover_) ? 0u : Renderer::kGridHoverBlocked));
       for (const e2::BattleHex& c : spellCells_) flag(c, Renderer::kGridSpellChosen);
       const e2::BattleUnit& u = battle_->units()[b];
@@ -5527,6 +5577,7 @@ class MapStage final : public Stage {
   JobCounter fogJob_;
   bool fogBusy_ = false, sightLogged_ = false;
   std::vector<std::vector<e2::HexPoint>> fogQueue_, fogJobEyes_;  // party positions waiting / being relit, in order
+  std::vector<e2::BattleHex> spellPreview_;  // a line / cone spell: its area toward the nearest foe it reaches (cursor off the board)
   e2::FogMask fogNext_;
   std::vector<uint16_t> fogTexels_, fogNextTexels_;  // fogMask_ / fogNext_ packed for the GPU (Renderer::fogTexels)
   double fogJobMs_ = 0.0;
