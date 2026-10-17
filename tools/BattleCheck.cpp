@@ -236,6 +236,68 @@ bool checkBattle(const std::filesystem::path& battleJson) {
       report(std::format("cast {} {} from ({},{}) at ({},{}) seed {}:{}", battle->units()[static_cast<size_t>(r.caster)].name, r.kind, r.at.x, r.at.y,
                          r.cell.x, r.cell.y, r.seed, diff));
   }
+  // The start of a turn under each condition (beginUnitTurn).
+  size_t turnsChecked = 0;
+  for (const e2::TurnStartReference& r : battle->turnStartReferences()) {
+    e2::Battle copy = pristine;
+    const size_t ui = static_cast<size_t>(r.unit);
+    e2::BattleUnit& u = copy.units()[ui];
+    auto around = [&]() {
+      std::vector<e2::BattleHex> cells{{u.x, u.y}};
+      for (const e2::BattleHex& n : e2::Battle::neighbors(u.x, u.y)) cells.push_back(n);
+      return cells;
+    };
+    if (r.scenario == "stunned" || r.scenario == "mixed") u.stunned = true, u.stunTurns = 2;
+    if (r.scenario == "asleep") u.asleep = true, u.sleepTurns = 2;
+    if (r.scenario == "web") copy.webZones().push_back({around(), 3, {u.x, u.y}, 1, 0.6});
+    if (r.scenario == "fear") {
+      u.fearTurns = 2;
+      std::optional<size_t> foe;
+      for (size_t i = 0; i < copy.units().size(); ++i) {
+        const e2::BattleUnit& v = copy.units()[i];
+        if (!v.alive || v.side == u.side || v.side == "neutral") continue;
+        if (!foe || e2::Battle::distance({u.x, u.y}, {v.x, v.y}) < e2::Battle::distance({u.x, u.y}, {copy.units()[*foe].x, copy.units()[*foe].y})) foe = i;
+      }
+      if (foe) u.fearSourceId = copy.units()[*foe].id;
+    }
+    if (r.scenario == "poison" || r.scenario == "mixed") u.poisoned = true, u.poisonTier = "lethal", u.cond.poisonMag = 40;
+    if (r.scenario == "ice" || r.scenario == "mixed") {
+      std::string caster;
+      for (const e2::BattleUnit& v : copy.units())
+        if (v.side == "player") {
+          caster = v.id;
+          break;
+        }
+      copy.iceZones().push_back({around(), 2, {u.x, u.y}, 1, 2, 6, 0.8, 30, 12, caster, "player"});
+    }
+    if (r.scenario == "echo") u.shock = e2::BattleUnit::Echo{1, 12, 2, 30};
+    e2::Mulberry32 rng(r.seed);
+    std::vector<e2::BattleEffect> effects;
+    u.moveUsed = 0;
+    copy.beginTurn(ui);
+    const e2::TurnStart ts = e2::beginUnitTurn(copy, ui, rng, effects);
+    int calls = 0;
+    {
+      e2::Mulberry32 probe(r.seed), used = rng;
+      const double next = used();
+      while (calls < 100000 && probe() != next) ++calls;
+    }
+    ++turnsChecked;
+    std::string diff;
+    if (static_cast<int>(copy.units().size()) != static_cast<int>(r.ext.size())) diff += " [units]";
+    for (size_t i = 0; i < copy.units().size() && i < r.ext.size(); ++i) {
+      const std::vector<double> mine = e2::unitStateNumbers(copy.units()[i]);
+      for (size_t k = 0; k < mine.size() && k < r.ext[i].size(); ++k)
+        if (std::abs(mine[k] - r.ext[i][k]) > 1e-9) diff += std::format(" [{} #{} {} vs {}]", copy.units()[i].name, k, mine[k], r.ext[i][k]);
+    }
+    if (e2::zoneStateNumbers(copy) != r.zones) diff += " [zones]";
+    if (copy.units()[ui].moved != r.moved || copy.units()[ui].acted != r.acted || copy.turnRestrained() != r.restrained)
+      diff += std::format(" [moved {} acted {} restrained {} vs {} {} {}]", copy.units()[ui].moved, copy.units()[ui].acted, copy.turnRestrained(), r.moved, r.acted, r.restrained);
+    if (ts.fleePath != r.flee) diff += std::format(" [flee {} vs {} hexes]", ts.fleePath.size(), r.flee.size());
+    if (calls != r.calls) diff += std::format(" [draws {} vs {}]", calls, r.calls);
+    if (!diff.empty()) report(std::format("turn start {} {} seed {}:{}", u.name, r.scenario, r.seed, diff));
+  }
+  if (turnsChecked && !combatFailed) logInfo("battle {}: turn starts match Engine2 ({} units under 8 conditions)", battle->map(), turnsChecked);
   if (combatFailed) {
     for (const auto& [kind, n] : seenKinds) logError("battle {}: {} x {}", battle->map(), n, kind.substr(0, 120));
     logError("battle {}: {} combat answers differ from Engine2", battle->map(), combatFailed);

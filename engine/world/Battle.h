@@ -232,6 +232,18 @@ struct CastReference {
   int patchTier = 0, patchValue = 0;  // the caster was given this tier's uses first (a start-method needs some)
 };
 
+// A unit's turn beginning under a condition (export_battle.ts turnStarts): the board right after Engine2's beginUnitTurn.
+struct TurnStartReference {
+  int unit = 0;
+  std::string scenario;
+  uint32_t seed = 0;
+  int calls = 0;
+  std::vector<std::vector<double>> ext;
+  nlohmann::json zones, enmity;
+  bool moved = false, acted = false, restrained = false;
+  std::vector<BattleHex> flee;
+};
+
 // Engine2's reference answers for the combat check (export_battle.ts).
 struct ForecastReference {
   int attacker = 0, defender = 0, x = 0, y = 0, dmgOut = 0, dmgBack = 0;
@@ -282,11 +294,12 @@ class Battle {
   // The party's affinity bonus between two names (0 = none).
   double affinityBonus(const std::string& a, const std::string& b) const;
   // Drops Engine2's reference answers (a copy of the battle for one cast does not need them).
-  void clearReferences() { forecastRefs_.clear(), rollRefs_.clear(), aiRefs_.clear(), castRefs_.clear(); }
+  void clearReferences() { forecastRefs_.clear(), rollRefs_.clear(), aiRefs_.clear(), castRefs_.clear(), turnRefs_.clear(); }
   const std::vector<ForecastReference>& forecastReferences() const { return forecastRefs_; }
   const std::vector<RollReference>& rollReferences() const { return rollRefs_; }
   const std::vector<AiReference>& aiReferences() const { return aiRefs_; }
   const std::vector<CastReference>& castReferences() const { return castRefs_; }
+  const std::vector<TurnStartReference>& turnStartReferences() const { return turnRefs_; }
   // Engine2's enmity hooks for spells and support (spell damage, heals noticed by every enemy).
   void noteDamage(size_t attacker, size_t target, int dmg, bool spell);
   void noteAware(size_t hero, double ce, double ve);
@@ -450,6 +463,7 @@ class Battle {
   std::vector<std::string> log_;
   std::vector<AiReference> aiRefs_;
   std::vector<CastReference> castRefs_;
+  std::vector<TurnStartReference> turnRefs_;
   void sortTurnOrder();
   std::vector<size_t> turnOrder_;
   int round_ = 1;

@@ -310,6 +310,21 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
       }
       b.castRefs_.push_back(std::move(r));
     }
+  if (j.contains("turnStarts"))
+    for (const json& c : j["turnStarts"]) {
+      if (!c.is_array() || c.size() < 9) continue;
+      TurnStartReference r;
+      r.unit = c[0].get<int>(), r.scenario = c[1].get<std::string>(), r.seed = c[2].get<uint32_t>(), r.calls = c[3].get<int>();
+      for (const json& u : c[4]) {
+        std::vector<double> v;
+        for (const json& x : u) v.push_back(x.get<double>());
+        r.ext.push_back(std::move(v));
+      }
+      r.zones = c[5], r.enmity = c[6];
+      r.moved = c[7][0].get<int>() != 0, r.acted = c[7][1].get<int>() != 0, r.restrained = c[7][2].get<int>() != 0;
+      for (const json& p : c[8]) r.flee.push_back({p[0].get<int>(), p[1].get<int>()});
+      b.turnRefs_.push_back(std::move(r));
+    }
   // The support casts and potions, in the hurt scene: [caster, kind, x, y, valid, at x, at y, seed, calls, after, spells,
   // shock, frost, lootRations, potion]; each unit afterwards as [hp, alive, echo, maxHp, level, xp, atk, mag, def, dex,
   // mov, diseased, poisoned, fullness, spells, bag].

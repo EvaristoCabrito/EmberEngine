@@ -491,6 +491,54 @@ if (process.env.SPELL_REFS === '1') {
   }
 }
 
+
+// The start of a unit's own turn (beginUnitTurn): each unit under each condition, the board read right after (SPELL_REFS=1):
+// stunned, asleep, standing in a web, in fear, poisoned, in an ice storm, carrying a lightning echo, several at once.
+const TURN_SCENARIOS = ['stunned', 'asleep', 'web', 'fear', 'poison', 'ice', 'echo', 'mixed'];
+const turnStarts: unknown[] = [];
+if (process.env.SPELL_REFS === '1') {
+  const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
+  const base = fresh();
+  const pristine = structuredClone(base.units);
+  let turnSeed = 400000;
+  for (let ci = 0; ci < base.units.length; ci++) {
+    if (!base.units[ci].alive || base.units[ci].side === 'neutral') continue;
+    for (const scenario of TURN_SCENARIOS) {
+      const b = fresh();
+      b.units = structuredClone(pristine);
+      const u = b.units[ci];
+      const foe = b.units.filter((v: any) => v.alive && v.side !== u.side && v.side !== 'neutral').sort((p: any, q: any) => pathfinding.hexDist(u, p) - pathfinding.hexDist(u, q))[0];
+      const firstPlayer = b.units.find((v: any) => v.side === 'player');
+      const around = [{ x: u.x, y: u.y }, ...pathfinding.hexNeighbors(u.x, u.y)];
+      const web = () => b.webZones.push({ cells: new Set(around.map((p: any) => pathfinding.key(p.x, p.y))), roundsLeft: 3, createdAt: 0, center: { x: u.x, y: u.y }, radius: 1, sleepChance: 0.6 });
+      const ice = () => b.iceStormZones.push({ cells: new Set(around.map((p: any) => pathfinding.key(p.x, p.y))), roundsLeft: 2, createdAt: 0, center: { x: u.x, y: u.y }, radius: 1,
+        damageDice: 2, damageFaces: 6, damageMul: 0.8, casterMag: 30, casterLevel: 12, casterId: firstPlayer.id, side: 'player' });
+      if (scenario === 'stunned' || scenario === 'mixed') u.stunned = true, u.stunTurns = 2;
+      if (scenario === 'asleep') u.asleep = true, u.sleepTurns = 2;
+      if (scenario === 'web') web();
+      if (scenario === 'fear') u.fearTurns = 2, u.fearSourceId = foe?.id;
+      if (scenario === 'poison' || scenario === 'mixed') u.poisoned = true, u.poisonTier = 'lethal', u.poisonMag = 40;
+      if (scenario === 'ice' || scenario === 'mixed') ice();
+      if (scenario === 'echo') u.shock = { dice: 1, faces: 12, bonus: 2, mag: 30 };
+      const s = turnSeed++;
+      const gen = combat.mulberry32(s);
+      let calls = 0;
+      b.rng = () => { calls++; return gen(); };
+      for (const name of FX) {
+        const original = b[name];
+        if (typeof original !== 'function') continue;
+        b[name] = (...args: unknown[]) => { const keep = b.rng; b.rng = Math.random; try { return original.apply(b, args); } finally { b.rng = keep; } };
+      }
+      b.runAiFor = () => {};  // the turn's own rules, not what the AI then does
+      b.queue = [];
+      u.moveBudgetUsed = 0;
+      b.beginUnitTurn(u);
+      const move = b.queue.find((q: any) => q.type === 'move');
+      turnStarts.push([ci, scenario, s, calls, b.units.map(unitExt), zonesExt(b), enmityExt(b), [u.moved ? 1 : 0, u.acted ? 1 : 0, b.turnRestrained ? 1 : 0], move ? move.path.map((p: any) => [p.x, p.y]) : []]);
+    }
+  }
+}
+
 // The support casts (the cures, Curar Doença, Criar Comida e Água) and the potions, in a hurt scene so they have work to
 // do: every living unit at half HP, the party's even-indexed units diseased (maybeInflictDisease's own change), every
 // third unit poisoned, everyone hungry, every tier's uses halved (EmberEngine Spells hurtScene does the same). Recorded as
@@ -739,7 +787,7 @@ const missionMusic = (() => {
 })();
 
 writeFileSync(outPath, JSON.stringify({ source: 'Engine2 src/game/engine.ts BattleEngine via tools/scripts/engine2/export_battle.ts',
-  map: draft.id, cols: e.cols, rows: e.rows, debugFreeCast: testLevel > 0, explore: !!mission.explore, cells, units, affinityBonus, forecasts, rolls, ai, aiNear: near, casts, supportCasts, skillCasts,
+  map: draft.id, cols: e.cols, rows: e.rows, debugFreeCast: testLevel > 0, explore: !!mission.explore, cells, units, affinityBonus, forecasts, rolls, ai, aiNear: near, casts, supportCasts, skillCasts, turnStarts,
   sounds: { levelUp }, music: missionMusic }));
 console.log(`${draft.id}: ${e.cols}x${e.rows}, ${units.length} units (${units.map((u) => `${u.name} mov ${u.mov}`).join(', ')})`);
 process.exit(0);  // the engine leaves timers running
