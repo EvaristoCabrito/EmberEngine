@@ -34,7 +34,23 @@ struct TonemapPush {
   uint32_t sampler;
   float exposure;
   float bloom;
+  uint32_t bloomTexture;
 };
+
+// shaders/bloom.hlsl Push.
+struct BloomPush {
+  uint32_t source;
+  uint32_t sampler;
+  uint32_t destination;
+  float sourceLevel;
+  uint32_t width, height;
+  float texelX, texelY;
+  float weight;
+  float sourceWeight;
+};
+constexpr uint32_t kBloomLevels = 5;
+// Each level's share of the finished bloom (UnrealBloomPass's factors 1.0 .. 0.2 mixed by its radius 0.3, then normalised).
+constexpr float kBloomWeights[kBloomLevels] = {0.25f, 0.23f, 0.20f, 0.17f, 0.15f};
 
 struct GroundPush {
   glm::mat4 viewProjection;
@@ -529,6 +545,8 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   cullInstancesPipeline_ = createComputePipeline(context, layout, "cull.CSInstancesEarly");
   cullInstancesLatePipeline_ = createComputePipeline(context, layout, "cull.CSInstancesLate");
   hizPipeline_ = createComputePipeline(context, layout, "hiz.CSDownsample");
+  bloomDownPipeline_ = createComputePipeline(context, layout, "bloom.CSDown");
+  bloomUpPipeline_ = createComputePipeline(context, layout, "bloom.CSUp");
   cullPreparePipeline_ = createComputePipeline(context, layout, "cull.CSPrepare");
   cullTraversePipeline_ = createComputePipeline(context, layout, "cull.CSTraverse");
   cullPrepareDrawPipeline_ = createComputePipeline(context, layout, "cull.CSPrepareDraw");
@@ -656,7 +674,7 @@ Renderer::~Renderer() {
   vkDestroyPipeline(context_.device, spriteDepthPipeline_, nullptr);
   vkDestroyPipeline(context_.device, effectPipeline_, nullptr);
   for (VkPipeline p : vfxPipelines_) vkDestroyPipeline(context_.device, p, nullptr);
-  for (VkPipeline p : {cullInstancesPipeline_, cullInstancesLatePipeline_, hizPipeline_, cullPreparePipeline_,
+  for (VkPipeline p : {cullInstancesPipeline_, cullInstancesLatePipeline_, hizPipeline_, bloomDownPipeline_, bloomUpPipeline_, cullPreparePipeline_,
                        cullTraversePipeline_, cullPrepareDrawPipeline_, meshletPipeline_, resolvePipeline_, skyPipeline_})
     vkDestroyPipeline(context_.device, p, nullptr);
   vkDestroySampler(context_.device, minSampler_, nullptr);
@@ -720,6 +738,22 @@ void Renderer::createTargets(VkExtent2D size) {
   // The fog bank's half-resolution march result.
   bankMarch_ = createImage(context_, {VK_FORMAT_R16G16B16A16_SFLOAT, {(size.width + 1) / 2, (size.height + 1) / 2},
                                       VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT});
+  // Bloom pyramid: half the screen, kBloomLevels levels, one storage view per level (see recordBloom).
+  bloomSize_ = {std::max(1u, (size.width + 1) / 2), std::max(1u, (size.height + 1) / 2)};
+  ImageDesc bloomDesc{VK_FORMAT_R16G16B16A16_SFLOAT, bloomSize_, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT};
+  bloomDesc.mipLevels = kBloomLevels;
+  bloomImage_ = createImage(context_, bloomDesc);
+  for (uint32_t level = 0; level < kBloomLevels; ++level) {
+    VkImageViewCreateInfo viewInfo{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+    viewInfo.image = bloomImage_.image;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = VK_FORMAT_R16G16B16A16_SFLOAT;
+    viewInfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, level, 1, 0, 1};
+    VkImageView view;
+    VK_CHECK(vkCreateImageView(context_.device, &viewInfo, nullptr, &view));
+    bloomLevelViews_.push_back(view);
+    bloomLevelIndices_.push_back(bindless_.addStorageImage(view));
+  }
   // Depth pyramid: power-of-two below the screen size, full mip chain, one storage view per level.
   hizSize_ = {previousPowerOfTwo(size.width), previousPowerOfTwo(size.height)};
   hizValid_ = false;
@@ -748,6 +782,7 @@ void Renderer::createTargets(VkExtent2D size) {
     visibilityIndex_ = bindless_.addStorageImage(visibility_.view);
     bankMarchStorage_ = bindless_.addStorageImage(bankMarch_.view);
     bankMarchSampled_ = bindless_.addSampledImage(bankMarch_.view, VK_IMAGE_LAYOUT_GENERAL);
+    bloomSampledIndex_ = bindless_.addSampledImage(bloomImage_.view, VK_IMAGE_LAYOUT_GENERAL);
   } else {
     bindless_.setSampledImage(hizIndex_, hiz_.view, VK_IMAGE_LAYOUT_GENERAL);
     bindless_.setSampledImage(depthIndex_, depth_.view, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
@@ -756,6 +791,7 @@ void Renderer::createTargets(VkExtent2D size) {
     bindless_.setStorageImage(visibilityIndex_, visibility_.view);
     bindless_.setStorageImage(bankMarchStorage_, bankMarch_.view);
     bindless_.setSampledImage(bankMarchSampled_, bankMarch_.view, VK_IMAGE_LAYOUT_GENERAL);
+    bindless_.setSampledImage(bloomSampledIndex_, bloomImage_.view, VK_IMAGE_LAYOUT_GENERAL);
   }
 }
 
@@ -765,6 +801,13 @@ void Renderer::destroyTargets() {
   destroyImage(context_, output_);
   destroyImage(context_, visibility_);
   destroyImage(context_, bankMarch_);
+  for (size_t i = 0; i < bloomLevelViews_.size(); ++i) {
+    bindless_.removeStorageImage(bloomLevelIndices_[i]);
+    vkDestroyImageView(context_.device, bloomLevelViews_[i], nullptr);
+  }
+  bloomLevelViews_.clear();
+  bloomLevelIndices_.clear();
+  destroyImage(context_, bloomImage_);
   for (size_t i = 0; i < hizLevelViews_.size(); ++i) {
     bindless_.removeStorageImage(hizLevelIndices_[i]);
     vkDestroyImageView(context_.device, hizLevelViews_[i], nullptr);
@@ -1301,6 +1344,41 @@ void Renderer::recordDepthPyramid(VkCommandBuffer cmd) {
   }
 }
 
+// Engine2's bloom as a mip pyramid (shaders/bloom.hlsl): the part of the scene above the threshold comes down five levels,
+// then goes back up with a tent filter, each level adding its own share; level 0 is the finished bloom the tonemap adds.
+void Renderer::recordBloom(VkCommandBuffer cmd) {
+  // Last frame's tonemap sampled the pyramid; it is rebuilt from scratch.
+  transition(cmd, bloomImage_.image, bloomImage_.aspect,
+             {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_NONE,
+              VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
+  auto levelSize = [&](uint32_t level) { return VkExtent2D{std::max(1u, bloomSize_.width >> level), std::max(1u, bloomSize_.height >> level)}; };
+  auto barrier = [&](VkPipelineStageFlags2 nextStage) {
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, nextStage,
+                  VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
+  };
+  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, bloomDownPipeline_);
+  for (uint32_t level = 0; level < kBloomLevels; ++level) {
+    const VkExtent2D size = levelSize(level);
+    const VkExtent2D from = level == 0 ? size_ : levelSize(level - 1);
+    const BloomPush push{level == 0 ? sceneColorIndex_ : bloomSampledIndex_, linearClampIndex_, bloomLevelIndices_[level],
+                         level == 0 ? -1.0f : static_cast<float>(level - 1), size.width, size.height,
+                         1.0f / static_cast<float>(from.width), 1.0f / static_cast<float>(from.height), 1.0f, 1.0f};
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+    vkCmdDispatch(cmd, (size.width + 7) / 8, (size.height + 7) / 8, 1);
+    barrier(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT);
+  }
+  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, bloomUpPipeline_);
+  for (uint32_t level = kBloomLevels - 1; level-- > 0;) {
+    const VkExtent2D size = levelSize(level), from = levelSize(level + 1);
+    const BloomPush push{bloomSampledIndex_, linearClampIndex_, bloomLevelIndices_[level], static_cast<float>(level + 1), size.width, size.height,
+                         1.0f / static_cast<float>(from.width), 1.0f / static_cast<float>(from.height), kBloomWeights[level],
+                         level + 2 == kBloomLevels ? kBloomWeights[kBloomLevels - 1] : 1.0f};
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+    vkCmdDispatch(cmd, (size.width + 7) / 8, (size.height + 7) / 8, 1);
+    barrier(level == 0 ? VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT : VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT);
+  }
+}
+
 uint32_t Renderer::gatherWaits(Frame& frame, bool swapImage, std::array<VkSemaphoreSubmitInfo, 2>& waits) const {
   uint32_t count = 0;
   if (swapImage) {
@@ -1784,7 +1862,13 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
              {bank ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
               bank ? VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT : VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
               bank ? VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT : VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-              VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
+              VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
+  const bool bloomOn = debugView_ == 0 && bloom_ > 0.0f;
+  if (bloomOn) {
+    const uint32_t bloomScope = gpuTimer_.begin(cmd, "bloom");
+    recordBloom(cmd);
+    gpuTimer_.end(cmd, bloomScope);
+  }
   // The previous frame may still be copying the output image to the window.
   transition(cmd, output_.image, output_.aspect,
              {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -1804,7 +1888,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   vkCmdBeginRendering(cmd, &display);
   setViewport(cmd, size_);
   vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, tonemapPipeline_);
-  const TonemapPush tonemapPush{sceneColorIndex_, linearClampIndex_, debugView_ != 0 ? -1.0f : 1.0f, debugView_ != 0 ? 0.0f : bloom_};
+  const TonemapPush tonemapPush{sceneColorIndex_, linearClampIndex_, debugView_ != 0 ? -1.0f : 1.0f, debugView_ != 0 ? 0.0f : bloom_, bloomSampledIndex_};
   vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0,
                      sizeof(tonemapPush), &tonemapPush);
   vkCmdDraw(cmd, 3, 1, 0, 0);

@@ -309,6 +309,7 @@ class Renderer {
   void recordMeshes(Frame& frame, VkCommandBuffer cmd);
   void cullPass(VkCommandBuffer cmd, VkDeviceAddress frameAddress, VkPipeline instances, uint32_t drawPass, uint32_t instanceCount);
   void recordDepthPyramid(VkCommandBuffer cmd);
+  void recordBloom(VkCommandBuffer cmd);  // the bloom pyramid (shaders/bloom.hlsl), before the tonemap pass
   void recordVisibilityPass(VkCommandBuffer cmd, VkDeviceAddress frameAddress, uint32_t pass);
   void destroyTargets();
   Frame& beginFrame();
@@ -381,6 +382,13 @@ class Renderer {
   uint32_t bankNoiseIndex_[static_cast<size_t>(FogNoise::Count)] = {kNoIndex, kNoIndex, kNoIndex};
   bool bankNoiseUploaded_[static_cast<size_t>(FogNoise::Count)] = {};
   uint32_t bankMarchStorage_ = kNoIndex, bankMarchSampled_ = kNoIndex;
+  // Bloom: half-resolution mip pyramid (RGBA16F), one storage view per level, one sampled view of the whole chain.
+  Image bloomImage_;
+  std::vector<VkImageView> bloomLevelViews_;
+  std::vector<uint32_t> bloomLevelIndices_;
+  uint32_t bloomSampledIndex_ = kNoIndex;
+  VkExtent2D bloomSize_{};
+  VkPipeline bloomDownPipeline_ = VK_NULL_HANDLE, bloomUpPipeline_ = VK_NULL_HANDLE;
   std::vector<VkPipeline> bankMarchPipelines_, bankCompositePipelines_;  // per look
   bool bankThisFrame_ = false;
   uint32_t bankLook_ = 0;  // the look this frame draws
