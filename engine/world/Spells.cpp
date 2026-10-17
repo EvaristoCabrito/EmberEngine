@@ -1230,6 +1230,8 @@ bool spellPorted(const std::string& kind) {
          emberSpell(kind) != nullptr;
 }
 
+bool spellWeaponAbility(const std::string& kind) { return weaponAbility(kind); }
+
 bool spellInstant(const std::string& kind) { return kind == "createFoodAndWater" || kind == "eruption"; }
 
 int potionIndex(const std::string& id) {

@@ -110,6 +110,8 @@ void setCombatLogEnglish(bool english);
 std::string spellName(const std::string& kind);
 // A spell EmberEngine casts (the rest of a unit's list is shown but not castable yet).
 bool spellPorted(const std::string& kind);
+// A weapon skill (Engine2 isWeaponAbility): it rolls the weapon's own hit chance on a foe.
+bool spellWeaponAbility(const std::string& kind);
 // A spell cast at once, with no aim (Criar Comida e Água): cast it at the caster's own hex.
 bool spellInstant(const std::string& kind);
 
