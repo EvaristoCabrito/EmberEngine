@@ -123,6 +123,49 @@ void writeLook003(const FogLookInputs& in, void* out) {
   std::memcpy(out, &f, sizeof(f));
 }
 
+// --- Look 008 (192-byte frame): 003 thinning away near the camera (shaders/fog_look008.hlsl) -------------------
+
+struct Look008Frame {
+  glm::mat4 inverseViewProjection;
+  glm::vec2 boardCenter;
+  float time;
+  float baseY;
+  float topY;
+  float extinction;
+  float fadeRadius;
+  float rememberedCover;
+  glm::vec3 wind;
+  float noiseScale;
+  float scaleHeight;
+  float nearFadeStart, nearFadeEnd, pad0;
+  glm::vec3 albedo;
+  float ambient;
+  uint32_t noise, depth, march, marchSampled, color, frameIndex;
+  glm::uvec2 halfSize, fullSize, pad;
+};
+static_assert(sizeof(Look008Frame) == 192);
+
+// 008: 003's settings; the fog along each ray grows from nothing 2 units from the eye to whole at 14 (about 8 hexes),
+// so a camera that has come down into the bank no longer sees it over everything (the user's white / yellow veil).
+void writeLook008(const FogLookInputs& in, void* out) {
+  Look008Frame f{};
+  common(in, f);
+  f.boardCenter = in.scene.boardCenter;
+  f.baseY = in.scene.meanGround - 1.0f;
+  f.topY = in.scene.groundHigh + 3.0f;
+  f.fadeRadius = in.scene.boardRadius * 2.2f;
+  f.extinction = 0.75f;
+  f.scaleHeight = 1.1f;
+  f.nearFadeStart = 2.0f;
+  f.nearFadeEnd = 14.0f;
+  f.rememberedCover = 0.3f;
+  f.wind = {0.35f, 0.0f, 0.15f};
+  f.noiseScale = 0.06f;
+  f.albedo = {0.5f, 0.52f, 0.56f};
+  f.ambient = 0.8f;
+  std::memcpy(out, &f, sizeof(f));
+}
+
 // --- Looks 004 and 005 (240-byte frame): Engine2's mist model, 005 with the swirl ------------------------------
 
 struct Look004Frame {
@@ -328,6 +371,7 @@ std::span<const FogLook> fogLooks() {
       {"005", "fog_look005", "swirl round the party (Claude's take) - not yet seen", FogNoise::WhiteLattice, sizeof(Look005Frame), writeLook005},
       {"006", "fog_look006", "Engine2's mist4 as in the user's reference (vortex, clear centre) - not yet seen", FogNoise::WhiteLattice, sizeof(Look006Frame), writeLook006},
       {"007", "fog_look007", "swirl round the party on mist4's real values, fog-of-war coverage - not yet seen", FogNoise::WhiteLattice, sizeof(Look005Frame), writeLook007},
+      {"008", "fog_look008", "003 thinning away near the camera (no veil when the camera comes close)", FogNoise::SoftFbm, sizeof(Look008Frame), writeLook008},
   };
   return looks;
 }

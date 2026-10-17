@@ -18,6 +18,7 @@ ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/volumetrics_v1.hlsl STAGE
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/fog_look001.hlsl STAGES cs:CSMarch cs:CSComposite)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/fog_look002.hlsl STAGES cs:CSMarch cs:CSComposite)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/fog_look003.hlsl STAGES cs:CSMarch cs:CSComposite)
+ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/fog_look008.hlsl STAGES cs:CSMarch cs:CSComposite)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/fog_look004.hlsl STAGES cs:CSMarch cs:CSComposite)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/fog_look005.hlsl STAGES cs:CSMarch cs:CSComposite)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/fog_look006.hlsl STAGES cs:CSMarch cs:CSComposite)

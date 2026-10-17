@@ -132,7 +132,7 @@ struct Options {
   int fog = -1;
   bool scout = false, noUi = false, volume = true;
   bool windowed = false;  // --windowed or --size: a window instead of the whole screen
-  int fogLook = 3;
+  int fogLook = 8;
   int gridLook = 2;  // --grid-look N: the battle grid (panel "Grade"): 0 OFF, 1 the old marks, 2 look 001
   int cardStance = 1;  // --cards N: 0 vertical cards, 1 leaning back with the camera's tilt (panel "Cards")
   int barsFade = 1;    // --bars-fade N: 0 bars always shown, 1 the bars of units near the camera fade (panel "Vida perto")

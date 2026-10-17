@@ -124,7 +124,7 @@ struct MapStageOptions {
   // Volumetric fog (R7's literal fog, shaders/volume.hlsl): on unless switched off (--volume 0).
   bool volume = true;
   bool airParticles = true;  // the map's wisps and dust motes (Dev Controls "Efeitos atmosféricos" off: none)
-  int fogLook = 3;  // the fog look shown first (render/FogLooks.h numbers)
+  int fogLook = 8;  // the fog look shown first (render/FogLooks.h numbers): 008 = 003 without the veil up close
   int gridLook = 2;  // the panel's "Grade" at the start: 0 OFF, 1 antiga (the marks), 2 = look 001 (--grid-look N)
   int cardStance = 1;  // the panel's "Cards" at the start: 0 em pé (vertical), 1 para a câmera (--cards N)
   int barsFade = 1;    // the panel's "Vida perto" at the start: 0 OFF, 1 bars near the camera fade (--bars-fade N)
@@ -901,12 +901,12 @@ class MapStage final : public Stage {
     if (fog_ && options_.volume) {
       // First "no fog at all" (no mist and no fog of war: the whole map seen, every unit drawn), then the saved
       // mist looks (looks/fog/README.md, in order).
-      static const char* kFog[7] = {"nuvens", "lençol", "bancos", "bloco", "bloco + giro", "mist4", "mist4 + giro"};
+      static const char* kFog[8] = {"nuvens", "lençol", "bancos", "bloco", "bloco + giro", "mist4", "mist4 + giro", "bancos sem véu"};
       int look = noFog_ ? 0 : static_cast<int>(fogLook_) + 1;
       const int count = static_cast<int>(fogLooks().size());
       if (dropdown("Névoa", look, count + 1, [count](int i) {
             if (i == 0) return std::string("OFF");
-            return count == 7 ? std::string(kFog[i - 1]) : std::string(fogLooks()[i - 1].note);
+            return count == 8 ? std::string(kFog[i - 1]) : std::string(fogLooks()[i - 1].note);
           })) {
         noFog_ = look == 0;
         if (!noFog_) fogLook_ = static_cast<uint32_t>(look - 1);
@@ -4263,7 +4263,7 @@ class MapStage final : public Stage {
   glm::vec3 heroAt_{0.0f};
   e2::HexPoint heroHex_;
   float meanGround_ = 0.0f, boardTop_ = 0.0f, groundLow_ = 0.0f;
-  uint32_t fogLook_ = 2;  // index into fogLooks(): look 003 unless --fog-look says otherwise
+  uint32_t fogLook_ = 7;  // index into fogLooks(): look 008 unless --fog-look says otherwise
   int lightingMode_ = 3;   // 0 old prototype day, 1 Engine2 presets, 2 physical sky (Engine2 strengths), 3 real (lux + camera)
   // Light mode "real": the camera's exposure, adapted towards the scene's (EV100), and what was metered.
   float adaptedEv_ = std::numeric_limits<float>::quiet_NaN();
