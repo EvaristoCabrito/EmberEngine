@@ -172,17 +172,17 @@ std::optional<std::vector<Hero>> loadHeroes(const std::filesystem::path& heroesJ
       q.frames = static_cast<int>(num(p, "frames", 1));
       if (p.contains("pace") && p["pace"].is_array()) q.pace = p["pace"].get<std::vector<int>>();
       q.doneAt = static_cast<int>(num(p, "doneAt", -1));
-      o.poses.push_back(std::move(q));
-    }
-    heroes.push_back(std::move(o));
-  }
-  return heroes;
-}
       if (strides.is_object()) {
         const auto it = strides.find(q.set + "/" + q.clip);
         if (it != strides.end() && it->is_number()) q.strides = it->get<float>();
         else if (strides.contains("__default") && strides["__default"].is_number()) q.strides = strides["__default"].get<float>();
       }
       if (p.contains("bodyShift") && p["bodyShift"].is_array()) q.bodyShift = p["bodyShift"].get<std::vector<float>>();
+      o.poses.push_back(std::move(q));
+    }
+    heroes.push_back(std::move(o));
+  }
+  return heroes;
+}
 
 }  // namespace ember::e2

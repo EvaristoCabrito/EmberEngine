@@ -1,0 +1,25 @@
+{
+ "version": 1,
+ "about": "Clips whose art EmberEngine replaces (Engine2's file stays untouched in C:/Engine2). Applied to the battle pack's manifest and the heroes file by tools/scripts/sprites/apply_sprite_overrides.py. Paths are relative to the repo root.",
+ "clips": [
+  {
+   "set": "salazar-final",
+   "clip": "move",
+   "version": "v02",
+   "why": "Engine2's walk to the right did not close its loop (the user, 2026-10-17); the user's new sheet (ludo.ai, 7 x 7, 66 ms a frame), sliced into frames",
+   "frames": {"count": 49, "pattern": "content/sprites/salazar-final/move-v02/move-{}.png"},
+   "frameMs": 66,
+   "strides": 2.0,
+   "poses": [
+    {
+     "hero": "salazar",
+     "pose": "walk",
+     "nat": [380, 622],
+     "crop": [15, 1, 364, 615],
+     "box": {"w": 1.65665, "h": 2.71167, "foot": 0.02472},
+     "boxNote": "same figure size and feet line as Engine2's clip: its figure 473 px tall at 3.3843 / 613 units a pixel, 13 px of margin under the feet; this art's figure is 599 px tall with 12 px under the feet"
+    }
+   ]
+  }
+ ]
+}
