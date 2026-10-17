@@ -522,6 +522,7 @@ class Battle {
   const std::string& win() const { return win_; }
   struct Exit {
     std::string id, kind;  // "escape" (a DEX chance to get away), "dungeon" and "connector" (leave at once)
+    int x = 0, y = 0;      // the placement's own hex (its footprint's anchor)
     std::vector<BattleHex> cells;
     std::string targetMapId;
     // A floor connector: the way back to the floor it came from (Engine2 DecorationPlacement.returnConnector), and the
@@ -530,6 +531,7 @@ class Battle {
     std::string connectorDirection;
   };
   const std::vector<Exit>& exits() const { return exits_; }
+  std::vector<Exit>& exits() { return exits_; }  // a mission's own routing (wispCrossing.ts routeWispCrossing)
   // The end is on offer: a hero stands on a waypoint, or the win rule is met.
   bool winAvailable() const;
   // The waypoint a living hero is standing on, if any, and that hero.

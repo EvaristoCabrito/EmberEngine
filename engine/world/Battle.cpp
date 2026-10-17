@@ -148,6 +148,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
       e.connectorDirection = text(x, "connectorDirection");
       if (x.contains("cells") && x["cells"].is_array())
         for (const json& c : x["cells"]) e.cells.push_back({c[0].get<int>(), c[1].get<int>()});
+      e.x = integer(x, "x", e.cells.empty() ? 0 : e.cells.front().x), e.y = integer(x, "y", e.cells.empty() ? 0 : e.cells.front().y);
       b.exits_.push_back(std::move(e));
     }
   // A file from before `explore` / `baseMov`: an explore mission shows as every unit carrying the whole board as its

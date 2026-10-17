@@ -132,6 +132,9 @@ struct Options {
   // --arrived-from <mission id>: the party comes in by the floor connector back to that map (MapStageOptions::arrivedFrom);
   // --leader <hero>: that hero walks a free-roam map in the authored walker's place (MapStageOptions::leader).
   std::string arrivedFrom, leader;
+  // --defeated-spawns <id,id,...>: those enemy / neutral spawns dead from an earlier visit (MapStageOptions::defeatedSpawns);
+  // --knocked-out <Hero,Hero>: those heroes fell on the floor before and stay out (carried HP 0 + preserveKnockouts).
+  std::string defeatedSpawns, knockedOut;
   bool tatica = false;
   bool spellsMenuOpen = false;
   float measureSeconds = 0.0f;
@@ -216,6 +219,8 @@ Options parse(int argc, char** argv) {
     else if (arg == "--spell-light") o.spellLight = true;
     else if (arg == "--fx-test" && hasValue) o.fxTest = argv[++i];
     else if (arg == "--arrived-from" && hasValue) o.arrivedFrom = argv[++i];
+    else if (arg == "--defeated-spawns" && hasValue) o.defeatedSpawns = argv[++i];
+    else if (arg == "--knocked-out" && hasValue) o.knockedOut = argv[++i];
     else if (arg == "--leader" && hasValue) o.leader = argv[++i];
     else if (arg == "--promote" && hasValue) {
       std::string list = argv[++i];
@@ -585,6 +590,17 @@ MapStageOptions mapOptions(const Options& o) {
     for (const auto& [name, level] : o.promoteLevel) m.heroProgress[name] = {level, 0};
     m.arrivedFrom = o.arrivedFrom;
     m.leader = o.leader;
+    const auto split = [](const std::string& s) {
+      std::vector<std::string> out;
+      for (size_t at = 0; at < s.size();) {
+        const size_t end = std::min(s.find(',', at), s.size());
+        if (end > at) out.push_back(s.substr(at, end - at));
+        at = end + 1;
+      }
+      return out;
+    };
+    for (const std::string& id : split(o.defeatedSpawns)) m.defeatedSpawns.insert(id);
+    for (const std::string& hero : split(o.knockedOut)) m.heroState[hero].hp = 0, m.preserveKnockouts = true;
     return m;
   }
 }
@@ -882,6 +898,8 @@ int runWindow(const Options& o) {
   bool resumeOnMap = false, resumeNext = false;
   // A floor connector taken (GameApp startBattle(target, ..., arrivedFrom)): the map it was taken on, for the next battle.
   std::string arriveFrom;
+  // ... and the heroes who fell there stay out of the next floor (GameApp startBattle's preserveKnockouts).
+  bool preserveKnockouts = false;
   auto toggleFullscreen = [&] {
     const bool full = (SDL_GetWindowFlags(window.handle()) & SDL_WINDOW_FULLSCREEN) != 0;
     SDL_SetWindowFullscreen(window.handle(), !full);
@@ -957,13 +975,28 @@ int runWindow(const Options& o) {
   // campaign.ts finishBattle (its heroes part and the mission's completion): each hero's level, XP and HP into the
   // active slot, the pending mission cleared, and on a victory the mission completed. Loot, ember, rations, quests and
   // story progression are not ported yet.
-  auto finishCampaignFight = [&](const MapStage& map) {
+  // `advancing`: a floor connector taken (the result screen's Subir / Descer): the next floor opens right after, so no note and
+  // no world map.
+  auto finishCampaignFight = [&](const MapStage& map, bool advancing = false) {
     if (playing.empty() || map.battleResult().empty()) return;
     e2::Json save = campaign.activeSave();
+    const bool victory = map.battleResult() == "victory";
+    if (victory) save["unitHp"] = e2::Json::object();  // persistVictory: unitHp is this fight's heroes, after the camp (campHp)
     for (const HeroOutcome& h : map.heroOutcomes()) {
-      save["levels"][h.name] = h.level;
-      save["xp"][h.name] = h.xp;
-      save["unitHp"][h.name] = h.hp;
+      if (!victory || h.hp > 0) {  // persistVictory keeps the levels and XP of the heroes still standing
+        save["levels"][h.name] = h.level;
+        save["xp"][h.name] = h.xp;
+      }
+      save["unitHp"][h.name] = victory ? h.campHp : h.hp;
+    }
+    // mapstore keepsDefeatedSpawns: a dungeon keeps the enemies and neutrals killed here dead on every later visit
+    if (const e2::MapMission* mm = hasWorld ? world.mission(playing) : nullptr; victory && mm && mm->keepsSpawns) {
+      e2::Json& dead = save["crossingDefeatedSpawns"];
+      if (!dead.is_object()) dead = e2::Json::object();
+      e2::Json& list = dead[playing];
+      if (!list.is_array()) list = e2::Json::array();
+      for (const std::string& id : map.fallenSpawns())
+        if (std::find(list.begin(), list.end(), id) == list.end()) list.push_back(id);
     }
     // potions left, disease, poison, hunger, rations (finishBattle; HeroHandoff.h)
     writeHeroConditions(save, map.heroOutcomes(), map.lootRations());
@@ -989,13 +1022,24 @@ int runWindow(const Options& o) {
         if (!world.bagHasRoom(probe, 1)) continue;
         save["looseEquipment"][id] = have + 1;
       }
+      // wispCrossing.ts completedAfterWispVictory: the crossing counts only once its lair's plant falls (then both do)
       e2::Json& done = save["completed"];
       if (!done.is_array()) done = e2::Json::array();
-      if (std::find(done.begin(), done.end(), playing) == done.end()) done.push_back(playing);
+      const bool wispDone = std::find(done.begin(), done.end(), "wisp-forest-crossing") != done.end() ||
+                            std::find(done.begin(), done.end(), "wisp-forest-crossing-boss") != done.end();
+      std::vector<std::string> ids{playing};
+      if (playing == "wisp-forest-crossing" && !wispDone) ids.clear();
+      if (playing == "wisp-forest-crossing-boss") ids.push_back("wisp-forest-crossing");
+      for (const std::string& id : ids)
+        if (std::find(done.begin(), done.end(), id) == done.end()) done.push_back(id);
     } else {
       save["pendingMission"] = playing;  // a lost fight is played again from its briefing
     }
     const bool ok = campaign.saveActive(std::move(save));
+    if (advancing) {
+      if (!ok) logWarn("{}: the victory could not be written before the next floor", playing);
+      return;
+    }
     const e2::CampaignMission* m = campaign.data().mission(playing);
     const std::string name = m ? m->title : playing;
     campaignNote = !ok ? "Não foi possível gravar o progresso (" + e2::Campaign::savePath().string() + ")."
@@ -1071,11 +1115,20 @@ int runWindow(const Options& o) {
         // floor opens, the party beside the connector back.
         map->clearFloor();
         std::string error;
-        std::optional<MissionEntry> next = testSession || playing.empty() ? testMission(campaign, paths, floor, error) : campaignMission(campaign, paths, floor, error);
+        const bool test = testSession || playing.empty();
+        std::optional<MissionEntry> next = test ? testMission(campaign, paths, floor, error) : campaignMission(campaign, paths, floor, error);
+        const e2::Json completed = test ? e2::Json::array() : campaign.activeSave().value("completed", e2::Json::array());
+        const bool lairDone = std::find(completed.begin(), completed.end(), "wisp-forest-crossing-boss") != completed.end();
         if (!next) {
           logWarn("floor connector to {}: {}", floor, error);
+        } else if (!test && floor == "wisp-forest-crossing-boss" && lairDone) {
+          logWarn("floor connector to {}: the lair is done (GameApp startBattle refuses it)", floor);
         } else {
+          // A fight won on its stairs: the victory is written first (persistVictory: HP carried, the dead stay dead), as Engine2
+          // writes it when the result screen shows; a free-roam floor (the walkable Inn) writes nothing here.
+          if (!test && !map->explores() && map->battleResult() == "victory") finishCampaignFight(*map, true);
           arriveFrom = map->draftId();
+          preserveKnockouts = true;
           pending = std::move(next);
         }
       } else if (map->wantsLoad()) {
@@ -1192,6 +1245,19 @@ int runWindow(const Options& o) {
         // A free-roam map: who sits there and who walks (the campaign's save, or Modo teste's); where the party comes in.
         if (hasWorld) setUpExplore(options, testSession ? testSession->save : campaign.activeSave(), world, testSession.has_value() || playing.empty());
         options.arrivedFrom = std::exchange(arriveFrom, {});
+        options.preserveKnockouts = std::exchange(preserveKnockouts, false);
+        // A dungeon's dead stay dead (crossingDefeatedSpawns; a campaign only), and the Wisp crossing's exits lead to the lair until
+        // it is done (routeWispCrossing; Modo teste: always to the lair).
+        if (!playing.empty() && !testSession) {
+          const e2::Json save = campaign.activeSave();
+          if (const e2::MapMission* mm = hasWorld ? world.mission(playing) : nullptr; mm && mm->keepsSpawns)
+            if (const e2::Json dead = save.value("crossingDefeatedSpawns", e2::Json::object()); dead.is_object() && dead.contains(playing) && dead[playing].is_array())
+              for (const e2::Json& id : dead[playing])
+                if (id.is_string()) options.defeatedSpawns.insert(id.get<std::string>());
+          const e2::Json done = save.value("completed", e2::Json::array());
+          options.wispCrossingDone = std::find(done.begin(), done.end(), "wisp-forest-crossing") != done.end() ||
+                                     std::find(done.begin(), done.end(), "wisp-forest-crossing-boss") != done.end();
+        }
         curtainBeforeBattle();
         auto map = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
         map->setMenus(toggleFullscreen, &devGfx);

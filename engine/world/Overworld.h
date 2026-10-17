@@ -79,6 +79,7 @@ class Overworld {
   // --- rules -------------------------------------------------------------------------------------------------------
   bool heroRecruited(const std::string& hero, const Json& save) const;
   int maxHp(const Json& save, const std::string& hero) const;  // statsFor(class, level).hp, 0 without a class
+  int classHp(const std::string& classId, int level) const;    // statsFor(classId, level).hp
   bool wispForestUncleared(const Json& save) const;
   // `test` everywhere below: Engine2's Modo teste (GameApp testMode): every hex walkable, every hero counts as in the
   // party, every mission and location open.
@@ -122,7 +123,6 @@ class Overworld {
     int power = 1;
     bool starting = false;
   };
-  int classHp(const std::string& classId, int level) const;
   double classResistance(const std::string& classId, const std::string& element) const;
   double gearResistance(const Json& save, const std::string& hero, const std::string& element) const;
   int missionIndex(const std::string& id) const;

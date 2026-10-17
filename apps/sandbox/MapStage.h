@@ -161,6 +161,14 @@ struct MapStageOptions {
   // beside the connector leading back (arriveAtConnector) instead of on the authored spawns.
   std::set<std::string> absentNeutrals;
   std::string leader, arrivedFrom;
+  // A dungeon (mapstore keepsDefeatedSpawns): the enemy / neutral spawn ids killed on earlier visits (save.crossingDefeatedSpawns
+  // of this mission), never spawned again; and after a floor connector (GameApp preserveKnockouts) the heroes whose carried HP
+  // is 0 stay out of this floor.
+  std::set<std::string> defeatedSpawns;
+  bool preserveKnockouts = false;
+  // wispCrossing.ts routeWispCrossing: the Wisp Forest crossing's way on. Until the crossing is finished its exits lead to the
+  // carnivorous plant's lair (a floor connector up to wisp-forest-crossing-boss); once finished they lead outside (dungeon exits).
+  bool wispCrossingDone = false;
   // A campaign fight: each hero's level and XP from the save (save.ts levels / xp), by name.
   std::map<std::string, std::pair<int, int>> heroProgress;
   // ... and each hero's promotion (save.ts promotions: "warlock" / "elementalist"), by name: its class, class name and
@@ -200,6 +208,7 @@ struct MapStageOptions {
 struct HeroOutcome {
   std::string name;
   int level = 1, xp = 0, hp = 0;
+  int campHp = 0;            // after a victory: the HP it keeps (persistVictory: half the missing healed, or carried past a floor connector)
   std::array<int, 7> bag{};  // in e2::kPotionIds order
   bool diseased = false;
   std::string poison;        // empty = not poisoned
@@ -1179,12 +1188,38 @@ class MapStage final : public Stage {
   bool holdTurns = false;
   // The party's affinities as the fight leaves them (friendly fire, healing, fighting side by side), for the save.
   std::map<std::string, double> affinityScoresNow() const { return battle_ ? battle_->affinityScores() : std::map<std::string, double>(); }
+  // GameApp persistVictory crossingDefeatedSpawns: the enemy / neutral spawn ids that fell in this fight (summons aside).
+  std::vector<std::string> fallenSpawns() const {
+    std::vector<std::string> out;
+    if (battle_)
+      for (const e2::BattleUnit& u : battle_->units())
+        if ((u.side == "enemy" || u.side == "neutral") && !u.alive && !u.summoned && !absent_.contains(u.id)) out.push_back(u.id);
+    return out;
+  }
+  // The waypoint the mission was ended on was a floor connector (data.ts isFloorConnector(hud.activeExit)): no rest after it.
+  bool floorTaken() const { return finishExit_ && finishExit_->kind == "connector"; }
+  // ... and the floor it leads to (empty: nowhere to go on).
+  std::string floorTarget() const { return floorTaken() ? finishExit_->targetMapId : std::string(); }
+  // GameApp persistVictory's HP for a hero after a victory: past a floor connector the battle's HP carries on (fallen: 0, out of
+  // the next floor); after any other victory the camp heals half of what is missing up to the class's HP at its level now
+  // (statsFor(class, level).hp), and the fallen come back at half of it.
+  int maxHpAt(const e2::BattleUnit& u, int level) const {
+    const int hp = options_.world ? options_.world->classHp(u.classId, level) : 0;
+    return hp > 0 ? hp : u.maxHp;
+  }
+  int campHp(const e2::BattleUnit& u) const {
+    const int battle = u.alive ? u.hp : 0;
+    if (floorTaken()) return battle;
+    const int max = maxHpAt(u, u.level);
+    return u.alive ? std::min(max, battle + static_cast<int>(std::ceil((max - battle) * 0.5))) : std::max(1, static_cast<int>(std::ceil(max * 0.5)));
+  }
   std::vector<HeroOutcome> heroOutcomes() const {
     std::vector<HeroOutcome> out;
     if (!battle_) return out;
     for (const e2::BattleUnit& u : battle_->units())
-      if (u.side == "player" && !u.summoned) {
+      if (u.side == "player" && !u.summoned && !absent_.contains(u.id)) {
         HeroOutcome h{u.name, u.level, u.xp, u.alive ? u.hp : 0};
+        h.campHp = campHp(u);
         std::copy(std::begin(u.bag), std::end(u.bag), h.bag.begin());
         h.diseased = u.diseased;
         h.poison = u.poisoned ? (u.poisonTier.empty() ? "lesser" : u.poisonTier) : "";
@@ -2100,6 +2135,7 @@ class MapStage final : public Stage {
     if (!battle_) return;
     explores_ = battle_->roaming();
     arrangeBattle();
+    routeWispCrossing();
     for (e2::BattleUnit& u : battle_->units())
       if (const auto it = options_.heroProgress.find(u.name); it != options_.heroProgress.end() && u.side == "player")
         e2::raiseToLevel(u, it->second.first, it->second.second);
@@ -2116,6 +2152,18 @@ class MapStage final : public Stage {
       if (it == options_.heroState.end() || u.side != "player") continue;
       applyHeroState(u, it->second);
     }
+    // A dungeon (GameApp startBattle + the BattleEngine constructor): the enemies and neutrals killed on an earlier visit stay dead
+    // (save.crossingDefeatedSpawns, by spawn id), and after a floor connector the heroes who fell on the floor before stay out of
+    // this one (preserveKnockouts: their carried HP is 0). Both are gone from the start: not drawn, no turn, no body.
+    for (e2::BattleUnit& u : battle_->units()) {
+      bool gone = u.side != "player" && options_.defeatedSpawns.contains(u.id);
+      if (u.side == "player" && options_.preserveKnockouts)
+        if (const auto it = options_.heroState.find(u.name); it != options_.heroState.end() && it->second.hp && *it->second.hp == 0) gone = true;
+      if (!gone) continue;
+      u.alive = false, u.hp = 0;
+      absent_.insert(u.id);
+    }
+    if (!absent_.empty()) logInfo("battle: {} units absent from the start (killed on an earlier visit, or fell on the floor before)", absent_.size());
     if (battle_->cols() != board_->layout().cols || battle_->rows() != board_->layout().rows) {
       logError("battle {}: {}x{} does not fit the map's {}x{} board", path.string(), battle_->cols(), battle_->rows(), board_->layout().cols,
                board_->layout().rows);
@@ -2131,6 +2179,8 @@ class MapStage final : public Stage {
           break;
         }
     logInfo("battle {}: {} of {} units in play", battle_->map(), matched, scene_->units.size());
+    for (size_t i = 0; i < unitBattle_.size(); ++i)
+      if (unitBattle_[i] >= 0 && absent_.contains(battle_->units()[static_cast<size_t>(unitBattle_[i])].id)) unitDiedAt_[i] = -1000.0f;
     findConversations();
     if (!options_.arrivedFrom.empty()) arriveAtConnector();
     rng_ = e2::Mulberry32(static_cast<uint32_t>(std::chrono::steady_clock::now().time_since_epoch().count()));
@@ -2596,7 +2646,10 @@ class MapStage final : public Stage {
   // The mission's end (Engine2 evaluateEnd / confirmFinish): winning only makes ending it an option. A hero on a waypoint offers it
   // (an escape marker with its DEX chance), and so does a won rout / boss mission.
   void confirmFinishNow() {
+    const e2::Battle::Exit* exit = battle_->activeExit();
+    const std::optional<e2::Battle::Exit> on = exit ? std::optional<e2::Battle::Exit>(*exit) : std::nullopt;
     const e2::FinishOutcome o = e2::confirmFinish(*battle_, rng_);
+    if (o.ended) finishExit_ = on;  // the waypoint taken (hud.activeExit at the result screen)
     if (o.escapeFailed) {
       const e2::BattleUnit& u = battle_->units()[o.hero];
       tip_ = u.name + tr(" não conseguiu fugir — o combate continua.", " could not get away: the fight goes on."), tipAt_ = now_;
@@ -2647,9 +2700,10 @@ class MapStage final : public Stage {
     ImGui::PopTextWrapPos();
     ImGui::PopFont();
     if (emberButton("##finishyes", yes.c_str(), true, true)) {
-      // A floor connector leads straight onto the linked floor (GameApp: the result screen's "Subir" / "Descer", then
-      // startBattle(target, ..., arrivedFrom)); the battle does not end here.
-      if (!floorExit.empty()) floorRequest_ = floorExit, winDismissed_ = true;
+      // On a free-roam map (the walkable Inn) a floor connector leads straight onto the linked floor. In a fight it ends the
+      // mission as Engine2's confirmFinish does: victory, then the result screen's "Subir" / "Descer" / "Avançar" / "Voltar"
+      // (GameApp startBattle(target, ..., preserveKnockouts, arrivedFrom)).
+      if (!floorExit.empty() && explores_) floorRequest_ = floorExit, winDismissed_ = true;
       else confirmFinishNow();
     }
     ImGui::SameLine();
@@ -3586,6 +3640,18 @@ class MapStage final : public Stage {
       select(gi);
       openLock();
       return logInfo("battle script: lockpick {} on lock {} ({} at {}, {}): open {}, Ember found {}", p[1], li, lock.kind, lock.x, lock.y, battle_->locks()[li].open, battle_->lootEmber());
+    }
+    if (p[0] == "finish") {
+      // the finish prompt's yes (drawFinishPrompt), then what the result screen says: its line, its way on, each hero's HP after it
+      const e2::Battle::Exit* on = battle_->activeExit();
+      if (!battle_->winAvailable()) return fail("the end is not on offer");
+      if (on && on->kind == "connector" && !on->targetMapId.empty() && explores_) floorRequest_ = on->targetMapId;
+      else confirmFinishNow();
+      std::string heroes;
+      for (const HeroOutcome& h : heroOutcomes()) heroes += std::format(" {} {}->{}", h.name, h.hp, h.campHp);
+      return logInfo("battle script: finish on {} ({}): result '{}', line '{}', way on '{}' ({}), fallen spawns {}, HP after:{}", on ? on->id : "no waypoint",
+                     on ? on->kind : "-", battle_->result(), resultLine(), floorTarget().empty() ? floorRequest_ : floorTarget(),
+                     floorTarget().empty() ? "-" : advanceLabel(), fallenSpawns().size(), heroes);
     }
     if (p[0] == "aim" && p.size() > 2) {
       // the cursor held on a hex from now on (the grid's route / target under it, for captures)
@@ -5250,6 +5316,26 @@ class MapStage final : public Stage {
 
   // GameApp ResultScreen: the mission's art, "Vitória · T3" / "Derrota", its title and line, each hero's growth (level,
   // XP bar, HP after the fight), then the way on.
+  // GameApp ResultScreen's body on a victory, by the waypoint the mission was ended on.
+  std::string resultLine() const {
+    if (finishExit_ && board_->draft().id == kWispCrossing && finishExit_->targetMapId == kWispBoss)
+      return tr("A trilha leva ao covil da Planta Carnívora. Derrotem-na para concluir a travessia.",
+                "The trail leads to the Carnivorous Plant's lair. Defeat it to finish the crossing.");
+    if (finishExit_ && finishExit_->kind == "dungeon") return tr("Vocês encontraram a saída da masmorra.", "You found the dungeon exit.");
+    if (finishExit_ && finishExit_->id == "escape-exit") return tr("Vocês escaparam a tempo.", "You got away in time.");
+    if (floorTaken()) {
+      if (board_->draft().id == "estalagem") return tr("Subir para o Segundo andar", "Up to the Second floor");
+      if (board_->draft().id == "estalagem-andar-2") return tr("Descer para o Primeiro andar", "Down to the First floor");
+      return connectorUp(*finishExit_) ? tr("Subindo para o andar superior.", "Going up to the floor above.")
+                                       : tr("Descendo para o andar inferior.", "Going down to the floor below.");
+    }
+    return tr("O campo ficou em silêncio.", "The field fell silent.");
+  }
+  // ... and its "advance" button (floorConnectorDirection always names a way: Subir / Descer).
+  std::string advanceLabel() const {
+    if (board_->draft().id == kWispCrossing && finishExit_ && finishExit_->targetMapId == kWispBoss) return tr("ENFRENTAR A PLANTA", "FACE THE PLANT");
+    return connectorUp(*finishExit_) ? tr("SUBIR", "GO UP") : tr("DESCER", "GO DOWN");
+  }
   void drawResultScreen() {
     const ImGuiIO& io = ImGui::GetIO();
     const ImVec2 size = io.DisplaySize;
@@ -5278,13 +5364,13 @@ class MapStage final : public Stage {
     emberTitle(dl, {x, y}, 3.0f * rem, title.c_str());
     y += 3.0f * rem * 1.1f + 0.5f * rem;
     ImFont* ui = uiFont(UiFont::Ui);
-    dl->AddText(ui, 1.125f * rem, {x, y}, IM_COL32(180, 180, 180, 255), win ? "O campo ficou em silêncio." : "A linha quebrou.");
+    dl->AddText(ui, 1.125f * rem, {x, y}, IM_COL32(180, 180, 180, 255), win ? resultLine().c_str() : tr("A linha quebrou.", "The line broke.").c_str());
     y += 1.125f * rem * 1.5f + 1.5f * rem * z;
     // growth: one trough per hero
     const float rowW = std::min(34.0f * rem, size.x - 2.0f * rem);
     for (size_t i = 0; i < battle_->units().size(); ++i) {
       const e2::BattleUnit& u = battle_->units()[i];
-      if (u.side != "player" || u.summoned || i >= startLevel_.size()) continue;
+      if (u.side != "player" || u.summoned || i >= startLevel_.size() || absent_.contains(u.id)) continue;
       const auto [fromLevel, fromXp] = startLevel_[i];
       const float rowH = 4.6f * rem;
       const ImVec2 p{x, y}, q{x + rowW, y + rowH};
@@ -5307,7 +5393,20 @@ class MapStage final : public Stage {
       const std::string xp = std::format("{}/{} XP{}", u.xp, next, u.level != fromLevel ? " · subiu" : "");
       dl->AddText(ui, 0.875f * rem, {p.x + 0.75f * rem + barW + 0.5f * rem, ty}, IM_COL32(180, 180, 180, 255), xp.c_str());
       ty += 0.875f * rem * 1.45f;
-      dl->AddText(ui, 0.875f * rem, {p.x + 0.75f * rem, ty}, IM_COL32(180, 180, 180, 255), std::format("Combate: {}/{}", u.hp, u.maxHp).c_str());
+      // GameApp ResultScreen's HP lines: the fight's HP, then what the camp gives (resting) or what goes on to the next floor
+      std::string hpLine = std::format("{} {}/{}", tr("Combate:", "Battle:"), u.alive ? u.hp : 0, maxHpAt(u, fromLevel));
+      if (win) {
+        const int camp = campHp(u), max = maxHpAt(u, u.level);
+        if (floorTaken())
+          hpLine += !u.alive ? tr(" · Fora do próximo andar", " · Out of the next floor")
+                             : std::format(" · {} {} HP · {}", tr("Próximo andar:", "Next floor:"), camp, tr("sem descanso", "no rest"));
+        else if (!u.alive)
+          hpLine += std::format(" · {} {} HP ({} {})", tr("Descanso: revive com", "Rest: back with"), camp, tr("metade de", "half of"), max);
+        else
+          hpLine += (camp > u.hp ? std::format(" · {} +{} HP", tr("Descanso:", "Rest:"), camp - u.hp) : tr(" · Descanso: sem feridas", " · Rest: no wounds")) +
+                    std::format(" · {} {}/{}", tr("Acampamento:", "Camp:"), camp, max);
+      }
+      dl->AddText(ui, 0.875f * rem, {p.x + 0.75f * rem, ty}, IM_COL32(180, 180, 180, 255), hpLine.c_str());
       y += rowH + 0.5f * rem;
     }
     // the way on
@@ -5315,6 +5414,10 @@ class MapStage final : public Stage {
     const float by = size.y - rem - bh;
     if (!win) {
       if (emberBigButton("##retry", "TENTAR DE NOVO", {x, by}, {bw, bh}, true, rem)) retryRequested_ = true;
+      if (emberBigButton("##map", "MAPA", {x + bw + rem, by}, {bw, bh}, false, rem)) titleRequested_ = true;
+    } else if (const std::string floor = floorTarget(); !floor.empty()) {
+      // GameApp onAdvance: a floor connector goes straight into the linked floor (never the world map)
+      if (emberBigButton("##advance", advanceLabel().c_str(), {x, by}, {bw, bh}, true, rem)) floorRequest_ = floor;
       if (emberBigButton("##map", "MAPA", {x + bw + rem, by}, {bw, bh}, false, rem)) titleRequested_ = true;
     } else if (emberBigButton("##map", "MAPA", {x, by}, {bw, bh}, true, rem)) {
       titleRequested_ = true;
@@ -5434,7 +5537,9 @@ class MapStage final : public Stage {
     if (!npcDialog_.empty()) logInfo("conversations: {} NPCs talk", npcDialog_.size());
   }
   // GameApp arriveAtConnector: the party beside the connector that leads back where it came from, in walking order out from
-  // it (passable ground only, never on a waypoint or another body); the authored spawns when there is not room enough.
+  // it (the terrain's own passability, no blocking decoration; never on a waypoint or any enemy / neutral spawn's body, the dead
+  // of an earlier visit included); the heroes who fell on the floor before do not count; the authored spawns when there is
+  // not room enough.
   void arriveAtConnector() {
     const auto& exits = battle_->exits();
     const auto back = std::find_if(exits.begin(), exits.end(), [&](const e2::Battle::Exit& x) {
@@ -5445,19 +5550,22 @@ class MapStage final : public Stage {
     std::set<std::pair<int, int>> waypoints, bodies;
     for (size_t b = 0; b < battle_->units().size(); ++b) {
       const e2::BattleUnit& u = battle_->units()[b];
-      if (u.side == "player" && !u.summoned) party.push_back(b);
-      else if (u.alive)
+      if (u.side == "player") {
+        if (!u.summoned && !absent_.contains(u.id)) party.push_back(b);
+      } else {
         for (const e2::BattleHex& h : e2::Battle::footprint(u, u.x, u.y)) bodies.insert({h.x, h.y});
+      }
     }
     for (const e2::Battle::Exit& x : exits)
       for (const e2::BattleHex& c : x.cells) waypoints.insert({c.x, c.y});
     auto walkable = [&](int x, int y) {
       if (x < 0 || y < 0 || x >= battle_->cols() || y >= battle_->rows()) return false;
       const e2::BattleCell& c = battle_->cell(x, y);
-      return c.passable && !c.blocked;
+      const auto t = board_->data().terrain.find(c.terrain);  // TERRAIN[terrain].passable: the tile itself, decorations aside
+      return t != board_->data().terrain.end() && t->second.passable && !c.blocked;
     };
-    std::vector<e2::BattleHex> cells, queue{back->cells.front()};
-    std::set<std::pair<int, int>> seen{{back->cells.front().x, back->cells.front().y}};
+    std::vector<e2::BattleHex> cells, queue{{back->x, back->y}};
+    std::set<std::pair<int, int>> seen{{back->x, back->y}};
     for (size_t q = 0; q < queue.size() && cells.size() < party.size(); ++q)
       for (const e2::BattleHex& n : e2::Battle::neighbors(queue[q].x, queue[q].y)) {
         if (seen.contains({n.x, n.y}) || !walkable(n.x, n.y)) continue;
@@ -5494,6 +5602,25 @@ class MapStage final : public Stage {
       }
     }
     talkRequest_ = npc;
+  }
+  // wispCrossing.ts routeWispCrossing: on the Wisp Forest crossing every dungeon exit and every connector to the lair leads to the
+  // carnivorous plant's lair (a floor connector up) until the crossing is finished, then outside (a dungeon exit, two hexes wide
+  // as Engine2's dungeon-exit decoration is).
+  static constexpr const char* kWispCrossing = "wisp-forest-crossing";
+  static constexpr const char* kWispBoss = "wisp-forest-crossing-boss";
+  void routeWispCrossing() {
+    if (!board_ || board_->draft().id != kWispCrossing) return;
+    for (e2::Battle::Exit& x : battle_->exits()) {
+      if (x.kind != "dungeon" && x.targetMapId != kWispBoss) continue;
+      x.returnConnector = false;
+      if (options_.wispCrossingDone) {
+        x.id = "dungeon-exit", x.kind = "dungeon", x.targetMapId.clear(), x.connectorDirection.clear();
+        x.cells = {{x.x, x.y}, {x.x + 1, x.y}};
+      } else {
+        x.id = "floor-connector", x.kind = "connector", x.targetMapId = kWispBoss, x.connectorDirection = "up";
+        x.cells = {{x.x, x.y}};
+      }
+    }
   }
   // The walkable Inn's two floors (Engine2's result screen names their stairs "Subir para o Segundo andar" / "Descer para o
   // Primeiro andar"); any other connector goes the way floorConnectorDirection says.
@@ -5927,6 +6054,8 @@ class MapStage final : public Stage {
   int talkAfterWalk_ = -1;                     // the NPC the leader is walking up to, to talk once there
   std::optional<size_t> talkRequest_;          // a conversation asked for (takeTalk)
   std::string floorRequest_;                   // a floor connector taken: the linked map's mission id (wantsFloor)
+  std::set<std::string> absent_;               // battle unit ids gone from the start (dead on an earlier visit, fallen on the floor before)
+  std::optional<e2::Battle::Exit> finishExit_; // the waypoint the mission was ended on (the result screen's text and its way on)
   bool talked_ = false;                        // a conversation was taken (the battle script's "talk" check)
   bool explores_ = false;                      // an explore mission (it roamed when it opened)
   bool winDismissed_ = false;        // the end was on offer and the player kept playing (the footer button brings it back)
