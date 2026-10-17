@@ -358,12 +358,14 @@ class TestModeStage : public Stage {
     place(goldW);
     emberPlate("##gold", {goldW, h}, [&](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32) {
       if (const UiImage* icon = uiImage(paths_.engine2Public / "game/icons/gold-coins-pile.png"))
-        d->AddImage(icon->texture, {a.x + 8, (a.y + b.y) * 0.5f - 12}, {a.x + 32, (a.y + b.y) * 0.5f + 12});
+        imageContain(d, *icon, {a.x + 8, (a.y + b.y) * 0.5f - 12}, {a.x + 32, (a.y + b.y) * 0.5f + 12});  // object-contain
       d->AddText(ui, 14.0f, {a.x + 38, (a.y + b.y) * 0.5f - 8}, kMuted, gold.c_str());
     });
     place(h);
     if (emberPlate("##options", {h, h}, [&](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32 ink) { iconGear(d, {(a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f}, 16, ink); }))
       options_ = true;
+    place(h);  // WorldMapScreen's sound button
+    soundButton("##sound", {h, h}, 16);
     {
       const char* label = "LISTA";
       const float w = spacedTextWidth(ui, 12.0f, label, 0.14f) + 24.0f;
@@ -718,7 +720,7 @@ class TestModeStage : public Stage {
       const ImVec2 ts = sans()->CalcTextSizeA(14.0f, FLT_MAX, 0, gold.c_str());
       const ImVec2 p{size.x - 16 - ts.x - 16 - 24, 16 + 8};
       dl->AddRect(p, {size.x - 16, p.y + 26}, kBorder);
-      if (const UiImage* icon = uiImage(paths_.engine2Public / "game/icons/gold-coins-pile.png")) dl->AddImage(icon->texture, {p.x + 6, p.y + 3}, {p.x + 26, p.y + 23});
+      if (const UiImage* icon = uiImage(paths_.engine2Public / "game/icons/gold-coins-pile.png")) imageContain(dl, *icon, {p.x + 6, p.y + 3}, {p.x + 26, p.y + 23});
       dl->AddText(sans(), 14.0f, {p.x + 30, p.y + 5}, kMuted, gold.c_str());
     }
     ImGui::SetCursorScreenPos({0, headerH + 1});

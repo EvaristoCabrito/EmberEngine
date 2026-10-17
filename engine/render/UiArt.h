@@ -29,6 +29,19 @@ struct UiImage {
 const UiImage* uiImage(const std::filesystem::path& file);
 // True once uiImage has the file (or knows it cannot be read): it then returns at once.
 bool uiImageLoaded(const std::filesystem::path& file);
+// Called by DebugUi between ImGui::Render and the draw: every UI image drawn smaller than its file is swapped for a copy
+// resampled to its size on screen (the browser's smooth downscale), so icons and portraits stay sharp, never jagged.
+void refineUiImages(ImDrawData* drawData);
+// One axis of a resample of premultiplied float RGBA: a tent as wide as a source pixel when enlarging and as wide as a
+// destination pixel when shrinking (every source pixel averaged). dstW is the new length along that axis.
+std::vector<float> uiResampleAxis(const std::vector<float>& src, int srcW, int srcH, int dstW, bool horizontal);
+
+// A lucide icon (content/ui/lucide/<name>.svg, Engine2's lucide 0.510.0) rasterised at its exact pixel size on screen
+// and tinted with `ink`; `size` = its 24-unit box in UI units (Engine2: size-4 = 16), centred on `centre`.
+// strokeWidth: the SVG's stroke in its 24 box (lucide 2; Engine2's options headings 1.5).
+void uiIcon(ImDrawList* dl, const char* name, ImVec2 centre, float size, ImU32 ink, float strokeWidth = 2.0f);
+// The same for an SVG given as text (white = ink); `key` names it in the raster cache.
+void uiIconSvg(ImDrawList* dl, const std::string& key, const std::string& svg, ImVec2 centre, float size, ImU32 ink);
 
 // The title screen's art load (Engine2 title/main.ts loadTitleResources): files decoded one after another on a
 // background thread and handed to uiImage's cache on the main thread, so the screens after the title open at once
@@ -64,6 +77,8 @@ struct GradientStop {
 void verticalGradient(ImDrawList* dl, ImVec2 a, ImVec2 b, std::initializer_list<GradientStop> stops);
 // An image covering the rectangle (CSS background-size: cover), its focus at (fx, fy) of the image (0.5, 0.42 = "center 42%").
 void imageCover(ImDrawList* dl, const UiImage& image, ImVec2 a, ImVec2 b, float fx = 0.5f, float fy = 0.5f, ImU32 tint = IM_COL32_WHITE);
+// The whole image inside the rectangle, its shape kept, centred (CSS object-fit: contain).
+void imageContain(ImDrawList* dl, const UiImage& image, ImVec2 a, ImVec2 b, ImU32 tint = IM_COL32_WHITE);
 // Text with letter spacing (em of the font size) and an optional soft shadow (CSS text-shadow 0 2px 6px #000).
 float spacedTextWidth(ImFont* font, float size, const char* text, float spacingEm);
 void spacedText(ImDrawList* dl, ImFont* font, float size, ImVec2 at, ImU32 color, const char* text, float spacingEm, bool shadow = true);

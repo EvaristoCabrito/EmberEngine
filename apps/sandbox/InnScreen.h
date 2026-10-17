@@ -200,13 +200,18 @@ class InnScreen {
     emberKicker(dl, {100, 16}, 12.0f, upperUtf8(kick).c_str());
     emberTitle(dl, {100, 32}, 24.0f, title);
     float x = size.x - 16;
+    // Som (size-10, icon size-4), the header's last button
+    x -= 40;
+    ImGui::SetCursorScreenPos({x, 16});
+    soundButton("##sound", {40, 40}, 16);
+    x -= 12;
     // Gold
     const std::string gold = std::format("{} Gold", ember(c));
     const float gw = 44 + uiFont(UiFont::Ui)->CalcTextSizeA(14.0f, FLT_MAX, 0, gold.c_str()).x;
     x -= gw;
     ImGui::SetCursorScreenPos({x, 18});
     emberPlate("##gold", {gw, 36}, [&](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32) {
-      if (const UiImage* icon = uiImage(c.engine2Public / "game/icons/gold-coins-pile.png")) d->AddImage(icon->texture, {a.x + 8, a.y + 6}, {a.x + 32, a.y + 30});
+      if (const UiImage* icon = uiImage(c.engine2Public / "game/icons/gold-coins-pile.png")) imageContain(d, *icon, {a.x + 8, a.y + 6}, {a.x + 32, a.y + 30});
       d->AddText(uiFont(UiFont::Ui), 14.0f, {a.x + 38, (a.y + b.y) / 2 - 8}, kMuted, gold.c_str());
     });
     // Mochila / Equipar, on the hero chosen here (the forge's or the Adega's); the healer has neither.

@@ -146,11 +146,7 @@ class InventoryScreen {
     const size_t i = it == heroes.end() ? 0 : static_cast<size_t>(it - heroes.begin());
     x -= 36;
     ImGui::SetCursorScreenPos({x, y});
-    if (emberPlate("##next", {36, 36}, [](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32 ink) {
-          const Lucide l({(a.x + b.x) / 2, (a.y + b.y) / 2}, 16);
-          const ImVec2 p[3] = {l.at(9, 18), l.at(15, 12), l.at(9, 6)};
-          d->AddPolyline(p, 3, ink, l.stroke(), ImDrawFlags_None);
-        }))
+    if (emberPlate("##next", {36, 36}, [](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32 ink) { iconChevronRight(d, {(a.x + b.x) / 2, (a.y + b.y) / 2}, 16, ink); }))
       hero_ = heroes[(i + 1) % heroes.size()];
     x -= 40;
     ImGui::SetCursorScreenPos({x, y});

@@ -39,34 +39,6 @@ bool gGrabRequested = false;
 // Engine2 shows both cursor images at 26.25 CSS px (their SVG wrappers), times the screen's scale in the browser.
 constexpr float kCursorSize = 26.25f;
 
-// One axis of a resample in premultiplied alpha: a tent as wide as a source pixel when enlarging (the browser's
-// smooth upscale of the 21 px arrow) and as wide as a destination pixel when shrinking (the 128 px gauntlet), so
-// shrinking averages every source pixel instead of skipping most of them.
-std::vector<float> resampleAxis(const std::vector<float>& src, int srcW, int srcH, int dstW, bool horizontal) {
-  const int srcLen = horizontal ? srcW : srcH, dstLen = dstW;
-  const int lines = horizontal ? srcH : srcW;
-  const float step = static_cast<float>(srcLen) / static_cast<float>(dstLen);
-  const float radius = std::max(1.0f, step);
-  std::vector<float> dst(static_cast<size_t>(dstLen) * lines * 4, 0.0f);
-  for (int d = 0; d < dstLen; ++d) {
-    const float centre = (static_cast<float>(d) + 0.5f) * step - 0.5f;
-    const int first = static_cast<int>(std::floor(centre - radius)), last = static_cast<int>(std::ceil(centre + radius));
-    for (int line = 0; line < lines; ++line) {
-      float sum[4] = {}, weights = 0.0f;
-      for (int s = std::max(first, 0); s <= std::min(last, srcLen - 1); ++s) {
-        const float w = std::max(0.0f, 1.0f - std::abs(static_cast<float>(s) - centre) / radius);
-        if (w <= 0.0f) continue;
-        const size_t at = horizontal ? (static_cast<size_t>(line) * srcW + s) * 4 : (static_cast<size_t>(s) * srcW + line) * 4;
-        for (int c = 0; c < 4; ++c) sum[c] += src[at + c] * w;
-        weights += w;
-      }
-      const size_t out = horizontal ? (static_cast<size_t>(line) * dstLen + d) * 4 : (static_cast<size_t>(d) * srcW + line) * 4;
-      for (int c = 0; c < 4; ++c) dst[out + c] = weights > 0.0f ? sum[c] / weights : 0.0f;
-    }
-  }
-  return dst;
-}
-
 // An Engine2 cursor image at `size` pixels (RGBA, straight alpha); nullptr if the file is missing.
 SDL_Surface* cursorImage(const char* file, int size) {
   int w = 0, h = 0, n = 0;
@@ -82,8 +54,8 @@ SDL_Surface* cursorImage(const char* file, int size) {
     image[i * 4 + 3] = a;
   }
   stbi_image_free(pixels);
-  const std::vector<float> wide = resampleAxis(image, w, h, size, true);
-  const std::vector<float> square = resampleAxis(wide, size, h, size, false);
+  const std::vector<float> wide = uiResampleAxis(image, w, h, size, true);
+  const std::vector<float> square = uiResampleAxis(wide, size, h, size, false);
   SDL_Surface* surface = SDL_CreateSurface(size, size, SDL_PIXELFORMAT_RGBA32);
   if (!surface) return nullptr;
   for (int y = 0; y < size; ++y) {
@@ -288,6 +260,7 @@ void DebugUi::record(VkCommandBuffer cmd, VkImageView target, VkExtent2D size) {
   applyCursor();
   ImGui::Render();
   ImDrawData* drawData = ImGui::GetDrawData();
+  refineUiImages(drawData);  // UI images at their size on screen (render/UiArt.h)
 
   VkRenderingAttachmentInfo color{VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
   color.imageView = target;

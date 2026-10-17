@@ -62,60 +62,13 @@ inline constexpr ImU32 kTitle = IM_COL32(241, 220, 192, 255);      // .ember-tit
 inline ImFont* ui() { return uiFont(UiFont::Ui); }
 inline ImFont* mark() { return uiFont(UiFont::Mark); }
 
-// --- lucide icons used by the menus (24 px boxes) -----------------------------------------------------------------------
-inline void iconMonitor(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) {
-  const Lucide b(c, s);
-  dl->AddRect(b.at(2, 3), b.at(22, 17), ink, 2 * b.scale, b.stroke() * 0.75f);
-  dl->AddLine(b.at(8, 21), b.at(16, 21), ink, b.stroke() * 0.75f);
-  dl->AddLine(b.at(12, 17), b.at(12, 21), ink, b.stroke() * 0.75f);
-}
-inline void iconVolume(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) {
-  const Lucide b(c, s);
-  const float w = b.stroke() * 0.75f;
-  const ImVec2 body[7] = {b.at(11, 5), b.at(6, 9), b.at(2, 9), b.at(2, 15), b.at(6, 15), b.at(11, 19), b.at(11, 5)};
-  dl->AddPolyline(body, 7, ink, w);
-  dl->PathArcTo(b.at(12, 12), 5 * b.scale, -0.25f * std::numbers::pi_v<float>, 0.25f * std::numbers::pi_v<float>, 10);
-  dl->PathStroke(ink, w);
-  dl->PathArcTo(b.at(12, 12), 10 * b.scale, -0.25f * std::numbers::pi_v<float>, 0.25f * std::numbers::pi_v<float>, 14);
-  dl->PathStroke(ink, w);
-}
-inline void iconLanguages(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) {
-  const Lucide b(c, s);
-  const float w = b.stroke() * 0.75f;
-  dl->AddLine(b.at(5, 8), b.at(11, 14), ink, w);
-  const ImVec2 a[3] = {b.at(4, 14), b.at(10, 8), b.at(12, 5)};
-  dl->AddPolyline(a, 3, ink, w);
-  dl->AddLine(b.at(2, 5), b.at(14, 5), ink, w);
-  dl->AddLine(b.at(7, 2), b.at(8, 2), ink, w);
-  const ImVec2 v[3] = {b.at(22, 22), b.at(17, 12), b.at(12, 22)};
-  dl->AddPolyline(v, 3, ink, w);
-  dl->AddLine(b.at(14, 18), b.at(20, 18), ink, w);
-}
-inline void iconSliders(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) {
-  const Lucide b(c, s);
-  const float w = b.stroke();
-  // SlidersHorizontal: three rails, each with its knob's short cross line
-  dl->AddLine(b.at(21, 4), b.at(14, 4), ink, w), dl->AddLine(b.at(10, 4), b.at(3, 4), ink, w), dl->AddLine(b.at(14, 2), b.at(14, 6), ink, w);
-  dl->AddLine(b.at(21, 12), b.at(12, 12), ink, w), dl->AddLine(b.at(8, 12), b.at(3, 12), ink, w), dl->AddLine(b.at(8, 10), b.at(8, 14), ink, w);
-  dl->AddLine(b.at(21, 20), b.at(16, 20), ink, w), dl->AddLine(b.at(12, 20), b.at(3, 20), ink, w), dl->AddLine(b.at(16, 18), b.at(16, 22), ink, w);
-}
-inline void iconSwords(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) {
-  const Lucide b(c, s);
-  const float w = b.stroke();
-  const ImVec2 l[3] = {b.at(14.5f, 17.5f), b.at(3, 6), b.at(3, 3)};
-  dl->AddPolyline(l, 3, ink, w);
-  dl->AddLine(b.at(3, 3), b.at(6, 3), ink, w), dl->AddLine(b.at(6, 3), b.at(17.5f, 14.5f), ink, w);
-  dl->AddLine(b.at(13, 19), b.at(19, 13), ink, w), dl->AddLine(b.at(16, 16), b.at(20, 20), ink, w), dl->AddLine(b.at(19, 21), b.at(21, 19), ink, w);
-  const ImVec2 r[3] = {b.at(14.5f, 6.5f), b.at(18, 3), b.at(21, 3)};
-  dl->AddPolyline(r, 3, ink, w);
-  dl->AddLine(b.at(21, 3), b.at(21, 6), ink, w), dl->AddLine(b.at(21, 6), b.at(17.5f, 9.5f), ink, w);
-  dl->AddLine(b.at(5, 14), b.at(9, 18), ink, w), dl->AddLine(b.at(7, 17), b.at(4, 20), ink, w), dl->AddLine(b.at(3, 19), b.at(5, 21), ink, w);
-}
-inline void iconChevronDown(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) {
-  const Lucide b(c, s);
-  const ImVec2 p[3] = {b.at(6, 9), b.at(12, 15), b.at(18, 9)};
-  dl->AddPolyline(p, 3, ink, b.stroke());
-}
+// --- lucide icons used by the menus (the options headings: stroke 1.5, styles.css .game-options-heading svg) -----------
+inline void iconMonitor(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "monitor", c, s, ink, 1.5f); }
+inline void iconVolume(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "volume-2", c, s, ink, 1.5f); }
+inline void iconLanguages(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "languages", c, s, ink, 1.5f); }
+inline void iconSliders(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "sliders-horizontal", c, s, ink); }
+inline void iconSwords(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "swords", c, s, ink); }
+inline void iconChevronDown(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "chevron-down", c, s, ink); }
 
 // --- text -------------------------------------------------------------------------------------------------------------
 
@@ -268,9 +221,11 @@ inline bool emberCheckbox(const char* id, bool& value, bool disabled = false) {
     verticalGradient(dl, a, b, {{0.0f, IM_COL32(0xd9, 0x62, 0x1c, al)}, {0.55f, IM_COL32(0x9c, 0x2f, 0x10, al)}, {1.0f, IM_COL32(0x56, 0x17, 0x08, al)}});
     dl->AddLine({a.x + 1, a.y + 1}, {b.x - 1, a.y + 1}, IM_COL32(255, 225, 160, disabled ? 45 : 115));
     dl->AddRect(a, b, IM_COL32(255, 200, 130, disabled ? 60 : 153), 2.0f);
-    const Lucide t({(a.x + b.x) / 2, (a.y + b.y) / 2}, 12.8f);
-    const ImVec2 p[3] = {t.at(5, 12), t.at(9, 16), t.at(19, 6)};
-    dl->AddPolyline(p, 3, IM_COL32(255, 241, 216, al), 2.0f);
+    // Engine2's tick (styles.css .game-options input:checked): its own SVG at 0.8 rem.
+    uiIconSvg(dl, "options-tick",
+        "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='#ffffff' stroke-width='3.2' "
+        "stroke-linecap='round' stroke-linejoin='round'><path d='m5 12 4 4L19 6'/></svg>",
+        {(a.x + b.x) / 2, (a.y + b.y) / 2}, 12.8f, IM_COL32(255, 241, 216, al));
   } else {
     dl->AddRectFilled(a, b, IM_COL32(5, 5, 5, al), 2.0f);
     dl->AddRectFilledMultiColor(a, {b.x, a.y + 5}, IM_COL32(0, 0, 0, al), IM_COL32(0, 0, 0, al), IM_COL32(0, 0, 0, 0), IM_COL32(0, 0, 0, 0));

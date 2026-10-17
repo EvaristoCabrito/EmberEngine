@@ -1,8 +1,8 @@
 #pragma once
 
 // Pieces of Engine2's campaign screens shared by the title and the world map: the save-slot screen (src/title/main.ts
-// renderSaveSlots + GameApp's in-game saveSlots), the iron plate button (.ember-plate), a few lucide icons drawn by
-// hand, and a campaign mission's map / scene / battle files (Engine2's newest, or the Map Editor's newer save).
+// renderSaveSlots + GameApp's in-game saveSlots), the iron plate button (.ember-plate), the lucide icons (Engine2's own
+// SVGs, rasterised at their size on screen: render/UiArt.h uiIcon), and a campaign mission's map / scene / battle files (Engine2's newest, or the Map Editor's newer save).
 
 #include <imgui.h>
 
@@ -214,78 +214,33 @@ inline bool emberTextPlate(const char* id, ImVec2 size, const char* label, float
       disabled);
 }
 
-// lucide icons in their 24 px box, drawn at `size` centred on `c`.
-struct Lucide {
-  ImVec2 origin;
-  float scale;
-  Lucide(ImVec2 c, float size) : origin{c.x - size * 0.5f, c.y - size * 0.5f}, scale(size / 24.0f) {}
-  ImVec2 at(float x, float y) const { return {origin.x + x * scale, origin.y + y * scale}; }
-  float stroke() const { return std::max(1.0f, 2.0f * scale); }
-};
-inline void iconX(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) {
-  const Lucide b(c, s);
-  dl->AddLine(b.at(18, 6), b.at(6, 18), ink, b.stroke());
-  dl->AddLine(b.at(6, 6), b.at(18, 18), ink, b.stroke());
-}
-inline void iconCheck(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) {
-  const Lucide b(c, s);
-  const ImVec2 p[3] = {b.at(20, 6), b.at(9, 17), b.at(4, 12)};
-  dl->AddPolyline(p, 3, ink, b.stroke(), ImDrawFlags_None);
-}
-inline void iconLock(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) {
-  const Lucide b(c, s);
-  dl->AddRect(b.at(3, 11), b.at(21, 22), ink, 2 * b.scale, b.stroke(), ImDrawFlags_None);
-  dl->PathArcTo(b.at(12, 7), 5 * b.scale, std::numbers::pi_v<float>, 2 * std::numbers::pi_v<float>, 12);
-  dl->PathStroke(ink, b.stroke(), ImDrawFlags_None);
-  dl->AddLine(b.at(7, 7), b.at(7, 11), ink, b.stroke());
-  dl->AddLine(b.at(17, 7), b.at(17, 11), ink, b.stroke());
-}
-inline void iconMapPin(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) {
-  const Lucide b(c, s);
-  // "M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
-  dl->PathArcTo(b.at(12, 10), 8 * b.scale, std::numbers::pi_v<float>, 2 * std::numbers::pi_v<float>, 16);
-  dl->PathBezierCubicCurveTo(b.at(20, 15), b.at(14.5f, 20.2f), b.at(12, 22));
-  dl->PathBezierCubicCurveTo(b.at(9.5f, 20.2f), b.at(4, 15), b.at(4, 10));
-  dl->PathStroke(ink, b.stroke(), ImDrawFlags_None);
-  dl->AddCircle(b.at(12, 10), 3 * b.scale, ink, 12, b.stroke());
-}
-inline void iconBook(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) {
-  const Lucide b(c, s);
-  // BookOpen: two pages meeting at the spine
-  const ImVec2 left[5] = {b.at(12, 7), b.at(8, 4), b.at(2, 4), b.at(2, 18), b.at(9, 18)};
-  const ImVec2 right[5] = {b.at(12, 7), b.at(16, 4), b.at(22, 4), b.at(22, 18), b.at(15, 18)};
-  dl->AddPolyline(left, 5, ink, b.stroke(), ImDrawFlags_None);
-  dl->AddPolyline(right, 5, ink, b.stroke(), ImDrawFlags_None);
-  dl->AddLine(b.at(9, 18), b.at(12, 21), ink, b.stroke());
-  dl->AddLine(b.at(15, 18), b.at(12, 21), ink, b.stroke());
-  dl->AddLine(b.at(12, 7), b.at(12, 21), ink, b.stroke());
-}
-inline void iconClock(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) {
-  const Lucide b(c, s);
-  dl->AddCircle(b.at(12, 12), 10 * b.scale, ink, 24, b.stroke());
-  const ImVec2 hands[3] = {b.at(12, 6), b.at(12, 12), b.at(16, 14)};
-  dl->AddPolyline(hands, 3, ink, b.stroke(), ImDrawFlags_None);
-}
-inline void iconGear(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) {
-  const Lucide b(c, s);
-  dl->AddCircle(b.at(12, 12), 3 * b.scale, ink, 12, b.stroke());
-  for (int i = 0; i < 8; ++i) {
-    const float a = static_cast<float>(i) * std::numbers::pi_v<float> / 4;
-    dl->AddLine(b.at(12 + 6.5f * std::cos(a), 12 + 6.5f * std::sin(a)), b.at(12 + 9.5f * std::cos(a), 12 + 9.5f * std::sin(a)), ink, 2.2f * b.stroke());
-  }
-  dl->AddCircle(b.at(12, 12), 7 * b.scale, ink, 24, b.stroke());
-}
-inline void iconZoom(ImDrawList* dl, ImVec2 c, float s, ImU32 ink, bool in) {
-  const Lucide b(c, s);
-  dl->AddCircle(b.at(11, 11), 8 * b.scale, ink, 20, b.stroke());
-  dl->AddLine(b.at(21, 21), b.at(16.65f, 16.65f), ink, b.stroke());
-  dl->AddLine(b.at(8, 11), b.at(14, 11), ink, b.stroke());
-  if (in) dl->AddLine(b.at(11, 8), b.at(11, 14), ink, b.stroke());
-}
-inline void iconChevronLeft(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) {
-  const Lucide b(c, s);
-  const ImVec2 p[3] = {b.at(15, 18), b.at(9, 12), b.at(15, 6)};
-  dl->AddPolyline(p, 3, ink, b.stroke(), ImDrawFlags_None);
+// lucide icons: `size` = the icon's 24-unit box (Engine2's size-4 = 16), centred on `c`.
+inline void iconX(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "x", c, s, ink); }
+inline void iconCheck(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "check", c, s, ink); }
+inline void iconLock(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "lock", c, s, ink); }
+inline void iconMapPin(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "map-pin", c, s, ink); }
+inline void iconBook(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "book-open", c, s, ink); }
+inline void iconClock(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "clock", c, s, ink); }
+inline void iconGear(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "settings", c, s, ink); }
+inline void iconZoom(ImDrawList* dl, ImVec2 c, float s, ImU32 ink, bool in) { uiIcon(dl, in ? "zoom-in" : "zoom-out", c, s, ink); }
+inline void iconChevronLeft(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "chevron-left", c, s, ink); }
+inline void iconChevronRight(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "chevron-right", c, s, ink); }
+// lucide Volume2 / VolumeX (Engine2's sound buttons).
+inline void iconSound(ImDrawList* dl, ImVec2 c, float s, ImU32 ink, bool on) { uiIcon(dl, on ? "volume-2" : "volume-x", c, s, ink); }
+
+// Engine2's sound button (onMute: Volume2 / VolumeX on a plate): flips audio.ts muted, the same switch as Opções'
+// Silenciar, saved with the player's choices. `size` = the plate, `icon` = the icon (Engine2 size-10 + size-4: 40, 16);
+// gold: .ember-icon-btn's gold icon (title, briefing) instead of the plate's light one.
+inline bool soundButton(const char* id, ImVec2 size, float icon, bool gold = false) {
+  GamePrefs& prefs = gamePrefs();
+  if (!emberPlate(id, size, [&](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32 ink) {
+        if (gold && ink == IM_COL32(240, 240, 240, 255)) ink = IM_COL32(223, 191, 142, 255);  // #dfbf8e
+        iconSound(d, {(a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f}, icon, ink, !prefs.muted);
+      }))
+    return false;
+  prefs.muted = !prefs.muted;
+  prefs.save();
+  return true;
 }
 
 // The six save slots (Engine2 title.css .save-slot*): "Nova campanha" (writes a fresh campaign, an occupied slot asks for
@@ -473,6 +428,8 @@ inline int drawBriefing(ImVec2 size, float rem, const MissionEntry& m, const std
   const float pad = size.x >= 640.0f ? 1.5f * rem : rem;
   ImGui::SetCursorScreenPos({pad, rem});
   if (emberTextPlate("##briefback", {2.5f * rem, 2.5f * rem}, "‹", rem)) result = -1;
+  ImGui::SetCursorScreenPos({size.x - pad - 2.5f * rem, rem});
+  soundButton("##briefsound", {2.5f * rem, 2.5f * rem}, 1.25f * rem, true);
   const float hx = pad + 2.5f * rem + 0.75f * rem;
   const std::string place = upperUtf8(m.place.empty() ? "Ember" : m.place);
   emberKicker(dl, {hx, rem - 0.1f * rem}, 0.875f * rem, place.c_str());

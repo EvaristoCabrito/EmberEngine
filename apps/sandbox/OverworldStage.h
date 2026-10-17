@@ -469,13 +469,16 @@ class OverworldStage : public Stage {
     place(goldW);
     emberPlate("##gold", {goldW, h}, [&](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32) {
       if (const UiImage* icon = uiImage(paths_.engine2Public / "game/icons/gold-coins-pile.png"))
-        d->AddImage(icon->texture, {a.x + 8, (a.y + b.y) * 0.5f - 12}, {a.x + 32, (a.y + b.y) * 0.5f + 12});
+        imageContain(d, *icon, {a.x + 8, (a.y + b.y) * 0.5f - 12}, {a.x + 32, (a.y + b.y) * 0.5f + 12});  // object-contain
       d->AddText(ui, 14.0f, {a.x + 38, (a.y + b.y) * 0.5f - 8}, kMuted, gold.c_str());
     });
     // Opções
     place(h);
     if (emberPlate("##options", {h, h}, [&](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32 ink) { iconGear(d, {(a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f}, 16, ink); }))
       options_ = true;
+    // Som (the user, 2026-10-16: sound and options in the corner, as in Engine2's other screens)
+    place(h);
+    soundButton("##sound", {h, h}, 16);
     // Alimentar todos
     {
       const char* label = "Alimentar todos";

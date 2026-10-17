@@ -156,20 +156,7 @@ class CutsceneScreen {
   }
 
   // lucide Volume2 / VolumeX at 16 px.
-  static void speaker(ImDrawList* dl, ImVec2 c, ImU32 ink, bool on) {
-    const Lucide b(c, 16);
-    const ImVec2 body[6] = {b.at(11, 5), b.at(6, 9), b.at(2, 9), b.at(2, 15), b.at(6, 15), b.at(11, 19)};
-    dl->AddPolyline(body, 6, ink, b.stroke(), ImDrawFlags_Closed);
-    if (on) {
-      dl->PathArcTo(b.at(13, 12), 3.5f * b.scale, -0.9f, 0.9f, 8);
-      dl->PathStroke(ink, b.stroke(), ImDrawFlags_None);
-      dl->PathArcTo(b.at(13, 12), 7.0f * b.scale, -0.95f, 0.95f, 12);
-      dl->PathStroke(ink, b.stroke(), ImDrawFlags_None);
-    } else {
-      dl->AddLine(b.at(22, 9), b.at(16, 15), ink, b.stroke());
-      dl->AddLine(b.at(16, 9), b.at(22, 15), ink, b.stroke());
-    }
-  }
+  static void speaker(ImDrawList* dl, ImVec2 c, ImU32 ink, bool on) { iconSound(dl, c, 16, ink, on); }
 
   std::unique_ptr<VideoPlayer> player_;
   std::vector<Cue> cues_;

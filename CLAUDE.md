@@ -505,6 +505,19 @@ mesh, 391k tris, no UVs / material) was in no catalogue.
   extra list (fences, door, doorway, grave marker, wheel, firewood, bucket, torch bracket, crystal, mine supports,
   mushrooms).
 
+## UI icons and images (2026-10-16; the user: the gear "nojento", the gold "horrendo", every icon pixelated)
+
+- **Images** (`uiImage`, any PNG / JPG from Engine2): nothing to do. `refineUiImages` (render/UiArt.cpp, called by
+  DebugUi between ImGui::Render and the draw) swaps every image drawn smaller than its file for a copy resampled to its
+  size on screen (premultiplied tent filter = the browser's smooth downscale; exact sizes cached, then a halving chain).
+  Non-square art inside a square box: `imageContain` (CSS object-contain), never a stretched AddImage.
+- **Icons: never draw an icon by hand with lines again.** Put the lucide SVG in `content/ui/lucide/<name>.svg` (from
+  lucide 0.510.0 = the version Engine2's lucide-react uses: `raw.githubusercontent.com/lucide-icons/lucide/0.510.0/
+  icons/<name>.svg`) and call `uiIcon(dl, "<name>", centre, size, ink[, strokeWidth])`; an inline SVG (Engine2's CSS
+  data-URIs) goes through `uiIconSvg`. lunasvg 3.5.0 rasterises it at the exact pixel size, snapped to the pixel grid.
+- Sound button = `soundButton` (CampaignUi.h: GamePrefs muted, the same switch as Opções' Silenciar): title (top right),
+  briefing, world maps (beside Opções), the Inn, the battle's camera bar (+ "Opções" = the Esc menu), as in Engine2.
+
 ## Next
 
 The user's verdict (2026-10-15): the engine as seen is worse than Engine2 ("worst colours and render I've ever

@@ -2,10 +2,16 @@
 
 #include <algorithm>
 #include <cstring>
+#include <cmath>
+#include <format>
+#include <fstream>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
+
+#include <lunasvg.h>
 
 #include <imgui_internal.h>
 #include <stb_image.h>
@@ -18,10 +24,18 @@ namespace {
 
 ImFont* gFonts[3] = {};
 
+struct Sized {
+  int width = 0, height = 0;
+  std::unique_ptr<ImTextureData> data;
+};
 struct LoadedImage {
   std::unique_ptr<ImTextureData> data;
   UiImage image;
   bool failed = false;
+  // Copies resampled to the sizes the image is drawn at (refineUiImages): exact ones first, then a halving chain for
+  // images too big to resample per size, or drawn at more sizes than kMaxExactSizes.
+  std::vector<Sized> exact;
+  std::vector<Sized> halves;
 };
 std::map<std::string, LoadedImage>& images() {
   static std::map<std::string, LoadedImage> cache;
@@ -29,8 +43,200 @@ std::map<std::string, LoadedImage>& images() {
 }
 // One key per file however its path was written ("a/b\c.png" and "a/b/c.png" are the same picture).
 std::string keyOf(const std::filesystem::path& file) { return file.lexically_normal().generic_string(); }
+// The full-size texture of each loaded image -> its entry (map nodes never move).
+std::map<const ImTextureData*, LoadedImage*>& imagesByTexture() {
+  static std::map<const ImTextureData*, LoadedImage*> index;
+  return index;
+}
+
+// Textures made by refineUiImages, after ImGui::Render built this frame's texture list: added to it by hand, so the
+// backend creates them before the draw that uses them.
+std::vector<ImTextureData*>& lateTextures() {
+  static std::vector<ImTextureData*> list;
+  return list;
+}
+
+constexpr size_t kMaxExactSizes = 8;
+constexpr long long kMaxExactSource = 2048LL * 2048LL;  // source pixels resampled per drawn size
+constexpr long long kMaxExactTarget = 1024LL * 1024LL;  // drawn pixels resampled exactly
+
+// Premultiplied float RGBA of an 8-bit straight-alpha image.
+std::vector<float> premultiplied(const unsigned char* pixels, int w, int h) {
+  std::vector<float> image(static_cast<size_t>(w) * h * 4);
+  for (size_t i = 0; i < static_cast<size_t>(w) * h; ++i) {
+    const float a = pixels[i * 4 + 3] / 255.0f;
+    for (int c = 0; c < 3; ++c) image[i * 4 + c] = pixels[i * 4 + c] / 255.0f * a;
+    image[i * 4 + 3] = a;
+  }
+  return image;
+}
+
+// A UI texture (straight alpha, 8 bit) from premultiplied float RGBA; registered, created by the backend on its next draw.
+std::unique_ptr<ImTextureData> makeTexture(const std::vector<float>& premul, int w, int h) {
+  auto tex = std::make_unique<ImTextureData>();
+  tex->Create(ImTextureFormat_RGBA32, w, h);
+  auto* out = static_cast<unsigned char*>(tex->GetPixels());
+  for (size_t i = 0; i < static_cast<size_t>(w) * h; ++i) {
+    const float a = std::clamp(premul[i * 4 + 3], 0.0f, 1.0f);
+    for (int c = 0; c < 3; ++c) out[i * 4 + c] = static_cast<unsigned char>(std::lround(std::clamp(a > 0.0f ? premul[i * 4 + c] / a : 0.0f, 0.0f, 1.0f) * 255.0f));
+    out[i * 4 + 3] = static_cast<unsigned char>(std::lround(a * 255.0f));
+  }
+  tex->UseColors = true;
+  ImGui::RegisterUserTexture(tex.get());
+  lateTextures().push_back(tex.get());
+  return tex;
+}
+
+// The loaded image resampled to w x h (the browser's smooth downscale: every source pixel averaged).
+std::unique_ptr<ImTextureData> resampledTexture(const LoadedImage& image, int w, int h) {
+  const int sw = image.image.width, sh = image.image.height;
+  const std::vector<float> source = premultiplied(static_cast<const unsigned char*>(image.data->GetPixels()), sw, sh);
+  const std::vector<float> wide = uiResampleAxis(source, sw, sh, w, true);
+  return makeTexture(uiResampleAxis(wide, w, sh, h, false), w, h);
+}
+
+// The texture to draw `image` with when its whole width / height cover needW / needH pixels on screen.
+const ImTextureData* textureFor(LoadedImage& image, float needW, float needH) {
+  const int w = image.image.width, h = image.image.height;
+  if (needW >= 0.8f * static_cast<float>(w) && needH >= 0.8f * static_cast<float>(h)) return image.data.get();
+  const int tw = std::clamp(static_cast<int>(std::ceil(needW)), 1, w), th = std::clamp(static_cast<int>(std::ceil(needH)), 1, h);
+  for (const Sized& s : image.exact)
+    if (std::abs(s.width - tw) <= 1 && std::abs(s.height - th) <= 1) return s.data.get();
+  if (image.exact.size() < kMaxExactSizes && static_cast<long long>(w) * h <= kMaxExactSource && static_cast<long long>(tw) * th <= kMaxExactTarget) {
+    image.exact.push_back({tw, th, resampledTexture(image, tw, th)});
+    return image.exact.back().data.get();
+  }
+  // The smallest halving still at least as big as the drawn size; bilinear filtering covers the rest (under 2:1).
+  int level = 0;
+  while ((w >> (level + 1)) >= tw && (h >> (level + 1)) >= th && (w >> (level + 1)) > 0 && (h >> (level + 1)) > 0) ++level;
+  if (level == 0) return image.data.get();
+  while (static_cast<int>(image.halves.size()) < level) image.halves.push_back({});
+  Sized& half = image.halves[static_cast<size_t>(level - 1)];
+  if (!half.data) half = {w >> level, h >> level, resampledTexture(image, w >> level, h >> level)};
+  return half.data.get();
+}
+
+// --- lucide icons ------------------------------------------------------------------------------------------------------
+struct IconRaster {
+  std::unique_ptr<ImTextureData> data;
+  bool failed = false;
+};
+std::map<std::string, IconRaster>& iconRasters() {
+  static std::map<std::string, IconRaster> cache;
+  return cache;
+}
+std::map<std::string, std::string>& iconSources() {
+  static std::map<std::string, std::string> cache;
+  return cache;
+}
+
 
 }  // namespace
+
+std::vector<float> uiResampleAxis(const std::vector<float>& src, int srcW, int srcH, int dstW, bool horizontal) {
+  const int srcLen = horizontal ? srcW : srcH, dstLen = dstW;
+  const int lines = horizontal ? srcH : srcW;
+  const float step = static_cast<float>(srcLen) / static_cast<float>(dstLen);
+  const float radius = std::max(1.0f, step);
+  std::vector<float> dst(static_cast<size_t>(dstLen) * lines * 4, 0.0f);
+  for (int d = 0; d < dstLen; ++d) {
+    const float centre = (static_cast<float>(d) + 0.5f) * step - 0.5f;
+    const int first = static_cast<int>(std::floor(centre - radius)), last = static_cast<int>(std::ceil(centre + radius));
+    for (int line = 0; line < lines; ++line) {
+      float sum[4] = {}, weights = 0.0f;
+      for (int s = std::max(first, 0); s <= std::min(last, srcLen - 1); ++s) {
+        const float w = std::max(0.0f, 1.0f - std::abs(static_cast<float>(s) - centre) / radius);
+        if (w <= 0.0f) continue;
+        const size_t at = horizontal ? (static_cast<size_t>(line) * srcW + s) * 4 : (static_cast<size_t>(s) * srcW + line) * 4;
+        for (int c = 0; c < 4; ++c) sum[c] += src[at + c] * w;
+        weights += w;
+      }
+      const size_t out = horizontal ? (static_cast<size_t>(line) * dstLen + d) * 4 : (static_cast<size_t>(d) * srcW + line) * 4;
+      for (int c = 0; c < 4; ++c) dst[out + c] = weights > 0.0f ? sum[c] / weights : 0.0f;
+    }
+  }
+  return dst;
+}
+
+void refineUiImages(ImDrawData* drawData) {
+  if (!drawData) return;
+  const auto& index = imagesByTexture();
+  if (index.empty()) return;
+  const ImVec2 scale = drawData->FramebufferScale;
+  for (ImDrawList* list : drawData->CmdLists) {
+    for (ImDrawCmd& cmd : list->CmdBuffer) {
+      if (cmd.UserCallback || !cmd.TexRef._TexData) continue;
+      const auto it = index.find(cmd.TexRef._TexData);
+      if (it == index.end()) continue;
+      // The whole texture's size on screen, from each triangle's mapping uv -> position (any shape: quads, rounded).
+      float needW = 0.0f, needH = 0.0f;
+      for (unsigned int i = 0; i + 2 < cmd.ElemCount; i += 3) {
+        const ImDrawVert& a = list->VtxBuffer[cmd.VtxOffset + list->IdxBuffer[cmd.IdxOffset + i]];
+        const ImDrawVert& b = list->VtxBuffer[cmd.VtxOffset + list->IdxBuffer[cmd.IdxOffset + i + 1]];
+        const ImDrawVert& c = list->VtxBuffer[cmd.VtxOffset + list->IdxBuffer[cmd.IdxOffset + i + 2]];
+        const float du1 = b.uv.x - a.uv.x, dv1 = b.uv.y - a.uv.y, du2 = c.uv.x - a.uv.x, dv2 = c.uv.y - a.uv.y;
+        const float det = du1 * dv2 - du2 * dv1;
+        if (std::abs(det) < 1e-9f) continue;
+        const float e1x = (b.pos.x - a.pos.x) * scale.x, e1y = (b.pos.y - a.pos.y) * scale.y;
+        const float e2x = (c.pos.x - a.pos.x) * scale.x, e2y = (c.pos.y - a.pos.y) * scale.y;
+        // Position change per unit u and per unit v.
+        const float ux = (e1x * dv2 - e2x * dv1) / det, uy = (e1y * dv2 - e2y * dv1) / det;
+        const float vx = (e2x * du1 - e1x * du2) / det, vy = (e2y * du1 - e1y * du2) / det;
+        needW = std::max(needW, std::sqrt(ux * ux + uy * uy));
+        needH = std::max(needH, std::sqrt(vx * vx + vy * vy));
+      }
+      if (needW <= 0.0f || needH <= 0.0f) continue;
+      const ImTextureData* tex = textureFor(*it->second, needW, needH);
+      if (tex != cmd.TexRef._TexData) cmd.TexRef = const_cast<ImTextureData*>(tex)->GetTexRef();
+    }
+  }
+  if (drawData->Textures)
+    for (ImTextureData* tex : lateTextures())
+      if (!drawData->Textures->contains(tex)) drawData->Textures->push_back(tex);
+  lateTextures().clear();
+}
+
+void uiIconSvg(ImDrawList* dl, const std::string& key, const std::string& svg, ImVec2 centre, float size, ImU32 ink) {
+  const float zoom = std::max(ImGui::GetIO().DisplayFramebufferScale.x, 0.01f);
+  const int px = std::max(1, static_cast<int>(std::lround(size * zoom)));
+  IconRaster& raster = iconRasters()[std::format("{}@{}", key, px)];
+  if (raster.failed) return;
+  if (!raster.data) {
+    std::string text = svg;
+    for (size_t at = 0; (at = text.find("currentColor", at)) != std::string::npos;) text.replace(at, 12, "#ffffff");
+    const std::unique_ptr<lunasvg::Document> doc = lunasvg::Document::loadFromData(text);
+    lunasvg::Bitmap bitmap = doc ? doc->renderToBitmap(px, px) : lunasvg::Bitmap();
+    if (bitmap.isNull()) {
+      logError("UI icon not drawn: {}", key);
+      raster.failed = true;
+      return;
+    }
+    bitmap.convertToRGBA();
+    raster.data = std::make_unique<ImTextureData>();
+    raster.data->Create(ImTextureFormat_RGBA32, px, px);
+    for (int y = 0; y < px; ++y) std::memcpy(static_cast<unsigned char*>(raster.data->GetPixels()) + static_cast<size_t>(y) * px * 4, bitmap.data() + static_cast<size_t>(y) * bitmap.stride(), static_cast<size_t>(px) * 4);
+    raster.data->UseColors = true;
+    ImGui::RegisterUserTexture(raster.data.get());
+  }
+  // On whole screen pixels, so each raster pixel lands on one screen pixel.
+  const float x0 = std::round(centre.x * zoom - px * 0.5f) / zoom, y0 = std::round(centre.y * zoom - px * 0.5f) / zoom;
+  dl->AddImage(raster.data->GetTexRef(), {x0, y0}, {x0 + px / zoom, y0 + px / zoom}, {0, 0}, {1, 1}, ink);
+}
+
+void uiIcon(ImDrawList* dl, const char* name, ImVec2 centre, float size, ImU32 ink, float strokeWidth) {
+  std::string& source = iconSources()[name];
+  if (source.empty()) {
+    const std::string file = std::format("content/ui/lucide/{}.svg", name);
+    std::ifstream in(file, std::ios::binary);
+    source = in ? std::string(std::istreambuf_iterator<char>(in), {}) : std::string(" ");
+    if (!in) logError("UI icon not found: {}", file);
+  }
+  if (source == " ") return;
+  if (strokeWidth == 2.0f) return uiIconSvg(dl, name, source, centre, size, ink);
+  std::string thin = source;
+  if (const size_t at = thin.find("stroke-width=\"2\""); at != std::string::npos) thin.replace(at, 16, std::format("stroke-width=\"{}\"", strokeWidth));
+  uiIconSvg(dl, std::format("{}~{}", name, strokeWidth), thin, centre, size, ink);
+}
 
 void loadUiFonts() {
   ImGuiIO& io = ImGui::GetIO();
@@ -68,6 +274,7 @@ const UiImage* adopt(const std::string& key, stbi_uc* pixels, int w, int h) {
   slot.data->UseColors = true;
   ImGui::RegisterUserTexture(slot.data.get());  // the Vulkan backend creates it on its next draw
   slot.image = {slot.data->GetTexRef(), w, h};
+  imagesByTexture()[slot.data.get()] = &slot;
   return &slot.image;
 }
 
@@ -139,6 +346,14 @@ void imageCover(ImDrawList* dl, const UiImage& image, ImVec2 a, ImVec2 b, float 
   dl->PushClipRect(a, b, true);
   dl->AddImage(image.texture, p, {p.x + iw, p.y + ih}, {0, 0}, {1, 1}, tint);
   dl->PopClipRect();
+}
+
+void imageContain(ImDrawList* dl, const UiImage& image, ImVec2 a, ImVec2 b, ImU32 tint) {
+  const float w = b.x - a.x, h = b.y - a.y;
+  const float scale = std::min(w / static_cast<float>(image.width), h / static_cast<float>(image.height));
+  const float iw = image.width * scale, ih = image.height * scale;
+  const ImVec2 p{a.x + (w - iw) * 0.5f, a.y + (h - ih) * 0.5f};
+  dl->AddImage(image.texture, p, {p.x + iw, p.y + ih}, {0, 0}, {1, 1}, tint);
 }
 
 float spacedTextWidth(ImFont* font, float size, const char* text, float spacingEm) {

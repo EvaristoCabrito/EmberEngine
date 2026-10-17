@@ -692,21 +692,9 @@ class MapStage final : public Stage {
     return clicked;
   }
 
-  // A lucide icon's 24 px box drawn at 14 px (Engine2: size-3.5), centred on the button, stroke 2 at that scale.
-  struct IconBox {
-    ImVec2 origin;
-    float scale = 14.0f / 24.0f;
-    IconBox(ImVec2 a, ImVec2 b) : origin{(a.x + b.x) * 0.5f - 7.0f, (a.y + b.y) * 0.5f - 7.0f} {}
-    ImVec2 at(float x, float y) const { return {origin.x + x * scale, origin.y + y * scale}; }
-    float stroke() const { return std::max(1.0f, 2.0f * scale); }
-  };
-  // lucide Chevron*: a polyline of three points in the 24 px box.
-  static auto chevron(float x0, float y0, float x1, float y1, float x2, float y2) {
-    return [=](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32 ink) {
-      const IconBox box(a, b);
-      const ImVec2 p[3] = {box.at(x0, y0), box.at(x1, y1), box.at(x2, y2)};
-      dl->AddPolyline(p, 3, ink, box.stroke());
-    };
+  // A lucide icon at 14 px (Engine2: size-3.5), centred on the button.
+  static auto barIcon(const char* name) {
+    return [name](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32 ink) { uiIcon(dl, name, {(a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f}, 14.0f, ink); };
   }
   // Text with Engine2's 0.14 em letter spacing (tracking-[0.14em]), one glyph at a time.
   static float spacedWidth(const char* text) {
@@ -753,28 +741,33 @@ class MapStage final : public Stage {
         }))
       setFlat(!flat_);
     ImGui::SameLine();
-    if (plate("##down", {kPlate, kPlate}, chevron(6, 9, 12, 15, 18, 9))) pitch_ = std::clamp(pitch_ - kTiltStep, kMinPitch, kMaxPitch);
+    if (plate("##down", {kPlate, kPlate}, barIcon("chevron-down"))) pitch_ = std::clamp(pitch_ - kTiltStep, kMinPitch, kMaxPitch);
     ImGui::SameLine();
-    if (plate("##up", {kPlate, kPlate}, chevron(18, 15, 12, 9, 6, 15))) pitch_ = std::clamp(pitch_ + kTiltStep, kMinPitch, kMaxPitch);
+    if (plate("##up", {kPlate, kPlate}, barIcon("chevron-up"))) pitch_ = std::clamp(pitch_ + kTiltStep, kMinPitch, kMaxPitch);
     ImGui::SameLine();
-    if (plate("##left", {kPlate, kPlate}, chevron(15, 18, 9, 12, 15, 6))) yaw_ += kTurnStep;
+    if (plate("##left", {kPlate, kPlate}, barIcon("chevron-left"))) yaw_ += kTurnStep;
     ImGui::SameLine();
-    if (plate("##right", {kPlate, kPlate}, chevron(9, 18, 15, 12, 9, 6))) yaw_ -= kTurnStep;
+    if (plate("##right", {kPlate, kPlate}, barIcon("chevron-right"))) yaw_ -= kTurnStep;
     ImGui::SameLine();
-    if (plate("##reset", {kPlate, kPlate}, [](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32 ink) {
-          // lucide RotateCcw: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" + "M3 3v5h5" (24 px box, 14 px icon)
-          const IconBox box(a, b);
-          dl->PathArcTo(box.at(12, 12), 9.0f * box.scale, std::numbers::pi_v<float>, -0.75f * std::numbers::pi_v<float>, 24);
-          dl->PathLineTo(box.at(3, 8));
-          dl->PathStroke(ink, box.stroke());
-          const ImVec2 arrow[3] = {box.at(3, 3), box.at(3, 8), box.at(8, 8)};
-          dl->AddPolyline(arrow, 3, ink, box.stroke());
-        })) {
+    if (plate("##reset", {kPlate, kPlate}, barIcon("rotate-ccw"))) {
       if (flat_) setFlat(false);
       // The shortest way round to the normal turn; zoom and pan stay.
       const float twoPi = 2.0f * std::numbers::pi_v<float>;
       yaw_ = homeYaw_ + twoPi * std::round((yaw_ - homeYaw_) / twoPi);
       pitch_ = homePitch_;
+    }
+    if (!options_.editorClick) {  // a battle: Engine2's Som and Opções (onPause: the battle's Esc menu) end the bar
+      ImGui::SameLine();
+      GamePrefs& prefs = gamePrefs();
+      if (plate("##sound", {kPlate, kPlate}, barIcon(prefs.muted ? "volume-x" : "volume-2"))) prefs.muted = !prefs.muted, prefs.save();
+      ImGui::SameLine();
+      const std::string opt = upperUtf8(tr("Opções", "Options"));
+      if (plate("##options", {spacedWidth(opt.c_str()) + 16.0f, kPlate}, [&](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32 ink) {
+            const float w = spacedWidth(opt.c_str());
+            drawSpaced(dl, {std::round((a.x + b.x - w) * 0.5f), std::round((a.y + b.y - ImGui::GetTextLineHeight()) * 0.5f)}, ink, opt.c_str());
+          }) &&
+          result_.empty() && !menuOptions_.isOpen())
+        pauseOpen_ = true;
     }
     ImGui::PopFont();
     ImGui::End();

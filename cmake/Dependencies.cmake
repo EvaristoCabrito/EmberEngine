@@ -45,6 +45,15 @@ FetchContent_Declare(imgui
   GIT_SHALLOW TRUE
   SOURCE_SUBDIR do-not-build)
 
+# SVG rasteriser for the UI's lucide icons (content/ui/lucide), drawn at the exact pixel size on screen. plutovg comes
+# in as lunasvg's own submodule; no text in the icons, so no system fonts are read.
+set(LUNASVG_DISABLE_LOAD_SYSTEM_FONTS ON CACHE BOOL "" FORCE)
+set(PLUTOVG_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(lunasvg
+  GIT_REPOSITORY https://github.com/sammycage/lunasvg.git
+  GIT_TAG v3.5.0
+  GIT_SHALLOW TRUE)
+
 # Archive compression
 set(ZSTD_BUILD_PROGRAMS OFF CACHE BOOL "" FORCE)
 set(ZSTD_BUILD_SHARED OFF CACHE BOOL "" FORCE)
@@ -96,7 +105,7 @@ FetchContent_Declare(cgltf
   GIT_SHALLOW TRUE
   SOURCE_SUBDIR do-not-build)
 
-FetchContent_MakeAvailable(SDL3 volk vma glm stb imgui zstd basisu bc7enc_rdo nlohmann_json meshoptimizer cgltf)
+FetchContent_MakeAvailable(SDL3 volk vma glm stb imgui lunasvg zstd basisu bc7enc_rdo nlohmann_json meshoptimizer cgltf)
 
 add_library(vma INTERFACE)
 target_include_directories(vma SYSTEM INTERFACE ${vma_SOURCE_DIR}/include)

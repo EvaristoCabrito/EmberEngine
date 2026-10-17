@@ -152,6 +152,8 @@ class TitleStage : public Stage {
     verticalGradient(dl, a, b, {{0.0f, IM_COL32(8, 8, 8, 69)}, {0.36f, IM_COL32(10, 10, 10, 99)}, {0.72f, IM_COL32(10, 10, 10, 219)}, {1.0f, IM_COL32(14, 14, 14, 255)}});
     // .title-topline .title-mark
     spacedText(dl, uiFont(UiFont::Mark), 0.95f * kTitleText * rem_, {1.25f * rem_, 1.25f * rem_ + 0.4f * rem_}, IM_COL32(231, 199, 150, 191), "EMBER ASHES", 0.18f);
+    ImGui::SetCursorScreenPos({size.x - rem_ - 2.75f * rem_, 1.25f * rem_});
+    soundButton("##titlesound", {2.75f * rem_, 2.75f * rem_}, 1.25f * rem_, true);
 
     // .title-content: min(32rem, 100% - 2.5rem) wide, centred, its bottom 6.6rem above the screen's.
     const float width = std::min(32.0f * rem_, size.x - 2.5f * rem_);
