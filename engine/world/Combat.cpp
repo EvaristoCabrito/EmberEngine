@@ -252,16 +252,23 @@ bool canCounter(const Battle& b, const Fighter& attacker, BattleHex from, const 
   // Counters are judged on the bare tiles (Engine2 passes no decoration overlay here) and from the whole body.
   if (hitFrom(b, d, d.minRange, d.maxRange, defender.mag, at, a, from, false, true)) return true;
   if (!d.combat.offHandWeapon) return false;
+bool canOffHandHit(const Battle& b, size_t unit, BattleHex from, size_t foe, bool withDecorations) {
+  const BattleUnit& u = b.units()[unit];
+  const BattleUnit& f = b.units()[foe];
+  if (!u.combat.offHandWeapon || u.combat.offHandShield) return false;
+  return hitFrom(b, u, u.combat.offMinRange, u.combat.offMaxRange, u.mag, from, f, {f.x, f.y}, withDecorations, false);
+}
+
   return hitFrom(b, d, d.combat.offMinRange, d.combat.offMaxRange, defender.mag, at, a, from, false, true);
 }
 
-Forecast forecast(const Battle& b, size_t attacker, BattleHex from, size_t defender) {
+Forecast forecast(const Battle& b, size_t attacker, BattleHex from, size_t defender, bool offHand) {
   const Fighter att = fighterAt(b, attacker, from.x, from.y);
   const BattleUnit& du = b.units()[defender];
   const Fighter def = fighterAt(b, defender, du.x, du.y);
   const BattleCell::Terrain &attTile = tileAt(b, from.x, from.y), &defTile = tileAt(b, du.x, du.y);
   Forecast f;
-  const Preview out = previewDamage(b, att, def, attTile, defTile, false);
+  const Preview out = previewDamage(b, att, def, attTile, defTile, offHand);
   f.dmgOut = out.dmg, f.hitOut = out.hitChance;
   f.canCounter = canCounter(b, att, from, def);
   const bool daggerCounter = du.combat.offHandWeapon && Battle::distance({du.x, du.y}, from) <= du.combat.offMaxRange;

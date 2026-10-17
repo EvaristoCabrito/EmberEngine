@@ -172,5 +172,11 @@ std::optional<std::vector<Hero>> loadHeroes(const std::filesystem::path& heroesJ
   }
   return heroes;
 }
+      if (strides.is_object()) {
+        const auto it = strides.find(q.set + "/" + q.clip);
+        if (it != strides.end() && it->is_number()) q.strides = it->get<float>();
+        else if (strides.contains("__default") && strides["__default"].is_number()) q.strides = strides["__default"].get<float>();
+      }
+      if (p.contains("bodyShift") && p["bodyShift"].is_array()) q.bodyShift = p["bodyShift"].get<std::vector<float>>();
 
 }  // namespace ember::e2

@@ -68,8 +68,11 @@ double elementalDamage(double base, double resistance, double mag);
 Fighter fighterAt(const Battle& b, size_t unit, int x, int y);
 // Whether the unit, standing at `from`, reaches the foe with its weapon and has a clear shot (canHitFrom).
 bool canHitFrom(const Battle& b, size_t unit, BattleHex from, size_t foe, bool withDecorations = true);
+// The same with the off-hand weapon's reach (Engine2 offHandReach: a dagger or katar beside a bow reaches by its own range,
+// the bow's minimum would leave an adjacent foe out of reach).
+bool canOffHandHit(const Battle& b, size_t unit, BattleHex from, size_t foe, bool withDecorations = true);
 // The forecast the battle shows for an attack from `from` (makeForecast).
-Forecast forecast(const Battle& b, size_t attacker, BattleHex from, size_t defender);
+Forecast forecast(const Battle& b, size_t attacker, BattleHex from, size_t defender, bool offHand = false);
 // A real plain attack's hit (rollDamage, then the arcane bolt / staff element step), drawing from `rng` in Engine2's
 // order. The attacker stands where it is.
 Hit rollHit(const Battle& b, const Fighter& attacker, const Fighter& defender, Mulberry32& rng);

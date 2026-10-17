@@ -557,6 +557,7 @@ class MapStage final : public Stage {
       else if (pendingFoe_ >= 0) pendingFoe_ = -1;
       else if (spellArmed_) spellArmed_.reset();
       else if (!spellMode_.empty()) spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
+      else if (offHandMode_) offHandMode_ = false, refreshReach();
       else if (attackMode_) attackMode_ = false;
       else if (selected_ >= 0 && result_.empty()) select(-1);
       else if (!menuOptions_.isOpen()) pauseOpen_ = !pauseOpen_;  // nothing picked: the battle menu
@@ -1541,7 +1542,9 @@ class MapStage final : public Stage {
       if (flat_) anchor.y = boardTop_ + anchor.z * kFlatRowStep + kFlatRowStep * 0.5f;
       const uint32_t flags = flat_ ? kSpriteLit | kSpriteFlat : kSpriteLit | kSpriteFront | kSpriteCastsShadow;
       const size_t cardsBefore = drawList_.size();
-      addCard(clip, anchor, right, boxW, boxH, {0.0f, -foot, 0.0f}, mirror, frame, flags, nullptr);
+      // Engine2 centerBody: a sheet that drifts sideways mid-swing (Neera's off-hand dagger) is held on its hex.
+      const float drift = p && frame < p->bodyShift.size() ? p->bodyShift[frame] * boxW : 0.0f;
+      addCard(clip, anchor, right, boxW, boxH, {-drift, -foot, 0.0f}, mirror, frame, flags, nullptr);
       // A unit whose spell is playing stays in front of it (user, 2026-10-16): its card is drawn again over the effects.
       if (drawList_.size() > cardsBefore && spellFx_.casterInFront(static_cast<int>(ui), time)) frontCards_.push_back(drawList_.back());
       unitCard_[ui] = {anchor - (flat_ ? glm::vec3(0.0f, 0.0f, -foot) : glm::vec3(0.0f, foot, 0.0f)), boxW, boxH, flat_, true};
@@ -2153,6 +2156,7 @@ class MapStage final : public Stage {
     spellArmed_.reset(), pendingFoe_ = -1;
     const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
     const e2::BattleUnit& u = battle_->units()[b];
+    offHandMode_ = false;
     // Criar Comida e Água has no aim: it is cast at once, around the caster.
     if (e2::spellInstant(kind)) return commitSpell({u.x, u.y});
     for (int y = 0; y < battle_->rows(); ++y)
@@ -2235,7 +2239,9 @@ class MapStage final : public Stage {
     for (const auto& [t, from] : targets_)
       if (t == foe) {
         const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
-        if (from.x == u.x && from.y == u.y) return attack(static_cast<size_t>(selected_), static_cast<size_t>(foe));
+        if (from.x == u.x && from.y == u.y)
+          return attack(static_cast<size_t>(selected_), static_cast<size_t>(foe),
+                        offHandWanted(static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), static_cast<size_t>(unitBattle_[static_cast<size_t>(foe)])));
         pendingStrike_ = foe;
         return walkTo(static_cast<size_t>(selected_), from);
       }
@@ -2254,7 +2260,7 @@ class MapStage final : public Stage {
       if (t == targets_.end()) return void(pendingFoe_ = -1);
       const size_t db = static_cast<size_t>(unitBattle_[static_cast<size_t>(pendingFoe_)]);
       title = tr("Atacar ", "Attack ") + battle_->units()[db].name;
-      hit = e2::forecast(*battle_, ab, t->second, db).hitOut;
+      hit = e2::forecast(*battle_, ab, t->second, db, offHandFrom(ab, db, t->second)).hitOut;
     } else if (!spellMode_.empty() && spellArmed_) {
       title = potionOf(spellMode_) ? e2::potionName(*potionOf(spellMode_)) : e2::spellName(spellMode_);
       ready = aimValid(ab, *spellArmed_);
@@ -2347,6 +2353,23 @@ class MapStage final : public Stage {
   bool busy() const {
     if (exchange_ || enemyTurn_ || !result_.empty()) return true;
     return std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
+    // The off-hand weapon (a dagger beside a bow) reaches what the bow cannot, standing where it is; with "Mão Secundária"
+    // armed those are the only targets.
+    if (u.combat.offHandWeapon && !u.combat.offHandShield) {
+      for (size_t i = 0; i < scene_->units.size(); ++i) {
+        const int fb = unitBattle_[i];
+        if (fb < 0 || !unitCard_[i].drawn) continue;
+        const e2::BattleUnit& f = battle_->units()[static_cast<size_t>(fb)];
+        if (!f.alive || f.side == u.side || !e2::canOffHandHit(*battle_, b, {u.x, u.y}, static_cast<size_t>(fb))) continue;
+        const auto have = std::find_if(targets_.begin(), targets_.end(), [&](const auto& t) { return t.first == static_cast<int>(i); });
+        if (have == targets_.end()) targets_.push_back({static_cast<int>(i), e2::BattleHex{u.x, u.y}});
+        else if (u.combat.arrow) have->second = e2::BattleHex{u.x, u.y};  // in the dagger's reach it strikes from here
+      }
+    }
+    if (offHandMode_)
+      targets_.erase(std::remove_if(targets_.begin(), targets_.end(),
+                                    [&](const auto& t) { return !e2::canOffHandHit(*battle_, b, {u.x, u.y}, static_cast<size_t>(unitBattle_[static_cast<size_t>(t.first)])); }),
+                     targets_.end());
   }
 
   // Engine2's turn loop (tick / beginUnitTurn / startNewRound): whoever is next in the round acts; when everyone has
@@ -2648,9 +2671,7 @@ class MapStage final : public Stage {
   bool strikeIsArrow(const e2::BattleStep& s, bool counter) const {
     if (s.type != e2::BattleStep::Type::Combat || (!counter && !s.kind.empty())) return false;
     const e2::BattleUnit& actor = battle_->units()[counter ? s.def : s.att];
-    const e2::BattleUnit& target = battle_->units()[counter ? s.att : s.def];
-    const bool off = counter && actor.combat.offHandWeapon && e2::Battle::distance({actor.x, actor.y}, {target.x, target.y}) <= actor.combat.offMaxRange;
-    return actor.combat.arrow && !off;
+    return actor.combat.arrow && !strikeIsOffHand(s, counter);
   }
 
   // A strike's blow is an arcane bolt (Combat.cpp resolveStrike: an arcane caster's plain attack or counter, never an
@@ -2658,9 +2679,17 @@ class MapStage final : public Stage {
   bool strikeIsBolt(const e2::BattleStep& s, bool counter, std::string& element) const {
     if (s.type != e2::BattleStep::Type::Combat || (!counter && !s.kind.empty())) return false;
     const e2::BattleUnit& actor = battle_->units()[counter ? s.def : s.att];
-    const e2::BattleUnit& target = battle_->units()[counter ? s.att : s.def];
-    const bool off = counter && actor.combat.offHandWeapon && e2::Battle::distance({actor.x, actor.y}, {target.x, target.y}) <= actor.combat.offMaxRange;
-    if (off || actor.combat.arrow || !(actor.combat.arcane || actor.combat.staff)) return false;
+    if (strikeIsOffHand(s, counter) || actor.combat.arrow || !(actor.combat.arcane || actor.combat.staff)) return false;
+  // A strike is made with the off-hand weapon (Engine2 offHandStrike): the unit's own off-hand attack (its step carries the
+  // weapon's dice), or a counter by a defender whose off-hand weapon reaches the attacker.
+  bool strikeIsOffHand(const e2::BattleStep& s, bool counter) const {
+    if (s.type != e2::BattleStep::Type::Combat) return false;
+    if (!counter) return s.customDice;
+    const e2::BattleUnit& actor = battle_->units()[s.def];
+    const e2::BattleUnit& target = battle_->units()[s.att];
+    return actor.combat.offHandWeapon && e2::Battle::distance({actor.x, actor.y}, {target.x, target.y}) <= actor.combat.offMaxRange;
+  }
+
     element = actor.combat.staff ? actor.combat.staffElement : "arcane";
     return true;
   }
@@ -2687,7 +2716,8 @@ class MapStage final : public Stage {
     if (std::abs(screenX) > 0.05f) unitFacing_[ui] = screenX > 0.0f ? 1 : -1;
   }
 
-  void attack(size_t attackerUi, size_t defenderUi) {
+  // `offHand`: the blow is the off-hand weapon's (Engine2 commitOffHandAction: its own dice, its own sheet).
+  void attack(size_t attackerUi, size_t defenderUi, bool offHand = false) {
     e2::BattleStep strike;
     strike.type = e2::BattleStep::Type::Combat;
     strike.att = static_cast<size_t>(unitBattle_[attackerUi]);
@@ -2709,9 +2739,30 @@ class MapStage final : public Stage {
 
   // The step's pose starts: the striker turns to its target (and a struck foe to the striker).
   void startStep(Exchange& x) {
+    if (offHand) {
+      const e2::CombatProfile& c = battle_->units()[strike.att].combat;
+      strike.customDice = true;
+      strike.customDiceCount = c.offDice, strike.customFaces = c.offFaces, strike.customBonus = c.offBonus;
+    }
+    offHandMode_ = false;
     const e2::BattleStep& s = x.steps[x.step];
     const int striker = sceneUnitOf(static_cast<int>(x.counter ? s.def : s.att));
     using StepType = e2::BattleStep::Type;
+  // Whether the plain attack of the picked unit on this foe, from where it stands, is made with the off-hand weapon: the
+  // foe is within that weapon's reach and the player armed "Mão Secundária", or the unit wields a bow (Engine2: a bow user
+  // with a dagger strikes with it by default whenever the foe is in its reach, it always outhits the arrow).
+  bool offHandWanted(size_t unitBattle, size_t foeBattle) const {
+    const e2::BattleUnit& u = battle_->units()[unitBattle];
+    if (!u.combat.offHandWeapon || u.combat.offHandShield) return false;
+    if (!e2::canOffHandHit(*battle_, unitBattle, {u.x, u.y}, foeBattle)) return false;
+    return offHandMode_ || u.combat.arrow;
+  }
+  // The forecast's off-hand flag for a strike from `from`: only the hex the unit stands on can be struck with the off hand.
+  bool offHandFrom(size_t unitBattle, size_t foeBattle, e2::BattleHex from) const {
+    const e2::BattleUnit& u = battle_->units()[unitBattle];
+    return from.x == u.x && from.y == u.y && offHandWanted(unitBattle, foeBattle);
+  }
+
     const bool support = s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food || s.type == StepType::Potion;
     int target = -1;
     if (s.type == StepType::Food) target = -1;  // around the caster: nobody to turn to
@@ -2723,7 +2774,8 @@ class MapStage final : public Stage {
     }
     // A potion is drunk or handed over with no pose of its own (Engine2 applyPotion); the cures and the food play the
     // healing pose.
-    std::string pose = s.type == StepType::Combat ? "attack" : s.type == StepType::Potion ? "" : e2::spellPose(s.kind);
+    std::string pose = s.type == StepType::Combat ? (strikeIsOffHand(s, x.counter) ? "attackShort" : "attack") : s.type == StepType::Potion ? "" : e2::spellPose(s.kind);
+    if (pose == "attackShort" && striker >= 0 && !hasPose(static_cast<size_t>(striker), pose)) pose = "attack";  // no off-hand sheet: the main one
     if (striker >= 0 && !pose.empty() && !hasPose(static_cast<size_t>(striker), pose)) pose = hasPose(static_cast<size_t>(striker), "cast") ? "cast" : "attack";
     const float length = (striker >= 0 && !pose.empty() ? poseSeconds(static_cast<size_t>(striker), pose) : 0.6f) / actionRate();
     x.impact = now_ + length * kImpactShare;
@@ -3051,10 +3103,11 @@ class MapStage final : public Stage {
       if (fi < 0) return fail("no such target");
       if (!placeBeside(static_cast<size_t>(fi), static_cast<size_t>(ci))) return fail("no free hex beside the attacker");
       select(ci);
-      attack(static_cast<size_t>(ci), static_cast<size_t>(fi));
+      const bool off = offHandWanted(static_cast<size_t>(unitBattle_[static_cast<size_t>(ci)]), static_cast<size_t>(unitBattle_[static_cast<size_t>(fi)]));
+      attack(static_cast<size_t>(ci), static_cast<size_t>(fi), off);
       if (!exchange_) return fail("nothing played");
-      return logInfo("battle script: strike {} -> {}: {} (impact in {:.2f} s)", p[1], p[2], exchange_->bolt ? "Arcano bolt (" + exchange_->element + ")" : "weapon blow",
-                     exchange_->impact - now_);
+      return logInfo("battle script: strike {} -> {}: {} (impact in {:.2f} s)", p[1], p[2],
+                     off ? "off-hand blow" : exchange_->bolt ? "Arcano bolt (" + exchange_->element + ")" : "weapon blow", exchange_->impact - now_);
     }
     int ti = ci;
     if ((p[0] == "cast" && p.size() > 3) || (p[0] == "potion" && p.size() > 3)) {
@@ -3537,7 +3590,7 @@ class MapStage final : public Stage {
     if (foe < 0 || target == targets_.end()) return;
     const size_t ab = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), db = static_cast<size_t>(unitBattle_[static_cast<size_t>(foe)]);
     const e2::BattleUnit &a = battle_->units()[ab], &d = battle_->units()[db];
-    const e2::Forecast f = e2::forecast(*battle_, ab, target->second, db);  // from the hex it would strike from
+    const e2::Forecast f = e2::forecast(*battle_, ab, target->second, db, offHandFrom(ab, db, target->second));  // from the hex it would strike from
     const ImVec2 cursor = ImGui::GetIO().MousePos;  // canvas units (mouse_ is in window pixels)
     ImGui::SetNextWindowPos({cursor.x + 18.0f, cursor.y + 18.0f}, ImGuiCond_Always);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {12.0f, 10.0f});
@@ -3943,7 +3996,7 @@ class MapStage final : public Stage {
         const auto t = std::find_if(targets_.begin(), targets_.end(), [&](const auto& q) { return q.first == foe; });
         if (foe >= 0 && t != targets_.end()) {
           const size_t ab = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), db = static_cast<size_t>(unitBattle_[static_cast<size_t>(foe)]);
-          const e2::Forecast fc = e2::forecast(*battle_, ab, t->second, db);
+          const e2::Forecast fc = e2::forecast(*battle_, ab, t->second, db, offHandFrom(ab, db, t->second));
           line = fc.canCounter ? std::format("{:.0f}% em {} · contra {:.0f}%", fc.hitOut, battle_->units()[db].name, fc.hitBack)
                                : std::format("{:.0f}% em {} · sem contra", fc.hitOut, battle_->units()[db].name);
         }
@@ -3966,14 +4019,22 @@ class MapStage final : public Stage {
     const e2::BattleUnit* actor = mine ? &battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])] : nullptr;
     const bool canAct = actor && !actor->acted;
     // Atacar always opens (the grid shows the weapon's zone even with nobody in it), so the player sees its reach.
-    if (emberButton("##attack", "Atacar", true, canAct && spellMode_.empty())) attackMode_ = !attackMode_;
+    if (emberButton("##attack", "Atacar", true, canAct && spellMode_.empty())) attackMode_ = !attackMode_, offHandMode_ = false, refreshReach();
+    if (actor && actor->combat.offHandWeapon && !actor->combat.offHandShield) {  // Engine2's "Mão Secundária": the dagger or katar strikes
+      ImGui::SameLine();
+      if (emberButton("##offhand", tr("Mão Secundária", "Off-hand").c_str(), offHandMode_, canAct && spellMode_.empty())) {
+        offHandMode_ = !offHandMode_;
+        attackMode_ = false;
+        refreshReach();
+      }
+    }
     ImGui::SameLine();
     const bool turns = !battle_->roaming();  // free roam has no turns to end
     if (emberButton("##wait", "Esperar", false, mine && turns)) endUnitTurn();
     ImGui::SameLine();
     // Cancelar: leaves the attack / spell aim; else takes back the last walk (one per click, each giving back only
     // its own movement). A walk made before an action cannot be taken back once the unit has acted.
-    const bool aiming = !spellMode_.empty() || attackMode_ || pendingFoe_ >= 0;
+    const bool aiming = !spellMode_.empty() || attackMode_ || offHandMode_ || pendingFoe_ >= 0;
     const bool canUndo = actor && !undo_.empty() && undo_.back().unit == static_cast<size_t>(selected_) && undo_.back().acted == actor->acted;
     if (emberButton("##cancel", "Cancelar", false, mine && (aiming || canUndo))) {
       if (aiming) {
@@ -3997,6 +4058,8 @@ class MapStage final : public Stage {
         for (int k = 0; k < 7; ++k) {
           if (actor->bag[k] <= 0) continue;
           ImGui::SameLine();
+        offHandMode_ = false;
+        refreshReach();
           const std::string kind = std::string("potion:") + e2::kPotionIds[k];
           if (spellSocket(std::format("##potion{}", k).c_str(), kind, actor->bag[k], canAct, spellMode_ == kind)) startSpell(kind);
         }
@@ -4729,6 +4792,7 @@ class MapStage final : public Stage {
     bool struck = false;
     std::vector<e2::BattleStep> steps;  // or the spell it casts after its walk
   };
+  bool offHandMode_ = false;         // "Mão Secundária" armed: the off-hand weapon is the one that strikes
   std::optional<EnemyTurn> enemyTurn_;
   std::unordered_set<int> awake_;         // enemies that have seen the party (fog)
   int roamLeader_ = -1;                   // free roam: the scene unit the party follows
