@@ -53,14 +53,36 @@ nlohmann::json Battle::snapshot() const {
     if (u.faceDy) s["faceDy"] = *u.faceDy;
     s["shock"] = u.shock ? nlohmann::json{{"dice", u.shock->dice}, {"faces", u.shock->faces}, {"bonus", u.shock->bonus}, {"mag", u.shock->mag}}
                          : nlohmann::json();
+    // EmberEngine's own: a promotion's class and spell list, the conditions our spells leave
+    s["className"] = u.className;
+    s["spellList"] = u.spellList;
+    if (u.cond.any() || u.cond.poisonMag > 0) {
+      const BattleUnit::Conditions& c = u.cond;
+      s["cond"] = {{"markPct", c.markPct},       {"markTurns", c.markTurns},     {"plagueSpread", c.plagueSpread}, {"plagueBurst", c.plagueBurst},
+                   {"poisonMag", c.poisonMag},   {"bleedDice", c.bleedDice},     {"bleedFaces", c.bleedFaces},     {"bleedTurns", c.bleedTurns},
+                   {"silenceTurns", c.silenceTurns}, {"decayTurns", c.decayTurns}, {"decayPct", c.decayPct},       {"decayCap", c.decayCap},
+                   {"decayStep", c.decayStep},   {"decayDice", c.decayDice},     {"decayFaces", c.decayFaces},     {"decayMul", c.decayMul},
+                   {"decayMag", c.decayMag}};
+    }
+    if (u.decayBase)
+      s["decayBase"] = {{"atk", u.decayBase->atk}, {"mag", u.decayBase->mag}, {"def", u.decayBase->def}, {"dex", u.decayBase->dex}, {"mov", u.decayBase->mov}};
     units.push_back(std::move(s));
   }
+  nlohmann::json zones = nlohmann::json::array();
+  for (const Zone& z : zones_)
+    zones.push_back({{"id", z.id},           {"kind", z.kind},             {"x", z.centre.x},         {"y", z.centre.y},
+                     {"radius", z.radius},   {"rounds", z.rounds},         {"ring", z.ring},          {"caster", units_[z.caster].id},
+                     {"element", z.element}, {"hazardDice", z.hazardDice}, {"hazardFaces", z.hazardFaces}, {"dice", z.dice},
+                     {"faces", z.faces},     {"mul", z.mul},               {"mag", z.mag},            {"statPct", z.statPct},
+                     {"centreMul", z.centreMul}, {"ringMul", z.ringMul},   {"centreDice", z.centreDice}, {"centreFaces", z.centreFaces},
+                     {"ringDice", z.ringDice}, {"ringFaces", z.ringFaces}});
   nlohmann::json order = nlohmann::json::array();
   for (size_t i : turnOrder_) order.push_back(units_[i].id);
   // enmity.ts EnmitySnapshot: { enemyId: { heroId: [ce, ve] } }
   nlohmann::json enmity = nlohmann::json::object();
   for (const Enmity& e : enmity_) enmity[units_[e.enemy].id][units_[e.hero].id] = nlohmann::json::array({e.ce, e.ve});
-  return {{"turn", round_}, {"units", units}, {"turnOrder", order}, {"enmity", enmity}, {"lootRations", lootRations_}, {"roaming", roaming_}};
+  return {{"turn", round_}, {"units", units}, {"turnOrder", order}, {"enmity", enmity}, {"lootRations", lootRations_}, {"roaming", roaming_},
+          {"zones", zones}, {"zoneSerial", zoneSerial_}};
 }
 
 bool Battle::applySnapshot(const nlohmann::json& snap) {
@@ -127,7 +149,48 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       const nlohmann::json& e = s["shock"];
       u.shock = BattleUnit::Echo{e.value("dice", 0), e.value("faces", 0), e.value("bonus", 0), e.value("mag", 0.0)};
     }
+    // EmberEngine's own
+    if (s.contains("classId") && s["classId"].is_string()) u.classId = s["classId"].get<std::string>();
+    if (s.contains("className") && s["className"].is_string()) u.className = s["className"].get<std::string>();
+    if (s.contains("spellList") && s["spellList"].is_array()) {
+      u.spellList.clear();
+      for (const nlohmann::json& k : s["spellList"])
+        if (k.is_string()) u.spellList.push_back(k.get<std::string>());
+    }
+    u.cond = BattleUnit::Conditions{};
+    if (s.contains("cond") && s["cond"].is_object()) {
+      const nlohmann::json& c = s["cond"];
+      BattleUnit::Conditions& o = u.cond;
+      o.markPct = c.value("markPct", 0), o.markTurns = c.value("markTurns", 0), o.plagueSpread = c.value("plagueSpread", 0);
+      o.plagueBurst = c.value("plagueBurst", false), o.poisonMag = c.value("poisonMag", 0.0);
+      o.bleedDice = c.value("bleedDice", 0), o.bleedFaces = c.value("bleedFaces", 0), o.bleedTurns = c.value("bleedTurns", 0);
+      o.silenceTurns = c.value("silenceTurns", 0), o.decayTurns = c.value("decayTurns", 0), o.decayPct = c.value("decayPct", 0);
+      o.decayCap = c.value("decayCap", 0), o.decayStep = c.value("decayStep", 0), o.decayDice = c.value("decayDice", 0);
+      o.decayFaces = c.value("decayFaces", 0), o.decayMul = c.value("decayMul", 0.0), o.decayMag = c.value("decayMag", 0.0);
+    }
+    u.decayBase.reset();
+    if (s.contains("decayBase") && s["decayBase"].is_object()) {
+      const nlohmann::json& d = s["decayBase"];
+      u.decayBase = BattleUnit::Stats{d.value("atk", 0), d.value("mag", 0), d.value("def", 0), d.value("dex", 0), d.value("mov", 0)};
+    }
   }
+  zones_.clear();
+  zoneSerial_ = snap.value("zoneSerial", 0);
+  if (snap.contains("zones") && snap["zones"].is_array())
+    for (const nlohmann::json& j : snap["zones"]) {
+      if (!j.is_object()) continue;
+      const int caster = find(j.value("caster", std::string()));
+      if (caster < 0) continue;
+      Zone z;
+      z.id = j.value("id", 0), z.kind = j.value("kind", std::string()), z.centre = {j.value("x", 0), j.value("y", 0)};
+      z.radius = j.value("radius", 1), z.rounds = j.value("rounds", 1), z.ring = j.value("ring", false), z.caster = static_cast<size_t>(caster);
+      z.element = j.value("element", std::string()), z.hazardDice = j.value("hazardDice", 0), z.hazardFaces = j.value("hazardFaces", 8);
+      z.dice = j.value("dice", 0), z.faces = j.value("faces", 0), z.mul = j.value("mul", 0.0), z.mag = j.value("mag", 0.0), z.statPct = j.value("statPct", 0);
+      z.centreMul = j.value("centreMul", 0.0), z.ringMul = j.value("ringMul", 0.0), z.centreDice = j.value("centreDice", 0);
+      z.centreFaces = j.value("centreFaces", 0), z.ringDice = j.value("ringDice", 0), z.ringFaces = j.value("ringFaces", 0);
+      zoneSerial_ = std::max(zoneSerial_, z.id);
+      zones_.push_back(std::move(z));
+    }
   round_ = snap.value("turn", round_);
   lootRations_ = snap.value("lootRations", lootRations_);
   roaming_ = roaming_ && snap.value("roaming", true);

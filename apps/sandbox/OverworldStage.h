@@ -45,6 +45,7 @@
 #include "world/Combat.h"
 #include "world/Inn.h"
 #include "world/Overworld.h"
+#include "world/Spells.h"
 
 namespace ember {
 
@@ -1158,6 +1159,54 @@ class OverworldStage : public Stage {
     endPanel();
   }
 
+  // Caminho de classe (EmberEngine's own, 2026-10-17): a Mago Negro of level 15 or more chooses Elementalista (dano
+  // puro e área) or Bruxo (enfraquecimento e dano no tempo); the choice goes into save.promotions, which the fights read
+  // (world/Spells.cpp setPromotion), and stays. Only the Mago Negro's paths have spells so far: the other classes wait.
+  void drawPromotions(const std::vector<std::string>& heroes, float inner) {
+    std::vector<std::string> mages;
+    for (const std::string& hero : heroes) {
+      const std::string base = world_.tables()["baseClass"].value(hero, "");
+      if (base == "mage" || base == "voss") mages.push_back(hero);
+    }
+    if (mages.empty()) return;
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    ImFont* ui = uiFont(UiFont::Ui);
+    kicker("Caminho de classe", 14.0f);
+    const ImVec2 a = ImGui::GetCursorScreenPos();
+    const float rowH = 64.0f;
+    slot(a, {a.x + inner, a.y + 16 + rowH * static_cast<float>(mages.size())});
+    float y = a.y + 10;
+    for (const std::string& hero : mages) {
+      const int level = static_cast<int>(num(save_.value("levels", e2::Json::object()), hero, 1));
+      std::string promo;
+      if (save_.contains("promotions") && save_["promotions"].contains(hero) && save_["promotions"][hero].is_string()) promo = save_["promotions"][hero].get<std::string>();
+      portrait(dl, hero, {a.x + 12, y}, {a.x + 52, y + 48});
+      const std::string head = std::format("{} · Nv {} · {}", hero, level, e2::promotionName(promo));
+      dl->AddText(ui, 14.0f, {a.x + 62, y + 2}, kFg, head.c_str());
+      if (!promo.empty()) {
+        dl->AddText(ui, 12.0f, {a.x + 62, y + 24}, kMuted,
+                    promo == "warlock" ? "Bruxo: enfraquecimento e dano no tempo. Marca da Ruína e Praga Rastejante no 15; T7 a T10 até o 25."
+                                       : "Elementalista: dano puro e área. Coluna de Fogo e Lança de Gelo no 15; T7 a T10 até o 25.");
+      } else if (level < 15) {
+        dl->AddText(ui, 12.0f, {a.x + 62, y + 24}, kMuted, "No nível 15 escolhe o caminho: Elementalista (dano puro e área) ou Bruxo (enfraquecimento e dano no tempo).");
+      } else {
+        dl->AddText(ui, 12.0f, {a.x + 62, y + 24}, kMuted, "Escolha o caminho (fica para o resto da campanha):");
+        ImGui::PushID(hero.c_str());
+        if (emberBigButton("##elem", "ELEMENTALISTA", {a.x + inner - 300, y + 8}, {140, 30}, false, 11.0f)) {
+          save_["promotions"][hero] = "elementalist";
+          write();
+        }
+        if (emberBigButton("##warlock", "BRUXO", {a.x + inner - 150, y + 8}, {130, 30}, false, 11.0f)) {
+          save_["promotions"][hero] = "warlock";
+          write();
+        }
+        ImGui::PopID();
+      }
+      y += rowH;
+    }
+    ImGui::SetCursorScreenPos({a.x, a.y + 24 + rowH * static_cast<float>(mages.size())});
+  }
+
   void drawGroupTab(const std::vector<std::string>& heroes, float inner) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     ImFont* ui = uiFont(UiFont::Ui);
@@ -1186,6 +1235,7 @@ class OverworldStage : public Stage {
       }
       ImGui::SetCursorScreenPos({a.x, a.y + 128});
     }
+    drawPromotions(heroes, inner);
     // Formação inicial: the radius-2 board (rows 3-4-5-4-3), two clicks swap two cells.
     kicker("Formação inicial", 14.0f);
     {

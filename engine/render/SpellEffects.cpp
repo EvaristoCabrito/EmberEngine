@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "core/Log.h"
+
 namespace ember {
 
 namespace {
@@ -72,6 +74,12 @@ int SpellEffects::looks(const std::string& kind) {
   static const char* kVersion01[] = {"lightning", "lightningTier3", "shock", "frost", "cureMinor", "longShot", "piercing", "piercingThrust",
                                      "doubleStrike"};
   for (const char* k : kVersion01)
+    if (kind == k) return 1;
+  // EmberEngine's own spells (SpellEffectsEmber.cpp): version 01, flipbook cards.
+  static const char* kEmber[] = {"markOfRuin",   "creepingPlague", "lifeDrain",    "shroudOfShadows", "hemorrhage",     "profaneSilence",  "blackPestilence",
+                                 "curseOfDecay", "soulHarvest",    "devouringVoid", "pillarOfFlame",  "iceLance",       "thunderstorm",    "meteor",
+                                 "absoluteZero", "chainLightning", "eruption",      "glacialGale",     "wrathOfTheSkies", "primordialEmber"};
+  for (const char* k : kEmber)
     if (kind == k) return 1;
   return 0;
 }
@@ -234,6 +242,7 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
   else if (kind == "longShot") arrow(caster, targets, start, impact, false);
   else if (kind == "piercing") arrow(caster, targets, start, impact, true);
   else if (kind == "piercingThrust" || kind == "doubleStrike") bladeSkill(caster, start, impact);
+  else if (emberCast(kind, caster, targets, start, impact)) return true;
   else return false;
   return true;
 }
@@ -556,14 +565,23 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
     glm::vec3 at = position(e, now);
     if (e.lightIntensity > 0.0f) {
       const float decay = e.lightDecay > 0.0f ? std::pow(1.0f - age, e.lightDecay) : 1.0f;
-      lights.push_back({at, e.lightColor, e.lightIntensity * envelope * decay, e.lightRadius, std::max(at.y, 1.0f)});
+      float waver = 1.0f;
+      if (e.flickerLight > 0.0f) {  // flames: two slow sines and a fast one, never below 1 - share
+        const float t = now * 7.3f + e.start * 13.0f;
+        waver = 1.0f - e.flickerLight * (0.5f + 0.25f * std::sin(t) + 0.15f * std::sin(t * 2.7f) + 0.1f * std::sin(t * 6.1f));
+      }
+      lights.push_back({at, e.lightColor, e.lightIntensity * envelope * decay * waver, e.lightRadius, std::max(at.y, 1.0f)});
     }
     SpriteClipId id = e.clip;
     if (!e.flicker.empty()) id = e.flicker[static_cast<size_t>((now - e.start) / kFlickerStep) % e.flicker.size()];
-    if (id == kNoSpriteClip) continue;
+    if (id == kNoSpriteClip) continue;  // a light alone (add(nullptr, ...)), or art missing from the pack
     sprites_.request(id, SpriteSystem::kOnScreen);
     const SpriteSystem::Texture tex = sprites_.texture(id);
-    if (tex.index == kNoTexture) continue;
+    if (tex.index == kNoTexture) {
+      ++notResident_;
+      continue;
+    }
+    ++drawn_;
     const SpriteClipHeader& c = sprites_.header(id);
 
     // The flipbook frame: looping at its rate, or once over the element's life.
@@ -627,6 +645,13 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   std::sort(out.begin() + static_cast<std::ptrdiff_t>(first), out.end(), [&](const EffectInstance& a, const EffectInstance& b) {
     return glm::dot(a.center - eye, forward) > glm::dot(b.center - eye, forward);
   });
+  // Once a second while anything is alive and some card could not be drawn (its texture not resident yet: the sprite
+  // budget starving the effect clips), say so: an invisible spell is otherwise silent.
+  if (!elements_.empty() && now - lastReport_ >= 1.0f) {
+    lastReport_ = now;
+    if (notResident_ > 0) logWarn("effects: {} cards drawn, {} waiting for their texture ({} elements alive)", drawn_, notResident_, elements_.size());
+    drawn_ = notResident_ = 0;
+  }
 }
 
 }  // namespace ember

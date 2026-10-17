@@ -20,6 +20,7 @@ add_library(EmberEngine STATIC
   render/UiArt.cpp
   render/SpriteSystem.cpp
   render/SpellEffects.cpp
+  render/SpellEffectsEmber.cpp
   render/vfx/MagicMissileV2.cpp
   render/vfx/Fireball.cpp
   render/vfx/Bless.cpp

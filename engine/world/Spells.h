@@ -8,7 +8,15 @@
 // Ported: Míssil Mágico, Tiro Longo, Tiro Perfurante, Investida Perfurante, Golpe Duplo, Relâmpago (+ its echo), Frost,
 // Choque (enemy charges), Cura Menor, Cura Média, Mãos Curativas, Curar Doença, Criar Comida e Água, the battle's potions,
 // the disease of a bite; weapon-skill / resistance / healing training, experience and level-ups, a death's
-// loot roll, start-of-turn echo and hazards. Not yet: the other spells (area, summons, status zones, poison, bleeding).
+// loot roll, start-of-turn echo and hazards. Not yet: the other spells (area, summons, status zones, bleeding).
+//
+// EmberEngine's own (2026-10-17, the user's "pode criar todas elas"): the Mago Negro's two promotions, 2 spells per
+// tier from T6 to T10 (kEmberSpells in Spells.cpp): the Bruxo (enfeeblement and damage over time: marks, poisons that
+// spread, bleeding, silence, a decaying curse, a life drain, an execution) and the Elementalista (pure damage and area:
+// fire, ice, lightning and Brasa; lines, cones, chains, zones that burn, a meteor that falls a turn later). They use the
+// game's own formula (floor(floor(MAG / 2) × weight) + dice, the element's resistance, MAG / 2 of penetration) and
+// Engine2's poison tiers (poisonTiers: Veneno Maior / Mortal / Letal), which tick here at the start of the victim's
+// turn as Engine2's help describes. Numbers: docs/SPELLS_PROMOTIONS.md.
 
 #include <optional>
 #include <string>
@@ -40,6 +48,27 @@ struct BattleStep {
   // Food: the fullness it brings (its rations roll is dice / faces / bonus); Potion: the potion's id
   double fullness = 0;
   std::string potion;
+
+  // --- EmberEngine's own spells (the Bruxo's and the Elementalista's T6-T10; see kEmberSpells in Spells.cpp) ---
+  std::vector<double> perTargetMul;  // a weight per entry of `ids` (empty = 1 each): Lança de Gelo, Cadeia de Raios, Zero Absoluto
+  std::vector<size_t> echoIds;       // Tempestade Elétrica: struck again at once by echoDice (no MAG weight, lightning resistance)
+  int echoDice = 0, echoFaces = 0, echoBonus = 0;
+  int drainPct = 0;                  // Dreno de Vida: the caster heals this % of the damage dealt
+  bool harvest = false;              // Colheita de Almas: every condition on the struck ticks once more, now
+  int harvestHealPct = 0;            // ... and the caster heals this % of its max HP per enemy struck
+  int execPct = 0;                   // Vazio Devorador: a target left under this % of its HP dies
+  int shredDarkness = 0;             // ... and loses this much Escuridão resistance for the rest of the fight
+  int push = 0;                      // Vendaval Glacial: every struck unit is pushed this many hexes away from the caster
+  bool delayed = false;              // Meteoro: nothing lands now (its zone waits for the caster's next turn)
+  // Conditions the hits leave (Battle.h BattleUnit::Conditions)
+  int markPct = 0, markTurns = 0;
+  std::string poisonTier;            // "greater", "deadly", "lethal" (Engine2 poisonTiers), applied to every struck unit
+  int plagueSpread = 0;
+  bool plagueBurst = false;
+  int bleedDice = 0, bleedFaces = 0, bleedTurnsDice = 0, bleedTurnsFaces = 0;
+  int silenceTurns = 0;
+  int decayStep = 0, decayCap = 0, decayTurns = 0, decayDice = 0, decayFaces = 0;
+  double decayMul = 0;
 };
 
 // What a step did, for the window: a number over a unit, a miss, a heal, a death.
@@ -49,7 +78,29 @@ struct BattleEffect {
   bool crit = false, miss = false, heal = false, died = false;
   bool counter = false;  // the defender striking back
   std::string text;      // shown instead of the number ("curado", "+2 rações", ...)
+  bool status = false;   // a condition's word ("Marcado", "Envenenado", ...): no hit pose, its own colour
+  bool pushed = false;   // the unit was moved to another hex (Vendaval Glacial): the window re-places its card
 };
+
+// --- EmberEngine's own spells: the two promotions of the Mago Negro (user, 2026-10-16/17: "2 magias por tier do 6 ao
+// 10"; Bruxo = enfraquecimento e dano no tempo, Elementalista = dano puro e área) ---
+// The class a kind belongs to ("warlock" / "elementalist"), empty for Engine2's own spells.
+std::string emberSpellClass(const std::string& kind);
+// The level a class learns it at (0 = not one of ours).
+int spellLearnLevel(const std::string& kind);
+// The kinds a class knows at a level, in learning order (empty for Engine2's classes).
+std::vector<std::string> emberSpells(const std::string& classId, int level);
+// Appends to the unit's spell list what its class knows at its level and does not have yet (level-ups call it too).
+void grantClassSpells(BattleUnit& u);
+// Promotes (or demotes) a hero: its class id and Portuguese class name, and its spell list rebuilt (Engine2's own spells
+// kept, ours replaced). "" / "mage" = the Mago Negro again.
+void setPromotion(BattleUnit& u, const std::string& classId);
+// The Portuguese class name ("Bruxo", "Elementalista", "Mago Negro"; the id itself when unknown).
+std::string promotionName(const std::string& classId);
+// A unit's conditions in words, for the window ("Marcado +20% · Veneno Maior · Silenciado 2"), empty when none.
+std::string conditionsText(const BattleUnit& u);
+// The spell's description for the window's tooltip (its numbers at the caster's level).
+std::string spellTooltip(const BattleUnit& caster, const std::string& kind);
 
 // Spell names as the window shows them (Engine2's own Portuguese names).
 std::string spellName(const std::string& kind);

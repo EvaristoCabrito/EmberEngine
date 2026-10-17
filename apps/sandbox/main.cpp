@@ -123,6 +123,10 @@ struct Options {
   bool movingLight = false, spellLight = false;
   std::string fxTest;
   std::string battleScript;  // --battle-script: MapStage::runScript's steps
+  // --promote Name=class[:level],...: a hero's promotion ("warlock" / "elementalist") and, optionally, its level for the
+  // fight (tests of the promotions' spells; the campaign reads the save's promotions instead).
+  std::map<std::string, std::string> promote;
+  std::map<std::string, int> promoteLevel;
   bool tatica = false;
   bool spellsMenuOpen = false;
   float measureSeconds = 0.0f;
@@ -206,6 +210,23 @@ Options parse(int argc, char** argv) {
     else if (arg == "--measure" && hasValue) o.measureSeconds = static_cast<float>(std::atof(argv[++i]));
     else if (arg == "--spell-light") o.spellLight = true;
     else if (arg == "--fx-test" && hasValue) o.fxTest = argv[++i];
+    else if (arg == "--promote" && hasValue) {
+      std::string list = argv[++i];
+      for (size_t at = 0; at <= list.size();) {
+        size_t comma = list.find(',', at);
+        if (comma == std::string::npos) comma = list.size();
+        const std::string item = list.substr(at, comma - at);
+        at = comma + 1;
+        const size_t eq = item.find('=');
+        if (eq == std::string::npos) continue;
+        std::string cls = item.substr(eq + 1);
+        if (const size_t colon = cls.find(':'); colon != std::string::npos) {
+          o.promoteLevel[item.substr(0, eq)] = std::atoi(cls.c_str() + colon + 1);
+          cls.resize(colon);
+        }
+        o.promote[item.substr(0, eq)] = cls;
+      }
+    }
     else if (arg == "--battle-script" && hasValue) o.battleScript = argv[++i];
     else if (arg == "--tatica") o.tatica = true;
     else if (arg == "--spells-menu-open") o.spellsMenuOpen = true;
@@ -553,6 +574,8 @@ MapStageOptions mapOptions(const Options& o) {
     m.starLook = o.starLook;
     m.heroes = o.heroes;
     m.battle = o.battleRules;
+    m.heroClass = o.promote;
+    for (const auto& [name, level] : o.promoteLevel) m.heroProgress[name] = {level, 0};
     return m;
   }
 }
@@ -1071,6 +1094,11 @@ int runWindow(const Options& o) {
           const e2::Json levels = save.value("levels", e2::Json::object()), xp = save.value("xp", e2::Json::object());
           for (const auto& [name, level] : levels.items())
             if (level.is_number_integer()) options.heroProgress[name] = {level.get<int>(), xp.value(name, 0)};
+          // ... and their promotions (save.ts promotions: the Mago Negro's path chosen on the Party screen).
+          const e2::Json promotions = save.value("promotions", e2::Json::object());
+          if (promotions.is_object())
+            for (const auto& [name, cls] : promotions.items())
+              if (cls.is_string()) options.heroClass[name] = cls.get<std::string>();
           // ... and their condition (GameApp startBattle's roster; HeroHandoff.h).
           options.heroState = heroStatesFromSave(save);
         }

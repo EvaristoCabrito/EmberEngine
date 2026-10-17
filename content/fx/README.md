@@ -53,6 +53,28 @@ at the nearest foe every 3 s), `--tatica` (2D view), `--spells-menu-open` (the M
 | every landed weapon blow | (always) | an impact spark (Impacto 01-04) on the body, embers on a critical, a warm flash | `strike()` |
 | lightning echo (start of the struck unit's turn) | (with Relâmpago) | Relâmpago 01's strike at 0.6 size | `echo()` |
 
+| **EmberEngine's own, the Mago Negro's promotions (docs/SPELLS_PROMOTIONS.md)** | 01 | flipbook cards + lights, `engine/render/SpellEffectsEmber.cpp` (2026-10-17) | |
+| Marca da Ruína (`markOfRuin`) | 01 | shadow gathers in the hand, a dark bolt flies, a violet seal closes over the chest and keeps turning while the mark lasts | `markOfRuin()` |
+| Praga Rastejante (`creepingPlague`) | 01 | a sick green orb arcs in; a plume, a puddle ring and bubbles on the body | `creepingPlague()` |
+| Dreno de Vida (`lifeDrain`) | 01 | red threads pulled from the target's chest to the caster's hand, a red glow swelling on the caster | `lifeDrain()` |
+| Mortalha de Sombras (`shroudOfShadows`) | 01 | the cast: a burst of dark smoke at the centre; the zone (standing): dark smoke columns and drifting rings on every hex, a dim violet light | `shroudCast()`, `zoneStart("shroudOfShadows")` |
+| Hemorragia (`hemorrhage`) | 01 | a red shadow slash across the body, drops falling to the feet, a red ring | `hemorrhage()` |
+| Silêncio Profano (`profaneSilence`) | 01 | a violet wave over the area; rings of runes close over every head and go out | `profaneSilence()` |
+| Peste Negra (`blackPestilence`) | 01 | a black-green orb arcs to the centre; plumes, puddles and dark smoke roll out over every hex under a sick light | `blackPestilence()` |
+| Maldição da Decadência (`curseOfDecay`) | 01 | a dark pillar round the body, grey motes falling from head to feet | `curseOfDecay()` |
+| Colheita de Almas (`soulHarvest`) | 01 | a shadow sheet sweeps the area at waist height; pale souls stream from each struck body to the caster | `soulHarvest()` |
+| Vazio Devorador (`devouringVoid`) | 01 | a black point swells over the body drinking the light, collapses into a vortex, shards fly out | `devouringVoid()` |
+| Coluna de Fogo (`pillarOfFlame`) | 01 | a pillar of fire on the centre, the ring catching, smoke; then the ground burns (zone `burning`: small flames, glow, a wavering light) | `pillarOfFlame()`, `zoneStart("burning")` |
+| Lança de Gelo (`iceLance`) | 01 | a streak of ice along the whole line, an ice eruption on everyone on it | `iceLance()` |
+| Tempestade Elétrica (`thunderstorm`) | 01 | a dark cloud over the area, bolts on everyone standing in it and a few empty hexes, smaller echoes a beat later | `thunderstorm()` |
+| Meteoro (`meteor`) | 01 | the cast: a red mark on the ground (zone `meteor`, pulsing ring + embers); the fall (`meteorFall`): the rock from the sky with a trail, a column of fire, a wave, bursts on every hex, smoke, a huge flash | `meteorMark()`, `meteorFall()` |
+| Zero Absoluto (`absoluteZero`) | 01 | the area crystallises from the centre out: a frost ring runs, ice erupts on every hex, white motes on the bodies | `absoluteZero()` |
+| Cadeia de Raios (`chainLightning`) | 01 | a bolt from the hand to the first body, arcs jumping body to body (the bolt art stretched between them), each thinner | `chainLightning()` |
+| Erupção (`eruption`) | 01 | the ground cracks round the caster, a ring of fire runs out, flames rise on the rim; the rim keeps burning (zone) | `eruption()` |
+| Vendaval Glacial (`glacialGale`) | 01 | gusts of snow rush down the cone, ice dust on every hex, the struck slide back | `glacialGale()` |
+| Fúria dos Céus (`wrathOfTheSkies`) | 01 | dark clouds over the targets, four or five columns of lightning almost at once, echoes round them | `wrathOfTheSkies()` |
+| Brasa Primordial (`primordialEmber`) | 01 | embers rise over the whole area, an orange-white blast, plumes on every hex; the ground smoulders (zone `burning`, ember) | `primordialEmber()`, `zoneStart("burning")` |
+
 All the other spells: OFF only (no version yet).
 
 ## Engine2's own spell effects (not ported yet)

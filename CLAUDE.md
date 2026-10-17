@@ -161,7 +161,10 @@ build.bat release          # or debug; output in build/<config>/bin
   `[[vk::ext_decorate(5271)]]` + `[[vk::ext_capability(5283)]]` (DXC issue #6862). A 3D-texture `SampleLevel` whose
   coordinate was built inline (`float3(uv, 1.0 - 0.5 / float(max(f.volumeSlices, 1u)))`) read 0 on one code path
   while a debug branch read the right value at the same coordinate (2026-10-16, lighting.hlsli): compute the
-  coordinate into a local first, in a small helper (`volumeFarSample`).
+  coordinate into a local first, in a small helper (`volumeFarSample`). **It struck again in `volumeTransmittance`
+  (found 2026-10-17): every spell effect (flipbook cards and the ported vfx) was invisible whenever the Atmosfera was on
+  (the default since 2026-10-16 afternoon); fixed the same way (`volumeSampleAt`). Any new `SampleLevel` on the volume
+  goes through a helper. `--atmos 0` is the first thing to try when an effect does not show.**
 - Git after a power cut / app crash (2026-10-16): `.git/index`, `refs/heads/main`, `COMMIT_EDITMSG` and the reflog tails
   came back zero-filled while the commit objects survived; the repair = write the last commit's hash into
   `refs/heads/main` (find it with `git fsck --lost-found` / the objects written last) and `git reset` to rebuild the
@@ -547,9 +550,13 @@ efeitos e wire into the game")
   level 15 → `save.promotions` → `MapStageOptions::heroClass` in main.cpp).
 - **Verified (debug + validation, exit 0):** all 20 cast through `--battle-script` on the aldeia015 test battle with Voss
   at 25 (`captures/promo/*.log`: marks, poisons, bleeding, silence, curse, zones, pushes, hits); `--battle-save-check`
-  PASS; `Cooker check-battle` aldeia015 still matches Engine2 (reach, 462 forecasts + rolls). **Not verified:** the look
-  of each effect in the window (the user judges), the campaign's promotion screen in play, enemy warlocks (no AI casts),
-  balance (the numbers are the design's).
+  PASS; `Cooker check-battle` aldeia015 still matches Engine2 (reach, 462 forecasts + rolls); four effects seen in
+  captures with the atmosphere on (`captures/promo/fx7-*.png`). **Not verified:** the look of each effect in the window
+  (the user judges), the campaign's promotion screen in play, enemy warlocks (no AI casts), balance (the numbers are
+  the design's).
+- **Shader bug found and fixed on the way (affects every spell effect, not only ours):** with the Atmosfera on (the
+  default), `volumeTransmittance` read 0 and every flipbook / vfx effect was invisible since 2026-10-16 afternoon. See
+  the DXC gotcha above. If the user says "the spells show nothing", this was why.
 - Test lines: `tools: run_promo.ps1` pattern = `Sandbox ... --battle-rules build/engine2-test/battles/aldeia015.battle.json
   --promote Voss=warlock:25 --battle-script "cast:Voss:markOfRuin:Kael; ..."`; `--fx-test <kind>` for the visuals alone.
 

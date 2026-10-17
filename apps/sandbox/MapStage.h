@@ -154,6 +154,9 @@ struct MapStageOptions {
   std::filesystem::path battle;
   // A campaign fight: each hero's level and XP from the save (save.ts levels / xp), by name.
   std::map<std::string, std::pair<int, int>> heroProgress;
+  // ... and each hero's promotion (save.ts promotions: "warlock" / "elementalist"), by name: its class, class name and
+  // spell list in the fight (e2::setPromotion). Also --promote Name=class for tests.
+  std::map<std::string, std::string> heroClass;
   // ... and what each hero brings in from the save (Engine2 startBattle's roster: unitHp, bags, heroDiseases,
   // heroPoisons, heroHunger and the starving penalty).
   struct HeroState {
@@ -378,6 +381,12 @@ class MapStage final : public Stage {
     fxLights_.clear();
     if (scene_ && sprites_.ready()) {
       runFxTest(time);
+      syncZones();
+      // Numbers held back for an effect still in the air (a Meteoro's fall).
+      for (size_t i = 0; i < pendingFx_.size();) {
+        if (time >= pendingFx_[i].first) showEffects(pendingFx_[i].second), pendingFx_.erase(pendingFx_.begin() + static_cast<std::ptrdiff_t>(i));
+        else ++i;
+      }
       // Tática: the effects lie face up just above every flat card (cards: boardTop + z x the row step).
       spellFx_.build(time, camera, flat_, boardTop_ + 0.2f, effectList_, fxLights_);
     }
@@ -833,6 +842,15 @@ class MapStage final : public Stage {
       dropdown("Cards", cardStance_, 2, [](int i) { return std::string(kStance[i]); });
     }
     if (battle_) {
+      // The Mago Negro's path (test mode): the party's black mages as Mago Negro, Elementalista or Bruxo, live (the
+      // campaign chooses it on the world map's Party screen and brings it in the save).
+      for (e2::BattleUnit& u : battle_->units()) {
+        if (u.side != "player" || !(u.classId == "mage" || u.classId == "voss" || u.classId == "elementalist" || u.classId == "warlock")) continue;
+        static const char* kPaths[3] = {"Mago Negro", "Elementalista", "Bruxo"};
+        static const char* kIds[3] = {"mage", "elementalist", "warlock"};
+        int path = u.classId == "elementalist" ? 1 : u.classId == "warlock" ? 2 : 0;
+        if (dropdown(u.name.c_str(), path, 3, [](int i) { return std::string(kPaths[i]); })) e2::setPromotion(u, kIds[path]);
+      }
       // The battle grid: the old marks, or a saved look (looks/grid/README.md).
       static const char* kGrid[3] = {"OFF", "antiga", "001"};
       dropdown("Grade", gridLook_, 3, [](int i) { return std::string(kGrid[i]); });
@@ -1810,6 +1828,12 @@ class MapStage final : public Stage {
     for (e2::BattleUnit& u : battle_->units())
       if (const auto it = options_.heroProgress.find(u.name); it != options_.heroProgress.end() && u.side == "player")
         e2::raiseToLevel(u, it->second.first, it->second.second);
+    // Promotions (the save's, or --promote): the hero's class, class name and spell list; every unit of a promoted class
+    // (Engine2's own Bruxo enemies too) knows our spells of its level.
+    for (e2::BattleUnit& u : battle_->units()) {
+      if (const auto it = options_.heroClass.find(u.name); it != options_.heroClass.end() && u.side == "player") e2::setPromotion(u, it->second);
+      e2::grantClassSpells(u);
+    }
     // The save's condition of each hero (Engine2 spawnUnit: hunger and disease off its stats, HP capped, its bag).
     for (e2::BattleUnit& u : battle_->units()) {
       const auto it = options_.heroState.find(u.name);
@@ -2233,12 +2257,16 @@ class MapStage final : public Stage {
     turnUnit_ = active;
     battle_->beginTurn(static_cast<size_t>(active));
     {
-      // The start of its own turn: a lightning echo, the ground's flames.
+      // The start of its own turn: a lightning echo, the ground's flames, our zones and conditions, a Meteoro it called.
       std::vector<e2::BattleEffect> fx;
       const bool echo = battle_->units()[static_cast<size_t>(active)].shock.has_value();
       e2::startOfTurnEffects(*battle_, static_cast<size_t>(active), rng_, fx);
       if (const int ui = sceneUnitOf(active); echo && ui >= 0 && !fx.empty()) spellFx_.echo(unitSpot(static_cast<size_t>(ui)), now_);
-      showEffects(fx);
+      // A Meteoro that fell: the rock takes 0.9 s to land; the numbers wait for it.
+      const std::vector<e2::Battle::Zone> fallen = battle_->takeLanded();
+      for (const e2::Battle::Zone& z : fallen) spellFx_.meteorFall(zoneSpots(z), now_, now_ + 0.9f);
+      if (fallen.empty()) showEffects(fx);
+      else pendingFx_.push_back({now_ + 0.9f, fx});
       if (!battle_->units()[static_cast<size_t>(active)].alive) {
         battle_->units()[static_cast<size_t>(active)].moved = true;
         return;
@@ -2523,6 +2551,36 @@ class MapStage final : public Stage {
     }
   }
 
+  // The zones the rules keep (burning ground, the Mortalha de Sombras, a Meteoro's mark) drawn for as long as they
+  // last: each one's standing effect starts when it appears and fades when the rules drop it.
+  void syncZones() {
+    if (!battle_) return;
+    for (const e2::Battle::Zone& z : battle_->zones())
+      if (!zoneFx_.contains(z.id)) zoneFx_[z.id] = spellFx_.zoneStart(z.kind, z.element, zoneSpots(z), now_);
+    for (auto it = zoneFx_.begin(); it != zoneFx_.end();) {
+      const int id = it->first;
+      const bool alive = std::any_of(battle_->zones().begin(), battle_->zones().end(), [&](const e2::Battle::Zone& z) { return z.id == id; });
+      if (alive) {
+        ++it;
+      } else {
+        spellFx_.zoneEnd(it->second, now_);
+        it = zoneFx_.erase(it);
+      }
+    }
+  }
+  // A zone's hexes as spots, the centre first.
+  std::vector<SpellEffects::Spot> zoneSpots(const e2::Battle::Zone& z) const {
+    std::vector<SpellEffects::Spot> spots;
+    if (battle_->inBounds(z.centre.x, z.centre.y)) spots.push_back(hexSpot(z.centre));
+    for (int y = 0; y < battle_->rows(); ++y)
+      for (int x = 0; x < battle_->cols(); ++x) {
+        const e2::BattleHex h{x, y};
+        if (h == z.centre || !z.covers(h) || battle_->cell(x, y).terrain == "void") continue;
+        spots.push_back(hexSpot(h));
+      }
+    return spots;
+  }
+
   // Where an effect meets a scene unit: its feet and the middle of its body (its card as drawn, else Engine2's chest
   // height 0.9).
   SpellEffects::Spot unitSpot(size_t ui) const {
@@ -2552,7 +2610,10 @@ class MapStage final : public Stage {
     const int cycle = static_cast<int>(std::floor(time / kFxTestCycle));
     if (cycle == fxTestCycle_) return;
     fxTestCycle_ = cycle;
-    static const char* kKinds[] = {"magicMissile", "lightning", "frost", "cureMinor", "longShot", "piercing", "shock", "doubleStrike"};
+    static const char* kKinds[] = {"magicMissile",   "lightning",     "frost",          "cureMinor",      "longShot",      "piercing",    "shock",
+                                   "doubleStrike",   "markOfRuin",    "creepingPlague", "lifeDrain",      "shroudOfShadows", "hemorrhage", "profaneSilence",
+                                   "blackPestilence", "curseOfDecay", "soulHarvest",    "devouringVoid",  "pillarOfFlame", "iceLance",    "thunderstorm",
+                                   "meteor",         "absoluteZero",  "chainLightning", "eruption",       "glacialGale",   "wrathOfTheSkies", "primordialEmber"};
     // KIND or KIND:VERSION (the version number of the Magias menu; default the menu's choice, at least 01).
     std::string kind = options_.fxTest;
     int look = 0;
@@ -2709,7 +2770,8 @@ class MapStage final : public Stage {
     else return fail("unknown step");
     const int usesBefore = p[0] == "potion" ? 0 : e2::spellUsesLeft(*battle_, cb, kind);
     startSpell(kind);
-    if (!spellMode_.empty()) aimSpell({battle_->units()[tb].x, battle_->units()[tb].y});
+    // every target the spell asks for, on the same hex (Míssil Mágico's missiles, Fúria dos Céus' bolts may repeat)
+    for (int k = 0; k < 8 && !spellMode_.empty(); ++k) aimSpell({battle_->units()[tb].x, battle_->units()[tb].y});
     if (refuse) {
       if (exchange_) return fail("played, should have been refused");
       const e2::BattleUnit& c = battle_->units()[cb];
@@ -2737,6 +2799,14 @@ class MapStage final : public Stage {
       }
       if (e2::spellUsesLeft(*battle_, cb, kind) != usesBefore - 1) return std::format("uses {} -> {}", usesBefore, e2::spellUsesLeft(*battle_, cb, kind));
       if (kind == "cureDisease") return t.diseased || t.poisoned ? "still sick" : "";
+      // Ours: a zone laid (the Mortalha, a Meteoro waiting), a condition left, or the hit itself.
+      if (kind == "shroudOfShadows" || kind == "meteor") return battle_->zones().empty() ? "no zone laid" : "";
+      if (kind == "markOfRuin") return t.cond.markTurns > 0 ? "" : "not marked";
+      if (kind == "creepingPlague" || kind == "blackPestilence") return t.poisoned || !t.alive ? "" : "not poisoned";
+      if (kind == "hemorrhage") return t.cond.bleedTurns > 0 || !t.alive ? "" : "not bleeding";
+      if (kind == "profaneSilence") return t.cond.silenceTurns > 0 || !t.alive ? "" : "not silenced";
+      if (kind == "curseOfDecay") return t.cond.decayTurns > 0 || !t.alive ? "" : "not cursed";
+      if (kind == "glacialGale") return t.hp < before.hp || t.x != before.x || t.y != before.y || !t.alive ? "" : "neither hurt nor pushed";
       if (kind == "createFoodAndWater") {
         for (const auto& [i, full] : fedBefore) {
           const e2::BattleUnit& v = battle_->units()[i];
@@ -2745,6 +2815,7 @@ class MapStage final : public Stage {
         // rations from level 3 on (createFoodAndWaterPower)
         return c.level < 3 || battle_->lootRations() > rationsBefore ? "" : "no rations conjured";
       }
+      if (!spellOnFriend(kind)) return t.hp < before.hp || !t.alive ? std::string() : std::format("hp {} -> {} (not hurt)", before.hp, t.hp);
       return t.hp > before.hp ? std::string() : std::format("hp {} -> {}", before.hp, t.hp);
     };
     logInfo("battle script: {}: cast", scriptLabel_);
@@ -2771,7 +2842,26 @@ class MapStage final : public Stage {
     const size_t hero = caster;
     const size_t target = nearestTarget(caster, spellOnFriend(kind));
     std::vector<SpellEffects::Spot> spots{unitSpot(target)};
-    if (kind == "frost" || kind == "piercing") {
+    // Ours: the spell's own shape on the board (its area round the target, its line, its cone), when a battle is on.
+    if (battle_ && !e2::emberSpellClass(kind).empty() && unitBattle_[hero] >= 0 && unitBattle_[target] >= 0) {
+      const e2::BattleUnit& t = battle_->units()[static_cast<size_t>(unitBattle_[target])];
+      const e2::BattleHex aim = kind == "eruption" ? e2::BattleHex{battle_->units()[static_cast<size_t>(unitBattle_[hero])].x,
+                                                                   battle_->units()[static_cast<size_t>(unitBattle_[hero])].y}
+                                                   : e2::BattleHex{t.x, t.y};
+      std::vector<e2::BattleHex> area = e2::spellArea(*battle_, static_cast<size_t>(unitBattle_[hero]), kind, aim);
+      if (kind == "chainLightning" || kind == "wrathOfTheSkies")  // a few more bodies for the chain / the bolts
+        for (size_t i = 0; i < scene_->units.size() && area.size() < 4; ++i)
+          if (i != hero && i != target && unitBattle_[i] >= 0 && scene_->units[i].side != scene_->units[hero].side &&
+              battle_->units()[static_cast<size_t>(unitBattle_[i])].alive)
+            area.push_back({battle_->units()[static_cast<size_t>(unitBattle_[i])].x, battle_->units()[static_cast<size_t>(unitBattle_[i])].y});
+      if (!area.empty()) {
+        spots.clear();
+        for (const e2::BattleHex& h : area) spots.push_back(hexSpot(h));
+      }
+      if (kind == "meteor") {  // Testar shows the fall itself, not only the mark
+        spellFx_.meteorFall(spots, start + 0.6f, start + 1.5f);
+      }
+    } else if (kind == "frost" || kind == "piercing") {
       // A line of hexes from the hero through the target (three more hexes beyond it).
       const glm::vec3 a = unitWorld(hero), b = unitWorld(target);
       for (int k = 1; k <= 3; ++k) {
@@ -2808,7 +2898,18 @@ class MapStage final : public Stage {
         popups_.push_back({u, e.text.empty() ? "+" + std::to_string(e.amount) : e.text, IM_COL32(170, 226, 150, 255), now_, false});
         continue;
       }
-      popups_.push_back({u, std::to_string(e.amount), e.crit ? IM_COL32(255, 214, 102, 255) : IM_COL32(255, 255, 255, 255), now_, e.crit});
+      if (e.pushed) {  // Vendaval Glacial: the card goes to its new hex at once
+        const e2::BattleUnit& bu = battle_->units()[e.unit];
+        unitPos_[u] = anchorWorld(bu, {bu.x, bu.y});
+        unitWalk_[u] = Walk{};
+        unitMoved_[u] = 1;
+      }
+      if (e.status && !e.died) {  // a condition's word (our spells): violet, no hit pose
+        popups_.push_back({u, e.text, IM_COL32(196, 150, 232, 255), now_, false});
+        continue;
+      }
+      popups_.push_back({u, e.text.empty() ? std::to_string(e.amount) : e.text, e.crit || !e.text.empty() ? IM_COL32(255, 214, 102, 255) : IM_COL32(255, 255, 255, 255), now_,
+                         e.crit || !e.text.empty()});
       // The struck unit's own hit / death cues (the engine's per-frame watch of hitAt / diedAt).
       if (!e.died || sounds(e.unit, "hitOnDeath") != e2::Json(false)) playCues(sounds(e.unit, "hit"));
       if (e.died) playCues(sounds(e.unit, "death"));
@@ -3258,7 +3359,36 @@ class MapStage final : public Stage {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     verticalGradient(dl, a, b, {{0.0f, IM_COL32(12, 12, 12, 255)}, {1.0f, IM_COL32(5, 5, 5, 255)}});
     const int fade = enabled ? 255 : 102;
-    if (const UiImage* icon = spellIconOf(kind)) dl->AddImage(icon->texture, {a.x + 6, a.y + 6}, {b.x - 6, b.y - 6}, {0, 0}, {1, 1}, IM_COL32(255, 255, 255, fade));
+    if (const UiImage* icon = spellIconOf(kind)) {
+      dl->AddImage(icon->texture, {a.x + 6, a.y + 6}, {b.x - 6, b.y - 6}, {0, 0}, {1, 1}, IM_COL32(255, 255, 255, fade));
+    } else if (!e2::emberSpellClass(kind).empty()) {
+      // Ours have no Engine2 icon yet: the element's colour behind the spell's initials.
+      static const std::pair<const char*, ImU32> kElementColors[] = {{"darkness", IM_COL32(92, 48, 150, 255)}, {"poison", IM_COL32(60, 130, 40, 255)},
+                                                                     {"fire", IM_COL32(170, 70, 20, 255)},     {"ice", IM_COL32(60, 120, 170, 255)},
+                                                                     {"lightning", IM_COL32(90, 110, 180, 255)}, {"ember", IM_COL32(190, 90, 25, 255)}};
+      ImU32 back = IM_COL32(60, 60, 60, 255);
+      const std::string name = e2::spellName(kind);
+      static const std::map<std::string, const char*> kElementOf = {
+          {"markOfRuin", "darkness"},  {"creepingPlague", "poison"}, {"lifeDrain", "darkness"}, {"shroudOfShadows", "darkness"}, {"hemorrhage", "darkness"},
+          {"profaneSilence", "darkness"}, {"blackPestilence", "poison"}, {"curseOfDecay", "darkness"}, {"soulHarvest", "darkness"}, {"devouringVoid", "darkness"},
+          {"pillarOfFlame", "fire"},   {"iceLance", "ice"},          {"thunderstorm", "lightning"}, {"meteor", "fire"}, {"absoluteZero", "ice"},
+          {"chainLightning", "lightning"}, {"eruption", "fire"},     {"glacialGale", "ice"},    {"wrathOfTheSkies", "lightning"}, {"primordialEmber", "ember"}};
+      if (const auto it = kElementOf.find(kind); it != kElementOf.end())
+        for (const auto& [el, c] : kElementColors)
+          if (std::string(el) == it->second) back = c;
+      dl->AddRectFilled({a.x + 5, a.y + 5}, {b.x - 5, b.y - 5}, (back & ~IM_COL32_A_MASK) | (static_cast<ImU32>(fade) << IM_COL32_A_SHIFT), 4.0f);
+      // initials: the first letter of the first two words
+      std::string initials;
+      bool wordStart = true;
+      for (unsigned char ch : name) {
+        if (ch == ' ') wordStart = true;
+        else if (wordStart && initials.size() < 2 && ch != 'd' && ch != 'e') initials.push_back(static_cast<char>(ch)), wordStart = false;
+        else wordStart = false;
+      }
+      ImFont* mark = uiFont(UiFont::Mark);
+      const ImVec2 ts = mark->CalcTextSizeA(16.0f, FLT_MAX, 0.0f, initials.c_str());
+      dl->AddText(mark, 16.0f, {std::round((a.x + b.x - ts.x) * 0.5f), std::round((a.y + b.y - ts.y) * 0.5f) - 1.0f}, IM_COL32(255, 240, 220, fade), initials.c_str());
+    }
     if (active) for (int i = 3; i >= 1; --i) dl->AddRect({a.x - i * 2.0f, a.y - i * 2.0f}, {b.x + i * 2.0f, b.y + i * 2.0f}, IM_COL32(255, 110, 30, 40), 3.0f, 2.0f);
     dl->AddRect(a, b, active ? IM_COL32(226, 104, 30, 255) : hover ? IM_COL32(226, 170, 100, 216) : IM_COL32(190, 150, 95, 89), 2.0f);
     const std::string count = std::to_string(uses);
@@ -3277,6 +3407,10 @@ class MapStage final : public Stage {
       } else {
         ImGui::TextUnformatted(e2::spellName(kind).c_str());
         if (!e2::spellPorted(kind)) ImGui::TextDisabled("ainda não existe no Ember");
+        else if (selected_ >= 0 && !e2::emberSpellClass(kind).empty()) {
+          const std::string about = e2::spellTooltip(battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])], kind);
+          if (!about.empty()) ImGui::TextDisabled("%s", about.c_str());
+        }
       }
       ImGui::PopFont();
       ImGui::EndTooltip();
@@ -3380,6 +3514,8 @@ class MapStage final : public Stage {
       }
       dl->AddText(text, 13.0f, {x, barY + 12.0f}, IM_COL32(180, 180, 180, 255), line.c_str());
       if (!tip_.empty() && now_ - tipAt_ < 3.0f) dl->AddText(text, 12.0f, {x, barY + 30.0f}, IM_COL32(224, 189, 128, 255), tip_.c_str());
+      else if (const std::string cond = e2::conditionsText(u); !cond.empty())  // what ails it (our spells' conditions)
+        dl->AddText(text, 12.0f, {x, barY + 30.0f}, IM_COL32(196, 150, 232, 255), cond.c_str());
       ImGui::PopFont();
     } else {
       dl->AddText(text, 12.0f, {a.x + 10.0f, rowY + 4.0f}, IM_COL32(180, 180, 180, 255),
@@ -4004,6 +4140,8 @@ class MapStage final : public Stage {
   BoardGround ground_;
   SpriteSystem sprites_;
   SpellEffects spellFx_{sprites_};  // spell and strike visuals (the fx clips)
+  std::map<int, int> zoneFx_;       // the rules' zone id -> its standing effect (SpellEffects::zoneStart)
+  std::vector<std::pair<float, std::vector<e2::BattleEffect>>> pendingFx_;  // numbers waiting for an effect to land
   SpellsMenu spellsMenu_;           // the Magias window: each spell's effect version, loose effects
   std::vector<EffectInstance> effectList_;
   std::vector<SpellEffects::Light> fxLights_;

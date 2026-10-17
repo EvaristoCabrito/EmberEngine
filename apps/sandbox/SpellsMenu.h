@@ -93,6 +93,26 @@ inline const std::vector<SpellEntry>& allSpells() {
       {"burningHands", "Mãos Flamejantes", false},
       {"turnUndead", "Expulsar Mortos-Vivos", false},
       {"createFoodAndWater", "Criar Comida e Água", false},
+      // EmberEngine's own: the Bruxo's and the Elementalista's T6-T10 (world/Spells.cpp kEmberSpells)
+      {"markOfRuin", "Marca da Ruína", false},
+      {"creepingPlague", "Praga Rastejante", false},
+      {"shroudOfShadows", "Mortalha de Sombras", false},
+      {"hemorrhage", "Hemorragia", false},
+      {"profaneSilence", "Silêncio Profano", false},
+      {"blackPestilence", "Peste Negra", false},
+      {"curseOfDecay", "Maldição da Decadência", false},
+      {"soulHarvest", "Colheita de Almas", false},
+      {"devouringVoid", "Vazio Devorador", false},
+      {"pillarOfFlame", "Coluna de Fogo", false},
+      {"iceLance", "Lança de Gelo", false},
+      {"thunderstorm", "Tempestade Elétrica", false},
+      {"meteor", "Meteoro", false},
+      {"absoluteZero", "Zero Absoluto", false},
+      {"chainLightning", "Cadeia de Raios", false},
+      {"eruption", "Erupção", false},
+      {"glacialGale", "Vendaval Glacial", false},
+      {"wrathOfTheSkies", "Fúria dos Céus", false},
+      {"primordialEmber", "Brasa Primordial", false},
   };
   return kAll;
 }

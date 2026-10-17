@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include <nlohmann/json.hpp>
@@ -124,6 +125,21 @@ struct BattleUnit {
   };
   std::optional<Echo> shock;  // a lightning echo that strikes when its own turn begins
 
+  // --- EmberEngine's own conditions (the Bruxo's spells, world/Spells.cpp "Ember spells"): each counts down in the
+  // victim's own turns (applied at the start of its turn, then one less) ---
+  struct Conditions {
+    int markPct = 0, markTurns = 0;      // Marca da Ruína: takes +pct% damage from everything
+    int plagueSpread = 0;                // Praga Rastejante: its poison jumps to this many adjacent allies each turn
+    bool plagueBurst = false;            // Peste Negra: dying poisoned spreads Veneno Maior to its neighbours
+    double poisonMag = 0;                // the MAG of whoever poisoned it (the tick's resistance penetration)
+    int bleedDice = 0, bleedFaces = 0, bleedTurns = 0;  // Hemorragia: bleeds this at each turn; heals received halved
+    int silenceTurns = 0;                // Silêncio Profano: cannot cast
+    int decayTurns = 0, decayPct = 0, decayCap = 0, decayStep = 0;  // Maldição da Decadência: -step% of every stat per turn, to the cap
+    int decayDice = 0, decayFaces = 0;
+    double decayMul = 0, decayMag = 0;   // ... and its Escuridão tick: floor(floor(mag / 2) * mul) + dice
+    bool any() const { return markTurns > 0 || plagueSpread > 0 || plagueBurst || bleedTurns > 0 || silenceTurns > 0 || decayTurns > 0; }
+  } cond;
+
   // --- Items and conditions a hero brings into the fight (Engine2 Unit.bag / diseased / poisoned / fullness) ---
   int bag[7] = {};  // potions carried, in kPotionIds order
   bool diseased = false;
@@ -131,6 +147,7 @@ struct BattleUnit {
     int atk = 0, mag = 0, def = 0, dex = 0, mov = 0;
   };
   std::optional<Stats> diseaseBase;  // its stats before the disease's penalty (curePlayerDisease restores them)
+  std::optional<Stats> decayBase;    // its stats before Maldição da Decadência (given back when the curse lifts)
   bool poisoned = false;
   std::string poisonTier;            // save.heroPoisons' value ("lesser", ...), kept for the save
   std::optional<double> fullness;    // hunger.ts fullness 0..120; unset reads as 100
@@ -245,6 +262,48 @@ class Battle {
   int lootRations() const { return lootRations_; }
   void addLootRations(int n) { lootRations_ += n; }
 
+  // --- Zones (EmberEngine's own: the Elementalista's burning ground and Meteoro, the Bruxo's Mortalha de Sombras) ---
+  // A zone lies on the hexes within `radius` of its centre (`ring`: only at exactly that distance) for `rounds` rounds
+  // (one less at every new round; gone at 0). What it does to whoever starts a turn inside: a hazard (dice of its
+  // element, like Engine2's flames), a weighted tick (floor(floor(mag / 2) * mul) + dice of its element) and a stat
+  // penalty while inside (statPct % off ATK and MAG). "meteor": nothing until its caster's next turn begins, when it
+  // lands (world/Spells.cpp startOfTurnEffects).
+  struct Zone {
+    int id = 0;
+    std::string kind;
+    BattleHex centre;
+    int radius = 1, rounds = 1;
+    bool ring = false;
+    size_t caster = 0;
+    std::string element;
+    int hazardDice = 0, hazardFaces = 8;
+    int dice = 0, faces = 0;
+    double mul = 0, mag = 0;
+    int statPct = 0;
+    // Meteoro: what lands (the centre hex's and the ring's weight and dice)
+    double centreMul = 0, ringMul = 0;
+    int centreDice = 0, centreFaces = 0, ringDice = 0, ringFaces = 0;
+    bool covers(BattleHex h) const {
+      const int d = Battle::distance(centre, h);
+      return ring ? d == radius : d <= radius;
+    }
+  };
+  const std::vector<Zone>& zones() const { return zones_; }
+  int addZone(Zone z) {
+    z.id = ++zoneSerial_;
+    zones_.push_back(std::move(z));
+    return zoneSerial_;
+  }
+  void removeZone(int id) { std::erase_if(zones_, [&](const Zone& z) { return z.id == id; }); }
+  std::vector<Zone>& zonesMutable() { return zones_; }
+  // The stat penalty on a unit standing in a Mortalha (the strongest zone it stands in), in %.
+  int weakenAt(const BattleUnit& u) const;
+  // Whether the unit stands in a zone of this element (Zero Absoluto: ×1.5 inside a Tempestade de Gelo).
+  bool inZoneOf(const BattleUnit& u, const std::string& element) const;
+  // Meteoros that landed since the last call (their zones, for the window to draw the fall).
+  std::vector<Zone> takeLanded() { return std::exchange(landed_, {}); }
+  void noteLanded(const Zone& z) { landed_.push_back(z); }
+
   // --- Turns (Engine2 BattleEngine: one battle-opening initiative roll, a round in initiative order) ---
   // Every unit that takes turns (alive, not neutral) rolls 1d20 + its bonus; the order is highest first, the party
   // winning a draw, then the unit's id.
@@ -307,6 +366,8 @@ class Battle {
     double ce = 0, ve = 0;
   };
   std::vector<Enmity> enmity_;
+  std::vector<Zone> zones_, landed_;
+  int zoneSerial_ = 0;
 };
 
 }  // namespace ember::e2

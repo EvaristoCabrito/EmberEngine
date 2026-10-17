@@ -253,15 +253,22 @@ float3 applyVolume(MeshFrame f, float3 color, float3 position) {
 // Atmosfera volumétrica v1 (volumeFlags bit 1): the fog's transmittance alone between the camera and a point, for
 // light that adds itself over the scene (effects): it crosses the fog but brings no in-scatter of its own. 1 when
 // no volume owns the frame.
+// The volume read at a coordinate. DXC gotcha (2026-10-17, the same as volumeFarSample's): with the coordinate built
+// or wrapped inline in the SampleLevel call, the read came back 0 and every spell effect (effects.hlsl, vfx.hlsl)
+// vanished while the atmosphere was on; the sample lives in its own helper, the coordinate finished first.
+float4 volumeSampleAt(MeshFrame f, float3 uvw) {
+  return gTextures3D[NonUniformResourceIndex(f.volume)].SampleLevel(gSamplers[f.volumeSampler], uvw, 0);
+}
 float volumeTransmittance(MeshFrame f, float3 position) {
   if (f.volume == kNoTexture || (f.volumeFlags & 1u) == 0) return 1.0;
   const float4 c = mul(float4(position, 1.0), f.viewProjection);
   if (c.w <= 0.0) return 1.0;
   const float w = froxelSlice(f, c.w);
   const float slices = float(max(f.volumeSlices, 1u));
-  const float3 uvw = float3(c.xy / c.w * 0.5 + 0.5, w - 0.5 / slices);
-  const float t = gTextures3D[NonUniformResourceIndex(f.volume)].SampleLevel(gSamplers[f.volumeSampler], saturate(uvw), 0).a;
-  return lerp(1.0, t, saturate(w * slices + 0.5));
+  float3 uvw = float3(c.xy / c.w * 0.5 + 0.5, w - 0.5 / slices);
+  uvw = saturate(uvw);
+  const float4 fog = volumeSampleAt(f, uvw);
+  return lerp(1.0, fog.a, saturate(w * slices + 0.5));
 }
 // (volumeFlags bit 2) The fog all the way out, over what shows behind everything (the sky, a painted backdrop).
 // The volume's far slice at a screen uv (the fog all the way out).

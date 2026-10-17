@@ -217,6 +217,11 @@ Fighter fighterAt(const Battle& b, size_t unit, int x, int y) {
   const BattleUnit& u = b.units()[unit];
   Fighter f{unit, x, y, static_cast<double>(u.atk), static_cast<double>(u.mag), static_cast<double>(u.def), static_cast<double>(u.dex),
             u.faceDx, u.faceDy, u.facing};
+  // Mortalha de Sombras (EmberEngine's own): standing in it takes statPct % off ATK and MAG, for as long as it stands there.
+  if (const int weak = b.weakenAt(u); weak > 0) {
+    f.atk = jsRound(f.atk * (1 - weak / 100.0));
+    f.mag = f.mag > 0 ? std::max(1.0, jsRound(f.mag * (1 - weak / 100.0))) : 0;
+  }
   if (u.side != "player" || u.summoned || !u.alive) return f;
   // The best affinity bonus among the party members standing next to it (BattleEngine.adjacentAllies).
   double bonus = 0;

@@ -79,6 +79,15 @@ class SpellEffects {
   // Lightning's echo striking again at the start of the struck unit's turn.
   void echo(const Spot& target, float at);
 
+  // --- EmberEngine's own spells (SpellEffectsEmber.cpp: the Bruxo's and the Elementalista's, version 01 = flipbook cards) ---
+  // A zone that stays on the board (burning ground, the Mortalha de Sombras, a Meteoro's mark): `kind` as the rules name
+  // it ("burning" with its element, "shroudOfShadows", "meteor"), one spot per hex (the centre first). Returns its id;
+  // zoneEnd fades it out from `now`.
+  int zoneStart(const std::string& kind, const std::string& element, const std::vector<Spot>& hexes, float now);
+  void zoneEnd(int id, float now);
+  // Meteoro falls: the rock from the sky onto the centre (hexes.front()), the blast over every hex; it lands at `impact`.
+  void meteorFall(const std::vector<Spot>& hexes, float start, float impact);
+
   // This frame's quads (sorted far to near) and lights. `flatTop`: in the 2D view (Tática) every quad lies face up
   // at this height instead of standing.
   // Engine2's ported effects (render/vfx/*) are drawn from vfx() (Renderer::setVfx), filled by the same call.
@@ -116,6 +125,8 @@ class SpellEffects {
     // Its light (intensity 0 = none), following it and fading with it.
     std::array<float, 3> lightColor{1.0f, 1.0f, 1.0f};
     float lightIntensity = 0.0f, lightRadius = 3.0f, lightDecay = 0.0f;  // decay: intensity x (1 - age)^decay
+    int zone = 0;                         // part of a standing zone (zoneStart): lives until zoneEnd
+    float flickerLight = 0.0f;            // > 0: the light wavers by this share (flames)
   };
 
   SpriteClipId clip(const char* name) const { return sprites_.find("fx", name); }
@@ -130,6 +141,31 @@ class SpellEffects {
   void cure(const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
   void arrow(const Spot& caster, const std::vector<Spot>& targets, float start, float impact, bool piercing);
   void bladeSkill(const Spot& caster, float start, float impact);
+  // Ours (SpellEffectsEmber.cpp). True when `kind` is one of them.
+  bool emberCast(const std::string& kind, const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
+  void markOfRuin(const Spot& caster, const Spot& target, float start, float impact);
+  void creepingPlague(const Spot& caster, const Spot& target, float start, float impact);
+  void lifeDrain(const Spot& caster, const Spot& target, float start, float impact);
+  void shroudCast(const Spot& caster, const std::vector<Spot>& hexes, float start, float impact);
+  void hemorrhage(const Spot& caster, const Spot& target, float start, float impact);
+  void profaneSilence(const Spot& caster, const std::vector<Spot>& hexes, float start, float impact);
+  void blackPestilence(const Spot& caster, const std::vector<Spot>& hexes, float start, float impact);
+  void curseOfDecay(const Spot& caster, const Spot& target, float start, float impact);
+  void soulHarvest(const Spot& caster, const std::vector<Spot>& hexes, float start, float impact);
+  void devouringVoid(const Spot& caster, const Spot& target, float start, float impact);
+  void pillarOfFlame(const Spot& caster, const std::vector<Spot>& hexes, float start, float impact);
+  void iceLance(const Spot& caster, const std::vector<Spot>& line, float start, float impact);
+  void thunderstorm(const Spot& caster, const std::vector<Spot>& hexes, float start, float impact);
+  void meteorMark(const Spot& caster, const std::vector<Spot>& hexes, float start, float impact);
+  void absoluteZero(const Spot& caster, const std::vector<Spot>& hexes, float start, float impact);
+  void chainLightning(const Spot& caster, const std::vector<Spot>& chain, float start, float impact);
+  void eruption(const Spot& caster, const std::vector<Spot>& hexes, float start, float impact);
+  void glacialGale(const Spot& caster, const std::vector<Spot>& cone, float start, float impact);
+  void wrathOfTheSkies(const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
+  void primordialEmber(const Spot& caster, const std::vector<Spot>& hexes, float start, float impact);
+  // A streak of sparks flowing from one point to another (drains, harvested souls), `count` of them over the flight.
+  void stream(const char* clipName, glm::vec3 from, glm::vec3 to, float start, float duration, int count, glm::vec3 color, float size);
+  int zoneSerial_ = 0;
 
   SpriteSystem& sprites_;
   std::vector<Element> elements_;
@@ -164,6 +200,9 @@ class SpellEffects {
   static glm::vec3 engine2Origin(const Spot& caster) { return caster.feet + glm::vec3(0.0f, 0.9f, 0.0f); }
   uint32_t seed_ = 0x9e3779b9u;
   float random();  // 0..1, the visuals' own sequence (never the rules')
+  // build()'s tally since the last report (logged once a second while something is not drawn)
+  int drawn_ = 0, notResident_ = 0;
+  float lastReport_ = -10.0f;
 };
 
 }  // namespace ember

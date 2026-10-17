@@ -42,6 +42,31 @@ void Battle::startNewRound() {
   for (BattleUnit& u : units_) u.moved = false, u.acted = false;
   sortTurnOrder();
   ++round_;
+  // Zones last their rounds (a Meteoro waits for its caster's turn instead).
+  for (Zone& z : zones_)
+    if (z.kind != "meteor") --z.rounds;
+  std::erase_if(zones_, [](const Zone& z) { return z.kind != "meteor" && z.rounds <= 0; });
+}
+
+int Battle::weakenAt(const BattleUnit& u) const {
+  int pct = 0;
+  if (!u.alive) return 0;
+  for (const Zone& z : zones_) {
+    if (z.statPct <= 0) continue;
+    for (const BattleHex& h : footprint(u, u.x, u.y))
+      if (z.covers(h)) pct = std::max(pct, z.statPct);
+  }
+  return pct;
+}
+
+bool Battle::inZoneOf(const BattleUnit& u, const std::string& element) const {
+  if (!u.alive) return false;
+  for (const Zone& z : zones_) {
+    if (z.element != element || z.kind == "meteor") continue;
+    for (const BattleHex& h : footprint(u, u.x, u.y))
+      if (z.covers(h)) return true;
+  }
+  return false;
 }
 
 void Battle::beginTurn(size_t unit) {
