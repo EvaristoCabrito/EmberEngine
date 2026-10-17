@@ -1,4 +1,5 @@
-"""Clips whose art EmberEngine replaces (content/sprite-overrides.json), applied to the files built from Engine2's:
+"""Clips whose art EmberEngine replaces or adds (content/sprite-overrides.json; an entry with "add" is a clip and poses
+Engine2 does not have, appended once), applied to the files built from Engine2's:
 
 - build/sprites/battle.sprites.json: the clip's frames point at the new art (absolute paths, so the Cooker's Engine2 root
   does not apply), its fps from the art's frame time;
@@ -56,6 +57,10 @@ def main():
                     clip["frames"] = {"count": count, "pattern": pattern}
                     clip["fps"] = fps
                     hit += 1
+            if not hit and "add" in c:  # a clip Engine2 does not have (EmberEngine's own art)
+                s["clips"].append({"fps": fps, "frames": {"count": count, "pattern": pattern}, "mode": c["add"]["mode"],
+                                   "name": c["clip"], "pack": c["add"]["pack"]})
+                hit += 1
         if not hit:
             raise SystemExit(f"{c['set']}/{c['clip']}: not in {manifest_path}")
         # the pace: frame i for the art's frame time, one loop sampled at 240 Hz
@@ -70,6 +75,11 @@ def main():
                     if p["pose"] == want["pose"] and p["set"] == c["set"] and p["clip"] == c["clip"]:
                         p.update(box=want["box"], nat=want["nat"], crop=want["crop"], frames=count, pace=pace, doneAt=-1)
                         done += 1
+                if not done and "add" in c:  # a pose Engine2 does not have
+                    h["poses"].append({"pose": want["pose"], "label": want.get("label", want["pose"]), "set": c["set"],
+                                       "clip": c["clip"], "box": want["box"], "nat": want["nat"], "crop": want["crop"],
+                                       "frames": count, "pace": pace, "doneAt": -1})
+                    done += 1
             if not done:
                 raise SystemExit(f"{want['hero']} {want['pose']}: not in {roster_path}")
         for table in strides:

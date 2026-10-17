@@ -3,8 +3,11 @@
 #include <algorithm>
 #include <cmath>
 #include <format>
+#include <fstream>
 #include <map>
 #include <set>
+
+#include "core/Log.h"
 
 namespace ember::e2 {
 
@@ -1961,6 +1964,18 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     return;
   }
   if (step.type == BattleStep::Type::Effect) {
+    if (const SummonSpec* sp = summonSpec(step.kind)) {  // the familiar steps out: its initiative is rolled as it appears
+      const SummonData& data = summonData();
+      const auto it = data.classes.find(sp->classId);
+      if (it == data.classes.end() || step.tiles.empty() || !att.alive) return;
+      const int roll = 1 + static_cast<int>(std::floor(rng() * 20));
+      BattleUnit f = makeSummon(b, att, *sp, it->second, step.tiles.front(), roll);
+      b.units().push_back(std::move(f));  // `att` and every reference into the battle's units end here
+      BattleEffect e;
+      e.unit = b.units().size() - 1, e.status = true, e.text = "Invocado";
+      out.push_back(e);
+      return;
+    }
     if (step.kind == "webOfDreams") {  // whoever stands in the patch (its anchor hex) may fall asleep for 1D4 of its turns
       for (BattleUnit& v : b.units()) {
         if (!v.alive || std::none_of(step.tiles.begin(), step.tiles.end(), [&](const BattleHex& c) { return c.x == v.x && c.y == v.y; })) continue;

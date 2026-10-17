@@ -20,6 +20,46 @@
      "boxNote": "same figure size and feet line as Engine2's clip: its figure 473 px tall at 3.3843 / 613 units a pixel, 13 px of margin under the feet; this art's figure is 599 px tall with 12 px under the feet"
     }
    ]
+  },
+  {
+   "set": "salazar-final",
+   "clip": "cast-back",
+   "version": "v01",
+   "add": {"mode": "once", "pack": "combat"},
+   "why": "the user's picture of Salazar from the back (2026-10-17): after his cast pose he turns away and Mãos Flamejantes leaves his hands when its target lies away from the camera",
+   "frames": {"count": 1, "pattern": "content/sprites/salazar-final/cast-back-v01/cast-back-{}.png"},
+   "frameMs": 1000,
+   "poses": [
+    {
+     "hero": "salazar",
+     "pose": "castBack",
+     "label": "Conjurar (costas)",
+     "nat": [503, 731],
+     "crop": [78, 4, 343, 723],
+     "box": {"w": 1.85135, "h": 2.69052, "foot": 0.01504},
+     "boxNote": "tools/scripts/sprites/prepare_still_pose.py source-SalazarBack.png against Engine2's idle frame 1 (box h 3.3843): the figure head to feet as tall in the world as in the idle (2.661 units), 723 px (1.5x the idle's 482)"
+    }
+   ]
+  },
+  {
+   "set": "voss-final",
+   "clip": "cast-back",
+   "version": "v01",
+   "add": {"mode": "once", "pack": "combat"},
+   "why": "the user's picture of Voss from the back (2026-10-17): after his cast pose he turns away and Sopro Venenoso leaves his hands when its target lies away from the camera",
+   "frames": {"count": 1, "pattern": "content/sprites/voss-final/cast-back-v01/cast-back-{}.png"},
+   "frameMs": 1000,
+   "poses": [
+    {
+     "hero": "voss",
+     "pose": "castBack",
+     "label": "Conjurar (costas)",
+     "nat": [535, 792],
+     "crop": [29, 4, 480, 784],
+     "box": {"w": 1.8916, "h": 2.80028, "foot": 0.01335},
+     "boxNote": "tools/scripts/sprites/prepare_still_pose.py source-VossBack.png against Engine2's idle frame 1 (box h 4.36196): head to feet 2.687 units as in the idle, 760 px (1.5x the idle's 507)"
+    }
+   ]
   }
  ]
 }

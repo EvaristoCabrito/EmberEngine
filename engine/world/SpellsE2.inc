@@ -491,6 +491,120 @@ std::optional<std::vector<RushLeg>> bullRushCharge(const Battle& b, size_t caste
   return std::nullopt;
 }
 
+
+// --- Summons (castSummonFamiliar): the conjurer's familiars and the Cao Zumbi -------------------------------------------
+
+struct SummonClass {
+  std::string id, name, role, sprite;
+  int mov = 5, minRange = 1, maxRange = 1, size = 1, initiativeBonus = 0;
+  std::optional<std::vector<BattleHex>> offsets;
+  int footprintW = 2, footprintH = 4;
+  std::vector<std::pair<std::string, double>> resistances;
+};
+struct SummonData {
+  std::map<std::string, SummonClass> classes;
+  std::vector<int> spellCharges, missileCharges, drainCharges;
+  int dogVenom = 2;
+};
+const SummonData& summonData() {
+  static const SummonData data = [] {
+    SummonData d;
+    std::ifstream in("content/engine2/summons.json", std::ios::binary);
+    const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+    if (!in || j.is_discarded() || !j.contains("classes")) {
+      logError("battle: cannot read content/engine2/summons.json (export it with tools/scripts/engine2/export_summons.ts)");
+      return d;
+    }
+    for (const auto& [id, c] : j["classes"].items()) {
+      SummonClass s;
+      s.id = c.value("id", id), s.name = c.value("name", id), s.role = c.value("role", std::string()), s.sprite = c.value("sprite", id);
+      s.mov = c.value("mov", 5), s.minRange = c.value("minRange", 1), s.maxRange = c.value("maxRange", 1), s.size = c.value("size", 1);
+      s.initiativeBonus = c.value("initiativeBonus", 0);
+      if (c.contains("footprintOffsets") && c["footprintOffsets"].is_array()) {
+        std::vector<BattleHex> o;
+        for (const nlohmann::json& f : c["footprintOffsets"]) o.push_back({f.value("dx", 0), f.value("dy", 0)});
+        s.offsets = std::move(o);
+      }
+      if (c.contains("footprintW") && c["footprintW"].is_number()) s.footprintW = c["footprintW"].get<int>();
+      if (c.contains("footprintH") && c["footprintH"].is_number()) s.footprintH = c["footprintH"].get<int>();
+      if (c.contains("resistances") && c["resistances"].is_object())
+        for (const auto& [k, v] : c["resistances"].items())
+          if (v.is_number()) s.resistances.emplace_back(k, v.get<double>());
+      d.classes[id] = std::move(s);
+    }
+    auto table = [&](const char* key) {
+      std::vector<int> t;
+      if (j.contains("tables") && j["tables"].contains(key))
+        for (const nlohmann::json& v : j["tables"][key]) t.push_back(v.get<int>());
+      return t;
+    };
+    d.spellCharges = table("familiarSpellCharges"), d.missileCharges = table("familiarMagicMissileCharges"), d.drainCharges = table("familiarLifeDrainCharges");
+    d.dogVenom = j.value("zombieDogVenomCharges", 2);
+    return d;
+  }();
+  return data;
+}
+struct SummonSpec {
+  const char* kind;
+  const char* classId;
+  double scale;
+  int range;
+  const char* prefix;
+};
+constexpr SummonSpec kSummons[] = {{"summonFamiliar", "familiar", 0.5, 4, "Familiar de"},
+                                   {"summonFamiliar2", "familiar2", 0.75, 4, "Familiar Maior de"},
+                                   {"summonFamiliar3", "familiar3", 1.0, 5, "Familiar Titã de"},
+                                   {"summonFamiliar4", "familiar4", 0.75, 4, "Familiar Radiante de"},
+                                   {"summonZombieDog", "zombieDog", 1.0, 4, "Cão Zumbi de"}};
+const SummonSpec* summonSpec(const std::string& kind) {
+  for (const SummonSpec& s : kSummons)
+    if (kind == s.kind) return &s;
+  return nullptr;
+}
+int chargesAt(const std::vector<int>& table, int level) {
+  if (table.empty()) return 1;
+  return table[static_cast<size_t>(std::max(1, std::min(static_cast<int>(table.size()), level)) - 1)];
+}
+bool hasFamiliarOut(const Battle& b, const BattleUnit& caster, const std::string& classId) {
+  for (const BattleUnit& v : b.units())
+    if (v.alive && v.summonerId == caster.id && v.classId == classId) return true;
+  return false;
+}
+// Where a summon of this class would stand: every hex of its body free, passable and on the board.
+bool summonCellsFree(const Battle& b, const SummonClass& cls, BattleHex cell) {
+  BattleUnit probe;
+  probe.size = cls.size, probe.footprintOffsets = cls.offsets, probe.footprintW = cls.footprintW, probe.footprintH = cls.footprintH;
+  const bool body = cls.id == "familiar3" || cls.id == "zombieDog";
+  const std::vector<BattleHex> cells = body ? Battle::footprint(probe, cell.x, cell.y) : std::vector<BattleHex>{cell};
+  const OccMap occ = occupancyMap(b);
+  for (const BattleHex& p : cells)
+    if (!inBoardXY(b, p.x, p.y) || !b.cell(p.x, p.y).passable || occ.count({p.x, p.y})) return false;
+  return true;
+}
+// The familiar itself, as castSummonFamiliar builds it from its summoner at the moment the cast plays.
+BattleUnit makeSummon(const Battle& b, const BattleUnit& caster, const SummonSpec& sp, const SummonClass& cls, BattleHex cell, int initiativeRoll) {
+  const SummonData& d = summonData();
+  BattleUnit f;
+  f.id = std::format("player-familiar-{}", b.units().size());
+  f.name = std::string(sp.prefix) + " " + caster.name;
+  f.classId = cls.id, f.className = cls.name, f.sprite = cls.sprite, f.side = "player";
+  f.x = cell.x, f.y = cell.y, f.alive = true;
+  f.maxHp = std::max(1, static_cast<int>(jsRound(caster.maxHp * sp.scale))), f.hp = f.maxHp;
+  f.atk = static_cast<int>(jsRound(caster.atk * sp.scale)), f.mag = static_cast<int>(jsRound(caster.mag * sp.scale));
+  f.def = static_cast<int>(jsRound(caster.def * sp.scale)), f.dex = static_cast<int>(jsRound(caster.dex * sp.scale));
+  f.combat.resistances = cls.resistances;
+  f.initiativeBonus = cls.initiativeBonus, f.initiative = initiativeRoll + cls.initiativeBonus;
+  f.mov = cls.mov, f.minRange = cls.minRange, f.maxRange = cls.maxRange, f.size = cls.size;
+  f.footprintOffsets = cls.offsets, f.footprintW = cls.footprintW, f.footprintH = cls.footprintH;
+  f.level = caster.level, f.xp = 0, f.summoned = true, f.faceDx = 1.0, f.faceDy = 0.0, f.facing = 1;
+  f.fullness = 100;
+  const std::string k = sp.kind;
+  f.spellCharges = k == "summonFamiliar4" ? 3 : k == "summonZombieDog" ? d.dogVenom : k == "summonFamiliar3" ? chargesAt(d.spellCharges, caster.level) : chargesAt(d.missileCharges, caster.level);
+  if (k == "summonFamiliar2" || k == "summonFamiliar4") f.lifeDrainCharges = chargesAt(d.drainCharges, caster.level);
+  f.summonerId = caster.id;
+  return f;
+}
+
 // --- Aim validity of the remaining spells (spellAimValid) ---------------------------------------------------------------
 
 bool boltReaches(const Battle& b, const BattleUnit& u, BattleHex cell, int range) {
@@ -580,6 +694,17 @@ bool aimE2(const Battle& b, size_t caster, const std::string& kind, BattleHex ce
   if (kind == "sweep") return d <= kSweepRadius ? yes() : no(std::format("Escolha uma casa dentro do raio {}.", kSweepRadius));
   if (kind == "turnUndead" || kind == "bless" || kind == "auraOfProtection" || kind == "intimidatingPresence")
     return cell == from ? yes() : no("Esta magia não precisa de alvo.");
+  if (const SummonSpec* sp = summonSpec(kind)) {
+    if (d > sp->range) return no(std::format("Ponto de invocação fora de alcance (máximo {} hexes).", sp->range));
+    if (!inBoardXY(b, cell.x, cell.y)) return no("O ponto de invocação fica fora do mapa.");
+    const SummonData& data = summonData();
+    const auto it = data.classes.find(sp->classId);
+    if (it == data.classes.end()) return no("Esta criatura não existe aqui.");
+    if (summonCellsFree(b, it->second, cell)) return yes();
+    if (here >= 0) return no("O ponto de invocação está ocupado.");
+    if (!b.cell(cell.x, cell.y).passable) return no("O terreno bloqueia a invocação.");
+    return no("Não há espaço livre para essa criatura nesse ponto.");
+  }
   if (kind == "warp") {  // a free passable hex
     if (!inBoardXY(b, cell.x, cell.y) || !b.cell(cell.x, cell.y).passable) return no("Escolha uma casa livre.");
     for (size_t i = 0; i < b.units().size(); ++i)
@@ -799,6 +924,16 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
       if (!leg.push.path.empty()) c.knockTo = leg.push.path.back();
       steps.push_back(c);
     }
+  } else if (const SummonSpec* sp = summonSpec(kind)) {
+    const SummonData& data = summonData();
+    const auto it = data.classes.find(sp->classId);
+    if (it == data.classes.end()) return fail("Esta criatura não existe aqui.");
+    if (std::string(kind) == "summonFamiliar2" && u.level < 5) return fail("Familiar Maior disponível a partir do nível 5.");
+    if (hasFamiliarOut(b, u, it->second.id)) return fail(std::format("{} já tem {} invocado.", u.name, it->second.name));
+    spendTier(u, kind);
+    b.noteAware(caster, kSupportCe, kSupportVe);
+    s.type = BattleStep::Type::Effect, s.tiles = {cell};
+    steps.push_back(s);
   } else if (kind == "bless") {
     // Bênção: the caster is the centre and every living ally within three hexes gets the level's accuracy bonus
     std::vector<size_t> allies;
@@ -876,7 +1011,8 @@ bool e2Kind(const std::string& k) {
   static const char* const kinds[] = {"bloodyShot", "multiShot",  "trip",       "executionerStrike", "shieldBash", "cleave",         "shoulderSmash",
                                       "sweep",      "divineWrath", "stampede",   "burningHands",      "poisonBreath", "fireball",     "causticVenom",
                                       "divineBolt", "minorVenom", "iceStorm",   "turnUndead",        "lightningTier3", "familiarLifeDrain",  "phantasmalForce",
-                                      "provoke",    "bullRush",     "bless",     "webOfDreams", "auraOfProtection", "intimidatingPresence", "warp"};
+                                      "provoke",    "bullRush",     "bless",     "webOfDreams", "auraOfProtection", "intimidatingPresence", "warp",
+                                      "summonFamiliar", "summonFamiliar2", "summonFamiliar3", "summonFamiliar4", "summonZombieDog"};
   for (const char* c : kinds)
     if (k == c) return true;
   return false;

@@ -360,7 +360,8 @@ if (process.env.SPELL_REFS === '1') {
 // full (position, statuses, stats, charges of every unit, the zones, every enmity entry).
 const E2_KINDS = ['bloodyShot', 'multiShot', 'trip', 'executionerStrike', 'shieldBash', 'cleave', 'shoulderSmash', 'sweep', 'divineWrath', 'stampede',
   'burningHands', 'poisonBreath', 'fireball', 'causticVenom', 'divineBolt', 'minorVenom', 'iceStorm', 'turnUndead', 'lightningTier3', 'lifeDrain',
-  'phantasmalForce', 'provoke', 'bullRush', 'bless', 'webOfDreams', 'auraOfProtection', 'intimidatingPresence', 'warp'];
+  'phantasmalForce', 'provoke', 'bullRush', 'bless', 'webOfDreams', 'auraOfProtection', 'intimidatingPresence', 'warp',
+  'summonFamiliar', 'summonFamiliar2', 'summonFamiliar3', 'summonFamiliar4', 'summonZombieDog'];
 const E2_CAST: Record<string, (b: any, u: any, c: { x: number; y: number }) => void> = {
   bloodyShot: (b, u, c) => b.castBloodyShot(u, c),
   multiShot: (b, u, c) => { for (let k = 0; k < 16 && !b.queue.length && !b.active && b.spellKind === 'multiShot'; k++) b.castMultiShot(u, c); },
@@ -390,6 +391,11 @@ const E2_CAST: Record<string, (b: any, u: any, c: { x: number; y: number }) => v
   auraOfProtection: (b) => b.startAuraOfProtection(),
   intimidatingPresence: (b) => b.startIntimidatingPresence(),
   warp: (b, u, c) => b.castWarp(u, c),
+  summonFamiliar: (b, u, c) => b.castSummonFamiliar(u, c, 1),
+  summonFamiliar2: (b, u, c) => b.castSummonFamiliar(u, c, 2),
+  summonFamiliar3: (b, u, c) => b.castSummonFamiliar(u, c, 3),
+  summonFamiliar4: (b, u, c) => b.castSummonFamiliar(u, c, 4),
+  summonZombieDog: (b, u, c) => b.castSummonFamiliar(u, c, 5),
 };
 // The tier a start-method checks before it casts: given to the caster when it has none, and recorded so the check does the same.
 const E2_NEEDS_TIER: Record<string, [number, number]> = { bless: [1, 2], auraOfProtection: [5, 2], intimidatingPresence: [5, 2], warp: [3, 2], bullRush: [1, 2] };

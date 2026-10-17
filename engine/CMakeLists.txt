@@ -57,10 +57,9 @@ add_library(EmberEngine STATIC
   world/Locais.cpp
   world/Overworld.cpp
   world/Inn.cpp
-  media/VideoPlayer.cpp
+  world/Companions.cpp
   world/FieldSpells.cpp
   media/VideoPlayer.cpp
-  world/Companions.cpp
   media/AudioMixer.cpp
   debug/PerfOverlay.cpp
 )
