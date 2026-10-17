@@ -173,15 +173,8 @@ inline std::optional<MissionEntry> testMission(const e2::Campaign& campaign, con
   return e;
 }
 
-// Engine2's ember-plate as a button with its own face painted by `paint(drawList, min, max, ink)`.
-template <typename Paint>
-bool emberPlate(const char* id, ImVec2 size, Paint paint, bool disabled = false) {
-  ImGui::BeginDisabled(disabled);
-  const bool clicked = ImGui::InvisibleButton(id, size);
-  ImGui::EndDisabled();
-  const bool hover = !disabled && ImGui::IsItemHovered();
-  const ImVec2 a = ImGui::GetItemRectMin(), b = ImGui::GetItemRectMax();
-  ImDrawList* dl = ImGui::GetWindowDrawList();
+// Engine2's ember-plate face (shadow, hover glow, bevel, border) over [a, b]: paint only, no ImGui item.
+inline void emberPlateFace(ImDrawList* dl, ImVec2 a, ImVec2 b, bool hover) {
   for (int i = 6; i >= 1; --i) {
     const float spread = 1.5f * static_cast<float>(i);
     dl->AddRectFilled({a.x - spread, a.y + 6.0f - spread}, {b.x + spread, b.y + 6.0f + spread}, IM_COL32(0, 0, 0, 14), 2.0f + spread);
@@ -199,6 +192,17 @@ bool emberPlate(const char* id, ImVec2 size, Paint paint, bool disabled = false)
     dl->AddRect({a.x + d, a.y + d}, {b.x - d, b.y - d}, IM_COL32(0, 0, 0, 90 - 20 * i), 1.0f, 2.0f);
   }
   dl->AddRect(a, b, hover ? IM_COL32(226, 170, 100, 217) : IM_COL32(190, 150, 95, 115), 2.0f);
+}
+// Engine2's ember-plate as a button with its own face painted by `paint(drawList, min, max, ink)`.
+template <typename Paint>
+bool emberPlate(const char* id, ImVec2 size, Paint paint, bool disabled = false) {
+  ImGui::BeginDisabled(disabled);
+  const bool clicked = ImGui::InvisibleButton(id, size);
+  ImGui::EndDisabled();
+  const bool hover = !disabled && ImGui::IsItemHovered();
+  const ImVec2 a = ImGui::GetItemRectMin(), b = ImGui::GetItemRectMax();
+  ImDrawList* dl = ImGui::GetWindowDrawList();
+  emberPlateFace(dl, a, b, hover);
   const int alpha = disabled ? 102 : 255;
   paint(dl, a, b, hover ? IM_COL32(255, 224, 180, alpha) : IM_COL32(240, 240, 240, alpha));
   return clicked && !disabled;
@@ -230,20 +234,19 @@ inline bool worldMapZoomBoxHovered(ImVec2 size) {
   const ImVec2 m = ImGui::GetIO().MousePos, a = worldMapZoomBoxMin(size);
   return m.x >= a.x && m.x <= a.x + 52.0f && m.y >= a.y && m.y <= a.y + 123.0f;
 }
-inline bool worldMapZoomBox(ImVec2 size, int& zoom, int stops = 4) {
+inline bool worldMapZoomBox(ImVec2 size, int& zoom, bool inert = false, int stops = 4) {
   const ImVec2 a = worldMapZoomBoxMin(size);
   bool changed = false;
-  ImGui::SetCursorScreenPos(a);
-  emberPlate("##zoombox", {52.0f, 123.0f}, [](ImDrawList*, ImVec2, ImVec2, ImU32) {}, true);  // disabled: only paints the plate
+  emberPlateFace(ImGui::GetWindowDrawList(), a, {a.x + 52.0f, a.y + 123.0f}, false);  // paint only: an item here would take the buttons' hover
   ImGui::SetCursorScreenPos({a.x + 4.0f, a.y + 4.0f});
-  if (emberPlate("##zoomin", {44, 44}, [](ImDrawList* d, ImVec2 p, ImVec2 q, ImU32 ink) { iconZoom(d, {(p.x + q.x) / 2, (p.y + q.y) / 2}, 20, ink, true); }, zoom >= stops - 1))
+  if (emberPlate("##zoomin", {44, 44}, [](ImDrawList* d, ImVec2 p, ImVec2 q, ImU32 ink) { iconZoom(d, {(p.x + q.x) / 2, (p.y + q.y) / 2}, 20, ink, true); }, inert || zoom >= stops - 1))
     zoom = std::min(stops - 1, zoom + 1), changed = true;
   const std::string label = std::format("{}/{}", stops - zoom, stops);
   ImFont* font = uiFont(UiFont::Ui);
   const ImVec2 ts = font->CalcTextSizeA(10.0f, FLT_MAX, 0, label.c_str());
   ImGui::GetWindowDrawList()->AddText(font, 10.0f, {a.x + 26.0f - ts.x / 2, a.y + 4.0f + 44.0f + 4.0f + 9.5f - ts.y / 2}, IM_COL32(180, 180, 180, 255), label.c_str());
   ImGui::SetCursorScreenPos({a.x + 4.0f, a.y + 4.0f + 44.0f + 4.0f + 19.0f + 4.0f});
-  if (emberPlate("##zoomout", {44, 44}, [](ImDrawList* d, ImVec2 p, ImVec2 q, ImU32 ink) { iconZoom(d, {(p.x + q.x) / 2, (p.y + q.y) / 2}, 20, ink, false); }, zoom <= 0))
+  if (emberPlate("##zoomout", {44, 44}, [](ImDrawList* d, ImVec2 p, ImVec2 q, ImU32 ink) { iconZoom(d, {(p.x + q.x) / 2, (p.y + q.y) / 2}, 20, ink, false); }, inert || zoom <= 0))
     zoom = std::max(0, zoom - 1), changed = true;
   return changed;
 }

@@ -936,7 +936,7 @@ class OverworldStage : public Stage {
   }
 
   void drawZoom(ImVec2 size) {
-    if (worldMapZoomBox(size, zoom_)) recentre_ = true;
+    if (worldMapZoomBox(size, zoom_, event_ || open_ || questLog_ || party_ || options_ || !save_.value("seenOverworldIntro", false))) recentre_ = true;
   }
 
   // --- dialogs ----------------------------------------------------------------------------------------------------------

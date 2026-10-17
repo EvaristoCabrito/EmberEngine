@@ -341,7 +341,10 @@ class HelpModal {
     return j;
   }
 
-  void open(int tab = 0) { open_ = true, tab_ = tab, scrollTop_ = true; }
+  void open(int tab = 0) {
+    if (!open_) openedFrame_ = ImGui::GetCurrentContext() ? ImGui::GetFrameCount() : -1;
+    open_ = true, tab_ = tab, scrollTop_ = true;
+  }
   void close() { open_ = false; }
   bool isOpen() const { return open_; }
   // Captures: a tab shown, scrolled to `scroll` canvas units.
@@ -350,7 +353,7 @@ class HelpModal {
   // Drawn over everything (its own window); Esc and the X / Entendi close it.
   void draw(ImVec2 screen) {
     if (!open_) return;
-    if (ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
+    if (ImGui::IsKeyPressed(ImGuiKey_Escape, false) && ImGui::GetFrameCount() != openedFrame_) {
       open_ = false;
       return;
     }
@@ -623,6 +626,7 @@ class HelpModal {
   }
 
   bool open_ = false;
+  int openedFrame_ = -1;  // the frame it opened in: an Esc opening it must not also close it
   int tab_ = 0;
   bool scrollTop_ = false;
   float previewScroll_ = 0.0f;
@@ -640,13 +644,16 @@ class OptionsDialog {
     std::function<void()> gfxChanged;           // a battle on screen takes the change at once
   };
 
-  void open() { open_ = true; }
+  void open() {
+    if (!open_) openedFrame_ = ImGui::GetCurrentContext() ? ImGui::GetFrameCount() : -1;
+    open_ = true;
+  }
   void close() { open_ = false; }
   bool isOpen() const { return open_; }
 
   void draw(ImVec2 screen, const Actions& actions) {
     if (!open_) return;
-    if (ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {  // <dialog> onCancel
+    if (ImGui::IsKeyPressed(ImGuiKey_Escape, false) && ImGui::GetFrameCount() != openedFrame_) {  // <dialog> onCancel (not the press that opened it)
       open_ = false;
       return;
     }
@@ -873,6 +880,7 @@ class OptionsDialog {
 
  private:
   bool open_ = false;
+  int openedFrame_ = -1;
   bool prefsOk_ = true, gfxOk_ = true;
 };
 
