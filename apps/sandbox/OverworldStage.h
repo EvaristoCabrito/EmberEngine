@@ -45,6 +45,7 @@
 #include "world/Campaign.h"
 #include "world/Combat.h"
 #include "world/Companions.h"
+#include "world/FieldSpells.h"
 #include "world/Inn.h"
 #include "world/Overworld.h"
 #include "world/Spells.h"
@@ -91,6 +92,7 @@ class OverworldStage : public Stage {
 
   // Captures: a panel opened as a click would ("party", "skills", "quests", "options", "move", "location:<id>", "save").
   void preview(const std::string& what) {
+    save_["seenOverworldIntro"] = true;  // a capture of a panel is not covered by the first-visit explainer
     if (what == "party") party_ = true;
     if (what == "skills") party_ = true, partyTab_ = 1;
     if (what == "talk" || what.starts_with("talk:")) {  // "talk:<tier>": that tier's conversation of the first companion opens
@@ -107,6 +109,8 @@ class OverworldStage : public Stage {
         if (tree.is_object()) convLeader_ = lead, convDialog_.emplace(tree, companions_.portraits(), paths_.engine2Public);
       }
     }
+    if (what == "fieldspells") fieldSpells_ = true;
+    if (what.starts_with("warp:")) warpHero_ = what.substr(5);
     if (what == "quests") questLog_ = true;
     if (what == "options") options_ = true;
     if (what == "move") movementOpen_ = true;
@@ -162,6 +166,8 @@ class OverworldStage : public Stage {
     if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.key == SDLK_ESCAPE) {
       // Esc: closes what is open; on the bare map it opens Opções (OptionsButton escapeKey).
       if (convDialog_) convDialog_.reset();
+      else if (!warpHero_.empty()) warpHero_.clear();
+      else if (fieldSpells_) fieldSpells_ = false;
       else if (briefing_) briefing_.reset();
       else if (slots_) slots_.reset();
       else if (options_) options_ = false;
@@ -443,6 +449,9 @@ class OverworldStage : public Stage {
     if (questLog_) drawQuestLog(size);
     if (party_) drawParty(size);
     if (options_) drawOptions(size);
+    if (fieldSpells_) drawFieldSpells(size);
+    if (!warpHero_.empty()) drawWarpMenu(size);
+    drawWarpVisual(size);
     if (convDialog_) {  // a companion conversation, over everything: its replies change the affinity once
       const bool closed = convDialog_->draw(size, [this](const e2::Json& reply) {
         if (companions_.resolveReply(save_, reply, convLeader_)) write();
@@ -504,6 +513,15 @@ class OverworldStage : public Stage {
     // Som (the user, 2026-10-16: sound and options in the corner, as in Engine2's other screens)
     place(h);
     soundButton("##sound", {h, h}, 16);
+    // Feitiços de campo (Engine2: the field-spells icon beside Opções)
+    {
+      place(h);
+      const bool clicked = emberPlate("##fieldspellsbtn", {h, h}, [&](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32) {
+        if (const UiImage* icon = uiImage(paths_.engine2Public / "game/icons/field-spells.png")) imageCover(d, *icon, {a.x + 3, a.y + 3}, {b.x - 3, b.y - 3});
+      });
+      if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tr("Feitiços de campo", "Field spells").c_str());
+      if (clicked) fieldSpells_ = !fieldSpells_;
+    }
     // Alimentar todos
     {
       const char* label = "Alimentar todos";
@@ -1322,6 +1340,148 @@ class OverworldStage : public Stage {
     ImGui::Dummy({1, 8});
   }
 
+  // The field-spells menu (OverworldMapScreen's dropdown): Criar Comida e Água for each healer, Warp for each mage of level 7+.
+  void drawFieldSpells(ImVec2 size) {
+    if (veil(size, "##fieldveil")) {
+      fieldSpells_ = false;
+      return;
+    }
+    const bool en = uiEnglish();
+    const e2::FieldSpells spells(innData_, world_);
+    const std::vector<std::string> healers = spells.healers(save_, test()), mages = spells.mages(save_, test());
+    const std::vector<const e2::MapLocation*> cities = spells.warpCities(save_);
+    beginPanel("##fieldspells", size, 360, size.y * 0.8f);
+    const ImVec2 head = ImGui::GetCursorScreenPos();
+    kicker(tr("Feitiços de campo", "Field spells"), 14.0f);
+    ImGui::SetCursorScreenPos({head.x + 320 - 36, head.y - 6});
+    if (closeButton("##fieldclose")) fieldSpells_ = false;
+    ImGui::SetCursorScreenPos({head.x, head.y + 34});
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    ImFont* ui = uiFont(UiFont::Ui);
+    const float inner = 320;
+    for (const std::string& hero : healers) {
+      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kFoodTier);
+      const ImVec2 a = ImGui::GetCursorScreenPos();
+      dl->AddText(ui, 15.0f, {a.x, a.y}, kFg, tr("Criar Comida e Água", "Create Food and Water").c_str());
+      dl->AddText(ui, 12.0f, {a.x, a.y + 20}, kMuted,
+                  std::format("{} ({} {}) · {} · {}x", hero, en ? "Lv" : "Nv", level, e2::FieldSpells::foodFormula(level, en), left).c_str(), nullptr, inner - 108);
+      ImGui::PushID(hero.c_str());
+      ImGui::BeginDisabled(!spells.canFeed(save_, hero));
+      if (emberBigButton("##cast", upperUtf8(tr("Lançar", "Cast")).c_str(), {a.x + inner - 96, a.y + 6}, {96, 30}, false, 11.0f)) {
+        static std::mt19937 rng{std::random_device{}()};
+        std::uniform_real_distribution<double> unit(0.0, 1.0);
+        if (const std::optional<e2::Json> next = spells.castFood(save_, hero, [&] { return unit(rng); })) {
+          save_ = *next;
+          write();
+          showHint(en ? std::format("{} restored their hunger.", hero) : std::format("{} restaurou a fome.", hero));
+        } else {
+          showHint(tr("Não foi possível lançar.", "Could not cast."));
+        }
+      }
+      ImGui::EndDisabled();
+      ImGui::PopID();
+      ImGui::SetCursorScreenPos({a.x, a.y + 62});
+      ImGui::Dummy({inner, 4});
+    }
+    for (const std::string& hero : mages) {
+      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kWarpTier);
+      const ImVec2 a = ImGui::GetCursorScreenPos();
+      ImGui::PushID(hero.c_str());
+      ImGui::BeginDisabled(left <= 0 || cities.empty());
+      if (ImGui::InvisibleButton("##warp", {inner, 44})) warpHero_ = hero, fieldSpells_ = false;
+      ImGui::EndDisabled();
+      ImGui::PopID();
+      emberSlot(dl, a, {a.x + inner, a.y + 44}, ImGui::IsItemHovered());
+      if (const UiImage* icon = uiImage(paths_.engine2Public / "game/icons/warp-portal.png")) imageContain(dl, *icon, {a.x + 6, a.y + 4}, {a.x + 42, a.y + 40});
+      dl->AddText(ui, 15.0f, {a.x + 52, a.y + 12}, kFg, "Warp");
+      const std::string who = std::format("{} · {} {} · {}x", hero, en ? "Lv" : "Nv", level, left);
+      const ImVec2 ws = ui->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, who.c_str());
+      dl->AddText(ui, 12.0f, {a.x + inner - 8 - ws.x, a.y + 15}, kMuted, who.c_str());
+      ImGui::SetCursorScreenPos({a.x, a.y + 52});
+      ImGui::Dummy({inner, 4});
+    }
+    if (!mages.empty() && cities.empty()) text(tr("Nenhum outro local visitado.", "No other visited locations."), 12.0f, kMuted);
+    if (healers.empty() && mages.empty()) text(tr("Nenhum feitiço de campo disponível.", "No field spells available."), 14.0f, kMuted);
+    endPanel();
+  }
+
+  // Warp's destination wheel: the explored locations on a ring around the spell's icon.
+  void drawWarpMenu(ImVec2 size) {
+    const std::string hero = warpHero_;
+    const e2::FieldSpells spells(innData_, world_);
+    const std::vector<const e2::MapLocation*> cities = spells.warpCities(save_);
+    ImGui::SetNextWindowPos({0, 0});
+    ImGui::SetNextWindowSize(size);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 150));
+    ImGui::Begin("##warpmenu", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+    ImGui::PopStyleColor();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    ImFont* ui = uiFont(UiFont::Ui);
+    const ImVec2 c{size.x / 2, size.y / 2};
+    const float radius = std::min(190.0f, std::min(size.x, size.y) * 0.4f);
+    ImGui::SetCursorScreenPos({0, 0});
+    ImGui::SetNextItemAllowOverlap();  // the city buttons drawn after it take their own clicks
+    if (ImGui::InvisibleButton("##warpbg", size)) warpHero_.clear();  // a click outside closes
+    dl->AddCircleFilled(c, radius + 60, IM_COL32(19, 19, 19, 242), 96);
+    dl->AddCircle(c, radius + 60, IM_COL32(223, 191, 142, 115), 96, 1.5f);
+    dl->AddCircleFilled(c, 48, IM_COL32(28, 28, 28, 255), 48);
+    dl->AddCircle(c, 48, IM_COL32(223, 191, 142, 128), 48, 1.5f);
+    if (const UiImage* icon = uiImage(paths_.engine2Public / "game/icons/warp-portal.png")) imageContain(dl, *icon, {c.x - 20, c.y - 36}, {c.x + 20, c.y + 4});
+    const ImVec2 ts = ui->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, "Warp");
+    dl->AddText(ui, 12.0f, {c.x - ts.x / 2, c.y + 6}, IM_COL32(223, 191, 142, 255), "Warp");
+    const ImVec2 hs = ui->CalcTextSizeA(10.0f, FLT_MAX, 0.0f, hero.c_str());
+    dl->AddText(ui, 10.0f, {c.x - hs.x / 2, c.y + 22}, kMuted, hero.c_str());
+    const bool en = uiEnglish();
+    for (size_t i = 0; i < cities.size(); ++i) {
+      const float angle = static_cast<float>(i) / static_cast<float>(cities.size()) * 6.2831853f - 1.5707963f;
+      const ImVec2 p{c.x + std::cos(angle) * radius * 0.78f, c.y + std::sin(angle) * radius * 0.78f};
+      const float w = 118, h = 36;
+      ImGui::SetCursorScreenPos({p.x - w / 2, p.y - h / 2});
+      ImGui::PushID(static_cast<int>(i));
+      const bool clicked = ImGui::InvisibleButton("##city", {w, h});
+      ImGui::PopID();
+      const bool hovered = ImGui::IsItemHovered();
+      dl->AddRectFilled({p.x - w / 2, p.y - h / 2}, {p.x + w / 2, p.y + h / 2}, hovered ? IM_COL32(48, 48, 48, 255) : IM_COL32(40, 40, 40, 255), h / 2);
+      dl->AddRect({p.x - w / 2, p.y - h / 2}, {p.x + w / 2, p.y + h / 2}, IM_COL32(223, 191, 142, 150), h / 2, 1.0f, ImDrawFlags_None);
+      const ImVec2 ns = ui->CalcTextSizeA(12.0f, FLT_MAX, w - 14, cities[i]->name.c_str());
+      dl->AddText(ui, 12.0f, {p.x - ns.x / 2, p.y - ns.y / 2}, IM_COL32(240, 223, 197, 255), cities[i]->name.c_str(), nullptr, w - 14);
+      if (clicked) {
+        if (const std::optional<e2::Json> next = spells.castWarp(save_, hero, cities[i]->id)) {
+          const int level = spells.levelOf(save_, hero);
+          save_ = *next;
+          write();
+          partyX_ = -1, centred_ = false, prevCol_ = save_["overworldPos"].value("col", 0);  // the party stands there at once
+          warpAt_ = now_, warpDuration_ = std::min(3.2f, 1.6f + std::floor(std::max(0, level - e2::FieldSpells::kWarpUnlockLevel) / 6.0f) * 0.35f);
+          showHint(en ? std::format("{} crossed to {}.", hero, cities[i]->name) : std::format("{} atravessou para {}.", hero, cities[i]->name));
+        } else {
+          showHint(tr("Não foi possível lançar Warp.", "Could not cast Warp."));
+        }
+        warpHero_.clear();
+        break;
+      }
+    }
+    ImGui::SetCursorScreenPos({c.x - 50, c.y + radius + 76});
+    if (emberBigButton("##warpcancel", upperUtf8(tr("Cancelar", "Cancel")).c_str(), {c.x - 50, c.y + radius + 76}, {100, 32}, false, 11.0f)) warpHero_.clear();
+    ImGui::End();
+  }
+
+  // playWarpGate: the gate's picture forms, holds and closes over the map for the spell's duration.
+  void drawWarpVisual(ImVec2 size) {
+    if (warpAt_ < 0 || now_ - warpAt_ > warpDuration_) return;
+    const float t = (now_ - warpAt_) / std::max(0.1f, warpDuration_);
+    const float form = std::min(1.0f, (now_ - warpAt_) / 0.95f);  // scale and fade in over 950 ms
+    const float closing = t > 0.7f ? std::min(1.0f, (t - 0.7f) / 0.18f) : 0.0f;
+    const float alpha = (0.15f + 0.85f * form) * (1.0f - closing);
+    ImDrawList* dl = ImGui::GetForegroundDrawList();
+    dl->AddRectFilled({0, 0}, size, IM_COL32(0, 0, 0, static_cast<int>(89 * (1.0f - closing))));
+    if (const UiImage* icon = uiImage(paths_.engine2Public / "game/icons/warp-portal.png")) {
+      const float h = size.y * 0.58f, w = h * static_cast<float>(icon->width) / static_cast<float>(icon->height);
+      const float sx = (0.42f + 0.58f * form) * (1.0f + 0.08f * closing), sy = (0.5f + 0.5f * form) * (1.0f + 0.12f * closing);
+      const ImVec2 c{size.x / 2, size.y / 2};
+      dl->AddImage(icon->texture, {c.x - w * sx / 2, c.y - h * sy / 2}, {c.x + w * sx / 2, c.y + h * sy / 2}, {0, 0}, {1, 1}, IM_COL32(255, 255, 255, static_cast<int>(255 * alpha)));
+    }
+  }
+
   void drawGroupTab(const std::vector<std::string>& heroes, float inner) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     ImFont* ui = uiFont(UiFont::Ui);
@@ -1701,6 +1861,9 @@ class OverworldStage : public Stage {
   bool hasInn_ = false;
   e2::Companions companions_;
   bool hasCompanions_ = false;
+  bool fieldSpells_ = false;     // the field-spells menu is open
+  std::string warpHero_;         // the mage choosing Warp's destination (the wheel is open)
+  float warpAt_ = -100, warpDuration_ = 0;  // the gate's picture over the map
   std::string convCompanion_, convLeader_;
   std::optional<DialogScreen> convDialog_;
   std::optional<InnScreen> inn_;
