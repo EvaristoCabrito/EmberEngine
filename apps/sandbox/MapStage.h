@@ -3586,6 +3586,17 @@ class MapStage final : public Stage {
         }
       return logInfo("battle script: where: {} round {}:{}", battle_->roaming() ? "roaming" : "turns", battle_->round(), list);
     }
+    if (p[0] == "press" && p.size() > 1) {
+      // "press:flee[:miss]" / "press:wait": the HUD's own button pressed while the action row is drawn (drawHudBar), the
+      // rest of the row drawn after it in the same frame, as a click does; ":miss" makes the escape roll fail.
+      scriptPress_ = p[1], scriptFleeMiss_ = p.size() > 2 && p[2] == "miss";
+      scriptCheck_ = [this]() -> std::string {
+        if (!scriptPress_.empty()) return "button '" + std::exchange(scriptPress_, {}) + "' not on offer";
+        logInfo("battle script: pressed, picked {}, leaving {}", selected_, titleRequested_);
+        return "";
+      };
+      return logInfo("battle script: press {}", p[1]);
+    }
     const int ci = p.size() > 1 ? sceneUnitNamed(p[1]) : -1;
     if (ci < 0) return fail("no such unit");
     if (p[0] == "picktest") {
@@ -4808,7 +4819,10 @@ class MapStage final : public Stage {
     // the actions row
     ImGui::SetCursorScreenPos({a.x + 10.0f, b.y - 32.0f - 10.0f});
     const bool mine = myTurn() && !busy();
-    const e2::BattleUnit* actor = mine ? &battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])] : nullptr;
+    // The actor's battle index, read once: Esperar and a failed Fugir combate let go of the unit (select(-1)) mid-row, and the
+    // rest of the row is still drawn this frame (reading unitBattle_[selected_] after that indexed -1: the crash of 2026-10-17).
+    const size_t me = mine ? static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]) : 0;
+    const e2::BattleUnit* actor = mine ? &battle_->units()[me] : nullptr;
     const bool canAct = actor && !actor->acted;
     // Atacar always opens (the grid shows the weapon's zone even with nobody in it), so the player sees its reach.
     if (emberButton("##attack", "Atacar", true, canAct && spellMode_.empty())) attackMode_ = !attackMode_, offHandMode_ = false, refreshReach();
@@ -4820,13 +4834,14 @@ class MapStage final : public Stage {
         refreshReach();
       }
     }
-    if (actor && canAct && actor->lockpick > 0 && battle_->adjacentLock(static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])) >= 0) {
+    if (actor && canAct && actor->lockpick > 0 && battle_->adjacentLock(me) >= 0) {
       ImGui::SameLine();  // Engine2's "Arrombar": a Gazua opens the chest or door beside the hero
       if (emberButton("##lockpick", tr("Arrombar", "Pick lock").c_str(), false, spellMode_.empty())) openLock();
     }
     ImGui::SameLine();
     const bool turns = !battle_->roaming();  // free roam has no turns to end
-    if (emberButton("##wait", "Esperar", false, mine && turns)) endUnitTurn();
+    const auto scriptPressed = [this](const char* id) { return scriptPress_ == id ? (scriptPress_.clear(), true) : false; };
+    if (emberButton("##wait", "Esperar", false, mine && turns) || (mine && turns && scriptPressed("wait"))) endUnitTurn();
     ImGui::SameLine();
     // Cancelar: leaves the attack / spell aim; else takes back the last walk (one per click, each giving back only
     // its own movement). A walk made before an action cannot be taken back once the unit has acted.
@@ -4848,13 +4863,13 @@ class MapStage final : public Stage {
     if (actor && canFlee(*actor)) {
       ImGui::SameLine();
       const std::string label = tr("Fugir combate · ", "Flee battle · ") + std::format("{:.0f}%", fleeChance(*actor));
-      if (emberButton("##flee", label.c_str(), false, canAct && !aiming)) attemptFlee();
+      if (emberButton("##flee", label.c_str(), false, canAct && !aiming) || (canAct && !aiming && scriptPressed("flee"))) attemptFlee();
     }
     if (actor) {
       int n = 0;
       for (const std::string& kind : actor->spellList) {
         ImGui::SameLine();
-        const int uses = e2::spellUsesLeft(*battle_, static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), kind);
+        const int uses = e2::spellUsesLeft(*battle_, me, kind);
         const bool ok = canAct && e2::spellPorted(kind) && uses > 0;
         if (spellSocket(std::format("##spell{}", n++).c_str(), kind, uses, ok, spellMode_ == kind)) startSpell(kind);
       }
@@ -4940,7 +4955,7 @@ class MapStage final : public Stage {
     if (!canFlee(u)) return false;
     std::random_device device;
     e2::Mulberry32 rng(device());
-    const bool out = rng() * 100.0 < fleeChance(u);
+    const bool out = !std::exchange(scriptFleeMiss_, false) && rng() * 100.0 < fleeChance(u);
     const std::string line = out ? tr(u.name + " encontrou uma saída! O grupo foge do combate.", u.name + " found a way out! The party flees the battle.")
                                  : tr(u.name + " não conseguiu fugir — o combate continua.", u.name + " failed to flee: the battle goes on.");
     battle_->pushLog(line);
@@ -5518,6 +5533,8 @@ class MapStage final : public Stage {
   bool scriptDone_ = false, scriptFailed_ = false, scriptStarted_ = false;
   std::optional<e2::BattleHex> scriptHover_;  // "aim:x:y": the cursor held on a hex
   std::function<std::string()> scriptCheck_;  // the playing step's check (empty = passed)
+  std::string scriptPress_;                   // "press:<button>": the HUD button the next drawHudBar presses
+  bool scriptFleeMiss_ = false;               // "press:flee:miss": that escape roll fails
   std::string scriptLabel_;
   MeshScene meshes_;
   AssetManager& assets_;
