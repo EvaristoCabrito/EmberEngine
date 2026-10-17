@@ -174,6 +174,8 @@ void resolveStep(Battle& b, const BattleStep& step, Mulberry32& rng, std::vector
 void resolveStrike(Battle& b, const BattleStep& step, bool counter, Mulberry32& rng, std::vector<BattleEffect>& out);
 // Whether the defender strikes back after the step's strike (resolveCombat's condition).
 bool strikesBack(const Battle& b, const BattleStep& step);
+// A summoned unit of this class as it stands when a saved fight is resumed (its numbers are then overlaid from the snapshot).
+std::optional<BattleUnit> summonSkeleton(const std::string& id, const std::string& classId);
 // Engine2 applyTileHazard for a unit that just stepped onto a hex (a flame under its feet burns it).
 void stepOnHex(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out);
 // Engine2 tryWarpCrossing: the hex a unit standing on one opening of a warp gate comes out at, beside the other, or nothing.

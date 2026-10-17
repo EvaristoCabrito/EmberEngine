@@ -2451,6 +2451,21 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
 
 void stepOnHex(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) { tileHazard(b, unit, rng, out); }
 
+std::optional<BattleUnit> summonSkeleton(const std::string& id, const std::string& classId) {
+  const SummonData& data = summonData();
+  const auto it = data.classes.find(classId);
+  if (it == data.classes.end()) return std::nullopt;
+  const SummonClass& cls = it->second;
+  BattleUnit f;
+  f.id = id, f.classId = cls.id, f.className = cls.name, f.sprite = cls.sprite, f.side = "player", f.alive = true, f.summoned = true;
+  f.combat.resistances = cls.resistances;
+  f.initiativeBonus = cls.initiativeBonus;
+  f.mov = cls.mov, f.minRange = cls.minRange, f.maxRange = cls.maxRange, f.size = cls.size;
+  f.footprintOffsets = cls.offsets, f.footprintW = cls.footprintW, f.footprintH = cls.footprintH;
+  f.faceDx = 1.0, f.faceDy = 0.0, f.facing = 1, f.fullness = 100;
+  return f;
+}
+
 std::optional<BattleHex> warpCrossing(const Battle& b, size_t unitIdx) {
   const BattleUnit& u = b.units()[unitIdx];
   if (u.side != "player" && Battle::footprint(u, u.x, u.y).size() > 1) return std::nullopt;

@@ -1042,6 +1042,7 @@ class MapStage final : public Stage {
     if (!battle_ || !snap.is_object()) return false;
     if (snap.value("missionId", std::string()) != missionId_ || (!mapKey_.empty() && snap.value("mapKey", mapKey_) != mapKey_)) return false;
     if (!battle_->applySnapshot(snap)) return false;
+    syncSummons();  // the familiars summoned before the save get their cards back
     for (size_t i = 0; i < unitBattle_.size(); ++i) {
       if (unitBattle_[i] < 0) continue;
       const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[i])];
@@ -1892,6 +1893,44 @@ class MapStage final : public Stage {
       unitPos_[i] = {u.x, u.z};
       unitFacing_[i] = u.facing < 0 ? -1 : 1;
       unitReversed_[i] = u.mirror != (u.facing == -1) ? 1 : 0;
+    }
+  }
+
+  // A familiar that stepped out of a summoning (Engine2 castSummonFamiliar pushes it into the units): it gets a scene unit with its
+  // class's own art (the catalog entry keyed by its class id) and every per-unit array grows by one.
+  void syncSummons() {
+    if (!battle_ || !scene_) return;
+    for (size_t b = 0; b < battle_->units().size(); ++b) {
+      if (std::find(unitBattle_.begin(), unitBattle_.end(), static_cast<int>(b)) != unitBattle_.end()) continue;
+      const e2::BattleUnit& bu = battle_->units()[b];
+      if (!bu.summoned || !bu.alive || bu.side != "player") continue;
+      const e2::Hero* entry = nullptr;
+      for (const e2::Hero& h : catalog_)
+        if (h.key == bu.classId) entry = &h;
+      const e2::HeroPose* idle = entry ? entry->find("idle") : nullptr;
+      if (!idle) {
+        logWarn("summon: {} has no art in the catalog ({})", bu.name, bu.classId);
+        continue;
+      }
+      e2::SceneUnit su;
+      su.side = bu.side, su.name = bu.name, su.classId = bu.classId, su.key = bu.classId, su.sprite = bu.sprite;
+      su.set = idle->set, su.clip = idle->clip, su.boxW = idle->boxW, su.boxH = idle->boxH, su.foot = idle->foot;
+      su.frames = idle->frames, su.pace = idle->pace, su.facing = 1, su.mirror = entry->reversed;
+      const glm::vec2 at = anchorWorld(bu, {bu.x, bu.y});
+      su.x = at.x, su.z = at.y;
+      scene_->units.push_back(std::move(su));
+      unitCatalog_.push_back(entry);
+      unitPos_.push_back(at);
+      unitMoved_.push_back(1);
+      unitFacing_.push_back(1);
+      unitReversed_.push_back(entry->reversed ? 1 : 0);
+      unitWalk_.push_back({});
+      unitCard_.push_back({});
+      unitBattle_.push_back(static_cast<int>(b));
+      unitShot_.push_back({});
+      unitDiedAt_.push_back(-1.0f);
+      unitRecoil_.push_back({});
+      while (unitSounds_.size() <= b) unitSounds_.push_back(e2::Json::object());
     }
   }
 
@@ -3199,6 +3238,25 @@ class MapStage final : public Stage {
       if (!placeBeside(static_cast<size_t>(ci), static_cast<size_t>(other))) return fail("no free hex beside it");
       return logInfo("battle script: near {} {}", p[1], p[2]);
     }
+    if (p[0] == "summon" && p.size() > 2) {
+      // "summon:<unit>:<kind>": the unit picked as its turn casts the summon on the first free hex beside it
+      const size_t cu = static_cast<size_t>(unitBattle_[static_cast<size_t>(ci)]);
+      for (size_t i : battle_->turnOrder()) {
+        if (i == cu) break;
+        battle_->units()[i].moved = true;
+      }
+      e2::BattleUnit& me = battle_->units()[cu];
+      me.moved = false, me.acted = false, me.moveUsed = 0;
+      select(ci);
+      startSpell(p[2]);
+      std::optional<e2::BattleHex> free;
+      for (const e2::BattleHex& n : e2::Battle::neighbors(me.x, me.y))
+        if (!free && aimValid(cu, n)) free = n;
+      if (!free) return fail("no free hex beside it");
+      aimSpell(*free);
+      aimSpell(*free);
+      return logInfo("battle script: summon {} {}: {}", p[1], p[2], exchange_ ? "playing" : "not cast: " + tip_);
+    }
     if ((p[0] == "stage" || p[0] == "arm") && p.size() > 2) {
       // Engine2's confirm panel for captures: "stage:<unit>:<foe>" = the unit picked as its turn with a strike staged on
       // the foe (stood beside it); "arm:<unit>:<kind>:<target>" = the spell aimed at the target (stood beside), waiting
@@ -3471,6 +3529,7 @@ class MapStage final : public Stage {
       } else {
         e2::resolveStep(*battle_, s, rng_, fx);
       }
+      syncSummons();  // a familiar that appeared with this step gets its card
       showEffects(fx);
       // A missed Investida Touro shoves nobody aside: the rest of the charge is dropped (its walk and its other blows).
       if (std::any_of(fx.begin(), fx.end(), [](const e2::BattleEffect& e) { return e.abortRush; })) {

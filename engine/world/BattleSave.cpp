@@ -2,6 +2,7 @@
 // state, the round, its initiative order and every enemy's enmity table, in Engine2's BattleSnapshot field names.
 
 #include "world/Battle.h"
+#include "world/Spells.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -126,9 +127,19 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       if (units_[i].id == id) return static_cast<int>(i);
     return -1;
   };
-  // Every saved unit must be one of this battle's (a fight saved on another version of the map is not resumed).
-  for (const nlohmann::json& s : units)
-    if (!s.is_object() || find(s.value("id", std::string())) < 0) return false;
+  // Every saved unit must be one of this battle's (a fight saved on another version of the map is not resumed), except the
+  // familiars summoned during it: they are made again from their class (their numbers come from the snapshot below).
+  std::vector<BattleUnit> summoned;
+  for (const nlohmann::json& s : units) {
+    if (!s.is_object()) return false;
+    const std::string id = s.value("id", std::string());
+    if (find(id) >= 0) continue;
+    std::optional<BattleUnit> skeleton = s.value("summoned", false) ? summonSkeleton(id, s.value("classId", std::string())) : std::nullopt;
+    if (!skeleton) return false;
+    skeleton->name = s.value("name", id);
+    summoned.push_back(std::move(*skeleton));
+  }
+  for (BattleUnit& f : summoned) units_.push_back(std::move(f));
   for (const nlohmann::json& s : units) {
     BattleUnit& u = units_[static_cast<size_t>(find(s.value("id", std::string())))];
     u.x = s.value("x", u.x), u.y = s.value("y", u.y);
