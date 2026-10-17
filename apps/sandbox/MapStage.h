@@ -1965,7 +1965,8 @@ class MapStage final : public Stage {
     return {0.0f, 1.0f, 0.0f};
   }
 
-  std::optional<e2::BattleHex> pick(SDL_WindowID id, float mx, float my) const {
+  // `cards` false: the ground under the cursor only (a transparent corner of a tall card must not steal a walk click).
+  std::optional<e2::BattleHex> pick(SDL_WindowID id, float mx, float my, bool cards = true) const {
     int w = 0, h = 0;
     SDL_Window* window = SDL_GetWindowFromID(id);
     if (!window || !SDL_GetWindowSize(window, &w, &h) || w <= 0 || h <= 0) return std::nullopt;
@@ -1976,7 +1977,7 @@ class MapStage final : public Stage {
     const glm::vec3 right = glm::length(glm::vec3(lastCamera_.right.x, 0.0f, lastCamera_.right.z)) > 0.0f && !flat_
                                 ? glm::normalize(glm::vec3(lastCamera_.right.x, 0.0f, lastCamera_.right.z))
                                 : glm::vec3(1.0f, 0.0f, 0.0f);
-    for (size_t i = 0; i < unitCard_.size(); ++i) {
+    for (size_t i = 0; cards && i < unitCard_.size(); ++i) {
       const CardRect& c = unitCard_[i];
       if (!c.drawn || (unitBattle_[i] < 0 && !(options_.editorClick && scene_ && i < scene_->units.size()))) continue;
       const glm::vec3 up = cardUp(c);
@@ -2080,8 +2081,22 @@ class MapStage final : public Stage {
     if (myTurn()) {
       const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
       const bool own = hex->x == u.x && hex->y == u.y;
-      if (!own && std::any_of(reach_.begin(), reach_.end(), [&](const e2::ReachCell& c) { return c.x == hex->x && c.y == hex->y; }))
-        return walkTo(static_cast<size_t>(selected_), *hex);
+      auto reachable = [&](e2::BattleHex h) {
+        return std::any_of(reach_.begin(), reach_.end(), [&](const e2::ReachCell& c) { return c.x == h.x && c.y == h.y; });
+      };
+      if (!own && reachable(*hex)) return walkTo(static_cast<size_t>(selected_), *hex);
+      // A card's rectangle is taller than the body: a click on the ground behind a friend's card is still a walk, not
+      // a jump of the selection to that friend.
+      if (!own)
+        if (const std::optional<e2::BattleHex> ground = pick(id, mx, my, false); ground && !(ground->x == u.x && ground->y == u.y) && reachable(*ground))
+          return walkTo(static_cast<size_t>(selected_), *ground);
+      // Two left clicks on the unit being played end its turn (a single one keeps it picked).
+      if (own && !battle_->roaming()) {
+        const bool twice = lastOwnClick_ >= 0.0f && now_ - lastOwnClick_ <= kDoubleClick && lastOwnClickUnit_ == selected_;
+        lastOwnClick_ = twice ? -1.0f : now_, lastOwnClickUnit_ = selected_;
+        if (twice) endUnitTurn();
+        return;
+      }
     }
     const int ui = sceneUnitOf(battle_->unitAt(hex->x, hex->y));
     if (ui >= 0 && ui != selected_ && unitCard_[static_cast<size_t>(ui)].drawn && battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(ui)])].alive)
@@ -4227,6 +4242,9 @@ class MapStage final : public Stage {
   bool panning_ = false;
   static constexpr int kHoldMs = 500;
   static constexpr float kClickSlop = 5.0f;
+  static constexpr float kDoubleClick = 0.4f;  // seconds between the two clicks that end a turn
+  float lastOwnClick_ = -1.0f;                 // scene clock of the last click on the unit being played
+  int lastOwnClickUnit_ = -1;
   // Combat (world/Battle.h): the battle, each scene unit's battle unit and live state, the picked unit and its reach.
   std::optional<e2::Battle> battle_;
   std::vector<int> unitBattle_;        // per scene unit: its battle unit, -1 = none
