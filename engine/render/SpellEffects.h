@@ -102,6 +102,11 @@ class SpellEffects {
   // A version that keeps Engine2's own timeline decides when the hit lands: seconds from the cast (Míssil Mágico 02:
   // Engine2's charge, then the flight). Below 0: the version lands on the caller's impact (the pose's).
   float impactDelay(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const;
+  // A spell cast after its caster's whole pose (the user, 2026-10-17: the effect only appears once the cast animation is
+  // over): seconds from the effect's start to its first hit. impactDelay's timeline when the version has one; the cures'
+  // light gathers for HolyLight::leadIn; every other version kKindLead (Engine2's SPELL_TRAVEL at most).
+  float leadIn(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const;
+  static constexpr float kKindLead = 0.6f;
 
  private:
   enum class Facing : uint8_t {
@@ -133,6 +138,8 @@ class SpellEffects {
     float flickerLight = 0.0f;            // > 0: the light wavers by this share (flames)
   };
 
+  // The cures', the meal's and the potion's light (HolyLight) plays this version.
+  static bool isHoly(const std::string& kind, int look);
   SpriteClipId clip(const char* name) const { return sprites_.find("fx", name); }
   Element& add(const char* clipName, float start, float duration);
   glm::vec3 position(const Element& e, float now) const;

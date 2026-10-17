@@ -1529,7 +1529,9 @@ class MapStage final : public Stage {
       const e2::HeroPose* p = nullptr;
       // The fallen: their death plays out, holds, then they are gone.
       if (ui < unitDiedAt_.size() && unitDiedAt_[ui] >= 0.0f && time - unitDiedAt_[ui] > poseSeconds(ui, "death") / unitShot_[ui].rate + kCorpseSeconds) continue;
-      const OneShot* shot = ui < unitShot_.size() && !unitShot_[ui].pose.empty() ? &unitShot_[ui] : nullptr;
+      OneShot shotNow;  // this frame's (the stored one may move on to its next pose below)
+      const OneShot* shot = nullptr;
+      if (ui < unitShot_.size() && !unitShot_[ui].pose.empty()) shotNow = unitShot_[ui], shot = &shotNow;
       if (shot && entry) {
         // Engine2 UnitActor.play: the left-facing cut when it faces left and has one.
         const std::string left = shot->pose + "Left";
@@ -1537,7 +1539,12 @@ class MapStage final : public Stage {
         p = l && !l->pace.empty() ? l : entry->find(shot->pose);
         if (p && p->pace.empty()) p = nullptr;
         if (p) shown = p == l ? left : shot->pose;
-        if (!shot->hold && time - shot->start > poseSeconds(ui, shot->pose) / shot->rate) unitShot_[ui].pose.clear();
+        const bool over = shot->until >= 0.0f ? time > shot->until : time - shot->start > poseSeconds(ui, shot->pose) / shot->rate;
+        if (!shot->hold && over) {
+          OneShot& s = unitShot_[ui];
+          if (!s.then.empty() && time < s.thenUntil) s = {s.then, time, false, s.rate, s.thenUntil};  // drawn from the next frame
+          else s.pose.clear();
+        }
       } else if (walking && entry) {
         p = walkPose(*entry, unitWalk_[ui].dir, unitFacing_[ui], u.sprite, shown);
       } else if (chosen != kIdle && entry) {
@@ -2776,6 +2783,9 @@ class MapStage final : public Stage {
     float start = 0.0f;
     bool hold = false;   // keeps its last frame (death)
     float rate = 1.0f;   // its pace (Velocidade)
+    float until = -1.0f; // >= 0: held until this time instead of its own length (a still)
+    std::string then;    // played next, as this one ends, until `thenUntil` (the cast pose, then its back still)
+    float thenUntil = -1.0f;
   };
   // An action in play (Engine2's queue): its steps one after another (a strike and its counter, a spell's hits, a
   // heal), each a pose with the rules applied at its impact.
@@ -2963,6 +2973,17 @@ class MapStage final : public Stage {
       return;
     }
     if (striker >= 0 && !pose.empty()) unitShot_[static_cast<size_t>(striker)] = {pose, now_, false, actionRate()};
+    // A spell waits for its caster's whole cast pose (the user, 2026-10-17: "as magias esperem a animação dos sprites de
+    // casting antes de aparecerem em todos os casos"): its effect, its sound and its hit come after the pose. Weapon skills,
+    // plain blows and potions keep the blow inside the pose.
+    const bool magic = striker >= 0 && !x.counter && !s.kind.empty() && !pose.empty() && s.type != StepType::Combat &&
+                       s.type != StepType::Potion && e2::spellPose(s.kind) != "attack";
+    const float fxStart = magic ? now_ + length : now_;
+    auto afterPose = [&](e2::Json cues) {
+      if (magic && cues.is_array())
+        for (e2::Json& c : cues) c["delay"] = c.value("delay", 0.0f) + length;
+      return cues;
+    };
     // The Arcano attack: energy gathers at the hand while the pose winds up, the bolt leaves at the pose's release and
     // the blow lands (the roll, the numbers, the hit react) when it arrives.
     x.bolt = striker >= 0 && target >= 0 && strikeIsBolt(s, x.counter, x.element);
@@ -2996,8 +3017,8 @@ class MapStage final : public Stage {
     if (striker >= 0) {
       const size_t sb = x.counter ? s.def : s.att;
       if (s.type == StepType::Combat) playCues(sounds(sb, x.counter ? "counter" : "attack"));
-      else if (s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food) playCues(sounds(sb, "heal"));
-      else if (const e2::Json& spells = sounds(sb, "spells"); spells.is_object() && spells.contains(s.kind)) playCues(spells[s.kind]);
+      else if (s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food) playCues(afterPose(sounds(sb, "heal")));
+      else if (const e2::Json& spells = sounds(sb, "spells"); spells.is_object() && spells.contains(s.kind)) playCues(afterPose(spells[s.kind]));
     }
     // The spell's visual, laid out so it lands on the impact (a counter or a plain attack has none: its blow's sparks
     // come when it lands).
@@ -3014,7 +3035,10 @@ class MapStage final : public Stage {
       // A version with Engine2's own timeline (Míssil Mágico 02) lands when it hits, as Engine2's rules wait for it.
       const SpellEffects::Spot casterSpot = unitSpot(static_cast<size_t>(striker));
       const int look = spellLook(s.kind, static_cast<size_t>(striker));
-      if (const float delay = spellFx_.impactDelay(s.kind, look, casterSpot, spots); delay > 0.0f) {
+      if (magic) {  // the effect starts as the pose ends and runs its own lead to the hit
+        x.impact = fxStart + spellFx_.leadIn(s.kind, look, casterSpot, spots);
+        x.end = std::max(x.end, x.impact + 0.8f + kExchangeGap / actionRate());
+      } else if (const float delay = spellFx_.impactDelay(s.kind, look, casterSpot, spots); delay > 0.0f) {
         x.impact = now_ + delay;
         x.end = std::max(x.end, x.impact + 0.8f + kExchangeGap);
       }
@@ -3023,7 +3047,27 @@ class MapStage final : public Stage {
         const std::string effect = s.potion == "disease" ? "disease" : s.potion.starts_with("mana") ? "mana" : "heal";
         spellFx_.potion(effect, look, spots.front(), now_, x.impact, striker);
       } else {
-        spellFx_.cast(s.kind, look, casterSpot, spots, now_, x.impact, striker);
+        spellFx_.cast(s.kind, look, casterSpot, spots, fxStart, x.impact, striker);
+      }
+      // Mãos Flamejantes / Sopro Venenoso aimed away from the camera (the user, 2026-10-17): after the cast pose the caster
+      // turns its back to us (its "castBack" still, the user's own picture) and the jet leaves its hands into the board,
+      // held until the last flames burn out. Aimed toward the camera (or level with it) it stays as it is.
+      const bool breath = s.kind == "burningHands" || s.kind == "poisonBreath";
+      if (magic && breath && !spots.empty() && !flat_ && hasPose(static_cast<size_t>(striker), "castBack")) {
+        glm::vec2 d{0.0f};
+        for (const SpellEffects::Spot& t : spots) d += glm::vec2(t.feet.x - casterSpot.feet.x, t.feet.z - casterSpot.feet.z);
+        d /= static_cast<float>(spots.size());
+        const float yaw = cam_.yaw;
+        // Any aim deeper into the screen than the caster turns it (the user, 2026-10-17, a low camera along the board with
+        // the foes off to the right and a little further: "mesmo deste angulo ele precisa virar de costas"), not only a
+        // walk's back cut (within 60 degrees of straight away).
+        const float away = -(d.x * std::sin(yaw) + d.y * std::cos(yaw));
+        if (glm::length(d) > 1e-3f && away > 0.02f * glm::length(d)) {
+          OneShot& shot = unitShot_[static_cast<size_t>(striker)];
+          shot.then = "castBack";
+          shot.thenUntil = fxStart + BurningHands::kFinish;
+          logInfo("{}: {} away from the camera, back turned after the cast pose ({:.2f} s)", scene_->units[static_cast<size_t>(striker)].name, s.kind, length);
+        }
       }
     }
   }

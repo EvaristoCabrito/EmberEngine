@@ -147,6 +147,17 @@ float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& c
   return -1.0f;
 }
 
+float SpellEffects::leadIn(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const {
+  if (const float delay = impactDelay(kind, look, caster, targets); delay > 0.0f) return delay;
+  if (isHoly(kind, look)) return HolyLight::leadIn(HolyLight::Style::Minor);
+  return kKindLead;
+}
+
+bool SpellEffects::isHoly(const std::string& kind, int look) {
+  return (kind == "cureMinor" && look == 2) || kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" ||
+         kind == "createFoodAndWater" || kind == "potion";
+}
+
 float SpellEffects::fireballArea(const std::vector<Spot>& targets) {
   if (targets.size() < 2) return 1.0f + 2.0f * std::sqrt(3.0f);
   float radius = 1.0f;
@@ -193,9 +204,7 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
   impact = std::max(impact, start + 0.05f);
   if (targets.empty() && kind != "piercingThrust" && kind != "doubleStrike") return false;
   // The cures', the meal's and the potion's light (HolyLight), on every unit it reaches.
-  const bool holy = (kind == "cureMinor" && look == 2) || kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" ||
-                    kind == "createFoodAndWater" || kind == "potion";
-  if (holy) {
+  if (isHoly(kind, look)) {
     using Style = HolyLight::Style;
     const Style style = kind == "cureMinor" ? Style::Minor : kind == "cureWounds" ? Style::Medium : kind == "cureLight" ? Style::Hands
                         : kind == "cureDisease" ? Style::Disease : kind == "createFoodAndWater" ? Style::Food
