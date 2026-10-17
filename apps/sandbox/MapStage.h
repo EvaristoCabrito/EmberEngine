@@ -3611,6 +3611,7 @@ class MapStage final : public Stage {
   void drawHudBar() {
     const ImGuiIO& io = ImGui::GetIO();
     const float height = 132.0f;
+    e2::setCombatLogEnglish(uiEnglish());  // the lines made from now on follow the interface language
     ImGui::SetNextWindowPos({0.0f, io.DisplaySize.y - height});
     ImGui::SetNextWindowSize({io.DisplaySize.x, height});
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {10.0f, 8.0f});

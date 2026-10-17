@@ -62,6 +62,10 @@ inline std::string applyReplyAffinity(e2::Json& save, const e2::Overworld& world
   while (d.back() == '0') d.pop_back();
   if (d.back() == '.') d.pop_back();
   if (const size_t dot = d.find('.'); dot != std::string::npos) d[dot] = ',';
+  if (uiEnglish()) {
+    std::replace(d.begin(), d.end(), ',', '.');
+    return std::format("Affinity {} + {}: {}{}", a, b, delta > 0 ? "+" : "", d);
+  }
   return std::format("Afinidade {} + {}: {}{}", a, b, delta > 0 ? "+" : "", d);
 }
 

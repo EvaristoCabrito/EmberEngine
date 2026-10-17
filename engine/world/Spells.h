@@ -103,6 +103,9 @@ std::string conditionsText(const BattleUnit& u);
 // The spell's description for the window's tooltip (its numbers at the caster's level).
 std::string spellTooltip(const BattleUnit& caster, const std::string& kind);
 
+// The combat log's language for the lines made from now on (the window's Idioma choice).
+void setCombatLogEnglish(bool english);
+
 // Spell names as the window shows them (Engine2's own Portuguese names).
 std::string spellName(const std::string& kind);
 // A spell EmberEngine casts (the rest of a unit's list is shown but not castable yet).

@@ -531,6 +531,8 @@ double* skillSlot(BattleUnit& u, const std::string& id) {
 // The combat log's notes made while a step resolves (skill points gained, levels reached); the wrappers around
 // resolveStrike / resolveStep / startOfTurnEffects hand them to the battle's log (Engine2 logSkillGain, the level-up tip).
 std::vector<std::string> gNotes;
+bool gLogEnglish = false;  // the combat log's language, set by the window (setCombatLogEnglish)
+const char* pick(const char* pt, const char* en) { return gLogEnglish ? en : pt; }
 // toLocaleString("pt-BR", { maximumFractionDigits: 2 }): a comma, no trailing zeros.
 std::string numberPt(double v, int digits = 2) {
   std::string t = std::format("{:.{}f}", v, digits);
@@ -538,26 +540,32 @@ std::string numberPt(double v, int digits = 2) {
     while (t.back() == '0') t.pop_back();
     if (t.back() == '.') t.pop_back();
   }
-  if (const size_t dot = t.find('.'); dot != std::string::npos) t[dot] = ',';
+  if (const size_t dot = t.find('.'); dot != std::string::npos && !gLogEnglish) t[dot] = ',';
   return t;
 }
 std::string weaponTypeLabelPt(const std::string& type) {
   static const std::pair<const char*, const char*> kLabels[] = {{"sword", "Espadas"},   {"axe", "Machados"},  {"mace", "Maças"},
                                                                 {"hammer", "Martelos"}, {"staff", "Cajados"},  {"spear", "Lanças e Armas de Haste"},
                                                                 {"bow", "Arcos"},       {"crossbow", "Bestas"}, {"dagger", "Adagas"}};
-  for (const auto& [id, label] : kLabels)
+  static const std::pair<const char*, const char*> kEnglish[] = {{"sword", "Swords"},   {"axe", "Axes"},  {"mace", "Maces"},
+                                                                 {"hammer", "Hammers"}, {"staff", "Staves"},  {"spear", "Spears & Polearms"},
+                                                                 {"bow", "Bows"},       {"crossbow", "Crossbows"}, {"dagger", "Daggers"}};
+  for (const auto& [id, label] : gLogEnglish ? kEnglish : kLabels)
     if (type == id) return label;
   return type;
 }
 std::string elementLabelPt(const std::string& element) {
   static const std::pair<const char*, const char*> kLabels[] = {{"fire", "Fogo"},   {"lightning", "Raio"},   {"ice", "Gelo"},       {"arcane", "Arcana"},
                                                                 {"darkness", "Trevas"}, {"holy", "Sagrado"}, {"poison", "Veneno"}, {"ember", "Brasa"}};
-  for (const auto& [id, label] : kLabels)
+  static const std::pair<const char*, const char*> kEnglish[] = {{"fire", "Fire"},   {"lightning", "Lightning"},   {"ice", "Ice"},       {"arcane", "Arcane"},
+                                                                 {"darkness", "Darkness"}, {"holy", "Holy"}, {"poison", "Poison"}, {"ember", "Ember"}};
+  for (const auto& [id, label] : gLogEnglish ? kEnglish : kLabels)
     if (element == id) return label;
   return element;
 }
 void noteSkillGain(const BattleUnit& u, const std::string& skill, double before, double after) {
-  gNotes.push_back(std::format("{} melhorou {}: {} (+{})", u.name, skill, numberPt(after), numberPt(after - before)));
+  const std::string a = numberPt(after), d = numberPt(after - before);
+  gNotes.push_back(gLogEnglish ? std::format("{} improved {}: {} (+{})", u.name, skill, a, d) : std::format("{} melhorou {}: {} (+{})", u.name, skill, a, d));
 }
 // trainingGainForLevel: none 10 levels above the foe, half 5 above, else the usual.
 std::optional<double> trainingGain(int unitLevel, int enemyLevel, bool& skip) {
@@ -614,7 +622,7 @@ void trainResistance(BattleUnit& u, const std::string& element, std::optional<in
   if (rng() >= skillGainChance(current)) return;  // rollSkillGain
   const double gained = std::min(kSkillCap, jsRound((current + amount.value_or(kSkillGain)) * 100) / 100);
   *slot = gained;
-  noteSkillGain(u, "Resistência a " + elementLabelPt(element), current, gained);
+  noteSkillGain(u, gLogEnglish ? elementLabelPt(element) + " Resistance" : "Resistência a " + elementLabelPt(element), current, gained);
   bool found = false;
   for (auto& [e, v] : u.combat.resistances)
     if (e == element) v = jsRound((v + gained - current) * 100) / 100, found = true;  // Number(x.toFixed(2))
@@ -626,7 +634,7 @@ void trainHealing(BattleUnit& u, Mulberry32& rng) {
   const double current = u.healingSkill;
   if (rng() >= skillGainChance(current)) return;
   u.healingSkill = std::min(kSkillCap, jsRound((current + kSkillGain) * 100) / 100);
-  noteSkillGain(u, "Cura", current, u.healingSkill);
+  noteSkillGain(u, pick("Cura", "Healing"), current, u.healingSkill);
 }
 
 // healingPower: healingAmount(base, healing skill) = +1% per skill point.
@@ -698,7 +706,7 @@ void grantExp(BattleUnit& u, int amount) {
   while (u.xp >= expToLevel(u.level) && u.level < kMaxLevel) {
     u.xp -= expToLevel(u.level);
     levelUp(u);
-    gNotes.push_back(std::format("{} subiu para o nível {}!", u.name, u.level));
+    gNotes.push_back(gLogEnglish ? std::format("{} reached level {}!", u.name, u.level) : std::format("{} subiu para o nível {}!", u.name, u.level));
   }
   if (u.level >= kMaxLevel) u.xp = 0;
 }
@@ -907,16 +915,16 @@ void tickConditions(Battle& b, size_t id, Mulberry32& rng, std::vector<BattleEff
   if (u.alive && u.poisoned)
     if (const PoisonTier* t = poisonTier(u.poisonTier)) {
       const int roll = rollDice(t->dice, t->faces, 0, rng);
-      hurt(static_cast<int>(std::floor(elementalDamage(roll, u.combat.resistance("poison") - t->penalty, u.cond.poisonMag))), "poison", "Veneno consome");
+      hurt(static_cast<int>(std::floor(elementalDamage(roll, u.combat.resistance("poison") - t->penalty, u.cond.poisonMag))), "poison", pick("Veneno consome", "Poison consumes"));
     }
   if (u.alive && u.cond.bleedTurns > 0) {
-    hurt(rollDice(u.cond.bleedDice, u.cond.bleedFaces, 0, rng), "", "Sangramento fere");
+    hurt(rollDice(u.cond.bleedDice, u.cond.bleedFaces, 0, rng), "", pick("Sangramento fere", "Bleeding hurts"));
     if (countDown && --u.cond.bleedTurns <= 0) u.cond.bleedDice = u.cond.bleedFaces = 0;
   }
   if (u.alive && u.cond.decayTurns > 0) {
     const int roll = rollDice(u.cond.decayDice, u.cond.decayFaces, 0, rng);
     const int base = static_cast<int>(std::floor(std::floor(u.cond.decayMag / 2) * u.cond.decayMul)) + roll;
-    hurt(static_cast<int>(std::floor(elementalDamage(base, u.combat.resistance("darkness"), u.cond.decayMag))), "darkness", "Decadência consome");
+    hurt(static_cast<int>(std::floor(elementalDamage(base, u.combat.resistance("darkness"), u.cond.decayMag))), "darkness", pick("Decadência consome", "Decay consumes"));
     if (countDown && u.alive) {
       if (--u.cond.decayTurns <= 0) {
         liftDecay(u);
@@ -942,7 +950,7 @@ void zoneEffects(Battle& b, size_t id, Mulberry32& rng, std::vector<BattleEffect
     u.hp = std::max(0, u.hp - dmg);
     trainResistance(u, z.element, std::nullopt, rng);
     BattleEffect e;
-    e.unit = id, e.amount = dmg, e.cause = "Zona de " + elementLabelPt(z.element) + " fere";
+    e.unit = id, e.amount = dmg, e.cause = gLogEnglish ? elementLabelPt(z.element) + " zone hurts" : "Zona de " + elementLabelPt(z.element) + " fere";
     if (u.hp <= 0) markDead(u, rng), e.died = true;
     out.push_back(e);
     if (!u.alive) afterDeath(b, id, out);
@@ -977,7 +985,7 @@ void landMeteors(Battle& b, size_t caster, Mulberry32& rng, std::vector<BattleEf
       }
       first = false;
       BattleEffect e;
-      e.unit = i, e.amount = dmg, e.cause = "Meteoro atinge";
+      e.unit = i, e.amount = dmg, e.cause = pick("Meteoro atinge", "Meteor strikes");
       if (foe.hp <= 0) markDead(foe, rng), e.died = true;
       out.push_back(e);
       if (!foe.alive) afterDeath(b, i, out);
@@ -1625,25 +1633,30 @@ void logEffects(Battle& b, const std::vector<BattleEffect>& out, size_t from, in
   for (size_t k = from; k < out.size(); ++k) {
     const BattleEffect& e = out[k];
     const std::string target = nameOf(e.unit);
-    const std::string crit = e.crit ? " (crítico)" : "";
+    const bool en = gLogEnglish;
+    const std::string crit = e.crit ? (en ? " (critical)" : " (crítico)") : "";
     if (!e.cause.empty()) {
-      b.pushLog(std::format("{} {}: {} dano", e.cause, target, e.amount));
+      b.pushLog(en ? std::format("{} {}: {} damage", e.cause, target, e.amount) : std::format("{} {}: {} dano", e.cause, target, e.amount));
     } else if (e.miss) {
-      b.pushLog(std::format("{} atacou {}: Missed", who, target));
+      b.pushLog(en ? std::format("{} attacked {}: Missed", who, target) : std::format("{} atacou {}: Missed", who, target));
     } else if (e.heal) {
       if (step && step->type == BattleStep::Type::Potion)
-        b.pushLog(e.text.empty() ? std::format("{} usou {} em {} e recuperou {} HP.", who, potionName(step->potion), target, e.amount)
-                                 : std::format("{} usou {} em {}: {}", who, potionName(step->potion), target, e.text));
+        b.pushLog(e.text.empty() ? (en ? std::format("{} used {} on {} and recovered {} HP.", who, potionName(step->potion), target, e.amount)
+                                       : std::format("{} usou {} em {} e recuperou {} HP.", who, potionName(step->potion), target, e.amount))
+                                 : (en ? std::format("{} used {} on {}: {}", who, potionName(step->potion), target, e.text)
+                                       : std::format("{} usou {} em {}: {}", who, potionName(step->potion), target, e.text)));
       else
-        b.pushLog(e.text.empty() ? std::format("{} curou {}: +{} HP", who, target, e.amount) : std::format("{}: {}", target, e.text));
+        b.pushLog(e.text.empty() ? (en ? std::format("{} healed {}: +{} HP", who, target, e.amount) : std::format("{} curou {}: +{} HP", who, target, e.amount))
+                                 : std::format("{}: {}", target, e.text));
     } else if (e.status) {
       b.pushLog(std::format("{}: {}", target, e.text));
     } else if (step && step->type == BattleStep::Type::Spell) {
-      b.pushLog(std::format("{} atingiu {} com magia: {} dano{}", who, target, e.amount, crit));
+      b.pushLog(en ? std::format("{} hit {} with magic: {} damage{}", who, target, e.amount, crit)
+                   : std::format("{} atingiu {} com magia: {} dano{}", who, target, e.amount, crit));
     } else {
-      b.pushLog(std::format("{} atacou {}: {} dano{}", who, target, e.amount, crit));
+      b.pushLog(en ? std::format("{} attacked {}: {} damage{}", who, target, e.amount, crit) : std::format("{} atacou {}: {} dano{}", who, target, e.amount, crit));
     }
-    if (e.died) b.pushLog(std::format("{} foi derrotado.", target));
+    if (e.died) b.pushLog(en ? std::format("{} was defeated.", target) : std::format("{} foi derrotado.", target));
   }
 }
 
@@ -1705,6 +1718,8 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
 void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::vector<BattleEffect>& out);
 
 }  // namespace
+
+void setCombatLogEnglish(bool english) { gLogEnglish = english; }
 
 void resolveStrike(Battle& b, const BattleStep& step, bool counter, Mulberry32& rng, std::vector<BattleEffect>& out) {
   gNotes.clear();
@@ -2057,7 +2072,7 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
     u.hp = std::max(0, u.hp - dmg);
     trainResistance(u, "lightning", std::nullopt, rng);
     BattleEffect e{unit, dmg, false, false, false, false, false};
-    e.cause = "Eco de relâmpago em";
+    e.cause = pick("Eco de relâmpago em", "Lightning echo on");
     if (u.hp <= 0) markDead(u, rng), e.died = true;
     out.push_back(e);
     if (!u.alive) afterDeath(b, unit, out);
@@ -2073,7 +2088,7 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
     u.hp = std::max(0, u.hp - dmg);
     if (!element.empty()) trainResistance(u, element, std::nullopt, rng);
     BattleEffect e{unit, dmg, false, false, false, false, false};
-    e.cause = c.terrain == "flame" ? "Chamas feriram" : "Brasas feriram";
+    e.cause = c.terrain == "flame" ? pick("Chamas feriram", "Flames burned") : pick("Brasas feriram", "Embers burned");
     if (u.hp <= 0) markDead(u, rng), e.died = true;
     out.push_back(e);
     if (!u.alive) afterDeath(b, unit, out);
