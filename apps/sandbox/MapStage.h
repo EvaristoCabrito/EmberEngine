@@ -66,6 +66,8 @@
 #include "render/Renderer.h"
 #include "rhi/UploadQueue.h"
 #include "render/MeshScene.h"
+#include "BattleStatus.h"
+#include "InventoryScreen.h"
 #include "EmberMenus.h"
 #include "SpellsMenu.h"
 #include "media/AudioMixer.h"
@@ -73,6 +75,7 @@
 #include "render/SpriteSystem.h"
 #include "world/Battle.h"
 #include "world/Combat.h"
+#include "world/Inn.h"
 #include "world/Spells.h"
 #include "render/UiArt.h"
 #include "world/Board.h"
@@ -167,8 +170,12 @@ struct MapStageOptions {
     std::string poison;                     // heroPoisons' tier, empty = not poisoned
     std::optional<double> fullness;
     double hungerPenalty = 0;
+    std::array<int, 5> points{};            // statPointAllocations: hp, atk, mag, def, dex
+    int lockpick = 0;                       // bags[name].lockpick
   };
   std::map<std::string, HeroState> heroState;
+  // The world's tables, for the status sheet's Mochila / Equipar (the party's inventory over a fight).
+  const e2::Overworld* world = nullptr;
   // The map editor's preview (MapEditorStage.h): the draft and its scene given in memory instead of `map` / `scene`,
   // and a left click on a hex handed to editorClick instead of played; only the camera bar is drawn.
   std::optional<e2::MapDraft> draftData;
@@ -553,7 +560,9 @@ class MapStage final : public Stage {
       if (a && b) target_ += glm::vec3{a->x - b->x, 0.0f, a->z - b->z}, cam_.target += glm::vec3{a->x - b->x, 0.0f, a->z - b->z};
     }
     if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.key == SDLK_ESCAPE) {
-      if (logFull_) logFull_ = false;
+      if (battleInventory_) battleInventory_.reset();
+      else if (statusSheet_.isOpen()) statusSheet_.closeConditionOrSheet();
+      else if (logFull_) logFull_ = false;
       else if (pendingFoe_ >= 0) pendingFoe_ = -1;
       else if (spellArmed_) spellArmed_.reset();
       else if (!spellMode_.empty()) spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
@@ -1074,6 +1083,32 @@ class MapStage final : public Stage {
     else if (which == "options") menuOptions_.open();
     else if (which == "log") showLog_ = true, logJustOpened_ = true, logKeep_ = true;  // a capture: the turns the script plays do not close it
     else if (which == "fulllog") logFull_ = true, logFullJustOpened_ = true;
+    else if (which == "status" && battle_) openStatus(battle_->activeUnit() >= 0 ? battle_->activeUnit() : 0);
+    else if (which.starts_with("inventory:") && battle_) {  // "inventory:<name>[:doll]": the Mochila (or Equipar) over the fight
+      const std::string rest = which.substr(10);
+      const bool doll = rest.ends_with(":doll");
+      const std::string name = doll ? rest.substr(0, rest.size() - 5) : rest;
+      for (size_t i = 0; i < battle_->units().size(); ++i)
+        if (battle_->units()[i].name == name) {
+          openInventory(i, !doll);
+          break;
+        }
+    } else if (which.starts_with("synced:") && battle_) {  // "synced:<name>": the inventory's write-back run once, then that unit's sheet
+      openInventory(0, true);
+      syncInventory();
+      battleInventory_.reset();
+      for (size_t i = 0; i < battle_->units().size(); ++i)
+        if (battle_->units()[i].name == which.substr(7)) {
+          openStatus(static_cast<int>(i));
+          break;
+        }
+    } else if (which.starts_with("status:") && battle_) {  // "status:<name>": that unit's sheet
+      for (size_t i = 0; i < battle_->units().size(); ++i)
+        if (battle_->units()[i].name == which.substr(7) && battle_->units()[i].alive) {
+          openStatus(static_cast<int>(i));
+          break;
+        }
+    }
   }
   // "victory" / "defeat" once the fight is over, else empty.
   const std::string& battleResult() const { return result_; }
@@ -1105,6 +1140,8 @@ class MapStage final : public Stage {
     static constexpr int kStartingBag[7] = {2, 2, 1, 1, 1, 0, 0};  // weak mid potent disease manaSmall manaMid manaLarge
     if (!s.bag && s.starterBag)
       for (int k = 0; k < 7; ++k) u.bag[k] = u.classId == "healer" ? 0 : kStartingBag[k];
+    u.lockpick = s.lockpick;
+    u.pointHp = s.points[0], u.pointAtk = s.points[1], u.pointMag = s.points[2], u.pointDef = s.points[3], u.pointDex = s.points[4];
     u.diseased = s.diseased;
     u.poisoned = !s.poison.empty(), u.poisonTier = s.poison;
     u.fullness = s.fullness;
@@ -2156,6 +2193,7 @@ class MapStage final : public Stage {
     spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
     spellArmed_.reset(), pendingFoe_ = -1;
     attackMode_ = false;
+    offHandMode_ = false;
     refreshReach();
   }
 
@@ -2173,7 +2211,6 @@ class MapStage final : public Stage {
     spellArmed_.reset(), pendingFoe_ = -1;
     const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
     const e2::BattleUnit& u = battle_->units()[b];
-    offHandMode_ = false;
     // Criar Comida e Água has no aim: it is cast at once, around the caster.
     if (e2::spellInstant(kind)) return commitSpell({u.x, u.y});
     // Varredura, Expulsar Mortos-Vivos: its area around the caster is shown at once and waits for Confirmar (Engine2
@@ -2361,23 +2398,6 @@ class MapStage final : public Stage {
         if (std::any_of(targets_.begin(), targets_.end(), [&](const auto& t) { return t.first == static_cast<int>(i); })) continue;
         if (e2::canHitFrom(*battle_, b, {c.x, c.y}, static_cast<size_t>(fb))) targets_.push_back({static_cast<int>(i), e2::BattleHex{c.x, c.y}});
       }
-  }
-
-  // The party's unit whose turn it is, picked.
-  bool myTurn() const {
-    if (!battle_ || selected_ < 0 || unitBattle_[static_cast<size_t>(selected_)] < 0) return false;
-    if (battle_->roaming()) {  // free roam: no turns, the party's picked unit leads
-      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
-      return u.side == "player" && u.alive && result_.empty();
-    }
-    const int active = battle_->activeUnit();
-    return active == unitBattle_[static_cast<size_t>(selected_)] && battle_->units()[static_cast<size_t>(active)].side == "player" && result_.empty();
-  }
-
-  // Something is playing that input must not cut into: a walk, a strike, an enemy's turn, the battle's end.
-  bool busy() const {
-    if (exchange_ || enemyTurn_ || !result_.empty()) return true;
-    return std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
     // The off-hand weapon (a dagger beside a bow) reaches what the bow cannot, standing where it is; with "Mão Secundária"
     // armed those are the only targets.
     if (u.combat.offHandWeapon && !u.combat.offHandShield) {
@@ -2395,6 +2415,23 @@ class MapStage final : public Stage {
       targets_.erase(std::remove_if(targets_.begin(), targets_.end(),
                                     [&](const auto& t) { return !e2::canOffHandHit(*battle_, b, {u.x, u.y}, static_cast<size_t>(unitBattle_[static_cast<size_t>(t.first)])); }),
                      targets_.end());
+  }
+
+  // The party's unit whose turn it is, picked.
+  bool myTurn() const {
+    if (!battle_ || selected_ < 0 || unitBattle_[static_cast<size_t>(selected_)] < 0) return false;
+    if (battle_->roaming()) {  // free roam: no turns, the party's picked unit leads
+      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
+      return u.side == "player" && u.alive && result_.empty();
+    }
+    const int active = battle_->activeUnit();
+    return active == unitBattle_[static_cast<size_t>(selected_)] && battle_->units()[static_cast<size_t>(active)].side == "player" && result_.empty();
+  }
+
+  // Something is playing that input must not cut into: a walk, a strike, an enemy's turn, the battle's end.
+  bool busy() const {
+    if (exchange_ || enemyTurn_ || !result_.empty()) return true;
+    return std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
   }
 
   // Engine2's turn loop (tick / beginUnitTurn / startNewRound): whoever is next in the round acts; when everyone has
@@ -2753,6 +2790,16 @@ class MapStage final : public Stage {
     }
     return std::nullopt;
   }
+  // A strike is made with the off-hand weapon (Engine2 offHandStrike): the unit's own off-hand attack (its step carries the
+  // weapon's dice), or a counter by a defender whose off-hand weapon reaches the attacker.
+  bool strikeIsOffHand(const e2::BattleStep& s, bool counter) const {
+    if (s.type != e2::BattleStep::Type::Combat) return false;
+    if (!counter) return s.customDice;
+    const e2::BattleUnit& actor = battle_->units()[s.def];
+    const e2::BattleUnit& target = battle_->units()[s.att];
+    return actor.combat.offHandWeapon && e2::Battle::distance({actor.x, actor.y}, {target.x, target.y}) <= actor.combat.offMaxRange;
+  }
+
   // A strike is a bow shot (Combat.cpp resolveStrike arrowShot: an archer's plain attack or counter, never off-hand).
   bool strikeIsArrow(const e2::BattleStep& s, bool counter) const {
     if (s.type != e2::BattleStep::Type::Combat || (!counter && !s.kind.empty())) return false;
@@ -2766,16 +2813,6 @@ class MapStage final : public Stage {
     if (s.type != e2::BattleStep::Type::Combat || (!counter && !s.kind.empty())) return false;
     const e2::BattleUnit& actor = battle_->units()[counter ? s.def : s.att];
     if (strikeIsOffHand(s, counter) || actor.combat.arrow || !(actor.combat.arcane || actor.combat.staff)) return false;
-  // A strike is made with the off-hand weapon (Engine2 offHandStrike): the unit's own off-hand attack (its step carries the
-  // weapon's dice), or a counter by a defender whose off-hand weapon reaches the attacker.
-  bool strikeIsOffHand(const e2::BattleStep& s, bool counter) const {
-    if (s.type != e2::BattleStep::Type::Combat) return false;
-    if (!counter) return s.customDice;
-    const e2::BattleUnit& actor = battle_->units()[s.def];
-    const e2::BattleUnit& target = battle_->units()[s.att];
-    return actor.combat.offHandWeapon && e2::Battle::distance({actor.x, actor.y}, {target.x, target.y}) <= actor.combat.offMaxRange;
-  }
-
     element = actor.combat.staff ? actor.combat.staffElement : "arcane";
     return true;
   }
@@ -2808,7 +2845,28 @@ class MapStage final : public Stage {
     strike.type = e2::BattleStep::Type::Combat;
     strike.att = static_cast<size_t>(unitBattle_[attackerUi]);
     strike.def = static_cast<size_t>(unitBattle_[defenderUi]);
+    if (offHand) {
+      const e2::CombatProfile& c = battle_->units()[strike.att].combat;
+      strike.customDice = true;
+      strike.customDiceCount = c.offDice, strike.customFaces = c.offFaces, strike.customBonus = c.offBonus;
+    }
+    offHandMode_ = false;
     play({strike}, attackerUi);
+  }
+
+  // Whether the plain attack of the picked unit on this foe, from where it stands, is made with the off-hand weapon: the
+  // foe is within that weapon's reach and the player armed "Mão Secundária", or the unit wields a bow (Engine2: a bow user
+  // with a dagger strikes with it by default whenever the foe is in its reach, it always outhits the arrow).
+  bool offHandWanted(size_t unitBattle, size_t foeBattle) const {
+    const e2::BattleUnit& u = battle_->units()[unitBattle];
+    if (!u.combat.offHandWeapon || u.combat.offHandShield) return false;
+    if (!e2::canOffHandHit(*battle_, unitBattle, {u.x, u.y}, foeBattle)) return false;
+    return offHandMode_ || u.combat.arrow;
+  }
+  // The forecast's off-hand flag for a strike from `from`: only the hex the unit stands on can be struck with the off hand.
+  bool offHandFrom(size_t unitBattle, size_t foeBattle, e2::BattleHex from) const {
+    const e2::BattleUnit& u = battle_->units()[unitBattle];
+    return from.x == u.x && from.y == u.y && offHandWanted(unitBattle, foeBattle);
   }
 
   void play(std::vector<e2::BattleStep> steps, size_t ownerUi) {
@@ -2838,30 +2896,9 @@ class MapStage final : public Stage {
 
   // The step's pose starts: the striker turns to its target (and a struck foe to the striker).
   void startStep(Exchange& x) {
-    if (offHand) {
-      const e2::CombatProfile& c = battle_->units()[strike.att].combat;
-      strike.customDice = true;
-      strike.customDiceCount = c.offDice, strike.customFaces = c.offFaces, strike.customBonus = c.offBonus;
-    }
-    offHandMode_ = false;
     const e2::BattleStep& s = x.steps[x.step];
     const int striker = sceneUnitOf(static_cast<int>(x.counter ? s.def : s.att));
     using StepType = e2::BattleStep::Type;
-  // Whether the plain attack of the picked unit on this foe, from where it stands, is made with the off-hand weapon: the
-  // foe is within that weapon's reach and the player armed "Mão Secundária", or the unit wields a bow (Engine2: a bow user
-  // with a dagger strikes with it by default whenever the foe is in its reach, it always outhits the arrow).
-  bool offHandWanted(size_t unitBattle, size_t foeBattle) const {
-    const e2::BattleUnit& u = battle_->units()[unitBattle];
-    if (!u.combat.offHandWeapon || u.combat.offHandShield) return false;
-    if (!e2::canOffHandHit(*battle_, unitBattle, {u.x, u.y}, foeBattle)) return false;
-    return offHandMode_ || u.combat.arrow;
-  }
-  // The forecast's off-hand flag for a strike from `from`: only the hex the unit stands on can be struck with the off hand.
-  bool offHandFrom(size_t unitBattle, size_t foeBattle, e2::BattleHex from) const {
-    const e2::BattleUnit& u = battle_->units()[unitBattle];
-    return from.x == u.x && from.y == u.y && offHandWanted(unitBattle, foeBattle);
-  }
-
     const bool support = s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food || s.type == StepType::Potion;
     int target = -1;
     if (s.type == StepType::Food || s.type == StepType::Move || s.type == StepType::Effect) target = -1;  // around the caster / a walk: nobody to turn to
@@ -4029,21 +4066,163 @@ class MapStage final : public Stage {
     ImGui::PopStyleColor();
   }
 
+  // --- Engine2's character status sheet (BattleStatus.h), opened by "Status" for the unit the bar describes ----------------
+
+  void openStatus(int battleUnit) {
+    if (battleUnit >= 0 && battle_) statusSheet_.open(static_cast<size_t>(battleUnit));
+  }
+
+  // The party's inventory over the fight (Engine2: the status sheet's Mochila / Equipar open the backpack / paper doll with the
+  // live battle patched into the save: the heroes' potions, HP, conditions). A Modo teste fight shows a brand-new save's gear.
+  bool ensureInnRules() {
+    if (!options_.world) return false;
+    if (!innRules_) {
+      if (!innData_.load("content/engine2/inn.json")) return false;
+      innRules_.emplace(innData_, *options_.world);
+    }
+    return true;
+  }
+  e2::Json gearSave() const { return campaign_ ? (testMode_ || playtest_ ? campaign_->emptySave() : campaign_->activeSave()) : e2::Json::object(); }
+
+  void openInventory(size_t unit, bool backpack) {
+    if (!campaign_ || !ensureInnRules() || !battle_ || unit >= battle_->units().size()) return;
+    inventorySave_ = gearSave();
+    for (const e2::BattleUnit& u : battle_->units()) {
+      if (u.side != "player") continue;
+      e2::Json& bag = inventorySave_["bags"][u.name];
+      if (!bag.is_object()) bag = e2::Json::object();
+      for (int k = 0; k < 7; ++k) bag[e2::kPotionIds[k]] = u.bag[k];
+      bag["lockpick"] = u.lockpick;
+      inventorySave_["unitHp"][u.name] = u.hp;
+      if (u.fullness) inventorySave_["heroHunger"][u.name] = *u.fullness;
+    }
+    statusSheet_.close();
+    battleInventory_.emplace(battle_->units()[unit].name, backpack);
+  }
+
+  // What the inventory changed, into the fight: the worn pieces' stats, the potions, HP, disease and poison of every hero (the
+  // main-hand weapon's dice and reach come with the next fight); a campaign save keeps it.
+  void syncInventory() {
+    if (!battle_ || !innRules_) return;
+    if (campaign_ && !testMode_ && !playtest_) campaign_->saveActive(inventorySave_);
+    for (e2::BattleUnit& u : battle_->units()) {
+      if (u.side != "player") continue;
+      const e2::InnRules::GearBonus g = innRules_->gearBonus(inventorySave_, u.name, u.classId);
+      u.gearHp = g.hp, u.gearAtk = g.atk, u.gearMag = g.mag, u.gearDef = g.def, u.gearDex = g.dex, u.gearMov = g.mov;
+      const e2::Json& bag = inventorySave_["bags"][u.name];
+      if (bag.is_object()) {
+        for (int k = 0; k < 7; ++k) u.bag[k] = bag.value(e2::kPotionIds[k], u.bag[k]);
+        u.lockpick = bag.value("lockpick", u.lockpick);
+      }
+      const e2::Json& diseases = inventorySave_["heroDiseases"];
+      u.diseased = diseases.is_object() && diseases.contains(u.name) && diseases[u.name] == true;
+      const e2::Json& poisons = inventorySave_["heroPoisons"];
+      const bool poisoned = poisons.is_object() && poisons.contains(u.name) && poisons[u.name].is_string();
+      u.poisoned = poisoned, u.poisonTier = poisoned ? poisons[u.name].get<std::string>() : std::string();
+      const int hp = inventorySave_["unitHp"].is_object() && inventorySave_["unitHp"].contains(u.name) ? inventorySave_["unitHp"][u.name].get<int>() : u.hp;
+      e2::reapplyGear(u);
+      u.hp = std::min(u.maxHp, hp);
+    }
+  }
+
+  void drawBattleInventory() {
+    if (!battleInventory_ || !innRules_ || !options_.world) return;
+    const ImGuiIO& io = ImGui::GetIO();
+    ImGui::SetNextWindowPos({0, 0});
+    ImGui::SetNextWindowSize(io.DisplaySize);
+    ImGui::SetNextWindowFocus();
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 0));
+    ImGui::Begin("##battleinventory", nullptr,
+                 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse);
+    InventoryScreen::Context context{inventorySave_, [this] { syncInventory(); }, *innRules_, innData_, *options_.world, options_.engine2Public};
+    context.allHeroes = testMode_ || playtest_;
+    const bool closed = battleInventory_->draw(io.DisplaySize, context);
+    ImGui::End();
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar();
+    if (closed) battleInventory_.reset();
+  }
+
+  void drawStatusSheet() {
+    if (!statusSheet_.isOpen() || !battle_) return;
+    BattleStatusSheet::Hooks hooks;
+    hooks.portrait = [this](const e2::BattleUnit& u) { return portraitOf(u); };
+    hooks.spellIcon = [this](const std::string& kind) { return spellIconOf(kind); };
+    hooks.xpToLevel = [](int level) { return xpToLevel(level); };
+    hooks.allocation = [](const e2::BattleUnit& u) { return std::array<int, 5>{u.pointHp, u.pointAtk, u.pointMag, u.pointDef, u.pointDex}; };
+    hooks.adjust = [this](size_t unit, int stat, int delta) { return adjustStatPoint(unit, stat, delta); };
+    if (campaign_ && options_.world && ensureInnRules()) {
+      hooks.openPack = [this](size_t unit) { openInventory(unit, true); };
+      hooks.openEquip = [this](size_t unit) { openInventory(unit, false); };
+    }
+    hooks.gearLines = [this](const e2::BattleUnit& u, const char* stat) {
+      if (!campaign_ || !ensureInnRules()) return std::vector<std::string>{};
+      return innRules_->gearLines(gearSave(), u.name, stat);
+    };
+    hooks.potionTip = [this](const std::string& id) -> std::string {
+      if (!ensureInnRules()) return {};
+      const e2::InnPotion* p = innData_.potion(id);
+      return p ? p->tooltip : std::string();
+    };
+    hooks.lockpickTip = [this]() { return ensureInnRules() ? innData_.lockpickTooltip : std::string(); };
+    hooks.order = [this] {
+      std::vector<size_t> order;
+      for (size_t i : battle_->turnOrder())
+        if (battle_->units()[i].alive) order.push_back(i);
+      return order;
+    };
+    statusSheet_.draw(*battle_, options_.engine2Public, hooks);
+  }
+
+  // Engine2 adjustStatPoint (+ GameApp onAdjustStatPoint): one permanent level-up point put on, or taken off, VIT / ATK /
+  // MAG / DEF / DEX of a hero (three per level of the hero's level in the fight); the stats follow at once (a point on
+  // vitality heals as much), and a campaign fight writes the allocation into the save. Modo teste keeps it in the fight.
+  bool adjustStatPoint(size_t b, int stat, int delta) {
+    if (!battle_ || b >= battle_->units().size() || stat < 0 || stat > 4 || !result_.empty()) return false;
+    e2::BattleUnit& u = battle_->units()[b];
+    if (u.side != "player" || !u.alive) return false;
+    int* slot[5] = {&u.pointHp, &u.pointAtk, &u.pointMag, &u.pointDef, &u.pointDex};
+    const int spent = u.pointHp + u.pointAtk + u.pointMag + u.pointDef + u.pointDex, budget = std::max(0, (u.level - 1) * 3);
+    if ((delta > 0 && spent >= budget) || (delta < 0 && *slot[stat] <= 0)) return false;
+    const int previousMax = u.maxHp;
+    *slot[stat] += delta;
+    e2::reapplyGear(u);
+    if (stat == 0 && delta > 0) u.hp = std::min(u.maxHp, u.hp + (u.maxHp - previousMax));
+    static const char* kNames[5] = {"hp", "atk", "mag", "def", "dex"};
+    std::string label = kNames[stat];
+    for (char& c : label) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+    battle_->pushLog(std::format("{}: {} {}.", u.name, label, delta > 0 ? "+1" : "−1"));
+    if (campaign_ && !testMode_) {
+      e2::Json save = campaign_->activeSave();
+      e2::Json& all = save["statPointAllocations"];
+      if (!all.is_object()) all = e2::Json::object();
+      e2::Json& mine = all[u.name];
+      if (!mine.is_object()) mine = e2::Json::object();
+      if (*slot[stat] > 0) mine[kNames[stat]] = *slot[stat];
+      else mine.erase(kNames[stat]);
+      campaign_->saveActive(std::move(save));
+    }
+    return true;
+  }
+
   void drawTurnBar() {
     if (!battle_) return;
+    e2::setCombatLogEnglish(uiEnglish());  // the lines made from now on follow the interface language
     drawTurnPlate();
     drawHealthBars();
     drawTurnOrder();
     drawHudBar();
     drawConfirm();
     drawFullLog();
+    drawStatusSheet();
+    drawBattleInventory();
   }
 
   // GameApp's footer: portrait, name · level · XP, class, HP bar, the sheet line or the forecast; then the actions.
   void drawHudBar() {
     const ImGuiIO& io = ImGui::GetIO();
     const float height = 132.0f;
-    e2::setCombatLogEnglish(uiEnglish());  // the lines made from now on follow the interface language
     ImGui::SetNextWindowPos({0.0f, io.DisplaySize.y - height});
     ImGui::SetNextWindowSize({io.DisplaySize.x, height});
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {10.0f, 8.0f});
@@ -4158,6 +4337,8 @@ class MapStage final : public Stage {
         spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
         spellArmed_.reset(), pendingFoe_ = -1;
         attackMode_ = false;
+        offHandMode_ = false;
+        refreshReach();
       } else {
         undoMove();
       }
@@ -4175,8 +4356,6 @@ class MapStage final : public Stage {
         for (int k = 0; k < 7; ++k) {
           if (actor->bag[k] <= 0) continue;
           ImGui::SameLine();
-        offHandMode_ = false;
-        refreshReach();
           const std::string kind = std::string("potion:") + e2::kPotionIds[k];
           if (spellSocket(std::format("##potion{}", k).c_str(), kind, actor->bag[k], canAct, spellMode_ == kind)) startSpell(kind);
         }
@@ -4184,10 +4363,14 @@ class MapStage final : public Stage {
     const float endW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, "Fim do turno", 0.06f) + 28.0f;
     {  // the combat log: its switch, and (while it shows) the whole log full screen
       const std::string openLabel = tr("Abrir log", "Open log");
-      const char* logLabel = showLog_ ? "Status" : "Log";
+      const char* logLabel = showLog_ ? "Resumo" : "Log";
       const float openW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, openLabel.c_str(), 0.06f) + 28.0f;
       const float logW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, logLabel, 0.06f) + 28.0f;
+      const std::string statusLabel = "Status";
+      const float statusW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, statusLabel.c_str(), 0.06f) + 28.0f;
       const float endX = io.DisplaySize.x - endW - 20.0f, openX = endX - 6.0f - openW, logX = (showLog_ ? openX : endX) - 6.0f - logW;
+      ImGui::SameLine(logX - 6.0f - statusW);
+      if (emberButton("##statusbtn", statusLabel.c_str(), false, ub >= 0)) openStatus(ub);
       ImGui::SameLine(logX);
       if (emberButton("##logbtn", logLabel, false, true)) showLog_ = !showLog_, logPinned_ = true, logJustOpened_ = showLog_;
       if (showLog_) {
@@ -4892,7 +5075,13 @@ class MapStage final : public Stage {
     bool flat = false, drawn = false;
   };
   std::vector<CardRect> unitCard_;
+  bool offHandMode_ = false;         // "Mão Secundária" armed: the off-hand weapon is the one that strikes
   bool pickActiveOnResume_ = false;  // set by resume(): pick the active hero once the turn loop first runs
+  BattleStatusSheet statusSheet_;                                    // the character status sheet
+  e2::InnData innData_;                                              // the Mochila / Equipar over the fight
+  std::optional<e2::InnRules> innRules_;
+  std::optional<InventoryScreen> battleInventory_;
+  e2::Json inventorySave_;
   bool showLog_ = false, logPinned_ = true, logJustOpened_ = false;  // the combat log in the HUD bar
   bool logFull_ = false, logFullJustOpened_ = false;                 // ... and full screen
   bool logKeep_ = false;
@@ -4910,7 +5099,6 @@ class MapStage final : public Stage {
     bool struck = false;
     std::vector<e2::BattleStep> steps;  // or the spell it casts after its walk
   };
-  bool offHandMode_ = false;         // "Mão Secundária" armed: the off-hand weapon is the one that strikes
   std::optional<EnemyTurn> enemyTurn_;
   std::unordered_set<int> awake_;         // enemies that have seen the party (fog)
   int roamLeader_ = -1;                   // free roam: the scene unit the party follows

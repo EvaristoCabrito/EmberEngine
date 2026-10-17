@@ -1,4 +1,6 @@
 #include "render/UiArt.h"
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 
 #include <algorithm>
 #include <cstring>
@@ -245,6 +247,18 @@ void loadUiFonts() {
     std::error_code error;
     if (std::filesystem::exists(files[i], error)) gFonts[i] = io.Fonts->AddFontFromFileTTF(files[i], 18.0f);
     else logError("UI font not found: {}", files[i]);
+    // Figtree has no ⌊ ⌋ (the status sheet's damage formulas, Engine2 StatusPanel): Segoe UI Symbol fills in the glyphs it lacks.
+    if (i == 0 && gFonts[0]) {
+      char windows[MAX_PATH] = {};
+      const UINT length = GetWindowsDirectoryA(windows, MAX_PATH);
+      const std::string symbols = (length > 0 && length < MAX_PATH ? std::string(windows) : std::string("C:\\Windows")) + "\\Fonts\\seguisym.ttf";
+      std::error_code error;
+      if (std::filesystem::exists(symbols, error)) {
+        ImFontConfig merge;
+        merge.MergeMode = true;
+        io.Fonts->AddFontFromFileTTF(symbols.c_str(), 18.0f, &merge);
+      }
+    }
   }
 }
 

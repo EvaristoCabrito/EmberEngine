@@ -36,12 +36,14 @@ nlohmann::json Battle::snapshot() const {
         // EmberEngine's own: the trained weapon's value and every trained skill (Engine2 kept them in heroSkills)
         {"weaponSkill", u.weaponSkill},             {"skills", skills},
         // levelUpUnit's growth also moves these
-        {"gear", {{"hp", u.gearHp}, {"atk", u.gearAtk}, {"mag", u.gearMag}, {"def", u.gearDef}, {"dex", u.gearDex}, {"mov", u.gearMov}}}};
+        {"gear", {{"hp", u.gearHp}, {"atk", u.gearAtk}, {"mag", u.gearMag}, {"def", u.gearDef}, {"dex", u.gearDex}, {"mov", u.gearMov}}},
+        {"points", {{"hp", u.pointHp}, {"atk", u.pointAtk}, {"mag", u.pointMag}, {"def", u.pointDef}, {"dex", u.pointDex}}}};
     // What it carries and its conditions (Engine2 Unit.bag / diseased / diseaseBase / poisoned / poisonTier / fullness /
     // hungerPenaltyPct); the off-hand weapon's trained value (ours, as weaponSkill).
     nlohmann::json bag = nlohmann::json::object();
     for (int k = 0; k < 7; ++k) bag[kPotionIds[k]] = u.bag[k];
     s["bag"] = bag;
+    s["lockpick"] = u.lockpick;
     s["diseased"] = u.diseased;
     s["diseaseBase"] = u.diseaseBase ? nlohmann::json{{"atk", u.diseaseBase->atk}, {"mag", u.diseaseBase->mag}, {"def", u.diseaseBase->def},
                                                        {"dex", u.diseaseBase->dex}, {"mov", u.diseaseBase->mov}}
@@ -152,11 +154,16 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       for (const auto& [id, value] : s["skills"].items())
         if (value.is_number()) u.skills.emplace_back(id, value.get<double>());
     }
+    if (s.contains("points") && s["points"].is_object()) {
+      const nlohmann::json& p = s["points"];
+      u.pointHp = p.value("hp", 0), u.pointAtk = p.value("atk", 0), u.pointMag = p.value("mag", 0), u.pointDef = p.value("def", 0), u.pointDex = p.value("dex", 0);
+    }
     if (s.contains("gear") && s["gear"].is_object()) {
       const nlohmann::json& g = s["gear"];
       u.gearHp = g.value("hp", u.gearHp), u.gearAtk = g.value("atk", u.gearAtk), u.gearMag = g.value("mag", u.gearMag);
       u.gearDef = g.value("def", u.gearDef), u.gearDex = g.value("dex", u.gearDex), u.gearMov = g.value("mov", u.gearMov);
     }
+    u.lockpick = s.value("lockpick", u.lockpick);
     if (s.contains("bag") && s["bag"].is_object())
       for (int k = 0; k < 7; ++k) u.bag[k] = s["bag"].value(kPotionIds[k], u.bag[k]);
     u.diseased = s.value("diseased", u.diseased);

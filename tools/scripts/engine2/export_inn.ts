@@ -26,7 +26,7 @@ const innPrice = (name: string) => Number(new RegExp('export const ' + name + ' 
 const inn = { NIGHT_REST_PRICE: innPrice('NIGHT_REST_PRICE'), HEALER_CAST_PRICE: innPrice('HEALER_CAST_PRICE'), HEALER_AILMENT_PRICE: innPrice('HEALER_AILMENT_PRICE') };
 
 type Weapon = { id: string; name: string; price: number; usableBy: string[]; recommendedLevel?: number; bonusClass?: string; magic?: unknown; twoHanded?: boolean };
-type Gear = { id: string; name: string; price?: number; slot: string; usableBy?: string[]; hp?: number; kind?: string; dmgMul?: number; dice?: number; faces?: number };
+type Gear = { id: string; name: string; price?: number; slot: string; usableBy?: string[]; hp?: number; atk?: number; mag?: number; def?: number; dex?: number; mov?: number; kind?: string; dmgMul?: number; dice?: number; faces?: number };
 const maxEnh = data.WEAPON_MAX_ENH as number;
 const heroClasses = [...new Set(['swordsman', 'archer', 'mage', 'healer', 'aldric', 'conjurer', ...Object.values(data.PROMOTIONS as Record<string, string[]>).flat()])]
   .filter((c) => (data.CLASSES as Record<string, unknown>)[c]);
@@ -35,12 +35,13 @@ const weapons = Object.values(data.WEAPONS as Record<string, Weapon>).map((w) =>
   bonusClass: w.bonusClass && data.isPlayableClassForDisplay(w.bonusClass) ? w.bonusClass : null,
   bonusClassName: w.bonusClass && data.isPlayableClassForDisplay(w.bonusClass) ? (data.CLASSES as Record<string, { name: string }>)[w.bonusClass]?.name ?? null : null,
   magic: w.magic ? data.weaponMagicSummary(w) : null,
+  magBonus: (w.magic as { magBonus?: number } | undefined)?.magBonus ?? 0, dexBonus: (w.magic as { dexBonus?: number } | undefined)?.dexBonus ?? 0,
   twoHanded: !!w.twoHanded, power: data.weaponPower(w), dice: data.weaponDiceLabel(w.id), range: data.weaponRangeLabel(w.id), icon: data.weaponIcon(w.id),
   tooltip: Array.from({ length: maxEnh + 1 }, (_, e) => data.weaponTooltip(w, e)),
   sell: Array.from({ length: maxEnh + 1 }, (_, e) => data.weaponSellValue(w.id, e)),
 }));
 const equipment = Object.values(data.EQUIPMENT as Record<string, Gear>).map((e) => ({
-  id: e.id, name: e.name, price: e.price ?? 0, slot: e.slot, usableBy: e.usableBy ?? null, hp: e.hp ?? 0, pouch: data.isPouch(e.id),
+  id: e.id, name: e.name, price: e.price ?? 0, slot: e.slot, usableBy: e.usableBy ?? null, hp: e.hp ?? 0, atk: e.atk ?? 0, mag: e.mag ?? 0, def: e.def ?? 0, dex: e.dex ?? 0, mov: e.mov ?? 0, pouch: data.isPouch(e.id),
   typeSlot: data.equipmentTypeSlotName(e), tooltip: data.equipmentTooltip(e), icon: data.equipmentIcon(e.id),
   kind: e.kind ?? null, dmgMul: e.dmgMul ?? null, dice: e.dice ?? null, faces: e.faces ?? null, summary: data.equipmentStatSummary(e),
 }));

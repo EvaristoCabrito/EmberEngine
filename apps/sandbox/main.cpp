@@ -659,7 +659,11 @@ int runCapture(const Options& o) {
       mission.map = m->map.string(), mission.scene = m->scene.string(), mission.battleRules = m->battle.string();
       MapStageOptions options = mapOptions(mission);
       options.spellsMenu = options.choicesPanel = test;  // Modo teste's tools, as in the game
-      stage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
+      if (world.load("content/engine2/overworld.json")) options.world = &world;  // the status sheet's Mochila / Equipar
+      auto missionStage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
+      missionStage->setCampaign(&campaign, test ? std::string() : id, id, test);  // the campaign's own save backs the inventory
+      if (o.mapUi == "menu" || o.mapUi == "options" || o.mapUi == "log" || o.mapUi == "fulllog" || o.mapUi.starts_with("status") || o.mapUi.starts_with("inventory:") || o.mapUi.starts_with("synced:")) missionStage->previewMenu(o.mapUi);
+      stage = std::move(missionStage);
     } else if (o.title && o.titleScreen.starts_with("test") && hasCampaign && world.load("content/engine2/overworld.json")) {
       // --title-screen test / test-choice / test-classic / test-scenarios / test-rpg / test-dev / test-editor: Modo teste's screens (--map-ui
       // location:<id> opens a place's panel on the classic map; on the RPG map the usual --map-ui panels).
@@ -707,7 +711,7 @@ int runCapture(const Options& o) {
     } else {
       stage = makeStage(o, context, renderer, services.assets, services.jobs);
       // --map-ui menu / options: the battle's Esc menu or Opções open.
-      if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && (o.mapUi == "menu" || o.mapUi == "options" || o.mapUi == "log" || o.mapUi == "fulllog"))
+      if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && (o.mapUi == "menu" || o.mapUi == "options" || o.mapUi == "log" || o.mapUi == "fulllog" || o.mapUi.starts_with("status") || o.mapUi.starts_with("inventory:") || o.mapUi.starts_with("synced:")))
         map->previewMenu(o.mapUi);
       // --resume <snapshot.json>: the battle as that saved fight left it.
       if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && !o.resume.empty()) {
@@ -1085,6 +1089,7 @@ int runWindow(const Options& o) {
         renderer.setDebugView(o.debugView);
         MapStageOptions options = mapOptions(mission);
         devGfx.apply(options, renderer);
+        options.world = &world;  // the Mochila / Equipar of the status sheet
         playing = pending->campaignId;
         // Magias and Escolhas are Modo teste's tools: a campaign battle shows only the game (user 2026-10-16).
         options.spellsMenu = options.choicesPanel = testSession.has_value() || playing.empty();

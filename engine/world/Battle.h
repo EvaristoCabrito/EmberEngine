@@ -121,6 +121,8 @@ struct BattleUnit {
   // gear adds over the class's stats.
   std::vector<std::array<int, 16>> growth;  // hp atk mag def dex, tier1..tier10 uses, mov
   int gearHp = 0, gearAtk = 0, gearMag = 0, gearDef = 0, gearDex = 0, gearMov = 0;
+  // The level-up points spent on each attribute (Engine2 statPointAllocation: three per level, +1 to the stat each).
+  int pointHp = 0, pointAtk = 0, pointMag = 0, pointDef = 0, pointDex = 0;
   struct Echo {
     int dice = 0, faces = 0, bonus = 0;
     double mag = 0;
@@ -144,6 +146,7 @@ struct BattleUnit {
 
   // --- Items and conditions a hero brings into the fight (Engine2 Unit.bag / diseased / poisoned / fullness) ---
   int bag[7] = {};  // potions carried, in kPotionIds order
+  int lockpick = 0;  // Engine2 bag.lockpick (the sheet lists them: "Gazua")
   bool diseased = false;
   struct Stats {
     int atk = 0, mag = 0, def = 0, dex = 0, mov = 0;

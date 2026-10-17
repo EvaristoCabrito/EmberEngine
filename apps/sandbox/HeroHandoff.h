@@ -34,12 +34,18 @@ inline std::map<std::string, MapStageOptions::HeroState> heroStatesFromSave(cons
       std::array<int, 7> bag{};
       for (int k = 0; k < 7; ++k) bag[static_cast<size_t>(k)] = bags[name].value(e2::kPotionIds[k], 0);
       s.bag = bag;
+      s.lockpick = bags[name].value("lockpick", 0);
     } else if (bags.is_object() && save.contains("bags")) {
       s.starterBag = true;
     }
     s.diseased = sick.contains(name) && sick[name] == true;
     if (poisons.contains(name) && poisons[name].is_string()) s.poison = poisons[name].get<std::string>();
     else if (poisons.contains(name) && !poisons[name].is_null() && poisons[name] != false) s.poison = "lesser";
+    if (const e2::Json& pts = save.value("statPointAllocations", e2::Json::object()); pts.is_object() && pts.contains(name) && pts[name].is_object()) {
+      static const char* kStats[5] = {"hp", "atk", "mag", "def", "dex"};  // StatPointAttribute
+      for (int k = 0; k < 5; ++k)
+        if (pts[name].contains(kStats[k]) && pts[name][kStats[k]].is_number()) s.points[static_cast<size_t>(k)] = std::max(0, pts[name][kStats[k]].get<int>());
+    }
     s.fullness = e2::Overworld::fullness(hunger.contains(name) ? hunger[name] : e2::Json());  // spawnUnit: always a number
     if (*s.fullness <= 0) s.hungerPenalty = std::min(0.9, std::max(0.0, penalty));
   }

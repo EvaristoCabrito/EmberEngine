@@ -595,6 +595,20 @@ efeitos e wire into the game")
 - **Open, asked of the user:** the "flame effect" on braziers / lights ("precisa arrumar esse efeito em todos os pontos de luz"): which effect;
   the world map's blocked paths (re-exported 2026-10-17: `content/engine2/overworld.json` is identical to Engine2's current output, so a path blocked here is blocked in Engine2 too, unless it is a UI / click problem: ask for the hex).
 
+## Status sheet in battle (2026-10-17; user: "importa direito a ficha": images, details, point system, Mochila / Equipar, the same scroller)
+
+- `apps/sandbox/BattleStatus.h` = Engine2's StatusPanel (portrait + hunger, name / class / level / XP, condition badge + detail, HP, "Pontos de atributo"
+  (3 per level, +1 to VIT / ATK / MAG / DEF / DEX per point, `BattleUnit::point*`, saved in `statPointAllocations`, in the fight's snapshot), 8 attribute
+  cells with gear tooltips, spells / skills from `content/engine2/status-rows.json` (`export_status_rows.ts`: Engine2's own row text per class × level),
+  potions + lockpicks), with Engine2's ember scrollbar drawn by hand (14 px track, bronze pill thumb). The ⌊ ⌋ of the formulas come from Segoe UI
+  Symbol merged into the Figtree font (UiArt.cpp loadUiFonts).
+- **Mochila / Equipar** inside the sheet open `InventoryScreen` over the fight (MapStage `openInventory` / `syncInventory`; `MapStageOptions::world`;
+  Modo teste uses a brand-new save's gear and lists every hero). The inventory's changes are written back live: worn pieces' stats
+  (`InnRules::gearBonus`), potions, lockpicks, HP, disease, poison. **Not live:** a changed main / off-hand weapon (dice and reach come with the next fight).
+- Captures: `--title --title-screen mission-test:aldeia --save-bank <copy of the bank> ... --map-ui status:<name> | inventory:<name>[:doll] | synced:<name>`.
+- Verified: release + debug with validation (exit 0, 0 validation lines) on those captures; `--battle-save-check` PASS on the 7 battles; `Cooker check-battle`
+  matches Engine2. Not verified: clicking in the window (Mochila / Equipar / +/- / scrollbar drag), points persisting through a real campaign save.
+
 ## Next
 
 The user's verdict (2026-10-15): the engine as seen is worse than Engine2 ("worst colours and render I've ever

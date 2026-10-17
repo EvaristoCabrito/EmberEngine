@@ -28,12 +28,13 @@ struct InnWeapon {
   std::optional<int> recommendedLevel;
   double power = 0;
   bool twoHanded = false;
+  int magBonus = 0, dexBonus = 0;              // a staff's MAG / DEX while its class wields it (weapon.magic)
   std::vector<std::string> usableBy, tooltip;  // tooltip per enhancement 0..max
   std::vector<int> sell;                       // sell value per enhancement 0..max
 };
 struct InnGear {
   std::string id, name, slot, typeSlot, tooltip, icon, kind, summary;  // kind: "", "weapon" or "shield" (off-hand)
-  int price = 0, hp = 0, dice = 0, faces = 0;
+  int price = 0, hp = 0, atk = 0, mag = 0, def = 0, dex = 0, mov = 0, dice = 0, faces = 0;  // the worn stats (EQUIPMENT)
   double dmgMul = 0.75;
   bool pouch = false;
   std::optional<std::vector<std::string>> usableBy;
@@ -95,6 +96,13 @@ class InnRules {
   std::optional<Json> usePotion(const Json& save, const std::string& hero, const std::string& kind, const std::function<double()>& rng) const;
   // GameApp consumeRation: hunger.ts useRation, the party's hunger streak cleared once everyone has eaten.
   std::optional<Json> useRation(const Json& save, const std::string& hero) const;
+  // data.ts gearStatBonus: what a hero's worn pieces (and a staff's magic, for its class) add to each stat, and the lines
+  // the status sheet names ("Capuz +2": the piece and its amount) for one stat.
+  struct GearBonus {
+    int hp = 0, atk = 0, mag = 0, def = 0, dex = 0, mov = 0;
+  };
+  GearBonus gearBonus(const Json& save, const std::string& hero, const std::string& classId) const;
+  std::vector<std::string> gearLines(const Json& save, const std::string& hero, const std::string& stat) const;  // stat: hp atk mag def dex mov
   int bagUsed(const Json& save) const;      // partyBagUsed
   int bagCapacity(const Json& save) const;  // partyBagCapacity
 

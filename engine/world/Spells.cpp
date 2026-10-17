@@ -692,8 +692,8 @@ void levelUp(BattleUnit& u) {
   const std::array<int, 16>& before = u.growth[static_cast<size_t>(from - 1)];
   const std::array<int, 16>& after = u.growth[static_cast<size_t>(to - 1)];
   u.level = to;
-  u.maxHp = after[0] + u.gearHp;
-  u.atk = after[1] + u.gearAtk, u.mag = after[2] + u.gearMag, u.def = after[3] + u.gearDef, u.dex = after[4] + u.gearDex;
+  u.maxHp = after[0] + u.pointHp + u.gearHp;
+  u.atk = after[1] + u.pointAtk + u.gearAtk, u.mag = after[2] + u.pointMag + u.gearMag, u.def = after[3] + u.pointDef + u.gearDef, u.dex = after[4] + u.pointDex + u.gearDex;
   u.hp = std::min(u.maxHp, u.hp + (after[0] - before[0]));
   u.mov = after[15] + u.gearMov;
   for (int t = 0; t < 10; ++t) {
@@ -1343,9 +1343,9 @@ void reapplyGear(BattleUnit& u) {
   const std::array<int, 16>& g = u.growth[static_cast<size_t>(u.level - 1)];
   const double keep = 1 - u.hungerPenaltyPct, sick = u.diseased ? 1 - kDiseasePenalty : 1;
   auto r = [](double v) { return static_cast<int>(jsRound(v)); };
-  u.maxHp = r((g[0] + u.gearHp) * keep);
-  const BattleUnit::Stats base{r((g[1] + u.gearAtk) * keep), r((g[2] + u.gearMag) * keep), r((g[3] + u.gearDef) * keep), r((g[4] + u.gearDex) * keep),
-                               g[15] + u.gearMov};
+  u.maxHp = r((g[0] + u.pointHp + u.gearHp) * keep);
+  const BattleUnit::Stats base{r((g[1] + u.pointAtk + u.gearAtk) * keep), r((g[2] + u.pointMag + u.gearMag) * keep), r((g[3] + u.pointDef + u.gearDef) * keep),
+                               r((g[4] + u.pointDex + u.gearDex) * keep), g[15] + u.gearMov};
   u.atk = r(base.atk * sick), u.mag = r(base.mag * sick), u.def = r(base.def * sick), u.dex = r(base.dex * sick);
   u.mov = u.diseased ? std::max(1, r(base.mov * sick)) : base.mov;
   u.diseaseBase = u.diseased ? std::optional(base) : std::nullopt;
@@ -1358,12 +1358,12 @@ void spawnConditions(BattleUnit& u) {
   const double keep = 1 - u.hungerPenaltyPct, sick = u.diseased ? 1 - kDiseasePenalty : 1;
   auto r = [](double v) { return static_cast<int>(jsRound(v)); };
   // spawnUnit: one rounding of class + points + gear, x hunger x disease (reapplyGear rounds twice)
-  u.maxHp = r((g[0] + u.gearHp) * keep);
-  u.atk = r((g[1] + u.gearAtk) * keep * sick), u.mag = r((g[2] + u.gearMag) * keep * sick);
-  u.def = r((g[3] + u.gearDef) * keep * sick), u.dex = r((g[4] + u.gearDex) * keep * sick);
+  u.maxHp = r((g[0] + u.pointHp + u.gearHp) * keep);
+  u.atk = r((g[1] + u.pointAtk + u.gearAtk) * keep * sick), u.mag = r((g[2] + u.pointMag + u.gearMag) * keep * sick);
+  u.def = r((g[3] + u.pointDef + u.gearDef) * keep * sick), u.dex = r((g[4] + u.pointDex + u.gearDex) * keep * sick);
   u.mov = u.diseased ? std::max(1, r((g[15] + u.gearMov) * sick)) : g[15] + u.gearMov;
-  u.diseaseBase = u.diseased ? std::optional(BattleUnit::Stats{r((g[1] + u.gearAtk) * keep), r((g[2] + u.gearMag) * keep), r((g[3] + u.gearDef) * keep),
-                                                               r((g[4] + u.gearDex) * keep), g[15] + u.gearMov})
+  u.diseaseBase = u.diseased ? std::optional(BattleUnit::Stats{r((g[1] + u.pointAtk + u.gearAtk) * keep), r((g[2] + u.pointMag + u.gearMag) * keep),
+                                                               r((g[3] + u.pointDef + u.gearDef) * keep), r((g[4] + u.pointDex + u.gearDex) * keep), g[15] + u.gearMov})
                              : std::nullopt;
   u.hp = std::min(u.hp, u.maxHp);
 }

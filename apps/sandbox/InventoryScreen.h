@@ -36,6 +36,7 @@ class InventoryScreen {
     const e2::InnData& data;
     const e2::Overworld& world;
     std::filesystem::path engine2Public;
+    bool allHeroes = false;  // Modo teste: every hero, recruited or not
   };
 
   InventoryScreen(std::string hero, bool backpack) : hero_(std::move(hero)), backpack_(backpack) {}
@@ -87,7 +88,7 @@ class InventoryScreen {
   std::vector<std::string> roster(const Context& c) const {
     std::vector<std::string> out;
     for (const char* h : {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec"})
-      if (c.world.heroRecruited(h, c.save)) out.push_back(h);
+      if (c.allHeroes || c.world.heroRecruited(h, c.save)) out.push_back(h);
     return out;
   }
   const UiImage* art(const Context& c, std::string path) const {

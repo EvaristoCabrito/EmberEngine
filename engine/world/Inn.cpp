@@ -69,6 +69,7 @@ bool InnData::load(const std::filesystem::path& file) {
     if (w["bonusClass"].is_string()) x.bonusClass = w["bonusClass"], x.bonusClassName = w["bonusClassName"].is_string() ? w["bonusClassName"].get<std::string>() : "";
     if (w["magic"].is_string()) x.magic = w["magic"];
     x.twoHanded = w.value("twoHanded", false);
+    x.magBonus = w.value("magBonus", 0), x.dexBonus = w.value("dexBonus", 0);
     x.power = w["power"].get<double>(), x.dice = w["dice"], x.range = w["range"], x.icon = w["icon"];
     for (const Json& u : w["usableBy"]) x.usableBy.push_back(u);
     for (const Json& t : w["tooltip"]) x.tooltip.push_back(t);
@@ -79,6 +80,7 @@ bool InnData::load(const std::filesystem::path& file) {
     InnGear x;
     x.id = e["id"], x.name = e["name"], x.slot = e["slot"], x.typeSlot = e["typeSlot"], x.tooltip = e["tooltip"], x.icon = e["icon"];
     x.price = e["price"].get<int>(), x.hp = e.value("hp", 0), x.pouch = e.value("pouch", false);
+    x.atk = e.value("atk", 0), x.mag = e.value("mag", 0), x.def = e.value("def", 0), x.dex = e.value("dex", 0), x.mov = e.value("mov", 0);
     x.kind = e["kind"].is_string() ? e["kind"].get<std::string>() : "";
     x.summary = e.value("summary", "");
     if (e["dmgMul"].is_number()) x.dmgMul = e["dmgMul"].get<double>();
@@ -526,6 +528,38 @@ std::optional<Json> InnRules::useRation(const Json& save, const std::string& her
   }
   next["pendingMission"] = nullptr;
   return next;
+}
+
+InnRules::GearBonus InnRules::gearBonus(const Json& save, const std::string& hero, const std::string& classId) const {
+  GearBonus total;
+  // a staff's own magic counts while its class wields it (gearStatBonus: weapon.magic, usableBy the class)
+  const Json& weaponId = child(child(save, "equipped"), hero);
+  if (weaponId.is_string())
+    if (const InnWeapon* w = data_.weapon(weaponId.get<std::string>()))
+      if (classId.empty() || std::find(w->usableBy.begin(), w->usableBy.end(), classId) != w->usableBy.end()) total.mag += w->magBonus, total.dex += w->dexBonus;
+  const Json& worn = child(child(save, "equipment"), hero);
+  if (worn.is_object())
+    for (const auto& [slot, id] : worn.items()) {
+      if (!id.is_string()) continue;
+      const InnGear* item = data_.gear(id.get<std::string>());
+      if (!item) continue;
+      total.hp += item->hp, total.atk += item->atk, total.mag += item->mag, total.def += item->def, total.dex += item->dex, total.mov += item->mov;
+    }
+  return total;
+}
+
+std::vector<std::string> InnRules::gearLines(const Json& save, const std::string& hero, const std::string& stat) const {
+  std::vector<std::string> lines;
+  const Json& worn = child(child(save, "equipment"), hero);
+  if (!worn.is_object()) return lines;
+  for (const auto& [slot, id] : worn.items()) {
+    if (!id.is_string()) continue;
+    const InnGear* item = data_.gear(id.get<std::string>());
+    if (!item) continue;
+    const int amount = stat == "hp" ? item->hp : stat == "atk" ? item->atk : stat == "mag" ? item->mag : stat == "def" ? item->def : stat == "dex" ? item->dex : item->mov;
+    if (amount) lines.push_back(std::format("{} {}{}", item->name, amount > 0 ? "+" : "", amount));
+  }
+  return lines;
 }
 
 int InnRules::bagUsed(const Json& save) const {
