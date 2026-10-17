@@ -1150,6 +1150,7 @@ int battleSaveCheck(const char* file, const char* out) {
   e2::Mulberry32 rng(7);
   a->rollInitiative(rng);
   std::vector<e2::BattleUnit>& u = a->units();
+  u.reserve(u.size() + 4);  // a familiar is added below: `h` must not move
   int hero = -1, foe = -1, foe2 = -1;
   for (size_t i = 0; i < u.size(); ++i) {
     if (u[i].side == "player" && hero < 0) hero = static_cast<int>(i);
@@ -1167,6 +1168,20 @@ int battleSaveCheck(const char* file, const char* out) {
   h.diseased = true, h.diseaseBase = e2::BattleUnit::Stats{h.atk + 1, h.mag + 1, h.def + 1, h.dex + 1, h.mov + 1};
   h.poisoned = true, h.poisonTier = "lesser", h.fullness = 40.0, h.hungerPenaltyPct = 0.2, h.offWeaponSkill = 3.5;
   a->addLootRations(3);
+  // Engine2's statuses, zones, a warp gate and a summoned familiar must come back too
+  h.stunned = true, h.stunTurns = 2, h.bleeding = true, h.bleedRoundsLeft = 3, h.bleedRoundMarker = 1, h.crippled = true;
+  h.blessedHitBonusPct = 0.07, h.blessedRoundsLeft = 4, h.fearTurns = 1, h.fearSourceId = u[static_cast<size_t>(foe)].id;
+  u[static_cast<size_t>(foe2)].asleep = true, u[static_cast<size_t>(foe2)].sleepTurns = 3;
+  a->webZones().push_back({{{h.x, h.y}, {h.x + 1, h.y}}, 2, {h.x, h.y}, 1, 0.55});
+  a->iceZones().push_back({{{h.x, h.y}}, 3, {h.x, h.y}, 1, 2, 6, 0.75, 31, 12, h.id, "player"});
+  a->auraZones().push_back({{{h.x, h.y}, {h.x, h.y + 1}}, 3, "protection", "player", 0.2});
+  a->warpGates().push_back({{h.x + 2, h.y}, {h.x + 3, h.y}, 3, 9});
+  a->setTurnRestrained(true);
+  if (std::optional<e2::BattleUnit> fam = e2::summonSkeleton("player-familiar-" + std::to_string(u.size()), "familiar2")) {
+    fam->name = "Familiar Maior de " + h.name, fam->summonerId = h.id, fam->x = h.x, fam->y = h.y + 2, fam->hp = 11, fam->maxHp = 23, fam->level = h.level;
+    fam->atk = 7, fam->spellCharges = 2, fam->lifeDrainCharges = 1;
+    u.push_back(std::move(*fam));
+  }
   u[static_cast<size_t>(foe)].alive = false, u[static_cast<size_t>(foe)].hp = 0;
   a->noteWeaponDamage(static_cast<size_t>(hero), static_cast<size_t>(foe2), 5);
   a->startNewRound();
