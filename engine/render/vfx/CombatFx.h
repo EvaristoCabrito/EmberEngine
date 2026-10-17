@@ -11,10 +11,9 @@
 //               out and debris chunks thrown on arcs (lit by the scene like the board), bouncing once;
 //     Magical   a school's energy (Arcano = violet): a core that flares and collapses, a pressure shell spreading, energy
 //               streaks bursting out in 3D, slow motes, a ground ring, a strong light of the school's colour.
-//   Bolt (the mage's plain attack, Arcano; Black Mage and the arcane casters): three phases on one clock -
-//     conjure  from the pose's start to its release: energy gathers at the hand, motes converging on a growing core,
-//              its light on the hand, the face and the ground;
-//     launch   at the release: a flare, then the bolt accelerates to the target's body on a low arc, a trail behind it,
+//   Bolt (the mage's plain attack, Arcano; Black Mage and the arcane casters), on one clock (no charging at the hand:
+//   the casters' sprites already gather the spell, user 2026-10-17) -
+//     launch   at the pose's release: a flare, then the bolt accelerates to the target's body on a low arc, a trail behind it,
 //              embers shed along the path, its light travelling with it;
 //     impact   when it arrives (= the rules' impact: damage, numbers, the hit pose and the recoil land then): the Magical
 //              impact above.

@@ -596,38 +596,9 @@ void CombatFx::buildBolt(const Bolt& b, float now, const Camera& camera, VfxFram
   const float k = std::clamp(b.casterHeight / 2.0f, 0.7f, 1.4f);
   const glm::vec3 hand = pulled(b.hand, eye, kPull);
 
-  // --- Phase 1, the conjuring: energy gathers at the hand, motes on tilted orbits closing in on a growing core. ---
-  if (now < b.release + 0.04f) {
-    const float c = ease(b.start, b.release, now);
-    const float pulse = 1.0f + 0.12f * std::sin(now * 31.0f);
-    const float r = (0.03f + 0.08f * c) * k * pulse;
-    const glm::mat4 m = glm::translate(glm::mat4(1.0f), hand) * glm::scale(glm::mat4(1.0f), glm::vec3(r));
-    draw(sphereFirst_, sphereCount_, m, kModeEnergy, now, 1.4f, 0.45f + 0.55f * c, pal.energy, 0.2f, glm::vec4(pal.core, 1.0f), b.hand, VfxBlend::Additive);
-    const glm::mat4 halo = glm::translate(glm::mat4(1.0f), hand) * glm::scale(glm::mat4(1.0f), glm::vec3(r * 2.3f));
-    draw(sphereFirst_, sphereCount_, halo, kModeEnergy, now, 0.6f, 0.3f * c, pal.energy, 0.1f, glm::vec4(pal.core, 0.0f), b.hand, VfxBlend::Additive);
-    for (int i = 0; i < 10; ++i) {
-      const uint32_t n = static_cast<uint32_t>(i);
-      const glm::vec3 normal = sphereDir(hash01(b.seed, n, 1), hash01(b.seed, n, 2));
-      const glm::vec3 e1 = glm::normalize(glm::cross(normal, std::abs(normal.y) < 0.9f ? kUp : glm::vec3(1, 0, 0))), e2 = glm::cross(normal, e1);
-      const float ci = ease(b.start + 0.05f * hash01(b.seed, n, 3), b.release, now);
-      const float radius = (0.5f - 0.42f * ci) * k;
-      const float w = 7.0f + 3.0f * hash01(b.seed, n, 4);
-      const float theta = hash01(b.seed, n, 5) * kTau + (now - b.start) * w;
-      const glm::vec3 p = hand + (e1 * std::cos(theta) + e2 * std::sin(theta)) * radius;
-      const glm::vec3 tangent = (-e1 * std::sin(theta) + e2 * std::cos(theta)) * radius * w;
-      const float alpha = ease(b.start, b.start + 0.12f, now) * (1.0f - ease(b.release - 0.03f, b.release + 0.04f, now));
-      streaks_.push_back(streak(p, tangent * 0.06f, 0.035f * k, alpha, glm::mix(pal.energy, pal.core, ci), 3.0f));
-    }
-    // The ground under the caster takes the light: a faint ring tightening around its feet.
-    const glm::vec3 feet{b.hand.x - b.dir.x * 0.35f, b.hand.y - b.casterHeight * 0.55f, b.hand.z - b.dir.z * 0.35f};
-    const float rr = (0.9f - 0.25f * c) * k;
-    const glm::mat4 g = glm::translate(glm::mat4(1.0f), pulled(feet + glm::vec3(0.0f, 0.04f, 0.0f), eye, kGroundPull)) * glm::scale(glm::mat4(1.0f), {rr, 1.0f, rr});
-    draw(discFirst_, discCount_, g, kModeRing, now, 0.35f, 0.55f * c * (1.0f - ease(b.release, b.release + 0.04f, now)), pal.energy, 0.0f,
-         glm::vec4(pal.core, 0.8f), feet, VfxBlend::Additive);
-    lights.push_back({b.hand, pal.light, (2.0f + 10.0f * c) * (1.0f - ease(b.release, b.release + 0.04f, now)), 3.0f * k});
-  }
+  // No charging at the hand: the casters' own sprites already gather the spell (user, 2026-10-17: "fica em dose dupla").
 
-  // --- Phase 2, the launch: a flare at the hand as it lets go. ---
+  // --- The launch: a flare at the hand as it lets go. ---
   if (now >= b.release && now < b.release + 0.14f) {
     const float f = 1.0f - ease(b.release, b.release + 0.14f, now);
     streaks_.push_back(streak(hand, glm::vec3(0.0f), 0.55f * k * (0.5f + 0.5f * f), f, pal.core, 2.6f));

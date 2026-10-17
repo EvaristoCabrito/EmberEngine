@@ -2512,6 +2512,27 @@ class MapStage final : public Stage {
       if (u.classId == c) return WeaponStyle::Thrust;
     return WeaponStyle::Blunt;
   }
+  // When the arrow leaves the bow in a unit's attack pose (seconds of the pose's own clock, before its pace), from the
+  // first art frame without the arrow on the string (looked up frame by frame in Engine2's art, 2026-10-17): Neera's
+  // atk / atk-left 27 of 36, the crossbowman's atk 21 (the bolt's streak is drawn in 21-22), the bandit crossbowman's 18,
+  // the recruit archer's 3 of 4 (Engine2's short-cut hit frame). Unknown art: none (the pose's impact share stays).
+  std::optional<float> arrowRelease(size_t ui, const std::string& pose) const {
+    const e2::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
+    if (!entry) return std::nullopt;
+    const e2::HeroPose* left = unitFacing_[ui] == -1 ? entry->find(pose + "Left") : nullptr;
+    const e2::HeroPose* p = left && !left->pace.empty() ? left : entry->find(pose);
+    if (!p || p->pace.empty()) return std::nullopt;
+    static const std::pair<const char*, int> kRelease[] = {{"neera/neera-v2-001:atk", 27}, {"neera/neera-v2-001:atk-left", 27},
+                                                           {"BaseCrossbowman:atk", 21},    {"BrigandCrossbowman:atk", 18},
+                                                           {"archerRecruit:atk", 3}};
+    const std::string id = p->set + ":" + p->clip;
+    for (const auto& [name, frame] : kRelease) {
+      if (id != name) continue;
+      for (size_t tick = 0; tick < p->pace.size(); ++tick)
+        if (p->pace[tick] >= frame - 1) return static_cast<float>(tick) / 240.0f;
+    }
+    return std::nullopt;
+  }
   // A strike is a bow shot (Combat.cpp resolveStrike arrowShot: an archer's plain attack or counter, never off-hand).
   bool strikeIsArrow(const e2::BattleStep& s, bool counter) const {
     if (s.type != e2::BattleStep::Type::Combat || (!counter && !s.kind.empty())) return false;
@@ -2610,6 +2631,18 @@ class MapStage final : public Stage {
     // A bow's plain attack or counter shoots the arrow Tiro Longo already flies (SpellEffects::arrow), landing on the hit.
     x.arrow = !x.bolt && striker >= 0 && target >= 0 && strikeIsArrow(s, x.counter);
     if (x.arrow) {
+      // It leaves the bow on the frame the art lets it go (arrowRelease), and lands one flight later (the flight
+      // SpellEffects::arrow keeps: 1/22 s per unit, 0.12..0.4 s); the archer's release sound with it.
+      const SpellEffects::Spot from = unitSpot(static_cast<size_t>(striker)), to = unitSpot(static_cast<size_t>(target));
+      if (const std::optional<float> release = arrowRelease(static_cast<size_t>(striker), pose)) {
+        const float flight = std::clamp(glm::length(to.body - from.body) / 22.0f, 0.12f, 0.4f);
+        x.impact = now_ + *release / actionRate() + flight;
+        x.end = std::max(x.end, x.impact + 0.5f + kExchangeGap / actionRate());
+        e2::Json cues = sounds(x.counter ? s.def : s.att, "release");
+        if (cues.is_array())
+          for (e2::Json& c : cues) c["delay"] = c.value("delay", 0.0f) + *release / actionRate();
+        playCues(cues);
+      }
       spellFx_.cast("longShot", std::max(spellLook("longShot", static_cast<size_t>(striker)), 1), unitSpot(static_cast<size_t>(striker)),
                     {unitSpot(static_cast<size_t>(target))}, now_, x.impact, striker);
     }
