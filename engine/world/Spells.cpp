@@ -4,6 +4,7 @@
 #include <cmath>
 #include <format>
 #include <map>
+#include <set>
 
 namespace ember::e2 {
 
@@ -63,6 +64,15 @@ constexpr SpellData kSpells[] = {
     {"summonFamiliar3", "Familiar 3", 4, "", false},
     {"summonFamiliar4", "Familiar Radiante", 3, "", false},
     {"summonZombieDog", "Cão Zumbi", 5, "", false},
+    {"lightningTier3", "Relâmpago 3", 5, "lightning", false},
+    {"minorVenom", "Veneno Menor", 4, "poison", false},
+    {"familiarLifeDrain", "Dreno de Vida", 0, "darkness", false},
+    {"divineWrath", "Ira Divina", 6, "holy", false},
+    {"shoulderSmash", "Investida de Ombro", 4, "", false},
+    {"stampede", "Debandada", 6, "", false},
+    {"auraOfProtection", "Aura de Proteção", 5, "", false},
+    {"intimidatingPresence", "Presença Intimidante", 5, "", false},
+    {"secondWind", "Fôlego Renovado", 3, "", false},
 };
 // EmberEngine's own spells: the Mago Negro's promotions, two per tier from T6 to T10 (docs/SPELLS_PROMOTIONS.md).
 struct EmberSpell {
@@ -497,6 +507,8 @@ std::vector<BattleHex> frostTiles(const Battle& b, BattleHex origin, BattleHex t
 
 int tierRemaining(const BattleUnit& u, const std::string& kind) {
   if (kind == "frost" && u.side == "enemy") return u.frostCharges;
+  if (kind == "poisonBreath" && u.level < 3) return 0;  // POISON_BREATH.unlockLevel
+  if (kind == "burningHands" && u.level < 5) return 0;
   const int tier = spellTierOf(kind);
   return tier ? u.spells[tier - 1] : 0;
 }
@@ -899,7 +911,7 @@ void afterDeath(Battle& b, size_t dead, std::vector<BattleEffect>& out) {
 // What eats at a unit at the start of its turn (and again, at once, under Colheita de Almas: countDown = false): its
 // poison (Engine2's rule: the tier's dice, its resistance less the tier's penalty, the poisoner's MAG / 2 penetrating),
 // its bleeding, its curse's tick and the curse's next step.
-void tickConditions(Battle& b, size_t id, Mulberry32& rng, std::vector<BattleEffect>& out, bool countDown) {
+void tickConditions(Battle& b, size_t id, Mulberry32& rng, std::vector<BattleEffect>& out, bool countDown, bool withPoison = true) {
   BattleUnit& u = b.units()[id];
   auto hurt = [&](int dmg, const std::string& element, const char* cause) {
     if (!u.alive) return;
@@ -912,10 +924,12 @@ void tickConditions(Battle& b, size_t id, Mulberry32& rng, std::vector<BattleEff
     out.push_back(e);
     if (!u.alive) afterDeath(b, id, out);
   };
-  if (u.alive && u.poisoned)
-    if (const PoisonTier* t = poisonTier(u.poisonTier)) {
+  if (u.alive && u.poisoned && withPoison)
+    if (const PoisonTier* t = poisonTier(u.poisonTier.empty() ? "lesser" : u.poisonTier)) {
+      // poisonTickDamage(roll, effectivePoisonResistance(PR, tier, MAG)): rounded once, after the resistance
       const int roll = rollDice(t->dice, t->faces, 0, rng);
-      hurt(static_cast<int>(std::floor(elementalDamage(roll, u.combat.resistance("poison") - t->penalty, u.cond.poisonMag))), "poison", pick("Veneno consome", "Poison consumes"));
+      const double eff = std::max(-50.0, std::min(100.0, u.combat.resistance("poison") - t->penalty - u.cond.poisonMag / 2));
+      hurt(std::max(0, static_cast<int>(jsRound(roll * (1 - eff / 100)))), "poison", pick("Veneno consome", "Poison consumes"));
     }
   if (u.alive && u.cond.bleedTurns > 0) {
     hurt(rollDice(u.cond.bleedDice, u.cond.bleedFaces, 0, rng), "", pick("Sangramento fere", "Bleeding hurts"));
@@ -1140,6 +1154,8 @@ bool leavesZone(const std::string& kind) {
   return kind == "pillarOfFlame" || kind == "primordialEmber" || kind == "eruption" || kind == "shroudOfShadows" || kind == "meteor";
 }
 
+#include "SpellsE2.inc"
+
 }  // namespace
 
 // --- Public ----------------------------------------------------------------------------------------------------------
@@ -1227,12 +1243,15 @@ std::string spellName(const std::string& kind) {
 bool spellPorted(const std::string& kind) {
   return kind == "magicMissile" || kind == "longShot" || kind == "piercing" || kind == "piercingThrust" || kind == "doubleStrike" || kind == "lightning" ||
          kind == "frost" || kind == "cureMinor" || kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "createFoodAndWater" ||
-         emberSpell(kind) != nullptr;
+         emberSpell(kind) != nullptr || e2Kind(kind);
 }
 
 bool spellWeaponAbility(const std::string& kind) { return weaponAbility(kind); }
 
-bool spellInstant(const std::string& kind) { return kind == "createFoodAndWater" || kind == "eruption"; }
+bool spellInstant(const std::string& kind) {
+  return kind == "createFoodAndWater" || kind == "eruption" || kind == "auraOfProtection" || kind == "intimidatingPresence";
+}
+bool spellSelfArea(const std::string& kind) { return kind == "sweep" || kind == "turnUndead"; }
 
 int potionIndex(const std::string& id) {
   for (int i = 0; i < 7; ++i)
@@ -1355,20 +1374,26 @@ void hurtScene(Battle& b) {
 std::string spellPose(const std::string& kind) {
   if (kind == "cureMinor" || kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "bless") return "heal";
   if (kind == "longShot" || kind == "bloodyShot" || kind == "multiShot" || kind == "piercing" || kind == "doubleStrike" || kind == "piercingThrust" ||
-      kind == "cleave" || kind == "sweep" || kind == "trip")
+      kind == "cleave" || kind == "sweep" || kind == "trip" || kind == "bullRush" || kind == "executionerStrike" || kind == "shieldBash" ||
+      kind == "shoulderSmash" || kind == "stampede")
     return "attack";
   return "cast";
 }
 
+int spellTierNumber(const std::string& kind) { return spellTierOf(kind == "magicMissileV2" ? "magicMissile" : kind); }
+
 int spellUsesLeft(const Battle& b, size_t unit, const std::string& kind) {
   const BattleUnit& u = b.units()[unit];
-  if (kind == "shock") return u.shockCharges;
+  if (kind == "shock" && u.classId != "familiar4") return u.shockCharges;
   if (kind == "fantomForce") return u.fantomForceCharges;
+  if (kind == "familiarLifeDrain") return u.lifeDrainCharges.value_or(1);
+  if (familiarOwnSpell(u, kind == "magicMissileV2" ? "magicMissile" : kind)) return u.spellCharges;
   return tierRemaining(u, kind == "magicMissileV2" ? "magicMissile" : kind);
 }
 
 int spellTargetCount(const Battle& b, size_t unit, const std::string& kind) {
   if (kind == "wrathOfTheSkies") return emberNumbers(kind, b.units()[unit].level).count;
+  if (kind == "multiShot") return multiShotTargets(b.units()[unit].level);
   return kind == "magicMissile" || kind == "magicMissileV2" ? magicMissileCount(b.units()[unit].level) : 1;
 }
 
@@ -1387,6 +1412,21 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   else if (const CureData* cure = cureData(kind)) maxRange = cure->range;
   else if (kind == "cureDisease") maxRange = kCureDiseaseRange;
   else if (emberBoltSpell(kind) || emberAreaSpell(kind)) maxRange = emberNumbers(kind, u.level).range;  // ours: no line of fire needed
+  else if (kind == "fireball") maxRange = kFireballRange, shot = true;
+  else if (kind == "causticVenom") maxRange = kCausticVenom.range, shot = true;
+  else if (kind == "minorVenom") maxRange = kMinorVenom.range, shot = true;
+  else if (kind == "divineBolt") maxRange = kDivineBolt.range, shot = true;
+  else if (kind == "webOfDreams") maxRange = kWebRange, shot = true;
+  else if (kind == "iceStorm") maxRange = iceStormPower(u.level).range, shot = true;
+  else if (kind == "bloodyShot") minRange = u.minRange, maxRange = kBloodyShotRange, shot = true, arrow = true;
+  else if (kind == "multiShot") minRange = u.minRange, maxRange = kMultiShotRange, shot = true, arrow = true;
+  else if (kind == "lightningTier3") maxRange = kLightningT3Range;
+  else if (kind == "phantasmalForce") maxRange = kPhantasmalRange, shot = true;
+  else if (kind == "trip" || kind == "executionerStrike" || kind == "shieldBash") minRange = u.minRange, maxRange = u.maxRange, shot = u.maxRange > 1, arrow = true;
+  else if (kind == "familiarLifeDrain") maxRange = kLifeDrainRange;
+  else if (kind == "provoke") maxRange = provokePower(u.level).range;
+  else if (kind == "cleave" || kind == "shoulderSmash") maxRange = 1;
+  else if (kind == "sweep") maxRange = kSweepRadius;
   for (int y = 0; y < b.rows(); ++y)
     for (int x = 0; x < b.cols(); ++x) {
       const BattleHex cell{x, y};
@@ -1463,6 +1503,7 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
   }
   if (kind == "createFoodAndWater") return cell == from ? true : fail("Esta magia não precisa de alvo.");  // no aim: self-centred
   // EmberEngine's own spells
+  if (bool valid = false; aimE2(b, caster, kind, cell, valid, error)) return valid;
   if (emberSpell(kind)) {
     const EmberNumbers n = emberNumbers(kind, u.level);
     if (kind == "eruption") return cell == from ? true : fail("Esta magia não precisa de alvo.");
@@ -1499,7 +1540,7 @@ std::vector<BattleHex> spellArea(const Battle& b, size_t caster, const std::stri
     if (kind == "eruption") return hexesWithin(b, {u.x, u.y}, n.radius);
     if (emberAreaSpell(kind)) return hexesWithin(b, cell, n.radius);
   }
-  return {cell};
+  return areaE2(b, caster, kind, cell);
 }
 
 std::optional<std::vector<BattleStep>> castSpell(Battle& b, size_t caster, const std::string& kind, const std::vector<BattleHex>& cells, std::string* error,
@@ -1518,6 +1559,7 @@ std::optional<std::vector<BattleStep>> castSpell(Battle& b, size_t caster, const
   for (const BattleHex& c : cells)
     if (!spellAimValid(b, caster, kind, c, error)) return std::nullopt;
   if (emberSpell(kind)) return castEmber(b, caster, kind, cells, error);
+  if (e2Kind(kind)) return castE2(b, caster, kind, cells, error, checkUses);
   const BattleHex cell = cells[0];
   std::vector<BattleStep> steps;
   BattleStep s;
@@ -1620,7 +1662,7 @@ std::optional<std::vector<BattleStep>> castSpell(Battle& b, size_t caster, const
 bool strikesBack(const Battle& b, const BattleStep& step) {
   if (step.noCounter) return false;
   const BattleUnit &u = b.units()[step.att], &t = b.units()[step.def];
-  if (!u.alive || !t.alive) return false;
+  if (!u.alive || !t.alive || t.stunned) return false;
   const Fighter a = fighterAt(b, step.att, u.x, u.y), d = fighterAt(b, step.def, t.x, t.y);
   return canCounter(b, a, {u.x, u.y}, d);
 }
@@ -1667,30 +1709,88 @@ void flushNotes(Battle& b) {
   gNotes.clear();
 }
 
+// applyTileHazard: flames and embers hurt whoever ends a step (or starts its turn) on them.
+void tileHazard(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) {
+  BattleUnit& u = b.units()[unit];
+  const BattleCell& c = b.cell(u.x, u.y);
+  if (!u.alive || c.hazardDice <= 0) return;
+  int dmg = 0;
+  for (int i = 0; i < c.hazardDice; ++i) dmg += 1 + static_cast<int>(std::floor(rng() * c.hazardFaces));
+  const std::string element = c.terrain == "flame" ? "fire" : c.terrain == "ember" ? "ember" : "";
+  if (!element.empty()) dmg = static_cast<int>(std::floor(elementalDamage(dmg, u.combat.resistance(element), 0)));
+  dmg = marked(u, dmg);
+  u.hp = std::max(0, u.hp - dmg);
+  if (!element.empty()) trainResistance(u, element, std::nullopt, rng);
+  BattleEffect e{unit, dmg, false, false, false, false, false};
+  e.cause = c.terrain == "flame" ? pick("Chamas feriram", "Flames burned") : pick("Brasas feriram", "Embers burned");
+  if (u.hp <= 0) markDead(u, rng), e.died = true;
+  out.push_back(e);
+  if (!u.alive) afterDeath(b, unit, out);
+}
+
+// provoke(target, attacker): a neutral struck by the party turns, and its whole pack with it.
+void provokeNeutral(Battle& b, size_t target, size_t attacker, std::vector<BattleEffect>& out) {
+  const BattleUnit& t = b.units()[target];
+  if (t.side != "neutral" || b.units()[attacker].side != "player") return;
+  std::vector<size_t> pack;
+  for (size_t i = 0; i < b.units().size(); ++i)
+    if (b.units()[i].alive && b.units()[i].side == "neutral" && b.units()[i].classId == t.classId) pack.push_back(i);
+  for (size_t i : pack) b.units()[i].side = "enemy";
+  BattleEffect e = statusEffect(target, pack.size() > 1 ? pick("reage, e todo o bando vem junto", "strikes back, and its whole pack with it")
+                                                         : pick("se volta contra vocês", "turns on you"));
+  out.push_back(e);
+}
+
+// stepCombat's "hit" / "counterHit": one strike of an exchange, with every skill's extras.
 void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry32& rng, std::vector<BattleEffect>& out) {
   const size_t ai = counter ? step.def : step.att, ti = counter ? step.att : step.def;
   BattleUnit& actor = b.units()[ai];
   BattleUnit& target = b.units()[ti];
-  // The counter's off-hand weapon: its own dice when the attacker stands within its reach.
-  CustomDice offDice;
-  const bool off = counter && actor.combat.offHandWeapon && hexDist({actor.x, actor.y}, {target.x, target.y}) <= actor.combat.offMaxRange;
-  if (off) offDice = {actor.combat.offDice, actor.combat.offFaces, actor.combat.offBonus};
   const bool hitStage = !counter;
-  const bool arrowShot = actor.combat.arrow && !off;
+  const bool bash = hitStage && step.kind == "shieldBash";
+  // Explicit dice: the attacker's own off-hand strike, or the defender's off-hand counter when the attacker stands within
+  // its reach.
+  CustomDice custom;
+  bool useCustom = false;
+  if (hitStage) {
+    if (step.customDice) custom = {step.customDiceCount, step.customFaces, step.customBonus}, useCustom = true;
+  } else if (actor.combat.offHandWeapon && hexDist({actor.x, actor.y}, {target.x, target.y}) <= actor.combat.offMaxRange) {
+    custom = {actor.combat.offDice, actor.combat.offFaces, actor.combat.offBonus}, useCustom = true;
+  }
+  const bool arrowShot = actor.combat.arrow && !useCustom;
   const bool arcaneBolt = !arrowShot && actor.combat.arcane;
   const Fighter A = fighterAt(b, ai, actor.x, actor.y), T = fighterAt(b, ti, target.x, target.y);
-  Hit hit = rollDamage(b, A, T, rng, true, off ? &offDice : nullptr);
-  if (target.side == "enemy") trainWeapon(actor, target.level, rng, off);  // the off-hand weapon on an off-hand counter
-  const bool usesArcane = arcaneBolt && !off && (counter || step.kind.empty());
-  const bool usesStaff = actor.combat.staff && !off && (counter || step.kind.empty());
+  Hit hit = rollDamage(b, A, T, rng, !bash, useCustom ? &custom : nullptr);
+  if (target.side == "enemy" && !bash) trainWeapon(actor, target.level, rng, useCustom);  // the off-hand weapon on an off-hand strike
+  const bool usesArcane = arcaneBolt && !useCustom && (counter || step.kind.empty());
+  const bool usesStaff = actor.combat.staff && !useCustom && (counter || step.kind.empty());
   if (!hit.landed) {
-    out.push_back({ti, 0, false, true, false, false, counter});
+    BattleEffect m{ti, 0, false, true, false, false, counter};
+    if (hitStage && step.kind == "bullRush") m.abortRush = true;  // a missed charge shoves nobody aside: the rest of it is dropped
+    out.push_back(m);
     return;
   }
   int dmg = hit.dmg;
-  if (hitStage && step.bonusDice > 0) dmg += rollDice(step.bonusDiceCount, step.bonusDice, step.bonusFlat, rng);
-  if (hitStage && step.dmgMul != 1) dmg = static_cast<int>(std::max(1.0, std::floor(dmg * step.dmgMul)));
-  dmg = std::max(1, dmg);  // zoneDamageMul (no zones yet)
+  int bonusRoll = 0;
+  if (hitStage && step.bonusDice > 0) {
+    bonusRoll = rollDice(step.bonusDiceCount, step.bonusDice, step.bonusFlat, rng);
+    dmg += bonusRoll;
+  }
+  // Bull Rush's wall-impact dice: folded into this same hit (never a second hit, never a second counter).
+  if (hitStage && step.wallDice > 0) dmg += rollDice(step.wallDice, step.wallFaces, 0, rng);
+  // Executioner's Strike replaces, rather than stacks with, a normal crit.
+  if (hitStage && step.kind == "executionerStrike") {
+    const ExecP p = executionerStrikePower(actor.level);
+    if (target.maxHp > 0 && static_cast<double>(target.hp) / target.maxHp <= p.threshold)
+      dmg = std::max(1, static_cast<int>(std::floor((hit.preCritDmg + bonusRoll) * p.mult)));
+  }
+  if (hitStage && step.dmgMul != 1) dmg = std::max(1, static_cast<int>(std::floor(dmg * step.dmgMul)));
+  if (hitStage && step.stunChance > 0 && rng() < step.stunChance) target.stunned = true, target.stunTurns = 1;
+  if (target.asleep) {  // a hit on a sleeper hurts 25% more and wakes it
+    dmg = std::max(1, static_cast<int>(std::floor(dmg * (1 + kWebSleepBonusDamage))));
+    target.asleep = false, target.sleepTurns = 0;
+  }
+  dmg = std::max(1, static_cast<int>(std::floor(dmg * b.zoneDamageMul(target))));
   if (usesArcane || usesStaff) {
     const std::string element = usesStaff ? actor.combat.staffElement : "arcane";
     const double staffed = dmg * (1 + (usesStaff ? staffBonus(actor.combat, element) : 0) / 100);
@@ -1700,8 +1800,9 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
   dmg = marked(target, dmg);  // Marca da Ruína
   const int actual = std::min(target.hp, dmg);
   target.hp = std::max(0, target.hp - dmg);
-  if (target.side != actor.side && !off) staffDrain(actor, actual);
+  if (target.side != actor.side && !useCustom) staffDrain(actor, actual);
   b.noteDamage(ai, ti, dmg, false);
+  provokeNeutral(b, ti, ai, out);
   if (target.side != actor.side) {
     if (hitStage) gainExp(actor, target.level, dmg, 1, target.hp <= 0);
     else gainCounterExp(actor);
@@ -1710,8 +1811,25 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
   if (target.hp <= 0) {
     markDead(target, rng);
     e.died = true;
-  } else if (hitStage) {
-    maybeInflictDisease(actor, target, rng);
+  } else {
+    if (hitStage) maybeInflictDisease(actor, target, rng);
+    if (hitStage && step.kind == "trip") {
+      // Rasteira causes Bleeding (1D8 each action) and takes 10% off every stat for the rest of the fight.
+      target.bleeding = true;
+      target.bleedRoundsLeft.reset(), target.bleedRoundMarker.reset();
+      if (!target.crippled) {
+        target.crippled = true;
+        const double keep = 1 - kTripStatPenalty;
+        target.atk = static_cast<int>(jsRound(target.atk * keep)), target.mag = static_cast<int>(jsRound(target.mag * keep));
+        target.def = static_cast<int>(jsRound(target.def * keep)), target.dex = static_cast<int>(jsRound(target.dex * keep));
+        target.mov = std::max(1, static_cast<int>(jsRound(target.mov * keep)));
+      }
+    }
+    if (hitStage && step.kind == "shieldBash") target.stunned = true, target.stunTurns = shieldBashPower(actor.level).stunTurns;
+    if (hitStage && step.kind == "bullRush" && step.knockTo) {
+      target.x = step.knockTo->x, target.y = step.knockTo->y;
+      e.pushed = true;
+    }
   }
   out.push_back(e);
   if (!target.alive) afterDeath(b, ti, out);
@@ -1729,6 +1847,71 @@ void resolveStrike(Battle& b, const BattleStep& step, bool counter, Mulberry32& 
   resolveStrikeImpl(b, step, counter, rng, out);
   logEffects(b, out, from, static_cast<int>(counter ? step.def : step.att), &step);
   flushNotes(b);
+}
+
+void playSteps(Battle& b, const std::vector<BattleStep>& steps, Mulberry32& rng, std::vector<BattleEffect>& out) {
+  std::vector<BattleStep> queue = steps;
+  for (size_t i = 0; i < queue.size(); ++i) {
+    const size_t before = out.size();
+    resolveStep(b, queue[i], rng, out);
+    bool abort = false;
+    for (size_t k = before; k < out.size(); ++k) abort = abort || out[k].abortRush;
+    if (!abort) continue;
+    const size_t actor = queue[i].att;
+    std::vector<BattleStep> kept(queue.begin(), queue.begin() + static_cast<long>(i) + 1);
+    for (size_t k = i + 1; k < queue.size(); ++k)
+      if (!(queue[k].att == actor && (queue[k].type == BattleStep::Type::Move || (queue[k].type == BattleStep::Type::Combat && queue[k].kind == "bullRush")))) kept.push_back(queue[k]);
+    queue = std::move(kept);
+  }
+}
+
+std::vector<double> unitStateNumbers(const BattleUnit& u) {
+  int tier = 0;
+  if (u.poisoned)
+    if (const PoisonTier* t = poisonTier(u.poisonTier.empty() ? "lesser" : u.poisonTier)) tier = t->rank;
+  std::vector<double> v = {static_cast<double>(u.hp), u.alive ? 1.0 : 0.0, static_cast<double>(u.x), static_cast<double>(u.y), u.stunned ? 1.0 : 0.0,
+                           static_cast<double>(u.stunTurns), u.asleep ? 1.0 : 0.0, static_cast<double>(u.sleepTurns), u.bleeding ? 1.0 : 0.0,
+                           static_cast<double>(u.bleedRoundsLeft.value_or(-1)), u.crippled ? 1.0 : 0.0, static_cast<double>(u.fearTurns), static_cast<double>(u.atk),
+                           static_cast<double>(u.mag), static_cast<double>(u.def), static_cast<double>(u.dex), static_cast<double>(u.mov), u.poisoned ? 1.0 : 0.0,
+                           static_cast<double>(tier), u.cond.poisonMag, u.side == "player" ? 0.0 : u.side == "enemy" ? 1.0 : 2.0, static_cast<double>(u.xp),
+                           static_cast<double>(u.level), static_cast<double>(u.maxHp), u.shock ? 1.0 : 0.0, static_cast<double>(u.blessedRoundsLeft), u.blessedHitBonusPct,
+                           static_cast<double>(u.spellCharges), static_cast<double>(u.lifeDrainCharges.value_or(-1))};
+  for (int t = 0; t < 10; ++t) v.push_back(static_cast<double>(u.spells[t]));
+  return v;
+}
+
+namespace {
+std::pair<double, double> cellHash(const std::vector<BattleHex>& cells) {
+  double h = 0;
+  for (const BattleHex& c : cells) h += (c.x * 1009 + c.y * 7919) % 1000003;
+  return {static_cast<double>(cells.size()), h};
+}
+double sideNumber(const std::string& s) { return s == "player" ? 0.0 : s == "enemy" ? 1.0 : 2.0; }
+}  // namespace
+
+nlohmann::json zoneStateNumbers(const Battle& b) {
+  nlohmann::json ice = nlohmann::json::array(), web = nlohmann::json::array(), aura = nlohmann::json::array();
+  for (const Battle::IceZone& z : b.iceZones()) {
+    const auto [n, h] = cellHash(z.cells);
+    ice.push_back({z.roundsLeft, n, h, z.damageDice, z.damageFaces, z.damageMul, z.casterMag, z.casterLevel, sideNumber(z.side)});
+  }
+  for (const Battle::WebZone& z : b.webZones()) {
+    const auto [n, h] = cellHash(z.cells);
+    web.push_back({z.roundsLeft, n, h, z.sleepChance});
+  }
+  for (const Battle::AuraZone& z : b.auraZones()) {
+    const auto [n, h] = cellHash(z.cells);
+    aura.push_back({z.roundsLeft, n, h, z.kind == "protection" ? 0 : 1, sideNumber(z.side), z.pct});
+  }
+  nlohmann::json warp = nlohmann::json::array();
+  for (const Battle::WarpGate& g : b.warpGates()) warp.push_back({g.roundsLeft, g.a.x, g.a.y, g.b.x, g.b.y, g.level});
+  return {{"ice", ice}, {"web", web}, {"aura", aura}, {"warp", warp}};
+}
+
+nlohmann::json enmityNumbers(const Battle& b) {
+  nlohmann::json out = nlohmann::json::array();
+  for (const auto& e : b.enmityDump()) out.push_back({e[0], e[1], e[2], e[3]});
+  return out;
 }
 
 void resolveStep(Battle& b, const BattleStep& step, Mulberry32& rng, std::vector<BattleEffect>& out) {
@@ -1755,6 +1938,36 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     if (strikesBack(b, step)) {
       faceToward(def, {att.x, att.y});
       resolveStrike(b, step, true, rng, out);
+    }
+    return;
+  }
+  if (step.type == BattleStep::Type::Move) {  // a charge: the walk, hex by hex (a flame underfoot burns)
+    if (!att.alive || step.path.size() < 2) return;
+    for (size_t k = 1; k < step.path.size() && att.alive; ++k) {
+      att.x = step.path[k].x, att.y = step.path[k].y;
+      tileHazard(b, step.att, rng, out);
+    }
+    BattleEffect m;
+    m.unit = step.att, m.moved = true;
+    out.push_back(m);
+    return;
+  }
+  if (step.type == BattleStep::Type::Effect) {
+    if (step.kind == "webOfDreams") {  // whoever stands in the patch (its anchor hex) may fall asleep for 1D4 of its turns
+      for (BattleUnit& v : b.units()) {
+        if (!v.alive || std::none_of(step.tiles.begin(), step.tiles.end(), [&](const BattleHex& c) { return c.x == v.x && c.y == v.y; })) continue;
+        if (rng() < step.spellMul) {
+          v.asleep = true;
+          v.sleepTurns = rollDice(kWebSleepDice, kWebSleepFaces, 0, rng);
+        }
+      }
+      return;
+    }
+    if (step.kind == "provoke") {  // castProvoke: no damage, a huge volatile enmity on every enemy it reaches
+      for (size_t id : step.ids) {
+        b.addEnmity(id, step.att, kProvokeCe, kProvokeVe);
+        out.push_back(statusEffect(id, "Provocado"));
+      }
     }
     return;
   }
@@ -1855,6 +2068,17 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
   }
   // A spell's hits (stepSpell). The caster turns to its first target, every foe it hits turns to the caster.
   if (!att.alive) return;
+  if (step.kind == "bless") {  // applyBless: +pct% to hit for some rounds, for every ally still standing
+    for (size_t id : step.ids) {
+      BattleUnit& ally = b.units()[id];
+      if (!ally.alive || ally.side != att.side) continue;
+      const double pct = blessHitBonusPct(att.level) / 100.0;
+      ally.blessedHitBonusPct = std::max(ally.blessedHitBonusPct, pct);
+      ally.blessedRoundsLeft = blessDuration(att.level);
+      out.push_back(statusEffect(id, std::format("Bênção +{}%", static_cast<int>(jsRound(pct * 100)))));
+    }
+    return;
+  }
   if (!step.ids.empty()) faceToward(att, {b.units()[step.ids[0]].x, b.units()[step.ids[0]].y});
   else if (!step.tiles.empty()) faceToward(att, step.tiles[0]);
   for (size_t id : step.ids) {
@@ -1872,7 +2096,9 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
       }
     }
   const bool ember = emberSpell(step.kind) != nullptr;
-  const bool aoe = step.kind == "piercing" || step.kind == "piercingThrust" || (ember && step.ids.size() > 1);
+  static const char* const kAoeKinds[] = {"turnUndead", "fireball", "cleave", "piercing", "causticVenom", "minorVenom", "piercingThrust", "sweep",
+                                          "divineWrath", "shoulderSmash", "stampede", "burningHands", "poisonBreath", "tendrilSwipe"};
+  const bool aoe = std::any_of(std::begin(kAoeKinds), std::end(kAoeKinds), [&](const char* k) { return step.kind == k; }) || (ember && step.ids.size() > 1);
   bool firstAoe = true;
   int thrustHits = 0, enemiesStruck = 0, drained = 0;
   std::vector<size_t> struck;  // ours: who took the hit and stands (Colheita's extra ticks)
@@ -1880,11 +2106,14 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
   for (size_t k = 0; k < step.ids.size(); ++k) {
     const size_t id = step.ids[k];
     BattleUnit& foe = b.units()[id];
-    if (!foe.alive) continue;
+    if (!foe.alive || (step.kind == "turnUndead" && !foe.undead)) continue;
     if (b.cell(foe.x, foe.y).terrain == "barricade") continue;  // "bloqueado"
     int dmg = 0;
     bool crit = false, landed = true, weaponRolled = false;
-    if (step.dice > 0) {
+    if (step.centerId && id == *step.centerId) {
+      const int roll = rollDice(step.centerDice, step.centerFaces, step.centerBonus, rng);
+      dmg = spellDamage(b, step.att, id, step.centerMul, roll, rng);
+    } else if (step.dice > 0) {
       const int roll = rollDice(step.dice, step.faces, step.bonus, rng);
       dmg = spellDamage(b, step.att, id, step.spellMul, roll, rng);
     } else if (step.kind == "piercingThrust") {
@@ -1922,8 +2151,13 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     }
     if (step.kind == "fantomForce") dmg = std::max(1, static_cast<int>(std::floor(dmg * kFantomForceMul)));
     if (step.dmgMul > 1) dmg = std::max(1, static_cast<int>(std::floor(dmg * step.dmgMul)));
+    if (step.kind == "cleave" && occupiedHexCount(foe) >= kCleaveLargeHexes) dmg = std::max(1, static_cast<int>(std::floor(dmg * kCleaveLargeMul)));
+    if (foe.asleep) {  // a hit on a sleeper hurts 25% more and wakes it
+      dmg = std::max(1, static_cast<int>(std::floor(dmg * (1 + kWebSleepBonusDamage))));
+      foe.asleep = false, foe.sleepTurns = 0;
+    }
     if (k < step.perTargetMul.size() && step.perTargetMul[k] != 1.0) dmg = std::max(1, static_cast<int>(std::floor(dmg * step.perTargetMul[k])));
-    dmg = std::max(1, dmg);  // zoneDamageMul (no zones yet)
+    dmg = std::max(1, static_cast<int>(std::floor(dmg * b.zoneDamageMul(foe))));
     if (!element.empty()) {
       const double staffed = dmg * (1 + staffBonus(att.combat, element) / 100);
       dmg = static_cast<int>(std::floor(elementalDamage(staffed, foe.combat.resistance(element), fighterAt(b, step.att, att.x, att.y).mag)));
@@ -1932,12 +2166,44 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     const int actual = std::min(foe.hp, dmg);
     foe.hp = std::max(0, foe.hp - dmg);
     if (!element.empty() && foe.side != att.side) staffDrain(att, actual);
+    if (step.kind == "turnUndead" && foe.hp > 0) {
+      foe.fearTurns = std::max(foe.fearTurns, kTurnUndeadFearTurns);
+      foe.fearSourceId = att.id;
+    }
     b.noteDamage(step.att, id, dmg, !ability);
+    provokeNeutral(b, id, step.att, out);
+    if (step.poison) {
+      // each landed hit may poison: 100 - the effective Poison Resistance (less the tier's penalty and half the caster's MAG)
+      const std::string tierId = step.kind == "causticVenom" ? "poison" : "lesser";
+      const PoisonTier* pt = poisonTier(tierId);
+      const double casterMag = fighterAt(b, step.att, att.x, att.y).mag;
+      const double eff = std::max(-50.0, std::min(100.0, foe.combat.resistance("poison") - pt->penalty - casterMag / 2));
+      if (rng() * 100 < std::max(0.0, std::min(100.0, 100 - eff))) {
+        const PoisonTier* cur = foe.poisoned ? poisonTier(foe.poisonTier.empty() ? "lesser" : foe.poisonTier) : nullptr;
+        const PoisonTier* next = !cur || cur->rank >= pt->rank ? (cur ? cur : pt) : pt;
+        const std::string nextId = next->id;
+        if (!cur || nextId != foe.poisonTier) foe.cond.poisonMag = casterMag;
+        else if (nextId == tierId) foe.cond.poisonMag = std::max(foe.cond.poisonMag, casterMag);
+        foe.poisonTier = nextId;
+        foe.poisoned = true;
+      }
+    }
     if (!element.empty()) trainResistance(foe, element, att.level, rng);
+    if (step.kind == "familiarLifeDrain" && !att.summonerId.empty())
+      for (size_t hi = 0; hi < b.units().size(); ++hi) {
+        BattleUnit& healer = b.units()[hi];
+        if (healer.id != att.summonerId || !healer.alive) continue;
+        const int gained = std::min(static_cast<int>(jsRound(dmg * lifeDrainHealMul(att.level))), healer.maxHp - healer.hp);
+        if (gained > 0) {
+          healer.hp += gained;
+          out.push_back({hi, gained, false, false, true, false, false});
+        }
+        break;
+      }
     if (foe.side != att.side) {
       const bool kill = foe.hp <= 0;
       const bool mageClass = att.classId == "mage" || att.classId == "voss" || att.classId == "conjurer" || att.classId == "warlock" || att.classId == "elementalist";
-      const bool doubled = kill && !aoe && (mageClass || step.kind == "longShot");
+      const bool doubled = kill && !aoe && (mageClass || step.kind == "longShot" || step.kind == "bloodyShot");
       const double mul = doubled ? 2 : aoe && !firstAoe ? 0.5 : 1;
       if (aoe) firstAoe = false;
       gainExp(att, foe.level, dmg, mul, kill);
@@ -1948,10 +2214,28 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     if (foe.hp <= 0) {
       markDead(foe, rng);
       e.died = true;
-    } else if (step.echo) {
-      BattleUnit::Echo echo = *step.echo;
-      echo.mag = fighterAt(b, step.att, att.x, att.y).mag;
-      foe.shock = echo;
+    } else {
+      if (step.echo) {
+        BattleUnit::Echo echo = *step.echo;
+        echo.mag = fighterAt(b, step.att, att.x, att.y).mag;
+        foe.shock = echo;
+      }
+      if (step.kind == "bloodyShot" && (!foe.bleeding || foe.bleedRoundsLeft)) {
+        const DiceFaces duration = bloodyShotBleed(att.level);
+        foe.bleeding = true;
+        foe.bleedRoundsLeft = rollDice(duration.dice, duration.faces, 0, rng);
+        foe.bleedRoundMarker = b.round();
+      }
+      if (step.kind == "sweep") {
+        const BattleHex before{foe.x, foe.y};
+        knockBack(b, step.att, id);
+        if (foe.x != before.x || foe.y != before.y) e.pushed = true;
+      }
+      if (step.kind == "shoulderSmash") {
+        const BattleHex before{foe.x, foe.y};
+        for (int i = 0; i < kShoulderSmashKnockback; ++i) knockBack(b, step.att, id);
+        if (foe.x != before.x || foe.y != before.y) e.pushed = true;
+      }
     }
     // Vendaval Glacial: the struck are pushed away from the caster (their card follows: `pushed`).
     if (foe.alive && step.push > 0 && pushAway(b, id, {att.x, att.y}, step.push)) e.pushed = true;
@@ -2079,25 +2363,46 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
     out.push_back(e);
     if (!u.alive) afterDeath(b, unit, out);
   }
-  // applyTileHazard: flames and embers hurt whoever starts its turn on them.
-  const BattleCell& c = b.cell(u.x, u.y);
-  if (u.alive && c.hazardDice > 0) {
-    int dmg = 0;
-    for (int i = 0; i < c.hazardDice; ++i) dmg += 1 + static_cast<int>(std::floor(rng() * c.hazardFaces));
-    const std::string element = c.terrain == "flame" ? "fire" : c.terrain == "ember" ? "ember" : "";
-    if (!element.empty()) dmg = static_cast<int>(std::floor(elementalDamage(dmg, u.combat.resistance(element), 0)));
-    dmg = marked(u, dmg);
-    u.hp = std::max(0, u.hp - dmg);
-    if (!element.empty()) trainResistance(u, element, std::nullopt, rng);
-    BattleEffect e{unit, dmg, false, false, false, false, false};
-    e.cause = c.terrain == "flame" ? pick("Chamas feriram", "Flames burned") : pick("Brasas feriram", "Embers burned");
-    if (u.hp <= 0) markDead(u, rng), e.died = true;
-    out.push_back(e);
-    if (!u.alive) afterDeath(b, unit, out);
+  // Its poison (Engine2: the tier's dice, its Poison Resistance less the tier's penalty and the poisoner's MAG / 2)
+  if (u.alive) tickConditions(b, unit, rng, out, false, true);
+  // Tempestade de Gelo: whoever starts its turn inside the field is hurt
+  if (u.alive)
+    for (const Battle::IceZone zone : std::vector<Battle::IceZone>(b.iceZones())) {  // a copy: a death may change the list
+      if (!u.alive) break;
+      const std::vector<BattleHex> body = Battle::footprint(u, u.x, u.y);
+      if (std::none_of(zone.cells.begin(), zone.cells.end(), [&](const BattleHex& c) { return std::any_of(body.begin(), body.end(), [&](const BattleHex& p) { return p == c; }); })) continue;
+      const double base = std::floor(std::floor(zone.casterMag / 2) * zone.damageMul) + rollDice(zone.damageDice, zone.damageFaces, 0, rng);
+      int casterIdx = -1;
+      for (size_t i = 0; i < b.units().size(); ++i)
+        if (b.units()[i].id == zone.casterId) casterIdx = static_cast<int>(i);
+      const double staffed = casterIdx >= 0 ? base * (1 + staffBonus(b.units()[static_cast<size_t>(casterIdx)].combat, "ice") / 100) : base;
+      const int dmg = static_cast<int>(std::floor(elementalDamage(staffed, u.combat.resistance("ice"), zone.casterMag)));
+      const int actual = std::min(u.hp, dmg);
+      u.hp = std::max(0, u.hp - dmg);
+      if (casterIdx >= 0 && b.units()[static_cast<size_t>(casterIdx)].side != u.side) staffDrain(b.units()[static_cast<size_t>(casterIdx)], actual);
+      trainResistance(u, "ice", zone.casterLevel, rng);
+      if (casterIdx >= 0 && b.units()[static_cast<size_t>(casterIdx)].side == "player") trainResistance(b.units()[static_cast<size_t>(casterIdx)], "ice", u.level, rng);
+      BattleEffect e{unit, dmg, false, false, false, false, false};
+      e.cause = pick("Tempestade de Gelo atinge", "Ice Storm strikes");
+      if (u.hp <= 0) markDead(u, rng), e.died = true;
+      out.push_back(e);
+      if (!u.alive) afterDeath(b, unit, out);
+    }
+  // Fôlego Renovado (the paladin's passive): the first time its turn opens badly wounded with a tier-3 use banked
+  if (u.alive && u.classId == "paladin" && u.maxHp > 0 && static_cast<double>(u.hp) / u.maxHp <= 0.3 && tierRemaining(u, "secondWind") > 0) {
+    spendTier(u, "secondWind");
+    const double pct = u.level >= 13 ? 0.75 : u.level >= 10 ? 0.5 : 0.25;
+    const int heal = std::min(u.maxHp - u.hp, static_cast<int>(std::floor(pct * u.dex)));
+    if (heal > 0) {
+      u.hp += heal;
+      out.push_back({unit, heal, false, false, true, false, false});
+    }
   }
+  // applyTileHazard: flames and embers hurt whoever starts its turn on them.
+  if (u.alive) tileHazard(b, unit, rng, out);
   // --- EmberEngine's own: the zones it stands in, its conditions, the Meteoro it called, the countdowns ---
   if (u.alive) zoneEffects(b, unit, rng, out);
-  if (u.alive) tickConditions(b, unit, rng, out, true);
+  if (u.alive) tickConditions(b, unit, rng, out, true, false);
   if (u.alive) landMeteors(b, unit, rng, out);
   if (!u.alive) return;
   // Praga Rastejante: the poison jumps to neighbours of its own side not yet poisoned.
@@ -2119,6 +2424,115 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
   }
   if (u.cond.markTurns > 0 && --u.cond.markTurns <= 0) u.cond.markPct = 0;
   if (u.cond.silenceTurns > 0) --u.cond.silenceTurns;
+}
+
+void stepOnHex(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) { tileHazard(b, unit, rng, out); }
+
+std::optional<BattleHex> warpCrossing(const Battle& b, size_t unitIdx) {
+  const BattleUnit& u = b.units()[unitIdx];
+  if (u.side != "player" && Battle::footprint(u, u.x, u.y).size() > 1) return std::nullopt;
+  for (const Battle::WarpGate& g : b.warpGates()) {
+    const bool atA = u.x == g.a.x && u.y == g.a.y, atB = u.x == g.b.x && u.y == g.b.y;
+    if (!atA && !atB) continue;
+    const BattleHex other = atA ? g.b : g.a;
+    auto isGate = [&](BattleHex c) {
+      return std::any_of(b.warpGates().begin(), b.warpGates().end(), [&](const Battle::WarpGate& h) { return c == h.a || c == h.b; });
+    };
+    std::vector<BattleHex> landing;
+    for (const BattleHex& c : hexAreaTiles(b, other, 2)) {
+      if (isGate(c) || !b.cell(c.x, c.y).passable) continue;
+      bool taken = false;
+      for (size_t i = 0; i < b.units().size(); ++i)
+        if (i != unitIdx && b.units()[i].alive && occupies(b.units()[i], c.x, c.y)) taken = true;
+      if (!taken) landing.push_back(c);
+    }
+    if (landing.empty()) return std::nullopt;
+    std::stable_sort(landing.begin(), landing.end(), [&](const BattleHex& p, const BattleHex& q) {
+      const int dp = hexDist(p, other), dq = hexDist(q, other);
+      return dp != dq ? dp < dq : p.y != q.y ? p.y < q.y : p.x < q.x;
+    });
+    return landing.front();
+  }
+  return std::nullopt;
+}
+
+bool bleedOnAction(Battle& b, size_t unit, bool isMove, Mulberry32& rng, std::vector<BattleEffect>& out) {
+  BattleUnit& u = b.units()[unit];
+  if (!u.alive || !u.bleeding || (isMove && u.bleedMovedThisTurn)) return u.alive;
+  if (isMove) u.bleedMovedThisTurn = true;
+  const int dmg = rollDice(1, 8, 0, rng);
+  u.hp = std::max(0, u.hp - dmg);
+  BattleEffect e{unit, dmg, false, false, false, false, false};
+  e.cause = pick("Sangramento fere", "Bleeding hurts");
+  if (u.hp <= 0) markDead(u, rng), e.died = true;
+  out.push_back(e);
+  if (!u.alive) afterDeath(b, unit, out);
+  return u.alive;
+}
+
+TurnStart beginUnitTurn(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) {
+  BattleUnit& u = b.units()[unit];
+  TurnStart r;
+  u.bleedMovedThisTurn = false;
+  startOfTurnEffects(b, unit, rng, out);
+  if (!u.alive) {
+    r.kind = TurnStart::Kind::Lost;
+    return r;
+  }
+  if (u.stunned) {
+    u.stunTurns = std::max(0, u.stunTurns - 1);
+    u.stunned = u.stunTurns > 0;
+    u.moved = true, u.acted = true;
+    r.kind = TurnStart::Kind::Lost;
+    r.tip = pick(" está atordoado(a) — perde o turno.", " is stunned and loses the turn.");
+    return r;
+  }
+  // Still standing in a web at the start of its own turn: another sleep roll, stacking 1D4 more sleep.
+  if (b.isWebCell(u.x, u.y) && rng() < b.webCellSleepChance(u.x, u.y)) {
+    const int extra = rollDice(kWebSleepDice, kWebSleepFaces, 0, rng);
+    u.asleep = true;
+    u.sleepTurns += extra;
+  }
+  if (u.asleep) {
+    u.sleepTurns = std::max(0, u.sleepTurns - 1);
+    u.asleep = u.sleepTurns > 0;
+    u.moved = true, u.acted = true;
+    r.kind = TurnStart::Kind::Lost;
+    r.tip = pick(" está adormecido(a) — perde o turno.", " is asleep and loses the turn.");
+    return r;
+  }
+  if (u.fearTurns > 0) {
+    u.fearTurns = std::max(0, u.fearTurns - 1);
+    std::vector<size_t> threats;
+    int source = -1;
+    for (size_t i = 0; i < b.units().size(); ++i)
+      if (b.units()[i].id == u.fearSourceId) source = static_cast<int>(i);
+    if (source >= 0) threats.push_back(static_cast<size_t>(source));
+    else
+      for (size_t i = 0; i < b.units().size(); ++i)
+        if (b.units()[i].alive && b.units()[i].side != u.side && b.units()[i].side != "neutral") threats.push_back(i);
+    b.setTurnRestrained(b.isWebCell(u.x, u.y));
+    const std::vector<ReachCell> reach = b.reachable(unit, true), paths = b.reachable(unit, false);
+    auto distance = [&](BattleHex c) {
+      if (threats.empty()) return 0;
+      int best = 1 << 30;
+      for (size_t t : threats) best = std::min(best, hexDist(c, {b.units()[t].x, b.units()[t].y}));
+      return best;
+    };
+    BattleHex destination{u.x, u.y};
+    for (const ReachCell& c : reach)
+      if (distance({c.x, c.y}) > distance(destination)) destination = {c.x, c.y};
+    if (!(destination.x == u.x && destination.y == u.y)) {
+      std::vector<BattleHex> path = Battle::path(paths, destination.x, destination.y);
+      if (path.size() > 1) r.fleePath = std::move(path);
+    }
+    u.moved = true, u.acted = true;
+    r.kind = TurnStart::Kind::Fled;
+    r.tip = pick(" foge de medo e não pode atacar.", " flees in fear and cannot attack.");
+    return r;
+  }
+  b.setTurnRestrained(b.isWebCell(u.x, u.y));
+  return r;
 }
 
 std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {

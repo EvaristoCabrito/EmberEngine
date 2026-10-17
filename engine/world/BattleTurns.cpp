@@ -39,7 +39,28 @@ int Battle::activeUnit() const {
 
 void Battle::startNewRound() {
   for (Enmity& e : enmity_) e.ve = capped(e.ve - kVolatileDecayPerRound);
-  for (BattleUnit& u : units_) u.moved = false, u.acted = false;
+  for (BattleUnit& u : units_) {
+    u.moved = false, u.acted = false;
+    // Tiro Sangrento's bleed counts down one round at a time, and Bênção's too
+    if (u.bleedRoundsLeft && u.bleedRoundMarker && *u.bleedRoundMarker < round_) {
+      u.bleedRoundsLeft = std::max(0, *u.bleedRoundsLeft - 1);
+      u.bleedRoundMarker = round_;
+      if (*u.bleedRoundsLeft == 0) u.bleeding = false, u.bleedRoundMarker.reset();
+    }
+    if (u.blessedRoundsLeft > 0) {
+      u.blessedRoundsLeft = std::max(0, u.blessedRoundsLeft - 1);
+      if (u.blessedRoundsLeft == 0) u.blessedHitBonusPct = 0;
+    }
+  }
+  // Engine2's zones and gates last their rounds
+  for (WebZone& z : webZones_) --z.roundsLeft;
+  std::erase_if(webZones_, [](const WebZone& z) { return z.roundsLeft <= 0; });
+  for (IceZone& z : iceZones_) --z.roundsLeft;
+  std::erase_if(iceZones_, [](const IceZone& z) { return z.roundsLeft <= 0; });
+  for (AuraZone& z : auraZones_) --z.roundsLeft;
+  std::erase_if(auraZones_, [](const AuraZone& z) { return z.roundsLeft <= 0; });
+  for (WarpGate& g : warpGates_) --g.roundsLeft;
+  std::erase_if(warpGates_, [](const WarpGate& g) { return g.roundsLeft <= 0; });
   sortTurnOrder();
   ++round_;
   // Zones last their rounds (a Meteoro waits for its caster's turn instead).
@@ -100,6 +121,23 @@ void Battle::noteAware(size_t hero, double ce, double ve) {
       if (e.enemy == f && e.hero == hero) e.ce = capped(e.ce + ce), e.ve = capped(e.ve + ve), found = true;
     if (!found) enmity_.push_back({f, hero, capped(ce), capped(ve)});
   }
+}
+
+std::vector<std::array<double, 4>> Battle::enmityDump() const {
+  std::vector<std::array<double, 4>> out;
+  for (const Enmity& e : enmity_) out.push_back({static_cast<double>(e.enemy), static_cast<double>(e.hero), e.ce, e.ve});
+  std::sort(out.begin(), out.end(), [](const auto& a, const auto& b) { return a[0] != b[0] ? a[0] < b[0] : a[1] < b[1]; });
+  return out;
+}
+
+void Battle::addEnmity(size_t foe, size_t hero, double ce, double ve) {
+  if (units_[foe].side != "enemy" || units_[hero].side != "player" || !units_[foe].alive || !units_[hero].alive) return;
+  for (Enmity& e : enmity_)
+    if (e.enemy == foe && e.hero == hero) {
+      e.ce = capped(e.ce + ce), e.ve = capped(e.ve + ve);
+      return;
+    }
+  enmity_.push_back({foe, hero, capped(ce), capped(ve)});
 }
 
 void Battle::noteDamage(size_t attacker, size_t target, int dmg, bool spell) {

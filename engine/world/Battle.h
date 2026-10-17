@@ -55,6 +55,7 @@ struct CombatProfile {
   double accuracy = 100, damageMul = 1;        // main-hand mastery
   double offAccuracy = 100, offDamageMul = 1;  // off-hand mastery
   bool offHandWeapon = false;
+  bool offHandShield = false;  // a shield in the off hand (Golpe de Escudo needs one; Investida de Ombro none)
   int offMinRange = 1, offMaxRange = 1, offDice = 1, offFaces = 4, offBonus = 0;
   bool staff = false;  // staff magic: its element and bonus
   std::string staffElement = "arcane";
@@ -92,6 +93,7 @@ struct BattleUnit {
   int size = 1;
   int level = 1;
   bool summoned = false;
+  bool undead = false;  // creatureType "undead" (Expulsar Mortos-Vivos)
   CombatProfile combat;
   std::optional<double> faceDx, faceDy;  // its last heading on the board (Engine2 screen units), if any
   int facing = 1;
@@ -152,6 +154,24 @@ struct BattleUnit {
   std::string poisonTier;            // save.heroPoisons' value ("lesser", ...), kept for the save
   std::optional<double> fullness;    // hunger.ts fullness 0..120; unset reads as 100
   double hungerPenaltyPct = 0;       // a starving hero's stat loss (0..0.9), gone once fed
+
+  // --- Engine2's status conditions (Engine2 Unit.stunned / asleep / bleeding / crippled / fearTurns / blessed...) ---
+  bool stunned = false;              // loses its next turns (Golpe de Escudo, an off-hand bash)
+  int stunTurns = 0;
+  bool asleep = false;               // Teia dos Sonhos: loses its turns, wakes on a hit (which hurts 25% more)
+  int sleepTurns = 0;
+  bool bleeding = false;             // 1D8 whenever it acts (Tiro Sangrento for some rounds, Rasteira for good)
+  std::optional<int> bleedRoundsLeft;   // rounds left of Tiro Sangrento's bleed (none = until cured, Rasteira)
+  std::optional<int> bleedRoundMarker;  // the round it was last counted down in
+  bool bleedMovedThisTurn = false;   // walking opens the wound once per own turn
+  bool crippled = false;             // Rasteira: 10% off every stat for the rest of the fight
+  int fearTurns = 0;                 // Expulsar Mortos-Vivos: flees instead of fighting
+  std::string fearSourceId;
+  double blessedHitBonusPct = 0;     // Bênção: +hit chance (a fraction) for some rounds
+  int blessedRoundsLeft = 0;
+  std::string summonerId;            // a familiar's conjurer
+  int spellCharges = 0;              // a familiar's own spell (Míssil Mágico / Bola de Fogo / Veneno Menor)
+  std::optional<int> lifeDrainCharges;  // a Familiar Maior / Radiante's Dreno de Vida
 };
 
 // An enemy's decision (Engine2 runAiFor's plain branch): the walk (start first; empty = stays) and the foe it strikes.
@@ -200,6 +220,13 @@ struct CastReference {
   bool hurt = false;
   int lootRations = 0;
   std::string potion;  // a potion used instead of a spell (its id; `kind` is then "potion")
+  // A skill cast (export_battle.ts skillCasts): every unit's state afterwards as numbers (Spells.h unitStateNumbers), the
+  // zones and the enmity entries.
+  bool skill = false;
+  std::vector<std::vector<double>> ext;
+  nlohmann::json zones, enmity;
+  int unitCount = 0;
+  int patchTier = 0, patchValue = 0;  // the caster was given this tier's uses first (a start-method needs some)
 };
 
 // Engine2's reference answers for the combat check (export_battle.ts).
@@ -251,6 +278,8 @@ class Battle {
   void newTurn();
   // The party's affinity bonus between two names (0 = none).
   double affinityBonus(const std::string& a, const std::string& b) const;
+  // Drops Engine2's reference answers (a copy of the battle for one cast does not need them).
+  void clearReferences() { forecastRefs_.clear(), rollRefs_.clear(), aiRefs_.clear(), castRefs_.clear(); }
   const std::vector<ForecastReference>& forecastReferences() const { return forecastRefs_; }
   const std::vector<RollReference>& rollReferences() const { return rollRefs_; }
   const std::vector<AiReference>& aiReferences() const { return aiRefs_; }
@@ -258,6 +287,10 @@ class Battle {
   // Engine2's enmity hooks for spells and support (spell damage, heals noticed by every enemy).
   void noteDamage(size_t attacker, size_t target, int dmg, bool spell);
   void noteAware(size_t hero, double ce, double ve);
+  // Every enmity entry as [enemy, hero, ce, ve], sorted (the cast check compares them with Engine2's table).
+  std::vector<std::array<double, 4>> enmityDump() const;
+  // Engine2 addEnmity: this much enmity of `foe` for `hero` (an enemy and a hero, both standing).
+  void addEnmity(size_t foe, size_t hero, double ce, double ve);
   // Rations conjured in this fight (Engine2 lootRations: Criar Comida e Água), added to the save's at its end.
   int lootRations() const { return lootRations_; }
   void addLootRations(int n) { lootRations_ += n; }
@@ -268,6 +301,54 @@ class Battle {
     log_.push_back(std::move(line));
     if (log_.size() > 200) log_.erase(log_.begin());
   }
+
+  // --- Engine2's zones (engine.ts webZones / iceStormZones / auraZones / warpGates), each one round shorter at every new round ---
+  struct WebZone {  // Teia dos Sonhos: anyone starting its turn inside may fall asleep; its movement is clamped to 1 hex
+    std::vector<BattleHex> cells;
+    int roundsLeft = 0;
+    BattleHex center;
+    int radius = 0;
+    double sleepChance = 0.25;
+  };
+  struct IceZone {  // Tempestade de Gelo: hurts whoever starts its turn inside
+    std::vector<BattleHex> cells;
+    int roundsLeft = 0;
+    BattleHex center;
+    int radius = 0;
+    int damageDice = 1, damageFaces = 6;
+    double damageMul = 0.65;
+    double casterMag = 0;
+    int casterLevel = 1;
+    std::string casterId;
+    std::string side;
+  };
+  struct AuraZone {  // Aura de Proteção / Presença Intimidante
+    std::vector<BattleHex> cells;
+    int roundsLeft = 0;
+    std::string kind;  // "protection" | "intimidation"
+    std::string side;
+    double pct = 0;
+  };
+  struct WarpGate {  // Portal: a pair of gates a unit may cross
+    BattleHex a, b;
+    int roundsLeft = 0;
+    int level = 1;
+  };
+  std::vector<WebZone>& webZones() { return webZones_; }
+  const std::vector<WebZone>& webZones() const { return webZones_; }
+  std::vector<IceZone>& iceZones() { return iceZones_; }
+  const std::vector<IceZone>& iceZones() const { return iceZones_; }
+  std::vector<AuraZone>& auraZones() { return auraZones_; }
+  const std::vector<AuraZone>& auraZones() const { return auraZones_; }
+  std::vector<WarpGate>& warpGates() { return warpGates_; }
+  const std::vector<WarpGate>& warpGates() const { return warpGates_; }
+  // engine.ts isWebCell / webCellSleepChance / zoneDamageMul
+  bool isWebCell(int x, int y) const;
+  double webCellSleepChance(int x, int y) const;
+  double zoneDamageMul(const BattleUnit& defender) const;
+  // The unit begins its turn restrained (its cell is webbed): its movement is clamped to one hex for the turn.
+  bool turnRestrained() const { return turnRestrained_; }
+  void setTurnRestrained(bool v) { turnRestrained_ = v; }
 
   // --- Zones (EmberEngine's own: the Elementalista's burning ground and Meteoro, the Bruxo's Mortalha de Sombras) ---
   // A zone lies on the hexes within `radius` of its centre (`ring`: only at exactly that distance) for `rounds` rounds
@@ -376,6 +457,11 @@ class Battle {
   std::vector<Enmity> enmity_;
   std::vector<Zone> zones_, landed_;
   int zoneSerial_ = 0;
+  std::vector<WebZone> webZones_;
+  std::vector<IceZone> iceZones_;
+  std::vector<AuraZone> auraZones_;
+  std::vector<WarpGate> warpGates_;
+  bool turnRestrained_ = false;
 };
 
 }  // namespace ember::e2

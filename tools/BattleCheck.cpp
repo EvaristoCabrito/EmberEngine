@@ -1,6 +1,7 @@
 #include "BattleCheck.h"
 
 #include <algorithm>
+#include <map>
 #include <tuple>
 
 #include "core/Log.h"
@@ -47,8 +48,12 @@ bool checkBattle(const std::filesystem::path& battleJson) {
 
   // Combat: every reference forecast and seeded roll.
   size_t combatFailed = 0;
+  // the first two differences of every kind of check, and a count of the rest at the end
+  std::map<std::string, int> seenKinds;
   auto report = [&](const std::string& what) {
-    if (++combatFailed <= 12) logError("battle {}: {}", battle->map(), what);
+    ++combatFailed;
+    const int n = ++seenKinds[what.substr(0, what.find(" from"))];
+    if (n <= 2) logError("battle {}: {}", battle->map(), what);
   };
   for (const e2::ForecastReference& r : battle->forecastReferences()) {
     const e2::Forecast f = e2::forecast(*battle, static_cast<size_t>(r.attacker), {r.x, r.y}, static_cast<size_t>(r.defender));
@@ -122,11 +127,15 @@ bool checkBattle(const std::filesystem::path& battleJson) {
   }
   // Spells: every reference cast (the aim's verdict; then the board afterwards and the random numbers drawn).
   size_t castsChecked = 0, castsValid = 0;
+  // every cast starts from the battle as it opens, without the (very large) reference tables the copies would drag along
+  e2::Battle pristine = *battle;
+  pristine.clearReferences();
   for (const e2::CastReference& r : battle->castReferences()) {
-    e2::Battle copy = *battle;
+    e2::Battle copy = pristine;
     if (r.hurt) e2::hurtScene(copy);
     e2::BattleUnit& u = copy.units()[static_cast<size_t>(r.caster)];
     u.x = r.at.x, u.y = r.at.y;
+    if (r.patchTier > 0) u.spells[r.patchTier - 1] = r.patchValue;  // the reference gave the caster uses first
     ++castsChecked;
     std::optional<std::vector<e2::BattleStep>> steps;
     bool valid = false;
@@ -150,7 +159,7 @@ bool checkBattle(const std::filesystem::path& battleJson) {
         // method checks its uses itself
         const int count = e2::spellTargetCount(copy, static_cast<size_t>(r.caster), r.kind);
         steps = e2::castSpell(copy, static_cast<size_t>(r.caster), r.kind, std::vector<e2::BattleHex>(static_cast<size_t>(count), r.cell), &why,
-                              e2::spellInstant(r.kind));
+                              r.kind == "createFoodAndWater");
       }
     }
     const bool cast = valid && steps.has_value();
@@ -164,7 +173,9 @@ bool checkBattle(const std::filesystem::path& battleJson) {
     e2::Mulberry32 rng(r.seed);
     int calls = 0;
     std::vector<e2::BattleEffect> effects;
-    for (const e2::BattleStep& step : *steps) e2::resolveStep(copy, step, rng, effects);
+    if (r.skill) e2::playSteps(copy, *steps, rng, effects);
+    else
+      for (const e2::BattleStep& step : *steps) e2::resolveStep(copy, step, rng, effects);
     // how many numbers were drawn: advance a fresh generator until it matches the used one
     {
       e2::Mulberry32 probe(r.seed), used = rng;
@@ -172,6 +183,29 @@ bool checkBattle(const std::filesystem::path& battleJson) {
       while (calls < 100000 && probe() != next) ++calls;
     }
     std::string diff;
+    if (r.skill) {
+      static const char* const kNames[] = {"hp", "alive", "x", "y", "stunned", "stunTurns", "asleep", "sleepTurns", "bleeding", "bleedRounds", "crippled", "fear",
+                                           "atk", "mag", "def", "dex", "mov", "poisoned", "poisonTier", "poisonMag", "side", "xp", "level", "maxHp", "shock",
+                                           "blessRounds", "blessPct", "charges", "drainCharges", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"};
+      if (static_cast<int>(copy.units().size()) != r.unitCount) diff += std::format(" [units {} vs {}]", copy.units().size(), r.unitCount);
+      for (size_t i = 0; i < copy.units().size() && i < r.ext.size(); ++i) {
+        const std::vector<double> mine = e2::unitStateNumbers(copy.units()[i]);
+        for (size_t k = 0; k < mine.size() && k < r.ext[i].size(); ++k)
+          if (std::abs(mine[k] - r.ext[i][k]) > 1e-9) diff += std::format(" [{} {} {} vs {}]", copy.units()[i].name, k < std::size(kNames) ? kNames[k] : "?", mine[k], r.ext[i][k]);
+      }
+      if (e2::zoneStateNumbers(copy) != r.zones) diff += std::format(" [zones {} vs {}]", e2::zoneStateNumbers(copy).dump(), r.zones.dump());
+      const nlohmann::json en = e2::enmityNumbers(copy);
+      bool sameEnmity = en.size() == r.enmity.size();
+      for (size_t i = 0; sameEnmity && i < en.size(); ++i)
+        for (size_t k = 0; k < 4; ++k)
+          if (std::abs(en[i][k].get<double>() - r.enmity[i][k].get<double>()) > 1e-6) sameEnmity = false;
+      if (!sameEnmity) diff += std::format(" [enmity {} vs {}]", en.dump(), r.enmity.dump());
+      if (calls != r.calls) diff += std::format(" [draws {} vs {}]", calls, r.calls);
+      if (!diff.empty())
+        report(std::format("cast {} {} from ({},{}) at ({},{}) seed {}:{}", battle->units()[static_cast<size_t>(r.caster)].name, r.kind, r.at.x, r.at.y, r.cell.x,
+                           r.cell.y, r.seed, diff));
+      continue;
+    }
     for (size_t i = 0; i < copy.units().size() && i < r.after.size(); ++i) {
       const e2::BattleUnit& v = copy.units()[i];
       const e2::CastReference::After& t = r.after[i];
@@ -202,6 +236,7 @@ bool checkBattle(const std::filesystem::path& battleJson) {
                          r.cell.x, r.cell.y, r.seed, diff));
   }
   if (combatFailed) {
+    for (const auto& [kind, n] : seenKinds) logError("battle {}: {} x {}", battle->map(), n, kind.substr(0, 120));
     logError("battle {}: {} combat answers differ from Engine2", battle->map(), combatFailed);
     return false;
   }

@@ -4,6 +4,8 @@
 #include "world/Battle.h"
 
 #include <algorithm>
+#include <cstdlib>
+#include <format>
 #include <string>
 
 namespace ember::e2 {
@@ -49,6 +51,16 @@ nlohmann::json Battle::snapshot() const {
     s["fullness"] = u.fullness ? nlohmann::json(*u.fullness) : nlohmann::json();
     s["hungerPenaltyPct"] = u.hungerPenaltyPct;
     s["offWeaponSkill"] = u.offWeaponSkill;
+    // Engine2's status conditions (BattleUnitSnap names)
+    s["stunned"] = u.stunned, s["stunTurns"] = u.stunTurns, s["asleep"] = u.asleep, s["sleepTurns"] = u.sleepTurns;
+    s["bleeding"] = u.bleeding, s["crippled"] = u.crippled, s["fearTurns"] = u.fearTurns;
+    if (u.bleedRoundsLeft) s["bleedRoundsLeft"] = *u.bleedRoundsLeft;
+    if (u.bleedRoundMarker) s["bleedRoundMarker"] = *u.bleedRoundMarker;
+    if (!u.fearSourceId.empty()) s["fearSourceId"] = u.fearSourceId;
+    s["blessedHitBonusPct"] = u.blessedHitBonusPct, s["blessedRoundsLeft"] = u.blessedRoundsLeft;
+    if (!u.summonerId.empty()) s["summonerId"] = u.summonerId;
+    s["spellCharges"] = u.spellCharges;
+    if (u.lifeDrainCharges) s["lifeDrainCharges"] = *u.lifeDrainCharges;
     if (u.faceDx) s["faceDx"] = *u.faceDx;
     if (u.faceDy) s["faceDy"] = *u.faceDy;
     s["shock"] = u.shock ? nlohmann::json{{"dice", u.shock->dice}, {"faces", u.shock->faces}, {"bonus", u.shock->bonus}, {"mag", u.shock->mag}}
@@ -76,13 +88,32 @@ nlohmann::json Battle::snapshot() const {
                      {"faces", z.faces},     {"mul", z.mul},               {"mag", z.mag},            {"statPct", z.statPct},
                      {"centreMul", z.centreMul}, {"ringMul", z.ringMul},   {"centreDice", z.centreDice}, {"centreFaces", z.centreFaces},
                      {"ringDice", z.ringDice}, {"ringFaces", z.ringFaces}});
+  // Engine2's zones, in captureSnapshot's shapes
+  auto cellsJson = [](const std::vector<BattleHex>& cells) {
+    nlohmann::json a = nlohmann::json::array();
+    for (const BattleHex& c : cells) a.push_back(std::format("{},{}", c.x, c.y));
+    return a;
+  };
+  nlohmann::json webs = nlohmann::json::array(), ices = nlohmann::json::array(), auras = nlohmann::json::array(), gates = nlohmann::json::array();
+  for (const WebZone& z : webZones_)
+    webs.push_back({{"cells", cellsJson(z.cells)}, {"roundsLeft", z.roundsLeft}, {"center", {{"x", z.center.x}, {"y", z.center.y}}}, {"radius", z.radius},
+                    {"sleepChance", z.sleepChance}});
+  for (const IceZone& z : iceZones_)
+    ices.push_back({{"cells", cellsJson(z.cells)}, {"roundsLeft", z.roundsLeft}, {"center", {{"x", z.center.x}, {"y", z.center.y}}}, {"radius", z.radius},
+                    {"damageDice", z.damageDice}, {"damageFaces", z.damageFaces}, {"damageMul", z.damageMul}, {"casterMag", z.casterMag},
+                    {"casterLevel", z.casterLevel}, {"casterId", z.casterId}, {"side", z.side}});
+  for (const AuraZone& z : auraZones_)
+    auras.push_back({{"cells", cellsJson(z.cells)}, {"roundsLeft", z.roundsLeft}, {"kind", z.kind}, {"side", z.side}, {"pct", z.pct}});
+  for (const WarpGate& g : warpGates_)
+    gates.push_back({{"a", {{"x", g.a.x}, {"y", g.a.y}}}, {"b", {{"x", g.b.x}, {"y", g.b.y}}}, {"roundsLeft", g.roundsLeft}, {"level", g.level}});
   nlohmann::json order = nlohmann::json::array();
   for (size_t i : turnOrder_) order.push_back(units_[i].id);
   // enmity.ts EnmitySnapshot: { enemyId: { heroId: [ce, ve] } }
   nlohmann::json enmity = nlohmann::json::object();
   for (const Enmity& e : enmity_) enmity[units_[e.enemy].id][units_[e.hero].id] = nlohmann::json::array({e.ce, e.ve});
   return {{"turn", round_}, {"units", units}, {"turnOrder", order}, {"enmity", enmity}, {"lootRations", lootRations_}, {"roaming", roaming_},
-          {"zones", zones}, {"zoneSerial", zoneSerial_}, {"log", log_}};
+          {"zones", zones}, {"zoneSerial", zoneSerial_}, {"log", log_}, {"webZones", webs}, {"iceStormZones", ices}, {"auraZones", auras},
+          {"warpGates", gates}, {"turnRestrained", turnRestrained_}};
 }
 
 bool Battle::applySnapshot(const nlohmann::json& snap) {
@@ -142,6 +173,17 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
     }
     u.hungerPenaltyPct = s.value("hungerPenaltyPct", u.hungerPenaltyPct);
     u.offWeaponSkill = s.value("offWeaponSkill", u.offWeaponSkill);
+    u.stunned = s.value("stunned", false), u.stunTurns = s.value("stunTurns", 0), u.asleep = s.value("asleep", false), u.sleepTurns = s.value("sleepTurns", 0);
+    u.bleeding = s.value("bleeding", false), u.crippled = s.value("crippled", false), u.fearTurns = s.value("fearTurns", 0);
+    u.bleedRoundsLeft.reset(), u.bleedRoundMarker.reset();
+    if (s.contains("bleedRoundsLeft") && s["bleedRoundsLeft"].is_number()) u.bleedRoundsLeft = s["bleedRoundsLeft"].get<int>();
+    if (s.contains("bleedRoundMarker") && s["bleedRoundMarker"].is_number()) u.bleedRoundMarker = s["bleedRoundMarker"].get<int>();
+    u.fearSourceId = s.value("fearSourceId", std::string());
+    u.blessedHitBonusPct = s.value("blessedHitBonusPct", 0.0), u.blessedRoundsLeft = s.value("blessedRoundsLeft", 0);
+    u.summonerId = s.value("summonerId", std::string());
+    u.spellCharges = s.value("spellCharges", 0);
+    u.lifeDrainCharges.reset();
+    if (s.contains("lifeDrainCharges") && s["lifeDrainCharges"].is_number()) u.lifeDrainCharges = s["lifeDrainCharges"].get<int>();
     if (s.contains("faceDx") && s["faceDx"].is_number()) u.faceDx = s["faceDx"].get<double>();
     if (s.contains("faceDy") && s["faceDy"].is_number()) u.faceDy = s["faceDy"].get<double>();
     u.shock.reset();
@@ -191,6 +233,42 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       zoneSerial_ = std::max(zoneSerial_, z.id);
       zones_.push_back(std::move(z));
     }
+  // Engine2's zones
+  auto readCells = [](const nlohmann::json& a) {
+    std::vector<BattleHex> cells;
+    if (a.is_array())
+      for (const nlohmann::json& k : a)
+        if (k.is_string()) {
+          const std::string t = k.get<std::string>();
+          const size_t comma = t.find(',');
+          if (comma != std::string::npos) cells.push_back({std::atoi(t.c_str()), std::atoi(t.c_str() + comma + 1)});
+        }
+    return cells;
+  };
+  auto readPoint = [](const nlohmann::json& j, const char* key) {
+    return j.contains(key) && j[key].is_object() ? BattleHex{j[key].value("x", 0), j[key].value("y", 0)} : BattleHex{};
+  };
+  webZones_.clear(), iceZones_.clear(), auraZones_.clear(), warpGates_.clear();
+  if (snap.contains("webZones") && snap["webZones"].is_array())
+    for (const nlohmann::json& j : snap["webZones"])
+      if (j.is_object())
+        webZones_.push_back({readCells(j.contains("cells") ? j["cells"] : nlohmann::json()), j.value("roundsLeft", 0), readPoint(j, "center"), j.value("radius", 0),
+                             j.value("sleepChance", 0.25)});
+  if (snap.contains("iceStormZones") && snap["iceStormZones"].is_array())
+    for (const nlohmann::json& j : snap["iceStormZones"])
+      if (j.is_object())
+        iceZones_.push_back({readCells(j.contains("cells") ? j["cells"] : nlohmann::json()), j.value("roundsLeft", 0), readPoint(j, "center"), j.value("radius", 0),
+                             j.value("damageDice", 1), j.value("damageFaces", 6), j.value("damageMul", 0.65), j.value("casterMag", 0.0),
+                             j.value("casterLevel", 1), j.value("casterId", std::string()), j.value("side", std::string())});
+  if (snap.contains("auraZones") && snap["auraZones"].is_array())
+    for (const nlohmann::json& j : snap["auraZones"])
+      if (j.is_object())
+        auraZones_.push_back({readCells(j.contains("cells") ? j["cells"] : nlohmann::json()), j.value("roundsLeft", 0), j.value("kind", std::string()),
+                              j.value("side", std::string()), j.value("pct", 0.0)});
+  if (snap.contains("warpGates") && snap["warpGates"].is_array())
+    for (const nlohmann::json& j : snap["warpGates"])
+      if (j.is_object()) warpGates_.push_back({readPoint(j, "a"), readPoint(j, "b"), j.value("roundsLeft", 0), j.value("level", 1)});
+  turnRestrained_ = snap.value("turnRestrained", false);
   round_ = snap.value("turn", round_);
   lootRations_ = snap.value("lootRations", lootRations_);
   log_.clear();

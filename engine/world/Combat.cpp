@@ -176,13 +176,21 @@ struct Preview {
   double hitChance = 0;
 };
 
+// weaponModifiers' blessedHitBonusPct * 100: an enemy always has it, a hero only when its weapon's mastery applies.
+double blessBonus(const Battle& b, const Fighter& f, bool offHand) {
+  const BattleUnit& u = b.units()[f.unit];
+  if (u.blessedHitBonusPct <= 0) return 0;
+  if (u.side == "enemy") return u.blessedHitBonusPct * 100;
+  return (offHand ? u.offTrainsWeapon : u.trainsWeapon) ? u.blessedHitBonusPct * 100 : 0;
+}
+
 // combat.ts previewDamage (the weapon's average roll).
 Preview previewDamage(const Battle& b, const Fighter& a, const Fighter& d, const BattleCell::Terrain& att, const BattleCell::Terrain& def,
                       bool offHand) {
   const CombatProfile& p = b.units()[a.unit].combat;
   const auto [bonusAtk, bonusDef] = terrainBonus(b, a, att, def);
   const bool rear = isRearAttack(a, d);
-  const double accuracy = offHand ? p.offAccuracy : p.accuracy, damageMul = offHand ? p.offDamageMul : p.damageMul;
+  const double accuracy = (offHand ? p.offAccuracy : p.accuracy) + blessBonus(b, a, offHand), damageMul = offHand ? p.offDamageMul : p.damageMul;
   double weapon = 0;
   if (offHand) {
     if (p.offHandWeapon) weapon = p.offDice * (p.offFaces + 1.0) / 2 * damageMul + p.offBonus;
@@ -244,6 +252,13 @@ bool canHitFrom(const Battle& b, size_t unit, BattleHex from, size_t foe, bool w
   return hitFrom(b, u, u.minRange, u.maxRange, u.mag, from, f, {f.x, f.y}, withDecorations, false);
 }
 
+bool canOffHandHit(const Battle& b, size_t unit, BattleHex from, size_t foe, bool withDecorations) {
+  const BattleUnit& u = b.units()[unit];
+  const BattleUnit& f = b.units()[foe];
+  if (!u.combat.offHandWeapon || u.combat.offHandShield) return false;
+  return hitFrom(b, u, u.combat.offMinRange, u.combat.offMaxRange, u.mag, from, f, {f.x, f.y}, withDecorations, false);
+}
+
 bool canCounter(const Battle& b, const Fighter& attacker, BattleHex from, const Fighter& defender) {
   const BattleUnit& d = b.units()[defender.unit];
   if (!d.alive) return false;
@@ -252,13 +267,6 @@ bool canCounter(const Battle& b, const Fighter& attacker, BattleHex from, const 
   // Counters are judged on the bare tiles (Engine2 passes no decoration overlay here) and from the whole body.
   if (hitFrom(b, d, d.minRange, d.maxRange, defender.mag, at, a, from, false, true)) return true;
   if (!d.combat.offHandWeapon) return false;
-bool canOffHandHit(const Battle& b, size_t unit, BattleHex from, size_t foe, bool withDecorations) {
-  const BattleUnit& u = b.units()[unit];
-  const BattleUnit& f = b.units()[foe];
-  if (!u.combat.offHandWeapon || u.combat.offHandShield) return false;
-  return hitFrom(b, u, u.combat.offMinRange, u.combat.offMaxRange, u.mag, from, f, {f.x, f.y}, withDecorations, false);
-}
-
   return hitFrom(b, d, d.combat.offMinRange, d.combat.offMaxRange, defender.mag, at, a, from, false, true);
 }
 
@@ -290,7 +298,7 @@ Hit rollDamage(const Battle& b, const Fighter& a, const Fighter& d, Mulberry32& 
   const auto [bonusAtk, bonusDef] = terrainBonus(b, a, att, def);
   const bool rear = useWeaponSkill && isRearAttack(a, d);
   // weaponModifiers, or { accuracy 100, damage 1 } when the hit does not use the weapon's mastery
-  const double accuracy = useWeaponSkill ? (custom ? p.offAccuracy : p.accuracy) : 100;
+  const double accuracy = useWeaponSkill ? (custom ? p.offAccuracy : p.accuracy) + blessBonus(b, a, custom != nullptr) : 100;
   const double damageMul = useWeaponSkill ? (custom ? p.offDamageMul : p.damageMul) : 1;
   auto roll = [&](int dice, int faces) {  // rollDice(dice, faces, 0, rng)
     double rolled = 0;

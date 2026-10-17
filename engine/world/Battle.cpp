@@ -149,6 +149,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     o.initiativeBonus = integer(u, "initiativeBonus");
     o.level = integer(u, "level", 1);
     o.summoned = yes(u, "summoned");
+    o.undead = yes(u, "undead");
     if (u.contains("combat") && u["combat"].is_object()) {
       const json& c = u["combat"];
       CombatProfile& p = o.combat;
@@ -164,6 +165,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
       if (c.contains("offHand") && c["offHand"].is_object()) {
         const json& h = c["offHand"];
         p.offHandWeapon = text(h, "kind") == "weapon";
+        p.offHandShield = text(h, "kind") == "shield";
         p.offMinRange = integer(h, "minRange", 1), p.offMaxRange = integer(h, "maxRange", 1);
         p.offDice = integer(h, "dice", 1), p.offFaces = integer(h, "faces", 4), p.offBonus = integer(h, "bonus");
       }
@@ -219,6 +221,14 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     o.poisonTier = text(u, "poisonTier");
     if (u.contains("fullness") && u["fullness"].is_number()) o.fullness = u["fullness"].get<double>();
     o.hungerPenaltyPct = number(u, "hungerPenaltyPct");
+    o.stunned = yes(u, "stunned"), o.stunTurns = integer(u, "stunTurns");
+    o.asleep = yes(u, "asleep"), o.sleepTurns = integer(u, "sleepTurns");
+    o.bleeding = yes(u, "bleeding"), o.crippled = yes(u, "crippled");
+    if (u.contains("bleedRoundsLeft") && u["bleedRoundsLeft"].is_number()) o.bleedRoundsLeft = u["bleedRoundsLeft"].get<int>();
+    o.fearTurns = integer(u, "fearTurns"), o.fearSourceId = text(u, "fearSourceId");
+    o.blessedHitBonusPct = number(u, "blessedHitBonusPct"), o.blessedRoundsLeft = integer(u, "blessedRoundsLeft");
+    o.summonerId = text(u, "summonerId"), o.spellCharges = integer(u, "spellCharges");
+    if (u.contains("lifeDrainCharges") && u["lifeDrainCharges"].is_number()) o.lifeDrainCharges = u["lifeDrainCharges"].get<int>();
     if (u.contains("growth") && u["growth"].is_array()) {
       for (const json& row : u["growth"]) {
         std::array<int, 16> r{};
@@ -274,6 +284,29 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
         }
         for (int t = 0; t < 10; ++t) r.spells[t] = integer(c[10], ("tier" + std::to_string(t + 1)).c_str());
         r.shockCharges = c[11].get<int>(), r.frostCharges = c[12].get<int>();
+      }
+      b.castRefs_.push_back(std::move(r));
+    }
+  if (j.contains("skillCasts"))
+    for (const json& c : j["skillCasts"]) {
+      if (!c.is_array() || c.size() < 7) continue;
+      CastReference r;
+      r.skill = true;
+      r.caster = c[0].get<int>();
+      r.kind = c[1].get<std::string>();
+      r.cell = {c[2].get<int>(), c[3].get<int>()};
+      r.valid = c[4].get<int>() != 0;
+      r.at = {c[5].get<int>(), c[6].get<int>()};
+      if (r.valid && c.size() >= 13) {
+        r.seed = c[7].get<uint32_t>();
+        r.calls = c[8].get<int>();
+        for (const json& u : c[9]) {
+          std::vector<double> v;
+          for (const json& x : u) v.push_back(x.get<double>());
+          r.ext.push_back(std::move(v));
+        }
+        r.zones = c[10], r.enmity = c[11], r.unitCount = c[12].get<int>();
+        if (c.size() > 13 && c[13].is_array() && c[13].size() >= 2) r.patchTier = c[13][0].get<int>(), r.patchValue = c[13][1].get<int>();
       }
       b.castRefs_.push_back(std::move(r));
     }
@@ -412,7 +445,9 @@ std::optional<int> Battle::stepCost(int x, int y, const BattleUnit& self, const 
 std::vector<ReachCell> Battle::reachable(size_t unit, bool pruneStops) const {
   const BattleUnit& u = units_[unit];
   // Free roam (Engine2 effectiveUnitForReach on an explore mission): any reachable hex, however far.
-  const int mov = roaming_ ? cols_ * rows_ : std::max(0, u.mov - u.moveUsed);
+  // effectiveUnitForReach: a unit whose cell was webbed when its turn began (turnRestrained) walks one hex at most.
+  const int remaining = std::max(0, u.mov - u.moveUsed);
+  const int mov = roaming_ ? cols_ * rows_ : turnRestrained_ ? std::min(1, remaining) : remaining;
   const std::vector<int> occ = occupancy();
   // The reach in Engine2's insertion order (a Map there): `at` finds a hex's entry.
   std::vector<ReachCell> result;
@@ -480,6 +515,28 @@ double Battle::affinityBonus(const std::string& a, const std::string& b) const {
   for (const auto& [x, y, v] : affinity_)
     if (x == a && y == b) return v;
   return 0;
+}
+
+bool Battle::isWebCell(int x, int y) const {
+  for (const WebZone& z : webZones_)
+    if (std::any_of(z.cells.begin(), z.cells.end(), [&](const BattleHex& c) { return c.x == x && c.y == y; })) return true;
+  return false;
+}
+
+double Battle::webCellSleepChance(int x, int y) const {
+  for (const WebZone& z : webZones_)
+    if (std::any_of(z.cells.begin(), z.cells.end(), [&](const BattleHex& c) { return c.x == x && c.y == y; })) return z.sleepChance;
+  return 0.25;  // WEB_OF_DREAMS.sleepChance
+}
+
+double Battle::zoneDamageMul(const BattleUnit& defender) const {
+  double mul = 1;
+  for (const AuraZone& z : auraZones_) {
+    if (!std::any_of(z.cells.begin(), z.cells.end(), [&](const BattleHex& c) { return c.x == defender.x && c.y == defender.y; })) continue;
+    if (z.kind == "protection" && z.side == defender.side) mul *= 1 - z.pct;
+    if (z.kind == "intimidation" && z.side != defender.side) mul *= 1 + z.pct;
+  }
+  return mul;
 }
 
 void Battle::newTurn() {

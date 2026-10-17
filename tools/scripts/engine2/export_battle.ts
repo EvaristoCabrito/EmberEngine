@@ -143,6 +143,10 @@ for (const u of e.units) {
     mov: e.effectiveUnitForReach(u).mov, baseMov: u.mov, hp: u.hp, maxHp: u.maxHp, atk: u.atk, def: u.def, mag: u.mag, dex: u.dex ?? 0,
     minRange: u.minRange ?? 1, maxRange: u.maxRange ?? 1, size: u.size ?? 1, summoned: !!u.summoned, level: u.level ?? 1,
     footprintOffsets: u.footprintOffsets ?? null, footprintW: u.footprintW ?? null, footprintH: u.footprintH ?? null, reach: cellsOut,
+    undead: !!data.isUndeadClass(u.classId), stunned: !!u.stunned, stunTurns: u.stunTurns ?? 0, asleep: !!u.asleep, sleepTurns: u.sleepTurns ?? 0,
+    bleeding: !!u.bleeding, bleedRoundsLeft: u.bleedRoundsLeft ?? null, crippled: !!u.crippled, fearTurns: u.fearTurns ?? 0, fearSourceId: u.fearSourceId ?? null,
+    blessedHitBonusPct: u.blessedHitBonusPct ?? 0, blessedRoundsLeft: u.blessedRoundsLeft ?? 0, summonerId: u.summonerId ?? null, spellCharges: u.spellCharges ?? 0,
+    lifeDrainCharges: u.lifeDrainCharges ?? null,
     initiativeBonus: (u.initiative ?? 0) - (u.initiativeRoll ?? 0),
     // Spells: what the unit may cast (classSpells), its charges, and what its weapon practises (weaponSkills.ts).
     spells: u.spells, spellList: available.classSpells(u.classId, u.level ?? 1, u.name), shockCharges: u.shockCharges ?? 0,
@@ -332,6 +336,8 @@ if (process.env.SPELL_REFS === '1') {
             const finish = b.finishCombat.bind(b);
             b.finishCombat = (att: unknown) => { finish(att); if (!b.queue.length && !done) { done = true; doneCalls = calls; } };
             b.queue = [];
+            // the rules of the cast alone: no later turn begins (its poison, its zones) before the board is read
+            b.beginUnitTurn = () => {}, b.startNewRound = () => {};
             if (kind === 'cureMinor') b.castHeal(u, { x, y }, 'cureMinor');
             else if (kind === 'magicMissile') {
               // Every dart picked on the same hex (magicMissileCount(level) clicks, as a player repeats a target).
@@ -342,6 +348,138 @@ if (process.env.SPELL_REFS === '1') {
             if (done) calls = doneCalls;
             const after = b.units.map((v: any) => [v.hp, v.alive ? 1 : 0, v.shock ? [v.shock.dice, v.shock.faces, v.shock.bonus, v.shock.mag] : 0, v.maxHp, v.level, v.xp ?? 0]);
             casts.push([ci, kind, x, y, 1, at.x, at.y, s, calls, after, u.spells, u.shockCharges ?? 0, u.frostCharges ?? 0]);
+          }
+    }
+  }
+}
+
+
+// Skill casts: the rest of the weapon skills and spells EmberEngine ports (SPELL_REFS=1). Every one is cast by any unit that
+// has it in its class list (and by the first four units, so classes this map lacks are covered) at every hex within 9, from
+// where it stands and from a second spot; recorded: the aim's verdict, the random numbers drawn and the board afterwards in
+// full (position, statuses, stats, charges of every unit, the zones, every enmity entry).
+const E2_KINDS = ['bloodyShot', 'multiShot', 'trip', 'executionerStrike', 'shieldBash', 'cleave', 'shoulderSmash', 'sweep', 'divineWrath', 'stampede',
+  'burningHands', 'poisonBreath', 'fireball', 'causticVenom', 'divineBolt', 'minorVenom', 'iceStorm', 'turnUndead', 'lightningTier3', 'lifeDrain',
+  'phantasmalForce', 'provoke', 'bullRush', 'bless', 'webOfDreams', 'auraOfProtection', 'intimidatingPresence', 'warp'];
+const E2_CAST: Record<string, (b: any, u: any, c: { x: number; y: number }) => void> = {
+  bloodyShot: (b, u, c) => b.castBloodyShot(u, c),
+  multiShot: (b, u, c) => { for (let k = 0; k < 16 && !b.queue.length && !b.active && b.spellKind === 'multiShot'; k++) b.castMultiShot(u, c); },
+  trip: (b, u, c) => b.castTrip(u, c),
+  executionerStrike: (b, u, c) => b.castExecutionerStrike(u, c),
+  shieldBash: (b, u, c) => b.castShieldBash(u, c),
+  cleave: (b, u, c) => b.castCleave(u, c),
+  shoulderSmash: (b, u, c) => b.castShoulderSmash(u, c),
+  sweep: (b, u) => b.confirmSweep(),
+  divineWrath: (b, u, c) => b.castDivineWrath(u, c),
+  stampede: (b, u, c) => b.castStampede(u, c),
+  burningHands: (b, u, c) => b.castBurningHands(u, c, 'burningHands'),
+  poisonBreath: (b, u, c) => b.castBurningHands(u, c, 'poisonBreath'),
+  fireball: (b, u, c) => b.castFireball(u, c),
+  causticVenom: (b, u, c) => b.castCausticVenom(u, c),
+  divineBolt: (b, u, c) => b.castDivineBolt(u, c),
+  minorVenom: (b, u, c) => b.castMinorVenom(u, c),
+  iceStorm: (b, u, c) => b.castIceStorm(u, c),
+  turnUndead: (b, u) => b.castTurnUndead(u),
+  lightningTier3: (b, u, c) => b.castLightningTier3(u, c),
+  lifeDrain: (b, u, c) => b.castLifeDrain(u, c),
+  phantasmalForce: (b, u, c) => b.castPhantasmalForce(u, c),
+  provoke: (b, u, c) => b.castProvoke(u, c),
+  bullRush: (b, u, c) => b.castBullRush(u, c),
+  bless: (b) => b.startBless(),
+  webOfDreams: (b, u, c) => b.castWebOfDreams(u, c),
+  auraOfProtection: (b) => b.startAuraOfProtection(),
+  intimidatingPresence: (b) => b.startIntimidatingPresence(),
+  warp: (b, u, c) => b.castWarp(u, c),
+};
+// The tier a start-method checks before it casts: given to the caster when it has none, and recorded so the check does the same.
+const E2_NEEDS_TIER: Record<string, [number, number]> = { bless: [1, 2], auraOfProtection: [5, 2], intimidatingPresence: [5, 2], warp: [3, 2], bullRush: [1, 2] };
+// Self-centred casts: aimed at the caster's own hex only (their JS aim check is not used).
+const E2_SELF = new Set(['turnUndead', 'bless', 'auraOfProtection', 'intimidatingPresence']);
+const sideIdx = (v: any) => (v.side === 'player' ? 0 : v.side === 'enemy' ? 1 : 2);
+const tierIdx = (v: any) => (v.poisoned ? ['lesser', 'poison', 'greater', 'deadly', 'lethal'].indexOf(v.poisonTier ?? 'lesser') + 1 : 0);
+const unitExt = (v: any) => [v.hp, v.alive ? 1 : 0, v.x, v.y, v.stunned ? 1 : 0, v.stunTurns ?? 0, v.asleep ? 1 : 0, v.sleepTurns ?? 0, v.bleeding ? 1 : 0,
+  v.bleedRoundsLeft ?? -1, v.crippled ? 1 : 0, v.fearTurns ?? 0, v.atk, v.mag, v.def, v.dex, v.mov, v.poisoned ? 1 : 0, tierIdx(v), v.poisonMag ?? 0, sideIdx(v),
+  v.xp ?? 0, v.level, v.maxHp, v.shock ? 1 : 0, v.blessedRoundsLeft ?? 0, v.blessedHitBonusPct ?? 0, v.spellCharges ?? 0, v.lifeDrainCharges ?? -1,
+  ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((t) => v.spells?.[`tier${t}`] ?? 0)];
+const cellHash = (cells: Iterable<string>) => { let h = 0, n = 0; for (const k of cells) { const [x, y] = k.split(',').map(Number); h += (x * 1009 + y * 7919) % 1000003; n++; } return [n, h]; };
+const zonesExt = (b: any) => ({
+  ice: b.iceStormZones.map((z: any) => [z.roundsLeft, ...cellHash(z.cells), z.damageDice, z.damageFaces, z.damageMul, z.casterMag, z.casterLevel, z.side === 'player' ? 0 : z.side === 'enemy' ? 1 : 2]),
+  web: b.webZones.map((z: any) => [z.roundsLeft, ...cellHash(z.cells), z.sleepChance ?? 0.25]),
+  warp: b.warpGates.map((g: any) => [g.roundsLeft, g.a.x, g.a.y, g.b.x, g.b.y, g.level]),
+  aura: b.auraZones.map((z: any) => [z.roundsLeft, ...cellHash(z.cells), z.kind === 'protection' ? 0 : 1, z.side === 'player' ? 0 : z.side === 'enemy' ? 1 : 2, z.pct]),
+});
+const enmityExt = (b: any) => {
+  const out: number[][] = [];
+  for (const [foeId, row] of b.enmity as Map<string, Map<string, { ce: number; ve: number }>>) {
+    const fi = b.units.findIndex((v: any) => v.id === foeId);
+    for (const [heroId, entry] of row) out.push([fi, b.units.findIndex((v: any) => v.id === heroId), entry.ce, entry.ve]);
+  }
+  return out.sort((a, c) => a[0] - c[0] || a[1] - c[1]);
+};
+const skillCasts: unknown[] = [];
+if (process.env.SPELL_REFS === '1') {
+  const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
+  const base = fresh();
+  const pristine = structuredClone(base.units);
+  let castSeed = 200000;
+  for (const kind of E2_KINDS) {
+    const kindOut = kind === 'lifeDrain' ? 'familiarLifeDrain' : kind;  // Ember's warlock has a spell of the same id
+    for (let ci = 0; ci < base.units.length; ci++) {
+      const me = base.units[ci];
+      const has = available.classSpells(me.classId, me.level ?? 1, me.name).includes(kind);
+      if (!has && (ci >= 4 || kind === 'bullRush' || kind === 'turnUndead' || kind === 'bless')) continue;
+      const spots: { x: number; y: number }[] = [{ x: me.x, y: me.y }];
+      if ((me.size ?? 1) === 1) {
+        const occ = pathfinding.occupancy(base.units);
+        let foe: any = null;
+        for (const v of base.units) if (v.alive && v.side !== me.side && v.side !== 'neutral' && (!foe || pathfinding.hexDist(v, me) < pathfinding.hexDist(foe, me))) foe = v;
+        let spot: { x: number; y: number } | null = null;
+        for (let y = 0; foe && y < base.rows && !spot; y++)
+          for (let x = 0; x < base.cols && !spot; x++)
+            if (pathfinding.hexDist({ x, y }, foe) === 2 && hexprops.hexDef(base.tiles, base.cols, x, y, base.decorOverlay).passable && !occ.has(pathfinding.key(x, y))) spot = { x, y };
+        if (spot) spots.push(spot);
+      }
+      for (const at of spots)
+        for (let y = 0; y < base.rows; y++)
+          for (let x = 0; x < base.cols; x++) {
+            if (pathfinding.hexDist({ x, y }, at) > 9) continue;
+            if (E2_SELF.has(kind) && (x !== at.x || y !== at.y)) continue;
+            const b = fresh();
+            b.units = structuredClone(pristine);
+            const u = b.units[ci];
+            u.x = at.x, u.y = at.y, u.drawX = at.x, u.drawY = at.y;
+            b.selectedId = u.id;
+            b.spellKind = kind;
+            b.mode = 'awaitSpell';
+            b.missileTargets = [];
+            if (!E2_SELF.has(kind) && !b.spellAimValid(u, { x, y })) { skillCasts.push([ci, kindOut, x, y, 0, at.x, at.y]); continue; }
+            const s = castSeed++;
+            const gen = combat.mulberry32(s);
+            let calls = 0;
+            b.rng = () => { calls++; return gen(); };
+            for (const name of FX) {
+              const original = b[name];
+              if (typeof original !== 'function') continue;
+              b[name] = (...args: unknown[]) => { const keep = b.rng; b.rng = Math.random; try { return original.apply(b, args); } finally { b.rng = keep; } };
+            }
+            let done = false, doneCalls = 0;
+            const finish = b.finishCombat.bind(b);
+            b.finishCombat = (att: unknown) => { finish(att); if (!b.queue.length && !done) { done = true; doneCalls = calls; } };
+            b.queue = [];
+            // the rules of the cast alone: no later turn begins (its poison, its zones) before the board is read
+            b.beginUnitTurn = () => {}, b.startNewRound = () => {};
+            const need = E2_NEEDS_TIER[kind];
+            if (need && (u.spells[`tier${need[0]}`] ?? 0) <= 0) u.spells[`tier${need[0]}`] = need[1];
+            const patched = need && JSON.stringify(u.spells) !== JSON.stringify(pristine[ci].spells);
+            const tiersBefore = JSON.stringify(u.spells), zonesBefore = JSON.stringify(zonesExt(b));
+            const trace = process.env.CAST_TRACE === `${u.name}:${kind}:${at.x},${at.y}:${x},${y}`;
+            if (trace) { const sh = b.spawnHit.bind(b); b.spawnHit = (t: any, d: number, c: boolean, m: boolean) => { console.log(`TRACE hit ${t.name}@${t.x},${t.y} dmg ${d} hp ${t.hp}`); return sh(t, d, c, m); }; }
+            E2_CAST[kind](b, u, { x, y });
+            const cast = !!b.queue.length || !!b.active || JSON.stringify(u.spells) !== tiersBefore || JSON.stringify(zonesExt(b)) !== zonesBefore;
+            if (!cast) { castSeed--; skillCasts.push([ci, kindOut, x, y, 0, at.x, at.y]); continue; }
+            for (let i = 0; i < 6000 && !done && (b.active || b.queue.length); i++) b.tick(0.05);
+            if (done) calls = doneCalls;
+            skillCasts.push([ci, kindOut, x, y, 1, at.x, at.y, s, calls, b.units.map(unitExt), zonesExt(b), enmityExt(b), b.units.length, patched ? need : null]);
           }
     }
   }
@@ -394,6 +532,7 @@ if (process.env.SPELL_REFS === '1') {
     // the action's end (finishAction) belongs to the turn loop, not to the rules checked here
     b.finishAction = () => { if (!done) { done = true; doneCalls = calls; } };
     b.queue = [];
+    b.beginUnitTurn = () => {}, b.startNewRound = () => {};  // the rules of the action alone: no later turn begins before the board is read
     const spellsBefore = JSON.stringify(u.spells), bagBefore = JSON.stringify(u.bag);
     act(b, u);
     for (let i = 0; i < 4000 && !done && (b.active || b.queue.length); i++) b.tick(0.05);
@@ -594,7 +733,7 @@ const missionMusic = (() => {
 })();
 
 writeFileSync(outPath, JSON.stringify({ source: 'Engine2 src/game/engine.ts BattleEngine via tools/scripts/engine2/export_battle.ts',
-  map: draft.id, cols: e.cols, rows: e.rows, debugFreeCast: testLevel > 0, explore: !!mission.explore, cells, units, affinityBonus, forecasts, rolls, ai, aiNear: near, casts, supportCasts,
+  map: draft.id, cols: e.cols, rows: e.rows, debugFreeCast: testLevel > 0, explore: !!mission.explore, cells, units, affinityBonus, forecasts, rolls, ai, aiNear: near, casts, supportCasts, skillCasts,
   sounds: { levelUp }, music: missionMusic }));
 console.log(`${draft.id}: ${e.cols}x${e.rows}, ${units.length} units (${units.map((u) => `${u.name} mov ${u.mov}`).join(', ')})`);
 process.exit(0);  // the engine leaves timers running

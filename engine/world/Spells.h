@@ -29,7 +29,7 @@ namespace ember::e2 {
 
 // One queued action (Engine2 Seq): a spell's hits, a weapon strike (Golpe Duplo, a plain attack) or a heal.
 struct BattleStep {
-  enum class Type { Spell, Combat, Heal, CureDisease, Food, Potion };
+  enum class Type { Spell, Combat, Heal, CureDisease, Food, Potion, Move, Effect };
   Type type = Type::Spell;
   size_t att = 0;
   std::string kind;  // the spell (empty = a plain attack)
@@ -45,6 +45,17 @@ struct BattleStep {
   size_t def = 0;
   bool noCounter = false;
   int bonusDice = 0, bonusDiceCount = 1, bonusFlat = 0;  // an extra die on a landed strike (bonusDice = faces)
+  // Engine2's SpellAnim / CombatAnim fields for the rest of the skills
+  std::optional<size_t> centerId;  // Bola de Fogo-style: the aimed unit rolls the centre dice, everyone else the splash
+  double centerMul = 1;
+  int centerDice = 0, centerFaces = 0, centerBonus = 0;
+  bool poison = false;             // each landed hit may poison (Veneno Cáustico, Sopro Venenoso)
+  int wallDice = 0, wallFaces = 0;  // Investida Touro: the impact dice when the shove is blocked short
+  std::optional<BattleHex> knockTo;  // ... and where the struck is shoved
+  double stunChance = 0;           // an off-hand shield bash
+  bool customDice = false;         // an off-hand weapon strike: its own dice
+  int customDiceCount = 1, customFaces = 4, customBonus = 0;
+  std::vector<BattleHex> path;     // Type::Move: the walk (start first)
   // Food: the fullness it brings (its rations roll is dice / faces / bonus); Potion: the potion's id
   double fullness = 0;
   std::string potion;
@@ -79,6 +90,8 @@ struct BattleEffect {
   bool counter = false;  // the defender striking back
   std::string text;      // shown instead of the number ("curado", "+2 rações", ...)
   bool status = false;   // a condition's word ("Marcado", "Envenenado", ...): no hit pose, its own colour
+  bool abortRush = false;  // a missed Investida Touro: the rest of the charge is dropped
+  bool moved = false;      // Type::Move / knockback: the unit is on another hex now
   bool pushed = false;   // the unit was moved to another hex (Vendaval Glacial): the window re-places its card
   std::string cause;     // what hurt it at the start of its turn ("Sangramento fere", ...): the combat log's verb
 };
@@ -114,6 +127,8 @@ bool spellPorted(const std::string& kind);
 bool spellWeaponAbility(const std::string& kind);
 // A spell cast at once, with no aim (Criar Comida e Água): cast it at the caster's own hex.
 bool spellInstant(const std::string& kind);
+// A spell centred on its caster whose area is shown first, then confirmed (Varredura, Expulsar Mortos-Vivos).
+bool spellSelfArea(const std::string& kind);
 
 // Potions (data.ts POTIONS; their ids in the bag's order: kPotionIds, Battle.h).
 int potionIndex(const std::string& id);  // -1 when unknown
@@ -136,6 +151,8 @@ void hurtScene(Battle& b);
 std::string spellPose(const std::string& kind);
 // Uses left (Engine2 remainingSpellUses).
 int spellUsesLeft(const Battle& b, size_t unit, const std::string& kind);
+// The tier a spell draws its uses from (Engine2 SPELL_TIER; 0 = none): the status sheet's "Tier N".
+int spellTierNumber(const std::string& kind);
 // How many hexes the cast takes (Míssil Mágico: one per missile, which may repeat).
 int spellTargetCount(const Battle& b, size_t unit, const std::string& kind);
 // The spell's zone: every hex within its reach from the caster (range, the shot's line) before asking for a target in
@@ -157,6 +174,29 @@ void resolveStep(Battle& b, const BattleStep& step, Mulberry32& rng, std::vector
 void resolveStrike(Battle& b, const BattleStep& step, bool counter, Mulberry32& rng, std::vector<BattleEffect>& out);
 // Whether the defender strikes back after the step's strike (resolveCombat's condition).
 bool strikesBack(const Battle& b, const BattleStep& step);
+// Engine2 applyTileHazard for a unit that just stepped onto a hex (a flame under its feet burns it).
+void stepOnHex(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out);
+// Engine2 tryWarpCrossing: the hex a unit standing on one opening of a warp gate comes out at, beside the other, or nothing.
+std::optional<BattleHex> warpCrossing(const Battle& b, size_t unit);
+// Plays steps one after another (Engine2's queue): a missed Investida Touro drops the rest of its charge.
+void playSteps(Battle& b, const std::vector<BattleStep>& steps, Mulberry32& rng, std::vector<BattleEffect>& out);
+// Cooker check-battle: a unit's whole state as numbers, the zones and the enmity entries (compared with Engine2's own).
+std::vector<double> unitStateNumbers(const BattleUnit& u);
+nlohmann::json zoneStateNumbers(const Battle& b);
+nlohmann::json enmityNumbers(const Battle& b);
+// What a unit's turn becomes once it has begun (Engine2 beginUnitTurn after startOfTurnEffects): it plays on, it loses the turn
+// (dead, stunned, asleep) or it flees in fear along `fleePath` and cannot act.
+struct TurnStart {
+  enum class Kind { Normal, Lost, Fled } kind = Kind::Normal;
+  std::vector<BattleHex> fleePath;
+  std::string tip;
+};
+// Engine2 beginUnitTurn: its start-of-turn effects, then stun, the web's sleep roll, sleep and fear, and whether its cell is webbed
+// (turnRestrained). The caller has already called Battle::beginTurn.
+TurnStart beginUnitTurn(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out);
+// Engine2 applyBleedingActionDamage: a bleeding unit takes 1D8 whenever it acts (once per own turn when it walks). False when it bled
+// out. `isMove`: it is walking.
+bool bleedOnAction(Battle& b, size_t unit, bool isMove, Mulberry32& rng, std::vector<BattleEffect>& out);
 // The start of a unit's own turn (startOfTurnEffects): the lightning echo, the ground's hazard.
 void startOfTurnEffects(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out);
 
