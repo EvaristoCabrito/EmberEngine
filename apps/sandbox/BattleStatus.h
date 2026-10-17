@@ -8,6 +8,7 @@
 // functions); the potions carried. The arrows beside the close button browse the units of the fight.
 
 #include <imgui.h>
+#include <imgui_internal.h>  // BringWindowToDisplayFront
 
 #include <algorithm>
 #include <array>
@@ -45,7 +46,7 @@ class BattleStatusSheet {
     std::function<std::vector<std::string>(const e2::BattleUnit&, const char* stat)> gearLines;  // the worn pieces behind a stat
   };
 
-  void open(size_t unit) { open_ = true, unit_ = unit, conditionOpen_ = false; }
+  void open(size_t unit) { open_ = true, unit_ = unit, conditionOpen_ = false, scrollTarget_ = 0.0f, scrollReset_ = true; }
   void close() { open_ = false, conditionOpen_ = false; }
   bool isOpen() const { return open_; }
   size_t unit() const { return unit_; }
@@ -62,25 +63,27 @@ class BattleStatusSheet {
     // the veil: a click outside the sheet closes it
     ImGui::SetNextWindowPos({0, 0});
     ImGui::SetNextWindowSize(io.DisplaySize);
-    ImGui::SetNextWindowFocus();
     ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 150));
     ImGui::Begin("##statusveil", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+    ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());  // on top, without the focus change that drops a held click
     const bool veilClicked = ImGui::InvisibleButton("##statusveilbtn", io.DisplaySize);
     ImGui::End();
     ImGui::PopStyleColor();
     if (veilClicked) return void(open_ = false);
 
-    const float width = std::min(432.0f, io.DisplaySize.x - 32.0f);  // max-w-[27rem]
+    const float width = std::min(480.0f, io.DisplaySize.x - 32.0f);  // max-w-[27rem], widened for readable text
     const float maxHeight = io.DisplaySize.y * 0.85f;                // max-h-[85dvh]
     const float height = std::min(maxHeight, contentHeight_ > 0 ? contentHeight_ + 48.0f : maxHeight);
     ImGui::SetNextWindowPos({io.DisplaySize.x / 2, io.DisplaySize.y / 2}, ImGuiCond_Always, {0.5f, 0.5f});
     ImGui::SetNextWindowSize({width, height});
-    ImGui::SetNextWindowFocus();
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {24, 24});
     ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 0));
     ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(0, 0, 0, 0));
     ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, IM_COL32(0, 0, 0, 0));
-    ImGui::Begin("##statussheet", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);  // its own scrollbar below
+    ImGui::Begin("##statussheet", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
+                                               ImGuiWindowFlags_NoScrollWithMouse);  // its own scrollbar and wheel below
+    ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
+    wheelScroll();
     ImDrawList* dl = ImGui::GetWindowDrawList();
     dl->ChannelsSplit(3);
     dl->ChannelsSetCurrent(0);
@@ -199,16 +202,16 @@ class BattleStatusSheet {
     const float rightW = 150.0f, rightX = colRight - rightW;
     dl->AddText(uiFont(UiFont::Display), 22.0f, {tx, top.y - 2.0f}, kFg, u.name.c_str(), nullptr, rightX - tx - 8.0f);
     const std::string cls = u.className.empty() ? u.classId : u.className;
-    dl->AddText(ui, 13.0f, {tx, top.y + 28.0f}, u.side == "enemy" ? kDanger : kMuted, std::format("{} · {} {}", cls, en ? "Lv" : "Nv", u.level).c_str());
+    dl->AddText(ui, 15.0f, {tx, top.y + 28.0f}, u.side == "enemy" ? kDanger : kMuted, std::format("{} · {} {}", cls, en ? "Lv" : "Nv", u.level).c_str());
     if (player) {
       const float bw = std::min(144.0f, rightX - tx - 10.0f);
       if (u.level >= 30) {
-        dl->AddText(ui, 11.0f, {tx, top.y + 52.0f}, kMuted, en ? "Max level" : "Nível máximo");
+        dl->AddText(ui, 13.0f, {tx, top.y + 52.0f}, kMuted, en ? "Max level" : "Nível máximo");
       } else {
         const int need = hooks.xpToLevel ? hooks.xpToLevel(u.level) : 100;
         dl->AddRectFilled({tx, top.y + 54.0f}, {tx + bw, top.y + 60.0f}, kBorder, 3.0f);
         dl->AddRectFilled({tx, top.y + 54.0f}, {tx + bw * std::clamp(static_cast<float>(u.xp) / static_cast<float>(std::max(need, 1)), 0.0f, 1.0f), top.y + 60.0f}, kAccent, 3.0f);
-        dl->AddText(ui, 11.0f, {tx, top.y + 63.0f}, kMuted, std::format("{}/{} XP", u.xp, need).c_str());
+        dl->AddText(ui, 13.0f, {tx, top.y + 63.0f}, kMuted, std::format("{}/{} XP", u.xp, need).c_str());
       }
     }
     // The right column: ▲ ▼ ✕, the condition badge, Mochila, Equipar.
@@ -235,8 +238,8 @@ class BattleStatusSheet {
       dl->AddRectFilled(ca, cb, IM_COL32(0, 0, 0, 255), 6.0f);
       dl->AddRect(ca, cb, ImGui::IsItemHovered() ? kAccent : cond.tone, 6.0f);
       drawConditionIcon(dl, cond, {ca.x + 8, ca.y + 8}, 32.0f, publicDir);
-      dl->AddText(ui, 10.0f, {ca.x + 46, ca.y + 9}, kMuted, upperUtf8(en ? "Condition" : "Condição").c_str());
-      dl->AddText(ui, 12.0f, {ca.x + 46, ca.y + 24}, kFg, cond.title.c_str(), nullptr, rightW - 52.0f);
+      dl->AddText(ui, 12.0f, {ca.x + 46, ca.y + 9}, kMuted, upperUtf8(en ? "Condition" : "Condição").c_str());
+      dl->AddText(ui, 14.0f, {ca.x + 46, ca.y + 24}, kFg, cond.title.c_str(), nullptr, rightW - 52.0f);
       cy += 48.0f + 6.0f;
       auto shortcut = [&](const char* id, const char* iconFile, const std::string& label, const std::function<void(size_t)>& action) {
         if (!action) return;
@@ -246,7 +249,7 @@ class BattleStatusSheet {
         dl->AddRectFilled(a, b, IM_COL32(0, 0, 0, 255), 6.0f);
         dl->AddRect(a, b, ImGui::IsItemHovered() ? kAccent : kBorder, 6.0f);
         if (const UiImage* icon = uiImage(publicDir / iconFile)) imageContain(dl, *icon, {a.x + 6, a.y + 6}, {a.x + 30, a.y + 30});
-        dl->AddText(ui, 12.0f, {a.x + 38, a.y + 10}, kFg, label.c_str());
+        dl->AddText(ui, 14.0f, {a.x + 38, a.y + 10}, kFg, label.c_str());
         cy += 36.0f + 6.0f;
       };
       if (player) {
@@ -283,20 +286,20 @@ class BattleStatusSheet {
     const ImGuiIO& io = ImGui::GetIO();
     ImGui::SetNextWindowPos({0, 0});
     ImGui::SetNextWindowSize(io.DisplaySize);
-    ImGui::SetNextWindowFocus();
     ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 120));
     ImGui::Begin("##condveil", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+    ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());  // on top, without the focus change that drops a held click
     if (ImGui::InvisibleButton("##condveilbtn", io.DisplaySize)) conditionOpen_ = false;
     ImGui::End();
     ImGui::PopStyleColor();
     const float w = std::min(320.0f, io.DisplaySize.x - 32.0f);
     ImGui::SetNextWindowPos({io.DisplaySize.x / 2, io.DisplaySize.y / 2}, ImGuiCond_Always, {0.5f, 0.5f});
     ImGui::SetNextWindowSize({w, 0});
-    ImGui::SetNextWindowFocus();
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {20, 20});
     ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 0));
     ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(0, 0, 0, 0));
     ImGui::Begin("##condwindow", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
     ImDrawList* dl = ImGui::GetWindowDrawList();
     dl->ChannelsSplit(2);
     dl->ChannelsSetCurrent(1);
@@ -309,8 +312,8 @@ class BattleStatusSheet {
     const ImVec2 ts = uiFont(UiFont::Display)->CalcTextSizeA(18.0f, FLT_MAX, 0.0f, c.title.c_str());
     dl->AddText(uiFont(UiFont::Display), 18.0f, {top.x + (inner - ts.x) / 2, y}, c.tone, c.title.c_str());
     y += 28.0f;
-    const ImVec2 ds = ui->CalcTextSizeA(12.0f, FLT_MAX, inner, c.detail.c_str());
-    dl->AddText(ui, 12.0f, {top.x + 0.0f, y}, kMuted, c.detail.c_str(), nullptr, inner);
+    const ImVec2 ds = ui->CalcTextSizeA(14.0f, FLT_MAX, inner, c.detail.c_str());
+    dl->AddText(ui, 14.0f, {top.x + 0.0f, y}, kMuted, c.detail.c_str(), nullptr, inner);
     y += ds.y + 6.0f;
     ImGui::SetCursorScreenPos({top.x, y});
     ImGui::Dummy({inner, 4.0f});
@@ -326,12 +329,12 @@ class BattleStatusSheet {
   float drawHp(ImDrawList* dl, const e2::BattleUnit& u, float x, float y, float inner) {
     ImFont* ui = uiFont(UiFont::Ui);
     const std::string hp = std::format("{}/{}", u.hp, u.maxHp);
-    const float hw = ui->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, hp.c_str()).x;
+    const float hw = ui->CalcTextSizeA(14.0f, FLT_MAX, 0.0f, hp.c_str()).x;
     const float barR = x + inner - hw - 8.0f;
     dl->AddRectFilled({x, y + 2.0f}, {barR, y + 10.0f}, kBorder, 4.0f);
     const float f = u.maxHp > 0 ? std::clamp(static_cast<float>(u.hp) / static_cast<float>(u.maxHp), 0.0f, 1.0f) : 0.0f;
     if (f > 0) dl->AddRectFilled({x, y + 2.0f}, {x + (barR - x) * f, y + 10.0f}, u.side == "enemy" ? kDanger : kAccent, 4.0f);
-    dl->AddText(ui, 12.0f, {x + inner - hw, y - 1.0f}, kFg, hp.c_str());
+    dl->AddText(ui, 14.0f, {x + inner - hw, y - 1.0f}, kFg, hp.c_str());
     return y + 28.0f;
   }
 
@@ -344,16 +347,16 @@ class BattleStatusSheet {
     dl->AddRectFilled(a, b, kBg, 8.0f);
     dl->AddRect(a, b, IM_COL32(216, 216, 216, 100), 8.0f);
     if (const UiImage* icon = uiImage(publicDir / "game/icons/stat-points-001.png")) imageContain(dl, *icon, {a.x + 12, a.y + 12}, {a.x + 52, a.y + 52});
-    emberKicker(dl, {a.x + 64, a.y + 8}, 10.0f, upperUtf8(en ? "Attribute points" : "Pontos de atributo").c_str());
-    dl->AddText(uiFont(UiFont::Display), 18.0f, {a.x + 64, a.y + 20}, kFg, en ? std::format("{} available", left).c_str() : std::format("{} disponível{}", left, left == 1 ? "" : "is").c_str());
-    dl->AddText(ui, 11.0f, {a.x + 64, a.y + 44}, kMuted, en ? "Earn 3 per level and spend them as you like." : "Ganhe 3 por nível e distribua como quiser.");
+    dl->AddText(uiFont(UiFont::Ui), 12.0f, {a.x + 64, a.y + 6}, kWarn, upperUtf8(en ? "Attribute points" : "Pontos de atributo").c_str());
+    dl->AddText(uiFont(UiFont::Display), 18.0f, {a.x + 64, a.y + 20}, kFg, en ? std::format("{} available", left).c_str() : std::format("{} {}", left, left == 1 ? "disponível" : "disponíveis").c_str());
+    dl->AddText(ui, 13.0f, {a.x + 64, a.y + 44}, kMuted, en ? "Earn 3 per level and spend them as you like." : "Ganhe 3 por nível e distribua como quiser.");
     return b.y + 14.0f;
   }
 
   float drawAttributes(ImDrawList* dl, const e2::BattleUnit& u, float x, float y, float inner, const Hooks& hooks, bool en) {
     ImFont* ui = uiFont(UiFont::Ui);
-    emberKicker(dl, {x, y}, 12.0f, upperUtf8(en ? "Attributes" : "Atributos").c_str());
-    y += 22.0f;
+    sectionTitle(dl, {x, y}, en ? "Attributes" : "Atributos");
+    y += 26.0f;
     const std::array<int, 5> spent = hooks.allocation ? hooks.allocation(u) : std::array<int, 5>{};
     const int budget = std::max(0, (u.level - 1) * 3), left = std::max(0, budget - (spent[0] + spent[1] + spent[2] + spent[3] + spent[4]));
     const bool hungry = u.hungerPenaltyPct > 0;
@@ -370,6 +373,7 @@ class BattleStatusSheet {
       const ImVec2 a{x + (i % 4) * (cw + gap), y + (i / 4) * (ch + gap)};
       ImGui::SetCursorScreenPos(a);
       ImGui::PushID(i);
+      ImGui::SetNextItemAllowOverlap();  // the − / + buttons drawn over it must get their clicks
       ImGui::InvisibleButton("##cell", {cw, ch});
       const bool hovered = ImGui::IsItemHovered();
       ImGui::PopID();
@@ -387,10 +391,10 @@ class BattleStatusSheet {
       dl->AddRectFilled(a, {a.x + cw, a.y + ch}, kBg, 6.0f);
       dl->AddRect(a, {a.x + cw, a.y + ch}, kBorder, 6.0f);
       const ImU32 ink = cells[i].penalised ? kDanger : cells[i].gear != 0 ? kSky : kFg;
-      const ImVec2 ls = ui->CalcTextSizeA(9.0f, FLT_MAX, 0.0f, cells[i].label);
-      dl->AddText(ui, 9.0f, {a.x + (cw - ls.x) / 2, a.y + 5.0f}, kMuted, cells[i].label);
-      const ImVec2 vs = ui->CalcTextSizeA(14.0f, FLT_MAX, 0.0f, cells[i].value.c_str());
-      dl->AddText(ui, 14.0f, {a.x + (cw - vs.x) / 2, a.y + 18.0f}, ink, cells[i].value.c_str());
+      const ImVec2 ls = ui->CalcTextSizeA(11.0f, FLT_MAX, 0.0f, cells[i].label);
+      dl->AddText(ui, 11.0f, {a.x + (cw - ls.x) / 2, a.y + 5.0f}, kMuted, cells[i].label);
+      const ImVec2 vs = ui->CalcTextSizeA(17.0f, FLT_MAX, 0.0f, cells[i].value.c_str());
+      dl->AddText(ui, 17.0f, {a.x + (cw - vs.x) / 2, a.y + 18.0f}, ink, cells[i].value.c_str());
       if (controls && cells[i].stat >= 0) {  // − +N +
         const int stat = cells[i].stat;
         const float by = a.y + 42.0f, bs = 20.0f, mid = a.x + cw / 2;
@@ -402,18 +406,18 @@ class BattleStatusSheet {
         ImGui::EndDisabled();
         dl->AddRectFilled({mid - 30.0f, by}, {mid - 30.0f + bs, by + bs}, IM_COL32(0, 0, 0, 200), 4.0f);
         dl->AddRect({mid - 30.0f, by}, {mid - 30.0f + bs, by + bs}, kBorder, 4.0f);
-        dl->AddText(ui, 14.0f, {mid - 30.0f + 6.0f, by + 2.0f}, canRemove ? kFg : IM_COL32(240, 240, 240, 90), "−");
+        dl->AddText(ui, 17.0f, {mid - 30.0f + 5.0f, by + 0.5f}, canRemove ? kFg : IM_COL32(240, 240, 240, 90), "−");
         ImGui::BeginDisabled(!canAdd);
         ImGui::SetCursorScreenPos({mid + 10.0f, by});
         const bool plus = ImGui::InvisibleButton("##plus", {bs, bs});
         ImGui::EndDisabled();
         dl->AddRectFilled({mid + 10.0f, by}, {mid + 10.0f + bs, by + bs}, IM_COL32(0, 0, 0, 200), 4.0f);
         dl->AddRect({mid + 10.0f, by}, {mid + 10.0f + bs, by + bs}, kBorder, 4.0f);
-        dl->AddText(ui, 14.0f, {mid + 10.0f + 5.5f, by + 2.0f}, canAdd ? kFg : IM_COL32(240, 240, 240, 90), "+");
+        dl->AddText(ui, 17.0f, {mid + 10.0f + 4.5f, by + 0.5f}, canAdd ? kFg : IM_COL32(240, 240, 240, 90), "+");
         ImGui::PopID();
         const std::string pts = std::format("+{}", spent[static_cast<size_t>(stat)]);
-        const ImVec2 ps = ui->CalcTextSizeA(10.0f, FLT_MAX, 0.0f, pts.c_str());
-        dl->AddText(ui, 10.0f, {mid - ps.x / 2, by + 5.0f}, kAccent, pts.c_str());
+        const ImVec2 ps = ui->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, pts.c_str());
+        dl->AddText(ui, 12.0f, {mid - ps.x / 2, by + 3.0f}, kAccent, pts.c_str());
         if (minus) hooks.adjust(unit_, stat, -1);
         if (plus) hooks.adjust(unit_, stat, +1);
       }
@@ -458,8 +462,11 @@ class BattleStatusSheet {
           const int dice = m.value("dice", 0), faces = m.value("faces", 0), bonus = m.value("bonus", 0);
           const long long total = static_cast<long long>(std::floor(std::floor(u.mag / 2.0) * mul));
           const std::string roll = diceText(dice, faces, bonus);
-          if (m.value("verbose", true)) text += std::format(" {} (⌊⌊MAG ÷ 2⌋ × {}⌋){}", total, mul, roll.empty() ? "" : " + " + roll);
-          else text += std::format(" {} + {}", total, roll);
+          // what it does, in words: "· dano 39 + 1D10" (the MAG formula behind the number is left out: unreadable here)
+          while (!text.empty() && (text.back() == ' ' || text.ends_with("·"))) text.erase(text.size() - (text.back() == ' ' ? 1 : std::string("·").size()));
+          const bool heals = row.kind.starts_with("cure");
+          const char* what = heals ? (en ? "heals" : "cura") : (en ? "damage" : "dano");
+          text += std::format(" · {} {}{}", what, total, roll.empty() ? "" : " + " + roll);
         }
         text += r.value("after", std::string());
         if (r.contains("lockLevel") && r["lockLevel"].is_number() && u.level < r["lockLevel"].get<int>()) {
@@ -477,22 +484,22 @@ class BattleStatusSheet {
       rows.push_back({kind, tr(e2::spellName(kind)), tier, tier >= 1 && tier <= 10 ? u.spells[tier - 1] : 0});
     }
     std::stable_sort(rows.begin(), rows.end(), [](const Row& a, const Row& b) { return (a.tier ? a.tier : 99) < (b.tier ? b.tier : 99); });
-    emberKicker(dl, {x, y}, 12.0f, upperUtf8(en ? "Spells and skills" : "Magias e habilidades").c_str());
-    y += 22.0f;
+    sectionTitle(dl, {x, y}, en ? "Spells and skills" : "Magias e habilidades");
+    y += 26.0f;
     (void)battle;
     for (const Row& r : rows) {
       const std::string uses = r.tier > 0 ? std::format("Tier {} · ×{}", r.tier, r.uses) : std::string();
-      const float usesW = ui->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, uses.c_str()).x;
+      const float usesW = ui->CalcTextSizeA(14.0f, FLT_MAX, 0.0f, uses.c_str()).x;
       const float textW = inner - 36.0f - usesW - 20.0f;
-      const ImVec2 ts = ui->CalcTextSizeA(12.0f, FLT_MAX, textW, r.text.c_str());
+      const ImVec2 ts = ui->CalcTextSizeA(14.0f, FLT_MAX, textW, r.text.c_str());
       const float h = std::max(32.0f, ts.y + 14.0f);
       const ImVec2 a{x, y};
       dl->AddRectFilled(a, {a.x + inner, a.y + h}, kBg, 6.0f);
       dl->AddRect(a, {a.x + inner, a.y + h}, kBorder, 6.0f);
       dl->AddRectFilled({a.x + 8, a.y + (h - 20) / 2}, {a.x + 28, a.y + (h + 20) / 2}, IM_COL32(0, 0, 0, 255), 3.0f);
       if (const UiImage* icon = hooks.spellIcon ? hooks.spellIcon(r.kind) : nullptr) coverRounded(dl, *icon, {a.x + 8, a.y + (h - 20) / 2}, {a.x + 28, a.y + (h + 20) / 2}, 3.0f, IM_COL32_WHITE);
-      dl->AddText(ui, 12.0f, {a.x + 36, a.y + (h - ts.y) / 2}, kFg, r.text.c_str(), nullptr, textW);
-      dl->AddText(ui, 12.0f, {a.x + inner - 10.0f - usesW, a.y + (h - 12.0f) / 2}, kMuted, uses.c_str());
+      dl->AddText(ui, 14.0f, {a.x + 36, a.y + (h - ts.y) / 2}, kFg, r.text.c_str(), nullptr, textW);
+      dl->AddText(ui, 14.0f, {a.x + inner - 10.0f - usesW, a.y + (h - 14.0f) / 2}, kMuted, uses.c_str());
       y += h + 6.0f;
     }
     // Healing: the skill, for a hero that is not a summon.
@@ -504,7 +511,9 @@ class BattleStatusSheet {
         if (!en) std::replace(t.begin(), t.end(), '.', ',');
         return t;
       };
-      dl->AddText(ui, 12.0f, {x, y}, kMuted, std::format("Healing: {}/100 · +{}% healing", pt(u.healingSkill), pt(u.healingSkill)).c_str());
+      const std::string healing = en ? std::format("Healing: {}/100 · +{}% healing", pt(u.healingSkill), pt(u.healingSkill))
+                                     : std::format("Cura: {}/100 · +{}% de cura", pt(u.healingSkill), pt(u.healingSkill));
+      dl->AddText(ui, 14.0f, {x, y}, kMuted, healing.c_str());
       y += 18.0f;
     }
     return y + 12.0f;
@@ -512,14 +521,24 @@ class BattleStatusSheet {
 
   float drawPotions(ImDrawList* dl, const e2::BattleUnit& u, float x, float y, float inner, const std::filesystem::path& publicDir, const Hooks& hooks, bool en) {
     ImFont* ui = uiFont(UiFont::Ui);
-    emberKicker(dl, {x, y}, 12.0f, upperUtf8(en ? "Potions" : "Poções").c_str());
-    y += 22.0f;
+    sectionTitle(dl, {x, y}, en ? "Potions" : "Poções");
+    y += 26.0f;
     static constexpr int kCarryMax[7] = {5, 5, 5, 5, 5, 5, 5};  // POTION_CARRY_MAX (a pouch raises it; the bag's cap is Engine2's)
-    const float gap = 6.0f, cw = (inner - 3 * gap) / 4.0f, ch = 36.0f;
+    // two per row: the name on top (one line, cut with … if it must), "count · dice" under it
+    constexpr int kCols = 2;
+    const float gap = 6.0f, cw = (inner - (kCols - 1) * gap) / kCols, ch = 40.0f, textW = cw - 44.0f;
+    auto fit = [&](std::string s, float size) {
+      if (ui->CalcTextSizeA(size, FLT_MAX, 0.0f, s.c_str()).x <= textW) return s;
+      while (!s.empty() && ui->CalcTextSizeA(size, FLT_MAX, 0.0f, (s + "…").c_str()).x > textW) {
+        do s.pop_back(); while (!s.empty() && (static_cast<unsigned char>(s.back()) & 0xC0) == 0x80);  // whole UTF-8 characters
+        if (!s.empty() && (static_cast<unsigned char>(s.back()) & 0xC0) == 0xC0) s.pop_back();
+      }
+      return s + "…";
+    };
     int n = 0;
     for (int k = 0; k < 7; ++k) {
       if (u.bag[k] <= 0) continue;
-      const ImVec2 a{x + (n % 4) * (cw + gap), y + (n / 4) * (ch + gap)};
+      const ImVec2 a{x + (n % kCols) * (cw + gap), y + (n / kCols) * (ch + gap)};
       ImGui::SetCursorScreenPos(a);
       ImGui::PushID(200 + k);
       ImGui::InvisibleButton("##potion", {cw, ch});
@@ -529,29 +548,35 @@ class BattleStatusSheet {
       dl->AddRectFilled(a, {a.x + cw, a.y + ch}, kBg, 6.0f);
       dl->AddRect(a, {a.x + cw, a.y + ch}, kBorder, 6.0f);
       const std::string file = std::format("game/icons/potion-{}.png", e2::kPotionIds[k]);
-      if (const UiImage* icon = uiImage(publicDir / file)) imageContain(dl, *icon, {a.x + 6, a.y + 6}, {a.x + 30, a.y + 30});
-      dl->AddText(ui, 12.0f, {a.x + 36, a.y + 3}, kFg, e2::potionName(e2::kPotionIds[k]).c_str(), nullptr, cw - 40.0f);
-      dl->AddText(ui, 10.0f, {a.x + 36, a.y + 20}, kMuted, std::format("{}/{}", u.bag[k], kCarryMax[k]).c_str());
+      if (const UiImage* icon = uiImage(publicDir / file)) imageContain(dl, *icon, {a.x + 8, a.y + 8}, {a.x + 32, a.y + 32});
+      // potionLabel = "name dice": the dice go to the second line
+      std::string name = e2::potionName(e2::kPotionIds[k]), dice;
+      if (const size_t sp = name.rfind(' '); sp != std::string::npos && name.find('D', sp) != std::string::npos &&
+                                             std::isdigit(static_cast<unsigned char>(name[sp + 1])))
+        dice = name.substr(sp + 1), name.resize(sp);
+      dl->AddText(ui, 14.0f, {a.x + 40, a.y + 5}, kFg, fit(name, 14.0f).c_str());
+      const std::string sub = dice.empty() ? std::format("{}/{}", u.bag[k], kCarryMax[k]) : std::format("{}/{} · {}", u.bag[k], kCarryMax[k], dice);
+      dl->AddText(ui, 13.0f, {a.x + 40, a.y + 23}, kMuted, sub.c_str());
       ++n;
     }
     if (u.lockpick > 0) {  // the lockpicks of the bag
-      const ImVec2 a{x + (n % 4) * (cw + gap), y + (n / 4) * (ch + gap)};
+      const ImVec2 a{x + (n % kCols) * (cw + gap), y + (n / kCols) * (ch + gap)};
       ImGui::SetCursorScreenPos(a);
       ImGui::InvisibleButton("##lockpick", {cw, ch});
       if (ImGui::IsItemHovered() && hooks.lockpickTip)
         if (const std::string tip = hooks.lockpickTip(); !tip.empty()) ImGui::SetTooltip("%s", tip.c_str());
       dl->AddRectFilled(a, {a.x + cw, a.y + ch}, kBg, 6.0f);
       dl->AddRect(a, {a.x + cw, a.y + ch}, kBorder, 6.0f);
-      if (const UiImage* icon = uiImage(publicDir / "game/icons/lockpick.png")) imageContain(dl, *icon, {a.x + 6, a.y + 6}, {a.x + 30, a.y + 30});
-      dl->AddText(ui, 12.0f, {a.x + 36, a.y + 3}, kFg, "Gazua");
-      dl->AddText(ui, 10.0f, {a.x + 36, a.y + 20}, kMuted, std::to_string(u.lockpick).c_str());
+      if (const UiImage* icon = uiImage(publicDir / "game/icons/lockpick.png")) imageContain(dl, *icon, {a.x + 8, a.y + 8}, {a.x + 32, a.y + 32});
+      dl->AddText(ui, 14.0f, {a.x + 40, a.y + 5}, kFg, en ? "Lockpick" : "Gazua");
+      dl->AddText(ui, 13.0f, {a.x + 40, a.y + 23}, kMuted, std::to_string(u.lockpick).c_str());
       ++n;
     }
     if (n == 0) {
-      dl->AddText(ui, 12.0f, {x, y}, kMuted, en ? "No potions carried." : "Sem poções carregadas.");
+      dl->AddText(ui, 14.0f, {x, y}, kMuted, en ? "No potions carried." : "Sem poções carregadas.");
       return y + 22.0f;
     }
-    return y + ((n + 3) / 4) * (ch + gap);
+    return y + ((n + kCols - 1) / kCols) * (ch + gap);
   }
 
   // ember-ui/styles.css ::-webkit-scrollbar: 14 px, a dark track with a faint edge, a pill thumb in aged bronze with a gold ring
@@ -595,8 +620,34 @@ class BattleStatusSheet {
     dl->AddRect(q0, q1, hot ? IM_COL32(255, 231, 172, 158) : IM_COL32(255, 211, 139, 90), 999.0f, 1.0f, ImDrawFlags_None);  // the gold ring
   }
 
-  bool dragging_ = false, scrollable_ = false;
-  float grab_ = 0;
+  // A section's title (Atributos, Magias e habilidades, Poções): Newsreader at a size that reads, in the sheet's gold.
+  static void sectionTitle(ImDrawList* dl, ImVec2 at, const char* text) {
+    dl->AddText(uiFont(UiFont::Display), 17.0f, at, IM_COL32(224, 189, 128, 255), text);
+  }
+
+  // The wheel, like a browser's smooth scroll: each notch moves the target kWheelStep, the view glides to it (~0.15 s).
+  void wheelScroll() {
+    static constexpr float kWheelStep = 56.0f, kGlide = 22.0f;
+    const ImGuiIO& io = ImGui::GetIO();
+    const float maxY = ImGui::GetScrollMaxY(), scrollY = ImGui::GetScrollY();
+    if (scrollReset_) {
+      scrollReset_ = false;
+      ImGui::SetScrollY(0.0f);
+      return;
+    }
+    if (dragging_) scrollTarget_ = scrollY;  // the thumb drives it
+    else if (io.MouseWheel != 0.0f && ImGui::IsWindowHovered()) scrollTarget_ -= io.MouseWheel * kWheelStep;
+    scrollTarget_ = std::clamp(scrollTarget_, 0.0f, maxY);
+    const float gap = scrollTarget_ - scrollY;
+    if (std::abs(gap) < 0.5f) {
+      if (gap != 0.0f) ImGui::SetScrollY(scrollTarget_);
+      return;
+    }
+    ImGui::SetScrollY(scrollY + gap * (1.0f - std::exp(-kGlide * io.DeltaTime)));
+  }
+
+  bool dragging_ = false, scrollable_ = false, scrollReset_ = false;
+  float grab_ = 0, scrollTarget_ = 0;
   bool open_ = false, conditionOpen_ = false;
   size_t unit_ = 0;
   float contentHeight_ = 0;

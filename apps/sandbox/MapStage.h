@@ -3698,6 +3698,31 @@ class MapStage final : public Stage {
       scriptHover_ = e2::BattleHex{std::atoi(p[1].c_str()), std::atoi(p[2].c_str())};
       return logInfo("battle script: aim {} {}", scriptHover_->x, scriptHover_->y);
     }
+    if (p[0] == "status" && p.size() > 1) {  // "status:<unit>": its status sheet opened (as a click on its portrait does)
+      const int who = sceneUnitNamed(p[1]);
+      if (who < 0 || unitBattle_[static_cast<size_t>(who)] < 0) return fail("no such unit");
+      openStatus(unitBattle_[static_cast<size_t>(who)]);
+      return logInfo("battle script: status {}", p[1]);
+    }
+    if (p[0] == "ui" && p.size() > 2) {  // "ui:<x>:<y>": a left click on the interface at a point of the 720-tall UI canvas
+      ImGuiIO& io = ImGui::GetIO();
+      io.AddMousePosEvent(static_cast<float>(std::atof(p[1].c_str())), static_cast<float>(std::atof(p[2].c_str())));
+      io.AddMouseButtonEvent(0, true);
+      io.AddMouseButtonEvent(0, false);  // the event queue trickles: down and up land on separate frames
+      return logInfo("battle script: ui click {} {}", p[1], p[2]);
+    }
+    if (p[0] == "wheel" && p.size() > 3) {  // "wheel:<x>:<y>:<notches>": the mouse wheel over a point of the UI canvas (negative = down)
+      ImGuiIO& io = ImGui::GetIO();
+      io.AddMousePosEvent(static_cast<float>(std::atof(p[1].c_str())), static_cast<float>(std::atof(p[2].c_str())));
+      io.AddMouseWheelEvent(0.0f, static_cast<float>(std::atof(p[3].c_str())));
+      return logInfo("battle script: wheel {} at {} {}", p[3], p[1], p[2]);
+    }
+    if (p[0] == "sheet") {  // "sheet": what the status sheet shows now (open, unit, the unit's points)
+      if (!statusSheet_.isOpen()) return logInfo("battle script: sheet closed");
+      const e2::BattleUnit& v = battle_->units()[statusSheet_.unit()];
+      return logInfo("battle script: sheet open on {}: points hp {} atk {} mag {} def {} dex {}, inventory {}", v.name, v.pointHp, v.pointAtk, v.pointMag,
+                     v.pointDef, v.pointDex, battleInventory_ ? "open" : "closed");
+    }
     if (p[0] == "click" && p.size() > 1) {
       // "click:<x>:<y>" or "click:<unit>": a left click on the hex's centre on screen, through the window's own click
       // (pick, cards first)
