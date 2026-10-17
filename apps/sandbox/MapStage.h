@@ -2492,7 +2492,34 @@ class MapStage final : public Stage {
     size_t owner = 0;      // the scene unit whose action this is
     bool bolt = false;     // this strike is an Arcano bolt (CombatFx): it lands when the bolt arrives
     std::string element;   // the bolt's element (its palette)
+    bool arrow = false;    // this strike is a bow shot: the arrow flies and lands on the hit
   };
+
+  // What a unit's blows look like (CombatFx): its weapon's type (the heroes'), else its class (Engine2 exports no weapon
+  // for enemies: milícia, the Butcher, captains, brigands, rogues and assassins carry blades; pikemen and lancers spears;
+  // beasts, trolls, the dead and the rest strike blunt).
+  enum class WeaponStyle { Blunt, Blade, Thrust };
+  static WeaponStyle weaponStyle(const e2::BattleUnit& u) {
+    const std::string& w = u.weaponType;
+    if (w == "sword" || w == "dagger" || w == "axe" || w == "blade" || w == "scimitar" || w == "katana") return WeaponStyle::Blade;
+    if (w == "spear" || w == "lance" || w == "pike" || w == "polearm" || w == "halberd") return WeaponStyle::Thrust;
+    if (!w.empty()) return WeaponStyle::Blunt;
+    static const char* kBlades[] = {"miliciaV2", "milicia", "theButcher", "captain", "brigand", "rogue", "assassin", "swordsman"};
+    static const char* kSpears[] = {"basePikeman", "pikeman", "lancer"};
+    for (const char* c : kBlades)
+      if (u.classId == c) return WeaponStyle::Blade;
+    for (const char* c : kSpears)
+      if (u.classId == c) return WeaponStyle::Thrust;
+    return WeaponStyle::Blunt;
+  }
+  // A strike is a bow shot (Combat.cpp resolveStrike arrowShot: an archer's plain attack or counter, never off-hand).
+  bool strikeIsArrow(const e2::BattleStep& s, bool counter) const {
+    if (s.type != e2::BattleStep::Type::Combat || (!counter && !s.kind.empty())) return false;
+    const e2::BattleUnit& actor = battle_->units()[counter ? s.def : s.att];
+    const e2::BattleUnit& target = battle_->units()[counter ? s.att : s.def];
+    const bool off = counter && actor.combat.offHandWeapon && e2::Battle::distance({actor.x, actor.y}, {target.x, target.y}) <= actor.combat.offMaxRange;
+    return actor.combat.arrow && !off;
+  }
 
   // A strike's blow is an arcane bolt (Combat.cpp resolveStrike: an arcane caster's plain attack or counter, never an
   // arrow, never an off-hand counter); its element (the staff's, else arcane).
@@ -2579,6 +2606,12 @@ class MapStage final : public Stage {
       x.impact = release + CombatFx::flightSeconds(from.feet, to.feet);
       x.end = std::max(x.end, x.impact + 0.6f + kExchangeGap / actionRate());
       spellFx_.combat().bolt(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), now_, release, x.impact, CombatPalette::of(x.element.c_str()));
+    }
+    // A bow's plain attack or counter shoots the arrow Tiro Longo already flies (SpellEffects::arrow), landing on the hit.
+    x.arrow = !x.bolt && striker >= 0 && target >= 0 && strikeIsArrow(s, x.counter);
+    if (x.arrow) {
+      spellFx_.cast("longShot", std::max(spellLook("longShot", static_cast<size_t>(striker)), 1), unitSpot(static_cast<size_t>(striker)),
+                    {unitSpot(static_cast<size_t>(target))}, now_, x.impact, striker);
     }
     // Its sound as the pose begins (engine.ts startSeq; a counter's cue as the counter begins, stepCombat; the cures and
     // Criar Comida e Água: healBy).
@@ -2816,6 +2849,17 @@ class MapStage final : public Stage {
     }
     e2::BattleUnit& caster = battle_->units()[cb];
     caster.acted = false, caster.moved = false;
+    if (p[0] == "strike" && p.size() > 2) {
+      // the unit's plain attack on a foe stood beside it (the Arcano bolt for a mage, a weapon blow otherwise)
+      const int fi = sceneUnitNamed(p[2]);
+      if (fi < 0) return fail("no such target");
+      if (!placeBeside(static_cast<size_t>(fi), static_cast<size_t>(ci))) return fail("no free hex beside the attacker");
+      select(ci);
+      attack(static_cast<size_t>(ci), static_cast<size_t>(fi));
+      if (!exchange_) return fail("nothing played");
+      return logInfo("battle script: strike {} -> {}: {} (impact in {:.2f} s)", p[1], p[2], exchange_->bolt ? "Arcano bolt (" + exchange_->element + ")" : "weapon blow",
+                     exchange_->impact - now_);
+    }
     int ti = ci;
     if ((p[0] == "cast" && p.size() > 3) || (p[0] == "potion" && p.size() > 3)) {
       ti = sceneUnitNamed(p[3]);
@@ -2942,10 +2986,10 @@ class MapStage final : public Stage {
     if (weaponStrikeKind(kind))
       spellFx_.combat().impact(CombatFx::Kind::Physical, spots.front().feet, cardHeightOf(spots.front()), unitWorld(hero), start + 0.6f);
   }
-  // --fx-test hit | hitHeavy | arcaneAttack: the combat's own effects alone (no rules): a weapon blow, a heavy one, the
+  // --fx-test hit | hitHeavy | slash | thrust | arrowHit | arcaneAttack: the combat's own effects alone (no rules): a weapon blow, a heavy one, the
   // Arcano attack (conjure 0.45 s, the bolt, the impact), each with the struck card's recoil.
   bool testCombat(size_t hero, const std::string& kind, float start) {
-    if (kind != "hit" && kind != "hitHeavy" && kind != "arcaneAttack") return false;
+    if (kind != "hit" && kind != "hitHeavy" && kind != "slash" && kind != "thrust" && kind != "arrowHit" && kind != "arcaneAttack") return false;
     const size_t target = nearestTarget(hero, false);
     const SpellEffects::Spot from = unitSpot(hero), to = unitSpot(target);
     float impact = start + 0.4f;
@@ -2954,8 +2998,12 @@ class MapStage final : public Stage {
       impact = release + CombatFx::flightSeconds(from.feet, to.feet);
       spellFx_.combat().bolt(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), start, release, impact);
       spellFx_.combat().impact(CombatFx::Kind::Magical, to.feet, cardHeightOf(to), from.feet, impact);
+      logInfo("fx test: Arcano bolt released at {:.2f} s, lands at {:.2f} s", release, impact);
     } else {
-      spellFx_.combat().impact(kind == "hitHeavy" ? CombatFx::Kind::Heavy : CombatFx::Kind::Physical, to.feet, cardHeightOf(to), from.feet, impact);
+      spellFx_.combat().impact(kind == "hitHeavy" ? CombatFx::Kind::Heavy : kind == "slash" ? CombatFx::Kind::Slash : kind == "thrust" ? CombatFx::Kind::Thrust
+                               : kind == "arrowHit" ? CombatFx::Kind::ArrowHit
+                                                                                           : CombatFx::Kind::Physical,
+                               to.feet, cardHeightOf(to), from.feet, impact);
     }
     glm::vec3 dir = to.feet - from.feet;
     dir.y = 0.0f;
@@ -3048,8 +3096,16 @@ class MapStage final : public Stage {
         if (x.bolt) {
           spellFx_.combat().impact(e.miss ? CombatFx::Kind::MagicalMiss : CombatFx::Kind::Magical, struck.feet, cardHeightOf(struck), from, now_,
                                    CombatPalette::of(x.element.c_str()));
-        } else if (!magic && !e.miss) {
-          spellFx_.combat().impact(heavy ? CombatFx::Kind::Heavy : CombatFx::Kind::Physical, struck.feet, cardHeightOf(struck), from, now_);
+        } else if (x.arrow && !e.miss) {
+          spellFx_.combat().impact(heavy ? CombatFx::Kind::HeavyArrowHit : CombatFx::Kind::ArrowHit, struck.feet, cardHeightOf(struck), from, now_);
+        } else if (!magic && !e.miss && striker >= 0) {
+          // By the striker's weapon: a blade cuts, a spear stabs, a blunt weapon (or a beast's weight) knocks.
+          const WeaponStyle style = weaponStyle(battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(striker)])]);
+          const CombatFx::Kind kind = style == WeaponStyle::Blade   ? (heavy ? CombatFx::Kind::HeavySlash : CombatFx::Kind::Slash)
+                                      : style == WeaponStyle::Thrust ? CombatFx::Kind::Thrust
+                                      : heavy                        ? CombatFx::Kind::Heavy
+                                                                     : CombatFx::Kind::Physical;
+          spellFx_.combat().impact(kind, struck.feet, cardHeightOf(struck), from, now_);
         }
         if (!e.miss && e.amount > 0) {
           glm::vec3 dir = struck.feet - from;

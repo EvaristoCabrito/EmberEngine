@@ -24,6 +24,7 @@
 #include "render/vfx/Bless.h"
 #include "render/vfx/BurningHands.h"
 #include "render/vfx/CausticVenom.h"
+#include "render/vfx/CombatFx.h"
 #include "render/vfx/Fireball.h"
 #include "render/vfx/HolyLight.h"
 #include "render/vfx/MagicMissileV2.h"
@@ -74,8 +75,11 @@ class SpellEffects {
   // A potion handed over or drunk (kind "potion", version `look`): its colour by what it does (Engine2 POTIONS effect:
   // "heal", "disease", "mana").
   bool potion(const std::string& effect, int look, const Spot& target, float start, float impact, int owner = -1);
-  // A weapon blow that landed (a plain attack, a counter, a blade skill's strike): sparks on the body.
+  // A weapon blow that landed (a plain attack, a counter, a blade skill's strike): sparks on the body. The flipbook
+  // version (random "impact-N" art); no longer played since 2026-10-17: the game uses combat() (CombatFx).
   void strike(const Spot& target, float at, bool crit);
+  // The combat's own 3D effects (2026-10-17): every blow's impact and the mage's Arcano attack.
+  CombatFx& combat() { return combat_; }
   // Lightning's echo striking again at the start of the struck unit's turn.
   void echo(const Spot& target, float at);
 
@@ -94,7 +98,7 @@ class SpellEffects {
   void build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out, std::vector<Light>& lights);
   const VfxFrame& vfx() const { return vfx_; }
   bool active(float now) const;
-  void clear() { elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(); }
+  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(); }
   // A version that keeps Engine2's own timeline decides when the hit lands: seconds from the cast (Míssil Mágico 02:
   // Engine2's charge, then the flight). Below 0: the version lands on the caller's impact (the pose's).
   float impactDelay(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const;
@@ -184,6 +188,7 @@ class SpellEffects {
   std::vector<CleaveSweep> cleaves_;  // Cleave 01 = CleaveSweepVFX
   std::vector<Varredura> sweeps_;     // Varredura 01 = VarreduraVFX
   std::vector<HolyLight> holies_;     // the cures', the meal's and the potions' light (ours, 3D)
+  CombatFx combat_;
   std::string potionEffect_ = "heal";  // the potion being cast (potion())
   std::vector<std::pair<BurningHands, bool>> burns_;  // Mãos Flamejantes 01 / Sopro Venenoso 01 (poison) = BurningHandsV2VFX
   // An fx clip of the battle pack as the effect runtime samples it (requested on screen; empty while not loaded).

@@ -45,6 +45,8 @@ enum class VfxMaterial : uint32_t {
                        // v = delay + 2 x round(phase / 2pi x 1000))
   FlipbookParticle = 15,  // ThreeVfxSystem ParticleEmitter (camera-facing quads over a 4x4 sheet, uv turbulence)
   Holy = 16,              // ours (vfx/HolyLight): params0.y = 0 shaft, 1 ground glow, 2 motes (instanced quads), 3 tube, 4 ring
+  Combat = 17,            // ours (vfx/CombatFx): params0.y = 0 streaks, 1 dust puffs (instanced quads), 2 energy sphere,
+                          // 3 ground ring, 4 trail tube, 5 a blade's cut (sheet)
 };
 
 // Per-instance data (three InstancedMesh matrices, or a particle's attributes). Matches VfxInstance in vfx.hlsl. For

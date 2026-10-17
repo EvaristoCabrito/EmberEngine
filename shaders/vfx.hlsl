@@ -38,7 +38,8 @@ struct VfxInstance {
 static const uint kMaterialBasic = 0, kMaterialMissileCore = 1, kMaterialMissileShell = 2, kMaterialMissileTrail = 3,
                   kMaterialStandard = 4, kMaterialFlame = 5, kMaterialImpactParticle = 6, kMaterialImpactFlash = 7,
                   kMaterialBlessWave = 8, kMaterialSpriteSheet = 9, kMaterialVenomSmoke = 10, kMaterialPfTendril = 11, kMaterialPfCore = 12,
-                  kMaterialPfShell = 13, kMaterialWebThread = 14, kMaterialFlipbookParticle = 15, kMaterialHoly = 16;
+                  kMaterialPfShell = 13, kMaterialWebThread = 14, kMaterialFlipbookParticle = 15, kMaterialHoly = 16,
+                  kMaterialCombat = 17;
 
 struct Push {
   uint64_t vertices;   // VfxVertex[]
@@ -203,6 +204,54 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
     o.particleC = inst.c;
     if (sight.local <= 0.0) o.position = float4(0, 0, -1, 1);
     return o;
+  }
+  if (d.material == kMaterialCombat && d.params0.y < 1.5) {
+    // Ours (render/vfx/CombatFx): a streak or a dust puff, one instance each, around its centre a.xyz.
+    //   streak (mode 0): stretched along b.xyz (its motion, tail -> head) and a.w wide, turned about that axis to face the
+    //                    eye; shorter than its width = a round dot of a.w; b.w = alpha, c = tint + intensity;
+    //   puff (mode 1):   a camera-facing quad of a.w, turned by b.x; b.y = its noise seed, b.z = alpha; c = its colour.
+    const VfxInstance inst = loadInstance(d.firstInstance + instance);
+    const float3 right = float3(f.view[0].x, f.view[1].x, f.view[2].x), up = float3(f.view[0].y, f.view[1].y, f.view[2].y);
+    const float3 centre = mul(float4(inst.a.xyz, 1.0), d.model).xyz;
+    float3 w;
+    if (d.params0.y < 0.5) {
+      // Never thinner than kMinPixels on screen (a thinner streak shimmers as loose pixels); what is widened is dimmed
+      // by as much, so it carries the same light.
+      static const float kMinPixels = 3.0;
+      const float pixel = 2.0 * length(centre - f.cameraPosition) / max(f.projectionY * f.screenSize.y, 1.0);  // world size of a pixel there
+      const float width = max(inst.a.w, pixel * kMinPixels);
+      const float3 axis = inst.b.xyz;
+      const float len = length(axis);
+      float dotShape = 0.0;
+      if (len < width * 0.75) {
+        w = centre + (right * v.position.x + up * v.position.y) * width;
+        dotShape = 1.0;
+      } else {
+        float3 across = cross(axis / len, normalize(f.cameraPosition - centre));
+        across = dot(across, across) > 1e-8 ? normalize(across) : right;
+        w = centre + axis * v.position.y + across * (v.position.x * width);
+      }
+      const float kept = inst.a.w / width;
+      o.particleB = float4(inst.b.w * (dotShape > 0.5 ? kept * kept : kept), dotShape, 0.0, 0.0);
+    } else {
+      const float cs = cos(inst.b.x), sn = sin(inst.b.x);
+      const float2 q = float2(v.position.x * cs - v.position.y * sn, v.position.x * sn + v.position.y * cs) * inst.a.w;
+      w = centre + right * q.x + up * q.y;
+      o.particleB = inst.b;
+    }
+    o.position = mul(float4(w, 1.0), f.viewProjection);
+    o.local = v.position;
+    o.world = w;
+    o.normal = float3(0, 1, 0);
+    o.particleC = inst.c;
+    if (sight.local <= 0.0) o.position = float4(0, 0, -1, 1);
+    return o;
+  }
+  if (d.material == kMaterialCombat && d.params0.y > 1.5 && d.params0.y < 2.5) {
+    // An energy sphere: its surface boils (color.a = how far); heat = the noise.
+    const float n = snoise(p * 3.0 + float3(0.0, d.params0.x * 2.2, d.params0.x * 1.3));
+    p += v.normal * n * d.color.a;
+    o.heat = n;
   }
   if (d.material == kMaterialFlame) {
     // flameMaterial's vertex: the boiling surface (the noise scrolls up +z and churns), pushed along the normal.
@@ -492,6 +541,86 @@ float4 PSMain(VSOut i) : SV_Target0 {
       const float flow = 0.7 + 0.3 * sin(i.uv.x * 24.0 - t * 9.0);
       a = (0.25 + 0.75 * facing) * ends * opacity;
       c = lerp(d.color.rgb, d.params1.rgb, facing * facing * 0.5) * intensity * flow;
+    }
+  } else if (d.material == kMaterialCombat) {
+    // Ours (render/vfx/CombatFx): the blows' and the Arcano bolt's light. params0 = time, mode, intensity, opacity;
+    // color.rgb = the energy's colour; params1.rgb = the hot core's colour, params1.a = the mode's own number.
+    const MeshFrame f = loadFrame(push.frame);
+    const float t = d.params0.x, mode = d.params0.y, intensity = d.params0.z, opacity = d.params0.w;
+    if (mode < 0.5) {
+      // A streak of light (u across, v tail -> head: brightest at the head, a white-hot thread down its middle), or a
+      // round dot.
+      const float2 q = (i.uv - 0.5) * 2.0;
+      float shape, hot;
+      if (i.particleB.y > 0.5) {
+        const float r2 = dot(q, q);
+        shape = exp(-r2 * 4.5);
+        hot = exp(-r2 * 22.0);
+      } else {
+        const float across = q.x * q.x, along = i.uv.y;
+        shape = exp(-across * 5.0) * (0.2 + 0.8 * along) * smoothstep(0.0, 0.2, along) * (1.0 - smoothstep(0.85, 1.0, along));
+        hot = exp(-across * 30.0) * along;
+      }
+      a = shape * i.particleB.x * opacity;
+      if (a < 0.003) discard;
+      c = lerp(i.particleC.rgb, d.params1.rgb, saturate(hot)) * i.particleC.w * intensity;
+    } else if (mode < 1.5) {
+      // A puff of dust: a ragged soft disc, lit by the scene's own light like the ground it came from (dark at night,
+      // coloured by a spell's light), alpha-blended.
+      const float2 q = (i.uv - 0.5) * 2.0;
+      const float n = noise2(i.uv * 3.5 + i.particleB.y) * 0.6 + noise2(i.uv * 7.0 - i.particleB.y) * 0.4;
+      const float shape = saturate(1.0 - smoothstep(0.3, 1.0, length(q) + (n - 0.5) * 0.55));
+      const float alpha = shape * i.particleB.z * opacity;
+      if (alpha < 0.003) discard;
+      const float3 toEye = normalize(f.cameraPosition - i.world);
+      Surface s = defaultSurface(i.world, normalize(toEye * 0.55 + float3(0.0, 0.45, 0.0)), i.particleC.rgb);
+      s.roughness = 1.0;
+      s.metallic = 0.0;
+      s.receivesCardShadow = 0.0;
+      s.sightAt = d.sightAt;
+      const Sight sight = tacticalSight(f, d.sightAt);
+      const float3 lit = shadeInSight(f, s, sight) * (0.85 + 0.3 * n);
+      return float4(applyVolume(f, lit, i.world) * i.sight * alpha, alpha);
+    } else if (mode < 2.5) {
+      // An energy sphere: a hot heart where it faces the eye (params1.a = how much of it), a rim at its edge, boiling.
+      const float facing = abs(dot(normalize(i.normal), normalize(f.cameraPosition - i.world)));
+      const float coreWeight = d.params1.a;
+      const float core = pow(facing, 2.5) * coreWeight;
+      // A shell (no heart) keeps only a thin edge, so it reads as a wave in the air, never as a glass ball.
+      const float rim = pow(1.0 - facing, lerp(5.0, 2.2, coreWeight));
+      const float boil = 0.72 + 0.28 * snoise(i.local * 5.0 + float3(0.0, t * 4.0, t * 2.0));
+      a = (core + rim * (1.0 - 0.4 * coreWeight)) * boil * opacity;
+      c = lerp(d.color.rgb, d.params1.rgb, saturate(core * 1.2)) * intensity;
+    } else if (mode < 3.5) {
+      // A ring of light on the ground (a disc, u around, v out): a thin bright ring at params1.a of its radius, a faint
+      // pool inside, sparkling.
+      const float r = i.uv.y, around = i.uv.x;
+      const float ring = exp(-pow((r - d.params1.a) / 0.07, 2.0));
+      const float pool = pow(saturate(1.0 - r), 2.5) * 0.25;
+      const float sparkle = 0.7 + 0.3 * noise2(float2(around * 48.0 + t * 4.0, r * 8.0 - t * 3.0));
+      a = (ring * sparkle + pool) * opacity;
+      c = lerp(d.color.rgb, d.params1.rgb, ring * 0.5) * intensity;
+    } else if (mode < 4.5) {
+      // A trail (a tube, u from its tail to its head): brightest at the head and where it faces the eye, a current in it.
+      const float facing = abs(dot(normalize(i.normal), normalize(f.cameraPosition - i.world)));
+      const float along = i.uv.x;
+      a = (0.3 + 0.7 * pow(facing, 1.5)) * pow(along, 1.6) * opacity * (0.75 + 0.25 * sin(along * 30.0 - t * 20.0));
+      c = lerp(d.color.rgb, d.params1.rgb, facing * facing * along) * intensity;
+    } else {
+      // A blade's cut (a sheet along the swing, u along its path, v from its inner side to the cutting edge): only the
+      // part between the tail (color.a) and the head (params1.a) shows; a white-hot edge, a thin steel wash behind it,
+      // brightest near the head; streaked along its length like light caught on a moving edge.
+      const float s = i.uv.x, v = i.uv.y, head = d.params1.a, tail = d.color.a;
+      if (s > head || s < tail) discard;
+      const float span = max(head - tail, 1e-3);
+      const float fromTail = smoothstep(0.0, 0.35, (s - tail) / span);
+      const float atHead = exp(-pow((head - s) / 0.1, 2.0));
+      const float edge = exp(-pow((1.0 - v) / 0.1, 2.0));
+      const float wash = pow(v, 2.2) * 0.32;
+      const float streaks = 0.75 + 0.25 * noise2(float2(s * 40.0, v * 3.0));
+      a = (edge + wash * streaks) * fromTail * (0.65 + 0.7 * atHead) * opacity;
+      if (a < 0.003) discard;
+      c = lerp(d.color.rgb, d.params1.rgb, saturate(edge * 0.8 + atHead * 0.4)) * intensity;
     }
   } else if (d.material == kMaterialStandard) {
     // MeshStandardMaterial: lit by the scene like any surface, plus its emissive (display-relative, as Engine2's glow);
