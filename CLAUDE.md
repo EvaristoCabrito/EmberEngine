@@ -807,6 +807,15 @@ only on the user's explicit "faz", shown live in the window:
 6. Tabletop pieces as specified above; the redo of the sprite path if it still falls short of Engine2.
 Skipped until final assets exist (user, 2026-10-15): the ground material's cost.
 
+## Battle bar: 12 sockets F1-F12 + Atalhos (2026-10-18; the user: "12 sockets ... F1 ao F12 e um outro botão para editar")
+
+- MapStage `hotbarOf` / `storeHotbar` / `drawHotbarEditor` / `pressHotbar`: each hero's 12 sockets (a spell / skill kind or
+  `potion:<id>`); no layout yet = its spells then its potions. Campaign: `save.hotbars[name]` (12 strings); Modo teste: kept for the
+  session only. "Atalhos" (after the sockets) = drag from Disponíveis into a socket, socket onto socket swaps, right click empties.
+  Sockets shrink (36 -> 24 px) when the row is crowded. F1-F12 press the socket; Modo teste's numbers moved to **Ctrl+F1**.
+  The bar's "Status" button is gone (the portrait opens the sheet). The confirm panel's hit: two decimals ("93,83 % de acerto").
+  Capture: `--map-ui hotbar` (the first hero's editor). Not verified: dragging and the F keys in the window (no scripted input).
+
 ## Waiting on the user
 
 - **Video → sprite pipeline: built (2026-10-18, `1fceba8`), first used on Voss** (`content/sprites/voss-veo/cut.json`, the

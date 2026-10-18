@@ -652,8 +652,13 @@ class MapStage final : public Stage {
       const std::optional<glm::vec3> b = groundUnder(e.motion.windowID, e.motion.x, e.motion.y);
       if (a && b) target_ += glm::vec3{a->x - b->x, 0.0f, a->z - b->z}, cam_.target += glm::vec3{a->x - b->x, 0.0f, a->z - b->z};
     }
+    // F1..F12: the battle bar's sockets (Ctrl+F1 is Modo teste's numbers)
+    if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.scancode >= SDL_SCANCODE_F1 && e.key.scancode <= SDL_SCANCODE_F12 &&
+        !(e.key.mod & (SDL_KMOD_CTRL | SDL_KMOD_ALT | SDL_KMOD_SHIFT)))
+      pressHotbar(static_cast<int>(e.key.scancode - SDL_SCANCODE_F1));
     if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.key == SDLK_ESCAPE) {
-      if (battleInventory_) battleInventory_.reset();
+      if (hotbarEdit_) hotbarEdit_ = false;
+      else if (battleInventory_) battleInventory_.reset();
       else if (statusSheet_.isOpen()) statusSheet_.closeConditionOrSheet();
       else if (questLog_) questLog_ = false;
       else if (logFull_) logFull_ = false;
@@ -1244,6 +1249,10 @@ class MapStage final : public Stage {
     else if (which == "log") showLog_ = true, logJustOpened_ = true, logKeep_ = true;  // a capture: the turns the script plays do not close it
     else if (which == "fulllog") logFull_ = true, logFullJustOpened_ = true;
     else if (which == "quests") questLog_ = true;
+    else if (which == "hotbar" && battle_) {  // the first hero's
+      for (size_t i = 0; i < battle_->units().size() && !hotbarEdit_; ++i)
+        if (battle_->units()[i].side == "player") hotbarEdit_ = true, hotbarHero_ = static_cast<int>(i);
+    }
     else if (which == "status" && battle_) openStatus(battle_->activeUnit() >= 0 ? battle_->activeUnit() : 0);
     else if (which.starts_with("inventory:") && battle_) {  // "inventory:<name>[:doll]": the Mochila (or Equipar) over the fight
       const std::string rest = which.substr(10);
@@ -2927,7 +2936,11 @@ class MapStage final : public Stage {
       ImGui::PopFont();
     };
     centred(title.c_str(), uiFont(UiFont::Ui), 14.0f, IM_COL32(226, 150, 70, 255));
-    if (hit) centred(tr(std::format("{}% de acerto", *hit), std::format("{}% to hit", *hit)).c_str(), uiFont(UiFont::Mark), 34.0f, IM_COL32(244, 232, 214, 255));
+    if (hit) {  // two decimals (the user, 2026-10-18: "82,59 %"), a decimal comma in Portuguese
+      std::string pt = std::format("{:.2f}", *hit);
+      std::replace(pt.begin(), pt.end(), '.', ',');
+      centred(tr(pt + " % de acerto", std::format("{:.2f} % to hit", *hit)).c_str(), uiFont(UiFont::Mark), 34.0f, IM_COL32(244, 232, 214, 255));
+    }
     // Fogo amigo: the aimed spell would hit friends too (allowed; it costs their affinity with the caster).
     if (pendingFoe_ < 0 && spellArmed_ && ready) {
       std::string friends;
@@ -5042,9 +5055,9 @@ class MapStage final : public Stage {
     return clicked && enabled;
   }
 
-  // .ember-socket: a spell's icon with its uses left in the corner (lit while it is being aimed).
-  bool spellSocket(const char* id, const std::string& kind, int uses, bool enabled, bool active) {
-    const float side = 36.0f;
+  // .ember-socket: a spell's icon with its uses left in the corner (lit while it is being aimed). `key` >= 0: the battle
+  // bar's socket F<key + 1>, its key in the top-left corner; an empty `kind` is an empty socket.
+  bool spellSocket(const char* id, const std::string& kind, int uses, bool enabled, bool active, float side = 36.0f, int key = -1) {
     ImGui::BeginDisabled(!enabled);
     const bool clicked = ImGui::InvisibleButton(id, {side, side});
     const bool hover = enabled && ImGui::IsItemHovered();
@@ -5053,8 +5066,21 @@ class MapStage final : public Stage {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     verticalGradient(dl, a, b, {{0.0f, IM_COL32(12, 12, 12, 255)}, {1.0f, IM_COL32(5, 5, 5, 255)}});
     const int fade = enabled ? 255 : 102;
+    const auto keyLabel = [&] {
+      if (key < 0) return;
+      const std::string k = std::format("F{}", key + 1);
+      ImFont* font = uiFont(UiFont::Ui);
+      dl->AddText(font, 10.0f, {a.x + 3.0f, a.y + 2.0f}, IM_COL32(0, 0, 0, 230), k.c_str());
+      dl->AddText(font, 10.0f, {a.x + 2.0f, a.y + 1.0f}, IM_COL32(226, 194, 148, kind.empty() ? 150 : 255), k.c_str());
+    };
+    if (kind.empty()) {
+      dl->AddRect(a, b, hover ? IM_COL32(226, 170, 100, 160) : IM_COL32(190, 150, 95, 56), 2.0f);
+      keyLabel();
+      return false;
+    }
+    const float inset = std::round(side * 6.0f / 36.0f);
     if (const UiImage* icon = spellIconOf(kind)) {
-      imageCover(dl, *icon, {a.x + 6, a.y + 6}, {b.x - 6, b.y - 6}, 0.5f, 0.5f, IM_COL32(255, 255, 255, fade));  // object-cover
+      imageCover(dl, *icon, {a.x + inset, a.y + inset}, {b.x - inset, b.y - inset}, 0.5f, 0.5f, IM_COL32(255, 255, 255, fade));  // object-cover
     } else if (!e2::emberSpellClass(kind).empty()) {
       // Ours have no Engine2 icon yet: the element's colour behind the spell's initials.
       static const std::pair<const char*, ImU32> kElementColors[] = {{"darkness", IM_COL32(92, 48, 150, 255)}, {"poison", IM_COL32(60, 130, 40, 255)},
@@ -5089,6 +5115,7 @@ class MapStage final : public Stage {
     }
     if (active) for (int i = 3; i >= 1; --i) dl->AddRect({a.x - i * 2.0f, a.y - i * 2.0f}, {b.x + i * 2.0f, b.y + i * 2.0f}, IM_COL32(255, 110, 30, 40), 3.0f, 2.0f);
     dl->AddRect(a, b, active ? IM_COL32(226, 104, 30, 255) : hover ? IM_COL32(226, 170, 100, 216) : IM_COL32(190, 150, 95, 89), 2.0f);
+    keyLabel();
     const std::string count = std::to_string(uses);
     ImFont* font = uiFont(UiFont::Ui);
     const ImVec2 t = font->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, count.c_str());
@@ -5398,6 +5425,169 @@ class MapStage final : public Stage {
     return true;
   }
 
+  // --- The battle bar's 12 sockets, F1..F12, per hero (ours; the user, 2026-10-18) ------------------------------------------
+  // Each socket holds a spell / skill kind or "potion:<id>" ("" = empty). A hero with no layout of its own gets its spells and
+  // then the potions it carries, in order. A campaign keeps each hero's layout in the save ("hotbars": name -> 12 entries);
+  // Modo teste keeps it for the session, never in the bank. "Atalhos" opens the editor (drag into a socket).
+  static constexpr int kHotbarSlots = 12;
+  using Hotbar = std::array<std::string, kHotbarSlots>;
+  static std::map<std::string, Hotbar>& sessionHotbars() {
+    static std::map<std::string, Hotbar> kept;
+    return kept;
+  }
+  bool hotbarInSave() const { return campaign_ && !testMode_ && !playtest_; }
+  // What the hero can put in a socket now: its spells and skills, then the potions it carries.
+  std::vector<std::string> hotbarChoices(size_t b) const {
+    const e2::BattleUnit& u = battle_->units()[b];
+    std::vector<std::string> out(u.spellList.begin(), u.spellList.end());
+    if (u.side == "player")
+      for (int k = 0; k < 7; ++k)
+        if (u.bag[k] > 0) out.push_back(std::string("potion:") + e2::kPotionIds[k]);
+    return out;
+  }
+  Hotbar& hotbarOf(size_t b) {
+    const e2::BattleUnit& u = battle_->units()[b];
+    if (const auto it = hotbars_.find(u.name); it != hotbars_.end()) return it->second;
+    Hotbar bar{};
+    bool stored = false;
+    if (hotbarInSave()) {
+      const e2::Json save = campaign_->activeSave();
+      if (const auto all = save.find("hotbars"); all != save.end() && all->is_object() && all->contains(u.name) && (*all)[u.name].is_array()) {
+        const e2::Json& list = (*all)[u.name];
+        for (size_t i = 0; i < bar.size() && i < list.size(); ++i)
+          if (list[i].is_string()) bar[i] = list[i].get<std::string>();
+        stored = true;
+      }
+    } else if (const auto it = sessionHotbars().find(u.name); it != sessionHotbars().end()) {
+      bar = it->second, stored = true;
+    }
+    if (!stored) {
+      const std::vector<std::string> choices = hotbarChoices(b);
+      for (size_t i = 0; i < bar.size() && i < choices.size(); ++i) bar[i] = choices[i];
+    }
+    return hotbars_[u.name] = bar;
+  }
+  void storeHotbar(size_t b) {
+    const e2::BattleUnit& u = battle_->units()[b];
+    const Hotbar& bar = hotbarOf(b);
+    if (!hotbarInSave()) return void(sessionHotbars()[u.name] = bar);
+    e2::Json save = campaign_->activeSave();
+    e2::Json& all = save["hotbars"];
+    if (!all.is_object()) all = e2::Json::object();
+    all[u.name] = e2::Json(std::vector<std::string>(bar.begin(), bar.end()));
+    campaign_->saveActive(std::move(save));
+  }
+  // A socket's entry as the hero has it now: its uses left and whether it can be used (nullopt: the hero no longer has it).
+  struct SocketState {
+    int uses = 0;
+    bool usable = false;
+  };
+  std::optional<SocketState> socketState(size_t b, const std::string& kind, bool canAct) const {
+    if (kind.empty()) return std::nullopt;
+    const e2::BattleUnit& u = battle_->units()[b];
+    if (const std::optional<std::string> potion = potionOf(kind)) {
+      for (int k = 0; k < 7; ++k)
+        if (*potion == e2::kPotionIds[k]) return SocketState{u.bag[k], canAct && u.bag[k] > 0};
+      return std::nullopt;
+    }
+    if (std::find(u.spellList.begin(), u.spellList.end(), kind) == u.spellList.end()) return std::nullopt;
+    const int uses = e2::spellUsesLeft(*battle_, b, kind);
+    return SocketState{uses, canAct && e2::spellPorted(kind) && uses > 0};
+  }
+  // F1..F12: the socket's spell / potion, as a click on it.
+  void pressHotbar(int slot) {
+    if (hotbarEdit_ || pauseOpen_ || battleInventory_ || statusSheet_.isOpen() || !battle_ || battle_->roaming() || !myTurn() || busy()) return;
+    const size_t me = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
+    const e2::BattleUnit& u = battle_->units()[me];
+    const std::string kind = hotbarOf(me)[static_cast<size_t>(slot)];
+    if (const std::optional<SocketState> s = socketState(me, kind, !u.acted); s && s->usable) startSpell(kind);
+  }
+
+  // "Atalhos": the hero's 12 sockets on top, everything it can put in them below; drag one into a socket (a socket dragged
+  // onto another swaps them; a right click empties it).
+  void drawHotbarEditor() {
+    if (!hotbarEdit_ || !battle_) return;
+    const int ub = hotbarHero_;  // the hero whose bar was open (the cursor over another unit does not switch it)
+    if (ub < 0 || ub >= static_cast<int>(battle_->units().size()) || battle_->units()[static_cast<size_t>(ub)].side != "player") return void(hotbarEdit_ = false);
+    const size_t b = static_cast<size_t>(ub);
+    const e2::BattleUnit& u = battle_->units()[b];
+    Hotbar& bar = hotbarOf(b);
+    const ImGuiIO& io = ImGui::GetIO();
+    const float side = 40.0f, gap = 8.0f;
+    const float width = kHotbarSlots * side + (kHotbarSlots - 1) * gap + 32.0f;
+    ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.45f}, ImGuiCond_Always, {0.5f, 0.5f});
+    ImGui::SetNextWindowSize({width, 0.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {16.0f, 14.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {gap, 8.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(14, 14, 14, 246));
+    ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(226, 150, 70, 170));
+    ImGui::SetNextWindowFocus();  // over the Escolhas / Magias panels
+    ImGui::Begin("##hotbaredit", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize);
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const auto heading = [&](const std::string& s, float size, ImU32 ink) {
+      const ImVec2 p = ImGui::GetCursorScreenPos();
+      dl->AddText(uiFont(UiFont::Ui), size, p, ink, s.c_str());
+      ImGui::Dummy({1.0f, size + 2.0f});
+    };
+    heading(tr("Atalhos de ", "Shortcuts of ") + u.name, 17.0f, IM_COL32(226, 150, 70, 255));
+    heading(tr("Arraste uma magia, habilidade ou poção para um socket (F1 a F12). Botão direito esvazia o socket.",
+               "Drag a spell, skill or potion onto a socket (F1 to F12). Right click empties a socket."),
+            13.0f, IM_COL32(180, 180, 180, 255));
+    bool changed = false;
+    for (int i = 0; i < kHotbarSlots; ++i) {
+      if (i > 0) ImGui::SameLine();
+      const std::optional<SocketState> s = socketState(b, bar[static_cast<size_t>(i)], true);
+      spellSocket(std::format("##edit{}", i).c_str(), s ? bar[static_cast<size_t>(i)] : std::string(), s ? s->uses : 0, true, false, side, i);
+      if (s && ImGui::BeginDragDropSource()) {
+        ImGui::SetDragDropPayload("hotbar-slot", &i, sizeof i);
+        ImGui::TextUnformatted(socketName(bar[static_cast<size_t>(i)]).c_str());
+        ImGui::EndDragDropSource();
+      }
+      if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload* p = ImGui::AcceptDragDropPayload("hotbar-choice")) {
+          const std::string kind(static_cast<const char*>(p->Data), static_cast<size_t>(p->DataSize));
+          for (std::string& other : bar)
+            if (other == kind) other.clear();  // one socket per entry
+          bar[static_cast<size_t>(i)] = kind, changed = true;
+        }
+        if (const ImGuiPayload* p = ImGui::AcceptDragDropPayload("hotbar-slot")) {
+          std::swap(bar[static_cast<size_t>(i)], bar[static_cast<size_t>(*static_cast<const int*>(p->Data))]), changed = true;
+        }
+        ImGui::EndDragDropTarget();
+      }
+      if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && !bar[static_cast<size_t>(i)].empty()) bar[static_cast<size_t>(i)].clear(), changed = true;
+    }
+    ImGui::Dummy({1.0f, 4.0f});
+    heading(tr("Disponíveis", "Available"), 14.0f, IM_COL32(226, 194, 148, 255));
+    const std::vector<std::string> choices = hotbarChoices(b);
+    int n = 0;
+    for (const std::string& kind : choices) {
+      if (n % kHotbarSlots != 0) ImGui::SameLine();
+      const std::optional<SocketState> s = socketState(b, kind, true);
+      spellSocket(std::format("##choice{}", n).c_str(), kind, s ? s->uses : 0, true, false, side);
+      if (ImGui::BeginDragDropSource()) {
+        ImGui::SetDragDropPayload("hotbar-choice", kind.data(), kind.size());
+        ImGui::TextUnformatted(socketName(kind).c_str());
+        ImGui::EndDragDropSource();
+      }
+      ++n;
+    }
+    if (choices.empty()) heading(tr("Nada para pôr nos sockets.", "Nothing to put in the sockets."), 13.0f, IM_COL32(150, 150, 150, 255));
+    ImGui::Dummy({1.0f, 4.0f});
+    const float closeW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, tr("Fechar", "Close").c_str(), 0.06f) + 28.0f;
+    ImGui::SetCursorPosX(width - 16.0f - closeW);
+    if (emberButton("##hotbarclose", tr("Fechar", "Close").c_str(), true, true)) hotbarEdit_ = false;
+    ImGui::End();
+    ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar(3);
+    if (changed) storeHotbar(b);
+  }
+  std::string socketName(const std::string& kind) const {
+    if (const std::optional<std::string> potion = potionOf(kind)) return e2::potionName(*potion);
+    return e2::spellName(kind);
+  }
+
   void drawTurnBar() {
     if (!battle_) return;
     e2::setCombatLogEnglish(uiEnglish());  // the lines made from now on follow the interface language
@@ -5407,6 +5597,7 @@ class MapStage final : public Stage {
     drawTurnOrder();
     drawHudBar();
     drawConfirm();
+    drawHotbarEditor();
     drawFinishPrompt();
     drawChestLoot();
     drawFullLog();
@@ -5524,17 +5715,18 @@ class MapStage final : public Stage {
       const char* logLabel = showLog_ ? "Resumo" : "Log";
       const float openW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, openLabel.c_str(), 0.06f) + 28.0f;
       const float logW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, logLabel, 0.06f) + 28.0f;
-      const std::string statusLabel = "Status";
-      const float statusW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, statusLabel.c_str(), 0.06f) + 28.0f;
+      // (no "Status" here: the portrait opens the sheet; the user, 2026-10-18)
       const float endX = io.DisplaySize.x - endW - 20.0f, openX = endX - 6.0f - openW, logX = (showLog_ ? openX : endX) - 6.0f - logW;
       // the quest log (Engine2's world-map "Missões", here in the fight too)
       const std::string questLabel = tr("Missões", "Quests");
       const float questW = options_.world ? spacedTextWidth(uiFont(UiFont::Mark), 16.0f, questLabel.c_str(), 0.06f) + 28.0f : 0.0f;
-      const float questX = logX - 6.0f - statusW - (questW > 0.0f ? 6.0f + questW : 0.0f);
+      const float questX = questW > 0.0f ? logX - 6.0f - questW : logX;
+      hudRightEdge_ = questX;  // the actions row's sockets stop short of it (next frame)
       // Engine2's footer: "Encerrar missão" / "Usar waypoint" once the end is on offer
       if (battle_->winAvailable() && result_.empty()) {
         const std::string finishLabel = battle_->activeExit() ? tr("Usar waypoint", "Use waypoint") : tr("Encerrar missão", "End mission");
         const float finishW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, finishLabel.c_str(), 0.06f) + 28.0f;
+        hudRightEdge_ = questX - 6.0f - finishW;
         ImGui::SameLine(questX - 6.0f - finishW);
         if (emberButton("##finishbtn", finishLabel.c_str(), true, !busy())) {
           if (battle_->activeExit()) winDismissed_ = false;
@@ -5545,8 +5737,6 @@ class MapStage final : public Stage {
         ImGui::SameLine(questX);
         if (emberButton("##questbtn", questLabel.c_str(), false, true)) questLog_ = true;
       }
-      ImGui::SameLine(logX - 6.0f - statusW);
-      if (emberButton("##statusbtn", statusLabel.c_str(), false, ub >= 0)) openStatus(ub);
       ImGui::SameLine(logX);
       if (emberButton("##logbtn", logLabel, false, true)) showLog_ = !showLog_, logPinned_ = true, logJustOpened_ = showLog_;
       if (showLog_) {
@@ -5615,22 +5805,22 @@ class MapStage final : public Stage {
       const std::string label = tr("Fugir combate · ", "Flee battle · ") + std::format("{:.0f}%", fleeChance(*actor));
       if (emberButton("##flee", label.c_str(), false, canAct && !aiming) || (canAct && !aiming && scriptPressed("flee"))) attemptFlee();
     }
-    if (actor) {
-      int n = 0;
-      for (const std::string& kind : actor->spellList) {
+    if (actor) {  // a party unit (myTurn)
+      // The 12 sockets (F1..F12) and "Atalhos"; they shrink when the row is crowded (Mão Secundária, Arrombar, Fugir).
+      const float spacing = ImGui::GetStyle().ItemSpacing.x;
+      const float editW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, tr("Atalhos", "Shortcuts").c_str(), 0.06f) + 28.0f;
+      const float from = ImGui::GetItemRectMax().x + spacing, room = hudRightEdge_ - 12.0f - from - editW - spacing;
+      const float side = std::clamp(std::floor(room / kHotbarSlots - spacing), 24.0f, 36.0f);
+      const Hotbar& bar = hotbarOf(me);
+      for (int i = 0; i < kHotbarSlots; ++i) {
         ImGui::SameLine();
-        const int uses = e2::spellUsesLeft(*battle_, me, kind);
-        const bool ok = canAct && e2::spellPorted(kind) && uses > 0;
-        if (spellSocket(std::format("##spell{}", n++).c_str(), kind, uses, ok, spellMode_ == kind)) startSpell(kind);
+        const std::string& kind = bar[static_cast<size_t>(i)];
+        const std::optional<SocketState> s = socketState(me, kind, canAct);
+        if (spellSocket(std::format("##slot{}", i).c_str(), s ? kind : std::string(), s ? s->uses : 0, s && s->usable, s && spellMode_ == kind, side, i))
+          startSpell(kind);
       }
-      // the potions it carries (GameApp's hotbar: the spells, then the potions; using one spends the action)
-      if (actor->side == "player")
-        for (int k = 0; k < 7; ++k) {
-          if (actor->bag[k] <= 0) continue;
-          ImGui::SameLine();
-          const std::string kind = std::string("potion:") + e2::kPotionIds[k];
-          if (spellSocket(std::format("##potion{}", k).c_str(), kind, actor->bag[k], canAct, spellMode_ == kind)) startSpell(kind);
-        }
+      ImGui::SameLine();
+      if (emberButton("##hotbaredit", tr("Atalhos", "Shortcuts").c_str(), hotbarEdit_, true)) hotbarEdit_ = !hotbarEdit_, hotbarHero_ = static_cast<int>(me);
     }
   }
 
@@ -6947,6 +7137,10 @@ class MapStage final : public Stage {
   bool logFull_ = false, logFullJustOpened_ = false;                 // ... and full screen
   bool logKeep_ = false;
   int hudActive_ = -2;                                               // the active unit the HUD last saw (a new turn closes the log)
+  std::map<std::string, Hotbar> hotbars_;                            // each hero's 12 sockets this fight (hotbarOf)
+  bool hotbarEdit_ = false;                                          // "Atalhos" open
+  int hotbarHero_ = -1;                                              // ... for this battle unit
+  float hudRightEdge_ = 1.0e9f;                                      // where the bar's right-hand buttons begin (last frame)
   int selected_ = -1;                     // the picked scene unit
   std::vector<e2::ReachCell> reach_;      // where it can stop
   std::vector<e2::ReachCell> reachPaths_; // every hex it can pass (its routes)

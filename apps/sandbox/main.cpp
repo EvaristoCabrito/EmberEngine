@@ -757,7 +757,7 @@ int runCapture(const Options& o) {
       auto talk = attachNpcTalk(*missionStage, o.engine2, options.world, nullptr, test ? &testSession->save : nullptr, campaign.activeSave());
       if (missionStage->draftId().rfind("estalagem", 0) == 0) missionStage->setMusic(music::theme("inn"));
       if (o.mapUi.starts_with("npc:")) talk->preview(o.mapUi.substr(4));
-      if (o.mapUi == "menu" || o.mapUi == "options" || o.mapUi == "log" || o.mapUi == "fulllog" || o.mapUi == "quests" || o.mapUi.starts_with("status") || o.mapUi.starts_with("inventory:") || o.mapUi.starts_with("synced:")) missionStage->previewMenu(o.mapUi);
+      if (o.mapUi == "menu" || o.mapUi == "options" || o.mapUi == "log" || o.mapUi == "fulllog" || o.mapUi == "quests" || o.mapUi == "hotbar" || o.mapUi.starts_with("status") || o.mapUi.starts_with("inventory:") || o.mapUi.starts_with("synced:")) missionStage->previewMenu(o.mapUi);
       stage = std::move(missionStage);
     } else if (o.title && o.titleScreen.starts_with("test") && hasCampaign && world.load("content/engine2/overworld.json")) {
       // --title-screen test / test-choice / test-classic / test-scenarios / test-rpg / test-dev / test-editor: Modo teste's screens (--map-ui
@@ -806,7 +806,7 @@ int runCapture(const Options& o) {
     } else {
       stage = makeStage(o, context, renderer, services.assets, services.jobs);
       // --map-ui menu / options: the battle's Esc menu or Opções open.
-      if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && (o.mapUi == "menu" || o.mapUi == "options" || o.mapUi == "log" || o.mapUi == "fulllog" || o.mapUi == "quests" || o.mapUi.starts_with("status") || o.mapUi.starts_with("inventory:") || o.mapUi.starts_with("synced:")))
+      if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && (o.mapUi == "menu" || o.mapUi == "options" || o.mapUi == "log" || o.mapUi == "fulllog" || o.mapUi == "quests" || o.mapUi == "hotbar" || o.mapUi.starts_with("status") || o.mapUi.starts_with("inventory:") || o.mapUi.starts_with("synced:")))
         map->previewMenu(o.mapUi);
       // --resume <snapshot.json>: the battle as that saved fight left it.
       if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && !o.resume.empty()) {
@@ -1130,13 +1130,14 @@ int runWindow(const Options& o) {
   if (titleMode) stage = makeTitle();
   else stage = makeStage(o, context, renderer, services.assets, services.jobs);
   if (dynamic_cast<MapStage*>(stage.get())) curtain.open(loading::Curtain::Kind::Battle, clockNow());
-  services.perf.visible = false;  // the game shows only its own screens (F1 brings the numbers back, in Modo teste)
+  services.perf.visible = false;  // the game shows only its own screens (Ctrl+F1 brings the numbers back, in Modo teste)
 
   window.setEventHook([&](const SDL_Event& event) {
     if (ui.processEvent(event)) return;
     if (stage && !curtain.up()) stage->event(event);
     if (event.type != SDL_EVENT_KEY_DOWN || event.key.repeat) return;
-    if (event.key.key == SDLK_F1 && testSession) services.perf.visible = !services.perf.visible;  // Modo teste only
+    // Modo teste only; Ctrl+F1, since F1..F12 are the battle bar's sockets (the user, 2026-10-18)
+    if (event.key.key == SDLK_F1 && (event.key.mod & SDL_KMOD_CTRL) && testSession) services.perf.visible = !services.perf.visible;
     if (event.key.key == SDLK_R && services.streamTest) services.streamTest->restart();
   });
 
