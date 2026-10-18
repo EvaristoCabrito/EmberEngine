@@ -8,17 +8,17 @@
   {
    "set": "salazar-final",
    "clip": "move",
-   "version": "v02",
-   "why": "Engine2's walk to the right did not close its loop (the user, 2026-10-17); the user's new sheet (ludo.ai, 7 x 7, 66 ms a frame), sliced into frames",
-   "frames": {"count": 49, "pattern": "content/sprites/salazar-final/move-v02/move-{}.png"},
-   "frameMs": 66,
+   "version": "v03",
+   "why": "the user's second sheet (Attachments/Salazar/Walkright2, ludo.ai, 7 x 7, 79 ms a frame), 2026-10-17. As drawn, the boot on the ground climbs 12-19 px in the cell during each stance and drops back (frames 3-22: 613 -> 601, 28-48: 617 -> 598), so with the card's feet fixed he floated off the ground and fell back. Each frame moved up / down by whole pixels (no resampling) so the boot standing on the ground sits on row 610 in every frame (scratchpad align_sole.py: lowest row of a solid boot 16 rows tall, which skips the opaque contact-shadow ghosts under frames 23-24 / 46-47). v02 (the first sheet) stays in content/sprites",
+   "frames": {"count": 49, "pattern": "content/sprites/salazar-final/move-v03/move-{}.png"},
+   "frameMs": 79,
    "strides": 2.0,
    "poses": [
     {
      "hero": "salazar",
      "pose": "walk",
      "nat": [380, 622],
-     "crop": [15, 1, 364, 615],
+     "crop": [21, 0, 358, 622],
      "box": {"w": 1.65665, "h": 2.71167, "foot": 0.02472},
      "boxNote": "same figure size and feet line as Engine2's clip: its figure 473 px tall at 3.3843 / 613 units a pixel, 13 px of margin under the feet; this art's figure is 599 px tall with 12 px under the feet"
     }
