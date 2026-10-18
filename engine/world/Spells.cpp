@@ -2923,6 +2923,45 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
       }
   }
   const bool cultist = c == "cultist" || c == "cultistV2" || c == "emberedWraith" || c == "swampBlueCalf";
+  // Ours: a level-15 cultist's one Tempestade de Gelo (Battle.cpp gives it the use). Laid where it covers the most heroes and
+  // none of its own side (the field hurts whoever starts a turn in it), from a hex it can reach with a clear shot.
+  if ((c == "cultist" || c == "cultistV2") && u.spells[3] > 0 && u.level >= 8) {
+    struct StormPick {
+      BattleHex at, from;
+      int score = 0;
+    };
+    std::optional<StormPick> p;
+    std::vector<BattleHex> centres;
+    for (size_t h : heroes)
+      for (const BattleHex& t : hexAreaTiles(b, {b.units()[h].x, b.units()[h].y}, 1))
+        if (std::none_of(centres.begin(), centres.end(), [&](const BattleHex& q) { return q == t; })) centres.push_back(t);
+    for (const BattleHex& at : centres) {
+      const std::vector<BattleHex> area = iceStormAreaTiles(b, at, u.level);
+      auto inside = [&](const BattleUnit& v) { return std::any_of(area.begin(), area.end(), [&](const BattleHex& q) { return occupies(v, q.x, q.y); }); };
+      int hits = 0, sc = 0;
+      bool ownSide = false;
+      for (size_t i = 0; i < b.units().size(); ++i) {
+        const BattleUnit& v = b.units()[i];
+        if (!v.alive || !inside(v)) continue;
+        if (v.side == "player") ++hits, sc += 10 + (v.maxHp - v.hp);
+        else if (v.side == u.side) ownSide = true;
+      }
+      if (hits == 0 || ownSide || (p && sc <= p->score)) continue;
+      for (const ReachCell& cell : reach)
+        if (hexDist({cell.x, cell.y}, at) <= iceStormPower(u.level).range && clearShot(b, {cell.x, cell.y}, at, false)) {
+          p = StormPick{at, {cell.x, cell.y}, sc};
+          break;
+        }
+    }
+    if (p) {
+      AiCast cast;
+      cast.path = walkTo(p->from);
+      if (std::optional<std::vector<BattleStep>> steps = castE2(b, unit, "iceStorm", {p->at}, nullptr, false)) {
+        cast.steps = std::move(*steps);
+        return cast;
+      }
+    }
+  }
   if (cultist && (u.spells[0] > 0 || u.spells[1] > 0 || u.shockCharges > 0 || u.fantomForceCharges > 0)) {
     if (u.spells[1] > 0)
       if (const std::optional<Pick> p = best(kLightningRange, false)) {

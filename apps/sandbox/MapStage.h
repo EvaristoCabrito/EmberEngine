@@ -3573,12 +3573,22 @@ class MapStage final : public Stage {
       if (s.type == StepType::Combat) playCues(sounds(sb, x.counter ? "counter" : "attack"));
       else if (s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food) playCues(afterPose(sounds(sb, "heal")));
       else if (const e2::Json& spells = sounds(sb, "spells"); spells.is_object() && spells.contains(s.kind)) playCues(afterPose(spells[s.kind]));
+      else if (s.kind == "iceStorm" && spells.is_object()) {  // a cultist's Tempestade de Gelo (ours: Engine2 records none for it): its own cast
+        for (const char* other : {"lightning", "magicMissile", "frost"})
+          if (spells.contains(other)) {
+            playCues(afterPose(spells[other]));
+            break;
+          }
+      }
     }
     // The spell's visual, laid out so it lands on the impact (a counter or a plain attack has none: its blow's sparks
     // come when it lands).
     if (striker >= 0 && !x.counter && !s.kind.empty()) {
       std::vector<SpellEffects::Spot> spots;
-      if (s.type == StepType::Spell || s.type == StepType::Effect) {
+      const e2::Battle::IceZone* storm = s.kind == "iceStorm" && !s.tiles.empty() ? iceZoneOf(s.tiles.front(), battle_->units()[s.att].id) : nullptr;
+      if (storm) {  // Tempestade de Gelo: the storm covers the field the rules just laid (the step aims its centre only)
+        for (const e2::BattleHex& h : storm->cells) spots.push_back(hexSpot(h));
+      } else if (s.type == StepType::Spell || s.type == StepType::Effect) {
         for (const e2::BattleHex& h : s.tiles) spots.push_back(hexSpot(h));
       } else if (s.type == StepType::Food) {
         for (size_t id : s.ids)  // everyone it feeds
@@ -3600,8 +3610,8 @@ class MapStage final : public Stage {
         // its colour by what it does (Engine2 POTIONS effect)
         const std::string effect = s.potion == "disease" ? "disease" : s.potion.starts_with("mana") ? "mana" : "heal";
         spellFx_.potion(effect, look, spots.front(), now_, x.impact, striker);
-      } else {
-        spellFx_.cast(s.kind, look, casterSpot, spots, fxStart, x.impact, striker);
+      } else if (spellFx_.cast(s.kind, look, casterSpot, spots, fxStart, x.impact, striker) && storm) {
+        iceFx_.push_back({storm->center, storm->casterId, spellFx_.newestStorm()});
       }
       // Mãos Flamejantes / Sopro Venenoso not aimed at the camera (the user, 2026-10-17): after the cast pose the caster
       // turns its back to us (its "castBack" still, the user's own picture) and the jet leaves its hands into the board,
@@ -3630,6 +3640,7 @@ class MapStage final : public Stage {
   // last: each one's standing effect starts when it appears and fades when the rules drop it.
   void syncZones() {
     if (!battle_) return;
+    syncIceStorms();
     for (const e2::Battle::Zone& z : battle_->zones())
       if (!zoneFx_.contains(z.id)) zoneFx_[z.id] = spellFx_.zoneStart(z.kind, z.element, zoneSpots(z), now_);
     for (auto it = zoneFx_.begin(); it != zoneFx_.end();) {
@@ -3642,6 +3653,35 @@ class MapStage final : public Stage {
         it = zoneFx_.erase(it);
       }
     }
+  }
+  // The Tempestade de Gelo fields (Battle::iceZones, Engine2's iceStormZones). A storm starts with its cast (startStep); it
+  // fades when the rules drop its field (battleSpellOverlay3d removeBlizzard). The fields already on the board at the first
+  // frame (a resumed fight) get theirs then, as Engine2 spawns one for every live field.
+  const e2::Battle::IceZone* iceZoneOf(e2::BattleHex centre, const std::string& caster) const {
+    const e2::Battle::IceZone* found = nullptr;
+    for (const e2::Battle::IceZone& z : battle_->iceZones())
+      if (z.center == centre && z.casterId == caster) found = &z;  // the newest
+    return found;
+  }
+  void syncIceStorms() {
+    if (!iceSynced_) {
+      iceSynced_ = true;
+      for (const e2::Battle::IceZone& z : battle_->iceZones()) {
+        int caster = -1;
+        for (size_t i = 0; i < battle_->units().size(); ++i)
+          if (battle_->units()[i].id == z.casterId) caster = sceneUnitOf(static_cast<int>(i));
+        std::vector<SpellEffects::Spot> spots;
+        for (const e2::BattleHex& h : z.cells) spots.push_back(hexSpot(h));
+        const int look = caster >= 0 ? spellLook("iceStorm", static_cast<size_t>(caster)) : SpellEffects::engine2Look("iceStorm");
+        if (!spots.empty() && spellFx_.cast("iceStorm", look, spots.front(), spots, now_, now_ + 0.05f))
+          iceFx_.push_back({z.center, z.casterId, spellFx_.newestStorm()});
+      }
+    }
+    std::erase_if(iceFx_, [&](const IceFx& t) {
+      if (iceZoneOf(t.center, t.caster)) return false;
+      spellFx_.stormEnd(t.fx, now_);
+      return true;
+    });
   }
   // A zone's hexes as spots, the centre first.
   std::vector<SpellEffects::Spot> zoneSpots(const e2::Battle::Zone& z) const {
@@ -3989,6 +4029,28 @@ class MapStage final : public Stage {
       return logInfo("battle script: walk {} to {} {}: {} walking", p[1], to.x, to.y, walking);
     }
     const size_t cb = static_cast<size_t>(unitBattle_[static_cast<size_t>(ci)]);
+    if (p[0] == "ai") {
+      // "ai:<enemy>": its AI plays a turn now (planEnemyCast, as an enemy's turn does); passes when it cast a spell.
+      e2::BattleUnit& v = battle_->units()[cb];
+      v.moved = false, v.acted = false, v.moveUsed = 0;
+      select(-1);
+      const int tier4 = v.spells[3];
+      std::optional<e2::AiCast> cast = e2::planEnemyCast(*battle_, cb);
+      if (!cast) return fail("its AI cast nothing");
+      if (cast->path.size() > 1) {  // set down where its walk ends (the script holds the turn loop that plays a walk then a cast)
+        v.x = cast->path.back().x, v.y = cast->path.back().y;
+        unitPos_[static_cast<size_t>(ci)] = anchorWorld(v, {v.x, v.y});
+        unitWalk_[static_cast<size_t>(ci)] = Walk{};
+      }
+      play(cast->steps, static_cast<size_t>(ci));
+      const std::string kind = cast->steps.empty() ? std::string() : cast->steps.front().kind;
+      scriptCheck_ = [this, cb, kind, tier4]() -> std::string {
+        if (kind != "iceStorm") return "";
+        if (battle_->iceZones().empty()) return "no field laid";
+        return battle_->units()[cb].spells[3] == tier4 - 1 ? "" : "its use was not spent";
+      };
+      return logInfo("battle script: ai {}: casts {}", p[1], kind);
+    }
     if (p[0] == "near" && p.size() > 2) {
       // the unit placed beside another (a foe in reach of a strike, for captures)
       const int other = sceneUnitNamed(p[2]);
@@ -4137,6 +4199,7 @@ class MapStage final : public Stage {
       if (kind == "cureDisease") return t.diseased || t.poisoned ? "still sick" : "";
       // Ours: a zone laid (the Mortalha, a Meteoro waiting), a condition left, or the hit itself.
       if (kind == "shroudOfShadows" || kind == "meteor") return battle_->zones().empty() ? "no zone laid" : "";
+      if (kind == "iceStorm") return battle_->iceZones().empty() ? "no field laid" : "";  // it hurts at turn starts, not now
       if (kind == "markOfRuin") return t.cond.markTurns > 0 ? "" : "not marked";
       if (kind == "creepingPlague" || kind == "blackPestilence") return t.poisoned || !t.alive ? "" : "not poisoned";
       if (kind == "hemorrhage") return t.cond.bleedTurns > 0 || !t.alive ? "" : "not bleeding";
@@ -6446,6 +6509,13 @@ class MapStage final : public Stage {
   SpriteSystem sprites_;
   SpellEffects spellFx_{sprites_};  // spell and strike visuals (the fx clips)
   std::map<int, int> zoneFx_;       // the rules' zone id -> its standing effect (SpellEffects::zoneStart)
+  struct IceFx {
+    e2::BattleHex center;
+    std::string caster;
+    int fx;
+  };
+  std::vector<IceFx> iceFx_;        // the Tempestade de Gelo fields drawn, by their centre and caster (syncIceStorms)
+  bool iceSynced_ = false;
   std::vector<std::pair<float, std::vector<e2::BattleEffect>>> pendingFx_;  // numbers waiting for an effect to land
   SpellsMenu spellsMenu_;           // the Magias window: each spell's effect version, loose effects
   std::vector<EffectInstance> effectList_;

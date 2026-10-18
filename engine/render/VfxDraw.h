@@ -47,6 +47,9 @@ enum class VfxMaterial : uint32_t {
   Holy = 16,              // ours (vfx/HolyLight): params0.y = 0 shaft, 1 ground glow, 2 motes (instanced quads), 3 tube, 4 ring
   Combat = 17,            // ours (vfx/CombatFx): params0.y = 0 streaks, 1 dust puffs (instanced quads), 2 energy sphere,
                           // 3 ground ring, 4 trail tube, 5 a blade's cut (sheet)
+  IceStorm = 18,          // vfx/IceStorm: params0 = time, mode, intensity, opacity. Ours (02): 0 frosted floor (params1.x = cover),
+                          // 1 snow, 6 ice dust (billboards), 2 wind bands, 3 crystals, 7 frost rings (instanced meshes, c = alpha,
+                          // seed). Engine2's Blizzard2D (01): 4 its floor, 5 its sprites (billboards, b.w = kind), over a sheet
 };
 
 // Per-instance data (three InstancedMesh matrices, or a particle's attributes). Matches VfxInstance in vfx.hlsl. For

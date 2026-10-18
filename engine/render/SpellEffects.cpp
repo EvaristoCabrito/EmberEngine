@@ -67,6 +67,8 @@ int SpellEffects::looks(const std::string& kind) {
   if (kind == "magicMissile" || kind == "magicMissileV2") return 2;
   // 01 Engine2's BurningHandsV2VFX as it was, 02 its cone opening outward (ours).
   if (kind == "burningHands" || kind == "poisonBreath") return 2;
+  // Tempestade de Gelo: 01 Engine2's Blizzard2D (the enemies'), 02 ours in 3D (the heroes'): vfx/IceStorm.
+  if (kind == "iceStorm") return 2;
   // 01 of a spell with no flipbook-card version: Engine2's own effect, ported.
   if (kind == "fireball" || kind == "bless" || kind == "causticVenom" || kind == "phantasmalForce" ||
       kind == "webOfDreams" || kind == "burningHands" || kind == "poisonBreath" || kind == "cleave" || kind == "sweep")
@@ -96,6 +98,7 @@ int SpellEffects::engine2Look(const std::string& kind) {
   if (kind == "burningHands" || kind == "poisonBreath") return 2;    // BurningHandsV2VFX, its cone opening outward (02)
   if (kind == "cleave") return 1;                                    // CleaveSweepVFX
   if (kind == "sweep") return 1;                                     // VarreduraVFX
+  if (kind == "iceStorm") return 2;  // ours in 3D (Engine2's Blizzard2D, 01, is the enemies': content/fx/spell-looks.json)
   return 0;
 }
 
@@ -193,6 +196,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     latest(phantasms_, before[5]), latest(webs_, before[6]), latest(cleaves_, before[8]), latest(sweeps_, before[9]);
     latest(holies_, before[10]);
     for (size_t i = before[7]; i < burns_.size(); ++i) end = std::max(end, burns_[i].first.end());
+    if (kind == "iceStorm" && !storms_.empty()) end = std::max(end, storms_.back().start() + 1.0f);  // its first second, not the whole storm
     std::erase_if(casts_, [&](const Cast& c) { return c.end <= start; });
     casts_.push_back({owner, end});
   }
@@ -238,7 +242,13 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     for (const Spot& s : targets) wrapped.push_back(engine2Origin(s));
     webs_.emplace_back(targets.front().feet + glm::vec3(0.0f, 0.04f, 0.0f), std::sqrt(3.0f) + 1.0f, wrapped, start, start + 2.6f);
   }
-  else if (kind == "causticVenom") {
+  else if (kind == "iceStorm") {
+    // The storm over the whole field (targets = its hexes), from the impact (vfx/IceStorm).
+    std::vector<glm::vec3> hexes;
+    for (const Spot& s : targets) hexes.push_back(s.feet);
+    storms_.emplace_back(look, std::move(hexes), impact);
+    storms_.back().id = ++stormSerial_;
+  } else if (kind == "causticVenom") {
     std::vector<glm::vec3> hexes;
     for (const Spot& s : targets) hexes.push_back(s.feet + glm::vec3(0.0f, 0.04f, 0.0f));
     venoms_.emplace_back(engine2Origin(caster), fireballTarget(targets), hexes, start);
@@ -509,6 +519,11 @@ void SpellEffects::strike(const Spot& target, float at, bool crit) {
   flash.lightColor = kSpark, flash.lightIntensity = crit ? 14.0f : 6.0f, flash.lightRadius = 2.5f, flash.lightDecay = 2.0f;
 }
 
+void SpellEffects::stormEnd(int id, float now) {
+  for (IceStorm& s : storms_)
+    if (s.id == id) s.stop(now);
+}
+
 bool SpellEffects::active(float now) const {
   if (combat_.active(now)) return true;
   if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
@@ -521,6 +536,7 @@ bool SpellEffects::active(float now) const {
   if (std::any_of(burns_.begin(), burns_.end(), [&](const auto& b) { return !b.first.done(now); })) return true;
   if (std::any_of(cleaves_.begin(), cleaves_.end(), [&](const CleaveSweep& c) { return !c.done(now); })) return true;
   if (std::any_of(sweeps_.begin(), sweeps_.end(), [&](const Varredura& s) { return !s.done(now); })) return true;
+  if (std::any_of(storms_.begin(), storms_.end(), [&](const IceStorm& s) { return !s.done(now); })) return true;
   return std::any_of(elements_.begin(), elements_.end(), [&](const Element& e) { return e.end > now; });
 }
 
@@ -559,6 +575,14 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
     // The impact's fire flipbook (Engine2 loadFireFlipbook: fx/fire-flipbook-4x4.png), from the battle pack.
     const VfxFlipbook fire = flipbook("fire-flipbook-4x4");
     for (Fireball& f : fireballs_) f.build(now, camera, fire, vfx_, vfxLights);
+  }
+  std::erase_if(storms_, [&](const IceStorm& s) { return s.done(now); });
+  if (!storms_.empty()) {
+    // Engine2's two sheets, only when a storm of version 01 is on the board.
+    const bool engine2 = std::any_of(storms_.begin(), storms_.end(), [](const IceStorm& s) { return s.version() == 1; });
+    const VfxFlipbook ice = engine2 ? flipbook("blizzard-impact-reference") : VfxFlipbook{};
+    const VfxFlipbook wind = engine2 ? flipbook("blizzard-wind-reference") : VfxFlipbook{};
+    for (IceStorm& s : storms_) s.build(now, camera, ice, wind, vfx_, vfxLights);
   }
   combat_.build(now, camera, vfx_, vfxLights);
   for (const VfxLight& l : vfxLights)

@@ -39,7 +39,7 @@ static const uint kMaterialBasic = 0, kMaterialMissileCore = 1, kMaterialMissile
                   kMaterialStandard = 4, kMaterialFlame = 5, kMaterialImpactParticle = 6, kMaterialImpactFlash = 7,
                   kMaterialBlessWave = 8, kMaterialSpriteSheet = 9, kMaterialVenomSmoke = 10, kMaterialPfTendril = 11, kMaterialPfCore = 12,
                   kMaterialPfShell = 13, kMaterialWebThread = 14, kMaterialFlipbookParticle = 15, kMaterialHoly = 16,
-                  kMaterialCombat = 17;
+                  kMaterialCombat = 17, kMaterialIceStorm = 18;
 
 struct Push {
   uint64_t vertices;   // VfxVertex[]
@@ -126,6 +126,12 @@ float noise2(float2 p) {
 // size and the crop in pixels, color.xy = 1 / the texture's size.
 float2 cellToTexture(VfxDraw d, float2 uv) { return (float2(uv.x, 1.0 - uv.y) * d.params1.xy - d.params1.zw) * d.color.xy; }
 
+// Blizzard2D's sheets, cooked whole as one picture: Engine2's uv (v down) over the whole sheet.
+float4 iceSheet(VfxDraw d, float2 e2uv) {
+  const float2 tex = saturate(cellToTexture(d, float2(e2uv.x, 1.0 - e2uv.y)));
+  return gTextureArrays[NonUniformResourceIndex(d.texture)].SampleLevel(gSamplers[push.samplerIndex], float3(tex, 0.0), 0.0);
+}
+
 // CausticVenomVFX VENOM_SMOKE_FRAGMENT's noise.
 float hash31(float3 p) {
   p = frac(p * 0.1031);
@@ -201,6 +207,28 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
     o.world = w;
     o.normal = float3(0, 1, 0);
     o.particleB = inst.b;
+    o.particleC = inst.c;
+    if (sight.local <= 0.0) o.position = float4(0, 0, -1, 1);
+    return o;
+  }
+  if (d.material == kMaterialIceStorm && ((d.params0.y > 0.5 && d.params0.y < 1.5) || (d.params0.y > 4.5 && d.params0.y < 6.5))) {
+    // render/vfx/IceStorm's billboards (snow, ice dust, Blizzard2D's sprites): a camera-facing quad around a.xyz, c.xy wide
+    // and tall, turned by b.x. Never thinner than 1.5 pixels (a snowflake is smaller than one); what is widened is dimmed by
+    // as much, so it carries the same light.
+    const VfxInstance inst = loadInstance(d.firstInstance + instance);
+    const float3 right = float3(f.view[0].x, f.view[1].x, f.view[2].x), up = float3(f.view[0].y, f.view[1].y, f.view[2].y);
+    const float3 centre = mul(float4(inst.a.xyz, 1.0), d.model).xyz;
+    const float pixel = 2.0 * length(centre - f.cameraPosition) / max(f.projectionY * f.screenSize.y, 1.0);
+    const float2 size = max(inst.c.xy, pixel * 1.5);
+    const float kept = (inst.c.x * inst.c.y) / max(size.x * size.y, 1e-8);
+    const float cs = cos(inst.b.x), sn = sin(inst.b.x);
+    const float2 l = v.position.xy * size;
+    const float3 w = centre + right * (cs * l.x - sn * l.y) + up * (sn * l.x + cs * l.y);
+    o.position = mul(float4(w, 1.0), f.viewProjection);
+    o.local = v.position;
+    o.world = w;
+    o.normal = float3(0, 1, 0);
+    o.particleB = float4(inst.b.x, inst.b.y, inst.b.z * kept, inst.b.w);
     o.particleC = inst.c;
     if (sight.local <= 0.0) o.position = float4(0, 0, -1, 1);
     return o;
@@ -621,6 +649,95 @@ float4 PSMain(VSOut i) : SV_Target0 {
       a = (edge + wash * streaks) * fromTail * (0.65 + 0.7 * atHead) * opacity;
       if (a < 0.003) discard;
       c = lerp(d.color.rgb, d.params1.rgb, saturate(edge * 0.8 + atHead * 0.4)) * intensity;
+    }
+  } else if (d.material == kMaterialIceStorm) {
+    // render/vfx/IceStorm (Tempestade de Gelo). params0 = time, mode, intensity, opacity. Alpha-blended, as Blizzard2D's pass.
+    const MeshFrame f = loadFrame(push.frame);
+    const float t = d.params0.x, mode = d.params0.y, intensity = d.params0.z, opacity = d.params0.w;
+    if (mode < 0.5) {
+      // Ours: the frosted floor (a hex, local xz = its own coordinates), spreading from the middle out to params1.x; a
+      // frost of crystal veins in world space (adjacent hexes join), glints twinkling in it.
+      const float2 wp = i.world.xz;
+      const float n = noise2(wp * 1.7) * 0.6 + noise2(wp * 4.1) * 0.4;
+      const float edge = 1.0 - smoothstep(d.params1.x - 0.35, d.params1.x, length(i.local.xz) + (n - 0.5) * 0.5);
+      const float vein = pow(1.0 - abs(noise2(wp * 6.0 + 3.1) * 2.0 - 1.0), 6.0) * 0.7 + pow(1.0 - abs(noise2(wp * 13.0 - 1.7) * 2.0 - 1.0), 8.0) * 0.5;
+      const float2 grain = floor(wp * 30.0);
+      const float glint = step(0.985, hash2(grain)) * (0.5 + 0.5 * sin(t * 6.0 + hash2(grain + 7.0) * 40.0));
+      a = saturate(0.08 + 0.3 * n * n + vein * 0.45 + glint) * edge * opacity;
+      c = (lerp(float3(0.45, 0.66, 0.85), float3(0.9, 0.96, 1.0), saturate(vein + n * 0.4)) + glint) * intensity;
+    } else if (mode < 1.5) {
+      // Ours: a snowflake, a soft white dot.
+      const float dd = length((i.uv - 0.5) * 2.0);
+      a = (1.0 - smoothstep(0.15, 1.0, dd)) * i.particleB.z * opacity;
+      if (a < 0.004) discard;
+      c = lerp(float3(0.78, 0.92, 1.0), float3(1.0, 1.0, 1.0), exp(-dd * dd * 8.0)) * intensity;
+    } else if (mode < 2.5) {
+      // Ours: a band of wind (u along, v across): streaks flowing along it, soft at its ends and edges.
+      const float u = i.uv.x, v = i.uv.y, seed = i.particleC.y;
+      const float across = 1.0 - pow(abs(v * 2.0 - 1.0), 1.6);
+      const float ends = smoothstep(0.0, 0.25, u) * (1.0 - smoothstep(0.6, 1.0, u));
+      const float streak = noise2(float2(u * 3.0 - t * 1.4 + seed * 17.0, v * 9.0 + seed * 5.0)) * 0.65 + noise2(float2(u * 9.0 - t * 2.3, v * 23.0 + seed * 11.0)) * 0.35;
+      a = across * ends * smoothstep(0.35, 0.85, streak) * i.particleC.x * opacity;
+      if (a < 0.004) discard;
+      c = lerp(float3(0.55, 0.78, 0.95), float3(0.9, 0.97, 1.0), streak) * intensity;
+    } else if (mode < 3.5) {
+      // Ours: an ice crystal, flat faces: clear in the middle, bright at its rim, a glint where a face catches the sky.
+      const float3 toEye = normalize(f.cameraPosition - i.world);
+      const float3 n = normalize(i.normal);
+      const float facing = abs(dot(n, toEye));
+      const float rim = pow(1.0 - facing, 2.0);
+      const float glint = pow(saturate(dot(reflect(-toEye, n), normalize(float3(0.3, 0.9, 0.3)))), 24.0);
+      a = saturate(0.12 + 0.5 * rim + glint * 0.8) * i.particleC.x * opacity;
+      c = (lerp(float3(0.32, 0.58, 0.86), float3(0.85, 0.95, 1.0), rim) + glint) * intensity;
+    } else if (mode < 4.5) {
+      // Blizzard2D's floor: the wind sheet's cell (1, 2) laid over the field (Engine2 tiled it over the screen, here over the
+      // ground), mixed toward ice blue, 0.32 strong.
+      const float2 tile = frac(i.world.xz * float2(0.26, 0.3));
+      const float4 ice = iceSheet(d, (float2(1.0, 2.0) + tile) / 4.0);
+      a = ice.a * 0.32 * opacity;
+      c = lerp(ice.rgb, float3(0.72, 0.9, 0.96), 0.45) * intensity;
+    } else if (mode < 5.5) {
+      // Blizzard2D's FS, line for line (vUv = uv with v down, p = vUv x 2 - 1); b = rotation, frame, alpha, kind.
+      const float2 e = float2(i.uv.x, 1.0 - i.uv.y);
+      const float2 p = e * 2.0 - 1.0;
+      const float kind = i.particleB.w, frame = floor(i.particleB.y);
+      const float2 cell = float2(fmod(frame, 4.0), floor(frame / 4.0));
+      float4 tex;
+      if (kind < 0.5) {
+        float2 uv = e;
+        uv.x += sin(uv.y * 9.0 + t * 1.3 + frame) * 0.045;
+        uv.y += sin(uv.x * 7.0 - t * 0.8) * 0.055;
+        tex = iceSheet(d, (cell + clamp(uv, 0.005, 0.995)) / 4.0);
+        const float ribbon = pow(max(0.0, 1.0 - p.x * p.x), 0.5) * pow(max(0.0, 1.0 - abs(p.y)), 0.7);
+        tex.a *= ribbon;
+        tex.rgb = lerp(tex.rgb, float3(0.13, 0.58, 0.83), 0.25);
+      } else if (kind < 1.5) {
+        const float2 uv = float2(0.49 + e.x * 0.12, 0.035 + e.y * 0.66);
+        tex = iceSheet(d, (cell + uv) / 4.0);
+        tex.a *= 1.0 - smoothstep(0.82, 0.99, e.y + sin(e.x * 13.0) * 0.025);
+      } else if (kind < 2.5) {
+        tex = float4(0.76, 0.94, 1.0, 1.0 - smoothstep(0.1, 0.85, length(p)));
+      } else {
+        tex = iceSheet(d, (cell + clamp(e, 0.002, 0.998)) / 4.0);
+      }
+      a = tex.a * i.particleB.z * opacity;
+      if (a < 0.006) discard;
+      c = tex.rgb * intensity;
+    } else if (mode < 6.5) {
+      // Ours: a puff of ice dust, a ragged soft disc.
+      const float2 q = (i.uv - 0.5) * 2.0;
+      const float n = noise2(i.uv * 4.0 + i.particleC.w) * 0.6 + noise2(i.uv * 8.0 - i.particleC.w) * 0.4;
+      a = saturate(1.0 - smoothstep(0.2, 1.0, length(q) + (n - 0.5) * 0.5)) * i.particleB.z * opacity;
+      if (a < 0.004) discard;
+      c = lerp(float3(0.7, 0.86, 0.97), float3(0.95, 0.99, 1.0), n) * intensity;
+    } else {
+      // Ours: a frost ring on the ground (a disc, u around, v out), glittering.
+      const float r = i.uv.y;
+      const float ring = exp(-pow((r - 0.85) / 0.09, 2.0)) + pow(saturate(1.0 - r), 3.0) * 0.15;
+      const float sparkle = 0.6 + 0.4 * noise2(float2(i.uv.x * 40.0 + i.particleC.y * 9.0, r * 7.0 - t * 2.0));
+      a = ring * sparkle * i.particleC.x * opacity;
+      if (a < 0.004) discard;
+      c = float3(0.82, 0.95, 1.0) * intensity;
     }
   } else if (d.material == kMaterialStandard) {
     // MeshStandardMaterial: lit by the scene like any surface, plus its emissive (display-relative, as Engine2's glow);

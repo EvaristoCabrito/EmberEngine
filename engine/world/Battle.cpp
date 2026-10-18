@@ -328,6 +328,9 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
       }
     }
     applyProgression(o);  // EmberEngine's own growth over Engine2's (gear kept; off in the Cooker's checks)
+    // Ours (the user, 2026-10-18: "cultista de level 15 pode usar 1X"): a cultist of level 15 or more brings one Tempestade de
+    // Gelo (its tier-4 use; Engine2's cultists have none). Off in the Cooker's checks, like the progression.
+    if (progressionEnabled() && o.side == "enemy" && (o.classId == "cultist" || o.classId == "cultistV2") && o.level >= 15) o.spells[3] = 1;
     o.footprintW = integer(u, "footprintW", 2);
     o.footprintH = integer(u, "footprintH", 4);
     if (u.contains("reach") && u["reach"].is_array())

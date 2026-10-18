@@ -27,6 +27,7 @@
 #include "render/vfx/CombatFx.h"
 #include "render/vfx/Fireball.h"
 #include "render/vfx/HolyLight.h"
+#include "render/vfx/IceStorm.h"
 #include "render/vfx/MagicMissileV2.h"
 #include "render/vfx/PhantasmalForce.h"
 #include "render/vfx/Sweeps.h"
@@ -92,13 +93,18 @@ class SpellEffects {
   // Meteoro falls: the rock from the sky onto the centre (hexes.front()), the blast over every hex; it lands at `impact`.
   void meteorFall(const std::vector<Spot>& hexes, float start, float impact);
 
+  // Tempestade de Gelo (vfx/IceStorm): cast("iceStorm", ...) with every hex of the field as the targets starts a storm at
+  // the impact; newestStorm() is its id (0 = none yet), stormEnd fades it when the rules drop the field.
+  int newestStorm() const { return stormSerial_; }
+  void stormEnd(int id, float now);
+
   // This frame's quads (sorted far to near) and lights. `flatTop`: in the 2D view (Tática) every quad lies face up
   // at this height instead of standing.
   // Engine2's ported effects (render/vfx/*) are drawn from vfx() (Renderer::setVfx), filled by the same call.
   void build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out, std::vector<Light>& lights);
   const VfxFrame& vfx() const { return vfx_; }
   bool active(float now) const;
-  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(); }
+  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(); }
   // A version that keeps Engine2's own timeline decides when the hit lands: seconds from the cast (Míssil Mágico 02:
   // Engine2's charge, then the flight). Below 0: the version lands on the caller's impact (the pose's).
   float impactDelay(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const;
@@ -195,6 +201,8 @@ class SpellEffects {
   std::vector<CleaveSweep> cleaves_;  // Cleave 01 = CleaveSweepVFX
   std::vector<Varredura> sweeps_;     // Varredura 01 = VarreduraVFX
   std::vector<HolyLight> holies_;     // the cures', the meal's and the potions' light (ours, 3D)
+  std::vector<IceStorm> storms_;      // Tempestade de Gelo 01 (Engine2's Blizzard2D) / 02 (ours, 3D)
+  int stormSerial_ = 0;
   CombatFx combat_;
   std::string potionEffect_ = "heal";  // the potion being cast (potion())
   std::vector<std::pair<BurningHands, bool>> burns_;  // Mãos Flamejantes 01 / Sopro Venenoso 01 (poison) = BurningHandsV2VFX
