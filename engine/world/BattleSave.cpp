@@ -122,7 +122,7 @@ nlohmann::json Battle::snapshot() const {
           {"ownedWeapons", nlohmann::json(ownedWeapons_)},
           {"turn", round_}, {"units", units}, {"turnOrder", order}, {"enmity", enmity}, {"lootRations", lootRations_}, {"roaming", roaming_},
           {"zones", zones}, {"zoneSerial", zoneSerial_}, {"log", log_}, {"webZones", webs}, {"iceStormZones", ices}, {"auraZones", auras},
-          {"warpGates", gates}, {"turnRestrained", turnRestrained_}};
+          {"warpGates", gates}, {"turnRestrained", turnRestrained_}, {"questFound", questFound_}};
 }
 
 bool Battle::applySnapshot(const nlohmann::json& snap) {
@@ -299,6 +299,13 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
   if (snap.contains("lootWeapons") && snap["lootWeapons"].is_array()) lootWeapons_ = snap["lootWeapons"].get<std::vector<std::string>>();
   if (snap.contains("lootEquipment") && snap["lootEquipment"].is_array()) lootEquipment_ = snap["lootEquipment"].get<std::vector<std::string>>();
   if (snap.contains("ownedWeapons") && snap["ownedWeapons"].is_array()) ownedWeapons_ = snap["ownedWeapons"].get<std::set<std::string>>();
+  // engine.ts applySnapshot: the pickups found stay found, and leave the ground
+  if (snap.contains("questFound") && snap["questFound"].is_array()) {
+    questFound_.clear();
+    for (const nlohmann::json& k : snap["questFound"])
+      if (k.is_string()) questFound_.push_back(k.get<std::string>());
+    std::erase_if(questPickups_, [&](const QuestPickup& p) { return std::find(questFound_.begin(), questFound_.end(), p.key) != questFound_.end(); });
+  }
   if (snap.contains("locksOpen") && snap["locksOpen"].is_array())
     for (const nlohmann::json& i : snap["locksOpen"])
       if (i.is_number_integer() && i.get<int>() >= 0 && static_cast<size_t>(i.get<int>()) < locks_.size()) {

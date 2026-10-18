@@ -67,6 +67,7 @@
 #include "rhi/UploadQueue.h"
 #include "render/MeshScene.h"
 #include "BattleStatus.h"
+#include "QuestLog.h"
 #include "InventoryScreen.h"
 #include "EmberMenus.h"
 #include "SpellsMenu.h"
@@ -77,6 +78,7 @@
 #include "world/Combat.h"
 #include "world/Inn.h"
 #include "world/Loadout.h"
+#include "world/Quests.h"
 #include "world/Spells.h"
 #include "render/UiArt.h"
 #include "world/Board.h"
@@ -378,6 +380,7 @@ class MapStage final : public Stage {
     now_ = time;
     updateUnits(dt);
     updateExchange();
+    updateQuestPickups();
     if (talkAfterWalk_ >= 0 && !busy()) talkRequest_ = std::exchange(talkAfterWalk_, -1);  // walked up to the NPC: they talk
     runScript();
     updateRoaming();
@@ -608,6 +611,7 @@ class MapStage final : public Stage {
     if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.key == SDLK_ESCAPE) {
       if (battleInventory_) battleInventory_.reset();
       else if (statusSheet_.isOpen()) statusSheet_.closeConditionOrSheet();
+      else if (questLog_) questLog_ = false;
       else if (logFull_) logFull_ = false;
       else if (pendingFoe_ >= 0) pendingFoe_ = -1;
       else if (spellArmed_) spellArmed_.reset();
@@ -1079,6 +1083,9 @@ class MapStage final : public Stage {
   // map file is not resumed). `testMode`: Modo teste writes nothing, so its menu has no Save.
   void setCampaign(e2::Campaign* campaign, std::string missionId, std::string mapKey, bool testMode) {
     campaign_ = campaign, missionId_ = std::move(missionId), mapKey_ = std::move(mapKey), testMode_ = testMode;
+    // The Inn quests' pickups lying on this mission's map (GameApp startBattle: quests.ts activePickupsFor; never in Modo teste).
+    if (battle_ && campaign_ && !testMode_ && !playtest_ && options_.world)
+      battle_->setQuestPickups(e2::activeQuestPickups(questTable("quests"), campaign_->activeSave(), missionId_));
     // A campaign fight: each hero wears what the save has it wearing (Engine2 spawnUnit's gearStatBonus on HP / ATK / MAG / DEF /
     // DEX / movement), its HP as the save carries it (full when it carries none).
     if (!campaign_ || testMode_ || playtest_ || !battle_ || !ensureInnRules()) return;
@@ -1182,6 +1189,7 @@ class MapStage final : public Stage {
     else if (which == "options") menuOptions_.open();
     else if (which == "log") showLog_ = true, logJustOpened_ = true, logKeep_ = true;  // a capture: the turns the script plays do not close it
     else if (which == "fulllog") logFull_ = true, logFullJustOpened_ = true;
+    else if (which == "quests") questLog_ = true;
     else if (which == "status" && battle_) openStatus(battle_->activeUnit() >= 0 ? battle_->activeUnit() : 0);
     else if (which.starts_with("inventory:") && battle_) {  // "inventory:<name>[:doll]": the Mochila (or Equipar) over the fight
       const std::string rest = which.substr(10);
@@ -1211,6 +1219,17 @@ class MapStage final : public Stage {
   }
   // "victory" / "defeat" once the fight is over, else empty.
   const std::string& battleResult() const { return result_; }
+  // What the fight adds to the quests: the pickups found, and this mission's quest targets that fell (GameApp persistVictory).
+  std::vector<std::string> questFound() const { return battle_ ? battle_->questFound() : std::vector<std::string>{}; }
+  std::vector<std::string> questKills() const {
+    std::vector<std::string> out;
+    if (!battle_ || missionId_.empty()) return out;
+    for (const std::string& target : e2::questKillTargets(questTable("quests"), missionId_))
+      if (std::any_of(battle_->units().begin(), battle_->units().end(),
+                      [&](const e2::BattleUnit& u) { return u.side == "enemy" && !u.alive && !u.summoned && u.name == target; }))
+        out.push_back(target);
+    return out;
+  }
   // A line for the combat log from outside the battle's own rules (a conversation's affinity change).
   void battleLog(std::string line) {
     if (battle_) battle_->pushLog(std::move(line));
@@ -4874,6 +4893,56 @@ class MapStage final : public Stage {
     ImGui::PopStyleColor();
   }
 
+  // --- Engine2's Inn quests in a fight (world/Quests.h): the pickups on the ground, collected by walking onto them, and the
+  // quest log (QuestLog.h) following the fight's finds and kills live. Nothing is announced on screen: the combat log and the
+  // quest log say it (the user, 2026-10-17).
+  e2::Json questTable(const char* key) const {
+    if (!options_.world) return e2::Json::array();
+    const e2::Json& t = options_.world->tables();
+    return t.contains(key) && t[key].is_array() ? t[key] : e2::Json::array();
+  }
+  // engine.ts collectQuestPickups (after every walk): a hero whose walk is over on a pickup's hex picks it up.
+  void updateQuestPickups() {
+    if (!battle_ || battle_->questPickups().empty() || !result_.empty()) return;
+    const auto settled = [&](size_t b) {
+      const int s = sceneUnitOf(static_cast<int>(b));
+      return s < 0 || static_cast<size_t>(s) >= unitWalk_.size() || unitWalk_[static_cast<size_t>(s)].points.empty();
+    };
+    for (const e2::QuestPickup& p : battle_->collectQuestPickups(settled)) logInfo("quest pickup {} found at ({}, {})", p.key, p.x, p.y);
+  }
+  // Engine2 drawQuestPickups: a small pulsing gold glint lying on each pickup's hex (not a hex outline), hidden under the fog of
+  // war until the hex has been seen.
+  void drawQuestPickups() {
+    if (!battle_ || !board_ || battle_->questPickups().empty()) return;
+    const ImGuiIO& io = ImGui::GetIO();
+    ImDrawList* dl = ImGui::GetBackgroundDrawList();
+    const float w = io.DisplaySize.x, h = io.DisplaySize.y;
+    const e2::HexLayout& L = board_->layout();
+    const float pulse = 0.75f + std::sin(now_ * 3.4f) * 0.25f;
+    for (const e2::QuestPickup& p : battle_->questPickups()) {
+      if (!e2::inBoard(L, p.x, p.y)) continue;
+      const size_t i = static_cast<size_t>(e2::indexOf(L, p.x, p.y));
+      if (fog_ && !noFog_ && (i >= fogStates_.size() || fogStates_[i] == e2::kFogUnseen)) continue;
+      const float cx = static_cast<float>(e2::hexX(L, p.x, p.y)), cz = static_cast<float>(e2::hexZ(L, p.y));
+      const float y = static_cast<float>(e2::groundHeightAt(*board_, look_, cx, cz)) + 0.02f;
+      auto diamond = [&](float r, ImU32 color) {  // lying on the ground: its long axis along the board's depth, as Engine2's
+        const std::optional<ImVec2> a = screenOf({cx, y, cz - r}, w, h), b = screenOf({cx + 0.7f * r, y, cz}, w, h);
+        const std::optional<ImVec2> c = screenOf({cx, y, cz + r}, w, h), d = screenOf({cx - 0.7f * r, y, cz}, w, h);
+        if (a && b && c && d) dl->AddQuadFilled(*a, *b, *c, *d, color);
+      };
+      for (int k = 3; k >= 1; --k)  // the glow (shadowBlur 0.45 hex x pulse)
+        diamond(0.2f * (1.0f + 0.5f * static_cast<float>(k) * pulse), IM_COL32(255, 208, 96, static_cast<int>(0.85f * pulse * 255.0f / static_cast<float>(2 * k + 1))));
+      diamond(0.2f, IM_COL32(255, 226, 140, 242));
+    }
+  }
+  void drawQuestLog() {
+    if (!questLog_) return;
+    if (!options_.world) return void(questLog_ = false);
+    e2::Json save = gearSave();  // the campaign's save (Modo teste: a new one), with this fight's finds and kills folded in
+    e2::foldQuestProgress(save, questFound(), questKills());
+    if (!drawQuestLogPanel(questTable("quests"), questTable("potions"), save)) questLog_ = false;
+  }
+
   // --- Engine2's character status sheet (BattleStatus.h), opened by "Status" for the unit the bar describes ----------------
 
   void openStatus(int battleUnit) {
@@ -5023,6 +5092,7 @@ class MapStage final : public Stage {
     if (!battle_) return;
     e2::setCombatLogEnglish(uiEnglish());  // the lines made from now on follow the interface language
     drawTurnPlate();
+    drawQuestPickups();
     drawHealthBars();
     drawTurnOrder();
     drawHudBar();
@@ -5032,6 +5102,7 @@ class MapStage final : public Stage {
     drawFullLog();
     drawStatusSheet();
     drawBattleInventory();
+    drawQuestLog();
   }
 
   // GameApp's footer: portrait, name · level · XP, class, HP bar, the sheet line or the forecast; then the actions.
@@ -5146,15 +5217,23 @@ class MapStage final : public Stage {
       const std::string statusLabel = "Status";
       const float statusW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, statusLabel.c_str(), 0.06f) + 28.0f;
       const float endX = io.DisplaySize.x - endW - 20.0f, openX = endX - 6.0f - openW, logX = (showLog_ ? openX : endX) - 6.0f - logW;
+      // the quest log (Engine2's world-map "Missões", here in the fight too)
+      const std::string questLabel = tr("Missões", "Quests");
+      const float questW = options_.world ? spacedTextWidth(uiFont(UiFont::Mark), 16.0f, questLabel.c_str(), 0.06f) + 28.0f : 0.0f;
+      const float questX = logX - 6.0f - statusW - (questW > 0.0f ? 6.0f + questW : 0.0f);
       // Engine2's footer: "Encerrar missão" / "Usar waypoint" once the end is on offer
       if (battle_->winAvailable() && result_.empty()) {
         const std::string finishLabel = battle_->activeExit() ? tr("Usar waypoint", "Use waypoint") : tr("Encerrar missão", "End mission");
         const float finishW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, finishLabel.c_str(), 0.06f) + 28.0f;
-        ImGui::SameLine(logX - 6.0f - statusW - 6.0f - finishW);
+        ImGui::SameLine(questX - 6.0f - finishW);
         if (emberButton("##finishbtn", finishLabel.c_str(), true, !busy())) {
           if (battle_->activeExit()) winDismissed_ = false;
           else confirmFinishNow();
         }
+      }
+      if (questW > 0.0f) {
+        ImGui::SameLine(questX);
+        if (emberButton("##questbtn", questLabel.c_str(), false, true)) questLog_ = true;
       }
       ImGui::SameLine(logX - 6.0f - statusW);
       if (emberButton("##statusbtn", statusLabel.c_str(), false, ub >= 0)) openStatus(ub);
@@ -6477,6 +6556,7 @@ class MapStage final : public Stage {
   // Save / Load in battle: the campaign, this fight's mission and map key, the slot screen and the save it writes.
   e2::Campaign* campaign_ = nullptr;
   std::string missionId_, mapKey_;
+  bool questLog_ = false;  // the quest log open over the fight
   bool testMode_ = false, loadRequested_ = false;
   std::optional<SlotScreen> battleSlots_;
   e2::Json slotSave_;

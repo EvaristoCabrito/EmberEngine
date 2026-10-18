@@ -36,6 +36,7 @@
 #include "EmberMenus.h"
 #include "GameMusic.h"
 #include "InnScreen.h"
+#include "QuestLog.h"
 #include "Stage.h"
 #include "render/Camera.h"
 #include "render/DebugUi.h"
@@ -1096,81 +1097,9 @@ class OverworldStage : public Stage {
     }
   }
 
-  void drawQuestLog(ImVec2 size) {
-    if (veil(size, "##questveil")) {
-      questLog_ = false;
-      return;
-    }
-    beginPanel("##questlog", size, 672, size.y * 0.82f);
-    const float inner = 632;
-    const e2::Json& quests = world_.tables()["quests"];
-    struct Entry {
-      const e2::Json* q;
-      std::string status;
-      int have, total;
-    };
-    std::vector<Entry> active, done;
-    auto has = [&](const char* key, const std::string& v) {
-      for (const e2::Json& x : save_.value(key, e2::Json::array()))
-        if (x.is_string() && x.get<std::string>() == v) return true;
-      return false;
-    };
-    for (const e2::Json& q : quests) {
-      const std::string id = q.value("id", ""), kind = q.value("kind", "");
-      int have = 0, total = 0;
-      if (kind == "kill") total = 1, have = has("questKills", q.value("targetName", "")) ? 1 : 0;
-      else if (kind == "recruit") total = 1, have = has("flags", "recruited:" + q.value("targetName", "")) ? 1 : 0;
-      else
-        for (const e2::Json& p : q.value("pickups", e2::Json::array())) ++total, have += has("questItems", id + ":" + p.value("id", "")) ? 1 : 0;
-      std::string status = has("questsDone", id) ? "done" : !has("questsActive", id) ? "available" : have >= total ? "ready" : "active";
-      if (status == "done") done.push_back({&q, status, have, total});
-      else if (status == "active" || status == "ready") active.push_back({&q, status, have, total});
-    }
-    const ImVec2 head = ImGui::GetCursorScreenPos();
-    kicker(std::format("Estalagem · {}/{} concluídas", done.size(), quests.size()), 12.0f);
-    title("Registro de missões", 24.0f);
-    ImGui::SetCursorScreenPos({head.x + inner - 36, head.y});
-    if (closeButton("##questclose")) questLog_ = false;
-    ImGui::SetCursorScreenPos({head.x, head.y + 64});
-    const std::pair<const char*, std::vector<Entry>*> sections[2] = {{"Missões ativas", &active}, {"Missões concluídas", &done}};
-    const char* empties[2] = {"Nenhuma missão ativa. Fale com o pessoal da Estalagem.", "Nenhuma missão concluída ainda."};
-    for (int s = 0; s < 2; ++s) {
-      kicker(std::format("{} · {}", sections[s].first, sections[s].second->size()), 14.0f);
-      if (sections[s].second->empty()) {
-        const ImVec2 a = ImGui::GetCursorScreenPos();
-        slot(a, {a.x + inner, a.y + 44});
-        ImGui::GetWindowDrawList()->AddText(uiFont(UiFont::Ui), 14.0f, {a.x + 12, a.y + 14}, kMuted, empties[s]);
-        ImGui::Dummy({inner, 52});
-      }
-      for (const Entry& e : *sections[s].second) {
-        const e2::Json& q = *e.q;
-        const ImVec2 a = ImGui::GetCursorScreenPos();
-        const float h = e.status == "done" ? 64 : 84;
-        slot(a, {a.x + inner, a.y + h});
-        ImDrawList* dl = ImGui::GetWindowDrawList();
-        ImFont* ui = uiFont(UiFont::Ui);
-        if (e.status == "done") iconCheck(dl, {a.x + 20, a.y + 22}, 16, kAccent);
-        else dl->AddCircleFilled({a.x + 20, a.y + 22}, 4, kAccent);
-        emberTitle(dl, {a.x + 36, a.y + 10}, 18.0f, q.value("title", "").c_str());
-        const char* state = e.status == "done" ? "Concluída" : e.status == "ready" ? "Entregar" : "Em andamento";
-        const float sw = ui->CalcTextSizeA(12.0f, FLT_MAX, 0, state).x;
-        dl->AddText(ui, 12.0f, {a.x + inner - 12 - sw, a.y + 14}, kMuted, state);
-        const std::string kind = q.value("kind", "");
-        const std::string what = (kind == "kill" ? "Abater " + q.value("targetName", "") : std::format("Recolher {} itens", e.total)) + " · " + q.value("place", "");
-        dl->AddText(ui, 14.0f, {a.x + 36, a.y + 36}, kMuted, what.c_str(), nullptr, inner - 48);
-        if (e.status != "done") {
-          std::string line = kind == "kill" ? (e.have >= e.total ? "Alvo abatido — entregar na Estalagem" : "Alvo ainda vivo") : std::format("Encontrados {} / {}", e.have, e.total);
-          line += std::format(" · Recompensa {} Gold", q.value("reward", 0));
-          for (const e2::Json& p : q.value("rewardPotions", e2::Json::array()))
-            for (const e2::Json& pd : world_.tables()["potions"])
-              if (pd["id"] == p) line += " + " + pd["name"].get<std::string>();
-          dl->AddText(ui, 12.0f, {a.x + 36, a.y + 58}, kMuted, line.c_str());
-        }
-        ImGui::Dummy({inner, h + 8});
-      }
-      ImGui::Dummy({1, 8});
-    }
-    endPanel();
+  // Engine2's QuestLogPanel (QuestLog.h, shared with the fight's quest log).
+  void drawQuestLog(ImVec2) {
+    if (!drawQuestLogPanel(world_.tables()["quests"], world_.tables()["potions"], save_)) questLog_ = false;
   }
 
   // The Party menu: Grupo (leader, starting formation, affinities) and Skills (road training).

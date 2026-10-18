@@ -58,6 +58,7 @@ add_library(EmberEngine STATIC
   world/Locais.cpp
   world/Overworld.cpp
   world/Inn.cpp
+  world/Quests.cpp
   world/Companions.cpp
   world/FieldSpells.cpp
   media/VideoPlayer.cpp

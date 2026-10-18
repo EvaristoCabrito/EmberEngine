@@ -11,6 +11,7 @@
 #include <map>
 #include <set>
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <cstdint>
@@ -104,6 +105,12 @@ struct CombatProfile {
 struct ReachCell {
   int x = 0, y = 0, cost = 0;
   int parentX = -1, parentY = -1;
+};
+
+// An Inn quest's pickup lying on the map (quests.ts activePickupsFor): its key "<quest>:<pickup>", name and hex (world/Quests.h).
+struct QuestPickup {
+  std::string key, name;
+  int x = 0, y = 0;
 };
 
 // Potions in the bag's order (Engine2 GameApp ALL_POTIONS; data.ts POTIONS).
@@ -449,6 +456,15 @@ class Battle {
   const std::optional<ChestLoot>& chestLoot() const { return chestLoot_; }
   void setChestLoot(ChestLoot c) { chestLoot_ = std::move(c); }
   void clearChestLoot() { chestLoot_.reset(); }
+  // --- Engine2's Inn-quest pickups (engine.ts questPickups / questFound; world/Quests.cpp) ---
+  // The pickups lying here (the window sets them from the save: quests.ts activePickupsFor), and the keys found in this fight
+  // (folded into save.questItems at its end; kept in the snapshot).
+  void setQuestPickups(std::vector<QuestPickup> p) { questPickups_ = std::move(p); }
+  const std::vector<QuestPickup>& questPickups() const { return questPickups_; }
+  const std::vector<std::string>& questFound() const { return questFound_; }
+  // engine.ts collectQuestPickups: a living hero standing on a pickup's hex picks it up (once `settled` says its walk is over;
+  // Engine2 checks after every walk), and the combat log says who found what. Returns the finds.
+  std::vector<QuestPickup> collectQuestPickups(const std::function<bool(size_t)>& settled);
   void setTurnOrder(std::vector<size_t> order) { turnOrder_ = std::move(order); }
   std::vector<WarpGate>& warpGates() { return warpGates_; }
   const std::vector<WarpGate>& warpGates() const { return warpGates_; }
@@ -608,6 +624,8 @@ class Battle {
   int lootEmber_ = 0;
   std::vector<std::string> lootWeapons_, lootEquipment_;
   std::optional<ChestLoot> chestLoot_;
+  std::vector<QuestPickup> questPickups_;
+  std::vector<std::string> questFound_;
   bool turnRestrained_ = false;
 };
 

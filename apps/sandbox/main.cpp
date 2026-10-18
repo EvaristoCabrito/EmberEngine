@@ -749,7 +749,7 @@ int runCapture(const Options& o) {
       auto talk = attachNpcTalk(*missionStage, o.engine2, options.world, nullptr, test ? &testSession->save : nullptr, campaign.activeSave());
       if (missionStage->draftId().rfind("estalagem", 0) == 0) missionStage->setMusic(music::theme("inn"));
       if (o.mapUi.starts_with("npc:")) talk->preview(o.mapUi.substr(4));
-      if (o.mapUi == "menu" || o.mapUi == "options" || o.mapUi == "log" || o.mapUi == "fulllog" || o.mapUi.starts_with("status") || o.mapUi.starts_with("inventory:") || o.mapUi.starts_with("synced:")) missionStage->previewMenu(o.mapUi);
+      if (o.mapUi == "menu" || o.mapUi == "options" || o.mapUi == "log" || o.mapUi == "fulllog" || o.mapUi == "quests" || o.mapUi.starts_with("status") || o.mapUi.starts_with("inventory:") || o.mapUi.starts_with("synced:")) missionStage->previewMenu(o.mapUi);
       stage = std::move(missionStage);
     } else if (o.title && o.titleScreen.starts_with("test") && hasCampaign && world.load("content/engine2/overworld.json")) {
       // --title-screen test / test-choice / test-classic / test-scenarios / test-rpg / test-dev / test-editor: Modo teste's screens (--map-ui
@@ -798,7 +798,7 @@ int runCapture(const Options& o) {
     } else {
       stage = makeStage(o, context, renderer, services.assets, services.jobs);
       // --map-ui menu / options: the battle's Esc menu or Opções open.
-      if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && (o.mapUi == "menu" || o.mapUi == "options" || o.mapUi == "log" || o.mapUi == "fulllog" || o.mapUi.starts_with("status") || o.mapUi.starts_with("inventory:") || o.mapUi.starts_with("synced:")))
+      if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && (o.mapUi == "menu" || o.mapUi == "options" || o.mapUi == "log" || o.mapUi == "fulllog" || o.mapUi == "quests" || o.mapUi.starts_with("status") || o.mapUi.starts_with("inventory:") || o.mapUi.starts_with("synced:")))
         map->previewMenu(o.mapUi);
       // --resume <snapshot.json>: the battle as that saved fight left it.
       if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && !o.resume.empty()) {
@@ -1077,6 +1077,8 @@ int runWindow(const Options& o) {
       if (playing == "wisp-forest-crossing-boss") ids.push_back("wisp-forest-crossing");
       for (const std::string& id : ids)
         if (std::find(done.begin(), done.end(), id) == done.end()) done.push_back(id);
+      // Inn quests (persistVictory): the pickups found here, and this mission's quest targets that fell, accepted or not
+      e2::foldQuestProgress(save, map.questFound(), map.questKills());
     } else {
       save["pendingMission"] = playing;  // a lost fight is played again from its briefing
     }
@@ -1094,8 +1096,9 @@ int runWindow(const Options& o) {
     openMap = true;  // GameApp ResultScreen "Mapa": back to the world map
   };
   // GameApp onQuit on an explore map: the map's mission completed, no pending mission or resumable fight left in the slot.
-  auto markVisited = [&](const std::string& id) {
+  auto markVisited = [&](const std::string& id, const MapStage* map = nullptr) {
     e2::Json save = campaign.activeSave();
+    if (map) e2::foldQuestProgress(save, map->questFound(), map->questKills());  // what the walk found stays found
     e2::Json& done = save["completed"];
     if (!done.is_array()) done = e2::Json::array();
     if (std::find(done.begin(), done.end(), id) == done.end()) done.push_back(id);
@@ -1195,7 +1198,7 @@ int runWindow(const Options& o) {
           finishCampaignFight(*map);
         } else if (!playing.empty() && map->explores()) {
           // Leaving a free-roam map (the walkable Inn's Sair): the visit recorded, no resumable snapshot left (GameApp onQuit).
-          markVisited(playing);
+          markVisited(playing, map);
           playing.clear();
           openMap = true;
         } else if (!playing.empty()) {
