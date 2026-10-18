@@ -2111,6 +2111,14 @@ class MapStage final : public Stage {
       const auto it = byKey.find(scene_->units[i].key);
       if (it != byKey.end()) unitCatalog_[i] = it->second;
       else unknown.push_back(scene_->units[i].name + " (" + scene_->units[i].key + ")");
+      // Art EmberEngine replaced (content/sprite-overrides.json "sets", e.g. Voss cut from video): the scene file still
+      // names Engine2's idle, so the unit takes the catalog's.
+      const e2::HeroPose* idle = unitCatalog_[i] ? unitCatalog_[i]->find(kIdle) : nullptr;
+      e2::SceneUnit& su = scene_->units[i];
+      if (idle && !idle->pace.empty() && idle->set != su.set) {
+        su.set = idle->set, su.clip = idle->clip, su.boxW = idle->boxW, su.boxH = idle->boxH, su.foot = idle->foot;
+        su.frames = idle->frames, su.pace = idle->pace, su.natW = su.natH = 0;
+      }
     }
     for (const e2::Hero& h : catalog_) {
       if (std::find(unitCatalog_.begin(), unitCatalog_.end(), &h) == unitCatalog_.end()) continue;

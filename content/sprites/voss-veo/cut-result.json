@@ -1,0 +1,187 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/VeoVoss/Idle/VossV2Idle.mp4",
+   "first": 16,
+   "last": 112,
+   "bootRow": 1210,
+   "bootRows": [
+    1210,
+    1210
+   ],
+   "crossfade": 6,
+   "figurePx": 1087.0,
+   "frames": 97,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    654,
+    1154
+   ],
+   "crop": [
+    5,
+    5,
+    644,
+    1144
+   ],
+   "box": {
+    "w": 1.61665,
+    "h": 2.85262,
+    "foot": 0.01978
+   },
+   "pattern": "content/sprites/voss-veo/base-v01/base-{}.png"
+  },
+  "move": {
+   "video": "Attachments/VeoVoss/WalkRight/Voss_walking_to_the_right_20261017230249.mp4",
+   "first": 40,
+   "last": 130,
+   "loopFirst": 49,
+   "loopLast": 109,
+   "seamSteps": 1.88,
+   "bootRow": 1206,
+   "bodyDrift": [
+    -21,
+    14
+   ],
+   "figurePx": 1080.0,
+   "frames": 61,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    609,
+    1189
+   ],
+   "crop": [
+    5,
+    6,
+    602,
+    1178
+   ],
+   "box": {
+    "w": 1.51517,
+    "h": 2.95819,
+    "foot": 0.04478
+   },
+   "pattern": "content/sprites/voss-veo/move-v01/move-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/VeoVoss/Walk Left/Character_walking_left_with_staff_20261017230240.mp4",
+   "first": 30,
+   "last": 170,
+   "loopFirst": 42,
+   "loopLast": 147,
+   "seamSteps": 1.89,
+   "bootRow": 1221,
+   "bodyDrift": [
+    -39,
+    0
+   ],
+   "figurePx": 1124.5,
+   "frames": 106,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    653,
+    1210
+   ],
+   "crop": [
+    0,
+    6,
+    646,
+    1199
+   ],
+   "box": {
+    "w": 1.56035,
+    "h": 2.8913,
+    "foot": 0.05974
+   },
+   "pattern": "content/sprites/voss-veo/move-left-v01/move-left-{}.png"
+  },
+  "cast": {
+   "video": "Attachments/VeoVoss/Casting/Voss_casting_purple_arcane_spell_20261017231306.mp4",
+   "first": 8,
+   "last": 120,
+   "bootRow": 687,
+   "bootRows": [
+    686,
+    687
+   ],
+   "figurePx": 632.0,
+   "frames": 113,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    421,
+    695
+   ],
+   "crop": [
+    4,
+    0,
+    413,
+    690
+   ],
+   "box": {
+    "w": 1.78992,
+    "h": 2.95485,
+    "foot": 0.02976
+   },
+   "pattern": "content/sprites/voss-veo/cast-v01/cast-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/VeoVoss/CounterDistance/CounterDistanceat420sec.mp4",
+   "first": 101,
+   "last": 212,
+   "bootRow": 1193,
+   "bootRows": [
+    1193,
+    1222
+   ],
+   "figurePx": 1046.5,
+   "frames": 112,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    719,
+    1186
+   ],
+   "crop": [
+    0,
+    5,
+    714,
+    1175
+   ],
+   "box": {
+    "w": 1.84611,
+    "h": 3.04518,
+    "foot": 0.04622
+   },
+   "pattern": "content/sprites/voss-veo/atk-v01/atk-{}.png",
+   "impact": 0.5446
+  },
+  "counter-staff": {
+   "video": "Attachments/VeoVoss/CounterStaff/CounterClseat4sec.mp4",
+   "first": 96,
+   "last": 220,
+   "bootRow": 1224,
+   "bootRows": [
+    1221,
+    1243
+   ],
+   "figurePx": 1124.0,
+   "frames": 125,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    720,
+    1234
+   ],
+   "crop": [
+    0,
+    0,
+    720,
+    1229
+   ],
+   "box": {
+    "w": 1.72121,
+    "h": 2.94996,
+    "foot": 0.02152
+   },
+   "pattern": "content/sprites/voss-veo/counter-staff-v01/counter-staff-{}.png",
+   "impact": 0.56
+  }
+ }
+}

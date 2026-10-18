@@ -10,13 +10,13 @@ Per frame:
   studio wall shows as a halo round the robe and inside the purple / white light;
 - matte noise under 3% is dropped;
 - no resampling: frames are only cut and moved by whole pixels;
-- "stand" clips (idle, cast, strikes): the camera is locked, so every frame keeps the video's own place (one offset for
-  the whole clip: the idle's boots on the clip's feet line);
+- "stand" clips (idle, cast, strikes): the camera is locked, so every frame keeps the video's own place (the clip's
+  median boot row is its feet line); a loop may blend its last `crossfade` frames into the frames before its first;
 - "walk" clips: each frame moved sideways so the body (hood + chest) stays put, and up / down so the boot on the ground
   sits on one line (lowest row of a solid boot 16 rows tall, the robe's thin tatters do not count); the loop is the
   stretch's best seam after that alignment (searched between loopMin and loopMax frames).
-The world size: the idle's head to feet (the hood's top over the body's middle, not the staff's orb) is `figureUnits`
-tall, so every clip shares one units-a-pixel and the hero is as tall as his other art.
+The world size: each video is framed its own way, so each clip's median hood top (the first row 61 px wide: not the
+staff's orb or spikes) to boot row is `figureUnits` tall: the hero stands as tall in every clip and as his other art.
 
     python -I tools/scripts/sprites/video_sprite.py content/sprites/voss-veo/cut.json [--only clip,clip]
 """
@@ -97,6 +97,22 @@ def head_and_feet(a):
     return int(head), int(ys.max())
 
 
+def hood_top(a, width=None, thick=None):
+    """The figure's top: the first row holding a solid block `width` px wide and `thick` rows tall. The staff, its spikes
+    and the orb's ring are thinner, so they do not count (in profile they rise above the hood); the hood is wider."""
+    # sized to the video: 61 x 8 px in a 1280-tall frame (the cast's 720-tall video: 34 x 4)
+    width = width or max(9, round(a.shape[0] * 61 / 1280))
+    thick = thick or max(3, round(a.shape[0] * 8 / 1280))
+    m = (a > 60).astype(np.int32)
+    v = np.cumsum(np.pad(m, ((1, 0), (0, 0))), axis=0)
+    m = np.zeros_like(m)
+    m[:-(thick - 1)] = (v[thick:] - v[:-thick]) == thick  # solid `thick` rows down (the orb's ring is ~6 px)
+    c = np.cumsum(np.pad(m, ((0, 0), (1, 0))), axis=1)
+    wide = (c[:, width:] - c[:, :-width]) == width
+    rows = np.nonzero(wide.any(1))[0]
+    return int(rows.min())
+
+
 def body_shift(prev, cur, rows, cols, rng=40):
     """Horizontal shift that lays `cur`'s body patch (alpha) on `prev`'s."""
     pa = prev[rows[0]:rows[1], cols[0]:cols[1]].astype(np.float32)
@@ -146,14 +162,6 @@ def main():
     result_path = os.path.join(here, "cut-result.json")
     result = json.load(open(result_path, encoding="utf-8")) if os.path.exists(result_path) else {"clips": {}}
 
-    # one world scale for the hero: the idle's head to feet (first frame of the stand clip named in scaleFrom)
-    ref = next(c for c in spec["clips"] if c["clip"] == spec["scaleFrom"])
-    ref_a = np.asarray(Image.open(os.path.join(ROOT, ref["src"], f"alpha-{ref['first']:04d}.png")).convert("L"))
-    head, feet = head_and_feet(ref_a)
-    units_px = spec["figureUnits"] / (feet - head)
-    ref_sole = sole_row(ref_a)
-    print(f"scale: idle head {head} feet {feet} ({feet - head} px) -> {units_px:.6f} units a pixel; idle boot row {ref_sole}")
-
     for c in spec["clips"]:
         if only and c["clip"] not in only:
             continue
@@ -162,6 +170,10 @@ def main():
         frames = [unmix(rgb[i], alpha[i], plate) for i in range(len(rgb))]
         n = len(frames)
         info = {"video": c.get("video"), "first": c["first"], "last": c["last"]}
+        # Every video is framed its own way (the cast is landscape, ~660 px of figure; the staff counter ~4% closer than the
+        # idle) and he steps in some (both strikes settle back in their first half second): each clip's frames are set on
+        # its own feet line, and its median hood top to boot row is `figureUnits` tall, so he stands as tall on the same
+        # ground in every clip with no resampling.
         if c["kind"] == "walk":
             al = [f[..., 3] for f in frames]
             h, w = al[0].shape
@@ -179,13 +191,42 @@ def main():
             frames = [shifted(f, x_off[i], target - soles[i]) for i, f in enumerate(frames)]
             s, e, seam = best_loop(frames, c["loopMin"], c["loopMax"])
             frames = frames[s:e]
-            info.update(loopFirst=c["first"] + s, loopLast=c["first"] + e - 1, seamSteps=round(seam, 2),
-                        bootRow=target, bodyDrift=[min(x_off[s:e]), max(x_off[s:e])])
+            tops = [hood_top(f[..., 3]) for f in frames]
+            height = float(np.median([target - t for t in tops]))
+            info.update(loopFirst=int(c["first"] + s), loopLast=int(c["first"] + e - 1), seamSteps=round(float(seam), 2),
+                        bootRow=int(target), bodyDrift=[int(min(x_off[s:e])), int(max(x_off[s:e]))])
             print(f"{c['clip']}: loop video frames {c['first'] + s}..{c['first'] + e - 1} ({e - s}), seam {seam:.2f} x a step, "
                   f"body moved {min(x_off)}..{max(x_off)} px, boot rows {min(soles)}..{max(soles)} -> {target}")
             sole = target
         else:
-            sole = ref_sole  # the camera never moves: the boots stand where the idle's do
+            # the boot row per frame, smoothed over 5 frames (a misread frame must not shake him), every frame moved onto
+            # the clip's median line
+            raw = [sole_row(alpha[i]) for i in range(n)]
+            known = [r for r in raw if r is not None]
+            raw = [r if r is not None else int(np.median(known)) for r in raw]
+            boots = [int(np.median(raw[max(0, i - 2):i + 3])) for i in range(n)]
+            sole = int(np.median(boots))
+            tops = [hood_top(alpha[i]) for i in range(n)]
+            height = float(np.median([boots[i] - tops[i] for i in range(n)]))
+            frames = [shifted(f, 0, sole - boots[i]) if boots[i] != sole else f for i, f in enumerate(frames)]
+            info["bootRow"], info["bootRows"] = sole, [int(min(boots)), int(max(boots))]
+            print(f"{c['clip']}: boot rows {min(boots)}..{max(boots)} -> {sole}")
+            xf = c.get("crossfade", 0)
+            if xf:
+                # a loop's seam: its last `xf` frames blend into the video frames just before its first (premultiplied),
+                # so the last frame leads into the first as the video itself does
+                pre_rgb, pre_a = load_frames(os.path.join(ROOT, c["src"]), c["first"] - xf, c["first"] - 1)
+                pre = [unmix(pre_rgb[i], pre_a[i], plate) for i in range(xf)]
+                for k in range(xf):
+                    t = (k + 1) / (xf + 1)
+                    f, g = frames[n - xf + k], pre[k]
+                    pa = f[..., 3:] / 255 * (1 - t) + g[..., 3:] / 255 * t
+                    pc = f[..., :3] * f[..., 3:] / 255 * (1 - t) + g[..., :3] * g[..., 3:] / 255 * t
+                    frames[n - xf + k] = np.dstack([pc / np.maximum(pa, 1e-4), pa * 255]).astype(np.float32)
+                info["crossfade"] = xf
+        clip_units_px = spec["figureUnits"] / height
+        info["figurePx"] = round(height, 1)
+        print(f"{c['clip']}: figure {height:.0f} px -> {clip_units_px:.6f} units a pixel")
         # cut every frame to the clip's union box (+ margin), the feet line kept
         al = np.stack([f[..., 3] for f in frames])
         m = (al > 0).any(0)
@@ -206,17 +247,17 @@ def main():
         bys, bxs = np.nonzero(bb)
         info.update(frames=len(frames), frameMs=1000.0 / FPS, nat=nat,
                     crop=[int(bxs.min()), int(bys.min()), int(bxs.max() - bxs.min() + 1), int(bys.max() - bys.min() + 1)],
-                    box={"w": round(nat[0] * units_px, 5), "h": round(nat[1] * units_px, 5),
-                         "foot": round(float(y1 - 1 - sole) * units_px, 5)},
+                    box={"w": round(nat[0] * clip_units_px, 5), "h": round(nat[1] * clip_units_px, 5),
+                         "foot": round(float(y1 - 1 - sole) * clip_units_px, 5)},
                     pattern=os.path.relpath(os.path.join(out_dir, f"{c['clip']}-{{}}.png"), ROOT).replace("\\", "/"))
         if "impactFrame" in c:
             info["impact"] = round((c["impactFrame"] - c["first"]) / len(frames), 4)
         result["clips"][c["clip"]] = info
         print(f"{c['clip']}: {len(frames)} frames {nat[0]} x {nat[1]}, box {info['box']}")
-    result["unitsPerPixel"] = units_px
-    with open(result_path, "w", encoding="utf-8") as f:
-        json.dump(result, f, indent=1)
-        f.write("\n")
+    text = json.dumps(result, indent=1) + "\n"  # whole before the file is touched
+    with open(result_path + ".tmp", "w", encoding="utf-8") as f:
+        f.write(text)
+    os.replace(result_path + ".tmp", result_path)
 
 
 if __name__ == "__main__":

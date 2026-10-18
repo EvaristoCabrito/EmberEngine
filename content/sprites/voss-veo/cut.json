@@ -2,15 +2,76 @@
  "about": "Voss cut from the user's Veo videos (Attachments/VeoVoss, 2026-10-17), every native frame at 24 fps, the video's own resolution. tools/scripts/sprites/video_matte.py (BiRefNet) then tools/scripts/sprites/video_sprite.py this file. The user's choices: distance counter = the regular ATT (CounterDistance, from 4.2 s); the staff counter when the foe is beside him (CounterStaff, from 4 s); every frame, max quality; voss-final kept, its back pose stays on Poison Breath.",
  "set": "voss-veo",
  "version": "v01",
- "scaleFrom": "base",
  "figureUnits": 2.687,
- "figureNote": "head to feet as in voss-final's idle (the cast-back pose's note: 2.687 units)",
+ "figureNote": "each clip's median hood top to boot row, as tall as voss-final's idle (the cast-back pose's note: 2.687 units)",
  "clips": [
-  {"clip": "base", "pose": "idle", "kind": "stand", "src": "build/video-cut/voss-veo/idle", "video": "Attachments/VeoVoss/Idle/VossV2Idle.mp4", "first": 16, "last": 112, "mode": "loop"},
-  {"clip": "move", "pose": "walk", "kind": "walk", "src": "build/video-cut/voss-veo/walk-right", "video": "Attachments/VeoVoss/WalkRight/Voss_walking_to_the_right_20261017230249.mp4", "first": 40, "last": 130, "loopMin": 40, "loopMax": 86, "mode": "loop"},
-  {"clip": "move-left", "pose": "walkLeft", "kind": "walk", "src": "build/video-cut/voss-veo/walk-left", "video": "Attachments/VeoVoss/Walk Left/Character_walking_left_with_staff_20261017230240.mp4", "first": 30, "last": 170, "loopMin": 40, "loopMax": 110, "mode": "loop"},
-  {"clip": "cast", "pose": "cast", "kind": "stand", "src": "build/video-cut/voss-veo/cast", "video": "Attachments/VeoVoss/Casting/Voss_casting_purple_arcane_spell_20261017231306.mp4", "first": 8, "last": 120, "mode": "once"},
-  {"clip": "atk", "pose": "attack", "kind": "stand", "src": "build/video-cut/voss-veo/attack", "video": "Attachments/VeoVoss/CounterDistance/CounterDistanceat420sec.mp4", "first": 101, "last": 212, "impactFrame": 166, "mode": "once"},
-  {"clip": "counter-staff", "pose": "counterStaff", "label": "Contra-ataque (cajado)", "kind": "stand", "src": "build/video-cut/voss-veo/counter-staff", "video": "Attachments/VeoVoss/CounterStaff/CounterClseat4sec.mp4", "first": 96, "last": 220, "impactFrame": 162, "mode": "once"}
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/idle",
+   "video": "Attachments/VeoVoss/Idle/VossV2Idle.mp4",
+   "first": 16,
+   "last": 112,
+   "crossfade": 6,
+   "mode": "loop"
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/voss-veo/walk-right",
+   "video": "Attachments/VeoVoss/WalkRight/Voss_walking_to_the_right_20261017230249.mp4",
+   "first": 40,
+   "last": 130,
+   "loopMin": 40,
+   "loopMax": 86,
+   "mode": "loop"
+  },
+  {
+   "clip": "move-left",
+   "pose": "walkLeft",
+   "kind": "walk",
+   "src": "build/video-cut/voss-veo/walk-left",
+   "video": "Attachments/VeoVoss/Walk Left/Character_walking_left_with_staff_20261017230240.mp4",
+   "first": 30,
+   "last": 170,
+   "loopMin": 40,
+   "loopMax": 110,
+   "mode": "loop"
+  },
+  {
+   "clip": "cast",
+   "pose": "cast",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/cast",
+   "video": "Attachments/VeoVoss/Casting/Voss_casting_purple_arcane_spell_20261017231306.mp4",
+   "first": 8,
+   "last": 120,
+   "mode": "once"
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/attack",
+   "video": "Attachments/VeoVoss/CounterDistance/CounterDistanceat420sec.mp4",
+   "first": 101,
+   "last": 212,
+   "impactFrame": 162,
+   "mode": "once"
+  },
+  {
+   "clip": "counter-staff",
+   "pose": "counterStaff",
+   "label": "Contra-ataque (cajado)",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/counter-staff",
+   "video": "Attachments/VeoVoss/CounterStaff/CounterClseat4sec.mp4",
+   "first": 96,
+   "last": 220,
+   "impactFrame": 166,
+   "mode": "once"
+  }
  ]
 }

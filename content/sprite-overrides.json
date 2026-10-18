@@ -4,6 +4,19 @@
  "speed": [
   {"hero": "malrec", "poses": ["attack", "cast"], "factor": 2.0, "why": "the user, 2026-10-17: Malrec's casting and ATT are far too slow (his clips run 3.33 s at 10.8 fps, then the fight plays them at its pace: more than 5 s a cast)"}
  ],
+ "sets": [
+  {
+   "set": "voss-veo",
+   "version": "v01",
+   "hero": "voss",
+   "cut": "content/sprites/voss-veo/cut.json",
+   "why": "the user, 2026-10-17: Voss cut from their Veo videos (Attachments/VeoVoss) as a new sprite set, his default; voss-final kept (its back pose stays on Poison Breath); every native frame, the video's own resolution",
+   "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "cast": "cast", "attack": "atk", "counter": "counter-staff", "counterStaff": "counter-staff"},
+   "labels": {"counterStaff": "Contra-ataque (cajado)"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
+  }
+ ],
  "clips": [
   {
    "set": "salazar-final",
