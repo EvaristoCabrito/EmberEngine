@@ -107,7 +107,17 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"glacialGale", "Vendaval Glacial", 9, "ice", false}, "elementalist", 22},
     {{"wrathOfTheSkies", "Fúria dos Céus", 10, "lightning", false}, "elementalist", 23},
     {{"primordialEmber", "Brasa Primordial", 10, "ember", false}, "elementalist", 25},
+    // Guerreiro (docs/SKILLS_WARRIOR.md, 2026-10-18): weapon skills (the weapon's own roll + bonus dice), two per tier T4 / T5
+    {{"steelWhirlwind", "Redemoinho de Aço", 4, "", true}, "swordsman", 11},
+    {{"guardBreak", "Quebra-Guarda", 4, "", true}, "swordsman", 13},
+    {{"warCry", "Grito de Guerra", 5, "", false}, "swordsman", 15},
+    {{"leapingStrike", "Salto Devastador", 5, "", true}, "swordsman", 17},
 };
+// The base class a promotion keeps the skills of (the Guerreiro's go on into the Paladino and the Cavaleiro Pesado).
+const char* emberClassFamily(const std::string& classId) {
+  if (classId == "paladin" || classId == "heavyKnight") return "swordsman";
+  return classId.c_str();
+}
 const EmberSpell* emberSpell(const std::string& kind) {
   for (const EmberSpell& s : kEmberSpells)
     if (kind == s.data.kind) return &s;
@@ -324,6 +334,30 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
     n.range = 7, n.mul = 2.2, n.dice = lv >= 28 ? 4 : 3, n.faces = 8;
     n.pct = lv >= 30 ? 25 : lv >= 27 ? 20 : 15;
     n.spread = 30;  // Escuridão resistance shred
+  }
+  // Guerreiro (docs/SKILLS_WARRIOR.md): dice = the bonus on the weapon's own roll
+  else if (kind == "steelWhirlwind") {
+    n.radius = 1;
+    if (lv >= 30) n.dice = 3, n.faces = 8;
+    else if (lv >= 26) n.dice = 2, n.faces = 10;
+    else if (lv >= 22) n.dice = 2, n.faces = 8;
+    else if (lv >= 18) n.dice = 2, n.faces = 6;
+    else if (lv >= 14) n.dice = 1, n.faces = 8;
+    else n.dice = 1, n.faces = 6;
+  } else if (kind == "guardBreak") {
+    n.dice = lv >= 19 ? 2 : 1, n.faces = lv >= 25 ? 8 : lv >= 19 ? 6 : 8;
+    n.pct = lv >= 28 ? 35 : lv >= 21 ? 30 : lv >= 17 ? 25 : 20;  // DEF off
+    n.turns = lv >= 24 ? 3 : 2;
+  } else if (kind == "warCry") {
+    n.radius = lv >= 19 ? 3 : 2;
+    n.pct = lv >= 27 ? 25 : lv >= 21 ? 20 : 15;  // ATK up
+    n.turns = lv >= 24 ? 3 : 2;
+    n.spread = lv >= 22 ? 1 : 0;  // the foes' turns of fear
+  } else if (kind == "leapingStrike") {
+    n.range = lv >= 27 ? 5 : lv >= 21 ? 4 : 3;
+    n.mul = lv >= 29 ? 2.0 : lv >= 23 ? 1.75 : 1.5;
+    n.dice = 2, n.faces = lv >= 25 ? 8 : 6;
+    n.pct = lv >= 25 ? 50 : 0;  // the shockwave on the landing's other neighbours: this share of a weapon roll
   }
   // Elementalista
   else if (kind == "pillarOfFlame") {
@@ -1018,6 +1052,25 @@ void landMeteors(Battle& b, size_t caster, Mulberry32& rng, std::vector<BattleEf
   }
 }
 // The cast of one of ours (castSpell's branch): the steps to play, or nothing with the reason.
+// Salto Devastador: where the caster lands to strike the foe: its own hex when the weapon already reaches it, else the
+// free, passable hex beside the foe nearest to the caster (the first in the neighbours' order on a tie) within `range`
+// hexes of the caster; none when there is no such hex.
+std::optional<BattleHex> leapLanding(const Battle& b, size_t caster, size_t foe, int range) {
+  const BattleUnit &u = b.units()[caster], &t = b.units()[foe];
+  const BattleHex from{u.x, u.y};
+  if (canHitFrom(b, caster, from, foe)) return from;
+  std::optional<BattleHex> best;
+  int bestD = 1 << 30;
+  for (const BattleHex& h : Battle::neighbors(t.x, t.y)) {
+    if (!b.inBounds(h.x, h.y) || !b.cell(h.x, h.y).passable || b.cell(h.x, h.y).terrain == "void" || occAt(b, h) >= 0) continue;
+    const int d = hexDist(from, h);
+    if (d > range || d >= bestD) continue;
+    if (!canHitFrom(b, caster, h, foe)) continue;
+    bestD = d, best = h;
+  }
+  return best;
+}
+
 std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const std::string& kind, const std::vector<BattleHex>& cells, std::string* error) {
   BattleUnit& u = b.units()[caster];
   auto fail = [&](const std::string& why) -> std::optional<std::vector<BattleStep>> {
@@ -1133,6 +1186,77 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     s.push = n.push;
     spend();
     steps.push_back(s);
+  } else if (kind == "steelWhirlwind") {
+    // One turn of the blade: a weapon blow (+ the bonus dice) on every foe round the caster; nobody strikes back.
+    if (!(cell == from)) return fail("Esta habilidade gira em volta de quem a usa.");
+    std::vector<BattleHex> ring = hexesWithin(b, from, n.radius);
+    std::erase_if(ring, [&](const BattleHex& h) { return h == from; });
+    s.tiles = ring;
+    s.ids = unitsOn(b, caster, ring, false);
+    s.dice = 0, s.spellMul = 1;
+    s.weaponBonusDice = n.dice, s.weaponBonusFaces = n.faces, s.weaponBonusBonus = 0;
+    spend();
+    steps.push_back(s);
+  } else if (kind == "guardBreak") {
+    // A weapon blow (+ the bonus dice) on a foe in reach that leaves its guard broken: DEF down for some of its turns.
+    const int foe = occAt(b, cell);
+    if (foe < 0 || !targetable(b, foe)) return fail("Escolha um inimigo visível.");
+    if (!canHitFrom(b, caster, from, static_cast<size_t>(foe))) return fail("Esse inimigo não está ao alcance da arma.");
+    spend();
+    s.type = BattleStep::Type::Combat, s.def = static_cast<size_t>(foe);
+    s.dice = 0, s.spellMul = 1;
+    s.bonusDice = n.faces, s.bonusDiceCount = n.dice, s.bonusFlat = 0;
+    s.sunderPct = n.pct, s.sunderTurns = n.turns;
+    steps.push_back(s);
+  } else if (kind == "warCry") {
+    // Around the caster: every ally (itself too) rallied for some of its turns; from level 22 the foes in the radius are afraid.
+    if (!(cell == from)) return fail("Esta habilidade não precisa de alvo.");
+    const std::vector<BattleHex> area = hexesWithin(b, from, n.radius);
+    s.type = BattleStep::Type::Effect;
+    s.tiles = area;
+    s.dice = 0, s.spellMul = 1;
+    for (size_t i = 0; i < b.units().size(); ++i) {
+      const BattleUnit& t = b.units()[i];
+      if (!t.alive) continue;
+      const bool inside = std::any_of(area.begin(), area.end(), [&](const BattleHex& c) { return occupies(t, c.x, c.y); });
+      if (!inside) continue;
+      if (t.side == u.side) s.ids.push_back(i);
+      else if (n.spread > 0 && t.side != "neutral") s.fearIds.push_back(i);
+    }
+    s.rallyPct = n.pct, s.rallyTurns = n.turns, s.fearTurns = n.spread;
+    spend();
+    steps.push_back(s);
+  } else if (kind == "leapingStrike") {
+    // A leap over everything onto a free hex beside the foe, then the blow (x mul, + the bonus dice; nobody strikes back);
+    // from level 25 a shockwave: the landing's other neighbours take half a weapon roll each.
+    const int foe = occAt(b, cell);
+    if (foe < 0 || !targetable(b, foe)) return fail("Escolha um inimigo visível.");
+    const std::optional<BattleHex> landing = leapLanding(b, caster, static_cast<size_t>(foe), n.range);
+    if (!landing) return fail("Não há hex livre ao lado do alvo ao alcance do salto.");
+    spend();
+    if (!(*landing == from)) {
+      BattleStep m;
+      m.type = BattleStep::Type::Move, m.att = caster, m.kind = kind;
+      m.path = {from, *landing};
+      steps.push_back(m);
+    }
+    BattleStep c;
+    c.type = BattleStep::Type::Combat, c.att = caster, c.def = static_cast<size_t>(foe), c.kind = kind, c.noCounter = true;
+    c.dmgMul = n.mul;
+    c.bonusDice = n.faces, c.bonusDiceCount = n.dice, c.bonusFlat = 0;
+    steps.push_back(c);
+    if (n.pct > 0) {
+      std::vector<BattleHex> ring;
+      for (const BattleHex& h : Battle::neighbors(landing->x, landing->y))
+        if (b.inBounds(h.x, h.y)) ring.push_back(h);
+      BattleStep w;
+      w.type = BattleStep::Type::Spell, w.att = caster, w.kind = kind;
+      w.tiles = ring;
+      w.dice = 0, w.spellMul = 1;
+      for (size_t id : unitsOn(b, caster, ring, false))
+        if (id != static_cast<size_t>(foe)) w.ids.push_back(id), w.perTargetMul.push_back(n.pct / 100.0);
+      if (!w.ids.empty()) steps.push_back(w);
+    }
   } else {
     return fail("Esta habilidade ainda não existe aqui.");
   }
@@ -1181,8 +1305,9 @@ int spellLearnLevel(const std::string& kind) {
 }
 std::vector<std::string> emberSpells(const std::string& classId, int level) {
   std::vector<std::string> out;
+  const std::string family = emberClassFamily(classId);
   for (const EmberSpell& e : kEmberSpells)
-    if (classId == e.cls && level >= e.learn) out.push_back(e.data.kind);
+    if ((classId == e.cls || family == e.cls) && level >= e.learn) out.push_back(e.data.kind);
   return out;
 }
 void grantClassSpells(BattleUnit& u) {
@@ -1193,6 +1318,9 @@ std::string promotionName(const std::string& classId) {
   if (classId == "warlock") return "Bruxo";
   if (classId == "elementalist") return "Elementalista";
   if (classId == "mage" || classId == "voss" || classId.empty()) return "Mago Negro";
+  if (classId == "swordsman") return "Guerreiro";
+  if (classId == "paladin") return "Paladino";
+  if (classId == "heavyKnight") return "Cavaleiro Pesado";
   return classId;
 }
 void setPromotion(BattleUnit& u, const std::string& classId) {
@@ -1210,6 +1338,8 @@ std::string conditionsText(const BattleUnit& u) {
   if (u.cond.bleedTurns > 0) add(std::format("Sangrando {}D{} ({})", u.cond.bleedDice, u.cond.bleedFaces, u.cond.bleedTurns));
   if (u.cond.silenceTurns > 0) add(std::format("Silenciado ({})", u.cond.silenceTurns));
   if (u.cond.decayTurns > 0) add(std::format("Decadência -{}% ({})", u.cond.decayPct, u.cond.decayTurns));
+  if (u.cond.sunderPct > 0) add(std::format("{} -{}% DEF ({})", pick("Guarda quebrada", "Guard broken"), u.cond.sunderPct, u.cond.sunderTurns + 1));
+  if (u.cond.rallyPct > 0) add(std::format("{} +{}% ATK ({})", pick("Grito de Guerra", "War Cry"), u.cond.rallyPct, u.cond.rallyTurns + 1));
   if (u.diseased) add("Doente");
   // Engine2's statuses
   if (u.stunned) add(std::string(pick("Atordoado", "Stunned")) + std::format(" ({})", u.stunTurns));
@@ -1229,8 +1359,16 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind) {
   auto dmg = [&](double mul, int dice, int faces) { return std::format("{} + {}D{}", static_cast<int>(std::floor(half * mul)), dice, faces); };
   static const std::map<std::string, const char*> kElements = {{"darkness", "Escuridão"}, {"poison", "Veneno"}, {"fire", "Fogo"}, {"ice", "Gelo"},
                                                                {"lightning", "Relâmpago"}, {"ember", "Brasa"}};
-  std::string s = std::format("T{} · {}", e->data.tier, kElements.contains(e->data.element) ? kElements.at(e->data.element) : e->data.element);
-  if (n.range > 0) s += std::format(" · alcance {}", n.range);
+  const std::string element = e->data.element;
+  std::string s = std::format("T{} · {}", e->data.tier, kElements.contains(element) ? std::string(kElements.at(element)) : element.empty() ? std::string("Arma") : element);
+  if (n.range > 0 && kind != "leapingStrike") s += std::format(" · alcance {}", n.range);
+  // The Guerreiro's (the weapon's own roll, hit chance and mastery, plus the dice)
+  if (kind == "steelWhirlwind") return s + std::format("\ngira uma vez: golpe de arma + {}D{} em todo inimigo vizinho · sem contra-ataque", n.dice, n.faces);
+  if (kind == "guardBreak") return s + std::format("\ngolpe de arma + {}D{} · Guarda quebrada: -{}% DEF por {} turnos", n.dice, n.faces, n.pct, n.turns);
+  if (kind == "warCry") return s + std::format("\nem volta de si, raio {} · aliados +{}% ATK por {} turnos{}", n.radius, n.pct, n.turns, n.spread > 0 ? " · inimigos no raio com medo 1 turno" : "");
+  if (kind == "leapingStrike")
+    return s + std::format("\nsalta até {} hexes para junto do inimigo · ×{:g} da arma + {}D{} · sem contra-ataque{}", n.range, n.mul, n.dice, n.faces,
+                           n.pct > 0 ? std::format(" · onda de choque: os outros inimigos vizinhos do pouso levam {}%", n.pct) : "");
   if (kind == "markOfRuin") s += std::format("\n{} · o alvo recebe +{}% de dano por {} turnos", dmg(n.mul, n.dice, n.faces), n.pct, n.turns);
   else if (kind == "creepingPlague") s += std::format("\n{} · {} que passa a {} vizinho{} por turno", dmg(n.mul, n.dice, n.faces), poisonTier(n.tier)->name, n.spread, n.spread > 1 ? "s" : "");
   else if (kind == "lifeDrain") s += std::format("\n{} · cura {}% do dano causado", dmg(n.mul, n.dice, n.faces), n.pct);
@@ -1283,6 +1421,7 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"thunderstorm", "Thunderstorm"}, {"meteor", "Meteor"}, {"absoluteZero", "Absolute Zero"}, {"chainLightning", "Chain Lightning"},
     {"eruption", "Eruption"}, {"glacialGale", "Glacial Gale"}, {"wrathOfTheSkies", "Wrath of the Skies"},
     {"primordialEmber", "Primordial Ember"},
+    {"steelWhirlwind", "Steel Whirlwind"}, {"guardBreak", "Guard Break"}, {"warCry", "War Cry"}, {"leapingStrike", "Devastating Leap"},
 };
 }  // namespace
 
@@ -1302,9 +1441,9 @@ bool spellPorted(const std::string& kind) {
 bool spellWeaponAbility(const std::string& kind) { return weaponAbility(kind); }
 
 bool spellInstant(const std::string& kind) {
-  return kind == "createFoodAndWater" || kind == "eruption" || kind == "auraOfProtection" || kind == "intimidatingPresence";
+  return kind == "createFoodAndWater" || kind == "eruption" || kind == "auraOfProtection" || kind == "intimidatingPresence" || kind == "warCry";
 }
-bool spellSelfArea(const std::string& kind) { return kind == "sweep" || kind == "turnUndead"; }
+bool spellSelfArea(const std::string& kind) { return kind == "sweep" || kind == "turnUndead" || kind == "steelWhirlwind"; }
 bool spellAimsDirection(const std::string& kind) {
   return kind == "piercing" || kind == "piercingThrust" || kind == "frost" || kind == "iceLance" || kind == "glacialGale" ||
          kind == "burningHands" || kind == "poisonBreath" || kind == "divineWrath" || kind == "stampede";
@@ -1432,7 +1571,7 @@ std::string spellPose(const std::string& kind) {
   if (kind == "cureMinor" || kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "bless") return "heal";
   if (kind == "longShot" || kind == "bloodyShot" || kind == "multiShot" || kind == "piercing" || kind == "doubleStrike" || kind == "piercingThrust" ||
       kind == "cleave" || kind == "sweep" || kind == "trip" || kind == "bullRush" || kind == "executionerStrike" || kind == "shieldBash" ||
-      kind == "shoulderSmash" || kind == "stampede")
+      kind == "shoulderSmash" || kind == "stampede" || kind == "steelWhirlwind" || kind == "guardBreak" || kind == "warCry" || kind == "leapingStrike")
     return "attack";
   return "cast";
 }
@@ -1472,6 +1611,9 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   else if (const CureData* cure = cureData(kind)) maxRange = cure->range;
   else if (kind == "cureDisease") maxRange = kCureDiseaseRange;
   else if (emberBoltSpell(kind) || emberAreaSpell(kind)) maxRange = emberNumbers(kind, u.level).range;  // ours: no line of fire needed
+  else if (kind == "guardBreak") minRange = u.minRange, maxRange = u.maxRange, shot = u.maxRange > 1, arrow = true;  // the weapon's reach
+  else if (kind == "steelWhirlwind") maxRange = 1;
+  else if (kind == "leapingStrike") maxRange = -1;  // wherever a landing exists
   else if (kind == "fireball") maxRange = kFireballRange, shot = true;
   else if (kind == "causticVenom") maxRange = kCausticVenom.range, shot = true;
   else if (kind == "minorVenom") maxRange = kMinorVenom.range, shot = true;
@@ -1567,6 +1709,20 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
   if (emberSpell(kind)) {
     const EmberNumbers n = emberNumbers(kind, u.level);
     if (kind == "eruption") return cell == from ? true : fail("Esta magia não precisa de alvo.");
+    // The Guerreiro's skills
+    if (kind == "steelWhirlwind" || kind == "warCry") return cell == from ? true : fail("Esta habilidade não precisa de alvo.");
+    if (kind == "guardBreak") {
+      if (!targetable(b, here)) return fail(here < 0 ? "Não há unidade na casa selecionada." : "Escolha um inimigo visível.");
+      return canHitFrom(b, caster, from, static_cast<size_t>(here)) ? true : fail("Esse inimigo não está ao alcance da arma.");
+    }
+    if (kind == "leapingStrike") {
+      if (!targetable(b, here)) return fail(here < 0 ? "Não há unidade na casa selecionada." : "Escolha um inimigo visível.");
+      if (d > n.range + 1) {
+        if (error) *error = std::format("Alvo fora de alcance (salto de até {} hexes).", n.range);
+        return false;
+      }
+      return leapLanding(b, caster, static_cast<size_t>(here), n.range) ? true : fail("Não há hex livre ao lado do alvo ao alcance do salto.");
+    }
     if (kind == "iceLance") return piercingRay(b, from, cell).empty() ? fail("Escolha uma reta válida.") : true;
     if (kind == "glacialGale") return coneHexes(b, from, cell, n.length).empty() ? fail("Escolha uma direção a partir do personagem.") : true;
     if (emberBoltSpell(kind)) {
@@ -1599,6 +1755,18 @@ std::vector<BattleHex> spellArea(const Battle& b, size_t caster, const std::stri
     if (kind == "glacialGale") return coneHexes(b, {u.x, u.y}, cell, n.length);
     if (kind == "eruption") return hexesWithin(b, {u.x, u.y}, n.radius);
     if (emberAreaSpell(kind)) return hexesWithin(b, cell, n.radius);
+    if (kind == "steelWhirlwind") {
+      std::vector<BattleHex> ring = hexesWithin(b, {u.x, u.y}, n.radius);
+      std::erase_if(ring, [&](const BattleHex& h) { return h.x == u.x && h.y == u.y; });
+      return ring;
+    }
+    if (kind == "warCry") return hexesWithin(b, {u.x, u.y}, n.radius);
+    if (kind == "leapingStrike") {  // the foe's hex and where the caster lands
+      std::vector<BattleHex> out{cell};
+      if (const int foe = occAt(b, cell); foe >= 0)
+        if (const std::optional<BattleHex> landing = leapLanding(b, caster, static_cast<size_t>(foe), n.range); landing && !(*landing == cell)) out.push_back(*landing);
+      return out;
+    }
   }
   return areaE2(b, caster, kind, cell);
 }
@@ -1743,6 +1911,7 @@ void logEffects(Battle& b, const std::vector<BattleEffect>& out, size_t from, in
                                                  : std::string();
   for (size_t k = from; k < out.size(); ++k) {
     const BattleEffect& e = out[k];
+    if (e.moved && !e.pushed && e.amount == 0 && !e.died && !e.miss && e.text.empty()) continue;  // a charge's / a leap's walk: nothing to say
     const std::string target = nameOf(e.unit);
     const std::string crit = e.crit ? (en ? " (critical)" : " (crítico)") : "";
     // "Salazar usou Mãos Flamejantes em Kael" / "Orc contra-atacou Kael" / "Kael atacou Orc"
@@ -1914,6 +2083,10 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
       }
     }
     if (hitStage && step.kind == "shieldBash") target.stunned = true, target.stunTurns = shieldBashPower(actor.level).stunTurns;
+    if (hitStage && step.sunderPct > 0) {  // Quebra-Guarda: the guard broken, DEF down for some of its turns
+      target.cond.sunderPct = std::max(target.cond.sunderPct, step.sunderPct);
+      target.cond.sunderTurns = std::max(target.cond.sunderTurns, step.sunderTurns);
+    }
     if (hitStage && step.kind == "bullRush" && step.knockTo) {
       target.x = step.knockTo->x, target.y = step.knockTo->y;
       e.pushed = true;
@@ -1921,6 +2094,7 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
   }
   out.push_back(e);
   if (!target.alive) afterDeath(b, ti, out);
+  else if (hitStage && step.sunderPct > 0) out.push_back(statusEffect(ti, std::format("{} -{}%", pick("Guarda quebrada", "Guard broken"), step.sunderPct)));
 }
 
 void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::vector<BattleEffect>& out);
@@ -2075,6 +2249,21 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
         b.addEnmity(id, step.att, kProvokeCe, kProvokeVe);
         out.push_back(statusEffect(id, "Provocado"));
       }
+    }
+    if (step.kind == "warCry") {  // Grito de Guerra: the allies rallied (ATK up for some of their turns), the foes afraid
+      for (size_t id : step.ids) {
+        BattleUnit& t = b.units()[id];
+        if (!t.alive) continue;
+        t.cond.rallyPct = std::max(t.cond.rallyPct, step.rallyPct), t.cond.rallyTurns = std::max(t.cond.rallyTurns, step.rallyTurns);
+        out.push_back(statusEffect(id, std::format("{} +{}%", pick("Grito de Guerra", "War Cry"), step.rallyPct)));
+      }
+      for (size_t id : step.fearIds) {
+        BattleUnit& t = b.units()[id];
+        if (!t.alive || step.fearTurns <= 0) continue;
+        t.fearTurns = std::max(t.fearTurns, step.fearTurns), t.fearSourceId = att.id;
+        out.push_back(statusEffect(id, pick("Com medo", "Afraid")));
+      }
+      b.noteAware(step.att, kSupportCe, kSupportVe);
     }
     return;
   }
@@ -2544,6 +2733,15 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
   }
   if (u.cond.markTurns > 0 && --u.cond.markTurns <= 0) u.cond.markPct = 0;
   if (u.cond.silenceTurns > 0) --u.cond.silenceTurns;
+  // The Guerreiro's: "N turnos" = N of the unit's own turns with the condition on; it lifts as the next one begins.
+  if (u.cond.sunderPct > 0) {
+    if (u.cond.sunderTurns > 0) --u.cond.sunderTurns;
+    else u.cond.sunderPct = 0;
+  }
+  if (u.cond.rallyPct > 0) {
+    if (u.cond.rallyTurns > 0) --u.cond.rallyTurns;
+    else u.cond.rallyPct = 0;
+  }
 }
 
 void stepOnHex(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) { tileHazard(b, unit, rng, out); }

@@ -1822,7 +1822,7 @@ class MapStage final : public Stage {
       glm::vec3 anchor = static_cast<int>(ui) == hero_ && path_.size() > 1 ? heroAt_ : unitWorld(ui);
       // The hit react: knocked back along the blow, squashed (a little wider as it is shorter).
       float squash = 1.0f;
-      anchor += recoilOffset(ui, time, boxH, squash);
+      anchor += recoilOffset(ui, time, boxH, squash) + leapOffset(ui, time);
       boxW *= 1.0f + (1.0f - squash) * 0.6f, boxH *= squash;
       // Engine2's mirroring: the art's facing against the unit's, except cuts drawn for the left (and directional
       // walks while moving), which are never mirrored.
@@ -2131,7 +2131,7 @@ class MapStage final : public Stage {
     const size_t n = scene_->units.size();
     unitPos_.resize(n), unitMoved_.assign(n, 0), unitFacing_.resize(n), unitReversed_.resize(n);
     unitWalk_.assign(n, {}), unitCard_.assign(n, {}), unitBattle_.assign(n, -1);
-    unitShot_.assign(n, {}), unitDiedAt_.assign(n, -1.0f), unitRecoil_.assign(n, {});
+    unitShot_.assign(n, {}), unitDiedAt_.assign(n, -1.0f), unitRecoil_.assign(n, {}), unitLeap_.assign(n, {});
     for (size_t i = 0; i < n; ++i) {
       const e2::SceneUnit& u = scene_->units[i];
       unitPos_[i] = {u.x, u.z};
@@ -3514,6 +3514,30 @@ class MapStage final : public Stage {
     x.impact = now_ + length * (striker >= 0 && !pose.empty() ? poseImpact(static_cast<size_t>(striker), pose) : kImpactShare);
     x.end = now_ + length + kExchangeGap / actionRate();
     x.landed = false;
+    if (s.type == StepType::Move && s.kind == "leapingStrike" && striker >= 0 && s.path.size() >= 2) {
+      // Salto Devastador: the rules stand the unit on the landing at once; the card flies there on an arc (leapOffset) while
+      // the trail of steel light follows it and the crater opens as it lands (SpellEffects::leapFlight).
+      const size_t ui = static_cast<size_t>(striker);
+      const e2::BattleUnit& bu = battle_->units()[s.att];
+      const SpellEffects::Spot takeOff = unitSpot(ui);
+      const glm::vec2 from = unitPos_[ui], to = anchorWorld(bu, s.path.back());
+      const float hexes = static_cast<float>(e2::Battle::distance(s.path.front(), s.path.back()));
+      const float flight = (0.34f + 0.05f * hexes) / actionRate();
+      unitLeap_[ui] = {now_, now_ + flight, from, to, 1.2f + 0.25f * hexes};
+      unitPos_[ui] = to, unitWalk_[ui] = Walk{}, unitMoved_[ui] = 1;
+      const glm::vec2 d = to - from;
+      const float yaw = flat_ ? 0.0f : cam_.yaw;
+      if (const float screenX = d.x * std::cos(yaw) - d.y * std::sin(yaw); std::abs(screenX) > 0.05f) unitFacing_[ui] = screenX > 0.0f ? 1 : -1;
+      spellFx_.leapFlight(takeOff, hexSpot(s.path.back()), now_, now_ + flight, striker);
+      x.impact = now_;
+      x.end = now_ + flight + 0.04f;
+      return;
+    }
+    if (s.type == StepType::Spell && s.kind == "leapingStrike") {  // the Salto's shockwave: lands at once after the blow, no pose of its own
+      x.impact = now_;
+      x.end = now_ + 0.3f / actionRate();
+      return;
+    }
     if (s.type == StepType::Move) {  // a charge: the rules play at once (the unit is on its last hex), the card dashes the route
       const float dash = striker >= 0 ? animateAlong(static_cast<size_t>(striker), s.path, stepSeconds() * 0.5f) : 0.0f;
       x.impact = now_;
@@ -3588,6 +3612,9 @@ class MapStage final : public Stage {
       const e2::Battle::IceZone* storm = s.kind == "iceStorm" && !s.tiles.empty() ? iceZoneOf(s.tiles.front(), battle_->units()[s.att].id) : nullptr;
       if (storm) {  // Tempestade de Gelo: the storm covers the field the rules just laid (the step aims its centre only)
         for (const e2::BattleHex& h : storm->cells) spots.push_back(hexSpot(h));
+      } else if (s.kind == "warCry" || s.kind == "steelWhirlwind") {  // Grito de Guerra: the allies it rallies (the caster among them); Redemoinho: the foes it reaches
+        for (size_t id : s.ids)
+          if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0) spots.push_back(unitSpot(static_cast<size_t>(ui)));
       } else if (s.type == StepType::Spell || s.type == StepType::Effect) {
         for (const e2::BattleHex& h : s.tiles) spots.push_back(hexSpot(h));
       } else if (s.type == StepType::Food) {
@@ -3612,6 +3639,12 @@ class MapStage final : public Stage {
         spellFx_.potion(effect, look, spots.front(), now_, x.impact, striker);
       } else if (spellFx_.cast(s.kind, look, casterSpot, spots, fxStart, x.impact, striker) && storm) {
         iceFx_.push_back({storm->center, storm->casterId, spellFx_.newestStorm()});
+      }
+      if (s.kind == "warCry" && !s.fearIds.empty()) {  // ... and its dark pulse on the foes it frightens
+        std::vector<SpellEffects::Spot> foes;
+        for (size_t id : s.fearIds)
+          if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0) foes.push_back(unitSpot(static_cast<size_t>(ui)));
+        spellFx_.warCryFear(foes, x.impact);
       }
       // Mãos Flamejantes / Sopro Venenoso not aimed at the camera (the user, 2026-10-17): after the cast pose the caster
       // turns its back to us (its "castBack" still, the user's own picture) and the jet leaves its hands into the board,
@@ -3730,7 +3763,8 @@ class MapStage final : public Stage {
     static const char* kKinds[] = {"magicMissile",   "lightning",     "frost",          "cureMinor",      "longShot",      "piercing",    "shock",
                                    "doubleStrike",   "markOfRuin",    "creepingPlague", "lifeDrain",      "shroudOfShadows", "hemorrhage", "profaneSilence",
                                    "blackPestilence", "curseOfDecay", "soulHarvest",    "devouringVoid",  "pillarOfFlame", "iceLance",    "thunderstorm",
-                                   "meteor",         "absoluteZero",  "chainLightning", "eruption",       "glacialGale",   "wrathOfTheSkies", "primordialEmber"};
+                                   "meteor",         "absoluteZero",  "chainLightning", "eruption",       "glacialGale",   "wrathOfTheSkies", "primordialEmber",
+                                   "steelWhirlwind", "guardBreak",    "warCry",         "leapingStrike"};
     // KIND or KIND:VERSION (the version number of the Magias menu; default the menu's choice, at least 01).
     std::string kind = options_.fxTest;
     int look = 0;
@@ -4169,7 +4203,8 @@ class MapStage final : public Stage {
     const int usesBefore = p[0] == "potion" ? 0 : e2::spellUsesLeft(*battle_, cb, kind);
     startSpell(kind);
     // every target the spell asks for, on the same hex (Míssil Mágico's missiles, Fúria dos Céus' bolts may repeat)
-    for (int k = 0; k < 8 && !spellMode_.empty(); ++k) aimSpell({battle_->units()[tb].x, battle_->units()[tb].y});
+    for (int k = 0; k < 8 && !spellMode_.empty(); ++k)  // a self-centred skill (Varredura, Redemoinho) is armed on the caster's own hex
+      aimSpell(spellArmed_ ? *spellArmed_ : e2::BattleHex{battle_->units()[tb].x, battle_->units()[tb].y});
     if (refuse) {
       if (exchange_) return fail("played, should have been refused");
       const e2::BattleUnit& c = battle_->units()[cb];
@@ -4206,6 +4241,14 @@ class MapStage final : public Stage {
       if (kind == "profaneSilence") return t.cond.silenceTurns > 0 || !t.alive ? "" : "not silenced";
       if (kind == "curseOfDecay") return t.cond.decayTurns > 0 || !t.alive ? "" : "not cursed";
       if (kind == "glacialGale") return t.hp < before.hp || t.x != before.x || t.y != before.y || !t.alive ? "" : "neither hurt nor pushed";
+      // The Guerreiro's: a weapon roll may miss (the uses and the turn were spent above); the conditions when it lands.
+      if (kind == "warCry") return t.cond.rallyPct > 0 ? "" : "not rallied";
+      if (kind == "guardBreak") return t.cond.sunderPct > 0 || !t.alive ? "" : t.hp < before.hp ? "hurt but the guard not broken" : (logInfo("battle script: {} missed", kind), std::string());
+      if (kind == "steelWhirlwind" || kind == "leapingStrike") {
+        if (t.hp < before.hp || !t.alive) return "";
+        logInfo("battle script: {} missed", kind);
+        return "";
+      }
       if (kind == "createFoodAndWater") {
         for (const auto& [i, full] : fedBefore) {
           const e2::BattleUnit& v = battle_->units()[i];
@@ -4259,6 +4302,26 @@ class MapStage final : public Stage {
       }
       if (kind == "meteor") {  // Testar shows the fall itself, not only the mark
         spellFx_.meteorFall(spots, start + 0.6f, start + 1.5f);
+      }
+      if (kind == "warCry") {  // the allies standing in its radius (the hero among them), not the bare hexes
+        spots.clear();
+        for (size_t i = 0; i < scene_->units.size(); ++i) {
+          if (unitBattle_[i] < 0 || scene_->units[i].side != scene_->units[hero].side) continue;
+          const e2::BattleUnit& v = battle_->units()[static_cast<size_t>(unitBattle_[i])];
+          if (v.alive && std::any_of(area.begin(), area.end(), [&](const e2::BattleHex& h) { return h.x == v.x && h.y == v.y; })) spots.push_back(unitSpot(i));
+        }
+      }
+      if (kind == "leapingStrike") {  // the flight to the landing first (a foe out of range: four hexes along the line to it), the blow as it lands
+        const e2::BattleUnit& hb = battle_->units()[static_cast<size_t>(unitBattle_[hero])];
+        std::optional<e2::BattleHex> landing;
+        if (area.size() > 1) landing = area[1];
+        else if (const std::vector<e2::BattleHex> line = e2::hexLine({hb.x, hb.y}, aim); line.size() > 5) landing = line[4];
+        if (landing) {
+          spellFx_.leapFlight(unitSpot(hero), hexSpot(*landing), start, start + 0.45f, static_cast<int>(hero));
+          spots = {hexSpot(area[0])};
+          spellFx_.cast(kind, look, unitSpot(hero), spots, start + 0.45f, start + 0.75f, static_cast<int>(hero));
+          return;
+        }
       }
     } else if (kind == "frost" || kind == "piercing") {
       // A line of hexes from the hero through the target (three more hexes beyond it).
@@ -6781,6 +6844,24 @@ class MapStage final : public Stage {
     bool heavy = false;
   };
   std::vector<Recoil> unitRecoil_;
+  // Salto Devastador (2026-10-18): the card flies from `from` to `to` on an arc `height` high over [start, end] while the
+  // board position is already the landing (the rules moved it at once). Drawn only.
+  struct Leap {
+    float start = -10.0f, end = -10.0f;
+    glm::vec2 from{0.0f}, to{0.0f};
+    float height = 0.0f;
+  };
+  std::vector<Leap> unitLeap_;
+  glm::vec3 leapOffset(size_t ui, float time) const {
+    if (ui >= unitLeap_.size()) return glm::vec3(0.0f);
+    const Leap& l = unitLeap_[ui];
+    if (time < l.start || time > l.end || l.end <= l.start) return glm::vec3(0.0f);
+    const float t = (time - l.start) / (l.end - l.start);
+    const float s = t * t * (3.0f - 2.0f * t);  // eased: off the ground hard, down hard
+    const glm::vec2 back = (l.from - l.to) * (1.0f - s);
+    const float ground = (groundAt(l.from.x, l.from.y) - groundAt(l.to.x, l.to.y)) * (1.0f - s);
+    return {back.x, ground + l.height * 4.0f * s * (1.0f - s), back.y};
+  }
   // Where the card is pushed now and how much it is squashed (1 = not).
   glm::vec3 recoilOffset(size_t ui, float time, float height, float& squash) const {
     squash = 1.0f;

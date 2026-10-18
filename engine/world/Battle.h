@@ -177,7 +177,12 @@ struct BattleUnit {
     int decayTurns = 0, decayPct = 0, decayCap = 0, decayStep = 0;  // Maldição da Decadência: -step% of every stat per turn, to the cap
     int decayDice = 0, decayFaces = 0;
     double decayMul = 0, decayMag = 0;   // ... and its Escuridão tick: floor(floor(mag / 2) * mul) + dice
-    bool any() const { return markTurns > 0 || plagueSpread > 0 || plagueBurst || bleedTurns > 0 || silenceTurns > 0 || decayTurns > 0; }
+    // The Guerreiro's (docs/SKILLS_WARRIOR.md): on while pct > 0; `turns` more of the unit's own turns after the current one
+    int sunderPct = 0, sunderTurns = 0;  // Quebra-Guarda: DEF down by pct %
+    int rallyPct = 0, rallyTurns = 0;    // Grito de Guerra: ATK up by pct %
+    bool any() const {
+      return markTurns > 0 || plagueSpread > 0 || plagueBurst || bleedTurns > 0 || silenceTurns > 0 || decayTurns > 0 || sunderPct > 0 || rallyPct > 0;
+    }
   } cond;
 
   // --- Items and conditions a hero brings into the fight (Engine2 Unit.bag / diseased / poisoned / fullness) ---

@@ -77,7 +77,8 @@ nlohmann::json Battle::snapshot() const {
                    {"poisonMag", c.poisonMag},   {"bleedDice", c.bleedDice},     {"bleedFaces", c.bleedFaces},     {"bleedTurns", c.bleedTurns},
                    {"silenceTurns", c.silenceTurns}, {"decayTurns", c.decayTurns}, {"decayPct", c.decayPct},       {"decayCap", c.decayCap},
                    {"decayStep", c.decayStep},   {"decayDice", c.decayDice},     {"decayFaces", c.decayFaces},     {"decayMul", c.decayMul},
-                   {"decayMag", c.decayMag}};
+                   {"decayMag", c.decayMag},     {"sunderPct", c.sunderPct},     {"sunderTurns", c.sunderTurns},   {"rallyPct", c.rallyPct},
+                   {"rallyTurns", c.rallyTurns}};
     }
     if (u.decayBase)
       s["decayBase"] = {{"atk", u.decayBase->atk}, {"mag", u.decayBase->mag}, {"def", u.decayBase->def}, {"dex", u.decayBase->dex}, {"mov", u.decayBase->mov}};
@@ -233,6 +234,7 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       o.silenceTurns = c.value("silenceTurns", 0), o.decayTurns = c.value("decayTurns", 0), o.decayPct = c.value("decayPct", 0);
       o.decayCap = c.value("decayCap", 0), o.decayStep = c.value("decayStep", 0), o.decayDice = c.value("decayDice", 0);
       o.decayFaces = c.value("decayFaces", 0), o.decayMul = c.value("decayMul", 0.0), o.decayMag = c.value("decayMag", 0.0);
+      o.sunderPct = c.value("sunderPct", 0), o.sunderTurns = c.value("sunderTurns", 0), o.rallyPct = c.value("rallyPct", 0), o.rallyTurns = c.value("rallyTurns", 0);
     }
     u.decayBase.reset();
     if (s.contains("decayBase") && s["decayBase"].is_object()) {

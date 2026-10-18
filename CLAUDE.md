@@ -547,6 +547,22 @@ mesh, 391k tris, no UVs / material) was in no catalogue.
 - Sound button = `soundButton` (CampaignUi.h: GamePrefs muted, the same switch as Opções' Silenciar): title (top right),
   briefing, world maps (beside Opções), the Inn, the battle's camera bar (+ "Opções" = the Esc menu), as in Engine2.
 
+## Habilidades do Guerreiro T4 / T5 (2026-10-18; the user: "duas habilidades novas Tier 4 e duas Tier 5 para guerreiro, with
+level scaling, and 3D FX", "faz as quatro como propostas"; icons in `Attachments/warriorskills`)
+
+- **Read `docs/SKILLS_WARRIOR.md`** (numbers, scaling 11-30, conditions, the landing rule, the effects). Redemoinho de Aço (T4, 11:
+  weapon blow + dice on the 6 neighbours, self area), Quebra-Guarda (T4, 13: blow + dice, "Guarda quebrada" -DEF% for N turns),
+  Grito de Guerra (T5, 15: instant, allies in the radius +ATK% for N turns, foes afraid from 22), Salto Devastador (T5, 17: a leap
+  over everything to a free hex beside the foe, x mul + dice, no counter; a shockwave on the landing's other neighbours from 25).
+  Weapon skills (the weapon's own roll + bonus dice: `bonusDice` / `weaponBonusDice`), no MAG; a miss is a miss. Learned by
+  `grantClassSpells` for `swordsman` and its promotions (`emberClassFamily`: paladin, heavyKnight).
+- Code: `Spells.cpp` (`kEmberSpells`, `emberNumbers`, `castEmber`, `leapLanding`, the countdown in `startOfTurnEffects`),
+  `Battle.h` `Conditions::sunder* / rally*` (applied by `fighterAt`, in the snapshot), `render/vfx/WarriorFx.*` (the 4 effects, 3D,
+  Combat material + lit pieces), `SpellEffects::leapFlight / warCryFear`, `MapStage.h` (`leapOffset`: the card's arc during the
+  Move step; the Grito's / Redemoinho's unit spots; the Salto's shockwave step lands at once with no pose).
+- Icons: the user's art copied to `content/ui/spells/<kind>.jpg` (`spellIconOf` finds them). Tests: `--promote Kael=swordsman:25`,
+  `--fx-test <kind>`, `--battle-script "near:Piqueiro:Kael; cast:Kael:guardBreak:Piqueiro"` (scratchpad `run_warrior.ps1`).
+
 ## Promoções do Mago Negro: Bruxo e Elementalista, magias T6–T10 (2026-10-17; the user: "pode criar todas elas os
 efeitos e wire into the game")
 

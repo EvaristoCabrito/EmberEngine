@@ -80,6 +80,11 @@ struct BattleStep {
   int silenceTurns = 0;
   int decayStep = 0, decayCap = 0, decayTurns = 0, decayDice = 0, decayFaces = 0;
   double decayMul = 0;
+  // The Guerreiro's skills (docs/SKILLS_WARRIOR.md)
+  int sunderPct = 0, sunderTurns = 0;  // Quebra-Guarda: the struck foe's DEF down
+  int rallyPct = 0, rallyTurns = 0;    // Grito de Guerra: every unit of `ids` gets ATK up ...
+  std::vector<size_t> fearIds;         // ... and these foes are afraid for fearTurns turns
+  int fearTurns = 0;
 };
 
 // What a step did, for the window: a number over a unit, a miss, a heal, a death.

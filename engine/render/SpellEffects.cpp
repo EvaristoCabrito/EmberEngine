@@ -82,7 +82,9 @@ int SpellEffects::looks(const std::string& kind) {
   // EmberEngine's own spells (SpellEffectsEmber.cpp): version 01, flipbook cards.
   static const char* kEmber[] = {"markOfRuin",   "creepingPlague", "lifeDrain",    "shroudOfShadows", "hemorrhage",     "profaneSilence",  "blackPestilence",
                                  "curseOfDecay", "soulHarvest",    "devouringVoid", "pillarOfFlame",  "iceLance",       "thunderstorm",    "meteor",
-                                 "absoluteZero", "chainLightning", "eruption",      "glacialGale",     "wrathOfTheSkies", "primordialEmber"};
+                                 "absoluteZero", "chainLightning", "eruption",      "glacialGale",     "wrathOfTheSkies", "primordialEmber",
+                                 // the Guerreiro's (vfx/WarriorFx, ours, 3D)
+                                 "steelWhirlwind", "guardBreak", "warCry", "leapingStrike"};
   for (const char* k : kEmber)
     if (kind == k) return 1;
   return 0;
@@ -214,7 +216,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
 bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact) {
   if (look < 1 || look > looks(kind)) return false;
   impact = std::max(impact, start + 0.05f);
-  if (targets.empty() && kind != "piercingThrust" && kind != "doubleStrike") return false;
+  if (targets.empty() && kind != "piercingThrust" && kind != "doubleStrike" && kind != "steelWhirlwind" && kind != "warCry") return false;
   // The cures', the meal's and the potion's light (HolyLight), on every unit it reaches.
   if (isHoly(kind, look)) {
     using Style = HolyLight::Style;
@@ -225,6 +227,23 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     for (const Spot& s : targets)  // its card's height, else what the body point says (Spot: body = 0.45 of the card)
       reached.push_back({s.feet, s.cardHeight > 0.0f ? s.cardHeight : std::max(1.2f, (s.body.y - s.feet.y) / 0.45f)});
     holies_.emplace_back(style, std::move(reached), impact, static_cast<uint32_t>(random() * 4294967295.0f));
+    return true;
+  }
+  // The Guerreiro's skills (WarriorFx, ours, 3D). Targets: the foes round the caster (Redemoinho), the struck foe (Quebra-Guarda, the
+  // Salto's blow), the allies rallied (Grito).
+  auto warriorTarget = [](const Spot& s) { return WarriorFx::Target{s.feet, s.cardHeight}; };
+  if (kind == "steelWhirlwind" || kind == "guardBreak" || kind == "warCry" || kind == "leapingStrike") {
+    std::vector<WarriorFx::Target> hit;
+    for (const Spot& s : targets)
+      if (kind != "steelWhirlwind" || s.cardHeight > 0.0f) hit.push_back(warriorTarget(s));  // the blade flashes on bodies, not on bare hexes
+    if (kind == "steelWhirlwind") warrior_.whirlwind(caster.feet, caster.cardHeight, hit, impact);
+    else if (kind == "guardBreak") warrior_.guardBreak(hit.front(), caster.feet, impact);
+    else if (kind == "leapingStrike") warrior_.leapBlow(hit.front(), caster.feet, impact);
+    else {
+      float radius = 0.0f;
+      for (const Spot& s : targets) radius = std::max(radius, glm::length(glm::vec2(s.feet.x - caster.feet.x, s.feet.z - caster.feet.z)));
+      warrior_.warCry(caster.feet, caster.cardHeight, hit, radius + 1.2f, impact);
+    }
     return true;
   }
   if (isBolt(kind, look)) {
@@ -553,8 +572,18 @@ void SpellEffects::stormEnd(int id, float now) {
     if (s.id == id) s.stop(now);
 }
 
+void SpellEffects::leapFlight(const Spot& caster, const Spot& landing, float start, float impact, int owner) {
+  warrior_.leap(caster.feet, caster.cardHeight, landing.feet, start, impact);
+  if (owner >= 0) casts_.push_back({owner, impact + 1.8f});
+}
+void SpellEffects::warCryFear(const std::vector<Spot>& foes, float impact) {
+  std::vector<WarriorFx::Target> hit;
+  for (const Spot& s : foes) hit.push_back({s.feet, s.cardHeight});
+  warrior_.warCryFear(hit, impact);
+}
+
 bool SpellEffects::active(float now) const {
-  if (combat_.active(now)) return true;
+  if (combat_.active(now) || warrior_.active(now)) return true;
   if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
   if (std::any_of(fireballs_.begin(), fireballs_.end(), [&](const Fireball& f) { return !f.done(now); })) return true;
   if (std::any_of(blesses_.begin(), blesses_.end(), [&](const Bless& b) { return !b.done(now); })) return true;
@@ -617,6 +646,7 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
     for (IceStorm& s : storms_) s.build(now, camera, ice, wind, vfx_, vfxLights);
   }
   combat_.build(now, camera, vfx_, vfxLights);
+  warrior_.build(now, camera, vfx_, vfxLights);
   for (const VfxLight& l : vfxLights)
     if (l.intensity > 0.0f) lights.push_back({l.at, {l.color.r, l.color.g, l.color.b}, l.intensity, l.distance, std::max(l.at.y, 1.0f)});
   const size_t first = out.size();

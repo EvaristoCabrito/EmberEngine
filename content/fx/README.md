@@ -79,6 +79,12 @@ at the nearest foe every 3 s), `--tatica` (2D view), `--spells-menu-open` (the M
 | Fúria dos Céus (`wrathOfTheSkies`) | 01 | dark clouds over the targets, four or five columns of lightning almost at once, echoes round them | `wrathOfTheSkies()` |
 | Brasa Primordial (`primordialEmber`) | 01 | embers rise over the whole area, an orange-white blast, plumes on every hex; the ground smoulders (zone `burning`, ember) | `primordialEmber()`, `zoneStart("burning")` |
 
+| **EmberEngine's own, the Guerreiro's T4 / T5 (docs/SKILLS_WARRIOR.md)** | 01 | **ours, 3D** (`engine/render/vfx/WarriorFx.cpp`, 2026-10-18): the Combat material's streaks, dust, shells, rings, trails and blade sheets + pieces lit by the scene | |
+| Redemoinho de Aço (`steelWhirlwind`) | 01 | a sheet of steel light turns a full circle round the caster at weapon height, white-hot edge with a glint and a light riding it, sparks flung off, a ring of dust, a flash on every foe as the edge reaches it | `WarriorFx::whirlwind` |
+| Quebra-Guarda (`guardBreak`) | 01 | the blade comes down (a vertical cut sheet); flash, sparks, armour shards (lit steel plates) burst from the chest and bounce, a crack ring on the ground, an orange light; a broken ring of dull red light turns over the chest for two seconds | `WarriorFx::guardBreak` |
+| Grito de Guerra (`warCry`) | 01 | a pressure shell and a ground ring burst out to the radius, dust lifted as they pass; a column of red-gold light with climbing motes on every ally, warm lights; a dark pulse on the frightened foes | `WarriorFx::warCry`, `warCryFear` |
+| Salto Devastador (`leapingStrike`) | 01 | the card flies on an arc with a trail of steel light and sparks; the landing is a crater (shell, ground ring, dust ring, chips of ground thrown on arcs, a strong light); then a big downward cut over the foe with sparks | `WarriorFx::leap`, `leapBlow` |
+
 All the other spells: OFF only (no version yet).
 
 ## Engine2's own spell effects (not ported yet)
