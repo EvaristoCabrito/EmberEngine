@@ -5056,7 +5056,6 @@ class MapStage final : public Stage {
     // The close-up photos only on the status sheet (the user, 2026-10-18: "zoom só no status"); every other screen keeps the originals.
     hooks.portrait = [this](const e2::BattleUnit& u) -> const UiImage* {
       static const std::pair<const char*, const char*> kClose[] = {{"kaelFinal", "content/ui/portraits/kael-close-v01.jpg"},
-                                                                   {"neera", "content/ui/portraits/neera-close-v01.jpg"},
                                                                    {"voss", "content/ui/portraits/voss-close-v01.jpg"}};
       for (const auto& [sprite, file] : kClose)
         if (u.sprite == sprite && std::filesystem::exists(file))
