@@ -458,6 +458,7 @@ class BattleStatusSheet {
         Row row;
         row.kind = r.value("kind", "");
         row.tier = r.contains("tier") && r["tier"].is_number() ? r["tier"].get<int>() : 0;
+        if (row.kind == "bullRush") row.tier = e2::spellTierNumber(row.kind);  // ours: tier 3 (Spells.cpp unitTierOf)
         row.uses = row.tier >= 1 && row.tier <= 10 ? u.spells[row.tier - 1] : 0;
         if (r.value("uses", false) && row.uses <= 0) continue;
         std::string text = tr(r.value("text", ""));

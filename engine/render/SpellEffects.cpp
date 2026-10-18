@@ -64,7 +64,9 @@ int SpellEffects::looks(const std::string& kind) {
   if (kind == "cureMinor") return 2;
   if (kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "createFoodAndWater" || kind == "potion") return 1;
   // 02: Engine2's own effect, ported (render/vfx/*).
-  if (kind == "magicMissile" || kind == "magicMissileV2") return 2;
+  // 03: ours in 3D (vfx/SpellBolts; the user, 2026-10-18: "the current ones are too bland").
+  if (kind == "magicMissile" || kind == "magicMissileV2") return 3;
+  if (kind == "divineBolt") return 1;  // 01: ours in 3D (vfx/SpellBolts)
   // 01 Engine2's BurningHandsV2VFX as it was, 02 its cone opening outward (ours).
   if (kind == "burningHands" || kind == "poisonBreath") return 2;
   // Tempestade de Gelo: 01 Engine2's Blizzard2D (the enemies'), 02 ours in 3D (the heroes'): vfx/IceStorm.
@@ -89,7 +91,8 @@ int SpellEffects::looks(const std::string& kind) {
 int SpellEffects::engine2Look(const std::string& kind) {
   if (kind == "cureMinor") return 2;  // HolyLight (Engine2's own was 2D)
   if (kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "createFoodAndWater" || kind == "potion") return 1;
-  if (kind == "magicMissile" || kind == "magicMissileV2") return 2;  // MagicMissileV2VFX
+  if (kind == "magicMissile" || kind == "magicMissileV2") return 3;  // ours in 3D (SpellBolts; 02 = Engine2's MagicMissileV2VFX)
+  if (kind == "divineBolt") return 1;                                // ours in 3D (SpellBolts)
   if (kind == "fireball") return 1;                                  // FireballVFX
   if (kind == "bless") return 1;                                     // BlessVFX
   if (kind == "causticVenom") return 1;                              // CausticVenomVFX
@@ -139,6 +142,10 @@ float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& c
   if (kind == "phantasmalForce" && look == 1) return PhantasmalForce::kImpactAt;
   if (kind == "webOfDreams" && look == 1) return WebOfDreams::kShotTravel;
   if ((kind == "burningHands" || kind == "poisonBreath") && look >= 1) return BurningHands::kRelease;
+  if (isBolt(kind, look) && !targets.empty()) {
+    const SpellBolt::Style style = kind == "divineBolt" ? SpellBolt::Style::Divine : SpellBolt::Style::Arcane;
+    return SpellBolt::flightSeconds(style, caster.feet, (kind == "divineBolt" ? areaCentre(targets) : targets.front()).feet);
+  }
   if (kind == "causticVenom" && look == 1 && !targets.empty())
     return CausticVenom::kCharge + CausticVenom::travelSeconds(engine2Origin(caster), fireballTarget(targets));
   if (kind == "bless" && look == 1) {
@@ -197,6 +204,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     latest(holies_, before[10]);
     for (size_t i = before[7]; i < burns_.size(); ++i) end = std::max(end, burns_[i].first.end());
     if (kind == "iceStorm" && !storms_.empty()) end = std::max(end, storms_.back().start() + 1.0f);  // its first second, not the whole storm
+    if (isBolt(kind, look) && !bolts_.empty()) end = std::max(end, bolts_.back().end());
     std::erase_if(casts_, [&](const Cast& c) { return c.end <= start; });
     casts_.push_back({owner, end});
   }
@@ -219,7 +227,18 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     holies_.emplace_back(style, std::move(reached), impact, static_cast<uint32_t>(random() * 4294967295.0f));
     return true;
   }
-  if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2) missiles_.emplace_back(engine2Origin(caster), targets.front().body, start);
+  if (isBolt(kind, look)) {
+    // Ours, in 3D (vfx/SpellBolts): one look, the same on every cast (fixed seeds).
+    if (kind == "divineBolt") {
+      const Spot& centre = areaCentre(targets);
+      std::vector<glm::vec3> splash;
+      for (const Spot& s : targets) splash.push_back(s.feet);
+      bolts_.emplace_back(SpellBolt::Style::Divine, caster.feet, heightOf(caster), centre.feet, heightOf(centre), std::move(splash), start, impact, 0xd1b1e7u);
+    } else {
+      bolts_.emplace_back(SpellBolt::Style::Arcane, caster.feet, heightOf(caster), targets.front().feet, heightOf(targets.front()), std::vector<glm::vec3>{},
+                          start, impact, 0xa11ce5u);
+    }
+  } else if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2) missiles_.emplace_back(engine2Origin(caster), targets.front().body, start);
   else if (kind == "fireball") fireballs_.emplace_back(engine2Origin(caster), fireballTarget(targets), fireballArea(targets), start);
   else if (kind == "phantasmalForce") phantasms_.emplace_back(targets.front().body, start);
   else if (kind == "cleave" || kind == "sweep") {
@@ -519,6 +538,16 @@ void SpellEffects::strike(const Spot& target, float at, bool crit) {
   flash.lightColor = kSpark, flash.lightIntensity = crit ? 14.0f : 6.0f, flash.lightRadius = 2.5f, flash.lightDecay = 2.0f;
 }
 
+const SpellEffects::Spot& SpellEffects::areaCentre(const std::vector<Spot>& hexes) {
+  glm::vec3 mean{0.0f};
+  for (const Spot& s : hexes) mean += s.feet;
+  mean /= static_cast<float>(std::max<size_t>(hexes.size(), 1));
+  const Spot* best = &hexes.front();
+  for (const Spot& s : hexes)
+    if (glm::length(glm::vec2(s.feet.x - mean.x, s.feet.z - mean.z)) < glm::length(glm::vec2(best->feet.x - mean.x, best->feet.z - mean.z))) best = &s;
+  return *best;
+}
+
 void SpellEffects::stormEnd(int id, float now) {
   for (IceStorm& s : storms_)
     if (s.id == id) s.stop(now);
@@ -537,6 +566,7 @@ bool SpellEffects::active(float now) const {
   if (std::any_of(cleaves_.begin(), cleaves_.end(), [&](const CleaveSweep& c) { return !c.done(now); })) return true;
   if (std::any_of(sweeps_.begin(), sweeps_.end(), [&](const Varredura& s) { return !s.done(now); })) return true;
   if (std::any_of(storms_.begin(), storms_.end(), [&](const IceStorm& s) { return !s.done(now); })) return true;
+  if (std::any_of(bolts_.begin(), bolts_.end(), [&](const SpellBolt& b) { return !b.done(now); })) return true;
   return std::any_of(elements_.begin(), elements_.end(), [&](const Element& e) { return e.end > now; });
 }
 
@@ -576,6 +606,8 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
     const VfxFlipbook fire = flipbook("fire-flipbook-4x4");
     for (Fireball& f : fireballs_) f.build(now, camera, fire, vfx_, vfxLights);
   }
+  std::erase_if(bolts_, [&](const SpellBolt& b) { return b.done(now); });
+  for (const SpellBolt& b : bolts_) b.build(now, camera, vfx_, vfxLights);
   std::erase_if(storms_, [&](const IceStorm& s) { return s.done(now); });
   if (!storms_.empty()) {
     // Engine2's two sheets, only when a storm of version 01 is on the board.

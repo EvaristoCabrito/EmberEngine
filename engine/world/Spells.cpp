@@ -8,6 +8,7 @@
 #include <set>
 
 #include "core/Log.h"
+#include "world/Progression.h"
 
 namespace ember::e2 {
 
@@ -132,6 +133,13 @@ bool weaponAbility(const std::string& kind) {
 }
 
 constexpr int kLongShotRange = 7;  // LONG_SHOT.range
+// Ours (the user, 2026-10-18: "faça a investida de touro ficar como T3 e dê um boost no dano"): a hero's Investida Touro is a
+// tier-3 skill (Engine2: tier 1); an enemy's (the Ox's three charges) keeps Engine2's tier 1. Off in the Cooker's checks.
+bool bullRushTier3() { return progressionEnabled(); }
+int unitTierOf(const BattleUnit& u, const std::string& kind) {
+  if (kind == "bullRush" && u.side == "player" && bullRushTier3()) return 3;
+  return spellTierOf(kind);
+}
 struct Dice {
   int dice = 0, faces = 0;
 };
@@ -512,7 +520,7 @@ int tierRemaining(const BattleUnit& u, const std::string& kind) {
   if (kind == "frost" && u.side == "enemy") return u.frostCharges;
   if (kind == "poisonBreath" && u.level < 3) return 0;  // POISON_BREATH.unlockLevel
   if (kind == "burningHands" && u.level < 5) return 0;
-  const int tier = spellTierOf(kind);
+  const int tier = unitTierOf(u, kind);
   return tier ? u.spells[tier - 1] : 0;
 }
 void spendTier(BattleUnit& u, const std::string& kind) {
@@ -520,7 +528,7 @@ void spendTier(BattleUnit& u, const std::string& kind) {
     u.frostCharges = std::max(0, u.frostCharges - 1);
     return;
   }
-  const int tier = spellTierOf(kind);
+  const int tier = unitTierOf(u, kind);
   if (tier) u.spells[tier - 1] -= 1;
 }
 
@@ -1429,7 +1437,10 @@ std::string spellPose(const std::string& kind) {
   return "cast";
 }
 
-int spellTierNumber(const std::string& kind) { return spellTierOf(kind == "magicMissileV2" ? "magicMissile" : kind); }
+int spellTierNumber(const std::string& kind) {
+  if (kind == "bullRush" && bullRushTier3()) return 3;  // the heroes' (unitTierOf)
+  return spellTierOf(kind == "magicMissileV2" ? "magicMissile" : kind);
+}
 
 int spellUsesLeft(const Battle& b, size_t unit, const std::string& kind) {
   const BattleUnit& u = b.units()[unit];

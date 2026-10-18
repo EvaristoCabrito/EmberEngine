@@ -906,7 +906,8 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
     const std::optional<std::vector<RushLeg>> legs = bullRushCharge(b, caster, cell);
     if (!legs) return fail("Toque num inimigo a até 4 hexes, sem aliado ou obstáculo no caminho.");
     spendTier(u, kind);
-    const BullRushP p = bullRushPower(u.level);
+    BullRushP p = bullRushPower(u.level);
+    if (u.side == "player" && bullRushTier3()) p.dice += 1;  // ours: the tier-3 Investida hits one die harder (unitTierOf)
     BattleHex at = from;
     for (const RushLeg& leg : *legs) {
       if (!leg.path.empty()) {

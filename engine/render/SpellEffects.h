@@ -28,6 +28,7 @@
 #include "render/vfx/Fireball.h"
 #include "render/vfx/HolyLight.h"
 #include "render/vfx/IceStorm.h"
+#include "render/vfx/SpellBolts.h"
 #include "render/vfx/MagicMissileV2.h"
 #include "render/vfx/PhantasmalForce.h"
 #include "render/vfx/Sweeps.h"
@@ -104,7 +105,7 @@ class SpellEffects {
   void build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out, std::vector<Light>& lights);
   const VfxFrame& vfx() const { return vfx_; }
   bool active(float now) const;
-  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(); }
+  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(); }
   // A version that keeps Engine2's own timeline decides when the hit lands: seconds from the cast (Míssil Mágico 02:
   // Engine2's charge, then the flight). Below 0: the version lands on the caller's impact (the pose's).
   float impactDelay(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const;
@@ -202,6 +203,14 @@ class SpellEffects {
   std::vector<Varredura> sweeps_;     // Varredura 01 = VarreduraVFX
   std::vector<HolyLight> holies_;     // the cures', the meal's and the potions' light (ours, 3D)
   std::vector<IceStorm> storms_;      // Tempestade de Gelo 01 (Engine2's Blizzard2D) / 02 (ours, 3D)
+  std::vector<SpellBolt> bolts_;      // Míssil Mágico 03, Raio Divino 01 (ours, 3D)
+  // The bolt of Míssil Mágico 03 / Raio Divino 01, or none.
+  static bool isBolt(const std::string& kind, int look) {
+    return ((kind == "magicMissile" || kind == "magicMissileV2") && look == 3) || (kind == "divineBolt" && look == 1);
+  }
+  // Raio Divino's struck hex: the one nearest the middle of its area (the rules list the area row by row).
+  static const Spot& areaCentre(const std::vector<Spot>& hexes);
+  static float heightOf(const Spot& s) { return s.cardHeight > 0.0f ? s.cardHeight : std::max(1.2f, (s.body.y - s.feet.y) / 0.45f); }
   int stormSerial_ = 0;
   CombatFx combat_;
   std::string potionEffect_ = "heal";  // the potion being cast (potion())
