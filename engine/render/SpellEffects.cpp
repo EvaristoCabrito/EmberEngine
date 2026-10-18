@@ -187,13 +187,16 @@ bool SpellEffects::potion(const std::string& effect, int look, const Spot& targe
   return made;
 }
 
-bool SpellEffects::casterInFront(int owner, float now) const {
-  return owner >= 0 && std::any_of(casts_.begin(), casts_.end(), [&](const Cast& c) { return c.owner == owner && c.end > now; });
+float SpellEffects::castEnd(int owner) const {
+  float end = -1.0f;
+  for (const Cast& c : casts_)
+    if (c.owner == owner) end = std::max(end, c.end);
+  return end;
 }
 
 bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact,
                         int owner) {
-  // When everything this cast adds is over (the newest element or ported effect of each list), for casterInFront.
+  // When everything this cast adds is over (the newest element or ported effect of each list), for castEnd.
   const size_t before[] = {elements_.size(), missiles_.size(), fireballs_.size(), blesses_.size(), venoms_.size(), phantasms_.size(),
                            webs_.size(),     burns_.size(),    cleaves_.size(),   sweeps_.size(),  holies_.size()};
   const bool made = castEffect(kind, look, caster, targets, start, impact);

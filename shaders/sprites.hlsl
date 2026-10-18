@@ -35,7 +35,8 @@ struct Push {
   uint64_t instances;  // device address of SpriteInstance[]
   uint64_t frame;      // MeshFrame (camera, lights); 0 = no scene lighting
   float3 cameraForward;
-  uint lean;           // 1: a card's up is the world's vertical projected onto the image plane (see VSMain)
+  uint lean;           // bit 1: a card's up is the world's vertical projected onto the image plane (see VSMain);
+                       // PSDepth: bit 4 skips the units' cards, bit 8 draws only them (Renderer: effects over units)
 };
 [[vk::push_constant]] Push push;
 
@@ -67,7 +68,7 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
   const bool flat = (s.flags & 16u) != 0;
   float3 up = float3(0, 1, 0);
   if (flat) up = float3(0, 0, -1);
-  else if (push.lean != 0) {
+  else if ((push.lean & 1u) != 0) {
     const float3 v = float3(0, 1, 0) - push.cameraForward * push.cameraForward.y;
     if (dot(v, v) > 1e-6) up = normalize(v);
   }
@@ -138,9 +139,12 @@ float4 PSMain(VSOut i) : SV_Target0 {
 // The cards' depth, written after every card is drawn (so it never changes how cards blend over each other):
 // alpha-tested at half coverage like the card shadows. Passes after the cards (the fog bank, effects) then stop at
 // a character instead of reaching the ground behind it: the fog of war behind a unit no longer paints over it.
-// Writes no colour (premultiplied blend of zero).
+// Writes no colour (premultiplied blend of zero). While spell effects play, the units' cards are left out here and
+// written after the effects (push.lean bits 4 / 8), so every effect draws over the characters (the user, 2026-10-18).
 float4 PSDepth(VSOut i) : SV_Target0 {
   const SpriteInstance s = loadSprite(i.instance);
+  const bool unit = (s.flags & 4u) != 0;
+  if (((push.lean & 4u) != 0 && unit) || ((push.lean & 8u) != 0 && !unit)) discard;
   const float a = gTextureArrays[NonUniformResourceIndex(s.textureIndex)].Sample(gSamplers[push.samplerIndex], float3(i.uv, s.layer)).a;
   clip(a - 0.5);
   return float4(0.0, 0.0, 0.0, 0.0);

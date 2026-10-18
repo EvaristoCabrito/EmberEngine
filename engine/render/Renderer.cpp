@@ -1766,6 +1766,8 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   const uint32_t sceneScope = gpuTimer_.begin(cmd, "scene");
   vkCmdBeginRendering(cmd, &scene);
   setViewport(cmd, size_);
+  // Spell effects this frame: they draw over every unit's card (the units' depth is written after them, below).
+  const bool effects = hasScene_ && (!effects_.empty() || !vfxDraws_.empty() || !frontCards_.empty());
   if (hasScene_) {
     const glm::mat4 viewProjection = camera_.viewProjection();
     if (terrain_) {
@@ -1816,6 +1818,11 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(spritePush), &spritePush);
       vkCmdDraw(cmd, 6, static_cast<uint32_t>(sprites_.size()), 0, 0);
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spriteDepthPipeline_);
+      if (effects) {  // the units' cards later, after the effects
+        SpritePush depthPush = spritePush;
+        depthPush.lean |= 4u;
+        vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(depthPush), &depthPush);
+      }
       vkCmdDraw(cmd, 6, static_cast<uint32_t>(sprites_.size()), 0, 0);
     }
   } else {
@@ -1828,7 +1835,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   gpuTimer_.end(cmd, sceneScope);
 
   // --- Spell effects: over the finished surfaces, depth read-only (tested and sampled for the soft fade) -----------
-  const bool effects = hasScene_ && (!effects_.empty() || !vfxDraws_.empty() || !frontCards_.empty());
+  // The units' cards are not in the depth yet: every effect draws over the characters (the user, 2026-10-18).
   if (effects) {
     const uint32_t effectScope = gpuTimer_.begin(cmd, "effects");
     transition(cmd, depth_.image, depth_.aspect,
@@ -1875,7 +1882,8 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
       vkCmdDraw(cmd, d.gpu.vertexCount, d.gpu.firstInstance == 0xFFFFFFFFu ? 1u : d.instances, 0, 0);
     }
-    // Cards over the effects (a caster in front of its own spell): the same card drawing, read past the frame's cards.
+    // Cards over the effects (a caster turned away, in front of what leaves its hands): the same card drawing, read past
+    // the frame's cards.
     if (!frontCards_.empty()) {
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spritePipeline_);
       const SpritePush frontPush{camera_.viewProjection(), camera_.right, spriteSamplerIndex_,
@@ -1885,8 +1893,28 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       vkCmdDraw(cmd, 6, static_cast<uint32_t>(frontCards_.size()), 0, 0);
     }
     vkCmdEndRendering(cmd);
+    // Now the units' depth (left out of the scene's card-depth pass), so the fog bank stops at a character again.
+    if (!sprites_.empty()) {
+      transition(cmd, depth_.image, depth_.aspect,
+                 {VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                  VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                  VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+                  VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                  VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT});
+      fxDepth.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+      fxDepth.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+      vkCmdBeginRendering(cmd, &fxPass);
+      setViewport(cmd, size_);
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spriteDepthPipeline_);
+      const SpritePush unitDepth{camera_.viewProjection(), camera_.right, spriteSamplerIndex_, bufferAddress(context_, frame.sprites),
+                                 bufferAddress(context_, frame.meshFrame), camera_.forward, (cardLean_ ? 1u : 0u) | 8u};
+      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(unitDepth), &unitDepth);
+      vkCmdDraw(cmd, 6, static_cast<uint32_t>(sprites_.size()), 0, 0);
+      vkCmdEndRendering(cmd);
+    }
     gpuTimer_.end(cmd, effectScope);
   }
+  const bool depthReadOnly = effects && sprites_.empty();  // the depth's layout after the effects
 
   // --- Fog bank (fog of war): marched at half resolution, composited over the finished scene ---------------
   const bool bank = hasScene_ && bankThisFrame_;
@@ -1897,7 +1925,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
                 VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
                 VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
     transition(cmd, depth_.image, depth_.aspect,
-               {effects ? VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+               {depthReadOnly ? VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
                 VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
                 VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
     // Last frame's composite may still read the march result.

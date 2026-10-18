@@ -1919,8 +1919,10 @@ class MapStage final : public Stage {
       }
       addCard(clip, anchor, right, boxW, boxH, {-drift, -foot, 0.0f}, mirror, frame, flags, glows ? &glow : nullptr);
       if (glows && drawList_.size() > cardsBefore) drawList_.back().emitAt.z = -1.0f;
-      // A unit whose spell is playing stays in front of it (user, 2026-10-16): its card is drawn again over the effects.
-      if (drawList_.size() > cardsBefore && spellFx_.casterInFront(static_cast<int>(ui), time)) frontCards_.push_back(drawList_.back());
+      // Effects cover every unit (the user, 2026-10-18: "tudo precisa desenhar na frente dos personagens"; Renderer draws
+      // the units' depth only after the effects), the caster included while it faces us; a caster turned away (its
+      // "castBack" still) stays in front of what leaves its hands: its card is drawn again over the effects.
+      if (drawList_.size() > cardsBefore && shown == "castBack") frontCards_.push_back(drawList_.back());
       unitCard_[ui] = {anchor - (flat_ ? glm::vec3(0.0f, 0.0f, -foot) : glm::vec3(0.0f, foot, 0.0f)), boxW, boxH, flat_, true};
     }
     const glm::vec3 eye = camera.position, fwd = camera.forward;
@@ -3761,11 +3763,14 @@ class MapStage final : public Stage {
           if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0) foes.push_back(unitSpot(static_cast<size_t>(ui)));
         spellFx_.warCryFear(foes, x.impact);
       }
-      // Mãos Flamejantes / Sopro Venenoso not aimed at the camera (the user, 2026-10-17): after the cast pose the caster
-      // turns its back to us (its "castBack" still, the user's own picture) and the jet leaves its hands into the board,
-      // held until the last flames burn out. Aimed toward the camera it stays as it is.
-      const bool breath = s.kind == "burningHands" || s.kind == "poisonBreath";
-      if (magic && breath && !spots.empty() && !flat_ && hasPose(static_cast<size_t>(striker), "castBack")) {
+      // A spell that leaves the caster's hands (Mãos Flamejantes, Sopro Venenoso; since 2026-10-18 also Míssil Mágico, Bola
+      // de Fogo, Veneno Cáustico, Frost: the user, "para o resto usar a mesma regra do burning hands"; not Relâmpago, it
+      // falls from the sky) not aimed at the camera: after the cast pose the caster turns its back to us (its "castBack"
+      // still, the user's own picture) and the spell leaves its hands into the board, held until the effect is over.
+      // Aimed toward the camera it stays as it is.
+      const bool fromHands = s.kind == "burningHands" || s.kind == "poisonBreath" || s.kind == "magicMissile" || s.kind == "magicMissileV2" ||
+                             s.kind == "fireball" || s.kind == "causticVenom" || s.kind == "frost";
+      if (magic && fromHands && !spots.empty() && !flat_ && hasPose(static_cast<size_t>(striker), "castBack")) {
         glm::vec2 d{0.0f};
         for (const SpellEffects::Spot& t : spots) d += glm::vec2(t.feet.x - casterSpot.feet.x, t.feet.z - casterSpot.feet.z);
         d /= static_cast<float>(spots.size());
@@ -3777,7 +3782,7 @@ class MapStage final : public Stage {
         if (glm::length(d) > 1e-3f && away >= -0.5f * glm::length(d)) {
           OneShot& shot = unitShot_[static_cast<size_t>(striker)];
           shot.then = "castBack";
-          shot.thenUntil = fxStart + BurningHands::kFinish;
+          shot.thenUntil = std::max(spellFx_.castEnd(static_cast<int>(striker)), x.impact + 0.5f);
           logInfo("{}: {} not at the camera, back turned after the cast pose ({:.2f} s)", scene_->units[static_cast<size_t>(striker)].name, s.kind, length);
         }
       }

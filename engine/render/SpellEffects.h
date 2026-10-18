@@ -66,12 +66,11 @@ class SpellEffects {
   // A spell or weapon skill (Engine2 kinds) in version `look`: the caster's pose starts at `start`, its first hit
   // lands at `impact`. `targets` are the hexes / units it reaches in the rules' order (Frost: its whole area). False =
   // nothing drawn (OFF, or no such version).
-  // `owner`: who casts it (the stage's unit index, -1 = nobody): while its effect plays, casterInFront(owner, now) is
-  // true and the stage draws that unit's card over the effects (user, 2026-10-16: the caster stays in front of its
-  // own spell).
+  // `owner`: who casts it (the stage's unit index, -1 = nobody): castEnd(owner) says when what it cast is over (the
+  // stage holds a caster turned away from the camera until then).
   bool cast(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact,
             int owner = -1);
-  bool casterInFront(int owner, float now) const;
+  float castEnd(int owner) const;  // the latest end of `owner`'s casts (-1: none)
   bool castEffect(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact);
   // One fx clip on its own (the Spells menu's loose effects): played once at the spot, placed by what the art is
   // (a pillar stands on the feet, a ring lies around them, a burst sits on the body), with a light of its colour.
