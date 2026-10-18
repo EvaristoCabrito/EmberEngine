@@ -807,6 +807,19 @@ only on the user's explicit "faz", shown live in the window:
 6. Tabletop pieces as specified above; the redo of the sprite path if it still falls short of Engine2.
 Skipped until final assets exist (user, 2026-10-15): the ground material's cost.
 
+## Picking by the figure's body (2026-10-18; the user: "o path não se forma atrás de outras unidades", "quase impossível de
+selecionar os alvos")
+
+- A card's whole rectangle used to take the click / hover, so any card in front hid the hexes and the targets behind it.
+  Now `CardRect` carries the body (`bodyX / bodyBottom / bodyTop / bodyHalf`: the frame's trimmed picture from the pack's
+  crop box, its middle 60 %), `pickAt` tests that band only; `pickWalk` (hover and click with no spell open): the ground hex
+  wins over every card whenever the picked unit can walk there (`inReach`); a spell's aim keeps `aimPickAt` (a foe's body,
+  else the ground). No re-cook: the crop box was already in every clip header. Not done (the user: no re-cooking): per-frame
+  alpha masks for pixel-exact picking; a stretched arm or weapon outside the band is not clickable.
+- Verified (debug + validation): the script click on (14,10) picks the Piqueiro where the war dog's card in front used to
+  win; `pick:Kael; click:13:22` walks him behind Neera's card. `picktest` still reports 13 edge hexes at a height step
+  picking the hex in front (the ground ray, pre-existing, not the cards).
+
 ## Battle bar: 12 sockets F1-F12 + Atalhos (2026-10-18; the user: "12 sockets ... F1 ao F12 e um outro botão para editar")
 
 - MapStage `hotbarOf` / `storeHotbar` / `drawHotbarEditor` / `pressHotbar`: each hero's 12 sockets (a spell / skill kind or

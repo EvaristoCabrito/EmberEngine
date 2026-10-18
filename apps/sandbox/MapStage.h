@@ -1921,6 +1921,17 @@ class MapStage final : public Stage {
       // "castBack" still) stays in front of what leaves its hands: its card is drawn again over the effects.
       if (drawList_.size() > cardsBefore && shown == "castBack") frontCards_.push_back(drawList_.back());
       unitCard_[ui] = {anchor - (flat_ ? glm::vec3(0.0f, 0.0f, -foot) : glm::vec3(0.0f, foot, 0.0f)), boxW, boxH, flat_, true};
+      {  // the body for picking: the frame's trimmed picture, its middle 60 % (addCard's placement of the content box)
+        const SpriteClipHeader& ch = sprites_.header(clip);
+        const float sw = static_cast<float>(ch.sourceWidth), sh = static_cast<float>(ch.sourceHeight);
+        const float cx = (static_cast<float>(ch.cropX) + ch.contentWidth * 0.5f) / sw - 0.5f;
+        const float cy = 1.0f - (static_cast<float>(ch.cropY) + ch.contentHeight) / sh;
+        CardRect& cr = unitCard_[ui];
+        cr.bodyX = (-drift + cx * boxW) * (mirror ? -1.0f : 1.0f);
+        cr.bodyBottom = cy * boxH;
+        cr.bodyTop = cr.bodyBottom + boxH * ch.contentHeight / sh;
+        cr.bodyHalf = 0.3f * boxW * ch.contentWidth / sw;
+      }
     }
     const glm::vec3 eye = camera.position, fwd = camera.forward;
     std::sort(drawList_.begin(), drawList_.end(),
@@ -2487,8 +2498,10 @@ class MapStage final : public Stage {
       const CardRect& c = unitCard_[i];
       if (!c.drawn || (unitBattle_[i] < 0 && !(options_.editorClick && scene_ && i < scene_->units.size()))) continue;
       const glm::vec3 up = cardUp(c);
-      const glm::vec3 corners[4] = {c.origin - right * (c.width * 0.5f), c.origin + right * (c.width * 0.5f),
-                                    c.origin + right * (c.width * 0.5f) + up * c.height, c.origin - right * (c.width * 0.5f) + up * c.height};
+      // The figure's body, not the whole card (most of a card is air): the trimmed picture's middle band.
+      const glm::vec3 mid = c.origin + right * c.bodyX;
+      const glm::vec3 corners[4] = {mid - right * c.bodyHalf + up * c.bodyBottom, mid + right * c.bodyHalf + up * c.bodyBottom,
+                                    mid + right * c.bodyHalf + up * c.bodyTop, mid - right * c.bodyHalf + up * c.bodyTop};
       ImVec2 q[4];
       bool ok = true;
       for (int k = 0; k < 4 && ok; ++k)
@@ -2565,7 +2578,21 @@ class MapStage final : public Stage {
     int w = 0, h = 0;
     SDL_Window* window = SDL_GetWindowFromID(mouseWindow_);
     if (!window || !SDL_GetWindowSize(window, &w, &h) || w <= 0 || h <= 0) return;
-    hover_ = spellMode_.empty() ? pickAt(w, h, mouse_.x, mouse_.y) : aimPickAt(w, h, mouse_.x, mouse_.y);
+    hover_ = spellMode_.empty() ? pickWalk(w, h, mouse_.x, mouse_.y) : aimPickAt(w, h, mouse_.x, mouse_.y);
+  }
+  // A hex of the picked unit's reach: walking there is what a click / hover means.
+  bool inReach(e2::BattleHex h) const {
+    return std::any_of(reach_.begin(), reach_.end(), [&](const e2::ReachCell& c) { return c.x == h.x && c.y == h.y; });
+  }
+  // Walking (no spell open): the ground under the cursor wins over every card whenever the picked unit can walk there
+  // (the user, 2026-10-18: the route never formed behind other units); else a body under the cursor, else the ground.
+  std::optional<e2::BattleHex> pickWalk(int w, int h, float mx, float my) const {
+    if (selected_ >= 0 && myTurn()) {
+      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
+      if (const std::optional<e2::BattleHex> ground = pickAt(w, h, mx, my, false); ground && !(ground->x == u.x && ground->y == u.y) && inReach(*ground))
+        return ground;
+    }
+    return pickAt(w, h, mx, my);
   }
   // A spell being aimed: a foe's card under the cursor aims at its hex; a friend's card (the caster's own too) never hides
   // the ground behind it (a click on a foe standing behind a friend picked the friend: Mãos Flamejantes burnt the party).
@@ -2594,7 +2621,7 @@ class MapStage final : public Stage {
       return;
     }
     if (!battle_ || !scene_) return;
-    const std::optional<e2::BattleHex> hex = pickAt(w, h, mx, my);
+    const std::optional<e2::BattleHex> hex = spellMode_.empty() ? pickWalk(w, h, mx, my) : pickAt(w, h, mx, my);
     if (busy()) return;  // a walk, a strike or an enemy's turn is playing
     if (!spellMode_.empty()) {
       if (const std::optional<e2::BattleHex> aim = aimPickAt(w, h, mx, my); aim && myTurn()) aimSpell(*aim);
@@ -7135,6 +7162,10 @@ class MapStage final : public Stage {
     glm::vec3 origin{0.0f};  // bottom centre
     float width = 0.0f, height = 0.0f;
     bool flat = false, drawn = false;
+    // The figure's body inside the card (the user, 2026-10-18: cards in front stole the hexes and the targets behind them):
+    // the frame's trimmed picture (the pack's crop box), narrowed to its middle: x = its centre from the origin along
+    // `right`, bottom / top above the origin, half = half its width. Picking tests this, never the whole card.
+    float bodyX = 0.0f, bodyBottom = 0.0f, bodyTop = 0.0f, bodyHalf = 0.0f;
   };
   std::vector<CardRect> unitCard_;
   bool offHandMode_ = false;         // "Mão Secundária" armed: the off-hand weapon is the one that strikes
