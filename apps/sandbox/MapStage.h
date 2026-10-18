@@ -1823,6 +1823,7 @@ class MapStage final : public Stage {
       // The hit react: knocked back along the blow, squashed (a little wider as it is shorter).
       float squash = 1.0f;
       anchor += recoilOffset(ui, time, boxH, squash) + leapOffset(ui, time);
+      if (!flat_) anchor += bodyFrontShift(ui, camera.forward);
       boxW *= 1.0f + (1.0f - squash) * 0.6f, boxH *= squash;
       // Engine2's mirroring: the art's facing against the unit's, except cuts drawn for the left (and directional
       // walks while moving), which are never mirrored.
@@ -2299,6 +2300,26 @@ class MapStage final : public Stage {
     const glm::vec2 p = unitPos_[i];
     const float y = unitMoved_[i] ? static_cast<float>(e2::groundHeightAt(*board_, look_, p.x, p.y)) : groundOf(u.groundSmooth, u.groundHard);
     return {p.x, y, p.y};
+  }
+
+  // A body of several hexes seen end-on (the user, 2026-10-18: the 2-hex Cão Zumbi with the camera turned): its card always faces
+  // the camera, so at the footprint's middle its feet stood on the edge between the hex in front and the one behind, off both
+  // marks. The feet go forward, toward the camera, to the nearest hex of the body; seen side-on nothing moves (the middle).
+  glm::vec3 bodyFrontShift(size_t ui, const glm::vec3& forward) const {
+    if (!battle_ || !board_ || ui >= unitBattle_.size() || unitBattle_[ui] < 0) return glm::vec3(0.0f);
+    const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[ui])];
+    const std::vector<e2::BattleHex> body = e2::Battle::footprint(u, u.x, u.y);
+    glm::vec2 toCamera(-forward.x, -forward.z);
+    if (body.size() < 2 || glm::dot(toCamera, toCamera) < 1e-6f) return glm::vec3(0.0f);
+    toCamera = glm::normalize(toCamera);
+    const glm::vec2 centre = anchorWorld(u, {u.x, u.y});
+    float reach = 0.0f;
+    for (const e2::BattleHex& p : body) {
+      if (!battle_->inBounds(p.x, p.y)) continue;
+      const e2::Cell& c = board_->cell(p.x, p.y);
+      reach = std::max(reach, glm::dot(glm::vec2(static_cast<float>(c.x), static_cast<float>(c.z)) - centre, toCamera));
+    }
+    return glm::vec3(toCamera.x, 0.0f, toCamera.y) * reach;
   }
 
   // Where a battle unit's feet stand with its anchor on a hex: the middle of its body's front row (Ember's footprint
@@ -4652,6 +4673,11 @@ class MapStage final : public Stage {
     auto flag = [&](e2::BattleHex h, uint32_t f) {
       if (Renderer::GridCell* c = at(h)) c->flags |= f;
     };
+    // A unit's marks go on every hex its body stands on (the user, 2026-10-18: a 2-hex Cão Zumbi stands across both, its card on
+    // their shared edge, and a ring on its first hex alone lay beside its feet).
+    auto flagBody = [&](const e2::BattleUnit& u, uint32_t f) {
+      for (const e2::BattleHex& p : e2::Battle::footprint(u, u.x, u.y)) flag(p, f);
+    };
     const bool walking = selected_ >= 0 && !unitWalk_[static_cast<size_t>(selected_)].points.empty();
     if (selected_ >= 0 && !walking && !spellMode_.empty()) {
       // The spell's zone (where it reaches), the hexes it may be aimed at right now, the hovered aim's area.
@@ -4670,13 +4696,13 @@ class MapStage final : public Stage {
         for (const e2::BattleHex& c : aimArea(b, *aimed)) flag(c, Renderer::kGridSpellArea);
         for (size_t id : aimHits(b, *aimed)) {
           const e2::BattleUnit& t = battle_->units()[id];
-          if (t.alive && !t.hidden) flag({t.x, t.y}, t.side == battle_->units()[b].side ? Renderer::kGridTarget : Renderer::kGridSpellTarget);
+          if (t.alive && !t.hidden) flagBody(t, t.side == battle_->units()[b].side ? Renderer::kGridTarget : Renderer::kGridSpellTarget);
         }
       }
       if (hover_) flag(*hover_, Renderer::kGridHover | (aimValid(b, *hover_) ? 0u : Renderer::kGridHoverBlocked));
       for (const e2::BattleHex& c : spellCells_) flag(c, Renderer::kGridSpellChosen);
       const e2::BattleUnit& u = battle_->units()[b];
-      flag({u.x, u.y}, Renderer::kGridActive);
+      flagBody(u, Renderer::kGridActive);
     } else if (selected_ >= 0 && !walking) {
       const bool player = scene_->units[static_cast<size_t>(selected_)].side == "player";
       const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
@@ -4711,12 +4737,12 @@ class MapStage final : public Stage {
             if (i + 1 == route.size()) cell->flags |= Renderer::kGridRouteEnd;
           }
       }
-      flag({u.x, u.y}, player ? Renderer::kGridActive : Renderer::kGridActiveFoe);
+      flagBody(u, player ? Renderer::kGridActive : Renderer::kGridActiveFoe);
     }
     // The foes in reach of a strike.
     for (const auto& [t, from] : targets_) {
       const e2::BattleUnit& f = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(t)])];
-      flag({f.x, f.y}, Renderer::kGridTarget);
+      flagBody(f, Renderer::kGridTarget);
     }
     // The cursor: marked where nothing can stand.
     if (hover_ && spellMode_.empty()) {

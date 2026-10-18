@@ -242,7 +242,15 @@ Options parse(int argc, char** argv) {
         o.promote[item.substr(0, eq)] = cls;
       }
     }
-    else if (arg == "--battle-script" && hasValue) o.battleScript = argv[++i];
+    else if (arg == "--battle-script" && hasValue) {
+      // "@<file>": the steps read from a UTF-8 file (the command line reaches argv in the ANSI code page: "Cão" never matched)
+      o.battleScript = argv[++i];
+      if (o.battleScript.starts_with('@')) {
+        std::ifstream in(std::filesystem::path(o.battleScript.substr(1)), std::ios::binary);
+        o.battleScript.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+        while (!o.battleScript.empty() && (o.battleScript.back() == '\n' || o.battleScript.back() == '\r')) o.battleScript.pop_back();
+      }
+    }
     else if (arg == "--tatica") o.tatica = true;
     else if (arg == "--spells-menu-open") o.spellsMenuOpen = true;
     else if (arg == "--fog" && hasValue) o.fog = std::atoi(argv[++i]);
