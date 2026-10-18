@@ -6268,7 +6268,15 @@ class MapStage final : public Stage {
       fogDeliverMs_.push_back(std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count());
       fogUpdatedThisFrame_ = true;
     }
+    // The fog's clock (real seconds): remembered ground is forgotten kForgetSeconds after it was last in sight. Checked once a
+    // second; when something is due, the party's sight runs again (the forgetting happens on the worker, then the mask).
+    const double fogClock = std::chrono::duration<double>(std::chrono::steady_clock::now() - fogClockStart_).count();
+    if (!fogBusy_) fog_->setClock(fogClock);
     if (!fogBusy_ && !pendingExplored_.empty()) fog_->restoreExplored(std::exchange(pendingExplored_, {}));  // a resumed fight
+    if (!fogBusy_ && fogQueue_.empty() && !lastParty_.empty() && fogClock - fogForgetCheck_ >= 1.0) {
+      fogForgetCheck_ = fogClock;
+      if (fog_->forgetDue(e2::kForgetSeconds)) fogQueue_.push_back(lastParty_);
+    }
     if (!fogBusy_ && !fogQueue_.empty()) {
       // Every party position queued since the last job relights in order, so what is remembered is exactly
       // what one relight per change would leave; the mask is painted once, for the latest.
@@ -6297,6 +6305,7 @@ class MapStage final : public Stage {
                 inRange, inRange - seen);
       }
     }
+    fog_->forget(e2::kForgetSeconds);
     for (const std::vector<e2::HexPoint>& eyes : fogJobEyes_) relight(eyes);
     fogNext_ = fog_->paint(*board_, fogJobEyes_.back());
     Renderer::fogTexels(fogNext_, fogNextTexels_);  // the GPU's half floats, so the main thread only copies
@@ -6750,6 +6759,8 @@ class MapStage final : public Stage {
   JobSystem& jobs_;
   JobCounter fogJob_;
   bool fogBusy_ = false, sightLogged_ = false;
+  std::chrono::steady_clock::time_point fogClockStart_ = std::chrono::steady_clock::now();  // the fog's forgetting clock
+  double fogForgetCheck_ = 0.0;
   std::vector<std::vector<e2::HexPoint>> fogQueue_, fogJobEyes_;  // party positions waiting / being relit, in order
   e2::FogMask fogNext_;
   std::vector<uint16_t> fogTexels_, fogNextTexels_;  // fogMask_ / fogNext_ packed for the GPU (Renderer::fogTexels)

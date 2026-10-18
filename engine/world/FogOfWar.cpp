@@ -64,7 +64,7 @@ std::vector<HexPoint> hexLine(HexPoint a, HexPoint b) {
   return out;
 }
 
-FogOfWar::FogOfWar(const Board& board) : layout_(board.layout()), cells_(board.cells().size(), kFogUnseen) {
+FogOfWar::FogOfWar(const Board& board) : layout_(board.layout()), cells_(board.cells().size(), kFogUnseen), seenAt_(board.cells().size(), 0.0) {
   for (const Cell& c : board.cells()) ground_.push_back(static_cast<float>(c.groundY));
   top_ = ground_;
 }
@@ -157,9 +157,29 @@ void FogOfWar::relight(std::span<const Eye> eyes) {
         }
       }
       if (edge || members.size() > 3) continue;
-      for (const auto& [mx, my] : members) cells_[static_cast<size_t>(indexOf(layout_, mx, my))] = allSight ? kFogVisible : kFogExplored;
+      for (const auto& [mx, my] : members) {
+        const size_t i = static_cast<size_t>(indexOf(layout_, mx, my));
+        cells_[i] = allSight ? kFogVisible : kFogExplored;
+        seenAt_[i] = clock_;
+      }
     }
+  for (size_t i = 0; i < cells_.size(); ++i)
+    if (cells_[i] == kFogVisible) seenAt_[i] = clock_;
   ++version_;
+}
+
+bool FogOfWar::forgetDue(double seconds) const {
+  for (size_t i = 0; i < cells_.size(); ++i)
+    if (cells_[i] == kFogExplored && clock_ - seenAt_[i] > seconds) return true;
+  return false;
+}
+
+bool FogOfWar::forget(double seconds) {
+  bool any = false;
+  for (size_t i = 0; i < cells_.size(); ++i)
+    if (cells_[i] == kFogExplored && clock_ - seenAt_[i] > seconds) cells_[i] = kFogUnseen, any = true;
+  if (any) ++version_;
+  return any;
 }
 
 FogMask FogOfWar::paint(const Board& board, std::span<const HexPoint> party) const {

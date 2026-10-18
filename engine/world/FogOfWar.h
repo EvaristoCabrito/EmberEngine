@@ -29,7 +29,8 @@
 namespace ember::e2 {
 
 inline constexpr uint8_t kFogUnseen = 0, kFogExplored = 1, kFogVisible = 2;
-inline constexpr int kSightRadius = 7;            // Engine2 SIGHT_RADIUS
+inline constexpr int kSightRadius = 9;            // the user, 2026-10-18: a little more than Engine2's SIGHT_RADIUS 7
+inline constexpr double kForgetSeconds = 180.0;   // remembered ground is forgotten 3 min after it was last in sight (the user)
 inline constexpr float kExploredAlpha = 0.6f;      // Engine2 EXPLORED_ALPHA (darkness over remembered ground)
 inline constexpr float kEyeHeight = 1.6f;          // eyes above their hex's ground (world units = hex radii)
 inline constexpr float kTargetHeight = 0.8f;       // a hex is seen when a body standing there is (half its height)
@@ -79,8 +80,14 @@ class FogOfWar {
   // falls out of the next relight.
   void restoreExplored(const std::vector<uint8_t>& seen) {
     for (size_t i = 0; i < cells_.size() && i < seen.size(); ++i)
-      if (seen[i] && cells_[i] == kFogUnseen) cells_[i] = kFogExplored;
+      if (seen[i] && cells_[i] == kFogUnseen) cells_[i] = kFogExplored, seenAt_[i] = clock_;
   }
+  // The clock (seconds) the next relight stamps on what it sees.
+  void setClock(double seconds) { clock_ = seconds; }
+  // Remembered hexes last in sight more than `seconds` ago are never-seen again (the user, 2026-10-18: 3 minutes); true when
+  // any was forgotten. forgetDue only asks.
+  bool forget(double seconds);
+  bool forgetDue(double seconds) const;
   bool visible(int c, int r) const { return state(c, r) == kFogVisible; }
   // Bumped by every relight: the mask (and the shadows that read it) must be redrawn.
   uint64_t version() const { return version_; }
@@ -93,6 +100,8 @@ class FogOfWar {
 
   HexLayout layout_;
   std::vector<uint8_t> cells_;
+  std::vector<double> seenAt_;  // per hex: the clock when it was last in sight (or remembered by a hole / a resumed fight)
+  double clock_ = 0.0;
   std::vector<float> ground_, top_;  // per hex: ground height, and the highest thing standing on it
   uint64_t version_ = 0;
 };
