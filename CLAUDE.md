@@ -783,9 +783,16 @@ Skipped until final assets exist (user, 2026-10-15): the ground material's cost.
 
 ## Waiting on the user
 
-- Video → sprite pipeline (their earlier top priority, ARCHITECTURE §5): needs their videos organised as
-  `content/video/<Character>/<move>.mp4` (they sit in `Downloads` / `Desktop\Characters` with generated names;
-  don't guess the mapping). ffmpeg 9.0.1 and Python + PIL are installed.
+- **Video → sprite pipeline: built (2026-10-18, `1fceba8`), first used on Voss** (`content/sprites/voss-veo/cut.json`, the
+  user's Veo videos in `Attachments/VeoVoss`, one folder per move; the user names each video's move and start time).
+  `tools/scripts/sprites/video_matte.py <video> <out> <first> <last>` (BiRefNet general on the CPU, ~11 s / frame, 13 GB
+  RAM: one run at a time; resumable; run it detached with Start-Process, sessions and power cuts kill child runs) →
+  `video_sprite.py <cut.json>` (every native frame, no resampling, wall unmixed, each clip its own scale + feet line,
+  walks held in place + loop search, crossfade for idle seams, impact frames) → `content/sprite-overrides.json` "sets"
+  (`apply_sprite_overrides.py`, new set + the hero's poses; MapStage takes a replaced idle from the catalog) → cook.
+  The user chose every frame at the video's resolution ("max quality, downsize later"): Voss's 6 clips = 564 MB on the
+  GPU (voss-final ~160). The staff counter (`counterStaff`) plays when he counters a foe beside him (MapStage
+  `strikeBeside`); a pose's `impact` sets when its blow lands. Not judged by the user in the window yet.
 - Reference images / one clearly described moment, to turn R1–R8 into D1 pass/fail criteria.
 - The final camera angles.
 
