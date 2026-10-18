@@ -232,8 +232,9 @@ Fighter fighterAt(const Battle& b, size_t unit, int x, int y) {
     f.mag = f.mag > 0 ? std::max(1.0, jsRound(f.mag * (1 - weak / 100.0))) : 0;
   }
   if (u.side != "player" || u.summoned || !u.alive) return f;
-  // The best affinity bonus among the party members standing next to it (BattleEngine.adjacentAllies).
-  double bonus = 0;
+  // The best affinity bonus among the party members standing next to it (BattleEngine.adjacentAllies), plus the worst penalty
+  // (a neighbour it is at odds with, score -25 and below).
+  double bonus = 0, penalty = 0;
   const std::vector<BattleHex> mine = Battle::footprint(u, x, y);
   for (const BattleUnit& v : b.units()) {
     if (v.id == u.id || !v.alive || v.side != "player" || v.summoned) continue;
@@ -241,8 +242,11 @@ Fighter fighterAt(const Battle& b, size_t unit, int x, int y) {
     const bool adjacent = std::any_of(mine.begin(), mine.end(), [&](const BattleHex& p) {
       return std::any_of(theirs.begin(), theirs.end(), [&](const BattleHex& q) { return Battle::distance(p, q) == 1; });
     });
-    if (adjacent) bonus = std::max(bonus, b.affinityBonus(u.name, v.name));
+    if (!adjacent) continue;
+    const double pair = b.affinityBonus(u.name, v.name);
+    bonus = std::max(bonus, pair), penalty = std::min(penalty, pair);
   }
+  bonus += penalty;
   if (bonus != 0) f.atk *= 1 + bonus, f.mag *= 1 + bonus, f.def *= 1 + bonus, f.dex *= 1 + bonus;
   return f;
 }

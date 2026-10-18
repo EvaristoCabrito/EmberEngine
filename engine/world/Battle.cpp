@@ -8,6 +8,7 @@
 
 #include "core/Log.h"
 #include "world/Progression.h"
+#include "world/Spells.h"
 
 namespace ember::e2 {
 
@@ -627,17 +628,19 @@ bool affinityHero(const std::string& n) {
 void Battle::adjustAffinity(const std::string& a, const std::string& b, double delta) {
   if (a == b || delta == 0 || !affinityHero(a) || !affinityHero(b)) return;
   double& score = affinityScores_[affinityPair(a, b)];
-  score = std::max(0.0, std::min(100.0, std::floor((score + delta) * 10 + 0.5) / 10));
+  score = std::max(-100.0, std::min(100.0, std::floor((score + delta) * 10 + 0.5) / 10));
   scoresKnown_ = true;
   std::string d = std::format("{}", delta);
-  if (const size_t dot = d.find('.'); dot != std::string::npos) d[dot] = ',';
-  pushLog(std::format("Afinidade {} + {}: {}{}", a, b, delta > 0 ? "+" : "", d));
+  const bool en = combatLogEnglish();
+  if (const size_t dot = d.find('.'); dot != std::string::npos && !en) d[dot] = ',';
+  pushLog(std::format("{} {} + {}: {}{}", en ? "Affinity" : "Afinidade", a, b, delta > 0 ? "+" : "", d));
 }
 
 double Battle::affinityBonus(const std::string& a, const std::string& b) const {
   if (scoresKnown_) {
     const auto it = affinityScores_.find(affinityPair(a, b));
     const double score = it == affinityScores_.end() ? 0 : it->second;
+    if (score < 0) return score <= -90 ? -0.08 : score <= -50 ? -0.05 : score <= -25 ? -0.02 : 0;
     return score >= 90 ? 0.08 : score >= 50 ? 0.05 : score >= 25 ? 0.02 : 0;
   }
   for (const auto& [x, y, v] : affinity_)

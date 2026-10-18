@@ -337,19 +337,21 @@ class Battle {
   bool move(size_t unit, int x, int y);
   // A new turn: every unit's movement is whole again and it may act.
   void newTurn();
-  // The party's affinity bonus between two names (0 = none): from the pair's score (Engine2 affinity.ts affinityBonus: 25 -> 2%,
-  // 50 -> 5%, 90 -> 8%), or the file's own list for a battle file that carries no scores.
+  // The party's affinity bonus between two names (0 = none): from the pair's score (25 -> 2%, 50 -> 5%, 90 -> 8%; and the
+  // penalty below zero: -25 -> -2%, -50 -> -5%, -90 -> -8%), or the file's own list for a battle file that carries no scores.
   double affinityBonus(const std::string& a, const std::string& b) const;
-  // The pairs' scores 0..100 ("A|B" with the names in order), which a fight moves (friendly fire -1, healing +0.2, fighting side by
-  // side +0.1) and the campaign's save keeps.
+  // The pairs' scores -100..100 ("A|B" with the names in order), which a fight moves (friendly fire -1, healing +0.2, fighting side
+  // by side +0.1) and the campaign's save keeps.
   const std::map<std::string, double>& affinityScores() const { return affinityScores_; }
   void setAffinityScores(std::map<std::string, double> scores) { affinityScores_ = std::move(scores), scoresKnown_ = true; }
-  // BattleEngine.adjustHeroAffinity: both must be of the six heroes; the score is kept to a tenth within 0..100; the change is logged.
+  // Both must be of the six heroes; the score is kept to a tenth within -100..100; the change is logged.
   void adjustAffinity(const std::string& a, const std::string& b, double delta);
   std::map<size_t, std::set<size_t>>& supportRecipients() { return supportRecipients_; }
   // Drops Engine2's reference answers (a copy of the battle for one cast does not need them).
   void clearReferences() { forecastRefs_.clear(), rollRefs_.clear(), aiRefs_.clear(), castRefs_.clear(), turnRefs_.clear(), lockRefs_.clear(); }
   const std::vector<ForecastReference>& forecastReferences() const { return forecastRefs_; }
+  // Who each unit has hurt this action (friendly fire): they gain nothing for standing beside it when the action ends.
+  std::map<size_t, std::set<size_t>>& hurtAllies() { return hurtAllies_; }
   const std::vector<RollReference>& rollReferences() const { return rollRefs_; }
   const std::vector<AiReference>& aiReferences() const { return aiRefs_; }
   const std::vector<CastReference>& castReferences() const { return castRefs_; }
@@ -597,6 +599,7 @@ class Battle {
   std::vector<Exit> exits_;
   bool finished_ = false;
   std::vector<WebZone> webZones_;
+  std::map<size_t, std::set<size_t>> hurtAllies_;         // who each unit has hurt this action (no side-by-side +0.1 for them)
   std::vector<IceZone> iceZones_;
   std::vector<AuraZone> auraZones_;
   std::vector<WarpGate> warpGates_;

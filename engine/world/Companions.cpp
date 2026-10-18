@@ -16,7 +16,7 @@ bool isHero(const std::string& name) { return std::any_of(std::begin(kHeroes), s
 
 std::string pairKey(const std::string& a, const std::string& b) { return a < b ? a + "|" + b : b + "|" + a; }
 
-double clampScore(double v) { return std::max(0.0, std::min(100.0, v)); }
+double clampScore(double v) { return std::max(-100.0, std::min(100.0, v)); }  // negative affinity exists (user, 2026-10-17)
 
 Json readJson(const std::filesystem::path& file) {
   std::ifstream in(file, std::ios::binary);
@@ -135,7 +135,7 @@ bool Companions::resolveReply(Json& save, const Json& reply, const std::string& 
   const double raw = af.value("delta", 0.0);
   const double score = affinityScore(save, leader, companion);
   // the leader catch-up bonus of positive changes; losses are never amplified
-  const double delta = raw > 0 ? jsRound(raw * (2 - score / 100) * 100) / 100 : raw;
+  const double delta = raw > 0 ? jsRound(raw * (2 - std::max(0.0, score) / 100) * 100) / 100 : raw;
   Json& scores = save["affinityScores"];
   if (!scores.is_object()) scores = Json::object();
   scores[pairKey(leader, companion)] = clampScore(jsRound((score + delta) * 10) / 10);

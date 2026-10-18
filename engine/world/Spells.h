@@ -118,9 +118,12 @@ std::string spellTooltip(const BattleUnit& caster, const std::string& kind);
 
 // The combat log's language for the lines made from now on (the window's Idioma choice).
 void setCombatLogEnglish(bool english);
+bool combatLogEnglish();
 
 // Spell names as the window shows them (Engine2's own Portuguese names).
 std::string spellName(const std::string& kind);
+// ... in the chosen language (English names for the combat log in English; Portuguese otherwise).
+std::string spellNameIn(const std::string& kind, bool english);
 // A spell EmberEngine casts (the rest of a unit's list is shown but not castable yet).
 bool spellPorted(const std::string& kind);
 // A weapon skill (Engine2 isWeaponAbility): it rolls the weapon's own hit chance on a foe.

@@ -1251,6 +1251,40 @@ std::string spellName(const std::string& kind) {
   return s ? s->name : kind;
 }
 
+namespace {
+// The English names, for the combat log in English (Engine2's own names for its spells, ours for the promotions).
+constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
+    {"magicMissile", "Magic Missile"}, {"magicMissileV2", "Magic Missile"}, {"longShot", "Long Shot"}, {"piercing", "Piercing Shot"},
+    {"piercingThrust", "Piercing Thrust"}, {"doubleStrike", "Double Strike"}, {"lightning", "Lightning"}, {"frost", "Frost"},
+    {"shock", "Shock"}, {"cureMinor", "Cure Minor"}, {"cureWounds", "Cure Wounds"}, {"cureLight", "Healing Hands"},
+    {"cureDisease", "Cure Disease"}, {"createFoodAndWater", "Create Food and Water"}, {"fantomForce", "Phantom Force"},
+    {"bloodyShot", "Bloody Shot"}, {"multiShot", "Multi Shot"}, {"provoke", "Provoke"}, {"cleave", "Cleave"}, {"sweep", "Sweep"},
+    {"trip", "Trip"}, {"bullRush", "Bull Rush"}, {"shieldBash", "Shield Bash"}, {"executionerStrike", "Executioner's Strike"},
+    {"fireball", "Fireball"}, {"iceStorm", "Ice Storm"}, {"causticVenom", "Caustic Venom"}, {"poisonBreath", "Poison Breath"},
+    {"warp", "Warp"}, {"bless", "Bless"}, {"burningHands", "Burning Hands"}, {"turnUndead", "Turn Undead"},
+    {"divineBolt", "Divine Bolt"}, {"summonFamiliar", "Summon Familiar"}, {"phantasmalForce", "Phantasmal Force"},
+    {"webOfDreams", "Web of Dreams"}, {"summonFamiliar2", "Greater Familiar"}, {"summonFamiliar3", "Familiar 3"},
+    {"summonFamiliar4", "Radiant Familiar"}, {"summonZombieDog", "Zombie Dog"}, {"lightningTier3", "Lightning 3"},
+    {"minorVenom", "Minor Venom"}, {"familiarLifeDrain", "Life Drain"}, {"divineWrath", "Divine Wrath"},
+    {"shoulderSmash", "Shoulder Smash"}, {"stampede", "Stampede"}, {"auraOfProtection", "Aura of Protection"},
+    {"intimidatingPresence", "Intimidating Presence"}, {"secondWind", "Second Wind"},
+    {"markOfRuin", "Mark of Ruin"}, {"creepingPlague", "Creeping Plague"}, {"lifeDrain", "Life Drain"},
+    {"shroudOfShadows", "Shroud of Shadows"}, {"hemorrhage", "Hemorrhage"}, {"profaneSilence", "Profane Silence"},
+    {"blackPestilence", "Black Pestilence"}, {"curseOfDecay", "Curse of Decay"}, {"soulHarvest", "Soul Harvest"},
+    {"devouringVoid", "Devouring Void"}, {"pillarOfFlame", "Pillar of Flame"}, {"iceLance", "Ice Lance"},
+    {"thunderstorm", "Thunderstorm"}, {"meteor", "Meteor"}, {"absoluteZero", "Absolute Zero"}, {"chainLightning", "Chain Lightning"},
+    {"eruption", "Eruption"}, {"glacialGale", "Glacial Gale"}, {"wrathOfTheSkies", "Wrath of the Skies"},
+    {"primordialEmber", "Primordial Ember"},
+};
+}  // namespace
+
+std::string spellNameIn(const std::string& kind, bool english) {
+  if (english)
+    for (const auto& [k, en] : kSpellNamesEnglish)
+      if (kind == k) return en;
+  return spellName(kind);
+}
+
 bool spellPorted(const std::string& kind) {
   return kind == "magicMissile" || kind == "longShot" || kind == "piercing" || kind == "piercingThrust" || kind == "doubleStrike" || kind == "lightning" ||
          kind == "frost" || kind == "cureMinor" || kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "createFoodAndWater" ||
@@ -1689,31 +1723,42 @@ namespace {
 void logEffects(Battle& b, const std::vector<BattleEffect>& out, size_t from, int actor, const BattleStep* step) {
   const auto nameOf = [&](size_t i) { return b.units()[i].name; };
   const std::string who = actor >= 0 ? nameOf(static_cast<size_t>(actor)) : std::string();
+  const bool en = gLogEnglish;
+  // What was used (user, 2026-10-17: the log names the spell or skill): the spell / skill, the off-hand blow, or nothing for the
+  // weapon's plain attack. A counter is always the defender's plain blow.
+  const std::string used = !step                 ? std::string()
+                           : !step->kind.empty() ? spellNameIn(step->kind, en)
+                           : step->customDice    ? std::string(en ? "Off-hand" : "Mão Secundária")
+                                                 : std::string();
   for (size_t k = from; k < out.size(); ++k) {
     const BattleEffect& e = out[k];
     const std::string target = nameOf(e.unit);
-    const bool en = gLogEnglish;
     const std::string crit = e.crit ? (en ? " (critical)" : " (crítico)") : "";
+    // "Salazar usou Mãos Flamejantes em Kael" / "Orc contra-atacou Kael" / "Kael atacou Orc"
+    const std::string action = e.counter     ? (en ? std::format("{} countered {}", who, target) : std::format("{} contra-atacou {}", who, target))
+                               : used.empty() ? (en ? std::format("{} attacked {}", who, target) : std::format("{} atacou {}", who, target))
+                                              : (en ? std::format("{} used {} on {}", who, used, target) : std::format("{} usou {} em {}", who, used, target));
     if (!e.cause.empty()) {
       b.pushLog(en ? std::format("{} {}: {} damage", e.cause, target, e.amount) : std::format("{} {}: {} dano", e.cause, target, e.amount));
     } else if (e.miss) {
-      b.pushLog(en ? std::format("{} attacked {}: Missed", who, target) : std::format("{} atacou {}: Missed", who, target));
+      b.pushLog(en ? std::format("{}: missed", action) : std::format("{}: errou", action));
     } else if (e.heal) {
       if (step && step->type == BattleStep::Type::Potion)
         b.pushLog(e.text.empty() ? (en ? std::format("{} used {} on {} and recovered {} HP.", who, potionName(step->potion), target, e.amount)
                                        : std::format("{} usou {} em {} e recuperou {} HP.", who, potionName(step->potion), target, e.amount))
                                  : (en ? std::format("{} used {} on {}: {}", who, potionName(step->potion), target, e.text)
                                        : std::format("{} usou {} em {}: {}", who, potionName(step->potion), target, e.text)));
+      else if (!e.text.empty())
+        b.pushLog(used.empty() ? std::format("{}: {}", target, e.text) : std::format("{}: {} ({})", target, e.text, used));
+      else if (used.empty())
+        b.pushLog(en ? std::format("{} healed {}: +{} HP", who, target, e.amount) : std::format("{} curou {}: +{} HP", who, target, e.amount));
       else
-        b.pushLog(e.text.empty() ? (en ? std::format("{} healed {}: +{} HP", who, target, e.amount) : std::format("{} curou {}: +{} HP", who, target, e.amount))
-                                 : std::format("{}: {}", target, e.text));
+        b.pushLog(en ? std::format("{} healed {} with {}: +{} HP", who, target, used, e.amount)
+                     : std::format("{} curou {} com {}: +{} HP", who, target, used, e.amount));
     } else if (e.status) {
-      b.pushLog(std::format("{}: {}", target, e.text));
-    } else if (step && step->type == BattleStep::Type::Spell) {
-      b.pushLog(en ? std::format("{} hit {} with magic: {} damage{}", who, target, e.amount, crit)
-                   : std::format("{} atingiu {} com magia: {} dano{}", who, target, e.amount, crit));
+      b.pushLog(used.empty() || actor < 0 ? std::format("{}: {}", target, e.text) : std::format("{}: {} ({})", target, e.text, used));
     } else {
-      b.pushLog(en ? std::format("{} attacked {}: {} damage{}", who, target, e.amount, crit) : std::format("{} atacou {}: {} dano{}", who, target, e.amount, crit));
+      b.pushLog(en ? std::format("{}: {} damage{}", action, e.amount, crit) : std::format("{}: {} dano{}", action, e.amount, crit));
     }
     if (e.died) b.pushLog(en ? std::format("{} was defeated.", target) : std::format("{} foi derrotado.", target));
   }
@@ -1728,6 +1773,7 @@ void flushNotes(Battle& b) {
 void affinityDelta(Battle& b, size_t a, size_t t, double delta) {
   const BattleUnit &x = b.units()[a], &y = b.units()[t];
   if (a == t || x.side != "player" || y.side != "player" || x.summoned || y.summoned) return;
+  if (delta < 0) b.hurtAllies()[a].insert(t);  // hurt by this action: no side-by-side +0.1 for it when the action ends
   b.adjustAffinity(x.name, y.name, delta);
 }
 // gainSupportAffinity: +0.2 once per helped unit per action.
@@ -1871,6 +1917,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
 }  // namespace
 
 void setCombatLogEnglish(bool english) { gLogEnglish = english; }
+bool combatLogEnglish() { return gLogEnglish; }
 
 void resolveStrike(Battle& b, const BattleStep& step, bool counter, Mulberry32& rng, std::vector<BattleEffect>& out) {
   gNotes.clear();
@@ -2627,9 +2674,14 @@ std::optional<BattleStep> offHandStep(const Battle& b, size_t unit, size_t foe) 
 
 void gainAdjacentAffinity(Battle& b, size_t unit) {
   const BattleUnit& u = b.units()[unit];
+  // a friend this action hurt loses affinity and gains none back for standing beside the one who hurt it (taken out here, so
+  // it never carries over into the unit's next action)
+  std::set<size_t> hurt;
+  if (const auto h = b.hurtAllies().find(unit); h != b.hurtAllies().end()) hurt = std::move(h->second), b.hurtAllies().erase(h);
   if (u.acted || !u.alive || u.side != "player" || u.summoned) return;
   const auto it = b.supportRecipients().find(unit);
-  const std::set<size_t> recipients = it == b.supportRecipients().end() ? std::set<size_t>() : it->second;
+  std::set<size_t> recipients = it == b.supportRecipients().end() ? std::set<size_t>() : it->second;
+  recipients.insert(hurt.begin(), hurt.end());
   const std::vector<BattleHex> mine = Battle::footprint(u, u.x, u.y);
   for (size_t i = 0; i < b.units().size(); ++i) {
     const BattleUnit& v = b.units()[i];

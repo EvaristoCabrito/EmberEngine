@@ -39,7 +39,7 @@ inline bool affinityHero(const std::string& name) {
 }
 
 // BattleEngine.adjustHeroAffinity(from, to, delta, dialogue = true) on a save: the party leader's positive changes
-// catch up faster, then changeAffinity (sorted pair key, one decimal, 0..100). JS Math.round = floor(x + 0.5).
+// catch up faster, then changeAffinity (sorted pair key, one decimal, -100..100). JS Math.round = floor(x + 0.5).
 // Returns the combat log's line for it ("Afinidade Kael + Voss: +2,5"), empty when nothing changed.
 inline std::string applyReplyAffinity(e2::Json& save, const e2::Overworld& world, const e2::Json& affinity) {
   if (!affinity.is_object()) return {};
@@ -55,8 +55,8 @@ inline std::string applyReplyAffinity(e2::Json& save, const e2::Overworld& world
   if (const auto l = save.find("partyLeader"); l != save.end() && l->is_string() && affinityHero(l->get<std::string>()) &&
                                                world.heroRecruited(l->get<std::string>(), save))
     leader = l->get<std::string>();
-  if (delta > 0 && (a == leader || b == leader)) delta = std::floor(delta * (2 - score / 100) * 100 + 0.5) / 100;
-  scores[pair] = std::clamp(std::floor((score + delta) * 10 + 0.5) / 10, 0.0, 100.0);
+  if (delta > 0 && (a == leader || b == leader)) delta = std::floor(delta * (2 - std::max(0.0, score) / 100) * 100 + 0.5) / 100;
+  scores[pair] = std::clamp(std::floor((score + delta) * 10 + 0.5) / 10, -100.0, 100.0);  // negative affinity exists
   // delta.toLocaleString("pt-BR"): up to 3 decimals, a comma
   std::string d = std::format("{:.3f}", delta);
   while (d.back() == '0') d.pop_back();
