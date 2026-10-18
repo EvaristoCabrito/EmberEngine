@@ -575,7 +575,8 @@ cada tier no mínimo e uma habilidade de campo para usar no world map")
   `FieldSpells::castHunt`, a row in OverworldStage's field-spells menu). Bow skills on the bow's own roll (`dmgMul` now also under 1).
   Learned for `archer` and its promotions (ranger, assassin). Effects: `render/vfx/RangerFx.*` (a real lit arrow on an arc, trails and
   impacts per skill, volleys falling from the sky); MapStage `archerKind` gives every struck body CombatFx's arrow hit.
-- No icons yet (initials on wood); `--promote Neera=archer:25`; the `cast` script step stands the target beside the caster, inside the
+- Icons: the user's art (`Attachments/ArcherIcon`) in `content/ui/spells/<kind>.jpg` + `hunt.jpg` on the Caçada's row;
+  `--promote Neera=archer:25`; the `cast` script step stands the target beside the caster, inside the
   bow's minimum range: test the shots with `goto` + `spell` + `click` + `confirm`, the volleys with `cast`.
 
 ## Promoções do Mago Negro: Bruxo e Elementalista, magias T6–T10 (2026-10-17; the user: "pode criar todas elas os

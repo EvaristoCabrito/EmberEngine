@@ -1274,9 +1274,14 @@ class OverworldStage : public Stage {
     for (const std::string& hero : hunters) {
       const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kHuntTier);
       const ImVec2 a = ImGui::GetCursorScreenPos();
-      dl->AddText(ui, 15.0f, {a.x, a.y}, kFg, tr("Caçada", "Hunt").c_str());
-      dl->AddText(ui, 12.0f, {a.x, a.y + 20}, kMuted,
-                  std::format("{} ({} {}) · {} · {}x", hero, en ? "Lv" : "Nv", level, e2::FieldSpells::huntFormula(level, en), left).c_str(), nullptr, inner - 108);
+      float textX = a.x;
+      if (const UiImage* icon = uiImage(std::filesystem::path("content/ui/spells/hunt.jpg"))) {  // the user's art, centre-cropped
+        imageCover(dl, *icon, {a.x, a.y - 2}, {a.x + 40, a.y + 38}, 0.5f, 0.5f, IM_COL32(255, 255, 255, 255));
+        textX += 48;
+      }
+      dl->AddText(ui, 15.0f, {textX, a.y}, kFg, tr("Caçada", "Hunt").c_str());
+      dl->AddText(ui, 12.0f, {textX, a.y + 20}, kMuted,
+                  std::format("{} ({} {}) · {} · {}x", hero, en ? "Lv" : "Nv", level, e2::FieldSpells::huntFormula(level, en), left).c_str(), nullptr, inner - 108 - (textX - a.x));
       ImGui::PushID(("hunt" + hero).c_str());
       ImGui::BeginDisabled(!spells.canHunt(save_, hero));
       if (emberBigButton("##hunt", upperUtf8(tr("Caçar", "Hunt")).c_str(), {a.x + inner - 96, a.y + 6}, {96, 30}, false, 11.0f)) {

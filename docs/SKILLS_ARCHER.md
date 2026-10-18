@@ -11,8 +11,9 @@ Paralisado condition `applyHobble` / `liftHobble` and its countdown in `startOfT
 `spellTooltip`), `Battle.h` (`Conditions::hobble*`, `hobbleBase`), `BattleSave.cpp`, `engine/world/FieldSpells.*`
 (Caçada), `apps/sandbox/OverworldStage.h` (its row in the field-spells menu), `engine/render/vfx/RangerFx.h/.cpp` (the
 effects, 3D), `render/SpellEffects.cpp` (`castEffect`), `apps/sandbox/MapStage.h` (`archerKind`: the arrow's hit on each
-struck body, `--fx-test`, the battle script's checks). Icons: none yet (the socket shows the initials on wood); put the
-user's art in `content/ui/spells/<kind>.jpg` when it comes.
+struck body, `--fx-test`, the battle script's checks). Icons: the user's art (`Attachments/ArcherIcon`) in
+`content/ui/spells/<kind>.jpg` (784 x 1168, centre-cropped in the HUD socket); the Caçada's (`hunt.jpg`) heads its row in
+the field-spells menu.
 
 ## The formula
 
@@ -62,7 +63,7 @@ rules' impact; CombatFx's arrow hit (the pin of light, the splinters) lands on e
 
 - Learned by level (`grantClassSpells`): an Arqueiro / Patrulheiro / Assassino of level 2 has the Flecha Envenenada, 7 the
   Chuva, 10 the Explosiva, 12 the Paralisante, 13 the Tempestade, 15 the Tiro Mortal. The Caçada needs level 4 and T2 uses.
-- HUD: the socket shows the initials on wood until there is art; its tooltip the numbers at the hero's level
+- HUD: the socket shows the user's icon; its tooltip the numbers at the hero's level
   (`spellTooltip`); the status sheet lists them under their tier with the uses left.
 - Tests: `--promote Neera=archer:25`, `--fx-test <kind>`, `--battle-script "near:Piqueiro:Neera; cast:Neera:venomArrow:Piqueiro"`
   (the `cast` step stands the target beside the caster: inside the bow's minimum range, so the shots need a target two
