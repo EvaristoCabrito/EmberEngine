@@ -5056,7 +5056,7 @@ class MapStage final : public Stage {
     // The close-up photos only on the status sheet (the user, 2026-10-18: "zoom só no status"); every other screen keeps the originals.
     hooks.portraitWhole = [](const e2::BattleUnit& u) { return u.side == "player"; };  // the party's 2:3 box (the user, 2026-10-18)
     hooks.portrait = [this](const e2::BattleUnit& u) -> const UiImage* {
-      static const std::pair<const char*, const char*> kClose[] = {{"kaelFinal", "content/ui/portraits/kael-close-v01.jpg"},
+      static const std::pair<const char*, const char*> kClose[] = {{"kaelFinal", "content/ui/portraits/kael-close-v01.jpg"}, {"neera", "content/ui/portraits/neera-close-v01.jpg"},
                                                                    {"voss", "content/ui/portraits/voss-close-v01.jpg"},
                                                                    {"aldric", "content/ui/portraits/aldric-close-v02.jpg"},
                                                                    {"defaultLancer", "content/ui/portraits/aldric-close-v02.jpg"}};
