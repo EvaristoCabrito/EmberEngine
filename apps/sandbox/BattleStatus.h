@@ -35,6 +35,7 @@ class BattleStatusSheet {
   // What the sheet asks of the window around it (null = the control is not shown).
   struct Hooks {
     std::function<const UiImage*(const e2::BattleUnit&)> portrait;
+    std::function<bool(const e2::BattleUnit&)> portraitWhole;  // the photo shown whole, in its own format (box as tall as it needs)
     std::function<const UiImage*(const std::string& kind)> spellIcon;
     std::function<int(int level)> xpToLevel;
     std::function<std::array<int, 5>(const e2::BattleUnit&)> allocation;  // the points spent: hp, atk, mag, def, dex
@@ -179,10 +180,14 @@ class BattleStatusSheet {
   float drawHeader(ImDrawList* dl, const e2::Battle& battle, const e2::BattleUnit& u, ImVec2 top, float inner, const std::filesystem::path& publicDir, const Hooks& hooks, bool en) {
     ImFont* ui = uiFont(UiFont::Ui);
     const bool player = u.side == "player";
-    // Portrait (108 x 130, rounded-lg, bordered, black), the hunger bar under it.
-    const ImVec2 pa = top, pb{top.x + 108.0f, top.y + 130.0f};
+    // Portrait (108 x 130, rounded-lg, bordered, black), the hunger bar under it. A "whole" photo (Neera, the user 2026-10-18)
+    // keeps its own format: the box is as tall as the photo, nothing cut.
+    const UiImage* face = hooks.portrait ? hooks.portrait(u) : nullptr;
+    float boxH = 130.0f;
+    if (face && face->width > 0 && hooks.portraitWhole && hooks.portraitWhole(u)) boxH = 108.0f * static_cast<float>(face->height) / static_cast<float>(face->width);
+    const ImVec2 pa = top, pb{top.x + 108.0f, top.y + boxH};
     dl->AddRectFilled(pa, pb, IM_COL32(0, 0, 0, 255), 8.0f);
-    if (const UiImage* face = hooks.portrait ? hooks.portrait(u) : nullptr) coverRounded(dl, *face, pa, pb, 8.0f, IM_COL32_WHITE, 0.5f, 0.3f);
+    if (face) coverRounded(dl, *face, pa, pb, 8.0f, IM_COL32_WHITE, 0.5f, 0.3f);
     dl->AddRect(pa, pb, kBorder, 8.0f);
     float bottom = pb.y;
     if (player) {
