@@ -45,6 +45,32 @@ std::map<std::string, LoadedImage>& images() {
 }
 // One key per file however its path was written ("a/b\c.png" and "a/b/c.png" are the same picture).
 std::string keyOf(const std::filesystem::path& file) { return file.lexically_normal().generic_string(); }
+
+// The file actually read for a picture: the user's own replacements of Engine2 art (content/ui/replacements.json:
+// "<folder>/<file>" -> a file of ours), so every screen that asks for the old picture gets the new one; else the file.
+std::filesystem::path sourceOf(const std::filesystem::path& file) {
+  static const std::map<std::string, std::filesystem::path> table = [] {
+    std::map<std::string, std::filesystem::path> t;
+    std::ifstream in("content/ui/replacements.json");
+    std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    // a flat {"a/b.jpg": "c/d.jpg", ...}: read without a JSON library (this file has none)
+    for (size_t at = 0;;) {
+      std::string pair[2];
+      for (std::string& s : pair) {
+        const size_t open = text.find('"', at), close = open == std::string::npos ? open : text.find('"', open + 1);
+        if (close == std::string::npos) return t;
+        s = text.substr(open + 1, close - open - 1), at = close + 1;
+      }
+      std::transform(pair[0].begin(), pair[0].end(), pair[0].begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+      t[pair[0]] = pair[1];
+    }
+  }();
+  if (table.empty()) return file;
+  std::string tail = (file.parent_path().filename() / file.filename()).generic_string();
+  std::transform(tail.begin(), tail.end(), tail.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+  const auto it = table.find(tail);
+  return it != table.end() && std::filesystem::exists(it->second) ? it->second : file;
+}
 // The full-size texture of each loaded image -> its entry (map nodes never move).
 std::map<const ImTextureData*, LoadedImage*>& imagesByTexture() {
   static std::map<const ImTextureData*, LoadedImage*> index;
@@ -299,7 +325,7 @@ const UiImage* uiImage(const std::filesystem::path& file) {
   if (const auto it = images().find(key); it != images().end() && (it->second.data || it->second.failed))
     return it->second.failed ? nullptr : &it->second.image;
   int w = 0, h = 0, n = 0;
-  stbi_uc* pixels = stbi_load(file.string().c_str(), &w, &h, &n, 4);
+  stbi_uc* pixels = stbi_load(sourceOf(file).string().c_str(), &w, &h, &n, 4);
   return adopt(key, pixels, w, h);
 }
 
@@ -313,7 +339,7 @@ UiPreload::UiPreload(std::vector<std::filesystem::path> files) : files_(std::mov
     for (const std::filesystem::path& f : files_) {
       if (stop.stop_requested()) return;
       Decoded d{keyOf(f)};
-      d.pixels = stbi_load(f.string().c_str(), &d.w, &d.h, &d.n, 4);
+      d.pixels = stbi_load(sourceOf(f).string().c_str(), &d.w, &d.h, &d.n, 4);
       std::lock_guard lock(mutex_);
       decoded_.push_back(d);
     }
