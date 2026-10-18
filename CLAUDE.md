@@ -615,8 +615,13 @@ efeitos e wire into the game")
 - Map Editor: "CityHubs…" also lists maps reached by a hub's floor connectors (the Inn's Andar II).
 - Script steps `talk:<npc>`, `stairs`; captures `--title-screen mission:estalagem [--map-ui npc:tavern|smith|healer]`, `--arrived-from`,
   `--leader`. DialogScreen's wrap was in screen space (lines clipped right in every conversation): fixed.
-- **Map defect (Engine2's own data, not fixed, asked):** on estalagem-andar-2003 the stairs room (cols 20-22, rows 10-14) has no doorway:
-  arriving upstairs, the party can only go back down. A door frame in the row-9 wall (Map Editor) opens it.
+- **Andar II enlarged (2026-10-17, user's "faz": each room and the corridor at twice the area):** our own save
+  `content/maps/ember/estalagem-andar-2004.json` (serial 4 wins over Engine2's 003; Engine2's file untouched), 33x21: rooms 7 rows
+  tall, corridor 3, room widths 7/6/6/9 above and 10/7/6/5 below (x1.96-2.33 area, corridor x2.11), walls re-laid, the stairs room's
+  `door-3d-closed` now an open `door-3d-frame` (the user: no lock there). Made by a script (scratchpad make_upstairs.py: items
+  touching a wall keep that distance, the rest scaled; NPCs with their dialogs, all 58 cards, stairs + connector at (29,18)).
+  The campaign builds its game files from it itself (build/engine2-campaign); test files in build/engine2-test. Every walkable
+  cell (493) reachable from Kael's spawn; the same 17 lights now light a larger floor (darker rooms: the user judges).
 
 ## Status sheet in battle (2026-10-17; user: "importa direito a ficha": images, details, point system, Mochila / Equipar, the same scroller)
 
