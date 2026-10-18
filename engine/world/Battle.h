@@ -155,6 +155,7 @@ struct BattleUnit {
   bool offTrainsWeapon = false;
   double offWeaponSkill = 0;
   std::vector<std::pair<std::string, double>> skills;  // trained skills by id ("fireResistance", ...)
+  std::string rank;  // ours: a non-party unit's class of strength, F .. S++ (content/enemy-ranks.json); empty = none
   // A hero's growth: per level 1..30 the class's hp atk mag def dex and its uses per tier (levelUpUnit), and what its
   // gear adds over the class's stats.
   std::vector<std::array<int, 16>> growth;  // hp atk mag def dex, tier1..tier10 uses, mov

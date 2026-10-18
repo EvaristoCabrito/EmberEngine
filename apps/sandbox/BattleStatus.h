@@ -207,7 +207,8 @@ class BattleStatusSheet {
     const float rightW = 150.0f, rightX = colRight - rightW;
     dl->AddText(uiFont(UiFont::Display), 22.0f, {tx, top.y - 2.0f}, kFg, u.name.c_str(), nullptr, rightX - tx - 8.0f);
     const std::string cls = u.className.empty() ? u.classId : u.className;
-    dl->AddText(ui, 15.0f, {tx, top.y + 28.0f}, u.side == "enemy" ? kDanger : kMuted, std::format("{} · {} {}", cls, en ? "Lv" : "Nv", u.level).c_str());
+    const std::string rank = u.rank.empty() || player ? "" : std::format(" · {} {}", en ? "Rank" : "Classe", u.rank);  // ours (enemy-ranks.json)
+    dl->AddText(ui, 15.0f, {tx, top.y + 28.0f}, u.side == "enemy" ? kDanger : kMuted, std::format("{} · {} {}{}", cls, en ? "Lv" : "Nv", u.level, rank).c_str());
     if (player) {
       const float bw = std::min(144.0f, rightX - tx - 10.0f);
       if (u.level >= 30) {
@@ -521,6 +522,12 @@ class BattleStatusSheet {
                                      : std::format("Cura: {}/100 · +{}% de cura", pt(u.healingSkill), pt(u.healingSkill));
       dl->AddText(ui, 14.0f, {x, y}, kMuted, healing.c_str());
       y += 18.0f;
+      if (u.side != "player" && !u.rank.empty()) {  // a ranked unit's skills (ours): one value for weapon, Esquiva, resistances
+        const std::string line = en ? std::format("Rank {} skills: {}/100 (weapon, dodging, resistances)", u.rank, pt(u.weaponSkill))
+                                    : std::format("Perícias da classe {}: {}/100 (arma, esquiva, resistências)", u.rank, pt(u.weaponSkill));
+        dl->AddText(ui, 14.0f, {x, y}, kMuted, line.c_str());
+        y += 18.0f;
+      }
       if (u.side == "player") {  // Esquiva (ours): half a point off the foe's hit chance per point
         double dodging = 0;
         for (const auto& [id, v] : u.skills)

@@ -681,7 +681,10 @@ efeitos e wire into the game")
   (3, Battle.h) − defender's Esquiva / 2); escape = min(100, 60 + DEX / kDexDivisor), unchanged. **Esquiva** (skill
   `dodging`, heroes only, 0..100, `Fighter::dodge`): trains when an enemy strikes at the hero (`trainDodge`, trainWeapon's rule,
   off in Cooker checks), read from / written to `save.heroSkills[hero].dodging` (MapStage campaign start, finishCampaignFight),
-  on the road like any skill (Party → Skills), shown in the battle sheet. Bênção counts once (weaponAccuracy, not Loadout). Spells.cpp's own weapon-ability roll (resolveStepImpl) was
+  on the road like any skill (Party → Skills), shown in the battle sheet. Bênção counts once (weaponAccuracy, not Loadout).
+- **Enemy ranks F .. S++ (the user, 2026-10-18): read `docs/ENEMY_RANKS.md`.** Data `content/enemy-ranks.json` (per-level value
+  per rank, class → rank; humans F by default); `Progression.cpp applyRank` gives every non-party unit skill = value × level
+  (cap 100) as its weapon mastery (75 + skill, replacing 90 + DEX), Esquiva and every resistance; shown on the enemy's sheet. Spells.cpp's own weapon-ability roll (resolveStepImpl) was
   left as it was on the user's order. `Cooker check-battle`'s hit % no longer matches Engine2 by design.
 - **Confirm + hit %:** `MapStage::drawConfirm` (strike / spell shows the hit chance, Confirmar / Cancelar, as Engine2). Pathfinding: the
   algorithm already matched Engine2; the bug was rim hexes that could not be clicked (`pickAt` edge padding, fixed). A hand-bent route would

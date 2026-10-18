@@ -93,6 +93,60 @@ Row enemyAt(const std::vector<Row>& rows, int level) {
   return r;
 }
 
+// Enemy ranks (ours, content/enemy-ranks.json; docs/ENEMY_RANKS.md).
+struct Ranks {
+  std::map<std::string, double> perLevel;
+  std::map<std::string, std::string> classes;
+  std::string fallback = "F";
+  double cap = 100;
+};
+
+const Ranks& ranks() {
+  static const Ranks r = [] {
+    Ranks r;
+    const json j = readJson("content/enemy-ranks.json");
+    if (j.contains("perLevel") && j["perLevel"].is_object())
+      for (const auto& [rank, v] : j["perLevel"].items())
+        if (v.is_number()) r.perLevel[rank] = v.get<double>();
+    if (j.contains("classes") && j["classes"].is_object())
+      for (const auto& [id, rank] : j["classes"].items())
+        if (rank.is_string()) r.classes[id] = rank.get<std::string>();
+    if (j.contains("default") && j["default"].is_string()) r.fallback = j["default"].get<std::string>();
+    if (j.contains("cap") && j["cap"].is_number()) r.cap = j["cap"].get<double>();
+    logInfo("enemy ranks: {} ranks, {} classes ranked (others {})", r.perLevel.size(), r.classes.size(), r.fallback);
+    return r;
+  }();
+  return r;
+}
+
+// The unit's rank and its skills at its level: the weapon's (accuracy 75 + skill and dice x (100 + skill) / 100, a hero's
+// mastery), Esquiva, and every resistance.
+void applyRank(BattleUnit& u) {
+  const Ranks& r = ranks();
+  const auto own = r.classes.find(u.classId);
+  u.rank = own != r.classes.end() ? own->second : r.fallback;
+  const auto rate = r.perLevel.find(u.rank);
+  if (rate == r.perLevel.end()) {
+    logWarn("enemy ranks: {} ({}) has rank {}, which has no perLevel entry", u.name, u.classId, u.rank);
+    return;
+  }
+  const double skill = std::min(r.cap, std::round(rate->second * std::max(1, u.level) * 100) / 100);
+  u.weaponSkill = skill;
+  u.combat.accuracy = 75 + skill, u.combat.damageMul = (100 + skill) / 100;
+  if (u.combat.offHandWeapon) u.offWeaponSkill = skill, u.combat.offAccuracy = 75 + skill, u.combat.offDamageMul = (100 + skill) / 100;
+  bool dodge = false;
+  for (auto& [id, v] : u.skills)
+    if (id == "dodging") v = skill, dodge = true;
+  if (!dodge) u.skills.emplace_back("dodging", skill);
+  static const char* kElements[] = {"fire", "lightning", "ice", "arcane", "darkness", "holy", "poison", "ember"};
+  for (const char* e : kElements) {
+    bool found = false;
+    for (auto& [id, v] : u.combat.resistances)
+      if (id == e) v += skill, found = true;
+    if (!found) u.combat.resistances.emplace_back(e, skill);
+  }
+}
+
 }  // namespace
 
 void setProgressionEnabled(bool on) { gEnabled = on; }
@@ -128,6 +182,7 @@ void applyProgression(BattleUnit& u) {
       for (size_t k = 0; k < 5; ++k) u.growth[i][k] = r[k];
     }
   } else {
+    applyRank(u);  // every class, also one without Engine2 growth rows
     const std::vector<Row>* rows = classRows(u.classId);
     if (!rows) return;
     const int level = clampLevel(*rows, u.level);

@@ -230,8 +230,8 @@ Fighter fighterAt(const Battle& b, size_t unit, int x, int y) {
   const BattleUnit& u = b.units()[unit];
   Fighter f{unit, x, y, static_cast<double>(u.atk), static_cast<double>(u.mag), static_cast<double>(u.def), static_cast<double>(u.dex),
             u.faceDx, u.faceDy, u.facing};
-  // Esquiva (ours, heroes only): the trained skill "dodging", 0..100.
-  if (u.side == "player" && !u.summoned)
+  // Esquiva (ours): the skill "dodging", 0..100 (a hero's trained, an enemy's from its rank).
+  if (!u.summoned)
     for (const auto& [id, v] : u.skills)
       if (id == "dodging") f.dodge = std::max(0.0, std::min(100.0, v));
   // Mortalha de Sombras (EmberEngine's own): standing in it takes statPct % off ATK and MAG, for as long as it stands there.
