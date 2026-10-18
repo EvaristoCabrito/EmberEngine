@@ -165,8 +165,13 @@ float reliefVisibility(MeshFrame f, VolumetricsFrame v, float3 p, float3 lightPo
   return 1.0 - saturate(hidden / float(v.occlusionTaps));
 }
 
-// Local lights scattered towards the camera at p (the light cluster p falls in; the lights' own falloff).
-float3 airLocalLights(MeshFrame f, VolumetricsFrame v, float3 p, float3 toCamera) {
+// Local lights scattered towards the camera over the froxel around p (the light cluster p falls in; the lights' own
+// falloff). The falloff is not read at the slice's centre: a lamp is far smaller than a slice, so a point sample jumped
+// as the slices slid over it while the camera zoomed (the user, 2026-10-18: every light "pisca" on zoom). Instead
+// 1 / d^2 is averaged exactly along this froxel's stretch of the view ray (t0 .. t1 from the camera), widened by the
+// froxel's own footprint (spread x distance): the same glow wherever the slices fall. Window, phase and relief are read
+// at the stretch's point nearest the light; other decays than 2 keep their shape through d^(2 - decay) there.
+float3 airLocalLights(MeshFrame f, VolumetricsFrame v, float3 p, float3 toCamera, float t0, float t1, float spread) {
   if ((f.lightingLayers & kLayerLocal) == 0 || f.lightCount == 0) return 0.0;
   const float4 clip = mul(float4(p, 1.0), f.viewProjection);
   if (clip.w <= 0.0) return 0.0;
@@ -176,16 +181,26 @@ float3 airLocalLights(MeshFrame f, VolumetricsFrame v, float3 p, float3 toCamera
   const uint cluster = tile.x + tile.y * kClusterX + clusterSlice(f, depth) * kClusterX * kClusterY;
   const uint64_t list = f.clusters + clusterOffset(cluster);
   const uint count = vk::RawBufferLoad<uint>(list);
+  const float3 eye = f.cameraPosition;
+  const float3 ray = -toCamera;
+  const float length01 = max(t1 - t0, 1e-4);
   float3 color = 0.0;
   for (uint k = 0; k < count; ++k) {
     const LocalLight light = loadLight(f, vk::RawBufferLoad<uint>(list + 4 + k * 4));
-    const float3 toLight = light.position - p;
+    const float3 fromEye = light.position - eye;
+    const float tc = dot(fromEye, ray);  // where the ray passes the light
+    const float h2 = max(dot(fromEye, fromEye) - tc * tc, 0.0);
+    const float3 q = eye + ray * clamp(tc, t0, t1);
+    const float3 toLight = light.position - q;
     const float d = length(toLight);
     if (d >= light.range) continue;
     const float ratio = d / light.range;
     const float window = saturate(1.0 - ratio * ratio * ratio * ratio);
-    const float falloff = window * window / max(pow(d, light.decay), 0.01);
-    const float visible = reliefVisibility(f, v, p, light.position);
+    const float width = spread * max(tc, 0.0);
+    const float h = sqrt(h2 + width * width + 0.01);  // 0.01: the falloff's own floor, 1 / max(d^2, 0.01)
+    float falloff = window * window * (atan((t1 - tc) / h) - atan((t0 - tc) / h)) / (h * length01);
+    if (light.decay != 2.0) falloff *= pow(max(d, 0.1), 2.0 - light.decay);
+    const float visible = reliefVisibility(f, v, q, light.position);
     if (visible <= 0.0) continue;
     color += light.color * f.exposure * falloff * visible * phase2(dot(toLight / max(d, 1e-4), -toCamera), v.anisotropy, v.backLobe);
   }
@@ -240,7 +255,14 @@ void CSInject(uint3 id : SV_DispatchThreadID) {
   float3 light = 0.0;
   if (sight.color > 0.0 && sigma.x > 0.0) {
     light = sunSky;
-    if (sight.local > 0.0) light += airLocalLights(f, v, pLight, toCamera) * v.localScale * sight.local;
+    if (sight.local > 0.0) {
+      // This froxel's stretch of the view ray, and its half width per unit of distance (the tile at unit depth).
+      const float centre = froxelDepth(f, (float(id.z) + 0.5) / float(v.grid.z));
+      const float stretch = length(pLight - f.cameraPosition) / max(centre, 1e-3);
+      const float t0 = froxelDepth(f, float(id.z) / float(v.grid.z)) * stretch, t1 = froxelDepth(f, float(id.z + 1) / float(v.grid.z)) * stretch;
+      const float spread = 1.0 / max(f.projectionY * float(v.grid.y), 1e-3);
+      light += airLocalLights(f, v, pLight, toCamera, t0, t1, spread) * v.localScale * sight.local;
+    }
     light *= sight.color;  // remembered air is as dark as remembered ground
   }
   float4 result = float4((light * sigma.x + sunSky * sigma.y) * v.albedo, sigma.x + sigma.y);
