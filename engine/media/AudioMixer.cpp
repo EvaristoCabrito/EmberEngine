@@ -26,6 +26,9 @@ namespace ember {
 
 namespace {
 
+// EmberEngine's own tracks (the user's, not Engine2's): a name found here plays from here, else from Engine2's game/MUSIC.
+const std::filesystem::path kOwnMusic = "content/music";
+
 template <typename T>
 struct Com {
   T* p = nullptr;
@@ -266,7 +269,9 @@ void AudioMixer::playMusic(const std::string& file, float base) {
   std::unique_ptr<Track>& t = tracks_[file];
   if (!t) {
     t = std::make_unique<Track>();
-    t->file = root_ / "game" / "MUSIC" / std::filesystem::path(reinterpret_cast<const char8_t*>(file.c_str()));
+    const std::filesystem::path name(reinterpret_cast<const char8_t*>(file.c_str()));
+    std::error_code ec;
+    t->file = std::filesystem::exists(kOwnMusic / name, ec) ? kOwnMusic / name : root_ / "game" / "MUSIC" / name;
     t->stream = SDL_CreateAudioStream(&kDeviceSpec, &kDeviceSpec);
     if (!t->stream) {
       tracks_.erase(file);
@@ -342,15 +347,16 @@ int AudioMixer::check(const std::filesystem::path& engine2Public) {
   mfThread();
   int failed = 0, files = 0;
   double seconds = 0.0;
-  for (const char* dir : {"SoundFX", "MUSIC"}) {
+  for (const char* dir : {"SoundFX", "MUSIC", "own MUSIC"}) {
     std::error_code ec;
-    for (const auto& entry : std::filesystem::directory_iterator(engine2Public / "game" / dir, ec)) {
+    const std::filesystem::path folder = std::string(dir) == "own MUSIC" ? kOwnMusic : engine2Public / "game" / dir;
+    for (const auto& entry : std::filesystem::directory_iterator(folder, ec)) {
       if (entry.path().extension() != ".mp3") continue;
       ++files;
       Reader r;
       std::vector<float> pcm;
       bool ok = r.open(entry.path());
-      const bool music = std::string(dir) == "MUSIC";
+      const bool music = std::string(dir) != "SoundFX";
       // effects whole; music its first five seconds (it is streamed)
       while (ok && r.read(pcm) && (!music || pcm.size() < static_cast<size_t>(5 * r.rate * r.channels))) {
       }

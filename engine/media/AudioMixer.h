@@ -30,6 +30,7 @@ class AudioMixer {
   ~AudioMixer();
 
   // Engine2's public folder: music in game/MUSIC, effects in game/SoundFX. Without one nothing plays (captures).
+  // EmberEngine's own tracks live in content/music and are found there first, by the same file name.
   void setRoot(const std::filesystem::path& engine2Public);
   // Stops everything and closes the device; called before SDL shuts down.
   void shutdown();

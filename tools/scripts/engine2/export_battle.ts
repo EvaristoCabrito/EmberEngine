@@ -16,8 +16,9 @@
 //
 // ENGINE2=<folder> points at another Engine2 checkout (default C:/Engine2).
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const E2 = process.env.ENGINE2 ?? 'C:/Engine2';
 
@@ -960,12 +961,14 @@ const THEMES: Record<string, [string, number]> = {
   temple: ['temple.mp3', 0.42], aldeia: ['EMBERBattle01-Balanced-High.mp3', 0.4], siege: ['Absolute Mental Descruction 00-Balanced-High.mp3', 0.4],
   inn: ['Connard The Barbarian 10.mp3', 0.4], hill: ['Long Space _Opera DJ  UMN+  022-Balanced-High.mp3', 0.4],
   portao: ['TempleEntrance-Balanced-High.mp3', 0.4], early: ['LANDR-Absolute Mental Descruction umn3 10 (3)-Balanced-High.mp3', 0.4],
+  cemetery: ['Ember Ashes Ambient OST 0-Balanced-High.mp3', 0.4],  // EmberEngine's own (content/music), every cemetery map
 };
+const OWN_MUSIC = `${dirname(fileURLToPath(import.meta.url))}/../../../content/music`;
 const missionMusic = (() => {
   const named = mission.music;
-  if (named && (data.MUSIC_TRACKS as string[]).includes(named)) return { file: named, base: 0.4 };
+  if (named && ((data.MUSIC_TRACKS as string[]).includes(named) || existsSync(`${OWN_MUSIC}/${named}`))) return { file: named, base: 0.4 };
   const id = draft.id as string;
-  const theme = id === 'templo' ? 'temple' : id === 'aldeia' ? 'aldeia' : ['vau', 'bosque', 'cripta', 'vertente'].includes(id) ? 'early'
+  const theme = id.startsWith('cemiterio') ? 'cemetery' : id === 'templo' ? 'temple' : id === 'aldeia' ? 'aldeia' : ['vau', 'bosque', 'cripta', 'vertente'].includes(id) ? 'early'
     : id === 'estalagem' ? 'inn' : ['muralha', 'fortaleza'].includes(id) ? 'siege' : ['colina', 'passagem'].includes(id) ? 'hill'
     : id === 'portao' ? 'portao' : 'early';
   return { file: THEMES[theme][0], base: THEMES[theme][1], theme };

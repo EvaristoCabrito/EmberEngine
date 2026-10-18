@@ -1863,7 +1863,7 @@ class MapEditorStage : public Stage {
           if (ImGui::Selectable(f.c_str(), f == music)) beginEdit(), draft_["music"] = f, note(std::format("Trilha desta missão: {}.", f));
         ImGui::EndCombo();
       }
-      hint("Os arquivos de public/game/MUSIC, pelo nome. Toca durante o briefing, a batalha e as telas de fim.");
+      hint("Os arquivos de public/game/MUSIC e de content/music, pelo nome. Toca durante o briefing, a batalha e as telas de fim.");
     }
     textField("Objetivo", "objective");
     textField("Briefing", "briefing", true);

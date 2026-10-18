@@ -30,11 +30,16 @@ inline Stage::Music theme(const std::string& name) {
   if (name == "portao") return {"TempleEntrance-Balanced-High.mp3", 0.4f};
   if (name == "worldMap") return {"Tragic Arqui TruePersonaWorldMapEmber-Balanced-High.mp3", 0.4f};
   if (name == "battle") return {"music.mp3", 0.4f};
+  if (name == "cemetery") return {"Ember Ashes Ambient OST 0-Balanced-High.mp3", 0.4f};  // EmberEngine's own (content/music)
   return {"LANDR-Absolute Mental Descruction umn3 10 (3)-Balanced-High.mp3", 0.4f};  // "early"
 }
 
+// Every cemetery map (the user, 2026-10-18): its id starts with "cemiterio" (cemiterio-esquecidos, -cripta, -mausoleu, ...).
+inline bool isCemetery(const std::string& id) { return id.starts_with("cemiterio"); }
+
 // GameApp's chain for a mission id when its battle file carries no `music` (older exports).
 inline Stage::Music forMissionId(const std::string& id) {
+  if (isCemetery(id)) return theme("cemetery");
   if (id == "templo") return theme("temple");
   if (id == "aldeia") return theme("aldeia");
   if (id == "estalagem") return theme("inn");
@@ -44,6 +49,16 @@ inline Stage::Music forMissionId(const std::string& id) {
   return theme("early");
 }
 
+// A battle file's track: its `music` (export_battle.ts); a `theme` there means the map named none, so a cemetery map
+// gets the cemetery's (battle files exported before that theme existed carry "early"). A track the map names is kept.
+inline Stage::Music fromBattle(const nlohmann::json& j, Stage::Music fallback) {
+  if (!j.is_object()) return fallback;
+  const auto music = j.find("music");
+  if (music == j.end() || !music->is_object() || music->value("file", std::string()).empty()) return fallback;
+  if (music->contains("theme") && isCemetery(j.value("map", std::string()))) return theme("cemetery");
+  return {music->value("file", std::string()), music->value("base", 0.4f)};
+}
+
 // A mission's track (its briefing keeps it, as GameApp's inMission): the battle file's `music`, read once per file.
 inline Stage::Music forMission(const MissionEntry& m) {
   static std::map<std::filesystem::path, Stage::Music> known;
@@ -51,10 +66,7 @@ inline Stage::Music forMission(const MissionEntry& m) {
     if (const auto it = known.find(m.battle); it != known.end()) return it->second;
     std::ifstream in(m.battle, std::ios::binary);
     const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
-    Stage::Music out = forMissionId(m.draftId);
-    if (j.is_object() && j.contains("music") && j["music"].is_object() && !j["music"].value("file", std::string()).empty())
-      out = {j["music"].value("file", std::string()), j["music"].value("base", 0.4f)};
-    return known[m.battle] = out;
+    return known[m.battle] = fromBattle(j, forMissionId(m.draftId));
   }
   return forMissionId(m.draftId);
 }

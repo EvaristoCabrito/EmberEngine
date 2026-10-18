@@ -13,6 +13,8 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 const E2 = process.env.ENGINE2 ?? 'C:/Engine2';
+// EmberEngine's own tracks (content/music), listed beside Engine2's MUSIC_TRACKS.
+const OWN_MUSIC = readdirSync(`${dirname(fileURLToPath(import.meta.url))}/../../../content/music`).filter((f) => f.endsWith('.mp3'));
 const PUBLIC = `${E2}/public`;
 globalThis.fetch = (async (url: string) => {
   const text = readFileSync(`${PUBLIC}${url}`, 'utf8');
@@ -207,7 +209,7 @@ const editor = {
   timeOfDay: Object.fromEntries(Object.entries(battleLight.TIME_OF_DAY_LIGHT).map(([k, v]: [string, any]) => [k, { label: v.label, moon: v.moon, key: v.key, ambient: v.ambient }])),
   defaults: { sun: battleLight.DEFAULT_SUN_INTENSITY, ambient: battleLight.DEFAULT_AMBIENT_INTENSITY, bloom: battleLight.DEFAULT_BLOOM_INTENSITY },
   backgrounds: backgrounds.MAP_BACKGROUNDS.map((b: any) => ({ id: b.id, label: b.label, file: b.file })),
-  music: [...data.MUSIC_TRACKS].sort(byName),
+  music: [...data.MUSIC_TRACKS, ...OWN_MUSIC.filter((f) => !data.MUSIC_TRACKS.includes(f))].sort(byName),
   // the City brush: plains with the city layers (Stone paving = ENGINE2_V3_CITY_VARIANT, then photo-city / indoor wood)
   city: [{ variant: tv.ENGINE2_V3_CITY_VARIANT, label: 'Stone paving', thumb: thumbFor('plains', tv.ENGINE2_V3_CITY_VARIANT) },
     ...tv.GROUND_VARIANT_LAYERS.filter((e: any) => e.key === 'photo-city' || e.key === 'city-indoor-wood').map((e: any) => ({ variant: e.variant, label: e.label, thumb: thumbFor('plains', e.variant) }))],

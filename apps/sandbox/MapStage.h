@@ -70,6 +70,7 @@
 #include "QuestLog.h"
 #include "InventoryScreen.h"
 #include "EmberMenus.h"
+#include "GameMusic.h"
 #include "SpellsMenu.h"
 #include "media/AudioMixer.h"
 #include "render/SpellEffects.h"
@@ -6998,7 +6999,7 @@ class MapStage final : public Stage {
     if (const auto units = j.find("units"); units != j.end() && units->is_array())
       for (const e2::Json& u : *units) unitSounds_.push_back(u.value("sounds", e2::Json::object()));
     if (const auto sounds = j.find("sounds"); sounds != j.end() && sounds->is_object()) levelUpSound_ = sounds->value("levelUp", e2::Json::array());
-    if (const auto music = j.find("music"); music != j.end() && music->is_object()) music_ = {music->value("file", std::string()), music->value("base", 0.4f)};
+    music_ = music::fromBattle(j, music_);
   }
   const e2::Json& sounds(size_t battleUnit, const char* key) const {
     static const e2::Json none;
