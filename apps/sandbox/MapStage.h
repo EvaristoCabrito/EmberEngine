@@ -5054,12 +5054,12 @@ class MapStage final : public Stage {
     if (!statusSheet_.isOpen() || !battle_) return;
     BattleStatusSheet::Hooks hooks;
     // The close-up photos only on the status sheet (the user, 2026-10-18: "zoom só no status"); every other screen keeps the originals.
-    hooks.portraitWhole = [](const e2::BattleUnit& u) { return u.sprite == "neera"; };  // Neera's photo whole (the user, 2026-10-18)
+    hooks.portraitWhole = [](const e2::BattleUnit& u) { return u.side == "player"; };  // the party's 2:3 box (the user, 2026-10-18)
     hooks.portrait = [this](const e2::BattleUnit& u) -> const UiImage* {
       static const std::pair<const char*, const char*> kClose[] = {{"kaelFinal", "content/ui/portraits/kael-close-v01.jpg"},
                                                                    {"voss", "content/ui/portraits/voss-close-v01.jpg"},
-                                                                   {"aldric", "content/ui/portraits/aldric-close-v01.jpg"},
-                                                                   {"defaultLancer", "content/ui/portraits/aldric-close-v01.jpg"}};
+                                                                   {"aldric", "content/ui/portraits/aldric-close-v02.jpg"},
+                                                                   {"defaultLancer", "content/ui/portraits/aldric-close-v02.jpg"}};
       for (const auto& [sprite, file] : kClose)
         if (u.sprite == sprite && std::filesystem::exists(file))
           if (const UiImage* close = uiImage(file)) return close;
