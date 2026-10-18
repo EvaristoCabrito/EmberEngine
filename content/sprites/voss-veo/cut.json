@@ -10,7 +10,7 @@
   {"clip": "move", "pose": "walk", "kind": "walk", "src": "build/video-cut/voss-veo/walk-right", "video": "Attachments/VeoVoss/WalkRight/Voss_walking_to_the_right_20261017230249.mp4", "first": 40, "last": 130, "loopMin": 40, "loopMax": 86, "mode": "loop"},
   {"clip": "move-left", "pose": "walkLeft", "kind": "walk", "src": "build/video-cut/voss-veo/walk-left", "video": "Attachments/VeoVoss/Walk Left/Character_walking_left_with_staff_20261017230240.mp4", "first": 30, "last": 170, "loopMin": 40, "loopMax": 110, "mode": "loop"},
   {"clip": "cast", "pose": "cast", "kind": "stand", "src": "build/video-cut/voss-veo/cast", "video": "Attachments/VeoVoss/Casting/Voss_casting_purple_arcane_spell_20261017231306.mp4", "first": 8, "last": 120, "mode": "once"},
-  {"clip": "atk", "pose": "attack", "kind": "stand", "src": "build/video-cut/voss-veo/attack", "video": "Attachments/VeoVoss/CounterDistance/CounterDistanceat420sec.mp4", "first": 101, "last": 212, "impactFrame": 167, "mode": "once"},
-  {"clip": "counter-staff", "pose": "counterStaff", "label": "Contra-ataque (cajado)", "kind": "stand", "src": "build/video-cut/voss-veo/counter-staff", "video": "Attachments/VeoVoss/CounterStaff/CounterClseat4sec.mp4", "first": 96, "last": 220, "impactFrame": 160, "mode": "once"}
+  {"clip": "atk", "pose": "attack", "kind": "stand", "src": "build/video-cut/voss-veo/attack", "video": "Attachments/VeoVoss/CounterDistance/CounterDistanceat420sec.mp4", "first": 101, "last": 212, "impactFrame": 166, "mode": "once"},
+  {"clip": "counter-staff", "pose": "counterStaff", "label": "Contra-ataque (cajado)", "kind": "stand", "src": "build/video-cut/voss-veo/counter-staff", "video": "Attachments/VeoVoss/CounterStaff/CounterClseat4sec.mp4", "first": 96, "last": 220, "impactFrame": 162, "mode": "once"}
  ]
 }

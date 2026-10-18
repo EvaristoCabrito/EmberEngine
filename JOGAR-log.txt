@@ -17,30 +17,11 @@
 [info] inn: 134 weapons, 292 gear, 7 potions
 [info] sprites: roster lists 918 clips
 [info] sprites: full-clip pool 9 x 64 MB (largest clip 38.5 MB)
-[info] sight: Kael at (4, 25) sees 127 of the 146 hexes in range (19 hidden by ground or what stands on it)
-[info] sight: Neera at (3, 25) sees 117 of the 133 hexes in range (16 hidden by ground or what stands on it)
-[info] sight: Voss at (4, 26) sees 121 of the 131 hexes in range (10 hidden by ground or what stands on it)
-[info] sight: Salazar at (3, 26) sees 110 of the 118 hexes in range (8 hidden by ground or what stands on it)
-[info] sight: Aldric at (5, 26) sees 131 of the 142 hexes in range (11 hidden by ground or what stands on it)
-[info] sight: Malrec at (5, 25) sees 135 of the 155 hexes in range (20 hidden by ground or what stands on it)
-[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
-[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
-[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
-[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
-[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
-[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
-[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
-[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
-[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
-[ERROR] vulkan: (Warning - This VUID has now been reported 10 times, which is the duplicate_message_limit value, this will be the last time reporting it).
-vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
+[info] sight: Kael at (4, 25) sees 155 of the 195 hexes in range (40 hidden by ground or what stands on it)
+[info] sight: Neera at (3, 25) sees 145 of the 179 hexes in range (34 hidden by ground or what stands on it)
+[info] sight: Voss at (4, 26) sees 149 of the 176 hexes in range (27 hidden by ground or what stands on it)
+[info] sight: Salazar at (3, 26) sees 139 of the 161 hexes in range (22 hidden by ground or what stands on it)
+[info] sight: Aldric at (5, 26) sees 160 of the 191 hexes in range (31 hidden by ground or what stands on it)
+[info] sight: Malrec at (5, 25) sees 167 of the 210 hexes in range (43 hidden by ground or what stands on it)
+[info] explore: Trail Brigand in sight: the roaming ends, round 1 begins
+[info] inn: 134 weapons, 292 gear, 7 potions

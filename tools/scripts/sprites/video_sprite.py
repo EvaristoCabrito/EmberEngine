@@ -207,7 +207,7 @@ def main():
         info.update(frames=len(frames), frameMs=1000.0 / FPS, nat=nat,
                     crop=[int(bxs.min()), int(bys.min()), int(bxs.max() - bxs.min() + 1), int(bys.max() - bys.min() + 1)],
                     box={"w": round(nat[0] * units_px, 5), "h": round(nat[1] * units_px, 5),
-                         "foot": round((y1 - 1 - sole) * units_px, 5)},
+                         "foot": round(float(y1 - 1 - sole) * units_px, 5)},
                     pattern=os.path.relpath(os.path.join(out_dir, f"{c['clip']}-{{}}.png"), ROOT).replace("\\", "/"))
         if "impactFrame" in c:
             info["impact"] = round((c["impactFrame"] - c["first"]) / len(frames), 4)
