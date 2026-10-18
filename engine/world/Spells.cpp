@@ -112,12 +112,27 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"guardBreak", "Quebra-Guarda", 4, "", true}, "swordsman", 13},
     {{"warCry", "Grito de Guerra", 5, "", false}, "swordsman", 15},
     {{"leapingStrike", "Salto Devastador", 5, "", true}, "swordsman", 17},
+    // Arqueiro (docs/SKILLS_ARCHER.md, 2026-10-18): bow skills (the bow's own roll + bonus dice), the second of T1 / T3, two of T4 / T5
+    {{"venomArrow", "Flecha Envenenada", 1, "", true}, "archer", 2},
+    {{"arrowRain", "Chuva de Flechas", 3, "", true}, "archer", 7},
+    {{"explosiveArrow", "Flecha Explosiva", 4, "", true}, "archer", 10},
+    {{"cripplingShot", "Tiro Paralisante", 4, "", true}, "archer", 12},
+    {{"arrowStorm", "Tempestade de Flechas", 5, "", true}, "archer", 13},
+    {{"deathShot", "Tiro Mortal", 5, "", true}, "archer", 15},
 };
-// The base class a promotion keeps the skills of (the Guerreiro's go on into the Paladino and the Cavaleiro Pesado).
+// The base class a promotion keeps the skills of (the Guerreiro's go on into the Paladino and the Cavaleiro Pesado, the
+// Arqueiro's into the Patrulheiro and the Assassino).
 const char* emberClassFamily(const std::string& classId) {
   if (classId == "paladin" || classId == "heavyKnight") return "swordsman";
+  if (classId == "ranger" || classId == "assassin") return "archer";
   return classId.c_str();
 }
+// The Arqueiro's shots aimed at one foe within the bow's reach (+ the skill's extra hexes), with a clear line of fire.
+bool archerShot(const std::string& kind) {
+  return kind == "venomArrow" || kind == "explosiveArrow" || kind == "cripplingShot" || kind == "deathShot";
+}
+// ... and its volleys over an area (no line of fire: the arrows come down from above).
+bool archerVolley(const std::string& kind) { return kind == "arrowRain" || kind == "arrowStorm"; }
 const EmberSpell* emberSpell(const std::string& kind) {
   for (const EmberSpell& s : kEmberSpells)
     if (kind == s.data.kind) return &s;
@@ -358,6 +373,38 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
     n.mul = lv >= 29 ? 2.0 : lv >= 23 ? 1.75 : 1.5;
     n.dice = 2, n.faces = lv >= 25 ? 8 : 6;
     n.pct = lv >= 25 ? 50 : 0;  // the shockwave on the landing's other neighbours: this share of a weapon roll
+  }
+  // Arqueiro (docs/SKILLS_ARCHER.md): mul = the weight on the bow's roll, dice = the bonus; length = hexes past the bow's reach
+  else if (kind == "venomArrow") {
+    n.mul = 1;
+    if (lv >= 26) n.dice = 2, n.faces = 8;
+    else if (lv >= 20) n.dice = 2, n.faces = 6;
+    else if (lv >= 14) n.dice = 1, n.faces = 8;
+    else if (lv >= 8) n.dice = 1, n.faces = 6;
+    else n.dice = 1, n.faces = 4;
+    n.tier = lv >= 21 ? "deadly" : lv >= 13 ? "greater" : lv >= 7 ? "poison" : "lesser";
+  } else if (kind == "arrowRain") {
+    n.range = 6, n.radius = lv >= 16 ? 2 : 1;
+    n.mul = lv >= 20 ? 0.9 : 0.75;
+    n.dice = lv >= 13 ? 2 : 1, n.faces = lv >= 25 ? 6 : 4;
+  } else if (kind == "explosiveArrow") {
+    n.mul = lv >= 26 ? 1.8 : lv >= 14 ? 1.5 : 1.3;
+    n.dice = lv >= 30 ? 4 : lv >= 18 ? 3 : 2, n.faces = 6;
+    n.pct = lv >= 22 ? 70 : 50;  // the neighbours' share
+  } else if (kind == "cripplingShot") {
+    n.mul = 1;
+    n.dice = lv >= 16 ? 2 : 1, n.faces = lv >= 24 ? 8 : lv >= 16 ? 6 : 8;
+    n.pct = lv >= 27 ? 75 : lv >= 18 ? 60 : 50;  // MOV off
+    n.turns = lv >= 22 ? 3 : 2;
+  } else if (kind == "arrowStorm") {
+    n.range = 7, n.radius = lv >= 25 ? 3 : 2;
+    n.mul = lv >= 28 ? 1.3 : lv >= 20 ? 1.1 : 0.9;
+    n.dice = lv >= 23 ? 2 : 1, n.faces = 6;
+  } else if (kind == "deathShot") {
+    n.length = 2;
+    n.mul = lv >= 29 ? 2.6 : lv >= 21 ? 2.3 : 2.0;
+    n.dice = lv >= 24 ? 3 : 2, n.faces = 8;
+    n.pct = lv >= 26 ? 30 : 25;  // a foe left under this share of its HP dies
   }
   // Elementalista
   else if (kind == "pillarOfFlame") {
@@ -929,6 +976,16 @@ void applyDecay(BattleUnit& u) {
   u.atk = r(u.decayBase->atk), u.mag = r(u.decayBase->mag), u.def = r(u.decayBase->def), u.dex = r(u.decayBase->dex);
   u.mov = std::max(1, r(u.decayBase->mov));
 }
+// Tiro Paralisante (the Arqueiro's): MOV at hobblePct % off what it was, given back when the condition lifts.
+void applyHobble(BattleUnit& u) {
+  if (!u.hobbleBase) u.hobbleBase = u.mov;
+  u.mov = std::max(1, static_cast<int>(jsRound(*u.hobbleBase * (1 - u.cond.hobblePct / 100.0))));
+}
+void liftHobble(BattleUnit& u) {
+  if (u.hobbleBase) u.mov = *u.hobbleBase;
+  u.hobbleBase.reset();
+  u.cond.hobblePct = u.cond.hobbleTurns = 0;
+}
 void liftDecay(BattleUnit& u) {
   if (u.decayBase) u.atk = u.decayBase->atk, u.mag = u.decayBase->mag, u.def = u.decayBase->def, u.dex = u.decayBase->dex, u.mov = u.decayBase->mov;
   u.decayBase.reset();
@@ -1257,6 +1314,44 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
         if (id != static_cast<size_t>(foe)) w.ids.push_back(id), w.perTargetMul.push_back(n.pct / 100.0);
       if (!w.ids.empty()) steps.push_back(w);
     }
+  } else if (archerShot(kind)) {
+    // One arrow at a foe within the bow's reach (+ the skill's extra hexes), a clear line of fire; the bow's own roll.
+    const int foe = occAt(b, cell);
+    if (foe < 0 || !targetable(b, foe)) return fail("Escolha um inimigo visível.");
+    const int d = hexDist(from, cell);
+    if (d < u.minRange) return fail(std::format("Alvo perto demais (alcance mínimo {} hexes).", u.minRange));
+    if (d > u.maxRange + n.length) return fail(std::format("Alvo fora de alcance (máximo {} hexes).", u.maxRange + n.length));
+    if (!clearShot(b, from, cell, true)) return fail("O tiro está bloqueado.");
+    s.dice = 0, s.spellMul = 1;
+    s.tiles = {cell}, s.ids = {static_cast<size_t>(foe)};
+    s.dmgMul = n.mul;
+    s.weaponBonusDice = n.dice, s.weaponBonusFaces = n.faces, s.weaponBonusBonus = 0;
+    if (kind == "venomArrow") s.poisonTier = n.tier;
+    else if (kind == "cripplingShot") s.hobblePct = n.pct, s.hobbleTurns = n.turns;
+    else if (kind == "deathShot") s.execPct = n.pct;
+    else if (kind == "explosiveArrow") {  // the burst: the foes on the neighbouring hexes take a share of their own roll
+      s.perTargetMul = {1.0};
+      for (const BattleHex& h : Battle::neighbors(cell.x, cell.y)) {
+        if (!b.inBounds(h.x, h.y)) continue;
+        s.tiles.push_back(h);
+        for (size_t id : unitsOn(b, caster, {h}, false))
+          if (id != static_cast<size_t>(foe) && std::find(s.ids.begin(), s.ids.end(), id) == s.ids.end()) s.ids.push_back(id), s.perTargetMul.push_back(n.pct / 100.0);
+      }
+    }
+    spend();
+    steps.push_back(s);
+  } else if (archerVolley(kind)) {
+    // Arrows from above over an area round the aimed hex: every foe in it takes a share of the bow's roll (+ the dice).
+    if (hexDist(from, cell) > n.range) return fail(std::format("Alvo fora de alcance (máximo {} hexes).", n.range));
+    if (b.cell(cell.x, cell.y).terrain == "void") return fail("Não há chão nessa casa.");
+    const std::vector<BattleHex> area = hexesWithin(b, cell, n.radius);
+    s.dice = 0, s.spellMul = 1;
+    s.tiles = area;
+    s.ids = unitsOn(b, caster, area, false);
+    s.dmgMul = n.mul;
+    s.weaponBonusDice = n.dice, s.weaponBonusFaces = n.faces, s.weaponBonusBonus = 0;
+    spend();
+    steps.push_back(s);
   } else {
     return fail("Esta habilidade ainda não existe aqui.");
   }
@@ -1321,6 +1416,9 @@ std::string promotionName(const std::string& classId) {
   if (classId == "swordsman") return "Guerreiro";
   if (classId == "paladin") return "Paladino";
   if (classId == "heavyKnight") return "Cavaleiro Pesado";
+  if (classId == "archer") return "Arqueira";  // Neera, the only one
+  if (classId == "ranger") return "Patrulheira";
+  if (classId == "assassin") return "Assassina";
   return classId;
 }
 void setPromotion(BattleUnit& u, const std::string& classId) {
@@ -1340,6 +1438,7 @@ std::string conditionsText(const BattleUnit& u) {
   if (u.cond.decayTurns > 0) add(std::format("Decadência -{}% ({})", u.cond.decayPct, u.cond.decayTurns));
   if (u.cond.sunderPct > 0) add(std::format("{} -{}% DEF ({})", pick("Guarda quebrada", "Guard broken"), u.cond.sunderPct, u.cond.sunderTurns + 1));
   if (u.cond.rallyPct > 0) add(std::format("{} +{}% ATK ({})", pick("Grito de Guerra", "War Cry"), u.cond.rallyPct, u.cond.rallyTurns + 1));
+  if (u.cond.hobblePct > 0) add(std::format("{} -{}% MOV ({})", pick("Paralisado", "Crippled"), u.cond.hobblePct, u.cond.hobbleTurns + 1));
   if (u.diseased) add("Doente");
   // Engine2's statuses
   if (u.stunned) add(std::string(pick("Atordoado", "Stunned")) + std::format(" ({})", u.stunTurns));
@@ -1369,6 +1468,14 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind) {
   if (kind == "leapingStrike")
     return s + std::format("\nsalta até {} hexes para junto do inimigo · ×{:g} da arma + {}D{} · sem contra-ataque{}", n.range, n.mul, n.dice, n.faces,
                            n.pct > 0 ? std::format(" · onda de choque: os outros inimigos vizinhos do pouso levam {}%", n.pct) : "");
+  // The Arqueiro's (the bow's own roll, hit chance and mastery, plus the dice)
+  if (archerShot(kind)) s += std::format(" · alcance do arco{}", n.length > 0 ? std::format(" + {}", n.length) : "");
+  if (kind == "venomArrow") return s + std::format("\ntiro de arco + {}D{} · {}", n.dice, n.faces, poisonTier(n.tier)->name);
+  if (kind == "arrowRain") return s + std::format("\nalcance {} · raio {} · ×{:g} do arco + {}D{} em cada inimigo · sem linha de tiro", n.range, n.radius, n.mul, n.dice, n.faces);
+  if (kind == "explosiveArrow") return s + std::format("\n×{:g} do arco + {}D{} · os inimigos vizinhos do alvo levam {}%", n.mul, n.dice, n.faces, n.pct);
+  if (kind == "cripplingShot") return s + std::format("\ntiro de arco + {}D{} · Paralisado: -{}% MOV por {} turnos", n.dice, n.faces, n.pct, n.turns);
+  if (kind == "arrowStorm") return s + std::format("\nalcance {} · raio {} · ×{:g} do arco + {}D{} em cada inimigo · sem linha de tiro", n.range, n.radius, n.mul, n.dice, n.faces);
+  if (kind == "deathShot") return s + std::format("\n×{:g} do arco + {}D{} · abaixo de {}% do HP, morre", n.mul, n.dice, n.faces, n.pct);
   if (kind == "markOfRuin") s += std::format("\n{} · o alvo recebe +{}% de dano por {} turnos", dmg(n.mul, n.dice, n.faces), n.pct, n.turns);
   else if (kind == "creepingPlague") s += std::format("\n{} · {} que passa a {} vizinho{} por turno", dmg(n.mul, n.dice, n.faces), poisonTier(n.tier)->name, n.spread, n.spread > 1 ? "s" : "");
   else if (kind == "lifeDrain") s += std::format("\n{} · cura {}% do dano causado", dmg(n.mul, n.dice, n.faces), n.pct);
@@ -1422,6 +1529,8 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"eruption", "Eruption"}, {"glacialGale", "Glacial Gale"}, {"wrathOfTheSkies", "Wrath of the Skies"},
     {"primordialEmber", "Primordial Ember"},
     {"steelWhirlwind", "Steel Whirlwind"}, {"guardBreak", "Guard Break"}, {"warCry", "War Cry"}, {"leapingStrike", "Devastating Leap"},
+    {"venomArrow", "Venom Arrow"}, {"arrowRain", "Arrow Rain"}, {"explosiveArrow", "Explosive Arrow"}, {"cripplingShot", "Crippling Shot"},
+    {"arrowStorm", "Arrow Storm"}, {"deathShot", "Death Shot"},
 };
 }  // namespace
 
@@ -1571,7 +1680,8 @@ std::string spellPose(const std::string& kind) {
   if (kind == "cureMinor" || kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "bless") return "heal";
   if (kind == "longShot" || kind == "bloodyShot" || kind == "multiShot" || kind == "piercing" || kind == "doubleStrike" || kind == "piercingThrust" ||
       kind == "cleave" || kind == "sweep" || kind == "trip" || kind == "bullRush" || kind == "executionerStrike" || kind == "shieldBash" ||
-      kind == "shoulderSmash" || kind == "stampede" || kind == "steelWhirlwind" || kind == "guardBreak" || kind == "warCry" || kind == "leapingStrike")
+      kind == "shoulderSmash" || kind == "stampede" || kind == "steelWhirlwind" || kind == "guardBreak" || kind == "warCry" || kind == "leapingStrike" ||
+      archerShot(kind) || archerVolley(kind))
     return "attack";
   return "cast";
 }
@@ -1614,6 +1724,8 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   else if (kind == "guardBreak") minRange = u.minRange, maxRange = u.maxRange, shot = u.maxRange > 1, arrow = true;  // the weapon's reach
   else if (kind == "steelWhirlwind") maxRange = 1;
   else if (kind == "leapingStrike") maxRange = -1;  // wherever a landing exists
+  else if (archerShot(kind)) minRange = u.minRange, maxRange = u.maxRange + emberNumbers(kind, u.level).length, shot = true, arrow = true;
+  else if (archerVolley(kind)) maxRange = emberNumbers(kind, u.level).range;  // from above: no line of fire
   else if (kind == "fireball") maxRange = kFireballRange, shot = true;
   else if (kind == "causticVenom") maxRange = kCausticVenom.range, shot = true;
   else if (kind == "minorVenom") maxRange = kMinorVenom.range, shot = true;
@@ -1715,6 +1827,23 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
       if (!targetable(b, here)) return fail(here < 0 ? "Não há unidade na casa selecionada." : "Escolha um inimigo visível.");
       return canHitFrom(b, caster, from, static_cast<size_t>(here)) ? true : fail("Esse inimigo não está ao alcance da arma.");
     }
+    // The Arqueiro's skills
+    if (archerShot(kind)) {
+      if (!targetable(b, here)) return fail(here < 0 ? "Não há unidade na casa selecionada." : "Escolha um inimigo visível.");
+      if (d < u.minRange) return fail("Alvo perto demais.");
+      if (d > u.maxRange + n.length) {
+        if (error) *error = std::format("Alvo fora de alcance (máximo {} hexes).", u.maxRange + n.length);
+        return false;
+      }
+      return clearShot(b, from, cell, true) ? true : fail("O tiro está bloqueado.");
+    }
+    if (archerVolley(kind)) {
+      if (d > n.range) {
+        if (error) *error = std::format("Alvo fora de alcance (máximo {} hexes).", n.range);
+        return false;
+      }
+      return b.cell(cell.x, cell.y).terrain == "void" ? fail("Não há chão nessa casa.") : true;
+    }
     if (kind == "leapingStrike") {
       if (!targetable(b, here)) return fail(here < 0 ? "Não há unidade na casa selecionada." : "Escolha um inimigo visível.");
       if (d > n.range + 1) {
@@ -1761,6 +1890,8 @@ std::vector<BattleHex> spellArea(const Battle& b, size_t caster, const std::stri
       return ring;
     }
     if (kind == "warCry") return hexesWithin(b, {u.x, u.y}, n.radius);
+    if (archerVolley(kind)) return hexesWithin(b, cell, n.radius);
+    if (kind == "explosiveArrow") return hexesWithin(b, cell, 1);
     if (kind == "leapingStrike") {  // the foe's hex and where the caster lands
       std::vector<BattleHex> out{cell};
       if (const int foe = occAt(b, cell); foe >= 0)
@@ -2450,7 +2581,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
       continue;
     }
     if (step.kind == "fantomForce") dmg = std::max(1, static_cast<int>(std::floor(dmg * kFantomForceMul)));
-    if (step.dmgMul > 1) dmg = std::max(1, static_cast<int>(std::floor(dmg * step.dmgMul)));
+    if (step.dmgMul != 1 && step.dmgMul > 0) dmg = std::max(1, static_cast<int>(std::floor(dmg * step.dmgMul)));  // ours go under 1 too (the volleys)
     if (step.kind == "cleave" && occupiedHexCount(foe) >= kCleaveLargeHexes) dmg = std::max(1, static_cast<int>(std::floor(dmg * kCleaveLargeMul)));
     if (foe.asleep) {  // a hit on a sleeper hurts 25% more and wakes it
       dmg = std::max(1, static_cast<int>(std::floor(dmg * (1 + kWebSleepBonusDamage))));
@@ -2584,6 +2715,11 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
           break;
         }
       out.push_back(statusEffect(id, "Silenciado"));
+    }
+    if (step.hobblePct > 0) {  // Tiro Paralisante: MOV down for some of its turns
+      foe.cond.hobblePct = std::max(foe.cond.hobblePct, step.hobblePct), foe.cond.hobbleTurns = std::max(foe.cond.hobbleTurns, step.hobbleTurns);
+      applyHobble(foe);
+      out.push_back(statusEffect(id, std::format("{} -{}% MOV", pick("Paralisado", "Crippled"), foe.cond.hobblePct)));
     }
     if (step.decayTurns > 0) {
       foe.cond.decayTurns = std::max(foe.cond.decayTurns, step.decayTurns);
@@ -2741,6 +2877,10 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
   if (u.cond.rallyPct > 0) {
     if (u.cond.rallyTurns > 0) --u.cond.rallyTurns;
     else u.cond.rallyPct = 0;
+  }
+  if (u.cond.hobblePct > 0) {
+    if (u.cond.hobbleTurns > 0) --u.cond.hobbleTurns;
+    else liftHobble(u);
   }
 }
 

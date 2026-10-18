@@ -27,6 +27,9 @@ class FieldSpells {
   static constexpr int kWarpUnlockLevel = 7;  // WARP.unlockLevel
   static constexpr int kWarpTier = 3;
   static constexpr int kFoodTier = 4;
+  // Caçada (ours, docs/SKILLS_ARCHER.md): an archer's tier 2 from level 4: game hunted on the world map = rations.
+  static constexpr int kHuntUnlockLevel = 4;
+  static constexpr int kHuntTier = 2;
 
   FieldSpells(const InnData& inn, const Overworld& world) : inn_(inn), world_(world) {}
 
@@ -49,6 +52,12 @@ class FieldSpells {
   bool canFeed(const Json& save, const std::string& hero) const;
 
   std::optional<Json> castFood(const Json& save, const std::string& hero, const std::function<double()>& rng) const;
+  // Caçada: who can hunt (archers from level 4, standing), the rations it brings at a level ("1D4+1 rações"), the cast.
+  static FoodPower huntPower(int level);
+  static std::string huntFormula(int level, bool english = false);
+  std::vector<std::string> hunters(const Json& save, bool test) const;
+  bool canHunt(const Json& save, const std::string& hero) const { return usesLeft(save, hero, kHuntTier) > 0; }
+  std::optional<Json> castHunt(const Json& save, const std::string& hero, const std::function<double()>& rng, int* rations = nullptr) const;
   std::optional<Json> castWarp(const Json& save, const std::string& hero, const std::string& cityId) const;
 
  private:

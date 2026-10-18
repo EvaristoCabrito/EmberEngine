@@ -84,7 +84,9 @@ int SpellEffects::looks(const std::string& kind) {
                                  "curseOfDecay", "soulHarvest",    "devouringVoid", "pillarOfFlame",  "iceLance",       "thunderstorm",    "meteor",
                                  "absoluteZero", "chainLightning", "eruption",      "glacialGale",     "wrathOfTheSkies", "primordialEmber",
                                  // the Guerreiro's (vfx/WarriorFx, ours, 3D)
-                                 "steelWhirlwind", "guardBreak", "warCry", "leapingStrike"};
+                                 "steelWhirlwind", "guardBreak", "warCry", "leapingStrike",
+                                 // the Arqueiro's (vfx/RangerFx, ours, 3D)
+                                 "venomArrow", "arrowRain", "explosiveArrow", "cripplingShot", "arrowStorm", "deathShot"};
   for (const char* k : kEmber)
     if (kind == k) return 1;
   return 0;
@@ -244,6 +246,26 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
       for (const Spot& s : targets) radius = std::max(radius, glm::length(glm::vec2(s.feet.x - caster.feet.x, s.feet.z - caster.feet.z)));
       warrior_.warCry(caster.feet, caster.cardHeight, hit, radius + 1.2f, impact);
     }
+    return true;
+  }
+  // The Arqueiro's skills (RangerFx, ours, 3D): one arrow at the struck foe (the first target; the burst's neighbours follow it),
+  // or a volley over every hex of the area (the bodies in it flash).
+  if (kind == "venomArrow" || kind == "explosiveArrow" || kind == "cripplingShot" || kind == "deathShot") {
+    const RangerFx::Shot style = kind == "venomArrow" ? RangerFx::Shot::Venom : kind == "explosiveArrow" ? RangerFx::Shot::Explosive
+                                 : kind == "cripplingShot" ? RangerFx::Shot::Crippling : RangerFx::Shot::Death;
+    const Spot& foe = targets.front();
+    const float release = std::max(start, impact - RangerFx::flightSeconds(caster.feet, foe.feet));
+    ranger_.shot(style, caster.feet, caster.cardHeight, {foe.feet, foe.cardHeight}, release, impact);
+    return true;
+  }
+  if (kind == "arrowRain" || kind == "arrowStorm") {
+    std::vector<glm::vec3> hexes;
+    std::vector<RangerFx::Target> foes;
+    for (const Spot& s : targets) {
+      hexes.push_back(s.feet);
+      if (s.cardHeight > 0.0f) foes.push_back({s.feet, s.cardHeight});
+    }
+    ranger_.volley(caster.feet, hexes, foes, start, impact, kind == "arrowStorm");
     return true;
   }
   if (isBolt(kind, look)) {
@@ -583,7 +605,7 @@ void SpellEffects::warCryFear(const std::vector<Spot>& foes, float impact) {
 }
 
 bool SpellEffects::active(float now) const {
-  if (combat_.active(now) || warrior_.active(now)) return true;
+  if (combat_.active(now) || warrior_.active(now) || ranger_.active(now)) return true;
   if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
   if (std::any_of(fireballs_.begin(), fireballs_.end(), [&](const Fireball& f) { return !f.done(now); })) return true;
   if (std::any_of(blesses_.begin(), blesses_.end(), [&](const Bless& b) { return !b.done(now); })) return true;
@@ -647,6 +669,7 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   }
   combat_.build(now, camera, vfx_, vfxLights);
   warrior_.build(now, camera, vfx_, vfxLights);
+  ranger_.build(now, camera, vfx_, vfxLights);
   for (const VfxLight& l : vfxLights)
     if (l.intensity > 0.0f) lights.push_back({l.at, {l.color.r, l.color.g, l.color.b}, l.intensity, l.distance, std::max(l.at.y, 1.0f)});
   const size_t first = out.size();

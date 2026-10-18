@@ -562,6 +562,21 @@ level scaling, and 3D FX", "faz as quatro como propostas"; icons in `Attachments
   Move step; the Grito's / Redemoinho's unit spots; the Salto's shockwave step lands at once with no pose).
 - Icons: the user's art copied to `content/ui/spells/<kind>.jpg` (`spellIconOf` finds them). Tests: `--promote Kael=swordsman:25`,
   `--fx-test <kind>`, `--battle-script "near:Piqueiro:Kael; cast:Kael:guardBreak:Piqueiro"` (scratchpad `run_warrior.ps1`).
+- **Committed through a temporary index + a clean worktree build** (`ed78ce7`, rebased on the other session's commits); the user then
+  asked for the Arqueiro's (below) in the same turn.
+
+## Habilidades do Arqueiro T1-T5 + Caçada (2026-10-18; the user: "as habilidades que estão faltando para arqueiro até o T5, duas de
+cada tier no mínimo e uma habilidade de campo para usar no world map")
+
+- **Read `docs/SKILLS_ARCHER.md`.** Flecha Envenenada (T1, 2: bow roll + dice, Engine2's poison by tier), Chuva de Flechas (T3, 7: a
+  volley over a hex's area, no line of fire), Flecha Explosiva (T4, 10: x mul + dice, the target's neighbours take a share), Tiro
+  Paralisante (T4, 12: "Paralisado" -MOV% for N turns, `applyHobble` / `hobbleBase`), Tempestade de Flechas (T5, 13: a bigger volley),
+  Tiro Mortal (T5, 15: x mul + dice, a foe under a share of its HP dies); Caçada (field, T2 from 4: rations on the world map,
+  `FieldSpells::castHunt`, a row in OverworldStage's field-spells menu). Bow skills on the bow's own roll (`dmgMul` now also under 1).
+  Learned for `archer` and its promotions (ranger, assassin). Effects: `render/vfx/RangerFx.*` (a real lit arrow on an arc, trails and
+  impacts per skill, volleys falling from the sky); MapStage `archerKind` gives every struck body CombatFx's arrow hit.
+- No icons yet (initials on wood); `--promote Neera=archer:25`; the `cast` script step stands the target beside the caster, inside the
+  bow's minimum range: test the shots with `goto` + `spell` + `click` + `confirm`, the volleys with `cast`.
 
 ## Promoções do Mago Negro: Bruxo e Elementalista, magias T6–T10 (2026-10-17; the user: "pode criar todas elas os
 efeitos e wire into the game")

@@ -3772,7 +3772,8 @@ class MapStage final : public Stage {
                                    "doubleStrike",   "markOfRuin",    "creepingPlague", "lifeDrain",      "shroudOfShadows", "hemorrhage", "profaneSilence",
                                    "blackPestilence", "curseOfDecay", "soulHarvest",    "devouringVoid",  "pillarOfFlame", "iceLance",    "thunderstorm",
                                    "meteor",         "absoluteZero",  "chainLightning", "eruption",       "glacialGale",   "wrathOfTheSkies", "primordialEmber",
-                                   "steelWhirlwind", "guardBreak",    "warCry",         "leapingStrike"};
+                                   "steelWhirlwind", "guardBreak",    "warCry",         "leapingStrike",
+                                   "venomArrow",     "arrowRain",     "explosiveArrow", "cripplingShot",  "arrowStorm",    "deathShot"};
     // KIND or KIND:VERSION (the version number of the Magias menu; default the menu's choice, at least 01).
     std::string kind = options_.fxTest;
     int look = 0;
@@ -4257,6 +4258,14 @@ class MapStage final : public Stage {
         logInfo("battle script: {} missed", kind);
         return "";
       }
+      // The Arqueiro's: the bow may miss; the riders when it lands.
+      if (kind == "venomArrow") return t.poisoned || !t.alive ? "" : t.hp < before.hp ? "hurt but not poisoned" : (logInfo("battle script: {} missed", kind), std::string());
+      if (kind == "cripplingShot") return t.cond.hobblePct > 0 || !t.alive ? "" : t.hp < before.hp ? "hurt but not hobbled" : (logInfo("battle script: {} missed", kind), std::string());
+      if (kind == "arrowRain" || kind == "explosiveArrow" || kind == "arrowStorm" || kind == "deathShot") {
+        if (t.hp < before.hp || !t.alive) return "";
+        logInfo("battle script: {} missed", kind);
+        return "";
+      }
       if (kind == "createFoodAndWater") {
         for (const auto& [i, full] : fedBefore) {
           const e2::BattleUnit& v = battle_->units()[i];
@@ -4371,6 +4380,10 @@ class MapStage final : public Stage {
   static bool weaponStrikeKind(const std::string& kind) {
     return kind == "doubleStrike" || kind == "longShot" || kind == "piercing" || kind == "piercingThrust";
   }
+  // The Arqueiro's skills (ours, docs/SKILLS_ARCHER.md): arrows (RangerFx), the arrow's hit on each struck body.
+  static bool archerKind(const std::string& kind) {
+    return kind == "venomArrow" || kind == "arrowRain" || kind == "explosiveArrow" || kind == "cripplingShot" || kind == "arrowStorm" || kind == "deathShot";
+  }
   // The effect version a scene unit's spell plays (the Magias menu: heroes and enemies choose apart).
   int spellLook(const std::string& kind, size_t ui) const { return spellsMenu_.look(kind, scene_->units[ui].side != "player"); }
 
@@ -4453,7 +4466,8 @@ class MapStage final : public Stage {
       // a blade skill: the physical impact (heavy on a critical, a kill or a third of the body's life); the Arcano bolt:
       // the magical one (its energy comes apart on a miss). Spells bring their own burst; every blow that hurts knocks
       // the card back.
-      const bool magic = s.type == e2::BattleStep::Type::Spell && s.kind != "longShot" && s.kind != "piercing" && s.kind != "piercingThrust";
+      const bool bowSkill = archerKind(s.kind);  // the Arqueiro's (ours): arrows, so the arrow's hit lands on each struck body
+      const bool magic = s.type == e2::BattleStep::Type::Spell && s.kind != "longShot" && s.kind != "piercing" && s.kind != "piercingThrust" && !bowSkill;
       const int striker = sceneUnitOf(static_cast<int>(x.counter ? s.def : s.att));
       for (const e2::BattleEffect& e : fx) {
         const int ui = sceneUnitOf(static_cast<int>(e.unit));
@@ -4466,7 +4480,7 @@ class MapStage final : public Stage {
         if (x.bolt) {
           spellFx_.combat().impact(e.miss ? CombatFx::Kind::MagicalMiss : CombatFx::Kind::Magical, struck.feet, cardHeightOf(struck), from, now_,
                                    CombatPalette::of(x.element.c_str()));
-        } else if (x.arrow && !e.miss) {
+        } else if ((x.arrow || bowSkill) && !e.miss) {
           spellFx_.combat().impact(heavy ? CombatFx::Kind::HeavyArrowHit : CombatFx::Kind::ArrowHit, struck.feet, cardHeightOf(struck), from, now_);
         } else if (!magic && !e.miss && striker >= 0) {
           // By the striker's weapon: a blade cuts, a spear stabs, a blunt weapon (or a beast's weight) knocks.
@@ -4851,8 +4865,12 @@ class MapStage final : public Stage {
   // GameApp slotIcon / data.ts spellIcon. EmberEngine's own spells (the Mago Negro's promotions) take the user's art,
   // content/ui/spells/<kind>.jpg (portrait, drawn centre-cropped), before any Engine2 icon of the same kind.
   const UiImage* spellIconOf(const std::string& kind) const {
-    if (!e2::emberSpellClass(kind).empty())
-      if (const UiImage* own = uiImage(std::filesystem::path("content/ui/spells") / (kind + ".jpg"))) return own;
+    if (!e2::emberSpellClass(kind).empty()) {  // ours: the user's art when there is one (none yet for the Arqueiro: the initials)
+      const std::filesystem::path own = std::filesystem::path("content/ui/spells") / (kind + ".jpg");
+      std::error_code ec;
+      if (std::filesystem::exists(own, ec))
+        if (const UiImage* icon = uiImage(own)) return icon;
+    }
     if (const std::optional<std::string> potion = potionOf(kind)) return uiImage(options_.engine2Public / "game/icons" / ("potion-" + *potion + ".png"));
     static const std::pair<const char*, const char*> kIcons[] = {
         {"doubleStrike", "refresh-001/spells/cleave-crossed-blades.png"}, {"cleave", "refresh-001/spells/cleave.png"},
@@ -4941,14 +4959,18 @@ class MapStage final : public Stage {
       // Ours have no Engine2 icon yet: the element's colour behind the spell's initials.
       static const std::pair<const char*, ImU32> kElementColors[] = {{"darkness", IM_COL32(92, 48, 150, 255)}, {"poison", IM_COL32(60, 130, 40, 255)},
                                                                      {"fire", IM_COL32(170, 70, 20, 255)},     {"ice", IM_COL32(60, 120, 170, 255)},
-                                                                     {"lightning", IM_COL32(90, 110, 180, 255)}, {"ember", IM_COL32(190, 90, 25, 255)}};
+                                                                     {"lightning", IM_COL32(90, 110, 180, 255)}, {"ember", IM_COL32(190, 90, 25, 255)},
+                                                                     {"steel", IM_COL32(95, 105, 120, 255)},    {"wood", IM_COL32(110, 85, 50, 255)}};
       ImU32 back = IM_COL32(60, 60, 60, 255);
       const std::string name = e2::spellName(kind);
       static const std::map<std::string, const char*> kElementOf = {
           {"markOfRuin", "darkness"},  {"creepingPlague", "poison"}, {"lifeDrain", "darkness"}, {"shroudOfShadows", "darkness"}, {"hemorrhage", "darkness"},
           {"profaneSilence", "darkness"}, {"blackPestilence", "poison"}, {"curseOfDecay", "darkness"}, {"soulHarvest", "darkness"}, {"devouringVoid", "darkness"},
           {"pillarOfFlame", "fire"},   {"iceLance", "ice"},          {"thunderstorm", "lightning"}, {"meteor", "fire"}, {"absoluteZero", "ice"},
-          {"chainLightning", "lightning"}, {"eruption", "fire"},     {"glacialGale", "ice"},    {"wrathOfTheSkies", "lightning"}, {"primordialEmber", "ember"}};
+          {"chainLightning", "lightning"}, {"eruption", "fire"},     {"glacialGale", "ice"},    {"wrathOfTheSkies", "lightning"}, {"primordialEmber", "ember"},
+          // the Guerreiro's and the Arqueiro's (no icon yet: steel / wood)
+          {"steelWhirlwind", "steel"}, {"guardBreak", "steel"}, {"warCry", "steel"}, {"leapingStrike", "steel"},
+          {"venomArrow", "wood"}, {"arrowRain", "wood"}, {"explosiveArrow", "wood"}, {"cripplingShot", "wood"}, {"arrowStorm", "wood"}, {"deathShot", "wood"}};
       if (const auto it = kElementOf.find(kind); it != kElementOf.end())
         for (const auto& [el, c] : kElementColors)
           if (std::string(el) == it->second) back = c;

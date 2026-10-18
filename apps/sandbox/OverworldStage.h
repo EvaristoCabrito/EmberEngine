@@ -1235,7 +1235,7 @@ class OverworldStage : public Stage {
     }
     const bool en = uiEnglish();
     const e2::FieldSpells spells(innData_, world_);
-    const std::vector<std::string> healers = spells.healers(save_, test()), mages = spells.mages(save_, test());
+    const std::vector<std::string> healers = spells.healers(save_, test()), mages = spells.mages(save_, test()), hunters = spells.hunters(save_, test());
     const std::vector<const e2::MapLocation*> cities = spells.warpCities(save_);
     beginPanel("##fieldspells", size, 360, size.y * 0.8f);
     const ImVec2 head = ImGui::GetCursorScreenPos();
@@ -1270,6 +1270,33 @@ class OverworldStage : public Stage {
       ImGui::SetCursorScreenPos({a.x, a.y + 62});
       ImGui::Dummy({inner, 4});
     }
+    // Caçada (ours, docs/SKILLS_ARCHER.md): the archer hunts: rations for the party, a tier-2 use
+    for (const std::string& hero : hunters) {
+      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kHuntTier);
+      const ImVec2 a = ImGui::GetCursorScreenPos();
+      dl->AddText(ui, 15.0f, {a.x, a.y}, kFg, tr("Caçada", "Hunt").c_str());
+      dl->AddText(ui, 12.0f, {a.x, a.y + 20}, kMuted,
+                  std::format("{} ({} {}) · {} · {}x", hero, en ? "Lv" : "Nv", level, e2::FieldSpells::huntFormula(level, en), left).c_str(), nullptr, inner - 108);
+      ImGui::PushID(("hunt" + hero).c_str());
+      ImGui::BeginDisabled(!spells.canHunt(save_, hero));
+      if (emberBigButton("##hunt", upperUtf8(tr("Caçar", "Hunt")).c_str(), {a.x + inner - 96, a.y + 6}, {96, 30}, false, 11.0f)) {
+        static std::mt19937 rng{std::random_device{}()};
+        std::uniform_real_distribution<double> unit(0.0, 1.0);
+        int rations = 0;
+        if (const std::optional<e2::Json> next = spells.castHunt(save_, hero, [&] { return unit(rng); }, &rations)) {
+          save_ = *next;
+          write();
+          showHint(en ? std::format("{} hunted {} {}.", hero, rations, rations == 1 ? "ration" : "rations")
+                      : std::format("{} caçou {} {}.", hero, rations, rations == 1 ? "ração" : "rações"));
+        } else {
+          showHint(tr("Não foi possível caçar.", "Could not hunt."));
+        }
+      }
+      ImGui::EndDisabled();
+      ImGui::PopID();
+      ImGui::SetCursorScreenPos({a.x, a.y + 62});
+      ImGui::Dummy({inner, 4});
+    }
     for (const std::string& hero : mages) {
       const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kWarpTier);
       const ImVec2 a = ImGui::GetCursorScreenPos();
@@ -1288,7 +1315,7 @@ class OverworldStage : public Stage {
       ImGui::Dummy({inner, 4});
     }
     if (!mages.empty() && cities.empty()) text(tr("Nenhum outro local visitado.", "No other visited locations."), 12.0f, kMuted);
-    if (healers.empty() && mages.empty()) text(tr("Nenhum feitiço de campo disponível.", "No field spells available."), 14.0f, kMuted);
+    if (healers.empty() && mages.empty() && hunters.empty()) text(tr("Nenhum feitiço de campo disponível.", "No field spells available."), 14.0f, kMuted);
     endPanel();
   }
 

@@ -85,6 +85,13 @@ at the nearest foe every 3 s), `--tatica` (2D view), `--spells-menu-open` (the M
 | Grito de Guerra (`warCry`) | 01 | a pressure shell and a ground ring burst out to the radius, dust lifted as they pass; a column of red-gold light with climbing motes on every ally, warm lights; a dark pulse on the frightened foes | `WarriorFx::warCry`, `warCryFear` |
 | Salto Devastador (`leapingStrike`) | 01 | the card flies on an arc with a trail of steel light and sparks; the landing is a crater (shell, ground ring, dust ring, chips of ground thrown on arcs, a strong light); then a big downward cut over the foe with sparks | `WarriorFx::leap`, `leapBlow` |
 
+| **EmberEngine's own, the Arqueiro's T1-T5 (docs/SKILLS_ARCHER.md)** | 01 | **ours, 3D** (`engine/render/vfx/RangerFx.cpp`, 2026-10-18): a real arrow (lit wood shaft, steel head) on a shallow arc, each skill's trail and impact on the Combat material; CombatFx's arrow hit on every struck body | |
+| Flecha Envenenada (`venomArrow`) | 01 | green motes along the flight; a sick green shell on the body, drips, a green ring, a green light | `RangerFx::shot` (Venom) |
+| Flecha Explosiva (`explosiveArrow`) | 01 | embers along the flight; a flash, a fire shell out over the neighbours, flames and embers flung up, a ring of fire, dust, a strong orange light | `RangerFx::shot` (Explosive) |
+| Tiro Paralisante (`cripplingShot`) | 01 | a grey trail; the arrow in low: dust at the feet, chips, a dull grey ring pulsing under the foe | `RangerFx::shot` (Crippling) |
+| Tiro Mortal (`deathShot`) | 01 | a long crimson trail; a pin of light through the body, a crimson shell, dark streaks, a red ring, a lingering red light | `RangerFx::shot` (Death) |
+| Chuva de Flechas (`arrowRain`), Tempestade de Flechas (`arrowStorm`) | 01 | a faint ring over the area; arrows (three / five a hex, the Tempestade in two waves) come down at a slant and stick in the ground, a glint and dust where each lands, a flash on every foe | `RangerFx::volley` |
+
 All the other spells: OFF only (no version yet).
 
 ## Engine2's own spell effects (not ported yet)

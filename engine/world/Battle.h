@@ -180,10 +180,13 @@ struct BattleUnit {
     // The Guerreiro's (docs/SKILLS_WARRIOR.md): on while pct > 0; `turns` more of the unit's own turns after the current one
     int sunderPct = 0, sunderTurns = 0;  // Quebra-Guarda: DEF down by pct %
     int rallyPct = 0, rallyTurns = 0;    // Grito de Guerra: ATK up by pct %
+    int hobblePct = 0, hobbleTurns = 0;  // Tiro Paralisante (the Arqueiro's): MOV down by pct % (hobbleBase keeps the whole)
     bool any() const {
-      return markTurns > 0 || plagueSpread > 0 || plagueBurst || bleedTurns > 0 || silenceTurns > 0 || decayTurns > 0 || sunderPct > 0 || rallyPct > 0;
+      return markTurns > 0 || plagueSpread > 0 || plagueBurst || bleedTurns > 0 || silenceTurns > 0 || decayTurns > 0 || sunderPct > 0 || rallyPct > 0 ||
+             hobblePct > 0;
     }
   } cond;
+  std::optional<int> hobbleBase;       // its MOV before Tiro Paralisante (given back when it lifts)
 
   // --- Items and conditions a hero brings into the fight (Engine2 Unit.bag / diseased / poisoned / fullness) ---
   int bag[7] = {};  // potions carried, in kPotionIds order

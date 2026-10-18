@@ -36,6 +36,7 @@ add_library(EmberEngine STATIC
   render/vfx/BurningHands.cpp
   render/vfx/Sweeps.cpp
   render/vfx/WarriorFx.cpp
+  render/vfx/RangerFx.cpp
   render/MeshScene.cpp
   render/MeshBuild.cpp
   render/BoardGround.cpp

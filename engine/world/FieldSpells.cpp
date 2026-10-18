@@ -152,6 +152,44 @@ std::optional<Json> FieldSpells::castFood(const Json& save, const std::string& h
   return next;
 }
 
+// --- Caçada (ours): the archer hunts game on the world map: rations for the party, one tier-2 use ---------------------------
+
+FoodPower FieldSpells::huntPower(int level) {
+  if (level >= 26) return {3, 6, 3, 0};
+  if (level >= 18) return {2, 6, 2, 0};
+  if (level >= 10) return {2, 4, 1, 0};
+  return {1, 4, 1, 0};
+}
+
+std::string FieldSpells::huntFormula(int level, bool english) {
+  const FoodPower p = huntPower(level);
+  return std::format("{}D{}+{} {}", p.dice, p.faces, p.bonus, english ? "rations" : "rações");
+}
+
+std::vector<std::string> FieldSpells::hunters(const Json& save, bool test) const {
+  std::vector<std::string> out;
+  for (const char* h : kHeroes) {
+    if (!(test || world_.heroRecruited(h, save)) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
+    if (rulesClass(classOf(save, h)) == "archer" && levelOf(save, h) >= kHuntUnlockLevel) out.push_back(h);
+  }
+  return out;
+}
+
+std::optional<Json> FieldSpells::castHunt(const Json& save, const std::string& hero, const std::function<double()>& rng, int* rations) const {
+  if (rulesClass(classOf(save, hero)) != "archer" || levelOf(save, hero) < kHuntUnlockLevel || !canHunt(save, hero)) return std::nullopt;
+  const FoodPower power = huntPower(levelOf(save, hero));
+  int gained = power.bonus;
+  for (int i = 0; i < power.dice; ++i) gained += 1 + static_cast<int>(std::floor(rng() * power.faces));  // rollDice
+  Json next = save;
+  next["rations"] = number(num(save, "rations").value_or(0) + gained);
+  if (!next["spellUses"].is_object()) next["spellUses"] = Json::object();
+  if (!next["spellUses"][hero].is_object()) next["spellUses"][hero] = Json::object();
+  const std::string key = "tier" + std::to_string(kHuntTier);
+  next["spellUses"][hero][key] = number(num(next["spellUses"][hero], key).value_or(0) + 1);
+  if (rations) *rations = gained;
+  return next;
+}
+
 std::optional<Json> FieldSpells::castWarp(const Json& save, const std::string& hero, const std::string& cityId) const {
   if (rulesClass(classOf(save, hero)) != "mage" || levelOf(save, hero) < kWarpUnlockLevel) return std::nullopt;
   const MapLocation* city = nullptr;

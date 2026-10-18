@@ -85,6 +85,7 @@ struct BattleStep {
   int rallyPct = 0, rallyTurns = 0;    // Grito de Guerra: every unit of `ids` gets ATK up ...
   std::vector<size_t> fearIds;         // ... and these foes are afraid for fearTurns turns
   int fearTurns = 0;
+  int hobblePct = 0, hobbleTurns = 0;  // Tiro Paralisante (the Arqueiro's): the struck foe's MOV down
 };
 
 // What a step did, for the window: a number over a unit, a miss, a heal, a death.

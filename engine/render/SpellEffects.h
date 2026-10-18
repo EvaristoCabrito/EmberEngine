@@ -32,6 +32,7 @@
 #include "render/vfx/MagicMissileV2.h"
 #include "render/vfx/PhantasmalForce.h"
 #include "render/vfx/Sweeps.h"
+#include "render/vfx/RangerFx.h"
 #include "render/vfx/WarriorFx.h"
 #include "render/vfx/WebOfDreams.h"
 
@@ -111,7 +112,7 @@ class SpellEffects {
   void build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out, std::vector<Light>& lights);
   const VfxFrame& vfx() const { return vfx_; }
   bool active(float now) const;
-  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), warrior_.clear(); }
+  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), warrior_.clear(), ranger_.clear(); }
   // A version that keeps Engine2's own timeline decides when the hit lands: seconds from the cast (Míssil Mágico 02:
   // Engine2's charge, then the flight). Below 0: the version lands on the caller's impact (the pose's).
   float impactDelay(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const;
@@ -220,6 +221,7 @@ class SpellEffects {
   int stormSerial_ = 0;
   CombatFx combat_;
   WarriorFx warrior_;  // the Guerreiro's skills (ours, 3D)
+  RangerFx ranger_;    // the Arqueiro's skills (ours, 3D)
   std::string potionEffect_ = "heal";  // the potion being cast (potion())
   std::vector<std::pair<BurningHands, bool>> burns_;  // Mãos Flamejantes 01 / Sopro Venenoso 01 (poison) = BurningHandsV2VFX
   // An fx clip of the battle pack as the effect runtime samples it (requested on screen; empty while not loaded).
