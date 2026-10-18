@@ -3477,24 +3477,24 @@ class MapStage final : public Stage {
       } else {
         spellFx_.cast(s.kind, look, casterSpot, spots, fxStart, x.impact, striker);
       }
-      // Mãos Flamejantes / Sopro Venenoso aimed away from the camera (the user, 2026-10-17): after the cast pose the caster
+      // Mãos Flamejantes / Sopro Venenoso not aimed at the camera (the user, 2026-10-17): after the cast pose the caster
       // turns its back to us (its "castBack" still, the user's own picture) and the jet leaves its hands into the board,
-      // held until the last flames burn out. Aimed toward the camera (or level with it) it stays as it is.
+      // held until the last flames burn out. Aimed toward the camera it stays as it is.
       const bool breath = s.kind == "burningHands" || s.kind == "poisonBreath";
       if (magic && breath && !spots.empty() && !flat_ && hasPose(static_cast<size_t>(striker), "castBack")) {
         glm::vec2 d{0.0f};
         for (const SpellEffects::Spot& t : spots) d += glm::vec2(t.feet.x - casterSpot.feet.x, t.feet.z - casterSpot.feet.z);
         d /= static_cast<float>(spots.size());
         const float yaw = cam_.yaw;
-        // Any aim deeper into the screen than the caster turns it (the user, 2026-10-17, a low camera along the board with
-        // the foes off to the right and a little further: "mesmo deste angulo ele precisa virar de costas"), not only a
-        // walk's back cut (within 60 degrees of straight away).
+        // Into the screen and to the side both turn it (the user, 2026-10-17: "mesmo deste angulo ele precisa virar de costas",
+        // then "de lado fica de costas tbm"); only an aim coming at the camera keeps the front: within 60 degrees of straight
+        // toward it (a walk's front cut, updateUnits).
         const float away = -(d.x * std::sin(yaw) + d.y * std::cos(yaw));
-        if (glm::length(d) > 1e-3f && away > 0.02f * glm::length(d)) {
+        if (glm::length(d) > 1e-3f && away >= -0.5f * glm::length(d)) {
           OneShot& shot = unitShot_[static_cast<size_t>(striker)];
           shot.then = "castBack";
           shot.thenUntil = fxStart + BurningHands::kFinish;
-          logInfo("{}: {} away from the camera, back turned after the cast pose ({:.2f} s)", scene_->units[static_cast<size_t>(striker)].name, s.kind, length);
+          logInfo("{}: {} not at the camera, back turned after the cast pose ({:.2f} s)", scene_->units[static_cast<size_t>(striker)].name, s.kind, length);
         }
       }
     }
