@@ -713,6 +713,20 @@ void trainWeapon(BattleUnit& u, int enemyLevel, Mulberry32& rng, bool offHand = 
   applyWeaponSkill(u);
 }
 
+// Esquiva (ours, the user, 2026-10-18): a hero an enemy strikes at may gain a point, by trainWeapon's rule (the foe's level,
+// the chance falling as the skill rises). Off in the Cooker's checks (no extra draw from Engine2's random numbers).
+void trainDodge(BattleUnit& u, int enemyLevel, Mulberry32& rng) {
+  if (u.side != "player" || u.summoned || !u.alive || !progressionEnabled()) return;
+  bool skip = false;
+  const std::optional<double> amount = trainingGain(u.level, enemyLevel, skip);
+  if (skip) return;
+  double* slot = skillSlot(u, "dodging");
+  const double current = std::max(0.0, std::min(kSkillCap, *slot));
+  if (current >= kSkillCap || rng() >= skillGainChance(current)) return;
+  *slot = std::min(kSkillCap, jsRound((current + amount.value_or(kSkillGain)) * 100) / 100);
+  noteSkillGain(u, pick("Esquiva", "Dodging"), current, *slot);
+}
+
 void trainResistance(BattleUnit& u, const std::string& element, std::optional<int> enemyLevel, Mulberry32& rng) {
   if (u.side != "player" || u.summoned) return;
   std::optional<double> amount;
@@ -2149,6 +2163,7 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
   const Fighter A = fighterAt(b, ai, actor.x, actor.y), T = fighterAt(b, ti, target.x, target.y);
   Hit hit = rollDamage(b, A, T, rng, !bash, useCustom ? &custom : nullptr);
   if (target.side == "enemy" && !bash) trainWeapon(actor, target.level, rng, useCustom);  // the off-hand weapon on an off-hand strike
+  if (actor.side == "enemy") trainDodge(target, actor.level, rng);
   const bool usesArcane = arcaneBolt && !useCustom && (counter || step.kind.empty());
   const bool usesStaff = actor.combat.staff && !useCustom && (counter || step.kind.empty());
   if (!hit.landed) {
@@ -2575,6 +2590,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
         landed = accuracy >= 100 || rng() * 100 < accuracy;
       }
       if (foe.side == "enemy") trainWeapon(att, foe.level, rng);
+      if (att.side == "enemy") trainDodge(foe, att.level, rng);
     }
     if (!landed) {
       out.push_back({id, 0, false, true, false, false, false});

@@ -32,6 +32,7 @@ struct Fighter {
   double atk = 0, mag = 0, def = 0, dex = 0;  // after the party's affinity bonus
   std::optional<double> faceDx, faceDy;
   int facing = 1;
+  double dodge = 0;  // a hero's Esquiva skill, 0..100 (ours): each point takes half a point off the blows aimed at it
 };
 
 struct Forecast {
@@ -64,7 +65,7 @@ bool clearShot(const Battle& b, BattleHex from, BattleHex to, bool arrow, bool d
 double powerOf(const Fighter& f);
 double elementalDamage(double base, double resistance, double mag);
 // Every weapon blow's chance to land, in % (ours, the user, 2026-10-18): clamp(0..100, accuracy + 10 from behind +
-// (attacker's DEX - defender's DEX) / kDexDivisor), DEX as fighterAt reads it.
+// (attacker's DEX - defender's DEX) / kDexDivisor - defender's Esquiva / 2), DEX and Esquiva as fighterAt reads them.
 double hitChance(const Fighter& attacker, const Fighter& defender, double accuracy, bool rear);
 
 // The unit placed at (x, y), with the affinity bonus its party neighbours there give it (BattleEngine.affinityUnit).

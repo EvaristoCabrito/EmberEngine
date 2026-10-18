@@ -147,7 +147,8 @@ bool equipFromSave(BattleUnit& u, const Loadouts& arms, const Json& save) {
       return;
     }
     const double v = skillOf(type);
-    accuracy = 75 + v + u.blessedHitBonusPct * 100, damage = (100 + v) / 100;
+    // No Bênção here: Combat.cpp weaponAccuracy adds it on every blow (counted once; the user, 2026-10-18).
+    accuracy = 75 + v, damage = (100 + v) / 100;
   };
   mastery(mainType, p.accuracy, p.damageMul);
   mastery(offType, p.offAccuracy, p.offDamageMul);

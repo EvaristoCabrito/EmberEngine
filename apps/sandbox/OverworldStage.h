@@ -1596,6 +1596,7 @@ class OverworldStage : public Stage {
     order.push_back("poisonResistance");
     for (const e2::Json& id : t["skillIds"])
       if (!id.get<std::string>().ends_with("Weapon") && id.get<std::string>() != "poisonResistance") order.push_back(id.get<std::string>());
+    order.push_back("dodging");  // Esquiva (ours, not in Engine2's list)
     const float cardW = (inner - 8) / 2;
     int n = 0;
     float rowTop = ImGui::GetCursorScreenPos().y, rowH = 0;
@@ -1616,14 +1617,15 @@ class OverworldStage : public Stage {
       if (!training.empty()) {
         const double banked = std::fmod(num(save_.value("travelTrainingHours", e2::Json::object()), hero, 0), stepHours);
         const int left = std::max(1, static_cast<int>(std::ceil(stepHours - banked)));
-        line = std::format("Treino na estrada: {} · próximo +0,1 em {}h de viagem", t["skillNames"].value(training, training), left);
+        line = std::format("Treino na estrada: {} · próximo +0,1 em {}h de viagem",
+                           training == "dodging" ? tr("Esquiva", "Dodging") : t["skillNames"].value(training, training), left);
       }
       dl->AddText(ui, 12.0f, {x + 12, rowTop + 36}, training.empty() ? kMuted : kAccent, line.c_str(), nullptr, cardW - 24);
       float y = rowTop + 58;
       for (const std::string& id : shown) {
         const double points = num(save_.value("heroSkills", e2::Json::object()).value(hero, e2::Json::object()), id, 0);
         const bool on = training == id;
-        std::string name = t["skillNames"].value(id, id);
+        std::string name = id == "dodging" ? tr("Esquiva", "Dodging") : t["skillNames"].value(id, id);
         if (id == "healing") name += std::format(" · +{}% healing", std::round(points * 100) / 100);
         dl->AddText(ui, 14.0f, {x + 12, y}, kFg, name.c_str());
         const std::string value = std::format("{}/{}", std::round(points * 100) / 100, cap);

@@ -521,6 +521,15 @@ class BattleStatusSheet {
                                      : std::format("Cura: {}/100 · +{}% de cura", pt(u.healingSkill), pt(u.healingSkill));
       dl->AddText(ui, 14.0f, {x, y}, kMuted, healing.c_str());
       y += 18.0f;
+      if (u.side == "player") {  // Esquiva (ours): half a point off the foe's hit chance per point
+        double dodging = 0;
+        for (const auto& [id, v] : u.skills)
+          if (id == "dodging") dodging = v;
+        const std::string line = en ? std::format("Dodging: {}/100 · -{}% to be hit", pt(dodging), pt(dodging / 2))
+                                    : std::format("Esquiva: {}/100 · -{}% de acerto contra", pt(dodging), pt(dodging / 2));
+        dl->AddText(ui, 14.0f, {x, y}, kMuted, line.c_str());
+        y += 18.0f;
+      }
     }
     return y + 12.0f;
   }

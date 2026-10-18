@@ -7991,7 +7991,7 @@
          "accent": true
         },
         {
-         "text": ": limite entre 0% e 100% de (75% + proficiência da arma + bônus de acerto + 10% pelas costas + (DEX do atacante − DEX do defensor) ÷ 3)"
+         "text": ": limite entre 0% e 100% de (75% + proficiência da arma + bônus de acerto + 10% pelas costas + (DEX do atacante − DEX do defensor) ÷ 3 − Esquiva do defensor ÷ 2)"
         }
        ],
        [
@@ -16980,7 +16980,7 @@
          "accent": true
         },
         {
-         "text": ": Clamp (75% + weapon proficiency + hit bonus + 10% from behind + (attacker DEX − defender DEX) ÷ 3) to 0%–100%."
+         "text": ": Clamp (75% + weapon proficiency + hit bonus + 10% from behind + (attacker DEX − defender DEX) ÷ 3 − defender Dodging ÷ 2) to 0%–100%."
         }
        ],
        [

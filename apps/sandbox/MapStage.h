@@ -224,6 +224,7 @@ struct HeroOutcome {
   bool diseased = false;
   std::string poison;        // empty = not poisoned
   std::optional<double> fullness;
+  std::optional<double> dodging;  // its Esquiva as the fight leaves it (ours)
 };
 
 class MapStage final : public Stage {
@@ -1100,6 +1101,16 @@ class MapStage final : public Stage {
       if (u.side != "player" || u.summoned || !u.alive) continue;
       // ... and wields what it has equipped: main hand, off hand, their reach, staff magic and mastery (e2::equipFromSave)
       if (!e2::equipFromSave(u, arms, save)) logWarn("{}: class {} has no weapon data: it keeps the battle file's weapon", u.name, u.classId);
+      // ... and its Esquiva (ours: save.heroSkills[hero].dodging)
+      if (const e2::Json skills = save.value("heroSkills", e2::Json::object()); skills.is_object() && skills.contains(u.name) &&
+                                                                             skills[u.name].is_object() && skills[u.name].contains("dodging") &&
+                                                                             skills[u.name]["dodging"].is_number()) {
+        const double v = skills[u.name]["dodging"].get<double>();
+        bool set = false;
+        for (auto& [id, value] : u.skills)
+          if (id == "dodging") value = v, set = true;
+        if (!set) u.skills.emplace_back("dodging", v);
+      }
       const bool full = u.hp >= u.maxHp;
       const e2::InnRules::GearBonus g = innRules_->gearBonus(save, u.name, u.classId);
       u.gearHp = g.hp, u.gearAtk = g.atk, u.gearMag = g.mag, u.gearDef = g.def, u.gearDex = g.dex, u.gearMov = g.mov;
@@ -1275,6 +1286,8 @@ class MapStage final : public Stage {
         h.diseased = u.diseased;
         h.poison = u.poisoned ? (u.poisonTier.empty() ? "lesser" : u.poisonTier) : "";
         h.fullness = u.fullness;
+        for (const auto& [id, v] : u.skills)
+          if (id == "dodging") h.dodging = v;
         out.push_back(std::move(h));
       }
     return out;

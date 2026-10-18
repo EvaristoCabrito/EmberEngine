@@ -1041,6 +1041,7 @@ int runWindow(const Options& o) {
         save["xp"][h.name] = h.xp;
       }
       save["unitHp"][h.name] = victory ? h.campHp : h.hp;
+      if (h.dodging) save["heroSkills"][h.name]["dodging"] = *h.dodging;  // the Esquiva trained in the fight (ours)
     }
     // mapstore keepsDefeatedSpawns: a dungeon keeps the enemies and neutrals killed here dead on every later visit
     if (const e2::MapMission* mm = hasWorld ? world.mission(playing) : nullptr; victory && mm && mm->keepsSpawns) {

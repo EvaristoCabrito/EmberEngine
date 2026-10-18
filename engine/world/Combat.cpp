@@ -211,7 +211,7 @@ Preview previewDamage(const Battle& b, const Fighter& a, const Fighter& d, const
 }  // namespace
 
 double hitChance(const Fighter& attacker, const Fighter& defender, double accuracy, bool rear) {
-  return std::max(0.0, std::min(100.0, accuracy + (rear ? 10 : 0) + (attacker.dex - defender.dex) / kDexDivisor));
+  return std::max(0.0, std::min(100.0, accuracy + (rear ? 10 : 0) + (attacker.dex - defender.dex) / kDexDivisor - defender.dodge / 2));
 }
 
 double Mulberry32::operator()() {
@@ -230,6 +230,10 @@ Fighter fighterAt(const Battle& b, size_t unit, int x, int y) {
   const BattleUnit& u = b.units()[unit];
   Fighter f{unit, x, y, static_cast<double>(u.atk), static_cast<double>(u.mag), static_cast<double>(u.def), static_cast<double>(u.dex),
             u.faceDx, u.faceDy, u.facing};
+  // Esquiva (ours, heroes only): the trained skill "dodging", 0..100.
+  if (u.side == "player" && !u.summoned)
+    for (const auto& [id, v] : u.skills)
+      if (id == "dodging") f.dodge = std::max(0.0, std::min(100.0, v));
   // Mortalha de Sombras (EmberEngine's own): standing in it takes statPct % off ATK and MAG, for as long as it stands there.
   if (const int weak = b.weakenAt(u); weak > 0) {
     f.atk = jsRound(f.atk * (1 - weak / 100.0));
