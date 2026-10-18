@@ -2,7 +2,7 @@
 
 // Ember's fog of war (ARCHITECTURE §7.0 R7).
 //   states  Engine2's (src/rules/fog.ts): never seen, remembered, in sight; remembered never falls back to
-//           never seen. Every living party unit is an eye with its own vision range (SIGHT_RADIUS 7).
+//           never seen. Every living party unit is an eye with its own vision range (kSightRadius; Engine2's 7).
 //   sight   EmberEngine's own line of sight in the 3D board (Engine2's was never finished; the user,
 //           2026-10-14: occlusion-based). A ray from the eye (kEyeHeight above its hex) to a point
 //           kTargetHeight above the target hex's ground; a hex the ray passes whose top (ground + whatever
@@ -30,7 +30,10 @@ namespace ember::e2 {
 
 inline constexpr uint8_t kFogUnseen = 0, kFogExplored = 1, kFogVisible = 2;
 inline constexpr int kSightRadius = 9;            // the user, 2026-10-18: a little more than Engine2's SIGHT_RADIUS 7
-inline constexpr double kForgetSeconds = 180.0;   // remembered ground is forgotten 3 min after it was last in sight (the user)
+// Ground the party has left stays drawn as in sight for this long, then darkens to remembered (the user, 2026-10-18: "a
+// área que o grupo deixou continua clara como vista por 3 minutos, depois escurece"). The look only: what the party sees
+// (enemies drawn, combat starting, aims) is still the sight of this moment.
+inline constexpr double kLingerSeconds = 180.0;
 inline constexpr float kExploredAlpha = 0.6f;      // Engine2 EXPLORED_ALPHA (darkness over remembered ground)
 inline constexpr float kEyeHeight = 1.6f;          // eyes above their hex's ground (world units = hex radii)
 inline constexpr float kTargetHeight = 0.8f;       // a hex is seen when a body standing there is (half its height)
@@ -80,27 +83,28 @@ class FogOfWar {
   // falls out of the next relight.
   void restoreExplored(const std::vector<uint8_t>& seen) {
     for (size_t i = 0; i < cells_.size() && i < seen.size(); ++i)
-      if (seen[i] && cells_[i] == kFogUnseen) cells_[i] = kFogExplored, seenAt_[i] = clock_;
+      if (seen[i] && cells_[i] == kFogUnseen) cells_[i] = kFogExplored;  // dark at once: no time left in the light
   }
-  // The clock (seconds) the next relight stamps on what it sees.
+  // The clock (seconds) the next relight stamps on what it sees, and paint() measures the linger against.
   void setClock(double seconds) { clock_ = seconds; }
-  // Remembered hexes last in sight more than `seconds` ago are never-seen again (the user, 2026-10-18: 3 minutes); true when
-  // any was forgotten. forgetDue only asks.
-  bool forget(double seconds);
-  bool forgetDue(double seconds) const;
+  // Whether some remembered hex's linger ran out in (since, clock]: the mask must be painted again.
+  bool lingerEnded(double since) const;
   bool visible(int c, int r) const { return state(c, r) == kFogVisible; }
   // Bumped by every relight: the mask (and the shadows that read it) must be redrawn.
   uint64_t version() const { return version_; }
 
-  // Engine2's mask for the current states; `party` are the hexes the party stands on (clear within one hex).
+  // Engine2's mask for the current states; `party` are the hexes the party stands on (clear within one hex). Remembered
+  // hexes still inside their kLingerSeconds are painted as in sight.
   FogMask paint(const Board& board, std::span<const HexPoint> party) const;
 
  private:
   bool rayClear(double ax, double az, double ay, double bx, double bz, double by, int fromIndex, int toIndex) const;
 
+  static constexpr double kNeverSeen = -1e30;
+
   HexLayout layout_;
   std::vector<uint8_t> cells_;
-  std::vector<double> seenAt_;  // per hex: the clock when it was last in sight (or remembered by a hole / a resumed fight)
+  std::vector<double> seenAt_;  // per hex: the clock when it was last in sight (kNeverSeen: no linger)
   double clock_ = 0.0;
   std::vector<float> ground_, top_;  // per hex: ground height, and the highest thing standing on it
   uint64_t version_ = 0;

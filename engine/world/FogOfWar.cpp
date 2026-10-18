@@ -64,7 +64,7 @@ std::vector<HexPoint> hexLine(HexPoint a, HexPoint b) {
   return out;
 }
 
-FogOfWar::FogOfWar(const Board& board) : layout_(board.layout()), cells_(board.cells().size(), kFogUnseen), seenAt_(board.cells().size(), 0.0) {
+FogOfWar::FogOfWar(const Board& board) : layout_(board.layout()), cells_(board.cells().size(), kFogUnseen), seenAt_(board.cells().size(), kNeverSeen) {
   for (const Cell& c : board.cells()) ground_.push_back(static_cast<float>(c.groundY));
   top_ = ground_;
 }
@@ -130,6 +130,8 @@ void FogOfWar::relight(std::span<const Eye> eyes) {
         pockets.push_back(static_cast<size_t>(indexOf(layout_, x, y)));
     }
   for (const size_t i : pockets) cells_[i] = kFogVisible;
+  for (size_t i = 0; i < cells_.size(); ++i)
+    if (cells_[i] == kFogVisible) seenAt_[i] = clock_;
   // Enclosed holes (the user, 2026-10-15): a group of up to 3 never-seen hexes whose every neighbour is
   // explored (and which does not touch the board's edge: off the board counts as never seen) counts as seen.
   // It joins its surroundings: in sight if they all are, remembered otherwise (so it shows no enemy the party
@@ -157,29 +159,27 @@ void FogOfWar::relight(std::span<const Eye> eyes) {
         }
       }
       if (edge || members.size() > 3) continue;
+      // A remembered hole lingers as long as the freshest ground around it, so no dark spot opens in a lit stretch.
+      double around = kNeverSeen;
+      for (const auto& [mx, my] : members)
+        for (const auto& [nx, ny] : neighbors(layout_, mx, my))
+          around = std::max(around, seenAt_[static_cast<size_t>(indexOf(layout_, nx, ny))]);
       for (const auto& [mx, my] : members) {
         const size_t i = static_cast<size_t>(indexOf(layout_, mx, my));
         cells_[i] = allSight ? kFogVisible : kFogExplored;
-        seenAt_[i] = clock_;
+        seenAt_[i] = allSight ? clock_ : std::max(seenAt_[i], around);
       }
     }
-  for (size_t i = 0; i < cells_.size(); ++i)
-    if (cells_[i] == kFogVisible) seenAt_[i] = clock_;
   ++version_;
 }
 
-bool FogOfWar::forgetDue(double seconds) const {
+bool FogOfWar::lingerEnded(double since) const {
   for (size_t i = 0; i < cells_.size(); ++i)
-    if (cells_[i] == kFogExplored && clock_ - seenAt_[i] > seconds) return true;
+    if (cells_[i] == kFogExplored) {
+      const double end = seenAt_[i] + kLingerSeconds;
+      if (end > since && end <= clock_) return true;
+    }
   return false;
-}
-
-bool FogOfWar::forget(double seconds) {
-  bool any = false;
-  for (size_t i = 0; i < cells_.size(); ++i)
-    if (cells_[i] == kFogExplored && clock_ - seenAt_[i] > seconds) cells_[i] = kFogUnseen, any = true;
-  if (any) ++version_;
-  return any;
 }
 
 FogMask FogOfWar::paint(const Board& board, std::span<const HexPoint> party) const {
@@ -187,6 +187,8 @@ FogMask FogOfWar::paint(const Board& board, std::span<const HexPoint> party) con
   constexpr int kBlurRadius = 2, kBlurPasses = 2;
   // No fog within one hex of a living party unit, ever (Engine2 syncFog's clear set).
   std::vector<uint8_t> state = cells_;
+  for (size_t i = 0; i < state.size(); ++i)
+    if (state[i] == kFogExplored && clock_ - seenAt_[i] < kLingerSeconds) state[i] = kFogVisible;  // left, still lit
   for (const HexPoint& p : party) {
     if (!inBoard(layout_, p.c, p.r)) continue;
     state[static_cast<size_t>(indexOf(layout_, p.c, p.r))] = kFogVisible;
