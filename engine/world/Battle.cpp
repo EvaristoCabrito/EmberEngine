@@ -134,7 +134,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
   Battle b;
   b.map_ = text(j, "map");
   b.debugFreeCast_ = j.value("debugFreeCast", false);
-  b.roaming_ = j.value("explore", false);
+  b.explore_ = b.roaming_ = j.value("explore", false);
   b.win_ = j.value("win", std::string("rout"));
   if (j.contains("affinityScores") && j["affinityScores"].is_object()) {
     std::map<std::string, double> scores;
@@ -161,7 +161,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     const int board = integer(j, "cols") * integer(j, "rows");
     olderExplore = board > 0 && std::all_of(j["units"].begin(), j["units"].end(), [&](const json& u) { return integer(u, "mov") == board; });
     if (olderExplore) {
-      b.roaming_ = true;
+      b.explore_ = b.roaming_ = true;
       logInfo("battle {}: an explore file from before baseMov: each unit's movement from its class", b.map_);
     }
   }

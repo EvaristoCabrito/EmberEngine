@@ -61,8 +61,8 @@ add_library(EmberEngine STATIC
   world/Quests.cpp
   world/Companions.cpp
   world/FieldSpells.cpp
-  media/VideoPlayer.cpp
   world/Loadout.cpp
+  media/VideoPlayer.cpp
   media/AudioMixer.cpp
   debug/PerfOverlay.cpp
 )

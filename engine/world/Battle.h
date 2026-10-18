@@ -320,9 +320,14 @@ class Battle {
   // Engine2 BattleEngine debugFreeCast (Modo teste's battles, export_battle.ts TEST_LEVEL): spells may be aimed at any
   // visible unit, allies included, and cures at anyone, hurt or not.
   bool debugFreeCast() const { return debugFreeCast_; }
-  // An explore mission (Engine2 mission.explore) roams free: no turns, any reachable hex in one walk, until the party
-  // meets an enemy (Ember's rule, the user's: then the fight starts with every unit's own movement), and roams again once
-  // the foes it met have fallen and none is in sight (MapStage::updateRoaming).
+  // An explore mission (Engine2 mission.explore): no win or defeat rule of its own, only its waypoints.
+  bool explore() const { return explore_; }
+  // A map that ends only at its waypoints, like an explore mission, whatever its own rule (MapStage: every map with fog of war).
+  void setWaypointsOnly(bool on) { waypointsOnly_ = on; }
+  // Free roam: no turns, any reachable hex in one walk. An explore mission starts so, and MapStage starts every map with fog
+  // of war so too (the user, 2026-10-17); the party meeting an enemy ends it (Ember's rule, the user's: then the fight starts
+  // with every unit's own movement), and it begins again once the foes it met have fallen and none is in sight
+  // (MapStage::updateRoaming).
   bool roaming() const { return roaming_; }
   void endRoaming() { roaming_ = false; }
   void resumeRoaming() { roaming_ = true; }
@@ -354,11 +359,11 @@ class Battle {
   // Both must be of the six heroes; the score is kept to a tenth within -100..100; the change is logged.
   void adjustAffinity(const std::string& a, const std::string& b, double delta);
   std::map<size_t, std::set<size_t>>& supportRecipients() { return supportRecipients_; }
+  // Who each unit has hurt this action (friendly fire): they gain nothing for standing beside it when the action ends.
+  std::map<size_t, std::set<size_t>>& hurtAllies() { return hurtAllies_; }
   // Drops Engine2's reference answers (a copy of the battle for one cast does not need them).
   void clearReferences() { forecastRefs_.clear(), rollRefs_.clear(), aiRefs_.clear(), castRefs_.clear(), turnRefs_.clear(), lockRefs_.clear(); }
   const std::vector<ForecastReference>& forecastReferences() const { return forecastRefs_; }
-  // Who each unit has hurt this action (friendly fire): they gain nothing for standing beside it when the action ends.
-  std::map<size_t, std::set<size_t>>& hurtAllies() { return hurtAllies_; }
   const std::vector<RollReference>& rollReferences() const { return rollRefs_; }
   const std::vector<AiReference>& aiReferences() const { return aiRefs_; }
   const std::vector<CastReference>& castReferences() const { return castRefs_; }
@@ -586,6 +591,8 @@ class Battle {
   std::string map_;
   bool debugFreeCast_ = false;
   bool roaming_ = false;
+  bool explore_ = false;
+  bool waypointsOnly_ = false;
   int cols_ = 0, rows_ = 0;
   std::vector<BattleCell> cells_;
   std::vector<BattleUnit> units_;
@@ -611,11 +618,11 @@ class Battle {
   std::map<std::string, double> affinityScores_;
   bool scoresKnown_ = false;
   std::map<size_t, std::set<size_t>> supportRecipients_;  // who each unit has already helped this action (gainSupportAffinity)
+  std::map<size_t, std::set<size_t>> hurtAllies_;         // who each unit has hurt this action (no side-by-side +0.1 for them)
   std::string win_ = "rout";
   std::vector<Exit> exits_;
   bool finished_ = false;
   std::vector<WebZone> webZones_;
-  std::map<size_t, std::set<size_t>> hurtAllies_;         // who each unit has hurt this action (no side-by-side +0.1 for them)
   std::vector<IceZone> iceZones_;
   std::vector<AuraZone> auraZones_;
   std::vector<WarpGate> warpGates_;

@@ -87,6 +87,46 @@ def main():
                 table[f"{c['set']}/{c['clip']}"] = c["strides"]
         print(f"{c['set']}/{c['clip']} -> {c['version']}: {count} frames at {c['frameMs']} ms, {len(c['poses'])} pose(s)")
 
+    # "sets": a whole sprite set of EmberEngine's own (cut from video by tools/scripts/sprites/video_sprite.py, its
+    # cut-result.json beside the cut spec), added to the manifest (replaced on a second run) and made the hero's art for the
+    # listed poses; poses the set does not list keep their old art (e.g. Voss's back pose).
+    for st in over.get("sets", []):
+        cut_dir = os.path.dirname(os.path.join(ROOT, st["cut"]))
+        cut = load(os.path.join(cut_dir, "cut-result.json"))["clips"]
+        spec = {c["clip"]: c for c in load(os.path.join(ROOT, st["cut"]))["clips"]}
+        clips = []
+        for name, r in cut.items():
+            pattern = os.path.join(ROOT, r["pattern"]).replace("\\", "/")
+            for i in range(1, r["frames"] + 1):
+                if not os.path.exists(pattern.replace("{}", str(i))):
+                    raise SystemExit(f"missing frame {pattern.replace('{}', str(i))}")
+            clips.append({"fps": 1000.0 / r["frameMs"], "frames": {"count": r["frames"], "pattern": pattern},
+                          "mode": spec[name]["mode"], "name": name, "pack": st["packs"].get(name, "combat")})
+        manifest["sets"] = [s for s in manifest["sets"] if s["name"] != st["set"]] + [{"name": st["set"], "clips": clips}]
+        hero = next((h for h in roster["heroes"] if h.get("key") == st["hero"]), None)
+        if hero is None:
+            raise SystemExit(f"{st['hero']}: not in {roster_path}")
+        for pose, name in st["poses"].items():
+            r = cut[name]
+            per = r["frameMs"] * 240 / 1000  # ticks a frame (10 at 24 fps)
+            pace = [min(r["frames"] - 1, math.floor(t / per)) for t in range(round(r["frames"] * per))]
+            fields = dict(set=st["set"], clip=name, box=r["box"], nat=r["nat"], crop=r["crop"], frames=r["frames"], pace=pace,
+                          doneAt=-1)
+            if "impact" in r:
+                fields["impact"] = r["impact"]
+            p = next((p for p in hero["poses"] if p["pose"] == pose), None)
+            if p is None:
+                p = {"pose": pose, "label": st.get("labels", {}).get(pose, pose)}
+                hero["poses"].append(p)
+            p.pop("bodyShift", None)  # Engine2's per-frame shift belonged to its own art
+            p.pop("impact", None)
+            p.update(fields)
+        for table in strides:
+            if table is not None:
+                for name, n in st.get("strides", {}).items():
+                    table[f"{st['set']}/{name}"] = n
+        print(f"{st['set']} {st['version']}: {len(clips)} clips, {st['hero']}'s poses {', '.join(st['poses'])}")
+
     # "speed": a pose's own clip played faster (its pace sampled `factor` times as fast, so the pose is that much shorter in
     # the fight); marked on the pose so a second run does nothing.
     for sp in over.get("speed", []):

@@ -2183,7 +2183,11 @@ class MapStage final : public Stage {
     battle_ = e2::Battle::load(path);
     loadSounds(path);
     if (!battle_) return;
-    explores_ = battle_->roaming();
+    explores_ = battle_->explore();
+    // Every map with fog of war is explored freely until the party sees an enemy (the user, 2026-10-17), like an explore mission.
+    roams_ = explores_ || fog_.has_value();
+    if (roams_ && !battle_->roaming()) battle_->resumeRoaming();
+    battle_->setWaypointsOnly(roams_);  // and it ends only at a waypoint: no "Encerrar missão" when every foe is down
     arrangeBattle();
     if (options_.partyRoster) {  // the same on the battle's units (their sounds follow them), each hero once
       std::vector<e2::BattleUnit>& units = battle_->units();
@@ -3035,7 +3039,8 @@ class MapStage final : public Stage {
     if (plan.path.size() > 1) walkAlong(static_cast<size_t>(ui), plan.path);
   }
 
-  // --- Free roam (an explore mission, Engine2 mission.explore): no turns until the party meets an enemy ------------
+  // --- Free roam (an explore mission, Engine2 mission.explore, and any map with fog of war: the user, 2026-10-17): no turns
+  // until the party meets an enemy ------------------------------------------------------------------------------------------
   // The user's rule (2026-10-16): the party walks freely, its picked unit leading and the others following in
   // a line; an enemy coming into the party's sight starts the fight, in initiative order, with every unit's own
   // movement; once the foes it woke have fallen and none is in sight the party roams again (the user, 2026-10-17: "free
@@ -3072,7 +3077,8 @@ class MapStage final : public Stage {
   }
 
   void updateRoaming() {
-    if (!battle_ || !scene_ || !explores_ || !result_.empty()) return;
+    if (!battle_ || !scene_ || !roams_ || !result_.empty()) return;
+    if (fog_ && !noFog_ && !fogReady_) return;  // the fog's first sight decides whether the map opens in free roam or a fight
     if (!battle_->roaming()) {
       // The fight on an explore map is over once every foe it woke has fallen and no other is in sight: free roam again,
       // between actions (nothing walking, striking or playing an enemy's turn).
@@ -3085,8 +3091,7 @@ class MapStage final : public Stage {
       undo_.clear();
       turnUnit_ = -1;
       select(-1);  // the leader is picked again below, next frame
-      tip_ = tr("Área livre: movimento livre de novo.", "Area clear: free movement again."), tipAt_ = now_;
-      modeSwitchAt_ = now_, modeSwitchFight_ = false;
+      // No announcement (the user, 2026-10-17: "não existe anúncio"): the box is free movement again, that is all.
       logInfo("explore: no foe left in sight: free roam again");
       return;
     }
@@ -3125,8 +3130,7 @@ class MapStage final : public Stage {
     undo_.clear();
     turnUnit_ = -1;
     select(-1);
-    tip_ = tr("Inimigos à vista! Combate por turnos.", "Enemies in sight! Turn-based combat."), tipAt_ = now_;
-    modeSwitchAt_ = now_, modeSwitchFight_ = true;
+    // No announcement (the user, 2026-10-17): the free-movement box gives way to the turn plate, that is all.
     logInfo("explore: {} in sight: the roaming ends, round {} begins", battle_->units()[static_cast<size_t>(met.front())].name, battle_->round());
   }
 
@@ -3392,6 +3396,21 @@ class MapStage final : public Stage {
     if (!p || p->pace.empty()) return 0.8f;
     return static_cast<float>(p->doneAt >= 0 ? p->doneAt : static_cast<int>(p->pace.size())) / 240.0f;
   }
+  // How far into a unit's strike pose the blow lands: the pose's own moment (art cut from video), else kImpactShare.
+  float poseImpact(size_t ui, const std::string& pose) const {
+    const e2::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
+    const e2::HeroPose* p = entry ? entry->find(pose) : nullptr;
+    return p && p->impact >= 0 ? p->impact : kImpactShare;
+  }
+  // A blow between two units side by side (the struck one's nearest hex, for bodies bigger than one hex).
+  bool strikeBeside(const e2::BattleStep& s) const {
+    const e2::BattleUnit& a = battle_->units()[s.att];
+    const e2::BattleUnit& d = battle_->units()[s.def];
+    int nearest = 1 << 20;
+    for (const e2::BattleHex& h : e2::Battle::footprint(d, d.x, d.y))
+      for (const e2::BattleHex& g : e2::Battle::footprint(a, a.x, a.y)) nearest = std::min(nearest, e2::Battle::distance(g, h));
+    return nearest <= 1;
+  }
 
   // Turn a unit to face a hex: on screen (its card) and on the board (Engine2 faceSpriteToward).
   void faceToward(size_t ui, size_t otherUi) {
@@ -3486,8 +3505,13 @@ class MapStage final : public Stage {
     std::string pose = s.type == StepType::Combat ? (strikeIsOffHand(s, x.counter) ? "attackShort" : "attack") : s.type == StepType::Potion ? "" : e2::spellPose(s.kind);
     if (pose == "attackShort" && striker >= 0 && !hasPose(static_cast<size_t>(striker), pose)) pose = "attack";  // no off-hand sheet: the main one
     if (striker >= 0 && !pose.empty() && !hasPose(static_cast<size_t>(striker), pose)) pose = hasPose(static_cast<size_t>(striker), "cast") ? "cast" : "attack";
+    // A counter on a foe beside it: the unit's staff blow when it has one (Voss; the user, 2026-10-17: "he will counter with
+    // his staff when the enemy is close ranged, and ... the regular mage ATT when in distance"). No bolt flies from it.
+    const bool staffCounter = s.type == StepType::Combat && x.counter && striker >= 0 &&
+                              hasPose(static_cast<size_t>(striker), "counterStaff") && strikeBeside(s);
+    if (staffCounter) pose = "counterStaff";
     const float length = (striker >= 0 && !pose.empty() ? poseSeconds(static_cast<size_t>(striker), pose) : 0.6f) / actionRate();
-    x.impact = now_ + length * kImpactShare;
+    x.impact = now_ + length * (striker >= 0 && !pose.empty() ? poseImpact(static_cast<size_t>(striker), pose) : kImpactShare);
     x.end = now_ + length + kExchangeGap / actionRate();
     x.landed = false;
     if (s.type == StepType::Move) {  // a charge: the rules play at once (the unit is on its last hex), the card dashes the route
@@ -3516,7 +3540,7 @@ class MapStage final : public Stage {
     };
     // The Arcano attack: energy gathers at the hand while the pose winds up, the bolt leaves at the pose's release and
     // the blow lands (the roll, the numbers, the hit react) when it arrives.
-    x.bolt = striker >= 0 && target >= 0 && strikeIsBolt(s, x.counter, x.element);
+    x.bolt = striker >= 0 && target >= 0 && !staffCounter && strikeIsBolt(s, x.counter, x.element);
     if (x.bolt) {
       const SpellEffects::Spot from = unitSpot(static_cast<size_t>(striker)), to = unitSpot(static_cast<size_t>(target));
       const float release = x.impact;
@@ -5245,8 +5269,8 @@ class MapStage final : public Stage {
       }
     }
     ImGui::SameLine(io.DisplaySize.x - endW - 20.0f);
-    if (!turns) {  // free roam: Engine2's "Sair" (onQuit) in place of Fim do turno
-      if (emberButton("##leave", tr("Sair", "Leave").c_str(), true, !busy())) titleRequested_ = true;
+    if (!turns) {  // free roam: an explore mission's "Sair" (Engine2 onQuit) in place of Fim do turno; nothing on a fight's map
+      if (explores_ && emberButton("##leave", tr("Sair", "Leave").c_str(), true, !busy())) titleRequested_ = true;
     } else if (emberButton("##endturn", "Fim do turno", false, mine && turns)) {
       endUnitTurn();
     }
@@ -5676,8 +5700,7 @@ class MapStage final : public Stage {
     if (innFloor()) {
       lines.push_back(tr("Clique no chão para andar · clique em alguém para conversar.", "Click the ground to walk · click someone to talk."));
     } else {
-      lines.push_back(tr("Nenhum inimigo à vista: clique no chão e o grupo segue o líder até lá.",
-                         "No enemies in sight: click the ground and the party follows the leader there."));
+      lines.push_back(tr("Clique no chão e o grupo segue o líder até lá.", "Click the ground and the party follows the leader there."));
       lines.push_back(tr("Um inimigo à vista começa o combate por turnos.", "An enemy in sight starts turn-based combat."));
     }
     ImFont* ui = uiFont(UiFont::Ui);
@@ -5710,14 +5733,13 @@ class MapStage final : public Stage {
     ImGui::PopStyleVar(2);
   }
 
-  // The moment an explore map turns into a fight or back into free roam: a big plate mid-screen for a few seconds.
+  // The moment free roam turns into a fight: a big plate mid-screen for a few seconds (going back to free roam says nothing).
   static constexpr float kModeBannerSeconds = 2.8f;
   void drawModeBanner() {
     const float age = now_ - modeSwitchAt_;
     if (age < 0.0f || age > kModeBannerSeconds || !result_.empty()) return;
     const ImGuiIO& io = ImGui::GetIO();
-    const std::string text = modeSwitchFight_ ? tr("Inimigos à vista!  Combate por turnos", "Enemies in sight!  Turn-based combat")
-                                              : tr("Área livre  ·  Movimento livre", "Area clear  ·  Free movement");
+    const std::string text = tr("Inimigos à vista!  Combate por turnos", "Enemies in sight!  Turn-based combat");
     ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.3f}, ImGuiCond_Always, {0.5f, 0.5f});
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {kPlateGlow, kPlateGlow});
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
@@ -5726,7 +5748,7 @@ class MapStage final : public Stage {
                                               ImGuiWindowFlags_NoSavedSettings);
     ImGui::PushFont(nullptr, 30.0f);
     const ImVec2 t = ImGui::CalcTextSize(text.c_str());
-    const ImU32 ink = modeSwitchFight_ ? IM_COL32(255, 150, 120, 255) : IM_COL32(190, 230, 255, 255);
+    const ImU32 ink = IM_COL32(255, 150, 120, 255);
     plate("##modebannerbox", {t.x + 56.0f, t.y + 24.0f}, [&](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32) {
       dl->AddText({std::round((a.x + b.x - t.x) * 0.5f), std::round((a.y + b.y - t.y) * 0.5f)}, ink, text.c_str());
     });
@@ -6519,6 +6541,7 @@ class MapStage final : public Stage {
   std::optional<e2::Battle::Exit> finishExit_; // the waypoint the mission was ended on (the result screen's text and its way on)
   bool talked_ = false;                        // a conversation was taken (the battle script's "talk" check)
   bool explores_ = false;                      // an explore mission (it roamed when it opened)
+  bool roams_ = false;                         // free roam until an enemy is in sight: an explore mission or any map with fog of war
   bool winDismissed_ = false;        // the end was on offer and the player kept playing (the footer button brings it back)
   bool pickActiveOnResume_ = false;  // set by resume(): pick the active hero once the turn loop first runs
   BattleStatusSheet statusSheet_;                                    // the character status sheet
@@ -6547,8 +6570,7 @@ class MapStage final : public Stage {
   std::optional<EnemyTurn> enemyTurn_;
   std::unordered_set<int> awake_;         // enemies that have seen the party (fog)
   int roamLeader_ = -1;                   // free roam: the scene unit the party follows
-  float modeSwitchAt_ = -100.0f;          // an explore map's last switch between free roam and a fight (the banner)
-  bool modeSwitchFight_ = false;          // ... into a fight (else back into free roam)
+  float modeSwitchAt_ = -100.0f;          // free roam's last turn into a fight (the banner)
   std::string result_;                    // "victory" / "defeat" once the battle is over
   bool pauseOpen_ = false, titleRequested_ = false, retryRequested_ = false;
   // Engine2's menus over the battle (EmberMenus.h) and what they act on.

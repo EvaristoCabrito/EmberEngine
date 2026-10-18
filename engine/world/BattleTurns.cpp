@@ -120,7 +120,10 @@ const Battle::Exit* Battle::activeExit(size_t* hero) const {
 bool Battle::winAvailable() const {
   if (finished_) return false;
   if (activeExit()) return true;
-  if (roaming_) return false;
+  // Engine2 evaluateEnd: an explore mission ends only at its waypoints. So does every map with fog of war (the user,
+  // 2026-10-17: "essas missões são de passar do outro lado", "não existe terminar a missão em mapas com névoa"): every foe
+  // down is free movement again, never the end.
+  if (explore_ || waypointsOnly_) return false;
   const bool bossAlive = std::any_of(units_.begin(), units_.end(), [](const BattleUnit& u) { return u.side == "enemy" && u.alive && u.boss; });
   const bool anyEnemy = std::any_of(units_.begin(), units_.end(), [](const BattleUnit& u) { return u.side == "enemy" && u.alive; });
   return win_ == "boss" ? !bossAlive : win_ == "escape" ? false : !anyEnemy;

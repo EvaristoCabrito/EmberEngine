@@ -172,6 +172,7 @@ std::optional<std::vector<Hero>> loadHeroes(const std::filesystem::path& heroesJ
       q.frames = static_cast<int>(num(p, "frames", 1));
       if (p.contains("pace") && p["pace"].is_array()) q.pace = p["pace"].get<std::vector<int>>();
       q.doneAt = static_cast<int>(num(p, "doneAt", -1));
+      q.impact = static_cast<float>(num(p, "impact", -1));
       if (strides.is_object()) {
         const auto it = strides.find(q.set + "/" + q.clip);
         if (it != strides.end() && it->is_number()) q.strides = it->get<float>();

@@ -91,6 +91,7 @@ struct HeroPose {
   std::vector<int> pace;     // frame shown at each 1/240 s (Engine2 framePace)
   int doneAt = -1;           // one-shot poses: the 1/240 s tick it finishes (-1 = loops)
   float strides = 2.0f;      // walk clips: full strides (both legs) the whole clip holds (content/engine2/walk-strides.json)
+  float impact = -1;         // strike poses: share of the pose at which the blow lands (art cut from video); -1 = the default
   // Poses Engine2 holds on their hex (units/catalog.ts centerBody): per frame, how far right of frame 1 the body sits, as a
   // share of the pose's width (tools/scripts/engine2/measure_body_shift.py); empty = the pose plays as drawn.
   std::vector<float> bodyShift;

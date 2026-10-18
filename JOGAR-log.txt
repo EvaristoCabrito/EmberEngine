@@ -1,0 +1,46 @@
+[info] mounted C:\EmberEngine\build\sprites\battle.pak (2755 assets)
+[info] mounted C:\EmberEngine\build\meshes\props-v2.pak (261 assets)
+[info] mounted C:\EmberEngine\build\meshes\architecture.pak (24 assets)
+[info] mounted C:\EmberEngine\build\ground\ground-v2.pak (153 assets)
+[info] GPU: AMD Radeon(TM) RX 6400 (Vulkan 1.4.315, driver 0x800161)
+[info] transfer queue: dedicated (family 2)
+[info] bindless: 262144 textures, 16384 storage images, 256 samplers, 4096 storage buffers
+[info] campaign: save bank C:\Users\evari\AppData\Local\Ember\ember-save-bank.json (1 of 6 slots used)
+[info] overworld: 113 cells, 15 locations, 150 missions
+[info] map ashen-forest-crossing 'Ashen Forest Crossing': 88x32 hexes, smooth 446348 triangles, hard 68788 triangles, 0 baked layers, 11 textures, 43.4 MB geometry
+[info] volumetrics: 7 profiles from content/atmosphere/v1/profiles.json
+[info] scene ashen-forest-crossing: 13 cards, 89 models, 18 units, 0 architecture pieces (0 built)
+[info] poses: 18 of 18 map units in the catalog, 18 poses between them
+[info] progression: 6 heroes; enemies' gains x hp 1.263 atk 1.500 mag 1.143 def 1.222 dex 0.833
+[info] battle ashen-forest-crossing: 18 of 18 units in play
+[info] formation: 6 heroes at the entry (4, 25), front turned 1 sixths toward the enemy at (19, 25); 0 moved to the nearest free ground
+[info] inn: 134 weapons, 292 gear, 7 potions
+[info] sprites: roster lists 918 clips
+[info] sprites: full-clip pool 9 x 64 MB (largest clip 38.5 MB)
+[info] sight: Kael at (4, 25) sees 127 of the 146 hexes in range (19 hidden by ground or what stands on it)
+[info] sight: Neera at (3, 25) sees 117 of the 133 hexes in range (16 hidden by ground or what stands on it)
+[info] sight: Voss at (4, 26) sees 121 of the 131 hexes in range (10 hidden by ground or what stands on it)
+[info] sight: Salazar at (3, 26) sees 110 of the 118 hexes in range (8 hidden by ground or what stands on it)
+[info] sight: Aldric at (5, 26) sees 131 of the 142 hexes in range (11 hidden by ground or what stands on it)
+[info] sight: Malrec at (5, 25) sees 135 of the 155 hexes in range (20 hidden by ground or what stands on it)
+[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
+The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
+[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
+The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
+[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
+The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
+[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
+The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
+[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
+The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
+[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
+The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
+[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
+The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
+[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
+The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
+[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
+The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
+[ERROR] vulkan: (Warning - This VUID has now been reported 10 times, which is the duplicate_message_limit value, this will be the last time reporting it).
+vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x2760000000276.
+The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
