@@ -63,8 +63,9 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   environmental scene, D3 cinematic stress scene. Engineering tests are foundation, not visual progress.
 - **Free roam (user, 2026-10-17, do not make them explain it again):** on EVERY map with fog of war, no enemy in sight =
   free movement automatically; an enemy coming into sight = turn-based combat; no enemy in sight again (dead OR just out of
-  view) = free movement again. Never depends on the editor's "explore" flag. Such maps end only at a waypoint, nothing
-  announced on screen (MapStage::updateRoaming / enemiesInSight).
+  view) = free movement again. Never depends on the editor's "explore" flag. Such maps end only at a waypoint. Entering the
+  fight: movement pauses 1.8 s under "Inimigos avistados!" (user, 2026-10-18), then turns; going back to free roam says
+  nothing (MapStage::updateRoaming / enemiesInSight / sightPause). **Don't build or capture more than needed: tokens.**
 - **Never throw visual work away (user, 2026-10-14: "everything always degrades the more you try").** Every
   look is saved in a numbered series (fog: `looks/fog/README.md`, `shaders/fog_lookNNN.hlsl`, tag
   `fog-look-NNN`), switchable live, and kept until the user deletes it after seeing it. A change is a new

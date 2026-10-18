@@ -2915,7 +2915,7 @@ class MapStage final : public Stage {
 
   // Something is playing that input must not cut into: a walk, a strike, an enemy's turn, the battle's end.
   bool busy() const {
-    if (exchange_ || enemyTurn_ || !result_.empty()) return true;
+    if (exchange_ || enemyTurn_ || !result_.empty() || sightPause()) return true;
     return std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
   }
 
@@ -2924,7 +2924,7 @@ class MapStage final : public Stage {
   void updateTurns() {
     if (!battle_ || !scene_ || !result_.empty() || holdTurns || battle_->roaming()) return;
     const bool walking = std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
-    if (exchange_ || walking) return;
+    if (exchange_ || walking || sightPause()) return;
     // A strike the player asked for once the walk to its hex is over.
     if (pendingStrike_ >= 0) {
       const int foe = pendingStrike_;
@@ -3128,7 +3128,9 @@ class MapStage final : public Stage {
     undo_.clear();
     turnUnit_ = -1;
     select(-1);
-    // No announcement (the user, 2026-10-17): the free-movement box gives way to the turn plate, that is all.
+    // The user (2026-10-18): the movement pauses and "Inimigos avistados!" shows, then the turns begin (drawModeBanner,
+    // sightPause). Going back to free roam says nothing.
+    modeSwitchAt_ = now_;
     logInfo("explore: {} in sight: the roaming ends, round {} begins", battle_->units()[static_cast<size_t>(met.front())].name, battle_->round());
   }
 
@@ -5731,13 +5733,16 @@ class MapStage final : public Stage {
     ImGui::PopStyleVar(2);
   }
 
-  // The moment free roam turns into a fight: a big plate mid-screen for a few seconds (going back to free roam says nothing).
-  static constexpr float kModeBannerSeconds = 2.8f;
+  // The moment free roam turns into a fight: everything holds for kSightPauseSeconds under a big plate mid-screen, then the
+  // turns begin (the user, 2026-10-18: "dar uma pausa no movimento e dizer Inimigos avistados"); going back to free roam
+  // says nothing.
+  static constexpr float kModeBannerSeconds = 2.0f, kSightPauseSeconds = 1.8f;
+  bool sightPause() const { return now_ - modeSwitchAt_ >= 0.0f && now_ - modeSwitchAt_ < kSightPauseSeconds; }
   void drawModeBanner() {
     const float age = now_ - modeSwitchAt_;
     if (age < 0.0f || age > kModeBannerSeconds || !result_.empty()) return;
     const ImGuiIO& io = ImGui::GetIO();
-    const std::string text = tr("Inimigos à vista!  Combate por turnos", "Enemies in sight!  Turn-based combat");
+    const std::string text = tr("Inimigos avistados!", "Enemies sighted!");
     ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.3f}, ImGuiCond_Always, {0.5f, 0.5f});
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {kPlateGlow, kPlateGlow});
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
