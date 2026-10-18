@@ -5081,10 +5081,20 @@ class MapStage final : public Stage {
       return p ? p->tooltip : std::string();
     };
     hooks.lockpickTip = [this]() { return ensureInnRules() ? innData_.lockpickTooltip : std::string(); };
+    // The arrows browse the opened unit's own side only (the user, 2026-10-18): a hero's sheet goes through the party; a foe's
+    // (opened by clicking it) through the foes the party can see.
     hooks.order = [this] {
       std::vector<size_t> order;
-      for (size_t i : battle_->turnOrder())
-        if (battle_->units()[i].alive) order.push_back(i);
+      const std::string side = battle_->units()[statusSheet_.unit()].side;
+      for (size_t i : battle_->turnOrder()) {
+        const e2::BattleUnit& v = battle_->units()[i];
+        if (!v.alive || v.side != side) continue;
+        if (side != "player") {
+          const int ui = sceneUnitOf(static_cast<int>(i));
+          if (ui < 0 || !unitCard_[static_cast<size_t>(ui)].drawn) continue;  // not in sight
+        }
+        order.push_back(i);
+      }
       return order;
     };
     statusSheet_.draw(*battle_, options_.engine2Public, hooks);
