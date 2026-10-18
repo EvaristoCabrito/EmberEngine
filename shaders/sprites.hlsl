@@ -112,7 +112,15 @@ float4 PSMain(VSOut i) : SV_Target0 {
     const Sight sight = tacticalSight(f, s.origin);
     if (f.debugView == kDebugFog) return float4(float3(1.0 - sight.color, sight.local, 1.0) * c.a, c.a);
     if (f.debugView == kDebugFogStates) return float4(fogStateColor(fogAlpha(f, s.origin)) * c.a, c.a);
-    color = min(shadeInSight(f, surface, sight), c.rgb * kMaxLit * f.litCap);
+    // Engine2's MAX_LIT, on the sun and sky and on the local lights each: by day the sun alone brought a card near the cap and a
+    // caster's own light could add nothing (the user, 2026-10-18: Malrec's blue casting light "não mudou nada").
+    // The local share is capped on its brightness, not per channel, so a coloured light can tint the figure (a blue light on a grey
+    // robe could add only 2x the robe's little blue).
+    float3 local;
+    const float3 base = shadeInSightSplit(f, surface, sight, local);
+    const float3 kLuma = float3(0.2126, 0.7152, 0.0722);
+    const float localCap = dot(c.rgb, kLuma) * kMaxLit * f.litCap, localLuma = dot(local, kLuma);
+    color = min(base, c.rgb * kMaxLit * f.litCap) + local * (localLuma > localCap ? localCap / max(localLuma, 1e-6) : 1.0);
     if (s.emitLevel > 0.0) {
       // Engine2's flame mask: bright, saturated pixels close to the light's colour glow, and so does the lit
       // glass just around where the light sits on the card.

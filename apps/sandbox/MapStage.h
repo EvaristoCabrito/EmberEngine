@@ -438,7 +438,8 @@ class MapStage final : public Stage {
       spellFx_.build(time, camera, flat_, boardTop_ + 0.2f, effectList_, fxLights_);
     }
     const size_t spellLightsFrom = lights_.size();  // the effects' and the casters' lights: the brightest casts the spell shadow
-    for (const SpellEffects::Light& l : fxLights_) lights_.push_back(carried(offCard(l.at, camera.forward), l.color, l.intensity, l.radius, l.height, 1.0f));
+    for (const SpellEffects::Light& l : fxLights_)
+      lights_.push_back(engine2Light(offCard(l.at, camera.forward), l.color, l.intensity * kE2Strength, std::hypot(l.radius, l.height) * 2.5f, 1.25f));
     // Engine2 Battle3D syncCastLight: a point of light at a caster's hands while it casts (Malrec: blue on every spell, yellow on
     // his attacks and counters). It stands 0.6 of the card up and 0.45 in front of the card, toward the camera, so it lights the
     // caster himself (the user, 2026-10-18: "a luz tem que ser em MALREC não no chão"; inside the card's own plane it lit only the
@@ -454,7 +455,7 @@ class MapStage final : public Stage {
         const float glow = std::clamp((time - g.start) * 5.0f, 0.0f, 1.0f) * std::clamp(1.0f - (time - g.end) * 2.5f, 0.0f, 1.0f);
         const glm::vec3 hands = c.origin + cardUp(c) * (0.6f * c.height) - camera.forward * 0.45f;
         const float flick = 0.92f + std::sin(time * 1000.0f / 70.0f) * 0.08f;
-        lights_.push_back(carried(hands, g.color, kCastLight * glow, kCastLightRadius, 1.6f, flick));
+        lights_.push_back(engine2Light(hands, g.color, kCastLight * glow * flick, kCastLightReach, kCastLightDecay));
       }
       ++i;
     }
@@ -483,13 +484,9 @@ class MapStage final : public Stage {
       const UnitLightDef& d = def->second;
       const glm::vec3 feet = unitWorld(i);
       const float flick = flicker(time, static_cast<float>(i) * 1.7f, d.flicker);
-      // Real light reads Engine2's strength x reach^2 as the flux, so a 1-hex familiar came out 50x under a lantern and could not be
-      // seen at night; each carried light gives a lantern's flux (Engine2 NORMAL_LANTERN: 7 at 3.3 hexes) so the unit and what
-      // stands around it read as lit (the user, 2026-10-18, Engine2's screenshot: "é assim que tem que ficar ILUMINADO").
-      for (const glm::vec3& o : unitLightSpots(i, d)) {  // (x, z, radius) around the feet
-        const float strength = lightingMode_ == 3 ? 7.0f * (3.3f * 3.3f) / (o.z * o.z) : std::max(d.intensity, 7.0f);
-        lights_.push_back(carried(feet + glm::vec3(o.x, 1.0f, o.y), d.color, strength, o.z * 1.3f, 1.0f, flick));
-      }
+      // Engine2 CarriedLight: strength x 3.2, decay 1.25, cut off at hypot(radius, 1) x 2.5, one unit above the feet.
+      for (const glm::vec3& o : unitLightSpots(i, d))  // (x, z, radius) around the feet
+        lights_.push_back(engine2Light(feet + glm::vec3(o.x, 1.0f, o.y), d.color, d.intensity * kE2Strength * flick, std::hypot(o.z, 1.0f) * 2.5f, 1.25f));
     }
     renderer.setEffects(effectList_);
     renderer.setVfx(spellFx_.vfx());
@@ -3655,18 +3652,20 @@ class MapStage final : public Stage {
       return;
     }
     if (striker >= 0 && !pose.empty()) unitShot_[static_cast<size_t>(striker)] = {pose, now_, false, actionRate()};
-    // The casting light (Engine2 Battle3D syncCastLight): every caster while its cast pose plays, in its spell's colour; swings,
-    // shoves and arrow shots are not casts (NOT_CASTS). Malrec alone also lights his attacks and counters.
+    // The casting light (Engine2 Battle3D syncCastLight): every caster while its cast pose plays, in its spell's colour (Malrec,
+    // Salazar and Voss in their own); swings, shoves and arrow shots are not casts (NOT_CASTS). Malrec alone also lights his attacks
+    // and counters, in yellow.
     if (striker >= 0 && !pose.empty()) {
       static const std::unordered_set<std::string> kNotCasts = {"doubleStrike", "cleave", "piercingThrust", "sweep", "trip", "shoulderSmash",
                                                                 "stampede", "tendrilSwipe", "longShot", "bloodyShot", "multiShot", "piercing",
                                                                 "bullRush", "shieldBash", "executionerStrike"};
       const size_t su = static_cast<size_t>(striker);
-      const bool malrec = su < unitCatalog_.size() && unitCatalog_[su] && unitCatalog_[su]->key == "malrec";
+      const std::string hero = su < unitCatalog_.size() && unitCatalog_[su] ? unitCatalog_[su]->key : std::string();
+      const bool malrec = hero == "malrec";
       const bool attack = s.type == StepType::Combat || x.counter || pose.rfind("attack", 0) == 0 || pose.rfind("counter", 0) == 0;
       const bool cast = !attack && s.type != StepType::Potion && s.type != StepType::Move && !kNotCasts.contains(s.kind);
       const bool heal = s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food;
-      if (cast || (attack && malrec)) glows_.push_back({su, now_, now_ + length, castTint(s.kind, heal, malrec, attack)});
+      if (cast || (attack && malrec)) glows_.push_back({su, now_, now_ + length, castTint(s.kind, heal, hero, attack)});
     }
     // A spell waits for its caster's whole cast pose (the user, 2026-10-17: "as magias esperem a animação dos sprites de
     // casting antes de aparecerem em todos os casos"): its effect, its sound and its hit come after the pose. Weapon skills,
@@ -7046,8 +7045,23 @@ class MapStage final : public Stage {
     }
     return p;
   }
-  // Engine2 Battle3D: CAST_LIGHT 9 (its PointLight reaches 6 at decay 1.8; here as the carried light the previous glow was tuned with).
-  static constexpr float kCastLight = 9.0f, kCastLightRadius = 3.4f;
+  // Engine2 Battle3D: CAST_LIGHT 9, its PointLight reaching 6 at decay 1.8.
+  static constexpr float kCastLight = 9.0f, kCastLightReach = 6.0f, kCastLightDecay = 1.8f;
+  // Engine2 CarriedLight STRENGTH: a light of strength 1 (LightDef) is 3.2 in three's units, "as much light again as the scene
+  // already has there" one hex out.
+  static constexpr float kE2Strength = 3.2f;
+  // An Engine2 point light (three's intensity, distance, decay) as Engine2 meant it: relative to the light already on the board.
+  // Under real light (lux, the camera's exposure) the casters', familiars' and spells' lights scale with the metered scene light
+  // (meterLux_ = Engine2's 3.2): as lux they vanished on a day map, a lantern at noon (the user, 2026-10-18: "não mudou nada").
+  LocalLight engine2Light(glm::vec3 at, const std::array<float, 3>& color, float intensity, float distance, float decay) const {
+    LocalLight l;
+    l.position = at;
+    l.range = distance;
+    l.decay = decay;
+    const float scale = lightingMode_ == 3 ? std::max(meterLux_, 1e-4f) / kE2Strength : 1.0f;
+    l.color = glm::vec3(color[0], color[1], color[2]) * intensity * scale;
+    return l;
+  }
   struct UnitLightDef {  // Engine2 lighting.ts LightDef: linear colour, strength, reach in hex radii, flicker
     std::array<float, 3> color;
     float intensity, radius, flicker;
@@ -7081,8 +7095,9 @@ class MapStage final : public Stage {
     }
     return {{0.0f, 0.0f, d.radius}};
   }
-  // Engine2 Battle3D CAST_TINT / MALREC_*: the casting light's colour (sRGB hex, three's linear colour).
-  static std::array<float, 3> castTint(const std::string& kind, bool heal, bool malrec, bool attack) {
+  // Engine2 Battle3D CAST_TINT / MALREC_*: the casting light's colour (sRGB hex, three's linear colour). The heroes cast in their
+  // own colour whatever the spell (the user, 2026-10-18): Malrec blue, Salazar yellow, Voss purple.
+  static std::array<float, 3> castTint(const std::string& kind, bool heal, const std::string& hero, bool attack) {
     static const std::unordered_map<std::string, uint32_t> kTint = {
         {"fireball", 0xff8a3c}, {"burningHands", 0xff8a3c}, {"frost", 0x9fd6ff}, {"iceStorm", 0x9fd6ff}, {"lightning", 0xb8d2ff},
         {"shock", 0xb8d2ff}, {"causticVenom", 0x86ff7c}, {"minorVenom", 0x86ff7c}, {"poisonBreath", 0x86ff7c}, {"lifeDrain", 0xff5a6e},
@@ -7090,7 +7105,9 @@ class MapStage final : public Stage {
         {"webOfDreams", 0xd8c8ff}, {"warp", 0xb48cff}};
     uint32_t h = 0xffe6c0;
     if (attack) h = 0xffd45a;
-    else if (malrec) h = 0x4f9dff;
+    else if (hero == "malrec") h = 0x4f9dff;
+    else if (hero == "salazar") h = 0xffd45a;
+    else if (hero == "voss") h = 0xa066ff;
     else if (heal) h = 0xffd98a;
     else if (const auto t = kTint.find(kind); t != kTint.end()) h = t->second;
     const auto lin = [](uint32_t v) {

@@ -217,8 +217,9 @@ Sight tacticalSight(MeshFrame f, float3 position) {
 
 // --- The surface's colour --------------------------------------------------------------------------------
 
-// Lit colour before the fog of war's darkening (`sight` limits local light); shade() applies all of it.
-float3 shadeInSight(MeshFrame f, Surface s, Sight sight) {
+// Lit colour before the fog of war's darkening (`sight` limits local light); shade() applies all of it. The local lights' share
+// comes back apart in `local` (the cards cap the two shares each on their own: sprites.hlsl).
+float3 shadeInSightSplit(MeshFrame f, Surface s, Sight sight, out float3 local) {
   const float3 view = normalize(f.cameraPosition - s.position);
   const float a = max(s.roughness * s.roughness, 0.002);
   const float3 diffuseColor = s.albedo * (1.0 - s.metallic);
@@ -238,7 +239,7 @@ float3 shadeInSight(MeshFrame f, Surface s, Sight sight) {
                f.sunIntensity * shadow;
     }
   }
-  if (sight.local > 0.0) color += localLights(f, s, view, diffuseColor, f0, a, nv) * sight.local;
+  local = sight.local > 0.0 ? localLights(f, s, view, diffuseColor, f0, a, nv) * sight.local : float3(0.0, 0.0, 0.0);
   if (f.lightingLayers & kLayerIndirect) {
     // Lambert returns albedo * E / pi; the specular lobe sees the environment's radiance through the
     // split-sum BRDF.
@@ -247,6 +248,12 @@ float3 shadeInSight(MeshFrame f, Surface s, Sight sight) {
   }
   color += s.emissive * f.exposure;
   return color;
+}
+
+float3 shadeInSight(MeshFrame f, Surface s, Sight sight) {
+  float3 local;
+  const float3 color = shadeInSightSplit(f, s, sight, local);
+  return color + local;
 }
 
 // The volumetric fog between the camera and a surface (volume.hlsl): what reaches the eye.
