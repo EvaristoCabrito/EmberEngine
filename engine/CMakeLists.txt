@@ -49,6 +49,7 @@ add_library(EmberEngine STATIC
   world/Architecture.cpp
   world/Water3D.cpp
   world/Battle.cpp
+  world/Progression.cpp
   world/BattleSave.cpp
   world/Combat.cpp
   world/BattleTurns.cpp

@@ -11,6 +11,7 @@
 #include "core/Log.h"
 #include "world/Battle.h"
 #include "world/Combat.h"
+#include "world/Progression.h"
 
 namespace ember::e2 {
 
@@ -278,7 +279,7 @@ int Overworld::classHp(const std::string& classId, int level) const {
   if (!c.is_object()) return 0;
   const Json& hp = c["hp"];
   const int i = std::clamp(level, 1, static_cast<int>(hp.size())) - 1;  // statsFor: n = max(0, min(MAX, level) - 1)
-  return hp[static_cast<size_t>(i)].get<int>();
+  return progressionClassHp(classId, i + 1, hp[static_cast<size_t>(i)].get<int>());  // a hero's class: EmberEngine's own growth
 }
 
 double Overworld::classResistance(const std::string& classId, const std::string& element) const {

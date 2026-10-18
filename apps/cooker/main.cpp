@@ -41,6 +41,7 @@
 #include "BattleCheck.h"
 #include "world/Campaign.h"
 #include "world/Overworld.h"
+#include "world/Progression.h"
 #include "GroundCheck.h"
 #include "GroundCooker.h"
 #include "MeshCooker.h"
@@ -393,6 +394,7 @@ int main(int argc, char** argv) {
   }
   const std::string_view command = argv[1];
   const std::vector<std::string_view> args(argv + 2, argv + argc);
+  ember::e2::setProgressionEnabled(false);  // the checks compare Engine2's own numbers, not EmberEngine's growth
   if (command == "pack") return pack(args);
   if (command == "list") return list(args);
   if (command == "synth") return synth(args);

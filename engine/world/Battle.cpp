@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 
 #include "core/Log.h"
+#include "world/Progression.h"
 
 namespace ember::e2 {
 
@@ -325,6 +326,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
         o.gearMov = o.mov - g[15];
       }
     }
+    applyProgression(o);  // EmberEngine's own growth over Engine2's (gear kept; off in the Cooker's checks)
     o.footprintW = integer(u, "footprintW", 2);
     o.footprintH = integer(u, "footprintH", 4);
     if (u.contains("reach") && u["reach"].is_array())
