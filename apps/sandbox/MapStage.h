@@ -1876,13 +1876,32 @@ class MapStage final : public Stage {
   }
 
   void buildLights(float time) {
+    // A map light sits on its flame as the card draws it (the user, 2026-10-18: the lights were "completely off set"):
+    // the card's axis and layer step (addCard), its picture's bottom edge, then up the card along the same lean as
+    // sprites.hlsl VSMain when the cards lean to the camera; Engine2's floor of minHeight over the ground kept.
+    glm::vec3 lean{0.0f, 1.0f, 0.0f};
+    if (cardStance_ == 1) {
+      const glm::vec3 f = lastCamera_.forward;
+      const glm::vec3 v = glm::vec3(0.0f, 1.0f, 0.0f) - f * f.y;
+      if (glm::dot(v, v) > 1e-6f) lean = glm::normalize(v);
+    }
     for (const e2::SceneCard& d : scene_->cards) {
       if (!d.light) continue;
       const float yaw = d.lockedYaw.value_or(0.0f);
       const glm::vec3 right{std::cos(yaw), 0.0f, -std::sin(yaw)};
       const float height = std::max(d.light->minHeight, (d.art.flameV - d.art.baseV) * d.h);
       const float side = (d.art.flameU - d.art.baseU) * d.w * (d.mirror ? -1.0f : 1.0f);
-      const glm::vec3 at = glm::vec3(d.x, groundOf(d.groundSmooth, d.groundHard), d.z) + right * side + glm::vec3(0, height, 0);
+      const glm::vec3 base = glm::vec3(d.x, groundOf(d.groundSmooth, d.groundHard), d.z);
+      glm::vec3 at = base + right * side + glm::vec3(0, height, 0);
+      const SpriteClipId clip = flat_ || !sprites_.ready() ? kNoSpriteClip : sprites_.find("decor", std::filesystem::path(d.image).stem().string());
+      if (clip != kNoSpriteClip) {
+        const SpriteClipHeader& c = sprites_.header(clip);
+        const float bottom = 1.0f - (static_cast<float>(c.cropY) + c.contentHeight) / static_cast<float>(c.sourceHeight);
+        const float flameV = d.art.flameFound ? d.art.flameV : 0.7f;
+        const glm::vec3 facing{-right.z, 0.0f, right.x};
+        at = base + right * side + facing * d.nudge + glm::vec3(0.0f, (bottom - d.art.baseV) * d.h, 0.0f) + lean * ((flameV - bottom) * d.h);
+        at.y = std::max(at.y, base.y + d.light->minHeight);
+      }
       lights_.push_back(carried(at, d.light->color, d.light->intensity, d.light->radius, height, flicker(time, d.light->seed, d.light->flicker)));
     }
     if (hero_ < 0) return;
