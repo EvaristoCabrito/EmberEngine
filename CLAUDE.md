@@ -676,6 +676,10 @@ efeitos e wire into the game")
 
 ## Combat rules port (2026-10-17; user: "porta todas as regras do combate", hit % + confirm, pathfinding)
 
+- **DEX = hit, dodge and escape only (ours, the user, 2026-10-18; NOT Engine2's):** every weapon blow (main, off-hand, counter)
+  goes through `e2::hitChance` (Combat.h): clamp(0..100, accuracy + 10 from behind + (attacker DEX − defender DEX) / `kDexDivisor`
+  (3, Battle.h)); escape = min(100, 60 + DEX / kDexDivisor), unchanged. Spells.cpp's own weapon-ability roll (resolveStepImpl) was
+  left as it was on the user's order. `Cooker check-battle`'s hit % no longer matches Engine2 by design.
 - **Confirm + hit %:** `MapStage::drawConfirm` (strike / spell shows the hit chance, Confirmar / Cancelar, as Engine2). Pathfinding: the
   algorithm already matched Engine2; the bug was rim hexes that could not be clicked (`pickAt` edge padding, fixed). A hand-bent route would
   be NEW behaviour: ask the user first.

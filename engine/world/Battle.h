@@ -115,6 +115,8 @@ struct QuestPickup {
 
 // Potions in the bag's order (Engine2 GameApp ALL_POTIONS; data.ts POTIONS).
 inline constexpr const char* kPotionIds[7] = {"weak", "mid", "potent", "disease", "manaSmall", "manaMid", "manaLarge"};
+// DEX counts in thirds, and only in three places (the user, 2026-10-18): hit, dodge (Combat.h hitChance) and escape (fleeChance).
+inline constexpr double kDexDivisor = 3.0;
 
 struct BattleUnit {
   std::string id, side, name, classId, sprite, className;
@@ -569,7 +571,7 @@ class Battle {
   bool winAvailable() const;
   // The waypoint a living hero is standing on, if any, and that hero.
   const Exit* activeExit(size_t* hero = nullptr) const;
-  // Engine2 fleeChance: min(100, 60 + DEX / 3) with the affinity bonus.
+  // Engine2 fleeChance: min(100, 60 + DEX / kDexDivisor) with the affinity bonus.
   double fleeChance(size_t unit) const;
   void setFinished() { finished_ = true; }
   bool finished() const { return finished_; }

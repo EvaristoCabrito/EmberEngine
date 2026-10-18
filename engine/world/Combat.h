@@ -63,6 +63,9 @@ bool clearShot(const Battle& b, BattleHex from, BattleHex to, bool arrow, bool d
 // combat.ts powerOf; resistances.ts elementalDamage (resistance in %, softened by the caster's MAG / 2).
 double powerOf(const Fighter& f);
 double elementalDamage(double base, double resistance, double mag);
+// Every weapon blow's chance to land, in % (ours, the user, 2026-10-18): clamp(0..100, accuracy + 10 from behind +
+// (attacker's DEX - defender's DEX) / kDexDivisor), DEX as fighterAt reads it.
+double hitChance(const Fighter& attacker, const Fighter& defender, double accuracy, bool rear);
 
 // The unit placed at (x, y), with the affinity bonus its party neighbours there give it (BattleEngine.affinityUnit).
 Fighter fighterAt(const Battle& b, size_t unit, int x, int y);

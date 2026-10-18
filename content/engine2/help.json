@@ -7991,7 +7991,7 @@
          "accent": true
         },
         {
-         "text": ": limite entre 0% e 100% de (75% + proficiência da arma + bônus de acerto − DEX do defensor)"
+         "text": ": limite entre 0% e 100% de (75% + proficiência da arma + bônus de acerto + 10% pelas costas + (DEX do atacante − DEX do defensor) ÷ 3)"
         }
        ],
        [
@@ -8148,7 +8148,7 @@
       "mt": 0.5,
       "spans": [
        {
-        "text": "Exemplo de precisão: proficiência 20, bônus de acerto 0 e defensor com DEX 15 → 75 + 20 − 15 = 80% de chance. Em 100 pontos de proficiência, a precisão base chega a 175%; o limite final ainda é aplicado depois da DEX do defensor."
+        "text": "Exemplo de precisão: proficiência 20, bônus de acerto 0, atacante com DEX 21 e defensor com DEX 15 → 75 + 20 + (21 − 15) ÷ 3 = 97% de chance. Ao contrário, atacante com DEX 15 e defensor com DEX 21 → 75 + 20 − 2 = 93%. Em 100 pontos de proficiência, a precisão base chega a 175%; o limite final ainda é aplicado depois da DEX."
        }
       ]
      },
@@ -8162,11 +8162,11 @@
       "lines": [
        [
         {
-         "text": "Precisão contra você",
+         "text": "Acerto e esquiva",
          "accent": true
         },
         {
-         "text": ": chance do ataque − sua DEX, limitado entre 0% e 100%."
+         "text": ": a cada 3 pontos de DEX que o atacante tem a mais que o alvo, +1% de acerto; a cada 3 a menos, −1%. Limitado entre 0% e 100%."
         }
        ],
        [
@@ -16980,7 +16980,7 @@
          "accent": true
         },
         {
-         "text": ": Clamp (75% + weapon proficiency + hit bonus − defender DEX) to 0%–100%."
+         "text": ": Clamp (75% + weapon proficiency + hit bonus + 10% from behind + (attacker DEX − defender DEX) ÷ 3) to 0%–100%."
         }
        ],
        [
@@ -17137,7 +17137,7 @@
       "mt": 0.5,
       "spans": [
        {
-        "text": "Accuracy example: proficiency 20, no hit bonus, defender DEX 15 → 75 + 20 − 15 = 80% chance. At 100 proficiency, base accuracy reaches 175%; the final cap is applied after subtracting defender DEX."
+        "text": "Accuracy example: proficiency 20, no hit bonus, attacker DEX 21, defender DEX 15 → 75 + 20 + (21 − 15) ÷ 3 = 97% chance. The other way round, attacker DEX 15 against defender DEX 21 → 75 + 20 − 2 = 93%. At 100 proficiency, base accuracy reaches 175%; the final cap is applied after DEX."
        }
       ]
      },
@@ -17151,11 +17151,11 @@
       "lines": [
        [
         {
-         "text": "Accuracy against you",
+         "text": "Hit and dodge",
          "accent": true
         },
         {
-         "text": ": attack chance − your DEX, clamped to 0%–100%."
+         "text": ": every 3 DEX the attacker has over the target adds 1% to hit; every 3 under takes 1% off. Clamped to 0%–100%."
         }
        ],
        [

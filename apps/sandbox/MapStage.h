@@ -76,6 +76,7 @@
 #include "render/SpriteSystem.h"
 #include "world/Battle.h"
 #include "world/Combat.h"
+#include "world/Initiative.h"
 #include "world/Inn.h"
 #include "world/Loadout.h"
 #include "world/Quests.h"
@@ -2282,6 +2283,7 @@ class MapStage final : public Stage {
     findConversations();
     if (!options_.arrivedFrom.empty()) arriveAtConnector();
     else if (options_.formation && !explores_) placeFormation();
+    for (e2::BattleUnit& u : battle_->units()) e2::applyEmberInitiative(u);  // our bonuses, not Engine2's (world/Initiative.h)
     rng_ = e2::Mulberry32(static_cast<uint32_t>(std::chrono::steady_clock::now().time_since_epoch().count()));
     battle_->rollInitiative(rng_);
     for (const e2::BattleUnit& u : battle_->units()) startLevel_.emplace_back(u.level, u.xp);
@@ -5624,7 +5626,7 @@ class MapStage final : public Stage {
   }
   double fleeChance(const e2::BattleUnit& u) const {
     const size_t b = static_cast<size_t>(&u - battle_->units().data());
-    return std::min(100.0, 60.0 + e2::fighterAt(*battle_, b, u.x, u.y).dex / 3.0);  // dexterity.ts dexEscapeChance
+    return std::min(100.0, 60.0 + e2::fighterAt(*battle_, b, u.x, u.y).dex / e2::kDexDivisor);  // dexterity.ts dexEscapeChance
   }
   // Rolls the escape for the picked hero: a hit takes the party back where the fight came from (no victory, nothing completed); a
   // miss spends the hero's turn and the foes carry on.

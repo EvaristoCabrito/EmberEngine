@@ -198,17 +198,21 @@ Preview previewDamage(const Battle& b, const Fighter& a, const Fighter& d, const
   } else if (p.hasWeapon) {
     weapon = p.dice * (p.faces + 1.0) / 2 * damageMul + p.bonus + p.enh;
   }
-  const double hitChance = useSkill ? std::max(0.0, std::min(100.0, accuracy + (rear ? 10 : 0) - d.dex)) : 100.0;
+  const double chance = useSkill ? hitChance(a, d, accuracy, rear) : 100.0;
   const double raw = powerOf(a) + weapon + bonusAtk - protOf(a, d) - bonusDef;
   double dmg = std::max(1.0, std::floor(std::max(1.0, raw) * (offHand ? 1 : (p.classBonus ? 1.1 : 1)) * (rear ? 1.1 : 1)));
   if (!offHand && p.staff && useSkill) {
     const double staffed = dmg * (1 + p.staffBonusPct / 100);
     dmg = std::floor(elementalDamage(staffed, b.units()[d.unit].combat.resistance(p.staffElement), a.mag));
   }
-  return {static_cast<int>(dmg), hitChance};
+  return {static_cast<int>(dmg), chance};
 }
 
 }  // namespace
+
+double hitChance(const Fighter& attacker, const Fighter& defender, double accuracy, bool rear) {
+  return std::max(0.0, std::min(100.0, accuracy + (rear ? 10 : 0) + (attacker.dex - defender.dex) / kDexDivisor));
+}
 
 double Mulberry32::operator()() {
   a_ += 0x6d2b79f5u;
@@ -323,7 +327,7 @@ Hit rollDamage(const Battle& b, const Fighter& a, const Fighter& d, Mulberry32& 
   if (custom) weapon = roll(custom->dice, custom->faces) * damageMul + custom->bonus;  // rollDamageCustom
   else if (p.hasWeapon) weapon = roll(p.dice, p.faces) * damageMul + p.bonus + p.enh;
   Hit h;
-  h.hitChance = useWeaponSkill ? std::max(0.0, std::min(100.0, accuracy + (rear ? 10 : 0) - d.dex)) : 100;
+  h.hitChance = useWeaponSkill ? hitChance(a, d, accuracy, rear) : 100;
   const double raw = powerOf(a) + weapon + bonusAtk - protOf(a, d) - bonusDef;
   const double classMul = !custom && p.classBonus ? 1.1 : 1;
   h.preCritDmg = static_cast<int>(std::max(1.0, std::floor(std::max(1.0, raw) * classMul * (rear ? 1.1 : 1))));

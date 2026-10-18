@@ -131,7 +131,7 @@ bool Battle::winAvailable() const {
 
 double Battle::fleeChance(size_t unit) const {
   const BattleUnit& u = units_[unit];
-  return std::min(100.0, 60 + fighterAt(*this, unit, u.x, u.y).dex / 3);
+  return std::min(100.0, 60 + fighterAt(*this, unit, u.x, u.y).dex / kDexDivisor);
 }
 
 void Battle::noteWeaponDamage(size_t attacker, size_t target, int dmg) { noteDamage(attacker, target, dmg, false); }
