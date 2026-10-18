@@ -6430,6 +6430,24 @@ class MapStage final : public Stage {
 
   // What stands on the board and blocks sight: 3D models over their footprint, standing cards at least
   // kBlockHeight tall and kBlockWidth wide along their width; 3D models at least kBlockWidth across. (Walls and doors are not imported yet: they block nothing.)
+  // A card's width is its drawn art, not its image box (the user, 2026-10-18: trees left holes everywhere): the box is
+  // 1.86 wide for a tree whose trunk fills a third of it, so every tree, stump and bush walled off three hexes.
+  // content/engine2/card-sight.json (tools/scripts/engine2/card_sight.py) = the opaque share of each image's width.
+  static float cardArtShare(const std::string& image) {
+    static const std::unordered_map<std::string, float> shares = [] {
+      std::unordered_map<std::string, float> out;
+      std::ifstream in("content/engine2/card-sight.json");
+      const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+      if (j.is_object())
+        for (const auto& [key, value] : j.items())
+          if (value.is_number()) out[key] = value.get<float>();
+      if (out.empty()) logError("fog of war: content/engine2/card-sight.json missing: cards block by their whole image box");
+      return out;
+    }();
+    const auto it = shares.find(image);
+    return it == shares.end() ? 1.0f : it->second;
+  }
+
   void addOccluders() {
     for (const ArchPiece& a : arch_)
       if (a.blocks)
@@ -6449,10 +6467,11 @@ class MapStage final : public Stage {
       fog_->block(m.x, m.z, m.height);
     }
     for (const e2::SceneCard& d : scene_->cards) {
-      if (d.onFloor || d.h < e2::kBlockHeight || d.w < e2::kBlockWidth) continue;  // thin props do not block
+      const float drawn = d.w * cardArtShare(d.image);
+      if (d.onFloor || d.h < e2::kBlockHeight || drawn < e2::kBlockWidth) continue;  // thin props do not block
       const float yaw = d.lockedYaw.value_or(0.0f);
       const glm::vec2 right{std::cos(yaw), -std::sin(yaw)};
-      const float half = d.w * 0.5f;
+      const float half = drawn * 0.5f;
       for (float a = -half; a <= half; a += 0.25f) fog_->block(d.x + right.x * a, d.z + right.y * a, d.h);
     }
   }

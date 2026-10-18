@@ -29,7 +29,7 @@
 namespace ember::e2 {
 
 inline constexpr uint8_t kFogUnseen = 0, kFogExplored = 1, kFogVisible = 2;
-inline constexpr int kSightRadius = 9;            // the user, 2026-10-18: a little more than Engine2's SIGHT_RADIUS 7
+inline constexpr int kSightRadius = 12;           // the user, 2026-10-18: 9 (Engine2's SIGHT_RADIUS 7), then 12 ("aumentar o line of sight")
 // Ground the party has left stays drawn as in sight for this long, then darkens to remembered (the user, 2026-10-18: "a
 // área que o grupo deixou continua clara como vista por 3 minutos, depois escurece"). The look only: what the party sees
 // (enemies drawn, combat starting, aims) is still the sight of this moment.
