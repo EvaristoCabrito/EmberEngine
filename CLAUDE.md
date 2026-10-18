@@ -653,8 +653,9 @@ efeitos e wire into the game")
   Venenoso, Veneno Menor; proven on `aldeia015` with its enemies swapped for plants: `PLANT_TEST=1`, `aldeia015.plants.refs.json`), and the locks:
   `useLockpick` (chests in 3 tiers, door decorations, door tiles; Ember, potion for whoever has room, gear, rations; ~90 openings compared: bags, loot,
   draws, affinity). Data: battle JSONs now carry `locks` (+ the cells each opening changes) and `ownedWeapons`: **re-export a battle file to get chests**
-  (the 7 in `content/engine2/battles` and the 3 proof maps in `build/engine2-test/battles` were; the other `build/engine2-test` battles were not: the user
-  said proof maps only). Loot tables are read from `content/engine2/overworld.json`. In the game: "Arrombar" beside a lock, the loot popup with icons,
+  (every campaign battle in `content/engine2/battles`; on 2026-10-17, on the user's order "todos os mapas com baús precisam funcionar", every
+  `build/engine2-test` battle whose map has a chest, door tile or door decoration: 116 maps, battle file only, TEST_LEVEL=15 NO_REFS=1 from its own
+  build/engine2-test/maps file, ~3 s each; maps without locks were left alone). Loot tables are read from `content/engine2/overworld.json`. In the game: "Arrombar" beside a lock, the loot popup with icons,
   the opened chest's card and an opened door's model leave the board, Ember / weapons / gear are folded into the save on a victory
   (`finishCampaignFight`), saved with the fight's snapshot. Capture step `lockpick:<unit>:<lock>`.
 - **Ported, NOT checked against Engine2:** win rules (rout / boss / escape waypoints, `Battle::winAvailable`, `confirmFinish`, the finish prompt and
