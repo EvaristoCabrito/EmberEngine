@@ -3043,7 +3043,7 @@ class MapStage final : public Stage {
   // until the party meets an enemy ------------------------------------------------------------------------------------------
   // The user's rule (2026-10-16): the party walks freely, its picked unit leading and the others following in
   // a line; an enemy coming into the party's sight starts the fight, in initiative order, with every unit's own
-  // movement; once the foes it woke have fallen and none is in sight the party roams again (the user, 2026-10-17: "free
+  // movement; once no enemy is in sight (fallen or out of view) the party roams again (the user, 2026-10-17: "free
   // movement switch back and forth"). Engine2 roamed the whole mission; its free reach stays (Battle::reachable while
   // roaming), and like Engine2 the reach is not washed over the board (a box says it is free movement).
   static constexpr int kRoamSight = 6;  // without fog of war: an enemy this many hexes from the party is met
@@ -3080,11 +3080,9 @@ class MapStage final : public Stage {
     if (!battle_ || !scene_ || !roams_ || !result_.empty()) return;
     if (fog_ && !noFog_ && !fogReady_) return;  // the fog's first sight decides whether the map opens in free roam or a fight
     if (!battle_->roaming()) {
-      // The fight on an explore map is over once every foe it woke has fallen and no other is in sight: free roam again,
-      // between actions (nothing walking, striking or playing an enemy's turn).
+      // The fight is over once no enemy is in sight, dead or only out of view (the user, 2026-10-17: the party does not hunt a
+      // foe it cannot see turn by turn): free roam again, between actions (nothing walking, striking or playing an enemy's turn).
       if (busy() || pendingStrike_ >= 0) return;
-      for (const int b : awake_)
-        if (battle_->units()[static_cast<size_t>(b)].alive) return;
       if (!enemiesInSight().empty()) return;
       battle_->resumeRoaming();
       for (e2::BattleUnit& u : battle_->units()) u.moveUsed = 0, u.acted = false, u.moved = false;
@@ -3092,7 +3090,7 @@ class MapStage final : public Stage {
       turnUnit_ = -1;
       select(-1);  // the leader is picked again below, next frame
       // No announcement (the user, 2026-10-17: "não existe anúncio"): the box is free movement again, that is all.
-      logInfo("explore: no foe left in sight: free roam again");
+      logInfo("explore: no foe in sight: free roam again");
       return;
     }
     const std::vector<int> met = enemiesInSight();
