@@ -3789,7 +3789,7 @@ class MapStage final : public Stage {
       unitWalk_[static_cast<size_t>(gi)] = Walk{};
       return logInfo("battle script: goto {} ({}, {}): exit {}", p[1], v.x, v.y, battle_->activeExit() ? battle_->activeExit()->kind : "none");
     }
-    if (p[0] == "lockpick" && p.size() > 2) {  // "lockpick:<unit>:<lock>": the unit set beside the lock with a Gazua, picked, and the lock opened
+    if (p[0] == "lockpick" && p.size() > 2) {  // "lockpick:<unit>:<lock>": the unit set beside the lock with a Gazua, picked, and the lock opened (":hold" = not opened)
       const int gi = sceneUnitNamed(p[1]);
       const size_t li = static_cast<size_t>(std::atoi(p[2].c_str()));
       if (gi < 0 || li >= battle_->locks().size()) return fail("no such unit or lock");
@@ -3812,6 +3812,7 @@ class MapStage final : public Stage {
         battle_->units()[i].moved = true;
       }
       select(gi);
+      if (p.size() > 3 && p[3] == "hold") return logInfo("battle script: {} beside lock {} with a Gazua, not opened", p[1], li);  // the Arrombar button on screen
       openLock();
       return logInfo("battle script: lockpick {} on lock {} ({} at {}, {}): open {}, Ember found {}", p[1], li, lock.kind, lock.x, lock.y, battle_->locks()[li].open, battle_->lootEmber());
     }
@@ -4742,10 +4743,13 @@ class MapStage final : public Stage {
   }
 
   // .ember-btn.ember-btn-sm: Pirata One, primary (the ember gradient) or ghost (dark iron, an ember underline on hover).
-  bool emberButton(const char* id, const char* label, bool primary, bool enabled, float height = 32.0f) {
+  // `icon` (a file under Engine2's game/icons, e.g. "lockpick.png") is drawn before the label.
+  bool emberButton(const char* id, const char* label, bool primary, bool enabled, float height = 32.0f, const char* icon = nullptr) {
     ImFont* font = uiFont(UiFont::Mark);
     const float size = 16.0f;
-    const float w = spacedTextWidth(font, size, label, 0.06f) + 28.0f;
+    const UiImage* iconImage = icon ? uiImage(options_.engine2Public / "game/icons" / icon) : nullptr;
+    const float iconSide = iconImage ? std::round(height * 0.66f) : 0.0f, iconGap = iconImage ? 6.0f : 0.0f;
+    const float w = spacedTextWidth(font, size, label, 0.06f) + 28.0f + iconSide + iconGap;
     ImGui::BeginDisabled(!enabled);
     const bool clicked = ImGui::InvisibleButton(id, {w, height});
     const bool hover = enabled && ImGui::IsItemHovered();
@@ -4774,7 +4778,12 @@ class MapStage final : public Stage {
       }
     }
     const float tw = spacedTextWidth(font, size, label, 0.06f);
-    const ImVec2 p{std::round((a.x + b.x - tw) * 0.5f), std::round((a.y + b.y - size) * 0.5f)};
+    const float left = std::round((a.x + b.x - tw - iconSide - iconGap) * 0.5f);
+    if (iconImage) {
+      const float y = std::round((a.y + b.y - iconSide) * 0.5f);
+      imageContain(dl, *iconImage, {left, y}, {left + iconSide, y + iconSide}, IM_COL32(255, 255, 255, fade));
+    }
+    const ImVec2 p{left + iconSide + iconGap, std::round((a.y + b.y - size) * 0.5f)};
     const ImU32 ink = primary ? IM_COL32(255, 241, 216, fade) : hover ? IM_COL32(255, 224, 180, 255) : IM_COL32(226, 194, 148, fade);
     spacedText(dl, font, size, {p.x, p.y + 1}, IM_COL32(0, 0, 0, fade), label, 0.06f, false);
     spacedText(dl, font, size, p, ink, label, 0.06f, false);
@@ -5321,7 +5330,7 @@ class MapStage final : public Stage {
     }
     if (actor && canAct && actor->lockpick > 0 && battle_->adjacentLock(me) >= 0) {
       ImGui::SameLine();  // Engine2's "Arrombar": a Gazua opens the chest or door beside the hero
-      if (emberButton("##lockpick", tr("Arrombar", "Pick lock").c_str(), false, spellMode_.empty())) openLock();
+      if (emberButton("##lockpick", tr("Arrombar", "Pick lock").c_str(), false, spellMode_.empty(), 32.0f, "lockpick.png")) openLock();
     }
     ImGui::SameLine();
     const bool turns = !battle_->roaming();  // free roam has no turns to end
@@ -5375,7 +5384,7 @@ class MapStage final : public Stage {
     if (myTurn() && !busy()) {
       const size_t me = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
       if (battle_->units()[me].lockpick > 0 && battle_->adjacentLock(me) >= 0) {
-        if (emberButton("##lockpick", tr("Arrombar", "Pick lock").c_str(), false, true)) openLock();
+        if (emberButton("##lockpick", tr("Arrombar", "Pick lock").c_str(), false, true, 32.0f, "lockpick.png")) openLock();
         ImGui::SameLine();
       }
     }
