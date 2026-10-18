@@ -436,18 +436,59 @@ class MapStage final : public Stage {
       // Tática: the effects lie face up just above every flat card (cards: boardTop + z x the row step).
       spellFx_.build(time, camera, flat_, boardTop_ + 0.2f, effectList_, fxLights_);
     }
-    for (const SpellEffects::Light& l : fxLights_) lights_.push_back(carried(l.at, l.color, l.intensity, l.radius, l.height, 1.0f));
-    // Malrec's point of light (the user, 2026-10-17): blue while he casts, yellow while he strikes or counters; it swells in with
-    // the pose and fades 0.25 s after it.
+    const size_t spellLightsFrom = lights_.size();  // the effects' and the casters' lights: the brightest casts the spell shadow
+    for (const SpellEffects::Light& l : fxLights_) lights_.push_back(carried(offCard(l.at, camera.forward), l.color, l.intensity, l.radius, l.height, 1.0f));
+    // Engine2 Battle3D syncCastLight: a point of light at a caster's hands while it casts (Malrec: blue on every spell, yellow on
+    // his attacks and counters). It stands 0.6 of the card up and 0.45 in front of the card, toward the camera, so it lights the
+    // caster himself (the user, 2026-10-18: "a luz tem que ser em MALREC não no chão"; inside the card's own plane it lit only the
+    // ground). In at 5 / s, out at 2.5 / s, Engine2's flicker.
     for (size_t i = 0; i < glows_.size();) {
       const UnitGlow& g = glows_[i];
-      if (time > g.end + 0.25f || g.ui >= unitCard_.size()) {
+      if (time > g.end + 0.4f || g.ui >= unitCard_.size()) {
         glows_.erase(glows_.begin() + static_cast<std::ptrdiff_t>(i));
         continue;
       }
-      const float fade = std::clamp((time - g.start) / 0.15f, 0.0f, 1.0f) * std::clamp((g.end + 0.25f - time) / 0.25f, 0.0f, 1.0f);
-      lights_.push_back(carried(unitSpot(g.ui).body + glm::vec3(0.0f, 0.5f, 0.0f), g.color, 9.0f * fade, 3.4f, 1.6f, 1.0f));
+      const CardRect& c = unitCard_[g.ui];
+      if (c.drawn) {
+        const float glow = std::clamp((time - g.start) * 5.0f, 0.0f, 1.0f) * std::clamp(1.0f - (time - g.end) * 2.5f, 0.0f, 1.0f);
+        const glm::vec3 hands = c.origin + cardUp(c) * (0.6f * c.height) - camera.forward * 0.45f;
+        const float flick = 0.92f + std::sin(time * 1000.0f / 70.0f) * 0.08f;
+        lights_.push_back(carried(hands, g.color, kCastLight * glow, kCastLightRadius, 1.6f, flick));
+      }
       ++i;
+    }
+    // Every spell casts shadows from its light (the user, 2026-10-18): the brightest of this frame's effect and casting lights draws
+    // the cards into its own shadow map (Renderer::setLocalShadow); the ground and the 3D pieces darken behind every card.
+    {
+      size_t best = lights_.size();
+      float bestFlux = 0.0f;
+      for (size_t k = spellLightsFrom; k < lights_.size(); ++k) {
+        const glm::vec3& c = lights_[k].color;
+        const float flux = 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b;
+        if (flux > bestFlux) best = k, bestFlux = flux;
+      }
+      if (best < lights_.size() && board_ && !flat_) {
+        const glm::vec3 at = lights_[best].position;
+        renderer.setLocalShadow(at, lights_[best].range, static_cast<float>(e2::groundHeightAt(*board_, look_, at.x, at.z)));
+      } else {
+        renderer.setLocalShadow(std::nullopt, 0.0f, 0.0f);
+      }
+    }
+    // Engine2 UNIT_LIGHT_DEFS: units that carry their own light (the familiars, the swamp calf), on the body, walking with it.
+    for (size_t i = 0; scene_ && i < scene_->units.size() && i < unitCard_.size(); ++i) {
+      const auto def = kUnitLights.find(scene_->units[i].classId);
+      if (def == kUnitLights.end() || !unitCard_[i].drawn) continue;
+      if (unitBattle_[i] >= 0 && !battle_->units()[static_cast<size_t>(unitBattle_[i])].alive) continue;
+      const UnitLightDef& d = def->second;
+      const glm::vec3 feet = unitWorld(i);
+      const float flick = flicker(time, static_cast<float>(i) * 1.7f, d.flicker);
+      // Real light reads Engine2's strength x reach^2 as the flux, so a 1-hex familiar came out 50x under a lantern and could not be
+      // seen at night; each carried light gives a lantern's flux (Engine2 NORMAL_LANTERN: 7 at 3.3 hexes) so the unit and what
+      // stands around it read as lit (the user, 2026-10-18, Engine2's screenshot: "é assim que tem que ficar ILUMINADO").
+      for (const glm::vec3& o : unitLightSpots(i, d)) {  // (x, z, radius) around the feet
+        const float strength = lightingMode_ == 3 ? 7.0f * (3.3f * 3.3f) / (o.z * o.z) : std::max(d.intensity, 7.0f);
+        lights_.push_back(carried(feet + glm::vec3(o.x, 1.0f, o.y), d.color, strength, o.z * 1.3f, 1.0f, flick));
+      }
     }
     renderer.setEffects(effectList_);
     renderer.setVfx(spellFx_.vfx());
@@ -1837,7 +1878,6 @@ class MapStage final : public Stage {
       // The hit react: knocked back along the blow, squashed (a little wider as it is shorter).
       float squash = 1.0f;
       anchor += recoilOffset(ui, time, boxH, squash) + leapOffset(ui, time);
-      if (!flat_) anchor += bodyFrontShift(ui, camera.forward);
       boxW *= 1.0f + (1.0f - squash) * 0.6f, boxH *= squash;
       // Engine2's mirroring: the art's facing against the unit's, except cuts drawn for the left (and directional
       // walks while moving), which are never mirrored.
@@ -1857,7 +1897,18 @@ class MapStage final : public Stage {
       const size_t cardsBefore = drawList_.size();
       // Engine2 centerBody: a sheet that drifts sideways mid-swing (Neera's off-hand dagger) is held on its hex.
       const float drift = p && frame < p->bodyShift.size() ? p->bodyShift[frame] * boxW : 0.0f;
-      addCard(clip, anchor, right, boxW, boxH, {-drift, -foot, 0.0f}, mirror, frame, flags, nullptr);
+      // Engine2 UNIT_GLOW: art painted as glowing lights itself (the Cobalt Blue Deer's crystal antlers: colour, level 0.85, its
+      // own mask in sprites.hlsl, flagged by a negative emitAt.z).
+      // The familiars glow the same way (the user, 2026-10-18, Engine2's screenshot: the familiar bright, lit, among dark stone).
+      SpriteInstance glow{};
+      const bool glows = u.sprite == "cobalt-blue-deer" || u.classId == "familiar" || u.classId == "familiar2" ||
+                         u.classId == "familiar3" || u.classId == "familiar4";
+      if (glows) {
+        glow.emitColor = {0.55f, 0.62f, 1.0f};
+        glow.emitLevel = 0.85f * (lightingMode_ == 3 ? flameGlow() / std::max(exposure_, 1e-9f) : 1.0f);
+      }
+      addCard(clip, anchor, right, boxW, boxH, {-drift, -foot, 0.0f}, mirror, frame, flags, glows ? &glow : nullptr);
+      if (glows && drawList_.size() > cardsBefore) drawList_.back().emitAt.z = -1.0f;
       // A unit whose spell is playing stays in front of it (user, 2026-10-16): its card is drawn again over the effects.
       if (drawList_.size() > cardsBefore && spellFx_.casterInFront(static_cast<int>(ui), time)) frontCards_.push_back(drawList_.back());
       unitCard_[ui] = {anchor - (flat_ ? glm::vec3(0.0f, 0.0f, -foot) : glm::vec3(0.0f, foot, 0.0f)), boxW, boxH, flat_, true};
@@ -2315,26 +2366,6 @@ class MapStage final : public Stage {
     const glm::vec2 p = unitPos_[i];
     const float y = unitMoved_[i] ? static_cast<float>(e2::groundHeightAt(*board_, look_, p.x, p.y)) : groundOf(u.groundSmooth, u.groundHard);
     return {p.x, y, p.y};
-  }
-
-  // A body of several hexes seen end-on (the user, 2026-10-18: the 2-hex Cão Zumbi with the camera turned): its card always faces
-  // the camera, so at the footprint's middle its feet stood on the edge between the hex in front and the one behind, off both
-  // marks. The feet go forward, toward the camera, to the nearest hex of the body; seen side-on nothing moves (the middle).
-  glm::vec3 bodyFrontShift(size_t ui, const glm::vec3& forward) const {
-    if (!battle_ || !board_ || ui >= unitBattle_.size() || unitBattle_[ui] < 0) return glm::vec3(0.0f);
-    const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[ui])];
-    const std::vector<e2::BattleHex> body = e2::Battle::footprint(u, u.x, u.y);
-    glm::vec2 toCamera(-forward.x, -forward.z);
-    if (body.size() < 2 || glm::dot(toCamera, toCamera) < 1e-6f) return glm::vec3(0.0f);
-    toCamera = glm::normalize(toCamera);
-    const glm::vec2 centre = anchorWorld(u, {u.x, u.y});
-    float reach = 0.0f;
-    for (const e2::BattleHex& p : body) {
-      if (!battle_->inBounds(p.x, p.y)) continue;
-      const e2::Cell& c = board_->cell(p.x, p.y);
-      reach = std::max(reach, glm::dot(glm::vec2(static_cast<float>(c.x), static_cast<float>(c.z)) - centre, toCamera));
-    }
-    return glm::vec3(toCamera.x, 0.0f, toCamera.y) * reach;
   }
 
   // Where a battle unit's feet stand with its anchor on a hex: the middle of its body's front row (Ember's footprint
@@ -3608,11 +3639,18 @@ class MapStage final : public Stage {
       return;
     }
     if (striker >= 0 && !pose.empty()) unitShot_[static_cast<size_t>(striker)] = {pose, now_, false, actionRate()};
-    if (striker >= 0 && !pose.empty() && static_cast<size_t>(striker) < unitCatalog_.size() && unitCatalog_[static_cast<size_t>(striker)] &&
-        unitCatalog_[static_cast<size_t>(striker)]->key == "malrec") {
-      const bool castLike = s.type != StepType::Combat && !x.counter && pose.rfind("attack", 0) != 0;
-      glows_.push_back({static_cast<size_t>(striker), now_, now_ + length,
-                        castLike ? std::array<float, 3>{0.30f, 0.55f, 1.0f} : std::array<float, 3>{1.0f, 0.82f, 0.28f}});
+    // The casting light (Engine2 Battle3D syncCastLight): every caster while its cast pose plays, in its spell's colour; swings,
+    // shoves and arrow shots are not casts (NOT_CASTS). Malrec alone also lights his attacks and counters.
+    if (striker >= 0 && !pose.empty()) {
+      static const std::unordered_set<std::string> kNotCasts = {"doubleStrike", "cleave", "piercingThrust", "sweep", "trip", "shoulderSmash",
+                                                                "stampede", "tendrilSwipe", "longShot", "bloodyShot", "multiShot", "piercing",
+                                                                "bullRush", "shieldBash", "executionerStrike"};
+      const size_t su = static_cast<size_t>(striker);
+      const bool malrec = su < unitCatalog_.size() && unitCatalog_[su] && unitCatalog_[su]->key == "malrec";
+      const bool attack = s.type == StepType::Combat || x.counter || pose.rfind("attack", 0) == 0 || pose.rfind("counter", 0) == 0;
+      const bool cast = !attack && s.type != StepType::Potion && s.type != StepType::Move && !kNotCasts.contains(s.kind);
+      const bool heal = s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food;
+      if (cast || (attack && malrec)) glows_.push_back({su, now_, now_ + length, castTint(s.kind, heal, malrec, attack)});
     }
     // A spell waits for its caster's whole cast pose (the user, 2026-10-17: "as magias esperem a animação dos sprites de
     // casting antes de aparecerem em todos os casos"): its effect, its sound and its hit come after the pose. Weapon skills,
@@ -4662,8 +4700,10 @@ class MapStage final : public Stage {
     // The foes in reach of a strike (Engine2 GRID_ENEMY_TARGET: its fill and border).
     for (const auto& [t, from] : targets_) {
       const e2::BattleUnit& f = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(t)])];
-      add({f.x, f.y}, IM_COL32(110, 0, 8, 217), 1.0f);
-      add({f.x, f.y}, IM_COL32(110, 0, 8, 255), 0.94f, border(0.94f));
+      for (const e2::BattleHex& p : e2::Battle::footprint(f, f.x, f.y)) {
+        add(p, IM_COL32(110, 0, 8, 217), 1.0f);
+        add(p, IM_COL32(110, 0, 8, 255), 0.94f, border(0.94f));
+      }
     }
     // The cursor: red where nothing can stand.
     if (hover_) {
@@ -4688,8 +4728,7 @@ class MapStage final : public Stage {
     auto flag = [&](e2::BattleHex h, uint32_t f) {
       if (Renderer::GridCell* c = at(h)) c->flags |= f;
     };
-    // A unit's marks go on every hex its body stands on (the user, 2026-10-18: a 2-hex Cão Zumbi stands across both, its card on
-    // their shared edge, and a ring on its first hex alone lay beside its feet).
+    // A foe in reach of a strike is marked on every hex of its body (Engine2 boardOverlayLayers: atkTiles.push(...footprint(foe))).
     auto flagBody = [&](const e2::BattleUnit& u, uint32_t f) {
       for (const e2::BattleHex& p : e2::Battle::footprint(u, u.x, u.y)) flag(p, f);
     };
@@ -4711,13 +4750,13 @@ class MapStage final : public Stage {
         for (const e2::BattleHex& c : aimArea(b, *aimed)) flag(c, Renderer::kGridSpellArea);
         for (size_t id : aimHits(b, *aimed)) {
           const e2::BattleUnit& t = battle_->units()[id];
-          if (t.alive && !t.hidden) flagBody(t, t.side == battle_->units()[b].side ? Renderer::kGridTarget : Renderer::kGridSpellTarget);
+          if (t.alive && !t.hidden) flag({t.x, t.y}, t.side == battle_->units()[b].side ? Renderer::kGridTarget : Renderer::kGridSpellTarget);
         }
       }
       if (hover_) flag(*hover_, Renderer::kGridHover | (aimValid(b, *hover_) ? 0u : Renderer::kGridHoverBlocked));
       for (const e2::BattleHex& c : spellCells_) flag(c, Renderer::kGridSpellChosen);
       const e2::BattleUnit& u = battle_->units()[b];
-      flagBody(u, Renderer::kGridActive);
+      flag({u.x, u.y}, Renderer::kGridActive);
     } else if (selected_ >= 0 && !walking) {
       const bool player = scene_->units[static_cast<size_t>(selected_)].side == "player";
       const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
@@ -4752,7 +4791,7 @@ class MapStage final : public Stage {
             if (i + 1 == route.size()) cell->flags |= Renderer::kGridRouteEnd;
           }
       }
-      flagBody(u, player ? Renderer::kGridActive : Renderer::kGridActiveFoe);
+      flag({u.x, u.y}, player ? Renderer::kGridActive : Renderer::kGridActiveFoe);
     }
     // The foes in reach of a strike.
     for (const auto& [t, from] : targets_) {
@@ -6775,6 +6814,76 @@ class MapStage final : public Stage {
   std::vector<int> unitFacing_;        // 1 right, -1 left, on screen
   std::vector<uint8_t> unitReversed_;  // its art faces left (Engine2 drawnReversed)
   static constexpr int kWalkBack = 0, kWalkFront = 1, kWalkSide = 2;  // Engine2 WalkDir: up the map, down it, along a row
+  // A light born on a unit's body (an effect's glow at a caster's or a target's chest) sits in the plane of its camera-facing card,
+  // where the card takes none of it and only the ground lights up (the user, 2026-10-18: the same fix as Malrec's casting light, for
+  // every light on a unit): it moves 0.45 in front of that card, toward the camera, as Engine2's casting light stands.
+  glm::vec3 offCard(const glm::vec3& p, const glm::vec3& forward) const {
+    for (size_t i = 0; i < unitCard_.size(); ++i) {
+      const CardRect& c = unitCard_[i];
+      if (!c.drawn || c.flat) continue;
+      const glm::vec3 up = cardUp(c), d = p - c.origin;
+      const float along = glm::dot(d, up);
+      if (along < 0.0f || along > c.height) continue;
+      const glm::vec3 side = d - up * along;
+      const float depth = glm::dot(side, -forward);
+      if (std::abs(depth) > 0.35f || glm::length(side + forward * depth) > c.width * 0.5f) continue;
+      return p - forward * (0.45f - depth);
+    }
+    return p;
+  }
+  // Engine2 Battle3D: CAST_LIGHT 9 (its PointLight reaches 6 at decay 1.8; here as the carried light the previous glow was tuned with).
+  static constexpr float kCastLight = 9.0f, kCastLightRadius = 3.4f;
+  struct UnitLightDef {  // Engine2 lighting.ts LightDef: linear colour, strength, reach in hex radii, flicker
+    std::array<float, 3> color;
+    float intensity, radius, flicker;
+  };
+  inline static const std::unordered_map<std::string, UnitLightDef> kUnitLights = {
+      {"familiar", {{0.68f, 0.82f, 1.0f}, 1.5f, 1.0f, 0.08f}},  {"familiar2", {{0.64f, 0.76f, 1.0f}, 1.8f, 2.0f, 0.08f}},
+      {"familiar4", {{0.68f, 0.82f, 1.0f}, 1.8f, 2.0f, 0.08f}}, {"familiar3", {{1.0f, 0.08f, 0.1f}, 0.7f, 2.0f, 0.04f}},
+      {"swampBlueCalf", {{0.55f, 0.75f, 1.0f}, 1.8f, 3.0f, 0.3f}},
+  };
+  // Engine2 UnitActor's carried lights, as (x, z, radius) from the feet: Familiar Titã one per body hex (centred on its front
+  // row), Familiar Maior three (its body and the two hexes behind it), everyone else one.
+  std::vector<glm::vec3> unitLightSpots(size_t ui, const UnitLightDef& d) const {
+    const std::string& cls = scene_->units[ui].classId;
+    if (cls == "familiar4")
+      return {{0.0f, 0.0f, 3.0f}, {-std::sqrt(3.0f) / 2.0f, -1.5f, 2.0f}, {std::sqrt(3.0f) / 2.0f, -1.5f, 2.0f}};
+    if (cls == "familiar3" && unitBattle_[ui] >= 0) {
+      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[ui])];
+      std::vector<glm::vec3> spots;
+      float front = 0.0f;
+      int n = 0;
+      const e2::Cell& at = board_->cell(u.x, u.y);
+      for (const e2::BattleHex& p : e2::Battle::footprint(u, u.x, u.y)) {
+        if (!battle_->inBounds(p.x, p.y)) continue;
+        const e2::Cell& c = board_->cell(p.x, p.y);
+        const float x = static_cast<float>(c.x - at.x), z = static_cast<float>(c.z - at.z);
+        spots.push_back({x, z, d.radius});
+        if (p.y == u.y) front += x, ++n;
+      }
+      for (glm::vec3& s : spots) s.x -= n ? front / static_cast<float>(n) : 0.0f;
+      return spots;
+    }
+    return {{0.0f, 0.0f, d.radius}};
+  }
+  // Engine2 Battle3D CAST_TINT / MALREC_*: the casting light's colour (sRGB hex, three's linear colour).
+  static std::array<float, 3> castTint(const std::string& kind, bool heal, bool malrec, bool attack) {
+    static const std::unordered_map<std::string, uint32_t> kTint = {
+        {"fireball", 0xff8a3c}, {"burningHands", 0xff8a3c}, {"frost", 0x9fd6ff}, {"iceStorm", 0x9fd6ff}, {"lightning", 0xb8d2ff},
+        {"shock", 0xb8d2ff}, {"causticVenom", 0x86ff7c}, {"minorVenom", 0x86ff7c}, {"poisonBreath", 0x86ff7c}, {"lifeDrain", 0xff5a6e},
+        {"magicMissile", 0xc7b4ff}, {"magicMissileV2", 0xc7b4ff}, {"phantasmalForce", 0xc7b4ff}, {"fantomForce", 0xc7b4ff},
+        {"webOfDreams", 0xd8c8ff}, {"warp", 0xb48cff}};
+    uint32_t h = 0xffe6c0;
+    if (attack) h = 0xffd45a;
+    else if (malrec) h = 0x4f9dff;
+    else if (heal) h = 0xffd98a;
+    else if (const auto t = kTint.find(kind); t != kTint.end()) h = t->second;
+    const auto lin = [](uint32_t v) {
+      const float x = static_cast<float>(v & 255u) / 255.0f;
+      return x <= 0.04045f ? x / 12.92f : std::pow((x + 0.055f) / 1.055f, 2.4f);
+    };
+    return {lin(h >> 16), lin(h >> 8), lin(h)};
+  }
   struct UnitGlow {  // a unit's coloured point of light for the length of its pose
     size_t ui;
     float start, end;

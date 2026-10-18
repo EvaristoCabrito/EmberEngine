@@ -112,6 +112,23 @@ float sunShadow(MeshFrame f, Surface s) {
   return lit / 16.0;
 }
 
+// The spell light's shadow (Renderer setLocalShadow): the cards seen from that light, a soft 16-tap compare. 1 = lit. Its
+// fields come one by one and it runs once per surface, before the light loop (DXC gotcha, CLAUDE.md: read through the MeshFrame
+// passed by value, inside the loop, it lost the GPU even when the branch was never taken).
+float localShadow(float4x4 lightMatrix, uint mapIndex, uint samplerIndex, float size, float3 position, float3 normal, float3 lightPosition) {
+  const float3 p = position + normal * 0.04 + normalize(lightPosition - position) * 0.04;
+  const float4 c = mul(float4(p, 1.0), lightMatrix);
+  if (c.w <= 1e-4) return 1.0;
+  const float3 uvz = float3(c.xy / c.w * 0.5 + 0.5, c.z / c.w);
+  if (any(uvz.xy < 0.0) || any(uvz.xy > 1.0) || uvz.z > 1.0 || uvz.z < 0.0) return 1.0;
+  Texture2D map = gTextures[NonUniformResourceIndex(mapIndex)];
+  SamplerComparisonState cmp = gComparisonSamplers[samplerIndex];
+  const float radius = 2.5 / size;
+  float lit = 0.0;
+  [unroll] for (uint i = 0; i < 16; ++i) lit += map.SampleCmpLevelZero(cmp, uvz.xy + kPoisson16[i] * radius, uvz.z - 0.0005);
+  return lit / 16.0;
+}
+
 // Local lights through the cluster this point falls in. Engine2's falloff (three.js punctual lights):
 // 1 / max(d^decay, 0.01), windowed to zero at the range by (1 - (d / range)^4)^2.
 float3 localLights(MeshFrame f, Surface s, float3 view, float3 diffuseColor, float3 f0, float a, float nv) {
@@ -125,6 +142,10 @@ float3 localLights(MeshFrame f, Surface s, float3 view, float3 diffuseColor, flo
   const uint cluster = tile.x + tile.y * kClusterX + clusterSlice(f, depth) * kClusterX * kClusterY;
   const uint64_t list = f.clusters + clusterOffset(cluster);
   const uint count = vk::RawBufferLoad<uint>(list);
+  const float3 spellLight = f.localShadowPosition;
+  const bool spellShadow = f.localShadowMap != kNoTexture && s.receivesCardShadow > 0.0 && (f.lightingLayers & kLayerShadows) != 0;
+  const float spellLit = spellShadow ? localShadow(f.localShadowMatrix, f.localShadowMap, f.shadowSampler, f.localShadowSize, s.position,
+                                                   s.geometricNormal, spellLight) : 1.0;
   float3 color = 0.0;
   for (uint k = 0; k < count; ++k) {
     const LocalLight light = loadLight(f, vk::RawBufferLoad<uint>(list + 4 + k * 4));
@@ -134,7 +155,8 @@ float3 localLights(MeshFrame f, Surface s, float3 view, float3 diffuseColor, flo
     const float3 l = toLight / max(d, 1e-4);
     const float ratio = d / light.range;
     const float window = saturate(1.0 - ratio * ratio * ratio * ratio);
-    const float falloff = window * window / max(pow(d, light.decay), 0.01);
+    float falloff = window * window / max(pow(d, light.decay), 0.01);
+    if (spellShadow && distance(light.position, spellLight) < 1e-3) falloff *= spellLit;
     float3 n = s.normal;
     if (s.twoSidedLocal > 0.0 && dot(n, l) < 0.0) n = -n;
     const float nlRaw = dot(n, l);

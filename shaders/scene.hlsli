@@ -167,6 +167,13 @@ struct MeshFrame {
   // the sky / backdrop take its last slice (both 0 for volume.hlsl, so the old haze draws as it always did).
   uint volumeSlices;
   uint volumeFlags;
+  // The spell light's shadow (the user, 2026-10-18: "every single spell in the game has light and shadow"): the strongest
+  // effect light this frame casts the cards' shadows from a perspective map looking down from it (lighting.hlsli localShadow).
+  float4x4 localShadowMatrix;   // world -> that light's clip: x, y in -1..1, z in 0..1 (0 = nearest the light)
+  float3 localShadowPosition;   // the light it belongs to (matched by position in the light list)
+  uint localShadowMap;          // bindless depth texture; kNoTexture = none this frame
+  float localShadowSize;        // texels per side
+  uint pad10a, pad10b, pad10c;  // (not a uint3: aligned to 16 it would push the struct past the C++ one's 768 bytes)
 };
 static const uint kVolumeEffects = 1u;
 static const uint kVolumeBackground = 2u;

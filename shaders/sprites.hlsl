@@ -115,13 +115,19 @@ float4 PSMain(VSOut i) : SV_Target0 {
     if (s.emitLevel > 0.0) {
       // Engine2's flame mask: bright, saturated pixels close to the light's colour glow, and so does the lit
       // glass just around where the light sits on the card.
+      // A unit painted as glowing (emitAt.z < 0: the Cobalt Blue Deer): its whole body glows, antlers and white coat alike (the
+      // user, 2026-10-18: "o corpo dele tem que brilhar"); only its dark pixels (eyes, hooves' shade) stay unlit. No glass.
+      const bool unitGlow = s.emitAt.z < 0.0;
       const float3 lo = float3(0.45, 0.4, 0.9), hi = float3(0.8, 0.7, 0.97);
       const float eMax = max(c.r, max(c.g, c.b));
       const float eSat = (eMax - min(c.r, min(c.g, c.b))) / max(eMax, 1e-4);
       const float eSim = dot(normalize(c.rgb + 1e-4), normalize(s.emitColor));
-      float mask = smoothstep(lo.x, hi.x, eMax) * smoothstep(lo.y, hi.y, eSat) * smoothstep(lo.z, hi.z, eSim);
-      const float near = 1.0 - smoothstep(kGlowRadius * 0.6, kGlowRadius, length((i.uv - s.emitAt.xy) * float2(s.emitAt.z, s.emitScaleV)));
-      mask = max(mask, smoothstep(0.12, 0.4, eMax) * smoothstep(0.08, 0.3, eSat) * smoothstep(0.75, 0.9, eSim) * near * 0.75);
+      float mask = unitGlow ? smoothstep(0.15, 0.45, eMax)
+                            : smoothstep(lo.x, hi.x, eMax) * smoothstep(lo.y, hi.y, eSat) * smoothstep(lo.z, hi.z, eSim);
+      if (!unitGlow) {
+        const float near = 1.0 - smoothstep(kGlowRadius * 0.6, kGlowRadius, length((i.uv - s.emitAt.xy) * float2(s.emitAt.z, s.emitScaleV)));
+        mask = max(mask, smoothstep(0.12, 0.4, eMax) * smoothstep(0.08, 0.3, eSat) * smoothstep(0.75, 0.9, eSim) * near * 0.75);
+      }
       color += c.rgb * mask * s.emitLevel * f.exposure;
     }
     color = applyVolume(f, color * sight.color, i.world);
@@ -154,16 +160,18 @@ ShadowOut VSShadow(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
   const SpriteInstance s = loadSprite(instance);
   const MeshFrame f = loadFrame(push.frame);
   const float2 c = corners[vertex];
+  // push.lean bit 2: the spell light's pass (Renderer setLocalShadow): a camera-facing card turns to face that light instead.
+  const bool local = (push.lean & 2u) != 0;
   float3 right = float3(s.right.x, 0.0, s.right.y);
   if (dot(s.right, s.right) == 0.0) {
-    const float2 sun = f.sunDirection.xz;
-    right = dot(sun, sun) > 1e-6 ? normalize(float3(sun.y, 0.0, -sun.x)) : float3(1, 0, 0);
+    const float2 toward = local ? (f.localShadowPosition - s.origin).xz : f.sunDirection.xz;
+    right = dot(toward, toward) > 1e-6 ? normalize(float3(toward.y, 0.0, -toward.x)) : float3(1, 0, 0);
   }
   const float3 world = s.origin + right * ((c.x - 0.5) * s.width) + ((s.flags & 16u) ? float3(0, 0, -1) : float3(0, 1, 0)) * (c.y * s.height);
   ShadowOut o;
   // Non-casters fall off the map; so does a card standing on never-seen ground (R7: it reveals nothing).
   const bool casts = (s.flags & 8u) && !neverSeen(f, s.origin);
-  o.position = casts ? mul(float4(world, 1.0), f.shadowMatrix) : float4(0, 0, -1, 1);
+  o.position = casts ? mul(float4(world, 1.0), local ? f.localShadowMatrix : f.shadowMatrix) : float4(0, 0, -1, 1);
   const float u = (s.flags & 1u) ? 1.0 - c.x : c.x;
   o.uv = float2(u, 1.0 - c.y) * s.uvScale;
   o.instance = instance;

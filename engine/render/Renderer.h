@@ -3,6 +3,7 @@
 #include <array>
 #include <cmath>
 #include <memory>
+#include <optional>
 #include <span>
 #include <string>
 #include <vector>
@@ -232,6 +233,12 @@ class Renderer {
   // Cards lean back with the camera's tilt so they project upright anywhere on screen (sprites.hlsl VSMain); off =
   // vertical cards, which converge under a tilted camera. Panel "Cards".
   void setCardLean(bool on) { cardLean_ = on; }
+  // The spell light whose shadow the cards cast this frame (one of setLights' lights, by its position; its ground below it at
+  // groundY); none = no spell shadow. The cards are drawn into a perspective map looking straight down from the light.
+  void setLocalShadow(std::optional<glm::vec3> light, float range, float groundY) {
+    localShadowLight_ = light, localShadowRange_ = range, localShadowGround_ = groundY;
+  }
+  static constexpr uint32_t kLocalShadowSize = 2048;
   bool cardLean() const { return cardLean_; }
   uint32_t lightingLayers() const { return lightingLayers_; }
   // Tactical visibility (fog of war, ARCHITECTURE §7.0 R7): Engine2's darkness mask over the board
@@ -357,8 +364,14 @@ class Renderer {
   Image cardShadowMap_;
   uint32_t cardShadowMapIndex_ = kNoIndex;
   bool cardShadowsThisFrame_ = false;
+  Image localShadowMap_;  // the spell light's card shadows (setLocalShadow), D16
+  uint32_t localShadowMapIndex_ = kNoIndex;
+  std::optional<glm::vec3> localShadowLight_;
+  float localShadowRange_ = 0.0f, localShadowGround_ = 0.0f;
+  glm::mat4 localShadowMatrix_{1.0f};
+  bool localShadowThisFrame_ = false;
   uint64_t shadowMeshKey_ = 0;
-  alignas(16) std::array<std::byte, 672> shadowFrameStorage_{};
+  alignas(16) std::array<std::byte, 768> shadowFrameStorage_{};  // one MeshFrame (Renderer.cpp asserts the size)
   // Volumetric fog: two froxel volumes (this frame's and last frame's, swapped), the integrated one.
   VolumetricFog volumetric_;
   Image volumes_[2], volumeIntegrated_;

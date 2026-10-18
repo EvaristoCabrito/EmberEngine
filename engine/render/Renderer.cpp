@@ -210,9 +210,14 @@ struct MeshFrame {
   uint64_t atmosphere;  // AtmosphereFrame (device address); 0 = the hemisphere, no sky, no aerial perspective
   uint32_t volumeSlices;  // slices of `volume` (kFroxelZ for volume.hlsl; Volumetrics' grid when it owns the volume)
   uint32_t volumeFlags;   // scene.hlsli kVolume*: what else reads the volume (0 for volume.hlsl)
+  glm::mat4 localShadowMatrix;      // the spell light's shadow (Renderer::setLocalShadow): world -> its clip
+  glm::vec3 localShadowPosition;    // the light it belongs to
+  uint32_t localShadowMap;          // kNoTextureIndex = none this frame
+  float localShadowSize;
+  uint32_t pad10[3];
 };
-static_assert(sizeof(MeshFrame) == 672 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384 &&
-              offsetof(MeshFrame, shadowMatrix) == 480);
+static_assert(sizeof(MeshFrame) == 768 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384 &&
+              offsetof(MeshFrame, shadowMatrix) == 480 && offsetof(MeshFrame, localShadowMatrix) == 672);
 
 // Matches VolumeFrame in shaders/volume.hlsl.
 struct VolumeFrame {
@@ -442,6 +447,8 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   shadowMapIndex_ = bindless_.addSampledImage(shadowMap_.view, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
   cardShadowMap_ = createImage(context, {kCardShadowFormat, {shadowSize_, shadowSize_}, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT});
   cardShadowMapIndex_ = bindless_.addSampledImage(cardShadowMap_.view, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
+  localShadowMap_ = createImage(context, {kCardShadowFormat, {kLocalShadowSize, kLocalShadowSize}, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT});
+  localShadowMapIndex_ = bindless_.addSampledImage(localShadowMap_.view, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
 
   createTargets(size);
 
@@ -665,6 +672,8 @@ Renderer::~Renderer() {
   destroyImage(context_, shadowMap_);
   bindless_.removeSampledImage(cardShadowMapIndex_);
   destroyImage(context_, cardShadowMap_);
+  bindless_.removeSampledImage(localShadowMapIndex_);
+  destroyImage(context_, localShadowMap_);
   vkDestroyPipeline(context_.device, meshShadowPipeline_, nullptr);
   vkDestroyPipeline(context_.device, lightsPipeline_, nullptr);
   destroyBuffer(context_, clusters_);
@@ -1124,6 +1133,24 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
   // Cards cast into their own map, every frame (units move and animate).
   cardShadowsThisFrame_ = shadows && std::any_of(sprites_.begin(), sprites_.end(), [](const SpriteInstance& c) { return (c.flags & kSpriteCastsShadow) != 0; });
   f.cardShadowMap = cardShadowsThisFrame_ ? cardShadowMapIndex_ : kNoTextureIndex;
+  // The spell light's shadow: a perspective map looking straight down from the light, wide enough to reach its range on the
+  // ground (at most 160 degrees), cards drawn into it every frame. The shaded surfaces find the light by its position.
+  f.localShadowMap = kNoTextureIndex;
+  localShadowThisFrame_ = false;
+  if (localShadowLight_ && (lightingLayers_ & 2u) != 0 && !sprites_.empty() &&
+      std::any_of(lights_.begin(), lights_.end(), [&](const LocalLight& l) { return glm::distance(l.position, *localShadowLight_) < 1e-3f; })) {
+    const glm::vec3 at = *localShadowLight_;
+    const float height = std::max(at.y - localShadowGround_, 0.3f);
+    const float fov = std::min(2.0f * std::atan(std::max(localShadowRange_, 1.0f) / height), glm::radians(160.0f));
+    const glm::mat4 view = glm::lookAt(at, at - glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
+    const float nearPlane = std::min(0.2f, height * 0.5f);
+    localShadowMatrix_ = glm::perspective(fov, 1.0f, nearPlane, std::max(localShadowRange_, height + 1.0f) * 1.5f) * view;
+    f.localShadowMatrix = localShadowMatrix_;
+    f.localShadowPosition = at;
+    f.localShadowMap = localShadowMapIndex_;
+    f.localShadowSize = static_cast<float>(kLocalShadowSize);
+    localShadowThisFrame_ = true;
+  }
   if (shadowsThisFrame_ && meshView_) {
     // The meshes' pass from the sun: its orthographic view, frustum only, LOD at the shadow map's texel size.
     MeshFrame sf = f;
@@ -1136,6 +1163,7 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
     sf.earlyOcclusion = 0;
     sf.costSplit = 0;
     sf.debugView = 0;
+    static_assert(sizeof(sf) == sizeof(shadowFrameStorage_));
     std::memcpy(shadowFrameStorage_.data(), &sf, sizeof(sf));
   }
   // The previous frame's passes may still read these buffers.
@@ -1602,6 +1630,37 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
                 VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                 VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
     gpuTimer_.end(cmd, cardScope);
+  }
+  // --- The spell light's card shadows (setLocalShadow): the same cards, seen from the light (VSShadow, lean bit 2) ---
+  if (localShadowThisFrame_) {
+    const uint32_t localScope = gpuTimer_.begin(cmd, "spell shadow");
+    transition(cmd, localShadowMap_.image, localShadowMap_.aspect,
+               {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                VK_ACCESS_2_NONE, VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT});
+    VkRenderingAttachmentInfo localDepth{VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
+    localDepth.imageView = localShadowMap_.view;
+    localDepth.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    localDepth.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    localDepth.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    localDepth.clearValue.depthStencil = {1.0f, 0};
+    VkRenderingInfo localPass{VK_STRUCTURE_TYPE_RENDERING_INFO};
+    localPass.renderArea = {{0, 0}, {kLocalShadowSize, kLocalShadowSize}};
+    localPass.layerCount = 1;
+    localPass.pDepthAttachment = &localDepth;
+    vkCmdBeginRendering(cmd, &localPass);
+    setViewport(cmd, {kLocalShadowSize, kLocalShadowSize});
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spriteShadowPipeline_);
+    const SpritePush push{camera_.viewProjection(), camera_.right, spriteSamplerIndex_, bufferAddress(context_, frame.sprites),
+                          bufferAddress(context_, frame.meshFrame), camera_.forward, 2u};
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+    vkCmdDraw(cmd, 6, static_cast<uint32_t>(sprites_.size()), 0, 0);
+    vkCmdEndRendering(cmd);
+    transition(cmd, localShadowMap_.image, localShadowMap_.aspect,
+               {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+                VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
+    gpuTimer_.end(cmd, localScope);
   }
 
   // --- Atmosfera volumétrica v1: its froxels lit and integrated (shadows, clusters and the fog mask are ready) ---------
