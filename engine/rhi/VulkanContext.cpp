@@ -253,6 +253,11 @@ void VulkanContext::createDevice() {
   std::vector<const char*> extensions;
   if (surface) extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
   extensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+  // The driver's real budget for this process (other programs' use counted), read through VMA (vmaGetHeapBudgets): the
+  // sprite system decides from it whether Personagens Alta fits.
+  const bool memoryBudget = hasDeviceExtension(gpu, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
+  if (memoryBudget) extensions.push_back(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
+  else logWarn("VK_EXT_memory_budget missing: GPU memory budgets are estimates");
 
   VkDeviceCreateInfo info{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
   info.pNext = &wanted.core;
@@ -271,7 +276,7 @@ void VulkanContext::createDevice() {
   functions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
   functions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
   VmaAllocatorCreateInfo allocatorInfo{};
-  allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+  allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT | (memoryBudget ? VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT : 0);
   allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_3;
   allocatorInfo.physicalDevice = gpu;
   allocatorInfo.device = device;

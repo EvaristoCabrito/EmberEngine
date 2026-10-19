@@ -27,7 +27,7 @@ inline constexpr uint32_t kNoTexture = UINT32_MAX;
 // Character sprite residency. Every clip's small "tail" version stays on the GPU from start to end;
 // full-quality clips stream in when asked for and leave, least recently used first, when the GPU
 // budget needs room. Nothing ever waits: a clip draws from its tail until its full version lands.
-// Pinned clips (pin()) keep a half-resolution base for good instead, so they never fall back to the tail.
+// Pinned clips (pin(): a fight's characters) are loaded whole before the fight opens and held to its end instead.
 //
 // Each frame the game says which clips it draws now (and which it will soon) with request(); the
 // higher the priority, the sooner it streams. A clip requested this frame is never evicted.
@@ -65,16 +65,18 @@ class SpriteSystem {
 
   void request(SpriteClipId id, int32_t priority);
 
-  // A clip held in two layers from now on (a fight's characters: every pose they can play, loaded before the fight
-  // opens): its "base" (every mip from kBaseFirstMip, a quarter of the full clip's memory) stays on the GPU for good,
-  // in memory of its own, so it never draws from its tail; its full version streams like any clip, asked for by the
-  // game only while the card is big enough on screen to read the top mip (isPinned + baseHeight).
-  void pin(std::string_view set, std::string_view clip);
-  // Pinned clips whose base is on the GPU, out of all pinned (one whose base cannot be made counts as done: logged).
+  // A clip held from now on (a fight's characters: every pose they can play), loaded before the fight opens, never
+  // evicted, never drawn from its tail once it has landed. Pins made before the clip headers are read get GPU memory of
+  // their own on top of the budget (later ones, e.g. a summon, share it). A clip with `twoVersions` (the cast in
+  // content/sprite-quality.json) is held at full resolution (Alta) or as its "base" (Leve: every mip from kBaseFirstMip,
+  // the same frames at half resolution, a quarter of the memory, in an image of its own).
+  void pin(std::string_view set, std::string_view clip, bool twoVersions = false);
+  // Personagens Leve (true) or Alta, asked before the headers are read; Alta that does not fit the GPU becomes Leve.
+  void setLight(bool light) { lightAsked_ = light; }
+  bool lightActive() const { return lightActive_; }
+  // Pinned clips on the GPU, out of all pinned (one that cannot be made counts as done: logged).
   std::pair<uint32_t, uint32_t> pinProgress() const;
   bool isPinned(SpriteClipId id) const { return id < clips_.size() && clips_[id]->pinned; }
-  // Texels of the base's top mip, high: a card drawn taller than this on screen reads the full clip's top mip.
-  uint32_t baseHeight(SpriteClipId id) const { return std::max(1u, clips_[id]->header.height >> kBaseFirstMip); }
   static constexpr uint32_t kBaseFirstMip = 1;
 
   struct Texture {
@@ -127,8 +129,10 @@ class SpriteSystem {
     int32_t priority = 0;        // highest asked for this frame
     bool requestedThisFrame = false;
 
-    // Pinned clips: the base layer (mips from kBaseFirstMip, cut from the full asset), never evicted.
+    // Pinned clips: held whole (full resolution) or, Leve, as a base (mips from kBaseFirstMip, cut from the full asset).
     bool pinned = false;
+    bool twoVersions = false;  // in the cast list: Alta / Leve
+    bool light = false;        // held as its base (decided when the pool is made; a summon's when it is pinned)
     State baseState = State::Idle;
     bool baseFailed = false;  // could not be made: the clip draws its tail until its full version lands
     AssetHandle baseHandle;
@@ -152,7 +156,7 @@ class SpriteSystem {
   bool makeRoom(uint64_t bytes);
   void makeHole(const Clip& want);
   bool startUpload(Clip& clip);
-  void addPin(SpriteClipId id, std::string set);
+  void addPin(SpriteClipId id, std::string set, bool twoVersions);
   void updateBases();
 
   VulkanContext& context_;
@@ -180,11 +184,17 @@ class SpriteSystem {
   uint64_t evictions_ = 0, starved_ = 0, poolRetries_ = 0;
   uint64_t uploadWaitValue_ = 0;
   std::vector<SpriteClipId> requested_;  // this frame
-  std::vector<std::pair<AssetId, std::string>> pendingPins_;  // pinned before the roster was read (asset, sprite set)
+  struct PendingPin {
+    AssetId asset;
+    std::string set;
+    bool twoVersions;
+  };
+  std::vector<PendingPin> pendingPins_;  // pinned before the roster was read
   std::vector<SpriteClipId> pinned_;
   std::vector<std::string> pinnedSet_;   // each pinned clip's sprite set (one character's poses)
   uint64_t baseBytes_ = 0;
-  uint64_t closeUps_ = 0;  // full versions of pinned clips that landed (since start)
+  bool lightAsked_ = false, lightActive_ = false;
+  bool decided_ = false;  // the pool is made and each pinned clip's Alta / Leve is set: loads may start
   bool pinsLogged_ = false;
   std::chrono::steady_clock::time_point pinsAsked_{};
   std::vector<Retired> retired_;

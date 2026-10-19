@@ -26,6 +26,9 @@ struct GamePrefs {
   std::string uiLanguage = "pt", dialogueLanguage = "pt", subtitleLanguage = "pt";
   bool subtitles = true;
   float dialogueScale = 1.0f;  // 1 / 1.15 / 1.3
+  // Opções > Gráficos > Personagens (ours, the user 2026-10-18): "alta" = the cast's sprites at full resolution, "leve" =
+  // at half (content/sprite-quality.json lists who has both); taken when a fight loads.
+  std::string characters = "alta";
 
   static std::filesystem::path path() {
     const char* base = std::getenv("LOCALAPPDATA");
@@ -49,13 +52,15 @@ struct GamePrefs {
     p.subtitles = j.value("subtitles", p.subtitles);
     const float scale = j.value("dialogueScale", p.dialogueScale);
     if (scale == 1.0f || std::abs(scale - 1.15f) < 1e-3f || std::abs(scale - 1.3f) < 1e-3f) p.dialogueScale = scale;
+    const std::string characters = j.value("characters", p.characters);
+    if (characters == "alta" || characters == "leve") p.characters = characters;
     return p;
   }
   bool save() const {
     const nlohmann::json j = {{"muted", muted},           {"cutsceneEnabled", cutsceneEnabled}, {"music", music},
                               {"sfx", sfx},               {"cutscene", cutscene},               {"uiLanguage", uiLanguage},
                               {"dialogueLanguage", dialogueLanguage}, {"subtitleLanguage", subtitleLanguage},
-                              {"subtitles", subtitles},   {"dialogueScale", dialogueScale}};
+                              {"subtitles", subtitles},   {"dialogueScale", dialogueScale},     {"characters", characters}};
     std::error_code ec;
     std::filesystem::create_directories(path().parent_path(), ec);
     const std::filesystem::path tmp = path().string() + ".tmp";

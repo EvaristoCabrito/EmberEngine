@@ -29,8 +29,6 @@ SpriteSystem::SpriteSystem(VulkanContext& context, Bindless& bindless, AssetMana
     : context_(context), bindless_(bindless), assets_(assets), uploads_(uploads), budget_(budget) {}
 
 SpriteSystem::~SpriteSystem() {
-  if (!pinned_.empty())
-    logInfo("sprites: {} full versions of pinned clips loaded for close-ups, {} evictions", closeUps_, evictions_);
   for (auto& clip : clips_) {
     uploads_.cancel(clip->tailUpload);
     uploads_.cancel(clip->fullUpload);
@@ -80,21 +78,29 @@ void SpriteSystem::request(SpriteClipId id, int32_t priority) {
   clip.lastRequested = frame_;
 }
 
-void SpriteSystem::pin(std::string_view set, std::string_view clip) {
+void SpriteSystem::pin(std::string_view set, std::string_view clip, bool twoVersions) {
   const AssetId asset = assetId(std::string("sprites/") + std::string(set) + "/" + std::string(clip) + ".clip");
   if (pinned_.empty() && pendingPins_.empty()) pinsAsked_ = std::chrono::steady_clock::now();
   if (!rosterRead_) {
-    if (std::none_of(pendingPins_.begin(), pendingPins_.end(), [&](const auto& p) { return p.first == asset; }))
-      pendingPins_.emplace_back(asset, std::string(set));
+    const auto it = std::find_if(pendingPins_.begin(), pendingPins_.end(), [&](const PendingPin& p) { return p.asset == asset; });
+    if (it == pendingPins_.end()) pendingPins_.push_back({asset, std::string(set), twoVersions});
+    else it->twoVersions = it->twoVersions || twoVersions;
     return;
   }
   const auto it = byAsset_.find(asset);
-  if (it != byAsset_.end()) addPin(it->second, std::string(set));
+  if (it != byAsset_.end()) addPin(it->second, std::string(set), twoVersions);
 }
 
-void SpriteSystem::addPin(SpriteClipId id, std::string set) {
-  if (clips_[id]->pinned) return;
-  clips_[id]->pinned = true;
+void SpriteSystem::addPin(SpriteClipId id, std::string set, bool twoVersions) {
+  Clip& c = *clips_[id];
+  if (c.pinned) {
+    c.twoVersions = c.twoVersions || twoVersions;
+    if (decided_) c.light = c.twoVersions && lightActive_ && c.state != State::Resident;
+    return;
+  }
+  c.pinned = true;
+  c.twoVersions = twoVersions;
+  if (decided_) c.light = twoVersions && lightActive_;  // pinned during the fight (a summon): the fight's choice
   pinned_.push_back(id);
   pinnedSet_.push_back(std::move(set));
   pinsLogged_ = false;
@@ -106,7 +112,10 @@ std::pair<uint32_t, uint32_t> SpriteSystem::pinProgress() const {
   for (const SpriteClipId id : pinned_) {
     const Clip& c = *clips_[id];
     const bool headerFailed = !c.headerReady && !c.headerHandle;
-    if (headerFailed || c.baseFailed || c.baseState == State::Resident || (c.headerReady && !c.needsBase() && c.tailIndex != kNoTexture)) ++done;
+    if (headerFailed) ++done;
+    else if (!decided_) continue;
+    else if (c.light) done += c.baseFailed || c.baseState == State::Resident || (!c.needsBase() && c.tailIndex != kNoTexture) ? 1u : 0u;
+    else done += c.state == State::Resident || !fullPool_ ? 1u : 0u;  // no pool at all: tails only (logged)
   }
   return {done, total};
 }
@@ -116,15 +125,15 @@ SpriteSystem::Texture SpriteSystem::texture(SpriteClipId id) const {
   const Clip& clip = *clips_[id];
   if (clip.state == State::Resident) return {clip.fullIndex, true};
   if (clip.baseIndex != kNoTexture) return {clip.baseIndex, true};
-  return {clip.tailIndex, !clip.needsBase() && clip.pinned};
+  return {clip.tailIndex, clip.light && !clip.needsBase()};
 }
 
 void SpriteSystem::updateBases() {
-  // A pinned clip's base: its full asset read once, the mips from kBaseFirstMip on cut off its end (mip-major, like the
+  // A Leve clip's base: its full asset read once, the mips from kBaseFirstMip on cut off its end (mip-major, like the
   // tail), uploaded into an image of its own; the CPU copy goes once it is on the GPU.
   for (const SpriteClipId id : pinned_) {
     Clip& c = *clips_[id];
-    if (!c.headerReady || !c.needsBase() || c.baseFailed) continue;
+    if (!c.light || !c.headerReady || !c.needsBase() || c.baseFailed) continue;
     if (c.baseState == State::Idle) {
       c.baseHandle = assets_.load(c.header.fullAsset, kPinned);
       c.baseState = State::Loading;
@@ -206,22 +215,65 @@ void SpriteSystem::createFullPool() {
   uint32_t memoryType = 0;
   VK_CHECK(vmaFindMemoryTypeIndexForImageInfo(context_.allocator, &info, &alloc, &memoryType));
 
-  // Budget plus one block of slack, all allocated now; a fragmented pool opens holes (makeHole).
-  // Measured (512 MB budget): 64 MB blocks stream as well as a pool 50% over budget.
+  // The pinned clips (a fight's characters) are loaded whole before the fight opens and held: Alta or Leve for those
+  // with two versions (the player's choice), at full resolution for everyone else. Alta that does not fit the GPU's free
+  // memory (with a margin) is taken as Leve, logged.
+  uint64_t fullOne = 0, fullTwo = 0, halfTwo = 0;
+  for (const SpriteClipId id : pinned_) {
+    const Clip& c = *clips_[id];
+    if (!c.headerReady) continue;
+    (c.twoVersions ? fullTwo : fullOne) += c.header.fullBytes;
+    if (c.twoVersions) halfTwo += clipBytes(c.header, std::min(kBaseFirstMip, c.header.tailFirstMip));
+  }
+  const VkPhysicalDeviceMemoryProperties* props = nullptr;
+  vmaGetMemoryProperties(context_.allocator, &props);
+  VmaBudget budgets[VK_MAX_MEMORY_HEAPS];
+  vmaGetHeapBudgets(context_.allocator, budgets);
+  const VmaBudget& heap = budgets[props->memoryTypes[memoryType].heapIndex];
+  const uint64_t free = heap.budget > heap.usage ? heap.budget - heap.usage : 0;
+  constexpr uint64_t kMargin = 256ull << 20;  // the rest of the fight (effects, meshes still landing)
+  const uint64_t streaming = budget_.gpuBytes;
+  lightActive_ = lightAsked_;
+  if (!lightActive_ && fullTwo > 0 && streaming + fullOne + fullTwo + kMargin > free) {
+    lightActive_ = true;
+    logWarn("sprites: Personagens Alta needs {} MB, the GPU has {} MB free: Leve for this fight", (streaming + fullOne + fullTwo + kMargin) >> 20,
+            free >> 20);
+  }
+
+  // Budget plus the pinned full clips plus one block of slack, all allocated now; a fragmented pool opens holes
+  // (makeHole). Measured (512 MB budget): 64 MB blocks stream as well as a pool 50% over budget.
   const VkDeviceSize block = std::max(kPoolBlockBytes, largest);
-  const size_t blocks = static_cast<size_t>(budget_.gpuBytes / block + 1);
   VmaPoolCreateInfo poolInfo{};
   poolInfo.memoryTypeIndex = memoryType;
   poolInfo.blockSize = block;
-  poolInfo.minBlockCount = blocks;
-  poolInfo.maxBlockCount = blocks;
-  const VkResult result = vmaCreatePool(context_.allocator, &poolInfo, &fullPool_);
+  const auto createPool = [&](uint64_t bytes) {
+    poolInfo.minBlockCount = poolInfo.maxBlockCount = static_cast<size_t>(bytes / block + 1);
+    return vmaCreatePool(context_.allocator, &poolInfo, &fullPool_);
+  };
+  VkResult result = createPool(streaming + fullOne + (lightActive_ ? 0 : fullTwo));
+  if (result != VK_SUCCESS && !lightActive_ && fullTwo > 0) {
+    logWarn("sprites: no GPU room for Personagens Alta ({}): Leve for this fight", string_VkResult(result));
+    lightActive_ = true;
+    result = createPool(streaming + fullOne);
+  }
+  if (result != VK_SUCCESS && fullOne > 0) {
+    logError("sprites: no GPU room for the fight's {} MB of full clips ({}); they share the {} MB budget", fullOne >> 20,
+             string_VkResult(result), streaming >> 20);
+    result = createPool(streaming);
+  }
+  for (const SpriteClipId id : pinned_) clips_[id]->light = clips_[id]->twoVersions && lightActive_;
+  if (!pinned_.empty())
+    logInfo("sprites: Personagens {}{}: the cast {} MB at {} resolution, the others {} MB (GPU {} MB free before the fight)",
+            lightActive_ ? "Leve" : "Alta", lightActive_ && !lightAsked_ ? " (Alta asked)" : "", (lightActive_ ? halfTwo : fullTwo) >> 20,
+            lightActive_ ? "half" : "full", fullOne >> 20, free >> 20);
+  const size_t blocks = poolInfo.maxBlockCount;
   if (result != VK_SUCCESS) {
     logError("sprites: cannot reserve {} MB of GPU memory for full clips ({}); drawing tails only",
              (block * blocks) >> 20, string_VkResult(result));
     fullPool_ = VK_NULL_HANDLE;
     return;
   }
+  budget_.gpuBytes = streaming + fullOne + (lightActive_ ? 0 : fullTwo);
   fullPoolBlock_ = block;
   fullPoolBytes_ = block * blocks;
   logInfo("sprites: full-clip pool {} x {} MB (largest clip {:.1f} MB)", blocks, block >> 20, largest / 1048576.0);
@@ -262,9 +314,9 @@ void SpriteSystem::updateStartup() {
       headersPending_ = roster.clipCount;
       rosterRead_ = true;
       logInfo("sprites: roster lists {} clips", roster.clipCount);
-      for (auto& [asset, set] : pendingPins_) {
-        const auto it = byAsset_.find(asset);
-        if (it != byAsset_.end()) addPin(it->second, std::move(set));
+      for (PendingPin& p : pendingPins_) {
+        const auto it = byAsset_.find(p.asset);
+        if (it != byAsset_.end()) addPin(it->second, std::move(p.set), p.twoVersions);
       }
       pendingPins_.clear();
     }
@@ -287,7 +339,10 @@ void SpriteSystem::updateStartup() {
         assets_.release(clip.headerHandle);
         clip.headerHandle = {};
         --headersPending_;
-        if (headersPending_ == 0) createFullPool();
+        if (headersPending_ == 0) {
+          createFullPool();
+          decided_ = true;
+        }
         if (clip.headerReady) {
           clip.tailHandle = assets_.load(clip.header.tailAsset, kStartupPriority);
           ++tailsPending_;
@@ -428,25 +483,30 @@ void SpriteSystem::update() {
   });
 
   if (!ready()) updateStartup();
-  updateBases();
-  if (!pinsLogged_ && !pinned_.empty() && pendingPins_.empty()) {
+  if (decided_) {
+    // Pinned clips at full resolution are asked for every frame (so never evicted); Leve ones keep their base.
+    for (const SpriteClipId id : pinned_)
+      if (!clips_[id]->light) request(id, kPinned);
+    updateBases();
+  }
+  if (!pinsLogged_ && !pinned_.empty() && pendingPins_.empty() && decided_) {
     const auto [done, total] = pinProgress();
     if (done >= total) {
       pinsLogged_ = true;
-      logInfo("sprites: {} pinned clips' bases on the GPU, {} MB, {:.2f} s after they were asked for", total, baseBytes_ >> 20,
+      logInfo("sprites: the fight's {} clips on the GPU {:.2f} s after they were asked for", total,
               std::chrono::duration<double>(std::chrono::steady_clock::now() - pinsAsked_).count());
-      // What weighs the most, by sprite set (one character's poses each): the base, and the full clips it stands for.
+      // What weighs the most, by sprite set (one character's poses each): what is on the GPU, and the full size.
       std::unordered_map<std::string, std::pair<uint64_t, uint64_t>> bySet;
       for (size_t i = 0; i < pinned_.size(); ++i) {
         const Clip& c = *clips_[pinned_[i]];
         if (!c.headerReady) continue;
-        auto& [base, full] = bySet[pinnedSet_[i]];
-        base += c.baseState == State::Resident ? clipBytes(c.header, kBaseFirstMip) : 0;
+        auto& [held, full] = bySet[pinnedSet_[i]];
+        held += c.state == State::Resident ? c.header.fullBytes : c.baseState == State::Resident ? clipBytes(c.header, kBaseFirstMip) : 0;
         full += c.header.fullBytes;
       }
       std::vector<std::pair<std::string, std::pair<uint64_t, uint64_t>>> sets(bySet.begin(), bySet.end());
       std::sort(sets.begin(), sets.end(), [](const auto& a, const auto& b) { return a.second.second > b.second.second; });
-      for (const auto& [set, bytes] : sets) logInfo("sprites:   pinned {} base {} MB (full {} MB)", set, bytes.first >> 20, bytes.second >> 20);
+      for (const auto& [set, bytes] : sets) logInfo("sprites:   {} {} MB (full {} MB)", set, bytes.first >> 20, bytes.second >> 20);
       // The whole game's GPU memory at that moment (VMA's own count where the driver gives no budget): the largest
       // device-local heap.
       const VkPhysicalDeviceMemoryProperties* props = nullptr;
@@ -483,7 +543,6 @@ void SpriteSystem::update() {
       assets_.release(clip.fullHandle);  // the CPU copy is no longer needed
       clip.fullHandle = {};
       clip.state = State::Resident;
-      if (clip.pinned) ++closeUps_;
     }
   }
 

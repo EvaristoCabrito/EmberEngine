@@ -24,7 +24,8 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   and say where it came from.
 - **Commit** locally on your own once a change is verified (builds clean, its test passes; user, 2026-10-14).
   The message states exactly what is and is not verified. **Never push** unless asked in that moment.
-  Git identity repo-local: EvaristoCabrito <evaristo172@gmail.com>. Remote: github.com/EvaristoCabrito/EmberEngine.
+  Git identity repo-local: EvaristoCabrito <evaristo172@gmail.com>. Remote `origin`: github.com/EvaristoCabrito/EmberVulkan
+  (since 2026-10-18; the old github.com/EvaristoCabrito/EmberEngine is remote `emberengine-old`).
 - **Research before building** big visual features. Never show raw test renders as progress.
 - **`C:\Engine2` = asset source only, NOT a reference** (user, 2026-10-15, replaces the 2026-10-14 "game design
   yes" rule): "there is no engine 2, it's EMBER ENGINE"; "never alter anything there"; "it only serves to extract
@@ -839,6 +840,24 @@ selecionar os alvos")
 - Verified (debug + validation): the script click on (14,10) picks the Piqueiro where the war dog's card in front used to
   win; `pick:Kael; click:13:22` walks him behind Neera's card. `picktest` still reports 13 edge hexes at a height step
   picking the hex in front (the ground ray, pre-existing, not the cards).
+
+## Characters loaded whole before the fight; Personagens Alta / Leve (2026-10-18, the user's plan; read this before touching sprites)
+
+- **The blur on a change of animation** ("efeito horrendo de blur ... de idle para att"): a pose was streamed in only when it
+  started, and until it landed the card drew the clip's 64 px tail; with the map's 512 MB budget clips also evicted each other.
+- **Tried and rejected the same day: layers** (`6c1d7bb`: a half-resolution base pinned, the full resolution streamed in when the
+  camera got close). Measured beside Voss (20 s turn + zoom): main-thread worst 156 ms when his full clip (up to 144 MB) loaded
+  mid-play vs 20 ms with everything loaded at the start; the user felt it. **Never stream a fight's characters during play.**
+- **The plan (the user: "esse é o plano"):** every pose of every unit on the map is loaded before the fight opens and held to its
+  end (`SpriteSystem::pin`, MapStage `pinUnitArt` / `pinArt`; the loading screen waits for them). The **cast with two versions**
+  (`content/sprite-quality.json`: the 8 main characters, recurring villains, hi-def mega bosses; catalog keys) follows Opções >
+  Gráficos > **Personagens: Alta / Leve** (`GamePrefs::characters`, taken when a fight loads): Alta = full resolution, Leve = the
+  same frames and timing at half resolution (the cooked clip's level below the top, cut off the same asset: no second pack, a
+  quarter of the memory). Everyone else has one version, always whole. **Alta that does not fit the GPU becomes Leve by itself**
+  (logged: "Personagens Alta needs N MB, the GPU has M MB free"). Why: the game outlives today's cards; Alta exists for players
+  with big GPUs even when this RX 6400 cannot run 8 Voss-sized heroes (~4.5 GB at full resolution).
+- Numbers (aldeia015 test battle, 17 units, 71 clips, RX 6400): everything whole 1243 MB (voss-veo 564), game GPU memory 2556 MB
+  of the driver's 3059 MB; Voss at half = 141 MB.
 
 ## Battle bar: 12 sockets F1-F12 + Atalhos (2026-10-18; the user: "12 sockets ... F1 ao F12 e um outro botão para editar")
 

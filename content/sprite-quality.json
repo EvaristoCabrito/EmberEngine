@@ -1,0 +1,6 @@
+{
+ "about": "Characters with two versions of their sprites (the user, 2026-10-18): Opções > Gráficos > Personagens = Alta (full resolution) or Leve (half resolution: the same frames and timing, the level below the top in the same cooked clip, a quarter of the GPU memory). Keys = the unit catalog's keys (roster.json 'key'). Everyone else has one version, always loaded whole. When Alta does not fit the GPU, the game takes Leve for these on its own (logged). Planned: the 8 main characters, some recurring villains and some hi-def mega bosses.",
+ "cast": ["kael", "neera", "voss", "salazar", "aldric", "malrec"],
+ "villains": [],
+ "bosses": []
+}

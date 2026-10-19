@@ -356,7 +356,6 @@ class MapStage final : public Stage {
                                                  : std::chrono::duration<float>(std::chrono::steady_clock::now() - start_).count();
     updateFog(time);
     const float aspect = static_cast<float>(size.width) / static_cast<float>(size.height);
-    viewHeightPx_ = static_cast<float>(size.height);
     if (distance_ <= 0.0f) {
       const float tanHalf = std::tan(glm::radians(kFov * 0.5f));
       maxDistance_ = std::max(40.0f, std::max(boardWidth_, boardDepth_) * 2.2f);
@@ -1675,20 +1674,8 @@ class MapStage final : public Stage {
     s.origin = anchor + right * x + up * (local.y + cy * h) + facing * local.z;
     s.width = w * c.contentWidth / sw;
     s.height = h * c.contentHeight / sh;
-    // A fight's character keeps its half-resolution base for good; its full version is asked for only while the card is
-    // drawn taller on screen than 70% of the base (the top mip starts to show), so it lands before it is needed.
-    bool wantFull = true;
-    if (sprites_.isPinned(clip)) {
-      const glm::vec3 centre = s.origin + up * (s.height * 0.5f);
-      const float depth = std::max(glm::dot(centre - lastCamera_.position, lastCamera_.forward), 0.05f);
-      const float onScreen = s.height * std::abs(lastCamera_.projection[1][1]) / depth * viewHeightPx_ * 0.5f;
-      // In view: the centre within the screen widened by the card's own half height (in the same clip units).
-      const glm::vec4 clipPos = lastCamera_.viewProjection() * glm::vec4(centre, 1.0f);
-      const float reach = 1.0f + onScreen / viewHeightPx_;
-      const bool inView = clipPos.w > 0.0f && std::abs(clipPos.x) < reach * clipPos.w && std::abs(clipPos.y) < reach * clipPos.w;
-      wantFull = inView && onScreen > kFullFrom * static_cast<float>(sprites_.baseHeight(clip));
-    }
-    if (wantFull) sprites_.request(clip, SpriteSystem::kOnScreen);
+    // A fight's character (pinned) is held by the sprite system as loaded before the fight: Alta or Leve, never streamed.
+    if (!sprites_.isPinned(clip)) sprites_.request(clip, SpriteSystem::kOnScreen);
     const SpriteSystem::Texture tex = sprites_.texture(clip);
     if (tex.index == kNoTexture) return;
     if (tex.full) ++fullFrames_;
@@ -2260,16 +2247,33 @@ class MapStage final : public Stage {
     for (const std::string& u : unknown) logWarn("poses: {} not in the catalog: idle only", u);
   }
 
-  // Every pose the map's units can play is on the GPU from the loading screen to the end, at half resolution or better
-  // (the user, 2026-10-18: a pose streamed in on its first frame drew from the 64 px tail, a blur at every change of
-  // animation); the full resolution comes and goes with the camera (addCard).
+  // Every pose the map's units can play is loaded before the fight opens and held to its end (the user, 2026-10-18: a pose
+  // streamed in on its first frame drew from the 64 px tail, a blur at every change of animation). The cast with two
+  // versions (content/sprite-quality.json) follows Opções > Gráficos > Personagens: Alta (full resolution) / Leve (half).
   void pinUnitArt() {
+    sprites_.setLight(gamePrefs().characters == "leve");
     for (size_t i = 0; i < scene_->units.size(); ++i) pinArt(scene_->units[i], i < unitCatalog_.size() ? unitCatalog_[i] : nullptr);
   }
   void pinArt(const e2::SceneUnit& u, const e2::Hero* entry) {
-    sprites_.pin(u.set, u.clip);
+    const bool two = twoVersionCast().contains(entry ? entry->key : u.key);
+    sprites_.pin(u.set, u.clip, two);
     if (entry)
-      for (const e2::HeroPose& p : entry->poses) sprites_.pin(p.set, p.clip);
+      for (const e2::HeroPose& p : entry->poses) sprites_.pin(p.set, p.clip, two);
+  }
+  // The catalog keys with Alta / Leve sprites: content/sprite-quality.json's cast, villains and bosses.
+  static const std::unordered_set<std::string>& twoVersionCast() {
+    static const std::unordered_set<std::string> keys = [] {
+      std::unordered_set<std::string> out;
+      std::ifstream in("content/sprite-quality.json", std::ios::binary);
+      const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+      if (!j.is_object()) logWarn("sprites: content/sprite-quality.json missing or damaged: nobody has two versions");
+      for (const char* list : {"cast", "villains", "bosses"})
+        if (j.is_object() && j.contains(list) && j[list].is_array())
+          for (const nlohmann::json& k : j[list])
+            if (k.is_string()) out.insert(k.get<std::string>());
+      return out;
+    }();
+    return keys;
   }
 
   // Every scene unit's live state: where it stands, its facing, its art's own facing (from the scene's mirror rule).
@@ -7355,8 +7359,6 @@ class MapStage final : public Stage {
   // The orbit camera: the goal above (yaw_ ... target_), the view on show gliding to it, its limits and steps.
   OrbitView cam_;
   Camera lastCamera_{};
-  float viewHeightPx_ = 1080.0f;  // the frame's height in pixels (addCard: how big a card is on screen)
-  static constexpr float kFullFrom = 0.7f;  // a pinned card taller on screen than this share of its base: full version wanted
   float aspect_ = 1.0f;
   struct PieceBox {
     float x, z, radius, top;  // a 3D piece's footprint (square around its centre) and top, world units
