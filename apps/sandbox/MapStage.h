@@ -420,8 +420,19 @@ class MapStage final : public Stage {
     const float aspect = static_cast<float>(size.width) / static_cast<float>(size.height);
     if (distance_ <= 0.0f) {
       const float tanHalf = std::tan(glm::radians(kFov * 0.5f));
-      maxDistance_ = std::max(40.0f, std::max(boardWidth_, boardDepth_) * 2.2f);
+      // One camera rule for every map (the user, 2026-10-19: "esse aqui tem que ser o máximo de zoom out do jogo em TODOS os
+      // mapas"): the farthest zoom is aldeia's (its 30-column board x 2.2), the same distance whatever the board's size.
+      maxDistance_ = kMaxDistance;
       distance_ = std::min(maxDistance_, std::max(boardWidth_ / (2 * tanHalf * aspect), boardDepth_ * 1.35f) * 1.05f) / options_.zoom;
+      // Every map opens at the same zoom, over the party (the user, 2026-10-19: "esse deve ser o zoom padrão em que todos os mapas
+      // se iniciam com a camera em cima do grupo, caso estiverem separados na maior concentração de membros"). Captures that frame
+      // the board themselves (--offset) keep the whole-board view.
+      if (options_.offset.x == 0.0f && options_.offset.y == 0.0f)
+        if (const std::optional<glm::vec3> focus = partyFocus()) {
+          target_ = *focus;
+          distance_ = std::clamp(kStartDistance / options_.zoom, kMinDistance, maxDistance_);
+          clampGoal();
+        }
     }
     // Measurement: a full turn and two zooms in and out (to 35% of the framing distance) over the run.
     float yaw = yaw_, distance = distance_;
@@ -644,7 +655,10 @@ class MapStage final : public Stage {
         // The ground around the board: the map's top-down ground image (backdrop-fit.json "ground") on a flat plane a little under
         // its lowest ground, the painting beyond `groundFar`; without one, the painting all the way down.
         Renderer::BackdropPlane plane;
-        plane.y = groundLow_ - 1.5f;
+        // At the board's own base, so the board stands on it (the user, 2026-10-19: "o tabuleiro tem que encostar na imagem do chão,
+        // no momento parece que ele flutua"; it was 1.5 under the lowest ground): the hard / tabletop walls end at min(0, lowest
+        // ground) (GroundMesh), the smooth look's cut edge drops kEdgeLip (0.35) under its ground.
+        plane.y = look_ == e2::EdgeStyle::Smooth ? groundLow_ - 0.35f : std::min(0.0f, groundLow_);
         if (!fit.ground.empty()) plane.texture = ground_.textureIndex(e2::backdropAsset(fit.ground));
         plane.tile = fit.groundTile;
         plane.from = fit.groundFromDegrees;
@@ -7734,6 +7748,42 @@ class MapStage final : public Stage {
   static constexpr float kTiltStep = 0.0873f, kTurnStep = 0.2618f;  // Engine2's bar: 5 deg; 15 deg
   static constexpr float kTurnPerPixel = 0.005f, kZoomStep = 0.85f, kPanPerSecond = 0.9f;
   static constexpr float kMinDistance = 3.0f, kEyeClearance = 0.8f;
+  static constexpr float kMaxDistance = 112.42f;  // sqrt(3) x 29.5 (aldeia's board width) x 2.2
+  static constexpr float kStartDistance = 25.0f;  // the user's chosen opening zoom (aldeia's old framing 56.3 x 0.85^5)
+  static constexpr float kGroupRadius = 8.0f;     // party members within this of each other count as one group
+
+  // Where the camera opens: the party's members standing in play; if they are apart, the middle of the biggest group (the
+  // member with the most others within kGroupRadius, then the mean of that group). None in play: nothing (the board's centre).
+  std::optional<glm::vec3> partyFocus() const {
+    if (!scene_) return std::nullopt;
+    std::vector<glm::vec3> at;
+    for (size_t i = 0; i < scene_->units.size(); ++i) {
+      if (scene_->units[i].side != "player") continue;
+      if (battle_) {
+        const int b = unitBattle_[i];
+        if (b < 0) continue;
+        const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(b)];
+        if (!u.alive || absent_.contains(u.id)) continue;
+      }
+      at.push_back(unitWorld(i));
+    }
+    if (at.empty()) return std::nullopt;
+    size_t best = 0, bestCount = 0;
+    float bestSpread = 0.0f;
+    for (size_t i = 0; i < at.size(); ++i) {
+      size_t count = 0;
+      float spread = 0.0f;
+      for (const glm::vec3& p : at) {
+        const float d = glm::distance(glm::vec2(p.x, p.z), glm::vec2(at[i].x, at[i].z));
+        if (d <= kGroupRadius) ++count, spread += d;
+      }
+      if (count > bestCount || (count == bestCount && spread < bestSpread)) best = i, bestCount = count, bestSpread = spread;
+    }
+    glm::vec3 sum{0.0f};
+    for (const glm::vec3& p : at)
+      if (glm::distance(glm::vec2(p.x, p.z), glm::vec2(at[best].x, at[best].z)) <= kGroupRadius) sum += p;
+    return sum / static_cast<float>(bestCount);
+  }
   bool captured_ = false;  // the first view is remembered: the bar's reset goes back to its angle
   bool flat_ = false;      // Tática: the old-school 2D view (the bar's Normal / Tática)
   // Left-button pan (Engine2 cameraRig: HOLD_MS 500, CLICK_SLOP 5).
