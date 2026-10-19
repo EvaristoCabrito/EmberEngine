@@ -231,8 +231,19 @@ FogMask FogOfWar::paint(const Board& board, std::span<const HexPoint> party) con
       boxBlur(tmp, v, m.width, m.height, radius, false);
     }
   };
+  // Off the board's own hexes the mist is whole, right up to the board's edge (the user, 2026-10-19: "pode fazer a nevoa chegar
+  // nas bordas do tabuleiro corretamente?"): the margin used to take the edge hex's state, so a hex in sight left a clear strip
+  // of air past the edge before the bank outside began.
+  std::vector<uint8_t> offBoard(n);
+  for (int y = 0; y < m.height; y++)
+    for (int x = 0; x < m.width; x++) {
+      const double px = m.x0 + (x + 0.5) / FogMask::kRes, pz = m.z0 + (y + 0.5) / FogMask::kRes;
+      const auto [c, r] = hexAt(layout_, px, pz);
+      const double dx = std::abs(px - hexX(layout_, c, r)), dz = std::abs(pz - hexZ(layout_, r));
+      offBoard[static_cast<size_t>(y) * m.width + x] = dx > kSqrt3 * 0.5 * kHexRadius || dz + dx / kSqrt3 > kHexRadius;
+    }
   m.boundary.resize(n);
-  for (size_t i = 0; i < n; i++) m.boundary[i] = texelState[i] == kFogUnseen ? 1.0f : 0.0f;
+  for (size_t i = 0; i < n; i++) m.boundary[i] = texelState[i] == kFogUnseen || offBoard[i] ? 1.0f : 0.0f;
   blur(m.boundary, FogMask::kRes * 3 / 4, 3);
   // Ground: each texel's hex, softened a little; never-seen hexes read the board's mean height.
   double mean = 0;
@@ -243,7 +254,7 @@ FogMask FogOfWar::paint(const Board& board, std::span<const HexPoint> party) con
     for (int x = 0; x < m.width; x++) {
       const size_t i = static_cast<size_t>(y) * m.width + x;
       const auto [c, r] = hexAt(layout_, m.x0 + (x + 0.5) / FogMask::kRes, m.z0 + (y + 0.5) / FogMask::kRes);
-      m.ground[i] = texelState[i] == kFogUnseen ? static_cast<float>(mean) : ground_[static_cast<size_t>(indexOf(layout_, c, r))];
+      m.ground[i] = texelState[i] == kFogUnseen || offBoard[i] ? static_cast<float>(mean) : ground_[static_cast<size_t>(indexOf(layout_, c, r))];
     }
   blur(m.ground, FogMask::kRes / 4, 2);
   // Valleys: the ground's surroundings (about 3 hexes) above it.

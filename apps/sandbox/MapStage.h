@@ -352,7 +352,10 @@ class MapStage final : public Stage {
       if (!scene_->backdrop.empty()) ground_.requestTexture(e2::backdropAsset(scene_->backdrop));
       // A map with a painting opens with it aligned to the sky (4; the user's "si por favor", 2026-10-19); "imagem até o horizonte"
       // (3) stays an experiment in the panel ("you will need some smarter edition for this to work"); without a painting, the sky.
-      background_ = options.background >= 0 ? std::min(options.background, 4) : scene_->backdrop.empty() ? 1 : (aldeia() ? 4 : 0);
+      // Every other map opens on the real sky (the user, 2026-10-19: "joga o ceu em todos eu vou ir resolvendo um por um em termos de
+      // fundo, chão etc"; the cover-fit painting made the board look like it hung in limbo when the camera tilted up); the painting
+      // stays in the panel's Fundo.
+      background_ = options.background >= 0 ? std::min(options.background, 4) : aldeia() && !scene_->backdrop.empty() ? 4 : 1;
       if (!scene_->backdrop.empty()) backdropFit_ = loadBackdropFit(scene_->backdrop);
       if (!backdropFit_.ground.empty()) ground_.requestTexture(e2::backdropAsset(backdropFit_.ground));
       // The map's own panoramas (backdrop-fit.json "panoramas" by map id; the panel's Fundo after its five entries): aldeia only.
