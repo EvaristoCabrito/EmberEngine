@@ -29,9 +29,12 @@ SpriteSystem::SpriteSystem(VulkanContext& context, Bindless& bindless, AssetMana
     : context_(context), bindless_(bindless), assets_(assets), uploads_(uploads), budget_(budget) {}
 
 SpriteSystem::~SpriteSystem() {
+  if (!pinned_.empty())
+    logInfo("sprites: {} full versions of pinned clips loaded for close-ups, {} evictions", closeUps_, evictions_);
   for (auto& clip : clips_) {
     uploads_.cancel(clip->tailUpload);
     uploads_.cancel(clip->fullUpload);
+    uploads_.cancel(clip->baseUpload);
   }
   vkDeviceWaitIdle(context_.device);  // copies and draws may still use the images
   for (Retired& r : retired_) {
@@ -41,11 +44,14 @@ SpriteSystem::~SpriteSystem() {
   for (auto& clip : clips_) {
     destroyImage(context_, clip->tailImage);
     destroyImage(context_, clip->fullImage);
+    destroyImage(context_, clip->baseImage);
     if (clip->tailIndex != kNoTexture) bindless_.removeSampledImage(clip->tailIndex);
     if (clip->fullIndex != kNoTexture) bindless_.removeSampledImage(clip->fullIndex);
+    if (clip->baseIndex != kNoTexture) bindless_.removeSampledImage(clip->baseIndex);
     assets_.release(clip->headerHandle);
     assets_.release(clip->tailHandle);
     assets_.release(clip->fullHandle);
+    assets_.release(clip->baseHandle);
   }
   if (fullPool_) vmaDestroyPool(context_.allocator, fullPool_);
   assets_.release(rosterHandle_);
@@ -87,7 +93,8 @@ void SpriteSystem::pin(std::string_view set, std::string_view clip) {
 }
 
 void SpriteSystem::addPin(SpriteClipId id, std::string set) {
-  if (std::find(pinned_.begin(), pinned_.end(), id) != pinned_.end()) return;
+  if (clips_[id]->pinned) return;
+  clips_[id]->pinned = true;
   pinned_.push_back(id);
   pinnedSet_.push_back(std::move(set));
   pinsLogged_ = false;
@@ -95,10 +102,12 @@ void SpriteSystem::addPin(SpriteClipId id, std::string set) {
 
 std::pair<uint32_t, uint32_t> SpriteSystem::pinProgress() const {
   const uint32_t total = static_cast<uint32_t>(pinned_.size() + pendingPins_.size());
-  if (!pinsFit_) return {total, total};
   uint32_t done = 0;
-  for (const SpriteClipId id : pinned_)
-    if (clips_[id]->state == State::Resident || (!clips_[id]->headerReady && !clips_[id]->headerHandle)) ++done;
+  for (const SpriteClipId id : pinned_) {
+    const Clip& c = *clips_[id];
+    const bool headerFailed = !c.headerReady && !c.headerHandle;
+    if (headerFailed || c.baseFailed || c.baseState == State::Resident || (c.headerReady && !c.needsBase() && c.tailIndex != kNoTexture)) ++done;
+  }
   return {done, total};
 }
 
@@ -106,7 +115,55 @@ SpriteSystem::Texture SpriteSystem::texture(SpriteClipId id) const {
   if (id >= clips_.size()) return {};
   const Clip& clip = *clips_[id];
   if (clip.state == State::Resident) return {clip.fullIndex, true};
-  return {clip.tailIndex, false};
+  if (clip.baseIndex != kNoTexture) return {clip.baseIndex, true};
+  return {clip.tailIndex, !clip.needsBase() && clip.pinned};
+}
+
+void SpriteSystem::updateBases() {
+  // A pinned clip's base: its full asset read once, the mips from kBaseFirstMip on cut off its end (mip-major, like the
+  // tail), uploaded into an image of its own; the CPU copy goes once it is on the GPU.
+  for (const SpriteClipId id : pinned_) {
+    Clip& c = *clips_[id];
+    if (!c.headerReady || !c.needsBase() || c.baseFailed) continue;
+    if (c.baseState == State::Idle) {
+      c.baseHandle = assets_.load(c.header.fullAsset, kPinned);
+      c.baseState = State::Loading;
+    }
+    if (c.baseState == State::Loading) {
+      const AssetState state = assets_.state(c.baseHandle);
+      const std::span<const std::byte> bytes = assets_.data(c.baseHandle);
+      if (state == AssetState::Failed || (state == AssetState::Ready && bytes.size() != c.header.fullBytes)) {
+        logError("sprites: full clip {} is missing or damaged: no base, its tail is drawn", c.header.name);
+        assets_.release(c.baseHandle);
+        c.baseHandle = {};
+        c.baseFailed = true;
+        c.baseState = State::Idle;
+      } else if (state == AssetState::Ready) {
+        if (!tryCreateImage(context_, clipImageDesc(c.header, kBaseFirstMip), c.baseImage)) {
+          logError("sprites: no GPU memory for the base of {} ({:.1f} MB): its tail is drawn", c.header.name,
+                   clipBytes(c.header, kBaseFirstMip) / 1048576.0);
+          assets_.release(c.baseHandle);
+          c.baseHandle = {};
+          c.baseFailed = true;
+          c.baseState = State::Idle;
+          continue;
+        }
+        const uint64_t skip = c.header.fullBytes - clipBytes(c.header, kBaseFirstMip);
+        c.baseUpload = {c.baseImage.image, c.baseImage.extent.width, c.baseImage.extent.height, c.header.mipCount - kBaseFirstMip,
+                        c.header.frames, kBc7BlockBytes, bytes.subspan(skip)};
+        uploads_.enqueue(c.baseUpload);
+        baseBytes_ += clipBytes(c.header, kBaseFirstMip);
+        c.baseState = State::Uploading;
+      }
+    }
+    if (c.baseState == State::Uploading && uploads_.finished(c.baseUpload)) {
+      c.baseIndex = bindless_.addSampledImage(c.baseImage.view);
+      uploadWaitValue_ = std::max(uploadWaitValue_, c.baseUpload.signalValue);
+      assets_.release(c.baseHandle);
+      c.baseHandle = {};
+      c.baseState = State::Resident;
+    }
+  }
 }
 
 ImageDesc SpriteSystem::clipImageDesc(const SpriteClipHeader& h, uint32_t firstMip) const {
@@ -149,50 +206,20 @@ void SpriteSystem::createFullPool() {
   uint32_t memoryType = 0;
   VK_CHECK(vmaFindMemoryTypeIndexForImageInfo(context_.allocator, &info, &alloc, &memoryType));
 
-  // Pinned clips get room of their own on top of the streaming budget.
-  uint64_t pinnedBytes = 0;
-  for (const SpriteClipId id : pinned_)
-    if (clips_[id]->headerReady) pinnedBytes += clips_[id]->header.fullBytes;
-  const uint64_t streaming = budget_.gpuBytes;
-
   // Budget plus one block of slack, all allocated now; a fragmented pool opens holes (makeHole).
   // Measured (512 MB budget): 64 MB blocks stream as well as a pool 50% over budget.
   const VkDeviceSize block = std::max(kPoolBlockBytes, largest);
+  const size_t blocks = static_cast<size_t>(budget_.gpuBytes / block + 1);
   VmaPoolCreateInfo poolInfo{};
   poolInfo.memoryTypeIndex = memoryType;
   poolInfo.blockSize = block;
-  const auto createPool = [&](uint64_t bytes) {
-    const size_t blocks = static_cast<size_t>(bytes / block + 1);
-    poolInfo.minBlockCount = blocks;
-    poolInfo.maxBlockCount = blocks;
-    return vmaCreatePool(context_.allocator, &poolInfo, &fullPool_);
-  };
-  VkResult result = createPool(streaming + pinnedBytes);
-  if (result == VK_SUCCESS) {
-    budget_.gpuBytes = streaming + pinnedBytes;
-    if (!pinned_.empty()) {
-      logInfo("sprites: {} clips pinned at full quality, {} MB, on top of the {} MB streaming budget", pinned_.size(), pinnedBytes >> 20,
-              streaming >> 20);
-      // What weighs the most, by sprite set (one character's poses each).
-      std::unordered_map<std::string, uint64_t> bySet;
-      for (size_t i = 0; i < pinned_.size(); ++i)
-        if (clips_[pinned_[i]]->headerReady) bySet[pinnedSet_[i]] += clips_[pinned_[i]]->header.fullBytes;
-      std::vector<std::pair<std::string, uint64_t>> sets(bySet.begin(), bySet.end());
-      std::sort(sets.begin(), sets.end(), [](const auto& a, const auto& b) { return a.second > b.second; });
-      for (const auto& [set, bytes] : sets) logInfo("sprites:   pinned {} {} MB", set, bytes >> 20);
-    }
-  } else if (pinnedBytes > 0) {
-    logError("sprites: no GPU room for the {} MB of pinned clips ({}); they share the {} MB streaming budget", pinnedBytes >> 20,
-             string_VkResult(result), streaming >> 20);
-    pinsFit_ = pinnedBytes <= streaming;
-    result = createPool(streaming);
-  }
-  const size_t blocks = poolInfo.maxBlockCount;
+  poolInfo.minBlockCount = blocks;
+  poolInfo.maxBlockCount = blocks;
+  const VkResult result = vmaCreatePool(context_.allocator, &poolInfo, &fullPool_);
   if (result != VK_SUCCESS) {
     logError("sprites: cannot reserve {} MB of GPU memory for full clips ({}); drawing tails only",
              (block * blocks) >> 20, string_VkResult(result));
     fullPool_ = VK_NULL_HANDLE;
-    pinsFit_ = pinned_.empty();
     return;
   }
   fullPoolBlock_ = block;
@@ -401,14 +428,25 @@ void SpriteSystem::update() {
   });
 
   if (!ready()) updateStartup();
-  // Pinned clips are asked for every frame (so never evicted) before anything else is decided.
-  for (const SpriteClipId id : pinned_) request(id, kPinned);
+  updateBases();
   if (!pinsLogged_ && !pinned_.empty() && pendingPins_.empty()) {
     const auto [done, total] = pinProgress();
     if (done >= total) {
       pinsLogged_ = true;
-      logInfo("sprites: {} pinned clips at full quality {:.2f} s after they were asked for", total,
+      logInfo("sprites: {} pinned clips' bases on the GPU, {} MB, {:.2f} s after they were asked for", total, baseBytes_ >> 20,
               std::chrono::duration<double>(std::chrono::steady_clock::now() - pinsAsked_).count());
+      // What weighs the most, by sprite set (one character's poses each): the base, and the full clips it stands for.
+      std::unordered_map<std::string, std::pair<uint64_t, uint64_t>> bySet;
+      for (size_t i = 0; i < pinned_.size(); ++i) {
+        const Clip& c = *clips_[pinned_[i]];
+        if (!c.headerReady) continue;
+        auto& [base, full] = bySet[pinnedSet_[i]];
+        base += c.baseState == State::Resident ? clipBytes(c.header, kBaseFirstMip) : 0;
+        full += c.header.fullBytes;
+      }
+      std::vector<std::pair<std::string, std::pair<uint64_t, uint64_t>>> sets(bySet.begin(), bySet.end());
+      std::sort(sets.begin(), sets.end(), [](const auto& a, const auto& b) { return a.second.second > b.second.second; });
+      for (const auto& [set, bytes] : sets) logInfo("sprites:   pinned {} base {} MB (full {} MB)", set, bytes.first >> 20, bytes.second >> 20);
       // The whole game's GPU memory at that moment (VMA's own count where the driver gives no budget): the largest
       // device-local heap.
       const VkPhysicalDeviceMemoryProperties* props = nullptr;
@@ -445,6 +483,7 @@ void SpriteSystem::update() {
       assets_.release(clip.fullHandle);  // the CPU copy is no longer needed
       clip.fullHandle = {};
       clip.state = State::Resident;
+      if (clip.pinned) ++closeUps_;
     }
   }
 
@@ -482,6 +521,7 @@ SpriteSystem::Stats SpriteSystem::stats() const {
   s.starvedRequests = starved_;
   s.poolBytes = fullPoolBytes_;
   s.poolRetries = poolRetries_;
+  s.baseBytes = baseBytes_;
   return s;
 }
 

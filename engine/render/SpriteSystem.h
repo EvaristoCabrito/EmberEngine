@@ -27,6 +27,7 @@ inline constexpr uint32_t kNoTexture = UINT32_MAX;
 // Character sprite residency. Every clip's small "tail" version stays on the GPU from start to end;
 // full-quality clips stream in when asked for and leave, least recently used first, when the GPU
 // budget needs room. Nothing ever waits: a clip draws from its tail until its full version lands.
+// Pinned clips (pin()) keep a half-resolution base for good instead, so they never fall back to the tail.
 //
 // Each frame the game says which clips it draws now (and which it will soon) with request(); the
 // higher the priority, the sooner it streams. A clip requested this frame is never evicted.
@@ -64,12 +65,17 @@ class SpriteSystem {
 
   void request(SpriteClipId id, int32_t priority);
 
-  // A clip held at full quality from now on: asked for every frame, never evicted, never drawn from its tail once
-  // it has landed (a fight's characters: every pose they can play, loaded before the fight opens). Pins made
-  // before the clip headers are read get GPU memory of their own on top of the budget; later ones share it.
+  // A clip held in two layers from now on (a fight's characters: every pose they can play, loaded before the fight
+  // opens): its "base" (every mip from kBaseFirstMip, a quarter of the full clip's memory) stays on the GPU for good,
+  // in memory of its own, so it never draws from its tail; its full version streams like any clip, asked for by the
+  // game only while the card is big enough on screen to read the top mip (isPinned + baseHeight).
   void pin(std::string_view set, std::string_view clip);
-  // Pinned clips at full quality, out of all pinned; {n, n} when they could not all get room (logged once).
+  // Pinned clips whose base is on the GPU, out of all pinned (one whose base cannot be made counts as done: logged).
   std::pair<uint32_t, uint32_t> pinProgress() const;
+  bool isPinned(SpriteClipId id) const { return id < clips_.size() && clips_[id]->pinned; }
+  // Texels of the base's top mip, high: a card drawn taller than this on screen reads the full clip's top mip.
+  uint32_t baseHeight(SpriteClipId id) const { return std::max(1u, clips_[id]->header.height >> kBaseFirstMip); }
+  static constexpr uint32_t kBaseFirstMip = 1;
 
   struct Texture {
     uint32_t index = kNoTexture;  // bindless texture-array index; kNoTexture = not drawable yet
@@ -92,6 +98,7 @@ class SpriteSystem {
     uint64_t starvedRequests = 0;  // requests that found no room in the budget (since start)
     uint64_t poolBytes = 0;        // GPU memory reserved for full clips (budget + one block of slack)
     uint64_t poolRetries = 0;      // image creations that found the pool too fragmented (since start)
+    uint64_t baseBytes = 0;        // pinned clips' bases on the GPU (outside the budget)
   };
   Stats stats() const;
 
@@ -119,6 +126,16 @@ class SpriteSystem {
     uint64_t lastRequested = 0;  // frame
     int32_t priority = 0;        // highest asked for this frame
     bool requestedThisFrame = false;
+
+    // Pinned clips: the base layer (mips from kBaseFirstMip, cut from the full asset), never evicted.
+    bool pinned = false;
+    State baseState = State::Idle;
+    bool baseFailed = false;  // could not be made: the clip draws its tail until its full version lands
+    AssetHandle baseHandle;
+    Image baseImage;
+    ImageUpload baseUpload;
+    uint32_t baseIndex = kNoTexture;
+    bool needsBase() const { return header.tailFirstMip > kBaseFirstMip; }  // else the tail is already as sharp
   };
 
   struct Retired {
@@ -136,6 +153,7 @@ class SpriteSystem {
   void makeHole(const Clip& want);
   bool startUpload(Clip& clip);
   void addPin(SpriteClipId id, std::string set);
+  void updateBases();
 
   VulkanContext& context_;
   Bindless& bindless_;
@@ -165,7 +183,8 @@ class SpriteSystem {
   std::vector<std::pair<AssetId, std::string>> pendingPins_;  // pinned before the roster was read (asset, sprite set)
   std::vector<SpriteClipId> pinned_;
   std::vector<std::string> pinnedSet_;   // each pinned clip's sprite set (one character's poses)
-  bool pinsFit_ = true;                  // false: the pinned clips need more than the pool holds
+  uint64_t baseBytes_ = 0;
+  uint64_t closeUps_ = 0;  // full versions of pinned clips that landed (since start)
   bool pinsLogged_ = false;
   std::chrono::steady_clock::time_point pinsAsked_{};
   std::vector<Retired> retired_;

@@ -356,6 +356,7 @@ class MapStage final : public Stage {
                                                  : std::chrono::duration<float>(std::chrono::steady_clock::now() - start_).count();
     updateFog(time);
     const float aspect = static_cast<float>(size.width) / static_cast<float>(size.height);
+    viewHeightPx_ = static_cast<float>(size.height);
     if (distance_ <= 0.0f) {
       const float tanHalf = std::tan(glm::radians(kFov * 0.5f));
       maxDistance_ = std::max(40.0f, std::max(boardWidth_, boardDepth_) * 2.2f);
@@ -1450,7 +1451,7 @@ class MapStage final : public Stage {
     }
     if (scene_) {
       const auto [pinsDone, pins] = sprites_.pinProgress();
-      if (pinsDone < pins) return {0, pinsDone, pins, false};  // the characters at full quality: every pose they can play
+      if (pinsDone < pins) return {0, pinsDone, pins, false};  // the characters: every pose they can play, its base on the GPU
     }
     const auto [meshesDone, meshesTotal] = meshes_.progress();
     const uint32_t ground = ground_.ready() ? 1u : 0u, placed = !scene_ || modelsPlaced_ ? 1u : 0u;
@@ -1662,10 +1663,6 @@ class MapStage final : public Stage {
   // `right`, y up, z along the facing); the cooked clip holds a trimmed part of it.
   void addCard(SpriteClipId clip, glm::vec3 anchor, glm::vec3 right, float w, float h, glm::vec3 local, bool mirror, uint32_t frame,
                uint32_t flags, const SpriteInstance* emit) {
-    sprites_.request(clip, SpriteSystem::kOnScreen);
-    const SpriteSystem::Texture tex = sprites_.texture(clip);
-    if (tex.index == kNoTexture) return;
-    if (tex.full) ++fullFrames_;
     const SpriteClipHeader& c = sprites_.header(clip);
     const float sw = static_cast<float>(c.sourceWidth), sh = static_cast<float>(c.sourceHeight);
     const float cx = (static_cast<float>(c.cropX) + c.contentWidth * 0.5f) / sw - 0.5f;
@@ -1678,6 +1675,23 @@ class MapStage final : public Stage {
     s.origin = anchor + right * x + up * (local.y + cy * h) + facing * local.z;
     s.width = w * c.contentWidth / sw;
     s.height = h * c.contentHeight / sh;
+    // A fight's character keeps its half-resolution base for good; its full version is asked for only while the card is
+    // drawn taller on screen than 70% of the base (the top mip starts to show), so it lands before it is needed.
+    bool wantFull = true;
+    if (sprites_.isPinned(clip)) {
+      const glm::vec3 centre = s.origin + up * (s.height * 0.5f);
+      const float depth = std::max(glm::dot(centre - lastCamera_.position, lastCamera_.forward), 0.05f);
+      const float onScreen = s.height * std::abs(lastCamera_.projection[1][1]) / depth * viewHeightPx_ * 0.5f;
+      // In view: the centre within the screen widened by the card's own half height (in the same clip units).
+      const glm::vec4 clipPos = lastCamera_.viewProjection() * glm::vec4(centre, 1.0f);
+      const float reach = 1.0f + onScreen / viewHeightPx_;
+      const bool inView = clipPos.w > 0.0f && std::abs(clipPos.x) < reach * clipPos.w && std::abs(clipPos.y) < reach * clipPos.w;
+      wantFull = inView && onScreen > kFullFrom * static_cast<float>(sprites_.baseHeight(clip));
+    }
+    if (wantFull) sprites_.request(clip, SpriteSystem::kOnScreen);
+    const SpriteSystem::Texture tex = sprites_.texture(clip);
+    if (tex.index == kNoTexture) return;
+    if (tex.full) ++fullFrames_;
     s.textureIndex = tex.index;
     s.layer = std::min(frame, c.frames - 1);
     s.flags = flags | (mirror ? kSpriteMirrored : 0u);
@@ -2246,8 +2260,9 @@ class MapStage final : public Stage {
     for (const std::string& u : unknown) logWarn("poses: {} not in the catalog: idle only", u);
   }
 
-  // Every pose the map's units can play stays at full quality from the loading screen to the end (the user, 2026-10-18:
-  // a pose streamed in on its first frame drew from the 64 px tail, a blur at every change of animation).
+  // Every pose the map's units can play is on the GPU from the loading screen to the end, at half resolution or better
+  // (the user, 2026-10-18: a pose streamed in on its first frame drew from the 64 px tail, a blur at every change of
+  // animation); the full resolution comes and goes with the camera (addCard).
   void pinUnitArt() {
     for (size_t i = 0; i < scene_->units.size(); ++i) pinArt(scene_->units[i], i < unitCatalog_.size() ? unitCatalog_[i] : nullptr);
   }
@@ -7340,6 +7355,8 @@ class MapStage final : public Stage {
   // The orbit camera: the goal above (yaw_ ... target_), the view on show gliding to it, its limits and steps.
   OrbitView cam_;
   Camera lastCamera_{};
+  float viewHeightPx_ = 1080.0f;  // the frame's height in pixels (addCard: how big a card is on screen)
+  static constexpr float kFullFrom = 0.7f;  // a pinned card taller on screen than this share of its base: full version wanted
   float aspect_ = 1.0f;
   struct PieceBox {
     float x, z, radius, top;  // a 3D piece's footprint (square around its centre) and top, world units
