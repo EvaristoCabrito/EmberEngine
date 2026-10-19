@@ -296,11 +296,8 @@ struct ResolvePush {
   uint32_t colorImage;
   glm::vec4 clearColor;
   uint32_t background;  // kNoTextureIndex: the sky (atmosphere) or clearColor; kBlackBackground: black; else a backdrop
-  uint32_t backgroundMode;  // with a backdrop: 1 = the painting up to the horizon, the sky above; 2 = aligned to the sky (setBackground)
-  float planeY;             // mode 2: the flat ground plane under the board
-  glm::vec4 fitA, fitB;     // mode 2 (resolve.hlsl Push)
-  uint32_t planeTexture;    // mode 2: tileable ground for the plane; kNoTextureIndex = none
-  float planeTile, planeFar;
+  uint32_t backgroundMode;  // with a backdrop: 1 = the painting up to the horizon, the sky above (setBackground toHorizon)
+  uint32_t pad[2];
 };
 static_assert(sizeof(ResolvePush) <= Bindless::kPushConstantBytes);
 
@@ -1394,8 +1391,7 @@ void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
   scope = gpuTimer_.begin(cmd, "resolve");
   vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, resolvePipeline_);
   const ResolvePush resolvePush{frameAddress, visibilityIndex_, sceneColorStorageIndex_, fogOn_ ? kNeverSeenColor : kClearColor, background_,
-                                backgroundMode_, backdropPlane_.y, backdropFitA_, backdropFitB_,
-                                backdropPlane_.texture, backdropPlane_.tile, backdropPlane_.far};
+                                backgroundToHorizon_ ? 1u : 0u, {}};
   vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(resolvePush), &resolvePush);
   vkCmdDispatch(cmd, (size_.width + 7) / 8, (size_.height + 7) / 8, 1);
   gpuTimer_.end(cmd, scope);
@@ -1841,8 +1837,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     const uint32_t skyScope = gpuTimer_.begin(cmd, "sky");
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, skyPipeline_);
     const ResolvePush skyPush{bufferAddress(context_, frame.meshFrame), visibilityIndex_, sceneColorStorageIndex_, kClearColor, background_,
-                              backgroundMode_, backdropPlane_.y, backdropFitA_, backdropFitB_,
-                                backdropPlane_.texture, backdropPlane_.tile, backdropPlane_.far};
+                              backgroundToHorizon_ ? 1u : 0u, {}};
     vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(skyPush), &skyPush);
     vkCmdDispatch(cmd, (size_.width + 7) / 8, (size_.height + 7) / 8, 1);
     gpuTimer_.end(cmd, skyScope);

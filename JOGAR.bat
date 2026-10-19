@@ -13,8 +13,7 @@ if not exist "%EXE%" (
   goto :fim
 )
 
-set "GROUND=%ART%\ground\ground-v4.pak"
-if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v3.pak"
+set "GROUND=%ART%\ground\ground-v3.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v2.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground.pak"
 set "MESHES=%ART%\meshes\props-v2.pak"

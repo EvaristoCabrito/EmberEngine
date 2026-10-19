@@ -228,23 +228,11 @@ class Renderer {
   // What shows behind everything: kNoTextureIndex = the sky (with the atmosphere) or the clear colour,
   // kBlackBackground = black, else a bindless sRGB image (a painted backdrop), fitted to cover the screen.
   static constexpr uint32_t kBlackBackground = 0xFFFFFFFEu;
-  // `mode` with a backdrop (resolve.hlsl backgroundAt; both need the atmosphere, else the painting covers the screen as before):
-  // 0 cover-fit; 1 the painting up to the world's horizon, the sky above; 2 the painting aligned to the sky (content/engine2/
-  // backdrop-fit.json): `fitA` = horizon row, bottom row kept, degrees its height spans above the horizon, degrees below the
-  // horizon where the bottom row lands; `fitB` = centre azimuth (radians), sky-top row, degrees its width spans, 0.
-  // Mode 2's ground around the board: a flat plane at `y` carrying the map's top-down ground image (`texture`, `tile` world
-  // units across, mirrored at its edges; kNoTextureIndex = none), handing over to the painting beyond `far` units along the ray.
-  struct BackdropPlane {
-    float y = 0.0f;
-    uint32_t texture = 0xFFFFFFFFu;
-    float tile = 120.0f, far = 300.0f;
-  };
-  void setBackground(uint32_t background, uint32_t mode = 0, glm::vec4 fitA = {}, glm::vec4 fitB = {}, const BackdropPlane& plane = {}) {
+  // `toHorizon`: the painting ends at the world's horizon and the real sky shows above it (resolve.hlsl backgroundAt mode 1;
+  // needs the atmosphere, else the painting covers the screen as before).
+  void setBackground(uint32_t background, bool toHorizon = false) {
     background_ = background;
-    backgroundMode_ = mode;
-    backdropFitA_ = fitA;
-    backdropFitB_ = fitB;
-    backdropPlane_ = plane;
+    backgroundToHorizon_ = toHorizon;
   }
   // Full-scene bloom strength (Engine2: the map's bloomIntensity, default 0.16); 0 = none.
   void setBloom(float strength) { bloom_ = strength; }
@@ -485,9 +473,7 @@ class Renderer {
   std::array<float, 8> shadowKey_{};       // what the cached shadow map was drawn for
   VkDeviceAddress shadowTerrain_ = 0;
   uint32_t background_ = 0xFFFFFFFFu;  // setBackground
-  uint32_t backgroundMode_ = 0;
-  glm::vec4 backdropFitA_{0.0f}, backdropFitB_{0.0f};
-  BackdropPlane backdropPlane_;
+  bool backgroundToHorizon_ = false;
   uint32_t lightingLayers_ = 0xFFFFFFFFu;
   TerrainView terrain_;
   VkPipeline spritePipeline_ = VK_NULL_HANDLE;
