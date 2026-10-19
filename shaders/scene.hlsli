@@ -182,7 +182,7 @@ static const uint kCloudShadows = 2u;
 static const uint kVolumeEffects = 1u;
 static const uint kVolumeBackground = 2u;
 
-// Matches ember::AtmosphereFrame (render/Atmosphere.h). 336 bytes.
+// Matches ember::AtmosphereFrame (render/Atmosphere.h). 352 bytes.
 struct AtmosphereFrame {
   float4x4 inverseViewProjection;
   float3 rayleighScattering;  // per km at sea level
@@ -234,9 +234,16 @@ struct AtmosphereFrame {
   uint cloudShadowMap;        // sampled R32F; kNoTexture = none (then the cover is computed per surface)
   float sunTanRadius;         // the sun's disc: tan of its angular radius (0 = the real 0.26 deg, no corona); panel "Sol"
   uint pad2, pad3;
+  // Ciclo de 24 h: the moon as a second light of the sky (its scattering added to the sun's), opposite the sun in azimuth.
+  // 0 = none (every map's own time: only one light, as before). Read by offset (atmoMoonLight): the moonTexture gotcha.
+  float3 moonIlluminance;
+  float pad4;
 };
 
 AtmosphereFrame loadAtmosphere(MeshFrame f) { return vk::RawBufferLoad<AtmosphereFrame>(f.atmosphere); }
+// Fields after the AtmosphereFrame's uint64 read by byte offset (passed by value DXC read them wrong: moonTexture, 2026-10-15).
+float3 atmoMoonLight(uint64_t atmosphere) { return vk::RawBufferLoad<float3>(atmosphere + 336u); }
+float3 atmoMoonDirection(uint64_t atmosphere) { return vk::RawBufferLoad<float3>(atmosphere + 240u); }
 
 
 // One local light (Engine2's CarriedLight: a three.js point light). 32 bytes.

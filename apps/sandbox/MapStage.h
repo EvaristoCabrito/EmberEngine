@@ -149,6 +149,7 @@ struct MapStageOptions {
   int clouds = 1;
   int moonLight = 1;  // the panel's "Luar" (light mode real): 0 físico, 1 cinema (--moonlight N)
   int freeCam = 1;    // the panel's "Câmera": 0 jogo, 1 livre (--free-cam N)
+  int hour = 0;       // the panel's "Hora": 0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3..10 fixed hours (--hour N)
   int sunDisc = 1;    // the panel's "Sol": 0 real, 1 cinema (--sun-disc N)
   // The fog of war's mist bank (the numbered looks) on at the start; --mist 0 leaves only the fog of war's mask (check_fog.py
   // needs never-seen ground exactly black) while the volumetric atmosphere may stay on.
@@ -266,6 +267,7 @@ class MapStage final : public Stage {
     skyReflect_ = std::clamp(options.skyReflect, 0, 1);
     clouds_ = std::clamp(options.clouds, 0, 1);
     freeCam_ = std::clamp(options.freeCam, 0, 1);
+    dayCycle_ = std::clamp(options.hour, 0, 10);
     moonLight_ = std::clamp(options.moonLight, 0, 1);
     sunSize_ = std::clamp(options.sunDisc, 0, 1);
     spellsMenu_.load("content/fx/spell-looks.json", "content/fx.sprites.json");
@@ -364,7 +366,7 @@ class MapStage final : public Stage {
       }
       // The newest panorama opens first on its map (aldeia: the user's fire panorama, 2026-10-19 "TERMINA").
       if (options.background < 0 && !panoramas_.empty()) background_ = 4 + static_cast<int>(panoramas_.size());
-      if (e2::timeOfDay(scene_->timeOfDay).moon && scene_->environment != "indoor")
+      if (scene_->environment != "indoor")  // the map's night, or any night of the 24 h cycle
         for (const char* phase : e2::kMoonPhases) ground_.requestTexture(e2::skyMoonAsset(phase));  // 0.1 MB each
     }
   }
@@ -1104,6 +1106,11 @@ class MapStage final : public Stage {
       // every card stands upright on screen (sprites.hlsl VSMain).
       static const char* kCam[2] = {"jogo", "livre"};
       dropdown("Câmera", freeCam_, 2, [](int i) { return std::string(kCam[i]); });
+      if (lightingMode_ == 3 && !(scene_ && scene_->environment == "indoor")) {
+        static const char* kHours[11] = {"do mapa", "ciclo rápido", "ciclo lento", "amanhecer", "manhã", "meio-dia",
+                                         "tarde", "pôr do sol", "crepúsculo", "noite", "madrugada"};
+        dropdown("Hora", dayCycle_, 11, [](int i) { return std::string(kHours[i]); });
+      }
       static const char* kStance[2] = {"em pé", "para a câmera"};
       dropdown("Cards", cardStance_, 2, [](int i) { return std::string(kStance[i]); });
     }
@@ -1170,7 +1177,7 @@ class MapStage final : public Stage {
       static const char* kSun[2] = {"real", "cinema"};
       dropdown("Sol", sunSize_, 2, [](int i) { return std::string(kSun[i]); });
     }
-    if (scene_ && e2::timeOfDay(scene_->timeOfDay).moon) {
+    if (scene_ && (e2::timeOfDay(scene_->timeOfDay).moon || dayCycle_ > 0)) {
       static const char* kPaths[3] = {"Engine2", "atrás", "na frente"};
       int moon = moonOff_ ? 0 : moonPath_ + 1;
       if (dropdown("Lua", moon, 4, [](int i) { return i == 0 ? std::string("OFF") : std::string(kPaths[i - 1]); })) {
@@ -2260,6 +2267,7 @@ class MapStage final : public Stage {
       e2::lightDirection(t.stageAzimuth, t.elevationDeg >= 0.0f ? glm::radians(t.elevationDeg) : t.stageElevation, dir);
       l.sunDirection = glm::normalize(glm::vec3(dir[0], dir[1], dir[2]));
     }
+    if (lightingMode_ == 3 && dayCycle_ > 0 && !(scene_ && scene_->environment == "indoor")) return cycleLighting(time, moon, phase);
     if (lightingMode_ == 3) return realLighting(t, moon, phase, placed, time);
     if (lightingMode_ == 1) {  // Engine2's 3D stage, as it drew (at night: the moon's light from Engine2's side)
       if (t.moon) l.sunDirection = glm::normalize(moonPlacement(time).light);
@@ -2368,6 +2376,76 @@ class MapStage final : public Stage {
       // Engine2's glow: a bright disc under either "Luar" whose phase art still reads (at 0.9 x it burned to a white
       // "super moon": the user, 2026-10-19).
       l.moonGlow = std::max(2.3f, outside * 0.35f);
+    }
+    return l;
+  }
+
+  // Ciclo de 24 h (the user, 2026-10-19: "o melhor céu possível com 24 horas de transição"; the panel's "Hora", "do mapa" by default
+  // so no map changes): the sun rises at 6, stands 62 deg high at noon and sets at 18 on a path sweeping the whole sky; the moon is
+  // opposite it, also lighting the sky (the atmosphere's second light, Renderer::Lighting::moonIlluminance), so dusk glows out while
+  // the moon rises and the stars come in with the dark (atmosphere.hlsli). The board's key light is the sun while it is up, the moon
+  // after: the swap falls when both sit on the horizon and light almost nothing. The meter follows twilight (a tenth for every 2.4 deg
+  // the sun sinks), so the camera opens up through dusk.
+  float cycleHour(float time) const {
+    static constexpr float kFixed[8] = {6.0f, 9.0f, 12.0f, 15.0f, 18.0f, 18.6f, 22.0f, 3.0f};  // crepúsculo: the sun 6 deg down
+    if (dayCycle_ == 1) return std::fmod(6.0f + time * 24.0f / 120.0f, 24.0f);    // ciclo rápido: a day in 2 minutes
+    if (dayCycle_ == 2) return std::fmod(6.0f + time * 24.0f / 1440.0f, 24.0f);   // ciclo lento: a day in 24 minutes
+    return kFixed[std::clamp(dayCycle_ - 3, 0, 7)];
+  }
+  Renderer::Lighting cycleLighting(float time, const e2::Moonlight& moon, const char* phase) const {
+    Renderer::Lighting l;
+    const float pi = std::numbers::pi_v<float>;
+    const float hour = cycleHour(time);
+    const float elevation = glm::radians(62.0f) * std::sin(2.0f * pi * (hour - 6.0f) / 24.0f);
+    const float azimuth = -0.95f + pi * (hour - 12.0f) / 12.0f;
+    float d[3];
+    e2::lightDirection(azimuth, elevation, d);
+    const glm::vec3 sun = glm::normalize(glm::vec3(d[0], d[1], d[2]));
+    e2::lightDirection(azimuth + pi, -elevation * 0.9f, d);
+    const glm::vec3 moonDir = glm::normalize(glm::vec3(d[0], d[1], d[2]));
+    const glm::vec3 moonColor = Renderer::srgb(moon.color ? moon.color : 0x9fb4ffu);
+    const float moonLux = (moonLight_ == 1 ? kCinemaMoonLux : kFullMoonLux) * moon.strength;
+    const auto through = [](glm::vec3 dir, glm::vec3 colour, float& lum) {
+      const glm::vec3 c = atmosphereTransmittance(AtmosphereFrame{}, dir) * colour;
+      lum = 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b;
+      return lum > 1e-6f ? c / lum : colour;
+    };
+    l.atmosphere = true;
+    l.physicalSky = true;
+    l.ambientMul = 1.0f;
+    l.ambientIntensity = 0.0f;
+    l.skyScale = 1.0f;
+    l.skySunDirection = sun;
+    l.skyIlluminance = glm::vec3(kSunLux);
+    // The night sky reads deep navy (the ground stays moonlit): the moon lights the sky at a tenth of its key, so the exposure
+    // that shows the moonlit board does not turn the night sky into a blue day (measured 2026-10-19: at full share it did).
+    l.moonIlluminance = moonColor * moonLux * 0.1f;
+    l.sunDisc = true;  // the stars come out as the sun goes down (atmosphere.hlsli)
+    l.stars = 0.0f;
+    l.starLook = static_cast<uint32_t>(starLook_);
+    const bool day = sun.y > 0.0f;
+    moonNight_ = !day;
+    float sunLum = 0.0f, moonLum = 0.0f;
+    const glm::vec3 sunColor = through(day ? sun : glm::normalize(glm::vec3(sun.x, 0.001f, sun.z)), glm::vec3(1.0f), sunLum);
+    const glm::vec3 moonLit = through(moonDir.y > 0.0f ? moonDir : glm::normalize(glm::vec3(moonDir.x, 0.001f, moonDir.z)), moonColor, moonLum);
+    const float dayMeterAtHorizon = kSunLux * sunLum * 0.25f;
+    if (day) {
+      l.sunDirection = sun;
+      l.sunColor = sunColor;
+      l.sunIntensity = kSunLux * sunLum;
+      meterLux_ = l.sunIntensity * std::max(sun.y, 0.05f) + 0.2f * l.sunIntensity;
+    } else {
+      l.sunDirection = moonDir.y > 0.05f ? moonDir : glm::normalize(glm::vec3(moonDir.x, 0.05f, moonDir.z));
+      l.sunColor = moonLit;
+      l.sunIntensity = moonLux * moonLum;
+      const float twilight = dayMeterAtHorizon * std::pow(10.0f, glm::degrees(elevation) / 2.4f);
+      meterLux_ = twilight + l.sunIntensity * (std::max(moonDir.y, 0.05f) + 0.2f);
+    }
+    if (moonDir.y > -0.05f) {
+      l.moonDirection = moonDir;
+      l.moonTexture = ground_.textureIndex(e2::skyMoonAsset(phase));
+      l.moonRadius = moonOff_ ? 0.0f : glm::radians(kMoonSizes[moonSize_]);
+      l.moonGlow = std::max(2.3f, moonLux * 0.35f);
     }
     return l;
   }
@@ -7661,6 +7739,7 @@ class MapStage final : public Stage {
   float minDistance() const { return freeCam_ == 1 ? 0.8f : kMinDistance; }
   float maxDist() const { return freeCam_ == 1 ? std::max(400.0f, maxDistance_ * 9.0f) : maxDistance_; }
   int freeCam_ = 1;  // the panel's "Câmera": 0 jogo (the old limits), 1 livre (default; --free-cam N)
+  int dayCycle_ = 0;  // the panel's "Hora": 0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3.. a fixed hour (cycleHour; --hour N)
   static constexpr float kTiltStep = 0.0873f, kTurnStep = 0.2618f;  // Engine2's bar: 5 deg; 15 deg
   static constexpr float kTurnPerPixel = 0.005f, kZoomStep = 0.85f, kPanPerSecond = 0.9f;
   static constexpr float kMinDistance = 3.0f, kEyeClearance = 0.8f;

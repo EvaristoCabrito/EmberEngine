@@ -127,6 +127,9 @@ class Renderer {
     // Light mode "real" (ARCHITECTURE 7.6 step A): the sky's ambient is what the physical sky gives (lux), times
     // this multiplier (the map's ambient slider), instead of being scaled to ambientIntensity.
     bool physicalSky = false;
+    // Ciclo de 24 h: the sky's own sun (when the board's key light is the moon) and the moon as the sky's second light.
+    glm::vec3 skySunDirection{0.0f};  // zero = sunDirection
+    glm::vec3 moonIlluminance{0.0f};  // zero = none
     float ambientMul = 1.0f;
     // Lit cards stop at kMaxLit x their colour x this x exposure (Engine2 MAX_LIT, written for lights near 1;
     // the physical mode sets it to the metered light so exposure x litScale stays near 1 by day).

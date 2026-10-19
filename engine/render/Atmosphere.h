@@ -6,11 +6,12 @@
 #include <glm/glm.hpp>
 
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 
 namespace ember {
 
-// Matches AtmosphereFrame in shaders/scene.hlsli. 336 bytes.
+// Matches AtmosphereFrame in shaders/scene.hlsli. 352 bytes.
 struct AtmosphereFrame {
   glm::mat4 inverseViewProjection{1.0f};
   glm::vec3 rayleighScattering{5.802e-3f, 13.558e-3f, 33.1e-3f};
@@ -55,8 +56,11 @@ struct AtmosphereFrame {
   uint32_t cloudShadowMap = 0xFFFFFFFFu;
   float sunTanRadius = 0.0f;  // the sun's disc: tan of its angular radius (0 = the real 0.26 deg, no corona)
   uint32_t pad2 = 0, pad3 = 0;
+  glm::vec3 moonIlluminance{0.0f};  // the 24 h cycle: the moon as the sky's second light (0 = none)
+  float pad4 = 0.0f;
 };
-static_assert(sizeof(AtmosphereFrame) == 336);
+static_assert(sizeof(AtmosphereFrame) == 352 && offsetof(AtmosphereFrame, moonIlluminance) == 336 &&
+              offsetof(AtmosphereFrame, moonDirection) == 240);
 
 // The air's transmittance from the ground to its top towards `direction` (world, +y up), on the CPU (the same
 // integral as CSTransmittance): the colour the sun or moon arrives with.

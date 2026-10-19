@@ -1067,7 +1067,8 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
   if (atmoThisFrame_) {
     AtmosphereFrame a;
     a.inverseViewProjection = glm::inverse(camera_.viewProjection());
-    a.sunDirection = glm::normalize(lighting_.sunDirection);
+    a.sunDirection = glm::normalize(glm::length(lighting_.skySunDirection) > 0.0f ? lighting_.skySunDirection : lighting_.sunDirection);
+    a.moonIlluminance = lighting_.moonIlluminance;
     a.sunIlluminance = lighting_.skyIlluminance;
     a.kmPerUnit = lighting_.kmPerUnit;
     a.skyScale = lighting_.skyScale;

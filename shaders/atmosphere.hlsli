@@ -235,7 +235,16 @@ CloudHit cloudSheet(MeshFrame f, AtmosphereFrame a, CloudParams c, float3 origin
   const float3 fill = skyUp * lerp(0.55, 0.22, saturate(tau / 3.2)) + groundUp * 0.5;
   const float3 albedo = 0.94;
   // Direct light scattered towards the eye (phase x multiple-scatter lift), then the fill (Lambert).
-  const float3 direct = keyOnTop * selfShadow * phase * lerp(0.8, 1.35, powder) * bottom * 0.45;
+  float3 direct = keyOnTop * selfShadow * phase * lerp(0.8, 1.35, powder) * bottom * 0.45;
+  // The 24 h cycle's moon lights the sheet too (moonlit clouds at night).
+  const float3 moonLight = atmoMoonLight(f.atmosphere);
+  if (dot(moonLight, 1.0) > 0.0) {
+    const float3 moon = atmoMoonDirection(f.atmosphere);
+    const float3 moonOnTop = moonLight * transmittanceToTop(a, a.viewHeight, moon.y) * saturate(moon.y * 6.0 + 0.3);
+    const float cm = dot(dir, moon);
+    const float phaseMoon = (0.72 * phaseHG(cm, 0.62) + 0.28 * phaseHG(cm, -0.18)) * 4.0 * kPi;
+    direct += moonOnTop * phaseMoon * lerp(0.8, 1.35, powder) * bottom * 0.45;
+  }
   float3 color = albedo * (direct + fill / kPi);
   // Distance haze: towards the horizon the cloud takes the sky's own colour there.
   const float haze = 1.0 - exp(-t / 7000.0);

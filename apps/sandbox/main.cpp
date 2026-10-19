@@ -164,6 +164,7 @@ struct Options {
   int clouds = 1;       // --clouds N: the panel's "Nuvens" (0 OFF, 1 básica)
   int moonLight = 1;    // --moonlight N: the panel's "Luar" (0 físico, 1 cinema)
   int freeCam = 1;      // --free-cam N: the panel's "Câmera" (0 jogo, 1 livre)
+  int hour = 0;         // --hour N: the panel's "Hora" (0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3..10 amanhecer .. madrugada)
   int sunDisc = 1;      // --sun-disc N: the panel's "Sol" (0 real, 1 cinema)
   bool mist = true;    // --mist 0: the fog of war's mist bank off (its mask and the volumetric atmosphere stay)
   int lighting = 3;
@@ -279,6 +280,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--clouds" && hasValue) o.clouds = std::atoi(argv[++i]);
     else if (arg == "--moonlight" && hasValue) o.moonLight = std::atoi(argv[++i]);
     else if (arg == "--free-cam" && hasValue) o.freeCam = std::atoi(argv[++i]);
+    else if (arg == "--hour" && hasValue) o.hour = std::atoi(argv[++i]);
     else if (arg == "--sun-disc" && hasValue) o.sunDisc = std::atoi(argv[++i]);
     else if (arg == "--mist" && hasValue) o.mist = std::atoi(argv[++i]) != 0;
     else if (arg == "--lighting" && hasValue) o.lighting = std::atoi(argv[++i]);
@@ -615,6 +617,7 @@ MapStageOptions mapOptions(const Options& o) {
     m.clouds = o.clouds;
     m.moonLight = o.moonLight;
     m.freeCam = o.freeCam;
+    m.hour = o.hour;
     m.sunDisc = o.sunDisc;
     m.mist = o.mist;
     m.lighting = o.lighting;

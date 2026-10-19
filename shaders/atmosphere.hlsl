@@ -117,7 +117,17 @@ void CSSkyView(uint3 id : SV_DispatchThreadID) {
   const float3 o = float3(0.0, a.viewHeight, 0.0);
   const float ground = raySphere(o, d, a.bottomRadius), top = raySphere(o, d, a.topRadius);
   const float span = ground >= 0.0 ? ground : max(top, 0.0);
-  gStorageImagesRgba16f[NonUniformResourceIndex(a.skyViewStorage)][id.xy] = float4(integrate(a, o, d, span, 30).rgb, 1.0);
+  float3 light = integrate(a, o, d, span, 30).rgb;
+  // The 24 h cycle's moon, a second light opposite the sun in azimuth (the table is laid out around the sun's azimuth).
+  const float3 moonLight = atmoMoonLight(push.atmosphere);
+  if (dot(moonLight, 1.0) > 0.0) {
+    AtmosphereFrame m = a;
+    const float muMoon = atmoMoonDirection(push.atmosphere).y;
+    m.sunDirection = float3(-sqrt(max(1.0 - muMoon * muMoon, 0.0)), muMoon, 0.0);
+    m.sunIlluminance = moonLight;
+    light += integrate(m, o, d, span, 30).rgb;
+  }
+  gStorageImagesRgba16f[NonUniformResourceIndex(a.skyViewStorage)][id.xy] = float4(light, 1.0);
 }
 
 [numthreads(8, 8, 1)]
@@ -125,6 +135,11 @@ void CSAerial(uint3 id : SV_DispatchThreadID) {
   if (any(id.xy >= kAerialSize)) return;
   const AtmosphereFrame a = loadAtmo();
   const MeshFrame f = loadFrame(push.frame);
+  const float3 moonLight = atmoMoonLight(push.atmosphere);
+  AtmosphereFrame m = a;  // the 24 h cycle's moon as a second light
+  m.sunDirection = atmoMoonDirection(push.atmosphere);
+  m.sunIlluminance = moonLight;
+  const bool moonOn = dot(moonLight, 1.0) > 0.0;
   const float2 uv = (float2(id.xy) + 0.5) / float(kAerialSize);
   const float4 h = mul(float4(uv * 2.0 - 1.0, 1.0, 1.0), a.inverseViewProjection);
   const float3 d = normalize(h.xyz / h.w - f.cameraPosition);
@@ -138,6 +153,7 @@ void CSAerial(uint3 id : SV_DispatchThreadID) {
     const float t = (float(z) + 1.0) / kAerialSize * a.aerialMaxKm;
     const float4 slab = integrate(a, o + d * previous, d, t - previous, 2);
     light += throughput * slab.rgb;
+    if (moonOn) light += throughput * integrate(m, o + d * previous, d, t - previous, 2).rgb;
     throughput *= slab.a;
     previous = t;
     volume[uint3(id.xy, z)] = float4(light, throughput);
@@ -178,7 +194,9 @@ void CSAmbient(uint thread : SV_GroupIndex) {
     if (thread < s) gUp[thread] += gUp[thread + s];
     GroupMemoryBarrierWithGroupSync();
   }
-  const float3 sunOnGround = a.sunIlluminance * transmittanceToTop(a, a.viewHeight, a.sunDirection.y) * saturate(a.sunDirection.y);
+  float3 sunOnGround = a.sunIlluminance * transmittanceToTop(a, a.viewHeight, a.sunDirection.y) * saturate(a.sunDirection.y);
+  const float3 moonDir = atmoMoonDirection(push.atmosphere);
+  sunOnGround += atmoMoonLight(push.atmosphere) * transmittanceToTop(a, a.viewHeight, moonDir.y) * saturate(moonDir.y);
   const float3 groundRadiance = a.groundAlbedo / kPi * (gUp[0] + sunOnGround);
   float3 sh[9];
   [unroll] for (uint c = 0; c < 9; ++c) sh[c] = 0.0;
