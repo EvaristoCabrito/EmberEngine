@@ -115,13 +115,16 @@ bool cookGround(JobSystem& jobs, const GroundCookOptions& options, std::vector<P
   // The painted backdrops (screen backgrounds: basic BC7 is plenty, and much less work than slow).
   std::vector<std::string> backdropAssets;
   {
-    std::error_code error;
-    for (const auto& entry : std::filesystem::directory_iterator(options.engine2Public / "game/map-backgrounds", error)) {
-      const std::string ext = entry.path().extension().string();
-      if (ext != ".jpg" && ext != ".jpeg" && ext != ".png") continue;
-      const std::u8string name = entry.path().filename().u8string();
-      work.push_back({e2::backdropAsset(std::string(name.begin(), name.end())), TextureFormat::Bc7Srgb, entry.path(), {}});
-      backdropAssets.push_back(work.back().asset);
+    // Engine2's, then EmberEngine's own (content/backdrops, e2::emberBackdrop).
+    for (const std::filesystem::path& folder : {options.engine2Public / "game/map-backgrounds", std::filesystem::path("content/backdrops")}) {
+      std::error_code error;
+      for (const auto& entry : std::filesystem::directory_iterator(folder, error)) {
+        const std::string ext = entry.path().extension().string();
+        if (ext != ".jpg" && ext != ".jpeg" && ext != ".png") continue;
+        const std::u8string name = entry.path().filename().u8string();
+        work.push_back({e2::backdropAsset(std::string(name.begin(), name.end())), TextureFormat::Bc7Srgb, entry.path(), {}});
+        backdropAssets.push_back(work.back().asset);
+      }
     }
   }
   for (const char* phase : e2::kMoonPhases)

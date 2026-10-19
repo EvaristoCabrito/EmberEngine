@@ -456,9 +456,8 @@ inline int drawBriefing(ImVec2 size, float rem, const MissionEntry& m, const std
   ImDrawList* dl = ImGui::GetWindowDrawList();
   const ImVec2 a{0, 0}, b = size;
   dl->AddRectFilled(a, b, IM_COL32(28, 28, 28, 255));
-  const char* art = engine2BriefArt(m.draftId);
-  if (*art)
-    if (const UiImage* image = uiImage(engine2Public / std::filesystem::path(reinterpret_cast<const char8_t*>(art)))) {
+  if (const std::filesystem::path art = briefArtFile(m.draftId, engine2Public); !art.empty())
+    if (const UiImage* image = uiImage(art)) {
       imageCover(dl, *image, a, b, 0.5f, 0.5f);
       verticalGradient(dl, a, b, {{0.0f, IM_COL32(17, 17, 17, 0)}, {0.5f, IM_COL32(17, 17, 17, 115)}, {1.0f, IM_COL32(17, 17, 17, 230)}});
     }

@@ -20,6 +20,14 @@ inline std::string groundLayerAsset(std::string_view key, std::string_view role)
 }
 
 inline std::string backdropAsset(std::string_view file) { return "backdrop/" + std::string(file) + ".tex"; }
+// EmberEngine's own painted backdrops (content/backdrops, the user's art; cooked beside Engine2's): the file for a map's
+// draft id, used in place of the scene's own; "" = none.
+inline std::string emberBackdrop(std::string_view draftId) {
+  static const std::pair<std::string_view, std::string_view> kOwn[] = {{"ashen-forest-crossing", "ashen-forest-bg-v01.jpg"}};
+  for (const auto& [id, file] : kOwn)
+    if (draftId == id) return std::string(file);
+  return {};
+}
 inline std::string skyMoonAsset(std::string_view phase) { return "sky/moon/" + std::string(phase) + ".tex"; }
 
 }  // namespace ember::e2

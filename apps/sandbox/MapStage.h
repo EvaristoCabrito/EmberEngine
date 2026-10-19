@@ -334,6 +334,7 @@ class MapStage final : public Stage {
       if (!options.battle.empty()) setUpBattle(options.battle);
       pinUnitArt();
       preloadHud();
+      if (std::string own = e2::emberBackdrop(board_->draft().id); !own.empty()) scene_->backdrop = std::move(own);  // the user's art
       if (!scene_->backdrop.empty()) ground_.requestTexture(e2::backdropAsset(scene_->backdrop));
       background_ = options.background >= 0 ? std::min(options.background, 2) : scene_->backdrop.empty() ? 1 : 0;
       if (e2::timeOfDay(scene_->timeOfDay).moon && scene_->environment != "indoor")
@@ -6563,9 +6564,8 @@ class MapStage final : public Stage {
     const bool win = result_ == "victory";
     const float k = std::clamp((now_ - resultAt_ - kResultDelay) / 0.5f, 0.0f, 1.0f);  // fades in
     dl->AddRectFilled({0, 0}, size, IM_COL32(17, 17, 17, static_cast<int>(255 * k)));
-    const char* art = engine2BriefArt(board_->draft().id);
-    if (*art)
-      if (const UiImage* image = uiImage(options_.engine2Public / std::filesystem::u8path(art))) {
+    if (const std::filesystem::path art = briefArtFile(board_->draft().id, options_.engine2Public); !art.empty())
+      if (const UiImage* image = uiImage(art)) {
         imageCover(dl, *image, {0, 0}, size, 0.5f, 0.5f, IM_COL32(255, 255, 255, static_cast<int>(255 * k)));
         verticalGradient(dl, {0, 0}, size, {{0.0f, IM_COL32(17, 17, 17, 51)}, {0.5f, IM_COL32(17, 17, 17, 102)}, {1.0f, IM_COL32(17, 17, 17, 230)}});
       }
