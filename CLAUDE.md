@@ -858,6 +858,12 @@ selecionar os alvos")
   with big GPUs even when this RX 6400 cannot run 8 Voss-sized heroes (~4.5 GB at full resolution).
 - Numbers (aldeia015 test battle, 17 units, 71 clips, RX 6400): everything whole 1243 MB (voss-veo 564), game GPU memory 2556 MB
   of the driver's 3059 MB; Voss at half = 141 MB.
+- **Battle hitches (`92ff68f`, 2026-10-19):** slow frames log where the time went ("slow frame" / "slow stage frame" / "slow ui
+  record", > 50 ms). Never let ImGui's Vulkan backend upload textures (a vkQueueWaitIdle per texture: DebugUi::uploadTextures does
+  it); never resample or decode UI images on the main thread (UiArt Resampler, MapStage::preloadHud); never draw text at a size
+  that follows the zoom (each new size bakes glyphs). Measured beside Voss: main thread 99th 19.5 -> 2.1 ms, 0 frames over 16.7.
+- **Never force-kill a Sandbox window** (Stop-Process -Force while the GPU works): the process sticks "exiting" with 0 handles,
+  access denied, holding GPU memory until a reboot. Close test windows like the X (`CloseMainWindow`).
 
 ## Battle bar: 12 sockets F1-F12 + Atalhos (2026-10-18; the user: "12 sockets ... F1 ao F12 e um outro botão para editar")
 
