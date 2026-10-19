@@ -733,6 +733,60 @@ efeitos e wire into the game")
   not placed; kill drops are still not kept (only chests fill `lootWeapons` / `lootEquipment`); the weapon's "tip" text on the popup; enemy warp
   crossing beyond the walk; per-pose features.
 
+## Lighting plan, phase 4: sky reflections, clouds, water look 001, cinema moonlight (2026-10-19; the user's pasted plan phases 0-9,
+"concordo com seu plano, faz uma nuvem básica para ver com off", "aceito novos tiles de água", "não faça uma nuvem muito baixo
+esforço ... céu bonito, estrelado ... luz do luar também")
+
+- **Plan order agreed (the user, 2026-10-19):** phase 0 fog bank cost (6.4 of 11.7 ms) first, then 1 tonemap / exposure, 2 AO,
+  3 local-light shadows, 4 (this), 5 probe GI, 7 SSR; 6 TAA (blurs the cards), 8 volumetric clouds (the camera barely sees the sky),
+  9 ray tracing (4 GB) cut. The pasted phases 0-3 are in the conversation of 2026-10-19 (CLAUDE.md keeps only this line).
+  **MeshFrame pads:** phases 2-3 need them; this phase took only two (`skyReflect`, `cloudFlags`); the clouds' numbers live in the
+  AtmosphereFrame (304 bytes now, static_asserted).
+- **Sky reflection map** (`shaders/skyreflect.hlsl`, Renderer `skyReflect_`): lat-long 256 x 128 x 6 levels, rebuilt every frame
+  after CSAmbient from the sky-view table (clouds in, lit ground below the horizon, no sun disc), levels 1-5 GGX-prefiltered
+  (32 samples, filtered importance sampling, roughness = level / 5); `lighting.hlsli indirectSpecular()` reads it when
+  `f.skyReflect != kNoTexture`, on the SH ambient's scale (CSAmbient stores its scale in the ambient record's first w, the raw
+  up irradiance in w 1..3). Panel "Reflexo do céu": OFF (the SH sky, as before) / céu real; `--sky-reflect N`. GPU scope "sky reflect".
+- **Nuvens** (`shaders/clouds.hlsli` + `cloudSheet / cloudsOverSky` in atmosphere.hlsli, Renderer::Clouds): two sheets (cumulus at
+  meanGround + 900, cirrus 1.6 x higher, finer, thinner), cover = drifting fbm thresholded by coverage 0.4, eroded edges, lit by the
+  key light on top with self-shadow taps towards it, two-lobe phase (silver rims), powder, dark undersides, sky + ground fill,
+  distance haze; the same eroded cover field gives the sky, the reflection map and the board's shadows (`cloudShadow()` in the
+  sun term of shadeInSightSplit: every surface, cards too; by day only, off when the sun is under 12 deg). Composited last in
+  skyBackground, over the stars and the moon (a thin cloud veils the moon). Panel "Nuvens": OFF / básica; `--clouds N`;
+  `--debug-view 20` = the shadow factor on surfaces + the cover in the sky. **The cloud numbers are read by byte offset
+  (`loadCloudParams`, offset 276) because passed inside the AtmosphereFrame by value DXC read them as 0 (the moonTexture gotcha).**
+  Scale 300 units: with 500 the whole 100-unit board darkened at once (measured with the debug view from two sun azimuths).
+- **Water look 001 "ember"** (`shaders/water_look001.hlsli`, `looks/water/README.md`; water.hlsl `Push.look`, water3d look 2):
+  six analytic waves + noise ripple, Engine2's river blue deepening with the depth (Beer's law, k 0.6: a unit of water stays
+  blue), GGX sun at roughness 0.10, the sky's reflection by Fresnel, Fresnel see-through, shore foam where the sheet knows its
+  depth. Panel "Água": Engine2 / ember (default ember); "Água 3D" rio follows it; `--water N`.
+- **Luar: cinema** (panel "Luar", light mode real at night; `--moonlight N`): the physical moon (0.5 lux) never showed on the
+  ground (cemiterio capture: black beside the lanterns), so cinema = 16 lux (`kCinemaMoonLux`), the night stops capped at 1
+  (`moonNight_`), the disc's glow following the moon's light, and the stars boosted up to 12 x against the brighter sky.
+- **Why the user "lost" the moon and the sky:** maps with a painting defaulted Fundo = "imagem do mapa" (the sky never showed), and
+  the camera's lowest tilt (5 deg) puts the sky only in the top third of the screen; nothing else. Captures that show the sky need
+  `--tilt -15` (and `--fog 0` on fog maps, or the mist bank covers the horizon). **Never run a measurement window on the user's
+  screen** (2026-10-19: they saw the `--sun 200 55` run on the dusk map, overexposed by the dusk meter: "lavado, péssimo"; the
+  `--sun` override is now applied before the meter, in realLighting).
+- **Fundo "imagem até o horizonte"** (an experiment in the panel, NOT the default; the user: "a imagem de fundo pode terminar no
+  horizonte onde começa o céu. experimente na aldeia", then, seeing it: "you will need to try some sort of smarter edition for this
+  to work"): resolve.hlsl backgroundAt mode 1 (`ResolvePush.backgroundMode`, `setBackground(bg, true)`): the painting's horizon row
+  (kBackdropHorizon 0.5 of its height) pinned to the world's horizon, its rows below following the view's elevation down to 30 deg,
+  a 1-deg band of sky over the horizon. **The smarter version (not built, needs a "faz"):** a per-painting horizon row and a matte
+  of the painting's own sky (found once in the cooker, stored beside the backdrop), the painting kept at its own scale (no vertical
+  stretch) and extended at the sides, the seam hazed with the sky's own horizon colour.
+- **Sol** (panel, outdoors by day; `--sun-disc N`): real (0.26 deg, a dot nobody finds) / cinema (default: the moon's small disc, 2.7
+  deg, with a corona; `AtmosphereFrame.sunTanRadius`, `Lighting::sunRadius`). The moon's default size is now pequena (2.7 deg: média
+  and grande read as a "super moon" with the cinema glow); the disc glow = max(2.3, moon lux x 0.35).
+- **Cloud shadow map:** the per-surface cover cost +0.7 ms in the terrain pass (windowed 1080p measurement, below), so the sun
+  through the low sheet is computed once a frame into a 256 x 256 R32F map over the sun shadow's bounds (`skyreflect.hlsl
+  CSCloudShadow`, scope "cloud shadow"; `AtmosphereFrame.cloudShadowRect / cloudShadowMap`) and every surface reads one texel;
+  off the map (or without it) the cover is computed in place.
+- **Verified:** debug + validation captures exit 0, 0 validation lines (aldeia015 dusk / day, cemiterio night, rimewater shrine;
+  `captures/water/0xx`), clouds on/off, sky reflect on/off, water looks, both moons, debug view 20. **Not verified:** the look in
+  the window (the user judges: sky needs Fundo = céu and the camera at its lowest tilt), cost numbers (the measurement run in the
+  commit message), the reflection on the 3D meshes' metals (only water looked at).
+
 ## Next
 
 The user's verdict (2026-10-15): the engine as seen is worse than Engine2 ("worst colours and render I've ever

@@ -10,6 +10,7 @@
 #define EMBER_LIGHTING_HLSLI
 
 #include "scene.hlsli"
+#include "clouds.hlsli"
 
 static const float kPi = 3.14159265;
 
@@ -189,10 +190,37 @@ float3 indirectDiffuse(MeshFrame f, Surface s) {
   return lerp(f.groundColor, f.skyColor, s.normal.y * 0.5 + 0.5) * f.ambientIntensity;
 }
 
-// Prefiltered radiance along the reflection direction (the hemisphere: uniform radiance E / pi; with the
-// atmosphere, the sky's irradiance there / pi: a rough reflection until a filtered sky cube exists).
+// The sky's reflection map (skyreflect.hlsl): a lat-long image of the sky's radiance (clouds in), level 0 sharp and each
+// level above prefiltered for a rougher surface (roughness = level / (levels - 1)). Half a texel in from the poles so the
+// repeat sampler never reads across them (u wraps at the azimuth seam, as it should).
+static const uint kSkyReflectLevels = 6u;
+static const float2 kSkyReflectSize = float2(256.0, 128.0);
+float2 latLongUv(float3 dir) {
+  const float u = atan2(dir.z, dir.x) / (2.0 * kPi) + 0.5;
+  const float v = acos(clamp(dir.y, -1.0, 1.0)) / kPi;
+  return float2(u, lerp(0.5 / kSkyReflectSize.y, 1.0 - 0.5 / kSkyReflectSize.y, v));
+}
+// (the sample in its own helper, the coordinate finished first: the DXC gotcha of volumeSampleAt)
+float3 skyReflectSample(MeshFrame f, float2 uv, float lod) {
+  return gTextures[NonUniformResourceIndex(f.skyReflect)].SampleLevel(gSamplers[f.materialSampler], uv, lod).rgb;
+}
+// Prefiltered sky radiance along `dir` for a surface of `roughness`, on the same scale as the SH ambient (CSAmbient
+// stores its scale in the ambient record's first w).
+float3 skyReflection(MeshFrame f, float3 dir, float roughness) {
+  const float scale = vk::RawBufferLoad<float4>(loadAtmosphere(f).ambient).w;
+  const float2 uv = latLongUv(dir);
+  const float lod = saturate(roughness) * float(kSkyReflectLevels - 1u);
+  return skyReflectSample(f, uv, lod) * scale;
+}
+
+// Prefiltered radiance along the reflection direction: the sky's reflection map when the frame has one (sharp water,
+// polished stone, metal see the real sky, clouds and all), else the sky's irradiance there / pi (a rough reflection;
+// the hemisphere's uniform radiance E / pi without the atmosphere).
 float3 indirectSpecular(MeshFrame f, Surface s, float3 reflected) {
-  if (f.atmosphere != 0) return skyIrradiance(f, reflected) / kPi;
+  if (f.atmosphere != 0) {
+    if (f.skyReflect != kNoTexture) return skyReflection(f, reflected, s.roughness);
+    return skyIrradiance(f, reflected) / kPi;
+  }
   return lerp(f.groundColor, f.skyColor, reflected.y * 0.5 + 0.5) * f.ambientIntensity / kPi;
 }
 
@@ -234,7 +262,8 @@ float3 shadeInSightSplit(MeshFrame f, Surface s, Sight sight, out float3 local) 
     const float nlDiffuse = saturate((nlRaw + s.wrap) / (1.0 + s.wrap));
     if (nlDiffuse > 0.0) {
       const float3 F = fresnelSchlick(f0, vh) * s.specular;
-      const float shadow = s.receivesShadow > 0.0 ? lerp(1.0, sunShadow(f, s), s.receivesShadow) : 1.0;
+      // The shadow maps, then the clouds' (clouds.hlsli): every surface, the cards too.
+      const float shadow = (s.receivesShadow > 0.0 ? lerp(1.0, sunShadow(f, s), s.receivesShadow) : 1.0) * cloudShadow(f, s.position);
       color += (diffuseColor * (1.0 - F) / kPi * nlDiffuse + F * ggx(nh, a) * smithVisibility(nv, nl, a) * nl) * f.sunColor *
                f.sunIntensity * shadow;
     }
@@ -341,6 +370,7 @@ float3 shade(MeshFrame f, Surface s) {
     return debugVolume(f, c.xy / c.w * 0.5 + 0.5);
   }
   const Sight sight = tacticalSight(f, s.sightAt);
+  if (f.debugView == kDebugClouds) return cloudShadow(f, s.position).xxx;
   if (f.debugView == kDebugFog) return float3(1.0 - sight.color, sight.local, 1.0);
   if (f.debugView == kDebugFogStates) return fogStateColor(fogAlpha(f, s.sightAt));
   return applyVolume(f, shadeInSight(f, s, sight) * sight.color, s.position);

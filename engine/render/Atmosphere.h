@@ -10,7 +10,7 @@
 
 namespace ember {
 
-// Matches AtmosphereFrame in shaders/scene.hlsli. 280 bytes.
+// Matches AtmosphereFrame in shaders/scene.hlsli. 336 bytes.
 struct AtmosphereFrame {
   glm::mat4 inverseViewProjection{1.0f};
   glm::vec3 rayleighScattering{5.802e-3f, 13.558e-3f, 33.1e-3f};
@@ -43,9 +43,20 @@ struct AtmosphereFrame {
   float stars = 0.0f;
   uint32_t sunDisc = 1;
   uint32_t starLook = 3;
+  // Nuvens básicas (shaders/clouds.hlsli): the cloud sheet's numbers (Renderer::Clouds); MeshFrame.cloudFlags switches it.
+  float cloudCoverage = 0.0f;
+  float cloudAltitude = 0.0f;
+  float cloudShadow = 0.0f;
+  float cloudScale = 1.0f;
+  glm::vec2 cloudWind{0.0f};
   uint32_t pad0 = 0;
+  // The cloud shadow map over the board (Renderer cloudShadow_): world rect, sampled index (none = per-surface cover).
+  glm::vec4 cloudShadowRect{0.0f};
+  uint32_t cloudShadowMap = 0xFFFFFFFFu;
+  float sunTanRadius = 0.0f;  // the sun's disc: tan of its angular radius (0 = the real 0.26 deg, no corona)
+  uint32_t pad2 = 0, pad3 = 0;
 };
-static_assert(sizeof(AtmosphereFrame) == 280);
+static_assert(sizeof(AtmosphereFrame) == 336);
 
 // The air's transmittance from the ground to its top towards `direction` (world, +y up), on the CPU (the same
 // integral as CSTransmittance): the colour the sun or moon arrives with.

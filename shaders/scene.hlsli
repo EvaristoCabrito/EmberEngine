@@ -118,7 +118,8 @@ struct MeshFrame {
   uint hizSampler;          // min-reduction sampler
   float2 hizSize;           // pyramid level 0 size in texels
   uint instanceVisibility;  // gBuffers index: one uint per instance, 1 = visible last frame
-  uint pad2;
+  uint skyReflect;          // skyreflect.hlsl: the sky's prefiltered reflection map (lat-long, mips by roughness);
+                            // kNoTexture = none (indirectSpecular falls back to the SH sky)
   // Early-pass cluster occlusion: last frame's camera and pyramid (still in the pyramid image when
   // the early pass runs). Clusters it hides are re-tested in the late pass against this frame's.
   float4x4 previousView;
@@ -130,7 +131,8 @@ struct MeshFrame {
   uint debugView;       // 0 shaded, 1 geometric normal, 2 shading normal (normal map applied): xyz * 0.5 + 0.5
   uint shadowPass;      // 1: this frame record drives the meshes' pass from the sun (frustum only, no occlusion)
   uint cardShadowMap;   // bindless depth texture: the cards' shadows this frame; kNoTexture = none
-  uint pad6;
+  uint cloudFlags;      // clouds.hlsli kCloud*: 1 the cloud sheet exists (sky, reflections), 2 it shadows the board; its
+                        // numbers live in the AtmosphereFrame (cloud*)
   // Sun shadow (lighting.hlsli sunShadow): one orthographic map fitted to the board.
   float4x4 shadowMatrix;     // world -> light clip: x, y in -1..1, z in 0..1 (0 = nearest the sun)
   uint shadowMap;            // bindless depth texture; kNoTexture = no shadows
@@ -175,10 +177,12 @@ struct MeshFrame {
   float localShadowSize;        // texels per side
   uint pad10a, pad10b, pad10c;  // (not a uint3: aligned to 16 it would push the struct past the C++ one's 768 bytes)
 };
+static const uint kCloudLayer = 1u;
+static const uint kCloudShadows = 2u;
 static const uint kVolumeEffects = 1u;
 static const uint kVolumeBackground = 2u;
 
-// Matches ember::AtmosphereFrame (render/Atmosphere.h). 240 bytes.
+// Matches ember::AtmosphereFrame (render/Atmosphere.h). 336 bytes.
 struct AtmosphereFrame {
   float4x4 inverseViewProjection;
   float3 rayleighScattering;  // per km at sea level
@@ -217,7 +221,19 @@ struct AtmosphereFrame {
   float stars;                // star field strength (1 at night)
   uint sunDisc;               // 1: the key light is the sun (its small disc is drawn; stars come out as it sets)
   uint starLook;              // the star field's saved look (looks/stars/README.md)
+  // Nuvens básicas (clouds.hlsli; MeshFrame.cloudFlags says whether the sheet exists and shadows the board).
+  float cloudCoverage;        // share of the sky covered (0 clear .. 1 overcast)
+  float cloudAltitude;        // the sheet's world height
+  float cloudShadow;          // how dark its shadow gets on the board (0 none .. 1 full)
+  float cloudScale;           // world units per noise cell (the size of one cloud)
+  float2 cloudWind;           // drift, world units per second
   uint pad0;
+  // The cloud shadow map (skyreflect.hlsl CSCloudShadow): the sun through the low sheet over the board, one texel per
+  // (cloudShadowRect.zw) world units, computed once a frame and read by every surface (clouds.hlsli cloudShadow).
+  float4 cloudShadowRect;     // world x0, z0, 1 / width, 1 / depth
+  uint cloudShadowMap;        // sampled R32F; kNoTexture = none (then the cover is computed per surface)
+  float sunTanRadius;         // the sun's disc: tan of its angular radius (0 = the real 0.26 deg, no corona); panel "Sol"
+  uint pad2, pad3;
 };
 
 AtmosphereFrame loadAtmosphere(MeshFrame f) { return vk::RawBufferLoad<AtmosphereFrame>(f.atmosphere); }

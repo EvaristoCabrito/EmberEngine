@@ -127,7 +127,17 @@ struct WaterPush {
   VkDeviceAddress frame;
   VkDeviceAddress vertices;
   VkDeviceAddress indices;
+  uint32_t look;  // shaders/water.hlsl: 0 Engine2, 1 look 001 "ember"
+  uint32_t pad;
 };
+
+struct SkyReflectPush {  // shaders/skyreflect.hlsl
+  VkDeviceAddress frame;
+  uint32_t destination, level, width, height;
+};
+// The sky's reflection map: lat-long, this many levels (lighting.hlsli kSkyReflectLevels / kSkyReflectSize).
+constexpr uint32_t kSkyReflectLevels = 6;
+constexpr VkExtent2D kSkyReflectSize{256, 128};
 
 struct Water3DPush {  // shaders/water3d.hlsl
   VkDeviceAddress frame, vertices, indices;
@@ -174,7 +184,7 @@ struct MeshFrame {
   uint32_t hizSampler;
   glm::vec2 hizSize;
   uint32_t instanceVisibility;
-  uint32_t pad2;
+  uint32_t skyReflect;  // the sky's prefiltered reflection map (skyreflect.hlsl); kNoTextureIndex = none
   glm::mat4 previousView;
   float previousProjectionX;
   float previousProjectionY;
@@ -183,7 +193,7 @@ struct MeshFrame {
   uint32_t debugView;
   uint32_t shadowPass;
   uint32_t cardShadowMap;
-  uint32_t pad6;
+  uint32_t cloudFlags;  // clouds.hlsli: 1 the layer exists, 2 it shadows the board
   glm::mat4 shadowMatrix;
   uint32_t shadowMap;
   uint32_t shadowSampler;
@@ -286,7 +296,8 @@ struct ResolvePush {
   uint32_t colorImage;
   glm::vec4 clearColor;
   uint32_t background;  // kNoTextureIndex: the sky (atmosphere) or clearColor; kBlackBackground: black; else a backdrop
-  uint32_t pad[3];
+  uint32_t backgroundMode;  // with a backdrop: 1 = the painting up to the horizon, the sky above (setBackground toHorizon)
+  uint32_t pad[2];
 };
 static_assert(sizeof(ResolvePush) <= Bindless::kPushConstantBytes);
 
@@ -379,6 +390,26 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
       atmoStorage_[i] = bindless_.addStorageImage(tables[i]->view);
     }
     atmoAmbient_ = createDeviceBuffer(context, 9 * 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT);
+    // The sky's reflection map (skyreflect.hlsl): one storage view per level, one sampled view of the chain.
+    ImageDesc reflectDesc{VK_FORMAT_R16G16B16A16_SFLOAT, kSkyReflectSize, usage};
+    reflectDesc.mipLevels = kSkyReflectLevels;
+    skyReflect_ = createImage(context, reflectDesc);
+    for (uint32_t level = 0; level < kSkyReflectLevels; ++level) {
+      VkImageViewCreateInfo viewInfo{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+      viewInfo.image = skyReflect_.image;
+      viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+      viewInfo.format = VK_FORMAT_R16G16B16A16_SFLOAT;
+      viewInfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, level, 1, 0, 1};
+      VkImageView view;
+      VK_CHECK(vkCreateImageView(context.device, &viewInfo, nullptr, &view));
+      skyReflectLevelViews_.push_back(view);
+      skyReflectLevelIndices_.push_back(bindless_.addStorageImage(view));
+    }
+    skyReflectSampled_ = bindless_.addSampledImage(skyReflect_.view, VK_IMAGE_LAYOUT_GENERAL);
+    // The cloud shadow map over the board (clouds.hlsli cloudShadow).
+    cloudShadow_ = createImage(context, {.format = VK_FORMAT_R32_SFLOAT, .extent = {kCloudShadowSize, kCloudShadowSize}, .usage = usage});
+    cloudShadowStorage_ = bindless_.addStorageImage(cloudShadow_.view);
+    cloudShadowSampled_ = bindless_.addSampledImage(cloudShadow_.view, VK_IMAGE_LAYOUT_GENERAL);
   }
   // The fog looks' noise volumes (filled the first time a look needs one).
   for (size_t k = 0; k < static_cast<size_t>(FogNoise::Count); ++k) {
@@ -566,6 +597,9 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
                              "atmosphere.CSAmbient"};
     for (int i = 0; i < 5; ++i) atmoPipelines_[i] = createComputePipeline(context, layout, passes[i]);
   }
+  skyReflectBasePipeline_ = createComputePipeline(context, layout, "skyreflect.CSBase");
+  skyReflectFilterPipeline_ = createComputePipeline(context, layout, "skyreflect.CSFilter");
+  cloudShadowPipeline_ = createComputePipeline(context, layout, "skyreflect.CSCloudShadow");
   volumeIntegratePipeline_ = createComputePipeline(context, layout, "volume.CSIntegrate");
   for (const FogLook& look : fogLooks()) {
     bankMarchPipelines_.push_back(createComputePipeline(context, layout, std::string(look.shader) + ".CSMarch"));
@@ -718,6 +752,18 @@ Renderer::~Renderer() {
   for (VkPipeline p : atmoPipelines_) vkDestroyPipeline(context_.device, p, nullptr);
   for (Image* table : {&atmoTransmittance_, &atmoMultiScattering_, &atmoSkyView_, &atmoAerial_}) destroyImage(context_, *table);
   destroyBuffer(context_, atmoAmbient_);
+  vkDestroyPipeline(context_.device, skyReflectBasePipeline_, nullptr);
+  vkDestroyPipeline(context_.device, skyReflectFilterPipeline_, nullptr);
+  for (size_t i = 0; i < skyReflectLevelViews_.size(); ++i) {
+    bindless_.removeStorageImage(skyReflectLevelIndices_[i]);
+    vkDestroyImageView(context_.device, skyReflectLevelViews_[i], nullptr);
+  }
+  bindless_.removeSampledImage(skyReflectSampled_);
+  destroyImage(context_, skyReflect_);
+  vkDestroyPipeline(context_.device, cloudShadowPipeline_, nullptr);
+  bindless_.removeStorageImage(cloudShadowStorage_);
+  bindless_.removeSampledImage(cloudShadowSampled_);
+  destroyImage(context_, cloudShadow_);
   for (VkPipeline p : bankMarchPipelines_) vkDestroyPipeline(context_.device, p, nullptr);
   for (VkPipeline p : bankCompositePipelines_) vkDestroyPipeline(context_.device, p, nullptr);
   for (size_t k = 0; k < static_cast<size_t>(FogNoise::Count); ++k) {
@@ -1023,6 +1069,7 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
     a.kmPerUnit = lighting_.kmPerUnit;
     a.skyScale = lighting_.skyScale;
     a.sunDisc = lighting_.sunDisc ? 1u : 0u;
+    a.sunTanRadius = lighting_.sunRadius > 0.0f ? std::tan(lighting_.sunRadius) : 0.0f;
     a.stars = lighting_.stars;
     a.starLook = lighting_.starLook;
     a.moonDirection = glm::normalize(lighting_.moonDirection);
@@ -1039,9 +1086,31 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
     a.aerial = atmoSampled_[3], a.aerialStorage = atmoStorage_[3];
     a.ambient = bufferAddress(context_, atmoAmbient_);
     a.linearSampler = linearClampIndex_;
+    // Nuvens básicas (clouds.hlsli): the sheet's numbers; it shadows the board by day only (the key light is the sun), at
+    // night it is still in the sky and the reflections.
+    cloudShadowThisFrame_ = false;
+    if (clouds_.enabled) {
+      f.cloudFlags = 1u | (clouds_.shadows && lighting_.sunDisc ? 2u : 0u);
+      a.cloudCoverage = clouds_.coverage;
+      a.cloudAltitude = clouds_.altitude;
+      a.cloudShadow = clouds_.shadow;
+      a.cloudScale = clouds_.scale;
+      a.cloudWind = clouds_.wind;
+      // The shadow map covers the sun shadow's bounds (the board), at the board's middle height.
+      if ((f.cloudFlags & 2u) && shadowRadius_ > 0.0f) {
+        const float r = shadowRadius_;
+        a.cloudShadowRect = {shadowCenter_.x - r, shadowCenter_.z - r, 0.5f / r, 0.5f / r};
+        a.cloudShadowMap = cloudShadowSampled_;
+        cloudShadowHeight_ = shadowCenter_.y;
+        cloudShadowThisFrame_ = true;
+      }
+    }
     vkCmdUpdateBuffer(cmd, frame.atmosphereFrame.buffer, 0, sizeof(a), &a);
     f.atmosphere = bufferAddress(context_, frame.atmosphereFrame);
   }
+  // The sky's reflection map (skyreflect.hlsl): needs the sky.
+  skyReflectThisFrame_ = atmoThisFrame_ && skyReflection_;
+  f.skyReflect = skyReflectThisFrame_ ? skyReflectSampled_ : kNoTextureIndex;
   VolumeFrame vf{};
   if (volumeThisFrame_) {
     f.volume = volumeIntegratedSampled_;
@@ -1321,7 +1390,8 @@ void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
               VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
   scope = gpuTimer_.begin(cmd, "resolve");
   vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, resolvePipeline_);
-  const ResolvePush resolvePush{frameAddress, visibilityIndex_, sceneColorStorageIndex_, fogOn_ ? kNeverSeenColor : kClearColor, background_, {}};
+  const ResolvePush resolvePush{frameAddress, visibilityIndex_, sceneColorStorageIndex_, fogOn_ ? kNeverSeenColor : kClearColor, background_,
+                                backgroundToHorizon_ ? 1u : 0u, {}};
   vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(resolvePush), &resolvePush);
   vkCmdDispatch(cmd, (size_.width + 7) / 8, (size_.height + 7) / 8, 1);
   gpuTimer_.end(cmd, scope);
@@ -1557,6 +1627,52 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
                   VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
     gpuTimer_.end(cmd, atmoScope);
   }
+  // --- The cloud shadow map over the board (clouds.hlsli): the sun through the low sheet, once a frame ----------------------
+  if (hasScene_ && atmoThisFrame_ && cloudShadowThisFrame_) {
+    const uint32_t scope = gpuTimer_.begin(cmd, "cloud shadow");
+    if (!cloudShadowReady_) {
+      cloudShadowReady_ = true;
+      transition(cmd, cloudShadow_.image, cloudShadow_.aspect,
+                 {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE,
+                  VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
+    }
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+                  VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cloudShadowPipeline_);
+    uint32_t heightBits;
+    std::memcpy(&heightBits, &cloudShadowHeight_, sizeof(heightBits));
+    const SkyReflectPush push{bufferAddress(context_, frame.meshFrame), cloudShadowStorage_, heightBits, kCloudShadowSize, kCloudShadowSize};
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+    vkCmdDispatch(cmd, kCloudShadowSize / 8, kCloudShadowSize / 8, 1);
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+                  VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
+    gpuTimer_.end(cmd, scope);
+  }
+  // --- The sky's reflection map: the sky (clouds in) at level 0, then each level prefiltered for a rougher surface ----
+  if (hasScene_ && skyReflectThisFrame_) {
+    const uint32_t scope = gpuTimer_.begin(cmd, "sky reflect");
+    if (!skyReflectReady_) {
+      skyReflectReady_ = true;
+      transition(cmd, skyReflect_.image, skyReflect_.aspect,
+                 {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE,
+                  VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
+    }
+    // Last frame's surfaces may still read the map.
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+                  VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT);
+    for (uint32_t level = 0; level < kSkyReflectLevels; ++level) {
+      const uint32_t width = std::max(1u, kSkyReflectSize.width >> level), height = std::max(1u, kSkyReflectSize.height >> level);
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, level == 0 ? skyReflectBasePipeline_ : skyReflectFilterPipeline_);
+      const SkyReflectPush push{bufferAddress(context_, frame.meshFrame), skyReflectLevelIndices_[level], level, width, height};
+      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+      vkCmdDispatch(cmd, (width + 7) / 8, (height + 7) / 8, 1);
+      memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+                    level + 1 == kSkyReflectLevels ? VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
+                                                   : VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                    VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
+    }
+    gpuTimer_.end(cmd, scope);
+  }
   // --- Sun shadow: the board's ground from the sun (before the meshes: their resolve reads it) ---------------------------------------------
   if (shadowsThisFrame_) {
     const uint32_t shadowScope = gpuTimer_.begin(cmd, "shadow");
@@ -1720,7 +1836,8 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
                 VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
     const uint32_t skyScope = gpuTimer_.begin(cmd, "sky");
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, skyPipeline_);
-    const ResolvePush skyPush{bufferAddress(context_, frame.meshFrame), visibilityIndex_, sceneColorStorageIndex_, kClearColor, background_, {}};
+    const ResolvePush skyPush{bufferAddress(context_, frame.meshFrame), visibilityIndex_, sceneColorStorageIndex_, kClearColor, background_,
+                              backgroundToHorizon_ ? 1u : 0u, {}};
     vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(skyPush), &skyPush);
     vkCmdDispatch(cmd, (size_.width + 7) / 8, (size_.height + 7) / 8, 1);
     gpuTimer_.end(cmd, skyScope);
@@ -1800,7 +1917,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       // The board's water: transparent, over the ground, under the cards.
       const uint32_t waterScope = gpuTimer_.begin(cmd, "water");
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, waterPipeline_);
-      const WaterPush waterPush{bufferAddress(context_, frame.meshFrame), water_.vertices, water_.indices};
+      const WaterPush waterPush{bufferAddress(context_, frame.meshFrame), water_.vertices, water_.indices, water_.look, 0};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(waterPush), &waterPush);
       vkCmdDraw(cmd, water_.count, 1, 0, 0);
       gpuTimer_.end(cmd, waterScope);

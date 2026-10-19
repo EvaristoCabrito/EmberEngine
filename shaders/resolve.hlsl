@@ -14,8 +14,14 @@ struct Push {
   uint colorImage;       // RGBA16F storage image (scene colour)
   float4 clearColor;
   uint background;       // kNoTexture: sky / clearColor; kBlackBackground: black; else a painted backdrop
-  uint pad0, pad1, pad2;
+  uint backgroundMode;   // with a backdrop: 0 cover-fit over the whole screen, 1 the painting up to the world's horizon,
+                         // the real sky above it (the user, 2026-10-19: "a imagem de fundo pode terminar no horizonte")
+  uint pad1, pad2;
 };
+// Backdrop mode 1: the painting's own horizon sits at this share of its height (the row the world's horizon is pinned
+// to), and the painting reaches its bottom row this many degrees below the horizon.
+static const float kBackdropHorizon = 0.5;
+static const float kBackdropDownDegrees = 30.0;
 [[vk::push_constant]] Push push;
 static const uint kBlackBackground = 0xFFFFFFFEu;
 
@@ -23,6 +29,14 @@ static const uint kBlackBackground = 0xFFFFFFFEu;
 // stage), black, the sky, or the clear colour.
 float4 backgroundAt(MeshFrame f, uint2 pixel) {
   if (f.debugView >= kDebugVolumeFirst && f.debugView <= kDebugVolumeLast) return float4(volumeOverBackground(f, 0.0, pixel), 1.0);  // the volume's debug views
+  if (f.debugView == kDebugClouds && f.atmosphere != 0) {  // the low sheet's cover where the sky shows
+    const AtmosphereFrame a = loadAtmosphere(f);
+    const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);
+    if (dir.y <= 0.002 || (f.cloudFlags & kCloudLayer) == 0) return float4(0.0, 0.0, 0.3, 1.0);
+    const CloudParams c = loadCloudParams(f);
+    const float t = (c.altitude - f.cameraPosition.y) / dir.y;
+    return float4(cloudCoverEroded(c, f.time, f.cameraPosition.xz + dir.xz * t).xxx, 1.0);
+  }
   if (f.debugView != 0 || push.background == kBlackBackground) return float4(0.0, 0.0, 0.0, 1.0);
   if (push.background != kNoTexture) {
     uint w, h;
@@ -31,6 +45,19 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
     const float screenAspect = f.screenSize.x / f.screenSize.y, imageAspect = float(w) / float(h);
     if (screenAspect > imageAspect) uv.y = 0.5 + (uv.y - 0.5) * imageAspect / screenAspect;
     else uv.x = 0.5 + (uv.x - 0.5) * screenAspect / imageAspect;
+    if (push.backgroundMode == 1 && f.atmosphere != 0) {
+      // The painting up to the world's horizon, the sky above it: the painting's horizon row is pinned to the horizon and
+      // its rows below follow the view's elevation (so it moves with the camera's tilt like a far landscape); a narrow band
+      // of sky fades in over the horizon.
+      const AtmosphereFrame a = loadAtmosphere(f);
+      const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);
+      const float elevation = asin(clamp(dir.y, -1.0, 1.0));
+      uv.y = kBackdropHorizon + saturate(-elevation / radians(kBackdropDownDegrees)) * (1.0 - kBackdropHorizon);
+      const float3 painting = gTextures[NonUniformResourceIndex(push.background)].SampleLevel(gSamplers[f.materialSampler], uv, 0).rgb;
+      const float sky = smoothstep(-0.004, 0.012, elevation);
+      const float3 color = sky > 0.0 ? lerp(painting, skyBackground(f, pixel), sky) : painting;
+      return float4(volumeOverBackground(f, color, pixel), 1.0);
+    }
     // Atmosfera volumétrica v1: the fog lies between the camera and the painting (nothing when it is off).
     return float4(volumeOverBackground(f, gTextures[NonUniformResourceIndex(push.background)].SampleLevel(gSamplers[f.materialSampler], uv, 0).rgb, pixel), 1.0);
   }

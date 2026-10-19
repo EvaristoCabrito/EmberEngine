@@ -179,25 +179,116 @@ float3 moonDisc(float3 dir, float pixelAngle, float3 radiance, float3 moonDirect
   return lerp(radiance, art.rgb * glow * air, art.a);
 }
 
+// Nuvens básicas (clouds.hlsli; the user: "tem que ser boa"): two cloud sheets seen from below along the ray from
+// `origin` towards `dir` (world): a high, thin, fast layer (cirrus: 1.6 x the altitude, finer, 60% of the coverage) behind
+// a lower, thicker one (cumulus). Per sheet:
+//   shape    the cover field (clouds.hlsli), its edges eroded by a finer noise so puffs break up instead of blurring;
+//            the view's path through the sheet lengthens at grazing angles (thicker towards the horizon)
+//   light    the key light on the sheet's top (its colour through the air above the board), self-shadowed by the cloud
+//            between the point and the light (two taps along the light across the sheet: lit rims, dark cores), scattered
+//            with a two-lobe phase (bright "silver" rims towards the light, a little back-scatter), a powder term (thin
+//            edges darker than their middles), and the bottom darkening with the thickness above it; the fill light is
+//            the sky's irradiance from above (through the sheet) and the lit ground's from below
+//   air      distant clouds fade into the horizon's own colour (the sky radiance there), like everything far away
+// Returns the cloud radiance (raw: before skyScale and exposure) and how much of the sky it covers; `clear` = the sky's
+// radiance in `dir` (the haze colour). The caller composites it over the sky, its stars and its moon, so thin cloud veils
+// the moon and a thick one hides the stars.
+struct CloudHit {
+  float3 color;
+  float alpha;
+};
+CloudHit cloudSheet(MeshFrame f, AtmosphereFrame a, CloudParams c, float3 origin, float3 dir, float3 clear) {
+  CloudHit none;
+  none.color = 0.0;
+  none.alpha = 0.0;
+  const float t = (c.altitude - origin.y) / dir.y;
+  if (t <= 0.0) return none;
+  const float2 hit = origin.xz + dir.xz * t;
+  const float cover = cloudCoverEroded(c, f.time, hit);
+  if (cover <= 0.001) return none;
+  const float thickness = c.thickness;
+  // Optical depth: vertical through the sheet, longer along a slanted view.
+  const float tau = cover * thickness;
+  const float tauView = tau / max(dir.y, 0.25);
+  const float horizon = smoothstep(0.0, 0.08, dir.y);
+  float alpha = (1.0 - exp(-tauView)) * horizon;
+  if (alpha <= 0.002) return none;
+
+  // The key light on the sheet's top and through the cloud towards it.
+  const float3 sun = a.sunDirection;
+  const float3 keyOnTop = a.sunIlluminance * transmittanceToTop(a, a.viewHeight, sun.y) * saturate(sun.y * 6.0 + 0.3);
+  float selfShadow = 1.0;
+  if (sun.y > 0.05) {
+    const float2 step = sun.xz / max(sun.y, 0.2) * (c.scale * 0.12);
+    const float ahead = cloudCover(c, f.time, hit + step) * 0.6 + cloudCover(c, f.time, hit + step * 2.2) * 0.4;
+    selfShadow = exp(-ahead * thickness * 0.9);
+  }
+  const float cosTheta = dot(dir, sun);
+  const float phase = (0.72 * phaseHG(cosTheta, 0.62) + 0.28 * phaseHG(cosTheta, -0.18)) * 4.0 * kPi;  // 1 = isotropic
+  const float powder = 1.0 - exp(-tau * 2.5);
+  const float bottom = exp(-tau * 0.5);  // the light that gets down through the sheet to its underside
+  // Fill light: the sky from above (through the sheet) and the lit ground from below (CSAmbient's raw up irradiance).
+  const float3 skyUp = float3(vk::RawBufferLoad<float4>(a.ambient + 16).w, vk::RawBufferLoad<float4>(a.ambient + 32).w,
+                              vk::RawBufferLoad<float4>(a.ambient + 48).w);
+  const float3 sunOnGround = a.sunIlluminance * transmittanceToTop(a, a.viewHeight, sun.y) * saturate(sun.y);
+  const float3 groundUp = a.groundAlbedo * (skyUp + sunOnGround);  // irradiance on an underside from a Lambert ground
+  const float3 fill = skyUp * lerp(0.55, 0.22, saturate(tau / 3.2)) + groundUp * 0.5;
+  const float3 albedo = 0.94;
+  // Direct light scattered towards the eye (phase x multiple-scatter lift), then the fill (Lambert).
+  const float3 direct = keyOnTop * selfShadow * phase * lerp(0.8, 1.35, powder) * bottom * 0.45;
+  float3 color = albedo * (direct + fill / kPi);
+  // Distance haze: towards the horizon the cloud takes the sky's own colour there.
+  const float haze = 1.0 - exp(-t / 7000.0);
+  color = lerp(color, clear, haze);
+  CloudHit h;
+  h.color = color;
+  h.alpha = alpha;
+  return h;
+}
+// Both sheets over the sky radiance `sky` (which may already hold the sun's disc, the stars and the moon): the high
+// sheet first, the low one over it.
+float3 cloudsOverSky(MeshFrame f, AtmosphereFrame a, float3 origin, float3 dir, float3 clear, float3 sky) {
+  if ((f.cloudFlags & kCloudLayer) == 0 || dir.y <= 0.002) return sky;
+  const CloudParams low = loadCloudParams(f);
+  const CloudHit highHit = cloudSheet(f, a, highSheet(low), origin, dir, clear);
+  sky = lerp(sky, highHit.color, highHit.alpha);
+  const CloudHit lowHit = cloudSheet(f, a, low, origin, dir, clear);
+  return lerp(sky, lowHit.color, lowHit.alpha);
+}
+
 // What shows where nothing was drawn: the sky (outdoors), the sun's small disc by day, stars at night (or once the
 // sun is down) and the moon's disc.
 float3 skyBackground(MeshFrame f, uint2 pixel) {
   const AtmosphereFrame a = loadAtmosphere(f);
   const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);
-  float3 radiance = skyRadiance(a, dir) * a.skyScale;
+  const float3 clear = skyRadiance(a, dir);
+  float3 radiance = clear * a.skyScale;
   if (dir.y > 0.0) {
-    // The sun's disc (0.53 degrees across), seen through the air.
-    const float c = dot(dir, a.sunDirection);
-    if (a.sunDisc != 0 && c > 0.99998918 && a.sunDirection.y > -0.02)
-      radiance += a.sunIlluminance * transmittanceToTop(a, a.viewHeight, dir.y) * 20.0;
     const float pixelAngle = length(skyDirection(f, a, float2(pixel) + float2(1.5, 0.5)) - dir);
+    // The sun's disc, seen through the air: the real 0.53 degrees across, or the panel's "Sol: cinema" size (sunTanRadius,
+    // the moon's small disc: the real one is a dot the player never finds) with a soft corona around it.
+    const float c = dot(dir, a.sunDirection);
+    if (a.sunDisc != 0 && a.sunDirection.y > -0.02) {
+      const float angle = acos(clamp(c, -1.0, 1.0));
+      const float r = a.sunTanRadius > 0.0 ? atan(a.sunTanRadius) : 0.00465;
+      const float3 sunLight = a.sunIlluminance * transmittanceToTop(a, a.viewHeight, dir.y);
+      const float disc = 1.0 - smoothstep(r - pixelAngle, r + pixelAngle, angle);
+      radiance += sunLight * 20.0 * disc;
+      if (a.sunTanRadius > 0.0) radiance += sunLight * 0.06 * exp(-angle / (r * 2.5));
+    }
     // Stars, fixed to the sky: at night, or fading in as the sun goes down (the saved look in starLook).
     const float night = max(a.stars, a.sunDisc != 0 ? 1.0 - smoothstep(-0.12, 0.02, a.sunDirection.y) : 0.0);
-    if (night > 0.0) radiance += starField(a.starLook, dir, pixelAngle) * night * transmittanceToTop(a, a.viewHeight, dir.y);
+    // The star looks were tuned against the dim moonlit sky of light mode 2; under a brighter moon ("Luar: cinema") the
+    // sky would drown them, so they rise with the key light's strength, at most 12 x.
+    const float starBoost = a.sunDisc != 0 ? 1.0 : clamp(dot(a.sunIlluminance, float3(0.2126, 0.7152, 0.0722)) * 0.6, 1.0, 12.0);
+    if (night > 0.0) radiance += starField(a.starLook, dir, pixelAngle) * night * starBoost * transmittanceToTop(a, a.viewHeight, dir.y);
     if (a.moonTexture != kNoTexture) {
       radiance = moonDisc(dir, pixelAngle, radiance, a.moonDirection, a.moonTexture, a.moonTanRadius, a.moonGlow, a.linearSampler,
                           transmittanceToTop(a, a.viewHeight, dir.y));
     }
+    // The clouds last, over the stars and the moon (a thin veil over the moon, a thick cloud hiding the stars); the sheets'
+    // light on the sky's own scale.
+    radiance = cloudsOverSky(f, a, f.cameraPosition, dir, clear * a.skyScale, radiance);
   }
   return radiance * f.exposure;
 }

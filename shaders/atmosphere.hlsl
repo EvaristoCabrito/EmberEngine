@@ -207,5 +207,8 @@ void CSAmbient(uint thread : SV_GroupIndex) {
   // ambientTarget >= 0: scaled so an upward surface receives that luminance; < 0: the sky's own irradiance x -target.
   const float scale = a.ambientTarget >= 0.0 ? a.ambientTarget / max(dot(upIrradiance, float3(0.2126, 0.7152, 0.0722)), 1e-8)
                                             : -a.ambientTarget;
-  [unroll] for (uint c = 0; c < 9; ++c) vk::RawBufferStore<float4>(a.ambient + c * 16, float4(e[c] * scale, 0.0));
+  // The w's carry what else reads the sky: the scale (first), then the raw sky irradiance on an upward face (the cloud
+  // sheet's fill light, the reflection map's ground), both read by skyReflection / cloudsOverSky.
+  const float extra[4] = {scale, gUp[0].r, gUp[0].g, gUp[0].b};
+  [unroll] for (uint c = 0; c < 9; ++c) vk::RawBufferStore<float4>(a.ambient + c * 16, float4(e[c] * scale, c < 4 ? extra[c] : 0.0));
 }

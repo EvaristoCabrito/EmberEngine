@@ -33,6 +33,11 @@
 //        [--fog-look N]: which saved fog look (render/FogLooks.h; in a window, the Map panel's dropdown).
 //        [--grid-look N]: the battle grid (panel "Grade"): 0 OFF, 1 the old marks, 2 look 001 (looks/grid/README.md).
 //        [--cards N]: 0 vertical cards, 1 (default) cards leaning back with the camera's tilt, upright on screen (panel "Cards").
+//        [--water N]: the board's water (panel "Água"): 0 Engine2's, 1 (default) look 001 "ember" (looks/water/README.md).
+//        [--sky-reflect N]: 0 OFF, 1 (default) the sky's reflection map on water and specular surfaces (panel "Reflexo do céu").
+//        [--clouds N]: 0 OFF, 1 (default) the basic cloud sheet: sky, reflections, shadows on the board (panel "Nuvens").
+//        [--moonlight N]: light mode real, at night: 0 the physical moon (0.5 lux), 1 (default) the cinema moon (panel "Luar").
+//        [--sun-disc N]: the sun's disc in the sky: 0 the real 0.26 deg radius, 1 (default) the moon's small disc with a corona (panel "Sol").
 //        [--bars-fade N]: 0 health bars always shown, 1 (default) the bars and numbers of units near the camera fade (panel "Vida perto").
 //        [--lighting 0|1|2|3]: old prototype day / Engine2's presets / physical sky with Engine2's strengths / real
 //        (default: lux, physical camera, eye adaptation, inverse-square lamps; also in the panel as "Luz").
@@ -152,7 +157,12 @@ struct Options {
   int cardStance = 1;  // --cards N: 0 vertical cards, 1 leaning back with the camera's tilt (panel "Cards")
   int barsFade = 1;    // --bars-fade N: 0 bars always shown, 1 the bars of units near the camera fade (panel "Vida perto")
   int atmos = 2;  // --atmos N: Atmosfera volumétrica v1 at the start (0 OFF, 1 cinema, 2 alta, 3 desempenho)
-  int background = -1;  // --background N: the panel's "Fundo" (-1 as the map says, 0 the painting, 1 the sky, 2 OFF = black)
+  int background = -1;  // --background N: the panel's "Fundo" (-1 as the map says, 0 the painting, 1 the sky, 2 OFF = black, 3 the painting up to the horizon + the sky)
+  int waterLook = 1;    // --water N: the panel's "Água" (0 Engine2, 1 look 001 "ember")
+  int skyReflect = 1;   // --sky-reflect N: the panel's "Reflexo do céu" (0 OFF, 1 the sky's reflection map)
+  int clouds = 1;       // --clouds N: the panel's "Nuvens" (0 OFF, 1 básica)
+  int moonLight = 1;    // --moonlight N: the panel's "Luar" (0 físico, 1 cinema)
+  int sunDisc = 1;      // --sun-disc N: the panel's "Sol" (0 real, 1 cinema)
   bool mist = true;    // --mist 0: the fog of war's mist bank off (its mask and the volumetric atmosphere stay)
   int lighting = 3;
   float sceneTime = -1.0f;
@@ -262,6 +272,11 @@ Options parse(int argc, char** argv) {
     else if (arg == "--bars-fade" && hasValue) o.barsFade = std::atoi(argv[++i]);
     else if (arg == "--atmos" && hasValue) o.atmos = std::atoi(argv[++i]);
     else if (arg == "--background" && hasValue) o.background = std::atoi(argv[++i]);
+    else if (arg == "--water" && hasValue) o.waterLook = std::atoi(argv[++i]);
+    else if (arg == "--sky-reflect" && hasValue) o.skyReflect = std::atoi(argv[++i]);
+    else if (arg == "--clouds" && hasValue) o.clouds = std::atoi(argv[++i]);
+    else if (arg == "--moonlight" && hasValue) o.moonLight = std::atoi(argv[++i]);
+    else if (arg == "--sun-disc" && hasValue) o.sunDisc = std::atoi(argv[++i]);
     else if (arg == "--mist" && hasValue) o.mist = std::atoi(argv[++i]) != 0;
     else if (arg == "--lighting" && hasValue) o.lighting = std::atoi(argv[++i]);
     else if (arg == "--scene-time" && hasValue) o.sceneTime = static_cast<float>(std::atof(argv[++i]));
@@ -592,6 +607,11 @@ MapStageOptions mapOptions(const Options& o) {
     m.barsFade = o.barsFade;
     m.atmos = o.atmos;
     m.background = o.background;
+    m.waterLook = o.waterLook;
+    m.skyReflect = o.skyReflect;
+    m.clouds = o.clouds;
+    m.moonLight = o.moonLight;
+    m.sunDisc = o.sunDisc;
     m.mist = o.mist;
     m.lighting = o.lighting;
     m.sceneTime = o.sceneTime;

@@ -117,6 +117,7 @@ class Renderer {
     float skyScale = 1.0f;            // the sky behind the board (dark at night)
     // Night (the key light is the moon): no sun disc, stars out, and the moon's disc with tonight's phase art.
     bool sunDisc = true;
+    float sunRadius = 0.0f;  // the sun disc's angular radius, radians (0 = the real 0.26 deg); panel "Sol: cinema" = the moon's small disc
     float stars = 0.0f;
     uint32_t starLook = 3;  // the star field's saved look (looks/stars/README.md)
     glm::vec3 moonDirection{0.0f, 1.0f, 0.0f};  // towards the disc
@@ -227,7 +228,12 @@ class Renderer {
   // What shows behind everything: kNoTextureIndex = the sky (with the atmosphere) or the clear colour,
   // kBlackBackground = black, else a bindless sRGB image (a painted backdrop), fitted to cover the screen.
   static constexpr uint32_t kBlackBackground = 0xFFFFFFFEu;
-  void setBackground(uint32_t background) { background_ = background; }
+  // `toHorizon`: the painting ends at the world's horizon and the real sky shows above it (resolve.hlsl backgroundAt mode 1;
+  // needs the atmosphere, else the painting covers the screen as before).
+  void setBackground(uint32_t background, bool toHorizon = false) {
+    background_ = background;
+    backgroundToHorizon_ = toHorizon;
+  }
   // Full-scene bloom strength (Engine2: the map's bloomIntensity, default 0.16); 0 = none.
   void setBloom(float strength) { bloom_ = strength; }
   // Cards lean back with the camera's tilt so they project upright anywhere on screen (sprites.hlsl VSMain); off =
@@ -279,6 +285,24 @@ class Renderer {
   // Atmosfera volumétrica v1 (render/Volumetrics.h, docs/ATMOSPHERE.md): the visible air as a lit 3D medium. Its own
   // module; when enabled it owns the volume every surface reads (the old haze above stays off).
   Volumetrics& volumetrics() { return *volumetrics_; }
+  // The sky's reflection map (shaders/skyreflect.hlsl; the plan's phase 4): with the atmosphere on, every specular surface
+  // (water first) reflects the real sky, prefiltered by roughness, clouds in; off = the SH sky as before. Panel "Reflexo do céu".
+  void setSkyReflection(bool on) { skyReflection_ = on; }
+  // Nuvens básicas (shaders/clouds.hlsli): one drifting cloud sheet high over the board, in the sky, in the reflections and
+  // as soft shadows on the board by day. Panel "Nuvens"; off = no sheet anywhere.
+  struct Clouds {
+    bool enabled = false;
+    bool shadows = true;        // the sheet shadows the board (by day: the key light is the sun)
+    float coverage = 0.4f;      // share of the sky covered (0 clear .. 1 overcast)
+    float altitude = 450.0f;    // the sheet's world height (low: the camera sees the sky only near the horizon, where a
+                                // higher sheet shrinks every cloud into streaks; measured 2026-10-19 at 900 and 1200)
+    float shadow = 0.75f;       // how dark its shadow gets (0 none .. 1 full)
+    float scale = 300.0f;       // world units per noise cell (the size of one cloud: a third of the sheet's height, so a
+                                // cloud's edge and its eroded fringe are board-sized and the shadows sweep across the
+                                // board instead of darkening it whole; measured 2026-10-19 with 500: whole-board only)
+    glm::vec2 wind{8.0f, 3.0f}; // drift, world units per second (a shadow's edge crosses the board in seconds)
+  };
+  void setClouds(const Clouds& clouds) { clouds_ = clouds; }
   // Half the side of the square ground plane under the scene (metres, centred on the origin).
   void setGroundExtent(float halfExtent) { groundHalfExtent_ = halfExtent; }
 
@@ -393,6 +417,21 @@ class Renderer {
   Buffer atmoAmbient_;
   VkPipeline atmoPipelines_[5] = {};  // transmittance, multiple scattering, sky view, aerial, ambient
   bool atmoReady_ = false, atmoThisFrame_ = false;
+  // The sky's reflection map (skyreflect.hlsl): lat-long, a level per roughness step, rebuilt every frame with the sky.
+  Image skyReflect_;
+  std::vector<VkImageView> skyReflectLevelViews_;
+  std::vector<uint32_t> skyReflectLevelIndices_;
+  uint32_t skyReflectSampled_ = kNoIndex;
+  VkPipeline skyReflectBasePipeline_ = VK_NULL_HANDLE, skyReflectFilterPipeline_ = VK_NULL_HANDLE;
+  bool skyReflection_ = true, skyReflectReady_ = false, skyReflectThisFrame_ = false;
+  Clouds clouds_;
+  // The cloud shadow map over the board (skyreflect.hlsl CSCloudShadow): R32F, the sun shadow's bounds, once a frame.
+  static constexpr uint32_t kCloudShadowSize = 256;
+  Image cloudShadow_;
+  uint32_t cloudShadowStorage_ = kNoIndex, cloudShadowSampled_ = kNoIndex;
+  VkPipeline cloudShadowPipeline_ = VK_NULL_HANDLE;
+  bool cloudShadowReady_ = false, cloudShadowThisFrame_ = false;
+  float cloudShadowHeight_ = 0.0f;
   // Fog bank: the tiling noise volume (made once), the half-resolution march result.
   FogBank fogBank_;
   Image bankMarch_;
@@ -434,6 +473,7 @@ class Renderer {
   std::array<float, 8> shadowKey_{};       // what the cached shadow map was drawn for
   VkDeviceAddress shadowTerrain_ = 0;
   uint32_t background_ = 0xFFFFFFFFu;  // setBackground
+  bool backgroundToHorizon_ = false;
   uint32_t lightingLayers_ = 0xFFFFFFFFu;
   TerrainView terrain_;
   VkPipeline spritePipeline_ = VK_NULL_HANDLE;

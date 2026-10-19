@@ -3,12 +3,16 @@
 // normal map (normal scale 0.6) scrolling by (0.02, 0.013) per second, uv = world xz / 4. Engine2 bakes the
 // ripple into a 128 px texture from a sum of sines (src/render/textures.ts); the same sines are evaluated
 // here directly. Lit through the lighting contract; blended premultiplied, depth-tested, no depth write.
-#include "lighting.hlsli"
+// Looks (panel "Água"): 0 Engine2 (above), 1 ember = water_look001.hlsli (EmberEngine's own water: waves, the sky's
+// reflection, the body's depth colour; looks/water/README.md).
+#include "water_look001.hlsli"
 
 struct Push {
   uint64_t frame;     // MeshFrame
   uint64_t vertices;  // WaterVertex[] (16 bytes: position, octahedral normal)
   uint64_t indices;   // uint[]
+  uint look;          // 0 Engine2, 1 ember (look 001)
+  uint pad;
 };
 [[vk::push_constant]] Push push;
 
@@ -37,6 +41,7 @@ float rippleHeight(float2 p) {
 float4 PSMain(VSOut i) : SV_Target0 {
   const MeshFrame f = loadFrame(push.frame);
   if (neverSeen(f, i.world)) discard;  // never-seen water is not drawn (R7)
+  if (push.look == 1) return emberWater(f, i.world, normalize(i.normal), -1.0, 1.0);
   const float2 uv = i.world.xz / 4.0 + float2(0.02, 0.013) * f.time;
   const float2 p = frac(uv) * 128.0;
   // Engine2's texel normal: (-(dH/dx), -(dH/dy), 2), central differences one texel apart.

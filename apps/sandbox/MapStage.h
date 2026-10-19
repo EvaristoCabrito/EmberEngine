@@ -142,6 +142,13 @@ struct MapStageOptions {
   // The panel's "Fundo" at the start (-1 as the map says: its painting, or the sky without one; 0 the painting, 1 the
   // sky, 2 OFF = black; --background N): captures that must keep never-seen ground exactly black (check_fog.py) use 2.
   int background = -1;
+  // Water (2026-10-19): the panel's "Água" (0 Engine2's diorama water, 1 look 001 "ember"; --water N), "Reflexo do céu"
+  // (0 OFF, 1 the sky's reflection map; --sky-reflect N) and "Nuvens" (0 OFF, 1 básica; --clouds N).
+  int waterLook = 1;
+  int skyReflect = 1;
+  int clouds = 1;
+  int moonLight = 1;  // the panel's "Luar" (light mode real): 0 físico, 1 cinema (--moonlight N)
+  int sunDisc = 1;    // the panel's "Sol": 0 real, 1 cinema (--sun-disc N)
   // The fog of war's mist bank (the numbered looks) on at the start; --mist 0 leaves only the fog of war's mask (check_fog.py
   // needs never-seen ground exactly black) while the volumetric atmosphere may stay on.
   bool mist = true;
@@ -254,6 +261,11 @@ class MapStage final : public Stage {
     gridLook_ = std::clamp(options.gridLook, 0, 2);
     cardStance_ = std::clamp(options.cardStance, 0, 1);
     barsFade_ = std::clamp(options.barsFade, 0, 1);
+    waterLook_ = std::clamp(options.waterLook, 0, 1);
+    skyReflect_ = std::clamp(options.skyReflect, 0, 1);
+    clouds_ = std::clamp(options.clouds, 0, 1);
+    moonLight_ = std::clamp(options.moonLight, 0, 1);
+    sunSize_ = std::clamp(options.sunDisc, 0, 1);
     spellsMenu_.load("content/fx/spell-looks.json", "content/fx.sprites.json");
     layers_ = options.layers;
     data_ = e2::BoardData::load(options.boardData);
@@ -336,7 +348,9 @@ class MapStage final : public Stage {
       preloadHud();
       if (std::string own = e2::emberBackdrop(board_->draft().id); !own.empty()) scene_->backdrop = std::move(own);  // the user's art
       if (!scene_->backdrop.empty()) ground_.requestTexture(e2::backdropAsset(scene_->backdrop));
-      background_ = options.background >= 0 ? std::min(options.background, 2) : scene_->backdrop.empty() ? 1 : 0;
+      // A map with a painting opens with it over the whole screen; "imagem até o horizonte" (3) stays an experiment in the panel
+      // (the user, 2026-10-19: "you will need some smarter edition for this to work").
+      background_ = options.background >= 0 ? std::min(options.background, 3) : scene_->backdrop.empty() ? 1 : 0;
       if (e2::timeOfDay(scene_->timeOfDay).moon && scene_->environment != "indoor")
         for (const char* phase : e2::kMoonPhases) ground_.requestTexture(e2::skyMoonAsset(phase));  // 0.1 MB each
     }
@@ -546,7 +560,11 @@ class MapStage final : public Stage {
       // EV100 = log2(E / 2.5)), darker at night by up to 2.5 stops so night reads as night, and the eye adapting to
       // it (about a second); exposure = 1 / (1.2 x 2^EV) as a camera's.
       const float ev = std::log2(std::max(meterLux_, 1e-4f) / 2.5f);
-      const float target = ev + nightDarkening(ev);
+      // "Luar: cinema": the night stops are capped at one, or the camera would take back what the brighter moon gave
+      // (measured 2026-10-19: with the full darkening the moonlit ground stayed black beside the lanterns).
+      float darkening = nightDarkening(ev);
+      if (moonNight_ && moonLight_ == 1) darkening = std::min(darkening, 1.0f);
+      const float target = ev + darkening;
       if (std::isnan(adaptedEv_) || measuring_) adaptedEv_ = target;
       adaptedEv_ += (target - adaptedEv_) * (1.0f - std::exp(-dt * kAdaptPerSecond));
       lighting.exposure = 1.0f / (1.2f * std::exp2(adaptedEv_));
@@ -557,6 +575,9 @@ class MapStage final : public Stage {
       const float az = glm::radians(options_.sunAzimuth), el = glm::radians(options_.sunElevation);
       lighting.sunDirection = {std::cos(el) * std::cos(az), std::sin(el), std::cos(el) * std::sin(az)};
     }
+    // The sun's disc (panel "Sol"): the real 0.26 deg radius, or the moon's small disc with a corona (the user, 2026-10-19:
+    // "e o sol?": the real one is a dot nobody finds).
+    if (lighting.sunDisc) lighting.sunRadius = sunSize_ == 1 ? glm::radians(kMoonSizes[0]) : 0.0f;
     // Tática looks from far above: no air between the eye and the board (Engine2 drops its distance fog there).
     if (flat_) lighting.kmPerUnit = 0.0f;
     renderer.setMeshes(scene_ ? meshes_.view() : MeshSceneView{}, lighting);
@@ -573,19 +594,30 @@ class MapStage final : public Stage {
       if (gridLook_ >= 2) collectGrid(gridCells_);
       renderer.setGrid(gridCells_, cols, rows, gridLook_ >= 2 ? static_cast<uint32_t>(gridLook_ - 1) : 0u, now_);
     }
-    renderer.setWater(ground_.water(look_));
     {
+      WaterView water = ground_.water(look_);
+      water.look = static_cast<uint32_t>(waterLook_);  // panel "Água": 0 Engine2, 1 ember (look 001)
+      renderer.setWater(water);
       Water3DView water3d = water3dLook_ == 0 ? Water3DView{} : ground_.water3d(look_);
-      water3d.look = static_cast<uint32_t>(water3dLook_ - 1);
+      // "rio" follows the board's water look (0 Engine2's, 2 ember); "leito" is Engine2's ThreeWater (1).
+      water3d.look = water3dLook_ == 1 ? (waterLook_ == 1 ? 2u : 0u) : 1u;
       renderer.setWater3d(water3d);
+    }
+    // The sky's reflection map and the cloud sheet (panel "Reflexo do céu", "Nuvens"); the sheet sits well above the board.
+    renderer.setSkyReflection(skyReflect_ == 1);
+    {
+      Renderer::Clouds clouds;
+      clouds.enabled = clouds_ == 1;
+      clouds.altitude += meanGround_;  // the sheet's height above the board's mean ground
+      renderer.setClouds(clouds);
     }
     renderer.setSunShadowBounds(boardCenter_, boardRadius_);
     renderer.setLightingLayers(layers_);
     {
       uint32_t bg = kNoTextureIndex;  // the sky (or the clear colour)
       if (background_ == 2) bg = Renderer::kBlackBackground;
-      if (background_ == 0 && scene_ && !scene_->backdrop.empty()) bg = ground_.textureIndex(e2::backdropAsset(scene_->backdrop));
-      renderer.setBackground(bg);
+      if ((background_ == 0 || background_ == 3) && scene_ && !scene_->backdrop.empty()) bg = ground_.textureIndex(e2::backdropAsset(scene_->backdrop));
+      renderer.setBackground(bg, background_ == 3);
     }
     renderer.setFogOfWar(fogReady_ && !noFog_ ? &fogMask_ : nullptr, maskVersion_, &fogTexels_);
     Renderer::VolumetricFog volume;
@@ -995,8 +1027,10 @@ class MapStage final : public Stage {
       if (dropdown("Chão", look, 3, [](int i) { return std::string(kLooks[i]); })) look_ = static_cast<e2::EdgeStyle>(look);
     }
     {
-      static const char* kBackgrounds[3] = {"imagem do mapa", "céu", "OFF"};
-      dropdown("Fundo", background_, 3, [](int i) { return std::string(kBackgrounds[i]); });
+      // 3 = the painting up to the world's horizon, the real sky above it (the user, 2026-10-19: "a imagem de fundo pode
+      // terminar no horizonte onde começa o céu").
+      static const char* kBackgrounds[4] = {"imagem do mapa", "céu", "OFF", "imagem até o horizonte"};
+      dropdown("Fundo", background_, 4, [](int i) { return std::string(kBackgrounds[i]); });
     }
     {
       // Cards vertical (they converge under the tilted camera: "crooked"), or leaning back with the camera's tilt so
@@ -1022,9 +1056,21 @@ class MapStage final : public Stage {
       static const char* kBars[2] = {"OFF", "somem"};
       dropdown("Vida perto", barsFade_, 2, [](int i) { return std::string(kBars[i]); });
     }
+    {
+      // The board's water: Engine2's diorama material, or look 001 "ember" (looks/water/README.md).
+      static const char* kWater[2] = {"Engine2", "ember"};
+      dropdown("Água", waterLook_, 2, [](int i) { return std::string(kWater[i]); });
+    }
     if (board_ && board_->draft().water3d.any()) {
       static const char* kWater3d[3] = {"OFF", "rio", "leito"};
       dropdown("Água 3D", water3dLook_, 3, [](int i) { return std::string(kWater3d[i]); });
+    }
+    {
+      // The sky's reflection map on every specular surface (water first), and the cloud sheet (sky, reflections, shadows).
+      static const char* kReflect[2] = {"OFF", "céu real"};
+      dropdown("Reflexo do céu", skyReflect_, 2, [](int i) { return std::string(kReflect[i]); });
+      static const char* kClouds[2] = {"OFF", "básica"};
+      dropdown("Nuvens", clouds_, 2, [](int i) { return std::string(kClouds[i]); });
     }
     {
       static const char* kModes[4] = {"protótipo", "Engine2", "física", "real"};
@@ -1049,6 +1095,10 @@ class MapStage final : public Stage {
         if (ImGui::Checkbox(kLayers[i], &on)) layers_ ^= 1u << i;
       }
     }
+    if (scene_ && !e2::timeOfDay(scene_->timeOfDay).moon && scene_->environment != "indoor") {
+      static const char* kSun[2] = {"real", "cinema"};
+      dropdown("Sol", sunSize_, 2, [](int i) { return std::string(kSun[i]); });
+    }
     if (scene_ && e2::timeOfDay(scene_->timeOfDay).moon) {
       static const char* kPaths[3] = {"Engine2", "atrás", "na frente"};
       int moon = moonOff_ ? 0 : moonPath_ + 1;
@@ -1065,6 +1115,10 @@ class MapStage final : public Stage {
         moonPhase_ = phase - 1;
       static const char* kSizes[4] = {"pequena", "média", "grande", "enorme"};
       dropdown("Tamanho da lua", moonSize_, 4, [](int i) { return std::string(kSizes[i]); });
+      if (lightingMode_ == 3) {
+        static const char* kMoonLight[2] = {"físico", "cinema"};
+        dropdown("Luar", moonLight_, 2, [](int i) { return std::string(kMoonLight[i]); });
+      }
       static const char* kStars[kStarLooks] = {"quadradas", "poucas", "muitas"};
       int star = starsOff_ ? 0 : starLook_;
       if (dropdown("Estrelas", star, kStarLooks + 1, [](int i) { return i == 0 ? std::string("OFF") : std::string(kStars[i - 1]); })) {
@@ -1439,6 +1493,10 @@ class MapStage final : public Stage {
   // Light mode "real" (ARCHITECTURE 7.6 step A).
   static constexpr float kSunLux = 128000.0f;       // the sun above the atmosphere
   static constexpr float kFullMoonLux = 0.5f;       // a full moon (real 0.25, lifted so moonlit ground reads)
+  // "Luar: cinema" (the user, 2026-10-19: "gostaria que luz do luar também"): under the camera's night darkening the physical
+  // moon never showed on the ground (a capture of cemiterio: black beside the lanterns), so the cinema moon lights like a
+  // film's, ~60x the real one; the meter and the night stops still keep night darker than day.
+  static constexpr float kCinemaMoonLux = 16.0f;
   static constexpr float kIndoorFillLux = 3.0f, kIndoorAmbientLux = 1.5f;
   static constexpr float kLumensPerUnit = 12.0f;    // Engine2 intensity x reach^2 -> lumens
   static constexpr float kNightStops = 2.5f;        // the camera's darkening at night
@@ -2186,6 +2244,7 @@ class MapStage final : public Stage {
     const float keyMul = scene_ && scene_->sunIntensity ? *scene_->sunIntensity / t.key : 1.0f;
     const float ambientMul = scene_ && scene_->ambientIntensity && t.ambient > 0.0f ? *scene_->ambientIntensity / t.ambient : 1.0f;
     const bool indoor = scene_ && scene_->environment == "indoor";
+    moonNight_ = t.moon && !indoor;
     if (t.moon) {
       l.sunDirection = placed.light;
     } else {
@@ -2195,8 +2254,15 @@ class MapStage final : public Stage {
       e2::lightDirection(t.stageAzimuth, elevation, dir);
       l.sunDirection = glm::normalize(glm::vec3(dir[0], dir[1], dir[2]));
     }
+    if (options_.sunElevation >= 0.0f) {
+      // --sun AZ EL: forced here, before the air's colour and the meter read the direction (2026-10-19: forced only after
+      // mapLighting, a noon sun on the dusk map was exposed for dusk and the picture washed out).
+      const float az = glm::radians(options_.sunAzimuth), el = glm::radians(options_.sunElevation);
+      l.sunDirection = {std::cos(el) * std::cos(az), std::sin(el), std::cos(el) * std::sin(az)};
+    }
     const glm::vec3 keyColor = t.moon ? Renderer::srgb(moon.color ? moon.color : t.keyColor) : glm::vec3(1.0f);
-    const float outside = (t.moon ? kFullMoonLux * moon.strength : kSunLux) * keyMul;  // the key light above the air
+    const float moonLux = moonLight_ == 1 ? kCinemaMoonLux : kFullMoonLux;  // panel "Luar": físico / cinema
+    const float outside = (t.moon ? moonLux * moon.strength : kSunLux) * keyMul;  // the key light above the air
     const float sinElevation = std::max(l.sunDirection.y, 0.0f);
     if (indoor) {
       l.sunColor = Renderer::srgb(t.moon && moon.color ? moon.color : t.keyColor);
@@ -2227,7 +2293,10 @@ class MapStage final : public Stage {
       l.moonDirection = placed.disc;
       l.moonTexture = ground_.textureIndex(e2::skyMoonAsset(phase));
       l.moonRadius = moonOff_ ? 0.0f : glm::radians(kMoonSizes[moonSize_]);
-      l.moonGlow = 2.3f;
+      // The disc's radiance follows the moon's light (the physical sky's exposure is set by that light), never below
+      // Engine2's glow: a bright disc under either "Luar" whose phase art still reads (at 0.9 x it burned to a white
+      // "super moon": the user, 2026-10-19).
+      l.moonGlow = std::max(2.3f, outside * 0.35f);
     }
     return l;
   }
@@ -7410,8 +7479,11 @@ class MapStage final : public Stage {
   std::vector<const e2::Hero*> unitCatalog_;       // per scene unit: its catalog entry (null = idle only)
   std::vector<std::pair<std::string, std::string>> poseChoices_;  // the panel's "Animação": pose id, label
   int poseChoice_ = 0;
-  int background_ = 0;  // the panel's "Fundo": 0 the map's painted backdrop, 1 the sky, 2 black
+  int background_ = 0;  // the panel's "Fundo": 0 the map's painted backdrop, 1 the sky, 2 black, 3 the painting up to the horizon + the sky
   int water3dLook_ = 1;  // the panel's "Água 3D": 0 OFF, 1 rio (the board's river material), 2 leito (Engine2's ThreeWater)
+  int waterLook_ = 1;    // the panel's "Água": 0 Engine2's diorama water, 1 look 001 "ember" (shaders/water_look001.hlsli)
+  int skyReflect_ = 1;   // the panel's "Reflexo do céu": 0 OFF (the SH sky), 1 the sky's reflection map (skyreflect.hlsl)
+  int clouds_ = 1;       // the panel's "Nuvens": 0 OFF, 1 básica (shaders/clouds.hlsli)
   // Atmosfera volumétrica v1 (render/Volumetrics.h, docs/ATMOSPHERE.md): the panel's "Atmosfera" (0 OFF, 1 cinema,
   // 2 alta, 3 desempenho) and "Clima" (index into atmosProfiles_; the map's own profile by its key at first).
   int atmosChoice_ = 2, climaChoice_ = 0;
@@ -7851,15 +7923,19 @@ class MapStage final : public Stage {
   // Light mode "real": the camera's exposure, adapted towards the scene's (EV100), and what was metered.
   float adaptedEv_ = std::numeric_limits<float>::quiet_NaN();
   mutable float meterLux_ = 1.0f;
+  mutable bool moonNight_ = false;  // light mode real: the key light is the moon, outdoors ("Luar" applies)
   float exposure_ = 1.0f;  // the exposure in use (last frame's), for the painted flames' glow
   int moonPath_ = 0;       // moonPlacement()
+  int moonLight_ = 1;      // the panel's "Luar" (light mode real): 0 físico (kFullMoonLux), 1 cinema (kCinemaMoonLux)
   static constexpr int kStarLooks = 3;  // saved star looks (looks/stars/README.md)
   int starLook_ = 3;
   int moonPhase_ = -1;  // index in e2::kMoonPhases; -1 = Engine2's default (the full moon's art, the night's strength)
   // The disc's angular radius (degrees), chosen in the panel. 2.7 = Engine2's disc as seen from its normal view; the
   // user found it "millions of km away" (2026-10-15), so the panel starts at the large one.
   static constexpr float kMoonSizes[4] = {2.7f, 6.0f, 10.0f, 15.0f};
-  int moonSize_ = 2;
+  int moonSize_ = 0;  // panel "Tamanho da lua": pequena (2.7 deg radius, 10 x the real) by default: média and grande read as a
+                      // "super moon" with the cinema glow (the user, 2026-10-19)
+  int sunSize_ = 1;   // panel "Sol": 0 real (0.26 deg), 1 cinema (the moon's small disc + corona); --sun-disc N
   std::array<int, 3> fogCounts_{};
   int holes_ = 0, holeHexes_ = 0, worstHoles_ = 0;
   std::vector<std::pair<int, int>> lastHoles_;

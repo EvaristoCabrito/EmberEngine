@@ -49,6 +49,7 @@ static_assert(sizeof(WaterVertexGpu) == 16);
 struct WaterView {
   VkDeviceAddress vertices = 0, indices = 0;
   uint32_t count = 0;  // indices
+  uint32_t look = 0;   // shaders/water.hlsl: 0 Engine2's diorama water, 1 look 001 "ember" (water_look001.hlsli)
   explicit operator bool() const { return vertices != 0 && count != 0; }
 };
 
