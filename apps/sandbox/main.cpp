@@ -157,7 +157,8 @@ struct Options {
   int cardStance = 1;  // --cards N: 0 vertical cards, 1 leaning back with the camera's tilt (panel "Cards")
   int barsFade = 1;    // --bars-fade N: 0 bars always shown, 1 the bars of units near the camera fade (panel "Vida perto")
   int atmos = 2;  // --atmos N: Atmosfera volumétrica v1 at the start (0 OFF, 1 cinema, 2 alta, 3 desempenho)
-  int background = -1;  // --background N: the panel's "Fundo" (-1 as the map says, 0 the painting, 1 the sky, 2 OFF = black, 3 the painting up to the horizon + the sky)
+  int background = -1;  // --background N: the panel's "Fundo" (-1 as the map says, 0 the painting, 1 the sky, 2 OFF = black, 3 the painting up to
+                        // the horizon + the sky, 4 the painting aligned to the sky)
   int waterLook = 0;    // --water N: the panel's "Água" (0 the original = the default, 1 look 001 "ember")
   int skyReflect = 1;   // --sky-reflect N: the panel's "Reflexo do céu" (0 OFF, 1 the sky's reflection map)
   int clouds = 1;       // --clouds N: the panel's "Nuvens" (0 OFF, 1 básica)

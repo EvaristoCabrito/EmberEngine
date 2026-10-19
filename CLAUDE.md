@@ -71,6 +71,15 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   look is saved in a numbered series (fog: `looks/fog/README.md`, `shaders/fog_lookNNN.hlsl`, tag
   `fog-look-NNN`), switchable live, and kept until the user deletes it after seeing it. A change is a new
   look; never edit or overwrite a saved one. Commit before trying the next idea.
+- **Each map is its own diorama (the user, 2026-10-19, project rule): "Cada mapa é um estilo de diorama diferente e vai ter
+  técnicas diferentes aplicadas, nada é padronizado para todos em hipótese alguma."** Every visual technique (background, camera
+  limits, ground image, look) is enabled per map by its id, one map at a time; every other map keeps exactly its old look.
+  Before a release, capture another map and the Tática view to prove they did not change.
+  **aldeia (map id "aldeia", aldeia015) is the first:** Fundo "imagem alinhada ao céu" by default (resolve.hlsl backgroundAt
+  mode 2, `content/engine2/backdrop-fit.json` entry aldeia-bg.jpg: painting under the real sky, ruins on the horizon, the user's
+  AldeiaGround as `content/backdrops/aldeia-ground-v01.jpg` flat under the board, the only image in Tática), camera tilt down to
+  -8 deg (MapStage `minPitch()`); the user approved the two lowest-tilt views. Every other map: unchanged (cover-fit painting, 5 deg).
+  JOGAR uses `build/ground/ground-v4.pak` (v3 + that image).
 - Fold mid-turn messages into the work. Never touch `C:\emberashes03D-main`. `C:\Engine2` is read-only.
 - **Measure before fixing.** Guesses get measured and reverted if wrong (thread priorities; the occlusion
   "fix" for the 15.8/5.6 ms alternation, which was really GPU power saving).

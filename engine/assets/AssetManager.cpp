@@ -173,8 +173,10 @@ AssetHandle AssetManager::load(AssetId id, int32_t priority) {
 void AssetManager::release(AssetHandle handle) {
   Slot* s = resolve(handle);
   if (!s || --s->refs > 0) return;
-  // A load in flight finishes first; update() frees the slot when it lands.
-  if (s->state.load(std::memory_order_acquire) != AssetState::Loading) freeSlot(handle.index);
+  // A load in flight finishes first; update() frees the slot when it retires it. "In flight" is the loading list, not the
+  // state: a worker may already have marked the load Ready while update() has not retired it yet, and freeing it here then
+  // let update() free it a second time (2026-10-19: the Vau battle crashed on entry, AssetManager freeSlot twice).
+  if (!s->inLoadingList) freeSlot(handle.index);
 }
 
 AssetState AssetManager::state(AssetHandle handle) const {
@@ -202,6 +204,7 @@ void AssetManager::update() {
     s.inFlightBytes = 0;
     loadingSlots_[i] = loadingSlots_.back();
     loadingSlots_.pop_back();
+    s.inLoadingList = false;
     if (s.refs == 0) freeSlot(index);  // released while it was loading
   }
 
@@ -261,6 +264,7 @@ void AssetManager::startBatch(std::vector<uint32_t>& members) {
     statQueued_.fetch_sub(1, std::memory_order_relaxed);
     statLoading_.fetch_add(1, std::memory_order_relaxed);
     s.state.store(AssetState::Loading, std::memory_order_relaxed);
+    s.inLoadingList = true;
     loadingSlots_.push_back(index);
     batch->members.push_back(&s);
   }

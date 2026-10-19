@@ -110,6 +110,7 @@ class AssetManager {
     const std::byte* bytes = nullptr;
     uint64_t size = 0;
     uint64_t inFlightBytes = 0;     // counted against the budget while loading
+    bool inLoadingList = false;     // in loadingSlots_ until update() retires it: only update() may free it then
   };
 
   struct Archive {
