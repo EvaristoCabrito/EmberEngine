@@ -63,6 +63,8 @@
  "undeadOx/move": 2.0,
  "voss-final/move": 2.0,
  "voss-final/move-left": 2.0,
+ "voss-veo/move": 1.0,
+ "voss-veo/move-left": 1.0,
  "wardog2/move": 2.0,
  "zombie/move": 2.0,
  "zombie2/move": 2.0,

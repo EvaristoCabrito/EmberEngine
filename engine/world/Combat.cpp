@@ -184,6 +184,20 @@ double blessBonus(const Battle& b, const Fighter& f, bool offHand) {
   return (offHand ? u.offTrainsWeapon : u.trainsWeapon) ? u.blessedHitBonusPct * 100 : 0;
 }
 
+}  // namespace
+
+double weaponAccuracy(const Battle& b, const Fighter& f, bool offHand) {
+  const BattleUnit& u = b.units()[f.unit];
+  // weaponModifiers: an enemy's is 90 + its DEX as it is now (the battle file's number was its DEX when exported, and DEX
+  // changes in a fight: level growth, disease, decay); a hero's is 75 + the weapon's skill (100 for a weapon its class does
+  // not train). The user's own rule (2026-10-07): the attacker's DEX is no bonus for a hero.
+  if (u.side == "enemy" && u.rank.empty()) return 90.0 + u.dex + blessBonus(b, f, offHand);  // a ranked enemy: its rank's mastery
+  if (u.side == "enemy") return (offHand ? u.combat.offAccuracy : u.combat.accuracy) + blessBonus(b, f, offHand);
+  return (offHand ? u.combat.offAccuracy : u.combat.accuracy) + blessBonus(b, f, offHand);
+}
+
+namespace {
+
 // combat.ts previewDamage (the weapon's average roll).
 Preview previewDamage(const Battle& b, const Fighter& a, const Fighter& d, const BattleCell::Terrain& att, const BattleCell::Terrain& def,
                       bool offHand, bool useSkill = true) {
@@ -191,7 +205,7 @@ Preview previewDamage(const Battle& b, const Fighter& a, const Fighter& d, const
   const auto [bonusAtk, bonusDef] = terrainBonus(b, a, att, def);
   const bool rear = useSkill && isRearAttack(a, d);
   // weaponModifiers, or { accuracy 100, damage 1 } for a blow that does not use the weapon's mastery (a shield's bash)
-  const double accuracy = useSkill ? (offHand ? p.offAccuracy : p.accuracy) + blessBonus(b, a, offHand) : 100, damageMul = useSkill ? (offHand ? p.offDamageMul : p.damageMul) : 1;
+  const double accuracy = useSkill ? weaponAccuracy(b, a, offHand) : 100, damageMul = useSkill ? (offHand ? p.offDamageMul : p.damageMul) : 1;
   double weapon = 0;
   if (offHand) {
     if (p.offHandWeapon) weapon = p.offDice * (p.offFaces + 1.0) / 2 * damageMul + p.offBonus;
@@ -211,7 +225,8 @@ Preview previewDamage(const Battle& b, const Fighter& a, const Fighter& d, const
 }  // namespace
 
 double hitChance(const Fighter& attacker, const Fighter& defender, double accuracy, bool rear) {
-  return std::max(0.0, std::min(100.0, accuracy + (rear ? 10 : 0) + (attacker.dex - defender.dex) / kDexDivisor - defender.dodge / 2));
+  const double chance = std::max(0.0, std::min(100.0, accuracy + (rear ? 10 : 0) + (attacker.dex - defender.dex) / kDexDivisor - defender.dodge / 2));
+  return std::ceil(chance * 100 - 1e-6) / 100;  // rounded up to two decimals: the number shown is the number rolled (the user)
 }
 
 double Mulberry32::operator()() {
@@ -322,7 +337,7 @@ Hit rollDamage(const Battle& b, const Fighter& a, const Fighter& d, Mulberry32& 
   const auto [bonusAtk, bonusDef] = terrainBonus(b, a, att, def);
   const bool rear = useWeaponSkill && isRearAttack(a, d);
   // weaponModifiers, or { accuracy 100, damage 1 } when the hit does not use the weapon's mastery
-  const double accuracy = useWeaponSkill ? (custom ? p.offAccuracy : p.accuracy) + blessBonus(b, a, custom != nullptr) : 100;
+  const double accuracy = useWeaponSkill ? weaponAccuracy(b, a, custom != nullptr) : 100;
   const double damageMul = useWeaponSkill ? (custom ? p.offDamageMul : p.damageMul) : 1;
   auto roll = [&](int dice, int faces) {  // rollDice(dice, faces, 0, rng)
     double rolled = 0;

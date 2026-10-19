@@ -67,9 +67,13 @@ bool clearShot(const Battle& b, BattleHex from, BattleHex to, bool arrow, bool d
 double powerOf(const Fighter& f);
 double elementalDamage(double base, double resistance, double mag);
 // Every weapon blow's chance to land, in % (ours, the user, 2026-10-18): clamp(0..100, accuracy + 10 from behind +
-// (attacker's DEX - defender's DEX) / kDexDivisor - defender's Esquiva / 2), DEX and Esquiva as fighterAt reads them.
+// (attacker's DEX - defender's DEX) / kDexDivisor - defender's Esquiva / 2), DEX and Esquiva as fighterAt reads them;
+// rounded up to two decimals.
 double hitChance(const Fighter& attacker, const Fighter& defender, double accuracy, bool rear);
 
+// A weapon blow's accuracy before the target's DEX and the rear bonus (weaponModifiers): 75 + weapon skill for a hero, 90 + its
+// live DEX for an enemy, plus a blessing.
+double weaponAccuracy(const Battle& b, const Fighter& attacker, bool offHand);
 // The unit placed at (x, y), with the affinity bonus its party neighbours there give it (BattleEngine.affinityUnit).
 Fighter fighterAt(const Battle& b, size_t unit, int x, int y);
 // Whether the unit, standing at `from`, reaches the foe with its weapon and has a clear shot (canHitFrom).

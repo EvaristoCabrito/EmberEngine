@@ -166,6 +166,13 @@ int spellTierOf(const std::string& kind) {
   const SpellData* s = spellData(kind);
   return s ? s->tier : 0;
 }
+// Ours (the user, 2026-10-18: "faça a investida de touro ficar como T3 e dê um boost no dano"): a hero's Investida Touro is a
+// tier-3 skill (Engine2: tier 1); an enemy's (the Ox's three charges) keeps Engine2's tier 1. Off in the Cooker's checks.
+bool bullRushTier3() { return progressionEnabled(); }
+int unitTierOf(const BattleUnit& u, const std::string& kind) {
+  if (kind == "bullRush" && u.side == "player" && bullRushTier3()) return 3;
+  return spellTierOf(kind);
+}
 std::string elementOf(const std::string& kind) {
   const SpellData* s = spellData(kind);
   return s ? s->element : "";
@@ -176,13 +183,6 @@ bool weaponAbility(const std::string& kind) {
 }
 
 constexpr int kLongShotRange = 7;  // LONG_SHOT.range
-// Ours (the user, 2026-10-18: "faça a investida de touro ficar como T3 e dê um boost no dano"): a hero's Investida Touro is a
-// tier-3 skill (Engine2: tier 1); an enemy's (the Ox's three charges) keeps Engine2's tier 1. Off in the Cooker's checks.
-bool bullRushTier3() { return progressionEnabled(); }
-int unitTierOf(const BattleUnit& u, const std::string& kind) {
-  if (kind == "bullRush" && u.side == "player" && bullRushTier3()) return 3;
-  return spellTierOf(kind);
-}
 struct Dice {
   int dice = 0, faces = 0;
 };
@@ -3049,7 +3049,8 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     }
     if (ability) {
       if (!weaponRolled) {
-        const double accuracy = std::max(0.0, std::min(100.0, att.combat.accuracy - fighterAt(b, id, foe.x, foe.y).dex));
+        const double accuracy = std::max(0.0, std::min(100.0, weaponAccuracy(b, fighterAt(b, step.att, att.x, att.y), false) -
+                                                                  fighterAt(b, id, foe.x, foe.y).dex));
         landed = accuracy >= 100 || rng() * 100 < accuracy;
       }
       if (foe.side == "enemy") trainWeapon(att, foe.level, rng);
