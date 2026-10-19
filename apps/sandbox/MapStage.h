@@ -148,6 +148,7 @@ struct MapStageOptions {
   int skyReflect = 1;
   int clouds = 1;
   int moonLight = 1;  // the panel's "Luar" (light mode real): 0 físico, 1 cinema (--moonlight N)
+  int freeCam = 1;    // the panel's "Câmera": 0 jogo, 1 livre (--free-cam N)
   int sunDisc = 1;    // the panel's "Sol": 0 real, 1 cinema (--sun-disc N)
   // The fog of war's mist bank (the numbered looks) on at the start; --mist 0 leaves only the fog of war's mask (check_fog.py
   // needs never-seen ground exactly black) while the volumetric atmosphere may stay on.
@@ -264,6 +265,7 @@ class MapStage final : public Stage {
     waterLook_ = std::clamp(options.waterLook, 0, 1);
     skyReflect_ = std::clamp(options.skyReflect, 0, 1);
     clouds_ = std::clamp(options.clouds, 0, 1);
+    freeCam_ = std::clamp(options.freeCam, 0, 1);
     moonLight_ = std::clamp(options.moonLight, 0, 1);
     sunSize_ = std::clamp(options.sunDisc, 0, 1);
     spellsMenu_.load("content/fx/spell-looks.json", "content/fx.sprites.json");
@@ -648,8 +650,12 @@ class MapStage final : public Stage {
         plane.from = fit.groundFromDegrees;
         // Tática looks straight down from far away: the ground image is the whole view ("desse ângulo é essa imagem e nada mais").
         plane.far = flat_ ? 1.0e9f : fit.groundFar;
-        renderer.setBackground(bg, isPanorama && fit.keepSky ? 3u : 2u, {fit.horizon, fit.bottom, fit.degreesPerHeight, fit.bottomDegrees},
-                               {centre, fit.skyTop, fit.spanDegrees, fit.horizonDegrees}, plane);
+        // "Céu do panorama" (the user, 2026-10-19: "libera o céu para eu ver como fica"): 0 the image's own smoke sky, 1 the real sky
+        // above the rooftops (everything above 30% of the image is sky; down to the ruins its sky is matted out by colour).
+        const bool ownSky = isPanorama && fit.keepSky && panoramaSky_ == 0;
+        const float skyTop = isPanorama && fit.keepSky && panoramaSky_ == 1 ? 0.30f : fit.skyTop;
+        renderer.setBackground(bg, ownSky ? 3u : 2u, {fit.horizon, fit.bottom, fit.degreesPerHeight, fit.bottomDegrees},
+                               {centre, skyTop, fit.spanDegrees, fit.horizonDegrees}, plane);
       } else {
         renderer.setBackground(bg, background_ == 3 ? 1u : 0u);
       }
@@ -794,7 +800,7 @@ class MapStage final : public Stage {
       if (a && b) target_ += glm::vec3{a->x - b->x, 0.0f, a->z - b->z}, cam_.target += glm::vec3{a->x - b->x, 0.0f, a->z - b->z};
     }
     if (e.type == SDL_EVENT_MOUSE_WHEEL && e.wheel.y != 0.0f) {
-      const float next = std::clamp(distance_ * std::pow(kZoomStep, e.wheel.y), kMinDistance, maxDistance_);
+      const float next = std::clamp(distance_ * std::pow(kZoomStep, e.wheel.y), minDistance(), maxDist());
       // Toward the cursor: the pivot moves to the cursor's ground point by the share of the distance zoomed.
       if (const std::optional<glm::vec3> p = groundUnder(e.wheel.windowID, e.wheel.mouse_x, e.wheel.mouse_y)) {
         const float share = 1.0f - next / distance_;
@@ -832,12 +838,16 @@ class MapStage final : public Stage {
 
   // The board never leaves the screen: the pivot stays on the board, so at most the edge reaches the screen's
   // centre (the edge hexes whole, from any angle); tilt and zoom stay in range.
+  // Panel "Câmera" livre (the user, 2026-10-19: "adicione a opção de câmera livre nas escolhas", "girar a câmera como eu quiser"):
+  // the pivot roams ten board-sizes around the board, the tilt from 80 deg up into the sky to straight down, the zoom from close
+  // to the ground to far away; the eye still never goes under the ground. "jogo" keeps the old limits.
   void clampGoal() {
     const e2::Board::Bounds b = board_->bounds();
-    target_.x = std::clamp(target_.x, static_cast<float>(b.x0), static_cast<float>(b.x1));
-    target_.z = std::clamp(target_.z, static_cast<float>(b.z0), static_cast<float>(b.z1));
+    const float roam = freeCam_ == 1 ? 10.0f * std::max(static_cast<float>(b.x1 - b.x0), static_cast<float>(b.z1 - b.z0)) : 0.0f;
+    target_.x = std::clamp(target_.x, static_cast<float>(b.x0) - roam, static_cast<float>(b.x1) + roam);
+    target_.z = std::clamp(target_.z, static_cast<float>(b.z0) - roam, static_cast<float>(b.z1) + roam);
     pitch_ = std::clamp(pitch_, minPitch(), kMaxPitch);
-    distance_ = std::clamp(distance_, kMinDistance, maxDistance_);
+    distance_ = std::clamp(distance_, minDistance(), maxDist());
   }
 
   struct OrbitView {
@@ -1084,10 +1094,16 @@ class MapStage final : public Stage {
       static const char* kBackgrounds[5] = {"imagem do mapa", "céu", "OFF", "imagem até o horizonte", "imagem alinhada ao céu"};
       dropdown("Fundo", background_, 5 + static_cast<int>(panoramas_.size()),
                [](int i) { return i < 5 ? std::string(kBackgrounds[i]) : std::format("panorama {:02}", i - 4); });
+      if (background_ >= 5) {
+        static const char* kPanoramaSky[2] = {"da imagem", "real"};
+        dropdown("Céu do panorama", panoramaSky_, 2, [](int i) { return std::string(kPanoramaSky[i]); });
+      }
     }
     {
       // Cards vertical (they converge under the tilted camera: "crooked"), or leaning back with the camera's tilt so
       // every card stands upright on screen (sprites.hlsl VSMain).
+      static const char* kCam[2] = {"jogo", "livre"};
+      dropdown("Câmera", freeCam_, 2, [](int i) { return std::string(kCam[i]); });
       static const char* kStance[2] = {"em pé", "para a câmera"};
       dropdown("Cards", cardStance_, 2, [](int i) { return std::string(kStance[i]); });
     }
@@ -7548,6 +7564,7 @@ class MapStage final : public Stage {
   BackdropFit backdropFit_;
   std::vector<std::string> panoramas_;    // the map's own panoramas (backdrop-fit.json "panoramas"), the panel's "panorama NN"
   std::vector<BackdropFit> panoramaFits_;
+  int panoramaSky_ = 1;  // the panel's "Céu do panorama": 0 the image's own sky, 1 the real sky above the rooftops
   static std::vector<std::string> loadPanoramas(const std::string& mapId) {
     std::vector<std::string> out;
     std::ifstream in("content/engine2/backdrop-fit.json");
@@ -7639,7 +7656,11 @@ class MapStage final : public Stage {
   static constexpr float kMinPitch = -0.1396f, kMinEyePitch = 0.0873f, kMaxPitch = 1.5621f;
   // ONLY the aldeia looks up to -8 deg (the user, 2026-10-19: "somente a aldeia, só um por vez"); every other map keeps 5 deg.
   bool aldeia() const { return board_ && board_->draft().id == "aldeia"; }
-  float minPitch() const { return aldeia() ? kMinPitch : kMinEyePitch; }
+  float minPitch() const { return freeCam_ == 1 ? kFreeMinPitch : aldeia() ? kMinPitch : kMinEyePitch; }
+  static constexpr float kFreeMinPitch = -1.3963f;  // livre: 80 deg up into the sky
+  float minDistance() const { return freeCam_ == 1 ? 0.8f : kMinDistance; }
+  float maxDist() const { return freeCam_ == 1 ? std::max(400.0f, maxDistance_ * 9.0f) : maxDistance_; }
+  int freeCam_ = 1;  // the panel's "Câmera": 0 jogo (the old limits), 1 livre (default; --free-cam N)
   static constexpr float kTiltStep = 0.0873f, kTurnStep = 0.2618f;  // Engine2's bar: 5 deg; 15 deg
   static constexpr float kTurnPerPixel = 0.005f, kZoomStep = 0.85f, kPanPerSecond = 0.9f;
   static constexpr float kMinDistance = 3.0f, kEyeClearance = 0.8f;
