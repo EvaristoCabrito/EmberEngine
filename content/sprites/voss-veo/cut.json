@@ -12,8 +12,9 @@
    "src": "build/video-cut/voss-veo/idle",
    "video": "Attachments/VeoVoss/Idle/VossV2Idle.mp4",
    "first": 16,
-   "last": 112,
-   "crossfade": 6,
+   "last": 120,
+   "loopMin": 48,
+   "loopMax": 100,
    "mode": "loop"
   },
   {

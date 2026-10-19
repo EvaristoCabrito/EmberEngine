@@ -11,7 +11,8 @@ Per frame:
 - matte noise under 3% is dropped;
 - no resampling: frames are only cut and moved by whole pixels;
 - "stand" clips (idle, cast, strikes): the camera is locked, so every frame keeps the video's own place (the clip's
-  median boot row is its feet line); a loop may blend its last `crossfade` frames into the frames before its first;
+  median boot row is its feet line); a loop with loopMin / loopMax is a hard cut at the stretch's best seam, like the
+  walks (the user, 2026-10-19: no blend, no interpolation; the old `crossfade` blend is kept only for old specs);
 - "walk" clips: each frame moved sideways so the body (hood + chest) stays put, and up / down so the boot on the ground
   sits on one line (lowest row of a solid boot 16 rows tall, the robe's thin tatters do not count); the loop is the
   stretch's best seam after that alignment (searched between loopMin and loopMax frames).
@@ -211,6 +212,13 @@ def main():
             frames = [shifted(f, 0, sole - boots[i]) if boots[i] != sole else f for i, f in enumerate(frames)]
             info["bootRow"], info["bootRows"] = sole, [int(min(boots)), int(max(boots))]
             print(f"{c['clip']}: boot rows {min(boots)}..{max(boots)} -> {sole}")
+            if "loopMin" in c:
+                # a stand loop: a hard cut at the stretch's best seam, every frame the video's own (no blend)
+                s, e, seam = best_loop(frames, c["loopMin"], c["loopMax"])
+                frames = frames[s:e]
+                height = float(np.median([boots[i] - tops[i] for i in range(s, e)]))
+                info.update(loopFirst=int(c["first"] + s), loopLast=int(c["first"] + e - 1), seamSteps=round(float(seam), 2))
+                print(f"{c['clip']}: loop video frames {c['first'] + s}..{c['first'] + e - 1} ({e - s}), seam {seam:.2f} x a step")
             xf = c.get("crossfade", 0)
             if xf:
                 # a loop's seam: its last `xf` frames blend into the video frames just before its first (premultiplied),

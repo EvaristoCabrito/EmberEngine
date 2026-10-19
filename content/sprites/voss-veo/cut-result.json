@@ -3,15 +3,17 @@
   "base": {
    "video": "Attachments/VeoVoss/Idle/VossV2Idle.mp4",
    "first": 16,
-   "last": 112,
+   "last": 120,
    "bootRow": 1210,
    "bootRows": [
     1210,
     1210
    ],
-   "crossfade": 6,
+   "loopFirst": 16,
+   "loopLast": 111,
+   "seamSteps": 2.36,
    "figurePx": 1087.0,
-   "frames": 97,
+   "frames": 96,
    "frameMs": 41.666666666666664,
    "nat": [
     654,
