@@ -1,8 +1,10 @@
 #pragma once
 
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <utility>
 #include <string_view>
 #include <unordered_map>
@@ -38,6 +40,7 @@ class SpriteSystem {
   // Priorities for request(): what is on screen beats what is coming.
   static constexpr int32_t kOnScreen = 100;
   static constexpr int32_t kSoon = 50;
+  static constexpr int32_t kPinned = 200;
 
   SpriteSystem(VulkanContext& context, Bindless& bindless, AssetManager& assets, UploadQueue& uploads, const Budget& budget);
   ~SpriteSystem();
@@ -60,6 +63,13 @@ class SpriteSystem {
   const SpriteClipHeader& header(SpriteClipId id) const { return clips_[id]->header; }
 
   void request(SpriteClipId id, int32_t priority);
+
+  // A clip held at full quality from now on: asked for every frame, never evicted, never drawn from its tail once
+  // it has landed (a fight's characters: every pose they can play, loaded before the fight opens). Pins made
+  // before the clip headers are read get GPU memory of their own on top of the budget; later ones share it.
+  void pin(std::string_view set, std::string_view clip);
+  // Pinned clips at full quality, out of all pinned; {n, n} when they could not all get room (logged once).
+  std::pair<uint32_t, uint32_t> pinProgress() const;
 
   struct Texture {
     uint32_t index = kNoTexture;  // bindless texture-array index; kNoTexture = not drawable yet
@@ -125,6 +135,7 @@ class SpriteSystem {
   bool makeRoom(uint64_t bytes);
   void makeHole(const Clip& want);
   bool startUpload(Clip& clip);
+  void addPin(SpriteClipId id, std::string set);
 
   VulkanContext& context_;
   Bindless& bindless_;
@@ -151,6 +162,12 @@ class SpriteSystem {
   uint64_t evictions_ = 0, starved_ = 0, poolRetries_ = 0;
   uint64_t uploadWaitValue_ = 0;
   std::vector<SpriteClipId> requested_;  // this frame
+  std::vector<std::pair<AssetId, std::string>> pendingPins_;  // pinned before the roster was read (asset, sprite set)
+  std::vector<SpriteClipId> pinned_;
+  std::vector<std::string> pinnedSet_;   // each pinned clip's sprite set (one character's poses)
+  bool pinsFit_ = true;                  // false: the pinned clips need more than the pool holds
+  bool pinsLogged_ = false;
+  std::chrono::steady_clock::time_point pinsAsked_{};
   std::vector<Retired> retired_;
 };
 

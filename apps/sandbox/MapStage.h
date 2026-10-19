@@ -332,6 +332,7 @@ class MapStage final : public Stage {
       setUpParty();
       if (!options.heroes.empty()) setUpPoses(options.heroes);
       if (!options.battle.empty()) setUpBattle(options.battle);
+      pinUnitArt();
       if (!scene_->backdrop.empty()) ground_.requestTexture(e2::backdropAsset(scene_->backdrop));
       background_ = options.background >= 0 ? std::min(options.background, 2) : scene_->backdrop.empty() ? 1 : 0;
       if (e2::timeOfDay(scene_->timeOfDay).moon && scene_->environment != "indoor")
@@ -1447,6 +1448,10 @@ class MapStage final : public Stage {
       const auto [done, total] = sprites_.startupProgress();
       return {0, done, total, false};
     }
+    if (scene_) {
+      const auto [pinsDone, pins] = sprites_.pinProgress();
+      if (pinsDone < pins) return {0, pinsDone, pins, false};  // the characters at full quality: every pose they can play
+    }
     const auto [meshesDone, meshesTotal] = meshes_.progress();
     const uint32_t ground = ground_.ready() ? 1u : 0u, placed = !scene_ || modelsPlaced_ ? 1u : 0u;
     const uint32_t fog = !fog_ || fogReady_ ? 1u : 0u, drawn = !scene_ || fullFrames_ > 0 ? 1u : 0u;
@@ -1457,7 +1462,8 @@ class MapStage final : public Stage {
 
   bool sceneReady() const {
     if (!scene_) return true;
-    return sprites_.ready() && modelsPlaced_ && fullFrames_ > 0;
+    const auto [pinsDone, pins] = sprites_.pinProgress();
+    return sprites_.ready() && pinsDone >= pins && modelsPlaced_ && fullFrames_ > 0;
   }
 
   float groundOf(float smooth, float hard) const { return look_ == e2::EdgeStyle::Smooth ? smooth : hard; }
@@ -2240,6 +2246,17 @@ class MapStage final : public Stage {
     for (const std::string& u : unknown) logWarn("poses: {} not in the catalog: idle only", u);
   }
 
+  // Every pose the map's units can play stays at full quality from the loading screen to the end (the user, 2026-10-18:
+  // a pose streamed in on its first frame drew from the 64 px tail, a blur at every change of animation).
+  void pinUnitArt() {
+    for (size_t i = 0; i < scene_->units.size(); ++i) pinArt(scene_->units[i], i < unitCatalog_.size() ? unitCatalog_[i] : nullptr);
+  }
+  void pinArt(const e2::SceneUnit& u, const e2::Hero* entry) {
+    sprites_.pin(u.set, u.clip);
+    if (entry)
+      for (const e2::HeroPose& p : entry->poses) sprites_.pin(p.set, p.clip);
+  }
+
   // Every scene unit's live state: where it stands, its facing, its art's own facing (from the scene's mirror rule).
   void initUnits() {
     const size_t n = scene_->units.size();
@@ -2276,6 +2293,7 @@ class MapStage final : public Stage {
       su.frames = idle->frames, su.pace = idle->pace, su.facing = 1, su.mirror = entry->reversed;
       const glm::vec2 at = anchorWorld(bu, {bu.x, bu.y});
       su.x = at.x, su.z = at.y;
+      pinArt(su, entry);
       scene_->units.push_back(std::move(su));
       unitCatalog_.push_back(entry);
       unitPos_.push_back(at);

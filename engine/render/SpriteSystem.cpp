@@ -74,6 +74,34 @@ void SpriteSystem::request(SpriteClipId id, int32_t priority) {
   clip.lastRequested = frame_;
 }
 
+void SpriteSystem::pin(std::string_view set, std::string_view clip) {
+  const AssetId asset = assetId(std::string("sprites/") + std::string(set) + "/" + std::string(clip) + ".clip");
+  if (pinned_.empty() && pendingPins_.empty()) pinsAsked_ = std::chrono::steady_clock::now();
+  if (!rosterRead_) {
+    if (std::none_of(pendingPins_.begin(), pendingPins_.end(), [&](const auto& p) { return p.first == asset; }))
+      pendingPins_.emplace_back(asset, std::string(set));
+    return;
+  }
+  const auto it = byAsset_.find(asset);
+  if (it != byAsset_.end()) addPin(it->second, std::string(set));
+}
+
+void SpriteSystem::addPin(SpriteClipId id, std::string set) {
+  if (std::find(pinned_.begin(), pinned_.end(), id) != pinned_.end()) return;
+  pinned_.push_back(id);
+  pinnedSet_.push_back(std::move(set));
+  pinsLogged_ = false;
+}
+
+std::pair<uint32_t, uint32_t> SpriteSystem::pinProgress() const {
+  const uint32_t total = static_cast<uint32_t>(pinned_.size() + pendingPins_.size());
+  if (!pinsFit_) return {total, total};
+  uint32_t done = 0;
+  for (const SpriteClipId id : pinned_)
+    if (clips_[id]->state == State::Resident || (!clips_[id]->headerReady && !clips_[id]->headerHandle)) ++done;
+  return {done, total};
+}
+
 SpriteSystem::Texture SpriteSystem::texture(SpriteClipId id) const {
   if (id >= clips_.size()) return {};
   const Clip& clip = *clips_[id];
@@ -121,20 +149,50 @@ void SpriteSystem::createFullPool() {
   uint32_t memoryType = 0;
   VK_CHECK(vmaFindMemoryTypeIndexForImageInfo(context_.allocator, &info, &alloc, &memoryType));
 
+  // Pinned clips get room of their own on top of the streaming budget.
+  uint64_t pinnedBytes = 0;
+  for (const SpriteClipId id : pinned_)
+    if (clips_[id]->headerReady) pinnedBytes += clips_[id]->header.fullBytes;
+  const uint64_t streaming = budget_.gpuBytes;
+
   // Budget plus one block of slack, all allocated now; a fragmented pool opens holes (makeHole).
   // Measured (512 MB budget): 64 MB blocks stream as well as a pool 50% over budget.
   const VkDeviceSize block = std::max(kPoolBlockBytes, largest);
-  const size_t blocks = static_cast<size_t>(budget_.gpuBytes / block + 1);
   VmaPoolCreateInfo poolInfo{};
   poolInfo.memoryTypeIndex = memoryType;
   poolInfo.blockSize = block;
-  poolInfo.minBlockCount = blocks;
-  poolInfo.maxBlockCount = blocks;
-  const VkResult result = vmaCreatePool(context_.allocator, &poolInfo, &fullPool_);
+  const auto createPool = [&](uint64_t bytes) {
+    const size_t blocks = static_cast<size_t>(bytes / block + 1);
+    poolInfo.minBlockCount = blocks;
+    poolInfo.maxBlockCount = blocks;
+    return vmaCreatePool(context_.allocator, &poolInfo, &fullPool_);
+  };
+  VkResult result = createPool(streaming + pinnedBytes);
+  if (result == VK_SUCCESS) {
+    budget_.gpuBytes = streaming + pinnedBytes;
+    if (!pinned_.empty()) {
+      logInfo("sprites: {} clips pinned at full quality, {} MB, on top of the {} MB streaming budget", pinned_.size(), pinnedBytes >> 20,
+              streaming >> 20);
+      // What weighs the most, by sprite set (one character's poses each).
+      std::unordered_map<std::string, uint64_t> bySet;
+      for (size_t i = 0; i < pinned_.size(); ++i)
+        if (clips_[pinned_[i]]->headerReady) bySet[pinnedSet_[i]] += clips_[pinned_[i]]->header.fullBytes;
+      std::vector<std::pair<std::string, uint64_t>> sets(bySet.begin(), bySet.end());
+      std::sort(sets.begin(), sets.end(), [](const auto& a, const auto& b) { return a.second > b.second; });
+      for (const auto& [set, bytes] : sets) logInfo("sprites:   pinned {} {} MB", set, bytes >> 20);
+    }
+  } else if (pinnedBytes > 0) {
+    logError("sprites: no GPU room for the {} MB of pinned clips ({}); they share the {} MB streaming budget", pinnedBytes >> 20,
+             string_VkResult(result), streaming >> 20);
+    pinsFit_ = pinnedBytes <= streaming;
+    result = createPool(streaming);
+  }
+  const size_t blocks = poolInfo.maxBlockCount;
   if (result != VK_SUCCESS) {
     logError("sprites: cannot reserve {} MB of GPU memory for full clips ({}); drawing tails only",
              (block * blocks) >> 20, string_VkResult(result));
     fullPool_ = VK_NULL_HANDLE;
+    pinsFit_ = pinned_.empty();
     return;
   }
   fullPoolBlock_ = block;
@@ -177,6 +235,11 @@ void SpriteSystem::updateStartup() {
       headersPending_ = roster.clipCount;
       rosterRead_ = true;
       logInfo("sprites: roster lists {} clips", roster.clipCount);
+      for (auto& [asset, set] : pendingPins_) {
+        const auto it = byAsset_.find(asset);
+        if (it != byAsset_.end()) addPin(it->second, std::move(set));
+      }
+      pendingPins_.clear();
     }
     assets_.release(rosterHandle_);
     rosterHandle_ = {};
@@ -338,6 +401,27 @@ void SpriteSystem::update() {
   });
 
   if (!ready()) updateStartup();
+  // Pinned clips are asked for every frame (so never evicted) before anything else is decided.
+  for (const SpriteClipId id : pinned_) request(id, kPinned);
+  if (!pinsLogged_ && !pinned_.empty() && pendingPins_.empty()) {
+    const auto [done, total] = pinProgress();
+    if (done >= total) {
+      pinsLogged_ = true;
+      logInfo("sprites: {} pinned clips at full quality {:.2f} s after they were asked for", total,
+              std::chrono::duration<double>(std::chrono::steady_clock::now() - pinsAsked_).count());
+      // The whole game's GPU memory at that moment (VMA's own count where the driver gives no budget): the largest
+      // device-local heap.
+      const VkPhysicalDeviceMemoryProperties* props = nullptr;
+      vmaGetMemoryProperties(context_.allocator, &props);
+      VmaBudget budgets[VK_MAX_MEMORY_HEAPS];
+      vmaGetHeapBudgets(context_.allocator, budgets);
+      uint32_t heap = 0;
+      for (uint32_t h = 0; h < props->memoryHeapCount; ++h)
+        if ((props->memoryHeaps[h].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) && props->memoryHeaps[h].size > props->memoryHeaps[heap].size) heap = h;
+      logInfo("sprites: GPU memory {} MB allocated by the game, {} MB used, budget {} MB, heap {} MB", budgets[heap].statistics.blockBytes >> 20,
+              budgets[heap].usage >> 20, budgets[heap].budget >> 20, props->memoryHeaps[heap].size >> 20);
+    }
+  }
 
   // Progress full-quality clips: loaded -> uploading -> resident.
   for (auto& clipPtr : clips_) {
