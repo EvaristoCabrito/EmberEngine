@@ -772,9 +772,37 @@ esforço ... céu bonito, estrelado ... luz do luar também")
   horizonte onde começa o céu. experimente na aldeia", then, seeing it: "you will need to try some sort of smarter edition for this
   to work"): resolve.hlsl backgroundAt mode 1 (`ResolvePush.backgroundMode`, `setBackground(bg, true)`): the painting's horizon row
   (kBackdropHorizon 0.5 of its height) pinned to the world's horizon, its rows below following the view's elevation down to 30 deg,
-  a 1-deg band of sky over the horizon. **The smarter version (not built, needs a "faz"):** a per-painting horizon row and a matte
-  of the painting's own sky (found once in the cooker, stored beside the backdrop), the painting kept at its own scale (no vertical
-  stretch) and extended at the sides, the seam hazed with the sky's own horizon colour.
+  a 1-deg band of sky over the horizon.
+- **Fundo "imagem alinhada ao céu"** (mode 2, the default on maps with a painting; the user: "alinhar essas imagens de fundo com o
+  céu ... cortando a parte inferior da imagem para a parte com fumaça ficar visível abaixo do sol", "si por favor"):
+  `content/engine2/backdrop-fit.json` per painting (horizon row, bottom row kept, sky-top row, degrees the height spans above the
+  horizon, degrees below the horizon where the bottom row lands, degrees the width spans, the column of its own sun glow, and
+  `horizonDegrees` = where the painting's horizon row sits, degrees of elevation; `default` for the rest; aldeia-bg.jpg tuned by
+  eye: 0.22 / 1.0 / 0.06 / 24 / 36 / 140 / 0.2 / -8). The user first asked for the ground cut away below the smoke, then, seeing
+  it: "use the whole image and just add atmosphere and sky on the top layer" (bottom = 1), then "é o cenário que está muito alto"
+  and a mock-up with the board at the foot of the frame and the ruins on the horizon: **the camera now tilts down to -8 deg**
+  (MapStage kMinPitch; the eye never under kMinEyePitch 5 deg: below it the tilt lifts the line of sight, `eyeView` /
+  `lookTarget`), the painting's ridge at horizonDegrees -3 (just behind the board); between the real horizon and the ridge the
+  sky's horizon colour fills the painting's matted sky, never the sky table's dark ground. aldeia ended at horizon row 0.42 (the
+  ruins' feet) and horizonDegrees +1.5: the user approved the two lowest-tilt views ("as duas primeiras estão perfeitas";
+  captures/water/220-221, 261-262). Below the horizon a whole painting reaches its last row at the nadir (rows keep the
+  `bottomDegrees` scale near the horizon, then compress smoothly: 1 - exp), so the game's angle shows the painting's ashes with
+  no repeat and no seam (the user's "remenda"); the froxel volume is not applied below the horizon (rays looking down ran under
+  the board's ground and turned opaque: a flat tan band). Looking down (the game's angle and steeper), a flat plane under the board
+  (`groundLow_ - 1.5`) carries the map's top-down ground image (backdrop-fit.json `ground` / `groundTile` 120 / `groundFar` 300;
+  aldeia = the user's AldeiaGround as `content/backdrops/aldeia-ground-v01.jpg`, cooked into **`build/ground/ground-v4.pak`**,
+  which JOGAR now uses first), mirrored at its edges, hazed with distance, handing over to the painting where the plane lies far
+  and wherever the view is within 10-25 deg of the horizon (so the approved low views keep the painting exactly). Replaced the
+  "visão do inferno" (the painting's ground converging to a streaked pit straight down). The user offered to paint more
+  complementary images for this composition: one top-down ground per map is what this needs. **Never touch a look after the user approved it without showing first** (2026-10-19: I changed the
+  approved sky, then reverted it unseen; the user was furious). The user will repaint aldeia-bg without its own sun ("no double
+  sun"); a new painting = cook it into the ground pack and tune its JSON entry.
+  resolve.hlsl mode 2 (`ResolvePush.fitA / fitB`, `setBackground(bg, 2, fitA, fitB)`, MapStage `loadBackdropFit`): the
+  painting's horizon pinned to the world's, rows above at their own angular scale, the rows below reaching `bottomDegrees` down
+  (a cut painting fades into the sky's horizon colour), the width turned so its glow sits under the real key light (mirrored
+  beyond its edges), its own sky matted out
+  per pixel by colour against its top rows (towers and smoke above the ridge stay), a 1-deg haze on the seam. No offline matte
+  yet: the colour test is done on the GPU (3 extra texture reads per background pixel). Tuning other paintings = JSON only.
 - **Sol** (panel, outdoors by day; `--sun-disc N`): real (0.26 deg, a dot nobody finds) / cinema (default: the moon's small disc, 2.7
   deg, with a corona; `AtmosphereFrame.sunTanRadius`, `Lighting::sunRadius`). The moon's default size is now pequena (2.7 deg: média
   and grande read as a "super moon" with the cinema glow); the disc glow = max(2.3, moon lux x 0.35).

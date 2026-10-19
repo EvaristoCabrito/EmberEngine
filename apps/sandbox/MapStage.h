@@ -348,9 +348,11 @@ class MapStage final : public Stage {
       preloadHud();
       if (std::string own = e2::emberBackdrop(board_->draft().id); !own.empty()) scene_->backdrop = std::move(own);  // the user's art
       if (!scene_->backdrop.empty()) ground_.requestTexture(e2::backdropAsset(scene_->backdrop));
-      // A map with a painting opens with it over the whole screen; "imagem até o horizonte" (3) stays an experiment in the panel
-      // (the user, 2026-10-19: "you will need some smarter edition for this to work").
-      background_ = options.background >= 0 ? std::min(options.background, 3) : scene_->backdrop.empty() ? 1 : 0;
+      // A map with a painting opens with it aligned to the sky (4; the user's "si por favor", 2026-10-19); "imagem até o horizonte"
+      // (3) stays an experiment in the panel ("you will need some smarter edition for this to work"); without a painting, the sky.
+      background_ = options.background >= 0 ? std::min(options.background, 4) : scene_->backdrop.empty() ? 1 : 4;
+      if (!scene_->backdrop.empty()) backdropFit_ = loadBackdropFit(scene_->backdrop);
+      if (!backdropFit_.ground.empty()) ground_.requestTexture(e2::backdropAsset(backdropFit_.ground));
       if (e2::timeOfDay(scene_->timeOfDay).moon && scene_->environment != "indoor")
         for (const char* phase : e2::kMoonPhases) ground_.requestTexture(e2::skyMoonAsset(phase));  // 0.1 MB each
     }
@@ -460,7 +462,7 @@ class MapStage final : public Stage {
     // the ground or a 3D piece: the tilt rises just enough to clear it.
     cam_.target.y = pivotHeight(cam_.target);
     for (int i = 0; i < 8 && !flat_; ++i) {
-      const glm::vec3 eye = eyeOf(cam_);
+      const glm::vec3 eye = eyeOf(eyeView(cam_));
       const float floor = clearanceAt(eye.x, eye.z) + kEyeClearance;
       if (eye.y >= floor) break;
       const float need = std::asin(std::clamp((floor - cam_.target.y) / cam_.distance, -1.0f, 1.0f));
@@ -472,7 +474,7 @@ class MapStage final : public Stage {
     const float flatDistance = cam_.distance * std::tan(glm::radians(kFov * 0.5f)) / std::tan(glm::radians(kFlatFov * 0.5f));
     const Camera camera = flat_ ? Camera::lookAt(cam_.target + glm::vec3(0.0f, flatDistance, 0.0f), cam_.target, glm::radians(kFlatFov), aspect,
                                                  std::max(kNear, flatDistance - 200.0f), {0.0f, 0.0f, -1.0f})
-                                : Camera::lookAt(eyeOf(cam_), cam_.target, glm::radians(kFov), aspect, kNear);
+                                : Camera::lookAt(eyeOf(eyeView(cam_)), lookTarget(cam_), glm::radians(kFov), aspect, kNear);
     lastCamera_ = camera;
     drawList_.clear();
     frontCards_.clear();
@@ -616,8 +618,25 @@ class MapStage final : public Stage {
     {
       uint32_t bg = kNoTextureIndex;  // the sky (or the clear colour)
       if (background_ == 2) bg = Renderer::kBlackBackground;
-      if ((background_ == 0 || background_ == 3) && scene_ && !scene_->backdrop.empty()) bg = ground_.textureIndex(e2::backdropAsset(scene_->backdrop));
-      renderer.setBackground(bg, background_ == 3);
+      const bool painting = background_ != 1 && background_ != 2 && scene_ && !scene_->backdrop.empty();
+      if (painting) bg = ground_.textureIndex(e2::backdropAsset(scene_->backdrop));
+      if (painting && background_ == 4) {
+        // The painting aligned to the sky (backdrop-fit.json): its own sun glow turned under the real key light.
+        const BackdropFit& fit = backdropFit_;
+        const float sunAz = std::atan2(lighting.sunDirection.z, lighting.sunDirection.x);
+        const float centre = sunAz - (fit.glowColumn - 0.5f) * glm::radians(fit.spanDegrees);
+        // The ground around the board: the map's top-down ground image (backdrop-fit.json "ground") on a flat plane a little under
+        // its lowest ground, the painting beyond `groundFar`; without one, the painting all the way down.
+        Renderer::BackdropPlane plane;
+        plane.y = groundLow_ - 1.5f;
+        if (!fit.ground.empty()) plane.texture = ground_.textureIndex(e2::backdropAsset(fit.ground));
+        plane.tile = fit.groundTile;
+        plane.far = fit.groundFar;
+        renderer.setBackground(bg, 2u, {fit.horizon, fit.bottom, fit.degreesPerHeight, fit.bottomDegrees},
+                               {centre, fit.skyTop, fit.spanDegrees, fit.horizonDegrees}, plane);
+      } else {
+        renderer.setBackground(bg, background_ == 3 ? 1u : 0u);
+      }
     }
     renderer.setFogOfWar(fogReady_ && !noFog_ ? &fogMask_ : nullptr, maskVersion_, &fogTexels_);
     Renderer::VolumetricFog volume;
@@ -812,6 +831,22 @@ class MapStage final : public Stage {
   static glm::vec3 eyeOf(const OrbitView& v) {
     return v.target + glm::vec3{v.distance * std::cos(v.pitch) * std::sin(v.yaw), v.distance * std::sin(v.pitch),
                                 v.distance * std::cos(v.pitch) * std::cos(v.yaw)};
+  }
+  // The view the eye stands at: never under kMinEyePitch (the ground); the tilt below it becomes a lift of the line of sight.
+  static OrbitView eyeView(OrbitView v) {
+    v.pitch = std::max(v.pitch, kMinEyePitch);
+    return v;
+  }
+  // Where the camera looks: the pivot, or, under kMinEyePitch, a point lifted by the missing tilt about the eye's right axis
+  // (the board sinks in the frame, the sky takes the rest).
+  static glm::vec3 lookTarget(const OrbitView& v) {
+    const float lift = std::max(kMinEyePitch - v.pitch, 0.0f);
+    const glm::vec3 eye = eyeOf(eyeView(v));
+    const glm::vec3 forward = glm::normalize(v.target - eye);
+    if (lift <= 0.0f) return v.target;
+    const glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
+    const glm::vec3 up = glm::cross(right, forward);
+    return eye + (forward * std::cos(lift) + up * std::sin(lift)) * v.distance;
   }
   float groundAt(float x, float z) const { return static_cast<float>(board_->cellAt(x, z).groundY); }
   // The pivot's height: the ground averaged over about a hex around it, so it glides over steps instead of jumping.
@@ -1029,8 +1064,9 @@ class MapStage final : public Stage {
     {
       // 3 = the painting up to the world's horizon, the real sky above it (the user, 2026-10-19: "a imagem de fundo pode
       // terminar no horizonte onde começa o céu").
-      static const char* kBackgrounds[4] = {"imagem do mapa", "céu", "OFF", "imagem até o horizonte"};
-      dropdown("Fundo", background_, 4, [](int i) { return std::string(kBackgrounds[i]); });
+      // 4 = the painting aligned to the sky: cut at its horizon, its own sky matted out, turned under the sun (backdrop-fit.json).
+      static const char* kBackgrounds[5] = {"imagem do mapa", "céu", "OFF", "imagem até o horizonte", "imagem alinhada ao céu"};
+      dropdown("Fundo", background_, 5, [](int i) { return std::string(kBackgrounds[i]); });
     }
     {
       // Cards vertical (they converge under the tilted camera: "crooked"), or leaning back with the camera's tilt so
@@ -7479,7 +7515,41 @@ class MapStage final : public Stage {
   std::vector<const e2::Hero*> unitCatalog_;       // per scene unit: its catalog entry (null = idle only)
   std::vector<std::pair<std::string, std::string>> poseChoices_;  // the panel's "Animação": pose id, label
   int poseChoice_ = 0;
-  int background_ = 0;  // the panel's "Fundo": 0 the map's painted backdrop, 1 the sky, 2 black, 3 the painting up to the horizon + the sky
+  int background_ = 0;  // the panel's "Fundo": 0 the map's painted backdrop, 1 the sky, 2 black, 3 the painting up to the horizon + the sky,
+                        // 4 the painting aligned to the sky
+  // How the map's painting sits against the sky (content/engine2/backdrop-fit.json; resolve.hlsl backgroundAt mode 2).
+  struct BackdropFit {
+    float horizon = 0.4f, bottom = 1.0f, skyTop = 0.08f, degreesPerHeight = 30.0f, bottomDegrees = 40.0f, spanDegrees = 150.0f, glowColumn = 0.5f;
+    float horizonDegrees = -6.0f;  // where the painting's horizon row sits: degrees of elevation (negative = below the real horizon)
+    std::string ground;            // the map's top-down ground image around the board (content/backdrops); "" = none
+    float groundTile = 120.0f, groundFar = 300.0f;  // its width in world units; the painting takes over beyond this distance
+  };
+  BackdropFit backdropFit_;
+  static BackdropFit loadBackdropFit(const std::string& painting) {
+    BackdropFit fit;
+    std::ifstream in("content/engine2/backdrop-fit.json");
+    const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+    const auto read = [&](const nlohmann::json& e) {
+      if (!e.is_object()) return;
+      fit.horizon = e.value("horizon", fit.horizon);
+      fit.bottom = e.value("bottom", fit.bottom);
+      fit.skyTop = e.value("skyTop", fit.skyTop);
+      fit.degreesPerHeight = e.value("degreesPerHeight", fit.degreesPerHeight);
+      fit.bottomDegrees = e.value("bottomDegrees", fit.bottomDegrees);
+      fit.horizonDegrees = e.value("horizonDegrees", fit.horizonDegrees);
+      fit.ground = e.value("ground", fit.ground);
+      fit.groundTile = e.value("groundTile", fit.groundTile);
+      fit.groundFar = e.value("groundFar", fit.groundFar);
+      fit.spanDegrees = e.value("spanDegrees", fit.spanDegrees);
+      fit.glowColumn = e.value("glowColumn", fit.glowColumn);
+    };
+    if (j.is_object()) {
+      if (j.contains("default")) read(j["default"]);
+      const std::string name = std::filesystem::path(painting).filename().string();
+      if (j.contains("paintings") && j["paintings"].is_object() && j["paintings"].contains(name)) read(j["paintings"][name]);
+    }
+    return fit;
+  }
   int water3dLook_ = 1;  // the panel's "Água 3D": 0 OFF, 1 rio (the board's river material), 2 leito (Engine2's ThreeWater)
   int waterLook_ = 1;    // the panel's "Água": 0 Engine2's diorama water, 1 look 001 "ember" (shaders/water_look001.hlsli)
   int skyReflect_ = 1;   // the panel's "Reflexo do céu": 0 OFF (the SH sky), 1 the sky's reflection map (skyreflect.hlsl)
@@ -7525,7 +7595,10 @@ class MapStage final : public Stage {
   std::vector<PieceBox> pieceBoxes_;
   std::vector<ArchPiece> arch_;  // Ember's walls, doors and gates (buildArchitecture)
   static constexpr float kGlide = 10.0f;  // 1/s: ~90% of a move in 0.23 s, no overshoot
-  static constexpr float kMinPitch = 0.0873f, kMaxPitch = 1.5621f;  // 5 deg (nearly level) to 89.5 deg (straight down)
+  // -8 deg to 89.5 deg (straight down). The eye itself never goes below kMinEyePitch (5 deg, nearly level: it would enter the
+  // ground); under it the extra tilt lifts the line of sight instead, so the board sinks to the bottom of the frame and the sky
+  // fills the rest (the user's mock-up, 2026-10-19: "baixar todo o mapa desse jeito", the houses of the painting on the horizon).
+  static constexpr float kMinPitch = -0.1396f, kMinEyePitch = 0.0873f, kMaxPitch = 1.5621f;
   static constexpr float kTiltStep = 0.0873f, kTurnStep = 0.2618f;  // Engine2's bar: 5 deg; 15 deg
   static constexpr float kTurnPerPixel = 0.005f, kZoomStep = 0.85f, kPanPerSecond = 0.9f;
   static constexpr float kMinDistance = 3.0f, kEyeClearance = 0.8f;
