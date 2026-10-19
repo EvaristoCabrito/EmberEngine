@@ -148,7 +148,6 @@ struct MapStageOptions {
   int skyReflect = 1;
   int clouds = 1;
   int moonLight = 1;  // the panel's "Luar" (light mode real): 0 físico, 1 cinema (--moonlight N)
-  int freeCam = 1;    // the panel's "Câmera": 0 jogo, 1 livre (--free-cam N)
   int hour = 0;       // the panel's "Hora": 0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3..10 fixed hours (--hour N)
   int sunDisc = 1;    // the panel's "Sol": 0 real, 1 cinema (--sun-disc N)
   // The fog of war's mist bank (the numbered looks) on at the start; --mist 0 leaves only the fog of war's mask (check_fog.py
@@ -266,7 +265,6 @@ class MapStage final : public Stage {
     waterLook_ = std::clamp(options.waterLook, 0, 1);
     skyReflect_ = std::clamp(options.skyReflect, 0, 1);
     clouds_ = std::clamp(options.clouds, 0, 1);
-    freeCam_ = std::clamp(options.freeCam, 0, 1);
     dayCycle_ = std::clamp(options.hour, 0, 10);
     moonLight_ = std::clamp(options.moonLight, 0, 1);
     sunSize_ = std::clamp(options.sunDisc, 0, 1);
@@ -802,7 +800,7 @@ class MapStage final : public Stage {
       if (a && b) target_ += glm::vec3{a->x - b->x, 0.0f, a->z - b->z}, cam_.target += glm::vec3{a->x - b->x, 0.0f, a->z - b->z};
     }
     if (e.type == SDL_EVENT_MOUSE_WHEEL && e.wheel.y != 0.0f) {
-      const float next = std::clamp(distance_ * std::pow(kZoomStep, e.wheel.y), minDistance(), maxDist());
+      const float next = std::clamp(distance_ * std::pow(kZoomStep, e.wheel.y), kMinDistance, maxDistance_);
       // Toward the cursor: the pivot moves to the cursor's ground point by the share of the distance zoomed.
       if (const std::optional<glm::vec3> p = groundUnder(e.wheel.windowID, e.wheel.mouse_x, e.wheel.mouse_y)) {
         const float share = 1.0f - next / distance_;
@@ -840,16 +838,12 @@ class MapStage final : public Stage {
 
   // The board never leaves the screen: the pivot stays on the board, so at most the edge reaches the screen's
   // centre (the edge hexes whole, from any angle); tilt and zoom stay in range.
-  // Panel "Câmera" livre (the user, 2026-10-19: "adicione a opção de câmera livre nas escolhas", "girar a câmera como eu quiser"):
-  // the pivot roams ten board-sizes around the board, the tilt from 80 deg up into the sky to straight down, the zoom from close
-  // to the ground to far away; the eye still never goes under the ground. "jogo" keeps the old limits.
   void clampGoal() {
     const e2::Board::Bounds b = board_->bounds();
-    const float roam = freeCam_ == 1 ? 10.0f * std::max(static_cast<float>(b.x1 - b.x0), static_cast<float>(b.z1 - b.z0)) : 0.0f;
-    target_.x = std::clamp(target_.x, static_cast<float>(b.x0) - roam, static_cast<float>(b.x1) + roam);
-    target_.z = std::clamp(target_.z, static_cast<float>(b.z0) - roam, static_cast<float>(b.z1) + roam);
+    target_.x = std::clamp(target_.x, static_cast<float>(b.x0), static_cast<float>(b.x1));
+    target_.z = std::clamp(target_.z, static_cast<float>(b.z0), static_cast<float>(b.z1));
     pitch_ = std::clamp(pitch_, minPitch(), kMaxPitch);
-    distance_ = std::clamp(distance_, minDistance(), maxDist());
+    distance_ = std::clamp(distance_, kMinDistance, maxDistance_);
   }
 
   struct OrbitView {
@@ -1104,8 +1098,6 @@ class MapStage final : public Stage {
     {
       // Cards vertical (they converge under the tilted camera: "crooked"), or leaning back with the camera's tilt so
       // every card stands upright on screen (sprites.hlsl VSMain).
-      static const char* kCam[2] = {"jogo", "livre"};
-      dropdown("Câmera", freeCam_, 2, [](int i) { return std::string(kCam[i]); });
       if (lightingMode_ == 3 && !(scene_ && scene_->environment == "indoor")) {
         static const char* kHours[11] = {"do mapa", "ciclo rápido", "ciclo lento", "amanhecer", "manhã", "meio-dia",
                                          "tarde", "pôr do sol", "crepúsculo", "noite", "madrugada"};
@@ -7734,11 +7726,10 @@ class MapStage final : public Stage {
   static constexpr float kMinPitch = -0.1396f, kMinEyePitch = 0.0873f, kMaxPitch = 1.5621f;
   // ONLY the aldeia looks up to -8 deg (the user, 2026-10-19: "somente a aldeia, só um por vez"); every other map keeps 5 deg.
   bool aldeia() const { return board_ && board_->draft().id == "aldeia"; }
-  float minPitch() const { return freeCam_ == 1 ? kFreeMinPitch : aldeia() ? kMinPitch : kMinEyePitch; }
-  static constexpr float kFreeMinPitch = -1.3963f;  // livre: 80 deg up into the sky
-  float minDistance() const { return freeCam_ == 1 ? 0.8f : kMinDistance; }
-  float maxDist() const { return freeCam_ == 1 ? std::max(400.0f, maxDistance_ * 9.0f) : maxDistance_; }
-  int freeCam_ = 1;  // the panel's "Câmera": 0 jogo (the old limits), 1 livre (default; --free-cam N)
+  // The camera as before, on every map, only the tilt reaches 80 deg up into the sky (the user, 2026-10-19: "eu quero como estava
+  // antes de agora e com vista para o céu só isso"); the eye still never goes under the ground (eyeView).
+  float minPitch() const { return kSkyMinPitch; }
+  static constexpr float kSkyMinPitch = -1.3963f;
   int dayCycle_ = 0;  // the panel's "Hora": 0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3.. a fixed hour (cycleHour; --hour N)
   static constexpr float kTiltStep = 0.0873f, kTurnStep = 0.2618f;  // Engine2's bar: 5 deg; 15 deg
   static constexpr float kTurnPerPixel = 0.005f, kZoomStep = 0.85f, kPanPerSecond = 0.9f;
