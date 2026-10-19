@@ -130,6 +130,9 @@ class Renderer {
     // Ciclo de 24 h: the sky's own sun (when the board's key light is the moon) and the moon as the sky's second light.
     glm::vec3 skySunDirection{0.0f};  // zero = sunDirection
     glm::vec3 moonIlluminance{0.0f};  // zero = none
+    // Sol, look 001 (shaders/atmosphere.hlsli sunLook001): 0 the disc as before, 1 the real disc with its limb darkening,
+    // corona and the air's aureole (and a halo round the moon at night). Panel "Sol".
+    uint32_t sunLook = 0;
     float ambientMul = 1.0f;
     // Lit cards stop at kMaxLit x their colour x this x exposure (Engine2 MAX_LIT, written for lights near 1;
     // the physical mode sets it to the metered light so exposure x litScale stays near 1 by day).
@@ -317,8 +320,19 @@ class Renderer {
                                 // cloud's edge and its eroded fringe are board-sized and the shadows sweep across the
                                 // board instead of darkening it whole; measured 2026-10-19 with 500: whole-board only)
     glm::vec2 wind{8.0f, 3.0f}; // drift, world units per second (a shadow's edge crosses the board in seconds)
+    // Nuvens volumétricas, look 001 (shaders/cloudsvol.hlsli): instead of the sheets, a real 3D layer between `base` and
+    // `top`, ray marched once a frame at half resolution (sky, reflections, shadows on the board all from its density).
+    bool volumetric = false;
+    float base = 380.0f, top = 640.0f;  // world heights (the caller adds the board's mean ground)
   };
   void setClouds(const Clouds& clouds) { clouds_ = clouds; }
+  // Clarão do sol e raios de luz, look 001 (shaders/sunglare.hlsl): the lens's glare round the sun or the moon and the
+  // crepuscular rays from it, computed from the finished scene and added before the tonemap. Panels "Clarão", "Raios de luz".
+  struct SunGlare {
+    bool shafts = false;
+    bool flare = false;
+  };
+  void setSunGlare(const SunGlare& glare) { glare_ = glare; }
   // Half the side of the square ground plane under the scene (metres, centred on the origin).
   void setGroundExtent(float halfExtent) { groundHalfExtent_ = halfExtent; }
 
@@ -448,6 +462,19 @@ class Renderer {
   VkPipeline cloudShadowPipeline_ = VK_NULL_HANDLE;
   bool cloudShadowReady_ = false, cloudShadowThisFrame_ = false;
   float cloudShadowHeight_ = 0.0f;
+  // Nuvens volumétricas look 001 (cloudsvol.hlsl): the noise volumes (made once), the half-resolution march of the frame.
+  static constexpr uint32_t kCloudNoiseBaseSize = 128, kCloudNoiseDetailSize = 32;
+  Image cloudNoiseBase_, cloudNoiseDetail_, cloudMarch_;
+  uint32_t cloudNoiseBaseStorage_ = kNoIndex, cloudNoiseBaseSampled_ = kNoIndex, cloudNoiseDetailStorage_ = kNoIndex, cloudNoiseDetailSampled_ = kNoIndex;
+  uint32_t cloudMarchStorage_ = kNoIndex, cloudMarchSampled_ = kNoIndex;
+  VkPipeline cloudNoiseBasePipeline_ = VK_NULL_HANDLE, cloudNoiseDetailPipeline_ = VK_NULL_HANDLE, cloudMarchPipeline_ = VK_NULL_HANDLE;
+  bool cloudNoiseReady_ = false, cloudMarchThisFrame_ = false;
+  // Clarão do sol e raios de luz look 001 (sunglare.hlsl): the half-resolution glare image added in the tonemap.
+  SunGlare glare_;
+  Image glareImage_;
+  uint32_t glareStorage_ = kNoIndex, glareSampled_ = kNoIndex;
+  VkPipeline glarePipeline_ = VK_NULL_HANDLE;
+  bool glareThisFrame_ = false;
   // Fog bank: the tiling noise volume (made once), the half-resolution march result.
   FogBank fogBank_;
   Image bankMarch_;

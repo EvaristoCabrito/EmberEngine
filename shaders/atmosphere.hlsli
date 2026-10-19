@@ -176,7 +176,10 @@ float3 moonDisc(float3 dir, float pixelAngle, float3 radiance, float3 moonDirect
   const float lod = log2(max(pixelAngle * 0.4 * float(width) / tanRadius, 1e-4));
   const float4 art = gTextures[NonUniformResourceIndex(moonTexture)].SampleLevel(gSamplers[linearSampler],
                                                                                  0.5 + float2(p.x, -p.y) * 0.4, max(lod, 0.0));
-  return lerp(radiance, art.rgb * glow * air, art.a);
+  // Only the lit part of the moon covers the sky: the art paints the dark side opaque black, which read as a black disc on a
+  // bright dusk sky (the user, 2026-10-19: "esse sol negro"); in the real world the dark side vanishes against the sky.
+  const float lit = smoothstep(0.0, 0.12, dot(art.rgb, float3(0.2126, 0.7152, 0.0722)));
+  return lerp(radiance, art.rgb * glow * air, art.a * lit);
 }
 
 // Nuvens básicas (clouds.hlsli; the user: "tem que ser boa"): two cloud sheets seen from below along the ray from
@@ -257,7 +260,7 @@ CloudHit cloudSheet(MeshFrame f, AtmosphereFrame a, CloudParams c, float3 origin
 // Both sheets over the sky radiance `sky` (which may already hold the sun's disc, the stars and the moon): the high
 // sheet first, the low one over it.
 float3 cloudsOverSky(MeshFrame f, AtmosphereFrame a, float3 origin, float3 dir, float3 clear, float3 sky) {
-  if ((f.cloudFlags & kCloudLayer) == 0 || dir.y <= 0.002) return sky;
+  if ((f.cloudFlags & kCloudLayer) == 0 || (f.cloudFlags & kCloudVolumetric) != 0 || dir.y <= 0.002) return sky;
   const CloudParams low = loadCloudParams(f);
   const CloudHit highHit = cloudSheet(f, a, highSheet(low), origin, dir, clear);
   sky = lerp(sky, highHit.color, highHit.alpha);
@@ -265,8 +268,66 @@ float3 cloudsOverSky(MeshFrame f, AtmosphereFrame a, float3 origin, float3 dir, 
   return lerp(sky, lowHit.color, lowHit.alpha);
 }
 
-// What shows where nothing was drawn: the sky (outdoors), the sun's small disc by day, stars at night (or once the
-// sun is down) and the moon's disc.
+// Sol, look 001 (2026-10-19; the user: "não tem nem sol", "um sol digno de um triple A"): the sun as a camera sees it.
+//   disc     the real radiance of the photosphere's disc (illuminance / its solid angle: it saturates to white), darker
+//            towards its limb (the real sun's limb darkening), through the air at that elevation (red at the horizon)
+//   corona   a bright rim falling off as 1 / angle^2 out to a few radii (what the lens and the eye add round a source that
+//            bright), in the sun's own colour
+//   aureole  the air's forward scattering towards the sun (a narrow Mie lobe, g 0.96, on the Mie optical depth along the
+//            view: the sky-view table carries only the wide g 0.8 lobe), wide and soft, strongest low in the sky where the
+//            air is thickest and the light reddest: the glow that fills the sky round the sun at dusk
+// `r` = the disc's angular radius. The 24 h cycle's moon takes the same aureole (its own light) when it is the sky's second
+// light; at night the moon's disc (moonDisc) gets a soft halo of its own.
+// (the fields after the frame's uint64 passed one by one: the moonTexture gotcha)
+float3 sunLook001(AtmosphereFrame a, float3 dir, float pixelAngle, uint sunDisc, float sunTanRadius, float3 moonDirection, float3 moonLight) {
+  float3 radiance = 0.0;
+  const float3 air = transmittanceToTop(a, a.viewHeight, dir.y);
+  const float mieDepth = dot(a.mieScattering, 1.0 / 3.0) * a.mieScaleHeight / max(dir.y, 0.08);  // optical depth along the view
+  if (sunDisc != 0 && a.sunDirection.y > -0.03) {
+    const float c = dot(dir, a.sunDirection);
+    const float angle = acos(clamp(c, -1.0, 1.0));
+    const float r = sunTanRadius > 0.0 ? atan(sunTanRadius) : 0.00465;
+    const float3 sunLight = a.sunIlluminance * air;
+    // The disc: a white core (30 x the light: it saturates and blooms) darkening towards its rim (Eddington's limb darkening,
+    // 1 - u (1 - mu), u 0.6, steepened so the rim reads as a warm edge instead of burning out with the core).
+    const float u = saturate(angle / r);
+    const float limb = 1.0 - 0.6 * (1.0 - sqrt(max(1.0 - u * u, 0.0)));
+    const float disc = 1.0 - smoothstep(r - pixelAngle, r + pixelAngle, angle);
+    radiance += sunLight * (2.0 + 28.0 * limb * limb * limb * limb) * disc;
+    // The corona: 1 / angle^2 beyond the rim, held at the rim's own brightness.
+    const float rim = r * 1.15;
+    const float corona = angle > rim ? (rim * rim) / (angle * angle) : 1.0;
+    radiance += sunLight * 1.2 * corona * (1.0 - disc * 0.85);
+    // The aureole: the Mie lobe towards the sun, on the air's optical depth along the view.
+    radiance += sunLight * mieDepth * phaseMie(c, 0.96) * 0.45 * (1.0 - disc);
+  }
+  if (dot(moonLight, 1.0) > 0.0 && moonDirection.y > -0.03) {
+    const float cm = dot(dir, moonDirection);
+    radiance += moonLight * air * mieDepth * phaseMie(cm, 0.96) * 0.45;
+  }
+  return radiance;
+}
+
+// Nuvens volumétricas (cloudsvol.hlsl CSMarch, once a frame at half resolution): the march at this pixel of the screen,
+// rgb = radiance (raw), a = transmittance. (the sample in its own helper: the DXC gotcha)
+float4 cloudVolAt(MeshFrame f, float2 uv) {
+  const uint march = vk::RawBufferLoad<uint>(f.atmosphere + kVolMarchOffset);
+  if (march == kNoTexture) return float4(0.0, 0.0, 0.0, 1.0);
+  // A 3 x 3 Gaussian over the half-resolution march (the dithered march's grain smoothed away; a cloud has no edge sharper
+  // than this).
+  const float2 texel = vk::RawBufferLoad<float2>(f.atmosphere + kVolMarchSizeOffset);
+  const float2 t = 1.0 / max(texel, 1.0);
+  float4 sum = 0.0;
+  [unroll] for (int y = -1; y <= 1; ++y)
+    [unroll] for (int x = -1; x <= 1; ++x) {
+      const float w = (x == 0 ? 2.0 : 1.0) * (y == 0 ? 2.0 : 1.0);
+      sum += gTextures[NonUniformResourceIndex(march)].SampleLevel(gSamplers[f.volumeSampler], uv + float2(x, y) * t, 0) * w;
+    }
+  return sum / 16.0;
+}
+
+// What shows where nothing was drawn: the sky (outdoors), the sun's disc by day, stars at night (or once the sun is
+// down) and the moon's disc, the clouds over them.
 float3 skyBackground(MeshFrame f, uint2 pixel) {
   const AtmosphereFrame a = loadAtmosphere(f);
   const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);
@@ -274,10 +335,13 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
   float3 radiance = clear * a.skyScale;
   if (dir.y > 0.0) {
     const float pixelAngle = length(skyDirection(f, a, float2(pixel) + float2(1.5, 0.5)) - dir);
+    const uint sunLook = vk::RawBufferLoad<uint>(f.atmosphere + kSunLookOffset);
     // The sun's disc, seen through the air: the real 0.53 degrees across, or the panel's "Sol: cinema" size (sunTanRadius,
-    // the moon's small disc: the real one is a dot the player never finds) with a soft corona around it.
+    // the moon's small disc: the real one is a dot the player never finds) with a soft corona around it; or look 001.
     const float c = dot(dir, a.sunDirection);
-    if (a.sunDisc != 0 && a.sunDirection.y > -0.02) {
+    if (sunLook == 1u) {
+      radiance += sunLook001(a, dir, pixelAngle, a.sunDisc, a.sunTanRadius, atmoMoonDirection(f.atmosphere), atmoMoonLight(f.atmosphere)) * a.skyScale;
+    } else if (a.sunDisc != 0 && a.sunDirection.y > -0.02) {
       const float angle = acos(clamp(c, -1.0, 1.0));
       const float r = a.sunTanRadius > 0.0 ? atan(a.sunTanRadius) : 0.00465;
       const float3 sunLight = a.sunIlluminance * transmittanceToTop(a, a.viewHeight, dir.y);
@@ -294,10 +358,21 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
     if (a.moonTexture != kNoTexture) {
       radiance = moonDisc(dir, pixelAngle, radiance, a.moonDirection, a.moonTexture, a.moonTanRadius, a.moonGlow, a.linearSampler,
                           transmittanceToTop(a, a.viewHeight, dir.y));
+      if (sunLook == 1u) {
+        // Look 001: a soft halo round the moon's disc (the eye's and the air's glow round a bright disc at night).
+        const float cm = dot(dir, a.moonDirection);
+        const float angleM = acos(clamp(cm, -1.0, 1.0)), rm = atan(max(a.moonTanRadius, 1e-4));
+        if (angleM > rm) radiance += a.moonGlow * float3(0.85, 0.9, 1.0) * 0.06 * (rm * rm) / (angleM * angleM) * transmittanceToTop(a, a.viewHeight, dir.y);
+      }
     }
-    // The clouds last, over the stars and the moon (a thin veil over the moon, a thick cloud hiding the stars); the sheets'
-    // light on the sky's own scale.
-    radiance = cloudsOverSky(f, a, f.cameraPosition, dir, clear * a.skyScale, radiance);
+    // The clouds last, over the stars and the moon (a thin veil over the moon, a thick cloud hiding the stars): the volumetric
+    // layer marched this frame (cloudsvol.hlsl), or the sheets' light, on the sky's own scale.
+    if (f.cloudFlags & kCloudVolumetric) {
+      const float4 cloud = cloudVolAt(f, (float2(pixel) + 0.5) / f.screenSize);
+      radiance = radiance * cloud.a + cloud.rgb;
+    } else {
+      radiance = cloudsOverSky(f, a, f.cameraPosition, dir, clear * a.skyScale, radiance);
+    }
   }
   return radiance * f.exposure;
 }

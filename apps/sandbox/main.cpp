@@ -35,7 +35,8 @@
 //        [--cards N]: 0 vertical cards, 1 (default) cards leaning back with the camera's tilt, upright on screen (panel "Cards").
 //        [--water N]: the board's water (panel "Água"): 0 Engine2's, 1 (default) look 001 "ember" (looks/water/README.md).
 //        [--sky-reflect N]: 0 OFF, 1 (default) the sky's reflection map on water and specular surfaces (panel "Reflexo do céu").
-//        [--clouds N]: 0 OFF, 1 (default) the basic cloud sheet: sky, reflections, shadows on the board (panel "Nuvens").
+//        [--clouds N]: 0 OFF, 1 the basic cloud sheet, 2 (default) the volumetric clouds, look 001: sky, reflections, shadows (panel "Nuvens").
+//        [--glare N] [--shafts N]: 0 (default) OFF, 1 the sun's lens glare / its crepuscular rays, look 001 (panels "Clarão", "Raios de luz").
 //        [--moonlight N]: light mode real, at night: 0 the physical moon (0.5 lux), 1 (default) the cinema moon (panel "Luar").
 //        [--sun-disc N]: the sun's disc in the sky: 0 the real 0.26 deg radius, 1 (default) the moon's small disc with a corona (panel "Sol").
 //        [--bars-fade N]: 0 health bars always shown, 1 (default) the bars and numbers of units near the camera fade (panel "Vida perto").
@@ -161,10 +162,12 @@ struct Options {
                         // the horizon + the sky, 4 the painting aligned to the sky)
   int waterLook = 0;    // --water N: the panel's "Água" (0 the original = the default, 1 look 001 "ember")
   int skyReflect = 1;   // --sky-reflect N: the panel's "Reflexo do céu" (0 OFF, 1 the sky's reflection map)
-  int clouds = 1;       // --clouds N: the panel's "Nuvens" (0 OFF, 1 básica)
+  int clouds = 2;       // --clouds N: the panel's "Nuvens" (0 OFF, 1 básica, 2 volumétricas)
+  int glare = 0;        // --glare N: the panel's "Clarão" (0 OFF, 1 look 001)
+  int shafts = 0;       // --shafts N: the panel's "Raios de luz" (0 OFF, 1 look 001)
   int moonLight = 1;    // --moonlight N: the panel's "Luar" (0 físico, 1 cinema)
   int hour = 0;         // --hour N: the panel's "Hora" (0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3..10 amanhecer .. madrugada)
-  int sunDisc = 1;      // --sun-disc N: the panel's "Sol" (0 real, 1 cinema)
+  int sunDisc = 1;      // --sun-disc N: the panel's "Sol" (0 real, 1 cinema, 2 look 001)
   bool mist = true;    // --mist 0: the fog of war's mist bank off (its mask and the volumetric atmosphere stay)
   int lighting = 3;
   float sceneTime = -1.0f;
@@ -277,6 +280,8 @@ Options parse(int argc, char** argv) {
     else if (arg == "--water" && hasValue) o.waterLook = std::atoi(argv[++i]);
     else if (arg == "--sky-reflect" && hasValue) o.skyReflect = std::atoi(argv[++i]);
     else if (arg == "--clouds" && hasValue) o.clouds = std::atoi(argv[++i]);
+    else if (arg == "--glare" && hasValue) o.glare = std::atoi(argv[++i]);
+    else if (arg == "--shafts" && hasValue) o.shafts = std::atoi(argv[++i]);
     else if (arg == "--moonlight" && hasValue) o.moonLight = std::atoi(argv[++i]);
     else if (arg == "--hour" && hasValue) o.hour = std::atoi(argv[++i]);
     else if (arg == "--sun-disc" && hasValue) o.sunDisc = std::atoi(argv[++i]);
@@ -613,6 +618,8 @@ MapStageOptions mapOptions(const Options& o) {
     m.waterLook = o.waterLook;
     m.skyReflect = o.skyReflect;
     m.clouds = o.clouds;
+    m.glare = o.glare;
+    m.shafts = o.shafts;
     m.moonLight = o.moonLight;
     m.hour = o.hour;
     m.sunDisc = o.sunDisc;

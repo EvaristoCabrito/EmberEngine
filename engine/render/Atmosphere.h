@@ -58,9 +58,23 @@ struct AtmosphereFrame {
   uint32_t pad2 = 0, pad3 = 0;
   glm::vec3 moonIlluminance{0.0f};  // the 24 h cycle: the moon as the sky's second light (0 = none)
   float pad4 = 0.0f;
+  // Nuvens volumétricas, look 001 (shaders/clouds.hlsli, cloudsvol.hlsl; MeshFrame.cloudFlags kCloudVolumetric): the noise
+  // volumes, the half-resolution march of this frame, the layer's heights; and the sun's look (atmosphere.hlsli sunLook001).
+  // All read by byte offset in the shaders (the moonTexture gotcha).
+  uint32_t volNoiseBase = 0xFFFFFFFFu;    // 352
+  uint32_t volNoiseDetail = 0xFFFFFFFFu;  // 356
+  uint32_t volMarch = 0xFFFFFFFFu;        // 360: kNoTexture = not marched this frame
+  uint32_t volSampler = 0;                // 364: linear, repeating
+  float volBase = 0.0f;                   // 368
+  float volTop = 0.0f;                    // 372
+  uint32_t sunLook = 0;                   // 376: 0 as before, 1 look 001
+  float pad5 = 0.0f;                      // 380
+  glm::vec2 volMarchSize{1.0f};           // 384: the march image's size in texels
+  glm::vec2 pad6{0.0f};                   // 392
 };
-static_assert(sizeof(AtmosphereFrame) == 352 && offsetof(AtmosphereFrame, moonIlluminance) == 336 &&
-              offsetof(AtmosphereFrame, moonDirection) == 240);
+static_assert(sizeof(AtmosphereFrame) == 400 && offsetof(AtmosphereFrame, moonIlluminance) == 336 &&
+              offsetof(AtmosphereFrame, moonDirection) == 240 && offsetof(AtmosphereFrame, volNoiseBase) == 352 &&
+              offsetof(AtmosphereFrame, sunLook) == 376 && offsetof(AtmosphereFrame, volMarchSize) == 384);
 
 // The air's transmittance from the ground to its top towards `direction` (world, +y up), on the CPU (the same
 // integral as CSTransmittance): the colour the sun or moon arrives with.

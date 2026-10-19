@@ -10,6 +10,7 @@ struct Push {
   float exposure;
   float bloom;  // Engine2's full-scene bloom strength (the map's bloomIntensity); 0 = none
   uint bloomTexture;  // the bloom pyramid (shaders/bloom.hlsl): level 0 holds the finished bloom
+  uint glareTexture;  // the sun's glare and rays (shaders/sunglare.hlsl, half resolution); kNoTexture = none
 };
 [[vk::push_constant]] Push push;
 
@@ -31,5 +32,6 @@ float4 PSMain(FullscreenOut i) : SV_Target0 {
   if (push.exposure < 0.0) return float4(hdr, 1.0);  // debug views: values written as they are
   float3 c = hdr * push.exposure;
   if (push.bloom > 0.0) c += bloomAt(i.uv) * push.bloom;
+  if (push.glareTexture != 0xFFFFFFFFu) c += gTextures[push.glareTexture].SampleLevel(gSamplers[push.samplerIndex], i.uv, 0).rgb;
   return float4(linearToSrgb(acesFilmic(c)), 1.0);
 }

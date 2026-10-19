@@ -35,6 +35,20 @@ struct TonemapPush {
   float exposure;
   float bloom;
   uint32_t bloomTexture;
+  uint32_t glareTexture;  // shaders/sunglare.hlsl's image; kNoTextureIndex = none
+};
+
+struct CloudVolPush {  // shaders/cloudsvol.hlsl
+  VkDeviceAddress frame;
+  uint32_t destination, width, height, depth;
+};
+
+struct GlarePush {  // shaders/sunglare.hlsl
+  VkDeviceAddress frame;
+  uint32_t source, sampler, destination, width, height;
+  float lightU, lightV;
+  float tintR, tintG, tintB;
+  float visibility, shafts, flare, aspect;
 };
 
 // shaders/bloom.hlsl Push.
@@ -413,6 +427,15 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
     cloudShadow_ = createImage(context, {.format = VK_FORMAT_R32_SFLOAT, .extent = {kCloudShadowSize, kCloudShadowSize}, .usage = usage});
     cloudShadowStorage_ = bindless_.addStorageImage(cloudShadow_.view);
     cloudShadowSampled_ = bindless_.addSampledImage(cloudShadow_.view, VK_IMAGE_LAYOUT_GENERAL);
+    // Nuvens volumétricas: the noise volumes (cloudsvol.hlsl CSNoise*, filled the first frame the layer is on).
+    cloudNoiseBase_ = createImage(context, {.format = VK_FORMAT_R16G16B16A16_SFLOAT, .extent = {kCloudNoiseBaseSize, kCloudNoiseBaseSize},
+                                            .usage = usage, .depth = kCloudNoiseBaseSize});
+    cloudNoiseDetail_ = createImage(context, {.format = VK_FORMAT_R16G16B16A16_SFLOAT, .extent = {kCloudNoiseDetailSize, kCloudNoiseDetailSize},
+                                              .usage = usage, .depth = kCloudNoiseDetailSize});
+    cloudNoiseBaseStorage_ = bindless_.addStorageImage(cloudNoiseBase_.view);
+    cloudNoiseBaseSampled_ = bindless_.addSampledImage(cloudNoiseBase_.view, VK_IMAGE_LAYOUT_GENERAL);
+    cloudNoiseDetailStorage_ = bindless_.addStorageImage(cloudNoiseDetail_.view);
+    cloudNoiseDetailSampled_ = bindless_.addSampledImage(cloudNoiseDetail_.view, VK_IMAGE_LAYOUT_GENERAL);
   }
   // The fog looks' noise volumes (filled the first time a look needs one).
   for (size_t k = 0; k < static_cast<size_t>(FogNoise::Count); ++k) {
@@ -603,6 +626,10 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   skyReflectBasePipeline_ = createComputePipeline(context, layout, "skyreflect.CSBase");
   skyReflectFilterPipeline_ = createComputePipeline(context, layout, "skyreflect.CSFilter");
   cloudShadowPipeline_ = createComputePipeline(context, layout, "skyreflect.CSCloudShadow");
+  cloudNoiseBasePipeline_ = createComputePipeline(context, layout, "cloudsvol.CSNoiseBase");
+  cloudNoiseDetailPipeline_ = createComputePipeline(context, layout, "cloudsvol.CSNoiseDetail");
+  cloudMarchPipeline_ = createComputePipeline(context, layout, "cloudsvol.CSMarch");
+  glarePipeline_ = createComputePipeline(context, layout, "sunglare.CSGlare");
   volumeIntegratePipeline_ = createComputePipeline(context, layout, "volume.CSIntegrate");
   for (const FogLook& look : fogLooks()) {
     bankMarchPipelines_.push_back(createComputePipeline(context, layout, std::string(look.shader) + ".CSMarch"));
@@ -767,6 +794,11 @@ Renderer::~Renderer() {
   bindless_.removeStorageImage(cloudShadowStorage_);
   bindless_.removeSampledImage(cloudShadowSampled_);
   destroyImage(context_, cloudShadow_);
+  for (VkPipeline p : {cloudNoiseBasePipeline_, cloudNoiseDetailPipeline_, cloudMarchPipeline_, glarePipeline_}) vkDestroyPipeline(context_.device, p, nullptr);
+  for (uint32_t i : {cloudNoiseBaseStorage_, cloudNoiseDetailStorage_}) bindless_.removeStorageImage(i);
+  for (uint32_t i : {cloudNoiseBaseSampled_, cloudNoiseDetailSampled_}) bindless_.removeSampledImage(i);
+  destroyImage(context_, cloudNoiseBase_);
+  destroyImage(context_, cloudNoiseDetail_);
   for (VkPipeline p : bankMarchPipelines_) vkDestroyPipeline(context_.device, p, nullptr);
   for (VkPipeline p : bankCompositePipelines_) vkDestroyPipeline(context_.device, p, nullptr);
   for (size_t k = 0; k < static_cast<size_t>(FogNoise::Count); ++k) {
@@ -796,6 +828,11 @@ void Renderer::createTargets(VkExtent2D size) {
   // The fog bank's half-resolution march result.
   bankMarch_ = createImage(context_, {VK_FORMAT_R16G16B16A16_SFLOAT, {(size.width + 1) / 2, (size.height + 1) / 2},
                                       VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT});
+  // The volumetric clouds' march and the sun's glare, both at half resolution.
+  cloudMarch_ = createImage(context_, {VK_FORMAT_R16G16B16A16_SFLOAT, {(size.width + 1) / 2, (size.height + 1) / 2},
+                                       VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT});
+  glareImage_ = createImage(context_, {VK_FORMAT_R16G16B16A16_SFLOAT, {(size.width + 1) / 2, (size.height + 1) / 2},
+                                       VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT});
   // Bloom pyramid: half the screen, kBloomLevels levels, one storage view per level (see recordBloom).
   bloomSize_ = {std::max(1u, (size.width + 1) / 2), std::max(1u, (size.height + 1) / 2)};
   ImageDesc bloomDesc{VK_FORMAT_R16G16B16A16_SFLOAT, bloomSize_, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT};
@@ -841,7 +878,15 @@ void Renderer::createTargets(VkExtent2D size) {
     bankMarchStorage_ = bindless_.addStorageImage(bankMarch_.view);
     bankMarchSampled_ = bindless_.addSampledImage(bankMarch_.view, VK_IMAGE_LAYOUT_GENERAL);
     bloomSampledIndex_ = bindless_.addSampledImage(bloomImage_.view, VK_IMAGE_LAYOUT_GENERAL);
+    cloudMarchStorage_ = bindless_.addStorageImage(cloudMarch_.view);
+    cloudMarchSampled_ = bindless_.addSampledImage(cloudMarch_.view, VK_IMAGE_LAYOUT_GENERAL);
+    glareStorage_ = bindless_.addStorageImage(glareImage_.view);
+    glareSampled_ = bindless_.addSampledImage(glareImage_.view, VK_IMAGE_LAYOUT_GENERAL);
   } else {
+    bindless_.setStorageImage(cloudMarchStorage_, cloudMarch_.view);
+    bindless_.setSampledImage(cloudMarchSampled_, cloudMarch_.view, VK_IMAGE_LAYOUT_GENERAL);
+    bindless_.setStorageImage(glareStorage_, glareImage_.view);
+    bindless_.setSampledImage(glareSampled_, glareImage_.view, VK_IMAGE_LAYOUT_GENERAL);
     bindless_.setSampledImage(hizIndex_, hiz_.view, VK_IMAGE_LAYOUT_GENERAL);
     bindless_.setSampledImage(depthIndex_, depth_.view, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
     bindless_.setSampledImage(sceneColorIndex_, sceneColor_.view);
@@ -859,6 +904,8 @@ void Renderer::destroyTargets() {
   destroyImage(context_, output_);
   destroyImage(context_, visibility_);
   destroyImage(context_, bankMarch_);
+  destroyImage(context_, cloudMarch_);
+  destroyImage(context_, glareImage_);
   for (size_t i = 0; i < bloomLevelViews_.size(); ++i) {
     bindless_.removeStorageImage(bloomLevelIndices_[i]);
     vkDestroyImageView(context_.device, bloomLevelViews_[i], nullptr);
@@ -1093,13 +1140,26 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
     // Nuvens básicas (clouds.hlsli): the sheet's numbers; it shadows the board by day only (the key light is the sun), at
     // night it is still in the sky and the reflections.
     cloudShadowThisFrame_ = false;
+    cloudMarchThisFrame_ = false;
+    a.sunLook = lighting_.sunLook;
     if (clouds_.enabled) {
-      f.cloudFlags = 1u | (clouds_.shadows && lighting_.sunDisc ? 2u : 0u);
+      f.cloudFlags = 1u | (clouds_.shadows && lighting_.sunDisc ? 2u : 0u) | (clouds_.volumetric ? 4u : 0u);
       a.cloudCoverage = clouds_.coverage;
       a.cloudAltitude = clouds_.altitude;
       a.cloudShadow = clouds_.shadow;
       a.cloudScale = clouds_.scale;
       a.cloudWind = clouds_.wind;
+      if (clouds_.volumetric) {
+        // Nuvens volumétricas: the layer's density field (noise volumes) and this frame's march of it (cloudsvol.hlsl).
+        cloudMarchThisFrame_ = true;
+        a.volNoiseBase = cloudNoiseBaseSampled_;
+        a.volNoiseDetail = cloudNoiseDetailSampled_;
+        a.volSampler = materialSamplerIndex_;
+        a.volMarch = cloudMarchSampled_;
+        a.volBase = clouds_.base;
+        a.volTop = clouds_.top;
+        a.volMarchSize = {static_cast<float>((size_.width + 1) / 2), static_cast<float>((size_.height + 1) / 2)};
+      }
       // The shadow map covers the sun shadow's bounds (the board), at the board's middle height.
       if ((f.cloudFlags & 2u) && shadowRadius_ > 0.0f) {
         const float r = shadowRadius_;
@@ -1632,6 +1692,40 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
                   VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
     gpuTimer_.end(cmd, atmoScope);
   }
+  // --- Nuvens volumétricas (cloudsvol.hlsl): the noise volumes once, then the layer marched at half resolution ----------------
+  if (hasScene_ && atmoThisFrame_ && cloudMarchThisFrame_) {
+    const uint32_t scope = gpuTimer_.begin(cmd, "clouds");
+    const VkDeviceAddress frameAddress = bufferAddress(context_, frame.meshFrame);
+    if (!cloudNoiseReady_) {
+      cloudNoiseReady_ = true;
+      for (Image* noise : {&cloudNoiseBase_, &cloudNoiseDetail_})
+        transition(cmd, noise->image, noise->aspect,
+                   {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE,
+                    VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cloudNoiseBasePipeline_);
+      const CloudVolPush base{frameAddress, cloudNoiseBaseStorage_, kCloudNoiseBaseSize, kCloudNoiseBaseSize, kCloudNoiseBaseSize};
+      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(base), &base);
+      vkCmdDispatch(cmd, kCloudNoiseBaseSize / 4, kCloudNoiseBaseSize / 4, kCloudNoiseBaseSize / 4);
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cloudNoiseDetailPipeline_);
+      const CloudVolPush detail{frameAddress, cloudNoiseDetailStorage_, kCloudNoiseDetailSize, kCloudNoiseDetailSize, kCloudNoiseDetailSize};
+      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(detail), &detail);
+      vkCmdDispatch(cmd, kCloudNoiseDetailSize / 4, kCloudNoiseDetailSize / 4, kCloudNoiseDetailSize / 4);
+      memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+                    VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
+    }
+    // Last frame's sky may still read the march.
+    transition(cmd, cloudMarch_.image, cloudMarch_.aspect,
+               {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                VK_ACCESS_2_NONE, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, cloudMarchPipeline_);
+    const uint32_t width = (size_.width + 1) / 2, height = (size_.height + 1) / 2;
+    const CloudVolPush march{frameAddress, cloudMarchStorage_, width, height, 1};
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(march), &march);
+    vkCmdDispatch(cmd, (width + 7) / 8, (height + 7) / 8, 1);
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+                  VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
+    gpuTimer_.end(cmd, scope);
+  }
   // --- The cloud shadow map over the board (clouds.hlsli): the sun through the low sheet, once a frame ----------------------
   if (hasScene_ && atmoThisFrame_ && cloudShadowThisFrame_) {
     const uint32_t scope = gpuTimer_.begin(cmd, "cloud shadow");
@@ -2085,6 +2179,45 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     recordBloom(cmd);
     gpuTimer_.end(cmd, bloomScope);
   }
+  // --- Clarão do sol e raios de luz (sunglare.hlsl): from the finished scene, at half resolution, added by the tonemap ---------
+  glareThisFrame_ = false;
+  if (hasScene_ && debugView_ == 0 && atmoThisFrame_ && (glare_.shafts || glare_.flare)) {
+    // The light: the sun while it is up (the sky's own sun in the 24 h cycle), else the moon's disc.
+    glm::vec3 direction{0.0f};
+    glm::vec3 tint{0.0f};
+    const glm::vec3 sun = glm::length(lighting_.skySunDirection) > 0.0f ? lighting_.skySunDirection : lighting_.sunDirection;
+    if (lighting_.sunDisc && sun.y > -0.05f) {
+      direction = sun;
+      tint = lighting_.sunColor * std::clamp(lighting_.sunIntensity * lighting_.exposure * 6.0f, 0.0f, 12.0f);
+    } else if (lighting_.moonRadius > 0.0f && lighting_.moonDirection.y > 0.0f) {
+      direction = glm::normalize(lighting_.moonDirection);
+      tint = glm::vec3(0.85f, 0.9f, 1.0f) * 2.0f;
+    }
+    if (glm::length(direction) > 0.0f) {
+      const glm::vec4 clip = camera_.viewProjection() * glm::vec4(camera_.position + direction * 1000.0f, 1.0f);
+      if (clip.w > 0.0f) {
+        const glm::vec2 uv = glm::vec2(clip.x, clip.y) / clip.w * 0.5f + 0.5f;
+        if (uv.x > -0.4f && uv.x < 1.4f && uv.y > -0.4f && uv.y < 1.4f) {
+          glareThisFrame_ = true;
+          const uint32_t scope = gpuTimer_.begin(cmd, "sun glare");
+          transition(cmd, glareImage_.image, glareImage_.aspect,
+                     {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_NONE,
+                      VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
+          const uint32_t width = (size_.width + 1) / 2, height = (size_.height + 1) / 2;
+          const float visibility = std::clamp(direction.y / 0.09f, 0.0f, 1.0f);  // off screen: seen once 5 deg up
+          const GlarePush push{bufferAddress(context_, frame.meshFrame), sceneColorIndex_, linearClampIndex_, glareStorage_, width, height,
+                               uv.x, uv.y, tint.r, tint.g, tint.b, visibility, glare_.shafts ? 1.0f : 0.0f, glare_.flare ? 1.0f : 0.0f,
+                               static_cast<float>(size_.width) / static_cast<float>(std::max(size_.height, 1u))};
+          vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, glarePipeline_);
+          vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+          vkCmdDispatch(cmd, (width + 7) / 8, (height + 7) / 8, 1);
+          memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                        VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
+          gpuTimer_.end(cmd, scope);
+        }
+      }
+    }
+  }
   // The previous frame may still be copying the output image to the window.
   transition(cmd, output_.image, output_.aspect,
              {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -2104,7 +2237,8 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   vkCmdBeginRendering(cmd, &display);
   setViewport(cmd, size_);
   vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, tonemapPipeline_);
-  const TonemapPush tonemapPush{sceneColorIndex_, linearClampIndex_, debugView_ != 0 ? -1.0f : 1.0f, debugView_ != 0 ? 0.0f : bloom_, bloomSampledIndex_};
+  const TonemapPush tonemapPush{sceneColorIndex_, linearClampIndex_, debugView_ != 0 ? -1.0f : 1.0f, debugView_ != 0 ? 0.0f : bloom_, bloomSampledIndex_,
+                                glareThisFrame_ ? glareSampled_ : kNoTextureIndex};
   vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0,
                      sizeof(tonemapPush), &tonemapPush);
   vkCmdDraw(cmd, 3, 1, 0, 0);

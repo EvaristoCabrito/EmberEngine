@@ -798,6 +798,31 @@ esforço ... céu bonito, estrelado ... luz do luar também")
   the window (the user judges: sky needs Fundo = céu and the camera at its lowest tilt), cost numbers (the measurement run in the
   commit message), the reflection on the 3D meshes' metals (only water looked at).
 
+## Céu look 001: sol AAA, nuvens volumétricas, clarão, raios de luz (2026-10-19; the user: "VOCÊ VAI FAZER UM SOL DIGNO DE UM
+TRIPLE AAA AGORA", "um céu inteiro com 24 horas de transição com sol, lua, tudo que existe na atmosfera", "cadê o céu do FFXV?")
+
+- **Read `looks/sky/README.md`** (what each piece is, the capture line). Panel: **Sol** real / **cinema** (default: the disc the user
+  had) / 001, **Nuvens** OFF / básica / **volumétricas** (default), **Clarão** OFF (default) / 001, **Raios de luz** OFF (default) /
+  001 (both only with Fundo = céu: against a painting they took its fire for the sun); `--sun-disc N --clouds 2 --glare N --shafts N`.
+  **The user never asked for the sun look / glare / rays** ("que novo brilho? quem pediu?"): they stay as options, never defaults.
+  The 24 h cycle ("Hora") drives all of it: the moon lights the clouds and gets its own aureole / halo at night.
+- **What the user judged (2026-10-19 evening): "as nuvens ficaram boas"** after: the cone light march with a per-pixel offset, the
+  cheap density eroded like the drawn one (grey clouds otherwise), 0.004 rad per march step (0.01 showed shells as stripes 20 px
+  apart; the per-pixel dither alone did not hide them), the weather clearing with the world distance (a per-row thinning sheared
+  the far clouds into "curtains"). Dusk exposure: 2 stops under the incident reading (`nightDarkening`); the cycle's meter has a
+  2-deg horizon floor and amanhecer / pôr do sol sit at 6.35 / 17.65 h (the disc 6 deg up). The moon's dark side no longer covers
+  the sky (it read as a black disc at dusk). Cost looking straight at the clouds: "clouds" ~1.2 ms before the fine steps; re-measure.
+- Code: `atmosphere.hlsli sunLook001` (disc + limb darkening + corona + Mie aureole; read `sunLook` at AtmosphereFrame byte 376),
+  `clouds.hlsli` (the volumetric density: `CloudVolume`, `cloudVolDensity`, `cloudVolShadow`; fields at bytes 352-380, read by
+  offset), `cloudsvol.hlsli` (`cloudVolMarch`), `cloudsvol.hlsl` (CSNoiseBase 128³ / CSNoiseDetail 32³ once, CSMarch at half
+  resolution each frame), `sunglare.hlsl` (CSGlare at half resolution from the finished scene colour, added in tonemap.hlsl),
+  Renderer (`Lighting::sunLook`, `Clouds::volumetric / base / top`, `SunGlare`, scopes "clouds" and "sun glare"), MapStage
+  (`sunSize_`, `clouds_`, `glare_`, `shafts_`). AtmosphereFrame is 384 bytes now (static_asserted).
+- **Captures need `--ground build/ground/ground-v5.pak`** (v4 lacks aldeia's fire panorama: the capture never becomes ready and runs
+  for ever) and no `--budget 160` unless the user's game is open.
+- Not done: temporal reprojection for the clouds (40 fixed steps instead: measure before adding), the light shafts through the
+  volumetric fog (volumetrics_v1 could read `cloudShadow`), the sun's reflection highlight on the water from the new disc.
+
 ## Next
 
 The user's verdict (2026-10-15): the engine as seen is worse than Engine2 ("worst colours and render I've ever

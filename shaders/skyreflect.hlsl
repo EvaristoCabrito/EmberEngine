@@ -5,7 +5,7 @@
 // (GGX importance sampling, roughness = level / (levels - 1), 32 samples each reading level 0 at the lod their solid angle
 // asks for: filtered importance sampling). lighting.hlsli skyReflection() reads it by roughness. 256 x 128 x 6 levels:
 // ~44k texels a frame.
-#include "atmosphere.hlsli"
+#include "cloudsvol.hlsli"
 
 struct Push {
   uint64_t frame;  // MeshFrame (its skyReflect = this map, sampled)
@@ -32,7 +32,13 @@ void CSBase(uint2 pixel : SV_DispatchThreadID) {
   if (dir.y >= 0.0) {
     // The sky (no sun disc: the sun's highlight is the direct specular's), with the clouds seen from the board.
     const float3 clear = skyRadiance(a, dir);
-    radiance = cloudsOverSky(f, a, float3(0.0, 0.0, 0.0), dir, clear, clear);
+    if (f.cloudFlags & kCloudVolumetric) {
+      // The volumetric layer, marched coarsely (12 steps: the map is 256 x 128) from the board's middle.
+      const CloudVolHit hit = cloudVolMarch(f, a, loadCloudVolume(f), float3(0.0, 0.0, 0.0), dir, clear * a.skyScale, 24u, 0.5);
+      radiance = clear * hit.transmittance + hit.color / max(a.skyScale, 1e-4);
+    } else {
+      radiance = cloudsOverSky(f, a, float3(0.0, 0.0, 0.0), dir, clear, clear);
+    }
   } else {
     // Below the horizon: the lit ground (Lambert on the raw sky irradiance plus the key light), as CSAmbient's SH does.
     const float3 skyUp = float3(vk::RawBufferLoad<float4>(a.ambient + 16).w, vk::RawBufferLoad<float4>(a.ambient + 32).w,

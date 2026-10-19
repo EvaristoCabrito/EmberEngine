@@ -182,7 +182,7 @@ static const uint kCloudShadows = 2u;
 static const uint kVolumeEffects = 1u;
 static const uint kVolumeBackground = 2u;
 
-// Matches ember::AtmosphereFrame (render/Atmosphere.h). 352 bytes.
+// Matches ember::AtmosphereFrame (render/Atmosphere.h). 400 bytes.
 struct AtmosphereFrame {
   float4x4 inverseViewProjection;
   float3 rayleighScattering;  // per km at sea level
@@ -238,6 +238,13 @@ struct AtmosphereFrame {
   // 0 = none (every map's own time: only one light, as before). Read by offset (atmoMoonLight): the moonTexture gotcha.
   float3 moonIlluminance;
   float pad4;
+  // Nuvens volumétricas look 001 + the sun's look (render/Atmosphere.h; clouds.hlsli kVol* offsets, read by offset).
+  uint volNoiseBase, volNoiseDetail, volMarch, volSampler;
+  float volBase, volTop;
+  uint sunLook;
+  float pad5;
+  float2 volMarchSize;  // 384: the march image's size in texels
+  float2 pad6;
 };
 
 AtmosphereFrame loadAtmosphere(MeshFrame f) { return vk::RawBufferLoad<AtmosphereFrame>(f.atmosphere); }
