@@ -127,6 +127,9 @@ struct BattleUnit {
   bool moved = false;         // its turn in this round is over (Engine2 Unit.moved)
   int initiativeBonus = 0, initiative = 0;  // its class's bonus; the battle-opening roll + bonus
   int hp = 0, maxHp = 0, atk = 0, def = 0, mag = 0, dex = 0, minRange = 1, maxRange = 1;
+  // Ours (2026-10-19): Engine2 strikes with MAG (and past DEF) whenever MAG > 0; a class that had no MAG in its battle file
+  // keeps striking with ATK now that every class has MAG for its magic skills (set by Battle::load).
+  bool atkBlows = false;
   int size = 1;
   int level = 1;
   bool summoned = false;

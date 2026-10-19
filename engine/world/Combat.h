@@ -33,6 +33,8 @@ struct Fighter {
   std::optional<double> faceDx, faceDy;
   int facing = 1;
   double dodge = 0;  // a hero's Esquiva skill, 0..100 (ours): each point takes half a point off the blows aimed at it
+  bool atkBlows = false;  // BattleUnit::atkBlows: its weapon strikes with ATK even with MAG
+  bool magicBlows() const { return mag > 0 && !atkBlows; }
 };
 
 struct Forecast {

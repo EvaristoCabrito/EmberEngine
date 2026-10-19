@@ -327,6 +327,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
         o.gearMov = o.mov - g[15];
       }
     }
+    o.atkBlows = o.mag - o.gearMag <= 0;  // a class without MAG in the battle file keeps striking with ATK once it has MAG
     applyProgression(o);  // EmberEngine's own growth over Engine2's (gear kept; off in the Cooker's checks)
     // Ours (the user, 2026-10-18: "cultista de level 15 pode usar 1X"): a cultist of level 15 or more brings one Tempestade de
     // Gelo (its tier-4 use; Engine2's cultists have none). Off in the Cooker's checks, like the progression.

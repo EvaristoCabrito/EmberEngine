@@ -26,6 +26,7 @@ struct Tables {
   std::map<std::string, std::vector<Row>> classes;  // Engine2 statsFor per level 1..30
   std::map<std::string, Row> heroGain;              // by hero name
   std::map<std::string, std::string> heroOfClass;   // a hero's classes -> the hero
+  std::map<std::string, std::string> heroClass;     // the hero -> its first class (its level-1 MAG)
 };
 
 json readJson(const char* path) {
@@ -57,6 +58,8 @@ const Tables& tables() {
         for (const json& c : classes) t.heroOfClass[c.get<std::string>()] = hero;
         if (classes.empty() || !t.classes.count(classes[0].get<std::string>()))
           logError("progression: {}'s class is not in content/engine2/class-stats.json", hero);
+        else
+          t.heroClass[hero] = classes[0].get<std::string>();
       }
     logInfo("progression: {} heroes; enemies keep their class's own gains", t.heroGain.size());
     return t;
@@ -161,7 +164,7 @@ Row enemyPoints(const BattleUnit& u) {
   Row out{};
   const int points = kPointsPerLevel * std::max(0, u.level - 1);
   if (points == 0) return out;
-  const size_t strike = u.mag > 0 ? 2 : 1;
+  const size_t strike = u.mag > 0 && !u.atkBlows ? 2 : 1;
   std::array<double, 5> weight{};
   if (const std::vector<Row>* rows = classRows(u.classId); rows && rows->size() > 1)
     for (size_t k = 0; k < 5; ++k) weight[k] = std::max(0, (*rows)[1][k] - (*rows)[0][k]) / averageGain()[k];
@@ -201,6 +204,9 @@ void applyProgression(BattleUnit& u) {
     } else {
       return;
     }
+    // The level-1 MAG is the class table's own (its MAG column is ours, the heroes' starts included).
+    if (const auto own = t.heroClass.find(u.name); own != t.heroClass.end())
+      if (const std::vector<Row>* rows = classRows(own->second)) base[2] = (*rows)[0][2];
     // Engine2's stats at the unit's level (its growth rows, else its class), then the hero's own rows.
     const int level = std::max(1, u.level);
     if (!u.growth.empty() && static_cast<size_t>(level) <= u.growth.size()) {
@@ -218,6 +224,8 @@ void applyProgression(BattleUnit& u) {
   } else {
     applyRank(u);  // every class, also one without Engine2 growth rows
     to = enemyPoints(u);  // the class's own stats + the level's points (from stays 0)
+    // The MAG column is ours (the battle file carries Engine2's): the class table's MAG at the unit's level.
+    if (const std::vector<Row>* rows = classRows(u.classId)) to[2] += (*rows)[static_cast<size_t>(clampLevel(*rows, u.level) - 1)][2] - u.mag;
   }
   const int dHp = to[0] - from[0], dAtk = to[1] - from[1], dMag = to[2] - from[2], dDef = to[3] - from[3], dDex = to[4] - from[4];
   const int oldMax = u.maxHp;

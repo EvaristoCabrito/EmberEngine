@@ -1,10 +1,10 @@
 {
- "about": "EmberEngine's own character progression (the user, 2026-10-17). gain = what each level adds: hp atk mag def dex. Level 1 stays Engine2's (content/engine2/class-stats.json). classes = the Engine2 classes the hero plays as (the first one's gains are the old ones; promotions keep the hero's gains). Enemies keep their class's own fixed start and gain per level, no multiplier, plus 3 attribute points per level after the first, rolled per unit as the battle loads by what it uses (the user, 2026-10-19; engine/world/Progression.cpp enemyPoints).",
+ "about": "EmberEngine's own character progression (the user, 2026-10-17). gain = what each level adds: hp atk mag def dex. Level 1 = the first class's row in content/engine2/class-stats.json (its MAG column is ours: Kael 5, Aldric 5, Neera 6, Salazar 8, Voss 10, Malrec 10). classes = the Engine2 classes the hero plays as (the first one's gains are the old ones; promotions keep the hero's gains). Enemies keep their class's own fixed start and gain per level, no multiplier, plus 3 attribute points per level after the first, rolled per unit as the battle loads by what it uses (the user, 2026-10-19; engine/world/Progression.cpp enemyPoints).",
  "stats": ["hp", "atk", "mag", "def", "dex"],
  "heroes": {
-  "Kael":    { "gain": [5, 2, 0, 3, 2], "classes": ["swordsman"] },
-  "Aldric":  { "gain": [5, 3, 0, 2, 2], "classes": ["aldric"] },
-  "Neera":   { "gain": [4, 2, 0, 2, 3], "classes": ["neera", "archer"] },
+  "Kael":    { "gain": [5, 2, 1, 3, 2], "classes": ["swordsman"] },
+  "Aldric":  { "gain": [5, 3, 1, 2, 2], "classes": ["aldric"] },
+  "Neera":   { "gain": [4, 2, 2, 2, 3], "classes": ["neera", "archer"] },
   "Voss":    { "gain": [3, 0, 3, 1, 1], "classes": ["voss", "mage", "warlock", "elementalist"] },
   "Salazar": { "gain": [4, 2, 2, 2, 1], "classes": ["salazar", "healer"] },
   "Malrec":  { "gain": [3, 0, 3, 1, 1], "classes": ["conjurer"] }

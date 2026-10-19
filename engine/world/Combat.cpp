@@ -120,17 +120,17 @@ const BattleCell::Terrain& tileAt(const Battle& b, int x, int y) { return b.cell
 
 }  // namespace
 
-double powerOf(const Fighter& f) { return std::floor((f.mag > 0 ? f.mag : f.atk) / 2); }
+double powerOf(const Fighter& f) { return std::floor((f.magicBlows() ? f.mag : f.atk) / 2); }
 
 namespace {
 
-double protOf(const Fighter& a, const Fighter& d) { return std::floor((a.mag > 0 ? 0 : d.def) / 2); }
+double protOf(const Fighter& a, const Fighter& d) { return std::floor((a.magicBlows() ? 0 : d.def) / 2); }
 
 // combat.ts terrainBonus: the defender's ground (and cover from shots), the attacker's high ground (+10% of its stat).
 std::pair<double, double> terrainBonus(const Battle& b, const Fighter& a, const BattleCell::Terrain& att, const BattleCell::Terrain& def) {
   double defence = def.def;
   if (b.units()[a.unit].maxRange > 1 && def.cover) defence += def.cover;
-  const double attack = att.height ? jsRound((a.mag > 0 ? a.mag : a.atk) * 0.1) : att.atk;
+  const double attack = att.height ? jsRound((a.magicBlows() ? a.mag : a.atk) * 0.1) : att.atk;
   return {attack, defence};
 }
 
@@ -230,6 +230,7 @@ Fighter fighterAt(const Battle& b, size_t unit, int x, int y) {
   const BattleUnit& u = b.units()[unit];
   Fighter f{unit, x, y, static_cast<double>(u.atk), static_cast<double>(u.mag), static_cast<double>(u.def), static_cast<double>(u.dex),
             u.faceDx, u.faceDy, u.facing};
+  f.atkBlows = u.atkBlows;
   // Esquiva (ours): the skill "dodging", 0..100 (a hero's trained, an enemy's from its rank).
   if (!u.summoned)
     for (const auto& [id, v] : u.skills)
@@ -265,14 +266,14 @@ Fighter fighterAt(const Battle& b, size_t unit, int x, int y) {
 bool canHitFrom(const Battle& b, size_t unit, BattleHex from, size_t foe, bool withDecorations) {
   const BattleUnit& u = b.units()[unit];
   const BattleUnit& f = b.units()[foe];
-  return hitFrom(b, u, u.minRange, u.maxRange, u.mag, from, f, {f.x, f.y}, withDecorations, false);
+  return hitFrom(b, u, u.minRange, u.maxRange, u.atkBlows ? 0 : u.mag, from, f, {f.x, f.y}, withDecorations, false);
 }
 
 bool canOffHandHit(const Battle& b, size_t unit, BattleHex from, size_t foe, bool withDecorations) {
   const BattleUnit& u = b.units()[unit];
   const BattleUnit& f = b.units()[foe];
   if (!u.combat.offHandWeapon || u.combat.offHandShield) return false;
-  return hitFrom(b, u, u.combat.offMinRange, u.combat.offMaxRange, u.mag, from, f, {f.x, f.y}, withDecorations, false);
+  return hitFrom(b, u, u.combat.offMinRange, u.combat.offMaxRange, u.atkBlows ? 0 : u.mag, from, f, {f.x, f.y}, withDecorations, false);
 }
 
 bool canOffHandAct(const Battle& b, size_t unit, BattleHex from, size_t foe, bool withDecorations) {
@@ -287,9 +288,10 @@ bool canCounter(const Battle& b, const Fighter& attacker, BattleHex from, const 
   const BattleUnit& a = b.units()[attacker.unit];
   const BattleHex at{defender.x, defender.y};
   // Counters are judged on the bare tiles (Engine2 passes no decoration overlay here) and from the whole body.
-  if (hitFrom(b, d, d.minRange, d.maxRange, defender.mag, at, a, from, false, true)) return true;
+  const double magic = defender.magicBlows() ? defender.mag : 0;
+  if (hitFrom(b, d, d.minRange, d.maxRange, magic, at, a, from, false, true)) return true;
   if (!d.combat.offHandWeapon) return false;
-  return hitFrom(b, d, d.combat.offMinRange, d.combat.offMaxRange, defender.mag, at, a, from, false, true);
+  return hitFrom(b, d, d.combat.offMinRange, d.combat.offMaxRange, magic, at, a, from, false, true);
 }
 
 Forecast forecast(const Battle& b, size_t attacker, BattleHex from, size_t defender, bool offHand, bool useSkill) {

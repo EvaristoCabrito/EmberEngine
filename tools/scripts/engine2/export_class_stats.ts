@@ -2,6 +2,8 @@
 // content/engine2/class-stats.json: { classes: { <id>: [[hp, atk, mag, def, dex] per level 1..MAX_LEVEL] } }.
 // EmberEngine's own progression (content/progression.json) is measured against it: a hero's new gains replace its
 // class's; an enemy keeps its class's own stats (engine/world/Progression).
+// The MAG column in content/engine2/class-stats.json is EmberEngine's own (2026-10-19): running this again overwrites it
+// with Engine2's; write to another file and merge every column but MAG.
 //
 //   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <cache> tools/scripts/engine2/export_class_stats.ts -- <out.json>
 //
