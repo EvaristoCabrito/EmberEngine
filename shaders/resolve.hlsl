@@ -25,6 +25,7 @@ struct Push {
   uint planeTexture;     // mode 2: tileable top-down ground for the plane (kNoTexture = no plane: the painting all the way down)
   float planeTile;       // ... world units per repeat
   float planeFar;        // ... beyond this distance along the ray the painting takes over
+  float planeFrom;       // ... and within this many degrees of the horizon (the plane fully in from 2.5 x this)
 };
 // Backdrop mode 1: the painting's own horizon sits at this share of its height (the row the world's horizon is pinned
 // to), and the painting reaches its bottom row this many degrees below the horizon.
@@ -53,7 +54,9 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
     const float screenAspect = f.screenSize.x / f.screenSize.y, imageAspect = float(w) / float(h);
     if (screenAspect > imageAspect) uv.y = 0.5 + (uv.y - 0.5) * imageAspect / screenAspect;
     else uv.x = 0.5 + (uv.x - 0.5) * screenAspect / imageAspect;
-    if (push.backgroundMode == 2 && f.atmosphere != 0) {
+    // mode 3 = mode 2 keeping the painting's own sky (aldeia's fire panorama: its smoke sky is the look), the real sky only
+    // above the painting's top edge, faded in over its top rows.
+    if ((push.backgroundMode == 2 || push.backgroundMode == 3) && f.atmosphere != 0) {
       // The painting aligned to the sky (the user, 2026-10-19: "alinhar essas imagens de fundo com o céu ... cortando a parte
       // inferior da imagem para a parte com fumaça ficar visível abaixo do sol"): its horizon row pinned to the world's horizon,
       // its rows at their own angular scale (no stretch), the band below the horizon cut at `bottom` (the cracked ground goes;
@@ -99,6 +102,7 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
       float scene = smoothstep(0.18, 0.45, distance);
       scene = lerp(scene, 1.0, smoothstep(horizon - 0.04, horizon + 0.01, v));  // from the ridge down: all painting
       scene *= smoothstep(0.0, max(skyTop, 0.01), v);                             // the very top: all sky
+      if (push.backgroundMode == 3) scene = smoothstep(0.0, 0.08, v);              // its own sky kept, top rows fade
       float3 color = lerp(sky, paint, scene);
       // Below the kept band: the bottom row fades into the sky's own horizon colour; a thin haze on the seam.
       // (a painting kept whole ends at its last row and stays there; a cut one fades into the horizon colour)
@@ -130,7 +134,7 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
           if (push.planeFar < 1.0e8) ground = lerp(ground, skyHorizon, 0.55 * (1.0 - exp(-t / 1200.0)));
           // Only where the view looks clearly down (10-25 deg): the low views the user approved, whose rays below the horizon
           // stay within a few degrees of it, keep the painting exactly as it was.
-          const float far = max(smoothstep(push.planeFar * 0.55, push.planeFar, t), 1.0 - smoothstep(radians(10.0), radians(25.0), -realElevation));
+          const float far = max(smoothstep(push.planeFar * 0.55, push.planeFar, t), 1.0 - smoothstep(radians(push.planeFrom), radians(push.planeFrom * 2.5), -realElevation));
           color = lerp(ground, color, far);
         }
       }

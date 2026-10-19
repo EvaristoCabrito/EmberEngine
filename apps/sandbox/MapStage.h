@@ -353,6 +353,15 @@ class MapStage final : public Stage {
       background_ = options.background >= 0 ? std::min(options.background, 4) : scene_->backdrop.empty() ? 1 : (aldeia() ? 4 : 0);
       if (!scene_->backdrop.empty()) backdropFit_ = loadBackdropFit(scene_->backdrop);
       if (!backdropFit_.ground.empty()) ground_.requestTexture(e2::backdropAsset(backdropFit_.ground));
+      // The map's own panoramas (backdrop-fit.json "panoramas" by map id; the panel's Fundo after its five entries): aldeia only.
+      panoramas_ = loadPanoramas(board_->draft().id);
+      for (const std::string& file : panoramas_) {
+        ground_.requestTexture(e2::backdropAsset(file));
+        panoramaFits_.push_back(loadBackdropFit(file));
+        if (!panoramaFits_.back().ground.empty()) ground_.requestTexture(e2::backdropAsset(panoramaFits_.back().ground));
+      }
+      // The newest panorama opens first on its map (aldeia: the user's fire panorama, 2026-10-19 "TERMINA").
+      if (options.background < 0 && !panoramas_.empty()) background_ = 4 + static_cast<int>(panoramas_.size());
       if (e2::timeOfDay(scene_->timeOfDay).moon && scene_->environment != "indoor")
         for (const char* phase : e2::kMoonPhases) ground_.requestTexture(e2::skyMoonAsset(phase));  // 0.1 MB each
     }
@@ -622,9 +631,12 @@ class MapStage final : public Stage {
       if (background_ == 2) bg = Renderer::kBlackBackground;
       const bool painting = background_ != 1 && background_ != 2 && scene_ && !scene_->backdrop.empty();
       if (painting) bg = ground_.textureIndex(e2::backdropAsset(scene_->backdrop));
-      if (painting && background_ == 4) {
+      const int panorama = background_ - 5;  // 5.. = the map's own panoramas, aligned to the sky like 4, keeping their own sky
+      const bool isPanorama = panorama >= 0 && panorama < static_cast<int>(panoramas_.size());
+      if (isPanorama) bg = ground_.textureIndex(e2::backdropAsset(panoramas_[static_cast<size_t>(panorama)]));
+      if (painting && background_ >= 4) {
         // The painting aligned to the sky (backdrop-fit.json): its own sun glow turned under the real key light.
-        const BackdropFit& fit = backdropFit_;
+        const BackdropFit& fit = isPanorama ? panoramaFits_[static_cast<size_t>(panorama)] : backdropFit_;
         const float sunAz = std::atan2(lighting.sunDirection.z, lighting.sunDirection.x);
         const float centre = sunAz - (fit.glowColumn - 0.5f) * glm::radians(fit.spanDegrees);
         // The ground around the board: the map's top-down ground image (backdrop-fit.json "ground") on a flat plane a little under
@@ -633,9 +645,10 @@ class MapStage final : public Stage {
         plane.y = groundLow_ - 1.5f;
         if (!fit.ground.empty()) plane.texture = ground_.textureIndex(e2::backdropAsset(fit.ground));
         plane.tile = fit.groundTile;
+        plane.from = fit.groundFromDegrees;
         // Tática looks straight down from far away: the ground image is the whole view ("desse ângulo é essa imagem e nada mais").
         plane.far = flat_ ? 1.0e9f : fit.groundFar;
-        renderer.setBackground(bg, 2u, {fit.horizon, fit.bottom, fit.degreesPerHeight, fit.bottomDegrees},
+        renderer.setBackground(bg, isPanorama && fit.keepSky ? 3u : 2u, {fit.horizon, fit.bottom, fit.degreesPerHeight, fit.bottomDegrees},
                                {centre, fit.skyTop, fit.spanDegrees, fit.horizonDegrees}, plane);
       } else {
         renderer.setBackground(bg, background_ == 3 ? 1u : 0u);
@@ -1069,7 +1082,8 @@ class MapStage final : public Stage {
       // terminar no horizonte onde começa o céu").
       // 4 = the painting aligned to the sky: cut at its horizon, its own sky matted out, turned under the sun (backdrop-fit.json).
       static const char* kBackgrounds[5] = {"imagem do mapa", "céu", "OFF", "imagem até o horizonte", "imagem alinhada ao céu"};
-      dropdown("Fundo", background_, 5, [](int i) { return std::string(kBackgrounds[i]); });
+      dropdown("Fundo", background_, 5 + static_cast<int>(panoramas_.size()),
+               [](int i) { return i < 5 ? std::string(kBackgrounds[i]) : std::format("panorama {:02}", i - 4); });
     }
     {
       // Cards vertical (they converge under the tilted camera: "crooked"), or leaning back with the camera's tilt so
@@ -7527,9 +7541,22 @@ class MapStage final : public Stage {
     float horizon = 0.4f, bottom = 1.0f, skyTop = 0.08f, degreesPerHeight = 30.0f, bottomDegrees = 40.0f, spanDegrees = 150.0f, glowColumn = 0.5f;
     float horizonDegrees = -6.0f;  // where the painting's horizon row sits: degrees of elevation (negative = below the real horizon)
     std::string ground;            // the map's top-down ground image around the board (content/backdrops); "" = none
-    float groundTile = 120.0f, groundFar = 300.0f;  // its width in world units; the painting takes over beyond this distance
+    bool keepSky = false;          // panoramas: keep the image's own sky (no matte), the real sky only above its top edge
+    float groundTile = 120.0f, groundFar = 300.0f;
+    float groundFromDegrees = 10.0f;  // the ground image takes over from this many degrees below the horizon  // its width in world units; the painting takes over beyond this distance
   };
   BackdropFit backdropFit_;
+  std::vector<std::string> panoramas_;    // the map's own panoramas (backdrop-fit.json "panoramas"), the panel's "panorama NN"
+  std::vector<BackdropFit> panoramaFits_;
+  static std::vector<std::string> loadPanoramas(const std::string& mapId) {
+    std::vector<std::string> out;
+    std::ifstream in("content/engine2/backdrop-fit.json");
+    const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+    if (j.is_object() && j.contains("panoramas") && j["panoramas"].is_object() && j["panoramas"].contains(mapId) && j["panoramas"][mapId].is_array())
+      for (const nlohmann::json& f : j["panoramas"][mapId])
+        if (f.is_string()) out.push_back(f.get<std::string>());
+    return out;
+  }
   static BackdropFit loadBackdropFit(const std::string& painting) {
     BackdropFit fit;
     std::ifstream in("content/engine2/backdrop-fit.json");
@@ -7543,8 +7570,10 @@ class MapStage final : public Stage {
       fit.bottomDegrees = e.value("bottomDegrees", fit.bottomDegrees);
       fit.horizonDegrees = e.value("horizonDegrees", fit.horizonDegrees);
       fit.ground = e.value("ground", fit.ground);
+      fit.keepSky = e.value("keepSky", fit.keepSky);
       fit.groundTile = e.value("groundTile", fit.groundTile);
       fit.groundFar = e.value("groundFar", fit.groundFar);
+      fit.groundFromDegrees = e.value("groundFromDegrees", fit.groundFromDegrees);
       fit.spanDegrees = e.value("spanDegrees", fit.spanDegrees);
       fit.glowColumn = e.value("glowColumn", fit.glowColumn);
     };

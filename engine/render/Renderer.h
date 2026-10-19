@@ -238,6 +238,7 @@ class Renderer {
     float y = 0.0f;
     uint32_t texture = 0xFFFFFFFFu;
     float tile = 120.0f, far = 300.0f;
+    float from = 10.0f;  // degrees below the horizon where the plane starts taking over from the painting
   };
   void setBackground(uint32_t background, uint32_t mode = 0, glm::vec4 fitA = {}, glm::vec4 fitB = {}, const BackdropPlane& plane = {}) {
     background_ = background;
