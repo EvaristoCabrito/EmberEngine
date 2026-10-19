@@ -135,7 +135,8 @@ constexpr EmberSpell kEmberSpells[] = {
 // Arqueiro's into the Patrulheiro and the Assassino, the Lanceiro's into the Sentinela and the Templário).
 const char* emberClassFamily(const std::string& classId) {
   if (classId == "paladin" || classId == "heavyKnight") return "swordsman";
-  if (classId == "ranger" || classId == "assassin") return "archer";
+  // Neera's own class id in most battle files is "neera" (an archer with her sprite; "archer" in a few older exports)
+  if (classId == "ranger" || classId == "assassin" || classId == "neera") return "archer";
   if (classId == "sentinel" || classId == "templar" || classId == "lancer") return "aldric";
   return classId.c_str();
 }
