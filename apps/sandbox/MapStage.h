@@ -273,6 +273,7 @@ class MapStage final : public Stage {
     glare_ = std::clamp(options.glare, 0, 1);
     shafts_ = std::clamp(options.shafts, 0, 1);
     spellsMenu_.load("content/fx/spell-looks.json", "content/fx.sprites.json");
+    if (!starSky_.load("content/sky/stars.json")) logWarn("stars: content/sky/stars.json missing: the star look 'real' has no stars");
     layers_ = options.layers;
     data_ = e2::BoardData::load(options.boardData);
     std::optional<e2::MapDraft> draft = options.draftData ? options.draftData : e2::MapDraft::load(options.map);
@@ -594,11 +595,16 @@ class MapStage final : public Stage {
       // "Luar: cinema": the night stops are capped at one, or the camera would take back what the brighter moon gave
       // (measured 2026-10-19: with the full darkening the moonlit ground stayed black beside the lanterns).
       float darkening = nightDarkening(ev);
-      if (moonNight_ && moonLight_ == 1) darkening = std::min(darkening, 1.0f);
+      // "Luar: cinema": capped at 2 stops (at 1, measured 2026-10-19 on cemiterio: meter 4.4 lux, exposure 0.24, the night came out
+      // as an overcast day with a pale blue sky; at 2 the sky is navy and the moonlit ground still reads).
+      if (moonNight_ && moonLight_ == 1) darkening = std::min(darkening, 2.0f);
       const float target = ev + darkening;
       if (std::isnan(adaptedEv_) || measuring_) adaptedEv_ = target;
       adaptedEv_ += (target - adaptedEv_) * (1.0f - std::exp(-dt * kAdaptPerSecond));
       lighting.exposure = 1.0f / (1.2f * std::exp2(adaptedEv_));
+      if (readyFrames_ == 30)  // once, for the record of a capture
+        logInfo("camera: meter {:.3f} lux, EV {:.2f}, darkening {:.2f} stops, exposure {:.5f}, key {:.2f} lux at elevation {:.1f} deg",
+                meterLux_, ev, darkening, lighting.exposure, lighting.sunIntensity, glm::degrees(std::asin(std::clamp(lighting.sunDirection.y, -1.0f, 1.0f))));
       lighting.litScale = std::max(meterLux_, 1e-4f) * 1.2f / 2.5f;  // exposure x this = 1 at the metered EV
     }
     exposure_ = lighting.exposure;
@@ -656,6 +662,22 @@ class MapStage final : public Stage {
       clouds.base += meanGround_;
       clouds.top += meanGround_;
       renderer.setClouds(clouds);
+      // The real night sky (render/StarSky.h): the catalogue turned to this hour's sidereal time (the cycle's hour, or 22 h on a
+      // map whose own time is night, 12 h by day: the stars then hide behind the daylight anyway).
+      if (starSky_.loaded() && starLook_ == 4 && !starsOff_) {
+        const bool mapNight = scene_ && e2::timeOfDay(scene_->timeOfDay).moon;
+        const float hour = dayCycle_ > 0 ? cycleHour(now_) : mapNight ? 22.0f + std::fmod(now_ / 600.0f, 2.0f) : 12.0f;
+        const float lst = starSky_.siderealHours(hour);
+        const std::vector<GpuStar> stars = starSky_.gpuStars(lst);
+        glm::vec4 clouds4[2]{};
+        const auto& mc = starSky_.clouds();
+        for (size_t k = 0; k < std::min<size_t>(2, mc.size()); ++k)
+          clouds4[k] = glm::vec4(starSky_.worldDirection(mc[k].ra, mc[k].dec, lst), glm::radians(mc[k].radiusDegrees));
+        renderer.setStars(stars, starSky_.galacticPole(lst), starSky_.galacticCentre(lst), 1.0f, clouds4);
+      } else {
+        const glm::vec4 none[2]{};
+        renderer.setStars({}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, 0.0f, none);
+      }
       // Only against the real sky (Fundo = céu): with a painting behind the board the shader took the painting's own fire for
       // the sun and washed the whole scene in glare (the user, 2026-10-19: "super bright and sun on the sunset?").
       Renderer::SunGlare glare;
@@ -1233,7 +1255,7 @@ class MapStage final : public Stage {
         static const char* kMoonLight[2] = {"físico", "cinema"};
         dropdown("Luar", moonLight_, 2, [](int i) { return std::string(kMoonLight[i]); });
       }
-      static const char* kStars[kStarLooks] = {"quadradas", "poucas", "muitas"};
+      static const char* kStars[kStarLooks] = {"quadradas", "poucas", "muitas", "real"};
       int star = starsOff_ ? 0 : starLook_;
       if (dropdown("Estrelas", star, kStarLooks + 1, [](int i) { return i == 0 ? std::string("OFF") : std::string(kStars[i - 1]); })) {
         starsOff_ = star == 0;
@@ -2297,6 +2319,9 @@ class MapStage final : public Stage {
     MoonPlacement placed;
     if (t.moon) {
       placed = moonPlacement(time);
+      // The light comes from the disc (the user, 2026-10-19: "a lua não aparenta emanar a luz ... as sombras na direção oposta
+      // da lua": Engine2's preset lit from one side while the disc hung on another); with no disc, Engine2's side.
+      if (!moonOff_) placed.light = placed.disc;
       l.sunDirection = placed.light;
     } else {
       float dir[3];
@@ -8223,8 +8248,9 @@ class MapStage final : public Stage {
   float exposure_ = 1.0f;  // the exposure in use (last frame's), for the painted flames' glow
   int moonPath_ = 0;       // moonPlacement()
   int moonLight_ = 1;      // the panel's "Luar" (light mode real): 0 físico (kFullMoonLux), 1 cinema (kCinemaMoonLux)
-  static constexpr int kStarLooks = 3;  // saved star looks (looks/stars/README.md)
-  int starLook_ = 3;
+  static constexpr int kStarLooks = 4;  // saved star looks (looks/stars/README.md); 4 = the real sky (render/StarSky.h)
+  int starLook_ = 4;
+  StarSky starSky_;  // content/sky/stars.json: the real stars, turned to the hour
   int moonPhase_ = -1;  // index in e2::kMoonPhases; -1 = Engine2's default (the full moon's art, the night's strength)
   // The disc's angular radius (degrees), chosen in the panel. 2.7 = Engine2's disc as seen from its normal view; the
   // user found it "millions of km away" (2026-10-15), so the panel starts at the large one.

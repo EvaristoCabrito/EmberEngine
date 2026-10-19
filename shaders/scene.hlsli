@@ -182,7 +182,7 @@ static const uint kCloudShadows = 2u;
 static const uint kVolumeEffects = 1u;
 static const uint kVolumeBackground = 2u;
 
-// Matches ember::AtmosphereFrame (render/Atmosphere.h). 400 bytes.
+// Matches ember::AtmosphereFrame (render/Atmosphere.h). 480 bytes.
 struct AtmosphereFrame {
   float4x4 inverseViewProjection;
   float3 rayleighScattering;  // per km at sea level
@@ -245,6 +245,15 @@ struct AtmosphereFrame {
   float pad5;
   float2 volMarchSize;  // 384: the march image's size in texels
   float2 pad6;
+  // The real night sky (render/StarSky.h; realStars): read by offset (kStars* in atmosphere.hlsli).
+  uint64_t starBuffer;  // 400: GpuStar[starCount]: float4 (direction, magnitude), float4 (colour, 0)
+  uint starCount;       // 408
+  float starScale;      // 412
+  float3 galaxyPole;    // 416
+  float milkyWay;       // 428
+  float3 galaxyCentre;  // 432
+  float pad7;           // 444
+  float4 magellanic[2]; // 448: the Large and the Small cloud: direction xyz, w = radius (radians; 0 = none)
 };
 
 AtmosphereFrame loadAtmosphere(MeshFrame f) { return vk::RawBufferLoad<AtmosphereFrame>(f.atmosphere); }

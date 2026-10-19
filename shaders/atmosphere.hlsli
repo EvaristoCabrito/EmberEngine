@@ -159,6 +159,87 @@ float3 starField(uint look, float3 dir, float pixelAngle) {
   return tint * (0.12 + 3.5 * pow(r, 5.0)) * exp(-d * d * 1.5);
 }
 
+// --- The real night sky (star look 4 "real"; render/StarSky.h, content/sky/stars.json) -------------------------------------
+// The catalogue's stars as world directions (GpuStar: float4 direction + magnitude, float4 colour), each a point about a
+// pixel wide whose peak follows its magnitude (2.512 x per step) in its own colour, the brightest with a soft glow; under them
+// look 003's dim random field, faint, for the thousands of stars no catalogue of 220 holds; the Milky Way as a band about
+// the galactic plane, brightest towards the galactic centre (the bulge), broken by the dust lanes (the Great Rift); the two
+// Magellanic clouds. Everything in the sky's raw radiance (before exposure), scaled by starScale (a magnitude-0 star's peak).
+static const uint kStarsOffset = 400u, kStarCountOffset = 408u, kStarScaleOffset = 412u, kGalaxyPoleOffset = 416u,
+                  kMilkyWayOffset = 428u, kGalaxyCentreOffset = 432u, kMagellanicOffset = 448u;
+float3 realStars(uint64_t atmosphere, float3 dir, float pixelAngle) {
+  const uint64_t stars = vk::RawBufferLoad<uint64_t>(atmosphere + kStarsOffset);
+  const uint count = vk::RawBufferLoad<uint>(atmosphere + kStarCountOffset);
+  const float scale = vk::RawBufferLoad<float>(atmosphere + kStarScaleOffset);
+  float3 radiance = 0.0;
+  if (stars != 0) {
+    // A star's image: a Gaussian about a pixel wide (the lens), wider for the bright ones (the eye's glare), its peak at the
+    // magnitude's brightness so a faint star stays a faint point and a bright one a small blazing disc.
+    const float sigma = max(pixelAngle * 0.9, 0.0005);
+    const float cosLimit = cos(sigma * 14.0);
+    for (uint i = 0; i < count; ++i) {
+      const float4 s = vk::RawBufferLoad<float4>(stars + i * 32u);
+      const float c = dot(dir, s.xyz);
+      if (c < cosLimit) continue;
+      const float4 colour = vk::RawBufferLoad<float4>(stars + i * 32u + 16u);
+      const float brightness = scale * pow(2.512, -s.w);
+      const float angle = acos(clamp(c, -1.0, 1.0));
+      // The eye's glare round the bright ones: a wider, fainter Gaussian growing with the brightness (Sirius a small blaze,
+      // a third-magnitude star a bare point).
+      const float bright = saturate((2.5 - s.w) / 4.0);
+      const float glow = sigma * (1.5 + 4.0 * bright);
+      radiance += colour.rgb * brightness * (exp(-angle * angle / (sigma * sigma)) + 0.3 * bright * exp(-angle * angle / (glow * glow)));
+    }
+  }
+  // The dim field under the catalogue (look 003 at a tenth), the faint stars no one names.
+  radiance += starField(3u, dir, pixelAngle) * 0.1;
+  // The Milky Way: galactic latitude b (from the pole) and longitude l (from the centre, about the pole).
+  const float milky = vk::RawBufferLoad<float>(atmosphere + kMilkyWayOffset);
+  if (milky > 0.0) {
+    const float3 pole = vk::RawBufferLoad<float3>(atmosphere + kGalaxyPoleOffset);
+    const float3 centre = vk::RawBufferLoad<float3>(atmosphere + kGalaxyCentreOffset);
+    const float sinB = dot(dir, pole);
+    const float b = asin(clamp(sinB, -1.0, 1.0));
+    const float3 inPlane = normalize(dir - pole * sinB + 1e-5);
+    const float3 centreInPlane = normalize(centre - pole * dot(centre, pole) + 1e-5);
+    const float l = atan2(dot(cross(centreInPlane, inPlane), pole), dot(centreInPlane, inPlane));  // -pi .. pi
+    // The band: a thin bright core in a wider halo, both thicker and brighter towards the centre (the bulge).
+    const float toCentre = exp(-l * l / 1.6);
+    const float width = radians(6.0) * (1.0 + 1.2 * toCentre);
+    float band = exp(-b * b / (width * width)) * (0.5 + 1.5 * toCentre) + 0.35 * exp(-b * b / (width * width * 9.0)) * (0.5 + toCentre);
+    // Its texture: patches of star clouds, and the dust lanes (the Great Rift from Cygnus to Centaurus, below the centre).
+    const float2 g = float2(l * 8.0, b * 14.0);
+    const float clouds = 0.55 + 0.9 * cloudNoise(g * 1.7 + 3.1) * cloudNoise(g * 0.7 + 9.4);
+    const float rift = smoothstep(0.35, 0.6, cloudNoise(g * 1.1 + float2(21.0, 4.0))) * smoothstep(radians(20.0), 0.0, abs(b - radians(1.5))) *
+                       smoothstep(-2.2, -0.2, l) * smoothstep(1.4, 0.3, l);
+    band *= clouds * (1.0 - 0.75 * rift);
+    radiance += band * milky * scale * 0.03 * float3(0.92, 0.9, 1.0);
+    // The Magellanic clouds: two soft patches of the same light.
+    [unroll] for (uint k = 0; k < 2; ++k) {
+      const float4 m = vk::RawBufferLoad<float4>(atmosphere + kMagellanicOffset + k * 16u);
+      if (m.w <= 0.0) continue;
+      const float angle = acos(clamp(dot(dir, m.xyz), -1.0, 1.0));
+      const float patch = exp(-angle * angle / (m.w * m.w)) * (0.6 + 0.8 * cloudNoise(dir.xz * 40.0 + dir.y * 17.0 + k * 5.0));
+      radiance += patch * milky * scale * (k == 0 ? 0.03 : 0.02) * float3(0.95, 0.93, 1.0);
+    }
+  }
+  return radiance;
+}
+
+// The moon as a light in the air: the Mie aureole round it (the forward lobe on the air's optical depth along the view, the
+// same law as the sun's) and the glow at the disc's rim. The user, 2026-10-19: "a lua não aparenta emanar a luz".
+float3 moonAureole(AtmosphereFrame a, float3 dir, float3 moonDirection, float3 moonLight, float moonTanRadius) {
+  const float3 air = transmittanceToTop(a, a.viewHeight, dir.y);
+  const float mieDepth = dot(a.mieScattering, 1.0 / 3.0) * a.mieScaleHeight / max(dir.y, 0.08);
+  const float c = dot(dir, moonDirection);
+  float3 glow = moonLight * air * mieDepth * phaseMie(c, 0.96) * 0.6;
+  if (moonTanRadius > 0.0) {
+    const float angle = acos(clamp(c, -1.0, 1.0)), r = atan(moonTanRadius);
+    if (angle > r) glow += moonLight * air * 0.02 * (r * r) / (angle * angle);
+  }
+  return glow;
+}
+
 // The moon's disc over `radiance`: tonight's phase art (Engine2's icons: the disc fills 80% of the image), upright
 // in the sky, its brightness the art x glow, seen through the air (`air`: transmittance towards it). `pixelAngle`:
 // one pixel's width (radians). Takes the moon's fields one by one: with the AtmosphereFrame passed by value, DXC
@@ -349,21 +430,34 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
       radiance += sunLight * 20.0 * disc;
       if (a.sunTanRadius > 0.0) radiance += sunLight * 0.06 * exp(-angle / (r * 2.5));
     }
-    // Stars, fixed to the sky: at night, or fading in as the sun goes down (the saved look in starLook).
+    // The moon as a light in the air (always: physics, not a look): its aureole and the glow at its rim. At night the key light
+    // is the moon (sunDisc 0: a.sunIlluminance is its light, a.sunDirection its disc since 2026-10-19); in the 24 h cycle it is
+    // the sky's second light (moonIlluminance).
+    {
+      const float3 moonLight = a.sunDisc == 0 ? a.sunIlluminance : atmoMoonLight(f.atmosphere);
+      const float3 moonDir = a.moonTexture != kNoTexture ? atmoMoonDirection(f.atmosphere) : a.sunDirection;
+      if (dot(moonLight, 1.0) > 0.0 && moonDir.y > -0.05)
+        radiance += moonAureole(a, dir, moonDir, moonLight, a.moonTexture != kNoTexture ? a.moonTanRadius : 0.0) * a.skyScale;
+    }
+    // Stars, fixed to the sky: at night, or fading in as the sun goes down (the saved look in starLook; 4 = the real sky).
     const float night = max(a.stars, a.sunDisc != 0 ? 1.0 - smoothstep(-0.12, 0.02, a.sunDirection.y) : 0.0);
-    // The star looks were tuned against the dim moonlit sky of light mode 2; under a brighter moon ("Luar: cinema") the
-    // sky would drown them, so they rise with the key light's strength, at most 12 x.
-    const float starBoost = a.sunDisc != 0 ? 1.0 : clamp(dot(a.sunIlluminance, float3(0.2126, 0.7152, 0.0722)) * 0.6, 1.0, 12.0);
-    if (night > 0.0) radiance += starField(a.starLook, dir, pixelAngle) * night * starBoost * transmittanceToTop(a, a.viewHeight, dir.y);
+    if (night > 0.0) {
+      const float3 air = transmittanceToTop(a, a.viewHeight, dir.y);
+      if (a.starLook == 4u) {
+        // Under the bright "Luar: cinema" moon the sky would drown the catalogue's stars: they rise with the moon's light, at
+        // most 6 x (the eye sees more stars than a camera metering a moonlit ground does).
+        const float boost = a.sunDisc != 0 ? 1.0 : clamp(dot(a.sunIlluminance, float3(0.2126, 0.7152, 0.0722)) * 0.4, 1.0, 6.0);
+        radiance += realStars(f.atmosphere, dir, pixelAngle) * night * boost * air * a.skyScale;
+      } else {
+        // The star looks were tuned against the dim moonlit sky of light mode 2; under a brighter moon ("Luar: cinema") the
+        // sky would drown them, so they rise with the key light's strength, at most 12 x.
+        const float starBoost = a.sunDisc != 0 ? 1.0 : clamp(dot(a.sunIlluminance, float3(0.2126, 0.7152, 0.0722)) * 0.6, 1.0, 12.0);
+        radiance += starField(a.starLook, dir, pixelAngle) * night * starBoost * air;
+      }
+    }
     if (a.moonTexture != kNoTexture) {
       radiance = moonDisc(dir, pixelAngle, radiance, a.moonDirection, a.moonTexture, a.moonTanRadius, a.moonGlow, a.linearSampler,
                           transmittanceToTop(a, a.viewHeight, dir.y));
-      if (sunLook == 1u) {
-        // Look 001: a soft halo round the moon's disc (the eye's and the air's glow round a bright disc at night).
-        const float cm = dot(dir, a.moonDirection);
-        const float angleM = acos(clamp(cm, -1.0, 1.0)), rm = atan(max(a.moonTanRadius, 1e-4));
-        if (angleM > rm) radiance += a.moonGlow * float3(0.85, 0.9, 1.0) * 0.06 * (rm * rm) / (angleM * angleM) * transmittanceToTop(a, a.viewHeight, dir.y);
-      }
     }
     // The clouds last, over the stars and the moon (a thin veil over the moon, a thick cloud hiding the stars): the volumetric
     // layer marched this frame (cloudsvol.hlsl), or the sheets' light, on the sky's own scale.

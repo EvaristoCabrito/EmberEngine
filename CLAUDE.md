@@ -823,6 +823,21 @@ TRIPLE AAA AGORA", "um céu inteiro com 24 horas de transição com sol, lua, tu
 - Not done: temporal reprojection for the clouds (40 fixed steps instead: measure before adding), the light shafts through the
   volumetric fog (volumetrics_v1 could read `cloudShadow`), the sun's reflection highlight on the water from the new disc.
 
+## Céu noturno real (2026-10-19, late; the user: "a lua não aparenta emanar a luz ... as sombras na direção oposta da lua", "estrelas
+100% randômicas ... nenhuma tentativa de parecer um céu de verdade com constelações"; then "sky is fine just finish it")
+
+- **Stars look 4 "real" (default; `--star-look 4`):** `content/sky/stars.json` = the ~220 brightest real stars (RA, Dec, magnitude,
+  B-V), `engine/render/StarSky.h` turns them for latitude 23 S at the hour's sidereal time (the cycle's hour; 22 h on a night map),
+  `Renderer::setStars` uploads them per frame (host buffer, `AtmosphereFrame.starBuffer` at byte 400, 480 bytes now),
+  `atmosphere.hlsli realStars` draws each as a point at its magnitude with a glow on the bright ones, look 003 at a tenth under
+  them, the Milky Way as a band about the galactic plane (star clouds, the Great Rift, the bulge), the Magellanic clouds. World
+  frame: north = +z, east = +x (TimeOfDay.h lightDirection).
+- **The moon's light comes from its disc** (MapStage mapLighting: `placed.light = placed.disc` unless the disc is off) and the moon
+  always has its Mie aureole and rim glow in the sky (`moonAureole`, physics, every look).
+- **Night exposure:** "Luar: cinema" caps the darkening at 2 stops (was 1: cemiterio measured meter 4.4 lux, exposure 0.24, a pale
+  blue day-like night). `camera:` log line once per capture (meter, EV, darkening, exposure, key lux, elevation).
+- Not done: constellation lines (never asked), twinkle, the planets; the band's strength is a first guess.
+
 ## Next
 
 The user's verdict (2026-10-15): the engine as seen is worse than Engine2 ("worst colours and render I've ever

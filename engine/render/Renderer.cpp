@@ -391,6 +391,7 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
     frame.volumeFrame = createDeviceBuffer(context, sizeof(VolumeFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     frame.cloudFrame = createDeviceBuffer(context, kMaxFogLookFrameBytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     frame.atmosphereFrame = createDeviceBuffer(context, sizeof(AtmosphereFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    frame.stars = createHostBuffer(context, sizeof(GpuStar) * kMaxStars, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT);
   }
   // Atmosfera volumétrica v1: integration point 1 of 3 (docs/ATMOSPHERE.md §4).
   volumetrics_ = std::make_unique<Volumetrics>(context, bindless_);
@@ -778,6 +779,7 @@ Renderer::~Renderer() {
     destroyBuffer(context_, frame.volumeFrame);
     destroyBuffer(context_, frame.cloudFrame);
     destroyBuffer(context_, frame.atmosphereFrame);
+    destroyBuffer(context_, frame.stars);
   }
   for (VkPipeline p : atmoPipelines_) vkDestroyPipeline(context_.device, p, nullptr);
   for (Image* table : {&atmoTransmittance_, &atmoMultiScattering_, &atmoSkyView_, &atmoAerial_}) destroyImage(context_, *table);
@@ -1142,6 +1144,17 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
     cloudShadowThisFrame_ = false;
     cloudMarchThisFrame_ = false;
     a.sunLook = lighting_.sunLook;
+    // The real night sky: this frame's star directions (host-visible, read by address), the galactic frame, the clouds.
+    if (!stars_.empty()) {
+      std::memcpy(frame.stars.mapped, stars_.data(), stars_.size() * sizeof(GpuStar));
+      a.starBuffer = bufferAddress(context_, frame.stars);
+      a.starCount = static_cast<uint32_t>(stars_.size());
+    }
+    a.galaxyPole = galaxyPole_;
+    a.galaxyCentre = galaxyCentre_;
+    a.milkyWay = milkyWay_;
+    a.magellanic[0] = magellanic_[0];
+    a.magellanic[1] = magellanic_[1];
     if (clouds_.enabled) {
       f.cloudFlags = 1u | (clouds_.shadows && lighting_.sunDisc ? 2u : 0u) | (clouds_.volumetric ? 4u : 0u);
       a.cloudCoverage = clouds_.coverage;

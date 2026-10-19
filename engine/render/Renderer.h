@@ -10,6 +10,7 @@
 
 #include "render/BoardGround.h"
 #include "render/Atmosphere.h"
+#include "render/StarSky.h"
 #include "render/FogLooks.h"
 #include "render/Camera.h"
 #include "render/EffectDraw.h"
@@ -326,6 +327,17 @@ class Renderer {
     float base = 380.0f, top = 640.0f;  // world heights (the caller adds the board's mean ground)
   };
   void setClouds(const Clouds& clouds) { clouds_ = clouds; }
+  // The real night sky (render/StarSky.h; star look 4): the catalogue's stars as world directions this frame, the galactic frame
+  // for the Milky Way (strength `milkyWay`, 0 = none), the two Magellanic clouds (direction, radius in radians; 0 = none).
+  static constexpr uint32_t kMaxStars = 512;
+  void setStars(std::span<const GpuStar> stars, glm::vec3 galaxyPole, glm::vec3 galaxyCentre, float milkyWay, const glm::vec4 magellanic[2]) {
+    stars_.assign(stars.begin(), stars.begin() + std::min<size_t>(stars.size(), kMaxStars));
+    galaxyPole_ = galaxyPole;
+    galaxyCentre_ = galaxyCentre;
+    milkyWay_ = milkyWay;
+    magellanic_[0] = magellanic[0];
+    magellanic_[1] = magellanic[1];
+  }
   // Clarão do sol e raios de luz, look 001 (shaders/sunglare.hlsl): the lens's glare round the sun or the moon and the
   // crepuscular rays from it, computed from the finished scene and added before the tonemap. Panels "Clarão", "Raios de luz".
   struct SunGlare {
@@ -367,6 +379,7 @@ class Renderer {
     Buffer volumeFrame;   // VolumeFrame for the volumetric fog passes (device-local)
     Buffer cloudFrame;    // CloudFrame for the fog bank passes (device-local)
     Buffer atmosphereFrame;  // AtmosphereFrame (device-local)
+    Buffer stars;         // this frame's GpuStar[] (host-visible, read by device address)
     bool countersPending = false;
   };
 
@@ -455,6 +468,10 @@ class Renderer {
   VkPipeline skyReflectBasePipeline_ = VK_NULL_HANDLE, skyReflectFilterPipeline_ = VK_NULL_HANDLE;
   bool skyReflection_ = true, skyReflectReady_ = false, skyReflectThisFrame_ = false;
   Clouds clouds_;
+  std::vector<GpuStar> stars_;  // the real night sky this frame (setStars), copied into frame.stars
+  glm::vec3 galaxyPole_{0.0f, 1.0f, 0.0f}, galaxyCentre_{0.0f, 0.0f, 1.0f};
+  float milkyWay_ = 0.0f;
+  glm::vec4 magellanic_[2]{};
   // The cloud shadow map over the board (skyreflect.hlsl CSCloudShadow): R32F, the sun shadow's bounds, once a frame.
   static constexpr uint32_t kCloudShadowSize = 256;
   Image cloudShadow_;

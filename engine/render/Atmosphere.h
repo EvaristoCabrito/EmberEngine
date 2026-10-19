@@ -71,10 +71,22 @@ struct AtmosphereFrame {
   float pad5 = 0.0f;                      // 380
   glm::vec2 volMarchSize{1.0f};           // 384: the march image's size in texels
   glm::vec2 pad6{0.0f};                   // 392
+  // The real night sky (render/StarSky.h; star look 4 "real", atmosphere.hlsli realStars): the catalogue's stars as world
+  // directions (GpuStar[]), the galactic frame for the Milky Way, the two Magellanic clouds. Read by offset in the shaders.
+  uint64_t starBuffer = 0;                // 400: GpuStar[starCount] (device address); 0 = none
+  uint32_t starCount = 0;                 // 408
+  float starScale = 10.0f;                // 412: radiance (raw) of a magnitude-0 star's peak
+  glm::vec3 galaxyPole{0.0f, 1.0f, 0.0f}; // 416: the north galactic pole, world
+  float milkyWay = 1.0f;                  // 428: the band's strength (0 = none)
+  glm::vec3 galaxyCentre{0.0f, 0.0f, 1.0f};  // 432: the galactic centre, world
+  float pad7 = 0.0f;                      // 444
+  glm::vec4 magellanic[2]{};              // 448: the Large and the Small cloud: direction xyz, w = radius (radians; 0 = none)
 };
-static_assert(sizeof(AtmosphereFrame) == 400 && offsetof(AtmosphereFrame, moonIlluminance) == 336 &&
+static_assert(sizeof(AtmosphereFrame) == 480 && offsetof(AtmosphereFrame, moonIlluminance) == 336 &&
               offsetof(AtmosphereFrame, moonDirection) == 240 && offsetof(AtmosphereFrame, volNoiseBase) == 352 &&
-              offsetof(AtmosphereFrame, sunLook) == 376 && offsetof(AtmosphereFrame, volMarchSize) == 384);
+              offsetof(AtmosphereFrame, sunLook) == 376 && offsetof(AtmosphereFrame, volMarchSize) == 384 &&
+              offsetof(AtmosphereFrame, starBuffer) == 400 && offsetof(AtmosphereFrame, galaxyPole) == 416 &&
+              offsetof(AtmosphereFrame, galaxyCentre) == 432 && offsetof(AtmosphereFrame, magellanic) == 448);
 
 // The air's transmittance from the ground to its top towards `direction` (world, +y up), on the CPU (the same
 // integral as CSTransmittance): the colour the sun or moon arrives with.
