@@ -5,6 +5,7 @@
 #include <cmath>
 #include <fstream>
 #include <map>
+#include <random>
 #include <vector>
 
 #include <nlohmann/json.hpp>
@@ -25,7 +26,6 @@ struct Tables {
   std::map<std::string, std::vector<Row>> classes;  // Engine2 statsFor per level 1..30
   std::map<std::string, Row> heroGain;              // by hero name
   std::map<std::string, std::string> heroOfClass;   // a hero's classes -> the hero
-  std::array<double, 5> enemyScale{1, 1, 1, 1, 1};  // the party's new gains / old gains, stat by stat
 };
 
 json readJson(const char* path) {
@@ -48,7 +48,6 @@ const Tables& tables() {
         for (const json& r : rows) v.push_back({r[0].get<int>(), r[1].get<int>(), r[2].get<int>(), r[3].get<int>(), r[4].get<int>()});
       }
     const json p = readJson("content/progression.json");
-    std::array<double, 5> oldSum{}, newSum{};
     if (p.contains("heroes"))
       for (const auto& [hero, h] : p["heroes"].items()) {
         Row gain{};
@@ -56,16 +55,10 @@ const Tables& tables() {
         t.heroGain[hero] = gain;
         const json& classes = h["classes"];
         for (const json& c : classes) t.heroOfClass[c.get<std::string>()] = hero;
-        const auto own = classes.empty() ? t.classes.end() : t.classes.find(classes[0].get<std::string>());
-        if (own == t.classes.end() || own->second.size() < 2) {
+        if (classes.empty() || !t.classes.count(classes[0].get<std::string>()))
           logError("progression: {}'s class is not in content/engine2/class-stats.json", hero);
-          continue;
-        }
-        for (size_t k = 0; k < 5; ++k) oldSum[k] += own->second[1][k] - own->second[0][k], newSum[k] += gain[k];
       }
-    for (size_t k = 0; k < 5; ++k) t.enemyScale[k] = oldSum[k] > 0 ? newSum[k] / oldSum[k] : 1.0;
-    logInfo("progression: {} heroes; enemies' gains x hp {:.3f} atk {:.3f} mag {:.3f} def {:.3f} dex {:.3f}", t.heroGain.size(),
-            t.enemyScale[0], t.enemyScale[1], t.enemyScale[2], t.enemyScale[3], t.enemyScale[4]);
+    logInfo("progression: {} heroes; enemies keep their class's own gains", t.heroGain.size());
     return t;
   }();
   return t;
@@ -82,14 +75,6 @@ int clampLevel(const std::vector<Row>& rows, int level) { return std::clamp(leve
 Row heroAt(const Row& base, const Row& gain, int level) {
   Row r{};
   for (size_t k = 0; k < 5; ++k) r[k] = base[k] + (level - 1) * gain[k];
-  return r;
-}
-Row enemyAt(const std::vector<Row>& rows, int level) {
-  const Row& base = rows[0];
-  const Row& next = rows.size() > 1 ? rows[1] : rows[0];
-  Row r{};
-  for (size_t k = 0; k < 5; ++k)
-    r[k] = base[k] + static_cast<int>(std::lround((level - 1) * (next[k] - base[k]) * tables().enemyScale[k]));
   return r;
 }
 
@@ -147,6 +132,55 @@ void applyRank(BattleUnit& u) {
   }
 }
 
+// An enemy's attribute points (the user, 2026-10-19): kPointsPerLevel per level after the first on top of its class's own
+// gains, +1 to the stat per point as a hero's, rolled for each unit when its battle loads (two units of one class differ).
+// The split follows what the unit uses: each stat's weight = the class's own gain in it over the average class's gain in
+// that stat (so HP's large raw gains do not swallow the points), the stat it strikes with x kStrikeWeight, ATK nothing for
+// a unit that strikes with MAG; each unit's weights are then scaled by its own temper (x 0.5 .. 1.5 each), and every point
+// is drawn by weight. A class that gains nothing puts them all into the stat it strikes with (MAG when it has any, else ATK).
+constexpr int kPointsPerLevel = 3;
+constexpr double kStrikeWeight = 1.5;
+
+// The average class's gain per level in each stat (every class with growth rows).
+const std::array<double, 5>& averageGain() {
+  static const std::array<double, 5> avg = [] {
+    std::array<double, 5> sum{};
+    int n = 0;
+    for (const auto& [id, rows] : tables().classes)
+      if (rows.size() > 1) {
+        for (size_t k = 0; k < 5; ++k) sum[k] += std::max(0, rows[1][k] - rows[0][k]);
+        ++n;
+      }
+    for (double& s : sum) s = n > 0 && s > 0 ? s / n : 1.0;
+    return sum;
+  }();
+  return avg;
+}
+
+Row enemyPoints(const BattleUnit& u) {
+  Row out{};
+  const int points = kPointsPerLevel * std::max(0, u.level - 1);
+  if (points == 0) return out;
+  const size_t strike = u.mag > 0 ? 2 : 1;
+  std::array<double, 5> weight{};
+  if (const std::vector<Row>* rows = classRows(u.classId); rows && rows->size() > 1)
+    for (size_t k = 0; k < 5; ++k) weight[k] = std::max(0, (*rows)[1][k] - (*rows)[0][k]) / averageGain()[k];
+  if (strike == 2) weight[1] = 0;
+  weight[strike] *= kStrikeWeight;
+  double sum = 0;
+  for (double w : weight) sum += w;
+  if (sum <= 0) {
+    out[strike] = points;
+    return out;
+  }
+  thread_local std::mt19937 rng{std::random_device{}()};
+  std::uniform_real_distribution<double> temper(0.5, 1.5);
+  for (double& w : weight) w *= temper(rng);
+  std::discrete_distribution<size_t> pick(weight.begin(), weight.end());
+  for (int i = 0; i < points; ++i) ++out[pick(rng)];
+  return out;
+}
+
 }  // namespace
 
 void setProgressionEnabled(bool on) { gEnabled = on; }
@@ -183,11 +217,7 @@ void applyProgression(BattleUnit& u) {
     }
   } else {
     applyRank(u);  // every class, also one without Engine2 growth rows
-    const std::vector<Row>* rows = classRows(u.classId);
-    if (!rows) return;
-    const int level = clampLevel(*rows, u.level);
-    from = (*rows)[static_cast<size_t>(level - 1)];
-    to = enemyAt(*rows, level);
+    to = enemyPoints(u);  // the class's own stats + the level's points (from stays 0)
   }
   const int dHp = to[0] - from[0], dAtk = to[1] - from[1], dMag = to[2] - from[2], dDef = to[3] - from[3], dDex = to[4] - from[4];
   const int oldMax = u.maxHp;

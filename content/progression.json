@@ -1,5 +1,5 @@
 {
- "about": "EmberEngine's own character progression (the user, 2026-10-17). gain = what each level adds: hp atk mag def dex. Level 1 stays Engine2's (content/engine2/class-stats.json). classes = the Engine2 classes the hero plays as (the first one's gains are the old ones; promotions keep the hero's gains). Enemies: each class's own gains times (the party's new gains / its old gains), stat by stat (engine/world/Progression.cpp).",
+ "about": "EmberEngine's own character progression (the user, 2026-10-17). gain = what each level adds: hp atk mag def dex. Level 1 stays Engine2's (content/engine2/class-stats.json). classes = the Engine2 classes the hero plays as (the first one's gains are the old ones; promotions keep the hero's gains). Enemies keep their class's own fixed start and gain per level, no multiplier, plus 3 attribute points per level after the first, rolled per unit as the battle loads by what it uses (the user, 2026-10-19; engine/world/Progression.cpp enemyPoints).",
  "stats": ["hp", "atk", "mag", "def", "dex"],
  "heroes": {
   "Kael":    { "gain": [5, 2, 0, 3, 2], "classes": ["swordsman"] },

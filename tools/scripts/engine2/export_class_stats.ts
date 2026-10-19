@@ -1,7 +1,7 @@
 // Every class's stats at every level, from Engine2's class table (src/game/data.ts statsFor), into
 // content/engine2/class-stats.json: { classes: { <id>: [[hp, atk, mag, def, dex] per level 1..MAX_LEVEL] } }.
 // EmberEngine's own progression (content/progression.json) is measured against it: a hero's new gains replace its
-// class's, and an enemy's stats move by its class's gains scaled as the party's were (engine/world/Progression).
+// class's; an enemy keeps its class's own stats (engine/world/Progression).
 //
 //   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <cache> tools/scripts/engine2/export_class_stats.ts -- <out.json>
 //

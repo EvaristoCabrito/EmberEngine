@@ -4,9 +4,10 @@
 // (content/engine2/class-stats.json, Engine2's statsFor).
 //
 // Heroes: level 1 is Engine2's; every level after adds the hero's own gains (hp atk mag def dex), whatever class it is
-// promoted to. Enemies (every unit not on the party's side, summons excepted): level 1 is Engine2's; each level adds the
-// class's own Engine2 gains times the party's change in that stat (the six heroes' new gains summed / their old gains
-// summed), so the world grows the way the party now does.
+// promoted to. Enemies (every unit not on the party's side, summons excepted) keep their class's own fixed start and
+// fixed gain per level exactly as the class table has them (the user, 2026-10-19: no multiplier), plus 3 attribute points
+// per level after the first, rolled per unit as the battle loads by what it uses (Progression.cpp enemyPoints), and their rank's skills
+// (content/enemy-ranks.json).
 //
 // On by default; the Cooker's checks against Engine2 turn it off (they compare Engine2's own numbers).
 
