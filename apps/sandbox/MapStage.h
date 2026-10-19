@@ -429,6 +429,7 @@ class MapStage final : public Stage {
     if (scene_ && sprites_.ready()) {
       runFxTest(time);
       syncZones();
+      syncVigils();
       // Numbers held back for an effect still in the air (a Meteoro's fall).
       for (size_t i = 0; i < pendingFx_.size();) {
         if (time >= pendingFx_[i].first) showEffects(pendingFx_[i].second), pendingFx_.erase(pendingFx_.begin() + static_cast<std::ptrdiff_t>(i));
@@ -2938,6 +2939,16 @@ class MapStage final : public Stage {
           const e2::BattleUnit& u = battle_->units()[ab];
           hit = e2::forecast(*battle_, ab, {u.x, u.y}, static_cast<size_t>(fb)).hitOut;
         }
+      // The Lanceiro's aimed at a hex (a throw, a drag) or an ally (the swap): the foe the cast would strike; the vault's blow
+      // always comes from behind (+10, as a rear attack).
+      if (!hit && ready && e2::spellWeaponAbility(spellMode_))
+        for (size_t id : aimHits(ab, *spellArmed_))
+          if (battle_->units()[id].side != battle_->units()[ab].side) {
+            const e2::BattleUnit& u = battle_->units()[ab];
+            hit = e2::forecast(*battle_, ab, spellMode_ == "swapPost" ? *spellArmed_ : e2::BattleHex{u.x, u.y}, id).hitOut;
+            break;
+          }
+      if (hit && spellMode_ == "poleVault") hit = std::min(100.0, *hit + 10.0);
     } else {
       return;
     }
@@ -3070,6 +3081,21 @@ class MapStage final : public Stage {
     if (enemyTurn_) {
       EnemyTurn t = *enemyTurn_;
       enemyTurn_.reset();
+      // The Vigília da Sentinela (docs/SKILLS_LANCER.md): before its blow or its cast, every sentinel whose stance covers one of
+      // its targets thrusts first; an attacker that falls never strikes.
+      if (!t.struck && !t.interrupted && battle_->units()[static_cast<size_t>(unitBattle_[t.unit])].alive) {
+        t.interrupted = true;
+        std::vector<size_t> targets;
+        if (t.target >= 0 && unitBattle_[static_cast<size_t>(t.target)] >= 0) targets.push_back(static_cast<size_t>(unitBattle_[static_cast<size_t>(t.target)]));
+        for (const e2::BattleStep& st : t.steps) {
+          targets.insert(targets.end(), st.ids.begin(), st.ids.end());
+          if (st.type == e2::BattleStep::Type::Combat) targets.push_back(st.def);
+        }
+        if (playInterrupts(static_cast<size_t>(unitBattle_[t.unit]), targets)) {
+          enemyTurn_ = t;
+          return;
+        }
+      }
       if (!t.steps.empty() && !t.struck && battle_->units()[static_cast<size_t>(unitBattle_[t.unit])].alive) {
         t.struck = true;
         std::vector<e2::BattleStep> steps = t.steps;
@@ -3456,6 +3482,7 @@ class MapStage final : public Stage {
     bool bolt = false;     // this strike is an Arcano bolt (CombatFx): it lands when the bolt arrives
     std::string element;   // the bolt's element (its palette)
     bool arrow = false;    // this strike is a bow shot: the arrow flies and lands on the hit
+    bool interrupt = false;  // a sentinel's thrust out of its turn (Vigília da Sentinela): nothing of the owner's turn is spent
   };
 
   // What a unit's blows look like (CombatFx): its weapon's type (the heroes'), else its class (Engine2 exports no weapon
@@ -3595,17 +3622,20 @@ class MapStage final : public Stage {
     return from.x == u.x && from.y == u.y && offHandWanted(unitBattle, foeBattle);
   }
 
-  void play(std::vector<e2::BattleStep> steps, size_t ownerUi) {
+  // `interrupt`: a sentinel's thrust before an enemy's blow (Vigília da Sentinela): it is nobody's action (no bleed roll, no
+  // hunger, the owner's turn untouched).
+  void play(std::vector<e2::BattleStep> steps, size_t ownerUi, bool interrupt = false) {
     if (steps.empty()) return;
     Exchange x;
     x.steps = std::move(steps);
     x.owner = ownerUi;
+    x.interrupt = interrupt;
     exchange_ = std::move(x);
     reach_.clear(), reachPaths_.clear(), targets_.clear();
     spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
     spellArmed_.reset(), pendingFoe_ = -1;
     // A bleeding unit takes 1D8 whenever it acts (Engine2 applyBleedingActionDamage): once for the whole action.
-    {
+    if (!interrupt) {
       const size_t ob = static_cast<size_t>(unitBattle_[ownerUi]);
       std::vector<e2::BattleEffect> fx;
       const bool alive = e2::bleedOnAction(*battle_, ob, false, rng_, fx);
@@ -3632,7 +3662,7 @@ class MapStage final : public Stage {
     else if (!s.ids.empty()) target = sceneUnitOf(static_cast<int>(s.ids[0]));
     if (striker >= 0 && target >= 0 && striker != target) {
       faceToward(static_cast<size_t>(striker), static_cast<size_t>(target));
-      if (!support) faceToward(static_cast<size_t>(target), static_cast<size_t>(striker));
+      if (!support && !s.rearSure) faceToward(static_cast<size_t>(target), static_cast<size_t>(striker));  // Salto de Vara: struck from behind, unseen
     }
     // A potion is drunk or handed over with no pose of its own (Engine2 applyPotion); the cures and the food play the
     // healing pose.
@@ -3648,21 +3678,28 @@ class MapStage final : public Stage {
     x.impact = now_ + length * (striker >= 0 && !pose.empty() ? poseImpact(static_cast<size_t>(striker), pose) : kImpactShare);
     x.end = now_ + length + kExchangeGap / actionRate();
     x.landed = false;
-    if (s.type == StepType::Move && s.kind == "leapingStrike" && striker >= 0 && s.path.size() >= 2) {
+    if (s.type == StepType::Move && (s.kind == "leapingStrike" || s.kind == "poleVault") && striker >= 0 && s.path.size() >= 2) {
       // Salto Devastador: the rules stand the unit on the landing at once; the card flies there on an arc (leapOffset) while
-      // the trail of steel light follows it and the crater opens as it lands (SpellEffects::leapFlight).
+      // the trail of steel light follows it and the crater opens as it lands (SpellEffects::leapFlight). Salto de Vara (the
+      // Lanceiro's): the same flight, higher, over the foe the next step strikes, the lance planted beside it (vaultFlight).
+      const bool vault = s.kind == "poleVault";
       const size_t ui = static_cast<size_t>(striker);
       const e2::BattleUnit& bu = battle_->units()[s.att];
       const SpellEffects::Spot takeOff = unitSpot(ui);
       const glm::vec2 from = unitPos_[ui], to = anchorWorld(bu, s.path.back());
       const float hexes = static_cast<float>(e2::Battle::distance(s.path.front(), s.path.back()));
-      const float flight = (0.34f + 0.05f * hexes) / actionRate();
-      unitLeap_[ui] = {now_, now_ + flight, from, to, 1.2f + 0.25f * hexes};
+      const float flight = (vault ? 0.5f : 0.34f + 0.05f * hexes) / actionRate();
+      unitLeap_[ui] = {now_, now_ + flight, from, to, vault ? 2.0f : 1.2f + 0.25f * hexes};
       unitPos_[ui] = to, unitWalk_[ui] = Walk{}, unitMoved_[ui] = 1;
       const glm::vec2 d = to - from;
       const float yaw = flat_ ? 0.0f : cam_.yaw;
       if (const float screenX = d.x * std::cos(yaw) - d.y * std::sin(yaw); std::abs(screenX) > 0.05f) unitFacing_[ui] = screenX > 0.0f ? 1 : -1;
-      spellFx_.leapFlight(takeOff, hexSpot(s.path.back()), now_, now_ + flight, striker);
+      if (vault) {
+        const int foe = x.step + 1 < x.steps.size() ? sceneUnitOf(static_cast<int>(x.steps[x.step + 1].def)) : -1;
+        spellFx_.vaultFlight(takeOff, foe >= 0 ? unitSpot(static_cast<size_t>(foe)) : hexSpot(s.path.back()), hexSpot(s.path.back()), now_, now_ + flight, striker);
+      } else {
+        spellFx_.leapFlight(takeOff, hexSpot(s.path.back()), now_, now_ + flight, striker);
+      }
       x.impact = now_;
       x.end = now_ + flight + 0.04f;
       return;
@@ -3833,6 +3870,92 @@ class MapStage final : public Stage {
       }
     }
   }
+  // The Vigília da Sentinela's standing effect on every sentinel in its stance (LancerFx::vigil), following it, gone when it lifts.
+  void syncVigils() {
+    if (!battle_) return;
+    for (size_t i = 0; i < battle_->units().size(); ++i) {
+      const e2::BattleUnit& u = battle_->units()[i];
+      const int ui = sceneUnitOf(static_cast<int>(i));
+      const bool on = u.alive && u.cond.vigilPct > 0 && ui >= 0;
+      const auto it = vigilFx_.find(static_cast<int>(i));
+      if (on) {
+        const SpellEffects::Spot sp = unitSpot(static_cast<size_t>(ui));
+        if (it == vigilFx_.end()) vigilFx_[static_cast<int>(i)] = spellFx_.lancer().vigilStart(sp.feet, sp.cardHeight, (static_cast<float>(u.cond.vigilRadius) + 0.5f) * 1.7320508f, now_);
+        else spellFx_.lancer().vigilMove(it->second, sp.feet);
+      } else if (it != vigilFx_.end()) {
+        spellFx_.lancer().vigilEnd(it->second, now_);
+        vigilFx_.erase(it);
+      }
+    }
+  }
+  // The sentinels' thrusts before `attacker`'s blow on `targets` (e2::vigilInterrupts), played as one exchange of their own.
+  bool playInterrupts(size_t attacker, const std::vector<size_t>& targets) {
+    const std::vector<e2::BattleStep> steps = e2::vigilInterrupts(*battle_, attacker, targets);
+    if (steps.empty()) return false;
+    const int owner = sceneUnitOf(static_cast<int>(steps.front().att));
+    if (owner < 0) return false;
+    tip_ = battle_->units()[steps.front().att].name + tr(" interrompe o ataque!", " interrupts the attack!"), tipAt_ = now_;
+    play(steps, static_cast<size_t>(owner), true);
+    return exchange_.has_value();
+  }
+  glm::vec3 feetAt(glm::vec2 p) const { return {p.x, groundAt(p.x, p.y), p.y}; }
+  // The Lanceiro's board moves (docs/SKILLS_LANCER.md): a body thrown, pulled, dragged or swapped stands on its new hex at
+  // once in the rules; its card flies there on an arc (unitLeap_, the effect's `arc`) and the lance's effect follows it
+  // (SpellEffects::lancerFlight / swapFlight). Returns when the last flight ends (now_ when nothing flies).
+  float animateFlights(const std::vector<e2::BattleEffect>& fx, const e2::BattleStep& s) {
+    float latest = now_;
+    struct Mover {
+      size_t ui;
+      glm::vec3 from, to;
+      float arc, finish;
+    };
+    std::vector<Mover> movers;
+    for (const e2::BattleEffect& e : fx) {
+      if (!e.pushed || e.arc < 0.0f) continue;
+      const int ui = sceneUnitOf(static_cast<int>(e.unit));
+      if (ui < 0) continue;
+      const size_t u = static_cast<size_t>(ui);
+      const e2::BattleUnit& bu = battle_->units()[e.unit];
+      const glm::vec2 from = unitPos_[u], to = anchorWorld(bu, {bu.x, bu.y});
+      const float hexes = glm::length(to - from) / 1.7320508f;
+      const float seconds = (s.kind == "spearToss" ? 0.42f + 0.06f * hexes : s.kind == "swapPost" ? 0.42f : 0.2f + 0.11f * hexes) / actionRate();
+      unitLeap_[u] = {now_, now_ + seconds, from, to, e.arc};
+      unitPos_[u] = to, unitWalk_[u] = Walk{}, unitMoved_[u] = 1;
+      if (s.kind == "impaleDrag" || s.kind == "swapPost") {  // the runners face the way they go
+        const glm::vec2 d = to - from;
+        const float yaw = flat_ ? 0.0f : cam_.yaw;
+        if (const float screenX = d.x * std::cos(yaw) - d.y * std::sin(yaw); std::abs(screenX) > 0.05f) unitFacing_[u] = screenX > 0.0f ? 1 : -1;
+      }
+      movers.push_back({u, feetAt(from), feetAt(to), e.arc, now_ + seconds});
+      latest = std::max(latest, now_ + seconds);
+    }
+    if (movers.empty()) return latest;
+    auto spotAt = [&](size_t u, glm::vec3 feet) {
+      SpellEffects::Spot sp = unitSpot(u);
+      sp.body = feet + (sp.body - sp.feet), sp.feet = feet;
+      return sp;
+    };
+    const int striker = sceneUnitOf(static_cast<int>(s.att));
+    if (s.kind == "swapPost") {
+      // the dash's effect came with the cast (castEffect, at the impact); only the cards fly here
+    } else if (s.kind == "impaleDrag") {
+      const Mover *foe = nullptr, *lancer = nullptr;
+      for (const Mover& m : movers) {
+        if (static_cast<int>(m.ui) == striker) lancer = &m;
+        else foe = &m;
+      }
+      if (foe && striker >= 0)
+        spellFx_.lancerFlight(s.kind, spotAt(foe->ui, foe->from), spotAt(foe->ui, foe->to), foe->arc, now_, foe->finish,
+                              lancer ? spotAt(lancer->ui, lancer->from) : unitSpot(static_cast<size_t>(striker)),
+                              lancer ? spotAt(lancer->ui, lancer->to) : unitSpot(static_cast<size_t>(striker)), false);
+    } else {
+      const bool collided = std::any_of(fx.begin(), fx.end(), [](const e2::BattleEffect& e) { return e.delay > 0.0f; });
+      for (const Mover& m : movers)
+        spellFx_.lancerFlight(s.kind, spotAt(m.ui, m.from), spotAt(m.ui, m.to), m.arc, now_, m.finish,
+                              striker >= 0 ? unitSpot(static_cast<size_t>(striker)) : spotAt(m.ui, m.from), SpellEffects::Spot{}, collided);
+    }
+    return latest;
+  }
   // The Tempestade de Gelo fields (Battle::iceZones, Engine2's iceStormZones). A storm starts with its cast (startStep); it
   // fades when the rules drop its field (battleSpellOverlay3d removeBlizzard). The fields already on the board at the first
   // frame (a resumed fight) get theirs then, as Engine2 spawns one for every live field.
@@ -3911,7 +4034,8 @@ class MapStage final : public Stage {
                                    "blackPestilence", "curseOfDecay", "soulHarvest",    "devouringVoid",  "pillarOfFlame", "iceLance",    "thunderstorm",
                                    "meteor",         "absoluteZero",  "chainLightning", "eruption",       "glacialGale",   "wrathOfTheSkies", "primordialEmber",
                                    "steelWhirlwind", "guardBreak",    "warCry",         "leapingStrike",
-                                   "venomArrow",     "arrowRain",     "explosiveArrow", "cripplingShot",  "arrowStorm",    "deathShot"};
+                                   "venomArrow",     "arrowRain",     "explosiveArrow", "cripplingShot",  "arrowStorm",    "deathShot",
+                                   "spearToss",      "hookPull",      "poleVault",      "disarm",         "swapPost",      "impaleDrag",  "sentinelVigil"};
     // KIND or KIND:VERSION (the version number of the Magias menu; default the menu's choice, at least 01).
     std::string kind = options_.fxTest;
     int look = 0;
@@ -4232,6 +4356,61 @@ class MapStage final : public Stage {
       };
       return logInfo("battle script: ai {}: casts {}", p[1], kind);
     }
+    if (p[0] == "far" && p.size() > 3) {
+      // "far:<unit>:<other>:<n>[:<through>]": the unit set down n hexes from another on a straight free line (through the
+      // neighbour named, else the first direction that fits): a foe for the hook, a body for a throw to land against
+      const int other = sceneUnitNamed(p[2]);
+      const int through = p.size() > 4 ? sceneUnitNamed(p[4]) : -1;
+      const int n = std::atoi(p[3].c_str());
+      if (other < 0 || n < 1 || (p.size() > 4 && through < 0)) return fail("no such unit");
+      const e2::BattleUnit& o = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(other)])];
+      auto cube = [](e2::BattleHex h) { const int q = h.x - (h.y - (h.y & 1)) / 2; return std::pair<int, int>{q, h.y}; };
+      auto oddr = [](int q, int r) { return e2::BattleHex{q + (r - (r & 1)) / 2, r}; };
+      const auto [oq, orr] = cube({o.x, o.y});
+      std::vector<e2::BattleHex> dirs;
+      if (through >= 0) {
+        const e2::BattleUnit& t = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(through)])];
+        dirs.push_back({t.x, t.y});
+      } else {
+        for (const e2::BattleHex& h : e2::Battle::neighbors(o.x, o.y)) dirs.push_back(h);
+      }
+      for (const e2::BattleHex& d : dirs) {
+        const auto [dq, dr] = cube(d);
+        bool clear = true;
+        e2::BattleHex at{o.x, o.y};
+        for (int k = 1; k <= n && clear; ++k) {
+          at = oddr(oq + (dq - oq) * k, orr + (dr - orr) * k);
+          const bool occupied = battle_->inBounds(at.x, at.y) && battle_->unitAt(at.x, at.y) >= 0;
+          const bool own = through >= 0 && k == 1;  // the neighbour the line runs through stands on its hex
+          if (!battle_->inBounds(at.x, at.y) || !battle_->cell(at.x, at.y).passable || (occupied && !own)) clear = false;
+        }
+        if (!clear) continue;
+        e2::BattleUnit& v = battle_->units()[cb];
+        v.x = at.x, v.y = at.y;
+        unitPos_[static_cast<size_t>(ci)] = anchorWorld(v, {v.x, v.y});
+        unitWalk_[static_cast<size_t>(ci)] = Walk{};
+        return logInfo("battle script: far {} {} hexes from {} at ({}, {})", p[1], n, p[2], v.x, v.y);
+      }
+      return fail("no free line that long");
+    }
+    if (p[0] == "vigil" && p.size() > 2) {
+      // "vigil:<attacker>:<target>": the attacker stood beside the target is about to strike it; a sentinel's stance (Vigília da
+      // Sentinela) must interrupt with its thrust first
+      const int fi = sceneUnitNamed(p[2]);
+      if (fi < 0) return fail("no such target");
+      if (!placeBeside(static_cast<size_t>(ci), static_cast<size_t>(fi))) return fail("no free hex beside the target");
+      const size_t tb = static_cast<size_t>(unitBattle_[static_cast<size_t>(fi)]);
+      const int hpBefore = battle_->units()[cb].hp;
+      if (!playInterrupts(cb, {tb})) return fail("no sentinel interrupted");
+      scriptCheck_ = [this, cb, hpBefore]() -> std::string {
+        const e2::BattleUnit& a = battle_->units()[cb];
+        logInfo("battle script: vigil: the attacker {} hp {} -> {}{}", a.name, hpBefore, a.hp, a.alive ? "" : " (dead)");
+        if (a.hp < hpBefore || !a.alive) return "";
+        logInfo("battle script: the sentinel's thrust missed");
+        return "";
+      };
+      return logInfo("battle script: vigil {} -> {}: a sentinel interrupts", p[1], p[2]);
+    }
     if (p[0] == "near" && p.size() > 2) {
       // the unit placed beside another (a foe in reach of a strike, for captures)
       const int other = sceneUnitNamed(p[2]);
@@ -4330,7 +4509,10 @@ class MapStage final : public Stage {
     if ((p[0] == "cast" && p.size() > 3) || (p[0] == "potion" && p.size() > 3)) {
       ti = sceneUnitNamed(p[3]);
       if (ti < 0) return fail("no such target");
-      if (ti != ci && !placeBeside(static_cast<size_t>(ti), static_cast<size_t>(ci))) return fail("no free hex beside the caster");
+      // the Gancho takes a foe 2+ hexes away: one stood that far by a "far" step before is left where it is
+      const bool keep = p[2] == "hookPull" && e2::Battle::distance({caster.x, caster.y}, {battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(ti)])].x,
+                                                                                            battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(ti)])].y}) >= 2;
+      if (ti != ci && !keep && !placeBeside(static_cast<size_t>(ti), static_cast<size_t>(ci))) return fail("no free hex beside the caster");
     }
     const size_t tb = static_cast<size_t>(unitBattle_[static_cast<size_t>(ti)]);
     const e2::BattleUnit before = battle_->units()[tb];
@@ -4349,9 +4531,34 @@ class MapStage final : public Stage {
     else return fail("unknown step");
     const int usesBefore = p[0] == "potion" ? 0 : e2::spellUsesLeft(*battle_, cb, kind);
     startSpell(kind);
+    // The Lanceiro's throw and drag are aimed at a hex past the target: the farthest valid one on the line through it.
+    e2::BattleHex aimHex{battle_->units()[tb].x, battle_->units()[tb].y};
+    if (kind == "spearToss" || kind == "impaleDrag") {
+      const e2::BattleHex from{caster.x, caster.y};
+      // first the hexes exactly on the ray from the caster through the target (cube steps), then any whose line passes it
+      auto cube = [](e2::BattleHex h) { return std::pair<int, int>{h.x - (h.y - (h.y & 1)) / 2, h.y}; };
+      const auto [fq, fr] = cube(from);
+      const auto [tq, tr] = cube(aimHex);
+      const int dq = tq - fq, dr = tr - fr;
+      int best = -1;
+      e2::BattleHex found = aimHex;
+      for (const e2::BattleHex& h : spellZone_) {
+        const auto [hq, hr] = cube(h);
+        const int k = e2::Battle::distance(from, h);
+        if (k > 0 && hq - fq == dq * k && hr - fr == dr * k && k > best) best = k, found = h;
+      }
+      if (best < 0)
+        for (const e2::BattleHex& h : spellZone_) {
+          const std::vector<e2::BattleHex> line = e2::hexLine(from, h);
+          if (!std::any_of(line.begin(), line.end(), [&](const e2::BattleHex& c) { return c == aimHex; })) continue;
+          if (const int dist = e2::Battle::distance(from, h); dist > best) best = dist, found = h;
+        }
+      if (best < 0 && !spellZone_.empty()) found = spellZone_.front();
+      aimHex = found;
+    }
     // every target the spell asks for, on the same hex (Míssil Mágico's missiles, Fúria dos Céus' bolts may repeat)
     for (int k = 0; k < 8 && !spellMode_.empty(); ++k)  // a self-centred skill (Varredura, Redemoinho) is armed on the caster's own hex
-      aimSpell(spellArmed_ ? *spellArmed_ : e2::BattleHex{battle_->units()[tb].x, battle_->units()[tb].y});
+      aimSpell(spellArmed_ ? *spellArmed_ : aimHex);
     if (refuse) {
       if (exchange_) return fail("played, should have been refused");
       const e2::BattleUnit& c = battle_->units()[cb];
@@ -4404,6 +4611,36 @@ class MapStage final : public Stage {
         logInfo("battle script: {} missed", kind);
         return "";
       }
+      // The Lanceiro's: the lance may miss; the board move and the riders when it lands.
+      if (kind == "spearToss" || kind == "hookPull" || kind == "impaleDrag") {
+        const bool moved = t.x != before.x || t.y != before.y;
+        logInfo("battle script: {}: {} {} ({}, {}) -> ({}, {}), hp {} -> {}{}; the caster at ({}, {})", kind, t.name, moved ? "moved" : "stayed", before.x, before.y,
+                t.x, t.y, before.hp, t.hp, t.alive ? "" : " (dead)", c.x, c.y);
+        for (size_t k = battle_->log().size() > 9 ? battle_->log().size() - 9 : 0; k < battle_->log().size(); ++k) logInfo("battle script: log | {}", battle_->log()[k]);
+        if (moved) return kind == "hookPull" && !t.cond.staggered ? "pulled but not off balance" : "";
+        if (!t.alive) return "";  // killed by the blow itself: nobody left to move
+        if (t.hp < before.hp) return "hurt but not moved";
+        logInfo("battle script: {} missed", kind);
+        return "";
+      }
+      if (kind == "poleVault") {
+        if (c.x == casterBefore.x && c.y == casterBefore.y) return "the caster did not vault";
+        logInfo("battle script: {} vaulted from ({}, {}) to ({}, {})", kind, casterBefore.x, casterBefore.y, c.x, c.y);
+        if (t.hp < before.hp || !t.alive) return "";
+        logInfo("battle script: {} missed", kind);
+        return "";
+      }
+      if (kind == "disarm") {
+        logInfo("battle script: disarm: {} hp {} -> {}{}, atk {} -> {}, Desarmado -{}% for {} turns", t.name, before.hp, t.hp, t.alive ? "" : " (dead)", before.atk, t.atk,
+                t.cond.disarmPct, t.cond.disarmTurns);
+        return t.cond.disarmPct > 0 || !t.alive ? "" : t.hp < before.hp ? "hurt but not disarmed" : (logInfo("battle script: {} missed", kind), std::string());
+      }
+      if (kind == "swapPost") {
+        if (!(c.x == before.x && c.y == before.y && t.x == casterBefore.x && t.y == casterBefore.y)) return "places not changed";
+        logInfo("battle script: {}: {} now at ({}, {}), {} at ({}, {})", kind, c.name, c.x, c.y, t.name, t.x, t.y);
+        return "";
+      }
+      if (kind == "sentinelVigil") return c.cond.vigilPct > 0 ? "" : "no vigil on the caster";
       if (kind == "createFoodAndWater") {
         for (const auto& [i, full] : fedBefore) {
           const e2::BattleUnit& v = battle_->units()[i];
@@ -4435,7 +4672,68 @@ class MapStage final : public Stage {
   }
   // A spell's visual (version `look`) from `caster` at its nearest target, visuals only (no rules): the Spells menu's
   // Testar and --fx-test. Lines (Frost, piercing shots) reach three hexes past the target.
+  // The Lanceiro's (ours, visuals only): the lance's blow on the nearest foe and the board move it would make, the cards hopping
+  // in place (the rules move nobody here), the flights' effects to the hexes the move would reach.
+  void testLancer(size_t hero, const std::string& kind, float start) {
+    constexpr float kHexW = 1.7320508f;
+    const size_t foe = nearestTarget(hero, false);
+    const SpellEffects::Spot me = unitSpot(hero), them = unitSpot(foe);
+    glm::vec3 d = them.feet - me.feet;
+    d.y = 0.0f;
+    d = glm::dot(d, d) > 1e-6f ? glm::normalize(d) : glm::vec3(0.0f, 0.0f, 1.0f);
+    auto spotAt = [&](const SpellEffects::Spot& s, glm::vec3 feet) {
+      SpellEffects::Spot o = s;
+      o.body = feet + (s.body - s.feet), o.feet = feet;
+      return o;
+    };
+    auto onGround = [&](glm::vec3 p) {
+      p.y = groundAt(p.x, p.z);
+      return p;
+    };
+    auto hop = [&](size_t ui, float from, float to, float arc) {
+      if (ui < unitLeap_.size()) unitLeap_[ui] = {from, to, unitPos_[ui], unitPos_[ui], arc};
+    };
+    const int owner = static_cast<int>(hero);
+    const float impact = start + 0.4f;
+    if (kind == "spearToss") {
+      spellFx_.cast(kind, 1, me, {them}, start, impact, owner);
+      const glm::vec3 land = onGround(them.feet + d * (2.0f * kHexW));
+      spellFx_.lancerFlight(kind, them, spotAt(them, land), 1.9f, impact, impact + 0.5f, me, SpellEffects::Spot{}, false);
+      hop(foe, impact, impact + 0.5f, 1.9f);
+    } else if (kind == "hookPull") {
+      spellFx_.cast(kind, 1, me, {them}, start, impact, owner);
+      const glm::vec3 dest = onGround(me.feet + d * kHexW);
+      spellFx_.lancerFlight(kind, them, spotAt(them, dest), 0.0f, impact, impact + 0.35f, me, SpellEffects::Spot{}, false);
+    } else if (kind == "poleVault") {
+      const glm::vec3 landing = onGround(them.feet + d * kHexW);
+      spellFx_.vaultFlight(me, them, spotAt(them, landing), start, start + 0.5f, owner);
+      hop(hero, start, start + 0.5f, 2.0f);
+      spellFx_.cast(kind, 1, spotAt(me, landing), {them}, start + 0.5f, start + 0.8f, owner);
+    } else if (kind == "disarm") {
+      spellFx_.cast(kind, 1, me, {them}, start, impact, owner);
+      spellFx_.disarmed(them, me, impact);
+    } else if (kind == "swapPost") {
+      const size_t ally = nearestTarget(hero, true);
+      const SpellEffects::Spot al = unitSpot(ally);
+      spellFx_.swapFlight(me, al, impact, impact + 0.42f);
+      hop(hero, impact, impact + 0.42f, 0.55f);
+      if (ally != hero) hop(ally, impact, impact + 0.42f, 0.55f);
+      spellFx_.cast(kind, 1, me, {them}, impact + 0.5f, impact + 0.8f, owner);
+    } else if (kind == "impaleDrag") {
+      spellFx_.cast(kind, 1, me, {them}, start, impact, owner);
+      const glm::vec3 foeTo = onGround(them.feet + d * (2.0f * kHexW)), meTo = onGround(them.feet + d * kHexW);
+      spellFx_.lancerFlight(kind, them, spotAt(them, foeTo), 0.0f, impact, impact + 0.45f, me, spotAt(me, meTo), false);
+    } else if (kind == "sentinelVigil") {
+      spellFx_.cast(kind, 1, me, {me}, start, impact, owner);
+      const int id = spellFx_.lancer().vigilStart(me.feet, me.cardHeight, 1.5f * kHexW, impact);
+      spellFx_.lancer().vigilEnd(id, start + kFxTestCycle - 0.5f);
+      spellFx_.cast("sentinelStrike", 1, me, {them}, impact + 1.2f, impact + 1.5f, owner);
+    } else {
+      spellFx_.cast("sentinelStrike", 1, me, {them}, start, impact, owner);
+    }
+  }
   void testCast(size_t caster, const std::string& kind, int look, float start) {
+    if (e2::emberSpellClass(kind) == "aldric" || kind == "sentinelStrike") return testLancer(caster, kind, start);
     const size_t hero = caster;
     const size_t target = nearestTarget(caster, spellOnFriend(kind));
     std::vector<SpellEffects::Spot> spots{unitSpot(target)};
@@ -4589,7 +4887,23 @@ class MapStage final : public Stage {
         e2::resolveStep(*battle_, s, rng_, fx);
       }
       syncSummons();  // a familiar that appeared with this step gets its card
+      // The Lanceiro's board moves: bodies flying to their new hexes, and what lands only once a flight is over (a collision's
+      // numbers, `delay`).
+      const float flightEnd = animateFlights(fx, s);
+      {
+        std::vector<e2::BattleEffect> later;
+        for (size_t i = 0; i < fx.size();) {
+          if (fx[i].delay > 0.0f) later.push_back(fx[i]), fx.erase(fx.begin() + static_cast<std::ptrdiff_t>(i));
+          else ++i;
+        }
+        if (!later.empty()) pendingFx_.push_back({std::max(flightEnd, now_ + later.front().delay / actionRate()), later});
+      }
       showEffects(fx);
+      if (s.disarmPct > 0)  // Desarmar landed: the weapon knocked out of its hands flies off
+        for (const e2::BattleEffect& e : fx)
+          if (e.status && (e.text.starts_with("Desarmado") || e.text.starts_with("Disarmed")))
+            if (const int fu = sceneUnitOf(static_cast<int>(e.unit)), su = sceneUnitOf(static_cast<int>(s.att)); fu >= 0 && su >= 0)
+              spellFx_.disarmed(unitSpot(static_cast<size_t>(fu)), unitSpot(static_cast<size_t>(su)), now_);
       // A missed Investida Touro shoves nobody aside: the rest of the charge is dropped (its walk and its other blows).
       if (std::any_of(fx.begin(), fx.end(), [](const e2::BattleEffect& e) { return e.abortRush; })) {
         const size_t actor = s.att;
@@ -4643,7 +4957,7 @@ class MapStage final : public Stage {
       return;
     }
     // The step is over (Engine2 finishCombat -> finishAction): the action is done, and fighting side by side builds affinity (+0.1)
-    if (!x.affinityDone && s.type != e2::BattleStep::Type::Move) {
+    if (!x.affinityDone && !x.interrupt && s.type != e2::BattleStep::Type::Move) {
       x.affinityDone = true;
       e2::gainAdjacentAffinity(*battle_, static_cast<size_t>(unitBattle_[x.owner]));
     }
@@ -4651,6 +4965,10 @@ class MapStage final : public Stage {
       ++x.step;
       x.counter = false;
       startStep(x);
+      return;
+    }
+    if (x.interrupt) {  // a sentinel's thrust out of its turn: nobody's action ends here
+      exchange_.reset();
       return;
     }
     // Engine2 finishAction: it has acted; its turn ends unless it is a hero with movement left (it stays picked).
@@ -5127,7 +5445,9 @@ class MapStage final : public Stage {
           {"chainLightning", "lightning"}, {"eruption", "fire"},     {"glacialGale", "ice"},    {"wrathOfTheSkies", "lightning"}, {"primordialEmber", "ember"},
           // the Guerreiro's and the Arqueiro's (no icon yet: steel / wood)
           {"steelWhirlwind", "steel"}, {"guardBreak", "steel"}, {"warCry", "steel"}, {"leapingStrike", "steel"},
-          {"venomArrow", "wood"}, {"arrowRain", "wood"}, {"explosiveArrow", "wood"}, {"cripplingShot", "wood"}, {"arrowStorm", "wood"}, {"deathShot", "wood"}};
+          {"venomArrow", "wood"}, {"arrowRain", "wood"}, {"explosiveArrow", "wood"}, {"cripplingShot", "wood"}, {"arrowStorm", "wood"}, {"deathShot", "wood"},
+          {"spearToss", "steel"}, {"hookPull", "steel"}, {"poleVault", "steel"}, {"disarm", "steel"}, {"swapPost", "steel"}, {"impaleDrag", "steel"},
+          {"sentinelVigil", "ember"}};
       if (const auto it = kElementOf.find(kind); it != kElementOf.end())
         for (const auto& [el, c] : kElementColors)
           if (std::string(el) == it->second) back = c;
@@ -7205,9 +7525,11 @@ class MapStage final : public Stage {
     size_t unit = 0;    // scene unit
     int target = -1;    // scene unit it strikes after its walk
     bool struck = false;
+    bool interrupted = false;           // the sentinels' thrusts (Vigília) were played before its blow
     std::vector<e2::BattleStep> steps;  // or the spell it casts after its walk
   };
   std::optional<EnemyTurn> enemyTurn_;
+  std::map<int, int> vigilFx_;  // battle unit in its Vigília da Sentinela -> its standing effect (LancerFx::vigilStart)
   std::unordered_set<int> awake_;         // enemies that have seen the party (fog)
   int roamLeader_ = -1;                   // free roam: the scene unit the party follows
   float modeSwitchAt_ = -100.0f;          // free roam's last turn into a fight (the banner)

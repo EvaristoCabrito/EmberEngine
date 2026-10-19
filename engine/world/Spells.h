@@ -86,6 +86,17 @@ struct BattleStep {
   std::vector<size_t> fearIds;         // ... and these foes are afraid for fearTurns turns
   int fearTurns = 0;
   int hobblePct = 0, hobbleTurns = 0;  // Tiro Paralisante (the Arqueiro's): the struck foe's MOV down
+  // The Lanceiro's skills (docs/SKILLS_LANCER.md): the board moves ride on a landed hit
+  std::optional<BattleHex> throwTo;    // Arremesso / Gancho / Empalar e Arrastar: where the struck foe ends up
+  float arc = -1.0f;                   // ... its card's flight there: the arc's height in units (0 = dragged along the ground)
+  std::optional<size_t> collideWith;   // Arremesso: the unit it lands against; both take collideDice D collideFaces
+  int collideDice = 0, collideFaces = 0;
+  std::optional<BattleHex> dragTo;     // Empalar e Arrastar: where the caster ends up, behind the foe
+  bool rearSure = false;               // Salto de Vara: the blow comes from behind, whichever way the foe faces
+  int disarmPct = 0, disarmTurns = 0;  // Desarmar: the struck foe's ATK down, no counter
+  bool stagger = false;                // Gancho: the pulled foe cannot counter ...
+  int staggerTurns = 0;                // ... for this many more of its own turns
+  int vigilPct = 0, vigilRadius = 0;   // Vigília da Sentinela: the stance on the caster (Type::Effect)
 };
 
 // What a step did, for the window: a number over a unit, a miss, a heal, a death.
@@ -99,6 +110,8 @@ struct BattleEffect {
   bool abortRush = false;  // a missed Investida Touro: the rest of the charge is dropped
   bool moved = false;      // Type::Move / knockback: the unit is on another hex now
   bool pushed = false;   // the unit was moved to another hex (Vendaval Glacial): the window re-places its card
+  float arc = -1.0f;     // ... on a flight (the Lanceiro's throws, pulls, drags, the swap): the arc's height, -1 = at once
+  float delay = 0.0f;    // seconds (nominal) the window waits before showing it: what lands after a flight
   std::string cause;     // what hurt it at the start of its turn ("Sangramento fere", ...): the combat log's verb
 };
 
@@ -121,6 +134,12 @@ std::string promotionName(const std::string& classId);
 std::string conditionsText(const BattleUnit& u);
 // The spell's description for the window's tooltip (its numbers at the caster's level).
 std::string spellTooltip(const BattleUnit& caster, const std::string& kind);
+
+// The Lanceiro's Vigília da Sentinela (docs/SKILLS_LANCER.md): the thrusts that land on `attacker` before its blow, one per
+// sentinel of the other side whose stance covers one of `targets` (itself, or an ally within its radius) and whose lance
+// reaches the attacker from where it stands. Empty when nobody stands guard. The window plays them first; a dead attacker
+// never strikes.
+std::vector<BattleStep> vigilInterrupts(const Battle& b, size_t attacker, const std::vector<size_t>& targets);
 
 // The combat log's language for the lines made from now on (the window's Idioma choice).
 void setCombatLogEnglish(bool english);

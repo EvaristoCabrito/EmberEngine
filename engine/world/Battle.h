@@ -184,12 +184,20 @@ struct BattleUnit {
     int sunderPct = 0, sunderTurns = 0;  // Quebra-Guarda: DEF down by pct %
     int rallyPct = 0, rallyTurns = 0;    // Grito de Guerra: ATK up by pct %
     int hobblePct = 0, hobbleTurns = 0;  // Tiro Paralisante (the Arqueiro's): MOV down by pct % (hobbleBase keeps the whole)
+    // The Lanceiro's (docs/SKILLS_LANCER.md): Desarmado (ATK down by pct %, no counter; disarmBase keeps the whole ATK),
+    // Desequilibrado (Gancho: no counter until its next turn, staggerTurns more of its own turns), the Vigília da
+    // Sentinela (a stance, on while vigilPct > 0: it thrusts first at whoever attacks it or an ally within vigilRadius)
+    int disarmPct = 0, disarmTurns = 0;
+    bool staggered = false;
+    int staggerTurns = 0;
+    int vigilPct = 0, vigilRadius = 0;
     bool any() const {
       return markTurns > 0 || plagueSpread > 0 || plagueBurst || bleedTurns > 0 || silenceTurns > 0 || decayTurns > 0 || sunderPct > 0 || rallyPct > 0 ||
-             hobblePct > 0;
+             hobblePct > 0 || disarmPct > 0 || staggered || vigilPct > 0;
     }
   } cond;
   std::optional<int> hobbleBase;       // its MOV before Tiro Paralisante (given back when it lifts)
+  std::optional<int> disarmBase;       // its ATK before Desarmar (given back when it lifts)
 
   // --- Items and conditions a hero brings into the fight (Engine2 Unit.bag / diseased / poisoned / fullness) ---
   int bag[7] = {};  // potions carried, in kPotionIds order

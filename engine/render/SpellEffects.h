@@ -32,6 +32,7 @@
 #include "render/vfx/MagicMissileV2.h"
 #include "render/vfx/PhantasmalForce.h"
 #include "render/vfx/Sweeps.h"
+#include "render/vfx/LancerFx.h"
 #include "render/vfx/RangerFx.h"
 #include "render/vfx/WarriorFx.h"
 #include "render/vfx/WebOfDreams.h"
@@ -90,6 +91,20 @@ class SpellEffects {
   // and the Grito de Guerra's dark pulse on the foes it frightens.
   void leapFlight(const Spot& caster, const Spot& landing, float start, float impact, int owner = -1);
   void warCryFear(const std::vector<Spot>& foes, float impact);
+  // The Lanceiro's skills (vfx/LancerFx, ours, 3D): cast() plays the lance's blow of each; the stage times the board moves
+  // itself once the rules decided them. lancer() for the standing vigil (vigilStart / vigilMove / vigilEnd) and the tests.
+  LancerFx& lancer() { return lancer_; }
+  // The vault from `caster` over `over` onto `landing` over [start, land] (the card flies in the stage).
+  void vaultFlight(const Spot& caster, const Spot& over, const Spot& landing, float start, float land, int owner = -1);
+  // A body's flight after a landed hit of `kind` ("spearToss", "hookPull", "impaleDrag"): from `from` to `to` over [start, finish]
+  // on an arc `arc` high; `caster`: where the lancer stands (the hook's chain), or for the drag where it runs from and `casterTo`
+  // where it ends; `collided`: the thrown body lands against another.
+  void lancerFlight(const std::string& kind, const Spot& from, const Spot& to, float arc, float start, float finish, const Spot& caster, const Spot& casterTo,
+                    bool collided);
+  // Troca de Posto: `a` and `b` change places over [start, finish].
+  void swapFlight(const Spot& a, const Spot& b, float start, float finish);
+  // Desarmar landed: the foe's weapon knocked away at `at`, from the striker at `from`.
+  void disarmed(const Spot& foe, const Spot& from, float at);
 
   // --- EmberEngine's own spells (SpellEffectsEmber.cpp: the Bruxo's and the Elementalista's, version 01 = flipbook cards) ---
   // A zone that stays on the board (burning ground, the Mortalha de Sombras, a Meteoro's mark): `kind` as the rules name
@@ -111,7 +126,7 @@ class SpellEffects {
   void build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out, std::vector<Light>& lights);
   const VfxFrame& vfx() const { return vfx_; }
   bool active(float now) const;
-  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), warrior_.clear(), ranger_.clear(); }
+  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), warrior_.clear(), ranger_.clear(), lancer_.clear(); }
   // A version that keeps Engine2's own timeline decides when the hit lands: seconds from the cast (Míssil Mágico 02:
   // Engine2's charge, then the flight). Below 0: the version lands on the caller's impact (the pose's).
   float impactDelay(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const;
@@ -221,6 +236,7 @@ class SpellEffects {
   CombatFx combat_;
   WarriorFx warrior_;  // the Guerreiro's skills (ours, 3D)
   RangerFx ranger_;    // the Arqueiro's skills (ours, 3D)
+  LancerFx lancer_;    // the Lanceiro's skills (ours, 3D)
   std::string potionEffect_ = "heal";  // the potion being cast (potion())
   std::vector<std::pair<BurningHands, bool>> burns_;  // Mãos Flamejantes 01 / Sopro Venenoso 01 (poison) = BurningHandsV2VFX
   // An fx clip of the battle pack as the effect runtime samples it (requested on screen; empty while not loaded).

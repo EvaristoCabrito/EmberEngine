@@ -78,9 +78,12 @@ nlohmann::json Battle::snapshot() const {
                    {"silenceTurns", c.silenceTurns}, {"decayTurns", c.decayTurns}, {"decayPct", c.decayPct},       {"decayCap", c.decayCap},
                    {"decayStep", c.decayStep},   {"decayDice", c.decayDice},     {"decayFaces", c.decayFaces},     {"decayMul", c.decayMul},
                    {"decayMag", c.decayMag},     {"sunderPct", c.sunderPct},     {"sunderTurns", c.sunderTurns},   {"rallyPct", c.rallyPct},
-                   {"rallyTurns", c.rallyTurns},     {"hobblePct", c.hobblePct},     {"hobbleTurns", c.hobbleTurns}};
+                   {"rallyTurns", c.rallyTurns},     {"hobblePct", c.hobblePct},     {"hobbleTurns", c.hobbleTurns},
+                   {"disarmPct", c.disarmPct},   {"disarmTurns", c.disarmTurns}, {"staggered", c.staggered},       {"staggerTurns", c.staggerTurns},
+                   {"vigilPct", c.vigilPct},     {"vigilRadius", c.vigilRadius}};
     }
     if (u.hobbleBase) s["hobbleBase"] = *u.hobbleBase;
+    if (u.disarmBase) s["disarmBase"] = *u.disarmBase;
     if (u.decayBase)
       s["decayBase"] = {{"atk", u.decayBase->atk}, {"mag", u.decayBase->mag}, {"def", u.decayBase->def}, {"dex", u.decayBase->dex}, {"mov", u.decayBase->mov}};
     units.push_back(std::move(s));
@@ -237,9 +240,13 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       o.decayFaces = c.value("decayFaces", 0), o.decayMul = c.value("decayMul", 0.0), o.decayMag = c.value("decayMag", 0.0);
       o.sunderPct = c.value("sunderPct", 0), o.sunderTurns = c.value("sunderTurns", 0), o.rallyPct = c.value("rallyPct", 0), o.rallyTurns = c.value("rallyTurns", 0);
       o.hobblePct = c.value("hobblePct", 0), o.hobbleTurns = c.value("hobbleTurns", 0);
+      o.disarmPct = c.value("disarmPct", 0), o.disarmTurns = c.value("disarmTurns", 0), o.staggered = c.value("staggered", false);
+      o.staggerTurns = c.value("staggerTurns", 0), o.vigilPct = c.value("vigilPct", 0), o.vigilRadius = c.value("vigilRadius", 0);
     }
     u.hobbleBase.reset();
     if (s.contains("hobbleBase") && s["hobbleBase"].is_number()) u.hobbleBase = s["hobbleBase"].get<int>();
+    u.disarmBase.reset();
+    if (s.contains("disarmBase") && s["disarmBase"].is_number()) u.disarmBase = s["disarmBase"].get<int>();
     u.decayBase.reset();
     if (s.contains("decayBase") && s["decayBase"].is_object()) {
       const nlohmann::json& d = s["decayBase"];

@@ -579,6 +579,26 @@ cada tier no mínimo e uma habilidade de campo para usar no world map")
   `--promote Neera=archer:25`; the `cast` script step stands the target beside the caster, inside the
   bow's minimum range: test the shots with `goto` + `spell` + `click` + `confirm`, the volleys with `cast`.
 
+## Habilidades do Lanceiro T1-T5 (2026-10-18; the user chose the set he drew the icons for: "Faz o conjunto dos ícones: Arremesso,
+Gancho, Salto de Vara, Desarmar, Troca de Posto, Empalar e Arrastar, Vigília da Sentinela (mecânicas de tabuleiro, elemento só nos efeitos)")
+
+- **Read `docs/SKILLS_LANCER.md`** (numbers, scaling 2-30, what each refuses, the effects). Every one moves the board, none repeats an
+  existing mechanic (the user: "LEIA AS SKILLS JA EXISTENTES"): Arremesso (T1·2, a neighbour thrown 2-3 hexes the way you choose,
+  collision dice on both when it lands on a body), Gancho (T2·4, a foe 2-5 hexes away pulled beside you, Desequilibrado = no counter),
+  Salto de Vara (T3·8, vault over the neighbour onto its back, rear sure, no counter), Desarmar (T4·11, Desarmado = -ATK% and no
+  counter), Troca de Posto (T4·13, places changed with an ally, then the blow from there), Empalar e Arrastar (T5·15, the neighbour
+  dragged 1-4 hexes in a line, +mul per hex), Vigília da Sentinela (T5·17, a stance: the sentinel thrusts first at whoever attacks it
+  or an ally in the radius; a dead attacker never strikes). Lance skills (the lance's own roll); learned by `aldric` and its
+  promotions (`emberClassFamily`: sentinel, templar, lancer).
+- Code: `Spells.cpp` (`lancerKind`, the plans `tossPlan / hookPlan / vaultLanding / swapAlly / dragPlan`, `castEmber`, the riders:
+  `throwTo / arc / collideWith / dragTo / rearSure / disarm* / stagger*`, the Effect steps swapPost / sentinelVigil, `vigilInterrupts`),
+  `Battle.h` `Conditions::disarm* / staggered / vigil*` + `disarmBase`, `BattleEffect::arc / delay` (a card's flight; numbers that wait
+  for it), `render/vfx/LancerFx.*` (7 effects, 3D), `SpellEffects` (`vaultFlight / lancerFlight / swapFlight / disarmed`), `MapStage.h`
+  (`animateFlights`: thrown / pulled / dragged / swapped cards fly on `unitLeap_`; `playInterrupts` before an enemy's blow or cast in
+  `updateTurns`, `Exchange::interrupt`; `syncVigils`; `--fx-test`; script `cast` aims the throw / drag at a hex past the target,
+  `vigil:<attacker>:<target>` tests the interrupt).
+- Icons: the user's art copied to `content/ui/spells/<kind>.jpg`. Tests: `--promote Aldric=aldric:25`, scratchpad `run_lancer.ps1`.
+
 ## Promoções do Mago Negro: Bruxo e Elementalista, magias T6–T10 (2026-10-17; the user: "pode criar todas elas os
 efeitos e wire into the game")
 

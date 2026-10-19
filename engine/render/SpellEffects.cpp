@@ -86,7 +86,9 @@ int SpellEffects::looks(const std::string& kind) {
                                  // the Guerreiro's (vfx/WarriorFx, ours, 3D)
                                  "steelWhirlwind", "guardBreak", "warCry", "leapingStrike",
                                  // the Arqueiro's (vfx/RangerFx, ours, 3D)
-                                 "venomArrow", "arrowRain", "explosiveArrow", "cripplingShot", "arrowStorm", "deathShot"};
+                                 "venomArrow", "arrowRain", "explosiveArrow", "cripplingShot", "arrowStorm", "deathShot",
+                                 // the Lanceiro's (vfx/LancerFx, ours, 3D)
+                                 "spearToss", "hookPull", "poleVault", "disarm", "swapPost", "impaleDrag", "sentinelVigil", "sentinelStrike"};
   for (const char* k : kEmber)
     if (kind == k) return 1;
   return 0;
@@ -221,7 +223,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
 bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact) {
   if (look < 1 || look > looks(kind)) return false;
   impact = std::max(impact, start + 0.05f);
-  if (targets.empty() && kind != "piercingThrust" && kind != "doubleStrike" && kind != "steelWhirlwind" && kind != "warCry") return false;
+  if (targets.empty() && kind != "piercingThrust" && kind != "doubleStrike" && kind != "steelWhirlwind" && kind != "warCry" && kind != "sentinelVigil") return false;
   // The cures', the meal's and the potion's light (HolyLight), on every unit it reaches.
   if (isHoly(kind, look)) {
     using Style = HolyLight::Style;
@@ -269,6 +271,33 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
       if (s.cardHeight > 0.0f) foes.push_back({s.feet, s.cardHeight});
     }
     ranger_.volley(caster.feet, hexes, foes, start, impact, kind == "arrowStorm");
+    return true;
+  }
+  // The Lanceiro's skills (LancerFx, ours, 3D): the lance's blow on the first target (the struck foe; the swap's targets are
+  // the ally then the caster's own hex); the board moves follow from the stage (lancerFlight, swapFlight, vaultFlight).
+  if (kind == "spearToss" || kind == "hookPull" || kind == "poleVault" || kind == "disarm" || kind == "swapPost" || kind == "impaleDrag" ||
+      kind == "sentinelVigil" || kind == "sentinelStrike") {
+    auto lancerTarget = [](const Spot& s) { return LancerFx::Target{s.feet, s.cardHeight}; };
+    if (kind == "sentinelVigil") {
+      float radius = 0.0f;
+      for (const Spot& s : targets) radius = std::max(radius, glm::length(glm::vec2(s.feet.x - caster.feet.x, s.feet.z - caster.feet.z)));
+      lancer_.vigilRise(caster.feet, caster.cardHeight, radius + 0.6f, impact);
+      return true;
+    }
+    const LancerFx::Target foe = lancerTarget(targets.front());
+    if (kind == "swapPost") {
+      // The Effect step aims two hexes (the ally's, then the caster's own): the dash of both as the rules swap them at the impact
+      // (the cards fly from the stage, 0.42 s); its blow is a Combat step on one foe.
+      if (targets.size() >= 2) lancer_.swap(targets[1].feet, targets[1].cardHeight, targets[0].feet, targets[0].cardHeight, impact, impact + 0.42f);
+      else lancer_.swapBlow(foe, caster.feet, impact);
+      return true;
+    }
+    if (kind == "spearToss") lancer_.toss(foe, caster.feet, impact);
+    else if (kind == "hookPull") lancer_.hook(caster.feet, caster.cardHeight, foe, std::max(start, impact - RangerFx::flightSeconds(caster.feet, foe.feet)), impact);
+    else if (kind == "poleVault") lancer_.vaultBlow(foe, caster.feet, impact);
+    else if (kind == "disarm") lancer_.disarm(foe, caster.feet, impact);
+    else if (kind == "impaleDrag") lancer_.impale(foe, caster.feet, impact);
+    else lancer_.vigilStrike(foe, caster.feet, impact);
     return true;
   }
   if (isBolt(kind, look)) {
@@ -606,9 +635,21 @@ void SpellEffects::warCryFear(const std::vector<Spot>& foes, float impact) {
   for (const Spot& s : foes) hit.push_back({s.feet, s.cardHeight});
   warrior_.warCryFear(hit, impact);
 }
+void SpellEffects::vaultFlight(const Spot& caster, const Spot& over, const Spot& landing, float start, float land, int owner) {
+  lancer_.vault(caster.feet, caster.cardHeight, over.feet, landing.feet, start, land);
+  if (owner >= 0) casts_.push_back({owner, land + 1.3f});
+}
+void SpellEffects::lancerFlight(const std::string& kind, const Spot& from, const Spot& to, float arc, float start, float finish, const Spot& caster,
+                                const Spot& casterTo, bool collided) {
+  if (kind == "spearToss") lancer_.tossFlight(from.feet, to.feet, from.cardHeight, arc, start, finish, collided);
+  else if (kind == "hookPull") lancer_.hookPull(caster.feet, caster.cardHeight, from.feet, to.feet, from.cardHeight, start, finish);
+  else if (kind == "impaleDrag") lancer_.drag(from.feet, to.feet, from.cardHeight, caster.feet, casterTo.feet, caster.cardHeight, start, finish);
+}
+void SpellEffects::swapFlight(const Spot& a, const Spot& b, float start, float finish) { lancer_.swap(a.feet, a.cardHeight, b.feet, b.cardHeight, start, finish); }
+void SpellEffects::disarmed(const Spot& foe, const Spot& from, float at) { lancer_.disarmed({foe.feet, foe.cardHeight}, from.feet, at); }
 
 bool SpellEffects::active(float now) const {
-  if (combat_.active(now) || warrior_.active(now) || ranger_.active(now)) return true;
+  if (combat_.active(now) || warrior_.active(now) || ranger_.active(now) || lancer_.active(now)) return true;
   if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
   if (std::any_of(fireballs_.begin(), fireballs_.end(), [&](const Fireball& f) { return !f.done(now); })) return true;
   if (std::any_of(blesses_.begin(), blesses_.end(), [&](const Bless& b) { return !b.done(now); })) return true;
@@ -673,6 +714,7 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   combat_.build(now, camera, vfx_, vfxLights);
   warrior_.build(now, camera, vfx_, vfxLights);
   ranger_.build(now, camera, vfx_, vfxLights);
+  lancer_.build(now, camera, vfx_, vfxLights);
   for (const VfxLight& l : vfxLights)
     if (l.intensity > 0.0f) lights.push_back({l.at, {l.color.r, l.color.g, l.color.b}, l.intensity, l.distance, std::max(l.at.y, 1.0f)});
   const size_t first = out.size();

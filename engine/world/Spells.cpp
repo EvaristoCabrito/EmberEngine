@@ -119,13 +119,30 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"cripplingShot", "Tiro Paralisante", 4, "", true}, "archer", 12},
     {{"arrowStorm", "Tempestade de Flechas", 5, "", true}, "archer", 13},
     {{"deathShot", "Tiro Mortal", 5, "", true}, "archer", 15},
+    // Lanceiro (docs/SKILLS_LANCER.md, 2026-10-18; Aldric, class `aldric`): lance skills that move the board (the lance's own
+    // roll + bonus dice), two of T4 / T5, one of T1-T3; the Sentinela and the Templário keep them
+    {{"spearToss", "Arremesso", 1, "", true}, "aldric", 2},
+    {{"hookPull", "Gancho", 2, "", true}, "aldric", 4},
+    {{"poleVault", "Salto de Vara", 3, "", true}, "aldric", 8},
+    {{"disarm", "Desarmar", 4, "", true}, "aldric", 11},
+    {{"swapPost", "Troca de Posto", 4, "", true}, "aldric", 13},
+    {{"impaleDrag", "Empalar e Arrastar", 5, "", true}, "aldric", 15},
+    {{"sentinelVigil", "Vigília da Sentinela", 5, "", false}, "aldric", 17},
+    // ... and the Vigília's own thrust (never learned: the stance plays it when an enemy attacks)
+    {{"sentinelStrike", "Estocada da Sentinela", 5, "", true}, "", 99},
 };
 // The base class a promotion keeps the skills of (the Guerreiro's go on into the Paladino and the Cavaleiro Pesado, the
-// Arqueiro's into the Patrulheiro and the Assassino).
+// Arqueiro's into the Patrulheiro and the Assassino, the Lanceiro's into the Sentinela and the Templário).
 const char* emberClassFamily(const std::string& classId) {
   if (classId == "paladin" || classId == "heavyKnight") return "swordsman";
   if (classId == "ranger" || classId == "assassin") return "archer";
+  if (classId == "sentinel" || classId == "templar" || classId == "lancer") return "aldric";
   return classId.c_str();
+}
+// The Lanceiro's skills (docs/SKILLS_LANCER.md).
+bool lancerKind(const std::string& kind) {
+  return kind == "spearToss" || kind == "hookPull" || kind == "poleVault" || kind == "disarm" || kind == "swapPost" || kind == "impaleDrag" ||
+         kind == "sentinelVigil" || kind == "sentinelStrike";
 }
 // The Arqueiro's shots aimed at one foe within the bow's reach (+ the skill's extra hexes), with a clear line of fire.
 bool archerShot(const std::string& kind) {
@@ -405,6 +422,39 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
     n.mul = lv >= 29 ? 2.6 : lv >= 21 ? 2.3 : 2.0;
     n.dice = lv >= 24 ? 3 : 2, n.faces = 8;
     n.pct = lv >= 26 ? 30 : 25;  // a foe left under this share of its HP dies
+  }
+  // Lanceiro (docs/SKILLS_LANCER.md): mul = the weight on the lance's roll, dice = the bonus on it
+  else if (kind == "spearToss") {
+    n.range = lv >= 14 ? 3 : 2;  // hexes thrown
+    n.mul = lv >= 20 ? 1.1 : lv >= 8 ? 1.0 : 0.9;
+    if (lv >= 24) n.dice = 2, n.faces = 6;
+    else if (lv >= 16) n.dice = 1, n.faces = 6;
+    else if (lv >= 8) n.dice = 1, n.faces = 4;
+    n.tickDice = lv >= 26 ? 2 : lv >= 14 ? 2 : 1, n.tickFaces = lv >= 26 ? 8 : 6;  // the collision, on both bodies
+  } else if (kind == "hookPull") {
+    n.range = lv >= 26 ? 5 : lv >= 12 ? 4 : 3;
+    n.mul = lv >= 24 ? 1.0 : lv >= 15 ? 0.9 : 0.8;
+    n.dice = lv >= 28 ? 2 : 1, n.faces = lv >= 18 ? 6 : 4;
+    n.turns = lv >= 24 ? 1 : 0;  // Desequilibrado for this many more of its own turns (always until its next one)
+  } else if (kind == "poleVault") {
+    n.mul = lv >= 26 ? 1.8 : lv >= 20 ? 1.6 : lv >= 14 ? 1.4 : 1.2;
+    n.dice = lv >= 20 ? 2 : 1, n.faces = lv >= 29 ? 8 : 6;
+  } else if (kind == "disarm") {
+    n.dice = lv >= 27 ? 2 : 1, n.faces = lv >= 17 ? 6 : 4;
+    n.pct = lv >= 29 ? 60 : lv >= 22 ? 50 : 40;  // ATK off
+    n.turns = lv >= 17 ? 3 : 2;
+  } else if (kind == "swapPost") {
+    n.range = lv >= 28 ? 5 : lv >= 19 ? 4 : 3;
+    n.mul = lv >= 30 ? 1.3 : lv >= 25 ? 1.15 : 1.0;
+    n.dice = lv >= 21 ? 2 : 1, n.faces = 6;
+  } else if (kind == "impaleDrag") {
+    n.length = lv >= 24 ? 4 : 3;              // hexes dragged at most
+    n.mul = 1.0, n.decay = lv >= 21 ? 0.3 : 0.25;  // + this per hex dragged
+    n.dice = lv >= 28 ? 2 : 1, n.faces = 8;
+  } else if (kind == "sentinelVigil") {
+    n.radius = lv >= 26 ? 2 : 1;
+    n.mul = lv >= 27 ? 1.6 : lv >= 23 ? 1.4 : lv >= 20 ? 1.2 : 1.0;
+    n.dice = lv >= 23 ? 1 : 0, n.faces = 6;
   }
   // Elementalista
   else if (kind == "pillarOfFlame") {
@@ -1000,6 +1050,16 @@ void liftHobble(BattleUnit& u) {
   u.hobbleBase.reset();
   u.cond.hobblePct = u.cond.hobbleTurns = 0;
 }
+// Desarmar (the Lanceiro's): ATK at disarmPct % off what it was, given back when the condition lifts.
+void applyDisarm(BattleUnit& u) {
+  if (!u.disarmBase) u.disarmBase = u.atk;
+  u.atk = std::max(0, static_cast<int>(jsRound(*u.disarmBase * (1 - u.cond.disarmPct / 100.0))));
+}
+void liftDisarm(BattleUnit& u) {
+  if (u.disarmBase) u.atk = *u.disarmBase;
+  u.disarmBase.reset();
+  u.cond.disarmPct = u.cond.disarmTurns = 0;
+}
 void liftDecay(BattleUnit& u) {
   if (u.decayBase) u.atk = u.decayBase->atk, u.mag = u.decayBase->mag, u.def = u.decayBase->def, u.dex = u.decayBase->dex, u.mov = u.decayBase->mov;
   u.decayBase.reset();
@@ -1140,6 +1200,169 @@ std::optional<BattleHex> leapLanding(const Battle& b, size_t caster, size_t foe,
     bestD = d, best = h;
   }
   return best;
+}
+
+// --- The Lanceiro's board moves (docs/SKILLS_LANCER.md) ----------------------------------------------------------------------
+// A hex a body may be thrown, pulled or dragged onto: on the board, walkable ground, nobody on it.
+bool landable(const Battle& b, BattleHex h) {
+  if (!b.inBounds(h.x, h.y)) return false;
+  const BattleCell& c = b.cell(h.x, h.y);
+  if (!c.passable || c.blocked || c.terrain == "void" || c.terrain == "water" || c.terrain == "barricade") return false;
+  return b.unitAt(h.x, h.y) < 0;
+}
+// One body on one hex (a bigger one cannot be thrown about).
+bool oneHex(const BattleUnit& u) { return u.size <= 1 && !u.footprintOffsets; }
+// The hex past `through` on the straight line from `from` (for neighbours: the next hex in that direction).
+BattleHex hexBeyond(BattleHex from, BattleHex through) {
+  const Cube a = oddrToCube(from.x, from.y), t = oddrToCube(through.x, through.y);
+  return cubeToOddr(static_cast<int>(std::lround(2 * t.q - a.q)), static_cast<int>(std::lround(2 * t.r - a.r)));
+}
+// Arremesso: the neighbour to be thrown toward `aim` (the one nearest it), its flight, where it ends and what it hits.
+struct TossPlan {
+  size_t foe = 0;
+  std::optional<BattleHex> landing;  // where it ends (none: it never leaves its hex)
+  std::optional<size_t> collide;     // the unit it lands against
+  std::vector<BattleHex> tiles;      // the foe's hex, its flight, the body it hits
+  int hexes = 0;                     // how far it flies
+};
+std::optional<TossPlan> tossPlan(const Battle& b, size_t caster, BattleHex aim, const EmberNumbers& n, std::string* why = nullptr) {
+  const BattleUnit& u = b.units()[caster];
+  const BattleHex from{u.x, u.y};
+  auto fail = [&](const std::string& w) {
+    if (why) *why = w;
+    return std::optional<TossPlan>();
+  };
+  if (!b.inBounds(aim.x, aim.y)) return fail("Fora do mapa.");
+  if (aim == from) return fail("Escolha para onde lançar o inimigo vizinho.");
+  std::optional<TossPlan> best;
+  int bestD = 1 << 30;
+  for (const BattleHex& h : Battle::neighbors(u.x, u.y)) {
+    const int foe = occAt(b, h);
+    if (!targetable(b, foe) || !oneHex(b.units()[static_cast<size_t>(foe)])) continue;
+    const int d = hexDist(h, aim);
+    if (d < 1 || d > n.range || d >= bestD) continue;
+    const std::vector<BattleHex> line = hexLine(h, aim);
+    if (std::any_of(line.begin(), line.end(), [&](const BattleHex& c) { return c == from; })) continue;  // never through the thrower
+    TossPlan p;
+    p.foe = static_cast<size_t>(foe);
+    p.tiles.push_back(h);
+    BattleHex at = h;
+    for (size_t k = 1; k < line.size(); ++k) {
+      const BattleHex& c = line[k];
+      if (!b.inBounds(c.x, c.y)) break;
+      if (const int who = b.unitAt(c.x, c.y); who >= 0) {
+        p.collide = static_cast<size_t>(who);
+        p.tiles.push_back(c);
+        break;
+      }
+      if (!landable(b, c)) break;
+      at = c, p.tiles.push_back(c), ++p.hexes;
+    }
+    if (p.hexes == 0 && !p.collide) continue;  // nowhere to go that way
+    if (p.hexes > 0) p.landing = at;
+    best = p, bestD = d;
+  }
+  if (!best) return fail(std::format("Escolha um hex a até {} hexes de um inimigo vizinho, sem passar por você.", n.range));
+  return best;
+}
+// Gancho: the foe hooked at `aim` and the free hex on the line it is pulled to (the nearest to the caster).
+struct HookPlan {
+  size_t foe = 0;
+  BattleHex dest;
+  std::vector<BattleHex> line;
+};
+std::optional<HookPlan> hookPlan(const Battle& b, size_t caster, BattleHex aim, const EmberNumbers& n, std::string* why = nullptr) {
+  const BattleUnit& u = b.units()[caster];
+  const BattleHex from{u.x, u.y};
+  auto fail = [&](const std::string& w) {
+    if (why) *why = w;
+    return std::optional<HookPlan>();
+  };
+  if (!b.inBounds(aim.x, aim.y)) return fail("Fora do mapa.");
+  const int foe = occAt(b, aim);
+  if (!targetable(b, foe)) return fail(foe < 0 ? "Não há unidade na casa selecionada." : "Escolha um inimigo visível.");
+  if (!oneHex(b.units()[static_cast<size_t>(foe)])) return fail("Grande demais para ser puxado.");
+  const int d = hexDist(from, aim);
+  if (d < 2) return fail("Alvo perto demais: o gancho pega a 2 hexes ou mais.");
+  if (d > n.range) return fail(std::format("Alvo fora de alcance (máximo {} hexes).", n.range));
+  if (!clearShot(b, from, aim, true)) return fail("O gancho está bloqueado.");
+  HookPlan p;
+  p.foe = static_cast<size_t>(foe);
+  p.line = hexLine(from, aim);
+  for (size_t k = 1; k + 1 < p.line.size(); ++k)
+    if (landable(b, p.line[k])) {
+      p.dest = p.line[k];
+      return p;
+    }
+  return fail("Não há espaço para puxá-lo até você.");
+}
+// Salto de Vara: the hex behind the neighbour at `aim` (on the line through it), where the caster lands.
+std::optional<BattleHex> vaultLanding(const Battle& b, size_t caster, BattleHex aim, std::string* why = nullptr) {
+  const BattleUnit& u = b.units()[caster];
+  auto fail = [&](const char* w) {
+    if (why) *why = w;
+    return std::optional<BattleHex>();
+  };
+  if (!b.inBounds(aim.x, aim.y)) return fail("Fora do mapa.");
+  const int foe = occAt(b, aim);
+  if (!targetable(b, foe)) return fail(foe < 0 ? "Não há unidade na casa selecionada." : "Escolha um inimigo visível.");
+  if (hexDist({u.x, u.y}, aim) != 1) return fail("O salto passa por cima de um inimigo vizinho.");
+  if (!oneHex(u) || !oneHex(b.units()[static_cast<size_t>(foe)])) return fail("Não dá para saltar por cima desse inimigo.");
+  const BattleHex landing = hexBeyond({u.x, u.y}, aim);
+  if (!landable(b, landing)) return fail("Não há hex livre atrás do inimigo.");
+  return landing;
+}
+// Troca de Posto: the ally at `aim` the caster changes places with (-1 with the reason).
+int swapAlly(const Battle& b, size_t caster, BattleHex aim, const EmberNumbers& n, std::string* why = nullptr) {
+  const BattleUnit& u = b.units()[caster];
+  auto fail = [&](const std::string& w) {
+    if (why) *why = w;
+    return -1;
+  };
+  if (!b.inBounds(aim.x, aim.y)) return fail("Fora do mapa.");
+  const int ally = occAt(b, aim);
+  if (ally < 0) return fail("Não há aliado na casa selecionada.");
+  const BattleUnit& a = b.units()[static_cast<size_t>(ally)];
+  if (ally == static_cast<int>(caster) || !a.alive || a.side != u.side) return fail("Escolha um aliado para trocar de lugar.");
+  if (!oneHex(u) || !oneHex(a)) return fail("Não dá para trocar de lugar com esse aliado.");
+  if (hexDist({u.x, u.y}, aim) > n.range) return fail(std::format("Aliado fora de alcance (máximo {} hexes).", n.range));
+  return ally;
+}
+// Empalar e Arrastar: the neighbour dragged in a straight line away from the caster until `aim`; the caster follows one hex behind.
+struct DragPlan {
+  size_t foe = 0;
+  BattleHex foeTo, casterTo;
+  std::vector<BattleHex> tiles;  // the foe's hex and the hexes it is dragged over
+  int hexes = 0;
+};
+std::optional<DragPlan> dragPlan(const Battle& b, size_t caster, BattleHex aim, const EmberNumbers& n, std::string* why = nullptr) {
+  const BattleUnit& u = b.units()[caster];
+  const BattleHex from{u.x, u.y};
+  auto fail = [&](const std::string& w) {
+    if (why) *why = w;
+    return std::optional<DragPlan>();
+  };
+  if (!b.inBounds(aim.x, aim.y)) return fail("Fora do mapa.");
+  if (!oneHex(u)) return fail("Não dá para arrastar ninguém assim.");
+  for (const BattleHex& h : Battle::neighbors(u.x, u.y)) {
+    const int foe = occAt(b, h);
+    if (!targetable(b, foe) || !oneHex(b.units()[static_cast<size_t>(foe)])) continue;
+    DragPlan p;
+    p.foe = static_cast<size_t>(foe);
+    p.tiles.push_back(h);
+    BattleHex prev = from, at = h;
+    for (int k = 0; k < n.length; ++k) {
+      const BattleHex next = hexBeyond(prev, at);
+      if (!landable(b, next)) break;
+      prev = at, at = next;
+      p.tiles.push_back(at), ++p.hexes;
+      if (at == aim) {
+        p.foeTo = at, p.casterTo = prev;
+        return p;
+      }
+    }
+  }
+  return fail(std::format("Escolha um hex em linha reta atrás de um inimigo vizinho, a até {} hexes.", n.length));
 }
 
 std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const std::string& kind, const std::vector<BattleHex>& cells, std::string* error) {
@@ -1328,6 +1551,102 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
         if (id != static_cast<size_t>(foe)) w.ids.push_back(id), w.perTargetMul.push_back(n.pct / 100.0);
       if (!w.ids.empty()) steps.push_back(w);
     }
+  } else if (kind == "spearToss") {
+    // The lance under the neighbour: a lance blow (x mul + the dice); on a hit the body flies to the chosen hex, and against
+    // whoever stands in the way: both take the collision dice.
+    std::string why;
+    const std::optional<TossPlan> p = tossPlan(b, caster, cell, n, &why);
+    if (!p) return fail(why);
+    spend();
+    s.ids = {p->foe}, s.tiles = p->tiles;
+    s.dice = 0, s.spellMul = 1, s.dmgMul = n.mul;
+    s.weaponBonusDice = n.dice, s.weaponBonusFaces = n.faces, s.weaponBonusBonus = 0;
+    s.throwTo = p->landing, s.arc = 1.4f + 0.25f * static_cast<float>(p->hexes);
+    s.collideWith = p->collide, s.collideDice = n.tickDice, s.collideFaces = n.tickFaces;
+    steps.push_back(s);
+  } else if (kind == "hookPull") {
+    // The hook on a foe 2+ hexes away: a lance blow (x mul + the dice); on a hit it is dragged to the free hex nearest the
+    // caster on the line, off its feet (no counter until its next turn).
+    std::string why;
+    const std::optional<HookPlan> p = hookPlan(b, caster, cell, n, &why);
+    if (!p) return fail(why);
+    spend();
+    s.ids = {p->foe}, s.tiles = p->line;
+    s.dice = 0, s.spellMul = 1, s.dmgMul = n.mul;
+    s.weaponBonusDice = n.dice, s.weaponBonusFaces = n.faces, s.weaponBonusBonus = 0;
+    s.throwTo = p->dest, s.arc = 0.0f;
+    s.stagger = true, s.staggerTurns = n.turns;
+    steps.push_back(s);
+  } else if (kind == "poleVault") {
+    // Over the neighbour onto the hex behind it, then the blow from behind (x mul + the dice; the rear bonus is sure; no counter).
+    std::string why;
+    const int foe = occAt(b, cell);
+    const std::optional<BattleHex> landing = vaultLanding(b, caster, cell, &why);
+    if (!landing || foe < 0) return fail(why);
+    spend();
+    BattleStep m;
+    m.type = BattleStep::Type::Move, m.att = caster, m.kind = kind;
+    m.path = {from, *landing};
+    steps.push_back(m);
+    BattleStep c;
+    c.type = BattleStep::Type::Combat, c.att = caster, c.def = static_cast<size_t>(foe), c.kind = kind, c.noCounter = true, c.rearSure = true;
+    c.dmgMul = n.mul;
+    c.bonusDice = n.faces, c.bonusDiceCount = n.dice, c.bonusFlat = 0;
+    steps.push_back(c);
+  } else if (kind == "disarm") {
+    // A lance blow (+ the dice) on a foe in reach that knocks its weapon away: ATK down and no counter for some of its turns.
+    const int foe = occAt(b, cell);
+    if (foe < 0 || !targetable(b, foe)) return fail("Escolha um inimigo visível.");
+    if (!canHitFrom(b, caster, from, static_cast<size_t>(foe))) return fail("Esse inimigo não está ao alcance da arma.");
+    spend();
+    s.type = BattleStep::Type::Combat, s.def = static_cast<size_t>(foe);
+    s.dice = 0, s.spellMul = 1;
+    s.bonusDice = n.faces, s.bonusDiceCount = n.dice, s.bonusFlat = 0;
+    s.disarmPct = n.pct, s.disarmTurns = n.turns;
+    steps.push_back(s);
+  } else if (kind == "swapPost") {
+    // Places changed with an ally in reach; then, from the new post, a lance blow (x mul + the dice) on the weakest foe the lance reaches.
+    std::string why;
+    const int ally = swapAlly(b, caster, cell, n, &why);
+    if (ally < 0) return fail(why);
+    spend();
+    s.type = BattleStep::Type::Effect;
+    s.ids = {static_cast<size_t>(ally)}, s.tiles = {cell, from};
+    s.dice = 0, s.spellMul = 1;
+    steps.push_back(s);
+    int target = -1;
+    for (size_t i = 0; i < b.units().size(); ++i) {
+      if (!targetable(b, static_cast<int>(i)) || !canHitFrom(b, caster, cell, i)) continue;
+      if (target < 0 || b.units()[i].hp < b.units()[static_cast<size_t>(target)].hp) target = static_cast<int>(i);
+    }
+    if (target >= 0) {
+      BattleStep c;
+      c.type = BattleStep::Type::Combat, c.att = caster, c.def = static_cast<size_t>(target), c.kind = kind;
+      c.dmgMul = n.mul;
+      c.bonusDice = n.faces, c.bonusDiceCount = n.dice, c.bonusFlat = 0;
+      steps.push_back(c);
+    }
+  } else if (kind == "impaleDrag") {
+    // The neighbour impaled and dragged in a straight line to the chosen hex: a lance blow x (mul + the share per hex) + the
+    // dice; the caster runs one hex behind it.
+    std::string why;
+    const std::optional<DragPlan> p = dragPlan(b, caster, cell, n, &why);
+    if (!p) return fail(why);
+    spend();
+    s.ids = {p->foe}, s.tiles = p->tiles;
+    s.dice = 0, s.spellMul = 1, s.dmgMul = n.mul + n.decay * p->hexes;
+    s.weaponBonusDice = n.dice, s.weaponBonusFaces = n.faces, s.weaponBonusBonus = 0;
+    s.throwTo = p->foeTo, s.arc = 0.0f, s.dragTo = p->casterTo;
+    steps.push_back(s);
+  } else if (kind == "sentinelVigil") {
+    // The stance: until its next turn, whoever attacks the caster or an ally within the radius takes its thrust first.
+    if (!(cell == from)) return fail("Esta habilidade não precisa de alvo.");
+    spend();
+    s.type = BattleStep::Type::Effect;
+    s.tiles = hexesWithin(b, from, n.radius);
+    s.dice = 0, s.spellMul = 1;
+    s.vigilPct = static_cast<int>(std::lround(n.mul * 100)), s.vigilRadius = n.radius;
+    steps.push_back(s);
   } else if (archerShot(kind)) {
     // One arrow at a foe within the bow's reach (+ the skill's extra hexes), a clear line of fire; the bow's own roll.
     const int foe = occAt(b, cell);
@@ -1433,6 +1752,9 @@ std::string promotionName(const std::string& classId) {
   if (classId == "archer") return "Arqueira";  // Neera, the only one
   if (classId == "ranger") return "Patrulheira";
   if (classId == "assassin") return "Assassina";
+  if (classId == "aldric" || classId == "lancer") return "Lanceiro";
+  if (classId == "sentinel") return "Sentinela";
+  if (classId == "templar") return "Templário";
   return classId;
 }
 void setPromotion(BattleUnit& u, const std::string& classId) {
@@ -1453,6 +1775,9 @@ std::string conditionsText(const BattleUnit& u) {
   if (u.cond.sunderPct > 0) add(std::format("{} -{}% DEF ({})", pick("Guarda quebrada", "Guard broken"), u.cond.sunderPct, u.cond.sunderTurns + 1));
   if (u.cond.rallyPct > 0) add(std::format("{} +{}% ATK ({})", pick("Grito de Guerra", "War Cry"), u.cond.rallyPct, u.cond.rallyTurns + 1));
   if (u.cond.hobblePct > 0) add(std::format("{} -{}% MOV ({})", pick("Paralisado", "Crippled"), u.cond.hobblePct, u.cond.hobbleTurns + 1));
+  if (u.cond.disarmPct > 0) add(std::format("{} -{}% ATK ({})", pick("Desarmado", "Disarmed"), u.cond.disarmPct, u.cond.disarmTurns + 1));
+  if (u.cond.staggered) add(std::format("{} ({})", pick("Desequilibrado", "Off balance"), u.cond.staggerTurns + 1));
+  if (u.cond.vigilPct > 0) add(std::format("{} ×{:g} · {} {}", pick("Vigília", "Vigil"), u.cond.vigilPct / 100.0, pick("raio", "radius"), u.cond.vigilRadius));
   if (u.diseased) add("Doente");
   // Engine2's statuses
   if (u.stunned) add(std::string(pick("Atordoado", "Stunned")) + std::format(" ({})", u.stunTurns));
@@ -1490,6 +1815,24 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind) {
   if (kind == "cripplingShot") return s + std::format("\ntiro de arco + {}D{} · Paralisado: -{}% MOV por {} turnos", n.dice, n.faces, n.pct, n.turns);
   if (kind == "arrowStorm") return s + std::format("\nalcance {} · raio {} · ×{:g} do arco + {}D{} em cada inimigo · sem linha de tiro", n.range, n.radius, n.mul, n.dice, n.faces);
   if (kind == "deathShot") return s + std::format("\n×{:g} do arco + {}D{} · abaixo de {}% do HP, morre", n.mul, n.dice, n.faces, n.pct);
+  // The Lanceiro's (the lance's own roll, hit chance and mastery, plus the dice)
+  auto bonus = [&] { return n.dice > 0 ? std::format(" + {}D{}", n.dice, n.faces) : std::string(); };
+  if (kind == "spearToss")
+    return s + std::format("\nergue o inimigo vizinho com a lança e o lança {} hexes na direção escolhida · ×{:g} da lança{} · se cair sobre outra unidade, as duas levam {}D{} de colisão",
+                           n.range, n.mul, bonus(), n.tickDice, n.tickFaces);
+  if (kind == "hookPull")
+    return s + std::format("\nengancha um inimigo a 2–{} hexes e o puxa para junto de si · ×{:g} da lança{} · Desequilibrado: não contra-ataca até o próximo turno{}",
+                           n.range, n.mul, bonus(), n.turns > 0 ? " e mais um" : "");
+  if (kind == "poleVault")
+    return s + std::format("\nsalta por cima do inimigo vizinho e cai nas costas dele · golpe pela retaguarda garantido · ×{:g} da lança{} · sem contra-ataque", n.mul, bonus());
+  if (kind == "disarm") return s + std::format("\ngolpe de lança{} · Desarmado: -{}% ATK e sem contra-ataque por {} turnos", bonus(), n.pct, n.turns);
+  if (kind == "swapPost")
+    return s + std::format("\ntroca de lugar com um aliado a até {} hexes · depois golpeia um inimigo ao alcance do novo posto · ×{:g} da lança{}", n.range, n.mul, bonus());
+  if (kind == "impaleDrag")
+    return s + std::format("\nempala o inimigo vizinho e o arrasta até {} hexes · ×{:g} da lança +{:g} por hex arrastado{}", n.length, n.mul, n.decay, bonus());
+  if (kind == "sentinelVigil")
+    return s + std::format("\npostura até o próximo turno · quem atacar você ou um aliado a até {} hex{} leva a sua estocada antes · ×{:g} da lança{}", n.radius,
+                           n.radius > 1 ? "es" : "", n.mul, bonus());
   if (kind == "markOfRuin") s += std::format("\n{} · o alvo recebe +{}% de dano por {} turnos", dmg(n.mul, n.dice, n.faces), n.pct, n.turns);
   else if (kind == "creepingPlague") s += std::format("\n{} · {} que passa a {} vizinho{} por turno", dmg(n.mul, n.dice, n.faces), poisonTier(n.tier)->name, n.spread, n.spread > 1 ? "s" : "");
   else if (kind == "lifeDrain") s += std::format("\n{} · cura {}% do dano causado", dmg(n.mul, n.dice, n.faces), n.pct);
@@ -1545,6 +1888,8 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"steelWhirlwind", "Steel Whirlwind"}, {"guardBreak", "Guard Break"}, {"warCry", "War Cry"}, {"leapingStrike", "Devastating Leap"},
     {"venomArrow", "Venom Arrow"}, {"arrowRain", "Arrow Rain"}, {"explosiveArrow", "Explosive Arrow"}, {"cripplingShot", "Crippling Shot"},
     {"arrowStorm", "Arrow Storm"}, {"deathShot", "Death Shot"},
+    {"spearToss", "Spear Toss"}, {"hookPull", "Hook"}, {"poleVault", "Pole Vault"}, {"disarm", "Disarm"}, {"swapPost", "Change of Post"},
+    {"impaleDrag", "Impale and Drag"}, {"sentinelVigil", "Sentinel's Vigil"}, {"sentinelStrike", "Sentinel's Thrust"},
 };
 }  // namespace
 
@@ -1564,7 +1909,8 @@ bool spellPorted(const std::string& kind) {
 bool spellWeaponAbility(const std::string& kind) { return weaponAbility(kind); }
 
 bool spellInstant(const std::string& kind) {
-  return kind == "createFoodAndWater" || kind == "eruption" || kind == "auraOfProtection" || kind == "intimidatingPresence" || kind == "warCry";
+  return kind == "createFoodAndWater" || kind == "eruption" || kind == "auraOfProtection" || kind == "intimidatingPresence" || kind == "warCry" ||
+         kind == "sentinelVigil";
 }
 bool spellSelfArea(const std::string& kind) { return kind == "sweep" || kind == "turnUndead" || kind == "steelWhirlwind"; }
 bool spellAimsDirection(const std::string& kind) {
@@ -1695,7 +2041,7 @@ std::string spellPose(const std::string& kind) {
   if (kind == "longShot" || kind == "bloodyShot" || kind == "multiShot" || kind == "piercing" || kind == "doubleStrike" || kind == "piercingThrust" ||
       kind == "cleave" || kind == "sweep" || kind == "trip" || kind == "bullRush" || kind == "executionerStrike" || kind == "shieldBash" ||
       kind == "shoulderSmash" || kind == "stampede" || kind == "steelWhirlwind" || kind == "guardBreak" || kind == "warCry" || kind == "leapingStrike" ||
-      archerShot(kind) || archerVolley(kind))
+      archerShot(kind) || archerVolley(kind) || (lancerKind(kind) && kind != "sentinelVigil"))
     return "attack";
   return "cast";
 }
@@ -1740,6 +2086,12 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   else if (kind == "leapingStrike") maxRange = -1;  // wherever a landing exists
   else if (archerShot(kind)) minRange = u.minRange, maxRange = u.maxRange + emberNumbers(kind, u.level).length, shot = true, arrow = true;
   else if (archerVolley(kind)) maxRange = emberNumbers(kind, u.level).range;  // from above: no line of fire
+  // The Lanceiro's: the hook flies (a line of fire), the vault and the throw work on a neighbour, the swap reaches an ally
+  else if (kind == "hookPull") minRange = 2, maxRange = emberNumbers(kind, u.level).range, shot = true, arrow = true;
+  else if (kind == "poleVault") maxRange = 1;
+  else if (kind == "disarm") minRange = u.minRange, maxRange = u.maxRange, shot = u.maxRange > 1, arrow = true;  // the weapon's reach
+  else if (kind == "swapPost") maxRange = emberNumbers(kind, u.level).range;
+  else if (kind == "spearToss" || kind == "impaleDrag") maxRange = -1;  // wherever a throw / a drag can end
   else if (kind == "fireball") maxRange = kFireballRange, shot = true;
   else if (kind == "causticVenom") maxRange = kCausticVenom.range, shot = true;
   else if (kind == "minorVenom") maxRange = kMinorVenom.range, shot = true;
@@ -1868,6 +2220,32 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
     }
     if (kind == "iceLance") return piercingRay(b, from, cell).empty() ? fail("Escolha uma reta válida.") : true;
     if (kind == "glacialGale") return coneHexes(b, from, cell, n.length).empty() ? fail("Escolha uma direção a partir do personagem.") : true;
+    // The Lanceiro's skills
+    if (kind == "spearToss") {
+      std::string why;
+      return tossPlan(b, caster, cell, n, &why) ? true : fail(why.c_str());
+    }
+    if (kind == "hookPull") {
+      std::string why;
+      return hookPlan(b, caster, cell, n, &why) ? true : fail(why.c_str());
+    }
+    if (kind == "poleVault") {
+      std::string why;
+      return vaultLanding(b, caster, cell, &why) ? true : fail(why.c_str());
+    }
+    if (kind == "disarm") {
+      if (!targetable(b, here)) return fail(here < 0 ? "Não há unidade na casa selecionada." : "Escolha um inimigo visível.");
+      return canHitFrom(b, caster, from, static_cast<size_t>(here)) ? true : fail("Esse inimigo não está ao alcance da arma.");
+    }
+    if (kind == "swapPost") {
+      std::string why;
+      return swapAlly(b, caster, cell, n, &why) >= 0 ? true : fail(why.c_str());
+    }
+    if (kind == "impaleDrag") {
+      std::string why;
+      return dragPlan(b, caster, cell, n, &why) ? true : fail(why.c_str());
+    }
+    if (kind == "sentinelVigil") return cell == from ? true : fail("Esta habilidade não precisa de alvo.");
     if (emberBoltSpell(kind)) {
       if (!targetable(b, here)) return fail(here < 0 ? "Não há unidade na casa selecionada." : "Escolha um inimigo visível.");
       if (d > n.range) {
@@ -1912,6 +2290,25 @@ std::vector<BattleHex> spellArea(const Battle& b, size_t caster, const std::stri
         if (const std::optional<BattleHex> landing = leapLanding(b, caster, static_cast<size_t>(foe), n.range); landing && !(*landing == cell)) out.push_back(*landing);
       return out;
     }
+    // The Lanceiro's: the foe and where it (or the caster) ends up
+    if (kind == "spearToss") {
+      const std::optional<TossPlan> p = tossPlan(b, caster, cell, n);
+      return p ? p->tiles : std::vector<BattleHex>{cell};
+    }
+    if (kind == "hookPull") {
+      const std::optional<HookPlan> p = hookPlan(b, caster, cell, n);
+      return p ? std::vector<BattleHex>{cell, p->dest} : std::vector<BattleHex>{cell};
+    }
+    if (kind == "poleVault") {
+      const std::optional<BattleHex> landing = vaultLanding(b, caster, cell);
+      return landing ? std::vector<BattleHex>{cell, *landing} : std::vector<BattleHex>{cell};
+    }
+    if (kind == "swapPost") return {cell, {u.x, u.y}};
+    if (kind == "impaleDrag") {
+      const std::optional<DragPlan> p = dragPlan(b, caster, cell, n);
+      return p ? p->tiles : std::vector<BattleHex>{cell};
+    }
+    if (kind == "sentinelVigil") return hexesWithin(b, {u.x, u.y}, n.radius);
   }
   return areaE2(b, caster, kind, cell);
 }
@@ -2036,6 +2433,7 @@ bool strikesBack(const Battle& b, const BattleStep& step) {
   if (step.noCounter) return false;
   const BattleUnit &u = b.units()[step.att], &t = b.units()[step.def];
   if (!u.alive || !t.alive || t.stunned) return false;
+  if (t.cond.disarmPct > 0 || t.cond.staggered) return false;  // Desarmado / Desequilibrado (the Lanceiro's): no counter
   const Fighter a = fighterAt(b, step.att, u.x, u.y), d = fighterAt(b, step.def, t.x, t.y);
   return canCounter(b, a, {u.x, u.y}, d);
 }
@@ -2056,7 +2454,7 @@ void logEffects(Battle& b, const std::vector<BattleEffect>& out, size_t from, in
                                                  : std::string();
   for (size_t k = from; k < out.size(); ++k) {
     const BattleEffect& e = out[k];
-    if (e.moved && !e.pushed && e.amount == 0 && !e.died && !e.miss && e.text.empty()) continue;  // a charge's / a leap's walk: nothing to say
+    if (e.moved && e.amount == 0 && !e.died && !e.miss && e.text.empty()) continue;  // a charge's / a leap's walk, a hop or a dash: nothing to say
     const std::string target = nameOf(e.unit);
     const std::string crit = e.crit ? (en ? " (critical)" : " (crítico)") : "";
     // "Salazar usou Mãos Flamejantes em Kael" / "Orc contra-atacou Kael" / "Kael atacou Orc"
@@ -2160,6 +2558,14 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
   }
   const bool arrowShot = actor.combat.arrow && !useCustom;
   const bool arcaneBolt = !arrowShot && actor.combat.arcane;
+  if (hitStage && step.rearSure) {  // Salto de Vara (the Lanceiro's): the blow comes from behind, whichever way the foe faced
+    const auto [dx, dy] = heading({target.x, target.y}, {actor.x, actor.y});
+    if (dx != 0 || dy != 0) {
+      target.faceDx = -dx, target.faceDy = -dy;
+      if (-dx > 1e-6) target.facing = 1;
+      else if (-dx < -1e-6) target.facing = -1;
+    }
+  }
   const Fighter A = fighterAt(b, ai, actor.x, actor.y), T = fighterAt(b, ti, target.x, target.y);
   Hit hit = rollDamage(b, A, T, rng, !bash, useCustom ? &custom : nullptr);
   if (target.side == "enemy" && !bash) trainWeapon(actor, target.level, rng, useCustom);  // the off-hand weapon on an off-hand strike
@@ -2233,14 +2639,23 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
       target.cond.sunderPct = std::max(target.cond.sunderPct, step.sunderPct);
       target.cond.sunderTurns = std::max(target.cond.sunderTurns, step.sunderTurns);
     }
+    if (hitStage && step.disarmPct > 0) {  // Desarmar: the weapon knocked away, ATK down and no counter for some of its turns
+      target.cond.disarmPct = std::max(target.cond.disarmPct, step.disarmPct);
+      target.cond.disarmTurns = std::max(target.cond.disarmTurns, step.disarmTurns);
+      applyDisarm(target);
+    }
     if (hitStage && step.kind == "bullRush" && step.knockTo) {
       target.x = step.knockTo->x, target.y = step.knockTo->y;
       e.pushed = true;
     }
   }
   out.push_back(e);
-  if (!target.alive) afterDeath(b, ti, out);
-  else if (hitStage && step.sunderPct > 0) out.push_back(statusEffect(ti, std::format("{} -{}%", pick("Guarda quebrada", "Guard broken"), step.sunderPct)));
+  if (!target.alive) {
+    afterDeath(b, ti, out);
+  } else {
+    if (hitStage && step.sunderPct > 0) out.push_back(statusEffect(ti, std::format("{} -{}%", pick("Guarda quebrada", "Guard broken"), step.sunderPct)));
+    if (hitStage && step.disarmPct > 0) out.push_back(statusEffect(ti, std::format("{} -{}% ATK", pick("Desarmado", "Disarmed"), step.disarmPct)));
+  }
 }
 
 void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::vector<BattleEffect>& out);
@@ -2249,6 +2664,35 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
 
 void setCombatLogEnglish(bool english) { gLogEnglish = english; }
 bool combatLogEnglish() { return gLogEnglish; }
+
+std::vector<BattleStep> vigilInterrupts(const Battle& b, size_t attacker, const std::vector<size_t>& targets) {
+  std::vector<BattleStep> steps;
+  if (attacker >= b.units().size()) return steps;
+  const BattleUnit& a = b.units()[attacker];
+  if (!a.alive) return steps;
+  for (size_t i = 0; i < b.units().size(); ++i) {
+    const BattleUnit& s = b.units()[i];
+    if (i == attacker || !s.alive || s.cond.vigilPct <= 0 || s.side == a.side || s.side == "neutral") continue;
+    bool covered = false;
+    for (const size_t t : targets) {
+      if (t >= b.units().size()) continue;
+      const BattleUnit& v = b.units()[t];
+      if (t == i || (v.alive && v.side == s.side && hexDist({s.x, s.y}, {v.x, v.y}) <= s.cond.vigilRadius)) {
+        covered = true;
+        break;
+      }
+    }
+    if (!covered || !canHitFrom(b, i, {s.x, s.y}, attacker)) continue;
+    BattleStep st;
+    st.type = BattleStep::Type::Spell, st.att = i, st.kind = "sentinelStrike";
+    st.ids = {attacker}, st.tiles = {{a.x, a.y}};
+    st.dice = 0, st.spellMul = 1, st.dmgMul = s.cond.vigilPct / 100.0;
+    const EmberNumbers n = emberNumbers("sentinelVigil", s.level);
+    st.weaponBonusDice = n.dice, st.weaponBonusFaces = n.faces, st.weaponBonusBonus = 0;
+    steps.push_back(st);
+  }
+  return steps;
+}
 
 void resolveStrike(Battle& b, const BattleStep& step, bool counter, Mulberry32& rng, std::vector<BattleEffect>& out) {
   gNotes.clear();
@@ -2411,6 +2855,23 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
       }
       b.noteAware(step.att, kSupportCe, kSupportVe);
     }
+    if (step.kind == "swapPost") {  // Troca de Posto (the Lanceiro's): the caster and the ally change hexes (both cards hop over)
+      if (step.ids.empty() || !att.alive) return;
+      BattleUnit& ally = b.units()[step.ids[0]];
+      if (!ally.alive) return;
+      std::swap(att.x, ally.x), std::swap(att.y, ally.y);
+      for (const size_t who : {step.att, step.ids[0]}) {
+        BattleEffect m;
+        m.unit = who, m.moved = true, m.pushed = true, m.arc = 0.55f;
+        out.push_back(m);
+      }
+      supportAffinity(b, step.att, step.ids[0]);
+    }
+    if (step.kind == "sentinelVigil") {  // Vigília da Sentinela: the stance, until the caster's next turn
+      att.cond.vigilPct = step.vigilPct, att.cond.vigilRadius = step.vigilRadius;
+      out.push_back(statusEffect(step.att, pick("Vigília", "Vigil")));
+      b.noteAware(step.att, kSupportCe, kSupportVe);
+    }
     return;
   }
   if (step.type == BattleStep::Type::Heal) {
@@ -2548,6 +3009,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
   bool firstAoe = true;
   int thrustHits = 0, enemiesStruck = 0, drained = 0;
   std::vector<size_t> struck;  // ours: who took the hit and stands (Colheita's extra ticks)
+  bool thrown = false;         // the Lanceiro's: the struck body was moved
   const bool ability = weaponAbility(step.kind);
   for (size_t k = 0; k < step.ids.size(); ++k) {
     const size_t id = step.ids[k];
@@ -2687,6 +3149,12 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     }
     // Vendaval Glacial: the struck are pushed away from the caster (their card follows: `pushed`).
     if (foe.alive && step.push > 0 && pushAway(b, id, {att.x, att.y}, step.push)) e.pushed = true;
+    // The Lanceiro's throws, pulls and drags: the body lands where the cast planned (its card flies there: `arc`).
+    if (foe.alive && step.throwTo && oneHex(foe)) {
+      foe.x = step.throwTo->x, foe.y = step.throwTo->y;
+      e.pushed = true, e.arc = step.arc;
+      thrown = true;
+    }
     out.push_back(e);
     if (!foe.alive) {
       afterDeath(b, id, out);
@@ -2737,6 +3205,27 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
       applyHobble(foe);
       out.push_back(statusEffect(id, std::format("{} -{}% MOV", pick("Paralisado", "Crippled"), foe.cond.hobblePct)));
     }
+    if (step.stagger) {  // Gancho: pulled off its feet, it cannot counter until its next turn (and staggerTurns more of them)
+      foe.cond.staggered = true, foe.cond.staggerTurns = std::max(foe.cond.staggerTurns, step.staggerTurns);
+      out.push_back(statusEffect(id, pick("Desequilibrado", "Off balance")));
+    }
+    if (step.collideWith && step.collideDice > 0 && *step.collideWith < b.units().size()) {
+      // Arremesso: the thrown body lands against another: both take the collision dice (a body's weight: no resistance), once
+      // the flight is over (`delay`).
+      for (const size_t who : {id, *step.collideWith}) {
+        BattleUnit& v = b.units()[who];
+        if (!v.alive) continue;
+        const int d = marked(v, std::max(1, rollDice(step.collideDice, step.collideFaces, 0, rng)));
+        v.hp = std::max(0, v.hp - d);
+        b.noteDamage(step.att, who, d, false);
+        if (v.side != att.side) gainExp(att, v.level, d, 0.5, v.hp <= 0);
+        BattleEffect c{who, d, false, false, false, false, false};
+        c.delay = 0.45f;
+        if (v.hp <= 0) markDead(v, rng), c.died = true;
+        out.push_back(c);
+        if (!v.alive) afterDeath(b, who, out);
+      }
+    }
     if (step.decayTurns > 0) {
       foe.cond.decayTurns = std::max(foe.cond.decayTurns, step.decayTurns);
       foe.cond.decayCap = std::max(foe.cond.decayCap, step.decayCap), foe.cond.decayStep = step.decayStep;
@@ -2746,6 +3235,14 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
       out.push_back(statusEffect(id, std::format("Decadência -{}%", foe.cond.decayPct)));
     }
     struck.push_back(id);
+  }
+  // Empalar e Arrastar: the caster runs one hex behind the dragged body (its card dashes after it).
+  if (step.dragTo && thrown && att.alive) {
+    att.x = step.dragTo->x, att.y = step.dragTo->y;
+    if (step.throwTo) faceToward(att, *step.throwTo);
+    BattleEffect m;
+    m.unit = step.att, m.moved = true, m.pushed = true, m.arc = 0.0f;
+    out.push_back(m);
   }
   if (!ember) return;
   const Fighter A = fighterAt(b, step.att, att.x, att.y);
@@ -2898,6 +3395,16 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
     if (u.cond.hobbleTurns > 0) --u.cond.hobbleTurns;
     else liftHobble(u);
   }
+  // The Lanceiro's: Desarmado and Desequilibrado lift the same way; the Vigília ends as its sentinel's next turn begins.
+  if (u.cond.disarmPct > 0) {
+    if (u.cond.disarmTurns > 0) --u.cond.disarmTurns;
+    else liftDisarm(u);
+  }
+  if (u.cond.staggered) {
+    if (u.cond.staggerTurns > 0) --u.cond.staggerTurns;
+    else u.cond.staggered = false;
+  }
+  if (u.cond.vigilPct > 0) u.cond.vigilPct = 0, u.cond.vigilRadius = 0;
 }
 
 void stepOnHex(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) { tileHazard(b, unit, rng, out); }

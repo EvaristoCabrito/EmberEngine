@@ -92,6 +92,15 @@ at the nearest foe every 3 s), `--tatica` (2D view), `--spells-menu-open` (the M
 | Tiro Mortal (`deathShot`) | 01 | a long crimson trail; a pin of light through the body, a crimson shell, dark streaks, a red ring, a lingering red light | `RangerFx::shot` (Death) |
 | Chuva de Flechas (`arrowRain`), Tempestade de Flechas (`arrowStorm`) | 01 | a faint ring over the area; arrows (three / five a hex, the Tempestade in two waves) come down at a slant and stick in the ground, a glint and dust where each lands, a flash on every foe | `RangerFx::volley` |
 
+| **EmberEngine's own, the Lanceiro's T1-T5 (docs/SKILLS_LANCER.md)** | 01 | **ours, 3D** (`engine/render/vfx/LancerFx.cpp`, 2026-10-18): thrust sheets, flashes, sparks, dust, rings and trails on the Combat material; the lance, the hook, a knocked-away blade and chips of ground lit by the scene; the element in the effects only (ember on the hook and the vigil) | |
+| Arremesso (`spearToss`) | 01 | the lance in low, a flash and a streak up at the lift, dust; a wake behind the flying card; the landing a crater (shell, ground ring, dust, chips); against a body a flash and sparks | `LancerFx::toss`, `tossFlight` |
+| Gancho (`hookPull`) | 01 | a lit hook on an ember chain unrolling to the chest, a flash at the bite; the chain taut while the body is dragged in, dust behind it, a burst where it stops | `LancerFx::hook`, `hookPull` |
+| Salto de Vara (`poleVault`) | 01 | the lance planted beside the foe leaning over as the vault passes, a trail of steel light over the arc, dust at the plant and the landing; the blow from behind: a thrust, a white-hot flash, a crack ring, sparks | `LancerFx::vault`, `vaultBlow` |
+| Desarmar (`disarm`) | 01 | a thrust at the hands with a cross glint; the weapon (a lit blade) spins away, bounces, lies in the dust and fades | `LancerFx::disarm`, `disarmed` |
+| Troca de Posto (`swapPost`) | 01 | two trails cross (steel under the lancer, gold under the ally), a burst where they pass, dust at every take-off and landing; then the thrust from the new post | `LancerFx::swap`, `swapBlow` |
+| Empalar e Arrastar (`impaleDrag`) | 01 | the thrust into the body; the lance held in it between the two as they run, dust and sparks streaming behind, dark scrapes on the ground; a jolt at the end | `LancerFx::impale`, `drag` |
+| Vigília da Sentinela (`sentinelVigil`) | 01 | the point flares, an ember ring runs out to the radius; standing: an ember pulse at the feet, a faint turning ring, motes, the point aglow, a warm light; the interrupt: a white-hot thrust with an ember shell on the attacker | `LancerFx::vigilRise`, `vigilStart`, `vigilStrike` |
+
 All the other spells: OFF only (no version yet).
 
 ## Engine2's own spell effects (not ported yet)
