@@ -759,7 +759,9 @@ esforço ... céu bonito, estrelado ... luz do luar também")
 - **Water look 001 "ember"** (`shaders/water_look001.hlsli`, `looks/water/README.md`; water.hlsl `Push.look`, water3d look 2):
   six analytic waves + noise ripple, Engine2's river blue deepening with the depth (Beer's law, k 0.6: a unit of water stays
   blue), GGX sun at roughness 0.10, the sky's reflection by Fresnel, Fresnel see-through, shore foam where the sheet knows its
-  depth. Panel "Água": Engine2 / ember (default ember); "Água 3D" rio follows it; `--water N`.
+  depth. Panel "Água": original / ember (default original); "Água 3D": original (ThreeWater, default) / rio / rio ember, no OFF;
+  `--water N`. **The user, 2026-10-19: "NUNCA TROCAR O ASSET PADRÃO", "EU QUERO TODAS AS ÁGUAS": the original is always the
+  default, a new look is only ever an extra option.**
 - **Luar: cinema** (panel "Luar", light mode real at night; `--moonlight N`): the physical moon (0.5 lux) never showed on the
   ground (cemiterio capture: black beside the lanterns), so cinema = 16 lux (`kCinemaMoonLux`), the night stops capped at 1
   (`moonNight_`), the disc's glow following the moon's light, and the stars boosted up to 12 x against the brighter sky.
