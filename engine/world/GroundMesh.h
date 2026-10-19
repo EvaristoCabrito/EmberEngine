@@ -38,6 +38,9 @@ struct WaterGeometry {
 
 GroundGeometry buildSmoothGround(const Board& board);
 GroundGeometry buildHardGround(const Board& board);
+// The board's sides: walls from every open edge of an indexed ground (the smooth look's thin cut lip, a void's rim) straight down
+// to `base`, so a raised edge never shows a hole under it.
+void closeBoardSides(GroundGeometry& g, double base);
 GroundGeometry buildTabletopGround(const Board& board);
 // Empty when the map has no water.
 WaterGeometry buildWater(const Board& board, EdgeStyle style);

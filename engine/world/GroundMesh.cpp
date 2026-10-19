@@ -249,6 +249,46 @@ GroundGeometry buildSmoothGround(const Board& b) {
   return g;
 }
 
+void closeBoardSides(GroundGeometry& g, double base) {
+  if (g.indices.empty() || g.stride == 0) return;
+  // Every open edge of the ground (used by one triangle only: the board's cut edge, a void's rim) and the vertex across from it.
+  struct Open {
+    uint32_t p, q, inner;
+    int uses;
+  };
+  std::unordered_map<uint64_t, Open> edges;
+  for (size_t i = 0; i + 2 < g.indices.size(); i += 3)
+    for (int k = 0; k < 3; ++k) {
+      const uint32_t p = g.indices[i + k], q = g.indices[i + (k + 1) % 3], inner = g.indices[i + (k + 2) % 3];
+      const uint64_t key = (uint64_t{std::min(p, q)} << 32) | std::max(p, q);
+      auto [it, fresh] = edges.try_emplace(key, Open{p, q, inner, 0});
+      ++it->second.uses;
+    }
+  const auto P = [&](uint32_t v, int j) { return static_cast<double>(g.positions[size_t(v) * 3 + j]); };
+  for (const auto& [key, e] : edges) {
+    if (e.uses != 1) continue;
+    uint32_t p = e.p, q = e.q;
+    if (P(p, 1) <= base + 1e-4 && P(q, 1) <= base + 1e-4) continue;
+    // the face looks out into the air, away from the ground it hangs from (the void skirt's rule above)
+    const double dx = P(q, 0) - P(p, 0), dz = P(q, 2) - P(p, 2);
+    if (dz * (P(e.inner, 0) - P(p, 0)) - dx * (P(e.inner, 2) - P(p, 2)) > 0) std::swap(p, q);
+    const uint32_t first = static_cast<uint32_t>(g.vertexCount());
+    const double corners[4][3] = {{P(p, 0), P(p, 1), P(p, 2)}, {P(q, 0), P(q, 1), P(q, 2)}, {P(q, 0), base, P(q, 2)}, {P(p, 0), base, P(p, 2)}};
+    const double u[3] = {corners[1][0] - corners[0][0], corners[1][1] - corners[0][1], corners[1][2] - corners[0][2]};
+    const double w[3] = {corners[2][0] - corners[0][0], corners[2][1] - corners[0][1], corners[2][2] - corners[0][2]};
+    double n[3] = {u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]};
+    const double l = std::max(std::hypot(n[0], n[1], n[2]), 1e-12);
+    for (const uint32_t from : {p, q, q, p}) {
+      for (int j = 0; j < 3; ++j) g.normals.push_back(static_cast<float>(n[j] / l));
+      const std::vector<float> own(g.weights.begin() + std::ptrdiff_t(from) * g.stride, g.weights.begin() + std::ptrdiff_t(from + 1) * g.stride);
+      g.weights.insert(g.weights.end(), own.begin(), own.end());  // a copy first: inserting may move the vector
+    }
+    for (const auto& c : corners)
+      for (int j = 0; j < 3; ++j) g.positions.push_back(static_cast<float>(c[j]));
+    g.indices.insert(g.indices.end(), {first, first + 1, first + 2, first, first + 2, first + 3});
+  }
+}
+
 GroundGeometry buildHardGround(const Board& b) {
   const HexLayout& L = b.layout();
   const uint32_t stride = strideOf(b);

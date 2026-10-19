@@ -136,7 +136,16 @@ bool BoardGround::build(const e2::Board& board) {
   stats_.textures = static_cast<uint32_t>(textures_.size());
 
   // Geometry, every look.
-  const e2::GroundGeometry looks[3] = {e2::buildSmoothGround(board), e2::buildHardGround(board), e2::buildTabletopGround(board)};
+  e2::GroundGeometry looks[3] = {e2::buildSmoothGround(board), e2::buildHardGround(board), e2::buildTabletopGround(board)};
+  // The smooth look's cut edge is only a thin lip (0.35 under its ground): under raised ground the board showed huge holes (the
+  // user, 2026-10-19: "quero que o cenário não tenha esses buracos enormes na elevações, pode preencher tudo?"). Its sides go down
+  // to the lowest ground's lip, where the map's ground plane lies (MapStage). The hard and tabletop walls already reach the base.
+  {
+    double low = 0;
+    bool any = false;
+    for (const e2::Cell& c : board.cells()) low = any ? std::min(low, c.groundY) : c.groundY, any = true;
+    e2::closeBoardSides(looks[0], low - 0.35);
+  }
   for (int i = 0; i < 3; ++i) {
     pack(looks[i], palette, meshes_[i]);
     upload(meshes_[i]);
