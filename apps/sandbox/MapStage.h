@@ -333,6 +333,7 @@ class MapStage final : public Stage {
       if (!options.heroes.empty()) setUpPoses(options.heroes);
       if (!options.battle.empty()) setUpBattle(options.battle);
       pinUnitArt();
+      preloadHud();
       if (!scene_->backdrop.empty()) ground_.requestTexture(e2::backdropAsset(scene_->backdrop));
       background_ = options.background >= 0 ? std::min(options.background, 2) : scene_->backdrop.empty() ? 1 : 0;
       if (e2::timeOfDay(scene_->timeOfDay).moon && scene_->environment != "indoor")
@@ -344,17 +345,50 @@ class MapStage final : public Stage {
     if (fogBusy_) jobs_.wait(fogJob_);  // the sight job uses this stage's board and fog
   }
 
+  // Where a slow frame's stage time went: laps named in frame(), logged when the whole passes 50 ms (the hunt for the rare
+  // 140-220 ms hitch, 2026-10-19).
+  struct FrameLaps {
+    using Clock = std::chrono::steady_clock;
+    Clock::time_point start = Clock::now(), last = start;
+    std::array<std::pair<const char*, double>, 24> laps{};
+    size_t count = 0;
+    void lap(const char* name) {
+      const Clock::time_point now = Clock::now();
+      if (count < laps.size()) laps[count++] = {name, std::chrono::duration<double, std::milli>(now - last).count()};
+      last = now;
+    }
+    ~FrameLaps() {
+      const double total = std::chrono::duration<double, std::milli>(Clock::now() - start).count();
+      if (total <= 50.0) return;
+      std::string parts;
+      for (size_t i = 0; i < count; ++i)
+        if (laps[i].second >= 1.0) parts += std::format("{} {:.1f}, ", laps[i].first, laps[i].second);
+      logWarn("slow stage frame: {:.1f} ms = {}rest {:.1f}", total, parts,
+              std::chrono::duration<double, std::milli>(Clock::now() - last).count());
+    }
+  };
+
   void frame(Renderer& renderer, VkExtent2D size) override {
+    FrameLaps laps;
+    if (hudPreload_) {
+      hudPreloaded_ = hudPreload_->update();
+      if (hudPreloaded_.first >= hudPreloaded_.second) hudPreload_.reset();
+    }
     ground_.update();
+    laps.lap("ground");
     if (scene_) {
       sprites_.update();
+      laps.lap("sprites");
       meshes_.update();
+      laps.lap("meshes");
       if (!modelsPlaced_ && meshes_.ready()) placeModels();
     }
     uploads_.flush();
+    laps.lap("uploads");
     const float time = options_.sceneTime >= 0.0f ? options_.sceneTime
                                                  : std::chrono::duration<float>(std::chrono::steady_clock::now() - start_).count();
     updateFog(time);
+    laps.lap("fog");
     const float aspect = static_cast<float>(size.width) / static_cast<float>(size.height);
     if (distance_ <= 0.0f) {
       const float tanHalf = std::tan(glm::radians(kFov * 0.5f));
@@ -382,14 +416,21 @@ class MapStage final : public Stage {
     if (!measuring_) panKeys(dt);
     updatePanHold();
     now_ = time;
+    laps.lap("camera");
     updateUnits(dt);
+    laps.lap("units");
     updateExchange();
+    laps.lap("exchange");
     updateQuestPickups();
     if (talkAfterWalk_ >= 0 && !busy()) talkRequest_ = std::exchange(talkAfterWalk_, -1);  // walked up to the NPC: they talk
     runScript();
+    laps.lap("script");
     updateRoaming();
+    laps.lap("roaming");
     updateTurns();
+    laps.lap("turns");
     updateHover();
+    laps.lap("hover");
     clampGoal();
     if (measuring_) {
       cam_ = {target_, yaw, pitch_, distance};  // measurements and captures: exactly the asked view
@@ -420,11 +461,14 @@ class MapStage final : public Stage {
     lastCamera_ = camera;
     drawList_.clear();
     frontCards_.clear();
+    laps.lap("goal+eye");
     if (scene_ && sprites_.ready()) buildCards(camera, time);
+    laps.lap("cards");
     renderer.setScene(camera, drawList_);
     renderer.setFrontCards(frontCards_);
     lights_.clear();
     if (scene_) buildLights(time);
+    laps.lap("lights");
     effectList_.clear();
     fxLights_.clear();
     if (scene_ && sprites_.ready()) {
@@ -490,9 +534,11 @@ class MapStage final : public Stage {
       for (const glm::vec3& o : unitLightSpots(i, d))  // (x, z, radius) around the feet
         lights_.push_back(engine2Light(feet + glm::vec3(o.x, 1.0f, o.y), d.color, d.intensity * kE2Strength * flick, std::hypot(o.z, 1.0f) * 2.5f, 1.25f));
     }
+    laps.lap("effects");
     renderer.setEffects(effectList_);
     renderer.setVfx(spellFx_.vfx());
     renderer.setLights(lights_);
+    laps.lap("hand-over");
     Renderer::Lighting lighting = mapLighting(time);
     if (lightingMode_ == 3) {
       // The physical camera (ARCHITECTURE 7.6 step A): EV100 from the light metered on the board (incident meter:
@@ -1450,7 +1496,9 @@ class MapStage final : public Stage {
     }
     if (scene_) {
       const auto [pinsDone, pins] = sprites_.pinProgress();
-      if (pinsDone < pins) return {0, pinsDone, pins, false};  // the characters: every pose they can play, its base on the GPU
+      const uint32_t hudDone = static_cast<uint32_t>(hudPreloaded_.first), hud = hudPreload_ ? static_cast<uint32_t>(hudPreloaded_.second) : hudDone;
+      // the characters (every pose they can play) and the HUD's pictures
+      if (pinsDone < pins || hudDone < hud) return {0, pinsDone + hudDone, pins + hud, false};
     }
     const auto [meshesDone, meshesTotal] = meshes_.progress();
     const uint32_t ground = ground_.ready() ? 1u : 0u, placed = !scene_ || modelsPlaced_ ? 1u : 0u;
@@ -1463,7 +1511,7 @@ class MapStage final : public Stage {
   bool sceneReady() const {
     if (!scene_) return true;
     const auto [pinsDone, pins] = sprites_.pinProgress();
-    return sprites_.ready() && pinsDone >= pins && modelsPlaced_ && fullFrames_ > 0;
+    return sprites_.ready() && pinsDone >= pins && !hudPreload_ && modelsPlaced_ && fullFrames_ > 0;
   }
 
   float groundOf(float smooth, float hard) const { return look_ == e2::EdgeStyle::Smooth ? smooth : hard; }
@@ -2260,6 +2308,25 @@ class MapStage final : public Stage {
     if (entry)
       for (const e2::HeroPose& p : entry->poses) sprites_.pin(p.set, p.clip, two);
   }
+  // The battle HUD's pictures (every unit's portrait, each hero's 12 sockets: spell art up to 784 x 1168) decoded on a
+  // worker during the loading screen (the hunt for the battle hitch, 2026-10-19: read on the main thread the first time the
+  // bar showed them, 45-90 ms).
+  void preloadHud() {
+    if (!battle_) return;
+    std::vector<std::filesystem::path> files;
+    const auto add = [&](const std::filesystem::path& f) {
+      if (!f.empty() && !uiImageLoaded(f) && std::find(files.begin(), files.end(), f) == files.end()) files.push_back(f);
+    };
+    for (size_t b = 0; b < battle_->units().size(); ++b) {
+      const e2::BattleUnit& u = battle_->units()[b];
+      add(portraitFileOf(u));
+      if (u.side == "player")
+        for (const std::string& kind : hotbarOf(b))
+          if (!kind.empty()) add(spellIconFileOf(kind));
+    }
+    if (!files.empty()) hudPreload_ = std::make_unique<UiPreload>(std::move(files));
+  }
+
   // The catalog keys with Alta / Leve sprites: content/sprite-quality.json's cast, villains and bosses.
   static const std::unordered_set<std::string>& twoVersionCast() {
     static const std::unordered_set<std::string> keys = [] {
@@ -5342,6 +5409,10 @@ class MapStage final : public Stage {
 
   // GameApp portraitFor: a hero's own portrait, an enemy's head-and-shoulders cut, else its sprite's first frame.
   const UiImage* portraitOf(const e2::BattleUnit& u) const {
+    const std::filesystem::path file = portraitFileOf(u);
+    return file.empty() ? nullptr : uiImage(file);
+  }
+  std::filesystem::path portraitFileOf(const e2::BattleUnit& u) const {
     static const std::pair<const char*, const char*> kHero[] = {
         {"defaultWarrior", "game/portraits/kael.png"}, {"kaelFinal", "game/portraits/kael-final-face-001.jpg"},
         {"neera", "game/portraits/NeeraProperSide-profile.jpg"}, {"voss", "game/portraits/voss.png"},
@@ -5352,25 +5423,29 @@ class MapStage final : public Stage {
         {"familiar", "game/portraits/familiar1-profile.png"}};
     const std::filesystem::path root = options_.engine2Public;
     for (const auto& [sprite, file] : kHero)
-      if (u.sprite == sprite) return uiImage(root / file);
+      if (u.sprite == sprite) return root / file;
     std::error_code error;
     const std::filesystem::path cut = root / "game/portraits/sprites" / (u.sprite + ".png");
-    if (std::filesystem::exists(cut, error)) return uiImage(cut);
+    if (std::filesystem::exists(cut, error)) return cut;
     const std::filesystem::path frame = root / "game/sprites" / u.sprite / "1.png";
-    if (std::filesystem::exists(frame, error)) return uiImage(frame);
-    return nullptr;
+    if (std::filesystem::exists(frame, error)) return frame;
+    return {};
   }
 
   // GameApp slotIcon / data.ts spellIcon. EmberEngine's own spells (the Mago Negro's promotions) take the user's art,
   // content/ui/spells/<kind>.jpg (portrait, drawn centre-cropped), before any Engine2 icon of the same kind.
   const UiImage* spellIconOf(const std::string& kind) const {
-    if (!e2::emberSpellClass(kind).empty()) {  // ours: the user's art when there is one (none yet for the Arqueiro: the initials)
+    const std::filesystem::path file = spellIconFileOf(kind);
+    return file.empty() ? nullptr : uiImage(file);
+  }
+  // The file spellIconOf draws for `kind`, or none.
+  std::filesystem::path spellIconFileOf(const std::string& kind) const {
+    if (!e2::emberSpellClass(kind).empty()) {  // ours: the user's art when there is one (none yet for some: the initials)
       const std::filesystem::path own = std::filesystem::path("content/ui/spells") / (kind + ".jpg");
       std::error_code ec;
-      if (std::filesystem::exists(own, ec))
-        if (const UiImage* icon = uiImage(own)) return icon;
+      if (std::filesystem::exists(own, ec)) return own;
     }
-    if (const std::optional<std::string> potion = potionOf(kind)) return uiImage(options_.engine2Public / "game/icons" / ("potion-" + *potion + ".png"));
+    if (const std::optional<std::string> potion = potionOf(kind)) return options_.engine2Public / "game/icons" / ("potion-" + *potion + ".png");
     static const std::pair<const char*, const char*> kIcons[] = {
         {"doubleStrike", "refresh-001/spells/cleave-crossed-blades.png"}, {"cleave", "refresh-001/spells/cleave.png"},
         {"fireball", "refresh-001/spells/fireball.png"}, {"frost", "frost.jpg"}, {"iceStorm", "ice-storm.jpg"},
@@ -5389,8 +5464,8 @@ class MapStage final : public Stage {
         {"burningHands", "burning-hands.png"}, {"poisonBreath", "poison-breath.png"}, {"createFoodAndWater", "create-food-and-water.png"},
         {"turnUndead", "turn-undead.jpg"}};
     for (const auto& [k, file] : kIcons)
-      if (kind == k) return uiImage(options_.engine2Public / "game/icons" / file);
-    return nullptr;
+      if (kind == k) return options_.engine2Public / "game/icons" / file;
+    return {};
   }
 
   // .ember-btn.ember-btn-sm: Pirata One, primary (the ember gradient) or ghost (dark iron, an ember underline on hover).
@@ -6333,7 +6408,16 @@ class MapStage final : public Stage {
       if (f > 0.0f) dl->AddRectFilled({left, top}, {left + width * f, top + height}, faded(fill));
       if (cell >= 32.0f) {
         ImFont* font = uiFont(UiFont::Ui);
-        const float size = std::max(13.0f, std::round(cell * 0.3f));
+        // Fixed steps, all baked the first time (the hunt for the battle hitch, 2026-10-19: a size that followed the zoom
+        // made ImGui bake new glyphs and re-upload its font atlas as the camera came near, 21-50 ms each time).
+        static constexpr float kSteps[] = {13.0f, 15.0f, 18.0f, 22.0f, 27.0f, 33.0f, 40.0f, 48.0f};
+        if (!hpSizesBaked_) {
+          for (const float s : kSteps) font->CalcTextSizeA(s, FLT_MAX, 0.0f, "0123456789");
+          hpSizesBaked_ = true;
+        }
+        float size = kSteps[0];
+        for (const float s : kSteps)
+          if (s <= cell * 0.3f) size = s;
         const std::string hp = std::to_string(u.hp);
         const ImVec2 t = font->CalcTextSizeA(size, FLT_MAX, 0.0f, hp.c_str());
         const ImVec2 p{at->x - t.x * 0.5f, top - 1.0f - t.y};
@@ -7356,6 +7440,9 @@ class MapStage final : public Stage {
   float boardWidth_ = 1.0f, boardDepth_ = 1.0f;
   float yaw_ = glm::radians(-30.0f), pitch_ = glm::radians(20.0f);
   float distance_ = 0.0f, maxDistance_ = 40.0f;
+  bool hpSizesBaked_ = false;  // drawHealthBars: the HP number's glyphs at every step size are in the font atlas
+  std::unique_ptr<UiPreload> hudPreload_;            // preloadHud: the HUD's pictures being decoded (gone once all are in)
+  std::pair<size_t, size_t> hudPreloaded_{0, 0};
   // The orbit camera: the goal above (yaw_ ... target_), the view on show gliding to it, its limits and steps.
   OrbitView cam_;
   Camera lastCamera_{};

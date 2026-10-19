@@ -656,16 +656,26 @@ bool Services::frame(DebugUi& ui, Renderer& renderer, Stage* stage, VkExtent2D s
   const auto start = Clock::now();
   if (streamTest) streamTest->beginFrame();
   assets.update();
+  const double assetsMs = msSince(start);
   if (stage) stage->frame(renderer, size);
+  const double stageMs = msSince(start) - assetsMs;
   ui.newFrame(size, dt);
   perf.draw({&jobs, &io, &assets, &renderer});
   if (streamTest) streamTest->drawPanel();
   if (stage) stage->drawPanel();
   if (stage && stage->overlay) stage->overlay();
   if (curtain) curtain();
+  const double uiMs = msSince(start) - assetsMs - stageMs;
   const bool ok = render();
   const double frameMs = msSince(start);
   const double busyMs = std::max(0.0, frameMs - renderer.lastWaitMilliseconds());
+  // A frame the main thread spent over 50 ms on: where the time went (the hunt for the rare 140-220 ms hitch, 2026-10-19).
+  if (busyMs > 50.0) {
+    const Renderer::CpuSplit r = renderer.lastCpuSplit();
+    logWarn("slow frame: {:.1f} ms busy = assets {:.1f}, stage {:.1f}, ui {:.1f}, render {:.1f} (record {:.1f}, submit {:.1f}, present {:.1f}; "
+            "waits {:.1f} not counted)",
+            busyMs, assetsMs, stageMs, uiMs, frameMs - assetsMs - stageMs - uiMs, r.record, r.submit, r.present, renderer.lastWaitMilliseconds());
+  }
   perf.addFrame(frameMs, busyMs);
   if (streamTest) streamTest->endFrame(busyMs);
   if (stage) stage->endFrame(busyMs);

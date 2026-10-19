@@ -3,14 +3,18 @@
 #include <windows.h>
 
 #include <algorithm>
+#include <condition_variable>
 #include <cstring>
 #include <cmath>
+#include <deque>
 #include <format>
 #include <fstream>
 #include <iterator>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include <lunasvg.h>
@@ -99,40 +103,125 @@ std::vector<float> premultiplied(const unsigned char* pixels, int w, int h) {
   return image;
 }
 
-// A UI texture (straight alpha, 8 bit) from premultiplied float RGBA; registered, created by the backend on its next draw.
-std::unique_ptr<ImTextureData> makeTexture(const std::vector<float>& premul, int w, int h) {
-  auto tex = std::make_unique<ImTextureData>();
-  tex->Create(ImTextureFormat_RGBA32, w, h);
-  auto* out = static_cast<unsigned char*>(tex->GetPixels());
+// 8-bit straight-alpha RGBA from premultiplied float RGBA.
+std::vector<unsigned char> straightPixels(const std::vector<float>& premul, int w, int h) {
+  std::vector<unsigned char> out(static_cast<size_t>(w) * h * 4);
   for (size_t i = 0; i < static_cast<size_t>(w) * h; ++i) {
     const float a = std::clamp(premul[i * 4 + 3], 0.0f, 1.0f);
     for (int c = 0; c < 3; ++c) out[i * 4 + c] = static_cast<unsigned char>(std::lround(std::clamp(a > 0.0f ? premul[i * 4 + c] / a : 0.0f, 0.0f, 1.0f) * 255.0f));
     out[i * 4 + 3] = static_cast<unsigned char>(std::lround(a * 255.0f));
   }
+  return out;
+}
+
+// A UI texture from 8-bit RGBA; registered, created by the backend on its next draw.
+std::unique_ptr<ImTextureData> makeTexture(const std::vector<unsigned char>& pixels, int w, int h) {
+  auto tex = std::make_unique<ImTextureData>();
+  tex->Create(ImTextureFormat_RGBA32, w, h);
+  std::memcpy(tex->GetPixels(), pixels.data(), pixels.size());
   tex->UseColors = true;
   ImGui::RegisterUserTexture(tex.get());
   lateTextures().push_back(tex.get());
   return tex;
 }
 
-// The loaded image resampled to w x h (the browser's smooth downscale: every source pixel averaged).
-std::unique_ptr<ImTextureData> resampledTexture(const LoadedImage& image, int w, int h) {
-  const int sw = image.image.width, sh = image.image.height;
-  const std::vector<float> source = premultiplied(static_cast<const unsigned char*>(image.data->GetPixels()), sw, sh);
-  const std::vector<float> wide = uiResampleAxis(source, sw, sh, w, true);
-  return makeTexture(uiResampleAxis(wide, w, sh, h, false), w, h);
+// Resampling runs on a thread of its own (the hunt for the battle hitch, 2026-10-19: 27 spell icons of 784 x 1168
+// resampled on the main thread when the battle bar first showed cost 50-65 ms, their uploads 40-50 more): the image is
+// drawn with the best copy it already has until the new one is ready, and at most kTexturesPerFrame new copies are handed
+// to the backend per frame.
+struct ResampleJob {
+  LoadedImage* image;
+  bool half;  // a halving (index level - 1) or an exact size
+  int level, w, h;
+  std::shared_ptr<const std::vector<unsigned char>> source;  // the image's own pixels (8-bit RGBA)
+  int sw, sh;
+  std::vector<unsigned char> result;
+};
+class Resampler {
+ public:
+  Resampler() : thread_([this](std::stop_token stop) { run(stop); }) {}
+  ~Resampler() {
+    thread_.request_stop();
+    wake_.notify_all();
+  }
+  void push(ResampleJob job) {
+    {
+      std::lock_guard lock(mutex_);
+      todo_.push_back(std::move(job));
+    }
+    wake_.notify_one();
+  }
+  std::vector<ResampleJob> takeDone(size_t most) {
+    std::lock_guard lock(mutex_);
+    const size_t n = std::min(most, done_.size());
+    std::vector<ResampleJob> out(std::make_move_iterator(done_.begin()), std::make_move_iterator(done_.begin() + static_cast<ptrdiff_t>(n)));
+    done_.erase(done_.begin(), done_.begin() + static_cast<ptrdiff_t>(n));
+    return out;
+  }
+
+ private:
+  void run(std::stop_token stop) {
+    for (;;) {
+      ResampleJob job;
+      {
+        std::unique_lock lock(mutex_);
+        wake_.wait(lock, [&] { return stop.stop_requested() || !todo_.empty(); });
+        if (stop.stop_requested()) return;
+        job = std::move(todo_.front());
+        todo_.pop_front();
+      }
+      const std::vector<float> source = premultiplied(job.source->data(), job.sw, job.sh);
+      const std::vector<float> wide = uiResampleAxis(source, job.sw, job.sh, job.w, true);
+      job.result = straightPixels(uiResampleAxis(wide, job.w, job.sh, job.h, false), job.w, job.h);
+      std::lock_guard lock(mutex_);
+      done_.push_back(std::move(job));
+    }
+  }
+  std::mutex mutex_;
+  std::condition_variable wake_;
+  std::deque<ResampleJob> todo_, done_;
+  std::jthread thread_;
+};
+Resampler& resampler() {
+  static Resampler r;
+  return r;
+}
+constexpr size_t kTexturesPerFrame = 4;
+
+// The image's own pixels for the resampler (copied once, shared by every job of that image).
+std::shared_ptr<const std::vector<unsigned char>> sourcePixels(const LoadedImage& image) {
+  static std::map<const LoadedImage*, std::shared_ptr<const std::vector<unsigned char>>> copies;
+  auto& copy = copies[&image];
+  if (!copy) {
+    const auto* p = static_cast<const unsigned char*>(image.data->GetPixels());
+    copy = std::make_shared<const std::vector<unsigned char>>(p, p + static_cast<size_t>(image.image.width) * image.image.height * 4);
+  }
+  return copy;
 }
 
-// The texture to draw `image` with when its whole width / height cover needW / needH pixels on screen.
+// The texture to draw `image` with when its whole width / height cover needW / needH pixels on screen: the right copy
+// if it is made, else one is asked for and the best copy already made (or the image itself) is drawn meanwhile.
 const ImTextureData* textureFor(LoadedImage& image, float needW, float needH) {
   const int w = image.image.width, h = image.image.height;
   if (needW >= 0.8f * static_cast<float>(w) && needH >= 0.8f * static_cast<float>(h)) return image.data.get();
   const int tw = std::clamp(static_cast<int>(std::ceil(needW)), 1, w), th = std::clamp(static_cast<int>(std::ceil(needH)), 1, h);
+  // Meanwhile: the smallest copy made that is still at least as big as the drawn size (bilinear covers the rest).
+  const auto meanwhile = [&]() -> const ImTextureData* {
+    const ImTextureData* best = image.data.get();
+    int bestArea = w * h;
+    auto consider = [&](const Sized& s) {
+      if (s.data && s.width >= tw && s.height >= th && s.width * s.height < bestArea) best = s.data.get(), bestArea = s.width * s.height;
+    };
+    for (const Sized& s : image.exact) consider(s);
+    for (const Sized& s : image.halves) consider(s);
+    return best;
+  };
   for (const Sized& s : image.exact)
-    if (std::abs(s.width - tw) <= 1 && std::abs(s.height - th) <= 1) return s.data.get();
+    if (std::abs(s.width - tw) <= 1 && std::abs(s.height - th) <= 1) return s.data ? s.data.get() : meanwhile();
   if (image.exact.size() < kMaxExactSizes && static_cast<long long>(w) * h <= kMaxExactSource && static_cast<long long>(tw) * th <= kMaxExactTarget) {
-    image.exact.push_back({tw, th, resampledTexture(image, tw, th)});
-    return image.exact.back().data.get();
+    image.exact.push_back({tw, th, nullptr});  // asked for: filled when the resampler hands it back
+    resampler().push({&image, false, 0, tw, th, sourcePixels(image), w, h, {}});
+    return meanwhile();
   }
   // The smallest halving still at least as big as the drawn size; bilinear filtering covers the rest (under 2:1).
   int level = 0;
@@ -140,8 +229,25 @@ const ImTextureData* textureFor(LoadedImage& image, float needW, float needH) {
   if (level == 0) return image.data.get();
   while (static_cast<int>(image.halves.size()) < level) image.halves.push_back({});
   Sized& half = image.halves[static_cast<size_t>(level - 1)];
-  if (!half.data) half = {w >> level, h >> level, resampledTexture(image, w >> level, h >> level)};
-  return half.data.get();
+  if (half.width == 0) {
+    half = {w >> level, h >> level, nullptr};
+    resampler().push({&image, true, level, w >> level, h >> level, sourcePixels(image), w, h, {}});
+  }
+  return half.data ? half.data.get() : meanwhile();
+}
+
+// Copies the resampler finished: made into textures (a few per frame) and put where textureFor looks for them.
+void collectResampled() {
+  for (ResampleJob& job : resampler().takeDone(kTexturesPerFrame)) {
+    Sized* slot = nullptr;
+    if (job.half) {
+      if (job.level - 1 < static_cast<int>(job.image->halves.size())) slot = &job.image->halves[static_cast<size_t>(job.level - 1)];
+    } else {
+      for (Sized& s : job.image->exact)
+        if (s.width == job.w && s.height == job.h && !s.data) slot = &s;
+    }
+    if (slot && !slot->data) slot->data = makeTexture(job.result, job.w, job.h);
+  }
 }
 
 // --- lucide icons ------------------------------------------------------------------------------------------------------
@@ -188,6 +294,7 @@ std::vector<float> uiResampleAxis(const std::vector<float>& src, int srcW, int s
 
 void refineUiImages(ImDrawData* drawData) {
   if (!drawData) return;
+  collectResampled();
   const auto& index = imagesByTexture();
   if (index.empty()) return;
   const ImVec2 scale = drawData->FramebufferScale;

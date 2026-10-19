@@ -1,6 +1,13 @@
 #pragma once
 
+#include <cstdint>
+#include <set>
+#include <vector>
+
+#include "rhi/Image.h"
 #include "rhi/VkCommon.h"
+
+struct ImDrawData;
 
 struct SDL_Window;
 struct SDL_Cursor;
@@ -43,6 +50,25 @@ class DebugUi {
 
  private:
   void applyCursor();
+  // ImGui's textures (font atlas, every UI image) made and updated by us inside the frame's command buffer, before the
+  // UI draw: ImGui's Vulkan backend did each with its own submit and a vkQueueWaitIdle (20-50 ms a texture when one
+  // appeared mid-battle, the hunt for the hitch 2026-10-19). Staging buffers and dropped images live until the GPU is
+  // surely past the frame that used them.
+  void uploadTextures(VkCommandBuffer cmd, ImDrawData* drawData);
+  void destroyAllTextures();
+  struct UiTexture {
+    Image image;
+    VkDescriptorSet set = VK_NULL_HANDLE;
+  };
+  struct Retired {
+    Buffer staging;
+    UiTexture* texture = nullptr;
+    uint64_t record = 0;
+  };
+  VulkanContext& context_;
+  std::set<UiTexture*> textures_;
+  std::vector<Retired> retired_;
+  uint64_t records_ = 0;
 
   // Engine2's cursors (content/ui/cursors, tools/scripts/engine2/export_cursors.py), made for the window's display
   // scale; remade when the window moves to a screen with another scale.

@@ -188,6 +188,14 @@ ImageDesc SpriteSystem::clipImageDesc(const SpriteClipHeader& h, uint32_t firstM
 }
 
 void SpriteSystem::createFullPool() {
+  const auto started = std::chrono::steady_clock::now();
+  struct Report {
+    std::chrono::steady_clock::time_point started;
+    ~Report() {
+      logInfo("sprites: full-clip pool set up in {:.1f} ms",
+              std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count());
+    }
+  } report{started};
   // The real size of each full clip image (with the driver's padding), to size the blocks.
   VkDeviceSize largest = 0;
   const SpriteClipHeader* largestHeader = nullptr;

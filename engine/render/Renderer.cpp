@@ -868,7 +868,9 @@ bool Renderer::renderFrame(float time) {
 
   VK_CHECK(vkResetFences(context_.device, 1, &frame.done));
   VK_CHECK(vkResetCommandPool(context_.device, frame.pool, 0));
+  const auto recordStart = std::chrono::steady_clock::now();
   record(frame, time, swapImage, nullptr);
+  lastSplit_ = {millisecondsSince(recordStart), 0.0, 0.0};
 
   VkCommandBufferSubmitInfo cmdInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO};
   cmdInfo.commandBuffer = frame.cmd;
@@ -885,7 +887,9 @@ bool Renderer::renderFrame(float time) {
     submit.signalSemaphoreInfoCount = 1;
     submit.pSignalSemaphoreInfos = &signal;
   }
+  const auto submitStart = std::chrono::steady_clock::now();
   VK_CHECK(vkQueueSubmit2(context_.queue, 1, &submit, frame.done));
+  lastSplit_.submit = millisecondsSince(submitStart);
   frameIndex_ = (frameIndex_ + 1) % kFramesInFlight;
 
   if (!swapchain_) return true;
@@ -897,7 +901,9 @@ bool Renderer::renderFrame(float time) {
   present.swapchainCount = 1;
   present.pSwapchains = &handle;
   present.pImageIndices = &imageIndex;
+  const auto presentStart = std::chrono::steady_clock::now();
   const VkResult presented = vkQueuePresentKHR(context_.queue, &present);
+  lastSplit_.present = millisecondsSince(presentStart);
   if (presented == VK_ERROR_OUT_OF_DATE_KHR || presented == VK_SUBOPTIMAL_KHR) return false;
   VK_CHECK(presented);
   return true;

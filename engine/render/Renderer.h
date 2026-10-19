@@ -288,6 +288,11 @@ class Renderer {
   const GpuTimer& gpuTimer() const { return gpuTimer_; }
   // Time the last frame's CPU spent blocked on the GPU (fence) and on the window (acquire).
   double lastWaitMilliseconds() const { return lastWaitMs_; }
+  // The last frame's CPU time recording the commands, in vkQueueSubmit2 and in vkQueuePresentKHR (slow-frame report).
+  struct CpuSplit {
+    double record = 0.0, submit = 0.0, present = 0.0;
+  };
+  CpuSplit lastCpuSplit() const { return lastSplit_; }
 
  private:
   struct Frame {
@@ -330,6 +335,7 @@ class Renderer {
   GpuTimer gpuTimer_;
   DebugUi* ui_ = nullptr;
   double lastWaitMs_ = 0.0;
+  CpuSplit lastSplit_{};
   std::array<Frame, kFramesInFlight> frames_{};
   uint32_t frameIndex_ = 0;
 

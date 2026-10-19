@@ -9,7 +9,10 @@
 #include <stb_image_write.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <cstddef>
+#include <cstring>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -124,7 +127,7 @@ int DebugUi::checkCursors(const char* outDir) {
 }
 
 DebugUi::DebugUi(VulkanContext& context, SDL_Window* window, VkFormat targetFormat)
-    : window_(window), hasWindow_(window != nullptr), targetFormat_(targetFormat) {
+    : context_(context), window_(window), hasWindow_(window != nullptr), targetFormat_(targetFormat) {
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
   ImGuiIO& io = ImGui::GetIO();
@@ -176,6 +179,7 @@ DebugUi::~DebugUi() {
   if (cursors_.shown) SDL_SetCursor(SDL_GetDefaultCursor());
   for (SDL_Cursor* cursor : {cursors_.pointer, cursors_.grab, cursors_.text})
     if (cursor) SDL_DestroyCursor(cursor);
+  destroyAllTextures();  // ours, before the backend's shutdown looks at them
   ImGui_ImplVulkan_Shutdown();
   if (hasWindow_) ImGui_ImplSDL3_Shutdown();
   ImGui::DestroyContext();
@@ -258,9 +262,19 @@ void DebugUi::record(VkCommandBuffer cmd, VkImageView target, VkExtent2D size) {
   if (!frameOpen_) return;
   frameOpen_ = false;
   applyCursor();
+  using Clock = std::chrono::steady_clock;
+  const auto ms = [](Clock::time_point a, Clock::time_point b) { return std::chrono::duration<double, std::milli>(b - a).count(); };
+  const Clock::time_point t0 = Clock::now();
   ImGui::Render();
   ImDrawData* drawData = ImGui::GetDrawData();
+  const Clock::time_point t1 = Clock::now();
   refineUiImages(drawData);  // UI images at their size on screen (render/UiArt.h)
+  const Clock::time_point t2 = Clock::now();
+  int texUpdates = 0, texW = 0, texH = 0;
+  if (drawData && drawData->Textures)
+    for (ImTextureData* t : *drawData->Textures)
+      if (t->Status != ImTextureStatus_OK) ++texUpdates, texW = std::max(texW, t->Width), texH = std::max(texH, t->Height);
+  uploadTextures(cmd, drawData);
 
   VkRenderingAttachmentInfo color{VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
   color.imageView = target;
@@ -275,6 +289,107 @@ void DebugUi::record(VkCommandBuffer cmd, VkImageView target, VkExtent2D size) {
   vkCmdBeginRendering(cmd, &rendering);
   ImGui_ImplVulkan_RenderDrawData(drawData, cmd);
   vkCmdEndRendering(cmd);
+  // Slow UI frames (the hunt for the rare 140-220 ms hitch, 2026-10-19): ImGui's own render, the image resampling, the
+  // backend (texture uploads: how many textures changed, the largest).
+  const Clock::time_point t3 = Clock::now();
+  if (ms(t0, t3) > 20.0)
+    logWarn("slow ui record: {:.1f} ms = imgui render {:.1f}, refine images {:.1f}, textures + draw {:.1f} ({} textures changed, largest {}x{})",
+            ms(t0, t3), ms(t0, t1), ms(t1, t2), ms(t2, t3), texUpdates, texW, texH);
+}
+
+void DebugUi::uploadTextures(VkCommandBuffer cmd, ImDrawData* drawData) {
+  ++records_;
+  // What the GPU is surely done with: kFramesInFlight frames recorded since.
+  std::erase_if(retired_, [&](Retired& r) {
+    if (r.record + kFramesInFlight + 1 > records_) return false;
+    if (r.staging.buffer) destroyBuffer(context_, r.staging);
+    if (r.texture) {
+      destroyImage(context_, r.texture->image);
+      delete r.texture;
+    }
+    return true;
+  });
+  if (!drawData || !drawData->Textures) return;
+  for (ImTextureData* tex : *drawData->Textures) {
+    if (tex->Status == ImTextureStatus_OK || tex->Status == ImTextureStatus_Destroyed) continue;
+    if (tex->Status == ImTextureStatus_WantDestroy) {
+      // Unused for as many frames as can be in flight (the backend's own rule): its descriptor and image can go.
+      if (tex->UnusedFrames < static_cast<int>(kFramesInFlight)) continue;
+      auto* t = static_cast<UiTexture*>(tex->BackendUserData);
+      if (t && textures_.erase(t)) {
+        ImGui_ImplVulkan_RemoveTexture(t->set);
+        retired_.push_back({{}, t, records_});
+      }
+      tex->SetTexID(ImTextureID_Invalid);
+      tex->BackendUserData = nullptr;
+      tex->SetStatus(ImTextureStatus_Destroyed);
+      continue;
+    }
+    const bool create = tex->Status == ImTextureStatus_WantCreate;
+    if (create) {
+      auto* t = new UiTexture();
+      ImageDesc desc;
+      desc.format = VK_FORMAT_R8G8B8A8_UNORM;
+      desc.extent = {static_cast<uint32_t>(tex->Width), static_cast<uint32_t>(tex->Height)};
+      desc.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+      t->image = createImage(context_, desc);
+      t->set = ImGui_ImplVulkan_AddTexture(t->image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+      textures_.insert(t);
+      tex->SetTexID(reinterpret_cast<ImTextureID>(t->set));
+      tex->BackendUserData = t;
+    }
+    auto* t = static_cast<UiTexture*>(tex->BackendUserData);
+    if (!t || !textures_.contains(t)) continue;  // not ours (never: every texture is made here)
+    const int x = create ? 0 : tex->UpdateRect.x, y = create ? 0 : tex->UpdateRect.y;
+    const int w = create ? tex->Width : tex->UpdateRect.w, h = create ? tex->Height : tex->UpdateRect.h;
+    const VkDeviceSize pitch = static_cast<VkDeviceSize>(w) * tex->BytesPerPixel;
+    Buffer staging = createHostBuffer(context_, std::max<VkDeviceSize>(pitch * h, 16), VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    for (int row = 0; row < h; ++row)
+      std::memcpy(static_cast<std::byte*>(staging.mapped) + pitch * row, tex->GetPixelsAt(x, y + row), static_cast<size_t>(pitch));
+    VK_CHECK(vmaFlushAllocation(context_.allocator, staging.allocation, 0, VK_WHOLE_SIZE));
+    transition(cmd, t->image.image, VK_IMAGE_ASPECT_COLOR_BIT,
+               {create ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT});
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageOffset = {x, y, 0};
+    region.imageExtent = {static_cast<uint32_t>(w), static_cast<uint32_t>(h), 1};
+    vkCmdCopyBufferToImage(cmd, staging.buffer, t->image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    transition(cmd, t->image.image, VK_IMAGE_ASPECT_COLOR_BIT,
+               {VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_2_COPY_BIT,
+                VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT});
+    retired_.push_back({staging, nullptr, records_});
+    tex->SetStatus(ImTextureStatus_OK);
+  }
+}
+
+void DebugUi::destroyAllTextures() {
+  vkDeviceWaitIdle(context_.device);
+  for (Retired& r : retired_) {
+    if (r.staging.buffer) destroyBuffer(context_, r.staging);
+    if (r.texture) {
+      destroyImage(context_, r.texture->image);
+      delete r.texture;
+    }
+  }
+  retired_.clear();
+  for (ImTextureData* tex : ImGui::GetPlatformIO().Textures) {
+    auto* t = static_cast<UiTexture*>(tex->BackendUserData);
+    if (!t || !textures_.contains(t)) continue;
+    ImGui_ImplVulkan_RemoveTexture(t->set);
+    destroyImage(context_, t->image);
+    textures_.erase(t);
+    delete t;
+    tex->SetTexID(ImTextureID_Invalid);
+    tex->BackendUserData = nullptr;
+    tex->SetStatus(ImTextureStatus_Destroyed);
+  }
+  for (UiTexture* t : textures_) {  // user textures no longer listed
+    ImGui_ImplVulkan_RemoveTexture(t->set);
+    destroyImage(context_, t->image);
+    delete t;
+  }
+  textures_.clear();
 }
 
 }  // namespace ember
