@@ -67,6 +67,7 @@ int SpellEffects::looks(const std::string& kind) {
   // 03: ours in 3D (vfx/SpellBolts; the user, 2026-10-18: "the current ones are too bland").
   if (kind == "magicMissile" || kind == "magicMissileV2") return 3;
   if (kind == "divineBolt") return 1;  // 01: ours in 3D (vfx/SpellBolts)
+  if (kind == "turnUndead") return 1;  // 01: ours in 3D (vfx/TurnUndead)
   if (isLightning(kind, 2)) return 2;  // 01 the flipbook cards, 02 ours in 3D (vfx/Lightning)
   // 01 Engine2's BurningHandsV2VFX as it was, 02 its cone opening outward (ours).
   if (kind == "burningHands" || kind == "poisonBreath") return 2;
@@ -101,6 +102,7 @@ int SpellEffects::engine2Look(const std::string& kind) {
   if (kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "createFoodAndWater" || kind == "potion") return 1;
   if (kind == "magicMissile" || kind == "magicMissileV2") return 3;  // ours in 3D (SpellBolts; 02 = Engine2's MagicMissileV2VFX)
   if (kind == "divineBolt") return 1;                                // ours in 3D (SpellBolts)
+  if (kind == "turnUndead") return 1;                                // ours in 3D (vfx/TurnUndead)
   if (isLightning(kind, 2)) return 2;                                // Raio, ours in 3D (vfx/Lightning; 01 = the cards, the enemies')
   if (kind == "fireball") return 1;                                  // FireballVFX
   if (kind == "bless") return 1;                                     // BlessVFX
@@ -170,6 +172,7 @@ float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& c
 float SpellEffects::leadIn(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const {
   if (const float delay = impactDelay(kind, look, caster, targets); delay > 0.0f) return delay;
   if (isHoly(kind, look)) return HolyLight::leadIn(HolyLight::Style::Minor);
+  if (kind == "turnUndead" && look >= 1) return TurnUndead::kLead;  // the sigil gathers, then the burst
   return kKindLead;
 }
 
@@ -215,6 +218,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     latest(missiles_, before[1]), latest(fireballs_, before[2]), latest(blesses_, before[3]), latest(venoms_, before[4]);
     latest(phantasms_, before[5]), latest(webs_, before[6]), latest(cleaves_, before[8]), latest(sweeps_, before[9]);
     latest(holies_, before[10]);
+    if (kind == "turnUndead") end = std::max(end, turnUndead_.latestEnd());
     for (size_t i = before[7]; i < burns_.size(); ++i) end = std::max(end, burns_[i].first.end());
     if (kind == "iceStorm" && !storms_.empty()) end = std::max(end, storms_.back().start() + 1.0f);  // its first second, not the whole storm
     if (isBolt(kind, look) && !bolts_.empty()) end = std::max(end, bolts_.back().end());
@@ -257,6 +261,19 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
       for (const Spot& s : targets) radius = std::max(radius, glm::length(glm::vec2(s.feet.x - caster.feet.x, s.feet.z - caster.feet.z)));
       warrior_.warCry(caster.feet, caster.cardHeight, hit, radius + 1.2f, impact);
     }
+    return true;
+  }
+  // Expulsar Mortos-Vivos (TurnUndead, ours, 3D). Targets: the hexes of the area (cardHeight 0) and the undead standing in it (the
+  // stage gives bodies a card height only for the undead it strikes); the caster's own hex is no target.
+  if (kind == "turnUndead") {
+    float radius = 0.0f;
+    std::vector<TurnUndead::Target> undead;
+    for (const Spot& s : targets) {
+      const float d = glm::length(glm::vec2(s.feet.x - caster.feet.x, s.feet.z - caster.feet.z));
+      radius = std::max(radius, d);
+      if (s.cardHeight > 0.0f && d > 0.3f) undead.push_back({s.feet, s.cardHeight});
+    }
+    turnUndead_.cast(caster.feet, caster.cardHeight, radius + 1.0f, std::move(undead), impact);
     return true;
   }
   // The Arqueiro's skills (RangerFx, ours, 3D): one arrow at the struck foe (the first target; the burst's neighbours follow it),
@@ -665,7 +682,7 @@ void SpellEffects::swapFlight(const Spot& a, const Spot& b, float start, float f
 void SpellEffects::disarmed(const Spot& foe, const Spot& from, float at) { lancer_.disarmed({foe.feet, foe.cardHeight}, from.feet, at); }
 
 bool SpellEffects::active(float now) const {
-  if (combat_.active(now) || warrior_.active(now) || ranger_.active(now) || lancer_.active(now)) return true;
+  if (combat_.active(now) || warrior_.active(now) || ranger_.active(now) || lancer_.active(now) || turnUndead_.active(now)) return true;
   if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
   if (std::any_of(fireballs_.begin(), fireballs_.end(), [&](const Fireball& f) { return !f.done(now); })) return true;
   if (std::any_of(blesses_.begin(), blesses_.end(), [&](const Bless& b) { return !b.done(now); })) return true;
@@ -737,6 +754,7 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   warrior_.build(now, camera, vfx_, vfxLights);
   ranger_.build(now, camera, vfx_, vfxLights);
   lancer_.build(now, camera, vfx_, vfxLights);
+  turnUndead_.build(now, camera, vfx_, vfxLights);
   for (const VfxLight& l : vfxLights)
     if (l.intensity > 0.0f) lights.push_back({l.at, {l.color.r, l.color.g, l.color.b}, l.intensity, l.distance, std::max(l.at.y, 1.0f)});
   const size_t first = out.size();

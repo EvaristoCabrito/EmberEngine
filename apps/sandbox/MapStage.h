@@ -4219,6 +4219,14 @@ class MapStage final : public Stage {
       } else if (s.kind == "warCry" || s.kind == "steelWhirlwind") {  // Grito de Guerra: the allies it rallies (the caster among them); Redemoinho: the foes it reaches
         for (size_t id : s.ids)
           if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0) spots.push_back(unitSpot(static_cast<size_t>(ui)));
+      } else if (s.kind == "turnUndead") {  // Expulsar Mortos-Vivos: the area's hexes; only the undead standing in it keep their card height (they are struck)
+        for (const e2::BattleHex& h : s.tiles) {
+          SpellEffects::Spot spot = hexSpot(h);
+          const bool undead = std::any_of(battle_->units().begin(), battle_->units().end(),
+                                          [&](const e2::BattleUnit& u) { return u.alive && u.undead && u.x == h.x && u.y == h.y; });
+          if (!undead) spot.cardHeight = 0.0f;
+          spots.push_back(spot);
+        }
       } else if (s.type == StepType::Spell || s.type == StepType::Effect) {
         for (const e2::BattleHex& h : s.tiles) spots.push_back(hexSpot(h));
       } else if (s.type == StepType::Food) {
