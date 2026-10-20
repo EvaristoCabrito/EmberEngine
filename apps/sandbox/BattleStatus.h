@@ -50,6 +50,7 @@ class BattleStatusSheet {
 
   void open(size_t unit) { open_ = true, unit_ = unit, conditionOpen_ = false, skillsOpen_ = false, scrollTarget_ = 0.0f, scrollReset_ = true; }
   void close() { open_ = false, conditionOpen_ = false, skillsOpen_ = false; }
+  void openSkills() { skillsOpen_ = true; }  // captures ("skills:<unit>")
   bool isOpen() const { return open_; }
   size_t unit() const { return unit_; }
   void closeConditionOrSheet() {
@@ -112,7 +113,7 @@ class BattleStatusSheet {
     ImGui::PopStyleColor(3);
     ImGui::PopStyleVar();
     if (conditionOpen_) drawConditionWindow(statusCondition(u, en), publicDir);
-    if (skillsOpen_ && u.side == "player") drawSkillsWindow(u, publicDir, hooks, en);
+    if (skillsOpen_ && u.side == "player") drawSkillsWindow(battle, u, publicDir, hooks, en);
   }
 
  private:
@@ -546,7 +547,7 @@ class BattleStatusSheet {
 
   // The Skills window (the world map's Skills in the same plates): the spells and skills as cards, then the trained perícias with
   // their bars. A veil behind it; a click outside, ✕ or Esc closes it.
-  void drawSkillsWindow(const e2::BattleUnit& u, const std::filesystem::path& publicDir, const Hooks& hooks, bool en) {
+  void drawSkillsWindow(const e2::Battle& battle, const e2::BattleUnit& u, const std::filesystem::path& publicDir, const Hooks& hooks, bool en) {
     const ImGuiIO& io = ImGui::GetIO();
     ImGui::SetNextWindowPos({0, 0});
     ImGui::SetNextWindowSize(io.DisplaySize);
@@ -618,25 +619,36 @@ class BattleStatusSheet {
         bd->AddText(ui, 14.0f, {x0, y}, kMuted, en ? "This character has no spells or skills yet." : "Este personagem ainda não tem magias nem habilidades.");
         y += 24.0f;
       }
-      // --- Perícias: the trained skills, a bar each ---
+      // --- Perícias: every skill the sheet owes, a bar each (the weapon's, the resistances, Cura, Esquiva) ---
       y += 10.0f;
       sectionTitle(bd, {x0, y}, en ? "Trained skills" : "Perícias");
       y += 28.0f;
+      auto trained = [&](const std::string& id) {
+        for (const auto& [k, v] : u.skills)
+          if (k == id) return v;
+        return 0.0;
+      };
       std::vector<std::pair<std::string, double>> skills;
+      auto add = [&](const std::string& id, double v) {
+        if (std::none_of(skills.begin(), skills.end(), [&](const auto& e) { return e.first == id; })) skills.push_back({id, v});
+      };
+      if (u.trainsWeapon) {  // the weapon its class trains
+        static const std::vector<std::pair<std::string, std::string>> kWeaponSkill = {
+            {"sword", "swordWeapon"}, {"blade", "swordWeapon"}, {"katana", "swordWeapon"}, {"scimitar", "swordWeapon"}, {"axe", "axeWeapon"},
+            {"mace", "maceWeapon"},   {"hammer", "hammerWeapon"}, {"staff", "staffWeapon"}, {"spear", "spearWeapon"},    {"lance", "spearWeapon"},
+            {"pike", "spearWeapon"},  {"polearm", "spearWeapon"}, {"halberd", "spearWeapon"}, {"bow", "bowWeapon"},      {"crossbow", "crossbowWeapon"},
+            {"dagger", "daggerWeapon"}};
+        for (const auto& [type, id] : kWeaponSkill)
+          if (type == u.weaponType) add(id, std::max(u.weaponSkill, trained(id)));
+      }
       for (const auto& [id, v] : u.skills)
-        if (id != "healing" && id != "dodging") skills.push_back({id, v});
-      std::stable_sort(skills.begin(), skills.end(), [](const auto& a, const auto& b) {
-        auto rank = [](const std::string& id) { return id.ends_with("Weapon") ? 0 : id == "poisonResistance" ? 1 : 2; };
-        return rank(a.first) < rank(b.first);
-      });
+        if (id.ends_with("Weapon")) add(id, v);
+      for (const char* id : {"poisonResistance", "fireResistance", "lightningResistance", "iceResistance", "arcaneResistance", "darknessResistance",
+                             "holyResistance", "emberResistance"})
+        add(id, trained(id));
       if (!u.summoned) {
-        double healing = u.healingSkill, dodging = 0;
-        for (const auto& [id, v] : u.skills) {
-          if (id == "healing") healing = v;
-          if (id == "dodging") dodging = v;
-        }
-        skills.push_back({"healing", healing});
-        skills.push_back({"dodging", dodging});
+        add("healing", std::max(u.healingSkill, trained("healing")));
+        add("dodging", trained("dodging"));
       }
       const ImVec2 pa{x0, y};
       const float panelH = 14.0f + static_cast<float>(skills.size()) * 40.0f;
@@ -656,6 +668,42 @@ class BattleStatusSheet {
         sy += 40.0f;
       }
       y += panelH + 12.0f;
+      // --- Afinidades: this character's score with every other member of the party in the fight (as the world map's Party shows them) ---
+      std::vector<const e2::BattleUnit*> mates;
+      for (const e2::BattleUnit& o : battle.units())
+        if (o.side == "player" && !o.summoned && o.name != u.name &&
+            std::none_of(mates.begin(), mates.end(), [&](const e2::BattleUnit* m) { return m->name == o.name; }))
+          mates.push_back(&o);
+      if (!mates.empty()) {
+        y += 10.0f;
+        sectionTitle(bd, {x0, y}, en ? "Affinities" : "Afinidades");
+        y += 28.0f;
+        const float affH = 14.0f + static_cast<float>(mates.size()) * 56.0f;
+        bd->AddRectFilled({x0, y}, {x0 + bw, y + affH}, kBg, 8.0f);
+        bd->AddRect({x0, y}, {x0 + bw, y + affH}, kBorder, 8.0f);
+        float ay = y + 10.0f;
+        for (const e2::BattleUnit* o : mates) {
+          const std::string pair = u.name < o->name ? u.name + "|" + o->name : o->name + "|" + u.name;
+          const auto it = battle.affinityScores().find(pair);
+          const double score = it == battle.affinityScores().end() ? 0.0 : it->second;
+          const char* grade = score < 0 ? (score <= -90 ? (en ? "Hatred" : "Ódio") : score <= -50 ? (en ? "Hostile" : "Hostil") : score <= -25 ? (en ? "Strained" : "Tensa") : (en ? "Cold" : "Fria"))
+                                        : (score >= 100 ? (en ? "High" : "Alta") : score >= 80 ? (en ? "Good" : "Boa") : score >= 50 ? (en ? "Fair" : "Média") : score >= 25 ? (en ? "Regular" : "Regular") : (en ? "Poor" : "Ruim"));
+          const int bonus = score >= 90 ? 8 : score >= 50 ? 5 : score >= 25 ? 2 : score <= -90 ? -8 : score <= -50 ? -5 : score <= -25 ? -2 : 0;
+          bd->AddText(ui, 14.0f, {x0 + 14.0f, ay}, kFg, o->name.c_str());
+          const std::string right = std::format("{} · {}/100", grade, pointsText(score, en));
+          const float rw = ui->CalcTextSizeA(14.0f, FLT_MAX, 0.0f, right.c_str()).x;
+          bd->AddText(ui, 14.0f, {x0 + bw - 14.0f - rw, ay}, kMuted, right.c_str());
+          bd->AddRectFilled({x0 + 14.0f, ay + 22.0f}, {x0 + bw - 14.0f, ay + 28.0f}, kBorder, 3.0f);
+          bd->AddRectFilled({x0 + 14.0f, ay + 22.0f}, {x0 + 14.0f + (bw - 28.0f) * static_cast<float>(std::clamp(std::abs(score), 0.0, 100.0) / 100.0), ay + 28.0f},
+                            score < 0 ? IM_COL32(196, 58, 46, 255) : kAccent, 3.0f);
+          const std::string help = bonus < 0 ? std::format("{}: {}%", en ? "Side-by-side penalty" : "Penalidade por adjacência", bonus)
+                                             : std::format("{}: +{}%{}", en ? "Side-by-side bonus" : "Bônus por adjacência", bonus,
+                                                           score >= 80 ? (en ? " · Duo skill unlocked" : " · Skill de dupla desbloqueada") : "");
+          bd->AddText(ui, 12.0f, {x0 + 14.0f, ay + 32.0f}, kMuted, help.c_str());
+          ay += 56.0f;
+        }
+        y += affH + 12.0f;
+      }
       ImGui::SetCursorScreenPos({x0, y});
       ImGui::Dummy({bw, 4.0f});
     }

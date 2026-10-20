@@ -4675,6 +4675,13 @@ class MapStage final : public Stage {
       scriptHover_ = e2::BattleHex{std::atoi(p[1].c_str()), std::atoi(p[2].c_str())};
       return logInfo("battle script: aim {} {}", scriptHover_->x, scriptHover_->y);
     }
+    if (p[0] == "skills" && p.size() > 1) {  // "skills:<unit>": its status sheet with the Skills window opened over it
+      const int who = sceneUnitNamed(p[1]);
+      if (who < 0 || unitBattle_[static_cast<size_t>(who)] < 0) return fail("no such unit");
+      openStatus(unitBattle_[static_cast<size_t>(who)]);
+      statusSheet_.openSkills();
+      return logInfo("battle script: skills {}", p[1]);
+    }
     if (p[0] == "status" && p.size() > 1) {  // "status:<unit>": its status sheet opened (as a click on its portrait does)
       const int who = sceneUnitNamed(p[1]);
       if (who < 0 || unitBattle_[static_cast<size_t>(who)] < 0) return fail("no such unit");
