@@ -2017,14 +2017,14 @@ class MapEditorStage : public Stage {
         ImGui::EndCombo();
       }
       if (!file.empty())
-        if (const UiImage* img = uiImage(base_.engine2Public / "game" / "map-backgrounds" / file)) {
+        if (const UiImage* img = uiImage(std::filesystem::path("content/backdrops") / std::filesystem::u8path(file))) {
           const float w = ImGui::GetContentRegionAvail().x, h = 96;
           const float aspect = static_cast<float>(img->width) / std::max(1.0f, static_cast<float>(img->height));
           // object-cover: the middle band of the image
           const float vis = std::min(1.0f, (w / h) / aspect), v0 = (1.0f - std::min(1.0f, aspect / (w / h))) * 0.5f;
           ImGui::Image(img->texture, {w, h}, {(1.0f - vis) * 0.5f, v0}, {(1.0f + vis) * 0.5f, 1.0f - v0});
         }
-      hint("Pasta: public/game/map-backgrounds — JPG, PNG ou WebP");
+      hint("Pasta: content/backdrops — JPG, PNG ou WebP");
     }
     {
       const bool indoor = draft_.value("environment", "outdoor") == "indoor";

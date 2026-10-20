@@ -119,14 +119,19 @@ inline const char* engine2BriefArt(const std::string& id) {
   return "";
 }
 
-// The briefing art drawn for a mission id: EmberEngine's own (content/ui/briefing, the user's art) first, else
-// Engine2's (engine2BriefArt); empty = none.
+// The briefing art drawn for a mission id, from content/backdrops (every background and briefing of the game lives there: the user,
+// 2026-10-20: "quero tudo nessa pasta tudo que existe de fundo e de briefings"): EmberEngine's own first, else Engine2's file of the
+// same name (copied there), else Engine2's own folder; empty = none.
 inline std::filesystem::path briefArtFile(const std::string& id, const std::filesystem::path& engine2Public) {
-  static const std::pair<const char*, const char*> kOwn[] = {{"ashen-forest-crossing", "content/ui/briefing/ashen-forest-v02.jpg"}};
+  static const std::pair<const char*, const char*> kOwn[] = {{"ashen-forest-crossing", "content/backdrops/ashen-forest-brief-v02.jpg"}};
   for (const auto& [k, v] : kOwn)
     if (id == k) return std::filesystem::path(v);
   const char* art = engine2BriefArt(id);
-  return *art ? engine2Public / std::filesystem::u8path(art) : std::filesystem::path();
+  if (!*art) return {};
+  const std::filesystem::path original = std::filesystem::u8path(art);
+  const std::filesystem::path here = std::filesystem::path("content/backdrops") / original.filename();
+  std::error_code ec;
+  return std::filesystem::exists(here, ec) ? here : engine2Public / original;
 }
 
 }  // namespace ember

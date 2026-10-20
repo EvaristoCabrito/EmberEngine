@@ -147,7 +147,7 @@ class TitleStage : public Stage {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     const ImVec2 a{0, 0}, b = size;
     dl->AddRectFilled(a, b, IM_COL32(14, 14, 14, 255));  // .title-screen #0e0e0e
-    if (const UiImage* hero = uiImage(paths_.engine2Public / "game/title/title-bg.jpg")) imageCover(dl, *hero, a, b, 0.5f, 0.42f);
+    if (const UiImage* hero = uiImage(std::filesystem::path("content/backdrops/title-bg.jpg"))) imageCover(dl, *hero, a, b, 0.5f, 0.42f);
     // .title-veil
     verticalGradient(dl, a, b, {{0.0f, IM_COL32(8, 8, 8, 69)}, {0.36f, IM_COL32(10, 10, 10, 99)}, {0.72f, IM_COL32(10, 10, 10, 219)}, {1.0f, IM_COL32(14, 14, 14, 255)}});
     // .title-topline .title-mark
@@ -306,6 +306,13 @@ class TitleStage : public Stage {
     add("game/title", nullptr);
     add("game/ui", nullptr);
     add("game/assets", "brief-");
+    {  // the briefings and the title's background live in content/backdrops (the project's one folder of backgrounds)
+      std::error_code ec;
+      for (const auto& e : std::filesystem::directory_iterator("content/backdrops", ec)) {
+        const std::string name = e.path().filename().string();
+        if (e.is_regular_file() && name.rfind("brief-", 0) == 0 && !uiImageLoaded(e.path())) files.push_back(e.path());
+      }
+    }
     if (const auto map = paths_.engine2Public / "game/assets/world-map.jpg"; !uiImageLoaded(map)) files.push_back(map);
     std::sort(files.begin(), files.end());
     return files;

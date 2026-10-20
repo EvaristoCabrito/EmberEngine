@@ -123,6 +123,11 @@ bool cookGround(JobSystem& jobs, const GroundCookOptions& options, std::vector<P
         const std::string ext = entry.path().extension().string();
         if (ext != ".jpg" && ext != ".jpeg" && ext != ".png") continue;
         const std::u8string name = entry.path().filename().u8string();
+        {  // the briefings, the title's art and the shops' pictures are read as files by the UI: not cooked into the ground pack
+          std::string lower(name.begin(), name.end());
+          std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+          if (lower.find("brief") != std::string::npos || lower.rfind("title-bg", 0) == 0 || lower.rfind("backpack-bg", 0) == 0 || lower.rfind("farmlands-", 0) == 0) continue;
+        }
         work.push_back({e2::backdropAsset(std::string(name.begin(), name.end())), TextureFormat::Bc7Srgb, entry.path(), {}});
         backdropAssets.push_back(work.back().asset);
       }
