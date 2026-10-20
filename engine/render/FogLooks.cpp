@@ -372,6 +372,7 @@ std::span<const FogLook> fogLooks() {
       {"006", "fog_look006", "Engine2's mist4 as in the user's reference (vortex, clear centre) - not yet seen", FogNoise::WhiteLattice, sizeof(Look006Frame), writeLook006},
       {"007", "fog_look007", "swirl round the party on mist4's real values, fog-of-war coverage - not yet seen", FogNoise::WhiteLattice, sizeof(Look005Frame), writeLook007},
       {"008", "fog_look008", "003 thinning away near the camera (no veil when the camera comes close)", FogNoise::SoftFbm, sizeof(Look008Frame), writeLook008},
+      {"009", "fog_look009", "008 with the background left clear: no mist over the sky or the painting (the user: the sky on every outdoor map)", FogNoise::SoftFbm, sizeof(Look008Frame), writeLook008},
   };
   return looks;
 }
