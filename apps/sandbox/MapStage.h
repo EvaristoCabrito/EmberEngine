@@ -736,7 +736,9 @@ class MapStage final : public Stage {
         // above the rooftops (everything above 30% of the image is sky; down to the ruins its sky is matted out by colour).
         const bool ownSky = isPanorama && fit.keepSky && panoramaSky_ == 0;
         const float skyTop = isPanorama && fit.keepSky && panoramaSky_ == 1 ? 0.30f : fit.skyTop;
-        renderer.setBackground(bg, fit.whole ? 5u : fit.alphaSky ? 4u : ownSky ? 3u : 2u, {fit.horizon, fit.bottom, fit.degreesPerHeight, fit.bottomDegrees},
+        // Every map but Aldeia: the regular painting from its horizon row down, the real sky above (mode 5), with the fit's row or the default one.
+        const bool whole = fit.whole || (!aldeia() && !isPanorama);
+        renderer.setBackground(bg, whole ? 5u : fit.alphaSky ? 4u : ownSky ? 3u : 2u, {fit.horizon, fit.bottom, fit.degreesPerHeight, fit.bottomDegrees},
                                {centre, skyTop, fit.spanDegrees, fit.horizonDegrees}, plane);
       } else {
         renderer.setBackground(bg, background_ == 3 ? 1u : 0u);
