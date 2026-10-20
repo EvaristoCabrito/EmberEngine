@@ -165,6 +165,7 @@ struct Options {
   int clouds = 2;       // --clouds N: the panel's "Nuvens" (0 OFF, 1 básica, 2 volumétricas)
   int glare = 0;        // --glare N: the panel's "Clarão" (0 OFF, 1 look 001)
   int shafts = 0;       // --shafts N: the panel's "Raios de luz" (0 OFF, 1 look 001)
+  float gameHour = -1.0f;  // --game-hour H: the sky follows this hour of the game clock (0..23), as a campaign fight does
   int moonLight = 1;    // --moonlight N: the panel's "Luar" (0 físico, 1 cinema)
   int hour = 0;         // --hour N: the panel's "Hora" (0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3..10 amanhecer .. madrugada)
   int sunDisc = 1;      // --sun-disc N: the panel's "Sol" (0 real, 1 cinema, 2 look 001)
@@ -232,6 +233,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--offset" && i + 2 < argc) o.mapOffsetX = static_cast<float>(std::atof(argv[++i])), o.mapOffsetZ = static_cast<float>(std::atof(argv[++i]));
     else if (arg == "--sun" && i + 2 < argc) o.sunAzimuth = static_cast<float>(std::atof(argv[++i])), o.sunElevation = static_cast<float>(std::atof(argv[++i]));
     else if (arg == "--moving-light") o.movingLight = true;
+    else if (arg == "--game-hour" && hasValue) o.gameHour = static_cast<float>(std::atof(argv[++i]));
     else if (arg == "--measure" && hasValue) o.measureSeconds = static_cast<float>(std::atof(argv[++i]));
     else if (arg == "--spell-light") o.spellLight = true;
     else if (arg == "--fx-test" && hasValue) o.fxTest = argv[++i];
@@ -633,6 +635,7 @@ MapStageOptions mapOptions(const Options& o) {
     m.moonLight = o.moonLight;
     m.hour = o.hour;
     m.sunDisc = o.sunDisc;
+    m.gameHour = o.gameHour;
     m.mist = o.mist;
     m.lighting = o.lighting;
     m.sceneTime = o.sceneTime;
@@ -1384,6 +1387,9 @@ int runWindow(const Options& o) {
               if (v.is_number()) options.affinityScores[pair] = v.get<double>();
         }
         if (testSession) applyTestHeroes(options, testSession->save);
+        // The sky follows the game's clock: the campaign's save, or Modo teste's RPG map (the classic map has none: the map's own time of day).
+        if (!playing.empty() && !testSession) options.gameHour = static_cast<float>(e2::Overworld::campaignHour(campaign.activeSave()));
+        else if (testSession && testSession->mapMode == "rpg") options.gameHour = static_cast<float>(e2::Overworld::campaignHour(testSession->save));
         // A free-roam map: who sits there and who walks (the campaign's save, or Modo teste's); where the party comes in.
         if (hasWorld) setUpExplore(options, testSession ? testSession->save : campaign.activeSave(), world, testSession.has_value() || playing.empty());
         // The campaign's party (or Modo teste's), laid out by the Party screen's formation; the editor's Testar keeps the draft's places.

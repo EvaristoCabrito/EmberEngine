@@ -149,6 +149,9 @@ struct MapStageOptions {
   int clouds = 2;     // "Nuvens": 0 OFF, 1 básica (the sheets), 2 volumétricas (look 001, the default; --clouds N)
   int moonLight = 1;  // the panel's "Luar" (light mode real): 0 físico, 1 cinema (--moonlight N)
   int hour = 0;       // the panel's "Hora": 0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3..10 fixed hours (--hour N)
+  // The game's own clock (the campaign's / the test world map's gameHour, 0..23): the sun and sky follow it while the panel's Hora is "do mapa"
+  // (the user, 2026-10-20: "the sun must always follow the time of the day the map is set, or during campaign follow the real game time").
+  float gameHour = -1.0f;  // -1: the map's own time of day
   int sunDisc = 1;    // the panel's "Sol": 0 real, 1 cinema (the disc the user had; default), 2 look 001 (--sun-disc N)
   int glare = 0;      // "Clarão": 0 OFF (default: the user never asked for it), 1 look 001 (--glare N)
   int shafts = 0;     // "Raios de luz": 0 OFF (default), 1 look 001 (--shafts N)
@@ -268,6 +271,7 @@ class MapStage final : public Stage {
     skyReflect_ = std::clamp(options.skyReflect, 0, 1);
     clouds_ = std::clamp(options.clouds, 0, 2);
     dayCycle_ = std::clamp(options.hour, 0, 10);
+    gameHour_ = options.gameHour;
     moonLight_ = std::clamp(options.moonLight, 0, 1);
     sunSize_ = std::clamp(options.sunDisc, 0, 2);
     glare_ = std::clamp(options.glare, 0, 1);
@@ -682,7 +686,7 @@ class MapStage final : public Stage {
       // map whose own time is night, 12 h by day: the stars then hide behind the daylight anyway).
       if (starSky_.loaded() && starLook_ == 4 && !starsOff_) {
         const bool mapNight = scene_ && e2::timeOfDay(scene_->timeOfDay).moon;
-        const float hour = dayCycle_ > 0 ? cycleHour(now_) : mapNight ? 22.0f + std::fmod(now_ / 600.0f, 2.0f) : 12.0f;
+        const float hour = cycleOn() ? cycleHour(now_) : mapNight ? 22.0f + std::fmod(now_ / 600.0f, 2.0f) : 12.0f;
         const float lst = starSky_.siderealHours(hour);
         const std::vector<GpuStar> stars = starSky_.gpuStars(lst);
         glm::vec4 clouds4[2]{};
@@ -1254,11 +1258,11 @@ class MapStage final : public Stage {
         if (ImGui::Checkbox(kLayers[i], &on)) layers_ ^= 1u << i;
       }
     }
-    if (scene_ && (!e2::timeOfDay(scene_->timeOfDay).moon || dayCycle_ > 0) && scene_->environment != "indoor") {
+    if (scene_ && (!e2::timeOfDay(scene_->timeOfDay).moon || cycleOn()) && scene_->environment != "indoor") {
       static const char* kSun[3] = {"real", "cinema", "001"};
       dropdown("Sol", sunSize_, 3, [](int i) { return std::string(kSun[i]); });
     }
-    if (scene_ && (e2::timeOfDay(scene_->timeOfDay).moon || dayCycle_ > 0)) {
+    if (scene_ && (e2::timeOfDay(scene_->timeOfDay).moon || cycleOn())) {
       static const char* kPaths[3] = {"Engine2", "atrás", "na frente"};
       int moon = moonOff_ ? 0 : moonPath_ + 1;
       if (dropdown("Lua", moon, 4, [](int i) { return i == 0 ? std::string("OFF") : std::string(kPaths[i - 1]); })) {
@@ -2354,7 +2358,7 @@ class MapStage final : public Stage {
       e2::lightDirection(t.stageAzimuth, t.elevationDeg >= 0.0f ? glm::radians(t.elevationDeg) : t.stageElevation, dir);
       l.sunDirection = glm::normalize(glm::vec3(dir[0], dir[1], dir[2]));
     }
-    if (lightingMode_ == 3 && dayCycle_ > 0 && !(scene_ && scene_->environment == "indoor")) return cycleLighting(time, moon, phase);
+    if (lightingMode_ == 3 && cycleOn() && !(scene_ && scene_->environment == "indoor")) return cycleLighting(time, moon, phase);
     if (lightingMode_ == 3) return realLighting(t, moon, phase, placed, time);
     if (lightingMode_ == 1) {  // Engine2's 3D stage, as it drew (at night: the moon's light from Engine2's side)
       if (t.moon) l.sunDirection = glm::normalize(moonPlacement(time).light);
@@ -2477,7 +2481,10 @@ class MapStage final : public Stage {
   // the moon rises and the stars come in with the dark (atmosphere.hlsli). The board's key light is the sun while it is up, the moon
   // after: the swap falls when both sit on the horizon and light almost nothing. The meter follows twilight (a tenth for every 2.4 deg
   // the sun sinks), so the camera opens up through dusk.
+  // The sky follows an hour: a chosen one / a cycle (the panel's Hora), else the game's clock when the stage was given one.
+  bool cycleOn() const { return dayCycle_ > 0 || gameHour_ >= 0.0f; }
   float cycleHour(float time) const {
+    if (dayCycle_ == 0 && gameHour_ >= 0.0f) return gameHour_;
     // amanhecer / pôr do sol: the disc ~6 deg up (at 6.0 / 18.0 it sits half under the horizon and the camera, metering
     // the dark ground, blows the sky out: the user's "super bright", 2026-10-19); crepúsculo: the sun 6 deg down.
     static constexpr float kFixed[8] = {6.35f, 9.0f, 12.0f, 15.0f, 17.65f, 18.6f, 22.0f, 3.0f};
@@ -7938,6 +7945,7 @@ class MapStage final : public Stage {
   // antes de agora e com vista para o céu só isso"); the eye still never goes under the ground (eyeView).
   float minPitch() const { return kSkyMinPitch; }
   static constexpr float kSkyMinPitch = -1.3963f;
+  float gameHour_ = -1.0f;  // MapStageOptions::gameHour
   int dayCycle_ = 0;  // the panel's "Hora": 0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3.. a fixed hour (cycleHour; --hour N)
   static constexpr float kTiltStep = 0.0873f, kTurnStep = 0.2618f;  // Engine2's bar: 5 deg; 15 deg
   static constexpr float kTurnPerPixel = 0.005f, kZoomStep = 0.85f, kPanPerSecond = 0.9f;
