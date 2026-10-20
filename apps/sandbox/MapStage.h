@@ -362,9 +362,12 @@ class MapStage final : public Stage {
       // stays in the panel's Fundo.
       // Ashen Forest Crossing keeps its own painting (the user's background v02, 2026-10-19: "ashen forest background is missing"):
       // the cover-fit painting, as it opened before the sky became the default elsewhere.
-      background_ = options.background >= 0 ? std::min(options.background, 4) : aldeia() && !scene_->backdrop.empty() ? 4
-                    : ashenForest() && !scene_->backdrop.empty()                                                      ? 0
-                                                                                                                      : 1;
+      // Every map with a painting opens with it just below the real sky's horizon (the user, 2026-10-20: "activate the background image
+      // for O Vau just below the sky horizon, you should do that for all background images, dont touch Aldeia"); a room (indoor) keeps the
+      // sky it had. Aldeia is untouched: its own panoramas below.
+      background_ = options.background >= 0 ? std::min(options.background, 4)
+                    : !scene_->backdrop.empty() && (aldeia() || scene_->environment != "indoor") ? 4
+                                                                                                  : 1;
       if (!scene_->backdrop.empty()) backdropFit_ = loadBackdropFit(scene_->backdrop);
       if (!backdropFit_.ground.empty()) ground_.requestTexture(e2::backdropAsset(backdropFit_.ground));
       // The map's own panoramas (backdrop-fit.json "panoramas" by map id; the panel's Fundo after its five entries): aldeia only.
