@@ -26,6 +26,10 @@ struct ProvokeP {
   int range, radius;
 };
 ProvokeP provokePower(int level) {
+  if (trackActive("provoke", level)) {
+    const TrackGains g = spellGains("provoke", level);
+    return {std::min(kReachCap, 4 + g.n('r')), g.n('a')};
+  }
   // the reach grows; the area stays small: radius 1 at most (it grew to 4)
   if (level >= 15) return {8, 1};
   if (level >= 12) return {7, 1};
@@ -36,6 +40,10 @@ ProvokeP provokePower(int level) {
 constexpr int kProvokeUnlock = 3;
 constexpr double kProvokeCe = 1, kProvokeVe = 1800;  // ENMITY.provoke
 DiceFaces cleavePower(int level) {
+  if (trackActive("cleave", level)) {
+    const TrackGains g = spellGains("cleave", level);
+    return {1 + g.n('d'), 8 + g.n('f')};
+  }
   if (level >= 14) return {2, 8};
   if (level >= 11) return {2, 6};
   if (level >= 9) return {2, 4};
@@ -47,6 +55,10 @@ struct BullRushP {
   int chargeRange, dice, faces, knockback, wallDice, wallFaces;
 };
 BullRushP bullRushPower(int level) {
+  if (trackActive("bullRush", level)) {  // ours (T3, a die harder from the start); its charge's reach is grownReach's
+    const TrackGains g = spellGains("bullRush", level);
+    return {4, 2 + g.n('d'), 8 + g.n('f'), 1, 1 + g.n('k'), 8 + g.n('K')};
+  }
   if (level >= 27) return {4, 2, 12, 3, 2, 10};
   if (level >= 23) return {4, 2, 10, 2, 2, 8};
   if (level >= 19) return {4, 2, 8, 2, 2, 8};
@@ -63,6 +75,10 @@ struct ExecP {
   double threshold, mult;
 };
 ExecP executionerStrikePower(int level) {
+  if (trackActive("executionerStrike", level)) {
+    const TrackGains g = spellGains("executionerStrike", level);
+    return {1 + g.n('d'), 8 + g.n('f'), 0.30 + g('p') / 100, 1.5 + g('M')};
+  }
   if (level >= 28) return {3, 10, 0.4, 2.25};
   if (level >= 25) return {2, 12, 0.4, 2.0};
   if (level >= 21) return {2, 10, 0.35, 2.0};
@@ -75,6 +91,10 @@ struct ShieldP {
   int dice, faces, stunTurns;
 };
 ShieldP shieldBashPower(int level) {
+  if (trackActive("shieldBash", level)) {
+    const TrackGains g = spellGains("shieldBash", level);
+    return {1 + g.n('d'), 4 + g.n('f'), 1 + g.n('t')};
+  }
   if (level >= 27) return {2, 12, 3};
   if (level >= 23) return {2, 10, 3};
   if (level >= 19) return {2, 8, 2};
@@ -109,6 +129,10 @@ struct SmashP {
   int dice, faces, hexes;
 };
 SmashP shoulderSmashPower(int level) {
+  if (trackActive("shoulderSmash", level)) {
+    const TrackGains g = spellGains("shoulderSmash", level);
+    return {1 + g.n('d'), 8 + g.n('f'), 1 + g.n('c')};
+  }
   if (level >= 28) return {2, 12, 4};
   if (level >= 24) return {2, 10, 3};
   if (level >= 20) return {2, 8, 2};
@@ -117,6 +141,10 @@ SmashP shoulderSmashPower(int level) {
 }
 constexpr int kShoulderSmashKnockback = 2, kWrathRange = 4;
 DiceFaces stampedePower(int level) {
+  if (trackActive("stampede", level)) {
+    const TrackGains g = spellGains("stampede", level);
+    return {1 + g.n('d'), 10 + g.n('f')};
+  }
   if (level >= 30) return {3, 10};
   if (level >= 27) return {3, 8};
   if (level >= 24) return {2, 10};
@@ -459,7 +487,7 @@ RushPush rushPush(const Battle& b, size_t foe, CubeI dir, const OccMap& occ) {
 }
 std::optional<std::vector<RushLeg>> bullRushCharge(const Battle& b, size_t casterIdx, BattleHex cell) {
   const BattleUnit& caster = b.units()[casterIdx];
-  if (hexDist({caster.x, caster.y}, cell) > kBullRushRange) return std::nullopt;
+  if (hexDist({caster.x, caster.y}, cell) > grownReach("bullRush", kBullRushRange, caster.level)) return std::nullopt;
   OccMap occ = occupancyMap(b);
   const auto tIt = occ.find({cell.x, cell.y});
   if (tIt == occ.end()) return std::nullopt;
@@ -847,6 +875,10 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
     spendTier(u, kind);
     s.type = BattleStep::Type::Combat, s.def = static_cast<size_t>(foe), s.noCounter = true;
     s.bonusDice = kTripBonusFaces, s.bonusDiceCount = 1, s.bonusFlat = kTripBonusBonus;
+    if (trackActive(kind, u.level)) {  // its track: the dice and the weight
+      const TrackGains g = spellGains(kind, u.level);
+      s.bonusDice = kTripBonusFaces + g.n('f'), s.bonusDiceCount = 1 + g.n('d'), s.dmgMul = 1 + g('m');
+    }
     steps.push_back(s);
   } else if (kind == "executionerStrike" || kind == "shieldBash") {
     const int foe = occAt(b, cell);
@@ -857,6 +889,8 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
                                              : DiceFaces{executionerStrikePower(u.level).dice, executionerStrikePower(u.level).faces};
     s.type = BattleStep::Type::Combat, s.def = static_cast<size_t>(foe);
     s.bonusDice = p.faces, s.bonusDiceCount = p.dice, s.bonusFlat = 0;
+    s.dmgMul = skillMul(kind, u.level);
+    if (kind == "shieldBash" && hasTalent(kind, u.level)) s.push = 1;  // Empurrão de Escudo
     steps.push_back(s);
   } else if (kind == "cleave" || kind == "shoulderSmash") {
     const bool smash = kind == "shoulderSmash";
@@ -866,6 +900,11 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
     if (tiles.empty()) return fail("Toque num hex vizinho.");
     const std::vector<size_t> ids = unitsAlong(b, tiles, caster, &u.side);
     spendTier(u, kind);
+    s.dmgMul = skillMul(kind, u.level);
+    if (hasTalent(kind, u.level)) {
+      if (smash) s.stagger = true;               // Derrubar
+      else s.hobblePct = 25, s.hobbleTurns = 1;  // Corte Baixo
+    }
     weaponSpell(tiles, ids, smash ? DiceFaces{sp.dice, sp.faces} : cleavePower(u.level), 0);
   } else if (kind == "sweep") {
     std::vector<BattleHex> tiles = hexAreaTiles(b, from, kSweepRadius);
@@ -873,6 +912,10 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
     const std::vector<size_t> ids = unitsAlong(b, tiles, caster, &u.side);
     spendTier(u, kind);
     s.tiles = tiles, s.ids = ids;
+    if (trackActive(kind, u.level)) {  // its track: a bonus on the lance's roll and the weight
+      const TrackGains g = spellGains(kind, u.level);
+      s.weaponBonusDice = g.n('d'), s.weaponBonusFaces = 4 + g.n('f'), s.weaponBonusBonus = 0, s.dmgMul = 1 + g('m');
+    }
     steps.push_back(s);
   } else if (kind == "divineWrath" || kind == "stampede") {
     const std::vector<BattleHex> tiles = wrathRay(b, from, cell, grownReach(kind, kWrathRange, u.level));
@@ -880,6 +923,10 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
     const bool wrath = kind == "divineWrath";
     const std::vector<size_t> ids = unitsAlong(b, tiles, caster, wrath ? &u.side : nullptr);
     spendTier(u, kind);
+    if (!wrath) {
+      s.dmgMul = skillMul(kind, u.level);
+      if (hasTalent(kind, u.level)) s.push = 1;  // Pisoteio
+    }
     weaponSpell(tiles, ids, wrath ? divineWrathPower(u.level) : stampedePower(u.level), wrath ? static_cast<int>(std::floor(u.mag / 2)) : 0);
   } else if (kind == "burningHands" || kind == "poisonBreath") {
     const ConeP p = kind == "poisonBreath" ? poisonBreathPower(u.level) : burningHandsPower(u.level);
@@ -963,10 +1010,11 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
     steps.push_back(s);
   } else if (kind == "bullRush") {
     const std::optional<std::vector<RushLeg>> legs = bullRushCharge(b, caster, cell);
-    if (!legs) return fail("Toque num inimigo a até 4 hexes, sem aliado ou obstáculo no caminho.");
+    if (!legs) return fail(std::format("Toque num inimigo a até {} hexes, sem aliado ou obstáculo no caminho.", grownReach(kind, kBullRushRange, u.level)));
     spendTier(u, kind);
     BullRushP p = bullRushPower(u.level);
-    if (u.side == "player" && bullRushTier3()) p.dice += 1;  // ours: the tier-3 Investida hits one die harder (unitTierOf)
+    // ours: the tier-3 Investida hits one die harder (unitTierOf); on its track that die is in its numbers already
+    if (u.side == "player" && bullRushTier3() && !trackActive(kind, u.level)) p.dice += 1;
     BattleHex at = from;
     for (const RushLeg& leg : *legs) {
       if (!leg.path.empty()) {
@@ -980,7 +1028,9 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
       BattleStep c;
       c.type = BattleStep::Type::Combat, c.att = caster, c.def = leg.foe, c.kind = "bullRush", c.noCounter = true;
       c.bonusDice = p.faces, c.bonusDiceCount = p.dice, c.bonusFlat = 0;
+      c.dmgMul = skillMul(kind, u.level);
       if (leg.push.blocked) c.wallDice = p.wallDice, c.wallFaces = p.wallFaces;
+      if (leg.push.blocked && hasTalent(kind, u.level)) c.stunChance = 1;  // Contra a Parede
       if (!leg.push.path.empty()) c.knockTo = leg.push.path.back();
       steps.push_back(c);
     }

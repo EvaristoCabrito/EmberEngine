@@ -12,6 +12,10 @@ programado: os níveis além do 30 só não se alcançam ainda.
 
 Familiar Titã é Tier 5 (nível 11); o Cão Zumbi é Tier 6 do Necromante (nível 15, a promoção) (o usuário, 2026-10-20).
 
+As habilidades do Guerreiro, do Cavaleiro Pesado e do Lanceiro seguem a mesma regra; quase tudo nelas é dano (dados, faces, peso da
+arma), e cada uma ganha um **talento** num nível da trilha (o usuário, 2026-10-20: "eles não tem muito o que escalar além de dano, mas
+pode dar um talento nelas sim").
+
 ### Míssil Mágico
 
 Escala do nível 1 ao 15, uma melhoria pequena por nível: alcance 5 → 12; mísseis 1 → 5; peso do MAG 1,15 → 1,3.
@@ -401,3 +405,135 @@ Nível a nível: 16: +1 hex além do arco, 17: +0,15 peso do arco, 18: +2 execut
 Escala do nível 8 ao 22, uma melhoria pequena por nível: alcance 5 → 7; área 3 hexes → 2 anéis.
 
 Nível a nível: 10: +1 hex de alcance, 14: +1 anel, 17: +1 hex de alcance, 21: +1 anel.
+
+### Corte Duplo
+
+Escala do nível 1 ao 15, uma melhoria pequena por nível: dano 0 → 2D8; peso da arma 1 → 1,45; talento Terceiro Golpe (um terceiro golpe com metade do dano, sem contra-ataque).
+
+Nível a nível: 2: +0,05 peso da arma, 3: +0,05 peso da arma, 4: +1 dado, 5: +0,05 peso da arma, 6: dado maior, 7: +0,05 peso da arma, 8: +0,05 peso da arma, 9: talento Terceiro Golpe, 10: +0,05 peso da arma, 11: +0,05 peso da arma, 12: +1 dado, 13: +0,05 peso da arma, 14: dado maior, 15: +0,05 peso da arma.
+
+### Provocar
+
+Escala do nível 3 ao 17, uma melhoria pequena por nível: alcance 4 → 10; raio 0 → 1; inimizade extra % 0 → 60; talento Fúria Contida (o guerreiro ganha +10% de ATK por 2 turnos).
+
+Nível a nível: 4: +1 hex de alcance, 5: +10 inimizade extra %, 6: +1 hex de alcance, 7: +10 inimizade extra %, 8: +1 de raio, 9: +1 hex de alcance, 10: +10 inimizade extra %, 11: talento Fúria Contida, 12: +1 hex de alcance, 13: +10 inimizade extra %, 14: +1 hex de alcance, 15: +10 inimizade extra %, 16: +1 hex de alcance, 17: +10 inimizade extra %.
+
+### Cleave
+
+Escala do nível 4 ao 18, uma melhoria pequena por nível: dano 1D8 → 2D12; peso da arma 1 → 1,5; talento Corte Baixo (os atingidos ficam Paralisados (-25% de MOV) por 1 turno).
+
+Nível a nível: 5: +0,05 peso da arma, 6: +0,05 peso da arma, 7: dado maior, 8: +0,05 peso da arma, 9: +0,05 peso da arma, 10: +1 dado, 11: +0,05 peso da arma, 12: +0,05 peso da arma, 13: talento Corte Baixo, 14: +0,05 peso da arma, 15: +0,05 peso da arma, 16: dado maior, 17: +0,05 peso da arma, 18: +0,05 peso da arma.
+
+### Golpe de Escudo
+
+Escala do nível 4 ao 18, uma melhoria pequena por nível: dano 1D4 → 2D12; peso da arma 1 → 1,35; turnos atordoado 1 → 2; talento Empurrão de Escudo (o alvo é empurrado 1 hex para longe).
+
+Nível a nível: 5: +0,05 peso da arma, 6: dado maior, 7: +0,05 peso da arma, 8: +1 dado, 9: +0,05 peso da arma, 10: dado maior, 11: +1 turnos atordoado, 12: +0,05 peso da arma, 13: talento Empurrão de Escudo, 14: +0,05 peso da arma, 15: dado maior, 16: +0,05 peso da arma, 17: dado maior, 18: +0,05 peso da arma.
+
+### Investida Touro
+
+Escala do nível 8 ao 22, uma melhoria pequena por nível: dano 2D8 → 3D12; dano na parede 1D8 → 2D12; alcance 4 → 6; peso da arma 1 → 1,25; talento Contra a Parede (se o empurrão bate em algo, o alvo fica atordoado 1 turno).
+
+Nível a nível: 9: +0,05 peso da arma, 10: +1 hex de alcance, 11: dado maior, 12: dado por turno maior, 13: +0,05 peso da arma, 14: +1 dado, 15: +1 dado por turno, 16: +0,05 peso da arma, 17: talento Contra a Parede, 18: +0,05 peso da arma, 19: +1 hex de alcance, 20: dado maior, 21: dado por turno maior, 22: +0,05 peso da arma.
+
+### Golpe do Carrasco
+
+Escala do nível 8 ao 22, uma melhoria pequena por nível: dano 1D8 → 2D12; peso da arma 1 → 1,15; executa abaixo de % do HP 30 → 40; multiplicador da execução 1,5 → 2,25; talento Sentença (se o golpe mata, o uso da habilidade volta).
+
+Nível a nível: 9: +0,15 multiplicador da execução, 10: +0,05 peso da arma, 11: dado maior, 12: +5 executa abaixo de % do HP, 13: +0,15 multiplicador da execução, 14: +1 dado, 15: +0,15 multiplicador da execução, 16: +0,05 peso da arma, 17: talento Sentença, 18: +0,15 multiplicador da execução, 19: dado maior, 20: +5 executa abaixo de % do HP, 21: +0,05 peso da arma, 22: +0,15 multiplicador da execução.
+
+### Redemoinho de Aço
+
+Escala do nível 11 ao 25, uma melhoria pequena por nível: dano 1D6 → 3D10; peso da arma 1 → 1,45; talento Lâminas Abertas (os atingidos sangram (1D6 por turno, por 1D3 turnos)).
+
+Nível a nível: 12: +0,05 peso da arma, 13: +0,05 peso da arma, 14: +1 dado, 15: +0,05 peso da arma, 16: dado maior, 17: +0,05 peso da arma, 18: +0,05 peso da arma, 19: talento Lâminas Abertas, 20: +0,05 peso da arma, 21: +0,05 peso da arma, 22: +1 dado, 23: +0,05 peso da arma, 24: dado maior, 25: +0,05 peso da arma.
+
+### Quebra-Guarda
+
+Escala do nível 13 ao 27, uma melhoria pequena por nível: dano 1D8 → 2D8; peso da arma 1 → 1,4; DEF retirada % 20 → 35; turnos 2 → 3; talento Sem Resposta (o alvo não contra-ataca este golpe).
+
+Nível a nível: 14: +0,05 peso da arma, 15: +5 DEF retirada %, 16: +0,05 peso da arma, 17: +1 dado, 18: +0,05 peso da arma, 19: +1 turnos, 20: +0,05 peso da arma, 21: +5 DEF retirada %, 22: +0,05 peso da arma, 23: +0,05 peso da arma, 24: talento Sem Resposta, 25: +0,05 peso da arma, 26: +5 DEF retirada %, 27: +0,05 peso da arma.
+
+### Grito de Guerra
+
+Escala do nível 15 ao 29, uma melhoria pequena por nível: raio 2 → 3; ATK dos aliados % 15 → 25; turnos 2 → 4; talento Terror (os inimigos no raio ficam com medo por 1 turno).
+
+Nível a nível: 16: +1 ATK dos aliados %, 17: +1 ATK dos aliados %, 18: +1 turnos, 19: +1 ATK dos aliados %, 20: +1 ATK dos aliados %, 21: +1 de raio, 22: +1 ATK dos aliados %, 23: +1 ATK dos aliados %, 24: talento Terror, 25: +1 ATK dos aliados %, 26: +1 ATK dos aliados %, 27: +1 turnos, 28: +1 ATK dos aliados %, 29: +1 ATK dos aliados %.
+
+### Salto Devastador
+
+Escala do nível 17 ao 31, uma melhoria pequena por nível: dano 2D6 → 3D10; alcance do salto 3 → 5; bônus 0 → 2; peso da arma 1,5 → 2,1; talento Onda de Choque (os outros inimigos ao lado do pouso levam metade de um golpe).
+
+Nível a nível: 18: +0,1 peso da arma, 19: +1 hex de alcance, 20: dado maior, 21: +0,1 peso da arma, 22: +1 bônus, 23: +0,1 peso da arma, 24: +1 dado, 25: talento Onda de Choque, 26: +0,1 peso da arma, 27: +1 hex de alcance, 28: +0,1 peso da arma, 29: dado maior, 30: +1 bônus, 31: +0,1 peso da arma.
+
+### Investida de Ombro (Cavaleiro Pesado)
+
+Escala do nível 11 ao 25, uma melhoria pequena por nível: dano 1D8 → 2D12; hexes de largura 1 → 3; peso da arma 1 → 1,4; talento Derrubar (os atingidos ficam Desequilibrados (sem contra-ataque) até o próximo turno deles).
+
+Nível a nível: 12: +0,05 peso da arma, 13: +1 hexes de largura, 14: +0,05 peso da arma, 15: dado maior, 16: +0,05 peso da arma, 17: +1 dado, 18: +0,05 peso da arma, 19: talento Derrubar, 20: +0,05 peso da arma, 21: +0,05 peso da arma, 22: +1 hexes de largura, 23: +0,05 peso da arma, 24: dado maior, 25: +0,05 peso da arma.
+
+### Debandada (Cavaleiro Pesado)
+
+Escala do nível 18 ao 32, uma melhoria pequena por nível: dano 1D10 → 3D12; alcance 4 → 8; peso da arma 1 → 1,3; talento Pisoteio (os atingidos são empurrados 1 hex).
+
+Nível a nível: 19: +0,05 peso da arma, 20: +1 hex de alcance, 21: +1 dado, 22: +0,05 peso da arma, 23: +1 hex de alcance, 24: +0,05 peso da arma, 25: dado maior, 26: talento Pisoteio, 27: +0,05 peso da arma, 28: +1 hex de alcance, 29: +0,05 peso da arma, 30: +1 dado, 31: +1 hex de alcance, 32: +0,05 peso da arma.
+
+### Investida Perfurante
+
+Escala do nível 1 ao 15, uma melhoria pequena por nível: hexes além da arma 0 → 2; peso da arma 1 → 1,35; DEF ignorada % 20 → 40; talento Atravessar (os alvos depois do primeiro levam 75% do dano, não 50%).
+
+Nível a nível: 2: +0,05 peso da arma, 3: +5 DEF ignorada %, 4: +0,05 peso da arma, 5: +1 hexes além da arma, 6: +0,05 peso da arma, 7: +5 DEF ignorada %, 8: +0,05 peso da arma, 9: talento Atravessar, 10: +5 DEF ignorada %, 11: +0,05 peso da arma, 12: +1 hexes além da arma, 13: +0,05 peso da arma, 14: +5 DEF ignorada %, 15: +0,05 peso da arma.
+
+### Arremesso
+
+Escala do nível 2 ao 16, uma melhoria pequena por nível: dano 0 → 2D8; dano da colisão 1D6 → 2D8; hexes do arremesso 2 → 3; bônus 0 → 2; peso da arma 0,9 → 1,1; talento Colisão Atordoante (quando o corpo bate em outro, os dois ficam atordoados 1 turno).
+
+Nível a nível: 3: +0,05 peso da arma, 4: +1 dado, 5: dado maior, 6: +1 bônus, 7: +0,05 peso da arma, 8: +1 hex de alcance, 9: +1 dado por turno, 10: dado por turno maior, 11: talento Colisão Atordoante, 12: +0,05 peso da arma, 13: +1 dado, 14: dado maior, 15: +1 bônus, 16: +0,05 peso da arma.
+
+### Varredura
+
+Escala do nível 4 ao 18, uma melhoria pequena por nível: dano 0 → 1D10; peso da arma 1 → 1,45; talento Varrer Longe (empurra 2 hexes em vez de 1).
+
+Nível a nível: 5: +0,05 peso da arma, 6: dado maior, 7: +0,05 peso da arma, 8: +0,05 peso da arma, 9: +1 dado, 10: +0,05 peso da arma, 11: +0,05 peso da arma, 12: dado maior, 13: +0,05 peso da arma, 14: talento Varrer Longe, 15: +0,05 peso da arma, 16: +0,05 peso da arma, 17: dado maior, 18: +0,05 peso da arma.
+
+### Gancho
+
+Escala do nível 4 ao 18, uma melhoria pequena por nível: dano 1D4 → 2D8; alcance 3 → 5; peso da arma 0,8 → 1,15; turnos desequilibrado 0 → 1; talento Gancho Farpado (o puxado fica Paralisado (-30% de MOV) por 1 turno).
+
+Nível a nível: 5: +0,05 peso da arma, 6: +1 hex de alcance, 7: +0,05 peso da arma, 8: dado maior, 9: +0,05 peso da arma, 10: +1 dado, 11: +0,05 peso da arma, 12: +1 turnos desequilibrado, 13: talento Gancho Farpado, 14: +0,05 peso da arma, 15: +1 hex de alcance, 16: +0,05 peso da arma, 17: dado maior, 18: +0,05 peso da arma.
+
+### Rasteira
+
+Escala do nível 8 ao 22, uma melhoria pequena por nível: dano 1D8 → 3D10; peso da arma 1 → 1,5; talento Tendão Cortado (a Rasteira tira 20% de todos os atributos, não 10%).
+
+Nível a nível: 9: +0,05 peso da arma, 10: +0,05 peso da arma, 11: +1 dado, 12: +0,05 peso da arma, 13: +0,05 peso da arma, 14: dado maior, 15: +0,05 peso da arma, 16: +0,05 peso da arma, 17: talento Tendão Cortado, 18: +0,05 peso da arma, 19: +0,05 peso da arma, 20: +1 dado, 21: +0,05 peso da arma, 22: +0,05 peso da arma.
+
+### Salto de Vara
+
+Escala do nível 8 ao 22, uma melhoria pequena por nível: dano 1D6 → 2D10; bônus 0 → 4; peso da arma 1,2 → 1,8; talento Queda do Alto (50% de chance de atordoar o alvo por 1 turno).
+
+Nível a nível: 9: +0,1 peso da arma, 10: +1 bônus, 11: dado maior, 12: +0,1 peso da arma, 13: +1 bônus, 14: +0,1 peso da arma, 15: +1 dado, 16: talento Queda do Alto, 17: +0,1 peso da arma, 18: +1 bônus, 19: +0,1 peso da arma, 20: dado maior, 21: +1 bônus, 22: +0,1 peso da arma.
+
+### Desarmar
+
+Escala do nível 11 ao 25, uma melhoria pequena por nível: dano 1D4 → 2D8; peso da arma 1 → 1,25; ATK retirado % 40 → 60; turnos 2 → 3; talento Mão Ferida (o desarmado perde também 1 uso de habilidade).
+
+Nível a nível: 12: +0,05 peso da arma, 13: +5 ATK retirado %, 14: dado maior, 15: +0,05 peso da arma, 16: +5 ATK retirado %, 17: +1 dado, 18: +0,05 peso da arma, 19: +1 turnos, 20: talento Mão Ferida, 21: +5 ATK retirado %, 22: +0,05 peso da arma, 23: dado maior, 24: +5 ATK retirado %, 25: +0,05 peso da arma.
+
+### Troca de Posto
+
+Escala do nível 13 ao 27, uma melhoria pequena por nível: dano 1D6 → 2D10; alcance 3 → 5; bônus 0 → 2; peso da arma 1 → 1,3; talento Coragem do Posto (o aliado trocado ganha +10% de ATK por 1 turno).
+
+Nível a nível: 14: +0,05 peso da arma, 15: +1 hex de alcance, 16: dado maior, 17: +0,05 peso da arma, 18: +1 bônus, 19: +0,05 peso da arma, 20: +1 dado, 21: talento Coragem do Posto, 22: +0,05 peso da arma, 23: +1 hex de alcance, 24: +0,05 peso da arma, 25: dado maior, 26: +1 bônus, 27: +0,05 peso da arma.
+
+### Empalar e Arrastar
+
+Escala do nível 15 ao 29, uma melhoria pequena por nível: dano 1D8 → 2D12; hexes arrastados 3 → 4; peso da arma 1 → 1,2; peso por hex arrastado 0,25 → 0,3; talento Ferida Aberta (o arrastado sangra (1D8 por turno, por 1D3 turnos)).
+
+Nível a nível: 16: +0,01 peso por hex arrastado, 17: +0,05 peso da arma, 18: dado maior, 19: +0,01 peso por hex arrastado, 20: +0,05 peso da arma, 21: +1 hexes arrastados, 22: +0,01 peso por hex arrastado, 23: +1 dado, 24: talento Ferida Aberta, 25: +0,05 peso da arma, 26: +0,01 peso por hex arrastado, 27: dado maior, 28: +0,05 peso da arma, 29: +0,01 peso por hex arrastado.
+
+### Vigília da Sentinela
+
+Escala do nível 17 ao 31, uma melhoria pequena por nível: dano 0 → 1D10; raio 1 → 2; bônus 0 → 3; peso do contra-golpe 1 → 1,6; talento Contra-Golpe Firme (quem a Vigília interrompe fica Desequilibrado (sem contra-ataque)).
+
+Nível a nível: 18: +0,1 peso do contra-golpe, 19: +1 bônus, 20: dado maior, 21: +0,1 peso do contra-golpe, 22: +1 dado, 23: +0,1 peso do contra-golpe, 24: +1 bônus, 25: +1 de raio, 26: +0,1 peso do contra-golpe, 27: talento Contra-Golpe Firme, 28: +0,1 peso do contra-golpe, 29: dado maior, 30: +1 bônus, 31: +0,1 peso do contra-golpe.

@@ -92,8 +92,59 @@ S = {
     "deathShot": (None, dict(r=2, d=2, f=8, m=2.0, p=25), [("r", 1, 4), ("m", 0.15, 4), ("p", 2, 3), ("f", 2, 2), ("d", 1, 1)]),
     # --- the plants' venom (below the Veneno Cáustico in every number) ------------------------------------------------------
     "minorVenom": (8, dict(r=5, a=0), [("r", 1, 2), ("a", 1, 2)]),
+    # --- Guerreiro (weapon skills: the dice are a bonus on the weapon's roll, m = the weight on it; Z = its talent) ----------
+    # the user (2026-10-20): "eles não tem muito o que escalar além de dano, mas pode dar um talento nelas sim"
+    "doubleStrike": (1, dict(d=0, f=4, m=1.0), [("d", 1, 2), ("f", 2, 2), ("m", 0.05, 9), ("Z", 1, 1)]),
+    "provoke": (3, dict(r=4, a=0, p=0), [("r", 1, 6), ("a", 1, 1), ("p", 10, 6), ("Z", 1, 1)]),
+    "cleave": (4, dict(d=1, f=8, m=1.0), [("d", 1, 1), ("f", 2, 2), ("m", 0.05, 10), ("Z", 1, 1)]),
+    "shieldBash": (4, dict(d=1, f=4, m=1.0, t=1), [("f", 2, 4), ("d", 1, 1), ("t", 1, 1), ("m", 0.05, 7), ("Z", 1, 1)]),
+    "bullRush": (8, dict(r=4, d=2, f=8, k=1, K=8, m=1.0), [("r", 1, 2), ("d", 1, 1), ("f", 2, 2), ("k", 1, 1), ("K", 2, 2), ("m", 0.05, 5), ("Z", 1, 1)]),
+    "executionerStrike": (8, dict(d=1, f=8, p=30, M=1.5, m=1.0), [("M", 0.15, 5), ("d", 1, 1), ("f", 2, 2), ("p", 5, 2), ("m", 0.05, 3), ("Z", 1, 1)]),
+    "steelWhirlwind": (None, dict(d=1, f=6, m=1.0), [("d", 1, 2), ("f", 2, 2), ("m", 0.05, 9), ("Z", 1, 1)]),
+    "guardBreak": (None, dict(d=1, f=8, p=20, t=2, m=1.0), [("m", 0.05, 8), ("p", 5, 3), ("d", 1, 1), ("t", 1, 1), ("Z", 1, 1)]),
+    "warCry": (None, dict(a=2, p=15, t=2), [("p", 1, 10), ("t", 1, 2), ("a", 1, 1), ("Z", 1, 1)]),
+    "leapingStrike": (None, dict(r=3, d=2, f=6, m=1.5, b=0), [("m", 0.1, 6), ("r", 1, 2), ("f", 2, 2), ("b", 1, 2), ("d", 1, 1), ("Z", 1, 1)]),
+    # --- Cavaleiro Pesado ------------------------------------------------------------------------------------------------
+    "shoulderSmash": (11, dict(d=1, f=8, c=1, m=1.0), [("m", 0.05, 8), ("c", 1, 2), ("f", 2, 2), ("d", 1, 1), ("Z", 1, 1)]),
+    "stampede": (18, dict(r=4, d=1, f=10, m=1.0), [("m", 0.05, 6), ("r", 1, 4), ("d", 1, 2), ("f", 2, 1), ("Z", 1, 1)]),
+    # --- Lanceiro ----------------------------------------------------------------------------------------------------------
+    "piercingThrust": (1, dict(l=0, x=20, m=1.0), [("m", 0.05, 7), ("x", 5, 4), ("l", 1, 2), ("Z", 1, 1)]),
+    "spearToss": (None, dict(r=2, d=0, f=4, m=0.9, k=1, K=6, b=0), [("m", 0.05, 4), ("d", 1, 2), ("f", 2, 2), ("b", 1, 2), ("r", 1, 1), ("k", 1, 1), ("K", 2, 1), ("Z", 1, 1)]),
+    "sweep": (4, dict(d=0, f=4, m=1.0), [("m", 0.05, 9), ("f", 2, 3), ("d", 1, 1), ("Z", 1, 1)]),
+    "hookPull": (None, dict(r=3, d=1, f=4, m=0.8, t=0), [("m", 0.05, 7), ("r", 1, 2), ("f", 2, 2), ("d", 1, 1), ("t", 1, 1), ("Z", 1, 1)]),
+    "trip": (8, dict(d=1, f=8, m=1.0), [("m", 0.05, 10), ("d", 1, 2), ("f", 2, 1), ("Z", 1, 1)]),
+    "poleVault": (None, dict(d=1, f=6, m=1.2, b=0), [("m", 0.1, 6), ("b", 1, 4), ("f", 2, 2), ("d", 1, 1), ("Z", 1, 1)]),
+    "disarm": (None, dict(d=1, f=4, p=40, t=2, m=1.0), [("m", 0.05, 5), ("p", 5, 4), ("f", 2, 2), ("d", 1, 1), ("t", 1, 1), ("Z", 1, 1)]),
+    "swapPost": (None, dict(r=3, d=1, f=6, m=1.0, b=0), [("m", 0.05, 6), ("r", 1, 2), ("f", 2, 2), ("b", 1, 2), ("d", 1, 1), ("Z", 1, 1)]),
+    "impaleDrag": (None, dict(l=3, d=1, f=8, m=1.0, e=0.25), [("e", 0.01, 5), ("m", 0.05, 4), ("f", 2, 2), ("l", 1, 1), ("d", 1, 1), ("Z", 1, 1)]),
+    "sentinelVigil": (None, dict(a=1, d=0, f=6, m=1.0, b=0), [("m", 0.1, 6), ("b", 1, 3), ("f", 2, 2), ("d", 1, 1), ("a", 1, 1), ("Z", 1, 1)]),
 }
-ORDER = "racljdfbmpPtRsekKThHgGMuvx"
+# Each skill's talent (Z on its track): (name pt, what it does pt, name en, what it does en)
+TALENTS = {
+    "doubleStrike": ("Terceiro Golpe", "um terceiro golpe com metade do dano, sem contra-ataque", "Third Blow", "a third blow at half damage, no counter"),
+    "provoke": ("Fúria Contida", "o guerreiro ganha +10% de ATK por 2 turnos", "Held Fury", "the warrior gains +10% ATK for 2 turns"),
+    "cleave": ("Corte Baixo", "os atingidos ficam Paralisados (-25% de MOV) por 1 turno", "Low Cut", "the struck are Crippled (-25% MOV) for 1 turn"),
+    "shieldBash": ("Empurrão de Escudo", "o alvo é empurrado 1 hex para longe", "Shield Shove", "the target is pushed 1 hex away"),
+    "bullRush": ("Contra a Parede", "se o empurrão bate em algo, o alvo fica atordoado 1 turno", "Into the Wall", "if the shove hits something, the target is stunned 1 turn"),
+    "executionerStrike": ("Sentença", "se o golpe mata, o uso da habilidade volta", "Sentence", "if the blow kills, the skill's use comes back"),
+    "steelWhirlwind": ("Lâminas Abertas", "os atingidos sangram (1D6 por turno, por 1D3 turnos)", "Open Wounds", "the struck bleed (1D6 a turn, for 1D3 turns)"),
+    "guardBreak": ("Sem Resposta", "o alvo não contra-ataca este golpe", "No Answer", "the target cannot counter this blow"),
+    "warCry": ("Terror", "os inimigos no raio ficam com medo por 1 turno", "Terror", "the foes in the radius are afraid for 1 turn"),
+    "leapingStrike": ("Onda de Choque", "os outros inimigos ao lado do pouso levam metade de um golpe", "Shockwave", "the other foes beside the landing take half a blow"),
+    "shoulderSmash": ("Derrubar", "os atingidos ficam Desequilibrados (sem contra-ataque) até o próximo turno deles", "Knock Down", "the struck are Off balance (no counter) until their next turn"),
+    "stampede": ("Pisoteio", "os atingidos são empurrados 1 hex", "Trample", "the struck are pushed 1 hex"),
+    "piercingThrust": ("Atravessar", "os alvos depois do primeiro levam 75% do dano, não 50%", "Run Through", "the targets after the first take 75% of the damage, not 50%"),
+    "spearToss": ("Colisão Atordoante", "quando o corpo bate em outro, os dois ficam atordoados 1 turno", "Stunning Crash", "when the body hits another, both are stunned 1 turn"),
+    "sweep": ("Varrer Longe", "empurra 2 hexes em vez de 1", "Sweep Away", "pushes 2 hexes instead of 1"),
+    "hookPull": ("Gancho Farpado", "o puxado fica Paralisado (-30% de MOV) por 1 turno", "Barbed Hook", "the pulled foe is Crippled (-30% MOV) for 1 turn"),
+    "trip": ("Tendão Cortado", "a Rasteira tira 20% de todos os atributos, não 10%", "Cut Tendon", "the Trip takes 20% off every stat, not 10%"),
+    "poleVault": ("Queda do Alto", "50% de chance de atordoar o alvo por 1 turno", "From Above", "a 50% chance to stun the target for 1 turn"),
+    "disarm": ("Mão Ferida", "o desarmado perde também 1 uso de habilidade", "Wounded Hand", "the disarmed foe also loses 1 use of a skill"),
+    "swapPost": ("Coragem do Posto", "o aliado trocado ganha +10% de ATK por 1 turno", "Post's Courage", "the swapped ally gains +10% ATK for 1 turn"),
+    "impaleDrag": ("Ferida Aberta", "o arrastado sangra (1D8 por turno, por 1D3 turnos)", "Open Wound", "the dragged foe bleeds (1D8 a turn, for 1D3 turns)"),
+    "sentinelVigil": ("Contra-Golpe Firme", "quem a Vigília interrompe fica Desequilibrado (sem contra-ataque)", "Firm Riposte", "whoever the Vigil interrupts is Off balance (no counter)"),
+}
+ORDER = "racljdfbmpPtRsekKThHgGMuvxZ"
 
 
 def lay(grow):
@@ -124,6 +175,10 @@ lines = ["// TRACKS-BEGIN (written by tools/scripts/spells/tracks.py; the level 
          "constexpr SpellTrack kSpellTracks[] = {"]
 for kind, (L, slots) in tracks.items():
     lines.append(f'    {{"{kind}", {L}, "{" ".join(slots)}"}},')
+lines += ["};", "// The talents (Z): name and what it does, PT / EN", "struct SpellTalent {", "  const char *kind, *pt, *ptAbout, *en, *enAbout;", "};",
+          "constexpr SpellTalent kSpellTalents[] = {"]
+for kind, (pt, pta, en, ena) in TALENTS.items():
+    lines.append(f'    {{"{kind}", "{pt}", "{pta}", "{en}", "{ena}"}},')
 lines += ["};", "// TRACKS-END"]
 nl = "\r\n" if "\r\n" in src else "\n"
 a, b = src.find("// TRACKS-BEGIN"), src.find("// TRACKS-END")
@@ -157,7 +212,19 @@ OWN = {  # spell: {letter: (pt, en)}: what its numbers mean
     "longShot": {"b": ("bônus no arco", "bow bonus")}, "bloodyShot": {"m": ("peso do arco", "bow weight")},
     "thunderstorm": {"b": ("bônus do eco", "echo bonus")}, "chainLightning": {"l": ("alcance do salto", "jump reach")},
     "glacialGale": {"P": ("empurrão", "push")},
+    "executionerStrike": {"p": ("executa abaixo de % do HP", "executes under % HP"), "M": ("multiplicador da execução", "execution multiplier"), "m": ("peso da arma", "weapon weight")},
+    "piercingThrust": {"l": ("hexes além da arma", "hexes past the weapon"), "x": ("DEF ignorada %", "DEF ignored %"), "m": ("peso da arma", "weapon weight")},
+    "shieldBash": {"t": ("turnos atordoado", "stun turns")}, "shoulderSmash": {"c": ("hexes de largura", "hexes wide")},
+    "provoke": {"p": ("inimizade extra %", "extra enmity %"), "a": ("raio", "radius")}, "warCry": {"p": ("ATK dos aliados %", "allies' ATK %"), "a": ("raio", "radius")},
+    "guardBreak": {"p": ("DEF retirada %", "DEF off %")}, "disarm": {"p": ("ATK retirado %", "ATK off %")}, "hookPull": {"t": ("turnos desequilibrado", "off-balance turns")},
+    "impaleDrag": {"e": ("peso por hex arrastado", "weight per hex dragged"), "l": ("hexes arrastados", "hexes dragged")},
+    "sentinelVigil": {"a": ("raio", "radius"), "m": ("peso do contra-golpe", "riposte weight")}, "spearToss": {"r": ("hexes do arremesso", "hexes thrown")},
+    "leapingStrike": {"r": ("alcance do salto", "leap reach")},
 }
+for k in ("doubleStrike", "cleave", "shieldBash", "bullRush", "steelWhirlwind", "guardBreak", "leapingStrike", "shoulderSmash", "stampede", "spearToss", "sweep",
+          "hookPull", "trip", "poleVault", "disarm", "swapPost", "impaleDrag"):
+    OWN.setdefault(k, {}).setdefault("m", ("peso da arma", "weapon weight"))
+DICE_LABEL = {"bullRush": {"k": ("dano na parede", "wall damage")}, "spearToss": {"k": ("dano da colisão", "collision damage")}}
 for k in ("venomArrow", "explosiveArrow", "cripplingShot", "arrowRain", "arrowStorm", "deathShot", "bloodyShot"):
     OWN.setdefault(k, {}).setdefault("m", ("peso do arco", "bow weight"))
 SHOT = {"venomArrow", "explosiveArrow", "cripplingShot", "deathShot"}
@@ -183,13 +250,14 @@ def sentence(kind, pt):
         if dl in base and (dl in gain or fl in gain):
             d0, f0 = base[dl], base.get(fl, 6)
             d1, f1 = d0 + round(gain.get(dl, 0)), f0 + round(gain.get(fl, 0))
+            lab = DICE_LABEL.get(kind, {}).get(dl, lab)
             parts.append(f"{lab[0 if pt else 1]} {d0}D{f0} → {d1}D{f1}" if d0 else f"{lab[0 if pt else 1]} 0 → {d1}D{f1}")
             used |= {dl, fl}
     for letter in ORDER:
         if letter in used or letter not in gain:
             continue
         g = gain[letter]
-        if letter == "a":
+        if letter == "a" and "a" not in OWN.get(kind, {}):
             rings = round(g)
             parts.append(("área 3 hexes → " if pt else "area 3 hexes → ") + (f"{rings} anéis" if pt else f"{rings} rings") if rings > 1 else
                          ("área 3 hexes → 1 anel" if pt else "area 3 hexes → 1 ring"))
@@ -201,6 +269,10 @@ def sentence(kind, pt):
             continue
         if letter == "u":
             parts.append("duração 1D6 → 2D6" if pt else "duration 1D6 → 2D6")
+            continue
+        if letter == "Z":
+            t = TALENTS[kind]
+            parts.append(f"talento {t[0]} ({t[1]})" if pt else f"talent {t[2]} ({t[3]})")
             continue
         lab = OWN.get(kind, {}).get(letter) or LABEL[letter]
         lab = lab[0 if pt else 1]
@@ -231,7 +303,11 @@ def per_level(kind, pt):
         name = {"a": ("+1 anel", "+1 ring"), "d": ("+1 dado", "+1 die"), "f": ("dado maior", "bigger die"), "k": ("+1 dado por turno", "+1 tick die"),
                 "K": ("dado por turno maior", "bigger tick die"), "g": ("+1 dado no anel", "+1 ring die"), "h": ("+1 dado de fogo", "+1 fire die"),
                 "H": ("dado de fogo maior", "bigger fire die"), "u": ("+1 dado de duração", "+1 duration die"), "v": ("veneno mais forte", "stronger poison")}.get(letter)
-        if name:
+        if letter == "Z":
+            txt = ("talento " + TALENTS[kind][0]) if pt else ("talent " + TALENTS[kind][2])
+        elif letter == "a" and "a" in OWN.get(kind, {}):
+            txt = "+1 de raio" if pt else "+1 radius"
+        elif name:
             txt = name[0 if pt else 1]
         else:
             txt = f"{'+' if step > 0 else ''}{num(step if not step.is_integer() else int(step), pt)} {lab[0 if pt else 1]}"
@@ -241,64 +317,114 @@ def per_level(kind, pt):
     return ", ".join(out)
 
 
-# Como jogar
+# Como jogar: the skills table (Tier 1-6 tab), one row a spell or skill in the same order in both languages; every row of a kind
+# with a track is written whole from it: the formula at the learning level, 7 levels on and at the track's end, and what it
+# does (spellExplain in Spells.cpp, read from there) followed by its scaling sentence.
 HELP = "content/engine2/help.json"
 RAW = io.open(HELP, encoding="utf-8", newline="").read()
 d = json.loads(RAW)
 LAYOUT = next(((ind, end) for ind in (None, 1, 2, 4) for end in ("", "\n") if json.dumps(d, ensure_ascii=False, indent=ind) + end == RAW))
-ROWS = {
-    ("Míssil Mágico", "Magic Missile"): "magicMissile", ("Relâmpago", "Lightning"): "lightning", ("Relâmpago3", "Relâmpago3"): "lightningTier3",
-    ("Bola De Fogo", "Fireball"): "fireball", ("Veneno Cáustico", "Caustic Venom"): "causticVenom", ("Divine Bolt", "Divine Bolt"): "divineBolt",
-    ("Teia dos Sonhos", "Web of Dreams"): "webOfDreams", ("Cura Menor", "Minor Heal"): "cureMinor", ("Cura Média", "Medium Heal"): "cureWounds",
-    ("Curar Doença Leve", "Cure Minor Disease"): "cureDisease", ("Healing Hands", "Healing Hands"): "cureLight",
-    ("Tiro Longo", "Long Shot"): "longShot", ("Bloody Shot", "Bloody Shot"): "bloodyShot", ("Tiro Múltiplo", "Multi Shot"): "multiShot",
-    ("Bless", "Bless"): "bless", ("Turn Undead", "Turn Undead"): "turnUndead", ("Aura de Proteção", "Aura of Protection"): "auraOfProtection",
-    ("Presença Intimidante", "Intimidating Presence"): "intimidatingPresence", ("Frost", "Frost"): "frost",
-    ("Mãos Flamejantes", "Burning Hands"): "burningHands", ("Sopro Venenoso", "Poison Breath"): "poisonBreath",
-    ("Força Fantasmagórica", "Phantasmal Force"): "phantasmalForce", ("Ira Divina", "Divine Wrath"): "divineWrath",
-}
+ROW_KIND = {0: "bless", 1: "magicMissile", 2: "longShot", 3: "cureMinor", 4: "doubleStrike", 5: "provoke", 6: "piercingThrust",
+            7: "summonFamiliar", 8: "poisonBreath", 9: "bloodyShot", 10: "summonFamiliar2", 11: "lightning", 13: "cureWounds", 14: "cleave",
+            15: "sweep", 16: "webOfDreams", 17: "frost", 18: "summonFamiliar4", 20: "trip", 21: "fireball", 22: "turnUndead",
+            23: "cureDisease", 24: "multiShot", 26: "summonFamiliar3", 28: "divineBolt", 29: "cureLight", 30: "shoulderSmash",
+            31: "lightningTier3", 32: "causticVenom", 33: "auraOfProtection", 34: "intimidatingPresence", 35: "divineWrath", 36: "stampede"}
+ROW_TIER = {26: "T5"}  # Familiar Titã (the user, 2026-10-20)
+fn = src[src.index("std::string spellExplain(const std::string& kind, bool en) {"):]
+fn = fn[:fn.index("  for (const Line& l : kLines)")]
+EXPLAIN = {k: (pt, en)
+           for k, pt, en in re.findall(r'\{"(\w+)", "((?:[^"\\]|\\.)*)",\s*"((?:[^"\\]|\\.)*)"\}', fn)}
+
+
+def gains_at(kind, lv):
+    L, slots = tracks[kind]
+    g = {}
+    for i, tok in enumerate(slots):
+        if tok != "-" and L + 1 + i <= lv:
+            g[tok[0]] = g.get(tok[0], 0) + float(tok[1:])
+    return g
+
+
+def state(kind, lv, pt):
+    """The spell's numbers at a level, short: "dano 2D6 · alcance 7 · ×1,15"."""
+    base, g = S[kind][1], gains_at(kind, lv)
+    parts, used = [], set()
+    for dl, fl, lab in DICE:
+        if dl in base:
+            n_, f_ = base[dl] + round(g.get(dl, 0)), base.get(fl, 6) + round(g.get(fl, 0))
+            lab = DICE_LABEL.get(kind, {}).get(dl, lab)
+            if n_ > 0:
+                parts.append(f"{lab[0 if pt else 1]} {n_}D{f_}")
+            used |= {dl, fl}
+    for letter in ORDER:
+        if letter in used or (letter not in base and letter != "Z"):
+            continue
+        if letter == "Z":
+            if g.get("Z"):
+                parts.append(("talento " + TALENTS[kind][0]) if pt else ("talent " + TALENTS[kind][2]))
+            continue
+        v = base[letter] + g.get(letter, 0) if letter != "v" else None
+        if letter == "a" and "a" not in OWN.get(kind, {}):
+            st = round(v)
+            parts.append("3 hexes" if st <= 0 else (f"raio {st}" if pt else f"radius {st}"))
+            continue
+        if letter == "v":
+            t = TIERS[TIERS.index(base["v"]) + round(g.get("v", 0))]
+            parts.append((TIER_PT if pt else TIER_EN)[t])
+            continue
+        if letter == "u":
+            parts.append(f"{'duração' if pt else 'duration'} {1 + round(g.get('u', 0))}D6")
+            continue
+        if letter == "m":
+            parts.append(f"×{num(round(v, 3), pt)}")
+            continue
+        lab = OWN.get(kind, {}).get(letter) or LABEL[letter]
+        lab = lab[0 if pt else 1]
+        if letter == "r" and kind in SHOT:
+            lab = "hexes além do arco" if pt else "hexes past the bow"
+        val = int(round(v)) if isinstance(base[letter], int) and float(v).is_integer() else round(v, 3)
+        parts.append(f"{lab} {num(val, pt)}")
+    return " · ".join(parts)
 
 
 def txt(cell):
-    return "".join(x.get("text", "") for line in cell for x in line)
+    if isinstance(cell, str):
+        return cell
+    return "".join((x.get("text", "") if isinstance(x, dict) else str(x)) for line in cell for x in (line if isinstance(line, list) else [line]))
 
 
 def setc(cell, text):
-    muted = any(x.get("muted") for line in cell for x in line)
+    if isinstance(cell, str):
+        return text
+    muted = any(isinstance(x, dict) and x.get("muted") for line in cell for x in (line if isinstance(line, list) else [line]))
     return [[{"text": text, "muted": True} if muted else {"text": text}]]
 
 
-# the scaling sentences written before (bc1f175 / 1bc8cf0) and this script's own, all replaced by the new one
-OLD = [r"Escala do nível \d+ ao \d+[^.]*\.", r"Scales from level \d+ to \d+[^.]*\.",
-       r"Alcance \d+, (?:\+1 por nível|\+1 a cada \d+ níveis) desde o nível \d+, até \d+(?: no nível \d+)?\.",
-       r"Range \d+, (?:\+1 per level|\+1 every \d+ levels) from level \d+, up to \d+(?: at level \d+)?\.",
-       r"Área: 3 hexes[^.]*\.", r"Area: 3 hexes[^.]*\.", r"Dano: \+1D\d [^.]*\.", r"Damage: \+1D\d [^.]*\."]
 changed = 0
 seen = set()
 for lang in ("pt", "en"):
     pt = lang == "pt"
-    for tab in d[lang]["tabs"]:
-        for block in tab.get("blocks", []):
-            for row in block.get("rows", []) or []:
-                if not isinstance(row, list) or len(row) < 5:
-                    continue
-                name = txt(row[0]).strip()
-                kind = next((k for (a_, b_), k in ROWS.items() if name == (a_ if pt else b_)), None)
-                if not kind:
-                    continue
-                seen.add(kind)
-                notes = txt(row[4]).strip()
-                new = notes
-                for pat in OLD:
-                    new = re.sub(pat, "", new).strip()
-                new = new.replace("1 míssil, +1 a cada 3 níveis, até 5 no nível 13", "").replace("1 missile, +1 every 3 levels, up to 5 at level 13", "")
-                new = re.sub(r"\s{2,}", " ", new).strip(" ;,")
-                final = (sentence(kind, pt) + (" " + new if new and new != "—" else "")).strip()
-                if final != notes:
-                    row[4] = setc(row[4], final)
-                    changed += 1
+    rows = d[lang]["tabs"][2]["blocks"][3]["rows"]
+    for i, row in enumerate(rows):
+        kind = ROW_KIND.get(i)
+        if not kind or kind not in tracks:
+            continue
+        seen.add(kind)
+        L = tracks[kind][0]
+        lv = "Nv" if pt else "Lv"
+        formula = " · ".join(f"{lv}{x}: {state(kind, x, pt)}" for x in (L, L + 7, L + SLOTS))
+        formula = formula.replace(" · Nv", " | Nv").replace(" · Lv", " | Lv")
+        about = EXPLAIN.get(kind, ("", ""))[0 if pt else 1]
+        effect = (about + " " + sentence(kind, pt)).strip()
+        new = [txt(c) for c in row]
+        if i in ROW_TIER:
+            row[2] = setc(row[2], ROW_TIER[i])
+        if txt(row[3]) != formula or txt(row[4]) != effect:
+            row[3] = setc(row[3], formula)
+            row[4] = setc(row[4], effect)
+            changed += 1
 io.open(HELP, "w", encoding="utf-8", newline="").write(json.dumps(d, ensure_ascii=False, indent=LAYOUT[0]) + LAYOUT[1])
-print("Como jogar rows changed:", changed, "| spells without a row there:", ", ".join(k for k in S if k not in seen))
+print("Como jogar rows changed:", changed, "| with a track and no row there:", ", ".join(k for k in S if k not in seen))
 
 # docs/SPELLS_SCALING.md
 NAMES = {
@@ -320,6 +446,12 @@ NAMES = {
     "venomArrow": "Flecha Envenenada", "bloodyShot": "Tiro Sangrento", "multiShot": "Tiro Múltiplo", "arrowRain": "Chuva de Flechas",
     "explosiveArrow": "Flecha Explosiva", "cripplingShot": "Tiro Paralisante", "arrowStorm": "Tempestade de Flechas", "deathShot": "Tiro Mortal",
     "minorVenom": "Veneno Menor (plantas)",
+    "doubleStrike": "Corte Duplo", "provoke": "Provocar", "cleave": "Cleave", "shieldBash": "Golpe de Escudo", "bullRush": "Investida Touro",
+    "executionerStrike": "Golpe do Carrasco", "steelWhirlwind": "Redemoinho de Aço", "guardBreak": "Quebra-Guarda", "warCry": "Grito de Guerra",
+    "leapingStrike": "Salto Devastador", "shoulderSmash": "Investida de Ombro (Cavaleiro Pesado)", "stampede": "Debandada (Cavaleiro Pesado)",
+    "piercingThrust": "Investida Perfurante", "spearToss": "Arremesso", "sweep": "Varredura", "hookPull": "Gancho", "trip": "Rasteira",
+    "poleVault": "Salto de Vara", "disarm": "Desarmar", "swapPost": "Troca de Posto", "impaleDrag": "Empalar e Arrastar",
+    "sentinelVigil": "Vigília da Sentinela",
 }
 rows = []
 for kind in S:
@@ -337,6 +469,10 @@ O Ember Ashes I para no nível 30; uma magia aprendida depois do 16 continua a e
 programado: os níveis além do 30 só não se alcançam ainda.
 
 Familiar Titã é Tier 5 (nível 11); o Cão Zumbi é Tier 6 do Necromante (nível 15, a promoção) (o usuário, 2026-10-20).
+
+As habilidades do Guerreiro, do Cavaleiro Pesado e do Lanceiro seguem a mesma regra; quase tudo nelas é dano (dados, faces, peso da
+arma), e cada uma ganha um **talento** num nível da trilha (o usuário, 2026-10-20: "eles não tem muito o que escalar além de dano, mas
+pode dar um talento nelas sim").
 
 """ + "\n".join(rows)
 io.open("docs/SPELLS_SCALING.md", "w", encoding="utf-8", newline="\n").write(doc)

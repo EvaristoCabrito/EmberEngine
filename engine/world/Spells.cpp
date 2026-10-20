@@ -241,7 +241,8 @@ int magicMissileCount(int level);
 double missileMul(int level);
 double piercingMul(int level) { return level >= 13 ? 2.5 : level >= 10 ? 2.25 : level >= 6 ? 2 : 1.5; }
 constexpr double kThrustArmorIgnore = 0.2;  // PIERCING_THRUST.armorIgnore
-Dice doubleStrikePower(int level) {
+Dice doubleStrikePower(int level);
+Dice doubleStrikePowerE2(int level) {
   if (level >= 14) return {2, 8};
   if (level >= 13) return {2, 6};
   if (level >= 11) return {1, 12};
@@ -426,6 +427,56 @@ constexpr SpellTrack kSpellTracks[] = {
     {"arrowStorm", 13, "r1 m0.1 a1 f2 r1 m0.1 r1 d1 m0.1 r1 a1 f2 m0.1 r1"},
     {"deathShot", 15, "r1 m0.15 p2 f2 r1 m0.15 p2 d1 r1 m0.15 f2 p2 r1 m0.15"},
     {"minorVenom", 8, "- r1 - - - a1 - - r1 - - - a1 -"},
+    {"doubleStrike", 1, "m0.05 m0.05 d1 m0.05 f2 m0.05 m0.05 Z1 m0.05 m0.05 d1 m0.05 f2 m0.05"},
+    {"provoke", 3, "r1 p10 r1 p10 a1 r1 p10 Z1 r1 p10 r1 p10 r1 p10"},
+    {"cleave", 4, "m0.05 m0.05 f2 m0.05 m0.05 d1 m0.05 m0.05 Z1 m0.05 m0.05 f2 m0.05 m0.05"},
+    {"shieldBash", 4, "m0.05 f2 m0.05 d1 m0.05 f2 t1 m0.05 Z1 m0.05 f2 m0.05 f2 m0.05"},
+    {"bullRush", 8, "m0.05 r1 f2 K2 m0.05 d1 k1 m0.05 Z1 m0.05 r1 f2 K2 m0.05"},
+    {"executionerStrike", 8, "M0.15 m0.05 f2 p5 M0.15 d1 M0.15 m0.05 Z1 M0.15 f2 p5 m0.05 M0.15"},
+    {"steelWhirlwind", 11, "m0.05 m0.05 d1 m0.05 f2 m0.05 m0.05 Z1 m0.05 m0.05 d1 m0.05 f2 m0.05"},
+    {"guardBreak", 13, "m0.05 p5 m0.05 d1 m0.05 t1 m0.05 p5 m0.05 m0.05 Z1 m0.05 p5 m0.05"},
+    {"warCry", 15, "p1 p1 t1 p1 p1 a1 p1 p1 Z1 p1 p1 t1 p1 p1"},
+    {"leapingStrike", 17, "m0.1 r1 f2 m0.1 b1 m0.1 d1 Z1 m0.1 r1 m0.1 f2 b1 m0.1"},
+    {"shoulderSmash", 11, "m0.05 c1 m0.05 f2 m0.05 d1 m0.05 Z1 m0.05 m0.05 c1 m0.05 f2 m0.05"},
+    {"stampede", 18, "m0.05 r1 d1 m0.05 r1 m0.05 f2 Z1 m0.05 r1 m0.05 d1 r1 m0.05"},
+    {"piercingThrust", 1, "m0.05 x5 m0.05 l1 m0.05 x5 m0.05 Z1 x5 m0.05 l1 m0.05 x5 m0.05"},
+    {"spearToss", 2, "m0.05 d1 f2 b1 m0.05 r1 k1 K2 Z1 m0.05 d1 f2 b1 m0.05"},
+    {"sweep", 4, "m0.05 f2 m0.05 m0.05 d1 m0.05 m0.05 f2 m0.05 Z1 m0.05 m0.05 f2 m0.05"},
+    {"hookPull", 4, "m0.05 r1 m0.05 f2 m0.05 d1 m0.05 t1 Z1 m0.05 r1 m0.05 f2 m0.05"},
+    {"trip", 8, "m0.05 m0.05 d1 m0.05 m0.05 f2 m0.05 m0.05 Z1 m0.05 m0.05 d1 m0.05 m0.05"},
+    {"poleVault", 8, "m0.1 b1 f2 m0.1 b1 m0.1 d1 Z1 m0.1 b1 m0.1 f2 b1 m0.1"},
+    {"disarm", 11, "m0.05 p5 f2 m0.05 p5 d1 m0.05 t1 Z1 p5 m0.05 f2 p5 m0.05"},
+    {"swapPost", 13, "m0.05 r1 f2 m0.05 b1 m0.05 d1 Z1 m0.05 r1 m0.05 f2 b1 m0.05"},
+    {"impaleDrag", 15, "e0.01 m0.05 f2 e0.01 m0.05 l1 e0.01 d1 Z1 m0.05 e0.01 f2 m0.05 e0.01"},
+    {"sentinelVigil", 17, "m0.1 b1 f2 m0.1 d1 m0.1 b1 a1 m0.1 Z1 m0.1 f2 b1 m0.1"},
+};
+// The talents (Z): name and what it does, PT / EN
+struct SpellTalent {
+  const char *kind, *pt, *ptAbout, *en, *enAbout;
+};
+constexpr SpellTalent kSpellTalents[] = {
+    {"doubleStrike", "Terceiro Golpe", "um terceiro golpe com metade do dano, sem contra-ataque", "Third Blow", "a third blow at half damage, no counter"},
+    {"provoke", "Fúria Contida", "o guerreiro ganha +10% de ATK por 2 turnos", "Held Fury", "the warrior gains +10% ATK for 2 turns"},
+    {"cleave", "Corte Baixo", "os atingidos ficam Paralisados (-25% de MOV) por 1 turno", "Low Cut", "the struck are Crippled (-25% MOV) for 1 turn"},
+    {"shieldBash", "Empurrão de Escudo", "o alvo é empurrado 1 hex para longe", "Shield Shove", "the target is pushed 1 hex away"},
+    {"bullRush", "Contra a Parede", "se o empurrão bate em algo, o alvo fica atordoado 1 turno", "Into the Wall", "if the shove hits something, the target is stunned 1 turn"},
+    {"executionerStrike", "Sentença", "se o golpe mata, o uso da habilidade volta", "Sentence", "if the blow kills, the skill's use comes back"},
+    {"steelWhirlwind", "Lâminas Abertas", "os atingidos sangram (1D6 por turno, por 1D3 turnos)", "Open Wounds", "the struck bleed (1D6 a turn, for 1D3 turns)"},
+    {"guardBreak", "Sem Resposta", "o alvo não contra-ataca este golpe", "No Answer", "the target cannot counter this blow"},
+    {"warCry", "Terror", "os inimigos no raio ficam com medo por 1 turno", "Terror", "the foes in the radius are afraid for 1 turn"},
+    {"leapingStrike", "Onda de Choque", "os outros inimigos ao lado do pouso levam metade de um golpe", "Shockwave", "the other foes beside the landing take half a blow"},
+    {"shoulderSmash", "Derrubar", "os atingidos ficam Desequilibrados (sem contra-ataque) até o próximo turno deles", "Knock Down", "the struck are Off balance (no counter) until their next turn"},
+    {"stampede", "Pisoteio", "os atingidos são empurrados 1 hex", "Trample", "the struck are pushed 1 hex"},
+    {"piercingThrust", "Atravessar", "os alvos depois do primeiro levam 75% do dano, não 50%", "Run Through", "the targets after the first take 75% of the damage, not 50%"},
+    {"spearToss", "Colisão Atordoante", "quando o corpo bate em outro, os dois ficam atordoados 1 turno", "Stunning Crash", "when the body hits another, both are stunned 1 turn"},
+    {"sweep", "Varrer Longe", "empurra 2 hexes em vez de 1", "Sweep Away", "pushes 2 hexes instead of 1"},
+    {"hookPull", "Gancho Farpado", "o puxado fica Paralisado (-30% de MOV) por 1 turno", "Barbed Hook", "the pulled foe is Crippled (-30% MOV) for 1 turn"},
+    {"trip", "Tendão Cortado", "a Rasteira tira 20% de todos os atributos, não 10%", "Cut Tendon", "the Trip takes 20% off every stat, not 10%"},
+    {"poleVault", "Queda do Alto", "50% de chance de atordoar o alvo por 1 turno", "From Above", "a 50% chance to stun the target for 1 turn"},
+    {"disarm", "Mão Ferida", "o desarmado perde também 1 uso de habilidade", "Wounded Hand", "the disarmed foe also loses 1 use of a skill"},
+    {"swapPost", "Coragem do Posto", "o aliado trocado ganha +10% de ATK por 1 turno", "Post's Courage", "the swapped ally gains +10% ATK for 1 turn"},
+    {"impaleDrag", "Ferida Aberta", "o arrastado sangra (1D8 por turno, por 1D3 turnos)", "Open Wound", "the dragged foe bleeds (1D8 a turn, for 1D3 turns)"},
+    {"sentinelVigil", "Contra-Golpe Firme", "quem a Vigília interrompe fica Desequilibrado (sem contra-ataque)", "Firm Riposte", "whoever the Vigil interrupts is Off balance (no counter)"},
 };
 // TRACKS-END
 struct ParsedTrack {
@@ -489,6 +540,20 @@ int areaRadius(const std::string& kind, int base, int level) {
 }
 // What an area stage reads as ("3 hexes", "raio 2").
 std::string areaLabel(int stage) { return stage <= 0 ? std::string("3 hexes") : std::format("raio {}", stage); }
+// A skill's talent (Z on its track) is open at this level.
+bool hasTalent(const std::string& kind, int level) { return spellGains(kind, level).n('Z') > 0; }
+// The track drives a skill from its learning level on; under it (an enemy's) the skill keeps its old table.
+bool trackActive(const std::string& kind, int level) {
+  const ParsedTrack* t = progressionEnabled() ? parsedTrack(kind) : nullptr;
+  return t && level >= t->learn;
+}
+// A weapon skill's weight on the weapon's roll (its track's m), 1 off the track.
+double skillMul(const std::string& kind, int level) { return trackActive(kind, level) ? 1 + spellGains(kind, level)('m') : 1; }
+const SpellTalent* talentOf(const std::string& kind) {
+  for (const SpellTalent& t : kSpellTalents)
+    if (kind == t.kind) return &t;
+  return nullptr;
+}
 // The poison tier `steps` above `base` (Veneno Menor, Veneno, Veneno Maior, Veneno Mortal, Veneno Letal).
 const char* poisonTierUp(const char* base, int steps) {
   static const char* kOrder[] = {"lesser", "poison", "greater", "deadly", "lethal"};
@@ -504,6 +569,11 @@ int magicMissileCount(int level) {
   return 1 + spellGains("magicMissile", level).n('c');
 }
 double missileMul(int level) { return kMissileMul + spellGains("magicMissile", level)('m'); }
+Dice doubleStrikePower(int level) {
+  if (!trackActive("doubleStrike", level)) return doubleStrikePowerE2(level);
+  const TrackGains g = spellGains("doubleStrike", level);
+  return {g.n('d'), 4 + g.n('f')};
+}
 Dice longShotPower(int level) {
   if (!progressionEnabled()) return longShotPowerE2(level);
   const TrackGains g = spellGains("longShot", level);
@@ -583,29 +653,23 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
     n.pct = 15 + g.n('p');
     n.spread = 30 + g.n('s');  // Escuridão resistance shred
   }
-  // Guerreiro (docs/SKILLS_WARRIOR.md): dice = the bonus on the weapon's own roll
+  // Guerreiro (docs/SKILLS_WARRIOR.md): dice = the bonus on the weapon's own roll, mul = the weight on it; Z = its talent
   else if (kind == "steelWhirlwind") {
     n.radius = 1;
-    if (lv >= 30) n.dice = 3, n.faces = 8;
-    else if (lv >= 26) n.dice = 2, n.faces = 10;
-    else if (lv >= 22) n.dice = 2, n.faces = 8;
-    else if (lv >= 18) n.dice = 2, n.faces = 6;
-    else if (lv >= 14) n.dice = 1, n.faces = 8;
-    else n.dice = 1, n.faces = 6;
+    n.mul = mul(1.0), n.dice = dice(1), n.faces = faces(6);
   } else if (kind == "guardBreak") {
-    n.dice = lv >= 19 ? 2 : 1, n.faces = lv >= 25 ? 8 : lv >= 19 ? 6 : 8;
-    n.pct = lv >= 28 ? 35 : lv >= 21 ? 30 : lv >= 17 ? 25 : 20;  // DEF off
-    n.turns = lv >= 24 ? 3 : 2;
+    n.mul = mul(1.0), n.dice = dice(1), n.faces = 8;
+    n.pct = 20 + g.n('p');  // DEF off
+    n.turns = 2 + g.n('t');
   } else if (kind == "warCry") {
-    n.radius = lv >= 19 ? 3 : 2;
-    n.pct = lv >= 27 ? 25 : lv >= 21 ? 20 : 15;  // ATK up
-    n.turns = lv >= 24 ? 3 : 2;
-    n.spread = lv >= 22 ? 1 : 0;  // the foes' turns of fear
+    n.radius = 2 + g.n('a');
+    n.pct = 15 + g.n('p');  // ATK up
+    n.turns = 2 + g.n('t');
+    n.spread = g.n('Z') > 0 ? 1 : 0;  // its talent (Terror): the foes' turns of fear
   } else if (kind == "leapingStrike") {
-    n.range = lv >= 27 ? 5 : lv >= 21 ? 4 : 3;
-    n.mul = lv >= 29 ? 2.0 : lv >= 23 ? 1.75 : 1.5;
-    n.dice = 2, n.faces = lv >= 25 ? 8 : 6;
-    n.pct = lv >= 25 ? 50 : 0;  // the shockwave on the landing's other neighbours: this share of a weapon roll
+    n.range = 3;  // + its track's reach (grownReach below)
+    n.mul = mul(1.5), n.dice = dice(2), n.faces = faces(6), n.bonus = g.n('b');
+    n.pct = g.n('Z') > 0 ? 50 : 0;  // its talent (Onda de Choque): the landing's other neighbours take this share of a weapon roll
   }
   // Arqueiro (docs/SKILLS_ARCHER.md): mul = the weight on the bow's roll, dice = the bonus; length = hexes past the bow's reach
   else if (kind == "venomArrow") {
@@ -629,38 +693,31 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
     n.mul = mul(2.0), n.dice = dice(2), n.faces = faces(8);
     n.pct = 25 + g.n('p');  // a foe left under this share of its HP dies
   }
-  // Lanceiro (docs/SKILLS_LANCER.md): mul = the weight on the lance's roll, dice = the bonus on it
+  // Lanceiro (docs/SKILLS_LANCER.md): mul = the weight on the lance's roll, dice = the bonus on it; Z = its talent
   else if (kind == "spearToss") {
-    n.range = lv >= 14 ? 3 : 2;  // hexes thrown
-    n.mul = lv >= 20 ? 1.1 : lv >= 8 ? 1.0 : 0.9;
-    if (lv >= 24) n.dice = 2, n.faces = 6;
-    else if (lv >= 16) n.dice = 1, n.faces = 6;
-    else if (lv >= 8) n.dice = 1, n.faces = 4;
-    n.tickDice = lv >= 26 ? 2 : lv >= 14 ? 2 : 1, n.tickFaces = lv >= 26 ? 8 : 6;  // the collision, on both bodies
+    n.range = 2;  // hexes thrown (+ its track: grownReach below)
+    n.mul = mul(0.9), n.dice = dice(0), n.faces = faces(4), n.bonus = g.n('b');
+    n.tickDice = 1 + g.n('k'), n.tickFaces = 6 + g.n('K');  // the collision, on both bodies
   } else if (kind == "hookPull") {
-    n.range = lv >= 26 ? 5 : lv >= 12 ? 4 : 3;
-    n.mul = lv >= 24 ? 1.0 : lv >= 15 ? 0.9 : 0.8;
-    n.dice = lv >= 28 ? 2 : 1, n.faces = lv >= 18 ? 6 : 4;
-    n.turns = lv >= 24 ? 1 : 0;  // Desequilibrado for this many more of its own turns (always until its next one)
+    n.range = 3;
+    n.mul = mul(0.8), n.dice = dice(1), n.faces = faces(4);
+    n.turns = g.n('t');  // Desequilibrado for this many more of its own turns (always until its next one)
   } else if (kind == "poleVault") {
-    n.mul = lv >= 26 ? 1.8 : lv >= 20 ? 1.6 : lv >= 14 ? 1.4 : 1.2;
-    n.dice = lv >= 20 ? 2 : 1, n.faces = lv >= 29 ? 8 : 6;
+    n.mul = mul(1.2), n.dice = dice(1), n.faces = faces(6), n.bonus = g.n('b');
   } else if (kind == "disarm") {
-    n.dice = lv >= 27 ? 2 : 1, n.faces = lv >= 17 ? 6 : 4;
-    n.pct = lv >= 29 ? 60 : lv >= 22 ? 50 : 40;  // ATK off
-    n.turns = lv >= 17 ? 3 : 2;
+    n.mul = mul(1.0), n.dice = dice(1), n.faces = faces(4);
+    n.pct = 40 + g.n('p');  // ATK off
+    n.turns = 2 + g.n('t');
   } else if (kind == "swapPost") {
-    n.range = lv >= 28 ? 5 : lv >= 19 ? 4 : 3;
-    n.mul = lv >= 30 ? 1.3 : lv >= 25 ? 1.15 : 1.0;
-    n.dice = lv >= 21 ? 2 : 1, n.faces = 6;
+    n.range = 3;
+    n.mul = mul(1.0), n.dice = dice(1), n.faces = faces(6), n.bonus = g.n('b');
   } else if (kind == "impaleDrag") {
-    n.length = lv >= 24 ? 4 : 3;              // hexes dragged at most
-    n.mul = 1.0, n.decay = lv >= 21 ? 0.3 : 0.25;  // + this per hex dragged
-    n.dice = lv >= 28 ? 2 : 1, n.faces = 8;
+    n.length = 3 + g.n('l');                  // hexes dragged at most
+    n.mul = mul(1.0), n.decay = 0.25 + g('e');  // + this per hex dragged
+    n.dice = dice(1), n.faces = faces(8);
   } else if (kind == "sentinelVigil") {
-    n.radius = lv >= 26 ? 2 : 1;
-    n.mul = lv >= 27 ? 1.6 : lv >= 23 ? 1.4 : lv >= 20 ? 1.2 : 1.0;
-    n.dice = lv >= 23 ? 1 : 0, n.faces = 6;
+    n.radius = 1 + g.n('a');
+    n.mul = mul(1.0), n.dice = dice(0), n.faces = faces(6), n.bonus = g.n('b');
   }
   // Curandeiro (docs/SKILLS_HEALER.md): the cures' formula, floor(floor(MAG / 2) x mul) + dice (+1 % per healing skill point)
   else if (kind == "circleOfHealing") {
@@ -889,7 +946,8 @@ std::vector<BattleHex> piercingRay(const Battle& b, BattleHex from, BattleHex th
 }
 std::vector<BattleHex> piercingThrustRay(const Battle& b, const BattleUnit& caster, BattleHex through) {
   std::vector<BattleHex> raw = piercingRay(b, {caster.x, caster.y}, through);
-  if (raw.size() > static_cast<size_t>(caster.maxRange + 1)) raw.resize(static_cast<size_t>(caster.maxRange + 1));
+  const int reach = caster.maxRange + 1 + spellGains("piercingThrust", caster.level).n('l');  // + its track's hexes
+  if (raw.size() > static_cast<size_t>(reach)) raw.resize(static_cast<size_t>(reach));
   return raw;
 }
 // frostAreaTiles (game/frost.ts): one hex wide from next to the caster straight toward the aimed hex at any angle (a
@@ -1947,6 +2005,8 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     s.ids = unitsOn(b, caster, ring, false);
     s.dice = 0, s.spellMul = 1;
     s.weaponBonusDice = n.dice, s.weaponBonusFaces = n.faces, s.weaponBonusBonus = 0;
+    s.dmgMul = n.mul;
+    if (hasTalent(kind, u.level)) s.bleedDice = 1, s.bleedFaces = 6, s.bleedTurnsDice = 1, s.bleedTurnsFaces = 3;  // Lâminas Abertas
     spend();
     steps.push_back(s);
   } else if (kind == "guardBreak") {
@@ -1959,6 +2019,8 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     s.dice = 0, s.spellMul = 1;
     s.bonusDice = n.faces, s.bonusDiceCount = n.dice, s.bonusFlat = 0;
     s.sunderPct = n.pct, s.sunderTurns = n.turns;
+    s.dmgMul = n.mul;
+    s.noCounter = hasTalent(kind, u.level);  // Sem Resposta
     steps.push_back(s);
   } else if (kind == "warCry") {
     // Around the caster: every ally (itself too) rallied for some of its turns; from level 22 the foes in the radius are afraid.
@@ -1995,7 +2057,7 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     BattleStep c;
     c.type = BattleStep::Type::Combat, c.att = caster, c.def = static_cast<size_t>(foe), c.kind = kind, c.noCounter = true;
     c.dmgMul = n.mul;
-    c.bonusDice = n.faces, c.bonusDiceCount = n.dice, c.bonusFlat = 0;
+    c.bonusDice = n.faces, c.bonusDiceCount = n.dice, c.bonusFlat = n.bonus;
     steps.push_back(c);
     if (n.pct > 0) {
       std::vector<BattleHex> ring;
@@ -2018,7 +2080,7 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     spend();
     s.ids = {p->foe}, s.tiles = p->tiles;
     s.dice = 0, s.spellMul = 1, s.dmgMul = n.mul;
-    s.weaponBonusDice = n.dice, s.weaponBonusFaces = n.faces, s.weaponBonusBonus = 0;
+    s.weaponBonusDice = n.dice, s.weaponBonusFaces = n.faces, s.weaponBonusBonus = n.bonus;
     s.throwTo = p->landing, s.arc = 1.4f + 0.25f * static_cast<float>(p->hexes);
     s.collideWith = p->collide, s.collideDice = n.tickDice, s.collideFaces = n.tickFaces;
     steps.push_back(s);
@@ -2034,6 +2096,7 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     s.weaponBonusDice = n.dice, s.weaponBonusFaces = n.faces, s.weaponBonusBonus = 0;
     s.throwTo = p->dest, s.arc = 0.0f;
     s.stagger = true, s.staggerTurns = n.turns;
+    if (hasTalent(kind, u.level)) s.hobblePct = 30, s.hobbleTurns = 1;  // Gancho Farpado
     steps.push_back(s);
   } else if (kind == "poleVault") {
     // Over the neighbour onto the hex behind it, then the blow from behind (x mul + the dice; the rear bonus is sure; no counter).
@@ -2049,7 +2112,8 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     BattleStep c;
     c.type = BattleStep::Type::Combat, c.att = caster, c.def = static_cast<size_t>(foe), c.kind = kind, c.noCounter = true, c.rearSure = true;
     c.dmgMul = n.mul;
-    c.bonusDice = n.faces, c.bonusDiceCount = n.dice, c.bonusFlat = 0;
+    c.bonusDice = n.faces, c.bonusDiceCount = n.dice, c.bonusFlat = n.bonus;
+    if (hasTalent(kind, u.level)) c.stunChance = 0.5;  // Queda do Alto
     steps.push_back(c);
   } else if (kind == "disarm") {
     // A lance blow (+ the dice) on a foe in reach that knocks its weapon away: ATK down and no counter for some of its turns.
@@ -2061,6 +2125,8 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     s.dice = 0, s.spellMul = 1;
     s.bonusDice = n.faces, s.bonusDiceCount = n.dice, s.bonusFlat = 0;
     s.disarmPct = n.pct, s.disarmTurns = n.turns;
+    s.dmgMul = n.mul;
+    if (hasTalent(kind, u.level)) s.drainUses = 1;  // Mão Ferida
     steps.push_back(s);
   } else if (kind == "swapPost") {
     // Places changed with an ally in reach; then, from the new post, a lance blow (x mul + the dice) on the weakest foe the lance reaches.
@@ -2083,7 +2149,7 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
       BattleStep c;
       c.type = BattleStep::Type::Combat, c.att = caster, c.def = static_cast<size_t>(target), c.kind = kind;
       c.dmgMul = n.mul;
-      c.bonusDice = n.faces, c.bonusDiceCount = n.dice, c.bonusFlat = 0;
+      c.bonusDice = n.faces, c.bonusDiceCount = n.dice, c.bonusFlat = n.bonus;
       steps.push_back(c);
     }
   } else if (kind == "impaleDrag") {
@@ -2097,6 +2163,7 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     s.dice = 0, s.spellMul = 1, s.dmgMul = n.mul + n.decay * p->hexes;
     s.weaponBonusDice = n.dice, s.weaponBonusFaces = n.faces, s.weaponBonusBonus = 0;
     s.throwTo = p->foeTo, s.arc = 0.0f, s.dragTo = p->casterTo;
+    if (hasTalent(kind, u.level)) s.bleedDice = 1, s.bleedFaces = 8, s.bleedTurnsDice = 1, s.bleedTurnsFaces = 3;  // Ferida Aberta
     steps.push_back(s);
   } else if (kind == "sentinelVigil") {
     // The stance: until its next turn, whoever attacks the caster or an ally within the radius takes its thrust first.
@@ -2204,7 +2271,7 @@ std::vector<std::string> checkSpellTracks(std::vector<std::string>* report) {
   setProgressionEnabled(true);
   // what a cast reads of the spell at a level (its reach, area, dice, weights, counts, rounds ...)
   const auto numbers = [](const std::string& kind, int lv) {
-    std::vector<double> v = {static_cast<double>(grownReach(kind, 0, lv)), static_cast<double>(areaRadius(kind, 0, lv))};
+    std::vector<double> v = {static_cast<double>(grownReach(kind, 0, lv)), static_cast<double>(areaRadius(kind, 0, lv)), spellGains(kind, lv)('Z')};
     const auto add = [&](std::initializer_list<double> x) { v.insert(v.end(), x); };
     if (emberSpell(kind)) {
       const EmberNumbers n = emberNumbers(kind, lv);
@@ -2259,6 +2326,33 @@ std::vector<std::string> checkSpellTracks(std::vector<std::string>* report) {
     } else if (kind == "multiShot") {
       const DiceFaces p = multiShotPower(lv);
       add({double(multiShotTargets(lv)), double(p.dice), double(p.faces)});
+    } else if (kind == "doubleStrike") {
+      const Dice p = doubleStrikePower(lv);
+      add({double(p.dice), double(p.faces), skillMul(kind, lv)});
+    } else if (kind == "cleave") {
+      const DiceFaces p = cleavePower(lv);
+      add({double(p.dice), double(p.faces), skillMul(kind, lv)});
+    } else if (kind == "shieldBash") {
+      const ShieldP p = shieldBashPower(lv);
+      add({double(p.dice), double(p.faces), double(p.stunTurns), skillMul(kind, lv)});
+    } else if (kind == "provoke") {
+      const ProvokeP p = provokePower(lv);
+      add({double(p.range), double(p.radius), spellGains(kind, lv)('p')});
+    } else if (kind == "bullRush") {
+      const BullRushP p = bullRushPower(lv);
+      add({double(p.dice), double(p.faces), double(p.wallDice), double(p.wallFaces), skillMul(kind, lv)});
+    } else if (kind == "executionerStrike") {
+      const ExecP p = executionerStrikePower(lv);
+      add({double(p.dice), double(p.faces), p.threshold, p.mult, skillMul(kind, lv)});
+    } else if (kind == "shoulderSmash") {
+      const SmashP p = shoulderSmashPower(lv);
+      add({double(p.dice), double(p.faces), double(p.hexes), skillMul(kind, lv)});
+    } else if (kind == "stampede") {
+      const DiceFaces p = stampedePower(lv);
+      add({double(p.dice), double(p.faces), skillMul(kind, lv)});
+    } else if (kind == "piercingThrust" || kind == "sweep" || kind == "trip") {
+      const TrackGains g = spellGains(kind, lv);
+      add({g('l'), g('x'), g('d'), g('f'), skillMul(kind, lv)});
     }
     return v;
   };
@@ -2279,7 +2373,8 @@ std::vector<std::string> checkSpellTracks(std::vector<std::string>* report) {
       // a ring of area moves two numbers (its stage and the spell's radius); a dice-only spell's reach / area keep one each
       if (step && changed == 0) fails.push_back(std::format("{}: nível {} devia melhorar e não mudou nada", t.kind, lv));
       if (!step && changed > 0) fails.push_back(std::format("{}: nível {} mudou {} números sem passo na trilha", t.kind, lv, changed));
-      if (step && changed > 1 && !(p->steps[at].first == 'a' && changed == 2) && !(p->steps[at].first == 'r' && changed == 2))
+      if (step && changed > 1 && !(p->steps[at].first == 'a' && changed == 2) && !(p->steps[at].first == 'r' && changed == 2) &&
+          !(p->steps[at].first == 'Z' && changed == 2))
         fails.push_back(std::format("{}: nível {} mudou {} números de uma vez", t.kind, lv, changed));
       if (step) {
         ++steps;
@@ -2420,6 +2515,28 @@ std::string spellExplain(const std::string& kind, bool en) {
       {"bloodyShot", "Um tiro que multiplica o dano da arma e deixa o alvo sangrando por algumas rodadas.",
        "A shot that multiplies the weapon's damage and leaves the target bleeding for some rounds."},
       {"multiShot", "Várias flechas de uma vez, cada uma mirada num inimigo (pode repetir).", "Several arrows at once, each aimed at a foe (the same one is fine)."},
+      {"doubleStrike", "Dois golpes de arma seguidos no mesmo inimigo; o primeiro não recebe contra-ataque.",
+       "Two weapon blows in a row on the same foe; the first cannot be countered."},
+      {"provoke", "Chama a atenção dos inimigos na área mirada: eles passam a querer atacar você.",
+       "Draws the attention of the foes in the aimed area: they turn to attack you."},
+      {"cleave", "Um golpe em arco nos 3 hexes à sua frente, só nos inimigos; contra corpos grandes (3 hexes ou mais) o dano dobra.",
+       "A sweeping blow over the 3 hexes in front of you, foes only; against large bodies (3 hexes or more) the damage doubles."},
+      {"shieldBash", "Um golpe com o escudo (precisa de escudo): dano e o alvo fica atordoado.",
+       "A blow with the shield (needs a shield): damage, and the target is stunned."},
+      {"bullRush", "Corre em linha até o inimigo, tirando do caminho quem estiver nele, e empurra o alvo; se ele bater em algo, leva o dano da parede. Sem contra-ataque.",
+       "Charges in a line at the foe, shoving aside whoever is in the way, and pushes the target; if it hits something, it takes the wall damage. No counter."},
+      {"executionerStrike", "Um golpe que, num inimigo com pouco HP, multiplica o dano no lugar do crítico.",
+       "A blow that, on a foe with little HP left, multiplies the damage instead of a critical."},
+      {"shoulderSmash", "Uma investida de ombro (mãos livres, sem escudo) nos hexes à sua frente: dano e empurra 2 hexes.",
+       "A shoulder charge (free hands, no shield) over the hexes in front of you: damage and a 2-hex push."},
+      {"stampede", "Uma corrida em linha reta: todos sobre ela levam o golpe, aliados também.",
+       "A straight-line charge: everyone on it takes the blow, allies too."},
+      {"piercingThrust", "Uma estocada em linha que atravessa os inimigos e ignora parte da DEF; depois do primeiro, cada um leva metade.",
+       "A thrust in a line that runs through the foes and ignores part of their DEF; after the first, each takes half."},
+      {"sweep", "Um giro da lança em volta de você: os inimigos ao lado levam o golpe e são empurrados.",
+       "A turn of the lance around you: the foes beside you take the blow and are pushed."},
+      {"trip", "Uma rasteira sem contra-ataque: o alvo sangra 1D8 a cada ação e perde 10% de todos os atributos pelo resto da luta.",
+       "A trip that cannot be countered: the target bleeds 1D8 on each action and loses 10% of every stat for the rest of the fight."},
   };
   for (const Line& l : kLines)
     if (kind == l.kind) return en ? l.en : l.pt;
@@ -2429,6 +2546,17 @@ std::string spellTrackNote(const std::string& kind, int level, bool en) {
   const ParsedTrack* t = parsedTrack(kind);
   if (!t) return {};
   const int last = t->learn + static_cast<int>(t->steps.size());
+  // its talent, on a line of its own: what it does, open or the level it opens at
+  std::string talent;
+  if (const SpellTalent* tl = talentOf(kind)) {
+    int at = 0;
+    for (size_t i = 0; i < t->steps.size(); ++i)
+      if (t->steps[i].first == 'Z') at = t->learn + 1 + static_cast<int>(i);
+    const char* name = en ? tl->en : tl->pt;
+    const char* about = en ? tl->enAbout : tl->ptAbout;
+    talent = level >= at ? std::format("\n{}: {} ({})", en ? "Talent" : "Talento", name, about)
+                         : std::format("\n{} {}: {} ({})", en ? "Talent at level" : "Talento no nível", at, name, about);
+  }
   std::string s = en ? std::format("Scales from level {} to {}, one small improvement a level", t->learn, last)
                      : std::format("Escala do nível {} ao {}, uma melhoria pequena por nível", t->learn, last);
   for (size_t i = 0; i < t->steps.size(); ++i) {
@@ -2458,9 +2586,13 @@ std::string spellTrackNote(const std::string& kind, int level, bool en) {
     if (c == 'c' && kind == "mirrorImage") what = en ? "+1 copy" : "+1 cópia";
     if (c == 'c' && kind == "wrathOfTheSkies") what = en ? "+1 bolt" : "+1 raio";
     if (c == 'p' && kind == "sacrificeBond") what = en ? "the summon takes less" : "a invocação recebe menos";
-    return s + (en ? std::format(" · next: level {}, {}", at, what) : std::format(" · próximo: nível {}, {}", at, what));
+    if (c == 'Z') {
+      const SpellTalent* tl = talentOf(kind);
+      what = std::string(en ? "talent " : "talento ") + (tl ? (en ? tl->en : tl->pt) : "");
+    }
+    return s + (en ? std::format(" · next: level {}, {}", at, what) : std::format(" · próximo: nível {}, {}", at, what)) + talent;
   }
-  return s + (level >= t->learn ? (en ? " · complete" : " · completa") : "");
+  return s + (level >= t->learn ? (en ? " · complete" : " · completa") : "") + talent;
 }
 std::string spellScaleTextRaw(const BattleUnit& c, const std::string& kind, bool en);
 std::string spellScaleText(const BattleUnit& c, const std::string& kind, bool en) {
@@ -2546,6 +2678,55 @@ std::string spellScaleTextRaw(const BattleUnit& c, const std::string& kind, bool
   if (kind == "bloodyShot") {
     const DiceFaces p = bloodyShotBleed(lv);
     return std::format("{} · ×{} {} · {} {}D{} {}", reach(kBloodyShotRange), num(bloodyShotMul(lv)), pick("da arma", "weapon"), pick("sangra", "bleeds"), p.dice, p.faces, pick("rodadas", "rounds"));
+  }
+  const auto weapon = [&](int dice, int faces, double mul) {
+    std::string w = pick("arma", "weapon");
+    if (dice > 0) w += std::format(" + {}D{}", dice, faces);
+    if (std::abs(mul - 1) > 1e-9) w += std::format(" · ×{}", num(mul));
+    return w;
+  };
+  if (kind == "doubleStrike") {
+    const Dice p = doubleStrikePower(lv);
+    return std::format("{} · {}", pick("2 golpes", "2 blows"), weapon(p.dice, p.faces, skillMul(kind, lv)));
+  }
+  if (kind == "cleave") {
+    const DiceFaces p = cleavePower(lv);
+    return std::format("{} · {} · {}", pick("arco de 3 hexes", "3-hex arc"), weapon(p.dice, p.faces, skillMul(kind, lv)), pick("×2 nos grandes", "×2 on large bodies"));
+  }
+  if (kind == "shieldBash") {
+    const ShieldP p = shieldBashPower(lv);
+    return std::format("{} · {} {} {}", weapon(p.dice, p.faces, skillMul(kind, lv)), pick("atordoa", "stuns"), p.stunTurns, pick("turnos", "turns"));
+  }
+  if (kind == "provoke") {
+    const ProvokeP p = provokePower(lv);
+    const int more = static_cast<int>(std::lround(spellGains(kind, lv)('p')));
+    return std::format("{} {} · {} {}{}", pick("alcance", "range"), p.range, pick("raio", "radius"), p.radius, more > 0 ? std::format(" · +{}% {}", more, pick("de inimizade", "enmity")) : "");
+  }
+  if (kind == "bullRush") {
+    const BullRushP p = bullRushPower(lv);
+    return std::format("{} {} hexes · {} · {} {}D{}", pick("investida até", "charge up to"), grownReach(kind, kBullRushRange, lv), weapon(p.dice, p.faces, skillMul(kind, lv)),
+                       pick("parede", "wall"), p.wallDice, p.wallFaces);
+  }
+  if (kind == "executionerStrike") {
+    const ExecP p = executionerStrikePower(lv);
+    return std::format("{} · {} {}% {} ×{}", weapon(p.dice, p.faces, skillMul(kind, lv)), pick("abaixo de", "under"), static_cast<int>(std::lround(p.threshold * 100)),
+                       pick("do HP", "HP"), num(p.mult));
+  }
+  if (kind == "shoulderSmash") {
+    const SmashP p = shoulderSmashPower(lv);
+    return std::format("{} {} hexes · {} · {}", pick("largura", "width"), p.hexes, weapon(p.dice, p.faces, skillMul(kind, lv)), pick("empurra 2", "pushes 2"));
+  }
+  if (kind == "stampede") {
+    const DiceFaces p = stampedePower(lv);
+    return std::format("{} {} hexes · {}", pick("linha de", "line of"), grownReach(kind, kWrathRange, lv), weapon(p.dice, p.faces, skillMul(kind, lv)));
+  }
+  if (kind == "piercingThrust" || kind == "sweep" || kind == "trip") {
+    const TrackGains g = trackActive(kind, lv) ? spellGains(kind, lv) : TrackGains{};
+    if (kind == "piercingThrust")
+      return std::format("{} {} · {} · {} {}% {}", pick("linha: alcance da arma +", "line: weapon reach +"), 1 + g.n('l'), weapon(0, 0, skillMul(kind, lv)), pick("ignora", "ignores"),
+                         static_cast<int>(std::lround(kThrustArmorIgnore * 100 + g('x'))), pick("da DEF", "of DEF"));
+    if (kind == "sweep") return std::format("{} · {} · {}", pick("em volta", "around you"), weapon(g.n('d'), 4 + g.n('f'), skillMul(kind, lv)), pick("empurra", "pushes"));
+    return std::format("{} · {}", weapon(1 + g.n('d'), kTripBonusFaces + g.n('f'), skillMul(kind, lv)), hasTalent(kind, lv) ? pick("sangra · -20% nos atributos", "bleeds · -20% to every stat") : pick("sangra · -10% nos atributos", "bleeds · -10% to every stat"));
   }
   if (kind == "multiShot") {
     const DiceFaces p = multiShotPower(lv);
@@ -3194,6 +3375,7 @@ std::optional<std::vector<BattleStep>> castSpell(Battle& b, size_t caster, const
     spendTier(u, kind);
     s.tiles = line;
     if (kind == "piercing") s.dmgMul = piercingMul(u.level);
+    else s.dmgMul = skillMul(kind, u.level);
     steps.push_back(s);
   } else if (kind == "lightning") {
     const int foe = occAt(b, cell);
@@ -3226,9 +3408,15 @@ std::optional<std::vector<BattleStep>> castSpell(Battle& b, size_t caster, const
     s.type = BattleStep::Type::Combat;
     s.def = static_cast<size_t>(foe);
     if (p.dice > 0) s.bonusDice = p.faces, s.bonusDiceCount = p.dice, s.bonusFlat = 0;
+    s.dmgMul = skillMul(kind, u.level);
     BattleStep first = s;
     first.noCounter = true;
     steps.push_back(first);
+    if (hasTalent(kind, u.level)) {  // Terceiro Golpe: half a blow more, no counter, before the last one
+      BattleStep third = first;
+      third.dmgMul = s.dmgMul * 0.5;
+      steps.push_back(third);
+    }
     steps.push_back(s);
   } else if (kind == "frost") {
     if (tierRemaining(u, "frost") <= 0) return fail("Spell was not cast.");
@@ -3475,7 +3663,7 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
       target.bleedRoundsLeft.reset(), target.bleedRoundMarker.reset();
       if (!target.crippled) {
         target.crippled = true;
-        const double keep = 1 - kTripStatPenalty;
+        const double keep = 1 - (hasTalent("trip", actor.level) ? 0.2 : kTripStatPenalty);  // Tendão Cortado
         target.atk = static_cast<int>(jsRound(target.atk * keep)), target.mag = static_cast<int>(jsRound(target.mag * keep));
         target.def = static_cast<int>(jsRound(target.def * keep)), target.dex = static_cast<int>(jsRound(target.dex * keep));
         target.mov = std::max(1, static_cast<int>(jsRound(target.mov * keep)));
@@ -3495,9 +3683,20 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
       target.x = step.knockTo->x, target.y = step.knockTo->y;
       e.pushed = true;
     }
+    // Empurrão de Escudo (the Golpe de Escudo's talent): the struck shoved away from the attacker
+    if (hitStage && step.push > 0 && step.kind != "bullRush" && pushAway(b, ti, {actor.x, actor.y}, step.push)) e.pushed = true;
+    if (hitStage && step.drainUses > 0)  // Mão Ferida (the Desarmar's talent): a use of its strongest skill lost
+      for (int t = 9, left = step.drainUses; t >= 0 && left > 0; --t)
+        if (target.spells[t] > 0) target.spells[t] -= 1, --left;
   }
   if (!bonded) out.push_back(e);
   if (!target.alive) {
+    // Sentença (the Golpe do Carrasco's talent): a killing blow gives the skill's use back
+    if (hitStage && step.kind == "executionerStrike" && hasTalent(step.kind, actor.level))
+      if (const int tier = unitTierOf(actor, step.kind); tier >= 1 && tier <= 10) {
+        actor.spells[tier - 1] += 1;
+        out.push_back(statusEffect(ai, pick("Sentença: uso devolvido", "Sentence: use given back")));
+      }
     afterDeath(b, ti, out);
   } else {
     if (hitStage && step.sunderPct > 0) out.push_back(statusEffect(ti, std::format("{} -{}%", pick("Guarda quebrada", "Guard broken"), step.sunderPct)));
@@ -3535,7 +3734,8 @@ std::vector<BattleStep> vigilInterrupts(const Battle& b, size_t attacker, const 
     st.ids = {attacker}, st.tiles = {{a.x, a.y}};
     st.dice = 0, st.spellMul = 1, st.dmgMul = s.cond.vigilPct / 100.0;
     const EmberNumbers n = emberNumbers("sentinelVigil", s.level);
-    st.weaponBonusDice = n.dice, st.weaponBonusFaces = n.faces, st.weaponBonusBonus = 0;
+    st.weaponBonusDice = n.dice, st.weaponBonusFaces = n.faces, st.weaponBonusBonus = n.bonus;
+    st.stagger = hasTalent("sentinelVigil", s.level);  // Contra-Golpe Firme
     steps.push_back(st);
   }
   return steps;
@@ -3682,9 +3882,14 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
       return;
     }
     if (step.kind == "provoke") {  // castProvoke: no damage, a huge volatile enmity on every enemy it reaches
+      const double more = 1 + spellGains("provoke", att.level)('p') / 100;  // its track's extra enmity
       for (size_t id : step.ids) {
-        b.addEnmity(id, step.att, kProvokeCe, kProvokeVe);
+        b.addEnmity(id, step.att, kProvokeCe, kProvokeVe * more);
         out.push_back(statusEffect(id, "Provocado"));
+      }
+      if (hasTalent("provoke", att.level)) {  // Fúria Contida: the warrior's own ATK up
+        att.cond.rallyPct = std::max(att.cond.rallyPct, 10), att.cond.rallyTurns = std::max(att.cond.rallyTurns, 2);
+        out.push_back(statusEffect(step.att, pick("Fúria Contida +10%", "Held Fury +10%")));
       }
     }
     if (step.kind == "warCry") {  // Grito de Guerra: the allies rallied (ATK up for some of their turns), the foes afraid
@@ -3746,6 +3951,10 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
         out.push_back(m);
       }
       supportAffinity(b, step.att, step.ids[0]);
+      if (step.kind == "swapPost" && hasTalent(step.kind, att.level)) {  // Coragem do Posto: the swapped ally's ATK up
+        ally.cond.rallyPct = std::max(ally.cond.rallyPct, 10), ally.cond.rallyTurns = std::max(ally.cond.rallyTurns, 1);
+        out.push_back(statusEffect(step.ids[0], pick("Coragem do Posto +10%", "Post's Courage +10%")));
+      }
     }
     if (step.kind == "sentinelVigil") {  // Vigília da Sentinela: the stance, until the caster's next turn
       att.cond.vigilPct = step.vigilPct, att.cond.vigilRadius = step.vigilRadius;
@@ -3957,13 +4166,15 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
       // Armour-piercing: the defender's DEF counts 20% lower for this hit.
       const Fighter A = fighterAt(b, step.att, att.x, att.y);
       Fighter F = fighterAt(b, id, foe.x, foe.y);
-      const int softDef = std::max(0, static_cast<int>(std::floor(foe.def * (1 - kThrustArmorIgnore))));
+      const double ignore = kThrustArmorIgnore + spellGains("piercingThrust", att.level)('x') / 100;  // + its track's share
+      const int softDef = std::max(0, static_cast<int>(std::floor(foe.def * (1 - ignore))));
       // affinityUnit on the softened copy: the same bonus, applied to the softened DEF
       F.def = foe.def != 0 ? softDef * (F.def / foe.def) : 0;
       const Hit h = rollDamage(b, A, F, rng, true);
       weaponRolled = true;
       landed = h.landed;
-      dmg = thrustHits == 0 ? h.dmg : std::max(1, static_cast<int>(std::floor(h.dmg * 0.5)));
+      const double later = hasTalent("piercingThrust", att.level) ? 0.75 : 0.5;  // Atravessar
+      dmg = thrustHits == 0 ? h.dmg : std::max(1, static_cast<int>(std::floor(h.dmg * later)));
       crit = h.crit;
       if (landed) ++thrustHits;
     } else {
@@ -4072,6 +4283,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
       if (step.kind == "sweep") {
         const BattleHex before{foe.x, foe.y};
         knockBack(b, step.att, id);
+        if (hasTalent("sweep", att.level)) knockBack(b, step.att, id);  // Varrer Longe
         if (foe.x != before.x || foe.y != before.y) e.pushed = true;
       }
       if (step.kind == "shoulderSmash") {
@@ -4154,6 +4366,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
         if (!v.alive) continue;
         const int d = marked(v, std::max(1, rollDice(step.collideDice, step.collideFaces, 0, rng)));
         v.hp = std::max(0, v.hp - d);
+        if (v.hp > 0 && step.kind == "spearToss" && hasTalent(step.kind, att.level)) v.stunned = true, v.stunTurns = std::max(v.stunTurns, 1);  // Colisão Atordoante
         b.noteDamage(step.att, who, d, false);
         if (v.side != att.side) gainExp(att, v.level, d, 0.5, v.hp <= 0);
         BattleEffect c{who, d, false, false, false, false, false};

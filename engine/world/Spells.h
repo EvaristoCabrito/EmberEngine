@@ -94,6 +94,7 @@ struct BattleStep {
   std::optional<BattleHex> dragTo;     // Empalar e Arrastar: where the caster ends up, behind the foe
   bool rearSure = false;               // Salto de Vara: the blow comes from behind, whichever way the foe faces
   int disarmPct = 0, disarmTurns = 0;  // Desarmar: the struck foe's ATK down, no counter
+  int drainUses = 0;                   // ... its talent (Mão Ferida): the struck foe loses this many uses of its skills
   bool stagger = false;                // Gancho: the pulled foe cannot counter ...
   int staggerTurns = 0;                // ... for this many more of its own turns
   int vigilPct = 0, vigilRadius = 0;   // Vigília da Sentinela: the stance on the caster (Type::Effect)

@@ -5226,7 +5226,10 @@ class MapStage final : public Stage {
       return fail("refused but something was spent");
     }
     if (!exchange_) return fail("nothing played: " + tip_);
-    if (!spellFx_.active(now_ + 0.5f)) return fail("no effect playing");
+    // the old weapon skills have no effect of their own (the blow is the pose): their check is the rules' below
+    static const std::unordered_set<std::string> kNoFx = {"doubleStrike", "cleave", "piercingThrust", "sweep", "trip", "shoulderSmash", "stampede",
+                                                         "bullRush", "shieldBash", "executionerStrike", "provoke"};
+    if (!spellFx_.active(now_ + 0.5f) && !kNoFx.contains(kind)) return fail("no effect playing");
     scriptCheck_ = [this, kind, cb, tb, before, casterBefore, usesBefore, rationsBefore, fedBefore]() -> std::string {
       const e2::BattleUnit& t = battle_->units()[tb];
       const e2::BattleUnit& c = battle_->units()[cb];
