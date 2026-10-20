@@ -21,7 +21,7 @@ struct Push {
   uint gridLook;
   uint64_t grid;      // per hex Renderer::GridCell: flags, extra
   float gridSeconds;
-  uint pad;
+  uint wallFrom;      // smooth look: vertices from here on are the board's added side walls (BoardGround closeBoardSides); 0 = none
 };
 [[vk::push_constant]] Push push;
 
@@ -52,6 +52,7 @@ struct VSOut {
   float4 layers3 : TEXCOORD7;
   float4 layers4 : TEXCOORD8;
   float4 layers5 : TEXCOORD9;
+  nointerpolation float wall : TEXCOORD10;  // 1 on the board's added side walls
 };
 
 VSOut VSMain(uint id : SV_VertexID) {
@@ -74,6 +75,7 @@ VSOut VSMain(uint id : SV_VertexID) {
   o.layers3 = unpackUnorm8(lb.y);
   o.layers4 = unpackUnorm8(lb.z);
   o.layers5 = unpackUnorm8(lb.w);
+  o.wall = push.wallFrom != 0 && index >= push.wallFrom ? 1.0 : 0.0;
   return o;
 }
 
@@ -234,9 +236,14 @@ float3 sideTex(uint layer, float3 n, float3 wp, Grad zy, Grad xy, SamplerState s
 float4 PSMain(VSOut i) : SV_Target0 {
   const MeshFrame f = loadFrame(push.frame);
   SamplerState s = gSamplers[f.materialSampler];
-  const float3 n = normalize(i.normal);
+  // The board's added side walls are painted like the edge's lip above them (the user, 2026-10-19: "deixar o preenchimento
+  // inteiro da mesma cor que o resto das bordas"): the ground's own top material laid on the wall from the side, lit as the
+  // lip is (its normal tilted up), instead of the cliff texture facing away from the light.
+  const bool wall = i.wall > 0.5;
+  const float3 geometric = normalize(i.normal);
+  const float3 n = wall ? normalize(geometric + float3(0.0, 2.0, 0.0)) : geometric;
   const float3 wp = i.world;
-  const float2 tuv = wp.xz / 4.0;
+  const float2 tuv = (wall ? (abs(geometric.x) > abs(geometric.z) ? wp.zy : wp.xy) : wp.xz) / 4.0;
   Grad g, gzy, gxy;
   g.dx = ddx(tuv), g.dy = ddy(tuv);
   gzy.dx = ddx(wp.zy / 2.0), gzy.dy = ddy(wp.zy / 2.0);
@@ -314,5 +321,5 @@ float4 PSMain(VSOut i) : SV_Target0 {
   Surface surface = defaultSurface(wp, n, albedo);
   surface.normal = shading;
   surface.roughness = roughness;
-  return float4(applyGroundMarks(shade(f, surface), wp, smoothstep(0.5, 0.7, n.y)), 1.0);
+  return float4(applyGroundMarks(shade(f, surface), wp, smoothstep(0.5, 0.7, geometric.y)), 1.0);
 }

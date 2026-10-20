@@ -259,7 +259,12 @@ float3 moonDisc(float3 dir, float pixelAngle, float3 radiance, float3 moonDirect
                                                                                  0.5 + float2(p.x, -p.y) * 0.4, max(lod, 0.0));
   // Only the lit part of the moon covers the sky: the art paints the dark side opaque black, which read as a black disc on a
   // bright dusk sky (the user, 2026-10-19: "esse sol negro"); in the real world the dark side vanishes against the sky.
-  const float lit = smoothstep(0.0, 0.12, dot(art.rgb, float3(0.2126, 0.7152, 0.0722)));
+  // The dark side is told by a blurred copy of the art (4 mips down): a dark crater or sea on the lit side stays solid moon
+  // (judged pixel by pixel, the darkest maria let the sky's glow through: the user's "pontos brancos na lua").
+  const float4 coarse = gTextures[NonUniformResourceIndex(moonTexture)].SampleLevel(gSamplers[linearSampler],
+                                                                                    0.5 + float2(p.x, -p.y) * 0.4, max(lod, 0.0) + 4.0);
+  const float3 kLuma = float3(0.2126, 0.7152, 0.0722);
+  const float lit = smoothstep(0.0, 0.12, max(dot(art.rgb, kLuma), dot(coarse.rgb, kLuma) * 1.5));
   return lerp(radiance, art.rgb * glow * air, art.a * lit);
 }
 

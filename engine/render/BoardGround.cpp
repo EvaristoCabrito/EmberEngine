@@ -140,12 +140,18 @@ bool BoardGround::build(const e2::Board& board) {
   // The smooth look's cut edge is only a thin lip (0.35 under its ground): under raised ground the board showed huge holes (the
   // user, 2026-10-19: "quero que o cenário não tenha esses buracos enormes na elevações, pode preencher tudo?"). Its sides go down
   // to the lowest ground's lip, where the map's ground plane lies (MapStage). The hard and tabletop walls already reach the base.
+  // The walls are painted like the edge's lip (terrain.hlsl, push.wallFrom; the user: "deixar o preenchimento inteiro da mesma cor
+  // que o resto das bordas"): the vertices from wallFrom on are theirs.
+  uint32_t wallFrom = 0;
   {
     double low = 0;
     bool any = false;
     for (const e2::Cell& c : board.cells()) low = any ? std::min(low, c.groundY) : c.groundY, any = true;
+    wallFrom = static_cast<uint32_t>(looks[0].vertexCount());
     e2::closeBoardSides(looks[0], low - 0.35);
+    if (looks[0].vertexCount() == wallFrom) wallFrom = 0;
   }
+  meshes_[0].wallFrom = wallFrom;
   for (int i = 0; i < 3; ++i) {
     pack(looks[i], palette, meshes_[i]);
     upload(meshes_[i]);
@@ -400,6 +406,7 @@ TerrainView BoardGround::view(e2::EdgeStyle style) const {
   v.indices = m.indices.empty() ? 0 : bufferAddress(context_, m.indexBuffer);
   v.count = m.count;
   v.seamStep = style == e2::EdgeStyle::Tabletop ? static_cast<float>(e2::kStep) : 0.0f;
+  v.wallFrom = m.wallFrom;
   return v;
 }
 

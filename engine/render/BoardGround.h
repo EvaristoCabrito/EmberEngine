@@ -79,6 +79,7 @@ struct TerrainView {
   VkDeviceAddress record = 0, vertices = 0, indices = 0;
   uint32_t count = 0;  // vertices to draw (indices when indexed)
   float seamStep = 0.0f;  // tabletop: a dark seam on the walls at every this many units of height (0 = none)
+  uint32_t wallFrom = 0;  // smooth look: vertices from here on are the board's added side walls, painted like its edge (0 = none)
   explicit operator bool() const { return record != 0 && count != 0; }
 };
 
@@ -125,6 +126,7 @@ class BoardGround {
     Buffer vertexBuffer, indexBuffer;
     ImageUpload vertexUpload, indexUpload;
     uint32_t count = 0;
+    uint32_t wallFrom = 0;  // the first vertex of the board's added side walls (closeBoardSides); 0 = none
   };
 
   void texture(const std::string& asset);  // requests it once

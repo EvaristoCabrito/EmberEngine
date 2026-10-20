@@ -98,7 +98,7 @@ struct TerrainPush {
   uint32_t gridLook;
   VkDeviceAddress grid;   // per hex Renderer::GridCell
   float gridSeconds;
-  uint32_t pad;
+  uint32_t wallFrom;      // smooth look: the first vertex of the board's added side walls (0 = none)
 };
 static_assert(sizeof(TerrainPush) == 80);
 
@@ -2016,7 +2016,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
                                     marks ? static_cast<uint32_t>(markCols_) : 0u, marks ? bufferAddress(context_, frame.marks) : 0,
                                     static_cast<uint32_t>(markRows_),
                                     grid ? static_cast<uint32_t>(gridCols_) : 0u, grid ? static_cast<uint32_t>(gridRows_) : 0u, grid ? gridLook_ : 0u,
-                                    grid ? bufferAddress(context_, frame.grid) : 0, gridSeconds_, 0};
+                                    grid ? bufferAddress(context_, frame.grid) : 0, gridSeconds_, terrain_.wallFrom};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(terrainPush), &terrainPush);
       vkCmdDraw(cmd, terrain_.count, 1, 0, 0);
       gpuTimer_.end(cmd, terrainScope);
