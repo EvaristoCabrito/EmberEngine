@@ -2087,8 +2087,10 @@ class MapStage final : public Stage {
         const size_t i = static_cast<size_t>(e2::indexOf(board_->layout(), c, r));
         if (!litHex(i)) {
           ++hiddenUnits_;
+          noteShown(ui, false, c, r, i);
           continue;
         }
+        noteShown(ui, true, c, r, i);
       }
       // The scene's own idle unless the unit's catalog entry has the chosen pose. The mirror stays the scene's:
       // its side's facing against the unit's drawn direction, which is the same for every pose.
@@ -2125,6 +2127,7 @@ class MapStage final : public Stage {
       const SpriteClipId clip = p ? sprites_.find(p->set, p->clip) : sprites_.find(u.set, u.clip);
       if (clip == kNoSpriteClip) {
         ++missing_;
+        if (ui < shownLast_.size() && shownLast_[ui] != 2) logWarn("unit {} not drawn: no sprite clip for pose '{}'", u.name, shown), shownLast_[ui] = 2;
         continue;
       }
       uint32_t frame = 0;
@@ -8344,6 +8347,17 @@ class MapStage final : public Stage {
   e2::FogMask fogMask_;
   bool fogReady_ = false, replayed_ = false, fogUpdatedThisFrame_ = false, occludersAdded_ = false;
   std::vector<uint8_t> fogStates_;  // per hex, as of the mask on show (main thread)
+  // The hunt for the vanishing wolf (the user, 2026-10-19): an enemy going hidden or back on show is logged once with what decided it.
+  std::vector<uint8_t> shownLast_;  // per scene unit: 0 unknown, 1 shown, 3 hidden by fog, 2 no clip (logged)
+  void noteShown(size_t ui, bool shown, int c, int r, size_t i) {
+    if (shownLast_.size() != scene_->units.size()) shownLast_.assign(scene_->units.size(), 0);
+    const uint8_t now = shown ? 1 : 3;
+    if (shownLast_[ui] == now) return;
+    if (shownLast_[ui] != 0)
+      logInfo("fog: {} at ({}, {}) {}: sight state {}, lit {}, walking {}", scene_->units[ui].name, c, r, shown ? "on show again" : "hidden",
+              i < fogStates_.size() ? static_cast<int>(fogStates_[i]) : -1, i < fogLit_.size() ? static_cast<int>(fogLit_[i]) : -1, !unitWalk_[ui].points.empty());
+    shownLast_[ui] = now;
+  }
   std::vector<uint8_t> fogLit_;     // per hex: kFogVisible where the mask on show is lit (in sight, still lingering, beside the party)
   // Whether a hex (its index) is drawn lit on the mask on show: an enemy standing on it is drawn, with its bar and locks.
   bool litHex(size_t i) const { return i < fogLit_.size() && fogLit_[i] == e2::kFogVisible; }
