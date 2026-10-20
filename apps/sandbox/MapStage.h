@@ -381,7 +381,7 @@ class MapStage final : public Stage {
       // the photo: the dense fog over the sky, as on 2026-10-19 21:49; a painting showed through the fog). The fog itself is untouched;
       // maps without fog unchanged; the panel's Fundo still offers the painting.
       background_ = options.background >= 0 ? std::min(options.background, 4)
-                    : fog_.has_value()                                                              ? 1
+                    : fog_.has_value() && !ashenForest()                                            ? 1  // Ashen Forest: its painting, to see (the user, 2026-10-20)
                     : !scene_->backdrop.empty() && (aldeia() || scene_->environment != "indoor") ? 4
                                                                                                   : 1;
       if (!scene_->backdrop.empty()) backdropFit_ = loadBackdropFit(scene_->backdrop);
