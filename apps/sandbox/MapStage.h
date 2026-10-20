@@ -2396,7 +2396,11 @@ class MapStage final : public Stage {
       l.sunDirection = placed.light;
     } else {
       const std::string_view name = t.name;
-      const float elevation = name == "dawn" ? glm::radians(6.0f) : name == "dusk" ? glm::radians(4.0f) : t.stageElevation;
+      // aldeia's dusk sits lower (the user, 2026-10-19: "acertasse a luz do sol para fim do dia": at 4 deg the air left it 32,000 lux,
+      // white, and the camera only 1.1 stops under the meter, a clear day): at 2.5 deg the air reddens and dims it, the shadows
+      // lengthen and the camera darkens by itself. Every other map keeps its 4 deg (one map at a time).
+      const float duskDegrees = aldeia() ? 2.5f : 4.0f;
+      const float elevation = name == "dawn" ? glm::radians(6.0f) : name == "dusk" ? glm::radians(duskDegrees) : t.stageElevation;
       float dir[3];
       e2::lightDirection(t.stageAzimuth, elevation, dir);
       l.sunDirection = glm::normalize(glm::vec3(dir[0], dir[1], dir[2]));
