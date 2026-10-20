@@ -274,7 +274,9 @@ BattleHex stepFromHex(BattleHex p, CubeI dir) {
   const CubeI c = toCubeI(p);
   return fromCubeI(c.q + dir.q, c.r + dir.r);
 }
-// coneSector: a slim hex cone `radius` rows deep, 3, 3, 5, 5, 7, 7 wide.
+// coneSector: a slim hex cone `radius` rows deep, 1, 3, 3, 5, 5, 7 wide: a single hex next to the caster, opening from there (the user,
+// 2026-10-19: "it must start with a single hex and open up to three or else its not a cone"; Engine2's was 3, 3, 5, 5, 7, 7, which
+// starts three wide). Shared by Mãos Flamejantes and Sopro Venenoso.
 std::vector<BattleHex> coneSector(const Battle& b, BattleHex from, CubeI dir, int radius) {
   int i = -1;
   for (int k = 0; k < 6; ++k)
@@ -287,7 +289,7 @@ std::vector<BattleHex> coneSector(const Battle& b, BattleHex from, CubeI dir, in
     std::vector<CubeI> row;
     for (int a = k; a >= 0; --a) row.push_back({left.q * a + dir.q * (k - a), left.r * a + dir.r * (k - a), 0});
     for (int a = 1; a <= k; ++a) row.push_back({right.q * a + dir.q * (k - a), right.r * a + dir.r * (k - a), 0});
-    const int width = 3 + 2 * ((k - 1) / 2);
+    const int width = 1 + 2 * (k / 2);
     const int half = (width - 1) / 2;
     for (int j = k - half; j <= k + half; ++j) {
       if (j < 0 || j >= static_cast<int>(row.size())) continue;
