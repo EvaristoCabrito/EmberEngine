@@ -46,7 +46,7 @@
 namespace ember {
 
 // GameApp DEFAULT_TEST_LEVEL ("the one place to change the test-mode level") and TEST_EMBER.
-inline constexpr int kDefaultTestLevel = 15;
+inline constexpr int kDefaultTestLevel = 30;  // was 15 (the user, 2026-10-19: "subir o level dos testes para 30")
 inline constexpr long long kTestEmber = 900000;
 
 struct TestSession {

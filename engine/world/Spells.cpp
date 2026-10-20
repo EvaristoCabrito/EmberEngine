@@ -1828,6 +1828,12 @@ std::string promotionName(const std::string& classId) {
   if (classId == "aldric" || classId == "lancer") return "Lanceiro";
   if (classId == "sentinel") return "Sentinela";
   if (classId == "templar") return "Templário";
+  if (classId == "healer") return "Curandeiro";
+  if (classId == "cleric") return "Clérigo";
+  if (classId == "bishop") return "Bispo";
+  if (classId == "conjurer") return "Conjurador";
+  if (classId == "sorcerer") return "Arcanista";
+  if (classId == "necromancer") return "Necromante";
   return classId;
 }
 void setPromotion(BattleUnit& u, const std::string& classId) {
@@ -3195,7 +3201,8 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
       }
     if (foe.side != att.side) {
       const bool kill = foe.hp <= 0;
-      const bool mageClass = att.classId == "mage" || att.classId == "voss" || att.classId == "conjurer" || att.classId == "warlock" || att.classId == "elementalist";
+      const bool mageClass = att.classId == "mage" || att.classId == "voss" || att.classId == "conjurer" || att.classId == "warlock" || att.classId == "elementalist" ||
+                           att.classId == "sorcerer" || att.classId == "necromancer";
       const bool doubled = kill && !aoe && (mageClass || step.kind == "longShot" || step.kind == "bloodyShot");
       const double mul = doubled ? 2 : aoe && !firstAoe ? 0.5 : 1;
       if (aoe) firstAoe = false;

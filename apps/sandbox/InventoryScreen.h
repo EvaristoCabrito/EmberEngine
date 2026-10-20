@@ -61,7 +61,8 @@ class InventoryScreen {
   static constexpr ImU32 kMuted = IM_COL32(180, 180, 180, 255), kFg = IM_COL32(240, 240, 240, 255), kAccent = IM_COL32(216, 216, 216, 255),
                          kDanger = IM_COL32(181, 74, 50, 255), kBorder = IM_COL32(74, 74, 74, 255);
   static constexpr const char* kPotions[7] = {"weak", "mid", "potent", "disease", "manaSmall", "manaMid", "manaLarge"};
-  static constexpr const char* kBagIcon = "game/icons/refresh-001/packs/small-pouch.png";
+  static constexpr const char* kBagIcon = "game/icons/refresh-001/packs/small-pouch.png";  // Engine2's, no longer drawn
+  static constexpr const char* kBagArt = "content/ui/status/mochila-sq-v01.jpg";           // the user's Mochila (2026-10-19)
 
   struct DollSlot {
     const char* id;
@@ -180,7 +181,7 @@ class InventoryScreen {
     x -= 120;
     ImGui::SetCursorScreenPos({x, a.y + 8});
     if (emberPlate("##tobackpack", {120, 48}, [&](ImDrawList* d, ImVec2 p, ImVec2 q, ImU32 ink) {
-          if (const UiImage* icon = art(c, kBagIcon)) d->AddImage(icon->texture, {p.x + 10, p.y + 8}, {p.x + 42, p.y + 40});
+          if (const UiImage* icon = uiImage(std::filesystem::path(kBagArt))) d->AddImage(icon->texture, {p.x + 10, p.y + 8}, {p.x + 42, p.y + 40});
           d->AddText(uiFont(UiFont::Ui), 12.0f, {p.x + 50, (p.y + q.y) / 2 - 7}, ink, "Mochila");
         }))
       backpack_ = true;
@@ -387,7 +388,7 @@ class InventoryScreen {
           d->AddText(uiFont(UiFont::Ui), 12.0f, {p.x + 30, (p.y + q.y) / 2 - 7}, ink, "Voltar");
         }))
       close = true;
-    if (const UiImage* icon = art(c, kBagIcon)) dl->AddImage(icon->texture, {a.x + 104, a.y + 6}, {a.x + 140, a.y + 42});
+    if (const UiImage* icon = uiImage(std::filesystem::path(kBagArt))) dl->AddImage(icon->texture, {a.x + 104, a.y + 6}, {a.x + 140, a.y + 42});
     emberTitle(dl, {a.x + 146, a.y + 10}, 24.0f, "Mochila");
     dl->AddText(uiFont(UiFont::Ui), 12.0f, {a.x + 104, a.y + 46}, kMuted, (hero_ + " · clique num item para usar, equipar ou jogar fora").c_str());
     hungerBar(c, dl, {a.x + 104, a.y + 64}, 260);

@@ -1133,6 +1133,70 @@ class OverworldStage : public Stage {
     endPanel();
   }
 
+  // Caminho de classe: from level 15 every hero chooses once between the two prestige classes of its own (the user, 2026-10-19: "vamos
+  // colocar para todos, a partir do level 15 podem escolher entre uma das duas classes de prestígio"); the choice goes into
+  // save.promotions, which the fights read (world/Spells.cpp setPromotion) and the inn / inventory / world map read for the class.
+  void drawPromotions(const std::vector<std::string>& heroes, float inner) {
+    struct Path {
+      const char *base, *first, *second;
+    };
+    static const Path kPaths[] = {{"mage", "elementalist", "warlock"},  {"voss", "elementalist", "warlock"}, {"swordsman", "paladin", "heavyKnight"},
+                                  {"archer", "ranger", "assassin"},     {"aldric", "sentinel", "templar"},   {"healer", "cleric", "bishop"},
+                                  {"conjurer", "sorcerer", "necromancer"}};
+    struct Row {
+      std::string hero;
+      const Path* path;
+    };
+    std::vector<Row> rows;
+    for (const std::string& hero : heroes) {
+      const std::string base = world_.tables()["baseClass"].value(hero, "");
+      for (const Path& p : kPaths)
+        if (base == p.base) {
+          rows.push_back({hero, &p});
+          break;
+        }
+    }
+    if (rows.empty()) return;
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    ImFont* ui = uiFont(UiFont::Ui);
+    kicker(tr("Caminho de classe", "Class path"), 14.0f);
+    const ImVec2 a = ImGui::GetCursorScreenPos();
+    const float rowH = 64.0f;
+    slot(a, {a.x + inner, a.y + 16 + rowH * static_cast<float>(rows.size())});
+    float y = a.y + 10;
+    for (const Row& row : rows) {
+      const std::string& hero = row.hero;
+      const int level = static_cast<int>(num(save_.value("levels", e2::Json::object()), hero, 1));
+      std::string promo;
+      if (save_.contains("promotions") && save_["promotions"].contains(hero) && save_["promotions"][hero].is_string()) promo = save_["promotions"][hero].get<std::string>();
+      portrait(dl, hero, {a.x + 12, y}, {a.x + 52, y + 48});
+      const std::string cls = promo.empty() ? e2::promotionName(row.path->base) : e2::promotionName(promo);
+      const std::string head = std::format("{} · {} {} · {}", hero, tr("Nv", "Lv"), level, cls);
+      dl->AddText(ui, 14.0f, {a.x + 62, y + 2}, kFg, head.c_str());
+      const std::string firstName = e2::promotionName(row.path->first), secondName = e2::promotionName(row.path->second);
+      if (!promo.empty()) {
+        dl->AddText(ui, 12.0f, {a.x + 62, y + 24}, kMuted, tr("Classe de prestígio escolhida: fica para o resto da campanha.", "Prestige class chosen: it stays for the rest of the campaign.").c_str());
+      } else if (level < 15) {
+        const std::string hint = std::format("{} {} / {}.", tr("No nível 15 escolhe o caminho:", "At level 15 you choose the path:"), firstName, secondName);
+        dl->AddText(ui, 12.0f, {a.x + 62, y + 24}, kMuted, hint.c_str());
+      } else {
+        dl->AddText(ui, 12.0f, {a.x + 62, y + 24}, kMuted, tr("Escolha a classe de prestígio (fica para o resto da campanha):", "Choose the prestige class (it stays for the rest of the campaign):").c_str());
+        ImGui::PushID(hero.c_str());
+        if (emberBigButton("##first", upperUtf8(firstName).c_str(), {a.x + inner - 300, y + 8}, {140, 30}, false, 11.0f)) {
+          save_["promotions"][hero] = row.path->first;
+          write();
+        }
+        if (emberBigButton("##second", upperUtf8(secondName).c_str(), {a.x + inner - 150, y + 8}, {140, 30}, false, 11.0f)) {
+          save_["promotions"][hero] = row.path->second;
+          write();
+        }
+        ImGui::PopID();
+      }
+      y += rowH;
+    }
+    ImGui::SetCursorScreenPos({a.x, a.y + 24 + rowH * static_cast<float>(rows.size())});
+  }
+
   // Conversas de companheiros (Engine2 CompanionConversations.tsx): the leader, a companion, and that pair's topics (one per
   // affinity tier); a topic opens the conversation, whose first reply changes the affinity for good.
   void drawConversationsTab(const std::vector<std::string>& heroes, float inner) {
@@ -1429,6 +1493,7 @@ class OverworldStage : public Stage {
       }
       ImGui::SetCursorScreenPos({a.x, a.y + 128});
     }
+    drawPromotions(heroes, inner);
     // Formação inicial: the radius-2 board (rows 3-4-5-4-3), two clicks swap two cells.
     kicker("Formação inicial", 14.0f);
     {

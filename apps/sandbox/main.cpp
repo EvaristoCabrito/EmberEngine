@@ -564,6 +564,16 @@ struct BlankStage final : Stage {
 };
 
 MapStageOptions mapOptions(const Options& o);
+// Modo teste: the session's heroes at its level (30) and the class path each chose on the Party screen.
+void applyTestHeroes(MapStageOptions& options, const e2::Json& tsave) {
+  const e2::Json levels = tsave.value("levels", e2::Json::object());
+  for (const auto& [name, level] : levels.items())
+    if (level.is_number_integer()) options.heroProgress[name] = {level.get<int>(), 0};
+  const e2::Json promotions = tsave.value("promotions", e2::Json::object());
+  if (promotions.is_object())
+    for (const auto& [name, cls] : promotions.items())
+      if (cls.is_string()) options.heroClass[name] = cls.get<std::string>();
+}
 
 std::unique_ptr<Stage> makeStage(const Options& o, VulkanContext& context, Renderer& renderer, AssetManager& assets, JobSystem& jobs) {
   if (o.battle) {
@@ -779,6 +789,7 @@ int runCapture(const Options& o) {
       options.spellsMenu = options.choicesPanel = test;  // Modo teste's tools, as in the game
       if (world.load("content/engine2/overworld.json")) options.world = &world;  // the status sheet's Mochila / Equipar
       if (test) testSession = freshTestSession(campaign);
+      if (test) applyTestHeroes(options, testSession->save);
       if (options.world) setUpExplore(options, test ? testSession->save : campaign.activeSave(), world, test);
       if (options.world) {  // the party and its formation (--formation "Kael,,Neera,...": the board's cells instead of the save's)
         e2::Json save = test ? testSession->save : campaign.activeSave();
@@ -1354,7 +1365,7 @@ int runWindow(const Options& o) {
         playing = pending->campaignId;
         // Magias and Escolhas are Modo teste's tools: a campaign battle shows only the game (user 2026-10-16).
         options.spellsMenu = options.choicesPanel = testSession.has_value() || playing.empty();
-        if (!playing.empty()) {
+        if (!playing.empty() && !testSession) {
           // The heroes as the save has them (levels and XP).
           const e2::Json save = campaign.activeSave();
           const e2::Json levels = save.value("levels", e2::Json::object()), xp = save.value("xp", e2::Json::object());
@@ -1372,6 +1383,7 @@ int runWindow(const Options& o) {
             for (const auto& [pair, v] : scores.items())
               if (v.is_number()) options.affinityScores[pair] = v.get<double>();
         }
+        if (testSession) applyTestHeroes(options, testSession->save);
         // A free-roam map: who sits there and who walks (the campaign's save, or Modo teste's); where the party comes in.
         if (hasWorld) setUpExplore(options, testSession ? testSession->save : campaign.activeSave(), world, testSession.has_value() || playing.empty());
         // The campaign's party (or Modo teste's), laid out by the Party screen's formation; the editor's Testar keeps the draft's places.
