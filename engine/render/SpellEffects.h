@@ -27,6 +27,7 @@
 #include "render/vfx/CombatFx.h"
 #include "render/vfx/Fireball.h"
 #include "render/vfx/HolyLight.h"
+#include "render/vfx/FrostLine.h"
 #include "render/vfx/IceStorm.h"
 #include "render/vfx/Lightning.h"
 #include "render/vfx/SpellBolts.h"
@@ -127,7 +128,7 @@ class SpellEffects {
   void build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out, std::vector<Light>& lights);
   const VfxFrame& vfx() const { return vfx_; }
   bool active(float now) const;
-  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), warrior_.clear(), ranger_.clear(), lancer_.clear(); }
+  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), frosts_.clear(), warrior_.clear(), ranger_.clear(), lancer_.clear(); }
   // A version that keeps Engine2's own timeline decides when the hit lands: seconds from the cast (Míssil Mágico 02:
   // Engine2's charge, then the flight). Below 0: the version lands on the caller's impact (the pose's).
   float impactDelay(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const;
@@ -227,6 +228,9 @@ class SpellEffects {
   std::vector<IceStorm> storms_;      // Tempestade de Gelo 01 (Engine2's Blizzard2D) / 02 (ours, 3D)
   std::vector<SpellBolt> bolts_;      // Míssil Mágico 03, Raio Divino 01 (ours, 3D)
   std::vector<Lightning> lightnings_; // Relâmpago / Relâmpago Maior / Choque 02 (ours, 3D)
+  std::vector<FrostLine> frosts_;     // Frost 02 (ours, 3D)
+  // Frost's 3D version (02).
+  static bool isFrost(const std::string& kind, int look) { return look == 2 && kind == "frost"; }
   // The lightning spells' 3D version (02).
   static bool isLightning(const std::string& kind, int look) { return look == 2 && (kind == "lightning" || kind == "lightningTier3" || kind == "shock"); }
   // The bolt of Míssil Mágico 03 / Raio Divino 01, or none.

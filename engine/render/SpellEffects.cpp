@@ -72,11 +72,12 @@ int SpellEffects::looks(const std::string& kind) {
   if (kind == "burningHands" || kind == "poisonBreath") return 2;
   // Tempestade de Gelo: 01 Engine2's Blizzard2D (the enemies'), 02 ours in 3D (the heroes'): vfx/IceStorm.
   if (kind == "iceStorm") return 2;
+  if (kind == "frost") return 2;  // 01 the flipbook cards, 02 ours in 3D (vfx/FrostLine)
   // 01 of a spell with no flipbook-card version: Engine2's own effect, ported.
   if (kind == "fireball" || kind == "bless" || kind == "causticVenom" || kind == "phantasmalForce" ||
       kind == "webOfDreams" || kind == "burningHands" || kind == "poisonBreath" || kind == "cleave" || kind == "sweep")
     return 1;
-  static const char* kVersion01[] = {"lightning", "lightningTier3", "shock", "frost", "cureMinor", "longShot", "piercing", "piercingThrust",
+  static const char* kVersion01[] = {"lightning", "lightningTier3", "shock", "cureMinor", "longShot", "piercing", "piercingThrust",
                                      "doubleStrike"};
   for (const char* k : kVersion01)
     if (kind == k) return 1;
@@ -110,6 +111,7 @@ int SpellEffects::engine2Look(const std::string& kind) {
   if (kind == "cleave") return 1;                                    // CleaveSweepVFX
   if (kind == "sweep") return 1;                                     // VarreduraVFX
   if (kind == "iceStorm") return 2;  // ours in 3D (Engine2's Blizzard2D, 01, is the enemies': content/fx/spell-looks.json)
+  if (kind == "frost") return 2;     // Frost, ours in 3D (vfx/FrostLine; 01 = the cards, the enemies')
   return 0;
 }
 
@@ -217,6 +219,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     if (kind == "iceStorm" && !storms_.empty()) end = std::max(end, storms_.back().start() + 1.0f);  // its first second, not the whole storm
     if (isBolt(kind, look) && !bolts_.empty()) end = std::max(end, bolts_.back().end());
     if (isLightning(kind, look) && !lightnings_.empty()) end = std::max(end, lightnings_.back().end());
+    if (isFrost(kind, look) && !frosts_.empty()) end = std::max(end, frosts_.back().end());
     std::erase_if(casts_, [&](const Cast& c) { return c.end <= start; });
     casts_.push_back({owner, end});
   }
@@ -303,7 +306,12 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     else lancer_.vigilStrike(foe, caster.feet, impact);
     return true;
   }
-  if (isLightning(kind, look)) {
+  if (isFrost(kind, look)) {
+    // Frost 02, ours, in 3D (vfx/FrostLine): ice erupts on every hex of the line, nearest first.
+    std::vector<glm::vec3> hexes;
+    for (const Spot& s : targets) hexes.push_back(s.feet);
+    frosts_.emplace_back(caster.feet, heightOf(caster), std::move(hexes), start, impact, 0xf2057u);
+  } else if (isLightning(kind, look)) {
     // Relâmpago 02, ours, in 3D (vfx/Lightning): a bolt from the sky on every struck body; Choque is the same at 3/4 size.
     std::vector<Lightning::Target> struck;
     for (const Spot& s : targets) struck.push_back({s.feet, heightOf(s)});
@@ -671,6 +679,7 @@ bool SpellEffects::active(float now) const {
   if (std::any_of(storms_.begin(), storms_.end(), [&](const IceStorm& s) { return !s.done(now); })) return true;
   if (std::any_of(bolts_.begin(), bolts_.end(), [&](const SpellBolt& b) { return !b.done(now); })) return true;
   if (std::any_of(lightnings_.begin(), lightnings_.end(), [&](const Lightning& l) { return !l.done(now); })) return true;
+  if (std::any_of(frosts_.begin(), frosts_.end(), [&](const FrostLine& f) { return !f.done(now); })) return true;
   return std::any_of(elements_.begin(), elements_.end(), [&](const Element& e) { return e.end > now; });
 }
 
@@ -714,6 +723,8 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   for (const SpellBolt& b : bolts_) b.build(now, camera, vfx_, vfxLights);
   std::erase_if(lightnings_, [&](const Lightning& l) { return l.done(now); });
   for (const Lightning& l : lightnings_) l.build(now, camera, vfx_, vfxLights);
+  std::erase_if(frosts_, [&](const FrostLine& f) { return f.done(now); });
+  for (const FrostLine& f : frosts_) f.build(now, vfx_, vfxLights);
   std::erase_if(storms_, [&](const IceStorm& s) { return s.done(now); });
   if (!storms_.empty()) {
     // Engine2's two sheets, only when a storm of version 01 is on the board.

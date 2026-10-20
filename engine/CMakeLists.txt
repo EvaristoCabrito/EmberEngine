@@ -25,6 +25,7 @@ add_library(EmberEngine STATIC
   render/vfx/Fireball.cpp
   render/vfx/Bless.cpp
   render/vfx/HolyLight.cpp
+  render/vfx/FrostLine.cpp
   render/vfx/IceStorm.cpp
   render/vfx/SpellBolts.cpp
   render/vfx/Lightning.cpp

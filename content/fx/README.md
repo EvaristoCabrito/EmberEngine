@@ -34,6 +34,7 @@ at the nearest foe every 3 s), `--tatica` (2D view), `--spells-menu-open` (the M
 | Relâmpago Maior (`lightningTier3`) | 01 | the same as Relâmpago 01 | `lightning()` |
 | Choque (`shock`) | 01 | Relâmpago 01 at 3/4 size | `lightning()` |
 | Frost (`frost`) | 01 | flipbook cards: cold on the caster; ice eruption + ring + icy flash on every hex of the line, nearest first | `frost()` |
+| Frost (`frost`) | 02 | **ours, 3D** (2026-10-19; the heroes' default; 01 stays the enemies'): a frost ring contracts round the caster over a frosting floor, snow and ice dust spiral in to the hand, six shards orbit it and are thrown down the line at the cast; on every hex of the line, nearest first (0.055 s apart), a cluster of crystal spikes (a tall one and satellites leaning out) erupts overshooting, ice chips fly, two frost rings and a puff of ice dust race out, the floor frosts over from the hex's middle, a strong cold flash settles into a glow; after a hold the spikes crack and shatter into splinters. Reuses the Tempestade de Gelo 02 crystal / ring / dust parts (`vfx/IceParts.h`) | `render/vfx/FrostLine.cpp` |
 | Cura Menor (`cureMinor`) | 01 | flipbook cards: gold ring under the caster; ring, pillar of light and motes on the healed unit, warm glow | `cure()` |
 | Tiro Longo (`longShot`) | 01 | the arrow (solid, lit by the scene) in a shallow arch, pointing where it flies; sparks on a hit | `arrow()` |
 | Tiro Perfurante (`piercing`) | 01 | Tiro Longo 01 flying on through the line | `arrow()` |
