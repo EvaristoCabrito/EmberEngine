@@ -4247,6 +4247,16 @@ class MapStage final : public Stage {
           if (!undead) spot.cardHeight = 0.0f;
           spots.push_back(spot);
         }
+      } else if (s.kind == "circleOfHealing" || s.kind == "judgment") {  // the Curandeiro's areas: the hexes; only the units it reaches (`ids`) keep their card height
+        for (const e2::BattleHex& h : s.tiles) {
+          SpellEffects::Spot spot = hexSpot(h);
+          const bool reached = std::any_of(s.ids.begin(), s.ids.end(), [&](size_t id) {
+            const e2::BattleUnit& u = battle_->units()[id];
+            return u.alive && u.x == h.x && u.y == h.y;
+          });
+          if (!reached) spot.cardHeight = 0.0f;
+          spots.push_back(spot);
+        }
       } else if (s.type == StepType::Spell || s.type == StepType::Effect) {
         for (const e2::BattleHex& h : s.tiles) spots.push_back(hexSpot(h));
       } else if (s.type == StepType::Food) {
@@ -4551,7 +4561,8 @@ class MapStage final : public Stage {
                                    "meteor",         "absoluteZero",  "chainLightning", "eruption",       "glacialGale",   "wrathOfTheSkies", "primordialEmber",
                                    "steelWhirlwind", "guardBreak",    "warCry",         "leapingStrike",
                                    "venomArrow",     "arrowRain",     "explosiveArrow", "cripplingShot",  "arrowStorm",    "deathShot",
-                                   "spearToss",      "hookPull",      "poleVault",      "disarm",         "swapPost",      "impaleDrag",  "sentinelVigil"};
+                                   "spearToss",      "hookPull",      "poleVault",      "disarm",         "swapPost",      "impaleDrag",  "sentinelVigil",
+                                   "circleOfHealing", "resurrection", "judgment"};
     // KIND or KIND:VERSION (the version number of the Magias menu; default the menu's choice, at least 01).
     std::string kind = options_.fxTest;
     int look = 0;
@@ -4570,10 +4581,10 @@ class MapStage final : public Stage {
   //   food:CASTER               Criar Comida e Água (its allies within 2 hexes fed)
   //   potion:ACTOR:ID:TARGET    the target is first stood beside the actor (or the actor itself)
   //   refuse:<a step>           the game must refuse it (nothing played, nothing spent)
-  int sceneUnitNamed(const std::string& name) const {
+  int sceneUnitNamed(const std::string& name, bool aliveOnly = true) const {
     for (size_t i = 0; i < scene_->units.size(); ++i)
       if (unitBattle_[i] >= 0 && battle_->units()[static_cast<size_t>(unitBattle_[i])].name == name &&
-          battle_->units()[static_cast<size_t>(unitBattle_[i])].alive)
+          (!aliveOnly || battle_->units()[static_cast<size_t>(unitBattle_[i])].alive))
         return static_cast<int>(i);
     return -1;
   }
@@ -4640,6 +4651,15 @@ class MapStage final : public Stage {
       for (e2::BattleUnit& v : battle_->units())
         if (v.side == "enemy") v.alive = false, v.hp = 0;
       return logInfo("battle script: wipe: win rule {}, end on offer {}", battle_->win(), battle_->winAvailable());
+    }
+    if (p[0] == "kill" && p.size() > 1) {  // "kill:<unit>": the unit falls where it stands (its card gone), for a Ressurreição
+      const int gi = sceneUnitNamed(p[1]);
+      if (gi < 0) return fail("no such unit");
+      e2::BattleUnit& v = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(gi)])];
+      v.alive = false, v.hp = 0;
+      unitDiedAt_[static_cast<size_t>(gi)] = -1000.0f;
+      unitShot_[static_cast<size_t>(gi)] = {};
+      return logInfo("battle script: kill {}: fallen at ({}, {})", p[1], v.x, v.y);
     }
     if (p[0] == "goto" && p.size() > 3) {  // "goto:<unit>:<x>:<y>": the unit set down on a hex (a waypoint, for captures)
       const int gi = sceneUnitNamed(p[1]);
@@ -5030,7 +5050,7 @@ class MapStage final : public Stage {
     }
     int ti = ci;
     if ((p[0] == "cast" && p.size() > 3) || (p[0] == "potion" && p.size() > 3)) {
-      ti = sceneUnitNamed(p[3]);
+      ti = sceneUnitNamed(p[3], p[2] != "resurrection");  // a Ressurreição is cast on a fallen one
       if (ti < 0) return fail("no such target");
       // the Gancho takes a foe 2+ hexes away: one stood that far by a "far" step before is left where it is
       const bool keep = p[2] == "hookPull" && e2::Battle::distance({caster.x, caster.y}, {battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(ti)])].x,
@@ -5164,6 +5184,11 @@ class MapStage final : public Stage {
         return "";
       }
       if (kind == "sentinelVigil") return c.cond.vigilPct > 0 ? "" : "no vigil on the caster";
+      // The Curandeiro's: the fallen stands again; the circle heals the hurt target (the `hurt` step before it)
+      if (kind == "resurrection") {
+        logInfo("battle script: resurrection: {} alive {}, hp {} -> {}, moved {} acted {}", t.name, t.alive, before.hp, t.hp, t.moved, t.acted);
+        return t.alive && t.hp > 0 ? "" : "still fallen";
+      }
       if (kind == "createFoodAndWater") {
         for (const auto& [i, full] : fedBefore) {
           const e2::BattleUnit& v = battle_->units()[i];
@@ -5362,6 +5387,13 @@ class MapStage final : public Stage {
         continue;
       }
       if (e.moved && !e.pushed && e.amount == 0 && !e.died) continue;  // a charge's walk: nothing to say
+      if (e.revived) {  // Ressurreição: the card stands again where it fell, in its idle
+        unitDiedAt_[u] = -1.0f;
+        unitShot_[u] = {};
+        const e2::BattleUnit& bu = battle_->units()[e.unit];
+        unitPos_[u] = anchorWorld(bu, {bu.x, bu.y});
+        unitWalk_[u] = Walk{};
+      }
       if (e.heal) {
         // a heal's +HP, else what a cure, a meal or a mana potion did ("curado", "+2 rações", "+3 magia")
         popups_.push_back({u, e.text.empty() ? "+" + std::to_string(e.amount) : e.text, IM_COL32(170, 226, 150, 255), now_, false});

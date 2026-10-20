@@ -613,6 +613,20 @@ Gancho, Salto de Vara, Desarmar, Troca de Posto, Empalar e Arrastar, Vigília da
   `vigil:<attacker>:<target>` tests the interrupt).
 - Icons: the user's art copied to `content/ui/spells/<kind>.jpg`. Tests: `--promote Aldric=aldric:25`, scratchpad `run_lancer.ps1`.
 
+## Magias do Curandeiro T4 / T5 + dois feitiços de campo (2026-10-20; the user: "create these new healer spells with 3D effects and
+proper scaling", the formulas written like Salazar's own; icons in `Attachments/HealerIcons`)
+
+- **Read `docs/SKILLS_HEALER.md`** (numbers, scaling 9-30, what each refuses, the effects). Círculo de Cura (T4, 9: hex at range 4, radius 2,
+  every hurt ally heals its own MAG/2 × 1.2 + 1D8), Ressurreição (T5, 12: the fallen ally on a hex within 1 stands again with MAG/2 × 1.5 + 2D8 HP,
+  conditions wiped, acts next round), Julgamento (T5, 14: holy, range 6, radius 2, MAG/2 × 1.8 + 2D8 on every foe, undead × 1.5). Field:
+  Consagrar Acampamento (T2 from 5: the party to full HP, tier uses untouched), Prece do Caminho (T3 from 9: `save.roadPrayer` hexes with no
+  undead encounter and battles half as likely; `content/engine2/undead-encounters.json` from `tools/scripts/engine2/undead_encounters.py`).
+  "healer" family = `salazar` / `cleric` / `bishop` (`emberClassFamily`).
+- Code: `Spells.cpp` (`healerKind`, `fallenAllyAt`, the Heal branch heals every id of `ids`, the `resurrection` branch), `Spells.h`
+  (`BattleEffect::revived`), `FieldSpells.*`, `Overworld.cpp step` (the Prece), `render/vfx/HealerFx.*` (3 effects, 3D), `MapStage.h` (the areas'
+  spots, the card back on a revival, script `kill:<unit>`), `OverworldStage.h` (the field rows). Tests: `--promote Salazar=salazar:25`,
+  `--battle-script "kill:Kael; cast:Salazar:resurrection:Kael"`, `--title-screen test-rpg --map-ui fieldspells`.
+
 ## Promoções do Mago Negro: Bruxo e Elementalista, magias T6–T10 (2026-10-17; the user: "pode criar todas elas os
 efeitos e wire into the game")
 

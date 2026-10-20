@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <optional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -140,6 +141,9 @@ class Overworld {
   std::vector<std::string> stoneBridgeMissionIds_;
   std::vector<LootEntry> loot_;  // weapons then equipment, in Engine2's table order
   Json tables_;
+  // The road encounters that field undead (content/engine2/undead-encounters.json, beside the world data; tools/scripts/engine2/
+  // undead_encounters.py): never rolled while the Prece do Caminho holds (world/FieldSpells, docs/SKILLS_HEALER.md).
+  std::set<std::string> undeadEncounters_;
 };
 
 // Cooker check-overworld: location / mission status, allowed steps and seeded steps against Engine2's answers.

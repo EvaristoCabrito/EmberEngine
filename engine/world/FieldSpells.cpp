@@ -190,6 +190,75 @@ std::optional<Json> FieldSpells::castHunt(const Json& save, const std::string& h
   return next;
 }
 
+// --- The Curandeiro's (ours, docs/SKILLS_HEALER.md) ---------------------------------------------------------------------------
+
+std::vector<std::string> FieldSpells::campers(const Json& save, bool test) const {
+  std::vector<std::string> out;
+  for (const char* h : kHeroes) {
+    if (!(test || world_.heroRecruited(h, save)) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
+    if (rulesClass(classOf(save, h)) == "healer" && levelOf(save, h) >= kCampUnlockLevel) out.push_back(h);
+  }
+  return out;
+}
+
+// Consagrar Acampamento heals every standing hero of the party to its whole (GameApp mapStatusUnit's max: class + gear, less hunger);
+// nothing to do when nobody is hurt.
+bool FieldSpells::canCamp(const Json& save, bool test) const {
+  const InnRules rules(inn_, world_);
+  for (const char* h : kHeroes) {
+    if (!(test || world_.heroRecruited(h, save)) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
+    if (rules.statusHp(save, h) < rules.statusMaxHp(save, h)) return true;
+  }
+  return false;
+}
+
+std::optional<Json> FieldSpells::castCamp(const Json& save, const std::string& hero, bool test, int* healed) const {
+  if (rulesClass(classOf(save, hero)) != "healer" || levelOf(save, hero) < kCampUnlockLevel || !canCamp(save, hero, test)) return std::nullopt;
+  const InnRules rules(inn_, world_);
+  Json next = save;
+  if (!next["unitHp"].is_object()) next["unitHp"] = Json::object();
+  int count = 0;
+  for (const char* h : kHeroes) {
+    if (!(test || world_.heroRecruited(h, save)) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
+    const int max = rules.statusMaxHp(save, h);
+    if (rules.statusHp(save, h) >= max) continue;
+    next["unitHp"][h] = max;
+    ++count;
+  }
+  if (!next["spellUses"].is_object()) next["spellUses"] = Json::object();
+  if (!next["spellUses"][hero].is_object()) next["spellUses"][hero] = Json::object();
+  const std::string key = "tier" + std::to_string(kCampTier);
+  next["spellUses"][hero][key] = number(num(next["spellUses"][hero], key).value_or(0) + 1);
+  if (healed) *healed = count;
+  return next;
+}
+
+int FieldSpells::prayerHexes(int level) { return level >= 30 ? 16 : level >= 23 ? 14 : level >= 16 ? 12 : 10; }
+
+int FieldSpells::prayerLeft(const Json& save) { return std::max(0, static_cast<int>(num(save, kPrayerKey).value_or(0))); }
+
+std::vector<std::string> FieldSpells::prayers(const Json& save, bool test) const {
+  std::vector<std::string> out;
+  for (const char* h : kHeroes) {
+    if (!(test || world_.heroRecruited(h, save)) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
+    if (rulesClass(classOf(save, h)) == "healer" && levelOf(save, h) >= kPrayerUnlockLevel) out.push_back(h);
+  }
+  return out;
+}
+
+// Prece do Caminho: the save counts the hexes it still covers (Overworld::step spends one per hex and reads it: no undead encounter,
+// battles half as likely). A new prayer starts the count over at the caster's own reach (it never adds up).
+std::optional<Json> FieldSpells::castPrayer(const Json& save, const std::string& hero) const {
+  if (rulesClass(classOf(save, hero)) != "healer" || levelOf(save, hero) < kPrayerUnlockLevel || !canPray(save, hero)) return std::nullopt;
+  Json next = save;
+  next[kPrayerKey] = std::max(prayerLeft(save), prayerHexes(levelOf(save, hero)));
+  if (!next["spellUses"].is_object()) next["spellUses"] = Json::object();
+  if (!next["spellUses"][hero].is_object()) next["spellUses"][hero] = Json::object();
+  const std::string key = "tier" + std::to_string(kPrayerTier);
+  next["spellUses"][hero][key] = number(num(next["spellUses"][hero], key).value_or(0) + 1);
+  return next;
+}
+
 std::optional<Json> FieldSpells::castWarp(const Json& save, const std::string& hero, const std::string& cityId) const {
   if (rulesClass(classOf(save, hero)) != "mage" || levelOf(save, hero) < kWarpUnlockLevel) return std::nullopt;
   const MapLocation* city = nullptr;

@@ -130,6 +130,11 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"sentinelVigil", "Vigília da Sentinela", 5, "", false}, "aldric", 17},
     // ... and the Vigília's own thrust (never learned: the stance plays it when an enemy attacks)
     {{"sentinelStrike", "Estocada da Sentinela", 5, "", true}, "", 99},
+    // Curandeiro (docs/SKILLS_HEALER.md, 2026-10-20; Salazar, class `salazar`): the second spell of T4 and both of T5, holy; the
+    // Clérigo and the Bispo keep them. The field spells (Consagrar Acampamento, Prece do Caminho) live in world/FieldSpells.
+    {{"circleOfHealing", "Círculo de Cura", 4, "holy", false}, "healer", 9},
+    {{"resurrection", "Ressurreição", 5, "holy", false}, "healer", 12},
+    {{"judgment", "Julgamento", 5, "holy", false}, "healer", 14},
 };
 // The base class a promotion keeps the skills of (the Guerreiro's go on into the Paladino and the Cavaleiro Pesado, the
 // Arqueiro's into the Patrulheiro and the Assassino, the Lanceiro's into the Sentinela and the Templário).
@@ -138,8 +143,12 @@ const char* emberClassFamily(const std::string& classId) {
   // Neera's own class id in most battle files is "neera" (an archer with her sprite; "archer" in a few older exports)
   if (classId == "ranger" || classId == "assassin" || classId == "neera") return "archer";
   if (classId == "sentinel" || classId == "templar" || classId == "lancer") return "aldric";
+  // Salazar's own class id is "salazar" (a healer with his sprite); the Clérigo and the Bispo are the healer's promotions
+  if (classId == "salazar" || classId == "cleric" || classId == "bishop") return "healer";
   return classId.c_str();
 }
+// The Curandeiro's spells (docs/SKILLS_HEALER.md): a group heal over an area, a fallen ally raised, holy judgment over an area.
+bool healerKind(const std::string& kind) { return kind == "circleOfHealing" || kind == "resurrection" || kind == "judgment"; }
 // The Lanceiro's skills (docs/SKILLS_LANCER.md).
 bool lancerKind(const std::string& kind) {
   return kind == "spearToss" || kind == "hookPull" || kind == "poleVault" || kind == "disarm" || kind == "swapPost" || kind == "impaleDrag" ||
@@ -473,6 +482,21 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
     n.mul = lv >= 27 ? 1.6 : lv >= 23 ? 1.4 : lv >= 20 ? 1.2 : 1.0;
     n.dice = lv >= 23 ? 1 : 0, n.faces = 6;
   }
+  // Curandeiro (docs/SKILLS_HEALER.md): the cures' formula, floor(floor(MAG / 2) x mul) + dice (+1 % per healing skill point)
+  else if (kind == "circleOfHealing") {
+    n.range = 4, n.radius = lv >= 23 ? 3 : 2;
+    n.mul = lv >= 29 ? 1.6 : lv >= 19 ? 1.4 : 1.2;
+    n.dice = lv >= 26 ? 3 : lv >= 15 ? 2 : 1, n.faces = 8;
+  } else if (kind == "resurrection") {
+    n.range = 1;
+    n.mul = lv >= 26 ? 2.1 : lv >= 18 ? 1.8 : 1.5;
+    n.dice = lv >= 29 ? 4 : lv >= 22 ? 3 : 2, n.faces = 8;
+  } else if (kind == "judgment") {
+    n.range = 6, n.radius = lv >= 24 ? 3 : 2;
+    n.mul = lv >= 30 ? 2.4 : lv >= 21 ? 2.1 : 1.8;
+    n.dice = lv >= 28 ? 4 : lv >= 18 ? 3 : 2, n.faces = 8;
+    n.tickMul = lv >= 26 ? 1.75 : 1.5;  // the undead's weight
+  }
   // Elementalista
   else if (kind == "pillarOfFlame") {
     n.range = 6, n.radius = lv >= 23 ? 2 : 1, n.mul = 2.0, n.dice = lv >= 19 ? 3 : 2, n.faces = 8;
@@ -511,7 +535,8 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
   static const std::set<std::string> kRangeGrows = {"markOfRuin",   "creepingPlague", "lifeDrain",     "shroudOfShadows", "hemorrhage",
                                                      "profaneSilence", "blackPestilence", "curseOfDecay", "soulHarvest",   "devouringVoid",
                                                      "pillarOfFlame", "iceLance",       "thunderstorm",  "meteor",        "absoluteZero",
-                                                     "chainLightning", "wrathOfTheSkies", "primordialEmber", "arrowRain",   "arrowStorm"};
+                                                     "chainLightning", "wrathOfTheSkies", "primordialEmber", "arrowRain",   "arrowStorm",
+                                                     "circleOfHealing", "judgment"};
   static const std::set<std::string> kLengthGrows = {"venomArrow", "explosiveArrow", "cripplingShot", "deathShot"};
   if (kRangeGrows.contains(kind)) n.range += reachGrowth(lv);
   if (kLengthGrows.contains(kind)) n.length += reachGrowth(lv);
@@ -524,7 +549,17 @@ bool emberBothSides(const std::string& kind) {
 // Aimed at a hex of the board (an area) rather than at a unit.
 bool emberAreaSpell(const std::string& kind) {
   return kind == "shroudOfShadows" || kind == "profaneSilence" || kind == "blackPestilence" || kind == "soulHarvest" || kind == "pillarOfFlame" ||
-         kind == "thunderstorm" || kind == "meteor" || kind == "absoluteZero" || kind == "primordialEmber";
+         kind == "thunderstorm" || kind == "meteor" || kind == "absoluteZero" || kind == "primordialEmber" || kind == "circleOfHealing" ||
+         kind == "judgment";
+}
+// Ressurreição: the fallen ally (the party's, not a summon) lying on the hex, or -1. The dead keep the hex they fell on.
+int fallenAllyAt(const Battle& b, size_t caster, BattleHex cell) {
+  const std::string& side = b.units()[caster].side;
+  for (size_t i = 0; i < b.units().size(); ++i) {
+    const BattleUnit& t = b.units()[i];
+    if (!t.alive && !t.summoned && t.side == side && t.x == cell.x && t.y == cell.y) return static_cast<int>(i);
+  }
+  return -1;
 }
 // Aimed at a visible foe.
 bool emberBoltSpell(const std::string& kind) {
@@ -1496,6 +1531,32 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
       m.echo = BattleUnit::Echo{2, 12, 8, 0};
       steps.push_back(m);
     }
+  } else if (kind == "circleOfHealing") {
+    // Holy light over an area: every ally standing in it (the caster too) heals its own roll of the cure's formula. A Heal step
+    // with the whole list in `ids` (def = the caster: nobody to turn to).
+    const std::vector<BattleHex> area = hexesWithin(b, cell, n.radius);
+    s.type = BattleStep::Type::Heal;
+    s.def = caster;
+    s.tiles = area;
+    for (size_t i = 0; i < b.units().size(); ++i) {
+      const BattleUnit& t = b.units()[i];
+      if (!t.alive || t.side != u.side) continue;
+      if (!b.debugFreeCast() && t.hp >= t.maxHp) continue;  // the cures' rule: only the hurt are healed (nothing to say for the rest)
+      if (std::any_of(area.begin(), area.end(), [&](const BattleHex& c) { return occupies(t, c.x, c.y); })) s.ids.push_back(i);
+    }
+    if (s.ids.empty()) return fail("Não há aliado ferido nessa área.");
+    spend();
+    steps.push_back(s);
+  } else if (kind == "resurrection") {
+    // The fallen ally on the hex beside the caster stands again with its own roll of HP and acts on its next turn.
+    const int fallen = fallenAllyAt(b, caster, cell);
+    if (fallen < 0) return fail("Não há aliado caído nessa casa.");
+    if (occAt(b, cell) >= 0) return fail("Alguém está sobre o aliado caído.");
+    spend();
+    s.type = BattleStep::Type::Heal;
+    s.def = static_cast<size_t>(fallen);
+    s.tiles = {cell};
+    steps.push_back(s);
   } else if (emberAreaSpell(kind)) {
     const std::vector<BattleHex> area = hexesWithin(b, cell, n.radius);
     s.tiles = area;
@@ -1505,6 +1566,8 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
       s.dice = 0, s.spellMul = 0;  // the zone alone (laid at the impact)
     } else {
       s.ids = unitsOn(b, caster, area, emberBothSides(kind));
+      if (kind == "judgment")  // the undead take the heavier weight
+        for (size_t id : s.ids) s.perTargetMul.push_back(b.units()[id].undead ? n.tickMul : 1.0);
       if (kind == "profaneSilence") s.silenceTurns = n.turns;
       else if (kind == "blackPestilence") s.poisonTier = n.tier, s.plagueBurst = true;
       else if (kind == "soulHarvest") s.harvest = true, s.harvestHealPct = n.pct;
@@ -1828,7 +1891,7 @@ std::string promotionName(const std::string& classId) {
   if (classId == "aldric" || classId == "lancer") return "Lanceiro";
   if (classId == "sentinel") return "Sentinela";
   if (classId == "templar") return "Templário";
-  if (classId == "healer") return "Curandeiro";
+  if (classId == "healer" || classId == "salazar") return "Curandeiro";
   if (classId == "cleric") return "Clérigo";
   if (classId == "bishop") return "Bispo";
   if (classId == "conjurer") return "Conjurador";
@@ -1875,7 +1938,7 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind) {
   const int half = static_cast<int>(std::floor(c.mag / 2.0));
   auto dmg = [&](double mul, int dice, int faces) { return std::format("{} + {}D{}", static_cast<int>(std::floor(half * mul)), dice, faces); };
   static const std::map<std::string, const char*> kElements = {{"darkness", "Escuridão"}, {"poison", "Veneno"}, {"fire", "Fogo"}, {"ice", "Gelo"},
-                                                               {"lightning", "Relâmpago"}, {"ember", "Brasa"}};
+                                                               {"lightning", "Relâmpago"}, {"ember", "Brasa"}, {"holy", "Sagrado"}};
   const std::string element = e->data.element;
   std::string s = std::format("T{} · {}", e->data.tier, kElements.contains(element) ? std::string(kElements.at(element)) : element.empty() ? std::string("Arma") : element);
   if (n.range > 0 && kind != "leapingStrike") s += std::format(" · alcance {}", n.range);
@@ -1912,6 +1975,10 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind) {
   if (kind == "sentinelVigil")
     return s + std::format("\npostura até o próximo turno · quem atacar você ou um aliado a até {} hex{} leva a sua estocada antes · ×{:g} da lança{}", n.radius,
                            n.radius > 1 ? "es" : "", n.mul, bonus());
+  // The Curandeiro's (the cures' formula; the healing skill adds +1 % a point)
+  if (kind == "circleOfHealing") return s + std::format("\nraio {} · cada aliado na área cura {} HP", n.radius, dmg(n.mul, n.dice, n.faces));
+  if (kind == "resurrection") return s + std::format("\num aliado caído ao lado volta com {} HP · age no seu próximo turno", dmg(n.mul, n.dice, n.faces));
+  if (kind == "judgment") return s + std::format("\nraio {} · {} em cada inimigo · mortos-vivos ×{:g}", n.radius, dmg(n.mul, n.dice, n.faces), n.tickMul);
   if (kind == "markOfRuin") s += std::format("\n{} · o alvo recebe +{}% de dano por {} turnos", dmg(n.mul, n.dice, n.faces), n.pct, n.turns);
   else if (kind == "creepingPlague") s += std::format("\n{} · {} que passa a {} vizinho{} por turno", dmg(n.mul, n.dice, n.faces), poisonTier(n.tier)->name, n.spread, n.spread > 1 ? "s" : "");
   else if (kind == "lifeDrain") s += std::format("\n{} · cura {}% do dano causado", dmg(n.mul, n.dice, n.faces), n.pct);
@@ -1969,6 +2036,7 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"arrowStorm", "Arrow Storm"}, {"deathShot", "Death Shot"},
     {"spearToss", "Spear Toss"}, {"hookPull", "Hook"}, {"poleVault", "Pole Vault"}, {"disarm", "Disarm"}, {"swapPost", "Change of Post"},
     {"impaleDrag", "Impale and Drag"}, {"sentinelVigil", "Sentinel's Vigil"}, {"sentinelStrike", "Sentinel's Thrust"},
+    {"circleOfHealing", "Circle of Healing"}, {"resurrection", "Resurrection"}, {"judgment", "Judgment"},
 };
 }  // namespace
 
@@ -2120,7 +2188,9 @@ void hurtScene(Battle& b) {
 }
 
 std::string spellPose(const std::string& kind) {
-  if (kind == "cureMinor" || kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "bless") return "heal";
+  if (kind == "cureMinor" || kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "bless" || kind == "circleOfHealing" ||
+      kind == "resurrection")
+    return "heal";
   if (kind == "longShot" || kind == "bloodyShot" || kind == "multiShot" || kind == "piercing" || kind == "doubleStrike" || kind == "piercingThrust" ||
       kind == "cleave" || kind == "sweep" || kind == "trip" || kind == "bullRush" || kind == "executionerStrike" || kind == "shieldBash" ||
       kind == "shoulderSmash" || kind == "stampede" || kind == "steelWhirlwind" || kind == "guardBreak" || kind == "warCry" || kind == "leapingStrike" ||
@@ -2165,6 +2235,7 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   else if (const CureData* cure = cureData(kind)) maxRange = cure->range + reachGrowth(u.level);
   else if (kind == "cureDisease") maxRange = grown(kCureDiseaseRange);
   else if (emberBoltSpell(kind) || emberAreaSpell(kind)) maxRange = emberNumbers(kind, u.level).range;  // ours: no line of fire needed
+  else if (kind == "resurrection") maxRange = 1;  // the fallen ally beside the caster (or under its feet)
   else if (kind == "guardBreak") minRange = u.minRange, maxRange = u.maxRange, shot = u.maxRange > 1, arrow = true;  // the weapon's reach
   else if (kind == "steelWhirlwind") maxRange = 1;
   else if (kind == "leapingStrike") maxRange = -1;  // wherever a landing exists
@@ -2334,6 +2405,22 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
       return dragPlan(b, caster, cell, n, &why) ? true : fail(why.c_str());
     }
     if (kind == "sentinelVigil") return cell == from ? true : fail("Esta habilidade não precisa de alvo.");
+    // The Curandeiro's
+    if (kind == "resurrection") {
+      if (d > 1) return fail("O aliado caído precisa estar ao lado.");
+      if (fallenAllyAt(b, caster, cell) < 0) return fail("Não há aliado caído nessa casa.");
+      return occAt(b, cell) < 0 ? true : fail("Alguém está sobre o aliado caído.");
+    }
+    if (kind == "circleOfHealing") {
+      if (d > n.range) {
+        if (error) *error = std::format("Alvo fora de alcance (máximo {} hexes).", n.range);
+        return false;
+      }
+      if (b.cell(cell.x, cell.y).terrain == "void") return fail("Não há chão nessa casa.");
+      for (const BattleUnit& t : b.units())
+        if (t.alive && t.side == u.side && (b.debugFreeCast() || t.hp < t.maxHp) && hexDist(cell, {t.x, t.y}) <= n.radius) return true;
+      return fail("Não há aliado ferido nessa área.");
+    }
     if (emberBoltSpell(kind)) {
       if (!targetable(b, here)) return fail(here < 0 ? "Não há unidade na casa selecionada." : "Escolha um inimigo visível.");
       if (d > n.range) {
@@ -2962,24 +3049,61 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     }
     return;
   }
-  if (step.type == BattleStep::Type::Heal) {
+  if (step.type == BattleStep::Type::Heal && step.kind == "resurrection") {
+    // Ressurreição (the Curandeiro's): the fallen ally stands again with its own roll of HP (the cure's formula, +1 % per healing
+    // skill point, never above its whole), what death left on it gone, and acts on its next turn (its turn this round is over).
     BattleUnit& target = b.units()[step.def];
-    if (!att.alive || !target.alive) return;
+    if (!att.alive || target.alive) return;
     const Fighter A = fighterAt(b, step.att, att.x, att.y);
-    // rollCure (the cure's own numbers), then healingAmount (+1% per healing skill point)
-    const CureData& c = *cureData(step.kind);
-    const int base = static_cast<int>(std::floor(std::floor(A.mag / 2) * c.mul + rollDice(c.dice, c.faces, c.bonus, rng)));
-    int heal = healingPower(att, base);
-    if (target.cond.bleedTurns > 0) heal /= 2;  // Hemorragia: heals received halved
-    const int gained = std::min(heal, target.maxHp - target.hp);
-    target.hp += gained;
-    if (gained > 0) {
-      supportAffinity(b, step.att, step.def);
-      trainHealing(att, rng);
-      b.noteAware(step.att, gained * kHealCe, gained * kHealVe);
+    const EmberNumbers n = emberNumbers(step.kind, att.level);
+    const int base = static_cast<int>(std::floor(std::floor(A.mag / 2) * n.mul + rollDice(n.dice, n.faces, 0, rng)));
+    const int hp = std::max(1, std::min(target.maxHp, healingPower(att, base)));
+    if (target.hobbleBase) target.mov = *target.hobbleBase;
+    if (target.disarmBase) target.atk = *target.disarmBase;
+    if (target.decayBase) target.atk = target.decayBase->atk, target.mag = target.decayBase->mag, target.def = target.decayBase->def, target.dex = target.decayBase->dex;
+    target.hobbleBase.reset(), target.disarmBase.reset(), target.decayBase.reset();
+    target.cond = BattleUnit::Conditions{};
+    target.poisoned = false, target.poisonTier.clear();
+    target.stunned = false, target.stunTurns = 0, target.asleep = false, target.sleepTurns = 0;
+    target.bleeding = false, target.bleedRoundsLeft.reset(), target.bleedRoundMarker.reset(), target.bleedMovedThisTurn = false;
+    target.fearTurns = 0, target.fearSourceId.clear(), target.shock.reset();
+    target.alive = true, target.hp = hp;
+    target.moved = true, target.acted = true, target.moveUsed = 0;
+    supportAffinity(b, step.att, step.def);
+    trainHealing(att, rng);
+    b.noteAware(step.att, hp * kHealCe, hp * kHealVe);
+    gainExp(att, target.level, hp);
+    BattleEffect up = statusEffect(step.def, pick("Ressuscitado", "Revived"));
+    up.revived = true;
+    out.push_back(up);
+    out.push_back({step.def, hp, false, false, true, false, false});
+    return;
+  }
+  if (step.type == BattleStep::Type::Heal) {
+    // One unit (the cures: `def`), or every unit of `ids` with its own roll (Círculo de Cura, the Curandeiro's).
+    const std::vector<size_t> healed = step.ids.empty() ? std::vector<size_t>{step.def} : step.ids;
+    const EmberNumbers n = emberSpell(step.kind) ? emberNumbers(step.kind, att.level) : EmberNumbers{};
+    const CureData* c = cureData(step.kind);
+    if (!att.alive || (!c && !emberSpell(step.kind))) return;
+    for (const size_t id : healed) {
+      BattleUnit& target = b.units()[id];
+      if (!target.alive) continue;
+      const Fighter A = fighterAt(b, step.att, att.x, att.y);
+      // rollCure (the cure's own numbers), then healingAmount (+1% per healing skill point)
+      const int base = c ? static_cast<int>(std::floor(std::floor(A.mag / 2) * c->mul + rollDice(c->dice, c->faces, c->bonus, rng)))
+                         : static_cast<int>(std::floor(std::floor(A.mag / 2) * n.mul + rollDice(n.dice, n.faces, 0, rng)));
+      int heal = healingPower(att, base);
+      if (target.cond.bleedTurns > 0) heal /= 2;  // Hemorragia: heals received halved
+      const int gained = std::min(heal, target.maxHp - target.hp);
+      target.hp += gained;
+      if (gained > 0) {
+        supportAffinity(b, step.att, id);
+        trainHealing(att, rng);
+        b.noteAware(step.att, gained * kHealCe, gained * kHealVe);
+      }
+      gainExp(att, target.level, gained);
+      out.push_back({id, gained, false, false, true, false, false});
     }
-    gainExp(att, target.level, gained);
-    out.push_back({step.def, gained, false, false, true, false, false});
     return;
   }
   if (step.type == BattleStep::Type::CureDisease) {  // stepCureDisease

@@ -158,6 +158,15 @@ bool Overworld::load(const std::filesystem::path& file) {
   for (const Json& e : tables_["equipment"])
     loot_.push_back({false, e["id"].get<std::string>(), e["name"].get<std::string>(), e["price"].get<double>(), e["power"].get<int>(), e["starting"].get<bool>()});
   logInfo("overworld: {} cells, {} locations, {} missions", cells_.size(), locations_.size(), missions_.size());
+  // The undead road encounters (the Prece do Caminho keeps them away), kept beside the world data; none when the file is missing.
+  undeadEncounters_.clear();
+  if (std::ifstream undead{file.parent_path() / "undead-encounters.json", std::ios::binary}; undead) {
+    const Json u = Json::parse(undead, nullptr, false);
+    if (u.is_object())
+      for (const Json& id : u.value("encounters", Json::array()))
+        if (id.is_string()) undeadEncounters_.insert(id.get<std::string>());
+    logInfo("overworld: {} road encounters field undead", undeadEncounters_.size());
+  }
   shippedLocations_ = locations_, shippedMissions_ = missions_;
   shippedEncounters_.clear();
   for (const OverworldCell& c : cells_) shippedEncounters_.push_back(c.encounters);
@@ -486,8 +495,12 @@ Json Overworld::step(const Json& save, OverworldHex to, Mulberry32& rng, std::op
   const Json emptyList = Json::array();
   const Json& seenRoad = child(save, "roadEncountersSeen").is_array() ? child(save, "roadEncountersSeen") : emptyList;
   const bool merchantCanAppear = !has(completed, "thebridge") || arrivalTime == "brightNight" || arrivalTime == "darkNight";
+  // Prece do Caminho (ours, world/FieldSpells): while the save still counts hexes under it, the undead encounters are left out of
+  // the roll and a battle is half as likely; this hex spends one.
+  const int prayer = std::max(0, static_cast<int>(num(save, "roadPrayer").value_or(0)));
   std::vector<std::string> travelIds;
   for (const std::string& id : cell(to.col, to.row)->encounters) {
+    if (prayer > 0 && undeadEncounters_.contains(id)) continue;
     if (id == "random-encounter-11" || id == "random-encounter-14") {
       if (merchantCanAppear) travelIds.push_back(id);
     } else if (!has(completed, id) && !has(seenRoad, id)) {
@@ -495,7 +508,7 @@ Json Overworld::step(const Json& save, OverworldHex to, Mulberry32& rng, std::op
     }
   }
   const double saveAlert = num(save, "alertStreak").value_or(std::numeric_limits<double>::quiet_NaN());
-  const double battleChance = saveAlert > 0 ? kBattleEncounterChance * 2 : kBattleEncounterChance;
+  const double battleChance = (saveAlert > 0 ? kBattleEncounterChance * 2 : kBattleEncounterChance) * (prayer > 0 ? 0.5 : 1.0);
   double alertStreak = std::isnan(saveAlert) ? saveAlert : std::max(0.0, saveAlert - elapsedDays);
   const Json& lastRoad = child(save, "lastRoadEncounterId");
   std::optional<Json> lastRoadEncounterId;
@@ -687,6 +700,8 @@ Json Overworld::step(const Json& save, OverworldHex to, Mulberry32& rng, std::op
   out["spellUses"] = std::move(spellUses);
   out["heroSkills"] = std::move(heroSkills);
   out["travelTrainingHours"] = std::move(trainingHours);
+  if (prayer > 1) out["roadPrayer"] = prayer - 1;
+  else if (prayer == 1) out.erase("roadPrayer");
   return out;
 }
 

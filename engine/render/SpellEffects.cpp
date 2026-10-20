@@ -93,7 +93,9 @@ int SpellEffects::looks(const std::string& kind) {
                                  // the Arqueiro's (vfx/RangerFx, ours, 3D)
                                  "venomArrow", "arrowRain", "explosiveArrow", "cripplingShot", "arrowStorm", "deathShot",
                                  // the Lanceiro's (vfx/LancerFx, ours, 3D)
-                                 "spearToss", "hookPull", "poleVault", "disarm", "swapPost", "impaleDrag", "sentinelVigil", "sentinelStrike"};
+                                 "spearToss", "hookPull", "poleVault", "disarm", "swapPost", "impaleDrag", "sentinelVigil", "sentinelStrike",
+                                 // the Curandeiro's (vfx/HealerFx, ours, 3D)
+                                 "circleOfHealing", "resurrection", "judgment"};
   for (const char* k : kEmber)
     if (kind == k) return 1;
   return 0;
@@ -175,6 +177,7 @@ float SpellEffects::leadIn(const std::string& kind, int look, const Spot& caster
   if (const float delay = impactDelay(kind, look, caster, targets); delay > 0.0f) return delay;
   if (isHoly(kind, look)) return HolyLight::leadIn(HolyLight::Style::Minor);
   if (kind == "turnUndead" && look >= 1) return TurnUndead::kLead;  // the sigil gathers, then the burst
+  if (isHealer(kind)) return HealerFx::leadIn(kind);                // the Curandeiro's: the light gathers, then lands
   return kKindLead;
 }
 
@@ -221,6 +224,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     latest(phantasms_, before[5]), latest(webs_, before[6]), latest(cleaves_, before[8]), latest(sweeps_, before[9]);
     latest(holies_, before[10]), latest(dreamWebs_, before[11]);
     if (kind == "turnUndead") end = std::max(end, turnUndead_.latestEnd());
+    if (isHealer(kind)) end = std::max(end, healer_.latestEnd());
     for (size_t i = before[7]; i < burns_.size(); ++i) end = std::max(end, burns_[i].first.end());
     if (kind == "iceStorm" && !storms_.empty()) end = std::max(end, storms_.back().start() + 1.0f);  // its first second, not the whole storm
     if (isBolt(kind, look) && !bolts_.empty()) end = std::max(end, bolts_.back().end());
@@ -276,6 +280,25 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
       if (s.cardHeight > 0.0f && d > 0.3f) undead.push_back({s.feet, s.cardHeight});
     }
     turnUndead_.cast(caster.feet, caster.cardHeight, radius + 1.0f, std::move(undead), impact);
+    return true;
+  }
+  // The Curandeiro's spells (HealerFx, ours, 3D). Targets: the area's hexes (cardHeight 0) with the bodies it reaches keeping their
+  // card height (the stage gives it to the allies healed / the foes struck only); the Ressurreição's one target is the fallen body.
+  if (isHealer(kind)) {
+    if (kind == "resurrection") {
+      const Spot& fallen = targets.front();
+      healer_.resurrection(caster.feet, caster.cardHeight, {fallen.feet, heightOf(fallen)}, impact);
+      return true;
+    }
+    const Spot& centre = areaCentre(targets);
+    float radius = 0.0f;
+    std::vector<HealerFx::Target> bodies;
+    for (const Spot& s : targets) {
+      radius = std::max(radius, glm::length(glm::vec2(s.feet.x - centre.feet.x, s.feet.z - centre.feet.z)));
+      if (s.cardHeight > 0.0f) bodies.push_back({s.feet, s.cardHeight});
+    }
+    if (kind == "circleOfHealing") healer_.circle(caster.feet, caster.cardHeight, centre.feet, radius + 1.0f, std::move(bodies), impact);
+    else healer_.judgment(caster.feet, caster.cardHeight, centre.feet, radius + 1.0f, std::move(bodies), impact);
     return true;
   }
   // The Arqueiro's skills (RangerFx, ours, 3D): one arrow at the struck foe (the first target; the burst's neighbours follow it),
@@ -718,7 +741,7 @@ void SpellEffects::swapFlight(const Spot& a, const Spot& b, float start, float f
 void SpellEffects::disarmed(const Spot& foe, const Spot& from, float at) { lancer_.disarmed({foe.feet, foe.cardHeight}, from.feet, at); }
 
 bool SpellEffects::active(float now) const {
-  if (combat_.active(now) || warrior_.active(now) || ranger_.active(now) || lancer_.active(now) || turnUndead_.active(now)) return true;
+  if (combat_.active(now) || warrior_.active(now) || ranger_.active(now) || lancer_.active(now) || turnUndead_.active(now) || healer_.active(now)) return true;
   if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
   if (std::any_of(fireballs_.begin(), fireballs_.end(), [&](const Fireball& f) { return !f.done(now); })) return true;
   if (std::any_of(blesses_.begin(), blesses_.end(), [&](const Bless& b) { return !b.done(now); })) return true;
@@ -794,6 +817,7 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   ranger_.build(now, camera, vfx_, vfxLights);
   lancer_.build(now, camera, vfx_, vfxLights);
   turnUndead_.build(now, camera, vfx_, vfxLights);
+  healer_.build(now, camera, vfx_, vfxLights);
   for (const VfxLight& l : vfxLights)
     if (l.intensity > 0.0f) lights.push_back({l.at, {l.color.r, l.color.g, l.color.b}, l.intensity, l.distance, std::max(l.at.y, 1.0f)});
   const size_t first = out.size();

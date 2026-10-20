@@ -1300,6 +1300,7 @@ class OverworldStage : public Stage {
     const bool en = uiEnglish();
     const e2::FieldSpells spells(innData_, world_);
     const std::vector<std::string> healers = spells.healers(save_, test()), mages = spells.mages(save_, test()), hunters = spells.hunters(save_, test());
+    const std::vector<std::string> campers = spells.campers(save_, test()), prayers = spells.prayers(save_, test());
     const std::vector<const e2::MapLocation*> cities = spells.warpCities(save_);
     beginPanel("##fieldspells", size, 360, size.y * 0.8f);
     const ImVec2 head = ImGui::GetCursorScreenPos();
@@ -1366,6 +1367,60 @@ class OverworldStage : public Stage {
       ImGui::SetCursorScreenPos({a.x, a.y + 62});
       ImGui::Dummy({inner, 4});
     }
+    // The Curandeiro's (ours, docs/SKILLS_HEALER.md): Consagrar Acampamento (the party to full HP, a tier-2 use) and Prece do Caminho
+    // (the next hexes free of undead ambushes, battles half as likely, a tier-3 use); the user's icons head their rows.
+    auto healerRow = [&](const std::string& hero, const char* icon, const std::string& title, const std::string& line, const std::string& button, const char* id,
+                         bool enabled, const std::function<void()>& cast) {
+      const ImVec2 a = ImGui::GetCursorScreenPos();
+      float textX = a.x;
+      if (const UiImage* art = uiImage(std::filesystem::path("content/ui/spells") / icon)) {  // the user's art, centre-cropped
+        imageCover(dl, *art, {a.x, a.y - 2}, {a.x + 40, a.y + 38}, 0.5f, 0.5f, IM_COL32(255, 255, 255, 255));
+        textX += 48;
+      }
+      dl->AddText(ui, 15.0f, {textX, a.y}, kFg, title.c_str());
+      dl->AddText(ui, 12.0f, {textX, a.y + 20}, kMuted, line.c_str(), nullptr, inner - 108 - (textX - a.x));
+      ImGui::PushID((id + hero).c_str());
+      ImGui::BeginDisabled(!enabled);
+      if (emberBigButton("##castrow", upperUtf8(button).c_str(), {a.x + inner - 96, a.y + 6}, {96, 30}, false, 11.0f)) cast();
+      ImGui::EndDisabled();
+      ImGui::PopID();
+      ImGui::SetCursorScreenPos({a.x, a.y + 62});
+      ImGui::Dummy({inner, 4});
+    };
+    for (const std::string& hero : campers) {
+      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kCampTier);
+      healerRow(hero, "consecrateCamp.jpg", tr("Consagrar Acampamento", "Consecrate Camp"),
+                std::format("{} ({} {}) · {} · {}x", hero, en ? "Lv" : "Nv", level, tr("todo o grupo com HP cheio", "the whole party to full HP"), left),
+                tr("Acampar", "Camp"), "camp", spells.canCamp(save_, hero, test()), [&, hero] {
+                  int healed = 0;
+                  if (const std::optional<e2::Json> next = spells.castCamp(save_, hero, test(), &healed)) {
+                    save_ = *next;
+                    write();
+                    showHint(en ? std::format("{} consecrated the camp: {} healed to full.", hero, healed)
+                                : std::format("{} consagrou o acampamento: {} com HP cheio.", hero, healed));
+                  } else {
+                    showHint(tr("Não foi possível acampar.", "Could not camp."));
+                  }
+                });
+    }
+    for (const std::string& hero : prayers) {
+      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kPrayerTier);
+      const int hexes = e2::FieldSpells::prayerHexes(level), active = e2::FieldSpells::prayerLeft(save_);
+      const std::string state = active > 0 ? (en ? std::format(" · active: {} hexes", active) : std::format(" · ativa: {} hexes", active)) : std::string();
+      healerRow(hero, "prayerOfTheRoad.jpg", tr("Prece do Caminho", "Prayer of the Road"),
+                std::format("{} ({} {}) · {} {} · {}x{}", hero, en ? "Lv" : "Nv", level, hexes, tr("hexes sem mortos-vivos, batalhas pela metade", "hexes: no undead, battles halved"),
+                            left, state),
+                tr("Rezar", "Pray"), "pray", spells.canPray(save_, hero), [&, hero, hexes] {
+                  if (const std::optional<e2::Json> next = spells.castPrayer(save_, hero)) {
+                    save_ = *next;
+                    write();
+                    showHint(en ? std::format("{} prayed: the next {} hexes hold no undead.", hero, e2::FieldSpells::prayerLeft(save_))
+                                : std::format("{} rezou: os próximos {} hexes sem mortos-vivos.", hero, e2::FieldSpells::prayerLeft(save_)));
+                  } else {
+                    showHint(tr("Não foi possível rezar.", "Could not pray."));
+                  }
+                });
+    }
     for (const std::string& hero : mages) {
       const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kWarpTier);
       const ImVec2 a = ImGui::GetCursorScreenPos();
@@ -1384,7 +1439,8 @@ class OverworldStage : public Stage {
       ImGui::Dummy({inner, 4});
     }
     if (!mages.empty() && cities.empty()) text(tr("Nenhum outro local visitado.", "No other visited locations."), 12.0f, kMuted);
-    if (healers.empty() && mages.empty() && hunters.empty()) text(tr("Nenhum feitiço de campo disponível.", "No field spells available."), 14.0f, kMuted);
+    if (healers.empty() && mages.empty() && hunters.empty() && campers.empty() && prayers.empty())
+      text(tr("Nenhum feitiço de campo disponível.", "No field spells available."), 14.0f, kMuted);
     endPanel();
   }
 

@@ -30,6 +30,13 @@ class FieldSpells {
   // Caçada (ours, docs/SKILLS_ARCHER.md): an archer's tier 2 from level 4: game hunted on the world map = rations.
   static constexpr int kHuntUnlockLevel = 4;
   static constexpr int kHuntTier = 2;
+  // The Curandeiro's field spells (ours, docs/SKILLS_HEALER.md): Consagrar Acampamento (tier 2 from level 5: the party to full HP,
+  // the tier uses untouched) and Prece do Caminho (tier 3 from level 9: for the next hexes no undead ambush and battles half as likely).
+  static constexpr int kCampUnlockLevel = 5;
+  static constexpr int kCampTier = 2;
+  static constexpr int kPrayerUnlockLevel = 9;
+  static constexpr int kPrayerTier = 3;
+  static constexpr const char* kPrayerKey = "roadPrayer";  // the save's hexes left under the Prece
 
   FieldSpells(const InnData& inn, const Overworld& world) : inn_(inn), world_(world) {}
 
@@ -59,6 +66,17 @@ class FieldSpells {
   bool canHunt(const Json& save, const std::string& hero) const { return usesLeft(save, hero, kHuntTier) > 0; }
   std::optional<Json> castHunt(const Json& save, const std::string& hero, const std::function<double()>& rng, int* rations = nullptr) const;
   std::optional<Json> castWarp(const Json& save, const std::string& hero, const std::string& cityId) const;
+  // Consagrar Acampamento: who can (healers from level 5, standing), whether it would heal anyone, the cast (`healed` = how many).
+  std::vector<std::string> campers(const Json& save, bool test) const;
+  bool canCamp(const Json& save, bool test) const;
+  bool canCamp(const Json& save, const std::string& hero, bool test) const { return usesLeft(save, hero, kCampTier) > 0 && canCamp(save, test); }
+  std::optional<Json> castCamp(const Json& save, const std::string& hero, bool test, int* healed = nullptr) const;
+  // Prece do Caminho: who can (healers from level 9, standing), the hexes it covers at a level, how many are left on the save, the cast.
+  static int prayerHexes(int level);
+  static int prayerLeft(const Json& save);
+  std::vector<std::string> prayers(const Json& save, bool test) const;
+  bool canPray(const Json& save, const std::string& hero) const { return usesLeft(save, hero, kPrayerTier) > 0; }
+  std::optional<Json> castPrayer(const Json& save, const std::string& hero) const;
 
  private:
   const InnData& inn_;

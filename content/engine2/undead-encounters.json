@@ -1,0 +1,21 @@
+{
+  "undeadClasses": [
+    "apparition",
+    "emberedWraith",
+    "plagueBearingCattle",
+    "undeadOx",
+    "zombie",
+    "zombie2",
+    "zombieDog"
+  ],
+  "encounters": [
+    "random-blightwood-verge",
+    "random-broken-antler-grove",
+    "random-cairnkeepers-rise",
+    "random-encounter-13",
+    "random-forest011-hollow-grove",
+    "random-mora-rootwatch",
+    "random-plains-silent-harvest",
+    "random-rimewater-shrine"
+  ]
+}

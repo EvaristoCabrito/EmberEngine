@@ -110,6 +110,7 @@ struct BattleEffect {
   bool abortRush = false;  // a missed Investida Touro: the rest of the charge is dropped
   bool moved = false;      // Type::Move / knockback: the unit is on another hex now
   bool pushed = false;   // the unit was moved to another hex (Vendaval Glacial): the window re-places its card
+  bool revived = false;  // Ressurreição (the Curandeiro's): the fallen unit stands again (the window brings its card back)
   float arc = -1.0f;     // ... on a flight (the Lanceiro's throws, pulls, drags, the swap): the arc's height, -1 = at once
   float delay = 0.0f;    // seconds (nominal) the window waits before showing it: what lands after a flight
   std::string cause;     // what hurt it at the start of its turn ("Sangramento fere", ...): the combat log's verb
