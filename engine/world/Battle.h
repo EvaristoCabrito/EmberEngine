@@ -532,7 +532,13 @@ class Battle {
     // Meteoro: what lands (the centre hex's and the ring's weight and dice)
     double centreMul = 0, ringMul = 0;
     int centreDice = 0, centreFaces = 0, ringDice = 0, ringFaces = 0;
+    std::vector<BattleHex> cells;  // its own hexes when its area is a stage (Spells.cpp areaTiles); empty = by the radius
     bool covers(BattleHex h) const {
+      if (!cells.empty() && !ring) {
+        for (const BattleHex& c : cells)
+          if (c.x == h.x && c.y == h.y) return true;
+        return false;
+      }
       const int d = Battle::distance(centre, h);
       return ring ? d == radius : d <= radius;
     }

@@ -114,12 +114,14 @@ constexpr double kTripStatPenalty = 0.1;
 // fireball / venoms / divine bolt
 constexpr int kFireballRange = 5, kFireballSize = 1 /* small area (D&D Fireball, 20 ft) */, kFireballDice = 2, kFireballFaces = 6, kFireballBonus = 0;
 constexpr double kFireballMul = 1.35;
+// AD&D 2e Fireball: a die per caster level; here +1D6 every two levels after it is learned (6), at most 8D6.
+int fireballDice(int level) { return progressionEnabled() ? std::min(8, kFireballDice + std::max(0, level - 6) / 2) : kFireballDice; }
 struct BoltData {
   int size, range, centerDice, centerFaces, centerBonus, splashDice, splashFaces, splashBonus;
   double centerMul, splashMul;
 };
 constexpr BoltData kCausticVenom{1 /* small area */, 7, 1, 10, 0, 1, 6, 0, 1.5, 1.1};
-constexpr BoltData kMinorVenom{1, 7, 1, 10, 0, 1, 6, 0, 1.5, 1.1};
+constexpr BoltData kMinorVenom{1, 5, 1, 6, 0, 1, 4, 0, 1.0, 0.6};  // below the Veneno Cáustico in every number (the user, 2026-10-20)
 constexpr BoltData kDivineBolt{1, 6, 2, 4, 0, 1, 4, 0, 1.4, 1.0};
 constexpr int kLightningT3Range = 7, kLightningT3Dice = 3, kLightningT3Faces = 12, kLightningT3Bonus = 8;
 constexpr double kLightningT3Mul = 3.0;
@@ -181,7 +183,7 @@ UndeadP turnUndeadPower(int level) {
   UndeadP p = kTurnUndead[0];
   for (const UndeadP& q : kTurnUndead)
     if (capped >= q.level) p = q;
-  p.radius = areaRadius("turnUndead", 3, level);  // round the priest (at the cap of 3 already)
+  p.radius = areaRadius("turnUndead", 3, level);  // its area stage round the priest (Spells.cpp kAreaScale)
   return p;
 }
 constexpr int kTurnUndeadFearTurns = 2;
@@ -204,7 +206,7 @@ AuraP auraPower(int level) {
   if (level >= 20) return {1, 0.2, 3};
   return {1, 0.2, 3};
 }
-int webOfDreamsSize(int level) { return areaRadius("webOfDreams", 1, level); }  // +1 radius every 10 levels, at most 3
+int webOfDreamsSize(int level) { return areaRadius("webOfDreams", 1, level); }  // its area stage (Spells.cpp kAreaScale)
 double webOfDreamsSleepChance(int level) {
   const double t = std::max(0.0, std::min(1.0, (level - 3) / 27.0));
   return 0.25 + (0.85 - 0.25) * t;
@@ -650,8 +652,8 @@ bool aimE2(const Battle& b, size_t caster, const std::string& kind, BattleHex ce
   const auto grown = [&](int base) { return grownReach(kind, base, u.level); };  // the reach that grows with the level
   if (kind == "fireball") return bolt(grown(kFireballRange));
   if (kind == "iceStorm") return bolt(grown(iceStormPower(u.level).range));
-  if (kind == "causticVenom") return bolt(kCausticVenom.range);
-  if (kind == "minorVenom") return bolt(kMinorVenom.range);
+  if (kind == "causticVenom") return bolt(grown(kCausticVenom.range));
+  if (kind == "minorVenom") return bolt(grown(kMinorVenom.range));
   if (kind == "divineBolt") return bolt(grown(kDivineBolt.range));
   if (kind == "webOfDreams") return bolt(grown(kWebRange));
   // The verdict is spellAimValid's (targetable, range, line of fire); the reason, when it fails, spellAimError's.
@@ -844,13 +846,13 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
   } else if (kind == "fireball" || kind == "causticVenom" || kind == "divineBolt" || kind == "minorVenom") {
     const bool fire = kind == "fireball";
     const BoltData& d = kind == "causticVenom" ? kCausticVenom : kind == "minorVenom" ? kMinorVenom : kDivineBolt;
-    const std::vector<BattleHex> tiles = hexAreaTiles(b, cell, areaRadius(kind, fire ? kFireballSize : d.size, u.level));
+    const std::vector<BattleHex> tiles = areaTiles(b, cell, areaRadius(kind, fire ? kFireballSize : d.size, u.level));
     const std::vector<size_t> ids = unitsAlong(b, tiles, std::nullopt);
     const int center = firstAt(b, cell);
     spendFamiliarOrTier(u, kind);
     s.tiles = tiles, s.ids = ids;
     if (fire) {
-      s.dice = kFireballDice, s.faces = kFireballFaces, s.bonus = kFireballBonus, s.spellMul = kFireballMul;
+      s.dice = fireballDice(u.level), s.faces = kFireballFaces, s.bonus = kFireballBonus, s.spellMul = kFireballMul;
     } else {
       s.dice = d.splashDice, s.faces = d.splashFaces, s.bonus = d.splashBonus, s.spellMul = d.splashMul;
       if (center >= 0) s.centerId = static_cast<size_t>(center);
@@ -872,7 +874,7 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
   } else if (kind == "turnUndead") {
     const UndeadP p = turnUndeadPower(u.level);
     std::vector<BattleHex> tiles;
-    for (const BattleHex& t : hexAreaTiles(b, from, p.radius))
+    for (const BattleHex& t : areaTiles(b, from, p.radius))
       if (b.cell(t.x, t.y).terrain != "void") tiles.push_back(t);
     std::vector<size_t> ids;
     for (size_t i = 0; i < b.units().size(); ++i) {
@@ -949,7 +951,7 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
     std::vector<BattleHex> tiles;
     for (size_t i = 0; i < b.units().size(); ++i) {
       const BattleUnit& t = b.units()[i];
-      if (t.alive && t.side == u.side && hexDist(from, {t.x, t.y}) <= areaRadius(kind, kBlessRadius, u.level)) allies.push_back(i), tiles.push_back({t.x, t.y});
+      if (t.alive && t.side == u.side && inArea(areaTiles(b, from, areaRadius(kind, kBlessRadius, u.level)), {t.x, t.y})) allies.push_back(i), tiles.push_back({t.x, t.y});
     }
     spendTier(u, kind);
     b.noteAware(caster, kSupportCe, kSupportVe);
@@ -959,15 +961,15 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
     // a sticky patch centred on the aimed hex; whoever stands in it (either side) may fall asleep (rolled as the cast plays)
     const int radius = webOfDreamsSize(u.level);
     const double chance = webOfDreamsSleepChance(u.level);
-    const std::vector<BattleHex> cellsHit = hexAreaTiles(b, cell, radius);
-    b.webZones().push_back({cellsHit, kWebDuration, cell, radius, chance});
+    const std::vector<BattleHex> cellsHit = areaTiles(b, cell, radius);
+    b.webZones().push_back({cellsHit, kWebDuration, cell, std::max(1, radius), chance});
     spendTier(u, kind);
     b.noteAware(caster, kSupportCe, kSupportVe);
     s.type = BattleStep::Type::Effect, s.tiles = cellsHit, s.spellMul = chance;
     steps.push_back(s);
   } else if (kind == "auraOfProtection" || kind == "intimidatingPresence") {
     const AuraP p = auraPower(u.level);
-    b.auraZones().push_back({hexAreaTiles(b, from, areaRadius(kind, p.radius, u.level)), p.duration, kind == "auraOfProtection" ? "protection" : "intimidation", u.side, p.pct});
+    b.auraZones().push_back({areaTiles(b, from, areaRadius(kind, p.radius, u.level)), p.duration, kind == "auraOfProtection" ? "protection" : "intimidation", u.side, p.pct});
     spendTier(u, kind);
     b.noteAware(caster, kSupportCe, kSupportVe);
     s.type = BattleStep::Type::Effect, s.tiles = {from};
@@ -1045,16 +1047,16 @@ std::vector<BattleHex> areaE2(const Battle& b, size_t caster, const std::string&
     const std::optional<CubeI> dir = ray.empty() ? std::nullopt : axisDir(from, ray[0]);
     return dir ? coneSector(b, from, *dir, p.radius) : std::vector<BattleHex>{};
   }
-  if (kind == "fireball") return hexAreaTiles(b, cell, areaRadius(kind, kFireballSize, u.level));
-  if (kind == "causticVenom") return hexAreaTiles(b, cell, areaRadius(kind, kCausticVenom.size, u.level));
-  if (kind == "minorVenom") return hexAreaTiles(b, cell, areaRadius(kind, kMinorVenom.size, u.level));
-  if (kind == "divineBolt") return hexAreaTiles(b, cell, areaRadius(kind, kDivineBolt.size, u.level));
-  if (kind == "webOfDreams") return hexAreaTiles(b, cell, webOfDreamsSize(u.level));
+  if (kind == "fireball") return areaTiles(b, cell, areaRadius(kind, kFireballSize, u.level));
+  if (kind == "causticVenom") return areaTiles(b, cell, areaRadius(kind, kCausticVenom.size, u.level));
+  if (kind == "minorVenom") return areaTiles(b, cell, areaRadius(kind, kMinorVenom.size, u.level));
+  if (kind == "divineBolt") return areaTiles(b, cell, areaRadius(kind, kDivineBolt.size, u.level));
+  if (kind == "webOfDreams") return areaTiles(b, cell, webOfDreamsSize(u.level));
   if (kind == "iceStorm") return iceStormAreaTiles(b, cell, u.level);
   if (kind == "provoke") return hexAreaTiles(b, cell, provokePower(u.level).radius);
   if (kind == "turnUndead") {
     std::vector<BattleHex> t;
-    for (const BattleHex& h : hexAreaTiles(b, from, turnUndeadPower(u.level).radius))
+    for (const BattleHex& h : areaTiles(b, from, turnUndeadPower(u.level).radius))
       if (b.cell(h.x, h.y).terrain != "void") t.push_back(h);
     return t;
   }
@@ -1063,7 +1065,7 @@ std::vector<BattleHex> areaE2(const Battle& b, size_t caster, const std::string&
     if (!t.empty()) t.erase(t.begin());
     return t;
   }
-  if (kind == "auraOfProtection" || kind == "intimidatingPresence") return hexAreaTiles(b, from, areaRadius(kind, auraPower(u.level).radius, u.level));
-  if (kind == "bless") return hexAreaTiles(b, from, areaRadius(kind, kBlessRadius, u.level));
+  if (kind == "auraOfProtection" || kind == "intimidatingPresence") return areaTiles(b, from, areaRadius(kind, auraPower(u.level).radius, u.level));
+  if (kind == "bless") return areaTiles(b, from, areaRadius(kind, kBlessRadius, u.level));
   return {cell};
 }

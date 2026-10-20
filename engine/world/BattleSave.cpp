@@ -99,6 +99,11 @@ nlohmann::json Battle::snapshot() const {
                      {"faces", z.faces},     {"mul", z.mul},               {"mag", z.mag},            {"statPct", z.statPct},
                      {"centreMul", z.centreMul}, {"ringMul", z.ringMul},   {"centreDice", z.centreDice}, {"centreFaces", z.centreFaces},
                      {"ringDice", z.ringDice}, {"ringFaces", z.ringFaces}});
+  for (size_t i = 0; i < zones_.size(); ++i) {  // a zone's own hexes (its area stage), as [x, y] pairs
+    nlohmann::json cells = nlohmann::json::array();
+    for (const BattleHex& c : zones_[i].cells) cells.push_back({c.x, c.y});
+    zones[i]["cells"] = std::move(cells);
+  }
   // Engine2's zones, in captureSnapshot's shapes
   auto cellsJson = [](const std::vector<BattleHex>& cells) {
     nlohmann::json a = nlohmann::json::array();
@@ -277,6 +282,9 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       z.dice = j.value("dice", 0), z.faces = j.value("faces", 0), z.mul = j.value("mul", 0.0), z.mag = j.value("mag", 0.0), z.statPct = j.value("statPct", 0);
       z.centreMul = j.value("centreMul", 0.0), z.ringMul = j.value("ringMul", 0.0), z.centreDice = j.value("centreDice", 0);
       z.centreFaces = j.value("centreFaces", 0), z.ringDice = j.value("ringDice", 0), z.ringFaces = j.value("ringFaces", 0);
+      if (j.contains("cells") && j["cells"].is_array())
+        for (const nlohmann::json& c : j["cells"])
+          if (c.is_array() && c.size() == 2) z.cells.push_back({c[0].get<int>(), c[1].get<int>()});
       zoneSerial_ = std::max(zoneSerial_, z.id);
       zones_.push_back(std::move(z));
     }

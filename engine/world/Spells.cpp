@@ -230,7 +230,11 @@ Dice longShotPower(int level) {
 }
 constexpr int kMissileRange = 5, kMissileDice = 1, kMissileFaces = 4, kMissileBonus = 0;  // MAGIC_MISSILE
 constexpr double kMissileMul = 1.15;
-int magicMissileCount(int level) { return level >= 6 ? 3 : level >= 3 ? 2 : 1; }
+// Based on AD&D 2e's Magic Missile, not a copy (the user, 2026-10-20): one missile, one more every three levels, five at the 13th.
+int magicMissileCount(int level) {
+  if (!progressionEnabled()) return level >= 6 ? 3 : level >= 3 ? 2 : 1;
+  return std::min(5, 1 + (std::max(1, level) - 1) / 3);
+}
 double piercingMul(int level) { return level >= 13 ? 2.5 : level >= 10 ? 2.25 : level >= 6 ? 2 : 1.5; }
 constexpr double kThrustArmorIgnore = 0.2;  // PIERCING_THRUST.armorIgnore
 Dice doubleStrikePower(int level) {
@@ -246,6 +250,8 @@ Dice doubleStrikePower(int level) {
 }
 // LIGHTNING / SHOCK
 constexpr int kLightningRange = 5, kLightningDice = 2, kLightningFaces = 8, kLightningBonus = 0;
+// AD&D 2e Lightning Bolt gains a die with the caster's level: here +1D8 every four levels after it is learned (3), at most 5D8.
+int lightningDice(int level) { return progressionEnabled() ? std::min(5, kLightningDice + std::max(0, level - 3) / 4) : kLightningDice; }
 constexpr double kLightningMul = 2.0;
 constexpr BattleUnit::Echo kLightningEcho{1, 12, 2, 0};
 constexpr int kShockRange = 5, kShockDice = 1, kShockFaces = 6, kShockBonus = 0;
@@ -338,61 +344,99 @@ const PoisonTier* poisonTier(const std::string& id) {
   return nullptr;
 }
 
-// --- Reach: +1 hex per level from the level a spell is learned, up to 12 hexes (the user, 2026-10-20: "o alcance aumenta à
-// vontade, tem que aumentar por level igual DD2", "com um cap obviamente", "manda brasa"; 12 = the party's sight) ---
-// Touch spells, cones / lines / rays from the caster, self areas and the weapon skills keep their reach. Off in the Cooker's checks.
+// --- Each spell's own scaling (the user, 2026-10-20: "refazer todas as magias uma por uma com sentido real baseado no Advanced
+// Dungeons & Dragons second edition"; every spell unique; the reach grows with the caster's level as AD&D 2e's (+10 yards a level =
+// a hex a level, +5 = a hex every two, a fixed reach a hex every few), never past 12 hexes (the party's sight); an area starts as
+// 3 hexes (a size-3 body) on the level it is learned and grows a ring at a time on the spell's own levels; the Bola de Fogo's three
+// rings are the largest area in the game). Off in the Cooker's checks. Docs: docs/SPELLS_SCALING.md. ---
 constexpr int kReachCap = 12;
-struct ReachFrom {
+struct ReachScale {
   const char* kind;
-  int from;  // the level the spell is learned
+  int learn;        // the level it is learned (its tier's first use for the class)
+  int levelsPerHex; // levels per hex of reach gained
+  int cap;          // the reach never goes past this (nor below the spell's own)
 };
-constexpr ReachFrom kReachFrom[] = {
-    {"magicMissile", 1},    {"magicMissileV2", 1}, {"lightning", 1},       {"lightningTier3", 15}, {"fireball", 1},
-    {"divineBolt", 1},      {"webOfDreams", 1},    {"phantasmalForce", 2}, {"cureDisease", 1},     {"cureMinor", 1},
-    {"cureLight", 1},       {"longShot", 1},       {"bloodyShot", 5},      {"multiShot", 1},       {"summonFamiliar", 1},
-    {"summonFamiliar2", 1}, {"summonFamiliar3", 1}, {"summonFamiliar4", 1}, {"summonZombieDog", 1},
+constexpr ReachScale kReachScale[] = {
+    // Mago Negro
+    {"magicMissile", 1, 1, 12}, {"magicMissileV2", 1, 1, 12}, {"lightning", 3, 1, 12}, {"fireball", 6, 1, 12},
+    {"causticVenom", 11, 2, 12}, {"lightningTier3", 15, 1, 12},
+    // Curandeiro / Paladino
+    {"cureMinor", 1, 3, 6}, {"cureWounds", 3, 5, 5}, {"cureDisease", 6, 5, 4}, {"divineBolt", 8, 2, 12}, {"cureLight", 11, 6, 3},
+    {"circleOfHealing", 9, 2, 10}, {"judgment", 14, 3, 10},
+    // Conjurador
+    {"phantasmalForce", 2, 1, 12}, {"webOfDreams", 3, 2, 12}, {"placeSwap", 3, 2, 10}, {"mirrorImage", 7, 3, 9},
+    {"detonateSummon", 9, 2, 10}, {"nightmare", 13, 2, 12}, {"summonFamiliar", 1, 2, 8}, {"summonFamiliar2", 3, 2, 8},
+    {"summonFamiliar4", 6, 2, 8}, {"summonFamiliar3", 8, 2, 8}, {"summonZombieDog", 11, 2, 8},
+    // Bruxo
+    {"markOfRuin", 15, 2, 11}, {"creepingPlague", 15, 4, 9}, {"lifeDrain", 16, 5, 7}, {"shroudOfShadows", 17, 1, 12},
+    {"hemorrhage", 18, 3, 9}, {"profaneSilence", 19, 3, 10}, {"blackPestilence", 21, 4, 9}, {"curseOfDecay", 22, 4, 8},
+    {"soulHarvest", 23, 1, 12}, {"devouringVoid", 25, 2, 11},
+    // Elementalista
+    {"pillarOfFlame", 15, 3, 11}, {"iceLance", 15, 2, 12}, {"thunderstorm", 16, 2, 12}, {"meteor", 17, 1, 12},
+    {"absoluteZero", 18, 3, 10}, {"chainLightning", 19, 2, 12}, {"wrathOfTheSkies", 23, 2, 12}, {"primordialEmber", 25, 2, 10},
+    // Arqueira (the shots: the hexes past the bow)
+    {"longShot", 1, 2, 12}, {"bloodyShot", 5, 2, 12}, {"multiShot", 7, 2, 12}, {"arrowRain", 7, 2, 12}, {"arrowStorm", 13, 2, 12},
+    {"venomArrow", 2, 3, 12}, {"explosiveArrow", 10, 3, 12}, {"cripplingShot", 12, 3, 12}, {"deathShot", 15, 3, 12},
+    // the plants' venom
+    {"minorVenom", 8, 4, 7},
 };
-// The classes' new spells cast at a distance (the shots: the hexes past the bow).
-bool emberReachGrows(const std::string& kind) {
-  static const std::set<std::string> kGrows = {"markOfRuin",     "creepingPlague", "lifeDrain",       "shroudOfShadows", "hemorrhage",
-                                               "profaneSilence", "blackPestilence", "curseOfDecay",   "soulHarvest",     "devouringVoid",
-                                               "pillarOfFlame",  "iceLance",        "thunderstorm",   "meteor",          "absoluteZero",
-                                               "chainLightning", "wrathOfTheSkies", "primordialEmber", "arrowRain",      "arrowStorm",
-                                               "circleOfHealing", "judgment",       "placeSwap",      "mirrorImage",     "detonateSummon",
-                                               "nightmare",      "venomArrow",      "explosiveArrow", "cripplingShot",   "deathShot"};
-  return kGrows.contains(kind);
+const ReachScale* reachScale(const std::string& kind) {
+  for (const ReachScale& r : kReachScale)
+    if (kind == r.kind) return &r;
+  return nullptr;
 }
-// The levels gained since the spell was learned (each one a hex of reach; the caller caps the reach at kReachCap).
+// The hexes of reach gained since the spell was learned (its own pace).
 int reachGain(const std::string& kind, int level) {
-  if (!progressionEnabled()) return 0;
-  int from = -1;
-  for (const ReachFrom& r : kReachFrom)
-    if (kind == r.kind) from = r.from;
-  if (from < 0 && emberReachGrows(kind))
-    if (const EmberSpell* e = emberSpell(kind)) from = e->learn;
-  return from < 0 ? 0 : std::max(0, level - from);
+  const ReachScale* r = progressionEnabled() ? reachScale(kind) : nullptr;
+  return r ? std::max(0, level - r->learn) / r->levelsPerHex : 0;
 }
-// A spell's reach at this level: its own, +1 per level, never past kReachCap (nor below its own).
-int grownReach(const std::string& kind, int base, int level) { return std::max(base, std::min(kReachCap, base + reachGain(kind, level))); }
+// A spell's reach at this level: its own plus what it gained, never past its cap (nor below its own).
+int grownReach(const std::string& kind, int base, int level) {
+  const ReachScale* r = progressionEnabled() ? reachScale(kind) : nullptr;
+  return r ? std::max(base, std::min(r->cap, base + reachGain(kind, level))) : base;
+}
 // A bow skill's reach: the bow's own plus the skill's extra hexes, never past kReachCap (nor below the bow's).
 int shotReach(int bow, int extra) { return std::max(bow, std::min(kReachCap, bow + extra)); }
-// --- Areas of effect: +1 radius every 10 levels after the spell is learned, never past radius 3 (the user, 2026-10-20: only the
-// spells with an area grow one, "sem exageros na AOE"). The weapon skills keep theirs. ---
-constexpr int kAreaCap = 3;
-constexpr ReachFrom kAreaFrom[] = {
-    {"fireball", 1}, {"webOfDreams", 1}, {"divineBolt", 1}, {"causticVenom", 1}, {"minorVenom", 1},
-    {"bless", 3},    {"auraOfProtection", 1}, {"intimidatingPresence", 1}, {"turnUndead", 6},
+// Areas: stage 0 = 3 hexes (the aimed one and two beside it, a size-3 body), stage N = every hex within N rings.
+struct AreaScale {
+  const char* kind;
+  int start;     // the stage on the level it is learned
+  int steps[4];  // the levels at which it grows a ring (0 = no more)
 };
-bool emberAreaGrows(const std::string& kind);
+constexpr AreaScale kAreaScale[] = {
+    // Every area spell grows two or three times, from 3 hexes on the level it is learned (the user, 2026-10-20). The Veneno
+    // Cáustico has the game's largest area (four rings: "4 anéis porque é maior"), the Bola de Fogo the next (three).
+    // Mago Negro
+    {"fireball", 0, {8, 13, 18}}, {"causticVenom", 0, {14, 18, 22, 26}}, {"minorVenom", 0, {16, 24, 0}},
+    // Curandeiro / Paladino / Cavaleiro Pesado
+    {"bless", 0, {11, 19, 0}}, {"turnUndead", 0, {14, 22, 0}}, {"divineBolt", 0, {16, 24, 0}}, {"circleOfHealing", 0, {13, 21, 0}},
+    {"judgment", 0, {20, 26, 0}}, {"auraOfProtection", 0, {20, 25, 0}}, {"intimidatingPresence", 0, {21, 27, 0}},
+    // Conjurador
+    {"webOfDreams", 0, {9, 15, 0}}, {"detonateSummon", 0, {15, 23, 0}}, {"nightmare", 0, {19, 27, 0}},
+    // Bruxo
+    {"shroudOfShadows", 0, {21, 25, 0}}, {"profaneSilence", 0, {23, 28, 0}}, {"blackPestilence", 0, {24, 27, 0}},
+    {"soulHarvest", 0, {26, 29, 0}},
+    // Elementalista
+    {"pillarOfFlame", 0, {20, 26, 0}}, {"thunderstorm", 0, {21, 28, 0}}, {"meteor", 0, {21, 25, 0}}, {"absoluteZero", 0, {22, 26, 0}},
+    {"eruption", 0, {24, 28, 0}}, {"primordialEmber", 0, {27, 30, 0}},
+    // Arqueira: arrows, not a bomb
+    {"arrowRain", 0, {13, 21, 0}}, {"arrowStorm", 0, {17, 25, 0}},
+};
+// The area stage of a spell at this level (its own table), else its own radius as it was.
 int areaRadius(const std::string& kind, int base, int level) {
-  if (!progressionEnabled() || base >= kAreaCap) return base;
-  int from = -1;
-  for (const ReachFrom& r : kAreaFrom)
-    if (kind == r.kind) from = r.from;
-  if (from < 0 && emberAreaGrows(kind))
-    if (const EmberSpell* e = emberSpell(kind)) from = e->learn;
-  return from < 0 ? base : std::min(kAreaCap, base + std::max(0, level - from) / 10);
+  if (!progressionEnabled()) return base;
+  for (const AreaScale& a : kAreaScale)
+    if (kind == a.kind) {
+      int stage = a.start;
+      for (const int at : a.steps)
+        if (at > 0 && level >= at) ++stage;
+      return stage;
+    }
+  return base;
 }
+// What an area stage reads as ("3 hexes", "raio 2").
+std::string areaLabel(int stage) { return stage <= 0 ? std::string("3 hexes") : std::format("raio {}", stage); }
+bool emberAreaGrows(const std::string& kind);
 
 // --- EmberEngine's own spells: their numbers by the caster's level (docs/SPELLS_PROMOTIONS.md) -------------------------
 struct EmberNumbers {
@@ -1115,6 +1159,18 @@ std::vector<BattleHex> hexesWithin(const Battle& b, BattleHex centre, int radius
     }
   return out;
 }
+bool inArea(const std::vector<BattleHex>& area, BattleHex h) { return std::find(area.begin(), area.end(), h) != area.end(); }
+// An area stage's hexes round a centre (areaRadius): 0 = the centre and the first two hexes beside it on the board (a size-3 body),
+// N = every hex within N rings.
+std::vector<BattleHex> areaTiles(const Battle& b, BattleHex centre, int stage) {
+  if (stage >= 1) return hexesWithin(b, centre, stage);
+  std::vector<BattleHex> out{centre};
+  for (const BattleHex& n : Battle::neighbors(centre.x, centre.y)) {
+    if (out.size() >= 3) break;
+    if (b.inBounds(n.x, n.y)) out.push_back(n);
+  }
+  return out;
+}
 // Everyone standing on the hexes but the caster, in the battle's order (queueFrost's way); the caster's foes only unless
 // bothSides.
 std::vector<size_t> unitsOn(const Battle& b, size_t caster, const std::vector<BattleHex>& hexes, bool bothSides) {
@@ -1359,7 +1415,7 @@ void landMeteors(Battle& b, size_t caster, Mulberry32& rng, std::vector<BattleEf
     const Battle::Zone z = *it;
     b.removeZone(id);
     b.noteLanded(z);
-    const std::vector<BattleHex> area = hexesWithin(b, z.centre, z.radius);
+    const std::vector<BattleHex> area = z.cells.empty() ? hexesWithin(b, z.centre, z.radius) : z.cells;
     bool first = true;
     for (size_t i : unitsOn(b, caster, area, true)) {
       BattleUnit& foe = b.units()[i];
@@ -1670,7 +1726,7 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
   } else if (kind == "circleOfHealing") {
     // Holy light over an area: every ally standing in it (the caster too) heals its own roll of the cure's formula. A Heal step
     // with the whole list in `ids` (def = the caster: nobody to turn to).
-    const std::vector<BattleHex> area = hexesWithin(b, cell, n.radius);
+    const std::vector<BattleHex> area = areaTiles(b, cell, n.radius);
     s.type = BattleStep::Type::Heal;
     s.def = caster;
     s.tiles = area;
@@ -1718,7 +1774,7 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     if (summon < 0) return fail("Escolha uma invocação sua.");
     if (hexDist(from, cell) > n.range) return fail(std::format("Invocação fora de alcance (máximo {} hexes).", n.range));
     const BattleUnit& sm = b.units()[static_cast<size_t>(summon)];
-    const std::vector<BattleHex> area = hexesWithin(b, {sm.x, sm.y}, n.radius);
+    const std::vector<BattleHex> area = areaTiles(b, {sm.x, sm.y}, n.radius);
     s.tiles = area;
     for (size_t id : unitsOn(b, caster, area, true))
       if (id != static_cast<size_t>(summon)) s.ids.push_back(id);
@@ -1756,7 +1812,7 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     s.tiles = {cell};
     steps.push_back(s);
   } else if (emberAreaSpell(kind)) {
-    const std::vector<BattleHex> area = hexesWithin(b, cell, n.radius);
+    const std::vector<BattleHex> area = areaTiles(b, cell, n.radius);
     s.tiles = area;
     if (kind == "meteor") {
       s.delayed = true;  // its zone is laid at the impact; it falls at the caster's next turn
@@ -1795,7 +1851,7 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     steps.push_back(s);
   } else if (kind == "eruption") {
     if (!(cell == from)) return fail("Esta magia não precisa de alvo.");
-    const std::vector<BattleHex> area = hexesWithin(b, from, n.radius);
+    const std::vector<BattleHex> area = areaTiles(b, from, n.radius);
     s.tiles = area;
     s.ids = unitsOn(b, caster, area, false);
     spend();
@@ -2015,7 +2071,7 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     // Arrows from above over an area round the aimed hex: every foe in it takes a share of the bow's roll (+ the dice).
     if (hexDist(from, cell) > n.range) return fail(std::format("Alvo fora de alcance (máximo {} hexes).", n.range));
     if (b.cell(cell.x, cell.y).terrain == "void") return fail("Não há chão nessa casa.");
-    const std::vector<BattleHex> area = hexesWithin(b, cell, n.radius);
+    const std::vector<BattleHex> area = areaTiles(b, cell, n.radius);
     s.dice = 0, s.spellMul = 1;
     s.tiles = area;
     s.ids = unitsOn(b, caster, area, false);
@@ -2037,6 +2093,7 @@ void layZone(Battle& b, const BattleStep& step, const Fighter& A) {
   z.kind = step.kind, z.caster = step.att, z.mag = A.mag;
   z.centre = step.kind == "eruption" ? BattleHex{att.x, att.y} : step.tiles.front();
   z.radius = n.radius, z.rounds = n.rounds;
+  z.cells = areaTiles(b, z.centre, n.radius);  // its own area stage (3 hexes, then rings)
   z.element = elementOf(step.kind);
   if (step.kind == "pillarOfFlame" || step.kind == "primordialEmber") {
     z.kind = "burning", z.hazardDice = n.hazardDice, z.hazardFaces = n.hazardFaces;
@@ -2157,10 +2214,10 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind) {
   // The Arqueiro's (the bow's own roll, hit chance and mastery, plus the dice)
   if (archerShot(kind)) s += std::format(" · alcance do arco{}", n.length > 0 ? std::format(" + {}", n.length) : "");
   if (kind == "venomArrow") return s + std::format("\ntiro de arco + {}D{} · {}", n.dice, n.faces, poisonTier(n.tier)->name);
-  if (kind == "arrowRain") return s + std::format("\nalcance {} · raio {} · ×{:g} do arco + {}D{} em cada inimigo · sem linha de tiro", n.range, n.radius, n.mul, n.dice, n.faces);
+  if (kind == "arrowRain") return s + std::format("\nalcance {} · {} · ×{:g} do arco + {}D{} em cada inimigo · sem linha de tiro", n.range, areaLabel(n.radius), n.mul, n.dice, n.faces);
   if (kind == "explosiveArrow") return s + std::format("\n×{:g} do arco + {}D{} · os inimigos vizinhos do alvo levam {}%", n.mul, n.dice, n.faces, n.pct);
   if (kind == "cripplingShot") return s + std::format("\ntiro de arco + {}D{} · Paralisado: -{}% MOV por {} turnos", n.dice, n.faces, n.pct, n.turns);
-  if (kind == "arrowStorm") return s + std::format("\nalcance {} · raio {} · ×{:g} do arco + {}D{} em cada inimigo · sem linha de tiro", n.range, n.radius, n.mul, n.dice, n.faces);
+  if (kind == "arrowStorm") return s + std::format("\nalcance {} · {} · ×{:g} do arco + {}D{} em cada inimigo · sem linha de tiro", n.range, areaLabel(n.radius), n.mul, n.dice, n.faces);
   if (kind == "deathShot") return s + std::format("\n×{:g} do arco + {}D{} · abaixo de {}% do HP, morre", n.mul, n.dice, n.faces, n.pct);
   // The Lanceiro's (the lance's own roll, hit chance and mastery, plus the dice)
   auto bonus = [&] { return n.dice > 0 ? std::format(" + {}D{}", n.dice, n.faces) : std::string(); };
@@ -2186,32 +2243,32 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind) {
   if (kind == "mirrorImage") return s + std::format("\n{} cópias ilusórias em um aliado por {} rodadas · cada ataque tem 1 chance em 3 de acertar uma cópia, que some", n.count, n.rounds);
   if (kind == "detonateSummon") return s + std::format("\nexplode uma invocação sua · todos a até {} hex{} dela levam {} · a invocação some", n.radius, n.radius > 1 ? "es" : "", dmg(n.mul, n.dice, n.faces));
   if (kind == "sacrificeBond") return s + std::format("\naté o fim da batalha, {}% do dano que você recebe vai para a sua invocação mais próxima", n.pct);
-  if (kind == "nightmare") return s + std::format("\nraio {} · {} em cada inimigo · quem dorme leva o dobro · {}% de chance de medo por {} turno{}", n.radius, dmg(n.mul, n.dice, n.faces), n.pct, n.turns, n.turns > 1 ? "s" : "");
+  if (kind == "nightmare") return s + std::format("\n{} · {} em cada inimigo · quem dorme leva o dobro · {}% de chance de medo por {} turno{}", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces), n.pct, n.turns, n.turns > 1 ? "s" : "");
   if (kind == "empowerSummons") return s + std::format("\ntodas as suas invocações: +{}% em todos os atributos por {} rodadas", n.pct, n.rounds);
   // The Curandeiro's (the cures' formula; the healing skill adds +1 % a point)
-  if (kind == "circleOfHealing") return s + std::format("\nraio {} · cada aliado na área cura {} HP", n.radius, dmg(n.mul, n.dice, n.faces));
+  if (kind == "circleOfHealing") return s + std::format("\n{} · cada aliado na área cura {} HP", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces));
   if (kind == "resurrection") return s + std::format("\num aliado caído ao lado volta com {} HP · age no seu próximo turno", dmg(n.mul, n.dice, n.faces));
-  if (kind == "judgment") return s + std::format("\nraio {} · {} em cada inimigo · mortos-vivos ×{:g}", n.radius, dmg(n.mul, n.dice, n.faces), n.tickMul);
+  if (kind == "judgment") return s + std::format("\n{} · {} em cada inimigo · mortos-vivos ×{:g}", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces), n.tickMul);
   if (kind == "markOfRuin") s += std::format("\n{} · o alvo recebe +{}% de dano por {} turnos", dmg(n.mul, n.dice, n.faces), n.pct, n.turns);
   else if (kind == "creepingPlague") s += std::format("\n{} · {} que passa a {} vizinho{} por turno", dmg(n.mul, n.dice, n.faces), poisonTier(n.tier)->name, n.spread, n.spread > 1 ? "s" : "");
   else if (kind == "lifeDrain") s += std::format("\n{} · cura {}% do dano causado", dmg(n.mul, n.dice, n.faces), n.pct);
-  else if (kind == "shroudOfShadows") s += std::format("\nzona raio {} por {} rodadas · -{}% ATK e MAG · {} por turno a quem está dentro", n.radius, n.rounds, n.pct, dmg(n.tickMul, n.tickDice, n.tickFaces));
+  else if (kind == "shroudOfShadows") s += std::format("\nzona {} por {} rodadas · -{}% ATK e MAG · {} por turno a quem está dentro", areaLabel(n.radius), n.rounds, n.pct, dmg(n.tickMul, n.tickDice, n.tickFaces));
   else if (kind == "hemorrhage") s += std::format("\n{} · sangra {}D{} por turno durante {}D{} turnos · curas pela metade", dmg(n.mul, n.dice, n.faces), n.tickDice, n.tickFaces, n.durDice, n.durFaces);
-  else if (kind == "profaneSilence") s += std::format("\nraio {} · {} · silenciados por {} turnos, -1 uso do maior tier", n.radius, dmg(n.mul, n.dice, n.faces), n.turns);
-  else if (kind == "blackPestilence") s += std::format("\nraio {} (os dois lados) · {} · {} · quem morre envenenado contagia os vizinhos", n.radius, dmg(n.mul, n.dice, n.faces), poisonTier(n.tier)->name);
+  else if (kind == "profaneSilence") s += std::format("\n{} · {} · silenciados por {} turnos, -1 uso do maior tier", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces), n.turns);
+  else if (kind == "blackPestilence") s += std::format("\n{} (os dois lados) · {} · {} · quem morre envenenado contagia os vizinhos", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces), poisonTier(n.tier)->name);
   else if (kind == "curseOfDecay") s += std::format("\n{} · -{}% de todos os atributos por turno até -{}% · {} por turno · {} turnos", dmg(n.mul, n.dice, n.faces), n.spread, n.pct, dmg(n.tickMul, n.tickDice, n.tickFaces), n.turns);
-  else if (kind == "soulHarvest") s += std::format("\nraio {} · {} em cada inimigo · venenos, sangrias e maldições batem mais uma vez · cura {}% do HP por inimigo", n.radius, dmg(n.mul, n.dice, n.faces), n.pct);
+  else if (kind == "soulHarvest") s += std::format("\n{} · {} em cada inimigo · venenos, sangrias e maldições batem mais uma vez · cura {}% do HP por inimigo", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces), n.pct);
   else if (kind == "devouringVoid") s += std::format("\n{} · -{} de resistência a Escuridão pelo resto da batalha · abaixo de {}% do HP, morre", dmg(n.mul, n.dice, n.faces), n.spread, n.pct);
-  else if (kind == "pillarOfFlame") s += std::format("\nraio {} · {} · o chão arde {}D{} por {} rodada{}", n.radius, dmg(n.mul, n.dice, n.faces), n.hazardDice, n.hazardFaces, n.rounds, n.rounds > 1 ? "s" : "");
+  else if (kind == "pillarOfFlame") s += std::format("\n{} · {} · o chão arde {}D{} por {} rodada{}", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces), n.hazardDice, n.hazardFaces, n.rounds, n.rounds > 1 ? "s" : "");
   else if (kind == "iceLance") s += std::format("\nreta até a borda · {} · os seguintes recebem {}%", dmg(n.mul, n.dice, n.faces), n.pct);
-  else if (kind == "thunderstorm") s += std::format("\nraio {} · {} · cada atingido ecoa {}D{}+{} num vizinho", n.radius, dmg(n.mul, n.dice, n.faces), n.tickDice, n.tickFaces, n.bonus);
-  else if (kind == "meteor") s += std::format("\nraio {} · cai no início do seu próximo turno · centro {} · anel {}", n.radius, dmg(n.mul, n.dice, n.faces), dmg(n.ringMul, n.ringDice, n.ringFaces));
-  else if (kind == "absoluteZero") s += std::format("\nraio {} · {} · ×1.5 dentro de uma Tempestade de Gelo", n.radius, dmg(n.mul, n.dice, n.faces));
+  else if (kind == "thunderstorm") s += std::format("\n{} · {} · cada atingido ecoa {}D{}+{} num vizinho", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces), n.tickDice, n.tickFaces, n.bonus);
+  else if (kind == "meteor") s += std::format("\n{} · cai no início do seu próximo turno · centro {} · anel {}", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces), dmg(n.ringMul, n.ringDice, n.ringFaces));
+  else if (kind == "absoluteZero") s += std::format("\n{} · {} · ×1.5 dentro de uma Tempestade de Gelo", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces));
   else if (kind == "chainLightning") s += std::format("\n{} · salta até {} vezes (a {} hexes), -{}% por salto", dmg(n.mul, n.dice, n.faces), n.jumps, n.length, static_cast<int>(n.decay * 100));
-  else if (kind == "eruption") s += std::format("\nem volta de si, raio {} · {} em cada inimigo · o anel arde {} rodadas", n.radius, dmg(n.mul, n.dice, n.faces), n.rounds);
+  else if (kind == "eruption") s += std::format("\nem volta de si, {} · {} em cada inimigo · o anel arde {} rodadas", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces), n.rounds);
   else if (kind == "glacialGale") s += std::format("\ncone de {} hexes (os dois lados) · {} · empurra {} hex", n.length, dmg(n.mul, n.dice, n.faces), n.push);
   else if (kind == "wrathOfTheSkies") s += std::format("\n{} raios à escolha · {} cada · eco 2D12+8", n.count, dmg(n.mul, n.dice, n.faces));
-  else if (kind == "primordialEmber") s += std::format("\nraio {} (os dois lados) · {} · o chão fica em brasa {}D{} por {} rodadas", n.radius, dmg(n.mul, n.dice, n.faces), n.hazardDice, n.hazardFaces, n.rounds);
+  else if (kind == "primordialEmber") s += std::format("\n{} (os dois lados) · {} · o chão fica em brasa {}D{} por {} rodadas", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces), n.hazardDice, n.hazardFaces, n.rounds);
   return s;
 }
 
@@ -2467,8 +2524,8 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   else if (kind == "swapPost") maxRange = emberNumbers(kind, u.level).range;
   else if (kind == "spearToss" || kind == "impaleDrag") maxRange = -1;  // wherever a throw / a drag can end
   else if (kind == "fireball") maxRange = grown(kFireballRange), shot = true;
-  else if (kind == "causticVenom") maxRange = kCausticVenom.range, shot = true;
-  else if (kind == "minorVenom") maxRange = kMinorVenom.range, shot = true;
+  else if (kind == "causticVenom") maxRange = grown(kCausticVenom.range), shot = true;
+  else if (kind == "minorVenom") maxRange = grown(kMinorVenom.range), shot = true;
   else if (kind == "divineBolt") maxRange = grown(kDivineBolt.range), shot = true;
   else if (kind == "webOfDreams") maxRange = grown(kWebRange), shot = true;
   else if (kind == "iceStorm") maxRange = grown(iceStormPower(u.level).range), shot = true;
@@ -2660,7 +2717,7 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
       }
       if (b.cell(cell.x, cell.y).terrain == "void") return fail("Não há chão nessa casa.");
       for (const BattleUnit& t : b.units())
-        if (t.alive && t.side == u.side && (b.debugFreeCast() || t.hp < t.maxHp) && hexDist(cell, {t.x, t.y}) <= n.radius) return true;
+        if (t.alive && t.side == u.side && (b.debugFreeCast() || t.hp < t.maxHp) && inArea(areaTiles(b, cell, n.radius), {t.x, t.y})) return true;
       return fail("Não há aliado ferido nessa área.");
     }
     if (emberBoltSpell(kind)) {
@@ -2691,15 +2748,15 @@ std::vector<BattleHex> spellArea(const Battle& b, size_t caster, const std::stri
     const EmberNumbers n = emberNumbers(kind, u.level);
     if (kind == "iceLance") return piercingRay(b, {u.x, u.y}, cell);
     if (kind == "glacialGale") return coneHexes(b, {u.x, u.y}, cell, n.length);
-    if (kind == "eruption") return hexesWithin(b, {u.x, u.y}, n.radius);
-    if (emberAreaSpell(kind)) return hexesWithin(b, cell, n.radius);
+    if (kind == "eruption") return areaTiles(b, {u.x, u.y}, n.radius);
+    if (emberAreaSpell(kind)) return areaTiles(b, cell, n.radius);
     if (kind == "steelWhirlwind") {
       std::vector<BattleHex> ring = hexesWithin(b, {u.x, u.y}, n.radius);
       std::erase_if(ring, [&](const BattleHex& h) { return h.x == u.x && h.y == u.y; });
       return ring;
     }
     if (kind == "warCry") return hexesWithin(b, {u.x, u.y}, n.radius);
-    if (archerVolley(kind)) return hexesWithin(b, cell, n.radius);
+    if (archerVolley(kind)) return areaTiles(b, cell, n.radius);
     if (kind == "explosiveArrow") return hexesWithin(b, cell, 1);
     if (kind == "leapingStrike") {  // the foe's hex and where the caster lands
       std::vector<BattleHex> out{cell};
@@ -2731,7 +2788,7 @@ std::vector<BattleHex> spellArea(const Battle& b, size_t caster, const std::stri
     if (kind == "placeSwap") return {cell, {u.x, u.y}};
     if (kind == "detonateSummon") {
       const int sm = ownSummonAt(b, caster, cell);
-      return sm >= 0 ? hexesWithin(b, {b.units()[static_cast<size_t>(sm)].x, b.units()[static_cast<size_t>(sm)].y}, n.radius) : std::vector<BattleHex>{cell};
+      return sm >= 0 ? areaTiles(b, {b.units()[static_cast<size_t>(sm)].x, b.units()[static_cast<size_t>(sm)].y}, n.radius) : std::vector<BattleHex>{cell};
     }
   }
   return areaE2(b, caster, kind, cell);
@@ -2780,7 +2837,7 @@ std::optional<std::vector<BattleStep>> castSpell(Battle& b, size_t caster, const
     if (foe < 0) return fail("Spell was not cast.");
     spendTier(u, kind);
     s.tiles = {cell}, s.ids = {static_cast<size_t>(foe)};
-    s.dice = kLightningDice, s.faces = kLightningFaces, s.bonus = kLightningBonus, s.spellMul = kLightningMul, s.echo = kLightningEcho;
+    s.dice = lightningDice(u.level), s.faces = kLightningFaces, s.bonus = kLightningBonus, s.spellMul = kLightningMul, s.echo = kLightningEcho;
     steps.push_back(s);
   } else if (kind == "magicMissile" || kind == "magicMissileV2") {
     // One step per missile, each with its own roll (castMagicMissile collects them, then spends one use).
@@ -4354,7 +4411,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
     if (u.spells[1] > 0)
       if (const std::optional<Pick> p = best(grownReach("lightning", kLightningRange, u.level), false)) {
         spendTier(u, "lightning");
-        return single(*p, "lightning", kLightningDice, kLightningFaces, kLightningBonus, kLightningMul, kLightningEcho);
+        return single(*p, "lightning", lightningDice(u.level), kLightningFaces, kLightningBonus, kLightningMul, kLightningEcho);
       }
     if (u.fantomForceCharges > 0)
       if (const std::optional<Pick> p = best(grownReach("phantasmalForce", kFantomForceRange, u.level), true)) {
@@ -4406,7 +4463,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
     }
   }
   // tryAiMinorVenom (the Undead Ox, the plague cattle): Veneno Menor on the splash that reaches the most foes
-  auto bestSplash = [&](const BoltData& d, bool bolt = true) {
+  auto bestSplash = [&](const BoltData& d, const char* kind, bool bolt = true) {
     struct SplashPick {
       BattleHex at, from;
       int score = 0;
@@ -4415,10 +4472,10 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
     for (const ReachCell& cell : reach)
       for (size_t h : heroes) {
         const BattleUnit& f = b.units()[h];
-        if (hexDist({cell.x, cell.y}, {f.x, f.y}) > d.range) continue;
+        if (hexDist({cell.x, cell.y}, {f.x, f.y}) > grownReach(kind, d.range, u.level)) continue;
         if (bolt && !clearShot(b, {cell.x, cell.y}, {f.x, f.y}, false)) continue;
         int hits = 0, sc = 0;
-        for (const BattleHex& t : hexAreaTiles(b, {f.x, f.y}, d.size))
+        for (const BattleHex& t : areaTiles(b, {f.x, f.y}, areaRadius(kind, d.size, u.level)))
           for (size_t g : heroes) {
             const BattleUnit& hit = b.units()[g];
             if (hit.x != t.x || hit.y != t.y) continue;
@@ -4433,7 +4490,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
     return p;
   };
   if ((c == "undeadOx" || c == "plagueBearingCattle") && tierRemaining(u, "minorVenom") > 0)
-    if (const auto p = bestSplash(kMinorVenom)) {
+    if (const auto p = bestSplash(kMinorVenom, "minorVenom")) {
       AiCast cast;
       cast.path = walkTo(p->from);
       if (std::optional<std::vector<BattleStep>> steps = castE2(b, unit, "minorVenom", {p->at}, nullptr, false)) {
@@ -4448,10 +4505,10 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
     if (u.spells[1] > 0)
       if (const std::optional<Pick> p = best(grownReach("lightning", kLightningRange, u.level), false)) {
         spendTier(u, "lightning");
-        return single(*p, "lightning", kLightningDice, kLightningFaces, kLightningBonus, kLightningMul, kLightningEcho);
+        return single(*p, "lightning", lightningDice(u.level), kLightningFaces, kLightningBonus, kLightningMul, kLightningEcho);
       }
     if (u.spells[3] > 0)
-      if (const auto p = bestSplash(kCausticVenom)) {
+      if (const auto p = bestSplash(kCausticVenom, "causticVenom")) {
         AiCast cast;
         cast.path = walkTo(p->from);
         if (std::optional<std::vector<BattleStep>> steps = castE2(b, unit, "causticVenom", {p->at}, nullptr, false)) {
@@ -4554,7 +4611,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
         return cast;
       }
       if (u.spells[2] > 0)
-        if (const auto p = bestSplash(kCausticVenom)) {
+        if (const auto p = bestSplash(kCausticVenom, "causticVenom")) {
           std::array<int, 10> kept{};
           std::copy(std::begin(u.spells), std::end(u.spells), kept.begin());
           if (std::optional<std::vector<BattleStep>> steps = castE2(b, unit, "causticVenom", {p->at}, nullptr, false)) {
@@ -4606,7 +4663,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
       }
     }
     if (c == "carnivorousPlant" && tierRemaining(u, "minorVenom") > 0)
-      if (const auto p = bestSplash(kMinorVenom)) {
+      if (const auto p = bestSplash(kMinorVenom, "minorVenom")) {
         AiCast cast;
         cast.path = walkTo(p->from);
         if (std::optional<std::vector<BattleStep>> steps = castE2(b, unit, "minorVenom", {p->at}, nullptr, false)) {

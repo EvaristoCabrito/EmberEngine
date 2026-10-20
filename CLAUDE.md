@@ -18,6 +18,9 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   overrides every Engine2 mention in this file: never base a design, number, rule or look on it, never run or propose parity checks
   against it, never write its name in new code, commits, docs or replies. The game's own rules (Como jogar, the spell tables) are
   EmberEngine's. Data and art the game already loads stay as they are; nothing new comes from there.
+- **D&D = Advanced Dungeons & Dragons 2nd edition ONLY (the user, 2026-10-20: "advanced dungeons and dragons second edition ONLY",
+  "its the only D&D system accepted").** Whenever a rule is based on D&D (spell reach, areas, scaling), use AD&D 2e's rules, never
+  3e / 3.5 / 4e / 5e. Basing is not copying: the user's own rules come first, AD&D 2e only supports them.
 - **Never change any fog (the user, 2026-10-20: "nunca mudar nenhuma névoa mesmo se eu implorar").** Not the fog of war's rules
   (sight 12), not any mist look, not the Atmosfera. A new fog may only be added as a new numbered look when the user asks for one.
 - **No outside engines**, ever (no Unreal/Epic, Unity, Godot). Open-source *libraries* are fine.
