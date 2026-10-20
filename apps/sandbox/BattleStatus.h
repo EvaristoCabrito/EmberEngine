@@ -482,11 +482,16 @@ class BattleStatusSheet {
         SpellRow row;
         row.kind = r.value("kind", "");
         row.tier = r.contains("tier") && r["tier"].is_number() ? r["tier"].get<int>() : 0;
-        if (row.kind == "bullRush") row.tier = e2::spellTierNumber(row.kind);  // ours: tier 3 (Spells.cpp unitTierOf)
+        if (const int ours = e2::spellTierNumber(row.kind); ours > 0) row.tier = ours;  // ours (Spells.cpp unitTierOf): Investida T3, Familiar Titã T5, Cão Zumbi T6
+        // the Cão Zumbi is the Necromante's (grantClassSpells): a hero without it has no line for it
+        if (row.kind == "summonZombieDog" && u.side == "player" && std::find(u.spellList.begin(), u.spellList.end(), row.kind) == u.spellList.end()) continue;
         row.uses = row.tier >= 1 && row.tier <= 10 ? u.spells[row.tier - 1] : 0;
         if (r.value("uses", false) && row.uses <= 0) continue;
         std::string text = tr(r.value("text", ""));
-        if (r.contains("mag") && r["mag"].is_object()) {
+        // a first spell's line from its own numbers at this level (its track), else the sheet's own line
+        const std::string scaled = e2::spellScaleText(u, row.kind, en);
+        if (!scaled.empty()) text = tr(e2::spellName(row.kind)) + " · " + scaled;
+        if (scaled.empty() && r.contains("mag") && r["mag"].is_object()) {
           const e2::Json& m = r["mag"];
           const double mul = m.value("mul", 1.0);
           const int dice = m.value("dice", 0), faces = m.value("faces", 0), bonus = m.value("bonus", 0);
@@ -498,7 +503,7 @@ class BattleStatusSheet {
           const char* what = heals ? (en ? "heals" : "cura") : (en ? "damage" : "dano");
           text += std::format(" · {} {}{}", what, total, roll.empty() ? "" : " + " + roll);
         }
-        text += r.value("after", std::string());
+        if (scaled.empty()) text += r.value("after", std::string());
         if (r.contains("lockLevel") && r["lockLevel"].is_number() && u.level < r["lockLevel"].get<int>()) {
           text += std::format(" · {} {}+", en ? "level" : "nível", r["lockLevel"].get<int>());
           row.uses = 0;

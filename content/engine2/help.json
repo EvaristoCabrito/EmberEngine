@@ -6226,7 +6226,7 @@
         [
          [
           {
-           "text": "Área: 3 hexes; 1 anel no nível 11 e 2 anéis no 19. Healer nível 3. +1% de acerto por nível até +10% no nível 13. Duração: 3 turnos no nível 3; 4 no 5; 5 no 7; 6 no 9; 7 no 12; 8 no 15.",
+           "text": "Escala do nível 3 ao 17, uma melhoria pequena por nível: área 3 hexes → 2 anéis; acerto % 1 → 8; rodadas 3 → 8. Healer nível 3. +1% de acerto por nível até +10% no nível 13. Duração: 3 turnos no nível 3; 4 no 5; 5 no 7; 6 no 9; 7 no 12; 8 no 15.",
            "muted": true
           }
          ]
@@ -6275,7 +6275,7 @@
         [
          [
           {
-           "text": "Alcance 5, +1 por nível desde o nível 1, até 12 no nível 8. Nunca erra. 1 míssil, +1 a cada 3 níveis, até 5 no nível 13 — um alvo cada.",
+           "text": "Escala do nível 1 ao 15, uma melhoria pequena por nível: alcance 5 → 12; mísseis 1 → 5; peso do MAG 1,15 → 1,3. Nunca erra. — um alvo cada.",
            "muted": true
           }
          ]
@@ -6324,7 +6324,7 @@
         [
          [
           {
-           "text": "Alcance 7, +1 a cada 2 níveis desde o nível 1, até 12 no nível 11. Dado sobe em níveis 2,3,5,7,9,12,14.",
+           "text": "Escala do nível 1 ao 15, uma melhoria pequena por nível: dano 1D8 → 4D12; alcance 7 → 12; bônus no arco 0 → 4. Dado sobe em níveis 2,3,5,7,9,12,14.",
            "muted": true
           }
          ]
@@ -6373,7 +6373,7 @@
         [
          [
           {
-           "text": "Alcance 2, +1 a cada 3 níveis desde o nível 1, até 6 no nível 13.",
+           "text": "Escala do nível 1 ao 15, uma melhoria pequena por nível: dano 1D6 → 4D6; alcance 2 → 6; peso do MAG 1 → 1,35.",
            "muted": true
           }
          ]
@@ -6644,7 +6644,7 @@
         [
          [
           {
-           "text": "Alcance 6, +1 a cada 2 níveis desde o nível 5, até 12 no nível 17. Aprendido no nível 5. Sangramento causa 1D8 por ação; a duração aumenta nos níveis 8, 12 e 15.",
+           "text": "Escala do nível 5 ao 19, uma melhoria pequena por nível: dano por turno 1D6 → 2D8; alcance 6 → 12; peso do arco 1,5 → 2,4. Aprendido no nível 5. Sangramento causa 1D8 por ação; a duração aumenta nos níveis 8, 12 e 15.",
            "muted": true
           }
          ]
@@ -6734,7 +6734,7 @@
         [
          [
           {
-           "text": "Alcance 5, +1 por nível desde o nível 3, até 12 no nível 10. Dano: +1D8 a cada 4 níveis desde o 3, até 5D8. Atravessa cobertura e barricadas. Eco em outro alvo adjacente: 1D12+2.",
+           "text": "Escala do nível 3 ao 17, uma melhoria pequena por nível: dano 2D8 → 5D8; alcance 5 → 12; peso do MAG 2 → 2,4. Atravessa cobertura e barricadas. Eco em outro alvo adjacente: 1D12+2.",
            "muted": true
           }
          ]
@@ -6832,7 +6832,7 @@
         [
          [
           {
-           "text": "Alcance 3, +1 a cada 5 níveis desde o nível 3, até 5 no nível 13.",
+           "text": "Escala do nível 3 ao 17, uma melhoria pequena por nível: dano 2D6 → 5D6; alcance 3 → 5; peso do MAG 1,6 → 2,05.",
            "muted": true
           }
          ]
@@ -6963,7 +6963,7 @@
         [
          [
           {
-           "text": "Alcance 7, +1 a cada 2 níveis desde o nível 3, até 12 no nível 13. Área: 3 hexes; 1 anel no nível 9 e 2 anéis no 15. 25% de dormir por 1D4 turnos (+25% dano ao acordar); prende o movimento a 1 hex na área por 3 turnos.",
+           "text": "Escala do nível 3 ao 17, uma melhoria pequena por nível: alcance 7 → 12; área 3 hexes → 2 anéis; chance de sono % 25 → 60. 25% de dormir por 1D4 turnos (+25% dano ao acordar); prende o movimento a 1 hex na área por 3 turnos.",
            "muted": true
           }
          ]
@@ -7012,7 +7012,7 @@
         [
          [
           {
-           "text": "Aprendido no nível 5. Linha de 2 hexes à frente; +1 hex a cada 4 níveis, e mais 1 no nível 10 e 1 no 15. Dano de Ice e fogo amigo. Cultist V2: 1 carga inicial, +1 nos níveis 5, 12 e 20.",
+           "text": "Escala do nível 5 ao 19, uma melhoria pequena por nível: dano 1D6 → 4D6; comprimento 2 → 8; peso do MAG 1,1 → 1,35. Aprendido no nível 5. Linha de 2 hexes à frente; +1 hex a cada 4 níveis, e mais 1 no nível 10 e 1 no 15. Dano de Ice e fogo amigo. Cultist V2: 1 carga inicial, +1 nos níveis 5, 12 e 20.",
            "muted": true
           }
          ]
@@ -7184,7 +7184,7 @@
         [
          [
           {
-           "text": "Alcance 5, +1 por nível desde o nível 6, até 12 no nível 13. Área: 3 hexes; 1 anel no nível 8, 2 anéis no 13 e 3 anéis no 18. Dano: +1D6 a cada 2 níveis desde o 6, até 8D6.",
+           "text": "Escala do nível 6 ao 20, uma melhoria pequena por nível: dano 2D6 → 6D6; alcance 5 → 12; área 3 hexes → 3 anéis.",
            "muted": true
           }
          ]
@@ -7225,7 +7225,7 @@
         [
          [
           {
-           "text": "Área: 3 hexes; 1 anel no nível 14 e 2 anéis no 22. Preview the area around the priest, then confirm or cancel; no target selection. Holy damage and 2 own turns of fear: undead retreat without attacking. Other creature types are completely unaffected.",
+           "text": "Escala do nível 6 ao 20, uma melhoria pequena por nível: dano 4D6 → 9D6; área 3 hexes → 2 anéis; peso do MAG 1,6 → 2,3. Preview the area around the priest, then confirm or cancel; no target selection. Holy damage and 2 own turns of fear: undead retreat without attacking. Other creature types are completely unaffected.",
            "muted": true
           }
          ]
@@ -7266,7 +7266,7 @@
         [
          [
           {
-           "text": "Alcance 2, +1 a cada 5 níveis desde o nível 6, até 4 no nível 16. Clériga T3. Cura doença e veneno. Luz teal.",
+           "text": "Escala do nível 6 ao 20, uma melhoria pequena por nível: alcance 2 → 4. Clériga T3. Cura doença e veneno. Luz teal.",
            "muted": true
           }
          ]
@@ -7315,7 +7315,7 @@
         [
          [
           {
-           "text": "Alcance 6, +1 a cada 2 níveis desde o nível 7, até 12 no nível 19. 2 alvos (3 no nível 11). Dado sobe no nível 8 e 13.",
+           "text": "Escala do nível 7 ao 21, uma melhoria pequena por nível: dano 0 → 3D10; alcance 6 → 12; alvos 2 → 4. 2 alvos (3 no nível 11). Dado sobe no nível 8 e 13.",
            "muted": true
           }
          ]
@@ -7520,7 +7520,7 @@
         [
          [
           {
-           "text": "Alcance 6, +1 a cada 2 níveis desde o nível 8, até 12 no nível 20. Área: 3 hexes; 1 anel no nível 16 e 2 anéis no 24. Somente Salazar. Dano Holy e atinge até seis hexes adjacentes.",
+           "text": "Escala do nível 8 ao 22, uma melhoria pequena por nível: dano 2D4 → 5D4; alcance 6 → 12; área 3 hexes → 2 anéis; peso do MAG 1,4 → 1,7. Somente Salazar. Dano Holy e atinge até seis hexes adjacentes.",
            "muted": true
           }
          ]
@@ -7569,7 +7569,7 @@
         [
          [
           {
-           "text": "Alcance 1, +1 a cada 6 níveis desde o nível 11, até 3 no nível 23. Entre Cura Menor e Cura Média; usos próprios do Paladino.",
+           "text": "Escala do nível 11 ao 25, uma melhoria pequena por nível: dano 1D8 → 4D8; alcance 1 → 3; peso do MAG 1,2 → 1,65. Entre Cura Menor e Cura Média; usos próprios do Paladino.",
            "muted": true
           }
          ]
@@ -7667,7 +7667,7 @@
         [
          [
           {
-           "text": "Alcance 7, +1 por nível desde o nível 15, até 12 no nível 20. Elementalista T5. Atravessa cobertura e barricadas. Eco 2D12+8.",
+           "text": "Escala do nível 15 ao 29, uma melhoria pequena por nível: dano 3D12 → 6D12; alcance 7 → 12; peso do MAG 3 → 3,6. Elementalista T5. Atravessa cobertura e barricadas. Eco 2D12+8.",
            "muted": true
           }
          ]
@@ -7716,7 +7716,7 @@
         [
          [
           {
-           "text": "Alcance 7, +1 a cada 2 níveis desde o nível 11, até 12 no nível 21. Área: 3 hexes; 1 anel no nível 14, 2 anéis no 18, 3 anéis no 22 e 4 anéis no 26. Veneno: 1D10 no início de cada turno do alvo, até curado (−10 pontos de Poison Resistance). Pega os dois lados.",
+           "text": "Escala do nível 11 ao 25, uma melhoria pequena por nível: dano 1D10 → 3D10; alcance 7 → 12; área 3 hexes → 4 anéis; peso do MAG 1,5 → 1,8. Veneno: 1D10 no início de cada turno do alvo, até curado (−10 pontos de Poison Resistance). Pega os dois lados.",
            "muted": true
           }
          ]
@@ -7765,7 +7765,7 @@
         [
          [
           {
-           "text": "Área: 3 hexes; 1 anel no nível 20 e 2 anéis no 25. Instantânea, centrada em si mesmo — sem mira. Escala nos níveis 20, 22, 24, 26, 28 e 30.",
+           "text": "Escala do nível 15 ao 29, uma melhoria pequena por nível: área 3 hexes → 2 anéis; proteção % 20 → 36; rodadas 3 → 7. Instantânea, centrada em si mesmo — sem mira. Escala nos níveis 20, 22, 24, 26, 28 e 30.",
            "muted": true
           }
          ]
@@ -7814,7 +7814,7 @@
         [
          [
           {
-           "text": "Área: 3 hexes; 1 anel no nível 21 e 2 anéis no 27. Instantânea, centrada em si mesmo — o oposto da Aura de Proteção, mesma escala.",
+           "text": "Escala do nível 15 ao 29, uma melhoria pequena por nível: área 3 hexes → 2 anéis; intimidação % 20 → 38; rodadas 3 → 6. Instantânea, centrada em si mesmo — o oposto da Aura de Proteção, mesma escala.",
            "muted": true
           }
          ]
@@ -7863,7 +7863,7 @@
         [
          [
           {
-           "text": "Linha reta mirada, alcance 4 — nunca atinge aliados. Dado sobe nos níveis 19, 22, 26 e 30.",
+           "text": "Escala do nível 18 ao 32, uma melhoria pequena por nível: dano 1D10 → 6D12; alcance 4 → 12. Linha reta mirada, alcance 4 — nunca atinge aliados. Dado sobe nos níveis 19, 22, 26 e 30.",
            "muted": true
           }
          ]
@@ -15183,7 +15183,7 @@
         [
          [
           {
-           "text": "Area: 3 hexes; 1 ring at level 11 and 2 rings at 19. Healer, level 3. +1% hit chance per level, up to +10% at level 13. Duration: 3 turns at level 3; 4 at 5; 5 at 7; 6 at 9; 7 at 12; 8 at 15.",
+           "text": "Scales from level 3 to 17, one small improvement a level: area 3 hexes → 2 rings; hit % 1 → 8; rounds 3 → 8. Healer, level 3. +1% hit chance per level, up to +10% at level 13. Duration: 3 turns at level 3; 4 at 5; 5 at 7; 6 at 9; 7 at 12; 8 at 15.",
            "muted": true
           }
          ]
@@ -15232,7 +15232,7 @@
         [
          [
           {
-           "text": "Range 5, +1 per level from level 1, up to 12 at level 8. Never misses. 1 missile, +1 every 3 levels, up to 5 at level 13 — each targets one unit.",
+           "text": "Scales from level 1 to 15, one small improvement a level: range 5 → 12; missiles 1 → 5; MAG weight 1.15 → 1.3. 15 → 1.3. Never misses. — each targets one unit.",
            "muted": true
           }
          ]
@@ -15281,7 +15281,7 @@
         [
          [
           {
-           "text": "Range 7, +1 every 2 levels from level 1, up to 12 at level 11. Damage die increases at levels 2, 3, 5, 7, 9, 12, and 14.",
+           "text": "Scales from level 1 to 15, one small improvement a level: damage 1D8 → 4D12; range 7 → 12; bow bonus 0 → 4. Damage die increases at levels 2, 3, 5, 7, 9, 12, and 14.",
            "muted": true
           }
          ]
@@ -15330,7 +15330,7 @@
         [
          [
           {
-           "text": "Range 2, +1 every 3 levels from level 1, up to 6 at level 13.",
+           "text": "Scales from level 1 to 15, one small improvement a level: damage 1D6 → 4D6; range 2 → 6; MAG weight 1 → 1.35. 35.",
            "muted": true
           }
          ]
@@ -15552,7 +15552,7 @@
         [
          [
           {
-           "text": "Learned at level 3; progression begins at level 3. Cone radius 1–3. Burning Hands damage progression is delayed by 2 levels. Minor Poison deals 1D4 per turn; it can hit allies too.",
+           "text": "Scales from level 3 to 17, one small improvement a level: damage 1D4 → 3D8; length 1 → 3; MAG weight 1.05 → 1.37. 05 → 1.37. Learned at level 3; progression begins at level 3. Cone radius 1–3. Burning Hands damage progression is delayed by 2 levels. Minor Poison deals 1D4 per turn; it can hit allies too.",
            "muted": true
           }
          ]
@@ -15601,7 +15601,7 @@
         [
          [
           {
-           "text": "Range 6, +1 every 2 levels from level 5, up to 12 at level 17. Archer Tier 2, learned at level 5. Deals weapon damage with a level-based multiplier and causes 1D8 bleeding damage per action for 1D6 rounds (1D8 at level 8, 2D4 at level 12, 2D6 at level 15).",
+           "text": "Scales from level 5 to 19, one small improvement a level: damage per turn 1D6 → 2D8; range 6 → 12; bow weight 1.5 → 2.4. 5 → 2.4. Archer Tier 2, learned at level 5. Deals weapon damage with a level-based multiplier and causes 1D8 bleeding damage per action for 1D6 rounds (1D8 at level 8, 2D4 at level 12, 2D6 at level 15).",
            "muted": true
           }
          ]
@@ -15691,7 +15691,7 @@
         [
          [
           {
-           "text": "Range 5, +1 per level from level 3, up to 12 at level 10. Damage: +1D8 every 4 levels from 3, up to 5D8. Pierces cover and barricades. Echoes to another adjacent target for 1D12+2.",
+           "text": "Scales from level 3 to 17, one small improvement a level: damage 2D8 → 5D8; range 5 → 12; MAG weight 2 → 2.4. 4. Pierces cover and barricades. Echoes to another adjacent target for 1D12+2.",
            "muted": true
           }
          ]
@@ -15789,7 +15789,7 @@
         [
          [
           {
-           "text": "Range 3, +1 every 5 levels from level 3, up to 5 at level 13.",
+           "text": "Scales from level 3 to 17, one small improvement a level: damage 2D6 → 5D6; range 3 → 5; MAG weight 1.6 → 2.05. 6 → 2.05.",
            "muted": true
           }
          ]
@@ -15920,7 +15920,7 @@
         [
          [
           {
-           "text": "Range 7, +1 every 2 levels from level 3, up to 12 at level 13. Area: 3 hexes; 1 ring at level 9 and 2 rings at 15. 25% chance to sleep for 1D4 turns (+25% damage when awakened); movement is limited to 1 hex in the area for 3 turns.",
+           "text": "Scales from level 3 to 17, one small improvement a level: range 7 → 12; area 3 hexes → 2 rings; sleep chance % 25 → 60. 25% chance to sleep for 1D4 turns (+25% damage when awakened); movement is limited to 1 hex in the area for 3 turns.",
            "muted": true
           }
          ]
@@ -15969,7 +15969,7 @@
         [
          [
           {
-           "text": "Learned at level 5. A line of 2 hexes ahead, +1 hex every 4 levels, plus 1 more at level 10 and 1 at 15. Ice damage; can hit allies. Cultist V2: 1 starting charge, +1 at levels 5, 12, and 20.",
+           "text": "Scales from level 5 to 19, one small improvement a level: damage 1D6 → 4D6; length 2 → 8; MAG weight 1.1 → 1.35. 1 → 1.35. Learned at level 5. A line of 2 hexes ahead, +1 hex every 4 levels, plus 1 more at level 10 and 1 at 15. Ice damage; can hit allies. Cultist V2: 1 starting charge, +1 at levels 5, 12, and 20.",
            "muted": true
           }
          ]
@@ -16141,7 +16141,7 @@
         [
          [
           {
-           "text": "Range 5, +1 per level from level 6, up to 12 at level 13. Area: 3 hexes; 1 ring at level 8, 2 rings at 13 and 3 rings at 18. Damage: +1D6 every 2 levels from 6, up to 8D6.",
+           "text": "Scales from level 6 to 20, one small improvement a level: damage 2D6 → 6D6; range 5 → 12; area 3 hexes → 3 rings.",
            "muted": true
           }
          ]
@@ -16182,7 +16182,7 @@
         [
          [
           {
-           "text": "Area: 3 hexes; 1 ring at level 14 and 2 rings at 22. Preview the area around the priest, then confirm or cancel; no target selection. Holy damage and 2 own turns of fear: undead retreat without attacking. Other creature types are completely unaffected.",
+           "text": "Scales from level 6 to 20, one small improvement a level: damage 4D6 → 9D6; area 3 hexes → 2 rings; MAG weight 1.6 → 2.3. 6 → 2.3. Preview the area around the priest, then confirm or cancel; no target selection. Holy damage and 2 own turns of fear: undead retreat without attacking. Other creature types are completely unaffected.",
            "muted": true
           }
          ]
@@ -16223,7 +16223,7 @@
         [
          [
           {
-           "text": "Range 2, +1 every 5 levels from level 6, up to 4 at level 16. Cleric T3. Cures disease and poison. Teal light.",
+           "text": "Scales from level 6 to 20, one small improvement a level: range 2 → 4. Cleric T3. Cures disease and poison. Teal light.",
            "muted": true
           }
          ]
@@ -16272,7 +16272,7 @@
         [
          [
           {
-           "text": "Range 6, +1 every 2 levels from level 7, up to 12 at level 19. 2 targets (3 at level 11). Damage die increases at levels 8 and 13.",
+           "text": "Scales from level 7 to 21, one small improvement a level: damage 0 → 3D10; range 6 → 12; targets 2 → 4. 2 targets (3 at level 11). Damage die increases at levels 8 and 13.",
            "muted": true
           }
          ]
@@ -16477,7 +16477,7 @@
         [
          [
           {
-           "text": "Range 6, +1 every 2 levels from level 8, up to 12 at level 20. Area: 3 hexes; 1 ring at level 16 and 2 rings at 24. Salazar only. Holy damage, affecting up to six adjacent hexes.",
+           "text": "Scales from level 8 to 22, one small improvement a level: damage 2D4 → 5D4; range 6 → 12; area 3 hexes → 2 rings; MAG weight 1.4 → 1.7. 4 → 1.7. Salazar only. Holy damage, affecting up to six adjacent hexes.",
            "muted": true
           }
          ]
@@ -16526,7 +16526,7 @@
         [
          [
           {
-           "text": "Range 1, +1 every 6 levels from level 11, up to 3 at level 23. Between Minor and Medium Heal; exclusive uses for the Paladin.",
+           "text": "Scales from level 11 to 25, one small improvement a level: damage 1D8 → 4D8; range 1 → 3; MAG weight 1.2 → 1.65. 2 → 1.65. Between Minor and Medium Heal; exclusive uses for the Paladin.",
            "muted": true
           }
          ]
@@ -16624,7 +16624,7 @@
         [
          [
           {
-           "text": "Range 7, +1 per level from level 15, up to 12 at level 20. Elementalist T5. Pierces cover and barricades. Echo: 2D12+8.",
+           "text": "Scales from level 15 to 29, one small improvement a level: damage 3D12 → 6D12; range 7 → 12; MAG weight 3 → 3.6. 6. Elementalist T5. Pierces cover and barricades. Echo: 2D12+8.",
            "muted": true
           }
          ]
@@ -16673,7 +16673,7 @@
         [
          [
           {
-           "text": "Range 7, +1 every 2 levels from level 11, up to 12 at level 21. Area: 3 hexes; 1 ring at level 14, 2 rings at 18, 3 rings at 22 and 4 rings at 26. Medium Poison: 1D10 at the start of each turn until cured. Affects both sides.",
+           "text": "Scales from level 11 to 25, one small improvement a level: damage 1D10 → 3D10; range 7 → 12; area 3 hexes → 4 rings; MAG weight 1.5 → 1.8. 5 → 1.8. Medium Poison: 1D10 at the start of each turn until cured. Affects both sides.",
            "muted": true
           }
          ]
@@ -16722,7 +16722,7 @@
         [
          [
           {
-           "text": "Area: 3 hexes; 1 ring at level 20 and 2 rings at 25. Instant, centered on self — no aiming. Scales at levels 20, 22, 24, 26, 28, and 30.",
+           "text": "Scales from level 15 to 29, one small improvement a level: area 3 hexes → 2 rings; protection % 20 → 36; rounds 3 → 7. Instant, centered on self — no aiming. Scales at levels 20, 22, 24, 26, 28, and 30.",
            "muted": true
           }
          ]
@@ -16771,7 +16771,7 @@
         [
          [
           {
-           "text": "Area: 3 hexes; 1 ring at level 21 and 2 rings at 27. Instant, centered on self — no aiming. The opposite of Aura of Protection, with the same scaling.",
+           "text": "Scales from level 15 to 29, one small improvement a level: area 3 hexes → 2 rings; intimidation % 20 → 38; rounds 3 → 6. Instant, centered on self — no aiming. The opposite of Aura of Protection, with the same scaling.",
            "muted": true
           }
          ]
@@ -16820,7 +16820,7 @@
         [
          [
           {
-           "text": "Aimed straight line, range 4 — never hits allies. Damage die increases at levels 19, 22, 26, and 30.",
+           "text": "Scales from level 18 to 32, one small improvement a level: damage 1D10 → 6D12; range 4 → 12. Aimed straight line, range 4 — never hits allies. Damage die increases at levels 19, 22, 26, and 30.",
            "muted": true
           }
          ]

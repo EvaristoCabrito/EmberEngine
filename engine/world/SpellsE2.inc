@@ -7,8 +7,15 @@
 struct DiceFaces {
   int dice = 0, faces = 0;
 };
-double bloodyShotMul(int level) { return level >= 13 ? 2.5 : level >= 10 ? 2.25 : level >= 6 ? 2 : 1.5; }
+double bloodyShotMul(int level) {
+  if (progressionEnabled()) return 1.5 + spellGains("bloodyShot", level)('m');
+  return level >= 13 ? 2.5 : level >= 10 ? 2.25 : level >= 6 ? 2 : 1.5;
+}
 DiceFaces bloodyShotBleed(int level) {
+  if (progressionEnabled()) {
+    const TrackGains g = spellGains("bloodyShot", level);
+    return {1 + g.n('k'), 6 + g.n('K')};
+  }
   if (level >= 15) return {2, 6};
   if (level >= 12) return {2, 4};
   if (level >= 8) return {1, 8};
@@ -77,13 +84,21 @@ ShieldP shieldBashPower(int level) {
   if (level >= 7) return {1, 6, 1};
   return {1, 4, 1};
 }
-int multiShotTargets(int level) { return level >= 11 ? 3 : 2; }
+int multiShotTargets(int level) { return progressionEnabled() ? 2 + spellGains("multiShot", level).n('c') : level >= 11 ? 3 : 2; }
 DiceFaces multiShotPower(int level) {
+  if (progressionEnabled()) {
+    const TrackGains g = spellGains("multiShot", level);
+    return {g.n('d'), 4 + g.n('f')};
+  }
   if (level >= 13) return {2, 4};
   if (level >= 8) return {1, 4};
   return {0, 0};
 }
 DiceFaces divineWrathPower(int level) {
+  if (progressionEnabled()) {
+    const TrackGains g = spellGains("divineWrath", level);
+    return {1 + g.n('d'), 10 + g.n('f')};
+  }
   if (level >= 30) return {3, 10};
   if (level >= 26) return {3, 8};
   if (level >= 22) return {2, 10};
@@ -114,8 +129,8 @@ constexpr double kTripStatPenalty = 0.1;
 // fireball / venoms / divine bolt
 constexpr int kFireballRange = 5, kFireballSize = 1 /* small area (D&D Fireball, 20 ft) */, kFireballDice = 2, kFireballFaces = 6, kFireballBonus = 0;
 constexpr double kFireballMul = 1.35;
-// AD&D 2e Fireball: a die per caster level; here +1D6 every two levels after it is learned (6), at most 8D6.
-int fireballDice(int level) { return progressionEnabled() ? std::min(8, kFireballDice + std::max(0, level - 6) / 2) : kFireballDice; }
+// AD&D 2e Fireball gains dice with the caster's level: here on its track (kSpellTracks).
+int fireballDice(int level) { return kFireballDice + spellGains("fireball", level).n('d'); }
 struct BoltData {
   int size, range, centerDice, centerFaces, centerBonus, splashDice, splashFaces, splashBonus;
   double centerMul, splashMul;
@@ -123,12 +138,25 @@ struct BoltData {
 constexpr BoltData kCausticVenom{1 /* small area */, 7, 1, 10, 0, 1, 6, 0, 1.5, 1.1};
 constexpr BoltData kMinorVenom{1, 5, 1, 6, 0, 1, 4, 0, 1.0, 0.6};  // below the Veneno Cáustico in every number (the user, 2026-10-20)
 constexpr BoltData kDivineBolt{1, 6, 2, 4, 0, 1, 4, 0, 1.4, 1.0};
+// A bolt's numbers at the caster's level: the centre's dice and weight on its track.
+BoltData boltPower(const std::string& kind, int level) {
+  BoltData d = kind == "causticVenom" ? kCausticVenom : kind == "minorVenom" ? kMinorVenom : kDivineBolt;
+  const TrackGains g = spellGains(kind, level);
+  d.centerDice += g.n('d'), d.centerMul += g('m');
+  return d;
+}
 constexpr int kLightningT3Range = 7, kLightningT3Dice = 3, kLightningT3Faces = 12, kLightningT3Bonus = 8;
 constexpr double kLightningT3Mul = 3.0;
 constexpr BattleUnit::Echo kLightningT3Echo{2, 12, 8, 0};
 constexpr int kPhantasmalRange = 6, kPhantasmalUnlock = 2, kWebRange = 7, kLifeDrainRange = 1;
 DiceFaces lifeDrainDice(int level) { return {1, 4 + (std::max(1, level) - 1) / 3 * 2}; }
-DiceFaces phantasmalForceDice(int level) { return {1, 4 + (std::max(1, level) - 1) / 2 * 2}; }
+DiceFaces phantasmalForceDice(int level) {
+  if (progressionEnabled()) {
+    const TrackGains g = spellGains("phantasmalForce", level);
+    return {1 + g.n('d'), 4 + g.n('f')};
+  }
+  return {1, 4 + (std::max(1, level) - 1) / 2 * 2};
+}
 double lifeDrainHealMul(int level) {
   if (level >= 30) return 1;
   if (level >= 23) return 0.75;
@@ -154,7 +182,14 @@ struct ConeP {
   int range, radius, dice, faces;
   double mul;
 };
+// The cones on their tracks: the cone's depth, dice, faces and weight.
+ConeP coneTrack(const char* kind, int level) {
+  const TrackGains g = spellGains(kind, level);
+  const int depth = 1 + g.n('l');
+  return {depth, depth, 1 + g.n('d'), 4 + g.n('f'), 1.05 + g('m')};
+}
 ConeP burningHandsPower(int level) {
+  if (progressionEnabled()) return coneTrack("burningHands", level);
   const int radius = burningHandsRadius(level);
   if (level >= 25) return {radius, radius, 2, 10, 1.35};
   if (level >= 21) return {radius, radius, 2, 8, 1.3};
@@ -166,6 +201,7 @@ ConeP burningHandsPower(int level) {
 }
 constexpr int kPoisonBreathUnlock = 3, kBurningHandsUnlock = 5;
 ConeP poisonBreathPower(int level) {
+  if (progressionEnabled()) return coneTrack("poisonBreath", level);
   const int progression = std::max(1, level - kPoisonBreathUnlock + 1);
   ConeP p = burningHandsPower(std::max(1, progression - 2));
   const int radius = std::max(1, burningHandsRadius(progression) - 1);
@@ -179,24 +215,35 @@ struct UndeadP {
 };
 constexpr UndeadP kTurnUndead[] = {{6, 4, 4, 4, 6, 1.6}, {9, 5, 5, 5, 6, 1.8}, {12, 6, 6, 6, 6, 2}, {15, 7, 7, 7, 6, 2.2}, {18, 8, 8, 8, 6, 2.4}, {22, 9, 9, 10, 6, 2.6}};
 UndeadP turnUndeadPower(int level) {
+  if (progressionEnabled()) {  // round the priest: its area, dice and weight on its track
+    const TrackGains g = spellGains("turnUndead", level);
+    return {level, 0, areaRadius("turnUndead", 0, level), 4 + g.n('d'), 6, 1.6 + g('m')};
+  }
   const int capped = std::max(1, std::min(22, level));
   UndeadP p = kTurnUndead[0];
   for (const UndeadP& q : kTurnUndead)
     if (capped >= q.level) p = q;
-  p.radius = areaRadius("turnUndead", 3, level);  // its area stage round the priest (Spells.cpp kAreaScale)
+  p.radius = areaRadius("turnUndead", 3, level);  // with the progression off: Engine2's radius
   return p;
 }
 constexpr int kTurnUndeadFearTurns = 2;
 // bless / aura / web
-int blessHitBonusPct(int level) { return std::min(10, std::max(1, level - 2)); }
-int blessDuration(int level) { return level >= 15 ? 8 : level >= 12 ? 7 : level >= 9 ? 6 : level >= 7 ? 5 : level >= 5 ? 4 : 3; }
+int blessHitBonusPct(int level) { return progressionEnabled() ? 1 + spellGains("bless", level).n('p') : std::min(10, std::max(1, level - 2)); }
+int blessDuration(int level) {
+  if (progressionEnabled()) return 3 + spellGains("bless", level).n('t');
+  return level >= 15 ? 8 : level >= 12 ? 7 : level >= 9 ? 6 : level >= 7 ? 5 : level >= 5 ? 4 : 3;
+}
 constexpr int kBlessRadius = 2 /* small area */, kBlessUnlock = 3;
 struct AuraP {
   int radius;
   double pct;
   int duration;
 };
-AuraP auraPower(int level) {
+AuraP auraPower(const std::string& kind, int level) {
+  if (progressionEnabled()) {  // each aura on its own track: its area, share and rounds
+    const TrackGains g = spellGains(kind, level);
+    return {areaRadius(kind, 0, level), 0.2 + g('p') / 100, 3 + g.n('t')};
+  }
   // a small area: radius 1 at every level (it grew to 3); the share and the rounds still grow
   if (level >= 30) return {1, 0.35, 4};
   if (level >= 28) return {1, 0.3, 4};
@@ -206,8 +253,9 @@ AuraP auraPower(int level) {
   if (level >= 20) return {1, 0.2, 3};
   return {1, 0.2, 3};
 }
-int webOfDreamsSize(int level) { return areaRadius("webOfDreams", 1, level); }  // its area stage (Spells.cpp kAreaScale)
+int webOfDreamsSize(int level) { return areaRadius("webOfDreams", 1, level); }  // its area stage (its track: kSpellTracks)
 double webOfDreamsSleepChance(int level) {
+  if (progressionEnabled()) return 0.25 + spellGains("webOfDreams", level)('x') / 100;
   const double t = std::max(0.0, std::min(1.0, (level - 3) / 27.0));
   return 0.25 + (0.85 - 0.25) * t;
 }
@@ -699,7 +747,7 @@ bool aimE2(const Battle& b, size_t caster, const std::string& kind, BattleHex ce
     return !wrathRay(b, from, cell, p.range).empty() ? yes() : no("Escolha uma linha reta válida dentro do alcance da habilidade.");
   }
   if (kind == "divineWrath" || kind == "stampede")
-    return !wrathRay(b, from, cell, kWrathRange).empty() ? yes() : no("Escolha uma linha reta válida dentro do alcance da habilidade.");
+    return !wrathRay(b, from, cell, grownReach(kind, kWrathRange, u.level)).empty() ? yes() : no("Escolha uma linha reta válida dentro do alcance da habilidade.");
   if (kind == "sweep") return d <= kSweepRadius ? yes() : no(std::format("Escolha uma casa dentro do raio {}.", kSweepRadius));
   if (kind == "turnUndead" || kind == "bless" || kind == "auraOfProtection" || kind == "intimidatingPresence")
     return cell == from ? yes() : no("Esta magia não precisa de alvo.");
@@ -827,7 +875,7 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
     s.tiles = tiles, s.ids = ids;
     steps.push_back(s);
   } else if (kind == "divineWrath" || kind == "stampede") {
-    const std::vector<BattleHex> tiles = wrathRay(b, from, cell, kWrathRange);
+    const std::vector<BattleHex> tiles = wrathRay(b, from, cell, grownReach(kind, kWrathRange, u.level));
     if (tiles.empty()) return fail("Escolha uma linha reta válida dentro do alcance da habilidade.");
     const bool wrath = kind == "divineWrath";
     const std::vector<size_t> ids = unitsAlong(b, tiles, caster, wrath ? &u.side : nullptr);
@@ -845,7 +893,7 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
     steps.push_back(s);
   } else if (kind == "fireball" || kind == "causticVenom" || kind == "divineBolt" || kind == "minorVenom") {
     const bool fire = kind == "fireball";
-    const BoltData& d = kind == "causticVenom" ? kCausticVenom : kind == "minorVenom" ? kMinorVenom : kDivineBolt;
+    const BoltData d = boltPower(kind, u.level);
     const std::vector<BattleHex> tiles = areaTiles(b, cell, areaRadius(kind, fire ? kFireballSize : d.size, u.level));
     const std::vector<size_t> ids = unitsAlong(b, tiles, std::nullopt);
     const int center = firstAt(b, cell);
@@ -889,7 +937,8 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
     if (foe < 0) return fail("Spell was not cast.");
     spendTier(u, kind);
     s.tiles = {cell}, s.ids = {static_cast<size_t>(foe)};
-    s.dice = kLightningT3Dice, s.faces = kLightningT3Faces, s.bonus = kLightningT3Bonus, s.spellMul = kLightningT3Mul, s.echo = kLightningT3Echo;
+    const TrackGains g = spellGains(kind, u.level);
+    s.dice = kLightningT3Dice + g.n('d'), s.faces = kLightningT3Faces, s.bonus = kLightningT3Bonus, s.spellMul = kLightningT3Mul + g('m'), s.echo = kLightningT3Echo;
     steps.push_back(s);
   } else if (kind == "familiarLifeDrain" || kind == "phantasmalForce") {
     const int foe = occAt(b, cell);
@@ -898,7 +947,7 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
     else spendTier(u, kind);
     const DiceFaces p = kind == "familiarLifeDrain" ? lifeDrainDice(u.level) : phantasmalForceDice(u.level);
     s.tiles = {cell}, s.ids = {static_cast<size_t>(foe)};
-    s.dice = p.dice, s.faces = p.faces, s.bonus = 0, s.spellMul = 1;
+    s.dice = p.dice, s.faces = p.faces, s.bonus = 0, s.spellMul = kind == "phantasmalForce" ? 1 + spellGains(kind, u.level)('m') : 1;
     steps.push_back(s);
   } else if (kind == "provoke") {
     const ProvokeP p = provokePower(u.level);
@@ -968,7 +1017,7 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
     s.type = BattleStep::Type::Effect, s.tiles = cellsHit, s.spellMul = chance;
     steps.push_back(s);
   } else if (kind == "auraOfProtection" || kind == "intimidatingPresence") {
-    const AuraP p = auraPower(u.level);
+    const AuraP p = auraPower(kind, u.level);
     b.auraZones().push_back({areaTiles(b, from, areaRadius(kind, p.radius, u.level)), p.duration, kind == "auraOfProtection" ? "protection" : "intimidation", u.side, p.pct});
     spendTier(u, kind);
     b.noteAware(caster, kSupportCe, kSupportVe);
@@ -1040,7 +1089,7 @@ std::vector<BattleHex> areaE2(const Battle& b, size_t caster, const std::string&
     std::erase_if(t, [&](const BattleHex& h) { return h == from; });
     return t;
   }
-  if (kind == "divineWrath" || kind == "stampede") return wrathRay(b, from, cell, kWrathRange);
+  if (kind == "divineWrath" || kind == "stampede") return wrathRay(b, from, cell, grownReach(kind, kWrathRange, u.level));
   if (kind == "burningHands" || kind == "poisonBreath") {
     const ConeP p = kind == "poisonBreath" ? poisonBreathPower(u.level) : burningHandsPower(u.level);
     const std::vector<BattleHex> ray = wrathRay(b, from, cell, p.range);
@@ -1065,7 +1114,7 @@ std::vector<BattleHex> areaE2(const Battle& b, size_t caster, const std::string&
     if (!t.empty()) t.erase(t.begin());
     return t;
   }
-  if (kind == "auraOfProtection" || kind == "intimidatingPresence") return areaTiles(b, from, areaRadius(kind, auraPower(u.level).radius, u.level));
+  if (kind == "auraOfProtection" || kind == "intimidatingPresence") return areaTiles(b, from, areaRadius(kind, auraPower(kind, u.level).radius, u.level));
   if (kind == "bless") return areaTiles(b, from, areaRadius(kind, kBlessRadius, u.level));
   return {cell};
 }

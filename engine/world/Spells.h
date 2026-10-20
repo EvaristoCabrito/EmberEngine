@@ -130,6 +130,10 @@ std::string emberSpellClass(const std::string& kind);
 int spellLearnLevel(const std::string& kind);
 // The kinds a class knows at a level, in learning order (empty for Engine2's classes).
 std::vector<std::string> emberSpells(const std::string& classId, int level);
+// Every spell's numbers level by level, as the casts read them, from the level it is learned to 60 (Ember Ashes II's cap):
+// one small change on each of the 14 levels after learning where its track has a step, none where it has none, none after
+// (the user, 2026-10-20). Returns the failures, empty when every spell keeps the rule; `report` gets a line per spell.
+std::vector<std::string> checkSpellTracks(std::vector<std::string>* report = nullptr);
 // Appends to the unit's spell list what its class knows at its level and does not have yet (level-ups call it too).
 void grantClassSpells(BattleUnit& u);
 // Promotes (or demotes) a hero: its class id and Portuguese class name, and its spell list rebuilt (Engine2's own spells
@@ -141,6 +145,9 @@ std::string promotionName(const std::string& classId);
 std::string conditionsText(const BattleUnit& u);
 // The spell's description for the window's tooltip (its numbers at the caster's level).
 std::string spellTooltip(const BattleUnit& caster, const std::string& kind);
+// A first spell's line for the status sheet (after its name) from its numbers at the caster's level (its track: reach, area, dice ...), in
+// Portuguese or English; empty for a kind it does not cover (the sheet keeps its own line then).
+std::string spellScaleText(const BattleUnit& caster, const std::string& kind, bool en);
 
 // The Lanceiro's Vigília da Sentinela (docs/SKILLS_LANCER.md): the thrusts that land on `attacker` before its blow, one per
 // sentinel of the other side whose stance covers one of `targets` (itself, or an ally within its radius) and whose lance

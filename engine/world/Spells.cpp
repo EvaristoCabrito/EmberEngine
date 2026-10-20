@@ -1,6 +1,9 @@
 #include "world/Spells.h"
 
 #include <algorithm>
+#include <cstdlib>
+#include <cstring>
+#include <array>
 #include <cmath>
 #include <format>
 #include <fstream>
@@ -203,6 +206,8 @@ int spellTierOf(const std::string& kind) {
 bool bullRushTier3() { return progressionEnabled(); }
 int unitTierOf(const BattleUnit& u, const std::string& kind) {
   if (kind == "bullRush" && u.side == "player" && bullRushTier3()) return 3;
+  if (kind == "summonFamiliar3" && progressionEnabled()) return 5;  // Familiar Titã (the user, 2026-10-20)
+  if (kind == "summonZombieDog" && progressionEnabled()) return 6;  // the Necromante's Cão Zumbi
   return spellTierOf(kind);
 }
 std::string elementOf(const std::string& kind) {
@@ -218,7 +223,8 @@ constexpr int kLongShotRange = 7;  // LONG_SHOT.range
 struct Dice {
   int dice = 0, faces = 0;
 };
-Dice longShotPower(int level) {
+Dice longShotPower(int level);
+Dice longShotPowerE2(int level) {
   if (level >= 14) return {2, 12};
   if (level >= 12) return {2, 10};
   if (level >= 9) return {2, 8};
@@ -230,11 +236,9 @@ Dice longShotPower(int level) {
 }
 constexpr int kMissileRange = 5, kMissileDice = 1, kMissileFaces = 4, kMissileBonus = 0;  // MAGIC_MISSILE
 constexpr double kMissileMul = 1.15;
-// Based on AD&D 2e's Magic Missile, not a copy (the user, 2026-10-20): one missile, one more every three levels, five at the 13th.
-int magicMissileCount(int level) {
-  if (!progressionEnabled()) return level >= 6 ? 3 : level >= 3 ? 2 : 1;
-  return std::min(5, 1 + (std::max(1, level) - 1) / 3);
-}
+// Based on AD&D 2e's Magic Missile, not a copy: one missile, then more on its track (kSpellTracks), five at the end.
+int magicMissileCount(int level);
+double missileMul(int level);
 double piercingMul(int level) { return level >= 13 ? 2.5 : level >= 10 ? 2.25 : level >= 6 ? 2 : 1.5; }
 constexpr double kThrustArmorIgnore = 0.2;  // PIERCING_THRUST.armorIgnore
 Dice doubleStrikePower(int level) {
@@ -250,8 +254,9 @@ Dice doubleStrikePower(int level) {
 }
 // LIGHTNING / SHOCK
 constexpr int kLightningRange = 5, kLightningDice = 2, kLightningFaces = 8, kLightningBonus = 0;
-// AD&D 2e Lightning Bolt gains a die with the caster's level: here +1D8 every four levels after it is learned (3), at most 5D8.
-int lightningDice(int level) { return progressionEnabled() ? std::min(5, kLightningDice + std::max(0, level - 3) / 4) : kLightningDice; }
+// AD&D 2e Lightning Bolt gains dice with the caster's level: here on its track (kSpellTracks).
+int lightningDice(int level);
+double lightningMul(int level);
 constexpr double kLightningMul = 2.0;
 constexpr BattleUnit::Echo kLightningEcho{1, 12, 2, 0};
 constexpr int kShockRange = 5, kShockDice = 1, kShockFaces = 6, kShockBonus = 0;
@@ -262,10 +267,7 @@ struct FrostPower {
   int length, dice, faces;
   double mul;
 };
-FrostPower frostPower(int level) {
-  const int lv = std::max(1, std::min(30, level));
-  return {2 + std::max(0, lv - 5) / 4, 1 + std::max(0, lv - 5) / 6, 6, 1.1};
-}
+FrostPower frostPower(int level);
 // CURES: rollCure = floor(floor(MAG / 2) * mul + dice)
 struct CureData {
   const char* kind;
@@ -345,98 +347,178 @@ const PoisonTier* poisonTier(const std::string& id) {
 }
 
 // --- Each spell's own scaling (the user, 2026-10-20: "refazer todas as magias uma por uma com sentido real baseado no Advanced
-// Dungeons & Dragons second edition"; every spell unique; the reach grows with the caster's level as AD&D 2e's (+10 yards a level =
-// a hex a level, +5 = a hex every two, a fixed reach a hex every few), never past 12 hexes (the party's sight); an area starts as
-// 3 hexes (a size-3 body) on the level it is learned and grows a ring at a time on the spell's own levels; the Bola de Fogo's three
-// rings are the largest area in the game). Off in the Cooker's checks. Docs: docs/SPELLS_SCALING.md. ---
+// Dungeons & Dragons second edition", based on, never copied; "cada nível é uma pequena melhoria, apenas uma pequena"; "são 15 níveis
+// de escalonamento"). A spell is learned on its tier's first level for the class; each of the 14 levels after it brings one small
+// improvement (a hex of reach, a ring of area, a die, a missile, a little more weight on MAG ...), never two on one level. Ember
+// Ashes I stops at level 30 (kMaxLevel); a spell learned after 16 keeps scaling past it in Ember Ashes II (cap 60): nothing here
+// stops at 30. The reach never passes 12 hexes (the party's sight); an area starts as 3 hexes (a size-3 body) and grows a ring at a
+// time (the Veneno Cáustico the most, four; the Bola de Fogo three). Off in the Cooker's checks. Docs: docs/SPELLS_SCALING.md. ---
 constexpr int kReachCap = 12;
-struct ReachScale {
+struct SpellTrack {
   const char* kind;
-  int learn;        // the level it is learned (its tier's first use for the class)
-  int levelsPerHex; // levels per hex of reach gained
-  int cap;          // the reach never goes past this (nor below the spell's own)
+  int learn;          // the level it is learned (its tier's first use for the class)
+  const char* steps;  // 14 tokens, one per level after `learn`: a letter and the step ("r1" = +1 hex of reach), "-" = none
 };
-constexpr ReachScale kReachScale[] = {
-    // Mago Negro
-    {"magicMissile", 1, 1, 12}, {"magicMissileV2", 1, 1, 12}, {"lightning", 3, 1, 12}, {"fireball", 6, 1, 12},
-    {"causticVenom", 11, 2, 12}, {"lightningTier3", 15, 1, 12},
-    // Curandeiro / Paladino
-    {"cureMinor", 1, 3, 6}, {"cureWounds", 3, 5, 5}, {"cureDisease", 6, 5, 4}, {"divineBolt", 8, 2, 12}, {"cureLight", 11, 6, 3},
-    {"circleOfHealing", 9, 2, 10}, {"judgment", 14, 3, 10},
-    // Conjurador
-    {"phantasmalForce", 2, 1, 12}, {"webOfDreams", 3, 2, 12}, {"placeSwap", 3, 2, 10}, {"mirrorImage", 7, 3, 9},
-    {"detonateSummon", 9, 2, 10}, {"nightmare", 13, 2, 12}, {"summonFamiliar", 1, 2, 8}, {"summonFamiliar2", 3, 2, 8},
-    {"summonFamiliar4", 6, 2, 8}, {"summonFamiliar3", 8, 2, 8}, {"summonZombieDog", 11, 2, 8},
-    // Bruxo
-    {"markOfRuin", 15, 2, 11}, {"creepingPlague", 15, 4, 9}, {"lifeDrain", 16, 5, 7}, {"shroudOfShadows", 17, 1, 12},
-    {"hemorrhage", 18, 3, 9}, {"profaneSilence", 19, 3, 10}, {"blackPestilence", 21, 4, 9}, {"curseOfDecay", 22, 4, 8},
-    {"soulHarvest", 23, 1, 12}, {"devouringVoid", 25, 2, 11},
-    // Elementalista
-    {"pillarOfFlame", 15, 3, 11}, {"iceLance", 15, 2, 12}, {"thunderstorm", 16, 2, 12}, {"meteor", 17, 1, 12},
-    {"absoluteZero", 18, 3, 10}, {"chainLightning", 19, 2, 12}, {"wrathOfTheSkies", 23, 2, 12}, {"primordialEmber", 25, 2, 10},
-    // Arqueira (the shots: the hexes past the bow)
-    {"longShot", 1, 2, 12}, {"bloodyShot", 5, 2, 12}, {"multiShot", 7, 2, 12}, {"arrowRain", 7, 2, 12}, {"arrowStorm", 13, 2, 12},
-    {"venomArrow", 2, 3, 12}, {"explosiveArrow", 10, 3, 12}, {"cripplingShot", 12, 3, 12}, {"deathShot", 15, 3, 12},
-    // the plants' venom
-    {"minorVenom", 8, 4, 7},
+// TRACKS-BEGIN (written by tools/scripts/spells/tracks.py; the level each token lands on = learn + its place, 1 to 14)
+constexpr SpellTrack kSpellTracks[] = {
+    {"magicMissile", 1, "r1 c1 m0.05 r1 r1 c1 r1 m0.05 c1 r1 r1 m0.05 c1 r1"},
+    {"lightning", 3, "r1 m0.1 d1 r1 r1 m0.1 r1 d1 m0.1 r1 r1 d1 m0.1 r1"},
+    {"frost", 5, "l1 m0.05 d1 l1 m0.05 l1 d1 m0.05 l1 m0.05 l1 d1 m0.05 l1"},
+    {"poisonBreath", 3, "m0.04 l1 m0.04 d1 m0.04 f2 m0.04 m0.04 l1 m0.04 d1 m0.04 f2 m0.04"},
+    {"fireball", 6, "r1 d1 a1 r1 r1 d1 r1 a1 d1 r1 r1 a1 d1 r1"},
+    {"causticVenom", 11, "r1 a1 m0.1 d1 r1 a1 r1 m0.1 a1 r1 d1 m0.1 a1 r1"},
+    {"lightningTier3", 15, "m0.1 r1 d1 m0.1 r1 m0.1 r1 d1 m0.1 r1 m0.1 d1 r1 m0.1"},
+    {"cureMinor", 1, "m0.05 r1 d1 m0.05 m0.05 r1 d1 m0.05 r1 m0.05 m0.05 d1 r1 m0.05"},
+    {"bless", 3, "p1 t1 p1 a1 t1 p1 p1 t1 p1 t1 a1 p1 t1 p1"},
+    {"cureWounds", 3, "m0.05 d1 m0.05 m0.05 r1 m0.05 d1 m0.05 m0.05 m0.05 r1 m0.05 d1 m0.05"},
+    {"burningHands", 5, "m0.05 d1 m0.05 l1 f2 m0.05 d1 m0.05 m0.05 l1 f2 m0.05 d1 m0.05"},
+    {"turnUndead", 6, "m0.1 d1 m0.1 a1 d1 m0.1 d1 m0.1 m0.1 d1 a1 m0.1 d1 m0.1"},
+    {"cureDisease", 6, "- - - r1 - - - - - - r1 - - -"},
+    {"divineBolt", 8, "r1 d1 m0.1 r1 a1 r1 d1 m0.1 r1 a1 r1 d1 m0.1 r1"},
+    {"circleOfHealing", 9, "r1 d1 m0.1 r1 a1 r1 d1 m0.1 r1 a1 r1 d1 m0.1 r1"},
+    {"resurrection", 12, "m0.1 r1 d1 m0.1 m0.1 f2 r1 m0.1 d1 m0.1 m0.1 r1 d1 m0.1"},
+    {"judgment", 14, "r1 m0.15 d1 a1 r1 m0.15 d1 T0.25 r1 m0.15 a1 d1 r1 m0.15"},
+    {"cureLight", 11, "m0.05 d1 m0.05 m0.05 r1 m0.05 d1 m0.05 m0.05 m0.05 r1 m0.05 d1 m0.05"},
+    {"auraOfProtection", 15, "p2 t1 p2 a1 p2 t1 p2 p2 t1 p2 a1 p2 t1 p2"},
+    {"intimidatingPresence", 15, "p2 t1 p2 p2 a1 p2 p2 t1 p2 p2 a1 p2 t1 p2"},
+    {"divineWrath", 18, "r1 d1 r1 d1 r1 f2 r1 d1 r1 r1 d1 r1 d1 r1"},
+    {"summonFamiliar", 1, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
+    {"phantasmalForce", 2, "r1 f2 d1 r1 m0.1 f2 r1 r1 f2 d1 r1 m0.1 f2 r1"},
+    {"webOfDreams", 3, "x5 r1 x5 a1 r1 x5 r1 x5 x5 r1 a1 x5 r1 x5"},
+    {"summonFamiliar2", 3, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
+    {"placeSwap", 3, "- r1 - - - r1 - - r1 - - - r1 -"},
+    {"boneLance", 5, "m0.1 l1 d1 f2 m0.1 l1 d1 m0.1 l1 m0.1 f2 d1 l1 m0.1"},
+    {"summonFamiliar4", 6, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
+    {"mirrorImage", 7, "p3 r1 R1 c1 p3 r1 R1 p3 r1 p3 c1 R1 r1 p3"},
+    {"detonateSummon", 9, "m0.12 r1 d1 a1 m0.12 r1 d1 m0.12 r1 m0.12 a1 d1 r1 m0.12"},
+    {"summonFamiliar3", 11, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
+    {"sacrificeBond", 11, "p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3"},
+    {"nightmare", 13, "r1 a1 d1 r1 m0.15 r1 p10 t1 r1 a1 r1 d1 m0.15 r1"},
+    {"summonZombieDog", 15, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
+    {"empowerSummons", 15, "p1 p1 p1 R1 p1 p1 p1 p1 p1 p1 R1 p1 p1 p1"},
+    {"markOfRuin", 15, "r1 p5 m0.05 r1 t1 d1 r1 p5 m0.05 f2 r1 p5 m0.05 r1"},
+    {"creepingPlague", 15, "r1 m0.05 d1 r1 m0.05 v1 r1 s1 f2 m0.05 r1 d1 m0.05 r1"},
+    {"lifeDrain", 16, "m0.05 r1 m0.05 f2 p25 m0.05 m0.05 d1 m0.05 r1 f2 m0.05 p25 m0.05"},
+    {"shroudOfShadows", 17, "r1 p5 a1 r1 R1 r1 p5 k1 r1 a1 r1 R1 p5 r1"},
+    {"hemorrhage", 18, "m0.05 r1 m0.05 k1 r1 m0.05 K2 u1 m0.05 r1 d1 m0.05 r1 m0.05"},
+    {"profaneSilence", 19, "r1 m0.05 a1 t1 r1 m0.05 d1 f2 r1 m0.05 a1 t1 r1 m0.05"},
+    {"blackPestilence", 21, "m0.05 r1 a1 d1 m0.05 f2 m0.05 v1 r1 m0.05 a1 d1 f2 m0.05"},
+    {"curseOfDecay", 22, "m0.05 r1 p10 T0.1 m0.05 t1 d1 k1 K2 m0.05 r1 p10 T0.1 m0.05"},
+    {"soulHarvest", 23, "r1 a1 m0.1 r1 p2 r1 d1 f2 r1 a1 r1 m0.1 p2 r1"},
+    {"devouringVoid", 25, "r1 m0.05 p5 s5 r1 m0.05 d1 f2 r1 m0.05 p5 s5 r1 m0.05"},
+    {"pillarOfFlame", 15, "r1 m0.1 a1 r1 d1 R1 r1 m0.1 h1 f2 r1 a1 m0.1 r1"},
+    {"iceLance", 15, "r1 m0.05 p25 r1 m0.05 d1 r1 m0.05 f2 r1 m0.05 p25 r1 m0.05"},
+    {"thunderstorm", 16, "r1 m0.1 a1 r1 d1 r1 m0.1 k1 r1 b2 r1 a1 m0.1 r1"},
+    {"meteor", 17, "r1 m0.1 a1 M0.2 r1 d1 m0.1 g1 f2 r1 a1 M0.2 m0.1 r1"},
+    {"absoluteZero", 18, "m0.05 r1 a1 m0.05 r1 m0.05 d1 f2 m0.05 r1 m0.05 a1 r1 m0.05"},
+    {"chainLightning", 19, "r1 m0.05 j1 e-0.025 r1 d1 r1 m0.05 l1 r1 j1 e-0.025 m0.05 r1"},
+    {"eruption", 21, "m0.05 a1 R1 m0.05 d1 m0.05 h1 f2 m0.05 H2 m0.05 a1 R1 m0.05"},
+    {"glacialGale", 22, "m0.05 l1 m0.05 f2 m0.05 d1 m0.05 l1 P1 m0.05 f2 m0.05 l1 m0.05"},
+    {"wrathOfTheSkies", 23, "r1 m0.1 b1 c1 r1 m0.1 b1 d1 r1 m0.1 b1 r1 m0.1 b1"},
+    {"primordialEmber", 25, "r1 m0.1 a1 d1 h1 R1 r1 m0.1 f2 H2 b1 a1 r1 m0.1"},
+    {"longShot", 1, "r1 b1 d1 f2 r1 b1 r1 d1 b1 r1 f2 d1 b1 r1"},
+    {"venomArrow", 2, "r1 v1 m0.05 d1 f2 r1 v1 m0.05 r1 d1 f2 v1 m0.05 r1"},
+    {"bloodyShot", 5, "r1 m0.15 r1 m0.15 k1 r1 m0.15 K2 r1 m0.15 r1 m0.15 r1 m0.15"},
+    {"multiShot", 7, "r1 d1 f2 r1 c1 r1 d1 f2 r1 c1 r1 d1 f2 r1"},
+    {"arrowRain", 7, "r1 m0.05 a1 r1 m0.05 r1 d1 f2 r1 m0.05 r1 a1 m0.05 r1"},
+    {"explosiveArrow", 10, "r1 m0.15 p5 d1 f2 r1 m0.15 p5 r1 d1 f2 m0.15 p5 r1"},
+    {"cripplingShot", 12, "p5 r1 m0.1 p5 r1 d1 p5 m0.1 t1 r1 p5 m0.1 r1 p5"},
+    {"arrowStorm", 13, "r1 m0.1 a1 f2 r1 m0.1 r1 d1 m0.1 r1 a1 f2 m0.1 r1"},
+    {"deathShot", 15, "r1 m0.15 p2 f2 r1 m0.15 p2 d1 r1 m0.15 f2 p2 r1 m0.15"},
+    {"minorVenom", 8, "- r1 - - - a1 - - r1 - - - a1 -"},
 };
-const ReachScale* reachScale(const std::string& kind) {
-  for (const ReachScale& r : kReachScale)
-    if (kind == r.kind) return &r;
-  return nullptr;
+// TRACKS-END
+struct ParsedTrack {
+  int learn = 0;
+  std::vector<std::pair<char, double>> steps;  // in level order: learn + 1, learn + 2 ...
+};
+const ParsedTrack* parsedTrack(const std::string& kind) {
+  static const std::map<std::string, ParsedTrack> all = [] {
+    std::map<std::string, ParsedTrack> out;
+    for (const SpellTrack& t : kSpellTracks) {
+      ParsedTrack& p = out[t.kind];
+      p.learn = t.learn;
+      for (const char* c = t.steps; *c;) {
+        while (*c == ' ') ++c;
+        if (!*c) break;
+        const char letter = *c++;
+        char* end = const_cast<char*>(c);
+        const double step = letter == '-' ? 0 : std::strtod(c, &end);
+        c = end;
+        p.steps.emplace_back(letter, step);
+      }
+    }
+    return out;
+  }();
+  const auto it = all.find(kind == "magicMissileV2" ? "magicMissile" : kind);
+  return it == all.end() ? nullptr : &it->second;
 }
-// The hexes of reach gained since the spell was learned (its own pace).
-int reachGain(const std::string& kind, int level) {
-  const ReachScale* r = progressionEnabled() ? reachScale(kind) : nullptr;
-  return r ? std::max(0, level - r->learn) / r->levelsPerHex : 0;
+// What a spell has gained by this level: the sum of its steps per letter, from the level after it is learned up to `level`.
+struct TrackGains {
+  std::array<double, 52> v{};
+  static int slot(char c) { return c >= 'a' && c <= 'z' ? c - 'a' : c >= 'A' && c <= 'Z' ? 26 + (c - 'A') : -1; }
+  double operator()(char c) const { return slot(c) < 0 ? 0 : v[static_cast<size_t>(slot(c))]; }
+  int n(char c) const { return static_cast<int>(std::lround((*this)(c))); }
+};
+TrackGains spellGains(const std::string& kind, int level) {
+  TrackGains g;
+  const ParsedTrack* t = progressionEnabled() ? parsedTrack(kind) : nullptr;
+  if (!t) return g;
+  for (size_t i = 0; i < t->steps.size() && t->learn + 1 + static_cast<int>(i) <= level; ++i)
+    if (const int at = TrackGains::slot(t->steps[i].first); at >= 0) g.v[static_cast<size_t>(at)] += t->steps[i].second;
+  return g;
 }
-// A spell's reach at this level: its own plus what it gained, never past its cap (nor below its own).
-int grownReach(const std::string& kind, int base, int level) {
-  const ReachScale* r = progressionEnabled() ? reachScale(kind) : nullptr;
-  return r ? std::max(base, std::min(r->cap, base + reachGain(kind, level))) : base;
+// The spell's track grows this at all (an area spell's rings: its area starts as 3 hexes).
+bool trackGrows(const std::string& kind, char letter) {
+  if (const ParsedTrack* t = parsedTrack(kind))
+    for (const auto& [c, step] : t->steps)
+      if (c == letter) return true;
+  return false;
 }
+// The hexes of reach gained since the spell was learned.
+int reachGain(const std::string& kind, int level) { return spellGains(kind, level).n('r'); }
+// A spell's reach at this level: its own plus what it gained, never past kReachCap (nor below its own).
+int grownReach(const std::string& kind, int base, int level) { return std::max(base, std::min(kReachCap, base + reachGain(kind, level))); }
 // A bow skill's reach: the bow's own plus the skill's extra hexes, never past kReachCap (nor below the bow's).
 int shotReach(int bow, int extra) { return std::max(bow, std::min(kReachCap, bow + extra)); }
-// Areas: stage 0 = 3 hexes (the aimed one and two beside it, a size-3 body), stage N = every hex within N rings.
-struct AreaScale {
-  const char* kind;
-  int start;     // the stage on the level it is learned
-  int steps[4];  // the levels at which it grows a ring (0 = no more)
-};
-constexpr AreaScale kAreaScale[] = {
-    // Every area spell grows two or three times, from 3 hexes on the level it is learned (the user, 2026-10-20). The Veneno
-    // Cáustico has the game's largest area (four rings: "4 anéis porque é maior"), the Bola de Fogo the next (three).
-    // Mago Negro
-    {"fireball", 0, {8, 13, 18}}, {"causticVenom", 0, {14, 18, 22, 26}}, {"minorVenom", 0, {16, 24, 0}},
-    // Curandeiro / Paladino / Cavaleiro Pesado
-    {"bless", 0, {11, 19, 0}}, {"turnUndead", 0, {14, 22, 0}}, {"divineBolt", 0, {16, 24, 0}}, {"circleOfHealing", 0, {13, 21, 0}},
-    {"judgment", 0, {20, 26, 0}}, {"auraOfProtection", 0, {20, 25, 0}}, {"intimidatingPresence", 0, {21, 27, 0}},
-    // Conjurador
-    {"webOfDreams", 0, {9, 15, 0}}, {"detonateSummon", 0, {15, 23, 0}}, {"nightmare", 0, {19, 27, 0}},
-    // Bruxo
-    {"shroudOfShadows", 0, {21, 25, 0}}, {"profaneSilence", 0, {23, 28, 0}}, {"blackPestilence", 0, {24, 27, 0}},
-    {"soulHarvest", 0, {26, 29, 0}},
-    // Elementalista
-    {"pillarOfFlame", 0, {20, 26, 0}}, {"thunderstorm", 0, {21, 28, 0}}, {"meteor", 0, {21, 25, 0}}, {"absoluteZero", 0, {22, 26, 0}},
-    {"eruption", 0, {24, 28, 0}}, {"primordialEmber", 0, {27, 30, 0}},
-    // Arqueira: arrows, not a bomb
-    {"arrowRain", 0, {13, 21, 0}}, {"arrowStorm", 0, {17, 25, 0}},
-};
-// The area stage of a spell at this level (its own table), else its own radius as it was.
+// Areas: stage 0 = 3 hexes (the aimed one and two beside it, a size-3 body), stage N = every hex within N rings. An area spell's
+// stage = the rings its track gave by this level; any other kind keeps its own radius.
 int areaRadius(const std::string& kind, int base, int level) {
-  if (!progressionEnabled()) return base;
-  for (const AreaScale& a : kAreaScale)
-    if (kind == a.kind) {
-      int stage = a.start;
-      for (const int at : a.steps)
-        if (at > 0 && level >= at) ++stage;
-      return stage;
-    }
-  return base;
+  if (!progressionEnabled() || !trackGrows(kind, 'a')) return base;
+  return spellGains(kind, level).n('a');
 }
 // What an area stage reads as ("3 hexes", "raio 2").
 std::string areaLabel(int stage) { return stage <= 0 ? std::string("3 hexes") : std::format("raio {}", stage); }
+// The poison tier `steps` above `base` (Veneno Menor, Veneno, Veneno Maior, Veneno Mortal, Veneno Letal).
+const char* poisonTierUp(const char* base, int steps) {
+  static const char* kOrder[] = {"lesser", "poison", "greater", "deadly", "lethal"};
+  int at = 0;
+  for (int i = 0; i < 5; ++i)
+    if (std::string(base) == kOrder[i]) at = i;
+  return kOrder[std::clamp(at + steps, 0, 4)];
+}
 bool emberAreaGrows(const std::string& kind);
+// --- The first spells on their tracks (with the progression off, the Cooker's checks: Engine2's own numbers) ---
+int magicMissileCount(int level) {
+  if (!progressionEnabled()) return level >= 6 ? 3 : level >= 3 ? 2 : 1;
+  return 1 + spellGains("magicMissile", level).n('c');
+}
+double missileMul(int level) { return kMissileMul + spellGains("magicMissile", level)('m'); }
+Dice longShotPower(int level) {
+  if (!progressionEnabled()) return longShotPowerE2(level);
+  const TrackGains g = spellGains("longShot", level);
+  return {1 + g.n('d'), 8 + g.n('f')};
+}
+int lightningDice(int level) { return kLightningDice + spellGains("lightning", level).n('d'); }
+double lightningMul(int level) { return kLightningMul + spellGains("lightning", level)('m'); }
+FrostPower frostPower(int level) {
+  if (!progressionEnabled()) {
+    const int lv = std::max(1, std::min(30, level));
+    return {2 + std::max(0, lv - 5) / 4, 1 + std::max(0, lv - 5) / 6, 6, 1.1};
+  }
+  const TrackGains g = spellGains("frost", level);
+  return {2 + g.n('l'), 1 + g.n('d'), 6, 1.1 + g('m')};
+}
 
 // --- EmberEngine's own spells: their numbers by the caster's level (docs/SPELLS_PROMOTIONS.md) -------------------------
 struct EmberNumbers {
@@ -455,51 +537,51 @@ struct EmberNumbers {
   double decay = 0;
 };
 EmberNumbers emberNumbers(const std::string& kind, int level) {
-  const int lv = std::max(1, std::min(30, level));
+  const int lv = std::max(1, level);
+  // the spells: their numbers on the level they are learned, plus what their track gave since (spellGains, one step a level)
+  const TrackGains g = spellGains(kind, lv);
+  const auto mul = [&](double base) { return base + g('m'); };
+  const auto dice = [&](int base) { return base + g.n('d'); };
+  const auto faces = [&](int base) { return base + g.n('f'); };
   EmberNumbers n;
   // Bruxo
   if (kind == "markOfRuin") {
-    n.range = 6, n.mul = 1.15, n.dice = 1, n.faces = 6;
-    n.pct = lv >= 27 ? 35 : lv >= 23 ? 30 : lv >= 19 ? 25 : 20;
-    n.turns = lv >= 22 ? 4 : 3;
+    n.range = 6, n.mul = mul(1.15), n.dice = dice(1), n.faces = faces(6);
+    n.pct = 20 + g.n('p'), n.turns = 3 + g.n('t');
   } else if (kind == "creepingPlague") {
-    n.range = 6, n.mul = 1.3, n.dice = 1, n.faces = 8;
-    n.tier = lv >= 25 ? "deadly" : "greater";
-    n.spread = lv >= 21 ? 2 : 1;
+    n.range = 6, n.mul = mul(1.3), n.dice = dice(1), n.faces = faces(8);
+    n.tier = poisonTierUp("greater", g.n('v'));
+    n.spread = 1 + g.n('s');
   } else if (kind == "lifeDrain") {
-    n.range = 5, n.mul = 1.6, n.dice = 2, n.faces = lv >= 26 ? 10 : lv >= 20 ? 8 : 6;
-    n.pct = lv >= 28 ? 100 : lv >= 22 ? 75 : 50;
+    n.range = 5, n.mul = mul(1.6), n.dice = dice(2), n.faces = faces(6);
+    n.pct = 50 + g.n('p');
   } else if (kind == "shroudOfShadows") {
-    n.range = 6, n.tickMul = 0.7, n.tickDice = 1, n.tickFaces = 6;
-    n.radius = 1;  // small area (D&D Darkness, 15 ft)
-    if (lv >= 28) n.rounds = 4, n.pct = 35;
-    else if (lv >= 24) n.rounds = 4, n.pct = 30;
-    else if (lv >= 20) n.rounds = 3, n.pct = 25;
-    else n.rounds = 2, n.pct = 20;
+    n.range = 6, n.tickMul = 0.7, n.tickDice = 1 + g.n('k'), n.tickFaces = 6;
+    n.radius = 1;  // an area (its stage: areaRadius)
+    n.rounds = 2 + g.n('R'), n.pct = 20 + g.n('p');
   } else if (kind == "hemorrhage") {
-    n.range = 5, n.mul = 1.4, n.dice = 2, n.faces = 6;
-    n.tickDice = lv >= 26 ? 3 : 2, n.tickFaces = lv >= 30 ? 8 : lv >= 26 ? 6 : lv >= 22 ? 8 : 6;
-    n.durDice = lv >= 24 ? 2 : 1, n.durFaces = lv >= 24 ? 4 : 6;
+    n.range = 5, n.mul = mul(1.4), n.dice = dice(2), n.faces = faces(6);
+    n.tickDice = 2 + g.n('k'), n.tickFaces = 6 + g.n('K');
+    n.durDice = 1 + g.n('u'), n.durFaces = 6;
   } else if (kind == "profaneSilence") {
-    n.range = 6, n.radius = 1 /* D&D Silence, 20 ft */, n.mul = 1.1, n.dice = 1, n.faces = 8;
-    n.turns = lv >= 24 ? 3 : 2;
+    n.range = 6, n.radius = 1, n.mul = mul(1.1), n.dice = dice(1), n.faces = faces(8);
+    n.turns = 2 + g.n('t');
   } else if (kind == "blackPestilence") {
-    n.range = 7, n.radius = 1 /* D&D Cloudkill, 20 ft */, n.mul = 1.2, n.dice = 2, n.faces = 6;
-    n.tier = lv >= 29 ? "lethal" : "deadly";
+    n.range = 7, n.radius = 1, n.mul = mul(1.2), n.dice = dice(2), n.faces = faces(6);
+    n.tier = poisonTierUp("deadly", g.n('v'));
   } else if (kind == "curseOfDecay") {
-    n.range = 6, n.mul = 1.5, n.dice = 2, n.faces = 8;
-    n.tickMul = 0.5, n.tickDice = 1, n.tickFaces = 8;
-    n.pct = lv >= 29 ? 50 : lv >= 25 ? 40 : 30;  // the cap
-    n.turns = lv >= 27 ? 4 : 3;
+    n.range = 6, n.mul = mul(1.5), n.dice = dice(2), n.faces = faces(8);
+    n.tickMul = 0.5 + g('T'), n.tickDice = 1 + g.n('k'), n.tickFaces = 8 + g.n('K');
+    n.pct = 30 + g.n('p');  // the cap
+    n.turns = 3 + g.n('t');
     n.spread = 10;  // the step per turn
   } else if (kind == "soulHarvest") {
-    n.range = 6, n.radius = 2, n.mul = lv >= 27 ? 1.9 : 1.7;
-    n.dice = lv >= 29 ? 4 : 3, n.faces = lv >= 29 ? 6 : lv >= 26 ? 8 : 6;
-    n.pct = 10;
+    n.range = 6, n.radius = 2, n.mul = mul(1.7), n.dice = dice(3), n.faces = faces(6);
+    n.pct = 10 + g.n('p');
   } else if (kind == "devouringVoid") {
-    n.range = 7, n.mul = 2.2, n.dice = lv >= 28 ? 4 : 3, n.faces = 8;
-    n.pct = lv >= 30 ? 25 : lv >= 27 ? 20 : 15;
-    n.spread = 30;  // Escuridão resistance shred
+    n.range = 7, n.mul = mul(2.2), n.dice = dice(3), n.faces = faces(8);
+    n.pct = 15 + g.n('p');
+    n.spread = 30 + g.n('s');  // Escuridão resistance shred
   }
   // Guerreiro (docs/SKILLS_WARRIOR.md): dice = the bonus on the weapon's own roll
   else if (kind == "steelWhirlwind") {
@@ -527,35 +609,25 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
   }
   // Arqueiro (docs/SKILLS_ARCHER.md): mul = the weight on the bow's roll, dice = the bonus; length = hexes past the bow's reach
   else if (kind == "venomArrow") {
-    n.mul = 1;
-    if (lv >= 26) n.dice = 2, n.faces = 8;
-    else if (lv >= 20) n.dice = 2, n.faces = 6;
-    else if (lv >= 14) n.dice = 1, n.faces = 8;
-    else if (lv >= 8) n.dice = 1, n.faces = 6;
-    else n.dice = 1, n.faces = 4;
-    n.tier = lv >= 21 ? "deadly" : lv >= 13 ? "greater" : lv >= 7 ? "poison" : "lesser";
+    n.mul = mul(1), n.dice = dice(1), n.faces = faces(4);
+    n.tier = poisonTierUp("lesser", g.n('v'));
   } else if (kind == "arrowRain") {
-    n.range = 6, n.radius = 1;  // small area (D&D Hail of Thorns)
-    n.mul = lv >= 20 ? 0.9 : 0.75;
-    n.dice = lv >= 13 ? 2 : 1, n.faces = lv >= 25 ? 6 : 4;
+    n.range = 6, n.radius = 1;  // an area (its stage: areaRadius)
+    n.mul = mul(0.75), n.dice = dice(1), n.faces = faces(4);
   } else if (kind == "explosiveArrow") {
-    n.mul = lv >= 26 ? 1.8 : lv >= 14 ? 1.5 : 1.3;
-    n.dice = lv >= 30 ? 4 : lv >= 18 ? 3 : 2, n.faces = 6;
-    n.pct = lv >= 22 ? 70 : 50;  // the neighbours' share
+    n.mul = mul(1.3), n.dice = dice(2), n.faces = faces(6);
+    n.pct = 50 + g.n('p');  // the neighbours' share
   } else if (kind == "cripplingShot") {
-    n.mul = 1;
-    n.dice = lv >= 16 ? 2 : 1, n.faces = lv >= 24 ? 8 : lv >= 16 ? 6 : 8;
-    n.pct = lv >= 27 ? 75 : lv >= 18 ? 60 : 50;  // MOV off
-    n.turns = lv >= 22 ? 3 : 2;
+    n.mul = mul(1), n.dice = dice(1), n.faces = faces(8);
+    n.pct = 50 + g.n('p');  // MOV off
+    n.turns = 2 + g.n('t');
   } else if (kind == "arrowStorm") {
-    n.range = 7, n.radius = 1;  // small area
-    n.mul = lv >= 28 ? 1.3 : lv >= 20 ? 1.1 : 0.9;
-    n.dice = lv >= 23 ? 2 : 1, n.faces = 6;
+    n.range = 7, n.radius = 1;
+    n.mul = mul(0.9), n.dice = dice(1), n.faces = faces(6);
   } else if (kind == "deathShot") {
     n.length = 2;
-    n.mul = lv >= 29 ? 2.6 : lv >= 21 ? 2.3 : 2.0;
-    n.dice = lv >= 24 ? 3 : 2, n.faces = 8;
-    n.pct = lv >= 26 ? 30 : 25;  // a foe left under this share of its HP dies
+    n.mul = mul(2.0), n.dice = dice(2), n.faces = faces(8);
+    n.pct = 25 + g.n('p');  // a foe left under this share of its HP dies
   }
   // Lanceiro (docs/SKILLS_LANCER.md): mul = the weight on the lance's roll, dice = the bonus on it
   else if (kind == "spearToss") {
@@ -592,79 +664,73 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
   }
   // Curandeiro (docs/SKILLS_HEALER.md): the cures' formula, floor(floor(MAG / 2) x mul) + dice (+1 % per healing skill point)
   else if (kind == "circleOfHealing") {
-    n.range = 4, n.radius = 1;  // small area
-    n.mul = lv >= 29 ? 1.6 : lv >= 19 ? 1.4 : 1.2;
-    n.dice = lv >= 26 ? 3 : lv >= 15 ? 2 : 1, n.faces = 8;
+    n.range = 4, n.radius = 1;
+    n.mul = mul(1.2), n.dice = dice(1), n.faces = 8;
   } else if (kind == "resurrection") {
-    n.range = 1;
-    n.mul = lv >= 26 ? 2.1 : lv >= 18 ? 1.8 : 1.5;
-    n.dice = lv >= 29 ? 4 : lv >= 22 ? 3 : 2, n.faces = 8;
+    n.range = 1;  // the fallen ally's hex
+    n.mul = mul(1.5), n.dice = dice(2), n.faces = faces(8);
   } else if (kind == "judgment") {
-    n.range = 6, n.radius = 1;  // small area (D&D Flame Strike, 10 ft)
-    n.mul = lv >= 30 ? 2.4 : lv >= 21 ? 2.1 : 1.8;
-    n.dice = lv >= 28 ? 4 : lv >= 18 ? 3 : 2, n.faces = 8;
-    n.tickMul = lv >= 26 ? 1.75 : 1.5;  // the undead's weight
+    n.range = 6, n.radius = 1;
+    n.mul = mul(1.8), n.dice = dice(2), n.faces = 8;
+    n.tickMul = 1.5 + g('T');  // the undead's weight
   }
   // Conjurador (docs/SKILLS_CONJURER.md): the game's damage formula on the arcane ones; the rest move the board or last rounds
   else if (kind == "placeSwap") {
     n.range = 6;
   } else if (kind == "boneLance") {
-    n.length = lv >= 23 ? 5 : lv >= 12 ? 4 : 3;
-    n.mul = lv >= 28 ? 1.7 : lv >= 19 ? 1.5 : 1.3;
-    n.dice = lv >= 27 ? 3 : lv >= 15 ? 2 : 1, n.faces = 8;
+    n.length = 3 + g.n('l');
+    n.mul = mul(1.3), n.dice = dice(1), n.faces = faces(8);
   } else if (kind == "mirrorImage") {
     n.range = 6;
-    n.count = lv >= 27 ? 4 : lv >= 16 ? 3 : 2;  // the copies
-    n.rounds = lv >= 21 ? 4 : 3;
-    n.pct = 33;  // one chance in three
+    n.count = 2 + g.n('c');  // the copies
+    n.rounds = 3 + g.n('R');
+    n.pct = 33 + g.n('p');  // the chance a hostile hit strikes a copy
   } else if (kind == "detonateSummon") {
-    n.range = 6, n.radius = 1;  // small area
-    n.mul = lv >= 28 ? 2.4 : lv >= 20 ? 2.1 : 1.8;
-    n.dice = lv >= 26 ? 4 : lv >= 17 ? 3 : 2, n.faces = 8;
+    n.range = 6, n.radius = 1;
+    n.mul = mul(1.8), n.dice = dice(2), n.faces = 8;
   } else if (kind == "sacrificeBond") {
-    n.pct = lv >= 27 ? 50 : lv >= 19 ? 75 : 100;  // the share the summon takes (the rest is gone)
+    n.pct = 100 + g.n('p');  // the share the summon takes (the rest is gone): it falls on the track
   } else if (kind == "nightmare") {
-    n.range = 6, n.radius = 1;  // small area (D&D Synaptic Static, 20 ft)
-    n.mul = lv >= 24 ? 1.8 : 1.5;
-    n.dice = lv >= 30 ? 4 : lv >= 18 ? 3 : 2, n.faces = 8;
-    n.pct = lv >= 21 ? 35 : 25;    // the chance of fear
-    n.turns = lv >= 27 ? 2 : 1;    // ... for this many turns
-    n.tickMul = 2.0;               // a sleeper's weight
+    n.range = 6, n.radius = 1;
+    n.mul = mul(1.5), n.dice = dice(2), n.faces = 8;
+    n.pct = 25 + g.n('p');  // the chance of fear
+    n.turns = 1 + g.n('t');  // ... for this many turns
+    n.tickMul = 2.0;         // a sleeper's weight
   } else if (kind == "empowerSummons") {
-    n.pct = lv >= 28 ? 40 : lv >= 20 ? 30 : 25;
-    n.rounds = lv >= 24 ? 4 : 3;
+    n.pct = 25 + g.n('p');
+    n.rounds = 3 + g.n('R');
   }
   // Elementalista
   else if (kind == "pillarOfFlame") {
-    n.range = 6, n.radius = 1 /* D&D Flame Strike, 10 ft */, n.mul = 2.0, n.dice = lv >= 19 ? 3 : 2, n.faces = 8;
-    n.hazardDice = 1, n.hazardFaces = 8, n.rounds = lv >= 27 ? 2 : 1;
+    n.range = 6, n.radius = 1, n.mul = mul(2.0), n.dice = dice(2), n.faces = faces(8);
+    n.hazardDice = 1 + g.n('h'), n.hazardFaces = 8, n.rounds = 1 + g.n('R');
   } else if (kind == "iceLance") {
-    n.range = 7, n.mul = lv >= 28 ? 2.6 : 2.4, n.dice = lv >= 25 ? 3 : 2, n.faces = 10;
-    n.pct = lv >= 21 ? 100 : 50;  // the hexes past the first
+    n.range = 7, n.mul = mul(2.4), n.dice = dice(2), n.faces = faces(10);
+    n.pct = 50 + g.n('p');  // the hexes past the first
   } else if (kind == "thunderstorm") {
-    n.range = 6, n.radius = 1 /* small area */, n.mul = 1.8, n.dice = lv >= 21 ? 3 : 2, n.faces = 12;
-    n.tickDice = lv >= 24 ? 2 : 1, n.tickFaces = 12, n.bonus = 4;  // the echo: tickDice D12 + 4
+    n.range = 6, n.radius = 1, n.mul = mul(1.8), n.dice = dice(2), n.faces = 12;
+    n.tickDice = 1 + g.n('k'), n.tickFaces = 12, n.bonus = 4 + g.n('b');  // the echo: tickDice D12 + bonus
   } else if (kind == "meteor") {
-    n.range = 8, n.radius = 2 /* D&D Meteor Swarm, 40 ft */, n.mul = lv >= 29 ? 3.3 : 3.0, n.dice = lv >= 22 ? 5 : 4, n.faces = 6;
-    n.ringMul = 2.0, n.ringDice = 2, n.ringFaces = 6;
+    n.range = 8, n.radius = 2, n.mul = mul(3.0), n.dice = dice(4), n.faces = faces(6);
+    n.ringMul = 2.0 + g('M'), n.ringDice = 2 + g.n('g'), n.ringFaces = 6;
   } else if (kind == "absoluteZero") {
-    n.range = 6, n.radius = 1 /* D&D Ice Storm, 20 ft */, n.mul = lv >= 27 ? 2.5 : 2.2, n.dice = lv >= 23 ? 4 : 3, n.faces = 8;
+    n.range = 6, n.radius = 1, n.mul = mul(2.2), n.dice = dice(3), n.faces = faces(8);
   } else if (kind == "chainLightning") {
-    n.range = 7, n.mul = 2.8, n.dice = lv >= 24 ? 4 : 3, n.faces = 10;
-    n.jumps = lv >= 26 ? 5 : lv >= 22 ? 4 : 3;
-    n.decay = lv >= 28 ? 0.10 : 0.15;
-    n.length = 3;  // a jump's reach
+    n.range = 7, n.mul = mul(2.8), n.dice = dice(3), n.faces = 10;
+    n.jumps = 3 + g.n('j');
+    n.decay = 0.15 + g('e');
+    n.length = 3 + g.n('l');  // a jump's reach
   } else if (kind == "eruption") {
-    n.radius = 2 /* round the caster */, n.mul = lv >= 30 ? 2.9 : 2.6, n.dice = lv >= 27 ? 5 : 4, n.faces = 8;
-    n.hazardDice = 1, n.hazardFaces = 8, n.rounds = 2;
+    n.radius = 2 /* round the caster */, n.mul = mul(2.6), n.dice = dice(4), n.faces = faces(8);
+    n.hazardDice = 1 + g.n('h'), n.hazardFaces = 8 + g.n('H'), n.rounds = 2 + g.n('R');
   } else if (kind == "glacialGale") {
-    n.length = lv >= 24 ? 6 : 5, n.mul = 2.4, n.dice = lv >= 26 ? 5 : 4, n.faces = 6;
-    n.push = lv >= 29 ? 2 : 1;
+    n.length = 5 + g.n('l'), n.mul = mul(2.4), n.dice = dice(4), n.faces = faces(6);
+    n.push = 1 + g.n('P');
   } else if (kind == "wrathOfTheSkies") {
-    n.range = 8, n.count = lv >= 26 ? 5 : 4, n.mul = lv >= 30 ? 2.9 : 2.6, n.dice = lv >= 28 ? 4 : 3, n.faces = 12;
+    n.range = 8, n.count = 4 + g.n('c'), n.mul = mul(2.6), n.dice = dice(3), n.faces = 12, n.bonus = g.n('b');
   } else if (kind == "primordialEmber") {
-    n.range = 7, n.radius = 1 /* D&D Fireball, 20 ft */, n.mul = lv >= 29 ? 3.7 : 3.4, n.dice = lv >= 27 ? 5 : 4, n.faces = 10;
-    n.hazardDice = 2, n.hazardFaces = 8, n.rounds = 2;
+    n.range = 7, n.radius = 1, n.mul = mul(3.4), n.dice = dice(4), n.faces = faces(10), n.bonus = g.n('b');
+    n.hazardDice = 2 + g.n('h'), n.hazardFaces = 8 + g.n('H'), n.rounds = 2 + g.n('R');
   }
   // The reach that grows with the level, gradually (reachGain): the spells cast at a distance (their range) and the Arqueiro's
   // shots (the hexes past the bow's reach). The Guerreiro's leap and the Lanceiro's throws, pulls and swaps keep theirs.
@@ -837,7 +903,7 @@ std::vector<BattleHex> frostArea(const Battle& b, BattleHex origin, BattleHex th
   // The line grows with the level like every other spell's reach (reachGrowth; the user, 2026-10-19: "frost really need to scale
   // the distance like the others").
   // The line is Frost's area: it keeps its own growth (+1 hex every 4 levels) and one more at 10 and at 15.
-  const int length = frostPower(level).length + (progressionEnabled() ? std::clamp(2 * (level - 5) / 10, 0, 2) : 0);
+  const int length = frostPower(level).length;
   for (int i = 1; i <= length; ++i) {
     const double t = static_cast<double>(i) / n;
     const Cube c = cubeRound(aq + (B.q - A.q) * t, ar + (B.r - A.r) * t, as + (B.s - A.s) * t);
@@ -2133,9 +2199,114 @@ std::vector<std::string> emberSpells(const std::string& classId, int level) {
     if ((classId == e.cls || family == e.cls) && level >= e.learn) out.push_back(e.data.kind);
   return out;
 }
+std::vector<std::string> checkSpellTracks(std::vector<std::string>* report) {
+  const bool was = progressionEnabled();
+  setProgressionEnabled(true);
+  // what a cast reads of the spell at a level (its reach, area, dice, weights, counts, rounds ...)
+  const auto numbers = [](const std::string& kind, int lv) {
+    std::vector<double> v = {static_cast<double>(grownReach(kind, 0, lv)), static_cast<double>(areaRadius(kind, 0, lv))};
+    const auto add = [&](std::initializer_list<double> x) { v.insert(v.end(), x); };
+    if (emberSpell(kind)) {
+      const EmberNumbers n = emberNumbers(kind, lv);
+      add({double(n.range), double(n.radius), n.mul, double(n.dice), double(n.faces), double(n.bonus), double(n.pct), double(n.turns),
+           double(n.rounds), double(n.spread), double(n.jumps), double(n.length), double(n.push), double(n.count), n.tickMul,
+           double(n.tickDice), double(n.tickFaces), double(n.hazardDice), double(n.hazardFaces), n.ringMul, double(n.ringDice),
+           double(n.ringFaces), double(n.durDice), double(n.durFaces), n.decay});
+      v.push_back(static_cast<double>(std::hash<std::string>{}(n.tier) % 1000003));  // the poison tier, one number
+    } else if (kind == "magicMissile") {
+      add({double(magicMissileCount(lv)), missileMul(lv)});
+    } else if (kind == "lightning") {
+      add({double(lightningDice(lv)), lightningMul(lv)});
+    } else if (kind == "frost") {
+      const FrostPower p = frostPower(lv);
+      add({double(p.length), double(p.dice), double(p.faces), p.mul});
+    } else if (kind == "fireball") {
+      add({double(fireballDice(lv))});
+    } else if (kind == "causticVenom" || kind == "minorVenom" || kind == "divineBolt") {
+      const BoltData d = boltPower(kind, lv);
+      add({double(d.centerDice), d.centerMul, double(d.splashDice), d.splashMul});
+    } else if (kind == "lightningTier3") {
+      const TrackGains g = spellGains(kind, lv);
+      add({double(kLightningT3Dice + g.n('d')), kLightningT3Mul + g('m')});
+    } else if (const CureData* c = cureData(kind)) {
+      const TrackGains g = spellGains(kind, lv);
+      add({double(c->dice + g.n('d')), c->mul + g('m')});
+    } else if (kind == "burningHands" || kind == "poisonBreath") {
+      const ConeP p = kind == "burningHands" ? burningHandsPower(lv) : poisonBreathPower(lv);
+      add({double(p.radius), double(p.dice), double(p.faces), p.mul});  // the cone's depth (its range is the same number)
+    } else if (kind == "turnUndead") {
+      const UndeadP p = turnUndeadPower(lv);
+      add({double(p.dice), double(p.faces), p.mul});
+    } else if (kind == "bless") {
+      add({double(blessHitBonusPct(lv)), double(blessDuration(lv))});
+    } else if (kind == "auraOfProtection" || kind == "intimidatingPresence") {
+      const AuraP p = auraPower(kind, lv);
+      add({double(p.radius), p.pct, double(p.duration)});
+    } else if (kind == "divineWrath") {
+      const DiceFaces p = divineWrathPower(lv);
+      add({double(p.dice), double(p.faces)});
+    } else if (kind == "phantasmalForce") {
+      const DiceFaces p = phantasmalForceDice(lv);
+      add({double(p.dice), double(p.faces), 1 + spellGains(kind, lv)('m')});
+    } else if (kind == "webOfDreams") {
+      add({webOfDreamsSleepChance(lv), double(webOfDreamsSize(lv))});
+    } else if (kind == "longShot") {
+      const Dice p = longShotPower(lv);
+      add({double(p.dice), double(p.faces), double(spellGains(kind, lv).n('b'))});
+    } else if (kind == "bloodyShot") {
+      const DiceFaces p = bloodyShotBleed(lv);
+      add({bloodyShotMul(lv), double(p.dice), double(p.faces)});
+    } else if (kind == "multiShot") {
+      const DiceFaces p = multiShotPower(lv);
+      add({double(multiShotTargets(lv)), double(p.dice), double(p.faces)});
+    }
+    return v;
+  };
+  std::vector<std::string> fails;
+  constexpr int kLastLevel = 60;  // Ember Ashes II's cap
+  for (const SpellTrack& t : kSpellTracks) {
+    const ParsedTrack* p = parsedTrack(t.kind);
+    std::vector<double> prev = numbers(t.kind, t.learn);
+    std::string line = std::format("{} (aprendida no {}):", t.kind, t.learn);
+    int steps = 0;
+    for (int lv = t.learn + 1; lv <= kLastLevel; ++lv) {
+      const std::vector<double> now = numbers(t.kind, lv);
+      int changed = 0;
+      for (size_t i = 0; i < now.size(); ++i)
+        if (std::abs(now[i] - prev[i]) > 1e-9) ++changed;
+      const size_t at = static_cast<size_t>(lv - t.learn - 1);
+      const bool step = at < p->steps.size() && p->steps[at].first != '-';
+      // a ring of area moves two numbers (its stage and the spell's radius); a dice-only spell's reach / area keep one each
+      if (step && changed == 0) fails.push_back(std::format("{}: nível {} devia melhorar e não mudou nada", t.kind, lv));
+      if (!step && changed > 0) fails.push_back(std::format("{}: nível {} mudou {} números sem passo na trilha", t.kind, lv, changed));
+      if (step && changed > 1 && !(p->steps[at].first == 'a' && changed == 2) && !(p->steps[at].first == 'r' && changed == 2))
+        fails.push_back(std::format("{}: nível {} mudou {} números de uma vez", t.kind, lv, changed));
+      if (step) {
+        ++steps;
+        line += std::format(" {}={}", lv, p->steps[at].first);
+      }
+      prev = now;
+    }
+    if (p->steps.size() != 14) fails.push_back(std::format("{}: trilha com {} passos (devem ser 14)", t.kind, p->steps.size()));
+    if (report) {
+      report->push_back(line + std::format(" ({} melhorias)", steps));
+      BattleUnit u;  // the status sheet's line at the learning level, half way and at the end (MAG 40)
+      u.mag = 40;
+      for (const int lv : {t.learn, t.learn + 7, t.learn + 14})
+        if (u.level = lv; !spellScaleText(u, t.kind, false).empty()) report->push_back(std::format("    nível {}: {}", lv, spellScaleText(u, t.kind, false)));
+    }
+  }
+  setProgressionEnabled(was);
+  return fails;
+}
 void grantClassSpells(BattleUnit& u) {
   for (const std::string& k : emberSpells(u.classId, u.level))
     if (!contains(u.spellList, k)) u.spellList.push_back(k);
+  if (progressionEnabled() && u.side == "player") {
+    const bool necromancer = u.classId == "necromancer" && u.level >= 15;
+    if (!necromancer) std::erase(u.spellList, std::string("summonZombieDog"));
+    else if (!contains(u.spellList, std::string("summonZombieDog"))) u.spellList.push_back("summonZombieDog");
+  }
 }
 std::string promotionName(const std::string& classId) {
   if (classId == "warlock") return "Bruxo";
@@ -2192,6 +2363,98 @@ std::string conditionsText(const BattleUnit& u) {
   if (u.fearTurns > 0) add(std::string(pick("Com medo", "Afraid")) + std::format(" ({})", u.fearTurns));
   if (u.blessedRoundsLeft > 0) add(std::string(pick("Abençoado", "Blessed")) + std::format(" +{}% ({})", static_cast<int>(jsRound(u.blessedHitBonusPct * 100)), u.blessedRoundsLeft));
   return s;
+}
+std::string spellScaleTextRaw(const BattleUnit& c, const std::string& kind, bool en);
+std::string spellScaleText(const BattleUnit& c, const std::string& kind, bool en) {
+  std::string s = spellScaleTextRaw(c, kind, en);
+  // one of a thing reads singular ("1 míssil", "cone de 1 hex")
+  for (const auto& [many, one] : {std::pair<const char*, const char*>{" 1 mísseis", " 1 míssil"}, {" 1 missiles", " 1 missile"}, {" 1 hexes", " 1 hex"},
+                                  {" 1 rodadas", " 1 rodada"}, {" 1 rounds", " 1 round"}})
+    for (size_t at = s.find(many); at != std::string::npos; at = s.find(many, at)) s.replace(at, std::strlen(many), one);
+  return s;
+}
+std::string spellScaleTextRaw(const BattleUnit& c, const std::string& kind, bool en) {
+  const int lv = c.level;
+  const int half = static_cast<int>(std::floor(c.mag / 2.0));
+  const auto pick = [&](const char* pt, const char* e) { return std::string(en ? e : pt); };
+  const auto dmg = [&](double mul, int dice, int faces, int bonus = 0) {
+    std::string r = std::format("{} + {}D{}", static_cast<int>(std::floor(half * mul)), dice, faces);
+    return bonus ? r + std::format("+{}", bonus) : r;
+  };
+  const auto reach = [&](int base) { return std::format("{} {}", pick("alcance", "range"), grownReach(kind, base, lv)); };
+  const auto area = [&](int base) {
+    const int st = areaRadius(kind, base, lv);
+    return st <= 0 ? std::string("3 hexes") : std::format("{} {}", pick("raio", "radius"), st);
+  };
+  const auto num = [&](double v) {
+    std::string t = std::format("{:.2f}", v);
+    while (t.back() == '0') t.pop_back();
+    if (t.back() == '.') t.pop_back();
+    if (!en) std::replace(t.begin(), t.end(), '.', ',');
+    return t;
+  };
+  const std::string damage = pick("dano", "damage");
+  if (kind == "magicMissile")
+    return std::format("{} · {} {} · {} {}", reach(kMissileRange), magicMissileCount(lv), pick("mísseis", "missiles"), pick("cada um", "each"), dmg(missileMul(lv), kMissileDice, kMissileFaces));
+  if (kind == "lightning") return std::format("{} · {} {}", reach(kLightningRange), damage, dmg(lightningMul(lv), lightningDice(lv), kLightningFaces));
+  if (kind == "lightningTier3") {
+    const TrackGains g = spellGains(kind, lv);
+    return std::format("{} · {} {}", reach(kLightningT3Range), damage, dmg(kLightningT3Mul + g('m'), kLightningT3Dice + g.n('d'), kLightningT3Faces, kLightningT3Bonus));
+  }
+  if (kind == "frost") {
+    const FrostPower p = frostPower(lv);
+    return std::format("{} {} hexes · {} {}", pick("linha de", "line of"), p.length, damage, dmg(p.mul, p.dice, p.faces));
+  }
+  if (kind == "burningHands" || kind == "poisonBreath") {
+    const ConeP p = kind == "burningHands" ? burningHandsPower(lv) : poisonBreathPower(lv);
+    return std::format("{} {} hexes · {} {}", pick("cone de", "cone of"), p.radius, damage, dmg(p.mul, p.dice, p.faces));
+  }
+  if (kind == "fireball") return std::format("{} · {} · {} {}", reach(kFireballRange), area(kFireballSize), damage, dmg(kFireballMul, fireballDice(lv), kFireballFaces));
+  if (kind == "causticVenom" || kind == "minorVenom" || kind == "divineBolt") {
+    const BoltData d = boltPower(kind, lv);
+    return std::format("{} · {} · {} {} · {} {}", reach(d.range), area(d.size), pick("centro", "centre"), dmg(d.centerMul, d.centerDice, d.centerFaces),
+                       pick("em volta", "around"), dmg(d.splashMul, d.splashDice, d.splashFaces));
+  }
+  if (const CureData* cure = cureData(kind)) {
+    const TrackGains g = spellGains(kind, lv);
+    return std::format("{} · {} {}", reach(cure->range), pick("cura", "heals"), dmg(cure->mul + g('m'), cure->dice + g.n('d'), cure->faces));
+  }
+  if (kind == "cureDisease") return std::format("{} · {}", reach(kCureDiseaseRange), pick("remove doença e veneno", "removes disease and poison"));
+  if (kind == "bless")
+    return std::format("{} {} · +{}% {} · {} {}", area(kBlessRadius), pick("em volta", "around"), blessHitBonusPct(lv), pick("acerto", "hit"), blessDuration(lv), pick("rodadas", "rounds"));
+  if (kind == "turnUndead") {
+    const UndeadP p = turnUndeadPower(lv);
+    return std::format("{} {} · {} {} {}", area(3), pick("em volta", "around"), damage, dmg(p.mul, p.dice, p.faces), pick("nos mortos-vivos", "to the undead"));
+  }
+  if (kind == "auraOfProtection" || kind == "intimidatingPresence") {
+    const AuraP p = auraPower(kind, lv);
+    return std::format("{} {} · {}% · {} {}", area(p.radius), pick("em volta", "around"), static_cast<int>(jsRound(p.pct * 100)), p.duration, pick("rodadas", "rounds"));
+  }
+  if (kind == "divineWrath") {
+    const DiceFaces p = divineWrathPower(lv);
+    return std::format("{} {} hexes · {} {}D{} + {}", pick("linha de", "line of"), grownReach(kind, kWrathRange, lv), damage, p.dice, p.faces, half);
+  }
+  if (kind == "phantasmalForce") {
+    const DiceFaces p = phantasmalForceDice(lv);
+    return std::format("{} · {} {}", reach(kPhantasmalRange), damage, dmg(1 + spellGains(kind, lv)('m'), p.dice, p.faces));
+  }
+  if (kind == "webOfDreams")
+    return std::format("{} · {} · {} {}%", reach(kWebRange), area(1), pick("sono", "sleep"), static_cast<int>(jsRound(webOfDreamsSleepChance(lv) * 100)));
+  if (kind == "longShot") {
+    const Dice p = longShotPower(lv);
+    const int bonus = spellGains(kind, lv).n('b');
+    return std::format("{} · {} + {}D{}{}", reach(kLongShotRange), pick("arma", "weapon"), p.dice, p.faces, bonus ? std::format("+{}", bonus) : "");
+  }
+  if (kind == "bloodyShot") {
+    const DiceFaces p = bloodyShotBleed(lv);
+    return std::format("{} · ×{} {} · {} {}D{} {}", reach(kBloodyShotRange), num(bloodyShotMul(lv)), pick("da arma", "weapon"), pick("sangra", "bleeds"), p.dice, p.faces, pick("rodadas", "rounds"));
+  }
+  if (kind == "multiShot") {
+    const DiceFaces p = multiShotPower(lv);
+    return std::format("{} · {} {} · {}{}", reach(kMultiShotRange), multiShotTargets(lv), pick("flechas", "arrows"), pick("arma", "weapon"),
+                       p.dice > 0 ? std::format(" + {}D{}", p.dice, p.faces) : "");
+  }
+  return {};
 }
 std::string spellTooltip(const BattleUnit& c, const std::string& kind) {
   const EmberSpell* e = emberSpell(kind);
@@ -2474,6 +2737,8 @@ std::string spellPose(const std::string& kind) {
 
 int spellTierNumber(const std::string& kind) {
   if (kind == "bullRush" && bullRushTier3()) return 3;  // the heroes' (unitTierOf)
+  if (kind == "summonFamiliar3" && progressionEnabled()) return 5;
+  if (kind == "summonZombieDog" && progressionEnabled()) return 6;
   return spellTierOf(kind == "magicMissileV2" ? "magicMissile" : kind);
 }
 
@@ -2822,7 +3087,7 @@ std::optional<std::vector<BattleStep>> castSpell(Battle& b, size_t caster, const
     spendTier(u, kind);
     const Dice p = longShotPower(u.level);
     s.tiles = {cell}, s.ids = {static_cast<size_t>(foe)};
-    s.weaponBonusDice = p.dice, s.weaponBonusFaces = p.faces, s.weaponBonusBonus = 0;
+    s.weaponBonusDice = p.dice, s.weaponBonusFaces = p.faces, s.weaponBonusBonus = spellGains(kind, u.level).n('b');
     steps.push_back(s);
   } else if (kind == "piercing" || kind == "piercingThrust") {
     const std::vector<BattleHex> line = kind == "piercing" ? piercingRay(b, {u.x, u.y}, cell) : piercingThrustRay(b, u, cell);
@@ -2837,7 +3102,7 @@ std::optional<std::vector<BattleStep>> castSpell(Battle& b, size_t caster, const
     if (foe < 0) return fail("Spell was not cast.");
     spendTier(u, kind);
     s.tiles = {cell}, s.ids = {static_cast<size_t>(foe)};
-    s.dice = lightningDice(u.level), s.faces = kLightningFaces, s.bonus = kLightningBonus, s.spellMul = kLightningMul, s.echo = kLightningEcho;
+    s.dice = lightningDice(u.level), s.faces = kLightningFaces, s.bonus = kLightningBonus, s.spellMul = lightningMul(u.level), s.echo = kLightningEcho;
     steps.push_back(s);
   } else if (kind == "magicMissile" || kind == "magicMissileV2") {
     // One step per missile, each with its own roll (castMagicMissile collects them, then spends one use).
@@ -2852,7 +3117,7 @@ std::optional<std::vector<BattleStep>> castSpell(Battle& b, size_t caster, const
       BattleStep m = s;
       m.kind = "magicMissileV2";
       m.tiles = {c}, m.ids = {foe};
-      m.dice = kMissileDice, m.faces = kMissileFaces, m.bonus = kMissileBonus, m.spellMul = kMissileMul;
+      m.dice = kMissileDice, m.faces = kMissileFaces, m.bonus = kMissileBonus, m.spellMul = missileMul(u.level);
       steps.push_back(m);
     }
   } else if (kind == "doubleStrike") {
@@ -3432,7 +3697,8 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
       if (!target.alive) continue;
       const Fighter A = fighterAt(b, step.att, att.x, att.y);
       // rollCure (the cure's own numbers), then healingAmount (+1% per healing skill point)
-      const int base = c ? static_cast<int>(std::floor(std::floor(A.mag / 2) * c->mul + rollDice(c->dice, c->faces, c->bonus, rng)))
+      const TrackGains cg = spellGains(step.kind, att.level);
+      const int base = c ? static_cast<int>(std::floor(std::floor(A.mag / 2) * (c->mul + cg('m')) + rollDice(c->dice + cg.n('d'), c->faces, c->bonus, rng)))
                          : static_cast<int>(std::floor(std::floor(A.mag / 2) * n.mul + rollDice(n.dice, n.faces, 0, rng)));
       int heal = healingPower(att, base);
       if (target.cond.bleedTurns > 0) heal /= 2;  // Hemorragia: heals received halved
@@ -4411,7 +4677,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
     if (u.spells[1] > 0)
       if (const std::optional<Pick> p = best(grownReach("lightning", kLightningRange, u.level), false)) {
         spendTier(u, "lightning");
-        return single(*p, "lightning", lightningDice(u.level), kLightningFaces, kLightningBonus, kLightningMul, kLightningEcho);
+        return single(*p, "lightning", lightningDice(u.level), kLightningFaces, kLightningBonus, lightningMul(u.level), kLightningEcho);
       }
     if (u.fantomForceCharges > 0)
       if (const std::optional<Pick> p = best(grownReach("phantasmalForce", kFantomForceRange, u.level), true)) {
@@ -4422,7 +4688,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
     if (u.spells[0] > 0)
       if (const std::optional<Pick> p = best(grownReach("magicMissile", kMissileRange, u.level), true)) {
         spendTier(u, "magicMissile");
-        return single(*p, "magicMissile", kMissileDice, kMissileFaces, kMissileBonus, kMissileMul, std::nullopt);
+        return single(*p, "magicMissile", kMissileDice, kMissileFaces, kMissileBonus, missileMul(u.level), std::nullopt);
       }
   }
   // Frost: the close-range fallback, from where it stands, along the line through each hero.
@@ -4505,7 +4771,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
     if (u.spells[1] > 0)
       if (const std::optional<Pick> p = best(grownReach("lightning", kLightningRange, u.level), false)) {
         spendTier(u, "lightning");
-        return single(*p, "lightning", lightningDice(u.level), kLightningFaces, kLightningBonus, kLightningMul, kLightningEcho);
+        return single(*p, "lightning", lightningDice(u.level), kLightningFaces, kLightningBonus, lightningMul(u.level), kLightningEcho);
       }
     if (u.spells[3] > 0)
       if (const auto p = bestSplash(kCausticVenom, "causticVenom")) {
@@ -4520,7 +4786,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
     if (u.spells[0] > 0)
       if (const std::optional<Pick> p = best(grownReach("magicMissile", kMissileRange, u.level), true)) {
         spendTier(u, "magicMissile");
-        return single(*p, "magicMissile", kMissileDice, kMissileFaces, kMissileBonus, kMissileMul, std::nullopt);
+        return single(*p, "magicMissile", kMissileDice, kMissileFaces, kMissileBonus, missileMul(u.level), std::nullopt);
       }
   }
   // Rocco The Bird: Burning Beak (Maos Flamejantes) outranks Missil Magico outranks Choque; the cone is never aimed where it would
@@ -4566,7 +4832,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
     if (u.spells[0] > 0)
       if (const std::optional<Pick> p = best(grownReach("magicMissile", kMissileRange, u.level), true)) {
         spendTier(u, "magicMissile");
-        return single(*p, "magicMissile", kMissileDice, kMissileFaces, kMissileBonus, kMissileMul, std::nullopt);
+        return single(*p, "magicMissile", kMissileDice, kMissileFaces, kMissileBonus, missileMul(u.level), std::nullopt);
       }
     if (std::optional<AiCast> s = shock()) return s;
   }
@@ -4753,7 +5019,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
         const Dice power = longShotPower(u.level);
         s.kind = "longShot";
         s.tiles = {{f.x, f.y}}, s.ids = {p->foe};
-        s.weaponBonusDice = power.dice, s.weaponBonusFaces = power.faces, s.weaponBonusBonus = 0;
+        s.weaponBonusDice = power.dice, s.weaponBonusFaces = power.faces, s.weaponBonusBonus = spellGains("longShot", u.level).n('b');
       } else {
         // the line from where it will stand; the bodies on it as the board is now (it has not walked yet)
         const std::vector<BattleHex> line = piercingRay(b, p->from, {f.x, f.y});

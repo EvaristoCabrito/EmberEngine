@@ -14,6 +14,7 @@
 //   Cooker check-ground <board.json> <map.json> <engine2 public> <reference dir>
 //                                                                    compare the C++ board/ground with Engine2's export
 //   Cooker check-battle <map.battle.json>                            compare the C++ movement reach with Engine2's export
+//   Cooker check-spell-tracks                                       every spell's numbers level by level: one change a level
 //   Cooker check-campaign <campaign.json>                            compare the C++ save slots (slotProgress) with Engine2's
 //   Cooker check-overworld <overworld.json> <references.json>        compare the C++ world-map rules with Engine2's answers
 //   Cooker check-scene-builder <board.json> <editor-catalog.json> <engine2 public> <scenes dir> <map.json...>
@@ -27,6 +28,7 @@
 #include <charconv>
 #include <cstdlib>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <string>
 #include <string_view>
@@ -42,6 +44,7 @@
 #include "world/Campaign.h"
 #include "world/Overworld.h"
 #include "world/Progression.h"
+#include "world/Spells.h"
 #include "GroundCheck.h"
 #include "GroundCooker.h"
 #include "MeshCooker.h"
@@ -317,6 +320,15 @@ int checkBattleCommand(const std::vector<std::string_view>& args) {
   return ok ? 0 : 1;
 }
 
+int checkSpellTracksCommand(const std::vector<std::string_view>& args) {
+  std::vector<std::string> report;
+  const std::vector<std::string> fails = ember::e2::checkSpellTracks(args.empty() ? nullptr : &report);
+  for (const std::string& line : report) ember::logInfo("{}", line);
+  for (const std::string& f : fails) ember::logError("{}", f);
+  ember::logInfo("spell tracks: {}", fails.empty() ? "one small improvement a level on every spell" : std::format("{} failures", fails.size()));
+  return fails.empty() ? 0 : 1;
+}
+
 int checkCampaignCommand(const std::vector<std::string_view>& args) {
   if (args.size() != 1) fatal("usage: Cooker check-campaign <campaign.json>");
   ember::e2::Campaign campaign;
@@ -405,6 +417,7 @@ int main(int argc, char** argv) {
   if (command == "check-ground") return checkGroundCommand(args);
   if (command == "check-battle") return checkBattleCommand(args);
   if (command == "check-campaign") return checkCampaignCommand(args);
+  if (command == "check-spell-tracks") return checkSpellTracksCommand(args);
   if (command == "check-overworld") return checkOverworldCommand(args);
   if (command == "check-scene-builder") return checkSceneBuilderCommand(args);
   if (command == "check-dress") return checkDressCommand(args);
