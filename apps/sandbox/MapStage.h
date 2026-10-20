@@ -10,7 +10,7 @@
 // Camera (Ember's own orbit camera, 2026-10-15): opens turned -30 deg, tilted 20 deg, 30 deg lens, framing the
 // whole board. It always turns around a pivot on the ground and glides to every input. Right-drag turns and
 // tilts (5 to 89.5 deg), middle-drag grabs the ground, the wheel zooms toward the cursor, WASD/arrows slide the
-// board (the pivot stays on the board: at most its edge reaches the screen centre); the eye never goes into the
+// board (the pivot stays on the board, kept in from its edges by 60% of the view: clampGoal); the eye never goes into the
 // ground or a 3D piece. The camera bar (top right, Engine2's battle HUD copied 1:1 at the user's request): Normal /
 // Tática, tilt 5 deg down / up, turn 15 deg left / right, back to the normal angle. Tática is the old-school 2D view
 // (Engine2 CameraRig.flat): straight overhead through a 1 deg lens from far away (no visible perspective), no
@@ -898,15 +898,22 @@ class MapStage final : public Stage {
     target_ += glm::normalize(move) * std::max(distance_, 6.0f) * kPanPerSecond * fast * dt;
   }
 
-  // The board never leaves the screen: the pivot stays on the board, so at most the edge reaches the screen's
-  // centre (the edge hexes whole, from any angle); tilt and zoom stay in range.
+  // The board never leaves the screen: the pivot stays on the board, kept in from its edges by 60% of the view's half height at
+  // the pivot (the user, 2026-10-19: "não pode deixar sair tanto assim do tabuleiro": with the edge allowed to reach the screen's
+  // centre, a corner left three quarters of the screen off the board); the farther the zoom, the nearer the middle (never past
+  // it). Tilt and zoom stay in range.
   void clampGoal() {
-    const e2::Board::Bounds b = board_->bounds();
-    target_.x = std::clamp(target_.x, static_cast<float>(b.x0), static_cast<float>(b.x1));
-    target_.z = std::clamp(target_.z, static_cast<float>(b.z0), static_cast<float>(b.z1));
     pitch_ = std::clamp(pitch_, minPitch(), kMaxPitch);
     distance_ = std::clamp(distance_, kMinDistance, maxDistance_);
+    const e2::Board::Bounds b = board_->bounds();
+    const float inset = distance_ * std::tan(glm::radians(kFov * 0.5f)) * kPanInset;
+    const float halfX = static_cast<float>(b.x1 - b.x0) * 0.5f, halfZ = static_cast<float>(b.z1 - b.z0) * 0.5f;
+    const float midX = static_cast<float>(b.x0 + b.x1) * 0.5f, midZ = static_cast<float>(b.z0 + b.z1) * 0.5f;
+    const float reachX = std::max(halfX - inset, 0.0f), reachZ = std::max(halfZ - inset, 0.0f);
+    target_.x = std::clamp(target_.x, midX - reachX, midX + reachX);
+    target_.z = std::clamp(target_.z, midZ - reachZ, midZ + reachZ);
   }
+  static constexpr float kPanInset = 0.6f;  // the pivot's distance from the board's edges, in view half heights
 
   struct OrbitView {
     glm::vec3 target{0.0f};

@@ -3,7 +3,7 @@
   "default": { "horizon": 0.40, "bottom": 1.0, "skyTop": 0.08, "degreesPerHeight": 30.0, "bottomDegrees": 40.0, "spanDegrees": 150.0, "glowColumn": 0.5, "horizonDegrees": -6.0 },
   "panoramas": { "aldeia": ["aldeia-fogo-v01.png", "aldeia-fundo2-v01.jpg"] },
   "paintings": {
-    "aldeia-fundo2-v01.jpg": { "horizon": 0.63, "bottom": 1.0, "skyTop": 0.0, "degreesPerHeight": 40.0, "bottomDegrees": 14.8, "spanDegrees": 113.0, "glowColumn": 0.35, "horizonDegrees": 1.0, "keepSky": true, "ground": "aldeia-ground-v01.jpg", "groundTile": 120.0, "groundFar": 300.0, "groundFromDegrees": 3.0 },
+    "aldeia-fundo2-v01.jpg": { "horizon": 0.63, "bottom": 1.0, "skyTop": 0.0, "degreesPerHeight": 40.0, "bottomDegrees": 14.8, "spanDegrees": 113.0, "glowColumn": 0.35, "horizonDegrees": -4.0, "keepSky": true, "ground": "aldeia-ground-v01.jpg", "groundTile": 120.0, "groundFar": 300.0, "groundFromDegrees": 3.0 },
     "aldeia-fogo-v01.png": { "horizon": 0.74, "bottom": 1.0, "skyTop": 0.0, "degreesPerHeight": 40.0, "bottomDegrees": 10.4, "spanDegrees": 60.0, "glowColumn": 0.5, "horizonDegrees": 1.0, "keepSky": true, "ground": "aldeia-ground-v01.jpg", "groundTile": 120.0, "groundFar": 300.0, "groundFromDegrees": 3.0 },
     "aldeia-bg.jpg": { "horizon": 0.42, "bottom": 1.0, "skyTop": 0.06, "degreesPerHeight": 26.0, "bottomDegrees": 34.0, "spanDegrees": 140.0, "glowColumn": 0.2, "horizonDegrees": 1.5, "ground": "aldeia-ground-v01.jpg", "groundTile": 120.0, "groundFar": 300.0 }
   }
