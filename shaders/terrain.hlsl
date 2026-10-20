@@ -35,6 +35,7 @@ static const uint kLayerColor = 12;
 static const uint kLayerNormal = kLayerColor + kPaletteSize;
 static const uint kLayerRough = kLayerNormal + kPaletteSize;
 static const uint kLayerHas = kLayerRough + kPaletteSize;
+static const uint kLayerTile = kLayerHas + kPaletteSize;  // float: world units per repeat, 0 = 4
 
 uint recordWord(uint i) { return vk::RawBufferLoad<uint>(push.record + i * 4); }
 
@@ -277,15 +278,19 @@ float4 PSMain(VSOut i) : SV_Target0 {
     if (recordWord(kLayerHas + k) == 0 || w <= 0.001) continue;
     have += w;
     sum += w;
-    setColor += gTextures[NonUniformResourceIndex(recordWord(kLayerColor + k))].SampleGrad(s, tuv, g.dx, g.dy).rgb * w;
+    // the layer's own scale (EmberEngine's tiles: the size of the same art around the board), else every 4 units
+    const float layerTile = asfloat(recordWord(kLayerTile + k));
+    const float scale = layerTile > 0.0 ? 4.0 / layerTile : 1.0;
+    const float2 luv = tuv * scale, ldx = g.dx * scale, ldy = g.dy * scale;
+    setColor += gTextures[NonUniformResourceIndex(recordWord(kLayerColor + k))].SampleGrad(s, luv, ldx, ldy).rgb * w;
     const uint normalTex = recordWord(kLayerNormal + k), roughTex = recordWord(kLayerRough + k);
     float3 tn = float3(0.5, 0.5, 1.0);  // a layer without maps: flat normal, matte (Engine2's fallbacks)
     if (normalTex != kNoTexture) {
-      const float2 xy = gTextures[NonUniformResourceIndex(normalTex)].SampleGrad(s, tuv, g.dx, g.dy).rg * 2.0 - 1.0;
+      const float2 xy = gTextures[NonUniformResourceIndex(normalTex)].SampleGrad(s, luv, ldx, ldy).rg * 2.0 - 1.0;
       tn = float3(xy, sqrt(saturate(1.0 - dot(xy, xy)))) * 0.5 + 0.5;
     }
     setNormal += tn * w;
-    setRough += (roughTex != kNoTexture ? gTextures[NonUniformResourceIndex(roughTex)].SampleGrad(s, tuv, g.dx, g.dy).r : 235.0 / 255.0) * w;
+    setRough += (roughTex != kNoTexture ? gTextures[NonUniformResourceIndex(roughTex)].SampleGrad(s, luv, ldx, ldy).r : 235.0 / 255.0) * w;
   }
   const float setW = saturate(have / max(gTotal, 1e-4));
   if (setW > 0.0) topC = lerp(topC, setColor / max(sum, 1e-4), setW);

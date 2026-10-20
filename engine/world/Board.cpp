@@ -6,6 +6,7 @@
 #include <nlohmann/json.hpp>
 
 #include "core/Log.h"
+#include "world/GroundAssets.h"
 
 namespace ember::e2 {
 
@@ -84,6 +85,16 @@ std::optional<BoardData> BoardData::load(const std::filesystem::path& boardJson)
     logError("board data: {} ground layer sources for {} layers", d.groundLayers.size(), d.groundLayerCount);
     return std::nullopt;
   }
+  d.engine2LayerCount = d.groundLayerCount;
+  for (const EmberGroundTile& t : kEmberGroundTiles) {
+    GroundLayerSource s;
+    s.key = t.key;
+    s.file = t.file;
+    s.tile = t.tile;
+    d.emberGroundLayer[std::string(t.map)] = static_cast<int>(d.groundLayers.size());
+    d.groundLayers.push_back(std::move(s));
+  }
+  d.groundLayerCount = static_cast<int>(d.groundLayers.size());
   return d;
 }
 
@@ -201,6 +212,9 @@ Board::Board(const BoardData& data, MapDraft draft) : data_(data), draft_(std::m
       else if (v3 >= 0) cell.ground = v3Layer;
       else if (variantLayer >= 0) cell.ground = baseLayers + 3 + variantLayer;
       else cell.ground = claudeTile ? data_.baseLayerIndex(cell.type) : -1;
+      // The map's own ground tile (GroundAssets.h kEmberGroundTiles) on its grass and forest hexes the procedural surfaces had.
+      if (cell.ground < 0 && (surf == "grass" || surf == "forest"))
+        if (const auto own = data_.emberGroundLayer.find(draft_.id); own != data_.emberGroundLayer.end()) cell.ground = own->second;
       if (info.surface == "void") cell.groundY = 0;
       else if (cell.water) cell.groundY = (data_.baseLevels - 1 + cell.level) * kStep;
       else cell.groundY = (data_.baseLevels + cell.level + info.raise) * kStep;

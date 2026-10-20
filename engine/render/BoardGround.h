@@ -37,8 +37,9 @@ struct TerrainGpu {
   uint32_t layerCount;
   uint32_t layerColor[kTerrainPaletteSize], layerNormal[kTerrainPaletteSize], layerRough[kTerrainPaletteSize];
   uint32_t layerHas[kTerrainPaletteSize];  // 1 = the layer exists in the set (its colour map is resident)
+  float layerTile[kTerrainPaletteSize];    // world units per repeat; 0 = 4 (GroundLayerSource::tile)
 };
-static_assert(sizeof(TerrainGpu) == 108 * 4);
+static_assert(sizeof(TerrainGpu) == 132 * 4);
 
 struct WaterVertexGpu {
   float position[3];

@@ -40,19 +40,20 @@ Diff compare(const std::vector<float>& ours, const std::vector<float>& theirs, d
 }
 
 // Engine2 splits the per-vertex weights into vec4 attributes: splatA, splatB, groundA, groundB, ...
-bool loadWeights(const std::filesystem::path& dir, const std::string& name, uint32_t stride, size_t vertices, std::vector<float>& out) {
-  out.assign(vertices * stride, 0.0f);
+// Its `stride` weights per vertex land in rows of `ours` (EmberEngine's own ground layers after Engine2's stay 0).
+bool loadWeights(const std::filesystem::path& dir, const std::string& name, uint32_t stride, uint32_t ours, size_t vertices, std::vector<float>& out) {
+  out.assign(vertices * ours, 0.0f);
   for (uint32_t part = 0; part * 4 < stride; ++part) {
     const std::string attr = part == 0 ? "splatA" : part == 1 ? "splatB" : std::string("ground") + static_cast<char>('A' + part - 2);
     std::vector<float> data;
     if (!readRaw(dir / (name + "." + attr + ".f32"), data) || data.size() != vertices * 4) return false;
     for (size_t v = 0; v < vertices; ++v)
-      for (uint32_t k = 0; k < 4 && part * 4 + k < stride; ++k) out[v * stride + part * 4 + k] = data[v * 4 + k];
+      for (uint32_t k = 0; k < 4 && part * 4 + k < stride; ++k) out[v * ours + part * 4 + k] = data[v * 4 + k];
   }
   return true;
 }
 
-bool checkOne(const std::filesystem::path& dir, const std::string& name, const e2::GroundGeometry& g) {
+bool checkOne(const std::filesystem::path& dir, const std::string& name, const e2::GroundGeometry& g, uint32_t engine2Stride) {
   std::vector<float> pos, nor, weights;
   std::vector<uint32_t> index;
   if (!readRaw(dir / (name + ".position.f32"), pos) || !readRaw(dir / (name + ".normal.f32"), nor)) {
@@ -77,7 +78,7 @@ bool checkOne(const std::filesystem::path& dir, const std::string& name, const e
     logError("  {}: indexed here, not in Engine2", name);
     ok = false;
   }
-  if (!loadWeights(dir, name, g.stride, vertices, weights)) {
+  if (!loadWeights(dir, name, engine2Stride, g.stride, vertices, weights)) {
     logError("  {}: reference weights missing", name);
     return false;
   }
@@ -120,8 +121,9 @@ bool checkGround(const std::filesystem::path& boardJson, const std::filesystem::
   logInfo("  cells: {} of {} match", cells.size() - cellErrors, cells.size());
   ok = ok && cellErrors == 0;
 
-  ok = checkOne(dir, "smooth", e2::buildSmoothGround(board)) && ok;
-  ok = checkOne(dir, "hard", e2::buildHardGround(board)) && ok;
+  const uint32_t engine2Stride = 8 + static_cast<uint32_t>(board.data().engine2LayerCount);  // 8 surfaces (GroundMesh)
+  ok = checkOne(dir, "smooth", e2::buildSmoothGround(board), engine2Stride) && ok;
+  ok = checkOne(dir, "hard", e2::buildHardGround(board), engine2Stride) && ok;
 
   // Water (no weights).
   for (const auto& [name, style] : {std::pair{"water-smooth", e2::EdgeStyle::Smooth}, std::pair{"water-hard", e2::EdgeStyle::Hard}}) {

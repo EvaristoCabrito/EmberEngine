@@ -28,6 +28,16 @@ inline std::string emberBackdrop(std::string_view draftId) {
     if (draftId == id) return std::string(file);
   return {};
 }
+// EmberEngine's own ground tiles (content/ground, made from the user's art by tools/scripts/ground/make_tile.py): a map's
+// grass and forest hexes wear its tile in place of Engine2's procedural surfaces, that map only (BoardData::load appends
+// each as a ground layer, Board lays it). `tile` = world units per repeat, the scale of the same art on the plane around
+// the board (O Vau: backdrop-fit.json groundTile 36 for the photo's 1168 px, the tile is 784 of them).
+struct EmberGroundTile {
+  std::string_view map, key, file;
+  float tile;
+};
+inline constexpr EmberGroundTile kEmberGroundTiles[] = {{"vau", "ember-vau-grass-v01", "content/ground/vau-grass-v01.png", 36.0f * 784.0f / 1168.0f}};
+
 inline std::string skyMoonAsset(std::string_view phase) { return "sky/moon/" + std::string(phase) + ".tex"; }
 
 }  // namespace ember::e2

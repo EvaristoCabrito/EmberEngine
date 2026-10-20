@@ -128,6 +128,7 @@ bool BoardGround::build(const e2::Board& board) {
   for (size_t k = 0; k < palette.size(); ++k) {
     const e2::GroundLayerSource& layer = data.groundLayers[palette[k]];
     if (layer.absent) continue;  // Engine2: this set has no such layer; the procedural ground stays
+    record_.layerTile[k] = layer.tile;
     want(e2::groundLayerAsset(layer.key, "color"), offsetof(TerrainGpu, layerColor) / 4 + k);
     want(e2::groundLayerAsset(layer.key, "color"), offsetof(TerrainGpu, layerHas) / 4 + k);  // 1 once resident
     if (!layer.normal.empty()) want(e2::groundLayerAsset(layer.key, "normal"), offsetof(TerrainGpu, layerNormal) / 4 + k);

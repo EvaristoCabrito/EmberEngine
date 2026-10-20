@@ -137,6 +137,10 @@ bool cookGround(JobSystem& jobs, const GroundCookOptions& options, std::vector<P
     work.push_back({e2::skyMoonAsset(phase), TextureFormat::Bc7Srgb, publicFile(options.engine2Public, e2::moonPhaseIcon(phase)), {}});
   for (const e2::GroundLayerSource& layer : data->groundLayers) {
     if (layer.absent) continue;
+    if (!layer.file.empty()) {  // EmberEngine's own tile, a project file (content/ground)
+      work.push_back({e2::groundLayerAsset(layer.key, "color"), TextureFormat::Bc7Srgb, layer.file, {}});
+      continue;
+    }
     if (!layer.procedural.empty()) {
       work.push_back({e2::groundLayerAsset(layer.key, "color"), TextureFormat::Bc7Srgb, {}, layer.procedural});
       continue;

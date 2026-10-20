@@ -36,6 +36,8 @@ struct GroundLayerSource {
   std::string color, normal, rough;  // URLs under Engine2's public/ ("/game/..."); empty = none
   double relief = 0;                 // vertex relief height (world units) when reliefGrid is set
   std::string reliefGrid;
+  std::string file;                  // EmberEngine's own tile (kEmberGroundTiles): a project file, in place of `color`
+  float tile = 0;                    // world units per repeat; 0 = the board's usual 4
 };
 
 struct GroundVariantLayer {
@@ -51,7 +53,8 @@ struct BoardData {
   std::unordered_map<std::string, int> surfaces;  // grass 0 ... plains049 7
   std::unordered_map<std::string, TerrainInfo> terrain;
   std::vector<std::string> groundLayerTerrains;    // the 12 base terrain layers
-  int groundLayerCount = 0;                         // base + city, shallow water, river rocks + variant layers
+  int groundLayerCount = 0;                         // base + city, shallow water, river rocks + variant layers + EmberEngine's tiles
+  int engine2LayerCount = 0;                        // the layers Engine2 knows (the first ones)
   std::vector<GroundLayerSource> groundLayers;      // groundLayerCount entries
   std::vector<GroundVariantLayer> groundVariantLayers;
   std::vector<std::pair<std::string, int>> engine2V3;  // (terrain, variant), in table order; key "city" first match
@@ -59,6 +62,7 @@ struct BoardData {
   int engine2V3CityVariant = 50;
   std::unordered_map<std::string, int> claudeVariant;
   std::vector<std::string> architectureDecorations;  // sorted
+  std::unordered_map<std::string, int> emberGroundLayer;  // map id -> its own ground tile's layer (appended after Engine2's)
 
   static std::optional<BoardData> load(const std::filesystem::path& boardJson);
   int groundVariantLayer(const std::string& terrain, int variant) const;
