@@ -29,11 +29,12 @@ inline std::string emberBackdrop(std::string_view draftId) {
   return {};
 }
 // EmberEngine's own ground tiles (content/ground, made from the user's art by tools/scripts/ground/make_tile.py): a map's
-// grass and forest hexes wear its tile in place of Engine2's procedural surfaces, that map only (BoardData::load appends
-// each as a ground layer, Board lays it). `tile` = world units per repeat, the scale of the same art on the plane around
-// the board (O Vau: backdrop-fit.json groundTile 36 for the photo's 1168 px, the tile is 784 of them).
+// grass and forest hexes wear its tile in place of the procedural surfaces, that map only (BoardData::load appends
+// each as a ground layer, Board lays it). `tile` = world units per repeat.
 // `map` = the set: a map id, or the name a draft picks with its "emberTiles" field (MapDraft::emberTiles). `terrain` = the
-// terrain id whose hexes wear it; empty = the set's grass and forest surfaces (O Vau's rule).
+// terrain id whose hexes wear it; empty = the set's grass and forest surfaces.
+// Never put a set on a map that already has its own ground (the user, 2026-10-20: O Vau's grass tile replaced the map's own
+// grass and was removed; a new ground is only ever a new map version that picks it).
 // The cemetery's set (cemiterio-v01): the user's six photos (Attachments/texturas/cemi01-06.jpg, 2026-10-20) cut by
 // make_tile.py; each photo shows about 4 m of ground across its 1168 px, so its 784 px tile repeats every ~3.5-5 units.
 struct EmberGroundTile {
@@ -41,7 +42,6 @@ struct EmberGroundTile {
   float tile;
 };
 inline constexpr EmberGroundTile kEmberGroundTiles[] = {
-    {"vau", "", "ember-vau-grass-v01", "content/ground/vau-grass-v01.png", 36.0f * 784.0f / 1168.0f},
     {"cemiterio-v01", "plains", "ember-cemiterio-relva-neve-v01", "content/ground/cemiterio-relva-neve-v01.png", 4.5f},  // cemi01: snow over dead grass
     {"cemiterio-v01", "snow", "ember-cemiterio-trilha-v01", "content/ground/cemiterio-trilha-v01.png", 5.0f},        // cemi02: trodden slush, the paths
     {"cemiterio-v01", "nave", "ember-cemiterio-lajes-v01", "content/ground/cemiterio-lajes-v01.png", 3.6f},          // cemi03: setts, frost in the joints
