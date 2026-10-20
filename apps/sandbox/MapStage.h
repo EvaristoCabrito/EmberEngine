@@ -377,7 +377,11 @@ class MapStage final : public Stage {
       // Every map with a painting opens with it just below the real sky's horizon (the user, 2026-10-20: "activate the background image
       // for O Vau just below the sky horizon, you should do that for all background images, dont touch Aldeia"); a room (indoor) keeps the
       // sky it had. Aldeia is untouched: its own panoramas below.
+      // Every map with fog of war opens on the sky (the user, 2026-10-20, Ashen Forest Crossing: "qualquer lugar com esse nevoa" as in
+      // the photo: the dense fog over the sky, as on 2026-10-19 21:49; a painting showed through the fog). The fog itself is untouched;
+      // maps without fog unchanged; the panel's Fundo still offers the painting.
       background_ = options.background >= 0 ? std::min(options.background, 4)
+                    : fog_.has_value()                                                              ? 1
                     : !scene_->backdrop.empty() && (aldeia() || scene_->environment != "indoor") ? 4
                                                                                                   : 1;
       if (!scene_->backdrop.empty()) backdropFit_ = loadBackdropFit(scene_->backdrop);
