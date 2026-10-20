@@ -26,7 +26,7 @@ import json
 import os
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 FPS = 24.0
@@ -72,6 +72,44 @@ def unmix(rgb, alpha, plate):
     fg = np.where(a[..., None] > 0.6, c, fg)  # solid inside: the frame's own pixels, untouched
     fg = np.clip(fg, 0, 255)
     return np.dstack([fg, a * 255.0]).astype(np.float32)
+
+
+def wall_key(rgb, alpha, plate, key):
+    """A clip's `wallKey` (the cast, 2026-10-20): inside a region of the video, whatever differs from the wall is figure too.
+    The model drops a bright light against the dark wall as background and the staff's head with it (the cast's flash and
+    burst); the video plate is no good there either (the head never leaves that spot, so its only "clear" frames are the
+    broken ones). So each frame's wall is a smooth surface (a degree-4 polynomial, the studio backdrop's gradient) fitted
+    to the sure wall outside the region, 20 px clear of anything the model kept; the difference from it, from `low` to
+    `high`, is alpha (the staff, the burst, the light it throws), kept where it is more than the model's, faded out over
+    `feather` px at the region's inner edges. Returns the alpha and the plate to unmix with."""
+    x0, y0, x1, y1 = key["region"]
+    h, w, _ = rgb.shape
+    far = np.asarray(Image.fromarray((alpha > 4).astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(41))) == 0
+    outside = np.ones((h, w), bool)
+    outside[y0:y1, x0:x1] = False
+    ys, xs = np.nonzero(far & outside)
+    sel = np.random.default_rng(1).choice(len(ys), min(len(ys), 20000), replace=False)
+    deg = 4
+
+    def basis(y, x):
+        u, v = x / w * 2 - 1, y / h * 2 - 1
+        return np.stack([u ** i * v ** j for i in range(deg + 1) for j in range(deg + 1 - i)], -1)
+    coef = np.linalg.lstsq(basis(ys[sel].astype(np.float64), xs[sel].astype(np.float64)),
+                           rgb[ys[sel], xs[sel]].astype(np.float64), rcond=None)[0]
+    gy, gx = np.mgrid[y0:y1, x0:x1]
+    fit = (basis(gy.astype(np.float64), gx.astype(np.float64)) @ coef).astype(np.float32)
+    d = np.abs(rgb[y0:y1, x0:x1].astype(np.float32) - fit).max(-1)
+    k = np.clip((d - key["low"]) / (key["high"] - key["low"]), 0, 1)
+    # the window: 1 inside, fading to 0 over `feather` px at every edge that is not the frame's own edge
+    f = float(key["feather"])
+    wx = np.minimum(1.0, np.minimum((gx - x0 + 0.5) / f if x0 > 0 else 1e9, (x1 - 0.5 - gx) / f if x1 < w else 1e9))
+    wy = np.minimum(1.0, np.minimum((gy - y0 + 0.5) / f if y0 > 0 else 1e9, (y1 - 0.5 - gy) / f if y1 < h else 1e9))
+    win = np.clip(np.minimum(wx, wy), 0, 1).astype(np.float32)
+    a = alpha.copy()
+    a[y0:y1, x0:x1] = np.maximum(alpha[y0:y1, x0:x1], np.round(k * win * 255).astype(np.uint8))
+    p = plate.copy()
+    p[y0:y1, x0:x1] = fit * win[..., None] + plate[y0:y1, x0:x1] * (1 - win[..., None])
+    return a, p
 
 
 def sole_row(a):
@@ -168,7 +206,10 @@ def main():
             continue
         rgb, alpha = load_frames(os.path.join(ROOT, c["src"]), c["first"], c["last"])
         plate = backdrop_plate(rgb, alpha)
-        frames = [unmix(rgb[i], alpha[i], plate) for i in range(len(rgb))]
+        if "wallKey" in c:
+            frames = [unmix(rgb[i], *wall_key(rgb[i], alpha[i], plate, c["wallKey"])) for i in range(len(rgb))]
+        else:
+            frames = [unmix(rgb[i], alpha[i], plate) for i in range(len(rgb))]
         n = len(frames)
         info = {"video": c.get("video"), "first": c["first"], "last": c["last"]}
         # Every video is framed its own way (the cast is landscape, ~660 px of figure; the staff counter ~4% closer than the
@@ -242,7 +283,21 @@ def main():
         pad = 4
         x0, x1 = max(0, xs.min() - pad), min(m.shape[1], xs.max() + 1 + pad)
         y0, y1 = max(0, ys.min() - pad), min(m.shape[0], max(ys.max() + 1, sole + 1) + pad)
-        out_dir = os.path.join(here, f"{c['clip']}-{spec['version']}")
+        if "bodyAt" in c:
+            # the card stands centred on its hex: the hood's centre must sit `bodyAt` units from the frame's centre as in
+            # the clip's other poses, or he slides sideways when the pose starts (cast v02's glow widened its frame on the
+            # left only); the frame is widened with clear columns on the side that needs them
+            t = hood_top(frames[0][..., 3])
+            hx = np.nonzero((frames[0][t + 20:t + 120, :, 3] > 128).any(0))[0]
+            hood = (hx.min() + hx.max()) / 2
+            want = c["bodyAt"] / clip_units_px  # px from the frame's centre
+            shift = int(round(2 * (hood - want) - (x0 + x1)))  # x0 + x1 must become 2 * (hood - want)
+            if shift > 0:
+                x1 = min(m.shape[1], x1 + shift)
+            elif shift < 0:
+                x0 = max(0, x0 + shift)
+            info["bodyAt"] = round(((hood - (x0 + x1) / 2)) * clip_units_px, 4)
+        out_dir = os.path.join(here, f"{c['clip']}-{c.get('version', spec['version'])}")  # a clip's own version wins
         os.makedirs(out_dir, exist_ok=True)
         for old in os.listdir(out_dir):
             if old.endswith(".png"):

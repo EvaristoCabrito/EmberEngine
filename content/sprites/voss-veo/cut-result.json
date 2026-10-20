@@ -106,24 +106,25 @@
     687
    ],
    "figurePx": 632.0,
+   "bodyAt": -0.2423,
    "frames": 113,
    "frameMs": 41.666666666666664,
    "nat": [
-    421,
+    629,
     695
    ],
    "crop": [
-    4,
+    15,
     0,
-    413,
+    506,
     690
    ],
    "box": {
-    "w": 1.78992,
+    "w": 2.67425,
     "h": 2.95485,
     "foot": 0.02976
    },
-   "pattern": "content/sprites/voss-veo/cast-v01/cast-{}.png"
+   "pattern": "content/sprites/voss-veo/cast-v02/cast-{}.png"
   },
   "atk": {
    "video": "Attachments/VeoVoss/CounterDistance/CounterDistanceat420sec.mp4",

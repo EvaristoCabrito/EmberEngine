@@ -49,7 +49,21 @@
    "video": "Attachments/VeoVoss/Casting/Voss_casting_purple_arcane_spell_20261017231306.mp4",
    "first": 8,
    "last": 120,
-   "mode": "once"
+   "mode": "once",
+   "version": "v02",
+   "wallKey": {
+    "region": [
+     330,
+     0,
+     660,
+     380
+    ],
+    "low": 30,
+    "high": 110,
+    "feather": 56,
+    "why": "the user, 2026-10-20: half of the staff vanished at the end of the cast (v01 frames 77-90: the model dropped the flash, the burst and the staff's head as background); v01 kept"
+   },
+   "bodyAt": -0.242
   },
   {
    "clip": "atk",
