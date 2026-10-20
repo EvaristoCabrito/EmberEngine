@@ -634,6 +634,17 @@ float4 PSMain(VSOut i) : SV_Target0 {
       const float along = i.uv.x;
       a = (0.3 + 0.7 * pow(facing, 1.5)) * pow(along, 1.6) * opacity * (0.75 + 0.25 * sin(along * 30.0 - t * 20.0));
       c = lerp(d.color.rgb, d.params1.rgb, facing * facing * along) * intensity;
+    } else if (mode >= 5.5) {
+      // Lightning (render/vfx/Lightning, Relâmpago 02): a jagged tube from the sky to the body (u from the top to the foot). A
+      // white-hot thread down its middle where it faces the eye, the energy's colour in the shell around it, a hard crackle
+      // along its length; params1.a = how much of the bolt is lit (a flash that dies from the top), color.a = unused.
+      const float facing = abs(dot(normalize(i.normal), normalize(f.cameraPosition - i.world)));
+      const float along = i.uv.x;
+      const float crackle = 0.78 + 0.22 * sin(along * 140.0 + t * 130.0 + i.uv.y * 6.0);
+      const float lit = smoothstep(0.0, 0.08, d.params1.a - along);
+      a = (0.35 + 0.65 * pow(facing, 1.2)) * opacity * crackle * lit;
+      if (a < 0.003) discard;
+      c = lerp(d.color.rgb, d.params1.rgb, saturate(pow(facing, 3.0) * 1.3)) * intensity;
     } else {
       // A blade's cut (a sheet along the swing, u along its path, v from its inner side to the cutting edge): only the
       // part between the tail (color.a) and the head (params1.a) shows; a white-hot edge, a thin steel wash behind it,

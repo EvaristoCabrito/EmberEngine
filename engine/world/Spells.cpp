@@ -652,7 +652,10 @@ std::vector<BattleHex> frostArea(const Battle& b, BattleHex origin, BattleHex th
   const Cube A = oddrToCube(origin.x, origin.y), B = oddrToCube(through.x, through.y);
   const double aq = A.q + 1e-6, ar = A.r + 2e-6, as = A.s - 3e-6;
   std::vector<BattleHex> out;
-  for (int i = 1; i <= frostPower(level).length; ++i) {
+  // The line grows with the level like every other spell's reach (reachGrowth; the user, 2026-10-19: "frost really need to scale
+  // the distance like the others").
+  const int length = frostPower(level).length + reachGrowth(level);
+  for (int i = 1; i <= length; ++i) {
     const double t = static_cast<double>(i) / n;
     const Cube c = cubeRound(aq + (B.q - A.q) * t, ar + (B.r - A.r) * t, as + (B.s - A.s) * t);
     const BattleHex p = cubeToOddr(static_cast<int>(c.q), static_cast<int>(c.r));
@@ -1244,6 +1247,24 @@ BattleHex hexBeyond(BattleHex from, BattleHex through) {
   const Cube a = oddrToCube(from.x, from.y), t = oddrToCube(through.x, through.y);
   return cubeToOddr(static_cast<int>(std::lround(2 * t.q - a.q)), static_cast<int>(std::lround(2 * t.r - a.r)));
 }
+// The neighbour foe standing on `aim` itself, when the aim is a click on it (-1: the aim is a hex): Arremesso then throws that very foe,
+// Empalar e Arrastar drags that very foe, straight away from the caster as far as it goes (the user, 2026-10-19: "should allow me to aim
+// in different targets ... I can't ever fire anything where I want").
+int aimedNeighbour(const Battle& b, const BattleUnit& u, BattleHex aim) {
+  if (hexDist({u.x, u.y}, aim) != 1) return -1;
+  const int foe = occAt(b, aim);
+  return targetable(b, foe) && oneHex(b.units()[static_cast<size_t>(foe)]) ? foe : -1;
+}
+// The hex `steps` past `through` on the line from `from`, stopping at the board's edge.
+BattleHex farAlong(const Battle& b, BattleHex from, BattleHex through, int steps) {
+  BattleHex prev = from, at = through;
+  for (int k = 0; k < steps; ++k) {
+    const BattleHex next = hexBeyond(prev, at);
+    if (!b.inBounds(next.x, next.y)) break;
+    prev = at, at = next;
+  }
+  return at;
+}
 // Arremesso: the neighbour to be thrown toward `aim` (the one nearest it), its flight, where it ends and what it hits.
 struct TossPlan {
   size_t foe = 0;
@@ -1263,12 +1284,15 @@ std::optional<TossPlan> tossPlan(const Battle& b, size_t caster, BattleHex aim, 
   if (aim == from) return fail("Escolha para onde lançar o inimigo vizinho.");
   std::optional<TossPlan> best;
   int bestD = 1 << 30;
+  const int aimed = aimedNeighbour(b, u, aim);  // a click on the neighbour itself: that one, straight away from the caster
   for (const BattleHex& h : Battle::neighbors(u.x, u.y)) {
     const int foe = occAt(b, h);
     if (!targetable(b, foe) || !oneHex(b.units()[static_cast<size_t>(foe)])) continue;
-    const int d = hexDist(h, aim);
+    if (aimed >= 0 && foe != aimed) continue;
+    const BattleHex goal = aimed >= 0 ? farAlong(b, from, h, n.range) : aim;
+    const int d = hexDist(h, goal);
     if (d < 1 || d > n.range || d >= bestD) continue;
-    const std::vector<BattleHex> line = hexLine(h, aim);
+    const std::vector<BattleHex> line = hexLine(h, goal);
     if (std::any_of(line.begin(), line.end(), [&](const BattleHex& c) { return c == from; })) continue;  // never through the thrower
     TossPlan p;
     p.foe = static_cast<size_t>(foe);
@@ -1371,9 +1395,11 @@ std::optional<DragPlan> dragPlan(const Battle& b, size_t caster, BattleHex aim, 
   };
   if (!b.inBounds(aim.x, aim.y)) return fail("Fora do mapa.");
   if (!oneHex(u)) return fail("Não dá para arrastar ninguém assim.");
+  const int aimed = aimedNeighbour(b, u, aim);  // a click on the neighbour itself: dragged as far as the line stays free
   for (const BattleHex& h : Battle::neighbors(u.x, u.y)) {
     const int foe = occAt(b, h);
     if (!targetable(b, foe) || !oneHex(b.units()[static_cast<size_t>(foe)])) continue;
+    if (aimed >= 0 && foe != aimed) continue;
     DragPlan p;
     p.foe = static_cast<size_t>(foe);
     p.tiles.push_back(h);
@@ -1383,13 +1409,18 @@ std::optional<DragPlan> dragPlan(const Battle& b, size_t caster, BattleHex aim, 
       if (!landable(b, next)) break;
       prev = at, at = next;
       p.tiles.push_back(at), ++p.hexes;
-      if (at == aim) {
+      if (aimed < 0 && at == aim) {
         p.foeTo = at, p.casterTo = prev;
         return p;
       }
     }
+    if (aimed >= 0 && p.hexes > 0) {
+      p.foeTo = at, p.casterTo = prev;
+      return p;
+    }
+    if (aimed >= 0) return fail("Não há espaço livre atrás dele para arrastá-lo.");
   }
-  return fail(std::format("Escolha um hex em linha reta atrás de um inimigo vizinho, a até {} hexes.", n.length));
+  return fail(std::format("Escolha um inimigo vizinho ou um hex em linha reta atrás dele, a até {} hexes.", n.length));
 }
 
 std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const std::string& kind, const std::vector<BattleHex>& cells, std::string* error) {
@@ -1936,10 +1967,14 @@ bool spellPorted(const std::string& kind) {
 bool spellWeaponAbility(const std::string& kind) { return weaponAbility(kind); }
 
 bool spellInstant(const std::string& kind) {
-  return kind == "createFoodAndWater" || kind == "eruption" || kind == "auraOfProtection" || kind == "intimidatingPresence" || kind == "warCry" ||
-         kind == "sentinelVigil";
+  return kind == "createFoodAndWater" || kind == "auraOfProtection" || kind == "intimidatingPresence";
 }
-bool spellSelfArea(const std::string& kind) { return kind == "sweep" || kind == "turnUndead" || kind == "steelWhirlwind"; }
+// An area around the caster, shown at once and cast on Confirmar. Grito de Guerra, Vigília da Sentinela and Erupção were instant (cast the
+// moment the socket was pressed, the area never shown): the user, 2026-10-19: "how the fuck im going to cast something without knowing the
+// area of effect".
+bool spellSelfArea(const std::string& kind) {
+  return kind == "sweep" || kind == "turnUndead" || kind == "steelWhirlwind" || kind == "warCry" || kind == "sentinelVigil" || kind == "eruption";
+}
 bool spellAimsDirection(const std::string& kind) {
   return kind == "piercing" || kind == "piercingThrust" || kind == "frost" || kind == "iceLance" || kind == "glacialGale" ||
          kind == "burningHands" || kind == "poisonBreath" || kind == "divineWrath" || kind == "stampede";

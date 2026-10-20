@@ -360,7 +360,11 @@ class MapStage final : public Stage {
       // Every other map opens on the real sky (the user, 2026-10-19: "joga o ceu em todos eu vou ir resolvendo um por um em termos de
       // fundo, chão etc"; the cover-fit painting made the board look like it hung in limbo when the camera tilted up); the painting
       // stays in the panel's Fundo.
-      background_ = options.background >= 0 ? std::min(options.background, 4) : aldeia() && !scene_->backdrop.empty() ? 4 : 1;
+      // Ashen Forest Crossing keeps its own painting (the user's background v02, 2026-10-19: "ashen forest background is missing"):
+      // the cover-fit painting, as it opened before the sky became the default elsewhere.
+      background_ = options.background >= 0 ? std::min(options.background, 4) : aldeia() && !scene_->backdrop.empty() ? 4
+                    : ashenForest() && !scene_->backdrop.empty()                                                      ? 0
+                                                                                                                      : 1;
       if (!scene_->backdrop.empty()) backdropFit_ = loadBackdropFit(scene_->backdrop);
       if (!backdropFit_.ground.empty()) ground_.requestTexture(e2::backdropAsset(backdropFit_.ground));
       // The map's own panoramas (backdrop-fit.json "panoramas" by map id; the panel's Fundo after its five entries): aldeia only.
@@ -3618,7 +3622,7 @@ class MapStage final : public Stage {
   // movement; once no enemy is in sight (fallen or out of view) the party roams again (the user, 2026-10-17: "free
   // movement switch back and forth"). Engine2 roamed the whole mission; its free reach stays (Battle::reachable while
   // roaming), and like Engine2 the reach is not washed over the board (a box says it is free movement).
-  static constexpr int kRoamSight = 6;  // without fog of war: an enemy this many hexes from the party is met
+  static constexpr int kRoamSight = e2::kSightRadius;  // without fog of war: an enemy this many hexes from the party is met (the same 12 as the fog's sight; was 6)
 
   // The living enemies the party sees right now (fog: on a hex in sight; without fog: within kRoamSight of a hero).
   std::vector<int> enemiesInSight() const {
@@ -4081,6 +4085,13 @@ class MapStage final : public Stage {
     std::string pose = s.type == StepType::Combat ? (strikeIsOffHand(s, x.counter) ? "attackShort" : "attack") : s.type == StepType::Potion ? "" : e2::spellPose(s.kind);
     if (pose == "attackShort" && striker >= 0 && !hasPose(static_cast<size_t>(striker), pose)) pose = "attack";  // no off-hand sheet: the main one
     if (striker >= 0 && !pose.empty() && !hasPose(static_cast<size_t>(striker), pose)) pose = hasPose(static_cast<size_t>(striker), "cast") ? "cast" : "attack";
+    // Neera's Casting animation plays on every skill she uses, the bow skills too (the user, 2026-10-19); her plain attacks and
+    // counters keep the shot. A skill is any step with a kind that is not a counter, a potion or a walk.
+    if (striker >= 0 && !x.counter && !s.kind.empty() && s.type != StepType::Potion && s.type != StepType::Move && !pose.empty() &&
+        hasPose(static_cast<size_t>(striker), "cast")) {
+      const size_t su = static_cast<size_t>(striker);
+      if (su < unitCatalog_.size() && unitCatalog_[su] && unitCatalog_[su]->key == "neera") pose = "cast";
+    }
     // A counter on a foe beside it: the unit's staff blow when it has one (Voss; the user, 2026-10-17: "he will counter with
     // his staff when the enemy is close ranged, and ... the regular mage ATT when in distance"). No bolt flies from it.
     const bool staffCounter = s.type == StepType::Combat && x.counter && striker >= 0 &&
@@ -4138,7 +4149,8 @@ class MapStage final : public Stage {
       const size_t su = static_cast<size_t>(striker);
       const std::string hero = su < unitCatalog_.size() && unitCatalog_[su] ? unitCatalog_[su]->key : std::string();
       const bool malrec = hero == "malrec";
-      const bool attack = s.type == StepType::Combat || x.counter || pose.rfind("attack", 0) == 0 || pose.rfind("counter", 0) == 0;
+      const bool attack = s.type == StepType::Combat || x.counter || pose.rfind("attack", 0) == 0 || pose.rfind("counter", 0) == 0 ||
+                          (!s.kind.empty() && e2::spellPose(s.kind) == "attack");  // a weapon skill played in the cast pose (Neera's) is no spell light
       const bool cast = !attack && s.type != StepType::Potion && s.type != StepType::Move && !kNotCasts.contains(s.kind);
       const bool heal = s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food;
       if (cast || (attack && malrec)) glows_.push_back({su, now_, now_ + length, castTint(s.kind, heal, hero, attack)});
@@ -7827,6 +7839,7 @@ class MapStage final : public Stage {
   static constexpr float kMinPitch = -0.1396f, kMinEyePitch = 0.0873f, kMaxPitch = 1.5621f;
   // ONLY the aldeia looks up to -8 deg (the user, 2026-10-19: "somente a aldeia, só um por vez"); every other map keeps 5 deg.
   bool aldeia() const { return board_ && board_->draft().id == "aldeia"; }
+  bool ashenForest() const { return board_ && board_->draft().id == "ashen-forest-crossing"; }
   // The camera as before, on every map, only the tilt reaches 80 deg up into the sky (the user, 2026-10-19: "eu quero como estava
   // antes de agora e com vista para o céu só isso"); the eye still never goes under the ground (eyeView).
   float minPitch() const { return kSkyMinPitch; }

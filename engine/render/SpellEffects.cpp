@@ -67,6 +67,7 @@ int SpellEffects::looks(const std::string& kind) {
   // 03: ours in 3D (vfx/SpellBolts; the user, 2026-10-18: "the current ones are too bland").
   if (kind == "magicMissile" || kind == "magicMissileV2") return 3;
   if (kind == "divineBolt") return 1;  // 01: ours in 3D (vfx/SpellBolts)
+  if (isLightning(kind, 2)) return 2;  // 01 the flipbook cards, 02 ours in 3D (vfx/Lightning)
   // 01 Engine2's BurningHandsV2VFX as it was, 02 its cone opening outward (ours).
   if (kind == "burningHands" || kind == "poisonBreath") return 2;
   // Tempestade de Gelo: 01 Engine2's Blizzard2D (the enemies'), 02 ours in 3D (the heroes'): vfx/IceStorm.
@@ -99,6 +100,7 @@ int SpellEffects::engine2Look(const std::string& kind) {
   if (kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "createFoodAndWater" || kind == "potion") return 1;
   if (kind == "magicMissile" || kind == "magicMissileV2") return 3;  // ours in 3D (SpellBolts; 02 = Engine2's MagicMissileV2VFX)
   if (kind == "divineBolt") return 1;                                // ours in 3D (SpellBolts)
+  if (isLightning(kind, 2)) return 2;                                // Raio, ours in 3D (vfx/Lightning; 01 = the cards, the enemies')
   if (kind == "fireball") return 1;                                  // FireballVFX
   if (kind == "bless") return 1;                                     // BlessVFX
   if (kind == "causticVenom") return 1;                              // CausticVenomVFX
@@ -214,6 +216,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     for (size_t i = before[7]; i < burns_.size(); ++i) end = std::max(end, burns_[i].first.end());
     if (kind == "iceStorm" && !storms_.empty()) end = std::max(end, storms_.back().start() + 1.0f);  // its first second, not the whole storm
     if (isBolt(kind, look) && !bolts_.empty()) end = std::max(end, bolts_.back().end());
+    if (isLightning(kind, look) && !lightnings_.empty()) end = std::max(end, lightnings_.back().end());
     std::erase_if(casts_, [&](const Cast& c) { return c.end <= start; });
     casts_.push_back({owner, end});
   }
@@ -300,7 +303,12 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     else lancer_.vigilStrike(foe, caster.feet, impact);
     return true;
   }
-  if (isBolt(kind, look)) {
+  if (isLightning(kind, look)) {
+    // Relâmpago 02, ours, in 3D (vfx/Lightning): a bolt from the sky on every struck body; Choque is the same at 3/4 size.
+    std::vector<Lightning::Target> struck;
+    for (const Spot& s : targets) struck.push_back({s.feet, heightOf(s)});
+    lightnings_.emplace_back(caster.feet, heightOf(caster), std::move(struck), start, impact, kind == "shock" ? 0.75f : 1.0f, 0x11417u);
+  } else if (isBolt(kind, look)) {
     // Ours, in 3D (vfx/SpellBolts): one look, the same on every cast (fixed seeds).
     if (kind == "divineBolt") {
       const Spot& centre = areaCentre(targets);
@@ -662,6 +670,7 @@ bool SpellEffects::active(float now) const {
   if (std::any_of(sweeps_.begin(), sweeps_.end(), [&](const Varredura& s) { return !s.done(now); })) return true;
   if (std::any_of(storms_.begin(), storms_.end(), [&](const IceStorm& s) { return !s.done(now); })) return true;
   if (std::any_of(bolts_.begin(), bolts_.end(), [&](const SpellBolt& b) { return !b.done(now); })) return true;
+  if (std::any_of(lightnings_.begin(), lightnings_.end(), [&](const Lightning& l) { return !l.done(now); })) return true;
   return std::any_of(elements_.begin(), elements_.end(), [&](const Element& e) { return e.end > now; });
 }
 
@@ -703,6 +712,8 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   }
   std::erase_if(bolts_, [&](const SpellBolt& b) { return b.done(now); });
   for (const SpellBolt& b : bolts_) b.build(now, camera, vfx_, vfxLights);
+  std::erase_if(lightnings_, [&](const Lightning& l) { return l.done(now); });
+  for (const Lightning& l : lightnings_) l.build(now, camera, vfx_, vfxLights);
   std::erase_if(storms_, [&](const IceStorm& s) { return s.done(now); });
   if (!storms_.empty()) {
     // Engine2's two sheets, only when a storm of version 01 is on the board.

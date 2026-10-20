@@ -27,6 +27,7 @@ add_library(EmberEngine STATIC
   render/vfx/HolyLight.cpp
   render/vfx/IceStorm.cpp
   render/vfx/SpellBolts.cpp
+  render/vfx/Lightning.cpp
   render/vfx/CombatFx.cpp
   render/vfx/CausticVenom.cpp
   render/vfx/ElementSprites.cpp
