@@ -56,7 +56,9 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
     else uv.x = 0.5 + (uv.x - 0.5) * screenAspect / imageAspect;
     // mode 3 = mode 2 keeping the painting's own sky (aldeia's fire panorama: its smoke sky is the look), the real sky only
     // above the painting's top edge, faded in over its top rows.
-    if ((push.backgroundMode == 2 || push.backgroundMode == 3) && f.atmosphere != 0) {
+    // mode 4 = mode 2 for a painting whose sky is truly transparent (its alpha: the user's "Paisagem Devastada", 2026-10-19): the
+    // real sky shows wherever the image is clear, through its smoke where it is half clear; no matte by colour.
+    if ((push.backgroundMode == 2 || push.backgroundMode == 3 || push.backgroundMode == 4) && f.atmosphere != 0) {
       // The painting aligned to the sky (the user, 2026-10-19: "alinhar essas imagens de fundo com o céu ... cortando a parte
       // inferior da imagem para a parte com fumaça ficar visível abaixo do sol"): its horizon row pinned to the world's horizon,
       // its rows at their own angular scale (no stretch), the band below the horizon cut at `bottom` (the cracked ground goes;
@@ -94,7 +96,8 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
       Texture2D painting = gTextures[NonUniformResourceIndex(push.background)];
       SamplerState s = gSamplers[f.materialSampler];
       const float2 puv = float2(u, min(v, min(bottom + 0.15, 1.0)));
-      const float3 paint = painting.SampleLevel(s, puv, 0).rgb;
+      const float4 paintSample = painting.SampleLevel(s, puv, 0);
+      const float3 paint = paintSample.rgb;
       // The painting's own sky at this column (its top rows): what is close to it, above the ridge, is sky.
       const float3 skyRef = (painting.SampleLevel(s, float2(u, skyTop * 0.5), 0).rgb + painting.SampleLevel(s, float2(u, skyTop), 0).rgb +
                              painting.SampleLevel(s, float2(u, skyTop + 0.04), 0).rgb) / 3.0;
@@ -103,6 +106,7 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
       scene = lerp(scene, 1.0, smoothstep(horizon - 0.04, horizon + 0.01, v));  // from the ridge down: all painting
       scene *= smoothstep(0.0, max(skyTop, 0.01), v);                             // the very top: all sky
       if (push.backgroundMode == 3) scene = smoothstep(0.0, 0.08, v);              // its own sky kept, top rows fade
+      if (push.backgroundMode == 4) scene = paintSample.a;                         // its own alpha: clear sky = the real sky
       float3 color = lerp(sky, paint, scene);
       // Below the kept band: the bottom row fades into the sky's own horizon colour; a thin haze on the seam.
       // (a painting kept whole ends at its last row and stays there; a cut one fades into the horizon colour)
