@@ -6168,17 +6168,9 @@ class MapStage final : public Stage {
     if (hover) {
       ImGui::BeginTooltip();
       ImGui::PushFont(uiFont(UiFont::Ui), 15.0f);
-      if (const std::optional<std::string> potion = potionOf(kind)) {
-        ImGui::TextUnformatted(e2::potionName(*potion).c_str());
-        ImGui::TextDisabled("%s", tr("você ou um aliado ao lado · gasta a ação", "yourself or an adjacent ally · uses the action").c_str());
-      } else {
-        ImGui::TextUnformatted(e2::spellName(kind).c_str());
-        if (!e2::spellPorted(kind)) ImGui::TextDisabled("ainda não existe no Ember");
-        else if (selected_ >= 0 && !e2::emberSpellClass(kind).empty()) {
-          const std::string about = e2::spellTooltip(battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])], kind);
-          if (!about.empty()) ImGui::TextDisabled("%s", about.c_str());
-        }
-      }
+      // the name only (the user, 2026-10-20): what it does is in the sheet's Skills
+      if (const std::optional<std::string> potion = potionOf(kind)) ImGui::TextUnformatted(e2::potionName(*potion).c_str());
+      else ImGui::TextUnformatted(tr(e2::spellName(kind)).c_str());
       ImGui::PopFont();
       ImGui::EndTooltip();
     }

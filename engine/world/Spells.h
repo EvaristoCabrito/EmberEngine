@@ -148,6 +148,10 @@ std::string spellTooltip(const BattleUnit& caster, const std::string& kind);
 // A first spell's line for the status sheet (after its name) from its numbers at the caster's level (its track: reach, area, dice ...), in
 // Portuguese or English; empty for a kind it does not cover (the sheet keeps its own line then).
 std::string spellScaleText(const BattleUnit& caster, const std::string& kind, bool en);
+// How a first spell works, in words (who it strikes, what it leaves behind), PT or EN; empty when it has none (ours: spellTooltip).
+std::string spellExplain(const std::string& kind, bool en);
+// Where the spell stands on its scaling track at this level: "Escala do 1 ao 15 · próximo: nível 4, +1 míssil" (empty: no track).
+std::string spellTrackNote(const std::string& kind, int level, bool en);
 
 // The Lanceiro's Vigília da Sentinela (docs/SKILLS_LANCER.md): the thrusts that land on `attacker` before its blow, one per
 // sentinel of the other side whose stance covers one of `targets` (itself, or an ally within its radius) and whose lance

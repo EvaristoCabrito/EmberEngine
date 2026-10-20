@@ -2364,6 +2364,104 @@ std::string conditionsText(const BattleUnit& u) {
   if (u.blessedRoundsLeft > 0) add(std::string(pick("Abençoado", "Blessed")) + std::format(" +{}% ({})", static_cast<int>(jsRound(u.blessedHitBonusPct * 100)), u.blessedRoundsLeft));
   return s;
 }
+std::string spellExplain(const std::string& kind, bool en) {
+  struct Line {
+    const char* kind;
+    const char* pt;
+    const char* en;
+  };
+  static const Line kLines[] = {
+      {"magicMissile", "Dispara mísseis de força arcana. Cada míssil escolhe o seu alvo (pode ser o mesmo inimigo mais de uma vez); só precisa ver o inimigo.",
+       "Fires missiles of arcane force. Each missile picks its own target (the same foe more than once is fine); it only needs to see the foe."},
+      {"lightning", "Um raio num inimigo que você vê; o choque fica nele e volta a atingi-lo no começo do turno dele.",
+       "A bolt at a foe you can see; the shock stays on it and strikes it again at the start of its turn."},
+      {"lightningTier3", "Um raio maior num inimigo; o choque fica nele e volta a atingi-lo, mais forte, no começo do turno dele.",
+       "A greater bolt at a foe; the shock stays on it and strikes it again, harder, at the start of its turn."},
+      {"frost", "Uma linha de gelo que sai do seu lado na direção que você mira e atinge todos sobre ela, aliados também.",
+       "A line of ice from beside you toward where you aim; it strikes everyone on it, allies too."},
+      {"poisonBreath", "Um cone de veneno à sua frente: todos dentro levam dano e ficam envenenados, aliados também.",
+       "A cone of poison in front of you: everyone in it takes damage and is poisoned, allies too."},
+      {"burningHands", "Um cone de fogo à sua frente: todos dentro levam dano, aliados também.",
+       "A cone of fire in front of you: everyone in it takes damage, allies too."},
+      {"fireball", "Explode no hex que você mira: todos na área levam o mesmo dano, aliados também. Precisa de linha de tiro até o hex.",
+       "Bursts on the hex you aim at: everyone in the area takes the same damage, allies too. Needs a clear shot to the hex."},
+      {"causticVenom", "Ácido venenoso no hex mirado: quem está no centro leva o golpe forte, os outros na área levam o respingo; todos ficam envenenados, aliados também.",
+       "Poisonous acid on the aimed hex: whoever stands in the centre takes the strong hit, the others in the area the splash; all are poisoned, allies too."},
+      {"minorVenom", "Veneno fraco no hex mirado: o centro leva o golpe, a área em volta o respingo; todos ficam envenenados.",
+       "Weak venom on the aimed hex: the centre takes the hit, the area around the splash; all are poisoned."},
+      {"divineBolt", "Luz sagrada no hex mirado: o centro leva o golpe forte, a área em volta leva menos, aliados também.",
+       "Holy light on the aimed hex: the centre takes the strong hit, the area around less, allies too."},
+      {"cureMinor", "Cura um aliado (ou você) até o alcance. Cada ponto da perícia Cura soma 1% à cura.",
+       "Heals an ally (or yourself) within reach. Each point of the Healing skill adds 1% to it."},
+      {"cureWounds", "Cura forte num aliado (ou você) até o alcance. Cada ponto da perícia Cura soma 1% à cura.",
+       "A strong heal on an ally (or yourself) within reach. Each point of the Healing skill adds 1% to it."},
+      {"cureLight", "Imposição de mãos: cura um aliado bem perto. Cada ponto da perícia Cura soma 1% à cura.",
+       "Laying on of hands: heals an ally close by. Each point of the Healing skill adds 1% to it."},
+      {"cureDisease", "Tira a doença e o veneno de um aliado (ou de você) até o alcance.", "Removes disease and poison from an ally (or yourself) within reach."},
+      {"bless", "Abençoa os aliados na área em volta de você: acertam mais por algumas rodadas.",
+       "Blesses the allies in the area around you: they hit more often for a few rounds."},
+      {"turnUndead", "Luz sagrada em volta do sacerdote: só os mortos-vivos na área levam dano, e os que sobrevivem fogem com medo por 2 turnos.",
+       "Holy light around the priest: only the undead in the area take damage, and the ones left standing flee in fear for 2 turns."},
+      {"auraOfProtection", "Uma aura em volta de você: aliados dentro dela levam menos dano enquanto durar.",
+       "An aura around you: allies inside it take less damage while it lasts."},
+      {"intimidatingPresence", "Uma presença em volta de você: inimigos dentro dela levam mais dano enquanto durar.",
+       "A presence around you: foes inside it take more damage while it lasts."},
+      {"divineWrath", "Uma linha reta de fúria sagrada a partir de você: os inimigos sobre ela levam o dano, somado à metade da sua MAG.",
+       "A straight line of holy wrath from you: the foes on it take the damage, plus half your MAG."},
+      {"phantasmalForce", "Uma ilusão que fere um inimigo que você vê.", "An illusion that wounds a foe you can see."},
+      {"webOfDreams", "Uma teia no hex mirado que fica 3 rodadas: quem está nela pode adormecer (1D4 turnos), aliados também; quem dorme leva 25% a mais de dano.",
+       "A web on the aimed hex that stays 3 rounds: whoever is in it may fall asleep (1D4 turns), allies too; sleepers take 25% more damage."},
+      {"summonFamiliar", "Invoca um familiar num hex livre até o alcance; ele luta ao seu lado.", "Summons a familiar on a free hex within reach; it fights at your side."},
+      {"summonFamiliar2", "Invoca um familiar maior num hex livre até o alcance.", "Summons a greater familiar on a free hex within reach."},
+      {"summonFamiliar4", "Invoca um familiar radiante num hex livre até o alcance.", "Summons a radiant familiar on a free hex within reach."},
+      {"summonFamiliar3", "Invoca o Familiar Titã num hex livre até o alcance.", "Summons the Titan Familiar on a free hex within reach."},
+      {"summonZombieDog", "Invoca um Cão Zumbi num hex livre até o alcance; a mordida dele envenena.", "Summons a Zombie Dog on a free hex within reach; its bite poisons."},
+      {"longShot", "Um tiro de arco de longe: o dano da arma mais os dados da habilidade.", "A long bow shot: the weapon's damage plus the skill's dice."},
+      {"bloodyShot", "Um tiro que multiplica o dano da arma e deixa o alvo sangrando por algumas rodadas.",
+       "A shot that multiplies the weapon's damage and leaves the target bleeding for some rounds."},
+      {"multiShot", "Várias flechas de uma vez, cada uma mirada num inimigo (pode repetir).", "Several arrows at once, each aimed at a foe (the same one is fine)."},
+  };
+  for (const Line& l : kLines)
+    if (kind == l.kind) return en ? l.en : l.pt;
+  return {};
+}
+std::string spellTrackNote(const std::string& kind, int level, bool en) {
+  const ParsedTrack* t = parsedTrack(kind);
+  if (!t) return {};
+  const int last = t->learn + static_cast<int>(t->steps.size());
+  std::string s = en ? std::format("Scales from level {} to {}, one small improvement a level", t->learn, last)
+                     : std::format("Escala do nível {} ao {}, uma melhoria pequena por nível", t->learn, last);
+  for (size_t i = 0; i < t->steps.size(); ++i) {
+    const int at = t->learn + 1 + static_cast<int>(i);
+    const auto [c, step] = t->steps[i];
+    if (at <= level || c == '-') continue;
+    struct Name {
+      char c;
+      const char *pt, *en;
+    };
+    static const Name kNames[] = {{'r', "+1 hex de alcance", "+1 hex of range"}, {'a', "+1 anel de área", "+1 ring of area"},
+                                  {'l', "+1 hex de comprimento", "+1 hex of length"}, {'d', "+1 dado de dano", "+1 damage die"},
+                                  {'f', "dado maior", "a bigger die"}, {'b', "+1 de bônus", "+1 bonus"}, {'m', "mais peso da MAG", "more weight on MAG"},
+                                  {'c', "+1 na quantidade", "+1 to the count"}, {'p', "porcentagem maior", "a higher percentage"},
+                                  {'t', "+1 turno", "+1 turn"}, {'R', "+1 rodada", "+1 round"}, {'s', "espalha mais", "spreads further"},
+                                  {'j', "+1 salto", "+1 jump"}, {'e', "perde menos por salto", "loses less per jump"}, {'P', "+1 de empurrão", "+1 push"},
+                                  {'k', "+1 dado por turno", "+1 die per turn"}, {'K', "dado por turno maior", "a bigger die per turn"},
+                                  {'T', "efeito mais forte", "a stronger effect"}, {'h', "+1 dado de fogo no chão", "+1 die of burning ground"},
+                                  {'H', "fogo no chão mais forte", "stronger burning ground"}, {'g', "+1 dado no anel", "+1 ring die"},
+                                  {'M', "anel mais forte", "a stronger ring"}, {'u', "dura mais", "lasts longer"}, {'v', "veneno mais forte", "a stronger poison"},
+                                  {'x', "+5% de chance de sono", "+5% sleep chance"}};
+    std::string what;
+    for (const Name& n : kNames)
+      if (n.c == c) what = en ? n.en : n.pt;
+    if (c == 'c' && (kind == "magicMissile" || kind == "magicMissileV2")) what = en ? "+1 missile" : "+1 míssil";
+    if (c == 'c' && kind == "multiShot") what = en ? "+1 arrow" : "+1 flecha";
+    if (c == 'c' && kind == "mirrorImage") what = en ? "+1 copy" : "+1 cópia";
+    if (c == 'c' && kind == "wrathOfTheSkies") what = en ? "+1 bolt" : "+1 raio";
+    if (c == 'p' && kind == "sacrificeBond") what = en ? "the summon takes less" : "a invocação recebe menos";
+    return s + (en ? std::format(" · next: level {}, {}", at, what) : std::format(" · próximo: nível {}, {}", at, what));
+  }
+  return s + (level >= t->learn ? (en ? " · complete" : " · completa") : "");
+}
 std::string spellScaleTextRaw(const BattleUnit& c, const std::string& kind, bool en);
 std::string spellScaleText(const BattleUnit& c, const std::string& kind, bool en) {
   std::string s = spellScaleTextRaw(c, kind, en);

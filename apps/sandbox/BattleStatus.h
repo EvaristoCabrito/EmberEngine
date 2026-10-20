@@ -465,8 +465,9 @@ class BattleStatusSheet {
   }
 
   struct SpellRow {
-    std::string kind, text;
+    std::string kind, text;  // text: the sheet's own line (a skill's formula) or the spell's numbers at this level
     int tier = 0, uses = 0;
+    std::string title, about, note;  // its name; how it works; where it is on its scaling track
   };
 
   // The class's rows of spells and skills for the unit's level (status-rows.json), then the ones this port has that the sheet of the
@@ -490,7 +491,7 @@ class BattleStatusSheet {
         std::string text = tr(r.value("text", ""));
         // a first spell's line from its own numbers at this level (its track), else the sheet's own line
         const std::string scaled = e2::spellScaleText(u, row.kind, en);
-        if (!scaled.empty()) text = tr(e2::spellName(row.kind)) + " · " + scaled;
+        if (!scaled.empty()) text = scaled;
         if (scaled.empty() && r.contains("mag") && r["mag"].is_object()) {
           const e2::Json& m = r["mag"];
           const double mul = m.value("mul", 1.0);
@@ -515,7 +516,15 @@ class BattleStatusSheet {
     for (const std::string& kind : u.spellList) {
       if (std::any_of(rows.begin(), rows.end(), [&](const SpellRow& r) { return r.kind == kind; })) continue;
       const int tier = e2::spellTierNumber(kind);
-      rows.push_back({kind, tr(e2::spellName(kind)), tier, tier >= 1 && tier <= 10 ? u.spells[tier - 1] : 0});
+      // ours: their numbers and what they do (spellTooltip, after its tier · element line)
+      std::string about = e2::spellTooltip(u, kind);
+      rows.push_back({kind, about, tier, tier >= 1 && tier <= 10 ? u.spells[tier - 1] : 0});
+    }
+    for (SpellRow& r : rows) {
+      r.title = tr(e2::spellName(r.kind));
+      r.about = e2::spellExplain(r.kind, en);
+      r.note = e2::spellTrackNote(r.kind, u.level, en);
+      if (r.text.empty() || r.text == r.title) r.text.clear();
     }
     std::stable_sort(rows.begin(), rows.end(), [](const SpellRow& a, const SpellRow& b) { return (a.tier ? a.tier : 99) < (b.tier ? b.tier : 99); });
     return rows;
@@ -596,34 +605,40 @@ class BattleStatusSheet {
       const float bw = inner - 14.0f;  // the scrollbar's share
       const float x0 = ImGui::GetCursorScreenPos().x;
       float y = ImGui::GetCursorScreenPos().y;
-      // --- Magias e habilidades: two cards a row, icon + what it does + its tier and uses ---
+      // --- Magias e habilidades: a card a row (the user, 2026-10-20: the descriptions here, in a larger font, explained well): icon,
+      // name, tier and uses, how it works, its numbers at this level, its scaling track ---
       sectionTitle(bd, {x0, y}, en ? "Spells and skills" : "Magias e habilidades");
       y += 28.0f;
       const std::vector<SpellRow> rows = spellRows(u, en);
-      const float gap = 8.0f, cardW = (bw - gap) / 2.0f, iconS = 44.0f, textW = cardW - 12.0f - iconS - 10.0f - 12.0f;
-      auto cardHeight = [&](const SpellRow& r) { return std::max(iconS + 20.0f, 12.0f + ui->CalcTextSizeA(14.0f, FLT_MAX, textW, r.text.c_str()).y + 22.0f); };
-      for (size_t i = 0; i < rows.size(); i += 2) {
-        const float rowH = std::max(cardHeight(rows[i]), i + 1 < rows.size() ? cardHeight(rows[i + 1]) : 0.0f);
-        for (size_t k = i; k < std::min(i + 2, rows.size()); ++k) {
-          const SpellRow& r = rows[k];
-          const ImVec2 a{x0 + static_cast<float>(k - i) * (cardW + gap), y};
-          const ImVec2 b{a.x + cardW, a.y + rowH};
-          const bool dim = r.tier > 0 && r.uses <= 0;
-          bd->AddRectFilled(a, b, kBg, 8.0f);
-          bd->AddRect(a, b, kBorder, 8.0f);
-          const ImVec2 ia{a.x + 12.0f, a.y + 10.0f}, ib{ia.x + iconS, ia.y + iconS};
-          bd->AddRectFilled(ia, ib, IM_COL32(0, 0, 0, 255), 6.0f);
-          if (const UiImage* icon = hooks.spellIcon ? hooks.spellIcon(r.kind) : nullptr) coverRounded(bd, *icon, ia, ib, 6.0f, dim ? IM_COL32(255, 255, 255, 110) : IM_COL32_WHITE);
-          bd->AddRect(ia, ib, kBorder, 6.0f);
-          const float tx = ib.x + 10.0f;
-          bd->AddText(ui, 14.0f, {tx, a.y + 10.0f}, dim ? kMuted : kFg, r.text.c_str(), nullptr, textW);
-          if (r.tier > 0) {
-            const std::string uses = std::format("Tier {} · ×{}", r.tier, r.uses);
-            const ImVec2 us = ui->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, uses.c_str());
-            bd->AddText(ui, 12.0f, {b.x - 12.0f - us.x, b.y - 10.0f - us.y}, r.uses > 0 ? kAccent : kDanger, uses.c_str());
-          }
+      constexpr float kTitle = 19.0f, kBody = 16.0f, kNote = 14.0f;
+      const float gap = 10.0f, cardW = bw, iconS = 56.0f, textW = cardW - 14.0f - iconS - 14.0f - 16.0f;
+      ImFont* title = uiFont(UiFont::Display);
+      for (const SpellRow& r : rows) {
+        const float aboutH = r.about.empty() ? 0.0f : ui->CalcTextSizeA(kBody, FLT_MAX, textW, r.about.c_str()).y + 6.0f;
+        const float textH = r.text.empty() ? 0.0f : ui->CalcTextSizeA(kBody, FLT_MAX, textW, r.text.c_str()).y + 6.0f;
+        const float noteH = r.note.empty() ? 0.0f : ui->CalcTextSizeA(kNote, FLT_MAX, textW, r.note.c_str()).y + 4.0f;
+        const float cardH = std::max(iconS + 24.0f, 12.0f + kTitle + 8.0f + aboutH + textH + noteH + 12.0f);
+        const ImVec2 a{x0, y}, b{x0 + cardW, y + cardH};
+        const bool dim = r.tier > 0 && r.uses <= 0;
+        bd->AddRectFilled(a, b, kBg, 8.0f);
+        bd->AddRect(a, b, kBorder, 8.0f);
+        const ImVec2 ia{a.x + 14.0f, a.y + 12.0f}, ib{ia.x + iconS, ia.y + iconS};
+        bd->AddRectFilled(ia, ib, IM_COL32(0, 0, 0, 255), 6.0f);
+        if (const UiImage* icon = hooks.spellIcon ? hooks.spellIcon(r.kind) : nullptr) coverRounded(bd, *icon, ia, ib, 6.0f, dim ? IM_COL32(255, 255, 255, 110) : IM_COL32_WHITE);
+        bd->AddRect(ia, ib, kBorder, 6.0f);
+        const float tx = ib.x + 14.0f;
+        float ty = a.y + 12.0f;
+        bd->AddText(title, kTitle, {tx, ty}, dim ? kMuted : IM_COL32(224, 189, 128, 255), r.title.c_str());
+        if (r.tier > 0) {
+          const std::string uses = std::format("Tier {} · ×{}", r.tier, r.uses);
+          const ImVec2 us = ui->CalcTextSizeA(kNote, FLT_MAX, 0.0f, uses.c_str());
+          bd->AddText(ui, kNote, {b.x - 14.0f - us.x, ty + 3.0f}, r.uses > 0 ? kAccent : kDanger, uses.c_str());
         }
-        y += rowH + gap;
+        ty += kTitle + 8.0f;
+        if (!r.about.empty()) bd->AddText(ui, kBody, {tx, ty}, dim ? kMuted : kFg, r.about.c_str(), nullptr, textW), ty += aboutH;
+        if (!r.text.empty()) bd->AddText(ui, kBody, {tx, ty}, dim ? kMuted : kAccent, r.text.c_str(), nullptr, textW), ty += textH;
+        if (!r.note.empty()) bd->AddText(ui, kNote, {tx, ty}, kMuted, r.note.c_str(), nullptr, textW);
+        y += cardH + gap;
       }
       if (rows.empty()) {
         bd->AddText(ui, 14.0f, {x0, y}, kMuted, en ? "This character has no spells or skills yet." : "Este personagem ainda não tem magias nem habilidades.");
