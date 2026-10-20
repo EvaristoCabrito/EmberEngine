@@ -1672,8 +1672,10 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     s.ids = {static_cast<size_t>(ally)}, s.tiles = {cell, from};
     s.dice = 0, s.spellMul = 1;
     steps.push_back(s);
+    // Beside the ally (one hex away) the swap is only a swap: no blow (the user, 2026-10-19: "troca de posto when you do that besides an
+    // ally should not trigger an ATT"); from farther away the blow from the new post stays.
     int target = -1;
-    for (size_t i = 0; i < b.units().size(); ++i) {
+    for (size_t i = 0; i < b.units().size() && hexDist(from, cell) > 1; ++i) {
       if (!targetable(b, static_cast<int>(i)) || !canHitFrom(b, caster, cell, i)) continue;
       if (target < 0 || b.units()[i].hp < b.units()[static_cast<size_t>(target)].hp) target = static_cast<int>(i);
     }

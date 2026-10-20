@@ -237,16 +237,19 @@ class BattleStatusSheet {
       }
       float cy = top.y + s + 10.0f;
       const Condition cond = statusCondition(u, en);
-      const ImVec2 ca{rightX, cy}, cb{rightX + rightW, cy + 48.0f};
+      // The title wraps in the badge ("Grito de Guerra +15% ATK (2)" is two lines): the badge grows to hold it, the buttons below follow.
+      const ImVec2 titleSize = ui->CalcTextSizeA(14.0f, FLT_MAX, rightW - 52.0f, cond.title.c_str());
+      const float badgeH = std::max(48.0f, 24.0f + titleSize.y + 9.0f);
+      const ImVec2 ca{rightX, cy}, cb{rightX + rightW, cy + badgeH};
       ImGui::SetCursorScreenPos(ca);
-      if (ImGui::InvisibleButton("##statuscond", {rightW, 48.0f})) conditionOpen_ = true;
+      if (ImGui::InvisibleButton("##statuscond", {rightW, badgeH})) conditionOpen_ = true;
       if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", cond.detail.c_str());
       dl->AddRectFilled(ca, cb, IM_COL32(0, 0, 0, 255), 6.0f);
       dl->AddRect(ca, cb, ImGui::IsItemHovered() ? kAccent : cond.tone, 6.0f);
       drawConditionIcon(dl, cond, {ca.x + 8, ca.y + 8}, 32.0f, publicDir);
       dl->AddText(ui, 12.0f, {ca.x + 46, ca.y + 9}, kMuted, upperUtf8(en ? "Condition" : "Condição").c_str());
       dl->AddText(ui, 14.0f, {ca.x + 46, ca.y + 24}, kFg, cond.title.c_str(), nullptr, rightW - 52.0f);
-      cy += 48.0f + 6.0f;
+      cy += badgeH + 6.0f;
       auto shortcut = [&](const char* id, const char* iconFile, const std::string& label, const std::function<void(size_t)>& action) {
         if (!action) return;
         const ImVec2 a{rightX, cy}, b{rightX + rightW, cy + 36.0f};
