@@ -6226,7 +6226,7 @@
         [
          [
           {
-           "text": "Healer nível 3. Raio 3; +1% de acerto por nível até +10% no nível 13. Duração: 3 turnos no nível 3; 4 no 5; 5 no 7; 6 no 9; 7 no 12; 8 no 15.",
+           "text": "Healer nível 3. Raio 2; +1% de acerto por nível até +10% no nível 13. Duração: 3 turnos no nível 3; 4 no 5; 5 no 7; 6 no 9; 7 no 12; 8 no 15.",
            "muted": true
           }
          ]
@@ -6275,7 +6275,7 @@
         [
          [
           {
-           "text": "Nunca erra. 1 míssil, 2 no nível 3, 3 no nível 6 — um alvo cada.",
+           "text": "Alcance 5, sobe para 6 no nível 6, 7 no 11 e 8 no 15. Nunca erra. 1 míssil, 2 no nível 3, 3 no nível 6 — um alvo cada.",
            "muted": true
           }
          ]
@@ -6324,7 +6324,7 @@
         [
          [
           {
-           "text": "Alcance 7. Dado sobe em níveis 2,3,5,7,9,12,14.",
+           "text": "Alcance 7, sobe para 8 no nível 8 e 9 no 15. Dado sobe em níveis 2,3,5,7,9,12,14.",
            "muted": true
           }
          ]
@@ -6373,7 +6373,7 @@
         [
          [
           {
-           "text": "—",
+           "text": "Alcance 2, sobe para 3 no nível 8 e 4 no 15.",
            "muted": true
           }
          ]
@@ -6456,14 +6456,7 @@
         [
          [
           {
-           "text": "Nv1: um inimigo, alcance 4"
-          },
-          {
-           "text": " · Nv7: inimigos em raio 1, alcance 5",
-           "muted": true
-          },
-          {
-           "text": " · Nv14: inimigos em raio 3, alcance 7",
+           "text": "Nv1: um inimigo, alcance 4 · Nv7: inimigos em raio 1, alcance 5 · Nv14: inimigos em raio 1, alcance 7",
            "muted": true
           }
          ]
@@ -6471,7 +6464,7 @@
         [
          [
           {
-           "text": "Aprendido no nível 3. Sem dano: os inimigos atingidos passam a mirar o guerreiro até alguém gerar mais inimizade. Vira área de raio 1 no nível 6, 2 no 9, 3 no 12 e 4 no 15; o alcance sobe de 4 até 8.",
+           "text": "Aprendido no nível 3. Sem dano: os inimigos atingidos passam a mirar o guerreiro até alguém gerar mais inimizade. Vira área de raio 1 no nível 6 (área pequena: não cresce mais); o alcance sobe de 4 até 8.",
            "muted": true
           }
          ]
@@ -6553,7 +6546,7 @@
         [
          [
           {
-           "text": "Invoca aliado com 50% dos atributos atuais — pode lançar Míssil Mágico por conta própria.",
+           "text": "Invoca aliado com 50% dos atributos atuais — pode lançar Míssil Mágico por conta própria. O ponto de invocação alcança +1 hex no nível 8 e +2 no 15.",
            "muted": true
           }
          ]
@@ -6602,7 +6595,7 @@
         [
          [
           {
-           "text": "Aprendido no nível 3; progressão começa no nível 3. Cone de raio 1–5. Progressão de dano de Mãos Flamejantes atrasada em 2 níveis. Veneno Menor: 1D4 por turno; atinge aliados também.",
+           "text": "Aprendido no nível 3; progressão começa no nível 3. Cone de raio 1–3. Progressão de dano de Mãos Flamejantes atrasada em 2 níveis. Veneno Menor: 1D4 por turno; atinge aliados também.",
            "muted": true
           }
          ]
@@ -6651,7 +6644,7 @@
         [
          [
           {
-           "text": "Aprendido no nível 5. Sangramento causa 1D8 por ação; a duração aumenta nos níveis 8, 12 e 15.",
+           "text": "Alcance 6, sobe para 7 no nível 10 e 8 no 15. Aprendido no nível 5. Sangramento causa 1D8 por ação; a duração aumenta nos níveis 8, 12 e 15.",
            "muted": true
           }
          ]
@@ -6692,7 +6685,7 @@
         [
          [
           {
-           "text": "Invoca aliado maior, com 75% dos atributos atuais — pode lançar Míssil Mágico ou Dreno de Vida por conta própria.",
+           "text": "Invoca aliado maior, com 75% dos atributos atuais — pode lançar Míssil Mágico ou Dreno de Vida por conta própria. O ponto de invocação alcança +1 hex no nível 8 e +2 no 15.",
            "muted": true
           }
          ]
@@ -6741,7 +6734,7 @@
         [
          [
           {
-           "text": "Atravessa cobertura e barricadas. Eco em outro alvo adjacente: 1D12+2.",
+           "text": "Alcance 5, sobe para 6 no nível 6, 7 no 11 e 8 no 15. Atravessa cobertura e barricadas. Eco em outro alvo adjacente: 1D12+2.",
            "muted": true
           }
          ]
@@ -6929,7 +6922,7 @@
         [
          [
           {
-           "text": "Inimigos a até 2 hexes; empurra 1 hex. Prévia da área antes de confirmar.",
+           "text": "Inimigos ao lado (1 hex); empurra 1 hex. Prévia da área antes de confirmar.",
            "muted": true
           }
          ]
@@ -6970,7 +6963,7 @@
         [
          [
           {
-           "text": "Alcance 7. Raio 1 (2 no nível 7, 3 no nível 12). 25% de dormir por 1D4 turnos (+25% dano ao acordar); prende o movimento a 1 hex na área por 3 turnos.",
+           "text": "Alcance 7, sobe para 8 no nível 15. Raio 1. 25% de dormir por 1D4 turnos (+25% dano ao acordar); prende o movimento a 1 hex na área por 3 turnos.",
            "muted": true
           }
          ]
@@ -7019,7 +7012,7 @@
         [
          [
           {
-           "text": "Aprendido no nível 5. Linha de 2 hexes à frente; +1 hex a cada 4 níveis. Dano de Ice e fogo amigo. Cultist V2: 1 carga inicial, +1 nos níveis 5, 12 e 20.",
+           "text": "Aprendido no nível 5. Linha de 2 hexes à frente; +1 hex a cada 4 níveis, e mais 1 no nível 10 e 1 no 15. Dano de Ice e fogo amigo. Cultist V2: 1 carga inicial, +1 nos níveis 5, 12 e 20.",
            "muted": true
           }
          ]
@@ -7060,7 +7053,7 @@
         [
          [
           {
-           "text": "Invoca aliado radiante, com 75% dos atributos atuais — pode lançar Míssil Mágico ou Dreno de Vida por conta própria.",
+           "text": "Invoca aliado radiante, com 75% dos atributos atuais — pode lançar Míssil Mágico ou Dreno de Vida por conta própria. O ponto de invocação alcança +1 hex no nível 8 e +2 no 15.",
            "muted": true
           }
          ]
@@ -7191,7 +7184,7 @@
         [
          [
           {
-           "text": "Área de raio 2.",
+           "text": "Alcance 5, sobe para 6 no nível 6, 7 no 11 e 8 no 15. Área de raio 1.",
            "muted": true
           }
          ]
@@ -7225,39 +7218,39 @@
         [
          [
           {
-           "text": "Níveis 6–8: alcance 4, área de 61 hexes, duração 2 rodadas, dano ⌊⌊MAG / 2⌋ × 1.6⌋ + 4D6"
+           "text": "Níveis 6–8: raio 3 (37 hexes), duração 2 rodadas, dano ⌊⌊MAG / 2⌋ × 1.6⌋ + 4D6"
           }
          ],
          [
           {
-           "text": "Níveis 9–11: alcance 5, área de 91 hexes, duração 2 rodadas, dano ⌊⌊MAG / 2⌋ × 1.8⌋ + 5D6"
+           "text": "Níveis 9–11: raio 3 (37 hexes), duração 2 rodadas, dano ⌊⌊MAG / 2⌋ × 1.8⌋ + 5D6"
           }
          ],
          [
           {
-           "text": "Níveis 12–14: alcance 6, área de 127 hexes, duração 2 rodadas, dano ⌊⌊MAG / 2⌋ × 2⌋ + 6D6"
+           "text": "Níveis 12–14: raio 3 (37 hexes), duração 2 rodadas, dano ⌊⌊MAG / 2⌋ × 2⌋ + 6D6"
           }
          ],
          [
           {
-           "text": "Níveis 15–17: alcance 7, área de 169 hexes, duração 2 rodadas, dano ⌊⌊MAG / 2⌋ × 2.2⌋ + 7D6"
+           "text": "Níveis 15–17: raio 3 (37 hexes), duração 2 rodadas, dano ⌊⌊MAG / 2⌋ × 2.2⌋ + 7D6"
           }
          ],
          [
           {
-           "text": "Níveis 18–21: alcance 8, área de 217 hexes, duração 2 rodadas, dano ⌊⌊MAG / 2⌋ × 2.4⌋ + 8D6"
+           "text": "Níveis 18–21: raio 3 (37 hexes), duração 2 rodadas, dano ⌊⌊MAG / 2⌋ × 2.4⌋ + 8D6"
           }
          ],
          [
           {
-           "text": "Níveis 22–30 (capped at 22): alcance 9, área de 271 hexes, duração 2 rodadas, dano ⌊⌊MAG / 2⌋ × 2.6⌋ + 10D6"
+           "text": "Níveis 22–30 (capped at 22): raio 3 (37 hexes), duração 2 rodadas, dano ⌊⌊MAG / 2⌋ × 2.6⌋ + 10D6"
           }
          ]
         ],
         [
          [
           {
-           "text": "Preview the area around the priest, then confirm or cancel; no target selection. Holy damage and 2 own turns of fear: undead retreat without attacking. Radius grows at every breakpoint from 4 to 9 hexes (61–271 affected cells). Other creature types are completely unaffected.",
+           "text": "Preview the area around the priest, then confirm or cancel; no target selection. Holy damage and 2 own turns of fear: undead retreat without attacking. Raio 3 em volta do sacerdote em todos os níveis (37 hexes). Other creature types are completely unaffected.",
            "muted": true
           }
          ]
@@ -7298,7 +7291,7 @@
         [
          [
           {
-           "text": "Clériga T3. Cura doença e veneno. Luz teal.",
+           "text": "Alcance 2, sobe para 3 no nível 15. Clériga T3. Cura doença e veneno. Luz teal.",
            "muted": true
           }
          ]
@@ -7347,7 +7340,7 @@
         [
          [
           {
-           "text": "2 alvos (3 no nível 11), alcance 6. Dado sobe no nível 8 e 13.",
+           "text": "Alcance 6, sobe para 7 no nível 8 e 8 no 15. 2 alvos (3 no nível 11). Dado sobe no nível 8 e 13.",
            "muted": true
           }
          ]
@@ -7437,7 +7430,7 @@
         [
          [
           {
-           "text": "Invoca aliado com 100% dos atributos atuais — pode lançar Bola de Fogo por conta própria.",
+           "text": "Invoca aliado com 100% dos atributos atuais — pode lançar Bola de Fogo por conta própria. O ponto de invocação alcança +1 hex no nível 8 e +2 no 15.",
            "muted": true
           }
          ]
@@ -7552,7 +7545,7 @@
         [
          [
           {
-           "text": "Somente Salazar. Alcance 6; raio 1; dano Holy e atinge até seis hexes adjacentes.",
+           "text": "Alcance 6, sobe para 7 no nível 8 e 8 no 15. Somente Salazar. Raio 1; dano Holy e atinge até seis hexes adjacentes.",
            "muted": true
           }
          ]
@@ -7699,7 +7692,7 @@
         [
          [
           {
-           "text": "Elementalista T5. Atravessa cobertura e barricadas. Eco 2D12+8.",
+           "text": "Alcance 7, sobe para 8 no nível 20, 9 no 25 e 10 no 30. Elementalista T5. Atravessa cobertura e barricadas. Eco 2D12+8.",
            "muted": true
           }
          ]
@@ -7748,7 +7741,7 @@
         [
          [
           {
-           "text": "Alcance 7. Veneno: 1D10 no início de cada turno do alvo, até curado (−10 pontos de Poison Resistance). Área de raio 3, pega os dois lados.",
+           "text": "Alcance 7. Veneno: 1D10 no início de cada turno do alvo, até curado (−10 pontos de Poison Resistance). Área de raio 1, pega os dois lados.",
            "muted": true
           }
          ]
@@ -15215,7 +15208,7 @@
         [
          [
           {
-           "text": "Healer, level 3. Radius 3; +1% hit chance per level, up to +10% at level 13. Duration: 3 turns at level 3; 4 at 5; 5 at 7; 6 at 9; 7 at 12; 8 at 15.",
+           "text": "Healer, level 3. Radius 2; +1% hit chance per level, up to +10% at level 13. Duration: 3 turns at level 3; 4 at 5; 5 at 7; 6 at 9; 7 at 12; 8 at 15.",
            "muted": true
           }
          ]
@@ -15264,7 +15257,7 @@
         [
          [
           {
-           "text": "Never misses. 1 missile, 2 at level 3, 3 at level 6 — each targets one unit.",
+           "text": "Range 5, rising to 6 at level 6, 7 at 11 and 8 at 15. Never misses. 1 missile, 2 at level 3, 3 at level 6 — each targets one unit.",
            "muted": true
           }
          ]
@@ -15313,7 +15306,7 @@
         [
          [
           {
-           "text": "Range 7. Damage die increases at levels 2, 3, 5, 7, 9, 12, and 14.",
+           "text": "Range 7, rising to 8 at level 8 and 9 at 15. Damage die increases at levels 2, 3, 5, 7, 9, 12, and 14.",
            "muted": true
           }
          ]
@@ -15362,7 +15355,7 @@
         [
          [
           {
-           "text": "—",
+           "text": "Range 2, rising to 3 at level 8 and 4 at 15.",
            "muted": true
           }
          ]
@@ -15445,14 +15438,7 @@
         [
          [
           {
-           "text": "Lv 1: um inimigo, range 4"
-          },
-          {
-           "text": " · Lv 7: inimigos em radius 1, range 5",
-           "muted": true
-          },
-          {
-           "text": " · Lv 14: inimigos em radius 3, range 7",
+           "text": "Lv 1: um inimigo, range 4 · Lv 7: inimigos em radius 1, range 5 · Lv 14: inimigos em radius 1, range 7",
            "muted": true
           }
          ]
@@ -15460,7 +15446,7 @@
         [
          [
           {
-           "text": "Warrior Tier 1, learned at level 3. No damage: every enemy it reaches turns on the warrior until someone generates more enmity. Becomes an area of radius 1 at level 6, 2 at 9, 3 at 12 and 4 at 15; reach grows from 4 to 8.",
+           "text": "Warrior Tier 1, learned at level 3. No damage: every enemy it reaches turns on the warrior until someone generates more enmity. Becomes an area of radius 1 at level 6 (a small area: it grows no further); reach grows from 4 to 8.",
            "muted": true
           }
          ]
@@ -15542,7 +15528,7 @@
         [
          [
           {
-           "text": "Summons an ally with 50% of your current stats. It can cast Magic Missile on its own.",
+           "text": "Summons an ally with 50% of your current stats. It can cast Magic Missile on its own. The summoning point reaches 1 hex farther at level 8 and 2 at 15.",
            "muted": true
           }
          ]
@@ -15591,7 +15577,7 @@
         [
          [
           {
-           "text": "Learned at level 3; progression begins at level 3. Cone radius 1–5. Burning Hands damage progression is delayed by 2 levels. Minor Poison deals 1D4 per turn; it can hit allies too.",
+           "text": "Learned at level 3; progression begins at level 3. Cone radius 1–3. Burning Hands damage progression is delayed by 2 levels. Minor Poison deals 1D4 per turn; it can hit allies too.",
            "muted": true
           }
          ]
@@ -15640,7 +15626,7 @@
         [
          [
           {
-           "text": "Archer Tier 2, learned at level 5. Deals weapon damage with a level-based multiplier and causes 1D8 bleeding damage per action for 1D6 rounds (1D8 at level 8, 2D4 at level 12, 2D6 at level 15).",
+           "text": "Range 6, rising to 7 at level 10 and 8 at 15. Archer Tier 2, learned at level 5. Deals weapon damage with a level-based multiplier and causes 1D8 bleeding damage per action for 1D6 rounds (1D8 at level 8, 2D4 at level 12, 2D6 at level 15).",
            "muted": true
           }
          ]
@@ -15681,7 +15667,7 @@
         [
          [
           {
-           "text": "Summons a greater ally with 75% of your current stats. It can cast Magic Missile or Life Drain on its own.",
+           "text": "Summons a greater ally with 75% of your current stats. It can cast Magic Missile or Life Drain on its own. The summoning point reaches 1 hex farther at level 8 and 2 at 15.",
            "muted": true
           }
          ]
@@ -15730,7 +15716,7 @@
         [
          [
           {
-           "text": "Pierces cover and barricades. Echoes to another adjacent target for 1D12+2.",
+           "text": "Range 5, rising to 6 at level 6, 7 at 11 and 8 at 15. Pierces cover and barricades. Echoes to another adjacent target for 1D12+2.",
            "muted": true
           }
          ]
@@ -15918,7 +15904,7 @@
         [
          [
           {
-           "text": "Enemies within 2 hexes; knocks them back 1 hex. Shows the area before confirming.",
+           "text": "Enemies beside the lancer (1 hex); knocks them back 1 hex. Shows the area before confirming.",
            "muted": true
           }
          ]
@@ -15959,7 +15945,7 @@
         [
          [
           {
-           "text": "Range 7. Radius 1 (2 at level 7, 3 at level 12). 25% chance to sleep for 1D4 turns (+25% damage when awakened); movement is limited to 1 hex in the area for 3 turns.",
+           "text": "Range 7, rising to 8 at level 15. Radius 1. 25% chance to sleep for 1D4 turns (+25% damage when awakened); movement is limited to 1 hex in the area for 3 turns.",
            "muted": true
           }
          ]
@@ -16008,7 +15994,7 @@
         [
          [
           {
-           "text": "Learned at level 5. A line of 2 hexes ahead, +1 hex every 4 levels. Ice damage; can hit allies. Cultist V2: 1 starting charge, +1 at levels 5, 12, and 20.",
+           "text": "Learned at level 5. A line of 2 hexes ahead, +1 hex every 4 levels, plus 1 more at level 10 and 1 at 15. Ice damage; can hit allies. Cultist V2: 1 starting charge, +1 at levels 5, 12, and 20.",
            "muted": true
           }
          ]
@@ -16049,7 +16035,7 @@
         [
          [
           {
-           "text": "Summons a radiant ally with 75% of your current stats. It can cast Magic Missile or Life Drain on its own.",
+           "text": "Summons a radiant ally with 75% of your current stats. It can cast Magic Missile or Life Drain on its own. The summoning point reaches 1 hex farther at level 8 and 2 at 15.",
            "muted": true
           }
          ]
@@ -16180,7 +16166,7 @@
         [
          [
           {
-           "text": "Area radius 2.",
+           "text": "Range 5, rising to 6 at level 6, 7 at 11 and 8 at 15. Area radius 1.",
            "muted": true
           }
          ]
@@ -16214,39 +16200,39 @@
         [
          [
           {
-           "text": "Levels 6–8: range 4, area of 61 hexes, duration 2 rounds, damage ⌊⌊MAG / 2⌋ × 1.6⌋ + 4D6"
+           "text": "Levels 6–8: radius 3 (37 hexes), duration 2 rounds, damage ⌊⌊MAG / 2⌋ × 1.6⌋ + 4D6"
           }
          ],
          [
           {
-           "text": "Levels 9–11: range 5, area of 91 hexes, duration 2 rounds, damage ⌊⌊MAG / 2⌋ × 1.8⌋ + 5D6"
+           "text": "Levels 9–11: radius 3 (37 hexes), duration 2 rounds, damage ⌊⌊MAG / 2⌋ × 1.8⌋ + 5D6"
           }
          ],
          [
           {
-           "text": "Levels 12–14: range 6, area of 127 hexes, duration 2 rounds, damage ⌊⌊MAG / 2⌋ × 2⌋ + 6D6"
+           "text": "Levels 12–14: radius 3 (37 hexes), duration 2 rounds, damage ⌊⌊MAG / 2⌋ × 2⌋ + 6D6"
           }
          ],
          [
           {
-           "text": "Levels 15–17: range 7, area of 169 hexes, duration 2 rounds, damage ⌊⌊MAG / 2⌋ × 2.2⌋ + 7D6"
+           "text": "Levels 15–17: radius 3 (37 hexes), duration 2 rounds, damage ⌊⌊MAG / 2⌋ × 2.2⌋ + 7D6"
           }
          ],
          [
           {
-           "text": "Levels 18–21: range 8, area of 217 hexes, duration 2 rounds, damage ⌊⌊MAG / 2⌋ × 2.4⌋ + 8D6"
+           "text": "Levels 18–21: radius 3 (37 hexes), duration 2 rounds, damage ⌊⌊MAG / 2⌋ × 2.4⌋ + 8D6"
           }
          ],
          [
           {
-           "text": "Levels 22–30 (capped at 22): range 9, area of 271 hexes, duration 2 rounds, damage ⌊⌊MAG / 2⌋ × 2.6⌋ + 10D6"
+           "text": "Levels 22–30 (capped at 22): radius 3 (37 hexes), duration 2 rounds, damage ⌊⌊MAG / 2⌋ × 2.6⌋ + 10D6"
           }
          ]
         ],
         [
          [
           {
-           "text": "Preview the area around the priest, then confirm or cancel; no target selection. Holy damage and 2 own turns of fear: undead retreat without attacking. Radius grows at every breakpoint from 4 to 9 hexes (61–271 affected cells). Other creature types are completely unaffected.",
+           "text": "Preview the area around the priest, then confirm or cancel; no target selection. Holy damage and 2 own turns of fear: undead retreat without attacking. Radius 3 around the priest at every level (37 hexes). Other creature types are completely unaffected.",
            "muted": true
           }
          ]
@@ -16287,7 +16273,7 @@
         [
          [
           {
-           "text": "Cleric T3. Cures disease and poison. Teal light.",
+           "text": "Range 2, rising to 3 at level 15. Cleric T3. Cures disease and poison. Teal light.",
            "muted": true
           }
          ]
@@ -16336,7 +16322,7 @@
         [
          [
           {
-           "text": "2 targets (3 at level 11), range 6. Damage die increases at levels 8 and 13.",
+           "text": "Range 6, rising to 7 at level 8 and 8 at 15. 2 targets (3 at level 11). Damage die increases at levels 8 and 13.",
            "muted": true
           }
          ]
@@ -16426,7 +16412,7 @@
         [
          [
           {
-           "text": "Summons an ally with 100% of your current stats. It can cast Fireball on its own.",
+           "text": "Summons an ally with 100% of your current stats. It can cast Fireball on its own. The summoning point reaches 1 hex farther at level 8 and 2 at 15.",
            "muted": true
           }
          ]
@@ -16541,7 +16527,7 @@
         [
          [
           {
-           "text": "Salazar only. Range 6; radius 1; Holy damage, affecting up to six adjacent hexes.",
+           "text": "Range 6, rising to 7 at level 8 and 8 at 15. Salazar only. Radius 1; Holy damage, affecting up to six adjacent hexes.",
            "muted": true
           }
          ]
@@ -16688,7 +16674,7 @@
         [
          [
           {
-           "text": "Elementalist T5. Pierces cover and barricades. Echo: 2D12+8.",
+           "text": "Range 7, rising to 8 at level 20, 9 at 25 and 10 at 30. Elementalist T5. Pierces cover and barricades. Echo: 2D12+8.",
            "muted": true
           }
          ]
@@ -16737,7 +16723,7 @@
         [
          [
           {
-           "text": "Range 7. Medium Poison: 1D10 at the start of each turn until cured. Radius 3; affects both sides.",
+           "text": "Range 7. Medium Poison: 1D10 at the start of each turn until cured. Radius 1; affects both sides.",
            "muted": true
           }
          ]

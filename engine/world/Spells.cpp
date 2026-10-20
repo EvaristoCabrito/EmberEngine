@@ -338,21 +338,47 @@ const PoisonTier* poisonTier(const std::string& id) {
   return nullptr;
 }
 
-// --- Reach that grows with the level (the user, 2026-10-19: "o range de todas as magias e habilidades de arqueiro dêem uma
-// escalada com o passar dos níveis, está tudo muito curto, explode só em cima da party"; "sem exageros para ninguém, só
-// precisam de alguns a mais com o passar do tempo") ---
-// +1 hex from level 7, +2 from 15, +3 from 23, on every mage's spell cast at a distance (bolts, areas, cures, summons) and on the
-// archer's skills. Touch spells, cones / rays from the caster, self areas and the other classes' weapon skills keep their reach.
-// Off in the Cooker's checks (they compare Engine2's own reach).
-int reachGrowth(int level) { return progressionEnabled() ? std::clamp((level + 1) / 8, 0, 3) : 0; }
-// Engine2's spells and skills whose reach grows (ours grow in emberNumbers).
-bool reachGrows(const std::string& kind) {
-  static const std::set<std::string> kGrows = {"magicMissile", "magicMissileV2", "lightning", "lightningTier3", "fireball", "iceStorm",
-                                               "divineBolt", "webOfDreams", "phantasmalForce", "cureDisease", "longShot", "bloodyShot",
-                                               "multiShot"};
-  return kGrows.contains(kind);
+// --- Reach that grows with the level, gradually (the user, 2026-10-20: "long range, small areas of effect based on dungeons and
+// dragons"; "o range comece pequeno como está hoje e aumente"; "tem que começar a escalar do nível em que ele ganha"; "os ganhos
+// precisam ser graduais"; Míssil Mágico "apenas até o 15 como está no jogo") ---
+// Each spell starts at its own reach on the level it is learned and gains `gain` hexes, one at a time, by the level its own
+// scaling ends (Como jogar: the first spells scale to 15, Ice Storm's own table already grows its reach; the promotions' and
+// the classes' new spells to 30). Touch spells, cones / rays from the caster, self areas and the weapon skills keep their reach.
+struct ReachScale {
+  const char* kind;
+  int from, to, gain;
+};
+constexpr ReachScale kReachScale[] = {
+    {"magicMissile", 1, 15, 3},    {"magicMissileV2", 1, 15, 3}, {"lightning", 1, 15, 3},      {"lightningTier3", 15, 30, 3},
+    {"fireball", 1, 15, 3},        {"divineBolt", 1, 15, 2},     {"webOfDreams", 1, 15, 1},    {"phantasmalForce", 2, 15, 2},
+    {"cureDisease", 1, 15, 1},     {"cureMinor", 1, 15, 2},      {"cureLight", 1, 15, 1},      {"longShot", 1, 15, 2},
+    {"bloodyShot", 5, 15, 2},      {"multiShot", 1, 15, 2},      {"frost", 5, 15, 2},          {"summonFamiliar", 1, 15, 2},
+    {"summonFamiliar2", 1, 15, 2}, {"summonFamiliar3", 1, 15, 2}, {"summonFamiliar4", 1, 15, 2}, {"summonZombieDog", 1, 15, 2},
+};
+// The classes' new spells cast at a distance: from the level the class learns them to 30 (the shots: the hexes past the bow).
+int emberReachGain(const std::string& kind) {
+  static const std::set<std::string> kGrows = {"markOfRuin",     "creepingPlague", "lifeDrain",       "shroudOfShadows", "hemorrhage",
+                                               "profaneSilence", "blackPestilence", "curseOfDecay",   "soulHarvest",     "devouringVoid",
+                                               "pillarOfFlame",  "iceLance",        "meteor",         "absoluteZero",    "chainLightning",
+                                               "wrathOfTheSkies", "primordialEmber", "arrowRain",     "arrowStorm",      "circleOfHealing",
+                                               "judgment",       "placeSwap",       "mirrorImage",    "detonateSummon",  "nightmare",
+                                               "venomArrow",     "explosiveArrow",  "cripplingShot",  "deathShot"};
+  if (kind == "thunderstorm") return 3;
+  return kGrows.contains(kind) ? 2 : 0;
 }
-int grownReach(const std::string& kind, int base, int level) { return reachGrows(kind) ? base + reachGrowth(level) : base; }
+// The hexes a spell's reach has gained at this level: gain x (level - from) / (to - from), rounded down (+1 at a time).
+int reachGain(const std::string& kind, int level) {
+  if (!progressionEnabled()) return 0;
+  int from = 0, to = 0, gain = 0;
+  for (const ReachScale& s : kReachScale)
+    if (kind == s.kind) from = s.from, to = s.to, gain = s.gain;
+  if (gain == 0)
+    if (const EmberSpell* e = emberSpell(kind)) from = e->learn, to = 30, gain = emberReachGain(kind);
+  if (gain <= 0 || level <= from) return 0;
+  if (level >= to) return gain;
+  return gain * (level - from) / (to - from);
+}
+int grownReach(const std::string& kind, int base, int level) { return base + reachGain(kind, level); }
 
 // --- EmberEngine's own spells: their numbers by the caster's level (docs/SPELLS_PROMOTIONS.md) -------------------------
 struct EmberNumbers {
@@ -387,19 +413,20 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
     n.pct = lv >= 28 ? 100 : lv >= 22 ? 75 : 50;
   } else if (kind == "shroudOfShadows") {
     n.range = 6, n.tickMul = 0.7, n.tickDice = 1, n.tickFaces = 6;
-    if (lv >= 28) n.radius = 3, n.rounds = 4, n.pct = 35;
-    else if (lv >= 24) n.radius = 2, n.rounds = 4, n.pct = 30;
-    else if (lv >= 20) n.radius = 2, n.rounds = 3, n.pct = 25;
-    else n.radius = 1, n.rounds = 2, n.pct = 20;
+    n.radius = 1;  // small area (D&D Darkness, 15 ft)
+    if (lv >= 28) n.rounds = 4, n.pct = 35;
+    else if (lv >= 24) n.rounds = 4, n.pct = 30;
+    else if (lv >= 20) n.rounds = 3, n.pct = 25;
+    else n.rounds = 2, n.pct = 20;
   } else if (kind == "hemorrhage") {
     n.range = 5, n.mul = 1.4, n.dice = 2, n.faces = 6;
     n.tickDice = lv >= 26 ? 3 : 2, n.tickFaces = lv >= 30 ? 8 : lv >= 26 ? 6 : lv >= 22 ? 8 : 6;
     n.durDice = lv >= 24 ? 2 : 1, n.durFaces = lv >= 24 ? 4 : 6;
   } else if (kind == "profaneSilence") {
-    n.range = 6, n.radius = lv >= 26 ? 2 : 1, n.mul = 1.1, n.dice = 1, n.faces = 8;
+    n.range = 6, n.radius = 1 /* D&D Silence, 20 ft */, n.mul = 1.1, n.dice = 1, n.faces = 8;
     n.turns = lv >= 24 ? 3 : 2;
   } else if (kind == "blackPestilence") {
-    n.range = 7, n.radius = lv >= 25 ? 3 : 2, n.mul = 1.2, n.dice = 2, n.faces = 6;
+    n.range = 7, n.radius = 1 /* D&D Cloudkill, 20 ft */, n.mul = 1.2, n.dice = 2, n.faces = 6;
     n.tier = lv >= 29 ? "lethal" : "deadly";
   } else if (kind == "curseOfDecay") {
     n.range = 6, n.mul = 1.5, n.dice = 2, n.faces = 8;
@@ -450,7 +477,7 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
     else n.dice = 1, n.faces = 4;
     n.tier = lv >= 21 ? "deadly" : lv >= 13 ? "greater" : lv >= 7 ? "poison" : "lesser";
   } else if (kind == "arrowRain") {
-    n.range = 6, n.radius = lv >= 16 ? 2 : 1;
+    n.range = 6, n.radius = 1;  // small area (D&D Hail of Thorns)
     n.mul = lv >= 20 ? 0.9 : 0.75;
     n.dice = lv >= 13 ? 2 : 1, n.faces = lv >= 25 ? 6 : 4;
   } else if (kind == "explosiveArrow") {
@@ -463,7 +490,7 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
     n.pct = lv >= 27 ? 75 : lv >= 18 ? 60 : 50;  // MOV off
     n.turns = lv >= 22 ? 3 : 2;
   } else if (kind == "arrowStorm") {
-    n.range = 7, n.radius = lv >= 25 ? 3 : 2;
+    n.range = 7, n.radius = 1;  // small area
     n.mul = lv >= 28 ? 1.3 : lv >= 20 ? 1.1 : 0.9;
     n.dice = lv >= 23 ? 2 : 1, n.faces = 6;
   } else if (kind == "deathShot") {
@@ -507,7 +534,7 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
   }
   // Curandeiro (docs/SKILLS_HEALER.md): the cures' formula, floor(floor(MAG / 2) x mul) + dice (+1 % per healing skill point)
   else if (kind == "circleOfHealing") {
-    n.range = 4, n.radius = lv >= 23 ? 3 : 2;
+    n.range = 4, n.radius = 1;  // small area
     n.mul = lv >= 29 ? 1.6 : lv >= 19 ? 1.4 : 1.2;
     n.dice = lv >= 26 ? 3 : lv >= 15 ? 2 : 1, n.faces = 8;
   } else if (kind == "resurrection") {
@@ -515,7 +542,7 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
     n.mul = lv >= 26 ? 2.1 : lv >= 18 ? 1.8 : 1.5;
     n.dice = lv >= 29 ? 4 : lv >= 22 ? 3 : 2, n.faces = 8;
   } else if (kind == "judgment") {
-    n.range = 6, n.radius = lv >= 24 ? 3 : 2;
+    n.range = 6, n.radius = 1;  // small area (D&D Flame Strike, 10 ft)
     n.mul = lv >= 30 ? 2.4 : lv >= 21 ? 2.1 : 1.8;
     n.dice = lv >= 28 ? 4 : lv >= 18 ? 3 : 2, n.faces = 8;
     n.tickMul = lv >= 26 ? 1.75 : 1.5;  // the undead's weight
@@ -533,13 +560,13 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
     n.rounds = lv >= 21 ? 4 : 3;
     n.pct = 33;  // one chance in three
   } else if (kind == "detonateSummon") {
-    n.range = 6, n.radius = lv >= 24 ? 2 : 1;
+    n.range = 6, n.radius = 1;  // small area
     n.mul = lv >= 28 ? 2.4 : lv >= 20 ? 2.1 : 1.8;
     n.dice = lv >= 26 ? 4 : lv >= 17 ? 3 : 2, n.faces = 8;
   } else if (kind == "sacrificeBond") {
     n.pct = lv >= 27 ? 50 : lv >= 19 ? 75 : 100;  // the share the summon takes (the rest is gone)
   } else if (kind == "nightmare") {
-    n.range = 6, n.radius = lv >= 25 ? 3 : 2;
+    n.range = 6, n.radius = 1;  // small area (D&D Synaptic Static, 20 ft)
     n.mul = lv >= 24 ? 1.8 : 1.5;
     n.dice = lv >= 30 ? 4 : lv >= 18 ? 3 : 2, n.faces = 8;
     n.pct = lv >= 21 ? 35 : 25;    // the chance of fear
@@ -551,26 +578,26 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
   }
   // Elementalista
   else if (kind == "pillarOfFlame") {
-    n.range = 6, n.radius = lv >= 23 ? 2 : 1, n.mul = 2.0, n.dice = lv >= 19 ? 3 : 2, n.faces = 8;
+    n.range = 6, n.radius = 1 /* D&D Flame Strike, 10 ft */, n.mul = 2.0, n.dice = lv >= 19 ? 3 : 2, n.faces = 8;
     n.hazardDice = 1, n.hazardFaces = 8, n.rounds = lv >= 27 ? 2 : 1;
   } else if (kind == "iceLance") {
     n.range = 7, n.mul = lv >= 28 ? 2.6 : 2.4, n.dice = lv >= 25 ? 3 : 2, n.faces = 10;
     n.pct = lv >= 21 ? 100 : 50;  // the hexes past the first
   } else if (kind == "thunderstorm") {
-    n.range = 6, n.radius = lv >= 27 ? 3 : 2, n.mul = 1.8, n.dice = lv >= 21 ? 3 : 2, n.faces = 12;
+    n.range = 6, n.radius = 1 /* small area */, n.mul = 1.8, n.dice = lv >= 21 ? 3 : 2, n.faces = 12;
     n.tickDice = lv >= 24 ? 2 : 1, n.tickFaces = 12, n.bonus = 4;  // the echo: tickDice D12 + 4
   } else if (kind == "meteor") {
-    n.range = 8, n.radius = lv >= 26 ? 3 : 2, n.mul = lv >= 29 ? 3.3 : 3.0, n.dice = lv >= 22 ? 5 : 4, n.faces = 6;
+    n.range = 8, n.radius = 2 /* D&D Meteor Swarm, 40 ft */, n.mul = lv >= 29 ? 3.3 : 3.0, n.dice = lv >= 22 ? 5 : 4, n.faces = 6;
     n.ringMul = 2.0, n.ringDice = 2, n.ringFaces = 6;
   } else if (kind == "absoluteZero") {
-    n.range = 6, n.radius = lv >= 30 ? 3 : 2, n.mul = lv >= 27 ? 2.5 : 2.2, n.dice = lv >= 23 ? 4 : 3, n.faces = 8;
+    n.range = 6, n.radius = 1 /* D&D Ice Storm, 20 ft */, n.mul = lv >= 27 ? 2.5 : 2.2, n.dice = lv >= 23 ? 4 : 3, n.faces = 8;
   } else if (kind == "chainLightning") {
     n.range = 7, n.mul = 2.8, n.dice = lv >= 24 ? 4 : 3, n.faces = 10;
     n.jumps = lv >= 26 ? 5 : lv >= 22 ? 4 : 3;
     n.decay = lv >= 28 ? 0.10 : 0.15;
     n.length = 3;  // a jump's reach
   } else if (kind == "eruption") {
-    n.radius = lv >= 25 ? 4 : 3, n.mul = lv >= 30 ? 2.9 : 2.6, n.dice = lv >= 27 ? 5 : 4, n.faces = 8;
+    n.radius = 2 /* round the caster */, n.mul = lv >= 30 ? 2.9 : 2.6, n.dice = lv >= 27 ? 5 : 4, n.faces = 8;
     n.hazardDice = 1, n.hazardFaces = 8, n.rounds = 2;
   } else if (kind == "glacialGale") {
     n.length = lv >= 24 ? 6 : 5, n.mul = 2.4, n.dice = lv >= 26 ? 5 : 4, n.faces = 6;
@@ -578,20 +605,14 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
   } else if (kind == "wrathOfTheSkies") {
     n.range = 8, n.count = lv >= 26 ? 5 : 4, n.mul = lv >= 30 ? 2.9 : 2.6, n.dice = lv >= 28 ? 4 : 3, n.faces = 12;
   } else if (kind == "primordialEmber") {
-    n.range = 7, n.radius = lv >= 30 ? 4 : 3, n.mul = lv >= 29 ? 3.7 : 3.4, n.dice = lv >= 27 ? 5 : 4, n.faces = 10;
+    n.range = 7, n.radius = 1 /* D&D Fireball, 20 ft */, n.mul = lv >= 29 ? 3.7 : 3.4, n.dice = lv >= 27 ? 5 : 4, n.faces = 10;
     n.hazardDice = 2, n.hazardFaces = 8, n.rounds = 2;
   }
-  // The reach that grows with the level (reachGrowth): the Bruxo's and the Elementalista's spells cast at a distance, the
-  // Arqueiro's volleys (their range) and shots (the hexes past the bow's reach). The Guerreiro's leap and the Lanceiro's
-  // throws, pulls and swaps keep theirs.
-  static const std::set<std::string> kRangeGrows = {"markOfRuin",   "creepingPlague", "lifeDrain",     "shroudOfShadows", "hemorrhage",
-                                                     "profaneSilence", "blackPestilence", "curseOfDecay", "soulHarvest",   "devouringVoid",
-                                                     "pillarOfFlame", "iceLance",       "thunderstorm",  "meteor",        "absoluteZero",
-                                                     "chainLightning", "wrathOfTheSkies", "primordialEmber", "arrowRain",   "arrowStorm",
-                                                     "circleOfHealing", "judgment", "placeSwap", "mirrorImage", "detonateSummon", "nightmare"};
+  // The reach that grows with the level, gradually (reachGain): the spells cast at a distance (their range) and the Arqueiro's
+  // shots (the hexes past the bow's reach). The Guerreiro's leap and the Lanceiro's throws, pulls and swaps keep theirs.
   static const std::set<std::string> kLengthGrows = {"venomArrow", "explosiveArrow", "cripplingShot", "deathShot"};
-  if (kRangeGrows.contains(kind)) n.range += reachGrowth(lv);
-  if (kLengthGrows.contains(kind)) n.length += reachGrowth(lv);
+  if (kLengthGrows.contains(kind)) n.length += reachGain(kind, lv);
+  else n.range += reachGain(kind, lv);
   return n;
 }
 // Both sides stand in its area (else the caster's foes only).
@@ -754,7 +775,7 @@ std::vector<BattleHex> frostArea(const Battle& b, BattleHex origin, BattleHex th
   std::vector<BattleHex> out;
   // The line grows with the level like every other spell's reach (reachGrowth; the user, 2026-10-19: "frost really need to scale
   // the distance like the others").
-  const int length = frostPower(level).length + reachGrowth(level);
+  const int length = frostPower(level).length + reachGain("frost", level);
   for (int i = 1; i <= length; ++i) {
     const double t = static_cast<double>(i) / n;
     const Cube c = cubeRound(aq + (B.q - A.q) * t, ar + (B.r - A.r) * t, as + (B.s - A.s) * t);
@@ -2409,7 +2430,7 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   else if (kind == "shock") maxRange = kShockRange;
   else if (kind == "magicMissile" || kind == "magicMissileV2") maxRange = grown(kMissileRange), shot = true;
   else if (kind == "doubleStrike") minRange = u.minRange, maxRange = u.maxRange, shot = u.maxRange > 1, arrow = true;
-  else if (const CureData* cure = cureData(kind)) maxRange = cure->range + reachGrowth(u.level);
+  else if (const CureData* cure = cureData(kind)) maxRange = cure->range + reachGain(kind, u.level);
   else if (kind == "cureDisease") maxRange = grown(kCureDiseaseRange);
   else if (emberBoltSpell(kind) || emberAreaSpell(kind)) maxRange = emberNumbers(kind, u.level).range;  // ours: no line of fire needed
   else if (kind == "resurrection") maxRange = 1;  // the fallen ally beside the caster (or under its feet)
@@ -2500,8 +2521,8 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
     return canHitFrom(b, caster, from, static_cast<size_t>(here)) ? true : fail("Esse inimigo não está ao alcance ou não pode ser atingido daqui.");
   }
   if (const CureData* cure = cureData(kind)) {
-    if (d > cure->range + reachGrowth(u.level)) {
-      const std::string why = std::format("Alvo fora de alcance (máximo {} hexes).", cure->range + reachGrowth(u.level));
+    if (d > cure->range + reachGain(kind, u.level)) {
+      const std::string why = std::format("Alvo fora de alcance (máximo {} hexes).", cure->range + reachGain(kind, u.level));
       if (error) *error = why;
       return false;
     }

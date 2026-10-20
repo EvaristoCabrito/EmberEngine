@@ -19,9 +19,10 @@ struct ProvokeP {
   int range, radius;
 };
 ProvokeP provokePower(int level) {
-  if (level >= 15) return {8, 4};
-  if (level >= 12) return {7, 3};
-  if (level >= 9) return {6, 2};
+  // the reach grows; the area stays small: radius 1 at most (it grew to 4)
+  if (level >= 15) return {8, 1};
+  if (level >= 12) return {7, 1};
+  if (level >= 9) return {6, 1};
   if (level >= 6) return {5, 1};
   return {4, 0};
 }
@@ -107,18 +108,18 @@ DiceFaces stampedePower(int level) {
   if (level >= 21) return {2, 8};
   return {1, 10};
 }
-constexpr int kSweepRadius = 2, kSweepKnockback = 1;
+constexpr int kSweepRadius = 1, kSweepKnockback = 1;  // small area: the hexes beside the lancer
 constexpr int kTripBonusFaces = 8, kTripBonusBonus = 0, kTripStunRounds = 2;
 constexpr double kTripStatPenalty = 0.1;
 // fireball / venoms / divine bolt
-constexpr int kFireballRange = 5, kFireballSize = 2, kFireballDice = 2, kFireballFaces = 6, kFireballBonus = 0;
+constexpr int kFireballRange = 5, kFireballSize = 1 /* small area (D&D Fireball, 20 ft) */, kFireballDice = 2, kFireballFaces = 6, kFireballBonus = 0;
 constexpr double kFireballMul = 1.35;
 struct BoltData {
   int size, range, centerDice, centerFaces, centerBonus, splashDice, splashFaces, splashBonus;
   double centerMul, splashMul;
 };
-constexpr BoltData kCausticVenom{3, 7, 1, 10, 0, 1, 6, 0, 1.5, 1.1};
-constexpr BoltData kMinorVenom{2, 7, 1, 10, 0, 1, 6, 0, 1.5, 1.1};
+constexpr BoltData kCausticVenom{1 /* small area */, 7, 1, 10, 0, 1, 6, 0, 1.5, 1.1};
+constexpr BoltData kMinorVenom{1, 7, 1, 10, 0, 1, 6, 0, 1.5, 1.1};
 constexpr BoltData kDivineBolt{1, 6, 2, 4, 0, 1, 4, 0, 1.4, 1.0};
 constexpr int kLightningT3Range = 7, kLightningT3Dice = 3, kLightningT3Faces = 12, kLightningT3Bonus = 8;
 constexpr double kLightningT3Mul = 3.0;
@@ -145,7 +146,8 @@ IceStormP iceStormPower(int level) {
 }
 constexpr int kIceStormUnlock = 8;
 // burning hands / poison breath
-int burningHandsRadius(int level) { return std::min(6, 1 + static_cast<int>(std::floor((std::max(1, level) - 1) * 5.0 / 14.0))); }
+// A small cone: 3 hexes deep at most (D&D Burning Hands, 15 ft; it grew to 6).
+int burningHandsRadius(int level) { return std::min(3, 1 + static_cast<int>(std::floor((std::max(1, level) - 1) * 5.0 / 14.0))); }
 struct ConeP {
   int range, radius, dice, faces;
   double mul;
@@ -179,28 +181,30 @@ UndeadP turnUndeadPower(int level) {
   UndeadP p = kTurnUndead[0];
   for (const UndeadP& q : kTurnUndead)
     if (capped >= q.level) p = q;
+  p.radius = 3;  // a small area round the priest at every level (it grew 4 to 9)
   return p;
 }
 constexpr int kTurnUndeadFearTurns = 2;
 // bless / aura / web
 int blessHitBonusPct(int level) { return std::min(10, std::max(1, level - 2)); }
 int blessDuration(int level) { return level >= 15 ? 8 : level >= 12 ? 7 : level >= 9 ? 6 : level >= 7 ? 5 : level >= 5 ? 4 : 3; }
-constexpr int kBlessRadius = 3, kBlessUnlock = 3;
+constexpr int kBlessRadius = 2 /* small area */, kBlessUnlock = 3;
 struct AuraP {
   int radius;
   double pct;
   int duration;
 };
 AuraP auraPower(int level) {
-  if (level >= 30) return {3, 0.35, 4};
-  if (level >= 28) return {3, 0.3, 4};
-  if (level >= 26) return {3, 0.25, 4};
-  if (level >= 24) return {2, 0.25, 4};
-  if (level >= 22) return {2, 0.25, 3};
-  if (level >= 20) return {2, 0.2, 3};
+  // a small area: radius 1 at every level (it grew to 3); the share and the rounds still grow
+  if (level >= 30) return {1, 0.35, 4};
+  if (level >= 28) return {1, 0.3, 4};
+  if (level >= 26) return {1, 0.25, 4};
+  if (level >= 24) return {1, 0.25, 4};
+  if (level >= 22) return {1, 0.25, 3};
+  if (level >= 20) return {1, 0.2, 3};
   return {1, 0.2, 3};
 }
-int webOfDreamsSize(int level) { return level >= 12 ? 3 : level >= 7 ? 2 : 1; }
+int webOfDreamsSize(int) { return 1; }  // a small area at every level (it grew to 3)
 double webOfDreamsSleepChance(int level) {
   const double t = std::max(0.0, std::min(1.0, (level - 3) / 27.0));
   return 0.25 + (0.85 - 0.25) * t;
@@ -698,7 +702,7 @@ bool aimE2(const Battle& b, size_t caster, const std::string& kind, BattleHex ce
   if (kind == "turnUndead" || kind == "bless" || kind == "auraOfProtection" || kind == "intimidatingPresence")
     return cell == from ? yes() : no("Esta magia não precisa de alvo.");
   if (const SummonSpec* sp = summonSpec(kind)) {
-    const int reach = sp->range + reachGrowth(u.level);  // a summoner's reach grows with its level too
+    const int reach = sp->range + reachGain(kind, u.level);  // a summoner's reach grows with its level too, gradually
     if (d > reach) return no(std::format("Ponto de invocação fora de alcance (máximo {} hexes).", reach));
     if (!inBoardXY(b, cell.x, cell.y)) return no("O ponto de invocação fica fora do mapa.");
     const SummonData& data = summonData();
