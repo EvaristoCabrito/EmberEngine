@@ -38,6 +38,7 @@
 #include "render/vfx/LancerFx.h"
 #include "render/vfx/RangerFx.h"
 #include "render/vfx/WarriorFx.h"
+#include "render/vfx/DreamWeb.h"
 #include "render/vfx/WebOfDreams.h"
 
 namespace ember {
@@ -123,13 +124,26 @@ class SpellEffects {
   int newestStorm() const { return stormSerial_; }
   void stormEnd(int id, float now);
 
+  // Teia dos Sonhos 02 (vfx/DreamWeb): a web the rules keep for rounds. Before cast("webOfDreams", 2, ...) call webUnits() with the
+  // units standing in the zone; after it, newestWeb() is its id (0 = none yet) and webStand(id) holds it until webEnd(id, now) (the
+  // rules dropped the zone); webUnits(id, ...) keeps its occupants current. Without webStand it holds 2.6 s and lets go (--fx-test).
+  struct WebUnit {
+    int key = 0;
+    Spot at;
+  };
+  void webUnits(const std::vector<WebUnit>& units) { webPending_ = units; }
+  void webUnits(int id, const std::vector<WebUnit>& units);
+  int newestWeb() const { return webSerial_; }
+  void webStand(int id);
+  void webEnd(int id, float now);
+
   // This frame's quads (sorted far to near) and lights. `flatTop`: in the 2D view (Tática) every quad lies face up
   // at this height instead of standing.
   // Engine2's ported effects (render/vfx/*) are drawn from vfx() (Renderer::setVfx), filled by the same call.
   void build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out, std::vector<Light>& lights);
   const VfxFrame& vfx() const { return vfx_; }
   bool active(float now) const;
-  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), frosts_.clear(), warrior_.clear(), ranger_.clear(), lancer_.clear(), turnUndead_.clear(); }
+  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), dreamWebs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), frosts_.clear(), warrior_.clear(), ranger_.clear(), lancer_.clear(), turnUndead_.clear(); }
   // A version that keeps Engine2's own timeline decides when the hit lands: seconds from the cast (Míssil Mágico 02:
   // Engine2's charge, then the flight). Below 0: the version lands on the caller's impact (the pose's).
   float impactDelay(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const;
@@ -223,6 +237,9 @@ class SpellEffects {
   std::vector<CausticVenom> venoms_; // Veneno Cáustico 01 = CausticVenomVFX
   std::vector<PhantasmalForce> phantasms_;  // Força Fantasmagórica 01 = PhantasmalForceVFX
   std::vector<WebOfDreams> webs_;           // Teia dos Sonhos 01 = WebOfDreamsVFX
+  std::vector<DreamWeb> dreamWebs_;         // Teia dos Sonhos 02 (ours, 3D): the shot, the floor, the net
+  std::vector<WebUnit> webPending_;         // the units in the zone about to be cast
+  int webSerial_ = 0;
   std::vector<CleaveSweep> cleaves_;  // Cleave 01 = CleaveSweepVFX
   std::vector<Varredura> sweeps_;     // Varredura 01 = VarreduraVFX
   std::vector<HolyLight> holies_;     // the cures', the meal's and the potions' light (ours, 3D)

@@ -525,6 +525,7 @@ class MapStage final : public Stage {
     if (scene_ && sprites_.ready()) {
       runFxTest(time);
       syncZones();
+      syncWebs();
       syncVigils();
       // Numbers held back for an effect still in the air (a Meteoro's fall).
       for (size_t i = 0; i < pendingFx_.size();) {
@@ -4245,12 +4246,20 @@ class MapStage final : public Stage {
         x.impact = now_ + delay;
         x.end = std::max(x.end, x.impact + 0.8f + kExchangeGap);
       }
+      // Teia dos Sonhos 02: the units standing in the zone are wrapped; the web stands for as long as the rules keep the zone (syncWebs).
+      const e2::Battle::WebZone* webZone = s.kind == "webOfDreams" && look == 2 ? webZoneOf(s.tiles) : nullptr;
+      const int webBefore = spellFx_.newestWeb();
+      if (webZone) spellFx_.webUnits(webUnitsIn(*webZone));
       if (s.type == StepType::Potion && !spots.empty()) {
         // its colour by what it does (Engine2 POTIONS effect)
         const std::string effect = s.potion == "disease" ? "disease" : s.potion.starts_with("mana") ? "mana" : "heal";
         spellFx_.potion(effect, look, spots.front(), now_, x.impact, striker);
       } else if (spellFx_.cast(s.kind, look, casterSpot, spots, fxStart, x.impact, striker) && storm) {
         iceFx_.push_back({storm->center, storm->casterId, spellFx_.newestStorm()});
+      }
+      if (webZone && spellFx_.newestWeb() != webBefore) {
+        spellFx_.webStand(spellFx_.newestWeb());
+        webFx_.push_back({webZone->center, webZone->radius, spellFx_.newestWeb()});
       }
       if (s.kind == "warCry" && !s.fearIds.empty()) {  // ... and its dark pulse on the foes it frightens
         std::vector<SpellEffects::Spot> foes;
@@ -4301,6 +4310,62 @@ class MapStage final : public Stage {
         it = zoneFx_.erase(it);
       }
     }
+  }
+  // Teia dos Sonhos 02 (vfx/DreamWeb): the web stays over its zone for as long as the rules keep it (Engine2 draws the net and the
+  // floor for every live webZone), its occupants following who stands in it now; a fight resumed with webs on the board gets
+  // them already formed.
+  const e2::Battle::WebZone* webZoneOf(const std::vector<e2::BattleHex>& cells) const {
+    const e2::Battle::WebZone* found = nullptr;
+    for (const e2::Battle::WebZone& z : battle_->webZones())
+      if (z.cells.size() == cells.size() && std::equal(z.cells.begin(), z.cells.end(), cells.begin())) found = &z;  // the newest
+    return found;
+  }
+  std::vector<SpellEffects::WebUnit> webUnitsIn(const e2::Battle::WebZone& z) const {
+    std::vector<SpellEffects::WebUnit> in;
+    for (size_t i = 0; i < battle_->units().size(); ++i) {
+      const e2::BattleUnit& u = battle_->units()[i];
+      if (!u.alive || std::none_of(z.cells.begin(), z.cells.end(), [&](const e2::BattleHex& c) { return c.x == u.x && c.y == u.y; })) continue;
+      if (const int ui = sceneUnitOf(static_cast<int>(i)); ui >= 0) in.push_back({static_cast<int>(i), unitSpot(static_cast<size_t>(ui))});
+    }
+    return in;
+  }
+  void syncWebs() {
+    if (!battle_) return;
+    const auto& zones = battle_->webZones();
+    auto same = [](const WebFx& f, const e2::Battle::WebZone& z) { return f.center == z.center && f.radius == z.radius; };
+    std::vector<bool> taken(webFx_.size(), false);
+    const bool resumed = !webSynced_;
+    webSynced_ = true;
+    for (const e2::Battle::WebZone& z : zones) {
+      size_t at = webFx_.size();
+      for (size_t i = 0; i < webFx_.size(); ++i)
+        if (!taken[i] && same(webFx_[i], z)) {
+          at = i;
+          break;
+        }
+      if (at == webFx_.size()) {
+        if (!resumed || spellsMenu_.look("webOfDreams", false) != 2 || !battle_->inBounds(z.center.x, z.center.y)) continue;
+        std::vector<SpellEffects::Spot> spots;
+        for (const e2::BattleHex& h : z.cells)
+          if (battle_->cell(h.x, h.y).terrain != "void") spots.push_back(hexSpot(h));
+        if (spots.empty()) continue;
+        const int before = spellFx_.newestWeb();
+        spellFx_.webUnits(webUnitsIn(z));
+        spellFx_.cast("webOfDreams", 2, hexSpot(z.center), spots, now_ - 2.7f, now_ - 1.85f);
+        if (spellFx_.newestWeb() == before) continue;
+        spellFx_.webStand(spellFx_.newestWeb());
+        webFx_.push_back({z.center, z.radius, spellFx_.newestWeb()});
+        taken.push_back(true);
+        continue;
+      }
+      taken[at] = true;
+      spellFx_.webUnits(webFx_[at].fx, webUnitsIn(z));
+    }
+    for (size_t i = webFx_.size(); i-- > 0;)
+      if (!taken[i]) {
+        spellFx_.webEnd(webFx_[i].fx, now_);
+        webFx_.erase(webFx_.begin() + static_cast<std::ptrdiff_t>(i));
+      }
   }
   // The Vigília da Sentinela's standing effect on every sentinel in its stance (LancerFx::vigil), following it, gone when it lifts.
   void syncVigils() {
@@ -7715,6 +7780,13 @@ class MapStage final : public Stage {
     int fx;
   };
   std::vector<IceFx> iceFx_;        // the Tempestade de Gelo fields drawn, by their centre and caster (syncIceStorms)
+  struct WebFx {
+    e2::BattleHex center;
+    int radius;
+    int fx;
+  };
+  std::vector<WebFx> webFx_;        // the Teia dos Sonhos 02 webs drawn, by their zone (syncWebs)
+  bool webSynced_ = false;
   bool iceSynced_ = false;
   std::vector<std::pair<float, std::vector<e2::BattleEffect>>> pendingFx_;  // numbers waiting for an effect to land
   SpellsMenu spellsMenu_;           // the Magias window: each spell's effect version, loose effects

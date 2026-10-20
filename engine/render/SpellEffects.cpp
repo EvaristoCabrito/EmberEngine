@@ -74,6 +74,8 @@ int SpellEffects::looks(const std::string& kind) {
   // Tempestade de Gelo: 01 Engine2's Blizzard2D (the enemies'), 02 ours in 3D (the heroes'): vfx/IceStorm.
   if (kind == "iceStorm") return 2;
   if (kind == "frost") return 2;  // 01 the flipbook cards, 02 ours in 3D (vfx/FrostLine)
+  // Teia dos Sonhos: 01 Engine2's WebOfDreamsVFX as ported (the net alone), 02 ours in 3D with the whole spell (vfx/DreamWeb).
+  if (kind == "webOfDreams") return 2;
   // 01 of a spell with no flipbook-card version: Engine2's own effect, ported.
   if (kind == "fireball" || kind == "bless" || kind == "causticVenom" || kind == "phantasmalForce" ||
       kind == "webOfDreams" || kind == "burningHands" || kind == "poisonBreath" || kind == "cleave" || kind == "sweep")
@@ -108,7 +110,7 @@ int SpellEffects::engine2Look(const std::string& kind) {
   if (kind == "bless") return 1;                                     // BlessVFX
   if (kind == "causticVenom") return 1;                              // CausticVenomVFX
   if (kind == "phantasmalForce") return 1;                           // PhantasmalForceVFX
-  if (kind == "webOfDreams") return 1;                               // WebOfDreamsVFX
+  if (kind == "webOfDreams") return 2;                               // ours in 3D (DreamWeb: shot, floor, net; 01 = WebOfDreamsVFX)
   if (kind == "burningHands" || kind == "poisonBreath") return 2;    // BurningHandsV2VFX, its cone opening outward (02)
   if (kind == "cleave") return 1;                                    // CleaveSweepVFX
   if (kind == "sweep") return 1;                                     // VarreduraVFX
@@ -152,7 +154,7 @@ float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& c
     return MagicMissileV2::impactDelay(engine2Origin(caster), targets.front().body);
   if (kind == "fireball" && look == 1 && !targets.empty()) return Fireball::travelSeconds(engine2Origin(caster), fireballTarget(targets));
   if (kind == "phantasmalForce" && look == 1) return PhantasmalForce::kImpactAt;
-  if (kind == "webOfDreams" && look == 1) return WebOfDreams::kShotTravel;
+  if (kind == "webOfDreams" && look >= 1) return look == 2 ? DreamWeb::kShotTravel : WebOfDreams::kShotTravel;
   if ((kind == "burningHands" || kind == "poisonBreath") && look >= 1) return BurningHands::kRelease;
   if (isBolt(kind, look) && !targets.empty()) {
     const SpellBolt::Style style = kind == "divineBolt" ? SpellBolt::Style::Divine : SpellBolt::Style::Arcane;
@@ -207,7 +209,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
                         int owner) {
   // When everything this cast adds is over (the newest element or ported effect of each list), for castEnd.
   const size_t before[] = {elements_.size(), missiles_.size(), fireballs_.size(), blesses_.size(), venoms_.size(), phantasms_.size(),
-                           webs_.size(),     burns_.size(),    cleaves_.size(),   sweeps_.size(),  holies_.size()};
+                           webs_.size(),     burns_.size(),    cleaves_.size(),   sweeps_.size(),  holies_.size(),    dreamWebs_.size()};
   const bool made = castEffect(kind, look, caster, targets, start, impact);
   if (made && owner >= 0) {
     float end = start;
@@ -217,7 +219,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     };
     latest(missiles_, before[1]), latest(fireballs_, before[2]), latest(blesses_, before[3]), latest(venoms_, before[4]);
     latest(phantasms_, before[5]), latest(webs_, before[6]), latest(cleaves_, before[8]), latest(sweeps_, before[9]);
-    latest(holies_, before[10]);
+    latest(holies_, before[10]), latest(dreamWebs_, before[11]);
     if (kind == "turnUndead") end = std::max(end, turnUndead_.latestEnd());
     for (size_t i = before[7]; i < burns_.size(); ++i) end = std::max(end, burns_[i].first.end());
     if (kind == "iceStorm" && !storms_.empty()) end = std::max(end, storms_.back().start() + 1.0f);  // its first second, not the whole storm
@@ -360,6 +362,25 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     for (const Spot& s : targets) cells.push_back(s.feet + glm::vec3(0.0f, 0.04f, 0.0f));
     const bool poison = kind == "poisonBreath";
     burns_.emplace_back(BurningHands(engine2Origin(caster), cells, poison, start, look), poison);
+  } else if (kind == "webOfDreams" && look == 2 && !targets.empty()) {
+    // Ours (vfx/DreamWeb): the shot from the caster, the floor on every hex, the net over the zone's middle hex (the rules list the
+    // area row by row: the nearest hex to its mean, not the first), each unit in it wrapped.
+    const glm::vec3 centre = areaCentre(targets).feet;
+    std::vector<glm::vec3> hexes;
+    float reach = 0.0f;
+    for (const Spot& s : targets) {
+      hexes.push_back(s.feet);
+      reach = std::max(reach, glm::length(glm::vec2(s.feet.x - centre.x, s.feet.z - centre.z)));
+    }
+    std::vector<DreamWeb::Occupant> inside;
+    for (const WebUnit& u : webPending_) inside.push_back({u.key, u.at.feet, heightOf(u.at)});
+    if (webPending_.empty())  // no rules (--fx-test): the spots that are units
+      for (size_t i = 0; i < targets.size(); ++i)
+        if (targets[i].cardHeight > 0.0f) inside.push_back({static_cast<int>(i), targets[i].feet, heightOf(targets[i])});
+    webPending_.clear();
+    dreamWebs_.emplace_back(caster.body, centre, std::move(hexes), std::clamp(static_cast<int>(std::lround(reach / std::sqrt(3.0f))), 1, 3), std::move(inside), start,
+                            false);
+    dreamWebs_.back().id = ++webSerial_;
   } else if (kind == "webOfDreams") {
     // The zone on the aimed hex (WEB_OF_DREAMS.size 1: webZoneRadiusTiles = sqrt 3 + 1); the units in it wrapped. It holds
     // as Engine2's preview does (2.6 s after the cast), then releases.
@@ -654,6 +675,21 @@ const SpellEffects::Spot& SpellEffects::areaCentre(const std::vector<Spot>& hexe
   return *best;
 }
 
+void SpellEffects::webUnits(int id, const std::vector<WebUnit>& units) {
+  std::vector<DreamWeb::Occupant> inside;
+  for (const WebUnit& u : units) inside.push_back({u.key, u.at.feet, heightOf(u.at)});
+  for (DreamWeb& w : dreamWebs_)
+    if (w.id == id) w.setOccupants(inside);
+}
+void SpellEffects::webStand(int id) {
+  for (DreamWeb& w : dreamWebs_)
+    if (w.id == id) w.stand();
+}
+void SpellEffects::webEnd(int id, float now) {
+  for (DreamWeb& w : dreamWebs_)
+    if (w.id == id) w.release(now);
+}
+
 void SpellEffects::stormEnd(int id, float now) {
   for (IceStorm& s : storms_)
     if (s.id == id) s.stop(now);
@@ -690,6 +726,7 @@ bool SpellEffects::active(float now) const {
   if (std::any_of(venoms_.begin(), venoms_.end(), [&](const CausticVenom& v) { return !v.done(now); })) return true;
   if (std::any_of(phantasms_.begin(), phantasms_.end(), [&](const PhantasmalForce& p) { return !p.done(now); })) return true;
   if (std::any_of(webs_.begin(), webs_.end(), [&](const WebOfDreams& w) { return !w.done(now); })) return true;
+  if (std::any_of(dreamWebs_.begin(), dreamWebs_.end(), [&](const DreamWeb& w) { return !w.done(now); })) return true;
   if (std::any_of(burns_.begin(), burns_.end(), [&](const auto& b) { return !b.first.done(now); })) return true;
   if (std::any_of(cleaves_.begin(), cleaves_.end(), [&](const CleaveSweep& c) { return !c.done(now); })) return true;
   if (std::any_of(sweeps_.begin(), sweeps_.end(), [&](const Varredura& s) { return !s.done(now); })) return true;
@@ -717,6 +754,8 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   for (PhantasmalForce& p : phantasms_) p.build(now, camera, vfx_, vfxLights);
   std::erase_if(webs_, [&](const WebOfDreams& w) { return w.done(now); });
   for (WebOfDreams& w : webs_) w.build(now, camera, vfx_, vfxLights);
+  std::erase_if(dreamWebs_, [&](const DreamWeb& w) { return w.done(now); });
+  for (DreamWeb& w : dreamWebs_) w.build(now, camera, vfx_, vfxLights);
   std::erase_if(cleaves_, [&](const CleaveSweep& c) { return c.done(now); });
   for (CleaveSweep& c : cleaves_) c.build(now, camera, vfx_, vfxLights);
   std::erase_if(sweeps_, [&](const Varredura& s) { return s.done(now); });

@@ -34,6 +34,7 @@ add_library(EmberEngine STATIC
   render/vfx/ElementSprites.cpp
   render/vfx/PhantasmalForce.cpp
   render/vfx/WebOfDreams.cpp
+  render/vfx/DreamWeb.cpp
   render/vfx/ParticleEmitter.cpp
   render/vfx/BurningHands.cpp
   render/vfx/Sweeps.cpp
