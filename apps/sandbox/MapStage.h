@@ -2085,7 +2085,7 @@ class MapStage final : public Stage {
         const auto [c, r] = e2::hexAt(board_->layout(), unitPos_[ui].x, unitPos_[ui].y);
         // The states the shown mask was painted from (all hidden until the first mask arrives).
         const size_t i = static_cast<size_t>(e2::indexOf(board_->layout(), c, r));
-        if (i >= fogStates_.size() || fogStates_[i] != e2::kFogVisible) {
+        if (!litHex(i)) {
           ++hiddenUnits_;
           continue;
         }
@@ -3129,7 +3129,7 @@ class MapStage final : public Stage {
     std::vector<int> standing(static_cast<size_t>(battle_->cols()) * static_cast<size_t>(battle_->rows()), -1);
     for (size_t i = 0; i < battle_->units().size(); ++i) {
       const e2::BattleUnit& t = battle_->units()[i];
-      if (i == b || !t.alive || t.hidden) continue;
+      if (i == b || !t.alive || t.hidden || !unitOnShow(t)) continue;
       for (const e2::BattleHex& p : e2::Battle::footprint(t, t.x, t.y))
         if (battle_->inBounds(p.x, p.y)) standing[static_cast<size_t>(p.y) * static_cast<size_t>(battle_->cols()) + static_cast<size_t>(p.x)] = static_cast<int>(i);
     }
@@ -3593,7 +3593,7 @@ class MapStage final : public Stage {
     // party sees its hex).
     if (fog_ && !noFog_ && !awake_.contains(active)) {
       const size_t i = static_cast<size_t>(e2::indexOf(board_->layout(), u.x, u.y));
-      if (i >= fogStates_.size() || fogStates_[i] != e2::kFogVisible) {
+      if (!litHex(i)) {
         battle_->units()[static_cast<size_t>(active)].moved = true;
         return;
       }
@@ -3644,7 +3644,7 @@ class MapStage final : public Stage {
       bool seen = false;
       if (fogged) {
         const size_t i = static_cast<size_t>(e2::indexOf(L, e.x, e.y));
-        seen = i < fogStates_.size() && fogStates_[i] == e2::kFogVisible;
+        seen = litHex(i);  // what is drawn is in sight: an enemy on lit ground starts the fight, as the player sees it
       } else {
         seen = std::any_of(eyes.begin(), eyes.end(), [&](e2::BattleHex h) { return e2::Battle::distance(h, {e.x, e.y}) <= kRoamSight; });
       }
@@ -5610,7 +5610,7 @@ class MapStage final : public Stage {
         for (const e2::BattleHex& c : aimArea(b, *aimed)) flag(c, Renderer::kGridSpellArea);
         for (size_t id : aimHits(b, *aimed)) {
           const e2::BattleUnit& t = battle_->units()[id];
-          if (t.alive && !t.hidden) flag({t.x, t.y}, t.side == battle_->units()[b].side ? Renderer::kGridTarget : Renderer::kGridSpellTarget);
+          if (t.alive && !t.hidden && unitOnShow(t)) flag({t.x, t.y}, t.side == battle_->units()[b].side ? Renderer::kGridTarget : Renderer::kGridSpellTarget);
         }
       }
       if (hover_) flag(*hover_, Renderer::kGridHover | (aimValid(b, *hover_) ? 0u : Renderer::kGridHoverBlocked));
@@ -7604,6 +7604,7 @@ class MapStage final : public Stage {
           fogStates_[static_cast<size_t>(e2::indexOf(L, c, r))] = s;
           ++fogCounts_[s];
         }
+      fogLit_ = fog_->displayStates(fogJobEyes_.back());  // what the mask paints lit: what stands there is drawn
       countHoles(time);
       lastFogMs_ = fogJobMs_;
       fogDeliverMs_.push_back(std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count());
@@ -8336,6 +8337,14 @@ class MapStage final : public Stage {
   e2::FogMask fogMask_;
   bool fogReady_ = false, replayed_ = false, fogUpdatedThisFrame_ = false, occludersAdded_ = false;
   std::vector<uint8_t> fogStates_;  // per hex, as of the mask on show (main thread)
+  std::vector<uint8_t> fogLit_;     // per hex: kFogVisible where the mask on show is lit (in sight, still lingering, beside the party)
+  // Whether a hex (its index) is drawn lit on the mask on show: an enemy standing on it is drawn, with its bar and locks.
+  bool litHex(size_t i) const { return i < fogLit_.size() && fogLit_[i] == e2::kFogVisible; }
+  // Whether a battle unit is on show: always without fog and for the party's own, else its hex lit.
+  bool unitOnShow(const e2::BattleUnit& t) const {
+    if (!fog_ || noFog_ || t.side == "player") return true;
+    return litHex(static_cast<size_t>(e2::indexOf(board_->layout(), t.x, t.y)));
+  }
   // The sight job (runFogJob): while fogBusy_, only the worker touches fog_, fogJobEyes_, fogNext_, fogJobMs_.
   JobSystem& jobs_;
   JobCounter fogJob_;

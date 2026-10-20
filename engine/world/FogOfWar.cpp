@@ -182,9 +182,7 @@ bool FogOfWar::lingerEnded(double since) const {
   return false;
 }
 
-FogMask FogOfWar::paint(const Board& board, std::span<const HexPoint> party) const {
-  constexpr float kMargin = 1.5f;  // off-board margin (Engine2 MARGIN)
-  constexpr int kBlurRadius = 2, kBlurPasses = 2;
+std::vector<uint8_t> FogOfWar::displayStates(std::span<const HexPoint> party) const {
   // No fog within one hex of a living party unit, ever (Engine2 syncFog's clear set).
   std::vector<uint8_t> state = cells_;
   for (size_t i = 0; i < state.size(); ++i)
@@ -194,6 +192,13 @@ FogMask FogOfWar::paint(const Board& board, std::span<const HexPoint> party) con
     state[static_cast<size_t>(indexOf(layout_, p.c, p.r))] = kFogVisible;
     for (const auto& [c, r] : neighbors(layout_, p.c, p.r)) state[static_cast<size_t>(indexOf(layout_, c, r))] = kFogVisible;
   }
+  return state;
+}
+
+FogMask FogOfWar::paint(const Board& board, std::span<const HexPoint> party) const {
+  constexpr float kMargin = 1.5f;  // off-board margin (Engine2 MARGIN)
+  constexpr int kBlurRadius = 2, kBlurPasses = 2;
+  std::vector<uint8_t> state = displayStates(party);
   const Board::Bounds b = board.bounds();
   FogMask m;
   m.x0 = static_cast<float>(b.x0) - kMargin;

@@ -96,6 +96,10 @@ class FogOfWar {
   // Engine2's mask for the current states; `party` are the hexes the party stands on (clear within one hex). Remembered
   // hexes still inside their kLingerSeconds are painted as in sight.
   FogMask paint(const Board& board, std::span<const HexPoint> party) const;
+  // The states the mask is painted from (paint's first step): in sight, plus remembered ground still inside its linger, plus the hexes
+  // within one of a party unit. kFogVisible here = drawn lit: what stands on it is drawn (the user, 2026-10-19: an enemy on ground that
+  // is drawn lit must be drawn too).
+  std::vector<uint8_t> displayStates(std::span<const HexPoint> party) const;
 
  private:
   bool rayClear(double ax, double az, double ay, double bx, double bz, double by, int fromIndex, int toIndex) const;
