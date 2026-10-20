@@ -34,6 +34,17 @@ static const float kBackdropDownDegrees = 30.0;
 [[vk::push_constant]] Push push;
 static const uint kBlackBackground = 0xFFFFFFFEu;
 
+// The real sky with the volumetric air over it only near the horizon: the air's haze fades out over the first few degrees of elevation, so it
+// never hides the sun, the clouds or the stars above (the user, 2026-10-20: "onde está o sol": the froxel haze, thick along the board, turned the whole
+// sky in the sun's direction into an orange wash and attenuated the disc to nothing).
+float3 skyWithAir(MeshFrame f, uint2 pixel) {
+  const AtmosphereFrame a = loadAtmosphere(f);
+  const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);
+  const float3 sky = skyBackground(f, pixel);
+  const float elevation = asin(clamp(dir.y, -1.0, 1.0));
+  return lerp(sky, volumeOverBackground(f, sky, pixel), exp(-max(elevation, 0.0) / radians(2.5)));
+}
+
 // What shows where nothing was drawn: the painted backdrop (fitted to cover the screen, like a photo behind a
 // stage), black, the sky, or the clear colour.
 float4 backgroundAt(MeshFrame f, uint2 pixel) {
@@ -67,7 +78,7 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
       // The real sky above the world's horizon (the sun, the clouds, the stars: the user, 2026-10-20: "I NEED THE SKY ON ALL OUTDOORS MAPS"), the
       // painting from its horizon row down, a clean cut on the horizon line. Below it the rows keep the image's own scale near the horizon and
       // compress smoothly toward the nadir, so the last row lands exactly there (one continuous image at any tilt: no clamped smear).
-      if (elevation >= 0.0) return float4(volumeOverBackground(f, skyBackground(f, pixel), pixel), 1.0);
+      if (elevation >= 0.0) return float4(skyWithAir(f, pixel), 1.0);
       const float horizonRow = clamp(push.fitA.x, 0.02, 0.98);
       const float span = (1.0 - horizonRow) * imageHeightRad, toNadir = (1.5707963 / max(span, 1e-3));
       const float v = saturate(horizonRow + (1.0 - horizonRow) * (1.0 - exp(elevation / max(span, 1e-3))) / max(1.0 - exp(-toNadir), 1e-3));
@@ -183,7 +194,7 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
     // Atmosfera volumétrica v1: the fog lies between the camera and the painting (nothing when it is off).
     return float4(volumeOverBackground(f, gTextures[NonUniformResourceIndex(push.background)].SampleLevel(gSamplers[f.materialSampler], uv, 0).rgb, pixel), 1.0);
   }
-  if (f.atmosphere != 0) return float4(volumeOverBackground(f, skyBackground(f, pixel), pixel), 1.0);
+  if (f.atmosphere != 0) return float4(skyWithAir(f, pixel), 1.0);
   return push.clearColor;
 }
 
