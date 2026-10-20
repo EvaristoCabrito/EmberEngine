@@ -736,7 +736,7 @@ class MapStage final : public Stage {
         // above the rooftops (everything above 30% of the image is sky; down to the ruins its sky is matted out by colour).
         const bool ownSky = isPanorama && fit.keepSky && panoramaSky_ == 0;
         const float skyTop = isPanorama && fit.keepSky && panoramaSky_ == 1 ? 0.30f : fit.skyTop;
-        renderer.setBackground(bg, fit.alphaSky ? 4u : ownSky ? 3u : 2u, {fit.horizon, fit.bottom, fit.degreesPerHeight, fit.bottomDegrees},
+        renderer.setBackground(bg, fit.whole ? 5u : fit.alphaSky ? 4u : ownSky ? 3u : 2u, {fit.horizon, fit.bottom, fit.degreesPerHeight, fit.bottomDegrees},
                                {centre, skyTop, fit.spanDegrees, fit.horizonDegrees}, plane);
       } else {
         renderer.setBackground(bg, background_ == 3 ? 1u : 0u);
@@ -7839,6 +7839,7 @@ class MapStage final : public Stage {
     std::string ground;            // the map's top-down ground image around the board (content/backdrops); "" = none
     bool keepSky = false;          // panoramas: keep the image's own sky (no matte), the real sky only above its top edge
     bool alphaSky = false;         // the image's sky is truly transparent (its alpha): the real sky shows through it (mode 4)
+    bool whole = false;            // the regular image, opaque, its horizon row on the world's horizon, nothing blended (mode 5)
     float groundTile = 120.0f, groundFar = 300.0f;
     float groundFromDegrees = 10.0f;  // the ground image takes over from this many degrees below the horizon  // its width in world units; the painting takes over beyond this distance
   };
@@ -7870,6 +7871,7 @@ class MapStage final : public Stage {
       fit.ground = e.value("ground", fit.ground);
       fit.keepSky = e.value("keepSky", fit.keepSky);
       fit.alphaSky = e.value("alphaSky", fit.alphaSky);
+      fit.whole = e.value("whole", fit.whole);
       fit.groundTile = e.value("groundTile", fit.groundTile);
       fit.groundFar = e.value("groundFar", fit.groundFar);
       fit.groundFromDegrees = e.value("groundFromDegrees", fit.groundFromDegrees);

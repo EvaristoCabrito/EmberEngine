@@ -54,6 +54,32 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
     const float screenAspect = f.screenSize.x / f.screenSize.y, imageAspect = float(w) / float(h);
     if (screenAspect > imageAspect) uv.y = 0.5 + (uv.y - 0.5) * imageAspect / screenAspect;
     else uv.x = 0.5 + (uv.x - 0.5) * screenAspect / imageAspect;
+    // mode 5 = the regular image, whole and opaque (the user, 2026-10-20: "the regular image static at the line of the horizon, NOT melting,
+    // no transparency"): its horizon row on the world's horizon line, its width spanning the screen (the image's own proportions, no
+    // stretch), nothing of the real sky mixed into it; it moves with the camera's tilt only, as a far backdrop does. The painting's own
+    // colours, with the volumetric air in front of it like the plain cover-fit.
+    if (push.backgroundMode == 5 && f.atmosphere != 0) {
+      const AtmosphereFrame a = loadAtmosphere(f);
+      const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);
+      const float elevation = asin(clamp(dir.y, -1.0, 1.0));
+      const float3 dl = skyDirection(f, a, float2(0.5, f.screenSize.y * 0.5)), dr = skyDirection(f, a, float2(f.screenSize.x - 0.5, f.screenSize.y * 0.5));
+      const float imageHeightRad = acos(clamp(dot(dl, dr), -1.0, 1.0)) * float(h) / max(float(w), 1.0);
+      // The rows keep the image's own scale near the horizon and compress smoothly toward the zenith / the nadir, so the last row lands exactly
+      // there (one continuous image at any tilt: no clamped smear). A painting is never repeated or cut.
+      const float horizonRow = clamp(push.fitA.x, 0.02, 0.98);
+      float v;
+      if (elevation >= 0.0) {
+        const float span = horizonRow * imageHeightRad, toZenith = (1.5707963 / max(span, 1e-3));
+        v = horizonRow * (1.0 - (1.0 - exp(-elevation / max(span, 1e-3))) / max(1.0 - exp(-toZenith), 1e-3));
+      } else {
+        const float span = (1.0 - horizonRow) * imageHeightRad, toNadir = (1.5707963 / max(span, 1e-3));
+        v = horizonRow + (1.0 - horizonRow) * (1.0 - exp(elevation / max(span, 1e-3))) / max(1.0 - exp(-toNadir), 1e-3);
+      }
+      v = saturate(v);
+      const float u = (float(pixel.x) + 0.5) / f.screenSize.x;
+      const float3 painting = gTextures[NonUniformResourceIndex(push.background)].SampleLevel(gSamplers[f.materialSampler], float2(u, v), 0).rgb;
+      return float4(volumeOverBackground(f, painting, pixel), 1.0);
+    }
     // mode 3 = mode 2 keeping the painting's own sky (aldeia's fire panorama: its smoke sky is the look), the real sky only
     // above the painting's top edge, faded in over its top rows.
     // mode 4 = mode 2 for a painting whose sky is truly transparent (its alpha: the user's "Paisagem Devastada", 2026-10-19): the

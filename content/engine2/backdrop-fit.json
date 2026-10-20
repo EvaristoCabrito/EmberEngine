@@ -84,7 +84,8 @@
    "horizonDegrees": 1.5,
    "horizon": 0.31,
    "skyTop": 0.05,
-   "glowColumn": 0.5
+   "glowColumn": 0.5,
+   "whole": true
   },
   "bosque-bg.jpg": {
    "bottom": 1.0,
@@ -95,7 +96,8 @@
    "horizon": 0.46,
    "skyTop": 0.0,
    "glowColumn": 0.78,
-   "keepSky": true
+   "keepSky": true,
+   "whole": true
   },
   "wisp-forest-bg.jpg": {
    "bottom": 1.0,
@@ -106,7 +108,8 @@
    "horizon": 0.3,
    "skyTop": 0.0,
    "glowColumn": 0.45,
-   "keepSky": true
+   "keepSky": true,
+   "whole": true
   },
   "thebridge-bg.jpg": {
    "bottom": 1.0,
@@ -116,7 +119,8 @@
    "horizonDegrees": 1.5,
    "horizon": 0.14,
    "skyTop": 0.03,
-   "glowColumn": 0.5
+   "glowColumn": 0.5,
+   "whole": true
   },
   "CemiteryBackground.jpg": {
    "bottom": 1.0,
@@ -126,7 +130,8 @@
    "horizonDegrees": 1.5,
    "horizon": 0.1,
    "skyTop": 0.02,
-   "glowColumn": 0.5
+   "glowColumn": 0.5,
+   "whole": true
   },
   "ashen-forest-bg-v03.jpg": {
    "bottom": 1.0,
@@ -136,7 +141,8 @@
    "horizonDegrees": 1.5,
    "horizon": 0.36,
    "skyTop": 0.03,
-   "glowColumn": 0.5
+   "glowColumn": 0.5,
+   "whole": true
   }
  }
 }
