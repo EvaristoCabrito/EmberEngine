@@ -91,7 +91,7 @@ std::optional<BoardData> BoardData::load(const std::filesystem::path& boardJson)
     s.key = t.key;
     s.file = t.file;
     s.tile = t.tile;
-    d.emberGroundLayer[std::string(t.map)] = static_cast<int>(d.groundLayers.size());
+    d.emberGroundLayer[std::string(t.map) + "|" + std::string(t.terrain)] = static_cast<int>(d.groundLayers.size());
     d.groundLayers.push_back(std::move(s));
   }
   d.groundLayerCount = static_cast<int>(d.groundLayers.size());
@@ -143,6 +143,7 @@ std::optional<MapDraft> MapDraft::fromJson(const json& d) {
       o.mirrorX = p.contains("mirrorX") && p["mirrorX"].is_boolean() && p["mirrorX"].get<bool>();
       o.returnConnector = p.contains("returnConnector") && p["returnConnector"].is_boolean() && p["returnConnector"].get<bool>();
       o.connectorDirection = str(p, "connectorDirection");
+      o.blocksPath = p.contains("blocksPath") && p["blocksPath"].is_boolean() && p["blocksPath"].get<bool>();
       m.decorations.push_back(std::move(o));
     }
   m.playerSpawns = spawns(d, "playerSpawns");
@@ -154,6 +155,7 @@ std::optional<MapDraft> MapDraft::fromJson(const json& d) {
   m.fog = d.contains("fog") && d["fog"].is_boolean() && d["fog"].get<bool>();
   m.mistType = str(d, "mistType");
   m.atmosphereProfile = str(d, "atmosphereProfile");
+  m.emberTiles = str(d, "emberTiles");
   auto num = [&](const char* k, float fallback) { return d.contains(k) && d[k].is_number() ? d[k].get<float>() : fallback; };
   m.mistIntensity = num("mistIntensity", m.mistType.empty() ? 0.0f : 0.2f);
   m.mistSpeed = num("mistSpeed", 1.0f);
@@ -212,9 +214,14 @@ Board::Board(const BoardData& data, MapDraft draft) : data_(data), draft_(std::m
       else if (v3 >= 0) cell.ground = v3Layer;
       else if (variantLayer >= 0) cell.ground = baseLayers + 3 + variantLayer;
       else cell.ground = claudeTile ? data_.baseLayerIndex(cell.type) : -1;
-      // The map's own ground tile (GroundAssets.h kEmberGroundTiles) on its grass and forest hexes the procedural surfaces had.
-      if (cell.ground < 0 && (surf == "grass" || surf == "forest"))
-        if (const auto own = data_.emberGroundLayer.find(draft_.id); own != data_.emberGroundLayer.end()) cell.ground = own->second;
+      // The map's own ground tiles (GroundAssets.h kEmberGroundTiles) on the hexes the procedural surfaces had: one for the
+      // cell's terrain, else the set's tile for grass and forest.
+      if (cell.ground < 0 && surf != "void") {
+        const std::string set = draft_.emberTiles.empty() ? draft_.id : draft_.emberTiles;
+        if (const auto own = data_.emberGroundLayer.find(set + "|" + cell.type); own != data_.emberGroundLayer.end()) cell.ground = own->second;
+        else if (surf == "grass" || surf == "forest")
+          if (const auto any = data_.emberGroundLayer.find(set + "|"); any != data_.emberGroundLayer.end()) cell.ground = any->second;
+      }
       if (info.surface == "void") cell.groundY = 0;
       else if (cell.water) cell.groundY = (data_.baseLevels - 1 + cell.level) * kStep;
       else cell.groundY = (data_.baseLevels + cell.level + info.raise) * kStep;

@@ -62,7 +62,9 @@ struct BoardData {
   int engine2V3CityVariant = 50;
   std::unordered_map<std::string, int> claudeVariant;
   std::vector<std::string> architectureDecorations;  // sorted
-  std::unordered_map<std::string, int> emberGroundLayer;  // map id -> its own ground tile's layer (appended after Engine2's)
+  // "<set>|<terrain>" -> the layer of EmberEngine's own ground tile (appended after Engine2's); terrain "" = its grass /
+  // forest surfaces (GroundAssets.h kEmberGroundTiles)
+  std::unordered_map<std::string, int> emberGroundLayer;
 
   static std::optional<BoardData> load(const std::filesystem::path& boardJson);
   int groundVariantLayer(const std::string& terrain, int variant) const;
@@ -76,6 +78,7 @@ struct MapDecoration {
   double rot = 0;
   bool mirrorX = false, returnConnector = false;  // floor connectors: which way they lead
   std::string connectorDirection;                 // "up" / "down" / "" (not set)
+  bool blocksPath = false;                        // the editor's "Bloquear caminho"
 };
 
 struct MapSpawn {
@@ -104,6 +107,9 @@ struct MapDraft {
   // EmberEngine's own: the Atmosfera climate of this map (a profile's name in content/atmosphere/v1/profiles.json, picked
   // in the Map Editor); empty = the profile whose map keys name this map.
   std::string atmosphereProfile;
+  // EmberEngine's own: the set of EmberEngine ground tiles this map wears (GroundAssets.h kEmberGroundTiles); empty = the
+  // set named by the map's id, if any.
+  std::string emberTiles;
 
   // The map's backdrop pick (Engine2 draft.backgroundImage: absent = the map's own, "" = none) and its lighting
   // sliders as authored (absent = the time of day's default).

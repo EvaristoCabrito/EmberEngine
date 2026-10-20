@@ -873,6 +873,25 @@ TRIPLE AAA AGORA", "um céu inteiro com 24 horas de transição com sol, lua, tu
   blue day-like night). `camera:` log line once per capture (meter, EV, darkening, exposure, key lux, elevation).
 - Not done: constellation lines (never asked), twinkle, the planets; the band's strength is a first guess.
 
+## Cemitério dos Esquecidos 006, the modernized map (2026-10-20; the user: "versão modernizada do mapa do cemitério ... novos tiles,
+recursos, elevações variadas, monstros, e deixe o birolho bem mais escondido", "we need a waypoint out", "deixar o seu mapa ativo na campanha")
+
+- The user, seeing captures (2026-10-20): "worse than the original, a total mess, crazy tiles, nonsense walls that don't close ... there
+  was lots of elevation and walls crypts and cooler things". Not fixed yet.
+- `content/maps/ember/cemiterio-esquecidos006.json`, made by `tools/scripts/maps/make_cemetery_v2.py` (reads Engine2's 005 for the mission's
+  settings only; serial 6 > 5, so the campaign plays it; 005 untouched, Modo teste's build/engine2-test copies of 005 untouched). Layout from the
+  painting + briefing: south gate (party, `dungeon-exit` = the way out), crypt hill in the centre (terraces to level 3, the crypt connector in its
+  west flank), chapel plateau north (ruínas connector), mausoleum terrace east (mausoléu connector), the stone avenue east through an arch to
+  cemetery-ground-part-ii, a black pond south-east. **The Birolho's hollow** (north-west): a pit at -1 ringed by a ridge at +2 / +2.5 whose inner
+  ring is closed by solid rocks / dead trees (movement ignores height), one cleft from the north-west woods; the script fails if the pit can be
+  entered any other way, or if any exit / spawn is unreachable. 24 enemies in 9 groups (zombie, zombie2, zombieDog, necromancer added).
+- **Tiles: the user's own photos** (`Attachments/texturas/cemi01-06.jpg`, after rejecting my code-made snow: "these tiles are not going to work"),
+  cut by make_tile.py into `content/ground/cemiterio-*-v01.png`. `kEmberGroundTiles` now has a `terrain` field; a draft picks a set with its
+  `emberTiles` field (`MapDraft::emberTiles`; this map: "cemiterio-v01"), so the old 005 keeps its look. Ground pack `build/ground/ground-v14.pak`.
+- **EmberEngine 3D props in a campaign map (new):** export_scene.ts / export_battle.ts know only Engine2's ids, so MapStage builds the scene with
+  SceneBuilder when the draft has any `ember-*` decoration (`hasEmberProps`), and `blockEmberProps` makes the cells of `ember-*` props with
+  blocksPath solid in the battle (impassable, stops shots). Maps without ember props: unchanged.
+
 ## Veneno / Doença em 3D (2026-10-20; the user: Engine2's were WebGL and missing here, "recria algo similar em 3D")
 
 - `engine/render/vfx/StatusFx.*`: Engine2's drawStatusFx idea (haze, motes feet to head, vapour lines; green quick = poison, violet slow =

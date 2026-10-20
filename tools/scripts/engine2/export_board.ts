@@ -78,7 +78,8 @@ const data = {
   engine2V3CityVariant: variants.ENGINE2_V3_CITY_VARIANT,
   claudeVariant: variants.CLAUDE_VARIANT,
   // terrainMesh.ts groundFootprint(): decorations whose 3D wall/door grid reshapes the ground's edge.
-  architectureDecorations: Object.values(emberData.DECORATIONS as Record<string, { id: string; model3d?: string; propModel?: string }>)
+  // wall-3d-low: taken out on the user's order (tools/scripts/engine2/removed_decorations.py)
+  architectureDecorations: Object.values(emberData.DECORATIONS as Record<string, { id: string; model3d?: string; propModel?: string }>).filter((d) => d.id !== 'wall-3d-low')
     .filter((d) => d.model3d && ['wall', 'doorway', 'door', 'secretDoor'].includes(d.model3d) && !d.propModel).map((d) => d.id).sort(),
 };
 mkdirSync(dataOut, { recursive: true });

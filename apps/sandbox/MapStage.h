@@ -336,6 +336,14 @@ class MapStage final : public Stage {
         failed_ = true;
         return;
       }
+      // A map placing EmberEngine's own 3D props (content/models, ids "ember-*"): export_scene.ts knows only Engine2's ids and
+      // leaves them out, so its scene is built here by SceneBuilder (the same as export_scene.ts's on Engine2's maps: Cooker
+      // check-scene-builder). Every other map keeps its exported scene.
+      if (!options.sceneData && hasEmberProps()) {
+        std::map<std::string, int> skipped;
+        scene_ = e2::buildScene(*board_, architectureCatalog(), &skipped);
+        logInfo("scene {}: built by SceneBuilder (EmberEngine props); {} kinds left out", options.scene.generic_string(), skipped.size());
+      }
       sprites_.start();
       // 3D models: Engine2's GLBs, cooked by Cooker meshes ("/game/models/x.glb" -> "meshes/models/x.mesh").
       for (const e2::SceneModel& m : scene_->models) {
@@ -2730,11 +2738,37 @@ class MapStage final : public Stage {
     }
   }
 
+  bool hasEmberProps() const {
+    return std::any_of(board_->draft().decorations.begin(), board_->draft().decorations.end(),
+                       [](const e2::MapDecoration& d) { return d.id.starts_with("ember-"); });
+  }
+  // EmberEngine's own props set to "Bloquear caminho": export_battle.ts (Engine2's data.ts) has no footprint for them, so
+  // their cells are made solid here as Engine2's hexprops makes a solid decoration's (impassable, cost 99, stops shots).
+  void blockEmberProps() {
+    const e2::EditorCatalog& catalog = architectureCatalog();
+    const e2::HexLayout& L = board_->layout();
+    size_t cells = 0;
+    for (const e2::MapDecoration& d : board_->draft().decorations) {
+      if (!d.blocksPath || !d.id.starts_with("ember-")) continue;
+      const e2::CatalogDecoration* cd = catalog.decoration(d.id);
+      if (!cd) continue;
+      for (const e2::FootOffset& f : e2::placedFootprint(*cd, d.x, d.y, d.rot)) {
+        const int x = d.x + f.dx, y = d.y + f.dy;
+        if (!e2::inBoard(L, x, y)) continue;
+        e2::BattleCell c = battle_->cell(x, y);
+        c.passable = false, c.moveCost = 99, c.blocked = true, c.shot.blocksShot = true;
+        battle_->setCell(y * L.cols + x, c);
+        ++cells;
+      }
+    }
+    if (cells) logInfo("battle: {} cells made solid under EmberEngine props", cells);
+  }
   // The battle: each scene unit finds its battle unit by side and name, in spawn order.
   void setUpBattle(const std::filesystem::path& path) {
     battle_ = e2::Battle::load(path);
     loadSounds(path);
     if (!battle_) return;
+    blockEmberProps();
     explores_ = battle_->explore();
     // Every map with fog of war is explored freely until the party sees an enemy (the user, 2026-10-17), like an explore mission.
     roams_ = explores_ || fog_.has_value();

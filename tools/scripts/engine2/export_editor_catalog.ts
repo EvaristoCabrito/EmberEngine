@@ -36,7 +36,9 @@ const prepared: Record<string, { n: number; natW: number; natH: number; x: numbe
   JSON.parse(readFileSync(`${E2}/src/units/prepared.json`, 'utf8'));
 
 type Def = Record<string, any>;
-const DECORATIONS: Record<string, Def> = data.DECORATIONS;
+// Taken out of EmberEngine's catalog on the user's order (tools/scripts/engine2/removed_decorations.py: wall-3d-low has no texture).
+const REMOVED_DECORATIONS = new Set(['wall-3d-low']);
+const DECORATIONS: Record<string, Def> = Object.fromEntries(Object.entries(data.DECORATIONS as Record<string, Def>).filter(([id]) => !REMOVED_DECORATIONS.has(id)));
 const SQRT3 = Math.sqrt(3);
 const ARCHITECTURE = new Set(['wall', 'doorway', 'door', 'secretDoor']);
 const STAND_ON_DECOR = new Set(['fallen-log', 'wilds-fallen-log', 'forest-photographic-011-log', 'forest-mossy-trunk', 'wilds-snowy-log',
