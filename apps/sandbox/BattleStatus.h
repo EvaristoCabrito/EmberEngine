@@ -17,6 +17,7 @@
 #include <format>
 #include <fstream>
 #include <functional>
+#include <map>
 #include <optional>
 #include <string>
 #include <vector>
@@ -47,12 +48,13 @@ class BattleStatusSheet {
     std::function<std::vector<std::string>(const e2::BattleUnit&, const char* stat)> gearLines;  // the worn pieces behind a stat
   };
 
-  void open(size_t unit) { open_ = true, unit_ = unit, conditionOpen_ = false, scrollTarget_ = 0.0f, scrollReset_ = true; }
-  void close() { open_ = false, conditionOpen_ = false; }
+  void open(size_t unit) { open_ = true, unit_ = unit, conditionOpen_ = false, skillsOpen_ = false, scrollTarget_ = 0.0f, scrollReset_ = true; }
+  void close() { open_ = false, conditionOpen_ = false, skillsOpen_ = false; }
   bool isOpen() const { return open_; }
   size_t unit() const { return unit_; }
   void closeConditionOrSheet() {
-    if (conditionOpen_) conditionOpen_ = false;
+    if (skillsOpen_) skillsOpen_ = false;
+    else if (conditionOpen_) conditionOpen_ = false;
     else open_ = false;
   }
 
@@ -98,10 +100,7 @@ class BattleStatusSheet {
     y = drawHp(dl, u, top.x, y, inner);
     if (u.side == "player" && hooks.adjust) y = drawPointsBox(dl, u, top.x, y, inner, publicDir, hooks, en);
     y = drawAttributes(dl, u, top.x, y, inner, hooks, en);
-    if (u.side == "player") {
-      y = drawSpells(dl, battle, u, top.x, y, inner, hooks, en);
-      y = drawPotions(dl, u, top.x, y, inner, publicDir, hooks, en);
-    }
+    if (u.side == "player") y = drawPotions(dl, u, top.x, y, inner, publicDir, hooks, en);
     ImGui::SetCursorScreenPos({top.x, y});
     ImGui::Dummy({inner, 4.0f});
     contentHeight_ = y - top.y;
@@ -113,6 +112,7 @@ class BattleStatusSheet {
     ImGui::PopStyleColor(3);
     ImGui::PopStyleVar();
     if (conditionOpen_) drawConditionWindow(statusCondition(u, en), publicDir);
+    if (skillsOpen_ && u.side == "player") drawSkillsWindow(u, publicDir, hooks, en);
   }
 
  private:
@@ -264,6 +264,16 @@ class BattleStatusSheet {
       if (player) {
         shortcut("##stpack", "game/icons/equipment/small-leather-pouch.png", en ? "Backpack" : "Mochila", hooks.openPack);
         shortcut("##stequip", "game/icons/equipment-dark-001.png", en ? "Equip" : "Equipar", hooks.openEquip);
+        {  // Skills: the spells, the skills and the trained perícias in a window of their own
+          const ImVec2 a{rightX, cy}, b{rightX + rightW, cy + 36.0f};
+          ImGui::SetCursorScreenPos(a);
+          if (ImGui::InvisibleButton("##stskills", {rightW, 36.0f})) skillsOpen_ = true;
+          dl->AddRectFilled(a, b, IM_COL32(0, 0, 0, 255), 6.0f);
+          dl->AddRect(a, b, ImGui::IsItemHovered() ? kAccent : kBorder, 6.0f);
+          uiIcon(dl, "swords", {a.x + 18, a.y + 18}, 20.0f, kFg);
+          dl->AddText(ui, 14.0f, {a.x + 38, a.y + 10}, kFg, "Skills");
+          cy += 36.0f + 6.0f;
+        }
       }
       bottom = std::max(bottom, cy);
     }
@@ -449,17 +459,22 @@ class BattleStatusSheet {
     return bonus ? std::format("{}D{}+{}", dice, faces, bonus) : std::format("{}D{}", dice, faces);
   }
 
-  float drawSpells(ImDrawList* dl, const e2::Battle& battle, const e2::BattleUnit& u, float x, float y, float inner, const Hooks& hooks, bool en) {
-    ImFont* ui = uiFont(UiFont::Ui);
+  struct SpellRow {
+    std::string kind, text;
+    int tier = 0, uses = 0;
+  };
+
+  // The class's rows of spells and skills for the unit's level (status-rows.json), then the ones this port has that the sheet of the
+  // class does not list, by tier.
+  static std::vector<SpellRow> spellRows(const e2::BattleUnit& u, bool en) {
     std::string key = e2::FieldSpells::rulesClass(u.classId);
     if (key == "aldric") key = "lancer";
     if (key == "healer" && u.name == "Salazar") key = "healer:Salazar";
-    struct Row { std::string kind, text; int tier = 0, uses = 0; };
-    std::vector<Row> rows;
+    std::vector<SpellRow> rows;
     const e2::Json& table = rowsTable();
     if (table.contains("rows") && table["rows"].contains(key) && table["rows"][key].contains(std::to_string(std::clamp(u.level, 1, 30)))) {
       for (const e2::Json& r : table["rows"][key][std::to_string(std::clamp(u.level, 1, 30))]) {
-        Row row;
+        SpellRow row;
         row.kind = r.value("kind", "");
         row.tier = r.contains("tier") && r["tier"].is_number() ? r["tier"].get<int>() : 0;
         if (row.kind == "bullRush") row.tier = e2::spellTierNumber(row.kind);  // ours: tier 3 (Spells.cpp unitTierOf)
@@ -487,61 +502,173 @@ class BattleStatusSheet {
         rows.push_back(std::move(row));
       }
     }
-    // The spells this port has that the sheet of the class does not list (our own, Engine2's later ones): by name.
     for (const std::string& kind : u.spellList) {
-      if (std::any_of(rows.begin(), rows.end(), [&](const Row& r) { return r.kind == kind; })) continue;
+      if (std::any_of(rows.begin(), rows.end(), [&](const SpellRow& r) { return r.kind == kind; })) continue;
       const int tier = e2::spellTierNumber(kind);
       rows.push_back({kind, tr(e2::spellName(kind)), tier, tier >= 1 && tier <= 10 ? u.spells[tier - 1] : 0});
     }
-    std::stable_sort(rows.begin(), rows.end(), [](const Row& a, const Row& b) { return (a.tier ? a.tier : 99) < (b.tier ? b.tier : 99); });
-    sectionTitle(dl, {x, y}, en ? "Spells and skills" : "Magias e habilidades");
-    y += 26.0f;
-    (void)battle;
-    for (const Row& r : rows) {
-      const std::string uses = r.tier > 0 ? std::format("Tier {} · ×{}", r.tier, r.uses) : std::string();
-      const float usesW = ui->CalcTextSizeA(14.0f, FLT_MAX, 0.0f, uses.c_str()).x;
-      const float textW = inner - 36.0f - usesW - 20.0f;
-      const ImVec2 ts = ui->CalcTextSizeA(14.0f, FLT_MAX, textW, r.text.c_str());
-      const float h = std::max(32.0f, ts.y + 14.0f);
-      const ImVec2 a{x, y};
-      dl->AddRectFilled(a, {a.x + inner, a.y + h}, kBg, 6.0f);
-      dl->AddRect(a, {a.x + inner, a.y + h}, kBorder, 6.0f);
-      dl->AddRectFilled({a.x + 8, a.y + (h - 20) / 2}, {a.x + 28, a.y + (h + 20) / 2}, IM_COL32(0, 0, 0, 255), 3.0f);
-      if (const UiImage* icon = hooks.spellIcon ? hooks.spellIcon(r.kind) : nullptr) coverRounded(dl, *icon, {a.x + 8, a.y + (h - 20) / 2}, {a.x + 28, a.y + (h + 20) / 2}, 3.0f, IM_COL32_WHITE);
-      dl->AddText(ui, 14.0f, {a.x + 36, a.y + (h - ts.y) / 2}, kFg, r.text.c_str(), nullptr, textW);
-      dl->AddText(ui, 14.0f, {a.x + inner - 10.0f - usesW, a.y + (h - 14.0f) / 2}, kMuted, uses.c_str());
-      y += h + 6.0f;
-    }
-    // Healing: the skill, for a hero that is not a summon.
-    if (!u.summoned) {
-      auto pt = [&](double v) {
-        std::string t = std::format("{:.2f}", v);
-        while (t.back() == '0') t.pop_back();
-        if (t.back() == '.') t.pop_back();
-        if (!en) std::replace(t.begin(), t.end(), '.', ',');
-        return t;
-      };
-      const std::string healing = en ? std::format("Healing: {}/100 · +{}% healing", pt(u.healingSkill), pt(u.healingSkill))
-                                     : std::format("Cura: {}/100 · +{}% de cura", pt(u.healingSkill), pt(u.healingSkill));
-      dl->AddText(ui, 14.0f, {x, y}, kMuted, healing.c_str());
-      y += 18.0f;
-      if (u.side != "player" && !u.rank.empty()) {  // a ranked unit's skills (ours): one value for weapon, Esquiva, resistances
-        const std::string line = en ? std::format("Rank {} skills: {}/100 (weapon, dodging, resistances)", u.rank, pt(u.weaponSkill))
-                                    : std::format("Perícias da classe {}: {}/100 (arma, esquiva, resistências)", u.rank, pt(u.weaponSkill));
-        dl->AddText(ui, 14.0f, {x, y}, kMuted, line.c_str());
-        y += 18.0f;
+    std::stable_sort(rows.begin(), rows.end(), [](const SpellRow& a, const SpellRow& b) { return (a.tier ? a.tier : 99) < (b.tier ? b.tier : 99); });
+    return rows;
+  }
+
+  static std::string pointsText(double v, bool en) {
+    std::string t = std::format("{:.2f}", v);
+    while (t.back() == '0') t.pop_back();
+    if (t.back() == '.') t.pop_back();
+    if (!en) std::replace(t.begin(), t.end(), '.', ',');
+    return t;
+  }
+
+  static std::string skillName(const std::string& id, bool en) {
+    static const std::map<std::string, std::pair<const char*, const char*>> kNames = {
+        {"healing", {"Cura", "Healing"}},
+        {"dodging", {"Esquiva", "Dodging"}},
+        {"swordWeapon", {"Espadas", "Swords"}},
+        {"axeWeapon", {"Machados", "Axes"}},
+        {"maceWeapon", {"Maças", "Maces"}},
+        {"hammerWeapon", {"Martelos", "Hammers"}},
+        {"staffWeapon", {"Cajados", "Staves"}},
+        {"spearWeapon", {"Lanças e armas de haste", "Spears & Polearms"}},
+        {"bowWeapon", {"Arcos", "Bows"}},
+        {"crossbowWeapon", {"Bestas", "Crossbows"}},
+        {"daggerWeapon", {"Adagas", "Daggers"}},
+        {"fireResistance", {"Resistência a Fogo", "Fire Resistance"}},
+        {"lightningResistance", {"Resistência a Raio", "Lightning Resistance"}},
+        {"iceResistance", {"Resistência a Gelo", "Ice Resistance"}},
+        {"arcaneResistance", {"Resistência Arcana", "Arcane Resistance"}},
+        {"darknessResistance", {"Resistência a Trevas", "Darkness Resistance"}},
+        {"holyResistance", {"Resistência Sagrada", "Holy Resistance"}},
+        {"poisonResistance", {"Resistência a Veneno", "Poison Resistance"}},
+        {"emberResistance", {"Resistência a Brasa", "Ember Resistance"}}};
+    const auto it = kNames.find(id);
+    return it == kNames.end() ? id : (en ? it->second.second : it->second.first);
+  }
+
+  // The Skills window (the world map's Skills in the same plates): the spells and skills as cards, then the trained perícias with
+  // their bars. A veil behind it; a click outside, ✕ or Esc closes it.
+  void drawSkillsWindow(const e2::BattleUnit& u, const std::filesystem::path& publicDir, const Hooks& hooks, bool en) {
+    const ImGuiIO& io = ImGui::GetIO();
+    ImGui::SetNextWindowPos({0, 0});
+    ImGui::SetNextWindowSize(io.DisplaySize);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 150));
+    ImGui::Begin("##skillsveil", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+    ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
+    if (ImGui::InvisibleButton("##skillsveilbtn", io.DisplaySize)) skillsOpen_ = false;
+    ImGui::End();
+    ImGui::PopStyleColor();
+    const float w = std::min(720.0f, io.DisplaySize.x - 32.0f), h = io.DisplaySize.y * 0.86f;
+    ImGui::SetNextWindowPos({io.DisplaySize.x / 2, io.DisplaySize.y / 2}, ImGuiCond_Always, {0.5f, 0.5f});
+    ImGui::SetNextWindowSize({w, h});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {24, 24});
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 0));
+    ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(0, 0, 0, 0));
+    ImGui::Begin("##skillswindow", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse);
+    ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    dl->ChannelsSplit(2);
+    dl->ChannelsSetCurrent(1);
+    ImFont* ui = uiFont(UiFont::Ui);
+    const ImVec2 top = ImGui::GetCursorScreenPos();
+    const float inner = w - 48.0f;
+    const std::string kicker = upperUtf8(std::format("{} · {} {}", u.name, en ? "Lv" : "Nv", u.level));
+    dl->AddText(ui, 12.0f, {top.x, top.y}, kMuted, kicker.c_str());
+    dl->AddText(uiFont(UiFont::Display), 26.0f, {top.x, top.y + 16.0f}, IM_COL32(224, 189, 128, 255), "Skills");
+    if (iconButton(dl, "##skillsclose", {top.x + inner - 30.0f, top.y}, 30.0f, "x")) skillsOpen_ = false;
+    const float bodyTop = 62.0f, bodyH = h - 48.0f - bodyTop;
+    ImGui::SetCursorScreenPos({top.x, top.y + bodyTop});
+    ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarSize, 8.0f);
+    ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, IM_COL32(0, 0, 0, 0));
+    ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, IM_COL32(176, 128, 72, 255));
+    ImGui::BeginChild("##skillsbody", {inner, bodyH}, 0, ImGuiWindowFlags_NoBackground);
+    {
+      ImDrawList* bd = ImGui::GetWindowDrawList();
+      const float bw = inner - 14.0f;  // the scrollbar's share
+      const float x0 = ImGui::GetCursorScreenPos().x;
+      float y = ImGui::GetCursorScreenPos().y;
+      // --- Magias e habilidades: two cards a row, icon + what it does + its tier and uses ---
+      sectionTitle(bd, {x0, y}, en ? "Spells and skills" : "Magias e habilidades");
+      y += 28.0f;
+      const std::vector<SpellRow> rows = spellRows(u, en);
+      const float gap = 8.0f, cardW = (bw - gap) / 2.0f, iconS = 44.0f, textW = cardW - 12.0f - iconS - 10.0f - 12.0f;
+      auto cardHeight = [&](const SpellRow& r) { return std::max(iconS + 20.0f, 12.0f + ui->CalcTextSizeA(14.0f, FLT_MAX, textW, r.text.c_str()).y + 22.0f); };
+      for (size_t i = 0; i < rows.size(); i += 2) {
+        const float rowH = std::max(cardHeight(rows[i]), i + 1 < rows.size() ? cardHeight(rows[i + 1]) : 0.0f);
+        for (size_t k = i; k < std::min(i + 2, rows.size()); ++k) {
+          const SpellRow& r = rows[k];
+          const ImVec2 a{x0 + static_cast<float>(k - i) * (cardW + gap), y};
+          const ImVec2 b{a.x + cardW, a.y + rowH};
+          const bool dim = r.tier > 0 && r.uses <= 0;
+          bd->AddRectFilled(a, b, kBg, 8.0f);
+          bd->AddRect(a, b, kBorder, 8.0f);
+          const ImVec2 ia{a.x + 12.0f, a.y + 10.0f}, ib{ia.x + iconS, ia.y + iconS};
+          bd->AddRectFilled(ia, ib, IM_COL32(0, 0, 0, 255), 6.0f);
+          if (const UiImage* icon = hooks.spellIcon ? hooks.spellIcon(r.kind) : nullptr) coverRounded(bd, *icon, ia, ib, 6.0f, dim ? IM_COL32(255, 255, 255, 110) : IM_COL32_WHITE);
+          bd->AddRect(ia, ib, kBorder, 6.0f);
+          const float tx = ib.x + 10.0f;
+          bd->AddText(ui, 14.0f, {tx, a.y + 10.0f}, dim ? kMuted : kFg, r.text.c_str(), nullptr, textW);
+          if (r.tier > 0) {
+            const std::string uses = std::format("Tier {} · ×{}", r.tier, r.uses);
+            const ImVec2 us = ui->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, uses.c_str());
+            bd->AddText(ui, 12.0f, {b.x - 12.0f - us.x, b.y - 10.0f - us.y}, r.uses > 0 ? kAccent : kDanger, uses.c_str());
+          }
+        }
+        y += rowH + gap;
       }
-      if (u.side == "player") {  // Esquiva (ours): half a point off the foe's hit chance per point
-        double dodging = 0;
-        for (const auto& [id, v] : u.skills)
+      if (rows.empty()) {
+        bd->AddText(ui, 14.0f, {x0, y}, kMuted, en ? "This character has no spells or skills yet." : "Este personagem ainda não tem magias nem habilidades.");
+        y += 24.0f;
+      }
+      // --- Perícias: the trained skills, a bar each ---
+      y += 10.0f;
+      sectionTitle(bd, {x0, y}, en ? "Trained skills" : "Perícias");
+      y += 28.0f;
+      std::vector<std::pair<std::string, double>> skills;
+      for (const auto& [id, v] : u.skills)
+        if (id != "healing" && id != "dodging") skills.push_back({id, v});
+      std::stable_sort(skills.begin(), skills.end(), [](const auto& a, const auto& b) {
+        auto rank = [](const std::string& id) { return id.ends_with("Weapon") ? 0 : id == "poisonResistance" ? 1 : 2; };
+        return rank(a.first) < rank(b.first);
+      });
+      if (!u.summoned) {
+        double healing = u.healingSkill, dodging = 0;
+        for (const auto& [id, v] : u.skills) {
+          if (id == "healing") healing = v;
           if (id == "dodging") dodging = v;
-        const std::string line = en ? std::format("Dodging: {}/100 · -{}% to be hit", pt(dodging), pt(dodging / 2))
-                                    : std::format("Esquiva: {}/100 · -{}% de acerto contra", pt(dodging), pt(dodging / 2));
-        dl->AddText(ui, 14.0f, {x, y}, kMuted, line.c_str());
-        y += 18.0f;
+        }
+        skills.push_back({"healing", healing});
+        skills.push_back({"dodging", dodging});
       }
+      const ImVec2 pa{x0, y};
+      const float panelH = 14.0f + static_cast<float>(skills.size()) * 40.0f;
+      bd->AddRectFilled(pa, {pa.x + bw, pa.y + panelH}, kBg, 8.0f);
+      bd->AddRect(pa, {pa.x + bw, pa.y + panelH}, kBorder, 8.0f);
+      float sy = pa.y + 10.0f;
+      for (const auto& [id, v] : skills) {
+        const std::string value = std::format("{}/100", pointsText(v, en));
+        const float vw = ui->CalcTextSizeA(14.0f, FLT_MAX, 0.0f, value.c_str()).x;
+        std::string name = skillName(id, en);
+        if (id == "healing") name += en ? std::format(" · +{}% healing", pointsText(v, en)) : std::format(" · +{}% de cura", pointsText(v, en));
+        if (id == "dodging") name += en ? std::format(" · -{}% to be hit", pointsText(v / 2, en)) : std::format(" · -{}% de acerto contra", pointsText(v / 2, en));
+        bd->AddText(ui, 14.0f, {pa.x + 14.0f, sy}, kFg, name.c_str());
+        bd->AddText(ui, 14.0f, {pa.x + bw - 14.0f - vw, sy}, kMuted, value.c_str());
+        bd->AddRectFilled({pa.x + 14.0f, sy + 22.0f}, {pa.x + bw - 14.0f, sy + 28.0f}, kBorder, 3.0f);
+        bd->AddRectFilled({pa.x + 14.0f, sy + 22.0f}, {pa.x + 14.0f + (bw - 28.0f) * static_cast<float>(std::clamp(v / 100.0, 0.0, 1.0)), sy + 28.0f}, kAccent, 3.0f);
+        sy += 40.0f;
+      }
+      y += panelH + 12.0f;
+      ImGui::SetCursorScreenPos({x0, y});
+      ImGui::Dummy({bw, 4.0f});
     }
-    return y + 12.0f;
+    ImGui::EndChild();
+    ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar();
+    dl->ChannelsSetCurrent(0);
+    const ImVec2 a = ImGui::GetWindowPos(), b{a.x + ImGui::GetWindowSize().x, a.y + ImGui::GetWindowSize().y};
+    drawWindowFrame(dl, a, b, publicDir);
+    dl->ChannelsMerge();
+    ImGui::End();
+    ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar();
   }
 
   float drawPotions(ImDrawList* dl, const e2::BattleUnit& u, float x, float y, float inner, const std::filesystem::path& publicDir, const Hooks& hooks, bool en) {
@@ -673,7 +800,7 @@ class BattleStatusSheet {
 
   bool dragging_ = false, scrollable_ = false, scrollReset_ = false;
   float grab_ = 0, scrollTarget_ = 0;
-  bool open_ = false, conditionOpen_ = false;
+  bool open_ = false, conditionOpen_ = false, skillsOpen_ = false;
   size_t unit_ = 0;
   float contentHeight_ = 0;
 };
