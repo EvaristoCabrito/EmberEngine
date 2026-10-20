@@ -1242,6 +1242,19 @@ bool landable(const Battle& b, BattleHex h) {
 }
 // One body on one hex (a bigger one cannot be thrown about).
 bool oneHex(const BattleUnit& u) { return u.size <= 1 && !u.footprintOffsets; }
+// What the hook can pull: a body of at most two hexes (a wolf, whose authored shape is two; the user, 2026-10-19: "why I cant pull the wolf
+// with the hook? ... the max size he can pull is body type 2").
+bool pullable(const BattleUnit& u) { return u.size <= 2 && Battle::footprint(u, u.x, u.y).size() <= 2; }
+// Every hex of `u`'s body with its anchor on `at` is on the board, walkable and free (its own hexes count as free).
+bool bodyFitsAt(const Battle& b, const BattleUnit& u, size_t self, BattleHex at) {
+  for (const BattleHex& p : Battle::footprint(u, at.x, at.y)) {
+    if (!b.inBounds(p.x, p.y)) return false;
+    const BattleCell& c = b.cell(p.x, p.y);
+    if (!c.passable || c.blocked || c.terrain == "void" || c.terrain == "water" || c.terrain == "barricade") return false;
+    if (const int who = b.unitAt(p.x, p.y); who >= 0 && who != static_cast<int>(self)) return false;
+  }
+  return true;
+}
 // The hex past `through` on the straight line from `from` (for neighbours: the next hex in that direction).
 BattleHex hexBeyond(BattleHex from, BattleHex through) {
   const Cube a = oddrToCube(from.x, from.y), t = oddrToCube(through.x, through.y);
@@ -1332,7 +1345,7 @@ std::optional<HookPlan> hookPlan(const Battle& b, size_t caster, BattleHex aim, 
   if (!b.inBounds(aim.x, aim.y)) return fail("Fora do mapa.");
   const int foe = occAt(b, aim);
   if (!targetable(b, foe)) return fail(foe < 0 ? "Não há unidade na casa selecionada." : "Escolha um inimigo visível.");
-  if (!oneHex(b.units()[static_cast<size_t>(foe)])) return fail("Grande demais para ser puxado.");
+  if (!pullable(b.units()[static_cast<size_t>(foe)])) return fail("Grande demais para ser puxado.");
   const int d = hexDist(from, aim);
   if (d < 2) return fail("Alvo perto demais: o gancho pega a 2 hexes ou mais.");
   if (d > n.range) return fail(std::format("Alvo fora de alcance (máximo {} hexes).", n.range));
@@ -1341,7 +1354,7 @@ std::optional<HookPlan> hookPlan(const Battle& b, size_t caster, BattleHex aim, 
   p.foe = static_cast<size_t>(foe);
   p.line = hexLine(from, aim);
   for (size_t k = 1; k + 1 < p.line.size(); ++k)
-    if (landable(b, p.line[k])) {
+    if (bodyFitsAt(b, b.units()[static_cast<size_t>(foe)], static_cast<size_t>(foe), p.line[k])) {
       p.dest = p.line[k];
       return p;
     }
@@ -3220,7 +3233,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     // Vendaval Glacial: the struck are pushed away from the caster (their card follows: `pushed`).
     if (foe.alive && step.push > 0 && pushAway(b, id, {att.x, att.y}, step.push)) e.pushed = true;
     // The Lanceiro's throws, pulls and drags: the body lands where the cast planned (its card flies there: `arc`).
-    if (foe.alive && step.throwTo && oneHex(foe)) {
+    if (foe.alive && step.throwTo && (oneHex(foe) || (step.kind == "hookPull" && pullable(foe)))) {
       foe.x = step.throwTo->x, foe.y = step.throwTo->y;
       e.pushed = true, e.arc = step.arc;
       thrown = true;
