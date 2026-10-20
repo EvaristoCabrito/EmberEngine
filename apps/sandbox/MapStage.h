@@ -538,6 +538,7 @@ class MapStage final : public Stage {
       syncZones();
       syncWebs();
       syncVigils();
+      syncMirrors();
       // Numbers held back for an effect still in the air (a Meteoro's fall).
       for (size_t i = 0; i < pendingFx_.size();) {
         if (time >= pendingFx_[i].first) showEffects(pendingFx_[i].second), pendingFx_.erase(pendingFx_.begin() + static_cast<std::ptrdiff_t>(i));
@@ -4236,7 +4237,7 @@ class MapStage final : public Stage {
       const e2::Battle::IceZone* storm = s.kind == "iceStorm" && !s.tiles.empty() ? iceZoneOf(s.tiles.front(), battle_->units()[s.att].id) : nullptr;
       if (storm) {  // Tempestade de Gelo: the storm covers the field the rules just laid (the step aims its centre only)
         for (const e2::BattleHex& h : storm->cells) spots.push_back(hexSpot(h));
-      } else if (s.kind == "warCry" || s.kind == "steelWhirlwind") {  // Grito de Guerra: the allies it rallies (the caster among them); Redemoinho: the foes it reaches
+      } else if (s.kind == "warCry" || s.kind == "steelWhirlwind" || s.kind == "empowerSummons" || s.kind == "sacrificeBond") {  // Grito de Guerra: the allies it rallies (the caster among them); Redemoinho: the foes it reaches; the Conjurador's: its summons
         for (size_t id : s.ids)
           if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0) spots.push_back(unitSpot(static_cast<size_t>(ui)));
       } else if (s.kind == "turnUndead") {  // Expulsar Mortos-Vivos: the area's hexes; only the undead standing in it keep their card height (they are struck)
@@ -4247,13 +4248,15 @@ class MapStage final : public Stage {
           if (!undead) spot.cardHeight = 0.0f;
           spots.push_back(spot);
         }
-      } else if (s.kind == "circleOfHealing" || s.kind == "judgment") {  // the Curandeiro's areas: the hexes; only the units it reaches (`ids`) keep their card height
+      } else if (s.kind == "circleOfHealing" || s.kind == "judgment" || s.kind == "boneLance" || s.kind == "detonateSummon" || s.kind == "nightmare") {
+        // the Curandeiro's and the Conjurador's areas: the hexes; only the units it reaches (`ids`, and the summon that blows up) keep their card height
         for (const e2::BattleHex& h : s.tiles) {
           SpellEffects::Spot spot = hexSpot(h);
-          const bool reached = std::any_of(s.ids.begin(), s.ids.end(), [&](size_t id) {
+          auto standsHere = [&](size_t id) {
             const e2::BattleUnit& u = battle_->units()[id];
             return u.alive && u.x == h.x && u.y == h.y;
-          });
+          };
+          const bool reached = std::any_of(s.ids.begin(), s.ids.end(), standsHere) || (s.sacrifice && standsHere(*s.sacrifice));
           if (!reached) spot.cardHeight = 0.0f;
           spots.push_back(spot);
         }
@@ -4414,6 +4417,26 @@ class MapStage final : public Stage {
       }
     }
   }
+  // Imagem Espelhada's standing illusions (ConjurerFx::mirror*) beside every unit that has them, following it, one fewer when a copy is
+  // struck, gone when they end.
+  void syncMirrors() {
+    if (!battle_) return;
+    for (size_t i = 0; i < battle_->units().size(); ++i) {
+      const e2::BattleUnit& u = battle_->units()[i];
+      const int ui = sceneUnitOf(static_cast<int>(i));
+      const bool on = u.alive && u.cond.mirrorCopies > 0 && ui >= 0;
+      const auto it = mirrorFx_.find(static_cast<int>(i));
+      if (on) {
+        const SpellEffects::Spot sp = unitSpot(static_cast<size_t>(ui));
+        if (it == mirrorFx_.end()) mirrorFx_[static_cast<int>(i)] = spellFx_.conjurer().mirrorStart(sp.feet, sp.cardHeight, u.cond.mirrorCopies, now_);
+        else spellFx_.conjurer().mirrorUpdate(it->second, sp.feet, u.cond.mirrorCopies, now_);
+      } else if (it != mirrorFx_.end()) {
+        if (ui >= 0) spellFx_.conjurer().mirrorUpdate(it->second, unitSpot(static_cast<size_t>(ui)).feet, 0, now_);  // the last copies shatter
+        spellFx_.conjurer().mirrorEnd(it->second, now_);
+        mirrorFx_.erase(it);
+      }
+    }
+  }
   // The sentinels' thrusts before `attacker`'s blow on `targets` (e2::vigilInterrupts), played as one exchange of their own.
   bool playInterrupts(size_t attacker, const std::vector<size_t>& targets) {
     const std::vector<e2::BattleStep> steps = e2::vigilInterrupts(*battle_, attacker, targets);
@@ -4444,10 +4467,11 @@ class MapStage final : public Stage {
       const e2::BattleUnit& bu = battle_->units()[e.unit];
       const glm::vec2 from = unitPos_[u], to = anchorWorld(bu, {bu.x, bu.y});
       const float hexes = glm::length(to - from) / 1.7320508f;
-      const float seconds = (s.kind == "spearToss" ? 0.42f + 0.06f * hexes : s.kind == "swapPost" ? 0.42f : 0.2f + 0.11f * hexes) / actionRate();
+      const bool swap = s.kind == "swapPost" || s.kind == "placeSwap";
+      const float seconds = (s.kind == "spearToss" ? 0.42f + 0.06f * hexes : swap ? 0.42f : 0.2f + 0.11f * hexes) / actionRate();
       unitLeap_[u] = {now_, now_ + seconds, from, to, e.arc};
       unitPos_[u] = to, unitWalk_[u] = Walk{}, unitMoved_[u] = 1;
-      if (s.kind == "impaleDrag" || s.kind == "swapPost") {  // the runners face the way they go
+      if (s.kind == "impaleDrag" || swap) {  // the runners face the way they go
         const glm::vec2 d = to - from;
         const float yaw = flat_ ? 0.0f : cam_.yaw;
         if (const float screenX = d.x * std::cos(yaw) - d.y * std::sin(yaw); std::abs(screenX) > 0.05f) unitFacing_[u] = screenX > 0.0f ? 1 : -1;
@@ -4462,7 +4486,7 @@ class MapStage final : public Stage {
       return sp;
     };
     const int striker = sceneUnitOf(static_cast<int>(s.att));
-    if (s.kind == "swapPost") {
+    if (s.kind == "swapPost" || s.kind == "placeSwap") {
       // the dash's effect came with the cast (castEffect, at the impact); only the cards fly here
     } else if (s.kind == "impaleDrag") {
       const Mover *foe = nullptr, *lancer = nullptr;
@@ -4562,7 +4586,8 @@ class MapStage final : public Stage {
                                    "steelWhirlwind", "guardBreak",    "warCry",         "leapingStrike",
                                    "venomArrow",     "arrowRain",     "explosiveArrow", "cripplingShot",  "arrowStorm",    "deathShot",
                                    "spearToss",      "hookPull",      "poleVault",      "disarm",         "swapPost",      "impaleDrag",  "sentinelVigil",
-                                   "circleOfHealing", "resurrection", "judgment"};
+                                   "circleOfHealing", "resurrection", "judgment",
+                                   "placeSwap",      "boneLance",     "mirrorImage",    "detonateSummon", "sacrificeBond", "nightmare",   "empowerSummons"};
     // KIND or KIND:VERSION (the version number of the Magias menu; default the menu's choice, at least 01).
     std::string kind = options_.fxTest;
     int look = 0;
@@ -4651,6 +4676,23 @@ class MapStage final : public Stage {
       for (e2::BattleUnit& v : battle_->units())
         if (v.side == "enemy") v.alive = false, v.hp = 0;
       return logInfo("battle script: wipe: win rule {}, end on offer {}", battle_->win(), battle_->winAvailable());
+    }
+    if (p[0] == "summon" && p.size() > 2) {  // "summon:<unit>:<kind>": the unit's familiar called onto a free hex beside it (the rules' cast, no uses spent)
+      const int gi = sceneUnitNamed(p[1]);
+      if (gi < 0) return fail("no such unit");
+      const size_t ab = static_cast<size_t>(unitBattle_[static_cast<size_t>(gi)]);
+      const e2::BattleUnit& v = battle_->units()[ab];
+      std::optional<e2::BattleHex> free;
+      for (const e2::BattleHex& h : e2::Battle::neighbors(v.x, v.y))
+        if (battle_->inBounds(h.x, h.y) && battle_->cell(h.x, h.y).passable && battle_->unitAt(h.x, h.y) < 0 && e2::spellAimValid(*battle_, ab, p[2], h)) free = h;
+      if (!free) return fail("no free hex beside the summoner");
+      std::string why;
+      const std::optional<std::vector<e2::BattleStep>> steps = e2::castSpell(*battle_, ab, p[2], {*free}, &why, false);
+      if (!steps) return fail("the summon was refused: " + why);
+      std::vector<e2::BattleEffect> fx;
+      e2::playSteps(*battle_, *steps, rng_, fx);
+      syncSummons();
+      return logInfo("battle script: summon {} {}: {} units now", p[1], p[2], battle_->units().size());
     }
     if (p[0] == "kill" && p.size() > 1) {  // "kill:<unit>": the unit falls where it stands (its card gone), for a Ressurreição
       const int gi = sceneUnitNamed(p[1]);
@@ -5184,6 +5226,19 @@ class MapStage final : public Stage {
         return "";
       }
       if (kind == "sentinelVigil") return c.cond.vigilPct > 0 ? "" : "no vigil on the caster";
+      // The Conjurador's
+      if (kind == "placeSwap") {
+        if (!(c.x == before.x && c.y == before.y && t.x == casterBefore.x && t.y == casterBefore.y)) return "places not changed";
+        return "";
+      }
+      if (kind == "mirrorImage") return t.cond.mirrorCopies > 0 ? "" : "no illusions";
+      if (kind == "detonateSummon") return !t.alive ? "" : "the summon still stands";
+      if (kind == "sacrificeBond") return c.cond.bondPct > 0 ? "" : "no bond on the caster";
+      if (kind == "empowerSummons") {
+        for (const e2::BattleUnit& v : battle_->units())
+          if (v.alive && v.summoned && v.summonerId == c.id && v.cond.empowerPct > 0) return "";
+        return "no summon empowered";
+      }
       // The Curandeiro's: the fallen stands again; the circle heals the hurt target (the `hurt` step before it)
       if (kind == "resurrection") {
         logInfo("battle script: resurrection: {} alive {}, hp {} -> {}, moved {} acted {}", t.name, t.alive, before.hp, t.hp, t.moved, t.acted);
@@ -5382,8 +5437,8 @@ class MapStage final : public Stage {
       const int ui = sceneUnitOf(static_cast<int>(e.unit));
       if (ui < 0) continue;
       const size_t u = static_cast<size_t>(ui);
-      if (e.miss) {
-        popups_.push_back({u, "Errou", IM_COL32(200, 200, 200, 255), now_, false});
+      if (e.miss) {  // "Errou", or what took the blow instead (Imagem Espelhada: "Ilusão")
+        popups_.push_back({u, e.text.empty() ? "Errou" : e.text, e.text.empty() ? IM_COL32(200, 200, 200, 255) : IM_COL32(196, 150, 232, 255), now_, false});
         continue;
       }
       if (e.moved && !e.pushed && e.amount == 0 && !e.died) continue;  // a charge's walk: nothing to say
@@ -8223,6 +8278,7 @@ class MapStage final : public Stage {
   };
   std::optional<EnemyTurn> enemyTurn_;
   std::map<int, int> vigilFx_;  // battle unit in its Vigília da Sentinela -> its standing effect (LancerFx::vigilStart)
+  std::map<int, int> mirrorFx_;  // battle unit with Imagem Espelhada's illusions -> their standing effect (ConjurerFx::mirrorStart)
   std::unordered_set<int> awake_;         // enemies that have seen the party (fog)
   int roamLeader_ = -1;                   // free roam: the scene unit the party follows
   float modeSwitchAt_ = -100.0f;          // free roam's last turn into a fight (the banner)

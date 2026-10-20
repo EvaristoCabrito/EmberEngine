@@ -113,6 +113,7 @@ class OverworldStage : public Stage {
     }
     if (what == "fieldspells") fieldSpells_ = true;
     if (what.starts_with("warp:")) warpHero_ = what.substr(5);
+    if (what.starts_with("recall:")) recallHero_ = what.substr(7);  // Retornar's runes (the Conjurador's)
     if (what == "quests") questLog_ = true;
     if (what == "options") options_ = true;
     if (what == "move") movementOpen_ = true;
@@ -169,6 +170,7 @@ class OverworldStage : public Stage {
       // Esc: closes what is open; on the bare map it opens Opções (OptionsButton escapeKey).
       if (convDialog_) convDialog_.reset();
       else if (!warpHero_.empty()) warpHero_.clear();
+      else if (!recallHero_.empty()) recallHero_.clear();
       else if (fieldSpells_) fieldSpells_ = false;
       else if (briefing_) briefing_.reset();
       else if (slots_) slots_.reset();
@@ -456,6 +458,7 @@ class OverworldStage : public Stage {
     if (options_) drawOptions(size);
     if (fieldSpells_) drawFieldSpells(size);
     if (!warpHero_.empty()) drawWarpMenu(size);
+    if (!recallHero_.empty()) drawRecallMenu(size);
     drawWarpVisual(size);
     if (convDialog_) {  // a companion conversation, over everything: its replies change the affinity once
       const bool closed = convDialog_->draw(size, [this](const e2::Json& reply) {
@@ -1301,6 +1304,7 @@ class OverworldStage : public Stage {
     const e2::FieldSpells spells(innData_, world_);
     const std::vector<std::string> healers = spells.healers(save_, test()), mages = spells.mages(save_, test()), hunters = spells.hunters(save_, test());
     const std::vector<std::string> campers = spells.campers(save_, test()), prayers = spells.prayers(save_, test());
+    const std::vector<std::string> markers = spells.runeMarkers(save_, test()), recallers = spells.recallers(save_, test());
     const std::vector<const e2::MapLocation*> cities = spells.warpCities(save_);
     beginPanel("##fieldspells", size, 360, size.y * 0.8f);
     const ImVec2 head = ImGui::GetCursorScreenPos();
@@ -1421,6 +1425,32 @@ class OverworldStage : public Stage {
                   }
                 });
     }
+    // The Conjurador's runes (ours, docs/SKILLS_CONJURER.md; Ultima Online's Mark and Recall): Marcar Runa makes a rune of this hex (an
+    // item of the party's bag, a tier-2 use); Retornar opens the runes and takes the party to the chosen one (a tier-3 use; the rune stays).
+    for (const std::string& hero : markers) {
+      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kRuneTier);
+      const e2::FieldSpells::Rune here = spells.runeHere(save_);
+      const bool marked = e2::FieldSpells::runeAt(save_, here.col, here.row);
+      healerRow(hero, "markRune.jpg", tr("Marcar Runa", "Mark Rune"),
+                std::format("{} ({} {}) · {} · {}x", hero, en ? "Lv" : "Nv", level, marked ? tr("este hex já tem runa", "this hex has a rune") : here.place, left),
+                tr("Marcar", "Mark"), "mark", spells.canMark(save_, hero, test()), [&, hero] {
+                  if (const std::optional<e2::Json> next = spells.castMarkRune(save_, hero, test())) {
+                    save_ = *next;
+                    write();
+                    showHint(en ? std::format("{} marked a rune here ({} runes in the bag).", hero, e2::FieldSpells::runes(save_).size())
+                                : std::format("{} marcou uma runa aqui ({} runas na mochila).", hero, e2::FieldSpells::runes(save_).size()));
+                  } else {
+                    showHint(tr("Não foi possível marcar (sem uso, sem espaço na mochila ou já há runa aqui).", "Could not mark (no use, no bag room or a rune is here)."));
+                  }
+                });
+    }
+    for (const std::string& hero : recallers) {
+      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kRecallTier);
+      const size_t count = e2::FieldSpells::runes(save_).size();
+      healerRow(hero, "recall.jpg", tr("Retornar", "Recall"),
+                std::format("{} ({} {}) · {} {} · {}x", hero, en ? "Lv" : "Nv", level, count, count == 1 ? tr("runa", "rune") : tr("runas", "runes"), left),
+                tr("Runas", "Runes"), "recall", spells.canRecall(save_, hero), [&, hero] { recallHero_ = hero, fieldSpells_ = false; });
+    }
     for (const std::string& hero : mages) {
       const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kWarpTier);
       const ImVec2 a = ImGui::GetCursorScreenPos();
@@ -1439,8 +1469,66 @@ class OverworldStage : public Stage {
       ImGui::Dummy({inner, 4});
     }
     if (!mages.empty() && cities.empty()) text(tr("Nenhum outro local visitado.", "No other visited locations."), 12.0f, kMuted);
-    if (healers.empty() && mages.empty() && hunters.empty() && campers.empty() && prayers.empty())
+    if (healers.empty() && mages.empty() && hunters.empty() && campers.empty() && prayers.empty() && markers.empty() && recallers.empty())
       text(tr("Nenhum feitiço de campo disponível.", "No field spells available."), 14.0f, kMuted);
+    endPanel();
+  }
+
+  // Retornar's runes: a list over the map (place, region, hex, day, the note); a click takes the party there.
+  void drawRecallMenu(ImVec2 size) {
+    const std::string hero = recallHero_;
+    const e2::FieldSpells spells(innData_, world_);
+    const std::vector<e2::FieldSpells::Rune> runes = e2::FieldSpells::runes(save_);
+    const bool en = uiEnglish();
+    if (veil(size, "##recallveil")) {
+      recallHero_.clear();
+      return;
+    }
+    beginPanel("##recall", size, 420, size.y * 0.8f);
+    const ImVec2 head = ImGui::GetCursorScreenPos();
+    kicker(tr("Retornar", "Recall"), 14.0f);
+    ImGui::SetCursorScreenPos({head.x + 380 - 36, head.y - 6});
+    if (closeButton("##recallclose")) recallHero_.clear();
+    ImGui::SetCursorScreenPos({head.x, head.y + 34});
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    ImFont* ui = uiFont(UiFont::Ui);
+    const float inner = 380;
+    text(std::format("{} · {}", hero, tr("escolha a runa", "choose the rune")), 12.0f, kMuted);
+    ImGui::Dummy({1, 4});
+    for (size_t i = 0; i < runes.size(); ++i) {
+      const e2::FieldSpells::Rune& r = runes[i];
+      const ImVec2 a = ImGui::GetCursorScreenPos();
+      ImGui::PushID(static_cast<int>(i));
+      const bool clicked = ImGui::InvisibleButton("##rune", {inner, 54});
+      const bool hovered = ImGui::IsItemHovered();
+      ImGui::PopID();
+      emberSlot(dl, a, {a.x + inner, a.y + 54}, hovered);
+      if (const UiImage* icon = uiImage(std::filesystem::path("content/ui/spells/rune.png"))) imageContain(dl, *icon, {a.x + 6, a.y + 5}, {a.x + 50, a.y + 49});
+      dl->AddText(ui, 14.0f, {a.x + 58, a.y + 6}, kFg, r.place.c_str(), nullptr, inner - 66);
+      const std::string line = std::format("{} · ({}, {}) · {} {}{}", r.region.empty() ? tr("estrada", "road") : r.region, r.col, r.row, en ? "Day" : "Dia", r.day,
+                                           r.note.empty() ? "" : " · " + r.note);
+      dl->AddText(ui, 11.0f, {a.x + 58, a.y + 28}, kMuted, line.c_str(), nullptr, inner - 66);
+      ImGui::SetCursorScreenPos({a.x, a.y + 60});
+      if (clicked) {
+        if (const std::optional<e2::Json> next = spells.castRecall(save_, hero, r.id)) {
+          save_ = *next;
+          write();
+          partyX_ = -1, centred_ = false, prevCol_ = save_["overworldPos"].value("col", 0);  // the party stands there at once
+          warpAt_ = now_, warpDuration_ = 2.2f, warpRune_ = true;
+          showHint(en ? std::format("{} recalled the party to {}.", hero, r.place) : std::format("{} trouxe o grupo de volta a {}.", hero, r.place));
+        } else {
+          showHint(tr("Não foi possível retornar.", "Could not recall."));
+        }
+        recallHero_.clear();
+        break;
+      }
+    }
+    if (runes.empty()) text(tr("Nenhuma runa marcada.", "No rune marked."), 12.0f, kMuted);
+    ImGui::Dummy({1, 6});
+    const ImVec2 b = ImGui::GetCursorScreenPos();
+    if (emberBigButton("##recallcancel", upperUtf8(tr("Cancelar", "Cancel")).c_str(), {b.x + inner - 100, b.y}, {100, 32}, false, 11.0f)) recallHero_.clear();
+    ImGui::SetCursorScreenPos({b.x, b.y + 40});
+    ImGui::Dummy({inner, 1});
     endPanel();
   }
 
@@ -1490,7 +1578,7 @@ class OverworldStage : public Stage {
           save_ = *next;
           write();
           partyX_ = -1, centred_ = false, prevCol_ = save_["overworldPos"].value("col", 0);  // the party stands there at once
-          warpAt_ = now_, warpDuration_ = std::min(3.2f, 1.6f + std::floor(std::max(0, level - e2::FieldSpells::kWarpUnlockLevel) / 6.0f) * 0.35f);
+          warpAt_ = now_, warpDuration_ = std::min(3.2f, 1.6f + std::floor(std::max(0, level - e2::FieldSpells::kWarpUnlockLevel) / 6.0f) * 0.35f), warpRune_ = false;
           showHint(en ? std::format("{} crossed to {}.", hero, cities[i]->name) : std::format("{} atravessou para {}.", hero, cities[i]->name));
         } else {
           showHint(tr("Não foi possível lançar Warp.", "Could not cast Warp."));
@@ -1513,7 +1601,7 @@ class OverworldStage : public Stage {
     const float alpha = (0.15f + 0.85f * form) * (1.0f - closing);
     ImDrawList* dl = ImGui::GetForegroundDrawList();
     dl->AddRectFilled({0, 0}, size, IM_COL32(0, 0, 0, static_cast<int>(89 * (1.0f - closing))));
-    if (const UiImage* icon = uiImage(paths_.engine2Public / "game/icons/warp-portal.png")) {
+    if (const UiImage* icon = warpRune_ ? uiImage(std::filesystem::path("content/ui/spells/rune.png")) : uiImage(paths_.engine2Public / "game/icons/warp-portal.png")) {
       const float h = size.y * 0.58f, w = h * static_cast<float>(icon->width) / static_cast<float>(icon->height);
       const float sx = (0.42f + 0.58f * form) * (1.0f + 0.08f * closing), sy = (0.5f + 0.5f * form) * (1.0f + 0.12f * closing);
       const ImVec2 c{size.x / 2, size.y / 2};
@@ -1914,6 +2002,8 @@ class OverworldStage : public Stage {
   bool hasCompanions_ = false;
   bool fieldSpells_ = false;     // the field-spells menu is open
   std::string warpHero_;         // the mage choosing Warp's destination (the wheel is open)
+  std::string recallHero_;       // the conjurer choosing Retornar's rune (the list is open)
+  bool warpRune_ = false;        // the crossing's picture is the rune's (Retornar), not Warp's gate
   float warpAt_ = -100, warpDuration_ = 0;  // the gate's picture over the map
   std::string convCompanion_, convLeader_;
   std::optional<DialogScreen> convDialog_;

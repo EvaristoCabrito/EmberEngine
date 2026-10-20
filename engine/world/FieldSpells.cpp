@@ -4,6 +4,7 @@
 #include <cmath>
 #include <format>
 
+#include "world/Battle.h"
 #include "world/Noise.h"
 
 namespace ember::e2 {
@@ -256,6 +257,131 @@ std::optional<Json> FieldSpells::castPrayer(const Json& save, const std::string&
   if (!next["spellUses"][hero].is_object()) next["spellUses"][hero] = Json::object();
   const std::string key = "tier" + std::to_string(kPrayerTier);
   next["spellUses"][hero][key] = number(num(next["spellUses"][hero], key).value_or(0) + 1);
+  return next;
+}
+
+// --- The Conjurador's runes (ours, docs/SKILLS_CONJURER.md) ---------------------------------------------------------------
+
+std::vector<FieldSpells::Rune> FieldSpells::runes(const Json& save) {
+  std::vector<Rune> out;
+  const Json& list = child(save, kRunesKey);
+  if (!list.is_array()) return out;
+  for (const Json& r : list) {
+    if (!r.is_object()) continue;
+    Rune x;
+    x.id = r.value("id", ""), x.place = r.value("place", ""), x.region = r.value("region", ""), x.note = r.value("note", "");
+    x.col = r.value("col", 0), x.row = r.value("row", 0), x.day = r.value("day", 0);
+    if (!x.id.empty()) out.push_back(std::move(x));
+  }
+  return out;
+}
+
+Json FieldSpells::runeJson(const Rune& r) {
+  return Json{{"id", r.id}, {"place", r.place}, {"region", r.region}, {"note", r.note}, {"col", r.col}, {"row", r.row}, {"day", r.day}};
+}
+
+std::vector<std::string> FieldSpells::runeMarkers(const Json& save, bool test) const {
+  std::vector<std::string> out;
+  for (const char* h : kHeroes) {
+    if (!(test || world_.heroRecruited(h, save)) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
+    if (rulesClass(classOf(save, h)) == "conjurer" && levelOf(save, h) >= kRuneUnlockLevel) out.push_back(h);
+  }
+  return out;
+}
+
+std::vector<std::string> FieldSpells::recallers(const Json& save, bool test) const {
+  std::vector<std::string> out;
+  for (const char* h : kHeroes) {
+    if (!(test || world_.heroRecruited(h, save)) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
+    if (rulesClass(classOf(save, h)) == "conjurer" && levelOf(save, h) >= kRecallUnlockLevel) out.push_back(h);
+  }
+  return out;
+}
+
+FieldSpells::Rune FieldSpells::runeHere(const Json& save) const {
+  Rune r;
+  const Json& pos = child(save, "overworldPos");
+  r.col = static_cast<int>(num(pos, "col").value_or(0)), r.row = static_cast<int>(num(pos, "row").value_or(0));
+  r.day = static_cast<int>(num(save, "gameClock").value_or(0));
+  if (const OverworldCell* c = world_.cell(r.col, r.row)) r.region = c->region;
+  // the nearest place (the one on the hex first)
+  int best = 1 << 30;
+  for (const MapLocation& l : world_.locations()) {
+    const int d = Battle::distance({r.col, r.row}, {l.col, l.row});
+    if (d < best) best = d, r.place = l.name;
+  }
+  if (best > 0 && !r.place.empty()) r.place = std::format("{} ({} {})", r.place, best, best == 1 ? "hex" : "hexes");
+  r.id = std::format("rune-{}-{}-{}", r.col, r.row, r.day);
+  return r;
+}
+
+bool FieldSpells::runeAt(const Json& save, int col, int row) {
+  for (const Rune& r : runes(save))
+    if (r.col == col && r.row == row) return true;
+  return false;
+}
+
+bool FieldSpells::canMark(const Json& save, const std::string& hero, bool test) const {
+  if (usesLeft(save, hero, kRuneTier) <= 0) return false;
+  const Rune here = runeHere(save);
+  if (runeAt(save, here.col, here.row)) return false;
+  const InnRules rules(inn_, world_);
+  return test || rules.bagUsed(save) < rules.bagCapacity(save);
+}
+
+std::optional<Json> FieldSpells::castMarkRune(const Json& save, const std::string& hero, bool test) const {
+  if (rulesClass(classOf(save, hero)) != "conjurer" || levelOf(save, hero) < kRuneUnlockLevel || !canMark(save, hero, test)) return std::nullopt;
+  Rune r = runeHere(save);
+  Json next = save;
+  if (!next[kRunesKey].is_array()) next[kRunesKey] = Json::array();
+  // a second rune of the same hex on the same day gets its own id
+  int serial = 0;
+  for (const Rune& x : runes(save))
+    if (x.id.starts_with(r.id)) ++serial;
+  if (serial > 0) r.id += std::format("-{}", serial);
+  next[kRunesKey].push_back(runeJson(r));
+  if (!next["spellUses"].is_object()) next["spellUses"] = Json::object();
+  if (!next["spellUses"][hero].is_object()) next["spellUses"][hero] = Json::object();
+  const std::string key = "tier" + std::to_string(kRuneTier);
+  next["spellUses"][hero][key] = number(num(next["spellUses"][hero], key).value_or(0) + 1);
+  return next;
+}
+
+std::optional<Json> FieldSpells::castRecall(const Json& save, const std::string& hero, const std::string& runeId) const {
+  if (rulesClass(classOf(save, hero)) != "conjurer" || levelOf(save, hero) < kRecallUnlockLevel || usesLeft(save, hero, kRecallTier) <= 0) return std::nullopt;
+  const Rune* rune = nullptr;
+  const std::vector<Rune> all = runes(save);
+  for (const Rune& r : all)
+    if (r.id == runeId) rune = &r;
+  if (!rune || !world_.isCell(rune->col, rune->row)) return std::nullopt;
+  Json next = save;
+  next["overworldPos"] = Json{{"col", rune->col}, {"row", rune->row}};
+  const std::string hex = std::format("{},{}", rune->col, rune->row);
+  if (!next["exploredHexes"].is_array()) next["exploredHexes"] = Json::array();
+  if (!has(next["exploredHexes"], hex)) next["exploredHexes"].push_back(hex);
+  if (!next["spellUses"].is_object()) next["spellUses"] = Json::object();
+  if (!next["spellUses"][hero].is_object()) next["spellUses"][hero] = Json::object();
+  const std::string key = "tier" + std::to_string(kRecallTier);
+  next["spellUses"][hero][key] = number(num(next["spellUses"][hero], key).value_or(0) + 1);
+  next["pendingMission"] = nullptr;
+  return next;
+}
+
+Json FieldSpells::setRuneNote(const Json& save, const std::string& runeId, const std::string& note) {
+  Json next = save;
+  if (!next[kRunesKey].is_array()) return next;
+  for (Json& r : next[kRunesKey])
+    if (r.is_object() && r.value("id", "") == runeId) r["note"] = note;
+  return next;
+}
+
+Json FieldSpells::discardRune(const Json& save, const std::string& runeId) {
+  Json next = save;
+  if (!next[kRunesKey].is_array()) return next;
+  Json kept = Json::array();
+  for (const Json& r : next[kRunesKey])
+    if (!(r.is_object() && r.value("id", "") == runeId)) kept.push_back(r);
+  next[kRunesKey] = std::move(kept);
   return next;
 }
 

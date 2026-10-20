@@ -126,7 +126,8 @@ inline const std::vector<SpellEntry>& allItems() {
 // A friend is the target (heals, blessings, potions), not a foe.
 inline bool spellOnFriend(const std::string& kind) {
   return kind.starts_with("cure") || kind == "bless" || kind == "secondWind" || kind == "auraOfProtection" || kind == "createFoodAndWater" ||
-         kind == "potion" || kind == "circleOfHealing" || kind == "resurrection";
+         kind == "potion" || kind == "circleOfHealing" || kind == "resurrection" || kind == "placeSwap" || kind == "mirrorImage" ||
+         kind == "detonateSummon" || kind == "sacrificeBond" || kind == "empowerSummons";
 }
 
 class SpellsMenu {

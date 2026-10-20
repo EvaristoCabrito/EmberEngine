@@ -80,8 +80,11 @@ nlohmann::json Battle::snapshot() const {
                    {"decayMag", c.decayMag},     {"sunderPct", c.sunderPct},     {"sunderTurns", c.sunderTurns},   {"rallyPct", c.rallyPct},
                    {"rallyTurns", c.rallyTurns},     {"hobblePct", c.hobblePct},     {"hobbleTurns", c.hobbleTurns},
                    {"disarmPct", c.disarmPct},   {"disarmTurns", c.disarmTurns}, {"staggered", c.staggered},       {"staggerTurns", c.staggerTurns},
-                   {"vigilPct", c.vigilPct},     {"vigilRadius", c.vigilRadius}};
+                   {"vigilPct", c.vigilPct},     {"vigilRadius", c.vigilRadius}, {"mirrorCopies", c.mirrorCopies}, {"mirrorRounds", c.mirrorRounds},
+                   {"bondPct", c.bondPct},       {"empowerPct", c.empowerPct},   {"empowerRounds", c.empowerRounds}};
     }
+    if (u.empowerBase)
+      s["empowerBase"] = {{"atk", u.empowerBase->atk}, {"mag", u.empowerBase->mag}, {"def", u.empowerBase->def}, {"dex", u.empowerBase->dex}, {"mov", u.empowerBase->mov}};
     if (u.hobbleBase) s["hobbleBase"] = *u.hobbleBase;
     if (u.disarmBase) s["disarmBase"] = *u.disarmBase;
     if (u.decayBase)
@@ -242,6 +245,13 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       o.hobblePct = c.value("hobblePct", 0), o.hobbleTurns = c.value("hobbleTurns", 0);
       o.disarmPct = c.value("disarmPct", 0), o.disarmTurns = c.value("disarmTurns", 0), o.staggered = c.value("staggered", false);
       o.staggerTurns = c.value("staggerTurns", 0), o.vigilPct = c.value("vigilPct", 0), o.vigilRadius = c.value("vigilRadius", 0);
+      o.mirrorCopies = c.value("mirrorCopies", 0), o.mirrorRounds = c.value("mirrorRounds", 0), o.bondPct = c.value("bondPct", 0);
+      o.empowerPct = c.value("empowerPct", 0), o.empowerRounds = c.value("empowerRounds", 0);
+    }
+    u.empowerBase.reset();
+    if (s.contains("empowerBase") && s["empowerBase"].is_object()) {
+      const nlohmann::json& d = s["empowerBase"];
+      u.empowerBase = BattleUnit::Stats{d.value("atk", 0), d.value("mag", 0), d.value("def", 0), d.value("dex", 0), d.value("mov", 0)};
     }
     u.hobbleBase.reset();
     if (s.contains("hobbleBase") && s["hobbleBase"].is_number()) u.hobbleBase = s["hobbleBase"].get<int>();

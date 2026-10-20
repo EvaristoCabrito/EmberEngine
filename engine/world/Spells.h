@@ -97,6 +97,12 @@ struct BattleStep {
   bool stagger = false;                // Gancho: the pulled foe cannot counter ...
   int staggerTurns = 0;                // ... for this many more of its own turns
   int vigilPct = 0, vigilRadius = 0;   // Vigília da Sentinela: the stance on the caster (Type::Effect)
+  // The Conjurador's spells (docs/SKILLS_CONJURER.md)
+  std::optional<size_t> sacrifice;     // Detonar Invocação: the summon that blows up (dead as the step resolves, before the hits)
+  int fearPct = 0;                     // Pesadelo: each struck foe left standing is afraid for fearTurns turns with this chance
+  int mirrorCopies = 0, mirrorRounds = 0;  // Imagem Espelhada on every unit of `ids` (Type::Effect)
+  int bondPct = 0;                     // Elo de Sacrifício on the caster (Type::Effect)
+  int empowerPct = 0, empowerRounds = 0;   // Fortalecer Invocações on every unit of `ids` (Type::Effect)
 };
 
 // What a step did, for the window: a number over a unit, a miss, a heal, a death.

@@ -627,6 +627,23 @@ proper scaling", the formulas written like Salazar's own; icons in `Attachments/
   spots, the card back on a revival, script `kill:<unit>`), `OverworldStage.h` (the field rows). Tests: `--promote Salazar=salazar:25`,
   `--battle-script "kill:Kael; cast:Salazar:resurrection:Kael"`, `--title-screen test-rpg --map-ui fieldspells`.
 
+## Magias do Conjurador nv 3–15 + Marcar Runa / Retornar (2026-10-20; the user: "do the same process for these Conjurer spells",
+Detonar Invocação in Drenar Vida's place; icons in `Attachments/ConjurerIcons`)
+
+- **Read `docs/SKILLS_CONJURER.md`.** Troca de Lugar (3, T1: swap with an ally / summon within 6), Lança de Osso (5, T2: arcane line of 3 from
+  the caster, both sides, MAG/2 × 1.3 + 1D8), Imagem Espelhada (7, T2: 2 illusions on an ally for 3 rounds, each hostile hit 1 in 3 strikes a
+  copy: "Ilusão"), Detonar Invocação (9, T3: his summon blows up, MAG/2 × 1.8 + 2D8 within 1 hex, both sides), Elo de Sacrifício (11, T3: for
+  the fight, hits on him go to his nearest summon), Pesadelo (13, T4: range 6, radius 2, MAG/2 × 1.5 + 2D8, sleepers ×2, 25 % fear), Fortalecer
+  Invocações (15, T4: every summon +25 % all stats for 3 rounds). Field: Marcar Runa (5, T2: a rune of the hex as a bag item, `save.runes`, a
+  slot each, note editable in the Mochila's sheet) and Retornar (7, T3: the party to a rune's hex; the rune stays). "conjurer" family =
+  `conjurer` / `sorcerer` / `necromancer`.
+- Code: `Spells.cpp` (`conjurerKind`, `summonsOf`, `ownSummonAt`, `boneLine`, `mirrorAbsorbs` + `bondRedirects` hooked into resolveStrike and
+  the spell-hit loop, `BattleStep::sacrifice` dies before the hits, the fear rider), `Battle.h` (`Conditions::mirror* / bondPct / empower*`,
+  `empowerBase`), `BattleTurns.cpp` (rounds), `FieldSpells.*` (runes), `Inn.cpp bagUsed`, `InventoryScreen.h` (rune entries + note),
+  `OverworldStage.h` (rows, `drawRecallMenu`, `--map-ui recall:<hero>`), `render/vfx/ConjurerFx.*` (7 effects + the standing illusions,
+  `MapStage::syncMirrors`), script step `summon:<unit>:<kind>`. Tests: `--promote Malrec=conjurer:25`,
+  `--battle-script "summon:Malrec:summonFamiliar; cast:Malrec:detonateSummon:Familiar de Malrec"`.
+
 ## Promoções do Mago Negro: Bruxo e Elementalista, magias T6–T10 (2026-10-17; the user: "pode criar todas elas os
 efeitos e wire into the game")
 

@@ -135,6 +135,15 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"circleOfHealing", "Círculo de Cura", 4, "holy", false}, "healer", 9},
     {{"resurrection", "Ressurreição", 5, "holy", false}, "healer", 12},
     {{"judgment", "Julgamento", 5, "holy", false}, "healer", 14},
+    // Conjurador (docs/SKILLS_CONJURER.md, 2026-10-20; Malrec, class `conjurer`): a new spell every two levels from 3 to 15, combat and
+    // utility by turns; the Arcanista and the Necromante keep them. The field spells (Marcar Runa, Retornar) live in world/FieldSpells.
+    {{"placeSwap", "Troca de Lugar", 1, "", false}, "conjurer", 3},
+    {{"boneLance", "Lança de Osso", 2, "arcane", false}, "conjurer", 5},
+    {{"mirrorImage", "Imagem Espelhada", 2, "", false}, "conjurer", 7},
+    {{"detonateSummon", "Detonar Invocação", 3, "arcane", false}, "conjurer", 9},
+    {{"sacrificeBond", "Elo de Sacrifício", 3, "", false}, "conjurer", 11},
+    {{"nightmare", "Pesadelo", 4, "arcane", false}, "conjurer", 13},
+    {{"empowerSummons", "Fortalecer Invocações", 4, "", false}, "conjurer", 15},
 };
 // The base class a promotion keeps the skills of (the Guerreiro's go on into the Paladino and the Cavaleiro Pesado, the
 // Arqueiro's into the Patrulheiro and the Assassino, the Lanceiro's into the Sentinela and the Templário).
@@ -145,7 +154,21 @@ const char* emberClassFamily(const std::string& classId) {
   if (classId == "sentinel" || classId == "templar" || classId == "lancer") return "aldric";
   // Salazar's own class id is "salazar" (a healer with his sprite); the Clérigo and the Bispo are the healer's promotions
   if (classId == "salazar" || classId == "cleric" || classId == "bishop") return "healer";
+  if (classId == "sorcerer" || classId == "necromancer") return "conjurer";
   return classId.c_str();
+}
+// The Conjurador's spells (docs/SKILLS_CONJURER.md).
+bool conjurerKind(const std::string& kind) {
+  return kind == "placeSwap" || kind == "boneLance" || kind == "mirrorImage" || kind == "detonateSummon" || kind == "sacrificeBond" ||
+         kind == "nightmare" || kind == "empowerSummons";
+}
+// The living summons of a unit (its familiars, its Cão Zumbi), in the battle's order.
+std::vector<size_t> summonsOf(const Battle& b, size_t owner) {
+  std::vector<size_t> out;
+  const std::string& id = b.units()[owner].id;
+  for (size_t i = 0; i < b.units().size(); ++i)
+    if (b.units()[i].alive && b.units()[i].summoned && b.units()[i].summonerId == id) out.push_back(i);
+  return out;
 }
 // The Curandeiro's spells (docs/SKILLS_HEALER.md): a group heal over an area, a fallen ally raised, holy judgment over an area.
 bool healerKind(const std::string& kind) { return kind == "circleOfHealing" || kind == "resurrection" || kind == "judgment"; }
@@ -497,6 +520,35 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
     n.dice = lv >= 28 ? 4 : lv >= 18 ? 3 : 2, n.faces = 8;
     n.tickMul = lv >= 26 ? 1.75 : 1.5;  // the undead's weight
   }
+  // Conjurador (docs/SKILLS_CONJURER.md): the game's damage formula on the arcane ones; the rest move the board or last rounds
+  else if (kind == "placeSwap") {
+    n.range = 6;
+  } else if (kind == "boneLance") {
+    n.length = lv >= 23 ? 5 : lv >= 12 ? 4 : 3;
+    n.mul = lv >= 28 ? 1.7 : lv >= 19 ? 1.5 : 1.3;
+    n.dice = lv >= 27 ? 3 : lv >= 15 ? 2 : 1, n.faces = 8;
+  } else if (kind == "mirrorImage") {
+    n.range = 6;
+    n.count = lv >= 27 ? 4 : lv >= 16 ? 3 : 2;  // the copies
+    n.rounds = lv >= 21 ? 4 : 3;
+    n.pct = 33;  // one chance in three
+  } else if (kind == "detonateSummon") {
+    n.range = 6, n.radius = lv >= 24 ? 2 : 1;
+    n.mul = lv >= 28 ? 2.4 : lv >= 20 ? 2.1 : 1.8;
+    n.dice = lv >= 26 ? 4 : lv >= 17 ? 3 : 2, n.faces = 8;
+  } else if (kind == "sacrificeBond") {
+    n.pct = lv >= 27 ? 50 : lv >= 19 ? 75 : 100;  // the share the summon takes (the rest is gone)
+  } else if (kind == "nightmare") {
+    n.range = 6, n.radius = lv >= 25 ? 3 : 2;
+    n.mul = lv >= 24 ? 1.8 : 1.5;
+    n.dice = lv >= 30 ? 4 : lv >= 18 ? 3 : 2, n.faces = 8;
+    n.pct = lv >= 21 ? 35 : 25;    // the chance of fear
+    n.turns = lv >= 27 ? 2 : 1;    // ... for this many turns
+    n.tickMul = 2.0;               // a sleeper's weight
+  } else if (kind == "empowerSummons") {
+    n.pct = lv >= 28 ? 40 : lv >= 20 ? 30 : 25;
+    n.rounds = lv >= 24 ? 4 : 3;
+  }
   // Elementalista
   else if (kind == "pillarOfFlame") {
     n.range = 6, n.radius = lv >= 23 ? 2 : 1, n.mul = 2.0, n.dice = lv >= 19 ? 3 : 2, n.faces = 8;
@@ -536,7 +588,7 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
                                                      "profaneSilence", "blackPestilence", "curseOfDecay", "soulHarvest",   "devouringVoid",
                                                      "pillarOfFlame", "iceLance",       "thunderstorm",  "meteor",        "absoluteZero",
                                                      "chainLightning", "wrathOfTheSkies", "primordialEmber", "arrowRain",   "arrowStorm",
-                                                     "circleOfHealing", "judgment"};
+                                                     "circleOfHealing", "judgment", "placeSwap", "mirrorImage", "detonateSummon", "nightmare"};
   static const std::set<std::string> kLengthGrows = {"venomArrow", "explosiveArrow", "cripplingShot", "deathShot"};
   if (kRangeGrows.contains(kind)) n.range += reachGrowth(lv);
   if (kLengthGrows.contains(kind)) n.length += reachGrowth(lv);
@@ -544,13 +596,14 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
 }
 // Both sides stand in its area (else the caster's foes only).
 bool emberBothSides(const std::string& kind) {
-  return kind == "shroudOfShadows" || kind == "blackPestilence" || kind == "meteor" || kind == "glacialGale" || kind == "primordialEmber";
+  return kind == "shroudOfShadows" || kind == "blackPestilence" || kind == "meteor" || kind == "glacialGale" || kind == "primordialEmber" ||
+         kind == "detonateSummon";
 }
 // Aimed at a hex of the board (an area) rather than at a unit.
 bool emberAreaSpell(const std::string& kind) {
   return kind == "shroudOfShadows" || kind == "profaneSilence" || kind == "blackPestilence" || kind == "soulHarvest" || kind == "pillarOfFlame" ||
          kind == "thunderstorm" || kind == "meteor" || kind == "absoluteZero" || kind == "primordialEmber" || kind == "circleOfHealing" ||
-         kind == "judgment";
+         kind == "judgment" || kind == "nightmare";
 }
 // Ressurreição: the fallen ally (the party's, not a summon) lying on the hex, or -1. The dead keep the hex they fell on.
 int fallenAllyAt(const Battle& b, size_t caster, BattleHex cell) {
@@ -661,6 +714,18 @@ bool targetable(const Battle& b, int u) {
   return v.alive && (b.debugFreeCast() || v.side == "enemy" || v.side == "neutral") && !v.hidden;
 }
 
+// Detonar Invocação: the caster's own living summon standing on the hex, or -1.
+int ownSummonAt(const Battle& b, size_t caster, BattleHex cell) {
+  for (size_t i : summonsOf(b, caster))
+    if (occupies(b.units()[i], cell.x, cell.y)) return static_cast<int>(i);
+  return -1;
+}
+// Lança de Osso: the line from the caster through the aimed hex, `length` hexes long (it stops at the board's edge only).
+std::vector<BattleHex> boneLine(const Battle& b, BattleHex from, BattleHex through, int length) {
+  std::vector<BattleHex> line = piercingLine(b, from, through);
+  if (line.size() > static_cast<size_t>(length)) line.resize(static_cast<size_t>(length));
+  return line;
+}
 // piercingRay: stops at a barricade, a shot-blocking hex, or high ground the shooter is not on.
 std::vector<BattleHex> piercingRay(const Battle& b, BattleHex from, BattleHex through) {
   const std::vector<BattleHex> raw = piercingLine(b, from, through);
@@ -1092,6 +1157,38 @@ BattleEffect statusEffect(size_t unit, std::string text) {
   e.status = true;
   e.text = std::move(text);
   return e;
+}
+// Imagem Espelhada (the Conjurador's): a hostile blow on a unit with illusions standing has one chance in three of striking a copy
+// instead, which vanishes (the attack is spent: nothing lands). Draws one random number when a copy stands.
+bool mirrorAbsorbs(BattleUnit& target, Mulberry32& rng, size_t id, std::vector<BattleEffect>& out) {
+  if (target.cond.mirrorCopies <= 0) return false;
+  if (rng() * 3.0 >= 1.0) return false;
+  target.cond.mirrorCopies -= 1;
+  if (target.cond.mirrorCopies <= 0) target.cond.mirrorRounds = 0;
+  BattleEffect e = statusEffect(id, pick("Ilusão", "Illusion"));
+  e.miss = true;  // the window shows it as a blow that found nothing; the log says why
+  out.push_back(e);
+  return true;
+}
+// Elo de Sacrifício (the Conjurador's): the unit's nearest living summon takes the hit's share instead (the rest of it is gone); the
+// effects of what the summon suffers go to `out`. False when nothing stands between.
+bool bondRedirects(Battle& b, size_t target, int dmg, Mulberry32& rng, std::vector<BattleEffect>& out) {
+  BattleUnit& t = b.units()[target];
+  if (t.cond.bondPct <= 0 || dmg <= 0) return false;
+  int nearest = -1, best = 1 << 30;
+  for (size_t i : summonsOf(b, target)) {
+    const int d = hexDist({t.x, t.y}, {b.units()[i].x, b.units()[i].y});
+    if (d < best) best = d, nearest = static_cast<int>(i);
+  }
+  if (nearest < 0) return false;
+  BattleUnit& s = b.units()[static_cast<size_t>(nearest)];
+  const int taken = std::max(0, static_cast<int>(std::floor(dmg * t.cond.bondPct / 100.0)));
+  s.hp = std::max(0, s.hp - taken);
+  out.push_back(statusEffect(target, pick("Elo de Sacrifício", "Sacrifice Bond")));
+  BattleEffect e{static_cast<size_t>(nearest), taken, false, false, false, false, false};
+  if (s.hp <= 0) markDead(s, rng), e.died = true;
+  out.push_back(e);
+  return true;
 }
 // Marca da Ruína: the marked take +pct% from everything.
 int marked(const BattleUnit& t, int dmg) {
@@ -1547,6 +1644,68 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     if (s.ids.empty()) return fail("Não há aliado ferido nessa área.");
     spend();
     steps.push_back(s);
+  } else if (kind == "placeSwap") {
+    // Troca de Lugar (the Conjurador's): places changed with an ally or a summon in reach; nothing else.
+    std::string why;
+    const int ally = swapAlly(b, caster, cell, n, &why);
+    if (ally < 0) return fail(why);
+    spend();
+    s.type = BattleStep::Type::Effect;
+    s.ids = {static_cast<size_t>(ally)}, s.tiles = {cell, from};
+    s.dice = 0, s.spellMul = 1;
+    steps.push_back(s);
+  } else if (kind == "boneLance") {
+    // A lance of bone through everyone on the line, both sides, as far as it reaches.
+    const std::vector<BattleHex> line = boneLine(b, from, cell, n.length);
+    if (line.empty()) return fail("Escolha uma reta a partir do personagem.");
+    s.tiles = line;
+    s.ids = unitsOn(b, caster, line, true);
+    spend();
+    steps.push_back(s);
+  } else if (kind == "mirrorImage") {
+    // Illusions round an ally (the caster itself too) for some rounds.
+    const int ally = occAt(b, cell);
+    if (ally < 0 || !b.units()[static_cast<size_t>(ally)].alive || b.units()[static_cast<size_t>(ally)].side != u.side) return fail("Escolha um aliado.");
+    if (hexDist(from, cell) > n.range) return fail(std::format("Aliado fora de alcance (máximo {} hexes).", n.range));
+    spend();
+    s.type = BattleStep::Type::Effect;
+    s.ids = {static_cast<size_t>(ally)}, s.tiles = {cell};
+    s.dice = 0, s.spellMul = 1;
+    s.mirrorCopies = n.count, s.mirrorRounds = n.rounds;
+    steps.push_back(s);
+  } else if (kind == "detonateSummon") {
+    // One of the caster's own summons blows up: everyone within the radius of it (both sides) takes the roll; the summon is gone.
+    const int summon = ownSummonAt(b, caster, cell);
+    if (summon < 0) return fail("Escolha uma invocação sua.");
+    if (hexDist(from, cell) > n.range) return fail(std::format("Invocação fora de alcance (máximo {} hexes).", n.range));
+    const BattleUnit& sm = b.units()[static_cast<size_t>(summon)];
+    const std::vector<BattleHex> area = hexesWithin(b, {sm.x, sm.y}, n.radius);
+    s.tiles = area;
+    for (size_t id : unitsOn(b, caster, area, true))
+      if (id != static_cast<size_t>(summon)) s.ids.push_back(id);
+    s.sacrifice = static_cast<size_t>(summon);
+    spend();
+    steps.push_back(s);
+  } else if (kind == "sacrificeBond") {
+    // On the caster, for the rest of the fight: what hits it goes to its nearest summon.
+    if (!(cell == from)) return fail("Esta magia não precisa de alvo.");
+    spend();
+    s.type = BattleStep::Type::Effect;
+    s.ids = summonsOf(b, caster), s.tiles = {from};  // the summons it chains to (the window shows them); the bond itself is the caster's
+    s.dice = 0, s.spellMul = 1;
+    s.bondPct = n.pct;
+    steps.push_back(s);
+  } else if (kind == "empowerSummons") {
+    // Every living summon of the caster, stronger for some rounds.
+    if (!(cell == from)) return fail("Esta magia não precisa de alvo.");
+    s.ids = summonsOf(b, caster);
+    if (s.ids.empty()) return fail("Nenhuma invocação em campo.");
+    spend();
+    s.type = BattleStep::Type::Effect;
+    s.tiles = {from};
+    s.dice = 0, s.spellMul = 1;
+    s.empowerPct = n.pct, s.empowerRounds = n.rounds;
+    steps.push_back(s);
   } else if (kind == "resurrection") {
     // The fallen ally on the hex beside the caster stands again with its own roll of HP and acts on its next turn.
     const int fallen = fallenAllyAt(b, caster, cell);
@@ -1568,6 +1727,10 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
       s.ids = unitsOn(b, caster, area, emberBothSides(kind));
       if (kind == "judgment")  // the undead take the heavier weight
         for (size_t id : s.ids) s.perTargetMul.push_back(b.units()[id].undead ? n.tickMul : 1.0);
+      if (kind == "nightmare") {  // a sleeper takes double (the hit's own +25 % on a sleeper folded in), and each struck foe may be afraid
+        for (size_t id : s.ids) s.perTargetMul.push_back(b.units()[id].asleep ? n.tickMul / 1.25 : 1.0);  // 1.25 = kWebSleepBonusDamage (SpellsE2.inc)
+        s.fearPct = n.pct, s.fearTurns = n.turns;
+      }
       if (kind == "profaneSilence") s.silenceTurns = n.turns;
       else if (kind == "blackPestilence") s.poisonTier = n.tier, s.plagueBurst = true;
       else if (kind == "soulHarvest") s.harvest = true, s.harvestHealPct = n.pct;
@@ -1920,6 +2083,9 @@ std::string conditionsText(const BattleUnit& u) {
   if (u.cond.disarmPct > 0) add(std::format("{} -{}% ATK ({})", pick("Desarmado", "Disarmed"), u.cond.disarmPct, u.cond.disarmTurns + 1));
   if (u.cond.staggered) add(std::format("{} ({})", pick("Desequilibrado", "Off balance"), u.cond.staggerTurns + 1));
   if (u.cond.vigilPct > 0) add(std::format("{} ×{:g} · {} {}", pick("Vigília", "Vigil"), u.cond.vigilPct / 100.0, pick("raio", "radius"), u.cond.vigilRadius));
+  if (u.cond.mirrorCopies > 0) add(std::format("{} ×{} ({})", pick("Imagem Espelhada", "Mirror Image"), u.cond.mirrorCopies, u.cond.mirrorRounds));
+  if (u.cond.bondPct > 0) add(std::format("{} {}%", pick("Elo de Sacrifício", "Sacrifice Bond"), u.cond.bondPct));
+  if (u.cond.empowerPct > 0) add(std::format("{} +{}% ({})", pick("Fortalecido", "Empowered"), u.cond.empowerPct, u.cond.empowerRounds));
   if (u.diseased) add("Doente");
   // Engine2's statuses
   if (u.stunned) add(std::string(pick("Atordoado", "Stunned")) + std::format(" ({})", u.stunTurns));
@@ -1975,6 +2141,14 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind) {
   if (kind == "sentinelVigil")
     return s + std::format("\npostura até o próximo turno · quem atacar você ou um aliado a até {} hex{} leva a sua estocada antes · ×{:g} da lança{}", n.radius,
                            n.radius > 1 ? "es" : "", n.mul, bonus());
+  // The Conjurador's
+  if (kind == "placeSwap") return s + "\ntroca de lugar com um aliado ou uma invocação ao alcance";
+  if (kind == "boneLance") return s + std::format("\nreta de {} hexes a partir de si · {} em todos na reta (os dois lados)", n.length, dmg(n.mul, n.dice, n.faces));
+  if (kind == "mirrorImage") return s + std::format("\n{} cópias ilusórias em um aliado por {} rodadas · cada ataque tem 1 chance em 3 de acertar uma cópia, que some", n.count, n.rounds);
+  if (kind == "detonateSummon") return s + std::format("\nexplode uma invocação sua · todos a até {} hex{} dela levam {} · a invocação some", n.radius, n.radius > 1 ? "es" : "", dmg(n.mul, n.dice, n.faces));
+  if (kind == "sacrificeBond") return s + std::format("\naté o fim da batalha, {}% do dano que você recebe vai para a sua invocação mais próxima", n.pct);
+  if (kind == "nightmare") return s + std::format("\nraio {} · {} em cada inimigo · quem dorme leva o dobro · {}% de chance de medo por {} turno{}", n.radius, dmg(n.mul, n.dice, n.faces), n.pct, n.turns, n.turns > 1 ? "s" : "");
+  if (kind == "empowerSummons") return s + std::format("\ntodas as suas invocações: +{}% em todos os atributos por {} rodadas", n.pct, n.rounds);
   // The Curandeiro's (the cures' formula; the healing skill adds +1 % a point)
   if (kind == "circleOfHealing") return s + std::format("\nraio {} · cada aliado na área cura {} HP", n.radius, dmg(n.mul, n.dice, n.faces));
   if (kind == "resurrection") return s + std::format("\num aliado caído ao lado volta com {} HP · age no seu próximo turno", dmg(n.mul, n.dice, n.faces));
@@ -2037,6 +2211,8 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"spearToss", "Spear Toss"}, {"hookPull", "Hook"}, {"poleVault", "Pole Vault"}, {"disarm", "Disarm"}, {"swapPost", "Change of Post"},
     {"impaleDrag", "Impale and Drag"}, {"sentinelVigil", "Sentinel's Vigil"}, {"sentinelStrike", "Sentinel's Thrust"},
     {"circleOfHealing", "Circle of Healing"}, {"resurrection", "Resurrection"}, {"judgment", "Judgment"},
+    {"placeSwap", "Place Swap"}, {"boneLance", "Bone Lance"}, {"mirrorImage", "Mirror Image"}, {"detonateSummon", "Detonate Summon"},
+    {"sacrificeBond", "Sacrifice Bond"}, {"nightmare", "Nightmare"}, {"empowerSummons", "Empower Summons"},
 };
 }  // namespace
 
@@ -2056,7 +2232,8 @@ bool spellPorted(const std::string& kind) {
 bool spellWeaponAbility(const std::string& kind) { return weaponAbility(kind); }
 
 bool spellInstant(const std::string& kind) {
-  return kind == "createFoodAndWater" || kind == "auraOfProtection" || kind == "intimidatingPresence";
+  return kind == "createFoodAndWater" || kind == "auraOfProtection" || kind == "intimidatingPresence" || kind == "sacrificeBond" ||
+         kind == "empowerSummons";
 }
 // An area around the caster, shown at once and cast on Confirmar. Grito de Guerra, Vigília da Sentinela and Erupção were instant (cast the
 // moment the socket was pressed, the area never shown): the user, 2026-10-19: "how the fuck im going to cast something without knowing the
@@ -2066,7 +2243,7 @@ bool spellSelfArea(const std::string& kind) {
 }
 bool spellAimsDirection(const std::string& kind) {
   return kind == "piercing" || kind == "piercingThrust" || kind == "frost" || kind == "iceLance" || kind == "glacialGale" ||
-         kind == "burningHands" || kind == "poisonBreath" || kind == "divineWrath" || kind == "stampede";
+         kind == "burningHands" || kind == "poisonBreath" || kind == "divineWrath" || kind == "stampede" || kind == "boneLance";
 }
 
 int potionIndex(const std::string& id) {
@@ -2236,6 +2413,9 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   else if (kind == "cureDisease") maxRange = grown(kCureDiseaseRange);
   else if (emberBoltSpell(kind) || emberAreaSpell(kind)) maxRange = emberNumbers(kind, u.level).range;  // ours: no line of fire needed
   else if (kind == "resurrection") maxRange = 1;  // the fallen ally beside the caster (or under its feet)
+  // The Conjurador's: an ally / a summon in reach; the bone lance is a ray
+  else if (kind == "placeSwap" || kind == "mirrorImage" || kind == "detonateSummon") maxRange = emberNumbers(kind, u.level).range;
+  else if (kind == "boneLance") maxRange = -1;
   else if (kind == "guardBreak") minRange = u.minRange, maxRange = u.maxRange, shot = u.maxRange > 1, arrow = true;  // the weapon's reach
   else if (kind == "steelWhirlwind") maxRange = 1;
   else if (kind == "leapingStrike") maxRange = -1;  // wherever a landing exists
@@ -2405,6 +2585,29 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
       return dragPlan(b, caster, cell, n, &why) ? true : fail(why.c_str());
     }
     if (kind == "sentinelVigil") return cell == from ? true : fail("Esta habilidade não precisa de alvo.");
+    // The Conjurador's
+    if (kind == "placeSwap") {
+      std::string why;
+      return swapAlly(b, caster, cell, n, &why) >= 0 ? true : fail(why.c_str());
+    }
+    if (kind == "boneLance") return boneLine(b, from, cell, n.length).empty() ? fail("Escolha uma reta a partir do personagem.") : true;
+    if (kind == "mirrorImage") {
+      if (here < 0 || !b.units()[static_cast<size_t>(here)].alive || b.units()[static_cast<size_t>(here)].side != u.side) return fail("Escolha um aliado.");
+      if (d > n.range) {
+        if (error) *error = std::format("Aliado fora de alcance (máximo {} hexes).", n.range);
+        return false;
+      }
+      return true;
+    }
+    if (kind == "detonateSummon") {
+      if (ownSummonAt(b, caster, cell) < 0) return fail("Escolha uma invocação sua.");
+      if (d > n.range) {
+        if (error) *error = std::format("Invocação fora de alcance (máximo {} hexes).", n.range);
+        return false;
+      }
+      return true;
+    }
+    if (kind == "sacrificeBond" || kind == "empowerSummons") return cell == from ? true : fail("Esta magia não precisa de alvo.");
     // The Curandeiro's
     if (kind == "resurrection") {
       if (d > 1) return fail("O aliado caído precisa estar ao lado.");
@@ -2484,6 +2687,13 @@ std::vector<BattleHex> spellArea(const Battle& b, size_t caster, const std::stri
       return p ? p->tiles : std::vector<BattleHex>{cell};
     }
     if (kind == "sentinelVigil") return hexesWithin(b, {u.x, u.y}, n.radius);
+    // The Conjurador's
+    if (kind == "boneLance") return boneLine(b, {u.x, u.y}, cell, n.length);
+    if (kind == "placeSwap") return {cell, {u.x, u.y}};
+    if (kind == "detonateSummon") {
+      const int sm = ownSummonAt(b, caster, cell);
+      return sm >= 0 ? hexesWithin(b, {b.units()[static_cast<size_t>(sm)].x, b.units()[static_cast<size_t>(sm)].y}, n.radius) : std::vector<BattleHex>{cell};
+    }
   }
   return areaE2(b, caster, kind, cell);
 }
@@ -2741,6 +2951,7 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
       else if (-dx < -1e-6) target.facing = -1;
     }
   }
+  if (target.side != actor.side && mirrorAbsorbs(target, rng, ti, out)) return;  // Imagem Espelhada: the blow found a copy
   const Fighter A = fighterAt(b, ai, actor.x, actor.y), T = fighterAt(b, ti, target.x, target.y);
   Hit hit = rollDamage(b, A, T, rng, !bash, useCustom ? &custom : nullptr);
   if (target.side == "enemy" && !bash) trainWeapon(actor, target.level, rng, useCustom);  // the off-hand weapon on an off-hand strike
@@ -2782,6 +2993,8 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
   }
   dmg = marked(target, dmg);  // Marca da Ruína
   if (hitStage && !step.kind.empty() && dmg > 0) affinityDelta(b, ai, ti, -1);  // a skill that hurts a friend costs affinity
+  const bool bonded = target.side != actor.side && bondRedirects(b, ti, dmg, rng, out);  // Elo de Sacrifício: its summon takes it
+  if (bonded) dmg = 0;
   const int actual = std::min(target.hp, dmg);
   target.hp = std::max(0, target.hp - dmg);
   if (target.side != actor.side && !useCustom) staffDrain(actor, actual);
@@ -2824,7 +3037,7 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
       e.pushed = true;
     }
   }
-  out.push_back(e);
+  if (!bonded) out.push_back(e);
   if (!target.alive) {
     afterDeath(b, ti, out);
   } else {
@@ -3030,7 +3243,40 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
       }
       b.noteAware(step.att, kSupportCe, kSupportVe);
     }
-    if (step.kind == "swapPost") {  // Troca de Posto (the Lanceiro's): the caster and the ally change hexes (both cards hop over)
+    // The Conjurador's (docs/SKILLS_CONJURER.md)
+    if (step.kind == "mirrorImage") {
+      for (size_t id : step.ids) {
+        BattleUnit& t = b.units()[id];
+        if (!t.alive) continue;
+        t.cond.mirrorCopies = std::max(t.cond.mirrorCopies, step.mirrorCopies), t.cond.mirrorRounds = std::max(t.cond.mirrorRounds, step.mirrorRounds);
+        if (id != step.att) supportAffinity(b, step.att, id);
+        out.push_back(statusEffect(id, std::format("{} ×{}", pick("Imagem Espelhada", "Mirror Image"), step.mirrorCopies)));
+      }
+      b.noteAware(step.att, kSupportCe, kSupportVe);
+      return;
+    }
+    if (step.kind == "sacrificeBond") {
+      att.cond.bondPct = step.bondPct;
+      out.push_back(statusEffect(step.att, pick("Elo de Sacrifício", "Sacrifice Bond")));
+      b.noteAware(step.att, kSupportCe, kSupportVe);
+      return;
+    }
+    if (step.kind == "empowerSummons") {
+      for (size_t id : step.ids) {
+        BattleUnit& t = b.units()[id];
+        if (!t.alive) continue;
+        if (!t.empowerBase) t.empowerBase = BattleUnit::Stats{t.atk, t.mag, t.def, t.dex, t.mov};
+        const double k = 1 + step.empowerPct / 100.0;
+        t.atk = static_cast<int>(jsRound(t.empowerBase->atk * k)), t.mag = static_cast<int>(jsRound(t.empowerBase->mag * k));
+        t.def = static_cast<int>(jsRound(t.empowerBase->def * k)), t.dex = static_cast<int>(jsRound(t.empowerBase->dex * k));
+        t.mov = std::max(1, static_cast<int>(jsRound(t.empowerBase->mov * k)));
+        t.cond.empowerPct = step.empowerPct, t.cond.empowerRounds = std::max(t.cond.empowerRounds, step.empowerRounds);
+        out.push_back(statusEffect(id, std::format("{} +{}%", pick("Fortalecido", "Empowered"), step.empowerPct)));
+      }
+      b.noteAware(step.att, kSupportCe, kSupportVe);
+      return;
+    }
+    if (step.kind == "swapPost" || step.kind == "placeSwap") {  // Troca de Posto (the Lanceiro's) / Troca de Lugar (the Conjurador's): the caster and the ally change hexes (both cards hop over)
       if (step.ids.empty() || !att.alive) return;
       BattleUnit& ally = b.units()[step.ids[0]];
       if (!ally.alive) return;
@@ -3223,11 +3469,22 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
   std::vector<size_t> struck;  // ours: who took the hit and stands (Colheita's extra ticks)
   bool thrown = false;         // the Lanceiro's: the struck body was moved
   const bool ability = weaponAbility(step.kind);
+  if (step.sacrifice && *step.sacrifice < b.units().size()) {  // Detonar Invocação: the summon blows up before its blast lands
+    BattleUnit& sm = b.units()[*step.sacrifice];
+    if (sm.alive) {
+      sm.hp = 0;
+      markDead(sm, rng);
+      BattleEffect e{*step.sacrifice, 0, false, false, false, true, false};
+      e.text = pick("Detonado", "Detonated");
+      out.push_back(e);
+    }
+  }
   for (size_t k = 0; k < step.ids.size(); ++k) {
     const size_t id = step.ids[k];
     BattleUnit& foe = b.units()[id];
     if (!foe.alive || (step.kind == "turnUndead" && !foe.undead)) continue;
     if (b.cell(foe.x, foe.y).terrain == "barricade") continue;  // "bloqueado"
+    if (foe.side != att.side && mirrorAbsorbs(foe, rng, id, out)) continue;  // Imagem Espelhada: a copy took it
     int dmg = 0;
     bool crit = false, landed = true, weaponRolled = false;
     if (step.centerId && id == *step.centerId) {
@@ -3286,6 +3543,8 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     }
     dmg = marked(foe, dmg);  // Marca da Ruína
     if (dmg > 0 && !step.kind.empty()) affinityDelta(b, step.att, id, -1);
+    const bool bonded = foe.side != att.side && bondRedirects(b, id, dmg, rng, out);  // Elo de Sacrifício: its summon takes it
+    if (bonded) dmg = 0;
     const int actual = std::min(foe.hp, dmg);
     foe.hp = std::max(0, foe.hp - dmg);
     if (!element.empty() && foe.side != att.side) staffDrain(att, actual);
@@ -3369,7 +3628,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
       e.pushed = true, e.arc = step.arc;
       thrown = true;
     }
-    out.push_back(e);
+    if (!bonded) out.push_back(e);
     if (!foe.alive) {
       afterDeath(b, id, out);
       continue;
@@ -3392,6 +3651,10 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     }
     // The conditions ours leave
     const double mag = fighterAt(b, step.att, att.x, att.y).mag;
+    if (step.fearPct > 0 && foe.side != att.side && rng() * 100 < step.fearPct) {  // Pesadelo: afraid for some turns
+      foe.fearTurns = std::max(foe.fearTurns, step.fearTurns), foe.fearSourceId = att.id;
+      out.push_back(statusEffect(id, pick("Com medo", "Afraid")));
+    }
     if (step.markTurns > 0) {
       foe.cond.markPct = std::max(foe.cond.markPct, step.markPct), foe.cond.markTurns = std::max(foe.cond.markTurns, step.markTurns);
       out.push_back(statusEffect(id, std::format("Marcado +{}%", step.markPct)));

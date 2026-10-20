@@ -23,6 +23,7 @@
 
 #include "CampaignUi.h"
 #include "render/UiArt.h"
+#include "world/FieldSpells.h"
 #include "world/Inn.h"
 
 namespace ember {
@@ -82,6 +83,7 @@ class InventoryScreen {
     std::string name, icon, tip;
     int count = 0;
     bool weapon = false;
+    std::string rune;  // the Conjurador's rune (world/FieldSpells): its id; the sheet edits its note
     std::vector<std::pair<std::string, std::function<void(Context&)>>> equipChoices;  // run with this frame's Context
     std::function<void(Context&)> use, discard;
   };
@@ -577,6 +579,20 @@ class InventoryScreen {
       e.discard = [this, iid](Context& c) { apply(c, c.rules.discardEquipment(c.save, iid)); };
       for (int k = 0; k < count; ++k) out.push_back(e);
     }
+    // The Conjurador's runes (Marcar Runa, docs/SKILLS_CONJURER.md): each one a slot; its sheet shows where it points and holds the note.
+    static const std::string runeIcon = std::filesystem::absolute("content/ui/spells/rune.png").string();  // an absolute path: art() keeps it
+    for (const e2::FieldSpells::Rune& r : e2::FieldSpells::runes(c.save)) {
+      Entry e;
+      e.name = "Runa: " + r.place, e.icon = runeIcon, e.rune = r.id;
+      e.tip = std::format("{} · hex ({}, {}) · Dia {}{}", r.region.empty() ? "estrada" : r.region, r.col, r.row, r.day, r.note.empty() ? "" : " · " + r.note);
+      const std::string rid = r.id;
+      e.discard = [](Context&) {};  // replaced below (the rune's own removal)
+      e.discard = [rid](Context& c) {
+        c.save = e2::FieldSpells::discardRune(c.save, rid);
+        c.write();
+      };
+      out.push_back(std::move(e));
+    }
     return out;
   }
 
@@ -662,9 +678,29 @@ class InventoryScreen {
     } else {
       const ImVec2 at = ImGui::GetCursorScreenPos();
       const bool canEquip = !sheet_->equipChoices.empty();
-      ImGui::BeginDisabled(!canEquip);
-      if (emberBigButton("##equip", "EQUIPAR", at, {inner, 40}, false, 11.0f)) sheetChoosing_ = true;
-      ImGui::EndDisabled();
+      if (!sheet_->rune.empty()) {
+        // A rune: the player's note, written on it as it is typed (in place of Equipar).
+        if (runeNoteFor_ != sheet_->rune) {
+          runeNoteFor_ = sheet_->rune;
+          std::string note;
+          for (const e2::FieldSpells::Rune& r : e2::FieldSpells::runes(c.save))
+            if (r.id == sheet_->rune) note = r.note;
+          std::snprintf(runeNote_, sizeof(runeNote_), "%s", note.c_str());
+        }
+        ImGui::SetCursorScreenPos({at.x, at.y + 4});
+        ImGui::SetNextItemWidth(inner);
+        ImGui::PushFont(ui, 13.0f);
+        ImGui::InputTextWithHint("##runenote", "Nota da runa (ex.: entrada da cripta)", runeNote_, sizeof(runeNote_));
+        ImGui::PopFont();
+        if (ImGui::IsItemDeactivatedAfterEdit()) {
+          c.save = e2::FieldSpells::setRuneNote(c.save, sheet_->rune, runeNote_);
+          c.write();
+        }
+      } else {
+        ImGui::BeginDisabled(!canEquip);
+        if (emberBigButton("##equip", "EQUIPAR", at, {inner, 40}, false, 11.0f)) sheetChoosing_ = true;
+        ImGui::EndDisabled();
+      }
       ImGui::BeginDisabled(!sheet_->use);
       if (emberBigButton("##use", "USAR", {at.x, at.y + 46}, {inner, 40}, false, 11.0f) && sheet_->use) {
         sheet_->use(c);
@@ -680,7 +716,7 @@ class InventoryScreen {
       dl->AddText(ui, 14.0f, {at.x + (inner - ts.x) / 2, at.y + 104}, sheet_->discard ? kDanger : IM_COL32(240, 240, 240, 102), "Jogar Fora");
       if (discard) sheetConfirm_ = true;
       // The disabled buttons, dimmed.
-      if (!canEquip) dl->AddRectFilled(at, {at.x + inner, at.y + 40}, IM_COL32(17, 17, 17, 150));
+      if (!canEquip && sheet_->rune.empty()) dl->AddRectFilled(at, {at.x + inner, at.y + 40}, IM_COL32(17, 17, 17, 150));
       if (!sheet_->use) dl->AddRectFilled({at.x, at.y + 46}, {at.x + inner, at.y + 86}, IM_COL32(17, 17, 17, 150));
     }
     const ImVec2 a = ImGui::GetWindowPos(), b{a.x + ImGui::GetWindowSize().x, a.y + ImGui::GetWindowSize().y};
@@ -703,6 +739,8 @@ class InventoryScreen {
   float glowAt_ = -10;
   std::string note_;
   float noteAt_ = -10;
+  std::string runeNoteFor_;  // the rune whose note runeNote_ holds (the open sheet's)
+  char runeNote_[200] = {};
 };
 
 }  // namespace ember

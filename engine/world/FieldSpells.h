@@ -37,6 +37,14 @@ class FieldSpells {
   static constexpr int kPrayerUnlockLevel = 9;
   static constexpr int kPrayerTier = 3;
   static constexpr const char* kPrayerKey = "roadPrayer";  // the save's hexes left under the Prece
+  // The Conjurador's field spells (ours, docs/SKILLS_CONJURER.md), Ultima Online's Mark and Recall: Marcar Runa (tier 2 from level 5:
+  // a rune of the hex the party stands on, an item of the party's bag: `save.runes`) and Retornar (tier 3 from level 7: the party
+  // straight to a rune's hex; the rune stays). Neither in a battle.
+  static constexpr int kRuneUnlockLevel = 5;
+  static constexpr int kRuneTier = 2;
+  static constexpr int kRecallUnlockLevel = 7;
+  static constexpr int kRecallTier = 3;
+  static constexpr const char* kRunesKey = "runes";
 
   FieldSpells(const InnData& inn, const Overworld& world) : inn_(inn), world_(world) {}
 
@@ -77,6 +85,27 @@ class FieldSpells {
   std::vector<std::string> prayers(const Json& save, bool test) const;
   bool canPray(const Json& save, const std::string& hero) const { return usesLeft(save, hero, kPrayerTier) > 0; }
   std::optional<Json> castPrayer(const Json& save, const std::string& hero) const;
+  // Marcar Runa / Retornar: who can (conjurers from level 5 / 7, standing); a rune as the save keeps it; the casts.
+  struct Rune {
+    std::string id, place, region, note;
+    int col = 0, row = 0, day = 0;
+  };
+  static std::vector<Rune> runes(const Json& save);
+  static Json runeJson(const Rune& r);
+  std::vector<std::string> runeMarkers(const Json& save, bool test) const;
+  std::vector<std::string> recallers(const Json& save, bool test) const;
+  // The rune the party's hex would make (its nearest place's name, the hex's region, today).
+  Rune runeHere(const Json& save) const;
+  // Whether a rune of the party's hex exists already.
+  static bool runeAt(const Json& save, int col, int row);
+  // Marcar Runa needs a use, room in the party's bag and no rune of this hex yet.
+  bool canMark(const Json& save, const std::string& hero, bool test) const;
+  std::optional<Json> castMarkRune(const Json& save, const std::string& hero, bool test) const;
+  bool canRecall(const Json& save, const std::string& hero) const { return usesLeft(save, hero, kRecallTier) > 0 && !runes(save).empty(); }
+  std::optional<Json> castRecall(const Json& save, const std::string& hero, const std::string& runeId) const;
+  // The player's note on a rune; a rune thrown away.
+  static Json setRuneNote(const Json& save, const std::string& runeId, const std::string& note);
+  static Json discardRune(const Json& save, const std::string& runeId);
 
  private:
   const InnData& inn_;

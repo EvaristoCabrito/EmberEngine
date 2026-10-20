@@ -570,6 +570,8 @@ int InnRules::bagUsed(const Json& save) const {
   for (const auto& [id, enh] : child(save, "weapons").items())
     if (std::find(worn.begin(), worn.end(), id) == worn.end()) ++used;
   for (const auto& [id, qty] : child(save, "looseEquipment").items()) used += qty.is_number() ? qty.get<int>() : 0;
+  // The Conjurador's runes (world/FieldSpells, docs/SKILLS_CONJURER.md): each one a slot of the party's bag
+  if (const Json& runes = child(save, "runes"); runes.is_array()) used += static_cast<int>(runes.size());
   const int rations = static_cast<int>(num(save, "rations").value_or(0));
   return used + (rations + data_.rationStackMax - 1) / data_.rationStackMax;
 }

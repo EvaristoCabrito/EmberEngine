@@ -194,9 +194,16 @@ struct BattleUnit {
     bool staggered = false;
     int staggerTurns = 0;
     int vigilPct = 0, vigilRadius = 0;
+    // The Conjurador's (docs/SKILLS_CONJURER.md): Imagem Espelhada (mirrorCopies illusions for mirrorRounds rounds: each hostile hit has
+    // one chance in three of striking a copy, which vanishes), Elo de Sacrifício (bondPct % of every hit on the unit goes to its nearest
+    // living summon instead, for the rest of the fight), Fortalecer Invocações (every stat x (1 + empowerPct / 100) for empowerRounds
+    // rounds; empowerBase keeps the whole)
+    int mirrorCopies = 0, mirrorRounds = 0;
+    int bondPct = 0;
+    int empowerPct = 0, empowerRounds = 0;
     bool any() const {
       return markTurns > 0 || plagueSpread > 0 || plagueBurst || bleedTurns > 0 || silenceTurns > 0 || decayTurns > 0 || sunderPct > 0 || rallyPct > 0 ||
-             hobblePct > 0 || disarmPct > 0 || staggered || vigilPct > 0;
+             hobblePct > 0 || disarmPct > 0 || staggered || vigilPct > 0 || mirrorCopies > 0 || bondPct > 0 || empowerPct > 0;
     }
   } cond;
   std::optional<int> hobbleBase;       // its MOV before Tiro Paralisante (given back when it lifts)
@@ -211,6 +218,7 @@ struct BattleUnit {
   };
   std::optional<Stats> diseaseBase;  // its stats before the disease's penalty (curePlayerDisease restores them)
   std::optional<Stats> decayBase;    // its stats before Maldição da Decadência (given back when the curse lifts)
+  std::optional<Stats> empowerBase;  // a summon's stats before Fortalecer Invocações (given back when it ends)
   bool poisoned = false;
   std::string poisonTier;            // save.heroPoisons' value ("lesser", ...), kept for the save
   std::optional<double> fullness;    // hunger.ts fullness 0..120; unset reads as 100

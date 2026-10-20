@@ -51,6 +51,13 @@ void Battle::startNewRound() {
       u.blessedRoundsLeft = std::max(0, u.blessedRoundsLeft - 1);
       if (u.blessedRoundsLeft == 0) u.blessedHitBonusPct = 0;
     }
+    // The Conjurador's (docs/SKILLS_CONJURER.md): the illusions and the summons' strength last their rounds
+    if (u.cond.mirrorRounds > 0 && --u.cond.mirrorRounds == 0) u.cond.mirrorCopies = 0;
+    if (u.cond.empowerRounds > 0 && --u.cond.empowerRounds == 0) {
+      if (u.empowerBase) u.atk = u.empowerBase->atk, u.mag = u.empowerBase->mag, u.def = u.empowerBase->def, u.dex = u.empowerBase->dex, u.mov = u.empowerBase->mov;
+      u.empowerBase.reset();
+      u.cond.empowerPct = 0;
+    }
   }
   // Engine2's zones and gates last their rounds
   for (WebZone& z : webZones_) --z.roundsLeft;

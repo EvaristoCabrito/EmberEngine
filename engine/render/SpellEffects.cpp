@@ -95,7 +95,9 @@ int SpellEffects::looks(const std::string& kind) {
                                  // the Lanceiro's (vfx/LancerFx, ours, 3D)
                                  "spearToss", "hookPull", "poleVault", "disarm", "swapPost", "impaleDrag", "sentinelVigil", "sentinelStrike",
                                  // the Curandeiro's (vfx/HealerFx, ours, 3D)
-                                 "circleOfHealing", "resurrection", "judgment"};
+                                 "circleOfHealing", "resurrection", "judgment",
+                                 // the Conjurador's (vfx/ConjurerFx, ours, 3D)
+                                 "placeSwap", "boneLance", "mirrorImage", "detonateSummon", "sacrificeBond", "nightmare", "empowerSummons"};
   for (const char* k : kEmber)
     if (kind == k) return 1;
   return 0;
@@ -178,6 +180,7 @@ float SpellEffects::leadIn(const std::string& kind, int look, const Spot& caster
   if (isHoly(kind, look)) return HolyLight::leadIn(HolyLight::Style::Minor);
   if (kind == "turnUndead" && look >= 1) return TurnUndead::kLead;  // the sigil gathers, then the burst
   if (isHealer(kind)) return HealerFx::leadIn(kind);                // the Curandeiro's: the light gathers, then lands
+  if (isConjurer(kind)) return ConjurerFx::leadIn(kind);            // the Conjurador's
   return kKindLead;
 }
 
@@ -225,6 +228,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     latest(holies_, before[10]), latest(dreamWebs_, before[11]);
     if (kind == "turnUndead") end = std::max(end, turnUndead_.latestEnd());
     if (isHealer(kind)) end = std::max(end, healer_.latestEnd());
+    if (isConjurer(kind)) end = std::max(end, conjurer_.latestEnd());
     for (size_t i = before[7]; i < burns_.size(); ++i) end = std::max(end, burns_[i].first.end());
     if (kind == "iceStorm" && !storms_.empty()) end = std::max(end, storms_.back().start() + 1.0f);  // its first second, not the whole storm
     if (isBolt(kind, look) && !bolts_.empty()) end = std::max(end, bolts_.back().end());
@@ -299,6 +303,42 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     }
     if (kind == "circleOfHealing") healer_.circle(caster.feet, caster.cardHeight, centre.feet, radius + 1.0f, std::move(bodies), impact);
     else healer_.judgment(caster.feet, caster.cardHeight, centre.feet, radius + 1.0f, std::move(bodies), impact);
+    return true;
+  }
+  // The Conjurador's spells (ConjurerFx, ours, 3D). Targets: Troca de Lugar the ally's hex then the caster's own; Lança de Osso the
+  // line's hexes (the bodies struck keep their card height); Imagem Espelhada the ally; Detonar Invocação the blast's hexes (the
+  // summon's first, the bodies in it with a card height); Elo / Fortalecer the summons; Pesadelo the area's hexes.
+  if (isConjurer(kind)) {
+    std::vector<ConjurerFx::Target> bodies;
+    for (const Spot& s : targets)
+      if (s.cardHeight > 0.0f) bodies.push_back({s.feet, s.cardHeight});
+    if (kind == "placeSwap") {
+      if (targets.size() >= 2) conjurer_.swap({targets[1].feet, heightOf(targets[1])}, {targets[0].feet, heightOf(targets[0])}, impact, impact + 0.42f);
+      else conjurer_.swap({caster.feet, caster.cardHeight}, {targets.front().feet, heightOf(targets.front())}, impact, impact + 0.42f);
+    } else if (kind == "boneLance") {
+      std::vector<glm::vec3> hexes;
+      for (const Spot& s : targets) hexes.push_back(s.feet);
+      conjurer_.lance(caster.feet, caster.cardHeight, hexes, std::move(bodies), std::max(start, impact - ConjurerFx::lanceSeconds(hexes.size())), impact);
+    } else if (kind == "mirrorImage") {
+      conjurer_.mirrorBurst({targets.front().feet, heightOf(targets.front())}, impact);
+    } else if (kind == "detonateSummon") {
+      const Spot& centre = areaCentre(targets);
+      float radius = 0.0f;
+      for (const Spot& s : targets) radius = std::max(radius, glm::length(glm::vec2(s.feet.x - centre.feet.x, s.feet.z - centre.feet.z)));
+      std::erase_if(bodies, [&](const ConjurerFx::Target& b) { return glm::length(b.feet - centre.feet) < 0.3f; });  // the summon itself is the blast
+      conjurer_.detonate({centre.feet, heightOf(centre)}, radius + 1.0f, std::move(bodies), impact);
+    } else if (kind == "sacrificeBond") {
+      std::erase_if(bodies, [&](const ConjurerFx::Target& b) { return glm::length(b.feet - caster.feet) < 0.3f; });
+      conjurer_.bond(caster.feet, caster.cardHeight, std::move(bodies), impact);
+    } else if (kind == "nightmare") {
+      const Spot& centre = areaCentre(targets);
+      float radius = 0.0f;
+      for (const Spot& s : targets) radius = std::max(radius, glm::length(glm::vec2(s.feet.x - centre.feet.x, s.feet.z - centre.feet.z)));
+      conjurer_.nightmare(centre.feet, radius + 1.0f, std::move(bodies), impact);
+    } else {
+      std::erase_if(bodies, [&](const ConjurerFx::Target& b) { return glm::length(b.feet - caster.feet) < 0.3f; });
+      conjurer_.empower(caster.feet, caster.cardHeight, std::move(bodies), impact);
+    }
     return true;
   }
   // The Arqueiro's skills (RangerFx, ours, 3D): one arrow at the struck foe (the first target; the burst's neighbours follow it),
@@ -741,7 +781,9 @@ void SpellEffects::swapFlight(const Spot& a, const Spot& b, float start, float f
 void SpellEffects::disarmed(const Spot& foe, const Spot& from, float at) { lancer_.disarmed({foe.feet, foe.cardHeight}, from.feet, at); }
 
 bool SpellEffects::active(float now) const {
-  if (combat_.active(now) || warrior_.active(now) || ranger_.active(now) || lancer_.active(now) || turnUndead_.active(now) || healer_.active(now)) return true;
+  if (combat_.active(now) || warrior_.active(now) || ranger_.active(now) || lancer_.active(now) || turnUndead_.active(now) || healer_.active(now) ||
+      conjurer_.active(now))
+    return true;
   if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
   if (std::any_of(fireballs_.begin(), fireballs_.end(), [&](const Fireball& f) { return !f.done(now); })) return true;
   if (std::any_of(blesses_.begin(), blesses_.end(), [&](const Bless& b) { return !b.done(now); })) return true;
@@ -818,6 +860,7 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   lancer_.build(now, camera, vfx_, vfxLights);
   turnUndead_.build(now, camera, vfx_, vfxLights);
   healer_.build(now, camera, vfx_, vfxLights);
+  conjurer_.build(now, camera, vfx_, vfxLights);
   for (const VfxLight& l : vfxLights)
     if (l.intensity > 0.0f) lights.push_back({l.at, {l.color.r, l.color.g, l.color.b}, l.intensity, l.distance, std::max(l.at.y, 1.0f)});
   const size_t first = out.size();
