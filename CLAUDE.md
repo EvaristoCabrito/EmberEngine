@@ -79,7 +79,9 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   mode 2, `content/engine2/backdrop-fit.json` entry aldeia-bg.jpg: painting under the real sky, ruins on the horizon, the user's
   AldeiaGround as `content/backdrops/aldeia-ground-v01.jpg` flat under the board, the only image in Tática), camera tilt down to
   -8 deg (MapStage `minPitch()`); the user approved the two lowest-tilt views. Every other map: unchanged (cover-fit painting, 5 deg).
-  JOGAR uses `build/ground/ground-v4.pak` (v3 + that image).
+  JOGAR uses `build/ground/ground-v6.pak` (v5 + the user's "aldeia fundo2" as aldeia's "panorama 02", now the default there,
+  and Ashen Forest's new background `ashen-forest-bg-v02.jpg`; its briefing is `content/ui/briefing/ashen-forest-v02.jpg`; the
+  v01 files stay).
 - Fold mid-turn messages into the work. Never touch `C:\emberashes03D-main`. `C:\Engine2` is read-only.
 - **Measure before fixing.** Guesses get measured and reverted if wrong (thread priorities; the occlusion
   "fix" for the 15.8/5.6 ms alternation, which was really GPU power saving).

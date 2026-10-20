@@ -122,7 +122,7 @@ inline const char* engine2BriefArt(const std::string& id) {
 // The briefing art drawn for a mission id: EmberEngine's own (content/ui/briefing, the user's art) first, else
 // Engine2's (engine2BriefArt); empty = none.
 inline std::filesystem::path briefArtFile(const std::string& id, const std::filesystem::path& engine2Public) {
-  static const std::pair<const char*, const char*> kOwn[] = {{"ashen-forest-crossing", "content/ui/briefing/ashen-forest-v01.jpg"}};
+  static const std::pair<const char*, const char*> kOwn[] = {{"ashen-forest-crossing", "content/ui/briefing/ashen-forest-v02.jpg"}};
   for (const auto& [k, v] : kOwn)
     if (id == k) return std::filesystem::path(v);
   const char* art = engine2BriefArt(id);
