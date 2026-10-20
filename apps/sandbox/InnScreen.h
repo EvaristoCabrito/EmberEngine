@@ -254,7 +254,7 @@ class InnScreen {
   bool drawMain(ImVec2 size, Context& c) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     dl->AddRectFilled({0, 0}, size, IM_COL32(17, 17, 17, 255));
-    if (const UiImage* bg = uiImage(std::filesystem::path("content/backdrops/brief-estalagem.jpg"))) imageCover(dl, *bg, {0, 0}, size);
+    if (const UiImage* bg = uiImage(std::filesystem::path("content/briefings/brief-estalagem.jpg"))) imageCover(dl, *bg, {0, 0}, size);
     verticalGradient(dl, {0, 0}, size, {{0.0f, IM_COL32(17, 17, 17, 26)}, {0.5f, IM_COL32(17, 17, 17, 64)}, {1.0f, IM_COL32(17, 17, 17, 204)}});
     bool leave = false;
     header(size, c, "SAIR", "Pousada à margem da cinza", "A Estalagem do Osso Seco", leave, true);
@@ -748,7 +748,7 @@ class InnScreen {
   void drawHealer(ImVec2 size, Context& c) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     dl->AddRectFilled({0, 0}, size, IM_COL32(17, 17, 17, 255));
-    if (const UiImage* bg = uiImage(std::filesystem::path("content/backdrops/brief-estalagem.jpg"))) imageCover(dl, *bg, {0, 0}, size);
+    if (const UiImage* bg = uiImage(std::filesystem::path("content/briefings/brief-estalagem.jpg"))) imageCover(dl, *bg, {0, 0}, size);
     verticalGradient(dl, {0, 0}, size, {{0.0f, IM_COL32(17, 17, 17, 64)}, {0.5f, IM_COL32(17, 17, 17, 115)}, {1.0f, IM_COL32(17, 17, 17, 217)}});
     const bool busy = !queue_.empty() || (!healing_.empty() && now_ - lastCast_ < 0.65f);
     if (!busy) healing_.clear();

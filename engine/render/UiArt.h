@@ -119,19 +119,20 @@ inline const char* engine2BriefArt(const std::string& id) {
   return "";
 }
 
-// The briefing art drawn for a mission id, from content/backdrops (every background and briefing of the game lives there: the user,
-// 2026-10-20: "quero tudo nessa pasta tudo que existe de fundo e de briefings"): EmberEngine's own first, else Engine2's file of the
-// same name (copied there), else Engine2's own folder; empty = none.
-inline std::filesystem::path briefArtFile(const std::string& id, const std::filesystem::path& engine2Public) {
-  static const std::pair<const char*, const char*> kOwn[] = {{"ashen-forest-crossing", "content/backdrops/ashen-forest-brief-v02.jpg"}};
+// The briefing art drawn for a mission id, from content/briefings (the project's one folder of briefings; the backgrounds are in
+// content/backdrops): EmberEngine's own first, else the file the mission's table names (Engine2's name, its copy here). Nothing is read from
+// Engine2's folders (the user, 2026-10-20: "JAMAIS em dois engines"); empty = none.
+inline std::filesystem::path briefArtFile(const std::string& id, const std::filesystem::path& /*engine2Public, unused: kept for the callers*/) {
+  static const std::pair<const char*, const char*> kOwn[] = {{"ashen-forest-crossing", "content/briefings/ashen-forest-brief-v02.jpg"}};
   for (const auto& [k, v] : kOwn)
     if (id == k) return std::filesystem::path(v);
   const char* art = engine2BriefArt(id);
   if (!*art) return {};
-  const std::filesystem::path original = std::filesystem::u8path(art);
-  const std::filesystem::path here = std::filesystem::path("content/backdrops") / original.filename();
+  const std::filesystem::path name = std::filesystem::u8path(art).filename();
   std::error_code ec;
-  return std::filesystem::exists(here, ec) ? here : engine2Public / original;
+  for (const char* folder : {"content/briefings", "content/backdrops"})  // a briefing, or a background used as one (profundezas-bg)
+    if (const std::filesystem::path here = std::filesystem::path(folder) / name; std::filesystem::exists(here, ec)) return here;
+  return {};
 }
 
 }  // namespace ember

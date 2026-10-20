@@ -305,10 +305,9 @@ class TitleStage : public Stage {
     };
     add("game/title", nullptr);
     add("game/ui", nullptr);
-    add("game/assets", "brief-");
-    {  // the briefings and the title's background live in content/backdrops (the project's one folder of backgrounds)
+    {  // the briefings live in content/briefings (nothing of them is read from Engine2's folders)
       std::error_code ec;
-      for (const auto& e : std::filesystem::directory_iterator("content/backdrops", ec)) {
+      for (const auto& e : std::filesystem::directory_iterator("content/briefings", ec)) {
         const std::string name = e.path().filename().string();
         if (e.is_regular_file() && name.rfind("brief-", 0) == 0 && !uiImageLoaded(e.path())) files.push_back(e.path());
       }
