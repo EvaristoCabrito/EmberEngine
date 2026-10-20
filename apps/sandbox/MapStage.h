@@ -441,8 +441,12 @@ class MapStage final : public Stage {
       const float tanHalf = std::tan(glm::radians(kFov * 0.5f));
       // One camera rule for every map (the user, 2026-10-19: "esse aqui tem que ser o máximo de zoom out do jogo em TODOS os
       // mapas"): the farthest zoom is aldeia's (its 30-column board x 2.2), the same distance whatever the board's size.
-      maxDistance_ = kMaxDistance;
-      distance_ = std::min(maxDistance_, std::max(boardWidth_ / (2 * tanHalf * aspect), boardDepth_ * 1.35f) * 1.05f) / options_.zoom;
+      // ... in the board's own proportion (the user, 2026-10-20, on O Vau: "não pode deixar dar tanto zoom out nos mapas, TODOS"): the same distance
+      // for a small board left it a dot on the screen. The farthest zoom is 2.2 x the distance that frames the whole board (aldeia's
+      // 112.42), never beyond aldeia's.
+      const float fitDistance = std::max(boardWidth_ / (2 * tanHalf * aspect), boardDepth_ * 1.35f) * 1.05f;
+      maxDistance_ = std::min(kMaxDistance, std::max(2.2f * fitDistance, kMinDistance * 4.0f));
+      distance_ = std::min(maxDistance_, fitDistance) / options_.zoom;
       // Every map opens at the same zoom, over the party (the user, 2026-10-19: "esse deve ser o zoom padrão em que todos os mapas
       // se iniciam com a camera em cima do grupo, caso estiverem separados na maior concentração de membros"). Captures that frame
       // the board themselves (--offset) keep the whole-board view.

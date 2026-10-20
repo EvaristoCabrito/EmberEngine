@@ -158,7 +158,7 @@
    "horizonDegrees": -4.0,
    "alphaSky": true,
    "ground": "vau-ground-v01.jpg",
-   "groundTile": 120.0,
+   "groundTile": 36.0,
    "groundFar": 300.0,
    "groundFromDegrees": 3.0
   }
