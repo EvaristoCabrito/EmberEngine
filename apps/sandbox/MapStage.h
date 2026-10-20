@@ -888,8 +888,8 @@ class MapStage final : public Stage {
       else if (!spellMode_.empty()) spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
       else if (offHandMode_) offHandMode_ = false, refreshReach();
       else if (attackMode_) attackMode_ = false;
-      else if (selected_ >= 0 && result_.empty()) select(-1);
-      else if (!menuOptions_.isOpen()) pauseOpen_ = !pauseOpen_;  // nothing picked: the battle menu
+      else if (selected_ >= 0 && result_.empty() && !myTurn()) select(-1);
+      else if (!menuOptions_.isOpen()) pauseOpen_ = !pauseOpen_;  // nothing picked, or the hero whose turn it is: the battle menu
     }
     if (e.type == SDL_EVENT_MOUSE_MOTION && (e.motion.state & SDL_BUTTON_RMASK) && !flat_) {  // Tática never turns
       yaw_ -= e.motion.xrel * kTurnPerPixel;
@@ -3105,7 +3105,9 @@ class MapStage final : public Stage {
       return;
     }
     pendingFoe_ = -1;  // a staged strike is dropped by a click anywhere but on a foe (Engine2 handleCell)
-    if (!hex) return select(-1);
+    // Nothing clicked lets go of a unit, but never of the hero whose turn it is: it stays picked, its modes closed.
+    auto letGo = [&] { select(myTurn() ? selected_ : -1); };
+    if (!hex) return letGo();
     // A marked foe: the click only stages the strike (Engine2 stageAttack); the panel shows its hit chance and asks.
     if (const int foe = sceneUnitOf(battle_->unitAt(hex->x, hex->y)); foe >= 0 && myTurn())
       for (const auto& [t, from] : targets_)
@@ -3141,7 +3143,7 @@ class MapStage final : public Stage {
     const int ui = sceneUnitOf(battle_->unitAt(hex->x, hex->y));
     if (ui >= 0 && ui != selected_ && unitCard_[static_cast<size_t>(ui)].drawn && battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(ui)])].alive)
       return select(ui);
-    select(-1);
+    letGo();
   }
 
   void select(int ui) {
@@ -3600,16 +3602,16 @@ class MapStage final : public Stage {
       if (active < 0) return;
     }
     if (active == turnUnit_) {
-      // A saved fight resumed mid-turn: the hero whose turn it is stands picked again (else Esperar / Fim do turno and the
-      // actions stay dead until the player clicks it).
-      if (pickActiveOnResume_) {
-        pickActiveOnResume_ = false;
-        const int ui = sceneUnitOf(active);
-        if (ui >= 0 && battle_->units()[static_cast<size_t>(active)].side == "player") {
-          undo_.clear();
-          select(ui);
-        }
+      // The hero whose turn it is always stands picked (the user, 2026-10-20): whenever nothing is picked (a saved fight
+      // resumed mid-turn, a click on bare ground, Esc on another unit), it is picked again, else Esperar / Fim do turno and
+      // the actions stay dead until the player clicks it. Another unit clicked to look at it stays picked until let go.
+      const int ui = sceneUnitOf(active);
+      if (selected_ < 0 && ui >= 0 && battle_->units()[static_cast<size_t>(active)].side == "player" &&
+          battle_->units()[static_cast<size_t>(active)].alive) {
+        if (pickActiveOnResume_) undo_.clear();
+        select(ui);
       }
+      pickActiveOnResume_ = false;
       return;
     }
     pickActiveOnResume_ = false;
