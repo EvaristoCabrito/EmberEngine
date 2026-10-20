@@ -62,7 +62,7 @@ class InventoryScreen {
                          kDanger = IM_COL32(181, 74, 50, 255), kBorder = IM_COL32(74, 74, 74, 255);
   static constexpr const char* kPotions[7] = {"weak", "mid", "potent", "disease", "manaSmall", "manaMid", "manaLarge"};
   static constexpr const char* kBagIcon = "game/icons/refresh-001/packs/small-pouch.png";  // Engine2's, no longer drawn
-  static constexpr const char* kBagArt = "content/ui/status/mochila-sq-v01.jpg";           // the user's Mochila (2026-10-19)
+  static constexpr const char* kBagArt = "content/ui/status/mochila-sq-v02.jpg";           // the user's Mochila (2026-10-19)
 
   struct DollSlot {
     const char* id;

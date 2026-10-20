@@ -122,8 +122,8 @@ class BattleStatusSheet {
                          kOk = IM_COL32(150, 200, 130, 255), kWarn = IM_COL32(201, 154, 92, 255), kSky = IM_COL32(125, 211, 252, 255);
 
   // The sheet's own art (the user's, 2026-10-19: StatusScreenIcons), squared and cropped from Attachments/StatusScreenIcons.
-  static constexpr const char *kMochilaIcon = "content/ui/status/mochila-sq-v01.jpg", *kEquiparIcon = "content/ui/status/equipar-sq-v01.jpg",
-                              *kSkillsIcon = "content/ui/status/skills-sq-v01.jpg";
+  static constexpr const char *kMochilaIcon = "content/ui/status/mochila-sq-v02.jpg", *kEquiparIcon = "content/ui/status/equipar-sq-v02.jpg",
+                              *kSkillsIcon = "content/ui/status/skills-sq-v02.jpg";
 
   struct Condition {
     std::string title, detail, icon;  // icon: the status art's name
@@ -257,27 +257,27 @@ class BattleStatusSheet {
       cy += badgeH + 6.0f;
       auto shortcut = [&](const char* id, const char* iconPath, const std::string& label, const std::function<void(size_t)>& action) {
         if (!action) return;
-        const ImVec2 a{rightX, cy}, b{rightX + rightW, cy + 36.0f};
+        const ImVec2 a{rightX, cy}, b{rightX + rightW, cy + 44.0f};
         ImGui::SetCursorScreenPos(a);
-        if (ImGui::InvisibleButton(id, {rightW, 36.0f})) action(unit_);
+        if (ImGui::InvisibleButton(id, {rightW, 44.0f})) action(unit_);
         dl->AddRectFilled(a, b, IM_COL32(0, 0, 0, 255), 6.0f);
         dl->AddRect(a, b, ImGui::IsItemHovered() ? kAccent : kBorder, 6.0f);
-        if (const UiImage* icon = uiImage(std::filesystem::path(iconPath))) imageContain(dl, *icon, {a.x + 3, a.y + 3}, {a.x + 33, a.y + 33});  // the user's art, 2026-10-19
-        dl->AddText(ui, 14.0f, {a.x + 38, a.y + 10}, kFg, label.c_str());
-        cy += 36.0f + 6.0f;
+        if (const UiImage* icon = uiImage(std::filesystem::path(iconPath))) imageContain(dl, *icon, {a.x + 3, a.y + 3}, {a.x + 41, a.y + 41});  // the user's art, 2026-10-19
+        dl->AddText(ui, 14.0f, {a.x + 48, a.y + 14}, kFg, label.c_str());
+        cy += 44.0f + 6.0f;
       };
       if (player) {
         shortcut("##stpack", kMochilaIcon, en ? "Backpack" : "Mochila", hooks.openPack);
         shortcut("##stequip", kEquiparIcon, en ? "Equip" : "Equipar", hooks.openEquip);
         {  // Skills: the spells, the skills and the trained perícias in a window of their own
-          const ImVec2 a{rightX, cy}, b{rightX + rightW, cy + 36.0f};
+          const ImVec2 a{rightX, cy}, b{rightX + rightW, cy + 44.0f};
           ImGui::SetCursorScreenPos(a);
-          if (ImGui::InvisibleButton("##stskills", {rightW, 36.0f})) skillsOpen_ = true;
+          if (ImGui::InvisibleButton("##stskills", {rightW, 44.0f})) skillsOpen_ = true;
           dl->AddRectFilled(a, b, IM_COL32(0, 0, 0, 255), 6.0f);
           dl->AddRect(a, b, ImGui::IsItemHovered() ? kAccent : kBorder, 6.0f);
-          if (const UiImage* icon = uiImage(std::filesystem::path(kSkillsIcon))) imageContain(dl, *icon, {a.x + 3, a.y + 3}, {a.x + 33, a.y + 33});
-          dl->AddText(ui, 14.0f, {a.x + 38, a.y + 10}, kFg, "Skills");
-          cy += 36.0f + 6.0f;
+          if (const UiImage* icon = uiImage(std::filesystem::path(kSkillsIcon))) imageContain(dl, *icon, {a.x + 3, a.y + 3}, {a.x + 41, a.y + 41});
+          dl->AddText(ui, 14.0f, {a.x + 48, a.y + 14}, kFg, "Skills");
+          cy += 44.0f + 6.0f;
         }
       }
       bottom = std::max(bottom, cy);
