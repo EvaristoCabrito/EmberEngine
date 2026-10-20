@@ -587,6 +587,14 @@ class MapStage final : public Stage {
     renderer.setLights(lights_);
     laps.lap("hand-over");
     Renderer::Lighting lighting = mapLighting(time);
+    // aldeia's sky at the end of the day (the user, 2026-10-19: "ajuste a cor do azul no céu, até as nuvens reagem, menos o céu"):
+    // exposed for the board, the blue stayed as light as at noon while the clouds took the sunset's colour. As the sun sinks under
+    // 15 deg the sky behind the board (and its reflection) darkens into a dusk blue, 1.5 stops at 2 deg; the glow by the sun stays
+    // bright, the board's light is unchanged. Every other map unchanged.
+    if (lightingMode_ == 3 && aldeia() && !moonNight_) {
+      const float elevation = glm::degrees(std::asin(std::clamp(lighting.sunDirection.y, -1.0f, 1.0f)));
+      lighting.skyScale *= glm::mix(0.35f, 1.0f, glm::smoothstep(2.0f, 15.0f, elevation));
+    }
     if (lightingMode_ == 3) {
       // The physical camera (ARCHITECTURE 7.6 step A): EV100 from the light metered on the board (incident meter:
       // EV100 = log2(E / 2.5)), darker at night by up to 2.5 stops so night reads as night, and the eye adapting to
