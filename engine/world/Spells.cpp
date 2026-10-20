@@ -338,47 +338,61 @@ const PoisonTier* poisonTier(const std::string& id) {
   return nullptr;
 }
 
-// --- Reach that grows with the level, gradually (the user, 2026-10-20: "long range, small areas of effect based on dungeons and
-// dragons"; "o range comece pequeno como está hoje e aumente"; "tem que começar a escalar do nível em que ele ganha"; "os ganhos
-// precisam ser graduais"; Míssil Mágico "apenas até o 15 como está no jogo") ---
-// Each spell starts at its own reach on the level it is learned and gains `gain` hexes, one at a time, by the level its own
-// scaling ends (Como jogar: the first spells scale to 15, Ice Storm's own table already grows its reach; the promotions' and
-// the classes' new spells to 30). Touch spells, cones / rays from the caster, self areas and the weapon skills keep their reach.
-struct ReachScale {
+// --- Reach: +1 hex per level from the level a spell is learned, up to 12 hexes (the user, 2026-10-20: "o alcance aumenta à
+// vontade, tem que aumentar por level igual DD2", "com um cap obviamente", "manda brasa"; 12 = the party's sight) ---
+// Touch spells, cones / lines / rays from the caster, self areas and the weapon skills keep their reach. Off in the Cooker's checks.
+constexpr int kReachCap = 12;
+struct ReachFrom {
   const char* kind;
-  int from, to, gain;
+  int from;  // the level the spell is learned
 };
-constexpr ReachScale kReachScale[] = {
-    {"magicMissile", 1, 15, 3},    {"magicMissileV2", 1, 15, 3}, {"lightning", 1, 15, 3},      {"lightningTier3", 15, 30, 3},
-    {"fireball", 1, 15, 3},        {"divineBolt", 1, 15, 2},     {"webOfDreams", 1, 15, 1},    {"phantasmalForce", 2, 15, 2},
-    {"cureDisease", 1, 15, 1},     {"cureMinor", 1, 15, 2},      {"cureLight", 1, 15, 1},      {"longShot", 1, 15, 2},
-    {"bloodyShot", 5, 15, 2},      {"multiShot", 1, 15, 2},      {"frost", 5, 15, 2},          {"summonFamiliar", 1, 15, 2},
-    {"summonFamiliar2", 1, 15, 2}, {"summonFamiliar3", 1, 15, 2}, {"summonFamiliar4", 1, 15, 2}, {"summonZombieDog", 1, 15, 2},
+constexpr ReachFrom kReachFrom[] = {
+    {"magicMissile", 1},    {"magicMissileV2", 1}, {"lightning", 1},       {"lightningTier3", 15}, {"fireball", 1},
+    {"divineBolt", 1},      {"webOfDreams", 1},    {"phantasmalForce", 2}, {"cureDisease", 1},     {"cureMinor", 1},
+    {"cureLight", 1},       {"longShot", 1},       {"bloodyShot", 5},      {"multiShot", 1},       {"summonFamiliar", 1},
+    {"summonFamiliar2", 1}, {"summonFamiliar3", 1}, {"summonFamiliar4", 1}, {"summonZombieDog", 1},
 };
-// The classes' new spells cast at a distance: from the level the class learns them to 30 (the shots: the hexes past the bow).
-int emberReachGain(const std::string& kind) {
+// The classes' new spells cast at a distance (the shots: the hexes past the bow).
+bool emberReachGrows(const std::string& kind) {
   static const std::set<std::string> kGrows = {"markOfRuin",     "creepingPlague", "lifeDrain",       "shroudOfShadows", "hemorrhage",
                                                "profaneSilence", "blackPestilence", "curseOfDecay",   "soulHarvest",     "devouringVoid",
-                                               "pillarOfFlame",  "iceLance",        "meteor",         "absoluteZero",    "chainLightning",
-                                               "wrathOfTheSkies", "primordialEmber", "arrowRain",     "arrowStorm",      "circleOfHealing",
-                                               "judgment",       "placeSwap",       "mirrorImage",    "detonateSummon",  "nightmare",
-                                               "venomArrow",     "explosiveArrow",  "cripplingShot",  "deathShot"};
-  if (kind == "thunderstorm") return 3;
-  return kGrows.contains(kind) ? 2 : 0;
+                                               "pillarOfFlame",  "iceLance",        "thunderstorm",   "meteor",          "absoluteZero",
+                                               "chainLightning", "wrathOfTheSkies", "primordialEmber", "arrowRain",      "arrowStorm",
+                                               "circleOfHealing", "judgment",       "placeSwap",      "mirrorImage",     "detonateSummon",
+                                               "nightmare",      "venomArrow",      "explosiveArrow", "cripplingShot",   "deathShot"};
+  return kGrows.contains(kind);
 }
-// The hexes a spell's reach has gained at this level: gain x (level - from) / (to - from), rounded down (+1 at a time).
+// The levels gained since the spell was learned (each one a hex of reach; the caller caps the reach at kReachCap).
 int reachGain(const std::string& kind, int level) {
   if (!progressionEnabled()) return 0;
-  int from = 0, to = 0, gain = 0;
-  for (const ReachScale& s : kReachScale)
-    if (kind == s.kind) from = s.from, to = s.to, gain = s.gain;
-  if (gain == 0)
-    if (const EmberSpell* e = emberSpell(kind)) from = e->learn, to = 30, gain = emberReachGain(kind);
-  if (gain <= 0 || level <= from) return 0;
-  if (level >= to) return gain;
-  return gain * (level - from) / (to - from);
+  int from = -1;
+  for (const ReachFrom& r : kReachFrom)
+    if (kind == r.kind) from = r.from;
+  if (from < 0 && emberReachGrows(kind))
+    if (const EmberSpell* e = emberSpell(kind)) from = e->learn;
+  return from < 0 ? 0 : std::max(0, level - from);
 }
-int grownReach(const std::string& kind, int base, int level) { return base + reachGain(kind, level); }
+// A spell's reach at this level: its own, +1 per level, never past kReachCap (nor below its own).
+int grownReach(const std::string& kind, int base, int level) { return std::max(base, std::min(kReachCap, base + reachGain(kind, level))); }
+// A bow skill's reach: the bow's own plus the skill's extra hexes, never past kReachCap (nor below the bow's).
+int shotReach(int bow, int extra) { return std::max(bow, std::min(kReachCap, bow + extra)); }
+// --- Areas of effect: +1 radius every 10 levels after the spell is learned, never past radius 3 (the user, 2026-10-20: only the
+// spells with an area grow one, "sem exageros na AOE"). The weapon skills keep theirs. ---
+constexpr int kAreaCap = 3;
+constexpr ReachFrom kAreaFrom[] = {
+    {"fireball", 1}, {"webOfDreams", 1}, {"divineBolt", 1}, {"causticVenom", 1}, {"minorVenom", 1},
+    {"bless", 3},    {"auraOfProtection", 1}, {"intimidatingPresence", 1}, {"turnUndead", 6},
+};
+bool emberAreaGrows(const std::string& kind);
+int areaRadius(const std::string& kind, int base, int level) {
+  if (!progressionEnabled() || base >= kAreaCap) return base;
+  int from = -1;
+  for (const ReachFrom& r : kAreaFrom)
+    if (kind == r.kind) from = r.from;
+  if (from < 0 && emberAreaGrows(kind))
+    if (const EmberSpell* e = emberSpell(kind)) from = e->learn;
+  return from < 0 ? base : std::min(kAreaCap, base + std::max(0, level - from) / 10);
+}
 
 // --- EmberEngine's own spells: their numbers by the caster's level (docs/SPELLS_PROMOTIONS.md) -------------------------
 struct EmberNumbers {
@@ -611,8 +625,9 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
   // The reach that grows with the level, gradually (reachGain): the spells cast at a distance (their range) and the Arqueiro's
   // shots (the hexes past the bow's reach). The Guerreiro's leap and the Lanceiro's throws, pulls and swaps keep theirs.
   static const std::set<std::string> kLengthGrows = {"venomArrow", "explosiveArrow", "cripplingShot", "deathShot"};
-  if (kLengthGrows.contains(kind)) n.length += reachGain(kind, lv);
-  else n.range += reachGain(kind, lv);
+  if (kLengthGrows.contains(kind)) n.length += reachGain(kind, lv);  // capped with the bow's reach (shotReach)
+  else n.range = grownReach(kind, n.range, lv);
+  if (emberAreaGrows(kind)) n.radius = areaRadius(kind, n.radius, lv);  // only a spell with an area grows one
   return n;
 }
 // Both sides stand in its area (else the caster's foes only).
@@ -626,6 +641,8 @@ bool emberAreaSpell(const std::string& kind) {
          kind == "thunderstorm" || kind == "meteor" || kind == "absoluteZero" || kind == "primordialEmber" || kind == "circleOfHealing" ||
          kind == "judgment" || kind == "nightmare";
 }
+// The classes' spells with an area, whose area grows (areaRadius); single-target spells and the weapon skills never gain one.
+bool emberAreaGrows(const std::string& kind) { return emberAreaSpell(kind) || kind == "eruption" || kind == "detonateSummon" || archerVolley(kind); }
 // Ressurreição: the fallen ally (the party's, not a summon) lying on the hex, or -1. The dead keep the hex they fell on.
 int fallenAllyAt(const Battle& b, size_t caster, BattleHex cell) {
   const std::string& side = b.units()[caster].side;
@@ -775,7 +792,8 @@ std::vector<BattleHex> frostArea(const Battle& b, BattleHex origin, BattleHex th
   std::vector<BattleHex> out;
   // The line grows with the level like every other spell's reach (reachGrowth; the user, 2026-10-19: "frost really need to scale
   // the distance like the others").
-  const int length = frostPower(level).length + reachGain("frost", level);
+  // The line is Frost's area: it keeps its own growth (+1 hex every 4 levels) and one more at 10 and at 15.
+  const int length = frostPower(level).length + (progressionEnabled() ? std::clamp(2 * (level - 5) / 10, 0, 2) : 0);
   for (int i = 1; i <= length; ++i) {
     const double t = static_cast<double>(i) / n;
     const Cube c = cubeRound(aq + (B.q - A.q) * t, ar + (B.r - A.r) * t, as + (B.s - A.s) * t);
@@ -1973,7 +1991,7 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     if (foe < 0 || !targetable(b, foe)) return fail("Escolha um inimigo visível.");
     const int d = hexDist(from, cell);
     if (d < u.minRange) return fail(std::format("Alvo perto demais (alcance mínimo {} hexes).", u.minRange));
-    if (d > u.maxRange + n.length) return fail(std::format("Alvo fora de alcance (máximo {} hexes).", u.maxRange + n.length));
+    if (d > shotReach(u.maxRange, n.length)) return fail(std::format("Alvo fora de alcance (máximo {} hexes).", shotReach(u.maxRange, n.length)));
     if (!clearShot(b, from, cell, true)) return fail("O tiro está bloqueado.");
     s.dice = 0, s.spellMul = 1;
     s.tiles = {cell}, s.ids = {static_cast<size_t>(foe)};
@@ -2430,7 +2448,7 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   else if (kind == "shock") maxRange = kShockRange;
   else if (kind == "magicMissile" || kind == "magicMissileV2") maxRange = grown(kMissileRange), shot = true;
   else if (kind == "doubleStrike") minRange = u.minRange, maxRange = u.maxRange, shot = u.maxRange > 1, arrow = true;
-  else if (const CureData* cure = cureData(kind)) maxRange = cure->range + reachGain(kind, u.level);
+  else if (const CureData* cure = cureData(kind)) maxRange = grownReach(kind, cure->range, u.level);
   else if (kind == "cureDisease") maxRange = grown(kCureDiseaseRange);
   else if (emberBoltSpell(kind) || emberAreaSpell(kind)) maxRange = emberNumbers(kind, u.level).range;  // ours: no line of fire needed
   else if (kind == "resurrection") maxRange = 1;  // the fallen ally beside the caster (or under its feet)
@@ -2440,7 +2458,7 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   else if (kind == "guardBreak") minRange = u.minRange, maxRange = u.maxRange, shot = u.maxRange > 1, arrow = true;  // the weapon's reach
   else if (kind == "steelWhirlwind") maxRange = 1;
   else if (kind == "leapingStrike") maxRange = -1;  // wherever a landing exists
-  else if (archerShot(kind)) minRange = u.minRange, maxRange = u.maxRange + emberNumbers(kind, u.level).length, shot = true, arrow = true;
+  else if (archerShot(kind)) minRange = u.minRange, maxRange = shotReach(u.maxRange, emberNumbers(kind, u.level).length), shot = true, arrow = true;
   else if (archerVolley(kind)) maxRange = emberNumbers(kind, u.level).range;  // from above: no line of fire
   // The Lanceiro's: the hook flies (a line of fire), the vault and the throw work on a neighbour, the swap reaches an ally
   else if (kind == "hookPull") minRange = 2, maxRange = emberNumbers(kind, u.level).range, shot = true, arrow = true;
@@ -2521,8 +2539,8 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
     return canHitFrom(b, caster, from, static_cast<size_t>(here)) ? true : fail("Esse inimigo não está ao alcance ou não pode ser atingido daqui.");
   }
   if (const CureData* cure = cureData(kind)) {
-    if (d > cure->range + reachGain(kind, u.level)) {
-      const std::string why = std::format("Alvo fora de alcance (máximo {} hexes).", cure->range + reachGain(kind, u.level));
+    if (d > grownReach(kind, cure->range, u.level)) {
+      const std::string why = std::format("Alvo fora de alcance (máximo {} hexes).", grownReach(kind, cure->range, u.level));
       if (error) *error = why;
       return false;
     }
@@ -2557,8 +2575,8 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
     if (archerShot(kind)) {
       if (!targetable(b, here)) return fail(here < 0 ? "Não há unidade na casa selecionada." : "Escolha um inimigo visível.");
       if (d < u.minRange) return fail("Alvo perto demais.");
-      if (d > u.maxRange + n.length) {
-        if (error) *error = std::format("Alvo fora de alcance (máximo {} hexes).", u.maxRange + n.length);
+      if (d > shotReach(u.maxRange, n.length)) {
+        if (error) *error = std::format("Alvo fora de alcance (máximo {} hexes).", shotReach(u.maxRange, n.length));
         return false;
       }
       return clearShot(b, from, cell, true) ? true : fail("O tiro está bloqueado.");
