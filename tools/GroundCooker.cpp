@@ -115,8 +115,9 @@ bool cookGround(JobSystem& jobs, const GroundCookOptions& options, std::vector<P
   // The painted backdrops (screen backgrounds: basic BC7 is plenty, and much less work than slow).
   std::vector<std::string> backdropAssets;
   {
-    // Engine2's, then EmberEngine's own (content/backdrops, e2::emberBackdrop).
-    for (const std::filesystem::path& folder : {options.engine2Public / "game/map-backgrounds", std::filesystem::path("content/backdrops")}) {
+    // Every painted background lives in one folder of the project, content/backdrops (Engine2's 39 copied there, the user's own beside them:
+    // the user, 2026-10-20: "quero todos em uma pasta no EmberEngine"); Engine2's folder is no longer read.
+    for (const std::filesystem::path& folder : {std::filesystem::path("content/backdrops")}) {
       std::error_code error;
       for (const auto& entry : std::filesystem::directory_iterator(folder, error)) {
         const std::string ext = entry.path().extension().string();
