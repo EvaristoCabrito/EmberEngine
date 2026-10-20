@@ -15,6 +15,9 @@
    "aldeia-fogo-v01.png",
    "aldeia-fundo2-v01.jpg",
    "aldeia-paisagem-v01.png"
+  ],
+  "vau": [
+   "vau-panorama-v01.png"
   ]
  },
  "paintings": {
@@ -143,6 +146,21 @@
    "skyTop": 0.03,
    "glowColumn": 0.5,
    "whole": true
+  },
+  "vau-panorama-v01.png": {
+   "horizon": 0.41,
+   "bottom": 1.0,
+   "skyTop": 0.0,
+   "degreesPerHeight": 40.0,
+   "bottomDegrees": 23.6,
+   "spanDegrees": 119.0,
+   "glowColumn": 0.65,
+   "horizonDegrees": -4.0,
+   "alphaSky": true,
+   "ground": "vau-ground-v01.jpg",
+   "groundTile": 120.0,
+   "groundFar": 300.0,
+   "groundFromDegrees": 3.0
   }
  }
 }
