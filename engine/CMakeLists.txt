@@ -43,6 +43,7 @@ add_library(EmberEngine STATIC
   render/vfx/LancerFx.cpp
   render/vfx/HealerFx.cpp
   render/vfx/ConjurerFx.cpp
+  render/vfx/StatusFx.cpp
   render/vfx/TurnUndead.cpp
   render/MeshScene.cpp
   render/MeshBuild.cpp

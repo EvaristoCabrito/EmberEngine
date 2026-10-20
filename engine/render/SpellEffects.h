@@ -38,6 +38,7 @@
 #include "render/vfx/ConjurerFx.h"
 #include "render/vfx/HealerFx.h"
 #include "render/vfx/LancerFx.h"
+#include "render/vfx/StatusFx.h"
 #include "render/vfx/RangerFx.h"
 #include "render/vfx/WarriorFx.h"
 #include "render/vfx/DreamWeb.h"
@@ -145,9 +146,11 @@ class SpellEffects {
   void build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out, std::vector<Light>& lights);
   const VfxFrame& vfx() const { return vfx_; }
   bool active(float now) const;
-  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), dreamWebs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), frosts_.clear(), warrior_.clear(), ranger_.clear(), lancer_.clear(), turnUndead_.clear(), healer_.clear(), conjurer_.clear(); }
+  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), dreamWebs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), frosts_.clear(), warrior_.clear(), ranger_.clear(), lancer_.clear(), turnUndead_.clear(), healer_.clear(), conjurer_.clear(), status_.clear(); }
   // The Conjurador's standing illusions (Imagem Espelhada) and the swap of Troca de Lugar: the stage times them (MapStage syncMirrors / animateFlights).
   ConjurerFx& conjurer() { return conjurer_; }
+  // Poison and disease standing on a unit (vfx/StatusFx, ours, 3D): the stage keeps one per condition per unit (MapStage syncStatus).
+  StatusFx& status() { return status_; }
   // A version that keeps Engine2's own timeline decides when the hit lands: seconds from the cast (Míssil Mágico 02:
   // Engine2's charge, then the flight). Below 0: the version lands on the caller's impact (the pose's).
   float impactDelay(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const;
@@ -271,6 +274,7 @@ class SpellEffects {
   HealerFx healer_;        // the Curandeiro's Círculo de Cura / Ressurreição / Julgamento (ours, 3D)
   static bool isHealer(const std::string& kind) { return kind == "circleOfHealing" || kind == "resurrection" || kind == "judgment"; }
   ConjurerFx conjurer_;    // the Conjurador's seven (ours, 3D)
+  StatusFx status_;        // poison / disease on the units (ours, 3D)
   static bool isConjurer(const std::string& kind) {
     return kind == "placeSwap" || kind == "boneLance" || kind == "mirrorImage" || kind == "detonateSummon" || kind == "sacrificeBond" || kind == "nightmare" ||
            kind == "empowerSummons";

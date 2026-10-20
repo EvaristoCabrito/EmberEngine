@@ -539,6 +539,7 @@ class MapStage final : public Stage {
       syncWebs();
       syncVigils();
       syncMirrors();
+      syncStatus();
       // Numbers held back for an effect still in the air (a Meteoro's fall).
       for (size_t i = 0; i < pendingFx_.size();) {
         if (time >= pendingFx_[i].first) showEffects(pendingFx_[i].second), pendingFx_.erase(pendingFx_.begin() + static_cast<std::ptrdiff_t>(i));
@@ -4417,6 +4418,30 @@ class MapStage final : public Stage {
       }
     }
   }
+  // Poison and disease on every unit drawn that has them (StatusFx: one effect per condition, both layered on a unit with both),
+  // following it, faded out when the rules lift the condition, the unit dies or its card is not drawn (an enemy out of sight).
+  void syncStatus() {
+    if (!battle_) return;
+    for (size_t i = 0; i < battle_->units().size(); ++i) {
+      const e2::BattleUnit& u = battle_->units()[i];
+      const int ui = sceneUnitOf(static_cast<int>(i));
+      const bool shown = u.alive && ui >= 0 && static_cast<size_t>(ui) < unitCard_.size() && unitCard_[static_cast<size_t>(ui)].drawn;
+      for (int c = 0; c < 2; ++c) {
+        const bool on = shown && (c == 0 ? u.poisoned : u.diseased);
+        const int key = static_cast<int>(i) * 2 + c;
+        const auto it = statusFx_.find(key);
+        if (on) {
+          const SpellEffects::Spot sp = unitSpot(static_cast<size_t>(ui));
+          if (it == statusFx_.end())
+            statusFx_[key] = spellFx_.status().start(c == 0 ? StatusFx::Kind::Poison : StatusFx::Kind::Disease, sp.feet, sp.cardHeight, now_);
+          else spellFx_.status().move(it->second, sp.feet, sp.cardHeight);
+        } else if (it != statusFx_.end()) {
+          spellFx_.status().end(it->second, now_);
+          statusFx_.erase(it);
+        }
+      }
+    }
+  }
   // Imagem Espelhada's standing illusions (ConjurerFx::mirror*) beside every unit that has them, following it, one fewer when a copy is
   // struck, gone when they end.
   void syncMirrors() {
@@ -4702,6 +4727,14 @@ class MapStage final : public Stage {
       unitDiedAt_[static_cast<size_t>(gi)] = -1000.0f;
       unitShot_[static_cast<size_t>(gi)] = {};
       return logInfo("battle script: kill {}: fallen at ({}, {})", p[1], v.x, v.y);
+    }
+    if (p[0] == "sick" && p.size() > 2) {  // "sick:<unit>:poison|disease": the unit poisoned (Veneno Menor) or diseased, to see the effect
+      const int gi = sceneUnitNamed(p[1]);
+      if (gi < 0) return fail("no such unit");
+      e2::BattleUnit& v = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(gi)])];
+      if (p[2] == "disease") v.diseased = true;
+      else v.poisoned = true, v.poisonTier = v.poisonTier.empty() ? "lesser" : v.poisonTier;
+      return logInfo("battle script: sick {} {}: poisoned {} diseased {}", p[1], p[2], v.poisoned, v.diseased);
     }
     if (p[0] == "goto" && p.size() > 3) {  // "goto:<unit>:<x>:<y>": the unit set down on a hex (a waypoint, for captures)
       const int gi = sceneUnitNamed(p[1]);
@@ -8279,6 +8312,7 @@ class MapStage final : public Stage {
   std::optional<EnemyTurn> enemyTurn_;
   std::map<int, int> vigilFx_;  // battle unit in its Vigília da Sentinela -> its standing effect (LancerFx::vigilStart)
   std::map<int, int> mirrorFx_;  // battle unit with Imagem Espelhada's illusions -> their standing effect (ConjurerFx::mirrorStart)
+  std::map<int, int> statusFx_;  // battle unit x 2 (+1 = disease) -> its poison / disease effect (StatusFx::start)
   std::unordered_set<int> awake_;         // enemies that have seen the party (fog)
   int roamLeader_ = -1;                   // free roam: the scene unit the party follows
   float modeSwitchAt_ = -100.0f;          // free roam's last turn into a fight (the banner)

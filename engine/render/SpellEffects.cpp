@@ -861,6 +861,7 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   turnUndead_.build(now, camera, vfx_, vfxLights);
   healer_.build(now, camera, vfx_, vfxLights);
   conjurer_.build(now, camera, vfx_, vfxLights);
+  status_.build(now, camera, vfx_, vfxLights);
   for (const VfxLight& l : vfxLights)
     if (l.intensity > 0.0f) lights.push_back({l.at, {l.color.r, l.color.g, l.color.b}, l.intensity, l.distance, std::max(l.at.y, 1.0f)});
   const size_t first = out.size();

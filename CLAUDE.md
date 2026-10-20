@@ -873,6 +873,15 @@ TRIPLE AAA AGORA", "um céu inteiro com 24 horas de transição com sol, lua, tu
   blue day-like night). `camera:` log line once per capture (meter, EV, darkening, exposure, key lux, elevation).
 - Not done: constellation lines (never asked), twinkle, the planets; the band's strength is a first guess.
 
+## Veneno / Doença em 3D (2026-10-20; the user: Engine2's were WebGL and missing here, "recria algo similar em 3D")
+
+- `engine/render/vfx/StatusFx.*`: Engine2's drawStatusFx idea (haze, motes feet to head, vapour lines; green quick = poison, violet slow =
+  disease, both layered) standing round the body: lit vapour puffs wrapping the card (eye side over it, far side behind), a pulsing stain on
+  the ground, three spiralling wisps (tubes), motes, a faint light. `MapStage::syncStatus` (u.poisoned / u.diseased, only while the card is
+  drawn). Script step `sick:<unit>:poison|disease`. One look, no OFF (combat VFX rule). Verified: debug + validation capture exit 0
+  (`captures/status/`), release built. Not verified: the look in the window (the user judges).
+- World map field spells: Criar Comida e Água's row shows Engine2's `game/icons/create-food-and-water.png`.
+
 ## Next
 
 The user's verdict (2026-10-15): the engine as seen is worse than Engine2 ("worst colours and render I've ever
