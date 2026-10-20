@@ -641,19 +641,20 @@ bool aimE2(const Battle& b, size_t caster, const std::string& kind, BattleHex ce
     if (d > range) return no(rangeMsg(range));
     return clearShot(b, from, cell, false) ? yes() : no("O tiro está bloqueado.");
   };
-  if (kind == "fireball") return bolt(kFireballRange);
-  if (kind == "iceStorm") return bolt(iceStormPower(u.level).range);
+  const auto grown = [&](int base) { return grownReach(kind, base, u.level); };  // the reach that grows with the level
+  if (kind == "fireball") return bolt(grown(kFireballRange));
+  if (kind == "iceStorm") return bolt(grown(iceStormPower(u.level).range));
   if (kind == "causticVenom") return bolt(kCausticVenom.range);
   if (kind == "minorVenom") return bolt(kMinorVenom.range);
-  if (kind == "divineBolt") return bolt(kDivineBolt.range);
-  if (kind == "webOfDreams") return bolt(kWebRange);
+  if (kind == "divineBolt") return bolt(grown(kDivineBolt.range));
+  if (kind == "webOfDreams") return bolt(grown(kWebRange));
   // The verdict is spellAimValid's (targetable, range, line of fire); the reason, when it fails, spellAimError's.
   auto whyNotTarget = [&]() -> std::string {
     if (const std::string e = targetError(); !e.empty()) return e;
     return "Escolha um inimigo visível.";
   };
   if (kind == "bloodyShot" || kind == "multiShot") {
-    const int range = kind == "bloodyShot" ? kBloodyShotRange : kMultiShotRange;
+    const int range = grown(kind == "bloodyShot" ? kBloodyShotRange : kMultiShotRange);
     if (!targetable(b, here)) return no(whyNotTarget());
     if (d < u.minRange) return no(std::format("Alvo perto demais (alcance mínimo {} hexes).", u.minRange));
     if (d > range) return no(std::format("Alvo fora de alcance (máximo {} hexes).", range));
@@ -661,11 +662,11 @@ bool aimE2(const Battle& b, size_t caster, const std::string& kind, BattleHex ce
   }
   if (kind == "lightningTier3") {
     if (!targetable(b, here)) return no(whyNotTarget());
-    return d <= kLightningT3Range ? yes() : no(targetRangeMsg(kLightningT3Range));
+    return d <= grown(kLightningT3Range) ? yes() : no(targetRangeMsg(grown(kLightningT3Range)));
   }
   if (kind == "phantasmalForce") {
     if (!targetable(b, here)) return no(whyNotTarget());
-    if (d > kPhantasmalRange) return no(targetRangeMsg(kPhantasmalRange));
+    if (d > grown(kPhantasmalRange)) return no(targetRangeMsg(grown(kPhantasmalRange)));
     return clearShot(b, from, cell, false) ? yes() : no("O tiro está bloqueado.");
   }
   if (kind == "trip" || kind == "familiarLifeDrain" || kind == "executionerStrike" || kind == "shieldBash") {
@@ -695,7 +696,8 @@ bool aimE2(const Battle& b, size_t caster, const std::string& kind, BattleHex ce
   if (kind == "turnUndead" || kind == "bless" || kind == "auraOfProtection" || kind == "intimidatingPresence")
     return cell == from ? yes() : no("Esta magia não precisa de alvo.");
   if (const SummonSpec* sp = summonSpec(kind)) {
-    if (d > sp->range) return no(std::format("Ponto de invocação fora de alcance (máximo {} hexes).", sp->range));
+    const int reach = sp->range + reachGrowth(u.level);  // a summoner's reach grows with its level too
+    if (d > reach) return no(std::format("Ponto de invocação fora de alcance (máximo {} hexes).", reach));
     if (!inBoardXY(b, cell.x, cell.y)) return no("O ponto de invocação fica fora do mapa.");
     const SummonData& data = summonData();
     const auto it = data.classes.find(sp->classId);

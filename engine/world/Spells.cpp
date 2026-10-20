@@ -306,6 +306,22 @@ const PoisonTier* poisonTier(const std::string& id) {
   return nullptr;
 }
 
+// --- Reach that grows with the level (the user, 2026-10-19: "o range de todas as magias e habilidades de arqueiro dêem uma
+// escalada com o passar dos níveis, está tudo muito curto, explode só em cima da party"; "sem exageros para ninguém, só
+// precisam de alguns a mais com o passar do tempo") ---
+// +1 hex from level 7, +2 from 15, +3 from 23, on every mage's spell cast at a distance (bolts, areas, cures, summons) and on the
+// archer's skills. Touch spells, cones / rays from the caster, self areas and the other classes' weapon skills keep their reach.
+// Off in the Cooker's checks (they compare Engine2's own reach).
+int reachGrowth(int level) { return progressionEnabled() ? std::clamp((level + 1) / 8, 0, 3) : 0; }
+// Engine2's spells and skills whose reach grows (ours grow in emberNumbers).
+bool reachGrows(const std::string& kind) {
+  static const std::set<std::string> kGrows = {"magicMissile", "magicMissileV2", "lightning", "lightningTier3", "fireball", "iceStorm",
+                                               "divineBolt", "webOfDreams", "phantasmalForce", "cureDisease", "longShot", "bloodyShot",
+                                               "multiShot"};
+  return kGrows.contains(kind);
+}
+int grownReach(const std::string& kind, int base, int level) { return reachGrows(kind) ? base + reachGrowth(level) : base; }
+
 // --- EmberEngine's own spells: their numbers by the caster's level (docs/SPELLS_PROMOTIONS.md) -------------------------
 struct EmberNumbers {
   int range = 0, radius = 0;  // reach; the area around the aimed hex (0 = one hex / a line / a cone)
@@ -489,6 +505,16 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
     n.range = 7, n.radius = lv >= 30 ? 4 : 3, n.mul = lv >= 29 ? 3.7 : 3.4, n.dice = lv >= 27 ? 5 : 4, n.faces = 10;
     n.hazardDice = 2, n.hazardFaces = 8, n.rounds = 2;
   }
+  // The reach that grows with the level (reachGrowth): the Bruxo's and the Elementalista's spells cast at a distance, the
+  // Arqueiro's volleys (their range) and shots (the hexes past the bow's reach). The Guerreiro's leap and the Lanceiro's
+  // throws, pulls and swaps keep theirs.
+  static const std::set<std::string> kRangeGrows = {"markOfRuin",   "creepingPlague", "lifeDrain",     "shroudOfShadows", "hemorrhage",
+                                                     "profaneSilence", "blackPestilence", "curseOfDecay", "soulHarvest",   "devouringVoid",
+                                                     "pillarOfFlame", "iceLance",       "thunderstorm",  "meteor",        "absoluteZero",
+                                                     "chainLightning", "wrathOfTheSkies", "primordialEmber", "arrowRain",   "arrowStorm"};
+  static const std::set<std::string> kLengthGrows = {"venomArrow", "explosiveArrow", "cripplingShot", "deathShot"};
+  if (kRangeGrows.contains(kind)) n.range += reachGrowth(lv);
+  if (kLengthGrows.contains(kind)) n.length += reachGrowth(lv);
   return n;
 }
 // Both sides stand in its area (else the caster's foes only).
@@ -2074,13 +2100,14 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   if (spellInstant(kind)) return zone;
   int minRange = 0, maxRange = -1;
   bool shot = false, arrow = false;
-  if (kind == "longShot") minRange = u.minRange, maxRange = kLongShotRange, shot = true, arrow = true;
-  else if (kind == "lightning") maxRange = kLightningRange;
+  const auto grown = [&](int base) { return grownReach(kind, base, u.level); };
+  if (kind == "longShot") minRange = u.minRange, maxRange = grown(kLongShotRange), shot = true, arrow = true;
+  else if (kind == "lightning") maxRange = grown(kLightningRange);
   else if (kind == "shock") maxRange = kShockRange;
-  else if (kind == "magicMissile" || kind == "magicMissileV2") maxRange = kMissileRange, shot = true;
+  else if (kind == "magicMissile" || kind == "magicMissileV2") maxRange = grown(kMissileRange), shot = true;
   else if (kind == "doubleStrike") minRange = u.minRange, maxRange = u.maxRange, shot = u.maxRange > 1, arrow = true;
-  else if (const CureData* cure = cureData(kind)) maxRange = cure->range;
-  else if (kind == "cureDisease") maxRange = kCureDiseaseRange;
+  else if (const CureData* cure = cureData(kind)) maxRange = cure->range + reachGrowth(u.level);
+  else if (kind == "cureDisease") maxRange = grown(kCureDiseaseRange);
   else if (emberBoltSpell(kind) || emberAreaSpell(kind)) maxRange = emberNumbers(kind, u.level).range;  // ours: no line of fire needed
   else if (kind == "guardBreak") minRange = u.minRange, maxRange = u.maxRange, shot = u.maxRange > 1, arrow = true;  // the weapon's reach
   else if (kind == "steelWhirlwind") maxRange = 1;
@@ -2093,16 +2120,16 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   else if (kind == "disarm") minRange = u.minRange, maxRange = u.maxRange, shot = u.maxRange > 1, arrow = true;  // the weapon's reach
   else if (kind == "swapPost") maxRange = emberNumbers(kind, u.level).range;
   else if (kind == "spearToss" || kind == "impaleDrag") maxRange = -1;  // wherever a throw / a drag can end
-  else if (kind == "fireball") maxRange = kFireballRange, shot = true;
+  else if (kind == "fireball") maxRange = grown(kFireballRange), shot = true;
   else if (kind == "causticVenom") maxRange = kCausticVenom.range, shot = true;
   else if (kind == "minorVenom") maxRange = kMinorVenom.range, shot = true;
-  else if (kind == "divineBolt") maxRange = kDivineBolt.range, shot = true;
-  else if (kind == "webOfDreams") maxRange = kWebRange, shot = true;
-  else if (kind == "iceStorm") maxRange = iceStormPower(u.level).range, shot = true;
-  else if (kind == "bloodyShot") minRange = u.minRange, maxRange = kBloodyShotRange, shot = true, arrow = true;
-  else if (kind == "multiShot") minRange = u.minRange, maxRange = kMultiShotRange, shot = true, arrow = true;
-  else if (kind == "lightningTier3") maxRange = kLightningT3Range;
-  else if (kind == "phantasmalForce") maxRange = kPhantasmalRange, shot = true;
+  else if (kind == "divineBolt") maxRange = grown(kDivineBolt.range), shot = true;
+  else if (kind == "webOfDreams") maxRange = grown(kWebRange), shot = true;
+  else if (kind == "iceStorm") maxRange = grown(iceStormPower(u.level).range), shot = true;
+  else if (kind == "bloodyShot") minRange = u.minRange, maxRange = grown(kBloodyShotRange), shot = true, arrow = true;
+  else if (kind == "multiShot") minRange = u.minRange, maxRange = grown(kMultiShotRange), shot = true, arrow = true;
+  else if (kind == "lightningTier3") maxRange = grown(kLightningT3Range);
+  else if (kind == "phantasmalForce") maxRange = grown(kPhantasmalRange), shot = true;
   else if (kind == "trip" || kind == "executionerStrike" || kind == "shieldBash") minRange = u.minRange, maxRange = u.maxRange, shot = u.maxRange > 1, arrow = true;
   else if (kind == "familiarLifeDrain") maxRange = kLifeDrainRange;
   else if (kind == "provoke") maxRange = provokePower(u.level).range;
@@ -2138,21 +2165,24 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
     if (here < 0) return fail("Não há unidade na casa selecionada.");
     if (!targetable(b, here)) return fail("Escolha um inimigo visível.");
     if (d < u.minRange) return fail("Alvo perto demais.");
-    if (d > kLongShotRange) return fail("Alvo fora de alcance (máximo 7 hexes).");
+    if (const int reach = grownReach(kind, kLongShotRange, u.level); d > reach)
+      return fail(std::format("Alvo fora de alcance (máximo {} hexes).", reach).c_str());
     return clearShot(b, from, cell, true) ? true : fail("O tiro está bloqueado.");
   }
   if (kind == "piercing") return piercingRay(b, from, cell).empty() ? fail("Escolha uma reta válida.") : true;
   if (kind == "piercingThrust") return piercingThrustRay(b, u, cell).empty() ? fail("Escolha uma reta na frente.") : true;
   if (kind == "lightning" || kind == "shock") {
     if (!targetable(b, here)) return fail(here < 0 ? "Não há unidade na casa selecionada." : "Escolha um inimigo visível.");
-    return d <= (kind == "lightning" ? kLightningRange : kShockRange) ? true : fail("Alvo fora de alcance (máximo 5 hexes).");
+    const int reach = kind == "lightning" ? grownReach(kind, kLightningRange, u.level) : kShockRange;
+    return d <= reach ? true : fail(std::format("Alvo fora de alcance (máximo {} hexes).", reach).c_str());
   }
   if (kind == "magicMissile" || kind == "magicMissileV2") {
     // magicMissileTargetError, then targetable
     if (here < 0 || !b.units()[static_cast<size_t>(here)].alive || b.units()[static_cast<size_t>(here)].hidden) return fail("Não há inimigo visível nessa casa.");
     const std::string& side = b.units()[static_cast<size_t>(here)].side;
     if (!b.debugFreeCast() && side != "enemy" && side != "neutral") return fail("Míssil Mágico não pode mirar em aliados.");
-    if (d > kMissileRange) return fail("Alvo fora de alcance (máximo 5 hexes).");
+    if (const int reach = grownReach(kind, kMissileRange, u.level); d > reach)
+      return fail(std::format("Alvo fora de alcance (máximo {} hexes).", reach).c_str());
     if (!clearShot(b, from, cell, false)) return fail("O tiro está bloqueado.");
     return targetable(b, here) ? true : fail("Não há inimigo visível nessa casa.");
   }
@@ -2163,8 +2193,8 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
     return canHitFrom(b, caster, from, static_cast<size_t>(here)) ? true : fail("Esse inimigo não está ao alcance ou não pode ser atingido daqui.");
   }
   if (const CureData* cure = cureData(kind)) {
-    if (d > cure->range) {
-      const std::string why = std::format("Alvo fora de alcance (máximo {} hexes).", cure->range);
+    if (d > cure->range + reachGrowth(u.level)) {
+      const std::string why = std::format("Alvo fora de alcance (máximo {} hexes).", cure->range + reachGrowth(u.level));
       if (error) *error = why;
       return false;
     }
@@ -2175,7 +2205,8 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
     return w.hp < w.maxHp ? true : fail("Essa aliada está com a vida cheia.");
   }
   if (kind == "cureDisease") {  // validCureDiseaseTarget, spellAimError
-    if (d > kCureDiseaseRange) return fail("Alvo fora de alcance (máximo 2 hexes).");
+    if (const int reach = grownReach(kind, kCureDiseaseRange, u.level); d > reach)
+      return fail(std::format("Alvo fora de alcance (máximo {} hexes).", reach).c_str());
     if (here < 0 || !b.units()[static_cast<size_t>(here)].alive) return fail("Escolha uma aliada na casa selecionada.");
     const BattleUnit& w = b.units()[static_cast<size_t>(here)];
     if (b.debugFreeCast()) return true;
@@ -3822,7 +3853,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
       }
       if (hits == 0 || ownSide || (p && sc <= p->score)) continue;
       for (const ReachCell& cell : reach)
-        if (hexDist({cell.x, cell.y}, at) <= iceStormPower(u.level).range && clearShot(b, {cell.x, cell.y}, at, false)) {
+        if (hexDist({cell.x, cell.y}, at) <= grownReach("iceStorm", iceStormPower(u.level).range, u.level) && clearShot(b, {cell.x, cell.y}, at, false)) {
           p = StormPick{at, {cell.x, cell.y}, sc};
           break;
         }
@@ -3838,18 +3869,18 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
   }
   if (cultist && (u.spells[0] > 0 || u.spells[1] > 0 || u.shockCharges > 0 || u.fantomForceCharges > 0)) {
     if (u.spells[1] > 0)
-      if (const std::optional<Pick> p = best(kLightningRange, false)) {
+      if (const std::optional<Pick> p = best(grownReach("lightning", kLightningRange, u.level), false)) {
         spendTier(u, "lightning");
         return single(*p, "lightning", kLightningDice, kLightningFaces, kLightningBonus, kLightningMul, kLightningEcho);
       }
     if (u.fantomForceCharges > 0)
-      if (const std::optional<Pick> p = best(kFantomForceRange, true)) {
+      if (const std::optional<Pick> p = best(grownReach("phantasmalForce", kFantomForceRange, u.level), true)) {
         u.fantomForceCharges = std::max(0, u.fantomForceCharges - 1);
         return single(*p, "fantomForce", u.fantomDice, u.fantomFaces, 0, 1, std::nullopt);
       }
     if (std::optional<AiCast> s = shock()) return s;
     if (u.spells[0] > 0)
-      if (const std::optional<Pick> p = best(kMissileRange, true)) {
+      if (const std::optional<Pick> p = best(grownReach("magicMissile", kMissileRange, u.level), true)) {
         spendTier(u, "magicMissile");
         return single(*p, "magicMissile", kMissileDice, kMissileFaces, kMissileBonus, kMissileMul, std::nullopt);
       }
@@ -3932,7 +3963,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
   // the venom's own tier 5: kept as it is.)
   if (birolho && (u.spells[0] > 0 || u.spells[1] > 0 || u.spells[3] > 0 || u.shockCharges > 0)) {
     if (u.spells[1] > 0)
-      if (const std::optional<Pick> p = best(kLightningRange, false)) {
+      if (const std::optional<Pick> p = best(grownReach("lightning", kLightningRange, u.level), false)) {
         spendTier(u, "lightning");
         return single(*p, "lightning", kLightningDice, kLightningFaces, kLightningBonus, kLightningMul, kLightningEcho);
       }
@@ -3947,7 +3978,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
       }
     if (std::optional<AiCast> s = shock()) return s;
     if (u.spells[0] > 0)
-      if (const std::optional<Pick> p = best(kMissileRange, true)) {
+      if (const std::optional<Pick> p = best(grownReach("magicMissile", kMissileRange, u.level), true)) {
         spendTier(u, "magicMissile");
         return single(*p, "magicMissile", kMissileDice, kMissileFaces, kMissileBonus, kMissileMul, std::nullopt);
       }
@@ -3993,7 +4024,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
       }
     }
     if (u.spells[0] > 0)
-      if (const std::optional<Pick> p = best(kMissileRange, true)) {
+      if (const std::optional<Pick> p = best(grownReach("magicMissile", kMissileRange, u.level), true)) {
         spendTier(u, "magicMissile");
         return single(*p, "magicMissile", kMissileDice, kMissileFaces, kMissileBonus, kMissileMul, std::nullopt);
       }
@@ -4107,7 +4138,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
   // The Brigand Crossbowman: Tiro Multiplo (tier 3) from the spot that reaches the most foes, else Tiro Sangrento (tier 2).
   if (c == "brigandCrossbowman" && (u.spells[1] > 0 || u.spells[2] > 0)) {
     const bool multi = u.spells[2] > 0;
-    const int range = multi ? kMultiShotRange : kBloodyShotRange;
+    const int range = grownReach(multi ? "multiShot" : "bloodyShot", multi ? kMultiShotRange : kBloodyShotRange, u.level);
     struct VolleyPick {
       BattleHex from;
       std::vector<size_t> foes;
@@ -4162,7 +4193,7 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
         const BattleUnit& f = b.units()[h];
         if (!piercing) {
           const int d = hexDist({cell.x, cell.y}, {f.x, f.y});
-          if (d < u.minRange || d > kLongShotRange) continue;
+          if (d < u.minRange || d > grownReach("longShot", kLongShotRange, u.level)) continue;
           if (!clearShot(b, {cell.x, cell.y}, {f.x, f.y}, true)) continue;
         } else {
           const std::vector<BattleHex> line = piercingRay(b, {cell.x, cell.y}, {f.x, f.y});
