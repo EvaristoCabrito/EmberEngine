@@ -5808,6 +5808,9 @@
       }
     ],
     "neutralSpawns": [],
-    "emberTiles": "torre-v01"
+    "emberTiles": "torre-v01",
+    "emberFloor": "watchtower-entry-bg.jpg",
+    "emberFloorDepth": 0.0,
+    "emberFloorTile": 120.0
   }
 }

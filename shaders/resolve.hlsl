@@ -73,6 +73,29 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
     // background image as a Ground Floor Image": the gorge under the bridge): a real plane at planeY carrying the painting, planeTile world units
     // wide, mirrored at its edges; the real sky above the horizon; where the plane lies far the regular painting of mode 5 takes over on the
     // horizon. Its own branch: mode 5 is unchanged.
+    // mode 7 = an interior's ground (Luz das janelas, the user, 2026-10-21: "não renderizar nada do lado de fora ... exceto pelo ground and
+    // ceiling images"; the watchtower's background "usar ele de imagem de GROUND"): the map's painting on a real plane at planeY, planeTile world
+    // units wide, mirrored at its edges, its own colours; nothing else outside: black above the horizon, no sky, no haze.
+    if (push.backgroundMode == 7) {
+      if (f.atmosphere == 0 || push.planeTexture == kNoTexture) return float4(0.0, 0.0, 0.0, 1.0);
+      const AtmosphereFrame a = loadAtmosphere(f);
+      const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);
+      if (dir.y >= -1e-4) return float4(0.0, 0.0, 0.0, 1.0);
+      const float t = (push.planeY - f.cameraPosition.y) / dir.y;
+      if (t <= 0.0) return float4(0.0, 0.0, 0.0, 1.0);
+      const float2 hit = f.cameraPosition.xz + dir.xz * t;
+      Texture2D tile = gTextures[NonUniformResourceIndex(push.planeTexture)];
+      uint tw, th;
+      tile.GetDimensions(tw, th);
+      const float2 size = float2(push.planeTile, push.planeTile * float(th) / max(float(tw), 1.0));
+      float2 m = hit / size + 0.5;
+      m -= 2.0 * floor(m * 0.5);  // mirrored repeat: 0..2 -> 0..1..0
+      m = float2(m.x <= 1.0 ? m.x : 2.0 - m.x, m.y <= 1.0 ? m.y : 2.0 - m.y);
+      const float pixelAngle = length(skyDirection(f, a, float2(pixel) + float2(1.5, 0.5)) - dir);
+      const float footprint = t * pixelAngle / max(-dir.y, 0.05);
+      const float lod = max(log2(footprint / (size.x / float(max(tw, 1u)))), 0.0);
+      return float4(tile.SampleLevel(gSamplers[f.materialSampler], m, lod).rgb, 1.0);
+    }
     if (push.backgroundMode == 6 && f.atmosphere != 0) {
       const AtmosphereFrame a = loadAtmosphere(f);
       const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);

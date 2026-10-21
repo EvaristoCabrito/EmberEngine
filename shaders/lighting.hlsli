@@ -156,7 +156,7 @@ float3 localLights(MeshFrame f, Surface s, float3 view, float3 diffuseColor, flo
     const float3 l = toLight / max(d, 1e-4);
     const float ratio = d / light.range;
     const float window = saturate(1.0 - ratio * ratio * ratio * ratio);
-    float falloff = window * window / max(pow(d, light.decay), 0.01);
+    float falloff = window * window / max(pow(d, light.decay), 0.01) * lightFacing(light, s.position);
     if (spellShadow && distance(light.position, spellLight) < 1e-3) falloff *= spellLit;
     float3 n = s.normal;
     if (s.twoSidedLocal > 0.0 && dot(n, l) < 0.0) n = -n;

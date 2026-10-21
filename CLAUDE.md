@@ -952,6 +952,12 @@ design with the textures at watchtowerwalls", then "update the editor to make it
   room's reading; at 0.3 the night came out 36 x too bright and every torch burned its wall white), no twilight darkening by day, at night
   the indoor darkening without the moon's 2-stop cap, no aerial perspective, and Fundo forced black (the sky is never drawn). OFF = the old
   3 lux fill (`darkIndoor()`).
+  **100% interior (2026-10-21, the user: "a única coisa que vem de fora é a luz em si"):** every outer-ring piece has a shadow-only copy
+  `kSkirtOffset` (0.75) outside it (`ArchPiece::skirt`, same holes), a shadow-only plinth under the board (`plinthMesh_`), the roof's
+  margin 1.3: the sun lights no outer face, only what it reaches through the openings. Local lights cast no shadow, so `LocalLight` has
+  `facing` / `behind` (48 bytes now; `lightFacing()` in scene.hlsli): the openings' lights and the wall torches light their room side only.
+  Outside, only the map's ground image: `MapDraft::emberFloor` on an indoor map = resolve.hlsl mode 7 (the image flat at the board's base,
+  `emberFloorTile` wide, mirrored; black above the horizon, no sky); the watchtower's 008 uses its own background `watchtower-entry-bg.jpg`.
 - **The user's photographed materials (2026-10-21 late, `Attachments/watchtower`): read `content/models/README.md` § "The user's
   photographed materials".** Kit: oak / iron / dark oak / steps / fire textures on the tagged parts (`emberMaterialName`, ArchitectureDefs
   `materials`, catalog `editor.architectureMaterials`). Props: 12 Torre props and 5 cemetery tombs re-exported with the photos as new

@@ -78,7 +78,7 @@ constexpr VkFormat kCardShadowFormat = VK_FORMAT_D16_UNORM;  // cards: 16 bits i
 // Clustered lights (shaders/scene.hlsli): 16 x 9 tiles x 24 slices, 63 lights per cluster.
 constexpr uint32_t kClusterCount = 16 * 9 * 24;
 constexpr VkDeviceSize kClusterBytes = VkDeviceSize{kClusterCount} * 64 * 4;
-static_assert(sizeof(LocalLight) == 32);
+static_assert(sizeof(LocalLight) == 48);
 
 struct LightsPush {
   VkDeviceAddress frame;

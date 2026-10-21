@@ -263,12 +263,14 @@ float3 atmoMoonLight(uint64_t atmosphere) { return vk::RawBufferLoad<float3>(atm
 float3 atmoMoonDirection(uint64_t atmosphere) { return vk::RawBufferLoad<float3>(atmosphere + 240u); }
 
 
-// One local light (Engine2's CarriedLight: a three.js point light). 32 bytes.
+// One local light (Engine2's CarriedLight: a three.js point light). 48 bytes.
 struct LocalLight {
   float3 position;
   float range;     // influence ends here (three.js cutoff distance)
   float3 color;    // linear radiometric colour x intensity (before exposure)
   float decay;     // distance falloff exponent (Engine2: 1.25)
+  float3 facing;   // zero: every way; else only the half-space it faces is lit (an opening's light stays in the room)
+  float behind;    // ... fully lit down to this far behind the light along -facing, gone 0.15 further
 };
 
 // Darkness of the fog of war over a world point (0 in sight .. 0.6 remembered .. 1 never seen); outside the
@@ -292,7 +294,12 @@ static const uint kClusterX = 16, kClusterY = 9, kClusterZ = 24;
 static const uint kClusterCount = kClusterX * kClusterY * kClusterZ;
 static const uint kClusterMaxLights = 63;
 
-LocalLight loadLight(MeshFrame f, uint i) { return vk::RawBufferLoad<LocalLight>(f.lights + uint64_t(i) * 32); }
+LocalLight loadLight(MeshFrame f, uint i) { return vk::RawBufferLoad<LocalLight>(f.lights + uint64_t(i) * 48); }
+// The share of a light a point gets from its facing (1 for a light that shines every way).
+float lightFacing(LocalLight light, float3 p) {
+  if (all(light.facing == 0.0)) return 1.0;
+  return saturate((dot(light.facing, p - light.position) + light.behind + 0.15) / 0.15);
+}
 uint clusterOffset(uint cluster) { return cluster * (kClusterMaxLights + 1) * 4; }
 // View depth where slice `i` begins: logarithmic between clusterNear and clusterFar (slice 0 starts at 0).
 float clusterSliceDepth(MeshFrame f, uint i) {

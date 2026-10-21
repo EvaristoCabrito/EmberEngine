@@ -754,8 +754,20 @@ class MapStage final : public Stage {
     renderer.setSunShadowBounds(boardCenter_, boardRadius_);
     renderer.setLightingLayers(layers_);
     if (windowLight()) {
-      // Indoors the sky is never drawn, whatever lights the room (the user's spec, 2026-10-21): black beyond the walls.
-      renderer.setBackground(Renderer::kBlackBackground, 0u);
+      // Indoors the sky is never drawn, whatever lights the room (the user's spec, 2026-10-21): black beyond the walls, except the map's
+      // own ground image (MapDraft::emberFloor; the watchtower's background, the user: "usar ele de imagem de GROUND") flat at the
+      // board's base (mode 7), the panel's "Chão do vão".
+      const e2::MapDraft& draft = board_->draft();
+      Renderer::BackdropPlane plane;
+      if (!draft.emberFloor.empty() && floorChoice_ == 1) plane.texture = ground_.textureIndex(e2::backdropAsset(draft.emberFloor));
+      if (plane.texture != kNoTextureIndex) {
+        // at the board's own base (as the outdoor ground plane above), emberFloorDepth further down
+        plane.y = (look_ == e2::EdgeStyle::Smooth ? groundLow_ - 0.35f : std::min(0.0f, groundLow_)) - draft.emberFloorDepth;
+        plane.tile = draft.emberFloorTile;
+        renderer.setBackground(plane.texture, 7u, {}, {}, plane);
+      } else {
+        renderer.setBackground(Renderer::kBlackBackground, 0u);
+      }
     } else {
       uint32_t bg = kNoTextureIndex;  // the sky (or the clear colour)
       if (background_ == 2) bg = Renderer::kBlackBackground;
@@ -1859,6 +1871,9 @@ class MapStage final : public Stage {
     float openingArea = 0.0f;                        // a window / slit / doorway: its clear area (units²); 0 = not an opening
     glm::vec3 openingAt{0.0f};                       // ... the point just inside the room where its light comes in (from the anchor)
     float openingReach = 0.0f;                       // ... how far into the room that light goes (units)
+    float lightBehind = 0.0f;                        // a wall's torch: how far its light sits in front of the wall (it lights that side only)
+    bool hasSkirt = false;                           // an outer-ring piece: its shadow-only copy stands `skirt` outside it
+    glm::vec2 skirt{0.0f};
   };
   // The animated door (ember-arch-watchtower-door): its leaves (own meshes, swung about their hinges) and each door's state.
   struct DoorLeaf {
@@ -2091,6 +2106,7 @@ class MapStage final : public Stage {
         const float out = static_cast<float>(0.32 * def->wallThicknessScale * 0.5 + 0.62);
         piece.light = e2::SceneLight{{1.0f, 0.58f, 0.26f}, 11.0f, 4.68f, 1.0f, 1.0f, static_cast<float>(std::fmod(p.x * 7.31 + p.y * 3.17, 6.28))};
         piece.lightAt = {static_cast<float>(std::sin(a)) * out, 4.2f * 0.62f + 1.3f, static_cast<float>(std::cos(a)) * out};
+        piece.lightBehind = out - static_cast<float>(0.32 * def->wallThicknessScale * 0.5);  // back to the wall's face
       }
       if (const auto flame = e2::emberStairFlame(*def, rot)) {
         // The stairs' torch: Engine2's wall torch numbers, at its flame.
@@ -2098,6 +2114,22 @@ class MapStage final : public Stage {
         piece.lightAt = {static_cast<float>((*flame)[0]), static_cast<float>((*flame)[1]) + 0.15f, static_cast<float>((*flame)[2])};
       }
       if (stairs) stairPieces_.push_back({static_cast<float>(x), static_cast<float>(z)});
+      // Luz das janelas, 100% interior (the user, 2026-10-21: "a única coisa que vem de fora é a luz em si ... nas superfícies
+      // internas"): every piece of the outer ring gets a shadow skirt, a copy of itself kSkirtOffset outside that only casts shadow,
+      // so the sun reaches no outer face and comes in only through the openings (the copy keeps their holes).
+      if (!def->emberStyle.empty() && !stairs && def->emberStyle != "door") {
+        const double a = e2::emberAxisAngle(rot, connections);
+        double nx = std::sin(a), nz = std::cos(a);
+        if (nx * (x - centreX) + nz * (z - centreZ) < 0.0) nx = -nx, nz = -nz;  // pointing away from the room
+        const int sx = std::abs(nx) > std::abs(nz) ? (nx > 0.0 ? 1 : -1) : 0, sy = sx ? 0 : (nz > 0.0 ? 1 : -1);
+        bool outer = true;  // nothing joined between it and the board's edge, that way
+        for (int k = 1; k < L.cols + L.rows && outer; ++k) {
+          const int c = p.x + sx * k, r = p.y + sy * k;
+          if (!inBoard(c, r)) break;
+          if (joins.contains({c, r})) outer = false;
+        }
+        if (outer) piece.skirt = glm::vec2(static_cast<float>(nx), static_cast<float>(nz)) * kSkirtOffset, piece.hasSkirt = true;
+      }
       if (const auto hole = e2::emberStairHole(*def, rot))
         groundHoles_.push_back({static_cast<float>(x + (*hole)[0]), static_cast<float>(z + (*hole)[1]), static_cast<float>(x + (*hole)[2]),
                                 static_cast<float>(z + (*hole)[3])});
@@ -2203,7 +2235,7 @@ class MapStage final : public Stage {
   // camera looks into the room from above), so the sun and the moon reach the floor only through the windows, slits and
   // doorways. Built once per map; placed by placeModels while the light is on.
   void buildRoof() {
-    roofMesh_ = 0;
+    roofMesh_ = plinthMesh_ = 0;
     if (!scene_ || scene_->environment != "indoor") return;
     // The slab spans every wall top: its underside kRoofUnder over the lowest wall's ground (no light under it where walls stand
     // lower: the gate floor's rim walls stand 2 units under its raised floor, and a slab over the floor let the morning in along the
@@ -2227,12 +2259,26 @@ class MapStage final : public Stage {
     }
     roofCentre_ = {0.5f * (x0 + x1), 0.0f, 0.5f * (z0 + z1)};
     const float w = x1 - x0, d = z1 - z0;
+    roofMesh_ = shadowBox({w * 0.5f, t * 0.5f, d * 0.5f});
+    roofCentreY_ = roofBottom_ + t * 0.5f;
+    // ... and the plinth: the same rectangle under the board, its top just under the lowest wall's ground, down past the board's base,
+    // so the sun reaches none of the board's outer sides below the floor (100% interior; capture skirt-r-day of 2026-10-21: the stone
+    // sides under the outer walls lit white).
+    float ground = std::numeric_limits<float>::max();
+    for (const ArchPiece& a : arch_) ground = std::min(ground, std::min(a.groundSmooth, a.groundHard));
+    if (arch_.empty()) ground = groundLow_;
+    const float top = ground - 0.1f, bottom = std::min(groundLow_, 0.0f) - 3.0f;
+    plinthMesh_ = top > bottom ? shadowBox({w * 0.5f, 0.5f * (top - bottom), d * 0.5f}) : MeshId{0};
+    plinthCentreY_ = 0.5f * (top + bottom);
+  }
+
+  // A shadow-only box of the given half extents, centred on its origin (the roof slab, the plinth): never drawn, only cast.
+  MeshId shadowBox(glm::vec3 half) {
     MeshBuildPart part;
     static constexpr float kFaces[6][3] = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
     for (const float* n : kFaces) {
       const glm::vec3 normal{n[0], n[1], n[2]};
       const glm::vec3 u = std::abs(normal.y) > 0.5f ? glm::vec3(1, 0, 0) : glm::vec3(0, 1, 0), v = glm::cross(normal, u);
-      const glm::vec3 half{w * 0.5f, t * 0.5f, d * 0.5f};
       const uint32_t base = static_cast<uint32_t>(part.positions.size() / 3);
       for (int k = 0; k < 4; ++k) {
         const float su = (k == 1 || k == 2) ? 1.0f : -1.0f, sv = k >= 2 ? 1.0f : -1.0f;
@@ -2253,11 +2299,10 @@ class MapStage final : public Stage {
     // With both faces drawn the slab's top is what the map stores, and the wall tops inside it are shaded.
     m.flags = kMaterialDoubleSided;
     MeshBuild build;
-    if (!build.addPart(part, 0, true, false, false)) return;
+    if (!build.addPart(part, 0, true, false, false)) return MeshId{0};
     std::vector<uint8_t> bytes = build.finish({m}, part.indices.size() / 3);
-    if (bytes.empty()) return;
-    roofMesh_ = meshes_.addBuilt(std::move(bytes));
-    roofCentreY_ = roofBottom_ + t * 0.5f;
+    if (bytes.empty()) return MeshId{0};
+    return meshes_.addBuilt(std::move(bytes));
   }
 
   // Engine2's models.ts: scaled uniformly to their height, base centred on the anchor, turned by rotY.
@@ -2319,7 +2364,19 @@ class MapStage final : public Stage {
       inst.scale = 1;
       instances.push_back(inst);
     }
-    // Luz das janelas: the shadow-only roof over the room, at the walls' top above the highest ground.
+    // Luz das janelas: the outer ring's shadow skirts (buildArchitecture), then the roof over the room.
+    if (windowLight())
+      for (const ArchPiece& a : arch_) {
+        if (!a.hasSkirt) continue;
+        InstanceGpu inst{};
+        inst.rows[0] = {1, 0, 0, a.x + a.skirt.x};
+        inst.rows[1] = {0, 1, 0, groundOf(a.groundSmooth, a.groundHard)};
+        inst.rows[2] = {0, 0, 1, a.z + a.skirt.y};
+        inst.mesh = a.mesh;
+        inst.scale = 1;
+        inst.flags = kInstanceShadowOnly | kInstanceAlwaysSeen;
+        instances.push_back(inst);
+      }
     if (windowLight() && roofMesh_) {
       // Centred on the board (boardCenter_), never on the camera's pivot: placed on target_ it followed the party to the south and
       // left a 5-unit strip of the hall uncovered along the north wall (captures 011-017 of 2026-10-21).
@@ -2331,6 +2388,11 @@ class MapStage final : public Stage {
       inst.scale = 1;
       inst.flags = kInstanceShadowOnly | kInstanceAlwaysSeen;
       instances.push_back(inst);
+      if (plinthMesh_) {
+        inst.rows[1] = {0, 1, 0, plinthCentreY_};
+        inst.mesh = plinthMesh_;
+        instances.push_back(inst);
+      }
     }
     placedWindowLight_ = windowLight();
     if (windowLight() && roofMesh_)
@@ -2701,7 +2763,14 @@ class MapStage final : public Stage {
     for (const ArchPiece& a : arch_) {
       if (!a.light) continue;
       const glm::vec3 at = glm::vec3(a.x, groundOf(a.groundSmooth, a.groundHard), a.z) + a.lightAt;
-      lights_.push_back(carried(at, a.light->color, a.light->intensity * kTorchPower, a.light->radius, a.lightAt.y, flicker(time, a.light->seed, a.light->flicker)));
+      LocalLight l = carried(at, a.light->color, a.light->intensity * kTorchPower, a.light->radius, a.lightAt.y, flicker(time, a.light->seed, a.light->flicker));
+      if (a.lightBehind > 0.0f) {
+        // A wall's torch lights its own side of the wall only (a local light casts no shadow: it lit the board's outer sides through the
+        // outer walls, capture skirt-f-night of 2026-10-21).
+        l.facing = glm::normalize(glm::vec3(a.lightAt.x, 0.0f, a.lightAt.z));
+        l.behind = a.lightBehind;
+      }
+      lights_.push_back(l);
     }
     // Luz das janelas: the daylight (or moonlight) that comes in through each opening, a glow born at the opening and fading into the
     // room by the square of the distance (the user, 2026-10-21: "a luz de fora entra só pelas janelas, seteiras e portão ... uma
@@ -2727,6 +2796,10 @@ class MapStage final : public Stage {
         l.color = tint * candela;
         l.decay = 2.0f;
         l.range = a.openingReach;  // the shader's window (1 - (d / range)^4)^2 takes it to nothing there
+        // Into the room only (100% interior; a local light casts no shadow, and these lit the board's outer sides and the ground in front
+        // of the gate, capture skirt-p-day-localonly of 2026-10-21): fully down to the wall's inner face, gone 0.15 behind it.
+        l.facing = glm::normalize(glm::vec3(a.openingAt.x, 0.0f, a.openingAt.z));
+        l.behind = 0.45f;
         lights_.push_back(l);
       }
     }
@@ -8569,6 +8642,8 @@ class MapStage final : public Stage {
   int windFogChoice_ = 1;  // the panel's "Névoa do vento" (maps with MapDraft::emberWindFog): 0 OFF, 1 the draft's fog look
   int windowLight_ = 0;    // the panel's "Luz das janelas" (indoor maps): 0 OFF, 1 real (windowLight())
   MeshId roofMesh_ = 0;    // the shadow-only roof slab (buildRoof); 0 = none
+  MeshId plinthMesh_ = 0;  // ... and the shadow-only plinth under the board
+  float plinthCentreY_ = 0.0f;
   float roofBottom_ = 0.0f, roofCentreY_ = 0.0f;  // ... its underside and centre (world y)
   glm::vec3 roofCentre_{0.0f};                     // ... its centre on the board (x, z)
   std::map<std::pair<int, int>, e2::BattleCell> doorCellsBefore_;  // the battle cells under the animated doors before they were made solid
@@ -8693,7 +8768,8 @@ class MapStage final : public Stage {
   static constexpr float kGameStartHour = 8.0f;  // the game clock's hour when none is given (a new save's: Overworld::campaignHour)
   static constexpr float kRoofUnder = 4.0f;          // the roof slab's underside over the lowest wall's ground (walls are 4.2 tall)
   static constexpr float kRoofOver = 4.6f;           // ... its top over the highest wall's ground: every wall top sits inside the slab
-  static constexpr float kRoofMargin = 0.45f;        // the slab past the outermost wall piece's anchor (walls are 0.61 thick)
+  static constexpr float kRoofMargin = 1.3f;         // the slab past the outermost wall piece's anchor: over the walls and their skirts
+  static constexpr float kSkirtOffset = 0.75f;       // an outer piece's shadow skirt stands this far outside it (walls are 0.61 thick)
   static constexpr float kDoorSpeed = 2.6f;          // the door's leaves, radians per second (open in ~0.7 s)
   // MapDraft::emberDeckClip (A Ponte de Pedra 023, the user, 2026-10-21: "make sure the tiles finish right at the walls"): the ground
   // only between the planes of the cards standing on the board's first and last rows (the parapets) and within their ends; every
