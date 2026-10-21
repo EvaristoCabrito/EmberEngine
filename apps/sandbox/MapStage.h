@@ -153,9 +153,10 @@ struct MapStageOptions {
   int clouds = 2;     // "Nuvens": 0 OFF, 1 básica (the sheets), 2 volumétricas (look 001, the default; --clouds N)
   int moonLight = 1;  // the panel's "Luar" (light mode real): 0 físico, 1 cinema (--moonlight N)
   int hour = 0;       // the panel's "Hora": 0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3..10 fixed hours (--hour N)
-  // The game's own clock (the campaign's / the test world map's gameHour, 0..23): the sun and sky follow it while the panel's Hora is "do mapa"
-  // (the user, 2026-10-20: "the sun must always follow the time of the day the map is set, or during campaign follow the real game time").
-  float gameHour = -1.0f;  // -1: the map's own time of day
+  // The game's own clock (the campaign's / the test world map's gameHour, 0..23): ALL the light from outside follows it, on every map but
+  // the underground ones (the user, 2026-10-21: "TODA a luz externa do jogo segue o relógio de 24 horas", "SOL REAL LUA REAL LUZ REAL HORA
+  // REAL NÃO EXISTE OUTRA OPÇÃO"; the map's time of day and its sun / ambient sliders only decorate and test). The panel's Hora is a test.
+  float gameHour = -1.0f;  // -1: no clock given (Modo teste's classic map, captures): the game's opening hour, kGameStartHour
   int sunDisc = 1;    // the panel's "Sol": 0 real, 1 cinema (the disc the user had; default), 2 look 001 (--sun-disc N)
   int glare = 0;      // "Clarão": 0 OFF (default: the user never asked for it), 1 look 001 (--glare N)
   int shafts = 0;     // "Raios de luz": 0 OFF (default), 1 look 001 (--shafts N)
@@ -279,7 +280,7 @@ class MapStage final : public Stage {
     skyReflect_ = std::clamp(options.skyReflect, 0, 1);
     clouds_ = std::clamp(options.clouds, 0, 2);
     dayCycle_ = std::clamp(options.hour, 0, 10);
-    gameHour_ = options.gameHour;
+    gameHour_ = options.gameHour >= 0.0f ? options.gameHour : kGameStartHour;
     moonLight_ = std::clamp(options.moonLight, 0, 1);
     sunSize_ = std::clamp(options.sunDisc, 0, 2);
     glare_ = std::clamp(options.glare, 0, 1);
@@ -1262,12 +1263,12 @@ class MapStage final : public Stage {
       // Cards vertical (they converge under the tilted camera: "crooked"), or leaning back with the camera's tilt so
       // every card stands upright on screen (sprites.hlsl VSMain).
       // Luz das janelas (indoor maps): OFF = the room's fill light as before; real = the hour's sun / moon through the windows.
-      if (lightingMode_ == 3 && scene_ && scene_->environment == "indoor") {
+      if (lightingMode_ == 3 && scene_ && scene_->environment == "indoor" && !underground()) {
         static const char* kWindowLight[2] = {"OFF", "real"};
         dropdown("Luz das janelas", windowLight_, 2, [](int i) { return std::string(kWindowLight[i]); });
       }
       if (lightingMode_ == 3 && !darkIndoor()) {
-        static const char* kHours[11] = {"do mapa", "ciclo rápido", "ciclo lento", "amanhecer", "manhã", "meio-dia",
+        static const char* kHours[11] = {"do jogo", "ciclo rápido", "ciclo lento", "amanhecer", "manhã", "meio-dia",
                                          "tarde", "pôr do sol", "crepúsculo", "noite", "madrugada"};
         dropdown("Hora", dayCycle_, 11, [](int i) { return std::string(kHours[i]); });
       }
@@ -8612,14 +8613,18 @@ class MapStage final : public Stage {
   // Luz das janelas (2026-10-21, the user's spec "iluminação padrão para ambientes internos onde a luz natural entra pelas janelas"
   // + "create real windows and watchtower walls"): an indoor map lit by the hour's real sun / moon through its window pieces, under
   // a roof that only casts shadow (buildRoof); the sky is never drawn. OFF = the old indoor fill light (darkIndoor).
-  bool windowLight() const { return windowLight_ == 1 && scene_ && scene_->environment == "indoor"; }
-  bool darkIndoor() const { return scene_ && scene_->environment == "indoor" && !windowLight(); }
+  bool windowLight() const { return windowLight_ == 1 && scene_ && scene_->environment == "indoor" && !underground(); }
+  bool darkIndoor() const { return scene_ && (scene_->environment == "indoor" || underground()) && !windowLight(); }
+  // Subterrâneo (MapDraft::underground, the Map Editor's Ambiente; the user, 2026-10-21): the only maps free of the sun, the moon and
+  // the sky: the indoor light path with no light from outside, whatever the map's lists say.
+  bool underground() const { return board_ && board_->draft().underground; }
   inline static const std::set<std::string> kWindowLightMaps = {"watchtower-gate-floor", "watchtower-barracks", "watchtower-command"};
   static constexpr float kWindowSkyShare = 0.08f;    // the share of the sky's light a room gets through its openings (ambient)
   static constexpr float kWindowMeterShare = 0.04f;  // the camera's meter: the room's level against the outside's
   // lux: never under the torch-lit room's reading of the old indoor light (3 lux fill x 0.3 + 1.5 ambient): at 0.3 the night
   // was exposed 36 x brighter than before and every torch burned its wall white (captures 093-094 of 2026-10-21)
   static constexpr float kWindowMeterFloor = 2.7f;
+  static constexpr float kGameStartHour = 8.0f;  // the game clock's hour when none is given (a new save's: Overworld::campaignHour)
   static constexpr float kRoofUnder = 4.0f;          // the roof slab's underside over the lowest wall's ground (walls are 4.2 tall)
   static constexpr float kRoofOver = 4.6f;           // ... its top over the highest wall's ground: every wall top sits inside the slab
   static constexpr float kRoofMargin = 0.45f;        // the slab past the outermost wall piece's anchor (walls are 0.61 thick)

@@ -957,6 +957,15 @@ design with the textures at watchtowerwalls", then "update the editor to make it
   `materials`, catalog `editor.architectureMaterials`). Props: 12 Torre props and 5 cemetery tombs re-exported with the photos as new
   versions (`blender/retexture_photos.py`), pack `build/meshes/props-v4.pak` (JOGAR.bat uses it first), placed on
   `watchtower-gate-floor008` and the new `cemiterio-esquecidos007` (= 006 with the tombs swapped; the campaign plays the highest serial).
+- **The light rule (the user, 2026-10-21, furious, said in parts: "o jogo tem um relógio real com hora real com sol real e lua real, isso
+  tem que valer em todos os mapas a única exceção são mapas marcados como subterrâneos"; "sliders servem unicamente para decorar e
+  testar"; "Internos também ficam sem o céu, terão um teto desenhado" (the ceiling: not built, a later part)).** Never invent floors /
+  boosts for the light (a moonlight floor was built and rejected), never undo work on your own, never act before understanding: ask.
+  **Subterrâneo** = the Map Editor's Ambiente, third option (`"underground": true` + environment "indoor"; `MapDraft::underground`;
+  MapStage `underground()`: the indoor path with no light from outside, Luz das janelas never, its panel row hidden). No map carries the
+  mark yet. MapStage `gameHour_` falls back to `kGameStartHour` (8 h, a new save's) when no clock is given (Modo teste's classic map,
+  captures), and the panel's Hora "do mapa" is now "do jogo": built, NOT yet seen by the user. Not done yet: indoor maps without windows
+  (the Inn) still take no light from outside (darkIndoor); the drawn ceiling.
 - **Gotcha (2026-10-21): `build.bat` piped through PowerShell reported exit 0 on a failed shader compile** (a release with the old shaders
   was captured as if new). Always grep the log for `FAILED` and check the .spv / exe timestamps.
 - **Map Editor, 3D Walls:** "TORRE DE VIGIA" buttons (Parede / Janela / Seteira / Tocha / Portal / Porta) and the wall tools: Clique (as before),

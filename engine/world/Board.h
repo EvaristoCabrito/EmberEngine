@@ -122,6 +122,9 @@ struct MapDraft {
   // EmberEngine's own: the board's ground ends at the walls standing on its first and last rows (A Ponte de Pedra 023: the deck cut
   // along the parapets' planes and at their ends, MapStage deckClip).
   bool emberDeckClip = false;
+  // EmberEngine's own: an underground map ("Subterrâneo" in the Map Editor's Ambiente; the user, 2026-10-21): the only maps free of
+  // the sun, the moon and the sky. Every other map takes the game's real clock (real sun, real moon).
+  bool underground = false;
 
   // The map's backdrop pick (Engine2 draft.backgroundImage: absent = the map's own, "" = none) and its lighting
   // sliders as authored (absent = the time of day's default).

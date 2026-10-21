@@ -2180,11 +2180,18 @@ class MapEditorStage : public Stage {
       hint("Pasta: content/backdrops — JPG, PNG ou WebP");
     }
     {
+      // Subterrâneo (the user, 2026-10-21): the only maps free of the sun, the moon and the sky; saved as "underground": true (an
+      // underground map is an interior: environment "indoor"). Externo / Interno take the mark off.
+      const bool underground = draft_.contains("underground") && draft_["underground"].is_boolean() && draft_["underground"].get<bool>();
       const bool indoor = draft_.value("environment", "outdoor") == "indoor";
+      static const char* kOutdoor = "Externo (sol forte, sombras marcadas)";
+      static const char* kIndoor = "Interno (luz suave, sem sol direto)";
+      static const char* kUnderground = "Subterrâneo (sem sol, lua e céu)";
       ImGui::SetNextItemWidth(-110);
-      if (ImGui::BeginCombo("Ambiente", indoor ? "Interno (luz suave, sem sol direto)" : "Externo (sol forte, sombras marcadas)")) {
-        if (ImGui::Selectable("Externo (sol forte, sombras marcadas)", !indoor)) beginEdit(), draft_["environment"] = "outdoor";
-        if (ImGui::Selectable("Interno (luz suave, sem sol direto)", indoor)) beginEdit(), draft_["environment"] = "indoor";
+      if (ImGui::BeginCombo("Ambiente", underground ? kUnderground : indoor ? kIndoor : kOutdoor)) {
+        if (ImGui::Selectable(kOutdoor, !indoor && !underground)) beginEdit(), draft_["environment"] = "outdoor", draft_.erase("underground");
+        if (ImGui::Selectable(kIndoor, indoor && !underground)) beginEdit(), draft_["environment"] = "indoor", draft_.erase("underground");
+        if (ImGui::Selectable(kUnderground, underground)) beginEdit(), draft_["environment"] = "indoor", draft_["underground"] = true;
         ImGui::EndCombo();
       }
     }
