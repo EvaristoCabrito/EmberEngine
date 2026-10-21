@@ -611,8 +611,10 @@ void WarriorFx::buildLeap(const Effect& e, float now, const Camera& camera, VfxF
   const glm::vec3 eye = camera.position;
   const float k = std::clamp(e.height / 2.0f, 0.7f, 1.4f);
   const float dist = glm::length(glm::vec2(e.to.x - e.feet.x, e.to.z - e.feet.z));
-  const float arc = 1.2f + 0.25f * dist / kHex;  // the card's own arc (MapStage leapLift): the trail follows the weapon
-  auto at = [&](float s) { return glm::mix(e.feet, e.to, s) + kUp * (arc * 4.0f * s * (1.0f - s) + e.height * 0.5f); };
+  const float arc = 1.2f + 0.25f * dist / kHex;  // the card's own arc (MapStage leapLift)
+  // The silver trail, its glow and its light ride at the feet (the user, 2026-10-21: at half the body's height it lit his groin,
+  // "aim the silver glow effect closer to his feet").
+  auto at = [&](float s) { return glm::mix(e.feet, e.to, s) + kUp * (arc * 4.0f * s * (1.0f - s) + e.height * 0.1f); };
   const float flight = e.impact - e.start;
   const float s = ease(e.start, e.impact, now);
   // --- The flight: a trail of steel light behind the weapon, sparks shed along it, a light with it. ---
