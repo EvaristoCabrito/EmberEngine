@@ -166,6 +166,11 @@ struct BoltData {
 constexpr BoltData kCausticVenom{1 /* small area */, 7, 1, 10, 0, 1, 6, 0, 1.5, 1.1};
 constexpr BoltData kMinorVenom{1, 5, 1, 6, 0, 1, 4, 0, 1.0, 0.6};  // below the Veneno Cáustico in every number (the user, 2026-10-20)
 constexpr BoltData kDivineBolt{1, 6, 2, 4, 0, 1, 4, 0, 1.4, 1.0};
+// Raio Espectral (the Espectro em Brasa's twice a fight, the Aparição's and the Boi Zumbi's once; ours, the user 2026-10-20: "um pouco
+// mais poderosa que o Phantasmal Force e que tem AOE de 3Hex", "é do elemento darkness"): range 6 with a line of fire, the 3 hexes of a
+// size-3 body round the aimed one, Escuridão, the Força Fantasmagórica's dice at the caster's level and one more, x 1.15 on MAG; foes only.
+constexpr int kSpectralRange = 6;
+constexpr double kSpectralMul = 1.15;
 // A bolt's numbers at the caster's level: the centre's dice and weight on its track.
 BoltData boltPower(const std::string& kind, int level) {
   BoltData d = kind == "causticVenom" ? kCausticVenom : kind == "minorVenom" ? kMinorVenom : kDivineBolt;
@@ -731,6 +736,7 @@ bool aimE2(const Battle& b, size_t caster, const std::string& kind, BattleHex ce
   if (kind == "causticVenom") return bolt(grown(kCausticVenom.range));
   if (kind == "minorVenom") return bolt(grown(kMinorVenom.range));
   if (kind == "divineBolt") return bolt(grown(kDivineBolt.range));
+  if (kind == "spectralBolt") return bolt(kSpectralRange);
   if (kind == "webOfDreams") return bolt(grown(kWebRange));
   // The verdict is spellAimValid's (targetable, range, line of fire); the reason, when it fails, spellAimError's.
   auto whyNotTarget = [&]() -> std::string {
@@ -938,6 +944,14 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
     spendTier(u, kind);
     s.tiles = tiles, s.ids = ids, s.dice = p.dice, s.faces = p.faces, s.bonus = 0, s.spellMul = p.mul, s.poison = kind == "poisonBreath";
     steps.push_back(s);
+  } else if (kind == "spectralBolt") {
+    if (checkUses && u.spectralCharges <= 0) return fail("Sem cargas de Raio Espectral.");
+    const std::vector<BattleHex> tiles = areaTiles(b, cell, 0);
+    const DiceFaces p = phantasmalForceDice(u.level);
+    u.spectralCharges = std::max(0, u.spectralCharges - 1);
+    s.tiles = tiles, s.ids = unitsAlong(b, tiles, caster, &u.side);
+    s.dice = p.dice + 1, s.faces = p.faces, s.bonus = 0, s.spellMul = kSpectralMul;
+    steps.push_back(s);
   } else if (kind == "fireball" || kind == "causticVenom" || kind == "divineBolt" || kind == "minorVenom") {
     const bool fire = kind == "fireball";
     const BoltData d = boltPower(kind, u.level);
@@ -1122,7 +1136,7 @@ bool e2Kind(const std::string& k) {
                                       "sweep",      "divineWrath", "stampede",   "burningHands",      "poisonBreath", "fireball",     "causticVenom",
                                       "divineBolt", "minorVenom", "iceStorm",   "turnUndead",        "lightningTier3", "familiarLifeDrain",  "phantasmalForce",
                                       "provoke",    "bullRush",     "bless",     "webOfDreams", "auraOfProtection", "intimidatingPresence", "warp",
-                                      "summonFamiliar", "summonFamiliar2", "summonFamiliar3", "summonFamiliar4", "summonZombieDog"};
+                                      "summonFamiliar", "summonFamiliar2", "summonFamiliar3", "summonFamiliar4", "summonZombieDog", "spectralBolt"};
   for (const char* c : kinds)
     if (k == c) return true;
   return false;
@@ -1146,6 +1160,7 @@ std::vector<BattleHex> areaE2(const Battle& b, size_t caster, const std::string&
     const std::optional<CubeI> dir = ray.empty() ? std::nullopt : axisDir(from, ray[0]);
     return dir ? coneSector(b, from, *dir, p.radius) : std::vector<BattleHex>{};
   }
+  if (kind == "spectralBolt") return areaTiles(b, cell, 0);
   if (kind == "fireball") return areaTiles(b, cell, areaRadius(kind, kFireballSize, u.level));
   if (kind == "causticVenom") return areaTiles(b, cell, areaRadius(kind, kCausticVenom.size, u.level));
   if (kind == "minorVenom") return areaTiles(b, cell, areaRadius(kind, kMinorVenom.size, u.level));

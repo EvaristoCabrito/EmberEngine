@@ -45,6 +45,7 @@ constexpr SpellData kSpells[] = {
     {"cureDisease", "Curar Doença", 3, "", false},
     {"createFoodAndWater", "Criar Comida e Água", 4, "", false},
     {"fantomForce", "Força Fantasma", 0, "arcane", false},
+    {"spectralBolt", "Raio Espectral", 0, "darkness", false},  // the Espectro em Brasa's, the Aparição's, the Boi Zumbi's (ours, 2026-10-20)
     // listed (a unit's own spell bar) but not ported yet
     {"bloodyShot", "Tiro Sangrento", 2, "", true},
     {"multiShot", "Tiro Múltiplo", 3, "", true},
@@ -2866,7 +2867,7 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"magicMissile", "Magic Missile"}, {"magicMissileV2", "Magic Missile"}, {"longShot", "Long Shot"}, {"piercing", "Piercing Shot"},
     {"piercingThrust", "Piercing Thrust"}, {"doubleStrike", "Double Strike"}, {"lightning", "Lightning"}, {"frost", "Frost"},
     {"shock", "Shock"}, {"cureMinor", "Cure Minor"}, {"cureWounds", "Cure Wounds"}, {"cureLight", "Healing Hands"},
-    {"cureDisease", "Cure Disease"}, {"createFoodAndWater", "Create Food and Water"}, {"fantomForce", "Phantom Force"},
+    {"cureDisease", "Cure Disease"}, {"createFoodAndWater", "Create Food and Water"}, {"fantomForce", "Phantom Force"}, {"spectralBolt", "Spectral Bolt"},
     {"bloodyShot", "Bloody Shot"}, {"multiShot", "Multi Shot"}, {"provoke", "Provoke"}, {"cleave", "Cleave"}, {"sweep", "Sweep"},
     {"trip", "Trip"}, {"bullRush", "Bull Rush"}, {"shieldBash", "Shield Bash"}, {"executionerStrike", "Executioner's Strike"},
     {"fireball", "Fireball"}, {"iceStorm", "Ice Storm"}, {"causticVenom", "Caustic Venom"}, {"poisonBreath", "Poison Breath"},
@@ -3066,6 +3067,7 @@ int spellUsesLeft(const Battle& b, size_t unit, const std::string& kind) {
   const BattleUnit& u = b.units()[unit];
   if (kind == "shock" && u.classId != "familiar4") return u.shockCharges;
   if (kind == "fantomForce") return u.fantomForceCharges;
+  if (kind == "spectralBolt") return u.spectralCharges;
   if (kind == "familiarLifeDrain") return u.lifeDrainCharges.value_or(1);
   if (familiarOwnSpell(u, kind == "magicMissileV2" ? "magicMissile" : kind)) return u.spellCharges;
   return tierRemaining(u, kind == "magicMissileV2" ? "magicMissile" : kind);
@@ -5143,6 +5145,15 @@ std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
       }
     return p;
   };
+  if ((c == "apparition" || c == "emberedWraith" || c == "undeadOx") && u.spectralCharges > 0)
+    if (const auto p = bestSplash(BoltData{0, kSpectralRange, 0, 0, 0, 0, 0, 0, 1.0, 1.0}, "spectralBolt")) {
+      AiCast cast;
+      cast.path = walkTo(p->from);
+      if (std::optional<std::vector<BattleStep>> steps = castE2(b, unit, "spectralBolt", {p->at}, nullptr, false)) {
+        cast.steps = std::move(*steps);
+        return cast;
+      }
+    }
   if ((c == "undeadOx" || c == "plagueBearingCattle") && tierRemaining(u, "minorVenom") > 0)
     if (const auto p = bestSplash(kMinorVenom, "minorVenom")) {
       AiCast cast;

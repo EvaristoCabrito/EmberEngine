@@ -34,6 +34,9 @@
 //   Força Fantasma      (2026-10-20: "uma versão mais fraca da phantasmal force de outra cor ... mais puxado para vermelho e
 //                       magenta") a lesser Força Fantasmagórica: five thin red-magenta tendrils and a cloud of motes spiral in round
 //                       the foe to a churning core, smaller and quicker; it bursts: a magenta shell, the motes thrown out, a red light;
+//   Raio Espectral      (2026-10-20, the Espectro em Brasa's, the Aparição's, the Boi Zumbi's: "verde-azulada espectral", Escuridão) a ghostly teal orb
+//                       with a wailing wake of pale green wisps flies from the caster; over the 3 hexes it bursts: a teal shell,
+//                       spectral faces of mist rising and fading, a ring on the ground, wisps flung up, a cold green light;
 //   the summons         a conjuring circle on the hex (a ring and a turning rune), motes drawn in, a column of light, a
 //                       flash as the familiar comes - each in its own colour (Familiar violet, Maior blue, Radiante
 //                       white-gold, Titã ember, Cão Zumbi sick green).
@@ -72,6 +75,9 @@ class ArmsFx {
   void divineWrath(glm::vec3 from, float height, const std::vector<glm::vec3>& hexes, const std::vector<Target>& bodies, float impact);
   // Round the caster out to `radius` (world units); `bodies` = the allies it shields / the foes it cows.
   void aura(bool protection, glm::vec3 feet, float height, float radius, const std::vector<Target>& bodies, float impact);
+  // Raio Espectral from the caster at `from` over `hexes` (its 3 hexes; `bodies` struck): it leaves at `start`, bursts at `impact`.
+  void spectralBolt(glm::vec3 from, float height, const std::vector<glm::vec3>& hexes, const std::vector<Target>& bodies, float start, float impact);
+  static float spectralFlight(glm::vec3 from, glm::vec3 to);
   // Força Fantasma on `foe`: it gathers for 0.55 s and bursts at `impact`.
   void phantom(const Target& foe, float impact);
   // Reflexo Arcano: the ward forming round the caster at `impact`, then dissipating.
@@ -86,7 +92,7 @@ class ArmsFx {
   void build(float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
 
  private:
-  enum class Kind { Provoke, ShieldBash, BullRush, Executioner, Trip, ShoulderSmash, Stampede, DivineWrath, Aura, Summon, ReflectWard, ReflectHit, Phantom };
+  enum class Kind { Provoke, ShieldBash, BullRush, Executioner, Trip, ShoulderSmash, Stampede, DivineWrath, Aura, Summon, ReflectWard, ReflectHit, Phantom, Spectral };
   struct Effect {
     Kind kind;
     bool protection = false;
@@ -115,6 +121,7 @@ class ArmsFx {
   void buildReflectWard(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   void buildReflectHit(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   void buildPhantom(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
+  void buildSpectral(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   // Shared pieces: a flash with a cross glint, a ring on the ground, sparks, dust rolling out, stones / chips on arcs.
   void flash(glm::vec3 at, glm::vec3 across, float size, glm::vec3 colour, float age, float life, glm::vec3 eye, float pull);
   void groundRing(glm::vec3 feet, float from, float to, float grow, float life, float intensity, float opacity, glm::vec3 colour, glm::vec3 core, float age,

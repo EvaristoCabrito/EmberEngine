@@ -198,6 +198,7 @@ float ArmsFx::Effect::end() const {
     case Kind::ReflectWard: return impact + 1.9f;
     case Kind::ReflectHit: return impact + 0.9f;
     case Kind::Phantom: return impact + 0.5f;
+    case Kind::Spectral: return impact + 1.3f;
   }
   return impact + 1.0f;
 }
@@ -300,6 +301,19 @@ void ArmsFx::reflectHit(glm::vec3 from, float fromHeight, glm::vec3 to, float to
   effects_.push_back(std::move(e));
 }
 
+float ArmsFx::spectralFlight(glm::vec3 from, glm::vec3 to) { return std::clamp(glm::length(to - from) / 14.0f, 0.22f, 0.6f); }
+void ArmsFx::spectralBolt(glm::vec3 from, float height, const std::vector<glm::vec3>& hexes, const std::vector<Target>& bodies, float start, float impact) {
+  if (hexes.empty()) return;
+  Effect e;
+  e.kind = Kind::Spectral, e.from = from, e.height = bodyHeight(height), e.hexes = hexes, e.targets = bodies;
+  glm::vec3 centre{0.0f};
+  for (const glm::vec3& h : hexes) centre += h;
+  e.feet = centre / static_cast<float>(hexes.size());
+  e.start = start, e.impact = std::max(impact, start + 0.15f);
+  e.dir = flatDir(e.feet - from, glm::vec3(0.0f, 0.0f, 1.0f));
+  e.seed = 0x5bc7u + 7919u * ++serial_;
+  effects_.push_back(std::move(e));
+}
 void ArmsFx::phantom(const Target& foe, float impact) {
   Effect e;
   e.kind = Kind::Phantom, e.feet = foe.feet, e.height = bodyHeight(foe.height), e.impact = impact, e.start = impact - 0.55f;
@@ -338,6 +352,7 @@ void ArmsFx::build(float now, const Camera& camera, VfxFrame& frame, std::vector
       case Kind::ReflectWard: buildReflectWard(e, now, camera, frame, lights); break;
       case Kind::ReflectHit: buildReflectHit(e, now, camera, frame, lights); break;
       case Kind::Phantom: buildPhantom(e, now, camera, frame, lights); break;
+      case Kind::Spectral: buildSpectral(e, now, camera, frame, lights); break;
     }
   }
   // The particles of everything in play, one draw each: the dust first (it covers), the thrown pieces, then the light.
@@ -1226,6 +1241,87 @@ void ArmsFx::buildPhantom(const Effect& e, float now, const Camera& camera, VfxF
   }
   const float build = std::min(1.0f, t / 0.4f) * 2.0f, spike = age >= 0.0f ? 14.0f * (1.0f - ease(0.0f, 0.35f, age)) : 0.0f;
   if (age < 0.35f) lights.push_back({heart, {1.0f, 0.25f, 0.5f}, build + spike, 3.0f * k});
+}
+
+// --- Raio Espectral: teal-green, spectral --------------------------------------------------------------------------------------
+
+void ArmsFx::buildSpectral(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) {
+  const Draw draw{frame};
+  const glm::vec3 eye = camera.position;
+  const float k = scaleOf(e.height);
+  constexpr glm::vec3 kTeal{0.2f, 0.95f, 0.75f}, kPale{0.82f, 1.0f, 0.92f}, kDeep{0.05f, 0.45f, 0.4f};
+  const glm::vec3 a = e.from + kUp * (e.height * 0.6f) + e.dir * 0.4f, b = e.feet + kUp * 0.9f;
+  const float flight = e.impact - e.start, t = now - e.start, age = now - e.impact;
+  const float s = std::clamp(t / std::max(flight, 1e-3f), 0.0f, 1.0f);
+  const float lift = 0.15f * glm::length(b - a);
+  auto path = [&](float u) { return glm::mix(a, b, u) + kUp * (lift * 4.0f * u * (1.0f - u)); };
+  // --- The flight: a ghostly orb (a shell with a pale heart) and a wailing wake of pale green wisps behind it. ---
+  if (now < e.impact) {
+    const glm::vec3 head = path(s);
+    const glm::mat4 m = glm::translate(glm::mat4(1.0f), pulled(head, eye, kPull * 0.7f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.22f * k));
+    draw(sphereFirst_, sphereCount_, m, kModeEnergy, t, 1.6f, 0.95f, kTeal, 0.6f, glm::vec4(kPale, 0.6f), e.feet, VfxBlend::Additive);
+    const float tail = std::min(s, 0.45f);
+    if (tail > 0.02f)
+      for (int w = 0; w < 3; ++w) {  // three wisps twisting round each other behind the orb
+        three::CatmullRom wake;
+        for (int j = 0; j <= 8; ++j) {
+          const float u = s - tail + tail * static_cast<float>(j) / 8.0f;
+          const float twist = u * 18.0f + static_cast<float>(w) * kTau / 3.0f - t * 8.0f;
+          const glm::vec3 side = glm::normalize(glm::cross(kUp, e.dir));
+          const float r = 0.12f * k * (static_cast<float>(j) / 8.0f);
+          wake.points.push_back(pulled(path(u) + (side * std::cos(twist) + kUp * std::sin(twist)) * r, eye, kPull * 0.7f));
+        }
+        const std::vector<VfxVertex> tube = vfxgeo::tube(wake, 14, 0.03f * k, 6);
+        draw(frame.addVertices(tube), static_cast<uint32_t>(tube.size()), glm::mat4(1.0f), kModeTrail, t, 1.4f, 0.7f, kTeal, 0.0f, glm::vec4(kPale, 0.0f), e.feet,
+             VfxBlend::Additive);
+      }
+    lights.push_back({head, {0.4f, 1.0f, 0.8f}, 7.0f, 2.6f * k});
+  }
+  for (int i = 0; i < 14; ++i) {  // motes shed along the flight
+    const uint32_t n = static_cast<uint32_t>(i) + 1400u;
+    const float ub = (static_cast<float>(i) + 0.5f) / 14.0f, tb = e.start + ub * flight;
+    const float tau = now - tb, life = 0.4f + 0.3f * hash01(e.seed, n, 1);
+    if (tau < 0.0f || tau > life) continue;
+    const float u = tau / life;
+    const glm::vec3 p = path(ub) + sphereDir(hash01(e.seed, n, 2), hash01(e.seed, n, 3)) * (0.25f * tau) + kUp * (0.4f * tau);
+    streaks_.push_back(streak(pulled(p, eye, kPull * 0.7f), glm::vec3(0.0f), 0.04f * k * (1.0f - 0.5f * u), (1.0f - u) * 0.8f, kPale, 2.0f));
+  }
+  if (age < 0.0f) return;
+  // --- The burst over the 3 hexes: a flash, a teal shell, a ring on the ground, a cold green light. ---
+  flash(b, glm::vec3(0.0f), 0.9f * k, kPale, age, 0.16f, eye, kPull);
+  if (age < 0.45f) {
+    const float r = (0.3f + 1.6f * easeOut(0.0f, 0.35f, age)) * k;
+    const glm::mat4 m = glm::translate(glm::mat4(1.0f), e.feet + kUp * 0.5f) * glm::scale(glm::mat4(1.0f), {r, 0.6f * r, r});
+    draw(sphereFirst_, sphereCount_, m, kModeEnergy, age, 0.9f, 0.6f * (1.0f - ease(0.08f, 0.45f, age)), kTeal, 0.0f, glm::vec4(kPale, 0.0f), e.feet, VfxBlend::Additive);
+  }
+  groundRing(e.feet, 0.3f * k, 1.9f * k, 0.35f, 0.8f, 0.5f, 0.75f, kTeal, kPale, age, eye, frame, e.feet);
+  // --- Spectral faces of mist rising off each hex and fading (pale alpha puffs, dark eyes as two dark puffs), wisps flung up. ---
+  for (size_t h = 0; h < e.hexes.size(); ++h) {
+    const uint32_t seed = e.seed + 613u * static_cast<uint32_t>(h);
+    const float tau = age - 0.05f * static_cast<float>(h);
+    const float life = 1.0f;
+    if (tau < 0.0f || tau > life) continue;
+    const float u = tau / life;
+    const glm::vec3 face = e.hexes[h] + kUp * ((0.5f + 1.3f * easeOut(0.0f, 1.0f, u)) * k);
+    const float alpha = 0.5f * ease(0.0f, 0.12f, tau) * (1.0f - ease(0.35f, 1.0f, u));
+    puffs_.push_back(puff(pulled(face, eye, kPull * 0.8f), (0.45f + 0.25f * u) * k, hash01(seed, 1, 1) * kTau, hash01(seed, 1, 2) * 37.0f, alpha, {0.6f, 0.95f, 0.85f}));
+    const glm::vec3 across = glm::normalize(glm::cross(kUp, flatDir(eye - e.hexes[h], glm::vec3(0, 0, 1))));
+    for (int eyeSide = -1; eyeSide <= 1; eyeSide += 2)
+      puffs_.push_back(puff(pulled(face + across * (0.11f * k * static_cast<float>(eyeSide)) + kUp * (0.06f * k), eye, kPull * 0.85f), 0.08f * k, 0.0f,
+                            hash01(seed, 2, static_cast<uint32_t>(eyeSide + 2)) * 37.0f, alpha * 1.4f, {0.02f, 0.08f, 0.07f}));
+  }
+  for (int i = 0; i < 22; ++i) {
+    const uint32_t n = static_cast<uint32_t>(i) + 1500u;
+    const float tau = age - hash01(e.seed, n, 1) * 0.1f, life = 0.5f + 0.4f * hash01(e.seed, n, 2);
+    if (tau < 0.0f || tau > life) continue;
+    const float u = tau / life;
+    const glm::vec3 d = glm::normalize(sphereDir(hash01(e.seed, n, 3), hash01(e.seed, n, 4)) + kUp * 1.2f);
+    const glm::vec3 p = e.feet + kUp * 0.4f + d * ((0.4f + 2.0f * easeOut(0.0f, 1.0f, u)) * k);
+    streaks_.push_back(streak(pulled(p, eye, kPull), d * 0.12f * k, 0.035f * k, (1.0f - u) * 0.9f, glm::mix(kPale, kTeal, u), 2.2f));
+  }
+  // --- A pale flash on every body struck. ---
+  for (const Target& body : e.targets) flash(body.feet + kUp * (bodyHeight(body.height) * 0.5f), glm::vec3(0.0f), 0.5f * scaleOf(body.height), kPale, age - 0.04f, 0.16f, eye, kPull);
+  if (age < 0.6f) lights.push_back({e.feet + kUp * 0.8f, {0.35f, 1.0f, 0.75f}, 15.0f * (1.0f - ease(0.0f, 0.6f, age)), 4.0f * k});
 }
 
 }  // namespace ember

@@ -31,7 +31,7 @@ nlohmann::json Battle::snapshot() const {
         {"mov", u.mov},     {"minRange", u.minRange}, {"maxRange", u.maxRange}, {"moved", u.moved},
         {"acted", u.acted}, {"facing", u.facing},   {"alive", u.alive},         {"level", u.level},
         {"xp", u.xp},       {"spells", spells},     {"shockCharges", u.shockCharges},
-        {"frostCharges", u.frostCharges},           {"fantomForceCharges", u.fantomForceCharges},
+        {"frostCharges", u.frostCharges},           {"fantomForceCharges", u.fantomForceCharges}, {"spectralCharges", u.spectralCharges},
         {"initiative", u.initiative},               {"summoned", u.summoned},  {"guaranteedDrop", u.guaranteedDrop},
         {"moveBudgetUsed", u.moveUsed},             {"healingSkill", u.healingSkill},
         // EmberEngine's own: the trained weapon's value and every trained skill (Engine2 kept them in heroSkills)
@@ -175,6 +175,7 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
     u.shockCharges = s.value("shockCharges", u.shockCharges);
     u.frostCharges = s.value("frostCharges", u.frostCharges);
     u.fantomForceCharges = s.value("fantomForceCharges", u.fantomForceCharges);
+    u.spectralCharges = s.value("spectralCharges", u.spectralCharges);
     u.initiative = s.value("initiative", u.initiative);
     u.guaranteedDrop = s.value("guaranteedDrop", u.guaranteedDrop);
     u.moveUsed = s.value("moveBudgetUsed", u.moveUsed);

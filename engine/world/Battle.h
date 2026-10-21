@@ -146,6 +146,7 @@ struct BattleUnit {
   int spells[10] = {};  // uses left per tier (Engine2 Unit.spells tier1..tier10)
   std::vector<std::string> spellList;  // what it may cast (classSpells for its class, level and name)
   int shockCharges = 0, frostCharges = 0, fantomForceCharges = 0;
+  int spectralCharges = 0;  // Raio Espectral (the Aparição's and the Espectro em Brasa's, ours): its casts this fight
   int fantomDice = 0, fantomFaces = 0;
   int xp = 0;
   bool guaranteedDrop = false;

@@ -284,6 +284,9 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     o.shockCharges = integer(u, "shockCharges");
     o.frostCharges = integer(u, "frostCharges");
     o.fantomForceCharges = integer(u, "fantomForceCharges");
+    // Raio Espectral: the Espectro em Brasa casts it twice a fight, the Aparição and the Boi Zumbi once (the user, 2026-10-20)
+    if (progressionEnabled() && o.side == "enemy")
+      o.spectralCharges = o.classId == "emberedWraith" ? 2 : o.classId == "apparition" || o.classId == "undeadOx" ? 1 : 0;
     if (u.contains("fantomForceDice") && u["fantomForceDice"].is_object())
       o.fantomDice = integer(u["fantomForceDice"], "dice"), o.fantomFaces = integer(u["fantomForceDice"], "faces");
     o.xp = integer(u, "xp");

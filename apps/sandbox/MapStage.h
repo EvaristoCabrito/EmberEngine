@@ -4310,7 +4310,7 @@ class MapStage final : public Stage {
           spots.push_back(spot);
         }
       } else if (s.kind == "circleOfHealing" || s.kind == "judgment" || s.kind == "boneLance" || s.kind == "detonateSummon" || s.kind == "nightmare" ||
-                 s.kind == "shoulderSmash" || s.kind == "stampede" || s.kind == "divineWrath") {
+                 s.kind == "shoulderSmash" || s.kind == "stampede" || s.kind == "divineWrath" || s.kind == "spectralBolt") {
         // the Curandeiro's and the Conjurador's areas: the hexes; only the units it reaches (`ids`, and the summon that blows up) keep their card height
         for (const e2::BattleHex& h : s.tiles) {
           SpellEffects::Spot spot = hexSpot(h);
@@ -5118,6 +5118,7 @@ class MapStage final : public Stage {
       e2::BattleUnit& v = battle_->units()[cb];
       if (std::find(v.spellList.begin(), v.spellList.end(), p[2]) == v.spellList.end()) v.spellList.push_back(p[2]);
       if (const int tier = e2::spellTierNumber(p[2]); tier > 0 && v.spells[tier - 1] < 1) v.spells[tier - 1] = 2;
+      if (p[2] == "spectralBolt" && v.spectralCharges < 1) v.spectralCharges = 2;  // the enemies' own: its charges
       return logInfo("battle script: learn {} {}: {} uses", p[1], p[2], e2::spellUsesLeft(*battle_, cb, p[2]));
     }
     if (p[0] == "flee") {  // "flee:<unit>": the unit picked and Fugir combate tried (logs why not, its chance, the roll's outcome)

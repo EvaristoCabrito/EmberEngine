@@ -101,7 +101,7 @@ int SpellEffects::looks(const std::string& kind) {
                                  // the ones that had none (vfx/ArmsFx, the two new arrows of vfx/RangerFx; ours, 3D, 2026-10-20)
                                  "provoke", "shieldBash", "bullRush", "executionerStrike", "trip", "shoulderSmash", "stampede", "divineWrath",
                                  "auraOfProtection", "intimidatingPresence", "bloodyShot", "multiShot", "summonFamiliar", "summonFamiliar2",
-                                 "summonFamiliar3", "summonFamiliar4", "summonZombieDog", "arcaneReflection", "fantomForce"};
+                                 "summonFamiliar3", "summonFamiliar4", "summonZombieDog", "arcaneReflection", "fantomForce", "spectralBolt"};
   for (const char* k : kEmber)
     if (kind == k) return 1;
   return 0;
@@ -162,6 +162,7 @@ float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& c
     return MagicMissileV2::impactDelay(engine2Origin(caster), targets.front().body);
   if (kind == "fireball" && look == 1 && !targets.empty()) return Fireball::travelSeconds(engine2Origin(caster), fireballTarget(targets));
   if (kind == "phantasmalForce" && look == 1) return PhantasmalForce::kImpactAt;
+  if (kind == "spectralBolt" && !targets.empty()) return ArmsFx::spectralFlight(caster.feet, areaCentre(targets).feet);
   if (kind == "webOfDreams" && look >= 1) return look == 2 ? DreamWeb::kShotTravel : WebOfDreams::kShotTravel;
   if ((kind == "burningHands" || kind == "poisonBreath") && look >= 1) return BurningHands::kRelease;
   if (isBolt(kind, look) && !targets.empty()) {
@@ -317,6 +318,13 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     for (const Spot& s : targets)
       if (s.cardHeight > 0.0f) bodies.push_back(armsTarget(s));
     arms_.aura(kind == "auraOfProtection", caster.feet, caster.cardHeight, radius + 0.9f, bodies, impact);
+    return true;
+  }
+  if (kind == "spectralBolt") {  // Raio Espectral: the teal-green spectral bolt over its 3 hexes
+    std::vector<glm::vec3> hexes;
+    for (const Spot& s : targets) hexes.push_back(s.feet);
+    const float release = std::max(start, impact - ArmsFx::spectralFlight(caster.feet, areaCentre(targets).feet));
+    arms_.spectralBolt(caster.feet, caster.cardHeight, hexes, bodiesOf(targets), release, impact);
     return true;
   }
   if (kind == "fantomForce") {  // Força Fantasma: the lesser Força Fantasmagórica, red and magenta
