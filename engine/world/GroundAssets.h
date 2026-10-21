@@ -40,6 +40,7 @@ inline std::string emberBackdrop(std::string_view draftId) {
 struct EmberGroundTile {
   std::string_view map, terrain, key, file;
   float tile;
+  bool overBaked = false;  // also over the terrain's baked art (by default a tile takes only the hexes the procedural surfaces had)
 };
 inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"cemiterio-v01", "plains", "ember-cemiterio-relva-neve-v01", "content/ground/cemiterio-relva-neve-v01.png", 4.5f},  // cemi01: snow over dead grass
@@ -48,6 +49,8 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"cemiterio-v01", "ruins", "ember-cemiterio-entulho-v01", "content/ground/cemiterio-entulho-v01.png", 4.0f},     // cemi04: rubble
     {"cemiterio-v01", "woods", "ember-cemiterio-bosque-v01", "content/ground/cemiterio-bosque-v01.png", 4.5f},       // cemi05: leaf litter, snow
     {"cemiterio-v01", "hill", "ember-cemiterio-encosta-v01", "content/ground/cemiterio-encosta-v01.png", 4.5f},      // cemi06: stones, frosted grass
+    // A Ponte de Pedra 023's deck (ponte-v01): the user's BridgeTiles photo (Attachments/BridgeTiles.jpg, 2026-10-21; ~9 setts across).
+    {"ponte-v01", "ruins", "ember-ponte-calcamento-v01", "content/ground/ponte-calcamento-v01.png", 3.2f, true},
 };
 
 inline std::string skyMoonAsset(std::string_view phase) { return "sky/moon/" + std::string(phase) + ".tex"; }

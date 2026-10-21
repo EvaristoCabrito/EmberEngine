@@ -157,6 +157,8 @@ struct Options {
   int gridLook = 2;  // --grid-look N: the battle grid (panel "Grade"): 0 OFF, 1 the old marks, 2 look 001
   int cardStance = 1;  // --cards N: 0 vertical cards, 1 leaning back with the camera's tilt (panel "Cards")
   int barsFade = 1;    // --bars-fade N: 0 bars always shown, 1 the bars of units near the camera fade (panel "Vida perto")
+  int floorImage = 1;  // --floor N: maps whose draft lays its painting under the board: 0 OFF, 1 on (panel "Chão do vão")
+  int windFog = 1;     // --wind-fog N: maps whose draft names a wind fog: 0 OFF, 1 on (panel "Névoa do vento")
   int atmos = 2;  // --atmos N: Atmosfera volumétrica v1 at the start (0 OFF, 1 cinema, 2 alta, 3 desempenho)
   int background = -1;  // --background N: the panel's "Fundo" (-1 as the map says, 0 the painting, 1 the sky, 2 OFF = black, 3 the painting up to
                         // the horizon + the sky, 4 the painting aligned to the sky)
@@ -277,6 +279,8 @@ Options parse(int argc, char** argv) {
     else if (arg == "--grid-look" && hasValue) o.gridLook = std::atoi(argv[++i]);
     else if (arg == "--cards" && hasValue) o.cardStance = std::atoi(argv[++i]);
     else if (arg == "--bars-fade" && hasValue) o.barsFade = std::atoi(argv[++i]);
+    else if (arg == "--floor" && hasValue) o.floorImage = std::atoi(argv[++i]);
+    else if (arg == "--wind-fog" && hasValue) o.windFog = std::atoi(argv[++i]);
     else if (arg == "--atmos" && hasValue) o.atmos = std::atoi(argv[++i]);
     else if (arg == "--background" && hasValue) o.background = std::atoi(argv[++i]);
     else if (arg == "--water" && hasValue) o.waterLook = std::atoi(argv[++i]);
@@ -625,6 +629,8 @@ MapStageOptions mapOptions(const Options& o) {
     m.gridLook = o.gridLook;
     m.cardStance = o.cardStance;
     m.barsFade = o.barsFade;
+    m.floorImage = o.floorImage;
+    m.windFog = o.windFog;
     m.atmos = o.atmos;
     m.background = o.background;
     m.waterLook = o.waterLook;

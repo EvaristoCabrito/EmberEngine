@@ -22,6 +22,7 @@ struct Push {
   uint64_t grid;      // per hex Renderer::GridCell: flags, extra
   float gridSeconds;
   uint wallFrom;      // smooth look: vertices from here on are the board's added side walls (BoardGround closeBoardSides); 0 = none
+  float4 clip;        // x0, z0, x1, z1: the ground is drawn only inside (a deck that ends at its walls; everything elsewhere)
 };
 [[vk::push_constant]] Push push;
 
@@ -101,6 +102,7 @@ ShadowOut VSShadow(uint id : SV_VertexID) {
 }
 void PSShadow(ShadowOut i) {
   if (neverSeen(loadFrame(push.frame), i.world)) discard;
+  if (any(i.world.xz < push.clip.xy) || any(i.world.xz > push.clip.zw)) discard;
 }
 
 float3 proto(uint layer, float2 uv, Grad g, SamplerState s) {
@@ -252,6 +254,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
   // Never-seen ground is not drawn at all (R7): the black background shows, so no outline over lit ground.
   // (After the derivatives: neighbouring pixels may still need this one's.)
   if (neverSeen(f, wp)) discard;
+  if (any(wp.xz < push.clip.xy) || any(wp.xz > push.clip.zw)) discard;
   const float4 sA = i.surfacesA, sB = i.surfacesB;
   const float total = dot(sA, 1.0) + dot(sB, 1.0);
   // Engine2 samples every surface everywhere; a surface with no weight adds nothing, so it is skipped.

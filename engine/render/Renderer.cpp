@@ -99,8 +99,9 @@ struct TerrainPush {
   VkDeviceAddress grid;   // per hex Renderer::GridCell
   float gridSeconds;
   uint32_t wallFrom;      // smooth look: the first vertex of the board's added side walls (0 = none)
+  glm::vec4 clip;         // x0, z0, x1, z1: the ground is drawn only inside (Renderer::setGroundClip)
 };
-static_assert(sizeof(TerrainPush) == 80);
+static_assert(sizeof(TerrainPush) == 96);
 
 uint32_t packHalf2(float a, float b) { return glm::packHalf2x16(glm::vec2(a, b)); }
 
@@ -1323,8 +1324,9 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
                 VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
   vkCmdUpdateBuffer(cmd, frame.meshFrame.buffer, 0, sizeof(f), &f);
   if (volumeThisFrame_) vkCmdUpdateBuffer(cmd, frame.volumeFrame.buffer, 0, sizeof(vf), &vf);
-  // The fog bank: only over a fog-of-war mask.
-  bankThisFrame_ = fogBank_.enabled && f.fogMask != kNoTextureIndex && !fogLooks().empty();
+  // The fog bank: only over a fog-of-war mask, unless the look is a map's own fog (FogLook::fogOfWar false).
+  bankThisFrame_ = fogBank_.enabled && !fogLooks().empty() &&
+                   (f.fogMask != kNoTextureIndex || !fogLooks()[std::min<size_t>(fogBank_.look, fogLooks().size() - 1)].fogOfWar);
   if (bankThisFrame_) {
     bankLook_ = std::min<uint32_t>(fogBank_.look, static_cast<uint32_t>(fogLooks().size()) - 1);
     const FogLook& look = fogLooks()[bankLook_];
@@ -1807,7 +1809,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     vkCmdBeginRendering(cmd, &shadowPass);
     setViewport(cmd, {shadowSize_, shadowSize_});
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, terrainShadowPipeline_);
-    const TerrainPush push{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices, terrain_.seamStep, 0, 0, 0, 0, 0, 0, 0, 0.0f, 0};
+    const TerrainPush push{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices, terrain_.seamStep, 0, 0, 0, 0, 0, 0, 0, 0.0f, 0, groundClip_};
     vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
     vkCmdDraw(cmd, terrain_.count, 1, 0, 0);
     if (meshes) {
@@ -2016,7 +2018,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
                                     marks ? static_cast<uint32_t>(markCols_) : 0u, marks ? bufferAddress(context_, frame.marks) : 0,
                                     static_cast<uint32_t>(markRows_),
                                     grid ? static_cast<uint32_t>(gridCols_) : 0u, grid ? static_cast<uint32_t>(gridRows_) : 0u, grid ? gridLook_ : 0u,
-                                    grid ? bufferAddress(context_, frame.grid) : 0, gridSeconds_, terrain_.wallFrom};
+                                    grid ? bufferAddress(context_, frame.grid) : 0, gridSeconds_, terrain_.wallFrom, groundClip_};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(terrainPush), &terrainPush);
       vkCmdDraw(cmd, terrain_.count, 1, 0, 0);
       gpuTimer_.end(cmd, terrainScope);

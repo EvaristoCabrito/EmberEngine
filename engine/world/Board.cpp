@@ -92,6 +92,7 @@ std::optional<BoardData> BoardData::load(const std::filesystem::path& boardJson)
     s.file = t.file;
     s.tile = t.tile;
     d.emberGroundLayer[std::string(t.map) + "|" + std::string(t.terrain)] = static_cast<int>(d.groundLayers.size());
+    if (t.overBaked) d.emberGroundOver.insert(std::string(t.map) + "|" + std::string(t.terrain));
     d.groundLayers.push_back(std::move(s));
   }
   d.groundLayerCount = static_cast<int>(d.groundLayers.size());
@@ -156,7 +157,12 @@ std::optional<MapDraft> MapDraft::fromJson(const json& d) {
   m.mistType = str(d, "mistType");
   m.atmosphereProfile = str(d, "atmosphereProfile");
   m.emberTiles = str(d, "emberTiles");
+  m.emberFloor = str(d, "emberFloor");
   auto num = [&](const char* k, float fallback) { return d.contains(k) && d[k].is_number() ? d[k].get<float>() : fallback; };
+  m.emberFloorDepth = num("emberFloorDepth", m.emberFloorDepth);
+  m.emberFloorTile = num("emberFloorTile", m.emberFloorTile);
+  m.emberWindFog = static_cast<int>(num("emberWindFog", 0.0f));
+  m.emberDeckClip = d.contains("emberDeckClip") && d["emberDeckClip"].is_boolean() && d["emberDeckClip"].get<bool>();
   m.mistIntensity = num("mistIntensity", m.mistType.empty() ? 0.0f : 0.2f);
   m.mistSpeed = num("mistSpeed", 1.0f);
   m.wispIntensity = num("wispIntensity", 0.0f);
@@ -216,6 +222,11 @@ Board::Board(const BoardData& data, MapDraft draft) : data_(data), draft_(std::m
       else cell.ground = claudeTile ? data_.baseLayerIndex(cell.type) : -1;
       // The map's own ground tiles (GroundAssets.h kEmberGroundTiles) on the hexes the procedural surfaces had: one for the
       // cell's terrain, else the set's tile for grass and forest.
+      // A set's tile marked overBaked takes its terrain's hexes even where baked art lies (A Ponte de Pedra 023's deck over "ruins").
+      if (surf != "void" && !draft_.emberTiles.empty()) {
+        const std::string key = draft_.emberTiles + "|" + cell.type;
+        if (const auto own = data_.emberGroundLayer.find(key); own != data_.emberGroundLayer.end() && data_.emberGroundOver.contains(key)) cell.ground = own->second;
+      }
       if (cell.ground < 0 && surf != "void") {
         const std::string set = draft_.emberTiles.empty() ? draft_.id : draft_.emberTiles;
         if (const auto own = data_.emberGroundLayer.find(set + "|" + cell.type); own != data_.emberGroundLayer.end()) cell.ground = own->second;

@@ -165,6 +165,9 @@ class Renderer {
 
   // The board's ground (BoardGround::view); replaces the placeholder ground plane. Empty = none.
   void setTerrain(const TerrainView& terrain) { terrain_ = terrain; }
+  // The board's ground drawn only inside x0..x1, z0..z1 (world units; a map whose deck ends at its walls, MapDraft::emberDeckClip);
+  // the default lets everything through.
+  void setGroundClip(glm::vec4 clip) { groundClip_ = clip; }
   // Marks painted on the ground (the battle grid: reach, route, cursor), drawn by the terrain pass so whatever stands
   // in front covers them. Per hex, up to kMarkLayers fills / rings in order (painter's), colours sRGB + alpha as on
   // screen (blended after tone mapping, so they keep their exact colour in any light). Radii in hex radii (1 = the
@@ -538,6 +541,7 @@ class Renderer {
   BackdropPlane backdropPlane_;
   uint32_t lightingLayers_ = 0xFFFFFFFFu;
   TerrainView terrain_;
+  glm::vec4 groundClip_{-1.0e9f, -1.0e9f, 1.0e9f, 1.0e9f};
   VkPipeline spritePipeline_ = VK_NULL_HANDLE;
   VkPipeline spriteDepthPipeline_ = VK_NULL_HANDLE;  // the cards' depth, after the cards
   VkPipeline effectPipeline_ = VK_NULL_HANDLE;

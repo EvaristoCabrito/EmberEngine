@@ -12,6 +12,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <nlohmann/json.hpp>
@@ -65,6 +66,7 @@ struct BoardData {
   // "<set>|<terrain>" -> the layer of EmberEngine's own ground tile (appended after Engine2's); terrain "" = its grass /
   // forest surfaces (GroundAssets.h kEmberGroundTiles)
   std::unordered_map<std::string, int> emberGroundLayer;
+  std::unordered_set<std::string> emberGroundOver;  // the "set|terrain" keys whose tile also covers the terrain's baked art
 
   static std::optional<BoardData> load(const std::filesystem::path& boardJson);
   int groundVariantLayer(const std::string& terrain, int variant) const;
@@ -110,6 +112,16 @@ struct MapDraft {
   // EmberEngine's own: the set of EmberEngine ground tiles this map wears (GroundAssets.h kEmberGroundTiles); empty = the
   // set named by the map's id, if any.
   std::string emberTiles;
+  // EmberEngine's own: a painting (content/backdrops) laid flat under the board as the ground far below it (A Ponte de Pedra 023:
+  // the gorge under the bridge), `emberFloorDepth` under the board's lowest ground, `emberFloorTile` world units wide; "" = none.
+  std::string emberFloor;
+  float emberFloorDepth = 40.0f, emberFloorTile = 240.0f;
+  // EmberEngine's own: the number of a fog look drawn on this map without a fog of war (render/FogLooks.h; 010 = the gorge's
+  // wind fog outside the bridge walls); 0 = none.
+  int emberWindFog = 0;
+  // EmberEngine's own: the board's ground ends at the walls standing on its first and last rows (A Ponte de Pedra 023: the deck cut
+  // along the parapets' planes and at their ends, MapStage deckClip).
+  bool emberDeckClip = false;
 
   // The map's backdrop pick (Engine2 draft.backgroundImage: absent = the map's own, "" = none) and its lighting
   // sliders as authored (absent = the time of day's default).

@@ -908,6 +908,20 @@ recursos, elevações variadas, monstros, e deixe o birolho bem mais escondido",
 - Captures: scratchpad `cap_cem.ps1` pattern (test battle from `build/engine2-test`, `--fog 0 --zoom 0.7` overview, `--zoom 2.2 --offset -0.07
   0.06` the crypt).
 
+## A Ponte de Pedra 023 (2026-10-21; the user: "make the bridge 6 hexes wider, use the current background image as a Ground Floor Image,
+a strong volumetric fog with strong gusts of wind flowing outside of the bridge walls", "make sure the tiles finish right at the walls")
+
+- `content/maps/ember/thebridge023.json` by `tools/scripts/maps/make_bridge_v2.py <thebridge022.json>`: 40x21 (was 15 rows; every shift even,
+  things keep their place against their own wall), both parapets at columns 1, 6, ..., 31, 35 (a parapet card is drawn 2 columns east of its
+  anchor hex). 022 untouched. Test files made by hand in build/engine2-test (make_test_map / export_scene / measure_art / export_battle on 023).
+- Draft extras (MapDraft, Board.cpp): `emberTiles` "ponte-v01" (the user's BridgeTiles photo, `content/ground/ponte-calcamento-v01.png`, tile
+  3.2, `overBaked`: also over the "ruins" baked art), `emberFloor` + `emberFloorDepth` 40 + `emberFloorTile` 240 (resolve.hlsl backgroundAt
+  mode 6: the map's painting flat under the bridge, mode 5's painting on the far band; panel "Chão do vão", `--floor N`), `emberWindFog` 10
+  (fog look 010, `FogLook::fogOfWar` false: drawn without a fog mask; panel "Névoa do vento", `--wind-fog N`), `emberDeckClip` (MapStage
+  deckClip: the ground drawn only between the wall cards' planes and within their ends; TerrainPush.clip, 96 bytes now). Ground pack
+  `build/ground/ground-v15.pak`. The user will settle the horizon panorama later.
+- Limits: the parapets' east end runs 0.71 past the deck (columns are 1.73 apart; the west end, where the party starts, fits within 0.13).
+
 ## Veneno / Doença em 3D (2026-10-20; the user: Engine2's were WebGL and missing here, "recria algo similar em 3D")
 
 - `engine/render/vfx/StatusFx.*`: Engine2's drawStatusFx idea (haze, motes feet to head, vapour lines; green quick = poison, violet slow =

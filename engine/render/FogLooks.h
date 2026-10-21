@@ -21,6 +21,7 @@ struct FogScene {
   float meanGround = 0.0f, groundLow = 0.0f, groundHigh = 0.0f;
   glm::vec4 board{0.0f};  // x0, z0, x1, z1
   glm::vec2 partyCenter{0.0f};  // where the party stands (the swirl turns around it)
+  float floorY = -40.0f;        // the ground far under the board (MapDraft::emberFloor's plane), where a gorge fog rests
 };
 
 // What the renderer hands a look each frame.
@@ -44,6 +45,8 @@ struct FogLook {
   FogNoise noise;
   uint32_t frameBytes;  // size of its frame record
   void (*write)(const FogLookInputs&, void* frame);
+  // false = a map's own fog drawn without a fog of war (MapDraft::emberWindFog): needs no mask, never in the panel's "Névoa" list
+  bool fogOfWar = true;
 };
 inline constexpr uint32_t kMaxFogLookFrameBytes = 512;
 std::span<const FogLook> fogLooks();

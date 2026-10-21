@@ -166,6 +166,43 @@ void writeLook008(const FogLookInputs& in, void* out) {
   std::memcpy(out, &f, sizeof(f));
 }
 
+// --- Look 010 (192-byte frame): the gorge's wind fog, outside the bridge walls (A Ponte de Pedra 023) -------------
+
+struct Look010Frame {
+  glm::mat4 inverseViewProjection;
+  glm::vec4 deck;  // x0, z0, x1, z1: the board (its long sides are the bridge walls)
+  float time, deckY, floorY, topY;
+  glm::vec3 wind;  // the gorge's wind, world units per second
+  float gust;      // how strongly the gusts push on top of it
+  float extinction, noiseScale, wallMargin, nearFadeEnd;
+  glm::vec3 albedo;
+  float ambient;
+  uint32_t noise, depth, march, marchSampled, color, frameIndex;
+  glm::uvec2 halfSize, fullSize, pad;
+};
+static_assert(sizeof(Look010Frame) == 192);
+
+// 010 (the user, 2026-10-21: "a strong volumetric fog with strong gusts of wind flowing outside of the bridge walls"): the gorge
+// filled with fog from its floor up past the parapets, the wind blowing along the gorge (across the bridge, under it), gusts
+// sweeping through; the deck itself stays clear.
+void writeLook010(const FogLookInputs& in, void* out) {
+  Look010Frame f{};
+  common(in, f);
+  f.deck = in.scene.board;
+  f.deckY = in.scene.meanGround;
+  f.floorY = in.scene.floorY;
+  f.topY = in.scene.groundHigh + 5.0f;
+  f.wind = {1.2f, 0.0f, 7.5f};
+  f.gust = 1.0f;
+  f.extinction = 0.13f;
+  f.noiseScale = 0.05f;
+  f.wallMargin = 1.2f;
+  f.nearFadeEnd = 6.0f;
+  f.albedo = {0.74f, 0.77f, 0.83f};
+  f.ambient = 0.7f;
+  std::memcpy(out, &f, sizeof(f));
+}
+
 // --- Looks 004 and 005 (240-byte frame): Engine2's mist model, 005 with the swirl ------------------------------
 
 struct Look004Frame {
@@ -373,6 +410,7 @@ std::span<const FogLook> fogLooks() {
       {"007", "fog_look007", "swirl round the party on mist4's real values, fog-of-war coverage - not yet seen", FogNoise::WhiteLattice, sizeof(Look005Frame), writeLook007},
       {"008", "fog_look008", "003 thinning away near the camera (no veil when the camera comes close)", FogNoise::SoftFbm, sizeof(Look008Frame), writeLook008},
       {"009", "fog_look009", "008 with the background left clear: no mist over the sky or the painting (the user: the sky on every outdoor map)", FogNoise::SoftFbm, sizeof(Look008Frame), writeLook008},
+      {"010", "fog_look010", "the gorge's wind fog outside the bridge walls (A Ponte de Pedra 023) - not yet seen", FogNoise::SoftFbm, sizeof(Look010Frame), writeLook010, false},
   };
   return looks;
 }

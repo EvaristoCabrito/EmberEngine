@@ -69,6 +69,47 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
     // NOT melting, no transparency"): its horizon row on the world's horizon line, its width spanning the screen (the image's own proportions,
     // no stretch), the real sky above the line, nothing blended; it moves with the camera's tilt only, as a far backdrop does. The painting's own
     // colours, with the volumetric air in front of it like the plain cover-fit.
+    // mode 6 = the map's painting laid flat far under the board as its ground (A Ponte de Pedra 023, the user, 2026-10-21: "use the current
+    // background image as a Ground Floor Image": the gorge under the bridge): a real plane at planeY carrying the painting, planeTile world units
+    // wide, mirrored at its edges; the real sky above the horizon; where the plane lies far the regular painting of mode 5 takes over on the
+    // horizon. Its own branch: mode 5 is unchanged.
+    if (push.backgroundMode == 6 && f.atmosphere != 0) {
+      const AtmosphereFrame a = loadAtmosphere(f);
+      const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);
+      const float elevation = asin(clamp(dir.y, -1.0, 1.0));
+      if (elevation >= 0.0) return float4(skyWithAir(f, pixel), 1.0);
+      SamplerState s = gSamplers[f.materialSampler];
+      // the regular painting from its horizon row down (mode 5's mapping), for the far band
+      const float3 dl = skyDirection(f, a, float2(0.5, f.screenSize.y * 0.5)), dr = skyDirection(f, a, float2(f.screenSize.x - 0.5, f.screenSize.y * 0.5));
+      const float imageHeightRad = acos(clamp(dot(dl, dr), -1.0, 1.0)) * float(h) / max(float(w), 1.0);
+      const float horizonRow = clamp(push.fitA.x, 0.02, 0.98);
+      const float span = (1.0 - horizonRow) * imageHeightRad, toNadir = (1.5707963 / max(span, 1e-3));
+      const float pv = saturate(horizonRow + (1.0 - horizonRow) * (1.0 - exp(elevation / max(span, 1e-3))) / max(1.0 - exp(-toNadir), 1e-3));
+      const float3 farPainting = gTextures[NonUniformResourceIndex(push.background)].SampleLevel(s, float2((float(pixel.x) + 0.5) / f.screenSize.x, pv), 0).rgb;
+      float3 color = farPainting;
+      if (push.planeTexture != kNoTexture) {
+        const float t = (push.planeY - f.cameraPosition.y) / min(dir.y, -1e-4);
+        if (t > 0.0) {
+          const float2 hit = f.cameraPosition.xz + dir.xz * t;
+          Texture2D tile = gTextures[NonUniformResourceIndex(push.planeTexture)];
+          uint tw, th;
+          tile.GetDimensions(tw, th);
+          const float2 size = float2(push.planeTile, push.planeTile * float(th) / max(float(tw), 1.0));
+          float2 m = hit / size + 0.5;
+          m -= 2.0 * floor(m * 0.5);  // mirrored repeat: 0..2 -> 0..1..0
+          m = float2(m.x <= 1.0 ? m.x : 2.0 - m.x, m.y <= 1.0 ? m.y : 2.0 - m.y);
+          const float pixelAngle = length(skyDirection(f, a, float2(pixel) + float2(1.5, 0.5)) - dir);
+          const float footprint = t * pixelAngle / max(-dir.y, 0.05);
+          const float lod = max(log2(footprint / (size.x / float(max(tw, 1u)))), 0.0);
+          float3 ground = tile.SampleLevel(s, m, lod).rgb;
+          const float3 horizonDir = normalize(float3(dir.x, 0.002, dir.z));
+          const float3 skyHorizon = skyRadiance(a, horizonDir) * a.skyScale * f.exposure;
+          ground = lerp(ground, skyHorizon, 0.45 * (1.0 - exp(-t / 900.0)));
+          color = lerp(ground, farPainting, smoothstep(push.planeFar * 0.55, push.planeFar, t));
+        }
+      }
+      return float4(color, 1.0);
+    }
     if (push.backgroundMode == 5 && f.atmosphere != 0) {
       const AtmosphereFrame a = loadAtmosphere(f);
       const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);

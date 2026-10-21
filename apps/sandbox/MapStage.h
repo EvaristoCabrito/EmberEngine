@@ -136,6 +136,8 @@ struct MapStageOptions {
   int gridLook = 2;  // the panel's "Grade" at the start: 0 OFF, 1 antiga (the marks), 2 = look 001 (--grid-look N)
   int cardStance = 1;  // the panel's "Cards" at the start: 0 em pé (vertical), 1 para a câmera (--cards N)
   int barsFade = 1;    // the panel's "Vida perto" at the start: 0 OFF, 1 bars near the camera fade (--bars-fade N)
+  int floorImage = 1;  // the panel's "Chão do vão" at the start (--floor N)
+  int windFog = 1;     // the panel's "Névoa do vento" at the start (--wind-fog N)
   // Atmosfera volumétrica v1: the panel's "Atmosfera" at the start (0 OFF, 1 cinema, 2 alta, 3 desempenho; --atmos N).
   // ON by default at "alta" (user, 2026-10-16: "padrão on"); the choice stays in the panel.
   int atmos = 2;
@@ -262,13 +264,15 @@ class MapStage final : public Stage {
     for (int i = 0; i < static_cast<int>(std::size(e2::kMoonPhases)); ++i)
       if (options.moonPhase == e2::kMoonPhases[i]) moonPhase_ = i;
     for (uint32_t i = 0; i < fogLooks().size(); ++i)
-      if (options.fogLook == std::atoi(fogLooks()[i].number)) fogLook_ = i;
+      if (fogLooks()[i].fogOfWar && options.fogLook == std::atoi(fogLooks()[i].number)) fogLook_ = i;
     pitch_ += glm::radians(options.tiltDegrees);
     flat_ = options.tatica;
     atmosChoice_ = std::clamp(options.atmos, 0, 3);
     gridLook_ = std::clamp(options.gridLook, 0, 2);
     cardStance_ = std::clamp(options.cardStance, 0, 1);
     barsFade_ = std::clamp(options.barsFade, 0, 1);
+    floorChoice_ = std::clamp(options.floorImage, 0, 1);
+    windFogChoice_ = std::clamp(options.windFog, 0, 1);
     waterLook_ = std::clamp(options.waterLook, 0, 1);
     skyReflect_ = std::clamp(options.skyReflect, 0, 1);
     clouds_ = std::clamp(options.clouds, 0, 2);
@@ -388,6 +392,7 @@ class MapStage final : public Stage {
                                                                                                   : 1;
       if (!scene_->backdrop.empty()) backdropFit_ = loadBackdropFit(scene_->backdrop);
       if (!backdropFit_.ground.empty()) ground_.requestTexture(e2::backdropAsset(backdropFit_.ground));
+      if (!board_->draft().emberFloor.empty()) ground_.requestTexture(e2::backdropAsset(board_->draft().emberFloor));
       // The map's own panoramas (backdrop-fit.json "panoramas" by map id; the panel's Fundo after its five entries): aldeia only.
       panoramas_ = loadPanoramas(board_->draft().id);
       for (const std::string& file : panoramas_) {
@@ -664,6 +669,7 @@ class MapStage final : public Stage {
     if (flat_) lighting.kmPerUnit = 0.0f;
     renderer.setMeshes(scene_ ? meshes_.view() : MeshSceneView{}, lighting);
     renderer.setTerrain(ground_.view(look_));
+    renderer.setGroundClip(deckClip());
     {
       // The battle grid: the old marks (panel "Grade" antiga) or a numbered look (looks/grid); the editor's rings
       // always go through the marks.
@@ -759,7 +765,17 @@ class MapStage final : public Stage {
         const float skyTop = isPanorama && fit.keepSky && panoramaSky_ == 1 ? 0.30f : fit.skyTop;
         // Every map but Aldeia: the regular painting from its horizon row down, the real sky above (mode 5), with the fit's row or the default one.
         const bool whole = fit.whole || (!aldeia() && !isPanorama);
-        renderer.setBackground(bg, whole ? 5u : fit.alphaSky ? 4u : ownSky ? 3u : 2u, {fit.horizon, fit.bottom, fit.degreesPerHeight, fit.bottomDegrees},
+        // A map whose draft lays its painting flat far under the board (MapDraft::emberFloor, A Ponte de Pedra 023): mode 6, the panel's
+        // "Chão do vão" (OFF = mode 5 as every other map).
+        const e2::MapDraft& draft = board_->draft();
+        const bool floor = !draft.emberFloor.empty() && floorChoice_ == 1 && !isPanorama;
+        if (floor) {
+          plane.y = groundLow_ - draft.emberFloorDepth;
+          plane.texture = ground_.textureIndex(e2::backdropAsset(draft.emberFloor));
+          plane.tile = draft.emberFloorTile;
+          plane.far = flat_ ? 1.0e9f : 900.0f;
+        }
+        renderer.setBackground(bg, floor ? 6u : whole ? 5u : fit.alphaSky ? 4u : ownSky ? 3u : 2u, {fit.horizon, fit.bottom, fit.degreesPerHeight, fit.bottomDegrees},
                                {centre, skyTop, fit.spanDegrees, fit.horizonDegrees}, plane);
       } else {
         renderer.setBackground(bg, background_ == 3 ? 1u : 0u);
@@ -789,6 +805,12 @@ class MapStage final : public Stage {
     Renderer::FogBank bank;
     bank.enabled = options_.volume && options_.mist && fog_.has_value() && !noFog_;
     bank.look = fogLook_;
+    // A map's own fog without a fog of war (MapDraft::emberWindFog: A Ponte de Pedra 023's wind fog, look 010), the panel's
+    // "Névoa do vento"; a map with a fog of war keeps its bank.
+    if (!bank.enabled && options_.volume && windFogChoice_ == 1 && !flat_)
+      for (uint32_t i = 0; i < fogLooks().size(); ++i)
+        if (!fogLooks()[i].fogOfWar && std::atoi(fogLooks()[i].number) == board_->draft().emberWindFog) bank.enabled = true, bank.look = i;
+    bank.scene.floorY = groundLow_ - board_->draft().emberFloorDepth;
     bank.scene.boardCenter = {boardCenter_.x, boardCenter_.z};
     bank.scene.boardRadius = boardRadius_;
     bank.scene.meanGround = meanGround_;
@@ -1202,6 +1224,14 @@ class MapStage final : public Stage {
       static const char* kBackgrounds[5] = {"imagem do mapa", "céu", "OFF", "imagem até o horizonte", "imagem alinhada ao céu"};
       dropdown("Fundo", background_, 5 + static_cast<int>(panoramas_.size()),
                [](int i) { return i < 5 ? std::string(kBackgrounds[i]) : std::format("panorama {:02}", i - 4); });
+      if (board_ && !board_->draft().emberFloor.empty()) {
+        static const char* kFloor[2] = {"OFF", "imagem"};
+        dropdown("Chão do vão", floorChoice_, 2, [](int i) { return std::string(kFloor[i]); });
+      }
+      if (board_ && board_->draft().emberWindFog > 0) {
+        static const char* kWind[2] = {"OFF", "forte"};
+        dropdown("Névoa do vento", windFogChoice_, 2, [](int i) { return std::string(kWind[i]); });
+      }
       if (background_ >= 5) {
         static const char* kPanoramaSky[2] = {"da imagem", "real"};
         dropdown("Céu do panorama", panoramaSky_, 2, [](int i) { return std::string(kPanoramaSky[i]); });
@@ -1317,7 +1347,7 @@ class MapStage final : public Stage {
       // mist looks (looks/fog/README.md, in order).
       static const char* kFog[9] = {"nuvens", "lençol", "bancos", "bloco", "bloco + giro", "mist4", "mist4 + giro", "bancos sem véu", "bancos, céu livre"};
       int look = noFog_ ? 0 : static_cast<int>(fogLook_) + 1;
-      const int count = static_cast<int>(fogLooks().size());
+      const int count = static_cast<int>(std::count_if(fogLooks().begin(), fogLooks().end(), [](const FogLook& l) { return l.fogOfWar; }));
       if (dropdown("Névoa", look, count + 1, [count](int i) {
             if (i == 0) return std::string("OFF");
             return count == 9 ? std::string(kFog[i - 1]) : std::string(fogLooks()[i - 1].note);
@@ -8143,6 +8173,8 @@ class MapStage final : public Stage {
   std::vector<std::string> panoramas_;    // the map's own panoramas (backdrop-fit.json "panoramas"), the panel's "panorama NN"
   std::vector<BackdropFit> panoramaFits_;
   int panoramaSky_ = 1;  // the panel's "Céu do panorama": 0 the image's own sky, 1 the real sky above the rooftops
+  int floorChoice_ = 1;    // the panel's "Chão do vão" (maps with MapDraft::emberFloor): 0 OFF (mode 5), 1 the painting flat under the board
+  int windFogChoice_ = 1;  // the panel's "Névoa do vento" (maps with MapDraft::emberWindFog): 0 OFF, 1 the draft's fog look
   static std::vector<std::string> loadPanoramas(const std::string& mapId) {
     std::vector<std::string> out;
     std::ifstream in("content/engine2/backdrop-fit.json");
@@ -8238,6 +8270,25 @@ class MapStage final : public Stage {
   static constexpr float kMinPitch = -0.1396f, kMinEyePitch = 0.0873f, kMaxPitch = 1.5621f;
   // ONLY the aldeia looks up to -8 deg (the user, 2026-10-19: "somente a aldeia, só um por vez"); every other map keeps 5 deg.
   bool aldeia() const { return board_ && board_->draft().id == "aldeia"; }
+  // MapDraft::emberDeckClip (A Ponte de Pedra 023, the user, 2026-10-21: "make sure the tiles finish right at the walls"): the ground
+  // only between the planes of the cards standing on the board's first and last rows (the parapets) and within their ends; every
+  // other map draws its whole ground.
+  glm::vec4 deckClip() const {
+    const glm::vec4 all{-1.0e9f, -1.0e9f, 1.0e9f, 1.0e9f};
+    if (!board_ || !scene_ || !board_->draft().emberDeckClip) return all;
+    const e2::HexLayout L = e2::makeLayout(board_->draft().cols, board_->draft().rows);
+    const float north = static_cast<float>(e2::hexZ(L, 0)), south = static_cast<float>(e2::hexZ(L, board_->draft().rows - 1));
+    glm::vec4 clip{1.0e9f, all.y, -1.0e9f, all.w};
+    for (const e2::SceneCard& c : scene_->cards) {
+      const bool onNorth = std::abs(c.z - north) < 0.01f, onSouth = std::abs(c.z - south) < 0.01f;
+      if ((!onNorth && !onSouth) || c.w < 4.0f) continue;  // the walls: wide cards on the outer rows
+      if (onNorth) clip.y = std::max(clip.y, c.z + c.nudge);
+      if (onSouth) clip.w = std::min(clip.w, c.z + c.nudge);
+      clip.x = std::min(clip.x, c.x - c.w * 0.5f);
+      clip.z = std::max(clip.z, c.x + c.w * 0.5f);
+    }
+    return clip.x < clip.z ? clip : all;
+  }
   bool ashenForest() const { return board_ && board_->draft().id == "ashen-forest-crossing"; }
   // The camera as before, on every map, only the tilt reaches 80 deg up into the sky (the user, 2026-10-19: "eu quero como estava
   // antes de agora e com vista para o céu só isso"); the eye still never goes under the ground (eyeView).

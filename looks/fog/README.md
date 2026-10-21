@@ -18,3 +18,4 @@ after seeing it live. A change is a new look, never an edit of a saved one.
 | 006 | Engine2 mist4 as in the user's reference (vortex round the board, clear centre, intensity 0.3) | not seen |
 | 007 | Claude's swirl round the party on mist4's real values, fog-of-war coverage | not seen |
 | 008 | 003 thinning away near the camera (nothing from 2 to 14 units out, then 003's bank): no white / yellow veil "ping-ponging" over the screen when the camera comes close and its eye drops inside the bank (wisp-forest-crossing, the user, 2026-10-16). Default since then; 003 stays in the list | not seen |
+| 010 | a map's own fog, no fog of war (MapDraft::emberWindFog; A Ponte de Pedra 023): a pool on the gorge floor and a wind sheet at deck height streaming past the walls, wind along the gorge with gusts, the deck clear. Panel "Névoa do vento" OFF / forte, `--wind-fog N`; not in the "Névoa" list | not seen |
