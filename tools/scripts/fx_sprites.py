@@ -83,6 +83,12 @@ def main():
     for part in ("engine2", "decor", "fx"):
         with open(os.path.join(ROOT, "content", f"{part}.sprites.json"), encoding="utf-8") as f:
             sets += json.load(f)["sets"]
+    # The decorations come from the repo's decoracoes-2d/ (tools/scripts/sprites/decor_folder.py), not Engine2's root.
+    for s in sets:
+        for c in s["clips"] if s["name"] == "decor" else []:
+            f = c["frames"]
+            if "list" in f:
+                f["list"] = [ROOT.replace("\\", "/") + "/" + p if p.startswith("decoracoes-2d/") else p for p in f["list"]]
     os.makedirs(os.path.join(ROOT, "build", "sprites"), exist_ok=True)
     with open(os.path.join(ROOT, "build", "sprites", "battle.sprites.json"), "w", encoding="utf-8") as f:
         json.dump({"version": 1, "sets": sets}, f, indent=1, ensure_ascii=False)

@@ -144,8 +144,13 @@ build.bat release          # or debug; output in build/<config>/bin
   `python tools/scripts/compare_meshes.py build/compare` (silhouette IoU + normal angle error by width).
 - Cooker (see top of `apps/cooker/main.cpp`):
   - sprites: `Cooker sprites content/engine2.sprites.json C:/Engine2/public/game build/sprites/roster.pak`;
-    battle pack = engine2 + `content/decor.sprites.json` (443 decor images) merged into
+    battle pack = engine2 + `content/decor.sprites.json` merged into
     `build/sprites/battle.sprites.json` → `battle.pak` (one pack: two packs both define `sprites/roster`).
+  - **2D decorations = the PNGs in `decoracoes-2d/` (the user's folder, 2026-10-21: they edit, delete and add there by hand).**
+    `python -I tools/scripts/sprites/decor_folder.py` makes the game follow it (clip list, battle manifest, editor catalog: files
+    gone = decorations gone, duplicates → the kept copy via `content/decor-dupes.json` (SceneData::load too), the user's own
+    pieces from `content/decor-own.json` as `ember-*` ids, section "Árido"), then cook battle.pak. New art on one sheet:
+    `tools/scripts/sprites/split_decor_sheet.py <sheet> decoracoes-2d <name>...`. Editor thumbnails read the folder.
   - replaced art (the user's own frames for an Engine2 clip, e.g. Salazar's walk right v02): `content/sprite-overrides.json`
     + `content/sprites/<set>/<clip>-vNN/`; run `python -I tools/scripts/sprites/apply_sprite_overrides.py` after
     fx_sprites.py / export_heroes.ts (patches the manifest, the roster's pose box / pace, walk-strides), then cook again.
