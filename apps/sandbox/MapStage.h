@@ -3959,6 +3959,7 @@ class MapStage final : public Stage {
     bool affinityDone = false;  // the action's first step is over: its neighbours' affinity was built
     bool bolt = false;     // this strike is an Arcano bolt (CombatFx): it lands when the bolt arrives
     std::string element;   // the bolt's element (its palette)
+    float boltStrength = 1.0f;  // Voss's plain bolt is a lesser one than his Míssil Mágico (the user, 2026-10-20)
     bool arrow = false;    // this strike is a bow shot: the arrow flies and lands on the hit
     bool interrupt = false;  // a sentinel's thrust out of its turn (Vigília da Sentinela): nothing of the owner's turn is spent
   };
@@ -4147,12 +4148,15 @@ class MapStage final : public Stage {
     std::string pose = s.type == StepType::Combat ? (strikeIsOffHand(s, x.counter) ? "attackShort" : "attack") : s.type == StepType::Potion ? "" : e2::spellPose(s.kind);
     if (pose == "attackShort" && striker >= 0 && !hasPose(static_cast<size_t>(striker), pose)) pose = "attack";  // no off-hand sheet: the main one
     if (striker >= 0 && !pose.empty() && !hasPose(static_cast<size_t>(striker), pose)) pose = hasPose(static_cast<size_t>(striker), "cast") ? "cast" : "attack";
-    // Neera's Casting animation plays on every skill she uses, the bow skills too (the user, 2026-10-19); her plain attacks and
-    // counters keep the shot. A skill is any step with a kind that is not a counter, a potion or a walk.
-    if (striker >= 0 && !x.counter && !s.kind.empty() && s.type != StepType::Potion && s.type != StepType::Move && !pose.empty() &&
-        hasPose(static_cast<size_t>(striker), "cast")) {
+    // Neera's skill animation plays on every skill she uses, the bow skills too (the user, 2026-10-19); her plain attacks and
+    // counters keep the shot. A skill is any step with a kind that is not a counter, a potion or a walk. Neera v2 plays her own
+    // Especial (atk2): her catalog's "cast" is the old rejected sheet (the user, 2026-10-20).
+    if (striker >= 0 && !x.counter && !s.kind.empty() && s.type != StepType::Potion && s.type != StepType::Move && !pose.empty()) {
       const size_t su = static_cast<size_t>(striker);
-      if (su < unitCatalog_.size() && unitCatalog_[su] && unitCatalog_[su]->key == "neera") pose = "cast";
+      if (su < unitCatalog_.size() && unitCatalog_[su] && unitCatalog_[su]->key == "neera") {
+        if (hasPose(su, "attack2")) pose = "attack2";
+        else if (hasPose(su, "cast")) pose = "cast";
+      }
     }
     // A counter on a foe beside it: the unit's staff blow when it has one (Voss; the user, 2026-10-17: "he will counter with
     // his staff when the enemy is close ranged, and ... the regular mage ATT when in distance"). No bolt flies from it.
@@ -4236,7 +4240,10 @@ class MapStage final : public Stage {
       const float release = x.impact;
       x.impact = release + CombatFx::flightSeconds(from.feet, to.feet);
       x.end = std::max(x.end, x.impact + 0.6f + kExchangeGap / actionRate());
-      spellFx_.combat().bolt(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), now_, release, x.impact, CombatPalette::of(x.element.c_str()));
+      const size_t su = static_cast<size_t>(striker);
+      x.boltStrength = su < unitCatalog_.size() && unitCatalog_[su] && unitCatalog_[su]->key == "voss" ? 0.55f : 1.0f;
+      spellFx_.combat().bolt(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), now_, release, x.impact, CombatPalette::of(x.element.c_str()),
+                             x.boltStrength);
     }
     // A bow's plain attack or counter shoots the arrow Tiro Longo already flies (SpellEffects::arrow), landing on the hit.
     x.arrow = !x.bolt && striker >= 0 && target >= 0 && strikeIsArrow(s, x.counter);
@@ -4260,7 +4267,8 @@ class MapStage final : public Stage {
     // Criar Comida e Água: healBy).
     if (striker >= 0) {
       const size_t sb = x.counter ? s.def : s.att;
-      if (s.type == StepType::Combat) playCues(sounds(sb, x.counter ? "counter" : "attack"));
+      if (staffCounter) playCues(e2::Json::parse(R"([{"file":"ATT01Blunt.mp3","volume":0.55,"offset":0,"delay":0,"exclusive":true}])"));  // the staff's blow, not his cast (the user, 2026-10-20: Blunt01)
+      else if (s.type == StepType::Combat) playCues(sounds(sb, x.counter ? "counter" : "attack"));
       else if (s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food) playCues(afterPose(sounds(sb, "heal")));
       else if (const e2::Json& spells = sounds(sb, "spells"); spells.is_object() && spells.contains(s.kind)) playCues(afterPose(spells[s.kind]));
       else if (s.kind == "iceStorm" && spells.is_object()) {  // a cultist's Tempestade de Gelo (ours: Engine2 records none for it): its own cast
@@ -5626,7 +5634,7 @@ class MapStage final : public Stage {
         const bool heavy = e.crit || e.died || (bu.maxHp > 0 && e.amount * 10 >= bu.maxHp * 3);
         if (x.bolt) {
           spellFx_.combat().impact(e.miss ? CombatFx::Kind::MagicalMiss : CombatFx::Kind::Magical, struck.feet, cardHeightOf(struck), from, now_,
-                                   CombatPalette::of(x.element.c_str()));
+                                   CombatPalette::of(x.element.c_str()), x.boltStrength);
         } else if ((x.arrow || bowSkill) && !e.miss) {
           spellFx_.combat().impact(heavy ? CombatFx::Kind::HeavyArrowHit : CombatFx::Kind::ArrowHit, struck.feet, cardHeightOf(struck), from, now_);
         } else if (!magic && !e.miss && striker >= 0) {

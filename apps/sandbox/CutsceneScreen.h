@@ -70,16 +70,25 @@ class CutsceneScreen {
     }
     // The sound toggle, top right.
     ImGui::SetCursorScreenPos({size.x - 12 - 8 - 36, 12 + 8});
+    // It shows what is heard (the game's mute and Volume da cutscene count too); a touch on "off" makes the film heard (the
+    // user, 2026-10-20: the icon did nothing while the game was muted), on "on" turns the cutscene sound off.
     if (ImGui::InvisibleButton("##filmsound", {36, 36})) {
-      soundOn() = !soundOn();
-      gamePrefs().save();
-      player_->setMuted(!soundOn() || gamePrefs().muted);
+      GamePrefs& prefs = gamePrefs();
+      if (heard()) {
+        soundOn() = false;
+      } else {
+        soundOn() = true, prefs.muted = false;
+        if (prefs.cutscene <= 0.01f) prefs.cutscene = 1.0f;
+        player_->setVolume(prefs.cutscene);
+      }
+      prefs.save();
+      player_->setMuted(!soundOn() || prefs.muted);
     }
     {
       const bool hover = ImGui::IsItemHovered();
       const ImVec2 a = ImGui::GetItemRectMin(), b = ImGui::GetItemRectMax();
       dl->AddRectFilled(a, b, IM_COL32(0, 0, 0, hover ? 140 : 102), 4);
-      speaker(dl, {(a.x + b.x) / 2, (a.y + b.y) / 2}, IM_COL32(255, 255, 255, 230), soundOn());
+      speaker(dl, {(a.x + b.x) / 2, (a.y + b.y) / 2}, IM_COL32(255, 255, 255, 230), heard());
     }
     // Pular, bottom right (a ghost button).
     bool skip = false;
@@ -110,6 +119,7 @@ class CutsceneScreen {
 
   // The cutscene sound setting (audio.ts getCutsceneAudioSettings().enabled): Opções' Som das cutscenes.
   static bool& soundOn() { return gamePrefs().cutsceneEnabled; }
+  static bool heard() { return soundOn() && !gamePrefs().muted && gamePrefs().cutscene > 0.01f; }
 
   static double parseTime(const std::string& s) {
     int h = 0, m = 0, sec = 0, ms = 0;

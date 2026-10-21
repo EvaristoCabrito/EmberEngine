@@ -161,12 +161,12 @@ float CombatFx::Impact::end() const {
   return at + 1.0f;
 }
 
-void CombatFx::impact(Kind kind, glm::vec3 feet, float height, glm::vec3 from, float at, const CombatPalette& palette) {
+void CombatFx::impact(Kind kind, glm::vec3 feet, float height, glm::vec3 from, float at, const CombatPalette& palette, float strength) {
   height = std::clamp(height, 1.0f, 4.0f);
   const glm::vec3 dir = flatDir(feet - from, glm::vec3(0.0f, 0.0f, 1.0f));
   // The contact: the middle of the body, on the striker's side.
   const glm::vec3 point = feet + glm::vec3(0.0f, height * 0.5f, 0.0f) - dir * 0.15f;
-  impacts_.push_back({kind, point, feet, dir, height, at, palette, 0x51ed27u + 7919u * ++serial_});
+  impacts_.push_back({kind, point, feet, dir, height, at, palette, 0x51ed27u + 7919u * ++serial_, std::clamp(strength, 0.1f, 1.0f)});
 }
 
 float CombatFx::flightSeconds(glm::vec3 fromFeet, glm::vec3 toFeet) {
@@ -175,7 +175,7 @@ float CombatFx::flightSeconds(glm::vec3 fromFeet, glm::vec3 toFeet) {
 }
 
 void CombatFx::bolt(glm::vec3 casterFeet, float casterHeight, glm::vec3 targetFeet, float targetHeight, float start, float release, float impact,
-                    const CombatPalette& palette) {
+                    const CombatPalette& palette, float strength) {
   casterHeight = std::clamp(casterHeight, 1.0f, 4.0f), targetHeight = std::clamp(targetHeight, 1.0f, 4.0f);
   const glm::vec3 dir = flatDir(targetFeet - casterFeet, glm::vec3(0.0f, 0.0f, 1.0f));
   Bolt b;
@@ -186,6 +186,7 @@ void CombatFx::bolt(glm::vec3 casterFeet, float casterHeight, glm::vec3 targetFe
   b.casterHeight = casterHeight;
   b.palette = palette;
   b.seed = 0xb017u + 104729u * ++serial_;
+  b.strength = std::clamp(strength, 0.1f, 1.0f);
   bolts_.push_back(b);
 }
 
@@ -262,7 +263,8 @@ void CombatFx::buildImpact(const Impact& im, float now, const Camera& camera, Vf
   const Draw draw{frame};
   const glm::vec3 eye = camera.position;
   const glm::vec3 side = glm::normalize(glm::cross(kUp, im.dir));
-  const float k = std::clamp(im.height / 2.0f, 0.7f, 1.4f);
+  // A lesser blow (strength < 1): every size by its root, the light and the particle counts by it.
+  const float k = std::clamp(im.height / 2.0f, 0.7f, 1.4f) * std::sqrt(im.strength);
   const glm::vec3 point = pulled(im.point, eye, kPull);
   const CombatPalette& pal = im.palette;
   const bool physical = im.kind == Kind::Physical || im.kind == Kind::Heavy;
@@ -535,7 +537,7 @@ void CombatFx::buildImpact(const Impact& im, float now, const Camera& camera, Vf
            VfxBlend::Additive);
     }
     // --- Energy bursting out in 3D, slowing as it spends itself (away from the caster more than toward it). ---
-    for (int i = 0; i < 28; ++i) {
+    for (int i = 0, bursts = static_cast<int>(28.0f * im.strength + 0.5f); i < bursts; ++i) {
       const uint32_t n = static_cast<uint32_t>(i) + 400u;
       const float life = 0.3f + 0.35f * hash01(im.seed, n, 1);
       const float tau = age - hash01(im.seed, n, 2) * 0.025f;
@@ -550,7 +552,7 @@ void CombatFx::buildImpact(const Impact& im, float now, const Camera& camera, Vf
                                 2.8f));
     }
     // --- Motes left in the air, drifting up and out. ---
-    for (int i = 0; i < 12; ++i) {
+    for (int i = 0, motes = static_cast<int>(12.0f * im.strength + 0.5f); i < motes; ++i) {
       const uint32_t n = static_cast<uint32_t>(i) + 500u;
       const float life = 0.6f + 0.5f * hash01(im.seed, n, 1);
       const float tau = age - 0.05f;
@@ -563,7 +565,7 @@ void CombatFx::buildImpact(const Impact& im, float now, const Camera& camera, Vf
       streaks_.push_back(streak(pulled(p, eye, kPull), glm::vec3(0.0f), 0.06f * k, std::sin(std::numbers::pi_v<float> * u), pal.energy, 2.2f));
     }
     // --- Its light: strong at the flash, dying out in half a second; it colours the struck unit and the ground. ---
-    if (age < 0.6f) lights.push_back({im.point, pal.light, 18.0f * std::exp(-age * 6.0f) * ease(0.0f, 0.02f, age + 0.01f), 3.6f * k});
+    if (age < 0.6f) lights.push_back({im.point, pal.light, 18.0f * im.strength * std::exp(-age * 6.0f) * ease(0.0f, 0.02f, age + 0.01f), 3.6f * k});
   }
 
   if (im.kind == Kind::MagicalMiss) {
@@ -584,7 +586,7 @@ void CombatFx::buildImpact(const Impact& im, float now, const Camera& camera, Vf
       const float u = age / life;
       streaks_.push_back(streak(pulled(p, eye, kPull), d * speed * std::exp(-4.0f * age) * 0.05f, 0.025f * k, (1.0f - u), pal.energy, 2.0f));
     }
-    if (age < 0.3f) lights.push_back({im.point, pal.light, 6.0f * (1.0f - ease(0.0f, 0.3f, age)), 2.5f});
+    if (age < 0.3f) lights.push_back({im.point, pal.light, 6.0f * im.strength * (1.0f - ease(0.0f, 0.3f, age)), 2.5f});
   }
 }
 
@@ -593,7 +595,7 @@ void CombatFx::buildBolt(const Bolt& b, float now, const Camera& camera, VfxFram
   const Draw draw{frame};
   const glm::vec3 eye = camera.position;
   const CombatPalette& pal = b.palette;
-  const float k = std::clamp(b.casterHeight / 2.0f, 0.7f, 1.4f);
+  const float k = std::clamp(b.casterHeight / 2.0f, 0.7f, 1.4f) * std::sqrt(b.strength);  // a lesser bolt: smaller (impact's rule)
   const glm::vec3 hand = pulled(b.hand, eye, kPull);
 
   // No charging at the hand: the casters' own sprites already gather the spell (user, 2026-10-17: "fica em dose dupla").
@@ -639,11 +641,11 @@ void CombatFx::buildBolt(const Bolt& b, float now, const Camera& camera, VfxFram
       const glm::vec3 tangent = (-e1 * std::sin(phi) + e2 * std::cos(phi)) * 0.15f * k * 24.0f;
       streaks_.push_back(streak(pulled(head - vdir * 0.05f + off, eye, kPull), tangent * 0.03f - vdir * 0.12f, 0.02f * k, 0.9f, pal.core, 2.6f));
     }
-    lights.push_back({head, pal.light, 12.0f, 3.2f * k});
+    lights.push_back({head, pal.light, 12.0f * b.strength, 3.2f * k});
   }
 
   // --- Embers shed along the path, drifting and dying after the bolt has passed. ---
-  for (int i = 0; i < 16; ++i) {
+  for (int i = 0, embers = static_cast<int>(16.0f * b.strength + 0.5f); i < embers; ++i) {
     const uint32_t n = static_cast<uint32_t>(i) + 70u;
     const float ub = (static_cast<float>(i) + 0.5f) / 16.0f;
     const float tb = b.release + ub * (b.impact - b.release);

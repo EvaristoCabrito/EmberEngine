@@ -268,14 +268,22 @@ inline void iconSound(ImDrawList* dl, ImVec2 c, float s, ImU32 ink, bool on) { u
 // Engine2's sound button (onMute: Volume2 / VolumeX on a plate): flips audio.ts muted, the same switch as Opções'
 // Silenciar, saved with the player's choices. `size` = the plate, `icon` = the icon (Engine2 size-10 + size-4: 40, 16);
 // gold: .ember-icon-btn's gold icon (title, briefing) instead of the plate's light one.
+// It shows what is heard: off while muted or with Opções' Música at 0; a touch on "off" brings the music back (unmuted, and
+// Música back to full when it was at 0: the user, 2026-10-20, the icon "not working" with Música at 0), on "on" mutes.
 inline bool soundButton(const char* id, ImVec2 size, float icon, bool gold = false) {
   GamePrefs& prefs = gamePrefs();
+  const bool heard = !prefs.muted && prefs.music > 0.01f;
   if (!emberPlate(id, size, [&](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32 ink) {
         if (gold && ink == IM_COL32(240, 240, 240, 255)) ink = IM_COL32(223, 191, 142, 255);  // #dfbf8e
-        iconSound(d, {(a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f}, icon, ink, !prefs.muted);
+        iconSound(d, {(a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f}, icon, ink, heard);
       }))
     return false;
-  prefs.muted = !prefs.muted;
+  if (heard) {
+    prefs.muted = true;
+  } else {
+    prefs.muted = false;
+    if (prefs.music <= 0.01f) prefs.music = 1.0f;
+  }
   prefs.save();
   return true;
 }

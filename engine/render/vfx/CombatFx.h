@@ -53,11 +53,12 @@ class CombatFx {
 
   // A blow lands at `at` on a unit standing at `feet` with its card `height` tall; `from` = where the striker stands
   // (the blow's direction).
-  void impact(Kind kind, glm::vec3 feet, float height, glm::vec3 from, float at, const CombatPalette& palette = {});
+  // `strength` < 1: a lesser blow (smaller, dimmer, fewer particles; Voss's plain attack, below his Míssil Mágico).
+  void impact(Kind kind, glm::vec3 feet, float height, glm::vec3 from, float at, const CombatPalette& palette = {}, float strength = 1.0f);
   // The Arcano bolt: the caster's pose starts at `start`, it lets go at `release`, the bolt lands at `impact` (the
   // stage asks flightSeconds for it).
   void bolt(glm::vec3 casterFeet, float casterHeight, glm::vec3 targetFeet, float targetHeight, float start, float release, float impact,
-            const CombatPalette& palette = {});
+            const CombatPalette& palette = {}, float strength = 1.0f);
   // Seconds the bolt flies between two units (accelerating: slower at short range than a constant speed would be).
   static float flightSeconds(glm::vec3 fromFeet, glm::vec3 toFeet);
 
@@ -75,6 +76,7 @@ class CombatFx {
     float at;
     CombatPalette palette;
     uint32_t seed;
+    float strength;
     float end() const;
   };
   struct Bolt {
@@ -84,6 +86,7 @@ class CombatFx {
     float casterHeight;
     CombatPalette palette;
     uint32_t seed;
+    float strength = 1.0f;
     float end() const { return impact + 0.65f; }  // its embers outlive it
     glm::vec3 at(float s) const;  // the path, s 0..1 (hand -> target)
     float progress(float now) const;  // 0..1 along the path (accelerating)
