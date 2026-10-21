@@ -951,6 +951,46 @@ class MapEditorStage : public Stage {
     const auto it = editor_.classes.find(classId);
     return it == editor_.classes.end() ? classId : it->second.name;
   }
+  // Type-to-jump in an open unit list (the user, 2026-10-20): a letter pressed scrolls to the first entry starting with it, the
+  // same letter again to the next one. begin() once per frame inside the open combo, then item(label) right after each entry.
+  struct LetterJump {
+    char letter = 0;                // pressed this frame (lower case), 0 = none
+    int seen = 0, target = -1;      // entries starting with it so far; the one to land on
+    inline static char last = 0;    // the letter of the last jump and which match it landed on (cycles on the same letter)
+    inline static int lastMatch = -1;
+    void begin() {
+      letter = 0, seen = 0, target = -1;
+      for (int k = 0; k < 26; ++k)
+        if (ImGui::IsKeyPressed(static_cast<ImGuiKey>(ImGuiKey_A + k), false)) letter = static_cast<char>('a' + k);
+      if (!letter) return;
+      lastMatch = letter == last ? lastMatch + 1 : 0, last = letter;
+      target = lastMatch;
+    }
+    // The label's first letter, accents folded (Á À Â Ã → a, É Ê → e, Í → i, Ó Ô Õ → o, Ú → u, Ç → c).
+    static char initial(const std::string& s) {
+      if (s.empty()) return 0;
+      const unsigned char c = static_cast<unsigned char>(s[0]);
+      if (c < 0x80) return static_cast<char>(c >= 'A' && c <= 'Z' ? c + ('a' - 'A') : c);
+      if (c == 0xC3 && s.size() > 1) {
+        const unsigned char d = static_cast<unsigned char>(s[1]) | 0x20;  // upper and lower case share the low bits
+        if (d >= 0xA0 && d <= 0xA5) return 'a';
+        if (d == 0xA7) return 'c';
+        if (d >= 0xA8 && d <= 0xAB) return 'e';
+        if (d >= 0xAC && d <= 0xAF) return 'i';
+        if (d >= 0xB2 && d <= 0xB6) return 'o';
+        if (d >= 0xB9 && d <= 0xBC) return 'u';
+      }
+      return 0;
+    }
+    void item(const std::string& label) {
+      if (!letter || initial(label) != letter) return;
+      if (seen++ == target) ImGui::SetScrollHereY(0.0f);
+    }
+    // After the list: no entry that far (cycled past the last one) starts over at the first.
+    void end() {
+      if (letter && seen > 0 && target >= seen) lastMatch = -1, last = 0;
+    }
+  };
   // A picker's label for a class: a named hero's own name for their class, else "Name · role".
   std::string classLabel(const std::string& classId) const {
     for (const auto& [name, c] : editor_.heroes)
@@ -1857,8 +1897,10 @@ class MapEditorStage : public Stage {
       const std::string music = draft_.value("music", "");
       ImGui::TextColored(ImColor(180, 180, 180), "TRILHA");
       ImGui::SetNextItemWidth(-1);
-      if (ImGui::BeginCombo("##music", music.empty() ? "Tema padrão (pelo id da missão)" : music.c_str())) {
-        if (ImGui::Selectable("Tema padrão (pelo id da missão)", music.empty())) beginEdit(), draft_["music"] = "", note("Trilha desta missão: a do tema padrão.");
+      // The default names the track the mission's id plays (the user, 2026-10-20: it played the right one but never said which).
+      const std::string byId = "Tema padrão: " + ::ember::music::forMissionId(draft_.value("id", "")).file;
+      if (ImGui::BeginCombo("##music", music.empty() ? byId.c_str() : music.c_str())) {
+        if (ImGui::Selectable(byId.c_str(), music.empty())) beginEdit(), draft_["music"] = "", note("Trilha desta missão: " + byId + ".");
         for (const std::string& f : editor_.music)
           if (ImGui::Selectable(f.c_str(), f == music)) beginEdit(), draft_["music"] = f, note(std::format("Trilha desta missão: {}.", f));
         ImGui::EndCombo();
@@ -2241,8 +2283,13 @@ class MapEditorStage : public Stage {
         ImGui::Text("Personagem");
         ImGui::SetNextItemWidth(-1);
         if (ImGui::BeginCombo("##npc", shown.c_str())) {
-          for (const auto& [id, name] : editor_.npcs)
+          LetterJump jump;
+          jump.begin();
+          for (const auto& [id, name] : editor_.npcs) {
             if (ImGui::Selectable((name + "##" + id).c_str(), id == npcBrush_)) npcBrush_ = id;
+            jump.item(name);
+          }
+          jump.end();
           ImGui::EndCombo();
         }
         hint("Os novos personagens têm animação de quatro quadros e diálogo próprio.");
@@ -2257,10 +2304,14 @@ class MapEditorStage : public Stage {
         ImGui::SameLine();
         ImGui::SetNextItemWidth(-1);
         if (ImGui::BeginCombo("##summon", classLabel(summonBrush_).c_str())) {
+          LetterJump jump;
+          jump.begin();
           for (const std::string& c : editor_.classOrder) {
             if (!summonNeutral_ && !isSummon(c)) continue;  // allies: summons only; neutral: any class (a talkable NPC)
             if (ImGui::Selectable((classLabel(c) + "##" + c).c_str(), c == summonBrush_)) summonBrush_ = c;
+            jump.item(classLabel(c));
           }
+          jump.end();
           ImGui::EndCombo();
         }
         hint("Clique numa casa vazia pra pôr %s %s; clique numa casa ocupada desse lado pra remover.", lower(className(summonBrush_)).c_str(),
@@ -2732,10 +2783,14 @@ class MapEditorStage : public Stage {
         ImGui::SetNextItemWidth(classW);
         const std::string classId = s.value("classId", "");
         if (ImGui::BeginCombo("##class", classLabel(classId).c_str())) {
+          LetterJump jump;
+          jump.begin();
           for (const std::string& c : editor_.classOrder) {
             if (enemy && (isSummon(c) || isCivil(c))) continue;
             if (ImGui::Selectable((classLabel(c) + "##" + c).c_str(), c == classId)) beginEdit(), s["classId"] = c, s["useClassSprite"] = true;
+            jump.item(classLabel(c));
           }
+          jump.end();
           ImGui::EndCombo();
         }
         ImGui::SameLine();

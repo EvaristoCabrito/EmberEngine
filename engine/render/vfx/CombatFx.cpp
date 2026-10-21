@@ -157,6 +157,7 @@ float CombatFx::Impact::end() const {
     case Kind::HeavySlash: return at + 0.6f;
     case Kind::ArrowHit:
     case Kind::HeavyArrowHit: return at + 1.0f;
+    case Kind::LevelUp: return at + 2.0f;
   }
   return at + 1.0f;
 }
@@ -506,6 +507,49 @@ void CombatFx::buildImpact(const Impact& im, float now, const Camera& camera, Vf
       splinters_.push_back({m, glm::vec4(0.0f), glm::vec4(0.0f), glm::vec4(glm::vec3(0.5f, 0.36f, 0.22f) * (0.8f + 0.4f * hash01(im.seed, n, 9)), 1.0f)});
     }
     if (age < 0.1f) lights.push_back({im.point, {1.0f, 0.82f, 0.6f}, (big ? 5.0f : 3.0f) * (1.0f - ease(0.0f, 0.1f, age)), 1.8f});
+  }
+
+  if (im.kind == Kind::LevelUp) {
+    const glm::vec3 core{1.0f, 0.95f, 0.78f}, energy{1.0f, 0.7f, 0.22f}, light{1.0f, 0.78f, 0.4f};
+    const float h = im.height;
+    // --- Two golden rings racing out over the ground from the feet. ---
+    for (int i = 0; i < 2; ++i) {
+      const float t0 = 0.3f * static_cast<float>(i), a = age - t0;
+      if (a < 0.0f || a > 0.9f) continue;
+      const float r = (0.3f + 1.4f * easeOut(0.0f, 0.8f, a)) * k;
+      const glm::mat4 m = glm::translate(glm::mat4(1.0f), pulled(im.feet + glm::vec3(0.0f, 0.04f, 0.0f), eye, kGroundPull)) * glm::scale(glm::mat4(1.0f), {r, 1.0f, r});
+      draw(discFirst_, discCount_, m, kModeRing, now, 0.9f, 0.85f * (1.0f - ease(0.2f, 0.9f, a)), energy, 0.0f, glm::vec4(core, 0.88f), im.feet, VfxBlend::Additive);
+    }
+    // --- A soft pillar of light rising through the body, gone in a second and a half. ---
+    if (age < 1.5f) {
+      const float f = ease(0.0f, 0.15f, age) * (1.0f - ease(0.6f, 1.5f, age));
+      const float rise = easeOut(0.0f, 0.5f, age);
+      streaks_.push_back(streak(pulled(im.feet + kUp * (h * 0.65f * rise), eye, kPull), kUp * (h * 1.3f * rise), 0.55f * k, f * 0.45f, energy, 1.6f));
+      streaks_.push_back(streak(pulled(im.feet + kUp * (h * 0.65f * rise), eye, kPull), kUp * (h * 1.1f * rise), 0.18f * k, f * 0.8f, core, 2.2f));
+    }
+    // --- Sparks spiralling up round the body, from the feet to above the head. ---
+    for (int i = 0; i < 32; ++i) {
+      const uint32_t n = static_cast<uint32_t>(i) + 700u;
+      const float delay = 0.5f * hash01(im.seed, n, 1), life = 1.0f + 0.4f * hash01(im.seed, n, 2);
+      const float tau = age - delay;
+      if (tau < 0.0f || tau > life) continue;
+      const float u = tau / life;
+      const float a = hash01(im.seed, n, 3) * kTau + tau * (3.5f + 1.5f * hash01(im.seed, n, 4));
+      const float r = (0.5f - 0.25f * u) * k;
+      const glm::vec3 p = im.feet + glm::vec3(std::cos(a) * r, h * 1.25f * easeOut(0.0f, 1.0f, u), std::sin(a) * r);
+      const glm::vec3 v = glm::vec3(-std::sin(a), 0.6f, std::cos(a)) * (0.06f * k);
+      streaks_.push_back(streak(pulled(p, eye, kPull), v, 0.035f * k, std::sin(std::numbers::pi_v<float> * u) * 0.95f, i % 3 ? energy : core, 2.4f));
+    }
+    // --- A crown ring of light over the head, pulsing, then fading. ---
+    if (age > 0.5f && age < 1.9f) {
+      const float a = age - 0.5f;
+      const float r = (0.28f + 0.06f * std::sin(a * 9.0f)) * k * (0.6f + 0.4f * easeOut(0.0f, 0.3f, a));
+      const glm::mat4 m = glm::translate(glm::mat4(1.0f), pulled(im.feet + kUp * (h * 1.08f), eye, kPull)) * glm::scale(glm::mat4(1.0f), {r, 1.0f, r});
+      draw(discFirst_, discCount_, m, kModeRing, now, 1.3f, ease(0.0f, 0.2f, a) * (1.0f - ease(0.9f, 1.4f, a)), energy, 0.0f, glm::vec4(core, 0.8f), im.feet,
+           VfxBlend::Additive);
+    }
+    // --- A warm golden light on the hero and the ground round it. ---
+    if (age < 1.8f) lights.push_back({im.feet + kUp * (h * 0.6f), light, 9.0f * ease(0.0f, 0.15f, age) * (1.0f - ease(0.8f, 1.8f, age)), 3.2f * k});
   }
 
   if (im.kind == Kind::Magical) {

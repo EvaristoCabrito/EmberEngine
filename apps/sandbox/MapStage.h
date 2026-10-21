@@ -238,7 +238,9 @@ struct HeroOutcome {
   bool diseased = false;
   std::string poison;        // empty = not poisoned
   std::optional<double> fullness;
-  std::optional<double> dodging;  // its Esquiva as the fight leaves it (ours)
+  // What the fight trained, per skill id of save.heroSkills (weapons "<type>Weapon", "healing", the resistances, Esquiva
+  // "dodging"): the points gained since the fight opened, to add to the save's (the user, 2026-10-20: only Esquiva rose).
+  std::vector<std::pair<std::string, double>> skillGains;
 };
 
 class MapStage final : public Stage {
@@ -1447,6 +1449,7 @@ class MapStage final : public Stage {
       u.gearHp = g.hp, u.gearAtk = g.atk, u.gearMag = g.mag, u.gearDef = g.def, u.gearDex = g.dex, u.gearMov = g.mov;
       e2::reapplyGear(u);
       u.hp = full ? u.maxHp : std::min(u.maxHp, u.hp);
+      skillsAtStart_[u.name] = trainedSkills(u);  // what it knew as the fight opened: the end adds only what it trained here
     }
   }
   // The fight as Engine2's BattleSnapshot (captureSnapshot): an action in flight spends the acting unit's action (and,
@@ -1604,6 +1607,19 @@ class MapStage final : public Stage {
     const int hp = options_.world ? options_.world->classHp(u.classId, level) : 0;
     return hp > 0 ? hp : u.maxHp;
   }
+  // A hero's trainable skills as the fight holds them, by save.heroSkills id: every trained skill it carries, its weapons'
+  // mastery ("<type>Weapon", both hands) and Cura ("healing").
+  static std::map<std::string, double> trainedSkills(const e2::BattleUnit& u) {
+    std::map<std::string, double> out;
+    auto keep = [&](const std::string& id, double v) {
+      if (const auto it = out.find(id); it == out.end() || it->second < v) out[id] = v;
+    };
+    for (const auto& [id, v] : u.skills) keep(id, v);
+    if (u.trainsWeapon && !u.weaponType.empty()) keep(u.weaponType + "Weapon", u.weaponSkill);
+    if (u.offTrainsWeapon && !u.offWeaponType.empty()) keep(u.offWeaponType + "Weapon", u.offWeaponSkill);
+    keep("healing", u.healingSkill);
+    return out;
+  }
   int campHp(const e2::BattleUnit& u) const {
     const int battle = u.alive ? u.hp : 0;
     if (floorTaken()) return battle;
@@ -1621,8 +1637,12 @@ class MapStage final : public Stage {
         h.diseased = u.diseased;
         h.poison = u.poisoned ? (u.poisonTier.empty() ? "lesser" : u.poisonTier) : "";
         h.fullness = u.fullness;
-        for (const auto& [id, v] : u.skills)
-          if (id == "dodging") h.dodging = v;
+        if (const auto start = skillsAtStart_.find(u.name); start != skillsAtStart_.end())
+          for (const auto& [id, v] : trainedSkills(u)) {
+            const auto before = start->second.find(id);
+            const double gain = v - (before != start->second.end() ? before->second : 0.0);
+            if (gain > 1e-9) h.skillGains.emplace_back(id, gain);
+          }
         out.push_back(std::move(h));
       }
     return out;
@@ -2916,7 +2936,14 @@ class MapStage final : public Stage {
       std::vector<e2::BattleUnit>& all = battle_->units();
       levelSeen_.resize(all.size(), -1);
       for (size_t b = 0; b < all.size(); ++b) {
-        if (levelSeen_[b] >= 0 && all[b].level > levelSeen_[b] && all[b].side == "player") playCues(levelUpSound_);
+        if (levelSeen_[b] >= 0 && all[b].level > levelSeen_[b] && all[b].side == "player") {
+          playCues(levelUpSound_);
+          // ... and its light in 3D (CombatFx LevelUp; the user, 2026-10-20)
+          if (const int ui = sceneUnitOf(static_cast<int>(b)); ui >= 0 && all[b].alive) {
+            const SpellEffects::Spot at = unitSpot(static_cast<size_t>(ui));
+            spellFx_.combat().impact(CombatFx::Kind::LevelUp, at.feet, cardHeightOf(at), at.feet - glm::vec3(0.0f, 0.0f, 1.0f), now_);
+          }
+        }
         levelSeen_[b] = all[b].level;
       }
     }
@@ -4271,10 +4298,19 @@ class MapStage final : public Stage {
     // Criar Comida e Água: healBy).
     if (striker >= 0) {
       const size_t sb = x.counter ? s.def : s.att;
-      const bool neeraDagger = s.type == StepType::Combat && strikeIsOffHand(s, x.counter) && static_cast<size_t>(striker) < unitCatalog_.size() &&
-                               unitCatalog_[static_cast<size_t>(striker)] && unitCatalog_[static_cast<size_t>(striker)]->key == "neera";
-      if (staffCounter) playCues(e2::Json::parse(R"([{"file":"ATT01Blunt.mp3","volume":0.55,"offset":0,"delay":0,"exclusive":true}])"));  // the staff's blow, not his cast (the user, 2026-10-20: Blunt01)
-      else if (neeraDagger) playCues(e2::Json::parse(R"([{"file":"BladeSlash1Dagger.mp3","volume":0.55,"offset":0,"delay":0,"exclusive":true}])"));  // her off-hand dagger (the user, 2026-10-20: Dagger1)
+      const std::string key = static_cast<size_t>(striker) < unitCatalog_.size() && unitCatalog_[static_cast<size_t>(striker)]
+                                  ? unitCatalog_[static_cast<size_t>(striker)]->key : std::string();
+      auto cue = [](const char* file) {
+        return e2::Json::array({{{"file", file}, {"volume", 0.55}, {"offset", 0}, {"delay", 0}, {"exclusive", true}}});
+      };
+      const bool neeraDagger = s.type == StepType::Combat && strikeIsOffHand(s, x.counter) && key == "neera";
+      // The crossbowmen's bolt (the user, 2026-10-20: Arrow1 on every attack and skill), besides their own cues.
+      const bool crossbow = key == "brigandCrossbowman" || key == "baseCrossbowman" || key == "brigand";
+      if (crossbow && s.type != StepType::Potion && s.type != StepType::Move && (s.type == StepType::Combat || !s.kind.empty())) playCues(cue("Arrows1.mp3"));
+      if (staffCounter) playCues(cue("ATT01Blunt.mp3"));  // the staff's blow, not his cast (the user, 2026-10-20: Blunt01)
+      else if (neeraDagger) playCues(cue("BladeSlash1Dagger.mp3"));  // her off-hand dagger (the user, 2026-10-20: Dagger1)
+      else if (s.type == StepType::Potion) playCues(cue("Healing01-Balanced-High.mp3"));  // every potion (the user, 2026-10-20)
+      else if (key == "voss" && (s.kind == "magicMissile" || s.kind == "magicMissileV2")) playCues(afterPose(cue("Spellcast01.mp3")));  // the default cast
       else if (s.type == StepType::Combat) playCues(sounds(sb, x.counter ? "counter" : "attack"));
       else if (s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food) playCues(afterPose(sounds(sb, "heal")));
       else if (const e2::Json& spells = sounds(sb, "spells"); spells.is_object() && spells.contains(s.kind)) playCues(afterPose(spells[s.kind]));
@@ -7208,6 +7244,7 @@ class MapStage final : public Stage {
     y += 1.125f * rem * 1.5f + 1.5f * rem * z;
     // growth: one trough per hero
     const float rowW = std::min(34.0f * rem, size.x - 2.0f * rem);
+    int row = 0;
     for (size_t i = 0; i < battle_->units().size(); ++i) {
       const e2::BattleUnit& u = battle_->units()[i];
       if (u.side != "player" || u.summoned || i >= startLevel_.size() || absent_.contains(u.id)) continue;
@@ -7220,18 +7257,48 @@ class MapStage final : public Stage {
       if (!u.alive) head += " · caiu";
       dl->AddText(ui, 1.125f * rem, {p.x + 0.75f * rem, ty}, IM_COL32(240, 240, 240, 255), head.c_str());
       ty += 1.125f * rem * 1.35f;
-      // the XP bar: what it had (dim) and what it earned (bright)
+      // the XP bar fills like the loading bar (the user, 2026-10-20): from the XP it had to the XP it has, one hero after the
+      // other once the screen has faded in, its number counting up; a level gained fills the bar, then it starts again empty.
       const float barW = 12.0f * rem, barH = 0.4f * rem;
-      const int next = xpToLevel(u.level);
-      dl->AddRectFilled({p.x + 0.75f * rem, ty + 0.3f * rem}, {p.x + 0.75f * rem + barW, ty + 0.3f * rem + barH}, IM_COL32(74, 74, 74, 255), 2.0f);
-      const float had = u.level == fromLevel ? std::clamp(static_cast<float>(fromXp) / next, 0.0f, 1.0f) : 0.0f;
-      const float now = std::clamp(static_cast<float>(u.xp) / next, 0.0f, 1.0f);
-      if (now > 0.0f)
-        dl->AddRectFilled({p.x + 0.75f * rem, ty + 0.3f * rem}, {p.x + 0.75f * rem + barW * now, ty + 0.3f * rem + barH}, IM_COL32(226, 140, 60, 255), 2.0f);
-      if (had > 0.0f)
-        dl->AddRectFilled({p.x + 0.75f * rem, ty + 0.3f * rem}, {p.x + 0.75f * rem + barW * had, ty + 0.3f * rem + barH}, IM_COL32(216, 216, 216, 255), 2.0f);
-      const std::string xp = std::format("{}/{} XP{}", u.xp, next, u.level != fromLevel ? " · subiu" : "");
+      const ImVec2 ba{p.x + 0.75f * rem, ty + 0.3f * rem}, bb{ba.x + barW, ba.y + barH};
+      dl->AddRectFilled(ba, bb, IM_COL32(74, 74, 74, 255), 2.0f);
+      struct Span {
+        int level;
+        float from, to;  // shares of that level's bar
+      };
+      std::vector<Span> spans;
+      for (int level = fromLevel; level <= u.level; ++level) {
+        const float cap = static_cast<float>(xpToLevel(level));
+        const float from = level == fromLevel ? std::clamp(static_cast<float>(fromXp) / cap, 0.0f, 1.0f) : 0.0f;
+        const float to = level == u.level ? std::clamp(static_cast<float>(u.xp) / cap, 0.0f, 1.0f) : 1.0f;
+        spans.push_back({level, from, std::max(from, to)});
+      }
+      if (spans.empty()) spans.push_back({u.level, 0.0f, std::clamp(static_cast<float>(u.xp) / static_cast<float>(xpToLevel(u.level)), 0.0f, 1.0f)});
+      float total = 0.0f;
+      for (const Span& s : spans) total += s.to - s.from;
+      constexpr float kBarSeconds = 1.4f;  // a whole bar's fill
+      const float startAt = resultAt_ + kResultDelay + 0.5f + 0.35f * static_cast<float>(row);
+      const float t = total > 0.0f ? std::clamp((now_ - startAt) / std::max(0.5f, kBarSeconds * total), 0.0f, 1.0f) : 1.0f;
+      float left = total * (1.0f - (1.0f - t) * (1.0f - t));  // ease-out
+      size_t at = 0;
+      while (at + 1 < spans.size() && left > spans[at].to - spans[at].from) left -= spans[at].to - spans[at].from, ++at;
+      const Span& s = spans[at];
+      const float fill = std::min(s.to, s.from + left);
+      if (fill > 0.0f) {
+        // bg-gradient-to-r from-#444444 via-#e1a541 to-#fff0a2 across the fill, as the loading bar
+        const float fx = ba.x + barW * fill, mid = (ba.x + fx) * 0.5f;
+        dl->PushClipRect(ba, bb, true);
+        dl->AddRectFilledMultiColor(ba, {mid, bb.y}, IM_COL32(0x44, 0x44, 0x44, 255), IM_COL32(0xe1, 0xa5, 0x41, 255), IM_COL32(0xe1, 0xa5, 0x41, 255),
+                                    IM_COL32(0x44, 0x44, 0x44, 255));
+        dl->AddRectFilledMultiColor({mid, ba.y}, {fx, bb.y}, IM_COL32(0xe1, 0xa5, 0x41, 255), IM_COL32(0xff, 0xf0, 0xa2, 255), IM_COL32(0xff, 0xf0, 0xa2, 255),
+                                    IM_COL32(0xe1, 0xa5, 0x41, 255));
+        dl->PopClipRect();
+      }
+      const int cap = xpToLevel(s.level);
+      const int shownXp = static_cast<int>(std::lround(fill * static_cast<float>(cap)));
+      const std::string xp = std::format("{}/{} XP{}", at + 1 == spans.size() && t >= 1.0f ? u.xp : shownXp, cap, at > 0 ? " · subiu" : "");
       dl->AddText(ui, 0.875f * rem, {p.x + 0.75f * rem + barW + 0.5f * rem, ty}, IM_COL32(180, 180, 180, 255), xp.c_str());
+      ++row;
       ty += 0.875f * rem * 1.45f;
       // GameApp ResultScreen's HP lines: the fight's HP, then what the camp gives (resting) or what goes on to the next floor
       std::string hpLine = std::format("{} {}/{}", tr("Combate:", "Battle:"), u.alive ? u.hp : 0, maxHpAt(u, fromLevel));
@@ -8493,6 +8560,7 @@ class MapStage final : public Stage {
   float tipAt_ = -10.0f;
   std::vector<OneShot> unitShot_;         // per scene unit: a one-shot pose over its own
   std::vector<float> unitDiedAt_;         // per scene unit: when it fell (-1 = alive)
+  std::unordered_map<std::string, std::map<std::string, double>> skillsAtStart_;  // per hero: its skills as the campaign fight opened
   // The struck body's reaction (2026-10-17, the hit react; the impact's light and particles are CombatFx's): the card
   // is knocked back along the blow, squashed a little, and comes back; a heavy blow knocks it further, dips it and it
   // staggers once before it settles. Drawn only (the board position never moves).

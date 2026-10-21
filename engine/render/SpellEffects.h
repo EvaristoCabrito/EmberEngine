@@ -259,11 +259,16 @@ class SpellEffects {
   // Frost's 3D version (02).
   static bool isFrost(const std::string& kind, int look) { return look == 2 && kind == "frost"; }
   // The lightning spells' 3D version (02).
-  static bool isLightning(const std::string& kind, int look) { return look == 2 && (kind == "lightning" || kind == "lightningTier3" || kind == "shock"); }
-  // The bolt of Míssil Mágico 03 / Raio Divino 01, or none.
-  static bool isBolt(const std::string& kind, int look) {
-    return ((kind == "magicMissile" || kind == "magicMissileV2") && look == 3) || (kind == "divineBolt" && look == 1);
+  // Relâmpago / Choque 02, and 03 = the same at a small size (the enemies', the user 2026-10-20: "tiny ... thunder").
+  static bool isLightning(const std::string& kind, int look) {
+    return (look == 2 || look == 3) && (kind == "lightning" || kind == "lightningTier3" || kind == "shock");
   }
+  // The bolt of Míssil Mágico 03 (04 = the same at a small size, the enemies') / Raio Divino 01, or none.
+  static bool isBolt(const std::string& kind, int look) {
+    return ((kind == "magicMissile" || kind == "magicMissileV2") && (look == 3 || look == 4)) || (kind == "divineBolt" && look == 1);
+  }
+  // The size of the small versions (Míssil Mágico 04, Relâmpago / Choque 03).
+  static constexpr float kTinyFx = 0.55f;
   // Raio Divino's struck hex: the one nearest the middle of its area (the rules list the area row by row).
   static const Spot& areaCentre(const std::vector<Spot>& hexes);
   static float heightOf(const Spot& s) { return s.cardHeight > 0.0f ? s.cardHeight : std::max(1.2f, (s.body.y - s.feet.y) / 0.45f); }

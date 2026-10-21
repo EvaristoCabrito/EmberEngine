@@ -1096,7 +1096,13 @@ int runWindow(const Options& o) {
         save["xp"][h.name] = h.xp;
       }
       save["unitHp"][h.name] = victory ? h.campHp : h.hp;
-      if (h.dodging) save["heroSkills"][h.name]["dodging"] = *h.dodging;  // the Esquiva trained in the fight (ours)
+      // What the fight trained (weapons, Cura, resistances, Esquiva), added to the save's, capped at 100 (the user, 2026-10-20:
+      // only Esquiva ever rose, the rest was dropped here)
+      for (const auto& [id, gain] : h.skillGains) {
+        e2::Json& skills = save["heroSkills"][h.name];
+        const double before = skills.contains(id) && skills[id].is_number() ? skills[id].get<double>() : 0.0;
+        skills[id] = std::min(100.0, std::round((before + gain) * 100.0) / 100.0);
+      }
     }
     // mapstore keepsDefeatedSpawns: a dungeon keeps the enemies and neutrals killed here dead on every later visit
     if (const e2::MapMission* mm = hasWorld ? world.mission(playing) : nullptr; victory && mm && mm->keepsSpawns) {

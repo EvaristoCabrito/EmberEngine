@@ -64,11 +64,11 @@ int SpellEffects::looks(const std::string& kind) {
   if (kind == "cureMinor") return 2;
   if (kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "createFoodAndWater" || kind == "potion") return 1;
   // 02: Engine2's own effect, ported (render/vfx/*).
-  // 03: ours in 3D (vfx/SpellBolts; the user, 2026-10-18: "the current ones are too bland").
-  if (kind == "magicMissile" || kind == "magicMissileV2") return 3;
+  // 03: ours in 3D (vfx/SpellBolts; the user, 2026-10-18: "the current ones are too bland"). 04: 03 small (the enemies').
+  if (kind == "magicMissile" || kind == "magicMissileV2") return 4;
   if (kind == "divineBolt") return 1;  // 01: ours in 3D (vfx/SpellBolts)
   if (kind == "turnUndead") return 1;  // 01: ours in 3D (vfx/TurnUndead)
-  if (isLightning(kind, 2)) return 2;  // 01 the flipbook cards, 02 ours in 3D (vfx/Lightning)
+  if (isLightning(kind, 2)) return 3;  // 01 the flipbook cards, 02 ours in 3D (vfx/Lightning), 03 02 small (the enemies')
   // 01 Engine2's BurningHandsV2VFX as it was, 02 its cone opening outward (ours).
   if (kind == "burningHands" || kind == "poisonBreath") return 2;
   // Tempestade de Gelo: 01 Engine2's Blizzard2D (the enemies'), 02 ours in 3D (the heroes'): vfx/IceStorm.
@@ -80,8 +80,8 @@ int SpellEffects::looks(const std::string& kind) {
   if (kind == "fireball" || kind == "bless" || kind == "causticVenom" || kind == "phantasmalForce" ||
       kind == "webOfDreams" || kind == "burningHands" || kind == "poisonBreath" || kind == "cleave" || kind == "sweep")
     return 1;
-  static const char* kVersion01[] = {"lightning", "lightningTier3", "shock", "cureMinor", "longShot", "piercing", "piercingThrust",
-                                     "doubleStrike"};
+  if (kind == "longShot" || kind == "piercing") return 2;  // 01 the arrow card, 02 RangerFx's 3D arrow (the enemies')
+  static const char* kVersion01[] = {"lightning", "lightningTier3", "shock", "cureMinor", "piercingThrust", "doubleStrike"};
   for (const char* k : kVersion01)
     if (kind == k) return 1;
   // EmberEngine's own spells (SpellEffectsEmber.cpp): version 01, flipbook cards.
@@ -342,6 +342,17 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     arms_.summon(style, targets.front().feet, impact);
     return true;
   }
+  // Tiro Longo / Tiro Perfurante 02 (the plain shot too): the real 3D arrow of RangerFx instead of the 01 card, the enemies' (the
+  // crossbowmen's bolt, the user 2026-10-20: "an arrow to be drawn for his ATT and skills"). The piercing one flies to the last body.
+  if ((kind == "longShot" || kind == "piercing") && look == 2) {
+    const Spot* foe = &targets.front();
+    if (kind == "piercing")
+      for (const Spot& s : targets)
+        if (s.cardHeight > 0.0f && glm::length(s.feet - caster.feet) > 0.3f) foe = &s;
+    const float release = std::max(start, impact - RangerFx::flightSeconds(caster.feet, foe->feet));
+    ranger_.shot(RangerFx::Shot::Swift, caster.feet, caster.cardHeight, {foe->feet, foe->cardHeight}, release, impact);
+    return true;
+  }
   if (kind == "bloodyShot" || kind == "multiShot") {
     const Spot& foe = targets.front();
     const float release = std::max(start, impact - RangerFx::flightSeconds(caster.feet, foe.feet));
@@ -472,7 +483,8 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     // Relâmpago 02, ours, in 3D (vfx/Lightning): a bolt from the sky on every struck body; Choque is the same at 3/4 size.
     std::vector<Lightning::Target> struck;
     for (const Spot& s : targets) struck.push_back({s.feet, heightOf(s)});
-    lightnings_.emplace_back(caster.feet, heightOf(caster), std::move(struck), start, impact, kind == "shock" ? 0.75f : 1.0f, 0x11417u);
+    lightnings_.emplace_back(caster.feet, heightOf(caster), std::move(struck), start, impact,
+                             (kind == "shock" ? 0.75f : 1.0f) * (look == 3 ? kTinyFx : 1.0f), 0x11417u);
   } else if (isBolt(kind, look)) {
     // Ours, in 3D (vfx/SpellBolts): one look, the same on every cast (fixed seeds).
     if (kind == "divineBolt") {
@@ -482,7 +494,7 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
       bolts_.emplace_back(SpellBolt::Style::Divine, caster.feet, heightOf(caster), centre.feet, heightOf(centre), std::move(splash), start, impact, 0xd1b1e7u);
     } else {
       bolts_.emplace_back(SpellBolt::Style::Arcane, caster.feet, heightOf(caster), targets.front().feet, heightOf(targets.front()), std::vector<glm::vec3>{},
-                          start, impact, 0xa11ce5u);
+                          start, impact, 0xa11ce5u, look == 4 ? kTinyFx : 1.0f);
     }
   } else if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2) missiles_.emplace_back(engine2Origin(caster), targets.front().body, start);
   else if (kind == "fireball") fireballs_.emplace_back(engine2Origin(caster), fireballTarget(targets), fireballArea(targets), start);

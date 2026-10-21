@@ -145,8 +145,9 @@ VfxInstance mote(glm::vec3 centre, float size, float alpha, glm::vec3 tint, floa
 }  // namespace
 
 SpellBolt::SpellBolt(Style style, glm::vec3 casterFeet, float casterHeight, glm::vec3 targetFeet, float targetHeight, std::vector<glm::vec3> splash,
-                     float release, float impact, uint32_t seed)
-    : style_(style), splash_(std::move(splash)), release_(release), impact_(std::max(impact, release + 0.1f)), seed_(seed) {
+                     float release, float impact, uint32_t seed, float scale)
+    : style_(style), splash_(std::move(splash)), release_(release), impact_(std::max(impact, release + 0.1f)), seed_(seed),
+      scale_(std::clamp(scale, 0.2f, 1.0f)) {
   casterHeight_ = std::clamp(casterHeight, 1.0f, 4.0f), targetHeight_ = std::clamp(targetHeight, 1.0f, 4.0f);
   dir_ = flatDir(targetFeet - casterFeet, glm::vec3(0.0f, 0.0f, 1.0f));
   side_ = glm::normalize(glm::cross(kUp, dir_));
@@ -186,7 +187,7 @@ void SpellBolt::buildArcane(float now, const Camera& camera, VfxFrame& frame, st
   const Palette& pal = kArcane;
   const Draw draw{frame, VfxMaterial::Combat, now};
   const glm::vec3 eye = camera.position;
-  const float k = std::clamp(casterHeight_ / 2.0f, 0.7f, 1.4f);
+  const float k = std::clamp(casterHeight_ / 2.0f, 0.7f, 1.4f) * scale_;  // a small bolt: every size with it
   const uint32_t quad = frame.addVertices(quadGeometry()), sphere = frame.addVertices(sphereGeometry()), disc = frame.addVertices(discGeometry());
   const size_t quadN = quadGeometry().size(), sphereN = sphereGeometry().size(), discN = discGeometry().size();
   std::vector<VfxInstance> streaks;
@@ -255,7 +256,7 @@ void SpellBolt::buildArcane(float now, const Camera& camera, VfxFrame& frame, st
       const float sw = progress(tw);
       ring(pulled(at(sw), eye, kPull), tangent(sw), (0.08f + 0.32f * easeOut(0.0f, 0.32f, age)) * k, 0.85f, (1.0f - age / 0.32f) * 0.75f, 1.3f, at(sw));
     }
-    lights.push_back({head, pal.light, 14.0f, 3.4f * k});
+    lights.push_back({head, pal.light, 14.0f * scale_, 3.4f * k});
   }
 
   // --- Embers shed along the path, drifting and dying behind it. ---
@@ -303,7 +304,7 @@ void SpellBolt::buildArcane(float now, const Camera& camera, VfxFrame& frame, st
       const glm::vec3 p = body_ + glm::vec3(std::cos(a0) * rad, -0.3f * k + age * 1.2f, std::sin(a0) * rad);
       streaks.push_back(streak(pulled(p, eye, kPull), glm::vec3(0.0f), 0.045f * k, std::sin(kPi * age / life) * 0.85f, pal.core, 2.0f));
     }
-    if (age < 1.0f) lights.push_back({body_, pal.light, 26.0f * std::exp(-5.0f * age), 4.2f * k});
+    if (age < 1.0f) lights.push_back({body_, pal.light, 26.0f * scale_ * std::exp(-5.0f * age), 4.2f * k});
   }
   draw(quad, quadN, glm::mat4(1.0f), kStreak, 1.0f, 1.0f, glm::vec3(1.0f), 1.0f, glm::vec4(1.0f, 0.97f, 0.95f, 0.0f), body_, VfxBlend::Additive, &streaks);
 }

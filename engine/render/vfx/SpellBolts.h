@@ -32,8 +32,9 @@ class SpellBolt {
   enum class Style { Arcane, Divine };
   // casterFeet / casterHeight: the caster and its card's height; target: the struck body (feet + height); splash: every
   // struck hex's ground (Divine; the centre included), may be empty. It lets go at `release`, lands at `impact`.
+  // `scale` < 1: the same bolt smaller and dimmer (Míssil Mágico 04, the enemies').
   SpellBolt(Style style, glm::vec3 casterFeet, float casterHeight, glm::vec3 targetFeet, float targetHeight, std::vector<glm::vec3> splash,
-            float release, float impact, uint32_t seed);
+            float release, float impact, uint32_t seed, float scale = 1.0f);
 
   // Seconds from the release to the hit.
   static float flightSeconds(Style style, glm::vec3 fromFeet, glm::vec3 toFeet);
@@ -54,6 +55,7 @@ class SpellBolt {
   float release_ = 0.0f, impact_ = 0.0f;
   float swerve_ = 1.0f;  // which side the Arcane bolt curves to
   uint32_t seed_ = 0;
+  float scale_ = 1.0f;
 };
 
 }  // namespace ember

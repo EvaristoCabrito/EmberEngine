@@ -49,7 +49,10 @@ class CombatFx {
   // energy comes apart past the body.
   // ArrowHit: an arrow driven into the body - its point punching through (a short streak of light along the shot), a
   // pin of light at the tip, splinters of the shaft (lit 3D pieces) kicked back and falling. HeavyArrowHit: a critical.
-  enum class Kind { Physical, Heavy, Magical, MagicalMiss, Slash, HeavySlash, Thrust, ArrowHit, HeavyArrowHit };
+  // LevelUp: a hero gains a level (the user, 2026-10-20: "a level up FX in 3D"): two golden rings racing out over the ground, a
+  // soft pillar of light rising through the body, sparks spiralling from the feet to above the head, a crown ring of light
+  // over it, a warm golden light; nothing aimed (`from` is ignored).
+  enum class Kind { Physical, Heavy, Magical, MagicalMiss, Slash, HeavySlash, Thrust, ArrowHit, HeavyArrowHit, LevelUp };
 
   // A blow lands at `at` on a unit standing at `feet` with its card `height` tall; `from` = where the striker stands
   // (the blow's direction).
