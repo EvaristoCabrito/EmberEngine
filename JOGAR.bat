@@ -29,8 +29,9 @@ if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v2.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground.pak"
 set "MESHES=%ART%\meshes\props-v2.pak"
 if not exist "%MESHES%" set "MESHES=%ART%\meshes\props.pak"
-set "SPRITES=%ART%\sprites\battle-v2.pak"
-if not exist "%SPRITES%" set "SPRITES=%ART%\sprites\battle.pak"
+rem battle.pak = o pacote de sprites atual (cada mudanca de sprite e cozinhada nele); battle-v2.pak (19/10) so se faltar
+set "SPRITES=%ART%\sprites\battle.pak"
+if not exist "%SPRITES%" set "SPRITES=%ART%\sprites\battle-v2.pak"
 set "HEROES="
 if exist "%ART%\engine2-scenes\roster.json" set "HEROES=--heroes %ART%\engine2-scenes\roster.json"
 
