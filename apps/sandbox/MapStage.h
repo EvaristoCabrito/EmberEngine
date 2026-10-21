@@ -2127,8 +2127,11 @@ class MapStage final : public Stage {
       const bool walking = !unitWalk_[ui].points.empty();
       std::string shown = kIdle;
       const e2::HeroPose* p = nullptr;
-      // The fallen: their death plays out, holds, then they are gone.
-      if (ui < unitDiedAt_.size() && unitDiedAt_[ui] >= 0.0f && time - unitDiedAt_[ui] > poseSeconds(ui, "death") / unitShot_[ui].rate + kCorpseSeconds) continue;
+      // The fallen: their death plays out, holds, then they are gone. -1000 = gone already (fallen in a loaded save, absent,
+      // a summon dismissed): never drawn (the loaded dead stood on the board as ghosts, the user 2026-10-20).
+      if (ui < unitDiedAt_.size() && (unitDiedAt_[ui] <= -999.0f ||
+                                      (unitDiedAt_[ui] >= 0.0f && time - unitDiedAt_[ui] > poseSeconds(ui, "death") / unitShot_[ui].rate + kCorpseSeconds)))
+        continue;
       OneShot shotNow;  // this frame's (the stored one may move on to its next pose below)
       const OneShot* shot = nullptr;
       if (ui < unitShot_.size() && !unitShot_[ui].pose.empty()) shotNow = unitShot_[ui], shot = &shotNow;
@@ -4268,7 +4271,10 @@ class MapStage final : public Stage {
     // Criar Comida e Água: healBy).
     if (striker >= 0) {
       const size_t sb = x.counter ? s.def : s.att;
+      const bool neeraDagger = s.type == StepType::Combat && strikeIsOffHand(s, x.counter) && static_cast<size_t>(striker) < unitCatalog_.size() &&
+                               unitCatalog_[static_cast<size_t>(striker)] && unitCatalog_[static_cast<size_t>(striker)]->key == "neera";
       if (staffCounter) playCues(e2::Json::parse(R"([{"file":"ATT01Blunt.mp3","volume":0.55,"offset":0,"delay":0,"exclusive":true}])"));  // the staff's blow, not his cast (the user, 2026-10-20: Blunt01)
+      else if (neeraDagger) playCues(e2::Json::parse(R"([{"file":"BladeSlash1Dagger.mp3","volume":0.55,"offset":0,"delay":0,"exclusive":true}])"));  // her off-hand dagger (the user, 2026-10-20: Dagger1)
       else if (s.type == StepType::Combat) playCues(sounds(sb, x.counter ? "counter" : "attack"));
       else if (s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food) playCues(afterPose(sounds(sb, "heal")));
       else if (const e2::Json& spells = sounds(sb, "spells"); spells.is_object() && spells.contains(s.kind)) playCues(afterPose(spells[s.kind]));
