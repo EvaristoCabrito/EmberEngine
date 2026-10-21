@@ -1773,6 +1773,7 @@ class MapStage final : public Stage {
   static constexpr float kIndoorFillLux = 3.0f, kIndoorAmbientLux = 1.5f;
   static constexpr float kLumensPerUnit = 12.0f;    // Engine2 intensity x reach^2 -> lumens
   static constexpr float kTorchPower = 2.0f;        // every torch's light x this (the user, 2026-10-21: "2X do que estava antes"; 8x was too much)
+  static constexpr float kDecorLightPower = 2.0f;   // every other light-giving decoration's light x this (the user, 2026-10-21: "2X")
   static constexpr float kNightStops = 2.5f;        // the camera's darkening at night
   static constexpr float kAdaptPerSecond = 1.5f;    // eye adaptation rate
 
@@ -2755,8 +2756,10 @@ class MapStage final : public Stage {
         at = base + right * side + facing * d.nudge + glm::vec3(0.0f, (bottom - d.art.baseV) * d.h, 0.0f) + lean * ((flameV - bottom) * d.h);
         at.y = std::max(at.y, base.y + d.light->minHeight);
       }
-      // Torches burn kTorchPower x stronger (the user, 2026-10-21: "a luz das tochas bem mais potente", asked many times).
-      const float power = d.id.find("torch") != std::string::npos ? kTorchPower : 1.0f;
+      // Torches burn kTorchPower x stronger (the user, 2026-10-21: "a luz das tochas bem mais potente", asked many times), every other
+      // light-giving decoration (candles, braziers, lanterns, ...) kDecorLightPower x (the user, same day: "2X all other light emiting
+      // decoration objects").
+      const float power = d.id.find("torch") != std::string::npos ? kTorchPower : kDecorLightPower;
       lights_.push_back(carried(at, d.light->color, d.light->intensity * power, d.light->radius, height, flicker(time, d.light->seed, d.light->flicker)));
     }
     // The torch brackets on EmberEngine's walls and stairs (buildArchitecture): their fire, flickering like a map torch, as strong.
