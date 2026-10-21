@@ -751,11 +751,13 @@ class OverworldStage : public Stage {
         if (col != prevCol_) facingLeft_ = col < prevCol_;
         prevCol_ = col;
       }
-      const float k = std::clamp((now_ - moveAt_) / 0.5f, 0.0f, 1.0f);
-      const float e = k < 0.5f ? 2 * k * k : 1 - std::pow(-2 * k + 2, 2.0f) / 2;  // ease-in-out
-      partyX_ = fromX_ + (targetX_ - fromX_) * e, partyY_ = fromY_ + (targetY_ - fromY_) * e;
+      // Walked, not slid (the user, 2026-10-21: "walk instead of jumping to a new hex"): a steady pace over kWalkSeconds with the
+      // leader's own walk clip playing.
+      constexpr float kWalkSeconds = 1.0f;
+      const float k = std::clamp((now_ - moveAt_) / kWalkSeconds, 0.0f, 1.0f);
+      partyX_ = fromX_ + (targetX_ - fromX_) * k, partyY_ = fromY_ + (targetY_ - fromY_) * k;
       const ImVec2 foot = at(partyX_, partyY_);
-      const Box box = drawLeader(dl, foot, leader());
+      const Box box = drawLeader(dl, foot, leader(), k < 1.0f ? now_ - moveAt_ : -1.0f);
       if (overViewport && box.contains(mouse) && clicked) clickedLeader = true;
     }
     dl->PopClipRect();
@@ -848,47 +850,94 @@ class OverworldStage : public Stage {
     ImVec2 a, b;
     bool contains(ImVec2 p) const { return p.x >= a.x && p.x <= b.x && p.y >= a.y && p.y <= b.y; }
   };
-  Box drawLeader(ImDrawList* dl, ImVec2 foot, const std::string& hero) {
+  // `walkTime` >= 0: walking for that long (its walk clip, the left one when it goes left and has one, else the right one mirrored).
+  Box drawLeader(ImDrawList* dl, ImVec2 foot, const std::string& hero, float walkTime = -1.0f) {
     struct Sheet {
       const char* hero;
       const char* dir;
       int idle;
     };
-    static const Sheet kSheets[] = {{"Kael", "Kael_Final/kael-final-002", 36}, {"Neera", "neera/neera-v2-001/idle-", 36}, {"Voss", "voss", 12},
+    // The heroes' walk clips (the battle's own: frames, rate, frame size and the clip's crop box x, y, w, h). A pattern under
+    // content/ is the game's own art; the others are under the art folder's game/.
+    struct Clip {
+      const char* pattern;  // "{}" = the frame number from 1
+      int count;
+      float fps, natW, natH, x, y, w, h;
+    };
+    struct WalkSheet {
+      const char* hero;
+      Clip right, left;  // left.pattern null = the right one mirrored
+    };
+    static const WalkSheet kWalks[] = {
+        {"Kael", {"sprites/Kael_Final/kael-final-002/move-{}.png", 36, 24.0f, 434, 608, 0, 0, 419, 605}, {}},
+        {"Neera", {"sprites/neera/neera-v2-001/move-{}.png", 36, 24.0f, 356, 488, 3, 0, 271, 488},
+         {"sprites/neera/neera-v2-001/move-left-{}.png", 36, 24.0f, 414, 486, 100, 0, 314, 486}},
+        {"Voss", {"content/sprites/voss-veo/move-v01/move-{}.png", 61, 24.0f, 609, 1189, 5, 6, 602, 1178},
+         {"content/sprites/voss-veo/move-left-v01/move-left-{}.png", 106, 24.0f, 653, 1210, 0, 6, 646, 1199}},
+        {"Salazar", {"content/sprites/salazar-final/move-v03/move-{}.png", 49, 12.658f, 380, 622, 21, 0, 358, 622},
+         {"sprites/salazar-final/move-left-{}.png", 36, 18.947f, 416, 613, 45, 115, 292, 498}},
+        {"Aldric", {"sprites/aldric/move-{}.png", 36, 24.0f, 396, 584, 10, 0, 386, 582}, {"sprites/aldric/move-left-{}.png", 36, 24.0f, 388, 586, 0, 0, 378, 583}},
+        {"Malrec", {"sprites/malrec/move-{}.png", 36, 24.0f, 392, 682, 5, 0, 387, 682}, {}}};
+    const WalkSheet* walk = nullptr;
+    if (walkTime >= 0.0f)
+      for (const WalkSheet& w : kWalks)
+        if (hero == w.hero) walk = &w;
+    bool mirror = facingLeft_;
+    static const Sheet kSheets[] = {{"Kael", "Kael_Final/kael-final-002", 36}, {"Neera", "neera/neera-v2-001/idle-", 36},
                                     {"Salazar", "salazar-final", 36},       {"Aldric", "aldric", 36},                    {"Malrec", "malrec", 36}};
-    const Sheet* sheet = &kSheets[0];
-    for (const Sheet& s : kSheets)
-      if (hero == s.hero) sheet = &s;
-    const int cycle = sheet->idle * 2 - 2;
-    const double pace = (sheet->idle >= 24 ? sheet->idle / 3.0 : cycle / 2.6) * (hero == "Malrec" ? 0.9 : 1.0);
-    const int stepI = static_cast<int>(std::floor(now_ * pace)) % cycle;
-    const int source = stepI < sheet->idle ? stepI : cycle - stepI;
-    const int count = sheet->idle == 36 ? 12 : sheet->idle;
-    const int frameIndex = (sheet->idle == 36 ? source / 3 : source) % count;
-    const int file = sheet->idle == 36 ? 1 + frameIndex * 3 : 1 + frameIndex;
-    const e2::Json& bounds = world_.tables()["leaderFrameBounds"][hero];
     float left, top, width, height, cw, ch;
-    if (hero == "Neera" || hero == "Salazar") {
-      float l = 1e9f, t = 1e9f, r = -1e9f, bt = -1e9f;
-      for (const e2::Json& b : bounds) {
-        l = std::min(l, b[0].get<float>()), t = std::min(t, b[1].get<float>());
-        r = std::max(r, b[0].get<float>() + b[2].get<float>()), bt = std::max(bt, b[1].get<float>() + b[3].get<float>());
-      }
-      left = l, top = t, width = r - l, height = bt - t, cw = bounds[0][4].get<float>(), ch = bounds[0][5].get<float>();
+    std::filesystem::path framePath;
+    if (walk) {
+      // Every 3rd frame (every 4th of a long clip) loaded, at the clip's own pace, a forward loop.
+      const Clip& c = facingLeft_ && walk->left.pattern ? walk->left : walk->right;
+      mirror = facingLeft_ && !walk->left.pattern;
+      const int every = c.count > 48 ? 4 : 3, shown = (c.count + every - 1) / every;
+      const int frame = 1 + (static_cast<int>(std::floor(walkTime * c.fps / static_cast<float>(every))) % shown) * every;
+      left = c.x, top = c.y, width = c.w, height = c.h, cw = c.natW, ch = c.natH;
+      std::string name = c.pattern;
+      name.replace(name.find("{}"), 2, std::to_string(frame));
+      framePath = name.starts_with("content/") ? std::filesystem::path(name) : paths_.engine2Public / "game" / name;
+    } else if (hero == "Voss") {
+      // His own idle (voss-veo, cut from the user's video; the user, 2026-10-21: the map still showed the old black mage): every
+      // 4th of its 96 frames at 6 a second (its 24 fps / 4), a forward loop with a hard cut; the clip's crop box, 654 x 1154.
+      constexpr int kFrames = 96, kEvery = 4;
+      const int frame = 1 + (static_cast<int>(std::floor(now_ * 24.0f / kEvery)) % (kFrames / kEvery)) * kEvery;
+      left = 5, top = 5, width = 644, height = 1144, cw = 654, ch = 1154;
+      framePath = std::filesystem::path("content/sprites/voss-veo/base-v01") / ("base-" + std::to_string(frame) + ".png");
     } else {
-      const e2::Json& b = bounds[static_cast<size_t>(frameIndex) % bounds.size()];
-      left = b[0].get<float>(), top = b[1].get<float>(), width = b[2].get<float>(), height = b[3].get<float>(), cw = b[4].get<float>(), ch = b[5].get<float>();
+      const Sheet* sheet = &kSheets[0];
+      for (const Sheet& s : kSheets)
+        if (hero == s.hero) sheet = &s;
+      const int cycle = sheet->idle * 2 - 2;
+      const double pace = (sheet->idle >= 24 ? sheet->idle / 3.0 : cycle / 2.6) * (hero == "Malrec" ? 0.9 : 1.0);
+      const int stepI = static_cast<int>(std::floor(now_ * pace)) % cycle;
+      const int source = stepI < sheet->idle ? stepI : cycle - stepI;
+      const int count = sheet->idle == 36 ? 12 : sheet->idle;
+      const int frameIndex = (sheet->idle == 36 ? source / 3 : source) % count;
+      const int file = sheet->idle == 36 ? 1 + frameIndex * 3 : 1 + frameIndex;
+      const e2::Json& bounds = world_.tables()["leaderFrameBounds"][hero];
+      if (hero == "Neera" || hero == "Salazar") {
+        float l = 1e9f, t = 1e9f, r = -1e9f, bt = -1e9f;
+        for (const e2::Json& b : bounds) {
+          l = std::min(l, b[0].get<float>()), t = std::min(t, b[1].get<float>());
+          r = std::max(r, b[0].get<float>() + b[2].get<float>()), bt = std::max(bt, b[1].get<float>() + b[3].get<float>());
+        }
+        left = l, top = t, width = r - l, height = bt - t, cw = bounds[0][4].get<float>(), ch = bounds[0][5].get<float>();
+      } else {
+        const e2::Json& b = bounds[static_cast<size_t>(frameIndex) % bounds.size()];
+        left = b[0].get<float>(), top = b[1].get<float>(), width = b[2].get<float>(), height = b[3].get<float>(), cw = b[4].get<float>(), ch = b[5].get<float>();
+      }
+      framePath = paths_.engine2Public / (std::string("game/sprites/") + sheet->dir + (hero == "Neera" ? "" : "/") + std::to_string(file) + ".png");
     }
     const float scale = 48.0f / height;
     const float boxW = width * scale;
     // flex h-12 w-16 items-end justify-center: a 64 x 48 box, its bottom on the hex (translate -50%, -100%).
     const Box button{{foot.x - std::max(32.0f, boxW / 2), foot.y - 48.0f}, {foot.x + std::max(32.0f, boxW / 2), foot.y}};
-    const std::string path = std::string("game/sprites/") + sheet->dir + (hero == "Neera" ? "" : "/") + std::to_string(file) + ".png";
-    if (const UiImage* img = uiImage(paths_.engine2Public / path)) {
+    if (const UiImage* img = uiImage(framePath)) {
       const float x0 = foot.x - boxW / 2, y0 = foot.y - 48.0f;
       // The crop box of the frame, in texture coordinates.
       float u0 = left / cw, v0 = top / ch, u1 = (left + width) / cw, v1 = (top + height) / ch;
-      if (facingLeft_) std::swap(u0, u1);
+      if (mirror) std::swap(u0, u1);
       // drop-shadow(0 2px 3px rgba(0,0,0,.6))
       dl->AddImage(img->texture, {x0, y0 + 2}, {x0 + boxW, y0 + 50}, {u0, v0}, {u1, v1}, IM_COL32(0, 0, 0, 120));
       dl->AddImage(img->texture, {x0, y0}, {x0 + boxW, y0 + 48}, {u0, v0}, {u1, v1});
