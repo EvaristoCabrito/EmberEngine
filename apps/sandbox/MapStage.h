@@ -1760,6 +1760,7 @@ class MapStage final : public Stage {
   static constexpr float kCinemaMoonLux = 16.0f;
   static constexpr float kIndoorFillLux = 3.0f, kIndoorAmbientLux = 1.5f;
   static constexpr float kLumensPerUnit = 12.0f;    // Engine2 intensity x reach^2 -> lumens
+  static constexpr float kTorchPower = 2.0f;        // every torch's light x this (the user, 2026-10-21: "2X do que estava antes"; 8x was too much)
   static constexpr float kNightStops = 2.5f;        // the camera's darkening at night
   static constexpr float kAdaptPerSecond = 1.5f;    // eye adaptation rate
 
@@ -2662,13 +2663,15 @@ class MapStage final : public Stage {
         at = base + right * side + facing * d.nudge + glm::vec3(0.0f, (bottom - d.art.baseV) * d.h, 0.0f) + lean * ((flameV - bottom) * d.h);
         at.y = std::max(at.y, base.y + d.light->minHeight);
       }
-      lights_.push_back(carried(at, d.light->color, d.light->intensity, d.light->radius, height, flicker(time, d.light->seed, d.light->flicker)));
+      // Torches burn kTorchPower x stronger (the user, 2026-10-21: "a luz das tochas bem mais potente", asked many times).
+      const float power = d.id.find("torch") != std::string::npos ? kTorchPower : 1.0f;
+      lights_.push_back(carried(at, d.light->color, d.light->intensity * power, d.light->radius, height, flicker(time, d.light->seed, d.light->flicker)));
     }
-    // The torch brackets on EmberEngine's walls (buildArchitecture): their fire, flickering like a map torch.
+    // The torch brackets on EmberEngine's walls and stairs (buildArchitecture): their fire, flickering like a map torch, as strong.
     for (const ArchPiece& a : arch_) {
       if (!a.light) continue;
       const glm::vec3 at = glm::vec3(a.x, groundOf(a.groundSmooth, a.groundHard), a.z) + a.lightAt;
-      lights_.push_back(carried(at, a.light->color, a.light->intensity, a.light->radius, a.lightAt.y, flicker(time, a.light->seed, a.light->flicker)));
+      lights_.push_back(carried(at, a.light->color, a.light->intensity * kTorchPower, a.light->radius, a.lightAt.y, flicker(time, a.light->seed, a.light->flicker)));
     }
     if (hero_ < 0) return;
     const e2::SceneUnit* hero = &scene_->units[static_cast<size_t>(hero_)];
