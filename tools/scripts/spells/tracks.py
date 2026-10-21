@@ -127,6 +127,8 @@ S = {
     "swapPost": (None, dict(r=3, d=1, f=6, m=1.0, b=0), [("m", 0.05, 6), ("r", 1, 2), ("f", 2, 2), ("b", 1, 2), ("d", 1, 1), ("Z", 1, 1)]),
     "impaleDrag": (None, dict(l=3, d=1, f=8, m=1.0, e=0.25), [("e", 0.01, 5), ("m", 0.05, 4), ("f", 2, 2), ("l", 1, 1), ("d", 1, 1), ("Z", 1, 1)]),
     "sentinelVigil": (None, dict(a=1, d=0, f=6, m=1.0, b=0), [("m", 0.1, 6), ("b", 1, 3), ("f", 2, 2), ("d", 1, 1), ("a", 1, 1), ("Z", 1, 1)]),
+    # --- Mago Negro (2026-10-21; the user's own levels: FIXED below) ----------------------------------------------------
+    "cloudOfDaggers": (None, dict(c=3), [("c", 1, 2)]),
 }
 # Each skill's talent (Z on its track): (name pt, what it does pt, name en, what it does en)
 TALENTS = {
@@ -180,10 +182,12 @@ def lay(grow):
 
 # letters that only mean something once the talent is open: their steps come after it on the track
 AFTER_TALENT = {"arcaneReflection": "x", "boneLance": "p"}
+# tracks the user wrote level by level (not spread by lay()): the Mago Negro's Nuvem de Adagas, 3 daggers, 4 from 12, 5 from 15 (2026-10-21)
+FIXED = {"cloudOfDaggers": "- - - c1 - - c1 - - - - - - -"}
 tracks = {}
 for kind, (learn, base, grow) in S.items():
     L = learn if learn is not None else ours_learn[kind]
-    slots = lay(grow)
+    slots = FIXED[kind].split() if kind in FIXED else lay(grow)
     if kind in AFTER_TALENT:
         letter = AFTER_TALENT[kind]
         while True:
@@ -243,6 +247,7 @@ OWN = {  # spell: {letter: (pt, en)}: what its numbers mean
     "guardBreak": {"p": ("DEF retirada %", "DEF off %")}, "disarm": {"p": ("ATK retirado %", "ATK off %")}, "hookPull": {"t": ("turnos desequilibrado", "off-balance turns")},
     "impaleDrag": {"e": ("peso por hex arrastado", "weight per hex dragged"), "l": ("hexes arrastados", "hexes dragged")},
     "sentinelVigil": {"a": ("raio", "radius"), "m": ("peso do contra-golpe", "riposte weight")}, "spearToss": {"r": ("hexes do arremesso", "hexes thrown")},
+    "cloudOfDaggers": {"c": ("adagas", "daggers")},
     "leapingStrike": {"r": ("alcance do salto", "leap reach")},
     "arcaneReflection": {"t": ("turnos", "turns"), "p": ("devolvido %", "reflected %"), "x": ("cura %", "healing %")},
     "boneLance": {"l": ("comprimento", "length"), "t": ("turnos empalado", "impaled turns"), "p": ("estilhaços %", "shards %")},
@@ -478,6 +483,7 @@ NAMES = {
     "piercingThrust": "Investida Perfurante", "spearToss": "Arremesso", "sweep": "Varredura", "hookPull": "Gancho", "trip": "Rasteira",
     "poleVault": "Salto de Vara", "disarm": "Desarmar", "swapPost": "Troca de Posto", "impaleDrag": "Empalar e Arrastar",
     "sentinelVigil": "Vigília da Sentinela",
+    "cloudOfDaggers": "Nuvem de Adagas",
 }
 rows = []
 for kind in S:

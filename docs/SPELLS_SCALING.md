@@ -543,3 +543,9 @@ Nível a nível: 16: +0,01 peso por hex arrastado, 17: +0,05 peso da arma, 18: d
 Escala do nível 17 ao 31, uma melhoria pequena por nível: dano 0 → 1D10; raio 1 → 2; bônus 0 → 3; peso do contra-golpe 1 → 1,6; talento Contra-Golpe Firme (quem a Vigília interrompe fica Desequilibrado (sem contra-ataque)).
 
 Nível a nível: 18: +0,1 peso do contra-golpe, 19: +1 bônus, 20: dado maior, 21: +0,1 peso do contra-golpe, 22: +1 dado, 23: +0,1 peso do contra-golpe, 24: +1 bônus, 25: +1 de raio, 26: +0,1 peso do contra-golpe, 27: talento Contra-Golpe Firme, 28: +0,1 peso do contra-golpe, 29: dado maior, 30: +1 bônus, 31: +0,1 peso do contra-golpe.
+
+### Nuvem de Adagas
+
+Escala do nível 8 ao 22, uma melhoria pequena por nível: adagas 3 → 5.
+
+Nível a nível: 12: +1 adagas, 15: +1 adagas.

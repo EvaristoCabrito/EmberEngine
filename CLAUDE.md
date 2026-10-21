@@ -144,13 +144,8 @@ build.bat release          # or debug; output in build/<config>/bin
   `python tools/scripts/compare_meshes.py build/compare` (silhouette IoU + normal angle error by width).
 - Cooker (see top of `apps/cooker/main.cpp`):
   - sprites: `Cooker sprites content/engine2.sprites.json C:/Engine2/public/game build/sprites/roster.pak`;
-    battle pack = engine2 + `content/decor.sprites.json` merged into
+    battle pack = engine2 + `content/decor.sprites.json` (443 decor images) merged into
     `build/sprites/battle.sprites.json` → `battle.pak` (one pack: two packs both define `sprites/roster`).
-  - **2D decorations = the PNGs in `decoracoes-2d/` (the user's folder, 2026-10-21: they edit, delete and add there by hand).**
-    `python -I tools/scripts/sprites/decor_folder.py` makes the game follow it (clip list, battle manifest, editor catalog: files
-    gone = decorations gone, duplicates → the kept copy via `content/decor-dupes.json` (SceneData::load too), the user's own
-    pieces from `content/decor-own.json` as `ember-*` ids, section "Árido"), then cook battle.pak. New art on one sheet:
-    `tools/scripts/sprites/split_decor_sheet.py <sheet> decoracoes-2d <name>...`. Editor thumbnails read the folder.
   - replaced art (the user's own frames for an Engine2 clip, e.g. Salazar's walk right v02): `content/sprite-overrides.json`
     + `content/sprites/<set>/<clip>-vNN/`; run `python -I tools/scripts/sprites/apply_sprite_overrides.py` after
     fx_sprites.py / export_heroes.ts (patches the manifest, the roster's pose box / pace, walk-strides), then cook again.
@@ -657,6 +652,23 @@ Detonar Invocação in Drenar Vida's place; icons in `Attachments/ConjurerIcons`
   `OverworldStage.h` (rows, `drawRecallMenu`, `--map-ui recall:<hero>`), `render/vfx/ConjurerFx.*` (7 effects + the standing illusions,
   `MapStage::syncMirrors`), script step `summon:<unit>:<kind>`. Tests: `--promote Malrec=conjurer:25`,
   `--battle-script "summon:Malrec:summonFamiliar; cast:Malrec:detonateSummon:Familiar de Malrec"`.
+
+## Magias do Mago Negro: Nuvem de Adagas (2026-10-21; the user's pasted spec, "Criar essa magia e seu efeito visual")
+
+- **Read `docs/SKILLS_MAGE.md`.** Nuvem de Adagas (`cloudOfDaggers`, T4 arcane, level 8, instant on self): 3 daggers circling Voss (4 from 12, 5
+  from 15; the user's own levels, `FIXED` in tracks.py) until used or the fight ends; a recast is the whole count again. Each reacts on its own
+  and is spent: an enemy ending its walk beside him (`EnemyTurn::walked`), a melee blow / weapon skill at him (not by an archer), each a
+  `daggerStrike` step (MAG/2 × 0.8 + 1D6, arcane, no track) played as an interrupt before the enemy acts (`daggerInterrupts`, with the
+  Vigília's `playInterrupts`); an arrow / bolt at him is knocked down ("Interceptado", `daggerIntercepts` in `resolveStrikeImpl` and the
+  spell loop, `arrowKind`). The sheet / Status line shows "Adagas ×N"; in the snapshot. `emberClassFamily`: voss / warlock / elementalist →
+  `mage` (the promotions keep it).
+- Effect: `render/vfx/DaggerFx.*` (real lit daggers orbiting the body, over the card on the eye's side; the dart, the burial, the clash);
+  `MapStage::syncDaggers` keeps the cloud (count synced only when the rules' count changes: a thrown dagger is counted in flight). Script
+  steps `dagger:<attacker>:<target>` (arrival + melee: two daggers), `shoot:<archer>:<target>` (the interception); scratchpad `run_daggers.ps1`.
+  Icons for this and the next three spells: `Attachments/MoreSpells` → `content/ui/spells/<kind>.jpg`.
+- **Pending (the user, 2026-10-21, "depois criar"):** Dissipar Magia (`dispelMagic`, T3 level 6), Globo de Invulnerabilidade
+  (`globeOfInvulnerability`, T5 level 11), Identificar (`identify`, field, T1) + the unknown-items rule (chest loot above a power comes
+  unknown: no equip / drink, cheap sale at the Inn, saved in the save). The spec is in the conversation of 2026-10-21.
 
 ## Promoções do Mago Negro: Bruxo e Elementalista, magias T6–T10 (2026-10-17; the user: "pode criar todas elas os
 efeitos e wire into the game")

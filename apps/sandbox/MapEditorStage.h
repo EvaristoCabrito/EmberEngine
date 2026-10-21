@@ -2320,16 +2320,12 @@ class MapEditorStage : public Stage {
     return m[std::clamp(k, 0, 9)];
   }
 
-  // A small image button for a thumbnail (an Engine2 public file; a decoration's from decoracoes-2d, the art the game cooks);
-  // the swatch when there is none.
+  // A small image button for a thumbnail (an Engine2 public file); the swatch when there is none.
   bool thumbButton(const char* id, const std::string& thumb, const std::string& swatch, float size, bool selected, const std::string& tip, const char* text = nullptr) {
     const ImVec2 at = ImGui::GetCursorScreenPos();
     const bool clicked = ImGui::InvisibleButton(id, {size, size});
     ImDrawList* dl = ImGui::GetWindowDrawList();
-    constexpr std::string_view decor = "/game/decorations/";
-    const std::filesystem::path own = thumb.starts_with(decor) ? std::filesystem::path("decoracoes-2d") / thumb.substr(decor.size()) : std::filesystem::path();
-    const UiImage* image = thumb.empty() ? nullptr
-                           : uiImage(!own.empty() && std::filesystem::exists(own) ? own : base_.engine2Public / thumb.substr(thumb.starts_with('/') ? 1 : 0));
+    const UiImage* image = thumb.empty() ? nullptr : uiImage(base_.engine2Public / thumb.substr(thumb.starts_with('/') ? 1 : 0));
     if (image) {
       const float aspect = static_cast<float>(image->width) / std::max(1.0f, static_cast<float>(image->height));
       const float w = aspect >= 1 ? size : size * aspect, h = aspect >= 1 ? size / aspect : size;

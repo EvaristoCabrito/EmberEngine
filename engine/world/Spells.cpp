@@ -149,6 +149,10 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"nightmare", "Pesadelo", 4, "arcane", false}, "conjurer", 13},
     {{"boneLance", "Lança de Ossos", 6, "darkness", false}, "necromancer", 15},  // the Necromante's T6 (the user, 2026-10-20)
     {{"empowerSummons", "Fortalecer Invocações", 4, "", false}, "conjurer", 15},
+    // Mago Negro (docs/SKILLS_MAGE.md, 2026-10-21; Voss, class `mage` / `voss`): the Bruxo and the Elementalista keep them
+    {{"cloudOfDaggers", "Nuvem de Adagas", 4, "arcane", false}, "mage", 8},
+    // ... and the cloud's own dagger (never learned: the cloud throws it at whoever comes at its caster)
+    {{"daggerStrike", "Adaga", 4, "arcane", false}, "", 99},
 };
 // The base class a promotion keeps the skills of (the Guerreiro's go on into the Paladino and the Cavaleiro Pesado, the
 // Arqueiro's into the Patrulheiro and the Assassino, the Lanceiro's into the Sentinela and the Templário).
@@ -160,7 +164,14 @@ const char* emberClassFamily(const std::string& classId) {
   // Salazar's own class id is "salazar" (a healer with his sprite); the Clérigo and the Bispo are the healer's promotions
   if (classId == "salazar" || classId == "cleric" || classId == "bishop") return "healer";
   if (classId == "sorcerer" || classId == "necromancer") return "conjurer";
+  // Voss's own class id is "voss" in most battle files ("mage" in a few); the Bruxo and the Elementalista are the Mago Negro's promotions
+  if (classId == "voss" || classId == "warlock" || classId == "elementalist") return "mage";
   return classId.c_str();
+}
+// The spells and skills whose hit is an arrow or a bolt from a bow (the Nuvem de Adagas intercepts them).
+bool arrowKind(const std::string& kind) {
+  return kind == "longShot" || kind == "piercing" || kind == "bloodyShot" || kind == "multiShot" || kind == "venomArrow" || kind == "explosiveArrow" ||
+         kind == "cripplingShot" || kind == "deathShot";
 }
 // The Conjurador's spells (docs/SKILLS_CONJURER.md).
 bool conjurerKind(const std::string& kind) {
@@ -452,6 +463,7 @@ constexpr SpellTrack kSpellTracks[] = {
     {"swapPost", 13, "m0.05 r1 f2 m0.05 b1 m0.05 d1 Z1 m0.05 r1 m0.05 f2 b1 m0.05"},
     {"impaleDrag", 15, "e0.01 m0.05 f2 e0.01 m0.05 l1 e0.01 d1 Z1 m0.05 e0.01 f2 m0.05 e0.01"},
     {"sentinelVigil", 17, "m0.1 b1 f2 m0.1 d1 m0.1 b1 a1 m0.1 Z1 m0.1 f2 b1 m0.1"},
+    {"cloudOfDaggers", 8, "- - - c1 - - c1 - - - - - - -"},
 };
 // The talents (Z): name and what it does, PT / EN
 struct SpellTalent {
@@ -767,6 +779,11 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
   } else if (kind == "empowerSummons") {
     n.pct = 25 + g.n('p');
     n.rounds = 3 + g.n('R');
+  }
+  // Mago Negro (docs/SKILLS_MAGE.md): the user's own numbers (3 daggers, 4 from 12, 5 from 15; each MAG/2 x 0.8 + 1D6, no track)
+  else if (kind == "cloudOfDaggers" || kind == "daggerStrike") {
+    n.count = 3 + g.n('c');
+    n.mul = 0.8, n.dice = 1, n.faces = 6;
   }
   // Elementalista
   else if (kind == "pillarOfFlame") {
@@ -1390,6 +1407,16 @@ BattleEffect statusEffect(size_t unit, std::string text) {
 }
 // Imagem Espelhada (the Conjurador's): a hostile blow on a unit with illusions standing has one chance in three of striking a copy
 // instead, which vanishes (the attack is spent: nothing lands). Draws one random number when a copy stands.
+// Nuvem de Adagas (the Mago Negro's): an arrow or a bolt aimed at a unit with daggers left is met by one of them and never lands
+// ("Interceptado"; the dagger is spent). The caller has checked the shot is an arrow and the shooter is of the other side.
+bool daggerIntercepts(BattleUnit& target, size_t id, std::vector<BattleEffect>& out) {
+  if (target.cond.daggers <= 0) return false;
+  target.cond.daggers -= 1;
+  BattleEffect m{id, 0, false, true, false, false, false};
+  m.text = pick("Interceptado", "Intercepted");
+  out.push_back(m);
+  return true;
+}
 bool mirrorAbsorbs(BattleUnit& target, Mulberry32& rng, size_t id, std::vector<BattleEffect>& out) {
   if (target.cond.mirrorCopies <= 0) return false;
   if (rng() * 3.0 >= 1.0) return false;
@@ -1938,6 +1965,16 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     s.sacrifice = static_cast<size_t>(summon);
     spend();
     steps.push_back(s);
+  } else if (kind == "cloudOfDaggers") {
+    // The Mago Negro's: the daggers circle the caster until used or the fight ends; cast again, they are the whole count once more
+    // (never added up).
+    if (!(cell == from)) return fail("Esta magia não precisa de alvo.");
+    spend();
+    s.type = BattleStep::Type::Effect;
+    s.ids = {caster}, s.tiles = {from};
+    s.dice = 0, s.spellMul = 1;
+    s.daggers = n.count;
+    steps.push_back(s);
   } else if (kind == "sacrificeBond") {
     // On the caster, for the rest of the fight: what hits it goes to its nearest summon.
     if (!(cell == from)) return fail("Esta magia não precisa de alvo.");
@@ -2485,6 +2522,7 @@ std::string conditionsText(const BattleUnit& u) {
     add(std::format("{} {}%{} ({})", pick("Reflexo Arcano", "Arcane Reflection"), u.cond.reflectPct,
                     u.cond.reflectHealPct > 0 ? std::format(" · {} {}%", pick("cura", "heals"), u.cond.reflectHealPct) : std::string(), u.cond.reflectTurns));
   if (u.cond.empowerPct > 0) add(std::format("{} +{}% ({})", pick("Fortalecido", "Empowered"), u.cond.empowerPct, u.cond.empowerRounds));
+  if (u.cond.daggers > 0) add(std::format("{} ×{}", pick("Adagas", "Daggers"), u.cond.daggers));
   if (u.diseased) add("Doente");
   // Engine2's statuses
   if (u.stunned) add(std::string(pick("Atordoado", "Stunned")) + std::format(" ({})", u.stunTurns));
@@ -2779,7 +2817,7 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind) {
   const int half = static_cast<int>(std::floor(c.mag / 2.0));
   auto dmg = [&](double mul, int dice, int faces) { return std::format("{} + {}D{}", static_cast<int>(std::floor(half * mul)), dice, faces); };
   static const std::map<std::string, const char*> kElements = {{"darkness", "Escuridão"}, {"poison", "Veneno"}, {"fire", "Fogo"}, {"ice", "Gelo"},
-                                                               {"lightning", "Relâmpago"}, {"ember", "Brasa"}, {"holy", "Sagrado"}};
+                                                               {"lightning", "Relâmpago"}, {"ember", "Brasa"}, {"holy", "Sagrado"}, {"arcane", "Arcano"}};
   const std::string element = e->data.element;
   std::string s = std::format("T{} · {}", e->data.tier, kElements.contains(element) ? std::string(kElements.at(element)) : element.empty() ? std::string("Arma") : element);
   if (n.range > 0 && kind != "leapingStrike") s += std::format(" · alcance {}", n.range);
@@ -2829,6 +2867,13 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind) {
   if (kind == "sacrificeBond") return s + std::format("\naté o fim da batalha, {}% do dano que você recebe vai para a sua invocação mais próxima", n.pct);
   if (kind == "nightmare") return s + std::format("\n{} · {} em cada inimigo · quem dorme leva o dobro · {}% de chance de medo por {} turno{}", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces), n.pct, n.turns, n.turns > 1 ? "s" : "");
   if (kind == "empowerSummons") return s + std::format("\ntodas as suas invocações: +{}% em todos os atributos por {} rodadas", n.pct, n.rounds);
+  // The Mago Negro's
+  if (kind == "cloudOfDaggers")
+    return s + std::format("\n{} adagas girando em volta de si até serem usadas · cada uma reage sozinha, sem gastar a sua ação: um inimigo que termina o movimento "
+                           "colado em você, um golpe corpo a corpo em você ({} na hora, antes do golpe) ou uma flecha mirada em você (interceptada, não acerta) · "
+                           "lançar de novo repõe o total",
+                           n.count, dmg(n.mul, n.dice, n.faces));
+  if (kind == "daggerStrike") return s + std::format("\numa adaga da Nuvem voa em quem vem contra você · {}", dmg(n.mul, n.dice, n.faces));
   // The Curandeiro's (the cures' formula; the healing skill adds +1 % a point)
   if (kind == "circleOfHealing") return s + std::format("\n{} · cada aliado na área cura {} HP", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces));
   if (kind == "resurrection") return s + std::format("\num aliado caído ao lado volta com {} HP · age no seu próximo turno", dmg(n.mul, n.dice, n.faces));
@@ -2893,6 +2938,7 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"circleOfHealing", "Circle of Healing"}, {"resurrection", "Resurrection"}, {"judgment", "Judgment"},
     {"placeSwap", "Place Swap"}, {"boneLance", "Bone Lances"}, {"arcaneReflection", "Arcane Reflection"}, {"mirrorImage", "Mirror Image"}, {"detonateSummon", "Detonate Summon"},
     {"sacrificeBond", "Sacrifice Bond"}, {"nightmare", "Nightmare"}, {"empowerSummons", "Empower Summons"},
+    {"cloudOfDaggers", "Cloud of Daggers"}, {"daggerStrike", "Dagger"},
 };
 }  // namespace
 
@@ -2913,7 +2959,7 @@ bool spellWeaponAbility(const std::string& kind) { return weaponAbility(kind); }
 
 bool spellInstant(const std::string& kind) {
   return kind == "createFoodAndWater" || kind == "auraOfProtection" || kind == "intimidatingPresence" || kind == "sacrificeBond" || kind == "arcaneReflection" ||
-         kind == "empowerSummons";
+         kind == "empowerSummons" || kind == "cloudOfDaggers";
 }
 // An area around the caster, shown at once and cast on Confirmar. Grito de Guerra, Vigília da Sentinela and Erupção were instant (cast the
 // moment the socket was pressed, the area never shown): the user, 2026-10-19: "how the fuck im going to cast something without knowing the
@@ -3290,7 +3336,8 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
       }
       return true;
     }
-    if (kind == "sacrificeBond" || kind == "empowerSummons" || kind == "arcaneReflection") return cell == from ? true : fail("Esta magia não precisa de alvo.");
+    if (kind == "sacrificeBond" || kind == "empowerSummons" || kind == "arcaneReflection" || kind == "cloudOfDaggers")
+      return cell == from ? true : fail("Esta magia não precisa de alvo.");
     // The Curandeiro's
     if (kind == "resurrection") {
       if (d > 1) return fail("O aliado caído precisa estar ao lado.");
@@ -3538,6 +3585,8 @@ void logEffects(Battle& b, const std::vector<BattleEffect>& out, size_t from, in
                                               : (en ? std::format("{} used {} on {}", who, used, target) : std::format("{} usou {} em {}", who, used, target));
     if (!e.cause.empty()) {
       b.pushLog(en ? std::format("{} {}: {} damage", e.cause, target, e.amount) : std::format("{} {}: {} dano", e.cause, target, e.amount));
+    } else if (e.miss && (e.text == "Interceptado" || e.text == "Intercepted")) {  // Nuvem de Adagas: the shot knocked down
+      b.pushLog(en ? std::format("{}: intercepted by a dagger of the Cloud", action) : std::format("{}: interceptado por uma adaga da Nuvem", action));
     } else if (e.miss) {
       b.pushLog(en ? std::format("{}: missed", action) : std::format("{}: errou", action));
     } else if (e.heal) {
@@ -3679,6 +3728,7 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
     }
   }
   if (target.side != actor.side && mirrorAbsorbs(target, rng, ti, out)) return;  // Imagem Espelhada: the blow found a copy
+  if (target.side != actor.side && arrowShot && daggerIntercepts(target, ti, out)) return;  // Nuvem de Adagas: the arrow was knocked down
   const Fighter A = fighterAt(b, ai, actor.x, actor.y), T = fighterAt(b, ti, target.x, target.y);
   Hit hit = rollDamage(b, A, T, rng, !bash, useCustom ? &custom : nullptr);
   if (target.side == "enemy" && !bash) trainWeapon(actor, target.level, rng, useCustom);  // the off-hand weapon on an off-hand strike
@@ -3817,6 +3867,33 @@ std::vector<BattleStep> vigilInterrupts(const Battle& b, size_t attacker, const 
     st.weaponBonusDice = n.dice, st.weaponBonusFaces = n.faces, st.weaponBonusBonus = n.bonus;
     st.stagger = hasTalent("sentinelVigil", s.level);  // Contra-Golpe Firme
     steps.push_back(st);
+  }
+  return steps;
+}
+
+bool daggerStrikeKind(const std::string& kind) { return kind == "daggerStrike"; }
+
+std::vector<BattleStep> daggerInterrupts(const Battle& b, size_t attacker, const std::vector<size_t>& meleeTargets, bool arrived) {
+  std::vector<BattleStep> steps;
+  if (attacker >= b.units().size()) return steps;
+  const BattleUnit& a = b.units()[attacker];
+  if (!a.alive || a.side == "neutral") return steps;
+  const bool aimsMelee = !a.combat.arrow;  // an archer's shot is met by the interception, not by a thrown dagger
+  for (size_t i = 0; i < b.units().size(); ++i) {
+    const BattleUnit& h = b.units()[i];
+    if (i == attacker || !h.alive || h.cond.daggers <= 0 || h.side == a.side || h.side == "neutral") continue;
+    if (hexDist({h.x, h.y}, {a.x, a.y}) > 1) continue;  // the daggers reach whoever stands against their caster
+    int throws = arrived ? 1 : 0;
+    if (aimsMelee && std::find(meleeTargets.begin(), meleeTargets.end(), i) != meleeTargets.end()) ++throws;
+    throws = std::min(throws, h.cond.daggers);
+    const EmberNumbers n = emberNumbers("daggerStrike", h.level);
+    for (int k = 0; k < throws; ++k) {
+      BattleStep st;
+      st.type = BattleStep::Type::Spell, st.att = i, st.kind = "daggerStrike";
+      st.ids = {attacker}, st.tiles = {{a.x, a.y}};
+      st.dice = n.dice, st.faces = n.faces, st.bonus = 0, st.spellMul = n.mul;
+      steps.push_back(st);
+    }
   }
   return steps;
 }
@@ -4021,6 +4098,12 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
       b.noteAware(step.att, kSupportCe, kSupportVe);
       return;
     }
+    if (step.kind == "cloudOfDaggers") {  // Nuvem de Adagas (the Mago Negro's): the whole count again, never added up
+      att.cond.daggers = step.daggers;
+      out.push_back(statusEffect(step.att, std::format("{} ×{}", pick("Nuvem de Adagas", "Cloud of Daggers"), step.daggers)));
+      b.noteAware(step.att, kSupportCe, kSupportVe);
+      return;
+    }
     if (step.kind == "empowerSummons") {
       for (size_t id : step.ids) {
         BattleUnit& t = b.units()[id];
@@ -4197,6 +4280,10 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
   }
   // A spell's hits (stepSpell). The caster turns to its first target, every foe it hits turns to the caster.
   if (!att.alive) return;
+  if (step.kind == "daggerStrike") {  // Nuvem de Adagas: the throw spends a dagger; none left (used up meanwhile), nothing flies
+    if (att.cond.daggers <= 0) return;
+    att.cond.daggers -= 1;
+  }
   if (step.kind == "bless") {  // applyBless: +pct% to hit for some rounds, for every ally still standing
     for (size_t id : step.ids) {
       BattleUnit& ally = b.units()[id];
@@ -4250,6 +4337,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     if (!foe.alive || (step.kind == "turnUndead" && !foe.undead)) continue;
     if (b.cell(foe.x, foe.y).terrain == "barricade") continue;  // "bloqueado"
     if (foe.side != att.side && mirrorAbsorbs(foe, rng, id, out)) continue;  // Imagem Espelhada: a copy took it
+    if (foe.side != att.side && arrowKind(step.kind) && daggerIntercepts(foe, id, out)) continue;  // Nuvem de Adagas: the arrow knocked down
     int dmg = 0;
     bool crit = false, landed = true, weaponRolled = false;
     if (step.centerId && id == *step.centerId) {

@@ -103,7 +103,9 @@ int SpellEffects::looks(const std::string& kind) {
                                  // the ones that had none (vfx/ArmsFx, the two new arrows of vfx/RangerFx; ours, 3D, 2026-10-20)
                                  "provoke", "shieldBash", "bullRush", "executionerStrike", "trip", "shoulderSmash", "stampede", "divineWrath",
                                  "auraOfProtection", "intimidatingPresence", "bloodyShot", "multiShot", "summonFamiliar", "summonFamiliar2",
-                                 "summonFamiliar3", "summonFamiliar4", "summonZombieDog", "arcaneReflection", "fantomForce", "spectralBolt"};
+                                 "summonFamiliar3", "summonFamiliar4", "summonZombieDog", "arcaneReflection", "fantomForce", "spectralBolt",
+                                 // the Mago Negro's (vfx/DaggerFx, ours, 3D)
+                                 "cloudOfDaggers", "daggerStrike"};
   for (const char* k : kEmber)
     if (kind == k) return 1;
   return 0;
@@ -238,6 +240,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     if (kind == "turnUndead") end = std::max(end, turnUndead_.latestEnd());
     if (isHealer(kind)) end = std::max(end, healer_.latestEnd());
     if (isConjurer(kind)) end = std::max(end, conjurer_.latestEnd());
+    if (isDagger(kind)) end = std::max(end, daggers_.latestEnd());
     for (size_t i = before[7]; i < burns_.size(); ++i) end = std::max(end, burns_[i].first.end());
     if (kind == "iceStorm" && !storms_.empty()) end = std::max(end, storms_.back().start() + 1.0f);  // its first second, not the whole storm
     if (isBolt(kind, look) && !bolts_.empty()) end = std::max(end, bolts_.back().end());
@@ -265,6 +268,16 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     for (const Spot& s : targets)  // its card's height, else what the body point says (Spot: body = 0.45 of the card)
       reached.push_back({s.feet, s.cardHeight > 0.0f ? s.cardHeight : std::max(1.2f, (s.body.y - s.feet.y) / 0.45f)});
     holies_.emplace_back(style, std::move(reached), impact, static_cast<uint32_t>(random() * 4294967295.0f));
+    return true;
+  }
+  // The Mago Negro's Nuvem de Adagas (DaggerFx, ours, 3D): the conjuring on the caster; the thrown dagger on the attacker (the cloud
+  // standing round the caster lends it: MapStage syncDaggers keeps the cloud).
+  if (kind == "cloudOfDaggers") {
+    daggers_.summon(caster.feet, caster.cardHeight, impact);
+    return true;
+  }
+  if (kind == "daggerStrike") {
+    daggers_.strike(caster.feet, {targets.front().feet, targets.front().cardHeight}, start, impact);
     return true;
   }
   // The Guerreiro's skills (WarriorFx, ours, 3D). Targets: the foes round the caster (Redemoinho), the struck foe (Quebra-Guarda, the
@@ -914,7 +927,7 @@ void SpellEffects::disarmed(const Spot& foe, const Spot& from, float at) { lance
 
 bool SpellEffects::active(float now) const {
   if (combat_.active(now) || warrior_.active(now) || arms_.active(now) || ranger_.active(now) || lancer_.active(now) || turnUndead_.active(now) || healer_.active(now) ||
-      conjurer_.active(now))
+      conjurer_.active(now) || daggers_.active(now))
     return true;
   if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
   if (std::any_of(fireballs_.begin(), fireballs_.end(), [&](const Fireball& f) { return !f.done(now); })) return true;
@@ -995,6 +1008,7 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   healer_.build(now, camera, vfx_, vfxLights);
   conjurer_.build(now, camera, vfx_, vfxLights);
   status_.build(now, camera, vfx_, vfxLights);
+  daggers_.build(now, camera, vfx_, vfxLights);
   for (const VfxLight& l : vfxLights)
     if (l.intensity > 0.0f) lights.push_back({l.at, {l.color.r, l.color.g, l.color.b}, l.intensity, l.distance, std::max(l.at.y, 1.0f)});
   const size_t first = out.size();

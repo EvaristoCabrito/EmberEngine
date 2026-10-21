@@ -569,6 +569,7 @@ class MapStage final : public Stage {
       syncWebs();
       syncVigils();
       syncMirrors();
+      syncDaggers();
       syncWards();
       syncStatus();
       // Numbers held back for an effect still in the air (a Meteoro's fall).
@@ -4225,15 +4226,21 @@ class MapStage final : public Stage {
       enemyTurn_.reset();
       // The Vigília da Sentinela (docs/SKILLS_LANCER.md): before its blow or its cast, every sentinel whose stance covers one of
       // its targets thrusts first; an attacker that falls never strikes.
+      // The Nuvem de Adagas (docs/SKILLS_MAGE.md): a dagger at it for stopping beside its caster, one more for a melee blow at
+      // the caster; an arrow at the caster is met in the air instead (the rules: daggerIntercepts).
       if (!t.struck && !t.interrupted && battle_->units()[static_cast<size_t>(unitBattle_[t.unit])].alive) {
         t.interrupted = true;
-        std::vector<size_t> targets;
-        if (t.target >= 0 && unitBattle_[static_cast<size_t>(t.target)] >= 0) targets.push_back(static_cast<size_t>(unitBattle_[static_cast<size_t>(t.target)]));
+        std::vector<size_t> targets, melee;
+        if (t.target >= 0 && unitBattle_[static_cast<size_t>(t.target)] >= 0) {
+          targets.push_back(static_cast<size_t>(unitBattle_[static_cast<size_t>(t.target)]));
+          melee.push_back(targets.back());
+        }
         for (const e2::BattleStep& st : t.steps) {
           targets.insert(targets.end(), st.ids.begin(), st.ids.end());
-          if (st.type == e2::BattleStep::Type::Combat) targets.push_back(st.def);
+          if (st.type == e2::BattleStep::Type::Combat) targets.push_back(st.def), melee.push_back(st.def);
+          else if (st.type == e2::BattleStep::Type::Spell && e2::spellWeaponAbility(st.kind)) melee.insert(melee.end(), st.ids.begin(), st.ids.end());
         }
-        if (playInterrupts(static_cast<size_t>(unitBattle_[t.unit]), targets)) {
+        if (playInterrupts(static_cast<size_t>(unitBattle_[t.unit]), targets, melee, t.walked)) {
           enemyTurn_ = t;
           return;
         }
@@ -4329,6 +4336,7 @@ class MapStage final : public Stage {
       EnemyTurn t;
       t.unit = static_cast<size_t>(ui);
       t.steps = cast->steps;
+      t.walked = cast->path.size() > 1;
       enemyTurn_ = t;
       if (cast->path.size() > 1) walkAlong(static_cast<size_t>(ui), cast->path);
       return;
@@ -4337,6 +4345,7 @@ class MapStage final : public Stage {
     EnemyTurn t;
     t.unit = static_cast<size_t>(ui);
     t.target = plan.target >= 0 ? sceneUnitOf(plan.target) : -1;
+    t.walked = plan.path.size() > 1;
     enemyTurn_ = t;
     if (plan.path.size() > 1) walkAlong(static_cast<size_t>(ui), plan.path);
   }
@@ -4822,6 +4831,7 @@ class MapStage final : public Stage {
     // healing pose.
     std::string pose = s.type == StepType::Combat ? (strikeIsOffHand(s, x.counter) ? "attackShort" : "attack") : s.type == StepType::Potion ? "" : e2::spellPose(s.kind);
     if (pose == "attackShort" && striker >= 0 && !hasPose(static_cast<size_t>(striker), pose)) pose = "attack";  // no off-hand sheet: the main one
+    if (e2::daggerStrikeKind(s.kind)) pose.clear();  // a Nuvem de Adagas dagger flies on its own: its caster plays no pose
     if (striker >= 0 && !pose.empty() && !hasPose(static_cast<size_t>(striker), pose)) pose = hasPose(static_cast<size_t>(striker), "cast") ? "cast" : "attack";
     // Neera's skill animation plays on every skill she uses, the bow skills too (the user, 2026-10-19); her plain attacks and
     // counters keep the shot. A skill is any step with a kind that is not a counter, a potion or a walk. Neera v2 plays her own
@@ -4952,7 +4962,7 @@ class MapStage final : public Stage {
       const bool crossbow = key == "brigandCrossbowman" || key == "baseCrossbowman" || key == "brigand";
       if (crossbow && s.type != StepType::Potion && s.type != StepType::Move && (s.type == StepType::Combat || !s.kind.empty())) playCues(cue("Arrows1.mp3"));
       if (staffCounter) playCues(cue("ATT01Blunt.mp3"));  // the staff's blow, not his cast (the user, 2026-10-20: Blunt01)
-      else if (neeraDagger) playCues(cue("BladeSlash1Dagger.mp3"));  // her off-hand dagger (the user, 2026-10-20: Dagger1)
+      else if (neeraDagger || e2::daggerStrikeKind(s.kind)) playCues(cue("BladeSlash1Dagger.mp3"));  // her off-hand dagger (the user, 2026-10-20: Dagger1); a Nuvem's dagger
       else if (s.type == StepType::Potion) playCues(cue("Healing01-Balanced-High.mp3"));  // every potion (the user, 2026-10-20)
       else if (key == "voss" && (s.kind == "magicMissile" || s.kind == "magicMissileV2")) playCues(afterPose(cue("Spellcast01.mp3")));  // the default cast
       else if (s.type == StepType::Combat) playCues(sounds(sb, x.counter ? "counter" : "attack"));
@@ -4973,7 +4983,8 @@ class MapStage final : public Stage {
       const e2::Battle::IceZone* storm = s.kind == "iceStorm" && !s.tiles.empty() ? iceZoneOf(s.tiles.front(), battle_->units()[s.att].id) : nullptr;
       if (storm) {  // Tempestade de Gelo: the storm covers the field the rules just laid (the step aims its centre only)
         for (const e2::BattleHex& h : storm->cells) spots.push_back(hexSpot(h));
-      } else if (s.kind == "warCry" || s.kind == "steelWhirlwind" || s.kind == "empowerSummons" || s.kind == "sacrificeBond" || s.kind == "provoke") {  // Grito de Guerra: the allies it rallies (the caster among them); Redemoinho: the foes it reaches; the Conjurador's: its summons
+      } else if (s.kind == "warCry" || s.kind == "steelWhirlwind" || s.kind == "empowerSummons" || s.kind == "sacrificeBond" || s.kind == "provoke" ||
+                 e2::daggerStrikeKind(s.kind)) {  // Grito de Guerra: the allies it rallies (the caster among them); Redemoinho: the foes it reaches; the Conjurador's: its summons; a Nuvem's dagger: the body it flies at
         for (size_t id : s.ids)
           if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0) spots.push_back(unitSpot(static_cast<size_t>(ui)));
       } else if (s.kind == "turnUndead") {  // Expulsar Mortos-Vivos: the area's hexes; only the undead standing in it keep their card height (they are struck)
@@ -5226,13 +5237,42 @@ class MapStage final : public Stage {
       }
     }
   }
-  // The sentinels' thrusts before `attacker`'s blow on `targets` (e2::vigilInterrupts), played as one exchange of their own.
-  bool playInterrupts(size_t attacker, const std::vector<size_t>& targets) {
-    const std::vector<e2::BattleStep> steps = e2::vigilInterrupts(*battle_, attacker, targets);
+  // The Nuvem de Adagas standing round every unit that has daggers (DaggerFx), following it; the count follows the rules only when it
+  // changes (a thrown dagger already left the cloud when its strike was cast: DaggerFx counts it in flight until its impact, when the
+  // rules spend it); gone when the last is used, the unit falls or its card is not drawn.
+  void syncDaggers() {
+    if (!battle_) return;
+    for (size_t i = 0; i < battle_->units().size(); ++i) {
+      const e2::BattleUnit& u = battle_->units()[i];
+      const int ui = sceneUnitOf(static_cast<int>(i));
+      const bool on = u.alive && u.cond.daggers > 0 && ui >= 0;
+      const auto it = daggerFx_.find(static_cast<int>(i));
+      if (on) {
+        const SpellEffects::Spot sp = unitSpot(static_cast<size_t>(ui));
+        if (it == daggerFx_.end()) daggerFx_[static_cast<int>(i)] = {spellFx_.daggers().start(sp.feet, sp.cardHeight, u.cond.daggers, now_), u.cond.daggers};
+        else {
+          spellFx_.daggers().move(it->second.first, sp.feet, sp.cardHeight);
+          if (it->second.second != u.cond.daggers) spellFx_.daggers().setCount(it->second.first, u.cond.daggers, now_), it->second.second = u.cond.daggers;
+        }
+      } else if (it != daggerFx_.end()) {
+        spellFx_.daggers().end(it->second.first, now_);
+        daggerFx_.erase(it);
+      }
+    }
+  }
+  // The sentinels' thrusts before `attacker`'s blow on `targets` (e2::vigilInterrupts) and the daggers of a Nuvem de Adagas beside it
+  // (e2::daggerInterrupts: `melee` = whom its blow or weapon skill strikes, `arrived` = it walked here), played as one exchange of
+  // their own.
+  bool playInterrupts(size_t attacker, const std::vector<size_t>& targets, const std::vector<size_t>& melee = {}, bool arrived = false) {
+    std::vector<e2::BattleStep> steps = e2::vigilInterrupts(*battle_, attacker, targets);
+    const std::vector<e2::BattleStep> daggers = e2::daggerInterrupts(*battle_, attacker, melee, arrived);
+    steps.insert(steps.end(), daggers.begin(), daggers.end());
     if (steps.empty()) return false;
     const int owner = sceneUnitOf(static_cast<int>(steps.front().att));
     if (owner < 0) return false;
-    tip_ = battle_->units()[steps.front().att].name + tr(" interrompe o ataque!", " interrupts the attack!"), tipAt_ = now_;
+    const std::string& who = battle_->units()[steps.front().att].name;
+    tip_ = e2::daggerStrikeKind(steps.front().kind) ? who + tr(": uma adaga voa!", ": a dagger flies!") : who + tr(" interrompe o ataque!", " interrupts the attack!");
+    tipAt_ = now_;
     play(steps, static_cast<size_t>(owner), true);
     return exchange_.has_value();
   }
@@ -5378,7 +5418,8 @@ class MapStage final : public Stage {
                                    "venomArrow",     "arrowRain",     "explosiveArrow", "cripplingShot",  "arrowStorm",    "deathShot",
                                    "spearToss",      "hookPull",      "poleVault",      "disarm",         "swapPost",      "impaleDrag",  "sentinelVigil",
                                    "circleOfHealing", "resurrection", "judgment",
-                                   "placeSwap",      "boneLance",     "mirrorImage",    "detonateSummon", "sacrificeBond", "nightmare",   "empowerSummons"};
+                                   "placeSwap",      "boneLance",     "mirrorImage",    "detonateSummon", "sacrificeBond", "nightmare",   "empowerSummons",
+                                   "cloudOfDaggers", "daggerStrike"};
     // KIND or KIND:VERSION (the version number of the Magias menu; default the menu's choice, at least 01).
     std::string kind = options_.fxTest;
     int look = 0;
@@ -5795,6 +5836,48 @@ class MapStage final : public Stage {
       };
       return logInfo("battle script: vigil {} -> {}: a sentinel interrupts", p[1], p[2]);
     }
+    if (p[0] == "dagger" && p.size() > 2) {
+      // "dagger:<attacker>:<target>": the attacker, come to stand beside the target, is about to strike it in melee; the target's Nuvem
+      // de Adagas must throw first (one dagger for the arrival, one for the blow)
+      const int fi = sceneUnitNamed(p[2]);
+      if (fi < 0) return fail("no such target");
+      if (!placeBeside(static_cast<size_t>(ci), static_cast<size_t>(fi))) return fail("no free hex beside the target");
+      const size_t tb = static_cast<size_t>(unitBattle_[static_cast<size_t>(fi)]);
+      const int hpBefore = battle_->units()[cb].hp, daggersBefore = battle_->units()[tb].cond.daggers;
+      if (!playInterrupts(cb, {tb}, {tb}, true)) return fail("no dagger thrown");
+      scriptCheck_ = [this, cb, tb, hpBefore, daggersBefore]() -> std::string {
+        const e2::BattleUnit& a = battle_->units()[cb];
+        const e2::BattleUnit& h = battle_->units()[tb];
+        logInfo("battle script: dagger: the attacker {} hp {} -> {}{}; {} daggers {} -> {}", a.name, hpBefore, a.hp, a.alive ? "" : " (dead)", h.name, daggersBefore,
+                h.cond.daggers);
+        for (size_t k = battle_->log().size() > 6 ? battle_->log().size() - 6 : 0; k < battle_->log().size(); ++k) logInfo("battle script: log | {}", battle_->log()[k]);
+        if (h.cond.daggers >= daggersBefore) return "no dagger spent";
+        if (a.hp < hpBefore || !a.alive) return "";
+        logInfo("battle script: the daggers missed");
+        return "";
+      };
+      return logInfo("battle script: dagger {} -> {}: the cloud throws", p[1], p[2]);
+    }
+    if (p[0] == "shoot" && p.size() > 2) {
+      // "shoot:<archer>:<target>": the archer (stood 3 hexes off by a "far" step before, or where it is) shoots the target; the target's
+      // Nuvem de Adagas must knock the arrow down ("Interceptado": no damage, one dagger spent)
+      const int fi = sceneUnitNamed(p[2]);
+      if (fi < 0) return fail("no such target");
+      const size_t tb = static_cast<size_t>(unitBattle_[static_cast<size_t>(fi)]);
+      const int hpBefore = battle_->units()[tb].hp, daggersBefore = battle_->units()[tb].cond.daggers;
+      attack(static_cast<size_t>(ci), static_cast<size_t>(fi));
+      if (!exchange_) return fail("the shot was not played: " + tip_);
+      scriptCheck_ = [this, cb, tb, hpBefore, daggersBefore]() -> std::string {
+        const e2::BattleUnit& a = battle_->units()[cb];
+        const e2::BattleUnit& h = battle_->units()[tb];
+        logInfo("battle script: shoot: {} shot {}: hp {} -> {}, daggers {} -> {}", a.name, h.name, hpBefore, h.hp, daggersBefore, h.cond.daggers);
+        for (size_t k = battle_->log().size() > 6 ? battle_->log().size() - 6 : 0; k < battle_->log().size(); ++k) logInfo("battle script: log | {}", battle_->log()[k]);
+        if (h.cond.daggers >= daggersBefore) return "no dagger spent on the arrow";
+        if (h.hp < hpBefore) return "the arrow still hurt";
+        return "";
+      };
+      return logInfo("battle script: shoot {} -> {}", p[1], p[2]);
+    }
     if (p[0] == "near" && p.size() > 2) {
       // the unit placed beside another (a foe in reach of a strike, for captures)
       const int other = sceneUnitNamed(p[2]);
@@ -6026,6 +6109,11 @@ class MapStage final : public Stage {
         return "";
       }
       if (kind == "sentinelVigil") return c.cond.vigilPct > 0 ? "" : "no vigil on the caster";
+      // The Mago Negro's
+      if (kind == "cloudOfDaggers") {
+        logInfo("battle script: cloudOfDaggers: {} has {} daggers", c.name, c.cond.daggers);
+        return c.cond.daggers > 0 ? "" : "no daggers on the caster";
+      }
       // The Conjurador's
       if (kind == "placeSwap") {
         if (!(c.x == before.x && c.y == before.y && t.x == casterBefore.x && t.y == casterBefore.y)) return "places not changed";
@@ -6326,6 +6414,13 @@ class MapStage final : public Stage {
           if (e.status && (e.text.starts_with("Desarmado") || e.text.starts_with("Disarmed")))
             if (const int fu = sceneUnitOf(static_cast<int>(e.unit)), su = sceneUnitOf(static_cast<int>(s.att)); fu >= 0 && su >= 0)
               spellFx_.disarmed(unitSpot(static_cast<size_t>(fu)), unitSpot(static_cast<size_t>(su)), now_);
+      // Nuvem de Adagas: an arrow at its caster was knocked down ("Interceptado"): a dagger of the cloud darts out to meet it
+      for (const e2::BattleEffect& e : fx)
+        if (e.miss && (e.text == "Interceptado" || e.text == "Intercepted"))
+          if (const int hu = sceneUnitOf(static_cast<int>(e.unit)), su = sceneUnitOf(static_cast<int>(x.counter ? s.def : s.att)); hu >= 0 && su >= 0 && hu != su) {
+            const SpellEffects::Spot holder = unitSpot(static_cast<size_t>(hu)), shooter = unitSpot(static_cast<size_t>(su));
+            spellFx_.daggers().intercept(holder.feet, {shooter.feet, shooter.cardHeight}, now_ - 0.12f, now_);
+          }
       // A missed Investida Touro shoves nobody aside: the rest of the charge is dropped (its walk and its other blows).
       if (std::any_of(fx.begin(), fx.end(), [](const e2::BattleEffect& e) { return e.abortRush; })) {
         const size_t actor = s.att;
@@ -6869,7 +6964,8 @@ class MapStage final : public Stage {
       static const std::pair<const char*, ImU32> kElementColors[] = {{"darkness", IM_COL32(92, 48, 150, 255)}, {"poison", IM_COL32(60, 130, 40, 255)},
                                                                      {"fire", IM_COL32(170, 70, 20, 255)},     {"ice", IM_COL32(60, 120, 170, 255)},
                                                                      {"lightning", IM_COL32(90, 110, 180, 255)}, {"ember", IM_COL32(190, 90, 25, 255)},
-                                                                     {"steel", IM_COL32(95, 105, 120, 255)},    {"wood", IM_COL32(110, 85, 50, 255)}};
+                                                                     {"steel", IM_COL32(95, 105, 120, 255)},    {"wood", IM_COL32(110, 85, 50, 255)},
+                                                                     {"arcane", IM_COL32(110, 70, 180, 255)}};
       ImU32 back = IM_COL32(60, 60, 60, 255);
       const std::string name = e2::spellName(kind);
       static const std::map<std::string, const char*> kElementOf = {
@@ -6881,7 +6977,7 @@ class MapStage final : public Stage {
           {"steelWhirlwind", "steel"}, {"guardBreak", "steel"}, {"warCry", "steel"}, {"leapingStrike", "steel"},
           {"venomArrow", "wood"}, {"arrowRain", "wood"}, {"explosiveArrow", "wood"}, {"cripplingShot", "wood"}, {"arrowStorm", "wood"}, {"deathShot", "wood"},
           {"spearToss", "steel"}, {"hookPull", "steel"}, {"poleVault", "steel"}, {"disarm", "steel"}, {"swapPost", "steel"}, {"impaleDrag", "steel"},
-          {"sentinelVigil", "ember"}};
+          {"sentinelVigil", "ember"}, {"cloudOfDaggers", "arcane"}};
       if (const auto it = kElementOf.find(kind); it != kElementOf.end())
         for (const auto& [el, c] : kElementColors)
           if (std::string(el) == it->second) back = c;
@@ -9177,12 +9273,14 @@ class MapStage final : public Stage {
     size_t unit = 0;    // scene unit
     int target = -1;    // scene unit it strikes after its walk
     bool struck = false;
-    bool interrupted = false;           // the sentinels' thrusts (Vigília) were played before its blow
+    bool interrupted = false;           // the sentinels' thrusts (Vigília) and the daggers (Nuvem de Adagas) were played before its blow
+    bool walked = false;                // it walked this turn (a Nuvem de Adagas beside where it stopped throws at it)
     std::vector<e2::BattleStep> steps;  // or the spell it casts after its walk
   };
   std::optional<EnemyTurn> enemyTurn_;
   std::map<int, int> vigilFx_;  // battle unit in its Vigília da Sentinela -> its standing effect (LancerFx::vigilStart)
   std::map<int, int> mirrorFx_;  // battle unit with Imagem Espelhada's illusions -> their standing effect (ConjurerFx::mirrorStart)
+  std::map<int, std::pair<int, int>> daggerFx_;  // battle unit with a Nuvem de Adagas -> its cloud (DaggerFx::start) and the count last given to it
   std::map<int, int> statusFx_;  // battle unit x 2 (+1 = disease) -> its poison / disease effect (StatusFx::start)
   std::unordered_set<int> awake_;         // enemies that have seen the party (fog)
   int roamLeader_ = -1;                   // free roam: the scene unit the party follows

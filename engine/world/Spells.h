@@ -105,6 +105,8 @@ struct BattleStep {
   int bondPct = 0;                     // Elo de Sacrifício on the caster (Type::Effect)
   int empowerPct = 0, empowerRounds = 0;   // Fortalecer Invocações on every unit of `ids` (Type::Effect)
   int reflectTurns = 0, reflectPct = 0, reflectHealPct = 0;  // Reflexo Arcano on the caster (Type::Effect)
+  // The Mago Negro's (docs/SKILLS_MAGE.md)
+  int daggers = 0;                     // Nuvem de Adagas on the caster (Type::Effect): the daggers circling it
 };
 
 // What a step did, for the window: a number over a unit, a miss, a heal, a death.
@@ -161,6 +163,13 @@ std::string spellTrackNote(const std::string& kind, int level, bool en);
 // reaches the attacker from where it stands. Empty when nobody stands guard. The window plays them first; a dead attacker
 // never strikes.
 std::vector<BattleStep> vigilInterrupts(const Battle& b, size_t attacker, const std::vector<size_t>& targets);
+// The Mago Negro's Nuvem de Adagas (docs/SKILLS_MAGE.md): the daggers thrown at `attacker` before it acts, by every unit of the other
+// side beside it that has daggers left: one when it ended its walk beside that unit (`arrived`), one more when its melee action
+// (`meleeTargets`: whom its blow or weapon skill strikes) is aimed at that unit and it is no archer (an arrow is intercepted instead:
+// daggerIntercepts). Each step spends a dagger as it resolves; a dead attacker never strikes.
+std::vector<BattleStep> daggerInterrupts(const Battle& b, size_t attacker, const std::vector<size_t>& meleeTargets, bool arrived);
+// The daggers' own strike: a spell step the cloud throws (never learned).
+bool daggerStrikeKind(const std::string& kind);
 
 // The combat log's language for the lines made from now on (the window's Idioma choice).
 void setCombatLogEnglish(bool english);

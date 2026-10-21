@@ -82,7 +82,7 @@ nlohmann::json Battle::snapshot() const {
                    {"disarmPct", c.disarmPct},   {"disarmTurns", c.disarmTurns}, {"staggered", c.staggered},       {"staggerTurns", c.staggerTurns},
                    {"vigilPct", c.vigilPct},     {"vigilRadius", c.vigilRadius}, {"mirrorCopies", c.mirrorCopies}, {"mirrorRounds", c.mirrorRounds},
                    {"bondPct", c.bondPct},       {"empowerPct", c.empowerPct},   {"empowerRounds", c.empowerRounds},
-                   {"reflectTurns", c.reflectTurns}, {"reflectPct", c.reflectPct}, {"reflectHealPct", c.reflectHealPct}};
+                   {"reflectTurns", c.reflectTurns}, {"reflectPct", c.reflectPct}, {"reflectHealPct", c.reflectHealPct}, {"daggers", c.daggers}};
     }
     if (u.empowerBase)
       s["empowerBase"] = {{"atk", u.empowerBase->atk}, {"mag", u.empowerBase->mag}, {"def", u.empowerBase->def}, {"dex", u.empowerBase->dex}, {"mov", u.empowerBase->mov}};
@@ -255,6 +255,7 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       o.mirrorCopies = c.value("mirrorCopies", 0), o.mirrorRounds = c.value("mirrorRounds", 0), o.bondPct = c.value("bondPct", 0);
       o.empowerPct = c.value("empowerPct", 0), o.empowerRounds = c.value("empowerRounds", 0);
       o.reflectTurns = c.value("reflectTurns", 0), o.reflectPct = c.value("reflectPct", 0), o.reflectHealPct = c.value("reflectHealPct", 0);
+      o.daggers = c.value("daggers", 0);
     }
     u.empowerBase.reset();
     if (s.contains("empowerBase") && s["empowerBase"].is_object()) {
