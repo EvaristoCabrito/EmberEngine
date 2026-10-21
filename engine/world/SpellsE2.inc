@@ -1080,7 +1080,7 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
     const int radius = webOfDreamsSize(u.level);
     const double chance = webOfDreamsSleepChance(u.level);
     const std::vector<BattleHex> cellsHit = areaTiles(b, cell, radius);
-    b.webZones().push_back({cellsHit, kWebDuration, cell, std::max(1, radius), chance});
+    b.webZones().push_back({cellsHit, kWebDuration, cell, std::max(1, radius), chance, u.side});
     spendTier(u, kind);
     b.noteAware(caster, kSupportCe, kSupportVe);
     s.type = BattleStep::Type::Effect, s.tiles = cellsHit, s.spellMul = chance;

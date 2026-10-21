@@ -31,6 +31,7 @@ struct InnWeapon {
   int magBonus = 0, dexBonus = 0;              // a staff's MAG / DEX while its class wields it (weapon.magic)
   std::vector<std::string> usableBy, tooltip;  // tooltip per enhancement 0..max
   std::vector<int> sell;                       // sell value per enhancement 0..max
+  std::string weaponType;                      // ours: "sword", "bow", ... (content/engine2/weapons.json), the unknown item's only word
 };
 struct InnGear {
   std::string id, name, slot, typeSlot, tooltip, icon, kind, summary;  // kind: "", "weapon" or "shield" (off-hand)
@@ -89,7 +90,7 @@ class InnRules {
   // equipSharedItem (itemId) / unequipSharedItem ("" : the piece back into the stash, if the bag has room).
   std::optional<Json> equipItem(const Json& save, const std::string& hero, const std::string& slot, const std::string& itemId) const;
   std::optional<Json> discardWeapon(const Json& save, const std::string& weaponId) const;
-  std::optional<Json> discardEquipment(const Json& save, const std::string& itemId) const;
+  std::optional<Json> discardEquipment(const Json& save, const std::string& itemId, bool unknownCopy = false) const;
   std::optional<Json> discardRation(const Json& save) const;
   std::optional<Json> discardBagItem(const Json& save, const std::string& hero, const std::string& kind) const;
   // useHeroPotion: heal (dice + healing skill, capped), mana (spent tier uses back), disease (cure); healing may train.
@@ -105,6 +106,26 @@ class InnRules {
   std::vector<std::string> gearLines(const Json& save, const std::string& hero, const std::string& stat) const;  // stat: hp atk mag def dex mov
   int bagUsed(const Json& save) const;      // partyBagUsed
   int bagCapacity(const Json& save) const;  // partyBagCapacity
+
+  // --- Itens desconhecidos (ours, 2026-10-21, docs/SKILLS_MAGE.md): part of the chest loot comes unknown (content/unknown-items.json) and
+  // shows only its type ("Espada desconhecida", "Poção desconhecida"), cannot be equipped or drunk, sells cheap at the Inn, and is revealed
+  // for good by Identificar (the Mago Negro's field spell). The marks: save.unknownWeapons [ids] (each also in save.weapons),
+  // save.unknownEquipment {id: copies} (among save.looseEquipment's), save.unknownPotions {hero: {kind: count}} (apart from the bags). ---
+  struct UnknownItem {
+    std::string kind;   // "weapon" | "gear" | "potion"
+    std::string id;     // the weapon's / gear's id, the potion's kind
+    std::string hero;   // a potion's holder
+    std::string label, labelEn;  // what the player sees ("Espada desconhecida")
+    std::string realName;        // what Identificar reveals
+    int sell = 0;                // what the Inn pays for it unknown
+  };
+  std::vector<UnknownItem> unknownItems(const Json& save) const;
+  bool weaponUnknown(const Json& save, const std::string& weaponId) const;
+  int gearUnknown(const Json& save, const std::string& itemId) const;  // the unknown copies among looseEquipment[itemId]
+  int potionsUnknown(const Json& save, const std::string& hero, const std::string& kind) const;
+  std::optional<Json> sellUnknown(const Json& save, const UnknownItem& item, int& value) const;
+  Json identify(const Json& save, const UnknownItem& item) const;  // the mark removed (a potion goes into the hero's bag)
+  Json discardUnknown(const Json& save, const UnknownItem& item) const;
 
   Json talkToNpc(const Json& save, const std::string& npc) const;
   bool questOffered(const Json& save, const std::string& questId) const;

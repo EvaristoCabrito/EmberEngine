@@ -5,6 +5,7 @@
 #include <fstream>
 
 #include "core/Log.h"
+#include "world/Battle.h"  // UnknownItemRules (content/unknown-items.json)
 
 namespace ember::e2 {
 
@@ -101,6 +102,13 @@ bool InnData::load(const std::filesystem::path& file) {
       t.emplace_back();
       for (const Json& v : row) t.back().push_back(v.get<int>());
     }
+  }
+  // Ours: each weapon's type, from the loadouts' table beside the Inn's (an unknown weapon shows only that)
+  if (std::ifstream arms(file.parent_path() / "weapons.json", std::ios::binary); arms) {
+    const Json a = Json::parse(arms, nullptr, false);
+    if (!a.is_discarded() && a.is_object() && a.contains("weapons") && a["weapons"].is_object())
+      for (InnWeapon& w : weapons)
+        if (a["weapons"].contains(w.id) && a["weapons"][w.id].is_object()) w.weaponType = a["weapons"][w.id].value("weaponType", "");
   }
   logInfo("inn: {} weapons, {} gear, {} potions", weapons.size(), equipment.size(), potions.size());
   return true;
@@ -337,6 +345,7 @@ std::optional<Json> InnRules::equipWeapon(const Json& save, const std::string& h
     if (!world_.bagHasRoom(next, 0)) return std::nullopt;
   } else {
     if (!child(save, "weapons").contains(weaponId)) return std::nullopt;
+    if (weaponUnknown(save, weaponId)) return std::nullopt;  // an unknown weapon is never wielded (Identificar first)
     if (!next["equipped"].is_object()) next["equipped"] = Json::object();
     std::vector<std::string> drop;
     for (const auto& [owner, id] : next["equipped"].items())
@@ -379,7 +388,8 @@ std::optional<Json> InnRules::equipItem(const Json& save, const std::string& her
   }
   const InnGear* item = data_.gear(itemId);
   if (!item || !fitsSlot(*item, slot)) return std::nullopt;
-  const int reserve = static_cast<int>(num(child(save, "looseEquipment"), itemId).value_or(0));
+  const int total = static_cast<int>(num(child(save, "looseEquipment"), itemId).value_or(0));
+  const int reserve = total - gearUnknown(save, itemId);  // the known copies only: an unknown piece is never worn (Identificar first)
   if (current == itemId) return save;
   // A spare in the stash first; else the piece moves off another slot (another hero's, or this hero's other finger).
   std::optional<std::pair<std::string, std::string>> source;
@@ -394,8 +404,8 @@ std::optional<Json> InnRules::equipItem(const Json& save, const std::string& her
     }
   if (!source && reserve <= 0) return std::nullopt;
   if (source) next["equipment"][source->first].erase(source->second);
-  else if (reserve == 1) next["looseEquipment"].erase(itemId);
-  else next["looseEquipment"][itemId] = reserve - 1;
+  else if (total == 1) next["looseEquipment"].erase(itemId);
+  else next["looseEquipment"][itemId] = total - 1;
   if (!current.empty()) next["looseEquipment"][current] = static_cast<int>(num(next["looseEquipment"], current).value_or(0)) + 1;
   if (!next["equipment"][hero].is_object()) next["equipment"][hero] = Json::object();
   next["equipment"][hero][slot] = itemId;
@@ -403,21 +413,160 @@ std::optional<Json> InnRules::equipItem(const Json& save, const std::string& her
   return next;
 }
 
+namespace {
+// The unknown marks (ours): a weapon's taken off the list, a piece's copies one fewer, a potion's count one fewer.
+void unmarkWeapon(Json& next, const std::string& weaponId) {
+  if (!next["unknownWeapons"].is_array()) return;
+  Json kept = Json::array();
+  for (const Json& id : next["unknownWeapons"])
+    if (!(id.is_string() && id.get<std::string>() == weaponId)) kept.push_back(id);
+  next["unknownWeapons"] = std::move(kept);
+}
+void unmarkGear(Json& next, const std::string& itemId, int total) {
+  if (!next["unknownEquipment"].is_object() || !next["unknownEquipment"].contains(itemId)) return;
+  const int n = std::min(num(next["unknownEquipment"], itemId).value_or(0) - 1, static_cast<double>(total));
+  if (n <= 0) next["unknownEquipment"].erase(itemId);
+  else next["unknownEquipment"][itemId] = static_cast<int>(n);
+}
+void unmarkPotion(Json& next, const std::string& hero, const std::string& kind) {
+  if (!next["unknownPotions"].is_object() || !next["unknownPotions"][hero].is_object()) return;
+  const int n = static_cast<int>(num(next["unknownPotions"][hero], kind).value_or(0)) - 1;
+  if (n <= 0) next["unknownPotions"][hero].erase(kind);
+  else next["unknownPotions"][hero][kind] = n;
+}
+}  // namespace
+
 std::optional<Json> InnRules::discardWeapon(const Json& save, const std::string& weaponId) const {
   if (!child(save, "weapons").contains(weaponId)) return std::nullopt;
   Json next = save;
   next["weapons"].erase(weaponId);
+  unmarkWeapon(next, weaponId);
   next["pendingMission"] = nullptr;
   return next;
 }
 
-std::optional<Json> InnRules::discardEquipment(const Json& save, const std::string& itemId) const {
+std::optional<Json> InnRules::discardEquipment(const Json& save, const std::string& itemId, bool unknownCopy) const {
   const int reserve = static_cast<int>(num(child(save, "looseEquipment"), itemId).value_or(0));
   if (reserve <= 0) return std::nullopt;
+  const int unknown = gearUnknown(save, itemId);
+  if (unknownCopy ? unknown <= 0 : reserve - unknown <= 0) return std::nullopt;  // the copy thrown away is of the kind asked for
   Json next = save;
   if (reserve <= 1) next["looseEquipment"].erase(itemId);
   else next["looseEquipment"][itemId] = reserve - 1;
+  if (unknownCopy) unmarkGear(next, itemId, reserve - 1);
   next["pendingMission"] = nullptr;
+  return next;
+}
+
+// --- Itens desconhecidos (ours, docs/SKILLS_MAGE.md) --------------------------------------------------------------------------------
+
+bool InnRules::weaponUnknown(const Json& save, const std::string& weaponId) const {
+  const Json& list = child(save, "unknownWeapons");
+  if (!list.is_array()) return false;
+  for (const Json& id : list)
+    if (id.is_string() && id.get<std::string>() == weaponId) return true;
+  return false;
+}
+int InnRules::gearUnknown(const Json& save, const std::string& itemId) const {
+  const int total = static_cast<int>(num(child(save, "looseEquipment"), itemId).value_or(0));
+  return std::max(0, std::min(total, static_cast<int>(num(child(save, "unknownEquipment"), itemId).value_or(0))));
+}
+int InnRules::potionsUnknown(const Json& save, const std::string& hero, const std::string& kind) const {
+  return std::max(0, static_cast<int>(num(child(child(save, "unknownPotions"), hero), kind).value_or(0)));
+}
+std::vector<InnRules::UnknownItem> InnRules::unknownItems(const Json& save) const {
+  const UnknownItemRules& ur = UnknownItemRules::shared();
+  auto sellValue = [&](int price) { return std::max(1, static_cast<int>(std::floor(price * ur.sellShare))); };
+  static const std::pair<const char*, std::pair<const char*, const char*>> kTypes[] = {
+      {"sword", {"Espada desconhecida", "Unknown sword"}},   {"bow", {"Arco desconhecido", "Unknown bow"}},       {"crossbow", {"Besta desconhecida", "Unknown crossbow"}},
+      {"staff", {"Cajado desconhecido", "Unknown staff"}},   {"spear", {"Lança desconhecida", "Unknown spear"}},  {"axe", {"Machado desconhecido", "Unknown axe"}},
+      {"hammer", {"Martelo desconhecido", "Unknown hammer"}}, {"mace", {"Maça desconhecida", "Unknown mace"}},   {"dagger", {"Adaga desconhecida", "Unknown dagger"}}};
+  std::vector<UnknownItem> out;
+  const Json& weapons = child(save, "unknownWeapons");
+  if (weapons.is_array())
+    for (const Json& id : weapons) {
+      if (!id.is_string() || !child(save, "weapons").contains(id.get<std::string>())) continue;
+      const InnWeapon* w = data_.weapon(id.get<std::string>());
+      if (!w) continue;
+      UnknownItem u;
+      u.kind = "weapon", u.id = w->id, u.realName = w->name, u.sell = sellValue(w->price);
+      u.label = "Arma desconhecida", u.labelEn = "Unknown weapon";
+      for (const auto& [type, names] : kTypes)
+        if (w->weaponType == type) u.label = names.first, u.labelEn = names.second;
+      out.push_back(std::move(u));
+    }
+  const Json gear = child(save, "unknownEquipment");  // a named copy: items() of a temporary dangles
+  if (gear.is_object())
+    for (const auto& [id, nJ] : gear.items()) {
+      const InnGear* g = data_.gear(id);
+      const int n = gearUnknown(save, id);
+      if (!g || n <= 0) continue;
+      for (int k = 0; k < n; ++k) {
+        UnknownItem u;
+        u.kind = "gear", u.id = g->id, u.realName = g->name, u.sell = sellValue(g->price);
+        u.label = "Equipamento desconhecido (" + g->typeSlot + ")", u.labelEn = "Unknown gear (" + g->typeSlot + ")";
+        out.push_back(std::move(u));
+      }
+    }
+  const Json potions = child(save, "unknownPotions");
+  if (potions.is_object())
+    for (const auto& [hero, kinds] : potions.items()) {
+      if (!kinds.is_object()) continue;
+      for (const auto& [kind, nJ] : kinds.items()) {
+        const InnPotion* p = data_.potion(kind);
+        const int n = nJ.is_number() ? nJ.get<int>() : 0;
+        if (!p || n <= 0) continue;
+        for (int k = 0; k < n; ++k) {
+          UnknownItem u;
+          u.kind = "potion", u.id = kind, u.hero = hero, u.realName = p->label, u.sell = sellValue(p->price);
+          u.label = "Poção desconhecida (" + hero + ")", u.labelEn = "Unknown potion (" + hero + ")";
+          out.push_back(std::move(u));
+        }
+      }
+    }
+  return out;
+}
+std::optional<Json> InnRules::sellUnknown(const Json& save, const UnknownItem& item, int& value) const {
+  value = item.sell;
+  Json next = save;
+  if (item.kind == "weapon") {
+    if (!weaponUnknown(save, item.id) || !child(save, "weapons").contains(item.id)) return std::nullopt;
+    next["weapons"].erase(item.id);
+    unmarkWeapon(next, item.id);
+  } else if (item.kind == "gear") {
+    const int reserve = static_cast<int>(num(child(save, "looseEquipment"), item.id).value_or(0));
+    if (reserve <= 0 || gearUnknown(save, item.id) <= 0) return std::nullopt;
+    if (reserve <= 1) next["looseEquipment"].erase(item.id);
+    else next["looseEquipment"][item.id] = reserve - 1;
+    unmarkGear(next, item.id, reserve - 1);
+  } else if (item.kind == "potion") {
+    if (potionsUnknown(save, item.hero, item.id) <= 0) return std::nullopt;
+    unmarkPotion(next, item.hero, item.id);
+  } else {
+    return std::nullopt;
+  }
+  next["ember"] = ember(save) + value;
+  next["emberSeeded"] = true;
+  next["pendingMission"] = nullptr;
+  return next;
+}
+Json InnRules::identify(const Json& save, const UnknownItem& item) const {
+  Json next = save;
+  if (item.kind == "weapon") unmarkWeapon(next, item.id);
+  else if (item.kind == "gear") unmarkGear(next, item.id, static_cast<int>(num(child(save, "looseEquipment"), item.id).value_or(0)));
+  else if (item.kind == "potion" && potionsUnknown(save, item.hero, item.id) > 0) {
+    unmarkPotion(next, item.hero, item.id);
+    if (!next["bags"].is_object()) next["bags"] = Json::object();
+    if (!next["bags"][item.hero].is_object()) next["bags"][item.hero] = Json::object();
+    next["bags"][item.hero][item.id] = static_cast<int>(num(next["bags"][item.hero], item.id).value_or(0)) + 1;  // into the hero's own bag now
+  }
+  return next;
+}
+Json InnRules::discardUnknown(const Json& save, const UnknownItem& item) const {
+  if (item.kind == "weapon") return discardWeapon(save, item.id).value_or(save);
+  if (item.kind == "gear") return discardEquipment(save, item.id, true).value_or(save);
+  Json next = save;
+  if (item.kind == "potion") unmarkPotion(next, item.hero, item.id);
   return next;
 }
 

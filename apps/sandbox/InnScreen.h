@@ -563,8 +563,32 @@ class InnScreen {
       }
       std::vector<const e2::InnWeapon*> inBag, onBench;
       for (const e2::InnWeapon* wpn : pool) {
-        if (owned.contains(wpn->id) && wpn->id != equippedId) inBag.push_back(wpn);
+        if (owned.contains(wpn->id) && wpn->id != equippedId && !c.rules.weaponUnknown(c.save, wpn->id)) inBag.push_back(wpn);  // an unknown one: below, unnamed
         if (!owned.contains(wpn->id)) onBench.push_back(wpn);
+      }
+      // Itens desconhecidos (docs/SKILLS_MAGE.md): Vargan buys them unseen, for little; Identificar (the Mago Negro's field spell) reveals them
+      if (const std::vector<e2::InnRules::UnknownItem> unknowns = c.rules.unknownItems(c.save); !unknowns.empty()) {
+        ImGui::Dummy({1, 4});
+        kicker("Itens desconhecidos");
+        text("Vargan nem olha: paga pouco por coisa sem nome. Um Mago Negro identifica no mapa do mundo.", 11.0f, kMuted, w);
+        for (size_t i = 0; i < unknowns.size(); ++i) {
+          const e2::InnRules::UnknownItem& u = unknowns[i];
+          const ImVec2 a = ImGui::GetCursorScreenPos();
+          ImGui::PushID(static_cast<int>(i));
+          emberSlot(ImGui::GetWindowDrawList(), a, {a.x + w, a.y + 40}, false);
+          ImFont* mark = uiFont(UiFont::Mark);
+          ImGui::GetWindowDrawList()->AddText(mark, 22.0f, {a.x + 12, a.y + 8}, IM_COL32(196, 150, 232, 255), "?");
+          ImGui::GetWindowDrawList()->AddText(uiFont(UiFont::Ui), 13.0f, {a.x + 36, a.y + 12}, kFg, u.label.c_str());
+          ImGui::SetCursorScreenPos({a.x + w - 140, a.y + 7});
+          if (button("##sellunknown", std::format("Vender · {} Gold", u.sell), 132, 26, false, false, 10.0f)) {
+            int value = 0;
+            std::optional<e2::Json> s = c.rules.sellUnknown(c.save, u, value);
+            if (s) smithNote_ = std::format("{} vendido por {} Gold.", u.label, value);
+            apply(c, std::move(s));
+          }
+          ImGui::PopID();
+          ImGui::SetCursorScreenPos({a.x, a.y + 46});
+        }
       }
       if (!inBag.empty()) {
         ImGui::Dummy({1, 4});

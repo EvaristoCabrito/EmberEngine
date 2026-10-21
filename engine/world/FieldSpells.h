@@ -106,6 +106,13 @@ class FieldSpells {
   // The player's note on a rune; a rune thrown away.
   static Json setRuneNote(const Json& save, const std::string& runeId, const std::string& note);
   static Json discardRune(const Json& save, const std::string& runeId);
+  // Identificar (ours, the Mago Negro's, docs/SKILLS_MAGE.md): a tier-1 use reveals one unknown item of the party's bags
+  // (InnRules::unknownItems) for good. Who can: mages from level 1, standing.
+  static constexpr int kIdentifyTier = 1;
+  std::vector<std::string> identifiers(const Json& save, bool test) const;
+  std::vector<InnRules::UnknownItem> unknownItems(const Json& save) const { return InnRules(inn_, world_).unknownItems(save); }
+  bool canIdentify(const Json& save, const std::string& hero) const { return usesLeft(save, hero, kIdentifyTier) > 0 && !unknownItems(save).empty(); }
+  std::optional<Json> castIdentify(const Json& save, const std::string& hero, const InnRules::UnknownItem& item) const;
 
  private:
   const InnData& inn_;

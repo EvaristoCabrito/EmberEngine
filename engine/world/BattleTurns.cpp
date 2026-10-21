@@ -74,11 +74,15 @@ void Battle::startNewRound() {
   for (Zone& z : zones_)
     if (z.kind != "meteor") --z.rounds;
   std::erase_if(zones_, [](const Zone& z) { return z.kind != "meteor" && z.rounds <= 0; });
+  // A Globo counts its rounds at its caster's turns; a dead caster's counts them here
+  for (Globe& g : globes_)
+    if (g.caster >= units_.size() || !units_[g.caster].alive) --g.rounds;
+  std::erase_if(globes_, [](const Globe& g) { return g.rounds <= 0; });
 }
 
 int Battle::weakenAt(const BattleUnit& u) const {
   int pct = 0;
-  if (!u.alive) return 0;
+  if (!u.alive || shielded(u)) return 0;  // a Globo: zones do nothing inside
   for (const Zone& z : zones_) {
     if (z.statPct <= 0) continue;
     for (const BattleHex& h : footprint(u, u.x, u.y))
@@ -88,7 +92,7 @@ int Battle::weakenAt(const BattleUnit& u) const {
 }
 
 bool Battle::inZoneOf(const BattleUnit& u, const std::string& element) const {
-  if (!u.alive) return false;
+  if (!u.alive || shielded(u)) return false;
   for (const Zone& z : zones_) {
     if (z.element != element || z.kind == "meteor") continue;
     for (const BattleHex& h : footprint(u, u.x, u.y))

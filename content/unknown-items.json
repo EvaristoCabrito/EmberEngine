@@ -1,0 +1,7 @@
+{
+  "_about": "Itens desconhecidos (the user, 2026-10-21, docs/SKILLS_MAGE.md): part of what the chests drop comes unknown and must be identified (Identificar, the Mago Negro's field spell) before it can be equipped or drunk; sold at the Inn for a low price meanwhile. The user will settle the thresholds and the potions later: these are first values.",
+  "weaponPowerAbove": 3,
+  "gearPowerAbove": 3,
+  "potions": ["potent", "manaMid", "manaLarge"],
+  "sellShare": 0.1
+}

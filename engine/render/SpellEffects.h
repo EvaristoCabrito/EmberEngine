@@ -40,6 +40,7 @@
 #include "render/vfx/LancerFx.h"
 #include "render/vfx/StatusFx.h"
 #include "render/vfx/DaggerFx.h"
+#include "render/vfx/MageFx.h"
 #include "render/vfx/RangerFx.h"
 #include "render/vfx/WarriorFx.h"
 #include "render/vfx/ArmsFx.h"
@@ -149,10 +150,13 @@ class SpellEffects {
   void build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out, std::vector<Light>& lights);
   const VfxFrame& vfx() const { return vfx_; }
   bool active(float now) const;
-  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), dreamWebs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), frosts_.clear(), warrior_.clear(), arms_.clear(), ranger_.clear(), lancer_.clear(), turnUndead_.clear(), healer_.clear(), conjurer_.clear(), status_.clear(), daggers_.clear(); }
+  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), dreamWebs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), frosts_.clear(), warrior_.clear(), arms_.clear(), ranger_.clear(), lancer_.clear(), turnUndead_.clear(), healer_.clear(), conjurer_.clear(), status_.clear(), daggers_.clear(), mage_.clear(); }
   // The Mago Negro's Nuvem de Adagas standing round its caster (vfx/DaggerFx, ours, 3D): the stage keeps one cloud per unit (MapStage
   // syncDaggers); cast() plays the conjuring, the thrown dagger ("daggerStrike") and, through intercept(), the shot knocked down.
   DaggerFx& daggers() { return daggers_; }
+  // ... and his Dissipar Magia / Globo de Invulnerabilidade (vfx/MageFx): the stage keeps the standing globes (MapStage syncGlobes) and
+  // flashes a blocked spell on the bubble (globeRipple); cast() plays the dispel's wave and the bubble's rise.
+  MageFx& mage() { return mage_; }
   // The Conjurador's standing illusions (Imagem Espelhada) and the swap of Troca de Lugar: the stage times them (MapStage syncMirrors / animateFlights).
   ConjurerFx& conjurer() { return conjurer_; }
   ArmsFx& arms() { return arms_; }  // Reflexo Arcano's bounce, timed by the stage
@@ -290,7 +294,9 @@ class SpellEffects {
   ConjurerFx conjurer_;    // the Conjurador's seven (ours, 3D)
   StatusFx status_;        // poison / disease on the units (ours, 3D)
   DaggerFx daggers_;       // the Mago Negro's Nuvem de Adagas (ours, 3D)
+  MageFx mage_;            // ... and his Dissipar Magia / Globo de Invulnerabilidade (ours, 3D)
   static bool isDagger(const std::string& kind) { return kind == "cloudOfDaggers" || kind == "daggerStrike"; }
+  static bool isMage(const std::string& kind) { return kind == "dispelMagic" || kind == "globeOfInvulnerability"; }
   static bool isConjurer(const std::string& kind) {
     return kind == "placeSwap" || kind == "boneLance" || kind == "mirrorImage" || kind == "detonateSummon" || kind == "sacrificeBond" || kind == "nightmare" ||
            kind == "empowerSummons";

@@ -114,7 +114,12 @@ nlohmann::json Battle::snapshot() const {
   nlohmann::json webs = nlohmann::json::array(), ices = nlohmann::json::array(), auras = nlohmann::json::array(), gates = nlohmann::json::array();
   for (const WebZone& z : webZones_)
     webs.push_back({{"cells", cellsJson(z.cells)}, {"roundsLeft", z.roundsLeft}, {"center", {{"x", z.center.x}, {"y", z.center.y}}}, {"radius", z.radius},
-                    {"sleepChance", z.sleepChance}});
+                    {"sleepChance", z.sleepChance}, {"side", z.side}});
+  // Globo de Invulnerabilidade (ours)
+  nlohmann::json globes = nlohmann::json::array();
+  for (const Globe& g : globes_)
+    globes.push_back({{"id", g.id}, {"x", g.centre.x}, {"y", g.centre.y}, {"radius", g.radius}, {"rounds", g.rounds}, {"maxTier", g.maxTier},
+                      {"caster", units_[g.caster].id}, {"cells", cellsJson(g.cells)}});
   for (const IceZone& z : iceZones_)
     ices.push_back({{"cells", cellsJson(z.cells)}, {"roundsLeft", z.roundsLeft}, {"center", {{"x", z.center.x}, {"y", z.center.y}}}, {"radius", z.radius},
                     {"damageDice", z.damageDice}, {"damageFaces", z.damageFaces}, {"damageMul", z.damageMul}, {"casterMag", z.casterMag},
@@ -132,7 +137,10 @@ nlohmann::json Battle::snapshot() const {
   nlohmann::json opened = nlohmann::json::array();
   for (size_t i = 0; i < locks_.size(); ++i)
     if (locks_[i].open) opened.push_back(i);
+  nlohmann::json unknownPotions = nlohmann::json::array();
+  for (const auto& [kind, holder] : lootUnknownPotions_) unknownPotions.push_back({{"kind", kind}, {"holder", holder}});
   return {{"locksOpen", opened}, {"lootEmber", lootEmber_}, {"lootWeapons", lootWeapons_}, {"lootEquipment", lootEquipment_},
+          {"lootUnknown", std::vector<std::string>(lootUnknown_.begin(), lootUnknown_.end())}, {"lootUnknownPotions", unknownPotions},
           {"ownedWeapons", nlohmann::json(ownedWeapons_)},
           {"turn", round_}, {"units", units}, {"turnOrder", order}, {"enmity", enmity}, {"lootRations", lootRations_}, {"roaming", roaming_},
           {"zones", zones}, {"zoneSerial", zoneSerial_}, {"log", log_}, {"webZones", webs}, {"iceStormZones", ices}, {"auraZones", auras},
@@ -312,7 +320,19 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
     for (const nlohmann::json& j : snap["webZones"])
       if (j.is_object())
         webZones_.push_back({readCells(j.contains("cells") ? j["cells"] : nlohmann::json()), j.value("roundsLeft", 0), readPoint(j, "center"), j.value("radius", 0),
-                             j.value("sleepChance", 0.25)});
+                             j.value("sleepChance", 0.25), j.value("side", std::string())});
+  globes_.clear();
+  if (snap.contains("globes") && snap["globes"].is_array())
+    for (const nlohmann::json& j : snap["globes"]) {
+      if (!j.is_object()) continue;
+      const int caster = find(j.value("caster", std::string()));
+      if (caster < 0) continue;
+      Globe g;
+      g.id = j.value("id", 0), g.centre = {j.value("x", 0), j.value("y", 0)}, g.radius = j.value("radius", 1), g.rounds = j.value("rounds", 1);
+      g.maxTier = j.value("maxTier", 3), g.caster = static_cast<size_t>(caster), g.cells = readCells(j.contains("cells") ? j["cells"] : nlohmann::json());
+      zoneSerial_ = std::max(zoneSerial_, g.id);
+      globes_.push_back(std::move(g));
+    }
   if (snap.contains("iceStormZones") && snap["iceStormZones"].is_array())
     for (const nlohmann::json& j : snap["iceStormZones"])
       if (j.is_object())
@@ -335,6 +355,13 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
   lootEmber_ = snap.value("lootEmber", lootEmber_);
   if (snap.contains("lootWeapons") && snap["lootWeapons"].is_array()) lootWeapons_ = snap["lootWeapons"].get<std::vector<std::string>>();
   if (snap.contains("lootEquipment") && snap["lootEquipment"].is_array()) lootEquipment_ = snap["lootEquipment"].get<std::vector<std::string>>();
+  lootUnknown_.clear(), lootUnknownPotions_.clear();
+  if (snap.contains("lootUnknown") && snap["lootUnknown"].is_array())
+    for (const nlohmann::json& id : snap["lootUnknown"])
+      if (id.is_string()) lootUnknown_.insert(id.get<std::string>());
+  if (snap.contains("lootUnknownPotions") && snap["lootUnknownPotions"].is_array())
+    for (const nlohmann::json& p : snap["lootUnknownPotions"])
+      if (p.is_object()) lootUnknownPotions_.emplace_back(p.value("kind", std::string()), p.value("holder", std::string()));
   if (snap.contains("ownedWeapons") && snap["ownedWeapons"].is_array()) ownedWeapons_ = snap["ownedWeapons"].get<std::set<std::string>>();
   // engine.ts applySnapshot: the pickups found stay found, and leave the ground
   if (snap.contains("questFound") && snap["questFound"].is_array()) {

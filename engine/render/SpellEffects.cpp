@@ -105,7 +105,7 @@ int SpellEffects::looks(const std::string& kind) {
                                  "auraOfProtection", "intimidatingPresence", "bloodyShot", "multiShot", "summonFamiliar", "summonFamiliar2",
                                  "summonFamiliar3", "summonFamiliar4", "summonZombieDog", "arcaneReflection", "fantomForce", "spectralBolt",
                                  // the Mago Negro's (vfx/DaggerFx, ours, 3D)
-                                 "cloudOfDaggers", "daggerStrike"};
+                                 "cloudOfDaggers", "daggerStrike", "dispelMagic", "globeOfInvulnerability"};
   for (const char* k : kEmber)
     if (kind == k) return 1;
   return 0;
@@ -191,6 +191,7 @@ float SpellEffects::leadIn(const std::string& kind, int look, const Spot& caster
   if (kind == "turnUndead" && look >= 1) return TurnUndead::kLead;  // the sigil gathers, then the burst
   if (isHealer(kind)) return HealerFx::leadIn(kind);                // the Curandeiro's: the light gathers, then lands
   if (isConjurer(kind)) return ConjurerFx::leadIn(kind);            // the Conjurador's
+  if (kind == "dispelMagic") return MageFx::kDispelLead;             // the Mago Negro's: the light gathers, then the wave
   if (kind.rfind("summon", 0) == 0) return 0.9f;                     // the summoning circle, then the familiar
   return kKindLead;
 }
@@ -241,6 +242,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     if (isHealer(kind)) end = std::max(end, healer_.latestEnd());
     if (isConjurer(kind)) end = std::max(end, conjurer_.latestEnd());
     if (isDagger(kind)) end = std::max(end, daggers_.latestEnd());
+    if (isMage(kind)) end = std::max(end, mage_.latestEnd());
     for (size_t i = before[7]; i < burns_.size(); ++i) end = std::max(end, burns_[i].first.end());
     if (kind == "iceStorm" && !storms_.empty()) end = std::max(end, storms_.back().start() + 1.0f);  // its first second, not the whole storm
     if (isBolt(kind, look) && !bolts_.empty()) end = std::max(end, bolts_.back().end());
@@ -278,6 +280,23 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
   }
   if (kind == "daggerStrike") {
     daggers_.strike(caster.feet, {targets.front().feet, targets.front().cardHeight}, start, impact);
+    return true;
+  }
+  // Dissipar Magia (MageFx): the wave over the area's hexes (the aimed one first), the magic torn off the bodies among them (card heights);
+  // the Globo's rise on the caster (its standing bubble is the stage's: syncGlobes).
+  if (kind == "dispelMagic" || kind == "globeOfInvulnerability") {
+    const Spot& centre = kind == "dispelMagic" ? areaCentre(targets) : caster;
+    float radius = 0.0f;
+    for (const Spot& s : targets) radius = std::max(radius, glm::length(glm::vec2(s.feet.x - centre.feet.x, s.feet.z - centre.feet.z)));
+    radius += 1.0f;  // out to the far hexes' own edge
+    if (kind == "dispelMagic") {
+      std::vector<MageFx::Target> bodies;
+      for (const Spot& s : targets)
+        if (s.cardHeight > 0.0f) bodies.push_back({s.feet, s.cardHeight});
+      mage_.dispel(centre.feet, radius, std::move(bodies), impact);
+    } else {
+      daggers_.summon(caster.feet, caster.cardHeight, impact);  // the cast's flash on the caster; the bubble itself rises from the stage (syncGlobes)
+    }
     return true;
   }
   // The Guerreiro's skills (WarriorFx, ours, 3D). Targets: the foes round the caster (Redemoinho), the struck foe (Quebra-Guarda, the
@@ -927,7 +946,7 @@ void SpellEffects::disarmed(const Spot& foe, const Spot& from, float at) { lance
 
 bool SpellEffects::active(float now) const {
   if (combat_.active(now) || warrior_.active(now) || arms_.active(now) || ranger_.active(now) || lancer_.active(now) || turnUndead_.active(now) || healer_.active(now) ||
-      conjurer_.active(now) || daggers_.active(now))
+      conjurer_.active(now) || daggers_.active(now) || mage_.active(now))
     return true;
   if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
   if (std::any_of(fireballs_.begin(), fireballs_.end(), [&](const Fireball& f) { return !f.done(now); })) return true;
@@ -1009,6 +1028,7 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   conjurer_.build(now, camera, vfx_, vfxLights);
   status_.build(now, camera, vfx_, vfxLights);
   daggers_.build(now, camera, vfx_, vfxLights);
+  mage_.build(now, camera, vfx_, vfxLights);
   for (const VfxLight& l : vfxLights)
     if (l.intensity > 0.0f) lights.push_back({l.at, {l.color.r, l.color.g, l.color.b}, l.intensity, l.distance, std::max(l.at.y, 1.0f)});
   const size_t first = out.size();

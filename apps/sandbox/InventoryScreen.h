@@ -83,6 +83,7 @@ class InventoryScreen {
     std::string name, icon, tip;
     int count = 0;
     bool weapon = false;
+    bool unknown = false;  // an unknown item (docs/SKILLS_MAGE.md): a "?" in place of its art, no equip, no use
     std::string rune;  // the Conjurador's rune (world/FieldSpells): its id; the sheet edits its note
     std::vector<std::pair<std::string, std::function<void(Context&)>>> equipChoices;  // run with this frame's Context
     std::function<void(Context&)> use, discard;
@@ -95,6 +96,7 @@ class InventoryScreen {
     return out;
   }
   const UiImage* art(const Context& c, std::string path) const {
+    if (path.empty()) return nullptr;  // an unknown item has no art to show
     if (const size_t q = path.find('?'); q != std::string::npos) path.resize(q);
     if (!path.empty() && path[0] == '/') path.erase(0, 1);
     return uiImage(c.engine2Public / std::filesystem::path(reinterpret_cast<const char8_t*>(path.c_str())));
@@ -314,7 +316,9 @@ class InventoryScreen {
       }
       std::vector<const e2::InnWeapon*> owned;
       for (const e2::InnWeapon& w : c.data.weapons)
-        if (std::find(w.usableBy.begin(), w.usableBy.end(), cls) != w.usableBy.end() && c.save.value("weapons", e2::Json::object()).contains(w.id)) owned.push_back(&w);
+        if (std::find(w.usableBy.begin(), w.usableBy.end(), cls) != w.usableBy.end() && c.save.value("weapons", e2::Json::object()).contains(w.id) &&
+            !c.rules.weaponUnknown(c.save, w.id))  // an unknown weapon is not wielded (Identificar first)
+          owned.push_back(&w);
       std::stable_sort(owned.begin(), owned.end(), [](const auto* a, const auto* b) { return a->power < b->power; });
       if (owned.empty()) ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + inner), ImGui::TextColored(ImColor(kMuted), "Nenhuma arma no saco ainda. Compre uma com o Ferreiro."), ImGui::PopTextWrapPos();
       for (const e2::InnWeapon* w : owned) {
@@ -346,11 +350,11 @@ class InventoryScreen {
       int shown = 0;
       for (const e2::InnGear& it : c.data.equipment) {
         if (!e2::InnRules::fitsSlot(it, slot)) continue;
-        if (loose.value(it.id, 0) <= 0 && wearerOf(it.id).empty()) continue;
+        const int owned = loose.value(it.id, 0) - c.rules.gearUnknown(c.save, it.id);  // the known copies (an unknown piece is not worn)
+        if (owned <= 0 && wearerOf(it.id).empty()) continue;
         if (it.usableBy && std::find(it.usableBy->begin(), it.usableBy->end(), cls) == it.usableBy->end()) continue;
         ++shown;
         const bool equipped = here == it.id;
-        const int owned = loose.value(it.id, 0);
         const std::string wearer = wearerOf(it.id);
         const bool onOtherFinger = otherRing == it.id && owned <= 0;
         std::string detail = it.kind == "shield" ? std::format("Investida de Escudo · {}% dano · 70% atordoa", static_cast<int>(std::floor(it.dmgMul * 100 + 0.5)))
@@ -455,6 +459,11 @@ class InventoryScreen {
       tip(e->tip);
       ImGui::PopID();
       if (hover) cl->AddRect(p, q, kAccent, 6);
+      if (e->unknown) {  // an unknown item: a question mark in place of its art
+        ImFont* mark = uiFont(UiFont::Mark);
+        const ImVec2 ts = mark->CalcTextSizeA(cell * 0.55f, FLT_MAX, 0, "?");
+        cl->AddText(mark, cell * 0.55f, {(p.x + q.x - ts.x) / 2, (p.y + q.y - ts.y) / 2}, IM_COL32(196, 150, 232, 255), "?");
+      }
       if (const UiImage* img = art(c, e->icon)) {
         const float k = std::min(cell * 0.96f / img->width, cell * 0.96f / img->height);
         const float iw = img->width * k, ih = img->height * k;
@@ -535,11 +544,29 @@ class InventoryScreen {
     }
     const e2::Json& equipped = c.save.value("equipped", e2::Json::object());
     const e2::Json weapons = c.save.value("weapons", e2::Json::object());  // a named copy: items() of a temporary dangles
+    // Itens desconhecidos (docs/SKILLS_MAGE.md): only their type shows; thrown away from the sheet, revealed by Identificar on the world map
+    const std::vector<e2::InnRules::UnknownItem> unknowns = c.rules.unknownItems(c.save);
+    auto unknownEntry = [&](const e2::InnRules::UnknownItem& u) {
+      Entry e;
+      e.name = u.label, e.unknown = true, e.weapon = u.kind == "weapon";
+      e.tip = u.label + "\nIdentifique com um Mago Negro (feitiço de campo) para ver o nome e os atributos.\nNão pode ser equipado nem usado; o Ferreiro compra por " +
+              std::to_string(u.sell) + " Gold.";
+      e.discard = [u](Context& c) {
+        c.save = c.rules.discardUnknown(c.save, u);
+        c.write();
+      };
+      return e;
+    };
     for (const auto& [id, enhJ] : weapons.items()) {
       const e2::InnWeapon* w = c.data.weapon(id);
       bool worn = false;
       for (const auto& [h, v] : equipped.items()) worn = worn || v == id;
       if (!w || worn) continue;
+      if (c.rules.weaponUnknown(c.save, id)) {
+        for (const e2::InnRules::UnknownItem& u : unknowns)
+          if (u.kind == "weapon" && u.id == id) out.push_back(unknownEntry(u));
+        continue;
+      }
       const int enh = enhJ.is_number() ? enhJ.get<int>() : 0;
       Entry e;
       e.name = w->name + (enh > 0 ? std::format(" +{}", enh) : ""), e.icon = w->icon, e.weapon = true;
@@ -577,8 +604,13 @@ class InventoryScreen {
                                   }});
       }
       e.discard = [this, iid](Context& c) { apply(c, c.rules.discardEquipment(c.save, iid)); };
-      for (int k = 0; k < count; ++k) out.push_back(e);
+      const int unknown = c.rules.gearUnknown(c.save, id);
+      for (int k = 0; k < count - unknown; ++k) out.push_back(e);
+      for (const e2::InnRules::UnknownItem& u : unknowns)
+        if (u.kind == "gear" && u.id == id) out.push_back(unknownEntry(u));
     }
+    for (const e2::InnRules::UnknownItem& u : unknowns)  // the unknown potions, held apart from the heroes' bags
+      if (u.kind == "potion") out.push_back(unknownEntry(u));
     // The Conjurador's runes (Marcar Runa, docs/SKILLS_CONJURER.md): each one a slot; its sheet shows where it points and holds the note.
     static const std::string runeIcon = std::filesystem::absolute("content/ui/spells/rune.png").string();  // an absolute path: art() keeps it
     for (const e2::FieldSpells::Rune& r : e2::FieldSpells::runes(c.save)) {
@@ -619,6 +651,11 @@ class InventoryScreen {
     ImFont* ui = uiFont(UiFont::Ui);
     const ImVec2 head = ImGui::GetCursorScreenPos();
     if (const UiImage* img = art(c, sheet_->icon)) dl->AddImage(img->texture, head, {head.x + 44, head.y + 44});
+    if (sheet_->unknown) {
+      ImFont* mark = uiFont(UiFont::Mark);
+      const ImVec2 ts = mark->CalcTextSizeA(30.0f, FLT_MAX, 0, "?");
+      dl->AddText(mark, 30.0f, {head.x + (44 - ts.x) / 2, head.y + (44 - ts.y) / 2}, IM_COL32(196, 150, 232, 255), "?");
+    }
     dl->PushClipRect(head, {head.x + inner - 34, head.y + 46}, true);
     dl->AddText(ui, 14.0f, {head.x + 54, head.y}, kFg, sheet_->name.c_str());
     std::string firstLines = sheet_->tip;

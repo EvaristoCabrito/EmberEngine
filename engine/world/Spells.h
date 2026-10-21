@@ -107,6 +107,7 @@ struct BattleStep {
   int reflectTurns = 0, reflectPct = 0, reflectHealPct = 0;  // Reflexo Arcano on the caster (Type::Effect)
   // The Mago Negro's (docs/SKILLS_MAGE.md)
   int daggers = 0;                     // Nuvem de Adagas on the caster (Type::Effect): the daggers circling it
+  int globeRadius = 0, globeRounds = 0, globeTier = 0;  // Globo de Invulnerabilidade round the caster (Type::Effect): its bubble (`tiles`)
 };
 
 // What a step did, for the window: a number over a unit, a miss, a heal, a death.
@@ -170,6 +171,9 @@ std::vector<BattleStep> vigilInterrupts(const Battle& b, size_t attacker, const 
 std::vector<BattleStep> daggerInterrupts(const Battle& b, size_t attacker, const std::vector<size_t>& meleeTargets, bool arrived);
 // The daggers' own strike: a spell step the cloud throws (never learned).
 bool daggerStrikeKind(const std::string& kind);
+// Globo de Invulnerabilidade: `kind` cast by `caster` from where it stands would fail on `target` (inside a globe the caster is not in, the
+// spell's tier within the globe's; blows, arrows and weapon skills never).
+bool globeBlocks(const Battle& b, size_t caster, const std::string& kind, size_t target);
 
 // The combat log's language for the lines made from now on (the window's Idioma choice).
 void setCombatLogEnglish(bool english);

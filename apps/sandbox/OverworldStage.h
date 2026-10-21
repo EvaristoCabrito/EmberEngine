@@ -114,6 +114,7 @@ class OverworldStage : public Stage {
     if (what == "fieldspells") fieldSpells_ = true;
     if (what.starts_with("warp:")) warpHero_ = what.substr(5);
     if (what.starts_with("recall:")) recallHero_ = what.substr(7);  // Retornar's runes (the Conjurador's)
+    if (what.starts_with("identify:")) identifyHero_ = what.substr(9);  // Identificar's unknown items (the Mago Negro's)
     if (what == "quests") questLog_ = true;
     if (what == "options") options_ = true;
     if (what == "move") movementOpen_ = true;
@@ -171,6 +172,7 @@ class OverworldStage : public Stage {
       if (convDialog_) convDialog_.reset();
       else if (!warpHero_.empty()) warpHero_.clear();
       else if (!recallHero_.empty()) recallHero_.clear();
+      else if (!identifyHero_.empty()) identifyHero_.clear();
       else if (fieldSpells_) fieldSpells_ = false;
       else if (briefing_) briefing_.reset();
       else if (slots_) slots_.reset();
@@ -459,6 +461,7 @@ class OverworldStage : public Stage {
     if (fieldSpells_) drawFieldSpells(size);
     if (!warpHero_.empty()) drawWarpMenu(size);
     if (!recallHero_.empty()) drawRecallMenu(size);
+    if (!identifyHero_.empty()) drawIdentifyMenu(size);
     drawWarpVisual(size);
     if (convDialog_) {  // a companion conversation, over everything: its replies change the affinity once
       const bool closed = convDialog_->draw(size, [this](const e2::Json& reply) {
@@ -1506,6 +1509,17 @@ class OverworldStage : public Stage {
                 std::format("{} ({} {}) · {} {} · {}x", hero, en ? "Lv" : "Nv", level, count, count == 1 ? tr("runa", "rune") : tr("runas", "runes"), left),
                 tr("Runas", "Runes"), "recall", spells.canRecall(save_, hero), [&, hero] { recallHero_ = hero, fieldSpells_ = false; });
     }
+    // The Mago Negro's Identificar (ours, docs/SKILLS_MAGE.md): a tier-1 use reveals one unknown item of the party's bags
+    {
+      const size_t unknownCount = spells.unknownItems(save_).size();
+      for (const std::string& hero : spells.identifiers(save_, test())) {
+        const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kIdentifyTier);
+        healerRow(hero, "identify.jpg", tr("Identificar", "Identify"),
+                  std::format("{} ({} {}) · {} {} · {}x", hero, en ? "Lv" : "Nv", level, unknownCount,
+                              unknownCount == 1 ? tr("item desconhecido", "unknown item") : tr("itens desconhecidos", "unknown items"), left),
+                  tr("Itens", "Items"), "identify", spells.canIdentify(save_, hero), [&, hero] { identifyHero_ = hero, fieldSpells_ = false; });
+      }
+    }
     for (const std::string& hero : mages) {
       const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kWarpTier);
       const ImVec2 a = ImGui::GetCursorScreenPos();
@@ -1524,7 +1538,8 @@ class OverworldStage : public Stage {
       ImGui::Dummy({inner, 4});
     }
     if (!mages.empty() && cities.empty()) text(tr("Nenhum outro local visitado.", "No other visited locations."), 12.0f, kMuted);
-    if (healers.empty() && mages.empty() && hunters.empty() && campers.empty() && prayers.empty() && markers.empty() && recallers.empty())
+    if (healers.empty() && mages.empty() && hunters.empty() && campers.empty() && prayers.empty() && markers.empty() && recallers.empty() &&
+        spells.identifiers(save_, test()).empty())
       text(tr("Nenhum feitiço de campo disponível.", "No field spells available."), 14.0f, kMuted);
     endPanel();
   }
@@ -1582,6 +1597,62 @@ class OverworldStage : public Stage {
     ImGui::Dummy({1, 6});
     const ImVec2 b = ImGui::GetCursorScreenPos();
     if (emberBigButton("##recallcancel", upperUtf8(tr("Cancelar", "Cancel")).c_str(), {b.x + inner - 100, b.y}, {100, 32}, false, 11.0f)) recallHero_.clear();
+    ImGui::SetCursorScreenPos({b.x, b.y + 40});
+    ImGui::Dummy({inner, 1});
+    endPanel();
+  }
+
+  // Identificar's unknown items: a list over the map (what the player sees of each); a click reveals it for good and spends the use.
+  void drawIdentifyMenu(ImVec2 size) {
+    const std::string hero = identifyHero_;
+    const e2::FieldSpells spells(innData_, world_);
+    const std::vector<e2::InnRules::UnknownItem> items = spells.unknownItems(save_);
+    const bool en = uiEnglish();
+    if (veil(size, "##identifyveil")) {
+      identifyHero_.clear();
+      return;
+    }
+    beginPanel("##identify", size, 420, size.y * 0.8f);
+    const ImVec2 head = ImGui::GetCursorScreenPos();
+    kicker(tr("Identificar", "Identify"), 14.0f);
+    ImGui::SetCursorScreenPos({head.x + 380 - 36, head.y - 6});
+    if (closeButton("##identifyclose")) identifyHero_.clear();
+    ImGui::SetCursorScreenPos({head.x, head.y + 34});
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    ImFont* ui = uiFont(UiFont::Ui);
+    const float inner = 380;
+    text(std::format("{} · {} · {}x", hero, tr("escolha o item", "choose the item"), spells.usesLeft(save_, hero, e2::FieldSpells::kIdentifyTier)), 12.0f, kMuted);
+    ImGui::Dummy({1, 4});
+    for (size_t i = 0; i < items.size(); ++i) {
+      const e2::InnRules::UnknownItem& u = items[i];
+      const ImVec2 a = ImGui::GetCursorScreenPos();
+      ImGui::PushID(static_cast<int>(i));
+      const bool clicked = ImGui::InvisibleButton("##unknown", {inner, 46});
+      const bool hovered = ImGui::IsItemHovered();
+      ImGui::PopID();
+      emberSlot(dl, a, {a.x + inner, a.y + 46}, hovered);
+      ImFont* mark = uiFont(UiFont::Mark);
+      dl->AddText(mark, 26.0f, {a.x + 14, a.y + 8}, IM_COL32(196, 150, 232, 255), "?");
+      dl->AddText(ui, 14.0f, {a.x + 48, a.y + 7}, kFg, (en ? u.labelEn : u.label).c_str(), nullptr, inner - 56);
+      dl->AddText(ui, 11.0f, {a.x + 48, a.y + 27}, kMuted,
+                  (u.kind == "weapon" ? tr("arma", "weapon") : u.kind == "gear" ? tr("equipamento", "gear") : tr("poção", "potion")).c_str(), nullptr, inner - 56);
+      ImGui::SetCursorScreenPos({a.x, a.y + 52});
+      if (clicked) {
+        if (const std::optional<e2::Json> next = spells.castIdentify(save_, hero, u)) {
+          save_ = *next;
+          write();
+          showHint(en ? std::format("{} identified: {}.", hero, u.realName) : std::format("{} identificou: {}.", hero, u.realName));
+        } else {
+          showHint(tr("Não foi possível identificar.", "Could not identify."));
+        }
+        identifyHero_.clear();
+        break;
+      }
+    }
+    if (items.empty()) text(tr("Nenhum item desconhecido.", "No unknown item."), 12.0f, kMuted);
+    ImGui::Dummy({1, 6});
+    const ImVec2 b = ImGui::GetCursorScreenPos();
+    if (emberBigButton("##identifycancel", upperUtf8(tr("Cancelar", "Cancel")).c_str(), {b.x + inner - 100, b.y}, {100, 32}, false, 11.0f)) identifyHero_.clear();
     ImGui::SetCursorScreenPos({b.x, b.y + 40});
     ImGui::Dummy({inner, 1});
     endPanel();
@@ -2058,6 +2129,7 @@ class OverworldStage : public Stage {
   bool fieldSpells_ = false;     // the field-spells menu is open
   std::string warpHero_;         // the mage choosing Warp's destination (the wheel is open)
   std::string recallHero_;       // the conjurer choosing Retornar's rune (the list is open)
+  std::string identifyHero_;     // the mage choosing Identificar's item (the list is open)
   bool warpRune_ = false;        // the crossing's picture is the rune's (Retornar), not Warp's gate
   float warpAt_ = -100, warpDuration_ = 0;  // the gate's picture over the map
   std::string convCompanion_, convLeader_;

@@ -570,6 +570,7 @@ class MapStage final : public Stage {
       syncVigils();
       syncMirrors();
       syncDaggers();
+      syncGlobes();
       syncWards();
       syncStatus();
       // Numbers held back for an effect still in the air (a Meteoro's fall).
@@ -1777,6 +1778,15 @@ class MapStage final : public Stage {
     static const std::vector<std::string> none;
     return battle_ ? battle_->lootEquipment() : none;
   }
+  // Itens desconhecidos (docs/SKILLS_MAGE.md): the drops that came unknown, and the unknown potions with their holders.
+  const std::set<std::string>& lootUnknown() const {
+    static const std::set<std::string> none;
+    return battle_ ? battle_->lootUnknown() : none;
+  }
+  const std::vector<std::pair<std::string, std::string>>& lootUnknownPotions() const {
+    static const std::vector<std::pair<std::string, std::string>> none;
+    return battle_ ? battle_->lootUnknownPotions() : none;
+  }
   bool wantsRetry() const { return retryRequested_; }
   const MapStageOptions& options() const { return options_; }
 
@@ -2673,6 +2683,11 @@ class MapStage final : public Stage {
       const ImVec2 at = ImGui::GetCursorScreenPos();
       const float row = 40.0f;
       if (img) ImGui::GetWindowDrawList()->AddImage(img->texture, {at.x, at.y}, {at.x + row, at.y + row});
+      else if (item.id == "unknown") {  // an unknown item (docs/SKILLS_MAGE.md): a question mark, its art hidden until Identificar
+        ImFont* mark = uiFont(UiFont::Mark);
+        const ImVec2 ts = mark->CalcTextSizeA(28.0f, FLT_MAX, 0, "?");
+        ImGui::GetWindowDrawList()->AddText(mark, 28.0f, {at.x + (row - ts.x) / 2, at.y + (row - ts.y) / 2}, IM_COL32(196, 150, 232, 255), "?");
+      }
       ImGui::SetCursorScreenPos({at.x + row + 10.0f, at.y + (row - ImGui::GetTextLineHeight()) * 0.5f});
       ImGui::TextUnformatted(item.name.c_str());
       ImGui::SetCursorScreenPos({at.x, at.y + row + 4.0f});
@@ -5007,7 +5022,8 @@ class MapStage final : public Stage {
           spots.push_back(spot);
         }
       } else if (s.kind == "circleOfHealing" || s.kind == "judgment" || s.kind == "boneLance" || s.kind == "detonateSummon" || s.kind == "nightmare" ||
-                 s.kind == "shoulderSmash" || s.kind == "stampede" || s.kind == "divineWrath" || s.kind == "spectralBolt" || s.kind == "piercingThrust") {
+                 s.kind == "shoulderSmash" || s.kind == "stampede" || s.kind == "divineWrath" || s.kind == "spectralBolt" || s.kind == "piercingThrust" ||
+                 s.kind == "dispelMagic") {
         // the Curandeiro's and the Conjurador's areas: the hexes; only the units it reaches (`ids`, and the summon that blows up) keep their card height
         for (const e2::BattleHex& h : s.tiles) {
           SpellEffects::Spot spot = hexSpot(h);
@@ -5260,6 +5276,29 @@ class MapStage final : public Stage {
       }
     }
   }
+  // The Globos de Invulnerabilidade the rules keep (MageFx): each bubble rises when the rules lay it and fades when they drop it.
+  void syncGlobes() {
+    if (!battle_) return;
+    for (const e2::Battle::Globe& g : battle_->globes())
+      if (!globeFx_.contains(g.id) && battle_->inBounds(g.centre.x, g.centre.y)) {
+        const SpellEffects::Spot centre = hexSpot(g.centre);
+        float radius = 0.0f;
+        for (const e2::BattleHex& h : g.cells) {
+          const SpellEffects::Spot s = hexSpot(h);
+          radius = std::max(radius, glm::length(glm::vec2(s.feet.x - centre.feet.x, s.feet.z - centre.feet.z)));
+        }
+        globeFx_[g.id] = spellFx_.mage().globeStart(centre.feet, radius + 1.0f, now_);
+      }
+    for (auto it = globeFx_.begin(); it != globeFx_.end();) {
+      const int id = it->first;
+      if (std::any_of(battle_->globes().begin(), battle_->globes().end(), [&](const e2::Battle::Globe& g) { return g.id == id; })) {
+        ++it;
+      } else {
+        spellFx_.mage().globeEnd(it->second, now_);
+        it = globeFx_.erase(it);
+      }
+    }
+  }
   // The sentinels' thrusts before `attacker`'s blow on `targets` (e2::vigilInterrupts) and the daggers of a Nuvem de Adagas beside it
   // (e2::daggerInterrupts: `melee` = whom its blow or weapon skill strikes, `arrived` = it walked here), played as one exchange of
   // their own.
@@ -5419,7 +5458,7 @@ class MapStage final : public Stage {
                                    "spearToss",      "hookPull",      "poleVault",      "disarm",         "swapPost",      "impaleDrag",  "sentinelVigil",
                                    "circleOfHealing", "resurrection", "judgment",
                                    "placeSwap",      "boneLance",     "mirrorImage",    "detonateSummon", "sacrificeBond", "nightmare",   "empowerSummons",
-                                   "cloudOfDaggers", "daggerStrike"};
+                                   "cloudOfDaggers", "daggerStrike", "dispelMagic", "globeOfInvulnerability"};
     // KIND or KIND:VERSION (the version number of the Magias menu; default the menu's choice, at least 01).
     std::string kind = options_.fxTest;
     int look = 0;
@@ -5535,6 +5574,22 @@ class MapStage final : public Stage {
       unitShot_[static_cast<size_t>(gi)] = {};
       return logInfo("battle script: kill {}: fallen at ({}, {})", p[1], v.x, v.y);
     }
+    if (p[0] == "afflict" && p.size() > 2) {
+      // "afflict:<unit>:bless|rally|vigil|sleep|fear|silence|mark|decay": a condition set on the unit, to test Dissipar Magia
+      const int gi = sceneUnitNamed(p[1]);
+      if (gi < 0) return fail("no such unit");
+      e2::BattleUnit& v = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(gi)])];
+      if (p[2] == "bless") v.blessedHitBonusPct = 0.1, v.blessedRoundsLeft = 3;
+      else if (p[2] == "rally") v.cond.rallyPct = 20, v.cond.rallyTurns = 2;
+      else if (p[2] == "vigil") v.cond.vigilPct = 100, v.cond.vigilRadius = 1;
+      else if (p[2] == "sleep") v.asleep = true, v.sleepTurns = 2;
+      else if (p[2] == "fear") v.fearTurns = 2;
+      else if (p[2] == "silence") v.cond.silenceTurns = 2;
+      else if (p[2] == "mark") v.cond.markPct = 20, v.cond.markTurns = 3;
+      else if (p[2] == "decay") v.cond.decayTurns = 3, v.cond.decayPct = 10, v.cond.decayCap = 30, v.cond.decayStep = 10, v.cond.decayDice = 1, v.cond.decayFaces = 6, v.cond.decayMul = 0.5, v.cond.decayMag = 30;
+      else return fail("unknown affliction");
+      return logInfo("battle script: afflict {} {}: {}", p[1], p[2], e2::conditionsText(v));
+    }
     if (p[0] == "sick" && p.size() > 2) {  // "sick:<unit>:poison|disease": the unit poisoned (Veneno Menor) or diseased, to see the effect
       const int gi = sceneUnitNamed(p[1]);
       if (gi < 0) return fail("no such unit");
@@ -5577,7 +5632,11 @@ class MapStage final : public Stage {
       select(gi);
       if (p.size() > 3 && p[3] == "hold") return logInfo("battle script: {} beside lock {} with a Gazua, not opened", p[1], li);  // the Arrombar button on screen
       openLock();
-      return logInfo("battle script: lockpick {} on lock {} ({} at {}, {}): open {}, Ember found {}", p[1], li, lock.kind, lock.x, lock.y, battle_->locks()[li].open, battle_->lootEmber());
+      std::string unknown;
+      for (const std::string& id : battle_->lootUnknown()) unknown += " " + id;
+      for (const auto& [kind, holder] : battle_->lootUnknownPotions()) unknown += " potion:" + kind + "@" + holder;
+      return logInfo("battle script: lockpick {} on lock {} ({} at {}, {}): open {}, Ember found {}, weapons {}, gear {}, unknown [{}]", p[1], li, lock.kind, lock.x, lock.y,
+                     battle_->locks()[li].open, battle_->lootEmber(), battle_->lootWeapons().size(), battle_->lootEquipment().size(), unknown);
     }
     if (p[0] == "finish") {
       // the finish prompt's yes (drawFinishPrompt), then what the result screen says: its line, its way on, each hero's HP after it
@@ -5977,9 +6036,10 @@ class MapStage final : public Stage {
     if ((p[0] == "cast" && p.size() > 3) || (p[0] == "potion" && p.size() > 3)) {
       ti = sceneUnitNamed(p[3], p[2] != "resurrection");  // a Ressurreição is cast on a fallen one
       if (ti < 0) return fail("no such target");
-      // the Gancho takes a foe 2+ hexes away: one stood that far by a "far" step before is left where it is
-      const bool keep = p[2] == "hookPull" && e2::Battle::distance({caster.x, caster.y}, {battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(ti)])].x,
-                                                                                            battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(ti)])].y}) >= 2;
+      // the Gancho takes a foe 2+ hexes away: one stood that far by a "far" step before is left where it is; a target inside a Globo
+      // de Invulnerabilidade stays in it (the test of what the bubble stops)
+      const e2::BattleUnit& tu = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(ti)])];
+      const bool keep = (p[2] == "hookPull" && e2::Battle::distance({caster.x, caster.y}, {tu.x, tu.y}) >= 2) || battle_->shielded(tu);
       if (ti != ci && !keep && !placeBeside(static_cast<size_t>(ti), static_cast<size_t>(ci))) return fail("no free hex beside the caster");
     }
     const size_t tb = static_cast<size_t>(unitBattle_[static_cast<size_t>(ti)]);
@@ -6040,6 +6100,7 @@ class MapStage final : public Stage {
     scriptCheck_ = [this, kind, cb, tb, before, casterBefore, usesBefore, rationsBefore, fedBefore]() -> std::string {
       const e2::BattleUnit& t = battle_->units()[tb];
       const e2::BattleUnit& c = battle_->units()[cb];
+      logInfo("battle script: {}: {} at ({}, {}) -> {} at ({}, {}), hp {} -> {}; globes {}", kind, c.name, c.x, c.y, t.name, t.x, t.y, before.hp, t.hp, battle_->globes().size());
       if (!c.acted) return "the action did not spend the turn";
       if (const std::optional<std::string> potion = potionOf(kind)) {
         const int slot = e2::potionIndex(*potion);
@@ -6113,6 +6174,23 @@ class MapStage final : public Stage {
       if (kind == "cloudOfDaggers") {
         logInfo("battle script: cloudOfDaggers: {} has {} daggers", c.name, c.cond.daggers);
         return c.cond.daggers > 0 ? "" : "no daggers on the caster";
+      }
+      if (kind == "dispelMagic") {  // the target's magic gone (the test afflicts it first), the foes' zones in the area erased
+        logInfo("battle script: dispelMagic: {} before [{}] after [{}]; zones web {} ice {} aura {} ours {}", t.name, e2::conditionsText(before), e2::conditionsText(t),
+                battle_->webZones().size(), battle_->iceZones().size(), battle_->auraZones().size(), battle_->zones().size());
+        const bool hadMagic = before.blessedRoundsLeft > 0 || before.cond.rallyPct > 0 || before.cond.vigilPct > 0 || before.asleep || before.fearTurns > 0 ||
+                              before.cond.silenceTurns > 0 || before.cond.markTurns > 0 || before.cond.decayTurns > 0;
+        const bool hasMagic = t.blessedRoundsLeft > 0 || t.cond.rallyPct > 0 || t.cond.vigilPct > 0 || t.asleep || t.fearTurns > 0 || t.cond.silenceTurns > 0 ||
+                              t.cond.markTurns > 0 || t.cond.decayTurns > 0;
+        return hadMagic && hasMagic ? "the target's magic was not dispelled" : "";
+      }
+      if (kind == "globeOfInvulnerability") {
+        logInfo("battle script: globeOfInvulnerability: {} globes on the board", battle_->globes().size());
+        return battle_->globes().empty() ? "no globe laid" : "";
+      }
+      if (e2::globeBlocks(*battle_, cb, kind, tb)) {  // the target stands in a Globo the caster is outside of: nothing lands
+        logInfo("battle script: {}: the Globo should block it: {} hp {} -> {}", kind, t.name, before.hp, t.hp);
+        return t.hp == before.hp ? "" : "the globe did not block the spell";
       }
       // The Conjurador's
       if (kind == "placeSwap") {
@@ -6414,6 +6492,13 @@ class MapStage final : public Stage {
           if (e.status && (e.text.starts_with("Desarmado") || e.text.starts_with("Disarmed")))
             if (const int fu = sceneUnitOf(static_cast<int>(e.unit)), su = sceneUnitOf(static_cast<int>(s.att)); fu >= 0 && su >= 0)
               spellFx_.disarmed(unitSpot(static_cast<size_t>(fu)), unitSpot(static_cast<size_t>(su)), now_);
+      // Globo de Invulnerabilidade: a spell it stopped ("Bloqueado") flashes on the bubble over the one it was aimed at
+      for (const e2::BattleEffect& e : fx)
+        if (e.miss && (e.text == "Bloqueado" || e.text == "Blocked"))
+          if (const int bu = sceneUnitOf(static_cast<int>(e.unit)); bu >= 0) {
+            const SpellEffects::Spot at = unitSpot(static_cast<size_t>(bu));
+            spellFx_.mage().globeRipple(at.feet + glm::vec3(0.0f, std::max(at.cardHeight, 1.2f) * 0.6f, 0.0f), now_);
+          }
       // Nuvem de Adagas: an arrow at its caster was knocked down ("Interceptado"): a dagger of the cloud darts out to meet it
       for (const e2::BattleEffect& e : fx)
         if (e.miss && (e.text == "Interceptado" || e.text == "Intercepted"))
@@ -6977,7 +7062,7 @@ class MapStage final : public Stage {
           {"steelWhirlwind", "steel"}, {"guardBreak", "steel"}, {"warCry", "steel"}, {"leapingStrike", "steel"},
           {"venomArrow", "wood"}, {"arrowRain", "wood"}, {"explosiveArrow", "wood"}, {"cripplingShot", "wood"}, {"arrowStorm", "wood"}, {"deathShot", "wood"},
           {"spearToss", "steel"}, {"hookPull", "steel"}, {"poleVault", "steel"}, {"disarm", "steel"}, {"swapPost", "steel"}, {"impaleDrag", "steel"},
-          {"sentinelVigil", "ember"}, {"cloudOfDaggers", "arcane"}};
+          {"sentinelVigil", "ember"}, {"cloudOfDaggers", "arcane"}, {"dispelMagic", "arcane"}, {"globeOfInvulnerability", "arcane"}};
       if (const auto it = kElementOf.find(kind); it != kElementOf.end())
         for (const auto& [el, c] : kElementColors)
           if (std::string(el) == it->second) back = c;
@@ -9281,6 +9366,7 @@ class MapStage final : public Stage {
   std::map<int, int> vigilFx_;  // battle unit in its Vigília da Sentinela -> its standing effect (LancerFx::vigilStart)
   std::map<int, int> mirrorFx_;  // battle unit with Imagem Espelhada's illusions -> their standing effect (ConjurerFx::mirrorStart)
   std::map<int, std::pair<int, int>> daggerFx_;  // battle unit with a Nuvem de Adagas -> its cloud (DaggerFx::start) and the count last given to it
+  std::map<int, int> globeFx_;  // the rules' Globo id -> its standing bubble (MageFx::globeStart)
   std::map<int, int> statusFx_;  // battle unit x 2 (+1 = disease) -> its poison / disease effect (StatusFx::start)
   std::unordered_set<int> awake_;         // enemies that have seen the party (fog)
   int roamLeader_ = -1;                   // free roam: the scene unit the party follows

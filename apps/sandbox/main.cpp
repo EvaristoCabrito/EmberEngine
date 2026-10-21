@@ -1131,12 +1131,18 @@ int runWindow(const Options& o) {
     if (won) {
       // The chests opened in the fight (GameApp victory fold): their Ember, and the weapons / gear when the party's bags have room
       if (map.lootEmber() > 0) save["ember"] = save.value("ember", 0) + map.lootEmber();
+      // Itens desconhecidos (ours, docs/SKILLS_MAGE.md): what came unknown is marked so in the save (unknownWeapons / unknownEquipment /
+      // unknownPotions) until Identificar reveals it
       for (const std::string& id : map.lootWeapons()) {
         if (save["weapons"].is_object() && save["weapons"].contains(id)) continue;
         e2::Json probe = save;
         probe["weapons"][id] = 0;
         if (!world.bagHasRoom(probe, 1)) continue;
         save["weapons"][id] = 0;
+        if (map.lootUnknown().contains(id)) {
+          if (!save["unknownWeapons"].is_array()) save["unknownWeapons"] = e2::Json::array();
+          save["unknownWeapons"].push_back(id);
+        }
       }
       for (const std::string& id : map.lootEquipment()) {
         const e2::Json& stash = save["looseEquipment"];
@@ -1145,6 +1151,15 @@ int runWindow(const Options& o) {
         probe["looseEquipment"][id] = have + 1;
         if (!world.bagHasRoom(probe, 1)) continue;
         save["looseEquipment"][id] = have + 1;
+        if (map.lootUnknown().contains(id)) {
+          if (!save["unknownEquipment"].is_object()) save["unknownEquipment"] = e2::Json::object();
+          save["unknownEquipment"][id] = save["unknownEquipment"].value(id, 0) + 1;
+        }
+      }
+      for (const auto& [kind, holder] : map.lootUnknownPotions()) {
+        if (!save["unknownPotions"].is_object()) save["unknownPotions"] = e2::Json::object();
+        if (!save["unknownPotions"][holder].is_object()) save["unknownPotions"][holder] = e2::Json::object();
+        save["unknownPotions"][holder][kind] = save["unknownPotions"][holder].value(kind, 0) + 1;
       }
       // wispCrossing.ts completedAfterWispVictory: the crossing counts only once its lair's plant falls (then both do)
       e2::Json& done = save["completed"];

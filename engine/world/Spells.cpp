@@ -151,6 +151,8 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"empowerSummons", "Fortalecer Invocações", 4, "", false}, "conjurer", 15},
     // Mago Negro (docs/SKILLS_MAGE.md, 2026-10-21; Voss, class `mage` / `voss`): the Bruxo and the Elementalista keep them
     {{"cloudOfDaggers", "Nuvem de Adagas", 4, "arcane", false}, "mage", 8},
+    {{"dispelMagic", "Dissipar Magia", 3, "arcane", false}, "mage", 6},
+    {{"globeOfInvulnerability", "Globo de Invulnerabilidade", 5, "arcane", false}, "mage", 11},
     // ... and the cloud's own dagger (never learned: the cloud throws it at whoever comes at its caster)
     {{"daggerStrike", "Adaga", 4, "arcane", false}, "", 99},
 };
@@ -784,6 +786,10 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
   else if (kind == "cloudOfDaggers" || kind == "daggerStrike") {
     n.count = 3 + g.n('c');
     n.mul = 0.8, n.dice = 1, n.faces = 6;
+  } else if (kind == "dispelMagic") {  // the user's own levels: radius 1, 2 from level 10
+    n.range = 6, n.radius = lv >= 10 ? 2 : 1;
+  } else if (kind == "globeOfInvulnerability") {  // the user's own levels: radius 1 / 2 rounds / tiers 1-3, all one step up from 14
+    n.radius = lv >= 14 ? 2 : 1, n.rounds = lv >= 14 ? 3 : 2, n.pct = lv >= 14 ? 4 : 3;
   }
   // Elementalista
   else if (kind == "pillarOfFlame") {
@@ -1547,6 +1553,7 @@ void tickConditions(Battle& b, size_t id, Mulberry32& rng, std::vector<BattleEff
 // A zone's hazard or tick on whoever starts a turn inside it.
 void zoneEffects(Battle& b, size_t id, Mulberry32& rng, std::vector<BattleEffect>& out) {
   BattleUnit& u = b.units()[id];
+  if (b.shielded(u)) return;  // a Globo de Invulnerabilidade: zones do nothing inside
   const std::vector<BattleHex> body = Battle::footprint(u, u.x, u.y);
   for (const Battle::Zone& z : std::vector<Battle::Zone>(b.zones())) {  // a copy: a death may change the list
     if (!u.alive) return;
@@ -1974,6 +1981,26 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     s.ids = {caster}, s.tiles = {from};
     s.dice = 0, s.spellMul = 1;
     s.daggers = n.count;
+    steps.push_back(s);
+  } else if (kind == "dispelMagic") {
+    // Over an area: the foes in it lose their spells' blessings, the allies their spells' afflictions, the foes' zones touching it are
+    // erased. No damage, no line of fire.
+    if (hexDist(from, cell) > n.range) return fail(std::format("Fora de alcance (máximo {} hexes).", n.range));
+    spend();
+    s.type = BattleStep::Type::Effect;
+    s.tiles = hexesWithin(b, cell, n.radius);
+    s.ids = unitsOn(b, caster, s.tiles, true);
+    if (std::any_of(s.tiles.begin(), s.tiles.end(), [&](const BattleHex& h) { return h == from; })) s.ids.push_back(caster);  // himself too
+    s.dice = 0, s.spellMul = 1;
+    steps.push_back(s);
+  } else if (kind == "globeOfInvulnerability") {
+    // The bubble round the caster, fixed where it was cast (the stage shows the area first: spellSelfArea).
+    if (!(cell == from)) return fail("Esta magia não precisa de alvo.");
+    spend();
+    s.type = BattleStep::Type::Effect;
+    s.tiles = hexesWithin(b, from, n.radius);
+    s.dice = 0, s.spellMul = 1;
+    s.globeRadius = n.radius, s.globeRounds = n.rounds, s.globeTier = n.pct;
     steps.push_back(s);
   } else if (kind == "sacrificeBond") {
     // On the caster, for the rest of the fight: what hits it goes to its nearest summon.
@@ -2874,6 +2901,13 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind) {
                            "lançar de novo repõe o total",
                            n.count, dmg(n.mul, n.dice, n.faces));
   if (kind == "daggerStrike") return s + std::format("\numa adaga da Nuvem voa em quem vem contra você · {}", dmg(n.mul, n.dice, n.faces));
+  if (kind == "dispelMagic")
+    return s + std::format("\nraio {} · sem dano · nos inimigos, tira Bênção, Grito de Guerra, Vigília e auras · apaga as zonas dos inimigos na área · "
+                           "nos aliados, tira sono, medo, silêncio, marcas e maldições (veneno e sangramento ficam)", n.radius);
+  if (kind == "globeOfInvulnerability")
+    return s + std::format("\nbolha de raio {} em volta de si, parada onde foi lançada, por {} rodadas · magias de tier 1 a {} lançadas de fora não entram "
+                           "(dos dois lados, curas também) · zonas não fazem efeito dentro · golpes, flechas e lanças passam · quem está dentro lança para fora",
+                           n.radius, n.rounds, n.pct);
   // The Curandeiro's (the cures' formula; the healing skill adds +1 % a point)
   if (kind == "circleOfHealing") return s + std::format("\n{} · cada aliado na área cura {} HP", areaLabel(n.radius), dmg(n.mul, n.dice, n.faces));
   if (kind == "resurrection") return s + std::format("\num aliado caído ao lado volta com {} HP · age no seu próximo turno", dmg(n.mul, n.dice, n.faces));
@@ -2938,7 +2972,7 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"circleOfHealing", "Circle of Healing"}, {"resurrection", "Resurrection"}, {"judgment", "Judgment"},
     {"placeSwap", "Place Swap"}, {"boneLance", "Bone Lances"}, {"arcaneReflection", "Arcane Reflection"}, {"mirrorImage", "Mirror Image"}, {"detonateSummon", "Detonate Summon"},
     {"sacrificeBond", "Sacrifice Bond"}, {"nightmare", "Nightmare"}, {"empowerSummons", "Empower Summons"},
-    {"cloudOfDaggers", "Cloud of Daggers"}, {"daggerStrike", "Dagger"},
+    {"cloudOfDaggers", "Cloud of Daggers"}, {"daggerStrike", "Dagger"}, {"dispelMagic", "Dispel Magic"}, {"globeOfInvulnerability", "Globe of Invulnerability"},
 };
 }  // namespace
 
@@ -2965,7 +2999,8 @@ bool spellInstant(const std::string& kind) {
 // moment the socket was pressed, the area never shown): the user, 2026-10-19: "how the fuck im going to cast something without knowing the
 // area of effect".
 bool spellSelfArea(const std::string& kind) {
-  return kind == "sweep" || kind == "turnUndead" || kind == "steelWhirlwind" || kind == "warCry" || kind == "sentinelVigil" || kind == "eruption";
+  return kind == "sweep" || kind == "turnUndead" || kind == "steelWhirlwind" || kind == "warCry" || kind == "sentinelVigil" || kind == "eruption" ||
+         kind == "globeOfInvulnerability";
 }
 bool spellAimsDirection(const std::string& kind) {
   return kind == "piercing" || kind == "piercingThrust" || kind == "frost" || kind == "iceLance" || kind == "glacialGale" ||
@@ -3145,6 +3180,8 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   // The Conjurador's: an ally / a summon in reach; the bone lance is a ray
   else if (kind == "placeSwap" || kind == "mirrorImage" || kind == "detonateSummon") maxRange = emberNumbers(kind, u.level).range;
   else if (kind == "boneLance") maxRange = -1;
+  else if (kind == "dispelMagic") maxRange = emberNumbers(kind, u.level).range;  // the Mago Negro's: any hex in reach, no line of fire
+  else if (kind == "globeOfInvulnerability") maxRange = 0;
   else if (kind == "guardBreak") minRange = u.minRange, maxRange = u.maxRange, shot = u.maxRange > 1, arrow = true;  // the weapon's reach
   else if (kind == "steelWhirlwind") maxRange = 1;
   else if (kind == "leapingStrike") maxRange = -1;  // wherever a landing exists
@@ -3336,8 +3373,15 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
       }
       return true;
     }
-    if (kind == "sacrificeBond" || kind == "empowerSummons" || kind == "arcaneReflection" || kind == "cloudOfDaggers")
+    if (kind == "sacrificeBond" || kind == "empowerSummons" || kind == "arcaneReflection" || kind == "cloudOfDaggers" || kind == "globeOfInvulnerability")
       return cell == from ? true : fail("Esta magia não precisa de alvo.");
+    if (kind == "dispelMagic") {
+      if (d > n.range) {
+        if (error) *error = std::format("Fora de alcance (máximo {} hexes).", n.range);
+        return false;
+      }
+      return true;
+    }
     // The Curandeiro's
     if (kind == "resurrection") {
       if (d > 1) return fail("O aliado caído precisa estar ao lado.");
@@ -3417,6 +3461,9 @@ std::vector<BattleHex> spellArea(const Battle& b, size_t caster, const std::stri
       return p ? p->tiles : std::vector<BattleHex>{cell};
     }
     if (kind == "sentinelVigil") return hexesWithin(b, {u.x, u.y}, n.radius);
+    // The Mago Negro's
+    if (kind == "dispelMagic") return hexesWithin(b, cell, n.radius);
+    if (kind == "globeOfInvulnerability") return hexesWithin(b, {u.x, u.y}, n.radius);
     // The Conjurador's
     if (kind == "boneLance") return boneLine(b, {u.x, u.y}, cell, n.length);
     if (kind == "placeSwap") return {cell, {u.x, u.y}};
@@ -3587,6 +3634,8 @@ void logEffects(Battle& b, const std::vector<BattleEffect>& out, size_t from, in
       b.pushLog(en ? std::format("{} {}: {} damage", e.cause, target, e.amount) : std::format("{} {}: {} dano", e.cause, target, e.amount));
     } else if (e.miss && (e.text == "Interceptado" || e.text == "Intercepted")) {  // Nuvem de Adagas: the shot knocked down
       b.pushLog(en ? std::format("{}: intercepted by a dagger of the Cloud", action) : std::format("{}: interceptado por uma adaga da Nuvem", action));
+    } else if (e.miss && (e.text == "Bloqueado" || e.text == "Blocked")) {  // Globo de Invulnerabilidade: the spell never entered
+      b.pushLog(en ? std::format("{}: blocked by the Globe of Invulnerability", action) : std::format("{}: bloqueado pelo Globo de Invulnerabilidade", action));
     } else if (e.miss) {
       b.pushLog(en ? std::format("{}: missed", action) : std::format("{}: errou", action));
     } else if (e.heal) {
@@ -3636,7 +3685,7 @@ void supportAffinity(Battle& b, size_t actor, size_t target) {
 void tileHazard(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) {
   BattleUnit& u = b.units()[unit];
   const BattleCell& c = b.cell(u.x, u.y);
-  if (!u.alive || c.hazardDice <= 0) return;
+  if (!u.alive || c.hazardDice <= 0 || b.shielded(u)) return;  // a Globo: the flames do nothing inside
   int dmg = 0;
   for (int i = 0; i < c.hazardDice; ++i) dmg += 1 + static_cast<int>(std::floor(rng() * c.hazardFaces));
   const std::string element = c.terrain == "flame" ? "fire" : c.terrain == "ember" ? "ember" : "";
@@ -3659,7 +3708,7 @@ void tileHazard(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffec
 void iceStormsStrike(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out, size_t from = 0) {
   for (size_t zi = from; zi < b.iceZones().size(); ++zi) {
     BattleUnit& u = b.units()[unit];
-    if (!u.alive) return;
+    if (!u.alive || b.shielded(u)) return;  // a Globo: zones do nothing inside
     Battle::IceZone& z = b.iceZones()[zi];
     const std::vector<BattleHex> body = Battle::footprint(u, u.x, u.y);
     if (std::none_of(z.cells.begin(), z.cells.end(), [&](const BattleHex& c) { return std::any_of(body.begin(), body.end(), [&](const BattleHex& p) { return p == c; }); })) continue;
@@ -3836,6 +3885,46 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
 
 void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::vector<BattleEffect>& out);
 
+// Globo de Invulnerabilidade (the Mago Negro's, docs/SKILLS_MAGE.md): a spell of the globe's tier or under (a tier-less innate spell counts
+// as tier 1), cast from outside it, fails on whoever stands inside; blows, arrows and weapon skills pass.
+bool globeBlocksHit(const Battle& b, const BattleUnit& caster, const std::string& kind, const BattleUnit& target) {
+  if (kind.empty() || weaponAbility(kind) || arrowKind(kind) || b.globes().empty()) return false;
+  const Battle::Globe* g = b.globeAt({target.x, target.y});
+  if (!g || g->covers({caster.x, caster.y})) return false;
+  return std::max(1, unitTierOf(caster, kind)) <= g->maxTier;
+}
+// The step with the shielded targets dropped (each one "Bloqueado"); nothing when its one target was.
+std::optional<BattleStep> globeFilter(const Battle& b, const BattleStep& step, std::vector<BattleEffect>& out) {
+  using T = BattleStep::Type;
+  if (step.type == T::Combat || step.type == T::Move || step.type == T::Potion || step.type == T::Food || b.globes().empty() || step.att >= b.units().size())
+    return step;
+  const BattleUnit& att = b.units()[step.att];
+  auto blocked = [&](size_t id) { return id < b.units().size() && globeBlocksHit(b, att, step.kind, b.units()[id]); };
+  auto note = [&](size_t id) {
+    BattleEffect m{id, 0, false, true, false, false, false};
+    m.text = pick("Bloqueado", "Blocked");
+    out.push_back(m);
+  };
+  if ((step.type == T::Heal || step.type == T::CureDisease) && step.ids.empty()) {
+    if (!blocked(step.def)) return step;
+    note(step.def);
+    return std::nullopt;
+  }
+  BattleStep s = step;
+  s.ids.clear(), s.perTargetMul.clear();
+  for (size_t k = 0; k < step.ids.size(); ++k) {
+    if (blocked(step.ids[k])) {
+      note(step.ids[k]);
+      continue;
+    }
+    s.ids.push_back(step.ids[k]);
+    if (k < step.perTargetMul.size()) s.perTargetMul.push_back(step.perTargetMul[k]);
+  }
+  std::erase_if(s.echoIds, blocked);
+  std::erase_if(s.fearIds, blocked);
+  return s;
+}
+
 }  // namespace
 
 void setCombatLogEnglish(bool english) { gLogEnglish = english; }
@@ -3872,6 +3961,11 @@ std::vector<BattleStep> vigilInterrupts(const Battle& b, size_t attacker, const 
 }
 
 bool daggerStrikeKind(const std::string& kind) { return kind == "daggerStrike"; }
+
+bool globeBlocks(const Battle& b, size_t caster, const std::string& kind, size_t target) {
+  if (caster >= b.units().size() || target >= b.units().size()) return false;
+  return globeBlocksHit(b, b.units()[caster], kind, b.units()[target]);
+}
 
 std::vector<BattleStep> daggerInterrupts(const Battle& b, size_t attacker, const std::vector<size_t>& meleeTargets, bool arrived) {
   std::vector<BattleStep> steps;
@@ -3984,7 +4078,8 @@ void resolveStep(Battle& b, const BattleStep& step, Mulberry32& rng, std::vector
   }
   gNotes.clear();
   const size_t from = out.size();
-  resolveStepImpl(b, step, rng, out);
+  // Globo de Invulnerabilidade: whoever it shields from this spell is dropped from the step ("Bloqueado"); the rest of it plays.
+  if (const std::optional<BattleStep> s = globeFilter(b, step, out)) resolveStepImpl(b, *s, rng, out);
   logEffects(b, out, from, static_cast<int>(step.att), &step);
   flushNotes(b);
 }
@@ -4040,7 +4135,7 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     }
     if (step.kind == "webOfDreams") {  // whoever stands in the patch (its anchor hex) may fall asleep for 1D4 of its turns
       for (BattleUnit& v : b.units()) {
-        if (!v.alive || std::none_of(step.tiles.begin(), step.tiles.end(), [&](const BattleHex& c) { return c.x == v.x && c.y == v.y; })) continue;
+        if (!v.alive || b.shielded(v) || std::none_of(step.tiles.begin(), step.tiles.end(), [&](const BattleHex& c) { return c.x == v.x && c.y == v.y; })) continue;
         if (rng() < step.spellMul) {
           v.asleep = true;
           v.sleepTurns = rollDice(kWebSleepDice, kWebSleepFaces, 0, rng);
@@ -4101,6 +4196,50 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     if (step.kind == "cloudOfDaggers") {  // Nuvem de Adagas (the Mago Negro's): the whole count again, never added up
       att.cond.daggers = step.daggers;
       out.push_back(statusEffect(step.att, std::format("{} ×{}", pick("Nuvem de Adagas", "Cloud of Daggers"), step.daggers)));
+      b.noteAware(step.att, kSupportCe, kSupportVe);
+      return;
+    }
+    if (step.kind == "dispelMagic") {  // Dissipar Magia (the Mago Negro's, docs/SKILLS_MAGE.md)
+      for (size_t id : step.ids) {
+        BattleUnit& t = b.units()[id];
+        if (!t.alive) continue;
+        bool changed = false;
+        if (t.side != att.side) {  // a foe's blessings of magic: Bênção, Grito de Guerra, the Vigília (its auras are zones, below)
+          if (t.blessedRoundsLeft > 0 || t.blessedHitBonusPct > 0) t.blessedRoundsLeft = 0, t.blessedHitBonusPct = 0, changed = true;
+          if (t.cond.rallyPct > 0) t.cond.rallyPct = t.cond.rallyTurns = 0, changed = true;
+          if (t.cond.vigilPct > 0) t.cond.vigilPct = t.cond.vigilRadius = 0, changed = true;
+        } else {  // an ally's afflictions of magic: sleep, fear, silence, marks, curses (poison and bleeding stay)
+          if (t.asleep) t.asleep = false, t.sleepTurns = 0, changed = true;
+          if (t.fearTurns > 0) t.fearTurns = 0, t.fearSourceId.clear(), changed = true;
+          if (t.cond.silenceTurns > 0) t.cond.silenceTurns = 0, changed = true;
+          if (t.cond.markTurns > 0) t.cond.markPct = t.cond.markTurns = 0, changed = true;
+          if (t.cond.decayTurns > 0) liftDecay(t), changed = true;
+        }
+        if (changed) out.push_back(statusEffect(id, pick("Dissipado", "Dispelled")));
+      }
+      // The foes' zones touching the area are erased whole (webs, storms, auras, burning ground, a Mortalha, a Meteoro's mark).
+      const std::string side = att.side;
+      auto inArea = [&](BattleHex h) { return std::any_of(step.tiles.begin(), step.tiles.end(), [&](const BattleHex& t) { return t == h; }); };
+      auto touches = [&](const std::vector<BattleHex>& cells) { return std::any_of(cells.begin(), cells.end(), inArea); };
+      size_t gone = 0;
+      gone += std::erase_if(b.webZones(), [&](const Battle::WebZone& z) { return z.side != side && touches(z.cells); });
+      gone += std::erase_if(b.iceZones(), [&](const Battle::IceZone& z) { return z.side != side && touches(z.cells); });
+      gone += std::erase_if(b.auraZones(), [&](const Battle::AuraZone& z) { return z.side != side && touches(z.cells); });
+      std::vector<int> ours;
+      for (const Battle::Zone& z : b.zones())
+        if (z.caster < b.units().size() && b.units()[z.caster].side != side && std::any_of(step.tiles.begin(), step.tiles.end(), [&](const BattleHex& h) { return z.covers(h); }))
+          ours.push_back(z.id);
+      for (const int id : ours) b.removeZone(id);
+      gone += ours.size();
+      if (gone > 0) out.push_back(statusEffect(step.att, gone == 1 ? pick("Zona dissipada", "Zone dispelled") : std::format("{} ×{}", pick("Zonas dissipadas", "Zones dispelled"), gone)));
+      b.noteAware(step.att, kSupportCe, kSupportVe);
+      return;
+    }
+    if (step.kind == "globeOfInvulnerability") {  // Globo de Invulnerabilidade (the Mago Negro's): the bubble, fixed on these hexes
+      Battle::Globe g;
+      g.centre = {att.x, att.y}, g.radius = step.globeRadius, g.rounds = step.globeRounds, g.maxTier = step.globeTier, g.caster = step.att, g.cells = step.tiles;
+      b.addGlobe(g);
+      out.push_back(statusEffect(step.att, pick("Globo de Invulnerabilidade", "Globe of Invulnerability")));
       b.noteAware(step.att, kSupportCe, kSupportVe);
       return;
     }
@@ -4697,6 +4836,8 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
       out.push_back({unit, heal, false, false, true, false, false});
     }
   }
+  // A Globo de Invulnerabilidade counts its rounds at its caster's turns (gone at 0, before the zones act on it).
+  std::erase_if(b.globesMutable(), [&](Battle::Globe& g) { return g.caster == unit && --g.rounds <= 0; });
   // applyTileHazard: flames and embers hurt whoever starts its turn on them.
   if (u.alive) tileHazard(b, unit, rng, out);
   // --- EmberEngine's own: the zones it stands in, its conditions, the Meteoro it called, the countdowns ---
@@ -4834,16 +4975,20 @@ bool useLockpick(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffe
       for (size_t i = 0; i < b.units().size(); ++i)
         if (!seen.count(i)) sequence.push_back(i);
       std::optional<size_t> taker;
+      // Itens desconhecidos (ours, off in the Cooker's checks): a listed potion comes unknown and is held apart from the bag until identified
+      const bool unknownPotion = progressionEnabled() && UnknownItemRules::shared().potionUnknown(potion->id);
       for (size_t t : sequence) {
         BattleUnit& v = b.units()[t];
         if (v.side != "player" || !v.alive || v.bag[slot] >= potion->carryMax) continue;
-        v.bag[slot] += 1;
+        if (unknownPotion) b.lootUnknownPotions().emplace_back(potion->id, v.name);
+        else v.bag[slot] += 1;
         taker = t;
         break;
       }
-      found.push_back({taker ? potion->name + (*taker != unit ? " → " + b.units()[*taker].name : std::string())
-                             : potion->name + pick(" (sem espaço — descartada)", " (no room — discarded)"),
-                       "potion", potion->id});
+      const std::string shown = unknownPotion ? pick("Poção desconhecida", "Unknown potion") : potion->name;
+      found.push_back({taker ? shown + (*taker != unit ? " → " + b.units()[*taker].name : std::string())
+                             : shown + pick(" (sem espaço — descartada)", " (no room — discarded)"),
+                       "potion", unknownPotion ? std::string("unknown") : potion->id});
     }
     if (rng() < value("gearChance")) {
       int highest = 1;
@@ -4853,7 +4998,12 @@ bool useLockpick(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffe
       if (const LootTables::Entry* drop = weightedLootPick(*tables, rng, gearLevel, b.ownedWeapons())) {
         if (drop->weapon) b.ownedWeapons().insert(drop->id), b.lootWeapons().push_back(drop->id);
         else b.lootEquipment().push_back(drop->id);
-        found.push_back({drop->name, drop->weapon ? "weapon" : "gear", drop->id});
+        // Itens desconhecidos (ours, off in the Cooker's checks): above the power line the piece comes unknown (its name hidden)
+        const UnknownItemRules& ur = UnknownItemRules::shared();
+        const bool unknown = progressionEnabled() && (drop->weapon ? ur.weaponUnknown(drop->power) : ur.gearUnknown(drop->power));
+        if (unknown) b.lootUnknown().insert(drop->id);
+        found.push_back({unknown ? pick(drop->weapon ? "Arma desconhecida" : "Equipamento desconhecido", drop->weapon ? "Unknown weapon" : "Unknown gear") : drop->name,
+                         drop->weapon ? "weapon" : "gear", unknown ? std::string("unknown") : drop->id});
       }
     }
     if (rng() < 0.4) {
@@ -5010,7 +5160,7 @@ TurnStart beginUnitTurn(Battle& b, size_t unit, Mulberry32& rng, std::vector<Bat
     return r;
   }
   // Still standing in a web at the start of its own turn: another sleep roll, stacking 1D4 more sleep.
-  if (b.isWebCell(u.x, u.y) && rng() < b.webCellSleepChance(u.x, u.y)) {
+  if (b.isWebCell(u.x, u.y) && !b.shielded(u) && rng() < b.webCellSleepChance(u.x, u.y)) {
     const int extra = rollDice(kWebSleepDice, kWebSleepFaces, 0, rng);
     u.asleep = true;
     u.sleepTurns += extra;
@@ -5033,7 +5183,7 @@ TurnStart beginUnitTurn(Battle& b, size_t unit, Mulberry32& rng, std::vector<Bat
     else
       for (size_t i = 0; i < b.units().size(); ++i)
         if (b.units()[i].alive && b.units()[i].side != u.side && b.units()[i].side != "neutral") threats.push_back(i);
-    b.setTurnRestrained(b.isWebCell(u.x, u.y));
+    b.setTurnRestrained(b.isWebCell(u.x, u.y) && !b.shielded(u));
     const std::vector<ReachCell> reach = b.reachable(unit, true), paths = b.reachable(unit, false);
     auto distance = [&](BattleHex c) {
       if (threats.empty()) return 0;
@@ -5053,11 +5203,41 @@ TurnStart beginUnitTurn(Battle& b, size_t unit, Mulberry32& rng, std::vector<Bat
     r.tip = pick(" foge de medo e não pode atacar.", " flees in fear and cannot attack.");
     return r;
   }
-  b.setTurnRestrained(b.isWebCell(u.x, u.y));
+  b.setTurnRestrained(b.isWebCell(u.x, u.y) && !b.shielded(u));
   return r;
 }
 
+static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit);
+
 std::optional<AiCast> planEnemyCast(Battle& b, size_t unit) {
+  std::optional<AiCast> cast = planEnemyCastRaw(b, unit);
+  // A Globo de Invulnerabilidade: the AI never spends a spell whose every target it shields (the use is spent by the plan: it is given
+  // back, and the enemy swings its weapon instead).
+  if (!cast || b.globes().empty()) return cast;
+  const BattleUnit& u = b.units()[unit];
+  BattleUnit at = u;  // where it casts from, after its walk
+  if (!cast->path.empty()) at.x = cast->path.back().x, at.y = cast->path.back().y;
+  bool anyTarget = false, anyLands = false;
+  for (const BattleStep& s : cast->steps) {
+    if (s.type != BattleStep::Type::Spell || weaponAbility(s.kind) || arrowKind(s.kind)) return cast;
+    for (size_t id : s.ids) {
+      anyTarget = true;
+      if (!globeBlocksHit(b, at, s.kind, b.units()[id])) anyLands = true;
+    }
+  }
+  if (!anyTarget || anyLands) return cast;
+  for (const BattleStep& s : cast->steps) {
+    BattleUnit& w = b.units()[unit];
+    if (s.kind == "frost") w.frostCharges += 1;  // an enemy's Frost runs on its own charges (spendTier)
+    else if (s.kind == "shock") w.shockCharges += 1;
+    else if (s.kind == "fantomForce") w.fantomForceCharges += 1;
+    else if (s.kind == "spectralBolt") w.spectralCharges += 1;
+    else if (const int tier = unitTierOf(w, s.kind); tier > 0) w.spells[tier - 1] += 1;
+  }
+  return std::nullopt;
+}
+
+static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
   BattleUnit& u = b.units()[unit];
   if (!u.alive || u.side != "enemy") return std::nullopt;
   if (u.cond.silenceTurns > 0) return std::nullopt;  // Silêncio Profano: it swings its weapon instead

@@ -7,6 +7,7 @@
 //
 // Hexes are (column, row) on Ember's odd-r board: odd rows sit half a hex to the right.
 
+#include <algorithm>
 #include <array>
 #include <map>
 #include <set>
@@ -71,6 +72,16 @@ struct LootTables {
   int maxLevel = 30;
   // Null when the file is missing.
   static std::shared_ptr<const LootTables> shared();
+};
+// Itens desconhecidos (ours, 2026-10-21, docs/SKILLS_MAGE.md; content/unknown-items.json): what comes out of a chest unknown.
+struct UnknownItemRules {
+  int weaponPowerAbove = 3, gearPowerAbove = 3;  // a weapon / a piece of gear above this power is unknown
+  std::vector<std::string> potions;              // these potion kinds are unknown
+  double sellShare = 0.1;                        // the Inn pays this share of the price for an unknown item
+  bool weaponUnknown(int power) const { return power > weaponPowerAbove; }
+  bool gearUnknown(int power) const { return power > gearPowerAbove; }
+  bool potionUnknown(const std::string& kind) const { return std::find(potions.begin(), potions.end(), kind) != potions.end(); }
+  static const UnknownItemRules& shared();  // the file read once (defaults when it is missing)
 };
 
 // What a unit fights with, as Engine2 resolves it (weapon tables, weapon skills, staff magic, off-hand).
@@ -431,6 +442,7 @@ class Battle {
     BattleHex center;
     int radius = 0;
     double sleepChance = 0.25;
+    std::string side;  // ours: who laid it (Dissipar Magia erases an enemy's)
   };
   struct IceZone {  // Tempestade de Gelo: strikes everyone in it as it lands, then whoever starts its turn inside or walks into it
     std::vector<BattleHex> cells;
@@ -485,6 +497,13 @@ class Battle {
   const std::vector<std::string>& lootWeapons() const { return lootWeapons_; }
   std::vector<std::string>& lootEquipment() { return lootEquipment_; }
   const std::vector<std::string>& lootEquipment() const { return lootEquipment_; }
+  // Itens desconhecidos (ours, docs/SKILLS_MAGE.md): the chest drops above the power line (content/unknown-items.json) come unknown
+  // (lootUnknown: their ids, among lootWeapons / lootEquipment), and so do the listed potions, kept apart from the finder's bag
+  // (lootUnknownPotions: the potion kind and who holds it) until identified.
+  std::set<std::string>& lootUnknown() { return lootUnknown_; }
+  const std::set<std::string>& lootUnknown() const { return lootUnknown_; }
+  std::vector<std::pair<std::string, std::string>>& lootUnknownPotions() { return lootUnknownPotions_; }
+  const std::vector<std::pair<std::string, std::string>>& lootUnknownPotions() const { return lootUnknownPotions_; }
   // The chest just opened (Engine2 chestLoot): who, the Ember and what else it held; shown until the player says Ok.
   struct ChestLoot {
     struct Item {
@@ -566,6 +585,40 @@ class Battle {
   // Meteoros that landed since the last call (their zones, for the window to draw the fall).
   std::vector<Zone> takeLanded() { return std::exchange(landed_, {}); }
   void noteLanded(const Zone& z) { landed_.push_back(z); }
+
+  // --- Globo de Invulnerabilidade (the Mago Negro's, docs/SKILLS_MAGE.md): a bubble fixed where it was cast, for `rounds` of its
+  // caster's turns (one less as each of its turns begins; a dead caster's counts down at every new round). Spells of tier `maxTier`
+  // or under cast from outside into it fail on whoever stands inside (both sides, heals too); zones do nothing on its hexes; blows,
+  // arrows and lances pass; whoever stands inside casts out freely. ---
+  struct Globe {
+    int id = 0;
+    BattleHex centre;
+    int radius = 1, rounds = 2, maxTier = 3;
+    size_t caster = 0;
+    std::vector<BattleHex> cells;
+    bool covers(BattleHex h) const {
+      for (const BattleHex& c : cells)
+        if (c.x == h.x && c.y == h.y) return true;
+      return false;
+    }
+  };
+  const std::vector<Globe>& globes() const { return globes_; }
+  std::vector<Globe>& globesMutable() { return globes_; }
+  int addGlobe(Globe g) {
+    const int id = ++zoneSerial_;
+    g.id = id;
+    globes_.push_back(std::move(g));
+    return id;
+  }
+  // The globe covering the hex (the newest wins), or none.
+  const Globe* globeAt(BattleHex h) const {
+    const Globe* found = nullptr;
+    for (const Globe& g : globes_)
+      if (g.covers(h)) found = &g;
+    return found;
+  }
+  // The unit stands inside a globe (its anchor hex): zones do nothing to it.
+  bool shielded(const BattleUnit& u) const { return u.alive && globeAt({u.x, u.y}) != nullptr; }
 
   // --- Turns (Engine2 BattleEngine: one battle-opening initiative roll, a round in initiative order) ---
   // Every unit that takes turns (alive, not neutral) rolls 1d20 + its bonus; the order is highest first, the party
@@ -658,6 +711,7 @@ class Battle {
   };
   std::vector<Enmity> enmity_;
   std::vector<Zone> zones_, landed_;
+  std::vector<Globe> globes_;
   int zoneSerial_ = 0;
   std::map<std::string, double> affinityScores_;
   bool scoresKnown_ = false;
@@ -674,6 +728,8 @@ class Battle {
   std::set<std::string> ownedWeapons_;
   int lootEmber_ = 0;
   std::vector<std::string> lootWeapons_, lootEquipment_;
+  std::set<std::string> lootUnknown_;
+  std::vector<std::pair<std::string, std::string>> lootUnknownPotions_;
   std::optional<ChestLoot> chestLoot_;
   std::vector<QuestPickup> questPickups_;
   std::vector<std::string> questFound_;

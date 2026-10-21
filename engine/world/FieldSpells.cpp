@@ -260,6 +260,32 @@ std::optional<Json> FieldSpells::castPrayer(const Json& save, const std::string&
   return next;
 }
 
+// --- Identificar (ours, the Mago Negro's, docs/SKILLS_MAGE.md) ------------------------------------------------------------
+
+std::vector<std::string> FieldSpells::identifiers(const Json& save, bool test) const {
+  std::vector<std::string> out;
+  for (const char* h : kHeroes) {
+    if (!(test || world_.heroRecruited(h, save)) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
+    if (rulesClass(classOf(save, h)) == "mage") out.push_back(h);
+  }
+  return out;
+}
+
+std::optional<Json> FieldSpells::castIdentify(const Json& save, const std::string& hero, const InnRules::UnknownItem& item) const {
+  if (rulesClass(classOf(save, hero)) != "mage" || usesLeft(save, hero, kIdentifyTier) <= 0) return std::nullopt;
+  const InnRules rules(inn_, world_);
+  bool exists = false;
+  for (const InnRules::UnknownItem& u : rules.unknownItems(save))
+    if (u.kind == item.kind && u.id == item.id && u.hero == item.hero) exists = true;
+  if (!exists) return std::nullopt;
+  Json next = rules.identify(save, item);
+  if (!next["spellUses"].is_object()) next["spellUses"] = Json::object();
+  if (!next["spellUses"][hero].is_object()) next["spellUses"][hero] = Json::object();
+  const std::string key = "tier" + std::to_string(kIdentifyTier);
+  next["spellUses"][hero][key] = number(num(next["spellUses"][hero], key).value_or(0) + 1);
+  return next;
+}
+
 // --- The Conjurador's runes (ours, docs/SKILLS_CONJURER.md) ---------------------------------------------------------------
 
 std::vector<FieldSpells::Rune> FieldSpells::runes(const Json& save) {

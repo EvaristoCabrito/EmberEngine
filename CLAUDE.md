@@ -671,9 +671,26 @@ Detonar Invocação in Drenar Vida's place; icons in `Attachments/ConjurerIcons`
   `MapStage::syncDaggers` keeps the cloud (count synced only when the rules' count changes: a thrown dagger is counted in flight). Script
   steps `dagger:<attacker>:<target>` (arrival + melee: two daggers), `shoot:<archer>:<target>` (the interception); scratchpad `run_daggers.ps1`.
   Icons for this and the next three spells: `Attachments/MoreSpells` → `content/ui/spells/<kind>.jpg`.
-- **Pending (the user, 2026-10-21, "depois criar"):** Dissipar Magia (`dispelMagic`, T3 level 6), Globo de Invulnerabilidade
-  (`globeOfInvulnerability`, T5 level 11), Identificar (`identify`, field, T1) + the unknown-items rule (chest loot above a power comes
-  unknown: no equip / drink, cheap sale at the Inn, saved in the save). The spec is in the conversation of 2026-10-21.
+- **Dissipar Magia** (`dispelMagic`, T3 arcane, level 6; hex at 6, radius 1, 2 from 10): no damage; foes in the area lose Bênção / Grito de
+  Guerra / Vigília, the foes' zones touching the area are erased whole (webs, storms, auras, burning ground, Mortalha, a Meteoro's mark;
+  `WebZone` now carries `side`), allies lose sleep / fear / silence / marks / curses (poison and bleeding stay). Effect `render/vfx/MageFx`
+  (a violet shell bursting through the area, rings, the magic torn off each body).
+- **Globo de Invulnerabilidade** (`globeOfInvulnerability`, T5, level 11; `spellSelfArea`): `Battle::Globe` fixed where cast, radius 1 /
+  2 rounds / tiers 1-3 blocked, all one step up from 14 (`emberNumbers` reads the level); rounds count at the caster's turn starts
+  (`startOfTurnEffectsImpl`; a dead caster's at `startNewRound`). `globeFilter` in `resolveStep` drops the shielded targets of any spell /
+  heal / cure / effect step cast from outside ("Bloqueado"; weapon skills and arrows pass); `Battle::shielded()` turns off zones inside
+  (`zoneEffects`, `iceStormsStrike`, `tileHazard`, the web's roll and clamp, `weakenAt`, `inZoneOf`, `zoneDamageMul`); `planEnemyCast`
+  drops a plan the bubble shields entirely (its use given back). The standing dome is `MageFx::globeStart` (MapStage `syncGlobes`), a
+  blocked spell flashes on it (`globeRipple`). **Test gotcha:** at level 15 the bubble has radius 2: stand the outside caster 3 hexes off.
+- **Identificar** (`identify`, field, T1 from level 1; `FieldSpells::identifiers / castIdentify`) + **itens desconhecidos** (`InnRules::
+  unknownItems / weaponUnknown / gearUnknown / potionsUnknown / sellUnknown / identify / discardUnknown`): `content/unknown-items.json` (the
+  power line, the potion kinds, the Inn's share: first values, the user settles them) read by `UnknownItemRules::shared()`; `useLockpick`
+  marks the drops (`Battle::lootUnknown`, `lootUnknownPotions`, in the snapshot; off in the Cooker's checks) and the chest popup shows a "?";
+  `finishCampaignFight` writes `save.unknownWeapons / unknownEquipment / unknownPotions`; the Mochila lists them as "Espada desconhecida" /
+  "Equipamento desconhecido (Cabeça)" / "Poção desconhecida (Voss)" with a "?" and only Jogar Fora; the pickers and `equipWeapon / equipItem`
+  skip them; Vargan's forge sells them ("Itens desconhecidos", `sellShare` of the price); the world map's field spells list "Identificar"
+  per mage (button Itens → the list, a click reveals one for good: `--map-ui identify:<hero>`). `InnWeapon::weaponType` now comes from
+  `content/engine2/weapons.json` (the unknown weapon's only word).
 
 ## Promoções do Mago Negro: Bruxo e Elementalista, magias T6–T10 (2026-10-17; the user: "pode criar todas elas os
 efeitos e wire into the game")
@@ -929,6 +946,10 @@ recursos, elevações variadas, monstros, e deixe o birolho bem mais escondido",
   battle (impassable, stops shots). Maps without ember props: unchanged.
 - Captures: scratchpad `cap_cem.ps1` pattern (test battle from `build/engine2-test`, `--fog 0 --zoom 0.7` overview, `--zoom 2.2 --offset -0.07
   0.06` the crypt).
+- **008 (2026-10-21, the live version; the user: "fica o 008"; old versions are the user's to delete by hand, never ask):** 007 (the
+  photographed v02 / v03 tombs) with the crypt cut three hexes wide ("that narrow passage right in the entrance felt clunky and too
+  narrow") and the two Guardiões da Cripta out ("não tem cultista assim dando sopa na entrada de mapas"); the Saqueador stays inside the
+  cut. The generator now reads 007's settings and writes 008 (`TOMB_VERSIONS`, `SERIAL`, `CUT_HALF`); 006 and 007 untouched.
 
 ## A Ponte de Pedra 023 (2026-10-21; the user: "make the bridge 6 hexes wider, use the current background image as a Ground Floor Image,
 a strong volumetric fog with strong gusts of wind flowing outside of the bridge walls", "make sure the tiles finish right at the walls")

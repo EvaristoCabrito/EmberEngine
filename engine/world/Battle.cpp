@@ -124,6 +124,23 @@ std::shared_ptr<const LootTables> LootTables::shared() {
   return tables;
 }
 
+const UnknownItemRules& UnknownItemRules::shared() {
+  static const UnknownItemRules rules = [] {
+    UnknownItemRules r;
+    std::ifstream in("content/unknown-items.json");
+    if (!in) return r;
+    const json j = json::parse(in, nullptr, false);
+    if (j.is_discarded() || !j.is_object()) return r;
+    r.weaponPowerAbove = integer(j, "weaponPowerAbove", r.weaponPowerAbove), r.gearPowerAbove = integer(j, "gearPowerAbove", r.gearPowerAbove);
+    r.sellShare = number(j, "sellShare", r.sellShare);
+    if (j.contains("potions") && j["potions"].is_array())
+      for (const json& p : j["potions"])
+        if (p.is_string()) r.potions.push_back(p.get<std::string>());
+    return r;
+  }();
+  return rules;
+}
+
 std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
   std::ifstream in(battleJson, std::ios::binary);
   const json j = in ? json::parse(in, nullptr, false) : json();
@@ -669,6 +686,7 @@ double Battle::webCellSleepChance(int x, int y) const {
 
 double Battle::zoneDamageMul(const BattleUnit& defender) const {
   double mul = 1;
+  if (shielded(defender)) return mul;  // a Globo: the auras do nothing inside
   for (const AuraZone& z : auraZones_) {
     if (!std::any_of(z.cells.begin(), z.cells.end(), [&](const BattleHex& c) { return c.x == defender.x && c.y == defender.y; })) continue;
     if (z.kind == "protection" && z.side == defender.side) mul *= 1 - z.pct;
