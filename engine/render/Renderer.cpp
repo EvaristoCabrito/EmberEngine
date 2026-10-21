@@ -147,6 +147,15 @@ struct WaterPush {
   uint32_t pad;
 };
 
+struct ProbePush {  // shaders/probes.hlsl
+  VkDeviceAddress frame, bake, output, readback;
+  uint32_t key[3];
+  uint32_t count;
+  float weight[3];
+  uint32_t pad;
+};
+static_assert(sizeof(ProbePush) == 64);
+
 struct SkyReflectPush {  // shaders/skyreflect.hlsl
   VkDeviceAddress frame;
   uint32_t destination, level, width, height;
@@ -228,7 +237,7 @@ struct MeshFrame {
   glm::vec4 fogRect;   // fog of war mask: world x0, z0, 1 / width, 1 / depth
   uint32_t fogMask;    // bindless RGBA16F texture (darkness, boundary, ground, valley); kNoTextureIndex = no fog of war
   uint32_t fogSampler;
-  uint32_t pad9[2];
+  uint64_t probes;     // the room's light probes (probes.hlsl output); 0 = none
   uint32_t volume;     // integrated froxel volume (sampled); kNoTextureIndex = no volumetric fog
   uint32_t volumeSampler;
   float volumeNear;
@@ -242,7 +251,7 @@ struct MeshFrame {
   float localShadowSize;
   uint32_t pad10[3];
 };
-static_assert(sizeof(MeshFrame) == 768 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384 &&
+static_assert(sizeof(MeshFrame) == 768 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384 && offsetof(MeshFrame, probes) == 632 &&
               offsetof(MeshFrame, shadowMatrix) == 480 && offsetof(MeshFrame, localShadowMatrix) == 672);
 
 // Matches VolumeFrame in shaders/volume.hlsl.
@@ -409,7 +418,8 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
       atmoSampled_[i] = bindless_.addSampledImage(tables[i]->view, VK_IMAGE_LAYOUT_GENERAL);
       atmoStorage_[i] = bindless_.addStorageImage(tables[i]->view);
     }
-    atmoAmbient_ = createDeviceBuffer(context, 9 * 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT);
+    // 9 x float4 the ambient as read by every pass, then 9 x float4 the sky's own irradiance before the map's scale (the light probes')
+    atmoAmbient_ = createDeviceBuffer(context, 18 * 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT);
     // The sky's reflection map (skyreflect.hlsl): one storage view per level, one sampled view of the chain.
     ImageDesc reflectDesc{VK_FORMAT_R16G16B16A16_SFLOAT, kSkyReflectSize, usage};
     reflectDesc.mipLevels = kSkyReflectLevels;
@@ -633,6 +643,7 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   cloudNoiseDetailPipeline_ = createComputePipeline(context, layout, "cloudsvol.CSNoiseDetail");
   cloudMarchPipeline_ = createComputePipeline(context, layout, "cloudsvol.CSMarch");
   glarePipeline_ = createComputePipeline(context, layout, "sunglare.CSGlare");
+  probePipeline_ = createComputePipeline(context, layout, "probes.CSRelight");
   volumeIntegratePipeline_ = createComputePipeline(context, layout, "volume.CSIntegrate");
   for (const FogLook& look : fogLooks()) {
     bankMarchPipelines_.push_back(createComputePipeline(context, layout, std::string(look.shader) + ".CSMarch"));
@@ -782,7 +793,10 @@ Renderer::~Renderer() {
     destroyBuffer(context_, frame.cloudFrame);
     destroyBuffer(context_, frame.atmosphereFrame);
     destroyBuffer(context_, frame.stars);
+    destroyBuffer(context_, frame.probeRead);
   }
+  for (Buffer* b : {&probeStaging_, &probeBake_, &probeOutput_}) destroyBuffer(context_, *b);
+  vkDestroyPipeline(context_.device, probePipeline_, nullptr);
   for (VkPipeline p : atmoPipelines_) vkDestroyPipeline(context_.device, p, nullptr);
   for (Image* table : {&atmoTransmittance_, &atmoMultiScattering_, &atmoSkyView_, &atmoAerial_}) destroyImage(context_, *table);
   destroyBuffer(context_, atmoAmbient_);
@@ -948,7 +962,42 @@ Renderer::Frame& Renderer::beginFrame() {
     meshStats_ = {c[5], std::min(c[2], kMaxClusters), c[3], c[4], c[6], c[7], c[8], c[9]};
     frame.countersPending = false;
   }
+  // The probes' meter reading this frame left (probes.hlsl), for the camera.
+  if (frame.probeReadCount > 0 && frame.probeReadCount == probeCount_ && frame.probeRead.mapped) {
+    VK_CHECK(vmaInvalidateAllocation(context_.allocator, frame.probeRead.allocation, 0, VK_WHOLE_SIZE));
+    probeLux_.resize(frame.probeReadCount);
+    std::memcpy(probeLux_.data(), frame.probeRead.mapped, probeLux_.size() * sizeof(float));
+  }
+  frame.probeReadCount = 0;
   return frame;
+}
+
+void Renderer::setProbes(std::shared_ptr<const ProbeVolume> probes) {
+  vkDeviceWaitIdle(context_.device);  // a map's load: the old buffers may still be read
+  for (Buffer* b : {&probeStaging_, &probeBake_, &probeOutput_}) destroyBuffer(context_, *b);
+  probes_ = std::move(probes);
+  probeCount_ = 0;
+  probeLux_.clear();
+  probesDirty_ = false;
+  if (!probes_ || probes_->dims.x <= 0 || probes_->dims.y <= 0 || probes_->dims.z <= 0) return;
+  probeCount_ = static_cast<uint32_t>(probes_->dims.x * probes_->dims.y * probes_->dims.z);
+  // header: origin, spacing, dims + count, keyCount (probes.hlsl)
+  struct Header {
+    glm::vec4 origin, spacing;
+    uint32_t dims[4];
+    uint32_t keyCount, pad[3];
+  } header{{probes_->origin, 0.0f}, {probes_->spacing, 0.0f},
+           {static_cast<uint32_t>(probes_->dims.x), static_cast<uint32_t>(probes_->dims.y), static_cast<uint32_t>(probes_->dims.z), probeCount_},
+           static_cast<uint32_t>(probes_->keyDirections.size()), {}};
+  static_assert(sizeof(Header) == 64);
+  const VkDeviceSize bytes = sizeof(Header) + probes_->bake.size() * sizeof(float);
+  probeStaging_ = createHostBuffer(context_, bytes, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+  std::memcpy(probeStaging_.mapped, &header, sizeof(header));
+  std::memcpy(static_cast<std::byte*>(probeStaging_.mapped) + sizeof(header), probes_->bake.data(), probes_->bake.size() * sizeof(float));
+  VK_CHECK(vmaFlushAllocation(context_.allocator, probeStaging_.allocation, 0, VK_WHOLE_SIZE));
+  probeBake_ = createDeviceBuffer(context_, bytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+  probeOutput_ = createDeviceBuffer(context_, 64 + VkDeviceSize{probeCount_} * 144, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+  probesDirty_ = true;
 }
 
 bool Renderer::renderFrame(float time) {
@@ -1189,6 +1238,17 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
   }
   // The sky's reflection map (skyreflect.hlsl): needs the sky.
   skyReflectThisFrame_ = atmoThisFrame_ && skyReflection_;
+  // The room's light probes (relit in record() after the sky's SH): they need the sky.
+  f.probes = 0;
+  probesThisFrame_ = atmoThisFrame_ && probeCount_ > 0 && std::exchange(probesWanted_, false);
+  if (probesThisFrame_) {
+    f.probes = bufferAddress(context_, probeOutput_);
+    if (frame.probeRead.size < VkDeviceSize{probeCount_} * sizeof(float)) {
+      destroyBuffer(context_, frame.probeRead);
+      frame.probeRead = createHostBuffer(context_, VkDeviceSize{probeCount_} * sizeof(float), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    }
+    frame.probeReadCount = probeCount_;
+  }
   f.skyReflect = skyReflectThisFrame_ ? skyReflectSampled_ : kNoTextureIndex;
   VolumeFrame vf{};
   if (volumeThisFrame_) {
@@ -1707,6 +1767,49 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
                   VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
                   VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
     gpuTimer_.end(cmd, atmoScope);
+  }
+  // --- The room's light probes (probes.hlsl): the hour's sky through each probe's transfer, the key light's bounce -----------
+  if (hasScene_ && probesThisFrame_) {
+    const uint32_t scope = gpuTimer_.begin(cmd, "probes");
+    if (probesDirty_) {
+      probesDirty_ = false;
+      const VkBufferCopy copy{0, 0, probeStaging_.size};
+      vkCmdCopyBuffer(cmd, probeStaging_.buffer, probeBake_.buffer, 1, &copy);
+      memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                    VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
+    }
+    // Last frame's surfaces may still read the probes.
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_STORAGE_READ_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                  VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT);
+    // The three key-light directions of the bake nearest the key light, weighted by their closeness.
+    ProbePush push{bufferAddress(context_, frame.meshFrame), bufferAddress(context_, probeBake_), bufferAddress(context_, probeOutput_),
+                   bufferAddress(context_, frame.probeRead), {0, 0, 0}, probeCount_, {0.0f, 0.0f, 0.0f}, 0};
+    const std::vector<glm::vec3>& dirs = probes_->keyDirections;
+    const glm::vec3 key = glm::normalize(lighting_.sunDirection);
+    std::array<std::pair<float, uint32_t>, 3> best{{{-2.0f, 0}, {-2.0f, 0}, {-2.0f, 0}}};
+    for (uint32_t j = 0; j < dirs.size(); ++j) {
+      const float c = glm::dot(dirs[j], key);
+      if (c > best[2].first) {
+        best[2] = {c, j};
+        std::sort(best.begin(), best.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
+      }
+    }
+    float total = 0.0f;
+    for (int t = 0; t < 3; ++t) {
+      const float angle = std::acos(std::clamp(best[t].first, -1.0f, 1.0f));
+      push.key[t] = best[t].second;
+      push.weight[t] = best[t].first > -1.5f ? 1.0f / (angle + 0.02f) : 0.0f;
+      total += push.weight[t];
+    }
+    for (float& w : push.weight) w = total > 0.0f ? w / total : 0.0f;
+    // A key light under the horizon lights nothing through the room's openings (the bake's directions start at it).
+    if (key.y < 0.0f) push.weight[0] = push.weight[1] = push.weight[2] = 0.0f;
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, probePipeline_);
+    vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+    vkCmdDispatch(cmd, (probeCount_ + 63) / 64, 1, 1);
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                  VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
+    gpuTimer_.end(cmd, scope);
   }
   // --- Nuvens volumétricas (cloudsvol.hlsl): the noise volumes once, then the layer marched at half resolution ----------------
   if (hasScene_ && atmoThisFrame_ && cloudMarchThisFrame_) {

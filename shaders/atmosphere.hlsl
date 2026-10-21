@@ -229,4 +229,7 @@ void CSAmbient(uint thread : SV_GroupIndex) {
   // sheet's fill light, the reflection map's ground), both read by skyReflection / cloudsOverSky.
   const float extra[4] = {scale, gUp[0].r, gUp[0].g, gUp[0].b};
   [unroll] for (uint c = 0; c < 9; ++c) vk::RawBufferStore<float4>(a.ambient + c * 16, float4(e[c] * scale, c < 4 ? extra[c] : 0.0));
+  // After them, the sky's own irradiance, unscaled (no exposure, no map multiplier): the room's light probes (probes.hlsl) light
+  // a room from the real sky whatever the ambient above lets the other passes see.
+  [unroll] for (uint c = 0; c < 9; ++c) vk::RawBufferStore<float4>(a.ambient + 144u + c * 16, float4(e[c], 0.0));
 }

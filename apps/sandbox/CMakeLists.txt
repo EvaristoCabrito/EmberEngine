@@ -14,6 +14,7 @@ ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/hiz.hlsl STAGES cs:CSDown
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/bloom.hlsl STAGES cs:CSDown cs:CSUp)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/atmosphere.hlsl STAGES cs:CSTransmittance cs:CSMultiScattering cs:CSSkyView cs:CSAerial cs:CSAmbient)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/skyreflect.hlsl STAGES cs:CSBase cs:CSFilter cs:CSCloudShadow)
+ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/probes.hlsl STAGES cs:CSRelight)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/cloudsvol.hlsl STAGES cs:CSNoiseBase cs:CSNoiseDetail cs:CSMarch)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/sunglare.hlsl STAGES cs:CSGlare)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/volume.hlsl STAGES cs:CSInject cs:CSIntegrate)

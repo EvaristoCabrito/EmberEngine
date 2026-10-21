@@ -91,6 +91,7 @@
 #include "world/SceneData.h"
 #include "render/MeshBuild.h"
 #include "world/Architecture.h"
+#include "world/ProbeBake.h"
 #include "world/SceneBuilder.h"
 
 namespace ember {
@@ -141,8 +142,9 @@ struct MapStageOptions {
   // Luz das janelas (indoor maps): -1 as the map says (on for the watchtower's roofed floors), 0 OFF, 1 real (--window-light N)
   int windowLight = -1;
   // Atmosfera volumétrica v1: the panel's "Atmosfera" at the start (0 OFF, 1 cinema, 2 alta, 3 desempenho; --atmos N).
-  // ON by default at "alta" (user, 2026-10-16: "padrão on"); the choice stays in the panel.
-  int atmos = 2;
+  // ON by default at "alta" (user, 2026-10-16: "padrão on"); the choice stays in the panel. -1 = the map's own: "alta", but OFF on the
+  // watchtower's floors lit through their windows (the user, 2026-10-21: "faz: Atmosfera OFF por padrão só na torre").
+  int atmos = -1;
   // The panel's "Fundo" at the start (-1 as the map says: its painting, or the sky without one; 0 the painting, 1 the
   // sky, 2 OFF = black; --background N): captures that must keep never-seen ground exactly black (check_fog.py) use 2.
   int background = -1;
@@ -270,7 +272,7 @@ class MapStage final : public Stage {
       if (fogLooks()[i].fogOfWar && options.fogLook == std::atoi(fogLooks()[i].number)) fogLook_ = i;
     pitch_ += glm::radians(options.tiltDegrees);
     flat_ = options.tatica;
-    atmosChoice_ = std::clamp(options.atmos, 0, 3);
+    atmosChoice_ = options.atmos >= 0 ? std::clamp(options.atmos, 0, 3) : 2;
     gridLook_ = std::clamp(options.gridLook, 0, 2);
     cardStance_ = std::clamp(options.cardStance, 0, 1);
     barsFade_ = std::clamp(options.barsFade, 0, 1);
@@ -407,6 +409,8 @@ class MapStage final : public Stage {
       if (options.background < 0 && !panoramas_.empty()) background_ = 4 + static_cast<int>(panoramas_.size());
       // Luz das janelas: by map id (each map its own diorama): the watchtower's roofed floors open with it; every other map OFF.
       windowLight_ = options.windowLight >= 0 ? std::clamp(options.windowLight, 0, 1) : kWindowLightMaps.contains(board_->draft().id) ? 1 : 0;
+      // ... and their Atmosfera opens OFF (the user, 2026-10-21: the sunlit air outside, exposed for the room, veiled it white).
+      if (options.atmos < 0 && kWindowLightMaps.contains(board_->draft().id)) atmosChoice_ = 0;
       if (scene_->environment != "indoor")  // the map's night, or any night of the 24 h cycle
         for (const char* phase : e2::kMoonPhases) ground_.requestTexture(e2::skyMoonAsset(phase));  // 0.1 MB each
     }
@@ -414,6 +418,7 @@ class MapStage final : public Stage {
 
   ~MapStage() override {
     if (fogBusy_) jobs_.wait(fogJob_);  // the sight job uses this stage's board and fog
+    if (probeBusy_) jobs_.wait(probeJob_);  // the probes' bake writes this stage's probeOutput_
   }
 
   // Where a slow frame's stage time went: laps named in frame(), logged when the whole passes 50 ms (the hunt for the rare
@@ -616,7 +621,7 @@ class MapStage final : public Stage {
     // Engine2 UNIT_LIGHT_DEFS: units that carry their own light (the familiars, the swamp calf), on the body, walking with it.
     for (size_t i = 0; scene_ && i < scene_->units.size() && i < unitCard_.size(); ++i) {
       const auto def = kUnitLights.find(scene_->units[i].classId);
-      if (def == kUnitLights.end() || !unitCard_[i].drawn) continue;
+      if (def == kUnitLights.end() || !unitCard_[i].drawn) continue;  // (not fire: the familiars' / the calf's glow)
       if (unitBattle_[i] >= 0 && !battle_->units()[static_cast<size_t>(unitBattle_[i])].alive) continue;
       const UnitLightDef& d = def->second;
       const glm::vec3 feet = unitWorld(i);
@@ -630,15 +635,30 @@ class MapStage final : public Stage {
     renderer.setVfx(spellFx_.vfx());
     renderer.setLights(lights_);
     laps.lap("hand-over");
+    // Luz das janelas: the room's light probes, once baked (startProbeBake), light it from the hour's sky and the key light's bounce.
+    if (probeBusy_ && probeJob_.done()) uploadProbes(renderer);
+    const bool probesLive = probeUploaded_ && windowLight() && lightingMode_ == 3;
+    if (probesLive) renderer.useProbes();
     Renderer::Lighting lighting = mapLighting(time);
     if (windowLight() && lightingMode_ == 3) {
       // Luz das janelas: the key light (the hour's sun, the moon at night, through the air) comes in only through the openings
-      // (the shadow-only roof, buildRoof); the sky's ambient enters at the openings' share of the sky (kWindowSkyShare); the
-      // camera meters the room, not the outside (kWindowMeterShare), so the sun's patches on the floor burn bright and the rest
-      // of the room sits in the windows' glow, the torches carrying it at night. No air inside: no aerial perspective.
-      lighting.ambientMul *= kWindowSkyShare;
+      // (the shadow-only roof, buildRoof); the sky's light and the bounced light reach the room through its probes, which carry the
+      // whole sky (the transfer keeps out what the walls and the roof hide); the camera meters the room itself (probeMeterLux):
+      // the light on its floor, the probes' with the sun's beam where it falls and the fire's. No air inside: no aerial perspective.
+      // The ambient every pass reads stays without the sky (as before the probes: the air of the Atmosfera, the outer faces); the
+      // probes read the sky's own (atmosphere.hlsl CSAmbient's second record).
+      lighting.ambientMul = 0.0f;
       lighting.kmPerUnit = 0.0f;
-      meterLux_ = std::max(meterLux_ * kWindowMeterShare, kWindowMeterFloor);
+      const float room = probesLive ? probeMeterLux(renderer, lighting) : 0.0f;
+      if (room > 0.0f && !probeMeterLogged_) {
+        probeMeterLogged_ = true;
+        std::vector<float> floor;
+        for (uint32_t i : probeFloor_) floor.push_back(renderer.probeLux()[i]);
+        std::sort(floor.begin(), floor.end());
+        logInfo("light probes: the room's meter {:.2f} lux (outside {:.0f}); the floor probes' own light min {:.3f} / median {:.3f} / max {:.3f} lux",
+                room, meterLux_, floor.front(), floor[floor.size() / 2], floor.back());
+      }
+      meterLux_ = room > 0.0f ? room : std::max(meterLux_ * kWindowMeterShare, kWindowMeterFloor);
     }
     // aldeia's sky at the end of the day (the user, 2026-10-19: "ajuste a cor do azul no céu, até as nuvens reagem, menos o céu"):
     // exposed for the board, the blue stayed as light as at noon while the clouds took the sunset's colour. As the sun sinks under
@@ -672,6 +692,17 @@ class MapStage final : public Stage {
       lighting.litScale = std::max(meterLux_, 1e-4f) * 1.2f / 2.5f;  // exposure x this = 1 at the metered EV
     }
     exposure_ = lighting.exposure;
+    // The fire's light never yields to the sun (the user, 2026-10-21: "a luz do sol nunca deve afetar as tochas, fogo e afins ... em nenhuma
+    // ocasião"; by day the camera, exposed for the daylight, took every torch's and brazier's pool to nothing, and a passing cloud left the
+    // room black): the decorations' fire and the walls' torches are shown at no less than the night's exposure (kFireExposure), whatever
+    // the sun, the clouds or the hour set the camera to. At night (the camera at or over it) nothing changes.
+    if (lightingMode_ == 3 && fireLightsTo_ > fireLightsFrom_ && fireLightsTo_ <= lights_.size()) {
+      const float k = std::max(lighting.exposure, kFireExposure) / std::max(lighting.exposure, 1e-9f);
+      if (k > 1.0001f) {
+        for (size_t i = fireLightsFrom_; i < fireLightsTo_; ++i) lights_[i].color *= k;
+        renderer.setLights(lights_);
+      }
+    }
     if (options_.sunElevation >= 0.0f) {
       const float az = glm::radians(options_.sunAzimuth), el = glm::radians(options_.sunElevation);
       lighting.sunDirection = {std::cos(el) * std::cos(az), std::sin(el), std::cos(el) * std::sin(az)};
@@ -1773,6 +1804,8 @@ class MapStage final : public Stage {
   static constexpr float kIndoorFillLux = 3.0f, kIndoorAmbientLux = 1.5f;
   static constexpr float kLumensPerUnit = 12.0f;    // Engine2 intensity x reach^2 -> lumens
   static constexpr float kTorchPower = 2.0f;        // every torch's light x this (the user, 2026-10-21: "2X do que estava antes"; 8x was too much)
+  static constexpr float kFireExposure = 0.049f;    // the fire's light is shown at no less than this exposure (the watchtower's night)
+  size_t fireLightsFrom_ = 0, fireLightsTo_ = 0;    // this frame's fire lights in lights_ (buildLights)
   static constexpr float kDecorLightPower = 2.0f;   // every other light-giving decoration's light x this (the user, 2026-10-21: "2X")
   static constexpr float kNightStops = 2.5f;        // the camera's darkening at night
   static constexpr float kAdaptPerSecond = 1.5f;    // eye adaptation rate
@@ -1869,9 +1902,6 @@ class MapStage final : public Stage {
     std::vector<std::pair<float, float>> footprint;  // sight samples (world x, z) under its top faces
     std::optional<e2::SceneLight> light;             // a torch bracket's fire (EmberEngine's wall-torch piece)
     glm::vec3 lightAt{0.0f};                         // ... relative to the piece's anchor on its ground
-    float openingArea = 0.0f;                        // a window / slit / doorway: its clear area (units²); 0 = not an opening
-    glm::vec3 openingAt{0.0f};                       // ... the point just inside the room where its light comes in (from the anchor)
-    float openingReach = 0.0f;                       // ... how far into the room that light goes (units)
     float lightBehind = 0.0f;                        // a wall's torch: how far its light sits in front of the wall (it lights that side only)
     bool hasSkirt = false;                           // an outer-ring piece: its shadow-only copy stands `skirt` outside it
     glm::vec2 skirt{0.0f};
@@ -1910,6 +1940,8 @@ class MapStage final : public Stage {
     doors_.clear();
     stairPieces_.clear();
     groundHoles_.clear();
+    probeTris_.clear();
+    roomCells_.clear();
     if (scene_->pieces.empty()) {
       buildRoof();
       return;
@@ -2144,32 +2176,14 @@ class MapStage final : public Stage {
       piece.half = std::max({std::abs(minX), std::abs(maxX), std::abs(minZ), std::abs(maxZ)});
       piece.top = maxY;
       piece.blocks = def->model3d == "wall" || def->model3d == "door" || def->model3d == "secretDoor";
-      // The openings the light from outside comes through (Luz das janelas): their clear area and a point just inside the room at
-      // the opening's middle height, facing the room (windows / slits: their splay side; doorways: the side towards the board's centre).
+      // The room's surfaces for its light probes (Luz das janelas, startProbeBake): the piece as drawn, on its ground. (A door's
+      // leaves are left out: the light passes as through an open door.)
       {
-        const std::string& st = def->emberStyle;
-        // reach: how far into the room its light goes before it is gone (2026-10-21: with the 1/d^2 range of 48 units the 25
-        // windows and the gate summed into one blue wash over the whole room, capture 185 with local lights only)
-        float area = 0.0f, height = 0.0f, reach = 0.0f;
-        if (st == "window") area = 0.62f * 1.7f, height = 2.1f, reach = 5.0f;
-        else if (st == "slit") area = 0.18f * 1.75f, height = 2.1f, reach = 3.0f;
-        else if (st == "portal" || st == "door") area = 2.0f * 3.36f, height = 1.6f, reach = 8.0f;
-        else if (st == "gate") area = 4.0f * 4.0f, height = 1.9f, reach = 10.0f;
-        piece.openingReach = reach;
-        if (area > 0.0f) {
-          double nx = 0.0, nz = 0.0;
-          if (st == "window" || st == "slit") {
-            const double a = e2::emberAxisAngle(rot, connections);
-            nx = std::sin(a), nz = std::cos(a);
-          } else {  // a doorway runs along x (rot even) or z (rot odd); its room side is the one towards the board's centre
-            const bool alongX = (p.rot & 1) == 0;
-            nx = alongX ? 0.0 : (centreX > x ? 1.0 : -1.0);
-            nz = alongX ? (centreZ > z ? 1.0 : -1.0) : 0.0;
-          }
-          const float in = static_cast<float>(0.32 * def->wallThicknessScale * 0.5) + 0.45f;
-          piece.openingArea = area;
-          piece.openingAt = {static_cast<float>(nx) * in, height, static_cast<float>(nz) * in};
-        }
+        const float base = groundOf(piece.groundSmooth, piece.groundHard);
+        for (size_t v = 0; v + 2 < g.count(); v += 3)
+          for (size_t k = 0; k < 3; ++k)
+            probeTris_.push_back({g.position[(v + k) * 3] + static_cast<float>(x), g.position[(v + k) * 3 + 1] + base,
+                                  g.position[(v + k) * 3 + 2] + static_cast<float>(z)});
       }
       arch_.push_back(std::move(piece));
       if (def->emberStyle == "door") {
@@ -2186,7 +2200,25 @@ class MapStage final : public Stage {
       }
     }
     if (missing) logWarn("architecture: {} pieces not in the editor catalog", missing);
+    // The room: every hex the walls enclose (not reached from the board's edge stepping between hexes no wall stands on).
+    {
+      std::vector<std::pair<int, int>> open;
+      std::set<std::pair<int, int>> outside;
+      for (int c = 0; c < L.cols; ++c)
+        for (int r = 0; r < L.rows; ++r)
+          if ((c == 0 || r == 0 || c == L.cols - 1 || r == L.rows - 1) && !joins.contains({c, r}) && outside.insert({c, r}).second) open.push_back({c, r});
+      while (!open.empty()) {
+        const auto [c, r] = open.back();
+        open.pop_back();
+        for (const auto& [nc, nr] : {std::pair{c - 1, r}, std::pair{c + 1, r}, std::pair{c, r - 1}, std::pair{c, r + 1}})
+          if (inBoard(nc, nr) && !joins.contains({nc, nr}) && outside.insert({nc, nr}).second) open.push_back({nc, nr});
+      }
+      for (int c = 0; c < L.cols; ++c)
+        for (int r = 0; r < L.rows; ++r)
+          if (!joins.contains({c, r}) && !outside.contains({c, r})) roomCells_.insert({c, r});
+    }
     buildRoof();
+    startProbeBake();
   }
 
   // The animated door (the user, 2026-10-21: "keep new door this asset for closed doors, can you animate it opening?"): its leaves
@@ -2261,6 +2293,8 @@ class MapStage final : public Stage {
     roofCentre_ = {0.5f * (x0 + x1), 0.0f, 0.5f * (z0 + z1)};
     const float w = x1 - x0, d = z1 - z0;
     roofMesh_ = shadowBox({w * 0.5f, t * 0.5f, d * 0.5f});
+    roofRect_ = {x0, z0, x1, z1};
+    addProbeBox({x0, roofBottom_, z0}, {x1, roofBottom_ + t, z1});  // the room's ceiling, for its light probes
     roofCentreY_ = roofBottom_ + t * 0.5f;
     // ... and the plinth: the same rectangle under the board, its top just under the lowest wall's ground, down past the board's base,
     // so the sun reaches none of the board's outer sides below the floor (100% interior; capture skirt-r-day of 2026-10-21: the stone
@@ -2271,6 +2305,135 @@ class MapStage final : public Stage {
     const float top = ground - 0.1f, bottom = std::min(groundLow_, 0.0f) - 3.0f;
     plinthMesh_ = top > bottom ? shadowBox({w * 0.5f, 0.5f * (top - bottom), d * 0.5f}) : MeshId{0};
     plinthCentreY_ = 0.5f * (top + bottom);
+  }
+
+  // A box's twelve triangles for the light probes' bake, wound outwards (ProbeBake tells a solid's inside by its back faces).
+  void addProbeBox(glm::vec3 lo, glm::vec3 hi) {
+    const glm::vec3 centre = 0.5f * (lo + hi);
+    auto corner = [&](int i) { return glm::vec3(i & 1 ? hi.x : lo.x, i & 2 ? hi.y : lo.y, i & 4 ? hi.z : lo.z); };
+    static constexpr int kFaces[6][4] = {{0, 2, 6, 4}, {1, 3, 7, 5}, {0, 1, 5, 4}, {2, 3, 7, 6}, {0, 1, 3, 2}, {4, 5, 7, 6}};
+    for (const auto& f : kFaces)
+      for (const auto& tri : {std::array<int, 3>{f[0], f[1], f[2]}, std::array<int, 3>{f[0], f[2], f[3]}}) {
+        glm::vec3 a = corner(tri[0]), b = corner(tri[1]), c = corner(tri[2]);
+        if (glm::dot(glm::cross(b - a, c - a), (a + b + c) / 3.0f - centre) < 0.0f) std::swap(b, c);
+        probeTris_.insert(probeTris_.end(), {a, b, c});
+      }
+  }
+
+  // Luz das janelas: the room's diffuse light probes (world/ProbeBake.h), after Final Fantasy XV's ambient system: a grid over the
+  // room, each probe's transfer of the sky and the key light's bounce off the room baked by our path tracer on the workers (a few
+  // seconds after the map loads; until then the room has no sky light). Only the maps lit through their windows.
+  void startProbeBake() {
+    probeUploaded_ = false;
+    if (probeBusy_) jobs_.wait(probeJob_), probeBusy_ = false;
+    if (!board_ || !scene_ || !kWindowLightMaps.contains(board_->draft().id) || underground()) return;
+    if (roomCells_.empty()) {
+      logWarn("light probes: no hex enclosed by the walls (the room is open to the board's edge); no probes");
+      return;
+    }
+    const e2::HexLayout& L = board_->layout();
+    auto groundAt = [&](float x, float z) { return static_cast<float>(e2::groundHeightAt(*board_, look_, x, z)); };
+    ProbeBakeInput in;
+    float lowFloor = std::numeric_limits<float>::max();
+    for (const auto& [c, r] : roomCells_) lowFloor = std::min(lowFloor, groundAt(static_cast<float>(board_->cell(c, r).x), static_cast<float>(board_->cell(c, r).z)));
+    in.spacing = kProbeSpacing;
+    in.origin = {roofRect_.x, lowFloor + 0.5f, roofRect_.y};
+    in.dims = {static_cast<int>(std::ceil((roofRect_.z - roofRect_.x) / in.spacing.x)) + 1,
+               std::max(1, static_cast<int>(std::floor((roofBottom_ - 0.2f - in.origin.y) / in.spacing.y)) + 1),
+               static_cast<int>(std::ceil((roofRect_.w - roofRect_.y) / in.spacing.z)) + 1};
+    const size_t count = static_cast<size_t>(in.dims.x) * in.dims.y * in.dims.z;
+    in.candidate.assign(count, 0);
+    for (size_t i = 0; i < count; ++i) {
+      const int x = static_cast<int>(i % in.dims.x), z = static_cast<int>((i / in.dims.x) % in.dims.z), y = static_cast<int>(i / (in.dims.x * in.dims.z));
+      const glm::vec3 p = in.origin + glm::vec3(x, y, z) * in.spacing;
+      const auto [c, r] = e2::hexAt(L, p.x, p.z);
+      in.candidate[i] = roomCells_.contains({c, r}) && p.y > groundAt(p.x, p.z) + 0.15f && p.y < roofBottom_ - 0.1f;
+    }
+    // The surfaces: the pieces and the roof (probeTris_), the ground under the roof, two triangles per half unit, facing up.
+    in.triangles = probeTris_;
+    constexpr float kStep = 0.5f;
+    for (float x = roofRect_.x; x < roofRect_.z; x += kStep)
+      for (float z = roofRect_.y; z < roofRect_.w; z += kStep) {
+        const glm::vec3 a{x, groundAt(x, z), z}, b{x + kStep, groundAt(x + kStep, z), z}, c{x, groundAt(x, z + kStep), z + kStep},
+            d{x + kStep, groundAt(x + kStep, z + kStep), z + kStep};
+        in.triangles.insert(in.triangles.end(), {a, c, b, b, c, d});  // (a, c, b): cross points up (+y)
+      }
+    in.keyDirections = probeKeyDirections(kProbeKeyDirections);
+    logInfo("light probes: baking {} x {} x {} over {} hexes of room, {} triangles", in.dims.x, in.dims.y, in.dims.z, roomCells_.size(), in.triangles.size() / 3);
+    probeInput_ = std::move(in);
+    probeBusy_ = true;
+    jobs_.run([this] {
+      probeOutput_ = bakeProbes(probeInput_, [this](uint32_t n, const std::function<void(uint32_t, uint32_t)>& body) { jobs_.parallelFor(n, 8, body); });
+    }, &probeJob_);
+  }
+
+  // The bake is done: hand the probes to the renderer (Renderer::setProbes) and find each column's floor probe for the meter.
+  void uploadProbes(Renderer& renderer) {
+    probeBusy_ = false;
+    const ProbeBakeOutput& out = probeOutput_;
+    auto volume = std::make_shared<Renderer::ProbeVolume>();
+    volume->origin = probeInput_.origin, volume->spacing = probeInput_.spacing, volume->dims = probeInput_.dims;
+    volume->keyDirections.assign(probeInput_.keyDirections.begin(), probeInput_.keyDirections.begin() + out.keyCount);
+    const size_t keyFloats = size_t{out.keyCount} * ProbeBakeOutput::kKeyCoefficients, stride = 1 + ProbeBakeOutput::kTransfer + keyFloats;
+    volume->bake.assign(size_t{out.probeCount} * stride, 0.0f);
+    size_t valid = 0, candidates = 0;
+    for (uint8_t c : probeInput_.candidate) candidates += c;
+    for (uint8_t v : out.valid) valid += v;
+    if (valid * 10 < candidates || valid == 0) {  // the room's surfaces read as solids from inside: never light it with that
+      logWarn("light probes: only {} of {} probes in the room are clear of the walls; probes not used", valid, candidates);
+      return;
+    }
+    valid = 0;
+    for (size_t i = 0; i < out.probeCount; ++i) {
+      float* row = &volume->bake[i * stride];
+      row[0] = out.valid[i] ? 1.0f : 0.0f;
+      std::copy_n(&out.transfer[i * ProbeBakeOutput::kTransfer], ProbeBakeOutput::kTransfer, row + 1);
+      std::copy_n(&out.key[i * keyFloats], keyFloats, row + 1 + ProbeBakeOutput::kTransfer);
+      valid += out.valid[i];
+    }
+    renderer.setProbes(volume);
+    probeUploaded_ = true;
+    probeFloor_.clear();
+    const glm::ivec3 dims = probeInput_.dims;
+    for (int z = 0; z < dims.z; ++z)
+      for (int x = 0; x < dims.x; ++x)
+        for (int y = 0; y < dims.y; ++y) {
+          const uint32_t i = static_cast<uint32_t>(x + dims.x * (z + dims.z * y));
+          if (!out.valid[i]) continue;
+          probeFloor_.push_back(i);
+          break;
+        }
+    logInfo("light probes: {} of {} in the room ({} x {} x {}), {} triangles, baked in {:.2f} s", valid, out.probeCount, dims.x, dims.y, dims.z,
+            probeInput_.triangles.size() / 3, out.seconds);
+  }
+
+  // The camera's meter in a room lit through its windows: the light on the room's floor (an incident reading, as a light meter on
+  // the floor would take it), the geometric mean over the floor probes: the probes' own (the sky through the openings and every
+  // bounce, read back from the GPU), the key light's beam where it falls on the probe, and the fire's light. 0 = not yet read.
+  float probeMeterLux(const Renderer& renderer, const Renderer::Lighting& lighting) const {
+    const std::vector<float>& lux = renderer.probeLux();
+    if (!probeUploaded_ || lux.size() != probeOutput_.probeCount || probeFloor_.empty()) return 0.0f;
+    const glm::vec3 key = glm::normalize(lighting.sunDirection);
+    uint32_t nearest = 0;
+    for (uint32_t j = 1; j < probeOutput_.keyCount; ++j)
+      if (glm::dot(probeInput_.keyDirections[j], key) > glm::dot(probeInput_.keyDirections[nearest], key)) nearest = j;
+    const glm::vec3 c = lighting.sunColor;
+    const float beam = key.y > 0.0f ? lighting.sunIntensity * (0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b) * key.y : 0.0f;
+    double logSum = 0.0;
+    for (uint32_t i : probeFloor_) {
+      float e = lux[i];
+      if (beam > 0.0f && ((probeOutput_.keyVisible[i] >> nearest) & 1u)) e += beam;
+      const glm::ivec3 dims = probeInput_.dims;
+      const glm::vec3 p = probeInput_.origin + glm::vec3(static_cast<int>(i % dims.x), static_cast<int>(i / (dims.x * dims.z)),
+                                                         static_cast<int>((i / dims.x) % dims.z)) * probeInput_.spacing;
+      for (size_t k = fireLightsFrom_; k < fireLightsTo_ && k < lights_.size(); ++k) {
+        const LocalLight& l = lights_[k];
+        const float d2 = std::max(glm::dot(l.position - p, l.position - p), 0.25f);
+        if (d2 < l.range * l.range) e += (0.2126f * l.color.r + 0.7152f * l.color.g + 0.0722f * l.color.b) / d2;
+      }
+      logSum += std::log(std::max(e, 1e-3f));
+    }
+    return static_cast<float>(std::exp(logSum / static_cast<double>(probeFloor_.size())));
   }
 
   // A shadow-only box of the given half extents, centred on its origin (the roof slab, the plinth): never drawn, only cast.
@@ -2730,6 +2893,7 @@ class MapStage final : public Stage {
   }
 
   void buildLights(float time) {
+    fireLightsFrom_ = fireLightsTo_ = lights_.size();
     // A map light sits on its flame as the card draws it (the user, 2026-10-18: the lights were "completely off set"):
     // the card's axis and layer step (addCard), its picture's bottom edge, then up the card along the same lean as
     // sprites.hlsl VSMain when the cards lean to the camera; Engine2's floor of minHeight over the ground kept.
@@ -2775,37 +2939,8 @@ class MapStage final : public Stage {
       }
       lights_.push_back(l);
     }
-    // Luz das janelas: the daylight (or moonlight) that comes in through each opening, a glow born at the opening and fading into the
-    // room by the square of the distance (the user, 2026-10-21: "a luz de fora entra só pelas janelas, seteiras e portão ... uma
-    // claridade que nasce em cada abertura e se apaga para dentro da sala"). The opening is a patch of sky of luminance L = E_sky / pi
-    // (the sky's light on the ground, about a fifth of the key that reaches it) and clear area A: it shines with I = L x A candela. The
-    // direct sun through it is the sun's own shadowed light. The hour's real sun and moon set it (mapLighting).
-    if (windowLight() && lightingMode_ == 3) {
-      const Renderer::Lighting outside = mapLighting(time);
-      const float skyLux = kSkyShareOfKey * outside.sunIntensity;
-      const glm::vec3 cool{0.80f, 0.88f, 1.0f};  // the sky's own blue, a third of the mix with the key's colour (warm at dusk, the moon's at night)
-      glm::vec3 tint = glm::mix(outside.sunColor, cool, 0.35f);
-      const float lum = 0.2126f * tint.r + 0.7152f * tint.g + 0.0722f * tint.b;
-      if (lum > 1e-6f) tint /= lum;
-      for (size_t i = 0; i < arch_.size(); ++i) {
-        const ArchPiece& a = arch_[i];
-        if (a.openingArea <= 0.0f) continue;
-        float open = 1.0f;  // an animated door lets in its open share
-        if (const auto d = doors_.find(i); d != doors_.end()) open = d->second.angle / static_cast<float>(e2::kEmberDoorOpenRadians);
-        if (open <= 0.01f) continue;
-        const float candela = skyLux / std::numbers::pi_v<float> * a.openingArea * open;
-        LocalLight l;
-        l.position = glm::vec3(a.x, groundOf(a.groundSmooth, a.groundHard), a.z) + a.openingAt;
-        l.color = tint * candela;
-        l.decay = 2.0f;
-        l.range = a.openingReach;  // the shader's window (1 - (d / range)^4)^2 takes it to nothing there
-        // Into the room only (100% interior; a local light casts no shadow, and these lit the board's outer sides and the ground in front
-        // of the gate, capture skirt-p-day-localonly of 2026-10-21): fully down to the wall's inner face, gone 0.15 behind it.
-        l.facing = glm::normalize(glm::vec3(a.openingAt.x, 0.0f, a.openingAt.z));
-        l.behind = 0.45f;
-        lights_.push_back(l);
-      }
-    }
+    fireLightsTo_ = lights_.size();  // the decorations' and the walls' fire, above: never dimmed by the sun (frame, kFireExposure)
+    // (The daylight that comes in through the openings, the sky's and the bounced sun's, is the room's light probes': startProbeBake.)
     if (hero_ < 0) return;
     const e2::SceneUnit* hero = &scene_->units[static_cast<size_t>(hero_)];
     const glm::vec3 base = heroAt_;
@@ -8647,6 +8782,15 @@ class MapStage final : public Stage {
   MeshId roofMesh_ = 0;    // the shadow-only roof slab (buildRoof); 0 = none
   MeshId plinthMesh_ = 0;  // ... and the shadow-only plinth under the board
   float plinthCentreY_ = 0.0f;
+  glm::vec4 roofRect_{0.0f};  // ... its rectangle: x0, z0, x1, z1
+  // Luz das janelas: the room's light probes (startProbeBake / uploadProbes; the bake runs on the workers while probeBusy_).
+  std::vector<glm::vec3> probeTris_;          // the room's surfaces in world space: the pieces (buildArchitecture), the roof (buildRoof)
+  std::set<std::pair<int, int>> roomCells_;   // the hexes the walls enclose
+  ProbeBakeInput probeInput_;
+  ProbeBakeOutput probeOutput_;
+  JobCounter probeJob_;
+  bool probeBusy_ = false, probeUploaded_ = false, probeMeterLogged_ = false;
+  std::vector<uint32_t> probeFloor_;          // per column of the grid, its lowest probe in the room (the camera's meter reads them)
   float roofBottom_ = 0.0f, roofCentreY_ = 0.0f;  // ... its underside and centre (world y)
   glm::vec3 roofCentre_{0.0f};                     // ... its centre on the board (x, z)
   std::map<std::pair<int, int>, e2::BattleCell> doorCellsBefore_;  // the battle cells under the animated doors before they were made solid
@@ -8760,14 +8904,13 @@ class MapStage final : public Stage {
   // the sky: the indoor light path with no light from outside, whatever the map's lists say.
   bool underground() const { return board_ && board_->draft().underground; }
   inline static const std::set<std::string> kWindowLightMaps = {"watchtower-gate-floor", "watchtower-barracks", "watchtower-command"};
-  // The sky's ambient over the whole room: none (2026-10-21: at 0.08 it painted every surface blue, "pinta tudo de azul"); the sky's
-  // light comes in only through the openings (buildLights).
-  static constexpr float kWindowSkyShare = 0.0f;
-  static constexpr float kSkyShareOfKey = 0.2f;      // the sky's light on the ground as a share of the key light that reaches it
-  static constexpr float kWindowMeterShare = 0.04f;  // the camera's meter: the room's level against the outside's
-  // lux: never under the torch-lit room's reading of the old indoor light (3 lux fill x 0.3 + 1.5 ambient): at 0.3 the night
-  // was exposed 36 x brighter than before and every torch burned its wall white (captures 093-094 of 2026-10-21)
+  // Only for the second or two the room's probes take to bake after the map loads (probeMeterLux reads the room itself after):
+  // the camera's meter as a share of the outside's, never under the old torch-lit room's reading.
+  static constexpr float kWindowMeterShare = 0.04f;
   static constexpr float kWindowMeterFloor = 2.7f;
+  // The room's light probes (startProbeBake): their spacing (units; the hexes are 1.73 x 1.5) and the bake's numbers.
+  static constexpr glm::vec3 kProbeSpacing{1.5f, 1.0f, 1.5f};
+  static constexpr uint32_t kProbeKeyDirections = 64;  // the key-light directions of the bounce table (ProbeBakeOutput::keyVisible: <= 64)
   static constexpr float kGameStartHour = 8.0f;  // the game clock's hour when none is given (a new save's: Overworld::campaignHour)
   static constexpr float kRoofUnder = 4.0f;          // the roof slab's underside over the lowest wall's ground (walls are 4.2 tall)
   static constexpr float kRoofOver = 4.6f;           // ... its top over the highest wall's ground: every wall top sits inside the slab

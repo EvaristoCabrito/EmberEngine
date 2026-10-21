@@ -185,7 +185,44 @@ float3 skyIrradiance(MeshFrame f, float3 n) {
   return max(e, 0.0);
 }
 
+// The room's diffuse light probes (probes.hlsl; Luz das janelas, after Final Fantasy XV's): the irradiance at `p` facing `n`, from
+// the 8 probes around it (trilinear), each weighted by how much it faces the surface, only those standing in the room; `found` false
+// where no probe reaches (outside the room: no light from outside but through the openings).
+float3 probeIrradiance(MeshFrame f, float3 p, float3 n, out bool found) {
+  const float3 origin = vk::RawBufferLoad<float4>(f.probes).xyz, spacing = vk::RawBufferLoad<float4>(f.probes + 16u).xyz;
+  const uint4 dims = vk::RawBufferLoad<uint4>(f.probes + 32u);
+  const float3 g = (p + n * 0.35 - origin) / spacing;
+  const int3 base = int3(floor(g));
+  const float3 t = g - float3(base);
+  const float b[9] = {0.282095, 0.488603 * n.y, 0.488603 * n.z, 0.488603 * n.x, 1.092548 * n.x * n.y, 1.092548 * n.y * n.z,
+                      0.315392 * (3.0 * n.z * n.z - 1.0), 1.092548 * n.x * n.z, 0.546274 * (n.x * n.x - n.y * n.y)};
+  float3 sum = 0.0;
+  float total = 0.0;
+  [loop] for (uint c = 0; c < 8u; ++c) {  // (a loop, not unrolled: every lit shader carries this)
+    const int3 o = int3(c & 1u, (c >> 1) & 1u, (c >> 2) & 1u);
+    const int3 q = base + o;
+    if (any(q < 0) || q.x >= int(dims.x) || q.y >= int(dims.y) || q.z >= int(dims.z)) continue;
+    const uint64_t at = f.probes + 64u + uint64_t(uint(q.x) + dims.x * (uint(q.z) + dims.z * uint(q.y))) * 144u;
+    const float4 first = vk::RawBufferLoad<float4>(at);
+    if (first.w < 0.5) continue;
+    const float3 tri = lerp(1.0 - t, t, float3(o));
+    const float3 toProbe = normalize(origin + float3(q) * spacing - p);
+    const float w = tri.x * tri.y * tri.z * smoothstep(-0.2, 0.3, dot(toProbe, n));
+    if (w <= 1e-5) continue;
+    float3 e = first.rgb * b[0];
+    [loop] for (uint k = 1; k < 9u; ++k) e += vk::RawBufferLoad<float4>(at + k * 16u).rgb * b[k];
+    sum += e * w;
+    total += w;
+  }
+  found = total > 1e-4;
+  return found ? max(sum / total, 0.0) : float3(0.0, 0.0, 0.0);
+}
+
 float3 indirectDiffuse(MeshFrame f, Surface s) {
+  if (f.probes != 0) {
+    bool found;
+    return probeIrradiance(f, s.position, s.normal, found);
+  }
   if (f.atmosphere != 0) return skyIrradiance(f, s.normal);
   return lerp(f.groundColor, f.skyColor, s.normal.y * 0.5 + 0.5) * f.ambientIntensity;
 }
@@ -217,6 +254,10 @@ float3 skyReflection(MeshFrame f, float3 dir, float roughness) {
 // polished stone, metal see the real sky, clouds and all), else the sky's irradiance there / pi (a rough reflection;
 // the hemisphere's uniform radiance E / pi without the atmosphere).
 float3 indirectSpecular(MeshFrame f, Surface s, float3 reflected) {
+  if (f.probes != 0) {  // inside the room: what the probes see that way (no sky but through the openings)
+    bool found;
+    return probeIrradiance(f, s.position, reflected, found) / kPi;
+  }
   if (f.atmosphere != 0) {
     if (f.skyReflect != kNoTexture) return skyReflection(f, reflected, s.roughness);
     return skyIrradiance(f, reflected) / kPi;

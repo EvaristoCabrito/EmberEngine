@@ -157,7 +157,8 @@ struct MeshFrame {
   uint fogMask;              // RGBA16F: r darkness (0 in sight, 0.6 remembered, 1 never seen), then the volumetric
                              // fog's boundary, ground, valley (FogMask); kNoTexture = no fog of war
   uint fogSampler;
-  uint2 pad9;
+  // The room's diffuse light probes (probes.hlsl, Luz das janelas): header then per probe 9 x float4 irradiance; 0 = none.
+  uint64_t probes;
   // Volumetric fog (volume.hlsl): the integrated froxel volume surfaces read at their depth.
   uint volume;               // sampled 3D texture (scattered light, transmittance); kNoTexture = none
   uint volumeSampler;        // linear, clamped

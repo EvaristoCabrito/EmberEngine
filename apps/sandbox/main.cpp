@@ -160,7 +160,7 @@ struct Options {
   int floorImage = 1;  // --floor N: maps whose draft lays its painting under the board: 0 OFF, 1 on (panel "Chão do vão")
   int windFog = 1;     // --wind-fog N: maps whose draft names a wind fog: 0 OFF, 1 on (panel "Névoa do vento")
   int windowLight = -1;  // --window-light N: indoor maps' "Luz das janelas": -1 as the map says, 0 OFF, 1 real
-  int atmos = 2;  // --atmos N: Atmosfera volumétrica v1 at the start (0 OFF, 1 cinema, 2 alta, 3 desempenho)
+  int atmos = -1;  // --atmos N: Atmosfera volumétrica v1 at the start (0 OFF, 1 cinema, 2 alta, 3 desempenho; -1 the map's own)
   int background = -1;  // --background N: the panel's "Fundo" (-1 as the map says, 0 the painting, 1 the sky, 2 OFF = black, 3 the painting up to
                         // the horizon + the sky, 4 the painting aligned to the sky)
   int waterLook = 0;    // --water N: the panel's "Água" (0 the original = the default, 1 look 001 "ember")

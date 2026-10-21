@@ -226,6 +226,20 @@ class Renderer {
   void setWater(const WaterView& water) { water_ = water; }
   // Ember's 3D water (BoardGround::water3d); empty = none.
   void setWater3d(const Water3DView& water) { water3d_ = water; }
+  // The room's diffuse light probes (Luz das janelas; world/ProbeBake.h, shaders/probes.hlsl), after Final Fantasy XV's: the baked
+  // grid, relit every frame from the hour's sky (its transfer) and the key light (its bounce, at the key's real direction). `bake`
+  // per probe: valid (0 / 1), the 81 transfer numbers, keyDirections.size() x 4 key numbers. Null = none (the sky's SH as before).
+  struct ProbeVolume {
+    glm::vec3 origin{0.0f}, spacing{1.0f};
+    glm::ivec3 dims{0};
+    std::vector<glm::vec3> keyDirections;
+    std::vector<float> bake;
+  };
+  void setProbes(std::shared_ptr<const ProbeVolume> probes);
+  // Light the next frame with the probes (called every frame they apply; a stage that does not ask is lit as before).
+  void useProbes() { probesWanted_ = true; }
+  // The probes' irradiance on an upward face in lux, as last read back (one per probe; empty until a frame with probes finished).
+  const std::vector<float>& probeLux() const { return probeLux_; }
   // Local lights for the next frame (at most kMaxLights; the rest are dropped).
   void setLights(std::span<const LocalLight> lights) { lights_.assign(lights.begin(), lights.begin() + std::min<size_t>(lights.size(), kMaxLights)); }
   static constexpr uint32_t kMaxLights = 1024;
@@ -390,6 +404,9 @@ class Renderer {
     Buffer cloudFrame;    // CloudFrame for the fog bank passes (device-local)
     Buffer atmosphereFrame;  // AtmosphereFrame (device-local)
     Buffer stars;         // this frame's GpuStar[] (host-visible, read by device address)
+    Buffer probeRead;     // this frame's probes' upward irradiance in lux (host-visible, written by probes.hlsl, read back)
+    uint32_t probeReadCount = 0;  // ... how many probes it held when this frame was recorded (0 = none)
+    float probeReadExposure = 0.0f;
     bool countersPending = false;
   };
 
@@ -477,6 +494,13 @@ class Renderer {
   uint32_t skyReflectSampled_ = kNoIndex;
   VkPipeline skyReflectBasePipeline_ = VK_NULL_HANDLE, skyReflectFilterPipeline_ = VK_NULL_HANDLE;
   bool skyReflection_ = true, skyReflectReady_ = false, skyReflectThisFrame_ = false;
+  // The room's light probes (setProbes): the bake (staged once into a device buffer), relit every frame into probeOutput_.
+  std::shared_ptr<const ProbeVolume> probes_;
+  bool probesDirty_ = false, probesWanted_ = false, probesThisFrame_ = false;
+  Buffer probeStaging_, probeBake_, probeOutput_;
+  uint32_t probeCount_ = 0;
+  VkPipeline probePipeline_ = VK_NULL_HANDLE;
+  std::vector<float> probeLux_;
   Clouds clouds_;
   std::vector<GpuStar> stars_;  // the real night sky this frame (setStars), copied into frame.stars
   glm::vec3 galaxyPole_{0.0f, 1.0f, 0.0f}, galaxyCentre_{0.0f, 0.0f, 1.0f};
