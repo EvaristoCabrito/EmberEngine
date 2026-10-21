@@ -1,0 +1,314 @@
+{
+ "assets": [
+  {
+   "name": "barrel",
+   "kit": "props",
+   "glb": "props/barrel-v02.glb",
+   "size": [
+    1.165,
+    1.165,
+    1.3
+   ],
+   "height": 1.3,
+   "triangles": 2296,
+   "materials": [
+    "planks-dark-photo",
+    "iron-photo"
+   ],
+   "glb_bytes": 706276,
+   "version": "v02"
+  },
+  {
+   "name": "crate",
+   "kit": "props",
+   "glb": "props/crate-v02.glb",
+   "size": [
+    1.043,
+    1.09,
+    0.92
+   ],
+   "height": 0.92,
+   "triangles": 180,
+   "materials": [
+    "planks-worn-photo",
+    "planks-dark-photo"
+   ],
+   "glb_bytes": 594320,
+   "version": "v02"
+  },
+  {
+   "name": "sacks",
+   "kit": "props",
+   "glb": "props/sacks-v02.glb",
+   "size": [
+    1.675,
+    1.518,
+    1.112
+   ],
+   "height": 1.112,
+   "triangles": 1644,
+   "materials": [
+    "burlap-photo",
+    "rope"
+   ],
+   "glb_bytes": 381036,
+   "version": "v02"
+  },
+  {
+   "name": "weapon-rack",
+   "kit": "treasure",
+   "glb": "treasure/weapon-rack-v02.glb",
+   "size": [
+    1.94,
+    0.6,
+    2.55
+   ],
+   "height": 2.55,
+   "triangles": 528,
+   "materials": [
+    "planks-dark-photo",
+    "planks-worn-photo",
+    "silver",
+    "brass",
+    "leather"
+   ],
+   "glb_bytes": 619232,
+   "version": "v02"
+  },
+  {
+   "name": "shield-stand",
+   "kit": "treasure",
+   "glb": "treasure/shield-stand-v02.glb",
+   "size": [
+    2.07,
+    0.5,
+    1.0
+   ],
+   "height": 1.0,
+   "triangles": 1644,
+   "materials": [
+    "planks-dark-photo",
+    "iron-photo"
+   ],
+   "glb_bytes": 671080,
+   "version": "v02"
+  },
+  {
+   "name": "workbench",
+   "kit": "treasure",
+   "glb": "treasure/workbench-v02.glb",
+   "size": [
+    2.4,
+    1.37,
+    1.45
+   ],
+   "height": 1.45,
+   "triangles": 352,
+   "materials": [
+    "planks-worn-photo",
+    "planks-dark-photo",
+    "iron-photo",
+    "silver"
+   ],
+   "glb_bytes": 914000,
+   "version": "v02"
+  },
+  {
+   "name": "long-bench",
+   "kit": "interior",
+   "glb": "interior/long-bench-v02.glb",
+   "size": [
+    2.4,
+    0.4,
+    0.62
+   ],
+   "height": 0.62,
+   "triangles": 144,
+   "materials": [
+    "planks-worn-photo",
+    "planks-dark-photo"
+   ],
+   "glb_bytes": 593424,
+   "version": "v02"
+  },
+  {
+   "name": "barrel-rack",
+   "kit": "interior",
+   "glb": "interior/barrel-rack-v02.glb",
+   "size": [
+    2.6,
+    1.1,
+    1.146
+   ],
+   "height": 1.146,
+   "triangles": 4944,
+   "materials": [
+    "planks-dark-photo",
+    "iron-photo"
+   ],
+   "glb_bytes": 830736,
+   "version": "v02"
+  },
+  {
+   "name": "simple-bed",
+   "kit": "interior",
+   "glb": "interior/simple-bed-v02.glb",
+   "size": [
+    2.68,
+    1.38,
+    1.1
+   ],
+   "height": 1.1,
+   "triangles": 760,
+   "materials": [
+    "planks-dark-photo",
+    "wool",
+    "cloth-red"
+   ],
+   "glb_bytes": 331112,
+   "version": "v02"
+  },
+  {
+   "name": "table",
+   "kit": "tavern",
+   "glb": "tavern/table-v02.glb",
+   "size": [
+    2.5,
+    1.15,
+    1.25
+   ],
+   "height": 1.25,
+   "triangles": 192,
+   "materials": [
+    "planks-worn-photo",
+    "planks-dark-photo"
+   ],
+   "glb_bytes": 595192,
+   "version": "v02"
+  },
+  {
+   "name": "chair",
+   "kit": "tavern",
+   "glb": "tavern/chair-v02.glb",
+   "size": [
+    0.62,
+    0.62,
+    1.45
+   ],
+   "height": 1.45,
+   "triangles": 204,
+   "materials": [
+    "planks-worn-photo",
+    "planks-dark-photo"
+   ],
+   "glb_bytes": 596080,
+   "version": "v02"
+  },
+  {
+   "name": "pillar",
+   "kit": "dungeon",
+   "glb": "dungeon/pillar-v02.glb",
+   "size": [
+    1.678,
+    1.696,
+    4.214
+   ],
+   "height": 4.214,
+   "triangles": 2486,
+   "materials": [
+    "masonry-crypt-photo"
+   ],
+   "glb_bytes": 417084,
+   "version": "v02"
+  },
+  {
+   "name": "ancient-tombstone",
+   "kit": "crypt",
+   "glb": "crypt/ancient-tombstone-v02.glb",
+   "size": [
+    1.502,
+    0.763,
+    2.054
+   ],
+   "height": 2.054,
+   "triangles": 3228,
+   "materials": [
+    "masonry-crypt-photo",
+    "masonry-mossy-photo"
+   ],
+   "glb_bytes": 414348,
+   "version": "v02"
+  },
+  {
+   "name": "grave-marker",
+   "kit": "extra",
+   "glb": "extra/grave-marker-v03.glb",
+   "size": [
+    0.947,
+    0.315,
+    1.526
+   ],
+   "height": 1.526,
+   "triangles": 2592,
+   "materials": [
+    "masonry-mossy-photo",
+    "moss"
+   ],
+   "glb_bytes": 772412,
+   "version": "v03"
+  },
+  {
+   "name": "stone-tomb",
+   "kit": "crypt",
+   "glb": "crypt/stone-tomb-v02.glb",
+   "size": [
+    2.451,
+    1.252,
+    0.893
+   ],
+   "height": 0.893,
+   "triangles": 136,
+   "materials": [
+    "masonry-mossy-photo",
+    "masonry-crypt-photo"
+   ],
+   "glb_bytes": 334672,
+   "version": "v02"
+  },
+  {
+   "name": "sarcophagus",
+   "kit": "crypt",
+   "glb": "crypt/sarcophagus-v02.glb",
+   "size": [
+    2.706,
+    1.254,
+    1.396
+   ],
+   "height": 1.396,
+   "triangles": 3320,
+   "materials": [
+    "masonry-crypt-photo"
+   ],
+   "glb_bytes": 415980,
+   "version": "v02"
+  },
+  {
+   "name": "sarcophagus-broken-lid",
+   "kit": "crypt",
+   "glb": "crypt/sarcophagus-broken-lid-v02.glb",
+   "size": [
+    3.376,
+    3.316,
+    1.682
+   ],
+   "height": 1.682,
+   "triangles": 3364,
+   "materials": [
+    "masonry-crypt-photo"
+   ],
+   "glb_bytes": 418728,
+   "version": "v02"
+  }
+ ],
+ "errors": []
+}

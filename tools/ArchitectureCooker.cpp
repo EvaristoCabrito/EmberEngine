@@ -49,6 +49,7 @@ bool cookArchitecture(JobSystem& jobs, const ArchitectureCookOptions& options, s
   std::set<std::string> textures;
   for (const auto& [id, d] : defs.defs)
     if (!d.wallTexture.empty()) textures.insert(d.wallTexture);
+  for (const auto& [name, url] : defs.materials) textures.insert(url);  // EmberEngine's kit materials (oak, iron, the steps, fire, ...)
   bool ok = true;
   for (const std::string& url : textures) {
     const std::string asset = e2::architectureTextureAsset(url);

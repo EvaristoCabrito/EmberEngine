@@ -1978,7 +1978,7 @@ class MapStage final : public Stage {
       // welded); EmberEngine's pieces carry extra materials tagged in their UVs (Architecture.h emberMaterialTag): one part per
       // material. `footprint`: the top faces become the piece's sight samples and the bounds are kept.
       auto meshOf = [&](const e2::three::Geometry& g, bool footprint) -> MeshId {
-      static constexpr int kParts = 6;  // 0 the masonry (textured), 1 oak, 2 iron, 3 flame, 4 dark oak, 5 a dark void
+      static constexpr int kParts = e2::kEmberMaterialTags;  // 0 the masonry, 1 oak, 2 iron, 3 flame, 4 dark oak, 5 a dark void, 6 the steps
       MeshBuildPart parts[kParts];
       std::map<std::array<float, 8>, uint32_t> weld[kParts];
       size_t triangles = 0;
@@ -1999,7 +1999,7 @@ class MapStage final : public Stage {
           const size_t v = t + k;
           // three's TextureLoader flips the image (v up from its bottom row); cooked textures start at the top
           const std::array<float, 8> key{g.position[v * 3], g.position[v * 3 + 1], g.position[v * 3 + 2], normal.x, normal.y, normal.z,
-                                         g.uv[v * 2], 1.0f - g.uv[v * 2 + 1]};
+                                         static_cast<float>(e2::emberMaterialU(g.uv[v * 2])), 1.0f - g.uv[v * 2 + 1]};
           auto [it, fresh] = weld[tag].try_emplace(key, static_cast<uint32_t>(part.positions.size() / 3));
           if (fresh) {
             part.positions.insert(part.positions.end(), {key[0], key[1], key[2]});
@@ -2043,14 +2043,32 @@ class MapStage final : public Stage {
       // (At 40 / 16 / 4 the night's exposure (0.05) took it to white: a lamp bulb, not fire; capture 098 of 2026-10-21.)
       MeshMaterial flame = flat(0x3a1a08u, 0.9f, 0.0f);
       flame.emissive[0] = 16.0f, flame.emissive[1] = 5.5f, flame.emissive[2] = 0.9f;
-      const MeshMaterial materials[kParts] = {m, flat(0x6b4a2bu, 0.82f, 0.0f), flat(0x3a3a3cu, 0.45f, 0.65f), flame, flat(0x3b2a18u, 0.85f, 0.0f),
-                                              flat(0x060504u, 1.0f, 0.0f)};
+      MeshMaterial materials[kParts] = {m, flat(0x6b4a2bu, 0.82f, 0.0f), flat(0x3a3a3cu, 0.45f, 0.65f), flame, flat(0x3b2a18u, 0.85f, 0.0f),
+                                        flat(0x060504u, 1.0f, 0.0f), flat(0x55524eu, 0.9f, 0.0f)};
+      // The kit's photographed materials (the user's textures of 2026-10-21, content/models/architecture.json "materials"): the
+      // photograph instead of the flat colour; the flame's photograph is its glow (emissive x the fire, so its own oranges show).
+      bool taggedTexture[kParts] = {};
+      for (int k = 1; k < kParts; ++k) {
+        const auto it = defs.materials.find(e2::emberMaterialName(k));
+        if (it == defs.materials.end()) continue;
+        const AssetId tex = assetId(e2::architectureTextureAsset(it->second));
+        if (k == 3) {
+          materials[k].emissiveTexture = tex;
+          materials[k].emissive[0] = materials[k].emissive[1] = materials[k].emissive[2] = 14.0f;
+          materials[k].baseColor[0] = materials[k].baseColor[1] = materials[k].baseColor[2] = 0.02f;
+        } else {
+          materials[k].baseColorTexture = tex;
+          for (int c = 0; c < 3; ++c) materials[k].baseColor[c] = 1.0f;
+          if (k == 2) materials[k].metallic = 0.35f, materials[k].roughness = 0.62f;  // the rust is in the photograph
+        }
+        taggedTexture[k] = true;
+      }
       MeshBuild build;
       std::vector<MeshMaterial> used;
       bool built = false;
       for (int k = 0; k < kParts; ++k) {
         if (parts[k].indices.empty()) continue;
-        if (!build.addPart(parts[k], static_cast<uint16_t>(used.size()), false, k == 0 && textured, false)) continue;
+        if (!build.addPart(parts[k], static_cast<uint16_t>(used.size()), false, (k == 0 && textured) || taggedTexture[k], false)) continue;
         used.push_back(materials[k]);
         built = true;
       }

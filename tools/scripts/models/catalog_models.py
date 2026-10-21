@@ -59,6 +59,8 @@ def main(models_path='content/models/models.json', catalog_path='content/engine2
             'emberStyle': p['emberStyle'], 'textureRepeat': p.get('textureRepeat', 3.6),
         }
     editor['architectureOrder'] = [p['id'] for p in architecture['pieces']] + editor['architectureOrder']
+    # the kit's photographed materials (world/Architecture.h emberMaterialName -> texture URL)
+    editor['architectureMaterials'] = architecture.get('materials', {})
     # the editor's Abrir porta / Fechar passagem pairs (decoMeta.doorStyle -> doorVariants[style])
     editor.setdefault('doorVariants', {})
     for style in [s for s, v in editor['doorVariants'].items() if str(v.get('open', '')).startswith('ember-')]:

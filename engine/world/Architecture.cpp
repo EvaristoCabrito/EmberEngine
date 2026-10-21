@@ -338,13 +338,22 @@ Geometry referenceDoorGeometry(const ArchitectureDef& def, double tile, double h
 //   portal  an arched doorway two hexes wide (replaces the flat-coloured watchtower entrance)
 // A window's or slit's inner side is local -y (the board's +z) before the quarter turns; MapStage turns the piece so the splay
 // faces the room (the board's centre).
-// The masonry's UVs: world-aligned square repeats (continuous across the joins), left alone on the tagged materials.
+// The masonry's UVs: world-aligned square repeats (continuous across the joins). The tagged materials (the user's photographs of
+// 2026-10-21: oak, iron, dark oak, the steps' stone) get box-projected UVs of their own repeat, the tag kept in front (u = 100 * tag
+// + 50 + u); the flame keeps the UVs flameDrop gave it.
 void emberMasonryUVs(Geometry& g, std::pair<double, double> origin, double repeat) {
+  // world units per repeat, across and up (the photographs' own proportions: the door oak is portrait, the others landscape)
+  static constexpr double kRepeat[kEmberMaterialTags][2] = {{0, 0}, {1.3, 1.95}, {0.9, 0.6}, {0, 0}, {1.2, 0.8}, {1, 1}, {1.6, 1.07}};
   for (size_t i = 0; i < g.count(); ++i) {
-    if (g.uv[i * 2] >= kEmberUvTag) continue;
+    const int tag = emberMaterialTag(g.uv[i * 2]);
+    if (tag == 3) continue;
     const double x = g.px(i) + origin.first, y = g.py(i) + origin.second, z = g.pz(i);
-    if (std::abs(g.nz(i)) > 0.5) g.setUV(i, x / repeat, y / repeat);
-    else g.setUV(i, (std::abs(g.nx(i)) > 0.5 ? y : x) / repeat, z / repeat);
+    const double ru = tag ? kRepeat[std::min(tag, kEmberMaterialTags - 1)][0] : repeat, rv = tag ? kRepeat[std::min(tag, kEmberMaterialTags - 1)][1] : repeat;
+    double u, v;
+    if (std::abs(g.nz(i)) > 0.5) u = x / ru, v = y / rv;
+    else u = (std::abs(g.nx(i)) > 0.5 ? y : x) / ru, v = z / rv;
+    if (tag) u = std::clamp(u, -49.0, 49.0) + kEmberUvTag * tag + 50.0;
+    g.setUV(i, u, v);
   }
 }
 void tagMaterial(Geometry& g, int tag) {
@@ -367,8 +376,12 @@ Geometry flameDrop(double x, double y, double z) {
     f.position[i * 3 + 2] = static_cast<float>(pz * 2.6);
   }
   f.computeVertexNormals();
+  // the user's fire photograph (cropped to its flames) wrapped on the drop: across from side to side, up from its foot to its tip
+  for (size_t i = 0; i < f.count(); ++i) {
+    const double u = 0.5 + (f.px(i) + f.py(i)) * 0.5 / 0.3, v = 1.0 - (f.pz(i) + 0.135) / 0.525;
+    f.setUV(i, kEmberUvTag * 3 + 50.0 + std::clamp(u, 0.02, 0.98), std::clamp(v, 0.02, 0.98));
+  }
   f.translate(x, y, z);
-  tagMaterial(f, 3);
   return f;
 }
 
@@ -522,18 +535,19 @@ Geometry stairsGeometry(const ArchitectureDef& def, double tile, double height, 
   const double hw = p.W / 2, cheek = 0.18 * tile;
   if (def.emberStyle == "stairs-up") {
     // the flight: each step a block from its nose to the landing, so the mass under the treads is solid stone
+    // (tag 6: the steps' own stone, the user's worn-tread photograph; the cheeks and the arch keep the walls' masonry)
     for (int i = 0; i < p.steps; ++i) {
       const double x0 = p.from + i * p.tread, z1 = (i + 1) * p.rise;
-      boxSpan(x0, p.to, -hw, hw, 0, z1);
+      boxSpan(x0, p.to, -hw, hw, 0, z1, 6);
       // a nosing lip on each tread
-      boxSpan(x0 - 0.03 * tile, x0 + 0.06 * tile, -hw, hw, z1 - 0.05 * tile, z1 + 0.015 * tile);
+      boxSpan(x0 - 0.03 * tile, x0 + 0.06 * tile, -hw, hw, z1 - 0.05 * tile, z1 + 0.015 * tile, 6);
       // the stepped cheeks: half a metre of balustrade over each step
       for (int s : {-1, 1}) boxSpan(x0, x0 + p.tread, s > 0 ? hw : -hw - cheek, s > 0 ? hw + cheek : -hw, 0, z1 + 0.55 * tile);
     }
-    boxSpan(p.to, p.L / 2, -hw, hw, 0, p.top);  // the landing
+    boxSpan(p.to, p.L / 2, -hw, hw, 0, p.top, 6);  // the landing
     for (int s : {-1, 1}) boxSpan(p.to, p.L / 2, s > 0 ? hw : -hw - cheek, s > 0 ? hw + cheek : -hw, 0, p.top + 0.55 * tile);
     // the foot: a plinth under the first step's nose
-    boxSpan(p.from - 0.12 * tile, p.from + p.tread, -hw - cheek, hw + cheek, 0, 0.06 * tile);
+    boxSpan(p.from - 0.12 * tile, p.from + p.tread, -hw - cheek, hw + cheek, 0, 0.06 * tile, 6);
     // the stairhead arch on the landing, across the flight, its opening dark (the way up)
     const double archW = p.W + 0.5 * tile, archH = 2.5 * tile, radius = hw - 0.05 * tile, spring = 1.45 * tile, archRise = 0.65 * tile, depth = 0.45 * tile;
     Geometry arch = extruded(archFrame(archW, archH, radius, spring, archRise), depth, 20);  // width along x, depth along y
@@ -546,14 +560,14 @@ Geometry stairsGeometry(const ArchitectureDef& def, double tile, double height, 
     const double x0 = p.from, x1 = p.L / 2 - 0.1 * tile, depth = p.top + 0.5 * tile, wall = 0.3 * tile;
     // the kerb round the well and the parapet on its long sides and far end (the near end is the way in)
     const double k = 0.25 * tile, kh = 0.12 * tile, ph = 0.85 * tile, pt = 0.22 * tile;
-    boxSpan(x0 - k, x1 + k, hw, hw + k, 0, kh);
-    boxSpan(x0 - k, x1 + k, -hw - k, -hw, 0, kh);
-    boxSpan(x0 - k, x0, -hw, hw, 0, kh);
-    boxSpan(x1, x1 + k, -hw, hw, 0, kh);
-    boxSpan(x0 + 0.2 * tile, x1 + pt, hw, hw + pt, kh, kh + ph);
-    boxSpan(x0 + 0.2 * tile, x1 + pt, -hw - pt, -hw, kh, kh + ph);
-    boxSpan(x1, x1 + pt, -hw, hw, kh, kh + ph);
-    for (int s : {-1, 1}) boxSpan(x0 + 0.12 * tile, x0 + 0.32 * tile, s > 0 ? hw - 0.02 * tile : -hw - pt - 0.04 * tile, s > 0 ? hw + pt + 0.04 * tile : -hw + 0.02 * tile, kh, kh + ph + 0.14 * tile);  // newel posts
+    boxSpan(x0 - k, x1 + k, hw, hw + k, 0, kh, 6);
+    boxSpan(x0 - k, x1 + k, -hw - k, -hw, 0, kh, 6);
+    boxSpan(x0 - k, x0, -hw, hw, 0, kh, 6);
+    boxSpan(x1, x1 + k, -hw, hw, 0, kh, 6);
+    boxSpan(x0 + 0.2 * tile, x1 + pt, hw, hw + pt, kh, kh + ph, 6);
+    boxSpan(x0 + 0.2 * tile, x1 + pt, -hw - pt, -hw, kh, kh + ph, 6);
+    boxSpan(x1, x1 + pt, -hw, hw, kh, kh + ph, 6);
+    for (int s : {-1, 1}) boxSpan(x0 + 0.12 * tile, x0 + 0.32 * tile, s > 0 ? hw - 0.02 * tile : -hw - pt - 0.04 * tile, s > 0 ? hw + pt + 0.04 * tile : -hw + 0.02 * tile, kh, kh + ph + 0.14 * tile, 6);  // newel posts
     // the shaft lining
     boxSpan(x0 - wall, x1 + wall, hw, hw + wall, -depth, 0);
     boxSpan(x0 - wall, x1 + wall, -hw - wall, -hw, -depth, 0);
@@ -562,8 +576,8 @@ Geometry stairsGeometry(const ArchitectureDef& def, double tile, double height, 
     // the steps down: each a block from its nose to the far wall, down to the shaft's floor
     for (int i = 0; i < p.steps; ++i) {
       const double nose = x0 + i * p.tread, z1 = -(i + 1) * p.rise;
-      boxSpan(nose, x1, -hw, hw, -depth, z1);
-      boxSpan(nose - 0.03 * tile, nose + 0.06 * tile, -hw, hw, z1 - 0.05 * tile, z1 + 0.015 * tile);
+      boxSpan(nose, x1, -hw, hw, -depth, z1, 6);
+      boxSpan(nose - 0.03 * tile, nose + 0.06 * tile, -hw, hw, z1 - 0.05 * tile, z1 + 0.015 * tile, 6);
     }
     // the dark doorway at the bottom, on the far wall (the way down)
     boxSpan(x1 - 0.04 * tile, x1, -hw * 0.72, hw * 0.72, -p.top, -p.top + 2.3 * tile, 5);
@@ -724,6 +738,7 @@ Geometry emberGeometry(const ArchitectureDef& def, double tile, double height, i
 three::Geometry emberDoorLeafPiece(const ArchitectureDef& def, int rotation, int side) {
   const double height = 1.0 * 0.75 * def.heightScale * 3.5 * 1.6;  // pieceGeometry's WALL_HUMAN_SCALE, tile 1
   Geometry g = doorLeaf(def, 1.0, height, rotation, side, 0.0);
+  emberMasonryUVs(g, {0.0, 0.0}, std::max(def.textureRepeat, 0.1));
   g.rotateZ(-rotation * kPi / 2);
   g.rotateX(-kPi / 2);
   return g.toNonIndexed();
@@ -972,6 +987,9 @@ bool ArchitectureDefs::load(const std::filesystem::path& catalogFile) {
     a.emberStyle = s(d, "emberStyle"), a.textureRepeat = n(d, "textureRepeat", 3.6);
     defs.emplace(id, std::move(a));
   }
+  if (j["editor"].contains("architectureMaterials") && j["editor"]["architectureMaterials"].is_object())
+    for (const auto& [name, url] : j["editor"]["architectureMaterials"].items())
+      if (url.is_string()) materials.emplace(name, url.get<std::string>());
   return true;
 }
 

@@ -345,6 +345,21 @@ reaching the outermost wall pieces and no further: an overhang shaded the window
 (`stone-stairs-up/down-001`, a floor connector): the waypoint stays for the rules (the floor change), the game draws the 3D piece in its
 card's place; the editor lays them by a click on the waypoint with the Escada brush, the script with `--stairs`.
 
+## The user's photographed materials (2026-10-21; `Attachments/watchtower`)
+
+- **The watchtower kit** (C++ architecture): `architecture.json` "materials" (oak = `widewoodbettertexture`, iron = `metal`, darkOak =
+  `madeiraescura`, steps = `Escadas pedra gasta…`, fire = `Fire` cropped to its flames) in `content/textures/watchtower/*-v01.jpg`, cooked
+  into `architecture.pak` (the pack before them kept as `architecture-20261021-before-photos.pak`). The tagged parts (door leaves and
+  torch shafts, iron straps / brackets / rings, torch heads, the stairs' steps / kerb / parapet) carry box-projected UVs of their own
+  repeat behind the tag (u = 100 x tag + 50 + u); the flame is emissive with the fire photograph.
+- **Props as new versions** (`blender/retexture_photos.py`: the same builders, emberlib's materials swapped for the photos in
+  `textures/wt-*.jpg`, square crops): the Torre's barrel, crate, sacks, weapon rack, shield stand, workbench, long bench, barrel rack,
+  simple bed, table, chair and pillar as `-v02` (ids `ember-<kit>-<name>-v02`, names "· torre"); the cemetery's ancient tombstone and
+  grave marker (`gravestone`), stone tomb, sarcophagus and broken-lid sarcophagus (`limestone`) as `-v02` / grave marker `-v03` (names
+  "· túmulo novo"). The v01 assets and every map using them are unchanged. Pack `build/meshes/props-v4.pak` (JOGAR uses it first).
+  Placed: `watchtower-gate-floor008` (the props) and `cemiterio-esquecidos007` (= 006 with the tombs swapped; 006 untouched).
+- Not used yet: `wood.jpg`, `escadas2.jpg` (small cobbles).
+
 ## The pack (props-v2.pak)
 
 | | assets | textures | on disk | textures on the GPU |

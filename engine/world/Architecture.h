@@ -46,10 +46,21 @@ std::optional<std::array<double, 3>> emberStairFlame(const ArchitectureDef& def,
 // The direction of a span piece's local +x (the stairs' climb) on the board after its quarter turns (piece space: x, 0, z).
 std::array<double, 3> emberDirPiece(int rotation);
 std::optional<std::array<double, 4>> emberStairHole(const ArchitectureDef& def, int rotation);
-// Their extra materials, tagged in the UVs (u >= 100 * tag): 0 the masonry texture, 1 oak, 2 iron, 3 a flame (emissive), 4 dark oak,
-// 5 a dark void (the stairs' openings).
+// Their extra materials, tagged in the UVs (u = 100 * tag + 50 + the part's own u): 0 the masonry texture, 1 oak, 2 iron, 3 a flame
+// (emissive), 4 dark oak, 5 a dark void (the stairs' openings), 6 the steps' stone. MapStage splits them into parts and takes the
+// tag off again (emberMaterialU).
 inline constexpr double kEmberUvTag = 100.0;
+inline constexpr int kEmberMaterialTags = 7;
 inline int emberMaterialTag(double u) { return u >= kEmberUvTag ? static_cast<int>(u / kEmberUvTag) : 0; }
+inline double emberMaterialU(double u) {
+  const int tag = emberMaterialTag(u);
+  return tag ? u - kEmberUvTag * tag - 50.0 : u;
+}
+// The tag's material name in ArchitectureDefs::materials ("" = always flat).
+inline const char* emberMaterialName(int tag) {
+  static const char* kNames[kEmberMaterialTags] = {"", "oak", "iron", "fire", "darkOak", "", "steps"};
+  return tag >= 0 && tag < kEmberMaterialTags ? kNames[tag] : "";
+}
 // The animated door ("door" style): one leaf (side -1 left, +1 right), closed, in the piece's own space like pieceGeometry
 // (Y up, turned by the piece's quarter turns), and its hinge there; MapStage turns the leaf about the hinge (world Y, side x
 // angle: inwards) as the door opens. The "gate" style bakes its leaves swung open into the piece.
@@ -59,6 +70,9 @@ inline constexpr double kEmberDoorOpenRadians = 1.75;  // ~100 degrees: the leav
 
 struct ArchitectureDefs {
   std::map<std::string, ArchitectureDef> defs;
+  // EmberEngine's kit materials by name ("oak", "iron", "darkOak", "steps", "fire": the tagged parts, emberMaterialTag) -> texture URL
+  // (content/models/architecture.json "materials", "editor"."architectureMaterials" in the catalog); absent = the flat colour.
+  std::map<std::string, std::string> materials;
   bool load(const std::filesystem::path& catalogFile);
   const ArchitectureDef* find(const std::string& id) const;
 };

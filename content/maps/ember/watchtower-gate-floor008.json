@@ -5448,49 +5448,49 @@
         "connectorDirection": "down"
       },
       {
-        "id": "ember-dungeon-pillar",
+        "id": "ember-dungeon-pillar-v02",
         "x": 25,
         "y": 15,
         "blocksPath": true
       },
       {
-        "id": "ember-dungeon-pillar",
+        "id": "ember-dungeon-pillar-v02",
         "x": 23,
         "y": 18,
         "blocksPath": true
       },
       {
-        "id": "ember-dungeon-pillar",
+        "id": "ember-dungeon-pillar-v02",
         "x": 18,
         "y": 18,
         "blocksPath": true
       },
       {
-        "id": "ember-dungeon-pillar",
+        "id": "ember-dungeon-pillar-v02",
         "x": 15,
         "y": 15,
         "blocksPath": true
       },
       {
-        "id": "ember-dungeon-pillar",
+        "id": "ember-dungeon-pillar-v02",
         "x": 15,
         "y": 11,
         "blocksPath": true
       },
       {
-        "id": "ember-dungeon-pillar",
+        "id": "ember-dungeon-pillar-v02",
         "x": 18,
         "y": 8,
         "blocksPath": true
       },
       {
-        "id": "ember-dungeon-pillar",
+        "id": "ember-dungeon-pillar-v02",
         "x": 23,
         "y": 8,
         "blocksPath": true
       },
       {
-        "id": "ember-dungeon-pillar",
+        "id": "ember-dungeon-pillar-v02",
         "x": 25,
         "y": 11,
         "blocksPath": true
@@ -5549,115 +5549,115 @@
         "y": 17
       },
       {
-        "id": "ember-tavern-table",
+        "id": "ember-tavern-table-v02",
         "x": 8,
         "y": 26,
         "blocksPath": true
       },
       {
-        "id": "ember-interior-long-bench",
+        "id": "ember-interior-long-bench-v02",
         "x": 8,
         "y": 25,
         "blocksPath": true
       },
       {
-        "id": "ember-interior-long-bench",
+        "id": "ember-interior-long-bench-v02",
         "x": 7,
         "y": 27,
         "blocksPath": true
       },
       {
-        "id": "ember-tavern-table",
+        "id": "ember-tavern-table-v02",
         "x": 13,
         "y": 26,
         "blocksPath": true
       },
       {
-        "id": "ember-tavern-chair",
+        "id": "ember-tavern-chair-v02",
         "x": 12,
         "y": 27,
         "blocksPath": true
       },
       {
-        "id": "ember-tavern-chair",
+        "id": "ember-tavern-chair-v02",
         "x": 15,
         "y": 26,
         "blocksPath": true
       },
       {
-        "id": "ember-treasure-weapon-rack",
+        "id": "ember-treasure-weapon-rack-v02",
         "x": 15,
         "y": 25,
         "blocksPath": true
       },
       {
-        "id": "ember-treasure-weapon-rack",
+        "id": "ember-treasure-weapon-rack-v02",
         "x": 15,
         "y": 30,
         "blocksPath": true
       },
       {
-        "id": "ember-interior-simple-bed",
+        "id": "ember-interior-simple-bed-v02",
         "x": 12,
         "y": 31,
         "blocksPath": true
       },
       {
-        "id": "ember-props-barrel",
+        "id": "ember-props-barrel-v02",
         "x": 8,
         "y": 28,
         "blocksPath": true
       },
       {
-        "id": "ember-treasure-weapon-rack",
+        "id": "ember-treasure-weapon-rack-v02",
         "x": 24,
         "y": 25,
         "blocksPath": true
       },
       {
-        "id": "ember-treasure-weapon-rack",
+        "id": "ember-treasure-weapon-rack-v02",
         "x": 26,
         "y": 25,
         "blocksPath": true
       },
       {
-        "id": "ember-treasure-shield-stand",
+        "id": "ember-treasure-shield-stand-v02",
         "x": 25,
         "y": 31,
         "blocksPath": true
       },
       {
-        "id": "ember-treasure-workbench",
+        "id": "ember-treasure-workbench-v02",
         "x": 30,
         "y": 26,
         "blocksPath": true
       },
       {
-        "id": "ember-interior-barrel-rack",
+        "id": "ember-interior-barrel-rack-v02",
         "x": 31,
         "y": 27,
         "blocksPath": true
       },
       {
-        "id": "ember-props-crate",
+        "id": "ember-props-crate-v02",
         "x": 33,
         "y": 25,
         "blocksPath": true
       },
       {
-        "id": "ember-props-crate",
+        "id": "ember-props-crate-v02",
         "x": 33,
         "y": 26,
         "blocksPath": true
       },
       {
-        "id": "ember-props-sacks",
+        "id": "ember-props-sacks-v02",
         "x": 29,
         "y": 31,
         "blocksPath": true
       },
       {
-        "id": "ember-props-barrel",
+        "id": "ember-props-barrel-v02",
         "x": 28,
         "y": 30,
         "blocksPath": true

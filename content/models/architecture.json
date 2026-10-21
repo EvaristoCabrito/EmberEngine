@@ -3,6 +3,13 @@
   "textures": {
     "watchtower-v01": "/ember/textures/walls/watchtower-v01.jpg"
   },
+  "materials": {
+    "oak": "/ember/textures/watchtower/door-oak-v01.jpg",
+    "iron": "/ember/textures/watchtower/iron-v01.jpg",
+    "darkOak": "/ember/textures/watchtower/dark-oak-v01.jpg",
+    "steps": "/ember/textures/watchtower/steps-v01.jpg",
+    "fire": "/ember/textures/watchtower/torch-fire-v01.jpg"
+  },
   "pieces": [
     {
       "id": "ember-arch-watchtower-wall",

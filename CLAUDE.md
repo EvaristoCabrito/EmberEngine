@@ -952,6 +952,11 @@ design with the textures at watchtowerwalls", then "update the editor to make it
   room's reading; at 0.3 the night came out 36 x too bright and every torch burned its wall white), no twilight darkening by day, at night
   the indoor darkening without the moon's 2-stop cap, no aerial perspective, and Fundo forced black (the sky is never drawn). OFF = the old
   3 lux fill (`darkIndoor()`).
+- **The user's photographed materials (2026-10-21 late, `Attachments/watchtower`): read `content/models/README.md` § "The user's
+  photographed materials".** Kit: oak / iron / dark oak / steps / fire textures on the tagged parts (`emberMaterialName`, ArchitectureDefs
+  `materials`, catalog `editor.architectureMaterials`). Props: 12 Torre props and 5 cemetery tombs re-exported with the photos as new
+  versions (`blender/retexture_photos.py`), pack `build/meshes/props-v4.pak` (JOGAR.bat uses it first), placed on
+  `watchtower-gate-floor008` and the new `cemiterio-esquecidos007` (= 006 with the tombs swapped; the campaign plays the highest serial).
 - **Gotcha (2026-10-21): `build.bat` piped through PowerShell reported exit 0 on a failed shader compile** (a release with the old shaders
   was captured as if new). Always grep the log for `FAILED` and check the .spv / exe timestamps.
 - **Map Editor, 3D Walls:** "TORRE DE VIGIA" buttons (Parede / Janela / Seteira / Tocha / Portal / Porta) and the wall tools: Clique (as before),
