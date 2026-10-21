@@ -3030,6 +3030,19 @@
       "section": "Cave",
       "blocks": true,
       "triangles": 3364
+    },
+    {
+      "id": "ember-interior-pewter-tankard",
+      "name": "Caneca de estanho 3D · TripoSR",
+      "kit": "interior",
+      "model": "ember-pewter-tankard",
+      "file": "/game/ember/interior/pewter-tankard-v01.glb",
+      "height": 0.3,
+      "width": 0.335,
+      "footprint": "one",
+      "section": "Objetos",
+      "blocks": false,
+      "triangles": 32344
     }
   ]
 }

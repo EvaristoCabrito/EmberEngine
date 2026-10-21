@@ -360,6 +360,26 @@ card's place; the editor lays them by a click on the waypoint with the Escada br
   Placed: `watchtower-gate-floor008` (the props) and `cemiterio-esquecidos007` (= 006 with the tombs swapped; 006 untouched).
 - Not used yet: `wood.jpg`, `escadas2.jpg` (small cobbles).
 
+## Image to 3D with TripoSR (2026-10-21; the user: "use this instead of that basic Blender that looks so sad")
+
+- **Tool:** TripoSR (github.com/VAST-AI-Research/TripoSR, MIT, commit `107cefd`, weights `stabilityai/TripoSR` 1.68 GB) in
+  `build/ext/TripoSR` (git-ignored) with its own venv (Python 3.12, torch 2.14.1+cpu, TripoSR's pinned requirements +
+  scikit-image + onnxruntime). The RX 6400 has no CUDA, so it runs on the CPU: ~8 s model, ~18 s mesh, ~55 s texture bake per
+  image. One local change: `tsr/models/isosurface.py` falls back to scikit-image's marching cubes when torchmcubes (a CUDA
+  build) is missing.
+- **Run** (the input = the object on grey, 85 % of a square: `python -I tools/scripts/models/triposr_prep.py <alpha.png> <in.png>`, TripoSR's own preprocessing; the output folder
+  `<dir>/0` must exist with `--no-remove-bg`):
+  `.venv/Scripts/python run.py <in.png> --device cpu --no-remove-bg --bake-texture --texture-resolution 2048 --mc-resolution 256
+  --output-dir out/<name>` → `mesh.obj` (130k tris) + `texture.png` (baked colour atlas).
+- **Into the library:** `blender -b --python content/models/blender/import_triposr.py -- mesh.obj texture.png <kit> <name>
+  <height> [--preview <prefix>] [--dry-run]`: welds the atlas seams, takes out the photo camera's tilt (the flattest base), keeps
+  25 % of the triangles, scales to the height, exports `<kit>/<name>-vNN.glb` + `.blend` + `-vNN-color.png` (next free version).
+- **First test:** `interior/pewter-tankard-v01` (id `ember-interior-pewter-tankard`, "Caneca de estanho 3D · TripoSR", 0.3 tall,
+  32k tris) from the decor card `city-inn-tankard` (picked for its clean, grain-free art). Levelled by 26.8 deg. The back is the
+  model's guess (the card shows one side). The baked atlas averages ~2/3 of the card's brightness. Pack `build/meshes/props-v5.pak`
+  (= v4 + the tankard; JOGAR uses it first).
+- **Source images:** never the grainy old decor PNGs or icons; a whole object, sharp, three-quarter view, clean alpha, no glow.
+
 ## The pack (props-v2.pak)
 
 | | assets | textures | on disk | textures on the GPU |

@@ -72,6 +72,7 @@
     "drink-shelf": "Prateleira de bebidas 3D",
     "bookshelf": "Estante de madeira 3D",
     "wooden-mug": ["Caneca de madeira 3D", {"blocks": false}],
+    "pewter-tankard": ["Caneca de estanho 3D · TripoSR", {"blocks": false}],
     "wine-bottle": ["Garrafa de vinho vazia 3D", {"blocks": false}],
     "beer-jug": ["Jarra de cerveja 3D", {"blocks": false}],
     "wooden-plate": ["Prato de madeira 3D", {"blocks": false}],
