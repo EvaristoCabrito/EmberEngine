@@ -1856,6 +1856,9 @@ class MapStage final : public Stage {
     std::vector<std::pair<float, float>> footprint;  // sight samples (world x, z) under its top faces
     std::optional<e2::SceneLight> light;             // a torch bracket's fire (EmberEngine's wall-torch piece)
     glm::vec3 lightAt{0.0f};                         // ... relative to the piece's anchor on its ground
+    float openingArea = 0.0f;                        // a window / slit / doorway: its clear area (units²); 0 = not an opening
+    glm::vec3 openingAt{0.0f};                       // ... the point just inside the room where its light comes in (from the anchor)
+    float openingReach = 0.0f;                       // ... how far into the room that light goes (units)
   };
   // The animated door (ember-arch-watchtower-door): its leaves (own meshes, swung about their hinges) and each door's state.
   struct DoorLeaf {
@@ -2108,6 +2111,33 @@ class MapStage final : public Stage {
       piece.half = std::max({std::abs(minX), std::abs(maxX), std::abs(minZ), std::abs(maxZ)});
       piece.top = maxY;
       piece.blocks = def->model3d == "wall" || def->model3d == "door" || def->model3d == "secretDoor";
+      // The openings the light from outside comes through (Luz das janelas): their clear area and a point just inside the room at
+      // the opening's middle height, facing the room (windows / slits: their splay side; doorways: the side towards the board's centre).
+      {
+        const std::string& st = def->emberStyle;
+        // reach: how far into the room its light goes before it is gone (2026-10-21: with the 1/d^2 range of 48 units the 25
+        // windows and the gate summed into one blue wash over the whole room, capture 185 with local lights only)
+        float area = 0.0f, height = 0.0f, reach = 0.0f;
+        if (st == "window") area = 0.62f * 1.7f, height = 2.1f, reach = 5.0f;
+        else if (st == "slit") area = 0.18f * 1.75f, height = 2.1f, reach = 3.0f;
+        else if (st == "portal" || st == "door") area = 2.0f * 3.36f, height = 1.6f, reach = 8.0f;
+        else if (st == "gate") area = 4.0f * 4.0f, height = 1.9f, reach = 10.0f;
+        piece.openingReach = reach;
+        if (area > 0.0f) {
+          double nx = 0.0, nz = 0.0;
+          if (st == "window" || st == "slit") {
+            const double a = e2::emberAxisAngle(rot, connections);
+            nx = std::sin(a), nz = std::cos(a);
+          } else {  // a doorway runs along x (rot even) or z (rot odd); its room side is the one towards the board's centre
+            const bool alongX = (p.rot & 1) == 0;
+            nx = alongX ? 0.0 : (centreX > x ? 1.0 : -1.0);
+            nz = alongX ? (centreZ > z ? 1.0 : -1.0) : 0.0;
+          }
+          const float in = static_cast<float>(0.32 * def->wallThicknessScale * 0.5) + 0.45f;
+          piece.openingArea = area;
+          piece.openingAt = {static_cast<float>(nx) * in, height, static_cast<float>(nz) * in};
+        }
+      }
       arch_.push_back(std::move(piece));
       if (def->emberStyle == "door") {
         // The animated door: its two leaves as their own meshes, swung about the jambs by updateDoors / placeModels.
@@ -2672,6 +2702,33 @@ class MapStage final : public Stage {
       if (!a.light) continue;
       const glm::vec3 at = glm::vec3(a.x, groundOf(a.groundSmooth, a.groundHard), a.z) + a.lightAt;
       lights_.push_back(carried(at, a.light->color, a.light->intensity * kTorchPower, a.light->radius, a.lightAt.y, flicker(time, a.light->seed, a.light->flicker)));
+    }
+    // Luz das janelas: the daylight (or moonlight) that comes in through each opening, a glow born at the opening and fading into the
+    // room by the square of the distance (the user, 2026-10-21: "a luz de fora entra só pelas janelas, seteiras e portão ... uma
+    // claridade que nasce em cada abertura e se apaga para dentro da sala"). The opening is a patch of sky of luminance L = E_sky / pi
+    // (the sky's light on the ground, about a fifth of the key that reaches it) and clear area A: it shines with I = L x A candela. The
+    // direct sun through it is the sun's own shadowed light. The hour's real sun and moon set it (mapLighting).
+    if (windowLight() && lightingMode_ == 3) {
+      const Renderer::Lighting outside = mapLighting(time);
+      const float skyLux = kSkyShareOfKey * outside.sunIntensity;
+      const glm::vec3 cool{0.80f, 0.88f, 1.0f};  // the sky's own blue, a third of the mix with the key's colour (warm at dusk, the moon's at night)
+      glm::vec3 tint = glm::mix(outside.sunColor, cool, 0.35f);
+      const float lum = 0.2126f * tint.r + 0.7152f * tint.g + 0.0722f * tint.b;
+      if (lum > 1e-6f) tint /= lum;
+      for (size_t i = 0; i < arch_.size(); ++i) {
+        const ArchPiece& a = arch_[i];
+        if (a.openingArea <= 0.0f) continue;
+        float open = 1.0f;  // an animated door lets in its open share
+        if (const auto d = doors_.find(i); d != doors_.end()) open = d->second.angle / static_cast<float>(e2::kEmberDoorOpenRadians);
+        if (open <= 0.01f) continue;
+        const float candela = skyLux / std::numbers::pi_v<float> * a.openingArea * open;
+        LocalLight l;
+        l.position = glm::vec3(a.x, groundOf(a.groundSmooth, a.groundHard), a.z) + a.openingAt;
+        l.color = tint * candela;
+        l.decay = 2.0f;
+        l.range = a.openingReach;  // the shader's window (1 - (d / range)^4)^2 takes it to nothing there
+        lights_.push_back(l);
+      }
     }
     if (hero_ < 0) return;
     const e2::SceneUnit* hero = &scene_->units[static_cast<size_t>(hero_)];
@@ -8622,7 +8679,10 @@ class MapStage final : public Stage {
   // the sky: the indoor light path with no light from outside, whatever the map's lists say.
   bool underground() const { return board_ && board_->draft().underground; }
   inline static const std::set<std::string> kWindowLightMaps = {"watchtower-gate-floor", "watchtower-barracks", "watchtower-command"};
-  static constexpr float kWindowSkyShare = 0.08f;    // the share of the sky's light a room gets through its openings (ambient)
+  // The sky's ambient over the whole room: none (2026-10-21: at 0.08 it painted every surface blue, "pinta tudo de azul"); the sky's
+  // light comes in only through the openings (buildLights).
+  static constexpr float kWindowSkyShare = 0.0f;
+  static constexpr float kSkyShareOfKey = 0.2f;      // the sky's light on the ground as a share of the key light that reaches it
   static constexpr float kWindowMeterShare = 0.04f;  // the camera's meter: the room's level against the outside's
   // lux: never under the torch-lit room's reading of the old indoor light (3 lux fill x 0.3 + 1.5 ambient): at 0.3 the night
   // was exposed 36 x brighter than before and every torch burned its wall white (captures 093-094 of 2026-10-21)

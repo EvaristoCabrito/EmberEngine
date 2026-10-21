@@ -285,12 +285,21 @@ float3 shadeInSight(MeshFrame f, Surface s, Sight sight) {
   return color + local;
 }
 
+// Whether the air between the camera and the surfaces is applied: the atmosphere's kmPerUnit above 0 (read in a helper, the DXC
+// gotcha with values read from a frame passed by value).
+bool aerialOn(MeshFrame f) {
+  const AtmosphereFrame a = loadAtmosphere(f);
+  return a.kmPerUnit > 0.0;
+}
+
 // The volumetric fog between the camera and a surface (volume.hlsl): what reaches the eye.
 float3 applyVolume(MeshFrame f, float3 color, float3 position) {
   const float4 c = mul(float4(position, 1.0), f.viewProjection);
   if (c.w <= 0.0) return color;
-  if (f.atmosphere != 0) {
-    // Aerial perspective (the air between the camera and the surface, at the artistic scale), the farther layer.
+  if (f.atmosphere != 0 && aerialOn(f)) {
+    // Aerial perspective (the air between the camera and the surface, at the artistic scale), the farther layer. A scale of 0
+    // means no air at all (a room lit through its windows, Tática): at 0 the first slice was still laid at half weight over
+    // every surface, the day sky's blue as a flat veil over the whole room (found 2026-10-21, captures 192 / 193).
     const AtmosphereFrame a = loadAtmosphere(f);
     const float w = length(position - f.cameraPosition) * a.kmPerUnit / a.aerialMaxKm;
     const float3 uvw = float3(c.xy / c.w * 0.5 + 0.5, w - 0.5 / 32.0);
