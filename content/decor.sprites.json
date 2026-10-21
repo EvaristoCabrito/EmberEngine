@@ -4526,61 +4526,6 @@
      }
     },
     {
-     "name": "arid-boulders",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decoracoes-2d/arid-boulders.png"
-      ]
-     }
-    },
-    {
-     "name": "arid-broken-cart",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decoracoes-2d/arid-broken-cart.png"
-      ]
-     }
-    },
-    {
-     "name": "arid-campfire-cauldron",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decoracoes-2d/arid-campfire-cauldron.png"
-      ]
-     }
-    },
-    {
-     "name": "arid-clay-urn",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decoracoes-2d/arid-clay-urn.png"
-      ]
-     }
-    },
-    {
-     "name": "arid-dry-bush",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decoracoes-2d/arid-dry-bush.png"
-      ]
-     }
-    },
-    {
      "name": "arid-old-well",
      "fps": 1.0,
      "mode": "loop",
@@ -4592,35 +4537,90 @@
      }
     },
     {
-     "name": "arid-ox-skeleton-rocks",
+     "name": "arid-boulders-v02",
      "fps": 1.0,
      "mode": "loop",
      "pack": "decor",
      "frames": {
       "list": [
-       "decoracoes-2d/arid-ox-skeleton-rocks.png"
+       "decoracoes-2d/arid-boulders-v02.png"
       ]
      }
     },
     {
-     "name": "arid-ox-skeleton",
+     "name": "arid-broken-cart-v02",
      "fps": 1.0,
      "mode": "loop",
      "pack": "decor",
      "frames": {
       "list": [
-       "decoracoes-2d/arid-ox-skeleton.png"
+       "decoracoes-2d/arid-broken-cart-v02.png"
       ]
      }
     },
     {
-     "name": "arid-ruined-camp-tent",
+     "name": "arid-campfire-cauldron-v02",
      "fps": 1.0,
      "mode": "loop",
      "pack": "decor",
      "frames": {
       "list": [
-       "decoracoes-2d/arid-ruined-camp-tent.png"
+       "decoracoes-2d/arid-campfire-cauldron-v02.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-clay-urn-v02",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-clay-urn-v02.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-dry-bush-v02",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-dry-bush-v02.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-ox-skeleton-rocks-v02",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-ox-skeleton-rocks-v02.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-ox-skeleton-v02",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-ox-skeleton-v02.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-ruined-camp-tent-v02",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-ruined-camp-tent-v02.png"
       ]
      }
     }

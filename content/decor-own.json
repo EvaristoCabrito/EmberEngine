@@ -2,13 +2,13 @@
  "section": "Árido",
  "decorations": [
   {"id": "ember-arid-old-well", "image": "arid-old-well", "name": "Poço antigo do deserto", "like": "wilds-wishing-well"},
-  {"id": "ember-arid-ox-skeleton-rocks", "image": "arid-ox-skeleton-rocks", "name": "Esqueleto de boi entre pedras", "like": "dungeon-bones"},
-  {"id": "ember-arid-ruined-camp-tent", "image": "arid-ruined-camp-tent", "name": "Acampamento arruinado", "like": "wilds-camp"},
-  {"id": "ember-arid-broken-cart", "image": "arid-broken-cart", "name": "Carroça quebrada", "like": "wilds-abandoned-cart"},
-  {"id": "ember-arid-dry-bush", "image": "arid-dry-bush", "name": "Arbusto seco do deserto", "like": "wilds-dry-bush"},
-  {"id": "ember-arid-ox-skeleton", "image": "arid-ox-skeleton", "name": "Esqueleto de boi", "like": "dungeon-bones"},
-  {"id": "ember-arid-clay-urn", "image": "arid-clay-urn", "name": "Jarro de barro rachado", "like": "dungeon-funerary-urn"},
-  {"id": "ember-arid-campfire-cauldron", "image": "arid-campfire-cauldron", "name": "Fogueira com caldeirão", "like": "wilds-campfire-cauldron"},
-  {"id": "ember-arid-boulders", "image": "arid-boulders", "name": "Rochedos do deserto", "like": "wilds-lichen-boulder"}
+  {"id": "ember-arid-ox-skeleton-rocks", "image": "arid-ox-skeleton-rocks-v02", "name": "Esqueleto de boi entre pedras", "like": "dungeon-bones"},
+  {"id": "ember-arid-ruined-camp-tent", "image": "arid-ruined-camp-tent-v02", "name": "Acampamento arruinado", "like": "wilds-camp"},
+  {"id": "ember-arid-broken-cart", "image": "arid-broken-cart-v02", "name": "Carroça quebrada", "like": "wilds-abandoned-cart"},
+  {"id": "ember-arid-dry-bush", "image": "arid-dry-bush-v02", "name": "Arbusto seco do deserto", "like": "wilds-dry-bush"},
+  {"id": "ember-arid-ox-skeleton", "image": "arid-ox-skeleton-v02", "name": "Esqueleto de boi", "like": "dungeon-bones"},
+  {"id": "ember-arid-clay-urn", "image": "arid-clay-urn-v02", "name": "Jarro de barro rachado", "like": "dungeon-funerary-urn"},
+  {"id": "ember-arid-campfire-cauldron", "image": "arid-campfire-cauldron-v02", "name": "Fogueira com caldeirão", "like": "wilds-campfire-cauldron"},
+  {"id": "ember-arid-boulders", "image": "arid-boulders-v02", "name": "Rochedos do deserto", "like": "wilds-lichen-boulder"}
  ]
 }

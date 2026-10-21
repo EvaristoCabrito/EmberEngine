@@ -2,6 +2,9 @@
 "cook back this folder with trimmed fat into the game, no dupes"). Whatever is in the folder is cooked, edited files included;
 whatever was taken out of it leaves the game:
 
+(Subfolders are never cooked: decoracoes-2d/versoes-anteriores/ keeps the versions a newer one replaced, e.g. the 8 Árido pieces
+before defringe_red.py.)
+
 - content/decor.sprites.json: one clip per PNG in the folder (clip = file name without extension), frames
   "decoracoes-2d/<file>" (relative to the repo; fx_sprites.py makes them absolute when it merges the battle manifest);
 - build/sprites/battle.sprites.json: its "decor" set replaced the same way (absolute paths, so the Cooker's Engine2 root does
