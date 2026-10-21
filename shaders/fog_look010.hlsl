@@ -107,6 +107,12 @@ void CSMarch(uint3 id : SV_DispatchThreadID) {
   const float d = gTextures[NonUniformResourceIndex(c.depth)].Load(int3(full, 0)).r;
   const float4 farPoint = mul(float4(uv * 2.0 - 1.0, f.zNear / 1.0, 1.0), c.inverseViewProjection);
   const float3 dir = normalize(farPoint.xyz / farPoint.w - f.cameraPosition);
+  // The sky stays clear (the user, 2026-10-21: "eu ainda preciso do céu no mapa da ponte, é um mapa externo"): no fog on the background
+  // above the horizon; the eye may stand inside the wind sheet, whose near-level rays would cover the sky in grey.
+  if (d <= 0.0 && dir.y >= 0.0) {
+    march[id.xy] = float4(0.0, 0.0, 0.0, 1.0);
+    return;
+  }
   float surface = 1e6;
   if (d > 0.0) {
     const float4 s = mul(float4(uv * 2.0 - 1.0, d, 1.0), c.inverseViewProjection);
