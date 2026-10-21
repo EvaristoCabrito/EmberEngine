@@ -138,7 +138,9 @@ def stone_doorway(seed=62):
 
 
 # ------------------------------------------------------------------------------------------------- grave marker
-def grave_marker(seed=63):
+def grave_marker(seed=63, mound=True):
+    """mound=False (v02, the user 2026-10-20): the stone alone; the earth mound under it showed as a black disc, or white
+    under snow, cut by the board's uneven ground."""
     W, T = 0.9, 0.2
     slab = box('slab', (W, T, 1.05), loc=(0, 0, 0.525), mat=M('masonry-mossy'))
     top = cylinder('top', W * 0.5, W * 0.5, T, loc=(0, 0, 1.05), rot=(math.pi / 2, 0, 0), segs=24, mat=M('masonry-mossy'))
@@ -158,12 +160,15 @@ def grave_marker(seed=63):
     box_uv(s, 1.1, (0.2, 0.1))
     s.rotation_euler = (0.07, 0.04, 0.0)
     apply_transform(s)
-    mound = sphere('mound', 0.65, (0.05, 0.1, -0.35), subdiv=3, mat=M('forest-floor'), scale=(1.2, 1.5, 0.7))
-    displace(mound, 0.08, 0.3, seed=seed + 2)
-    apply_mods(mound)
-    clamp_floor(mound, 0.0)
-    box_uv(mound, 1.3)
-    o = join([s, mound], 'grave-marker')
+    parts = [s]
+    if mound:
+        earth = sphere('mound', 0.65, (0.05, 0.1, -0.35), subdiv=3, mat=M('forest-floor'), scale=(1.2, 1.5, 0.7))
+        displace(earth, 0.08, 0.3, seed=seed + 2)
+        apply_mods(earth)
+        clamp_floor(earth, 0.0)
+        box_uv(earth, 1.3)
+        parts.append(earth)
+    o = join(parts, 'grave-marker')
     set_material_where(o, M('moss'), lambda c, n: c.z < 0.4 and c.z > 0.05 and abs(n.z) < 0.6 and noise.noise(c * 3.0) > 0.1)
     smooth(o, 45)
     ground(o)

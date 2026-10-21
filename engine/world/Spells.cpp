@@ -364,7 +364,7 @@ struct SpellTrack {
 };
 // TRACKS-BEGIN (written by tools/scripts/spells/tracks.py; the level each token lands on = learn + its place, 1 to 14)
 constexpr SpellTrack kSpellTracks[] = {
-    {"magicMissile", 1, "r1 c1 m0.05 r1 r1 c1 r1 m0.05 c1 r1 r1 m0.05 c1 r1"},
+    {"magicMissile", 1, "r1 m0.05 c1 r1 r1 m0.05 r1 c1 m0.05 r1 r1 c1 m0.05 r1"},
     {"lightning", 3, "r1 m0.1 d1 r1 r1 m0.1 r1 d1 m0.1 r1 r1 d1 m0.1 r1"},
     {"frost", 5, "l1 m0.05 d1 l1 m0.05 l1 d1 m0.05 l1 m0.05 l1 d1 m0.05 l1"},
     {"poisonBreath", 3, "m0.04 l1 m0.04 d1 m0.04 f2 m0.04 m0.04 l1 m0.04 d1 m0.04 f2 m0.04"},
@@ -423,7 +423,7 @@ constexpr SpellTrack kSpellTracks[] = {
     {"longShot", 1, "r1 b1 d1 f2 r1 b1 r1 d1 b1 r1 f2 d1 b1 r1"},
     {"venomArrow", 2, "r1 v1 m0.05 d1 f2 r1 v1 m0.05 r1 d1 f2 v1 m0.05 r1"},
     {"bloodyShot", 5, "r1 m0.15 r1 m0.15 k1 r1 m0.15 K2 r1 m0.15 r1 m0.15 r1 m0.15"},
-    {"multiShot", 7, "r1 d1 f2 r1 c1 r1 d1 f2 r1 c1 r1 d1 f2 r1"},
+    {"multiShot", 7, "r1 f2 d1 r1 f2 r1 d1 c1 r1 f2 r1 d1 f2 r1"},
     {"arrowRain", 7, "r1 m0.05 a1 r1 m0.05 r1 d1 f2 r1 m0.05 r1 a1 m0.05 r1"},
     {"explosiveArrow", 10, "r1 m0.15 p5 d1 f2 r1 m0.15 p5 r1 d1 f2 m0.15 p5 r1"},
     {"cripplingShot", 12, "p5 r1 m0.1 p5 r1 d1 p5 m0.1 t1 r1 p5 m0.1 r1 p5"},
@@ -571,7 +571,7 @@ bool emberAreaGrows(const std::string& kind);
 // --- The first spells on their tracks (with the progression off, the Cooker's checks: Engine2's own numbers) ---
 int magicMissileCount(int level) {
   if (!progressionEnabled()) return level >= 6 ? 3 : level >= 3 ? 2 : 1;
-  return 1 + spellGains("magicMissile", level).n('c');
+  return std::min(4, 1 + spellGains("magicMissile", level).n('c'));  // at most 4 (the user, 2026-10-20)
 }
 double missileMul(int level) { return kMissileMul + spellGains("magicMissile", level)('m'); }
 Dice doubleStrikePower(int level) {

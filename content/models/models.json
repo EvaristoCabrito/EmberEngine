@@ -475,12 +475,13 @@
       "name": "Lápide gasta 3D",
       "kit": "extra",
       "model": "ember-grave-marker",
-      "file": "/game/ember/extra/grave-marker-v01.glb",
+      "file": "/game/ember/extra/grave-marker-v02.glb",
       "height": 1.526,
-      "width": 1.959,
+      "width": 0.947,
       "footprint": "one",
       "section": "Objetos",
-      "blocks": true
+      "blocks": true,
+      "triangles": 2592
     },
     {
       "id": "ember-extra-broken-cart-wheel",
@@ -1806,13 +1807,13 @@
       "name": "Lápide coberta de neve 3D",
       "kit": "frost",
       "model": "ember-snowy-grave-marker",
-      "file": "/game/ember/frost/snowy-grave-marker-v01.glb",
+      "file": "/game/ember/frost/snowy-grave-marker-v02.glb",
       "height": 1.526,
-      "width": 1.938,
+      "width": 0.957,
       "footprint": "one",
       "section": "Wilds",
       "blocks": true,
-      "triangles": 2912
+      "triangles": 2592
     },
     {
       "id": "ember-crypt-ancient-bookshelf",

@@ -6260,7 +6260,7 @@
         [
          [
           {
-           "text": "Nv1: alcance 5 · mísseis 1 · ×1,15 | Nv8: alcance 9 · mísseis 3 · ×1,2 | Nv15: alcance 12 · mísseis 5 · ×1,3",
+           "text": "Nv1: alcance 5 · mísseis 1 · ×1,15 | Nv8: alcance 9 · mísseis 2 · ×1,25 | Nv15: alcance 12 · mísseis 4 · ×1,35",
            "muted": true
           }
          ]
@@ -6268,7 +6268,7 @@
         [
          [
           {
-           "text": "Dispara mísseis de força arcana. Cada míssil escolhe o seu alvo (pode ser o mesmo inimigo mais de uma vez); só precisa ver o inimigo. Escala do nível 1 ao 15, uma melhoria pequena por nível: alcance 5 → 12; mísseis 1 → 5; peso do MAG 1,15 → 1,3.",
+           "text": "Dispara mísseis de força arcana. Cada míssil escolhe o seu alvo (pode ser o mesmo inimigo mais de uma vez); só precisa ver o inimigo. Escala do nível 1 ao 15, uma melhoria pequena por nível: alcance 5 → 12; mísseis 1 → 4; peso do MAG 1,15 → 1,35.",
            "muted": true
           }
          ]
@@ -7223,7 +7223,7 @@
         [
          [
           {
-           "text": "Nv7: alcance 6 · alvos 2 | Nv14: dano 2D6 · alcance 9 · alvos 3 | Nv21: dano 3D10 · alcance 12 · alvos 4",
+           "text": "Nv7: alcance 6 · alvos 2 | Nv14: dano 2D8 · alcance 9 · alvos 2 | Nv21: dano 3D12 · alcance 12 · alvos 3",
            "muted": true
           }
          ]
@@ -7231,7 +7231,7 @@
         [
          [
           {
-           "text": "Várias flechas de uma vez, cada uma mirada num inimigo (pode repetir). Escala do nível 7 ao 21, uma melhoria pequena por nível: dano 0 → 3D10; alcance 6 → 12; alvos 2 → 4.",
+           "text": "Várias flechas de uma vez, cada uma mirada num inimigo (pode repetir). Escala do nível 7 ao 21, uma melhoria pequena por nível: dano 0 → 3D12; alcance 6 → 12; alvos 2 → 3.",
            "muted": true
           }
          ]
@@ -15070,7 +15070,7 @@
         [
          [
           {
-           "text": "Lv1: range 5 · missiles 1 · ×1.15 | Lv8: range 9 · missiles 3 · ×1.2 | Lv15: range 12 · missiles 5 · ×1.3",
+           "text": "Lv1: range 5 · missiles 1 · ×1.15 | Lv8: range 9 · missiles 2 · ×1.25 | Lv15: range 12 · missiles 4 · ×1.35",
            "muted": true
           }
          ]
@@ -15078,7 +15078,7 @@
         [
          [
           {
-           "text": "Fires missiles of arcane force. Each missile picks its own target (the same foe more than once is fine); it only needs to see the foe. Scales from level 1 to 15, one small improvement a level: range 5 → 12; missiles 1 → 5; MAG weight 1.15 → 1.3.",
+           "text": "Fires missiles of arcane force. Each missile picks its own target (the same foe more than once is fine); it only needs to see the foe. Scales from level 1 to 15, one small improvement a level: range 5 → 12; missiles 1 → 4; MAG weight 1.15 → 1.35.",
            "muted": true
           }
          ]
@@ -16033,7 +16033,7 @@
         [
          [
           {
-           "text": "Lv7: range 6 · targets 2 | Lv14: damage 2D6 · range 9 · targets 3 | Lv21: damage 3D10 · range 12 · targets 4",
+           "text": "Lv7: range 6 · targets 2 | Lv14: damage 2D8 · range 9 · targets 2 | Lv21: damage 3D12 · range 12 · targets 3",
            "muted": true
           }
          ]
@@ -16041,7 +16041,7 @@
         [
          [
           {
-           "text": "Several arrows at once, each aimed at a foe (the same one is fine). Scales from level 7 to 21, one small improvement a level: damage 0 → 3D10; range 6 → 12; targets 2 → 4.",
+           "text": "Several arrows at once, each aimed at a foe (the same one is fine). Scales from level 7 to 21, one small improvement a level: damage 0 → 3D12; range 6 → 12; targets 2 → 3.",
            "muted": true
           }
          ]

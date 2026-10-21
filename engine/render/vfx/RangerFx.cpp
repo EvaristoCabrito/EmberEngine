@@ -294,13 +294,15 @@ void RangerFx::buildShot(const Effect& e, float now, const Camera& camera, VfxFr
   const glm::vec3 side = glm::normalize(glm::cross(kUp, e.dir));
   const float flight = e.impact - e.release;
   const float s = std::clamp((now - e.release) / flight, 0.0f, 1.0f);
+  // Flecha Envenenada flies in front of the units' cards (the user, 2026-10-20), the others half pulled as before.
+  const float flightPull = e.style == Shot::Venom ? kPull : kPull * 0.5f;
 
   // --- The flight: the arrow along the arc, a glint at its point, the skill's trail behind it, its light. ---
   if (now < e.impact) {
     const glm::vec3 head = e.at(s), ahead = e.at(std::min(1.0f, s + 0.02f));
     const glm::vec3 v = glm::length(ahead - head) > 1e-5f ? glm::normalize(ahead - head) : e.dir;
-    arrow(head, v, 1.0f, 1.0f, eye, kPull * 0.5f);
-    streaks_.push_back(streak(pulled(head, eye, kPull * 0.5f), v * 0.18f, 0.03f * k, 0.8f, pal.core, 2.2f));
+    arrow(head, v, 1.0f, 1.0f, eye, flightPull);
+    streaks_.push_back(streak(pulled(head, eye, flightPull), v * 0.18f, 0.03f * k, 0.8f, pal.core, 2.2f));
     if (e.style == Shot::Death) {  // a long crimson trail
       const float tail = std::min(s, 0.6f);
       if (tail > 0.02f) {
@@ -326,7 +328,7 @@ void RangerFx::buildShot(const Effect& e, float now, const Camera& camera, VfxFr
     const glm::vec3 d = sphereDir(hash01(e.seed, n, 2), hash01(e.seed, n, 3));
     const glm::vec3 p = e.at(ub) + d * 0.3f * tau + kUp * ((e.style == Shot::Explosive ? 0.6f : -0.3f) * tau * tau);
     const float size = (e.style == Shot::Explosive ? 0.045f : 0.035f) * k * (1.0f - 0.5f * u);
-    streaks_.push_back(streak(pulled(p, eye, kPull * 0.5f), glm::vec3(0.0f), size, (1.0f - u) * 0.9f, pal.energy, e.style == Shot::Crippling ? 1.2f : 2.2f));
+    streaks_.push_back(streak(pulled(p, eye, flightPull), glm::vec3(0.0f), size, (1.0f - u) * 0.9f, pal.energy, e.style == Shot::Crippling ? 1.2f : 2.2f));
   }
 
   const float age = now - e.impact;

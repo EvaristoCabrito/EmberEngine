@@ -104,7 +104,7 @@ ShieldP shieldBashPower(int level) {
   if (level >= 7) return {1, 6, 1};
   return {1, 4, 1};
 }
-int multiShotTargets(int level) { return progressionEnabled() ? 2 + spellGains("multiShot", level).n('c') : level >= 11 ? 3 : 2; }
+int multiShotTargets(int level) { return progressionEnabled() ? std::min(3, 2 + spellGains("multiShot", level).n('c')) : level >= 11 ? 3 : 2; }  // at most 3
 DiceFaces multiShotPower(int level) {
   if (progressionEnabled()) {
     const TrackGains g = spellGains("multiShot", level);

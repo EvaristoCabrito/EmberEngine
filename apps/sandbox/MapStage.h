@@ -4073,6 +4073,17 @@ class MapStage final : public Stage {
     const e2::HeroPose* p = entry ? entry->find(pose) : nullptr;
     return p && p->impact >= 0 ? p->impact : kImpactShare;
   }
+  // A step aimed only at foes of its caster that are already dead (a weapon blow at its defender, a spell at the units it
+  // lists): nothing left for it to strike. Steps for allies (heals, Ressurreição), areas with nobody listed and moves never are.
+  bool hitsOnlyTheDead(const e2::BattleStep& s) const {
+    const auto& all = battle_->units();
+    if (s.att >= all.size()) return false;
+    const std::string& side = all[s.att].side;
+    auto deadFoe = [&](size_t id) { return id < all.size() && !all[id].alive && all[id].side != side; };
+    if (s.type == e2::BattleStep::Type::Combat) return deadFoe(s.def);
+    if (s.type != e2::BattleStep::Type::Spell || s.ids.empty()) return false;
+    return std::all_of(s.ids.begin(), s.ids.end(), [&](size_t id) { return deadFoe(id); });
+  }
   // A blow between two units side by side (the struck one's nearest hex, for bodies bigger than one hex).
   bool strikeBeside(const e2::BattleStep& s) const {
     const e2::BattleUnit& a = battle_->units()[s.att];
@@ -5736,8 +5747,12 @@ class MapStage final : public Stage {
       x.affinityDone = true;
       e2::gainAdjacentAffinity(*battle_, static_cast<size_t>(unitBattle_[x.owner]));
     }
-    if (x.step + 1 < x.steps.size()) {
-      ++x.step;
+    // The next step, past every blow left for foes already dead: the second missile, arrow or swing at a body that fell is not
+    // cast (the user, 2026-10-20: every multi-hit skill and spell)
+    size_t next = x.step + 1;
+    while (next < x.steps.size() && hitsOnlyTheDead(x.steps[next])) ++next;
+    if (next < x.steps.size()) {
+      x.step = next;
       x.counter = false;
       startStep(x);
       return;

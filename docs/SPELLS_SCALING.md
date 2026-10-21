@@ -18,9 +18,9 @@ pode dar um talento nelas sim").
 
 ### Míssil Mágico
 
-Escala do nível 1 ao 15, uma melhoria pequena por nível: alcance 5 → 12; mísseis 1 → 5; peso do MAG 1,15 → 1,3.
+Escala do nível 1 ao 15, uma melhoria pequena por nível: alcance 5 → 12; mísseis 1 → 4; peso do MAG 1,15 → 1,35.
 
-Nível a nível: 2: +1 hex de alcance, 3: +1 mísseis, 4: +0,05 peso do MAG, 5: +1 hex de alcance, 6: +1 hex de alcance, 7: +1 mísseis, 8: +1 hex de alcance, 9: +0,05 peso do MAG, 10: +1 mísseis, 11: +1 hex de alcance, 12: +1 hex de alcance, 13: +0,05 peso do MAG, 14: +1 mísseis, 15: +1 hex de alcance.
+Nível a nível: 2: +1 hex de alcance, 3: +0,05 peso do MAG, 4: +1 mísseis, 5: +1 hex de alcance, 6: +1 hex de alcance, 7: +0,05 peso do MAG, 8: +1 hex de alcance, 9: +1 mísseis, 10: +0,05 peso do MAG, 11: +1 hex de alcance, 12: +1 hex de alcance, 13: +1 mísseis, 14: +0,05 peso do MAG, 15: +1 hex de alcance.
 
 ### Relâmpago
 
@@ -372,9 +372,9 @@ Nível a nível: 6: +1 hex de alcance, 7: +0,15 peso do arco, 8: +1 hex de alcan
 
 ### Tiro Múltiplo
 
-Escala do nível 7 ao 21, uma melhoria pequena por nível: dano 0 → 3D10; alcance 6 → 12; alvos 2 → 4.
+Escala do nível 7 ao 21, uma melhoria pequena por nível: dano 0 → 3D12; alcance 6 → 12; alvos 2 → 3.
 
-Nível a nível: 8: +1 hex de alcance, 9: +1 dado, 10: dado maior, 11: +1 hex de alcance, 12: +1 alvos, 13: +1 hex de alcance, 14: +1 dado, 15: dado maior, 16: +1 hex de alcance, 17: +1 alvos, 18: +1 hex de alcance, 19: +1 dado, 20: dado maior, 21: +1 hex de alcance.
+Nível a nível: 8: +1 hex de alcance, 9: dado maior, 10: +1 dado, 11: +1 hex de alcance, 12: dado maior, 13: +1 hex de alcance, 14: +1 dado, 15: +1 alvos, 16: +1 hex de alcance, 17: dado maior, 18: +1 hex de alcance, 19: +1 dado, 20: dado maior, 21: +1 hex de alcance.
 
 ### Chuva de Flechas
 

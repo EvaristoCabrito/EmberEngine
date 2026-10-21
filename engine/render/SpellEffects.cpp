@@ -506,7 +506,9 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     std::vector<glm::vec3> hit;
     for (const Spot& s : targets) hit.push_back(s.feet + glm::vec3(0.0f, height, 0.0f));
     if (kind == "sweep") sweeps_.emplace_back(caster.feet + glm::vec3(0.0f, height, 0.0f), hit, start);
-    else cleaves_.emplace_back(caster.feet + glm::vec3(0.0f, height, 0.0f), hit, start);
+    // Cleave's blade comes in on the pose's own slash (the hit), not 0.18 s after the pose begins (the user, 2026-10-20: it
+    // showed before the sword moved).
+    else cleaves_.emplace_back(caster.feet + glm::vec3(0.0f, height, 0.0f), hit, std::max(start, impact - CleaveSweep::kQueued));
   } else if (kind == "burningHands" || kind == "poisonBreath") {
     std::vector<glm::vec3> cells;
     for (const Spot& s : targets) cells.push_back(s.feet + glm::vec3(0.0f, 0.04f, 0.0f));
