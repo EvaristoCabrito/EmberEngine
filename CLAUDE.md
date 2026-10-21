@@ -927,7 +927,9 @@ onde a luz natural entra pelas janelas ... sem renderizar o céu", then "create 
 design with the textures at watchtowerwalls", then "update the editor to make it easier to use these 3D walls, segments, corners and windows")
 
 - **Read `content/models/README.md` § Architecture.** The kit = `content/models/architecture.json` (ids `ember-arch-watchtower-wall / -window /
-  -slit / -wall-torch / -portal / -door (animated: opens for anyone within a hex, `updateDoors`) / -gate (4 hexes, open, the entrance)`),
+  -slit / -wall-torch / -portal / -door (animated: opens for anyone within a hex, `updateDoors`) / -gate (4 hexes, open, the entrance) /
+  -stairs-up / -stairs-down (2026-10-21 late, the user's "faz": 3D over the stairs waypoints, each with a torch; the down well cuts the
+  ground, `Renderer::setGroundHoles`, TerrainPush now 128 bytes = the push constant limit)`),
   built in C++ by `world/Architecture.cpp emberGeometry` (ArchitectureDef `emberStyle`, `textureRepeat`;
   extra materials tagged in the UVs, `emberMaterialTag`; Engine2's own pieces untouched, `check-architecture` still bit-exact), textured with the
   user's `watchtowerwalls.jpg` (`content/textures/walls/watchtower-v01.jpg`, `/ember/...` URLs cooked from content/ by `Cooker architecture` into
@@ -946,14 +948,18 @@ design with the textures at watchtowerwalls", then "update the editor to make it
   cull.hlsl; double-sided; from the lowest wall's ground + 4.0 to the highest wall's + 4.6; reaching the outermost wall pieces and no
   further, centred on them, never on the camera's pivot: three leaks found and fixed on 2026-10-21, captures 002-020), so the key light
   reaches the floor only through the windows, slits and the doorways; the sky's ambient at
-  `kWindowSkyShare` (0.08) of the sky, the meter at `kWindowMeterShare` (0.04) of the outdoor reading (floor 0.3 lux), no twilight darkening by
-  day, no aerial perspective, and Fundo forced black (the sky is never drawn). OFF = the old 3 lux fill (`darkIndoor()`).
+  `kWindowSkyShare` (0.08) of the sky, the meter at `kWindowMeterShare` (0.04) of the outdoor reading (floor 2.7 lux = the old torch-lit
+  room's reading; at 0.3 the night came out 36 x too bright and every torch burned its wall white), no twilight darkening by day, at night
+  the indoor darkening without the moon's 2-stop cap, no aerial perspective, and Fundo forced black (the sky is never drawn). OFF = the old
+  3 lux fill (`darkIndoor()`).
+- **Gotcha (2026-10-21): `build.bat` piped through PowerShell reported exit 0 on a failed shader compile** (a release with the old shaders
+  was captured as if new). Always grep the log for `FAILED` and check the .spv / exe timestamps.
 - **Map Editor, 3D Walls:** "TORRE DE VIGIA" buttons (Parede / Janela / Seteira / Tocha / Portal / Porta) and the wall tools: Clique (as before),
   **Traçar parede** (drag on the preview from hex to hex: the armed piece in a straight or diagonal run; walls under it swapped for the brush,
   other props kept), **Fechar sala** (drag corner to corner: the four walls). The run is shown as amber rings while dragging (`wallCells`,
   `layWalls`). Abrir porta / Fechar passagem swaps the kit's door and portal.
 - **The map:** `content/maps/ember/watchtower-gate-floor008.json` = 007 through `tools/scripts/maps/watchtower_walls.py --windows --torches
-  --gate` (154 walls, the 4-hex gate at the entrance (2 wall pieces removed for it), 25 openings on the outer ring, 19 wall-torch cards moved
+  --gate --stairs` (the 3D stairs over both waypoints, up (29,5) and down (10,29); 154 walls, the 4-hex gate at the entrance (2 wall pieces removed for it), 25 openings on the outer ring, 19 wall-torch cards moved
   onto the walls as torch pieces). No animated door is placed on it yet (the kit's "Porta" in the editor, or `--door` instead of `--gate`). **The user was finishing their own improved version of this map while this was built:** if they
   save over 008 from a draft of 007, run the script on their file again. Test files: `build/engine2-test/{maps,scenes,battles}/watchtower-gate-floor008.*`
   (Engine2's exporters skip the `ember-arch-*` ids: MapStage rebuilds the scene with SceneBuilder, as for any `ember-*` prop).

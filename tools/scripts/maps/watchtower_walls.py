@@ -1,6 +1,9 @@
 """The watchtower's walls in EmberEngine's own kit (content/models/architecture.json), on a saved draft:
 
-  python -I tools/scripts/maps/watchtower_walls.py <in draft.json> <out draft.json> [--windows] [--torches] [--door]
+  python -I tools/scripts/maps/watchtower_walls.py <in draft.json> <out draft.json> [--windows] [--torches] [--door | --gate] [--stairs]
+
+--stairs lays the kit's 3D stairs (up / down) over every stone-stairs waypoint, on its hexes; the waypoint stays for the rules
+and the game draws the 3D piece in place of its card.
 
 Every `wall-3d-tower` becomes `ember-arch-watchtower-wall` and the flat watchtower entrance becomes the kit's portal
 (`ember-arch-watchtower-portal`, same hexes; with --door the closed two-leaf door `ember-arch-watchtower-door`, the user's
@@ -18,12 +21,14 @@ import sys
 WALL_OLD, WALL_NEW = 'wall-3d-tower', 'ember-arch-watchtower-wall'
 DOOR_OLD, PORTAL, DOOR = 'watchtower-stone-open-door-2hex', 'ember-arch-watchtower-portal', 'ember-arch-watchtower-door'
 GATE = 'ember-arch-watchtower-gate'
+STAIRS = {'stone-stairs-up-001': 'ember-arch-watchtower-stairs-up', 'stone-stairs-down-001': 'ember-arch-watchtower-stairs-down'}
+STAIRS_SECOND = {'stone-stairs-up-001': (0, -1), 'stone-stairs-down-001': (0, -1)}  # editor-catalog footprints: (0, 0), (0, -1)
 WINDOW, SLIT, TORCH = 'ember-arch-watchtower-window', 'ember-arch-watchtower-slit', 'ember-arch-watchtower-wall-torch'
 TORCH_CARD = 'light-wall-torch'
 WALL_IDS = {WALL_OLD, WALL_NEW, WINDOW, SLIT, TORCH}
 
 
-def main(src, dst, windows=False, torches=False, door=False, gate=False):
+def main(src, dst, windows=False, torches=False, door=False, gate=False, stairs=False):
     with open(src, encoding='utf-8') as f:
         file = json.load(f)
     draft = file['draft']
@@ -112,11 +117,26 @@ def main(src, dst, windows=False, torches=False, door=False, gate=False):
             target['id'] = TORCH
             moved += 1
         draft['decorations'] = keep
+    staired = 0
+    if stairs:
+        # the kit's 3D stairs over every stone-stairs waypoint, on exactly its hexes (a span piece's quarter turns: rot 0 (1, 0),
+        # 1 (0, 1), 2 (-1, 0), 3 (0, -1) for its second cell); the waypoint stays for the rules
+        turns = {(1, 0): 0, (0, 1): 1, (-1, 0): 2, (0, -1): 3}
+        for d in list(draft['decorations']):
+            if d['id'] not in STAIRS:
+                continue
+            if any(o['id'] == STAIRS[d['id']] and o['x'] == d['x'] and o['y'] == d['y'] for o in draft['decorations']):
+                continue
+            second = STAIRS_SECOND.get(d['id'], (0, -1))  # the card's footprint second cell (rot 0)
+            draft['decorations'].append({'id': STAIRS[d['id']], 'x': d['x'], 'y': d['y'], 'rot': turns[second],
+                                         'wallOrientation': 'vertical' if turns[second] % 2 else 'horizontal'})
+            staired += 1
     with open(dst, 'w', encoding='utf-8') as f:
         json.dump(file, f, ensure_ascii=False, indent=2)
-    print(f'{dst}: {swapped} walls, {doors} {"gates" if gate else "doors" if door else "portals"}, {opened} openings, {moved} torches onto walls')
+    print(f'{dst}: {swapped} walls, {doors} {"gates" if gate else "doors" if door else "portals"}, {opened} openings, {moved} torches onto walls, '
+          f'{staired} 3D stairs')
 
 
 if __name__ == '__main__':
     flags = sys.argv[3:]
-    main(sys.argv[1], sys.argv[2], '--windows' in flags, '--torches' in flags, '--door' in flags, '--gate' in flags)
+    main(sys.argv[1], sys.argv[2], '--windows' in flags, '--torches' in flags, '--door' in flags, '--gate' in flags, '--stairs' in flags)

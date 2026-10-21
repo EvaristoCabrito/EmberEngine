@@ -659,7 +659,8 @@ class MapStage final : public Stage {
       if (windowLight() && !moonNight_) darkening = 0.0f;
       // "Luar: cinema": capped at 2 stops (at 1, measured 2026-10-19 on cemiterio: meter 4.4 lux, exposure 0.24, the night came out
       // as an overcast day with a pale blue sky; at 2 the sky is navy and the moonlit ground still reads).
-      if (moonNight_ && moonLight_ == 1) darkening = std::min(darkening, 2.0f);
+      // (A room lit through its windows keeps the indoor night: its torches, not the moon outside, set the camera.)
+      if (moonNight_ && moonLight_ == 1 && !windowLight()) darkening = std::min(darkening, 2.0f);
       const float target = ev + darkening;
       if (std::isnan(adaptedEv_) || measuring_) adaptedEv_ = target;
       adaptedEv_ += (target - adaptedEv_) * (1.0f - std::exp(-dt * kAdaptPerSecond));
@@ -686,6 +687,7 @@ class MapStage final : public Stage {
     renderer.setMeshes(scene_ ? meshes_.view() : MeshSceneView{}, lighting);
     renderer.setTerrain(ground_.view(look_));
     renderer.setGroundClip(deckClip());
+    renderer.setGroundHoles(groundHoles_);
     {
       // The battle grid: the old marks (panel "Grade" antiga) or a numbered look (looks/grid); the editor's rings
       // always go through the marks.
@@ -1885,6 +1887,8 @@ class MapStage final : public Stage {
     arch_.clear();
     doorLeaves_.clear();
     doors_.clear();
+    stairPieces_.clear();
+    groundHoles_.clear();
     if (scene_->pieces.empty()) {
       buildRoof();
       return;
@@ -1941,6 +1945,25 @@ class MapStage final : public Stage {
             connections.push_back({nx - x, -(nz - z)});
           }
       int rot = p.rot;
+      const bool stairs = def->emberStyle == "stairs-up" || def->emberStyle == "stairs-down";
+      if (stairs) {
+        // The flight climbs (or the well descends) towards the wall beyond one of its ends: the end with a wall piece within two
+        // cells beyond it is the far end (the half turn flips it); with walls at both ends or neither, as placed.
+        const std::array<double, 3> run = e2::emberDirPiece(rot);
+        const int sx = std::abs(run[0]) > std::abs(run[2]) ? (run[0] > 0 ? 1 : -1) : 0, sy = sx ? 0 : (run[2] > 0 ? 1 : -1);
+        int farX = p.x, farY = p.y, nearX = p.x, nearY = p.y;
+        for (const e2::FootOffset& f : e2::placedFootprint(*cd, p.x, p.y, p.rot)) {
+          const int cx = p.x + f.dx, cy = p.y + f.dy;
+          if (cx * sx + cy * sy > farX * sx + farY * sy) farX = cx, farY = cy;
+          if (cx * sx + cy * sy < nearX * sx + nearY * sy) nearX = cx, nearY = cy;
+        }
+        auto wallBeyond = [&](int cx, int cy, int dx, int dy) {
+          for (int k = 1; k <= 2; ++k)
+            if (inBoard(cx + dx * k, cy + dy * k) && joins.contains({cx + dx * k, cy + dy * k})) return true;
+          return false;
+        };
+        if (!wallBeyond(farX, farY, sx, sy) && wallBeyond(nearX, nearY, -sx, -sy)) rot ^= 2;
+      }
       const bool faced = def->emberStyle == "window" || def->emberStyle == "slit" || def->emberStyle == "wall-torch";
       if (faced) {
         // The splay / the torch faces the room: the piece's inner side (Architecture.h emberAxisAngle: (sin a, cos a) on the
@@ -1955,7 +1978,7 @@ class MapStage final : public Stage {
       // welded); EmberEngine's pieces carry extra materials tagged in their UVs (Architecture.h emberMaterialTag): one part per
       // material. `footprint`: the top faces become the piece's sight samples and the bounds are kept.
       auto meshOf = [&](const e2::three::Geometry& g, bool footprint) -> MeshId {
-      static constexpr int kParts = 5;  // 0 the masonry (textured), 1 oak, 2 iron, 3 flame, 4 dark oak
+      static constexpr int kParts = 6;  // 0 the masonry (textured), 1 oak, 2 iron, 3 flame, 4 dark oak, 5 a dark void
       MeshBuildPart parts[kParts];
       std::map<std::array<float, 8>, uint32_t> weld[kParts];
       size_t triangles = 0;
@@ -2017,9 +2040,11 @@ class MapStage final : public Stage {
       m.normalScale = 1.0f, m.occlusionStrength = 1.0f, m.alphaCutoff = 0.5f;
       if (textured) m.baseColorTexture = assetId(e2::architectureTextureAsset(def->wallTexture));
       // The torch's flame: emissive, so it reads as fire by night (the bloom takes it) and stays a dim ember by day, as fire does.
+      // (At 40 / 16 / 4 the night's exposure (0.05) took it to white: a lamp bulb, not fire; capture 098 of 2026-10-21.)
       MeshMaterial flame = flat(0x3a1a08u, 0.9f, 0.0f);
-      flame.emissive[0] = 40.0f, flame.emissive[1] = 16.0f, flame.emissive[2] = 4.0f;
-      const MeshMaterial materials[kParts] = {m, flat(0x6b4a2bu, 0.82f, 0.0f), flat(0x3a3a3cu, 0.45f, 0.65f), flame, flat(0x3b2a18u, 0.85f, 0.0f)};
+      flame.emissive[0] = 16.0f, flame.emissive[1] = 5.5f, flame.emissive[2] = 0.9f;
+      const MeshMaterial materials[kParts] = {m, flat(0x6b4a2bu, 0.82f, 0.0f), flat(0x3a3a3cu, 0.45f, 0.65f), flame, flat(0x3b2a18u, 0.85f, 0.0f),
+                                              flat(0x060504u, 1.0f, 0.0f)};
       MeshBuild build;
       std::vector<MeshMaterial> used;
       bool built = false;
@@ -2044,6 +2069,15 @@ class MapStage final : public Stage {
         piece.light = e2::SceneLight{{1.0f, 0.58f, 0.26f}, 11.0f, 4.68f, 1.0f, 1.0f, static_cast<float>(std::fmod(p.x * 7.31 + p.y * 3.17, 6.28))};
         piece.lightAt = {static_cast<float>(std::sin(a)) * out, 4.2f * 0.62f + 1.3f, static_cast<float>(std::cos(a)) * out};
       }
+      if (const auto flame = e2::emberStairFlame(*def, rot)) {
+        // The stairs' torch: Engine2's wall torch numbers, at its flame.
+        piece.light = e2::SceneLight{{1.0f, 0.58f, 0.26f}, 11.0f, 4.68f, 1.0f, 1.0f, static_cast<float>(std::fmod(p.x * 5.17 + p.y * 2.31, 6.28))};
+        piece.lightAt = {static_cast<float>((*flame)[0]), static_cast<float>((*flame)[1]) + 0.15f, static_cast<float>((*flame)[2])};
+      }
+      if (stairs) stairPieces_.push_back({static_cast<float>(x), static_cast<float>(z)});
+      if (const auto hole = e2::emberStairHole(*def, rot))
+        groundHoles_.push_back({static_cast<float>(x + (*hole)[0]), static_cast<float>(z + (*hole)[1]), static_cast<float>(x + (*hole)[2]),
+                                static_cast<float>(z + (*hole)[3])});
       piece.x = static_cast<float>(x), piece.z = static_cast<float>(z);
       // EmberEngine's pieces stand on their own hex's ground: the arch position (no odd-row half-hex shift) samples the neighbouring
       // cell on odd rows, and a rim piece beside the void read 0 there, two units under the floor (2026-10-21). Engine2's pieces as before.
@@ -2391,6 +2425,8 @@ class MapStage final : public Stage {
       // centred on it (the card's x, z = the footprint's middle), a hair above the floor, lit, no shadow. They were never drawn
       // (the user, 2026-10-21: the watchtower's stairs and its exit at the door could not be seen).
       if (d.onFloor) {
+        // A 3D stair piece (the watchtower's kit) stands over this waypoint: the piece is its look, the card stays for the rules.
+        if (std::any_of(stairPieces_.begin(), stairPieces_.end(), [&](const glm::vec2& s) { return glm::distance(s, glm::vec2(d.x, d.z)) < 0.9f; })) continue;
         const float y = flat_ ? boardTop_ + d.z * kFlatRowStep - 0.5f * kFlatRowStep : groundOf(d.groundSmooth, d.groundHard) + 0.03f;
         addCard(clip, {d.x, y, d.z}, {1.0f, 0.0f, 0.0f}, d.w, d.h, {0.0f, -0.5f * d.h, 0.0f}, d.mirror, 0, kSpriteLit | kSpriteFlat, nullptr);
         continue;
@@ -8545,6 +8581,8 @@ class MapStage final : public Stage {
   std::vector<PieceBox> pieceBoxes_;
   std::vector<ArchPiece> arch_;  // Ember's walls, doors and gates (buildArchitecture)
   std::vector<DoorLeaf> doorLeaves_;  // the animated doors' leaves (buildArchitecture)
+  std::vector<glm::vec2> stairPieces_;  // the 3D stairs' centres (x, z): the 2D stairs card under one is not drawn
+  std::vector<glm::vec4> groundHoles_;  // the down stairs' wells: ground cut away (x0, z0, x1, z1; Renderer::setGroundHoles)
   std::map<size_t, DoorState> doors_;  // ... each door's state, by arch_ index
   static constexpr float kGlide = 10.0f;  // 1/s: ~90% of a move in 0.23 s, no overshoot
   // -8 deg to 89.5 deg (straight down). The eye itself never goes below kMinEyePitch (5 deg, nearly level: it would enter the
@@ -8561,7 +8599,9 @@ class MapStage final : public Stage {
   inline static const std::set<std::string> kWindowLightMaps = {"watchtower-gate-floor", "watchtower-barracks", "watchtower-command"};
   static constexpr float kWindowSkyShare = 0.08f;    // the share of the sky's light a room gets through its openings (ambient)
   static constexpr float kWindowMeterShare = 0.04f;  // the camera's meter: the room's level against the outside's
-  static constexpr float kWindowMeterFloor = 0.3f;   // lux: never darker than a torch-lit room's reading
+  // lux: never under the torch-lit room's reading of the old indoor light (3 lux fill x 0.3 + 1.5 ambient): at 0.3 the night
+  // was exposed 36 x brighter than before and every torch burned its wall white (captures 093-094 of 2026-10-21)
+  static constexpr float kWindowMeterFloor = 2.7f;
   static constexpr float kRoofUnder = 4.0f;          // the roof slab's underside over the lowest wall's ground (walls are 4.2 tall)
   static constexpr float kRoofOver = 4.6f;           // ... its top over the highest wall's ground: every wall top sits inside the slab
   static constexpr float kRoofMargin = 0.45f;        // the slab past the outermost wall piece's anchor (walls are 0.61 thick)

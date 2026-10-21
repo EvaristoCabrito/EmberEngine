@@ -55,7 +55,7 @@ def main(models_path='content/models/models.json', catalog_path='content/engine2
         editor['architectureDefs'][pid] = {
             'model3d': p['model3d'], 'heightScale': p.get('heightScale', 1), 'wallThicknessScale': p.get('wallThicknessScale', 1),
             'architectureSpan': span, 'doorStyle': None, 'rockStyle': None, 'templeStyle': None, 'castleStyle': None, 'thickWall': False,
-            'dungeonReference': False, 'wallTexture': p['wallTexture'], 'connects': True,
+            'dungeonReference': False, 'wallTexture': p['wallTexture'], 'connects': p.get('connects', True),
             'emberStyle': p['emberStyle'], 'textureRepeat': p.get('textureRepeat', 3.6),
         }
     editor['architectureOrder'] = [p['id'] for p in architecture['pieces']] + editor['architectureOrder']

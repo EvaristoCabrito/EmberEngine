@@ -350,6 +350,27 @@ void emberMasonryUVs(Geometry& g, std::pair<double, double> origin, double repea
 void tagMaterial(Geometry& g, int tag) {
   for (size_t i = 0; i < g.count(); ++i) g.setUV(i, kEmberUvTag * tag + 0.5, 0.5);
 }
+// A torch's flame: a drop that narrows to a tip and leans a little (a sphere's upper half drawn up into a point), centred at
+// (x, y, z) in the torch's own frame; tagged as the flame material.
+Geometry flameDrop(double x, double y, double z) {
+  Geometry f = three::sphere(0.15, 12, 10);
+  for (size_t i = 0; i < f.count(); ++i) {
+    const double pz = f.pz(i);
+    if (pz <= 0.0) {
+      f.position[i * 3 + 2] = static_cast<float>(pz * 0.9);
+      continue;
+    }
+    const double t = pz / 0.15;  // 0 at the widest, 1 at the top
+    const double shrink = 1.0 - 0.92 * t * t;
+    f.position[i * 3] = static_cast<float>(f.px(i) * shrink + 0.035 * t * t);
+    f.position[i * 3 + 1] = static_cast<float>(f.py(i) * shrink);
+    f.position[i * 3 + 2] = static_cast<float>(pz * 2.6);
+  }
+  f.computeVertexNormals();
+  f.translate(x, y, z);
+  tagMaterial(f, 3);
+  return f;
+}
 
 // The arched opening of the portal, the door and the gate: half the width, the spring of the arch and its rise.
 void emberArchOf(const ArchitectureDef& def, double tile, double height, int rotation, double& width, double& radius, double& spring, double& rise) {
@@ -404,7 +425,162 @@ Geometry doorLeaf(const ArchitectureDef& def, double tile, double height, int ro
   return g;
 }
 
+// --- the stairs (2026-10-21, the user: "escadas 3D da torre (subindo e descendo), no kit, com luz") ---------------------------
+// Both stand on two hexes along the run (local x, centred), the first hex the foot / the head where a unit stands, the climb or the
+// descent over the second, towards a wall. Up: a stepped stone flight between stepped cheeks to a landing two thirds of a wall up,
+// a stone arch on the landing opening onto darkness (the way to the floor above), a torch on the arch. Down: a stairwell: a kerb and
+// a parapet on three sides at floor level, the ground cut away over the well (MapStage hands the hole to the terrain pass), a lined
+// shaft, the steps going down into it to a dark doorway, a torch on the shaft's wall just under the floor.
+struct StairPlan {
+  double L = 0, W = 0;          // run length (two cells), clear width
+  double from = 0, to = 0;      // the flight's x range
+  int steps = 0;
+  double rise = 0, tread = 0;   // per step (up: positive, down: the drop)
+  double top = 0;               // up: the landing's height; down: the bottom's depth (positive)
+};
+StairPlan stairPlan(const ArchitectureDef& def, double tile, double height, int rotation) {
+  StairPlan p;
+  const bool vertical = (rotation & 1) != 0;
+  const double cell = tile * (vertical ? 1.5 : kSqrt3), across = tile * (vertical ? kSqrt3 : 1.5);
+  p.L = cell * 2.0;
+  p.W = std::min(1.4 * tile, across * 0.78);
+  p.from = -p.L / 2 + 0.35 * tile;
+  if (def.emberStyle == "stairs-up") {
+    p.steps = 9;
+    p.top = height * 0.667;
+    p.to = p.L / 2 - 0.5 * tile;  // the landing beyond
+  } else {
+    p.steps = 10;
+    p.top = height * 0.83;
+    p.to = p.L / 2 - 0.6 * tile;  // the bottom landing beyond
+  }
+  p.rise = p.top / p.steps;
+  p.tread = (p.to - p.from) / p.steps;
+  return p;
+}
+// Where the stair's torch hangs: the face point (Ember local frame, before the quarter turns) and the bracket's outward angle.
+struct TorchMount {
+  double x = 0, y = 0, z = 0, phi = 0;
+};
+TorchMount stairTorch(const ArchitectureDef& def, double tile, double height, int rotation) {
+  const StairPlan p = stairPlan(def, tile, height, rotation);
+  if (def.emberStyle == "stairs-up") {
+    const double archW = p.W + 0.5 * tile, radius = p.W / 2 - 0.05 * tile, post = archW / 2 - radius;
+    return {p.L / 2 - 0.45 * tile, archW / 2 - post / 2, p.top + 0.55 * tile, kPi};  // on the arch's left post, facing down the flight
+  }
+  // on the far parapet's inner face, over the well, facing the way in (inside the shaft, 0.3 from its walls, it burned them white:
+  // capture 091 of 2026-10-21)
+  return {p.L / 2 - 0.1 * tile, 0.0, 0.12 * tile + 0.25 * tile, kPi};
+}
+// A wall torch (bracket, ring, oak shaft, pitch head, flame) on a face point, the bracket standing out along phi; its flame centre.
+Geometry torchAt(const TorchMount& m, std::array<double, 3>* flameOut) {
+  std::vector<Geometry> t;
+  auto add = [&](Geometry g, int tag) {
+    tagMaterial(g, tag);
+    t.push_back(g.toNonIndexed());
+  };
+  for (int side : {-1, 1}) {
+    Geometry arm = three::box(0.05, 0.42, 0.05);
+    arm.translate(side * 0.11, -0.19, 0);
+    add(std::move(arm), 2);
+  }
+  Geometry plate = three::box(0.34, 0.03, 0.34);
+  plate.translate(0, -0.015, 0);
+  add(std::move(plate), 2);
+  Geometry ring = three::torus(0.11, 0.018, 8, 20);
+  ring.translate(0, -0.40, 0.02);
+  add(std::move(ring), 2);
+  Geometry shaft = three::box(0.12, 0.12, 1.05);
+  shaft.rotateX(0.32).translate(0, -0.40, 0.30);
+  add(std::move(shaft), 1);
+  Geometry head = three::box(0.2, 0.2, 0.22);
+  head.rotateX(0.32).translate(0, -0.57, 0.78);
+  add(std::move(head), 4);
+  t.push_back(flameDrop(0, -0.62, 1.06).toNonIndexed());
+  const double theta = m.phi + kPi / 2;
+  Geometry all = three::merge(t);
+  all.rotateZ(theta).translate(m.x, m.y, m.z);
+  if (flameOut) *flameOut = {m.x + 0.62 * std::sin(theta), m.y - 0.62 * std::cos(theta), m.z + 1.12};
+  return all;
+}
+// Ember local (before the quarter turns) -> the piece's space (pieceGeometry: rotateZ(-rotation * pi / 2), then up: (x, z, -y)).
+std::array<double, 3> emberToPiece(double x, double y, double z, int rotation) {
+  const double a = -rotation * kPi / 2;
+  const double ex = x * std::cos(a) - y * std::sin(a), ey = x * std::sin(a) + y * std::cos(a);
+  return {ex, z, -ey};
+}
+
+Geometry stairsGeometry(const ArchitectureDef& def, double tile, double height, int rotation) {
+  const StairPlan p = stairPlan(def, tile, height, rotation);
+  std::vector<Geometry> parts;
+  auto boxSpan = [&](double x0, double x1, double y0, double y1, double z0, double z1, int tag = 0) {
+    Geometry b = three::box(x1 - x0, y1 - y0, z1 - z0);
+    b.translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+    if (tag) tagMaterial(b, tag);
+    parts.push_back(b.toNonIndexed());
+  };
+  const double hw = p.W / 2, cheek = 0.18 * tile;
+  if (def.emberStyle == "stairs-up") {
+    // the flight: each step a block from its nose to the landing, so the mass under the treads is solid stone
+    for (int i = 0; i < p.steps; ++i) {
+      const double x0 = p.from + i * p.tread, z1 = (i + 1) * p.rise;
+      boxSpan(x0, p.to, -hw, hw, 0, z1);
+      // a nosing lip on each tread
+      boxSpan(x0 - 0.03 * tile, x0 + 0.06 * tile, -hw, hw, z1 - 0.05 * tile, z1 + 0.015 * tile);
+      // the stepped cheeks: half a metre of balustrade over each step
+      for (int s : {-1, 1}) boxSpan(x0, x0 + p.tread, s > 0 ? hw : -hw - cheek, s > 0 ? hw + cheek : -hw, 0, z1 + 0.55 * tile);
+    }
+    boxSpan(p.to, p.L / 2, -hw, hw, 0, p.top);  // the landing
+    for (int s : {-1, 1}) boxSpan(p.to, p.L / 2, s > 0 ? hw : -hw - cheek, s > 0 ? hw + cheek : -hw, 0, p.top + 0.55 * tile);
+    // the foot: a plinth under the first step's nose
+    boxSpan(p.from - 0.12 * tile, p.from + p.tread, -hw - cheek, hw + cheek, 0, 0.06 * tile);
+    // the stairhead arch on the landing, across the flight, its opening dark (the way up)
+    const double archW = p.W + 0.5 * tile, archH = 2.5 * tile, radius = hw - 0.05 * tile, spring = 1.45 * tile, archRise = 0.65 * tile, depth = 0.45 * tile;
+    Geometry arch = extruded(archFrame(archW, archH, radius, spring, archRise), depth, 20);  // width along x, depth along y
+    arch.rotateZ(kPi / 2).translate(p.L / 2 - depth / 2, 0, p.top);
+    parts.push_back(arch.toNonIndexed());
+    boxSpan(p.L / 2 - 0.1 * tile, p.L / 2 - 0.02 * tile, -radius, radius, p.top, p.top + spring + archRise, 5);
+    // its cornice
+    boxSpan(p.L / 2 - depth - 0.06 * tile, p.L / 2 + 0.02 * tile, -archW / 2 - 0.06 * tile, archW / 2 + 0.06 * tile, p.top + archH - 0.14 * tile, p.top + archH);
+  } else {
+    const double x0 = p.from, x1 = p.L / 2 - 0.1 * tile, depth = p.top + 0.5 * tile, wall = 0.3 * tile;
+    // the kerb round the well and the parapet on its long sides and far end (the near end is the way in)
+    const double k = 0.25 * tile, kh = 0.12 * tile, ph = 0.85 * tile, pt = 0.22 * tile;
+    boxSpan(x0 - k, x1 + k, hw, hw + k, 0, kh);
+    boxSpan(x0 - k, x1 + k, -hw - k, -hw, 0, kh);
+    boxSpan(x0 - k, x0, -hw, hw, 0, kh);
+    boxSpan(x1, x1 + k, -hw, hw, 0, kh);
+    boxSpan(x0 + 0.2 * tile, x1 + pt, hw, hw + pt, kh, kh + ph);
+    boxSpan(x0 + 0.2 * tile, x1 + pt, -hw - pt, -hw, kh, kh + ph);
+    boxSpan(x1, x1 + pt, -hw, hw, kh, kh + ph);
+    for (int s : {-1, 1}) boxSpan(x0 + 0.12 * tile, x0 + 0.32 * tile, s > 0 ? hw - 0.02 * tile : -hw - pt - 0.04 * tile, s > 0 ? hw + pt + 0.04 * tile : -hw + 0.02 * tile, kh, kh + ph + 0.14 * tile);  // newel posts
+    // the shaft lining
+    boxSpan(x0 - wall, x1 + wall, hw, hw + wall, -depth, 0);
+    boxSpan(x0 - wall, x1 + wall, -hw - wall, -hw, -depth, 0);
+    boxSpan(x0 - wall, x0, -hw, hw, -depth, 0);
+    boxSpan(x1, x1 + wall, -hw, hw, -depth, 0);
+    // the steps down: each a block from its nose to the far wall, down to the shaft's floor
+    for (int i = 0; i < p.steps; ++i) {
+      const double nose = x0 + i * p.tread, z1 = -(i + 1) * p.rise;
+      boxSpan(nose, x1, -hw, hw, -depth, z1);
+      boxSpan(nose - 0.03 * tile, nose + 0.06 * tile, -hw, hw, z1 - 0.05 * tile, z1 + 0.015 * tile);
+    }
+    // the dark doorway at the bottom, on the far wall (the way down)
+    boxSpan(x1 - 0.04 * tile, x1, -hw * 0.72, hw * 0.72, -p.top, -p.top + 2.3 * tile, 5);
+  }
+  std::array<double, 3> flame{};
+  parts.push_back(torchAt(stairTorch(def, tile, height, rotation), &flame));
+  Geometry g = three::merge(parts);
+  g.rotateZ(-rotation * kPi / 2);
+  return g;
+}
+
 Geometry emberGeometry(const ArchitectureDef& def, double tile, double height, int rotation, const std::vector<Conn>& connections, std::pair<double, double> origin) {
+  if (def.emberStyle == "stairs-up" || def.emberStyle == "stairs-down") {
+    Geometry g = stairsGeometry(def, tile, height, rotation);
+    emberMasonryUVs(g, origin, std::max(def.textureRepeat, 0.1));
+    return g;
+  }
   const double T = tile * 0.32 * def.wallThicknessScale;
   const double plinthH = height * 0.065, plinthOut = T * 0.16;
   const double capH = height * 0.045, capOut = T * 0.08;
@@ -445,9 +621,7 @@ Geometry emberGeometry(const ArchitectureDef& def, double tile, double height, i
     Geometry head = three::box(0.2, 0.2, 0.22);
     head.rotateX(0.32).translate(0, y0 - 0.57, zb + 0.78);
     add(std::move(head), 4);
-    Geometry flame = three::sphere(0.16, 10, 8);  // the flame: a stretched drop (emissive); its light is MapStage's
-    flame.scale(1.0, 1.0, 1.8).translate(0, y0 - 0.62, zb + 1.12);
-    add(std::move(flame), 3);
+    t.push_back(flameDrop(0, y0 - 0.62, zb + 1.06).toNonIndexed());  // the flame (emissive); its light is MapStage's
     Geometry all = three::merge(t);
     all.rotateZ(angle);
     parts.push_back(std::move(all));
@@ -563,6 +737,25 @@ std::array<double, 3> emberDoorHingePiece(const ArchitectureDef& def, int rotati
   const double hx = side * (radius - 0.02), a = -rotation * kPi / 2;
   const double x = hx * std::cos(a), y = hx * std::sin(a);
   return {x, 0.0, -y};
+}
+
+std::array<double, 3> emberDirPiece(int rotation) { return emberToPiece(1, 0, 0, rotation); }
+
+std::optional<std::array<double, 3>> emberStairFlame(const ArchitectureDef& def, int rotation) {
+  if (def.emberStyle != "stairs-up" && def.emberStyle != "stairs-down") return std::nullopt;
+  const double height = 0.75 * def.heightScale * 3.5 * 1.6;
+  std::array<double, 3> flame{};
+  torchAt(stairTorch(def, 1.0, height, rotation), &flame);
+  return emberToPiece(flame[0], flame[1], flame[2], rotation);
+}
+
+std::optional<std::array<double, 4>> emberStairHole(const ArchitectureDef& def, int rotation) {
+  if (def.emberStyle != "stairs-down") return std::nullopt;
+  const double height = 0.75 * def.heightScale * 3.5 * 1.6;
+  const StairPlan p = stairPlan(def, 1.0, height, rotation);
+  const double x0 = p.from, x1 = p.L / 2 - 0.1, hw = p.W / 2;
+  const std::array<double, 3> a = emberToPiece(x0, -hw, 0, rotation), b = emberToPiece(x1, hw, 0, rotation);
+  return std::array<double, 4>{std::min(a[0], b[0]), std::min(a[2], b[2]), std::max(a[0], b[0]), std::max(a[2], b[2])};
 }
 
 double emberAxisAngle(int rotation, const std::vector<std::pair<double, double>>& connections) {

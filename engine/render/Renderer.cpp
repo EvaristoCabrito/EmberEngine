@@ -100,8 +100,9 @@ struct TerrainPush {
   float gridSeconds;
   uint32_t wallFrom;      // smooth look: the first vertex of the board's added side walls (0 = none)
   glm::vec4 clip;         // x0, z0, x1, z1: the ground is drawn only inside (Renderer::setGroundClip)
+  glm::vec4 holes[Renderer::kGroundHoles];  // x0, z0, x1, z1: the ground is not drawn inside (Renderer::setGroundHoles; zero = none)
 };
-static_assert(sizeof(TerrainPush) == 96);
+static_assert(sizeof(TerrainPush) == 128);  // Bindless::kPushConstantBytes: full
 
 uint32_t packHalf2(float a, float b) { return glm::packHalf2x16(glm::vec2(a, b)); }
 
@@ -1809,7 +1810,8 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     vkCmdBeginRendering(cmd, &shadowPass);
     setViewport(cmd, {shadowSize_, shadowSize_});
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, terrainShadowPipeline_);
-    const TerrainPush push{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices, terrain_.seamStep, 0, 0, 0, 0, 0, 0, 0, 0.0f, 0, groundClip_};
+    const TerrainPush push{bufferAddress(context_, frame.meshFrame), terrain_.record, terrain_.vertices, terrain_.indices, terrain_.seamStep, 0, 0, 0, 0, 0, 0, 0, 0.0f, 0, groundClip_,
+                           {groundHoles_[0], groundHoles_[1]}};
     vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
     vkCmdDraw(cmd, terrain_.count, 1, 0, 0);
     if (meshes) {
@@ -2018,7 +2020,8 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
                                     marks ? static_cast<uint32_t>(markCols_) : 0u, marks ? bufferAddress(context_, frame.marks) : 0,
                                     static_cast<uint32_t>(markRows_),
                                     grid ? static_cast<uint32_t>(gridCols_) : 0u, grid ? static_cast<uint32_t>(gridRows_) : 0u, grid ? gridLook_ : 0u,
-                                    grid ? bufferAddress(context_, frame.grid) : 0, gridSeconds_, terrain_.wallFrom, groundClip_};
+                                    grid ? bufferAddress(context_, frame.grid) : 0, gridSeconds_, terrain_.wallFrom, groundClip_,
+                                    {groundHoles_[0], groundHoles_[1]}};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(terrainPush), &terrainPush);
       vkCmdDraw(cmd, terrain_.count, 1, 0, 0);
       gpuTimer_.end(cmd, terrainScope);

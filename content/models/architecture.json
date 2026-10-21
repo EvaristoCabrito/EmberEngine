@@ -69,6 +69,30 @@
       "footprint": "pair"
     },
     {
+      "id": "ember-arch-watchtower-stairs-up",
+      "name": "Escada que sobe da Torre de Vigia 3D · 2 hexes",
+      "model3d": "doorway",
+      "emberStyle": "stairs-up",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "architectureSpan": 2,
+      "footprint": "pair",
+      "connects": false
+    },
+    {
+      "id": "ember-arch-watchtower-stairs-down",
+      "name": "Escada que desce da Torre de Vigia 3D · 2 hexes",
+      "model3d": "doorway",
+      "emberStyle": "stairs-down",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "architectureSpan": 2,
+      "footprint": "pair",
+      "connects": false
+    },
+    {
       "id": "ember-arch-watchtower-gate",
       "name": "Portão da Torre de Vigia 3D · 4 hexes",
       "model3d": "doorway",

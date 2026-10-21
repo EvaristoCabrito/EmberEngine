@@ -5716,6 +5716,20 @@
         "id": "light-wall-torch",
         "x": 31,
         "y": 28
+      },
+      {
+        "id": "ember-arch-watchtower-stairs-up",
+        "x": 29,
+        "y": 5,
+        "rot": 3,
+        "wallOrientation": "vertical"
+      },
+      {
+        "id": "ember-arch-watchtower-stairs-down",
+        "x": 10,
+        "y": 29,
+        "rot": 3,
+        "wallOrientation": "vertical"
       }
     ],
     "elementalFx": [],

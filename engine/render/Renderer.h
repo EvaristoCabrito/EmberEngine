@@ -168,6 +168,11 @@ class Renderer {
   // The board's ground drawn only inside x0..x1, z0..z1 (world units; a map whose deck ends at its walls, MapDraft::emberDeckClip);
   // the default lets everything through.
   void setGroundClip(glm::vec4 clip) { groundClip_ = clip; }
+  // Up to kGroundHoles rectangles (x0, z0, x1, z1) where the ground is not drawn (a stairwell going down; terrain.hlsl).
+  static constexpr size_t kGroundHoles = 2;
+  void setGroundHoles(std::span<const glm::vec4> holes) {
+    for (size_t k = 0; k < kGroundHoles; ++k) groundHoles_[k] = k < holes.size() ? holes[k] : glm::vec4(0.0f);
+  }
   // Marks painted on the ground (the battle grid: reach, route, cursor), drawn by the terrain pass so whatever stands
   // in front covers them. Per hex, up to kMarkLayers fills / rings in order (painter's), colours sRGB + alpha as on
   // screen (blended after tone mapping, so they keep their exact colour in any light). Radii in hex radii (1 = the
@@ -542,6 +547,7 @@ class Renderer {
   uint32_t lightingLayers_ = 0xFFFFFFFFu;
   TerrainView terrain_;
   glm::vec4 groundClip_{-1.0e9f, -1.0e9f, 1.0e9f, 1.0e9f};
+  std::array<glm::vec4, kGroundHoles> groundHoles_{};  // (0, 0, 0, 0) = none
   VkPipeline spritePipeline_ = VK_NULL_HANDLE;
   VkPipeline spriteDepthPipeline_ = VK_NULL_HANDLE;  // the cards' depth, after the cards
   VkPipeline effectPipeline_ = VK_NULL_HANDLE;

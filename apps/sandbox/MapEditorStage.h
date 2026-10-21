@@ -762,6 +762,30 @@ class MapEditorStage : public Stage {
     for (size_t k = 0; k < decos.size() && !clicked; ++k)
       if (covers(decos[k], x, y)) clicked = k;
     const DecoMeta& brush = meta(decoBrush_);
+    // The kit's 3D stairs over a stairs waypoint (the floor connector stays for the rules; the game draws the 3D piece in place of
+    // its card): a click on the waypoint lays the stairs on exactly its hexes.
+    if (clicked && decoBrush_.starts_with("ember-arch-watchtower-stairs-") && !meta(decos[*clicked].value("id", "")).exitKind.empty()) {
+      const e2::Json c = decos[*clicked];
+      std::set<std::pair<int, int>> want;
+      for (const auto& cell : cellsOf(c)) want.insert(cell);
+      for (int rot = 0; rot < 4; ++rot) {
+        const e2::Json candidate = {{"id", decoBrush_}, {"x", c.value("x", 0)}, {"y", c.value("y", 0)}, {"rot", rot}};
+        std::set<std::pair<int, int>> got;
+        for (const auto& cell : cellsOf(candidate)) got.insert(cell);
+        if (got != want) continue;
+        for (const e2::Json& o : decos)
+          if (o.value("id", "").starts_with("ember-arch-watchtower-stairs-") && o.value("x", -1) == c.value("x", 0) && o.value("y", -1) == c.value("y", 0))
+            return note("Essa escada já tem a sua peça 3D.");
+        beginEdit();
+        e2::Json placed = candidate;
+        placed["wallOrientation"] = rot % 2 ? "vertical" : "horizontal";
+        arr("decorations").push_back(std::move(placed));
+        selected_.reset();
+        return note(std::format("{} sobre a passagem em {},{} (a passagem continua; o jogo desenha a escada 3D no lugar da carta).", decoName(decoBrush_),
+                                c.value("x", 0), c.value("y", 0)));
+      }
+      return note("A peça de escada não cabe nas casas dessa passagem.");
+    }
     if (clicked) {
       const e2::Json c = decos[*clicked];
       const DecoMeta& cm = meta(c.value("id", ""));
@@ -2534,11 +2558,12 @@ class MapEditorStage : public Stage {
     if (arch && !architectureDecorations_) {
       // The watchtower's kit (content/models/architecture.json) and the wall tools: a drag on the preview lays the whole run or room.
       ImGui::TextColored(ImColor(180, 180, 180), "TORRE DE VIGIA");
-      static const std::pair<const char*, const char*> kKit[7] = {{"Parede", "ember-arch-watchtower-wall"}, {"Janela", "ember-arch-watchtower-window"},
+      static const std::pair<const char*, const char*> kKit[9] = {{"Parede", "ember-arch-watchtower-wall"}, {"Janela", "ember-arch-watchtower-window"},
                                                                   {"Seteira", "ember-arch-watchtower-slit"}, {"Tocha", "ember-arch-watchtower-wall-torch"},
                                                                   {"Portal", "ember-arch-watchtower-portal"}, {"Porta", "ember-arch-watchtower-door"},
-                                                                  {"Portão", "ember-arch-watchtower-gate"}};
-      for (int k = 0; k < 7; ++k) {
+                                                                  {"Portão", "ember-arch-watchtower-gate"}, {"Escada sobe", "ember-arch-watchtower-stairs-up"},
+                                                                  {"Escada desce", "ember-arch-watchtower-stairs-down"}};
+      for (int k = 0; k < 9; ++k) {
         if (k) ImGui::SameLine();
         const bool armed = decoBrush_ == kKit[k].second;
         if (armed) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));

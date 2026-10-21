@@ -40,7 +40,14 @@ struct ArchitectureDef {
 // editor's quarter turn; the half turn (rotation 2 / 3) adds pi and so flips the piece's inner side, which is local -y before the
 // turn: on the board (sin a, cos a). MapStage turns windows so that side faces the room.
 double emberAxisAngle(int rotation, const std::vector<std::pair<double, double>>& connections);
-// Their extra materials, tagged in the UVs (u >= 100 * tag): 0 the masonry texture, 1 oak, 2 iron, 3 a flame (emissive), 4 dark oak.
+// The stairs ("stairs-up" / "stairs-down"): their torch's flame in the piece's space (Y up, like pieceGeometry), and the down
+// stairs' well as the rectangle of ground cut away (x0, z0, x1, z1 relative to the piece's anchor, board axes).
+std::optional<std::array<double, 3>> emberStairFlame(const ArchitectureDef& def, int rotation);
+// The direction of a span piece's local +x (the stairs' climb) on the board after its quarter turns (piece space: x, 0, z).
+std::array<double, 3> emberDirPiece(int rotation);
+std::optional<std::array<double, 4>> emberStairHole(const ArchitectureDef& def, int rotation);
+// Their extra materials, tagged in the UVs (u >= 100 * tag): 0 the masonry texture, 1 oak, 2 iron, 3 a flame (emissive), 4 dark oak,
+// 5 a dark void (the stairs' openings).
 inline constexpr double kEmberUvTag = 100.0;
 inline int emberMaterialTag(double u) { return u >= kEmberUvTag ? static_cast<int>(u / kEmberUvTag) : 0; }
 // The animated door ("door" style): one leaf (side -1 left, +1 right), closed, in the piece's own space like pieceGeometry

@@ -324,6 +324,8 @@ course under the top.
 | ember-arch-watchtower-wall-torch | Parede com tocha da Torre de Vigia 3D | the wall with an iron bracket, an oak torch and a flame (emissive) on the room's side, and its own flickering light (Engine2's wall torch numbers) |
 | ember-arch-watchtower-portal | Portal da Torre de Vigia 3D · 2 hexes | an arched doorway two hexes wide (in place of the flat-coloured watchtower entrance); open |
 | ember-arch-watchtower-door | Porta da Torre de Vigia 3D · 2 hexes | the same arch with two oak leaves (plank seams, iron straps, hinges, ring handles) as their own meshes: **animated**, they swing inwards (~100 deg in 0.7 s) while anyone alive stands within a hex of the door and close again after; past half open the door's cells are walked and seen through, closed it blocks (MapStage `updateDoors`, `emberDoorLeafPiece / emberDoorHingePiece`). The editor's Abrir porta / Fechar passagem swap it with the portal (doorVariants "watchtower") |
+| ember-arch-watchtower-stairs-up | Escada que sobe da Torre de Vigia 3D · 2 hexes | a stepped stone flight between stepped cheeks, 9 steps to a landing two thirds of a wall up, a stone arch on the landing opening onto darkness (the way up), a torch on the arch; climbs towards the wall beyond one of its ends by itself |
+| ember-arch-watchtower-stairs-down | Escada que desce da Torre de Vigia 3D · 2 hexes | a stairwell: kerb and parapet on three sides (newel posts at the way in), the ground cut away over the well (`Renderer::setGroundHoles`, terrain.hlsl, up to 2 per map), a lined shaft, 10 steps down to a dark doorway, a torch on the far parapet over the well |
 | ember-arch-watchtower-gate | Portão da Torre de Vigia 3D · 4 hexes | the tower's entrance (the user: "de 4 hexes para passar carroças"): the arch four hexes wide and 1.2 x as tall, its two leaves baked swung open; walked through |
 
 Extra materials (oak, iron, the flame, dark oak) are tagged in the UVs (`Architecture.h emberMaterialTag`, u >= 100 x tag) and become
@@ -339,7 +341,9 @@ a plain wall moves onto it). The light through the openings: MapStage "Luz das j
 watchtower's roofed floors): the hour's real sun / moon, a shadow-only roof slab over the walls (`buildRoof`, `kInstanceShadowOnly`,
 double-sided: the mesh shader's winding cull kept only its underside in the sun's pass; spanning every wall top in height and
 reaching the outermost wall pieces and no further: an overhang shaded the windows from outside), the sky never drawn. The script's
-`--gate` puts the 4-hex gate at the entrance (the two wall pieces on its extra cells go).
+`--gate` puts the 4-hex gate at the entrance (the two wall pieces on its extra cells go). The stairs are laid OVER a stairs waypoint
+(`stone-stairs-up/down-001`, a floor connector): the waypoint stays for the rules (the floor change), the game draws the 3D piece in its
+card's place; the editor lays them by a click on the waypoint with the Escada brush, the script with `--stairs`.
 
 ## The pack (props-v2.pak)
 
