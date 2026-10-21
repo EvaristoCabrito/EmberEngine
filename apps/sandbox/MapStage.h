@@ -138,6 +138,8 @@ struct MapStageOptions {
   int barsFade = 1;    // the panel's "Vida perto" at the start: 0 OFF, 1 bars near the camera fade (--bars-fade N)
   int floorImage = 1;  // the panel's "Chão do vão" at the start (--floor N)
   int windFog = 1;     // the panel's "Névoa do vento" at the start (--wind-fog N)
+  // Luz das janelas (indoor maps): -1 as the map says (on for the watchtower's roofed floors), 0 OFF, 1 real (--window-light N)
+  int windowLight = -1;
   // Atmosfera volumétrica v1: the panel's "Atmosfera" at the start (0 OFF, 1 cinema, 2 alta, 3 desempenho; --atmos N).
   // ON by default at "alta" (user, 2026-10-16: "padrão on"); the choice stays in the panel.
   int atmos = 2;
@@ -402,6 +404,8 @@ class MapStage final : public Stage {
       }
       // The newest panorama opens first on its map (aldeia: the user's fire panorama, 2026-10-19 "TERMINA").
       if (options.background < 0 && !panoramas_.empty()) background_ = 4 + static_cast<int>(panoramas_.size());
+      // Luz das janelas: by map id (each map its own diorama): the watchtower's roofed floors open with it; every other map OFF.
+      windowLight_ = options.windowLight >= 0 ? std::clamp(options.windowLight, 0, 1) : kWindowLightMaps.contains(board_->draft().id) ? 1 : 0;
       if (scene_->environment != "indoor")  // the map's night, or any night of the 24 h cycle
         for (const char* phase : e2::kMoonPhases) ground_.requestTexture(e2::skyMoonAsset(phase));  // 0.1 MB each
     }
@@ -448,6 +452,7 @@ class MapStage final : public Stage {
       meshes_.update();
       laps.lap("meshes");
       if (!modelsPlaced_ && meshes_.ready()) placeModels();
+      if (modelsPlaced_) updateDoors(now_);
     }
     uploads_.flush();
     laps.lap("uploads");
@@ -625,6 +630,15 @@ class MapStage final : public Stage {
     renderer.setLights(lights_);
     laps.lap("hand-over");
     Renderer::Lighting lighting = mapLighting(time);
+    if (windowLight() && lightingMode_ == 3) {
+      // Luz das janelas: the key light (the hour's sun, the moon at night, through the air) comes in only through the openings
+      // (the shadow-only roof, buildRoof); the sky's ambient enters at the openings' share of the sky (kWindowSkyShare); the
+      // camera meters the room, not the outside (kWindowMeterShare), so the sun's patches on the floor burn bright and the rest
+      // of the room sits in the windows' glow, the torches carrying it at night. No air inside: no aerial perspective.
+      lighting.ambientMul *= kWindowSkyShare;
+      lighting.kmPerUnit = 0.0f;
+      meterLux_ = std::max(meterLux_ * kWindowMeterShare, kWindowMeterFloor);
+    }
     // aldeia's sky at the end of the day (the user, 2026-10-19: "ajuste a cor do azul no céu, até as nuvens reagem, menos o céu"):
     // exposed for the board, the blue stayed as light as at noon while the clouds took the sunset's colour. As the sun sinks under
     // 15 deg the sky behind the board (and its reflection) darkens into a dusk blue, 1.5 stops at 2 deg; the glow by the sun stays
@@ -641,6 +655,8 @@ class MapStage final : public Stage {
       // "Luar: cinema": the night stops are capped at one, or the camera would take back what the brighter moon gave
       // (measured 2026-10-19: with the full darkening the moonlit ground stayed black beside the lanterns).
       float darkening = nightDarkening(ev);
+      // A room by day is exposed for the room (the twilight stops are the outdoors' reading of a low sun); at night the moon's rule.
+      if (windowLight() && !moonNight_) darkening = 0.0f;
       // "Luar: cinema": capped at 2 stops (at 1, measured 2026-10-19 on cemiterio: meter 4.4 lux, exposure 0.24, the night came out
       // as an overcast day with a pale blue sky; at 2 the sky is navy and the moonlit ground still reads).
       if (moonNight_ && moonLight_ == 1) darkening = std::min(darkening, 2.0f);
@@ -734,7 +750,10 @@ class MapStage final : public Stage {
     }
     renderer.setSunShadowBounds(boardCenter_, boardRadius_);
     renderer.setLightingLayers(layers_);
-    {
+    if (windowLight()) {
+      // Indoors the sky is never drawn, whatever lights the room (the user's spec, 2026-10-21): black beyond the walls.
+      renderer.setBackground(Renderer::kBlackBackground, 0u);
+    } else {
       uint32_t bg = kNoTextureIndex;  // the sky (or the clear colour)
       if (background_ == 2) bg = Renderer::kBlackBackground;
       const bool painting = background_ != 1 && background_ != 2 && scene_ && !scene_->backdrop.empty();
@@ -1240,7 +1259,12 @@ class MapStage final : public Stage {
     {
       // Cards vertical (they converge under the tilted camera: "crooked"), or leaning back with the camera's tilt so
       // every card stands upright on screen (sprites.hlsl VSMain).
-      if (lightingMode_ == 3 && !(scene_ && scene_->environment == "indoor")) {
+      // Luz das janelas (indoor maps): OFF = the room's fill light as before; real = the hour's sun / moon through the windows.
+      if (lightingMode_ == 3 && scene_ && scene_->environment == "indoor") {
+        static const char* kWindowLight[2] = {"OFF", "real"};
+        dropdown("Luz das janelas", windowLight_, 2, [](int i) { return std::string(kWindowLight[i]); });
+      }
+      if (lightingMode_ == 3 && !darkIndoor()) {
         static const char* kHours[11] = {"do mapa", "ciclo rápido", "ciclo lento", "amanhecer", "manhã", "meio-dia",
                                          "tarde", "pôr do sol", "crepúsculo", "noite", "madrugada"};
         dropdown("Hora", dayCycle_, 11, [](int i) { return std::string(kHours[i]); });
@@ -1826,6 +1850,20 @@ class MapStage final : public Stage {
     float x = 0, z = 0, groundSmooth = 0, groundHard = 0, half = 0, top = 0;
     bool blocks = false;
     std::vector<std::pair<float, float>> footprint;  // sight samples (world x, z) under its top faces
+    std::optional<e2::SceneLight> light;             // a torch bracket's fire (EmberEngine's wall-torch piece)
+    glm::vec3 lightAt{0.0f};                         // ... relative to the piece's anchor on its ground
+  };
+  // The animated door (ember-arch-watchtower-door): its leaves (own meshes, swung about their hinges) and each door's state.
+  struct DoorLeaf {
+    size_t piece = 0;
+    int side = 0;
+    MeshId mesh = 0;
+    glm::vec3 hinge{0.0f};  // relative to the piece's anchor on its ground
+  };
+  struct DoorState {
+    float angle = 0.0f;      // radians open (0 closed .. kEmberDoorOpenRadians)
+    bool passable = false;   // its cells walked and seen through
+    std::vector<std::pair<int, int>> cells;
   };
   static const e2::EditorCatalog& architectureCatalog() {
     static const e2::EditorCatalog catalog = [] {
@@ -1845,7 +1883,12 @@ class MapStage final : public Stage {
   }
   void buildArchitecture() {
     arch_.clear();
-    if (scene_->pieces.empty()) return;
+    doorLeaves_.clear();
+    doors_.clear();
+    if (scene_->pieces.empty()) {
+      buildRoof();
+      return;
+    }
     const e2::EditorCatalog& catalog = architectureCatalog();
     const e2::ArchitectureDefs& defs = architectureDefs();
     const e2::HexLayout& L = board_->layout();
@@ -1858,11 +1901,13 @@ class MapStage final : public Stage {
       const e2::ArchitectureDef* def = defs.find(p.id);
       const e2::CatalogDecoration* cd = catalog.decoration(p.id);
       if (!def || !cd || !def->connects) continue;
-      if (p.id == "watchtower-stone-open-door-2hex")
+      if (p.id == "watchtower-stone-open-door-2hex" || (!def->emberStyle.empty() && cd->architectureSpan))
         for (const e2::FootOffset& f : e2::placedFootprint(*cd, p.x, p.y, p.rot)) joins.insert({p.x + f.dx, p.y + f.dy});
       else
         joins.insert({p.x, p.y});
     }
+    // The room's centre (the board's), for the windows' splay.
+    const double centreX = 0.5 * (archAt(0, 0).first + archAt(L.cols - 1, 0).first), centreZ = 0.5 * (archAt(0, 0).second + archAt(0, L.rows - 1).second);
     size_t missing = 0;
     for (const e2::SceneArchitecture& p : scene_->pieces) {
       const e2::ArchitectureDef* def = defs.find(p.id);
@@ -1881,53 +1926,87 @@ class MapStage final : public Stage {
       if (!n) continue;
       x /= n, z /= n;
       std::vector<std::pair<double, double>> connections;
+      auto joined = [&](int c, int r) { return inBoard(c, r) && joins.contains({c, r}); };
       for (const auto& [c, r] : {std::pair{p.x - 1, p.y}, std::pair{p.x + 1, p.y}, std::pair{p.x, p.y - 1}, std::pair{p.x, p.y + 1}})
-        if (inBoard(c, r) && joins.contains({c, r})) {
+        if (joined(c, r)) {
           const auto [nx, nz] = archAt(c, r);
           connections.push_back({nx - x, -(nz - z)});
         }
-      const e2::three::Geometry g = e2::pieceGeometry(*def, p.rot, connections, {x, -z});
-      // flat shading (Engine2's material): each triangle's own normal; equal corners welded
-      MeshBuildPart part;
-      std::map<std::array<float, 8>, uint32_t> weld;
-      float minY = std::numeric_limits<float>::max(), maxY = -minY, minX = minY, maxX = maxY, minZ = minY, maxZ = maxY;
+      // EmberEngine's pieces also join a diagonal neighbour when no wall stands on either side of the step (the user, 2026-10-21:
+      // the tower's octagon corners were a staircase of loose stubs): the run turns into one continuous diagonal wall.
+      if (!def->emberStyle.empty())
+        for (const auto& [c, r] : {std::pair{p.x - 1, p.y - 1}, std::pair{p.x + 1, p.y - 1}, std::pair{p.x - 1, p.y + 1}, std::pair{p.x + 1, p.y + 1}})
+          if (joined(c, r) && !joined(c, p.y) && !joined(p.x, r)) {
+            const auto [nx, nz] = archAt(c, r);
+            connections.push_back({nx - x, -(nz - z)});
+          }
+      int rot = p.rot;
+      const bool faced = def->emberStyle == "window" || def->emberStyle == "slit" || def->emberStyle == "wall-torch";
+      if (faced) {
+        // The splay / the torch faces the room: the piece's inner side (Architecture.h emberAxisAngle: (sin a, cos a) on the
+        // board, the half turn flipping it) must point towards the board's centre.
+        const double a = e2::emberAxisAngle(rot, connections);
+        if (std::sin(a) * (centreX - x) + std::cos(a) * (centreZ - z) < 0.0) rot ^= 2;
+      }
+      const e2::three::Geometry g = e2::pieceGeometry(*def, rot, connections, {x, -z});
       ArchPiece piece;
+      float minY = std::numeric_limits<float>::max(), maxY = -minY, minX = minY, maxX = maxY, minZ = minY, maxZ = maxY;
+      // One mesh from a geometry in the piece's space: flat shading (Engine2's material: each triangle's own normal, equal corners
+      // welded); EmberEngine's pieces carry extra materials tagged in their UVs (Architecture.h emberMaterialTag): one part per
+      // material. `footprint`: the top faces become the piece's sight samples and the bounds are kept.
+      auto meshOf = [&](const e2::three::Geometry& g, bool footprint) -> MeshId {
+      static constexpr int kParts = 5;  // 0 the masonry (textured), 1 oak, 2 iron, 3 flame, 4 dark oak
+      MeshBuildPart parts[kParts];
+      std::map<std::array<float, 8>, uint32_t> weld[kParts];
+      size_t triangles = 0;
       for (size_t t = 0; t + 2 < g.count(); t += 3) {
         const glm::vec3 a{g.position[t * 3], g.position[t * 3 + 1], g.position[t * 3 + 2]}, b{g.position[t * 3 + 3], g.position[t * 3 + 4], g.position[t * 3 + 5]},
             c{g.position[t * 3 + 6], g.position[t * 3 + 7], g.position[t * 3 + 8]};
         const glm::vec3 cross = glm::cross(b - a, c - a);
         if (glm::length(cross) <= 0.0f) continue;
         const glm::vec3 normal = glm::normalize(cross);
-        if (normal.y > 0.5f) {  // a top face: sight is blocked under it
+        const int tag = std::clamp(e2::emberMaterialTag(g.uv[t * 2]), 0, kParts - 1);
+        if (footprint && normal.y > 0.5f && tag == 0) {  // a top face: sight is blocked under it
           const float x0 = std::min({a.x, b.x, c.x}), x1 = std::max({a.x, b.x, c.x}), z0 = std::min({a.z, b.z, c.z}), z1 = std::max({a.z, b.z, c.z});
           for (float sx = x0; sx <= x1 + 1e-4f; sx += 0.25f)
             for (float sz = z0; sz <= z1 + 1e-4f; sz += 0.25f) piece.footprint.push_back({static_cast<float>(x) + sx, static_cast<float>(z) + sz});
         }
+        MeshBuildPart& part = parts[tag];
         for (size_t k = 0; k < 3; ++k) {
           const size_t v = t + k;
           // three's TextureLoader flips the image (v up from its bottom row); cooked textures start at the top
           const std::array<float, 8> key{g.position[v * 3], g.position[v * 3 + 1], g.position[v * 3 + 2], normal.x, normal.y, normal.z,
                                          g.uv[v * 2], 1.0f - g.uv[v * 2 + 1]};
-          auto [it, fresh] = weld.try_emplace(key, static_cast<uint32_t>(part.positions.size() / 3));
+          auto [it, fresh] = weld[tag].try_emplace(key, static_cast<uint32_t>(part.positions.size() / 3));
           if (fresh) {
             part.positions.insert(part.positions.end(), {key[0], key[1], key[2]});
             part.normals.insert(part.normals.end(), {key[3], key[4], key[5]});
             part.uvs.insert(part.uvs.end(), {key[6], key[7]});
             part.tangents.insert(part.tangents.end(), {1.0f, 0.0f, 0.0f, 1.0f});
             part.colors.insert(part.colors.end(), {1.0f, 1.0f, 1.0f, 1.0f});
-            minX = std::min(minX, key[0]), maxX = std::max(maxX, key[0]), minY = std::min(minY, key[1]), maxY = std::max(maxY, key[1]);
-            minZ = std::min(minZ, key[2]), maxZ = std::max(maxZ, key[2]);
+            if (footprint) {
+              minX = std::min(minX, key[0]), maxX = std::max(maxX, key[0]), minY = std::min(minY, key[1]), maxY = std::max(maxY, key[1]);
+              minZ = std::min(minZ, key[2]), maxZ = std::max(maxZ, key[2]);
+            }
           }
           part.indices.push_back(it->second);
         }
+        ++triangles;
       }
-      if (part.indices.empty()) continue;
+      if (triangles == 0) return MeshId{0};
       // MeshStandardMaterial({map, color: map ? white : the piece's colour, roughness, metalness}) (three colours are sRGB)
       const bool metal = def->doorStyle == "iron" || def->doorStyle == "steel";
       const uint32_t hex = metal ? (def->doorStyle == "iron" ? 0x555b60u : 0x9ca7b0u) : def->model3d == "door" ? 0x925b32u : def->model3d == "doorway" ? 0xb7a27cu : 0x8b8b86u;
       auto linear = [](uint32_t c) {
         const float s = static_cast<float>(c) / 255.0f;
         return s <= 0.04045f ? s / 12.92f : std::pow((s + 0.055f) / 1.055f, 2.4f);
+      };
+      auto flat = [&](uint32_t colour, float roughness, float metallic) {
+        MeshMaterial f{};
+        for (int k = 0; k < 3; ++k) f.baseColor[k] = linear((colour >> (16 - 8 * k)) & 255u);
+        f.baseColor[3] = 1.0f;
+        f.metallic = metallic, f.roughness = roughness, f.normalScale = 1.0f, f.occlusionStrength = 1.0f, f.alphaCutoff = 0.5f;
+        return f;
       };
       MeshMaterial m{};
       const bool textured = !def->wallTexture.empty();
@@ -1937,20 +2016,164 @@ class MapStage final : public Stage {
       m.roughness = metal ? 0.52f : 0.94f;
       m.normalScale = 1.0f, m.occlusionStrength = 1.0f, m.alphaCutoff = 0.5f;
       if (textured) m.baseColorTexture = assetId(e2::architectureTextureAsset(def->wallTexture));
+      // The torch's flame: emissive, so it reads as fire by night (the bloom takes it) and stays a dim ember by day, as fire does.
+      MeshMaterial flame = flat(0x3a1a08u, 0.9f, 0.0f);
+      flame.emissive[0] = 40.0f, flame.emissive[1] = 16.0f, flame.emissive[2] = 4.0f;
+      const MeshMaterial materials[kParts] = {m, flat(0x6b4a2bu, 0.82f, 0.0f), flat(0x3a3a3cu, 0.45f, 0.65f), flame, flat(0x3b2a18u, 0.85f, 0.0f)};
       MeshBuild build;
-      if (!build.addPart(part, 0, false, textured, false)) continue;
-      std::vector<uint8_t> bytes = build.finish({m}, part.indices.size() / 3);
-      if (bytes.empty()) continue;
-      piece.mesh = meshes_.addBuilt(std::move(bytes));
+      std::vector<MeshMaterial> used;
+      bool built = false;
+      for (int k = 0; k < kParts; ++k) {
+        if (parts[k].indices.empty()) continue;
+        if (!build.addPart(parts[k], static_cast<uint16_t>(used.size()), false, k == 0 && textured, false)) continue;
+        used.push_back(materials[k]);
+        built = true;
+      }
+      if (!built) return MeshId{0};
+      std::vector<uint8_t> bytes = build.finish(used, triangles);
+      if (bytes.empty()) return MeshId{0};
+      return meshes_.addBuilt(std::move(bytes));
+      };
+      piece.mesh = meshOf(g, true);
+      if (!piece.mesh) continue;
+      if (def->emberStyle == "wall-torch") {
+        // The torch's light (Engine2's wall torch: colour (1, 0.58, 0.26), intensity 11, reach 4.68, full flicker) at its flame, on
+        // the piece's inner side (emberAxisAngle), with the flame's own phase.
+        const double a = e2::emberAxisAngle(rot, connections);
+        const float out = static_cast<float>(0.32 * def->wallThicknessScale * 0.5 + 0.62);
+        piece.light = e2::SceneLight{{1.0f, 0.58f, 0.26f}, 11.0f, 4.68f, 1.0f, 1.0f, static_cast<float>(std::fmod(p.x * 7.31 + p.y * 3.17, 6.28))};
+        piece.lightAt = {static_cast<float>(std::sin(a)) * out, 4.2f * 0.62f + 1.3f, static_cast<float>(std::cos(a)) * out};
+      }
       piece.x = static_cast<float>(x), piece.z = static_cast<float>(z);
-      piece.groundSmooth = static_cast<float>(e2::groundHeightAt(*board_, e2::EdgeStyle::Smooth, x, z));
-      piece.groundHard = static_cast<float>(e2::groundHeightAt(*board_, e2::EdgeStyle::Hard, x, z));
+      // EmberEngine's pieces stand on their own hex's ground: the arch position (no odd-row half-hex shift) samples the neighbouring
+      // cell on odd rows, and a rim piece beside the void read 0 there, two units under the floor (2026-10-21). Engine2's pieces as before.
+      double gx = x, gz = z;
+      if (!def->emberStyle.empty() && inBoard(p.x, p.y)) gx = board_->cell(p.x, p.y).x, gz = board_->cell(p.x, p.y).z;
+      piece.groundSmooth = static_cast<float>(e2::groundHeightAt(*board_, e2::EdgeStyle::Smooth, gx, gz));
+      piece.groundHard = static_cast<float>(e2::groundHeightAt(*board_, e2::EdgeStyle::Hard, gx, gz));
       piece.half = std::max({std::abs(minX), std::abs(maxX), std::abs(minZ), std::abs(maxZ)});
       piece.top = maxY;
       piece.blocks = def->model3d == "wall" || def->model3d == "door" || def->model3d == "secretDoor";
       arch_.push_back(std::move(piece));
+      if (def->emberStyle == "door") {
+        // The animated door: its two leaves as their own meshes, swung about the jambs by updateDoors / placeModels.
+        const size_t index = arch_.size() - 1;
+        DoorState& state = doors_[index];
+        for (const e2::FootOffset& f : e2::placedFootprint(*cd, p.x, p.y, p.rot)) state.cells.push_back({p.x + f.dx, p.y + f.dy});
+        for (int side : {-1, 1}) {
+          const MeshId leaf = meshOf(e2::emberDoorLeafPiece(*def, rot, side), false);
+          if (!leaf) continue;
+          const std::array<double, 3> h = e2::emberDoorHingePiece(*def, rot, side);
+          doorLeaves_.push_back({index, side, leaf, {static_cast<float>(h[0]), static_cast<float>(h[1]), static_cast<float>(h[2])}});
+        }
+      }
     }
     if (missing) logWarn("architecture: {} pieces not in the editor catalog", missing);
+    buildRoof();
+  }
+
+  // The animated door (the user, 2026-10-21: "keep new door this asset for closed doors, can you animate it opening?"): its leaves
+  // swing open while anyone alive stands within a hex of the door and close again when nobody does; past half open its cells are
+  // walked and seen through (the battle cells as they were before the door made them solid), closed they block again.
+  void updateDoors(float time) {
+    if (doors_.empty()) return;
+    const float dt = lastDoorTime_ < 0.0f ? 0.0f : std::clamp(time - lastDoorTime_, 0.0f, 0.1f);
+    lastDoorTime_ = time;
+    bool moved = false;
+    for (auto& [index, d] : doors_) {
+      bool near = false;
+      if (battle_)
+        for (const e2::BattleUnit& u : battle_->units()) {
+          if (!u.alive) continue;
+          for (const auto& [cx, cy] : d.cells)
+            if (std::abs(u.x - cx) <= 1 && std::abs(u.y - cy) <= 1) near = true;
+        }
+      const float target = near ? static_cast<float>(e2::kEmberDoorOpenRadians) : 0.0f;
+      if (d.angle != target) {
+        d.angle += std::clamp(target - d.angle, -kDoorSpeed * dt, kDoorSpeed * dt);
+        moved = true;
+      }
+      const bool open = d.angle > static_cast<float>(e2::kEmberDoorOpenRadians) * 0.45f;
+      if (open != d.passable) setDoorPassable(index, d, open);
+    }
+    if (moved) placeModels();
+  }
+  void setDoorPassable(size_t index, DoorState& d, bool open) {
+    d.passable = open;
+    if (index < arch_.size()) arch_[index].blocks = !open;
+    if (!battle_ || !board_) return;
+    const e2::HexLayout& L = board_->layout();
+    for (const auto& [x, y] : d.cells) {
+      if (!e2::inBoard(L, x, y)) continue;
+      if (open) {
+        if (const auto it = doorCellsBefore_.find({x, y}); it != doorCellsBefore_.end()) battle_->setCell(y * L.cols + x, it->second);
+      } else {
+        e2::BattleCell c = battle_->cell(x, y);
+        c.passable = false, c.moveCost = 99, c.blocked = true, c.shot.blocksShot = true;
+        battle_->setCell(y * L.cols + x, c);
+      }
+    }
+  }
+
+  // Luz das janelas: the room's roof, a slab over the whole board at the walls' top that only casts shadow (never drawn: the
+  // camera looks into the room from above), so the sun and the moon reach the floor only through the windows, slits and
+  // doorways. Built once per map; placed by placeModels while the light is on.
+  void buildRoof() {
+    roofMesh_ = 0;
+    if (!scene_ || scene_->environment != "indoor") return;
+    // The slab spans every wall top: its underside kRoofUnder over the lowest wall's ground (no light under it where walls stand
+    // lower: the gate floor's rim walls stand 2 units under its raised floor, and a slab over the floor let the morning in along the
+    // north wall, capture 011 of 2026-10-21), its top kRoofOver above the highest wall's; wall tops inside it are shaded like the room.
+    // ... and over the tallest piece (the 4-hex gate stands 1.2 x the walls: its top poked through a slab sized for walls).
+    float low = boardTop_ + kRoofUnder, high = boardTop_ + kRoofOver;
+    for (const ArchPiece& a : arch_) {
+      low = std::min(low, std::min(a.groundSmooth, a.groundHard) + kRoofUnder);
+      high = std::max(high, std::max(a.groundSmooth, a.groundHard) + a.top + kRoofOver - 4.2f);
+    }
+    roofBottom_ = low;
+    const float t = std::max(high - roofBottom_, 0.3f);
+    // The slab reaches the outer walls and no further (kRoofMargin past the outermost piece): an overhang shades the windows from
+    // outside (6 units of it kept every sun above 8 degrees out of the west wall's windows, capture 020 of 2026-10-21). A side with
+    // no wall is open to the sky, as it would be.
+    float x0 = boardCenter_.x - boardWidth_ * 0.5f, x1 = boardCenter_.x + boardWidth_ * 0.5f, z0 = boardCenter_.z - boardDepth_ * 0.5f, z1 = boardCenter_.z + boardDepth_ * 0.5f;
+    if (!arch_.empty()) {
+      x0 = x1 = arch_.front().x, z0 = z1 = arch_.front().z;
+      for (const ArchPiece& a : arch_) x0 = std::min(x0, a.x), x1 = std::max(x1, a.x), z0 = std::min(z0, a.z), z1 = std::max(z1, a.z);
+      x0 -= kRoofMargin, x1 += kRoofMargin, z0 -= kRoofMargin, z1 += kRoofMargin;
+    }
+    roofCentre_ = {0.5f * (x0 + x1), 0.0f, 0.5f * (z0 + z1)};
+    const float w = x1 - x0, d = z1 - z0;
+    MeshBuildPart part;
+    static constexpr float kFaces[6][3] = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
+    for (const float* n : kFaces) {
+      const glm::vec3 normal{n[0], n[1], n[2]};
+      const glm::vec3 u = std::abs(normal.y) > 0.5f ? glm::vec3(1, 0, 0) : glm::vec3(0, 1, 0), v = glm::cross(normal, u);
+      const glm::vec3 half{w * 0.5f, t * 0.5f, d * 0.5f};
+      const uint32_t base = static_cast<uint32_t>(part.positions.size() / 3);
+      for (int k = 0; k < 4; ++k) {
+        const float su = (k == 1 || k == 2) ? 1.0f : -1.0f, sv = k >= 2 ? 1.0f : -1.0f;
+        const glm::vec3 p = (normal + u * su + v * sv) * half;
+        part.positions.insert(part.positions.end(), {p.x, p.y, p.z});
+        part.normals.insert(part.normals.end(), {normal.x, normal.y, normal.z});
+        part.uvs.insert(part.uvs.end(), {su * 0.5f + 0.5f, sv * 0.5f + 0.5f});
+        part.tangents.insert(part.tangents.end(), {u.x, u.y, u.z, 1.0f});
+        part.colors.insert(part.colors.end(), {1.0f, 1.0f, 1.0f, 1.0f});
+      }
+      part.indices.insert(part.indices.end(), {base, base + 1, base + 2, base, base + 2, base + 3});
+    }
+    MeshMaterial m{};
+    m.baseColor[0] = m.baseColor[1] = m.baseColor[2] = 0.2f, m.baseColor[3] = 1.0f;
+    m.roughness = 1.0f, m.normalScale = 1.0f, m.occlusionStrength = 1.0f, m.alphaCutoff = 0.5f;
+    // Double-sided: the mesh shader culls one side of single-sided materials by their screen winding, and in the sun's pass that
+    // kept the slab's underside (measured 2026-10-21: every wall top inside the slab was lit; raised, the light came in under it).
+    // With both faces drawn the slab's top is what the map stores, and the wall tops inside it are shaded.
+    m.flags = kMaterialDoubleSided;
+    MeshBuild build;
+    if (!build.addPart(part, 0, true, false, false)) return;
+    std::vector<uint8_t> bytes = build.finish({m}, part.indices.size() / 3);
+    if (bytes.empty()) return;
+    roofMesh_ = meshes_.addBuilt(std::move(bytes));
+    roofCentreY_ = roofBottom_ + t * 0.5f;
   }
 
   // Engine2's models.ts: scaled uniformly to their height, base centred on the anchor, turned by rotY.
@@ -1995,6 +2218,40 @@ class MapStage final : public Stage {
       instances.push_back(inst);
       pieceBoxes_.push_back({a.x, a.z, a.half, y + a.top});
     }
+    // The animated doors' leaves: each turned about its hinge (world Y, side x the door's angle: inwards) on its piece's ground.
+    for (const DoorLeaf& leaf : doorLeaves_) {
+      if (leaf.piece >= arch_.size()) continue;
+      const ArchPiece& a = arch_[leaf.piece];
+      const float angle = static_cast<float>(leaf.side) * doors_[leaf.piece].angle;
+      const float c = std::cos(angle), s = std::sin(angle);
+      const glm::vec3 base{a.x, groundOf(a.groundSmooth, a.groundHard), a.z};
+      const glm::vec3 h = leaf.hinge, rh{c * h.x + s * h.z, h.y, -s * h.x + c * h.z};
+      const glm::vec3 t = base + h - rh;
+      InstanceGpu inst{};
+      inst.rows[0] = {c, 0, s, t.x};
+      inst.rows[1] = {0, 1, 0, t.y};
+      inst.rows[2] = {-s, 0, c, t.z};
+      inst.mesh = leaf.mesh;
+      inst.scale = 1;
+      instances.push_back(inst);
+    }
+    // Luz das janelas: the shadow-only roof over the room, at the walls' top above the highest ground.
+    if (windowLight() && roofMesh_) {
+      // Centred on the board (boardCenter_), never on the camera's pivot: placed on target_ it followed the party to the south and
+      // left a 5-unit strip of the hall uncovered along the north wall (captures 011-017 of 2026-10-21).
+      InstanceGpu inst{};
+      inst.rows[0] = {1, 0, 0, roofCentre_.x};
+      inst.rows[1] = {0, 1, 0, roofCentreY_};
+      inst.rows[2] = {0, 0, 1, roofCentre_.z};
+      inst.mesh = roofMesh_;
+      inst.scale = 1;
+      inst.flags = kInstanceShadowOnly | kInstanceAlwaysSeen;
+      instances.push_back(inst);
+    }
+    placedWindowLight_ = windowLight();
+    if (windowLight() && roofMesh_)
+      logInfo("window light: roof slab {:.2f} .. {:.2f} (ground top {:.2f}), {} wall pieces (tops at their ground + 4.2), {} instances", roofBottom_,
+              2.0f * roofCentreY_ - roofBottom_, boardTop_, arch_.size(), instances.size());
     meshes_.setInstances(instances);
     placedLook_ = look_;
   }
@@ -2119,7 +2376,7 @@ class MapStage final : public Stage {
   void buildCards(const Camera& camera, float time) {
     missing_ = 0;
     fullFrames_ = 0;
-    if (placedLook_ != look_ && modelsPlaced_) placeModels();
+    if ((placedLook_ != look_ || placedWindowLight_ != windowLight()) && modelsPlaced_) placeModels();
     // Decorations: Engine2's DecorLayer. Cards stand square to the hex rows (LOCK_PROPS) or along their own
     // turn (barricades); the art's opaque base sits on the anchor; Ember's layer step moves them along their facing.
     for (const e2::SceneCard& d : scene_->cards) {
@@ -2352,6 +2609,12 @@ class MapStage final : public Stage {
       }
       lights_.push_back(carried(at, d.light->color, d.light->intensity, d.light->radius, height, flicker(time, d.light->seed, d.light->flicker)));
     }
+    // The torch brackets on EmberEngine's walls (buildArchitecture): their fire, flickering like a map torch.
+    for (const ArchPiece& a : arch_) {
+      if (!a.light) continue;
+      const glm::vec3 at = glm::vec3(a.x, groundOf(a.groundSmooth, a.groundHard), a.z) + a.lightAt;
+      lights_.push_back(carried(at, a.light->color, a.light->intensity, a.light->radius, a.lightAt.y, flicker(time, a.light->seed, a.light->flicker)));
+    }
     if (hero_ < 0) return;
     const e2::SceneUnit* hero = &scene_->units[static_cast<size_t>(hero_)];
     const glm::vec3 base = heroAt_;
@@ -2439,7 +2702,7 @@ class MapStage final : public Stage {
       e2::lightDirection(t.stageAzimuth, t.elevationDeg >= 0.0f ? glm::radians(t.elevationDeg) : t.stageElevation, dir);
       l.sunDirection = glm::normalize(glm::vec3(dir[0], dir[1], dir[2]));
     }
-    if (lightingMode_ == 3 && cycleOn() && !(scene_ && scene_->environment == "indoor")) return cycleLighting(time, moon, phase);
+    if (lightingMode_ == 3 && cycleOn() && !darkIndoor()) return cycleLighting(time, moon, phase);
     if (lightingMode_ == 3) return realLighting(t, moon, phase, placed, time);
     if (lightingMode_ == 1) {  // Engine2's 3D stage, as it drew (at night: the moon's light from Engine2's side)
       if (t.moon) l.sunDirection = glm::normalize(moonPlacement(time).light);
@@ -2494,7 +2757,7 @@ class MapStage final : public Stage {
     Renderer::Lighting l;
     const float keyMul = scene_ && scene_->sunIntensity ? *scene_->sunIntensity / t.key : 1.0f;
     const float ambientMul = scene_ && scene_->ambientIntensity && t.ambient > 0.0f ? *scene_->ambientIntensity / t.ambient : 1.0f;
-    const bool indoor = scene_ && scene_->environment == "indoor";
+    const bool indoor = darkIndoor();  // a room lit through its windows takes the outdoor path (the light's share is set in frame())
     moonNight_ = t.moon && !indoor;
     if (t.moon) {
       l.sunDirection = placed.light;
@@ -2814,13 +3077,17 @@ class MapStage final : public Stage {
     const e2::HexLayout& L = board_->layout();
     size_t cells = 0;
     for (const e2::MapDecoration& d : board_->draft().decorations) {
-      if (!d.blocksPath || !d.id.starts_with("ember-")) continue;
+      if (!d.id.starts_with("ember-")) continue;
       const e2::CatalogDecoration* cd = catalog.decoration(d.id);
       if (!cd) continue;
+      // EmberEngine's walls and doors are solid like Engine2's own (hexprops solidArchitecture); an open portal is walked through.
+      const bool solidWall = cd->architecture && (cd->model3d == "wall" || cd->model3d == "door" || cd->model3d == "secretDoor");
+      if (!d.blocksPath && !solidWall) continue;
       for (const e2::FootOffset& f : e2::placedFootprint(*cd, d.x, d.y, d.rot)) {
         const int x = d.x + f.dx, y = d.y + f.dy;
         if (!e2::inBoard(L, x, y)) continue;
         e2::BattleCell c = battle_->cell(x, y);
+        if (cd->model3d == "door") doorCellsBefore_.try_emplace({x, y}, c);  // the animated door gives them back while open
         c.passable = false, c.moveCost = 99, c.blocked = true, c.shot.blocksShot = true;
         battle_->setCell(y * L.cols + x, c);
         ++cells;
@@ -8182,6 +8449,13 @@ class MapStage final : public Stage {
   int panoramaSky_ = 1;  // the panel's "Céu do panorama": 0 the image's own sky, 1 the real sky above the rooftops
   int floorChoice_ = 1;    // the panel's "Chão do vão" (maps with MapDraft::emberFloor): 0 OFF (mode 5), 1 the painting flat under the board
   int windFogChoice_ = 1;  // the panel's "Névoa do vento" (maps with MapDraft::emberWindFog): 0 OFF, 1 the draft's fog look
+  int windowLight_ = 0;    // the panel's "Luz das janelas" (indoor maps): 0 OFF, 1 real (windowLight())
+  MeshId roofMesh_ = 0;    // the shadow-only roof slab (buildRoof); 0 = none
+  float roofBottom_ = 0.0f, roofCentreY_ = 0.0f;  // ... its underside and centre (world y)
+  glm::vec3 roofCentre_{0.0f};                     // ... its centre on the board (x, z)
+  std::map<std::pair<int, int>, e2::BattleCell> doorCellsBefore_;  // the battle cells under the animated doors before they were made solid
+  float lastDoorTime_ = -1.0f;
+  bool placedWindowLight_ = false;  // placeModels: whether the roof was placed
   static std::vector<std::string> loadPanoramas(const std::string& mapId) {
     std::vector<std::string> out;
     std::ifstream in("content/engine2/backdrop-fit.json");
@@ -8270,6 +8544,8 @@ class MapStage final : public Stage {
   };
   std::vector<PieceBox> pieceBoxes_;
   std::vector<ArchPiece> arch_;  // Ember's walls, doors and gates (buildArchitecture)
+  std::vector<DoorLeaf> doorLeaves_;  // the animated doors' leaves (buildArchitecture)
+  std::map<size_t, DoorState> doors_;  // ... each door's state, by arch_ index
   static constexpr float kGlide = 10.0f;  // 1/s: ~90% of a move in 0.23 s, no overshoot
   // -8 deg to 89.5 deg (straight down). The eye itself never goes below kMinEyePitch (5 deg, nearly level: it would enter the
   // ground); under it the extra tilt lifts the line of sight instead, so the board sinks to the bottom of the frame and the sky
@@ -8277,6 +8553,19 @@ class MapStage final : public Stage {
   static constexpr float kMinPitch = -0.1396f, kMinEyePitch = 0.0873f, kMaxPitch = 1.5621f;
   // ONLY the aldeia looks up to -8 deg (the user, 2026-10-19: "somente a aldeia, só um por vez"); every other map keeps 5 deg.
   bool aldeia() const { return board_ && board_->draft().id == "aldeia"; }
+  // Luz das janelas (2026-10-21, the user's spec "iluminação padrão para ambientes internos onde a luz natural entra pelas janelas"
+  // + "create real windows and watchtower walls"): an indoor map lit by the hour's real sun / moon through its window pieces, under
+  // a roof that only casts shadow (buildRoof); the sky is never drawn. OFF = the old indoor fill light (darkIndoor).
+  bool windowLight() const { return windowLight_ == 1 && scene_ && scene_->environment == "indoor"; }
+  bool darkIndoor() const { return scene_ && scene_->environment == "indoor" && !windowLight(); }
+  inline static const std::set<std::string> kWindowLightMaps = {"watchtower-gate-floor", "watchtower-barracks", "watchtower-command"};
+  static constexpr float kWindowSkyShare = 0.08f;    // the share of the sky's light a room gets through its openings (ambient)
+  static constexpr float kWindowMeterShare = 0.04f;  // the camera's meter: the room's level against the outside's
+  static constexpr float kWindowMeterFloor = 0.3f;   // lux: never darker than a torch-lit room's reading
+  static constexpr float kRoofUnder = 4.0f;          // the roof slab's underside over the lowest wall's ground (walls are 4.2 tall)
+  static constexpr float kRoofOver = 4.6f;           // ... its top over the highest wall's ground: every wall top sits inside the slab
+  static constexpr float kRoofMargin = 0.45f;        // the slab past the outermost wall piece's anchor (walls are 0.61 thick)
+  static constexpr float kDoorSpeed = 2.6f;          // the door's leaves, radians per second (open in ~0.7 s)
   // MapDraft::emberDeckClip (A Ponte de Pedra 023, the user, 2026-10-21: "make sure the tiles finish right at the walls"): the ground
   // only between the planes of the cards standing on the board's first and last rows (the parapets) and within their ends; every
   // other map draws its whole ground.

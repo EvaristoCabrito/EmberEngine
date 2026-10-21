@@ -59,7 +59,9 @@ void cullInstance(uint id, bool late) {
   if (mesh.ready == 0) return;
   // Fog of war (R7): a piece standing on never-seen ground is neither drawn nor casts a shadow. Like a card, a
   // piece is seen whole by its anchor's hex (no house cut in half at the boundary).
-  if (neverSeen(f, instanceAnchor(inst))) return;
+  if ((inst.flags & kInstanceAlwaysSeen) == 0 && neverSeen(f, instanceAnchor(inst))) return;
+  // A shadow-only piece (a room's roof) is in the sun's pass and in no other.
+  if ((inst.flags & kInstanceShadowOnly) != 0 && f.shadowPass == 0) return;
   RWByteAddressBuffer visibility = gBuffers[NonUniformResourceIndex(f.instanceVisibility)];
   const bool wasVisible = visibility.Load(id * 4) != 0;
   const float3 center = transformPoint(inst, mesh.sphere.xyz);

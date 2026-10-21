@@ -922,6 +922,55 @@ a strong volumetric fog with strong gusts of wind flowing outside of the bridge 
   `build/ground/ground-v15.pak`. The user will settle the horizon panorama later.
 - Limits: the parapets' east end runs 0.71 past the deck (columns are 1.73 apart; the west end, where the party starts, fits within 0.13).
 
+## Torre de Vigia: paredes e janelas 3D + Luz das janelas (2026-10-21; the user's pasted spec "iluminação padrão para ambientes internos
+onde a luz natural entra pelas janelas ... sem renderizar o céu", then "create real windows and watchtower walls that actually feel like a real
+design with the textures at watchtowerwalls", then "update the editor to make it easier to use these 3D walls, segments, corners and windows")
+
+- **Read `content/models/README.md` § Architecture.** The kit = `content/models/architecture.json` (ids `ember-arch-watchtower-wall / -window /
+  -slit / -wall-torch / -portal / -door (animated: opens for anyone within a hex, `updateDoors`) / -gate (4 hexes, open, the entrance)`),
+  built in C++ by `world/Architecture.cpp emberGeometry` (ArchitectureDef `emberStyle`, `textureRepeat`;
+  extra materials tagged in the UVs, `emberMaterialTag`; Engine2's own pieces untouched, `check-architecture` still bit-exact), textured with the
+  user's `watchtowerwalls.jpg` (`content/textures/walls/watchtower-v01.jpg`, `/ember/...` URLs cooked from content/ by `Cooker architecture` into
+  `build/meshes/architecture.pak`; the old pack kept as `architecture-20261021-before-watchtower.pak`). `catalog_models.py` now also merges the
+  architecture (decorations + `editor.architectureDefs` + `doorVariants` + first in `architectureOrder`): re-run it after export_editor_catalog.ts.
+  Diagonal neighbours join (one continuous diagonal wall at the octagon's corners); a window's splay / a torch faces the board's centre by itself
+  (MapStage buildArchitecture, `emberAxisAngle`); walls / windows / the door block like Engine2's walls (`blockEmberProps`), the portal is open.
+  The torch wall carries its own light (`ArchPiece::light`, buildLights) and an emissive flame mesh (no VFX flame yet).
+- **Shadow-pass finding (2026-10-21):** meshlet.hlsl culls single-sided triangles by their screen winding in every pass, and in the sun's
+  orthographic pass it is the FAR faces that survive (a slab's underside is what the shadow map stores). Closed solids still shadow the ground,
+  thinner by their thickness; anything inside or just above a caster's far face is lit. The roof is double-sided for that reason; the general
+  case was left as it is (measure before changing every shadow).
+- **Luz das janelas** (panel, indoor maps: OFF / real; `--window-light N`; on by default for `watchtower-gate-floor / -barracks / -command`
+  (`kWindowLightMaps`), every other map unchanged): the indoor map takes the outdoor light path (the hour's sun / the moon through the air,
+  the 24 h "Hora" choices), under a shadow-only roof slab (`buildRoof`, InstanceGpu flags `kInstanceShadowOnly | kInstanceAlwaysSeen`,
+  cull.hlsl; double-sided; from the lowest wall's ground + 4.0 to the highest wall's + 4.6; reaching the outermost wall pieces and no
+  further, centred on them, never on the camera's pivot: three leaks found and fixed on 2026-10-21, captures 002-020), so the key light
+  reaches the floor only through the windows, slits and the doorways; the sky's ambient at
+  `kWindowSkyShare` (0.08) of the sky, the meter at `kWindowMeterShare` (0.04) of the outdoor reading (floor 0.3 lux), no twilight darkening by
+  day, no aerial perspective, and Fundo forced black (the sky is never drawn). OFF = the old 3 lux fill (`darkIndoor()`).
+- **Map Editor, 3D Walls:** "TORRE DE VIGIA" buttons (Parede / Janela / Seteira / Tocha / Portal / Porta) and the wall tools: Clique (as before),
+  **Traçar parede** (drag on the preview from hex to hex: the armed piece in a straight or diagonal run; walls under it swapped for the brush,
+  other props kept), **Fechar sala** (drag corner to corner: the four walls). The run is shown as amber rings while dragging (`wallCells`,
+  `layWalls`). Abrir porta / Fechar passagem swaps the kit's door and portal.
+- **The map:** `content/maps/ember/watchtower-gate-floor008.json` = 007 through `tools/scripts/maps/watchtower_walls.py --windows --torches
+  --gate` (154 walls, the 4-hex gate at the entrance (2 wall pieces removed for it), 25 openings on the outer ring, 19 wall-torch cards moved
+  onto the walls as torch pieces). No animated door is placed on it yet (the kit's "Porta" in the editor, or `--door` instead of `--gate`). **The user was finishing their own improved version of this map while this was built:** if they
+  save over 008 from a draft of 007, run the script on their file again. Test files: `build/engine2-test/{maps,scenes,battles}/watchtower-gate-floor008.*`
+  (Engine2's exporters skip the `ember-arch-*` ids: MapStage rebuilds the scene with SceneBuilder, as for any `ember-*` prop).
+- Captures: `Sandbox --map build/engine2-test/maps/watchtower-gate-floor008.json --ground build/ground/ground-v16.pak --scene ... --sprites
+  build/sprites/battle.pak --meshes build/meshes/props-v3.pak --heroes build/engine2-scenes/roster.json --battle-rules
+  build/engine2-test/battles/watchtower-gate-floor008.battle.json --hour 4 --zoom 0.7 --capture captures/watchtower/NNN.png` (local, git-ignored).
+  The door's opening: a draft with `--door` exported under another name (`build/engine2-test/*/watchtower-gate-floor-doortest.*`) and
+  `--battle-script "goto:Kael:19:31"` (Kael beside the door: it stands open in the capture).
+- **Verified (2026-10-21):** debug + validation exit 0, 0 validation lines (the gate floor by morning; the door test with Kael beside the open
+  door); release captures: the room dark under the roof with the sun up (no wall / pillar top lit, no strip along any wall), the low western
+  sun throwing streaks through the west windows and slits onto the floor (capture 053, `--sun 180 15 --layers 3`), the torches' pools on the
+  walls by night, the door's leaves swung open beside Kael, the 4-hex gate with its open leaves catching the sun through the arch;
+  `Cooker check-architecture` on Engine2's 1672 reference cases, every piece bit-exact (the exporter's 44 wall-3d-low cases dropped: that
+  piece was removed from the catalog). **Not verified:** the look in
+  the window (the user judges: Luz das janelas + Hora in the Escolhas panel on the watchtower's gate floor), the editor's drag tools by hand,
+  the door's passability in play (code path only), cost (155 pieces + leaves, the roof: not measured).
+
 ## Veneno / Doença em 3D (2026-10-20; the user: Engine2's were WebGL and missing here, "recria algo similar em 3D")
 
 - `engine/render/vfx/StatusFx.*`: Engine2's drawStatusFx idea (haze, motes feet to head, vapour lines; green quick = poison, violet slow =

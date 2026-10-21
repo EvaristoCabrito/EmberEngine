@@ -52,7 +52,8 @@ bool cookArchitecture(JobSystem& jobs, const ArchitectureCookOptions& options, s
   bool ok = true;
   for (const std::string& url : textures) {
     const std::string asset = e2::architectureTextureAsset(url);
-    const std::filesystem::path file = options.engine2Public / url.substr(1);
+    // "/ember/..." = EmberEngine's own texture under content/ (world/Architecture.h architectureTextureAsset); else Engine2's public folder.
+    const std::filesystem::path file = url.starts_with("/ember/") ? std::filesystem::path("content") / url.substr(7) : options.engine2Public / url.substr(1);
     std::vector<uint8_t> source;
     if (!readFile(file, source)) {
       logError("architecture: cannot read {}", file.string());

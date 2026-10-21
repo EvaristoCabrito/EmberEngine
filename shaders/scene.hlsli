@@ -61,9 +61,10 @@ struct InstanceGpu {  // 64 bytes
   float4 rows[3];
   uint mesh;
   float scale;
-  uint flags;
+  uint flags;  // kInstanceShadowOnly: in the sun's shadow map only; kInstanceAlwaysSeen: skips the never-seen test (render/MeshGpu.h)
   uint pad;
 };
+static const uint kInstanceShadowOnly = 1u, kInstanceAlwaysSeen = 2u;
 
 struct MaterialGpu {  // 80 bytes
   float4 baseColor;

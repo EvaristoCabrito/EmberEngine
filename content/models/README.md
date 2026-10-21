@@ -305,6 +305,42 @@ light sources: a map light must be placed beside them.
 
 Not built from the list: items that already existed (see above) and pure variants of them.
 
+## Architecture: the watchtower's kit (2026-10-21; `architecture.json`, built in C++)
+
+Not GLBs: wall pieces built by `world/Architecture.cpp emberGeometry` from `content/models/architecture.json`, placed like Ember's
+own 3D walls (anchor hex + quarter turn, joined to their neighbours, stood on the ground), so they go through the same path
+(MapStage::buildArchitecture, culled, lit, shadowed). `catalog_models.py` merges them into the editor catalog (decorations +
+`editor.architectureDefs`, first in the 3D Walls palette); their texture (`/ember/<path under content/>`) is cooked by
+`Cooker architecture ... build/meshes/architecture.pak` beside the mesh pack. Texture: the user's `Attachments/watchtower/
+watchtowerwalls.jpg` as `content/textures/walls/watchtower-v01.jpg`, masonry repeating every 3.6 units on every face, world-aligned
+(courses run through the joins). Walls 1.9 x Ember's thickness (0.61 units), 4.2 tall, every piece with a base course and a string
+course under the top.
+
+| id | name | what it is |
+|---|---|---|
+| ember-arch-watchtower-wall | Parede da Torre de Vigia 3D | a joined run (core + an arm to each wall neighbour), or a straight segment alone |
+| ember-arch-watchtower-window | Janela da Torre de Vigia 3D | a lancet window: the narrow light in the outer half of the wall, a wider splayed embrasure and a sill ledge inside; the sun / moon pass through it |
+| ember-arch-watchtower-slit | Seteira da Torre de Vigia 3D | an arrow loop: a tall narrow outer slit, a wide inner splay |
+| ember-arch-watchtower-wall-torch | Parede com tocha da Torre de Vigia 3D | the wall with an iron bracket, an oak torch and a flame (emissive) on the room's side, and its own flickering light (Engine2's wall torch numbers) |
+| ember-arch-watchtower-portal | Portal da Torre de Vigia 3D · 2 hexes | an arched doorway two hexes wide (in place of the flat-coloured watchtower entrance); open |
+| ember-arch-watchtower-door | Porta da Torre de Vigia 3D · 2 hexes | the same arch with two oak leaves (plank seams, iron straps, hinges, ring handles) as their own meshes: **animated**, they swing inwards (~100 deg in 0.7 s) while anyone alive stands within a hex of the door and close again after; past half open the door's cells are walked and seen through, closed it blocks (MapStage `updateDoors`, `emberDoorLeafPiece / emberDoorHingePiece`). The editor's Abrir porta / Fechar passagem swap it with the portal (doorVariants "watchtower") |
+| ember-arch-watchtower-gate | Portão da Torre de Vigia 3D · 4 hexes | the tower's entrance (the user: "de 4 hexes para passar carroças"): the arch four hexes wide and 1.2 x as tall, its two leaves baked swung open; walked through |
+
+Extra materials (oak, iron, the flame, dark oak) are tagged in the UVs (`Architecture.h emberMaterialTag`, u >= 100 x tag) and become
+their own parts in MapStage; the masonry keeps the texture. Pieces join their diagonal neighbours too when no wall stands on either
+side of the step (the octagon's corners are one continuous diagonal wall, not a staircase of stubs). A window's splay and a torch
+turn to the room by themselves (MapStage: towards the board's centre). Walls, windows and the door block movement, sight and shots
+like Engine2's walls (`MapStage::blockEmberProps`); the portal is walked through. The Map Editor's 3D Walls panel has the kit's
+six buttons and the wall tools (Traçar parede: a drag lays a straight or diagonal run; Fechar sala: a drag lays a room's four
+walls; a window / slit / torch brush over a wall swaps it). `tools/scripts/maps/watchtower_walls.py <in> <out> [--windows]
+[--torches] [--door]` converts a saved watchtower draft (every `wall-3d-tower` -> the kit's wall, the entrance -> the portal or
+the door; `--windows`: every third piece of the outer ring's straight runs a window / slit; `--torches`: every wall-torch card beside
+a plain wall moves onto it). The light through the openings: MapStage "Luz das janelas" (indoor maps; on by default on the
+watchtower's roofed floors): the hour's real sun / moon, a shadow-only roof slab over the walls (`buildRoof`, `kInstanceShadowOnly`,
+double-sided: the mesh shader's winding cull kept only its underside in the sun's pass; spanning every wall top in height and
+reaching the outermost wall pieces and no further: an overhang shaded the windows from outside), the sky never drawn. The script's
+`--gate` puts the 4-hex gate at the entrance (the two wall pieces on its extra cells go).
+
 ## The pack (props-v2.pak)
 
 | | assets | textures | on disk | textures on the GPU |

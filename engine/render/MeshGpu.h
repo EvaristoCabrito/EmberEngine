@@ -29,10 +29,13 @@ struct InstanceGpu {
   glm::vec4 rows[3];  // world transform, rows of a 3x4 matrix: world = rows * (p, 1)
   uint32_t mesh;
   float scale;        // largest axis scale (bounds and LOD error)
-  uint32_t flags;
+  uint32_t flags;     // kInstance* below
   uint32_t pad;
 };
 static_assert(sizeof(InstanceGpu) == 64);
+// InstanceGpu::flags (shaders/cull.hlsl): drawn only into the sun's shadow map (a roof that darkens a room without hiding it from
+// the camera: MapStage's window light), and never dropped by the fog of war's never-seen test (it stands on no hex).
+inline constexpr uint32_t kInstanceShadowOnly = 1u, kInstanceAlwaysSeen = 2u;
 
 inline constexpr uint32_t kNoTextureIndex = 0xFFFFFFFFu;
 

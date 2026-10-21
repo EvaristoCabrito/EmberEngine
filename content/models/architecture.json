@@ -1,0 +1,87 @@
+{
+  "source": "EmberEngine's own 3D architecture (walls, windows, doorways), built in C++ by world/Architecture.cpp emberGeometry from these definitions, like Ember's own walls (joined to their neighbours, stood on the ground). tools/scripts/models/catalog_models.py merges them into content/engine2/editor-catalog.json (decorations + editor.architectureDefs); Cooker architecture cooks their textures (/ember/<path under content/>) into build/meshes/architecture.pak.",
+  "textures": {
+    "watchtower-v01": "/ember/textures/walls/watchtower-v01.jpg"
+  },
+  "pieces": [
+    {
+      "id": "ember-arch-watchtower-wall",
+      "name": "Parede da Torre de Vigia 3D",
+      "model3d": "wall",
+      "emberStyle": "wall",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-watchtower-window",
+      "name": "Janela da Torre de Vigia 3D",
+      "model3d": "wall",
+      "emberStyle": "window",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-watchtower-slit",
+      "name": "Seteira da Torre de Vigia 3D",
+      "model3d": "wall",
+      "emberStyle": "slit",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-watchtower-wall-torch",
+      "name": "Parede com tocha da Torre de Vigia 3D",
+      "model3d": "wall",
+      "emberStyle": "wall-torch",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-watchtower-portal",
+      "name": "Portal da Torre de Vigia 3D · 2 hexes",
+      "model3d": "doorway",
+      "emberStyle": "portal",
+      "doorStyle": "watchtower",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "architectureSpan": 2,
+      "footprint": "pair"
+    },
+    {
+      "id": "ember-arch-watchtower-door",
+      "name": "Porta da Torre de Vigia 3D · 2 hexes",
+      "model3d": "door",
+      "emberStyle": "door",
+      "doorStyle": "watchtower",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.6,
+      "architectureSpan": 2,
+      "footprint": "pair"
+    },
+    {
+      "id": "ember-arch-watchtower-gate",
+      "name": "Portão da Torre de Vigia 3D · 4 hexes",
+      "model3d": "doorway",
+      "emberStyle": "gate",
+      "wallTexture": "/ember/textures/walls/watchtower-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "heightScale": 1.2,
+      "textureRepeat": 3.6,
+      "architectureSpan": 4,
+      "footprint": "quad"
+    }
+  ],
+  "doorVariants": {
+    "watchtower": {"open": "ember-arch-watchtower-portal", "closed": "ember-arch-watchtower-door"}
+  }
+}

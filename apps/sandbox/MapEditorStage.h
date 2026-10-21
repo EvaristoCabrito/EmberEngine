@@ -1171,6 +1171,12 @@ class MapEditorStage : public Stage {
   // when Girar objeto is not armed.
   bool grab(int x, int y, bool left) {
     if (left && turningDeco_) return false;
+    // The wall tools (3D Walls > Traçar parede / Fechar sala): the left press starts the run; release() lays it.
+    if (left && mode_ == Mode::Architecture && !architectureDecorations_ && wallTool_ != 0) {
+      wallDragFrom_ = std::make_pair(x, y);
+      heldUnit_.reset(), heldDeco_.reset();
+      return true;
+    }
     for (const char* key : {"playerSpawns", "enemySpawns", "neutralSpawns"}) {
       const e2::Json& list = arr(key);
       for (size_t k = 0; k < list.size(); ++k)
@@ -1198,6 +1204,12 @@ class MapEditorStage : public Stage {
   // The press let go: a drag drops the held unit / prop on the hex under the pointer; a plain press keeps the unit held
   // (Delete removes it).
   void release(std::optional<std::pair<int, int>> hex, bool moved) {
+    if (wallDragFrom_) {
+      const std::pair<int, int> from = *wallDragFrom_;
+      wallDragFrom_.reset();
+      if (!moved || !hex) return onCellClick(from.first, from.second, std::nullopt);  // a plain click: one piece, as always
+      return layWalls(wallCells(from, *hex));
+    }
     if (heldUnit_) {
       if (!moved) return;
       const HeldUnit held = *heldUnit_;
@@ -1261,7 +1273,80 @@ class MapEditorStage : public Stage {
     cleanEntrances();
   }
 
-  // dioramaView's rings: the hovered hex (warm), every hex of the selected prop (cool).
+  // --- the wall tools (2026-10-21, the user: "update the editor to make it easier to use these 3D walls, segments, corners and
+  // windows"): a drag lays a whole run of the armed wall brush, or the four walls of a room; a wall under the run is replaced by the
+  // brush (a window brush over a wall = a window), anything else is left alone. Walls join by themselves (MapStage buildArchitecture)
+  // and a window's splay turns to the room by itself, so a piece's orientation is only its run's.
+  struct WallCell {
+    int x = 0, y = 0;
+    bool vertical = false;
+  };
+  // Traçar parede: the straight run from `from` to `to` along the longer axis; Fechar sala: the rectangle's four sides.
+  std::vector<WallCell> wallCells(std::pair<int, int> from, std::pair<int, int> to) const {
+    std::vector<WallCell> out;
+    const int x0 = std::min(from.first, to.first), x1 = std::max(from.first, to.first), y0 = std::min(from.second, to.second), y1 = std::max(from.second, to.second);
+    if (wallTool_ == 2 && x1 > x0 && y1 > y0) {
+      for (int x = x0; x <= x1; ++x) out.push_back({x, y0, false}), out.push_back({x, y1, false});
+      for (int y = y0 + 1; y < y1; ++y) out.push_back({x0, y, true}), out.push_back({x1, y, true});
+      return out;
+    }
+    const int dx = x1 - x0, dy = y1 - y0;
+    // A diagonal drag (both ways at least 2 and within a factor of two of each other) lays a diagonal run: one step in x and one
+    // in y per piece, the pieces joining corner to corner (MapStage buildArchitecture), then straight along the longer way.
+    if (dx >= 2 && dy >= 2 && dx <= 2 * dy && dy <= 2 * dx) {
+      const int sx = to.first >= from.first ? 1 : -1, sy = to.second >= from.second ? 1 : -1, n = std::min(dx, dy);
+      for (int i = 0; i <= n; ++i) out.push_back({from.first + i * sx, from.second + i * sy, dy > dx});
+      for (int i = n + 1; i <= std::max(dx, dy); ++i)
+        out.push_back(dx > dy ? WallCell{from.first + i * sx, from.second + n * sy, false} : WallCell{from.first + n * sx, from.second + i * sy, true});
+      return out;
+    }
+    if (dx >= dy)
+      for (int x = x0; x <= x1; ++x) out.push_back({x, from.second, false});
+    else
+      for (int y = y0; y <= y1; ++y) out.push_back({from.first, y, true});
+    return out;
+  }
+  void layWalls(const std::vector<WallCell>& cells) {
+    const DecoMeta& brush = meta(decoBrush_);
+    if (brush.model3d.empty() || !catalog_.decoration(decoBrush_)) return note("Arme uma peça 3D de parede antes de traçar.");
+    e2::Json& decos = arr("decorations");
+    int placed = 0, replaced = 0, kept = 0;
+    bool editing = false;
+    auto edit = [&] {
+      if (!editing) beginEdit(), editing = true;
+    };
+    for (const WallCell& c : cells) {
+      if (c.x < 0 || c.y < 0 || c.x >= cols() || c.y >= rows()) continue;
+      std::optional<size_t> hit;
+      for (size_t k = 0; k < decos.size() && !hit; ++k)
+        if (covers(decos[k], c.x, c.y)) hit = k;
+      if (hit) {
+        const e2::Json old = decos[*hit];
+        const DecoMeta& om = meta(old.value("id", ""));
+        const bool wallPiece = !om.model3d.empty() && !om.props3d && om.exitKind.empty() && old.value("id", "") != kEntrance && catalog_.decoration(old.value("id", "")) &&
+                               catalog_.decoration(old.value("id", ""))->footprint.size() == 1;
+        if (!wallPiece || old.value("id", "") == decoBrush_) {
+          ++kept;
+          continue;
+        }
+        edit();
+        e2::Json replacement = old;
+        replacement["id"] = decoBrush_, replacement["rot"] = c.vertical ? 1 : 0, replacement["wallOrientation"] = c.vertical ? "vertical" : "horizontal";
+        replacement.erase("blocksPath"), replacement.erase("yieldsHighGround");
+        decos[*hit] = replacement;
+        ++replaced;
+        continue;
+      }
+      edit();
+      decos.push_back(e2::Json{{"id", decoBrush_}, {"x", c.x}, {"y", c.y}, {"rot", c.vertical ? 1 : 0}, {"wallOrientation", c.vertical ? "vertical" : "horizontal"}});
+      ++placed;
+    }
+    if (editing) cleanEntrances();
+    selected_.reset();
+    note(std::format("{}: {} colocada(s), {} trocada(s), {} casa(s) ocupada(s) mantida(s).", decoName(decoBrush_), placed, replaced, kept));
+  }
+
+  // dioramaView's rings: the hovered hex (warm), every hex of the selected prop (cool), the wall run being dragged (amber).
   std::vector<Renderer::GroundMark> rings() const {
     std::vector<Renderer::GroundMark> out;
     auto add = [&](int x, int y, ImU32 color) {
@@ -1269,6 +1354,8 @@ class MapEditorStage : public Stage {
     };
     if (selected_)
       for (const auto& [x, y] : cellsOf(*selected_)) add(x, y, IM_COL32(120, 200, 255, 230));
+    if (wallDragFrom_ && hover_)
+      for (const WallCell& c : wallCells(*wallDragFrom_, *hover_)) add(c.x, c.y, IM_COL32(255, 170, 60, 240));
     if (hover_) add(hover_->first, hover_->second, IM_COL32(255, 214, 140, 230));
     return out;
   }
@@ -2444,6 +2531,26 @@ class MapEditorStage : public Stage {
                                     "visão; passagens abertas permitem atravessar. Selecione uma peça e use Delete para remover."
                                   : "Clique na casa âncora pra colocar; clique em qualquer casa que a decoração cubra pra remover. Toda casa coberta fica "
                                     "intransponível e bloqueia visão/tiro, não importa o terreno por baixo.");
+    if (arch && !architectureDecorations_) {
+      // The watchtower's kit (content/models/architecture.json) and the wall tools: a drag on the preview lays the whole run or room.
+      ImGui::TextColored(ImColor(180, 180, 180), "TORRE DE VIGIA");
+      static const std::pair<const char*, const char*> kKit[7] = {{"Parede", "ember-arch-watchtower-wall"}, {"Janela", "ember-arch-watchtower-window"},
+                                                                  {"Seteira", "ember-arch-watchtower-slit"}, {"Tocha", "ember-arch-watchtower-wall-torch"},
+                                                                  {"Portal", "ember-arch-watchtower-portal"}, {"Porta", "ember-arch-watchtower-door"},
+                                                                  {"Portão", "ember-arch-watchtower-gate"}};
+      for (int k = 0; k < 7; ++k) {
+        if (k) ImGui::SameLine();
+        const bool armed = decoBrush_ == kKit[k].second;
+        if (armed) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+        if (ImGui::Button(kKit[k].first)) decoBrush_ = kKit[k].second, thickWalls_ = false, selected_.reset(), turningDeco_ = false;
+        if (armed) ImGui::PopStyleColor();
+      }
+      int tool = -1;
+      if (toggleRow({{"Clique", wallTool_ == 0}, {"Traçar parede", wallTool_ == 1}, {"Fechar sala", wallTool_ == 2}}, tool)) wallTool_ = tool, wallDragFrom_.reset();
+      hint("%s", wallTool_ == 0 ? "Clique coloca uma peça; clique numa parede com Janela, Seteira ou Tocha armada e ela vira essa peça (a abertura e a tocha se viram para a sala sozinhas)."
+                 : wallTool_ == 1 ? "Arraste na prévia de um hex a outro: a peça armada é traçada em linha reta ou na diagonal (as paredes se emendam sozinhas; janelas e tochas trocam a parede que cobrem)."
+                                  : "Arraste na prévia de um canto ao canto oposto: as quatro paredes da sala com a peça armada (cantos emendados sozinhos).");
+    }
     if (ImGui::Button(turningDeco_ ? (arch ? "Girando — clique numa peça 3D" : "Girando — clique numa decoração") : "Girar objeto")) {
       note(turningDeco_ ? (arch ? "Pincel 3D ativo: clique para colocar ou selecionar uma peça." : "Pincel de volta: clicar coloca e remove decoração.")
                         : (arch ? "Girar peça 3D armado: cada clique vira a peça 90°. Quatro cliques voltam ao original."
@@ -3313,6 +3420,8 @@ class MapEditorStage : public Stage {
   double waterLevel_ = 0.5, waterSize_ = 1.0;
   int waterRadius_ = 0;
   bool architectureDecorations_ = false, thickWalls_ = false, wallVertical_ = false;
+  int wallTool_ = 0;  // 3D Walls: 0 a click places one piece, 1 Traçar parede (a drag lays a run), 2 Fechar sala (a drag lays a room)
+  std::optional<std::pair<int, int>> wallDragFrom_;  // the run's first hex while the left button is held on the preview
   std::string decoBrush_ = "dead-tree", decoSection_ = "Todas";
   char search_[64] = {};
   std::optional<e2::Json> selected_;
