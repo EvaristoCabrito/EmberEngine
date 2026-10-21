@@ -11,7 +11,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/Brazier3.png"
+       "decoracoes-2d/Brazier3.png"
       ]
      }
     },
@@ -22,40 +22,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/Chandelier.png"
-      ]
-     }
-    },
-    {
-     "name": "abandoned-mansion",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/abandoned-mansion.png"
-      ]
-     }
-    },
-    {
-     "name": "ancient-shrine",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/ancient-shrine.png"
-      ]
-     }
-    },
-    {
-     "name": "barricade-2",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/barricade-2.png"
+       "decoracoes-2d/Chandelier.png"
       ]
      }
     },
@@ -66,18 +33,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/barricade.png"
-      ]
-     }
-    },
-    {
-     "name": "boulder-cluster",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/boulder-cluster.png"
+       "decoracoes-2d/barricade.png"
       ]
      }
     },
@@ -88,7 +44,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/boulder-mound.png"
+       "decoracoes-2d/boulder-mound.png"
       ]
      }
     },
@@ -99,7 +55,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/boulder-pile.png"
+       "decoracoes-2d/boulder-pile.png"
       ]
      }
     },
@@ -110,7 +66,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/bridge-parapet-gothic-statues-001.png"
+       "decoracoes-2d/bridge-parapet-gothic-statues-001.png"
       ]
      }
     },
@@ -121,7 +77,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/bridge-parapet-gothic-wall-001.png"
+       "decoracoes-2d/bridge-parapet-gothic-wall-001.png"
       ]
      }
     },
@@ -132,7 +88,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/bridge-parapet-tall-001.png"
+       "decoracoes-2d/bridge-parapet-tall-001.png"
       ]
      }
     },
@@ -143,40 +99,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/bridge-parapet-tall-statues-001.png"
-      ]
-     }
-    },
-    {
-     "name": "broken-cliff-wall",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/broken-cliff-wall.png"
-      ]
-     }
-    },
-    {
-     "name": "broken-tower",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/broken-tower.png"
-      ]
-     }
-    },
-    {
-     "name": "broken-wall-segment",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/broken-wall-segment.png"
+       "decoracoes-2d/bridge-parapet-tall-statues-001.png"
       ]
      }
     },
@@ -187,18 +110,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/burning-hamlet.png"
-      ]
-     }
-    },
-    {
-     "name": "burning-house-alpha-001",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/burning-house-alpha-001.png"
+       "decoracoes-2d/burning-hamlet.png"
       ]
      }
     },
@@ -209,18 +121,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/burning-house.png"
-      ]
-     }
-    },
-    {
-     "name": "burnt-house-ruins-alpha-001",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/burnt-house-ruins-alpha-001.png"
+       "decoracoes-2d/burning-house.png"
       ]
      }
     },
@@ -231,7 +132,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/burnt-house-ruins.png"
+       "decoracoes-2d/burnt-house-ruins.png"
       ]
      }
     },
@@ -242,7 +143,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-amethyst-geode.png"
+       "decoracoes-2d/cave-amethyst-geode.png"
       ]
      }
     },
@@ -253,7 +154,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-ammonite-fossil.png"
+       "decoracoes-2d/cave-ammonite-fossil.png"
       ]
      }
     },
@@ -264,7 +165,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-barred-stone-opening.png"
+       "decoracoes-2d/cave-barred-stone-opening.png"
       ]
      }
     },
@@ -275,7 +176,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-bones.png"
+       "decoracoes-2d/cave-basalt-004-bones.png"
       ]
      }
     },
@@ -286,7 +187,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-brazier.png"
+       "decoracoes-2d/cave-basalt-004-brazier.png"
       ]
      }
     },
@@ -297,7 +198,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-campfire.png"
+       "decoracoes-2d/cave-basalt-004-campfire.png"
       ]
      }
     },
@@ -308,7 +209,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-chest.png"
+       "decoracoes-2d/cave-basalt-004-chest.png"
       ]
      }
     },
@@ -319,7 +220,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-cliff.png"
+       "decoracoes-2d/cave-basalt-004-cliff.png"
       ]
      }
     },
@@ -330,7 +231,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-crystals.png"
+       "decoracoes-2d/cave-basalt-004-crystals.png"
       ]
      }
     },
@@ -341,7 +242,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-edge-pillar.png"
+       "decoracoes-2d/cave-basalt-004-edge-pillar.png"
       ]
      }
     },
@@ -352,7 +253,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-moss-rock.png"
+       "decoracoes-2d/cave-basalt-004-moss-rock.png"
       ]
      }
     },
@@ -363,7 +264,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-original-bones.png"
+       "decoracoes-2d/cave-basalt-004-original-bones.png"
       ]
      }
     },
@@ -374,7 +275,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-original-crystals.png"
+       "decoracoes-2d/cave-basalt-004-original-crystals.png"
       ]
      }
     },
@@ -385,7 +286,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-original-moss-rock.png"
+       "decoracoes-2d/cave-basalt-004-original-moss-rock.png"
       ]
      }
     },
@@ -396,7 +297,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-original-overhang.png"
+       "decoracoes-2d/cave-basalt-004-original-overhang.png"
       ]
      }
     },
@@ -407,7 +308,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-original-pillar.png"
+       "decoracoes-2d/cave-basalt-004-original-pillar.png"
       ]
      }
     },
@@ -418,7 +319,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-original-rubble.png"
+       "decoracoes-2d/cave-basalt-004-original-rubble.png"
       ]
      }
     },
@@ -429,7 +330,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-original-stalagmites.png"
+       "decoracoes-2d/cave-basalt-004-original-stalagmites.png"
       ]
      }
     },
@@ -440,7 +341,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-original-wall.png"
+       "decoracoes-2d/cave-basalt-004-original-wall.png"
       ]
      }
     },
@@ -451,7 +352,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-overhang.png"
+       "decoracoes-2d/cave-basalt-004-overhang.png"
       ]
      }
     },
@@ -462,7 +363,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-pillar.png"
+       "decoracoes-2d/cave-basalt-004-pillar.png"
       ]
      }
     },
@@ -473,7 +374,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-rubble.png"
+       "decoracoes-2d/cave-basalt-004-rubble.png"
       ]
      }
     },
@@ -484,7 +385,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-stalagmites.png"
+       "decoracoes-2d/cave-basalt-004-stalagmites.png"
       ]
      }
     },
@@ -495,7 +396,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-004-wall.png"
+       "decoracoes-2d/cave-basalt-004-wall.png"
       ]
      }
     },
@@ -506,7 +407,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-005-brazier.png"
+       "decoracoes-2d/cave-basalt-005-brazier.png"
       ]
      }
     },
@@ -517,7 +418,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-005-chest.png"
+       "decoracoes-2d/cave-basalt-005-chest.png"
       ]
      }
     },
@@ -528,7 +429,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-005-overhang.png"
+       "decoracoes-2d/cave-basalt-005-overhang.png"
       ]
      }
     },
@@ -539,7 +440,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-005-pillar.png"
+       "decoracoes-2d/cave-basalt-005-pillar.png"
       ]
      }
     },
@@ -550,7 +451,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-005-rubble.png"
+       "decoracoes-2d/cave-basalt-005-rubble.png"
       ]
      }
     },
@@ -561,7 +462,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-005-stalagmites.png"
+       "decoracoes-2d/cave-basalt-005-stalagmites.png"
       ]
      }
     },
@@ -572,7 +473,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-005-wall.png"
+       "decoracoes-2d/cave-basalt-005-wall.png"
       ]
      }
     },
@@ -583,7 +484,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-006-bones.png"
+       "decoracoes-2d/cave-basalt-006-bones.png"
       ]
      }
     },
@@ -594,7 +495,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-006-brazier.png"
+       "decoracoes-2d/cave-basalt-006-brazier.png"
       ]
      }
     },
@@ -605,7 +506,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-006-campfire.png"
+       "decoracoes-2d/cave-basalt-006-campfire.png"
       ]
      }
     },
@@ -616,7 +517,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-006-chest.png"
+       "decoracoes-2d/cave-basalt-006-chest.png"
       ]
      }
     },
@@ -627,7 +528,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-006-cliff.png"
+       "decoracoes-2d/cave-basalt-006-cliff.png"
       ]
      }
     },
@@ -638,7 +539,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-006-crystals.png"
+       "decoracoes-2d/cave-basalt-006-crystals.png"
       ]
      }
     },
@@ -649,7 +550,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-006-edge-pillar.png"
+       "decoracoes-2d/cave-basalt-006-edge-pillar.png"
       ]
      }
     },
@@ -660,7 +561,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-006-moss-rock.png"
+       "decoracoes-2d/cave-basalt-006-moss-rock.png"
       ]
      }
     },
@@ -671,7 +572,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-006-overhang.png"
+       "decoracoes-2d/cave-basalt-006-overhang.png"
       ]
      }
     },
@@ -682,7 +583,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-006-pillar-short.png"
+       "decoracoes-2d/cave-basalt-006-pillar-short.png"
       ]
      }
     },
@@ -693,7 +594,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-006-pillar.png"
+       "decoracoes-2d/cave-basalt-006-pillar.png"
       ]
      }
     },
@@ -704,7 +605,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-006-rubble.png"
+       "decoracoes-2d/cave-basalt-006-rubble.png"
       ]
      }
     },
@@ -715,7 +616,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-006-shore.png"
+       "decoracoes-2d/cave-basalt-006-shore.png"
       ]
      }
     },
@@ -726,7 +627,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-006-stalagmites.png"
+       "decoracoes-2d/cave-basalt-006-stalagmites.png"
       ]
      }
     },
@@ -737,7 +638,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-006-wall.png"
+       "decoracoes-2d/cave-basalt-006-wall.png"
       ]
      }
     },
@@ -748,7 +649,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-008-bones.png"
+       "decoracoes-2d/cave-basalt-008-bones.png"
       ]
      }
     },
@@ -759,7 +660,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-008-moss-rock.png"
+       "decoracoes-2d/cave-basalt-008-moss-rock.png"
       ]
      }
     },
@@ -770,7 +671,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-basalt-008-overhang.png"
+       "decoracoes-2d/cave-basalt-008-overhang.png"
       ]
      }
     },
@@ -781,7 +682,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-blue-crystals.png"
+       "decoracoes-2d/cave-blue-crystals.png"
       ]
      }
     },
@@ -792,7 +693,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-bones.png"
+       "decoracoes-2d/cave-bones.png"
       ]
      }
     },
@@ -803,7 +704,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-boulder.png"
+       "decoracoes-2d/cave-boulder.png"
       ]
      }
     },
@@ -814,7 +715,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-candle-stand.png"
+       "decoracoes-2d/cave-candle-stand.png"
       ]
      }
     },
@@ -825,7 +726,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-carved-stone-block.png"
+       "decoracoes-2d/cave-carved-stone-block.png"
       ]
      }
     },
@@ -836,7 +737,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-cracked-stone.png"
+       "decoracoes-2d/cave-cracked-stone.png"
       ]
      }
     },
@@ -847,7 +748,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-fractured-boulders-001.png"
+       "decoracoes-2d/cave-fractured-boulders-001.png"
       ]
      }
     },
@@ -858,7 +759,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-glowing-mushrooms.png"
+       "decoracoes-2d/cave-glowing-mushrooms.png"
       ]
      }
     },
@@ -869,7 +770,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-hanging-bat.png"
+       "decoracoes-2d/cave-hanging-bat.png"
       ]
      }
     },
@@ -880,7 +781,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-hanging-chains.png"
+       "decoracoes-2d/cave-hanging-chains.png"
       ]
      }
     },
@@ -891,7 +792,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-hanging-roots.png"
+       "decoracoes-2d/cave-hanging-roots.png"
       ]
      }
     },
@@ -902,7 +803,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-limestone-007-wall.png"
+       "decoracoes-2d/cave-limestone-007-wall.png"
       ]
      }
     },
@@ -913,7 +814,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-limestone-spires-001.png"
+       "decoracoes-2d/cave-limestone-spires-001.png"
       ]
      }
     },
@@ -924,7 +825,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-mossy-rocks.png"
+       "decoracoes-2d/cave-mossy-rocks.png"
       ]
      }
     },
@@ -935,7 +836,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-rock-pile.png"
+       "decoracoes-2d/cave-rock-pile.png"
       ]
      }
     },
@@ -946,7 +847,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-rusty-keys.png"
+       "decoracoes-2d/cave-rusty-keys.png"
       ]
      }
     },
@@ -957,7 +858,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-rusty-lantern.png"
+       "decoracoes-2d/cave-rusty-lantern.png"
       ]
      }
     },
@@ -968,7 +869,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-slate-shelf-001.png"
+       "decoracoes-2d/cave-slate-shelf-001.png"
       ]
      }
     },
@@ -979,7 +880,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-spiked-gate.png"
+       "decoracoes-2d/cave-spiked-gate.png"
       ]
      }
     },
@@ -990,7 +891,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-stalactite.png"
+       "decoracoes-2d/cave-stalactite.png"
       ]
      }
     },
@@ -1001,7 +902,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-stalagmites.png"
+       "decoracoes-2d/cave-stalagmites.png"
       ]
      }
     },
@@ -1012,7 +913,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-stone-rubble.png"
+       "decoracoes-2d/cave-stone-rubble.png"
       ]
      }
     },
@@ -1023,7 +924,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-underground-pool.png"
+       "decoracoes-2d/cave-underground-pool.png"
       ]
      }
     },
@@ -1034,7 +935,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-wall-boulders-002.png"
+       "decoracoes-2d/cave-wall-boulders-002.png"
       ]
      }
     },
@@ -1045,7 +946,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-wall-brazier.png"
+       "decoracoes-2d/cave-wall-brazier.png"
       ]
      }
     },
@@ -1056,7 +957,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-wall-ring.png"
+       "decoracoes-2d/cave-wall-ring.png"
       ]
      }
     },
@@ -1067,7 +968,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-wall-shelf-002.png"
+       "decoracoes-2d/cave-wall-shelf-002.png"
       ]
      }
     },
@@ -1078,7 +979,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-wall-stalagmites-002.png"
+       "decoracoes-2d/cave-wall-stalagmites-002.png"
       ]
      }
     },
@@ -1089,7 +990,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/cave-webbed-chest.png"
+       "decoracoes-2d/cave-webbed-chest.png"
       ]
      }
     },
@@ -1100,7 +1001,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/chest-large.png"
+       "decoracoes-2d/chest-large.png"
       ]
      }
     },
@@ -1111,7 +1012,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/chest-medium.png"
+       "decoracoes-2d/chest-medium.png"
       ]
      }
     },
@@ -1122,7 +1023,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-banner-barricade.png"
+       "decoracoes-2d/city-banner-barricade.png"
       ]
      }
     },
@@ -1133,7 +1034,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-banner-post-side4.png"
+       "decoracoes-2d/city-banner-post-side4.png"
       ]
      }
     },
@@ -1144,7 +1045,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-banner-post.png"
+       "decoracoes-2d/city-banner-post.png"
       ]
      }
     },
@@ -1155,7 +1056,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-barrels.png"
+       "decoracoes-2d/city-barrels.png"
       ]
      }
     },
@@ -1166,7 +1067,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-basket.png"
+       "decoracoes-2d/city-basket.png"
       ]
      }
     },
@@ -1177,7 +1078,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-bear-trap.png"
+       "decoracoes-2d/city-bear-trap.png"
       ]
      }
     },
@@ -1188,7 +1089,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-brazier.png"
+       "decoracoes-2d/city-brazier.png"
       ]
      }
     },
@@ -1199,7 +1100,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-broken-barrel.png"
+       "decoracoes-2d/city-broken-barrel.png"
       ]
      }
     },
@@ -1210,7 +1111,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-broken-chair.png"
+       "decoracoes-2d/city-broken-chair.png"
       ]
      }
     },
@@ -1221,7 +1122,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-broken-pottery.png"
+       "decoracoes-2d/city-broken-pottery.png"
       ]
      }
     },
@@ -1232,7 +1133,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-bucket.png"
+       "decoracoes-2d/city-bucket.png"
       ]
      }
     },
@@ -1243,7 +1144,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-campfire.png"
+       "decoracoes-2d/city-campfire.png"
       ]
      }
     },
@@ -1254,7 +1155,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-clothesline.png"
+       "decoracoes-2d/city-clothesline.png"
       ]
      }
     },
@@ -1265,7 +1166,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-covered-crate.png"
+       "decoracoes-2d/city-covered-crate.png"
       ]
      }
     },
@@ -1276,7 +1177,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-covered-wagon.png"
+       "decoracoes-2d/city-covered-wagon.png"
       ]
      }
     },
@@ -1287,7 +1188,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-crate-stack.png"
+       "decoracoes-2d/city-crate-stack.png"
       ]
      }
     },
@@ -1298,7 +1199,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-execution-block.png"
+       "decoracoes-2d/city-execution-block.png"
       ]
      }
     },
@@ -1309,7 +1210,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-firewood-pile.png"
+       "decoracoes-2d/city-firewood-pile.png"
       ]
      }
     },
@@ -1320,7 +1221,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-firewood-stack-new.png"
+       "decoracoes-2d/city-firewood-stack-new.png"
       ]
      }
     },
@@ -1331,7 +1232,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-forge.png"
+       "decoracoes-2d/city-forge.png"
       ]
      }
     },
@@ -1342,7 +1243,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-gallows-2.png"
+       "decoracoes-2d/city-gallows-2.png"
       ]
      }
     },
@@ -1353,7 +1254,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-gallows-cages.png"
+       "decoracoes-2d/city-gallows-cages.png"
       ]
      }
     },
@@ -1364,7 +1265,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-gallows-cages2.png"
+       "decoracoes-2d/city-gallows-cages2.png"
       ]
      }
     },
@@ -1375,7 +1276,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-gate-banner.png"
+       "decoracoes-2d/city-gate-banner.png"
       ]
      }
     },
@@ -1386,7 +1287,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-hanging-sign.png"
+       "decoracoes-2d/city-hanging-sign.png"
       ]
      }
     },
@@ -1397,7 +1298,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-inn-barrel.png"
+       "decoracoes-2d/city-inn-barrel.png"
       ]
      }
     },
@@ -1408,7 +1309,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-inn-candle-sconce.png"
+       "decoracoes-2d/city-inn-candle-sconce.png"
       ]
      }
     },
@@ -1419,7 +1320,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-inn-chair.png"
+       "decoracoes-2d/city-inn-chair.png"
       ]
      }
     },
@@ -1430,7 +1331,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-inn-table.png"
+       "decoracoes-2d/city-inn-table.png"
       ]
      }
     },
@@ -1441,7 +1342,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-inn-tankard.png"
+       "decoracoes-2d/city-inn-tankard.png"
       ]
      }
     },
@@ -1452,7 +1353,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-lantern-post-new.png"
+       "decoracoes-2d/city-lantern-post-new.png"
       ]
      }
     },
@@ -1463,7 +1364,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-lantern-post-side4.png"
+       "decoracoes-2d/city-lantern-post-side4.png"
       ]
      }
     },
@@ -1474,7 +1375,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-lantern-post.png"
+       "decoracoes-2d/city-lantern-post.png"
       ]
      }
     },
@@ -1485,7 +1386,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-log-cart.png"
+       "decoracoes-2d/city-log-cart.png"
       ]
      }
     },
@@ -1496,7 +1397,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-log-stack.png"
+       "decoracoes-2d/city-log-stack.png"
       ]
      }
     },
@@ -1507,7 +1408,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-market-stall-2.png"
+       "decoracoes-2d/city-market-stall-2.png"
       ]
      }
     },
@@ -1518,7 +1419,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-market-stall.png"
+       "decoracoes-2d/city-market-stall.png"
       ]
      }
     },
@@ -1529,7 +1430,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-market-wagon-new.png"
+       "decoracoes-2d/city-market-wagon-new.png"
       ]
      }
     },
@@ -1540,7 +1441,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-nailed-planks.png"
+       "decoracoes-2d/city-nailed-planks.png"
       ]
      }
     },
@@ -1551,7 +1452,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-notice-board-2.png"
+       "decoracoes-2d/city-notice-board-2.png"
       ]
      }
     },
@@ -1562,7 +1463,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-notice-post-side4.png"
+       "decoracoes-2d/city-notice-post-side4.png"
       ]
      }
     },
@@ -1573,7 +1474,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-notice-post.png"
+       "decoracoes-2d/city-notice-post.png"
       ]
      }
     },
@@ -1584,7 +1485,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-palisade-banner.png"
+       "decoracoes-2d/city-palisade-banner.png"
       ]
      }
     },
@@ -1595,7 +1496,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-palisade-frame.png"
+       "decoracoes-2d/city-palisade-frame.png"
       ]
      }
     },
@@ -1606,7 +1507,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-provisions.png"
+       "decoracoes-2d/city-provisions.png"
       ]
      }
     },
@@ -1617,7 +1518,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-ring-pillar.png"
+       "decoracoes-2d/city-ring-pillar.png"
       ]
      }
     },
@@ -1628,7 +1529,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-root-shrine.png"
+       "decoracoes-2d/city-root-shrine.png"
       ]
      }
     },
@@ -1639,7 +1540,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-rope-coil.png"
+       "decoracoes-2d/city-rope-coil.png"
       ]
      }
     },
@@ -1650,7 +1551,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-sack-pile.png"
+       "decoracoes-2d/city-sack-pile.png"
       ]
      }
     },
@@ -1661,7 +1562,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-shrineCandle.png"
+       "decoracoes-2d/city-shrineCandle.png"
       ]
      }
     },
@@ -1672,7 +1573,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-signpost-side4.png"
+       "decoracoes-2d/city-signpost-side4.png"
       ]
      }
     },
@@ -1683,7 +1584,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-signpost.png"
+       "decoracoes-2d/city-signpost.png"
       ]
      }
     },
@@ -1694,7 +1595,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-spike-barricade-large.png"
+       "decoracoes-2d/city-spike-barricade-large.png"
       ]
      }
     },
@@ -1705,7 +1606,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-spike-barricade-low.png"
+       "decoracoes-2d/city-spike-barricade-low.png"
       ]
      }
     },
@@ -1716,7 +1617,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-spike-barricade.png"
+       "decoracoes-2d/city-spike-barricade.png"
       ]
      }
     },
@@ -1727,7 +1628,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-stone-banner-wall.png"
+       "decoracoes-2d/city-stone-banner-wall.png"
       ]
      }
     },
@@ -1738,7 +1639,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-stone-pillar.png"
+       "decoracoes-2d/city-stone-pillar.png"
       ]
      }
     },
@@ -1749,7 +1650,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-stone-trough-fountain.png"
+       "decoracoes-2d/city-stone-trough-fountain.png"
       ]
      }
     },
@@ -1760,7 +1661,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-stool.png"
+       "decoracoes-2d/city-stool.png"
       ]
      }
     },
@@ -1771,7 +1672,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-supply-cart-2.png"
+       "decoracoes-2d/city-supply-cart-2.png"
       ]
      }
     },
@@ -1782,7 +1683,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-supply-cart.png"
+       "decoracoes-2d/city-supply-cart.png"
       ]
      }
     },
@@ -1793,7 +1694,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-wattle-fence.png"
+       "decoracoes-2d/city-wattle-fence.png"
       ]
      }
     },
@@ -1804,7 +1705,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-well-2.png"
+       "decoracoes-2d/city-well-2.png"
       ]
      }
     },
@@ -1815,7 +1716,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-well.png"
+       "decoracoes-2d/city-well.png"
       ]
      }
     },
@@ -1826,7 +1727,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-wheelbarrow.png"
+       "decoracoes-2d/city-wheelbarrow.png"
       ]
      }
     },
@@ -1837,7 +1738,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-wooden-barricade.png"
+       "decoracoes-2d/city-wooden-barricade.png"
       ]
      }
     },
@@ -1848,7 +1749,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-workbench.png"
+       "decoracoes-2d/city-workbench.png"
       ]
      }
     },
@@ -1859,18 +1760,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/city-wreckage-pile.png"
-      ]
-     }
-    },
-    {
-     "name": "dead-tree-large",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/dead-tree-large.png"
+       "decoracoes-2d/city-wreckage-pile.png"
       ]
      }
     },
@@ -1881,18 +1771,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/dead-tree.png"
-      ]
-     }
-    },
-    {
-     "name": "dense-forest",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/dense-forest.png"
+       "decoracoes-2d/dead-tree.png"
       ]
      }
     },
@@ -1903,7 +1782,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/dungeon-bones.png"
+       "decoracoes-2d/dungeon-bones.png"
       ]
      }
     },
@@ -1914,7 +1793,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/dungeon-exit-single.png"
+       "decoracoes-2d/dungeon-exit-single.png"
       ]
      }
     },
@@ -1925,7 +1804,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/dungeon-exit.png"
+       "decoracoes-2d/dungeon-exit.png"
       ]
      }
     },
@@ -1936,7 +1815,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/dungeon-funerary-urn.png"
+       "decoracoes-2d/dungeon-funerary-urn.png"
       ]
      }
     },
@@ -1947,7 +1826,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/dungeon-hanging-cage.png"
+       "decoracoes-2d/dungeon-hanging-cage.png"
       ]
      }
     },
@@ -1958,7 +1837,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/dungeon-ossuary.png"
+       "decoracoes-2d/dungeon-ossuary.png"
       ]
      }
     },
@@ -1969,7 +1848,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/dungeon-penitent-statue.png"
+       "decoracoes-2d/dungeon-penitent-statue.png"
       ]
      }
     },
@@ -1980,7 +1859,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/dungeon-sarcophagus.png"
+       "decoracoes-2d/dungeon-sarcophagus.png"
       ]
      }
     },
@@ -1991,7 +1870,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/dungeon-stone-door.png"
+       "decoracoes-2d/dungeon-stone-door.png"
       ]
      }
     },
@@ -2002,7 +1881,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/dungeon-stone-rubble.png"
+       "decoracoes-2d/dungeon-stone-rubble.png"
       ]
      }
     },
@@ -2013,7 +1892,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/dungeon-tomb-relief.png"
+       "decoracoes-2d/dungeon-tomb-relief.png"
       ]
      }
     },
@@ -2024,18 +1903,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ember-channels-001-alpha-001.png"
-      ]
-     }
-    },
-    {
-     "name": "ember-channels-001",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/ember-channels-001.png"
+       "decoracoes-2d/ember-channels-001-alpha-001.png"
       ]
      }
     },
@@ -2046,7 +1914,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/escape-exit.png"
+       "decoracoes-2d/escape-exit.png"
       ]
      }
     },
@@ -2057,7 +1925,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/fallen-log.png"
+       "decoracoes-2d/fallen-log.png"
       ]
      }
     },
@@ -2068,7 +1936,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-013-apothecary-house-grounded-v2.png"
+       "decoracoes-2d/farmland-photographic-013-apothecary-house-grounded-v2.png"
       ]
      }
     },
@@ -2079,7 +1947,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-013-apothecary-house-original-v1.png"
+       "decoracoes-2d/farmland-photographic-013-apothecary-house-original-v1.png"
       ]
      }
     },
@@ -2090,7 +1958,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-013-apothecary-house.png"
+       "decoracoes-2d/farmland-photographic-013-apothecary-house.png"
       ]
      }
     },
@@ -2101,7 +1969,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-013-bed.png"
+       "decoracoes-2d/farmland-photographic-013-bed.png"
       ]
      }
     },
@@ -2112,7 +1980,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-013-cabinet.png"
+       "decoracoes-2d/farmland-photographic-013-cabinet.png"
       ]
      }
     },
@@ -2123,7 +1991,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-013-forge.png"
+       "decoracoes-2d/farmland-photographic-013-forge.png"
       ]
      }
     },
@@ -2134,7 +2002,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-013-inn-house-grounded-v2.png"
+       "decoracoes-2d/farmland-photographic-013-inn-house-grounded-v2.png"
       ]
      }
     },
@@ -2145,7 +2013,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-013-inn-house-original-v1.png"
+       "decoracoes-2d/farmland-photographic-013-inn-house-original-v1.png"
       ]
      }
     },
@@ -2156,7 +2024,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-013-inn-house.png"
+       "decoracoes-2d/farmland-photographic-013-inn-house.png"
       ]
      }
     },
@@ -2167,7 +2035,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-013-smith-house-grounded-v2.png"
+       "decoracoes-2d/farmland-photographic-013-smith-house-grounded-v2.png"
       ]
      }
     },
@@ -2178,7 +2046,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-013-smith-house-original-v1.png"
+       "decoracoes-2d/farmland-photographic-013-smith-house-original-v1.png"
       ]
      }
     },
@@ -2189,7 +2057,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-013-smith-house.png"
+       "decoracoes-2d/farmland-photographic-013-smith-house.png"
       ]
      }
     },
@@ -2200,7 +2068,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-013-table.png"
+       "decoracoes-2d/farmland-photographic-013-table.png"
       ]
      }
     },
@@ -2211,7 +2079,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-013-tavern-house-grounded-v2.png"
+       "decoracoes-2d/farmland-photographic-013-tavern-house-grounded-v2.png"
       ]
      }
     },
@@ -2222,7 +2090,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-013-tavern-house-original-v1.png"
+       "decoracoes-2d/farmland-photographic-013-tavern-house-original-v1.png"
       ]
      }
     },
@@ -2233,7 +2101,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-013-tavern-house.png"
+       "decoracoes-2d/farmland-photographic-013-tavern-house.png"
       ]
      }
     },
@@ -2244,7 +2112,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-014-bed.png"
+       "decoracoes-2d/farmland-photographic-014-bed.png"
       ]
      }
     },
@@ -2255,7 +2123,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-014-store-house-grounded-v2.png"
+       "decoracoes-2d/farmland-photographic-014-store-house-grounded-v2.png"
       ]
      }
     },
@@ -2266,7 +2134,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-014-store-house-original-v1.png"
+       "decoracoes-2d/farmland-photographic-014-store-house-original-v1.png"
       ]
      }
     },
@@ -2277,7 +2145,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-014-store-house.png"
+       "decoracoes-2d/farmland-photographic-014-store-house.png"
       ]
      }
     },
@@ -2288,7 +2156,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-014-table.png"
+       "decoracoes-2d/farmland-photographic-014-table.png"
       ]
      }
     },
@@ -2299,7 +2167,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-014-villagers-house-grounded-v2.png"
+       "decoracoes-2d/farmland-photographic-014-villagers-house-grounded-v2.png"
       ]
      }
     },
@@ -2310,7 +2178,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-014-villagers-house-original-v1.png"
+       "decoracoes-2d/farmland-photographic-014-villagers-house-original-v1.png"
       ]
      }
     },
@@ -2321,7 +2189,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/farmland-photographic-014-villagers-house.png"
+       "decoracoes-2d/farmland-photographic-014-villagers-house.png"
       ]
      }
     },
@@ -2332,7 +2200,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/floor-connector-down-red-v1.png"
+       "decoracoes-2d/floor-connector-down-red-v1.png"
       ]
      }
     },
@@ -2343,7 +2211,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/floor-connector-up-gold-v1.png"
+       "decoracoes-2d/floor-connector-up-gold-v1.png"
       ]
      }
     },
@@ -2354,7 +2222,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/floor-connector.png"
+       "decoracoes-2d/floor-connector.png"
       ]
      }
     },
@@ -2365,7 +2233,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/forest-amanitas.png"
+       "decoracoes-2d/forest-amanitas.png"
       ]
      }
     },
@@ -2376,7 +2244,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/forest-mossy-stump.png"
+       "decoracoes-2d/forest-mossy-stump.png"
       ]
      }
     },
@@ -2387,7 +2255,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/forest-mossy-trunk.png"
+       "decoracoes-2d/forest-mossy-trunk.png"
       ]
      }
     },
@@ -2398,7 +2266,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/forest-photographic-011-cedar.png"
+       "decoracoes-2d/forest-photographic-011-cedar.png"
       ]
      }
     },
@@ -2409,7 +2277,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/forest-photographic-011-chest.png"
+       "decoracoes-2d/forest-photographic-011-chest.png"
       ]
      }
     },
@@ -2420,7 +2288,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/forest-photographic-011-hemlock.png"
+       "decoracoes-2d/forest-photographic-011-hemlock.png"
       ]
      }
     },
@@ -2431,7 +2299,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/forest-photographic-011-log.png"
+       "decoracoes-2d/forest-photographic-011-log.png"
       ]
      }
     },
@@ -2442,7 +2310,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/forest-photographic-012-cedar.png"
+       "decoracoes-2d/forest-photographic-012-cedar.png"
       ]
      }
     },
@@ -2453,18 +2321,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/forest-photographic-012-hemlock.png"
-      ]
-     }
-    },
-    {
-     "name": "gatehouse",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/gatehouse.png"
+       "decoracoes-2d/forest-photographic-012-hemlock.png"
       ]
      }
     },
@@ -2475,7 +2332,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-barrel.png"
+       "decoracoes-2d/ice-barrel.png"
       ]
      }
     },
@@ -2486,7 +2343,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-bear-trap.png"
+       "decoracoes-2d/ice-bear-trap.png"
       ]
      }
     },
@@ -2497,7 +2354,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-bones.png"
+       "decoracoes-2d/ice-bones.png"
       ]
      }
     },
@@ -2508,7 +2365,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-broken-shield.png"
+       "decoracoes-2d/ice-broken-shield.png"
       ]
      }
     },
@@ -2519,7 +2376,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-cairn.png"
+       "decoracoes-2d/ice-cairn.png"
       ]
      }
     },
@@ -2530,7 +2387,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-chains.png"
+       "decoracoes-2d/ice-chains.png"
       ]
      }
     },
@@ -2541,7 +2398,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-crate.png"
+       "decoracoes-2d/ice-crate.png"
       ]
      }
     },
@@ -2552,7 +2409,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-crystal-spikes.png"
+       "decoracoes-2d/ice-crystal-spikes.png"
       ]
      }
     },
@@ -2563,7 +2420,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-firewood.png"
+       "decoracoes-2d/ice-firewood.png"
       ]
      }
     },
@@ -2574,7 +2431,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-frozen-boulder.png"
+       "decoracoes-2d/ice-frozen-boulder.png"
       ]
      }
     },
@@ -2585,7 +2442,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-frozen-grass.png"
+       "decoracoes-2d/ice-frozen-grass.png"
       ]
      }
     },
@@ -2596,7 +2453,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-frozen-stump.png"
+       "decoracoes-2d/ice-frozen-stump.png"
       ]
      }
     },
@@ -2607,7 +2464,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-helmet.png"
+       "decoracoes-2d/ice-helmet.png"
       ]
      }
     },
@@ -2618,7 +2475,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-lantern-cage.png"
+       "decoracoes-2d/ice-lantern-cage.png"
       ]
      }
     },
@@ -2629,7 +2486,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-photographic-010-boulders.png"
+       "decoracoes-2d/ice-photographic-010-boulders.png"
       ]
      }
     },
@@ -2640,7 +2497,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-photographic-010-chest.png"
+       "decoracoes-2d/ice-photographic-010-chest.png"
       ]
      }
     },
@@ -2651,7 +2508,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-photographic-010-ridge.png"
+       "decoracoes-2d/ice-photographic-010-ridge.png"
       ]
      }
     },
@@ -2662,7 +2519,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-photographic-010-scrub.png"
+       "decoracoes-2d/ice-photographic-010-scrub.png"
       ]
      }
     },
@@ -2673,7 +2530,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-rope-coil.png"
+       "decoracoes-2d/ice-rope-coil.png"
       ]
      }
     },
@@ -2684,7 +2541,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-sack.png"
+       "decoracoes-2d/ice-sack.png"
       ]
      }
     },
@@ -2695,7 +2552,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-satchel.png"
+       "decoracoes-2d/ice-satchel.png"
       ]
      }
     },
@@ -2706,7 +2563,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-shield.png"
+       "decoracoes-2d/ice-shield.png"
       ]
      }
     },
@@ -2717,7 +2574,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-skull.png"
+       "decoracoes-2d/ice-skull.png"
       ]
      }
     },
@@ -2728,7 +2585,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-tools-pile.png"
+       "decoracoes-2d/ice-tools-pile.png"
       ]
      }
     },
@@ -2739,7 +2596,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-weapon-pile.png"
+       "decoracoes-2d/ice-weapon-pile.png"
       ]
      }
     },
@@ -2750,7 +2607,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/ice-wooden-spikes.png"
+       "decoracoes-2d/ice-wooden-spikes.png"
       ]
      }
     },
@@ -2761,7 +2618,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/inn-fireplace.png"
+       "decoracoes-2d/inn-fireplace.png"
       ]
      }
     },
@@ -2772,7 +2629,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/inn-herb-shelf.png"
+       "decoracoes-2d/inn-herb-shelf.png"
       ]
      }
     },
@@ -2783,7 +2640,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/inn-provisions-display.png"
+       "decoracoes-2d/inn-provisions-display.png"
       ]
      }
     },
@@ -2794,7 +2651,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/inn-stairs-down.png"
+       "decoracoes-2d/inn-stairs-down.png"
       ]
      }
     },
@@ -2805,7 +2662,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/inn-stairs-up.png"
+       "decoracoes-2d/inn-stairs-up.png"
       ]
      }
     },
@@ -2816,7 +2673,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/jagged-ridge.png"
+       "decoracoes-2d/jagged-ridge.png"
       ]
      }
     },
@@ -2827,7 +2684,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/lamppost-emberclassic.png"
+       "decoracoes-2d/lamppost-emberclassic.png"
       ]
      }
     },
@@ -2838,7 +2695,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/lamppost-side4.png"
+       "decoracoes-2d/lamppost-side4.png"
       ]
      }
     },
@@ -2849,7 +2706,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/lamppost.png"
+       "decoracoes-2d/lamppost.png"
       ]
      }
     },
@@ -2860,7 +2717,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/large-boulder.png"
+       "decoracoes-2d/large-boulder.png"
       ]
      }
     },
@@ -2871,7 +2728,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/light-brazier-bowl.png"
+       "decoracoes-2d/light-brazier-bowl.png"
       ]
      }
     },
@@ -2882,7 +2739,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/light-candle.png"
+       "decoracoes-2d/light-candle.png"
       ]
      }
     },
@@ -2893,7 +2750,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/light-fireplace.png"
+       "decoracoes-2d/light-fireplace.png"
       ]
      }
     },
@@ -2904,7 +2761,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/light-wall-torch.png"
+       "decoracoes-2d/light-wall-torch.png"
       ]
      }
     },
@@ -2915,7 +2772,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/locked-chest.png"
+       "decoracoes-2d/locked-chest.png"
       ]
      }
     },
@@ -2926,7 +2783,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/merchant-covered-cart-001.png"
+       "decoracoes-2d/merchant-covered-cart-001.png"
       ]
      }
     },
@@ -2937,7 +2794,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/mossy-boulder.png"
+       "decoracoes-2d/mossy-boulder.png"
       ]
      }
     },
@@ -2948,7 +2805,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/mossy-rocks.png"
+       "decoracoes-2d/mossy-rocks.png"
       ]
      }
     },
@@ -2959,18 +2816,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/mountain-range.png"
-      ]
-     }
-    },
-    {
-     "name": "mountain-ridge",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/mountain-ridge.png"
+       "decoracoes-2d/mountain-range.png"
       ]
      }
     },
@@ -2981,7 +2827,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/rocks-3d-grey-outcrop.png"
+       "decoracoes-2d/rocks-3d-grey-outcrop.png"
       ]
      }
     },
@@ -2992,29 +2838,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/rocky-outcrop.png"
-      ]
-     }
-    },
-    {
-     "name": "ruined-chapel",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/ruined-chapel.png"
-      ]
-     }
-    },
-    {
-     "name": "ruined-cottage",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/ruined-cottage.png"
+       "decoracoes-2d/rocky-outcrop.png"
       ]
      }
     },
@@ -3025,18 +2849,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/rune-stone.png"
-      ]
-     }
-    },
-    {
-     "name": "small-house-alpha-001",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/small-house-alpha-001.png"
+       "decoracoes-2d/rune-stone.png"
       ]
      }
     },
@@ -3047,7 +2860,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/small-house.png"
+       "decoracoes-2d/small-house.png"
       ]
      }
     },
@@ -3058,7 +2871,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/spike-crown.png"
+       "decoracoes-2d/spike-crown.png"
       ]
      }
     },
@@ -3069,7 +2882,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/spike-rocks-2.png"
+       "decoracoes-2d/spike-rocks-2.png"
       ]
      }
     },
@@ -3080,18 +2893,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/spike-rocks.png"
-      ]
-     }
-    },
-    {
-     "name": "stone-bridge",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/stone-bridge.png"
+       "decoracoes-2d/spike-rocks.png"
       ]
      }
     },
@@ -3102,7 +2904,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/stone-fountain.png"
+       "decoracoes-2d/stone-fountain.png"
       ]
      }
     },
@@ -3113,18 +2915,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/stone-hut-alpha-001.png"
-      ]
-     }
-    },
-    {
-     "name": "stone-hut",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/stone-hut.png"
+       "decoracoes-2d/stone-hut-alpha-001.png"
       ]
      }
     },
@@ -3135,7 +2926,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/stone-stairs-down-001.png"
+       "decoracoes-2d/stone-stairs-down-001.png"
       ]
      }
     },
@@ -3146,62 +2937,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/stone-stairs-up-001.png"
-      ]
-     }
-    },
-    {
-     "name": "tavern-barrel",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/tavern-barrel.png"
-      ]
-     }
-    },
-    {
-     "name": "tavern-candlestick",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/tavern-candlestick.png"
-      ]
-     }
-    },
-    {
-     "name": "tavern-chair",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/tavern-chair.png"
-      ]
-     }
-    },
-    {
-     "name": "tavern-mug",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/tavern-mug.png"
-      ]
-     }
-    },
-    {
-     "name": "tavern-table",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/tavern-table.png"
+       "decoracoes-2d/stone-stairs-up-001.png"
       ]
      }
     },
@@ -3212,7 +2948,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/tombstones.png"
+       "decoracoes-2d/tombstones.png"
       ]
      }
     },
@@ -3223,7 +2959,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-brazier.png"
+       "decoracoes-2d/torture-brazier.png"
       ]
      }
     },
@@ -3234,7 +2970,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-chain-pile.png"
+       "decoracoes-2d/torture-chain-pile.png"
       ]
      }
     },
@@ -3245,7 +2981,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-01.png"
+       "decoracoes-2d/torture-gear-01.png"
       ]
      }
     },
@@ -3256,7 +2992,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-02.png"
+       "decoracoes-2d/torture-gear-02.png"
       ]
      }
     },
@@ -3267,7 +3003,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-03.png"
+       "decoracoes-2d/torture-gear-03.png"
       ]
      }
     },
@@ -3278,7 +3014,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-04.png"
+       "decoracoes-2d/torture-gear-04.png"
       ]
      }
     },
@@ -3289,7 +3025,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-05.png"
+       "decoracoes-2d/torture-gear-05.png"
       ]
      }
     },
@@ -3300,7 +3036,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-06.png"
+       "decoracoes-2d/torture-gear-06.png"
       ]
      }
     },
@@ -3311,7 +3047,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-07.png"
+       "decoracoes-2d/torture-gear-07.png"
       ]
      }
     },
@@ -3322,7 +3058,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-08.png"
+       "decoracoes-2d/torture-gear-08.png"
       ]
      }
     },
@@ -3333,7 +3069,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-09.png"
+       "decoracoes-2d/torture-gear-09.png"
       ]
      }
     },
@@ -3344,7 +3080,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-10.png"
+       "decoracoes-2d/torture-gear-10.png"
       ]
      }
     },
@@ -3355,7 +3091,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-11.png"
+       "decoracoes-2d/torture-gear-11.png"
       ]
      }
     },
@@ -3366,7 +3102,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-12.png"
+       "decoracoes-2d/torture-gear-12.png"
       ]
      }
     },
@@ -3377,7 +3113,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-14.png"
+       "decoracoes-2d/torture-gear-14.png"
       ]
      }
     },
@@ -3388,7 +3124,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-15.png"
+       "decoracoes-2d/torture-gear-15.png"
       ]
      }
     },
@@ -3399,7 +3135,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-16.png"
+       "decoracoes-2d/torture-gear-16.png"
       ]
      }
     },
@@ -3410,7 +3146,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-17.png"
+       "decoracoes-2d/torture-gear-17.png"
       ]
      }
     },
@@ -3421,7 +3157,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-18.png"
+       "decoracoes-2d/torture-gear-18.png"
       ]
      }
     },
@@ -3432,7 +3168,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-19.png"
+       "decoracoes-2d/torture-gear-19.png"
       ]
      }
     },
@@ -3443,7 +3179,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-20.png"
+       "decoracoes-2d/torture-gear-20.png"
       ]
      }
     },
@@ -3454,7 +3190,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-21.png"
+       "decoracoes-2d/torture-gear-21.png"
       ]
      }
     },
@@ -3465,7 +3201,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-23.png"
+       "decoracoes-2d/torture-gear-23.png"
       ]
      }
     },
@@ -3476,7 +3212,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-24.png"
+       "decoracoes-2d/torture-gear-24.png"
       ]
      }
     },
@@ -3487,7 +3223,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-25.png"
+       "decoracoes-2d/torture-gear-25.png"
       ]
      }
     },
@@ -3498,7 +3234,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-26.png"
+       "decoracoes-2d/torture-gear-26.png"
       ]
      }
     },
@@ -3509,7 +3245,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-27.png"
+       "decoracoes-2d/torture-gear-27.png"
       ]
      }
     },
@@ -3520,7 +3256,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-28.png"
+       "decoracoes-2d/torture-gear-28.png"
       ]
      }
     },
@@ -3531,7 +3267,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-29.png"
+       "decoracoes-2d/torture-gear-29.png"
       ]
      }
     },
@@ -3542,7 +3278,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-31.png"
+       "decoracoes-2d/torture-gear-31.png"
       ]
      }
     },
@@ -3553,7 +3289,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-32.png"
+       "decoracoes-2d/torture-gear-32.png"
       ]
      }
     },
@@ -3564,7 +3300,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-33.png"
+       "decoracoes-2d/torture-gear-33.png"
       ]
      }
     },
@@ -3575,7 +3311,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-34.png"
+       "decoracoes-2d/torture-gear-34.png"
       ]
      }
     },
@@ -3586,7 +3322,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-35.png"
+       "decoracoes-2d/torture-gear-35.png"
       ]
      }
     },
@@ -3597,7 +3333,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-36.png"
+       "decoracoes-2d/torture-gear-36.png"
       ]
      }
     },
@@ -3608,7 +3344,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-37.png"
+       "decoracoes-2d/torture-gear-37.png"
       ]
      }
     },
@@ -3619,7 +3355,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-38.png"
+       "decoracoes-2d/torture-gear-38.png"
       ]
      }
     },
@@ -3630,7 +3366,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-39.png"
+       "decoracoes-2d/torture-gear-39.png"
       ]
      }
     },
@@ -3641,7 +3377,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-40.png"
+       "decoracoes-2d/torture-gear-40.png"
       ]
      }
     },
@@ -3652,7 +3388,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-41.png"
+       "decoracoes-2d/torture-gear-41.png"
       ]
      }
     },
@@ -3663,7 +3399,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-42.png"
+       "decoracoes-2d/torture-gear-42.png"
       ]
      }
     },
@@ -3674,7 +3410,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-43.png"
+       "decoracoes-2d/torture-gear-43.png"
       ]
      }
     },
@@ -3685,7 +3421,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-gear-44.png"
+       "decoracoes-2d/torture-gear-44.png"
       ]
      }
     },
@@ -3696,7 +3432,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-pillory.png"
+       "decoracoes-2d/torture-pillory.png"
       ]
      }
     },
@@ -3707,62 +3443,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/torture-wall-shackles.png"
-      ]
-     }
-    },
-    {
-     "name": "tree-3d-broadleaf",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/tree-3d-broadleaf.png"
-      ]
-     }
-    },
-    {
-     "name": "tree-3d-dead-oak",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/tree-3d-dead-oak.png"
-      ]
-     }
-    },
-    {
-     "name": "tree-3d-dead-snag",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/tree-3d-dead-snag.png"
-      ]
-     }
-    },
-    {
-     "name": "tree-3d-snowy-pine",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/tree-3d-snowy-pine.png"
-      ]
-     }
-    },
-    {
-     "name": "tree-3d-twisted-stump",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/tree-3d-twisted-stump.png"
+       "decoracoes-2d/torture-wall-shackles.png"
       ]
      }
     },
@@ -3773,18 +3454,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/twin-spires.png"
-      ]
-     }
-    },
-    {
-     "name": "watchtower",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/watchtower.png"
+       "decoracoes-2d/twin-spires.png"
       ]
      }
     },
@@ -3795,7 +3465,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/well.png"
+       "decoracoes-2d/well.png"
       ]
      }
     },
@@ -3806,7 +3476,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-abandoned-cart.png"
+       "decoracoes-2d/wilds-abandoned-cart.png"
       ]
      }
     },
@@ -3817,7 +3487,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-altar-sarcophagus.png"
+       "decoracoes-2d/wilds-altar-sarcophagus.png"
       ]
      }
     },
@@ -3828,7 +3498,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-ancestral-tree.png"
+       "decoracoes-2d/wilds-ancestral-tree.png"
       ]
      }
     },
@@ -3839,7 +3509,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-ancient-boulder.png"
+       "decoracoes-2d/wilds-ancient-boulder.png"
       ]
      }
     },
@@ -3850,7 +3520,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-bare-branch.png"
+       "decoracoes-2d/wilds-bare-branch.png"
       ]
      }
     },
@@ -3861,7 +3531,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-bark-pile.png"
+       "decoracoes-2d/wilds-bark-pile.png"
       ]
      }
     },
@@ -3872,7 +3542,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-birds-nest.png"
+       "decoracoes-2d/wilds-birds-nest.png"
       ]
      }
     },
@@ -3883,7 +3553,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-branch-pile.png"
+       "decoracoes-2d/wilds-branch-pile.png"
       ]
      }
     },
@@ -3894,7 +3564,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-brazier-tripod.png"
+       "decoracoes-2d/wilds-brazier-tripod.png"
       ]
      }
     },
@@ -3905,7 +3575,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-broken-column.png"
+       "decoracoes-2d/wilds-broken-column.png"
       ]
      }
     },
@@ -3916,7 +3586,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-broken-cross.png"
+       "decoracoes-2d/wilds-broken-cross.png"
       ]
      }
     },
@@ -3927,7 +3597,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-broken-gravestone.png"
+       "decoracoes-2d/wilds-broken-gravestone.png"
       ]
      }
     },
@@ -3938,7 +3608,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-broken-wheel.png"
+       "decoracoes-2d/wilds-broken-wheel.png"
       ]
      }
     },
@@ -3949,7 +3619,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-burnt-branch-pile.png"
+       "decoracoes-2d/wilds-burnt-branch-pile.png"
       ]
      }
     },
@@ -3960,7 +3630,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-camp.png"
+       "decoracoes-2d/wilds-camp.png"
       ]
      }
     },
@@ -3971,7 +3641,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-campfire-cauldron.png"
+       "decoracoes-2d/wilds-campfire-cauldron.png"
       ]
      }
     },
@@ -3982,7 +3652,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-candle-menhir.png"
+       "decoracoes-2d/wilds-candle-menhir.png"
       ]
      }
     },
@@ -3993,7 +3663,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-cave-amethyst-boulder.png"
+       "decoracoes-2d/wilds-cave-amethyst-boulder.png"
       ]
      }
     },
@@ -4004,7 +3674,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-cave-crystal-boulder.png"
+       "decoracoes-2d/wilds-cave-crystal-boulder.png"
       ]
      }
     },
@@ -4015,7 +3685,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-cave-crystal-rubble.png"
+       "decoracoes-2d/wilds-cave-crystal-rubble.png"
       ]
      }
     },
@@ -4026,7 +3696,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-cave-crystal-wall.png"
+       "decoracoes-2d/wilds-cave-crystal-wall.png"
       ]
      }
     },
@@ -4037,7 +3707,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-cave-glowing-mushrooms.png"
+       "decoracoes-2d/wilds-cave-glowing-mushrooms.png"
       ]
      }
     },
@@ -4048,7 +3718,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-cave-mushrooms.png"
+       "decoracoes-2d/wilds-cave-mushrooms.png"
       ]
      }
     },
@@ -4059,7 +3729,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-cave-stalactite-formation.png"
+       "decoracoes-2d/wilds-cave-stalactite-formation.png"
       ]
      }
     },
@@ -4070,7 +3740,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-cave-stalactites.png"
+       "decoracoes-2d/wilds-cave-stalactites.png"
       ]
      }
     },
@@ -4081,7 +3751,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-cave-stalagmite-cluster.png"
+       "decoracoes-2d/wilds-cave-stalagmite-cluster.png"
       ]
      }
     },
@@ -4092,7 +3762,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-cave-stalagmite-formation.png"
+       "decoracoes-2d/wilds-cave-stalagmite-formation.png"
       ]
      }
     },
@@ -4103,7 +3773,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-cemetery-lantern.png"
+       "decoracoes-2d/wilds-cemetery-lantern.png"
       ]
      }
     },
@@ -4114,7 +3784,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-chained-pillar.png"
+       "decoracoes-2d/wilds-chained-pillar.png"
       ]
      }
     },
@@ -4125,7 +3795,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-charred-stump.png"
+       "decoracoes-2d/wilds-charred-stump.png"
       ]
      }
     },
@@ -4136,7 +3806,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-dead-fern-pile.png"
+       "decoracoes-2d/wilds-dead-fern-pile.png"
       ]
      }
     },
@@ -4147,7 +3817,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-dead-oak.png"
+       "decoracoes-2d/wilds-dead-oak.png"
       ]
      }
     },
@@ -4158,7 +3828,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-dead-sapling.png"
+       "decoracoes-2d/wilds-dead-sapling.png"
       ]
      }
     },
@@ -4169,7 +3839,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-dry-bush.png"
+       "decoracoes-2d/wilds-dry-bush.png"
       ]
      }
     },
@@ -4180,7 +3850,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-dry-twig-pile.png"
+       "decoracoes-2d/wilds-dry-twig-pile.png"
       ]
      }
     },
@@ -4191,7 +3861,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-exposed-roots.png"
+       "decoracoes-2d/wilds-exposed-roots.png"
       ]
      }
     },
@@ -4202,7 +3872,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-fallen-king.png"
+       "decoracoes-2d/wilds-fallen-king.png"
       ]
      }
     },
@@ -4213,7 +3883,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-fallen-log.png"
+       "decoracoes-2d/wilds-fallen-log.png"
       ]
      }
     },
@@ -4224,7 +3894,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-fountain.png"
+       "decoracoes-2d/wilds-fountain.png"
       ]
      }
     },
@@ -4235,7 +3905,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-gibbet-tree.png"
+       "decoracoes-2d/wilds-gibbet-tree.png"
       ]
      }
     },
@@ -4246,7 +3916,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-gothic-arch.png"
+       "decoracoes-2d/wilds-gothic-arch.png"
       ]
      }
     },
@@ -4257,7 +3927,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-gothic-gravestone.png"
+       "decoracoes-2d/wilds-gothic-gravestone.png"
       ]
      }
     },
@@ -4268,7 +3938,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-grave-mound.png"
+       "decoracoes-2d/wilds-grave-mound.png"
       ]
      }
     },
@@ -4279,7 +3949,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-hollow-log.png"
+       "decoracoes-2d/wilds-hollow-log.png"
       ]
      }
     },
@@ -4290,7 +3960,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-hollow-stump.png"
+       "decoracoes-2d/wilds-hollow-stump.png"
       ]
      }
     },
@@ -4301,7 +3971,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-hollow-tree-001.png"
+       "decoracoes-2d/wilds-hollow-tree-001.png"
       ]
      }
     },
@@ -4312,7 +3982,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-hollow-tree-002.png"
+       "decoracoes-2d/wilds-hollow-tree-002.png"
       ]
      }
     },
@@ -4323,7 +3993,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-hollow-tree-003.png"
+       "decoracoes-2d/wilds-hollow-tree-003.png"
       ]
      }
     },
@@ -4334,7 +4004,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-incense-burner.png"
+       "decoracoes-2d/wilds-incense-burner.png"
       ]
      }
     },
@@ -4345,7 +4015,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-iron-cage.png"
+       "decoracoes-2d/wilds-iron-cage.png"
       ]
      }
     },
@@ -4356,7 +4026,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-ivy-arch.png"
+       "decoracoes-2d/wilds-ivy-arch.png"
       ]
      }
     },
@@ -4367,7 +4037,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-ivy-archway.png"
+       "decoracoes-2d/wilds-ivy-archway.png"
       ]
      }
     },
@@ -4378,7 +4048,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-ivy-statue.png"
+       "decoracoes-2d/wilds-ivy-statue.png"
       ]
      }
     },
@@ -4389,7 +4059,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-knight-statue.png"
+       "decoracoes-2d/wilds-knight-statue.png"
       ]
      }
     },
@@ -4400,7 +4070,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-lantern-post-side4.png"
+       "decoracoes-2d/wilds-lantern-post-side4.png"
       ]
      }
     },
@@ -4411,7 +4081,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-lantern-post.png"
+       "decoracoes-2d/wilds-lantern-post.png"
       ]
      }
     },
@@ -4422,7 +4092,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-lantern-signpost-side4.png"
+       "decoracoes-2d/wilds-lantern-signpost-side4.png"
       ]
      }
     },
@@ -4433,7 +4103,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-lantern-signpost.png"
+       "decoracoes-2d/wilds-lantern-signpost.png"
       ]
      }
     },
@@ -4444,7 +4114,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-lichen-boulder.png"
+       "decoracoes-2d/wilds-lichen-boulder.png"
       ]
      }
     },
@@ -4455,7 +4125,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-moss-bridge.png"
+       "decoracoes-2d/wilds-moss-bridge.png"
       ]
      }
     },
@@ -4466,7 +4136,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-mossy-charred-log.png"
+       "decoracoes-2d/wilds-mossy-charred-log.png"
       ]
      }
     },
@@ -4477,7 +4147,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-mossy-log.png"
+       "decoracoes-2d/wilds-mossy-log.png"
       ]
      }
     },
@@ -4488,7 +4158,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-mossy-shrine.png"
+       "decoracoes-2d/wilds-mossy-shrine.png"
       ]
      }
     },
@@ -4499,7 +4169,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-mossy-stones.png"
+       "decoracoes-2d/wilds-mossy-stones.png"
       ]
      }
     },
@@ -4510,7 +4180,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-mushroom-cluster.png"
+       "decoracoes-2d/wilds-mushroom-cluster.png"
       ]
      }
     },
@@ -4521,7 +4191,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-mushroom-stump.png"
+       "decoracoes-2d/wilds-mushroom-stump.png"
       ]
      }
     },
@@ -4532,7 +4202,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-palisade.png"
+       "decoracoes-2d/wilds-palisade.png"
       ]
      }
     },
@@ -4543,7 +4213,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-root-arch.png"
+       "decoracoes-2d/wilds-root-arch.png"
       ]
      }
     },
@@ -4554,7 +4224,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-root-tangle.png"
+       "decoracoes-2d/wilds-root-tangle.png"
       ]
      }
     },
@@ -4565,7 +4235,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-rope-bridge.png"
+       "decoracoes-2d/wilds-rope-bridge.png"
       ]
      }
     },
@@ -4576,7 +4246,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-ruined-gate.png"
+       "decoracoes-2d/wilds-ruined-gate.png"
       ]
      }
     },
@@ -4587,7 +4257,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-ruined-wayside-shrine.png"
+       "decoracoes-2d/wilds-ruined-wayside-shrine.png"
       ]
      }
     },
@@ -4598,7 +4268,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-shelf-mushrooms.png"
+       "decoracoes-2d/wilds-shelf-mushrooms.png"
       ]
      }
     },
@@ -4609,7 +4279,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-snowy-bush.png"
+       "decoracoes-2d/wilds-snowy-bush.png"
       ]
      }
     },
@@ -4620,7 +4290,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-snowy-dead-tree.png"
+       "decoracoes-2d/wilds-snowy-dead-tree.png"
       ]
      }
     },
@@ -4631,7 +4301,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-snowy-fallen-tree.png"
+       "decoracoes-2d/wilds-snowy-fallen-tree.png"
       ]
      }
     },
@@ -4642,7 +4312,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-snowy-log.png"
+       "decoracoes-2d/wilds-snowy-log.png"
       ]
      }
     },
@@ -4653,7 +4323,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-snowy-pines.png"
+       "decoracoes-2d/wilds-snowy-pines.png"
       ]
      }
     },
@@ -4664,7 +4334,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-snowy-roots.png"
+       "decoracoes-2d/wilds-snowy-roots.png"
       ]
      }
     },
@@ -4675,7 +4345,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-snowy-stump.png"
+       "decoracoes-2d/wilds-snowy-stump.png"
       ]
      }
     },
@@ -4686,7 +4356,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-stone-steps.png"
+       "decoracoes-2d/wilds-stone-steps.png"
       ]
      }
     },
@@ -4697,7 +4367,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-temple-door.png"
+       "decoracoes-2d/wilds-temple-door.png"
       ]
      }
     },
@@ -4708,7 +4378,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-thorn-bramble.png"
+       "decoracoes-2d/wilds-thorn-bramble.png"
       ]
      }
     },
@@ -4719,7 +4389,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-torture-rack.png"
+       "decoracoes-2d/wilds-torture-rack.png"
       ]
      }
     },
@@ -4730,7 +4400,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-tree-stump.png"
+       "decoracoes-2d/wilds-tree-stump.png"
       ]
      }
     },
@@ -4741,7 +4411,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-twisted-tree.png"
+       "decoracoes-2d/wilds-twisted-tree.png"
       ]
      }
     },
@@ -4752,7 +4422,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-weathered-signpost-side4.png"
+       "decoracoes-2d/wilds-weathered-signpost-side4.png"
       ]
      }
     },
@@ -4763,7 +4433,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-weathered-signpost.png"
+       "decoracoes-2d/wilds-weathered-signpost.png"
       ]
      }
     },
@@ -4774,7 +4444,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-winter-mossy-log.png"
+       "decoracoes-2d/wilds-winter-mossy-log.png"
       ]
      }
     },
@@ -4785,7 +4455,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-winter-thorn-bush.png"
+       "decoracoes-2d/wilds-winter-thorn-bush.png"
       ]
      }
     },
@@ -4796,7 +4466,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-wishing-well.png"
+       "decoracoes-2d/wilds-wishing-well.png"
       ]
      }
     },
@@ -4807,7 +4477,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-wisp-lantern-marker.png"
+       "decoracoes-2d/wilds-wisp-lantern-marker.png"
       ]
      }
     },
@@ -4818,7 +4488,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-wisp-mushrooms.png"
+       "decoracoes-2d/wilds-wisp-mushrooms.png"
       ]
      }
     },
@@ -4829,7 +4499,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-wisp-shrine.png"
+       "decoracoes-2d/wilds-wisp-shrine.png"
       ]
      }
     },
@@ -4840,29 +4510,7 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wilds-wisp-waystone.png"
-      ]
-     }
-    },
-    {
-     "name": "wooden-barricade-1",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/wooden-barricade-1.png"
-      ]
-     }
-    },
-    {
-     "name": "wooden-barricade",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decorations/wooden-barricade.png"
+       "decoracoes-2d/wilds-wisp-waystone.png"
       ]
      }
     },
@@ -4873,7 +4521,106 @@
      "pack": "decor",
      "frames": {
       "list": [
-       "decorations/wooden-cart.png"
+       "decoracoes-2d/wooden-cart.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-boulders",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-boulders.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-broken-cart",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-broken-cart.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-campfire-cauldron",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-campfire-cauldron.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-clay-urn",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-clay-urn.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-dry-bush",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-dry-bush.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-old-well",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-old-well.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-ox-skeleton-rocks",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-ox-skeleton-rocks.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-ox-skeleton",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-ox-skeleton.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-ruined-camp-tent",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-ruined-camp-tent.png"
       ]
      }
     }

@@ -30,6 +30,20 @@ std::optional<SceneLight> light(const json& j) {
   return out;
 }
 
+// A decoration image the user took out of decoracoes-2d as a duplicate -> the copy kept (content/decor-dupes.json, file names
+// without extension; tools/scripts/sprites/decor_folder.py). Scenes exported before still name the removed one.
+std::string keptImage(const std::string& image) {
+  static const json dupes = [] {
+    std::ifstream in("content/decor-dupes.json", std::ios::binary);
+    json j = in ? json::parse(in, nullptr, false) : json();
+    return j.is_object() ? j : json::object();
+  }();
+  constexpr std::string_view prefix = "/game/decorations/";
+  if (!image.starts_with(prefix) || !image.ends_with(".png")) return image;
+  const std::string stem = image.substr(prefix.size(), image.size() - prefix.size() - 4);
+  return dupes.contains(stem) && dupes[stem].is_string() ? std::string(prefix) + dupes[stem].get<std::string>() + ".png" : image;
+}
+
 void ground(const json& j, float& smooth, float& hard) {
   if (!j.contains("ground")) return;
   smooth = num(j["ground"], "smooth");
@@ -64,7 +78,7 @@ std::optional<SceneData> SceneData::load(const std::filesystem::path& sceneJson)
     if (kind == "card") {
       SceneCard c;
       c.id = str(d, "id");
-      c.image = str(d, "image");
+      c.image = keptImage(str(d, "image"));
       c.x = num(d, "x");
       c.z = num(d, "z");
       ground(d, c.groundSmooth, c.groundHard);
