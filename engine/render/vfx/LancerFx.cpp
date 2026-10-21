@@ -168,6 +168,7 @@ float LancerFx::Effect::end() const {
     case Kind::Drag: return finish + 2.4f;
     case Kind::VigilRise: return impact + 1.0f;
     case Kind::Vigil: return finish < 0.0f ? 1e30f : finish + 0.6f;
+    case Kind::Pierce: return finish + 1.2f;
   }
   return impact + 1.0f;
 }
@@ -298,6 +299,22 @@ void LancerFx::vigilStrike(const Target& foe, glm::vec3 from, float impact) {
   effects_.push_back(std::move(e));
 }
 
+void LancerFx::pierce(glm::vec3 from, float height, glm::vec3 end, std::vector<Target> bodies, float start, float impact) {
+  Effect e;
+  e.kind = Kind::Pierce, e.feet = from, e.from = from, e.to = end, e.height = e.height2 = bodyHeight(height);
+  e.dir = flatDir(end - from, glm::vec3(0.0f, 0.0f, 1.0f));
+  e.start = start, e.impact = std::max(impact, start + 0.05f);
+  const auto along = [&](glm::vec3 p) { return glm::dot(glm::vec3(p.x - from.x, 0.0f, p.z - from.z), e.dir); };
+  std::sort(bodies.begin(), bodies.end(), [&](const Target& a, const Target& b) { return along(a.feet) < along(b.feet); });
+  // The point's speed: it reaches the first body on the impact (half a hex out when the line holds none), then runs on to the end.
+  const float first = bodies.empty() ? 0.5f * kHex : std::max(along(bodies.front().feet) - 0.3f, 0.3f);
+  e.radius = std::max(first / (e.impact - e.start), 25.0f);
+  e.finish = e.start + (std::max(along(end), first) + 0.6f) / e.radius;
+  e.bodies = std::move(bodies);
+  e.seed = 0x5a10u + 7919u * ++serial_;
+  effects_.push_back(std::move(e));
+}
+
 bool LancerFx::active(float now) const {
   return std::any_of(effects_.begin(), effects_.end(), [&](const Effect& e) { return e.kind != Kind::Vigil && e.end() > now; });
 }
@@ -332,6 +349,7 @@ void LancerFx::build(float now, const Camera& camera, VfxFrame& frame, std::vect
       case Kind::Drag: buildDrag(e, now, camera, frame, lights); break;
       case Kind::VigilRise: buildVigilRise(e, now, camera, frame, lights); break;
       case Kind::Vigil: buildVigil(e, now, camera, frame, lights); break;
+      case Kind::Pierce: buildPierce(e, now, camera, frame, lights); break;
     }
   }
   // The particles of everything in play, one draw each: the dust first (it covers), the lit pieces, then the light.
@@ -977,6 +995,72 @@ void LancerFx::buildVigil(const Effect& e, float now, const Camera& camera, VfxF
   }
   streaks_.push_back(streak(pulled(point, eye, kPull), glm::vec3(0.0f), (0.16f + 0.05f * pulse) * k, env * 0.85f, kEmberCore, 2.0f));
   lights.push_back({point, {1.0f, 0.6f, 0.3f}, (2.6f + 0.8f * pulse) * env, 3.0f * k});
+}
+
+// --- Investida Perfurante ----------------------------------------------------------------------------------------------------
+
+void LancerFx::buildPierce(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) {
+  const Draw draw{frame};
+  const glm::vec3 eye = camera.position;
+  const float k = std::clamp(e.height / 2.0f, 0.7f, 1.4f);
+  const glm::vec3 side = glm::normalize(glm::cross(kUp, e.dir));
+  const float speed = e.radius;
+  const float reach = std::max(glm::dot(glm::vec3(e.to.x - e.from.x, 0.0f, e.to.z - e.from.z), e.dir), 0.3f) + 0.6f;
+  // A point `d` out along the line at the lancer's chest height, the ground's rise followed from his hex to the last.
+  auto axis = [&](float d) {
+    glm::vec3 p = e.from + e.dir * d;
+    p.y = glm::mix(e.from.y, e.to.y, std::clamp(d / reach, 0.0f, 1.0f)) + e.height * 0.5f;
+    return p;
+  };
+  const float run = now - e.start;
+  const float out = std::min(reach, speed * std::max(run, 0.0f));  // how far the point has gone
+  const glm::vec3 hand = axis(0.3f), head = axis(std::max(out, 0.3f));
+  const float gone = 1.0f - ease(e.finish, e.finish + 0.25f, now);
+  // --- The lance's sheet of steel light down the whole line, a white-hot spike along its axis, the glowing point. ---
+  thrustSheet(hand, axis(reach), side, 0.04f, 0.22f * k, 1.5f, kSteel, run, e.finish - e.start, eye, e.feet, frame);
+  if (gone > 0.0f && out > 0.35f) {
+    streaks_.push_back(streak(pulled((hand + head) * 0.5f, eye, kPull), head - hand, 0.05f * k, 0.9f * gone, kWhite, 2.6f));
+    if (now < e.finish) streaks_.push_back(streak(pulled(head, eye, kPull), glm::vec3(0.0f), 0.26f * k, 0.9f, kWhite, 2.2f));
+    lights.push_back({head, {0.85f, 0.9f, 1.0f}, 9.0f * gone, 3.0f * k});
+  }
+  // --- The air spiralling round the shaft behind the point. ---
+  constexpr int kTwists = 30;
+  for (int i = 0; i < kTwists; ++i) {
+    const uint32_t n = static_cast<uint32_t>(i) + 500u;
+    const float d = 0.3f + (reach - 0.3f) * (static_cast<float>(i) + 0.5f) / kTwists;
+    const float tau = now - (e.start + d / speed), life = 0.32f + 0.12f * hash01(e.seed, n, 1);
+    if (tau < 0.0f || tau > life) continue;
+    const float u = tau / life;
+    const float a = static_cast<float>(i) * 0.9f + tau * 9.0f;
+    const glm::vec3 p = axis(d) + (side * std::cos(a) + kUp * std::sin(a)) * ((0.16f + 0.45f * u) * k);
+    streaks_.push_back(streak(pulled(p, eye, kPull), e.dir * (0.2f * k * (1.0f - u)), 0.035f * k, 0.7f * (1.0f - u), (i & 1) ? kSteel : kWhite, 1.8f));
+  }
+  // --- Every body it runs through, in order as the point reaches it. ---
+  const glm::vec3 warm{1.0f, 0.55f, 0.18f};
+  for (size_t j = 0; j < e.bodies.size(); ++j) {
+    const Target& b = e.bodies[j];
+    const float d = glm::dot(glm::vec3(b.feet.x - e.from.x, 0.0f, b.feet.z - e.from.z), e.dir);
+    const float age = now - (e.start + std::max(d - 0.3f, 0.3f) / speed);
+    if (age < 0.0f) continue;
+    const float h = bodyHeight(b.height), kb = std::clamp(h / 2.0f, 0.7f, 1.4f);
+    const glm::vec3 contact = b.feet + kUp * (h * 0.5f) - e.dir * 0.1f;
+    if (age < 0.14f) {  // the puncture: a flash with a cross glint
+      const float f = 1.0f - ease(0.0f, 0.14f, age);
+      streaks_.push_back(streak(pulled(contact, eye, kPull), glm::vec3(0.0f), 0.55f * kb * (0.6f + 0.4f * f), f, kGold, 2.2f));
+      streaks_.push_back(streak(pulled(contact, eye, kPull), side * 1.0f * kb * f, 0.045f * kb, f, kWhite, 2.6f));
+      streaks_.push_back(streak(pulled(contact, eye, kPull), kUp * 0.9f * kb * f, 0.04f * kb, f, kWhite, 2.6f));
+    }
+    if (age < 0.35f) {  // a ring of pressure round the shaft, square to the line
+      const float r = (0.15f + 0.75f * easeOut(0.0f, 0.3f, age)) * kb;
+      const glm::mat4 m = glm::translate(glm::mat4(1.0f), pulled(contact, eye, kPull)) * alignY(e.dir) * glm::scale(glm::mat4(1.0f), {r, 1.0f, r});
+      draw(discFirst_, discCount_, m, kModeRing, age, 0.45f, 0.7f * (1.0f - ease(0.08f, 0.35f, age)), kSteel, 0.0f, glm::vec4(kWhite, 0.85f), b.feet,
+           VfxBlend::Additive);
+    }
+    sparks(e, contact + e.dir * 0.25f, e.dir * 0.9f + kUp * 0.2f, 14, 3.4f, kb, age, eye, 100u + 40u * static_cast<uint32_t>(j), warm);
+    if (age < 0.22f) lights.push_back({contact, {0.9f, 0.92f, 1.0f}, 11.0f * (1.0f - ease(0.0f, 0.22f, age)), 3.0f * kb});
+  }
+  // --- Dust kicked up where the line ends. ---
+  dustRing(e, e.to, k * 0.8f, 10, 0.9f, 0.0f, now - e.finish, eye, 400u);
 }
 
 }  // namespace ember

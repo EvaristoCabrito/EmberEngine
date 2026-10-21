@@ -76,15 +76,17 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
   // The card's facing (three.js: a plane turned by yaw faces (sin yaw, 0, cos yaw)), tilted upward.
   const float3 facing = float3(-right.z, 0.0, right.x);
   VSOut o;
-  float3 drawn = world;
+  o.position = mul(float4(world, 1.0), push.viewProjection);  // -Zpr: glm's column-major matrix reads as its transpose
   if ((s.flags & 4u) && push.frame != 0) {
-    // A unit wins against a prop card standing through its own hex: each vertex slides toward the camera
-    // along its own line of sight, landing on the same pixel with a nearer depth.
+    // A unit stands in front of everything behind its feet: the whole card takes the depth of its feet (the card's bottom
+    // middle) slid toward the camera along its line of sight, so a wall beside or behind it never cuts into the figure (the
+    // user, 2026-10-21: a character "melting with the walls"); only what stands nearer than its feet covers it. Each pixel
+    // stays where it was (the depth alone changes).
     const float3 eye = loadFrame(push.frame).cameraPosition;
-    const float3 d = world - eye;
-    drawn = eye + d * (1.0 - min(kUnitFront / max(length(d), 1e-3), 0.9));
+    const float3 d = s.origin - eye;
+    const float4 feet = mul(float4(eye + d * (1.0 - min(kUnitFront / max(length(d), 1e-3), 0.9)), 1.0), push.viewProjection);
+    o.position.z = feet.z / feet.w * o.position.w;
   }
-  o.position = mul(float4(drawn, 1.0), push.viewProjection);  // -Zpr: glm's column-major matrix reads as its transpose
   // A card standing on never-seen ground is not drawn: even black, its outline over lit ground would show (R7).
   if (push.frame != 0 && neverSeen(loadFrame(push.frame), s.origin)) o.position = float4(0, 0, -1, 1);
   const float u = (s.flags & 1u) ? 1.0 - c.x : c.x;

@@ -81,7 +81,8 @@ int SpellEffects::looks(const std::string& kind) {
       kind == "webOfDreams" || kind == "burningHands" || kind == "poisonBreath" || kind == "cleave" || kind == "sweep")
     return 1;
   if (kind == "longShot" || kind == "piercing") return 2;  // 01 the arrow card, 02 RangerFx's 3D arrow (the enemies')
-  static const char* kVersion01[] = {"lightning", "lightningTier3", "shock", "cureMinor", "piercingThrust", "doubleStrike"};
+  if (kind == "piercingThrust") return 2;  // 01 the flipbook burst, 02 ours in 3D (vfx/LancerFx: the thrust down the line)
+  static const char* kVersion01[] = {"lightning", "lightningTier3", "shock", "cureMinor", "doubleStrike"};
   for (const char* k : kVersion01)
     if (kind == k) return 1;
   // EmberEngine's own spells (SpellEffectsEmber.cpp): version 01, flipbook cards.
@@ -121,6 +122,7 @@ int SpellEffects::engine2Look(const std::string& kind) {
   if (kind == "webOfDreams") return 2;                               // ours in 3D (DreamWeb: shot, floor, net; 01 = WebOfDreamsVFX)
   if (kind == "burningHands" || kind == "poisonBreath") return 2;    // BurningHandsV2VFX, its cone opening outward (02)
   if (kind == "cleave") return 1;                                    // CleaveSweepVFX
+  if (kind == "piercingThrust") return 2;                            // ours in 3D (vfx/LancerFx; 01 = the flipbook burst)
   if (kind == "sweep") return 1;                                     // VarreduraVFX
   if (kind == "iceStorm") return 2;  // ours in 3D (Engine2's Blizzard2D, 01, is the enemies': content/fx/spell-looks.json)
   if (kind == "frost") return 2;     // Frost, ours in 3D (vfx/FrostLine; 01 = the cards, the enemies')
@@ -558,7 +560,14 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
   else if (kind == "cureMinor") cure(caster, targets, start, impact);
   else if (kind == "longShot") arrow(caster, targets, start, impact, false);
   else if (kind == "piercing") arrow(caster, targets, start, impact, true);
-  else if (kind == "piercingThrust" || kind == "doubleStrike") bladeSkill(caster, start, impact);
+  else if (kind == "piercingThrust" && look == 2) {
+    // Investida Perfurante 02 (the user, 2026-10-21: the old one "is not compatible with 3D"): the thrust down the whole line, a flash
+    // on every body it runs through (targets: the line's hexes; the bodies struck keep their card height).
+    std::vector<LancerFx::Target> bodies;
+    for (const Spot& s : targets)
+      if (s.cardHeight > 0.0f) bodies.push_back({s.feet, s.cardHeight});
+    lancer_.pierce(caster.feet, caster.cardHeight, targets.empty() ? caster.feet : targets.back().feet, std::move(bodies), std::max(start, impact - 0.1f), impact);
+  } else if (kind == "piercingThrust" || kind == "doubleStrike") bladeSkill(caster, start, impact);
   else if (emberCast(kind, caster, targets, start, impact)) return true;
   else return false;
   return true;

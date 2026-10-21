@@ -21,6 +21,11 @@
 //   Empalar e Arrastar  the thrust into the body; the lance stays in it and is drawn between the two as they run,
 //                       dust and sparks streaming behind the dragged body, dark scrapes left on the ground, a jolt at
 //                       the end;
+//   Investida Perfurante (02, 2026-10-21: the old one was a flipbook burst) the lance drives out from the hand down the whole
+//                       line: a sheet of steel light to the far end, a white-hot spike along its axis, the air spiralling
+//                       round it; on every body it runs through, in order, a puncture flash with a cross glint, a ring of
+//                       pressure round the shaft, sparks out of the far side; dust kicked up where the line ends;
+//                       a cold light running with the point;
 //   Vigília da Sentinela the stance rises (an ember ring out to the radius, a flash on the lance), then stands: a slow
 //                       ember pulse at the feet, motes rising, the lance point aglow, a warm light; the interrupt: a
 //                       white-hot thrust at the attacker with an ember burst.
@@ -74,13 +79,16 @@ class LancerFx {
   void vigilMove(int id, glm::vec3 feet);
   void vigilEnd(int id, float now);
   void vigilStrike(const Target& foe, glm::vec3 from, float impact);
+  // Investida Perfurante: the lancer at `from` (card `height`) thrusts down the line to `end` (the last hex's ground) from `start`;
+  // the point reaches the first of `bodies` at `impact`.
+  void pierce(glm::vec3 from, float height, glm::vec3 end, std::vector<Target> bodies, float start, float impact);
 
   bool active(float now) const;
   void clear() { effects_.clear(); }
   void build(float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
 
  private:
-  enum class Kind { Toss, TossFlight, Hook, HookPull, Vault, VaultBlow, Disarm, Disarmed, Swap, SwapBlow, Impale, Drag, VigilRise, Vigil, VigilStrike };
+  enum class Kind { Toss, TossFlight, Hook, HookPull, Vault, VaultBlow, Disarm, Disarmed, Swap, SwapBlow, Impale, Drag, VigilRise, Vigil, VigilStrike, Pierce };
   struct Effect {
     Kind kind;
     int id = 0;                        // Vigil: its handle
@@ -88,9 +96,10 @@ class LancerFx {
     glm::vec3 from{0.0f}, to2{0.0f};   // the lancer's feet / the second mover's end (Drag: the lancer's; Swap: b's)
     glm::vec3 dir{0.0f, 0.0f, 1.0f};   // from the striker toward the struck, on the ground
     float height = 1.8f, height2 = 1.8f;
-    float arc = 0.0f, radius = 0.0f;
+    float arc = 0.0f, radius = 0.0f;   // Pierce: radius = the point's speed, world units a second
     float start = 0.0f, impact = 0.0f, finish = 0.0f;  // finish: a flight's end; Vigil: when it was ended (-1 = on)
     bool collided = false;
+    std::vector<Target> bodies;        // Pierce: the bodies the lance runs through
     uint32_t seed = 0;
     float end() const;
   };
@@ -105,6 +114,7 @@ class LancerFx {
   void buildDrag(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   void buildVigilRise(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   void buildVigil(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
+  void buildPierce(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   // A sheet of light drawn from `a` to `b` (bowed sideways by `bow`) as the lance goes, `sweep` seconds to its head.
   void thrustSheet(glm::vec3 a, glm::vec3 b, glm::vec3 side, float bow, float width, float intensity, glm::vec3 colour, float age, float sweep, glm::vec3 eye,
                    glm::vec3 sight, VfxFrame& frame);

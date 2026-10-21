@@ -4785,7 +4785,7 @@ class MapStage final : public Stage {
           spots.push_back(spot);
         }
       } else if (s.kind == "circleOfHealing" || s.kind == "judgment" || s.kind == "boneLance" || s.kind == "detonateSummon" || s.kind == "nightmare" ||
-                 s.kind == "shoulderSmash" || s.kind == "stampede" || s.kind == "divineWrath" || s.kind == "spectralBolt") {
+                 s.kind == "shoulderSmash" || s.kind == "stampede" || s.kind == "divineWrath" || s.kind == "spectralBolt" || s.kind == "piercingThrust") {
         // the Curandeiro's and the Conjurador's areas: the hexes; only the units it reaches (`ids`, and the summon that blows up) keep their card height
         for (const e2::BattleHex& h : s.tiles) {
           SpellEffects::Spot spot = hexSpot(h);
