@@ -3043,6 +3043,19 @@
       "section": "Objetos",
       "blocks": false,
       "triangles": 32344
+    },
+    {
+      "id": "ember-treasure-iron-banded-chest",
+      "name": "Baú de ferro escurecido 3D · TripoSR",
+      "kit": "treasure",
+      "model": "ember-iron-banded-chest",
+      "file": "/game/ember/treasure/iron-banded-chest-v01.glb",
+      "height": 1.05,
+      "width": 1.649,
+      "footprint": "one",
+      "section": "Objetos",
+      "blocks": true,
+      "triangles": 43431
     }
   ]
 }

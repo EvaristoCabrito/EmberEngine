@@ -378,6 +378,11 @@ card's place; the editor lays them by a click on the waypoint with the Escada br
   32k tris) from the decor card `city-inn-tankard` (picked for its clean, grain-free art). Levelled by 26.8 deg. The back is the
   model's guess (the card shows one side). The baked atlas averages ~2/3 of the card's brightness. Pack `build/meshes/props-v5.pak`
   (= v4 + the tankard; JOGAR uses it first).
+- **Second:** `treasure/iron-banded-chest-v01` (id `ember-treasure-iron-banded-chest`, "Baú de ferro escurecido 3D · TripoSR",
+  1.05 tall, 43k tris, blocks) from `cave-basalt-006-chest`, levelled by 13.2 deg: the front (padlock, studs, wood) reads, the
+  knotwork bands came out plain, the edges soft, the back is the model's guess. Pack `build/meshes/props-v6.pak` (= v5 + this
+  chest; JOGAR uses it first). `chest-medium` was tried too (`treasure/hammered-iron-chest-v01`, not catalogued, not cooked:
+  the user, "não vai entrar no jogo").
 - **Source images:** never the grainy old decor PNGs or icons; a whole object, sharp, three-quarter view, clean alpha, no glow.
 
 ## The pack (props-v2.pak)
