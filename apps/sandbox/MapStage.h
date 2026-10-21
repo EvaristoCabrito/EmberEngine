@@ -2123,12 +2123,19 @@ class MapStage final : public Stage {
     // Decorations: Engine2's DecorLayer. Cards stand square to the hex rows (LOCK_PROPS) or along their own
     // turn (barricades); the art's opaque base sits on the anchor; Ember's layer step moves them along their facing.
     for (const e2::SceneCard& d : scene_->cards) {
-      if (d.onFloor) continue;  // waypoints lying on the floor: not drawn yet
       if (lockOpened(d.id, "chest", d.x, d.z)) continue;  // a chest opened with a Gazua is gone (Engine2 drops its decoration)
       const std::string name = std::filesystem::path(d.image).stem().string();
       const SpriteClipId clip = sprites_.find("decor", name);
       if (clip == kNoSpriteClip) {
         ++missing_;
+        continue;
+      }
+      // Waypoints lying on the floor (stairs, exits: every exit decoration): flat on the ground over their footprint, the art
+      // centred on it (the card's x, z = the footprint's middle), a hair above the floor, lit, no shadow. They were never drawn
+      // (the user, 2026-10-21: the watchtower's stairs and its exit at the door could not be seen).
+      if (d.onFloor) {
+        const float y = flat_ ? boardTop_ + d.z * kFlatRowStep - 0.5f * kFlatRowStep : groundOf(d.groundSmooth, d.groundHard) + 0.03f;
+        addCard(clip, {d.x, y, d.z}, {1.0f, 0.0f, 0.0f}, d.w, d.h, {0.0f, -0.5f * d.h, 0.0f}, d.mirror, 0, kSpriteLit | kSpriteFlat, nullptr);
         continue;
       }
       // Tática (Engine2 DecorLayer.face with flatTop): every card lies flat square to the screen, just over the highest
