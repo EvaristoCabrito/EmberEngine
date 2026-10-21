@@ -84,9 +84,9 @@ Nível a nível: 6: +0,05 peso do MAG, 7: +1 dado, 8: +0,05 peso do MAG, 9: +1 c
 
 ### Expulsar Mortos-Vivos
 
-Escala do nível 6 ao 20, uma melhoria pequena por nível: dano 4D6 → 9D6; área 3 hexes → 2 anéis; peso do MAG 1,6 → 2,3.
+Escala do nível 6 ao 20, uma melhoria pequena por nível: dano 4D6 → 9D6; área 3 hexes → 5 anéis; peso do MAG 1,6 → 2,3.
 
-Nível a nível: 7: +0,1 peso do MAG, 8: +1 dado, 9: +0,1 peso do MAG, 10: +1 anel, 11: +1 dado, 12: +0,1 peso do MAG, 13: +1 dado, 14: +0,1 peso do MAG, 15: +0,1 peso do MAG, 16: +1 dado, 17: +1 anel, 18: +0,1 peso do MAG, 19: +1 dado, 20: +0,1 peso do MAG.
+Nível a nível: 7: +1 anel, 8: +1 dado, 9: +0,175 peso do MAG, 10: +1 anel, 11: +1 dado, 12: +0,175 peso do MAG, 13: +1 anel, 14: +1 dado, 15: +0,175 peso do MAG, 16: +1 anel, 17: +1 dado, 18: +0,175 peso do MAG, 19: +1 anel, 20: +1 dado.
 
 ### Curar Doença
 
@@ -326,7 +326,7 @@ Nível a nível: 19: +0,05 peso do MAG, 20: +1 hex de alcance, 21: +1 anel, 22: 
 
 Escala do nível 19 ao 33, uma melhoria pequena por nível: dano 3D10 → 4D10; alcance 7 → 12; alcance do salto 3 → 4; saltos 3 → 5; peso do MAG 2,8 → 2,95; perda por salto 0,15 → 0,1.
 
-Nível a nível: 20: +1 hex de alcance, 21: +0,05 peso do MAG, 22: +1 saltos, 23: -0,03 perda por salto, 24: +1 hex de alcance, 25: +1 dado, 26: +1 hex de alcance, 27: +0,05 peso do MAG, 28: +1 alcance do salto, 29: +1 hex de alcance, 30: +1 saltos, 31: -0,03 perda por salto, 32: +0,05 peso do MAG, 33: +1 hex de alcance.
+Nível a nível: 20: +1 hex de alcance, 21: +0,05 peso do MAG, 22: +1 saltos, 23: -0,025 perda por salto, 24: +1 hex de alcance, 25: +1 dado, 26: +1 hex de alcance, 27: +0,05 peso do MAG, 28: +1 alcance do salto, 29: +1 hex de alcance, 30: +1 saltos, 31: -0,025 perda por salto, 32: +0,05 peso do MAG, 33: +1 hex de alcance.
 
 ### Erupção
 

@@ -34,7 +34,9 @@ S = {
     "bless": (3, dict(a=0, p=1, t=3), [("a", 1, 2), ("p", 1, 7), ("t", 1, 5)]),
     "cureWounds": (3, dict(r=3, d=2, f=6, m=1.6), [("r", 1, 2), ("d", 1, 3), ("m", 0.05, 9)]),
     "burningHands": (5, dict(l=1, d=1, f=4, m=1.05), [("l", 1, 2), ("d", 1, 3), ("f", 2, 2), ("m", 0.05, 7)]),
-    "turnUndead": (6, dict(a=0, d=4, f=6, m=1.6), [("a", 1, 2), ("d", 1, 5), ("m", 0.1, 7)]),
+    # the area 3 rings further (the user, 2026-10-21: "aumentar o radius de turn undead pelo menos 3 hexes a mais conforme escala"):
+    # raio 5 at the end; the weight on MAG reaches the same 2.3 in 4 steps
+    "turnUndead": (6, dict(a=0, d=4, f=6, m=1.6), [("a", 1, 5), ("d", 1, 5), ("m", 0.175, 4)]),
     "cureDisease": (6, dict(r=2), [("r", 1, 2)]),
     "divineBolt": (8, dict(r=6, a=0, d=2, f=4, m=1.4), [("r", 1, 6), ("a", 1, 2), ("d", 1, 3), ("m", 0.1, 3)]),
     "circleOfHealing": (None, dict(r=4, a=0, d=1, f=8, m=1.2), [("r", 1, 6), ("a", 1, 2), ("d", 1, 3), ("m", 0.1, 3)]),
@@ -257,7 +259,7 @@ DICE = [("d", "f", ("dano", "damage")), ("k", "K", ("dano por turno", "damage pe
 
 
 def num(v, pt):
-    s = f"{v:.2f}".rstrip("0").rstrip(".") if isinstance(v, float) else str(v)
+    s = f"{v:.3f}".rstrip("0").rstrip(".") if isinstance(v, float) else str(v)
     return s.replace(".", ",") if pt else s
 
 

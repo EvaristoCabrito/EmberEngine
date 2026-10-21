@@ -375,7 +375,7 @@ constexpr SpellTrack kSpellTracks[] = {
     {"bless", 3, "p1 t1 p1 a1 t1 p1 p1 t1 p1 t1 a1 p1 t1 p1"},
     {"cureWounds", 3, "m0.05 d1 m0.05 m0.05 r1 m0.05 d1 m0.05 m0.05 m0.05 r1 m0.05 d1 m0.05"},
     {"burningHands", 5, "m0.05 d1 m0.05 l1 f2 m0.05 d1 m0.05 m0.05 l1 f2 m0.05 d1 m0.05"},
-    {"turnUndead", 6, "m0.1 d1 m0.1 a1 d1 m0.1 d1 m0.1 m0.1 d1 a1 m0.1 d1 m0.1"},
+    {"turnUndead", 6, "a1 d1 m0.175 a1 d1 m0.175 a1 d1 m0.175 a1 d1 m0.175 a1 d1"},
     {"cureDisease", 6, "- - - r1 - - - - - - r1 - - -"},
     {"divineBolt", 8, "r1 d1 m0.1 r1 a1 r1 d1 m0.1 r1 a1 r1 d1 m0.1 r1"},
     {"circleOfHealing", 9, "r1 d1 m0.1 r1 a1 r1 d1 m0.1 r1 a1 r1 d1 m0.1 r1"},

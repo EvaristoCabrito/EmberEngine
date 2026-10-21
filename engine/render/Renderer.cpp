@@ -2052,6 +2052,20 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       vkCmdDraw(cmd, w.count, 1, 0, 0);
       gpuTimer_.end(cmd, scope);
     }
+    // Effects lying on the ground under the characters (Expulsar Mortos-Vivos' sigil): with the ground, before the cards.
+    {
+      VkPipeline bound = VK_NULL_HANDLE;
+      for (uint32_t i = 0; i < vfxDraws_.size(); ++i) {
+        const VfxDraw& d = vfxDraws_[i];
+        if (!d.underCards) continue;
+        const VkPipeline pipeline = vfxPipelines_[d.depthTest ? 1 : 0];
+        if (pipeline != bound) vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, bound = pipeline);
+        const VfxPush push{bufferAddress(context_, frame.vfxVertices), bufferAddress(context_, frame.vfxInstances), bufferAddress(context_, frame.vfxDraws),
+                           bufferAddress(context_, frame.meshFrame), i, effectBrightness_, spriteSamplerIndex_, 0};
+        vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+        vkCmdDraw(cmd, d.gpu.vertexCount, d.gpu.firstInstance == 0xFFFFFFFFu ? 1u : d.instances, 0, 0);
+      }
+    }
     if (!sprites_.empty()) {
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spritePipeline_);
       const SpritePush spritePush{viewProjection, camera_.right, spriteSamplerIndex_, bufferAddress(context_, frame.sprites),
@@ -2116,6 +2130,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     VkPipeline bound = VK_NULL_HANDLE;
     for (uint32_t i = 0; i < vfxDraws_.size(); ++i) {
       const VfxDraw& d = vfxDraws_[i];
+      if (d.underCards) continue;  // drawn with the ground
       const VkPipeline pipeline = vfxPipelines_[d.depthTest ? 1 : 0];
       if (pipeline != bound) vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, bound = pipeline);
       const VfxPush push{bufferAddress(context_, frame.vfxVertices), bufferAddress(context_, frame.vfxInstances), bufferAddress(context_, frame.vfxDraws),

@@ -2617,7 +2617,7 @@ class MapStage final : public Stage {
                          u.classId == "familiar3" || u.classId == "familiar4";
       if (glows) {
         glow.emitColor = {0.55f, 0.62f, 1.0f};
-        glow.emitLevel = 0.85f * (lightingMode_ == 3 ? flameGlow() / std::max(exposure_, 1e-9f) : 1.0f);
+        glow.emitLevel = 0.85f * (lightingMode_ == 3 ? flameGlow(0.15f) / std::max(exposure_, 1e-9f) : 1.0f);
       }
       addCard(clip, anchor, right, boxW, boxH, {-drift, -foot, 0.0f}, mirror, frame, flags, glows ? &glow : nullptr);
       if (glows && drawList_.size() > cardsBefore) drawList_.back().emitAt.z = -1.0f;
@@ -3022,10 +3022,13 @@ class MapStage final : public Stage {
   static float nightDarkening(float ev100) {
     return 2.0f * std::clamp((14.0f - ev100) / 4.0f, 0.0f, 1.0f) + kNightStops * std::clamp((10.0f - ev100) / 12.5f, 0.0f, 1.3f);
   }
-  // The painted flames' glow on screen: faint in daylight, full at night (from the camera's EV).
-  float flameGlow() const {
+  // The painted flames' glow on screen: full at night, still burning by day (from the camera's EV). A flame shines about as
+  // bright as sunlit white, so it glows against anything in shade (the user, 2026-10-21: "velas e braziers devem continuar
+  // emitindo luz porque são chamas, mesmo durante o dia": at 0.15 by day they went dull as soon as a cloud passed).
+  // `byDay` = the share left in full daylight (the glowing units keep their old 0.15).
+  float flameGlow(float byDay = 0.6f) const {
     if (std::isnan(adaptedEv_)) return 1.0f;
-    return glm::mix(0.15f, 1.0f, std::clamp((12.0f - adaptedEv_) / 12.0f, 0.0f, 1.0f));
+    return glm::mix(byDay, 1.0f, std::clamp((12.0f - adaptedEv_) / 12.0f, 0.0f, 1.0f));
   }
 
   // Where the party stands (the swirl turns round it): the middle of the living player units.

@@ -81,6 +81,7 @@ struct VfxDraw {
   uint32_t instances = 1;
   VfxBlend blend = VfxBlend::Additive;
   bool depthTest = true;
+  bool underCards = false;  // lies on the ground under the characters: drawn with the ground, before the cards (a sigil on the floor)
 };
 
 // One frame's effect geometry and draws.

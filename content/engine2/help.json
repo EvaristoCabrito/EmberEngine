@@ -7141,14 +7141,14 @@
         [
          [
           {
-           "text": "Nv6: dano 4D6 · 3 hexes · ×1,6 | Nv13: dano 7D6 · raio 1 · ×1,9 | Nv20: dano 9D6 · raio 2 · ×2,3"
+           "text": "Nv6: dano 4D6 · 3 hexes · ×1,6 | Nv13: dano 6D6 · raio 3 · ×1,95 | Nv20: dano 9D6 · raio 5 · ×2,3"
           }
          ]
         ],
         [
          [
           {
-           "text": "Luz sagrada em volta do sacerdote: só os mortos-vivos na área levam dano, e os que sobrevivem fogem com medo por 2 turnos. Escala do nível 6 ao 20, uma melhoria pequena por nível: dano 4D6 → 9D6; área 3 hexes → 2 anéis; peso do MAG 1,6 → 2,3.",
+           "text": "Luz sagrada em volta do sacerdote: só os mortos-vivos na área levam dano, e os que sobrevivem fogem com medo por 2 turnos. Escala do nível 6 ao 20, uma melhoria pequena por nível: dano 4D6 → 9D6; área 3 hexes → 5 anéis; peso do MAG 1,6 → 2,3.",
            "muted": true
           }
          ]
@@ -15951,14 +15951,14 @@
         [
          [
           {
-           "text": "Lv6: damage 4D6 · 3 hexes · ×1.6 | Lv13: damage 7D6 · radius 1 · ×1.9 | Lv20: damage 9D6 · radius 2 · ×2.3"
+           "text": "Lv6: damage 4D6 · 3 hexes · ×1.6 | Lv13: damage 6D6 · radius 3 · ×1.95 | Lv20: damage 9D6 · radius 5 · ×2.3"
           }
          ]
         ],
         [
          [
           {
-           "text": "Holy light around the priest: only the undead in the area take damage, and the ones left standing flee in fear for 2 turns. Scales from level 6 to 20, one small improvement a level: damage 4D6 → 9D6; area 3 hexes → 2 rings; MAG weight 1.6 → 2.3.",
+           "text": "Holy light around the priest: only the undead in the area take damage, and the ones left standing flee in fear for 2 turns. Scales from level 6 to 20, one small improvement a level: damage 4D6 → 9D6; area 3 hexes → 5 rings; MAG weight 1.6 → 2.3.",
            "muted": true
           }
          ]

@@ -20,6 +20,7 @@ constexpr float kHex = 1.7320508f;                 // the distance between neigh
 constexpr float kModeStreak = 0.0f, kModePuff = 1.0f, kModeEnergy = 2.0f, kModeRing = 3.0f;  // Combat material
 constexpr float kHolyShaft = 0.0f, kHolyPool = 1.0f, kHolyMote = 2.0f, kHolyLine = 4.0f;     // Holy material
 constexpr float kSpread = 0.5f;  // the wave takes this long from the caster to the edge of the area
+constexpr float kSigilMax = 2.0f * kHex + 1.0f;  // the sigil's largest radius: the area at raio 2 (SpellEffects adds a unit past the last hex)
 
 constexpr glm::vec3 kGold{1.0f, 0.82f, 0.48f}, kCore{1.0f, 0.97f, 0.88f}, kPale{1.0f, 0.93f, 0.7f};
 constexpr glm::vec3 kAsh{0.2f, 0.18f, 0.16f};
@@ -272,15 +273,20 @@ void TurnUndead::buildOne(const Effect& e, float now, const Camera& camera, VfxF
     const float flare = age >= 0.0f ? 1.0f + 1.2f * (1.0f - ease(0.0f, 0.5f, age)) : 1.0f + 0.4f * gather;
     const float opacity = appear * fade;
     if (opacity > 0.002f) {
-      const float rad = R * (0.4f + 0.6f * easeOut(begin, begin + 0.7f, now));
-      const glm::vec3 at = pulled(e.feet + kUp * 0.05f, eye, kGroundPull);
-      const glm::mat4 base = glm::translate(glm::mat4(1.0f), at);
+      // Lying on the floor under the characters (the user, 2026-10-21: "que ele ficasse no plano do chão, abaixo da camada dos
+      // sprites"): not pulled toward the eye, drawn with the ground before the cards. Its size stays the one it had at the old
+      // largest area (raio 2) when the area grows further: the wave, the rays and the light carry the reach.
+      const float rad = std::min(R, kSigilMax) * (0.4f + 0.6f * easeOut(begin, begin + 0.7f, now));
+      const glm::mat4 base = glm::translate(glm::mat4(1.0f), e.feet + kUp * 0.05f);
       holy(sigilFirst_, sigilCount_, base * glm::rotate(glm::mat4(1.0f), t * 0.22f, kUp) * glm::scale(glm::mat4(1.0f), glm::vec3(rad)), kHolyLine, t, 0.8f * flare,
            opacity, kGold, kCore, 0.0f, e.feet);
+      frame.draws.back().underCards = true;
       holy(starFirst_, starCount_, base * glm::rotate(glm::mat4(1.0f), -t * 0.55f, kUp) * glm::scale(glm::mat4(1.0f), glm::vec3(rad)), kHolyLine, t, 0.85f * flare,
            opacity, kPale, kCore, 0.0f, e.feet);
+      frame.draws.back().underCards = true;
       const float ring = age >= 0.0f ? 0.3f + 0.7f * easeOut(0.0f, 0.5f, age) : 0.3f;
       holy(discFirst_, discCount_, base * glm::scale(glm::mat4(1.0f), {rad, 1.0f, rad}), kHolyPool, t, 0.42f * flare, 0.7f * opacity, kGold, kCore, ring, e.feet);
+      frame.draws.back().underCards = true;
     }
   }
 
