@@ -1,5 +1,9 @@
 # As magias do Conjurador: uma a cada dois níveis do 3 ao 15, mais Marcar Runa e Retornar
 
+2026-10-20, the user: "deixar a magia Lança de Ossos como T6 para necromancer, e adaptar para algo mais forte e mais único. enquanto no
+lugar e tier da Lança de Ossos teremos Reflexo Arcano"; the duration 2 to 6 turns, at most 90 % reflected and 50 % absorbed, the excess
+taken until the talent opens. Every number scales on its track (docs/SPELLS_SCALING.md); the table below gives the learning level's.
+
 EmberEngine's own spells (2026-10-20; the user: "do the same process for these Conjurer spells", the list pasted, Detonar
 Invocação in Drenar Vida's place: "o Malrec explode uma das próprias invocações. Todos a até 1 hex dela levam MAG/2×1.8+2D8, e
 a invocação some"). Malrec (`conjurer`; the Arcanista and the Necromante are his promotions, `emberClassFamily` → `conjurer`) had
@@ -26,11 +30,12 @@ reach of the aimed ones grows with the level like every other mage's (`reachGrow
 | Nível · tier | Magia (kind) | Alvo | Efeito | Escala |
 |---|---|---|---|---|
 | 3 · T1 | Troca de Lugar (`placeSwap`) | aliado ou invocação a até 6 (um hex cada) | os dois trocam de lugar; nada mais | alcance cresce com o nível |
-| 5 · T2 | Lança de Osso (`boneLance`) | reta de 3 hexes a partir de si, qualquer ângulo | arcano, MAG/2 × 1.3 + 1D8 em todos na reta (os dois lados) | 4 hexes no 12, 2D8 no 15, ×1.5 no 19, 5 hexes no 23, 3D8 no 27, ×1.7 no 28 |
+| 5 · T2 | Reflexo Arcano (`arcaneReflection`) | ele mesmo (instantânea) | por 2 turnos dele, a primeira magia inimiga que o atingir volta 40 % para quem a lançou (sem resistência: é a magia dela) e a guarda acaba; o resto ele recebe. Talento Absorção (nível 8): do que não volta, 10 % vira cura em vez de ferir | a trilha (docs/SPELLS_SCALING.md): reflexo até 90 %, duração até 6 turnos, absorção até 50 % |
 | 7 · T2 | Imagem Espelhada (`mirrorImage`) | aliado a até 6 (ele mesmo também) | 2 cópias ilusórias por 3 rodadas; cada ataque inimigo (golpe ou magia) tem 1 chance em 3 de acertar uma cópia, que some ("Ilusão") | 3 cópias no 16, 4 rodadas no 21, 4 cópias no 27 |
 | 9 · T3 | Detonar Invocação (`detonateSummon`) | uma invocação sua a até 6 | ela explode e some; todos a até 1 hex dela (os dois lados) levam MAG/2 × 1.8 + 2D8 arcano | 3D8 no 17, ×2.1 no 20, raio 2 no 24, 4D8 no 26, ×2.4 no 28 |
 | 11 · T3 | Elo de Sacrifício (`sacrificeBond`) | ele mesmo (instantânea) | até o fim da batalha, o dano de cada golpe ou magia que o Malrec recebe vai para a invocação dele mais próxima; sem invocação de pé, ele recebe | a invocação recebe 75 % no 19 e 50 % no 27 (o resto some) |
 | 13 · T4 | Pesadelo (`nightmare`) | hex a até 6, raio 2, sem linha de tiro | arcano, MAG/2 × 1.5 + 2D8 em cada inimigo; quem dorme pela Teia dos Sonhos leva o dobro; cada atingido de pé tem 25 % de chance de ficar com medo por 1 turno | 3D8 no 18, 35 % no 21, ×1.8 no 24, raio 3 no 25, medo 2 turnos no 27, 4D8 no 30 |
+| 15 · T6 Necromante | Lança de Ossos (`boneLance`) | reta de 4 hexes a partir de si, qualquer ângulo | Escuridão, MAG/2 × 1.8 + 2D8 em cada inimigo na reta (só inimigos); cada um fica Empalado (não anda) por 1 turno. Talento Estilhaços (nível 20): os outros vizinhos da ponta levam 50 % | a trilha: até 6 hexes, 4D12, ×2.2, 2 turnos empalado, estilhaços até 70 % |
 | 15 · T4 | Fortalecer Invocações (`empowerSummons`) | ele mesmo (instantânea; precisa de invocação em campo) | todas as invocações dele: +25 % em todos os atributos (ATK, MAG, DEF, DEX, MOV) por 3 rodadas; os valores inteiros voltam ao fim | +30 % no 20, 4 rodadas no 24, +40 % no 28 |
 | campo · 5 · T2 | Marcar Runa (`markRune`) | o hex onde o grupo está | uma runa (lugar mais próximo, região, hex, dia, nota) como item da mochila do grupo: um slot; quantas quiser, enquanto houver slot; nunca duas do mesmo hex | — |
 | campo · 7 · T3 | Retornar (`recall`) | uma runa marcada | o grupo vai direto para o hex da runa; a runa fica; gasta um uso do T3 | — |

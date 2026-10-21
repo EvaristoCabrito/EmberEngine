@@ -172,11 +172,11 @@ Escala do nível 3 ao 17, uma melhoria pequena por nível: alcance 6 → 10.
 
 Nível a nível: 5: +1 hex de alcance, 9: +1 hex de alcance, 12: +1 hex de alcance, 16: +1 hex de alcance.
 
-### Lança de Osso
+### Reflexo Arcano
 
-Escala do nível 5 ao 19, uma melhoria pequena por nível: dano 1D8 → 4D12; comprimento 3 → 7; peso do MAG 1,3 → 1,8.
+Escala do nível 5 ao 19, uma melhoria pequena por nível: devolvido % 40 → 90; turnos 2 → 6; cura % 10 → 50; talento Absorção (do dano que não volta, uma parte vira cura em vez de ferir, de 10% a 50%).
 
-Nível a nível: 6: +0,1 peso do MAG, 7: +1 comprimento, 8: +1 dado, 9: dado maior, 10: +0,1 peso do MAG, 11: +1 comprimento, 12: +1 dado, 13: +0,1 peso do MAG, 14: +1 comprimento, 15: +0,1 peso do MAG, 16: dado maior, 17: +1 dado, 18: +1 comprimento, 19: +0,1 peso do MAG.
+Nível a nível: 6: +10 devolvido %, 7: +1 turnos, 8: talento Absorção, 9: +10 devolvido %, 10: +1 turnos, 11: +10 cura %, 12: +10 devolvido %, 13: +10 cura %, 14: +1 turnos, 15: +10 cura %, 16: +10 devolvido %, 17: +1 turnos, 18: +10 cura %, 19: +10 devolvido %.
 
 ### Familiar Radiante
 
@@ -225,6 +225,12 @@ Nível a nível: 17: +1 hex de alcance, 19: +1 hex de alcance, 21: +1 hex de alc
 Escala do nível 15 ao 29, uma melhoria pequena por nível: atributos % 25 → 37; rodadas 3 → 5.
 
 Nível a nível: 16: +1 atributos %, 17: +1 atributos %, 18: +1 atributos %, 19: +1 rodadas, 20: +1 atributos %, 21: +1 atributos %, 22: +1 atributos %, 23: +1 atributos %, 24: +1 atributos %, 25: +1 atributos %, 26: +1 rodadas, 27: +1 atributos %, 28: +1 atributos %, 29: +1 atributos %.
+
+### Lança de Ossos (Necromante, T6)
+
+Escala do nível 15 ao 29, uma melhoria pequena por nível: dano 2D8 → 4D12; comprimento 4 → 6; peso do MAG 1,8 → 2,2; estilhaços % 50 → 70; turnos empalado 1 → 2; talento Estilhaços (os ossos explodem na ponta da reta: os outros vizinhos dela levam de 50% a 70% do dano).
+
+Nível a nível: 16: +0,1 peso do MAG, 17: +1 comprimento, 18: +1 dado, 19: dado maior, 20: talento Estilhaços, 21: +0,1 peso do MAG, 22: +1 turnos empalado, 23: +10 estilhaços %, 24: +0,1 peso do MAG, 25: +1 comprimento, 26: +1 dado, 27: dado maior, 28: +10 estilhaços %, 29: +0,1 peso do MAG.
 
 ### Marca da Ruína
 

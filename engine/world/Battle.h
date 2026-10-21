@@ -201,9 +201,12 @@ struct BattleUnit {
     int mirrorCopies = 0, mirrorRounds = 0;
     int bondPct = 0;
     int empowerPct = 0, empowerRounds = 0;
+    // Reflexo Arcano: the first hostile spell to reach the unit while reflectTurns > 0 (its own turns, counted as each begins) goes
+    // back to its caster by reflectPct %; reflectHealPct % of it heals the unit (the talent); then the ward is spent
+    int reflectTurns = 0, reflectPct = 0, reflectHealPct = 0;
     bool any() const {
       return markTurns > 0 || plagueSpread > 0 || plagueBurst || bleedTurns > 0 || silenceTurns > 0 || decayTurns > 0 || sunderPct > 0 || rallyPct > 0 ||
-             hobblePct > 0 || disarmPct > 0 || staggered || vigilPct > 0 || mirrorCopies > 0 || bondPct > 0 || empowerPct > 0;
+             hobblePct > 0 || disarmPct > 0 || staggered || vigilPct > 0 || mirrorCopies > 0 || bondPct > 0 || empowerPct > 0 || reflectTurns > 0;
     }
   } cond;
   std::optional<int> hobbleBase;       // its MOV before Tiro Paralisante (given back when it lifts)

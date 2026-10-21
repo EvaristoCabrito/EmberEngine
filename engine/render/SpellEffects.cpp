@@ -101,7 +101,7 @@ int SpellEffects::looks(const std::string& kind) {
                                  // the ones that had none (vfx/ArmsFx, the two new arrows of vfx/RangerFx; ours, 3D, 2026-10-20)
                                  "provoke", "shieldBash", "bullRush", "executionerStrike", "trip", "shoulderSmash", "stampede", "divineWrath",
                                  "auraOfProtection", "intimidatingPresence", "bloodyShot", "multiShot", "summonFamiliar", "summonFamiliar2",
-                                 "summonFamiliar3", "summonFamiliar4", "summonZombieDog"};
+                                 "summonFamiliar3", "summonFamiliar4", "summonZombieDog", "arcaneReflection"};
   for (const char* k : kEmber)
     if (kind == k) return 1;
   return 0;
@@ -317,6 +317,10 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     for (const Spot& s : targets)
       if (s.cardHeight > 0.0f) bodies.push_back(armsTarget(s));
     arms_.aura(kind == "auraOfProtection", caster.feet, caster.cardHeight, radius + 0.9f, bodies, impact);
+    return true;
+  }
+  if (kind == "arcaneReflection") {  // the ward on the caster (its bounce comes from the stage: reflectHit)
+    arms_.reflectWard(caster.feet, caster.cardHeight, impact);
     return true;
   }
   if (kind.rfind("summon", 0) == 0) {

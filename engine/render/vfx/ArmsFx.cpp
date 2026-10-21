@@ -195,6 +195,8 @@ float ArmsFx::Effect::end() const {
     case Kind::DivineWrath: return impact + 0.06f * static_cast<float>(hexes.size()) + 1.4f;
     case Kind::Aura: return impact + 2.2f;
     case Kind::Summon: return impact + 1.0f;
+    case Kind::ReflectWard: return impact + 1.9f;
+    case Kind::ReflectHit: return impact + 0.9f;
   }
   return impact + 1.0f;
 }
@@ -282,6 +284,21 @@ void ArmsFx::summon(Summon style, glm::vec3 at, float impact) {
   effects_.push_back(std::move(e));
 }
 
+void ArmsFx::reflectWard(glm::vec3 feet, float height, float impact) {
+  Effect e;
+  e.kind = Kind::ReflectWard, e.feet = feet, e.height = bodyHeight(height), e.impact = impact, e.start = impact - 0.35f;
+  e.seed = 0x7ef1u + 7919u * ++serial_;
+  effects_.push_back(std::move(e));
+}
+void ArmsFx::reflectHit(glm::vec3 from, float fromHeight, glm::vec3 to, float toHeight, float start, float impact) {
+  Effect e;
+  e.kind = Kind::ReflectHit, e.from = from, e.radius = bodyHeight(fromHeight), e.feet = to, e.height = bodyHeight(toHeight);
+  e.start = start, e.impact = std::max(impact, start + 0.12f);
+  e.dir = flatDir(to - from, glm::vec3(0.0f, 0.0f, 1.0f));
+  e.seed = 0x3ef9u + 7919u * ++serial_;
+  effects_.push_back(std::move(e));
+}
+
 bool ArmsFx::active(float now) const {
   return std::any_of(effects_.begin(), effects_.end(), [&](const Effect& e) { return e.end() > now; });
 }
@@ -310,6 +327,8 @@ void ArmsFx::build(float now, const Camera& camera, VfxFrame& frame, std::vector
       case Kind::DivineWrath: buildDivineWrath(e, now, camera, frame, lights); break;
       case Kind::Aura: buildAura(e, now, camera, frame, lights); break;
       case Kind::Summon: buildSummon(e, now, camera, frame, lights); break;
+      case Kind::ReflectWard: buildReflectWard(e, now, camera, frame, lights); break;
+      case Kind::ReflectHit: buildReflectHit(e, now, camera, frame, lights); break;
     }
   }
   // The particles of everything in play, one draw each: the dust first (it covers), the thrown pieces, then the light.
@@ -1014,6 +1033,127 @@ void ArmsFx::buildSummon(const Effect& e, float now, const Camera& camera, VfxFr
          VfxBlend::Additive);
   }
   if (age < 0.5f) lights.push_back({e.feet + kUp * 0.8f, pal.light, 14.0f * (1.0f - ease(0.0f, 0.5f, age)), 3.2f * big});
+}
+
+// --- Reflexo Arcano (the user's icon: golden rune rings in violet flame) -------------------------------------------------------
+
+namespace {
+constexpr glm::vec3 kRuneGold{1.0f, 0.74f, 0.26f}, kRuneCore{1.0f, 0.95f, 0.72f}, kFlameViolet{0.58f, 0.3f, 1.0f}, kFlameCore{0.85f, 0.7f, 1.0f};
+}  // namespace
+
+void ArmsFx::buildReflectWard(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) {
+  const Draw draw{frame};
+  const glm::vec3 eye = camera.position;
+  const float k = scaleOf(e.height);
+  const float t = now - e.start, age = now - e.impact;
+  const glm::vec3 heart = e.feet + kUp * (e.height * 0.55f);
+  const glm::vec3 at = pulled(heart, eye, kPull * 0.6f);
+  const glm::vec3 toEye = flatDir(eye - e.feet, glm::vec3(0.0f, 0.0f, 1.0f));
+  const glm::vec3 side = glm::normalize(glm::cross(kUp, toEye));
+  // in over the lead, held, then dissipating from 0.75 s after the impact
+  const float form = easeOut(0.0f, 0.45f, t), gone = ease(0.75f, 1.6f, age);
+  const float env = form * (1.0f - gone);
+  if (env > 0.0f) {
+    // --- Two golden rune rings crossing like an eight (tilted either way about the axis toward the eye), turning against each other. ---
+    const float r = e.height * 0.42f * (0.6f + 0.4f * form) * (1.0f + 0.25f * gone);
+    for (int ring = 0; ring < 2; ++ring) {
+      const float tilt = glm::radians(ring == 0 ? 62.0f : -62.0f);
+      const glm::mat4 m = glm::translate(glm::mat4(1.0f), at + kUp * ((ring == 0 ? 0.22f : -0.22f) * e.height)) * glm::rotate(glm::mat4(1.0f), tilt, toEye) *
+                          glm::rotate(glm::mat4(1.0f), (ring == 0 ? 1.0f : -1.0f) * t * 2.4f, kUp) * glm::scale(glm::mat4(1.0f), glm::vec3(r));
+      draw(runeFirst_, runeCount_, m, kModeTrail, t, 2.2f, 0.95f * env, kRuneGold, 0.0f, glm::vec4(kRuneCore, 0.0f), e.feet, VfxBlend::Additive);
+    }
+    // --- The violet shell holding them, its rim only (a wave in the air), swelling and thinning as it dissipates. ---
+    const float rs = e.height * 0.62f * (0.7f + 0.3f * form) * (1.0f + 0.4f * gone);
+    const glm::mat4 shell = glm::translate(glm::mat4(1.0f), heart) * glm::scale(glm::mat4(1.0f), {rs * 0.8f, rs, rs * 0.8f});
+    draw(sphereFirst_, sphereCount_, shell, kModeEnergy, t, 0.8f, 0.55f * env, kFlameViolet, 0.0f, glm::vec4(kFlameCore, 0.0f), e.feet, VfxBlend::Additive);
+    lights.push_back({heart, {1.0f, 0.78f, 0.5f}, 8.0f * env, 3.0f * k});
+  }
+  // --- Violet flames licking up round him while it stands. ---
+  for (int i = 0; i < 34; ++i) {
+    const uint32_t n = static_cast<uint32_t>(i) + 900u;
+    const float born = hash01(e.seed, n, 1) * 1.2f;
+    const float tau = t - born, life = 0.45f + 0.3f * hash01(e.seed, n, 2);
+    if (tau < 0.0f || tau > life) continue;
+    const float u = tau / life;
+    const float ang = hash01(e.seed, n, 3) * kTau + u * 1.4f;
+    const float rr = (0.35f + 0.25f * hash01(e.seed, n, 4)) * e.height * 0.5f;
+    const glm::vec3 p = e.feet + glm::vec3(std::cos(ang) * rr, (0.1f + 1.0f * u) * e.height * 0.9f, std::sin(ang) * rr);
+    const float alpha = std::sin(kPi * u) * (1.0f - gone);
+    streaks_.push_back(streak(pulled(p, eye, kPull * 0.6f), kUp * (0.18f * k), (0.06f + 0.05f * (1.0f - u)) * k, alpha, glm::mix(kFlameCore, kFlameViolet, u), 2.2f));
+  }
+  // --- The golden star at his heart as the ward closes (a flash and its cross glint), a gold light. ---
+  flash(heart, side * 0.9f * k, 0.8f * k, kRuneCore, age, 0.3f, eye, kPull);
+  if (age >= 0.0f && age < 0.3f) {
+    const float f = 1.0f - ease(0.0f, 0.3f, age);
+    streaks_.push_back(streak(at, kUp * 0.9f * k * f, 0.04f * k, f, kRuneCore, 2.6f));
+    lights.push_back({heart, {1.0f, 0.82f, 0.55f}, 10.0f * f, 3.2f * k});
+  }
+  // --- Golden motes flying off as it dissipates. ---
+  for (int i = 0; i < 26; ++i) {
+    const uint32_t n = static_cast<uint32_t>(i) + 1000u;
+    const float tau = age - 0.75f - hash01(e.seed, n, 1) * 0.3f, life = 0.6f + 0.3f * hash01(e.seed, n, 2);
+    if (tau < 0.0f || tau > life) continue;
+    const float u = tau / life;
+    const glm::vec3 d = sphereDir(hash01(e.seed, n, 3), hash01(e.seed, n, 4));
+    const glm::vec3 p = heart + d * (e.height * 0.55f + 1.2f * easeOut(0.0f, 1.0f, u) * k) + kUp * (0.3f * u);
+    streaks_.push_back(streak(pulled(p, eye, kPull * 0.6f), glm::vec3(0.0f), 0.045f * k, (1.0f - u) * 0.9f, kRuneCore, 2.2f));
+  }
+}
+
+void ArmsFx::buildReflectHit(const Effect& e, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) {
+  const Draw draw{frame};
+  const glm::vec3 eye = camera.position;
+  const float k = scaleOf(e.height), kf = scaleOf(e.radius);
+  const glm::vec3 a = e.from + kUp * (e.radius * 0.55f), b = e.feet + kUp * (e.height * 0.5f);
+  const glm::vec3 side = glm::normalize(glm::cross(kUp, e.dir));
+  const float t = now - e.start, flight = e.impact - e.start;
+  // --- On the warded one: a golden rune ring flashes as the spell turns back. ---
+  if (t < 0.4f) {
+    const float f = 1.0f - ease(0.0f, 0.4f, t);
+    const float r = e.radius * (0.3f + 0.25f * easeOut(0.0f, 0.3f, t));
+    const glm::mat4 m = glm::translate(glm::mat4(1.0f), pulled(a, eye, kPull)) * glm::rotate(glm::mat4(1.0f), glm::radians(80.0f), side) *
+                        glm::rotate(glm::mat4(1.0f), t * 4.0f, kUp) * glm::scale(glm::mat4(1.0f), glm::vec3(r));
+    draw(runeFirst_, runeCount_, m, kModeTrail, t, 2.4f, 0.95f * f, kRuneGold, 0.0f, glm::vec4(kRuneCore, 0.0f), e.from, VfxBlend::Additive);
+    flash(a, glm::vec3(0.0f), 0.6f * kf, kRuneCore, t, 0.2f, eye, kPull);
+  }
+  // --- The streak back to its caster: a golden core in a violet sheath, drawn in as it flies. ---
+  if (now < e.impact + 0.1f) {
+    const float head = std::clamp(t / std::max(flight, 1e-3f), 0.0f, 1.0f), tail = std::clamp((t - 0.15f) / std::max(flight, 1e-3f), 0.0f, 1.0f);
+    if (head > tail + 0.02f) {
+      const float lift = 0.12f * glm::length(b - a);
+      three::CatmullRom path;
+      for (int j = 0; j <= 10; ++j) {
+        const float s = tail + (head - tail) * static_cast<float>(j) / 10.0f;
+        path.points.push_back(pulled(glm::mix(a, b, s) + kUp * (lift * 4.0f * s * (1.0f - s)), eye, kPull * 0.7f));
+      }
+      const std::vector<VfxVertex> sheath = vfxgeo::tube(path, 18, 0.09f * k, 8), core = vfxgeo::tube(path, 18, 0.035f * k, 6);
+      draw(frame.addVertices(sheath), static_cast<uint32_t>(sheath.size()), glm::mat4(1.0f), kModeTrail, t, 1.4f, 0.75f, kFlameViolet, 0.0f, glm::vec4(kFlameCore, 0.0f),
+           e.feet, VfxBlend::Additive);
+      draw(frame.addVertices(core), static_cast<uint32_t>(core.size()), glm::mat4(1.0f), kModeTrail, t, 2.4f, 0.95f, kRuneGold, 0.0f, glm::vec4(kRuneCore, 0.0f), e.feet,
+           VfxBlend::Additive);
+      const glm::vec3 tip = glm::mix(a, b, head) + kUp * (lift * 4.0f * head * (1.0f - head));
+      streaks_.push_back(streak(pulled(tip, eye, kPull * 0.7f), glm::vec3(0.0f), 0.28f * k, 0.9f, kRuneCore, 2.4f));
+      lights.push_back({tip, {1.0f, 0.82f, 0.55f}, 8.0f, 2.6f * k});
+    }
+  }
+  const float age = now - e.impact;
+  if (age < 0.0f) return;
+  // --- The arcane blow on the caster: a golden star with its glint, a violet shell, a golden ring breaking out, sparks, a gold light. ---
+  flash(b, side * 1.1f * k, 0.8f * k, kRuneCore, age, 0.16f, eye, kPull);
+  if (age < 0.4f) {
+    const float r = (0.2f + 0.9f * easeOut(0.0f, 0.32f, age)) * k;
+    const glm::mat4 m = glm::translate(glm::mat4(1.0f), b) * glm::scale(glm::mat4(1.0f), glm::vec3(r));
+    draw(sphereFirst_, sphereCount_, m, kModeEnergy, age, 1.0f, 0.7f * (1.0f - ease(0.06f, 0.4f, age)), kFlameViolet, 0.12f, glm::vec4(kFlameCore, 0.3f), e.feet,
+         VfxBlend::Additive);
+    const float rr = (0.3f + 0.8f * easeOut(0.0f, 0.35f, age)) * k;
+    const glm::mat4 ring = glm::translate(glm::mat4(1.0f), pulled(b, eye, kPull)) * glm::rotate(glm::mat4(1.0f), glm::radians(80.0f), side) *
+                           glm::rotate(glm::mat4(1.0f), age * 3.0f, kUp) * glm::scale(glm::mat4(1.0f), glm::vec3(rr));
+    draw(runeFirst_, runeCount_, ring, kModeTrail, age, 2.2f, 0.9f * (1.0f - ease(0.1f, 0.4f, age)), kRuneGold, 0.0f, glm::vec4(kRuneCore, 0.0f), e.feet,
+         VfxBlend::Additive);
+  }
+  sparks(e, b, -e.dir * 0.2f, 18, 3.2f * k, 0.03f * k, kRuneCore, kFlameViolet, age, eye, 1100u);
+  groundRing(e.feet, 0.3f * k, 1.0f * k, 0.35f, 0.6f, 0.5f, 0.65f, kFlameViolet, kRuneCore, age, eye, frame, e.feet);
+  if (age < 0.45f) lights.push_back({b, {1.0f, 0.75f, 0.5f}, 14.0f * (1.0f - ease(0.0f, 0.45f, age)), 3.0f * k});
 }
 
 }  // namespace ember

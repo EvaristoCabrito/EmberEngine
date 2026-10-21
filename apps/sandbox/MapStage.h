@@ -551,6 +551,7 @@ class MapStage final : public Stage {
       syncWebs();
       syncVigils();
       syncMirrors();
+      syncWards();
       syncStatus();
       // Numbers held back for an effect still in the air (a Meteoro's fall).
       for (size_t i = 0; i < pendingFx_.size();) {
@@ -4504,6 +4505,22 @@ class MapStage final : public Stage {
   }
   // Imagem Espelhada's standing illusions (ConjurerFx::mirror*) beside every unit that has them, following it, one fewer when a copy is
   // struck, gone when they end.
+  // Reflexo Arcano standing: while the ward lasts, only the warded unit's own casting light shows it (the user, 2026-10-20: "fica
+  // apenas a luz padrão azul de casting dele indicando que está ativo").
+  void syncWards() {
+    if (!battle_) return;
+    for (size_t i = 0; i < battle_->units().size(); ++i) {
+      const e2::BattleUnit& u = battle_->units()[i];
+      const int ui = sceneUnitOf(static_cast<int>(i));
+      if (ui < 0 || !u.alive || u.cond.reflectTurns <= 0) continue;
+      const size_t su = static_cast<size_t>(ui);
+      const std::string hero = su < unitCatalog_.size() && unitCatalog_[su] ? unitCatalog_[su]->key : std::string();
+      const std::array<float, 3> tint = castTint("arcaneReflection", false, hero, false);
+      auto it = std::find_if(glows_.begin(), glows_.end(), [&](const UnitGlow& g) { return g.ui == su && g.color == tint && g.end >= now_ - 0.05f; });
+      if (it != glows_.end()) it->end = std::max(it->end, now_ + 0.3f);
+      else glows_.push_back({su, now_, now_ + 0.3f, tint});
+    }
+  }
   void syncMirrors() {
     if (!battle_) return;
     for (size_t i = 0; i < battle_->units().size(); ++i) {
@@ -5430,6 +5447,11 @@ class MapStage final : public Stage {
   }
   void testCast(size_t caster, const std::string& kind, int look, float start) {
     if (e2::emberSpellClass(kind) == "aldric" || kind == "sentinelStrike") return testLancer(caster, kind, start);
+    if (kind == "arcaneReflectionHit") {  // Reflexo Arcano's bounce alone: from the hero back to the nearest foe
+      const SpellEffects::Spot a = unitSpot(caster), b = unitSpot(nearestTarget(caster, false));
+      spellFx_.arms().reflectHit(a.feet, a.cardHeight, b.feet, b.cardHeight, start, start + 0.4f);
+      return;
+    }
     const size_t hero = caster;
     const size_t target = nearestTarget(caster, spellOnFriend(kind));
     std::vector<SpellEffects::Spot> spots{unitSpot(target)};
@@ -5593,6 +5615,13 @@ class MapStage final : public Stage {
       // The Lanceiro's board moves: bodies flying to their new hexes, and what lands only once a flight is over (a collision's
       // numbers, `delay`).
       const float flightEnd = animateFlights(fx, s);
+      // Reflexo Arcano: a spell sent back flies from the warded unit to its caster and lands as its number shows (`delay`).
+      for (const e2::BattleEffect& e : fx)
+        if (e.reflectFrom >= 0)
+          if (const int from = sceneUnitOf(e.reflectFrom), to = sceneUnitOf(static_cast<int>(e.unit)); from >= 0 && to >= 0) {
+            const SpellEffects::Spot a = unitSpot(static_cast<size_t>(from)), b = unitSpot(static_cast<size_t>(to));
+            spellFx_.arms().reflectHit(a.feet, a.cardHeight, b.feet, b.cardHeight, now_, now_ + e.delay / actionRate());
+          }
       {
         std::vector<e2::BattleEffect> later;
         for (size_t i = 0; i < fx.size();) {

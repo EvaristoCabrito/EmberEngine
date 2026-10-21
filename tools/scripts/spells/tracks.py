@@ -49,7 +49,10 @@ S = {
     "webOfDreams": (3, dict(r=7, a=0, x=25), [("r", 1, 5), ("a", 1, 2), ("x", 5, 7)]),
     "summonFamiliar2": (3, dict(r=2), [("r", 1, 6)]),
     "placeSwap": (None, dict(r=6), [("r", 1, 4)]),
-    "boneLance": (None, dict(l=3, d=1, f=8, m=1.3), [("l", 1, 4), ("d", 1, 3), ("f", 2, 2), ("m", 0.1, 5)]),
+    # Reflexo Arcano in the Lança's place (the user, 2026-10-20: "começa com um reflexo mais fraco e vai escalando", "um talento que começa
+    # em menor percentagem a absorver o dano como cura", "escalar a duração ... começando com apenas 2 turnos indo até 6")
+    # (then: "não reflete e não absorve 100%: chega até 90% de reflexo e 50% de absorção"; before the talent he takes what is not reflected)
+    "arcaneReflection": (None, dict(t=2, p=40, x=10), [("p", 10, 5), ("t", 1, 4), ("Z", 1, 1), ("x", 10, 4)]),
     "summonFamiliar4": (6, dict(r=2), [("r", 1, 6)]),
     "mirrorImage": (None, dict(r=6, c=2, R=3, p=33), [("r", 1, 4), ("c", 1, 2), ("R", 1, 3), ("p", 3, 5)]),
     "detonateSummon": (None, dict(r=6, a=0, d=2, f=8, m=1.8), [("r", 1, 4), ("a", 1, 2), ("d", 1, 3), ("m", 0.12, 5)]),
@@ -58,6 +61,8 @@ S = {
     "nightmare": (None, dict(r=6, a=0, d=2, f=8, m=1.5, p=25, t=1), [("r", 1, 6), ("a", 1, 2), ("d", 1, 2), ("m", 0.15, 2), ("p", 10, 1), ("t", 1, 1)]),
     "summonZombieDog": (15, dict(r=2), [("r", 1, 6)]),  # Cão Zumbi: the Necromante's T6 (the user, 2026-10-20)
     "empowerSummons": (None, dict(p=25, R=3), [("p", 1, 12), ("R", 1, 2)]),
+    # the Necromante's T6 (the user, 2026-10-20: "deixar a magia Lança de Ossos como T6 para necromancer, e adaptar para algo mais forte e mais único")
+    "boneLance": (None, dict(l=4, d=2, f=8, m=1.8, t=1, p=50), [("m", 0.1, 4), ("l", 1, 2), ("d", 1, 2), ("f", 2, 2), ("t", 1, 1), ("Z", 1, 1), ("p", 10, 2)]),
     # --- Bruxo -----------------------------------------------------------------------------------------------------------
     "markOfRuin": (None, dict(r=6, d=1, f=6, m=1.15, p=20, t=3), [("r", 1, 5), ("p", 5, 3), ("m", 0.05, 3), ("t", 1, 1), ("d", 1, 1), ("f", 2, 1)]),
     "creepingPlague": (None, dict(r=6, d=1, f=8, m=1.3, v="greater", s=1), [("r", 1, 5), ("m", 0.05, 4), ("d", 1, 2), ("v", 1, 1), ("s", 1, 1), ("f", 2, 1)]),
@@ -142,6 +147,10 @@ TALENTS = {
     "disarm": ("Mão Ferida", "o desarmado perde também 1 uso de habilidade", "Wounded Hand", "the disarmed foe also loses 1 use of a skill"),
     "swapPost": ("Coragem do Posto", "o aliado trocado ganha +10% de ATK por 1 turno", "Post's Courage", "the swapped ally gains +10% ATK for 1 turn"),
     "impaleDrag": ("Ferida Aberta", "o arrastado sangra (1D8 por turno, por 1D3 turnos)", "Open Wound", "the dragged foe bleeds (1D8 a turn, for 1D3 turns)"),
+    "arcaneReflection": ("Absorção", "do dano que não volta, uma parte vira cura em vez de ferir, de 10% a 50%", "Absorption",
+                         "of the damage that does not go back, a share heals instead of hurting, from 10% to 50%"),
+    "boneLance": ("Estilhaços", "os ossos explodem na ponta da reta: os outros vizinhos dela levam de 50% a 70% do dano", "Shards",
+                  "the bones burst at the line's far end: its other neighbours take 50% to 70% of the damage"),
     "sentinelVigil": ("Contra-Golpe Firme", "quem a Vigília interrompe fica Desequilibrado (sem contra-ataque)", "Firm Riposte", "whoever the Vigil interrupts is Off balance (no counter)"),
 }
 ORDER = "racljdfbmpPtRsekKThHgGMuvxZ"
@@ -165,10 +174,21 @@ def lay(grow):
     return slots
 
 
+# letters that only mean something once the talent is open: their steps come after it on the track
+AFTER_TALENT = {"arcaneReflection": "x", "boneLance": "p"}
 tracks = {}
 for kind, (learn, base, grow) in S.items():
     L = learn if learn is not None else ours_learn[kind]
-    tracks[kind] = (L, lay(grow))
+    slots = lay(grow)
+    if kind in AFTER_TALENT:
+        letter = AFTER_TALENT[kind]
+        while True:
+            z = next(i for i, t in enumerate(slots) if t.startswith("Z"))
+            early = next((i for i, t in enumerate(slots[:z]) if t.startswith(letter)), None)
+            if early is None:
+                break
+            slots[early], slots[z] = slots[z], slots[early]
+    tracks[kind] = (L, slots)
 
 # --- C++ table -------------------------------------------------------------------------------------------------------------
 lines = ["// TRACKS-BEGIN (written by tools/scripts/spells/tracks.py; the level each token lands on = learn + its place, 1 to 14)",
@@ -220,6 +240,8 @@ OWN = {  # spell: {letter: (pt, en)}: what its numbers mean
     "impaleDrag": {"e": ("peso por hex arrastado", "weight per hex dragged"), "l": ("hexes arrastados", "hexes dragged")},
     "sentinelVigil": {"a": ("raio", "radius"), "m": ("peso do contra-golpe", "riposte weight")}, "spearToss": {"r": ("hexes do arremesso", "hexes thrown")},
     "leapingStrike": {"r": ("alcance do salto", "leap reach")},
+    "arcaneReflection": {"t": ("turnos", "turns"), "p": ("devolvido %", "reflected %"), "x": ("cura %", "healing %")},
+    "boneLance": {"l": ("comprimento", "length"), "t": ("turnos empalado", "impaled turns"), "p": ("estilhaços %", "shards %")},
 }
 for k in ("doubleStrike", "cleave", "shieldBash", "bullRush", "steelWhirlwind", "guardBreak", "leapingStrike", "shoulderSmash", "stampede", "spearToss", "sweep",
           "hookPull", "trip", "poleVault", "disarm", "swapPost", "impaleDrag"):
@@ -434,7 +456,7 @@ NAMES = {
     "circleOfHealing": "Círculo de Cura", "resurrection": "Ressurreição", "judgment": "Julgamento", "cureLight": "Mãos Curativas",
     "auraOfProtection": "Aura de Proteção", "intimidatingPresence": "Presença Intimidante", "divineWrath": "Ira Divina",
     "summonFamiliar": "Invocar Familiar", "phantasmalForce": "Força Fantasmagórica", "webOfDreams": "Teia dos Sonhos",
-    "summonFamiliar2": "Familiar Maior", "placeSwap": "Troca de Lugar", "boneLance": "Lança de Osso", "summonFamiliar4": "Familiar Radiante",
+    "summonFamiliar2": "Familiar Maior", "placeSwap": "Troca de Lugar", "boneLance": "Lança de Ossos (Necromante, T6)", "arcaneReflection": "Reflexo Arcano", "summonFamiliar4": "Familiar Radiante",
     "mirrorImage": "Imagem Espelhada", "detonateSummon": "Detonar Invocação", "summonFamiliar3": "Familiar Titã (T5)",
     "sacrificeBond": "Elo de Sacrifício", "nightmare": "Pesadelo", "summonZombieDog": "Cão Zumbi (Necromante, T6)",
     "empowerSummons": "Fortalecer Invocações", "markOfRuin": "Marca da Ruína", "creepingPlague": "Praga Rastejante",

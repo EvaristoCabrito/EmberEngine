@@ -141,11 +141,12 @@ constexpr EmberSpell kEmberSpells[] = {
     // Conjurador (docs/SKILLS_CONJURER.md, 2026-10-20; Malrec, class `conjurer`): a new spell every two levels from 3 to 15, combat and
     // utility by turns; the Arcanista and the Necromante keep them. The field spells (Marcar Runa, Retornar) live in world/FieldSpells.
     {{"placeSwap", "Troca de Lugar", 1, "", false}, "conjurer", 3},
-    {{"boneLance", "Lança de Osso", 2, "arcane", false}, "conjurer", 5},
+    {{"arcaneReflection", "Reflexo Arcano", 2, "arcane", false}, "conjurer", 5},  // in the Lança's place (the user, 2026-10-20)
     {{"mirrorImage", "Imagem Espelhada", 2, "", false}, "conjurer", 7},
     {{"detonateSummon", "Detonar Invocação", 3, "arcane", false}, "conjurer", 9},
     {{"sacrificeBond", "Elo de Sacrifício", 3, "", false}, "conjurer", 11},
     {{"nightmare", "Pesadelo", 4, "arcane", false}, "conjurer", 13},
+    {{"boneLance", "Lança de Ossos", 6, "darkness", false}, "necromancer", 15},  // the Necromante's T6 (the user, 2026-10-20)
     {{"empowerSummons", "Fortalecer Invocações", 4, "", false}, "conjurer", 15},
 };
 // The base class a promotion keeps the skills of (the Guerreiro's go on into the Paladino and the Cavaleiro Pesado, the
@@ -162,7 +163,7 @@ const char* emberClassFamily(const std::string& classId) {
 }
 // The Conjurador's spells (docs/SKILLS_CONJURER.md).
 bool conjurerKind(const std::string& kind) {
-  return kind == "placeSwap" || kind == "boneLance" || kind == "mirrorImage" || kind == "detonateSummon" || kind == "sacrificeBond" ||
+  return kind == "placeSwap" || kind == "boneLance" || kind == "arcaneReflection" || kind == "mirrorImage" || kind == "detonateSummon" || kind == "sacrificeBond" ||
          kind == "nightmare" || kind == "empowerSummons";
 }
 // The living summons of a unit (its familiars, its Cão Zumbi), in the battle's order.
@@ -388,7 +389,7 @@ constexpr SpellTrack kSpellTracks[] = {
     {"webOfDreams", 3, "x5 r1 x5 a1 r1 x5 r1 x5 x5 r1 a1 x5 r1 x5"},
     {"summonFamiliar2", 3, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
     {"placeSwap", 3, "- r1 - - - r1 - - r1 - - - r1 -"},
-    {"boneLance", 5, "m0.1 l1 d1 f2 m0.1 l1 d1 m0.1 l1 m0.1 f2 d1 l1 m0.1"},
+    {"arcaneReflection", 5, "p10 t1 Z1 p10 t1 x10 p10 x10 t1 x10 p10 t1 x10 p10"},
     {"summonFamiliar4", 6, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
     {"mirrorImage", 7, "p3 r1 R1 c1 p3 r1 R1 p3 r1 p3 c1 R1 r1 p3"},
     {"detonateSummon", 9, "m0.12 r1 d1 a1 m0.12 r1 d1 m0.12 r1 m0.12 a1 d1 r1 m0.12"},
@@ -397,6 +398,7 @@ constexpr SpellTrack kSpellTracks[] = {
     {"nightmare", 13, "r1 a1 d1 r1 m0.15 r1 p10 t1 r1 a1 r1 d1 m0.15 r1"},
     {"summonZombieDog", 15, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
     {"empowerSummons", 15, "p1 p1 p1 R1 p1 p1 p1 p1 p1 p1 R1 p1 p1 p1"},
+    {"boneLance", 15, "m0.1 l1 d1 f2 Z1 m0.1 t1 p10 m0.1 l1 d1 f2 p10 m0.1"},
     {"markOfRuin", 15, "r1 p5 m0.05 r1 t1 d1 r1 p5 m0.05 f2 r1 p5 m0.05 r1"},
     {"creepingPlague", 15, "r1 m0.05 d1 r1 m0.05 v1 r1 s1 f2 m0.05 r1 d1 m0.05 r1"},
     {"lifeDrain", 16, "m0.05 r1 m0.05 f2 p25 m0.05 m0.05 d1 m0.05 r1 f2 m0.05 p25 m0.05"},
@@ -476,6 +478,8 @@ constexpr SpellTalent kSpellTalents[] = {
     {"disarm", "Mão Ferida", "o desarmado perde também 1 uso de habilidade", "Wounded Hand", "the disarmed foe also loses 1 use of a skill"},
     {"swapPost", "Coragem do Posto", "o aliado trocado ganha +10% de ATK por 1 turno", "Post's Courage", "the swapped ally gains +10% ATK for 1 turn"},
     {"impaleDrag", "Ferida Aberta", "o arrastado sangra (1D8 por turno, por 1D3 turnos)", "Open Wound", "the dragged foe bleeds (1D8 a turn, for 1D3 turns)"},
+    {"arcaneReflection", "Absorção", "do dano que não volta, uma parte vira cura em vez de ferir, de 10% a 50%", "Absorption", "of the damage that does not go back, a share heals instead of hurting, from 10% to 50%"},
+    {"boneLance", "Estilhaços", "os ossos explodem na ponta da reta: os outros vizinhos dela levam de 50% a 70% do dano", "Shards", "the bones burst at the line's far end: its other neighbours take 50% to 70% of the damage"},
     {"sentinelVigil", "Contra-Golpe Firme", "quem a Vigília interrompe fica Desequilibrado (sem contra-ataque)", "Firm Riposte", "whoever the Vigil interrupts is Off balance (no counter)"},
 };
 // TRACKS-END
@@ -734,9 +738,15 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
   // Conjurador (docs/SKILLS_CONJURER.md): the game's damage formula on the arcane ones; the rest move the board or last rounds
   else if (kind == "placeSwap") {
     n.range = 6;
+  } else if (kind == "arcaneReflection") {
+    n.turns = 2 + g.n('t');                         // the ward lasts this many of the caster's turns
+    n.pct = 40 + g.n('p');                          // the share of the spell that goes back to its caster (90 % at most: never all of it)
+    n.spread = g.n('Z') > 0 ? 10 + g.n('x') : 0;    // its talent (Absorção): this share of what is left heals instead of hurting (50 % at most)
   } else if (kind == "boneLance") {
-    n.length = 3 + g.n('l');
-    n.mul = mul(1.3), n.dice = dice(1), n.faces = faces(8);
+    n.length = 4 + g.n('l');                        // the line of lances from the caster
+    n.mul = mul(1.8), n.dice = dice(2), n.faces = faces(8);
+    n.turns = 1 + g.n('t');                         // Empalado: no move for this many of its turns
+    n.pct = g.n('Z') > 0 ? 50 + g.n('p') : 0;       // its talent (Estilhaços): the far end's neighbours take this share
   } else if (kind == "mirrorImage") {
     n.range = 6;
     n.count = 2 + g.n('c');  // the copies
@@ -1874,12 +1884,34 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     s.dice = 0, s.spellMul = 1;
     steps.push_back(s);
   } else if (kind == "boneLance") {
-    // A lance of bone through everyone on the line, both sides, as far as it reaches.
+    // Lances of bone burst from the ground along the line, foes only: Escuridão, and every foe struck is Empalado (it cannot move);
+    // its talent: the bones burst at the far end, the end's other neighbours take a share.
     const std::vector<BattleHex> line = boneLine(b, from, cell, n.length);
     if (line.empty()) return fail("Escolha uma reta a partir do personagem.");
     s.tiles = line;
-    s.ids = unitsOn(b, caster, line, true);
+    s.ids = unitsOn(b, caster, line, false);
+    s.hobblePct = 100, s.hobbleTurns = n.turns;
     spend();
+    steps.push_back(s);
+    if (n.pct > 0) {
+      const BattleHex end = line.back();
+      BattleStep w;
+      w.type = BattleStep::Type::Spell, w.att = caster, w.kind = kind;
+      for (const BattleHex& h : Battle::neighbors(end.x, end.y))
+        if (b.inBounds(h.x, h.y) && std::none_of(line.begin(), line.end(), [&](const BattleHex& l) { return l == h; })) w.tiles.push_back(h);
+      w.dice = n.dice, w.faces = n.faces, w.bonus = 0, w.spellMul = n.mul;
+      for (size_t id : unitsOn(b, caster, w.tiles, false))
+        if (std::find(s.ids.begin(), s.ids.end(), id) == s.ids.end()) w.ids.push_back(id), w.perTargetMul.push_back(n.pct / 100.0);
+      if (!w.ids.empty()) steps.push_back(w);
+    }
+  } else if (kind == "arcaneReflection") {
+    // A ward on the caster: the first hostile spell to reach it while it lasts goes back to its caster in part (its talent heals a share).
+    if (!(cell == from)) return fail("Esta magia não precisa de alvo.");
+    spend();
+    s.type = BattleStep::Type::Effect;
+    s.ids = {caster}, s.tiles = {from};
+    s.dice = 0, s.spellMul = 1;
+    s.reflectTurns = n.turns, s.reflectPct = n.pct, s.reflectHealPct = n.spread;
     steps.push_back(s);
   } else if (kind == "mirrorImage") {
     // Illusions round an ally (the caster itself too) for some rounds.
@@ -2441,12 +2473,16 @@ std::string conditionsText(const BattleUnit& u) {
   if (u.cond.decayTurns > 0) add(std::format("Decadência -{}% ({})", u.cond.decayPct, u.cond.decayTurns));
   if (u.cond.sunderPct > 0) add(std::format("{} -{}% DEF ({})", pick("Guarda quebrada", "Guard broken"), u.cond.sunderPct, u.cond.sunderTurns + 1));
   if (u.cond.rallyPct > 0) add(std::format("{} +{}% ATK ({})", pick("Grito de Guerra", "War Cry"), u.cond.rallyPct, u.cond.rallyTurns + 1));
-  if (u.cond.hobblePct > 0) add(std::format("{} -{}% MOV ({})", pick("Paralisado", "Crippled"), u.cond.hobblePct, u.cond.hobbleTurns + 1));
+  if (u.cond.hobblePct >= 100) add(std::format("{} ({})", pick("Empalado", "Impaled"), u.cond.hobbleTurns + 1));
+  else if (u.cond.hobblePct > 0) add(std::format("{} -{}% MOV ({})", pick("Paralisado", "Crippled"), u.cond.hobblePct, u.cond.hobbleTurns + 1));
   if (u.cond.disarmPct > 0) add(std::format("{} -{}% ATK ({})", pick("Desarmado", "Disarmed"), u.cond.disarmPct, u.cond.disarmTurns + 1));
   if (u.cond.staggered) add(std::format("{} ({})", pick("Desequilibrado", "Off balance"), u.cond.staggerTurns + 1));
   if (u.cond.vigilPct > 0) add(std::format("{} ×{:g} · {} {}", pick("Vigília", "Vigil"), u.cond.vigilPct / 100.0, pick("raio", "radius"), u.cond.vigilRadius));
   if (u.cond.mirrorCopies > 0) add(std::format("{} ×{} ({})", pick("Imagem Espelhada", "Mirror Image"), u.cond.mirrorCopies, u.cond.mirrorRounds));
   if (u.cond.bondPct > 0) add(std::format("{} {}%", pick("Elo de Sacrifício", "Sacrifice Bond"), u.cond.bondPct));
+  if (u.cond.reflectTurns > 0)
+    add(std::format("{} {}%{} ({})", pick("Reflexo Arcano", "Arcane Reflection"), u.cond.reflectPct,
+                    u.cond.reflectHealPct > 0 ? std::format(" · {} {}%", pick("cura", "heals"), u.cond.reflectHealPct) : std::string(), u.cond.reflectTurns));
   if (u.cond.empowerPct > 0) add(std::format("{} +{}% ({})", pick("Fortalecido", "Empowered"), u.cond.empowerPct, u.cond.empowerRounds));
   if (u.diseased) add("Doente");
   // Engine2's statuses
@@ -2781,7 +2817,12 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind) {
                            n.radius > 1 ? "es" : "", n.mul, bonus());
   // The Conjurador's
   if (kind == "placeSwap") return s + "\ntroca de lugar com um aliado ou uma invocação ao alcance";
-  if (kind == "boneLance") return s + std::format("\nreta de {} hexes a partir de si · {} em todos na reta (os dois lados)", n.length, dmg(n.mul, n.dice, n.faces));
+  if (kind == "arcaneReflection")
+    return s + std::format("\nem si mesmo, por {} turnos seus: a primeira magia inimiga que o atingir volta {}% para quem lançou, e a guarda acaba · "
+                           "o resto você recebe{}", n.turns, n.pct, n.spread > 0 ? std::format(", menos {}% dele, que vira cura", n.spread) : std::string());
+  if (kind == "boneLance")
+    return s + std::format("\nreta de {} hexes a partir de si · {} em cada inimigo na reta · Empalado: não anda por {} turno(s){}", n.length,
+                           dmg(n.mul, n.dice, n.faces), n.turns, n.pct > 0 ? std::format(" · Estilhaços: os vizinhos da ponta levam {}%", n.pct) : std::string());
   if (kind == "mirrorImage") return s + std::format("\n{} cópias ilusórias em um aliado por {} rodadas · cada ataque tem 1 chance em 3 de acertar uma cópia, que some", n.count, n.rounds);
   if (kind == "detonateSummon") return s + std::format("\nexplode uma invocação sua · todos a até {} hex{} dela levam {} · a invocação some", n.radius, n.radius > 1 ? "es" : "", dmg(n.mul, n.dice, n.faces));
   if (kind == "sacrificeBond") return s + std::format("\naté o fim da batalha, {}% do dano que você recebe vai para a sua invocação mais próxima", n.pct);
@@ -2849,7 +2890,7 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"spearToss", "Spear Toss"}, {"hookPull", "Hook"}, {"poleVault", "Pole Vault"}, {"disarm", "Disarm"}, {"swapPost", "Change of Post"},
     {"impaleDrag", "Impale and Drag"}, {"sentinelVigil", "Sentinel's Vigil"}, {"sentinelStrike", "Sentinel's Thrust"},
     {"circleOfHealing", "Circle of Healing"}, {"resurrection", "Resurrection"}, {"judgment", "Judgment"},
-    {"placeSwap", "Place Swap"}, {"boneLance", "Bone Lance"}, {"mirrorImage", "Mirror Image"}, {"detonateSummon", "Detonate Summon"},
+    {"placeSwap", "Place Swap"}, {"boneLance", "Bone Lances"}, {"arcaneReflection", "Arcane Reflection"}, {"mirrorImage", "Mirror Image"}, {"detonateSummon", "Detonate Summon"},
     {"sacrificeBond", "Sacrifice Bond"}, {"nightmare", "Nightmare"}, {"empowerSummons", "Empower Summons"},
 };
 }  // namespace
@@ -2870,7 +2911,7 @@ bool spellPorted(const std::string& kind) {
 bool spellWeaponAbility(const std::string& kind) { return weaponAbility(kind); }
 
 bool spellInstant(const std::string& kind) {
-  return kind == "createFoodAndWater" || kind == "auraOfProtection" || kind == "intimidatingPresence" || kind == "sacrificeBond" ||
+  return kind == "createFoodAndWater" || kind == "auraOfProtection" || kind == "intimidatingPresence" || kind == "sacrificeBond" || kind == "arcaneReflection" ||
          kind == "empowerSummons";
 }
 // An area around the caster, shown at once and cast on Confirmar. Grito de Guerra, Vigília da Sentinela and Erupção were instant (cast the
@@ -3247,7 +3288,7 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
       }
       return true;
     }
-    if (kind == "sacrificeBond" || kind == "empowerSummons") return cell == from ? true : fail("Esta magia não precisa de alvo.");
+    if (kind == "sacrificeBond" || kind == "empowerSummons" || kind == "arcaneReflection") return cell == from ? true : fail("Esta magia não precisa de alvo.");
     // The Curandeiro's
     if (kind == "resurrection") {
       if (d > 1) return fail("O aliado caído precisa estar ao lado.");
@@ -3919,6 +3960,12 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
       b.noteAware(step.att, kSupportCe, kSupportVe);
       return;
     }
+    if (step.kind == "arcaneReflection") {
+      att.cond.reflectTurns = step.reflectTurns, att.cond.reflectPct = step.reflectPct, att.cond.reflectHealPct = step.reflectHealPct;
+      out.push_back(statusEffect(step.att, pick("Reflexo Arcano", "Arcane Reflection")));
+      b.noteAware(step.att, kSupportCe, kSupportVe);
+      return;
+    }
     if (step.kind == "sacrificeBond") {
       att.cond.bondPct = step.bondPct;
       out.push_back(statusEffect(step.att, pick("Elo de Sacrifício", "Sacrifice Bond")));
@@ -4214,10 +4261,37 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     }
     dmg = marked(foe, dmg);  // Marca da Ruína
     if (dmg > 0 && !step.kind.empty()) affinityDelta(b, step.att, id, -1);
+    // Reflexo Arcano: the first hostile spell to reach a warded unit goes back to its caster by the ward's share (no resistance: its
+    // own spell); the warded one takes what is left, unless the talent (Absorção) turns a share of that into healing; the ward is spent.
+    int reflectHeal = 0;
+    if (dmg > 0 && foe.cond.reflectTurns > 0 && foe.side != att.side && !step.kind.empty() && !weaponAbility(step.kind)) {
+      const int back = static_cast<int>(std::floor(dmg * foe.cond.reflectPct / 100.0));
+      reflectHeal = static_cast<int>(std::floor((dmg - back) * foe.cond.reflectHealPct / 100.0));
+      foe.cond.reflectTurns = 0, foe.cond.reflectPct = 0, foe.cond.reflectHealPct = 0;
+      dmg -= back + reflectHeal;
+      out.push_back(statusEffect(id, pick("Reflexo Arcano", "Arcane Reflection")));
+      if (back > 0 && att.alive) {
+        att.hp = std::max(0, att.hp - back);
+        b.noteDamage(id, step.att, back, false);
+        BattleEffect r{step.att, back, false, false, false, false, false};
+        r.reflectFrom = static_cast<int>(id), r.delay = 0.35f, r.cause = pick("Reflexo Arcano devolve", "Arcane Reflection sends back");
+        if (att.hp <= 0) {
+          markDead(att, rng);
+          r.died = true;
+        }
+        out.push_back(r);
+        if (!att.alive) afterDeath(b, step.att, out);
+      }
+    }
     const bool bonded = foe.side != att.side && bondRedirects(b, id, dmg, rng, out);  // Elo de Sacrifício: its summon takes it
     if (bonded) dmg = 0;
     const int actual = std::min(foe.hp, dmg);
     foe.hp = std::max(0, foe.hp - dmg);
+    if (reflectHeal > 0 && foe.hp > 0) {  // Absorção (the talent): a share of the spell heals the warded one
+      const int healed = std::min(reflectHeal, foe.maxHp - foe.hp);
+      foe.hp += healed;
+      if (healed > 0) out.push_back({id, healed, false, false, true, false, false});
+    }
     if (!element.empty() && foe.side != att.side) staffDrain(att, actual);
     if (step.kind == "turnUndead" && foe.hp > 0) {
       foe.fearTurns = std::max(foe.fearTurns, kTurnUndeadFearTurns);
@@ -4352,7 +4426,8 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     if (step.hobblePct > 0) {  // Tiro Paralisante: MOV down for some of its turns
       foe.cond.hobblePct = std::max(foe.cond.hobblePct, step.hobblePct), foe.cond.hobbleTurns = std::max(foe.cond.hobbleTurns, step.hobbleTurns);
       applyHobble(foe);
-      out.push_back(statusEffect(id, std::format("{} -{}% MOV", pick("Paralisado", "Crippled"), foe.cond.hobblePct)));
+      out.push_back(statusEffect(id, foe.cond.hobblePct >= 100 ? std::string(pick("Empalado", "Impaled"))
+                                                               : std::format("{} -{}% MOV", pick("Paralisado", "Crippled"), foe.cond.hobblePct)));
     }
     if (step.stagger) {  // Gancho: pulled off its feet, it cannot counter until its next turn (and staggerTurns more of them)
       foe.cond.staggered = true, foe.cond.staggerTurns = std::max(foe.cond.staggerTurns, step.staggerTurns);
@@ -4555,6 +4630,8 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
     else u.cond.staggered = false;
   }
   if (u.cond.vigilPct > 0) u.cond.vigilPct = 0, u.cond.vigilRadius = 0;
+  // Reflexo Arcano: one of its turns spent; the ward lifts when none is left
+  if (u.cond.reflectTurns > 0 && --u.cond.reflectTurns == 0) u.cond.reflectPct = 0, u.cond.reflectHealPct = 0;
 }
 
 void stepOnHex(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) { tileHazard(b, unit, rng, out); }

@@ -104,6 +104,7 @@ struct BattleStep {
   int mirrorCopies = 0, mirrorRounds = 0;  // Imagem Espelhada on every unit of `ids` (Type::Effect)
   int bondPct = 0;                     // Elo de Sacrifício on the caster (Type::Effect)
   int empowerPct = 0, empowerRounds = 0;   // Fortalecer Invocações on every unit of `ids` (Type::Effect)
+  int reflectTurns = 0, reflectPct = 0, reflectHealPct = 0;  // Reflexo Arcano on the caster (Type::Effect)
 };
 
 // What a step did, for the window: a number over a unit, a miss, a heal, a death.
@@ -121,6 +122,7 @@ struct BattleEffect {
   float arc = -1.0f;     // ... on a flight (the Lanceiro's throws, pulls, drags, the swap): the arc's height, -1 = at once
   float delay = 0.0f;    // seconds (nominal) the window waits before showing it: what lands after a flight
   std::string cause;     // what hurt it at the start of its turn ("Sangramento fere", ...): the combat log's verb
+  int reflectFrom = -1;  // Reflexo Arcano: the warded unit the spell came back from (the window flies it back from there)
 };
 
 // --- EmberEngine's own spells: the two promotions of the Mago Negro (user, 2026-10-16/17: "2 magias por tier do 6 ao
