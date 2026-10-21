@@ -885,21 +885,28 @@ TRIPLE AAA AGORA", "um céu inteiro com 24 horas de transição com sol, lua, tu
 ## Cemitério dos Esquecidos 006, the modernized map (2026-10-20; the user: "versão modernizada do mapa do cemitério ... novos tiles,
 recursos, elevações variadas, monstros, e deixe o birolho bem mais escondido", "we need a waypoint out", "deixar o seu mapa ativo na campanha")
 
-- The user, seeing captures (2026-10-20): "worse than the original, a total mess, crazy tiles, nonsense walls that don't close ... there
-  was lots of elevation and walls crypts and cooler things". Not fixed yet.
-- `content/maps/ember/cemiterio-esquecidos006.json`, made by `tools/scripts/maps/make_cemetery_v2.py` (reads Engine2's 005 for the mission's
-  settings only; serial 6 > 5, so the campaign plays it; 005 untouched, Modo teste's build/engine2-test copies of 005 untouched). Layout from the
-  painting + briefing: south gate (party, `dungeon-exit` = the way out), crypt hill in the centre (terraces to level 3, the crypt connector in its
-  west flank), chapel plateau north (ruínas connector), mausoleum terrace east (mausoléu connector), the stone avenue east through an arch to
-  cemetery-ground-part-ii, a black pond south-east. **The Birolho's hollow** (north-west): a pit at -1 ringed by a ridge at +2 / +2.5 whose inner
-  ring is closed by solid rocks / dead trees (movement ignores height), one cleft from the north-west woods; the script fails if the pit can be
-  entered any other way, or if any exit / spawn is unreachable. 24 enemies in 9 groups (zombie, zombie2, zombieDog, necromancer added).
-- **Tiles: the user's own photos** (`Attachments/texturas/cemi01-06.jpg`, after rejecting my code-made snow: "these tiles are not going to work"),
-  cut by make_tile.py into `content/ground/cemiterio-*-v01.png`. `kEmberGroundTiles` now has a `terrain` field; a draft picks a set with its
-  `emberTiles` field (`MapDraft::emberTiles`; this map: "cemiterio-v01"), so the old 005 keeps its look. Ground pack `build/ground/ground-v14.pak`.
-- **EmberEngine 3D props in a campaign map (new):** export_scene.ts / export_battle.ts know only Engine2's ids, so MapStage builds the scene with
-  SceneBuilder when the draft has any `ember-*` decoration (`hasEmberProps`), and `blockEmberProps` makes the cells of `ember-*` props with
-  blocksPath solid in the battle (impassable, stops shots). Maps without ember props: unchanged.
+- **First version rejected** ("worse than the original, a total mess, crazy tiles, nonsense walls that don't close ... there was lots of
+  elevation and walls crypts and cooler things"): loose low walls on one or two sides of each plot, a crypt hill of half-level terraces,
+  ~250 grey graves. **Then (the user, same night):** "no jogo ficou bem realista" (the tiles), zombie dogs out (they are summons), an
+  Aparição and a Boi Zumbi loose in two corners, 2D tombs out (3D only, fewer), every other decoration as it was, "termina o cenário com mais
+  elevações". The untextured "Mureta de pedra 3D" (`wall-3d-low`, no wall texture) was deleted from the catalog on the user's order
+  (`tools/scripts/engine2/removed_decorations.py`; the exporters skip it). `wall-3d-stone` has no texture either: never use it.
+- `content/maps/ember/cemiterio-esquecidos006.json`, made by `tools/scripts/maps/make_cemetery_v2.py` (reads its own mission settings from
+  the same file; serial 6, the campaign plays it). Relief in whole levels: rims north / west / east to 7, the barrow over the crypt with a flat
+  crown at 5, the chapel plateau at 3 stepping down, the mausoleum terrace at 2, open graves and the pond at -1, the south strip level so the
+  gothic wall runs at one height. The crypt = a walled cut (`wall-3d-crypt` both sides + end wall, `dungeon-stone-door`, connector inside)
+  into the barrow's south face, guardians at its mouth. The gothic parapet closes the whole south side, the gate (28..31) its only opening.
+  Graves: 3D only, family plots in straight rows, one stone kind per plot (~50). **The Birolho's hollow** (north-west): a pit at -1 inside a
+  ridge at 5 whose inner ring is closed by solid rocks / dead trees (movement ignores height), one cleft from the north-west woods. The script
+  fails if the pit opens elsewhere, if any exit / spawn is unreachable, if the south wall or the crypt cut has a gap.
+- **Tiles: the user's own photos** (`Attachments/texturas/cemi01-06.jpg`, after rejecting my code-made snow), cut by make_tile.py into
+  `content/ground/cemiterio-*-v01.png`. `kEmberGroundTiles` has a `terrain` field; a draft picks a set with its `emberTiles` field
+  (`MapDraft::emberTiles`; this map: "cemiterio-v01"). Ground pack `build/ground/ground-v14.pak`.
+- **EmberEngine 3D props in a campaign map:** the map exporters know only the old ids, so MapStage builds the scene with SceneBuilder when the
+  draft has any `ember-*` decoration (`hasEmberProps`), and `blockEmberProps` makes the cells of `ember-*` props with blocksPath solid in the
+  battle (impassable, stops shots). Maps without ember props: unchanged.
+- Captures: scratchpad `cap_cem.ps1` pattern (test battle from `build/engine2-test`, `--fog 0 --zoom 0.7` overview, `--zoom 2.2 --offset -0.07
+  0.06` the crypt).
 
 ## Veneno / Doença em 3D (2026-10-20; the user: Engine2's were WebGL and missing here, "recria algo similar em 3D")
 

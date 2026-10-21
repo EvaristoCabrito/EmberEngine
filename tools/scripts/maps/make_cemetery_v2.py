@@ -2,10 +2,10 @@
 tiles, recursos, elevações variadas, monstros, e deixe o birolho bem mais escondido"; "we need a waypoint out of the
 cemetery"; "pode deixar o seu mapa ativo na campanha").
 
-  python -I tools/scripts/maps/make_cemetery_v2.py [C:/Engine2/maps/ember/cemiterio-esquecidos005.json] [out.json]
+  python -I tools/scripts/maps/make_cemetery_v2.py [settings.json] [out.json]
 
-Writes content/maps/ember/cemiterio-esquecidos006.json (serial 6 > Engine2's 5: the campaign plays it; Engine2's file is
-only read, for the mission's own settings: lighting, mist, briefing, music, location). The layout follows the map's own
+Writes content/maps/ember/cemiterio-esquecidos006.json (serial 6: the campaign plays it). The mission's own settings (lighting,
+mist, briefing, music, location, the party) are read from `settings.json` (default: that same file). The layout follows the map's own
 painting (CemiteryBackground.jpg) and its briefing:
 
   south   the gate in the gothic wall (the party's entry) with the way out (dungeon-exit: the mission ends there)
@@ -28,7 +28,7 @@ import random
 import sys
 from collections import deque
 
-SRC = sys.argv[1] if len(sys.argv) > 1 else 'C:/Engine2/maps/ember/cemiterio-esquecidos005.json'
+SRC = sys.argv[1] if len(sys.argv) > 1 else 'content/maps/ember/cemiterio-esquecidos006.json'
 OUT = sys.argv[2] if len(sys.argv) > 2 else 'content/maps/ember/cemiterio-esquecidos006.json'
 CATALOG = 'content/engine2/editor-catalog.json'
 
@@ -113,44 +113,53 @@ elev = {p: 0.0 for p in cells()}
 # --- landmarks (hex coordinates) -------------------------------------------------------------------------------------
 GATE = (30, 47)
 PLAZA = (31, 36)
-HILL = (26, 22)          # the crypt hill's crown
-CRYPT_DOOR = (17, 25)    # the crypt's stone door, in the hill's west flank (the connector beside it)
+HILL = (26, 19)          # the barrow over the crypt (its crown)
+CRYPT_DOOR = (26, 24)    # the crypt's door, at the end of the walled cut into the barrow's south face
+CRYPT_MOUTH = (26, 31)   # where the cut opens onto the field
 CHAPEL = (30, 6)         # the chapel's nave
 MAUSO = (47, 11)         # the mausoleum terrace's door
 ARCH = (58, 25)          # the avenue's arch, to Part II
 LAIR = (8, 13)           # the Birolho's hollow (centre)
 POND = (50, 40)
 
-# --- relief ----------------------------------------------------------------------------------------------------------
+# --- relief: whole levels (Board: one level = one world unit, a hex is 1.73 across) --------------------------------------
+BARROW_R = 16.0   # world units
 for (c, r) in cells():
     x, z = wx(c, r), wz(r)
     e = 0.0
-    # gentle swells over the fields
-    e += 0.5 if noise(x, z) > 0.35 else 0.0
-    # the outer hills, highest in the north-west and north-east corners (the painting's wooded slopes)
-    edge = min(c, COLS - 1 - c, r)
-    if edge <= 3 and r < ROWS - 6:
-        e = max(e, 1.0 + (3 - edge) * 0.5 + (0.5 if noise2(x, z) > 0.2 else 0.0))
-    for (hx, hz, rad, top) in ((10, 6, 18, 3.5), (96, 6, 18, 3.0)):
-        d = math.hypot(x - hx, z - hz)
-        if d < rad:
-            e = max(e, round(top * (1 - d / rad) * 2) / 2)
-    # the crypt hill: terraces of half a level
+    # the fields: low swells of one level
+    if noise(x, z) > 0.45:
+        e = 1.0
+    # the rim: the painting's wooded hills close the cemetery on the north, west and east, up to level 7 (rock above 7)
+    rim = min(r, c, COLS - 1 - c)
+    k = 1.4 if r < 36 else 0.7
+    if rim <= 5:
+        e = max(e, min(7.0, max(0.0, round((5 - rim) * k + noise2(x, z)))))
+    # the barrow over the crypt: steep sides, a flat crown at level 5
     d = dist(c, r, wx(*HILL), wz(HILL[1]))
-    if d < 14:
-        e = max(e, round(3.0 * (1 - (d / 14) ** 1.3) * 2) / 2)
-    # the chapel plateau
-    if 21 <= c <= 39 and 1 <= r <= 11:
-        e = max(e, 1.5)
-    elif 19 <= c <= 41 and 0 <= r <= 13:
-        e = max(e, 1.0)
-    # the mausoleum terrace
+    if d < BARROW_R:
+        e = max(e, min(5.0, round(6.5 * (1 - (d / BARROW_R) ** 2))))
+    # the chapel plateau at level 3, stepping down to the field
+    if 20 <= c <= 40 and r <= 13:
+        e = max(e, 3.0 if r <= 9 else 2.0 if r <= 11 else 1.0)
+    # the mausoleum terrace at level 2
     if 41 <= c <= 54 and 5 <= r <= 17:
-        e = max(e, 1.0)
-    # sunken rows of open graves in the west field
-    if 6 <= c <= 14 and 32 <= r <= 42 and r % 3 == 0:
-        e = -0.5
+        e = max(e, 2.0 if 42 <= c <= 53 and 6 <= r <= 16 else 1.0)
+    # open graves sunk into the west field
+    if 7 <= c <= 15 and 33 <= r <= 41 and r % 4 == 1 and c % 3 != 0:
+        e = -1.0
+    # the strip along the south wall stays level, so the wall runs at one height edge to edge
+    if r >= 44:
+        e = 0.0
     elev[(c, r)] = e
+
+# the cut into the barrow: a walled passage at ground level from the field to the crypt's door
+cut_cells = {(CRYPT_MOUTH[0], rr) for rr in range(CRYPT_DOOR[1], CRYPT_MOUTH[1] + 1)}
+cut_walls = {(CRYPT_MOUTH[0] + dc, rr) for dc in (-1, 1) for rr in range(CRYPT_DOOR[1], CRYPT_MOUTH[1])} | {(CRYPT_DOOR[0] + dc, CRYPT_DOOR[1] - 1) for dc in (-1, 0, 1)}
+for p in cut_cells | cut_walls:
+    elev[p] = 0.0
+for p in cut_cells:
+    tiles[p] = 'nave'
 
 # --- the Birolho's hollow: pit at -1, ring ridge at +2 / +2.5 (three levels over the pit), one cleft from the north-west
 lx, lz = wx(*LAIR), wz(LAIR[1])
@@ -162,7 +171,7 @@ for (c, r) in cells():
         tiles[(c, r)] = 'ruins'
         lair_floor.add((c, r))
     elif d <= 9.0:
-        elev[(c, r)] = 2.5 if d <= 7.6 else 2.0
+        elev[(c, r)] = max(elev[(c, r)], 5.0 if d <= 7.6 else 4.0)
         tiles[(c, r)] = 'hill'
 # the cleft: a narrow way from the north-west woods down into the pit
 cleft = polyline_cells([(1, 3), (2, 6), (3, 8), (5, 10), (7, 12)], 0.95)
@@ -171,7 +180,7 @@ for p in cleft:
     elev[p] = min(elev[p], 0.5) if p not in lair_floor else -1.0
 for i, p in enumerate(sorted(cleft, key=lambda q: q[1])):
     if p not in lair_floor:
-        elev[p] = max(-0.5, 0.5 - 0.25 * i)
+        elev[p] = max(-1.0, 2.0 - 0.5 * i)  # the cleft goes down step by step into the pit
 
 # --- water: a black pond in the south-east
 for (c, r) in cells():
@@ -191,20 +200,24 @@ for (c, r) in cells():
     west = c <= 13 and r <= 30
     if edge <= 2 or (west and noise2(x, z) > -0.35) or (c >= 55 and r >= 30 and noise2(x, z) > 0.0):
         tiles[(c, r)] = 'woods'
-for (c, r) in cells():
-    if tiles[(c, r)] in ('plains', 'woods') and elev[(c, r)] >= 2.0:
-        tiles[(c, r)] = 'hill'
+def slope(p):
+    return any(abs(elev[n] - elev[p]) >= 1.0 for n in neighbors(*p))
+
+
+for p in cells():
+    if tiles[p] in ('plains', 'woods') and elev[p] >= 1.0 and slope(p):
+        tiles[p] = 'hill'
 
 # --- paths (snow = trodden), avenue + floors (nave = setts), ruins -----------------------------------------------------
 paths = set()
 paths |= polyline_cells([GATE, (30, 43), PLAZA], 1.3)                       # gate -> plaza
-paths |= polyline_cells([PLAZA, (22, 33), (16, 29), (16, 26)], 0.95)        # plaza -> the crypt door (around the hill's south-west)
-paths |= polyline_cells([PLAZA, (38, 30), (38, 18), (33, 13), CHAPEL], 0.95)  # plaza -> chapel (east of the hill)
-paths |= polyline_cells([(36, 12), (42, 12), MAUSO], 0.95)                  # chapel -> mausoleums
-paths |= polyline_cells([(16, 26), (14, 18), (16, 12), (21, 9)], 0.9)       # crypt -> chapel along the woods (west loop)
+paths |= polyline_cells([PLAZA, (28, 33), (CRYPT_MOUTH[0], CRYPT_MOUTH[1] + 1)], 0.95)  # plaza -> the barrow's cut
+paths |= polyline_cells([PLAZA, (38, 32), (39, 20), (34, 14), CHAPEL], 0.95)  # plaza -> chapel (east of the barrow)
+paths |= polyline_cells([(34, 12), (42, 12), MAUSO], 0.95)                  # chapel -> mausoleums
+paths |= polyline_cells([(24, 33), (15, 30), (13, 20), (18, 12), (23, 10)], 0.9)  # the west loop, round the barrow to the chapel
 paths |= polyline_cells([(30, 43), (20, 42), (12, 40)], 0.9)                # gate -> west grave field
 paths |= polyline_cells([(30, 43), (42, 42), (46, 37)], 0.9)                # gate -> the pond
-paths |= polyline_cells([(14, 18), (12, 23), (8, 24), (2, 20), (1, 12), (1, 6)], 0.75)  # a faint deer track through the dead wood to the cleft
+paths |= polyline_cells([(13, 20), (8, 24), (2, 20), (1, 12), (1, 6)], 0.75)  # a faint deer track through the dead wood to the cleft
 avenue = polyline_cells([PLAZA, (40, 32), (48, 28), (56, 25), ARCH], 1.25)
 plaza = {p for p in cells() if dist(*p, wx(*PLAZA), wz(PLAZA[1])) <= 3.2}
 for p in paths:
@@ -224,7 +237,7 @@ for (c, r) in cells():
         tiles[(c, r)] = 'nave' if r in (11, 12) or c in (47, 48) else 'ruins'
 # keep the avenue level where it crosses the terrace edge
 for p in avenue:
-    elev[p] = min(elev[p], 0.5)
+    elev[p] = 0.0
 
 # --- placements --------------------------------------------------------------------------------------------------------
 decos = []
@@ -275,7 +288,7 @@ def ring(center, radius):
     return [p for p in cells() if abs(dist(*p, cx, cz) - radius) < 0.9]
 
 
-# party spawns (Engine2 005's, by the gate) and their surroundings stay free
+# party spawns (by the gate) and their surroundings stay free
 party = [(29, 44), (31, 44), (30, 43), (30, 45), (30, 44), (29, 43)]
 for p in party:
     reserved.add(p)
@@ -284,8 +297,7 @@ for p in party:
 
 # exits and connectors (placed first, never blocked)
 place('dungeon-exit', 29, 47, block=False, allow_path=True)           # the way out: the mission ends here
-place('floor-connector', CRYPT_DOOR[0] + 1, CRYPT_DOOR[1] + 1, block=False, allow_path=True, targetMapId='cemiterio-esquecidos-cripta')
-place('dungeon-stone-door', *CRYPT_DOOR)
+place('floor-connector', *CRYPT_DOOR, block=False, allow_path=True, targetMapId='cemiterio-esquecidos-cripta')
 place('floor-connector', CHAPEL[0], CHAPEL[1] - 2, block=False, allow_path=True, targetMapId='cemiterio-esquecidos-ruinas')
 place('floor-connector', MAUSO[0], MAUSO[1] + 1, block=False, allow_path=True, targetMapId='cemiterio-esquecidos-mausoleu')
 place('wilds-temple-door', *MAUSO, allow_path=True)
@@ -293,7 +305,7 @@ place('floor-connector', ARCH[0], ARCH[1], block=False, allow_path=True, targetM
 place('door-3d-frame', ARCH[0] - 1, ARCH[1] - 1, block=False, allow_path=True)
 connectors = [(d['x'], d['y']) for d in decos if d['id'] in ('floor-connector', 'dungeon-exit')]
 
-# the hollow's rim: movement does not climb by height (Engine2's rules), so the ridge's inner ring is closed by solid
+# the hollow's rim: movement does not climb by height, so the ridge's inner ring is closed by solid
 # rocks and dead trees; the cleft is the only way down
 RIM = ['ember-winter-snow-boulder', 'ember-nature-cracked-boulder', 'ember-frost-ice-cracked-rocks', 'ember-winter-frost-dead-tree',
        'ember-forest-dead-tree', 'wilds-thorn-bramble', 'dead-tree', 'wilds-twisted-tree']
@@ -306,22 +318,27 @@ for p in rim_cells:
     if not place(did, *p, rot=rng.randrange(6)):
         place(rng.choice(['wilds-thorn-bramble', 'dead-tree', 'ember-winter-frost-dead-tree']), *p, rot=rng.randrange(6))
 
-# the gothic wall along the south, the gate open between its statues
-for x in list(range(1, 25, 4)) + list(range(36, 56, 4)):
+# the gothic wall across the whole south side, edge to edge on one row (row 46), the gate (28..31) its only opening
+for x in list(range(0, 28, 4)) + list(range(32, 60, 4)):
     place('bridge-parapet-gothic-wall-001' if (x // 4) % 2 else 'bridge-parapet-gothic-statues-001', x, 46, allow_path=True)
-for x in (26, 34):
-    place('wilds-knight-statue', x, 45, allow_path=True)
 place('wilds-cemetery-lantern', 27, 44, allow_path=True)
-place('wilds-cemetery-lantern', 33, 44, allow_path=True)
+place('wilds-cemetery-lantern', 32, 44, allow_path=True)
 
-# low stone walls (3D, they join) around the old family plots
-for (x0, x1, y) in ((6, 15, 31), (6, 15, 43), (40, 47, 33), (49, 55, 33)):
-    for x in range(x0, x1 + 1):
-        if (x, y) not in paths and rng.random() > 0.12:  # a few stones fallen out
-            place('wall-3d-low', x, y)
-for (x, y0, y1) in ((5, 32, 42), (16, 32, 37)):
-    for y in range(y0, y1 + 1):
-        place('wall-3d-low', x, y)
+# the cut into the barrow: crypt walls (3D, joined) on both sides and across its end, the door in the end wall
+for p in sorted(cut_walls):
+    if p not in ((CRYPT_DOOR[0], CRYPT_DOOR[1] - 1), (CRYPT_DOOR[0] + 1, CRYPT_DOOR[1] - 1)):
+        place('wall-3d-crypt', *p, allow_path=True)
+place('dungeon-stone-door', CRYPT_DOOR[0], CRYPT_DOOR[1] - 1, allow_path=True)
+for dc in (-2, 2):
+    place('wilds-knight-statue', CRYPT_MOUTH[0] + dc, CRYPT_MOUTH[1], allow_path=True)
+    place('Brazier3', CRYPT_MOUTH[0] + dc, CRYPT_MOUTH[1] + 1, allow_path=True)
+place('dungeon-ossuary', CRYPT_MOUTH[0] - 5, CRYPT_MOUTH[1] + 1)
+place('dungeon-ossuary', CRYPT_MOUTH[0] + 4, CRYPT_MOUTH[1] + 1)
+# the barrow's crown: the fallen king, the old family's stones
+place('wilds-fallen-king', HILL[0] - 1, HILL[1])
+place('ember-crypt-sarcophagus-broken-lid', HILL[0] + 3, HILL[1] + 1)
+place('wilds-gibbet-tree', HILL[0] - 4, HILL[1] - 2)
+place('wilds-ivy-statue', HILL[0] + 3, HILL[1] - 3)
 
 # the chapel: broken arches, the altar, rubble, braziers at its mouth
 place('wilds-gothic-arch', 30, 10, allow_path=True, block=False)
@@ -347,12 +364,6 @@ for c, r in [(44, 11), (52, 11), (45, 15), (50, 16), (44, 6), (52, 6)]:
 for c, r in [(42, 16), (53, 16), (42, 7), (53, 9)]:
     place('ember-crypt-funeral-urns', c, r)
 
-# the crypt door's mouth: menhir, braziers, the guardians' things
-place('wilds-candle-menhir', 14, 24)
-place('Brazier3', 18, 27, allow_path=True)
-place('ember-crypt-inscribed-stones', 18, 22)
-place('ember-dungeon-bone-pile', 15, 27, block=False)
-
 # the avenue: lanterns and statues in pairs, the arch at its end
 av = sorted(avenue, key=lambda p: wx(*p))
 for i, p in enumerate(av[4::7]):
@@ -369,26 +380,28 @@ for i, p in enumerate(sorted(paths, key=lambda q: (q[1], q[0]))[::23]):
             place('lamppost' if i % 2 else 'wilds-cemetery-lantern', *n)
             break
 
-# the grave fields: rows of graves on the plains and the hill's terraces, every other hex, a mix of 3D and card stones
-GRAVES_3D = ['ember-frost-snowy-grave-marker', 'ember-crypt-ancient-tombstone', 'ember-extra-grave-marker']
-GRAVES_CARD = ['tombstones', 'wilds-gothic-gravestone', 'wilds-broken-gravestone']
-for (c, r) in cells():
-    if tiles[(c, r)] != 'plains' or r % 2 or c % 2 == (r // 2) % 2:
-        continue
-    if dist(c, r, wx(*PLAZA), wz(PLAZA[1])) < 5 or r >= 44:
-        continue
-    x, z = wx(c, r), wz(r)
-    if noise2(x + 40, z) < -0.45:
-        continue  # a few gaps where the old rows have sunk away
-    roll = rng.random()
-    if roll < 0.45:
-        place(rng.choice(GRAVES_3D), c, r, rot=rng.choice([0, 0, 1, 5]))
-    elif roll < 0.85:
-        place(rng.choice(GRAVES_CARD), c, r)
-    elif roll < 0.93:
-        place(rng.choice(['ember-crypt-stone-tomb', 'ember-crypt-sarcophagus']), c, r)
-    else:
-        place('wilds-grave-mound', c, r)
+# the grave fields (3D stones only): family plots, rows straight along the hex rows, one kind of stone per plot and a monument at its head,
+# graves only on level ground
+PLOTS = [  # c0, c1, r0, r1, stone, monument
+    (7, 15, 32, 41, 'ember-crypt-ancient-tombstone', 'wilds-ruined-wayside-shrine'),
+    (18, 25, 37, 42, 'ember-extra-grave-marker', 'wilds-knight-statue'),
+    (35, 42, 37, 42, 'ember-extra-grave-marker', 'wilds-candle-menhir'),
+    (44, 53, 30, 35, 'ember-crypt-ancient-tombstone', 'wilds-ivy-statue'),
+    (20, 32, 15, 23, 'ember-crypt-ancient-tombstone', None),   # on the barrow's crown
+    (14, 19, 13, 19, 'ember-extra-grave-marker', 'dungeon-ossuary'),
+]
+for (c0, c1, r0, r1, stone, monument) in PLOTS:
+    if monument:
+        place(monument, (c0 + c1) // 2, r0)
+    for r in range(r0 + 1, r1 + 1, 2):
+        for c in range(c0, c1 + 1, 2):
+            p = (c, r)
+            if tiles[p] not in ('plains', 'hill') or slope(p) or elev[p] < 0:
+                continue
+            if rng.random() < 0.12:
+                place(rng.choice(['ember-crypt-stone-tomb', 'ember-crypt-sarcophagus']), c, r)
+            else:
+                place(stone, c, r)
 
 # the dead wood: trees (3D and cards), brambles, fallen logs; denser on the lair's ridge so its rim cannot be seen over
 TREES_3D = ['ember-winter-frost-dead-tree', 'ember-forest-dead-tree']
@@ -451,11 +464,10 @@ def enemy(name, cls, x, y, level, **extra):
 enemy('Zumbi', 'zombie', 10, 37, 5)
 enemy('Zumbi', 'zombie', 13, 35, 5)
 enemy('Zumbi', 'zombie2', 8, 40, 5)
-enemy('Cão Zumbi', 'zombieDog', 12, 39, 5)
 # the crypt's door
-enemy('Guardião da Cripta', 'cultistV2', 16, 23, 6)
-enemy('Guardião da Cripta', 'cultistV2', 19, 25, 6)
-enemy('Saqueador de Covas', 'miliciaV2', 15, 26, 5)
+enemy('Guardião da Cripta', 'cultistV2', 25, 32, 6)
+enemy('Guardião da Cripta', 'cultistV2', 27, 32, 6)
+enemy('Saqueador de Covas', 'miliciaV2', 26, 27, 5)
 # the chapel
 enemy('Acólito das Cinzas', 'cultist', 27, 6, 5)
 enemy('Acólito das Cinzas', 'cultist', 33, 6, 5)
@@ -468,16 +480,16 @@ enemy('Ladrão de Túmulos', 'assassin', 48, 9, 5)
 # the avenue, by the arch
 enemy('Zumbi', 'zombie2', 53, 26, 6)
 enemy('Zumbi', 'zombie2', 55, 24, 6)
-enemy('Cão Zumbi', 'zombieDog', 51, 28, 6)
 # the pond
 enemy('Zumbi', 'zombie', 46, 39, 5)
 enemy('Zumbi', 'zombie', 54, 41, 5)
 # the hill's crown, among the high graves
-enemy('Cão Zumbi', 'zombieDog', 27, 21, 5)
-enemy('Zumbi', 'zombie2', 24, 23, 5)
+enemy('Zumbi', 'zombie2', 23, 21, 5)
 # the dead wood near the deer track (they guard the way to the cleft without showing it)
 enemy('Zumbi', 'zombie2', 4, 22, 6)
-enemy('Cão Zumbi', 'zombieDog', 2, 9, 6)
+# loose in the corners: the apparition among the north-east hills, the zombie ox in the south-west field
+enemy('Aparição', 'apparition', 52, 4, 7)
+enemy('Boi Zumbi', 'undeadOx', 3, 42, 7)
 # the hollow
 enemy('O Birolho', 'birolhoLegs2', BIROLHO[0], BIROLHO[1], 10, guaranteedDrop=True)
 
@@ -490,7 +502,7 @@ neutral = [
 
 
 def unit_cells(s):
-    two = s['classId'] in ('birolhoLegs2', 'zombieDog', 'mordavianWolfFinal', 'swampBlueCalf')
+    two = s['classId'] in ('birolhoLegs2', 'undeadOx', 'mordavianWolfFinal', 'swampBlueCalf')
     return [(s['x'], s['y'])] + ([(s['x'] + 1, s['y'])] if two else [])
 
 
@@ -557,6 +569,15 @@ for name, p in (('Birolho', BIROLHO), ('chest', (11, 13)), ('cage', (10, 11))):
 if (BIROLHO[0] + 1, BIROLHO[1]) not in lair_floor:
     problems.append('Birolho second hex outside the hollow')
 rim_open = [p for p in rim_cells if p not in blocked]
+south = [x for x in range(COLS) if (x, 46) not in blocked]
+if south != [28, 29, 30, 31]:
+    problems.append(f'the south wall is open at {south} (only the gate 28..31 may be)')
+for p in cut_walls:
+    if p not in blocked:
+        problems.append(f'the crypt cut is open at {p}')
+for p in cut_cells:
+    if p in blocked:
+        problems.append(f'the crypt cut is blocked at {p}')
 if rim_open:
     problems.append(f'rim open at {rim_open}')
 for p in connectors:
