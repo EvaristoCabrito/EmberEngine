@@ -117,7 +117,7 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"warCry", "Grito de Guerra", 5, "", false}, "swordsman", 15},
     {{"leapingStrike", "Salto Devastador", 5, "", true}, "swordsman", 17},
     // Arqueiro (docs/SKILLS_ARCHER.md, 2026-10-18): bow skills (the bow's own roll + bonus dice), the second of T1 / T3, two of T4 / T5
-    {{"venomArrow", "Flecha Envenenada", 1, "", true}, "archer", 2},
+    {{"venomArrow", "Milf's Acid Arrow", 1, "", true}, "archer", 2},  // the user's name (2026-10-21, a gag), both languages
     {{"arrowRain", "Chuva de Flechas", 3, "", true}, "archer", 7},
     {{"explosiveArrow", "Flecha Explosiva", 4, "", true}, "archer", 10},
     {{"cripplingShot", "Tiro Paralisante", 4, "", true}, "archer", 12},
@@ -2886,7 +2886,7 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"eruption", "Eruption"}, {"glacialGale", "Glacial Gale"}, {"wrathOfTheSkies", "Wrath of the Skies"},
     {"primordialEmber", "Primordial Ember"},
     {"steelWhirlwind", "Steel Whirlwind"}, {"guardBreak", "Guard Break"}, {"warCry", "War Cry"}, {"leapingStrike", "Devastating Leap"},
-    {"venomArrow", "Venom Arrow"}, {"arrowRain", "Arrow Rain"}, {"explosiveArrow", "Explosive Arrow"}, {"cripplingShot", "Crippling Shot"},
+    {"venomArrow", "Milf's Acid Arrow"}, {"arrowRain", "Arrow Rain"}, {"explosiveArrow", "Explosive Arrow"}, {"cripplingShot", "Crippling Shot"},
     {"arrowStorm", "Arrow Storm"}, {"deathShot", "Death Shot"},
     {"spearToss", "Spear Toss"}, {"hookPull", "Hook"}, {"poleVault", "Pole Vault"}, {"disarm", "Disarm"}, {"swapPost", "Change of Post"},
     {"impaleDrag", "Impale and Drag"}, {"sentinelVigil", "Sentinel's Vigil"}, {"sentinelStrike", "Sentinel's Thrust"},
