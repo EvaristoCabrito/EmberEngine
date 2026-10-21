@@ -1,6 +1,6 @@
 """Makes a seamless square ground tile from a photo (the user's top-down ground art), for the board's ground layers.
 
-  python -I tools/scripts/ground/make_tile.py <photo> <out.png> [--size N] [--band PX] [--seed S] [--preview 2x2.png]
+  python -I tools/scripts/ground/make_tile.py <photo> <out.png> [--size N] [--band PX] [--seed S] [--preview 2x2.png] [--flatten]
 
 The square is cut from the photo's middle at its own pixels (no resampling). Along each axis in turn, the tile's two
 borders are taken from the square rolled by half its size (whose middle is continuous across the wrap), joined to it
@@ -43,6 +43,8 @@ def main():
     p.add_argument("--size", type=int, default=0, help="square side in pixels (default: the photo's shorter side)")
     p.add_argument("--band", type=int, default=110, help="the cut lies within twice this many pixels of each border")
     p.add_argument("--preview", default="")
+    p.add_argument("--flatten", action="store_true",
+                   help="even out the photo's slow light falloff (a vignette) first, so the copies meet at one brightness")
     a = p.parse_args()
 
     src = np.asarray(Image.open(a.photo).convert("RGB"), dtype=np.float32)
@@ -51,6 +53,17 @@ def main():
     n -= n % 4  # BC7 blocks
     y0, x0 = (h - n) // 2, (w - n) // 2
     out = src[y0:y0 + n, x0:x0 + n]
+    if a.flatten:
+        # The brightness at a scale of about an eighth of the square (a 64 px copy blurred, then back to size), divided out
+        # and the square's mean brightness put back: the stones keep their own light and dark, the falloff goes.
+        lum = out.mean(axis=2)
+        small = np.asarray(Image.fromarray(lum).resize((64, 64), Image.BILINEAR), dtype=np.float32)
+        g = np.exp(-0.5 * (np.arange(-15, 16) / 5.0) ** 2)
+        g /= g.sum()
+        for axis in (0, 1):  # a separable Gaussian, the edges mirrored
+            small = np.apply_along_axis(lambda r: np.convolve(np.pad(r, 15, mode="reflect"), g, mode="valid"), axis, small)
+        slow = np.asarray(Image.fromarray(small.astype(np.float32)).resize((n, n), Image.BILINEAR), dtype=np.float32)
+        out = out * (lum.mean() / np.maximum(slow, 1.0))[..., None]
 
     # One axis at a time (a roll on both at once leaves the rolled copy's own seams crossing the border bands):
     # the copy rolled by half along that axis covers the two borders across it; its own seam lies in the middle, unused.

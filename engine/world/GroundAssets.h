@@ -51,6 +51,10 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"cemiterio-v01", "hill", "ember-cemiterio-encosta-v01", "content/ground/cemiterio-encosta-v01.png", 4.5f},      // cemi06: stones, frosted grass
     // A Ponte de Pedra 023's deck (ponte-v01): the user's BridgeTiles photo (Attachments/BridgeTiles.jpg, 2026-10-21; ~9 setts across).
     {"ponte-v01", "ruins", "ember-ponte-calcamento-v01", "content/ground/ponte-calcamento-v01.png", 3.2f, true},
+    // The watchtower's floors (the user's photos in Attachments/watchtower, 2026-10-21; about 16 setts across each): torre-v01 the
+    // tower's own floors, prisao-v01 the prison under it (its photo's vignette evened out by make_tile.py --flatten).
+    {"torre-v01", "nave", "ember-torre-piso-v01", "content/ground/torre-piso-v01.png", 5.6f},
+    {"prisao-v01", "nave", "ember-prisao-piso-v01", "content/ground/prisao-piso-v01.png", 5.2f},
 };
 
 inline std::string skyMoonAsset(std::string_view phase) { return "sky/moon/" + std::string(phase) + ".tex"; }
