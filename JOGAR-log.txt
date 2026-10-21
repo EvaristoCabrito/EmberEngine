@@ -1,62 +1,45 @@
-[info] mounted C:\EmberEngine\build\sprites\battle-v2.pak (2773 assets)
-[info] mounted C:\EmberEngine\build\meshes\props-v2.pak (299 assets)
+[info] mounted C:\EmberEngine\build\sprites\battle.pak (2773 assets)
+[info] mounted C:\EmberEngine\build\meshes\props-v3.pak (301 assets)
 [info] mounted C:\EmberEngine\build\meshes\architecture.pak (24 assets)
-[info] mounted C:\EmberEngine\build\ground\ground-v14.pak (157 assets)
+[info] mounted C:\EmberEngine\build\ground\ground-v15.pak (157 assets)
 [info] GPU: AMD Radeon(TM) RX 6400 (Vulkan 1.4.315, driver 0x800161)
 [info] transfer queue: dedicated (family 2)
 [info] bindless: 262144 textures, 16384 storage images, 256 samplers, 4096 storage buffers
 [info] campaign: save bank C:\Users\evari\AppData\Local\Ember\ember-save-bank.json (2 of 6 slots used)
 [info] overworld: 113 cells, 15 locations, 150 missions
 [info] overworld: 8 road encounters field undead
-[info] inn: 134 weapons, 292 gear, 7 potions
-[warn] slow frame: 56.2 ms busy = assets 0.0, stage 0.0, ui 54.4, render 1.9 (record 1.2, submit 0.1, present 0.1; waits 0.2 not counted)
-[info] map vau 'O Vau': 16x14 hexes, smooth 74328 triangles, hard 5806 triangles, 0 baked layers, 11 textures, 5.4 MB geometry
+[info] map thebridge 'A Ponte de Pedra': 40x21 hexes, smooth 277200 triangles, hard 20644 triangles, 1 baked layers, 12 textures, 17.9 MB geometry
 [info] volumetrics: 7 profiles from content/atmosphere/v1/profiles.json
-[info] scene vau: 17 cards, 0 models, 11 units, 0 architecture pieces (0 built)
-[info] poses: 8 of 8 map units in the catalog, 14 poses between them
+[info] scene build/engine2-test/scenes/thebridge023.scene.json: built by SceneBuilder (EmberEngine props); 1 kinds left out
+[info] scene thebridge: 33 cards, 0 models, 20 units, 0 architecture pieces (0 built)
+[info] poses: 20 of 20 map units in the catalog, 15 poses between them
 [info] progression: 6 heroes; enemies keep their class's own gains
 [info] enemy ranks: 9 ranks, 20 classes ranked (others F)
-[info] battle vau: 8 of 8 units in play
-[info] formation: 3 heroes at the entry (4, 12), front turned 0 sixths toward the enemy at (8, 2); 0 moved to the nearest free ground
-[info] inn: 134 weapons, 292 gear, 7 potions
-[info] weapons: 134 main-hand, 27 off-hand, 96 classes
+[info] battle thebridge: 20 of 20 units in play
+[info] formation: the map splits the party into 3 groups: every hero keeps the map's place
 [info] inn: 134 weapons, 292 gear, 7 potions
 [info] sprites: roster lists 924 clips
-[info] sprites: Personagens Alta: the cast 722 MB at full resolution, the others 140 MB (GPU 2119 MB free before the fight)
-[info] sprites: full-clip pool 10 x 144 MB (largest clip 144.5 MB)
-[info] sprites: full-clip pool set up in 130.5 ms
-[warn] slow stage frame: 132.3 ms = sprites 131.0, rest 0.1
-[warn] slow frame: 137.0 ms busy = assets 0.0, stage 132.3, ui 0.5, render 4.3 (record 3.8, submit 0.1, present 0.1; waits 0.2 not counted)
-[info] sprites: the fight's 31 clips on the GPU 2.18 s after they were asked for
-[info] sprites:   voss-veo 563 MB (full 563 MB)
+[info] sprites: Personagens Alta: the cast 733 MB at full resolution, the others 320 MB (GPU 2122 MB free before the fight)
+[info] sprites: full-clip pool 11 x 144 MB (largest clip 144.5 MB)
+[info] sprites: full-clip pool set up in 192.2 ms
+[warn] slow stage frame: 214.8 ms = ground 2.2, sprites 209.5, uploads 3.0, rest 0.1
+[warn] slow frame: 218.2 ms busy = assets 0.2, stage 214.8, ui 0.5, render 2.8 (record 2.4, submit 0.1, present 0.1; waits 0.2 not counted)
+[warn] slow stage frame: 51.4 ms = ground 46.0, sprites 1.0, uploads 4.3, rest 0.1
+[warn] slow ui record: 31.8 ms = imgui render 0.0, refine images 0.0, textures + draw 31.8 (38 textures changed, largest 1254x1254)
+[warn] slow frame: 84.7 ms busy = assets 0.1, stage 51.4, ui 0.6, render 32.8 (record 32.3, submit 0.1, present 0.2; waits 0.2 not counted)
+[info] sprites: the fight's 53 clips on the GPU 2.72 s after they were asked for
+[info] sprites:   voss-veo 573 MB (full 573 MB)
 [info] sprites:   neera/neera-v2-001 117 MB (full 117 MB)
+[info] sprites:   BasePikeman 87 MB (full 87 MB)
 [info] sprites:   militia-v2 74 MB (full 74 MB)
 [info] sprites:   BaseCrossbowman 66 MB (full 66 MB)
+[info] sprites:   theButcher 60 MB (full 60 MB)
 [info] sprites:   Kael_Final/kael-final-002 33 MB (full 33 MB)
+[info] sprites:   wardog2 30 MB (full 30 MB)
 [info] sprites:   neera 8 MB (full 8 MB)
+[info] sprites:   lancer 2 MB (full 2 MB)
 [info] sprites:   voss-final 0 MB (full 0 MB)
-[info] sprites: GPU memory 2455 MB allocated by the game, 2523 MB used, budget 2523 MB, heap 3824 MB
-[info] camera: meter 71236.070 lux, EV 14.80, darkening 0.00 stops, exposure 0.00003, key 99625.56 lux at elevation 31.0 deg
-[info] Voss: magicMissileV2 not at the camera, back turned after the cast pose (7.24 s)
-[warn] slow frame: 51.4 ms busy = assets 0.0, stage 49.8, ui 0.6, render 1.2 (record 0.6, submit 0.1, present 0.1; waits 0.2 not counted)
-[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x3ba00000003ba.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
-[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x3ba00000003ba.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
-[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x3ba00000003ba.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
-[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x3ba00000003ba.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
-[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x3ba00000003ba.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
-[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x3ba00000003ba.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
-[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x3ba00000003ba.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
-[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x3ba00000003ba.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
-[ERROR] vulkan: vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x3ba00000003ba.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
-[ERROR] vulkan: (Warning - This VUID has now been reported 10 times, which is the duplicate_message_limit value, this will be the last time reporting it).
-vkQueueSubmit2(): pSubmits[0].pWaitSemaphoreInfos[1].semaphore Invalid VkSemaphore Object 0x3ba00000003ba.
-The Vulkan spec states: semaphore must be a valid VkSemaphore handle (https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-VkSemaphoreSubmitInfo-semaphore-parameter)
+[info] sprites:   captain 0 MB (full 0 MB)
+[info] sprites: GPU memory 2663 MB allocated by the game, 2768 MB used, budget 2814 MB, heap 3824 MB
+[info] camera: meter 1.336 lux, EV -0.90, darkening 2.00 stops, exposure 0.39028, key 3.56 lux at elevation 10.1 deg
+^C
