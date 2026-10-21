@@ -10,9 +10,13 @@
 //   02  ours, in 3D (the heroes'): the floor frosts over from each hex's middle, bands of wind turn round the field, snow
 //       swirls down through them, ice crystals (meshes) fall slanted by the gusts and shatter into splinters, a frost
 //       ring and a puff of ice dust, under the same pulsing light.
-// The rules keep the field for rounds; the storm plays its 9 s (Engine2) and fades early when the rules drop it (stop()).
+// The rules keep the field for rounds; the storm plays its 9 s (Engine2) and fades early when the rules drop it (stop()). In a
+// battle it stands (stand()) for as long as the rules keep the field (the user, 2026-10-21: it vanished while still active), and
+// fades only when they drop it.
 
+#include <algorithm>
 #include <array>
+#include <limits>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -32,7 +36,11 @@ class IceStorm {
   float start() const { return start_; }
   float end() const { return end_; }
   bool done(float now) const { return now >= end_; }
-  void stop(float now) { end_ = std::min(end_, now + kStopFade); }
+  void stop(float now) {
+    stopped_ = true;
+    end_ = std::min(end_, now + kStopFade);
+  }
+  void stand() { standing_ = true, end_ = std::numeric_limits<float>::max(); }
   int id = 0;
 
   // ice / wind: Engine2's two sheets (version 01 only; nothing is drawn by it until they are resident).
@@ -58,6 +66,7 @@ class IceStorm {
   glm::vec3 centre_{0.0f};
   float radius_ = 1.0f;  // the field's reach from its centre
   float start_ = 0.0f, end_ = 0.0f;
+  bool standing_ = false, stopped_ = false;
   std::vector<Mote> motes_;
   std::array<Pulse, 3> pulses_{};
 };

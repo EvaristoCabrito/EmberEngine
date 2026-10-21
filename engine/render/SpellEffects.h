@@ -127,6 +127,7 @@ class SpellEffects {
   // the impact; newestStorm() is its id (0 = none yet), stormEnd fades it when the rules drop the field.
   int newestStorm() const { return stormSerial_; }
   void stormEnd(int id, float now);
+  void stormStand(int id);  // held until stormEnd (the rules keep the field); without it the storm plays its 9 s (--fx-test)
 
   // Teia dos Sonhos 02 (vfx/DreamWeb): a web the rules keep for rounds. Before cast("webOfDreams", 2, ...) call webUnits() with the
   // units standing in the zone; after it, newestWeb() is its id (0 = none yet) and webStand(id) holds it until webEnd(id, now) (the
@@ -271,6 +272,7 @@ class SpellEffects {
   static constexpr float kTinyFx = 0.55f;
   // Raio Divino's struck hex: the one nearest the middle of its area (the rules list the area row by row).
   static const Spot& areaCentre(const std::vector<Spot>& hexes);
+  static glm::vec3 aimedHex(const std::vector<Spot>& targets);  // the area's aimed hex, ground + 0.04 (Veneno Cáustico's flight ends there)
   static float heightOf(const Spot& s) { return s.cardHeight > 0.0f ? s.cardHeight : std::max(1.2f, (s.body.y - s.feet.y) / 0.45f); }
   int stormSerial_ = 0;
   CombatFx combat_;

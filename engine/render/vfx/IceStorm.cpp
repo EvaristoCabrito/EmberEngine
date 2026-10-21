@@ -91,10 +91,10 @@ IceStorm::IceStorm(int version, std::vector<glm::vec3> hexes, float start)
 
 void IceStorm::build(float now, const Camera& camera, const VfxFlipbook& ice, const VfxFlipbook& wind, VfxFrame& frame, std::vector<VfxLight>& lights) {
   if (now < start_ || done(now) || hexes_.empty()) return;
-  const float age = std::min(now - start_, kDuration);
+  const float age = standing_ ? now - start_ : std::min(now - start_, kDuration);
   const float gather = std::min(1.0f, age / kGather);
-  float fade = std::min(1.0f, (kDuration - age) / kFade);
-  if (end_ < start_ + kDuration) fade = std::min(fade, std::max(0.0f, (end_ - now) / kStopFade));
+  float fade = standing_ ? 1.0f : std::min(1.0f, (kDuration - age) / kFade);
+  if (stopped_) fade = std::min(fade, std::max(0.0f, (end_ - now) / kStopFade));
   const float env = gather * fade;
   glm::vec3 right{camera.right.x, 0.0f, camera.right.z};  // Engine2's gusts blow across the screen
   right = glm::dot(right, right) > 1e-8f ? glm::normalize(right) : glm::vec3(1, 0, 0);

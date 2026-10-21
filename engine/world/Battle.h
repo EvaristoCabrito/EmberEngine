@@ -429,7 +429,7 @@ class Battle {
     int radius = 0;
     double sleepChance = 0.25;
   };
-  struct IceZone {  // Tempestade de Gelo: hurts whoever starts its turn inside
+  struct IceZone {  // Tempestade de Gelo: strikes everyone in it as it lands, then whoever starts its turn inside or walks into it
     std::vector<BattleHex> cells;
     int roundsLeft = 0;
     BattleHex center;
@@ -440,6 +440,7 @@ class Battle {
     int casterLevel = 1;
     std::string casterId;
     std::string side;
+    std::map<std::string, int> struckRound;  // unit id -> the round it was last struck (once a round per body)
   };
   struct AuraZone {  // Aura de Proteção / Presença Intimidante
     std::vector<BattleHex> cells;

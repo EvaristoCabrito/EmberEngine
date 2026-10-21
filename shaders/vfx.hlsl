@@ -501,17 +501,20 @@ float4 PSMain(VSOut i) : SV_Target0 {
   } else if (d.material == kMaterialVenomSmoke) {
     // VENOM_SMOKE_FRAGMENT: ragged smoke lobes from the sphere's own surface, no texture.
     const float t = d.params0.x, opacity = d.params0.y, seed = d.params0.z;
+    // Fixed 2026-10-21 (the user: no green smoke at all): every fragment lies on the sphere's surface (radius 1), past the ragged
+    // edge (0.72 + field x 0.44), so almost all were discarded, and the colour was near black. Now a soft lobe: dense where it faces
+    // the eye, thinning to nothing at its rim, torn by the same noise, an acid green.
     const float3 sp = i.local;
     const float3 p = sp + float3(seed * 2.7, seed * 0.83, t * 0.18);
     const float field = smokeField(p, t);
-    const float radius = length(sp);
-    const float ragged = 0.72 + field * 0.44;
-    const float edge = 1.0 - smoothstep(ragged, ragged + 0.24, radius);
-    const float pockets = smoothstep(0.28, 0.62, field);
-    a = edge * pockets * opacity;
+    const MeshFrame f = loadFrame(push.frame);
+    const float facing = abs(dot(normalize(i.normal), normalize(f.cameraPosition - i.world)));
+    const float body = smoothstep(0.05, 0.75, facing + (field - 0.5) * 0.5);
+    const float pockets = 0.45 + 0.55 * smoothstep(0.2, 0.7, field);
+    a = body * pockets * opacity;
     if (a < 0.018) discard;
     const float variation = smoothstep(0.28, 0.8, field);
-    c = lerp(float3(0.04, 0.2, 0.03), float3(0.2, 0.44, 0.075), variation);
+    c = lerp(float3(0.12, 0.4, 0.06), float3(0.36, 0.8, 0.15), variation);
   } else if (d.material == kMaterialFlipbookParticle) {
     // ParticleEmitter's fragment: the sheet's cell, its uv rippled a little, x tint x emissive x uIntensity.
     const float frameValue = i.particleB.y, alpha = i.particleB.z, emissive = i.particleB.w * d.params0.x;

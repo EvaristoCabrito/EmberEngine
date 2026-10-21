@@ -3602,6 +3602,43 @@ void tileHazard(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffec
   if (!u.alive) afterDeath(b, unit, out);
 }
 
+// Tempestade de Gelo (ours since 2026-10-21; the user: "cause um dano inicial imediato em todos ao ser lançada, e depois começa a contar
+// o dano por turno parado ali dentro, ou se passar no meio da tempestade"): every field the unit's body stands in strikes it, at most
+// once a round per field (struckRound): as the storm lands, at the start of its turn inside, or as it walks into it.
+// MAG/2 x the storm's weight + its dice, the caster's staff, ice resistance.
+// `from`: only the fields from this one on (the one just cast).
+void iceStormsStrike(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out, size_t from = 0) {
+  for (size_t zi = from; zi < b.iceZones().size(); ++zi) {
+    BattleUnit& u = b.units()[unit];
+    if (!u.alive) return;
+    Battle::IceZone& z = b.iceZones()[zi];
+    const std::vector<BattleHex> body = Battle::footprint(u, u.x, u.y);
+    if (std::none_of(z.cells.begin(), z.cells.end(), [&](const BattleHex& c) { return std::any_of(body.begin(), body.end(), [&](const BattleHex& p) { return p == c; }); })) continue;
+    if (const auto it = z.struckRound.find(u.id); it != z.struckRound.end() && it->second == b.round()) continue;
+    z.struckRound[u.id] = b.round();
+    const Battle::IceZone zone = z;  // a copy: a death may change the list
+    const double base = std::floor(std::floor(zone.casterMag / 2) * zone.damageMul) + rollDice(zone.damageDice, zone.damageFaces, 0, rng);
+    int casterIdx = -1;
+    for (size_t i = 0; i < b.units().size(); ++i)
+      if (b.units()[i].id == zone.casterId) casterIdx = static_cast<int>(i);
+    const double staffed = casterIdx >= 0 ? base * (1 + staffBonus(b.units()[static_cast<size_t>(casterIdx)].combat, "ice") / 100) : base;
+    const int dmg = static_cast<int>(std::floor(elementalDamage(staffed, u.combat.resistance("ice"), zone.casterMag)));
+    const int actual = std::min(u.hp, dmg);
+    u.hp = std::max(0, u.hp - dmg);
+    if (casterIdx >= 0 && b.units()[static_cast<size_t>(casterIdx)].side != u.side) staffDrain(b.units()[static_cast<size_t>(casterIdx)], actual);
+    trainResistance(u, "ice", zone.casterLevel, rng);
+    if (casterIdx >= 0 && b.units()[static_cast<size_t>(casterIdx)].side == "player") trainResistance(b.units()[static_cast<size_t>(casterIdx)], "ice", u.level, rng);
+    BattleEffect e{unit, dmg, false, false, false, false, false};
+    e.cause = pick("Tempestade de Gelo atinge", "Ice Storm strikes");
+    if (u.hp <= 0) markDead(u, rng), e.died = true;
+    out.push_back(e);
+    if (!u.alive) {
+      afterDeath(b, unit, out);
+      return;
+    }
+  }
+}
+
 // provoke(target, attacker): a neutral struck by the party turns, and its whole pack with it.
 void provokeNeutral(Battle& b, size_t target, size_t attacker, std::vector<BattleEffect>& out) {
   const BattleUnit& t = b.units()[target];
@@ -3894,11 +3931,21 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     if (!att.alive || step.path.size() < 2) return;
     for (size_t k = 1; k < step.path.size() && att.alive; ++k) {
       att.x = step.path[k].x, att.y = step.path[k].y;
-      tileHazard(b, step.att, rng, out);
+      stepOnHex(b, step.att, rng, out);
     }
     BattleEffect m;
     m.unit = step.att, m.moved = true;
     out.push_back(m);
+    return;
+  }
+  if (step.type == BattleStep::Type::Spell && step.kind == "iceStorm") {  // the storm strikes everyone in it as it lands (iceStormsStrike)
+    if (!att.alive || b.iceZones().empty()) return;
+    const size_t newest = b.iceZones().size() - 1;  // castE2 laid it
+    std::vector<size_t> inside;
+    for (size_t i = 0; i < b.units().size(); ++i)
+      if (b.units()[i].alive) inside.push_back(i);
+    for (size_t i : inside)
+      if (newest < b.iceZones().size()) iceStormsStrike(b, i, rng, out, newest);
     return;
   }
   if (step.type == BattleStep::Type::Effect) {
@@ -4542,29 +4589,8 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
   }
   // Its poison (Engine2: the tier's dice, its Poison Resistance less the tier's penalty and the poisoner's MAG / 2)
   if (u.alive) tickConditions(b, unit, rng, out, false, true);
-  // Tempestade de Gelo: whoever starts its turn inside the field is hurt
-  if (u.alive)
-    for (const Battle::IceZone zone : std::vector<Battle::IceZone>(b.iceZones())) {  // a copy: a death may change the list
-      if (!u.alive) break;
-      const std::vector<BattleHex> body = Battle::footprint(u, u.x, u.y);
-      if (std::none_of(zone.cells.begin(), zone.cells.end(), [&](const BattleHex& c) { return std::any_of(body.begin(), body.end(), [&](const BattleHex& p) { return p == c; }); })) continue;
-      const double base = std::floor(std::floor(zone.casterMag / 2) * zone.damageMul) + rollDice(zone.damageDice, zone.damageFaces, 0, rng);
-      int casterIdx = -1;
-      for (size_t i = 0; i < b.units().size(); ++i)
-        if (b.units()[i].id == zone.casterId) casterIdx = static_cast<int>(i);
-      const double staffed = casterIdx >= 0 ? base * (1 + staffBonus(b.units()[static_cast<size_t>(casterIdx)].combat, "ice") / 100) : base;
-      const int dmg = static_cast<int>(std::floor(elementalDamage(staffed, u.combat.resistance("ice"), zone.casterMag)));
-      const int actual = std::min(u.hp, dmg);
-      u.hp = std::max(0, u.hp - dmg);
-      if (casterIdx >= 0 && b.units()[static_cast<size_t>(casterIdx)].side != u.side) staffDrain(b.units()[static_cast<size_t>(casterIdx)], actual);
-      trainResistance(u, "ice", zone.casterLevel, rng);
-      if (casterIdx >= 0 && b.units()[static_cast<size_t>(casterIdx)].side == "player") trainResistance(b.units()[static_cast<size_t>(casterIdx)], "ice", u.level, rng);
-      BattleEffect e{unit, dmg, false, false, false, false, false};
-      e.cause = pick("Tempestade de Gelo atinge", "Ice Storm strikes");
-      if (u.hp <= 0) markDead(u, rng), e.died = true;
-      out.push_back(e);
-      if (!u.alive) afterDeath(b, unit, out);
-    }
+  // Tempestade de Gelo: whoever starts its turn inside the field is hurt (once a round: not again if it walked in this round)
+  if (u.alive) iceStormsStrike(b, unit, rng, out);
   // The staff's regeneration (restoreStaffHp): HP back, capped to what is missing.
   if (u.alive && u.combat.staff && u.combat.staffRegen > 0) {
     const int heal = std::min(u.maxHp - u.hp, static_cast<int>(std::floor(u.combat.staffRegen)));
@@ -4636,7 +4662,10 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
   if (u.cond.reflectTurns > 0 && --u.cond.reflectTurns == 0) u.cond.reflectPct = 0, u.cond.reflectHealPct = 0;
 }
 
-void stepOnHex(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) { tileHazard(b, unit, rng, out); }
+void stepOnHex(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) {
+  tileHazard(b, unit, rng, out);
+  if (b.units()[unit].alive) iceStormsStrike(b, unit, rng, out);  // walking into a Tempestade de Gelo
+}
 
 namespace {
 // data.ts weightedLootPick: weapons (not owned) and gear by power, the rarer the dearer.

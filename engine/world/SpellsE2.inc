@@ -202,10 +202,14 @@ struct IceStormP {
   int range, size, areaHexes, durationRounds, dice, faces;
   double mul;
 };
+// Ours since 2026-10-21 (the user: "o radius tem que ser maior e o dano tem que ser menor", "mais 2 hexes de radius no max power"):
+// radius 1 from the start (was 3 hexes below 12), 2 from 16, 3 from 24 (the old maximum, 1, plus 2); about a third less damage a
+// strike (MAG/2 weight 0.45-0.62, one die fewer from 16) since it now also strikes as it lands and on whoever walks into it.
 IceStormP iceStormPower(int level) {
   const int step = std::max(0, std::min(5, (level - 8) / 4 + (level - 8 < 0 ? -1 : 0)));  // Math.floor((level - 8) / 4), clamped
-  static const int dice[6] = {1, 1, 2, 2, 3, 3}, faces[6] = {6, 8, 6, 8, 6, 8};
-  return {5 + step, 1, level < 12 ? 3 : 7, 2 + step, dice[step], faces[step], 0.65 + step * 0.05};
+  static const int dice[6] = {1, 1, 1, 1, 2, 2}, faces[6] = {6, 8, 6, 8, 6, 8}, radius[6] = {1, 1, 2, 2, 3, 3};
+  const int r = radius[step];
+  return {5 + step, r, 3 * r * (r + 1) + 1, 2 + step, dice[step], faces[step], 0.45 + step * 0.035};
 }
 constexpr int kIceStormUnlock = 8;
 // burning hands / poison breath
@@ -393,10 +397,11 @@ std::vector<BattleHex> wrathRay(const Battle& b, BattleHex from, BattleHex throu
   if (raw.size() > static_cast<size_t>(range)) raw.resize(static_cast<size_t>(range));
   return raw;
 }
-// iceStormAreaTiles: the three adjoining hexes below level 12, else the seven-hex ring.
+// iceStormAreaTiles: every hex within the storm's radius (iceStormPower size). The old three adjoining hexes below level 12 are
+// kept below for reference, no longer reached.
 std::vector<BattleHex> iceStormAreaTiles(const Battle& b, BattleHex origin, int level) {
-  const std::vector<BattleHex> ring = hexAreaTiles(b, origin, 1);
-  if (iceStormPower(level).areaHexes == 7) return ring;
+  const std::vector<BattleHex> ring = hexAreaTiles(b, origin, iceStormPower(level).size);
+  if (iceStormPower(level).areaHexes >= 7) return ring;
   std::vector<BattleHex> neighbours;
   for (const BattleHex& c : ring)
     if (c.x != origin.x || c.y != origin.y) neighbours.push_back(c);

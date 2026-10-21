@@ -118,7 +118,7 @@ nlohmann::json Battle::snapshot() const {
   for (const IceZone& z : iceZones_)
     ices.push_back({{"cells", cellsJson(z.cells)}, {"roundsLeft", z.roundsLeft}, {"center", {{"x", z.center.x}, {"y", z.center.y}}}, {"radius", z.radius},
                     {"damageDice", z.damageDice}, {"damageFaces", z.damageFaces}, {"damageMul", z.damageMul}, {"casterMag", z.casterMag},
-                    {"casterLevel", z.casterLevel}, {"casterId", z.casterId}, {"side", z.side}});
+                    {"casterLevel", z.casterLevel}, {"casterId", z.casterId}, {"side", z.side}, {"struckRound", z.struckRound}});
   for (const AuraZone& z : auraZones_)
     auras.push_back({{"cells", cellsJson(z.cells)}, {"roundsLeft", z.roundsLeft}, {"kind", z.kind}, {"side", z.side}, {"pct", z.pct}});
   for (const WarpGate& g : warpGates_)
@@ -317,7 +317,9 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       if (j.is_object())
         iceZones_.push_back({readCells(j.contains("cells") ? j["cells"] : nlohmann::json()), j.value("roundsLeft", 0), readPoint(j, "center"), j.value("radius", 0),
                              j.value("damageDice", 1), j.value("damageFaces", 6), j.value("damageMul", 0.65), j.value("casterMag", 0.0),
-                             j.value("casterLevel", 1), j.value("casterId", std::string()), j.value("side", std::string())});
+                             j.value("casterLevel", 1), j.value("casterId", std::string()), j.value("side", std::string()),
+                             j.contains("struckRound") && j["struckRound"].is_object() ? j["struckRound"].get<std::map<std::string, int>>()
+                                                                                       : std::map<std::string, int>()});
   if (snap.contains("auraZones") && snap["auraZones"].is_array())
     for (const nlohmann::json& j : snap["auraZones"])
       if (j.is_object())

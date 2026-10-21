@@ -9,6 +9,11 @@
 //
 // Not carried over: MeshPhysicalMaterial's clearcoat and transmission (drawn as MeshStandardMaterial with the same
 // colour, emissive, roughness, metalness and opacity); the lights' shadows.
+//
+// Veneno Cáustico 02 (ours, 2026-10-21; not the default): the same charge and flight; on every struck hex the Poison V2 sprites
+// stay, and acid smoke rises in 3D around them (soft puffs lit by the scene and the spell's own light, alpha-blended, depth-tested,
+// swelling and drifting as they climb, gone by 2.6 s), glowing droplets climb through it, a burst of green light flashes as it
+// lands and settles into a steady glow. Both versions' flights end on the aimed hex.
 
 #include <vector>
 
@@ -23,20 +28,25 @@ class CausticVenom {
  public:
   // origin: the caster's anchor 0.9 up (0.55 for a zombie dog); target: the aimed hex's ground + 0.04; impactHexes: every
   // struck hex's ground + 0.04. World space.
-  CausticVenom(glm::vec3 origin, glm::vec3 target, std::vector<glm::vec3> impactHexes, float start);
+  // version: 1 Engine2's, 2 its impact in 3D.
+  CausticVenom(int version, glm::vec3 origin, glm::vec3 target, std::vector<glm::vec3> impactHexes, float start);
 
-  static constexpr float kCharge = 0.38f, kImpact = 1.85f;
+  static constexpr float kCharge = 0.38f, kImpact = 1.85f, kImpact02 = 2.6f;
   static float travelSeconds(glm::vec3 origin, glm::vec3 target);
   float impactTime() const { return start_ + kCharge + travel_; }
-  bool done(float now) const { return now - start_ >= kCharge + travel_ + kImpact; }
-  float end() const { return start_ + kCharge + travel_ + kImpact; }
+  float impactSeconds() const { return version_ >= 2 ? kImpact02 : kImpact; }
+  bool done(float now) const { return now - start_ >= kCharge + travel_ + impactSeconds(); }
+  float end() const { return start_ + kCharge + travel_ + impactSeconds(); }
 
   // poison: the Poison V2 sheets (main, secondary, particles).
   void build(float now, const Camera& camera, const ElementSpritesV2& poison, VfxFrame& frame, std::vector<VfxLight>& lights);
 
  private:
   glm::vec3 pathPosition(float t) const;
+  // 02's impact, `e` seconds after the landing.
+  void impact02(float e, const Camera& camera, const ElementSpritesV2& poison, VfxFrame& frame, std::vector<VfxLight>& lights) const;
 
+  int version_ = 1;
   glm::vec3 start3_, target_;
   std::vector<glm::vec3> hexes_;
   float start_ = 0, travel_ = 0, flightArc_ = 0;

@@ -77,7 +77,8 @@ int SpellEffects::looks(const std::string& kind) {
   // Teia dos Sonhos: 01 Engine2's WebOfDreamsVFX as ported (the net alone), 02 ours in 3D with the whole spell (vfx/DreamWeb).
   if (kind == "webOfDreams") return 2;
   // 01 of a spell with no flipbook-card version: Engine2's own effect, ported.
-  if (kind == "fireball" || kind == "bless" || kind == "causticVenom" || kind == "phantasmalForce" ||
+  if (kind == "causticVenom") return 2;  // 01 Engine2's CausticVenomVFX, 02 its impact in 3D (vfx/CausticVenom: smoke, light)
+  if (kind == "fireball" || kind == "bless" || kind == "phantasmalForce" ||
       kind == "webOfDreams" || kind == "burningHands" || kind == "poisonBreath" || kind == "cleave" || kind == "sweep")
     return 1;
   if (kind == "longShot" || kind == "piercing") return 2;  // 01 the arrow card, 02 RangerFx's 3D arrow (the enemies')
@@ -171,8 +172,8 @@ float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& c
     const SpellBolt::Style style = kind == "divineBolt" ? SpellBolt::Style::Divine : SpellBolt::Style::Arcane;
     return SpellBolt::flightSeconds(style, caster.feet, (kind == "divineBolt" ? areaCentre(targets) : targets.front()).feet);
   }
-  if (kind == "causticVenom" && look == 1 && !targets.empty())
-    return CausticVenom::kCharge + CausticVenom::travelSeconds(engine2Origin(caster), fireballTarget(targets));
+  if (kind == "causticVenom" && look >= 1 && !targets.empty())
+    return CausticVenom::kCharge + CausticVenom::travelSeconds(engine2Origin(caster), aimedHex(targets));
   if (kind == "bless" && look == 1) {
     // The blessing lands on the nearest ally as the wave reaches it.
     float first = Bless::reachSeconds(3.0f);
@@ -551,7 +552,9 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
   } else if (kind == "causticVenom") {
     std::vector<glm::vec3> hexes;
     for (const Spot& s : targets) hexes.push_back(s.feet + glm::vec3(0.0f, 0.04f, 0.0f));
-    venoms_.emplace_back(engine2Origin(caster), fireballTarget(targets), hexes, start);
+    // 01 Engine2's CausticVenomVFX (the heroes' default); 02 the same flight, the impact in 3D (green smoke lit by the scene, a green
+    // light, droplets).
+    venoms_.emplace_back(look >= 2 ? 2 : 1, engine2Origin(caster), aimedHex(targets), hexes, start);
   } else if (kind == "bless") blesses_.emplace_back(caster.feet + glm::vec3(0.0f, 0.04f, 0.0f), 3.0f * std::sqrt(3.0f), blessAllies(caster, targets), start);
   else if (kind == "magicMissile" || kind == "magicMissileV2") magicMissile(caster, targets.front(), start, impact);
   else if (kind == "lightning" || kind == "lightningTier3") lightning(caster, targets, start, impact, false);
@@ -845,6 +848,24 @@ const SpellEffects::Spot& SpellEffects::areaCentre(const std::vector<Spot>& hexe
   return *best;
 }
 
+// The hex an area was aimed at: the rules list the area row by row, so its first hex is a corner of it, not the aim. The aim is
+// the hex whose farthest hex of the area is nearest (a disc's centre, also when the board's edge clips it); a 3-hex area (the aim
+// and two beside it) lists the aim first. Ties: the one nearest the mean.
+glm::vec3 SpellEffects::aimedHex(const std::vector<Spot>& targets) {
+  if (targets.size() <= 3) return targets.front().feet + glm::vec3(0.0f, 0.04f, 0.0f);
+  const Spot& mean = areaCentre(targets);
+  const Spot* best = &mean;
+  auto reach = [&](const Spot& c) {
+    float far = 0.0f;
+    for (const Spot& s : targets) far = std::max(far, glm::length(glm::vec2(s.feet.x - c.feet.x, s.feet.z - c.feet.z)));
+    return far;
+  };
+  float bestReach = reach(mean);
+  for (const Spot& s : targets)
+    if (const float r = reach(s); r < bestReach - 1e-3f) best = &s, bestReach = r;
+  return best->feet + glm::vec3(0.0f, 0.04f, 0.0f);
+}
+
 void SpellEffects::webUnits(int id, const std::vector<WebUnit>& units) {
   std::vector<DreamWeb::Occupant> inside;
   for (const WebUnit& u : units) inside.push_back({u.key, u.at.feet, heightOf(u.at)});
@@ -863,6 +884,10 @@ void SpellEffects::webEnd(int id, float now) {
 void SpellEffects::stormEnd(int id, float now) {
   for (IceStorm& s : storms_)
     if (s.id == id) s.stop(now);
+}
+void SpellEffects::stormStand(int id) {
+  for (IceStorm& s : storms_)
+    if (s.id == id) s.stand();
 }
 
 void SpellEffects::leapFlight(const Spot& caster, const Spot& landing, float start, float impact, int owner) {

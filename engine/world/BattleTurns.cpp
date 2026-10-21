@@ -243,11 +243,34 @@ AiPlan Battle::planEnemy(size_t unit) const {
     for (size_t i = 0; i < units_.size(); ++i)
       if (units_[i].side == "player" && units_[i].alive) heroes.push_back(i);
   }
+  // Tempestade de Gelo (ours, 2026-10-21; the user: "os inimigos não tentam escapar dela"): a hex is unsafe when its body there stands
+  // in a storm, or, for one not in a storm yet, when the walk there crosses one. It strikes and closes in from safe hexes when it has
+  // any; one caught inside with no safe strike gets out first. Only when nowhere safe is in reach does it act as before.
+  auto inStorm = [&](int x, int y) {
+    const std::vector<BattleHex> body = footprint(u, x, y);
+    for (const IceZone& z : iceZones_)
+      for (const BattleHex& c : z.cells)
+        if (std::find(body.begin(), body.end(), c) != body.end()) return true;
+    return false;
+  };
+  const bool caught = !iceZones_.empty() && inStorm(u.x, u.y);
+  auto unsafe = [&](const ReachCell& c) {
+    if (iceZones_.empty()) return false;
+    if (inStorm(c.x, c.y)) return true;
+    if (caught) return false;
+    for (const BattleHex& h : path(walk, c.x, c.y))
+      if (inStorm(h.x, h.y)) return true;
+    return false;
+  };
+  std::vector<ReachCell> safe;
+  for (const ReachCell& c : reach)
+    if (!unsafe(c)) safe.push_back(c);
+  const std::vector<ReachCell>& options = safe.empty() ? reach : safe;
   // The best strike from any hex it can reach: the most wounded foe, good ground, a foe nearly down.
   AiPlan plan;
   std::optional<double> bestScore;
   BattleHex from{};
-  for (const ReachCell& c : reach)
+  for (const ReachCell& c : options)
     for (size_t h : heroes) {
       if (!canHitFrom(*this, unit, {c.x, c.y}, h)) continue;
       const BattleUnit& foe = units_[h];
@@ -283,7 +306,7 @@ AiPlan Battle::planEnemy(size_t unit) const {
   }
   std::optional<BattleHex> closest;
   double dist = std::numeric_limits<double>::infinity();
-  for (const ReachCell& c : reach)
+  for (const ReachCell& c : options)
     if (const double d = at(*nearest, c.x, c.y); d < dist) dist = d, closest = BattleHex{c.x, c.y};
   if (closest && (closest->x != u.x || closest->y != u.y)) plan.path = path(walk, closest->x, closest->y);
   return plan;

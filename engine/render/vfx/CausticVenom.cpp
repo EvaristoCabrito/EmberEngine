@@ -34,8 +34,8 @@ float CausticVenom::travelSeconds(glm::vec3 origin, glm::vec3 target) {
   return three::clamp(glm::length(target - origin) / (235.0f * kPixel), 0.7f, 1.65f);
 }
 
-CausticVenom::CausticVenom(glm::vec3 origin, glm::vec3 target, std::vector<glm::vec3> impactHexes, float start)
-    : start3_(vfxToEmber(origin)), target_(vfxToEmber(target)), start_(start) {
+CausticVenom::CausticVenom(int version, glm::vec3 origin, glm::vec3 target, std::vector<glm::vec3> impactHexes, float start)
+    : version_(version), start3_(vfxToEmber(origin)), target_(vfxToEmber(target)), start_(start) {
   for (const glm::vec3& h : impactHexes) hexes_.push_back(vfxToEmber(h));
   travel_ = travelSeconds(origin, target);
   // buildFlightPath
@@ -72,7 +72,7 @@ glm::vec3 CausticVenom::pathPosition(float t) const {
   return p;
 }
 
-void CausticVenom::build(float now, const Camera&, const ElementSpritesV2& poison, VfxFrame& frame, std::vector<VfxLight>& lights) {
+void CausticVenom::build(float now, const Camera& camera, const ElementSpritesV2& poison, VfxFrame& frame, std::vector<VfxLight>& lights) {
   const float t = now - start_;
   if (t < 0.0f || done(now)) return;
   const glm::mat4 toWorld = vfxEmberToWorld();
@@ -148,8 +148,9 @@ void CausticVenom::build(float now, const Camera&, const ElementSpritesV2& poiso
     return;
   }
 
-  // --- The impact: on every struck hex, smoke lobes (drawn first, over everything), the Poison V2 effect, a light ---
+  // --- The impact: on every struck hex, smoke lobes (drawn first, depth-tested), the Poison V2 effect, a light ---
   const float e = t - kCharge - travel_;
+  if (version_ >= 2) return impact02(e, camera, poison, frame, lights);
   const float it = three::clamp(e / kImpact, 0.0f, 1.0f);
   const float settle = 1.0f - smooth(0.42f, 1.0f, it);
   ElementSpritesV2 plume = poison;
@@ -168,16 +169,136 @@ void CausticVenom::build(float now, const Camera&, const ElementSpritesV2& poiso
       const float y = c.y + p * 0.13f + std::sin(seed) * 0.045f + it * (0.12f + p * 0.018f);
       const float z = c.z + (0.18f + p * 0.085f);
       const float expand = 1.0f + it * (0.24f + p * 0.025f);
-      const float base = p == 0 ? 0.37f : 0.275f + (p % 3) * 0.025f;
+      // 1.4 x the ported size (2026-10-21: the lobes hid inside the sprites).
+      const float base = 1.4f * (p == 0 ? 0.37f : 0.275f + (p % 3) * 0.025f);
       const glm::mat4 m = toWorld * glm::translate(glm::mat4(1.0f), {x, y, z}) * three::eulerXYZ(angle * 0.45f, angle * 0.3f, angle + e * (0.12f + p * 0.025f)) *
                           glm::scale(glm::mat4(1.0f), {base * expand, base * (1.1f + (p % 2) * 0.16f) * expand, base * (0.72f + (p % 3) * 0.09f) * expand});
-      draw(VfxMaterial::VenomSmoke, puff, puffGeometry().size(), m, {e, (p == 0 ? 0.7f : 0.58f) * settle, seed, 0}, {}, {}, sight, VfxBlend::Alpha, false);
+      // Depth-tested (2026-10-21: drawn over everything, it showed through the walls in front).
+      draw(VfxMaterial::VenomSmoke, puff, puffGeometry().size(), m, {e, (p == 0 ? 0.7f : 0.58f) * settle, seed, 0}, {}, {}, sight, VfxBlend::Alpha, true);
     }
   }
   for (size_t index = 0; index < hexes_.size(); ++index) {
     plume.build(hexes_[index], e, 1.0f, frame);
     const float flash = 0.65f + 0.35f * std::sin(kPi * std::min(1.0f, e / 0.8f));
-    lights.push_back({vfxFromEmber(hexes_[index] + glm::vec3(0, 0, 0.38f)), three::hex(kGreen), 2.4f * flash * settle, 1.8f});
+    // 1.5 x the ported strength, reaching 2.4 (was 2.4 / 1.8: it never showed on the ground, 2026-10-21).
+    lights.push_back({vfxFromEmber(hexes_[index] + glm::vec3(0, 0, 0.38f)), three::hex(kGreen), 3.6f * flash * settle, 2.4f});
+  }
+}
+
+namespace {
+
+const std::vector<VfxVertex>& quadGeometry() {
+  static const std::vector<VfxVertex> g = {
+      {{-0.5f, -0.5f, 0.0f}, 0.0f, {0, 0, 1}, 0.0f}, {{0.5f, -0.5f, 0.0f}, 1.0f, {0, 0, 1}, 0.0f}, {{0.5f, 0.5f, 0.0f}, 1.0f, {0, 0, 1}, 1.0f},
+      {{-0.5f, -0.5f, 0.0f}, 0.0f, {0, 0, 1}, 0.0f}, {{0.5f, 0.5f, 0.0f}, 1.0f, {0, 0, 1}, 1.0f}, {{-0.5f, 0.5f, 0.0f}, 0.0f, {0, 0, 1}, 1.0f}};
+  return g;
+}
+// 0..1, fixed per (hex, particle, channel): every cast looks the same.
+float hash01(uint32_t a, uint32_t b, uint32_t c) {
+  uint32_t h = a * 0x9e3779b1u ^ (b + 0x7f4a7c15u) * 0x85ebca6bu ^ (c + 0x165667b1u) * 0xc2b2ae35u;
+  h ^= h >> 15, h *= 0x2c1b3c6du, h ^= h >> 12, h *= 0x297a2d39u, h ^= h >> 15;
+  return static_cast<float>(h & 0xffffffu) / 16777216.0f;
+}
+float easeOut(float x) { return 1.0f - (1.0f - x) * (1.0f - x); }
+
+}  // namespace
+
+void CausticVenom::impact02(float e, const Camera& camera, const ElementSpritesV2& poison, VfxFrame& frame, std::vector<VfxLight>& lights) const {
+  // The Poison V2 sprites, as 01 (they end with 01's impact).
+  if (e < kImpact) {
+    ElementSpritesV2 plume = poison;
+    plume.scale = kPoisonV2Scale, plume.intensity = 1.15f, plume.emissive = 1.35f, plume.opacity = 1.0f, plume.animationSpeed = 1.1f;
+    for (const glm::vec3& h : hexes_) plume.build(h, e, 1.0f, frame);
+  }
+  if (hexes_.empty()) return;
+  glm::vec3 middle{0.0f};
+  for (const glm::vec3& h : hexes_) middle += vfxFromEmber(h);
+  middle /= static_cast<float>(hexes_.size());
+  // A wide area thins the smoke per hex so the whole cloud stays within the frame's room.
+  const int puffsPerHex = std::clamp(static_cast<int>(180 / hexes_.size()), 4, 12);
+  const int dropsPerHex = std::clamp(static_cast<int>(90 / hexes_.size()), 2, 6);
+  std::vector<std::pair<float, VfxInstance>> puffs;
+  std::vector<VfxInstance> glows;
+  for (size_t index = 0; index < hexes_.size(); ++index) {
+    const glm::vec3 c = vfxFromEmber(hexes_[index]);  // world, y up
+    const uint32_t hx = static_cast<uint32_t>(index);
+    // --- Acid smoke: puffs rise from the puddle, swell and drift out, the late ones thinning into the air. ---
+    for (int i = 0; i < puffsPerHex; ++i) {
+      const uint32_t n = static_cast<uint32_t>(i);
+      const float delay = static_cast<float>(i) * 0.05f + hash01(hx, n, 1) * 0.12f;
+      const float life = 1.6f + 0.7f * hash01(hx, n, 2);
+      const float tau = e - delay;
+      if (tau < 0.0f || tau > life) continue;
+      const float u = tau / life;
+      const float angle = hash01(hx, n, 3) * kPi * 2.0f;
+      const glm::vec3 out{std::cos(angle), 0.0f, std::sin(angle)};
+      const float r0 = 0.12f + 0.33f * hash01(hx, n, 4);
+      const float sway = std::sin(tau * 1.7f + hash01(hx, n, 5) * 6.0f) * 0.06f;
+      glm::vec3 p = c + out * (r0 + 0.32f * easeOut(u)) + glm::vec3(sway, 0.0f, -sway);
+      p.y += 0.18f + (0.55f + 0.85f * hash01(hx, n, 6)) * easeOut(u);
+      const float size = (0.34f + 0.2f * hash01(hx, n, 7)) * (1.0f + 1.5f * easeOut(u));
+      const float alpha = 0.6f * smooth(0.0f, 0.12f, u) * (1.0f - smooth(0.42f, 1.0f, u));
+      const glm::vec3 albedo = glm::mix(glm::vec3(0.1f, 0.3f, 0.05f), glm::vec3(0.3f, 0.6f, 0.12f), hash01(hx, n, 8));
+      const VfxInstance inst{glm::mat4(1.0f), glm::vec4(p, size), glm::vec4(hash01(hx, n, 9) * kPi * 2.0f + tau * (hash01(hx, n, 10) - 0.5f) * 0.6f,
+                                                                             hash01(hx, n, 11) * 10.0f, alpha, 0.0f),
+                             glm::vec4(albedo, 0.0f)};
+      puffs.push_back({glm::dot(p - camera.position, p - camera.position), inst});
+    }
+    // --- Droplets: glowing green beads climbing through the smoke and fading. ---
+    for (int i = 0; i < dropsPerHex; ++i) {
+      const uint32_t n = static_cast<uint32_t>(100 + i);
+      const float delay = 0.05f + hash01(hx, n, 1) * 0.6f;
+      const float life = 0.8f + 0.6f * hash01(hx, n, 2);
+      const float tau = e - delay;
+      if (tau < 0.0f || tau > life) continue;
+      const float u = tau / life;
+      const float angle = hash01(hx, n, 3) * kPi * 2.0f + tau * 2.0f;
+      const float r = 0.1f + 0.3f * hash01(hx, n, 4);
+      const glm::vec3 p = c + glm::vec3(std::cos(angle) * r, 0.15f + (0.6f + 0.7f * hash01(hx, n, 5)) * easeOut(u), std::sin(angle) * r);
+      const float alpha = smooth(0.0f, 0.1f, u) * (1.0f - smooth(0.6f, 1.0f, u));
+      glows.push_back({glm::mat4(1.0f), glm::vec4(p, 0.05f + 0.04f * hash01(hx, n, 6)), glm::vec4(0.0f, 0.0f, 0.0f, alpha),
+                       glm::vec4(three::hex(kGreen), 1.6f)});
+    }
+    // --- The landing's flash on the hex: a green glow swelling and gone in a quarter second. ---
+    if (e < 0.28f) {
+      const float f = 1.0f - smooth(0.0f, 0.28f, e);
+      glows.push_back({glm::mat4(1.0f), glm::vec4(c + glm::vec3(0.0f, 0.35f, 0.0f), 0.55f + 0.5f * (1.0f - f)), glm::vec4(0.0f, 0.0f, 0.0f, f * 0.8f),
+                       glm::vec4(three::hex(kHighlight), 1.2f)});
+    }
+    // --- The light: a flash on landing settling into a glow under the smoke, out with it. ---
+    const float burst = 1.0f - smooth(0.0f, 0.35f, e);
+    const float settle = 1.0f - smooth(0.55f, 1.0f, e / kImpact02);
+    const float glow = (0.65f + 0.35f * std::sin(kPi * std::min(1.0f, e / 0.8f))) * settle;
+    lights.push_back({c + glm::vec3(0.0f, 0.45f, 0.0f), three::hex(kGreen), 3.6f * glow + 2.4f * burst, 2.4f});
+  }
+  // Back to front: the alpha-blended smoke over itself.
+  std::sort(puffs.begin(), puffs.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
+  const uint32_t quad = frame.addVertices(quadGeometry());
+  auto draw = [&](float mode, uint32_t first, size_t count, float intensity, VfxBlend blend) {
+    VfxDraw d;
+    d.gpu.model = glm::mat4(1.0f);
+    d.gpu.params0 = {e, mode, intensity, 1.0f};
+    d.gpu.params1 = glm::vec4(three::hex(kHighlight), 0.0f);
+    d.gpu.color = glm::vec4(three::hex(kGreen), 1.0f);
+    d.gpu.firstVertex = quad;
+    d.gpu.vertexCount = static_cast<uint32_t>(quadGeometry().size());
+    d.gpu.firstInstance = first;
+    d.gpu.material = static_cast<uint32_t>(VfxMaterial::Combat);
+    d.gpu.sightAt = middle;
+    d.instances = static_cast<uint32_t>(count);
+    d.blend = blend;
+    d.depthTest = true;
+    frame.draws.push_back(d);
+  };
+  if (!puffs.empty()) {
+    const uint32_t first = static_cast<uint32_t>(frame.instances.size());
+    for (const auto& [distance, inst] : puffs) frame.instances.push_back(inst);
+    draw(1.0f, first, puffs.size(), 1.0f, VfxBlend::Alpha);  // CombatFx's puff: lit by the scene
+  }
+  if (!glows.empty()) {
+    const uint32_t first = static_cast<uint32_t>(frame.instances.size());
+    frame.instances.insert(frame.instances.end(), glows.begin(), glows.end());
+    draw(0.0f, first, glows.size(), 1.0f, VfxBlend::Additive);  // CombatFx's streak with no axis: a round glowing dot
   }
 }
 
