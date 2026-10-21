@@ -97,7 +97,11 @@ int SpellEffects::looks(const std::string& kind) {
                                  // the Curandeiro's (vfx/HealerFx, ours, 3D)
                                  "circleOfHealing", "resurrection", "judgment",
                                  // the Conjurador's (vfx/ConjurerFx, ours, 3D)
-                                 "placeSwap", "boneLance", "mirrorImage", "detonateSummon", "sacrificeBond", "nightmare", "empowerSummons"};
+                                 "placeSwap", "boneLance", "mirrorImage", "detonateSummon", "sacrificeBond", "nightmare", "empowerSummons",
+                                 // the ones that had none (vfx/ArmsFx, the two new arrows of vfx/RangerFx; ours, 3D, 2026-10-20)
+                                 "provoke", "shieldBash", "bullRush", "executionerStrike", "trip", "shoulderSmash", "stampede", "divineWrath",
+                                 "auraOfProtection", "intimidatingPresence", "bloodyShot", "multiShot", "summonFamiliar", "summonFamiliar2",
+                                 "summonFamiliar3", "summonFamiliar4", "summonZombieDog"};
   for (const char* k : kEmber)
     if (kind == k) return 1;
   return 0;
@@ -181,6 +185,7 @@ float SpellEffects::leadIn(const std::string& kind, int look, const Spot& caster
   if (kind == "turnUndead" && look >= 1) return TurnUndead::kLead;  // the sigil gathers, then the burst
   if (isHealer(kind)) return HealerFx::leadIn(kind);                // the Curandeiro's: the light gathers, then lands
   if (isConjurer(kind)) return ConjurerFx::leadIn(kind);            // the Conjurador's
+  if (kind.rfind("summon", 0) == 0) return 0.9f;                     // the summoning circle, then the familiar
   return kKindLead;
 }
 
@@ -243,7 +248,9 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
 bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets, float start, float impact) {
   if (look < 1 || look > looks(kind)) return false;
   impact = std::max(impact, start + 0.05f);
-  if (targets.empty() && kind != "piercingThrust" && kind != "doubleStrike" && kind != "steelWhirlwind" && kind != "warCry" && kind != "sentinelVigil") return false;
+  if (targets.empty() && kind != "piercingThrust" && kind != "doubleStrike" && kind != "steelWhirlwind" && kind != "warCry" && kind != "sentinelVigil" &&
+      kind != "provoke")
+    return false;
   // The cures', the meal's and the potion's light (HolyLight), on every unit it reaches.
   if (isHoly(kind, look)) {
     using Style = HolyLight::Style;
@@ -271,6 +278,58 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
       for (const Spot& s : targets) radius = std::max(radius, glm::length(glm::vec2(s.feet.x - caster.feet.x, s.feet.z - caster.feet.z)));
       warrior_.warCry(caster.feet, caster.cardHeight, hit, radius + 1.2f, impact);
     }
+    return true;
+  }
+  // The weapon skills, the auras and the summons that had no effect (ArmsFx, ours, 3D). Targets: the struck foe (the blows), the
+  // provoked foes, the hexes struck in order (Investida de Ombro, Debandada, Ira Divina: the bodies struck keep their card height),
+  // the aura's hexes (the bodies it reaches keep their card height), the summon's hex.
+  auto armsTarget = [](const Spot& s) { return ArmsFx::Target{s.feet, s.cardHeight}; };
+  auto bodiesOf = [&](const std::vector<Spot>& spots) {
+    std::vector<ArmsFx::Target> out;
+    for (const Spot& s : spots)
+      if (s.cardHeight > 0.0f && glm::length(s.feet - caster.feet) > 0.3f) out.push_back(armsTarget(s));
+    return out;
+  };
+  if (kind == "provoke") {
+    arms_.provoke(caster.feet, caster.cardHeight, bodiesOf(targets), impact);
+    return true;
+  }
+  if (kind == "shieldBash" || kind == "bullRush" || kind == "executionerStrike" || kind == "trip") {
+    const ArmsFx::Target foe = armsTarget(targets.front());
+    if (kind == "shieldBash") arms_.shieldBash(foe, caster.feet, impact);
+    else if (kind == "bullRush") arms_.bullRush(foe, caster.feet, impact);
+    else if (kind == "executionerStrike") arms_.executioner(foe, caster.feet, impact);
+    else arms_.trip(foe, caster.feet, impact);
+    return true;
+  }
+  if (kind == "shoulderSmash" || kind == "stampede" || kind == "divineWrath") {
+    std::vector<glm::vec3> hexes;
+    for (const Spot& s : targets) hexes.push_back(s.feet);
+    if (kind == "shoulderSmash") arms_.shoulderSmash(caster.feet, caster.cardHeight, hexes, bodiesOf(targets), impact);
+    else if (kind == "stampede") arms_.stampede(caster.feet, caster.cardHeight, hexes, bodiesOf(targets), impact);
+    else arms_.divineWrath(caster.feet, caster.cardHeight, hexes, bodiesOf(targets), impact);
+    return true;
+  }
+  if (kind == "auraOfProtection" || kind == "intimidatingPresence") {
+    float radius = 0.0f;
+    for (const Spot& s : targets) radius = std::max(radius, glm::length(glm::vec2(s.feet.x - caster.feet.x, s.feet.z - caster.feet.z)));
+    std::vector<ArmsFx::Target> bodies;
+    for (const Spot& s : targets)
+      if (s.cardHeight > 0.0f) bodies.push_back(armsTarget(s));
+    arms_.aura(kind == "auraOfProtection", caster.feet, caster.cardHeight, radius + 0.9f, bodies, impact);
+    return true;
+  }
+  if (kind.rfind("summon", 0) == 0) {
+    const ArmsFx::Summon style = kind == "summonFamiliar2" ? ArmsFx::Summon::Greater : kind == "summonFamiliar4" ? ArmsFx::Summon::Radiant
+                                 : kind == "summonFamiliar3" ? ArmsFx::Summon::Titan : kind == "summonZombieDog" ? ArmsFx::Summon::ZombieDog
+                                                             : ArmsFx::Summon::Familiar;
+    arms_.summon(style, targets.front().feet, impact);
+    return true;
+  }
+  if (kind == "bloodyShot" || kind == "multiShot") {
+    const Spot& foe = targets.front();
+    const float release = std::max(start, impact - RangerFx::flightSeconds(caster.feet, foe.feet));
+    ranger_.shot(kind == "bloodyShot" ? RangerFx::Shot::Bloody : RangerFx::Shot::Swift, caster.feet, caster.cardHeight, {foe.feet, foe.cardHeight}, release, impact);
     return true;
   }
   // Expulsar Mortos-Vivos (TurnUndead, ours, 3D). Targets: the hexes of the area (cardHeight 0) and the undead standing in it (the
@@ -650,10 +709,19 @@ void SpellEffects::cure(const Spot& caster, const std::vector<Spot>& targets, fl
 }
 
 // Tiro Longo / Tiro Perfurante: the arrow (solid, lit by the scene) flies along a shallow arch, pointing where it
-// goes, and lands on the hit; a piercing shot carries on through the line to its last target.
+// goes, and lands on the hit; a piercing shot carries on through the line to the last body it strikes (its targets are
+// the line's every hex to the board's edge: the bodies on it are the ones with a card; the user, 2026-10-20: "it doesnt end
+// at his target and just bounces off all the way out of the screen").
 void SpellEffects::arrow(const Spot& caster, const std::vector<Spot>& targets, float start, float impact, bool piercing) {
-  const glm::vec3 first = targets.front().body;
-  const glm::vec3 last = piercing ? targets.back().body : first;
+  const Spot* firstBody = &targets.front();
+  const Spot* lastBody = nullptr;
+  for (const Spot& s : targets)
+    if (s.cardHeight > 0.0f && glm::length(s.feet - caster.feet) > 0.3f) {
+      if (!lastBody) firstBody = &s;
+      lastBody = &s;
+    }
+  const glm::vec3 first = (piercing ? *firstBody : targets.front()).body;
+  const glm::vec3 last = piercing ? (lastBody ? lastBody->body : first) : first;
   const float firstDist = glm::length(first - caster.body), lastDist = glm::length(last - caster.body);
   const glm::vec3 dir = firstDist > 1e-3f ? (first - caster.body) / firstDist : glm::vec3(1, 0, 0);
   const float travel = std::clamp(firstDist / 22.0f, 0.12f, 0.4f);
@@ -781,7 +849,7 @@ void SpellEffects::swapFlight(const Spot& a, const Spot& b, float start, float f
 void SpellEffects::disarmed(const Spot& foe, const Spot& from, float at) { lancer_.disarmed({foe.feet, foe.cardHeight}, from.feet, at); }
 
 bool SpellEffects::active(float now) const {
-  if (combat_.active(now) || warrior_.active(now) || ranger_.active(now) || lancer_.active(now) || turnUndead_.active(now) || healer_.active(now) ||
+  if (combat_.active(now) || warrior_.active(now) || arms_.active(now) || ranger_.active(now) || lancer_.active(now) || turnUndead_.active(now) || healer_.active(now) ||
       conjurer_.active(now))
     return true;
   if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
@@ -856,6 +924,7 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   }
   combat_.build(now, camera, vfx_, vfxLights);
   warrior_.build(now, camera, vfx_, vfxLights);
+  arms_.build(now, camera, vfx_, vfxLights);
   ranger_.build(now, camera, vfx_, vfxLights);
   lancer_.build(now, camera, vfx_, vfxLights);
   turnUndead_.build(now, camera, vfx_, vfxLights);

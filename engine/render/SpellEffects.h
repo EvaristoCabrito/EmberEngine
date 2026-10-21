@@ -41,6 +41,7 @@
 #include "render/vfx/StatusFx.h"
 #include "render/vfx/RangerFx.h"
 #include "render/vfx/WarriorFx.h"
+#include "render/vfx/ArmsFx.h"
 #include "render/vfx/DreamWeb.h"
 #include "render/vfx/WebOfDreams.h"
 
@@ -146,7 +147,7 @@ class SpellEffects {
   void build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out, std::vector<Light>& lights);
   const VfxFrame& vfx() const { return vfx_; }
   bool active(float now) const;
-  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), dreamWebs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), frosts_.clear(), warrior_.clear(), ranger_.clear(), lancer_.clear(), turnUndead_.clear(), healer_.clear(), conjurer_.clear(), status_.clear(); }
+  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), dreamWebs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), frosts_.clear(), warrior_.clear(), arms_.clear(), ranger_.clear(), lancer_.clear(), turnUndead_.clear(), healer_.clear(), conjurer_.clear(), status_.clear(); }
   // The Conjurador's standing illusions (Imagem Espelhada) and the swap of Troca de Lugar: the stage times them (MapStage syncMirrors / animateFlights).
   ConjurerFx& conjurer() { return conjurer_; }
   // Poison and disease standing on a unit (vfx/StatusFx, ours, 3D): the stage keeps one per condition per unit (MapStage syncStatus).
@@ -268,6 +269,7 @@ class SpellEffects {
   int stormSerial_ = 0;
   CombatFx combat_;
   WarriorFx warrior_;  // the Guerreiro's skills (ours, 3D)
+  ArmsFx arms_;        // the weapon skills, auras and summons that had no effect (ours, 3D, 2026-10-20)
   RangerFx ranger_;    // the Arqueiro's skills (ours, 3D)
   LancerFx lancer_;    // the Lanceiro's skills (ours, 3D)
   TurnUndead turnUndead_;  // Expulsar Mortos-Vivos 01 (ours, 3D)

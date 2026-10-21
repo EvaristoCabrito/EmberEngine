@@ -4278,7 +4278,7 @@ class MapStage final : public Stage {
       const e2::Battle::IceZone* storm = s.kind == "iceStorm" && !s.tiles.empty() ? iceZoneOf(s.tiles.front(), battle_->units()[s.att].id) : nullptr;
       if (storm) {  // Tempestade de Gelo: the storm covers the field the rules just laid (the step aims its centre only)
         for (const e2::BattleHex& h : storm->cells) spots.push_back(hexSpot(h));
-      } else if (s.kind == "warCry" || s.kind == "steelWhirlwind" || s.kind == "empowerSummons" || s.kind == "sacrificeBond") {  // Grito de Guerra: the allies it rallies (the caster among them); Redemoinho: the foes it reaches; the Conjurador's: its summons
+      } else if (s.kind == "warCry" || s.kind == "steelWhirlwind" || s.kind == "empowerSummons" || s.kind == "sacrificeBond" || s.kind == "provoke") {  // Grito de Guerra: the allies it rallies (the caster among them); Redemoinho: the foes it reaches; the Conjurador's: its summons
         for (size_t id : s.ids)
           if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0) spots.push_back(unitSpot(static_cast<size_t>(ui)));
       } else if (s.kind == "turnUndead") {  // Expulsar Mortos-Vivos: the area's hexes; only the undead standing in it keep their card height (they are struck)
@@ -4289,7 +4289,19 @@ class MapStage final : public Stage {
           if (!undead) spot.cardHeight = 0.0f;
           spots.push_back(spot);
         }
-      } else if (s.kind == "circleOfHealing" || s.kind == "judgment" || s.kind == "boneLance" || s.kind == "detonateSummon" || s.kind == "nightmare") {
+      } else if ((s.kind == "auraOfProtection" || s.kind == "intimidatingPresence") && !battle_->auraZones().empty()) {
+        // the auras: the zone the rules just laid; only the bodies it reaches (allies for the protection, foes for the presence) keep their card height
+        const e2::Battle::AuraZone& z = battle_->auraZones().back();
+        for (const e2::BattleHex& h : z.cells) {
+          SpellEffects::Spot spot = hexSpot(h);
+          const bool reached = std::any_of(battle_->units().begin(), battle_->units().end(), [&](const e2::BattleUnit& u) {
+            return u.alive && u.x == h.x && u.y == h.y && (z.kind == "protection" ? u.side == z.side : u.side != z.side && u.side != "neutral");
+          });
+          if (!reached) spot.cardHeight = 0.0f;
+          spots.push_back(spot);
+        }
+      } else if (s.kind == "circleOfHealing" || s.kind == "judgment" || s.kind == "boneLance" || s.kind == "detonateSummon" || s.kind == "nightmare" ||
+                 s.kind == "shoulderSmash" || s.kind == "stampede" || s.kind == "divineWrath") {
         // the Curandeiro's and the Conjurador's areas: the hexes; only the units it reaches (`ids`, and the summon that blows up) keep their card height
         for (const e2::BattleHex& h : s.tiles) {
           SpellEffects::Spot spot = hexSpot(h);
@@ -5226,10 +5238,7 @@ class MapStage final : public Stage {
       return fail("refused but something was spent");
     }
     if (!exchange_) return fail("nothing played: " + tip_);
-    // the old weapon skills have no effect of their own (the blow is the pose): their check is the rules' below
-    static const std::unordered_set<std::string> kNoFx = {"doubleStrike", "cleave", "piercingThrust", "sweep", "trip", "shoulderSmash", "stampede",
-                                                         "bullRush", "shieldBash", "executionerStrike", "provoke"};
-    if (!spellFx_.active(now_ + 0.5f) && !kNoFx.contains(kind)) return fail("no effect playing");
+    if (!spellFx_.active(now_ + 0.5f)) return fail("no effect playing");
     scriptCheck_ = [this, kind, cb, tb, before, casterBefore, usesBefore, rationsBefore, fedBefore]() -> std::string {
       const e2::BattleUnit& t = battle_->units()[tb];
       const e2::BattleUnit& c = battle_->units()[cb];

@@ -12,6 +12,10 @@
 //                      pulsing under the foe while it is hobbled;
 //   Tiro Mortal        a long crimson trail; a heavy pierce: a pin of light driven through, a crimson shell, dark streaks
 //                      flung out, a red ring on the ground, a red light that lingers;
+//   Tiro Sangrento     a dark red trail; on the body a red flash, a spray of blood flung the shot's way and falling, a dark stain
+//                      spreading at the feet, a red light (2026-10-20);
+//   Tiro Múltiplo      quick arrows, each with a thin silver-blue trail; a sharp white flash and a cross glint on the body,
+//                      a few sparks (2026-10-20);
 //   Chuva / Tempestade de Flechas  arrows come down at a slant from the archer's side onto every hex (three or five a hex,
 //                      the Tempestade in two waves), a puff of dust and a glint where each lands, a flash on every foe.
 //
@@ -33,7 +37,7 @@ class RangerFx {
     glm::vec3 feet{0.0f};
     float height = 1.8f;  // the card's height (0 = a hex: a body's height is assumed)
   };
-  enum class Shot { Venom, Explosive, Crippling, Death };
+  enum class Shot { Venom, Explosive, Crippling, Death, Bloody, Swift };
 
   // One arrow from the archer standing at `from` (its card `height`) to `foe`: it lets go at `release`, lands at `impact`.
   void shot(Shot style, glm::vec3 from, float height, const Target& foe, float release, float impact);

@@ -146,12 +146,16 @@ constexpr Palette kVenom{{0.45f, 1.0f, 0.35f}, {0.85f, 1.0f, 0.7f}, {0.3f, 0.95f
 constexpr Palette kFire{{1.0f, 0.55f, 0.2f}, {1.0f, 0.93f, 0.72f}, {1.0f, 0.4f, 0.1f}};
 constexpr Palette kGrey{{0.75f, 0.78f, 0.8f}, {0.95f, 0.95f, 0.95f}, {0.6f, 0.62f, 0.66f}};
 constexpr Palette kCrimson{{1.0f, 0.2f, 0.15f}, {1.0f, 0.75f, 0.65f}, {0.85f, 0.08f, 0.1f}};
+constexpr Palette kBlood{{1.0f, 0.15f, 0.1f}, {1.0f, 0.6f, 0.5f}, {0.7f, 0.03f, 0.05f}};
+constexpr Palette kSwift{{0.75f, 0.85f, 1.0f}, {0.95f, 0.98f, 1.0f}, {0.6f, 0.72f, 0.95f}};
 const Palette& paletteOf(RangerFx::Shot s) {
   switch (s) {
     case RangerFx::Shot::Venom: return kVenom;
     case RangerFx::Shot::Explosive: return kFire;
     case RangerFx::Shot::Crippling: return kGrey;
     case RangerFx::Shot::Death: return kCrimson;
+    case RangerFx::Shot::Bloody: return kBlood;
+    case RangerFx::Shot::Swift: return kSwift;
   }
   return kGrey;
 }
@@ -166,6 +170,8 @@ float RangerFx::Effect::end() const {
     case Shot::Explosive: return impact + 1.4f;
     case Shot::Crippling: return impact + 2.2f;
     case Shot::Death: return impact + 1.3f;
+    case Shot::Bloody: return impact + 1.6f;
+    case Shot::Swift: return impact + 0.6f;
   }
   return impact + 1.0f;
 }
@@ -308,7 +314,7 @@ void RangerFx::buildShot(const Effect& e, float now, const Camera& camera, VfxFr
     lights.push_back({head, pal.light, e.style == Shot::Death ? 9.0f : 5.0f, 2.4f * k});
   }
   // --- Shed along the path: venom motes, embers, grey dust, dark red motes (each born as the arrow passed). ---
-  const int shed = e.style == Shot::Crippling ? 10 : 16;
+  const int shed = e.style == Shot::Crippling || e.style == Shot::Swift ? 8 : 16;
   for (int i = 0; i < shed; ++i) {
     const uint32_t n = static_cast<uint32_t>(i) + 70u;
     const float ub = (static_cast<float>(i) + 0.5f) / static_cast<float>(shed);
@@ -434,6 +440,57 @@ void RangerFx::buildShot(const Effect& e, float now, const Camera& camera, VfxFr
       }
     }
     if (age < 0.25f) lights.push_back({e.feet + kUp * 0.4f, pal.light, 5.0f * (1.0f - ease(0.0f, 0.25f, age)), 2.0f * k});
+  } else if (e.style == Shot::Bloody) {
+    // --- Tiro Sangrento: a red flash, blood sprayed the shot's way and falling, a dark stain spreading at the feet, a red light. ---
+    if (age < 0.12f) streaks_.push_back(streak(point, glm::vec3(0.0f), 0.55f * k * (1.0f - 0.4f * ease(0.0f, 0.12f, age)), 1.0f - ease(0.0f, 0.12f, age), pal.core, 2.2f));
+    for (int i = 0; i < 18; ++i) {  // drops: dark, falling, a little light caught on them
+      const uint32_t n = static_cast<uint32_t>(i) + 100u;
+      const float life = 0.35f + 0.35f * hash01(e.seed, n, 1);
+      const float tau = age - hash01(e.seed, n, 2) * 0.04f;
+      if (tau < 0.0f || tau > life) continue;
+      const glm::vec3 d = glm::normalize(e.dir * 1.1f + side * (hash01(e.seed, n, 3) - 0.5f) * 1.4f + kUp * (0.2f + 0.6f * hash01(e.seed, n, 4)));
+      const glm::vec3 v0 = d * (1.8f + 2.6f * hash01(e.seed, n, 5)) * k;
+      const glm::vec3 p = e.body + v0 * tau + glm::vec3(0.0f, -0.5f * kGravity * tau * tau, 0.0f);
+      if (p.y < e.feet.y + 0.02f) continue;
+      streaks_.push_back(streak(pulled(p, eye, kPull), (v0 + glm::vec3(0.0f, -kGravity * tau, 0.0f)) * 0.04f, 0.032f * k, 0.9f, {0.7f, 0.05f, 0.05f}, 1.2f));
+    }
+    for (int i = 0; i < 6; ++i) {  // a fine red mist where it went in
+      const uint32_t n = static_cast<uint32_t>(i) + 200u;
+      const float life = 0.6f * (0.8f + 0.4f * hash01(e.seed, n, 1));
+      const float tau = age - 0.02f;
+      if (tau < 0.0f || tau > life) continue;
+      const float u = tau / life;
+      const glm::vec3 p = e.body + (e.dir * 0.5f + side * (hash01(e.seed, n, 2) - 0.5f) * 0.6f + kUp * (hash01(e.seed, n, 3) - 0.3f) * 0.4f) * (0.4f + 0.6f * u) * k;
+      puffs_.push_back(puff(pulled(p, eye, kPull), (0.12f + 0.25f * u) * k, hash01(e.seed, n, 4) * kTau, hash01(e.seed, n, 5) * 37.0f,
+                            0.5f * ease(0.0f, 0.05f, tau) * (1.0f - ease(0.2f, 1.0f, u)), {0.4f, 0.03f, 0.04f}));
+    }
+    if (age < 1.5f) {  // the stain at the feet
+      const float r = (0.15f + 0.45f * easeOut(0.05f, 0.7f, age)) * k;
+      const glm::mat4 m = glm::translate(glm::mat4(1.0f), pulled(e.feet + glm::vec3(0.0f, 0.03f, 0.0f), eye, kGroundPull)) * glm::scale(glm::mat4(1.0f), {r, 0.02f * r, r});
+      draw(sphereFirst_, sphereCount_, m, kModeEnergy, age, 1.0f, 0.55f * (1.0f - ease(1.0f, 1.5f, age)), {0.4f, 0.02f, 0.03f}, 0.4f, glm::vec4(0.4f, 0.02f, 0.03f, 0.4f),
+           e.feet, VfxBlend::Alpha);
+    }
+    if (age < 0.5f) lights.push_back({e.body, pal.light, 8.0f * (1.0f - ease(0.0f, 0.5f, age)), 2.4f * k});
+  } else if (e.style == Shot::Swift) {
+    // --- Tiro Múltiplo: a sharp white flash and a cross glint, a few sparks. ---
+    if (age < 0.1f) {
+      const float f = 1.0f - ease(0.0f, 0.1f, age);
+      streaks_.push_back(streak(point, glm::vec3(0.0f), 0.38f * k * (0.6f + 0.4f * f), f, pal.core, 2.2f));
+      streaks_.push_back(streak(point, side * 0.7f * k * f, 0.03f * k, f, pal.core, 2.6f));
+      streaks_.push_back(streak(point, kUp * 0.5f * k * f, 0.025f * k, f, pal.core, 2.4f));
+    }
+    for (int i = 0; i < 8; ++i) {
+      const uint32_t n = static_cast<uint32_t>(i) + 100u;
+      const float life = 0.14f + 0.16f * hash01(e.seed, n, 1);
+      const float tau = age - hash01(e.seed, n, 2) * 0.02f;
+      if (tau < 0.0f || tau > life) continue;
+      const glm::vec3 d = glm::normalize(sphereDir(hash01(e.seed, n, 3), hash01(e.seed, n, 4)) + e.dir);
+      const glm::vec3 v0 = d * (2.5f + 3.0f * hash01(e.seed, n, 5)) * k;
+      const glm::vec3 p = e.body + v0 * tau + glm::vec3(0.0f, -0.5f * kGravity * tau * tau, 0.0f);
+      const float u = tau / life;
+      streaks_.push_back(streak(pulled(p, eye, kPull), v0 * 0.04f, 0.025f * k, 1.0f - u * u, glm::mix(pal.core, pal.energy, u), 2.8f));
+    }
+    if (age < 0.15f) lights.push_back({e.body, pal.light, 5.0f * (1.0f - ease(0.0f, 0.15f, age)), 1.8f * k});
   } else {
     // --- Tiro Mortal: a pin of light driven through the body, a crimson shell, dark streaks flung out, a red ring, a red light. ---
     if (age < 0.18f) {
