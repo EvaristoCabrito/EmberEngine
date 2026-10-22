@@ -14,6 +14,10 @@
 //   Cooker check-ground <board.json> <map.json> <engine2 public> <reference dir>
 //                                                                    compare the C++ board/ground with Engine2's export
 //   Cooker check-battle <map.battle.json>                            compare the C++ movement reach with Engine2's export
+//   Cooker check-battle-export <maps dir> <map.battle.json...>       the game's own battle export against the exporter's files
+//   Cooker prepare-map <map.json> <out map.json>                     the campaign's party on a map (what the game does on opening it)
+//   Cooker export-battle <map.json> <out.battle.json>                the game's own battle file of a prepared map
+//   Cooker export-scene <board.json> <catalog.json> <public> <map.json> <out.scene.json>   its scene (SceneBuilder)
 //   Cooker check-spell-tracks                                       every spell's numbers level by level: one change a level
 //   Cooker check-campaign <campaign.json>                            compare the C++ save slots (slotProgress) with Engine2's
 //   Cooker check-overworld <overworld.json> <references.json>        compare the C++ world-map rules with Engine2's answers
@@ -43,6 +47,7 @@
 #include "BattleCheck.h"
 #include "world/Campaign.h"
 #include "world/Overworld.h"
+#include "world/BattleExport.h"
 #include "world/Progression.h"
 #include "world/Spells.h"
 #include "GroundCheck.h"
@@ -344,6 +349,70 @@ int checkOverworldCommand(const std::vector<std::string_view>& args) {
   return ember::e2::checkOverworld(world, std::filesystem::path(args[1])) == 0 ? 0 : 1;
 }
 
+// The game's own map preparation by hand (what the game does when a mission opens: apps/sandbox/MapExport.h).
+int prepareMapCommand(const std::vector<std::string_view>& args) {
+  if (args.size() < 2) fatal("usage: Cooker prepare-map <map.json> <out map.json>");
+  std::string note;
+  if (!ember::e2::prepareCampaignMap(std::filesystem::path(args[0]), std::filesystem::path(args[1]), &note)) return 1;
+  logInfo("{}", note);
+  return 0;
+}
+
+int exportBattleCommand(const std::vector<std::string_view>& args) {
+  if (args.size() < 2) fatal("usage: Cooker export-battle <map.json> <out.battle.json> [--player-level N]");
+  int playerLevel = 1;
+  for (size_t i = 2; i + 1 < args.size(); ++i)
+    if (args[i] == "--player-level") playerLevel = static_cast<int>(parseNumber(args[++i]));
+  std::ifstream in(std::filesystem::path(args[0]), std::ios::binary);
+  const nlohmann::json map = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+  if (!in || map.is_discarded()) fatal(std::format("cannot read {}", args[0]));
+  std::string error;
+  const std::optional<nlohmann::json> battle = ember::e2::exportBattle(map, &error, playerLevel);
+  if (!battle) fatal(std::format("{}: {}", args[0], error));
+  std::error_code ec;
+  std::filesystem::create_directories(std::filesystem::path(args[1]).parent_path(), ec);
+  std::ofstream out(std::filesystem::path(args[1]), std::ios::binary);
+  if (!out) fatal(std::format("cannot write {}", args[1]));
+  out << battle->dump();
+  logInfo("{}: {}x{}, {} units, {} locks, {} exits", (*battle)["map"].get<std::string>(), (*battle)["cols"].get<int>(), (*battle)["rows"].get<int>(),
+          (*battle)["units"].size(), (*battle)["locks"].size(), (*battle)["exits"].size());
+  return 0;
+}
+
+int exportSceneCommand(const std::vector<std::string_view>& args) {
+  if (args.size() < 5) fatal("usage: Cooker export-scene <board.json> <editor-catalog.json> <engine2 public> <map.json> <out.scene.json>");
+  const std::optional<ember::e2::BoardData> data = ember::e2::BoardData::load(std::filesystem::path(args[0]));
+  ember::e2::EditorCatalog catalog;
+  if (!data || !catalog.load(std::filesystem::path(args[1]))) return 1;
+  std::optional<ember::e2::MapDraft> draft = ember::e2::MapDraft::load(std::filesystem::path(args[3]));
+  if (!draft) return 1;
+  const ember::e2::MapDraft copy = *draft;
+  ember::e2::Board board(*data, std::move(*draft));
+  if (!board.loadRelief(std::filesystem::path(args[2]))) logWarn("{}: relief not read from {}", args[3], args[2]);
+  std::map<std::string, int> skipped;
+  const ember::e2::SceneData scene = ember::e2::buildScene(board, catalog, &skipped);
+  std::error_code ec;
+  std::filesystem::create_directories(std::filesystem::path(args[4]).parent_path(), ec);
+  std::ofstream out(std::filesystem::path(args[4]), std::ios::binary);
+  if (!out) fatal(std::format("cannot write {}", args[4]));
+  out << ember::e2::sceneJson(scene, copy, skipped).dump(1);
+  logInfo("{}: {} cards, {} models, {} architecture, {} units; skipped {}", scene.map, scene.cards.size(), scene.models.size(), scene.architecture, scene.units.size(), nlohmann::json(skipped).dump());
+  return 0;
+}
+
+// The game's own battle export (world/BattleExport.cpp) against the TypeScript exporter's files: <maps dir>/<stem>.json
+// is each reference's map.
+int checkBattleExportCommand(const std::vector<std::string_view>& args) {
+  if (args.size() < 2) fatal("usage: Cooker check-battle-export <maps dir> [--player-level N] <reference.battle.json...>");
+  std::vector<std::filesystem::path> references;
+  int playerLevel = 1;
+  for (size_t i = 1; i < args.size(); ++i) {
+    if (args[i] == "--player-level" && i + 1 < args.size()) playerLevel = static_cast<int>(parseNumber(args[++i]));
+    else references.emplace_back(args[i]);
+  }
+  return ember::e2::checkBattleExport(std::filesystem::path(args[0]), references, playerLevel) == 0 ? 0 : 1;
+}
+
 int checkSceneBuilderCommand(const std::vector<std::string_view>& args) {
   if (args.size() < 5) fatal("usage: Cooker check-scene-builder <board.json> <editor-catalog.json> <engine2 public> <scenes dir> <map.json...>");
   const std::optional<ember::e2::BoardData> data = ember::e2::BoardData::load(std::filesystem::path(args[0]));
@@ -416,6 +485,10 @@ int main(int argc, char** argv) {
   if (command == "meshes") return meshes(args);
   if (command == "check-ground") return checkGroundCommand(args);
   if (command == "check-battle") return checkBattleCommand(args);
+  if (command == "check-battle-export") return checkBattleExportCommand(args);
+  if (command == "prepare-map") return prepareMapCommand(args);
+  if (command == "export-battle") return exportBattleCommand(args);
+  if (command == "export-scene") return exportSceneCommand(args);
   if (command == "check-campaign") return checkCampaignCommand(args);
   if (command == "check-spell-tracks") return checkSpellTracksCommand(args);
   if (command == "check-overworld") return checkOverworldCommand(args);

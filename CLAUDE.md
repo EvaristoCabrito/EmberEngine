@@ -1288,3 +1288,56 @@ selecionar os alvos")
 
 M4 world cells + terrain · M5 lighting/atmosphere · M6 editor · M7 gameplay port + cutscene timeline.
 Exit tests and demonstration gates in ARCHITECTURE.md §9.
+## Preparo de mapas em C++, sem node em tempo de execução (2026-10-22; the user: "porta o preparo de mapas (make_test_map,
+export_scene, measure_art, export_battle) para C++, sem node em tempo de execução, verificado contra os battle.json atuais dos mapas de prova")
+
+- **`engine/world/BattleExport.h/.cpp`** = the four steps the game ran through node (vite-node + the rule source's TypeScript) whenever a
+  mission's files were older than its map: `prepareCampaignMap` (make_test_map.ts: the six heroes placed by the same breadth-first walk from
+  the first spawn, in roster order; legacy class ids repaired; the whole map file written again), `sceneJson` (export_scene.ts + measure_art.py:
+  SceneBuilder's scene written as the scene file SceneData::load reads), `exportBattle` (export_battle.ts: cells with the decorations folded in
+  (hexprops), units as spawnUnit builds them for a fresh party and enemies at the mission's level, exits, locks with the cells their opening
+  changes, every unit's sound cues, the mission's music). The reference answers `Cooker check-battle` compares against (forecasts, rolls, casts,
+  turn starts, AI) are NOT written: they remain the TypeScript exporter's (`SPELL_REFS=1`). `apps/sandbox/MapExport.h` runs the three steps
+  (the campaign's missions and the editor's Testar); its `MapExportKind` overload stays for the committed callers.
+- **The rule tables as data: `content/engine2/battle-rules.json`**, written by `tools/scripts/engine2/export_battle_rules.ts` (classes with
+  stats / spell tiers / spell lists at every level, charges, starter weapons; the enemy spell pools; terrain; decorations with footprints,
+  solidity sets, doors and exits; weapons and gear; the sound cues recorded through audio.ts per cue and per sprite; the music themes).
+  Re-run it after a rule change: `node content/game/node_modules/vite-node/vite-node.mjs --root <scratch> --config
+  content/game/vite.export.config.mjs tools/scripts/engine2/export_battle_rules.ts -- content/engine2/battle-rules.json` (a build-time tool;
+  the game never runs node).
+- **Cooker:** `check-battle-export <maps dir> [--player-level N] <battle.json...>` (the C++ file against the exporter's, the fields the game
+  reads), `prepare-map <map> <out>`, `export-battle <map> <out> [--player-level N]`, `export-scene <board.json> <catalog> <public> <map> <out>`.
+- **Verified (2026-10-22):** the 9 proof battles in `content/engine2/battles` match field by field (units with sounds, cells, locks, exits,
+  music; the two wisp-forest files predate the exits' `returnConnector` / `connectorDirection` keys, compared on the keys they have); the 17
+  campaign battles the TypeScript pipeline had made in `build/engine2-campaign` match (except the 2 cemetery maps whose files predate the
+  cemetery theme); `prepare-map` identical to the TypeScript's prepared maps on 5 maps (watchtower and cemetery included); the scene writer
+  round-trips (`check-scene-builder` 0 differences on 5 maps); a release capture `--title --title-screen mission-test:aldeia` prepared
+  aldeia017 inside the game (map, scene, battle, 13 units in play) and its battle file equals the TypeScript one. The 164 battles in
+  `build/engine2-test` are NOT a reference (an older exporter: the test roster at 15 with a save's gear, `debugFreeCast`, no locks).
+- **Bug found in the TypeScript exporter, gone here by design:** a map whose tiles use the board's own terrains `highwood` / `highruin` /
+  `deadtree` (9 of 261 in content/maps/ember: colina004, cripta002, fortaleza004, muralha001, passagem001, profundezas002,
+  random-encounter-1-001, random-encounter-2-001, templo002) got misaligned combat cells (TILE_CHAR had no char for them, so "undefined" became
+  nine tiles for one). Here those tiles count as plains in combat; what they should be worth (woods? hill?) is the user's decision, not taken.
+- Nothing removed: the TypeScript exporters stay as tools (the `check-battle` references need them); `content/game` (the snapshot of the rule
+  source and assets another session made on 2026-10-22, 5.4 GB, untracked, only its node_modules ignored) is still where the game reads its
+  assets from (`--game-assets`), but node, vite-node and the TypeScript are no longer needed to play.
+
+## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
+
+- Sprite packs set aside when a new one was swapped in for JOGAR: `build/sprites/battle-20261021-before-voss-hitdeath.pak`,
+  `battle-20261021-before-voss-media.pak` (and the older `battle*.pak` beside them). The pack from before the Cultista Ancestral's
+  hit / hit2 / death was deleted on the user's order (2026-10-22: "pode remover o backup do cultista ancestral").
+- `build/release/CMakeCache-20261022-broken-tools-notfound.txt` (+ `-before-sdl-checks.txt`, the same before a first repair): the
+  release cache as configured at 00:14 on 2026-10-22 without the MSVC tools (linker / lib / mt / rc NOTFOUND, every SDL check
+  failed on C1902): SDL3 stopped compiling; the folder was configured again from a fresh cache.
+- Release build outputs damaged when a build was cut off at 17:48 on 2026-10-22 (zero-filled / half-written, set aside, not
+  used): `build/release/engine/CMakeFiles/EmberEngine.dir.damaged-20261022` (its shared compile PDB was broken: link.exe then
+  crashed with an access violation), `*.damaged-20261022` objects in `apps/sandbox/CMakeFiles/Sandbox.dir`, and in `build/release/bin`
+  `Sandbox.{exe,ilk,pdb}.broken-link*-20261022` + `Sandbox.exe.broken-manual-link-20261022` (crashed links) and
+  `Sandbox-20261022-1730-in-use.exe` (the user's 16:57 exe, renamed while it ran). Two `link.exe` processes from the crashed links
+  stay stuck with 0 handles until a reboot.
+- Voss's first hit cut (`content/sprites/voss-veo/hit-v01` before the wall key) was rewritten in place on 2026-10-21 before any commit;
+  its video frames stay in `build/video-cut/voss-veo/hit`, so it can be cut again with `video_sprite.py`.
+- **Milf's Acid Arrow (`acidArrow`, Spells.cpp / SpellsE2.inc, 2026-10-22):** built when the user's "Milf's acid arrow" was read as
+  AD&D's spell; the user's name belongs to Neera's `venomArrow`. Kept and in use: the Corrosive Slimes cast it.
+

@@ -66,6 +66,7 @@ add_library(EmberEngine STATIC
   world/ProbeBake.cpp
   world/Water3D.cpp
   world/Battle.cpp
+  world/BattleExport.cpp
   world/Progression.cpp
   world/BattleSave.cpp
   world/Combat.cpp
