@@ -31,6 +31,7 @@ add_library(EmberEngine STATIC
   render/vfx/Lightning.cpp
   render/vfx/CombatFx.cpp
   render/vfx/CausticVenom.cpp
+  render/vfx/AcidCloud.cpp
   render/vfx/ElementSprites.cpp
   render/vfx/PhantasmalForce.cpp
   render/vfx/WebOfDreams.cpp

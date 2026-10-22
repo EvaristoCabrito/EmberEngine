@@ -12,6 +12,7 @@ battle.pak again. Idempotent.
 
     python -I tools/scripts/sprites/apply_sprite_overrides.py
 """
+import copy
 import json
 import math
 import os
@@ -121,6 +122,12 @@ def main():
             print(f"{st['set']} {st['version']}: {len(clips)} clips, the medium copy of {of['hero']}'s {', '.join(marked)}")
             continue
         hero = next((h for h in roster["heroes"] if h.get("key") == st["hero"]), None)
+        if hero is None and "newHero" in st:
+            # a unit of EmberEngine's own (the Corrosive Slime, 2026-10-22): its catalog entry made here, its poses below
+            nh = st["newHero"]
+            hero = {"name": nh["name"], "key": st["hero"], "group": nh.get("group", "monster"), "sprite": nh.get("sprite", st["set"]),
+                    "reversed": bool(nh.get("reversed", False)), "poses": []}
+            roster["heroes"].append(hero)
         if hero is None:
             raise SystemExit(f"{st['hero']}: not in {roster_path}")
         for pose, name in st["poses"].items():
@@ -143,6 +150,23 @@ def main():
                 for name, n in st.get("strides", {}).items():
                     table[f"{st['set']}/{name}"] = n
         print(f"{st['set']} {st['version']}: {len(clips)} clips, {st['hero']}'s poses {', '.join(st['poses'])}")
+
+    # "copies" (after every set, so a medium copy's marks come along): another unit drawn with the same art at `scale` (the Large
+    # Corrosive Slime: two hexes, the Small one's art twice as big); its poses are the hero's, each box (width, height, foot) scaled.
+    for st in over.get("sets", []):
+        for cp in st.get("copies", []):
+            src = next((h for h in roster["heroes"] if h.get("key") == st["hero"]), None)
+            if src is None:
+                raise SystemExit(f"{st['hero']}: not in {roster_path} (copy {cp['key']})")
+            dst = next((h for h in roster["heroes"] if h.get("key") == cp["key"]), None)
+            if dst is None:
+                dst = {"key": cp["key"]}
+                roster["heroes"].append(dst)
+            dst.update(name=cp["name"], group=src.get("group", "monster"), sprite=src.get("sprite"), reversed=src.get("reversed", False))
+            dst["poses"] = copy.deepcopy(src["poses"])
+            for p in dst["poses"]:
+                p["box"] = {k: round(v * cp["scale"], 5) for k, v in p["box"].items()}
+            print(f"{cp['key']}: {st['hero']}'s {len(dst['poses'])} poses at x{cp['scale']}")
 
     # "speed": a pose's own clip played faster (its pace sampled `factor` times as fast, so the pose is that much shorter in
     # the fight); marked on the pose so a second run does nothing.

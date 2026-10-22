@@ -57,7 +57,13 @@ int SpellEffects::zoneStart(const std::string& kind, const std::string& element,
   const int id = ++zoneSerial_;
   constexpr float kForever = 1.0e9f;
   const glm::vec3 centre = hexes.front().feet;
-  if (kind == "burning") {
+  if (kind == "acidCloud") {
+    std::vector<glm::vec3> cells;
+    cells.reserve(hexes.size());
+    for (const Spot& h : hexes) cells.push_back(h.feet);
+    acidClouds_.emplace_back(std::move(cells), now);
+    acidClouds_.back().id = id;
+  } else if (kind == "burning") {
     // Small flames on every hex, each at its own phase, the ground glowing; one wavering light over the whole patch.
     const bool ember = element == "ember";
     for (const Spot& h : hexes) {
@@ -149,6 +155,8 @@ int SpellEffects::zoneStart(const std::string& kind, const std::string& element,
 }
 
 void SpellEffects::zoneEnd(int id, float now) {
+  for (AcidCloud& cloud : acidClouds_)
+    if (cloud.id == id) cloud.stop(now);
   for (Element& e : elements_)
     if (e.zone == id && e.end > now) e.end = now + std::max(e.fadeOut, 0.3f), e.zone = 0;
 }

@@ -1,0 +1,46 @@
+{
+ "about": "EmberEngine's own unit classes (read by engine/world/Battle.cpp applyEmberClass). A battle file's exporter knows only the old classes, so a unit of these arrives under a stand-in and is made what its class says here: stats at its level from content/engine2/class-stats.json, movement, body size (hexes), its blow (strikesWith atk = the weapon's dice on ATK), resistances, spell uses per tier and spells, its names. Ranks in content/enemy-ranks.json. The Corrosive Slime (the user, 2026-10-22): AD&D 2e's oozes are immune to acid (Veneno here, the game's acid); the Small Slime casts Milf's Acid Arrow twice (tier 2) and Névoa Ácida once (tier 3) a fight, the Large Slime three and two, its stats 75% higher, two hexes.",
+ "standIn": "zombie",
+ "classes": {
+  "corrosiveSlime": {
+   "name": "Slime Corrosivo", "nameEn": "Corrosive Slime", "role": "Gosma",
+   "sprite": "corrosive-slime", "size": 1, "mov": 3, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {"poison": 100},
+   "spells": {"tier2": 2, "tier3": 1},
+   "spellList": ["acidArrow", "acidCloud"]
+  },
+  "corrosiveSlimeLarge": {
+   "name": "Slime Corrosivo Grande", "nameEn": "Large Corrosive Slime", "role": "Gosma",
+   "sprite": "corrosive-slime", "size": 2, "mov": 3, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {"poison": 100},
+   "spells": {"tier2": 3, "tier3": 2},
+   "spellList": ["acidArrow", "acidCloud"]
+  },
+  "corrosiveSlime36": {
+   "name": "Slime36", "nameEn": "Slime36", "role": "Gosma",
+   "sprite": "corrosive-slime-36", "size": 1, "mov": 3, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {"poison": 100},
+   "spells": {"tier2": 2, "tier3": 1},
+   "spellList": ["acidArrow", "acidCloud"]
+  },
+  "corrosiveSlime64": {
+   "name": "Slime64", "nameEn": "Slime64", "role": "Gosma",
+   "sprite": "corrosive-slime-64", "size": 1, "mov": 3, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {"poison": 100},
+   "spells": {"tier2": 2, "tier3": 1},
+   "spellList": ["acidArrow", "acidCloud"]
+  },
+  "giantSpider": {
+   "name": "Aranha Gigante", "nameEn": "Giant Spider", "role": "Fera",
+   "sprite": "giant-spider", "size": 3, "mov": 4, "strikesWith": "atk",
+   "weapon": {"dice": 2, "faces": 6, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {"poison": 50},
+   "spells": {},
+   "spellList": []
+  }
+ }
+}

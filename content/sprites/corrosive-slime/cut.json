@@ -1,0 +1,86 @@
+{
+ "about": "Corrosive Slime from the user's videos (Attachments/Corrosive Slime, 2026-10-21): pulsing and casting, moving and attacking, hit at 1.07 s and death; every native frame at 24 fps, the video's own resolution (Alta). The user: walk and attack in one direction only (the game mirrors them); one art for the Small Slime (1 hex) and the Large Slime (2 hexes). figureUnits sets the Small Slime's size (its idle body as wide as a hex); the Large one is the same art scaled in the roster.",
+ "set": "corrosive-slime",
+ "version": "v01",
+ "figureUnits": 1.076,
+ "figureNote": "set so the Small Slime's idle body (its opaque box) is 1.75 units wide, one hex; figurePx 562 = the idle's measured height, kept for every clip (one camera in all three videos: the slime is ~900 px wide at rest in each)",
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/corrosive-slime/idlecast",
+   "video": "Attachments/Corrosive Slime/Slime_creature_pulsing_and_casting_20261021211244.mp4",
+   "first": 0,
+   "last": 86,
+   "loopMin": 40,
+   "loopMax": 86,
+   "mode": "loop"
+  },
+  {
+   "clip": "cast",
+   "pose": "cast",
+   "kind": "stand",
+   "src": "build/video-cut/corrosive-slime/idlecast",
+   "video": "Attachments/Corrosive Slime/Slime_creature_pulsing_and_casting_20261021211244.mp4",
+   "first": 86,
+   "last": 196,
+   "impactFrame": 140,
+   "mode": "once",
+   "bodyAt": -0.066
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/corrosive-slime/moveatk",
+   "video": "Attachments/Corrosive Slime/Slime_creature_moving_and_attacking_20261021215513.mp4",
+   "first": 24,
+   "last": 128,
+   "loopMin": 30,
+   "loopMax": 100,
+   "mode": "loop",
+   "bodyAt": -0.066
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "src": "build/video-cut/corrosive-slime/moveatk",
+   "video": "Attachments/Corrosive Slime/Slime_creature_moving_and_attacking_20261021215513.mp4",
+   "first": 130,
+   "last": 204,
+   "impactFrame": 187,
+   "mode": "once",
+   "mirror": true,
+   "why": "the walk moves right in its video and the strike lashes left: mirrored so every clip faces right (the game turns the card for the other side)",
+   "bodyAt": 0.066
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "kind": "stand",
+   "src": "build/video-cut/corrosive-slime/hitdeath",
+   "video": "Attachments/Corrosive Slime/SlimeHitat1.07anddeath.mp4",
+   "first": 26,
+   "last": 126,
+   "mode": "once",
+   "why": "the user: the hit at 1.07 s (video frame 26); upright and calm again by 126",
+   "bodyAt": -0.066
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "kind": "stand",
+   "src": "build/video-cut/corrosive-slime/hitdeath",
+   "video": "Attachments/Corrosive Slime/SlimeHitat1.07anddeath.mp4",
+   "first": 138,
+   "last": 239,
+   "standUntil": 150,
+   "mode": "once",
+   "why": "sinks from 144 to a steaming puddle by the end; its feet line and size from the frames it still stands in",
+   "bodyAt": -0.066
+  }
+ ],
+ "figurePx": 562
+}

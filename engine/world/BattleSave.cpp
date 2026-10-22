@@ -82,7 +82,8 @@ nlohmann::json Battle::snapshot() const {
                    {"disarmPct", c.disarmPct},   {"disarmTurns", c.disarmTurns}, {"staggered", c.staggered},       {"staggerTurns", c.staggerTurns},
                    {"vigilPct", c.vigilPct},     {"vigilRadius", c.vigilRadius}, {"mirrorCopies", c.mirrorCopies}, {"mirrorRounds", c.mirrorRounds},
                    {"bondPct", c.bondPct},       {"empowerPct", c.empowerPct},   {"empowerRounds", c.empowerRounds},
-                   {"reflectTurns", c.reflectTurns}, {"reflectPct", c.reflectPct}, {"reflectHealPct", c.reflectHealPct}, {"daggers", c.daggers}};
+                   {"reflectTurns", c.reflectTurns}, {"reflectPct", c.reflectPct}, {"reflectHealPct", c.reflectHealPct}, {"daggers", c.daggers},
+                   {"acidTurns", c.acidTurns},   {"acidDice", c.acidDice},       {"acidFaces", c.acidFaces},       {"acidMag", c.acidMag}};
     }
     if (u.empowerBase)
       s["empowerBase"] = {{"atk", u.empowerBase->atk}, {"mag", u.empowerBase->mag}, {"def", u.empowerBase->def}, {"dex", u.empowerBase->dex}, {"mov", u.empowerBase->mov}};
@@ -98,6 +99,7 @@ nlohmann::json Battle::snapshot() const {
                      {"radius", z.radius},   {"rounds", z.rounds},         {"ring", z.ring},          {"caster", units_[z.caster].id},
                      {"element", z.element}, {"hazardDice", z.hazardDice}, {"hazardFaces", z.hazardFaces}, {"dice", z.dice},
                      {"faces", z.faces},     {"mul", z.mul},               {"mag", z.mag},            {"statPct", z.statPct},
+                     {"casterId", z.casterId}, {"poisonChance", z.poisonChance}, {"struckRound", z.struckRound},
                      {"centreMul", z.centreMul}, {"ringMul", z.ringMul},   {"centreDice", z.centreDice}, {"centreFaces", z.centreFaces},
                      {"ringDice", z.ringDice}, {"ringFaces", z.ringFaces}});
   for (size_t i = 0; i < zones_.size(); ++i) {  // a zone's own hexes (its area stage), as [x, y] pairs
@@ -262,6 +264,7 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       o.staggerTurns = c.value("staggerTurns", 0), o.vigilPct = c.value("vigilPct", 0), o.vigilRadius = c.value("vigilRadius", 0);
       o.mirrorCopies = c.value("mirrorCopies", 0), o.mirrorRounds = c.value("mirrorRounds", 0), o.bondPct = c.value("bondPct", 0);
       o.empowerPct = c.value("empowerPct", 0), o.empowerRounds = c.value("empowerRounds", 0);
+      o.acidTurns = c.value("acidTurns", 0), o.acidDice = c.value("acidDice", 0), o.acidFaces = c.value("acidFaces", 0), o.acidMag = c.value("acidMag", 0.0);
       o.reflectTurns = c.value("reflectTurns", 0), o.reflectPct = c.value("reflectPct", 0), o.reflectHealPct = c.value("reflectHealPct", 0);
       o.daggers = c.value("daggers", 0);
     }
@@ -292,6 +295,8 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       z.radius = j.value("radius", 1), z.rounds = j.value("rounds", 1), z.ring = j.value("ring", false), z.caster = static_cast<size_t>(caster);
       z.element = j.value("element", std::string()), z.hazardDice = j.value("hazardDice", 0), z.hazardFaces = j.value("hazardFaces", 8);
       z.dice = j.value("dice", 0), z.faces = j.value("faces", 0), z.mul = j.value("mul", 0.0), z.mag = j.value("mag", 0.0), z.statPct = j.value("statPct", 0);
+      z.casterId = j.value("casterId", units_[static_cast<size_t>(caster)].id), z.poisonChance = j.value("poisonChance", 0.0);
+      if (j.contains("struckRound") && j["struckRound"].is_object()) z.struckRound = j["struckRound"].get<std::map<std::string, int>>();
       z.centreMul = j.value("centreMul", 0.0), z.ringMul = j.value("ringMul", 0.0), z.centreDice = j.value("centreDice", 0);
       z.centreFaces = j.value("centreFaces", 0), z.ringDice = j.value("ringDice", 0), z.ringFaces = j.value("ringFaces", 0);
       if (j.contains("cells") && j["cells"].is_array())

@@ -66,6 +66,19 @@ const gameResist = await import(`${E2}/src/game/resistances.ts`);
 
 const draft = JSON.parse(readFileSync(mapPath, 'utf8')).draft;
 const mission = store.draftToMission(draft);
+// EmberEngine's own classes (content/ember-classes.json, e.g. the Corrosive Slime): this engine has no such class, so their spawns
+// are built as the file's stand-in and written back under their own class, sprite and names; the game makes them what their class
+// says when the battle loads (engine/world/Battle.cpp applyEmberClass).
+const emberClassesPath = fileURLToPath(new URL('../../../content/ember-classes.json', import.meta.url));
+const emberClasses = existsSync(emberClassesPath) ? JSON.parse(readFileSync(emberClassesPath, 'utf8')) : { classes: {} };
+const emberAt = new Map<string, { classId: string; sprite: string; name: string; named: boolean }>();
+for (const list of [mission.enemySpawns ?? [], mission.neutralSpawns ?? []])
+  for (const s of list as any[]) {
+    const c = emberClasses.classes?.[s.classId];
+    if (!c) continue;
+    emberAt.set(`${s.x},${s.y}`, { classId: s.classId, sprite: c.sprite, name: c.name, named: !!s.name && s.name !== c.name });
+    s.classId = emberClasses.standIn ?? 'zombie';
+  }
 // PLANT_TEST=1: the map's enemies swapped for Carnivorous Plants and Saplings (no proof map has any), for the plants' AI references
 // (tryAiPlantSwipe / CausticVenom / PoisonBreath); the units, their spells and the decisions all come from this variant.
 if (process.env.PLANT_TEST === '1')
@@ -235,6 +248,14 @@ for (const u of e.units) {
       resistances: u.resistances ?? {},
       faceDx: u.faceDx ?? null, faceDy: u.faceDy ?? null, facing: u.facing ?? 1,
     } });
+  // A unit of an EmberEngine class (spawned as the stand-in): its own class, sprite and names back
+  const ember = u.side !== 'player' ? emberAt.get(`${u.x},${u.y}`) : undefined;
+  if (ember) {
+    const out = units[units.length - 1];
+    out.classId = ember.classId, out.sprite = ember.sprite, out.className = ember.name;
+    if (!ember.named) out.name = ember.name;
+    out.undead = false, out.boss = false, out.spellList = [];
+  }
 }
 
 // The party's affinity bonus for each pair of names (affinity.ts affinityBonus of the pair's score).

@@ -58,6 +58,8 @@ constexpr SpellData kSpells[] = {
     {"executionerStrike", "Golpe do Carrasco", 3, "", true},
     {"fireball", "Bola de Fogo", 3, "fire", false},
     {"iceStorm", "Tempestade de Gelo", 4, "ice", false},
+    {"acidCloud", "Névoa Ácida", 3, "poison", false},
+    {"acidArrow", "Milf's Acid Arrow", 2, "poison", false},  // the Corrosive Slime's (AD&D 2e's 2nd-level wizard spell; ours, 2026-10-22)
     {"causticVenom", "Veneno Cáustico", 5, "poison", false},
     {"poisonBreath", "Sopro Venenoso", 1, "poison", false},
     {"warp", "Portal", 3, "arcane", false},
@@ -1536,6 +1538,13 @@ void tickConditions(Battle& b, size_t id, Mulberry32& rng, std::vector<BattleEff
     hurt(rollDice(u.cond.bleedDice, u.cond.bleedFaces, 0, rng), "", pick("Sangramento fere", "Bleeding hurts"));
     if (countDown && --u.cond.bleedTurns <= 0) u.cond.bleedDice = u.cond.bleedFaces = 0;
   }
+  // Milf's Acid Arrow: the acid left on the body burns again (Veneno, the caster's MAG penetrating the resistance)
+  if (u.alive && u.cond.acidTurns > 0) {
+    const int roll = rollDice(u.cond.acidDice, u.cond.acidFaces, 0, rng);
+    hurt(static_cast<int>(std::floor(elementalDamage(roll, u.combat.resistance("poison"), u.cond.acidMag))), "poison",
+         pick("Ácido corrói", "Acid burns"));
+    if (countDown && --u.cond.acidTurns <= 0) u.cond.acidDice = u.cond.acidFaces = 0, u.cond.acidMag = 0;
+  }
   if (u.alive && u.cond.decayTurns > 0) {
     const int roll = rollDice(u.cond.decayDice, u.cond.decayFaces, 0, rng);
     const int base = static_cast<int>(std::floor(std::floor(u.cond.decayMag / 2) * u.cond.decayMul)) + roll;
@@ -1557,6 +1566,7 @@ void zoneEffects(Battle& b, size_t id, Mulberry32& rng, std::vector<BattleEffect
   const std::vector<BattleHex> body = Battle::footprint(u, u.x, u.y);
   for (const Battle::Zone& z : std::vector<Battle::Zone>(b.zones())) {  // a copy: a death may change the list
     if (!u.alive) return;
+    if (z.kind == "acidCloud") continue;
     if (z.kind == "meteor" || (z.hazardDice <= 0 && z.dice <= 0)) continue;
     if (std::none_of(body.begin(), body.end(), [&](const BattleHex& h) { return z.covers(h); })) continue;
     int dmg = 0;
@@ -2534,6 +2544,7 @@ std::string conditionsText(const BattleUnit& u) {
   if (u.poisoned)
     if (const PoisonTier* t = poisonTier(u.poisonTier)) add(std::string(t->name) + (u.cond.plagueSpread > 0 ? " (espalha)" : ""));
   if (u.cond.bleedTurns > 0) add(std::format("Sangrando {}D{} ({})", u.cond.bleedDice, u.cond.bleedFaces, u.cond.bleedTurns));
+  if (u.cond.acidTurns > 0) add(std::format("{} {}D{} ({})", pick("Ácido", "Acid"), u.cond.acidDice, u.cond.acidFaces, u.cond.acidTurns));
   if (u.cond.silenceTurns > 0) add(std::format("Silenciado ({})", u.cond.silenceTurns));
   if (u.cond.decayTurns > 0) add(std::format("Decadência -{}% ({})", u.cond.decayPct, u.cond.decayTurns));
   if (u.cond.sunderPct > 0) add(std::format("{} -{}% DEF ({})", pick("Guarda quebrada", "Guard broken"), u.cond.sunderPct, u.cond.sunderTurns + 1));
@@ -2578,6 +2589,10 @@ std::string spellExplain(const std::string& kind, bool en) {
        "A line of ice from beside you toward where you aim; it strikes everyone on it, allies too."},
       {"poisonBreath", "Um cone de veneno à sua frente: todos dentro levam dano e ficam envenenados, aliados também.",
        "A cone of poison in front of you: everyone in it takes damage and is poisoned, allies too."},
+      {"acidCloud", "Uma nuvem baixa de ácido permanece no chão: atinge todos quando cai, no início do turno e ao entrar nela. Cada acerto pode causar Veneno Menor.",
+       "A low acid cloud stays on the ground: it strikes everyone when it lands, at turn start and on entry. Each hit may inflict Lesser Poison."},
+      {"acidArrow", "Uma flecha de ácido num inimigo à vista: dano ao acertar, e o ácido continua corroendo no início dos turnos dele (um turno a mais a cada 3 níveis de quem lança).",
+       "An arrow of acid at a foe in sight: damage on the hit, and the acid keeps burning at the start of its turns (one more turn per 3 caster levels)."},
       {"burningHands", "Um cone de fogo à sua frente: todos dentro levam dano, aliados também.",
        "A cone of fire in front of you: everyone in it takes damage, allies too."},
       {"fireball", "Explode no hex que você mira: todos na área levam o mesmo dano, aliados também. Precisa de linha de tiro até o hex.",
@@ -2742,6 +2757,14 @@ std::string spellScaleTextRaw(const BattleUnit& c, const std::string& kind, bool
     return std::format("{} {} hexes · {} {}", pick("cone de", "cone of"), p.radius, damage, dmg(p.mul, p.dice, p.faces));
   }
   if (kind == "fireball") return std::format("{} · {} · {} {}", reach(kFireballRange), area(kFireballSize), damage, dmg(kFireballMul, fireballDice(lv), kFireballFaces));
+  if (kind == "acidCloud") {
+    const IceStormP p = acidCloudPower(lv);
+    return std::format("{} · {} · {} · {}% {}", reach(p.range), area(p.size), dmg(p.mul, p.dice, p.faces),
+                       static_cast<int>(acidCloudPoisonChance(lv)), pick("chance de Veneno Menor", "Lesser Poison chance"));
+  }
+  if (kind == "acidArrow")
+    return std::format("{} · {} · {} {}D{} × {}", reach(kAcidArrowRange), dmg(kAcidArrowMul, kAcidArrowDice, kAcidArrowFaces),
+                       pick("depois", "then"), kAcidArrowDice, kAcidArrowFaces, acidArrowTurns(lv));
   if (kind == "causticVenom" || kind == "minorVenom" || kind == "divineBolt") {
     const BoltData d = boltPower(kind, lv);
     return std::format("{} · {} · {} {} · {} {}", reach(d.range), area(d.size), pick("centro", "centre"), dmg(d.centerMul, d.centerDice, d.centerFaces),
@@ -2949,7 +2972,7 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"cureDisease", "Cure Disease"}, {"createFoodAndWater", "Create Food and Water"}, {"fantomForce", "Phantom Force"}, {"spectralBolt", "Spectral Bolt"},
     {"bloodyShot", "Bloody Shot"}, {"multiShot", "Multi Shot"}, {"provoke", "Provoke"}, {"cleave", "Cleave"}, {"sweep", "Sweep"},
     {"trip", "Trip"}, {"bullRush", "Bull Rush"}, {"shieldBash", "Shield Bash"}, {"executionerStrike", "Executioner's Strike"},
-    {"fireball", "Fireball"}, {"iceStorm", "Ice Storm"}, {"causticVenom", "Caustic Venom"}, {"poisonBreath", "Poison Breath"},
+    {"fireball", "Fireball"}, {"iceStorm", "Ice Storm"}, {"acidCloud", "Acid Cloud"}, {"acidArrow", "Milf's Acid Arrow"}, {"causticVenom", "Caustic Venom"}, {"poisonBreath", "Poison Breath"},
     {"warp", "Warp"}, {"bless", "Bless"}, {"burningHands", "Burning Hands"}, {"turnUndead", "Turn Undead"},
     {"divineBolt", "Divine Bolt"}, {"summonFamiliar", "Summon Familiar"}, {"phantasmalForce", "Phantasmal Force"},
     {"webOfDreams", "Web of Dreams"}, {"summonFamiliar2", "Greater Familiar"}, {"summonFamiliar3", "Familiar 3"},
@@ -3198,7 +3221,7 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   else if (kind == "minorVenom") maxRange = grown(kMinorVenom.range), shot = true;
   else if (kind == "divineBolt") maxRange = grown(kDivineBolt.range), shot = true;
   else if (kind == "webOfDreams") maxRange = grown(kWebRange), shot = true;
-  else if (kind == "iceStorm") maxRange = grown(iceStormPower(u.level).range), shot = true;
+  else if (kind == "iceStorm" || kind == "acidCloud") maxRange = grown(iceStormPower(u.level).range), shot = true;
   else if (kind == "bloodyShot") minRange = u.minRange, maxRange = grown(kBloodyShotRange), shot = true, arrow = true;
   else if (kind == "multiShot") minRange = u.minRange, maxRange = grown(kMultiShotRange), shot = true, arrow = true;
   else if (kind == "lightningTier3") maxRange = grown(kLightningT3Range);
@@ -3737,6 +3760,36 @@ void iceStormsStrike(Battle& b, size_t unit, Mulberry32& rng, std::vector<Battle
   }
 }
 
+void acidCloudsStrike(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out, int onlyId = -1) {
+  if (unit >= b.units().size()) return;
+  BattleUnit& target = b.units()[unit];
+  if (!target.alive || b.shielded(target)) return;
+  const std::vector<BattleHex> body = Battle::footprint(target, target.x, target.y);
+  for (Battle::Zone& z : b.zonesMutable()) {
+    if (z.kind != "acidCloud" || (onlyId >= 0 && z.id != onlyId) ||
+        std::none_of(body.begin(), body.end(), [&](const BattleHex& h) { return z.covers(h); })) continue;
+    if (const auto it = z.struckRound.find(target.id); it != z.struckRound.end() && it->second == b.round()) continue;
+    z.struckRound[target.id] = b.round();
+    const Battle::Zone cloud = z;
+    const double base = std::floor(std::floor(cloud.mag / 2) * cloud.mul) + rollDice(cloud.dice, cloud.faces, 0, rng);
+    const int damage = static_cast<int>(std::floor(elementalDamage(base, target.combat.resistance("poison"), cloud.mag)));
+    target.hp = std::max(0, target.hp - damage);
+    trainResistance(target, "poison", std::nullopt, rng);
+    BattleEffect hit{unit, damage, false, false, false, false, false};
+    hit.cause = pick("Névoa Ácida atinge", "Acid Cloud strikes");
+    if (target.hp <= 0) markDead(target, rng), hit.died = true;
+    out.push_back(hit);
+    if (target.alive && rng() * 100.0 < cloud.poisonChance) {
+      applyPoison(target, "lesser", cloud.mag, 0, false);
+      out.push_back(statusEffect(unit, "Envenenado"));
+    }
+    if (!target.alive) {
+      afterDeath(b, unit, out);
+      return;
+    }
+  }
+}
+
 // provoke(target, attacker): a neutral struck by the party turns, and its whole pack with it.
 void provokeNeutral(Battle& b, size_t target, size_t attacker, std::vector<BattleEffect>& out) {
   const BattleUnit& t = b.units()[target];
@@ -4118,6 +4171,13 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
       if (b.units()[i].alive) inside.push_back(i);
     for (size_t i : inside)
       if (newest < b.iceZones().size()) iceStormsStrike(b, i, rng, out, newest);
+    return;
+  }
+  if (step.type == BattleStep::Type::Spell && step.kind == "acidCloud") {
+    if (!att.alive || b.zones().empty()) return;
+    const int newest = b.zones().back().kind == "acidCloud" ? b.zones().back().id : -1;
+    if (newest < 0) return;
+    for (size_t i = 0; i < b.units().size(); ++i) acidCloudsStrike(b, i, rng, out, newest);
     return;
   }
   if (step.type == BattleStep::Type::Effect) {
@@ -4699,6 +4759,14 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
         }
       out.push_back(statusEffect(id, "Silenciado"));
     }
+    if (step.kind == "acidArrow") {  // Milf's Acid Arrow: the acid stays on the body (one more turn per three caster levels)
+      const int turns = acidArrowTurns(att.level);
+      if (turns > 0) {
+        foe.cond.acidTurns = std::max(foe.cond.acidTurns, turns);
+        foe.cond.acidDice = kAcidArrowDice, foe.cond.acidFaces = kAcidArrowFaces, foe.cond.acidMag = std::max(foe.cond.acidMag, mag);
+        out.push_back(statusEffect(id, pick("Corroído", "Corroded")));
+      }
+    }
     if (step.hobblePct > 0) {  // Tiro Paralisante: MOV down for some of its turns
       foe.cond.hobblePct = std::max(foe.cond.hobblePct, step.hobblePct), foe.cond.hobbleTurns = std::max(foe.cond.hobbleTurns, step.hobbleTurns);
       applyHobble(foe);
@@ -4818,6 +4886,7 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
   if (u.alive) tickConditions(b, unit, rng, out, false, true);
   // Tempestade de Gelo: whoever starts its turn inside the field is hurt (once a round: not again if it walked in this round)
   if (u.alive) iceStormsStrike(b, unit, rng, out);
+  if (u.alive) acidCloudsStrike(b, unit, rng, out);
   // The staff's regeneration (restoreStaffHp): HP back, capped to what is missing.
   if (u.alive && u.combat.staff && u.combat.staffRegen > 0) {
     const int heal = std::min(u.maxHp - u.hp, static_cast<int>(std::floor(u.combat.staffRegen)));
@@ -4894,6 +4963,7 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
 void stepOnHex(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffect>& out) {
   tileHazard(b, unit, rng, out);
   if (b.units()[unit].alive) iceStormsStrike(b, unit, rng, out);  // walking into a Tempestade de Gelo
+  if (b.units()[unit].alive) acidCloudsStrike(b, unit, rng, out);  // walking into Névoa Ácida
 }
 
 namespace {
@@ -5460,10 +5530,63 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
         return cast;
       }
     }
+  // Névoa Ácida: the centre (a hex of a foe's body) whose cloud catches the most foes, at least `minFoes`, weighted by their wounds,
+  // from a hex of the caster's reach with a line of fire to it
+  auto cloudCast = [&](int minFoes) -> std::optional<AiCast> {
+    struct CloudPick { BattleHex at, from; int score = 0; };
+    std::optional<CloudPick> bestCloud;
+    std::vector<BattleHex> centres;
+    for (size_t h : heroes)
+      for (const BattleHex& cell : Battle::footprint(b.units()[h], b.units()[h].x, b.units()[h].y))
+        if (std::find(centres.begin(), centres.end(), cell) == centres.end()) centres.push_back(cell);
+    for (const BattleHex& at : centres) {
+      const std::vector<BattleHex> area = iceStormAreaTiles(b, at, u.level);
+      int cloudScore = 0, caught = 0;
+      for (size_t h : heroes) {
+        const BattleUnit& hero = b.units()[h];
+        const std::vector<BattleHex> footprint = Battle::footprint(hero, hero.x, hero.y);
+        if (std::any_of(area.begin(), area.end(), [&](const BattleHex& cell) {
+              return std::find(footprint.begin(), footprint.end(), cell) != footprint.end();
+            })) cloudScore += 10 + hero.maxHp - hero.hp, ++caught;
+      }
+      if (caught < minFoes || cloudScore == 0 || (bestCloud && cloudScore <= bestCloud->score)) continue;
+      for (const ReachCell& from : reach)
+        if (hexDist({from.x, from.y}, at) <= grownReach("acidCloud", iceStormPower(u.level).range, u.level) &&
+            clearShot(b, {from.x, from.y}, at, false)) {
+          bestCloud = CloudPick{at, {from.x, from.y}, cloudScore};
+          break;
+        }
+    }
+    if (!bestCloud) return std::nullopt;
+    AiCast cast;
+    cast.path = walkTo(bestCloud->from);
+    std::optional<std::vector<BattleStep>> steps = castE2(b, unit, "acidCloud", {bestCloud->at}, nullptr, false);
+    if (!steps) return std::nullopt;
+    cast.steps = std::move(*steps);
+    return cast;
+  };
+  // The Corrosive Slime (Small: two Flechas Ácidas and one Névoa Ácida a fight; Large: three and two; the user, 2026-10-22): the
+  // cloud when it catches two foes or more, else an arrow at the best foe in reach, else the cloud on one; with nothing left it lashes.
+  // Slime36 / Slime64 are the Small Slime cut to 36 / 64 frames an animation (a test of the art): the same creature.
+  if (c == "corrosiveSlime" || c == "corrosiveSlimeLarge" || c == "corrosiveSlime36" || c == "corrosiveSlime64") {
+    if (tierRemaining(u, "acidCloud") > 0)
+      if (std::optional<AiCast> cc = cloudCast(2)) return cc;
+    if (tierRemaining(u, "acidArrow") > 0)
+      if (const auto p = bestSplash(BoltData{0, kAcidArrowRange, 0, 0, 0, 0, 0, 0, 1.0, 1.0}, "acidArrow")) {
+        AiCast cast;
+        cast.path = walkTo(p->from);
+        if (std::optional<std::vector<BattleStep>> steps = castE2(b, unit, "acidArrow", {p->at}, nullptr, false)) {
+          cast.steps = std::move(*steps);
+          return cast;
+        }
+      }
+    if (tierRemaining(u, "acidCloud") > 0)
+      if (std::optional<AiCast> cc = cloudCast(1)) return cc;
+  }
   const bool birolho = c == "birolho" || c == "birolho2" || c == "birolho3" || c == "birolhoLegs" || c == "birolhoLegs2";
   // Birolho: Relampago outranks Veneno Caustico outranks Choque outranks Missil Magico. (Engine2 tests its tier-4 uses and spends
   // the venom's own tier 5: kept as it is.)
-  if (birolho && (u.spells[0] > 0 || u.spells[1] > 0 || u.spells[3] > 0 || u.shockCharges > 0)) {
+  if (birolho && (u.spells[0] > 0 || u.spells[1] > 0 || u.spells[3] > 0 || u.shockCharges > 0 || tierRemaining(u, "acidCloud") > 0)) {
     if (u.spells[1] > 0)
       if (const std::optional<Pick> p = best(grownReach("lightning", kLightningRange, u.level), false)) {
         spendTier(u, "lightning");
@@ -5478,6 +5601,8 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
           return cast;
         }
       }
+    if (tierRemaining(u, "acidCloud") > 0)
+      if (std::optional<AiCast> cc = cloudCast(1)) return cc;
     if (std::optional<AiCast> s = shock()) return s;
     if (u.spells[0] > 0)
       if (const std::optional<Pick> p = best(grownReach("magicMissile", kMissileRange, u.level), true)) {

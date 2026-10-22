@@ -25,6 +25,89 @@
    "packs": {"base": "field", "move": "field", "move-left": "field"}
   },
   {
+   "set": "corrosive-slime",
+   "version": "v01",
+   "hero": "corrosiveSlime",
+   "newHero": {"name": "Slime Corrosivo", "group": "monster", "sprite": "corrosive-slime", "reversed": false},
+   "cut": "content/sprites/corrosive-slime/cut.json",
+   "why": "the user, 2026-10-21/22: the Corrosive Slime from their videos (Attachments/Corrosive Slime) in all three resolutions; walk and attack in one direction only (the game mirrors them); the Small Slime fills one hex, the Large one two (same art x2)",
+   "poses": {"idle": "base", "walk": "move", "attack": "atk", "cast": "cast", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "attack": "Atacar", "cast": "Conjurar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0},
+   "copies": [
+    {"key": "corrosiveSlimeLarge", "name": "Slime Corrosivo Grande", "scale": 2.0}
+   ]
+  },
+  {
+   "set": "corrosive-slime-media",
+   "version": "media-v01",
+   "mediumOf": {"hero": "corrosiveSlime", "set": "corrosive-slime"},
+   "cut": "content/sprites/corrosive-slime/cut-media.json",
+   "why": "the Corrosive Slime's medium copy (Personagens: Média, the default; Leve halves it): every clip at 0.555 of the video's size",
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "giant-spider",
+   "version": "v01",
+   "hero": "giantSpider",
+   "newHero": {"name": "Aranha Gigante", "group": "monster", "sprite": "giant-spider", "reversed": false},
+   "cut": "content/sprites/giant-spider/cut.json",
+   "why": "the user, 2026-10-22: the Giant Spider from their videos (Attachments/Giant Spider) in all three resolutions, like the Corrosive Slime",
+   "poses": {"idle": "base", "walk": "move", "attack": "atk", "cast": "cast", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "attack": "Atacar", "cast": "Conjurar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "giant-spider-media",
+   "version": "media-v01",
+   "mediumOf": {"hero": "giantSpider", "set": "giant-spider"},
+   "cut": "content/sprites/giant-spider/cut-media.json",
+   "why": "the Giant Spider's medium copy (Personagens: Média, the default; Leve halves it): every clip at 0.555 of the video's size",
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "corrosive-slime-36",
+   "version": "v01",
+   "hero": "corrosiveSlime36",
+   "newHero": {"name": "Slime36", "group": "monster", "sprite": "corrosive-slime-36", "reversed": false},
+   "cut": "content/sprites/corrosive-slime-36/cut.json",
+   "why": "the user, 2026-10-22: \"Slime36 with 36 frames per animation to see what happens in game, same size as small slime\": the Corrosive Slime's clips at 36 frames each, for comparing memory and look in play",
+   "poses": {"idle": "base", "walk": "move", "attack": "atk", "cast": "cast", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "attack": "Atacar", "cast": "Conjurar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "corrosive-slime-36-media",
+   "version": "media-v01",
+   "mediumOf": {"hero": "corrosiveSlime36", "set": "corrosive-slime-36"},
+   "cut": "content/sprites/corrosive-slime-36/cut-media.json",
+   "why": "Slime36's medium copy (Personagens: Média, the default; Leve halves it): every clip at 0.555 of the video's size",
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
+   "set": "corrosive-slime-64",
+   "version": "v01",
+   "hero": "corrosiveSlime64",
+   "newHero": {"name": "Slime64", "group": "monster", "sprite": "corrosive-slime-64", "reversed": false},
+   "cut": "content/sprites/corrosive-slime-64/cut.json",
+   "why": "the user, 2026-10-22: \"also make a Slime64 ... all resolutions side by side\": the Corrosive Slime's clips at 64 frames each (a clip with fewer keeps them all)",
+   "poses": {"idle": "base", "walk": "move", "attack": "atk", "cast": "cast", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "attack": "Atacar", "cast": "Conjurar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "corrosive-slime-64-media",
+   "version": "media-v01",
+   "mediumOf": {"hero": "corrosiveSlime64", "set": "corrosive-slime-64"},
+   "cut": "content/sprites/corrosive-slime-64/cut-media.json",
+   "why": "Slime64's medium copy (Personagens: Média, the default; Leve halves it): every clip at 0.555 of the video's size",
+   "packs": {"base": "field", "move": "field"}
+  },
+  {
    "set": "cultist-v2-ember",
    "version": "v01",
    "hero": "cultistV2",

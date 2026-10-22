@@ -1,0 +1,197 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Corrosive Slime/Slime_creature_pulsing_and_casting_20261021211244.mp4",
+   "first": 0,
+   "last": 86,
+   "bootRow": 680,
+   "bootRows": [
+    679,
+    681
+   ],
+   "loopFirst": 11,
+   "loopLast": 59,
+   "seamSteps": 3.33,
+   "frameCountFrom": 49,
+   "figurePx": 562.0,
+   "frames": 36,
+   "frameMs": 56.71296296296296,
+   "nat": [
+    924,
+    587
+   ],
+   "crop": [
+    5,
+    5,
+    914,
+    577
+   ],
+   "box": {
+    "w": 1.76908,
+    "h": 1.12386,
+    "foot": 0.0134
+   },
+   "pattern": "content/sprites/corrosive-slime-36/base-v01/base-{}.png"
+  },
+  "cast": {
+   "video": "Attachments/Corrosive Slime/Slime_creature_pulsing_and_casting_20261021211244.mp4",
+   "first": 86,
+   "last": 196,
+   "bootRow": 680,
+   "bootRows": [
+    679,
+    682
+   ],
+   "frameCountFrom": 111,
+   "figurePx": 562.0,
+   "bodyAt": -0.0661,
+   "frames": 36,
+   "frameMs": 128.47222222222223,
+   "nat": [
+    1160,
+    720
+   ],
+   "crop": [
+    5,
+    0,
+    1024,
+    720
+   ],
+   "box": {
+    "w": 2.22093,
+    "h": 1.37851,
+    "foot": 0.07467
+   },
+   "pattern": "content/sprites/corrosive-slime-36/cast-v01/cast-{}.png",
+   "impact": 0.4865
+  },
+  "move": {
+   "video": "Attachments/Corrosive Slime/Slime_creature_moving_and_attacking_20261021215513.mp4",
+   "first": 24,
+   "last": 128,
+   "loopFirst": 56,
+   "loopLast": 96,
+   "seamSteps": 3.52,
+   "bootRow": 595,
+   "bodyDrift": [
+    36,
+    47
+   ],
+   "frameCountFrom": 41,
+   "figurePx": 562.0,
+   "bodyAt": -0.0661,
+   "frames": 36,
+   "frameMs": 47.4537037037037,
+   "nat": [
+    1244,
+    459
+   ],
+   "crop": [
+    73,
+    5,
+    1166,
+    449
+   ],
+   "box": {
+    "w": 2.38175,
+    "h": 0.8788,
+    "foot": 0.0134
+   },
+   "pattern": "content/sprites/corrosive-slime-36/move-v01/move-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Corrosive Slime/Slime_creature_moving_and_attacking_20261021215513.mp4",
+   "first": 130,
+   "last": 204,
+   "bootRow": 591,
+   "bootRows": [
+    589,
+    639
+   ],
+   "frameCountFrom": 75,
+   "figurePx": 562.0,
+   "bodyAt": 0.0661,
+   "frames": 36,
+   "frameMs": 86.80555555555556,
+   "nat": [
+    1189,
+    551
+   ],
+   "crop": [
+    61,
+    5,
+    1128,
+    541
+   ],
+   "box": {
+    "w": 2.27645,
+    "h": 1.05494,
+    "foot": 0.05552
+   },
+   "pattern": "content/sprites/corrosive-slime-36/atk-v01/atk-{}.png",
+   "impact": 0.76
+  },
+  "hit": {
+   "video": "Attachments/Corrosive Slime/SlimeHitat1.07anddeath.mp4",
+   "first": 26,
+   "last": 126,
+   "bootRow": 672,
+   "bootRows": [
+    667,
+    688
+   ],
+   "frameCountFrom": 101,
+   "figurePx": 562.0,
+   "bodyAt": -0.0661,
+   "frames": 36,
+   "frameMs": 116.89814814814814,
+   "nat": [
+    1321,
+    707
+   ],
+   "crop": [
+    55,
+    5,
+    1260,
+    689
+   ],
+   "box": {
+    "w": 2.52917,
+    "h": 1.35362,
+    "foot": 0.08616
+   },
+   "pattern": "content/sprites/corrosive-slime-36/hit-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Corrosive Slime/SlimeHitat1.07anddeath.mp4",
+   "first": 138,
+   "last": 239,
+   "bootRow": 673,
+   "bootRows": [
+    673,
+    673
+   ],
+   "frameCountFrom": 102,
+   "figurePx": 562.0,
+   "bodyAt": -0.0661,
+   "frames": 36,
+   "frameMs": 118.05555555555556,
+   "nat": [
+    1339,
+    589
+   ],
+   "crop": [
+    7,
+    5,
+    1247,
+    579
+   ],
+   "box": {
+    "w": 2.56364,
+    "h": 1.12769,
+    "foot": 0.04786
+   },
+   "pattern": "content/sprites/corrosive-slime-36/death-v01/death-{}.png"
+  }
+ }
+}

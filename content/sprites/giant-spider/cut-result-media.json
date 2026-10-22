@@ -1,0 +1,192 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Giant Spider/Giant_spider_performing IdleandCasting.mp4",
+   "first": 0,
+   "last": 90,
+   "bootRow": 584,
+   "bootRows": [
+    572,
+    586
+   ],
+   "loopFirst": 30,
+   "loopLast": 69,
+   "seamSteps": 7.21,
+   "figurePx": 414.0,
+   "scaledTo": 230.1,
+   "frames": 40,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    479,
+    269
+   ],
+   "crop": [
+    3,
+    3,
+    473,
+    264
+   ],
+   "box": {
+    "w": 3.54101,
+    "h": 1.98858,
+    "foot": 0.21201
+   },
+   "pattern": "content/sprites/giant-spider/base-media-v01/base-{}.png"
+  },
+  "cast": {
+   "video": "Attachments/Giant Spider/Giant_spider_performing IdleandCasting.mp4",
+   "first": 90,
+   "last": 216,
+   "bootRow": 582,
+   "bootRows": [
+    577,
+    586
+   ],
+   "figurePx": 419.0,
+   "scaledTo": 232.5,
+   "frames": 127,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    483,
+    354
+   ],
+   "crop": [
+    3,
+    1,
+    477,
+    351
+   ],
+   "box": {
+    "w": 3.53119,
+    "h": 2.58808,
+    "foot": 0.22148
+   },
+   "pattern": "content/sprites/giant-spider/cast-media-v01/cast-{}.png",
+   "impact": 0.5669
+  },
+  "move": {
+   "video": "Attachments/Giant Spider/Giant_spider_animation_movementandATT.mp4",
+   "first": 30,
+   "last": 116,
+   "loopFirst": 57,
+   "loopLast": 97,
+   "seamSteps": 2.85,
+   "bootRow": 567,
+   "bodyDrift": [
+    -4,
+    19
+   ],
+   "figurePx": 407.0,
+   "scaledTo": 226.3,
+   "frames": 41,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    508,
+    268
+   ],
+   "crop": [
+    3,
+    3,
+    502,
+    262
+   ],
+   "box": {
+    "w": 3.82312,
+    "h": 2.01692,
+    "foot": 0.24521
+   },
+   "pattern": "content/sprites/giant-spider/move-media-v01/move-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Giant Spider/Giant_spider_animation_movementandATT.mp4",
+   "first": 138,
+   "last": 204,
+   "bootRow": 557,
+   "bootRows": [
+    544,
+    565
+   ],
+   "figurePx": 403.0,
+   "scaledTo": 223.9,
+   "frames": 67,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    514,
+    295
+   ],
+   "crop": [
+    2,
+    3,
+    509,
+    290
+   ],
+   "box": {
+    "w": 3.90322,
+    "h": 2.24017,
+    "foot": 0.21769
+   },
+   "pattern": "content/sprites/giant-spider/atk-media-v01/atk-{}.png",
+   "impact": 0.5373
+  },
+  "hit": {
+   "video": "Attachments/Giant Spider/Spider_reacting_to_impact_20261022115011.mp4",
+   "first": 30,
+   "last": 110,
+   "bootRow": 597,
+   "bootRows": [
+    565,
+    601
+   ],
+   "figurePx": 455.0,
+   "scaledTo": 252.7,
+   "frames": 81,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    558,
+    321
+   ],
+   "crop": [
+    2,
+    3,
+    554,
+    316
+   ],
+   "box": {
+    "w": 3.75581,
+    "h": 2.1606,
+    "foot": 0.21157
+   },
+   "pattern": "content/sprites/giant-spider/hit-media-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Giant Spider/Giant_spider-Deathat5secs.mp4",
+   "first": 120,
+   "last": 239,
+   "bootRow": 585,
+   "bootRows": [
+    585,
+    585
+   ],
+   "figurePx": 450.0,
+   "scaledTo": 249.8,
+   "frames": 120,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    506,
+    292
+   ],
+   "crop": [
+    3,
+    3,
+    500,
+    287
+   ],
+   "box": {
+    "w": 3.43892,
+    "h": 1.98452,
+    "foot": 0.23995
+   },
+   "pattern": "content/sprites/giant-spider/death-media-v01/death-{}.png"
+  }
+ }
+}

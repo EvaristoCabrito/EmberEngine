@@ -171,6 +171,14 @@ constexpr BoltData kDivineBolt{1, 6, 2, 4, 0, 1, 4, 0, 1.4, 1.0};
 // size-3 body round the aimed one, Escuridão, the Força Fantasmagórica's dice at the caster's level and one more, x 1.15 on MAG; foes only.
 constexpr int kSpectralRange = 6;
 constexpr double kSpectralMul = 1.15;
+// Milf's Acid Arrow (the Corrosive Slime's: the Small two a fight, the Large three; the user 2026-10-22). AD&D 2e's 2nd-level
+// wizard spell: a missile of acid, 2d4 on the hit, and the acid keeps burning 2d4 a round for one more round per three caster
+// levels. Here: range 7 with a line of fire, one foe, Veneno (the game's acid), MAG/2 x 1.0 + 2D4 on the hit like every spell,
+// then 2D4 at the start of each of the victim's turns for floor(level / 3) turns (none before level 3, as in the book).
+constexpr int kAcidArrowRange = 7;
+constexpr double kAcidArrowMul = 1.0;
+constexpr int kAcidArrowDice = 2, kAcidArrowFaces = 4;
+int acidArrowTurns(int level) { return std::max(0, level / 3); }
 // A bolt's numbers at the caster's level: the centre's dice and weight on its track.
 BoltData boltPower(const std::string& kind, int level) {
   BoltData d = kind == "causticVenom" ? kCausticVenom : kind == "minorVenom" ? kMinorVenom : kDivineBolt;
@@ -210,6 +218,15 @@ IceStormP iceStormPower(int level) {
   static const int dice[6] = {1, 1, 1, 1, 2, 2}, faces[6] = {6, 8, 6, 8, 6, 8}, radius[6] = {1, 1, 2, 2, 3, 3};
   const int r = radius[step];
   return {5 + step, r, 3 * r * (r + 1) + 1, 2 + step, dice[step], faces[step], 0.45 + step * 0.035};
+}
+IceStormP acidCloudPower(int level) {
+  IceStormP p = iceStormPower(level);
+  p.dice = 1, p.faces = 4, p.mul = 0.3;
+  return p;
+}
+double acidCloudPoisonChance(int level) {
+  const int step = std::clamp(static_cast<int>(std::floor((level - 8) / 4.0)), 0, 5);
+  return 25.0 + 5.0 * step;
 }
 constexpr int kIceStormUnlock = 8;
 // burning hands / poison breath
@@ -738,10 +755,12 @@ bool aimE2(const Battle& b, size_t caster, const std::string& kind, BattleHex ce
   const auto grown = [&](int base) { return grownReach(kind, base, u.level); };  // the reach that grows with the level
   if (kind == "fireball") return bolt(grown(kFireballRange));
   if (kind == "iceStorm") return bolt(grown(iceStormPower(u.level).range));
+  if (kind == "acidCloud") return bolt(grown(iceStormPower(u.level).range));
   if (kind == "causticVenom") return bolt(grown(kCausticVenom.range));
   if (kind == "minorVenom") return bolt(grown(kMinorVenom.range));
   if (kind == "divineBolt") return bolt(grown(kDivineBolt.range));
   if (kind == "spectralBolt") return bolt(kSpectralRange);
+  if (kind == "acidArrow") return bolt(kAcidArrowRange);
   if (kind == "webOfDreams") return bolt(grown(kWebRange));
   // The verdict is spellAimValid's (targetable, range, line of fire); the reason, when it fails, spellAimError's.
   auto whyNotTarget = [&]() -> std::string {
@@ -957,6 +976,13 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
     s.tiles = tiles, s.ids = unitsAlong(b, tiles, caster, &u.side);
     s.dice = p.dice + 1, s.faces = p.faces, s.bonus = 0, s.spellMul = kSpectralMul;
     steps.push_back(s);
+  } else if (kind == "acidArrow") {
+    if (checkUses && tierRemaining(u, kind) <= 0) return fail("Sem usos de Flecha Ácida.");
+    const std::vector<BattleHex> tiles = areaTiles(b, cell, 0);
+    spendTier(u, kind);
+    s.tiles = tiles, s.ids = unitsAlong(b, tiles, caster, &u.side);
+    s.dice = kAcidArrowDice, s.faces = kAcidArrowFaces, s.bonus = 0, s.spellMul = kAcidArrowMul;
+    steps.push_back(s);
   } else if (kind == "fireball" || kind == "causticVenom" || kind == "divineBolt" || kind == "minorVenom") {
     const bool fire = kind == "fireball";
     const BoltData d = boltPower(kind, u.level);
@@ -982,6 +1008,16 @@ std::optional<std::vector<BattleStep>> castE2(Battle& b, size_t caster, const st
     z.damageDice = p.dice, z.damageFaces = p.faces, z.damageMul = p.mul;
     z.casterMag = u.mag, z.casterLevel = u.level, z.casterId = u.id, z.side = u.side;
     b.iceZones().push_back(std::move(z));
+    spendTier(u, kind);
+    s.tiles = {cell}, s.ids = {};
+    steps.push_back(s);
+  } else if (kind == "acidCloud") {
+    const IceStormP p = acidCloudPower(u.level);
+    Battle::Zone z;
+    z.kind = "acidCloud", z.centre = cell, z.cells = iceStormAreaTiles(b, cell, u.level), z.radius = p.size, z.rounds = p.durationRounds;
+    z.caster = caster, z.casterId = u.id, z.element = "poison", z.dice = 1, z.faces = 4, z.mul = 0.3, z.mag = u.mag;
+    z.poisonChance = acidCloudPoisonChance(u.level);
+    b.addZone(std::move(z));
     spendTier(u, kind);
     s.tiles = {cell}, s.ids = {};
     steps.push_back(s);
@@ -1141,7 +1177,8 @@ bool e2Kind(const std::string& k) {
                                       "sweep",      "divineWrath", "stampede",   "burningHands",      "poisonBreath", "fireball",     "causticVenom",
                                       "divineBolt", "minorVenom", "iceStorm",   "turnUndead",        "lightningTier3", "familiarLifeDrain",  "phantasmalForce",
                                       "provoke",    "bullRush",     "bless",     "webOfDreams", "auraOfProtection", "intimidatingPresence", "warp",
-                                      "summonFamiliar", "summonFamiliar2", "summonFamiliar3", "summonFamiliar4", "summonZombieDog", "spectralBolt"};
+                                      "summonFamiliar", "summonFamiliar2", "summonFamiliar3", "summonFamiliar4", "summonZombieDog", "spectralBolt",
+                                      "acidCloud", "acidArrow"};
   for (const char* c : kinds)
     if (k == c) return true;
   return false;
@@ -1165,13 +1202,13 @@ std::vector<BattleHex> areaE2(const Battle& b, size_t caster, const std::string&
     const std::optional<CubeI> dir = ray.empty() ? std::nullopt : axisDir(from, ray[0]);
     return dir ? coneSector(b, from, *dir, p.radius) : std::vector<BattleHex>{};
   }
-  if (kind == "spectralBolt") return areaTiles(b, cell, 0);
+  if (kind == "spectralBolt" || kind == "acidArrow") return areaTiles(b, cell, 0);
   if (kind == "fireball") return areaTiles(b, cell, areaRadius(kind, kFireballSize, u.level));
   if (kind == "causticVenom") return areaTiles(b, cell, areaRadius(kind, kCausticVenom.size, u.level));
   if (kind == "minorVenom") return areaTiles(b, cell, areaRadius(kind, kMinorVenom.size, u.level));
   if (kind == "divineBolt") return areaTiles(b, cell, areaRadius(kind, kDivineBolt.size, u.level));
   if (kind == "webOfDreams") return areaTiles(b, cell, webOfDreamsSize(u.level));
-  if (kind == "iceStorm") return iceStormAreaTiles(b, cell, u.level);
+  if (kind == "iceStorm" || kind == "acidCloud") return iceStormAreaTiles(b, cell, u.level);
   if (kind == "provoke") return hexAreaTiles(b, cell, provokePower(u.level).radius);
   if (kind == "turnUndead") {
     std::vector<BattleHex> t;

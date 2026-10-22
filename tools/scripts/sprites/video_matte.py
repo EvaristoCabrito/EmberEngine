@@ -5,7 +5,10 @@ release) downloads to ~/.rembg/models/birefnet-general/. Writes <out>/src-NNNN.p
 <out>/alpha-NNNN.png (8-bit) for frames first..last (0-based, the video's own numbering). Resumable: frames already
 written are skipped, so a run cut short (power) carries on where it stopped.
 
-    python -I tools/scripts/sprites/video_matte.py <video.mp4> <out dir> <first> <last> [--threads N]
+    python -I tools/scripts/sprites/video_matte.py <video.mp4> <out dir> <first> <last> [--threads N] [--model lite]
+
+--model lite = BiRefNet general lite (rembg's birefnet-general-lite, same input size, a quarter of the weights; the user, 2026-10-22,
+for the Giant Spider: "try again on light mode").
 """
 import argparse
 import os
@@ -16,7 +19,10 @@ import numpy as np
 import onnxruntime as ort
 from PIL import Image
 
-MODEL = os.path.expanduser("~/.rembg/models/birefnet-general/birefnet-general.onnx")
+MODELS = {
+    "general": os.path.expanduser("~/.rembg/models/birefnet-general/birefnet-general.onnx"),
+    "lite": os.path.expanduser("~/.rembg/models/birefnet-general-lite/birefnet-general-lite.onnx"),
+}
 MEAN = np.array([0.485, 0.456, 0.406], np.float32)
 STD = np.array([0.229, 0.224, 0.225], np.float32)
 
@@ -55,11 +61,12 @@ def main():
     ap.add_argument("first", type=int)
     ap.add_argument("last", type=int)
     ap.add_argument("--threads", type=int, default=12)
+    ap.add_argument("--model", choices=sorted(MODELS), default="general")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     so = ort.SessionOptions()
     so.intra_op_num_threads = a.threads
-    sess = ort.InferenceSession(MODEL, so, providers=["CPUExecutionProvider"])
+    sess = ort.InferenceSession(MODELS[a.model], so, providers=["CPUExecutionProvider"])
     name = sess.get_inputs()[0].name
     t0 = time.time()
     done = 0

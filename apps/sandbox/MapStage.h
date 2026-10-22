@@ -3389,7 +3389,7 @@ class MapStage final : public Stage {
       std::ifstream in("content/sprite-quality.json", std::ios::binary);
       const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
       if (!j.is_object()) logWarn("sprites: content/sprite-quality.json missing or damaged: nobody has two versions");
-      for (const char* list : {"cast", "villains", "bosses"})
+      for (const char* list : {"cast", "villains", "bosses", "monsters"})
         if (j.is_object() && j.contains(list) && j[list].is_array())
           for (const nlohmann::json& k : j[list])
             if (k.is_string()) out.insert(k.get<std::string>());
@@ -3454,8 +3454,21 @@ class MapStage final : public Stage {
   }
 
   bool hasEmberProps() const {
-    return std::any_of(board_->draft().decorations.begin(), board_->draft().decorations.end(),
-                       [](const e2::MapDecoration& d) { return d.id.starts_with("ember-"); });
+    // ... or a unit of an EmberEngine class (content/ember-classes.json, the Corrosive Slimes): the scene exporter has no art for them
+    static const std::set<std::string> emberClasses = [] {
+      std::set<std::string> out;
+      std::ifstream in("content/ember-classes.json", std::ios::binary);
+      const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+      if (j.is_object() && j.contains("classes") && j["classes"].is_object())
+        for (const auto& [k, v] : j["classes"].items()) out.insert(k);
+      return out;
+    }();
+    const e2::MapDraft& d = board_->draft();
+    const auto ours = [&](const std::vector<e2::MapSpawn>& list) {
+      return std::any_of(list.begin(), list.end(), [&](const e2::MapSpawn& s) { return emberClasses.contains(s.classId); });
+    };
+    return std::any_of(d.decorations.begin(), d.decorations.end(), [](const e2::MapDecoration& m) { return m.id.starts_with("ember-"); }) ||
+           ours(d.enemySpawns) || ours(d.neutralSpawns);
   }
   // EmberEngine's own props set to "Bloquear caminho": export_battle.ts (Engine2's data.ts) has no footprint for them, so
   // their cells are made solid here as Engine2's hexprops makes a solid decoration's (impassable, cost 99, stops shots).

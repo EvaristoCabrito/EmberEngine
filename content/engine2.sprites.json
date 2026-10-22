@@ -3965,41 +3965,6 @@
   {
    "clips": [
     {
-     "fps": 8.461999893188477,
-     "frames": {
-      "count": 12,
-      "pattern": "sprites/voss-v2/{}.png"
-     },
-     "mode": "pingpong",
-     "name": "base",
-     "pack": "field"
-    },
-    {
-     "fps": 15.0,
-     "frames": {
-      "count": 12,
-      "pattern": "sprites/voss-v2/atk-{}.png"
-     },
-     "mode": "once",
-     "name": "atk",
-     "pack": "combat"
-    },
-    {
-     "fps": 8.461999893188477,
-     "frames": {
-      "count": 12,
-      "pattern": "sprites/voss-v2/stand-{}.png"
-     },
-     "mode": "pingpong",
-     "name": "stand",
-     "pack": "field"
-    }
-   ],
-   "name": "voss-v2"
-  },
-  {
-   "clips": [
-    {
      "fps": 2.308000087738037,
      "frames": {
       "count": 4,

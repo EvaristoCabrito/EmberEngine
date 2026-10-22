@@ -91,6 +91,68 @@ int classMov(const std::string& classId) {
   return table.contains(classId) ? integer(table[classId], "mov", -1) : -1;
 }
 
+// EmberEngine's own classes (content/ember-classes.json; the Corrosive Slime, 2026-10-22): a battle file's exporter knows only the old
+// classes, so a unit of ours arrives under a stand-in and is made here what its class says: stats at its level from
+// content/engine2/class-stats.json, movement, body size, weapon, resistances, spell uses and spells, its names.
+const json& emberClasses() {
+  static const json table = [] {
+    std::ifstream in("content/ember-classes.json", std::ios::binary);
+    json j = in ? json::parse(in, nullptr, false) : json();
+    return j.is_object() && j.contains("classes") && j["classes"].is_object() ? j["classes"] : json::object();
+  }();
+  return table;
+}
+const json& classStatTable() {
+  static const json table = [] {
+    std::ifstream in("content/engine2/class-stats.json", std::ios::binary);
+    json j = in ? json::parse(in, nullptr, false) : json();
+    return j.is_object() && j.contains("classes") && j["classes"].is_object() ? j["classes"] : json::object();
+  }();
+  return table;
+}
+void applyEmberClass(BattleUnit& o) {
+  const json& classes = emberClasses();
+  if (!classes.contains(o.classId)) return;
+  const json& c = classes[o.classId];
+  if (const json& rows = classStatTable(); rows.contains(o.classId) && rows[o.classId].is_array() && !rows[o.classId].empty()) {
+    const json& all = rows[o.classId];
+    const json& r = all[static_cast<size_t>(std::clamp(o.level, 1, static_cast<int>(all.size())) - 1)];
+    const bool whole = o.hp >= o.maxHp;
+    o.maxHp = r[0].get<int>(), o.atk = r[1].get<int>(), o.mag = r[2].get<int>(), o.def = r[3].get<int>(), o.dex = r[4].get<int>();
+    o.hp = whole ? o.maxHp : std::min(o.hp, o.maxHp);
+    o.growth.clear();  // the class table's own row: no gear on top
+  } else {
+    logError("battle: class '{}' of {} has no rows in content/engine2/class-stats.json", o.classId, o.name);
+  }
+  o.mov = integer(c, "mov", o.mov);
+  o.size = integer(c, "size", 1);
+  o.sprite = text(c, "sprite").empty() ? o.sprite : text(c, "sprite");
+  o.className = text(c, "name");
+  if (c.contains("weapon") && c["weapon"].is_object()) {
+    const json& w = c["weapon"];
+    CombatProfile& p = o.combat;
+    p.hasWeapon = true, p.dice = integer(w, "dice", 1), p.faces = integer(w, "faces", 4), p.bonus = integer(w, "bonus");
+    p.ranged = false, p.arrow = false, p.arcane = false, p.staff = false, p.classBonus = false;
+    p.offHandWeapon = p.offHandShield = false;
+    o.minRange = integer(w, "minRange", 1), o.maxRange = integer(w, "maxRange", 1);
+    o.weaponType.clear(), o.trainsWeapon = false;
+  }
+  o.combat.resistances.clear();
+  if (c.contains("resistances") && c["resistances"].is_object())
+    for (const auto& [k, v] : c["resistances"].items())
+      if (v.is_number()) o.combat.resistances.emplace_back(k, v.get<double>());
+  std::fill(std::begin(o.spells), std::end(o.spells), 0);
+  if (c.contains("spells") && c["spells"].is_object())
+    for (int t = 0; t < 10; ++t) o.spells[t] = integer(c["spells"], ("tier" + std::to_string(t + 1)).c_str());
+  o.spellList.clear();
+  if (c.contains("spellList") && c["spellList"].is_array())
+    for (const json& k : c["spellList"])
+      if (k.is_string()) o.spellList.push_back(k.get<std::string>());
+  o.shockCharges = o.frostCharges = o.fantomForceCharges = o.spectralCharges = 0;
+  o.undead = c.value("undead", false);
+  o.footprintOffsets.reset();
+}
+
 }  // namespace
 
 int Battle::adjacentLock(size_t unit) const {
@@ -348,10 +410,18 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
       }
     }
     o.atkBlows = o.mag - o.gearMag <= 0;  // a class without MAG in the battle file keeps striking with ATK once it has MAG
+    if (emberClasses().contains(o.classId)) {
+      applyEmberClass(o);
+      o.atkBlows = emberClasses()[o.classId].value("strikesWith", std::string("atk")) == "atk";
+    }
     applyProgression(o);  // EmberEngine's own growth over Engine2's (gear kept; off in the Cooker's checks)
     // Ours (the user, 2026-10-18: "cultista de level 15 pode usar 1X"): a cultist of level 15 or more brings one Tempestade de
     // Gelo (its tier-4 use; Engine2's cultists have none). Off in the Cooker's checks, like the progression.
     if (progressionEnabled() && o.side == "enemy" && (o.classId == "cultist" || o.classId == "cultistV2") && o.level >= 15) o.spells[3] = 1;
+    if (progressionEnabled() && o.side == "enemy" &&
+        (o.classId == "birolho" || o.classId == "birolho2" || o.classId == "birolho3" || o.classId == "birolhoLegs" ||
+         o.classId == "birolhoLegs2"))
+      o.spells[2] = std::max(1, o.spells[2]);  // one T3 use for Névoa Ácida (the slimes' come from content/ember-classes.json)
     o.footprintW = integer(u, "footprintW", 2);
     o.footprintH = integer(u, "footprintH", 4);
     if (u.contains("reach") && u["reach"].is_array())

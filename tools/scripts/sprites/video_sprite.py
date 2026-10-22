@@ -324,6 +324,20 @@ def main():
                     pc = f[..., :3] * f[..., 3:] / 255 * (1 - t) + g[..., :3] * g[..., 3:] / 255 * t
                     frames[n - xf + k] = np.dstack([pc / np.maximum(pa, 1e-4), pa * 255]).astype(np.float32)
                 info["crossfade"] = xf
+        # `frameCount` (a clip's or the spec's; the user, 2026-10-22, "Slime36 with 36 frames per animation"): that many of the
+        # clip's frames, picked evenly from its first to its last, each kept as it is (no blend); the clip keeps its duration
+        n_full = len(frames)
+        want_n = c.get("frameCount", spec.get("frameCount"))
+        if want_n and want_n < n_full:
+            pick = [round(k * (n_full - 1) / (want_n - 1)) for k in range(want_n)]
+            frames = [frames[k] for k in pick]
+            frame_ms = frame_ms * n_full / want_n
+            info["frameCountFrom"] = n_full
+        # `figurePx` (a clip's or the spec's): one fixed figure height in pixels instead of the clip's measured one, for a creature
+        # whose shape changes (the Corrosive Slime flattens to walk and to strike, 2026-10-22) filmed with one camera in every video:
+        # every clip then keeps the same pixel scale, so it is drawn the same size in every pose
+        if "figurePx" in c or "figurePx" in spec:
+            height = float(c.get("figurePx", spec.get("figurePx")))
         clip_units_px = spec["figureUnits"] / height
         info["figurePx"] = round(height, 1)
         print(f"{c['clip']}: figure {height:.0f} px -> {clip_units_px:.6f} units a pixel")
@@ -343,10 +357,11 @@ def main():
             hood = (hx.min() + hx.max()) / 2
             want = c["bodyAt"] / clip_units_px  # px from the frame's centre
             shift = int(round(2 * (hood - want) - (x0 + x1)))  # x0 + x1 must become 2 * (hood - want)
+            # past the video's own edge when it must (the slime's hit and death fill the whole width): clear columns there
             if shift > 0:
-                x1 = min(m.shape[1], x1 + shift)
+                x1 = x1 + shift
             elif shift < 0:
-                x0 = max(0, x0 + shift)
+                x0 = x0 + shift
             info["bodyAt"] = round(((hood - (x0 + x1) / 2)) * clip_units_px, 4)
         out_dir = os.path.join(here, f"{c['clip']}-{c.get('version', spec['version'])}")  # a clip's own version wins
         os.makedirs(out_dir, exist_ok=True)
@@ -357,16 +372,25 @@ def main():
         # tall, so every clip of the hero is drawn at one size on the GPU (the videos were framed ~1100 vs ~610 px); the only
         # resampling in the pipeline, done once on the cut frames: premultiplied alpha, Lanczos, every frame kept
         scale = min(1.0, c["scaleTo"] / height) if "scaleTo" in c else 1.0
+        if "scaleBy" in c:  # a share of the video's own size (a creature with no ~1100 px figure: the slime's Média = 0.555, Voss's ratio)
+            scale = min(1.0, float(c["scaleBy"]))
         w0, h0 = int(x1 - x0), int(y1 - y0)
         nw, nh = (max(1, round(w0 * scale)), max(1, round(h0 * scale))) if scale < 1.0 else (w0, h0)
         units_out = clip_units_px * w0 / nw if scale < 1.0 else clip_units_px
         sole_out = (sole - y0 + 0.5) * nh / h0 - 0.5
         bb = np.zeros((nh, nw), bool)
         for i, f in enumerate(frames):
-            cut = f[y0:y1, x0:x1]
+            if x0 >= 0 and x1 <= f.shape[1]:
+                cut = f[y0:y1, x0:x1]
+            else:  # widened past the video's edge (bodyAt): clear columns beyond it
+                cut = np.zeros((y1 - y0, x1 - x0, 4), np.float32)
+                sx0, sx1 = max(0, x0), min(f.shape[1], x1)
+                cut[:, sx0 - x0:sx1 - x0] = f[y0:y1, sx0:sx1]
             if scale < 1.0:
                 cut = resize_premultiplied(cut, nw, nh)
             px = np.clip(cut + 0.5, 0, 255).astype(np.uint8)
+            if c.get("mirror"):  # the clip faces the other way in its video (the slime's strike): turned to face as the others
+                px = np.ascontiguousarray(px[:, ::-1])
             bb |= px[..., 3] > 60
             Image.fromarray(px, "RGBA").save(os.path.join(out_dir, f"{c['clip']}-{i + 1}.png"), optimize=False, compress_level=6)
         nat = [nw, nh]
@@ -381,7 +405,7 @@ def main():
                          "foot": round(float(nh - 1 - sole_out) * units_out, 5)},
                     pattern=os.path.relpath(os.path.join(out_dir, f"{c['clip']}-{{}}.png"), ROOT).replace("\\", "/"))
         if "impactFrame" in c:
-            info["impact"] = round((c["impactFrame"] - c["first"]) / len(frames), 4)
+            info["impact"] = round((c["impactFrame"] - c["first"]) / n_full, 4)
         result["clips"][c["clip"]] = info
         print(f"{c['clip']}: {len(frames)} frames {nat[0]} x {nat[1]}, box {info['box']}")
     text = json.dumps(result, indent=1) + "\n"  # whole before the file is touched

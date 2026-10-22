@@ -288,6 +288,11 @@
   },
   "zombieDog": {
    "mov": 5
-  }
+  },
+  "corrosiveSlime": {"mov": 3},
+  "corrosiveSlimeLarge": {"mov": 3},
+  "giantSpider": {"mov": 4},
+  "corrosiveSlime36": {"mov": 3},
+  "corrosiveSlime64": {"mov": 3}
  }
 }

@@ -73,6 +73,7 @@ int SpellEffects::looks(const std::string& kind) {
   if (kind == "burningHands" || kind == "poisonBreath") return 2;
   // Tempestade de Gelo: 01 Engine2's Blizzard2D (the enemies'), 02 ours in 3D (the heroes'): vfx/IceStorm.
   if (kind == "iceStorm") return 2;
+  if (kind == "acidCloud") return 1;
   if (kind == "frost") return 2;  // 01 the flipbook cards, 02 ours in 3D (vfx/FrostLine)
   // Teia dos Sonhos: 01 Engine2's WebOfDreamsVFX as ported (the net alone), 02 ours in 3D with the whole spell (vfx/DreamWeb).
   if (kind == "webOfDreams") return 2;
@@ -94,6 +95,8 @@ int SpellEffects::looks(const std::string& kind) {
                                  "steelWhirlwind", "guardBreak", "warCry", "leapingStrike",
                                  // the Arqueiro's (vfx/RangerFx, ours, 3D)
                                  "venomArrow", "arrowRain", "explosiveArrow", "cripplingShot", "arrowStorm", "deathShot",
+                                 // the Corrosive Slimes' Milf's Acid Arrow: Neera's own arrow (RangerFx Venom), the user 2026-10-22
+                                 "acidArrow",
                                  // the Lanceiro's (vfx/LancerFx, ours, 3D)
                                  "spearToss", "hookPull", "poleVault", "disarm", "swapPost", "impaleDrag", "sentinelVigil", "sentinelStrike",
                                  // the Curandeiro's (vfx/HealerFx, ours, 3D)
@@ -128,6 +131,7 @@ int SpellEffects::engine2Look(const std::string& kind) {
   if (kind == "piercingThrust") return 2;                            // ours in 3D (vfx/LancerFx; 01 = the flipbook burst)
   if (kind == "sweep") return 1;                                     // VarreduraVFX
   if (kind == "iceStorm") return 2;  // ours in 3D (Engine2's Blizzard2D, 01, is the enemies': content/fx/spell-looks.json)
+  if (kind == "acidCloud") return 1;
   if (kind == "frost") return 2;     // Frost, ours in 3D (vfx/FrostLine; 01 = the cards, the enemies')
   return 0;
 }
@@ -244,6 +248,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     if (isDagger(kind)) end = std::max(end, daggers_.latestEnd());
     if (isMage(kind)) end = std::max(end, mage_.latestEnd());
     for (size_t i = before[7]; i < burns_.size(); ++i) end = std::max(end, burns_[i].first.end());
+    if (kind == "acidCloud") end = std::max(end, start + 0.55f);
     if (kind == "iceStorm" && !storms_.empty()) end = std::max(end, storms_.back().start() + 1.0f);  // its first second, not the whole storm
     if (isBolt(kind, look) && !bolts_.empty()) end = std::max(end, bolts_.back().end());
     if (isLightning(kind, look) && !lightnings_.empty()) end = std::max(end, lightnings_.back().end());
@@ -464,8 +469,8 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
   }
   // The Arqueiro's skills (RangerFx, ours, 3D): one arrow at the struck foe (the first target; the burst's neighbours follow it),
   // or a volley over every hex of the area (the bodies in it flash).
-  if (kind == "venomArrow" || kind == "explosiveArrow" || kind == "cripplingShot" || kind == "deathShot") {
-    const RangerFx::Shot style = kind == "venomArrow" ? RangerFx::Shot::Venom : kind == "explosiveArrow" ? RangerFx::Shot::Explosive
+  if (kind == "venomArrow" || kind == "acidArrow" || kind == "explosiveArrow" || kind == "cripplingShot" || kind == "deathShot") {
+    const RangerFx::Shot style = kind == "venomArrow" || kind == "acidArrow" ? RangerFx::Shot::Venom : kind == "explosiveArrow" ? RangerFx::Shot::Explosive
                                  : kind == "cripplingShot" ? RangerFx::Shot::Crippling : RangerFx::Shot::Death;
     const Spot& foe = targets.front();
     const float release = std::max(start, impact - RangerFx::flightSeconds(caster.feet, foe.feet));
@@ -581,6 +586,8 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     for (const Spot& s : targets) hexes.push_back(s.feet);
     storms_.emplace_back(look, std::move(hexes), impact);
     storms_.back().id = ++stormSerial_;
+  } else if (kind == "acidCloud") {
+    // The persistent, lit 3D field begins through zoneStart when the rules add its area.
   } else if (kind == "causticVenom") {
     std::vector<glm::vec3> hexes;
     for (const Spot& s : targets) hexes.push_back(s.feet + glm::vec3(0.0f, 0.04f, 0.0f));
@@ -998,6 +1005,8 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
     const ElementSpritesV2 poison = elementV2(VfxElement::Poison);
     for (CausticVenom& v : venoms_) v.build(now, camera, poison, vfx_, vfxLights);
   }
+  std::erase_if(acidClouds_, [&](const AcidCloud& cloud) { return cloud.done(now); });
+  for (const AcidCloud& cloud : acidClouds_) cloud.build(now, camera, vfx_, vfxLights);
   for (MagicMissileV2& m : missiles_) m.build(now, camera, vfx_, vfxLights);
   if (!fireballs_.empty()) {
     // The impact's fire flipbook (Engine2 loadFireFlipbook: fx/fire-flipbook-4x4.png), from the battle pack.

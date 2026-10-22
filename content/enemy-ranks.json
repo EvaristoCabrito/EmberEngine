@@ -6,7 +6,8 @@
  "classes": {
   "wardog": "E", "wardog2": "E", "horror": "E", "mordavianWolfFinal": "E", "sapling": "E",
   "zombie": "E", "zombie2": "E", "swampBlueCalf": "E",
-  "undeadOx": "D", "troll": "D", "troll2": "D", "ancientGolem": "D", "theButcher": "D",
+  "undeadOx": "D", "troll": "D", "troll2": "D", "ancientGolem": "D", "theButcher": "D", "corrosiveSlime": "D",
+  "corrosiveSlimeLarge": "C", "giantSpider": "D", "corrosiveSlime36": "D", "corrosiveSlime64": "D",
   "carnivorousPlant": "B",
   "birolho": "A", "birolho2": "A", "birolho3": "A", "birolhoLegs": "A", "birolhoLegs2": "A",
   "asherah": "S"

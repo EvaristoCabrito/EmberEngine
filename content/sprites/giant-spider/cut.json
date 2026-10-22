@@ -1,0 +1,81 @@
+{
+ "about": "Giant Spider from the user's videos (Attachments/Giant Spider, 2026-10-22): idle and casting, movement and attack, reacting to impact, death at 5 s; every native frame at 24 fps, the video's own resolution (Alta). figureUnits is set by tools/scripts/sprites/slime_pipeline.py --dir giant-spider from the idle body's width.",
+ "set": "giant-spider",
+ "version": "v01",
+ "figureUnits": 1.6987,
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/giant-spider/idlecast",
+   "video": "Attachments/Giant Spider/Giant_spider_performing IdleandCasting.mp4",
+   "first": 0,
+   "last": 90,
+   "loopMin": 40,
+   "loopMax": 90,
+   "mode": "loop"
+  },
+  {
+   "clip": "cast",
+   "pose": "cast",
+   "kind": "stand",
+   "src": "build/video-cut/giant-spider/idlecast",
+   "video": "Attachments/Giant Spider/Giant_spider_performing IdleandCasting.mp4",
+   "first": 90,
+   "last": 216,
+   "impactFrame": 162,
+   "mode": "once",
+   "why": "rears up from 96, the spray leaves the fangs at 162, settled again by 216"
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/giant-spider/moveatk",
+   "video": "Attachments/Giant Spider/Giant_spider_animation_movementandATT.mp4",
+   "first": 30,
+   "last": 116,
+   "loopMin": 36,
+   "loopMax": 110,
+   "mode": "loop",
+   "why": "turned to the right and walking from ~30, back to the camera by ~120"
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "src": "build/video-cut/giant-spider/moveatk",
+   "video": "Attachments/Giant Spider/Giant_spider_animation_movementandATT.mp4",
+   "first": 138,
+   "last": 204,
+   "impactFrame": 174,
+   "mode": "once",
+   "why": "rears with the front legs up 150-168, strikes down at 174, settled by 204"
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "kind": "stand",
+   "src": "build/video-cut/giant-spider/hit",
+   "video": "Attachments/Giant Spider/Spider_reacting_to_impact_20261022115011.mp4",
+   "first": 30,
+   "last": 110,
+   "mode": "once",
+   "why": "thrown back 36-60, calm again by ~100"
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "kind": "stand",
+   "src": "build/video-cut/giant-spider/death",
+   "video": "Attachments/Giant Spider/Giant_spider-Deathat5secs.mp4",
+   "first": 120,
+   "last": 239,
+   "standUntil": 168,
+   "mode": "once",
+   "why": "the user: death at 5 s (frame 120); collapses 174-186, lies flat to the end"
+  }
+ ],
+ "figureNote": "set so the idle body (its opaque box) is 3.5 units wide"
+}

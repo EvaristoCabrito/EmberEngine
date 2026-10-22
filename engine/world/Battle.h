@@ -219,9 +219,14 @@ struct BattleUnit {
     // The Mago Negro's Nuvem de Adagas (docs/SKILLS_MAGE.md): this many daggers circling the unit until used or the fight ends; each
     // reacts on its own (an enemy ending its walk beside it, a melee blow on it, an arrow aimed at it) and is spent
     int daggers = 0;
+    // Milf's Acid Arrow (the Corrosive Slime's; AD&D 2e): the acid keeps burning acidDice D acidFaces (Veneno, resisted with acidMag's
+    // penetration) at the start of the victim's own turns, acidTurns more
+    int acidTurns = 0, acidDice = 0, acidFaces = 0;
+    double acidMag = 0;
     bool any() const {
       return markTurns > 0 || plagueSpread > 0 || plagueBurst || bleedTurns > 0 || silenceTurns > 0 || decayTurns > 0 || sunderPct > 0 || rallyPct > 0 ||
-             hobblePct > 0 || disarmPct > 0 || staggered || vigilPct > 0 || mirrorCopies > 0 || bondPct > 0 || empowerPct > 0 || reflectTurns > 0 || daggers > 0;
+             hobblePct > 0 || disarmPct > 0 || staggered || vigilPct > 0 || mirrorCopies > 0 || bondPct > 0 || empowerPct > 0 || reflectTurns > 0 || daggers > 0 ||
+             acidTurns > 0;
     }
   } cond;
   std::optional<int> hobbleBase;       // its MOV before Tiro Paralisante (given back when it lifts)
@@ -555,6 +560,9 @@ class Battle {
     int hazardDice = 0, hazardFaces = 8;
     int dice = 0, faces = 0;
     double mul = 0, mag = 0;
+    std::string casterId;
+    double poisonChance = 0;
+    std::map<std::string, int> struckRound;  // persistent damage fields: once per round per unit
     int statPct = 0;
     // Meteoro: what lands (the centre hex's and the ring's weight and dice)
     double centreMul = 0, ringMul = 0;

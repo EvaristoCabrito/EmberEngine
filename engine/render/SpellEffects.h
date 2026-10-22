@@ -24,6 +24,7 @@
 #include "render/vfx/Bless.h"
 #include "render/vfx/BurningHands.h"
 #include "render/vfx/CausticVenom.h"
+#include "render/vfx/AcidCloud.h"
 #include "render/vfx/CombatFx.h"
 #include "render/vfx/Fireball.h"
 #include "render/vfx/HolyLight.h"
@@ -253,6 +254,7 @@ class SpellEffects {
   std::vector<Fireball> fireballs_;  // Bola de Fogo 01 = FireballVFX
   std::vector<Bless> blesses_;       // Bênção 01 = BlessVFX
   std::vector<CausticVenom> venoms_; // Veneno Cáustico 01 = CausticVenomVFX
+  std::vector<AcidCloud> acidClouds_; // Névoa Ácida: low, persistent 3D field
   std::vector<PhantasmalForce> phantasms_;  // Força Fantasmagórica 01 = PhantasmalForceVFX
   std::vector<WebOfDreams> webs_;           // Teia dos Sonhos 01 = WebOfDreamsVFX
   std::vector<DreamWeb> dreamWebs_;         // Teia dos Sonhos 02 (ours, 3D): the shot, the floor, the net

@@ -18,6 +18,8 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   overrides every Engine2 mention in this file: never base a design, number, rule or look on it, never run or propose parity checks
   against it, never write its name in new code, commits, docs or replies. The game's own rules (Como jogar, the spell tables) are
   EmberEngine's. Data and art the game already loads stay as they are; nothing new comes from there.
+- **The acid arrows are "Milf's Acid Arrow" in every language (the user, 2026-10-22: "eu serei processado"):** Neera's `venomArrow` and
+  the Corrosive Slimes' `acidArrow`. Never write the AD&D original name (an "e" in place of the "i") anywhere: code, data, docs, commits, replies.
 - **D&D = Advanced Dungeons & Dragons 2nd edition ONLY (the user, 2026-10-20: "advanced dungeons and dragons second edition ONLY",
   "its the only D&D system accepted").** Whenever a rule is based on D&D (spell reach, areas, scaling), use AD&D 2e's rules, never
   3e / 3.5 / 4e / 5e. Basing is not copying: the user's own rules come first, AD&D 2e only supports them.
@@ -94,6 +96,10 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   v6 = v5 + the user's "aldeia fundo2" as aldeia's "panorama 02",
   and Ashen Forest's new background `ashen-forest-bg-v02.jpg`; its briefing is `content/ui/briefing/ashen-forest-v02.jpg`; the
   v01 files stay).
+- **Never delete or throw away anything (the user, 2026-10-22: "não apagar as coisas sem entender o pedido, não jogar fora NENHUM
+  ASSET sob nenhuma condição").** No code, asset, art, map or data is removed unless the user explicitly orders that specific
+  removal; a correction or a clarification is never a delete order (stop, keep everything, ask one short question). Whatever was
+  made by mistake or is not used stays in place and gets a line in "Kept, not in use" below.
 - Fold mid-turn messages into the work. Never touch `C:\emberashes03D-main`. `C:\Engine2` is read-only.
 - **Measure before fixing.** Guesses get measured and reverted if wrong (thread priorities; the occlusion
   "fix" for the 15.8/5.6 ms alternation, which was really GPU power saving).

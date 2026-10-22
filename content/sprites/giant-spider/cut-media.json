@@ -1,0 +1,88 @@
+{
+ "about": "The Giant Spider's medium copy (Opções > Gráficos > Personagens: Média, the default; Leve halves it): every clip of cut.json cut from the same matted frames at 0.555 of the video's size. The roster's poses name this set in their 'medium' field.",
+ "set": "giant-spider-media",
+ "version": "media-v01",
+ "result": "cut-result-media.json",
+ "figureUnits": 1.6987,
+ "figureNote": "kept equal to cut.json's figureUnits (the world size does not change with the resolution)",
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/giant-spider/idlecast",
+   "video": "Attachments/Giant Spider/Giant_spider_performing IdleandCasting.mp4",
+   "first": 0,
+   "last": 90,
+   "loopMin": 40,
+   "loopMax": 90,
+   "mode": "loop",
+   "scaleBy": 0.555
+  },
+  {
+   "clip": "cast",
+   "pose": "cast",
+   "kind": "stand",
+   "src": "build/video-cut/giant-spider/idlecast",
+   "video": "Attachments/Giant Spider/Giant_spider_performing IdleandCasting.mp4",
+   "first": 90,
+   "last": 216,
+   "impactFrame": 162,
+   "mode": "once",
+   "why": "rears up from 96, the spray leaves the fangs at 162, settled again by 216",
+   "scaleBy": 0.555
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/giant-spider/moveatk",
+   "video": "Attachments/Giant Spider/Giant_spider_animation_movementandATT.mp4",
+   "first": 30,
+   "last": 116,
+   "loopMin": 36,
+   "loopMax": 110,
+   "mode": "loop",
+   "why": "turned to the right and walking from ~30, back to the camera by ~120",
+   "scaleBy": 0.555
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "src": "build/video-cut/giant-spider/moveatk",
+   "video": "Attachments/Giant Spider/Giant_spider_animation_movementandATT.mp4",
+   "first": 138,
+   "last": 204,
+   "impactFrame": 174,
+   "mode": "once",
+   "why": "rears with the front legs up 150-168, strikes down at 174, settled by 204",
+   "scaleBy": 0.555
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "kind": "stand",
+   "src": "build/video-cut/giant-spider/hit",
+   "video": "Attachments/Giant Spider/Spider_reacting_to_impact_20261022115011.mp4",
+   "first": 30,
+   "last": 110,
+   "mode": "once",
+   "why": "thrown back 36-60, calm again by ~100",
+   "scaleBy": 0.555
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "kind": "stand",
+   "src": "build/video-cut/giant-spider/death",
+   "video": "Attachments/Giant Spider/Giant_spider-Deathat5secs.mp4",
+   "first": 120,
+   "last": 239,
+   "standUntil": 168,
+   "mode": "once",
+   "why": "the user: death at 5 s (frame 120); collapses 174-186, lies flat to the end",
+   "scaleBy": 0.555
+  }
+ ]
+}
