@@ -87,6 +87,61 @@
    "last": 220,
    "impactFrame": 166,
    "mode": "once"
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "label": "Dano",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/hit",
+   "video": "Attachments/VeoVoss/HitandDeath/VossHitDeath.mp4",
+   "first": 28,
+   "last": 72,
+   "mode": "once",
+   "bodyAt": -0.242,
+   "wallKey": {
+    "region": [
+     220,
+     0,
+     560,
+     260
+    ],
+    "low": 25,
+    "high": 110,
+    "feather": 40,
+    "why": "the user, 2026-10-21: the staff was missing in the first frame (video 28-30: the model dropped the glowing staff head as background; the purple glow gone in the later frames too)"
+   },
+   "why": "the user, 2026-10-21: one video for both (VossHitDeath.mp4); the blow lands at frame 30, he is upright again by 72"
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "label": "Morte",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/death",
+   "video": "Attachments/VeoVoss/HitandDeath/VossHitDeath.mp4",
+   "first": 134,
+   "last": 212,
+   "standUntil": 150,
+   "mode": "once",
+   "bodyAt": -0.242,
+   "wallKey": {
+    "region": [
+     0,
+     0,
+     385,
+     650
+    ],
+    "frames": [
+     150,
+     161
+    ],
+    "low": 28,
+    "high": 210,
+    "feather": 30,
+    "why": "video 152-161: the falling staff is motion-blurred and the model took it for background (white head, the shaft gone, frame 160 almost empty); the region is the staff's sweep left of the body; only while it falls (before, the purple glow lit the wall; after, its shadow lies on the floor); low / high = a dark staff over the 230 wall, so alpha follows the blur; low 28: under it the wall's darker top corner leaked faint patches (alpha <= 23)"
+   },
+   "why": "the same video: struck at 136, the staff falls from 150, on his knees by 175, sitting still by 200; his feet line and height from the frames he still stands in (134-150); bodyAt keeps the body where the idle has it although the fallen staff widens the frame on the left"
   }
  ]
 }

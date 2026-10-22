@@ -11,7 +11,8 @@ Per frame:
 - matte noise under 3% is dropped;
 - no resampling: frames are only cut and moved by whole pixels;
 - "stand" clips (idle, cast, strikes): the camera is locked, so every frame keeps the video's own place (the clip's
-  median boot row is its feet line); a loop with loopMin / loopMax is a hard cut at the stretch's best seam, like the
+  median boot row is its feet line; a fall with `standUntil` takes the line and the height from its standing frames only);
+  a loop with loopMin / loopMax is a hard cut at the stretch's best seam, like the
   walks (the user, 2026-10-19: no blend, no interpolation; the old `crossfade` blend is kept only for old specs);
 - "walk" clips: each frame moved sideways so the body (hood + chest) stays put, and up / down so the boot on the ground
   sits on one line (lowest row of a solid boot 16 rows tall, the robe's thin tatters do not count); the loop is the
@@ -207,7 +208,10 @@ def main():
         rgb, alpha = load_frames(os.path.join(ROOT, c["src"]), c["first"], c["last"])
         plate = backdrop_plate(rgb, alpha)
         if "wallKey" in c:
-            frames = [unmix(rgb[i], *wall_key(rgb[i], alpha[i], plate, c["wallKey"])) for i in range(len(rgb))]
+            # a key's `frames` [first, last] (video numbering) limits it to those frames (the death: only while the staff falls)
+            lo, hi = c["wallKey"].get("frames", [c["first"], c["last"]])
+            frames = [unmix(rgb[i], *wall_key(rgb[i], alpha[i], plate, c["wallKey"])) if lo <= c["first"] + i <= hi
+                      else unmix(rgb[i], alpha[i], plate) for i in range(len(rgb))]
         else:
             frames = [unmix(rgb[i], alpha[i], plate) for i in range(len(rgb))]
         n = len(frames)
@@ -247,9 +251,17 @@ def main():
             known = [r for r in raw if r is not None]
             raw = [r if r is not None else int(np.median(known)) for r in raw]
             boots = [int(np.median(raw[max(0, i - 2):i + 3])) for i in range(n)]
-            sole = int(np.median(boots))
             tops = [hood_top(alpha[i]) for i in range(n)]
-            height = float(np.median([boots[i] - tops[i] for i in range(n)]))
+            if "standUntil" in c:
+                # a fall (death): he leaves his feet, so the feet line and the height come only from the frames up to video
+                # frame `standUntil`, where he still stands, and no frame is moved (the camera is locked)
+                k = c["standUntil"] - c["first"] + 1
+                sole = int(np.median(boots[:k]))
+                height = float(np.median([boots[i] - tops[i] for i in range(k)]))
+                boots = [sole] * n
+            else:
+                sole = int(np.median(boots))
+                height = float(np.median([boots[i] - tops[i] for i in range(n)]))
             frames = [shifted(f, 0, sole - boots[i]) if boots[i] != sole else f for i, f in enumerate(frames)]
             info["bootRow"], info["bootRows"] = sole, [int(min(boots)), int(max(boots))]
             print(f"{c['clip']}: boot rows {min(boots)}..{max(boots)} -> {sole}")

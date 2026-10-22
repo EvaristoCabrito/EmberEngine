@@ -185,6 +185,66 @@
    },
    "pattern": "content/sprites/voss-veo/counter-staff-v01/counter-staff-{}.png",
    "impact": 0.56
+  },
+  "hit": {
+   "video": "Attachments/VeoVoss/HitandDeath/VossHitDeath.mp4",
+   "first": 28,
+   "last": 72,
+   "bootRow": 693,
+   "bootRows": [
+    691,
+    693
+   ],
+   "figurePx": 612.0,
+   "bodyAt": -0.2415,
+   "frames": 45,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    666,
+    700
+   ],
+   "crop": [
+    8,
+    0,
+    632,
+    696
+   ],
+   "box": {
+    "w": 2.92409,
+    "h": 3.07337,
+    "foot": 0.02634
+   },
+   "pattern": "content/sprites/voss-veo/hit-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/VeoVoss/HitandDeath/VossHitDeath.mp4",
+   "first": 134,
+   "last": 212,
+   "bootRow": 690,
+   "bootRows": [
+    690,
+    690
+   ],
+   "figurePx": 609.0,
+   "bodyAt": -0.2427,
+   "frames": 79,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1204,
+    680
+   ],
+   "crop": [
+    9,
+    5,
+    830,
+    668
+   ],
+   "box": {
+    "w": 5.31223,
+    "h": 3.00026,
+    "foot": 0.1103
+   },
+   "pattern": "content/sprites/voss-veo/death-v01/death-{}.png"
   }
  }
 }
