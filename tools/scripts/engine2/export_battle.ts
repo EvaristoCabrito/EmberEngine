@@ -983,13 +983,14 @@ const THEMES: Record<string, [string, number]> = {
   inn: ['Connard The Barbarian 10.mp3', 0.4], hill: ['Long Space _Opera DJ  UMN+  022-Balanced-High.mp3', 0.4],
   portao: ['TempleEntrance-Balanced-High.mp3', 0.4], early: ['LANDR-Absolute Mental Descruction umn3 10 (3)-Balanced-High.mp3', 0.4],
   cemetery: ['Ember Ashes Ambient OST 0-Balanced-High.mp3', 0.4],  // EmberEngine's own (content/music), every cemetery map
+  ashenForest: ['New Claude Melisma Free 04 - AshenForest-Balanced-High.mp3', 0.4],  // EmberEngine's own, every Ashen Forest map
 };
 const OWN_MUSIC = `${dirname(fileURLToPath(import.meta.url))}/../../../content/music`;
 const missionMusic = (() => {
   const named = mission.music;
   if (named && ((data.MUSIC_TRACKS as string[]).includes(named) || existsSync(`${OWN_MUSIC}/${named}`))) return { file: named, base: 0.4 };
   const id = draft.id as string;
-  const theme = id.startsWith('cemiterio') ? 'cemetery' : id === 'templo' ? 'temple' : id === 'aldeia' ? 'aldeia' : ['vau', 'bosque', 'cripta', 'vertente'].includes(id) ? 'early'
+  const theme = id.startsWith('cemiterio') ? 'cemetery' : id.startsWith('ashen-forest') || id.startsWith('deep-ashen') ? 'ashenForest' : id === 'templo' ? 'temple' : id === 'aldeia' ? 'aldeia' : ['vau', 'bosque', 'cripta', 'vertente'].includes(id) ? 'early'
     : id === 'estalagem' ? 'inn' : ['muralha', 'fortaleza'].includes(id) ? 'siege' : ['colina', 'passagem'].includes(id) ? 'hill'
     : id === 'portao' ? 'portao' : 'early';
   return { file: THEMES[theme][0], base: THEMES[theme][1], theme };

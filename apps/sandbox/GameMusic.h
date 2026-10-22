@@ -31,15 +31,20 @@ inline Stage::Music theme(const std::string& name) {
   if (name == "worldMap") return {"Tragic Arqui TruePersonaWorldMapEmber-Balanced-High.mp3", 0.4f};
   if (name == "battle") return {"music.mp3", 0.4f};
   if (name == "cemetery") return {"Ember Ashes Ambient OST 0-Balanced-High.mp3", 0.4f};  // EmberEngine's own (content/music)
+  if (name == "ashenForest") return {"New Claude Melisma Free 04 - AshenForest-Balanced-High.mp3", 0.4f};  // EmberEngine's own (content/music)
   return {"LANDR-Absolute Mental Descruction umn3 10 (3)-Balanced-High.mp3", 0.4f};  // "early"
 }
 
 // Every cemetery map (the user, 2026-10-18): its id starts with "cemiterio" (cemiterio-esquecidos, -cripta, -mausoleu, ...).
 inline bool isCemetery(const std::string& id) { return id.starts_with("cemiterio"); }
+// Every Ashen Forest map (the user, 2026-10-22: "wire it for the Ashen forest Maps"): Ashen Forest Crossing and the Deep Ashen
+// region (deep-ashen-forest, -ravine, -root-sanctuary, ...).
+inline bool isAshenForest(const std::string& id) { return id.starts_with("ashen-forest") || id.starts_with("deep-ashen"); }
 
 // GameApp's chain for a mission id when its battle file carries no `music` (older exports).
 inline Stage::Music forMissionId(const std::string& id) {
   if (isCemetery(id)) return theme("cemetery");
+  if (isAshenForest(id)) return theme("ashenForest");
   if (id == "templo") return theme("temple");
   if (id == "aldeia") return theme("aldeia");
   if (id == "estalagem") return theme("inn");
@@ -56,6 +61,7 @@ inline Stage::Music fromBattle(const nlohmann::json& j, Stage::Music fallback) {
   const auto music = j.find("music");
   if (music == j.end() || !music->is_object() || music->value("file", std::string()).empty()) return fallback;
   if (music->contains("theme") && isCemetery(j.value("map", std::string()))) return theme("cemetery");
+  if (music->contains("theme") && isAshenForest(j.value("map", std::string()))) return theme("ashenForest");
   return {music->value("file", std::string()), music->value("base", 0.4f)};
 }
 
