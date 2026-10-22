@@ -28,8 +28,13 @@ import random
 import sys
 from collections import deque
 
-SRC = sys.argv[1] if len(sys.argv) > 1 else 'content/maps/ember/cemiterio-esquecidos006.json'
-OUT = sys.argv[2] if len(sys.argv) > 2 else 'content/maps/ember/cemiterio-esquecidos006.json'
+SRC = sys.argv[1] if len(sys.argv) > 1 else 'content/maps/ember/cemiterio-esquecidos007.json'
+OUT = sys.argv[2] if len(sys.argv) > 2 else 'content/maps/ember/cemiterio-esquecidos008.json'
+SERIAL = 8
+# the tombs' photographed versions (as map 007 carries them)
+TOMB_VERSIONS = {'ember-crypt-sarcophagus-broken-lid': 'ember-crypt-sarcophagus-broken-lid-v02', 'ember-crypt-stone-tomb': 'ember-crypt-stone-tomb-v02',
+                 'ember-crypt-sarcophagus': 'ember-crypt-sarcophagus-v02', 'ember-crypt-ancient-tombstone': 'ember-crypt-ancient-tombstone-v02',
+                 'ember-extra-grave-marker': 'ember-extra-grave-marker-v03'}
 CATALOG = 'content/engine2/editor-catalog.json'
 
 COLS, ROWS = 60, 48
@@ -154,8 +159,10 @@ for (c, r) in cells():
     elev[(c, r)] = e
 
 # the cut into the barrow: a walled passage at ground level from the field to the crypt's door
-cut_cells = {(CRYPT_MOUTH[0], rr) for rr in range(CRYPT_DOOR[1], CRYPT_MOUTH[1] + 1)}
-cut_walls = {(CRYPT_MOUTH[0] + dc, rr) for dc in (-1, 1) for rr in range(CRYPT_DOOR[1], CRYPT_MOUTH[1])} | {(CRYPT_DOOR[0] + dc, CRYPT_DOOR[1] - 1) for dc in (-1, 0, 1)}
+CUT_HALF = 1  # the passage: the middle column and one either side
+cut_cells = {(CRYPT_MOUTH[0] + dc, rr) for dc in range(-CUT_HALF, CUT_HALF + 1) for rr in range(CRYPT_DOOR[1], CRYPT_MOUTH[1] + 1)}
+cut_walls = ({(CRYPT_MOUTH[0] + dc, rr) for dc in (-CUT_HALF - 1, CUT_HALF + 1) for rr in range(CRYPT_DOOR[1], CRYPT_MOUTH[1])}
+             | {(CRYPT_DOOR[0] + dc, CRYPT_DOOR[1] - 1) for dc in range(-CUT_HALF - 1, CUT_HALF + 2)})
 for p in cut_cells | cut_walls:
     elev[p] = 0.0
 for p in cut_cells:
@@ -211,7 +218,7 @@ for p in cells():
 # --- paths (snow = trodden), avenue + floors (nave = setts), ruins -----------------------------------------------------
 paths = set()
 paths |= polyline_cells([GATE, (30, 43), PLAZA], 1.3)                       # gate -> plaza
-paths |= polyline_cells([PLAZA, (28, 33), (CRYPT_MOUTH[0], CRYPT_MOUTH[1] + 1)], 0.95)  # plaza -> the barrow's cut
+paths |= polyline_cells([PLAZA, (28, 33), (CRYPT_MOUTH[0], CRYPT_MOUTH[1] + 1)], 1.3)  # plaza -> the barrow's cut
 paths |= polyline_cells([PLAZA, (38, 32), (39, 20), (34, 14), CHAPEL], 0.95)  # plaza -> chapel (east of the barrow)
 paths |= polyline_cells([(34, 12), (42, 12), MAUSO], 0.95)                  # chapel -> mausoleums
 paths |= polyline_cells([(24, 33), (15, 30), (13, 20), (18, 12), (23, 10)], 0.9)  # the west loop, round the barrow to the chapel
@@ -330,8 +337,8 @@ for p in sorted(cut_walls):
         place('wall-3d-crypt', *p, allow_path=True)
 place('dungeon-stone-door', CRYPT_DOOR[0], CRYPT_DOOR[1] - 1, allow_path=True)
 for dc in (-2, 2):
-    place('wilds-knight-statue', CRYPT_MOUTH[0] + dc, CRYPT_MOUTH[1], allow_path=True)
-    place('Brazier3', CRYPT_MOUTH[0] + dc, CRYPT_MOUTH[1] + 1, allow_path=True)
+    place('wilds-knight-statue', CRYPT_MOUTH[0] + dc * 3 // 2, CRYPT_MOUTH[1], allow_path=True)
+    place('Brazier3', CRYPT_MOUTH[0] + dc * 3 // 2, CRYPT_MOUTH[1] + 1, allow_path=True)
 place('dungeon-ossuary', CRYPT_MOUTH[0] - 5, CRYPT_MOUTH[1] + 1)
 place('dungeon-ossuary', CRYPT_MOUTH[0] + 4, CRYPT_MOUTH[1] + 1)
 # the barrow's crown: the fallen king, the old family's stones
@@ -465,8 +472,6 @@ enemy('Zumbi', 'zombie', 10, 37, 5)
 enemy('Zumbi', 'zombie', 13, 35, 5)
 enemy('Zumbi', 'zombie2', 8, 40, 5)
 # the crypt's door
-enemy('Guardião da Cripta', 'cultistV2', 25, 32, 6)
-enemy('Guardião da Cripta', 'cultistV2', 27, 32, 6)
 enemy('Saqueador de Covas', 'miliciaV2', 26, 27, 5)
 # the chapel
 enemy('Acólito das Cinzas', 'cultist', 27, 6, 5)
@@ -612,7 +617,9 @@ draft.update({
     'emberTiles': 'cemiterio-v01',
     'objective': 'Explore o cemitério, desça às criptas, às ruínas e aos mausoléus, atravesse a alameda leste para Cemetery Ground Part II — ou volte pelo portão sul',
 })
-out = {'serial': 6, 'savedAt': src.get('savedAt', 0) + 1, 'draft': draft}
+for d in draft['decorations']:
+    d['id'] = TOMB_VERSIONS.get(d['id'], d['id'])
+out = {'serial': SERIAL, 'savedAt': src.get('savedAt', 0) + 1, 'draft': draft}
 with open(OUT, 'w', encoding='utf-8') as f:
     json.dump(out, f, ensure_ascii=False)
 print('wrote', OUT)
