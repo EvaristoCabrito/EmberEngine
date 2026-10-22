@@ -2856,8 +2856,11 @@ class MapStage final : public Stage {
       // full clip's frame mapped to the copy's, so the pose keeps its length and its blow lands at the same moment.
       if (const uint32_t n = sprites_.header(clip).frames, full = static_cast<uint32_t>(p ? p->frames : u.frames); n > 0 && full > n)
         frame = std::min(n - 1, static_cast<uint32_t>(static_cast<uint64_t>(frame) * n / full));
-      float boxW = p ? p->boxW : u.boxW, boxH = p ? p->boxH : u.boxH;
-      const float foot = p ? p->foot : u.foot;
+      // A unit drawn at its own size (content/unit-size.json; the user, 2026-10-22: the Cultista Ancestral ~10% smaller), every
+      // pose alike, feet kept on the ground.
+      const float size = unitSize(entry ? entry->key : u.key);
+      float boxW = (p ? p->boxW : u.boxW) * size, boxH = (p ? p->boxH : u.boxH) * size;
+      const float foot = (p ? p->foot : u.foot) * size;
       glm::vec3 anchor = static_cast<int>(ui) == hero_ && path_.size() > 1 ? heroAt_ : unitWorld(ui);
       // The hit react: knocked back along the blow, squashed (a little wider as it is shorter).
       float squash = 1.0f;
@@ -4771,13 +4774,21 @@ class MapStage final : public Stage {
   // first art frame without the arrow on the string (looked up frame by frame in Engine2's art, 2026-10-17): Neera's
   // atk / atk-left 27 of 36, the crossbowman's atk 21 (the bolt's streak is drawn in 21-22), the bandit crossbowman's 18,
   // the recruit archer's 3 of 4 (Engine2's short-cut hit frame). Unknown art: none (the pose's impact share stays).
+  // Neera shooting with her new attack art (neera-hydra): her bow sound is Bow2-Balanced-High, played at the release.
+  bool neeraBow(size_t ui) const {
+    const e2::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
+    if (!entry || entry->key != "neera") return false;
+    const e2::HeroPose* p = entry->find("attack");
+    return p && p->set == "neera-hydra";
+  }
   std::optional<float> arrowRelease(size_t ui, const std::string& pose) const {
     const e2::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
     if (!entry) return std::nullopt;
     const e2::HeroPose* left = unitFacing_[ui] == -1 ? entry->find(pose + "Left") : nullptr;
     const e2::HeroPose* p = left && !left->pace.empty() ? left : entry->find(pose);
     if (!p || p->pace.empty()) return std::nullopt;
-    static const std::pair<const char*, int> kRelease[] = {{"neera/neera-v2-001:atk", 27}, {"neera/neera-v2-001:atk-left", 27},
+    // Neera's Hydra+ attack (neera-hydra atk, the user 2026-10-22): the arrow on the string in 17-26, gone from 27.
+    static const std::pair<const char*, int> kRelease[] = {{"neera/neera-v2-001:atk", 27}, {"neera/neera-v2-001:atk-left", 27}, {"neera-hydra:atk", 27},
                                                            {"BaseCrossbowman:atk", 21},    {"BrigandCrossbowman:atk", 18},
                                                            {"archerRecruit:atk", 3}};
     const std::string id = p->set + ":" + p->clip;
@@ -5054,7 +5065,10 @@ class MapStage final : public Stage {
         const float flight = std::clamp(glm::length(to.body - from.body) / 22.0f, 0.12f, 0.4f);
         x.impact = now_ + *release / actionRate() + flight;
         x.end = std::max(x.end, x.impact + 0.5f + kExchangeGap / actionRate());
-        e2::Json cues = sounds(x.counter ? s.def : s.att, "release");
+        // Neera's bow (the user, 2026-10-22, with her new attack): Bow2-Balanced-High at the release, in place of her old cue
+        e2::Json cues = neeraBow(static_cast<size_t>(striker))
+                            ? e2::Json::array({{{"file", "Bow2-Balanced-High.mp3"}, {"volume", 0.55}, {"offset", 0}, {"delay", 0}, {"exclusive", true}}})
+                            : sounds(x.counter ? s.def : s.att, "release");
         if (cues.is_array())
           for (e2::Json& c : cues) c["delay"] = c.value("delay", 0.0f) + *release / actionRate();
         playCues(cues);
@@ -5079,7 +5093,9 @@ class MapStage final : public Stage {
       else if (neeraDagger || e2::daggerStrikeKind(s.kind)) playCues(cue("BladeSlash1Dagger.mp3"));  // her off-hand dagger (the user, 2026-10-20: Dagger1); a Nuvem's dagger
       else if (s.type == StepType::Potion) playCues(cue("Healing01-Balanced-High.mp3"));  // every potion (the user, 2026-10-20)
       else if (key == "voss" && (s.kind == "magicMissile" || s.kind == "magicMissileV2")) playCues(afterPose(cue("Spellcast01.mp3")));  // the default cast
-      else if (s.type == StepType::Combat) playCues(sounds(sb, x.counter ? "counter" : "attack"));
+      else if (s.type == StepType::Combat) {
+        if (!(x.arrow && neeraBow(static_cast<size_t>(striker)))) playCues(sounds(sb, x.counter ? "counter" : "attack"));  // hers plays at the release
+      }
       else if (s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food) playCues(afterPose(sounds(sb, "heal")));
       else if (const e2::Json& spells = sounds(sb, "spells"); spells.is_object() && spells.contains(s.kind)) playCues(afterPose(spells[s.kind]));
       else if (s.kind == "iceStorm" && spells.is_object()) {  // a cultist's Tempestade de Gelo (ours: Engine2 records none for it): its own cast
@@ -5526,6 +5542,20 @@ class MapStage final : public Stage {
     return {feet, feet + glm::vec3(0.0f, body, 0.0f), c.drawn && !c.flat ? c.height : 0.0f};
   }
   // A spot's card height (a hex with nobody on it: a body's, from its body point).
+  // content/unit-size.json: {"sizes": {"<catalog key>": factor}}; 1 for everyone else.
+  static float unitSize(const std::string& key) {
+    static const std::unordered_map<std::string, float> sizes = [] {
+      std::unordered_map<std::string, float> out;
+      std::ifstream in("content/unit-size.json", std::ios::binary);
+      const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
+      if (j.is_object() && j.contains("sizes") && j["sizes"].is_object())
+        for (const auto& [k, v] : j["sizes"].items())
+          if (v.is_number() && v.get<float>() > 0.0f) out[k] = v.get<float>();
+      return out;
+    }();
+    const auto it = sizes.find(key);
+    return it == sizes.end() ? 1.0f : it->second;
+  }
   static float cardHeightOf(const SpellEffects::Spot& s) { return s.cardHeight > 0.0f ? s.cardHeight : std::max(1.2f, (s.body.y - s.feet.y) / 0.45f); }
   // ... and a hex: the unit standing on it, else its ground.
   SpellEffects::Spot hexSpot(e2::BattleHex h) const {

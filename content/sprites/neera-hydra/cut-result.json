@@ -1,0 +1,124 @@
+{
+ "clips": {
+  "idle": {
+   "video": "Attachments/NeeraHydra/Idle/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "bootRow": 916,
+   "bootRows": [
+    916,
+    916
+   ],
+   "figurePx": 916.0,
+   "frames": 36,
+   "frameMs": 122.0,
+   "nat": [
+    497,
+    920
+   ],
+   "crop": [
+    5,
+    2,
+    490,
+    916
+   ],
+   "box": {
+    "w": 1.44108,
+    "h": 2.6676,
+    "foot": 0.0087
+   },
+   "pattern": "content/sprites/neera-hydra/idle-v01/idle-{}.png"
+  },
+  "atk-short": {
+   "video": "Attachments/NeeraHydra/Offhand/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "bootRow": 805,
+   "bootRows": [
+    796,
+    863
+   ],
+   "figurePx": 792.0,
+   "frames": 36,
+   "frameMs": 93.0,
+   "nat": [
+    597,
+    832
+   ],
+   "crop": [
+    0,
+    0,
+    591,
+    827
+   ],
+   "box": {
+    "w": 2.00206,
+    "h": 2.79014,
+    "foot": 0.08719
+   },
+   "pattern": "content/sprites/neera-hydra/atk-short-v01/atk-short-{}.png"
+  },
+  "move": {
+   "video": "Attachments/NeeraHydra/WalkRight/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "loopFirst": 0,
+   "loopLast": 35,
+   "seamSteps": NaN,
+   "bootRow": 837,
+   "bodyDrift": [
+    -5,
+    11
+   ],
+   "figurePx": 826.0,
+   "frames": 36,
+   "frameMs": 100.0,
+   "nat": [
+    446,
+    850
+   ],
+   "crop": [
+    6,
+    3,
+    435,
+    838
+   ],
+   "box": {
+    "w": 1.43411,
+    "h": 2.73317,
+    "foot": 0.03859
+   },
+   "pattern": "content/sprites/neera-hydra/move-v01/move-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/NeeraHydra/ATT/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "bootRow": 915,
+   "bootRows": [
+    914,
+    915
+   ],
+   "figurePx": 786.0,
+   "frames": 36,
+   "frameMs": 96.0,
+   "nat": [
+    518,
+    923
+   ],
+   "crop": [
+    6,
+    0,
+    512,
+    918
+   ],
+   "box": {
+    "w": 1.75039,
+    "h": 3.11894,
+    "foot": 0.02365
+   },
+   "pattern": "content/sprites/neera-hydra/atk-v01/atk-{}.png",
+   "impact": 0.7222
+  }
+ }
+}

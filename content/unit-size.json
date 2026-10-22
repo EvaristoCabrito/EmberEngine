@@ -1,0 +1,7 @@
+{
+ "about": "A unit drawn at its own size, every pose alike (MapStage unitSize; catalog keys of build/engine2-scenes/roster.json). The card's box and feet line are multiplied; rules (hexes, reach) are untouched. Missing = 1.",
+ "sizes": {},
+ "why": {
+  "cultistV2": "the user, 2026-10-22, asked for the Cultista Ancestral ~10% smaller, then: \"nevermind the cultist request, I will wait on that decision\": no size set"
+ }
+}

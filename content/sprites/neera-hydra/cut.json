@@ -1,0 +1,53 @@
+{
+ "about": "Neera's new idle, off-hand dagger strike and walk to the right from the user's sprite sheets (C:/Users/evari/Desktop/Characters/Neera/Nerra V2/Hydra+, copied to Attachments/NeeraHydra, 2026-10-22): 36 frames each, every frame and its timing as drawn (Idle 122 ms, Offhand 93 ms, WalkRight 100 ms a frame), alpha as drawn (no matting, no resampling). They replace neera-v2-001's idle, atk-short (attackShort, her off-hand strike) and move (walk); her other poses keep their art.",
+ "set": "neera-hydra",
+ "version": "v01",
+ "figureUnits": 2.656,
+ "figureNote": "the user: the same size as before. The old idle (neera-v2-001) stands 800 of its 811 px, drawn 2.686 units tall, and the old walk 473 of 488 px at 2.746: both ~2.656 units head to feet. These are 'max-px' sheets (each scaled to fill its own frame), so each clip gets its own figurePx = her height in that sheet: the idle 916 px; the offhand 792 (its first frame is the idle's upright stance, rows 7-798); the walk 826 (the median while walking)",
+ "clips": [
+  {
+   "clip": "idle",
+   "pose": "idle",
+   "kind": "stand",
+   "sheet": "Attachments/NeeraHydra/Idle/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "figurePx": 916,
+   "mode": "loop"
+  },
+  {
+   "clip": "atk-short",
+   "pose": "attackShort",
+   "kind": "stand",
+   "sheet": "Attachments/NeeraHydra/Offhand/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "figurePx": 792,
+   "mode": "once",
+   "why": "her off-hand dagger strike (MapStage plays attackShort for an off-hand blow)"
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "sheet": "Attachments/NeeraHydra/ATT/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "figurePx": 786,
+   "impactFrame": 26,
+   "mode": "once",
+   "why": "her bow attack (96 ms a frame); frame 1 is the idle's upright stance (rows 131-916 = 786 px); the arrow is on the string in 17-26 and gone from frame 27 (impactFrame 26 from 0), when Bow2-Balanced-High.mp3 plays (MapStage arrowRelease)"
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "sheet": "Attachments/NeeraHydra/WalkRight/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "figurePx": 826,
+   "mode": "loop",
+   "why": "the walk to the right; the legs repeat every 18 frames: 2 full strides in the sheet"
+  }
+ ]
+}

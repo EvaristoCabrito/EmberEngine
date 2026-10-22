@@ -43,6 +43,18 @@
    "packs": {"base": "field", "move": "field", "move-left": "field"}
   },
   {
+   "set": "neera-hydra",
+   "version": "v01",
+   "hero": "neera",
+   "cut": "content/sprites/neera-hydra/cut.json",
+   "why": "the user, 2026-10-22: \"add these new animations to Neera, they should have the same size, we dont need to keep the previous\" (Hydra+ sheets: Idle and Offhand); neera-v2-001's idle and atk-short stay in the pack, unused",
+   "poses": {"idle": "idle", "attackShort": "atk-short", "walk": "move", "attack": "atk"},
+   "labels": {"idle": "Parado", "attackShort": "Mão Secundária", "walk": "Andar", "attack": "Atacar"},
+   "packs": {"idle": "field", "move": "field"},
+   "strides": {"move": 2.0},
+   "whyWalk": "the user, 2026-10-22: \"WalkRight ... now add this new one\" (walk to the right; walkLeft keeps neera-v2-001's move-left until a left sheet exists)"
+  },
+  {
    "set": "corrosive-slime",
    "version": "v01",
    "hero": "corrosiveSlime",

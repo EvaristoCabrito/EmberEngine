@@ -299,7 +299,10 @@ def main():
             soles = [sole_row(x.astype(np.uint8)) for x in al]
             target = int(np.median(soles))
             frames = [shifted(f, x_off[i], target - soles[i]) for i, f in enumerate(frames)]
-            s, e, seam = best_loop(frames, c["loopMin"], c["loopMax"])
+            if "loopMin" in c:
+                s, e, seam = best_loop(frames, c["loopMin"], c["loopMax"])
+            else:  # a sheet drawn as a loop (Neera's WalkRight, 2026-10-22): the whole sheet is the loop
+                s, e, seam = 0, len(frames), float("nan")
             frames = frames[s:e]
             tops = [hood_top(f[..., 3]) for f in frames]
             height = float(np.median([target - t for t in tops]))

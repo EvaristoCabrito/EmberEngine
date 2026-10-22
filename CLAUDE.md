@@ -1266,6 +1266,12 @@ selecionar os alvos")
   `mediumOf` / `lightOf`), MapStage `artSet` picks by Personagens, and a copy with fewer frames plays on the full clip's timing (the frame
   index mapped). Personagens is read when a fight loads, never mid-fight. Measured on beasttest: Média 202 MB, Leve 30 MB (Alta 657 MB
   did not fit with the rest, 3161 needed vs 2442 free, and fell back to Leve by itself).
+- **Neera Hydra+ (2026-10-22):** her idle, off-hand strike (attackShort), walk right and bow attack from the user's sheets
+  (`Attachments/NeeraHydra`, 36 frames each, timing as drawn), set `neera-hydra`; walkLeft / attackLeft / attack2 / cast keep the old art.
+  These are "max-px" sheets (each scaled to fill its frame): every clip has its own `figurePx` (her upright height in that sheet) so she
+  stands 2.66 units like before. Her bow sound is `Bow2-Balanced-High.mp3` (content/game/public/game/SoundFX), played at the release
+  (MapStage `neeraBow`, `arrowRelease` "neera-hydra:atk" = frame 27). `content/unit-size.json` scales a unit's card (MapStage
+  `unitSize`): empty; the user is deciding on the Cultista Ancestral at 0.9.
 - **Giant Spider** (`giantSpider`, 3 hexes, rank D, mov 4, bite 2D6, poison 50 %, no spells; working stats, the user sets the real ones later):
   `Attachments/Giant Spider` (idle + cast, move + attack, hit, death at 5 s). Matted with BiRefNet general (idle/cast, move/attack) and
   **general lite** (hit, death; video_matte.py `--model lite`, the user's "light mode": ~11 s a frame vs ~13). Alta 312 MB, Média 98 MB.
