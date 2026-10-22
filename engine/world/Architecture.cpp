@@ -343,10 +343,10 @@ Geometry referenceDoorGeometry(const ArchitectureDef& def, double tile, double h
 // + 50 + u); the flame keeps the UVs flameDrop gave it.
 void emberMasonryUVs(Geometry& g, std::pair<double, double> origin, double repeat) {
   // world units per repeat, across and up (the photographs' own proportions: the door oak is portrait, the others landscape)
-  static constexpr double kRepeat[kEmberMaterialTags][2] = {{0, 0}, {1.3, 1.95}, {0.9, 0.6}, {0, 0}, {1.2, 0.8}, {1, 1}, {1.6, 1.07}};
+  static constexpr double kRepeat[kEmberMaterialTags][2] = {{0, 0}, {1.3, 1.95}, {0.9, 0.6}, {0, 0}, {1.2, 0.8}, {1, 1}, {1.6, 1.07}, {0, 0}};
   for (size_t i = 0; i < g.count(); ++i) {
     const int tag = emberMaterialTag(g.uv[i * 2]);
-    if (tag == 3) continue;
+    if (tag == 3 || tag == 7) continue;  // the flame and the gothic atlas keep the UVs their builders gave them
     const double x = g.px(i) + origin.first, y = g.py(i) + origin.second, z = g.pz(i);
     const double ru = tag ? kRepeat[std::min(tag, kEmberMaterialTags - 1)][0] : repeat, rv = tag ? kRepeat[std::min(tag, kEmberMaterialTags - 1)][1] : repeat;
     double u, v;
@@ -589,7 +589,247 @@ Geometry stairsGeometry(const ArchitectureDef& def, double tile, double height, 
   return g;
 }
 
+// --- the gothic parapet kit (2026-10-21, the user: the Stone Bridge's parapets "em 3D usando eles como base e textura ... muros
+// góticos detalhados para usar no jogo depois"; both PNGs are the two faces of one wall) ----------------------------------------
+// Ember's frame: x along the run, y across it, z up. Local -y is the deck side (the board's centre, MapStage turns the piece so):
+// the hooded guardians and the two-light tracery windows; +y the void side: the tally-marked panels and the drain holes. The
+// proportions are the art's (decoracoes-2d/bridge-parapet-gothic-statues-001.png / -tall-001.png: 640 px from the plinth's foot
+// to the pinnacles' tips = the piece's height; one hex along the wall = 251 px): a plinth, the panelled body, a string course, the
+// arcade's base, a pierced arcade of pointed arches under a coping rail, and the pilasters (a shaft with its blind lancet, a cap, a
+// pyramid pinnacle) at every run end, corner and junction, and at the hex's centre for the pilaster piece. The panels and the
+// pilasters' faces carry the art itself: regions of the atlas content/textures/walls/gothic-parapet-v01.jpg (material tag 7, cut by
+// tools/scripts/models/gothic_parapet_atlas.py: the numbers below are what it prints), fitted to each face's aspect; everything
+// else (tops, courses, the arcade, the pinnacles) is the plain stone cut from the same art (the piece's wallTexture, world-aligned).
+struct GothicRegion {
+  double u0, vTop, u1, vBottom;  // in texture space, v down from the top row
+};
+enum GothicArt { kDeckWindow, kDeckNiche, kDeckPlain, kVoidTally, kVoidDrain, kVoidPlain, kPierFace };
+constexpr GothicRegion kGothicAtlas[] = {
+    {0.00391, 0.00391, 0.24902, 0.33984},  // deckWindow: the tracery window with its margins
+    {0.25684, 0.00391, 0.50195, 0.33984},  // deckNiche: the hooded guardian in its niche
+    {0.50977, 0.00391, 0.75488, 0.33984},  // deckPlain: unmarked stone (the pier's halves, the arms of a corner)
+    {0.00391, 0.34766, 0.24902, 0.68555},  // voidTally: the tally-marked panels over the string course
+    {0.25684, 0.34766, 0.50195, 0.68555},  // voidDrain: the panels with a drain hole at the plinth
+    {0.50977, 0.34766, 0.75488, 0.68555},  // voidPlain: unmarked stone
+    {0.76270, 0.34766, 0.87988, 0.84570},  // pier: the pilaster's face from the cap's foot to the plinth
+};
+constexpr double kGothicAtlasSize = 2048.0;
+constexpr int kGothicTag = 7;
+// The art of one atlas panel on the faces of `g` whose normal points along `axis` (0 x, 1 y) towards `sign`: u across the face
+// as the viewer outside sees it (left to right), v up the face's z range; the panel is fitted to the face's aspect, the surplus
+// cropped about its centre, so nothing stretches.
+void gothicArt(Geometry& g, GothicArt art, int axis, int sign, double lo, double hi, double z0, double z1) {
+  const GothicRegion& r = kGothicAtlas[art];
+  const double pw = (r.u1 - r.u0) * kGothicAtlasSize, ph = (r.vBottom - r.vTop) * kGothicAtlasSize;
+  const double faceW = std::max(hi - lo, 1e-6), faceH = std::max(z1 - z0, 1e-6);
+  double u0 = r.u0, u1 = r.u1, vt = r.vTop, vb = r.vBottom;
+  if (const double want = ph * faceW / faceH; want <= pw) {
+    const double c = (r.u0 + r.u1) / 2, h = want / 2 / kGothicAtlasSize;
+    u0 = c - h, u1 = c + h;
+  } else {
+    const double wantH = pw * faceH / faceW, c = (r.vTop + r.vBottom) / 2, h = wantH / 2 / kGothicAtlasSize;
+    vt = c - h, vb = c + h;
+  }
+  // seen from outside with z up: on the -y face +x is the viewer's right, on +y it is -x; on +x the right is +y, on -x it is -y
+  const bool flip = (axis == 1 && sign > 0) || (axis == 0 && sign < 0);
+  for (size_t i = 0; i < g.count(); ++i) {
+    const double n = axis == 0 ? g.nx(i) : g.ny(i);
+    if (n * sign <= 0.5) continue;
+    const double p = axis == 0 ? g.py(i) : g.px(i);
+    double fx = (p - lo) / faceW;
+    if (flip) fx = 1.0 - fx;
+    const double fz = (g.pz(i) - z0) / faceH;
+    // three's v runs up from the texture's bottom row (MapStage flips it for the cooked texture)
+    const double u = u0 + (u1 - u0) * clamp01(fx), v = (1.0 - vb) + (vb - vt) * clamp01(fz);
+    g.setUV(i, kEmberUvTag * kGothicTag + 50.0 + u, v);
+  }
+}
+// A pyramid on z = 0, `w` x `d` at its base, its apex `h` up: four faces wound outwards, no base.
+Geometry pyramid(double w, double d, double h) {
+  Geometry g;
+  const double c[4][2] = {{-w / 2, -d / 2}, {w / 2, -d / 2}, {w / 2, d / 2}, {-w / 2, d / 2}};
+  for (int i = 0; i < 4; ++i) {
+    const double ax = c[i][0], ay = c[i][1], bx = c[(i + 1) % 4][0], by = c[(i + 1) % 4][1];
+    double nx = (by - ay) * h, ny = -(bx - ax) * h, nz = -ay * (bx - ax) + ax * (by - ay);
+    const double l = std::sqrt(nx * nx + ny * ny + nz * nz);
+    nx /= l, ny /= l, nz /= l;
+    for (const auto& [px, py, pz] : {std::array{ax, ay, 0.0}, std::array{bx, by, 0.0}, std::array{0.0, 0.0, h}}) {
+      g.position.insert(g.position.end(), {static_cast<float>(px), static_cast<float>(py), static_cast<float>(pz)});
+      g.normal.insert(g.normal.end(), {static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz)});
+      g.uv.insert(g.uv.end(), {0.0f, 0.0f});
+    }
+  }
+  return g;
+}
+// The kit's levels as shares of the piece's height (the art's rows: 680 the foot, 640 the plinth's top, 296 the string course,
+// 264 / 216 the arcade's base, 152 the arcade's top, 112 the rail's top, 150 / 112 the pilaster's cap, 40 the pinnacle's tip).
+struct GothicLevels {
+  double plinth = 0.0625, body = 0.60, string = 0.65, base = 0.725, arcade = 0.825, rail = 0.8875;
+  double shaft = 0.828, cap = 0.8875;  // the pilaster: its shaft's top, its cap's top; the pinnacle reaches the full height
+};
+// One straight run of the parapet from x0 to x1 (y = 0, along +x) with the given art on its deck (-y) and void (+y) faces,
+// ready to be turned and moved: plinth, body, string course, arcade base, pierced arcade, rail.
+Geometry gothicRun(double x0, double x1, double T, double H, GothicArt deck, GothicArt voidArt) {
+  const GothicLevels L;
+  const double len = x1 - x0, cx = (x0 + x1) / 2, balT = T * 0.55;
+  std::vector<Geometry> parts;
+  auto slab = [&](double across, double zlo, double zhi) {
+    Geometry b = three::box(len, across, zhi - zlo);
+    b.translate(cx, 0, (zlo + zhi) / 2);
+    parts.push_back(b.toNonIndexed());
+  };
+  slab(T + 0.24, 0, L.plinth * H);  // the plinth, proud of the body
+  {
+    Geometry body = three::box(len, T, (L.body - L.plinth) * H);
+    body.translate(cx, 0, (L.body + L.plinth) / 2 * H);
+    gothicArt(body, deck, 1, -1, x0, x1, L.plinth * H, L.body * H);
+    gothicArt(body, voidArt, 1, +1, x0, x1, L.plinth * H, L.body * H);
+    parts.push_back(body.toNonIndexed());
+  }
+  slab(T + 0.16, L.body * H, L.string * H);    // the string course
+  slab(balT + 0.14, L.string * H, L.base * H);  // the arcade's base course
+  {
+    // the arcade: a slab pierced by a row of pointed arches (an ellipse's top over a lancet's jambs)
+    const double zlo = L.base * H, zhi = L.arcade * H, arcH = zhi - zlo;
+    const int n = std::max(1, static_cast<int>(std::lround(len / 0.39)));
+    const double pitch = len / n, halfW = pitch * 0.30;
+    const double sill = zlo + 0.12 * arcH, spring = zlo + 0.50 * arcH, rise = std::min(halfW * 1.35, zhi - 0.12 * arcH - spring);
+    Shape s;
+    s.moveTo(x0, zlo);
+    s.lineTo(x0, zhi);
+    s.lineTo(x1, zhi);
+    s.lineTo(x1, zlo);
+    s.closePath();
+    for (int k = 0; k < n; ++k) {
+      const double ax = x0 + (k + 0.5) * pitch;
+      three::Path h;
+      h.moveTo(ax - halfW, sill);
+      h.lineTo(ax + halfW, sill);
+      h.lineTo(ax + halfW, spring);
+      h.absellipse(ax, spring, halfW, rise, 0, kPi, false);
+      h.lineTo(ax - halfW, sill);
+      h.closePath();
+      s.holes.push_back(h);
+    }
+    parts.push_back(extruded(s, balT, 10).toNonIndexed());
+  }
+  slab(balT + 0.30, L.arcade * H, L.rail * H);  // the coping rail
+  return three::merge(parts);
+}
+// A pilaster at (x, 0): base, shaft (its face from the atlas on all four sides), a two-step cap, the pyramid pinnacle.
+Geometry gothicPier(double x, double T, double H) {
+  const GothicLevels L;
+  const double w = 0.78, d = T + 0.50;
+  std::vector<Geometry> parts;
+  auto block = [&](double bw, double bd, double zlo, double zhi) {
+    Geometry b = three::box(bw, bd, zhi - zlo);
+    b.translate(x, 0, (zlo + zhi) / 2);
+    parts.push_back(b.toNonIndexed());
+  };
+  block(w + 0.16, d + 0.16, 0, L.plinth * H * 1.15);
+  {
+    Geometry shaft = three::box(w, d, L.shaft * H);
+    shaft.translate(x, 0, L.shaft * H / 2);
+    const double z0 = 0.03 * H, z1 = L.shaft * H;
+    gothicArt(shaft, kPierFace, 1, -1, x - w / 2, x + w / 2, z0, z1);
+    gothicArt(shaft, kPierFace, 1, +1, x - w / 2, x + w / 2, z0, z1);
+    gothicArt(shaft, kPierFace, 0, -1, -d / 2, d / 2, z0, z1);
+    gothicArt(shaft, kPierFace, 0, +1, -d / 2, d / 2, z0, z1);
+    parts.push_back(shaft.toNonIndexed());
+  }
+  const double capH = (L.cap - L.shaft) * H;
+  block(w + 0.16, d + 0.16, L.shaft * H, L.shaft * H + capH * 0.55);
+  block(w + 0.06, d + 0.06, L.shaft * H + capH * 0.55, L.cap * H);
+  Geometry tip = pyramid(w * 0.92, w * 0.92, (1.0 - L.cap) * H);
+  tip.translate(x, 0, L.cap * H);
+  parts.push_back(std::move(tip));
+  return three::merge(parts);
+}
+// The piece: a lone segment, a run's end, a straight run, or a corner / junction (the pilaster at the core, an arm to each
+// neighbour). Local -y is the deck side; on a corner's arms the deck side is the side the other arms lie on (the inside), a tie
+// falls back to the half turn.
+Geometry gothicGeometry(const ArchitectureDef& def, double tile, double height, int rotation, const std::vector<Conn>& connections) {
+  const double H = height, T = tile * 0.32 * def.wallThicknessScale, pierW = 0.78;
+  const bool niche = def.emberStyle == "gothic-niche", pierPiece = def.emberStyle == "gothic-pier";
+  const GothicArt deck = niche ? kDeckNiche : kDeckWindow, voidArt = niche ? kVoidDrain : kVoidTally;
+  const double axis = emberAxisAngle(rotation, connections);
+  const bool horizontal = std::abs(std::cos(axis)) > 0.5;
+  const double span = tile * (horizontal ? kSqrt3 : 1.5);
+  std::vector<Geometry> parts;
+  auto place = [&](Geometry g, double angle, double x, double y) {
+    g.rotateZ(angle).translate(x, y, 0);
+    parts.push_back(std::move(g));
+  };
+  if (connections.empty()) {
+    // alone: the whole cell, a pilaster at each end (or at the centre for the pilaster piece, the panels plain beside it)
+    if (pierPiece) {
+      place(gothicRun(-span / 2, -pierW / 2, T, H, kDeckPlain, kVoidPlain), 0, 0, 0);
+      place(gothicRun(pierW / 2, span / 2, T, H, kDeckPlain, kVoidPlain), 0, 0, 0);
+      place(gothicPier(0, T, H), 0, 0, 0);
+    } else {
+      place(gothicRun(-span / 2 + pierW / 2, span / 2 - pierW / 2, T, H, deck, voidArt), 0, 0, 0);
+      place(gothicPier(-span / 2 + pierW / 2, T, H), 0, 0, 0);
+      place(gothicPier(span / 2 - pierW / 2, T, H), 0, 0, 0);
+    }
+    Geometry g = three::merge(parts);
+    g.rotateZ(axis);
+    return g;
+  }
+  // the neighbours in the axis' frame
+  std::vector<std::pair<double, double>> local;
+  for (const auto& [cx, cy] : connections) local.push_back({cx * std::cos(axis) + cy * std::sin(axis), -cx * std::sin(axis) + cy * std::cos(axis)});
+  if (connections.size() == 1) {
+    // a run's end: the pilaster at the free end of the cell, the panels from it to the join
+    const double sx = local.front().first > 0 ? 1.0 : -1.0, join = std::abs(local.front().first) / 2 + tile * 0.01;
+    const double free = -sx * (span / 2 - pierW / 2);
+    place(gothicRun(std::min(free, sx * join), std::max(free, sx * join), T, H, deck, voidArt), 0, 0, 0);
+    place(gothicPier(free, T, H), 0, 0, 0);
+    Geometry g = three::merge(parts);
+    g.rotateZ(axis);
+    return g;
+  }
+  if (connections.size() == 2) {
+    const auto [ax, ay] = connections[0];
+    const auto [bx, by] = connections[1];
+    const bool straight = std::abs(ax * by - ay * bx) < 1e-6 * std::hypot(ax, ay) * std::hypot(bx, by) && ax * bx + ay * by < 0;
+    if (straight) {
+      double lo = 0, hi = 0;
+      for (const auto& [lx, ly] : local) (lx < 0 ? lo : hi) = lx / 2 + (lx < 0 ? -1 : 1) * tile * 0.01;
+      if (pierPiece) {
+        place(gothicRun(lo, -pierW / 2, T, H, kDeckPlain, kVoidPlain), 0, 0, 0);
+        place(gothicRun(pierW / 2, hi, T, H, kDeckPlain, kVoidPlain), 0, 0, 0);
+        place(gothicPier(0, T, H), 0, 0, 0);
+      } else {
+        place(gothicRun(lo, hi, T, H, deck, voidArt), 0, 0, 0);
+      }
+      Geometry g = three::merge(parts);
+      g.rotateZ(axis);
+      return g;
+    }
+  }
+  // a corner or a junction: the pilaster at the core, an arm of plain panels to each neighbour, its deck side towards the others
+  for (size_t i = 0; i < connections.size(); ++i) {
+    const auto [cx, cy] = connections[i];
+    const double angle = std::atan2(cy, cx), len = std::hypot(cx, cy) / 2 + tile * 0.01;
+    double inside = 0;  // > 0: the other arms lie on this arm's local -y side
+    for (size_t k = 0; k < connections.size(); ++k) {
+      if (k == i) continue;
+      const double ox = connections[k].first, oy = connections[k].second, ol = std::hypot(ox, oy);
+      inside += (ox * std::sin(angle) - oy * std::cos(angle)) / std::max(ol, 1e-9);
+    }
+    const bool swap = inside < -1e-6 || (std::abs(inside) <= 1e-6 && (rotation & 2));
+    place(gothicRun(pierW * 0.25, len, T, H, swap ? kVoidPlain : kDeckPlain, swap ? kDeckPlain : kVoidPlain), angle, 0, 0);
+  }
+  place(gothicPier(0, T, H), 0, 0, 0);
+  return three::merge(parts);
+}
+
 Geometry emberGeometry(const ArchitectureDef& def, double tile, double height, int rotation, const std::vector<Conn>& connections, std::pair<double, double> origin) {
+  if (def.emberStyle.starts_with("gothic-")) {
+    Geometry g = gothicGeometry(def, tile, height, rotation, connections);
+    emberMasonryUVs(g, origin, std::max(def.textureRepeat, 0.1));
+    return g;
+  }
   if (def.emberStyle == "stairs-up" || def.emberStyle == "stairs-down") {
     Geometry g = stairsGeometry(def, tile, height, rotation);
     emberMasonryUVs(g, origin, std::max(def.textureRepeat, 0.1));

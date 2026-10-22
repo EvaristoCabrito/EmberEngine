@@ -1049,6 +1049,23 @@ design with the textures at watchtowerwalls", then "update the editor to make it
   (`captures/status/`), release built. Not verified: the look in the window (the user judges).
 - World map field spells: Criar Comida e Água's row shows Engine2's `game/icons/create-food-and-water.png`.
 
+## Muralha gótica: os parapeitos da Ponte de Pedra em 3D (2026-10-21; the user: "make those parapeitos from the Stone Bridge in 3D using
+them as base and texture ... carefully designed detailed gothic walls to be used later in the game too", "its both sides of the same design")
+
+- **Read `content/models/README.md` § "the gothic parapet kit".** Three pieces in the watchtower's kit (`architecture.json` styles `gothic-wall` /
+  `gothic-niche` / `gothic-pier`, `Architecture.cpp gothicGeometry`): one wall with two faces, the guardians + tracery windows towards the
+  board's centre (MapStage `faced`, like the windows), the tally-marked panels + drain holes towards the void; pilasters with pinnacles at every
+  run end, corner and junction by themselves, mid-run with the Pilastra piece; a real pierced arcade on top. The art comes from the user's two
+  parapet PNGs cut into an atlas (`tools/scripts/models/gothic_parapet_atlas.py` → `content/textures/walls/gothic-parapet-v01.jpg`, material tag
+  7 "gothic" with UVs authored in the builder; `gothic-stone-v01.jpg` for the plain stone). Editor: 3D Walls → "MURALHA GÓTICA".
+- **Bug found on the way (MapStage `meshOf`): a `MeshId` is the mesh's index, so the map's first mesh is 0, which the piece builder read as
+  "no mesh": on a map with no 3D models the first wall piece was dropped.** Now `std::optional<MeshId>`, with a warn naming any piece that
+  builds nothing. (`roofMesh_` / `plinthMesh_` keep 0 = none: they are built after the pieces.)
+- Verified: debug + validation capture exit 0, 0 validation lines on the test draft (`make_gothic_bridge_test.py`, both parapet rows + an L,
+  82 of 82 pieces built); `Cooker check-architecture` on Engine2's reference cases unchanged; release captures `captures/gothic/011-014`
+  (deck face, corner, void face, close-up). Not verified: the look in the window (the user judges); the editor's buttons by hand; cost (82
+  pieces on the bridge, not measured). thebridge023 unchanged (cards); no campaign map uses the kit.
+
 ## Next
 
 The user's verdict (2026-10-15): the engine as seen is worse than Engine2 ("worst colours and render I've ever

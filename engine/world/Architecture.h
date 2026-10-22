@@ -30,7 +30,9 @@ struct ArchitectureDef {
   bool thickWall = false, dungeonReference = false, connects = true;  // connects: joins its neighbours (not rocks / trees / props)
   // EmberEngine's own pieces (content/models/architecture.json, ids ember-arch-*): "wall" (a joined run with a base and a string
   // course), "window" (a lancet window with a splayed inner embrasure, light through it), "slit" (an arrow loop), "portal" (an
-  // arched doorway two hexes wide). Their masonry repeats every textureRepeat units on every face (square, world-aligned).
+  // arched doorway two hexes wide); the gothic parapet kit: "gothic-wall" (a panelled run: tracery windows on the deck side, tally
+  // marks on the void side), "gothic-niche" (a hooded guardian in its niche / a drain hole), "gothic-pier" (the wall with a pilaster
+  // and its pinnacle at the hex's centre). Their masonry repeats every textureRepeat units on every face (square, world-aligned).
   std::string emberStyle;
   double textureRepeat = 3.6;
 };
@@ -47,10 +49,11 @@ std::optional<std::array<double, 3>> emberStairFlame(const ArchitectureDef& def,
 std::array<double, 3> emberDirPiece(int rotation);
 std::optional<std::array<double, 4>> emberStairHole(const ArchitectureDef& def, int rotation);
 // Their extra materials, tagged in the UVs (u = 100 * tag + 50 + the part's own u): 0 the masonry texture, 1 oak, 2 iron, 3 a flame
-// (emissive), 4 dark oak, 5 a dark void (the stairs' openings), 6 the steps' stone. MapStage splits them into parts and takes the
-// tag off again (emberMaterialU).
+// (emissive), 4 dark oak, 5 a dark void (the stairs' openings), 6 the steps' stone, 7 the gothic parapet's atlas (the carved
+// panels, the guardians, the pilasters' faces: UVs authored by the builder, like the flame's). MapStage splits them into parts and
+// takes the tag off again (emberMaterialU).
 inline constexpr double kEmberUvTag = 100.0;
-inline constexpr int kEmberMaterialTags = 7;
+inline constexpr int kEmberMaterialTags = 8;
 inline int emberMaterialTag(double u) { return u >= kEmberUvTag ? static_cast<int>(u / kEmberUvTag) : 0; }
 inline double emberMaterialU(double u) {
   const int tag = emberMaterialTag(u);
@@ -58,7 +61,7 @@ inline double emberMaterialU(double u) {
 }
 // The tag's material name in ArchitectureDefs::materials ("" = always flat).
 inline const char* emberMaterialName(int tag) {
-  static const char* kNames[kEmberMaterialTags] = {"", "oak", "iron", "fire", "darkOak", "", "steps"};
+  static const char* kNames[kEmberMaterialTags] = {"", "oak", "iron", "fire", "darkOak", "", "steps", "gothic"};
   return tag >= 0 && tag < kEmberMaterialTags ? kNames[tag] : "";
 }
 // The animated door ("door" style): one leaf (side -1 left, +1 right), closed, in the piece's own space like pieceGeometry

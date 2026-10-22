@@ -2574,13 +2574,22 @@ class MapEditorStage : public Stage {
                                                                   {"Portal", "ember-arch-watchtower-portal"}, {"Porta", "ember-arch-watchtower-door"},
                                                                   {"Portão", "ember-arch-watchtower-gate"}, {"Escada sobe", "ember-arch-watchtower-stairs-up"},
                                                                   {"Escada desce", "ember-arch-watchtower-stairs-down"}};
-      for (int k = 0; k < 9; ++k) {
-        if (k) ImGui::SameLine();
-        const bool armed = decoBrush_ == kKit[k].second;
-        if (armed) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-        if (ImGui::Button(kKit[k].first)) decoBrush_ = kKit[k].second, thickWalls_ = false, selected_.reset(), turningDeco_ = false;
-        if (armed) ImGui::PopStyleColor();
-      }
+      auto kitButtons = [&](const std::pair<const char*, const char*>* kit, int count) {
+        for (int k = 0; k < count; ++k) {
+          if (k) ImGui::SameLine();
+          const bool armed = decoBrush_ == kit[k].second;
+          if (armed) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+          if (ImGui::Button(kit[k].first)) decoBrush_ = kit[k].second, thickWalls_ = false, selected_.reset(), turningDeco_ = false;
+          if (armed) ImGui::PopStyleColor();
+        }
+      };
+      kitButtons(kKit, 9);
+      // The gothic parapet kit (the Stone Bridge's parapets in 3D, 2026-10-21): the guardians' side turns to the board's centre by
+      // itself; pilasters stand at every run end and corner, the Pilastra piece puts one mid-run.
+      ImGui::TextColored(ImColor(180, 180, 180), "MURALHA GÓTICA");
+      static const std::pair<const char*, const char*> kGothic[3] = {{"Parede gótica", "ember-arch-gothic-wall"}, {"Nicho com guardião", "ember-arch-gothic-niche"},
+                                                                     {"Pilastra", "ember-arch-gothic-pier"}};
+      kitButtons(kGothic, 3);
       int tool = -1;
       if (toggleRow({{"Clique", wallTool_ == 0}, {"Traçar parede", wallTool_ == 1}, {"Fechar sala", wallTool_ == 2}}, tool)) wallTool_ = tool, wallDragFrom_.reset();
       hint("%s", wallTool_ == 0 ? "Clique coloca uma peça; clique numa parede com Janela, Seteira ou Tocha armada e ela vira essa peça (a abertura e a tocha se viram para a sala sozinhas)."

@@ -1,14 +1,16 @@
 {
   "source": "EmberEngine's own 3D architecture (walls, windows, doorways), built in C++ by world/Architecture.cpp emberGeometry from these definitions, like Ember's own walls (joined to their neighbours, stood on the ground). tools/scripts/models/catalog_models.py merges them into content/engine2/editor-catalog.json (decorations + editor.architectureDefs); Cooker architecture cooks their textures (/ember/<path under content/>) into build/meshes/architecture.pak.",
   "textures": {
-    "watchtower-v01": "/ember/textures/walls/watchtower-v01.jpg"
+    "watchtower-v01": "/ember/textures/walls/watchtower-v01.jpg",
+    "gothic-stone-v01": "/ember/textures/walls/gothic-stone-v01.jpg"
   },
   "materials": {
     "oak": "/ember/textures/watchtower/door-oak-v01.jpg",
     "iron": "/ember/textures/watchtower/iron-v01.jpg",
     "darkOak": "/ember/textures/watchtower/dark-oak-v01.jpg",
     "steps": "/ember/textures/watchtower/steps-v01.jpg",
-    "fire": "/ember/textures/watchtower/torch-fire-v01.jpg"
+    "fire": "/ember/textures/watchtower/torch-fire-v01.jpg",
+    "gothic": "/ember/textures/walls/gothic-parapet-v01.jpg"
   },
   "pieces": [
     {
@@ -110,6 +112,39 @@
       "textureRepeat": 3.6,
       "architectureSpan": 4,
       "footprint": "quad"
+    },
+    {
+      "id": "ember-arch-gothic-wall",
+      "name": "Parede gótica 3D",
+      "model3d": "wall",
+      "emberStyle": "gothic-wall",
+      "wallTexture": "/ember/textures/walls/gothic-stone-v01.jpg",
+      "wallThicknessScale": 2.0,
+      "heightScale": 1.05,
+      "textureRepeat": 1.59,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-gothic-niche",
+      "name": "Nicho gótico com guardião 3D",
+      "model3d": "wall",
+      "emberStyle": "gothic-niche",
+      "wallTexture": "/ember/textures/walls/gothic-stone-v01.jpg",
+      "wallThicknessScale": 2.0,
+      "heightScale": 1.05,
+      "textureRepeat": 1.59,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-gothic-pier",
+      "name": "Pilastra gótica 3D",
+      "model3d": "wall",
+      "emberStyle": "gothic-pier",
+      "wallTexture": "/ember/textures/walls/gothic-stone-v01.jpg",
+      "wallThicknessScale": 2.0,
+      "heightScale": 1.05,
+      "textureRepeat": 1.59,
+      "footprint": "one"
     }
   ],
   "doorVariants": {

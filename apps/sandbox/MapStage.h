@@ -2028,7 +2028,7 @@ class MapStage final : public Stage {
         };
         if (!wallBeyond(farX, farY, sx, sy) && wallBeyond(nearX, nearY, -sx, -sy)) rot ^= 2;
       }
-      const bool faced = def->emberStyle == "window" || def->emberStyle == "slit" || def->emberStyle == "wall-torch";
+      const bool faced = def->emberStyle == "window" || def->emberStyle == "slit" || def->emberStyle == "wall-torch" || def->emberStyle.starts_with("gothic-");
       if (faced) {
         // The splay / the torch faces the room: the piece's inner side (Architecture.h emberAxisAngle: (sin a, cos a) on the
         // board, the half turn flipping it) must point towards the board's centre.
@@ -2041,8 +2041,10 @@ class MapStage final : public Stage {
       // One mesh from a geometry in the piece's space: flat shading (Engine2's material: each triangle's own normal, equal corners
       // welded); EmberEngine's pieces carry extra materials tagged in their UVs (Architecture.h emberMaterialTag): one part per
       // material. `footprint`: the top faces become the piece's sight samples and the bounds are kept.
-      auto meshOf = [&](const e2::three::Geometry& g, bool footprint) -> MeshId {
-      static constexpr int kParts = e2::kEmberMaterialTags;  // 0 the masonry, 1 oak, 2 iron, 3 flame, 4 dark oak, 5 a dark void, 6 the steps
+      // (std::optional: a MeshId is the mesh's index and the map's first mesh is 0, so 0 is a real mesh here: on a map with no
+      // 3D models the first wall piece used to be dropped as "no mesh", found 2026-10-21 on the gothic bridge test.)
+      auto meshOf = [&](const e2::three::Geometry& g, bool footprint) -> std::optional<MeshId> {
+      static constexpr int kParts = e2::kEmberMaterialTags;  // 0 the masonry, 1 oak, 2 iron, 3 flame, 4 dark oak, 5 a dark void, 6 the steps, 7 the gothic atlas
       MeshBuildPart parts[kParts];
       std::map<std::array<float, 8>, uint32_t> weld[kParts];
       size_t triangles = 0;
@@ -2080,7 +2082,7 @@ class MapStage final : public Stage {
         }
         ++triangles;
       }
-      if (triangles == 0) return MeshId{0};
+      if (triangles == 0) return std::nullopt;
       // MeshStandardMaterial({map, color: map ? white : the piece's colour, roughness, metalness}) (three colours are sRGB)
       const bool metal = def->doorStyle == "iron" || def->doorStyle == "steel";
       const uint32_t hex = metal ? (def->doorStyle == "iron" ? 0x555b60u : 0x9ca7b0u) : def->model3d == "door" ? 0x925b32u : def->model3d == "doorway" ? 0xb7a27cu : 0x8b8b86u;
@@ -2108,7 +2110,7 @@ class MapStage final : public Stage {
       MeshMaterial flame = flat(0x3a1a08u, 0.9f, 0.0f);
       flame.emissive[0] = 16.0f, flame.emissive[1] = 5.5f, flame.emissive[2] = 0.9f;
       MeshMaterial materials[kParts] = {m, flat(0x6b4a2bu, 0.82f, 0.0f), flat(0x3a3a3cu, 0.45f, 0.65f), flame, flat(0x3b2a18u, 0.85f, 0.0f),
-                                        flat(0x060504u, 1.0f, 0.0f), flat(0x55524eu, 0.9f, 0.0f)};
+                                        flat(0x060504u, 1.0f, 0.0f), flat(0x55524eu, 0.9f, 0.0f), flat(0x4b4c4eu, 0.94f, 0.0f)};
       // The kit's photographed materials (the user's textures of 2026-10-21, content/models/architecture.json "materials"): the
       // photograph instead of the flat colour; the flame's photograph is its glow (emissive x the fire, so its own oranges show).
       bool taggedTexture[kParts] = {};
@@ -2136,13 +2138,23 @@ class MapStage final : public Stage {
         used.push_back(materials[k]);
         built = true;
       }
-      if (!built) return MeshId{0};
+      if (!built) {
+        logWarn("architecture: {}: no part could be clustered ({} triangles)", def->id, triangles);
+        return std::nullopt;
+      }
       std::vector<uint8_t> bytes = build.finish(used, triangles);
-      if (bytes.empty()) return MeshId{0};
+      if (bytes.empty()) {
+        logWarn("architecture: {}: the cluster build gave nothing ({} triangles, {} clusters)", def->id, triangles, build.clusterCount());
+        return std::nullopt;
+      }
       return meshes_.addBuilt(std::move(bytes));
       };
-      piece.mesh = meshOf(g, true);
-      if (!piece.mesh) continue;
+      const std::optional<MeshId> pieceMesh = meshOf(g, true);
+      if (!pieceMesh) {
+        logWarn("architecture: {} at {},{} (rot {}, {} joins) built no mesh", p.id, p.x, p.y, rot, connections.size());
+        continue;
+      }
+      piece.mesh = *pieceMesh;
       if (def->emberStyle == "wall-torch") {
         // The torch's light (Engine2's wall torch: colour (1, 0.58, 0.26), intensity 11, reach 4.68, full flicker) at its flame, on
         // the piece's inner side (emberAxisAngle), with the flame's own phase.
@@ -2203,10 +2215,10 @@ class MapStage final : public Stage {
         DoorState& state = doors_[index];
         for (const e2::FootOffset& f : e2::placedFootprint(*cd, p.x, p.y, p.rot)) state.cells.push_back({p.x + f.dx, p.y + f.dy});
         for (int side : {-1, 1}) {
-          const MeshId leaf = meshOf(e2::emberDoorLeafPiece(*def, rot, side), false);
+          const std::optional<MeshId> leaf = meshOf(e2::emberDoorLeafPiece(*def, rot, side), false);
           if (!leaf) continue;
           const std::array<double, 3> h = e2::emberDoorHingePiece(*def, rot, side);
-          doorLeaves_.push_back({index, side, leaf, {static_cast<float>(h[0]), static_cast<float>(h[1]), static_cast<float>(h[2])}});
+          doorLeaves_.push_back({index, side, *leaf, {static_cast<float>(h[0]), static_cast<float>(h[1]), static_cast<float>(h[2])}});
         }
       }
     }

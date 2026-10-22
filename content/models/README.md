@@ -345,6 +345,34 @@ reaching the outermost wall pieces and no further: an overhang shaded the window
 (`stone-stairs-up/down-001`, a floor connector): the waypoint stays for the rules (the floor change), the game draws the 3D piece in its
 card's place; the editor lays them by a click on the waypoint with the Escada brush, the script with `--stairs`.
 
+## Architecture: the gothic parapet kit (2026-10-21; the Stone Bridge's parapets in 3D)
+
+The user: the bridge's two parapet PNGs (`decoracoes-2d/bridge-parapet-gothic-statues-001.png`, `bridge-parapet-tall-001.png`) "em 3D
+usando eles como base e textura ... muros góticos detalhados para usar no jogo depois"; "its both sides of the same design": one
+wall, the guardians' side towards the deck, the tally-marked side towards the void. Built in C++ like the watchtower's kit
+(`Architecture.cpp gothicGeometry`, styles `gothic-*` in `architecture.json`), the same joins, blocking, editor tools and pack.
+
+| id | name | what it is |
+|---|---|---|
+| ember-arch-gothic-wall | Parede gótica 3D | one hex of the parapet: plinth, the panelled body (deck side: a two-light tracery window; void side: tally-marked courses over the string course), the string course, the arcade's base, a pierced arcade of pointed arches (real holes), the coping rail |
+| ember-arch-gothic-niche | Nicho gótico com guardião 3D | the same with a hooded guardian in its niche on the deck side and a drain hole at the plinth on the void side |
+| ember-arch-gothic-pier | Pilastra gótica 3D | the wall with a pilaster at the hex's centre (shaft with its blind lancet on all four faces, two-step cap, pyramid pinnacle), plain panels beside it |
+
+Pilasters also stand by themselves at every run end (at the free end of the cell), at every corner and junction (at the core, the
+arms' panels plain), and at both ends of a lone piece. The deck side turns to the board's centre by itself (MapStage `faced`, as the
+windows do); on a corner each arm's deck side is the inside of the corner. Proportions from the art (640 px from the plinth's foot
+to the pinnacles' tips = the piece's height, 4.41 units at heightScale 1.05; one hex = 251 px of art; 0.64 thick): plinth to 6 %,
+body to 60 %, string course to 65 %, arcade base to 72.5 %, arcade to 82.5 %, rail to 88.75 %, pilaster cap to 88.75 %, pinnacle to
+100 %. Textures, cut from the PNGs by `tools/scripts/models/gothic_parapet_atlas.py`: `content/textures/walls/gothic-parapet-v01.jpg`
+(the atlas, material tag 7 "gothic": window / niche / plain deck panels, tally / drain / plain void panels, the pilaster's face,
+each at 2x the art's pixels and fitted to its face's aspect without stretching) and `gothic-stone-v01.jpg` (the plain stone the
+solid parts repeat every 1.59 units, world-aligned). Pack: `build/meshes/architecture.pak` re-cooked (the one before it kept as
+`architecture-20261021-before-gothic.pak`). Map Editor: 3D Walls → "MURALHA GÓTICA" (Parede gótica / Nicho com guardião /
+Pilastra), with Traçar parede / Fechar sala. Test draft: `tools/scripts/maps/make_gothic_bridge_test.py` (thebridge023 with the
+parapet cards swapped for the kit on both rows, pier / window / guardian / window every four hexes, plus an L inside the deck) →
+`build/engine2-test/*/thebridge-gothic.*`; captures in `captures/gothic/` (local). No campaign map uses the kit yet: thebridge023
+keeps its cards (a 024 with the 3D parapets only when the user asks).
+
 ## The user's photographed materials (2026-10-21; `Attachments/watchtower`)
 
 - **The watchtower kit** (C++ architecture): `architecture.json` "materials" (oak = `widewoodbettertexture`, iron = `metal`, darkOak =
