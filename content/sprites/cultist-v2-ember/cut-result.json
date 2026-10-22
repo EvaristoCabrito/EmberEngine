@@ -1,0 +1,94 @@
+{
+ "clips": {
+  "hit": {
+   "video": "Attachments/Cultist/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 13,
+   "bootRow": 625,
+   "bootRows": [
+    625,
+    626
+   ],
+   "figurePx": 543.5,
+   "bodyAt": 0.0,
+   "frames": 14,
+   "frameMs": 125.0,
+   "nat": [
+    431,
+    572
+   ],
+   "crop": [
+    51,
+    6,
+    375,
+    561
+   ],
+   "box": {
+    "w": 2.26483,
+    "h": 3.00576,
+    "foot": 0.03678
+   },
+   "pattern": "content/sprites/cultist-v2-ember/hit-v01/hit-{}.png"
+  },
+  "hit2": {
+   "video": "Attachments/Cultist/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 15,
+   "last": 35,
+   "bootRow": 623,
+   "bootRows": [
+    623,
+    623
+   ],
+   "figurePx": 530.0,
+   "bodyAt": -0.035,
+   "frames": 21,
+   "frameMs": 125.0,
+   "nat": [
+    443,
+    618
+   ],
+   "crop": [
+    3,
+    5,
+    429,
+    611
+   ],
+   "box": {
+    "w": 2.38718,
+    "h": 3.3302,
+    "foot": 0.38798
+   },
+   "pattern": "content/sprites/cultist-v2-ember/hit2-v01/hit2-{}.png"
+  },
+  "death": {
+   "video": "Attachments/Cultist/Fall/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "bootRow": 587,
+   "bootRows": [
+    587,
+    587
+   ],
+   "figurePx": 548.5,
+   "bodyAt": -0.0755,
+   "frames": 36,
+   "frameMs": 101.0,
+   "nat": [
+    504,
+    593
+   ],
+   "crop": [
+    0,
+    5,
+    504,
+    585
+   ],
+   "box": {
+    "w": 2.62429,
+    "h": 3.08771,
+    "foot": 0.15621
+   },
+   "pattern": "content/sprites/cultist-v2-ember/death-v01/death-{}.png"
+  }
+ }
+}

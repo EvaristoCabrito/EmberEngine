@@ -41,6 +41,24 @@ def load_frames(src, first, last):
     return np.stack(rgb), np.stack(alpha)
 
 
+def load_sheet(sheet, first, last):
+    """A clip from a sprite sheet (the user's art already cut out: straight alpha, a TexturePacker-style JSON beside it with
+    "frames": {"frame_NNN": {"frame": {x, y, w, h}, "duration": ms}}): frames first..last (0-based, the JSON's own numbering),
+    as float straight RGBA, and the frame time in ms (the JSON's median duration). Nothing is unmixed: the alpha is the art's."""
+    path = os.path.join(ROOT, sheet)
+    meta = json.load(open(os.path.splitext(path)[0] + ".json", encoding="utf-8"))["frames"]
+    names = sorted(meta)
+    img = np.asarray(Image.open(path).convert("RGBA"))
+    frames, durs = [], []
+    for name in names[first:last + 1]:
+        r = meta[name]["frame"]
+        frames.append(img[r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]].astype(np.float32))
+        durs.append(float(meta[name].get("duration", 1000.0 / FPS)))
+    if len({f.shape for f in frames}) != 1:
+        raise SystemExit(f"{sheet}: frames {first}..{last} differ in size")
+    return frames, float(np.median(durs))
+
+
 def backdrop_plate(rgb, alpha, step=8):
     """The wall behind the figure: per 1/8-size cell, the median colour of the frames where the matte is clear there."""
     n, h, w, _ = rgb.shape
@@ -218,9 +236,17 @@ def main():
     for c in spec["clips"]:
         if only and c["clip"] not in only:
             continue
-        rgb, alpha = load_frames(os.path.join(ROOT, c["src"]), c["first"], c["last"])
-        plate = backdrop_plate(rgb, alpha)
-        if "wallKey" in c:
+        frame_ms = 1000.0 / FPS
+        if "sheet" in c:
+            # a sprite sheet (the Cultist's hit and death, 2026-10-22): the user's own frames and timing, alpha as drawn
+            frames, frame_ms = load_sheet(c["sheet"], c["first"], c["last"])
+            alpha = np.stack([np.clip(f[..., 3], 0, 255).astype(np.uint8) for f in frames])
+        else:
+            rgb, alpha = load_frames(os.path.join(ROOT, c["src"]), c["first"], c["last"])
+            plate = backdrop_plate(rgb, alpha)
+        if "sheet" in c:
+            pass
+        elif "wallKey" in c:
             # a key's `frames` [first, last] (video numbering) limits it to those frames (the death: only while the staff falls)
             lo, hi = c["wallKey"].get("frames", [c["first"], c["last"]])
             frames = [unmix(rgb[i], *wall_key(rgb[i], alpha[i], plate, c["wallKey"])) if lo <= c["first"] + i <= hi
@@ -228,7 +254,7 @@ def main():
         else:
             frames = [unmix(rgb[i], alpha[i], plate) for i in range(len(rgb))]
         n = len(frames)
-        info = {"video": c.get("video"), "first": c["first"], "last": c["last"]}
+        info = {"video": c.get("video", c.get("sheet")), "first": c["first"], "last": c["last"]}
         # Every video is framed its own way (the cast is landscape, ~660 px of figure; the staff counter ~4% closer than the
         # idle) and he steps in some (both strikes settle back in their first half second): each clip's frames are set on
         # its own feet line, and its median hood top to boot row is `figureUnits` tall, so he stands as tall on the same
@@ -349,7 +375,7 @@ def main():
             info["scaledTo"] = round(height * nh / h0, 1)
             if "bodyAt" in info:
                 info["bodyAt"] = round(info["bodyAt"], 4)  # units: unchanged by the scale
-        info.update(frames=len(frames), frameMs=1000.0 / FPS, nat=nat,
+        info.update(frames=len(frames), frameMs=frame_ms, nat=nat,
                     crop=[int(bxs.min()), int(bys.min()), int(bxs.max() - bxs.min() + 1), int(bys.max() - bys.min() + 1)],
                     box={"w": round(nat[0] * units_out, 5), "h": round(nat[1] * units_out, 5),
                          "foot": round(float(nh - 1 - sole_out) * units_out, 5)},

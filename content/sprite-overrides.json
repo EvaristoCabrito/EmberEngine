@@ -23,6 +23,16 @@
    "cut": "content/sprites/voss-veo/cut-media.json",
    "why": "the user, 2026-10-21: \"deixar todos em ~610 px\", then \"com a opção de medium e high nas configurações de video, o padrão será medium\": idle, both walks, attack and staff counter at ~610 px of figure (like cast, hit and death); Personagens Média (default) draws them, Alta voss-veo's full resolution",
    "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "cultist-v2-ember",
+   "version": "v01",
+   "hero": "cultistV2",
+   "cut": "content/sprites/cultist-v2-ember/cut.json",
+   "why": "the user, 2026-10-22: the Cultista Ancestral's hit (sheet frames 1-14), second hit in a row (16-36; frame 15, the red slash, in no clip) and death (the whole Fall sheet), from Attachments/Cultist; his idle, attack, cast and walks keep cultist-v2",
+   "poses": {"hit": "hit", "hit2": "hit2", "death": "death"},
+   "labels": {"hit": "Dano", "hit2": "Dano seguido", "death": "Morte"},
+   "packs": {}
   }
  ],
  "clips": [

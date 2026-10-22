@@ -1,0 +1,45 @@
+{
+ "about": "Cultista Ancestral (cultistV2): hit, second hit and death from the user's sprite sheets (Attachments/Cultist, 2026-10-22), every frame and its timing as drawn, alpha as drawn (no matting, no resampling). The user's counting (from 1): the hit = frames 1-14 of the sheet in Attachments/Cultist; frame 15 (the red slash) is in no clip; the second hit in a row (Golpe Duplo and the like) = frames 16-36; the death = the whole sheet in Attachments/Cultist/Fall (1-36). `first` / `last` below are the JSON's frame_NNN (from 0).",
+ "set": "cultist-v2-ember",
+ "version": "v01",
+ "figureUnits": 2.856,
+ "figureNote": "the idle (cultist-v2 base) stands 2.892 units from the staff's top to the feet; the sheets' standing frames measured staff top to feet vs hood to boot (2.843 hit sheet, 2.869 fall sheet): their mean",
+ "clips": [
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "kind": "stand",
+   "sheet": "Attachments/Cultist/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 13,
+   "mode": "once",
+   "why": "the user: frames 1 to 14",
+   "bodyAt": 0.0
+  },
+  {
+   "clip": "hit2",
+   "pose": "hit2",
+   "kind": "stand",
+   "sheet": "Attachments/Cultist/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 15,
+   "last": 35,
+   "standUntil": 17,
+   "mode": "once",
+   "why": "the user: 16 to 36, only when he takes two hits in a row; he kneels and lies down, so the feet line comes from the frames he still stands in (16-18)",
+   "bodyAt": 0.0
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "kind": "stand",
+   "sheet": "Attachments/Cultist/Fall/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "standUntil": 17,
+   "mode": "once",
+   "why": "the user: the whole Fall sheet; the feet line from the frames he still stands in (1-18)",
+   "bodyAt": 0.0
+  }
+ ],
+ "bodyNote": "bodyAt 0 in every clip: the hood stands at the card's centre (the hex), so the lying body widening the frame does not slide him sideways"
+}

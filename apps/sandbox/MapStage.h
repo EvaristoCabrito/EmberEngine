@@ -3404,6 +3404,7 @@ class MapStage final : public Stage {
     unitPos_.resize(n), unitMoved_.assign(n, 0), unitFacing_.resize(n), unitReversed_.resize(n);
     unitWalk_.assign(n, {}), unitCard_.assign(n, {}), unitBattle_.assign(n, -1);
     unitShot_.assign(n, {}), unitDiedAt_.assign(n, -1.0f), unitRecoil_.assign(n, {}), unitLeap_.assign(n, {});
+    unitHitAction_.assign(n, -1);
     for (size_t i = 0; i < n; ++i) {
       const e2::SceneUnit& u = scene_->units[i];
       unitPos_[i] = {u.x, u.z};
@@ -3445,6 +3446,7 @@ class MapStage final : public Stage {
       unitCard_.push_back({});
       unitBattle_.push_back(static_cast<int>(b));
       unitShot_.push_back({});
+      unitHitAction_.push_back(-1);
       unitDiedAt_.push_back(-1.0f);
       unitRecoil_.push_back({});
       while (unitSounds_.size() <= b) unitSounds_.push_back(e2::Json::object());
@@ -4849,6 +4851,7 @@ class MapStage final : public Stage {
     x.owner = ownerUi;
     x.interrupt = interrupt;
     exchange_ = std::move(x);
+    ++actionSerial_;
     reach_.clear(), reachPaths_.clear(), targets_.clear();
     spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
     spellArmed_.reset(), pendingFoe_ = -1;
@@ -5613,6 +5616,14 @@ class MapStage final : public Stage {
       unitDiedAt_[static_cast<size_t>(gi)] = -1000.0f;
       unitShot_[static_cast<size_t>(gi)] = {};
       return logInfo("battle script: kill {}: fallen at ({}, {})", p[1], v.x, v.y);
+    }
+    if (p[0] == "hp" && p.size() > 2) {  // "hp:<unit>:<n>": the unit's HP (and its maximum, if lower) set to n, for a test that must not kill it
+      const int gi = sceneUnitNamed(p[1]);
+      if (gi < 0) return fail("no such unit");
+      e2::BattleUnit& v = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(gi)])];
+      v.hp = std::atoi(p[2].c_str());
+      v.maxHp = std::max(v.maxHp, v.hp);
+      return logInfo("battle script: hp {}: {} of {}", p[1], v.hp, v.maxHp);
     }
     if (p[0] == "afflict" && p.size() > 2) {
       // "afflict:<unit>:bless|rally|vigil|sleep|fear|silence|mark|decay": a condition set on the unit, to test Dissipar Magia
@@ -6485,7 +6496,23 @@ class MapStage final : public Stage {
         unitShot_[u] = {"death", now_, true, actionRate()};
         unitDiedAt_[u] = now_;
       } else {
-        unitShot_[u] = {"hit", now_, false, actionRate()};
+        // A second hit in a row (Golpe Duplo's second blow, a spell's next missile): it comes from the same action as the one
+        // before it, or lands while that one's reaction still plays. A unit with art of its own for that (the Cultista
+        // Ancestral's "hit2", the user 2026-10-22) plays it, and a hit landing while it plays lets it play on; every other unit
+        // plays its hit again, as before.
+        const OneShot& was = unitShot_[u];
+        const bool reacting = (was.pose == "hit" || was.pose == "hit2") && now_ - was.start <= poseSeconds(u, was.pose) / was.rate;
+        const int action = exchange_ ? actionSerial_ : -1;
+        const bool sameAction = action >= 0 && u < unitHitAction_.size() && unitHitAction_[u] == action;
+        if ((reacting || sameAction) && hasPose(u, "hit2")) {
+          if (!(reacting && was.pose == "hit2")) {
+            unitShot_[u] = {"hit2", now_, false, actionRate()};
+            logInfo("{}: second hit in a row: pose hit2", battle_->units()[e.unit].name);
+          }
+        } else {
+          unitShot_[u] = {"hit", now_, false, actionRate()};
+        }
+        if (u < unitHitAction_.size()) unitHitAction_[u] = action;
       }
     }
   }
@@ -9509,6 +9536,8 @@ class MapStage final : public Stage {
   std::string tip_;                       // why a click did nothing (Engine2's tip line)
   float tipAt_ = -10.0f;
   std::vector<OneShot> unitShot_;         // per scene unit: a one-shot pose over its own
+  std::vector<int> unitHitAction_;        // per scene unit: the action (actionSerial_) whose blow it last reacted to (-1 = none)
+  int actionSerial_ = 0;                  // counts the actions played (play()), so two hits from one action are told apart
   std::vector<float> unitDiedAt_;         // per scene unit: when it fell (-1 = alive)
   std::unordered_map<std::string, std::map<std::string, double>> skillsAtStart_;  // per hero: its skills as the campaign fight opened
   // The struck body's reaction (2026-10-17, the hit react; the impact's light and particles are CombatFx's): the card

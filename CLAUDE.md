@@ -1204,6 +1204,19 @@ selecionar os alvos")
 - **Never force-kill a Sandbox window** (Stop-Process -Force while the GPU works): the process sticks "exiting" with 0 handles,
   access denied, holding GPU memory until a reboot. Close test windows like the X (`CloseMainWindow`).
 
+## Cultista Ancestral: dano, dano seguido, morte from sprite sheets (2026-10-22)
+
+- The user's sheets in `Attachments/Cultist` (36 frames, 6 x 6, TexturePacker JSON beside each). **The user counts frames from 1;
+  never renumber them.** Dano = frames 1-14 of the root sheet; frame 15 (the red slash) is in no clip; Dano seguido = 16-36; Morte =
+  the whole `Fall` sheet. The two mp4s there are those sheets played as video (lossy, chequerboard baked in): never a source.
+- `video_sprite.py` reads a clip from a sheet (`"sheet"` in the cut spec: frames, timing and alpha as drawn, no matting / unmixing /
+  resampling); spec `content/sprites/cultist-v2-ember/cut.json`, set `cultist-v2-ember` (hero `cultistV2`; idle / attack / cast / walks
+  keep cultist-v2), poses hit / hit2 / death.
+- MapStage `showEffects`: a hit from the same action as the unit's previous hit (Golpe Duplo's next blow), or landing while its hit
+  reaction plays, is "in a row": a unit with a `hit2` pose plays it (a hit while hit2 plays lets it play on); every other unit unchanged.
+  Script step `hp:<unit>:<n>` (a target that must survive). Golpe Duplo at 15 = 3 blows: the 3rd starts hit2 again (the 21-frame
+  clip, 4 s at the normal pace, is over by then).
+
 ## Battle bar: 12 sockets F1-F12 + Atalhos (2026-10-18; the user: "12 sockets ... F1 ao F12 e um outro botão para editar")
 
 - MapStage `hotbarOf` / `storeHotbar` / `drawHotbarEditor` / `pressHotbar`: each hero's 12 sockets (a spell / skill kind or
