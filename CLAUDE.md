@@ -33,8 +33,9 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   and say where it came from.
 - **Commit** locally on your own once a change is verified (builds clean, its test passes; user, 2026-10-14).
   The message states exactly what is and is not verified. **Never push** unless asked in that moment.
-  Git identity repo-local: EvaristoCabrito <evaristo172@gmail.com>. Remote `origin`: github.com/EvaristoCabrito/EmberVulkan
-  (since 2026-10-18; the old github.com/EvaristoCabrito/EmberEngine is remote `emberengine-old`).
+  Git identity repo-local: EvaristoCabrito <evaristo172@gmail.com>. Remote `origin`: github.com/EvaristoCabrito/EmberEngine
+  again (the user, 2026-10-21: "vamos voltar a usar esse aqui por hora"); github.com/EvaristoCabrito/EmberVulkan (origin
+  2026-10-18..21, last pushed 460387a) is remote `embervulkan`.
 - **Research before building** big visual features. Never show raw test renders as progress.
 - **`C:\Engine2` = asset source only, NOT a reference** (user, 2026-10-15, replaces the 2026-10-14 "game design
   yes" rule): "there is no engine 2, it's EMBER ENGINE"; "never alter anything there"; "it only serves to extract
