@@ -1615,6 +1615,36 @@
    "objective": "Derrote todos os inimigos",
    "win": "rout",
    "mapFile": "zona-de-teste009.json"
+  },
+  {
+   "id": "deep-ashen-forest",
+   "index": 61,
+   "title": "Deep Ashen Forest — Trilha das Cinzas",
+   "place": "Ashen Forest · Mata Profunda",
+   "briefing": "A trilha sobe entre árvores calcinadas, clareiras de cinza solta e uma garganta. Iria procura a origem das brasas sob a floresta.",
+   "objective": "Siga a trilha elevada e investigue a passagem da garganta.",
+   "win": "escape",
+   "mapFile": "C:/EmberEngine/content/maps/ember/deep-ashen-forest001.json"
+  },
+  {
+   "id": "deep-ashen-ravine",
+   "index": 62,
+   "title": "Deep Ashen Forest — Garganta do Carvão",
+   "place": "Ashen Forest · Garganta do Carvão",
+   "briefing": "Um tronco cruza o leito de cinza. Cultistas guardam três brasas seladas e a passagem sob as raízes.",
+   "objective": "Atravesse o desfiladeiro e encontre o santuário.",
+   "win": "escape",
+   "mapFile": "C:/EmberEngine/content/maps/ember/deep-ashen-ravine001.json"
+  },
+  {
+   "id": "deep-ashen-root-sanctuary",
+   "index": 63,
+   "title": "Deep Ashen Forest — Santuário das Raízes",
+   "place": "Ashen Forest · Santuário das Raízes",
+   "briefing": "Uma câmara de raízes envolve o altar de carvão. Eda protege a nascente tomada pela Matriarca.",
+   "objective": "Derrote a Matriarca do Carvão.",
+   "win": "escape",
+   "mapFile": "C:/EmberEngine/content/maps/ember/deep-ashen-root-sanctuary001.json"
   }
  ],
  "locations": [
@@ -1666,7 +1696,17 @@
    ],
    "openAccess": true,
    "col": 8,
-   "row": 7
+   "row": 7,
+   "submaps": [
+    {
+     "missionId": "deep-ashen-ravine",
+     "floor": 1
+    },
+    {
+     "missionId": "deep-ashen-root-sanctuary",
+     "floor": 2
+    }
+   ]
   },
   {
    "id": "dungeon",

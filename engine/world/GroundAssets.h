@@ -56,6 +56,10 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     // tower's own floors, prisao-v01 the prison under it (its photo's vignette evened out by make_tile.py --flatten).
     {"torre-v01", "nave", "ember-torre-piso-v01", "content/ground/torre-piso-v01.png", 5.6f},
     {"prisao-v01", "nave", "ember-prisao-piso-v01", "content/ground/prisao-piso-v01.png", 5.2f},
+    // Deep Ashen Forest: charred forest litter, loose pale ash on clearings, and ash-darkened ridges.
+    {"deep-ashen-v01", "woods", "ember-deep-ashen-charred-v01", "content/ground/deep-ashen-forest-ash-tile-v01.png", 4.5f},
+    {"deep-ashen-v01", "hill", "ember-deep-ashen-slope-v01", "content/ground/deep-ashen-forest-ash-tile-v01.png", 4.5f},
+    {"deep-ashen-v01", "plains", "ember-deep-ashen-loose-ash-v01", "content/ground/deep-ashen-forest-loose-ash-tile-v01.png", 4.0f},
 };
 
 inline std::string skyMoonAsset(std::string_view phase) { return "sky/moon/" + std::string(phase) + ".tex"; }
