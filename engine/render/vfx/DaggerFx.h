@@ -9,7 +9,8 @@
 //   the cloud         3 to 5 daggers circling the body at chest height, points forward along the orbit, each rolling slowly
 //                     and bobbing, a violet glint on every point and a short arcane wake behind each blade; a faint violet
 //                     ring turning at the feet; a soft violet light on the body. The daggers on the eye's side are drawn over
-//                     the card, those on the far side behind it, so they go round the figure. Standing for as long as the
+//                     the card, those on the far half among the cards right before it (VfxDraw::behindCard: the body covers
+//                     them, since effects are otherwise drawn over every card), so they go round the figure. Standing for as long as the
 //                     rules keep them (MapStage syncDaggers): start() / move() / setCount() / end();
 //   a dagger thrown   one dagger leaves its orbit and darts at the attacker on a shallow arc, spinning on its axis, an arcane
 //                     wake behind it, and buries itself in the body: a flash with a cross glint, steel sparks, a small violet
@@ -94,8 +95,13 @@ class DaggerFx {
   void launch(glm::vec3 feet, const Target& foe, float start, float impact, bool intercept);
   glm::vec3 orbitPoint(const Cloud& c, const Slot& s, float now) const;
   glm::vec3 orbitTangent(const Cloud& c, const Slot& s, float now) const;
-  // The dagger's pieces at `m` (its guard at the origin, the point up +y), `k` its size, `fade` darkening it away.
-  void dagger(const glm::mat4& m, float k, float fade);
+  // The dagger's pieces at `m` (its guard at the origin, the point up +y), `k` its size, `fade` darkening it away; `behind`:
+  // on the orbit's far half, into back_ (drawn behind the body's card).
+  void dagger(const glm::mat4& m, float k, float fade, bool behind = false);
+  // The pieces gathered in these lists as draws (one per piece, then the streaks); behindAt: drawn among the cards, right
+  // before the card standing there (VfxDraw::behindCard).
+  void emit(VfxFrame& frame, float now, glm::vec3 sight, std::vector<VfxInstance>& streaks, std::vector<VfxInstance>* pieces[5],
+            const glm::vec3* behindAt);
   void buildCloud(Cloud& c, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   void buildThrow(const Throw& t, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   void buildBurst(const Burst& b, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
@@ -108,6 +114,9 @@ class DaggerFx {
   uint32_t quadFirst_ = 0, discFirst_ = 0, bladeFirst_ = 0, tipFirst_ = 0, guardFirst_ = 0, gripFirst_ = 0, pommelFirst_ = 0;
   uint32_t quadCount_ = 0, discCount_ = 0, bladeCount_ = 0, tipCount_ = 0, guardCount_ = 0, gripCount_ = 0, pommelCount_ = 0;
   std::vector<VfxInstance> streaks_, blades_, tips_, guards_, grips_, pommels_;
+  // A cloud's daggers on the far half of the orbit (the user, 2026-10-22: "only the top of the dagger circle should go behind
+  // him"), emitted per cloud behind its body's card.
+  std::vector<VfxInstance> backStreaks_, backBlades_, backTips_, backGuards_, backGrips_, backPommels_;
 };
 
 }  // namespace ember

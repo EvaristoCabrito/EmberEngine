@@ -2170,11 +2170,44 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       }
     }
     if (!sprites_.empty()) {
-      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spritePipeline_);
       const SpritePush spritePush{viewProjection, camera_.right, spriteSamplerIndex_, bufferAddress(context_, frame.sprites),
                                   bufferAddress(context_, frame.meshFrame), camera_.forward, cardLean_ ? 1u : 0u};
+      // The cards back to front (MapStage sorts them by depth along the view); an effect circling a body (behindCard) is drawn
+      // between them, right before the card standing where it circles: that body and the nearer cards cover it.
+      auto cardKey = [&](glm::vec3 p) { return glm::dot(p - camera_.position, camera_.forward); };
+      std::vector<std::pair<float, uint32_t>> behind;
+      for (uint32_t i = 0; i < vfxDraws_.size(); ++i)
+        if (vfxDraws_[i].behindCard) behind.push_back({cardKey(vfxDraws_[i].cardAt), i});
+      std::stable_sort(behind.begin(), behind.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
+      auto drawCards = [&](uint32_t from, uint32_t to) {
+        if (to <= from) return;
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spritePipeline_);
+        SpritePush part = spritePush;
+        part.instances += static_cast<VkDeviceAddress>(from) * sizeof(SpriteInstance);
+        vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(part), &part);
+        vkCmdDraw(cmd, 6, to - from, 0, 0);
+      };
+      constexpr float kCardSlack = 0.25f;  // the body's own card stands at its feet, give or take its placement
+      uint32_t from = 0;
+      for (size_t g = 0; g < behind.size();) {
+        const float key = behind[g].first;
+        uint32_t to = from;
+        while (to < sprites_.size() && cardKey(sprites_[to].origin) > key + kCardSlack) ++to;
+        drawCards(from, to);
+        from = to;
+        VkPipeline bound = VK_NULL_HANDLE;
+        for (; g < behind.size() && behind[g].first >= key - 1e-4f; ++g) {
+          const VfxDraw& d = vfxDraws_[behind[g].second];
+          const VkPipeline pipeline = vfxPipelines_[d.depthTest ? 1 : 0];
+          if (pipeline != bound) vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, bound = pipeline);
+          const VfxPush push{bufferAddress(context_, frame.vfxVertices), bufferAddress(context_, frame.vfxInstances), bufferAddress(context_, frame.vfxDraws),
+                             bufferAddress(context_, frame.meshFrame), behind[g].second, effectBrightness_, spriteSamplerIndex_, 0};
+          vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+          vkCmdDraw(cmd, d.gpu.vertexCount, d.gpu.firstInstance == 0xFFFFFFFFu ? 1u : d.instances, 0, 0);
+        }
+      }
+      drawCards(from, static_cast<uint32_t>(sprites_.size()));
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(spritePush), &spritePush);
-      vkCmdDraw(cmd, 6, static_cast<uint32_t>(sprites_.size()), 0, 0);
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spriteDepthPipeline_);
       if (effects) {  // the units' cards later, after the effects
         SpritePush depthPush = spritePush;
@@ -2233,7 +2266,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     VkPipeline bound = VK_NULL_HANDLE;
     for (uint32_t i = 0; i < vfxDraws_.size(); ++i) {
       const VfxDraw& d = vfxDraws_[i];
-      if (d.underCards) continue;  // drawn with the ground
+      if (d.underCards || d.behindCard) continue;  // drawn with the ground / among the cards
       const VkPipeline pipeline = vfxPipelines_[d.depthTest ? 1 : 0];
       if (pipeline != bound) vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, bound = pipeline);
       const VfxPush push{bufferAddress(context_, frame.vfxVertices), bufferAddress(context_, frame.vfxInstances), bufferAddress(context_, frame.vfxDraws),

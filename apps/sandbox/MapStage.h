@@ -3835,8 +3835,22 @@ class MapStage final : public Stage {
     if (!battle_ || !scene_) return;
     const std::optional<e2::BattleHex> hex = spellMode_.empty() ? pickWalk(w, h, mx, my) : pickAt(w, h, mx, my);
     if (busy()) return;  // a walk, a strike or an enemy's turn is playing
+    // The left click is also Cancelar (the user, 2026-10-22: "I will just left click"): while a spell / potion is aimed, a strike
+    // is staged or Atacar / Mão Secundária is open, a click on anything that is not a valid aim / target puts the action away,
+    // exactly as the bar's Cancelar does, and does nothing else (no walk, no other unit picked). A walk is never taken back here.
     if (!spellMode_.empty()) {
-      if (const std::optional<e2::BattleHex> aim = aimPickAt(w, h, mx, my); aim && myTurn()) aimSpell(*aim);
+      if (!myTurn()) return;
+      const std::optional<e2::BattleHex> aim = aimPickAt(w, h, mx, my);
+      if (!aim || !aimValid(static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), *aim)) return cancelAction();
+      aimSpell(*aim);
+      return;
+    }
+    if (myTurn() && (pendingFoe_ >= 0 || attackMode_ || offHandMode_)) {
+      const std::optional<e2::BattleHex> at = pickAt(w, h, mx, my);  // bodies first: a foe's card wins over the ground
+      const int foe = at ? sceneUnitOf(battle_->unitAt(at->x, at->y)) : -1;
+      if (foe < 0 || std::none_of(targets_.begin(), targets_.end(), [&](const auto& t) { return t.first == foe; })) return cancelAction();
+      pendingFoe_ = foe;  // a marked foe: the strike is staged (or moved onto it), the panel asks
+      tip_.clear();
       return;
     }
     pendingFoe_ = -1;  // a staged strike is dropped by a click anywhere but on a foe (Engine2 handleCell)
@@ -3879,6 +3893,15 @@ class MapStage final : public Stage {
     if (ui >= 0 && ui != selected_ && unitCard_[static_cast<size_t>(ui)].drawn && battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(ui)])].alive)
       return select(ui);
     letGo();
+  }
+
+  // Cancelar on an action being aimed (the bar's button and the left click): the attack / spell aim is put away.
+  void cancelAction() {
+    spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
+    spellArmed_.reset(), pendingFoe_ = -1;
+    attackMode_ = false;
+    offHandMode_ = false;
+    refreshReach();
   }
 
   void select(int ui) {
@@ -5768,8 +5791,8 @@ class MapStage final : public Stage {
       const std::optional<e2::BattleHex> picked = spellMode_.empty() ? pickAt(w, h, s->x, s->y) : aimPickAt(w, h, s->x, s->y);
       tip_.clear();
       clickAt(w, h, s->x, s->y);
-      return logInfo("battle script: click {} {}: picked {}, spell '{}' armed {}{}, playing {}{}", at.x, at.y,
-                     picked ? std::format("{},{}", picked->x, picked->y) : "nothing", spellMode_,
+      return logInfo("battle script: click {} {}: picked {}, attack {}, strike staged {}, spell '{}' armed {}{}, playing {}{}", at.x, at.y,
+                     picked ? std::format("{},{}", picked->x, picked->y) : "nothing", attackMode_ ? "open" : "closed", pendingFoe_ >= 0 ? "yes" : "no", spellMode_,
                      spellArmed_ ? std::format("{},{}", spellArmed_->x, spellArmed_->y) : "no", spellArmed_ ? std::format(" ({} hexes in its area)", aimArea(static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), *spellArmed_).size()) : "",
                      exchange_ ? "yes" : "no", tip_.empty() ? "" : " - " + tip_);
     }
@@ -7826,15 +7849,8 @@ class MapStage final : public Stage {
     const bool aiming = !spellMode_.empty() || attackMode_ || offHandMode_ || pendingFoe_ >= 0;
     const bool canUndo = actor && !undo_.empty() && undo_.back().unit == static_cast<size_t>(selected_) && undo_.back().acted == actor->acted;
     if (emberButton("##cancel", "Cancelar", false, mine && (aiming || canUndo))) {
-      if (aiming) {
-        spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
-        spellArmed_.reset(), pendingFoe_ = -1;
-        attackMode_ = false;
-        offHandMode_ = false;
-        refreshReach();
-      } else {
-        undoMove();
-      }
+      if (aiming) cancelAction();
+      else undoMove();
     }
     // Fugir combate (Engine2 GameApp "fleeable" + engine canAttemptFlee / attemptFlee): a random encounter only, by the hero whose turn it
     // is once any hex of its body is on the battlefield's edge; the roll is 60 + DEX / 3 % (DEX with the affinity bonus).

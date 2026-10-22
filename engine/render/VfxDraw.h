@@ -82,6 +82,10 @@ struct VfxDraw {
   VfxBlend blend = VfxBlend::Additive;
   bool depthTest = true;
   bool underCards = false;  // lies on the ground under the characters: drawn with the ground, before the cards (a sigil on the floor)
+  // The far half of something circling a body (Nuvem de Adagas): drawn among the cards, right before the card standing at
+  // cardAt, so that body covers it and the cards farther away stay under it (the user, 2026-10-22).
+  bool behindCard = false;
+  glm::vec3 cardAt{0.0f};
 };
 
 // One frame's effect geometry and draws.

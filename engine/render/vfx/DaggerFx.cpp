@@ -266,13 +266,52 @@ glm::vec3 DaggerFx::orbitTangent(const Cloud& c, const Slot& s, float now) const
   return glm::normalize(glm::vec3(-std::sin(a), 0.0f, std::cos(a)));
 }
 
-void DaggerFx::dagger(const glm::mat4& m, float k, float fade) {
+void DaggerFx::dagger(const glm::mat4& m, float k, float fade, bool behind) {
   const glm::mat4 base = m * glm::scale(glm::mat4(1.0f), glm::vec3(k));
-  blades_.push_back(lit(base * glm::translate(glm::mat4(1.0f), {0.0f, 0.125f, 0.0f}), kSteelLit * fade));
-  tips_.push_back(lit(base * glm::translate(glm::mat4(1.0f), {0.0f, 0.245f, 0.0f}), kSteelLit * fade));
-  guards_.push_back(lit(base, kBronze * fade));
-  grips_.push_back(lit(base * glm::translate(glm::mat4(1.0f), {0.0f, -0.06f, 0.0f}), kGrip * fade));
-  pommels_.push_back(lit(base * glm::translate(glm::mat4(1.0f), {0.0f, -0.122f, 0.0f}), kBronze * fade));
+  (behind ? backBlades_ : blades_).push_back(lit(base * glm::translate(glm::mat4(1.0f), {0.0f, 0.125f, 0.0f}), kSteelLit * fade));
+  (behind ? backTips_ : tips_).push_back(lit(base * glm::translate(glm::mat4(1.0f), {0.0f, 0.245f, 0.0f}), kSteelLit * fade));
+  (behind ? backGuards_ : guards_).push_back(lit(base, kBronze * fade));
+  (behind ? backGrips_ : grips_).push_back(lit(base * glm::translate(glm::mat4(1.0f), {0.0f, -0.06f, 0.0f}), kGrip * fade));
+  (behind ? backPommels_ : pommels_).push_back(lit(base * glm::translate(glm::mat4(1.0f), {0.0f, -0.122f, 0.0f}), kBronze * fade));
+}
+
+void DaggerFx::emit(VfxFrame& frame, float now, glm::vec3 sight, std::vector<VfxInstance>& streaks, std::vector<VfxInstance>* pieces[5],
+                    const glm::vec3* behindAt) {
+  // The lit pieces, one draw each; then the arcane light over them.
+  const uint32_t firsts[5] = {bladeFirst_, tipFirst_, guardFirst_, gripFirst_, pommelFirst_};
+  const uint32_t counts[5] = {bladeCount_, tipCount_, guardCount_, gripCount_, pommelCount_};
+  const float roughness[5] = {0.28f, 0.28f, 0.45f, 0.9f, 0.45f}, metal[5] = {0.85f, 0.85f, 0.7f, 0.0f, 0.7f};
+  for (int i = 0; i < 5; ++i) {
+    std::vector<VfxInstance>& list = *pieces[i];
+    if (list.empty()) continue;
+    const uint32_t first = static_cast<uint32_t>(frame.instances.size());
+    frame.instances.insert(frame.instances.end(), list.begin(), list.end());
+    VfxDraw d;
+    d.gpu.model = glm::mat4(1.0f);
+    d.gpu.params0 = {roughness[i], metal[i], 0.0f, 0.0f};
+    d.gpu.params1 = glm::vec4(0.0f);
+    d.gpu.color = glm::vec4(1.0f);
+    d.gpu.firstVertex = firsts[i];
+    d.gpu.vertexCount = counts[i];
+    d.gpu.firstInstance = first;
+    d.gpu.material = static_cast<uint32_t>(VfxMaterial::Standard);
+    d.gpu.sightAt = sight;
+    d.instances = static_cast<uint32_t>(list.size());
+    d.blend = VfxBlend::Alpha;
+    d.depthTest = true;
+    if (behindAt) d.behindCard = true, d.cardAt = *behindAt;
+    frame.draws.push_back(d);
+    list.clear();
+  }
+  if (!streaks.empty()) {
+    const uint32_t first = static_cast<uint32_t>(frame.instances.size());
+    frame.instances.insert(frame.instances.end(), streaks.begin(), streaks.end());
+    const Draw draw{frame};
+    draw(quadFirst_, quadCount_, glm::mat4(1.0f), kModeStreak, now, 1.0f, 1.0f, glm::vec3(1.0f), 1.0f, glm::vec4(kVioletCore, 0.0f), sight, VfxBlend::Additive,
+         first, static_cast<uint32_t>(streaks.size()));
+    if (behindAt) frame.draws.back().behindCard = true, frame.draws.back().cardAt = *behindAt;
+    streaks.clear();
+  }
 }
 
 void DaggerFx::build(float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) {
@@ -291,47 +330,15 @@ void DaggerFx::build(float now, const Camera& camera, VfxFrame& frame, std::vect
   gripFirst_ = frame.addVertices(gripGeometry()), gripCount_ = static_cast<uint32_t>(gripGeometry().size());
   pommelFirst_ = frame.addVertices(pommelGeometry()), pommelCount_ = static_cast<uint32_t>(pommelGeometry().size());
   streaks_.clear(), blades_.clear(), tips_.clear(), guards_.clear(), grips_.clear(), pommels_.clear();
+  backStreaks_.clear(), backBlades_.clear(), backTips_.clear(), backGuards_.clear(), backGrips_.clear(), backPommels_.clear();
   glm::vec3 sight = !clouds_.empty() ? clouds_.front().feet : !throws_.empty() ? throws_.front().to : bursts_.front().feet;
   for (Cloud& c : clouds_) buildCloud(c, now, camera, frame, lights);
   for (const Throw& t : throws_)
     if (now >= t.start) buildThrow(t, now, camera, frame, lights);
   for (const Burst& b : bursts_)
     if (now >= b.impact - 0.5f) buildBurst(b, now, camera, frame, lights);
-  // The lit pieces, one draw each; then the arcane light over them.
-  struct Lit {
-    const std::vector<VfxInstance>* list;
-    uint32_t first, count;
-    float roughness, metal;
-  };
-  const Lit pieces[] = {{&blades_, bladeFirst_, bladeCount_, 0.28f, 0.85f},  {&tips_, tipFirst_, tipCount_, 0.28f, 0.85f},
-                        {&guards_, guardFirst_, guardCount_, 0.45f, 0.7f},   {&grips_, gripFirst_, gripCount_, 0.9f, 0.0f},
-                        {&pommels_, pommelFirst_, pommelCount_, 0.45f, 0.7f}};
-  for (const Lit& l : pieces) {
-    if (l.list->empty()) continue;
-    const uint32_t first = static_cast<uint32_t>(frame.instances.size());
-    frame.instances.insert(frame.instances.end(), l.list->begin(), l.list->end());
-    VfxDraw d;
-    d.gpu.model = glm::mat4(1.0f);
-    d.gpu.params0 = {l.roughness, l.metal, 0.0f, 0.0f};
-    d.gpu.params1 = glm::vec4(0.0f);
-    d.gpu.color = glm::vec4(1.0f);
-    d.gpu.firstVertex = l.first;
-    d.gpu.vertexCount = l.count;
-    d.gpu.firstInstance = first;
-    d.gpu.material = static_cast<uint32_t>(VfxMaterial::Standard);
-    d.gpu.sightAt = sight;
-    d.instances = static_cast<uint32_t>(l.list->size());
-    d.blend = VfxBlend::Alpha;
-    d.depthTest = true;
-    frame.draws.push_back(d);
-  }
-  if (!streaks_.empty()) {
-    const uint32_t first = static_cast<uint32_t>(frame.instances.size());
-    frame.instances.insert(frame.instances.end(), streaks_.begin(), streaks_.end());
-    const Draw draw{frame};
-    draw(quadFirst_, quadCount_, glm::mat4(1.0f), kModeStreak, now, 1.0f, 1.0f, glm::vec3(1.0f), 1.0f, glm::vec4(kVioletCore, 0.0f), sight, VfxBlend::Additive,
-         first, static_cast<uint32_t>(streaks_.size()));
-  }
+  std::vector<VfxInstance>* pieces[5] = {&blades_, &tips_, &guards_, &grips_, &pommels_};
+  emit(frame, now, sight, streaks_, pieces, nullptr);
 }
 
 // --- The cloud ------------------------------------------------------------------------------------------------------------
@@ -371,6 +378,10 @@ void DaggerFx::buildCloud(Cloud& c, float now, const Camera& camera, VfxFrame& f
     ++drawn;
     const glm::vec3 p = orbitPoint(c, s, now), tangent = orbitTangent(c, s, now);
     const glm::vec3 wp = wrapped(p, c.feet, eye);
+    // The orbit's far half (away from the eye: the top of the circle on screen) goes behind the body's card; the near half
+    // stays over it (the user, 2026-10-22).
+    const bool behind = glm::dot(flatDir(p - c.feet, glm::vec3(0.0f)), flatDir(eye - c.feet, glm::vec3(0.0f))) < 0.0f;
+    std::vector<VfxInstance>& glow = behind ? backStreaks_ : streaks_;
     // The dagger: point along the orbit, nosed a little outward and up, rolling slowly on its axis; it grows out of its flash
     // as it materializes and shrinks as it dissolves.
     const glm::vec3 outward = flatDir(p - c.feet, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -378,24 +389,29 @@ void DaggerFx::buildCloud(Cloud& c, float now, const Camera& camera, VfxFrame& f
     const float roll = now * 1.9f + s.angle * 3.0f;
     const glm::mat4 m = glm::translate(glm::mat4(1.0f), wp) * alignY(axis) * glm::rotate(glm::mat4(1.0f), roll, kUp) *
                         glm::scale(glm::mat4(1.0f), glm::vec3(0.3f + 0.7f * life));
-    dagger(m, k, life);
+    dagger(m, k, life, behind);
     // the violet glint on the point and the wake behind the blade
     const glm::vec3 point = wp + axis * (0.31f * k * (0.3f + 0.7f * life));
-    streaks_.push_back(streak(point, glm::vec3(0.0f), (0.06f + 0.02f * pulse) * k, 0.55f * life, kVioletCore, 2.4f));
-    streaks_.push_back(streak(wp - tangent * (0.16f * k), -tangent * (0.3f * k), 0.028f * k, 0.3f * life, kViolet, 2.0f));
+    glow.push_back(streak(point, glm::vec3(0.0f), (0.06f + 0.02f * pulse) * k, 0.55f * life, kVioletCore, 2.4f));
+    glow.push_back(streak(wp - tangent * (0.16f * k), -tangent * (0.3f * k), 0.028f * k, 0.3f * life, kViolet, 2.0f));
     // materializing: a flash; dissolving: motes scattering
     if (age < kAppear) {
       const float f = 1.0f - ease(0.0f, kAppear, age);
-      streaks_.push_back(streak(wp, glm::vec3(0.0f), 0.34f * k * (0.5f + 0.5f * f), 0.9f * f, kVioletCore, 2.6f));
+      glow.push_back(streak(wp, glm::vec3(0.0f), 0.34f * k * (0.5f + 0.5f * f), 0.9f * f, kVioletCore, 2.6f));
     }
     if (s.gone >= 0.0f) {
       const float t = now - s.gone;
       for (int j = 0; j < 7; ++j) {
         const uint32_t n = static_cast<uint32_t>(j) + 40u;
         const glm::vec3 d = sphereDir(hash01(c.seed, n, 1), hash01(c.seed, n, 2));
-        streaks_.push_back(streak(wp + d * (t * 1.3f * k), glm::vec3(0.0f), 0.04f * k, 0.7f * (1.0f - ease(0.0f, kDissolve, t)), kViolet, 2.2f));
+        glow.push_back(streak(wp + d * (t * 1.3f * k), glm::vec3(0.0f), 0.04f * k, 0.7f * (1.0f - ease(0.0f, kDissolve, t)), kViolet, 2.2f));
       }
     }
+  }
+  // This cloud's far half: among the cards, right before its body's card.
+  {
+    std::vector<VfxInstance>* back[5] = {&backBlades_, &backTips_, &backGuards_, &backGrips_, &backPommels_};
+    emit(frame, now, c.feet, backStreaks_, back, &c.feet);
   }
   if (drawn == 0 && env <= 0.0f) return;
   // The ring at the feet, turning; the light on the body.
