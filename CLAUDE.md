@@ -1064,7 +1064,12 @@ them as base and texture ... carefully designed detailed gothic walls to be used
 - Verified: debug + validation capture exit 0, 0 validation lines on the test draft (`make_gothic_bridge_test.py`, both parapet rows + an L,
   82 of 82 pieces built); `Cooker check-architecture` on Engine2's reference cases unchanged; release captures `captures/gothic/011-014`
   (deck face, corner, void face, close-up). Not verified: the look in the window (the user judges); the editor's buttons by hand; cost (82
-  pieces on the bridge, not measured). thebridge023 unchanged (cards); no campaign map uses the kit.
+  pieces on the bridge, not measured). thebridge023 unchanged (cards).
+- **A Ponte de Pedra 024 (the user: "Faz a thebridge024 com os parapeitos 3D (kit gótico) no lugar das cartas, a 023 fica como está"):**
+  `content/maps/ember/thebridge024.json` by `tools/scripts/maps/make_bridge_gothic.py` (= 023, the 16 parapet cards replaced by 80 kit pieces
+  over both outer rows: pier / wall / niche / wall every four hexes; the campaign plays the highest serial, so 024 is live; 023 untouched).
+  `deckClip` now also ends the deck at a 3D parapet's outer face (`ArchPiece::deckHalf`, the ground runs under the wall), so "the tiles
+  finish right at the walls" still holds without the cards. Test files `build/engine2-test/*/thebridge024.*`; captures `captures/gothic/020-024`.
 
 ## Next
 

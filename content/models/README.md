@@ -370,8 +370,9 @@ solid parts repeat every 1.59 units, world-aligned). Pack: `build/meshes/archite
 `architecture-20261021-before-gothic.pak`). Map Editor: 3D Walls → "MURALHA GÓTICA" (Parede gótica / Nicho com guardião /
 Pilastra), with Traçar parede / Fechar sala. Test draft: `tools/scripts/maps/make_gothic_bridge_test.py` (thebridge023 with the
 parapet cards swapped for the kit on both rows, pier / window / guardian / window every four hexes, plus an L inside the deck) →
-`build/engine2-test/*/thebridge-gothic.*`; captures in `captures/gothic/` (local). No campaign map uses the kit yet: thebridge023
-keeps its cards (a 024 with the 3D parapets only when the user asks).
+`build/engine2-test/*/thebridge-gothic.*`; captures in `captures/gothic/` (local). **In the campaign: `thebridge024.json`**
+(`tools/scripts/maps/make_bridge_gothic.py`: 023 with its 16 parapet cards replaced by 80 kit pieces over both outer rows, pier / wall /
+niche / wall every four hexes; the deck ends at the walls' outer faces, MapStage `deckClip` + `ArchPiece::deckHalf`). 023 keeps its cards.
 
 ## The user's photographed materials (2026-10-21; `Attachments/watchtower`)
 

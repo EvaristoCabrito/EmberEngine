@@ -1916,6 +1916,7 @@ class MapStage final : public Stage {
     float lightBehind = 0.0f;                        // a wall's torch: how far its light sits in front of the wall (it lights that side only)
     bool hasSkirt = false;                           // an outer-ring piece: its shadow-only copy stands `skirt` outside it
     glm::vec2 skirt{0.0f};
+    float deckHalf = 0.0f;                           // a parapet piece (the gothic kit): half its thickness, where the bridge's deck ends (deckClip)
   };
   // The animated door (ember-arch-watchtower-door): its leaves (own meshes, swung about their hinges) and each door's state.
   struct DoorLeaf {
@@ -2198,6 +2199,7 @@ class MapStage final : public Stage {
       piece.groundHard = static_cast<float>(e2::groundHeightAt(*board_, e2::EdgeStyle::Hard, gx, gz));
       piece.half = std::max({std::abs(minX), std::abs(maxX), std::abs(minZ), std::abs(maxZ)});
       piece.top = maxY;
+      if (def->emberStyle.starts_with("gothic-")) piece.deckHalf = static_cast<float>(0.32 * def->wallThicknessScale * 0.5);
       piece.blocks = def->model3d == "wall" || def->model3d == "door" || def->model3d == "secretDoor";
       // The room's surfaces for its light probes (Luz das janelas, startProbeBake): the piece as drawn, on its ground. (A door's
       // leaves are left out: the light passes as through an open door.)
@@ -9129,6 +9131,16 @@ class MapStage final : public Stage {
       if (onSouth) clip.w = std::min(clip.w, c.z + c.nudge);
       clip.x = std::min(clip.x, c.x - c.w * 0.5f);
       clip.z = std::max(clip.z, c.x + c.w * 0.5f);
+    }
+    // The 3D parapets (the gothic kit, thebridge024): the deck ends at the wall's outer face, the ground runs under the wall.
+    for (const ArchPiece& a : arch_) {
+      if (a.deckHalf <= 0.0f) continue;
+      const bool onNorth = std::abs(a.z - north) < 0.01f, onSouth = std::abs(a.z - south) < 0.01f;
+      if (!onNorth && !onSouth) continue;
+      if (onNorth) clip.y = std::max(clip.y, a.z - a.deckHalf);
+      if (onSouth) clip.w = std::min(clip.w, a.z + a.deckHalf);
+      clip.x = std::min(clip.x, a.x - a.half);
+      clip.z = std::max(clip.z, a.x + a.half);
     }
     return clip.x < clip.z ? clip : all;
   }
