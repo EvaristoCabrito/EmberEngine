@@ -392,13 +392,14 @@ class MapStage final : public Stage {
       // the photo: the dense fog over the sky, as on 2026-10-19 21:49; a painting showed through the fog). The fog itself is untouched;
       // maps without fog unchanged; the panel's Fundo still offers the painting.
       background_ = options.background >= 0 ? std::min(options.background, 4)
+                    : board_->draft().id == "estalagem"                                       ? 0
                     : fog_.has_value() && !ashenForest()                                            ? 1  // Ashen Forest: its painting, to see (the user, 2026-10-20)
                     : !scene_->backdrop.empty() && (aldeia() || scene_->environment != "indoor") ? 4
                                                                                                   : 1;
       if (!scene_->backdrop.empty()) backdropFit_ = loadBackdropFit(scene_->backdrop);
       if (!backdropFit_.ground.empty()) ground_.requestTexture(e2::backdropAsset(backdropFit_.ground));
       if (!board_->draft().emberFloor.empty()) ground_.requestTexture(e2::backdropAsset(board_->draft().emberFloor));
-      // The map's own panoramas (backdrop-fit.json "panoramas" by map id; the panel's Fundo after its five entries): aldeia only.
+      // The map's own panoramas (backdrop-fit.json "panoramas" by map id; the panel's Fundo after its five entries).
       panoramas_ = loadPanoramas(board_->draft().id);
       for (const std::string& file : panoramas_) {
         ground_.requestTexture(e2::backdropAsset(file));
@@ -413,6 +414,17 @@ class MapStage final : public Stage {
       if (options.atmos < 0 && kWindowLightMaps.contains(board_->draft().id)) atmosChoice_ = 0;
       if (scene_->environment != "indoor")  // the map's night, or any night of the 24 h cycle
         for (const char* phase : e2::kMoonPhases) ground_.requestTexture(e2::skyMoonAsset(phase));  // 0.1 MB each
+    }
+    if (!scene_) {
+      // Random encounters can be board-only maps with no scene file. Load their map-specific panoramas anyway.
+      panoramas_ = loadPanoramas(board_->draft().id);
+      for (const std::string& file : panoramas_) {
+        ground_.requestTexture(e2::backdropAsset(file));
+        panoramaFits_.push_back(loadBackdropFit(file));
+        if (!panoramaFits_.back().ground.empty()) ground_.requestTexture(e2::backdropAsset(panoramaFits_.back().ground));
+      }
+      if (options.background >= 0) background_ = std::min(options.background, 4);
+      else if (!panoramas_.empty()) background_ = 4 + static_cast<int>(panoramas_.size());
     }
   }
 
@@ -786,7 +798,7 @@ class MapStage final : public Stage {
     }
     renderer.setSunShadowBounds(boardCenter_, boardRadius_);
     renderer.setLightingLayers(layers_);
-    if (windowLight()) {
+    if (windowLight() && board_->draft().id != "estalagem") {
       // Indoors the sky is never drawn, whatever lights the room (the user's spec, 2026-10-21): black beyond the walls, except the map's
       // own ground image (MapDraft::emberFloor; the watchtower's background, the user: "usar ele de imagem de GROUND") flat at the
       // board's base (mode 7), the panel's "Chão do vão".
@@ -804,10 +816,10 @@ class MapStage final : public Stage {
     } else {
       uint32_t bg = kNoTextureIndex;  // the sky (or the clear colour)
       if (background_ == 2) bg = Renderer::kBlackBackground;
-      const bool painting = background_ != 1 && background_ != 2 && scene_ && !scene_->backdrop.empty();
-      if (painting) bg = ground_.textureIndex(e2::backdropAsset(scene_->backdrop));
       const int panorama = background_ - 5;  // 5.. = the map's own panoramas, aligned to the sky like 4, keeping their own sky
       const bool isPanorama = panorama >= 0 && panorama < static_cast<int>(panoramas_.size());
+      const bool painting = isPanorama || (background_ != 1 && background_ != 2 && scene_ && !scene_->backdrop.empty());
+      if (painting && !isPanorama) bg = ground_.textureIndex(e2::backdropAsset(scene_->backdrop));
       if (isPanorama) bg = ground_.textureIndex(e2::backdropAsset(panoramas_[static_cast<size_t>(panorama)]));
       if (painting && background_ >= 4) {
         // The painting aligned to the sky (backdrop-fit.json): its own sun glow turned under the real key light.

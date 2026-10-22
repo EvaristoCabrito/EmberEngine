@@ -23,7 +23,8 @@ inline std::string backdropAsset(std::string_view file) { return "backdrop/" + s
 // EmberEngine's own painted backdrops (content/backdrops, the user's art; cooked beside Engine2's): the file for a map's
 // draft id, used in place of the scene's own; "" = none.
 inline std::string emberBackdrop(std::string_view draftId) {
-  static const std::pair<std::string_view, std::string_view> kOwn[] = {{"ashen-forest-crossing", "ashen-forest-bg-v03.jpg"}};
+  static const std::pair<std::string_view, std::string_view> kOwn[] = {
+      {"ashen-forest-crossing", "ashen-forest-bg-v03.jpg"}, {"estalagem", "inn-panorama-v01.jpg"}};
   for (const auto& [id, file] : kOwn)
     if (draftId == id) return std::string(file);
   return {};
