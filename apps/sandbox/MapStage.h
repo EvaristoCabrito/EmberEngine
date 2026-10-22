@@ -3500,6 +3500,15 @@ class MapStage final : public Stage {
     battle_ = e2::Battle::load(path);
     loadSounds(path);
     if (!battle_) return;
+    // Each cell's real elevation, for the archers' high ground (Battle.h kHighGroundHit; clearShot); before blockEmberProps,
+    // which keeps copies of door cells.
+    for (int y = 0; y < battle_->rows(); ++y)
+      for (int x = 0; x < battle_->cols(); ++x)
+        if (e2::inBoard(board_->layout(), x, y)) {
+          e2::BattleCell c = battle_->cell(x, y);
+          c.level = board_->cell(x, y).level;
+          battle_->setCell(y * battle_->cols() + x, c);
+        }
     blockEmberProps();
     explores_ = battle_->explore();
     // Every map with fog of war is explored freely until the party sees an enemy (the user, 2026-10-17), like an explore mission.
@@ -6003,6 +6012,25 @@ class MapStage final : public Stage {
         return "";
       };
       return logInfo("battle script: dagger {} -> {}: the cloud throws", p[1], p[2]);
+    }
+    if (p[0] == "highshot" && p.size() > 2) {
+      // "highshot:<archer>:<target>": the archers' high ground (Battle.h kHighGroundHit) from where both stand: line of fire, hit %
+      // and damage, then the same with the board's elevation ignored (every cell's level 0)
+      const int fi = sceneUnitNamed(p[2]);
+      if (fi < 0) return fail("no such target");
+      const size_t tb = static_cast<size_t>(unitBattle_[static_cast<size_t>(fi)]);
+      const e2::BattleUnit &a = battle_->units()[cb], &t = battle_->units()[tb];
+      e2::Battle flat = *battle_;
+      for (int i = 0; i < flat.cols() * flat.rows(); ++i) {
+        e2::BattleCell c = flat.cell(i % flat.cols(), i / flat.cols());
+        c.level = 0;
+        flat.setCell(i, c);
+      }
+      const e2::Forecast real = e2::forecast(*battle_, cb, {a.x, a.y}, tb), bare = e2::forecast(flat, cb, {a.x, a.y}, tb);
+      return logInfo("battle script: highshot {} ({},{} level {}) -> {} ({},{} level {}): clear {} (flat {}), hit {:.2f} (flat {:.2f}), dmg {} (flat {})",
+                     a.name, a.x, a.y, battle_->cell(a.x, a.y).level, t.name, t.x, t.y, battle_->cell(t.x, t.y).level,
+                     e2::clearShot(*battle_, {a.x, a.y}, {t.x, t.y}, true), e2::clearShot(flat, {a.x, a.y}, {t.x, t.y}, true), real.hitOut,
+                     bare.hitOut, real.dmgOut, bare.dmgOut);
     }
     if (p[0] == "shoot" && p.size() > 2) {
       // "shoot:<archer>:<target>": the archer (stood 3 hexes off by a "far" step before, or where it is) shoots the target; the target's

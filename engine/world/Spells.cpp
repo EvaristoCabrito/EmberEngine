@@ -4997,7 +4997,11 @@ bool useLockpick(Battle& b, size_t unit, Mulberry32& rng, std::vector<BattleEffe
   Battle::Lock& lock = b.locks()[static_cast<size_t>(li)];
   const std::shared_ptr<const LootTables> tables = LootTables::shared();
   lock.open = true;
-  for (const auto& [index, cell] : lock.after) b.setCell(index, cell);
+  for (const auto& [index, cell] : lock.after) {
+    BattleCell opened = cell;
+    opened.level = b.cell(index % b.cols(), index / b.cols()).level;  // the board's elevation stays (set by the stage)
+    b.setCell(index, opened);
+  }
   u.lockpick -= 1;
   if (lock.kind == "chest" && tables) {
     // CHEST_LOOT's three tiers: the same pool and range, climbing odds and gear headroom

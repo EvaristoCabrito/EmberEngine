@@ -71,11 +71,15 @@ const BattleCell& cellByIndex(const Battle& b, BattleHex p) {
 // pathfinding.ts shotBlocker == null.
 bool clearShot(const Battle& b, BattleHex from, BattleHex to, bool arrow, bool decorations) {
   const bool fromHigh = heightOf(cellByIndex(b, from), decorations) != 0;
+  const double fromLevel = cellByIndex(b, from).level;
   const std::vector<BattleHex> line = hexLine(from, to);
   for (size_t i = 1; i < line.size(); ++i) {
     const BattleHex p = line[i];
     const bool end = i == line.size() - 1;
     const BattleCell& t = cellByIndex(b, p);
+    // An arrow from higher ground (the board's real elevation) flies over whatever stands on a lower cell: tall terrain, a
+    // decoration, a barricade (the user, 2026-10-22: "o arqueiro em terreno mais alto atira por cima do que está no caminho").
+    if (arrow && !end && t.level < fromLevel) continue;
     if (t.terrain == "barricade") {
       if (end) return false;
       const bool shooterBehind = Battle::distance(from, p) <= 1, targetBehind = Battle::distance(to, p) <= 1;
@@ -132,6 +136,14 @@ std::pair<double, double> terrainBonus(const Battle& b, const Fighter& a, const 
   if (b.units()[a.unit].maxRange > 1 && def.cover) defence += def.cover;
   const double attack = att.height ? jsRound((a.magicBlows() ? a.mag : a.atk) * 0.1) : att.atk;
   return {attack, defence};
+}
+
+// An archer's blow from higher ground (Battle.h kHighGroundHit / kHighGroundAtkPct): a bow or crossbow (not the off-hand) on a
+// cell whose real elevation is above the defender's.
+bool archerHighGround(const Battle& b, const Fighter& a, const Fighter& d, bool offHand) {
+  if (offHand || !b.units()[a.unit].combat.arrow || a.magicBlows()) return false;
+  if (!b.inBounds(a.x, a.y) || !b.inBounds(d.x, d.y)) return false;
+  return b.cell(a.x, a.y).level > b.cell(d.x, d.y).level;
 }
 
 // combat.ts isRearAttack: an adjacent attacker on one of the two hexes behind the defender's heading.
@@ -212,8 +224,10 @@ Preview previewDamage(const Battle& b, const Fighter& a, const Fighter& d, const
   } else if (p.hasWeapon) {
     weapon = p.dice * (p.faces + 1.0) / 2 * damageMul + p.bonus + p.enh;
   }
-  const double chance = useSkill ? hitChance(a, d, accuracy, rear) : 100.0;
-  const double raw = powerOf(a) + weapon + bonusAtk - protOf(a, d) - bonusDef;
+  const bool high = archerHighGround(b, a, d, offHand);
+  const double chance = useSkill ? hitChance(a, d, accuracy + (high ? kHighGroundHit : 0), rear) : 100.0;
+  const double highAtk = high ? jsRound(a.atk * kHighGroundAtkPct / 100) : 0;
+  const double raw = powerOf(a) + weapon + bonusAtk + highAtk - protOf(a, d) - bonusDef;
   double dmg = std::max(1.0, std::floor(std::max(1.0, raw) * (offHand ? 1 : (p.classBonus ? 1.1 : 1)) * (rear ? 1.1 : 1)));
   if (!offHand && p.staff && useSkill) {
     const double staffed = dmg * (1 + p.staffBonusPct / 100);
@@ -348,8 +362,10 @@ Hit rollDamage(const Battle& b, const Fighter& a, const Fighter& d, Mulberry32& 
   if (custom) weapon = roll(custom->dice, custom->faces) * damageMul + custom->bonus;  // rollDamageCustom
   else if (p.hasWeapon) weapon = roll(p.dice, p.faces) * damageMul + p.bonus + p.enh;
   Hit h;
-  h.hitChance = useWeaponSkill ? hitChance(a, d, accuracy, rear) : 100;
-  const double raw = powerOf(a) + weapon + bonusAtk - protOf(a, d) - bonusDef;
+  const bool high = archerHighGround(b, a, d, custom != nullptr);
+  h.hitChance = useWeaponSkill ? hitChance(a, d, accuracy + (high ? kHighGroundHit : 0), rear) : 100;
+  const double highAtk = high ? jsRound(a.atk * kHighGroundAtkPct / 100) : 0;
+  const double raw = powerOf(a) + weapon + bonusAtk + highAtk - protOf(a, d) - bonusDef;
   const double classMul = !custom && p.classBonus ? 1.1 : 1;
   h.preCritDmg = static_cast<int>(std::max(1.0, std::floor(std::max(1.0, raw) * classMul * (rear ? 1.1 : 1))));
   double dmg = h.preCritDmg;

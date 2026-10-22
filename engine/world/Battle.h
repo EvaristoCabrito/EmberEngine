@@ -49,6 +49,9 @@ struct BattleCell {
     int height = 0;
     bool blocksShot = false;
   } shot;
+  // The board's real elevation here (Board Cell::level, set by the stage from its board; 0 without one). An arrow shot from a
+  // higher cell flies over whatever stands on a lower one (the user, 2026-10-22: clearShot).
+  double level = 0;
 };
 
 // The loot tables a chest rolls on (data.ts CHEST_LOOT, POTION_LOOT_WEIGHT, weightedLootPick's pool), read once from
@@ -128,6 +131,12 @@ struct QuestPickup {
 inline constexpr const char* kPotionIds[7] = {"weak", "mid", "potent", "disease", "manaSmall", "manaMid", "manaLarge"};
 // DEX counts in thirds, and only in three places (the user, 2026-10-18): hit, dodge (Combat.h hitChance) and escape (fleeChance).
 inline constexpr double kDexDivisor = 3.0;
+// High ground for archers (the user, 2026-10-22: "high ground should give archers bonus to hit chance and ATT, plus get past
+// blocked areas"): a bow / crossbow blow from a cell whose real elevation (BattleCell::level) is above the target's gets
+// +kHighGroundHit to hit (AD&D 2e's +1 on the d20) and +kHighGroundAtkPct % of its ATK (the size of the tile high-ground bonus);
+// its arrows also fly over whatever stands on lower cells (Combat.cpp clearShot).
+inline constexpr double kHighGroundHit = 5.0;
+inline constexpr double kHighGroundAtkPct = 10.0;
 
 struct BattleUnit {
   std::string id, side, name, classId, sprite, className;

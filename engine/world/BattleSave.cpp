@@ -379,7 +379,11 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
     for (const nlohmann::json& i : snap["locksOpen"])
       if (i.is_number_integer() && i.get<int>() >= 0 && static_cast<size_t>(i.get<int>()) < locks_.size()) {
         locks_[static_cast<size_t>(i.get<int>())].open = true;
-        for (const auto& [index, cell] : locks_[static_cast<size_t>(i.get<int>())].after) cells_[static_cast<size_t>(index)] = cell;
+        for (const auto& [index, cell] : locks_[static_cast<size_t>(i.get<int>())].after) {
+          const double level = cells_[static_cast<size_t>(index)].level;  // the board's elevation stays (set by the stage)
+          cells_[static_cast<size_t>(index)] = cell;
+          cells_[static_cast<size_t>(index)].level = level;
+        }
       }
   log_.clear();
   if (snap.contains("log") && snap["log"].is_array())
