@@ -747,9 +747,10 @@ class OptionsDialog {
       s.rows.push_back(toggle("##gfxshadows", tr("Sombras"), g.realShadows, !actions.gfx, &gfxChanged));
       s.rows.push_back(toggle("##gfxlights", tr("Luzes locais"), g.localLights, !actions.gfx, &gfxChanged));
       s.rows.push_back(toggle("##gfxatmo", tr("FX atmosféricos"), g.atmosphericFx, !actions.gfx, &gfxChanged));
-      s.rows.push_back(select("##gfxcast", tr("Personagens", "Characters"), prefs.characters == "leve" ? 1 : 0,
-                              {{tr("Alta", "High"), true}, {tr("Leve", "Light"), true}},
-                              [&](int v) { prefs.characters = v ? "leve" : "alta", prefsChanged = true; }));
+      s.rows.push_back(select("##gfxcast", tr("Personagens", "Characters"),
+                              prefs.characters == "alta" ? 0 : prefs.characters == "leve" ? 2 : 1,
+                              {{tr("Alta", "High"), true}, {tr("Média", "Medium"), true}, {tr("Leve", "Light"), true}},
+                              [&](int v) { prefs.characters = v == 0 ? "alta" : v == 2 ? "leve" : "media", prefsChanged = true; }));
       // Tela cheia: ember-btn ember-btn-ghost ember-btn-sm w-full py-1.5 mt-1
       s.rows.push_back(Row{36.0f, [&](ImVec2 at, float rw) {
                              ImGui::SetCursorScreenPos(at);

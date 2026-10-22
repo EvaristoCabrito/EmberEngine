@@ -1,0 +1,74 @@
+{
+ "about": "Voss's medium set (the user, 2026-10-21: \"deixar todos em ~610 px\", then \"com a opção de medium e high nas configurações de video, o padrão será medium\"): the clips framed at ~1100 px of figure in their videos, cut from the same matted frames as cut.json and brought down to 610 px (video_sprite.py scaleTo); cast, hit and death are already ~610 and have no medium copy (the game falls back to voss-veo's). Opções > Gráficos > Personagens: Média (default) draws these, Alta the full voss-veo.",
+ "set": "voss-veo-media",
+ "version": "media-v01",
+ "result": "cut-result-media.json",
+ "figureUnits": 2.687,
+ "figureNote": "each clip's median hood top to boot row, as tall as voss-final's idle (the cast-back pose's note: 2.687 units)",
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/idle",
+   "video": "Attachments/VeoVoss/Idle/VossV2Idle.mp4",
+   "first": 16,
+   "last": 120,
+   "loopMin": 48,
+   "loopMax": 100,
+   "mode": "loop",
+   "scaleTo": 610
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/voss-veo/walk-right",
+   "video": "Attachments/VeoVoss/WalkRight/Voss_walking_to_the_right_20261017230249.mp4",
+   "first": 40,
+   "last": 130,
+   "loopMin": 40,
+   "loopMax": 86,
+   "mode": "loop",
+   "scaleTo": 610
+  },
+  {
+   "clip": "move-left",
+   "pose": "walkLeft",
+   "kind": "walk",
+   "src": "build/video-cut/voss-veo/walk-left",
+   "video": "Attachments/VeoVoss/Walk Left/Character_walking_left_with_staff_20261017230240.mp4",
+   "first": 30,
+   "last": 170,
+   "loopMin": 40,
+   "loopMax": 110,
+   "mode": "loop",
+   "scaleTo": 610
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/attack",
+   "video": "Attachments/VeoVoss/CounterDistance/CounterDistanceat420sec.mp4",
+   "first": 101,
+   "last": 212,
+   "impactFrame": 162,
+   "mode": "once",
+   "scaleTo": 610
+  },
+  {
+   "clip": "counter-staff",
+   "pose": "counterStaff",
+   "label": "Contra-ataque (cajado)",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/counter-staff",
+   "video": "Attachments/VeoVoss/CounterStaff/CounterClseat4sec.mp4",
+   "first": 96,
+   "last": 220,
+   "impactFrame": 166,
+   "mode": "once",
+   "scaleTo": 610
+  }
+ ]
+}

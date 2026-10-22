@@ -15,6 +15,14 @@
    "labels": {"counterStaff": "Contra-ataque (cajado)", "hit": "Dano", "death": "Morte"},
    "packs": {"base": "field", "move": "field", "move-left": "field"},
    "strides": {"move": 1.0, "move-left": 1.0}
+  },
+  {
+   "set": "voss-veo-media",
+   "version": "media-v01",
+   "mediumOf": {"hero": "voss", "set": "voss-veo"},
+   "cut": "content/sprites/voss-veo/cut-media.json",
+   "why": "the user, 2026-10-21: \"deixar todos em ~610 px\", then \"com a opção de medium e high nas configurações de video, o padrão será medium\": idle, both walks, attack and staff counter at ~610 px of figure (like cast, hit and death); Personagens Média (default) draws them, Alta voss-veo's full resolution",
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
   }
  ],
  "clips": [

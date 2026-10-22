@@ -1,0 +1,165 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/VeoVoss/Idle/VossV2Idle.mp4",
+   "first": 16,
+   "last": 120,
+   "bootRow": 1210,
+   "bootRows": [
+    1210,
+    1210
+   ],
+   "loopFirst": 16,
+   "loopLast": 111,
+   "seamSteps": 2.36,
+   "figurePx": 1087.0,
+   "scaledTo": 610.4,
+   "frames": 96,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    367,
+    648
+   ],
+   "crop": [
+    3,
+    3,
+    361,
+    642
+   ],
+   "box": {
+    "w": 1.61665,
+    "h": 2.85447,
+    "foot": 0.01882
+   },
+   "pattern": "content/sprites/voss-veo/base-media-v01/base-{}.png"
+  },
+  "move": {
+   "video": "Attachments/VeoVoss/WalkRight/Voss_walking_to_the_right_20261017230249.mp4",
+   "first": 40,
+   "last": 130,
+   "loopFirst": 49,
+   "loopLast": 109,
+   "seamSteps": 1.88,
+   "bootRow": 1206,
+   "bodyDrift": [
+    -21,
+    14
+   ],
+   "figurePx": 1080.0,
+   "scaledTo": 610.4,
+   "frames": 61,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    344,
+    672
+   ],
+   "crop": [
+    3,
+    3,
+    340,
+    666
+   ],
+   "box": {
+    "w": 1.51517,
+    "h": 2.95987,
+    "foot": 0.04385
+   },
+   "pattern": "content/sprites/voss-veo/move-media-v01/move-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/VeoVoss/Walk Left/Character_walking_left_with_staff_20261017230240.mp4",
+   "first": 30,
+   "last": 170,
+   "loopFirst": 42,
+   "loopLast": 147,
+   "seamSteps": 1.89,
+   "bootRow": 1221,
+   "bodyDrift": [
+    -39,
+    0
+   ],
+   "figurePx": 1124.5,
+   "scaledTo": 609.6,
+   "frames": 106,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    354,
+    656
+   ],
+   "crop": [
+    0,
+    4,
+    350,
+    649
+   ],
+   "box": {
+    "w": 1.56035,
+    "h": 2.89149,
+    "foot": 0.05873
+   },
+   "pattern": "content/sprites/voss-veo/move-left-media-v01/move-left-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/VeoVoss/CounterDistance/CounterDistanceat420sec.mp4",
+   "first": 101,
+   "last": 212,
+   "bootRow": 1193,
+   "bootRows": [
+    1193,
+    1222
+   ],
+   "figurePx": 1046.5,
+   "scaledTo": 609.7,
+   "frames": 112,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    419,
+    691
+   ],
+   "crop": [
+    0,
+    3,
+    416,
+    684
+   ],
+   "box": {
+    "w": 1.84611,
+    "h": 3.04454,
+    "foot": 0.04529
+   },
+   "pattern": "content/sprites/voss-veo/atk-media-v01/atk-{}.png",
+   "impact": 0.5446
+  },
+  "counter-staff": {
+   "video": "Attachments/VeoVoss/CounterStaff/CounterClseat4sec.mp4",
+   "first": 96,
+   "last": 220,
+   "bootRow": 1224,
+   "bootRows": [
+    1221,
+    1243
+   ],
+   "figurePx": 1124.0,
+   "scaledTo": 610.3,
+   "frames": 125,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    391,
+    670
+   ],
+   "crop": [
+    0,
+    0,
+    391,
+    667
+   ],
+   "box": {
+    "w": 1.72121,
+    "h": 2.94939,
+    "foot": 0.0205
+   },
+   "pattern": "content/sprites/voss-veo/counter-staff-media-v01/counter-staff-{}.png",
+   "impact": 0.56
+  }
+ }
+}

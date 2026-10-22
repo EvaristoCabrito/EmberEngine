@@ -27,8 +27,13 @@ struct GamePrefs {
   bool subtitles = true;
   float dialogueScale = 1.0f;  // 1 / 1.15 / 1.3
   // Opções > Gráficos > Personagens (ours, the user 2026-10-18): "alta" = the cast's sprites at full resolution, "leve" =
-  // at half (content/sprite-quality.json lists who has both); taken when a fight loads.
-  std::string characters = "alta";
+  // at half (content/sprite-quality.json lists who has both); taken when a fight loads. "media" (the user, 2026-10-21: "com a
+  // opção de medium e high nas configurações de video, o padrão será medium", the default): the poses that have a medium
+  // copy (a sprite set "<set>-media", e.g. voss-veo-media: every clip at ~610 px of figure) draw it, the others as in Alta;
+  // Leve halves that copy where there is one (Voss ~305 px), the full clip elsewhere.
+  // Saved as "characterArt"; a file with only the old "characters" keeps an explicit "leve", its "alta" (the old default)
+  // becomes the new default.
+  std::string characters = "media";
 
   static std::filesystem::path path() {
     const char* base = std::getenv("LOCALAPPDATA");
@@ -52,15 +57,16 @@ struct GamePrefs {
     p.subtitles = j.value("subtitles", p.subtitles);
     const float scale = j.value("dialogueScale", p.dialogueScale);
     if (scale == 1.0f || std::abs(scale - 1.15f) < 1e-3f || std::abs(scale - 1.3f) < 1e-3f) p.dialogueScale = scale;
-    const std::string characters = j.value("characters", p.characters);
-    if (characters == "alta" || characters == "leve") p.characters = characters;
+    const std::string art = j.value("characterArt", std::string());
+    if (art == "alta" || art == "media" || art == "leve") p.characters = art;
+    else if (j.value("characters", std::string()) == "leve") p.characters = "leve";
     return p;
   }
   bool save() const {
     const nlohmann::json j = {{"muted", muted},           {"cutsceneEnabled", cutsceneEnabled}, {"music", music},
                               {"sfx", sfx},               {"cutscene", cutscene},               {"uiLanguage", uiLanguage},
                               {"dialogueLanguage", dialogueLanguage}, {"subtitleLanguage", subtitleLanguage},
-                              {"subtitles", subtitles},   {"dialogueScale", dialogueScale},     {"characters", characters}};
+                              {"subtitles", subtitles},   {"dialogueScale", dialogueScale},     {"characterArt", characters}};
     std::error_code ec;
     std::filesystem::create_directories(path().parent_path(), ec);
     const std::filesystem::path tmp = path().string() + ".tmp";

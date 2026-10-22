@@ -92,8 +92,9 @@ def main():
     # listed poses; poses the set does not list keep their old art (e.g. Voss's back pose).
     for st in over.get("sets", []):
         cut_dir = os.path.dirname(os.path.join(ROOT, st["cut"]))
-        cut = load(os.path.join(cut_dir, "cut-result.json"))["clips"]
-        spec = {c["clip"]: c for c in load(os.path.join(ROOT, st["cut"]))["clips"]}
+        cut_spec = load(os.path.join(ROOT, st["cut"]))
+        cut = load(os.path.join(cut_dir, cut_spec.get("result", "cut-result.json")))["clips"]
+        spec = {c["clip"]: c for c in cut_spec["clips"]}
         clips = []
         for name, r in cut.items():
             pattern = os.path.join(ROOT, r["pattern"]).replace("\\", "/")
@@ -103,6 +104,22 @@ def main():
             clips.append({"fps": 1000.0 / r["frameMs"], "frames": {"count": r["frames"], "pattern": pattern},
                           "mode": spec[name]["mode"], "name": name, "pack": st["packs"].get(name, "combat")})
         manifest["sets"] = [s for s in manifest["sets"] if s["name"] != st["set"]] + [{"name": st["set"], "clips": clips}]
+        if "mediumOf" in st:
+            # a medium copy (voss-veo-media: the same clips at ~610 px of figure): the roster keeps pointing at the hero's own
+            # set and each pose whose clip has a copy names it in "medium" (Opções > Gráficos > Personagens: Média draws it)
+            of = st["mediumOf"]
+            hero = next((h for h in roster["heroes"] if h.get("key") == of["hero"]), None)
+            if hero is None:
+                raise SystemExit(f"{of['hero']}: not in {roster_path}")
+            marked = []
+            for p in hero["poses"]:
+                if p.get("set") == of["set"] and p.get("clip") in cut:
+                    p["medium"] = st["set"]
+                    marked.append(p["pose"])
+                else:
+                    p.pop("medium", None)
+            print(f"{st['set']} {st['version']}: {len(clips)} clips, the medium copy of {of['hero']}'s {', '.join(marked)}")
+            continue
         hero = next((h for h in roster["heroes"] if h.get("key") == st["hero"]), None)
         if hero is None:
             raise SystemExit(f"{st['hero']}: not in {roster_path}")

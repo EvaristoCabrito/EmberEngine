@@ -113,6 +113,19 @@ def wall_key(rgb, alpha, plate, key):
     return a, p
 
 
+def resize_premultiplied(f, nw, nh):
+    """A straight-alpha float RGBA frame resized to nw x nh: premultiplied (no dark or light fringe from the clear pixels),
+    Lanczos per channel, ringing clamped (alpha 0..255, colour within its alpha), then straight again."""
+    a = f[..., 3] / 255.0
+    chans = [f[..., k] * a for k in range(3)] + [f[..., 3]]
+    out = [np.asarray(Image.fromarray(ch.astype(np.float32), "F").resize((nw, nh), Image.LANCZOS)) for ch in chans]
+    alpha = np.clip(out[3], 0, 255)
+    an = alpha / 255.0
+    rgb = [np.clip(out[k], 0, alpha) / np.maximum(an, 1e-4) for k in range(3)]
+    rgb = [np.where(an > 1e-4, ch, 0) for ch in rgb]
+    return np.dstack(rgb + [alpha]).astype(np.float32)
+
+
 def sole_row(a):
     solid = a > 230
     h = a.shape[0]
@@ -199,7 +212,7 @@ def main():
     spec = json.load(open(spec_path, encoding="utf-8"))
     here = os.path.dirname(spec_path)
     only = set(filter(None, a.only.split(",")))
-    result_path = os.path.join(here, "cut-result.json")
+    result_path = os.path.join(here, spec.get("result", "cut-result.json"))  # a second set from the same frames writes its own
     result = json.load(open(result_path, encoding="utf-8")) if os.path.exists(result_path) else {"clips": {}}
 
     for c in spec["clips"]:
@@ -314,16 +327,32 @@ def main():
         for old in os.listdir(out_dir):
             if old.endswith(".png"):
                 os.remove(os.path.join(out_dir, old))
+        # `scaleTo` (the user, 2026-10-21: "deixar todos em ~610 px"): the clip's figure brought down to that many pixels
+        # tall, so every clip of the hero is drawn at one size on the GPU (the videos were framed ~1100 vs ~610 px); the only
+        # resampling in the pipeline, done once on the cut frames: premultiplied alpha, Lanczos, every frame kept
+        scale = min(1.0, c["scaleTo"] / height) if "scaleTo" in c else 1.0
+        w0, h0 = int(x1 - x0), int(y1 - y0)
+        nw, nh = (max(1, round(w0 * scale)), max(1, round(h0 * scale))) if scale < 1.0 else (w0, h0)
+        units_out = clip_units_px * w0 / nw if scale < 1.0 else clip_units_px
+        sole_out = (sole - y0 + 0.5) * nh / h0 - 0.5
+        bb = np.zeros((nh, nw), bool)
         for i, f in enumerate(frames):
-            px = np.clip(f[y0:y1, x0:x1] + 0.5, 0, 255).astype(np.uint8)
+            cut = f[y0:y1, x0:x1]
+            if scale < 1.0:
+                cut = resize_premultiplied(cut, nw, nh)
+            px = np.clip(cut + 0.5, 0, 255).astype(np.uint8)
+            bb |= px[..., 3] > 60
             Image.fromarray(px, "RGBA").save(os.path.join(out_dir, f"{c['clip']}-{i + 1}.png"), optimize=False, compress_level=6)
-        nat = [int(x1 - x0), int(y1 - y0)]
-        bb = (al[:, y0:y1, x0:x1] > 60).any(0)
+        nat = [nw, nh]
         bys, bxs = np.nonzero(bb)
+        if scale < 1.0:
+            info["scaledTo"] = round(height * nh / h0, 1)
+            if "bodyAt" in info:
+                info["bodyAt"] = round(info["bodyAt"], 4)  # units: unchanged by the scale
         info.update(frames=len(frames), frameMs=1000.0 / FPS, nat=nat,
                     crop=[int(bxs.min()), int(bys.min()), int(bxs.max() - bxs.min() + 1), int(bys.max() - bys.min() + 1)],
-                    box={"w": round(nat[0] * clip_units_px, 5), "h": round(nat[1] * clip_units_px, 5),
-                         "foot": round(float(y1 - 1 - sole) * clip_units_px, 5)},
+                    box={"w": round(nat[0] * units_out, 5), "h": round(nat[1] * units_out, 5),
+                         "foot": round(float(nh - 1 - sole_out) * units_out, 5)},
                     pattern=os.path.relpath(os.path.join(out_dir, f"{c['clip']}-{{}}.png"), ROOT).replace("\\", "/"))
         if "impactFrame" in c:
             info["impact"] = round((c["impactFrame"] - c["first"]) / len(frames), 4)

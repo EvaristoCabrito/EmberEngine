@@ -2811,7 +2811,7 @@ class MapStage final : public Stage {
         if (p && p->pace.empty()) p = nullptr;
         if (p) shown = chosen;
       }
-      const SpriteClipId clip = p ? sprites_.find(p->set, p->clip) : sprites_.find(u.set, u.clip);
+      const SpriteClipId clip = p ? sprites_.find(artSet(*p), p->clip) : sprites_.find(sceneArtSet(u, entry), u.clip);
       if (clip == kNoSpriteClip) {
         ++missing_;
         if (ui < shownLast_.size() && shownLast_[ui] != 2) logWarn("unit {} not drawn: no sprite clip for pose '{}'", u.name, shown), shownLast_[ui] = 2;
@@ -3327,16 +3327,30 @@ class MapStage final : public Stage {
   // Every pose the map's units can play is loaded before the fight opens and held to its end (the user, 2026-10-18: a pose
   // streamed in on its first frame drew from the 64 px tail, a blur at every change of animation). The cast with two
   // versions (content/sprite-quality.json) follows Opções > Gráficos > Personagens: Alta (full resolution) / Leve (half).
+  // Média (the default, the user 2026-10-21): a pose with a medium copy (HeroPose::medium, e.g. voss-veo-media at ~610 px of
+  // figure) is pinned and drawn from it; the others as in Alta. Only the chosen copy is loaded.
   void pinUnitArt() {
     sprites_.setLight(gamePrefs().characters == "leve");
+    // Leve halves the medium copy where there is one (the user, 2026-10-21: "criar a versão leve ... para eu poder comparar
+    // os 3"): Voss at ~1100 / ~610 / ~305 px of figure in Alta / Média / Leve; without a copy Leve halves the full clip as before
+    mediumArt_ = gamePrefs().characters == "media" || gamePrefs().characters == "leve";
     for (size_t i = 0; i < scene_->units.size(); ++i) pinArt(scene_->units[i], i < unitCatalog_.size() ? unitCatalog_[i] : nullptr);
   }
   void pinArt(const e2::SceneUnit& u, const e2::Hero* entry) {
     const bool two = twoVersionCast().contains(entry ? entry->key : u.key);
-    sprites_.pin(u.set, u.clip, two);
+    sprites_.pin(sceneArtSet(u, entry), u.clip, two);
     if (entry)
-      for (const e2::HeroPose& p : entry->poses) sprites_.pin(p.set, p.clip, two);
+      for (const e2::HeroPose& p : entry->poses) sprites_.pin(artSet(p), p.clip, two);
   }
+  const std::string& artSet(const e2::HeroPose& p) const { return mediumArt_ && !p.medium.empty() ? p.medium : p.set; }
+  // A scene unit's own clip (its idle) is one of its catalog poses: the same copy as that pose.
+  const std::string& sceneArtSet(const e2::SceneUnit& u, const e2::Hero* entry) const {
+    if (mediumArt_ && entry)
+      for (const e2::HeroPose& p : entry->poses)
+        if (!p.medium.empty() && p.set == u.set && p.clip == u.clip) return p.medium;
+    return u.set;
+  }
+  bool mediumArt_ = false;  // Personagens: Média or Leve, taken when the fight loads (pinUnitArt)
   // The battle HUD's pictures (every unit's portrait, each hero's 12 sockets: spell art up to 784 x 1168) decoded on a
   // worker during the loading screen (the hunt for the battle hitch, 2026-10-19: read on the main thread the first time the
   // bar showed them, 45-90 ms).
