@@ -818,7 +818,9 @@ class OptionsDialog {
     ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, IM_COL32(98, 98, 98, 255));
     ImGui::Begin("##options", nullptr, ImGuiWindowFlags_NoDecoration & ~ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
                                           ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-    ImGui::SetWindowFocus();
+    // Kept in front, but never while one of its lists is open: focusing a window closes the popups over it (ImGui FocusWindow ->
+    // ClosePopupsOverWindow), so every dropdown here closed the frame after it opened (the user, 2026-10-22: "o drop down fica travado").
+    if (!ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel)) ImGui::SetWindowFocus();
     ImDrawList* dl = ImGui::GetWindowDrawList();
     const float scroll = ImGui::GetScrollY();
     const ImVec2 a{ImGui::GetWindowPos().x, ImGui::GetWindowPos().y - scroll};
