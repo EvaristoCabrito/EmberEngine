@@ -188,6 +188,7 @@ std::optional<std::vector<Hero>> loadHeroes(const std::filesystem::path& heroesJ
       q.doneAt = static_cast<int>(num(p, "doneAt", -1));
       q.impact = static_cast<float>(num(p, "impact", -1));
       if (p.contains("medium") && p["medium"].is_string()) q.medium = p["medium"].get<std::string>();
+      if (p.contains("light") && p["light"].is_string()) q.light = p["light"].get<std::string>();
       if (strides.is_object()) {
         const auto it = strides.find(q.set + "/" + q.clip);
         if (it != strides.end() && it->is_number()) q.strides = it->get<float>();

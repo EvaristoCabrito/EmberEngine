@@ -83,5 +83,10 @@
   }
  ],
  "figurePx": 562,
- "frameCount": 64
+ "frameCount": 64,
+ "despeck": {
+  "maxArea": 150,
+  "minGap": 6,
+  "why": "the user, 2026-10-22: clear the floating speck beside the slime (a matte speck, ~80 px at Alta, on the idle)"
+ }
 }

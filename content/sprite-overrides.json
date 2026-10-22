@@ -19,9 +19,27 @@
   {
    "set": "voss-veo-media",
    "version": "media-v01",
-   "mediumOf": {"hero": "voss", "set": "voss-veo"},
+   "unused": true,
+   "wasMediumOf": {"hero": "voss", "set": "voss-veo"},
+   "unusedWhy": "the user, 2026-10-22: \"64 is on with Medium\": voss-veo-64-media is Voss's Média now; this all-frames copy stays in the pack, drawn by nobody",
    "cut": "content/sprites/voss-veo/cut-media.json",
    "why": "the user, 2026-10-21: \"deixar todos em ~610 px\", then \"com a opção de medium e high nas configurações de video, o padrão será medium\": idle, both walks, attack and staff counter at ~610 px of figure (like cast, hit and death); Personagens Média (default) draws them, Alta voss-veo's full resolution",
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "voss-veo-64-media",
+   "version": "media64-v01",
+   "mediumOf": {"hero": "voss", "set": "voss-veo"},
+   "cut": "content/sprites/voss-veo/cut-64-media.json",
+   "why": "the user, 2026-10-22: \"36 is on with LEVE setup and 64 is on with Medium. High plays the full version\": every clip at ~610 px of figure with 64 frames (picked evenly, the clip's timing kept); Personagens Média",
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "voss-veo-36-media",
+   "version": "media36-v01",
+   "lightOf": {"hero": "voss", "set": "voss-veo"},
+   "cut": "content/sprites/voss-veo/cut-36-media.json",
+   "why": "the user, 2026-10-22: \"36 is on with LEVE setup\": every clip at ~610 px of figure with 36 frames; Personagens Leve draws it halved",
    "packs": {"base": "field", "move": "field", "move-left": "field"}
   },
   {

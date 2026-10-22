@@ -105,21 +105,29 @@ def main():
             clips.append({"fps": 1000.0 / r["frameMs"], "frames": {"count": r["frames"], "pattern": pattern},
                           "mode": spec[name]["mode"], "name": name, "pack": st["packs"].get(name, "combat")})
         manifest["sets"] = [s for s in manifest["sets"] if s["name"] != st["set"]] + [{"name": st["set"], "clips": clips}]
-        if "mediumOf" in st:
-            # a medium copy (voss-veo-media: the same clips at ~610 px of figure): the roster keeps pointing at the hero's own
-            # set and each pose whose clip has a copy names it in "medium" (Opções > Gráficos > Personagens: Média draws it)
-            of = st["mediumOf"]
+        if st.get("unused"):
+            # kept in the pack, drawn by nobody (the user: nothing is thrown away), e.g. voss-veo-media after the 64-frame Média
+            print(f"{st['set']} {st['version']}: {len(clips)} clips, kept, not in use")
+            continue
+        for key, field in (("mediumOf", "medium"), ("lightOf", "light")):
+            if key not in st:
+                continue
+            # a copy of a hero's clips: the roster keeps pointing at the hero's own set and each pose whose clip has a copy names
+            # it in "medium" (Personagens: Média draws it; voss-veo-64-media, 64 frames at ~610 px) or "light" (Personagens: Leve,
+            # halved like every Leve; voss-veo-36-media, 36 frames)
+            of = st[key]
             hero = next((h for h in roster["heroes"] if h.get("key") == of["hero"]), None)
             if hero is None:
                 raise SystemExit(f"{of['hero']}: not in {roster_path}")
             marked = []
             for p in hero["poses"]:
                 if p.get("set") == of["set"] and p.get("clip") in cut:
-                    p["medium"] = st["set"]
+                    p[field] = st["set"]
                     marked.append(p["pose"])
                 else:
-                    p.pop("medium", None)
-            print(f"{st['set']} {st['version']}: {len(clips)} clips, the medium copy of {of['hero']}'s {', '.join(marked)}")
+                    p.pop(field, None)
+            print(f"{st['set']} {st['version']}: {len(clips)} clips, the {field} copy of {of['hero']}'s {', '.join(marked)}")
+        if "mediumOf" in st or "lightOf" in st:
             continue
         hero = next((h for h in roster["heroes"] if h.get("key") == st["hero"]), None)
         if hero is None and "newHero" in st:

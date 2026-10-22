@@ -29,6 +29,28 @@ import os
 import numpy as np
 from PIL import Image, ImageFilter
 
+
+def despeck(px, max_area, min_gap):
+    """`despeck` (the user, 2026-10-22, Slime36 / Slime64: "o pixel do lado direito do slime"): a speck of the matte floating on its
+    own beside the body (smaller than `max_area` px and more than `min_gap` px from the body) is cleared, with its soft edge; drops
+    touching or close to the body stay."""
+    from scipy import ndimage
+    solid = px[..., 3] > 20
+    lab, n = ndimage.label(solid)
+    if n < 2:
+        return px
+    sizes = ndimage.sum(solid, lab, range(1, n + 1))
+    body = lab == (int(np.argmax(sizes)) + 1)
+    gap = ndimage.distance_transform_edt(~body)
+    out = px.copy()
+    for i, s in enumerate(sizes):
+        piece = lab == i + 1
+        if s >= max_area or gap[piece].min() <= min_gap:
+            continue
+        halo = ndimage.binary_dilation(piece, iterations=3) & (px[..., 3] > 0) & ~body
+        out[halo] = 0
+    return out
+
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 FPS = 24.0
 
@@ -231,7 +253,10 @@ def main():
     here = os.path.dirname(spec_path)
     only = set(filter(None, a.only.split(",")))
     result_path = os.path.join(here, spec.get("result", "cut-result.json"))  # a second set from the same frames writes its own
-    result = json.load(open(result_path, encoding="utf-8")) if os.path.exists(result_path) else {"clips": {}}
+    try:  # the clips cut before; a result a power cut zero-filled (Slime64's, 2026-10-22) counts as none
+        result = json.load(open(result_path, encoding="utf-8")) if os.path.exists(result_path) else {"clips": {}}
+    except ValueError:
+        result = {"clips": {}}
 
     for c in spec["clips"]:
         if only and c["clip"] not in only:
@@ -389,6 +414,9 @@ def main():
             if scale < 1.0:
                 cut = resize_premultiplied(cut, nw, nh)
             px = np.clip(cut + 0.5, 0, 255).astype(np.uint8)
+            dsp = c.get("despeck", spec.get("despeck"))
+            if dsp:  # its sizes are in the video's own pixels: a scaled copy scales them
+                px = despeck(px, dsp["maxArea"] * scale * scale, dsp["minGap"] * scale)
             if c.get("mirror"):  # the clip faces the other way in its video (the slime's strike): turned to face as the others
                 px = np.ascontiguousarray(px[:, ::-1])
             bb |= px[..., 3] > 60

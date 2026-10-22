@@ -1247,6 +1247,37 @@ selecionar os alvos")
 - Reference images / one clearly described moment, to turn R1–R8 into D1 pass/fail criteria.
 - The final camera angles.
 
+## Video monsters: Corrosive Slime (+ Slime36 / Slime64) and Giant Spider (2026-10-22)
+
+- **EmberEngine's own unit classes** = `content/ember-classes.json` (a battle file's exporter knows only the old classes: export_battle.ts
+  builds the spawn as the `standIn` and writes it back under its own class; Battle.cpp `applyEmberClass` makes it what the file says at load:
+  stats from class-stats.json at its level, mov, size in hexes, the ATK blow, resistances, tier uses, spells). MapStage `hasEmberProps`: a
+  map with such a unit builds its scene with SceneBuilder. `tools/scripts/sprites/catalog_ember_classes.py` adds them to the Map Editor.
+- **Corrosive Slime** (`corrosiveSlime`, 1 hex, rank D; `corrosiveSlimeLarge`, 2 hexes, stats x 1.75, rank C): Milf's Acid Arrow (`acidArrow`,
+  tier 2: 2 / 3 a fight) and Névoa Ácida (`acidCloud`, tier 3: 1 / 2; the persistent zone + AcidCloud vfx taken over from another session),
+  AI branch in planEnemyCastRaw (`cloudCast`). Art from the user's videos (`Attachments/Corrosive Slime`), one art for both sizes.
+- **Slime36 / Slime64** (`corrosiveSlime36` / `corrosiveSlime64`, the user: "to see what happens in game"): the Small Slime with each clip
+  cut to 36 / 64 frames picked evenly (video_sprite.py `frameCount`, no blend, the clip's duration kept). GPU memory, Alta / Média:
+  slime 445 / 139 MB, Slime64 311 / 97, Slime36 189 / 59 (Leve ~ a quarter of Média). Their floating bubble beside the body is
+  cleared (video_sprite.py `despeck`, the user: "a legit bubble, but in game it looks weird").
+- **Voss by quality (the user: "36 is on with LEVE setup and 64 is on with Medium. High plays the full version"):** Alta = voss-veo (all
+  frames), Média = `voss-veo-64-media` (64 frames, ~610 px), Leve = `voss-veo-36-media` (36 frames, halved like every Leve); the old
+  all-frames Média (`voss-veo-media`) stays in the pack, `"unused": true`. Roster poses carry `medium` / `light` (apply_sprite_overrides
+  `mediumOf` / `lightOf`), MapStage `artSet` picks by Personagens, and a copy with fewer frames plays on the full clip's timing (the frame
+  index mapped). Personagens is read when a fight loads, never mid-fight. Measured on beasttest: Média 202 MB, Leve 30 MB (Alta 657 MB
+  did not fit with the rest, 3161 needed vs 2442 free, and fell back to Leve by itself).
+- **Giant Spider** (`giantSpider`, 3 hexes, rank D, mov 4, bite 2D6, poison 50 %, no spells; working stats, the user sets the real ones later):
+  `Attachments/Giant Spider` (idle + cast, move + attack, hit, death at 5 s). Matted with BiRefNet general (idle/cast, move/attack) and
+  **general lite** (hit, death; video_matte.py `--model lite`, the user's "light mode": ~11 s a frame vs ~13). Alta 312 MB, Média 98 MB.
+- Pipeline for a video monster: `video_matte.py` → `slime_pipeline.py --dir <set> --width <idle body width> [--cut-only]` (cut, world size
+  from the idle's width, Média copy at 0.555; with several new sets, cut them all with `--cut-only`, then `apply_sprite_overrides.py` +
+  `catalog_ember_classes.py` once: the overrides list every set, so each one's cut must exist) → cook. Long mattes run unattended from Task
+  Scheduler (`EmberSpiderMatte`: scratchpad spider/matte.ps1 through hidden.vbs, no window; two mattes at once, resumes after power cuts,
+  then cuts + roster + cook).
+- Test battle: `content/maps/ember/beasttest001.json` (Map Editor: open, Testar) = `build/engine2-test/{maps,battles}/beasttest.*` (aldeia015 +
+  Small, Large, Slime36, Slime64, spider). Verified: release capture exit 0, all five drawn, their Média sets pinned. **Not verified:** the AI
+  casting both acid spells in play, debug + validation, the spider's look and size in the window (the user judges).
+
 ## Later milestones
 
 M4 world cells + terrain · M5 lighting/atmosphere · M6 editor · M7 gameplay port + cutscene timeline.
