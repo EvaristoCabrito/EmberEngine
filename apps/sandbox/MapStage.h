@@ -422,8 +422,8 @@ class MapStage final : public Stage {
       // Random encounters can be board-only maps with no scene file. Load their map-specific panoramas anyway.
       loadMapPanoramas();
       if (options.background >= 0) background_ = std::min(options.background, 4);
-      enforcePanorama("load");
       else if (!panoramas_.empty()) background_ = 4 + static_cast<int>(panoramas_.size());
+      enforcePanorama("load");
     }
   }
 
@@ -834,8 +834,8 @@ class MapStage final : public Stage {
       renderer.setSunGlare(glare);
     }
     renderer.setSunShadowBounds(boardCenter_, boardRadius_);
-    renderer.setBoardDrop(0.0f, 0.0f);  // nothing moves unless the chosen panorama lays its floor image under the base (below)
     renderer.setLightingLayers(layers_);
+    renderer.setBoardDrop(0.0f, 0.0f);  // nothing moves unless the chosen panorama lays its floor image under the base (below)
     if (windowLight() && board_->draft().id != "estalagem") {
       // Indoors the sky is never drawn, whatever lights the room (the user's spec, 2026-10-21): black beyond the walls, except the map's
       // own ground image (MapDraft::emberFloor; the watchtower's background, the user: "usar ele de imagem de GROUND") flat at the
@@ -895,6 +895,11 @@ class MapStage final : public Stage {
           plane.ceilingTexture = ground_.textureIndex(e2::backdropAsset(fit.ceilingImage));
           plane.ceilingHeight = fit.ceilingHeight;
           plane.ceilingTile = fit.ceilingTile;
+          // the painting projected onto a real room around the board: its round wall just outside the board, the painting's eye at a
+          // person's height (the user: the floor must meet the floor, the ceiling the ceiling, nothing squashed)
+          plane.roomCentreX = boardCenter_.x, plane.roomCentreZ = boardCenter_.z;
+          plane.roomRadius = boardRadius_ * fit.roomRadiusShare;
+          plane.roomEye = fit.roomEye;
         }
         // "Céu do panorama" (the user, 2026-10-19: "libera o céu para eu ver como fica"): 0 the image's own smoke sky, 1 the real sky
         // above the rooftops (everything above 30% of the image is sky; down to the ruins its sky is matted out by colour).
@@ -9285,50 +9290,6 @@ class MapStage final : public Stage {
   std::vector<const e2::Hero*> unitCatalog_;       // per scene unit: its catalog entry (null = idle only)
   std::vector<std::pair<std::string, std::string>> poseChoices_;  // the panel's "Animação": pose id, label
   int poseChoice_ = 0;
-  int background_ = 0;  // the panel's "Fundo": 0 the map's painted backdrop, 1 the sky, 2 black, 3 the painting up to the horizon + the sky,
-                        // 4 the painting aligned to the sky
-  // How the map's painting sits against the sky (content/engine2/backdrop-fit.json; resolve.hlsl backgroundAt mode 2).
-  struct BackdropFit {
-    float horizon = 0.4f, bottom = 1.0f, skyTop = 0.08f, degreesPerHeight = 30.0f, bottomDegrees = 40.0f, spanDegrees = 150.0f, glowColumn = 0.5f;
-    float horizonDegrees = -6.0f;  // where the painting's horizon row sits: degrees of elevation (negative = below the real horizon)
-    std::string ground;            // the map's top-down ground image around the board (content/backdrops); "" = none
-    bool keepSky = false;          // panoramas: keep the image's own sky (no matte), the real sky only above its top edge
-    bool alphaSky = false;         // the image's sky is truly transparent (its alpha): the real sky shows through it (mode 4)
-    bool whole = false;            // the regular image, opaque, its horizon row on the world's horizon, nothing blended (mode 5)
-    bool ceiling = false;          // a room's panorama: its top (the ceiling) always kept, never the real sky (mode 3, any "Céu do panorama")
-    // A room's drawn ceiling where the sky would show (content/backdrops; the user's Tavern Ceiling, 2026-10-22): a flat plane
-    // ceilingHeight above the eye, ceilingTile world units across (resolve.hlsl ceilingAt); "" = the sky as before.
-    std::string ceilingImage;
-    float ceilingHeight = 16.0f, ceilingTile = 24.0f;
-    float groundDepth = 0.0f;  // the ground image's plane this far further under the board's base (the user, 2026-10-22: "o chão mais baixo")
-    float groundTile = 120.0f, groundFar = 300.0f;
-    float groundFromDegrees = 10.0f;  // the ground image takes over from this many degrees below the horizon  // its width in world units; the painting takes over beyond this distance
-  };
-  BackdropFit backdropFit_;
-  std::vector<std::string> panoramas_;    // the map's own panoramas (backdrop-fit.json "panoramas"), the panel's "panorama NN"
-  std::vector<BackdropFit> panoramaFits_;
-  int panoramaSky_ = 1;  // the panel's "Céu do panorama": 0 the image's own sky, 1 the real sky above the rooftops
-  int floorChoice_ = 1;    // the panel's "Chão do vão" (maps with MapDraft::emberFloor): 0 OFF (mode 5), 1 the painting flat under the board
-  int windFogChoice_ = 1;  // the panel's "Névoa do vento" (maps with MapDraft::emberWindFog): 0 OFF, 1 the draft's fog look
-  int windowLight_ = 0;    // the panel's "Luz das janelas" (indoor maps): 0 OFF, 1 real (windowLight())
-  MeshId roofMesh_ = 0;    // the shadow-only roof slab (buildRoof); 0 = none
-  MeshId plinthMesh_ = 0;  // ... and the shadow-only plinth under the board
-  float plinthCentreY_ = 0.0f;
-  glm::vec4 roofRect_{0.0f};  // ... its rectangle: x0, z0, x1, z1
-  // Luz das janelas: the room's light probes (startProbeBake / uploadProbes; the bake runs on the workers while probeBusy_).
-  std::vector<glm::vec3> probeTris_;          // the room's surfaces in world space: the pieces (buildArchitecture), the roof (buildRoof)
-  std::set<std::pair<int, int>> roomCells_;   // the hexes the walls enclose
-  std::set<std::pair<int, int>> wallCells_;   // ... and the hexes the walls stand on
-  std::optional<float> roomCentreAzimuth_;  // a room's panorama centre, fixed in the world once (see the Fundo code)
-  // The board and its ground lowered together under the room's panorama and ceiling (the user, 2026-10-23: "desce o tabuleiro e
-  // ground, sem mais perguntas"): the chosen panorama's `roomDrop` (backdrop-fit.json, world units; 0 = none). The painting and the
-  // ceiling hang from the eye, so the camera (eye and aim) is lifted by that much: everything on the board sits that much lower
-  // under them. Tática unchanged.
-  float roomDrop() const {
-    const int panorama = background_ - 5;
-    if (panorama < 0 || panorama >= static_cast<int>(panoramaFits_.size())) return 0.0f;
-    return panoramaFits_[static_cast<size_t>(panorama)].roomDrop;
-  }
   // THE ONE FIXED RULE OF EVERY MAP, enforced by the engine itself (the user, 2026-10-23: "todos os mapas do jogo precisam ser assim,
   // precisa escrever no engine: ele deve rejeitar automaticamente qualquer fundo que não seja panorama"; "o engine agora vai ter auto
   // defesa contra sabotagem"): a map with panoramas never draws anything else behind the board. Any other Fundo (the cover-fit
@@ -9348,6 +9309,54 @@ class MapStage final : public Stage {
       background_ = 4 + static_cast<int>(panoramas_.size());
     }
   }
+  std::optional<float> roomCentreAzimuth_;  // a room's panorama centre, fixed in the world once (see the Fundo code)
+  // The board and its ground lowered together under the room's panorama and ceiling (the user, 2026-10-23: "desce o tabuleiro e
+  // ground, sem mais perguntas"): the chosen panorama's `roomDrop` (backdrop-fit.json, world units; 0 = none). The painting and the
+  // ceiling hang from the eye, so the camera (eye and aim) is lifted by that much: everything on the board sits that much lower
+  // under them. Tática unchanged.
+  float roomDrop() const {
+    const int panorama = background_ - 5;
+    if (panorama < 0 || panorama >= static_cast<int>(panoramaFits_.size())) return 0.0f;
+    return panoramaFits_[static_cast<size_t>(panorama)].roomDrop;
+  }
+  int background_ = 0;  // the panel's "Fundo": 0 the map's painted backdrop, 1 the sky, 2 black, 3 the painting up to the horizon + the sky,
+                        // 4 the painting aligned to the sky
+  // How the map's painting sits against the sky (content/engine2/backdrop-fit.json; resolve.hlsl backgroundAt mode 2).
+  struct BackdropFit {
+    float horizon = 0.4f, bottom = 1.0f, skyTop = 0.08f, degreesPerHeight = 30.0f, bottomDegrees = 40.0f, spanDegrees = 150.0f, glowColumn = 0.5f;
+    float horizonDegrees = -6.0f;  // where the painting's horizon row sits: degrees of elevation (negative = below the real horizon)
+    std::string ground;            // the map's top-down ground image around the board (content/backdrops); "" = none
+    bool keepSky = false;          // panoramas: keep the image's own sky (no matte), the real sky only above its top edge
+    bool alphaSky = false;         // the image's sky is truly transparent (its alpha): the real sky shows through it (mode 4)
+    bool whole = false;            // the regular image, opaque, its horizon row on the world's horizon, nothing blended (mode 5)
+    bool ceiling = false;          // a room's panorama: its top (the ceiling) always kept, never the real sky (mode 3, any "Céu do panorama")
+    // A room's drawn ceiling where the sky would show (content/backdrops; the user's Tavern Ceiling, 2026-10-22): a flat plane
+    // ceilingHeight above the eye, ceilingTile world units across (resolve.hlsl ceilingAt); "" = the sky as before.
+    std::string ceilingImage;
+    float ceilingHeight = 16.0f, ceilingTile = 24.0f;
+    float groundDepth = 0.0f;  // the ground image's plane this far further under the board's base (the user, 2026-10-22: "o chão mais baixo")
+    float roomRadiusShare = 1.1f;  // a room's round wall: this share of the board's radius from its centre (resolve.hlsl roomProjected)
+    std::optional<float> centreDegrees;  // a room's panorama: the world azimuth (degrees, x towards 0, z towards 90) its centre column faces; none = the opening camera's heading
+    float roomDrop = 0.0f;  // the board and its ground this much lower under the painting and the ceiling (MapStage::roomDrop)
+    float roomEye = 1.7f;          // ... and the painting's eye height above the floor (a person's)
+    float groundTile = 120.0f, groundFar = 300.0f;
+    float groundFromDegrees = 10.0f;  // the ground image takes over from this many degrees below the horizon  // its width in world units; the painting takes over beyond this distance
+  };
+  BackdropFit backdropFit_;
+  std::vector<std::string> panoramas_;    // the map's own panoramas (backdrop-fit.json "panoramas"), the panel's "panorama NN"
+  std::vector<BackdropFit> panoramaFits_;
+  int panoramaSky_ = 1;  // the panel's "Céu do panorama": 0 the image's own sky, 1 the real sky above the rooftops
+  int floorChoice_ = 1;    // the panel's "Chão do vão" (maps with MapDraft::emberFloor): 0 OFF (mode 5), 1 the painting flat under the board
+  int windFogChoice_ = 1;  // the panel's "Névoa do vento" (maps with MapDraft::emberWindFog): 0 OFF, 1 the draft's fog look
+  int windowLight_ = 0;    // the panel's "Luz das janelas" (indoor maps): 0 OFF, 1 real (windowLight())
+  MeshId roofMesh_ = 0;    // the shadow-only roof slab (buildRoof); 0 = none
+  MeshId plinthMesh_ = 0;  // ... and the shadow-only plinth under the board
+  float plinthCentreY_ = 0.0f;
+  glm::vec4 roofRect_{0.0f};  // ... its rectangle: x0, z0, x1, z1
+  // Luz das janelas: the room's light probes (startProbeBake / uploadProbes; the bake runs on the workers while probeBusy_).
+  std::vector<glm::vec3> probeTris_;          // the room's surfaces in world space: the pieces (buildArchitecture), the roof (buildRoof)
+  std::set<std::pair<int, int>> roomCells_;   // the hexes the walls enclose
+  std::set<std::pair<int, int>> wallCells_;   // ... and the hexes the walls stand on
   bool probeBakePending_ = false;             // buildArchitecture asked for a bake: it starts after the next buildLights (the fires)
   bool probeFromCache_ = false;               // the last bake was read from build/probes
   std::vector<uint8_t> probeMask_;            // the room seen from above (startProbeBake), kProbeMaskSpacing texels over roofRect_
@@ -9364,10 +9373,6 @@ class MapStage final : public Stage {
   bool placedWindowLight_ = false;  // placeModels: whether the roof was placed
   // The map's own panoramas (backdrop-fit.json "panoramas" by map id). An entry is a painting's file, or "file#name" for another fit
   // of the same painting (its own entry in "paintings": the tavern's panorama over the user's Tavernground, 2026-10-22). One whose
-    float roomRadiusShare = 1.1f;  // a room's round wall: this share of the board's radius from its centre (resolve.hlsl roomProjected)
-    float roomDrop = 0.0f;  // the board and its ground this much lower under the painting and the ceiling (MapStage::roomDrop)
-    std::optional<float> centreDegrees;  // a room's panorama: the world azimuth (degrees, x towards 0, z towards 90) its centre column faces; none = the opening camera's heading
-    float roomEye = 1.7f;          // ... and the painting's eye height above the floor (a person's)
   // painting or ground image is not in the ground pack yet is left out (it joins the panel once a pack carrying it is cooked).
   void loadMapPanoramas() {
     const auto packed = [&](const std::string& file) { return !assets_.name(assetId(e2::backdropAsset(file))).empty(); };
@@ -9382,6 +9387,16 @@ class MapStage final : public Stage {
       ground_.requestTexture(e2::backdropAsset(panoramaFile(entry)));
       if (!fit.ground.empty()) ground_.requestTexture(e2::backdropAsset(fit.ground));
       if (!fit.ceilingImage.empty()) ground_.requestTexture(e2::backdropAsset(fit.ceilingImage));
+    }
+    // Every map is a panorama, no exception (the user, 2026-10-23: "não existe forma de alterar em nenhum mapa"): a map with no
+    // entry of its own takes its painting (the scene's backdrop) as its panorama with backdrop-fit.json's `default` fit (the
+    // painting read as every other: loadBackdropFit gives the default and the painting's own entry when it has one).
+    if (panoramas_.empty() && scene_ && !scene_->backdrop.empty() && packed(scene_->backdrop)) {
+      panoramas_.push_back(scene_->backdrop);
+      panoramaFits_.push_back(loadBackdropFit(scene_->backdrop));
+      ground_.requestTexture(e2::backdropAsset(scene_->backdrop));
+      if (!panoramaFits_.back().ground.empty()) ground_.requestTexture(e2::backdropAsset(panoramaFits_.back().ground));
+      logInfo("panoramas {}: none listed, its painting {} is its panorama", board_->draft().id, scene_->backdrop);
     }
     if (!panoramas_.empty()) logInfo("panoramas {}: {} (the newest opens: {})", board_->draft().id, panoramas_.size(), panoramas_.back());
   }
@@ -9416,16 +9431,10 @@ class MapStage final : public Stage {
       fit.ceilingHeight = e.value("ceilingHeight", fit.ceilingHeight);
       fit.ceilingTile = e.value("ceilingTile", fit.ceilingTile);
       fit.groundDepth = e.value("groundDepth", fit.groundDepth);
-    // Every map is a panorama, no exception (the user, 2026-10-23: "não existe forma de alterar em nenhum mapa"): a map with no
-    // entry of its own takes its painting (the scene's backdrop) as its panorama with backdrop-fit.json's `default` fit (the
-    // painting read as every other: loadBackdropFit gives the default and the painting's own entry when it has one).
-    if (panoramas_.empty() && scene_ && !scene_->backdrop.empty() && packed(scene_->backdrop)) {
-      panoramas_.push_back(scene_->backdrop);
-      panoramaFits_.push_back(loadBackdropFit(scene_->backdrop));
-      ground_.requestTexture(e2::backdropAsset(scene_->backdrop));
-      if (!panoramaFits_.back().ground.empty()) ground_.requestTexture(e2::backdropAsset(panoramaFits_.back().ground));
-      logInfo("panoramas {}: none listed, its painting {} is its panorama", board_->draft().id, scene_->backdrop);
-    }
+      fit.roomRadiusShare = e.value("roomRadiusShare", fit.roomRadiusShare);
+      if (e.contains("centreDegrees")) fit.centreDegrees = e.value("centreDegrees", 0.0f);
+      fit.roomDrop = e.value("roomDrop", fit.roomDrop);
+      fit.roomEye = e.value("roomEye", fit.roomEye);
       fit.groundTile = e.value("groundTile", fit.groundTile);
       fit.groundFar = e.value("groundFar", fit.groundFar);
       fit.groundFromDegrees = e.value("groundFromDegrees", fit.groundFromDegrees);
@@ -9460,10 +9469,6 @@ class MapStage final : public Stage {
   std::vector<LocalLight> lights_;
   bool modelsPlaced_ = false;
   e2::EdgeStyle placedLook_ = e2::EdgeStyle::Smooth;
-      fit.roomRadiusShare = e.value("roomRadiusShare", fit.roomRadiusShare);
-      if (e.contains("centreDegrees")) fit.centreDegrees = e.value("centreDegrees", 0.0f);
-      fit.roomDrop = e.value("roomDrop", fit.roomDrop);
-      fit.roomEye = e.value("roomEye", fit.roomEye);
   uint32_t modelCount_ = 0, missing_ = 0, fullFrames_ = 0;
   std::chrono::steady_clock::time_point start_ = std::chrono::steady_clock::now();
   bool measuring_ = false, measured_ = false, measurePassed_ = true;

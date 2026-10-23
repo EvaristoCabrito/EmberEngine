@@ -286,6 +286,9 @@ class Renderer {
     // above the eye, `ceilingTile` world units across; kNoTextureIndex = the sky.
     uint32_t ceilingTexture = 0xFFFFFFFFu;
     float ceilingHeight = 16.0f, ceilingTile = 24.0f;
+    // A room's panorama projected onto a real room around the board (resolve.hlsl roomProjected): its centre, round wall radius
+    // (0 = none) and the painting's eye height above the floor.
+    float roomCentreX = 0.0f, roomCentreZ = 0.0f, roomRadius = 0.0f, roomEye = 1.7f;
   };
   void setBackground(uint32_t background, uint32_t mode = 0, glm::vec4 fitA = {}, glm::vec4 fitB = {}, const BackdropPlane& plane = {}) {
     background_ = background;
