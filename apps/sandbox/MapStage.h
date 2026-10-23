@@ -406,7 +406,8 @@ class MapStage final : public Stage {
       // Luz das janelas: by map id (each map its own diorama): the watchtower's roofed floors open with it; every other map OFF.
       windowLight_ = options.windowLight >= 0 ? std::clamp(options.windowLight, 0, 1) : kWindowLightMaps.contains(board_->draft().id) ? 1 : 0;
       // ... and their Atmosfera opens OFF (the user, 2026-10-21: the sunlit air outside, exposed for the room, veiled it white).
-      if (options.atmos < 0 && kWindowLightMaps.contains(board_->draft().id)) atmosChoice_ = 0;
+      // The watchtower now opens with it ON (the user, 2026-10-22: "activate the atmosphere and sky on the watchtower"); the panel keeps OFF.
+      if (options.atmos < 0 && kWindowLightMaps.contains(board_->draft().id) && !watchtower()) atmosChoice_ = 0;
       if (scene_->environment != "indoor")  // the map's night, or any night of the 24 h cycle
         for (const char* phase : e2::kMoonPhases) ground_.requestTexture(e2::skyMoonAsset(phase));  // 0.1 MB each
     }
@@ -807,9 +808,10 @@ class MapStage final : public Stage {
         // at the board's own base (as the outdoor ground plane above), emberFloorDepth further down
         plane.y = (look_ == e2::EdgeStyle::Smooth ? groundLow_ - 0.35f : std::min(0.0f, groundLow_)) - draft.emberFloorDepth;
         plane.tile = draft.emberFloorTile;
-        renderer.setBackground(plane.texture, 7u, {}, {}, plane);
+        // the watchtower: the real sky above the horizon (mode 9; the user, 2026-10-22: "activate the atmosphere and sky on the watchtower")
+        renderer.setBackground(plane.texture, watchtower() ? 9u : 7u, {}, {}, plane);
       } else {
-        renderer.setBackground(Renderer::kBlackBackground, 0u);
+        renderer.setBackground(watchtower() ? kNoTextureIndex : Renderer::kBlackBackground, 0u);
       }
     } else {
       uint32_t bg = kNoTextureIndex;  // the sky (or the clear colour)
@@ -9370,6 +9372,8 @@ class MapStage final : public Stage {
   static constexpr float kMinPitch = -0.1396f, kMinEyePitch = 0.0873f, kMaxPitch = 1.5621f;
   // ONLY the aldeia looks up to -8 deg (the user, 2026-10-19: "somente a aldeia, só um por vez"); every other map keeps 5 deg.
   bool aldeia() const { return board_ && board_->draft().id == "aldeia"; }
+  // The watchtower's floors (by map id): the sky above their ground image and the Atmosfera ON (the user, 2026-10-22).
+  bool watchtower() const { return board_ && board_->draft().id.rfind("watchtower", 0) == 0; }
   // Luz das janelas (2026-10-21, the user's spec "iluminação padrão para ambientes internos onde a luz natural entra pelas janelas"
   // + "create real windows and watchtower walls"): an indoor map lit by the hour's real sun / moon through its window pieces, under
   // a roof that only casts shadow (buildRoof); the sky is never drawn. OFF = the old indoor fill light (darkIndoor).
