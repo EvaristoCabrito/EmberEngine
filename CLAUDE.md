@@ -87,8 +87,11 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   disso nunca mais", "RESTAURAR DEFAULT DAQUELE DIA SEM MUDAR UMA VÍRGULA"):** the sky shaders are 7ce25262's text and MapStage's
   `mapLighting / realLighting / cycleHour / cycleLighting` and the sunset block are 236e0fa3's text (the 24 h cycle only with the panel's
   Hora; a map at its own Hora do dia is lit by its preset: bosque's dusk = the sun 4 deg up, not the cycle's 15 deg; the moon opposite the
-  sun; aldeia's own sunset blue), the only difference being the `darkIndoor()` hook where that day tested `environment == "indoor"` (the
-  interior lighting through windows came after). check_sky_lock.py's MapStage markers hold that text. Never "improve" it.
+  sun; aldeia's own sunset blue), with three lines not of that day, each the user's own order of 2026-10-23: the `darkIndoor()` hook
+  where that day tested `environment == "indoor"` (the interior lighting through windows came after); tonight's moon by the panel /
+  the campaign's day, else the map's own Lua (`moonPhaseIndex()`: "espero que tenha todas as luas", "cadê a lua vermelha?"); and the
+  campaign's clock as the cycle's hour source beside the panel's Hora (`clockOn()`, `cycleHour` returning `gameHour_`: "o relógio da
+  campanha dita a hora do mapa", "cadê as estrelas"). check_sky_lock.py's MapStage markers hold that text. Never "improve" it.
   Saved also in docs/ARCHITECTURE.md §7.5, docs/ATMOSPHERE.md, looks/sky/README.md, tools/scripts/check_sky_lock.py (+
   content/sky/sky.locked.json; the check is not yet run by build.bat: the user said "não vai bloquear nada antes de arrumar") and the
   memory note `only-one-sky`. **The user also said: "preste atenção apenas uma coisa por vez": one request at a time.**

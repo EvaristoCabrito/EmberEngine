@@ -40,7 +40,8 @@ SKY_FILES = [
 MAPSTAGE_MARKERS = [
     "if (!underground())  // the map's night, or any night of the 24 h cycle",
     "if (lightingMode_ == 3 && aldeia() && !moonNight_) {",
-    "if (lightingMode_ == 3 && dayCycle_ > 0 && !darkIndoor()) return cycleLighting(time, moon, phase);",
+    "if (lightingMode_ == 3 && clockOn() && !darkIndoor()) return cycleLighting(time, moon, phase);",
+    "bool clockOn() const { return dayCycle_ > 0 || gameHour_ >= 0.0f; }",
 ]
 # Nothing of the tower's own sky (its scale, its clouds, its exposure of the sky) comes back.
 FORBIDDEN_IN_MAPSTAGE = [

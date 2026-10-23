@@ -794,7 +794,7 @@ class MapStage final : public Stage {
       // map whose own time is night, 12 h by day: the stars then hide behind the daylight anyway).
       if (starSky_.loaded() && starLook_ == 4 && !starsOff_) {
         const bool mapNight = scene_ && e2::timeOfDay(scene_->timeOfDay).moon;
-        const float hour = dayCycle_ > 0 ? cycleHour(now_) : mapNight ? 22.0f + std::fmod(now_ / 600.0f, 2.0f) : 12.0f;
+        const float hour = clockOn() ? cycleHour(now_) : mapNight ? 22.0f + std::fmod(now_ / 600.0f, 2.0f) : 12.0f;
         const float lst = starSky_.siderealHours(hour);
         const std::vector<GpuStar> stars = starSky_.gpuStars(lst);
         glm::vec4 clouds4[2]{};
@@ -1457,11 +1457,11 @@ class MapStage final : public Stage {
         if (ImGui::Checkbox(kLayers[i], &on)) layers_ ^= 1u << i;
       }
     }
-    if (scene_ && (!e2::timeOfDay(scene_->timeOfDay).moon || dayCycle_ > 0) && scene_->environment != "indoor") {
+    if (scene_ && (!e2::timeOfDay(scene_->timeOfDay).moon || clockOn()) && scene_->environment != "indoor") {
       static const char* kSun[3] = {"real", "cinema", "001"};
       dropdown("Sol", sunSize_, 3, [](int i) { return std::string(kSun[i]); });
     }
-    if (scene_ && (e2::timeOfDay(scene_->timeOfDay).moon || dayCycle_ > 0)) {
+    if (scene_ && (e2::timeOfDay(scene_->timeOfDay).moon || clockOn())) {
       static const char* kPaths[3] = {"Engine2", "atrás", "na frente"};
       int moon = moonOff_ ? 0 : moonPath_ + 1;
       if (dropdown("Lua", moon, 4, [](int i) { return i == 0 ? std::string("OFF") : std::string(kPaths[i - 1]); })) {
@@ -3198,8 +3198,11 @@ class MapStage final : public Stage {
     Renderer::Lighting l;
     if (lightingMode_ == 0) return l;  // the old prototype day
     const TimeOfDayLight& t = e2::timeOfDay(scene_ ? scene_->timeOfDay : std::string());
-    const char* phase = moonPhase_ < 0 ? "full" : e2::kMoonPhases[moonPhase_];
-    const e2::Moonlight moon = moonPhase_ < 0 ? e2::Moonlight{} : e2::moonlightFor(phase);
+    // (the one line not of 2026-10-19: tonight's moon by the panel / the campaign's day, else the map's own Lua, moonPhaseIndex();
+    // the user, 2026-10-23: "espero que tenha todas as luas", "cadê a lua vermelha?")
+    const int phaseIndex = moonPhaseIndex();
+    const char* phase = phaseIndex < 0 ? "full" : e2::kMoonPhases[phaseIndex];
+    const e2::Moonlight moon = phaseIndex < 0 ? e2::Moonlight{} : e2::moonlightFor(phase);
     MoonPlacement placed;
     if (t.moon) {
       placed = moonPlacement(time);
@@ -3212,7 +3215,7 @@ class MapStage final : public Stage {
       e2::lightDirection(t.stageAzimuth, t.elevationDeg >= 0.0f ? glm::radians(t.elevationDeg) : t.stageElevation, dir);
       l.sunDirection = glm::normalize(glm::vec3(dir[0], dir[1], dir[2]));
     }
-    if (lightingMode_ == 3 && dayCycle_ > 0 && !darkIndoor()) return cycleLighting(time, moon, phase);
+    if (lightingMode_ == 3 && clockOn() && !darkIndoor()) return cycleLighting(time, moon, phase);
     if (lightingMode_ == 3) return realLighting(t, moon, phase, placed, time);
     if (lightingMode_ == 1) {  // Engine2's 3D stage, as it drew (at night: the moon's light from Engine2's side)
       if (t.moon) l.sunDirection = glm::normalize(moonPlacement(time).light);
@@ -3347,7 +3350,12 @@ class MapStage final : public Stage {
     return phase;
   }
 
+  // The 24 h cycle's hour comes from the panel's Hora (2026-10-19's rule) or, when the stage was given the game's clock (a campaign
+  // fight: MapStageOptions::gameHour), from that clock (the user, 2026-10-23: "o relógio da campanha dita a hora do mapa; o ciclo de dia
+  // e noite e os ciclos lunares seguem esse relógio"). Without either, the map's own Hora do dia is lit by its preset, as on the 19th.
+  bool clockOn() const { return dayCycle_ > 0 || gameHour_ >= 0.0f; }
   float cycleHour(float time) const {
+    if (dayCycle_ == 0) return gameHour_;  // the game's clock (clockOn())
     // amanhecer / pôr do sol: the disc ~6 deg up (at 6.0 / 18.0 it sits half under the horizon and the camera, metering
     // the dark ground, blows the sky out: the user's "super bright", 2026-10-19); crepúsculo: the sun 6 deg down.
     static constexpr float kFixed[8] = {6.35f, 9.0f, 12.0f, 15.0f, 17.65f, 18.6f, 22.0f, 3.0f};
@@ -3364,14 +3372,7 @@ class MapStage final : public Stage {
     float d[3];
     e2::lightDirection(azimuth, elevation, d);
     const glm::vec3 sun = glm::normalize(glm::vec3(d[0], d[1], d[2]));
-    // The moon by its phase (the user, 2026-10-23: "lua real por fase (cheia oposta ao sol, quarto a 90°, nova junto ao sol)"): it runs
-    // the sun's own path that many hours behind, 45 deg (3 h) a phase: new 0 h (beside the sun), first quarter 6 h (90 deg east: high at
-    // dusk, setting at midnight), full and blood 12 h (opposite: the path it always had), last quarter 18 h (rising at midnight, high at
-    // dawn). Its height on that path stays 0.9 of the sun's, as before.
-    const int phaseIndex = moonPhaseIndex();
-    const float moonHour = hour - 3.0f * static_cast<float>(phaseIndex < 0 || phaseIndex == 8 ? 4 : phaseIndex);
-    const float moonElevation = 0.9f * glm::radians(62.0f) * std::sin(2.0f * pi * (moonHour - 6.0f) / 24.0f);
-    e2::lightDirection(-0.95f + pi * (moonHour - 12.0f) / 12.0f, moonElevation, d);
+    e2::lightDirection(azimuth + pi, -elevation * 0.9f, d);
     const glm::vec3 moonDir = glm::normalize(glm::vec3(d[0], d[1], d[2]));
     const glm::vec3 moonColor = Renderer::srgb(moon.color ? moon.color : 0x9fb4ffu);
     const float moonLux = (moonLight_ == 1 ? kCinemaMoonLux : kFullMoonLux) * moon.strength;
