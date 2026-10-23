@@ -76,7 +76,9 @@ void CSRelight(uint id : SV_DispatchThreadID) {
   float3 up = 0.0;
   [unroll] for (uint c = 0; c < 9; ++c) {
     up += radiance[c] * kBandIrradiance[c] * upBasis[c];
-    const float3 e = (radiance[c] + fire[c] * max(push.fireScale - 1.0, 0.0)) * kBandIrradiance[c];
+    // The fires' bounce at the fire's own scale, both ways (2026-10-23 night: scaled only upwards, a room shown at the outdoor night
+    // exposure had its torches' bounce 230 x over their pools: random bright blotches over the whole floor, the bake's noise).
+    const float3 e = (radiance[c] - fire[c] + fire[c] * push.fireScale) * kBandIrradiance[c];
     vk::RawBufferStore<float4>(dst + c * 16u, float4(e, c == 0 ? 1.0 : 0.0));
   }
   vk::RawBufferStore<float>(push.readback + uint64_t(id) * 4u, max(dot(up, float3(0.2126, 0.7152, 0.0722)), 0.0) / max(f.exposure, 1e-12));
