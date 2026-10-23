@@ -60,6 +60,15 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"deep-ashen-v01", "woods", "ember-deep-ashen-charred-v01", "content/ground/deep-ashen-forest-ash-tile-v01.png", 4.5f},
     {"deep-ashen-v01", "hill", "ember-deep-ashen-slope-v01", "content/ground/deep-ashen-forest-ash-tile-v01.png", 4.5f},
     {"deep-ashen-v01", "plains", "ember-deep-ashen-loose-ash-v01", "content/ground/deep-ashen-forest-loose-ash-tile-v01.png", 4.0f},
+    // The Misty Cave (cave-v01, the user's photos in Attachments/MistyCave, 2026-10-23; docs/MISTY_CAVE_PROMPTS.md T1-T5, W1; each ~4 m
+    // of ground across its 784 px): bedrock floor, the old worked passage, rockfall, calcite ledges, the wet margin by the water; every
+    // one over its terrain's baked art too. "side" is laid on no hex: BoardGround puts it on the board's sides and cliffs (the rock wall).
+    {"cave-v01", "plains", "ember-cave-chao-v01", "content/ground/cave-chao-v01.png", 4.5f, true},
+    {"cave-v01", "nave", "ember-cave-piso-antigo-v01", "content/ground/cave-piso-antigo-v01.png", 4.0f, true},
+    {"cave-v01", "ruins", "ember-cave-desmoronamento-v01", "content/ground/cave-desmoronamento-v01.png", 4.0f, true},
+    {"cave-v01", "hill", "ember-cave-calcita-v01", "content/ground/cave-calcita-v01.png", 4.0f, true},
+    {"cave-v01", "snow", "ember-cave-margem-v01", "content/ground/cave-margem-v01.png", 4.5f, true},
+    {"cave-v01", "side", "ember-cave-parede-v01", "content/ground/cave-parede-v01.png", 3.0f},
 };
 
 inline std::string skyMoonAsset(std::string_view phase) { return "sky/moon/" + std::string(phase) + ".tex"; }

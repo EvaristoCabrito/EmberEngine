@@ -1,0 +1,11 @@
+{
+  "section": "Caverna",
+  "decorations": [
+    {"id": "ember-cave-fallen-block", "image": "cave-fallen-block-v01", "name": "Bloco de basalto caído", "like": "cave-fractured-boulders-001"},
+    {"id": "ember-cave-ember-seam", "image": "cave-ember-seam-v01", "name": "Veio de brasa", "like": "cave-basalt-006-brazier"},
+    {"id": "ember-cave-pale-fungi", "image": "cave-pale-fungi-v01", "name": "Fungos pálidos", "like": "cave-glowing-mushrooms"},
+    {"id": "ember-cave-column", "image": "cave-column-v01", "name": "Coluna natural", "like": "cave-basalt-006-pillar"},
+    {"id": "ember-cave-column-slender", "image": "cave-column-slender-v01", "name": "Coluna natural esguia", "like": "cave-basalt-006-edge-pillar"},
+    {"id": "ember-cave-expedition-remains", "image": "cave-expedition-remains-v01", "name": "Restos de uma expedição", "like": "cave-basalt-004-original-bones"}
+  ]
+}

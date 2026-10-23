@@ -84,6 +84,8 @@ struct TerrainView {
   // wallFrom's top bit: the board's sides lit and shadowed like the ground (the Inn's floors); clear = its walls and steep side
   // faces take no light or shadow of their own (terrain.hlsl).
   static constexpr uint32_t kWallsLit = 0x80000000u;
+  // wallFrom's bit 30: the added side walls wear the cliff texture (the map's tile set has a "side" rock wall) instead of the top's.
+  static constexpr uint32_t kWallsRock = 0x40000000u;
   explicit operator bool() const { return record != 0 && count != 0; }
 };
 

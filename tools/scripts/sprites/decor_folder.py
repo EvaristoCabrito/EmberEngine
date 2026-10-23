@@ -93,8 +93,16 @@ def remap(v, dupes):
 
 
 def add_own(cat):
+    # content/decor-own.json and every content/decor-own-<name>.json beside it (one editor section each: the Misty Cave's own art,
+    # 2026-10-23, in decor-own-cave.json).
+    content = os.path.join(ROOT, "content")
+    for name in ["decor-own.json"] + sorted(f for f in os.listdir(content) if f.startswith("decor-own-") and f.endswith(".json")):
+        add_own_file(cat, os.path.join(content, name))
+
+
+def add_own_file(cat, file):
     from measure_art import measure
-    own = load(os.path.join(ROOT, "content", "decor-own.json"))
+    own = load(file)
     ed = cat["editor"]
     section = own["section"]
     if section not in ed["decorationSections"]:
@@ -103,7 +111,7 @@ def add_own(cat):
         did, image, like = o["id"], f"{PREFIX}{o['image']}.png", o["like"]
         path = os.path.join(ROOT, FOLDER, o["image"] + ".png")
         if not os.path.exists(path):
-            raise SystemExit(f"{path} missing (content/decor-own.json {did})")
+            raise SystemExit(f"{path} missing ({os.path.basename(file)} {did})")
         cat["decorations"][did] = dict(cat["decorations"][like], name=o["name"])
         cat["facings"][did] = [dict(f, file=o["image"], image=image) for f in cat["facings"][like]]
         ed["decorationInfo"][did] = dict(ed["decorationInfo"][like], section=section, thumb=image)
@@ -112,6 +120,23 @@ def add_own(cat):
             ed["decorationOrder"].append(did)
         cat["measures"][image] = measure(path)
     print(f"catalog: {len(own['decorations'])} own decorations in section {section}")
+
+
+def add_own_backgrounds(cat):
+    # EmberEngine's own map paintings (content/backdrops-own.json: the user's art in content/backdrops), listed in the editor's
+    # Imagem de fundo and found by id (SceneBuilder EditorCatalog::backdrop) like the old ones; a map picks one by its
+    # "backgroundImage" field. Idempotent.
+    path = os.path.join(ROOT, "content", "backdrops-own.json")
+    if not os.path.exists(path):
+        return
+    listed = cat["editor"]["backgrounds"]
+    for b in load(path)["backgrounds"]:
+        if not os.path.exists(os.path.join(ROOT, "content", "backdrops", b["file"])):
+            raise SystemExit(f"content/backdrops/{b['file']} missing (content/backdrops-own.json {b['id']})")
+        entry = {"id": b["id"], "label": b["label"], "file": b["file"]}
+        listed[:] = [x for x in listed if x.get("id") != b["id"]] + [entry]
+        cat["backgrounds"]["byId"][b["id"]] = b["file"]
+    print(f"catalog: {len(load(path)['backgrounds'])} own backgrounds")
 
 
 def patch_catalog(path, dupes):
@@ -131,6 +156,7 @@ def patch_catalog(path, dupes):
         if f"{PREFIX}{kept}.png" not in cat["measures"] and f"{kept}.png" in present:
             cat["measures"][f"{PREFIX}{kept}.png"] = measure(os.path.join(ROOT, FOLDER, f"{kept}.png"))
     add_own(cat)
+    add_own_backgrounds(cat)
     out = json.dumps(cat, ensure_ascii=False, separators=(",", ":")) if "\n" not in raw.strip() else json.dumps(cat, ensure_ascii=False, indent=2)
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         f.write(out + ("\n" if raw.endswith("\n") else ""))

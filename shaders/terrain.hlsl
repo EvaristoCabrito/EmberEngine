@@ -94,7 +94,7 @@ VSOut VSMain(uint id : SV_VertexID) {
   o.layers4 = unpackUnorm8(lb.z);
   o.layers5 = unpackUnorm8(lb.w);
   // 0 the ground; 1 a side wall that takes no light or shadow of its own; 2 a side wall lit like the ground (wallFrom's top bit: the Inn).
-  const uint wallFrom = push.wallFrom & 0x7FFFFFFFu;
+  const uint wallFrom = push.wallFrom & 0x3FFFFFFFu;  // bits 31 (the Inn's lit sides) and 30 (rock walls) are flags
   o.wall = wallFrom != 0 && index >= wallFrom ? ((push.wallFrom & 0x80000000u) != 0 ? 2.0 : 1.0) : 0.0;
   return o;
 }
@@ -331,6 +331,9 @@ float4 PSMain(VSOut i) : SV_Target0 {
     cliffC /= max(ew + rw, 1e-4);
   }
   float3 ground = lerp(cliffC, topC, flatness);
+  // A tile set with its own rock wall (wallFrom's bit 30; BoardGround put it in the earth / cliff slots): the added side walls wear it
+  // too, projected from the side like any cliff, instead of the top's material.
+  if (wall && (push.wallFrom & 0x40000000u) != 0) ground = sideTex(8, geometric, wp, gzy, gxy, s);
   if (push.seamStep > 0.0) {
     // Tabletop pieces: a dark seam where each stacked level meets the next (diorama.html GROOVE).
     const float gy = frac(wp.y / push.seamStep);

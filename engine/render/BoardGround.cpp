@@ -122,7 +122,15 @@ bool BoardGround::build(const e2::Board& board) {
   };
   const size_t protoWord = offsetof(TerrainGpu, proto) / 4;
   static constexpr const char* kProto[9] = {"grass", "forest", "pavers", "snow", "rock", "gravel", "ash", "earth", "cliff"};
-  for (size_t k = 0; k < 9; ++k) want(e2::groundProtoAsset(kProto[k]), protoWord + k);
+  // A tile set with a "side" tile (GroundAssets.h kEmberGroundTiles: the Misty Cave's rock wall) puts it on the board's cliff faces
+  // in place of the procedural earth and cliff surfaces, and on its added side walls (terrain.hlsl: wallFrom's bit 30).
+  std::string sideAsset;
+  {
+    const std::string& set = board.draft().emberTiles;
+    if (const auto side = data.emberGroundLayer.find((set.empty() ? board.draft().id : set) + "|side"); side != data.emberGroundLayer.end())
+      sideAsset = e2::groundLayerAsset(data.groundLayers[side->second].key, "color");
+  }
+  for (size_t k = 0; k < 9; ++k) want(!sideAsset.empty() && (k == 7 || k == 8) ? sideAsset : e2::groundProtoAsset(kProto[k]), protoWord + k);
   want(e2::groundPlains049Asset("color"), offsetof(TerrainGpu, plains049Color) / 4);
   want(e2::groundPlains049Asset("rough"), offsetof(TerrainGpu, plains049Rough) / 4);
   for (size_t k = 0; k < palette.size(); ++k) {
@@ -156,6 +164,8 @@ bool BoardGround::build(const e2::Board& board) {
   // essa área não deve ser afetada por luz e sombra"; terrain.hlsl). The Inn's floors keep their walls lit as before (never touch the
   // Inn): the top bit of wallFrom says so.
   meshes_[0].wallFrom = wallFrom;
+  if (!sideAsset.empty())
+    for (Mesh& m : meshes_) m.wallFrom |= TerrainView::kWallsRock;
   if (board.draft().id.rfind("estalagem", 0) == 0)
     for (Mesh& m : meshes_) m.wallFrom |= TerrainView::kWallsLit;
   for (int i = 0; i < 3; ++i) {
