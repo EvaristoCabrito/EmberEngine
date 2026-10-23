@@ -26,6 +26,18 @@ SHADER_MARKERS = [
     "if (push.ceilingTexture != kNoTexture) sky = ceilingAt(f, dir, pixelAngle);",
     "if (realElevation < 0.0 && push.planeTexture != kNoTexture)",
     "push.backgroundMode == 5",
+    # The ceiling, same rules as the ground (the user, 2026-10-23: "o ceiling precisa continuar assim como o ground, same rules"):
+    # a flat plane ceilingHeight above the floor image's plane, never under the eye, the image ONCE over the room, nothing beyond it,
+    # covering the painting's own ceiling only where the image lies.
+    "const float planeY = max(push.planeY + push.ceilingHeight, f.cameraPosition.y + 4.0);",
+    "const float width = push.roomRadius > 0.0 ? 2.0 * push.roomRadius : push.ceilingTile;",
+    "if (any(m < 0.0) || any(m > 1.0)) return 0.0;",
+    "bool ceilingHit(MeshFrame f, float3 dir)",
+    "skyTop > 0.0 && ceilingHit(f, dir)) scene = smoothstep(skyTop - 0.015, skyTop + 0.015, v);",
+    # The ground: a flat plane under the board (planeY), the image planeTile wide, repeated and mirrored, the painting beyond planeFar.
+    "const float t = (push.planeY - f.cameraPosition.y) / min(dir.y, -1e-4);",
+    "const float2 size = float2(push.planeTile, push.planeTile * float(th) / max(float(tw), 1.0));",
+    "const float far = max(smoothstep(push.planeFar * 0.55, push.planeFar, t),",
 ]
 MAPSTAGE_MARKERS = [
     "if (options.background < 0 && !panoramas_.empty()) background_ = 4 + static_cast<int>(panoramas_.size());",
