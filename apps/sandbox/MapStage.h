@@ -823,7 +823,10 @@ class MapStage final : public Stage {
         // The painting aligned to the sky (backdrop-fit.json): its own sun glow turned under the real key light.
         const BackdropFit& fit = isPanorama ? panoramaFits_[static_cast<size_t>(panorama)] : backdropFit_;
         const float sunAz = std::atan2(lighting.sunDirection.z, lighting.sunDirection.x);
-        const float centre = sunAz - (fit.glowColumn - 0.5f) * glm::radians(fit.spanDegrees);
+        // A room's panorama (`ceiling`: the tavern) has no sun to sit under: it is centred where the camera looks, so its mirrored edges stay
+        // out of the view (centred under the sun, the tavern's showed its mirror seam in the middle of the screen, 2026-10-22).
+        const float centre = fit.ceiling ? std::atan2(lastCamera_.forward.z, lastCamera_.forward.x)
+                                         : sunAz - (fit.glowColumn - 0.5f) * glm::radians(fit.spanDegrees);
         // The ground around the board: the map's top-down ground image (backdrop-fit.json "ground") on a flat plane a little under
         // its lowest ground, the painting beyond `groundFar`; without one, the painting all the way down.
         Renderer::BackdropPlane plane;
@@ -865,7 +868,10 @@ class MapStage final : public Stage {
           plane.tile = draft.emberFloorTile;
           plane.far = flat_ ? 1.0e9f : 900.0f;
         }
-        renderer.setBackground(bg, roomCeiling ? 8u : floor ? 6u : whole ? 5u : fit.alphaSky ? 4u : ownSky ? 3u : 2u, {fit.horizon, fit.bottom, fit.degreesPerHeight, fit.bottomDegrees},
+        // (mode 8, resolve.hlsl roomBackground, is kept but no longer chosen: the user, 2026-10-22, "é para essa merda se comportar como
+        // todos os outros mapas": a room's panorama takes the same modes 2-4 as every map, which now run without the sky when it has a ceiling)
+        (void)roomCeiling;
+        renderer.setBackground(bg, floor ? 6u : whole ? 5u : fit.alphaSky ? 4u : ownSky ? 3u : 2u, {fit.horizon, fit.bottom, fit.degreesPerHeight, fit.bottomDegrees},
                                {centre, skyTop, fit.spanDegrees, fit.horizonDegrees}, plane);
       } else {
         renderer.setBackground(bg, background_ == 3 ? 1u : 0u);
