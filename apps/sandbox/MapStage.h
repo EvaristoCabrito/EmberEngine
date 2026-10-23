@@ -3343,12 +3343,18 @@ class MapStage final : public Stage {
     int phase = moonPhase_;
     for (int i = 0; phase < 0 && scene_ && i < 9; ++i)
       if (scene_->moonPhase == e2::kMoonPhases[i]) phase = i;
+    // A map that chose no Lua: Noite escura takes the new moon (no moon, the whole starry sky), Noite clara the full moon (-1, as
+    // before); the user, 2026-10-23: "Noite escura com lua nova quando o mapa não escolhe a fase; Noite clara com lua cheia".
+    if (phase < 0 && scene_ && scene_->moonPhase.empty() && scene_->timeOfDay == "darkNight") phase = 0;
     return phase;
   }
 
   // The sky follows an hour: a chosen one / a cycle (the panel's Hora), else the game's clock when the stage was given one (the
-  // campaign), else the map's own Hora do dia (Modo teste, the Map Editor: e2::mapHour). Always on.
-  bool cycleOn() const { return true; }
+  // campaign: the user, 2026-10-23, "o relógio da campanha dita a hora do mapa"). Without either (Modo teste, the Map Editor,
+  // captures) the map's own Hora do dia is lit as on 2026-10-19: realLighting's preset (bosque's "dusk" = the sun 4 deg up, red
+  // through the air, the camera closed), NOT the cycle at e2::mapHour (since 02:09 today the cycle ran always: "dusk" became 17.07 h,
+  // the sun 15 deg up, white; the user: "era esse o sol e a lua que eu tinha antes", "só quero de volta ao sol do dia 19").
+  bool cycleOn() const { return dayCycle_ > 0 || gameHour_ >= 0.0f; }
   float cycleHour(float time) const {
     if (dayCycle_ == 0) return gameHour_ >= 0.0f ? gameHour_ : e2::mapHour(scene_ ? scene_->timeOfDay : std::string());
     // amanhecer / pôr do sol: the disc ~6 deg up (at 6.0 / 18.0 it sits half under the horizon and the camera, metering
