@@ -93,6 +93,9 @@ class Volumetrics {
     meanGround_ = meanGround;
     tactical_ = tactical;
   }
+  // The sun's and the sky's light in the air times this (1 = as the profile says): a room exposed for itself shows the air outside
+  // as an outdoor camera would (MapStage, the watchtower).
+  void setOutsideLightScale(float s) { outsideScale_ = s; }
   // The next frame starts its history afresh (a camera cut: Tática on / off, a jump, a new map).
   void invalidateHistory() { historyValid_ = false; }
   // The subsystem's own GPU time (the renderer's "volumetrics" scope) for the adaptive quality.
@@ -137,7 +140,7 @@ class Volumetrics {
   Profile current_, from_, target_;
   float blendSeconds_ = 0.0f, blendT_ = 1.0f;
   std::vector<LocalVolume> volumes_;
-  float meanGround_ = 0.0f;
+  float meanGround_ = 0.0f, outsideScale_ = 1.0f;
   bool tactical_ = false;
   float lastTime_ = -1.0f;
 

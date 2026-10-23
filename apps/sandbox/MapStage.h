@@ -649,6 +649,7 @@ class MapStage final : public Stage {
     const bool probesLive = probeUploaded_ && windowLight() && lightingMode_ == 3;
     if (probesLive) renderer.useProbes();
     Renderer::Lighting lighting = mapLighting(time);
+    const float outsideMeter = meterLux_;  // the reading outside, before a room lit through its windows meters itself
     if (windowLight() && lightingMode_ == 3) {
       // Luz das janelas: the key light (the hour's sun, the moon at night, through the air) comes in only through the openings
       // (the shadow-only roof, buildRoof); the sky's light and the bounced light reach the room through its probes, which carry the
@@ -701,6 +702,19 @@ class MapStage final : public Stage {
         logInfo("camera: meter {:.3f} lux, EV {:.2f}, darkening {:.2f} stops, exposure {:.5f}, key {:.2f} lux at elevation {:.1f} deg",
                 meterLux_, ev, darkening, lighting.exposure, lighting.sunIntensity, glm::degrees(std::asin(std::clamp(lighting.sunDirection.y, -1.0f, 1.0f))));
       lighting.litScale = std::max(meterLux_, 1e-4f) * 1.2f / 2.5f;  // exposure x this = 1 at the metered EV
+      // The watchtower (the user, 2026-10-22: "cadê o céu normal de todos os dias"): the camera exposed for the dark room burned the sky
+      // and the sunlit air outside to white; they are shown as an outdoor camera at this hour shows them (the outdoor meter and night
+      // curve), the room keeps its own exposure.
+      outsideScale_ = 1.0f;
+      if (watchtower() && windowLight()) {
+        const float evOut = std::log2(std::max(outsideMeter, 1e-4f) / 2.5f);
+        float darkOut = nightDarkening(evOut);
+        if (moonNight_ && moonLight_ == 1) darkOut = std::min(darkOut, 2.0f);
+        const float outdoorExposure = 1.0f / (1.2f * std::exp2(evOut + darkOut));
+        outsideScale_ = outdoorExposure / std::max(lighting.exposure, 1e-9f);
+        lighting.skyScale *= outsideScale_;
+        if (readyFrames_ == 30) logInfo("watchtower: sky and air at the outdoor exposure {:.5f} (room {:.5f}, x{:.4f})", outdoorExposure, lighting.exposure, outsideScale_);
+      }
     }
     exposure_ = lighting.exposure;
     // The fire's light never yields to the sun (the user, 2026-10-21: "a luz do sol nunca deve afetar as tochas, fogo e afins ... em nenhuma
@@ -898,6 +912,7 @@ class MapStage final : public Stage {
       atmos.setQuality(kQualities[std::clamp(atmosChoice_, 0, 3)]);
       atmos.setProfile(atmosProfiles_[static_cast<size_t>(std::clamp<int>(climaChoice_, 0, static_cast<int>(atmosProfiles_.size()) - 1))], 1.5f);
       atmos.setScene(meanGround_, flat_);
+      atmos.setOutsideLightScale(outsideScale_);  // the watchtower's air at the outdoor exposure (1 everywhere else)
     }
     // The fog of war's mist: the numbered look on show (render/FogLooks.h; chosen in the Map panel).
     Renderer::FogBank bank;
@@ -9374,6 +9389,7 @@ class MapStage final : public Stage {
   bool aldeia() const { return board_ && board_->draft().id == "aldeia"; }
   // The watchtower's floors (by map id): the sky above their ground image and the Atmosfera ON (the user, 2026-10-22).
   bool watchtower() const { return board_ && board_->draft().id.rfind("watchtower", 0) == 0; }
+  float outsideScale_ = 1.0f;  // the watchtower: outdoor exposure / the room's, for its sky and air (frame())
   // Luz das janelas (2026-10-21, the user's spec "iluminação padrão para ambientes internos onde a luz natural entra pelas janelas"
   // + "create real windows and watchtower walls"): an indoor map lit by the hour's real sun / moon through its window pieces, under
   // a roof that only casts shadow (buildRoof); the sky is never drawn. OFF = the old indoor fill light (darkIndoor).
