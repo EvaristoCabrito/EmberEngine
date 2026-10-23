@@ -1,14 +1,15 @@
+import { engineRoot } from './engineRoot';
 // Engine2's status sheet "Magias e habilidades" rows (src/game/GameApp.tsx StatusPanel), for EmberEngine: per rules class and
 // level 1..30, the rows the sheet lists, built with Engine2's own formula functions. A row whose text depends on the unit's
 // MAG carries the parameters of damageFormula / spellFormula (`mag`); the window computes the total.
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
 //        tools/scripts/engine2/export_status_rows.ts -- <out.status-rows.json>
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-const E2 = process.env.ENGINE2 ?? 'C:/Engine2';
+const E2 = engineRoot;
 const PUBLIC = `${E2}/public`;
 globalThis.fetch = (async (url: string) => {
   const text = readFileSync(`${PUBLIC}${url}`, 'utf8');

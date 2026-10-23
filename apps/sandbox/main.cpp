@@ -196,7 +196,7 @@ struct Options {
   std::string scenes = "build/engine2-scenes", maps;
   uint32_t debugView = 0;
   std::string scene;
-  std::string map, ground, look = "smooth", boardData = "content/engine2/board.json", engine2 = "C:/Engine2/public";
+  std::string map, ground, look = "smooth", boardData = "content/engine2/board.json", gameAssets = "content/game/public";
   std::vector<std::string> compare;  // pakA assetA pakB assetB outDir  // measurement: frames back to back, so the GPU never idles and keeps its full clock
   bool budgetSet = false;
   uint32_t width = 1600, height = 900;
@@ -318,7 +318,7 @@ Options parse(int argc, char** argv) {
     else if (arg == "--windowed") o.windowed = true;
     else if (arg == "--layers" && hasValue) o.lightingLayers = static_cast<uint32_t>(std::strtoul(argv[++i], nullptr, 0));
     else if (arg == "--board" && hasValue) o.boardData = argv[++i];
-    else if (arg == "--engine2" && hasValue) o.engine2 = argv[++i];
+    else if (arg == "--game-assets" && hasValue) o.gameAssets = argv[++i];
     else if (arg == "--content" && hasValue) o.battleContent = argv[++i];
     else if (arg == "--unpaced") o.unpaced = true;
     else if (arg == "--capture-sequence" && hasValue) {
@@ -608,7 +608,7 @@ MapStageOptions mapOptions(const Options& o) {
     m.scene = o.scene;
     m.spriteBudgetMb = o.spriteBudgetMb;
     m.boardData = o.boardData;
-    m.engine2Public = o.engine2;
+    m.engine2Public = o.gameAssets;
     m.look = o.look == "hard" ? e2::EdgeStyle::Hard : o.look == "tabletop" ? e2::EdgeStyle::Tabletop : e2::EdgeStyle::Smooth;
     m.zoom = o.mapZoom;
     m.turnDegrees = o.mapTurn;
@@ -772,8 +772,8 @@ int runCapture(const Options& o) {
     std::optional<TestSession> testSession;
     DevGfx devGfx;  // captures: Engine2's defaults, never the PC's saved switches
     CampaignPaths campaignPaths;
-    campaignPaths.engine2Public = o.engine2;
-    campaignPaths.maps = !o.maps.empty() ? std::filesystem::path(o.maps) : std::filesystem::path(o.engine2).parent_path() / "maps" / "ember";
+    campaignPaths.engine2Public = o.gameAssets;
+    campaignPaths.maps = !o.maps.empty() ? std::filesystem::path(o.maps) : std::filesystem::path("content/maps/ember");
     campaignPaths.scenes = o.scenes;
     if (o.title && o.titleScreen == "map" && hasCampaign && world.load("content/engine2/overworld.json")) {
       // --title-screen map: the active slot's world map (--map-ui: party / quests / options / event / location opened).
@@ -789,7 +789,7 @@ int runCapture(const Options& o) {
       std::optional<MissionEntry> m = test ? testMission(campaign, campaignPaths, id, error) : campaignMission(campaign, campaignPaths, id, error);
       if (!m) fatal(error);
       if (m->prepare) {  // the campaign's game files made first, as the game makes them when the mission opens
-        const MapExportResult made = exportMap(m->source, m->id, MapExportKind::Campaign, campaignPaths, std::filesystem::path(o.engine2).parent_path(),
+        const MapExportResult made = exportMap(m->source, m->id, campaignPaths, std::filesystem::path(o.gameAssets).parent_path(),
                                                campaignPaths.campaign / "logs" / (m->id + ".log"));
         if (!made.ok) fatal("mission " + id + ": its game files could not be made (" + made.error + ")");
         logInfo("mission {}: game files made from {}", id, m->source.generic_string());
@@ -818,7 +818,7 @@ int runCapture(const Options& o) {
       auto missionStage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
       missionStage->setCampaign(&campaign, test ? std::string() : id, id, test);  // the campaign's own save backs the inventory
       // The people who talk (NpcTalk.h); a capture never writes the bank (no campaign record: the Inn's menus read a copy).
-      auto talk = attachNpcTalk(*missionStage, o.engine2, options.world, nullptr, test ? &testSession->save : nullptr, campaign.activeSave());
+      auto talk = attachNpcTalk(*missionStage, o.gameAssets, options.world, nullptr, test ? &testSession->save : nullptr, campaign.activeSave());
       if (missionStage->draftId().rfind("estalagem", 0) == 0) missionStage->setMusic(music::theme("inn"));
       if (o.mapUi.starts_with("npc:")) talk->preview(o.mapUi.substr(4));
       if (o.mapUi == "menu" || o.mapUi == "options" || o.mapUi == "log" || o.mapUi == "fulllog" || o.mapUi == "quests" || o.mapUi == "hotbar" || o.mapUi.starts_with("status") || o.mapUi.starts_with("inventory:") || o.mapUi.starts_with("synced:")) missionStage->previewMenu(o.mapUi);
@@ -854,7 +854,7 @@ int runCapture(const Options& o) {
       }
     } else if (o.title) {
       TitleStage::Paths paths;
-      paths.engine2Public = o.engine2, paths.maps = campaignPaths.maps, paths.scenes = o.scenes;
+      paths.engine2Public = o.gameAssets, paths.maps = campaignPaths.maps, paths.scenes = o.scenes;
       auto title = std::make_unique<TitleStage>(paths, hasCampaign ? &campaign : nullptr, [](const MissionEntry&) {}, [] {}, [] {});
       if (o.titleScreen == "new" || o.titleScreen == "load") title->previewSlots(o.titleScreen == "load");
       title->onOptions({}, &devGfx);  // Engine2's defaults (captures never write the PC's switches: nothing is clicked)
@@ -885,7 +885,7 @@ int runCapture(const Options& o) {
         const bool outro = mission.ends_with(":outro");
         if (outro) mission.resize(mission.size() - 6);
         world.load("content/engine2/overworld.json");
-        if (auto talk = attachBattleTalk(*map, mission, loadDialogs("content/engine2/dialogs.json"), o.engine2, world, nullptr); talk && outro) {
+        if (auto talk = attachBattleTalk(*map, mission, loadDialogs("content/engine2/dialogs.json"), o.gameAssets, world, nullptr); talk && outro) {
           talk->introDone = true;
           talk->open("outro", "outroEnabled");
         }
@@ -900,7 +900,7 @@ int runCapture(const Options& o) {
     if (o.curtain && stage) {
       if (dynamic_cast<MapStage*>(stage.get())) curtain.open(loading::Curtain::Kind::Battle, 0.0);
       else if (dynamic_cast<OverworldStage*>(stage.get())) curtain.open(loading::Curtain::Kind::Map, 0.0);
-      services.curtain = [&] { curtain.draw(o.engine2); };
+        services.curtain = [&] { curtain.draw(o.gameAssets); };
     }
     const auto curtainStep = [&] {
       if (!curtain.up()) return;
@@ -968,7 +968,7 @@ int runWindow(const Options& o) {
   DebugUi ui(context, window.handle(), Renderer::outputFormat());
   Renderer renderer(context, swapchain.get(), swapchain->extent());
   renderer.setUi(&ui);
-  AudioMixer::get().setRoot(o.engine2);  // music and effects from Engine2's public folder (captures stay silent)
+  AudioMixer::get().setRoot(o.gameAssets);
   // The title screen when asked (or when nothing else is). Its save slots open the campaign's world map; a mission
   // from there (or a test-mode map) plays in this window, then the world map comes back.
   std::optional<MissionEntry> pending;
@@ -997,8 +997,8 @@ int runWindow(const Options& o) {
   std::string playing;        // the campaign mission being fought (its result goes into the active slot)
   std::string campaignNote;   // what the world map says when the fight is left
   CampaignPaths paths;
-  paths.engine2Public = o.engine2;
-  paths.maps = !o.maps.empty() ? std::filesystem::path(o.maps) : std::filesystem::path(o.engine2).parent_path() / "maps" / "ember";
+  paths.engine2Public = o.gameAssets;
+  paths.maps = !o.maps.empty() ? std::filesystem::path(o.maps) : std::filesystem::path("content/maps/ember");
   paths.scenes = o.scenes;
   // Engine2's Modo teste (TestModeStage.h): the session (its own save, the travel style) from the title's "Modo teste"
   // until the player goes back to the title; nothing of it is written to the bank.
@@ -1048,7 +1048,7 @@ int runWindow(const Options& o) {
     callbacks.spells = [&] { openSpells = true; };
     callbacks.editor = [&] { openEditor = true; };
     callbacks.fullscreen = toggleFullscreen;
-    return std::make_unique<TestModeStage>(paths, campaign, world, *testSession, devGfx, std::move(callbacks), screen);
+    return std::make_unique<TestModeStage>(paths, campaign, world, *testSession, devGfx, std::move(callbacks), screen, std::exchange(campaignNote, {}));
   };
   auto makeEditor = [&]() -> std::unique_ptr<Stage> {
     MapEditorStage::Callbacks callbacks;
@@ -1073,7 +1073,7 @@ int runWindow(const Options& o) {
     callbacks.title = [&] { openTest = TestModeStage::Screen::Menu; };  // onBack / Voltar à tela inicial: the test menu
     callbacks.fullscreen = toggleFullscreen;
     callbacks.gfx = &devGfx;
-    return std::make_unique<OverworldStage>(paths, campaign, world, std::move(callbacks), std::string{}, &testSession->save);
+    return std::make_unique<OverworldStage>(paths, campaign, world, std::move(callbacks), std::exchange(campaignNote, {}), &testSession->save);
   };
   auto makeMap = [&]() -> std::unique_ptr<Stage> {
     if (!hasWorld) {
@@ -1333,9 +1333,9 @@ int runWindow(const Options& o) {
       stage = std::move(blank);
       preparingEntry = std::move(pending);
       pending.reset();
-      logInfo("{}: making its game files from {}", preparingEntry->campaignId, preparingEntry->source.generic_string());
+      logInfo("{}: making its game files from {}", preparingEntry->draftId, preparingEntry->source.generic_string());
       preparing = std::async(std::launch::async, [entry = *preparingEntry, paths, engine2 = std::filesystem::path(paths.engine2Public).parent_path()] {
-        return exportMap(entry.source, entry.id, MapExportKind::Campaign, paths, engine2, paths.campaign / "logs" / (entry.id + ".log"));
+        return exportMap(entry.source, entry.id, paths, engine2, paths.campaign / "logs" / (entry.id + ".log"));
       });
     }
     if (preparing.valid() && preparing.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
@@ -1344,11 +1344,16 @@ int runWindow(const Options& o) {
         preparingEntry->prepare = false;
         pending = std::move(preparingEntry);
       } else {
-        logWarn("{}: its game files could not be made ({})", preparingEntry->campaignId, r.error);
+        logWarn("{}: its game files could not be made ({})", preparingEntry->draftId, r.error);
         campaignNote = "Não foi possível preparar " + preparingEntry->title + " (" + r.error + ").";
         arriveFrom.clear(), preserveKnockouts = false;
         playing.clear();
-        openMap = true;
+        if (testSession) {
+          if (testSession->mapMode == "rpg") openTestRpg = true;
+          else openTest = TestModeStage::Screen::WorldMap;
+        } else {
+          openMap = true;
+        }
       }
       preparingEntry.reset();
     }
@@ -1654,7 +1659,7 @@ int main(int argc, char** argv) {
   if (argc >= 5 && std::string_view(argv[1]) == "--roster-check") return rosterCheck(argv[2], argv[3], argv[4]);
   // --audio-check [engine2 public folder]: decode every effect and the start of every track (exit 1 if any fails).
   if (argc >= 2 && std::string_view(argv[1]) == "--audio-check")
-    return ember::AudioMixer::check(argc >= 3 ? argv[2] : "C:/Engine2/public") == 0 ? 0 : 1;
+    return ember::AudioMixer::check(argc >= 3 ? argv[2] : "content/game/public") == 0 ? 0 : 1;
   if (argc >= 2 && std::string_view(argv[1]) == "--cursor-check")
     return ember::DebugUi::checkCursors(argc >= 3 ? argv[2] : "build/cursor-check");
   const Options options = parse(argc, argv);

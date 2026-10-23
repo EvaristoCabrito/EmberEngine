@@ -1,3 +1,4 @@
+import { engineRoot } from './engineRoot';
 // Engine2's "Como jogar" window (GameApp.tsx HelpModal, opened by the title's Como jogar) as data for EmberEngine, in both of Engine2's languages: its five tabs (Básicos, Usos, Dano, Fórmulas, Loot)
 // with every text as HelpModal writes it (Portuguese, and the English of its `uiText(..., { en })` / Engine2's
 // dictionary) and every table computed by Engine2's own rules (tierUses, the skill damage rows, weaponSkillAccuracy,
@@ -9,7 +10,7 @@
 // modules, and run as its own module in the temp folder. gamePreferences.ts imports React: its dictionary is read from
 // the source text.
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
 //        tools/scripts/engine2/export_help.ts -- <out help.json> <out ui-text.json>
 //
 // help.json: { pt: Help, en: Help }, Help = { title, close, tabs: [{ id, label, blocks }] }. A block: { t: "list", items }
@@ -22,7 +23,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 
-const E2 = (process.env.ENGINE2 ?? 'C:/Engine2').replaceAll('\\', '/');
+const E2 = engineRoot;
 const PUBLIC = `${E2}/public`;
 globalThis.fetch = (async (url: string) => {
   const text = readFileSync(`${PUBLIC}${url}`, 'utf8');

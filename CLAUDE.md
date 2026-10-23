@@ -648,17 +648,18 @@ proper scaling", the formulas written like Salazar's own; icons in `Attachments/
   spots, the card back on a revival, script `kill:<unit>`), `OverworldStage.h` (the field rows). Tests: `--promote Salazar=salazar:25`,
   `--battle-script "kill:Kael; cast:Salazar:resurrection:Kael"`, `--title-screen test-rpg --map-ui fieldspells`.
 
-## Magias do Conjurador nv 3–15 + Marcar Runa / Retornar (2026-10-20; the user: "do the same process for these Conjurer spells",
-Detonar Invocação in Drenar Vida's place; icons in `Attachments/ConjurerIcons`)
+## Magias do Conjurador na abertura dos tiers + Marcar Runa / Retornar
 
-- **Read `docs/SKILLS_CONJURER.md`.** Troca de Lugar (3, T1: swap with an ally / summon within 6), Lança de Osso (5, T2: arcane line of 3 from
-  the caster, both sides, MAG/2 × 1.3 + 1D8), Imagem Espelhada (7, T2: 2 illusions on an ally for 3 rounds, each hostile hit 1 in 3 strikes a
-  copy: "Ilusão"), Detonar Invocação (9, T3: his summon blows up, MAG/2 × 1.8 + 2D8 within 1 hex, both sides), Elo de Sacrifício (11, T3: for
-  the fight, hits on him go to his nearest summon), Pesadelo (13, T4: range 6, radius 2, MAG/2 × 1.5 + 2D8, sleepers ×2, 25 % fear), Fortalecer
-  Invocações (15, T4: every summon +25 % all stats for 3 rounds). Field: Marcar Runa (5, T2: a rune of the hex as a bag item, `save.runes`, a
-  slot each, note editable in the Mochila's sheet) and Retornar (7, T3: the party to a rune's hex; the rune stays). "conjurer" family =
-  `conjurer` / `sorcerer` / `necromancer`.
-- Code: `Spells.cpp` (`conjurerKind`, `summonsOf`, `ownSummonAt`, `boneLine`, `mirrorAbsorbs` + `bondRedirects` hooked into resolveStrike and
+- **Read `docs/SKILLS_CONJURER.md`.** Troca de Lugar (1, T1: swap with an ally / summon within 6), Reflexo Arcano (3, T2: reflects
+  hostile magic, with absorption unlocked by its existing talent), Imagem Espelhada (3, T2: 2 illusions on an ally for 3 rounds, each
+  hostile hit 1 in 3 strikes a copy: "Ilusão"), Detonar Invocação (6, T3: his summon blows up, MAG/2 × 1.8 + 2D8 within 1 hex, both
+  sides), Pesadelo (8, T4: range 6, radius 2, MAG/2 × 1.5 + 2D8, sleepers ×2, 25 % fear), Fortalecer Invocações (8, T4: every summon
+  +25 % all stats for 3 rounds), Elo de Sacrifício (11, T5: for the fight, hits on him go to his nearest summon; costs one T5 use).
+  Combat learning follows tier openings: T1 at 1, T2 at 3, T3 at 6, T4 at 8, T5 at 11. All existing scaling dates stay unchanged.
+  T3: Familiar Radiante + Detonar Invocação. T5: Familiar Titã + Elo de Sacrifício. Keep T1's three combat spells and T2's four.
+  Field: Marcar Runa (5, T2: a rune of the hex as a bag item, `save.runes`, a slot each, note editable in the Mochila's sheet) and
+  Retornar (7, T3: the party to a rune's hex; the rune stays). "conjurer" family = `conjurer` / `sorcerer` / `necromancer`.
+- Code: `Spells.cpp` (`conjurerKind`, `summonsOf`, `ownSummonAt`, `mirrorAbsorbs` + `bondRedirects` hooked into resolveStrike and
   the spell-hit loop, `BattleStep::sacrifice` dies before the hits, the fear rider), `Battle.h` (`Conditions::mirror* / bondPct / empower*`,
   `empowerBase`), `BattleTurns.cpp` (rounds), `FieldSpells.*` (runes), `Inn.cpp bagUsed`, `InventoryScreen.h` (rune entries + note),
   `OverworldStage.h` (rows, `drawRecallMenu`, `--map-ui recall:<hero>`), `render/vfx/ConjurerFx.*` (7 effects + the standing illusions,
@@ -1022,7 +1023,6 @@ design with the textures at watchtowerwalls", then "update the editor to make it
   mark yet. MapStage `gameHour_` falls back to `kGameStartHour` (8 h, a new save's) when no clock is given (Modo teste's classic map,
   captures), and the panel's Hora "do mapa" is now "do jogo": built, NOT yet seen by the user. Not done yet: indoor maps without windows
   (the Inn) still take no light from outside (darkIndoor); the drawn ceiling.
-- **Gotcha (2026-10-21): `build.bat` piped through PowerShell reported exit 0 on a failed shader compile** (a release with the old shaders
 - **Gotcha (2026-10-22): `build/debug` had NO header dependencies recorded (`ninja -t deps <obj>` said "#deps 0" for every object),
   so a header change (Battle.h's `BattleCell::level`, 18:30) never recompiled Battle.cpp / SceneData.cpp / SpriteSystem.cpp while
   Spells.cpp and main.cpp were compiled with the new layout: the debug exe mixed two layouts of the same structs and crashed right after
@@ -1030,6 +1030,7 @@ design with the textures at watchtowerwalls", then "update the editor to make it
   Battle.cpp.obj). The stale folder was set aside as `build/debug-stale-deps-20261022` and debug configured afresh (scratchpad
   `debug-fresh.cmd`: vcvars + `cmake --preset debug -DFETCHCONTENT_FULLY_DISCONNECTED=ON -DFETCHCONTENT_SOURCE_DIR_<DEP>=build/release/_deps/<dep>-src`).
   **Whenever a debug run crashes where release does not, run `ninja -t deps` on an object of a changed header before hunting the code.**
+- **Gotcha (2026-10-21): `build.bat` piped through PowerShell reported exit 0 on a failed shader compile** (a release with the old shaders
   was captured as if new). Always grep the log for `FAILED` and check the .spv / exe timestamps.
 - **Map Editor, 3D Walls:** "TORRE DE VIGIA" buttons (Parede / Janela / Seteira / Tocha / Portal / Porta) and the wall tools: Clique (as before),
   **Traçar parede** (drag on the preview from hex to hex: the armed piece in a straight or diagonal run; walls under it swapped for the brush,
@@ -1239,6 +1240,24 @@ selecionar os alvos")
   The bar's "Status" button is gone (the portrait opens the sheet). The confirm panel's hit: two decimals ("93,83 % de acerto").
   Capture: `--map-ui hotbar` (the first hero's editor). Not verified: dragging and the F keys in the window (no scripted input).
 
+## Left click = Cancelar; daggers behind the body (2026-10-22, `1a25694`)
+
+- Battle: while a spell / potion is aimed, a strike staged or Atacar / Mão Secundária open, a left click on anything that is
+  not a valid aim / marked foe cancels it and does nothing else (MapStage `cancelAction`, also the bar's Cancelar). Walks are
+  never undone by a click. Proven by script (release + debug with validation, exit 0, 0 validation lines,
+  `captures/cancel/003`, `004-debug`): a spell opened and Atacar opened are both closed by a click outside, nothing walks.
+- Effects are drawn over every card (the user, 2026-10-18); `VfxDraw::behindCard` + `cardAt` is the one exception: the
+  Renderer splits the sorted card draw and puts that draw right before the card standing at cardAt. DaggerFx uses it for
+  the orbit's far half. Capture: `captures/daggers/back-001.png`.
+- Personagens Alta / Média / Leve is read only when a fight loads (`pinUnitArt`): a change mid-fight shows from the next
+  fight. Alta that does not fit the GPU falls back to Leve by itself (the log says "no GPU room for Personagens Alta").
+- **High ground for archers (the user's "faz", 2026-10-22, `0cbc011`):** `BattleCell::level` = the board's real elevation
+  (set by MapStage at fight setup). An arrow flies over any in-between cell lower than the archer's (clearShot); a bow /
+  crossbow blow from a cell higher than the target's gets +5 to hit and +10 % of ATK (`kHighGroundHit`, `kHighGroundAtkPct`
+  in Battle.h: first values, the user may change them). Script step `highshot:<archer>:<target>`.
+- `--battle-save-check` fails on 4 battles in the working tree because of another session's uncommitted
+  `grantClassSpells(u)` in `Battle::applySnapshot` (passes at `0cbc011` without it); not this work's.
+
 ## Waiting on the user
 
 - **Video → sprite pipeline: built (2026-10-18, `1fceba8`), first used on Voss** (`content/sprites/voss-veo/cut.json`, the
@@ -1291,10 +1310,6 @@ selecionar os alvos")
   Small, Large, Slime36, Slime64, spider). Verified: release capture exit 0, all five drawn, their Média sets pinned. **Not verified:** the AI
   casting both acid spells in play, debug + validation, the spider's look and size in the window (the user judges).
 
-## Later milestones
-
-M4 world cells + terrain · M5 lighting/atmosphere · M6 editor · M7 gameplay port + cutscene timeline.
-Exit tests and demonstration gates in ARCHITECTURE.md §9.
 ## Preparo de mapas em C++, sem node em tempo de execução (2026-10-22; the user: "porta o preparo de mapas (make_test_map,
 export_scene, measure_art, export_battle) para C++, sem node em tempo de execução, verificado contra os battle.json atuais dos mapas de prova")
 
@@ -1332,6 +1347,8 @@ export_scene, measure_art, export_battle) para C++, sem node em tempo de execuç
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
+- `build/debug-stale-deps-20261022`: the debug build folder as it was on 2026-10-22 night (no header dependencies recorded, objects of
+  two struct layouts mixed; see the gotcha in Build and run). Set aside, not used; `build/debug` was configured afresh.
 - Sprite packs set aside when a new one was swapped in for JOGAR: `build/sprites/battle-20261021-before-voss-hitdeath.pak`,
   `battle-20261021-before-voss-media.pak` (and the older `battle*.pak` beside them). The pack from before the Cultista Ancestral's
   hit / hit2 / death was deleted on the user's order (2026-10-22: "pode remover o backup do cultista ancestral").
@@ -1347,7 +1364,9 @@ export_scene, measure_art, export_battle) para C++, sem node em tempo de execuç
 - Voss's first hit cut (`content/sprites/voss-veo/hit-v01` before the wall key) was rewritten in place on 2026-10-21 before any commit;
   its video frames stay in `build/video-cut/voss-veo/hit`, so it can be cut again with `video_sprite.py`.
 - **Milf's Acid Arrow (`acidArrow`, Spells.cpp / SpellsE2.inc, 2026-10-22):** built when the user's "Milf's acid arrow" was read as
-- `build/debug-stale-deps-20261022`: the debug build folder as it was on 2026-10-22 night (no header dependencies recorded, objects of
-  two struct layouts mixed; see the gotcha in Build and run). Set aside, not used; `build/debug` was configured afresh.
   AD&D's spell; the user's name belongs to Neera's `venomArrow`. Kept and in use: the Corrosive Slimes cast it.
 
+## Later milestones
+
+M4 world cells + terrain · M5 lighting/atmosphere · M6 editor · M7 gameplay port + cutscene timeline.
+Exit tests and demonstration gates in ARCHITECTURE.md §9.

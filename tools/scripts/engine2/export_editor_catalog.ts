@@ -1,10 +1,11 @@
+import { engineRoot } from './engineRoot';
 // The map editor's catalog: everything export_scene.ts reads from Engine2 to place a map's scene, resolved per
 // decoration and per unit instead of per map, so EmberEngine can build a scene from any draft on the fly
 // (engine/world/SceneBuilder: the editor's live preview). Engine2 is run read-only; decorSize is copied from
 // export_scene.ts (itself a verbatim copy of Engine2's module-private src/world/decor.ts rule).
 // Image measurements (the art's base and flame) are added by measure_art.py --catalog.
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
 //        tools/scripts/engine2/export_editor_catalog.ts -- <out catalog.json>
 //
 // Cooker check-scene-builder compares the C++ builder's scenes with export_scene.ts's on the campaign maps.
@@ -12,7 +13,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-const E2 = process.env.ENGINE2 ?? 'C:/Engine2';
+const E2 = engineRoot;
 // EmberEngine's own tracks (content/music), listed beside Engine2's MUSIC_TRACKS.
 const OWN_MUSIC = readdirSync(`${dirname(fileURLToPath(import.meta.url))}/../../../content/music`).filter((f) => f.endsWith('.mp3'));
 const PUBLIC = `${E2}/public`;

@@ -1,14 +1,15 @@
+import { engineRoot } from './engineRoot';
 // Engine2's mission dialogs for EmberEngine: each mission's intro and outro conversation (mapstore ALL_MISSIONS
 // introDialog / outroDialog, with their enabled switches) and, for every line, the portrait Engine2 shows beside it
 // (DialogOverlay.tsx dialoguePortraitFor, with the mission's spawns standing in for the battle's units).
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
 //        tools/scripts/engine2/export_dialogs.ts -- <out.dialogs.json>
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-const E2 = process.env.ENGINE2 ?? 'C:/Engine2';
+const E2 = engineRoot;
 const PUBLIC = `${E2}/public`;
 globalThis.fetch = (async (url: string) => {
   const text = readFileSync(`${PUBLIC}${url}`, 'utf8');

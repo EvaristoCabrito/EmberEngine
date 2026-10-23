@@ -1,14 +1,15 @@
+import { engineRoot } from './engineRoot';
 // Engine2's Inn (src/game/InnScreen.tsx and GameApp's Inn handlers) as data for EmberEngine: prices, the potions and
 // the lockpick as the Adega sells them, and every weapon and piece of gear with what Vargan's smith shows of it (icon,
 // dice, range, tooltip, price, enhancement costs, sell value per enhancement), read-only from Engine2's own modules.
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
 //        tools/scripts/engine2/export_inn.ts -- <out.inn.json>
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-const E2 = process.env.ENGINE2 ?? 'C:/Engine2';
+const E2 = engineRoot;
 const PUBLIC = `${E2}/public`;
 globalThis.fetch = (async (url: string) => {
   const text = readFileSync(`${PUBLIC}${url}`, 'utf8');

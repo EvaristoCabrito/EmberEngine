@@ -84,6 +84,7 @@ constexpr SpellData kSpells[] = {
     {"intimidatingPresence", "Presença Intimidante", 5, "", false},
     {"secondWind", "Fôlego Renovado", 3, "", false},
 };
+constexpr int kMageIceStormLevel = 8;  // T4's first use in the Mago Negro's tier table.
 // EmberEngine's own spells: the Mago Negro's promotions, two per tier from T6 to T10 (docs/SPELLS_PROMOTIONS.md).
 struct EmberSpell {
   SpellData data;
@@ -141,16 +142,16 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"circleOfHealing", "Círculo de Cura", 4, "holy", false}, "healer", 9},
     {{"resurrection", "Ressurreição", 5, "holy", false}, "healer", 12},
     {{"judgment", "Julgamento", 5, "holy", false}, "healer", 14},
-    // Conjurador (docs/SKILLS_CONJURER.md, 2026-10-20; Malrec, class `conjurer`): a new spell every two levels from 3 to 15, combat and
-    // utility by turns; the Arcanista and the Necromante keep them. The field spells (Marcar Runa, Retornar) live in world/FieldSpells.
-    {{"placeSwap", "Troca de Lugar", 1, "", false}, "conjurer", 3},
-    {{"arcaneReflection", "Reflexo Arcano", 2, "arcane", false}, "conjurer", 5},  // in the Lança's place (the user, 2026-10-20)
-    {{"mirrorImage", "Imagem Espelhada", 2, "", false}, "conjurer", 7},
-    {{"detonateSummon", "Detonar Invocação", 3, "arcane", false}, "conjurer", 9},
-    {{"sacrificeBond", "Elo de Sacrifício", 3, "", false}, "conjurer", 11},
-    {{"nightmare", "Pesadelo", 4, "arcane", false}, "conjurer", 13},
+    // Conjurador: combat spells open with their tier (1 / 3 / 6 / 8 / 11); their existing scaling tracks keep their dates.
+    // The Arcanista and the Necromante keep them. The field spells (Marcar Runa, Retornar) live in world/FieldSpells.
+    {{"placeSwap", "Troca de Lugar", 1, "", false}, "conjurer", 1},
+    {{"arcaneReflection", "Reflexo Arcano", 2, "arcane", false}, "conjurer", 3},
+    {{"mirrorImage", "Imagem Espelhada", 2, "", false}, "conjurer", 3},
+    {{"detonateSummon", "Detonar Invocação", 3, "arcane", false}, "conjurer", 6},
+    {{"sacrificeBond", "Elo de Sacrifício", 5, "", false}, "conjurer", 11},
+    {{"nightmare", "Pesadelo", 4, "arcane", false}, "conjurer", 8},
     {{"boneLance", "Lança de Ossos", 6, "darkness", false}, "necromancer", 15},  // the Necromante's T6 (the user, 2026-10-20)
-    {{"empowerSummons", "Fortalecer Invocações", 4, "", false}, "conjurer", 15},
+    {{"empowerSummons", "Fortalecer Invocações", 4, "", false}, "conjurer", 8},
     // Mago Negro (docs/SKILLS_MAGE.md, 2026-10-21; Voss, class `mage` / `voss`): the Bruxo and the Elementalista keep them
     {{"cloudOfDaggers", "Nuvem de Adagas", 4, "arcane", false}, "mage", 8},
     {{"dispelMagic", "Dissipar Magia", 3, "arcane", false}, "mage", 6},
@@ -374,7 +375,7 @@ const PoisonTier* poisonTier(const std::string& id) {
 constexpr int kReachCap = 12;
 struct SpellTrack {
   const char* kind;
-  int learn;          // the level it is learned (its tier's first use for the class)
+  int learn;          // scaling anchor; class learning can be earlier while these improvement dates stay fixed
   const char* steps;  // 14 tokens, one per level after `learn`: a letter and the step ("r1" = +1 hex of reach), "-" = none
 };
 // TRACKS-BEGIN (written by tools/scripts/spells/tracks.py; the level each token lands on = learn + its place, 1 to 14)
@@ -2363,6 +2364,7 @@ std::string emberSpellClass(const std::string& kind) {
   return e ? e->cls : "";
 }
 int spellLearnLevel(const std::string& kind) {
+  if (kind == "iceStorm") return kMageIceStormLevel;
   const EmberSpell* e = emberSpell(kind);
   return e ? e->learn : 0;
 }
@@ -2504,6 +2506,11 @@ std::vector<std::string> checkSpellTracks(std::vector<std::string>* report) {
 void grantClassSpells(BattleUnit& u) {
   for (const std::string& k : emberSpells(u.classId, u.level))
     if (!contains(u.spellList, k)) u.spellList.push_back(k);
+  // The ordinary spell bar and casting checks must grant Voss the same storm the effects preview can play.
+  // Keep its existing casting implementation; this is a class unlock, not a new spell formula.
+  if (u.side == "player" && emberClassFamily(u.classId) == std::string("mage") && u.level >= kMageIceStormLevel &&
+      !contains(u.spellList, std::string("iceStorm")))
+    u.spellList.push_back("iceStorm");
   if (progressionEnabled() && u.side == "player") {
     const bool necromancer = u.classId == "necromancer" && u.level >= 15;
     if (!necromancer) std::erase(u.spellList, std::string("summonZombieDog"));

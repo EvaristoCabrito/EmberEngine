@@ -1,6 +1,6 @@
 #pragma once
 
-// A real Ember map from Engine2 (C:/Engine2/maps): its board and ground in both looks, its water, and its
+// A real Ember map from the project's local game-data snapshot: its board and ground in both looks, its water, and its
 // scene as Engine2 places it (decoration cards, 3D models, units from the spawns; imported by
 // tools/scripts/engine2/export_scene.ts + measure_art.py), with Engine2's camera. D1 port, step by step
 // (docs/ENGINE2_AUDIT.md). Engine2 stays read-only: maps and relief grids are read from it; textures,
@@ -101,7 +101,7 @@ struct MapStageOptions {
   std::filesystem::path scene;  // imported scene (optional): decorations, models, units
   uint64_t spriteBudgetMb = 1024;
   std::filesystem::path boardData = "content/engine2/board.json";
-  std::filesystem::path engine2Public = "C:/Engine2/public";
+  std::filesystem::path engine2Public = "content/game/public";
   e2::EdgeStyle look = e2::EdgeStyle::Smooth;
   // Captures: camera relative to Engine2's normal view, and lighting layers switched on.
   float zoom = 1.0f;          // distance divided by this

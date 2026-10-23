@@ -1553,17 +1553,15 @@ class MapEditorStage : public Stage {
     rescan();
     return true;
   }
-  // A map file made playable for the campaign and for Modo teste (MapExport.h), in the background.
+  // One prepared map is shared by campaign and Modo teste.
   void prepare(const std::filesystem::path& file) {
     const std::string stem = file.stem().string();
     const std::filesystem::path engine2 = base_.engine2Public.parent_path();
     exports_.push_back(std::async(std::launch::async, [paths = paths_, file, stem, engine2]() -> std::string {
       const std::filesystem::path log = std::filesystem::path("build/editor") / (stem + ".log");
-      const MapExportResult c = exportMap(file, stem, MapExportKind::Campaign, paths, engine2, log);
+      const MapExportResult c = exportMap(file, stem, paths, engine2, log);
       if (!c.ok) return "Salvo, mas a preparação para a campanha falhou (" + c.error + ").";
-      const MapExportResult t = exportMap(file, stem, MapExportKind::Test, paths, engine2, log);
-      if (!t.ok) return "Salvo e pronto na campanha; o modo teste falhou (" + t.error + ").";
-      return "Salvo " + stem + ": a campanha e o modo teste já jogam esta versão.";
+      return "Salvo " + stem + ": campanha e Modo Teste usam esta mesma versão.";
     }));
   }
 
@@ -1641,10 +1639,8 @@ class MapEditorStage : public Stage {
     note(what);
   }
 
-  // Testar (MapEditorScreen onPlaytest -> GameApp startBattle with the draft as an override, test mode): the draft is
-  // written as a map file, Engine2's own exporters add the missing heroes (make_test_map.ts, keeping the authored levels)
-  // and build its scene and rules (export_scene.ts + measure_art.py, export_battle.ts with each spawn's own level), then
-  // the battle opens. Runs off the main thread (a few seconds).
+  // Testar uses the same campaign map preparation and battle rules. The caller supplies the test save, which provides
+  // the full level-30 party; the draft does not get a separate level-15 battle export.
   void playtest() {
     if (playtest_.valid()) return;
     const std::string id = scenarioId(draft_.value("id", "scenario"));
@@ -1657,8 +1653,10 @@ class MapEditorStage : public Stage {
     const std::filesystem::path engine2 = base_.engine2Public.parent_path();
     const std::string title = draft_.value("title", id), place = draft_.value("place", ""), briefing = draft_.value("briefing", ""),
                       objective = draft_.value("objective", "");
+    CampaignPaths previewPaths = paths_;
+    previewPaths.campaign = dir;
     note("Testando — Encerrar teste nas Opções traz o mapa de volta como está.");
-    playtest_ = std::async(std::launch::async, [this, dir, id, file, engine2, title, place, briefing, objective]() -> std::optional<MissionEntry> {
+    playtest_ = std::async(std::launch::async, [this, dir, id, file, engine2, paths = std::move(previewPaths), title, place, briefing, objective]() -> std::optional<MissionEntry> {
       std::error_code ec;
       std::filesystem::create_directories(dir, ec);
       const std::filesystem::path source = dir / (id + ".draft.json");
@@ -1666,7 +1664,7 @@ class MapEditorStage : public Stage {
         std::ofstream f(source, std::ios::binary | std::ios::trunc);
         f << file.dump(2) << "\n";
       }
-      const MapExportResult r = exportMap(source, id, MapExportKind::Playtest, paths_, engine2, dir / (id + ".log"), dir);
+      const MapExportResult r = exportMap(source, id, paths, engine2, dir / (id + ".log"));
       if (!r.ok) {
         playtestError_ = "O teste não pôde ser preparado (" + r.error + ").";
         return std::nullopt;
@@ -1693,8 +1691,30 @@ class MapEditorStage : public Stage {
     return std::nullopt;
   }
   static bool byName(const std::string& a, const std::string& b) { return lower(a) < lower(b); }
+  static std::string mapNameKey(const std::string& name) {
+    std::string key;
+    for (size_t i = 0; i < name.size(); ++i) {
+      const unsigned char c = static_cast<unsigned char>(name[i]);
+      if (c == 0xC3 && i + 1 < name.size()) {
+        const unsigned char d = static_cast<unsigned char>(name[++i]) | 0x20;
+        if (d >= 0xA0 && d <= 0xA5) key.push_back('a');
+        else if (d == 0xA7) key.push_back('c');
+        else if (d >= 0xA8 && d <= 0xAB) key.push_back('e');
+        else if (d >= 0xAC && d <= 0xAF) key.push_back('i');
+        else if (d >= 0xB2 && d <= 0xB6) key.push_back('o');
+        else if (d >= 0xB9 && d <= 0xBC) key.push_back('u');
+        else key.append(name, i - 1, 2);
+      } else {
+        key.push_back(static_cast<char>(std::tolower(c)));
+      }
+    }
+    return key;
+  }
+  static bool mapTitleBefore(const std::string& a, const std::string& b) { return mapNameKey(a) < mapNameKey(b); }
   static void sortRefs(std::vector<MapRef>& v) {
-    std::sort(v.begin(), v.end(), [](const MapRef& a, const MapRef& b) { return a.index != b.index ? a.index < b.index : byName(a.title, b.title); });
+    std::sort(v.begin(), v.end(), [](const MapRef& a, const MapRef& b) {
+      return mapTitleBefore(a.title, b.title) || (!mapTitleBefore(b.title, a.title) && a.id < b.id);
+    });
   }
   std::set<std::string> campaignIds() const {
     std::set<std::string> ids;
@@ -1756,7 +1776,9 @@ class MapEditorStage : public Stage {
   std::vector<MapRef> connectorTargets() const {
     std::vector<MapRef> out = campaignRefs(), reserve = reserveRefs();
     out.insert(out.end(), reserve.begin(), reserve.end());
-    std::sort(out.begin(), out.end(), [](const MapRef& a, const MapRef& b) { return byName(a.title, b.title); });
+    std::sort(out.begin(), out.end(), [](const MapRef& a, const MapRef& b) {
+      return mapTitleBefore(a.title, b.title) || (!mapTitleBefore(b.title, a.title) && a.id < b.id);
+    });
     return out;
   }
 
@@ -1923,8 +1945,13 @@ class MapEditorStage : public Stage {
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("Espalha barricadas, barrancos e terreno alto pelo mapa do tamanho atual — depois é só limpar o que não serve");
     ImGui::SetNextItemWidth(-1);
     if (ImGui::BeginCombo("##campaignmap", "Carregar mapa da campanha…")) {
-      for (const MapRef& m : campaignRefs())
+      LetterJump jump;
+      jump.begin();
+      for (const MapRef& m : campaignRefs()) {
         if (ImGui::Selectable(std::format("{}##{}", m.title, m.id).c_str())) loadCampaignMap(m.id);
+        jump.item(m.title);
+      }
+      jump.end();
       ImGui::EndCombo();
     }
     // Abrir mapa salvo: reserve maps only (campaign maps are in the picker above), the newest save of each.
@@ -1932,18 +1959,24 @@ class MapEditorStage : public Stage {
     std::vector<const Scenario*> pickable;
     for (const auto& [id, s] : saved_)
       if (!campaign.contains(id)) pickable.push_back(&s);
-    std::sort(pickable.begin(), pickable.end(), [](const Scenario* a, const Scenario* b) { return byName(a->title, b->title); });
+    std::sort(pickable.begin(), pickable.end(), [](const Scenario* a, const Scenario* b) {
+      return mapTitleBefore(a->title, b->title) || (!mapTitleBefore(b->title, a->title) && a->id < b->id);
+    });
     if (!pickable.empty()) {
       ImGui::SetNextItemWidth(-1);
       if (ImGui::BeginCombo("##savedmap", "Abrir mapa salvo…")) {
         const std::map<std::string, int> active = activeMaps();
+        LetterJump jump;
+        jump.begin();
         for (const Scenario* s : pickable) {
           const auto a = active.find(s->id);
           const std::string label = std::format("{} · {} ({} arquivo{}{})##{}", s->title, s->id, s->files.size(), s->files.size() == 1 ? "" : "s",
                                                 a != active.end() ? std::format(", v{:03} ativa", a->second) : "", s->id);
           if (ImGui::Selectable(label.c_str()) && !s->files.empty())
             openFile(s->files.back().file, std::format("Aberto {} — o save mais novo de \"{}\".", s->files.back().file.filename().string(), s->id));
+          jump.item(s->title);
         }
+        jump.end();
         ImGui::EndCombo();
       }
       if (ImGui::IsItemHovered()) ImGui::SetTooltip("Abre o save mais recente desse cenário — a lista de arquivos abaixo deixa escolher outro serial");
@@ -1952,8 +1985,13 @@ class MapEditorStage : public Stage {
     if (!hubs.empty()) {
       ImGui::SetNextItemWidth(-1);
       if (ImGui::BeginCombo("##cityhubs", "CityHubs…")) {
-        for (const MapRef& m : hubs)
+        LetterJump jump;
+        jump.begin();
+        for (const MapRef& m : hubs) {
           if (ImGui::Selectable(std::format("{}##{}", m.title, m.id).c_str())) loadCampaignMap(m.id);
+          jump.item(m.title);
+        }
+        jump.end();
         ImGui::EndCombo();
       }
       if (ImGui::IsItemHovered()) ImGui::SetTooltip("Mapas de hub (a Estalagem, cidades) e os andares ligados a eles por escada — sem combate");
@@ -3170,18 +3208,28 @@ class MapEditorStage : public Stage {
       ImGui::SameLine();
       ImGui::SetNextItemWidth(170);
       if (ImGui::BeginCombo("##add", "Adicionar mapa…")) {
-        for (const MapRef& m : reserve)
+        LetterJump jump;
+        jump.begin();
+        for (const MapRef& m : reserve) {
           if (ImGui::Selectable(std::format("{} · {}##{}", m.title, m.id, m.id).c_str())) transferMission(m.id, locId);
+          jump.item(m.title);
+        }
+        jump.end();
         ImGui::EndCombo();
       }
       if (ImGui::IsItemHovered()) ImGui::SetTooltip("Coloca neste Local um mapa seu já salvo que ainda não está na campanha");
       ImGui::SameLine();
       ImGui::SetNextItemWidth(-1);
       if (ImGui::BeginCombo("##addcampaign", "Adicionar mapa da campanha…")) {
-        for (const MapRef& m : campaign)
+        LetterJump jump;
+        jump.begin();
+        for (const MapRef& m : campaign) {
           if (inCampaign.contains(m.id) && std::find(ids.begin(), ids.end(), m.id) == ids.end() &&
               ImGui::Selectable(std::format("{} · {}##{}", m.title, m.id, m.id).c_str()))
             transferMission(m.id, locId);
+          if (inCampaign.contains(m.id) && std::find(ids.begin(), ids.end(), m.id) == ids.end()) jump.item(m.title);
+        }
+        jump.end();
         ImGui::EndCombo();
       }
       if (ImGui::IsItemHovered()) ImGui::SetTooltip("Move pra este Local um mapa que já está em outro Local da campanha");
@@ -3271,6 +3319,8 @@ class MapEditorStage : public Stage {
       hint("SUBMAPS (ANDARES EXTRAS, FORA DO MENU DE CAMPANHA)");
       ImGui::SetNextItemWidth(-1);
       if (ImGui::BeginCombo("##addsub", "Adicionar submap…")) {
+        LetterJump jump;
+        jump.begin();
         for (const MapRef& m : targets) {
           if (std::find(ids.begin(), ids.end(), m.id) != ids.end()) continue;
           const auto& subs = locais_.submaps[locId];
@@ -3280,7 +3330,9 @@ class MapEditorStage : public Stage {
             for (const e2::LocaisFloor& f : subs) top = std::max(top, f.floor);
             act = [this, locId, id = m.id, top] { setSubmap(locId, id, top + 1); };
           }
+          jump.item(m.title);
         }
+        jump.end();
         ImGui::EndCombo();
       }
       ImGui::EndChild();
@@ -3366,12 +3418,17 @@ class MapEditorStage : public Stage {
       ImGui::SameLine();
       ImGui::SetNextItemWidth(-1);
       if (ImGui::BeginCombo("##addsaved", "Adicionar mapa salvo…")) {
-        for (const MapRef& m : reserve)
+        LetterJump jump;
+        jump.begin();
+        for (const MapRef& m : reserve) {
           if (!assigned.contains(m.id) && ImGui::Selectable(std::format("{} · {}##{}", m.title, m.id, m.id).c_str()))
             act = [this, ri, id = m.id] {
               locais_.regions[ri].encounterIds.push_back(id);
               saveRegions();
             };
+          if (!assigned.contains(m.id)) jump.item(m.title);
+        }
+        jump.end();
         ImGui::EndCombo();
       }
       if (region.encounterIds.empty()) hint("Nenhum encontro nesta região ainda.");

@@ -1,16 +1,17 @@
+import { engineRoot } from './engineRoot';
 // Map importer: one Ember map's scene as Engine2 places it (decorations, 3D models, architecture, lights,
 // units), resolved by Engine2's own rules and written as EmberEngine data. Engine2's game design is the
 // reference (ARCHITECTURE §8): its tables and functions are run here, read-only; only the two small
 // module-private rules decor.ts keeps to itself (decorSize, the unit mirroring rule) are copied verbatim.
 // Image-based measurements (the art's opaque base, the painted flame) are made by EmberEngine from the art.
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
 //        tools/scripts/engine2/export_scene.ts -- <map.json> <out.scene.json>
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-const E2 = 'C:/Engine2';
+const E2 = engineRoot;
 const PUBLIC = `${E2}/public`;
 globalThis.fetch = (async (url: string) => {
   const text = readFileSync(`${PUBLIC}${url}`, 'utf8');

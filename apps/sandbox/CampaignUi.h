@@ -37,12 +37,11 @@ struct MissionEntry {
 };
 
 struct CampaignPaths {
-  std::filesystem::path engine2Public = "C:/Engine2/public";
-  std::filesystem::path maps;                                 // Engine2's maps/ember
-  std::filesystem::path scenes;                               // build/engine2-scenes (export_scene.ts)
-  std::filesystem::path battles = "content/engine2/battles";  // export_battle.ts
-  std::filesystem::path test = "build/engine2-test";          // Modo teste's missions (export_test_missions.sh)
-  std::filesystem::path campaign = "build/engine2-campaign";  // the campaign's missions, made as they open (MapExport.h Campaign)
+  std::filesystem::path engine2Public = "content/game/public";
+  std::filesystem::path maps = "content/maps/ember";
+  std::filesystem::path scenes = "build/engine2-scenes";
+  std::filesystem::path battles = "content/engine2/battles";
+  std::filesystem::path campaign = "build/engine2-campaign";
 };
 
 // CSS text-transform: uppercase, for ASCII and the accented Latin letters (UTF-8 C3 A0-BE).
@@ -103,18 +102,18 @@ inline MissionMap missionMap(const CampaignPaths& paths, const e2::CampaignMissi
     if (std::filesystem::exists(savedMapsDir() / (stem + ".json"), ec)) return {savedMapsDir() / (stem + ".json"), stem, true};
     if (std::filesystem::exists(paths.maps / (stem + ".json"), ec)) return {paths.maps / (stem + ".json"), stem, false};
   }
-  const std::string engine2Stem = std::filesystem::path(m.mapFile).stem().string();
-  int engine2Serial = 0;
-  if (engine2Stem.size() >= 3) {
-    const std::string digits = engine2Stem.substr(engine2Stem.size() - 3);
-    if (std::all_of(digits.begin(), digits.end(), [](char c) { return c >= '0' && c <= '9'; })) engine2Serial = std::stoi(digits);
+  const std::string stem = std::filesystem::path(m.mapFile).stem().string();
+  int serial = 0;
+  if (stem.size() >= 3) {
+    const std::string digits = stem.substr(stem.size() - 3);
+    if (std::all_of(digits.begin(), digits.end(), [](char c) { return c >= '0' && c <= '9'; })) serial = std::stoi(digits);
   }
   const int own = highestMapSerial(savedMapsDir(), m.id);
-  if (own > engine2Serial || (m.own && own > 0)) {
-    const std::string stem = std::format("{}{:03}", m.id, own);
-    return {savedMapsDir() / (stem + ".json"), stem, true};
+  if (own > serial || (m.own && own > 0)) {
+    const std::string savedStem = std::format("{}{:03}", m.id, own);
+    return {savedMapsDir() / (savedStem + ".json"), savedStem, true};
   }
-  return {paths.maps / m.mapFile, engine2Stem, false};
+  return {paths.maps / (stem + ".json"), stem, false};
 }
 // The texts of a mission entry from its map file's draft (title, place, briefing, objective).
 inline void missionTextsFromDraft(MissionEntry& e, const std::filesystem::path& mapFile) {
@@ -133,7 +132,7 @@ inline void missionTextsFromDraft(MissionEntry& e, const std::filesystem::path& 
 inline std::optional<MissionEntry> campaignMission(const e2::Campaign& campaign, const CampaignPaths& paths, const std::string& id, std::string& error) {
   const e2::CampaignMission* m = campaign.data().mission(id);
   if (!m || (m->mapFile.empty() && !m->own)) {
-    error = "A missão " + id + " não tem mapa salvo no Engine2.";
+    error = "A missão " + id + " não tem mapa local no projeto.";
     return std::nullopt;
   }
   const MissionMap map = missionMap(paths, *m);
@@ -158,29 +157,13 @@ inline std::optional<MissionEntry> campaignMission(const e2::Campaign& campaign,
   return e;
 }
 
-// The same mission as Engine2's Modo teste fights it (all six heroes, level 15, a new save's gear: tools/scripts/engine2/
-// export_test_missions.sh for Engine2's maps, the Map Editor's Salvar for its own): its scene and battle from
-// build/engine2-test. No campaignId: nothing is written back.
+// Test mode opens the campaign's exact prepared map, scene and battle. Its only gameplay differences come from the
+// fresh test save (full party at level 30) and the unlocked map picker; it never uses a second export or combat pipeline.
+inline std::optional<MissionEntry> campaignMission(const e2::Campaign& campaign, const CampaignPaths& paths, const std::string& id, std::string& error);
 inline std::optional<MissionEntry> testMission(const e2::Campaign& campaign, const CampaignPaths& paths, const std::string& id, std::string& error) {
-  const e2::CampaignMission* m = campaign.data().mission(id);
-  if (!m || (m->mapFile.empty() && !m->own)) {
-    error = "A missão " + id + " não tem mapa salvo no Engine2.";
-    return std::nullopt;
-  }
-  const MissionMap map = missionMap(paths, *m);
-  MissionEntry e;
-  e.id = map.stem, e.title = m->title, e.place = m->place, e.draftId = m->id, e.briefing = m->briefing, e.objective = m->objective;
-  if (map.own) missionTextsFromDraft(e, map.file);
-  e.map = map.file;
-  e.scene = paths.test / "scenes" / (map.stem + ".scene.json");
-  e.battle = paths.test / "battles" / (map.stem + ".battle.json");
-  std::error_code ec;
-  if (!std::filesystem::exists(e.map, ec) || !std::filesystem::exists(e.scene, ec) || !std::filesystem::exists(e.battle, ec)) {
-    error = map.own ? "O mapa " + map.stem + " foi salvo no editor mas ainda não foi preparado para o modo teste (salve de novo no editor)."
-                    : "O mapa " + map.stem + " (" + m->title + ") ainda não foi importado para o modo teste (export_test_missions.sh).";
-    return std::nullopt;
-  }
-  return e;
+  std::optional<MissionEntry> entry = campaignMission(campaign, paths, id, error);
+  if (entry) entry->campaignId.clear();
+  return entry;
 }
 
 // Engine2's ember-plate face (shadow, hover glow, bevel, border) over [a, b]: paint only, no ImGui item.

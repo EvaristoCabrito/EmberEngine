@@ -1,3 +1,4 @@
+import { engineRoot } from './engineRoot';
 // Engine2's world map (the RPG overworld) for EmberEngine, read-only from its own modules: the hex board
 // (src/campaign/overworld.ts: which cells exist, travel hours, encounter regions), the map's locations
 // (mapstore ALL_LOCATIONS), mission gating (progression.json, quests.ts, access.ts), and every table one travel
@@ -6,13 +7,13 @@
 // location / mission status, which steps are allowed, and stepOverworld() itself with seeded random numbers, so
 // EmberEngine's port is checked against Engine2 (Cooker check-overworld).
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
 //        tools/scripts/engine2/export_overworld.ts -- <out.overworld.json> <out.references.json>
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-const E2 = process.env.ENGINE2 ?? 'C:/Engine2';
+const E2 = engineRoot;
 const PUBLIC = `${E2}/public`;
 globalThis.fetch = (async (url: string) => {
   const text = readFileSync(`${PUBLIC}${url}`, 'utf8');

@@ -192,7 +192,7 @@ void writeLook010(const FogLookInputs& in, void* out) {
   f.deckY = in.scene.meanGround;
   f.floorY = in.scene.floorY;
   f.topY = in.scene.groundHigh + 5.0f;
-  f.wind = {1.2f, 0.0f, 7.5f};
+  f.wind = {7.5f, 0.0f, 1.2f};
   f.gust = 1.0f;
   f.extinction = 0.13f;
   f.noiseScale = 0.05f;

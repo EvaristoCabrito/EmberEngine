@@ -5,3 +5,4 @@ captures/
 build-log.txt
 build-log-release.txt
 __pycache__/
+content/game/node_modules/

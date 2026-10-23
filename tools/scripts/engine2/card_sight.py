@@ -6,7 +6,7 @@ rows between 20% and 80% of the art's own height, to content/engine2/card-sight.
   {"/game/decorations/<name>.png": share, ...}
 A card blocks sight only where its drawn width (w x share) reaches.
 
-  python -I tools/scripts/engine2/card_sight.py C:/Engine2/public content/engine2/card-sight.json
+  python -I tools/scripts/engine2/card_sight.py content/game/public content/engine2/card-sight.json
 """
 import json
 import sys

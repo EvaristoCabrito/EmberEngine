@@ -4,7 +4,7 @@
 measureBodyShift does it: the median x of the opaque pixels in the bottom quarter of the frame (the legs; arms, a swung
 weapon and a flaring cape sit higher and would skew it), relative to frame 1.
 
-    python -I tools/scripts/engine2/measure_body_shift.py build/engine2-scenes/roster.json C:/Engine2/public
+    python -I tools/scripts/engine2/measure_body_shift.py build/engine2-scenes/roster.json content/game/public
 
 Run it after export_heroes.ts (which rewrites the heroes file). Needs Pillow."""
 

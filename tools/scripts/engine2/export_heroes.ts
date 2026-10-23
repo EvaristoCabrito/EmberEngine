@@ -1,14 +1,15 @@
+import { engineRoot } from './engineRoot';
 // Every unit (the six heroes, summons, monsters, NPCs) with every pose it has, resolved by Engine2's
 // own unit tables (src/units/catalog.ts, visual.ts), read-only: sprite set and clip, Engine2's box for the pose,
 // the art's size and crop, and its frame pacing sampled at 240 Hz. EmberEngine's hero viewer reads this.
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
 //        tools/scripts/engine2/export_heroes.ts -- <out.heroes.json>
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-const E2 = 'C:/Engine2';
+const E2 = engineRoot;
 const PUBLIC = `${E2}/public`;
 globalThis.fetch = (async (url: string) => {
   const text = readFileSync(`${PUBLIC}${url}`, 'utf8');

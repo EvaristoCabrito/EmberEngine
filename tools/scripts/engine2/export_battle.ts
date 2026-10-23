@@ -1,3 +1,4 @@
+import { engineRoot } from './engineRoot';
 // Battle rules for one Ember map, from Engine2's own BattleEngine run headless (read-only): every cell's terrain as the
 // movement rules see it (the decorations' blocking folded in: hexprops.hexDef), every unit the battle starts with
 // (stats, size, body shape) and, as the reference EmberEngine's port is checked against (Cooker check-battle), each
@@ -11,16 +12,16 @@
 // heal, walk, hit, death; which file, volume, start offset, delay and player), recorded by a stand-in for the browser's
 // Audio element; the level-up cue; the mission's music (GameApp's music chain).
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
 //        tools/scripts/engine2/export_battle.ts -- <map.json> <out.battle.json>
 //
-// ENGINE2=<folder> points at another Engine2 checkout (default C:/Engine2).
+// EMBER_GAME_DATA_ROOT=<folder> selects the local game-data snapshot (default content/game).
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const E2 = process.env.ENGINE2 ?? 'C:/Engine2';
+const E2 = engineRoot;
 
 // The engine module touches a few browser globals while it loads and builds a battle; it never draws here.
 const g = globalThis as Record<string, unknown>;
@@ -84,33 +85,17 @@ for (const list of [mission.enemySpawns ?? [], mission.neutralSpawns ?? []])
 if (process.env.PLANT_TEST === '1')
   mission.enemySpawns.forEach((s: any, i: number) => { if (i % 3 === 0) s.classId = 'carnivorousPlant'; else if (i % 3 === 1) s.classId = 'sapling'; });
 // No art is drawn: every art table reads as empty.
+for (const [side, spawns] of Object.entries({ player: mission.playerSpawns, enemy: mission.enemySpawns, neutral: mission.neutralSpawns ?? [] }))
+  for (const spawn of spawns as any[])
+    if (!data.CLASSES[spawn.classId]) throw new Error(`${draft.id}: unknown ${side} class "${spawn.classId}" for "${spawn.name}" at ${spawn.x},${spawn.y}`);
 const art = new Proxy({}, { get: () => new Proxy({}, { get: () => [] }) });
-// TEST_LEVEL=N: Engine2's Modo teste battle (GameApp startBattle with testMode): every party spawn at level N
-// (DEFAULT_TEST_LEVEL is 15) and the engine's test flag (debugFreeCast). The map given is then the test-mode map
-// (make_test_map.ts: the missing heroes added). NO_REFS=1 leaves out the reference answers (the game never reads them).
-const testLevel = Number(process.env.TEST_LEVEL ?? 0);
-// LEVELS_FROM_DRAFT=1 (the map editor's Testar): each spawn's own level from the draft (MapEditorScreen onPlaytest:
-// heroes by name, enemies and neutrals by their index in their list), TEST_LEVEL for a hero without one.
-const fromDraft = process.env.LEVELS_FROM_DRAFT === '1';
-const levels: Record<string, number> = fromDraft
-  ? Object.fromEntries(draft.playerSpawns.map((s: { name: string; level?: number }) => [s.name, s.level ?? testLevel]))
-  : testLevel ? Object.fromEntries(mission.playerSpawns.map((s: { name: string }) => [s.name, testLevel])) : {};
-const enemyLevels = fromDraft ? Object.fromEntries(draft.enemySpawns.map((s: { level?: number }, i: number) => [i, s.level])) : undefined;
-const neutralLevels = fromDraft ? Object.fromEntries((draft.neutralSpawns ?? []).map((s: { level?: number }, i: number) => [i, s.level])) : undefined;
+// This exporter always writes the normal campaign rules. Party progression, including Modo Teste's level-30 save,
+// is applied by EmberEngine after loading these shared battle files. NO_REFS=1 omits answers used only by parity checks.
+const levels: Record<string, number> = {};
+const enemyLevels = undefined;
+const neutralLevels = undefined;
 const noRefs = process.env.NO_REFS === '1';
-// Test battles fight with a brand-new save's gear (GameApp freshTestOverworld + startBattle's roster): the starter weapon
-// in hand, Neera's dagger in the off-hand, nothing else owned.
 const gear: Record<string, unknown> = {};
-if (testLevel) {
-  const fresh = (await import(`${E2}/src/game/save.ts`)).emptySave(false);
-  gear.weapons = Object.fromEntries(Object.entries(fresh.equipped as Record<string, string>).map(([hero, id]) => [hero, { id, enh: fresh.weapons[id] ?? 0 }]));
-  gear.offHand = Object.fromEntries(Object.entries(fresh.equipment as Record<string, { offHand?: string }>).map(([hero, eq]) => [hero, eq.offHand] as const).filter((p) => !!p[1]));
-  gear.equipment = fresh.equipment;
-  gear.statPointAllocations = fresh.statPointAllocations;
-  gear.ownedWeaponIds = Object.keys(fresh.weapons);
-  gear.bags = fresh.bags;
-  gear.promotions = fresh.promotions;
-}
 // PROMOTIONS='{"Kael":"paladin"}': heroes promoted as a save carries them (save.promotions), for references of a
 // promoted class's spells (Mãos Curativas is the paladin's).
 if (process.env.PROMOTIONS) gear.promotions = { ...(gear.promotions as Record<string, string> ?? {}), ...JSON.parse(process.env.PROMOTIONS) };
@@ -135,7 +120,7 @@ if (process.env.SAVE) {
   gear.hungerPenaltyPct = ow.hungerPenaltyFor(s.hungerStreak ?? 0);
 }
 // The editor's preview battle (MapPreviewCanvas): fog off, a fresh party.
-const engine = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0);
+const engine = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, false);
 const e = engine as unknown as Record<string, any>;
 
 // One hex as the battle sees it (also the "after" of a lock that opens).
@@ -169,7 +154,7 @@ for (const d of e.decorations) if (data.CHEST_DECOR_IDS.has(d.id)) {
   const betterSpot = mission.betterChests?.some((c: any) => c.x === d.x && c.y === d.y) ?? false;
   lockList.push({ x: d.x, y: d.y, kind: 'chest', id: d.id, tier: d.id === 'chest-large' ? 'best' : d.id === 'chest-medium' || betterSpot ? 'better' : 'base' });
 }
-const freshEngine = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
+const freshEngine = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, false) as unknown as Record<string, any>;
 // free, passable hexes around a lock where a hero could stand
 const standSpots = (eng: any, lk: { x: number; y: number }) => {
   const occ = pathfinding.occupancy(eng.units);
@@ -300,7 +285,7 @@ for (let ai = 0; !noRefs && ai < e.units.length; ai++)
 const ai: unknown[] = [];
 for (let i = 0; !noRefs && i < e.units.length; i++) {
   if (e.units[i].side !== 'enemy' || !e.units[i].alive) continue;
-  const fresh = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
+  const fresh = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, false) as unknown as Record<string, any>;
   const u = fresh.units[i];
   fresh.queue = [];
   fresh.runAiFor(u);
@@ -320,7 +305,7 @@ const lead = e.units.find((u: { side: string; alive: boolean }) => u.side === 'p
 const near: unknown[] = [];
 for (let i = 0; !noRefs && lead && i < e.units.length; i++) {
   if (e.units[i].side !== 'enemy' || !e.units[i].alive || ((e.units[i].size ?? 1) > 1 && process.env.PLANT_TEST !== '1')) continue;
-  const fresh = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
+  const fresh = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, false) as unknown as Record<string, any>;
   const u = fresh.units[i];
   const occ = pathfinding.occupancy(fresh.units);
   let spot: { x: number; y: number } | null = null;
@@ -347,7 +332,7 @@ for (let i = 0; !noRefs && lead && i < e.units.length; i++) {
 const aiWarp: unknown[] = [];
 for (let i = 0; !noRefs && lead && i < e.units.length; i++) {
   if (e.units[i].side !== 'enemy' || !e.units[i].alive) continue;
-  const fresh = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
+  const fresh = new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, false) as unknown as Record<string, any>;
   const u = fresh.units[i];
   const occ = pathfinding.occupancy(fresh.units);
   const freeAt = (d: number, not?: { x: number; y: number }) => {
@@ -386,7 +371,7 @@ const FX = ['emitParticle', 'emitLevelUpFx', 'emitPotionZeroFx', 'emitHolyFx', '
 const casts: unknown[] = [];
 // SPELL_REFS=1: the cast references for Cooker check-battle (large; the game itself does not read them).
 if (process.env.SPELL_REFS === '1') {
-  const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
+  const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, false) as unknown as Record<string, any>;
   const base = fresh();
   const pristine = structuredClone(base.units);
   let castSeed = 1000;
@@ -530,7 +515,7 @@ const enmityExt = (b: any) => {
 };
 const skillCasts: unknown[] = [];
 if (process.env.SPELL_REFS === '1') {
-  const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
+  const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, false) as unknown as Record<string, any>;
   const base = fresh();
   const pristine = structuredClone(base.units);
   let castSeed = 200000;
@@ -601,7 +586,7 @@ if (process.env.SPELL_REFS === '1') {
 // strikes the two foes nearest to it from where it stands and from the hexes at 1 and 2 from the foe. Recorded like a skill cast, kind
 // "offHand", plus the item's numbers (index 15) so the check can give its own copy the same item.
 if (process.env.SPELL_REFS === '1') {
-  const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
+  const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, false) as unknown as Record<string, any>;
   const base = fresh();
   const pristine = structuredClone(base.units);
   let offSeed = 600000;
@@ -702,7 +687,7 @@ if (process.env.SPELL_REFS === '1') {
 const TURN_SCENARIOS = ['stunned', 'asleep', 'web', 'fear', 'poison', 'ice', 'echo', 'mixed', 'regen', 'regenNear'];
 const turnStarts: unknown[] = [];
 if (process.env.SPELL_REFS === '1') {
-  const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
+  const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, false) as unknown as Record<string, any>;
   const base = fresh();
   const pristine = structuredClone(base.units);
   let turnSeed = 400000;
@@ -753,7 +738,7 @@ if (process.env.SPELL_REFS === '1') {
 const SUPPORT = ['cureMinor', 'cureWounds', 'cureLight', 'cureDisease', 'createFoodAndWater'];
 const supportCasts: unknown[] = [];
 if (process.env.SPELL_REFS === '1') {
-  const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, testLevel > 0) as unknown as Record<string, any>;
+  const fresh = () => new BattleEngine({ ...mission, fog: false }, art, { hp: {}, levels, enemyLevels, neutralLevels, ...gear }, 1, false) as unknown as Record<string, any>;
   const base = fresh();
   const pristine = structuredClone(base.units);
   const hurtScene = (list: any[]) => list.forEach((v, i) => {
@@ -997,7 +982,7 @@ const missionMusic = (() => {
 })();
 
 writeFileSync(outPath, JSON.stringify({ source: 'Engine2 src/game/engine.ts BattleEngine via tools/scripts/engine2/export_battle.ts',
-  map: draft.id, cols: e.cols, rows: e.rows, debugFreeCast: testLevel > 0, explore: !!mission.explore, cells, units, affinityBonus, win: mission.win ?? 'rout', exits, affinityScores: e.affinityScores ?? {}, forecasts, rolls, ai, aiNear: near, aiWarp, locks, ownedWeapons: [...e.ownedWeapons], lockCasts, casts, supportCasts, skillCasts, turnStarts,
+  map: draft.id, cols: e.cols, rows: e.rows, debugFreeCast: false, explore: !!mission.explore, cells, units, affinityBonus, win: mission.win ?? 'rout', exits, affinityScores: e.affinityScores ?? {}, forecasts, rolls, ai, aiNear: near, aiWarp, locks, ownedWeapons: [...e.ownedWeapons], lockCasts, casts, supportCasts, skillCasts, turnStarts,
   sounds: { levelUp }, music: missionMusic }));
 console.log(`${draft.id}: ${e.cols}x${e.rows}, ${units.length} units (${units.map((u) => `${u.name} mov ${u.mov}`).join(', ')})`);
 process.exit(0);  // the engine leaves timers running

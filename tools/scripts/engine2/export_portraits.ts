@@ -1,15 +1,16 @@
+import { engineRoot } from './engineRoot';
 // The portraits Engine2 shows beside a conversation's lines (DialogOverlay.tsx dialoguePortraitFor over assets.ts portraitFor),
 // for any map's NPC conversations (Spawn.dialog), the Map Editor's own maps included: DialogOverlay's speaker table and
 // portraitFor's answer for every class's sprite and every speaker's sprite. A sprite missing here takes portraitFor's own
 // fallback (`/game/sprites/<sprite>/1.png`, unframed): MapStage / NpcTalk.h apply the same rule (npcPortrait).
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
 //        tools/scripts/engine2/export_portraits.ts -- content/engine2/portraits.json
 
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-const E2 = process.env.ENGINE2 ?? 'C:/Engine2';
+const E2 = engineRoot;
 const g = globalThis as Record<string, unknown>;
 g.window = globalThis;
 g.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };

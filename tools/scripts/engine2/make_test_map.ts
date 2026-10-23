@@ -1,11 +1,10 @@
-// A campaign map as Engine2's Modo teste plays it (GameApp startBattle with testMode, read-only): the heroes a mission's
-// own spawns leave out are added (addAdditionalPartyHeroes with TEST_PARTY_CLASS: each missing hero of the six on the
-// nearest free passable hex, breadth-first from the first party spawn, never on a wall, water or another unit), and
-// every party spawn is at DEFAULT_TEST_LEVEL (15). Free-roam maps (explore) are left as they are, as Engine2 does.
-// The result is a map file like Engine2's own, for export_scene.ts / measure_art.py and export_battle.ts (TEST_LEVEL=15).
+import { engineRoot } from './engineRoot';
+// A campaign map used by normal play and Modo Teste: when CAMPAIGN=1, the six campaign heroes are added to battle maps
+// as entry positions and the normal exporter builds their battle rules. Modo Teste raises its own full party to level 30
+// in the C++ session; this map file does not assign special test levels. Free-roam maps remain unchanged.
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
-//        tools/scripts/engine2/make_test_map.ts -- <map.json> <out test map.json>
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
+//        tools/scripts/engine2/make_test_map.ts -- <map.json> <out campaign map.json>
 //
 // Not applied (as in a fresh test session): the Party menu's formation (a fresh save has none), the travel clock's
 // lighting (test mode never uses it), the leader swap on free-roam maps (the test leader is Kael).
@@ -13,7 +12,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-const E2 = process.env.ENGINE2 ?? 'C:/Engine2';
+const E2 = engineRoot;
 const g = globalThis as Record<string, unknown>;
 g.window = globalThis;
 g.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
@@ -31,17 +30,18 @@ const data = await import(`${E2}/src/game/data.ts`);
 const pathfinding = await import(`${E2}/src/game/pathfinding.ts`);
 
 // GameApp.tsx (module-private there, copied as written).
-const DEFAULT_TEST_LEVEL = 15;
-// CAMPAIGN=1: the campaign's own party instead (campaignParty.ts: "campaign progression defines the party; editor spawns only
-// provide entry positions"): every one of the six with its campaign class (CAMPAIGN_HERO_CLASSES), no level set (the save's
-// levels are raised to in the game), so the game keeps the ones the save has recruited and lets the others go.
-const campaign = process.env.CAMPAIGN === '1';
-const TEST_PARTY_CLASS: Record<string, string> = campaign
-  ? (await import(`${E2}/src/game/campaignParty.ts`)).CAMPAIGN_HERO_CLASSES
-  : { Kael: 'kaelFinal', Neera: 'neera', Voss: 'voss', Salazar: 'salazar', Aldric: 'aldric', Malrec: 'conjurer' };
+// campaignParty.ts: progression determines the party; map spawns only provide entry positions. Normal play and Modo
+// Teste both use this same map. The test session raises its full roster to level 30 after loading the shared battle.
+const CAMPAIGN_HERO_CLASS: Record<string, string> = (await import(`${E2}/src/game/campaignParty.ts`)).CAMPAIGN_HERO_CLASSES;
 
 const file = JSON.parse(readFileSync(mapPath, 'utf8'));
 const draft = file.draft;
+// Older authored maps used the hero's name as a class id (Malrec: "malrec").
+// Repair known party entries in the prepared copy, preserving the authored map and valid promotions.
+for (const spawn of draft.playerSpawns ?? []) {
+  const heroClass = CAMPAIGN_HERO_CLASS[spawn.name];
+  if (!data.CLASSES[spawn.classId] && heroClass) spawn.classId = heroClass;
+}
 const mission = store.draftToMission(draft);
 
 type Spawn = { name: string; classId: string; x: number; y: number; level?: number };
@@ -49,7 +49,7 @@ const added: Spawn[] = [];
 if (!mission.explore) {
   // GameApp addAdditionalPartyHeroes(mission, TEST_PARTY_CLASS)
   const present = new Set(mission.playerSpawns.map((s: Spawn) => s.name));
-  const missing = Object.keys(TEST_PARTY_CLASS).filter((name) => !present.has(name));
+  const missing = Object.keys(CAMPAIGN_HERO_CLASS).filter((name) => !present.has(name));
   const terrain = data.parseLayout(mission.layout);
   const occupied = new Set([...mission.playerSpawns, ...mission.enemySpawns, ...(mission.neutralSpawns ?? [])].map((s: Spawn) => pathfinding.key(s.x, s.y)));
   const anchor = mission.playerSpawns[0] ?? { x: 0, y: 0 };
@@ -74,18 +74,13 @@ if (!mission.explore) {
     }
     if (!placed) continue;
     occupied.add(pathfinding.key(placed.x, placed.y));
-    added.push({ name, classId: TEST_PARTY_CLASS[name]!, x: placed.x, y: placed.y });
+    added.push({ name, classId: CAMPAIGN_HERO_CLASS[name]!, x: placed.x, y: placed.y });
   }
 }
 
-// KEEP_LEVELS=1 (the map editor's Testar, GameApp startBattle with an override): every authored spawn keeps its own
-// level (DEFAULT_TEST_LEVEL when it has none), only the heroes added here take DEFAULT_TEST_LEVEL.
-const keep = process.env.KEEP_LEVELS === '1';
-draft.playerSpawns = campaign
-  ? [...draft.playerSpawns, ...added]
-  : [...draft.playerSpawns, ...added].map((s: Spawn) => ({ ...s, level: keep ? s.level ?? DEFAULT_TEST_LEVEL : DEFAULT_TEST_LEVEL }));
+draft.playerSpawns = [...draft.playerSpawns, ...added];
 file.draft = draft;
 mkdirSync(dirname(outPath), { recursive: true });
 writeFileSync(outPath, JSON.stringify(file));
-console.log(`${draft.id}: test map, ${draft.playerSpawns.length} heroes (${added.length ? 'added ' + added.map((s) => `${s.name} at ${s.x},${s.y}`).join(', ') : 'none added'})`);
+console.log(`${draft.id}: campaign map, ${draft.playerSpawns.length} heroes (${added.length ? 'added ' + added.map((s) => `${s.name} at ${s.x},${s.y}`).join(', ') : 'none added'})`);
 process.exit(0);

@@ -1,16 +1,16 @@
-# As magias do Conjurador: uma a cada dois níveis do 3 ao 15, mais Marcar Runa e Retornar
+# As magias do Conjurador: aprendizado na abertura de cada tier, mais Marcar Runa e Retornar
 
-2026-10-20, the user: "deixar a magia Lança de Ossos como T6 para necromancer, e adaptar para algo mais forte e mais único. enquanto no
-lugar e tier da Lança de Ossos teremos Reflexo Arcano"; the duration 2 to 6 turns, at most 90 % reflected and 50 % absorbed, the excess
-taken until the talent opens. Every number scales on its track (docs/SPELLS_SCALING.md); the table below gives the learning level's.
+Reflexo Arcano: duration 2 to 6 turns, at most 90 % reflected and 50 % absorbed, the excess taken until the talent opens.
+Every number scales on its existing track (docs/SPELLS_SCALING.md); learning earlier does not move any improvement or talent level.
 
 EmberEngine's own spells (2026-10-20; the user: "do the same process for these Conjurer spells", the list pasted, Detonar
 Invocação in Drenar Vida's place: "o Malrec explode uma das próprias invocações. Todos a até 1 hex dela levam MAG/2×1.8+2D8, e
-a invocação some"). Malrec (`conjurer`; the Arcanista and the Necromante are his promotions, `emberClassFamily` → `conjurer`) had
-Engine2's five summons, Força Fantasmagórica (T1) and Teia dos Sonhos (T2), nearly all at level 1. These seven come one every two
-levels, combat and utility by turns; the tier table (`inn.json` tierUses) opens T2 at 3, T3 at 6, T4 at 8.
+a invocação some"). Malrec (`conjurer`; the Arcanista and the Necromante are his promotions, `emberClassFamily` → `conjurer`) learns
+the combat spells below when their tier opens in `inn.json` (`tierUses`): T1 at 1, T2 at 3, T3 at 6, T4 at 8 and T5 at 11.
+Elo de Sacrifício is T5, costs one T5 use and keeps its battle-long effect. T3 contains Familiar Radiante and Detonar Invocação;
+T5 contains Familiar Titã and Elo de Sacrifício. T1 keeps its three combat spells and T2 its four.
 
-Code: `engine/world/Spells.cpp` (`kEmberSpells`, `conjurerKind`, `summonsOf`, `ownSummonAt`, `boneLine`, `mirrorAbsorbs`,
+Code: `engine/world/Spells.cpp` (`kEmberSpells`, `conjurerKind`, `summonsOf`, `ownSummonAt`, `mirrorAbsorbs`,
 `bondRedirects`, `emberNumbers`, `castEmber`, the Effect branches of `resolveStep` (illusions, bond, empowerment, the swap shared with
 Troca de Posto), the sacrifice before a spell's hits, the fear rider, `spellTooltip`, `spellZone`, `spellAimValid`, `spellArea`),
 `Spells.h` (`BattleStep::sacrifice / fearPct / mirror* / bondPct / empower*`), `Battle.h` (`Conditions::mirror* / bondPct / empower*`,
@@ -29,14 +29,13 @@ reach of the aimed ones grows with the level like every other mage's (`reachGrow
 
 | Nível · tier | Magia (kind) | Alvo | Efeito | Escala |
 |---|---|---|---|---|
-| 3 · T1 | Troca de Lugar (`placeSwap`) | aliado ou invocação a até 6 (um hex cada) | os dois trocam de lugar; nada mais | alcance cresce com o nível |
-| 5 · T2 | Reflexo Arcano (`arcaneReflection`) | ele mesmo (instantânea) | por 2 turnos dele, a primeira magia inimiga que o atingir volta 40 % para quem a lançou (sem resistência: é a magia dela) e a guarda acaba; o resto ele recebe. Talento Absorção (nível 8): do que não volta, 10 % vira cura em vez de ferir | a trilha (docs/SPELLS_SCALING.md): reflexo até 90 %, duração até 6 turnos, absorção até 50 % |
-| 7 · T2 | Imagem Espelhada (`mirrorImage`) | aliado a até 6 (ele mesmo também) | 2 cópias ilusórias por 3 rodadas; cada ataque inimigo (golpe ou magia) tem 1 chance em 3 de acertar uma cópia, que some ("Ilusão") | 3 cópias no 16, 4 rodadas no 21, 4 cópias no 27 |
-| 9 · T3 | Detonar Invocação (`detonateSummon`) | uma invocação sua a até 6 | ela explode e some; todos a até 1 hex dela (os dois lados) levam MAG/2 × 1.8 + 2D8 arcano | 3D8 no 17, ×2.1 no 20, raio 2 no 24, 4D8 no 26, ×2.4 no 28 |
-| 11 · T3 | Elo de Sacrifício (`sacrificeBond`) | ele mesmo (instantânea) | até o fim da batalha, o dano de cada golpe ou magia que o Malrec recebe vai para a invocação dele mais próxima; sem invocação de pé, ele recebe | a invocação recebe 75 % no 19 e 50 % no 27 (o resto some) |
-| 13 · T4 | Pesadelo (`nightmare`) | hex a até 6, raio 2, sem linha de tiro | arcano, MAG/2 × 1.5 + 2D8 em cada inimigo; quem dorme pela Teia dos Sonhos leva o dobro; cada atingido de pé tem 25 % de chance de ficar com medo por 1 turno | 3D8 no 18, 35 % no 21, ×1.8 no 24, raio 3 no 25, medo 2 turnos no 27, 4D8 no 30 |
-| 15 · T6 Necromante | Lança de Ossos (`boneLance`) | reta de 4 hexes a partir de si, qualquer ângulo | Escuridão, MAG/2 × 1.8 + 2D8 em cada inimigo na reta (só inimigos); cada um fica Empalado (não anda) por 1 turno. Talento Estilhaços (nível 20): os outros vizinhos da ponta levam 50 % | a trilha: até 6 hexes, 4D12, ×2.2, 2 turnos empalado, estilhaços até 70 % |
-| 15 · T4 | Fortalecer Invocações (`empowerSummons`) | ele mesmo (instantânea; precisa de invocação em campo) | todas as invocações dele: +25 % em todos os atributos (ATK, MAG, DEF, DEX, MOV) por 3 rodadas; os valores inteiros voltam ao fim | +30 % no 20, 4 rodadas no 24, +40 % no 28 |
+| 1 · T1 | Troca de Lugar (`placeSwap`) | aliado ou invocação a até 6 (um hex cada) | os dois trocam de lugar; nada mais | alcance cresce com o nível |
+| 3 · T2 | Reflexo Arcano (`arcaneReflection`) | ele mesmo (instantânea) | por 2 turnos dele, a primeira magia inimiga que o atingir volta 40 % para quem a lançou (sem resistência: é a magia dela) e a guarda acaba; o resto ele recebe. Talento Absorção (nível 8): do que não volta, 10 % vira cura em vez de ferir | a trilha (docs/SPELLS_SCALING.md): reflexo até 90 %, duração até 6 turnos, absorção até 50 % |
+| 3 · T2 | Imagem Espelhada (`mirrorImage`) | aliado a até 6 (ele mesmo também) | 2 cópias ilusórias por 3 rodadas; cada ataque inimigo (golpe ou magia) tem 1 chance em 3 de acertar uma cópia, que some ("Ilusão") | 3 cópias no 16, 4 rodadas no 21, 4 cópias no 27 |
+| 6 · T3 | Detonar Invocação (`detonateSummon`) | uma invocação sua a até 6 | ela explode e some; todos a até 1 hex dela (os dois lados) levam MAG/2 × 1.8 + 2D8 arcano | 3D8 no 17, ×2.1 no 20, raio 2 no 24, 4D8 no 26, ×2.4 no 28 |
+| 8 · T4 | Pesadelo (`nightmare`) | hex a até 6, raio 2, sem linha de tiro | arcano, MAG/2 × 1.5 + 2D8 em cada inimigo; quem dorme pela Teia dos Sonhos leva o dobro; cada atingido de pé tem 25 % de chance de ficar com medo por 1 turno | 3D8 no 18, 35 % no 21, ×1.8 no 24, raio 3 no 25, medo 2 turnos no 27, 4D8 no 30 |
+| 8 · T4 | Fortalecer Invocações (`empowerSummons`) | ele mesmo (instantânea; precisa de invocação em campo) | todas as invocações dele: +25 % em todos os atributos (ATK, MAG, DEF, DEX, MOV) por 3 rodadas; os valores inteiros voltam ao fim | +30 % no 20, 4 rodadas no 24, +40 % no 28 |
+| 11 · T5 | Elo de Sacrifício (`sacrificeBond`) | ele mesmo (instantânea) | até o fim da batalha, o dano de cada golpe ou magia que o Malrec recebe vai para a invocação dele mais próxima; sem invocação de pé, ele recebe | a invocação recebe 75 % no 19 e 50 % no 27 (o resto some) |
 | campo · 5 · T2 | Marcar Runa (`markRune`) | o hex onde o grupo está | uma runa (lugar mais próximo, região, hex, dia, nota) como item da mochila do grupo: um slot; quantas quiser, enquanto houver slot; nunca duas do mesmo hex | — |
 | campo · 7 · T3 | Retornar (`recall`) | uma runa marcada | o grupo vai direto para o hex da runa; a runa fica; gasta um uso do T3 | — |
 
@@ -56,9 +55,6 @@ field spells only).
 
 - **Troca de Lugar:** two spirals of violet motes cross between the two hexes on an arc as the cards fly (0.42 s), a flash and a ring
   at each hex as the cards leave and land; a light travelling between them.
-- **Lança de Osso:** violet motes gather into the caster's hand (0.3 s); a lance of bone (a lit solid: tapered, jagged point, knobbed
-  butt) flies from the hand along the line with a violet charge round it, shedding motes; each body it passes flashes, bone shards fly
-  out and fall, a violet ring opens on the ground; the lance fades a second after the far end.
 - **Imagem Espelhada:** motes orbit the ally while it gathers (0.5 s); a flash and a ring as the copies step out. The copies stand beside
   it for as long as the rules keep them (`syncMirrors`): hooded shapes of hollow violet energy with a brighter heart, facing the eye,
   flanking the unit across the view (left, right, then behind on each side), swaying and breathing, a turning halo at the feet, motes
@@ -76,14 +72,14 @@ field spells only).
 
 ## How it reaches the game
 
-- Learned by level (`grantClassSpells`): a Conjurador / Arcanista / Necromante of level 3 has the Troca, 5 the Lança, 7 the Imagem, 9
-  Detonar, 11 the Elo, 13 Pesadelo, 15 Fortalecer. Marcar Runa needs level 5 and T2 uses, Retornar level 7 and T3 uses; both are rows
+- Learned by level (`grantClassSpells`): a Conjurador / Arcanista / Necromante learns Troca at 1, Reflexo and Imagem at 3, Detonar
+  at 6, Pesadelo and Fortalecer at 8, and Elo at 11 (T5). Marcar Runa needs level 5 and T2 uses, Retornar level 7 and T3 uses; both are rows
   of the world map's field-spells menu ("Marcar", "Runas").
 - HUD: the socket shows the user's icon; its tooltip the numbers at the hero's level (`spellTooltip`); the sheet shows "Imagem
   Espelhada ×N (R)", "Elo de Sacrifício N%", "Fortalecido +N% (R)" among the conditions.
 - Tests: `--promote Malrec=conjurer:25`, `--fx-test <kind>`, the battle script's `summon:Malrec:summonFamiliar` (a familiar on a free hex
   beside him, no uses spent), then `cast:Malrec:detonateSummon:Familiar de Malrec`, `cast:Malrec:empowerSummons:Malrec`,
-  `cast:Malrec:mirrorImage:Kael`, `cast:Malrec:placeSwap:Kael`, `cast:Malrec:boneLance:Piqueiro`, `cast:Malrec:nightmare:Piqueiro`,
+  `cast:Malrec:mirrorImage:Kael`, `cast:Malrec:placeSwap:Kael`, `cast:Malrec:nightmare:Piqueiro`,
   `cast:Malrec:sacrificeBond:Malrec`.
 
 ## Verified / not verified

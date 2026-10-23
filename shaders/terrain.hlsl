@@ -254,7 +254,10 @@ float4 PSMain(VSOut i) : SV_Target0 {
   const float3 geometric = normalize(i.normal);
   const float3 n = wall ? normalize(geometric + float3(0.0, 2.0, 0.0)) : geometric;
   const float3 wp = i.world;
-  const float2 tuv = (wall ? (abs(geometric.x) > abs(geometric.z) ? wp.zy : wp.xy) : wp.xz) / 4.0;
+  // Keep the lip material continuous around diagonal map edges: choosing world X or Z per face made adjacent wall strips
+  // jump between projections as the camera moved, which showed up as vertical streaks on the board's side.
+  const float2 wallTangent = normalize(float2(-geometric.z, geometric.x));
+  const float2 tuv = wall ? float2(dot(wp.xz, wallTangent), wp.y) / 4.0 : wp.xz / 4.0;
   Grad g, gzy, gxy;
   g.dx = ddx(tuv), g.dy = ddy(tuv);
   gzy.dx = ddx(wp.zy / 2.0), gzy.dy = ddy(wp.zy / 2.0);

@@ -1,13 +1,14 @@
+import { engineRoot } from './engineRoot';
 // The conjurer's summons from Engine2's class table (src/game/data.ts CLASSES familiar..familiar4, zombieDog) and the
 // charge tables their summoning reads (familiarSpellCharges, familiarMagicMissileCharges, familiarLifeDrainCharges), into
 // content/engine2/summons.json: the C++ spawns a familiar exactly as BattleEngine.castSummonFamiliar does.
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <cache> tools/scripts/engine2/export_summons.ts -- <out.json>
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <cache> tools/scripts/engine2/export_summons.ts -- <out.json>
 //
-// ENGINE2=<folder> points at another Engine2 checkout (default C:/Engine2). Engine2 is only read.
+// EMBER_GAME_DATA_ROOT=<folder> selects the local game-data snapshot (default content/game).
 import { writeFileSync } from 'node:fs';
 
-const E2 = process.env.ENGINE2 ?? 'C:/Engine2';
+const E2 = engineRoot;
 const out = process.argv[process.argv.length - 1];
 const data = await import(`${E2}/src/game/data.ts`);
 

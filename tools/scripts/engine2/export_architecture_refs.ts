@@ -1,16 +1,17 @@
+import { engineRoot } from './engineRoot';
 // Reference solids for Ember's 3D architecture: Engine2's own createWallGeometry (src/game/gfx/three/ThreeWalls.ts and
 // the castle / temple / rock / reference-door builders) called as its 3D map calls it (src/world/decor.ts
 // addArchitecture: tile 1, height x 3.5 x WALL_HUMAN_SCALE 1.6, physical form, texture height 3.5, turned upright),
 // for every architecture piece, every quarter turn and the joins a wall can have. EmberEngine's port
 // (engine/world/Architecture.cpp) is compared with it by Cooker check-architecture. Engine2 is run read-only.
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
 //        tools/scripts/engine2/export_architecture_refs.ts -- <out refs.json>
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-const E2 = process.env.ENGINE2 ?? 'C:/Engine2';
+const E2 = engineRoot;
 globalThis.fetch = (async (url: string) => {
   const text = readFileSync(`${E2}/public${url}`, 'utf8');
   return { ok: true, status: 200, json: async () => JSON.parse(text), text: async () => text, headers: new Map() };

@@ -8,8 +8,8 @@
 //                  Map Editor (MapEditorStage.h) and Dev Controls (the renderer switches, DevControls.h).
 //   Debug          asks once per test session how to travel: Classic Tactical (this file's map: click any place, go
 //                  straight to its missions) or RPG Map (OverworldStage with the session's own save: walk anywhere,
-//                  jump to any pin). A mission opens its briefing and is fought as Engine2's test battle: all six
-//                  heroes at level 15 with a new save's gear (tools/scripts/engine2/export_test_missions.sh).
+//                  jump to any pin). A mission opens its normal campaign map and battle rules with the test save's
+//                  full party at the maximum level.
 //
 // The test session (TestSession) lives in main.cpp from the "Modo teste" click until the player leaves to the title:
 // its own save (GameApp freshTestOverworld: a new save, every hero at DEFAULT_TEST_LEVEL, TEST_EMBER Gold), the

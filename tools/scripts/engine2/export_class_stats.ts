@@ -1,3 +1,4 @@
+import { engineRoot } from './engineRoot';
 // Every class's stats at every level, from Engine2's class table (src/game/data.ts statsFor), into
 // content/engine2/class-stats.json: { classes: { <id>: [[hp, atk, mag, def, dex] per level 1..MAX_LEVEL] } }.
 // EmberEngine's own progression (content/progression.json) is measured against it: a hero's new gains replace its
@@ -5,12 +6,12 @@
 // The MAG column in content/engine2/class-stats.json is EmberEngine's own (2026-10-19): running this again overwrites it
 // with Engine2's; write to another file and merge every column but MAG.
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <cache> tools/scripts/engine2/export_class_stats.ts -- <out.json>
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <cache> tools/scripts/engine2/export_class_stats.ts -- <out.json>
 //
-// ENGINE2=<folder> points at another Engine2 checkout (default C:/Engine2). Engine2 is only read.
+// EMBER_GAME_DATA_ROOT=<folder> selects the local game-data snapshot (default content/game).
 import { writeFileSync } from 'node:fs';
 
-const E2 = process.env.ENGINE2 ?? 'C:/Engine2';
+const E2 = engineRoot;
 const out = process.argv[process.argv.length - 1];
 const data = await import(`${E2}/src/game/data.ts`);
 

@@ -1,5 +1,9 @@
 # As magias do Mago Negro (Voss): Nuvem de Adagas, Dissipar Magia, Globo de Invulnerabilidade, Identificar
 
+Tempestade de Gelo (`iceStorm`) também pertence à lista normal de Voss: T4, aprendida no nível 8, quando o tier abre.
+O aprendizado passa por `grantClassSpells`, inclusive nas promoções do Mago Negro; o lançamento normal gasta um uso de T4.
+Seu dano, campo, duração e efeito visual são os mesmos usados no teste; a prévia de efeitos não define o acesso da classe.
+
 2026-10-21, the user's specs (pasted; "Criar essa magia e seu efeito visual", then "depois criar" the other three): the Mago Negro (`mage`;
 Voss's own class id is `voss` in most battle files; the Bruxo and the Elementalista are his promotions, `emberClassFamily` → `mage`, so they
 keep them). Every number below is the user's; where the user named the levels a number changes on, it changes there and nowhere else (no

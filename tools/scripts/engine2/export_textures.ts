@@ -1,15 +1,16 @@
+import { engineRoot } from './engineRoot';
 // Exports Engine2's procedural ground textures (src/render/textures.ts) exactly as Engine2 generates them,
 // for checking EmberEngine's port pixel for pixel. Engine2 paints them on a browser canvas; here a minimal
-// stand-in canvas keeps the ImageData bytes. Nothing under C:\Engine2 is written.
+// stand-in canvas keeps the ImageData bytes. Nothing under content\game is written.
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
 //        tools/scripts/engine2/export_textures.ts -- <out dir>
 // Writes <out>/<layer>.rgba (raw RGBA8) for the nine prototype layers and smooth-plains (1024 x 1024).
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const E2 = 'C:/Engine2';
+const E2 = engineRoot;
 const [outDir] = process.argv.slice(2).filter((a) => a !== '--');
 if (!outDir) throw new Error('usage: export_textures.ts -- <out dir>');
 

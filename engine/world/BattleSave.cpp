@@ -282,6 +282,8 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       const nlohmann::json& d = s["decayBase"];
       u.decayBase = BattleUnit::Stats{d.value("atk", 0), d.value("mag", 0), d.value("def", 0), d.value("dex", 0), d.value("mov", 0)};
     }
+    // Older snapshots may predate class unlock corrections. Refresh learned spells without refilling any tier uses.
+    grantClassSpells(u);
   }
   zones_.clear();
   zoneSerial_ = snap.value("zoneSerial", 0);

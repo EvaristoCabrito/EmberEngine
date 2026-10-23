@@ -1,3 +1,4 @@
+import { engineRoot } from './engineRoot';
 // Reference sheets for Ember's 3D water (the Map Editor's Água 3D brush): Engine2's own ThreeWater.rebuild
 // (src/game/gfx/three/ThreeWater.ts) called as ThreeBattleRenderer.syncWater calls it (tile 1; allowed = not void;
 // board rectangle on straight-border maps), on real map boards with water written by this script: per-hex levels,
@@ -5,13 +6,13 @@
 // shore depths compare too. EmberEngine's port (engine/world/Water3D.cpp) is compared with it by
 // Cooker check-water3d. Engine2 is run read-only.
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
 //        tools/scripts/engine2/export_water3d_refs.ts -- <out refs.json> <map.json>...
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-const E2 = process.env.ENGINE2 ?? 'C:/Engine2';
+const E2 = engineRoot;
 // three's TextureLoader asks the DOM for an <img>; the sheet does not need the textures.
 (globalThis as any).document = {
   createElementNS: () => ({ addEventListener() {}, removeEventListener() {}, set src(_v: string) {}, style: {} }),

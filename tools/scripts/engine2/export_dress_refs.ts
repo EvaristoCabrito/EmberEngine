@@ -1,16 +1,17 @@
+import { engineRoot } from './engineRoot';
 // Reference runs of the Map Editor's "Gerar terreno" (Engine2 src/editor/ember/MapEditorScreen.tsx: dressMap over
 // draftToMission({...draft, autoTactics: true, decorations: []}), then barricadeDecor and the clamped tile variants)
 // on the newest saved draft of every map, with Math.random replaced by mulberry32(seed) so EmberEngine's port
 // (engine/world/MapDressing.cpp) can draw the same numbers. Engine2 is run read-only.
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
 //        tools/scripts/engine2/export_dress_refs.ts -- <out refs.json>
 //   Cooker check-dress <out refs.json>
 
 import { readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-const E2 = process.env.ENGINE2 ?? 'C:/Engine2';
+const E2 = engineRoot;
 const PUBLIC = `${E2}/public`;
 globalThis.fetch = (async (url: string) => {
   const text = readFileSync(`${PUBLIC}${url}`, 'utf8');

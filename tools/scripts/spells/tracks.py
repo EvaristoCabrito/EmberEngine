@@ -14,7 +14,7 @@ SRC = "engine/world/Spells.cpp"
 src = io.open(SRC, encoding="utf-8", newline="").read()
 ours_learn = {k: int(l) for k, l in re.findall(r'\{\{"(\w+)", "[^"]+", \d+, "[^"]*", (?:true|false)\}, "\w+", (\d+)\}', src)}
 
-# kind: (learn level or None = ours (kEmberSpells), base values for the text, [(letter, step, count)])
+# kind: (scaling anchor or None = class learning in kEmberSpells, base values, [(letter, step, count)])
 # letters: r reach (hexes; the bow shots: hexes past the bow), a area ring (from 3 hexes), l length, d dice, f faces, b bonus,
 # m weight on MAG (bow / lance skills: on the weapon's roll), c count, p percent, t turns, R rounds, s spread, j jumps, e decay,
 # P push, k / K tick dice / faces, T tick weight, h / H the burning ground's dice / faces, g / G / M the ring's dice / faces / weight,
@@ -51,19 +51,20 @@ S = {
     "phantasmalForce": (2, dict(r=6, d=1, f=4, m=1.0), [("r", 1, 6), ("f", 2, 4), ("d", 1, 2), ("m", 0.1, 2)]),
     "webOfDreams": (3, dict(r=7, a=0, x=25), [("r", 1, 5), ("a", 1, 2), ("x", 5, 7)]),
     "summonFamiliar2": (3, dict(r=2), [("r", 1, 6)]),
-    "placeSwap": (None, dict(r=6), [("r", 1, 4)]),
+    # Fixed scaling anchors: learning now follows tier openings, but existing improvement levels stay unchanged.
+    "placeSwap": (3, dict(r=6), [("r", 1, 4)]),
     # Reflexo Arcano in the Lança's place (the user, 2026-10-20: "começa com um reflexo mais fraco e vai escalando", "um talento que começa
     # em menor percentagem a absorver o dano como cura", "escalar a duração ... começando com apenas 2 turnos indo até 6")
     # (then: "não reflete e não absorve 100%: chega até 90% de reflexo e 50% de absorção"; before the talent he takes what is not reflected)
-    "arcaneReflection": (None, dict(t=2, p=40, x=10), [("p", 10, 5), ("t", 1, 4), ("Z", 1, 1), ("x", 10, 4)]),
+    "arcaneReflection": (5, dict(t=2, p=40, x=10), [("p", 10, 5), ("t", 1, 4), ("Z", 1, 1), ("x", 10, 4)]),
     "summonFamiliar4": (6, dict(r=2), [("r", 1, 6)]),
-    "mirrorImage": (None, dict(r=6, c=2, R=3, p=33), [("r", 1, 4), ("c", 1, 2), ("R", 1, 3), ("p", 3, 5)]),
-    "detonateSummon": (None, dict(r=6, a=0, d=2, f=8, m=1.8), [("r", 1, 4), ("a", 1, 2), ("d", 1, 3), ("m", 0.12, 5)]),
+    "mirrorImage": (7, dict(r=6, c=2, R=3, p=33), [("r", 1, 4), ("c", 1, 2), ("R", 1, 3), ("p", 3, 5)]),
+    "detonateSummon": (9, dict(r=6, a=0, d=2, f=8, m=1.8), [("r", 1, 4), ("a", 1, 2), ("d", 1, 3), ("m", 0.12, 5)]),
     "summonFamiliar3": (11, dict(r=2), [("r", 1, 6)]),  # Familiar Titã: T5 (the user, 2026-10-20)
-    "sacrificeBond": (None, dict(p=100), [("p", -3, 14)]),
-    "nightmare": (None, dict(r=6, a=0, d=2, f=8, m=1.5, p=25, t=1), [("r", 1, 6), ("a", 1, 2), ("d", 1, 2), ("m", 0.15, 2), ("p", 10, 1), ("t", 1, 1)]),
+    "sacrificeBond": (11, dict(p=100), [("p", -3, 14)]),
+    "nightmare": (13, dict(r=6, a=0, d=2, f=8, m=1.5, p=25, t=1), [("r", 1, 6), ("a", 1, 2), ("d", 1, 2), ("m", 0.15, 2), ("p", 10, 1), ("t", 1, 1)]),
     "summonZombieDog": (15, dict(r=2), [("r", 1, 6)]),  # Cão Zumbi: the Necromante's T6 (the user, 2026-10-20)
-    "empowerSummons": (None, dict(p=25, R=3), [("p", 1, 12), ("R", 1, 2)]),
+    "empowerSummons": (15, dict(p=25, R=3), [("p", 1, 12), ("R", 1, 2)]),
     # the Necromante's T6 (the user, 2026-10-20: "deixar a magia Lança de Ossos como T6 para necromancer, e adaptar para algo mais forte e mais único")
     "boneLance": (None, dict(l=4, d=2, f=8, m=1.8, t=1, p=50), [("m", 0.1, 4), ("l", 1, 2), ("d", 1, 2), ("f", 2, 2), ("t", 1, 1), ("Z", 1, 1), ("p", 10, 2)]),
     # --- Bruxo -----------------------------------------------------------------------------------------------------------

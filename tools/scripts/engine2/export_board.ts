@@ -1,8 +1,9 @@
+import { engineRoot } from './engineRoot';
 // Exports Engine2's board and ground rules as data, plus Engine2's own output for one map, so
 // EmberEngine's C++ port can be checked against it. Runs Engine2's TypeScript read-only (nothing
-// under C:\Engine2 is written; vite-node's cache goes to --root).
+// under content\game is written; vite-node's cache goes to --root).
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
 //        tools/scripts/engine2/export_board.ts -- <map.json> <data out dir> <reference out dir>
 //
 // Data (committed, EmberEngine reads it): <data out>/board.json — terrain table, surfaces, ground
@@ -13,7 +14,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const E2 = 'C:/Engine2';
+const E2 = engineRoot;
 const PUBLIC = `${E2}/public`;
 
 // Engine2 fetches its relief grids from the dev server; here they come straight from disk.

@@ -1,15 +1,16 @@
+import { engineRoot } from './engineRoot';
 // Engine2's campaign data for EmberEngine's save files and campaign screens, read-only from its own modules
 // (src/campaign/save.ts, mapstore.ts, overworld.ts, src/ember/data.ts): the empty save (SaveData v19 with the starting
 // bags and gear), the missions in campaign order, the world-map locations with their hexes, and slotProgress()
 // answers for reference saves (EmberEngine's port is checked against them).
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
 //        tools/scripts/engine2/export_campaign.ts -- <out.campaign.json>
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-const E2 = process.env.ENGINE2 ?? 'C:/Engine2';
+const E2 = engineRoot;
 const PUBLIC = `${E2}/public`;
 globalThis.fetch = (async (url: string) => {
   const text = readFileSync(`${PUBLIC}${url}`, 'utf8');

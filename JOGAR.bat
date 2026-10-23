@@ -14,6 +14,15 @@ if not exist "%EXE%" (
 )
 
 set "GROUND=%ART%\ground\ground-v25.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v24.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v23.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v22.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v21.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v20.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v19.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v18.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v17.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v16.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v15.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v14.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v13.pak"
@@ -41,7 +50,7 @@ if not exist "%SPRITES%" set "SPRITES=%ART%\sprites\battle-v2.pak"
 set "HEROES="
 if exist "%ART%\engine2-scenes\roster.json" set "HEROES=--heroes %ART%\engine2-scenes\roster.json"
 
-for %%P in ("%GROUND%" "%SPRITES%" "%MESHES%" "%ART%\engine2-scenes" "C:\Engine2\maps\ember") do (
+for %%P in ("%GROUND%" "%SPRITES%" "%MESHES%" "%ART%\engine2-scenes" "%HERE%\content\maps\ember" "%HERE%\content\game\public" "%HERE%\content\engine2\battle-rules.json") do (
   if not exist %%P (
     echo Falta %%~P
     echo Tire uma foto desta tela e mande para o Claude.
@@ -50,7 +59,7 @@ for %%P in ("%GROUND%" "%SPRITES%" "%MESHES%" "%ART%\engine2-scenes" "C:\Engine2
 )
 
 echo Abrindo o Ember...
-"%EXE%" --title --ground "%GROUND%" --sprites "%SPRITES%" --meshes "%MESHES%" --scenes "%ART%\engine2-scenes" --maps "C:\Engine2\maps\ember" %HEROES% > "%HERE%\JOGAR-log.txt" 2>&1
+"%EXE%" --title --ground "%GROUND%" --sprites "%SPRITES%" --meshes "%MESHES%" --scenes "%ART%\engine2-scenes" --maps "%HERE%\content\maps\ember" --game-assets "%HERE%\content\game\public" %HEROES% > "%HERE%\JOGAR-log.txt" 2>&1
 set "RUNERR=%ERRORLEVEL%"
 if not "%RUNERR%"=="0" (
   echo.

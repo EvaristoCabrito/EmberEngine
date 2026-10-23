@@ -22,6 +22,8 @@
    "vau-panorama-v03.png"
   ],
   "estalagem": ["inn-panorama-v01.jpg"],
+  "bosque": ["bosque-morto-panorama-v01.png"],
+  "thebridge": ["bridge-panorama-v01.jpg"],
   "random-amanita-glade": ["vau-panorama-tira-teima-v05.png"],
   "random-blightwood-verge": ["vau-panorama-tira-teima-v05.png"],
   "random-broken-antler-grove": ["vau-panorama-tira-teima-v05.png"],
@@ -203,7 +205,29 @@
    "spanDegrees": 119.0,
    "glowColumn": 0.5,
    "horizonDegrees": 0.0,
-   "keepSky": true
+   "whole": true
+  },
+  "bosque-morto-panorama-v01.png": {
+   "horizon": 0.55,
+   "bottom": 1.0,
+   "skyTop": 0.0,
+   "degreesPerHeight": 40.0,
+   "bottomDegrees": 23.6,
+   "spanDegrees": 119.0,
+   "glowColumn": 0.5,
+   "horizonDegrees": 2.0,
+   "alphaSky": true
+  },
+  "bridge-panorama-v01.jpg": {
+   "horizon": 0.29,
+   "bottom": 1.0,
+   "skyTop": 0.0,
+   "degreesPerHeight": 40.0,
+   "bottomDegrees": 23.6,
+   "spanDegrees": 119.0,
+   "glowColumn": 0.5,
+   "horizonDegrees": 0.0,
+   "whole": true
   },
   "vau-panorama-tira-teima-v04.jpg": {
    "horizon": 0.43,

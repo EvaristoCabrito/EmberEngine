@@ -8,10 +8,10 @@ next version (serial + 1, the campaign plays it; the old file stays), with nothi
 import json
 
 FLOORS = [  # (old map, new map, tile set)
-    ('C:/Engine2/maps/ember/watchtower-barracks001.json', 'content/maps/ember/watchtower-barracks002.json', 'torre-v01'),
-    ('C:/Engine2/maps/ember/watchtower-command001.json', 'content/maps/ember/watchtower-command002.json', 'torre-v01'),
-    ('C:/Engine2/maps/ember/watchtower-beacon001.json', 'content/maps/ember/watchtower-beacon002.json', 'torre-v01'),
-    ('C:/Engine2/maps/ember/watchtower-prison002.json', 'content/maps/ember/watchtower-prison003.json', 'prisao-v01'),
+    ('content/maps/ember/watchtower-barracks001.json', 'content/maps/ember/watchtower-barracks002.json', 'torre-v01'),
+    ('content/maps/ember/watchtower-command001.json', 'content/maps/ember/watchtower-command002.json', 'torre-v01'),
+    ('content/maps/ember/watchtower-beacon001.json', 'content/maps/ember/watchtower-beacon002.json', 'torre-v01'),
+    ('content/maps/ember/watchtower-prison002.json', 'content/maps/ember/watchtower-prison003.json', 'prisao-v01'),
 ]
 
 for src, out, tiles in FLOORS:

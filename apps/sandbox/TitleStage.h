@@ -41,7 +41,7 @@ namespace ember {
 class TitleStage : public Stage {
  public:
   struct Paths {
-    std::filesystem::path engine2Public = "C:/Engine2/public";  // Engine2's art
+    std::filesystem::path engine2Public = "content/game/public";
     std::filesystem::path maps;                                 // Engine2's maps/ember
     std::filesystem::path scenes;                               // build/engine2-scenes (export_scene.ts)
     std::filesystem::path battles = "content/engine2/battles";  // export_battle.ts

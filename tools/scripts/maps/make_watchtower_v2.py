@@ -24,7 +24,7 @@ import math
 import sys
 from collections import deque
 
-SRC = sys.argv[1] if len(sys.argv) > 1 else 'C:/Engine2/maps/ember/watchtower-gate-floor006.json'
+SRC = sys.argv[1] if len(sys.argv) > 1 else 'content/maps/ember/watchtower-gate-floor006.json'
 OUT = sys.argv[2] if len(sys.argv) > 2 else 'content/maps/ember/watchtower-gate-floor007.json'
 CATALOG = 'content/engine2/editor-catalog.json'
 

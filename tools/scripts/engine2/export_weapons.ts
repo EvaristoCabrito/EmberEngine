@@ -1,16 +1,17 @@
+import { engineRoot } from './engineRoot';
 // Engine2's weapons as a fight reads them (GameApp startBattle -> BattleEngine spawnUnit, read-only): every main-hand weapon
 // (src/game/data.ts WEAPONS: dice, reach, the hands it takes, the class it is tuned for, its staff magic), every off-hand item
 // (EQUIPMENT of kind weapon / shield), and per hero class its starter weapon (starterWeaponFor), the weapon types it trains
 // (weaponSkills.ts weaponTypesForClass) and its own reach. EmberEngine equips the save's weapons with it at the start of a
 // campaign fight (engine/world/Loadout).
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
 //        tools/scripts/engine2/export_weapons.ts -- content/engine2/weapons.json
 //
-// ENGINE2=<folder> points at another Engine2 checkout (default C:/Engine2). Engine2 is only read.
+// EMBER_GAME_DATA_ROOT=<folder> selects the local game-data snapshot (default content/game).
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const E2 = process.env.ENGINE2 ?? 'C:/Engine2';
+const E2 = engineRoot;
 const g = globalThis as Record<string, unknown>;
 g.window = globalThis;
 g.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });

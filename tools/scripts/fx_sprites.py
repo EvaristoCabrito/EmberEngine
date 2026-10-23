@@ -7,7 +7,7 @@ its brightest channel, as Engine2's deriveAlphaFromBlack). Clip name = file name
 Then merges content/engine2.sprites.json + content/decor.sprites.json + content/fx.sprites.json into
 build/sprites/battle.sprites.json (the one pack the game mounts: two packs would both define sprites/roster).
 
-  python -I tools/scripts/fx_sprites.py [C:/Engine2/public/game]
+  python -I tools/scripts/fx_sprites.py [content/game/public/game]
 Engine2 is only read.
 """
 import json
@@ -17,7 +17,7 @@ import sys
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-GAME = sys.argv[1] if len(sys.argv) > 1 else "C:/Engine2/public/game"
+GAME = sys.argv[1] if len(sys.argv) > 1 else "content/game/public/game"
 
 
 def clips():

@@ -1,10 +1,10 @@
 """The road encounters whose latest map fields undead (Prece do Caminho, docs/SKILLS_HEALER.md: no undead ambush while it holds).
 
-Reads every encounter id the world map's cells can roll (content/engine2/overworld.json), finds the newest map file of each
-(C:/Engine2/maps/ember, then content/maps/ember: the highest serial wins) and lists the ids whose enemy or neutral spawns include
+Reads every encounter id the world map's cells can roll (content/engine2/overworld.json), finds the newest local map file of each
+(content/maps/ember: the highest serial wins) and lists the ids whose enemy or neutral spawns include
 a class Engine2 marks creatureType "undead" (data.ts isUndeadClass). Writes content/engine2/undead-encounters.json.
 
-  python -I tools/scripts/engine2/undead_encounters.py [--engine2 C:/Engine2]
+  python -I tools/scripts/engine2/undead_encounters.py [--game-data content/game]
 """
 
 import argparse
@@ -41,14 +41,14 @@ def newest_map(mission_id, folders):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--engine2", default="C:/Engine2")
+    ap.add_argument("--game-data", default=os.path.join(ROOT, "content", "game"))
     args = ap.parse_args()
-    undead = undead_classes(args.engine2)
+    undead = undead_classes(args.game_data)
     world = json.load(open(os.path.join(ROOT, "content", "engine2", "overworld.json"), encoding="utf-8"))
     ids = set()
     for c in world["board"]["cells"]:
         ids.update(c.get("encounters", []))
-    folders = [os.path.join(args.engine2, "maps", "ember"), os.path.join(ROOT, "content", "maps", "ember")]
+    folders = [os.path.join(ROOT, "content", "maps", "ember")]
     result = []
     for mid in sorted(ids):
         f = newest_map(mid, folders)

@@ -1,14 +1,15 @@
+import { engineRoot } from './engineRoot';
 // Engine2's companion conversations for EmberEngine (src/game/companionDialogues.ts): every directed pair's
 // conversation tree at every tier, as buildCompanionDialogue makes it for a first telling (no continuity prefix, no
 // replay), the topics' labels, the tier names, the continuity prefixes, and each line's portrait (as the dialogs export).
 //
-//   node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
+//   node content/game/node_modules/vite-node/vite-node.mjs --root <scratch dir> \
 //        tools/scripts/engine2/export_companions.ts -- <out.companions.json>
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-const E2 = process.env.ENGINE2 ?? 'C:/Engine2';
+const E2 = engineRoot;
 const PUBLIC = `${E2}/public`;
 globalThis.fetch = (async (url: string) => {
   const text = readFileSync(`${PUBLIC}${url}`, 'utf8');
