@@ -862,8 +862,13 @@ class MapStage final : public Stage {
         const float sunAz = std::atan2(lighting.sunDirection.z, lighting.sunDirection.x);
         // A room's panorama (`ceiling`: the tavern) has no sun to sit under: it is centred where the camera looks, so its mirrored edges stay
         // out of the view (centred under the sun, the tavern's showed its mirror seam in the middle of the screen, 2026-10-22).
-        const float centre = fit.ceiling ? std::atan2(lastCamera_.forward.z, lastCamera_.forward.x)
-                                         : sunAz - (fit.glowColumn - 0.5f) * glm::radians(fit.spanDegrees);
+        // A room is a panorama like every map (the user, 2026-10-23: "o INN não está com panorama, apenas um backdrop convencional"):
+        // its centre is fixed IN THE WORLD, once (the opening camera's heading, or the fit's `centreDegrees`), never re-centred on the
+        // camera each frame (that made the painting turn with the camera: a backdrop pinned to the screen, not a panorama).
+        if (fit.ceiling && !roomCentreAzimuth_) {
+          roomCentreAzimuth_ = fit.centreDegrees ? glm::radians(*fit.centreDegrees) : std::atan2(lastCamera_.forward.z, lastCamera_.forward.x);
+        }
+        const float centre = fit.ceiling ? *roomCentreAzimuth_ : sunAz - (fit.glowColumn - 0.5f) * glm::radians(fit.spanDegrees);
         // The ground around the board: the map's top-down ground image (backdrop-fit.json "ground") on a flat plane a little under
         // its lowest ground, the painting beyond `groundFar`; without one, the painting all the way down.
         Renderer::BackdropPlane plane;
@@ -9299,6 +9304,7 @@ class MapStage final : public Stage {
   std::vector<glm::vec3> probeTris_;          // the room's surfaces in world space: the pieces (buildArchitecture), the roof (buildRoof)
   std::set<std::pair<int, int>> roomCells_;   // the hexes the walls enclose
   std::set<std::pair<int, int>> wallCells_;   // ... and the hexes the walls stand on
+  std::optional<float> roomCentreAzimuth_;  // a room's panorama centre, fixed in the world once (see the Fundo code)
   bool probeBakePending_ = false;             // buildArchitecture asked for a bake: it starts after the next buildLights (the fires)
   bool probeFromCache_ = false;               // the last bake was read from build/probes
   std::vector<uint8_t> probeMask_;            // the room seen from above (startProbeBake), kProbeMaskSpacing texels over roofRect_
@@ -9315,6 +9321,9 @@ class MapStage final : public Stage {
   bool placedWindowLight_ = false;  // placeModels: whether the roof was placed
   // The map's own panoramas (backdrop-fit.json "panoramas" by map id). An entry is a painting's file, or "file#name" for another fit
   // of the same painting (its own entry in "paintings": the tavern's panorama over the user's Tavernground, 2026-10-22). One whose
+    float roomRadiusShare = 1.1f;  // a room's round wall: this share of the board's radius from its centre (resolve.hlsl roomProjected)
+    std::optional<float> centreDegrees;  // a room's panorama: the world azimuth (degrees, x towards 0, z towards 90) its centre column faces; none = the opening camera's heading
+    float roomEye = 1.7f;          // ... and the painting's eye height above the floor (a person's)
   // painting or ground image is not in the ground pack yet is left out (it joins the panel once a pack carrying it is cooked).
   void loadMapPanoramas() {
     const auto packed = [&](const std::string& file) { return !assets_.name(assetId(e2::backdropAsset(file))).empty(); };
@@ -9397,6 +9406,9 @@ class MapStage final : public Stage {
   std::vector<LocalLight> lights_;
   bool modelsPlaced_ = false;
   e2::EdgeStyle placedLook_ = e2::EdgeStyle::Smooth;
+      fit.roomRadiusShare = e.value("roomRadiusShare", fit.roomRadiusShare);
+      if (e.contains("centreDegrees")) fit.centreDegrees = e.value("centreDegrees", 0.0f);
+      fit.roomEye = e.value("roomEye", fit.roomEye);
   uint32_t modelCount_ = 0, missing_ = 0, fullFrames_ = 0;
   std::chrono::steady_clock::time_point start_ = std::chrono::steady_clock::now();
   bool measuring_ = false, measured_ = false, measurePassed_ = true;
