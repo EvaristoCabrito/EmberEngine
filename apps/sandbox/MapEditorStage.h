@@ -2249,8 +2249,9 @@ class MapEditorStage : public Stage {
       // refletir tudo isso"): the map's own moon in Modo teste and the editor; a campaign fight takes its day's phase instead.
       static const char* kPhaseLabels[9] = {"Nova", "Crescente", "Quarto crescente", "Gibosa crescente", "Cheia",
                                             "Gibosa minguante", "Quarto minguante", "Minguante", "Lua de sangue"};
-      const std::string phase = draft_.value("moonPhase", std::string("full"));
-      int shownPhase = 4;
+      // No Lua chosen: the moon the map gets by its hour (Noite escura: Nova; every other hour: Cheia).
+      const std::string phase = draft_.value("moonPhase", std::string());
+      int shownPhase = tod == "darkNight" ? 0 : 4;
       for (int i = 0; i < 9; ++i)
         if (phase == e2::kMoonPhases[i]) shownPhase = i;
       ImGui::SetNextItemWidth(-110);
