@@ -3359,7 +3359,14 @@ class MapStage final : public Stage {
     float d[3];
     e2::lightDirection(azimuth, elevation, d);
     const glm::vec3 sun = glm::normalize(glm::vec3(d[0], d[1], d[2]));
-    e2::lightDirection(azimuth + pi, -elevation * 0.9f, d);
+    // The moon by its phase (the user, 2026-10-23: "lua real por fase (cheia oposta ao sol, quarto a 90°, nova junto ao sol)"): it runs
+    // the sun's own path that many hours behind, 45 deg (3 h) a phase: new 0 h (beside the sun), first quarter 6 h (90 deg east: high at
+    // dusk, setting at midnight), full and blood 12 h (opposite: the path it always had), last quarter 18 h (rising at midnight, high at
+    // dawn). Its height on that path stays 0.9 of the sun's, as before.
+    const int phaseIndex = moonPhaseIndex();
+    const float moonHour = hour - 3.0f * static_cast<float>(phaseIndex < 0 || phaseIndex == 8 ? 4 : phaseIndex);
+    const float moonElevation = 0.9f * glm::radians(62.0f) * std::sin(2.0f * pi * (moonHour - 6.0f) / 24.0f);
+    e2::lightDirection(-0.95f + pi * (moonHour - 12.0f) / 12.0f, moonElevation, d);
     const glm::vec3 moonDir = glm::normalize(glm::vec3(d[0], d[1], d[2]));
     const glm::vec3 moonColor = Renderer::srgb(moon.color ? moon.color : 0x9fb4ffu);
     const float moonLux = (moonLight_ == 1 ? kCinemaMoonLux : kFullMoonLux) * moon.strength;
