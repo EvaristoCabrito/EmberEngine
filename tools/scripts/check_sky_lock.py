@@ -34,14 +34,19 @@ SKY_FILES = [
     "engine/render/StarSky.h",
     "content/sky/stars.json",
 ]
+# The sky's code in MapStage = the text of 2026-10-19 (236e0fa3; the user, 2026-10-23: "RESTAURAR DEFAULT DAQUELE DIA SEM MUDAR UMA
+# VÍRGULA"): mapLighting / realLighting / cycleHour / cycleLighting verbatim (the 24 h cycle only with the panel's Hora), aldeia's own
+# sunset blue as that day had it. The moon's art stays requested on every map but Subterrâneo.
 MAPSTAGE_MARKERS = [
     "if (!underground())  // the map's night, or any night of the 24 h cycle",
-    "if (lightingMode_ == 3 && !moonNight_) {",
+    "if (lightingMode_ == 3 && aldeia() && !moonNight_) {",
+    "if (lightingMode_ == 3 && dayCycle_ > 0 && !darkIndoor()) return cycleLighting(time, moon, phase);",
 ]
-# One sky for the whole game: no sky rule keyed to one map.
+# Nothing of the tower's own sky (its scale, its clouds, its exposure of the sky) comes back.
 FORBIDDEN_IN_MAPSTAGE = [
-    "aldeia() && !moonNight_",
-    'if (scene_->environment != "indoor")  // the map\'s night',
+    "outsideScale_",
+    "skyScaled",
+    "bool cycleOn() const { return true; }",
 ]
 
 
