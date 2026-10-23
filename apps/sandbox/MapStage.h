@@ -138,6 +138,7 @@ struct MapStageOptions {
   int gridLook = 2;  // the panel's "Grade" at the start: 0 OFF, 1 antiga (the marks), 2 = look 001 (--grid-look N)
   int cardStance = 1;  // the panel's "Cards" at the start: 0 em pé (vertical), 1 para a câmera (--cards N)
   int barsFade = 1;    // the panel's "Vida perto" at the start: 0 OFF, 1 bars near the camera fade (--bars-fade N)
+  int actionCamera = 1;  // the panel's "Câmera de ação" at the start: 0 OFF, 1 cinema (--action-camera N)
   int floorImage = 1;  // the panel's "Chão do vão" at the start (--floor N)
   int windFog = 1;     // the panel's "Névoa do vento" at the start (--wind-fog N)
   // Luz das janelas (indoor maps): -1 as the map says (on for the watchtower's roofed floors), 0 OFF, 1 real (--window-light N)
@@ -282,6 +283,7 @@ class MapStage final : public Stage {
     gridLook_ = std::clamp(options.gridLook, 0, 2);
     cardStance_ = std::clamp(options.cardStance, 0, 1);
     barsFade_ = std::clamp(options.barsFade, 0, 1);
+    actionCamera_ = std::clamp(options.actionCamera, 0, 1);
     floorChoice_ = std::clamp(options.floorImage, 0, 1);
     windFogChoice_ = std::clamp(options.windFog, 0, 1);
     waterLook_ = std::clamp(options.waterLook, 0, 1);
@@ -535,14 +537,17 @@ class MapStage final : public Stage {
     updateHover();
     laps.lap("hover");
     clampGoal();
+    applyActionShot();  // Câmera de ação: an action's shot takes the goal (and gives it back after)
     if (measuring_) {
       cam_ = {target_, yaw, pitch_, distance};  // measurements and captures: exactly the asked view
+      shotLift_ = shotLiftGoal_;
     } else {
       const float k = 1.0f - std::exp(-dt * kGlide);
       cam_.target += (target_ - cam_.target) * k;
       cam_.yaw += (yaw_ - cam_.yaw) * k;
       cam_.pitch += (pitch_ - cam_.pitch) * k;
       cam_.distance *= std::pow(distance_ / cam_.distance, k);  // zoom glides evenly in scale
+      shotLift_ += (shotLiftGoal_ - shotLift_) * k;
     }
     // The ground under the pivot (the camera always turns around a point on the board), and the eye never inside
     // the ground or a 3D piece: the tilt rises just enough to clear it.
@@ -555,13 +560,15 @@ class MapStage final : public Stage {
       cam_.pitch = std::min(std::max(cam_.pitch, need + 0.002f), kMaxPitch);
       if (pitch_ < cam_.pitch) pitch_ = cam_.pitch;  // the goal does not pull it back into the ground
     }
+    noteShotGoal();  // the goal as the shot leaves it this frame: a different one next frame was the player's hand
     // Tática: straight down from far away through the long lens, framing what the normal lens frames at this distance;
     // the top of the screen is the board's far side (-z). Its near plane hugs the board (Engine2: distance - 200).
+    // The action camera's lift raises the eye and the look point together (the figures' chests at the centre of a close shot).
     const float flatDistance = cam_.distance * std::tan(glm::radians(kFov * 0.5f)) / std::tan(glm::radians(kFlatFov * 0.5f));
     const Camera camera = flat_ ? Camera::lookAt(cam_.target + glm::vec3(0.0f, flatDistance, 0.0f), cam_.target, glm::radians(kFlatFov), aspect,
                                                  std::max(kNear, flatDistance - 200.0f), {0.0f, 0.0f, -1.0f})
-                                : Camera::lookAt(eyeOf(eyeView(cam_)) + glm::vec3(0.0f, roomDrop(), 0.0f),
-                                                 lookTarget(cam_) + glm::vec3(0.0f, roomDrop(), 0.0f), glm::radians(kFov), aspect, kNear);
+                                : Camera::lookAt(eyeOf(eyeView(cam_)) + glm::vec3(0.0f, roomDrop() + shotLift_, 0.0f),
+                                                 lookTarget(cam_) + glm::vec3(0.0f, roomDrop() + shotLift_, 0.0f), glm::radians(kFov), aspect, kNear);
     lastCamera_ = camera;
     drawList_.clear();
     frontCards_.clear();
@@ -1429,6 +1436,9 @@ class MapStage final : public Stage {
       // screen (drawHealthBars).
       static const char* kBars[2] = {"OFF", "somem"};
       dropdown("Vida perto", barsFade_, 2, [](int i) { return std::string(kBars[i]); });
+      // The action camera (the shots of every blow, shot and spell; applyActionShot): OFF = the camera is only the player's.
+      static const char* kActionCamera[2] = {"OFF", "cinema"};
+      dropdown("Câmera de ação", actionCamera_, 2, [](int i) { return std::string(kActionCamera[i]); });
     }
     {
       // The board's water: the original (Engine2's diorama material, the default) or look 001 "ember" (looks/water/README.md).
@@ -5118,6 +5128,7 @@ class MapStage final : public Stage {
       }
     }
     startStep(*exchange_);
+    planShot(*exchange_);
   }
 
   // The step's pose starts: the striker turns to its target (and a struck foe to the striker).
@@ -6841,6 +6852,10 @@ class MapStage final : public Stage {
         if (!later.empty()) pendingFx_.push_back({std::max(flightEnd, now_ + later.front().delay / actionRate()), later});
       }
       showEffects(fx);
+      // Câmera de ação: a body that fell keeps the camera on it a while after the action
+      for (const e2::BattleEffect& e : fx)
+        if (e.died)
+          if (const int du = sceneUnitOf(static_cast<int>(e.unit)); du >= 0) deathShot(static_cast<size_t>(du), x.end);
       if (s.disarmPct > 0)  // Desarmar landed: the weapon knocked out of its hands flies off
         for (const e2::BattleEffect& e : fx)
           if (e.status && (e.text.starts_with("Desarmado") || e.text.starts_with("Disarmed")))
@@ -6910,6 +6925,7 @@ class MapStage final : public Stage {
     if (s.type == e2::BattleStep::Type::Combat && !x.counter && e2::strikesBack(*battle_, s)) {
       x.counter = true;
       startStep(x);
+      planShot(x);
       return;
     }
     // The step is over (Engine2 finishCombat -> finishAction): the action is done, and fighting side by side builds affinity (+0.1)
@@ -6925,6 +6941,7 @@ class MapStage final : public Stage {
       x.step = next;
       x.counter = false;
       startStep(x);
+      planShot(x);
       return;
     }
     if (x.interrupt) {  // a sentinel's thrust out of its turn: nobody's action ends here
@@ -6942,6 +6959,238 @@ class MapStage final : public Stage {
       return select(-1);
     }
     refreshReach();
+  }
+
+  // --- Câmera de ação (the user, 2026-10-23: "cinematic camera for the combat, similar to triple A strategy titles"; built on
+  // the "faz" of the same day) ---------------------------------------------------------------------------------------------
+  // Panel "Câmera de ação": OFF (the camera is only the player's) / cinema. In cinema every step of an action (an Exchange)
+  // hands the orbit's goal (pivot, turn, tilt, distance) to a shot: the camera glides there as it glides to any input, and
+  // when the action is over it glides back to the view the player had. The shots: a melee blow = over the striker's shoulder,
+  // low, both bodies filling the frame, a push-in on the impact, the counter from the other side; an arrow or a bolt = behind
+  // the shooter, then the pivot on the target as the shot lands; an area spell = wider and higher, centred on the area; a
+  // spell on oneself or an ally = close on the caster; a death = the last shot held 1.5 s on the fallen; an enemy's walk = the
+  // pivot following it (the player's own walks stay in the player's hands). Any input of the player during a shot drops the
+  // shot (the camera is always theirs). Limits said up front: the cards have one face, so every shot stays within
+  // kShotYawRange of the player's turn (never round the back of a figure), and the eye keeps its clearance over the ground
+  // and the 3D pieces. Tática has no shots. An enemy on a hex the fog hides gets no shot (nothing of the fog changes).
+  // Timings scale with the battle's Velocidade (actionRate).
+  struct ShotKey {
+    float at = 0.0f;  // scene clock when this framing becomes the goal
+    glm::vec3 target{0.0f};
+    float yaw = 0.0f, pitch = 0.0f, distance = 10.0f, lift = 0.0f;
+  };
+  struct ActionShot {
+    std::vector<ShotKey> keys;  // in time order; each becomes the goal once its time has come
+    size_t key = 0;             // keys applied so far
+    float holdUntil = 0.0f;     // the shot stays this long after the action (a death)
+    int follow = -1;            // a scene unit the pivot follows while it walks (an enemy's turn)
+    // The view the player had (restored when the shot ends), and the goal as the shot left it last frame (a goal that differs
+    // at the next frame was moved by the player: the shot is dropped).
+    glm::vec3 playerTarget{0.0f}, wroteTarget{0.0f};
+    float playerYaw = 0.0f, playerPitch = 0.0f, playerDistance = 0.0f;
+    float wroteYaw = 0.0f, wrotePitch = 0.0f, wroteDistance = 0.0f;
+    bool written = false;
+  };
+  std::optional<ActionShot> shot_;
+  float shotLift_ = 0.0f, shotLiftGoal_ = 0.0f;  // the frame's lift (eye and look point together), gliding like the rest
+  static constexpr float kShotShoulder = 0.6109f;   // 35 deg: over the shoulder, the eye this far off the line between the two
+  static constexpr float kShotYawRange = 1.0472f;   // 60 deg: never further from the player's turn than this (one-faced cards)
+  static constexpr float kShotMeleePitch = 0.2094f, kShotRangedPitch = 0.2443f, kShotAreaPitch = 0.5236f, kShotCasterPitch = 0.2793f;  // 12 / 14 / 30 / 16 deg
+  static constexpr float kShotFill = 0.55f;      // a close shot: the taller card fills this share of the screen's height
+  static constexpr float kShotPushIn = 0.92f;    // the impact's push-in (share of the distance)
+  static constexpr float kShotDeathHold = 1.5f;  // seconds held on the fallen, at the normal pace
+
+  bool actionCameraOn() const { return actionCamera_ == 1 && !flat_ && scene_ && battle_ && board_; }
+  // A unit standing on a hex the player sees (without fog of war: everyone).
+  bool unitOnLitHex(size_t ui) const {
+    if (!fog_ || noFog_) return true;
+    const auto [c, r] = e2::hexAt(board_->layout(), unitPos_[ui].x, unitPos_[ui].y);
+    return litHex(static_cast<size_t>(e2::indexOf(board_->layout(), c, r)));
+  }
+  // The shot of the action now playing: the player's view is saved the first time (while a shot runs the goals are the shot's).
+  ActionShot& openShot() {
+    if (!shot_) {
+      ActionShot s;
+      s.playerTarget = target_, s.playerYaw = yaw_, s.playerPitch = pitch_, s.playerDistance = distance_;
+      shot_ = s;
+    }
+    shot_->keys.clear(), shot_->key = 0, shot_->follow = -1, shot_->holdUntil = 0.0f;
+    return *shot_;
+  }
+  static float wrapAngle(float a) { return std::remainder(a, 2.0f * std::numbers::pi_v<float>); }
+  // The shot's turn: the eye on `from`'s side of `to`, off their line by `shoulder` on the side nearer the player's turn,
+  // and never beyond kShotYawRange from it; written next to the current goal so the glide never takes the long way round.
+  float shotYaw(glm::vec3 from, glm::vec3 to, float shoulder) const {
+    const float base = shot_ ? shot_->playerYaw : yaw_;
+    const glm::vec2 v{from.x - to.x, from.z - to.z};
+    float want = base;
+    if (glm::dot(v, v) > 1e-4f) {
+      const float along = std::atan2(v.x, v.y);  // eyeOf: the eye at +sin(yaw) x, +cos(yaw) z of the pivot
+      const float a = wrapAngle(along + shoulder - base), b = wrapAngle(along - shoulder - base);
+      want = base + std::clamp(std::abs(a) <= std::abs(b) ? a : b, -kShotYawRange, kShotYawRange);
+    }
+    return yaw_ + wrapAngle(want - yaw_);
+  }
+  // The distance of a close shot: the taller card at kShotFill of the height, two bodies within 60% of the width.
+  float closeDistance(float cardHeight, float separation) const {
+    const float tanHalf = std::tan(glm::radians(kFov * 0.5f));
+    const float byHeight = std::max(cardHeight, 1.2f) / (kShotFill * 2.0f * tanHalf);
+    const float byWidth = separation / (0.6f * std::max(aspect_, 1.0f) * tanHalf);
+    return std::clamp(std::max(byHeight, byWidth), kMinDistance, maxDistance_);
+  }
+  // Over the striker's shoulder: the pivot between the two bodies, low, both filling the frame; the push-in at the impact.
+  void twoShot(ActionShot& s, size_t striker, size_t target, float impactAt, float pitch) {
+    const SpellEffects::Spot a = unitSpot(striker), b = unitSpot(target);
+    const float h = std::max(cardHeightOf(a), cardHeightOf(b));
+    const glm::vec3 mid = (a.feet + b.feet) * 0.5f;
+    const float d = closeDistance(h, glm::length(glm::vec2(a.feet.x - b.feet.x, a.feet.z - b.feet.z)));
+    const float yaw = shotYaw(a.feet, b.feet, kShotShoulder);
+    s.keys.push_back({now_, mid, yaw, pitch, d, h * 0.38f});
+    s.keys.push_back({impactAt, mid, yaw, pitch, d * kShotPushIn, h * 0.38f});
+  }
+  // A shot at range: behind the shooter looking down the line, then the pivot on the target as the arrow / bolt lands.
+  void rangedShot(ActionShot& s, size_t striker, size_t target, float impactAt) {
+    const SpellEffects::Spot a = unitSpot(striker), b = unitSpot(target);
+    const float ha = cardHeightOf(a), hb = cardHeightOf(b);
+    const float yaw = shotYaw(a.feet, b.feet, 0.4887f);  // 28 deg
+    const glm::vec3 toward = b.feet - a.feet;
+    const float len = glm::length(glm::vec2(toward.x, toward.z));
+    const glm::vec3 start = a.feet + (len > 1e-3f ? toward * (std::min(1.5f, 0.25f * len) / len) : glm::vec3(0.0f));
+    s.keys.push_back({now_, start, yaw, kShotRangedPitch, closeDistance(ha, 0.0f) * 1.15f, ha * 0.4f});
+    s.keys.push_back({std::max(now_, impactAt - 0.2f / actionRate()), b.feet, yaw, kShotMeleePitch, closeDistance(hb, 0.0f), hb * 0.38f});
+  }
+  // Wider and higher, centred on the points (an area's hexes and the bodies in it), fitting their spread; the turn from the caster.
+  void areaShot(ActionShot& s, glm::vec3 casterAt, std::vector<glm::vec3> pts, float impactAt) {
+    if (pts.empty()) pts.push_back(casterAt);
+    glm::vec3 c{0.0f};
+    for (const glm::vec3& p : pts) c += p;
+    c /= static_cast<float>(pts.size());
+    float r = 0.0f;
+    for (const glm::vec3& p : pts) r = std::max(r, glm::length(glm::vec2(p.x - c.x, p.z - c.z)));
+    r += 1.0f;  // a hex's width round the edge
+    const float tanHalf = std::tan(glm::radians(kFov * 0.5f));
+    const float d = std::clamp(std::max({(r * std::sin(kShotAreaPitch) + 2.5f) / (0.8f * tanHalf), r / (0.8f * std::max(aspect_, 1.0f) * tanHalf), 9.0f}),
+                               kMinDistance, maxDistance_);
+    const float yaw = shotYaw(casterAt, c, 0.3491f);  // 20 deg
+    s.keys.push_back({now_, c, yaw, kShotAreaPitch, d, 0.8f});
+    s.keys.push_back({impactAt, c, yaw, kShotAreaPitch, d * 0.95f, 0.8f});
+  }
+  // Close on the caster (a spell on oneself), or the two of them when it is cast on an ally.
+  void casterShot(ActionShot& s, size_t caster, int ally, float impactAt) {
+    if (ally >= 0 && static_cast<size_t>(ally) != caster) return twoShot(s, caster, static_cast<size_t>(ally), impactAt, kShotCasterPitch);
+    const SpellEffects::Spot a = unitSpot(caster);
+    const float h = cardHeightOf(a), d = closeDistance(h, 0.0f), yaw = shotYaw(a.feet, a.feet, 0.0f);
+    s.keys.push_back({now_, a.feet, yaw, kShotCasterPitch, d, h * 0.4f});
+    s.keys.push_back({impactAt, a.feet, yaw, kShotCasterPitch, d * kShotPushIn, h * 0.4f});
+  }
+  // Two battle units side by side (a weapon skill at the neighbour is a melee blow, not a shot down a line).
+  bool besideEachOther(size_t ab, size_t db) const {
+    const e2::BattleUnit& a = battle_->units()[ab];
+    const e2::BattleUnit& d = battle_->units()[db];
+    int nearest = 1 << 20;
+    for (const e2::BattleHex& h : e2::Battle::footprint(d, d.x, d.y))
+      for (const e2::BattleHex& g : e2::Battle::footprint(a, a.x, a.y)) nearest = std::min(nearest, e2::Battle::distance(g, h));
+    return nearest <= 1;
+  }
+  // The shot of the step that just began (startStep has set its impact and end).
+  void planShot(const Exchange& x) {
+    if (!actionCameraOn()) return;
+    const e2::BattleStep& s = x.steps[x.step];
+    using StepType = e2::BattleStep::Type;
+    const int striker = sceneUnitOf(static_cast<int>(x.counter ? s.def : s.att));
+    if (striker < 0 || !unitOnLitHex(static_cast<size_t>(striker))) return;
+    const size_t su = static_cast<size_t>(striker);
+    ActionShot& shot = openShot();
+    const float impact = std::max(now_, x.impact);
+    if (s.type == StepType::Combat) {
+      const int target = sceneUnitOf(static_cast<int>(x.counter ? s.att : s.def));
+      if (target < 0 || target == striker) return casterShot(shot, su, -1, impact);
+      if (x.arrow || x.bolt) return rangedShot(shot, su, static_cast<size_t>(target), impact);
+      return twoShot(shot, su, static_cast<size_t>(target), impact, kShotMeleePitch);
+    }
+    const glm::vec3 casterAt = unitWorld(su);
+    if (s.type == StepType::Move) {  // a charge or a leap: the ground it crosses, from where it set off to where it lands
+      std::vector<glm::vec3> pts;
+      if (!s.path.empty()) pts.push_back(hexSpot(s.path.front()).feet), pts.push_back(hexSpot(s.path.back()).feet);
+      return areaShot(shot, casterAt, std::move(pts), impact);
+    }
+    const bool support = s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Potion;
+    if (support || s.type == StepType::Food || s.type == StepType::Effect) {
+      const int ally = s.ids.size() == 1 ? sceneUnitOf(static_cast<int>(s.ids[0])) : support && s.def != s.att ? sceneUnitOf(static_cast<int>(s.def)) : -1;
+      return casterShot(shot, su, ally, impact);
+    }
+    // A spell: on one body alone it is a blow beside the caster or a shot down the line; on more, or on an area, the whole of it.
+    if (s.ids.size() == 1 && s.tiles.size() <= 1) {
+      const int target = sceneUnitOf(static_cast<int>(s.ids[0]));
+      if (target >= 0 && static_cast<size_t>(target) == su) return casterShot(shot, su, -1, impact);
+      if (target >= 0) {
+        if (besideEachOther(s.att, s.ids[0])) return twoShot(shot, su, static_cast<size_t>(target), impact, kShotMeleePitch);
+        return rangedShot(shot, su, static_cast<size_t>(target), impact);
+      }
+    }
+    std::vector<glm::vec3> pts;
+    for (const e2::BattleHex& h : s.tiles) pts.push_back(hexSpot(h).feet);
+    for (size_t id : s.ids)
+      if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0) pts.push_back(unitWorld(static_cast<size_t>(ui)));
+    areaShot(shot, casterAt, std::move(pts), impact);
+  }
+  // A body that fell under this step: the camera stays on it kShotDeathHold after the action.
+  void deathShot(size_t fallen, float actionEnd) {
+    if (!shot_ || !actionCameraOn() || shot_->follow >= 0) return;
+    const SpellEffects::Spot a = unitSpot(fallen);
+    const float h = cardHeightOf(a);
+    const ShotKey last = shot_->keys.empty() ? ShotKey{now_, a.feet, yaw_, kShotMeleePitch, closeDistance(h, 0.0f), h * 0.35f} : shot_->keys.back();
+    shot_->keys.push_back({now_ + 0.25f / actionRate(), a.feet, last.yaw, 0.1745f, closeDistance(h, 0.0f) * 1.1f, h * 0.35f});  // 10 deg
+    shot_->holdUntil = std::max(shot_->holdUntil, actionEnd + kShotDeathHold / actionRate());
+  }
+  // Every frame, after the player's input and clampGoal: the shot's keys become the goal; an enemy's walk is followed; the
+  // player's hand on the camera drops the shot; the player's view comes back when the action is over.
+  void applyActionShot() {
+    if (!actionCameraOn()) {
+      if (shot_) endShot(true);
+      return;
+    }
+    ActionShot* s = shot_ ? &*shot_ : nullptr;
+    // The player moved the camera since the shot last wrote it: the shot is theirs no more (no view to give back).
+    if (s && s->written && (glm::distance(target_, s->wroteTarget) > 1e-3f || std::abs(yaw_ - s->wroteYaw) > 1e-4f ||
+                           std::abs(pitch_ - s->wrotePitch) > 1e-4f || std::abs(distance_ - s->wroteDistance) > 1e-3f)) {
+      shot_.reset(), shotLiftGoal_ = 0.0f;
+      return;
+    }
+    // An enemy walking on seen ground: the pivot follows it (the player's own turn, zoom and tilt kept).
+    if (!exchange_ && enemyTurn_ && !enemyTurn_->struck && enemyTurn_->unit < unitWalk_.size() && !unitWalk_[enemyTurn_->unit].points.empty() &&
+        unitOnLitHex(enemyTurn_->unit)) {
+      const int eu = static_cast<int>(enemyTurn_->unit);
+      if (!s || s->follow != eu) s = &openShot(), s->follow = eu;
+    }
+    if (!s) return;
+    if (s->follow >= 0) {
+      const size_t fu = static_cast<size_t>(s->follow);
+      if (!unitWalk_[fu].points.empty()) target_ = unitWorld(fu), shotLiftGoal_ = 0.0f;
+      else if (!exchange_ && !enemyTurn_) return endShot(true);  // its turn ended with no blow
+    } else {
+      while (s->key < s->keys.size() && now_ >= s->keys[s->key].at) {
+        const ShotKey& k = s->keys[s->key++];
+        target_ = k.target, yaw_ = k.yaw, pitch_ = k.pitch, distance_ = k.distance, shotLiftGoal_ = k.lift;
+        if (!options_.battleScript.empty())
+          logInfo("action camera: key {} of {}: pivot ({:.1f}, {:.1f}) turn {:.0f} deg tilt {:.0f} deg distance {:.1f} lift {:.2f}", s->key, s->keys.size(),
+                  k.target.x, k.target.z, glm::degrees(k.yaw), glm::degrees(k.pitch), k.distance, k.lift);
+      }
+      if (!exchange_ && now_ >= s->holdUntil) return endShot(true);
+    }
+    clampGoal();
+  }
+  // The shot is over: the player's view back (unless they took the camera themselves).
+  void endShot(bool restore) {
+    if (shot_ && restore) target_ = shot_->playerTarget, yaw_ = shot_->playerYaw, pitch_ = shot_->playerPitch, distance_ = shot_->playerDistance;
+    if (shot_ && !options_.battleScript.empty()) logInfo("action camera: shot over, the player's view {}", restore ? "back" : "kept");
+    shot_.reset();
+    shotLiftGoal_ = 0.0f;
+    clampGoal();
+  }
+  void noteShotGoal() {
+    if (!shot_) return;
+    shot_->wroteTarget = target_, shot_->wroteYaw = yaw_, shot_->wrotePitch = pitch_, shot_->wroteDistance = distance_, shot_->written = true;
   }
 
   // The move is decided at once (the battle's state), the walk then plays it hex by hex.
@@ -9976,6 +10225,7 @@ class MapStage final : public Stage {
   int gridLook_ = 2;  // panel "Grade": 0 OFF, 1 antiga (the marks), 2.. = look 001.. (looks/grid/README.md)
   int cardStance_ = 1;  // panel "Cards": 0 em pé (vertical), 1 para a câmera (leaning back with the tilt, upright on screen)
   int barsFade_ = 1;    // panel "Vida perto": 0 OFF (bars always shown), 1 the bars of units near the camera fade away
+  int actionCamera_ = 1;  // panel "Câmera de ação": 0 OFF, 1 cinema (the shots of every action: applyActionShot)
   static constexpr float kBarsFadeFrom = 0.30f, kBarsFadeTo = 0.45f;  // the card's share of the screen's height
   static constexpr float kAirCardHeight = 2.0f;                         // world units: a unit's card, the yardstick of the particles' fade
   // Engine2 DIR_ACTION_WALK: sprites whose walks are drawn for each side, never mirrored while moving.

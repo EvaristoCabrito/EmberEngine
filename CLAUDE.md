@@ -1282,6 +1282,27 @@ selecionar os alvos")
   The bar's "Status" button is gone (the portrait opens the sheet). The confirm panel's hit: two decimals ("93,83 % de acerto").
   Capture: `--map-ui hotbar` (the first hero's editor). Not verified: dragging and the F keys in the window (no scripted input).
 
+## Câmera de ação (2026-10-23; the user: "start developing cinematic camera for the combat, similar to triple A strategy
+titles", then "Faz a câmera de ação como proposta")
+
+- Panel "Câmera de ação" (in a battle): OFF / cinema (default cinema); `--action-camera N`. MapStage `ActionShot` / `planShot` /
+  `applyActionShot` / `endShot` (the section "Câmera de ação" after updateExchange): every step of an action (an Exchange) hands the
+  orbit's goal to a shot, the glide (kGlide) carries the camera there, and at the end of the action the player's view comes back by
+  the same glide. Shots: a melee blow = over the striker's shoulder (35 deg off the line), 12 deg tilt, the taller card at 55 % of the
+  height, a push-in (8 %) at the impact, the counter from the other side; an arrow / bolt = behind the shooter, then the pivot on the
+  target as it lands; an area spell = 30 deg tilt, centred on the hexes and the bodies, far enough for the spread; a spell on oneself
+  / an ally = close on the caster (two-shot with the ally); a death = the last shot held 1.5 s on the fallen (`deathShot`, scaled by
+  the Velocidade); an enemy's walk = the pivot follows it (the player's turn, tilt and zoom kept); the player's own walks: nothing.
+  The shot's frame lifts the eye and the look point together (`shotLift_`, the chest at the centre).
+- Rules kept: any input of the player (drag, wheel, keys, the bar) during a shot drops it at once, no view restored (`noteShotGoal`
+  compares the goal with what the shot wrote); the cards have one face, so a shot never leaves ±60 deg of the player's turn
+  (`kShotYawRange`: a blow along the view axis becomes a side-on close shot); the eye clearance over the ground / 3D pieces still
+  applies; Tática has no shots; an enemy on a hex the fog hides gets no shot (nothing of the fog changes).
+- **Verified (release captures, `captures/actioncam/`, the aldeia015 test battle, scratchpad `cap_actioncam.ps1`):** melee + counter
+  (001), Voss's bolt with the death hold (002), Bola de Fogo area (003), death hold (004), OFF unchanged (005); the log line
+  "action camera: key ..." per key in scripted runs. **Not verified:** the look in the window (the user judges), the enemy walk's
+  follow (needs the turn loop: code path only), the player cancelling a shot by hand.
+
 ## Left click = Cancelar; daggers behind the body (2026-10-22, `1a25694`)
 
 - Battle: while a spell / potion is aimed, a strike staged or Atacar / Mão Secundária open, a left click on anything that is
