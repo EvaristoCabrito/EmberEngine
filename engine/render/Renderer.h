@@ -290,6 +290,9 @@ class Renderer {
     // (0 = none) and the painting's eye height above the floor.
     float roomCentreX = 0.0f, roomCentreZ = 0.0f, roomRadius = 0.0f, roomEye = 1.7f;
   };
+  // The background drawn by resolve_panorama.hlsl (resolve.hlsl with the painting's edge rows clamped) instead of resolve.hlsl: every map
+  // but the Inn's floors, whose shader never changes (the user, 2026-10-23).
+  void usePanoramaShader(bool on) { panoramaShader_ = on; }
   void setBackground(uint32_t background, uint32_t mode = 0, glm::vec4 fitA = {}, glm::vec4 fitB = {}, const BackdropPlane& plane = {}) {
     background_ = background;
     backgroundMode_ = mode;
@@ -637,7 +640,9 @@ class Renderer {
   VkPipeline cullInstancesLatePipeline_ = VK_NULL_HANDLE, hizPipeline_ = VK_NULL_HANDLE;
   VkPipeline cullInstancesPipeline_ = VK_NULL_HANDLE, cullPreparePipeline_ = VK_NULL_HANDLE,
              cullTraversePipeline_ = VK_NULL_HANDLE, cullPrepareDrawPipeline_ = VK_NULL_HANDLE,
-             meshletPipeline_ = VK_NULL_HANDLE, resolvePipeline_ = VK_NULL_HANDLE, skyPipeline_ = VK_NULL_HANDLE;
+             meshletPipeline_ = VK_NULL_HANDLE, resolvePipeline_ = VK_NULL_HANDLE, skyPipeline_ = VK_NULL_HANDLE,
+             panoramaResolvePipeline_ = VK_NULL_HANDLE, panoramaSkyPipeline_ = VK_NULL_HANDLE;  // resolve_panorama.hlsl (every map but the Inn)
+  bool panoramaShader_ = false;  // usePanoramaShader
   MeshSceneView meshView_;
   Lighting lighting_;
   MeshStats meshStats_;

@@ -70,7 +70,10 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   non-Inn maps, as resolve_tower.hlsl was for the tower), never a branch inside the Inn's shader. Never capture or "measure" the Inn
   unasked (the user: "o que tem o INN para ser medido?"). On 2026-10-23 a one-line seam fix in resolve.hlsl's shared panorama sampling
   (the painting's bottom row wrapped onto its top edge by the repeat sampler: the dark dashed line across the sky on panorama maps) was
-  written, built, measured and REVERTED for this rule; the seam stays on every panorama map until a non-Inn path is authorized.
+  written, built, measured and REVERTED for this rule. Then, on the user's repeated order ("A costura no topo dos panoramas ... isso é tão
+  prioridade quanto a lua"), it went into a path the Inn never runs: `shaders/resolve_panorama.hlsl` = resolve.hlsl with that one clamp,
+  its own pipelines (`Renderer::usePanoramaShader`, `panoramaResolvePipeline_ / panoramaSkyPipeline_`), chosen by MapStage for every map
+  but `innFloor()`; resolve.hlsl is byte for byte the Inn's. Any later fix of the background for other maps goes into resolve_panorama.hlsl.
 - **NEVER touch the Inn (the user, 2026-10-23: "NÃO ENCOSTAR NO INN JAMAIS").** The Inn's maps (`estalagem*`), their panoramas, ground,
   ceiling and look stay exactly as the user left them (their 23:10 build of 2026-10-22). Work for any other map must leave the Inn
   byte-identical: never edit the shared background code it is drawn with (resolve.hlsl `backgroundAt` and the panorama paths) for

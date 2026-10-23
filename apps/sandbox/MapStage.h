@@ -816,10 +816,14 @@ class MapStage final : public Stage {
     renderer.setSunShadowBounds(boardCenter_, boardRadius_);
     renderer.setLightingLayers(layers_);
     renderer.setBoardDrop(0.0f, 0.0f);  // nothing moves unless the chosen panorama lays its floor image under the base (below)
+    // Every map but the Inn's floors draws its background with resolve_panorama.hlsl (the painting's edge rows clamped: no seam across
+    // the sky); the Inn keeps resolve.hlsl untouched (the user, 2026-10-23: the Inn is an exception to all rules).
+    renderer.usePanoramaShader(!innFloor());
     if (windowLight() && board_->draft().id != "estalagem") {
-      // Indoors the sky is never drawn, whatever lights the room (the user's spec, 2026-10-21): black beyond the walls, except the map's
-      // own ground image (MapDraft::emberFloor; the watchtower's background, the user: "usar ele de imagem de GROUND") flat at the
-      // board's base (mode 7), the panel's "Chão do vão".
+      // One sky for every map (the user, 2026-10-23: "o mesmo céu único para todos os mapas", "eu não quero modo 9"): a room lit
+      // through its windows shows the same sky as any map, through the same background modes as any map. Its own ground image
+      // (MapDraft::emberFloor; the watchtower's background, the user: "usar ele de imagem de GROUND"; the panel's "Chão do vão") lies
+      // flat at the board's base under the real sky: mode 6, the Ponte de Pedra's floor mode. Without one: the sky.
       const e2::MapDraft& draft = board_->draft();
       Renderer::BackdropPlane plane;
       if (!draft.emberFloor.empty() && floorChoice_ == 1) plane.texture = ground_.textureIndex(e2::backdropAsset(draft.emberFloor));

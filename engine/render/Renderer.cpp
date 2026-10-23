@@ -635,6 +635,10 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   cullPrepareDrawPipeline_ = createComputePipeline(context, layout, "cull.CSPrepareDraw");
   resolvePipeline_ = createComputePipeline(context, layout, "resolve.CSResolve");
   skyPipeline_ = createComputePipeline(context, layout, "resolve.CSSky");
+  // resolve_panorama.hlsl: resolve.hlsl with the painting's edge rows clamped (the seam across the sky), for every map but the Inn's
+  // floors, so resolve.hlsl stays byte for byte the Inn's (the user, 2026-10-23).
+  panoramaResolvePipeline_ = createComputePipeline(context, layout, "resolve_panorama.CSResolve");
+  panoramaSkyPipeline_ = createComputePipeline(context, layout, "resolve_panorama.CSSky");
   lightsPipeline_ = createComputePipeline(context, layout, "lights.CSClusters");
   volumeInjectPipeline_ = createComputePipeline(context, layout, "volume.CSInject");
   {
@@ -768,7 +772,8 @@ Renderer::~Renderer() {
   vkDestroyPipeline(context_.device, effectPipeline_, nullptr);
   for (VkPipeline p : vfxPipelines_) vkDestroyPipeline(context_.device, p, nullptr);
   for (VkPipeline p : {cullInstancesPipeline_, cullInstancesLatePipeline_, hizPipeline_, bloomDownPipeline_, bloomUpPipeline_, cullPreparePipeline_,
-                       cullTraversePipeline_, cullPrepareDrawPipeline_, meshletPipeline_, resolvePipeline_, skyPipeline_})
+                       cullTraversePipeline_, cullPrepareDrawPipeline_, meshletPipeline_, resolvePipeline_, skyPipeline_, panoramaResolvePipeline_,
+                       panoramaSkyPipeline_})
     vkDestroyPipeline(context_.device, p, nullptr);
   vkDestroySampler(context_.device, minSampler_, nullptr);
   bindless_.removeStorageBuffer(instanceVisibilityIndex_);
@@ -1548,7 +1553,7 @@ void Renderer::recordMeshes(Frame& frame, VkCommandBuffer cmd) {
              {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_NONE,
               VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
   scope = gpuTimer_.begin(cmd, "resolve");
-  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, resolvePipeline_);
+  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, panoramaShader_ ? panoramaResolvePipeline_ : resolvePipeline_);
   const ResolvePush resolvePush{frameAddress, visibilityIndex_, sceneColorStorageIndex_, fogOn_ ? kNeverSeenColor : kClearColor, background_,
                                 backgroundMode_, backdropPlane_.y, backdropFitA_, backdropFitB_,
                                 backdropPlane_.texture, backdropPlane_.tile, backdropPlane_.far, backdropPlane_.from,
@@ -2079,7 +2084,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
                {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_NONE,
                 VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT});
     const uint32_t skyScope = gpuTimer_.begin(cmd, "sky");
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, skyPipeline_);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, panoramaShader_ ? panoramaSkyPipeline_ : skyPipeline_);
     const ResolvePush skyPush{bufferAddress(context_, frame.meshFrame), visibilityIndex_, sceneColorStorageIndex_, kClearColor, background_,
                               backgroundMode_, backdropPlane_.y, backdropFitA_, backdropFitB_,
                                 backdropPlane_.texture, backdropPlane_.tile, backdropPlane_.far, backdropPlane_.from,
