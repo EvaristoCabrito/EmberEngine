@@ -793,14 +793,13 @@ class MapStage final : public Stage {
                 lights_[openingLightsFrom_].facing.z, lights_[openingLightsFrom_].behind, lights_[openingLightsFrom_].range);
     }
     if (lightingMode_ == 3 && fireLightsTo_ > fireLightsFrom_ && fireLightsTo_ <= lights_.size()) {
-      // A room lit through its windows (the user, 2026-10-23 evening: "usar o céu como referência da intensidade que deve ser a luz em
-      // determinado horário"): the one sky's exposure at the hour is the frame's, and the fire's light is shown at exactly
-      // kFireExposure, both ways: at night (the moonlit exposure 0.088 over the fire's 0.049) the torches no longer burn the room white
-      // (50416a47), by day they rise with the sun as everywhere. Every other map: no less than kFireExposure, as before.
-      // (The room's reference is two stops under the old night's: at 0.049 the 30 torches lit the whole floor to white and the moon's
-      // patches through the windows could not be told from them; the user, 2026-10-23 night: "como é que eu vou saber o que é luz e
-      // janela se está tudo na potência máxima?". At 0.012 a torch is a pool at its wall and the moon's patch on the floor reads.)
-      const float k = (windowLight() ? kWindowFireExposure : std::max(lighting.exposure, kFireExposure)) / std::max(lighting.exposure, 1e-9f);
+      // Universal (the user, 2026-10-23 night: "a intensidade dos fogos precisa ser universal"): on every map, at every hour, the
+      // fire's light is shown at exactly kFireExposure, both ways (k = kFireExposure / exposure): a torch, a brazier, a candle reads the
+      // same whether the frame is exposed for noon (the fire rises with the sun: never dimmed by it, as before) or for a moonlit night
+      // (the fire comes down to its reference: on the tower at the night's 2.78 the torches had burned the room white, 50416a47).
+      // The value: 0.049 was the watchtower's own night of 2026-10-21; 0.025 (one stop under) read too dark with the window lights in,
+      // and the user asked for "o dobro": 0.05.
+      const float k = kFireExposure / std::max(lighting.exposure, 1e-9f);
       renderer.setProbeFireScale(k);  // ... and their light bounced into the room's probes with them
       if (std::abs(k - 1.0f) > 1e-4f) {
         for (size_t i = fireLightsFrom_; i < fireLightsTo_; ++i) lights_[i].color *= k;
@@ -1968,8 +1967,7 @@ class MapStage final : public Stage {
   static constexpr float kIndoorFillLux = 3.0f, kIndoorAmbientLux = 1.5f;
   static constexpr float kLumensPerUnit = 12.0f;    // Engine2 intensity x reach^2 -> lumens
   static constexpr float kTorchPower = 2.0f;        // every torch's light x this (the user, 2026-10-21: "2X do que estava antes"; 8x was too much)
-  static constexpr float kFireExposure = 0.049f;    // the fire's light is shown at no less than this exposure (the watchtower's night)
-  static constexpr float kWindowFireExposure = 0.025f;  // a room lit through its windows: its fires shown at exactly this (1 stop under; 0.012 was black: "mudanças graduais")
+  static constexpr float kFireExposure = 0.05f;     // every fire's light is shown at exactly this exposure, on every map (universal: the user, 2026-10-23)
   size_t fireLightsFrom_ = 0, fireLightsTo_ = 0;    // this frame's fire lights in lights_ (buildLights)
   size_t openingLightsFrom_ = 0, openingLightsTo_ = 0;  // this frame's window / door lights in lights_ (buildLights; set in frame())
   static constexpr float kWindowLightRange = 7.0f;  // an opening's light: its reach (units) ...
