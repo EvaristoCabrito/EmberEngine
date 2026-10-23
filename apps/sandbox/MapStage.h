@@ -750,9 +750,13 @@ class MapStage final : public Stage {
     // the sun, the clouds or the hour set the camera to. At night (the camera at or over it) nothing changes.
     renderer.setProbeFireScale(1.0f);
     if (lightingMode_ == 3 && fireLightsTo_ > fireLightsFrom_ && fireLightsTo_ <= lights_.size()) {
-      const float k = std::max(lighting.exposure, kFireExposure) / std::max(lighting.exposure, 1e-9f);
+      // A room lit through its windows (the user, 2026-10-23 evening: "usar o céu como referência da intensidade que deve ser a luz em
+      // determinado horário"): the one sky's exposure at the hour is the frame's, and the fire's light is shown at exactly
+      // kFireExposure, both ways: at night (the moonlit exposure 0.088 over the fire's 0.049) the torches no longer burn the room white
+      // (50416a47), by day they rise with the sun as everywhere. Every other map: no less than kFireExposure, as before.
+      const float k = (windowLight() ? kFireExposure : std::max(lighting.exposure, kFireExposure)) / std::max(lighting.exposure, 1e-9f);
       renderer.setProbeFireScale(k);  // ... and their light bounced into the room's probes with them
-      if (k > 1.0001f) {
+      if (std::abs(k - 1.0f) > 1e-4f) {
         for (size_t i = fireLightsFrom_; i < fireLightsTo_; ++i) lights_[i].color *= k;
         renderer.setLights(lights_);
       }
@@ -856,6 +860,7 @@ class MapStage final : public Stage {
         plane.tile = draft.emberFloorTile;
         // Mode 7: the floor image flat at the base; above the horizon resolve_panorama.hlsl draws the one sky (seen through the windows
         // and the doors: the user, 2026-10-23, "there is no sky or lights on the windows"); the Inn's resolve.hlsl keeps black there.
+        // Nothing outside is lit (the user, 2026-10-23 evening: "NENHUM RAIO DE SOL NAS PAREDES EXTERNAS ZERO, NENHUM RAIO NO TOPO DO MAPA").
         renderer.setBackground(plane.texture, 7u, {}, {}, plane);
       } else {
         renderer.setBackground(Renderer::kBlackBackground, 0u);
