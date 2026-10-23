@@ -855,10 +855,11 @@ class MapStage final : public Stage {
         // at the board's own base (as the outdoor ground plane above), emberFloorDepth further down
         plane.y = (look_ == e2::EdgeStyle::Smooth ? groundLow_ - 0.35f : std::min(0.0f, groundLow_)) - draft.emberFloorDepth;
         plane.tile = draft.emberFloorTile;
-        plane.far = flat_ ? 1.0e9f : 900.0f;
-        renderer.setBackground(plane.texture, 6u, {0.5f, 0.0f, 0.0f, 0.0f}, {}, plane);
+        // Mode 7: the floor image flat at the base; above the horizon resolve_panorama.hlsl draws the one sky (seen through the windows
+        // and the doors: the user, 2026-10-23, "there is no sky or lights on the windows"); the Inn's resolve.hlsl keeps black there.
+        renderer.setBackground(plane.texture, 7u, {}, {}, plane);
       } else {
-        renderer.setBackground(kNoTextureIndex, 0u);
+        renderer.setBackground(Renderer::kBlackBackground, 0u);
       }
     } else {
       uint32_t bg = kNoTextureIndex;  // the sky (or the clear colour)

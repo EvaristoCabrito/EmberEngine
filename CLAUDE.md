@@ -1167,6 +1167,10 @@ uma ilusão de ótica, não precisa entender só confia")
   (`probesLo / probesHi`, `probesAddress(f)`), no uint64_t member. `--debug-view 21` paints the gate (red inside, black outside, blue = no
   probes). Captures `captures/tower/day-outside-walls.png`, `day-gate-debug.png`, `night-interior.png`.
 - Still seen on the outer faces by day: a grey veil = the Atmosfera's air over them (the fog is never touched: the user's rule).
+- **The sky through the windows (the user, 2026-10-23: "there is no sky or lights on the windows"):** `resolve_panorama.hlsl`'s mode 7
+  (the non-Inn shader only; the Inn's resolve.hlsl keeps black) draws the one sky, `skyWithAir`, above the horizon over the floor image:
+  from the game's camera it shows only through the windows and doors, at the room's exposure (white by day, as a window seen from a dark
+  room). Mode 6 was tried for it and dropped: its sky-horizon blend washed the whole outside white.
 
 ## Veneno / Doença em 3D (2026-10-20; the user: Engine2's were WebGL and missing here, "recria algo similar em 3D")
 

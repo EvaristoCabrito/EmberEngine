@@ -171,10 +171,13 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
     // ceiling images"; the watchtower's background "usar ele de imagem de GROUND"): the map's painting on a real plane at planeY, planeTile world
     // units wide, mirrored at its edges, its own colours; nothing else outside: black above the horizon, no sky, no haze.
     if (push.backgroundMode == 7) {
+      // (resolve_panorama.hlsl only, never the Inn's resolve.hlsl: the user, 2026-10-23, "there is no sky or lights on the windows")
+      // Above the horizon the one sky, skyWithAir, the same every map draws: from the game's camera it shows only through the windows
+      // and the doors. Below it the map's floor image as it is, no sky blended in (mode 6 washed it white at the room's exposure).
       if (f.atmosphere == 0 || push.planeTexture == kNoTexture) return float4(0.0, 0.0, 0.0, 1.0);
       const AtmosphereFrame a = loadAtmosphere(f);
       const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);
-      if (dir.y >= -1e-4) return float4(0.0, 0.0, 0.0, 1.0);
+      if (dir.y >= -1e-4) return float4(skyWithAir(f, pixel), 1.0);
       const float t = (push.planeY - f.cameraPosition.y) / dir.y;
       if (t <= 0.0) return float4(0.0, 0.0, 0.0, 1.0);
       const float2 hit = f.cameraPosition.xz + dir.xz * t;
