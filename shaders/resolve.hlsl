@@ -28,7 +28,10 @@ struct Push {
   float planeFrom;       // ... and within this many degrees of the horizon (the plane fully in from 2.5 x this)
   uint ceilingTexture;   // modes 2-4 and 6: a room's drawn ceiling where the sky would show (kNoTexture = the sky)
   float ceilingHeight;   // ... a flat plane this far above the eye
-  float ceilingTile;     // ... world units per repeat
+  float ceilingTile;     // ... world units per repeat (unused since 2026-10-23: the image lies once over the room)
+  float2 roomCentre;     // the room: the board's centre and the radius of its bounding circle (Renderer::BackdropPlane room*)
+  float roomRadius;
+  float roomEye;
 };
 // Backdrop mode 1: the painting's own horizon sits at this share of its height (the row the world's horizon is pinned
 // to), and the painting reaches its bottom row this many degrees below the horizon.
@@ -54,18 +57,35 @@ float3 skyWithAir(MeshFrame f, uint2 pixel) {
 // mirrored at its edges, its beams converging toward the horizon; it darkens into the room's depth, black at the horizon.
 float3 ceilingAt(MeshFrame f, float3 dir, float pixelAngle) {
   if (dir.y <= 1e-4) return 0.0;
-  const float t = push.ceilingHeight / dir.y;
+  // The ceiling is the floor seen the other way round (the user, 2026-10-23: "ele é literalmente o oposto desse angulo"): a flat plane
+  // ceilingHeight above the floor image's plane (planeY), the image lying on it ONCE, centred over the room, as wide as the room's
+  // bounding circle ("dont multiply it, its only a single image"); when the camera rises above that height the plane keeps 4 units
+  // above the eye, so it never disappears. Outside the single image there is no ceiling (ceilingHit false): the panorama stays whole.
+  const float planeY = max(push.planeY + push.ceilingHeight, f.cameraPosition.y + 4.0);
+  const float t = (planeY - f.cameraPosition.y) / dir.y;
   const float2 hit = f.cameraPosition.xz + dir.xz * t;
   Texture2D tile = gTextures[NonUniformResourceIndex(push.ceilingTexture)];
   uint tw, th;
   tile.GetDimensions(tw, th);
-  const float2 size = float2(push.ceilingTile, push.ceilingTile * float(th) / max(float(tw), 1.0));
-  float2 m = hit / size + 0.5;
-  m -= 2.0 * floor(m * 0.5);  // mirrored repeat: 0..2 -> 0..1..0
-  m = float2(m.x <= 1.0 ? m.x : 2.0 - m.x, m.y <= 1.0 ? m.y : 2.0 - m.y);
+  const float width = push.roomRadius > 0.0 ? 2.0 * push.roomRadius : push.ceilingTile;
+  const float2 size = float2(width, width * float(th) / max(float(tw), 1.0));
+  const float2 m = (hit - push.roomCentre) / size + 0.5;
+  if (any(m < 0.0) || any(m > 1.0)) return 0.0;
   const float footprint = t * pixelAngle / max(dir.y, 0.05);
   const float lod = max(log2(footprint / (size.x / float(max(tw, 1u)))), 0.0);
   return tile.SampleLevel(gSamplers[f.materialSampler], m, lod).rgb;  // no darkening (the user, 2026-10-22: no black line)
+}
+// Whether the ceiling image lies in this direction (the same plane and placement as ceilingAt).
+bool ceilingHit(MeshFrame f, float3 dir) {
+  if (dir.y <= 1e-4 || push.roomRadius <= 0.0) return dir.y > 1e-4;
+  const float planeY = max(push.planeY + push.ceilingHeight, f.cameraPosition.y + 4.0);
+  const float2 hit = f.cameraPosition.xz + dir.xz * ((planeY - f.cameraPosition.y) / dir.y);
+  Texture2D tile = gTextures[NonUniformResourceIndex(push.ceilingTexture)];
+  uint tw, th;
+  tile.GetDimensions(tw, th);
+  const float width = 2.0 * push.roomRadius;
+  const float2 m = (hit - push.roomCentre) / float2(width, width * float(th) / max(float(tw), 1.0)) + 0.5;
+  return all(m >= 0.0) && all(m <= 1.0);
 }
 float3 ceilingAt(MeshFrame f, AtmosphereFrame a, float3 dir, uint2 pixel) {
   return ceilingAt(f, dir, length(skyDirection(f, a, float2(pixel) + float2(1.5, 0.5)) - dir));
@@ -300,6 +320,9 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
       scene = lerp(scene, 1.0, smoothstep(horizon - 0.04, horizon + 0.01, v));  // from the ridge down: all painting
       scene *= smoothstep(0.0, max(skyTop, 0.01), v);                             // the very top: all sky
       if (push.backgroundMode == 3) scene = smoothstep(0.0, 0.08, v);              // its own sky kept, top rows fade
+      // the single ceiling image covers the painting's own ceiling from its row skyTop up ONLY where the image lies (the user,
+      // 2026-10-23: "escondendo o teto do panorama"); everywhere else the panorama stays whole (skyTop 0 = as before)
+      if (push.backgroundMode == 3 && push.ceilingTexture != kNoTexture && skyTop > 0.0 && ceilingHit(f, dir)) scene = smoothstep(skyTop - 0.015, skyTop + 0.015, v);
       if (push.backgroundMode == 4) scene = paintSample.a;                         // its own alpha: clear sky = the real sky
       float3 color = lerp(sky, paint, scene);
       // Below the kept band: the bottom row fades into the sky's own horizon colour; a thin haze on the seam.
