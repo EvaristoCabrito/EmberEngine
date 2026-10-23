@@ -715,8 +715,12 @@ class MapStage final : public Stage {
       // "Luar: cinema": the night stops are capped at one, or the camera would take back what the brighter moon gave
       // (measured 2026-10-19: with the full darkening the moonlit ground stayed black beside the lanterns).
       float darkening = nightDarkening(ev);
-      // A room by day, metered the old way (its outside reading's share, only while its probes bake), is exposed for the room.
-      if (windowLight() && !moonNight_ && !probesLive) darkening = 0.0f;
+      // A room by day is exposed for the room, with no night curve: its meter reads the room's own light (65 lux measured on the
+      // gate floor at noon against 120,000 outside: a big hall with small openings), and the night curve keyed on that reading
+      // took 3 stops off the day room (2026-10-23, measured: "darkening 3.06 stops" at 9 h, 12 h and 15 h), so the light through
+      // the windows sat at twice mid-grey instead of 15 x (the user: "essa luz das janelas está quase inexistente"). At night the
+      // indoor darkening stays (the torch-lit room reads as night).
+      if (windowLight() && !moonNight_) darkening = 0.0f;
       // "Luar: cinema": capped at 2 stops (at 1, measured 2026-10-19 on cemiterio: meter 4.4 lux, exposure 0.24, the night came out
       // as an overcast day with a pale blue sky; at 2 the sky is navy and the moonlit ground still reads).
       // (A room lit through its windows keeps the indoor night: its torches, not the moon outside, set the camera.)
