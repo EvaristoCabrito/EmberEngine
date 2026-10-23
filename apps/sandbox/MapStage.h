@@ -830,7 +830,7 @@ class MapStage final : public Stage {
         // At the board's own base, so the board stands on it (the user, 2026-10-19: "o tabuleiro tem que encostar na imagem do chão,
         // no momento parece que ele flutua"; it was 1.5 under the lowest ground): the hard / tabletop walls end at min(0, lowest
         // ground) (GroundMesh), the smooth look's cut edge drops kEdgeLip (0.35) under its ground.
-        plane.y = look_ == e2::EdgeStyle::Smooth ? groundLow_ - 0.35f : std::min(0.0f, groundLow_);
+        plane.y = (look_ == e2::EdgeStyle::Smooth ? groundLow_ - 0.35f : std::min(0.0f, groundLow_)) - fit.groundDepth;
         if (!fit.ground.empty()) plane.texture = ground_.textureIndex(e2::backdropAsset(fit.ground));
         plane.tile = fit.groundTile;
         plane.from = fit.groundFromDegrees;
@@ -9207,6 +9207,7 @@ class MapStage final : public Stage {
     // ceilingHeight above the eye, ceilingTile world units across (resolve.hlsl ceilingAt); "" = the sky as before.
     std::string ceilingImage;
     float ceilingHeight = 16.0f, ceilingTile = 24.0f;
+    float groundDepth = 0.0f;  // the ground image's plane this far further under the board's base (the user, 2026-10-22: "o chão mais baixo")
     float groundTile = 120.0f, groundFar = 300.0f;
     float groundFromDegrees = 10.0f;  // the ground image takes over from this many degrees below the horizon  // its width in world units; the painting takes over beyond this distance
   };
@@ -9256,6 +9257,7 @@ class MapStage final : public Stage {
       if (!fit.ground.empty()) ground_.requestTexture(e2::backdropAsset(fit.ground));
       if (!fit.ceilingImage.empty()) ground_.requestTexture(e2::backdropAsset(fit.ceilingImage));
     }
+    if (!panoramas_.empty()) logInfo("panoramas {}: {} (the newest opens: {})", board_->draft().id, panoramas_.size(), panoramas_.back());
   }
   static std::string panoramaFile(const std::string& entry) { return entry.substr(0, entry.find('#')); }
   static std::vector<std::string> loadPanoramas(const std::string& mapId) {
@@ -9287,6 +9289,7 @@ class MapStage final : public Stage {
       fit.ceilingImage = e.value("ceilingImage", fit.ceilingImage);
       fit.ceilingHeight = e.value("ceilingHeight", fit.ceilingHeight);
       fit.ceilingTile = e.value("ceilingTile", fit.ceilingTile);
+      fit.groundDepth = e.value("groundDepth", fit.groundDepth);
       fit.groundTile = e.value("groundTile", fit.groundTile);
       fit.groundFar = e.value("groundFar", fit.groundFar);
       fit.groundFromDegrees = e.value("groundFromDegrees", fit.groundFromDegrees);

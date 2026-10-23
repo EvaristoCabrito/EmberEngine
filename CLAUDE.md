@@ -1370,6 +1370,9 @@ Panorama image", "Tavernground in attachments for you to use on the ground layer
   Tavern Ceiling, no ground), 02 `"#piso"` (+ InnGround1). Ground pack `build/ground/ground-v27.pak` (JOGAR uses it). The normal camera
   looks down at the floor image around the board; the painting and the ceiling show when the camera is tilted low. Captures
   `captures/tavern/` (aldeia compared with the previous build: difference = capture noise).
+- Then (the user: "o chão mais baixo", "fiz tábuas pequenas e ficaram gigante", "a imagem de ground está muito esticada"): `groundDepth`
+  (backdrop-fit.json; the ground plane that far further under the board's base) 3 and groundTile 60 -> 16 on both "#piso" entries; MapStage
+  logs "panoramas <map>: N (the newest opens: ...)". **The user, 2026-10-22: every background is a panorama from now on.**
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
