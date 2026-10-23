@@ -126,6 +126,11 @@ struct MapDraft {
   // EmberEngine's own: an underground map ("Subterrâneo" in the Map Editor's Ambiente; the user, 2026-10-21): the only maps free of
   // the sun, the moon and the sky. Every other map takes the game's real clock (real sun, real moon).
   bool underground = false;
+  // EmberEngine's own: this map's base levels in place of the board's BASE_LEVELS (2: a level-0 floor stands 2 units over the void's
+  // ground, and the board's sides go down to it). 0 = the floor at the void's ground (the Torre de Vigia's gate floor, 2026-10-23, the
+  // user: "encostar o tabuleiro da torre até a porta chegar no chão": the ground image lies at the board's base, so the gate's threshold
+  // touches it and no side wall stands under the door). Absent = the board's own.
+  std::optional<int> emberBaseLevels;
 
   // The map's backdrop pick (Engine2 draft.backgroundImage: absent = the map's own, "" = none) and its lighting
   // sliders as authored (absent = the time of day's default).
@@ -165,6 +170,8 @@ class Board {
 
   const BoardData& data() const { return data_; }
   const MapDraft& draft() const { return draft_; }
+  // The base levels the ground's heights stand on: the draft's own (MapDraft::emberBaseLevels), else the board's BASE_LEVELS.
+  int baseLevels() const { return draft_.emberBaseLevels.value_or(data_.baseLevels); }
   const HexLayout& layout() const { return layout_; }
   const std::vector<Cell>& cells() const { return cells_; }
   const Cell& cell(int c, int r) const { return cells_[indexOf(layout_, c, r)]; }

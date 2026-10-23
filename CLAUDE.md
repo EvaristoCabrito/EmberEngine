@@ -1544,6 +1544,23 @@ detalhes estranhos e nada a ver, deixa profissional", and "não alterar o sistem
   the bedrooms, which get the Torre's photographed simple bed (two in the wide rooms), a stool, a trunk (crate v02), a candle, a rug or a
   bookshelf (Nara's, Erasmo's); the corridor two benches and a barrel at each end. NPCs, spawn, tiles and the stairs as in 004.
 
+## Torre de Vigia 009: o tabuleiro no chão; Overworld / Underworld no mapa-múndi (2026-10-23)
+
+- **The gate's threshold on the floor (the user: "pode encostar o tabuleiro da torre até a porta chegar no chão?"):** every map's floor
+  stands `BASE_LEVELS` (2) units over the void's ground (0), and the ground image lies at the board's base (0), so a 2-unit side wall
+  stood under the gate. `MapDraft::emberBaseLevels` (Board.h; `Board::baseLevels()` = the draft's own, else BASE_LEVELS) sets a map's
+  base levels: `content/maps/ember/watchtower-gate-floor009.json` = 008 + `"emberBaseLevels": 0` (the campaign plays the highest serial;
+  008 untouched), so its floor is at 0, on the ground image, and no side stands under the door. Every other map: unchanged (the field
+  absent). The game prepares 009's scene / battle files itself on first use.
+- **Overworld / Underworld (the user: "on test mode, give me an option to choose between Overworld and Underworld maps. near the upper
+  left corner, you click the word Overworld and it switches to Underworld, it only opens up in the campaign after reaching the underworld
+  map"):** the world map's title "Mapa" is now the word "Overworld" / "Underworld" (OverworldStage `drawHeader`, `toggleWorld`): clicking
+  it switches the map to the user's Atlas do Submundo de Mordávia (`content/ui/underworld-atlas-v01.png`, a copy of
+  `Attachments/Atlas do Submundo de Mordávia(1).png`), drag and zoom as the overworld, no fog / sky tint / pins / steps / leader there (it
+  has no overworld board yet); each world keeps its own view. Modo teste: always; the campaign: only when the save carries
+  `underworldReached` (nothing sets it yet: the Underdark of Mordávia's exit, map 4 of the Misty Cave chain, is to set it when built).
+  Capture `--map-ui underworld`.
+
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
 - `content/engine2/backdrop-fit.json` painting entry `inn-second-floor-v01.jpg#teto-salao` (2026-10-23): made as an extra panorama when

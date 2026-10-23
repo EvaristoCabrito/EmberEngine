@@ -95,6 +95,7 @@ class OverworldStage : public Stage {
   void preview(const std::string& what) {
     save_["seenOverworldIntro"] = true;  // a capture of a panel is not covered by the first-visit explainer
     if (what == "party") party_ = true;
+    if (what == "underworld") toggleWorld();
     if (what == "party:end") party_ = true, partyScrollEnd_ = true;
     if (what == "skills") party_ = true, partyTab_ = 1;
     if (what == "talk" || what.starts_with("talk:")) {  // "talk:<tier>": that tier's conversation of the first companion opens
@@ -496,7 +497,22 @@ class OverworldStage : public Stage {
       left += 40.0f + 12.0f;
     }
     emberKicker(dl, {left, top + 4.0f}, 14.0f, test() ? "MODO TESTE · RPG" : "CAMPANHA · RPG");
-    emberTitle(dl, {left, top + 22.0f}, 30.0f, "Mapa");
+    // The world's name is the switch (the user, 2026-10-23: "near the upper left corner, you click the word Overworld and it switches
+    // to Underworld"): Modo teste always; the campaign only once the party has reached the Underworld (save "underworldReached").
+    {
+      const char* word = underworld_ ? "Underworld" : "Overworld";
+      ImFont* mark = uiFont(UiFont::Mark);
+      const ImVec2 ts = mark->CalcTextSizeA(30.0f, FLT_MAX, 0.0f, word);
+      const ImVec2 at{left, top + 22.0f};
+      bool hover = false;
+      if (underworldOpen()) {
+        ImGui::SetCursorScreenPos(at);
+        if (ImGui::InvisibleButton("##world", {ts.x, ts.y})) toggleWorld();
+        hover = ImGui::IsItemHovered();
+      }
+      emberTitle(dl, at, 30.0f, word);
+      if (hover) dl->AddLine({at.x, at.y + ts.y + 2.0f}, {at.x + ts.x, at.y + ts.y + 2.0f}, kAccent, 2.0f);
+    }
     // The plates, right to left.
     ImFont* ui = uiFont(UiFont::Ui);
     const float h = 36.0f, gap = 12.0f;
@@ -609,9 +625,21 @@ class OverworldStage : public Stage {
 
   // The map itself: the painted world in a scrollable viewport (drag with the mouse, wheel scrolls), the fog, the
   // time-of-day tint, the pins, the step hexes and the leader.
+  // The Underworld's map: the user's Atlas do Submundo de Mordávia (content/ui/underworld-atlas-v01.png), only the picture for now
+  // (no locations, steps or fog there yet: it has no overworld board).
+  static constexpr const char* kUnderworldAtlas = "content/ui/underworld-atlas-v01.png";
+  // Whether the word at the upper left switches worlds: Modo teste always, the campaign once the party has reached the Underworld.
+  bool underworldOpen() const { return test() || save_.value("underworldReached", false); }
+  void toggleWorld() {
+    underworld_ = !underworld_;
+    std::swap(centreX_, otherCentreX_), std::swap(centreY_, otherCentreY_);  // each world keeps its own view
+    recentre_ = true;
+    movementOpen_ = false;
+  }
+
   void drawViewport(ImVec2 a, ImVec2 b) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
-    const UiImage* map = uiImage(paths_.engine2Public / "game/assets/world-map.jpg");
+    const UiImage* map = uiImage(underworld_ ? std::filesystem::path(kUnderworldAtlas) : paths_.engine2Public / "game/assets/world-map.jpg");
     mapDrawn_ = true;
     const float vw = b.x - a.x, vh = b.y - a.y;
     const float imgW = vw * kZoomStops[zoom_] / 100.0f;
@@ -658,6 +686,10 @@ class OverworldStage : public Stage {
     auto at = [&](double xPct, double yPct) { return ImVec2{o.x + static_cast<float>(xPct) / 100.0f * imgW, o.y + static_cast<float>(yPct) / 100.0f * imgH}; };
     dl->PushClipRect(a, b, true);
     if (map) dl->AddImageRounded(map->texture, o, {o.x + imgW, o.y + imgH}, {0, 0}, {1, 1}, IM_COL32_WHITE, 8.0f);
+    if (underworld_) {  // the Atlas alone: no fog, no sky (it is underground), no pins, no steps, no leader there yet
+      dl->PopClipRect();
+      return;
+    }
     drawFog(dl, o, imgW, imgH);
     // Sky tint by the hour.
     {
@@ -2152,6 +2184,8 @@ class OverworldStage : public Stage {
   int zoom_ = 3;
   float scrollX_ = 0, scrollY_ = 0, centreX_ = 0.5f, centreY_ = 0.5f;
   bool centred_ = false, recentre_ = false;
+  bool underworld_ = false;                          // the Underworld's Atlas on show instead of the overworld (toggleWorld)
+  float otherCentreX_ = 0.5f, otherCentreY_ = 0.5f;  // the view of the world not on show
   struct Drag {
     float x, y, sx, sy;
   };

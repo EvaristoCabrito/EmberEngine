@@ -210,7 +210,7 @@ void BoardGround::buildWater3D(const e2::Board& board) {
   const e2::Water3DMap& map = board.draft().water3d;
   if (!map.any()) return;
   const e2::HexLayout& L = board.layout();
-  const double base = board.data().baseLevels * e2::kStep;
+  const double base = board.baseLevels() * e2::kStep;
   const double toX = -e2::kSqrt3 * 0.5 - L.ox, toZ = -3.4 - L.oz;  // Engine2 board (x, y) -> this world (x, z)
   const VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
   for (int i = 0; i < 2; ++i) {

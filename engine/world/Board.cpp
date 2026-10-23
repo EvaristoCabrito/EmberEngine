@@ -165,6 +165,7 @@ std::optional<MapDraft> MapDraft::fromJson(const json& d) {
   m.emberWindFog = static_cast<int>(num("emberWindFog", 0.0f));
   m.emberDeckClip = d.contains("emberDeckClip") && d["emberDeckClip"].is_boolean() && d["emberDeckClip"].get<bool>();
   m.underground = d.contains("underground") && d["underground"].is_boolean() && d["underground"].get<bool>();
+  if (d.contains("emberBaseLevels") && d["emberBaseLevels"].is_number()) m.emberBaseLevels = d["emberBaseLevels"].get<int>();
   m.mistIntensity = num("mistIntensity", m.mistType.empty() ? 0.0f : 0.2f);
   m.mistSpeed = num("mistSpeed", 1.0f);
   m.wispIntensity = num("wispIntensity", 0.0f);
@@ -235,12 +236,13 @@ Board::Board(const BoardData& data, MapDraft draft) : data_(data), draft_(std::m
         else if (surf == "grass" || surf == "forest")
           if (const auto any = data_.emberGroundLayer.find(set + "|"); any != data_.emberGroundLayer.end()) cell.ground = any->second;
       }
+      // (baseLevels(): the draft's own base levels when it has them, MapDraft::emberBaseLevels.)
       if (info.surface == "void") cell.groundY = 0;
-      else if (cell.water) cell.groundY = (data_.baseLevels - 1 + cell.level) * kStep;
-      else cell.groundY = (data_.baseLevels + cell.level + info.raise) * kStep;
+      else if (cell.water) cell.groundY = (baseLevels() - 1 + cell.level) * kStep;
+      else cell.groundY = (baseLevels() + cell.level + info.raise) * kStep;
       cell.x = hexX(layout_, c, r);
       cell.z = hexZ(layout_, r);
-      cell.waterY = cell.water ? (data_.baseLevels - 0.35 + cell.level) * kStep : 0;
+      cell.waterY = cell.water ? (baseLevels() - 0.35 + cell.level) * kStep : 0;
       cells_.push_back(std::move(cell));
     }
   }
