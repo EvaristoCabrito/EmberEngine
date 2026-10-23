@@ -1,0 +1,12 @@
+{
+  "section": "Caverna · Garganta das Raízes",
+  "decorations": [
+    {"id": "ember-cave2-root-column", "image": "cave2-root-column-v01", "name": "Raiz descendente", "like": "cave-basalt-006-pillar"},
+    {"id": "ember-cave2-hair-roots", "image": "cave2-hair-roots-v01", "name": "Cortina de radículas", "like": "cave-basalt-006-edge-pillar"},
+    {"id": "ember-cave2-sap-pod", "image": "cave2-sap-pod-v01", "name": "Casulo de seiva", "like": "cave-basalt-006-brazier"},
+    {"id": "ember-cave2-root-stumps", "image": "cave2-root-stumps-v01", "name": "Tocos petrificados", "like": "cave-mossy-rocks"},
+    {"id": "ember-cave2-root-ladder", "image": "cave2-root-ladder-v01", "name": "Escada de raízes", "like": "cave-basalt-006-edge-pillar"},
+    {"id": "ember-cave2-puffballs", "image": "cave2-puffballs-v01", "name": "Bolotas de esporos", "like": "wilds-mushroom-stump"},
+    {"id": "ember-cave2-sap-camp", "image": "cave2-sap-camp-v01", "name": "Acampamento dos sangradores", "like": "cave-basalt-004-original-bones"}
+  ]
+}

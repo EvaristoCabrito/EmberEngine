@@ -69,6 +69,15 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"cave-v01", "hill", "ember-cave-calcita-v01", "content/ground/cave-calcita-v01.png", 4.0f, true},
     {"cave-v01", "snow", "ember-cave-margem-v01", "content/ground/cave-margem-v01.png", 4.5f, true},
     {"cave-v01", "side", "ember-cave-parede-v01", "content/ground/cave-parede-v01.png", 3.0f},
+    // The Misty Cave's level 2, A Garganta das Raízes (cave2-v01, Attachments/MistyCave/2nd Floor, 2026-10-23; docs/MISTY_DEPTH2_PROMPTS.md):
+    // the root mat on plains, the carved slate ledges on nave, slate scree and snapped roots on ruins, the colossal roots' backs on hill,
+    // the sap seeps on snow; the gorge wall (slate threaded with roots) on the sides.
+    {"cave2-v01", "plains", "ember-cave2-raizes-v01", "content/ground/cave2-raizes-v01.png", 4.5f, true},
+    {"cave2-v01", "nave", "ember-cave2-ardosia-v01", "content/ground/cave2-ardosia-v01.png", 4.0f, true},
+    {"cave2-v01", "ruins", "ember-cave2-lascas-v01", "content/ground/cave2-lascas-v01.png", 4.0f, true},
+    {"cave2-v01", "hill", "ember-cave2-dorso-v01", "content/ground/cave2-dorso-v01.png", 4.0f, true},
+    {"cave2-v01", "snow", "ember-cave2-seiva-v01", "content/ground/cave2-seiva-v01.png", 4.0f, true},
+    {"cave2-v01", "side", "ember-cave2-parede-v01", "content/ground/cave2-parede-v01.png", 3.0f},
 };
 
 inline std::string skyMoonAsset(std::string_view phase) { return "sky/moon/" + std::string(phase) + ".tex"; }
