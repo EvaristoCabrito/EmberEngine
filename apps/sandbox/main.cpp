@@ -572,13 +572,12 @@ struct BlankStage final : Stage {
 };
 
 MapStageOptions mapOptions(const Options& o);
-// Modo teste: the session's heroes at its level (30) and the class path each chose on the Party screen; Salazar knows every
-// spell of his class at that level (the user, 2026-10-23: "salazar tenha acesso a todas suas magias no debug").
+// Modo teste: the session's heroes at its level (30) and the class path each chose on the Party screen; every hero knows every
+// spell of its class at that level (the user, 2026-10-23: "todas as magias para todos os personagens no debug").
 void applyTestHeroes(MapStageOptions& options, const e2::Json& tsave) {
   const e2::Json levels = tsave.value("levels", e2::Json::object());
   for (const auto& [name, level] : levels.items())
-    if (level.is_number_integer()) options.heroProgress[name] = {level.get<int>(), 0};
-  options.fullSpells.insert("Salazar");
+    if (level.is_number_integer()) options.heroProgress[name] = {level.get<int>(), 0}, options.fullSpells.insert(name);
   const e2::Json promotions = tsave.value("promotions", e2::Json::object());
   if (promotions.is_object())
     for (const auto& [name, cls] : promotions.items())

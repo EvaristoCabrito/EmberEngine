@@ -3666,9 +3666,12 @@ class MapStage final : public Stage {
     // (Engine2's own Bruxo enemies too) knows our spells of its level.
     for (e2::BattleUnit& u : battle_->units()) {
       if (const auto it = options_.heroClass.find(u.name); it != options_.heroClass.end() && u.side == "player") e2::setPromotion(u, it->second);
-      if (u.side == "player" && options_.fullSpells.contains(u.name))
-        for (const std::string& k : e2::classSpellsAt(u.classId, u.level, u.name))
-          if (std::find(u.spellList.begin(), u.spellList.end(), k) == u.spellList.end()) u.spellList.push_back(k);
+      if (u.side == "player" && options_.fullSpells.contains(u.name)) {  // the class's row first, in its order, then what it already knew
+        std::vector<std::string> all = e2::classSpellsAt(u.classId, u.level, u.name);
+        for (const std::string& k : u.spellList)
+          if (std::find(all.begin(), all.end(), k) == all.end()) all.push_back(k);
+        u.spellList = std::move(all);
+      }
       e2::grantClassSpells(u);
       if (u.side == "player" && options_.fullSpells.contains(u.name)) {
         std::string list;
