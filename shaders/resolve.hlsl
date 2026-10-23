@@ -67,26 +67,18 @@ float3 ceilingAt(MeshFrame f, float3 dir, float pixelAngle) {
   Texture2D tile = gTextures[NonUniformResourceIndex(push.ceilingTexture)];
   uint tw, th;
   tile.GetDimensions(tw, th);
-  const float width = push.roomRadius > 0.0 ? 2.0 * push.roomRadius : push.ceilingTile;
-  const float2 size = float2(width, width * float(th) / max(float(tw), 1.0));
-  const float2 m = (hit - push.roomCentre) / size + 0.5;
-  if (any(m < 0.0) || any(m > 1.0)) return 0.0;
+  // Like the ground (the user, 2026-10-23: "ela repete sim mas continua do mesmo tamanho"): the image ceilingTile world units wide,
+  // always that size, repeated and mirrored at its edges from the room's centre.
+  const float2 size = float2(push.ceilingTile, push.ceilingTile * float(th) / max(float(tw), 1.0));
+  float2 m = (hit - push.roomCentre) / size + 0.5;
+  m -= 2.0 * floor(m * 0.5);  // mirrored repeat: 0..2 -> 0..1..0
+  m = float2(m.x <= 1.0 ? m.x : 2.0 - m.x, m.y <= 1.0 ? m.y : 2.0 - m.y);
   const float footprint = t * pixelAngle / max(dir.y, 0.05);
   const float lod = max(log2(footprint / (size.x / float(max(tw, 1u)))), 0.0);
   return tile.SampleLevel(gSamplers[f.materialSampler], m, lod).rgb;  // no darkening (the user, 2026-10-22: no black line)
 }
-// Whether the ceiling image lies in this direction (the same plane and placement as ceilingAt).
-bool ceilingHit(MeshFrame f, float3 dir) {
-  if (dir.y <= 1e-4 || push.roomRadius <= 0.0) return dir.y > 1e-4;
-  const float planeY = max(push.planeY + push.ceilingHeight, f.cameraPosition.y + 4.0);
-  const float2 hit = f.cameraPosition.xz + dir.xz * ((planeY - f.cameraPosition.y) / dir.y);
-  Texture2D tile = gTextures[NonUniformResourceIndex(push.ceilingTexture)];
-  uint tw, th;
-  tile.GetDimensions(tw, th);
-  const float width = 2.0 * push.roomRadius;
-  const float2 m = (hit - push.roomCentre) / float2(width, width * float(th) / max(float(tw), 1.0)) + 0.5;
-  return all(m >= 0.0) && all(m <= 1.0);
-}
+// Whether the ceiling lies in this direction: everywhere above the horizon (the image repeats like the ground's).
+bool ceilingHit(MeshFrame f, float3 dir) { return dir.y > 1e-4; }
 float3 ceilingAt(MeshFrame f, AtmosphereFrame a, float3 dir, uint2 pixel) {
   return ceilingAt(f, dir, length(skyDirection(f, a, float2(pixel) + float2(1.5, 0.5)) - dir));
 }

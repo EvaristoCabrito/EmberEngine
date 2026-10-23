@@ -27,12 +27,12 @@ SHADER_MARKERS = [
     "if (realElevation < 0.0 && push.planeTexture != kNoTexture)",
     "push.backgroundMode == 5",
     # The ceiling, same rules as the ground (the user, 2026-10-23: "o ceiling precisa continuar assim como o ground, same rules"):
-    # a flat plane ceilingHeight above the floor image's plane, never under the eye, the image ONCE over the room, nothing beyond it,
-    # covering the painting's own ceiling only where the image lies.
+    # a flat plane ceilingHeight above the floor image's plane, never under the eye, the image always ceilingTile wide, repeated and
+    # mirrored like the ground's ("ela repete sim mas continua do mesmo tamanho"), covering the painting's own ceiling above skyTop.
     "const float planeY = max(push.planeY + push.ceilingHeight, f.cameraPosition.y + 4.0);",
-    "const float width = push.roomRadius > 0.0 ? 2.0 * push.roomRadius : push.ceilingTile;",
-    "if (any(m < 0.0) || any(m > 1.0)) return 0.0;",
-    "bool ceilingHit(MeshFrame f, float3 dir)",
+    "const float2 size = float2(push.ceilingTile, push.ceilingTile * float(th) / max(float(tw), 1.0));",
+    "float2 m = (hit - push.roomCentre) / size + 0.5;",
+    "bool ceilingHit(MeshFrame f, float3 dir) { return dir.y > 1e-4; }",
     "skyTop > 0.0 && ceilingHit(f, dir)) scene = smoothstep(skyTop - 0.015, skyTop + 0.015, v);",
     # The ground: a flat plane under the board (planeY), the image planeTile wide, repeated and mirrored, the painting beyond planeFar.
     "const float t = (push.planeY - f.cameraPosition.y) / min(dir.y, -1e-4);",
