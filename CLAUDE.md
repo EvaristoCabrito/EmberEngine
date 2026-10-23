@@ -1023,6 +1023,13 @@ design with the textures at watchtowerwalls", then "update the editor to make it
   captures), and the panel's Hora "do mapa" is now "do jogo": built, NOT yet seen by the user. Not done yet: indoor maps without windows
   (the Inn) still take no light from outside (darkIndoor); the drawn ceiling.
 - **Gotcha (2026-10-21): `build.bat` piped through PowerShell reported exit 0 on a failed shader compile** (a release with the old shaders
+- **Gotcha (2026-10-22): `build/debug` had NO header dependencies recorded (`ninja -t deps <obj>` said "#deps 0" for every object),
+  so a header change (Battle.h's `BattleCell::level`, 18:30) never recompiled Battle.cpp / SceneData.cpp / SpriteSystem.cpp while
+  Spells.cpp and main.cpp were compiled with the new layout: the debug exe mixed two layouts of the same structs and crashed right after
+  "poses: N of N map units in the catalog" on every map, old or new files alike.** The release folder tracked them fine (6 deps on
+  Battle.cpp.obj). The stale folder was set aside as `build/debug-stale-deps-20261022` and debug configured afresh (scratchpad
+  `debug-fresh.cmd`: vcvars + `cmake --preset debug -DFETCHCONTENT_FULLY_DISCONNECTED=ON -DFETCHCONTENT_SOURCE_DIR_<DEP>=build/release/_deps/<dep>-src`).
+  **Whenever a debug run crashes where release does not, run `ninja -t deps` on an object of a changed header before hunting the code.**
   was captured as if new). Always grep the log for `FAILED` and check the .spv / exe timestamps.
 - **Map Editor, 3D Walls:** "TORRE DE VIGIA" buttons (Parede / Janela / Seteira / Tocha / Portal / Porta) and the wall tools: Clique (as before),
   **Traçar parede** (drag on the preview from hex to hex: the armed piece in a straight or diagonal run; walls under it swapped for the brush,
@@ -1312,7 +1319,8 @@ export_scene, measure_art, export_battle) para C++, sem node em tempo de execuç
   campaign battles the TypeScript pipeline had made in `build/engine2-campaign` match (except the 2 cemetery maps whose files predate the
   cemetery theme); `prepare-map` identical to the TypeScript's prepared maps on 5 maps (watchtower and cemetery included); the scene writer
   round-trips (`check-scene-builder` 0 differences on 5 maps); a release capture `--title --title-screen mission-test:aldeia` prepared
-  aldeia017 inside the game (map, scene, battle, 13 units in play) and its battle file equals the TypeScript one. The 164 battles in
+  aldeia017 inside the game (map, scene, battle, 13 units in play) and its battle file equals the TypeScript one; the same capture in
+  debug with validation: exit 0, 0 validation lines (once `build/debug` was rebuilt afresh: debug-stale-deps gotcha above). The 164 battles in
   `build/engine2-test` are NOT a reference (an older exporter: the test roster at 15 with a save's gear, `debugFreeCast`, no locks).
 - **Bug found in the TypeScript exporter, gone here by design:** a map whose tiles use the board's own terrains `highwood` / `highruin` /
   `deadtree` (9 of 261 in content/maps/ember: colina004, cripta002, fortaleza004, muralha001, passagem001, profundezas002,
@@ -1339,5 +1347,7 @@ export_scene, measure_art, export_battle) para C++, sem node em tempo de execuç
 - Voss's first hit cut (`content/sprites/voss-veo/hit-v01` before the wall key) was rewritten in place on 2026-10-21 before any commit;
   its video frames stay in `build/video-cut/voss-veo/hit`, so it can be cut again with `video_sprite.py`.
 - **Milf's Acid Arrow (`acidArrow`, Spells.cpp / SpellsE2.inc, 2026-10-22):** built when the user's "Milf's acid arrow" was read as
+- `build/debug-stale-deps-20261022`: the debug build folder as it was on 2026-10-22 night (no header dependencies recorded, objects of
+  two struct layouts mixed; see the gotcha in Build and run). Set aside, not used; `build/debug` was configured afresh.
   AD&D's spell; the user's name belongs to Neera's `venomArrow`. Kept and in use: the Corrosive Slimes cast it.
 
