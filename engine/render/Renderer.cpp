@@ -249,7 +249,10 @@ struct MeshFrame {
   glm::vec3 localShadowPosition;    // the light it belongs to
   uint32_t localShadowMap;          // kNoTextureIndex = none this frame
   float localShadowSize;
-  uint32_t pad10[3];
+  // The board's sides reach the ground image (Renderer::setBoardDrop): terrain.hlsl lowers every side-wall bottom at
+  // boardBase by boardDrop, so the board stands on a floor image laid further under its base (0 = nothing moves).
+  float boardBase, boardDrop;
+  uint32_t pad10c;
 };
 static_assert(sizeof(MeshFrame) == 768 && offsetof(MeshFrame, meshes) == 200 && offsetof(MeshFrame, previousView) == 384 && offsetof(MeshFrame, probes) == 632 &&
               offsetof(MeshFrame, shadowMatrix) == 480 && offsetof(MeshFrame, localShadowMatrix) == 672);
@@ -1149,6 +1152,8 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
   f.clusterNear = std::max(2.0f, camera_.projection[3][2]);
   f.clusterFar = f.clusterNear + 398.0f;
   f.clusters = bufferAddress(context_, clusters_);
+  f.boardBase = boardBase_;
+  f.boardDrop = boardDrop_;
   f.fogMask = kNoTextureIndex;
   if (fogOn_ && fogMaskIndex_ != kNoIndex) {
     f.fogMask = fogMaskIndex_;

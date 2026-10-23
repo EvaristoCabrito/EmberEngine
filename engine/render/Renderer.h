@@ -170,6 +170,11 @@ class Renderer {
   // The board's ground drawn only inside x0..x1, z0..z1 (world units; a map whose deck ends at its walls, MapDraft::emberDeckClip);
   // the default lets everything through.
   void setGroundClip(glm::vec4 clip) { groundClip_ = clip; }
+  // The board always stands on the ground image, never floats (the user, 2026-10-23: "o tabuleiro precisa sempre encostar no
+  // ground em todos os mapas, não existe exceção"): when the map's floor image lies `drop` world units under the board's base
+  // (`base`: where its side walls end), terrain.hlsl lowers every side-wall bottom by `drop`, so the sides reach the floor.
+  // 0 = nothing moves (every map whose floor image lies at the base).
+  void setBoardDrop(float base, float drop) { boardBase_ = base, boardDrop_ = std::max(drop, 0.0f); }
   // Up to kGroundHoles rectangles (x0, z0, x1, z1) where the ground is not drawn (a stairwell going down; terrain.hlsl).
   static constexpr size_t kGroundHoles = 2;
   void setGroundHoles(std::span<const glm::vec4> holes) {
@@ -590,6 +595,7 @@ class Renderer {
   std::array<glm::vec4, kGroundHoles> groundHoles_{};  // (0, 0, 0, 0) = none
   VkPipeline spritePipeline_ = VK_NULL_HANDLE;
   VkPipeline spriteDepthPipeline_ = VK_NULL_HANDLE;  // the cards' depth, after the cards
+  float boardBase_ = 0.0f, boardDrop_ = 0.0f;  // setBoardDrop: the board's sides lowered to the floor image
   VkPipeline effectPipeline_ = VK_NULL_HANDLE;
   VkPipeline vfxPipelines_[2] = {};  // depth-tested, over everything
   std::vector<VfxVertex> vfxVertices_;

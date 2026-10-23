@@ -177,7 +177,11 @@ struct MeshFrame {
   float3 localShadowPosition;   // the light it belongs to (matched by position in the light list)
   uint localShadowMap;          // bindless depth texture; kNoTexture = none this frame
   float localShadowSize;        // texels per side
-  uint pad10a, pad10b, pad10c;  // (not a uint3: aligned to 16 it would push the struct past the C++ one's 768 bytes)
+  // The board's sides reach the floor image (Renderer::setBoardDrop; terrain.hlsl boardDropAt): every side-wall bottom lying
+  // at boardBase is lowered by boardDrop (0 = nothing moves). (Not a float3 / uint3: aligned to 16 it would push the struct
+  // past the C++ one's 768 bytes.)
+  float boardBase, boardDrop;
+  uint pad10c;
 };
 static const uint kCloudLayer = 1u;
 static const uint kCloudShadows = 2u;

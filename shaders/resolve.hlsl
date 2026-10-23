@@ -58,10 +58,11 @@ float3 skyWithAir(MeshFrame f, uint2 pixel) {
 float3 ceilingAt(MeshFrame f, float3 dir, float pixelAngle) {
   if (dir.y <= 1e-4) return 0.0;
   // The ceiling is the floor seen the other way round (the user, 2026-10-23: "ele é literalmente o oposto desse angulo"): a flat plane
-  // ceilingHeight above the floor image's plane (planeY), the image lying on it ONCE, centred over the room, as wide as the room's
-  // bounding circle ("dont multiply it, its only a single image"); when the camera rises above that height the plane keeps 4 units
-  // above the eye, so it never disappears. Outside the single image there is no ceiling (ceilingHit false): the panorama stays whole.
-  const float planeY = max(push.planeY + push.ceilingHeight, f.cameraPosition.y + 6.0);
+  // ceilingHeight above the floor image's plane (planeY), the image centred over the room at the room's size, repeated mirrored beyond
+  // it; when the camera rises above that height (the game's camera always does) the plane keeps half of ceilingHeight above the eye,
+  // so the JSON's ceilingHeight raises / lowers the ceiling at the game's camera too (the user, 2026-10-23: "sobe um pouco o teto",
+  // "nao mudou nada": a fixed margin above the eye ignored it).
+  const float planeY = max(push.planeY + push.ceilingHeight, f.cameraPosition.y + 0.5 * push.ceilingHeight);
   const float t = (planeY - f.cameraPosition.y) / dir.y;
   const float2 hit = f.cameraPosition.xz + dir.xz * t;
   Texture2D tile = gTextures[NonUniformResourceIndex(push.ceilingTexture)];

@@ -833,6 +833,7 @@ class MapStage final : public Stage {
       renderer.setSunGlare(glare);
     }
     renderer.setSunShadowBounds(boardCenter_, boardRadius_);
+    renderer.setBoardDrop(0.0f, 0.0f);  // nothing moves unless the chosen panorama lays its floor image under the base (below)
     renderer.setLightingLayers(layers_);
     if (windowLight() && board_->draft().id != "estalagem") {
       // Indoors the sky is never drawn, whatever lights the room (the user's spec, 2026-10-21): black beyond the walls, except the map's
@@ -877,7 +878,12 @@ class MapStage final : public Stage {
         // At the board's own base, so the board stands on it (the user, 2026-10-19: "o tabuleiro tem que encostar na imagem do chão,
         // no momento parece que ele flutua"; it was 1.5 under the lowest ground): the hard / tabletop walls end at min(0, lowest
         // ground) (GroundMesh), the smooth look's cut edge drops kEdgeLip (0.35) under its ground.
-        plane.y = (look_ == e2::EdgeStyle::Smooth ? groundLow_ - 0.35f : std::min(0.0f, groundLow_)) - fit.groundDepth;
+        const float boardBase = look_ == e2::EdgeStyle::Smooth ? groundLow_ - 0.35f : std::min(0.0f, groundLow_);
+        plane.y = boardBase - fit.groundDepth;
+        // ... and with the floor image laid further under the base (`groundDepth`, the user, 2026-10-22: "o chão mais baixo"), the
+        // board's sides go down to it (the user, 2026-10-23: "o tabuleiro precisa sempre encostar no ground em todos os mapas, não
+        // existe exceção"; terrain.hlsl boardDropAt). Only the fit's own depth: a draft's emberFloor (a bridge's gorge) is not a floor.
+        renderer.setBoardDrop(boardBase, fit.ground.empty() ? 0.0f : fit.groundDepth);
         if (!fit.ground.empty()) plane.texture = ground_.textureIndex(e2::backdropAsset(fit.ground));
         plane.tile = fit.groundTile;
         plane.from = fit.groundFromDegrees;

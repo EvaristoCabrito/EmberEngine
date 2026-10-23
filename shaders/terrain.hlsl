@@ -64,15 +64,24 @@ struct VSOut {
   nointerpolation float wall : TEXCOORD10;  // 1 on the board's added side walls
 };
 
+// The board stands on the ground image, never floats (the user, 2026-10-23: "o tabuleiro precisa sempre encostar no ground em
+// todos os mapas, não existe exceção"): when the map's floor image lies f.boardDrop under the board's base (Renderer::setBoardDrop),
+// every side-wall bottom at that base (a vertical face: the smooth look's lip ring, its void skirts and closeBoardSides walls; the hard
+// look's rim walls) goes down by the same amount, so the sides reach the floor. A top face (normal up) never moves; 0 = as before.
+float3 boardDropAt(MeshFrame f, float3 p, float3 n) {
+  if (f.boardDrop > 0.0 && abs(n.y) < 0.5 && p.y <= f.boardBase + 0.02) p.y -= f.boardDrop;
+  return p;
+}
+
 VSOut VSMain(uint id : SV_VertexID) {
   const MeshFrame f = loadFrame(push.frame);
   const uint index = push.indices != 0 ? vk::RawBufferLoad<uint>(push.indices + uint64_t(id) * 4) : id;
   const uint64_t v = push.vertices + uint64_t(index) * 48;
-  const float3 p = vk::RawBufferLoad<float3>(v);
   VSOut o;
+  o.normal = decodeNormal(vk::RawBufferLoad<uint>(v + 12));
+  const float3 p = boardDropAt(f, vk::RawBufferLoad<float3>(v), o.normal);
   o.position = mul(float4(p, 1.0), f.viewProjection);
   o.world = p;
-  o.normal = decodeNormal(vk::RawBufferLoad<uint>(v + 12));
   const uint2 s = vk::RawBufferLoad<uint2>(v + 16);
   const uint2 la = vk::RawBufferLoad<uint2>(v + 24);
   const uint4 lb = vk::RawBufferLoad<uint4>(v + 32);
@@ -103,7 +112,8 @@ ShadowOut VSShadow(uint id : SV_VertexID) {
   const MeshFrame f = loadFrame(push.frame);
   const uint index = push.indices != 0 ? vk::RawBufferLoad<uint>(push.indices + uint64_t(id) * 4) : id;
   ShadowOut o;
-  o.world = vk::RawBufferLoad<float3>(push.vertices + uint64_t(index) * 48);
+  const uint64_t v = push.vertices + uint64_t(index) * 48;
+  o.world = boardDropAt(f, vk::RawBufferLoad<float3>(v), decodeNormal(vk::RawBufferLoad<uint>(v + 12)));
   o.position = mul(float4(o.world, 1.0), f.shadowMatrix);
   return o;
 }
