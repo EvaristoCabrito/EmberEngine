@@ -50,6 +50,16 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   beyond, and an angular ceiling were all rejected that night). Commit `aaa82ce` puts resolve.hlsl's panorama path and the Inn's
   backdrop-fit entries into main as in the 23:10 build: every later commit starts from them; the user: a restored file is only a
   snapshot ("funciona até o próximo commit"), only a commit in main counts.**
+- **THE INN IS AN EXCEPTION TO ALL RULES: NEVER CHANGE ANYTHING, AND ONLY EVER WITH THE SECRET WORD (the user, 2026-10-23 afternoon: "O inn
+  está como precisa estar, se alguém encostar em alguma linha do INN eu vou amaldiçoar por 7 gerações; o INN é uma exceção a todas as
+  regras, NUNCA MUDAR NADA", then "NUNCA MUDAR O INN SEM A PALAVRA SECRETA PEPERONNI NIPPLES").** No line of any code the Inn runs may
+  change (resolve.hlsl as a whole, its panorama modes included; its backdrop-fit entries; its maps, scenes, kit; MapStage's `innFloor()`
+  paths), whatever another map needs and whatever another rule says (the one-sky rule included), unless the user's order itself carries
+  the words PEPERONNI NIPPLES. A fix another map needs goes into code the Inn never runs (its own shader file / pipeline chosen only for
+  non-Inn maps, as resolve_tower.hlsl was for the tower), never a branch inside the Inn's shader. Never capture or "measure" the Inn
+  unasked (the user: "o que tem o INN para ser medido?"). On 2026-10-23 a one-line seam fix in resolve.hlsl's shared panorama sampling
+  (the painting's bottom row wrapped onto its top edge by the repeat sampler: the dark dashed line across the sky on panorama maps) was
+  written, built, measured and REVERTED for this rule; the seam stays on every panorama map until a non-Inn path is authorized.
 - **NEVER touch the Inn (the user, 2026-10-23: "NÃO ENCOSTAR NO INN JAMAIS").** The Inn's maps (`estalagem*`), their panoramas, ground,
   ceiling and look stay exactly as the user left them (their 23:10 build of 2026-10-22). Work for any other map must leave the Inn
   byte-identical: never edit the shared background code it is drawn with (resolve.hlsl `backgroundAt` and the panorama paths) for
