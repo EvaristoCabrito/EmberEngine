@@ -61,7 +61,7 @@ float3 ceilingAt(MeshFrame f, float3 dir, float pixelAngle) {
   // ceilingHeight above the floor image's plane (planeY), the image lying on it ONCE, centred over the room, as wide as the room's
   // bounding circle ("dont multiply it, its only a single image"); when the camera rises above that height the plane keeps 4 units
   // above the eye, so it never disappears. Outside the single image there is no ceiling (ceilingHit false): the panorama stays whole.
-  const float planeY = max(push.planeY + push.ceilingHeight, f.cameraPosition.y + 4.0);
+  const float planeY = max(push.planeY + push.ceilingHeight, f.cameraPosition.y + 6.0);
   const float t = (planeY - f.cameraPosition.y) / dir.y;
   const float2 hit = f.cameraPosition.xz + dir.xz * t;
   Texture2D tile = gTextures[NonUniformResourceIndex(push.ceilingTexture)];

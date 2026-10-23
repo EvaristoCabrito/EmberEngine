@@ -30,7 +30,7 @@ SHADER_MARKERS = [
     # a flat plane ceilingHeight above the floor image's plane, never under the eye, the image centred over the room at the room's
     # size and repeated mirrored beyond it like the ground's ("ela repete sim mas continua do mesmo tamanho", "manter aquele centrado
     # no meio"), covering the painting's own ceiling above skyTop.
-    "const float planeY = max(push.planeY + push.ceilingHeight, f.cameraPosition.y + 4.0);",
+    "const float planeY = max(push.planeY + push.ceilingHeight, f.cameraPosition.y + 6.0);",
     "const float width = push.roomRadius > 0.0 ? 2.0 * push.roomRadius : push.ceilingTile;",
     "float2 m = (hit - push.roomCentre) / size + 0.5;",
     "bool ceilingHit(MeshFrame f, float3 dir) { return dir.y > 1e-4; }",
