@@ -400,12 +400,7 @@ class MapStage final : public Stage {
       if (!backdropFit_.ground.empty()) ground_.requestTexture(e2::backdropAsset(backdropFit_.ground));
       if (!board_->draft().emberFloor.empty()) ground_.requestTexture(e2::backdropAsset(board_->draft().emberFloor));
       // The map's own panoramas (backdrop-fit.json "panoramas" by map id; the panel's Fundo after its five entries).
-      panoramas_ = loadPanoramas(board_->draft().id);
-      for (const std::string& file : panoramas_) {
-        ground_.requestTexture(e2::backdropAsset(file));
-        panoramaFits_.push_back(loadBackdropFit(file));
-        if (!panoramaFits_.back().ground.empty()) ground_.requestTexture(e2::backdropAsset(panoramaFits_.back().ground));
-      }
+      loadMapPanoramas();
       // The newest panorama opens first on its map (aldeia: the user's fire panorama, 2026-10-19 "TERMINA").
       if (options.background < 0 && !panoramas_.empty()) background_ = 4 + static_cast<int>(panoramas_.size());
       // Luz das janelas: by map id (each map its own diorama): the watchtower's roofed floors open with it; every other map OFF.
@@ -417,12 +412,7 @@ class MapStage final : public Stage {
     }
     if (!scene_) {
       // Random encounters can be board-only maps with no scene file. Load their map-specific panoramas anyway.
-      panoramas_ = loadPanoramas(board_->draft().id);
-      for (const std::string& file : panoramas_) {
-        ground_.requestTexture(e2::backdropAsset(file));
-        panoramaFits_.push_back(loadBackdropFit(file));
-        if (!panoramaFits_.back().ground.empty()) ground_.requestTexture(e2::backdropAsset(panoramaFits_.back().ground));
-      }
+      loadMapPanoramas();
       if (options.background >= 0) background_ = std::min(options.background, 4);
       else if (!panoramas_.empty()) background_ = 4 + static_cast<int>(panoramas_.size());
     }
@@ -828,7 +818,7 @@ class MapStage final : public Stage {
       const bool isPanorama = panorama >= 0 && panorama < static_cast<int>(panoramas_.size());
       const bool painting = isPanorama || (background_ != 1 && background_ != 2 && scene_ && !scene_->backdrop.empty());
       if (painting && !isPanorama) bg = ground_.textureIndex(e2::backdropAsset(scene_->backdrop));
-      if (isPanorama) bg = ground_.textureIndex(e2::backdropAsset(panoramas_[static_cast<size_t>(panorama)]));
+      if (isPanorama) bg = ground_.textureIndex(e2::backdropAsset(panoramaFile(panoramas_[static_cast<size_t>(panorama)])));
       if (painting && background_ >= 4) {
         // The painting aligned to the sky (backdrop-fit.json): its own sun glow turned under the real key light.
         const BackdropFit& fit = isPanorama ? panoramaFits_[static_cast<size_t>(panorama)] : backdropFit_;
@@ -848,8 +838,9 @@ class MapStage final : public Stage {
         plane.far = flat_ ? 1.0e9f : fit.groundFar;
         // "Céu do panorama" (the user, 2026-10-19: "libera o céu para eu ver como fica"): 0 the image's own smoke sky, 1 the real sky
         // above the rooftops (everything above 30% of the image is sky; down to the ruins its sky is matted out by colour).
-        const bool ownSky = isPanorama && fit.keepSky && panoramaSky_ == 0;
-        const float skyTop = isPanorama && fit.keepSky && panoramaSky_ == 1 ? 0.30f : fit.skyTop;
+        // A room's panorama (`ceiling`: the tavern) always keeps its own top, the ceiling, whatever the choice.
+        const bool ownSky = isPanorama && (fit.ceiling || (fit.keepSky && panoramaSky_ == 0));
+        const float skyTop = isPanorama && fit.keepSky && !fit.ceiling && panoramaSky_ == 1 ? 0.30f : fit.skyTop;
         // Every map but Aldeia: the regular painting from its horizon row down, the real sky above (mode 5), with the fit's row or the default one.
         const bool whole = fit.whole || (!aldeia() && !isPanorama);
         // A map whose draft lays its painting flat far under the board (MapDraft::emberFloor, A Ponte de Pedra 023): mode 6, the panel's
@@ -9199,6 +9190,7 @@ class MapStage final : public Stage {
     bool keepSky = false;          // panoramas: keep the image's own sky (no matte), the real sky only above its top edge
     bool alphaSky = false;         // the image's sky is truly transparent (its alpha): the real sky shows through it (mode 4)
     bool whole = false;            // the regular image, opaque, its horizon row on the world's horizon, nothing blended (mode 5)
+    bool ceiling = false;          // a room's panorama: its top (the ceiling) always kept, never the real sky (mode 3, any "Céu do panorama")
     float groundTile = 120.0f, groundFar = 300.0f;
     float groundFromDegrees = 10.0f;  // the ground image takes over from this many degrees below the horizon  // its width in world units; the painting takes over beyond this distance
   };
@@ -9231,6 +9223,24 @@ class MapStage final : public Stage {
   std::map<std::pair<int, int>, e2::BattleCell> doorCellsBefore_;  // the battle cells under the animated doors before they were made solid
   float lastDoorTime_ = -1.0f;
   bool placedWindowLight_ = false;  // placeModels: whether the roof was placed
+  // The map's own panoramas (backdrop-fit.json "panoramas" by map id). An entry is a painting's file, or "file#name" for another fit
+  // of the same painting (its own entry in "paintings": the tavern's panorama over the user's Tavernground, 2026-10-22). One whose
+  // painting or ground image is not in the ground pack yet is left out (it joins the panel once a pack carrying it is cooked).
+  void loadMapPanoramas() {
+    const auto packed = [&](const std::string& file) { return !assets_.name(assetId(e2::backdropAsset(file))).empty(); };
+    for (const std::string& entry : loadPanoramas(board_->draft().id)) {
+      const BackdropFit fit = loadBackdropFit(entry);
+      if (!packed(panoramaFile(entry)) || (!fit.ground.empty() && !packed(fit.ground))) {
+        logWarn("panorama {} left out: not in the ground pack", entry);
+        continue;
+      }
+      panoramas_.push_back(entry);
+      panoramaFits_.push_back(fit);
+      ground_.requestTexture(e2::backdropAsset(panoramaFile(entry)));
+      if (!fit.ground.empty()) ground_.requestTexture(e2::backdropAsset(fit.ground));
+    }
+  }
+  static std::string panoramaFile(const std::string& entry) { return entry.substr(0, entry.find('#')); }
   static std::vector<std::string> loadPanoramas(const std::string& mapId) {
     std::vector<std::string> out;
     std::ifstream in("content/engine2/backdrop-fit.json");
@@ -9256,6 +9266,7 @@ class MapStage final : public Stage {
       fit.keepSky = e.value("keepSky", fit.keepSky);
       fit.alphaSky = e.value("alphaSky", fit.alphaSky);
       fit.whole = e.value("whole", fit.whole);
+      fit.ceiling = e.value("ceiling", fit.ceiling);
       fit.groundTile = e.value("groundTile", fit.groundTile);
       fit.groundFar = e.value("groundFar", fit.groundFar);
       fit.groundFromDegrees = e.value("groundFromDegrees", fit.groundFromDegrees);

@@ -21,7 +21,7 @@
    "vau-panorama-v02.png",
    "vau-panorama-v03.png"
   ],
-  "estalagem": ["inn-panorama-v01.jpg"],
+  "estalagem": ["inn-panorama-v01.jpg", "inn-panorama-v01.jpg#chao"],
   "bosque": ["bosque-morto-panorama-v01.png"],
   "thebridge": ["bridge-panorama-v01.jpg"],
   "random-amanita-glade": ["vau-panorama-tira-teima-v05.png"],
@@ -40,6 +40,21 @@
   "random-river-rope-ambush": ["vau-panorama-tira-teima-v05.png"]
  },
  "paintings": {
+  "inn-panorama-v01.jpg#chao": {
+   "horizon": 0.43,
+   "bottom": 1.0,
+   "skyTop": 0.0,
+   "degreesPerHeight": 51.0,
+   "bottomDegrees": 23.6,
+   "spanDegrees": 119.0,
+   "glowColumn": 0.5,
+   "horizonDegrees": 0.0,
+   "ceiling": true,
+   "ground": "tavern-ground-v01.jpg",
+   "groundTile": 72.0,
+   "groundFar": 300.0,
+   "groundFromDegrees": 3.0
+  },
   "aldeia-paisagem-v01.png": {
    "horizon": 0.62,
    "bottom": 1.0,

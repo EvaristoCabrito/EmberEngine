@@ -1345,6 +1345,16 @@ export_scene, measure_art, export_battle) para C++, sem node em tempo de execuç
   source and assets another session made on 2026-10-22, 5.4 GB, untracked, only its node_modules ignored) is still where the game reads its
   assets from (`--game-assets`), but node, vite-node and the TypeScript are no longer needed to play.
 
+## A Estalagem: panorama 02 over the user's Tavernground (2026-10-22; the user: "make the background image from the tavern into a
+Panorama image", "Tavernground in attachments for you to use on the ground layers")
+
+- The tavern (`estalagem`) already had its panorama (`inn-panorama-v01.jpg`, panorama 01). Panorama 02 = the same painting with the user's
+  `Attachments/Tavernground.jpg` (copied as `content/backdrops/tavern-ground-v01.jpg`) flat around the board: backdrop-fit.json entry
+  `"inn-panorama-v01.jpg#chao"` (a `file#name` panorama entry = another fit of the same painting), `ceiling: true` (mode 3 always: the
+  room's own ceiling, never the real sky), groundTile 72 (first value, the user judges). Panorama 01 kept as it is, in the Fundo choice.
+- `MapStage::loadMapPanoramas` leaves out a panorama whose painting or ground image is not in the ground pack (logged "left out"): panorama
+  02 joins the tavern (and opens first, the newest) only once a ground pack cooked after this carries `tavern-ground-v01.jpg`.
+
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
 - `build/debug-stale-deps-20261022`: the debug build folder as it was on 2026-10-22 night (no header dependencies recorded, objects of
