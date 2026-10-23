@@ -153,14 +153,11 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
     // mode 7 = an interior's ground (Luz das janelas, the user, 2026-10-21: "não renderizar nada do lado de fora ... exceto pelo ground and
     // ceiling images"; the watchtower's background "usar ele de imagem de GROUND"): the map's painting on a real plane at planeY, planeTile world
     // units wide, mirrored at its edges, its own colours; nothing else outside: black above the horizon, no sky, no haze.
-    // mode 9 = mode 7's ground with the real sky (and its air) above the horizon instead of black (the watchtower, the user, 2026-10-22:
-    // "activate the atmosphere and sky on the watchtower for me to see what its going to look like"). Mode 7 itself is unchanged.
-    if (push.backgroundMode == 7 || push.backgroundMode == 9) {
-      const bool sky = push.backgroundMode == 9;
-      if (f.atmosphere == 0 || push.planeTexture == kNoTexture) return sky && f.atmosphere != 0 ? float4(skyWithAir(f, pixel), 1.0) : float4(0.0, 0.0, 0.0, 1.0);
+    if (push.backgroundMode == 7) {
+      if (f.atmosphere == 0 || push.planeTexture == kNoTexture) return float4(0.0, 0.0, 0.0, 1.0);
       const AtmosphereFrame a = loadAtmosphere(f);
       const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);
-      if (dir.y >= -1e-4) return sky ? float4(skyWithAir(f, pixel), 1.0) : float4(0.0, 0.0, 0.0, 1.0);
+      if (dir.y >= -1e-4) return float4(0.0, 0.0, 0.0, 1.0);
       const float t = (push.planeY - f.cameraPosition.y) / dir.y;
       if (t <= 0.0) return float4(0.0, 0.0, 0.0, 1.0);
       const float2 hit = f.cameraPosition.xz + dir.xz * t;
