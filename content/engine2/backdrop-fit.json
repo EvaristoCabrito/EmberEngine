@@ -85,12 +85,12 @@
    "horizonDegrees": 0.0,
    "ceiling": true,
    "ground": "inn-ground-v01.jpg",
-   "groundDepth": 0.0,
+   "groundDepth": 0.5,
    "groundTile": 16.0,
    "groundFar": 300.0,
    "groundFromDegrees": 3.0,
    "ceilingImage": "tavern-ceiling-v01.jpg",
-   "ceilingHeight": 14.0,
+   "ceilingHeight": 18.0,
    "ceilingTile": 16.0
   },
   "inn-second-floor-v01.jpg#piso": {
@@ -104,12 +104,12 @@
    "horizonDegrees": 0.0,
    "ceiling": true,
    "ground": "inn-ground-v01.jpg",
-   "groundDepth": 0.0,
+   "groundDepth": 0.5,
    "groundTile": 16.0,
    "groundFar": 300.0,
    "groundFromDegrees": 3.0,
    "ceilingImage": "inn-ceiling-v01.jpg",
-   "ceilingHeight": 14.0,
+   "ceilingHeight": 18.0,
    "ceilingTile": 16.0
   },
   "inn-second-floor-v01.jpg#teto": {
