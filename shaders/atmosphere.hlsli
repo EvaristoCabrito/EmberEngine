@@ -348,11 +348,10 @@ CloudHit cloudSheet(MeshFrame f, AtmosphereFrame a, CloudParams c, float3 origin
 float3 cloudsOverSky(MeshFrame f, AtmosphereFrame a, float3 origin, float3 dir, float3 clear, float3 sky) {
   if ((f.cloudFlags & kCloudLayer) == 0 || (f.cloudFlags & kCloudVolumetric) != 0 || dir.y <= 0.002) return sky;
   const CloudParams low = loadCloudParams(f);
-  const float s = (f.cloudFlags & kCloudSkyScaled) != 0 ? a.skyScale : 1.0;
   const CloudHit highHit = cloudSheet(f, a, highSheet(low), origin, dir, clear);
-  sky = lerp(sky, highHit.color * s, highHit.alpha);
+  sky = lerp(sky, highHit.color, highHit.alpha);
   const CloudHit lowHit = cloudSheet(f, a, low, origin, dir, clear);
-  return lerp(sky, lowHit.color * s, lowHit.alpha);
+  return lerp(sky, lowHit.color, lowHit.alpha);
 }
 
 // Sol, look 001 (2026-10-19; the user: "não tem nem sol", "um sol digno de um triple A"): the sun as a camera sees it.
@@ -469,7 +468,7 @@ float3 skyBackground(MeshFrame f, uint2 pixel) {
     // layer marched this frame (cloudsvol.hlsl), or the sheets' light, on the sky's own scale.
     if (f.cloudFlags & kCloudVolumetric) {
       const float4 cloud = cloudVolAt(f, (float2(pixel) + 0.5) / f.screenSize);
-      radiance = radiance * cloud.a + cloud.rgb * ((f.cloudFlags & kCloudSkyScaled) != 0 ? a.skyScale : 1.0);
+      radiance = radiance * cloud.a + cloud.rgb;
     } else {
       radiance = cloudsOverSky(f, a, f.cameraPosition, dir, clear * a.skyScale, radiance);
     }

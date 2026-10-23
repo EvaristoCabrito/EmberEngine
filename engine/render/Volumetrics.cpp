@@ -322,8 +322,8 @@ bool Volumetrics::prepare(const Camera& camera, float time, VkCommandBuffer cmd,
   v.noiseStrength = current_.noiseStrength;
   v.anisotropy = current_.anisotropy;
   v.backLobe = current_.backLobe;
-  v.sunScale = current_.sunScale * outsideScale_;
-  v.skyScale = current_.skyScale * outsideScale_;
+  v.sunScale = current_.sunScale;
+  v.skyScale = current_.skyScale;
   v.localScale = current_.localScale;
   v.historyWeight = lv.historyWeight * weightRamp;
   v.meanGround = meanGround_;

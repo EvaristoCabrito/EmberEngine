@@ -414,10 +414,11 @@ class MapStage final : public Stage {
       enforcePanorama("load");
       // Luz das janelas: by map id (each map its own diorama): the watchtower's roofed floors open with it; every other map OFF.
       windowLight_ = options.windowLight >= 0 ? std::clamp(options.windowLight, 0, 1) : kWindowLightMaps.contains(board_->draft().id) ? 1 : 0;
-      // ... and their Atmosfera opens OFF (the user, 2026-10-21: the sunlit air outside, exposed for the room, veiled it white).
-      // The watchtower now opens with it ON (the user, 2026-10-22: "activate the atmosphere and sky on the watchtower"); the panel keeps OFF.
-      if (options.atmos < 0 && kWindowLightMaps.contains(board_->draft().id) && !watchtower()) atmosChoice_ = 0;
-      if (scene_->environment != "indoor")  // the map's night, or any night of the 24 h cycle
+      // (The Atmosfera is never switched off by the light through the windows: the user, 2026-10-22, "remover essa regra do jogo, não
+      // existe essa regra"; it opens as on any map. The panel's OFF stays the player's choice.)
+      // The moon's art on every map but Subterrâneo (one sky for the whole game): the watchtower draws the sky since 2026-10-22, and
+      // with the art loaded only outdoors its night showed the moon's glow with no disc, a brown smudge (the user, 2026-10-23).
+      if (!underground())  // the map's night, or any night of the 24 h cycle
         for (const char* phase : e2::kMoonPhases) ground_.requestTexture(e2::skyMoonAsset(phase));  // 0.1 MB each
     }
     if (!scene_) {
@@ -689,8 +690,9 @@ class MapStage final : public Stage {
     // aldeia's sky at the end of the day (the user, 2026-10-19: "ajuste a cor do azul no céu, até as nuvens reagem, menos o céu"):
     // exposed for the board, the blue stayed as light as at noon while the clouds took the sunset's colour. As the sun sinks under
     // 15 deg the sky behind the board (and its reflection) darkens into a dusk blue, 1.5 stops at 2 deg; the glow by the sun stays
-    // bright, the board's light is unchanged. Every other map unchanged.
-    if (lightingMode_ == 3 && aldeia() && !moonNight_) {
+    // bright, the board's light is unchanged. Since 2026-10-23 on every map (the user: "pôr do sol vale onde eu quiser colocar o pôr
+    // do sol"): the sunset the user tuned on aldeia is the sunset of every map.
+    if (lightingMode_ == 3 && !moonNight_) {
       const float elevation = glm::degrees(std::asin(std::clamp(lighting.sunDirection.y, -1.0f, 1.0f)));
       lighting.skyScale *= glm::mix(0.35f, 1.0f, glm::smoothstep(2.0f, 15.0f, elevation));
     }
@@ -732,19 +734,6 @@ class MapStage final : public Stage {
                                                                     : std::string("off screen"));
       }
       lighting.litScale = std::max(meterLux_, 1e-4f) * 1.2f / 2.5f;  // exposure x this = 1 at the metered EV
-      // The watchtower (the user, 2026-10-22: "cadê o céu normal de todos os dias"): the camera exposed for the dark room burned the sky
-      // and the sunlit air outside to white; they are shown as an outdoor camera at this hour shows them (the outdoor meter and night
-      // curve), the room keeps its own exposure.
-      outsideScale_ = 1.0f;
-      if (watchtower() && windowLight()) {
-        const float evOut = std::log2(std::max(outsideMeter, 1e-4f) / 2.5f);
-        float darkOut = nightDarkening(evOut);
-        if (moonNight_ && moonLight_ == 1) darkOut = std::min(darkOut, 2.0f);
-        const float outdoorExposure = 1.0f / (1.2f * std::exp2(evOut + darkOut));
-        outsideScale_ = outdoorExposure / std::max(lighting.exposure, 1e-9f);
-        lighting.skyScale *= outsideScale_;
-        if (readyFrames_ == 30) logInfo("watchtower: sky and air at the outdoor exposure {:.5f} (room {:.5f}, x{:.4f})", outdoorExposure, lighting.exposure, outsideScale_);
-      }
     }
     exposure_ = lighting.exposure;
     // The fire's light never yields to the sun (the user, 2026-10-21: "a luz do sol nunca deve afetar as tochas, fogo e afins ... em nenhuma
@@ -806,7 +795,6 @@ class MapStage final : public Stage {
       Renderer::Clouds clouds;
       clouds.enabled = clouds_ >= 1;
       clouds.volumetric = clouds_ == 2;  // look 001: the real 3D layer (cloudsvol.hlsli)
-      clouds.skyScaled = watchtower() && windowLight();  // the watchtower: the clouds at the outdoor exposure with their sky (outsideScale_)
       if (clouds.volumetric) {
         // Bigger clouds with wider clearings than the sheets' (a layer seen at the game's low angle closes up otherwise); the
         // sheets ("básica") keep their own numbers.
@@ -854,8 +842,7 @@ class MapStage final : public Stage {
         // at the board's own base (as the outdoor ground plane above), emberFloorDepth further down
         plane.y = (look_ == e2::EdgeStyle::Smooth ? groundLow_ - 0.35f : std::min(0.0f, groundLow_)) - draft.emberFloorDepth;
         plane.tile = draft.emberFloorTile;
-        // the watchtower: the real sky above the horizon (mode 9; the user, 2026-10-22: "activate the atmosphere and sky on the watchtower")
-        renderer.setBackground(plane.texture, watchtower() ? 9u : 7u, {}, {}, plane);
+        renderer.setBackground(plane.texture, 7u, {}, {}, plane);
       } else {
         renderer.setBackground(watchtower() ? kNoTextureIndex : Renderer::kBlackBackground, 0u);
       }
@@ -959,7 +946,6 @@ class MapStage final : public Stage {
       atmos.setQuality(kQualities[std::clamp(atmosChoice_, 0, 3)]);
       atmos.setProfile(atmosProfiles_[static_cast<size_t>(std::clamp<int>(climaChoice_, 0, static_cast<int>(atmosProfiles_.size()) - 1))], 1.5f);
       atmos.setScene(meanGround_, flat_);
-      atmos.setOutsideLightScale(outsideScale_);  // the watchtower's air at the outdoor exposure (1 everywhere else)
     }
     // The fog of war's mist: the numbered look on show (render/FogLooks.h; chosen in the Map panel).
     Renderer::FogBank bank;
@@ -9760,7 +9746,6 @@ class MapStage final : public Stage {
   bool aldeia() const { return board_ && board_->draft().id == "aldeia"; }
   // The watchtower's floors (by map id): the sky above their ground image and the Atmosfera ON (the user, 2026-10-22).
   bool watchtower() const { return board_ && board_->draft().id.rfind("watchtower", 0) == 0; }
-  float outsideScale_ = 1.0f;  // the watchtower: outdoor exposure / the room's, for its sky and air (frame())
   // Luz das janelas (2026-10-21, the user's spec "iluminação padrão para ambientes internos onde a luz natural entra pelas janelas"
   // + "create real windows and watchtower walls"): an indoor map lit by the hour's real sun / moon through its window pieces, under
   // a roof that only casts shadow (buildRoof); the sky is never drawn. OFF = the old indoor fill light (darkIndoor).

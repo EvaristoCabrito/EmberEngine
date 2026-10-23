@@ -1,5 +1,10 @@
 # Sky: saved looks (sun, volumetric clouds, glare, rays)
 
+**REGRA FIXA INQUEBRÁVEL (the user, 2026-10-23): "só existe uma atmosfera no jogo, não importa qual o mapa o céu é o mesmo,
+sempre sempre sempre só existe um único céu nesse jogo nunca vai existir excessão".** Every look in this series is a look of THE
+sky, chosen in the panel for the whole game; no map ever gets its own sky, sky scale, sky flag or sky path. A map differs only
+in what stands in front of the sky (its panorama, ground, ceiling) and in the game's hour.
+
 The user's rule (2026-10-14): every look is saved in a numbered series and kept until the user deletes it after seeing it
 live. A change is a new look, never an edit of a saved one. The user's demand (2026-10-19): "um céu inteiro com 24 horas de
 transição com sol, lua, tudo que existe na atmosfera, perfeição total, triple AAA"; "cadê o céu do Final Fantasy XV?".

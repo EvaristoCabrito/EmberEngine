@@ -65,6 +65,22 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   lip ring, void skirts and closeBoardSides walls; the hard look's rim walls); 0 everywhere the floor lies at the base, so no other
   map moves. Limits: the hard look's rim cells at level 0 and the tabletop look have no wall to lower (they would still float over a
   lowered floor); a draft's `emberFloor` depth (the bridge's gorge) is not a floor and does not lower the sides.
+- **ONE ATMOSPHERE, ONE SKY: REGRA FIXA INQUEBRÁVEL DO JOGO (the user, 2026-10-23: "só existe uma atmosfera no jogo, não importa
+  qual o mapa o céu é o mesmo, sempre sempre sempre só existe um único céu nesse jogo nunca vai existir excessão", "salvar essa regra
+  em tudo que pode ser salvo").** The atmosphere tables, sun, moon, stars, clouds and their exposure are drawn by the same code on
+  every map: never a per-map sky variant, scale, flag, mode, branch or path, not for an indoor map, not for a panorama map, not for a
+  test (the watchtower's own sky path of 2026-10-22/23 was that mistake). A map differs only in what stands in FRONT of the sky (its
+  panorama, ground, ceiling) and in the game's hour. If the one sky looks wrong on a map, say so and ask before writing anything.
+  Saved also in docs/ARCHITECTURE.md §7.5, docs/ATMOSPHERE.md, looks/sky/README.md, tools/scripts/check_sky_lock.py (+
+  content/sky/sky.locked.json; the check is not yet run by build.bat: the user said "não vai bloquear nada antes de arrumar") and the
+  memory note `only-one-sky`. **The user also said: "preste atenção apenas uma coisa por vez": one request at a time.**
+  **The rule in the user's own words (2026-10-23, pasted as the final text):** "O jogo inteiro tem uma atmosfera só: céu, lua,
+  estrelas, nuvens e sol. Ela é compartilhada por todos os mapas do jogo, menos os subterrâneos. Não existe exceção nem diferença
+  entre um mapa e outro. Existe um relógio da campanha, que é um relógio dentro do jogo e anda com o tempo que passa no jogo. É ele
+  que dita a hora do mapa. O ciclo de dia e noite e os ciclos lunares seguem esse relógio, sem exceção. Cada mapa também tem uma
+  configuração local de hora, que serve só pra testar o sistema. Com ela eu mudo a hora como quiser, quando quiser, pra ver como
+  tudo fica." (Subterrâneo = the editor's Ambiente mark: no sky, no light from outside; the per-map hour = the panel's "Hora", a
+  test setting only, never the game's time.)
 - **Never change any fog (the user, 2026-10-20: "nunca mudar nenhuma névoa mesmo se eu implorar").** Not the fog of war's rules
   (sight 12), not any mist look, not the Atmosfera. A new fog may only be added as a new numbered look when the user asks for one.
 - **No outside engines**, ever (no Unreal/Epic, Unity, Godot). Open-source *libraries* are fine.
@@ -1475,6 +1491,18 @@ Exit tests and demonstration gates in ARCHITECTURE.md §9.
   the user asked only for the Andar II's CEILING to change ("não é panorama, é CEILING"); taken out of the map's list, kept unused. The
   Andar II's `#piso` now carries the salão's ceiling (`tavern-ceiling-v01.jpg`); its previous ceiling was `inn-ceiling-v01.jpg`.
 
+- `shaders/kept/{atmosphere,clouds,cloudsvol}-20261023-tower-sky.hlsli` (2026-10-23): the shared sky shaders as the tower's sky work of
+  2026-10-22/23 left them (the kCloudSkyScaled flag on the clouds, discs and stars; the clouds' march opaque at 1 %). The user: "eu falei liga
+  o céu na torre, não falei acabar com todo o jogo": the three files are back to 97a980da's text (before the tower's sky).
+  **2026-10-23 14:30, the user's "Faz: build release da atmosfera original e tira o caminho de céu próprio da torre (modo 9,
+  outsideScale_, skyScaled)":** the whole tower-sky path is out of the game: `shaders/kept/resolve_tower-20261023.hlsl` (resolve.hlsl with
+  the watchtower's background mode 9, its own pipelines; out of apps/sandbox/CMakeLists.txt), Renderer's towerResolve / towerSky pipelines
+  and `Clouds::skyScaled`, MapStage's `outsideScale_` (the tower's sky and air at the outdoor exposure), `Volumetrics::setOutsideLightScale`.
+  The sky is 7ce25262's (2026-10-19 21:10, the real night sky) on every map; `content/sky/sky.locked.json` relocked to it on that order.
+  The exe that carried the tower sky is `build/release/bin/Sandbox-20261023-1400-tower-sky.exe` (set aside, never to be used).
+- `tools/scripts/check_sky_lock.py` + `content/sky/sky.locked.json` (2026-10-23): the sky lock, written when the user said "depois de
+  acertado NUNCA NINGUÉM VAI MEXER"; taken out of build.bat at once on their order ("não vai bloquear nada antes de arrumar"). Not run by
+  anything; wire it (and the edit refusal they asked for) only once the user says the sky is right.
 - **Another instance's Inn edits of 2026-10-23 ~02:00-02:26 (the user: "uma instância entrou em demência total"), taken out of the
   working tree on the user's "acertar o teto e ground da taverna":** `shaders/kept/inn-room-ceiling-20261023.patch` (resolve.hlsl: the
   Inn's drawn ceiling as ONE image over a round room with `saturate` = its edge pixels smeared into streaks on screen, and mode 3's

@@ -1,5 +1,10 @@
 # Atmosfera volumétrica (v1): auditoria, plano, integração
 
+**REGRA FIXA INQUEBRÁVEL DO JOGO (o usuário, 2026-10-23): "só existe uma atmosfera no jogo, não importa qual o mapa o céu é o
+mesmo, sempre sempre sempre só existe um único céu nesse jogo nunca vai existir excessão".** Os perfis de clima deste documento
+mudam a névoa no ar à frente do céu; o céu (tabelas da atmosfera, sol, lua, estrelas, nuvens, exposição) é um só para todos os
+mapas, pelo mesmo código, sem variante, escala, flag ou caminho por mapa.
+
 Pedido do usuário (2026-10-16): um sistema atmosférico cinematográfico (névoa volumétrica 3D, luz espalhada no ar,
 clima regional, partículas, perfis por região), versionado, sem tocar nos assets e sistemas existentes, com OFF e
 rollback; identidade visual Luminous, referência técnica UE5 ("algo que me cause orgulho"). Este documento é a

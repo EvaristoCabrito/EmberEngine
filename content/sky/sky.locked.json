@@ -1,0 +1,12 @@
+{
+  "shaders/atmosphere.hlsl": "d335f5dd0ffeae0cce415f28496e6db37730cfe57ee3d23b3f7ea9603685e071",
+  "shaders/atmosphere.hlsli": "8abeb3d343e9be99efeed0c202acb5ca4524df61b17e634a3d97ab4b76fee224",
+  "shaders/clouds.hlsli": "d8cdd249f9277876ec6315549ce8350a302d07eed60b725590256cc3a2abe2a2",
+  "shaders/cloudsvol.hlsl": "176a6d2e134921ecfc60beb6721fc2ed1322e22c058bab87cdfc008f07fa3c10",
+  "shaders/cloudsvol.hlsli": "214f01bda091b5632850ff7e4d73e52c01663856b8158fcee4db1b1af8b0f6d3",
+  "shaders/skyreflect.hlsl": "3270377f428813b7c38a693d2e20d5bb8ea0f4f4fe56eb0a45a8a81dcb63f8f9",
+  "shaders/sunglare.hlsl": "b6623742712c500af451339c7f9455e200c54f86c7a49d48cf7760b511beb712",
+  "engine/render/Atmosphere.h": "568bd7fb43a6835fa6fde2c3121c531f9c5c64a5db43042aed4cc9fce2d45dd7",
+  "engine/render/StarSky.h": "fe16e9b15ee0f50a261a62a8ea14316075263fc6f3bf7c492c613f674a54e98b",
+  "content/sky/stars.json": "222e578e865ab68dcf08061c42e9fa35a7d57be7705caa142a422d84268ee6f5"
+}
