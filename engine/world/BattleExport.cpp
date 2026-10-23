@@ -777,6 +777,15 @@ void legacyClassIds(const Rules& r, json& draft) {
 
 }  // namespace
 
+std::vector<std::string> classSpellsAt(const std::string& classId, int level, const std::string& name) {
+  std::vector<std::string> out;
+  const Rules* r = Rules::shared();
+  if (!r) return out;
+  for (const json& k : Spawner{*r}.spellList(classId, level, name))
+    if (k.is_string()) out.push_back(k.get<std::string>());
+  return out;
+}
+
 // --- make_test_map.ts ------------------------------------------------------------------------------------------------
 
 bool prepareCampaignMap(const std::filesystem::path& mapFile, const std::filesystem::path& outFile, std::string* note) {

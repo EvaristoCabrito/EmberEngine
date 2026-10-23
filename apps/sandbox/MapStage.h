@@ -76,6 +76,7 @@
 #include "render/SpellEffects.h"
 #include "render/SpriteSystem.h"
 #include "world/Battle.h"
+#include "world/BattleExport.h"
 #include "world/Combat.h"
 #include "world/Initiative.h"
 #include "world/Inn.h"
@@ -206,6 +207,9 @@ struct MapStageOptions {
   // ... and each hero's promotion (save.ts promotions: "warlock" / "elementalist"), by name: its class, class name and
   // spell list in the fight (e2::setPromotion). Also --promote Name=class for tests.
   std::map<std::string, std::string> heroClass;
+  // Modo teste's Debug: heroes who know every spell of their class at their level (the class table's row; a hero raised from 1
+  // by heroProgress otherwise keeps the level-1 list), by name.
+  std::set<std::string> fullSpells;
   // ... and what each hero brings in from the save (Engine2 startBattle's roster: unitHp, bags, heroDiseases,
   // heroPoisons, heroHunger and the starving penalty).
   struct HeroState {
@@ -3661,7 +3665,15 @@ class MapStage final : public Stage {
     // (Engine2's own Bruxo enemies too) knows our spells of its level.
     for (e2::BattleUnit& u : battle_->units()) {
       if (const auto it = options_.heroClass.find(u.name); it != options_.heroClass.end() && u.side == "player") e2::setPromotion(u, it->second);
+      if (u.side == "player" && options_.fullSpells.contains(u.name))
+        for (const std::string& k : e2::classSpellsAt(u.classId, u.level, u.name))
+          if (std::find(u.spellList.begin(), u.spellList.end(), k) == u.spellList.end()) u.spellList.push_back(k);
       e2::grantClassSpells(u);
+      if (u.side == "player" && options_.fullSpells.contains(u.name)) {
+        std::string list;
+        for (const std::string& k : u.spellList) list += (list.empty() ? "" : ", ") + k;
+        logInfo("{} (level {}, {}): every spell of the class: {}", u.name, u.level, u.classId, list);
+      }
     }
     battle_->setAffinityScores(options_.affinityScores);  // the save's party affinities (none: no bonus yet)
     // The save's condition of each hero (Engine2 spawnUnit: hunger and disease off its stats, HP capped, its bag).

@@ -40,6 +40,10 @@ bool prepareCampaignMap(const std::filesystem::path& mapFile, const std::filesys
 // the test battles in build/engine2-test were made at 15).
 std::optional<nlohmann::json> exportBattle(const nlohmann::json& mapFile, std::string* error, int playerLevel = 1);
 
+// The class's spell list at `level` (battle-rules.json classes.<id>.spells; Salazar's own row, spellsSalazar, for `name`
+// "Salazar"), as a fresh unit of that level is spawned with. Empty for a class the rules do not know.
+std::vector<std::string> classSpellsAt(const std::string& classId, int level, const std::string& name);
+
 // The scene file of a built scene (export_scene.ts's shape, with measure_art.py's art already in it).
 nlohmann::json sceneJson(const SceneData& scene, const MapDraft& draft, const std::map<std::string, int>& skipped);
 
