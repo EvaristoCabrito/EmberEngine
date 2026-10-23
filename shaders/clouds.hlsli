@@ -91,6 +91,9 @@ float cloudCoverEroded(CloudParams c, float time, float2 xz) {
 // 2015, the Horizon Zero Dawn / FFXV recipe). MeshFrame.cloudFlags kCloudVolumetric says the layer is this one (the sheets
 // are then not drawn); the numbers after the AtmosphereFrame's moonIlluminance are read by byte offset (the gotcha).
 static const uint kCloudVolumetric = 4u;
+// MeshFrame.cloudFlags kCloudSkyScaled: the clouds' own light on the sky's scale (AtmosphereFrame.skyScale) like the clear sky
+// around them (the watchtower, 2026-10-22: its sky shown at the outdoor exposure, the clouds burned white without it).
+static const uint kCloudSkyScaled = 8u;
 static const uint kVolNoiseBaseOffset = 352u;    // uint: sampled 3D texture, the base noise (128^3: r Perlin-Worley, gba Worley)
 static const uint kVolNoiseDetailOffset = 356u;  // uint: the detail noise (32^3: rgb Worley at three frequencies)
 static const uint kVolMarchOffset = 360u;        // uint: the half-resolution march result (sampled: rgb radiance, a transmittance)

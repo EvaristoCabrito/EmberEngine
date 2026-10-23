@@ -1220,7 +1220,7 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
     a.magellanic[0] = magellanic_[0];
     a.magellanic[1] = magellanic_[1];
     if (clouds_.enabled) {
-      f.cloudFlags = 1u | (clouds_.shadows && lighting_.sunDisc ? 2u : 0u) | (clouds_.volumetric ? 4u : 0u);
+      f.cloudFlags = 1u | (clouds_.shadows && lighting_.sunDisc ? 2u : 0u) | (clouds_.volumetric ? 4u : 0u) | (clouds_.skyScaled ? 8u : 0u);
       a.cloudCoverage = clouds_.coverage;
       a.cloudAltitude = clouds_.altitude;
       a.cloudShadow = clouds_.shadow;

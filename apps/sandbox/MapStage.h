@@ -780,6 +780,7 @@ class MapStage final : public Stage {
       Renderer::Clouds clouds;
       clouds.enabled = clouds_ >= 1;
       clouds.volumetric = clouds_ == 2;  // look 001: the real 3D layer (cloudsvol.hlsli)
+      clouds.skyScaled = watchtower() && windowLight();  // the watchtower: the clouds at the outdoor exposure with their sky (outsideScale_)
       if (clouds.volumetric) {
         // Bigger clouds with wider clearings than the sheets' (a layer seen at the game's low angle closes up otherwise); the
         // sheets ("básica") keep their own numbers.

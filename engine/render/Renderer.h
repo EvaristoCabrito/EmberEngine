@@ -360,6 +360,7 @@ class Renderer {
     // `top`, ray marched once a frame at half resolution (sky, reflections, shadows on the board all from its density).
     bool volumetric = false;
     float base = 380.0f, top = 640.0f;  // world heights (the caller adds the board's mean ground)
+    bool skyScaled = false;  // the clouds' light times Lighting::skyScale like the clear sky (the watchtower's outdoor exposure)
   };
   void setClouds(const Clouds& clouds) { clouds_ = clouds; }
   // The real night sky (render/StarSky.h; star look 4): the catalogue's stars as world directions this frame, the galactic frame
