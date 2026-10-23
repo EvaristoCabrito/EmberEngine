@@ -97,7 +97,7 @@
   "inn-second-floor-v01.jpg#piso": {
    "horizon": 0.49,
    "bottom": 1.0,
-   "skyTop": 0.2,
+   "skyTop": 0.28,
    "degreesPerHeight": 43.8,
    "bottomDegrees": 23.6,
    "spanDegrees": 65.3,
