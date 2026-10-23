@@ -55,7 +55,9 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   regras, NUNCA MUDAR NADA", then "NUNCA MUDAR O INN SEM A PALAVRA SECRETA PEPERONNI NIPPLES").** No line of any code the Inn runs may
   change (resolve.hlsl as a whole, its panorama modes included; its backdrop-fit entries; its maps, scenes, kit; MapStage's `innFloor()`
   paths), whatever another map needs and whatever another rule says (the one-sky rule included), unless the user's order itself carries
-  the words PEPERONNI NIPPLES. A fix another map needs goes into code the Inn never runs (its own shader file / pipeline chosen only for
+  the words PEPERONNI NIPPLES. The lock binds everyone, the user themself and every agent (Claude, Codex, any session) alike (the user:
+  "se eu não tiver a palavra secreta eu não posso alterar nada, não importa quem seja ou qual agente, sem eu digitar a senha aqui nada
+  pode ser modificado"): only the password typed in the chat unlocks it, for that one order. A fix another map needs goes into code the Inn never runs (its own shader file / pipeline chosen only for
   non-Inn maps, as resolve_tower.hlsl was for the tower), never a branch inside the Inn's shader. Never capture or "measure" the Inn
   unasked (the user: "o que tem o INN para ser medido?"). On 2026-10-23 a one-line seam fix in resolve.hlsl's shared panorama sampling
   (the painting's bottom row wrapped onto its top edge by the repeat sampler: the dark dashed line across the sky on panorama maps) was
