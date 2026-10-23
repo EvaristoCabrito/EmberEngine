@@ -692,12 +692,14 @@ class MapStage final : public Stage {
       // forma como a luz do luar entra ... faz de conta que existem teto, então a luz só pode entrar pelas janelas").
       lighting.ambientMul = 0.0f;
       lighting.kmPerUnit = 0.0f;
-      const float room = probesLive ? probeMeterLux(renderer, lighting) : 0.0f;
-      if (room > 0.0f && !probeMeterLogged_) {
+      // The camera is the same camera as on every map at this hour (the outdoor meter, the one sky's exposure; the user, 2026-10-23
+      // evening, with the room metering itself: "apenas BLACK ALL OVER ZERO SKY": exposed for the torch-lit floor, 28 lux, the night
+      // sky, moon and stars were 24 x darker than on any other map and vanished). The room is as bright as the light through its
+      // openings makes it (probeMeterLux stays in the file, read by nothing).
+      if (probesLive && !probeMeterLogged_) {
         probeMeterLogged_ = true;
-        logInfo("light probes: the room's meter {:.2f} lux (outside {:.0f})", room, meterLux_);
+        logInfo("light probes: the room's floor {:.2f} lux, the camera metered outside at {:.0f}", probeMeterLux(renderer, lighting), meterLux_);
       }
-      meterLux_ = room > 0.0f ? room : std::max(meterLux_ * kWindowMeterShare, kWindowMeterFloor);
     }
     // aldeia's sky at the end of the day (the user, 2026-10-19: "ajuste a cor do azul no céu, até as nuvens reagem, menos o céu"):
     // exposed for the board, the blue stayed as light as at noon while the clouds took the sunset's colour. As the sun sinks under
@@ -715,16 +717,9 @@ class MapStage final : public Stage {
       // "Luar: cinema": the night stops are capped at one, or the camera would take back what the brighter moon gave
       // (measured 2026-10-19: with the full darkening the moonlit ground stayed black beside the lanterns).
       float darkening = nightDarkening(ev);
-      // A room by day is exposed for the room, with no night curve: its meter reads the room's own light (65 lux measured on the
-      // gate floor at noon against 120,000 outside: a big hall with small openings), and the night curve keyed on that reading
-      // took 3 stops off the day room (2026-10-23, measured: "darkening 3.06 stops" at 9 h, 12 h and 15 h), so the light through
-      // the windows sat at twice mid-grey instead of 15 x (the user: "essa luz das janelas está quase inexistente"). At night the
-      // indoor darkening stays (the torch-lit room reads as night).
-      if (windowLight() && !moonNight_) darkening = 0.0f;
       // "Luar: cinema": capped at 2 stops (at 1, measured 2026-10-19 on cemiterio: meter 4.4 lux, exposure 0.24, the night came out
-      // as an overcast day with a pale blue sky; at 2 the sky is navy and the moonlit ground still reads).
-      // (A room lit through its windows keeps the indoor night: its torches, not the moon outside, set the camera.)
-      if (moonNight_ && moonLight_ == 1 && !windowLight()) darkening = std::min(darkening, 2.0f);
+      // as an overcast day with a pale blue sky; at 2 the sky is navy and the moonlit ground still reads). Every map, the rooms too.
+      if (moonNight_ && moonLight_ == 1) darkening = std::min(darkening, 2.0f);
       const float target = ev + darkening;
       if (std::isnan(adaptedEv_) || measuring_) adaptedEv_ = target;
       adaptedEv_ += (target - adaptedEv_) * (1.0f - std::exp(-dt * kAdaptPerSecond));
