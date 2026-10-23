@@ -234,10 +234,17 @@ class Renderer {
     glm::ivec3 dims{0};
     std::vector<glm::vec3> keyDirections;
     std::vector<float> bake;
+    // The room seen from above (255 inside, 0 outside), maskDims texels of maskSpacing from (origin.x, origin.z): outside it the sun
+    // and the sky light nothing (lighting.hlsli probeRoom). Empty = everywhere inside.
+    float maskSpacing = 0.0f;
+    glm::ivec2 maskDims{0};
+    std::vector<uint8_t> mask;
   };
   void setProbes(std::shared_ptr<const ProbeVolume> probes);
   // Light the next frame with the probes (called every frame they apply; a stage that does not ask is lit as before).
   void useProbes() { probesWanted_ = true; }
+  // The fires' bounce in the probes shown this much brighter than the exposure makes it (the fires' own boost; 1 = none).
+  void setProbeFireScale(float scale) { probeFireScale_ = scale; }
   // The probes' irradiance on an upward face in lux, as last read back (one per probe; empty until a frame with probes finished).
   const std::vector<float>& probeLux() const { return probeLux_; }
   // Local lights for the next frame (at most kMaxLights; the rest are dropped).
@@ -499,6 +506,8 @@ class Renderer {
   bool probesDirty_ = false, probesWanted_ = false, probesThisFrame_ = false;
   Buffer probeStaging_, probeBake_, probeOutput_;
   uint32_t probeCount_ = 0;
+  VkDeviceSize probeBakeBytes_ = 0, probeMaskBytes_ = 0, probeMaskAt_ = 0;
+  float probeFireScale_ = 1.0f;  // the staging buffer's two parts, the mask's place in the output
   VkPipeline probePipeline_ = VK_NULL_HANDLE;
   std::vector<float> probeLux_;
   Clouds clouds_;

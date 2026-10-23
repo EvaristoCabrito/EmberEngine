@@ -4,6 +4,7 @@
 #include <array>
 #include <chrono>
 #include <cmath>
+#include <cstdio>
 #include <numbers>
 
 namespace ember {
@@ -179,6 +180,7 @@ ProbeBakeOutput bakeProbes(const ProbeBakeInput& in, const std::function<void(ui
   out.transfer.assign(size_t{out.probeCount} * ProbeBakeOutput::kTransfer, 0.0f);
   out.key.assign(size_t{out.probeCount} * out.keyCount * ProbeBakeOutput::kKeyCoefficients, 0.0f);
   out.keyVisible.assign(out.probeCount, 0);
+  out.fire.assign(size_t{out.probeCount} * ProbeBakeOutput::kFire, 0.0f);
   const Bvh bvh(in.triangles);
   constexpr float kFar = 1.0e4f, kLift = 2.0e-3f;
   const float weight = 4.0f * kPi / static_cast<float>(std::max(in.paths, 1u));
@@ -194,6 +196,7 @@ ProbeBakeOutput bakeProbes(const ProbeBakeInput& in, const std::function<void(ui
       Rng rng{index * 9781u + 6271u};
       float* m = &out.transfer[size_t{index} * ProbeBakeOutput::kTransfer];
       float* key = &out.key[size_t{index} * out.keyCount * ProbeBakeOutput::kKeyCoefficients];
+      float* fire = &out.fire[size_t{index} * ProbeBakeOutput::kFire];
       uint32_t backs = 0;
       const float spin = rng.next() * 2.0f * kPi;
       for (uint32_t k = 0; k < in.paths; ++k) {
@@ -225,6 +228,19 @@ ProbeBakeOutput bakeProbes(const ProbeBakeInput& in, const std::function<void(ui
             const float radiance = throughput * in.albedo / kPi * c;
             for (uint32_t i = 0; i < ProbeBakeOutput::kKeyCoefficients; ++i) key[j * ProbeBakeOutput::kKeyCoefficients + i] += weight * yFirst[i] * radiance;
           }
+          // The fires this surface sees, as the renderer lights it with them (I / d^2 in the shader's window (1 - (d / range)^4)^2).
+          for (const ProbeBakeInput::Fire& f : in.fires) {
+            const glm::vec3 toFire = f.position - at;
+            const float d = glm::length(toFire);
+            if (d >= f.range || d < 1e-3f) continue;
+            const glm::vec3 l = toFire / d;
+            const float c = glm::dot(hit.normal, l);
+            if (c <= 0.0f || bvh.occluded(at, l, d - 0.05f)) continue;
+            const float ratio = d / f.range, window = std::clamp(1.0f - ratio * ratio * ratio * ratio, 0.0f, 1.0f);
+            const glm::vec3 radiance = f.color * (throughput * in.albedo / kPi * c * window * window / std::max(d * d, 0.01f));
+            for (int i = 0; i < 9; ++i)
+              for (int ch = 0; ch < 3; ++ch) fire[i * 3 + ch] += weight * yFirst[i] * radiance[ch];
+          }
           if (bounce + 1 >= in.bounces) break;
           throughput *= in.albedo;
           o = at;
@@ -235,6 +251,7 @@ ProbeBakeOutput bakeProbes(const ProbeBakeInput& in, const std::function<void(ui
       if (static_cast<float>(backs) > 0.2f * static_cast<float>(in.paths)) {
         std::fill(m, m + ProbeBakeOutput::kTransfer, 0.0f);
         std::fill(key, key + out.keyCount * ProbeBakeOutput::kKeyCoefficients, 0.0f);
+        std::fill(fire, fire + ProbeBakeOutput::kFire, 0.0f);
         continue;
       }
       out.valid[index] = 1;
@@ -246,6 +263,86 @@ ProbeBakeOutput bakeProbes(const ProbeBakeInput& in, const std::function<void(ui
   });
   out.seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count();
   return out;
+}
+
+namespace {
+constexpr uint32_t kCacheVersion = 2;  // the bake's own numbers or the file's layout changed: a new number
+struct Fnv {
+  uint64_t h = 1469598103934665603ull;
+  void bytes(const void* p, size_t n) {
+    const auto* b = static_cast<const unsigned char*>(p);
+    for (size_t i = 0; i < n; ++i) h = (h ^ b[i]) * 1099511628211ull;
+  }
+  template <class T>
+  void pod(const T& v) { bytes(&v, sizeof(v)); }
+  template <class T>
+  void vec(const std::vector<T>& v) {
+    pod(v.size());
+    if (!v.empty()) bytes(v.data(), v.size() * sizeof(T));
+  }
+};
+}  // namespace
+
+uint64_t probeBakeKey(const ProbeBakeInput& in) {
+  Fnv f;
+  f.pod(kCacheVersion);
+  f.vec(in.triangles);
+  f.pod(in.origin), f.pod(in.spacing), f.pod(in.dims);
+  f.vec(in.candidate);
+  f.vec(in.keyDirections);
+  // The fires by their place to half a unit and their strength to a percent: a card's flame leans with the camera, and the bounce
+  // that far does not change (the same room must find its bake from any view).
+  for (const ProbeBakeInput::Fire& fire : in.fires) {
+    const glm::ivec3 at = glm::ivec3(glm::round(fire.position * 2.0f));
+    const glm::ivec3 strength = glm::ivec3(glm::round(glm::log2(glm::max(fire.color, glm::vec3(1e-6f))) * 64.0f));
+    f.pod(at), f.pod(strength), f.pod(static_cast<int>(std::round(fire.range * 4.0f)));
+  }
+  f.pod(in.albedo), f.pod(in.paths), f.pod(in.bounces);
+  return f.h;
+}
+
+bool loadProbeBake(const std::string& path, uint64_t key, ProbeBakeOutput& out) {
+  std::FILE* file = std::fopen(path.c_str(), "rb");
+  if (!file) return false;
+  bool ok = false;
+  uint32_t version = 0, probes = 0, keys = 0;
+  uint64_t stored = 0;
+  if (std::fread(&version, 4, 1, file) == 1 && std::fread(&stored, 8, 1, file) == 1 && std::fread(&probes, 4, 1, file) == 1 &&
+      std::fread(&keys, 4, 1, file) == 1 && version == kCacheVersion && stored == key) {
+    out.probeCount = probes, out.keyCount = keys;
+    out.valid.resize(probes), out.keyVisible.resize(probes);
+    out.transfer.resize(size_t{probes} * ProbeBakeOutput::kTransfer);
+    out.key.resize(size_t{probes} * keys * ProbeBakeOutput::kKeyCoefficients);
+    out.fire.resize(size_t{probes} * ProbeBakeOutput::kFire);
+    ok = std::fread(out.valid.data(), 1, out.valid.size(), file) == out.valid.size() &&
+         std::fread(out.keyVisible.data(), 8, out.keyVisible.size(), file) == out.keyVisible.size() &&
+         std::fread(out.transfer.data(), 4, out.transfer.size(), file) == out.transfer.size() &&
+         std::fread(out.key.data(), 4, out.key.size(), file) == out.key.size() &&
+         std::fread(out.fire.data(), 4, out.fire.size(), file) == out.fire.size();
+  }
+  std::fclose(file);
+  out.seconds = 0.0;
+  return ok;
+}
+
+void saveProbeBake(const std::string& path, uint64_t key, const ProbeBakeOutput& out) {
+  const std::string temp = path + ".tmp";
+  std::FILE* file = std::fopen(temp.c_str(), "wb");
+  if (!file) return;
+  const uint32_t version = kCacheVersion;
+  std::fwrite(&version, 4, 1, file);
+  std::fwrite(&key, 8, 1, file);
+  std::fwrite(&out.probeCount, 4, 1, file);
+  std::fwrite(&out.keyCount, 4, 1, file);
+  std::fwrite(out.valid.data(), 1, out.valid.size(), file);
+  std::fwrite(out.keyVisible.data(), 8, out.keyVisible.size(), file);
+  std::fwrite(out.transfer.data(), 4, out.transfer.size(), file);
+  std::fwrite(out.key.data(), 4, out.key.size(), file);
+  std::fwrite(out.fire.data(), 4, out.fire.size(), file);
+  const bool written = std::fflush(file) == 0;
+  std::fclose(file);
+  std::remove(path.c_str());
+  if (!written || std::rename(temp.c_str(), path.c_str()) != 0) std::remove(temp.c_str());
 }
 
 }  // namespace ember

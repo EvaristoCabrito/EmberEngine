@@ -14,6 +14,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <string>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -27,17 +28,25 @@ struct ProbeBakeInput {
   glm::ivec3 dims{0};
   std::vector<uint8_t> candidate;    // per probe (x fastest, then z, then y): 1 where a probe may stand (inside the room)
   std::vector<glm::vec3> keyDirections;  // towards the key light
+  // The room's fires (torches, braziers, candles: lights that do not move), whose light bounces off the room into the probes, as
+  // Final Fantasy XV's irradiance volumes did for its static local lights. `color` = candela per channel; `range` = where it ends.
+  struct Fire {
+    glm::vec3 position{0.0f}, color{0.0f};
+    float range = 0.0f;
+  };
+  std::vector<Fire> fires;
   float albedo = 0.3f;               // the surfaces' diffuse reflectance (dressed stone: 0.2-0.4)
   uint32_t paths = 160;              // per probe
   uint32_t bounces = 3;
 };
 
 struct ProbeBakeOutput {
-  static constexpr uint32_t kTransfer = 81, kKeyCoefficients = 4;
+  static constexpr uint32_t kTransfer = 81, kKeyCoefficients = 4, kFire = 27;
   uint32_t probeCount = 0, keyCount = 0;
   std::vector<uint8_t> valid;        // per probe: 1 = in the room, not inside a solid
   std::vector<float> transfer;       // per probe: kTransfer (row i = the probe's coefficient, column k = the sky's)
   std::vector<float> key;            // per probe: keyCount x kKeyCoefficients
+  std::vector<float> fire;           // per probe: the fires' bounced radiance, 9 coefficients x rgb (candela-based: exposure not in)
   std::vector<uint64_t> keyVisible;  // per probe: bit j = the key light in direction j reaches the probe's point straight
   double seconds = 0.0;
 };
@@ -47,5 +56,11 @@ ProbeBakeOutput bakeProbes(const ProbeBakeInput& input, const std::function<void
 
 // The key-light directions the bake uses: `count` directions over the upper hemisphere (Fibonacci), the horizon included.
 std::vector<glm::vec3> probeKeyDirections(uint32_t count);
+
+// A hash of everything a bake reads (the cache's key: the same room, fires and numbers bake the same probes).
+uint64_t probeBakeKey(const ProbeBakeInput& input);
+// The bake kept on disk: false when the file is missing, from another version or does not hold `probeCount` probes.
+bool loadProbeBake(const std::string& path, uint64_t key, ProbeBakeOutput& out);
+void saveProbeBake(const std::string& path, uint64_t key, const ProbeBakeOutput& out);
 
 }  // namespace ember

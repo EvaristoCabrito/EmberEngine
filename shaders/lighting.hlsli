@@ -218,6 +218,20 @@ float3 probeIrradiance(MeshFrame f, float3 p, float3 n, out bool found) {
   return found ? max(sum / total, 0.0) : float3(0.0, 0.0, 0.0);
 }
 
+// The room seen from above (the probes' mask: Renderer::ProbeVolume::mask): 1 inside the room (a wall's inner half included), 0 outside;
+// 1 where the probes carry no mask. Outside the room nothing from outside lights a surface (the user, 2026-10-21: "não renderizar nada
+// do lado de fora"; 2026-10-22: the sun on the windows' outer faces and the foot of the walls bloomed into white blobs).
+float probeRoom(MeshFrame f, float3 p) {
+  const float4 origin = vk::RawBufferLoad<float4>(f.probes);
+  if (origin.w <= 0.0) return 1.0;
+  const uint4 mask = vk::RawBufferLoad<uint4>(f.probes + 48u);  // keyCount, the mask's x and z texels, its offset
+  const int2 t = int2(floor((p.xz - origin.xz) / origin.w));
+  if (any(t < 0) || t.x >= int(mask.y) || t.y >= int(mask.z)) return 0.0;
+  const uint i = uint(t.x) + mask.y * uint(t.y);
+  const uint word = vk::RawBufferLoad<uint>(f.probes + mask.w + (i / 4u) * 4u);
+  return float((word >> ((i % 4u) * 8u)) & 0xFFu) / 255.0;
+}
+
 float3 indirectDiffuse(MeshFrame f, Surface s) {
   if (f.probes != 0) {
     bool found;
@@ -296,7 +310,8 @@ float3 shadeInSightSplit(MeshFrame f, Surface s, Sight sight, out float3 local) 
   const float nv = max(dot(s.normal, view), 1e-4);
 
   float3 color = 0.0;
-  if (f.lightingLayers & kLayerSun) {
+  const float room = f.probes != 0 ? probeRoom(f, s.position) : 1.0;  // a room lit through its windows: nothing from outside out of it
+  if ((f.lightingLayers & kLayerSun) && room > 0.0) {
     const float3 l = f.sunDirection, h = normalize(l + view);
     const float nlRaw = dot(s.normal, l);
     const float nl = saturate(nlRaw), nh = saturate(dot(s.normal, h)), vh = saturate(dot(view, h));
@@ -306,15 +321,15 @@ float3 shadeInSightSplit(MeshFrame f, Surface s, Sight sight, out float3 local) 
       // The shadow maps, then the clouds' (clouds.hlsli): every surface, the cards too.
       const float shadow = (s.receivesShadow > 0.0 ? lerp(1.0, sunShadow(f, s), s.receivesShadow) : 1.0) * cloudShadow(f, s.position);
       color += (diffuseColor * (1.0 - F) / kPi * nlDiffuse + F * ggx(nh, a) * smithVisibility(nv, nl, a) * nl) * f.sunColor *
-               f.sunIntensity * shadow;
+               f.sunIntensity * shadow * room;
     }
   }
   local = sight.local > 0.0 ? localLights(f, s, view, diffuseColor, f0, a, nv) * sight.local : float3(0.0, 0.0, 0.0);
-  if (f.lightingLayers & kLayerIndirect) {
+  if ((f.lightingLayers & kLayerIndirect) && room > 0.0) {
     // Lambert returns albedo * E / pi; the specular lobe sees the environment's radiance through the
     // split-sum BRDF.
     color += (diffuseColor * indirectDiffuse(f, s) / kPi +
-              envBrdfApprox(f0, s.roughness, nv) * s.specular * indirectSpecular(f, s, reflect(-view, s.normal))) * s.occlusion;
+              envBrdfApprox(f0, s.roughness, nv) * s.specular * indirectSpecular(f, s, reflect(-view, s.normal))) * s.occlusion * room;
   }
   color += s.emissive * f.exposure;
   return color;

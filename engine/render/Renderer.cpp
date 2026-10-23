@@ -152,7 +152,7 @@ struct ProbePush {  // shaders/probes.hlsl
   uint32_t key[3];
   uint32_t count;
   float weight[3];
-  uint32_t pad;
+  float fireScale;
 };
 static_assert(sizeof(ProbePush) == 64);
 
@@ -982,21 +982,32 @@ void Renderer::setProbes(std::shared_ptr<const ProbeVolume> probes) {
   if (!probes_ || probes_->dims.x <= 0 || probes_->dims.y <= 0 || probes_->dims.z <= 0) return;
   probeCount_ = static_cast<uint32_t>(probes_->dims.x * probes_->dims.y * probes_->dims.z);
   // header: origin, spacing, dims + count, keyCount (probes.hlsl)
+  // The room's mask sits in the output buffer after the probes (copied once from the staging buffer's tail).
+  const bool masked = probes_->maskSpacing > 0.0f && probes_->mask.size() >= size_t(probes_->maskDims.x) * size_t(probes_->maskDims.y);
+  const VkDeviceSize maskBytes = masked ? (VkDeviceSize{probes_->mask.size()} + 3) / 4 * 4 : 0;
+  const VkDeviceSize outputProbes = 64 + VkDeviceSize{probeCount_} * 144;
+  // header (probes.hlsl, lighting.hlsli): origin + the mask's texel size, spacing, dims + count, keyCount + the mask's dims + its offset
   struct Header {
     glm::vec4 origin, spacing;
     uint32_t dims[4];
-    uint32_t keyCount, pad[3];
-  } header{{probes_->origin, 0.0f}, {probes_->spacing, 0.0f},
+    uint32_t keyCount, maskX, maskZ, maskOffset;
+  } header{{probes_->origin, masked ? probes_->maskSpacing : 0.0f}, {probes_->spacing, 0.0f},
            {static_cast<uint32_t>(probes_->dims.x), static_cast<uint32_t>(probes_->dims.y), static_cast<uint32_t>(probes_->dims.z), probeCount_},
-           static_cast<uint32_t>(probes_->keyDirections.size()), {}};
+           static_cast<uint32_t>(probes_->keyDirections.size()), masked ? static_cast<uint32_t>(probes_->maskDims.x) : 0u,
+           masked ? static_cast<uint32_t>(probes_->maskDims.y) : 0u, static_cast<uint32_t>(outputProbes)};
   static_assert(sizeof(Header) == 64);
-  const VkDeviceSize bytes = sizeof(Header) + probes_->bake.size() * sizeof(float);
-  probeStaging_ = createHostBuffer(context_, bytes, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+  const VkDeviceSize bakeBytes = sizeof(Header) + probes_->bake.size() * sizeof(float);
+  probeStaging_ = createHostBuffer(context_, bakeBytes + maskBytes, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
   std::memcpy(probeStaging_.mapped, &header, sizeof(header));
   std::memcpy(static_cast<std::byte*>(probeStaging_.mapped) + sizeof(header), probes_->bake.data(), probes_->bake.size() * sizeof(float));
+  if (masked) {
+    std::memset(static_cast<std::byte*>(probeStaging_.mapped) + bakeBytes, 0, maskBytes);
+    std::memcpy(static_cast<std::byte*>(probeStaging_.mapped) + bakeBytes, probes_->mask.data(), probes_->mask.size());
+  }
   VK_CHECK(vmaFlushAllocation(context_.allocator, probeStaging_.allocation, 0, VK_WHOLE_SIZE));
-  probeBake_ = createDeviceBuffer(context_, bytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-  probeOutput_ = createDeviceBuffer(context_, 64 + VkDeviceSize{probeCount_} * 144, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+  probeBake_ = createDeviceBuffer(context_, bakeBytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+  probeOutput_ = createDeviceBuffer(context_, outputProbes + maskBytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+  probeBakeBytes_ = bakeBytes, probeMaskBytes_ = maskBytes, probeMaskAt_ = outputProbes;
   probesDirty_ = true;
 }
 
@@ -1773,17 +1784,21 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     const uint32_t scope = gpuTimer_.begin(cmd, "probes");
     if (probesDirty_) {
       probesDirty_ = false;
-      const VkBufferCopy copy{0, 0, probeStaging_.size};
+      const VkBufferCopy copy{0, 0, probeBakeBytes_};
       vkCmdCopyBuffer(cmd, probeStaging_.buffer, probeBake_.buffer, 1, &copy);
-      memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                    VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
+      if (probeMaskBytes_ > 0) {
+        const VkBufferCopy mask{probeBakeBytes_, probeMaskAt_, probeMaskBytes_};
+        vkCmdCopyBuffer(cmd, probeStaging_.buffer, probeOutput_.buffer, 1, &mask);
+      }
+      memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                    VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT);
     }
     // Last frame's surfaces may still read the probes.
     memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_STORAGE_READ_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
                   VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT);
     // The three key-light directions of the bake nearest the key light, weighted by their closeness.
     ProbePush push{bufferAddress(context_, frame.meshFrame), bufferAddress(context_, probeBake_), bufferAddress(context_, probeOutput_),
-                   bufferAddress(context_, frame.probeRead), {0, 0, 0}, probeCount_, {0.0f, 0.0f, 0.0f}, 0};
+                   bufferAddress(context_, frame.probeRead), {0, 0, 0}, probeCount_, {0.0f, 0.0f, 0.0f}, probeFireScale_};
     const std::vector<glm::vec3>& dirs = probes_->keyDirections;
     const glm::vec3 key = glm::normalize(lighting_.sunDirection);
     std::array<std::pair<float, uint32_t>, 3> best{{{-2.0f, 0}, {-2.0f, 0}, {-2.0f, 0}}};

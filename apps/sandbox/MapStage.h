@@ -572,6 +572,10 @@ class MapStage final : public Stage {
     renderer.setFrontCards(frontCards_);
     lights_.clear();
     if (scene_) buildLights(time);
+    if (probeBakePending_ && scene_ && sprites_.ready()) {  // the room's fires are laid on their flames: the probes can bake
+      probeBakePending_ = false;
+      startProbeBake();
+    }
     laps.lap("lights");
     effectList_.clear();
     fxLights_.clear();
@@ -690,8 +694,10 @@ class MapStage final : public Stage {
       // "Luar: cinema": the night stops are capped at one, or the camera would take back what the brighter moon gave
       // (measured 2026-10-19: with the full darkening the moonlit ground stayed black beside the lanterns).
       float darkening = nightDarkening(ev);
-      // A room by day is exposed for the room (the twilight stops are the outdoors' reading of a low sun); at night the moon's rule.
-      if (windowLight() && !moonNight_) darkening = 0.0f;
+      // A room by day, metered the old way (its outside reading's share, only while its probes bake), is exposed for the room. Metered
+      // by its probes, the room takes the curve every other place takes for that light (the user, 2026-10-22: the room at 62 lux
+      // exposed like a sunny day came out "tudo totalmente branco"; the curve keeps it ~3.4 stops darker, a stone room with windows).
+      if (windowLight() && !moonNight_ && !probesLive) darkening = 0.0f;
       // "Luar: cinema": capped at 2 stops (at 1, measured 2026-10-19 on cemiterio: meter 4.4 lux, exposure 0.24, the night came out
       // as an overcast day with a pale blue sky; at 2 the sky is navy and the moonlit ground still reads).
       // (A room lit through its windows keeps the indoor night: its torches, not the moon outside, set the camera.)
@@ -710,8 +716,10 @@ class MapStage final : public Stage {
     // ocasião"; by day the camera, exposed for the daylight, took every torch's and brazier's pool to nothing, and a passing cloud left the
     // room black): the decorations' fire and the walls' torches are shown at no less than the night's exposure (kFireExposure), whatever
     // the sun, the clouds or the hour set the camera to. At night (the camera at or over it) nothing changes.
+    renderer.setProbeFireScale(1.0f);
     if (lightingMode_ == 3 && fireLightsTo_ > fireLightsFrom_ && fireLightsTo_ <= lights_.size()) {
       const float k = std::max(lighting.exposure, kFireExposure) / std::max(lighting.exposure, 1e-9f);
+      renderer.setProbeFireScale(k);  // ... and their light bounced into the room's probes with them
       if (k > 1.0001f) {
         for (size_t i = fireLightsFrom_; i < fireLightsTo_; ++i) lights_[i].color *= k;
         renderer.setLights(lights_);
@@ -1829,6 +1837,8 @@ class MapStage final : public Stage {
   static constexpr float kTorchPower = 2.0f;        // every torch's light x this (the user, 2026-10-21: "2X do que estava antes"; 8x was too much)
   static constexpr float kFireExposure = 0.049f;    // the fire's light is shown at no less than this exposure (the watchtower's night)
   size_t fireLightsFrom_ = 0, fireLightsTo_ = 0;    // this frame's fire lights in lights_ (buildLights)
+  std::vector<float> fireFlicker_;                  // ... and each one's flicker this frame
+  std::vector<glm::vec3> fireUpright_;              // ... and its flame with the card upright (the light probes' bake)
   static constexpr float kDecorLightPower = 2.0f;   // every other light-giving decoration's light x this (the user, 2026-10-21: "2X")
   // One colour for the light of every torch, brazier, lamp / lantern and candle (the user, 2026-10-22: "normalize as cores das tochas,
   // braziers, lâmpadas e velas"; before, three: torches and braziers (1, 0.58, 0.26), lanterns (1, 0.70, 0.36), candles (1, 0.66,
@@ -2266,8 +2276,11 @@ class MapStage final : public Stage {
         for (int r = 0; r < L.rows; ++r)
           if (!joins.contains({c, r}) && !outside.contains({c, r})) roomCells_.insert({c, r});
     }
+    wallCells_ = joins;
     buildRoof();
-    startProbeBake();
+    // The probes bake once the first frame has laid the room's fires (buildLights): their light bounces into the probes too.
+    probeUploaded_ = false;
+    probeBakePending_ = true;
   }
 
   // The animated door (the user, 2026-10-21: "keep new door this asset for closed doors, can you animate it opening?"): its leaves
@@ -2408,11 +2421,55 @@ class MapStage final : public Stage {
         in.triangles.insert(in.triangles.end(), {a, c, b, b, c, d});  // (a, c, b): cross points up (+y)
       }
     in.keyDirections = probeKeyDirections(kProbeKeyDirections);
-    logInfo("light probes: baking {} x {} x {} over {} hexes of room, {} triangles", in.dims.x, in.dims.y, in.dims.z, roomCells_.size(), in.triangles.size() / 3);
+    in.paths = kProbePaths;
+    // The room's fires (this frame's: buildLights laid them), their light bouncing off the room into the probes.
+    // (Without this frame's flicker: the bake holds a fire's steady light, and the same room bakes the same probes.)
+    for (size_t k = fireLightsFrom_; k < fireLightsTo_ && k < lights_.size(); ++k) {
+      const float flick = k - fireLightsFrom_ < fireFlicker_.size() ? std::max(fireFlicker_[k - fireLightsFrom_], 1e-3f) : 1.0f;
+      // (the flame where the card stands upright: a leaning card's follows the camera, and the cache must find the same room from any
+      // view; the candela to a hundredth: dividing the flicker back out is not exact to the last bit)
+      const size_t n = k - fireLightsFrom_;
+      const glm::vec3 at = n < fireUpright_.size() ? fireUpright_[n] : lights_[k].position;
+      in.fires.push_back({glm::round(at * 20.0f) / 20.0f, glm::round(lights_[k].color / flick * 100.0f) / 100.0f, lights_[k].range});
+    }
+    // The room seen from above (Renderer::ProbeVolume::mask): a room hex is inside, a wall's hex on the side nearer a room hex than an
+    // outside one (its inner face, the inner half of a window's opening), everything else outside.
+    probeMaskDims_ = {static_cast<int>(std::ceil((roofRect_.z - roofRect_.x) / kProbeMaskSpacing)),
+                      static_cast<int>(std::ceil((roofRect_.w - roofRect_.y) / kProbeMaskSpacing))};
+    probeMask_.assign(size_t(probeMaskDims_.x) * size_t(probeMaskDims_.y), 0);
+    for (int mz = 0; mz < probeMaskDims_.y; ++mz)
+      for (int mx = 0; mx < probeMaskDims_.x; ++mx) {
+        const float x = roofRect_.x + (mx + 0.5f) * kProbeMaskSpacing, z = roofRect_.y + (mz + 0.5f) * kProbeMaskSpacing;
+        const auto [c, r] = e2::hexAt(L, x, z);
+        bool inside = roomCells_.contains({c, r});
+        if (!inside && wallCells_.contains({c, r})) {
+          float nearest = std::numeric_limits<float>::max();
+          for (int dr = -2; dr <= 2; ++dr)
+            for (int dc = -2; dc <= 2; ++dc) {
+              const int nc = c + dc, nr = r + dr;
+              if (!e2::inBoard(L, nc, nr) || wallCells_.contains({nc, nr})) continue;
+              const float d = std::hypot(static_cast<float>(board_->cell(nc, nr).x) - x, static_cast<float>(board_->cell(nc, nr).z) - z);
+              if (d < nearest) nearest = d, inside = roomCells_.contains({nc, nr});
+            }
+        }
+        probeMask_[size_t(mz) * size_t(probeMaskDims_.x) + size_t(mx)] = inside ? 255 : 0;
+      }
+    logInfo("light probes: {} x {} x {} over {} hexes of room, {} triangles, {} fires", in.dims.x, in.dims.y, in.dims.z, roomCells_.size(),
+            in.triangles.size() / 3, in.fires.size());
     probeInput_ = std::move(in);
     probeBusy_ = true;
-    jobs_.run([this] {
+    // Kept on disk by what it reads (ProbeBake probeBakeKey): the same room, fires and numbers load it at once.
+    const std::string cache = std::format("build/probes/{}-{:016x}.bin", board_->draft().id, probeBakeKey(probeInput_));
+    jobs_.run([this, cache] {
+      if (loadProbeBake(cache, probeBakeKey(probeInput_), probeOutput_) && probeOutput_.probeCount == probeInput_.candidate.size()) {
+        probeFromCache_ = true;
+        return;
+      }
+      probeFromCache_ = false;
       probeOutput_ = bakeProbes(probeInput_, [this](uint32_t n, const std::function<void(uint32_t, uint32_t)>& body) { jobs_.parallelFor(n, 8, body); });
+      std::error_code ec;
+      std::filesystem::create_directories("build/probes", ec);
+      saveProbeBake(cache, probeBakeKey(probeInput_), probeOutput_);
     }, &probeJob_);
   }
 
@@ -2423,7 +2480,9 @@ class MapStage final : public Stage {
     auto volume = std::make_shared<Renderer::ProbeVolume>();
     volume->origin = probeInput_.origin, volume->spacing = probeInput_.spacing, volume->dims = probeInput_.dims;
     volume->keyDirections.assign(probeInput_.keyDirections.begin(), probeInput_.keyDirections.begin() + out.keyCount);
-    const size_t keyFloats = size_t{out.keyCount} * ProbeBakeOutput::kKeyCoefficients, stride = 1 + ProbeBakeOutput::kTransfer + keyFloats;
+    const size_t keyFloats = size_t{out.keyCount} * ProbeBakeOutput::kKeyCoefficients,
+                 stride = 1 + ProbeBakeOutput::kTransfer + ProbeBakeOutput::kFire + keyFloats;
+    volume->maskSpacing = kProbeMaskSpacing, volume->maskDims = probeMaskDims_, volume->mask = probeMask_;
     volume->bake.assign(size_t{out.probeCount} * stride, 0.0f);
     size_t valid = 0, candidates = 0;
     for (uint8_t c : probeInput_.candidate) candidates += c;
@@ -2437,7 +2496,8 @@ class MapStage final : public Stage {
       float* row = &volume->bake[i * stride];
       row[0] = out.valid[i] ? 1.0f : 0.0f;
       std::copy_n(&out.transfer[i * ProbeBakeOutput::kTransfer], ProbeBakeOutput::kTransfer, row + 1);
-      std::copy_n(&out.key[i * keyFloats], keyFloats, row + 1 + ProbeBakeOutput::kTransfer);
+      std::copy_n(&out.fire[i * ProbeBakeOutput::kFire], ProbeBakeOutput::kFire, row + 1 + ProbeBakeOutput::kTransfer);
+      std::copy_n(&out.key[i * keyFloats], keyFloats, row + 1 + ProbeBakeOutput::kTransfer + ProbeBakeOutput::kFire);
       valid += out.valid[i];
     }
     renderer.setProbes(volume);
@@ -2452,8 +2512,8 @@ class MapStage final : public Stage {
           probeFloor_.push_back(i);
           break;
         }
-    logInfo("light probes: {} of {} in the room ({} x {} x {}), {} triangles, baked in {:.2f} s", valid, out.probeCount, dims.x, dims.y, dims.z,
-            probeInput_.triangles.size() / 3, out.seconds);
+    logInfo("light probes: {} of {} in the room ({} x {} x {}), {} triangles, {}", valid, out.probeCount, dims.x, dims.y, dims.z,
+            probeInput_.triangles.size() / 3, probeFromCache_ ? std::string("from the cache") : std::format("baked in {:.2f} s", out.seconds));
   }
 
   // The camera's meter in a room lit through its windows: the light on the room's floor (an incident reading, as a light meter on
@@ -2955,6 +3015,8 @@ class MapStage final : public Stage {
 
   void buildLights(float time) {
     fireLightsFrom_ = fireLightsTo_ = lights_.size();
+    fireFlicker_.clear();
+    fireUpright_.clear();
     // A map light sits on its flame as the card draws it (the user, 2026-10-18: the lights were "completely off set"):
     // the card's axis and layer step (addCard), its picture's bottom edge, then up the card along the same lean as
     // sprites.hlsl VSMain when the cards lean to the camera; Engine2's floor of minHeight over the ground kept.
@@ -2971,7 +3033,7 @@ class MapStage final : public Stage {
       const float height = std::max(d.light->minHeight, (d.art.flameV - d.art.baseV) * d.h);
       const float side = (d.art.flameU - d.art.baseU) * d.w * (d.mirror ? -1.0f : 1.0f);
       const glm::vec3 base = glm::vec3(d.x, groundOf(d.groundSmooth, d.groundHard), d.z);
-      glm::vec3 at = base + right * side + glm::vec3(0, height, 0);
+      glm::vec3 at = base + right * side + glm::vec3(0, height, 0), upright = at;
       const SpriteClipId clip = flat_ || !sprites_.ready() ? kNoSpriteClip : sprites_.find("decor", std::filesystem::path(d.image).stem().string());
       if (clip != kNoSpriteClip) {
         const SpriteClipHeader& c = sprites_.header(clip);
@@ -2980,19 +3042,25 @@ class MapStage final : public Stage {
         const glm::vec3 facing{-right.z, 0.0f, right.x};
         at = base + right * side + facing * d.nudge + glm::vec3(0.0f, (bottom - d.art.baseV) * d.h, 0.0f) + lean * ((flameV - bottom) * d.h);
         at.y = std::max(at.y, base.y + d.light->minHeight);
+        // where the flame stands with the card upright: the light probes' bake (its cache must not follow the camera)
+        upright = base + right * side + facing * d.nudge + glm::vec3(0.0f, std::max((flameV - d.art.baseV) * d.h, d.light->minHeight), 0.0f);
       }
+      fireUpright_.push_back(upright);
       // Torches burn kTorchPower x stronger (the user, 2026-10-21: "a luz das tochas bem mais potente", asked many times), every other
       // light-giving decoration (candles, braziers, lanterns, ...) kDecorLightPower x (the user, same day: "2X all other light emiting
       // decoration objects").
       const float power = d.id.find("torch") != std::string::npos ? kTorchPower : kDecorLightPower;
+      fireFlicker_.push_back(flicker(time, d.light->seed, d.light->flicker));
       lights_.push_back(carried(at, flameLight(d.id) ? kFlameLightColor : d.light->color, d.light->intensity * power, d.light->radius, height,
-                                flicker(time, d.light->seed, d.light->flicker)));
+                                fireFlicker_.back()));
     }
     // The torch brackets on EmberEngine's walls and stairs (buildArchitecture): their fire, flickering like a map torch, as strong.
     for (const ArchPiece& a : arch_) {
       if (!a.light) continue;
       const glm::vec3 at = glm::vec3(a.x, groundOf(a.groundSmooth, a.groundHard), a.z) + a.lightAt;
-      LocalLight l = carried(at, kFlameLightColor, a.light->intensity * kTorchPower, a.light->radius, a.lightAt.y, flicker(time, a.light->seed, a.light->flicker));
+      fireFlicker_.push_back(flicker(time, a.light->seed, a.light->flicker));
+      fireUpright_.push_back(at);
+      LocalLight l = carried(at, kFlameLightColor, a.light->intensity * kTorchPower, a.light->radius, a.lightAt.y, fireFlicker_.back());
       if (a.lightBehind > 0.0f) {
         // A wall's torch lights its own side of the wall only (a local light casts no shadow: it lit the board's outer sides through the
         // outer walls, capture skirt-f-night of 2026-10-21).
@@ -9148,6 +9216,11 @@ class MapStage final : public Stage {
   // Luz das janelas: the room's light probes (startProbeBake / uploadProbes; the bake runs on the workers while probeBusy_).
   std::vector<glm::vec3> probeTris_;          // the room's surfaces in world space: the pieces (buildArchitecture), the roof (buildRoof)
   std::set<std::pair<int, int>> roomCells_;   // the hexes the walls enclose
+  std::set<std::pair<int, int>> wallCells_;   // ... and the hexes the walls stand on
+  bool probeBakePending_ = false;             // buildArchitecture asked for a bake: it starts after the next buildLights (the fires)
+  bool probeFromCache_ = false;               // the last bake was read from build/probes
+  std::vector<uint8_t> probeMask_;            // the room seen from above (startProbeBake), kProbeMaskSpacing texels over roofRect_
+  glm::ivec2 probeMaskDims_{0};
   ProbeBakeInput probeInput_;
   ProbeBakeOutput probeOutput_;
   JobCounter probeJob_;
@@ -9271,7 +9344,10 @@ class MapStage final : public Stage {
   static constexpr float kWindowMeterShare = 0.04f;
   static constexpr float kWindowMeterFloor = 2.7f;
   // The room's light probes (startProbeBake): their spacing (units; the hexes are 1.73 x 1.5) and the bake's numbers.
-  static constexpr glm::vec3 kProbeSpacing{1.5f, 1.0f, 1.5f};
+  // (2026-10-22: 1.5 x 1.0 x 1.5 before; the user's "faz" on denser probes, as Dragon Age: The Veilguard's (0.5 m) are)
+  static constexpr glm::vec3 kProbeSpacing{1.0f, 0.75f, 1.0f};
+  static constexpr uint32_t kProbePaths = 128;         // paths a probe (160 before, at a third of the probes)
+  static constexpr float kProbeMaskSpacing = 0.25f;    // the room mask's texel (units): a wall is 0.61 thick
   static constexpr uint32_t kProbeKeyDirections = 64;  // the key-light directions of the bounce table (ProbeBakeOutput::keyVisible: <= 64)
   static constexpr float kGameStartHour = 8.0f;  // the game clock's hour when none is given (a new save's: Overworld::campaignHour)
   static constexpr float kRoofUnder = 4.0f;          // the roof slab's underside over the lowest wall's ground (walls are 4.2 tall)
