@@ -90,7 +90,7 @@
    "groundFar": 300.0,
    "groundFromDegrees": 3.0,
    "ceilingImage": "tavern-ceiling-v01.jpg",
-   "ceilingHeight": 18.0,
+   "ceilingHeight": 24.0,
    "ceilingTile": 16.0
   },
   "inn-second-floor-v01.jpg#piso": {
@@ -109,7 +109,7 @@
    "groundFar": 300.0,
    "groundFromDegrees": 3.0,
    "ceilingImage": "inn-ceiling-v01.jpg",
-   "ceilingHeight": 18.0,
+   "ceilingHeight": 24.0,
    "ceilingTile": 16.0
   },
   "inn-second-floor-v01.jpg#teto": {
