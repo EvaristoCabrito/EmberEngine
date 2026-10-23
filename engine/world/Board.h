@@ -99,6 +99,7 @@ struct MapDraft {
   std::vector<MapDecoration> decorations;
   std::vector<MapSpawn> playerSpawns, enemySpawns, neutralSpawns;
   std::string environment, timeOfDay;
+  std::string moonPhase;  // the Map Editor's Lua (e2::kMoonPhases name; "" = full): Modo teste's moon on this map
   bool fog = false;  // the mission hides what the party has not seen (Engine2 mission.fog)
   // The map editor's atmosphere (Engine2 Mission): its mist (Névoa type, intensity, speed), wisps and bloom.
   std::string mistType;

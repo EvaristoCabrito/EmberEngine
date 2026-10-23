@@ -153,6 +153,7 @@ std::optional<MapDraft> MapDraft::fromJson(const json& d) {
   m.neutralSpawns = spawns(d, "neutralSpawns");
   m.environment = str(d, "environment");
   m.timeOfDay = str(d, "timeOfDay");
+  m.moonPhase = str(d, "moonPhase");
   m.fog = d.contains("fog") && d["fog"].is_boolean() && d["fog"].get<bool>();
   m.mistType = str(d, "mistType");
   m.atmosphereProfile = str(d, "atmosphereProfile");

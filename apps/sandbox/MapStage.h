@@ -173,8 +173,8 @@ struct MapStageOptions {
   int lighting = 3;
   // Scene clock pinned to this many seconds (< 0 = real time): identical frames for paired captures.
   float sceneTime = -1.0f;
-  // Night: tonight's moon phase (Engine2's moonPhase.ts names; "" = Engine2's stage default: the full moon's art at
-  // the night's own strength) and where the moon's disc and light stand (see moonPlacement()); also in the panel.
+  // Night: tonight's moon phase (Engine2's moonPhase.ts names; the campaign's: its day's, e2::campaignMoonPhase; "" = the map's own
+  // Lua, else the full moon's art at the night's own strength) and where the moon's disc and light stand (see moonPlacement()); also in the panel.
   std::string moonPhase;
   int moonPath = 0;
   // Every unit's poses (tools/scripts/engine2/export_heroes.ts output; empty = idle only): the map's own units
@@ -707,6 +707,20 @@ class MapStage final : public Stage {
       if (readyFrames_ == 30)  // once, for the record of a capture
         logInfo("camera: meter {:.3f} lux, EV {:.2f}, darkening {:.2f} stops, exposure {:.5f}, key {:.2f} lux at elevation {:.1f} deg",
                 meterLux_, ev, darkening, lighting.exposure, lighting.sunIntensity, glm::degrees(std::asin(std::clamp(lighting.sunDirection.y, -1.0f, 1.0f))));
+      if (readyFrames_ == 30) {  // the sky's record of a capture: the hour, tonight's moon and where its disc falls on the screen
+        const glm::vec3 m = lighting.moonDirection;
+        const glm::vec4 clip = lastCamera_.viewProjection() * glm::vec4(lastCamera_.position + m * 50.0f, 1.0f);
+        const glm::vec2 ndc = clip.w > 0.0f ? glm::vec2(clip) / clip.w : glm::vec2(9.0f);
+        const int phase = moonPhaseIndex();
+        logInfo("sky: hour {:.2f}, moon {} (disc texture {}, radius {:.2f} deg, glow {:.2f}) at elevation {:.1f} deg, azimuth {:.1f} deg (the camera looks at "
+                "azimuth {:.1f}, elevation {:.1f}), {}",
+                cycleHour(now_), phase < 0 ? "full (default)" : e2::kMoonPhases[phase], lighting.moonTexture, glm::degrees(lighting.moonRadius),
+                lighting.moonGlow, glm::degrees(std::asin(std::clamp(m.y, -1.0f, 1.0f))),
+                glm::degrees(std::atan2(m.x, m.z)), glm::degrees(std::atan2(lastCamera_.forward.x, lastCamera_.forward.z)),
+                glm::degrees(std::asin(std::clamp(lastCamera_.forward.y, -1.0f, 1.0f))),
+                std::abs(ndc.x) <= 1.0f && std::abs(ndc.y) <= 1.0f ? std::format("on screen at ({:.0f}%, {:.0f}%)", (ndc.x * 0.5f + 0.5f) * 100.0f, (ndc.y * 0.5f + 0.5f) * 100.0f)
+                                                                    : std::string("off screen"));
+      }
       lighting.litScale = std::max(meterLux_, 1e-4f) * 1.2f / 2.5f;  // exposure x this = 1 at the metered EV
       // The watchtower (the user, 2026-10-22: "cadê o céu normal de todos os dias"): the camera exposed for the dark room burned the sky
       // and the sunlit air outside to white; they are shown as an outdoor camera at this hour shows them (the outdoor meter and night
@@ -1452,7 +1466,7 @@ class MapStage final : public Stage {
                                        "gibosa ming.", "quarto ming.", "minguante", "sangue"};
       int phase = moonPhase_ + 1;
       if (dropdown("Fase da lua", phase, 10,
-                   [](int i) { return i == 0 ? std::string("padrão") : std::string(kPhases[i - 1]); }))
+                   [](int i) { return i == 0 ? std::string("do mapa") : std::string(kPhases[i - 1]); }))
         moonPhase_ = phase - 1;
       static const char* kSizes[4] = {"pequena", "média", "grande", "enorme"};
       dropdown("Tamanho da lua", moonSize_, 4, [](int i) { return std::string(kSizes[i]); });
@@ -3177,8 +3191,9 @@ class MapStage final : public Stage {
     Renderer::Lighting l;
     if (lightingMode_ == 0) return l;  // the old prototype day
     const TimeOfDayLight& t = e2::timeOfDay(scene_ ? scene_->timeOfDay : std::string());
-    const char* phase = moonPhase_ < 0 ? "full" : e2::kMoonPhases[moonPhase_];
-    const e2::Moonlight moon = moonPhase_ < 0 ? e2::Moonlight{} : e2::moonlightFor(phase);
+    const int phaseIndex = moonPhaseIndex();
+    const char* phase = phaseIndex < 0 ? "full" : e2::kMoonPhases[phaseIndex];
+    const e2::Moonlight moon = phaseIndex < 0 ? e2::Moonlight{} : e2::moonlightFor(phase);
     MoonPlacement placed;
     if (t.moon) {
       placed = moonPlacement(time);
@@ -3314,6 +3329,15 @@ class MapStage final : public Stage {
   // the moon rises and the stars come in with the dark (atmosphere.hlsli). The board's key light is the sun while it is up, the moon
   // after: the swap falls when both sit on the horizon and light almost nothing. The meter follows twilight (a tenth for every 2.4 deg
   // the sun sinks), so the camera opens up through dusk.
+  // Tonight's moon (index in e2::kMoonPhases, -1 = full at the night's own strength): the panel's / the campaign day's (moonPhase_),
+  // else the map's own Lua (the Map Editor, Modo teste).
+  int moonPhaseIndex() const {
+    int phase = moonPhase_;
+    for (int i = 0; phase < 0 && scene_ && i < 9; ++i)
+      if (scene_->moonPhase == e2::kMoonPhases[i]) phase = i;
+    return phase;
+  }
+
   // The sky follows an hour: a chosen one / a cycle (the panel's Hora), else the game's clock when the stage was given one (the
   // campaign), else the map's own Hora do dia (Modo teste, the Map Editor: e2::mapHour). Always on.
   bool cycleOn() const { return true; }

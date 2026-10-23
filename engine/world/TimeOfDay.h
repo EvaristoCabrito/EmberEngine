@@ -74,6 +74,13 @@ inline MoonPose moonPose(float progress) {
 // Engine2's moon phases (moonPhase.ts): an 8-day cycle, and the blood moon in place of every third full moon.
 inline constexpr const char* kMoonPhases[] = {"new",  "waxingCrescent", "firstQuarter", "waxingGibbous", "full",
                                               "waningGibbous", "lastQuarter", "waningCrescent", "blood"};
+// The campaign's moon on its day (save.gameClock; the world map's moon plate, OverworldStage.h): an 8-day cycle from the new moon on
+// day 1, every third full moon a blood moon.
+inline const char* campaignMoonPhase(int day) {
+  const int d = day > 1 ? day - 1 : 0;
+  if (d % 8 == 4 && (d / 8) % 3 == 2) return "blood";
+  return kMoonPhases[d % 8];
+}
 // The phase's art in Engine2's public folder (moonPhaseIcon).
 inline std::string moonPhaseIcon(std::string_view phase) {
   return phase == "full" ? std::string("game/ui/moon/moon-full-v2.png") : "game/ui/moon/moon-" + std::string(phase) + ".png";

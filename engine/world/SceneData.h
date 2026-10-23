@@ -68,6 +68,7 @@ struct SceneArchitecture {
 struct SceneData {
   std::string map, title;
   std::string timeOfDay, environment;
+  std::string moonPhase;  // the Map Editor's Lua (e2::kMoonPhases name; "" = full): the moon when no campaign day gives one
   // The map's own lighting sliders (Engine2 Mission.sunIntensity / ambientIntensity / bloomIntensity; absent =
   // the time of day's default) and its mist type (the fog look for the scenario).
   std::optional<float> sunIntensity, ambientIntensity, bloomIntensity;

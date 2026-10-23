@@ -1178,6 +1178,7 @@ json sceneJson(const SceneData& s, const MapDraft& draft, const std::map<std::st
   out["map"] = s.map, out["title"] = s.title, out["cols"] = draft.cols, out["rows"] = draft.rows;
   out["lighting"] = {{"timeOfDay", s.timeOfDay.empty() ? "day" : s.timeOfDay}, {"sunIntensity", opt(s.sunIntensity)}, {"ambientIntensity", opt(s.ambientIntensity)},
                      {"environment", s.environment.empty() ? "outdoor" : s.environment}, {"bloomIntensity", opt(s.bloomIntensity)}, {"mistType", s.mistType.empty() ? json(nullptr) : json(s.mistType)}};
+  if (!s.moonPhase.empty()) out["lighting"]["moonPhase"] = s.moonPhase;  // the editor's Lua (maps without one: the file as before)
   out["backdrop"] = s.backdrop.empty() ? json(nullptr) : json(s.backdrop);
   out["decor"] = decor, out["units"] = units;
   json skippedOut = json::object();

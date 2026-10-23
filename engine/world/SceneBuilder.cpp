@@ -212,6 +212,7 @@ SceneData buildScene(const Board& board, const EditorCatalog& catalog, std::map<
   s.map = draft.id;
   s.title = draft.title;
   s.timeOfDay = draft.timeOfDay.empty() ? "day" : draft.timeOfDay;
+  s.moonPhase = draft.moonPhase;
   s.environment = draft.environment.empty() ? "outdoor" : draft.environment;
   if (draft.sunIntensity) s.sunIntensity = static_cast<float>(*draft.sunIntensity);
   if (draft.ambientIntensity) s.ambientIntensity = static_cast<float>(*draft.ambientIntensity);

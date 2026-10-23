@@ -2245,6 +2245,20 @@ class MapEditorStage : public Stage {
           if (ImGui::Selectable(t.label.c_str(), t.id == tod)) beginEdit(), draft_["timeOfDay"] = t.id, draft_["sunIntensity"] = t.key, draft_["ambientIntensity"] = t.ambient;
         ImGui::EndCombo();
       }
+      // The moon's nine phases, the blood moon included (the user, 2026-10-23: "temos 9 fases, incluindo bloodmoon o editor tem que
+      // refletir tudo isso"): the map's own moon in Modo teste and the editor; a campaign fight takes its day's phase instead.
+      static const char* kPhaseLabels[9] = {"Nova", "Crescente", "Quarto crescente", "Gibosa crescente", "Cheia",
+                                            "Gibosa minguante", "Quarto minguante", "Minguante", "Lua de sangue"};
+      const std::string phase = draft_.value("moonPhase", std::string("full"));
+      int shownPhase = 4;
+      for (int i = 0; i < 9; ++i)
+        if (phase == e2::kMoonPhases[i]) shownPhase = i;
+      ImGui::SetNextItemWidth(-110);
+      if (ImGui::BeginCombo("Lua", kPhaseLabels[shownPhase])) {
+        for (int i = 0; i < 9; ++i)
+          if (ImGui::Selectable(kPhaseLabels[i], i == shownPhase)) beginEdit(), draft_["moonPhase"] = e2::kMoonPhases[i];
+        ImGui::EndCombo();
+      }
     }
     slider(moon ? "Intensidade da lua" : "Intensidade do sol", "sunIntensity", 0, 6, static_cast<float>(editor_.defaultSun));
     slider("Luz ambiente", "ambientIntensity", 0, 4, static_cast<float>(editor_.defaultAmbient));

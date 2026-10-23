@@ -65,6 +65,7 @@ std::optional<SceneData> SceneData::load(const std::filesystem::path& sceneJson)
   s.title = str(j, "title");
   if (j.contains("lighting")) {
     s.timeOfDay = str(j["lighting"], "timeOfDay");
+    s.moonPhase = str(j["lighting"], "moonPhase");
     s.environment = str(j["lighting"], "environment");
     const json& l = j["lighting"];
     const auto opt = [&](const char* key) { return l.contains(key) && l[key].is_number() ? std::optional<float>(l[key].get<float>()) : std::nullopt; };
