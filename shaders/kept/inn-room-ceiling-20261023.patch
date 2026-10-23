@@ -1,0 +1,103 @@
+diff --git a/content/engine2/backdrop-fit.json b/content/engine2/backdrop-fit.json
+index fd7a92e..d47f181 100644
+--- a/content/engine2/backdrop-fit.json
++++ b/content/engine2/backdrop-fit.json
+@@ -77,7 +77,7 @@
+   "inn-panorama-v01.jpg#piso": {
+    "horizon": 0.43,
+    "bottom": 1.0,
+-   "skyTop": 0.0,
++   "skyTop": 0.25,
+    "degreesPerHeight": 51.0,
+    "bottomDegrees": 23.6,
+    "spanDegrees": 119.0,
+@@ -85,7 +85,7 @@
+    "horizonDegrees": 0.0,
+    "ceiling": true,
+    "ground": "inn-ground-v01.jpg",
+-   "groundDepth": 0.0,
++   "groundDepth": 3.0,
+    "groundTile": 16.0,
+    "groundFar": 300.0,
+    "groundFromDegrees": 3.0,
+@@ -96,7 +96,7 @@
+   "inn-second-floor-v01.jpg#piso": {
+    "horizon": 0.49,
+    "bottom": 1.0,
+-   "skyTop": 0.0,
++   "skyTop": 0.2,
+    "degreesPerHeight": 43.8,
+    "bottomDegrees": 23.6,
+    "spanDegrees": 65.3,
+@@ -104,7 +104,7 @@
+    "horizonDegrees": 0.0,
+    "ceiling": true,
+    "ground": "inn-ground-v01.jpg",
+-   "groundDepth": 0.0,
++   "groundDepth": 3.0,
+    "groundTile": 16.0,
+    "groundFar": 300.0,
+    "groundFromDegrees": 3.0,
+diff --git a/shaders/resolve.hlsl b/shaders/resolve.hlsl
+index a3a4a19..eb3c5cb 100644
+--- a/shaders/resolve.hlsl
++++ b/shaders/resolve.hlsl
+@@ -29,6 +29,9 @@ struct Push {
+   uint ceilingTexture;   // modes 2-4 and 6: a room's drawn ceiling where the sky would show (kNoTexture = the sky)
+   float ceilingHeight;   // ... a flat plane this far above the eye
+   float ceilingTile;     // ... world units per repeat
++  float2 roomCentre;     // (sent by the C++ side, not read here: the round room is kept in shaders/kept/)
++  float roomRadius;
++  float roomEye;
+ };
+ // Backdrop mode 1: the painting's own horizon sits at this share of its height (the row the world's horizon is pinned
+ // to), and the painting reaches its bottom row this many degrees below the horizon.
+@@ -59,10 +62,17 @@ float3 ceilingAt(MeshFrame f, float3 dir, float pixelAngle) {
+   Texture2D tile = gTextures[NonUniformResourceIndex(push.ceilingTexture)];
+   uint tw, th;
+   tile.GetDimensions(tw, th);
+-  const float2 size = float2(push.ceilingTile, push.ceilingTile * float(th) / max(float(tw), 1.0));
+-  float2 m = hit / size + 0.5;
+-  m -= 2.0 * floor(m * 0.5);  // mirrored repeat: 0..2 -> 0..1..0
+-  m = float2(m.x <= 1.0 ? m.x : 2.0 - m.x, m.y <= 1.0 ? m.y : 2.0 - m.y);
++  // A room (roomRadius > 0: the Inn): the image ONCE over the room, centred on the board, as wide as the room (the user, 2026-10-23:
++  // "InnCeiling1floor é essa imagem perfeitamente alinhada"); otherwise tiled and mirrored from the world's origin as before.
++  const bool room = push.roomRadius > 0.0;
++  const float width = room ? 2.0 * push.roomRadius : push.ceilingTile;
++  const float2 size = float2(width, width * float(th) / max(float(tw), 1.0));
++  float2 m = (room ? hit - push.roomCentre : hit) / size + 0.5;
++  if (room) m = saturate(m);
++  else {
++    m -= 2.0 * floor(m * 0.5);  // mirrored repeat: 0..2 -> 0..1..0
++    m = float2(m.x <= 1.0 ? m.x : 2.0 - m.x, m.y <= 1.0 ? m.y : 2.0 - m.y);
++  }
+   const float footprint = t * pixelAngle / max(dir.y, 0.05);
+   const float lod = max(log2(footprint / (size.x / float(max(tw, 1u)))), 0.0);
+   return tile.SampleLevel(gSamplers[f.materialSampler], m, lod).rgb;  // no darkening (the user, 2026-10-22: no black line)
+@@ -153,14 +163,11 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
+     // mode 7 = an interior's ground (Luz das janelas, the user, 2026-10-21: "não renderizar nada do lado de fora ... exceto pelo ground and
+     // ceiling images"; the watchtower's background "usar ele de imagem de GROUND"): the map's painting on a real plane at planeY, planeTile world
+     // units wide, mirrored at its edges, its own colours; nothing else outside: black above the horizon, no sky, no haze.
+-    // mode 9 = mode 7's ground with the real sky (and its air) above the horizon instead of black (the watchtower, the user, 2026-10-22:
+-    // "activate the atmosphere and sky on the watchtower for me to see what its going to look like"). Mode 7 itself is unchanged.
+-    if (push.backgroundMode == 7 || push.backgroundMode == 9) {
+-      const bool sky = push.backgroundMode == 9;
+-      if (f.atmosphere == 0 || push.planeTexture == kNoTexture) return sky && f.atmosphere != 0 ? float4(skyWithAir(f, pixel), 1.0) : float4(0.0, 0.0, 0.0, 1.0);
++    if (push.backgroundMode == 7) {
++      if (f.atmosphere == 0 || push.planeTexture == kNoTexture) return float4(0.0, 0.0, 0.0, 1.0);
+       const AtmosphereFrame a = loadAtmosphere(f);
+       const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);
+-      if (dir.y >= -1e-4) return sky ? float4(skyWithAir(f, pixel), 1.0) : float4(0.0, 0.0, 0.0, 1.0);
++      if (dir.y >= -1e-4) return float4(0.0, 0.0, 0.0, 1.0);
+       const float t = (push.planeY - f.cameraPosition.y) / dir.y;
+       if (t <= 0.0) return float4(0.0, 0.0, 0.0, 1.0);
+       const float2 hit = f.cameraPosition.xz + dir.xz * t;
+@@ -303,6 +310,8 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
+       scene = lerp(scene, 1.0, smoothstep(horizon - 0.04, horizon + 0.01, v));  // from the ridge down: all painting
+       scene *= smoothstep(0.0, max(skyTop, 0.01), v);                             // the very top: all sky
+       if (push.backgroundMode == 3) scene = smoothstep(0.0, 0.08, v);              // its own sky kept, top rows fade
++      // a room's drawn ceiling covers the painting's own ceiling above its row `skyTop` (the user, 2026-10-22: "no double ceilings")
++      if (push.backgroundMode == 3 && push.ceilingTexture != kNoTexture) scene = smoothstep(skyTop - 0.015, skyTop + 0.015, v);
+       if (push.backgroundMode == 4) scene = paintSample.a;                         // its own alpha: clear sky = the real sky
+       float3 color = lerp(sky, paint, scene);
+       // Below the kept band: the bottom row fades into the sky's own horizon colour; a thin haze on the seam.

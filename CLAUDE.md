@@ -56,9 +56,15 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   another map's feature; put that feature in its own function / shader file. On 2026-10-22/23 the watchtower's sky written into
   backgroundAt changed how DXC compiled it and altered the Inn's panoramas in every later build.
 - **The board always sits on top of the ground, never floats: every single map, hard rule (the user, 2026-10-22, shouting).** Every
-  map's background is a panorama (the user, same day); its floor image lies at the board's base (groundDepth 0), at real size (never
-  stretched), and never cuts the painting in half; rooms show their drawn ceiling, never the sky. A panorama without a `ground` image
-  leaves the board over the painting: give it the map's floor image (ask the user which) before calling it done.
+  map's background is a panorama (the user, same day); its floor image lies at real size (never stretched) and never cuts the painting
+  in half; rooms show their drawn ceiling, never the sky. A panorama without a `ground` image leaves the board over the painting: give
+  it the map's floor image (ask the user which) before calling it done. **The floor image MAY lie lower than the board's base
+  (backdrop-fit.json `groundDepth`; the user, 2026-10-23: "quero o Ground mais baixo como está agora") and then the board's sides go
+  down to it (the user, same message: "o tabuleiro precisa sempre encostar no ground em todos os mapas, não existe exceção"):**
+  `Renderer::setBoardDrop` + terrain.hlsl `boardDropAt` lower every side-wall bottom at the base by `groundDepth` (the smooth look's
+  lip ring, void skirts and closeBoardSides walls; the hard look's rim walls); 0 everywhere the floor lies at the base, so no other
+  map moves. Limits: the hard look's rim cells at level 0 and the tabletop look have no wall to lower (they would still float over a
+  lowered floor); a draft's `emberFloor` depth (the bridge's gorge) is not a floor and does not lower the sides.
 - **Never change any fog (the user, 2026-10-20: "nunca mudar nenhuma névoa mesmo se eu implorar").** Not the fog of war's rules
   (sight 12), not any mist look, not the Atmosfera. A new fog may only be added as a new numbered look when the user asks for one.
 - **No outside engines**, ever (no Unreal/Epic, Unity, Godot). Open-source *libraries* are fine.
@@ -1409,6 +1415,15 @@ Panorama image", "Tavernground in attachments for you to use on the ground layer
 - Then (the user: "o chão mais baixo", "fiz tábuas pequenas e ficaram gigante", "a imagem de ground está muito esticada"): `groundDepth`
   (backdrop-fit.json; the ground plane that far further under the board's base) 3 and groundTile 60 -> 16 on both "#piso" entries; MapStage
   logs "panoramas <map>: N (the newest opens: ...)". **The user, 2026-10-22: every background is a panorama from now on.**
+- **2026-10-23 (the user: "acertar o teto e ground da taverna", "o tabuleiro precisa sempre encostar no ground", "esse tavern ceiling
+  fica melhor embaixo e o outro no topo devido ao tipo de telhado"):** both "#piso" entries: `groundDepth` 0.5 (the floor image just
+  under the board's base; the board's sides go down to it: `Renderer::setBoardDrop`); ceilings: salão = `tavern-ceiling-v01.jpg` (flat
+  beams), Andar II = `inn-ceiling-v01.jpg` (the gabled roof), both on the flat plane above the eye (`ceilingAt`, the 23:10 way).
+  **NEVER map a ceiling or a room image around the camera (angular / cylindrical): the camera looks up to 80 deg (`kSkyMinPitch`) and
+  the image converges into a circle at the zenith (the user, 2026-10-23: "isso JAMAIS DEVE ACONTECER JAMAIS", "voce sempre quebra os
+  panoramas e faz esse lance circular").** That `ceilingAligned` path was removed from the tree on the user's order ("só desfaz o
+  teto redondo"); its compiled form is only in `build/release/bin/shaders-20261023-0302-ceiling-aligned/` + `Sandbox-20261023-0302-ceiling-aligned.exe`
+  (set aside, never to be used). backdrop-fit.json's Inn entries are 97a980d's again (groundDepth 0, skyTop 0).
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
