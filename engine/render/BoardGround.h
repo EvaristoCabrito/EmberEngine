@@ -81,6 +81,9 @@ struct TerrainView {
   uint32_t count = 0;  // vertices to draw (indices when indexed)
   float seamStep = 0.0f;  // tabletop: a dark seam on the walls at every this many units of height (0 = none)
   uint32_t wallFrom = 0;  // smooth look: vertices from here on are the board's added side walls, painted like its edge (0 = none)
+  // wallFrom's top bit: the board's sides lit and shadowed like the ground (the Inn's floors); clear = its walls and steep side
+  // faces take no light or shadow of their own (terrain.hlsl).
+  static constexpr uint32_t kWallsLit = 0x80000000u;
   explicit operator bool() const { return record != 0 && count != 0; }
 };
 

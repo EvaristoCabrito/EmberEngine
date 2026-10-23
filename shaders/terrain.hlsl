@@ -93,7 +93,9 @@ VSOut VSMain(uint id : SV_VertexID) {
   o.layers3 = unpackUnorm8(lb.y);
   o.layers4 = unpackUnorm8(lb.z);
   o.layers5 = unpackUnorm8(lb.w);
-  o.wall = push.wallFrom != 0 && index >= push.wallFrom ? 1.0 : 0.0;
+  // 0 the ground; 1 a side wall that takes no light or shadow of its own; 2 a side wall lit like the ground (wallFrom's top bit: the Inn).
+  const uint wallFrom = push.wallFrom & 0x7FFFFFFFu;
+  o.wall = wallFrom != 0 && index >= wallFrom ? ((push.wallFrom & 0x80000000u) != 0 ? 2.0 : 1.0) : 0.0;
   return o;
 }
 
@@ -351,5 +353,20 @@ float4 PSMain(VSOut i) : SV_Target0 {
   Surface surface = defaultSurface(wp, n, albedo);
   surface.normal = shading;
   surface.roughness = roughness;
+  // The board's side walls take no light or shadow of their own (the user, 2026-10-23: "esse sombreado nas bordas do tabuleiro tem que
+  // acabar, essa área não deve ser afetada por luz e sombra"): one even light over the whole wall, the light a flat top takes in the
+  // open, with no shadow, no highlight and no facing: the added walls whole, and every steep side face of the board (its cut edge, the
+  // sides of its raised ground), eased in from a slope's 0.6 to 0.35 of up so a hill never shows a line. The Inn's floors as before
+  // (wallFrom's top bit).
+  const bool sidesLit = (push.wallFrom & 0x80000000u) != 0;
+  const float side = sidesLit ? 0.0 : wall ? 1.0 : 1.0 - smoothstep(0.35, 0.6, geometric.y);
+  if (side > 0.0) {
+    const float3 up = float3(0.0, 1.0, 0.0);
+    surface.normal = normalize(lerp(surface.normal, up, side));
+    surface.geometricNormal = normalize(lerp(geometric, up, side));
+    surface.receivesShadow = 1.0 - side;
+    surface.receivesCardShadow = 1.0 - side;
+    surface.specular = 1.0 - side;
+  }
   return float4(applyGroundMarks(shade(f, surface), wp, smoothstep(0.5, 0.7, geometric.y)), 1.0);
 }

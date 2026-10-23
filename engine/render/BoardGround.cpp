@@ -152,7 +152,12 @@ bool BoardGround::build(const e2::Board& board) {
     e2::closeBoardSides(looks[0], low - 0.35);
     if (looks[0].vertexCount() == wallFrom) wallFrom = 0;
   }
+  // The walls take no light and no shadow of their own (the user, 2026-10-23: "esse sombreado nas bordas do tabuleiro tem que acabar,
+  // essa área não deve ser afetada por luz e sombra"; terrain.hlsl). The Inn's floors keep their walls lit as before (never touch the
+  // Inn): the top bit of wallFrom says so.
   meshes_[0].wallFrom = wallFrom;
+  if (board.draft().id.rfind("estalagem", 0) == 0)
+    for (Mesh& m : meshes_) m.wallFrom |= TerrainView::kWallsLit;
   for (int i = 0; i < 3; ++i) {
     pack(looks[i], palette, meshes_[i]);
     upload(meshes_[i]);

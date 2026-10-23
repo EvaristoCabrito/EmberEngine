@@ -24,7 +24,12 @@ float luma(float3 c) {
 
 // The part of the scene colour that blooms: smoothstep over the display luminance, like the old gather.
 float3 brightAt(float2 uv) {
-  const float3 c = gTextures[NonUniformResourceIndex(push.source)].SampleLevel(gSamplers[push.sampler], uv, 0).rgb;
+  float3 c = gTextures[NonUniformResourceIndex(push.source)].SampleLevel(gSamplers[push.sampler], uv, 0).rgb;
+  // A NaN or an infinity in the scene colour (a half float past 65504 is infinite; the Karis weight then makes it NaN) spread
+  // through the pyramid's filters into black rectangles that flickered over the board (the user, 2026-10-23, Wisp Forest): a NaN
+  // blooms nothing, an infinity blooms as the brightest half float. Finite colours are untouched.
+  c = float3(isnan(c.r) ? 0.0 : c.r, isnan(c.g) ? 0.0 : c.g, isnan(c.b) ? 0.0 : c.b);
+  c = min(c, 65504.0);
   return c * smoothstep(0.75, 0.85, luma(acesFilmic(c)));
 }
 
