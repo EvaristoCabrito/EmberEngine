@@ -91,6 +91,13 @@ class OverworldStage : public Stage {
     if (!id.empty()) openMission(id, true);
   }
 
+  // The Underdark of Mordávia's exit (the Misty Cave's map 4, mordavia-underdark): a floor connector whose target is this id opens
+  // the world map on the Atlas do Submundo (main.cpp), the campaign recording "underworldReached".
+  static constexpr const char* kUnderworldExit = "underworld-atlas";
+  void showUnderworld() {
+    if (!underworld_) toggleWorld();
+  }
+
   // Captures: a panel opened as a click would ("party", "skills", "quests", "options", "move", "location:<id>", "save").
   void preview(const std::string& what) {
     save_["seenOverworldIntro"] = true;  // a capture of a panel is not covered by the first-visit explainer

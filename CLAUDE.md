@@ -1562,8 +1562,9 @@ detalhes estranhos e nada a ver, deixa profissional", and "não alterar o sistem
   it switches the map to the user's Atlas do Submundo de Mordávia (`content/ui/underworld-atlas-v01.png`, a copy of
   `Attachments/Atlas do Submundo de Mordávia(1).png`), drag and zoom as the overworld, no fog / sky tint / pins / steps / leader there (it
   has no overworld board yet); each world keeps its own view. Modo teste: always; the campaign: only when the save carries
-  `underworldReached` (nothing sets it yet: the Underdark of Mordávia's exit, map 4 of the Misty Cave chain, is to set it when built).
-  Capture `--map-ui underworld`.
+  `underworldReached`, set by the Underdark of Mordávia's exit (map 4 of the Misty Cave chain, `mordavia-underdark003`: a floor
+  connector whose target is `OverworldStage::kUnderworldExit` "underworld-atlas"; main.cpp writes the map done + the flag and opens
+  the world map on the Atlas, `showUnderworld`; Modo teste goes back to its RPG map on the Atlas). Capture `--map-ui underworld`.
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 

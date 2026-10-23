@@ -13,7 +13,8 @@ if not exist "%EXE%" (
   goto :fim
 )
 
-set "GROUND=%ART%\ground\ground-v30.pak"
+set "GROUND=%ART%\ground\ground-v31.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v30.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v29.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v28.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v27.pak"
@@ -50,6 +51,12 @@ if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v3.pak"
 if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v2.pak"
 if not exist "%MESHES%" set "MESHES=%ART%\meshes\props.pak"
 rem battle.pak = o pacote de sprites atual (cada mudanca de sprite e cozinhada nele); battle-v2.pak (19/10) so se faltar
+rem battle-new.pak = um pacote cozinhado com o jogo aberto (o battle.pak preso): entra no lugar dele aqui, o anterior guardado com a data
+if not exist "%ART%\sprites\battle-new.pak" goto :semnovo
+for /f %%D in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd-HHmm"') do set "STAMP=%%D"
+move /y "%ART%\sprites\battle.pak" "%ART%\sprites\battle-%STAMP%-antes.pak" >nul
+move /y "%ART%\sprites\battle-new.pak" "%ART%\sprites\battle.pak" >nul
+:semnovo
 set "SPRITES=%ART%\sprites\battle.pak"
 if not exist "%SPRITES%" set "SPRITES=%ART%\sprites\battle-v2.pak"
 set "HEROES="

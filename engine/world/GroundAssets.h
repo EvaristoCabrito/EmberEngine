@@ -86,6 +86,15 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"cave3-v01", "ruins", "ember-cave3-queda-v01", "content/ground/cave3-queda-v01.png", 4.0f, true},
     {"cave3-v01", "hill", "ember-cave3-orelha-v01", "content/ground/cave3-orelha-v01.png", 4.5f, true},
     {"cave3-v01", "snow", "ember-cave3-lodacal-v01", "content/ground/cave3-lodacal-v01.png", 4.0f, true},
+    // The Misty Cave's map 4, O Underdark de Mordávia (cave4-v01, Attachments/MistyCave/4rdFloor, 2026-10-23; docs/MISTY_DEPTH4_PROMPTS.md):
+    // the Root-Crown's silver bark on plains, the Enclave's plank decks on nave, broken branches and crystal shards on ruins, the crown's
+    // knotted burls on hill, the Glasswater Sea's shore on snow; the boughs' flanks on the sides.
+    {"cave4-v01", "plains", "ember-cave4-casca-v01", "content/ground/cave4-casca-v01.png", 4.5f, true},
+    {"cave4-v01", "nave", "ember-cave4-plataforma-v01", "content/ground/cave4-plataforma-v01.png", 4.0f, true},
+    {"cave4-v01", "ruins", "ember-cave4-galhos-v01", "content/ground/cave4-galhos-v01.png", 4.0f, true},
+    {"cave4-v01", "hill", "ember-cave4-no-v01", "content/ground/cave4-no-v01.png", 4.5f, true},
+    {"cave4-v01", "snow", "ember-cave4-margem-v01", "content/ground/cave4-margem-v01.png", 4.0f, true},
+    {"cave4-v01", "side", "ember-cave4-flanco-v01", "content/ground/cave4-flanco-v01.png", 3.0f},
 };
 
 inline std::string skyMoonAsset(std::string_view phase) { return "sky/moon/" + std::string(phase) + ".tex"; }

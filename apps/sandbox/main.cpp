@@ -1018,6 +1018,7 @@ int runWindow(const Options& o) {
   std::optional<TestSession> testSession;
   std::optional<TestModeStage::Screen> openTest;  // a test-mode screen to open
   bool openTestRpg = false;                       // the RPG map on the test session's save
+  bool openUnderworld = false;                    // the world map opens on the Atlas do Submundo (the Underdark's exit)
   bool openSpells = false, inSpells = false;      // Teste de Magias: the spells test battle (open it / it is open)
   // Map Editor: open it / a Testar battle from it is open; the draft it was editing (kept while the game runs, as
   // GameApp's editorDraft).
@@ -1266,7 +1267,26 @@ int runWindow(const Options& o) {
     // Screen changes happen between frames, with the GPU idle: the old screen's resources go before the new one loads.
     std::optional<MapStageOptions> retry;
     if (auto* map = dynamic_cast<MapStage*>(stage.get())) {
-      if (const std::string floor = map->wantsFloor(); !floor.empty() && !pending) {
+      if (const std::string floor = map->wantsFloor(); floor == OverworldStage::kUnderworldExit && !pending) {
+        // The Underdark of Mordávia's exit (the Misty Cave's map 4): the world map opens on the Atlas do Submundo. The campaign
+        // writes the map done (a fight won first, as on any floor) and "underworldReached", so the world map's Underworld word
+        // switches from then on; a test session goes back to its RPG map (Modo teste always has the Underworld).
+        map->clearFloor();
+        if (testSession) {
+          openTestRpg = true;
+        } else if (!playing.empty()) {
+          if (!map->explores() && map->battleResult() == "victory") finishCampaignFight(*map, true);
+          else markVisited(playing, map);
+          e2::Json save = campaign.activeSave();
+          save["underworldReached"] = true;
+          if (!campaign.saveActive(std::move(save))) logWarn("{}: the way to the Underworld could not be written", playing);
+          playing.clear();
+          openMap = true;
+        } else {
+          backToTitle = true;
+        }
+        openUnderworld = !backToTitle;
+      } else if (const std::string floor = map->wantsFloor(); !floor.empty() && !pending) {
         // A floor connector (GameApp: the result screen's Subir / Descer, then startBattle(target, ..., arrivedFrom)): the linked
         // floor opens, the party beside the connector back.
         map->clearFloor();
@@ -1487,6 +1507,8 @@ int runWindow(const Options& o) {
         stage = makeMap();
         curtain.open(loading::Curtain::Kind::Map, clockNow());
       }
+      if (std::exchange(openUnderworld, false))
+        if (auto* atlas = dynamic_cast<OverworldStage*>(stage.get())) atlas->showUnderworld();
       pending.reset();
       openTest.reset();
       backToTitle = false, openMap = false, openTestRpg = false, openSpells = false, openEditor = false;
