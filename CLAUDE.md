@@ -23,6 +23,10 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
 - **D&D = Advanced Dungeons & Dragons 2nd edition ONLY (the user, 2026-10-20: "advanced dungeons and dragons second edition ONLY",
   "its the only D&D system accepted").** Whenever a rule is based on D&D (spell reach, areas, scaling), use AD&D 2e's rules, never
   3e / 3.5 / 4e / 5e. Basing is not copying: the user's own rules come first, AD&D 2e only supports them.
+- **The board always sits on top of the ground, never floats: every single map, hard rule (the user, 2026-10-22, shouting).** Every
+  map's background is a panorama (the user, same day); its floor image lies at the board's base (groundDepth 0), at real size (never
+  stretched), and never cuts the painting in half; rooms show their drawn ceiling, never the sky. A panorama without a `ground` image
+  leaves the board over the painting: give it the map's floor image (ask the user which) before calling it done.
 - **Never change any fog (the user, 2026-10-20: "nunca mudar nenhuma névoa mesmo se eu implorar").** Not the fog of war's rules
   (sight 12), not any mist look, not the Atmosfera. A new fog may only be added as a new numbered look when the user asks for one.
 - **No outside engines**, ever (no Unreal/Epic, Unity, Godot). Open-source *libraries* are fine.
