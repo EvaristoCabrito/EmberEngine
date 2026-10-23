@@ -1,6 +1,7 @@
 {
   "backgrounds": [
     {"id": "ember-misty-cave-v01", "label": "Profundezas Enevoadas · Câmara funda", "file": "misty-cave-bg-v01.png"},
-    {"id": "ember-misty-root-descent-v01", "label": "Garganta das Raízes · O abismo", "file": "misty-root-descent-bg-v01.png"}
+    {"id": "ember-misty-root-descent-v01", "label": "Garganta das Raízes · O abismo", "file": "misty-root-descent-bg-v01.png"},
+    {"id": "ember-misty-spore-basin-v01", "label": "Bacia dos Esporos · A floresta de cogumelos", "file": "misty-spore-basin-bg-v01.png"}
   ]
 }

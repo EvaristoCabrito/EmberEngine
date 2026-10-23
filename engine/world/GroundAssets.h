@@ -78,6 +78,14 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"cave2-v01", "hill", "ember-cave2-dorso-v01", "content/ground/cave2-dorso-v01.png", 4.0f, true},
     {"cave2-v01", "snow", "ember-cave2-seiva-v01", "content/ground/cave2-seiva-v01.png", 4.0f, true},
     {"cave2-v01", "side", "ember-cave2-parede-v01", "content/ground/cave2-parede-v01.png", 3.0f},
+    // The Misty Cave's level 3, A Bacia dos Esporos (cave3-v01, Attachments/MistyCave/3rdfloor, 2026-10-23; docs/MISTY_DEPTH3_PROMPTS.md):
+    // the mycelium loam on plains, the mushroom-cap walkway on nave, the fallen giant mushrooms on ruins, the shelf-fungus tops on hill,
+    // the spore mire on snow. (The mycelium wall W1 was not delivered: the sides keep the default cliff surfaces.)
+    {"cave3-v01", "plains", "ember-cave3-micelio-v01", "content/ground/cave3-micelio-v01.png", 4.5f, true},
+    {"cave3-v01", "nave", "ember-cave3-calcada-v01", "content/ground/cave3-calcada-v01.png", 4.0f, true},
+    {"cave3-v01", "ruins", "ember-cave3-queda-v01", "content/ground/cave3-queda-v01.png", 4.0f, true},
+    {"cave3-v01", "hill", "ember-cave3-orelha-v01", "content/ground/cave3-orelha-v01.png", 4.5f, true},
+    {"cave3-v01", "snow", "ember-cave3-lodacal-v01", "content/ground/cave3-lodacal-v01.png", 4.0f, true},
 };
 
 inline std::string skyMoonAsset(std::string_view phase) { return "sky/moon/" + std::string(phase) + ".tex"; }

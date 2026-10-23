@@ -1,0 +1,9 @@
+{
+  "section": "Caverna · Bacia dos Esporos",
+  "decorations": [
+    {"id": "ember-cave3-shelf-boulder", "image": "cave3-shelf-boulder-v01", "name": "Rocha de orelhas-de-pau", "like": "cave-fractured-boulders-001"},
+    {"id": "ember-cave3-trail-marker", "image": "cave3-trail-marker-v01", "name": "Marco do Esporabrigo", "like": "cave-glowing-mushrooms",
+     "light": {"color": [0.34, 0.72, 1], "intensity": 4, "radius": 4.68, "flicker": 0.12, "minHeight": 1}},
+    {"id": "ember-cave3-cocoon", "image": "cave3-cocoon-v01", "name": "Casulo de micélio", "like": "cave-basalt-004-original-bones"}
+  ]
+}
