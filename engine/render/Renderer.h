@@ -239,9 +239,13 @@ class Renderer {
     glm::ivec3 dims{0};
     std::vector<glm::vec3> keyDirections;
     std::vector<float> bake;
+    // The same bake with the animated doors' leaves closed (empty = none): probes.hlsl blends the two by setProbeOpenness (Dragon
+    // Age: The Veilguard bakes once with the doors as placed; here a door that opens in play changes the room's light with it).
+    std::vector<float> bakeClosed;
     // The room seen from above (255 inside, 0 outside), maskDims texels of maskSpacing from (origin.x, origin.z): outside it the sun
     // and the sky light nothing (lighting.hlsli probeRoom). Empty = everywhere inside.
     float maskSpacing = 0.0f;
+    float roofHeight = 0.0f;  // the room's roof (world y; 0 = none): at it or above, nothing from outside lights a surface (lighting.hlsli probeRoom)
     glm::ivec2 maskDims{0};
     std::vector<uint8_t> mask;
   };
@@ -250,6 +254,8 @@ class Renderer {
   void useProbes() { probesWanted_ = true; }
   // The fires' bounce in the probes shown this much brighter than the exposure makes it (the fires' own boost; 1 = none).
   void setProbeFireScale(float scale) { probeFireScale_ = scale; }
+  // How open the room's animated doors are this frame (0 closed .. 1 open): the doors-open and doors-closed bakes blended.
+  void setProbeOpenness(float openness) { probeOpenness_ = openness; }
   // The probes' irradiance on an upward face in lux, as last read back (one per probe; empty until a frame with probes finished).
   const std::vector<float>& probeLux() const { return probeLux_; }
   // Local lights for the next frame (at most kMaxLights; the rest are dropped).
@@ -519,10 +525,13 @@ class Renderer {
   // The room's light probes (setProbes): the bake (staged once into a device buffer), relit every frame into probeOutput_.
   std::shared_ptr<const ProbeVolume> probes_;
   bool probesDirty_ = false, probesWanted_ = false, probesThisFrame_ = false;
+  bool probeGateThisFrame_ = false;  // the room's mask / roof gate on this frame (with or without the relight)
   Buffer probeStaging_, probeBake_, probeOutput_;
   uint32_t probeCount_ = 0;
   VkDeviceSize probeBakeBytes_ = 0, probeMaskBytes_ = 0, probeMaskAt_ = 0;
   float probeFireScale_ = 1.0f;  // the staging buffer's two parts, the mask's place in the output
+  float probeOpenness_ = 1.0f;   // setProbeOpenness
+  VkDeviceSize probeClosedOffset_ = 0;  // bytes from a probe's open row to its closed row (0 = one bake)
   VkPipeline probePipeline_ = VK_NULL_HANDLE;
   std::vector<float> probeLux_;
   Clouds clouds_;

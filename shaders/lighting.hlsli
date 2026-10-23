@@ -189,8 +189,8 @@ float3 skyIrradiance(MeshFrame f, float3 n) {
 // the 8 probes around it (trilinear), each weighted by how much it faces the surface, only those standing in the room; `found` false
 // where no probe reaches (outside the room: no light from outside but through the openings).
 float3 probeIrradiance(MeshFrame f, float3 p, float3 n, out bool found) {
-  const float3 origin = vk::RawBufferLoad<float4>(f.probes).xyz, spacing = vk::RawBufferLoad<float4>(f.probes + 16u).xyz;
-  const uint4 dims = vk::RawBufferLoad<uint4>(f.probes + 32u);
+  const float3 origin = vk::RawBufferLoad<float4>(probesAddress(f)).xyz, spacing = vk::RawBufferLoad<float4>(probesAddress(f) + 16u).xyz;
+  const uint4 dims = vk::RawBufferLoad<uint4>(probesAddress(f) + 32u);
   const float3 g = (p + n * 0.35 - origin) / spacing;
   const int3 base = int3(floor(g));
   const float3 t = g - float3(base);
@@ -202,7 +202,7 @@ float3 probeIrradiance(MeshFrame f, float3 p, float3 n, out bool found) {
     const int3 o = int3(c & 1u, (c >> 1) & 1u, (c >> 2) & 1u);
     const int3 q = base + o;
     if (any(q < 0) || q.x >= int(dims.x) || q.y >= int(dims.y) || q.z >= int(dims.z)) continue;
-    const uint64_t at = f.probes + 64u + uint64_t(uint(q.x) + dims.x * (uint(q.z) + dims.z * uint(q.y))) * 144u;
+    const uint64_t at = probesAddress(f) + 64u + uint64_t(uint(q.x) + dims.x * (uint(q.z) + dims.z * uint(q.y))) * 144u;
     const float4 first = vk::RawBufferLoad<float4>(at);
     if (first.w < 0.5) continue;
     const float3 tri = lerp(1.0 - t, t, float3(o));
@@ -222,18 +222,23 @@ float3 probeIrradiance(MeshFrame f, float3 p, float3 n, out bool found) {
 // 1 where the probes carry no mask. Outside the room nothing from outside lights a surface (the user, 2026-10-21: "não renderizar nada
 // do lado de fora"; 2026-10-22: the sun on the windows' outer faces and the foot of the walls bloomed into white blobs).
 float probeRoom(MeshFrame f, float3 p) {
-  const float4 origin = vk::RawBufferLoad<float4>(f.probes);
+  const float4 origin = vk::RawBufferLoad<float4>(probesAddress(f));
   if (origin.w <= 0.0) return 1.0;
-  const uint4 mask = vk::RawBufferLoad<uint4>(f.probes + 48u);  // keyCount, the mask's x and z texels, its offset
+  // The roof's height (spacing.w, 0 = none): a surface at it or above (the walls' tops, anything on the roof) is outside the room:
+  // the sun and the sky reach the room only through its windows and doors (the user, 2026-10-23: "eu já falei que eu não quero sol
+  // nas paredes externas e nem no topo do mapa", "ele só entra pelas janelas e portas").
+  const float roof = vk::RawBufferLoad<float4>(probesAddress(f) + 16u).w;
+  if (roof > 0.0 && p.y >= roof - 0.05) return 0.0;
+  const uint4 mask = vk::RawBufferLoad<uint4>(probesAddress(f) + 48u);  // keyCount, the mask's x and z texels, its offset
   const int2 t = int2(floor((p.xz - origin.xz) / origin.w));
   if (any(t < 0) || t.x >= int(mask.y) || t.y >= int(mask.z)) return 0.0;
   const uint i = uint(t.x) + mask.y * uint(t.y);
-  const uint word = vk::RawBufferLoad<uint>(f.probes + mask.w + (i / 4u) * 4u);
+  const uint word = vk::RawBufferLoad<uint>(probesAddress(f) + mask.w + (i / 4u) * 4u);
   return float((word >> ((i % 4u) * 8u)) & 0xFFu) / 255.0;
 }
 
 float3 indirectDiffuse(MeshFrame f, Surface s) {
-  if (f.probes != 0) {
+  if (probesAddress(f) != 0) {
     bool found;
     return probeIrradiance(f, s.position, s.normal, found);
   }
@@ -268,7 +273,7 @@ float3 skyReflection(MeshFrame f, float3 dir, float roughness) {
 // polished stone, metal see the real sky, clouds and all), else the sky's irradiance there / pi (a rough reflection;
 // the hemisphere's uniform radiance E / pi without the atmosphere).
 float3 indirectSpecular(MeshFrame f, Surface s, float3 reflected) {
-  if (f.probes != 0) {  // inside the room: what the probes see that way (no sky but through the openings)
+  if (probesAddress(f) != 0) {  // inside the room: what the probes see that way (no sky but through the openings)
     bool found;
     return probeIrradiance(f, s.position, reflected, found) / kPi;
   }
@@ -310,7 +315,7 @@ float3 shadeInSightSplit(MeshFrame f, Surface s, Sight sight, out float3 local) 
   const float nv = max(dot(s.normal, view), 1e-4);
 
   float3 color = 0.0;
-  const float room = f.probes != 0 ? probeRoom(f, s.position) : 1.0;  // a room lit through its windows: nothing from outside out of it
+  const float room = probesAddress(f) != 0 ? probeRoom(f, s.position) : 1.0;  // a room lit through its windows: nothing from outside out of it
   if ((f.lightingLayers & kLayerSun) && room > 0.0) {
     const float3 l = f.sunDirection, h = normalize(l + view);
     const float nlRaw = dot(s.normal, l);
@@ -436,6 +441,7 @@ float3 shade(MeshFrame f, Surface s) {
   }
   const Sight sight = tacticalSight(f, s.sightAt);
   if (f.debugView == kDebugClouds) return cloudShadow(f, s.position).xxx;
+  if (f.debugView == 21u) return probesAddress(f) != 0 ? float3(probeRoom(f, s.position), 0.0, 0.0) : float3(0.0, 0.0, 1.0);  // the room's gate: red = inside, black = outside, blue = no probes
   if (f.debugView == kDebugFog) return float3(1.0 - sight.color, sight.local, 1.0);
   if (f.debugView == kDebugFogStates) return fogStateColor(fogAlpha(f, s.sightAt));
   return applyVolume(f, shadeInSight(f, s, sight) * sight.color, s.position);

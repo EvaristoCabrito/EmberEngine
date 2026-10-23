@@ -16,8 +16,18 @@ struct Push {
   uint count;
   float3 weight;      // ... and their weights (summing to 1)
   float fireScale;    // the fires shown brighter than the camera's exposure would (MapStage kFireExposure; 1 = as metered)
+  uint64_t closed;    // bytes from a probe's row to the same probe's row in the doors-closed bake (0 = one bake)
+  float openness;     // the room's animated doors: 0 closed .. 1 open (the two bakes blended: every row is linear in the light)
+  uint pad;
 };
 [[vk::push_constant]] Push push;
+
+// A bake value at `at` (a row of the doors-open bake), blended with the doors-closed bake's when there is one.
+float bakeAt(uint64_t at) {
+  const float open = vk::RawBufferLoad<float>(at);
+  if (push.closed == 0) return open;
+  return lerp(vk::RawBufferLoad<float>(at + push.closed), open, push.openness);
+}
 
 static const float kBandIrradiance[9] = {kPi, 2.0943951, 2.0943951, 2.0943951, 0.785398, 0.785398, 0.785398, 0.785398, 0.785398};
 
@@ -43,7 +53,7 @@ void CSRelight(uint id : SV_DispatchThreadID) {
   float3 radiance[9];
   [unroll] for (uint i = 0; i < 9; ++i) {
     float3 sum = 0.0;
-    [unroll] for (uint j = 0; j < 9; ++j) sum += vk::RawBufferLoad<float>(probe + (1u + i * 9u + j) * 4u) * sky[j];
+    [unroll] for (uint j = 0; j < 9; ++j) sum += bakeAt(probe + (1u + i * 9u + j) * 4u) * sky[j];
     radiance[i] = sum;
   }
   // ... and the key light's bounce (unit irradiance in the table; the key's own, through the clouds, exposure in).
@@ -53,13 +63,12 @@ void CSRelight(uint id : SV_DispatchThreadID) {
   const float3 keyIrradiance = f.sunColor * f.sunIntensity * cloudShadow(f, at);
   [unroll] for (uint t = 0; t < 3; ++t) {
     const uint64_t row = probe + (1u + 81u + 27u + push.key[t] * 4u) * 4u;
-    [unroll] for (uint i = 0; i < 4; ++i) radiance[i] += push.weight[t] * vk::RawBufferLoad<float>(row + i * 4u) * keyIrradiance;
+    [unroll] for (uint i = 0; i < 4; ++i) radiance[i] += push.weight[t] * bakeAt(row + i * 4u) * keyIrradiance;
   }
   // ... and the fires' bounce (candela-based, the exposure in); shown as bright as the fires themselves are (fireScale), metered as is.
   float3 fire[9];
   [unroll] for (uint i = 0; i < 9; ++i) {
-    fire[i] = float3(vk::RawBufferLoad<float>(probe + (82u + i * 3u) * 4u), vk::RawBufferLoad<float>(probe + (83u + i * 3u) * 4u),
-                     vk::RawBufferLoad<float>(probe + (84u + i * 3u) * 4u)) * f.exposure;
+    fire[i] = float3(bakeAt(probe + (82u + i * 3u) * 4u), bakeAt(probe + (83u + i * 3u) * 4u), bakeAt(probe + (84u + i * 3u) * 4u)) * f.exposure;
     radiance[i] += fire[i];
   }
   // Irradiance, the meter's upward reading

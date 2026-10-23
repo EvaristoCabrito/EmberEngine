@@ -157,8 +157,10 @@ struct MeshFrame {
   uint fogMask;              // RGBA16F: r darkness (0 in sight, 0.6 remembered, 1 never seen), then the volumetric
                              // fog's boundary, ground, valley (FogMask); kNoTexture = no fog of war
   uint fogSampler;
-  // The room's diffuse light probes (probes.hlsl, Luz das janelas): header then per probe 9 x float4 irradiance; 0 = none.
-  uint64_t probes;
+  // The room's diffuse light probes (probes.hlsl, Luz das janelas): header then per probe 9 x float4 irradiance; 0 = none. Two uints,
+  // not a uint64_t: read by value inside the ground pass a uint64_t member came out 0 (2026-10-23, the by-value DXC gotcha), so the
+  // room's gate never reached the board's sides; probesAddress() below puts the halves together.
+  uint probesLo, probesHi;
   // Volumetric fog (volume.hlsl): the integrated froxel volume surfaces read at their depth.
   uint volume;               // sampled 3D texture (scattered light, transmittance); kNoTexture = none
   uint volumeSampler;        // linear, clamped
@@ -183,6 +185,7 @@ struct MeshFrame {
   float boardBase, boardDrop;
   uint pad10c;
 };
+uint64_t probesAddress(MeshFrame f) { return (uint64_t(f.probesHi) << 32) | uint64_t(f.probesLo); }
 static const uint kCloudLayer = 1u;
 static const uint kCloudShadows = 2u;
 static const uint kVolumeEffects = 1u;

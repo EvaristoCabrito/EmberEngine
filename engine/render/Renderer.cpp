@@ -153,8 +153,11 @@ struct ProbePush {  // shaders/probes.hlsl
   uint32_t count;
   float weight[3];
   float fireScale;
+  VkDeviceAddress closed;  // bytes from a probe's row to the same probe's row in the doors-closed bake (0 = one bake)
+  float openness;          // the doors: 0 closed .. 1 open (the bakes blended)
+  uint32_t pad;
 };
-static_assert(sizeof(ProbePush) == 64);
+static_assert(sizeof(ProbePush) == 80);
 
 struct SkyReflectPush {  // shaders/skyreflect.hlsl
   VkDeviceAddress frame;
@@ -990,6 +993,7 @@ void Renderer::setProbes(std::shared_ptr<const ProbeVolume> probes) {
   probeCount_ = 0;
   probeLux_.clear();
   probesDirty_ = false;
+  probesWanted_ = false;
   if (!probes_ || probes_->dims.x <= 0 || probes_->dims.y <= 0 || probes_->dims.z <= 0) return;
   probeCount_ = static_cast<uint32_t>(probes_->dims.x * probes_->dims.y * probes_->dims.z);
   // header: origin, spacing, dims + count, keyCount (probes.hlsl)
@@ -1002,15 +1006,21 @@ void Renderer::setProbes(std::shared_ptr<const ProbeVolume> probes) {
     glm::vec4 origin, spacing;
     uint32_t dims[4];
     uint32_t keyCount, maskX, maskZ, maskOffset;
-  } header{{probes_->origin, masked ? probes_->maskSpacing : 0.0f}, {probes_->spacing, 0.0f},
+  } header{{probes_->origin, masked ? probes_->maskSpacing : 0.0f}, {probes_->spacing, probes_->roofHeight},
            {static_cast<uint32_t>(probes_->dims.x), static_cast<uint32_t>(probes_->dims.y), static_cast<uint32_t>(probes_->dims.z), probeCount_},
            static_cast<uint32_t>(probes_->keyDirections.size()), masked ? static_cast<uint32_t>(probes_->maskDims.x) : 0u,
            masked ? static_cast<uint32_t>(probes_->maskDims.y) : 0u, static_cast<uint32_t>(outputProbes)};
   static_assert(sizeof(Header) == 64);
-  const VkDeviceSize bakeBytes = sizeof(Header) + probes_->bake.size() * sizeof(float);
+  // The doors-closed bake (the same rows) right after the doors-open one: probes.hlsl blends the two by the doors' openness.
+  const bool closed = probes_->bakeClosed.size() == probes_->bake.size() && !probes_->bakeClosed.empty();
+  probeClosedOffset_ = closed ? VkDeviceSize{probes_->bake.size()} * sizeof(float) : 0;
+  const VkDeviceSize bakeBytes = sizeof(Header) + probes_->bake.size() * sizeof(float) + (closed ? probeClosedOffset_ : 0);
   probeStaging_ = createHostBuffer(context_, bakeBytes + maskBytes, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
   std::memcpy(probeStaging_.mapped, &header, sizeof(header));
   std::memcpy(static_cast<std::byte*>(probeStaging_.mapped) + sizeof(header), probes_->bake.data(), probes_->bake.size() * sizeof(float));
+  if (closed)
+    std::memcpy(static_cast<std::byte*>(probeStaging_.mapped) + sizeof(header) + probeClosedOffset_, probes_->bakeClosed.data(),
+                probes_->bakeClosed.size() * sizeof(float));
   if (masked) {
     std::memset(static_cast<std::byte*>(probeStaging_.mapped) + bakeBytes, 0, maskBytes);
     std::memcpy(static_cast<std::byte*>(probeStaging_.mapped) + bakeBytes, probes_->mask.data(), probes_->mask.size());
@@ -1264,9 +1274,14 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
   skyReflectThisFrame_ = atmoThisFrame_ && skyReflection_;
   // The room's light probes (relit in record() after the sky's SH): they need the sky.
   f.probes = 0;
-  probesThisFrame_ = atmoThisFrame_ && probeCount_ > 0 && std::exchange(probesWanted_, false);
+  // The room's gate (lighting.hlsli probeRoom: its mask and roof, in the output buffer's header) holds whenever the stage asks, with
+  // or without the sky (the user, 2026-10-23: "não é para desenhar a luz na superfície nem nas paredes, ela só entra pela janela");
+  // the relight itself needs the sky's SH (the atmosphere).
+  // (The stage's request holds until the next setProbes: a frame rendered without a stage update, a capture's extra frame, keeps the gate.)
+  probeGateThisFrame_ = probeCount_ > 0 && probesWanted_;
+  probesThisFrame_ = probeGateThisFrame_ && atmoThisFrame_;
+  if (probeGateThisFrame_) f.probes = bufferAddress(context_, probeOutput_);
   if (probesThisFrame_) {
-    f.probes = bufferAddress(context_, probeOutput_);
     if (frame.probeRead.size < VkDeviceSize{probeCount_} * sizeof(float)) {
       destroyBuffer(context_, frame.probeRead);
       frame.probeRead = createHostBuffer(context_, VkDeviceSize{probeCount_} * sizeof(float), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
@@ -1795,25 +1810,33 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     gpuTimer_.end(cmd, atmoScope);
   }
   // --- The room's light probes (probes.hlsl): the hour's sky through each probe's transfer, the key light's bounce -----------
+  if (hasScene_ && probeGateThisFrame_ && probesDirty_) {
+    // The bake, its mask and (first) its header into the output buffer, so the room's gate reads the mask and the roof before any
+    // relight (and without one: the sky off). The probes' rows stay zero (valid 0) until the relight writes them.
+    probesDirty_ = false;
+    const VkBufferCopy copy{0, 0, probeBakeBytes_};
+    vkCmdCopyBuffer(cmd, probeStaging_.buffer, probeBake_.buffer, 1, &copy);
+    vkCmdFillBuffer(cmd, probeOutput_.buffer, 0, VK_WHOLE_SIZE, 0u);  // every probe row valid 0 until the relight writes it
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT,
+                  VK_ACCESS_2_TRANSFER_WRITE_BIT);
+    const VkBufferCopy header{0, 0, 64};
+    vkCmdCopyBuffer(cmd, probeStaging_.buffer, probeOutput_.buffer, 1, &header);
+    if (probeMaskBytes_ > 0) {
+      const VkBufferCopy mask{probeBakeBytes_, probeMaskAt_, probeMaskBytes_};
+      vkCmdCopyBuffer(cmd, probeStaging_.buffer, probeOutput_.buffer, 1, &mask);
+    }
+    memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                  VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT);
+  }
   if (hasScene_ && probesThisFrame_) {
     const uint32_t scope = gpuTimer_.begin(cmd, "probes");
-    if (probesDirty_) {
-      probesDirty_ = false;
-      const VkBufferCopy copy{0, 0, probeBakeBytes_};
-      vkCmdCopyBuffer(cmd, probeStaging_.buffer, probeBake_.buffer, 1, &copy);
-      if (probeMaskBytes_ > 0) {
-        const VkBufferCopy mask{probeBakeBytes_, probeMaskAt_, probeMaskBytes_};
-        vkCmdCopyBuffer(cmd, probeStaging_.buffer, probeOutput_.buffer, 1, &mask);
-      }
-      memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-                    VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT);
-    }
     // Last frame's surfaces may still read the probes.
     memoryBarrier(cmd, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_STORAGE_READ_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
                   VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT);
     // The three key-light directions of the bake nearest the key light, weighted by their closeness.
     ProbePush push{bufferAddress(context_, frame.meshFrame), bufferAddress(context_, probeBake_), bufferAddress(context_, probeOutput_),
-                   bufferAddress(context_, frame.probeRead), {0, 0, 0}, probeCount_, {0.0f, 0.0f, 0.0f}, probeFireScale_};
+                   bufferAddress(context_, frame.probeRead), {0, 0, 0}, probeCount_, {0.0f, 0.0f, 0.0f}, probeFireScale_,
+                   probeClosedOffset_, std::clamp(probeOpenness_, 0.0f, 1.0f), 0u};
     const std::vector<glm::vec3>& dirs = probes_->keyDirections;
     const glm::vec3 key = glm::normalize(lighting_.sunDirection);
     std::array<std::pair<float, uint32_t>, 3> best{{{-2.0f, 0}, {-2.0f, 0}, {-2.0f, 0}}};

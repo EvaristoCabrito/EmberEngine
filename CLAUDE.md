@@ -1146,6 +1146,28 @@ design with the textures at watchtowerwalls", then "update the editor to make it
   the window (the user judges: Luz das janelas + Hora in the Escolhas panel on the watchtower's gate floor), the editor's drag tools by hand,
   the door's passability in play (code path only), cost (155 pieces + leaves, the roof: not measured).
 
+## Luz interna, 2026-10-23 (the user: "estudar como funciona a luz interna em jogos como Dragon Age e aplicar as novas portas e
+janelas", then "não quero sol nas paredes externas e nem no topo do mapa", "ele só entra pelas janelas e portas", "é tudo para criar
+uma ilusão de ótica, não precisa entender só confia")
+
+- **Read `docs/INTERIOR_LIGHT.md`** (Veilguard / Frostbite: fully probe-lit, 0.5 m probes, chunky walls against leaks, a window = a hole
+  the bake sees; our Luz das janelas already is that, relit by the clock). Tried on the user's "faz" and REVERTED the same hour: probes at
+  0.5 x 0.5 x 0.5 (79,618 probes, ~2 min a bake at 128 paths, 116 MB; the bake's own noise showed as a blotch per probe over the whole
+  floor, "isso aqui ficou uma piada"; that density needs an offline bake). Spacing stays 1.0 x 0.75 x 1.0, 128 paths.
+- **Kept:** (1) **the animated doors in the bake**: `probeDoorTris_` (the leaves closed, buildArchitecture), a second bake with them among
+  the surfaces (`probeInputClosed_ / probeOutputClosed_`, its own cache file), `Renderer::ProbeVolume::bakeClosed` uploaded after the open
+  bake, probes.hlsl `bakeAt()` blending the two rows by `Push.openness` (`Renderer::setProbeOpenness`: the mean of the leaves' angles each
+  frame; every row is linear in the light, so the blend is exact); a map without animated doors bakes once. (2) **The room's gate holds
+  always:** the mask + roof go to the GPU at load (`uploadProbeMaskOnly`, one empty probe) before the bake lands; the gate (`probeRoom`)
+  is on whenever the stage asks, with or without the Atmosfera (`probeGateThisFrame_`; the relight alone needs the sky); the request is
+  sticky (`probesWanted_` until the next setProbes: a frame rendered without a stage update, a capture's extra frame, lost the gate and the
+  board's sides took the sun); the roof height (`ProbeVolume::roofHeight`, header spacing.w) makes any surface at or above it outside
+  (the walls' tops); a rim wall's outer half counts outside (off-board hexes in the mask's nearest test: the board's side faces under the
+  south wall were "room"); the mask is written as `build/probes/<id>-mask.pgm` for a look. (3) `MeshFrame.probes` is two uints
+  (`probesLo / probesHi`, `probesAddress(f)`), no uint64_t member. `--debug-view 21` paints the gate (red inside, black outside, blue = no
+  probes). Captures `captures/tower/day-outside-walls.png`, `day-gate-debug.png`, `night-interior.png`.
+- Still seen on the outer faces by day: a grey veil = the Atmosfera's air over them (the fog is never touched: the user's rule).
+
 ## Veneno / Doença em 3D (2026-10-20; the user: Engine2's were WebGL and missing here, "recria algo similar em 3D")
 
 - `engine/render/vfx/StatusFx.*`: Engine2's drawStatusFx idea (haze, motes feet to head, vapour lines; green quick = poison, violet slow =

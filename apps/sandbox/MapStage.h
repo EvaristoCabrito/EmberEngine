@@ -663,8 +663,23 @@ class MapStage final : public Stage {
     laps.lap("hand-over");
     // Luz das janelas: the room's light probes, once baked (startProbeBake), light it from the hour's sky and the key light's bounce.
     if (probeBusy_ && probeJob_.done()) uploadProbes(renderer);
+    // Until the bake lands, the room's mask and roof alone (one empty probe): the sun and the sky light nothing outside the room nor
+    // on its roof from the first frame (the user, 2026-10-23: "eu não quero sol nas paredes externas e nem no topo do mapa"); the
+    // room itself waits for its probes in the fires' light.
+    if (probeBusy_ && !probeUploaded_ && !probeMaskUploaded_ && windowLight()) uploadProbeMaskOnly(renderer);
     const bool probesLive = probeUploaded_ && windowLight() && lightingMode_ == 3;
-    if (probesLive) renderer.useProbes();
+    if (probeBusy_ && !probeUploaded_ && probeMaskUploaded_ && windowLight() && lightingMode_ == 3) renderer.useProbes();
+    if (probesLive) {
+      renderer.useProbes();
+      // The animated doors' openness this frame (the doors-open / doors-closed bakes blended): the mean of the leaves' angles.
+      float openness = 1.0f;
+      if (!doors_.empty()) {
+        openness = 0.0f;
+        for (const auto& [index, d] : doors_) openness += d.angle / static_cast<float>(e2::kEmberDoorOpenRadians);
+        openness /= static_cast<float>(doors_.size());
+      }
+      renderer.setProbeOpenness(openness);
+    }
     Renderer::Lighting lighting = mapLighting(time);
     if (windowLight() && lightingMode_ == 3) {
       // Luz das janelas: the key light (the hour's sun, the moon at night, through the air) comes in only through the openings
@@ -2054,6 +2069,7 @@ class MapStage final : public Stage {
     stairPieces_.clear();
     groundHoles_.clear();
     probeTris_.clear();
+    probeDoorTris_.clear();
     roomCells_.clear();
     if (scene_->pieces.empty()) {
       buildRoof();
@@ -2318,7 +2334,17 @@ class MapStage final : public Stage {
         DoorState& state = doors_[index];
         for (const e2::FootOffset& f : e2::placedFootprint(*cd, p.x, p.y, p.rot)) state.cells.push_back({p.x + f.dx, p.y + f.dy});
         for (int side : {-1, 1}) {
-          const std::optional<MeshId> leaf = meshOf(e2::emberDoorLeafPiece(*def, rot, side), false);
+          const e2::three::Geometry leafGeometry = e2::emberDoorLeafPiece(*def, rot, side);
+          // The leaf closed, for the doors-closed probe bake (startProbeBake: the room's light with the door shut, blended at run
+          // time with the doors-open bake by the leaf's angle).
+          {
+            const float base = groundOf(arch_.back().groundSmooth, arch_.back().groundHard);
+            for (size_t v = 0; v + 2 < leafGeometry.count(); v += 3)
+              for (size_t k = 0; k < 3; ++k)
+                probeDoorTris_.push_back({leafGeometry.position[(v + k) * 3] + static_cast<float>(x), leafGeometry.position[(v + k) * 3 + 1] + base,
+                                          leafGeometry.position[(v + k) * 3 + 2] + static_cast<float>(z)});
+          }
+          const std::optional<MeshId> leaf = meshOf(leafGeometry, false);
           if (!leaf) continue;
           const std::array<double, 3> h = e2::emberDoorHingePiece(*def, rot, side);
           doorLeaves_.push_back({index, side, *leaf, {static_cast<float>(h[0]), static_cast<float>(h[1]), static_cast<float>(h[2])}});
@@ -2454,6 +2480,7 @@ class MapStage final : public Stage {
   // seconds after the map loads; until then the room has no sky light). Only the maps lit through their windows.
   void startProbeBake() {
     probeUploaded_ = false;
+    probeMaskUploaded_ = false;
     if (probeBusy_) jobs_.wait(probeJob_), probeBusy_ = false;
     if (!board_ || !scene_ || !kWindowLightMaps.contains(board_->draft().id) || underground()) return;
     if (roomCells_.empty()) {
@@ -2510,36 +2537,66 @@ class MapStage final : public Stage {
         const auto [c, r] = e2::hexAt(L, x, z);
         bool inside = roomCells_.contains({c, r});
         if (!inside && wallCells_.contains({c, r})) {
+          // The wall hex's half nearer a room hex is inside; the half nearer any other hex, ON THE BOARD OR OFF IT, is outside (a wall
+          // on the board's rim has no board hex beyond it: without the off-board hexes its outer half counted as room and the board's
+          // side faces under it took the sun; the user, 2026-10-23: "não quero sol nas paredes externas").
           float nearest = std::numeric_limits<float>::max();
           for (int dr = -2; dr <= 2; ++dr)
             for (int dc = -2; dc <= 2; ++dc) {
               const int nc = c + dc, nr = r + dr;
-              if (!e2::inBoard(L, nc, nr) || wallCells_.contains({nc, nr})) continue;
-              const float d = std::hypot(static_cast<float>(board_->cell(nc, nr).x) - x, static_cast<float>(board_->cell(nc, nr).z) - z);
-              if (d < nearest) nearest = d, inside = roomCells_.contains({nc, nr});
+              if ((dc == 0 && dr == 0) || wallCells_.contains({nc, nr})) continue;
+              const float d = std::hypot(static_cast<float>(e2::hexX(L, nc, nr)) - x, static_cast<float>(e2::hexZ(L, nr)) - z);
+              if (d < nearest) nearest = d, inside = e2::inBoard(L, nc, nr) && roomCells_.contains({nc, nr});
             }
         }
         probeMask_[size_t(mz) * size_t(probeMaskDims_.x) + size_t(mx)] = inside ? 255 : 0;
       }
+    {  // the mask as an image, for a look (build/probes/<id>-mask.pgm: white = room, the walls' inner halves included)
+      std::error_code ec;
+      std::filesystem::create_directories("build/probes", ec);
+      if (std::ofstream pgm(std::format("build/probes/{}-mask.pgm", board_->draft().id), std::ios::binary); pgm) {
+        pgm << "P5\n" << probeMaskDims_.x << " " << probeMaskDims_.y << "\n255\n";
+        pgm.write(reinterpret_cast<const char*>(probeMask_.data()), static_cast<std::streamsize>(probeMask_.size()));
+      }
+    }
     logInfo("light probes: {} x {} x {} over {} hexes of room, {} triangles, {} fires", in.dims.x, in.dims.y, in.dims.z, roomCells_.size(),
             in.triangles.size() / 3, in.fires.size());
     probeInput_ = std::move(in);
+    // The animated doors closed: a second bake with their leaves among the surfaces (the first has none: the light passes as through
+    // an open door); probes.hlsl blends the two by the doors' angle (Renderer::setProbeOpenness). No animated door: one bake.
+    probeClosed_ = !probeDoorTris_.empty();
+    if (probeClosed_) {
+      probeInputClosed_ = probeInput_;
+      probeInputClosed_.triangles.insert(probeInputClosed_.triangles.end(), probeDoorTris_.begin(), probeDoorTris_.end());
+    }
     probeBusy_ = true;
     // Kept on disk by what it reads (ProbeBake probeBakeKey): the same room, fires and numbers load it at once.
-    const std::string cache = std::format("build/probes/{}-{:016x}.bin", board_->draft().id, probeBakeKey(probeInput_));
-    jobs_.run([this, cache] {
-      if (loadProbeBake(cache, probeBakeKey(probeInput_), probeOutput_) && probeOutput_.probeCount == probeInput_.candidate.size()) {
-        probeFromCache_ = true;
-        return;
-      }
-      probeFromCache_ = false;
-      probeOutput_ = bakeProbes(probeInput_, [this](uint32_t n, const std::function<void(uint32_t, uint32_t)>& body) { jobs_.parallelFor(n, 8, body); });
-      std::error_code ec;
-      std::filesystem::create_directories("build/probes", ec);
-      saveProbeBake(cache, probeBakeKey(probeInput_), probeOutput_);
+    const std::string id = board_->draft().id;
+    jobs_.run([this, id] {
+      auto bakeOne = [&](const ProbeBakeInput& input, ProbeBakeOutput& output) {
+        const std::string cache = std::format("build/probes/{}-{:016x}.bin", id, probeBakeKey(input));
+        if (loadProbeBake(cache, probeBakeKey(input), output) && output.probeCount == input.candidate.size()) return true;
+        output = bakeProbes(input, [this](uint32_t n, const std::function<void(uint32_t, uint32_t)>& body) { jobs_.parallelFor(n, 8, body); });
+        std::error_code ec;
+        std::filesystem::create_directories("build/probes", ec);
+        saveProbeBake(cache, probeBakeKey(input), output);
+        return false;
+      };
+      probeFromCache_ = bakeOne(probeInput_, probeOutput_);
+      if (probeClosed_) probeFromCache_ = bakeOne(probeInputClosed_, probeOutputClosed_) && probeFromCache_;
     }, &probeJob_);
   }
 
+  // Before the bake: the room's mask and roof with one empty probe, so lighting.hlsli's probeRoom gate holds from the first frame.
+  void uploadProbeMaskOnly(Renderer& renderer) {
+    probeMaskUploaded_ = true;
+    auto volume = std::make_shared<Renderer::ProbeVolume>();
+    volume->origin = probeInput_.origin, volume->spacing = probeInput_.spacing, volume->dims = {1, 1, 1};
+    volume->bake.assign(1 + ProbeBakeOutput::kTransfer + ProbeBakeOutput::kFire, 0.0f);  // valid 0: no probe found anywhere
+    volume->maskSpacing = kProbeMaskSpacing, volume->maskDims = probeMaskDims_, volume->mask = probeMask_;
+    volume->roofHeight = roofBottom_;
+    renderer.setProbes(volume);
+  }
   // The bake is done: hand the probes to the renderer (Renderer::setProbes) and find each column's floor probe for the meter.
   void uploadProbes(Renderer& renderer) {
     probeBusy_ = false;
@@ -2550,6 +2607,7 @@ class MapStage final : public Stage {
     const size_t keyFloats = size_t{out.keyCount} * ProbeBakeOutput::kKeyCoefficients,
                  stride = 1 + ProbeBakeOutput::kTransfer + ProbeBakeOutput::kFire + keyFloats;
     volume->maskSpacing = kProbeMaskSpacing, volume->maskDims = probeMaskDims_, volume->mask = probeMask_;
+    volume->roofHeight = roofBottom_;
     volume->bake.assign(size_t{out.probeCount} * stride, 0.0f);
     size_t valid = 0, candidates = 0;
     for (uint8_t c : probeInput_.candidate) candidates += c;
@@ -2559,13 +2617,21 @@ class MapStage final : public Stage {
       return;
     }
     valid = 0;
-    for (size_t i = 0; i < out.probeCount; ++i) {
-      float* row = &volume->bake[i * stride];
-      row[0] = out.valid[i] ? 1.0f : 0.0f;
-      std::copy_n(&out.transfer[i * ProbeBakeOutput::kTransfer], ProbeBakeOutput::kTransfer, row + 1);
-      std::copy_n(&out.fire[i * ProbeBakeOutput::kFire], ProbeBakeOutput::kFire, row + 1 + ProbeBakeOutput::kTransfer);
-      std::copy_n(&out.key[i * keyFloats], keyFloats, row + 1 + ProbeBakeOutput::kTransfer + ProbeBakeOutput::kFire);
-      valid += out.valid[i];
+    auto fill = [&](const ProbeBakeOutput& o, std::vector<float>& bake) {
+      for (size_t i = 0; i < o.probeCount; ++i) {
+        float* row = &bake[i * stride];
+        row[0] = o.valid[i] ? 1.0f : 0.0f;
+        std::copy_n(&o.transfer[i * ProbeBakeOutput::kTransfer], ProbeBakeOutput::kTransfer, row + 1);
+        std::copy_n(&o.fire[i * ProbeBakeOutput::kFire], ProbeBakeOutput::kFire, row + 1 + ProbeBakeOutput::kTransfer);
+        std::copy_n(&o.key[i * keyFloats], keyFloats, row + 1 + ProbeBakeOutput::kTransfer + ProbeBakeOutput::kFire);
+      }
+    };
+    fill(out, volume->bake);
+    for (size_t i = 0; i < out.probeCount; ++i) valid += out.valid[i];
+    const bool closed = probeClosed_ && probeOutputClosed_.probeCount == out.probeCount && probeOutputClosed_.keyCount == out.keyCount;
+    if (closed) {
+      volume->bakeClosed.assign(volume->bake.size(), 0.0f);
+      fill(probeOutputClosed_, volume->bakeClosed);
     }
     renderer.setProbes(volume);
     probeUploaded_ = true;
@@ -2579,8 +2645,11 @@ class MapStage final : public Stage {
           probeFloor_.push_back(i);
           break;
         }
-    logInfo("light probes: {} of {} in the room ({} x {} x {}), {} triangles, {}", valid, out.probeCount, dims.x, dims.y, dims.z,
-            probeInput_.triangles.size() / 3, probeFromCache_ ? std::string("from the cache") : std::format("baked in {:.2f} s", out.seconds));
+    logInfo("light probes: {} of {} in the room ({} x {} x {}), {} triangles, {}{}", valid, out.probeCount, dims.x, dims.y, dims.z,
+            probeInput_.triangles.size() / 3, probeFromCache_ ? std::string("from the cache") : std::format("baked in {:.2f} s", out.seconds),
+            closed ? std::format("; the doors-closed bake too ({} leaf triangles{})", probeDoorTris_.size() / 3,
+                                 probeFromCache_ ? "" : std::format(", {:.2f} s", probeOutputClosed_.seconds))
+                   : std::string());
   }
 
   // The camera's meter in a room lit through its windows: the light on the room's floor (an incident reading, as a light meter on
@@ -9596,8 +9665,14 @@ class MapStage final : public Stage {
   glm::ivec2 probeMaskDims_{0};
   ProbeBakeInput probeInput_;
   ProbeBakeOutput probeOutput_;
+  // The animated doors closed: their leaves' triangles (buildArchitecture), the second bake with them among the surfaces.
+  std::vector<glm::vec3> probeDoorTris_;
+  bool probeClosed_ = false;
+  ProbeBakeInput probeInputClosed_;
+  ProbeBakeOutput probeOutputClosed_;
   JobCounter probeJob_;
   bool probeBusy_ = false, probeUploaded_ = false, probeMeterLogged_ = false;
+  bool probeMaskUploaded_ = false;  // the mask-only volume handed over before the bake (uploadProbeMaskOnly)
   std::vector<uint32_t> probeFloor_;          // per column of the grid, its lowest probe in the room (the camera's meter reads them)
   float roofBottom_ = 0.0f, roofCentreY_ = 0.0f;  // ... its underside and centre (world y)
   glm::vec3 roofCentre_{0.0f};                     // ... its centre on the board (x, z)
@@ -9752,13 +9827,18 @@ class MapStage final : public Stage {
   // Subterrâneo (MapDraft::underground, the Map Editor's Ambiente; the user, 2026-10-21): the only maps free of the sun, the moon and
   // the sky: the indoor light path with no light from outside, whatever the map's lists say.
   bool underground() const { return board_ && board_->draft().underground; }
+  // (The Inn's floors are NOT listed: the user, 2026-10-22, "deixa todos os mapas em paz", "não existe regra": the light through the
+  // Inn's windows is the panel's choice there, and the Inn's floors keep their panoramas whatever the choice: the frame's background below.)
   inline static const std::set<std::string> kWindowLightMaps = {"watchtower-gate-floor", "watchtower-barracks", "watchtower-command"};
   // Only for the second or two the room's probes take to bake after the map loads (probeMeterLux reads the room itself after):
   // the camera's meter as a share of the outside's, never under the old torch-lit room's reading.
   static constexpr float kWindowMeterShare = 0.04f;
   static constexpr float kWindowMeterFloor = 2.7f;
   // The room's light probes (startProbeBake): their spacing (units; the hexes are 1.73 x 1.5) and the bake's numbers.
-  // (2026-10-22: 1.5 x 1.0 x 1.5 before; the user's "faz" on denser probes, as Dragon Age: The Veilguard's (0.5 m) are)
+  // (2026-10-22: 1.5 x 1.0 x 1.5 before. 2026-10-23: 0.5 x 0.5 x 0.5 tried on the user's "faz" (Dragon Age: The Veilguard's "up to
+  // 0.5 m", docs/INTERIOR_LIGHT.md): 79,618 probes, ~2 min a bake at 128 paths, 116 MB, and the bake's own noise showed as a blotch
+  // per probe over the whole floor (the user: "isso aqui ficou uma piada"); at 64 paths worse. That density needs an offline bake
+  // with far more rays than a load-time one can trace: back to the density the user had.)
   static constexpr glm::vec3 kProbeSpacing{1.0f, 0.75f, 1.0f};
   static constexpr uint32_t kProbePaths = 128;         // paths a probe (160 before, at a third of the probes)
   static constexpr float kProbeMaskSpacing = 0.25f;    // the room mask's texel (units): a wall is 0.61 thick
