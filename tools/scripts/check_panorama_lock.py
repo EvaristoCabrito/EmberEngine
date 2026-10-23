@@ -29,7 +29,15 @@ SHADER_MARKERS = [
 ]
 MAPSTAGE_MARKERS = [
     "if (options.background < 0 && !panoramas_.empty()) background_ = 4 + static_cast<int>(panoramas_.size());",
+    "void enforcePanorama(const char* where)",
+    'enforcePanorama("load");',
+    'enforcePanorama("panel");',
+    "none listed, its painting {} is its panorama",
 ]
+# A circular world is sabotage (the user, 2026-10-23: "deve rejeitar qualquer tentativa de transformar em um mundo circular"): the
+# ceiling and the ground images lie on flat planes; never mapped by azimuth / elevation around the eye, never a round room.
+FORBIDDEN_IN_SHADER = ["ceilingAligned", "roomProjected", "cylindrical", "spherical"]
+FORBIDDEN_IN_CEILING = ["atan2(", "asin(", "acos(", "saturate(m)"]
 
 
 def fail(msg):
@@ -65,10 +73,19 @@ def main():
     for marker in SHADER_MARKERS:
         if marker not in shader:
             fail(f"shaders/resolve.hlsl lost the panorama path: '{marker}' is missing")
+    for token in FORBIDDEN_IN_SHADER:
+        if token in shader:
+            fail(f"shaders/resolve.hlsl contains '{token}': a circular / projected world is refused")
+    start = shader.find("float3 ceilingAt(MeshFrame f, float3 dir, float pixelAngle)")
+    end = shader.find("\n}\n", start)
+    ceiling = shader[start:end] if start >= 0 and end > start else ""
+    for token in FORBIDDEN_IN_CEILING:
+        if token in ceiling:
+            fail(f"the ceiling in shaders/resolve.hlsl uses '{token}': the ceiling is a flat plane, never mapped around the eye")
     stage = MAPSTAGE.read_text(encoding="utf-8")
     for marker in MAPSTAGE_MARKERS:
         if marker not in stage:
-            fail(f"MapStage.h no longer opens a map on its newest panorama by default: '{marker}' is missing")
+            fail(f"MapStage.h lost the engine's own panorama rule: '{marker}' is missing")
     print("panorama lock: OK")
 
 

@@ -409,6 +409,7 @@ class MapStage final : public Stage {
       loadMapPanoramas();
       // The newest panorama opens first on its map (aldeia: the user's fire panorama, 2026-10-19 "TERMINA").
       if (options.background < 0 && !panoramas_.empty()) background_ = 4 + static_cast<int>(panoramas_.size());
+      enforcePanorama("load");
       // Luz das janelas: by map id (each map its own diorama): the watchtower's roofed floors open with it; every other map OFF.
       windowLight_ = options.windowLight >= 0 ? std::clamp(options.windowLight, 0, 1) : kWindowLightMaps.contains(board_->draft().id) ? 1 : 0;
       // ... and their Atmosfera opens OFF (the user, 2026-10-21: the sunlit air outside, exposed for the room, veiled it white).
@@ -421,6 +422,7 @@ class MapStage final : public Stage {
       // Random encounters can be board-only maps with no scene file. Load their map-specific panoramas anyway.
       loadMapPanoramas();
       if (options.background >= 0) background_ = std::min(options.background, 4);
+      enforcePanorama("load");
       else if (!panoramas_.empty()) background_ = 4 + static_cast<int>(panoramas_.size());
     }
   }
@@ -1361,8 +1363,14 @@ class MapStage final : public Stage {
       // terminar no horizonte onde começa o céu").
       // 4 = the painting aligned to the sky: cut at its horizon, its own sky matted out, turned under the sun (backdrop-fit.json).
       static const char* kBackgrounds[5] = {"imagem do mapa", "céu", "OFF", "imagem até o horizonte", "imagem alinhada ao céu"};
-      dropdown("Fundo", background_, 5 + static_cast<int>(panoramas_.size()),
-               [](int i) { return i < 5 ? std::string(kBackgrounds[i]) : std::format("panorama {:02}", i - 4); });
+      // The Fundo offers only the map's panoramas, on every map (the engine's own rule: enforcePanorama; the user, 2026-10-23: "não
+      // existe forma de alterar em nenhum mapa"). kBackgrounds names the refused choices only for the log.
+      (void)kBackgrounds;
+      if (!panoramas_.empty()) {
+        int choice = std::clamp(background_ - 5, 0, static_cast<int>(panoramas_.size()) - 1);
+        if (dropdown("Fundo", choice, static_cast<int>(panoramas_.size()), [](int i) { return std::format("panorama {:02}", i + 1); })) background_ = 5 + choice;
+        enforcePanorama("panel");
+      }
       if (board_ && !board_->draft().emberFloor.empty()) {
         static const char* kFloor[2] = {"OFF", "imagem"};
         dropdown("Chão do vão", floorChoice_, 2, [](int i) { return std::string(kFloor[i]); });
@@ -9305,6 +9313,26 @@ class MapStage final : public Stage {
   std::set<std::pair<int, int>> roomCells_;   // the hexes the walls enclose
   std::set<std::pair<int, int>> wallCells_;   // ... and the hexes the walls stand on
   std::optional<float> roomCentreAzimuth_;  // a room's panorama centre, fixed in the world once (see the Fundo code)
+  // THE ONE FIXED RULE OF EVERY MAP, enforced by the engine itself (the user, 2026-10-23: "todos os mapas do jogo precisam ser assim,
+  // precisa escrever no engine: ele deve rejeitar automaticamente qualquer fundo que não seja panorama"; "o engine agora vai ter auto
+  // defesa contra sabotagem"): a map with panoramas never draws anything else behind the board. Any other Fundo (the cover-fit
+  // picture, the sky, black, the painting to the horizon, the sun-aligned painting) is rejected on the spot, logged as an error, and
+  // the map's newest panorama stays ("não erra o log, ele recusa alteração": the change is refused, nothing else). The panel's Fundo
+  // lists only the map's panoramas. A map with no panorama entry at all (content/engine2/backdrop-fit.json "panoramas") is the
+  // one case the engine cannot refuse: it says so once in the log.
+  void enforcePanorama(const char* where) {
+    if (!board_) return;
+    if (panoramas_.empty()) {
+      if (!std::string_view(where).starts_with("panel"))
+        logWarn("panorama rule: map '{}' has no painting at all (no panorama entry, no backdrop): nothing to draw behind the board", board_->draft().id);
+      return;
+    }
+    if (background_ < 5 || background_ >= 5 + static_cast<int>(panoramas_.size())) {
+      logInfo("panorama rule ({}): background {} refused on '{}': only its panoramas are drawn", where, background_, board_->draft().id);
+      background_ = 4 + static_cast<int>(panoramas_.size());
+    }
+  }
+  std::optional<float> roomCentreAzimuth_;  // a room's panorama centre, fixed in the world once (see the Fundo code)
   bool probeBakePending_ = false;             // buildArchitecture asked for a bake: it starts after the next buildLights (the fires)
   bool probeFromCache_ = false;               // the last bake was read from build/probes
   std::vector<uint8_t> probeMask_;            // the room seen from above (startProbeBake), kProbeMaskSpacing texels over roofRect_
@@ -9372,6 +9400,16 @@ class MapStage final : public Stage {
       fit.ceilingHeight = e.value("ceilingHeight", fit.ceilingHeight);
       fit.ceilingTile = e.value("ceilingTile", fit.ceilingTile);
       fit.groundDepth = e.value("groundDepth", fit.groundDepth);
+    // Every map is a panorama, no exception (the user, 2026-10-23: "não existe forma de alterar em nenhum mapa"): a map with no
+    // entry of its own takes its painting (the scene's backdrop) as its panorama with backdrop-fit.json's `default` fit (the
+    // painting read as every other: loadBackdropFit gives the default and the painting's own entry when it has one).
+    if (panoramas_.empty() && scene_ && !scene_->backdrop.empty() && packed(scene_->backdrop)) {
+      panoramas_.push_back(scene_->backdrop);
+      panoramaFits_.push_back(loadBackdropFit(scene_->backdrop));
+      ground_.requestTexture(e2::backdropAsset(scene_->backdrop));
+      if (!panoramaFits_.back().ground.empty()) ground_.requestTexture(e2::backdropAsset(panoramaFits_.back().ground));
+      logInfo("panoramas {}: none listed, its painting {} is its panorama", board_->draft().id, scene_->backdrop);
+    }
       fit.groundTile = e.value("groundTile", fit.groundTile);
       fit.groundFar = e.value("groundFar", fit.groundFar);
       fit.groundFromDegrees = e.value("groundFromDegrees", fit.groundFromDegrees);
