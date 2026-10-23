@@ -749,6 +749,46 @@ class MapStage final : public Stage {
     // room black): the decorations' fire and the walls' torches are shown at no less than the night's exposure (kFireExposure), whatever
     // the sun, the clouds or the hour set the camera to. At night (the camera at or over it) nothing changes.
     renderer.setProbeFireScale(1.0f);
+    // The openings' lights (the user, 2026-10-23 night: "essas são janelas, cada uma delas precisa ter uma sonda imitando luz vindo de
+    // fora, a intensidade da sonda é baseada no horário do jogo, não tem segredo"): one light per window / door on the room's side,
+    // shown at a fixed display strength at the frame's exposure (kWindowLightDisplay / exposure, as the fires' reference), by the hour:
+    // the day's full, the sun's colour through the air; the night's moonlight at kWindowMoonShare, the moon's blue; twilight between
+    // (by the key's elevation). Never a lux reading: the sky at 10 deg gives nothing, and the user wants the window to read at any hour.
+    if (openingLightsTo_ > openingLightsFrom_ && openingLightsTo_ <= lights_.size()) {
+      const float elevation = lighting.sunDirection.y;
+      const float day = moonNight_ ? 0.0f : glm::smoothstep(0.0f, 0.2f, elevation);
+      const float hour = glm::mix(kWindowMoonShare, 1.0f, day);
+      const float cd = kWindowLightDisplay / std::max(lighting.exposure, 1e-9f) * hour;
+      const glm::vec3 dayColour = glm::mix(glm::vec3(0.78f, 0.86f, 1.0f), lighting.sunColor, 0.4f);
+      const glm::vec3 nightColour = glm::vec3(0.62f, 0.72f, 1.0f);
+      const glm::vec3 skyColour = glm::mix(nightColour, dayColour, day) * cd;
+      const glm::vec3 beamColour = lighting.sunColor * cd * 2.5f;
+      // The light's ray direction (from the sun down through the opening) and whether it enters this opening at all (the sun on its
+      // outer side): then a narrow beam along it; else the sky's light in a wide cone tilted down into the room. (The user,
+      // 2026-10-23: "a luz das janelas entra por um lado e o resto parece um globo de luz que vai para todo canto sem sentido".)
+      const glm::vec3 ray = -glm::normalize(lighting.sunDirection);
+      for (size_t i = openingLightsFrom_; i < openingLightsTo_; ++i) {
+        LocalLight& l = lights_[i];
+        const glm::vec3 in = glm::normalize(glm::vec3(l.facing.x, 0.0f, l.facing.z) == glm::vec3(0.0f) ? glm::vec3(0.0f, 0.0f, 1.0f) : glm::vec3(l.facing.x, 0.0f, l.facing.z));
+        // (l.facing keeps the room-ward axis in xz between frames: a beam's axis is rebuilt from it, never accumulated)
+        const bool beam = lighting.sunDirection.y > 0.02f && glm::dot(ray, in) > 0.25f;
+        if (beam) {
+          l.facing = ray;
+          l.behind = -std::cos(glm::radians(22.0f));
+          l.color = beamColour;
+        } else {
+          l.facing = glm::normalize(in * std::cos(glm::radians(40.0f)) - glm::vec3(0.0f, std::sin(glm::radians(40.0f)), 0.0f));
+          l.behind = -std::cos(glm::radians(62.0f));
+          l.color = skyColour;
+        }
+      }
+      renderer.setLights(lights_);
+      if (readyFrames_ == 30)
+        logInfo("window lights: {} openings, hour share {:.2f} at exposure {:.5f}, colour ({:.0f}, {:.0f}, {:.0f}) cd, first at ({:.1f}, {:.1f}, {:.1f}) facing ({:.2f}, {:.2f}) behind {:.2f} range {:.1f}",
+                openingLightsTo_ - openingLightsFrom_, hour, lighting.exposure, skyColour.r, skyColour.g, skyColour.b, lights_[openingLightsFrom_].position.x,
+                lights_[openingLightsFrom_].position.y, lights_[openingLightsFrom_].position.z, lights_[openingLightsFrom_].facing.x,
+                lights_[openingLightsFrom_].facing.z, lights_[openingLightsFrom_].behind, lights_[openingLightsFrom_].range);
+    }
     if (lightingMode_ == 3 && fireLightsTo_ > fireLightsFrom_ && fireLightsTo_ <= lights_.size()) {
       // A room lit through its windows (the user, 2026-10-23 evening: "usar o céu como referência da intensidade que deve ser a luz em
       // determinado horário"): the one sky's exposure at the hour is the frame's, and the fire's light is shown at exactly
@@ -1926,8 +1966,12 @@ class MapStage final : public Stage {
   static constexpr float kLumensPerUnit = 12.0f;    // Engine2 intensity x reach^2 -> lumens
   static constexpr float kTorchPower = 2.0f;        // every torch's light x this (the user, 2026-10-21: "2X do que estava antes"; 8x was too much)
   static constexpr float kFireExposure = 0.049f;    // the fire's light is shown at no less than this exposure (the watchtower's night)
-  static constexpr float kWindowFireExposure = 0.012f;  // a room lit through its windows: its fires shown at exactly this (2 stops under)
+  static constexpr float kWindowFireExposure = 0.025f;  // a room lit through its windows: its fires shown at exactly this (1 stop under; 0.012 was black: "mudanças graduais")
   size_t fireLightsFrom_ = 0, fireLightsTo_ = 0;    // this frame's fire lights in lights_ (buildLights)
+  size_t openingLightsFrom_ = 0, openingLightsTo_ = 0;  // this frame's window / door lights in lights_ (buildLights; set in frame())
+  static constexpr float kWindowLightRange = 7.0f;  // an opening's light: its reach (units) ...
+  static constexpr float kWindowLightDisplay = 90.0f;  // ... and its strength on screen (candela x the frame's exposure) by full day
+  static constexpr float kWindowMoonShare = 0.3f;   // ... and the night's share of it (the moon's light through the opening)
   std::vector<float> fireFlicker_;                  // ... and each one's flicker this frame
   std::vector<glm::vec3> fireUpright_;              // ... and its flame with the card upright (the light probes' bake)
   static constexpr float kDecorLightPower = 2.0f;   // every other light-giving decoration's light x this (the user, 2026-10-21: "2X")
@@ -2039,6 +2083,10 @@ class MapStage final : public Stage {
     std::optional<e2::SceneLight> light;             // a torch bracket's fire (EmberEngine's wall-torch piece)
     glm::vec3 lightAt{0.0f};                         // ... relative to the piece's anchor on its ground
     float lightBehind = 0.0f;                        // a wall's torch: how far its light sits in front of the wall (it lights that side only)
+    // An opening (window, slit, door, portal, gate): the daylight it lets in as a light of its own on the room's side (buildLights,
+    // the window lights; the user, 2026-10-23: "essa luz das janelas está quase inexistente", "no lado interno, no externo não").
+    std::optional<glm::vec3> openingAt;
+    float openingBehind = 0.0f;
     bool hasSkirt = false;                           // an outer-ring piece: its shadow-only copy stands `skirt` outside it
     glm::vec2 skirt{0.0f};
     float deckHalf = 0.0f;                           // a parapet piece (the gothic kit): half its thickness, where the bridge's deck ends (deckClip)
@@ -2282,6 +2330,15 @@ class MapStage final : public Stage {
         continue;
       }
       piece.mesh = *pieceMesh;
+      if (def->emberStyle == "window" || def->emberStyle == "slit" || def->emberStyle == "door" || def->emberStyle == "portal" ||
+          def->emberStyle == "gate" || def->emberStyle == "inn-window" || def->emberStyle == "inn-door" || def->emberStyle == "inn-doorway") {
+        // The opening's own light: at the inner face of the wall, mid-height, facing the room (the sky's and the sun's light coming in,
+        // scaled by the hour's outdoor light each frame: frame()). Never the outside: facing / behind like a wall torch's.
+        const double a = e2::emberAxisAngle(rot, connections);
+        const float out = static_cast<float>(0.32 * def->wallThicknessScale * 0.5 + 0.35);
+        piece.openingAt = glm::vec3{static_cast<float>(std::sin(a)) * out, def->emberStyle == "slit" ? 2.6f : 2.0f, static_cast<float>(std::cos(a)) * out};
+        piece.openingBehind = out - static_cast<float>(0.32 * def->wallThicknessScale * 0.5);
+      }
       if (def->emberStyle == "wall-torch") {
         // The torch's light (Engine2's wall torch: colour (1, 0.58, 0.26), intensity 11, reach 4.68, full flicker) at its flame, on
         // the piece's inner side (emberAxisAngle), with the flame's own phase.
@@ -3215,6 +3272,21 @@ class MapStage final : public Stage {
       lights_.push_back(l);
     }
     fireLightsTo_ = lights_.size();  // the decorations' and the walls' fire, above: never dimmed by the sun (frame, kFireExposure)
+    // The openings' lights (the daylight coming in, as the player should see it: a bright pool at every window and door on the room's
+    // side; their colour and strength follow the hour's outdoor light in frame()). The probes carry the physically right, faint share.
+    openingLightsFrom_ = lights_.size();
+    if (windowLight())
+      for (const ArchPiece& a : arch_) {
+        if (!a.openingAt) continue;
+        const glm::vec3 at = glm::vec3(a.x, groundOf(a.groundSmooth, a.groundHard), a.z) + *a.openingAt;
+        LocalLight l = carried(at, {1.0f, 1.0f, 1.0f}, 0.0f, kWindowLightRange, a.openingAt->y, 1.0f);
+        l.range = kWindowLightRange;  // (carried() sizes the range by the candela, 0 here: the colour, cone and axis are set each frame)
+        l.decay = 2.0f;
+        l.facing = glm::normalize(glm::vec3(a.openingAt->x, 0.0f, a.openingAt->z));  // into the room (frame() turns it into the cone's axis)
+        l.behind = -0.5f;
+        lights_.push_back(l);
+      }
+    openingLightsTo_ = lights_.size();
     // (The daylight that comes in through the openings, the sky's and the bounced sun's, is the room's light probes': startProbeBake.)
     if (hero_ < 0) return;
     const e2::SceneUnit* hero = &scene_->units[static_cast<size_t>(hero_)];
