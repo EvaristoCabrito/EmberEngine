@@ -714,6 +714,10 @@ bool Services::frame(DebugUi& ui, Renderer& renderer, Stage* stage, VkExtent2D s
   if (streamTest) streamTest->beginFrame();
   assets.update();
   const double assetsMs = msSince(start);
+  // The upload wait is the frame's own: each stage that uploads asks for it again in frame(). Kept across frames, a stage gone (a
+  // battle left for the world map) left the renderer waiting on its destroyed timeline semaphore (vkQueueSubmit2: Invalid VkSemaphore,
+  // the user's log of 2026-10-23).
+  renderer.waitFor(VK_NULL_HANDLE, 0);
   if (stage) stage->frame(renderer, size);
   const double stageMs = msSince(start) - assetsMs;
   ui.newFrame(size, dt);
