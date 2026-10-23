@@ -1462,8 +1462,73 @@ Panorama image", "Tavernground in attachments for you to use on the ground layer
   teto redondo"); its compiled form is only in `build/release/bin/shaders-20261023-0302-ceiling-aligned/` + `Sandbox-20261023-0302-ceiling-aligned.exe`
   (set aside, never to be used). backdrop-fit.json's Inn entries are 97a980d's again (groundDepth 0, skyTop 0).
 
+## A Estalagem em 3D: o kit da estalagem e o Andar II 005 (2026-10-22; the user: "pode criar as paredes em 3D com porta janela e luz
+vinda de fora similar a Watchtower no INN, escrever o prompt das texturas", then "comece pelo segundo andar do INN, ele tem uma porção de
+detalhes estranhos e nada a ver, deixa profissional", and "não alterar o sistema de panorama e ground")
+
+- **Read `docs/INN_TEXTURES.md`** (the four textures the user generates, their sizes, how each is mapped, the prompts, how they go in). Until
+  they arrive the kit shows the flat grey plaster, the Torre's dark-oak / door-oak photographs on the timber and the door, a flat pale green
+  on the glass (`architecture.json` "innTexturesPending").
+- **The kit** (`architecture.json` styles `inn-*`, `Architecture.cpp innGeometry`, editor 3D Walls → "ESTALAGEM"): `ember-arch-inn-wall`
+  (lime plaster on a timber frame: sill beam, wall plate, mid rail, a stud at every hex, corner posts at corners / junctions, posts at
+  a lone segment's ends; thickness 1.3), `-window` (a casement: rectangular opening, timber frame, mullion, proud sill, two leaves of
+  leaded glass hinged on the jambs standing open ~100° against the room's face; the light passes the opening; faces the room by
+  itself), `-door` (one hex, rectangular, timber jambs and head, one plank leaf with ledges / straps / ring hinged on the left jamb,
+  **animated like the Torre's**: `emberAnimatedDoor`, side +1 is an empty leaf), `-doorway` (the frame open; doorVariants "inn"),
+  `-sconce` (the wall with an iron bracket and a candle lantern: cap, base, four glass panes, the flame; its own light 6.5 / 3.6,
+  `innSconceLight`; faces the room). New material tags 8 glass / 9 innTimber / 10 innDoor (`kEmberMaterialTags` 11; their UVs are
+  authored: `woodUVs` along each beam's grain, `paneUVs` the whole image on a pane / the leaf; the lantern's panes take the glass
+  image's middle 40 %). `emberFacesRoom` / `emberAnimatedDoor` in Architecture.h replace MapStage's name lists.
+- **Luz das janelas** on `estalagem-andar-2` (`kWindowLightMaps`); the Inn's floors are never forced black behind the room
+  (`!innFloor()` where the watchtower gets mode 7 / black): their panoramas (01-03) draw as before. Panorama / ground code untouched.
+- **`content/maps/ember/estalagem-andar-2005.json`** by `tools/scripts/maps/make_inn_upstairs_v5.py` (004 untouched, the campaign plays
+  the highest serial): the 96 brick walls → the kit; an **outer ring of walls on the rim's void cells** (row 0, row 20, column 0, column
+  32) closes the building; 16 casement windows on it (one per room, two for the wide ones, one at each corridor end); the 8 door frames →
+  7 animated doors (rot 2 on the rooms above the corridor, so every leaf swings into its room) + the stairs room's open doorway; the 7
+  torch cards on the void → 8 lanterns on the corridor walls; the 20 sack piles, 7 workbenches, brazier, firewood, bucket, baskets gone from
+  the bedrooms, which get the Torre's photographed simple bed (two in the wide rooms), a stool, a trunk (crate v02), a candle, a rug or a
+  bookshelf (Nara's, Erasmo's); the corridor two benches and a barrel at each end. NPCs, spawn, tiles and the stairs as in 004.
+
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
+- `content/engine2/backdrop-fit.json` painting entry `inn-second-floor-v01.jpg#teto-salao` (2026-10-23): made as an extra panorama when
+  the user asked only for the Andar II's CEILING to change ("não é panorama, é CEILING"); taken out of the map's list, kept unused. The
+  Andar II's `#piso` now carries the salão's ceiling (`tavern-ceiling-v01.jpg`); its previous ceiling was `inn-ceiling-v01.jpg`.
+
+- **Another instance's Inn edits of 2026-10-23 ~02:00-02:26 (the user: "uma instância entrou em demência total"), taken out of the
+  working tree on the user's "acertar o teto e ground da taverna":** `shaders/kept/inn-room-ceiling-20261023.patch` (resolve.hlsl: the
+  Inn's drawn ceiling as ONE image over a round room with `saturate` = its edge pixels smeared into streaks on screen, and mode 3's
+  "no double ceilings" fade at skyTop; backdrop-fit.json skyTop 0.25 / 0.2 on the "#piso" entries), with the full files beside it
+  (`resolve-room-ceiling-20261023.hlsl`, `backdrop-fit-room-ceiling-20261023.json`) and its earlier `resolve-room-projected-20261023.hlsl`.
+  resolve.hlsl is back to the 23:03 commit's text (97a980d, the user's 23:10 build) and skyTop to 0; its groundDepth 3 is what the user
+  asked to keep. The C++ side of it (`BackdropPlane::roomCentre* / roomRadius / roomEye`, `BackdropFit::roomRadiusShare / roomEye`:
+  Renderer.h / .cpp, MapStage.h) is still in the tree, sent to the shader and read by nothing. Its exe `build/release/bin/
+  Sandbox-20261023-0226-room-ceiling.exe` + `shaders-20261023-0226-room-ceiling/` set aside.
+
+- `shaders/kept/{atmosphere,clouds,cloudsvol}-20261023-tower-sky.hlsli` (2026-10-23): the shared sky shaders as the tower's sky work of
+  2026-10-22/23 left them (the kCloudSkyScaled flag on the clouds, discs and stars; the clouds' march opaque at 1 %). The user: "eu falei liga
+  o céu na torre, não falei acabar com todo o jogo": the three files are back to 97a980da's text (before the tower's sky).
+  **2026-10-23 14:30, the user's "Faz: build release da atmosfera original e tira o caminho de céu próprio da torre (modo 9,
+  outsideScale_, skyScaled)":** out of the game: `Clouds::skyScaled` (the clouds, discs and stars on the tower's own scale), MapStage's
+  `outsideScale_` (the tower's sky and air at the outdoor exposure), `Volumetrics::setOutsideLightScale`, and mode 9 itself
+  (`shaders/kept/resolve_tower-20261023.hlsl`, its pipelines, its CMake line). **Then (the user, the same hour: "The watchtower needs
+  the same sky as all other maps", "eu não quero modo 9 eu quero o mesmo céu único para todos os mapas", "isso não deve excluir a
+  iluminação interna ... a luz ... vai ser a luz externa da atmosphere"):** without mode 9 the tower was black above the horizon (mode 7),
+  so a map lit through its windows now takes the SAME background modes as any map: its floor image flat at the base under the real sky
+  = mode 6 (the Ponte de Pedra's floor mode, `MapStage` after setBoardDrop), the plain sky without one; and the SAME camera as any map at
+  that hour: the outdoor meter and the night curve (the room no longer meters itself through its probes: `probeMeterLux`,
+  `kWindowMeterShare / Floor` stay in the file unused), so the sky through the windows is the sky, never burned white, and the room is
+  as bright as the atmosphere's light through its openings makes it. The interior lighting (probes relit from the hour's sky, Luz das
+  janelas, roof, skirts, plinth) was never touched. The sky is 7ce25262's (2026-10-19 21:10, the real night sky) on every map;
+  `content/sky/sky.locked.json` relocked to it.
+  The exe that carried the tower sky is `build/release/bin/Sandbox-20261023-1400-tower-sky.exe` (set aside, never to be used).
+- `tools/scripts/check_sky_lock.py` + `content/sky/sky.locked.json` (2026-10-23): the sky lock, written when the user said "depois de
+  acertado NUNCA NINGUÉM VAI MEXER"; taken out of build.bat at once on their order ("não vai bloquear nada antes de arrumar"). Not run by
+  anything; wire it (and the edit refusal they asked for) only once the user says the sky is right.
+- `build/release/bin/Sandbox-20261023-1328-stale-objects.exe` + `shaders-20261023-0313-before-rebuild/` (2026-10-23): the exe the
+  other agent built in `build/release-nopdb-deep-ashen` (ninja there records NO header deps, `#deps 0`) and copied into bin: its
+  BoardGround.cpp.obj was from 2026-10-22 while Board.h changed 2026-10-23 02:11, so it crashed (0xC0000005, BoardGround::build)
+  on entering any mission. Replaced by a release built in `build/release` (deps recorded). **Never copy an exe from that folder.**
 - `build/debug-stale-deps-20261022`: the debug build folder as it was on 2026-10-22 night (no header dependencies recorded, objects of
   two struct layouts mixed; see the gotcha in Build and run). Set aside, not used; `build/debug` was configured afresh.
 - Sprite packs set aside when a new one was swapped in for JOGAR: `build/sprites/battle-20261021-before-voss-hitdeath.pak`,
@@ -1487,29 +1552,3 @@ Panorama image", "Tavernground in attachments for you to use on the ground layer
 
 M4 world cells + terrain · M5 lighting/atmosphere · M6 editor · M7 gameplay port + cutscene timeline.
 Exit tests and demonstration gates in ARCHITECTURE.md §9.
-- `content/engine2/backdrop-fit.json` painting entry `inn-second-floor-v01.jpg#teto-salao` (2026-10-23): made as an extra panorama when
-  the user asked only for the Andar II's CEILING to change ("não é panorama, é CEILING"); taken out of the map's list, kept unused. The
-  Andar II's `#piso` now carries the salão's ceiling (`tavern-ceiling-v01.jpg`); its previous ceiling was `inn-ceiling-v01.jpg`.
-
-- `shaders/kept/{atmosphere,clouds,cloudsvol}-20261023-tower-sky.hlsli` (2026-10-23): the shared sky shaders as the tower's sky work of
-  2026-10-22/23 left them (the kCloudSkyScaled flag on the clouds, discs and stars; the clouds' march opaque at 1 %). The user: "eu falei liga
-  o céu na torre, não falei acabar com todo o jogo": the three files are back to 97a980da's text (before the tower's sky).
-  **2026-10-23 14:30, the user's "Faz: build release da atmosfera original e tira o caminho de céu próprio da torre (modo 9,
-  outsideScale_, skyScaled)":** the whole tower-sky path is out of the game: `shaders/kept/resolve_tower-20261023.hlsl` (resolve.hlsl with
-  the watchtower's background mode 9, its own pipelines; out of apps/sandbox/CMakeLists.txt), Renderer's towerResolve / towerSky pipelines
-  and `Clouds::skyScaled`, MapStage's `outsideScale_` (the tower's sky and air at the outdoor exposure), `Volumetrics::setOutsideLightScale`.
-  The sky is 7ce25262's (2026-10-19 21:10, the real night sky) on every map; `content/sky/sky.locked.json` relocked to it on that order.
-  The exe that carried the tower sky is `build/release/bin/Sandbox-20261023-1400-tower-sky.exe` (set aside, never to be used).
-- `tools/scripts/check_sky_lock.py` + `content/sky/sky.locked.json` (2026-10-23): the sky lock, written when the user said "depois de
-  acertado NUNCA NINGUÉM VAI MEXER"; taken out of build.bat at once on their order ("não vai bloquear nada antes de arrumar"). Not run by
-  anything; wire it (and the edit refusal they asked for) only once the user says the sky is right.
-- **Another instance's Inn edits of 2026-10-23 ~02:00-02:26 (the user: "uma instância entrou em demência total"), taken out of the
-  working tree on the user's "acertar o teto e ground da taverna":** `shaders/kept/inn-room-ceiling-20261023.patch` (resolve.hlsl: the
-  Inn's drawn ceiling as ONE image over a round room with `saturate` = its edge pixels smeared into streaks on screen, and mode 3's
-  "no double ceilings" fade at skyTop; backdrop-fit.json skyTop 0.25 / 0.2 on the "#piso" entries), with the full files beside it
-  (`resolve-room-ceiling-20261023.hlsl`, `backdrop-fit-room-ceiling-20261023.json`) and its earlier `resolve-room-projected-20261023.hlsl`.
-  resolve.hlsl is back to the 23:03 commit's text (97a980d, the user's 23:10 build) and skyTop to 0; its groundDepth 3 is what the user
-  asked to keep. The C++ side of it (`BackdropPlane::roomCentre* / roomRadius / roomEye`, `BackdropFit::roomRadiusShare / roomEye`:
-  Renderer.h / .cpp, MapStage.h) is still in the tree, sent to the shader and read by nothing. Its exe `build/release/bin/
-  Sandbox-20261023-0226-room-ceiling.exe` + `shaders-20261023-0226-room-ceiling/` set aside.
-

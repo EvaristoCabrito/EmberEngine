@@ -666,26 +666,17 @@ class MapStage final : public Stage {
     const bool probesLive = probeUploaded_ && windowLight() && lightingMode_ == 3;
     if (probesLive) renderer.useProbes();
     Renderer::Lighting lighting = mapLighting(time);
-    const float outsideMeter = meterLux_;  // the reading outside, before a room lit through its windows meters itself
     if (windowLight() && lightingMode_ == 3) {
       // Luz das janelas: the key light (the hour's sun, the moon at night, through the air) comes in only through the openings
       // (the shadow-only roof, buildRoof); the sky's light and the bounced light reach the room through its probes, which carry the
-      // whole sky (the transfer keeps out what the walls and the roof hide); the camera meters the room itself (probeMeterLux):
-      // the light on its floor, the probes' with the sun's beam where it falls and the fire's. No air inside: no aerial perspective.
+      // whole sky (the transfer keeps out what the walls and the roof hide). No air inside: no aerial perspective.
       // The ambient every pass reads stays without the sky (as before the probes: the air of the Atmosfera, the outer faces); the
       // probes read the sky's own (atmosphere.hlsl CSAmbient's second record).
+      // The camera is the same camera as on every map at this hour (the outdoor meter, the one sky's exposure; the user, 2026-10-23:
+      // "o mesmo céu único para todos os mapas ... a luz ... vai ser a luz externa da atmosphere"): the room no longer meters itself
+      // (probeMeterLux), so the sky through the windows is the sky, never burned white, and the room is as bright as that light makes it.
       lighting.ambientMul = 0.0f;
       lighting.kmPerUnit = 0.0f;
-      const float room = probesLive ? probeMeterLux(renderer, lighting) : 0.0f;
-      if (room > 0.0f && !probeMeterLogged_) {
-        probeMeterLogged_ = true;
-        std::vector<float> floor;
-        for (uint32_t i : probeFloor_) floor.push_back(renderer.probeLux()[i]);
-        std::sort(floor.begin(), floor.end());
-        logInfo("light probes: the room's meter {:.2f} lux (outside {:.0f}); the floor probes' own light min {:.3f} / median {:.3f} / max {:.3f} lux",
-                room, meterLux_, floor.front(), floor[floor.size() / 2], floor.back());
-      }
-      meterLux_ = room > 0.0f ? room : std::max(meterLux_ * kWindowMeterShare, kWindowMeterFloor);
     }
     // aldeia's sky at the end of the day (the user, 2026-10-19: "ajuste a cor do azul no céu, até as nuvens reagem, menos o céu"):
     // exposed for the board, the blue stayed as light as at noon while the clouds took the sunset's colour. As the sun sinks under
@@ -704,14 +695,9 @@ class MapStage final : public Stage {
       // "Luar: cinema": the night stops are capped at one, or the camera would take back what the brighter moon gave
       // (measured 2026-10-19: with the full darkening the moonlit ground stayed black beside the lanterns).
       float darkening = nightDarkening(ev);
-      // A room by day, metered the old way (its outside reading's share, only while its probes bake), is exposed for the room. Metered
-      // by its probes, the room takes the curve every other place takes for that light (the user, 2026-10-22: the room at 62 lux
-      // exposed like a sunny day came out "tudo totalmente branco"; the curve keeps it ~3.4 stops darker, a stone room with windows).
-      if (windowLight() && !moonNight_ && !probesLive) darkening = 0.0f;
       // "Luar: cinema": capped at 2 stops (at 1, measured 2026-10-19 on cemiterio: meter 4.4 lux, exposure 0.24, the night came out
       // as an overcast day with a pale blue sky; at 2 the sky is navy and the moonlit ground still reads).
-      // (A room lit through its windows keeps the indoor night: its torches, not the moon outside, set the camera.)
-      if (moonNight_ && moonLight_ == 1 && !windowLight()) darkening = std::min(darkening, 2.0f);
+      if (moonNight_ && moonLight_ == 1) darkening = std::min(darkening, 2.0f);
       const float target = ev + darkening;
       if (std::isnan(adaptedEv_) || measuring_) adaptedEv_ = target;
       adaptedEv_ += (target - adaptedEv_) * (1.0f - std::exp(-dt * kAdaptPerSecond));
@@ -842,9 +828,10 @@ class MapStage final : public Stage {
         // at the board's own base (as the outdoor ground plane above), emberFloorDepth further down
         plane.y = (look_ == e2::EdgeStyle::Smooth ? groundLow_ - 0.35f : std::min(0.0f, groundLow_)) - draft.emberFloorDepth;
         plane.tile = draft.emberFloorTile;
-        renderer.setBackground(plane.texture, 7u, {}, {}, plane);
+        plane.far = flat_ ? 1.0e9f : 900.0f;
+        renderer.setBackground(plane.texture, 6u, {0.5f, 0.0f, 0.0f, 0.0f}, {}, plane);
       } else {
-        renderer.setBackground(watchtower() ? kNoTextureIndex : Renderer::kBlackBackground, 0u);
+        renderer.setBackground(kNoTextureIndex, 0u);
       }
     } else {
       uint32_t bg = kNoTextureIndex;  // the sky (or the clear colour)
