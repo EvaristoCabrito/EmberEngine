@@ -672,11 +672,17 @@ class MapStage final : public Stage {
       // whole sky (the transfer keeps out what the walls and the roof hide). No air inside: no aerial perspective.
       // The ambient every pass reads stays without the sky (as before the probes: the air of the Atmosfera, the outer faces); the
       // probes read the sky's own (atmosphere.hlsl CSAmbient's second record).
-      // The camera is the same camera as on every map at this hour (the outdoor meter, the one sky's exposure; the user, 2026-10-23:
-      // "o mesmo céu único para todos os mapas ... a luz ... vai ser a luz externa da atmosphere"): the room no longer meters itself
-      // (probeMeterLux), so the sky through the windows is the sky, never burned white, and the room is as bright as that light makes it.
+      // The camera meters the room itself (probeMeterLux: the light on its floor, the probes' with the sun's / moon's beam where it
+      // falls and the fire's), never the outside: metered outdoors, the torch-lit floor burned white (the user, 2026-10-23: "essa não é a
+      // forma como a luz do luar entra ... faz de conta que existem teto, então a luz só pode entrar pelas janelas").
       lighting.ambientMul = 0.0f;
       lighting.kmPerUnit = 0.0f;
+      const float room = probesLive ? probeMeterLux(renderer, lighting) : 0.0f;
+      if (room > 0.0f && !probeMeterLogged_) {
+        probeMeterLogged_ = true;
+        logInfo("light probes: the room's meter {:.2f} lux (outside {:.0f})", room, meterLux_);
+      }
+      meterLux_ = room > 0.0f ? room : std::max(meterLux_ * kWindowMeterShare, kWindowMeterFloor);
     }
     // aldeia's sky at the end of the day (the user, 2026-10-19: "ajuste a cor do azul no céu, até as nuvens reagem, menos o céu"):
     // exposed for the board, the blue stayed as light as at noon while the clouds took the sunset's colour. As the sun sinks under
@@ -694,9 +700,12 @@ class MapStage final : public Stage {
       // "Luar: cinema": the night stops are capped at one, or the camera would take back what the brighter moon gave
       // (measured 2026-10-19: with the full darkening the moonlit ground stayed black beside the lanterns).
       float darkening = nightDarkening(ev);
+      // A room by day, metered the old way (its outside reading's share, only while its probes bake), is exposed for the room.
+      if (windowLight() && !moonNight_ && !probesLive) darkening = 0.0f;
       // "Luar: cinema": capped at 2 stops (at 1, measured 2026-10-19 on cemiterio: meter 4.4 lux, exposure 0.24, the night came out
       // as an overcast day with a pale blue sky; at 2 the sky is navy and the moonlit ground still reads).
-      if (moonNight_ && moonLight_ == 1) darkening = std::min(darkening, 2.0f);
+      // (A room lit through its windows keeps the indoor night: its torches, not the moon outside, set the camera.)
+      if (moonNight_ && moonLight_ == 1 && !windowLight()) darkening = std::min(darkening, 2.0f);
       const float target = ev + darkening;
       if (std::isnan(adaptedEv_) || measuring_) adaptedEv_ = target;
       adaptedEv_ += (target - adaptedEv_) * (1.0f - std::exp(-dt * kAdaptPerSecond));
@@ -820,10 +829,10 @@ class MapStage final : public Stage {
     // the sky); the Inn keeps resolve.hlsl untouched (the user, 2026-10-23: the Inn is an exception to all rules).
     renderer.usePanoramaShader(!innFloor());
     if (windowLight() && board_->draft().id != "estalagem") {
-      // One sky for every map (the user, 2026-10-23: "o mesmo céu único para todos os mapas", "eu não quero modo 9"): a room lit
-      // through its windows shows the same sky as any map, through the same background modes as any map. Its own ground image
-      // (MapDraft::emberFloor; the watchtower's background, the user: "usar ele de imagem de GROUND"; the panel's "Chão do vão") lies
-      // flat at the board's base under the real sky: mode 6, the Ponte de Pedra's floor mode. Without one: the sky.
+      // An interior (the user, 2026-10-23: "INTERNO ambiente INTERNO", "portas e janelas abertas trazem a luz de fora, que nunca é
+      // desenhada de fora"): nothing outside is drawn, only the light comes in through the openings. Beyond the walls: the map's own
+      // ground image (MapDraft::emberFloor; the watchtower's background, the user: "usar ele de imagem de GROUND"; the panel's "Chão do
+      // vão") flat at the board's base with black above the horizon (mode 7), or black alone.
       const e2::MapDraft& draft = board_->draft();
       Renderer::BackdropPlane plane;
       if (!draft.emberFloor.empty() && floorChoice_ == 1) plane.texture = ground_.textureIndex(e2::backdropAsset(draft.emberFloor));
