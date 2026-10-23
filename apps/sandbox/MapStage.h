@@ -1830,6 +1830,18 @@ class MapStage final : public Stage {
   static constexpr float kFireExposure = 0.049f;    // the fire's light is shown at no less than this exposure (the watchtower's night)
   size_t fireLightsFrom_ = 0, fireLightsTo_ = 0;    // this frame's fire lights in lights_ (buildLights)
   static constexpr float kDecorLightPower = 2.0f;   // every other light-giving decoration's light x this (the user, 2026-10-21: "2X")
+  // One colour for the light of every torch, brazier, lamp / lantern and candle (the user, 2026-10-22: "normalize as cores das tochas,
+  // braziers, lâmpadas e velas"; before, three: torches and braziers (1, 0.58, 0.26), lanterns (1, 0.70, 0.36), candles (1, 0.66,
+  // 0.34)): the lanterns', the most yellow. Fireplaces, campfires, forges, burning houses and the magic lights keep their own.
+  static constexpr std::array<float, 3> kFlameLightColor{1.0f, 0.70f, 0.36f};
+  static bool flameLight(std::string_view id) {
+    std::string low(id);
+    for (char& c : low) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    if (low.find("wisp") != std::string::npos) return false;  // the wisps' red lanterns are magic
+    for (const char* word : {"torch", "brazier", "lantern", "lamp", "candle", "chandelier"})
+      if (low.find(word) != std::string::npos) return true;
+    return false;
+  }
   static constexpr float kNightStops = 2.5f;        // the camera's darkening at night
   static constexpr float kAdaptPerSecond = 1.5f;    // eye adaptation rate
 
@@ -2973,13 +2985,14 @@ class MapStage final : public Stage {
       // light-giving decoration (candles, braziers, lanterns, ...) kDecorLightPower x (the user, same day: "2X all other light emiting
       // decoration objects").
       const float power = d.id.find("torch") != std::string::npos ? kTorchPower : kDecorLightPower;
-      lights_.push_back(carried(at, d.light->color, d.light->intensity * power, d.light->radius, height, flicker(time, d.light->seed, d.light->flicker)));
+      lights_.push_back(carried(at, flameLight(d.id) ? kFlameLightColor : d.light->color, d.light->intensity * power, d.light->radius, height,
+                                flicker(time, d.light->seed, d.light->flicker)));
     }
     // The torch brackets on EmberEngine's walls and stairs (buildArchitecture): their fire, flickering like a map torch, as strong.
     for (const ArchPiece& a : arch_) {
       if (!a.light) continue;
       const glm::vec3 at = glm::vec3(a.x, groundOf(a.groundSmooth, a.groundHard), a.z) + a.lightAt;
-      LocalLight l = carried(at, a.light->color, a.light->intensity * kTorchPower, a.light->radius, a.lightAt.y, flicker(time, a.light->seed, a.light->flicker));
+      LocalLight l = carried(at, kFlameLightColor, a.light->intensity * kTorchPower, a.light->radius, a.lightAt.y, flicker(time, a.light->seed, a.light->flicker));
       if (a.lightBehind > 0.0f) {
         // A wall's torch lights its own side of the wall only (a local light casts no shadow: it lit the board's outer sides through the
         // outer walls, capture skirt-f-night of 2026-10-21).
