@@ -754,7 +754,10 @@ class MapStage final : public Stage {
       // determinado horário"): the one sky's exposure at the hour is the frame's, and the fire's light is shown at exactly
       // kFireExposure, both ways: at night (the moonlit exposure 0.088 over the fire's 0.049) the torches no longer burn the room white
       // (50416a47), by day they rise with the sun as everywhere. Every other map: no less than kFireExposure, as before.
-      const float k = (windowLight() ? kFireExposure : std::max(lighting.exposure, kFireExposure)) / std::max(lighting.exposure, 1e-9f);
+      // (The room's reference is two stops under the old night's: at 0.049 the 30 torches lit the whole floor to white and the moon's
+      // patches through the windows could not be told from them; the user, 2026-10-23 night: "como é que eu vou saber o que é luz e
+      // janela se está tudo na potência máxima?". At 0.012 a torch is a pool at its wall and the moon's patch on the floor reads.)
+      const float k = (windowLight() ? kWindowFireExposure : std::max(lighting.exposure, kFireExposure)) / std::max(lighting.exposure, 1e-9f);
       renderer.setProbeFireScale(k);  // ... and their light bounced into the room's probes with them
       if (std::abs(k - 1.0f) > 1e-4f) {
         for (size_t i = fireLightsFrom_; i < fireLightsTo_; ++i) lights_[i].color *= k;
@@ -1923,6 +1926,7 @@ class MapStage final : public Stage {
   static constexpr float kLumensPerUnit = 12.0f;    // Engine2 intensity x reach^2 -> lumens
   static constexpr float kTorchPower = 2.0f;        // every torch's light x this (the user, 2026-10-21: "2X do que estava antes"; 8x was too much)
   static constexpr float kFireExposure = 0.049f;    // the fire's light is shown at no less than this exposure (the watchtower's night)
+  static constexpr float kWindowFireExposure = 0.012f;  // a room lit through its windows: its fires shown at exactly this (2 stops under)
   size_t fireLightsFrom_ = 0, fireLightsTo_ = 0;    // this frame's fire lights in lights_ (buildLights)
   std::vector<float> fireFlicker_;                  // ... and each one's flicker this frame
   std::vector<glm::vec3> fireUpright_;              // ... and its flame with the card upright (the light probes' bake)
