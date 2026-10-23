@@ -67,9 +67,10 @@ float3 ceilingAt(MeshFrame f, float3 dir, float pixelAngle) {
   Texture2D tile = gTextures[NonUniformResourceIndex(push.ceilingTexture)];
   uint tw, th;
   tile.GetDimensions(tw, th);
-  // Like the ground (the user, 2026-10-23: "ela repete sim mas continua do mesmo tamanho"): the image ceilingTile world units wide,
-  // always that size, repeated and mirrored at its edges from the room's centre.
-  const float2 size = float2(push.ceilingTile, push.ceilingTile * float(th) / max(float(tw), 1.0));
+  // The image centred over the room at the room's size (2 x roomRadius wide: "manter aquele centrado no meio", the user, 2026-10-23),
+  // and like the ground repeated and mirrored at its edges beyond it ("ela repete sim mas continua do mesmo tamanho").
+  const float width = push.roomRadius > 0.0 ? 2.0 * push.roomRadius : push.ceilingTile;
+  const float2 size = float2(width, width * float(th) / max(float(tw), 1.0));
   float2 m = (hit - push.roomCentre) / size + 0.5;
   m -= 2.0 * floor(m * 0.5);  // mirrored repeat: 0..2 -> 0..1..0
   m = float2(m.x <= 1.0 ? m.x : 2.0 - m.x, m.y <= 1.0 ? m.y : 2.0 - m.y);
