@@ -23,6 +23,38 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
 - **D&D = Advanced Dungeons & Dragons 2nd edition ONLY (the user, 2026-10-20: "advanced dungeons and dragons second edition ONLY",
   "its the only D&D system accepted").** Whenever a rule is based on D&D (spell reach, areas, scaling), use AD&D 2e's rules, never
   3e / 3.5 / 4e / 5e. Basing is not copying: the user's own rules come first, AD&D 2e only supports them.
+- **The 23:10 Inn (2026-10-22) has NO source in git** (no commit between 97a980d 23:03 and the 23:10 exe; the user, 2026-10-23: "não
+  existe 23:03, estava errado, é só 23:10"): the exe is the only copy, kept read-only in `build/release/jogar-2310/` (exe + shaders;
+  JOGAR.bat still runs `build/release/bin`: the user said "não quero nada" to a frozen JOGAR). Every later build by any session
+  replaces `bin` ("na próxima mudança ele some"): the Inn's entries in `content/engine2/backdrop-fit.json` stay as in 97a980d and
+  resolve.hlsl's panorama code stays 97a980d's text, so a build draws the Inn as close to 23:10 as the tree allows.
+- **The Inn's saved parameters (the user, 2026-10-23 ~05:00: "alinhar da mesma maneira e salvar esses parâmetros", "pode manter a
+  variação de teto"), backdrop-fit.json "#piso" entries, both floors:** roomDrop 10 (board and floor 10 below the painting and the
+  ceiling: MapStage::roomDrop lifts the camera), groundDepth 0 (the floor at the board, no side wall), groundFromDegrees 5, groundFar 300,
+  groundTile 16, ceilingHeight 24 (at the game camera the ceiling plane keeps half of it above the eye), the ceiling cut 9.2 deg above
+  the horizon on both (salão skyTop 0.25, Andar II 0.28); ceilings vary by floor: salão `tavern-ceiling-v01.jpg`, Andar II
+  `inn-ceiling-v01.jpg`. Tuned by the user step by step in the window; change only on their order (and relock).
+- **THE ONE FIXED RULE OF EVERY MAP, LOCKED (the user, 2026-10-23 03:40: "todos os mapas do jogo são panoramas, eu quero travar
+  permanentemente qualquer tentativa de desfazer essa única regra fixa de todos os mapas"; "nenhum mapa pode fugir da regra do
+  panorama"): every map's background is its panorama (backdrop-fit.json `maps` + `paintings`, resolve.hlsl modes 2-5, MapStage opening
+  a map on its newest panorama). `tools/scripts/check_panorama_lock.py` runs at the start of every build.bat and FAILS the build if
+  resolve.hlsl loses the panorama path, if a map in `content/engine2/backdrop-fit.locked.json` loses a panorama, or if a locked painting
+  entry changes without the lock being updated. A locked value changes only on the user's explicit order, with `--relock` in the same
+  commit, said in the message. Never delete the lock file, never weaken the check, never bypass build.bat to skip it.
+  **The engine itself refuses (MapStage `enforcePanorama`, the user: "não erra o log, ele recusa alteração", "não existe forma de
+  alterar em nenhum mapa"): the panel's Fundo lists only the map's panoramas; any other background from the panel, `--background` or
+  code is refused and the newest panorama stays; a map with no entry takes its painting as its panorama (default fit). The lock also
+  refuses a circular world (ceilingAligned / roomProjected / atan2-asin-acos in the ceiling).**
+- **The Inn's panorama is the panorama: never cut, never covered, never remapped (the user, 2026-10-23 03:30: "todos os mapas do
+  jogo são panorama não existe exceção"; a ceiling covering the painting above a row, a single ground image with the painting
+  beyond, and an angular ceiling were all rejected that night). Commit `aaa82ce` puts resolve.hlsl's panorama path and the Inn's
+  backdrop-fit entries into main as in the 23:10 build: every later commit starts from them; the user: a restored file is only a
+  snapshot ("funciona até o próximo commit"), only a commit in main counts.**
+- **NEVER touch the Inn (the user, 2026-10-23: "NÃO ENCOSTAR NO INN JAMAIS").** The Inn's maps (`estalagem*`), their panoramas, ground,
+  ceiling and look stay exactly as the user left them (their 23:10 build of 2026-10-22). Work for any other map must leave the Inn
+  byte-identical: never edit the shared background code it is drawn with (resolve.hlsl `backgroundAt` and the panorama paths) for
+  another map's feature; put that feature in its own function / shader file. On 2026-10-22/23 the watchtower's sky written into
+  backgroundAt changed how DXC compiled it and altered the Inn's panoramas in every later build.
 - **The board always sits on top of the ground, never floats: every single map, hard rule (the user, 2026-10-22, shouting).** Every
   map's background is a panorama (the user, same day); its floor image lies at the board's base (groundDepth 0), at real size (never
   stretched), and never cuts the painting in half; rooms show their drawn ceiling, never the sky. A panorama without a `ground` image
