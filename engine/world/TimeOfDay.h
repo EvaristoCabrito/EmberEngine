@@ -45,6 +45,19 @@ inline const TimeOfDayLight& timeOfDay(std::string_view name) {
   return kTimesOfDay[0];
 }
 
+// The hour of the 24 h sky a map's own time of day stands for (the user, 2026-10-23: "todo mapa deve seguir o horário da campanha, no
+// debug o horário que estiver no mapa"): Modo teste and the Map Editor's maps have no clock, so their sky takes this hour. The day
+// hours put the cycle's sun (62 deg at noon, MapStage::cycleLighting) at the height the time of day already had: day 54 deg (10.1 h),
+// dawn 20 deg (7.25 h), dusk 15 deg (17.07 h); the nights are the panel's own noite (22 h) and madrugada (3 h).
+inline float mapHour(std::string_view name) {
+  if (name == "noon") return 12.0f;
+  if (name == "dawn") return 7.25f;
+  if (name == "dusk") return 17.07f;
+  if (name == "brightNight") return 22.0f;
+  if (name == "darkNight") return 3.0f;
+  return 10.1f;  // "day", "" or unknown
+}
+
 // Engine2's moon pose (moon.ts Moon.pose): azimuth and elevation (radians) `progress` through the night
 // (0 rising, 0.5 highest, 1 setting); the stage keeps it at 0.35 by default.
 struct MoonPose {

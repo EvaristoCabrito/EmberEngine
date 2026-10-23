@@ -159,7 +159,9 @@ struct MapStageOptions {
   // The game's own clock (the campaign's / the test world map's gameHour, 0..23): ALL the light from outside follows it, on every map but
   // the underground ones (the user, 2026-10-21: "TODA a luz externa do jogo segue o relógio de 24 horas", "SOL REAL LUA REAL LUZ REAL HORA
   // REAL NÃO EXISTE OUTRA OPÇÃO"; the map's time of day and its sun / ambient sliders only decorate and test). The panel's Hora is a test.
-  float gameHour = -1.0f;  // -1: no clock given (Modo teste's classic map, captures): the game's opening hour, kGameStartHour
+  // -1: no clock given (Modo teste, the Map Editor, captures): the map's own Hora do dia (e2::mapHour, the user, 2026-10-23: "no debug
+  // o horário que estiver no mapa"), read live, so the editor's preview follows its dropdown.
+  float gameHour = -1.0f;
   int sunDisc = 1;    // the panel's "Sol": 0 real, 1 cinema (the disc the user had; default), 2 look 001 (--sun-disc N)
   int glare = 0;      // "Clarão": 0 OFF (default: the user never asked for it), 1 look 001 (--glare N)
   int shafts = 0;     // "Raios de luz": 0 OFF (default), 1 look 001 (--shafts N)
@@ -286,7 +288,7 @@ class MapStage final : public Stage {
     skyReflect_ = std::clamp(options.skyReflect, 0, 1);
     clouds_ = std::clamp(options.clouds, 0, 2);
     dayCycle_ = std::clamp(options.hour, 0, 10);
-    gameHour_ = options.gameHour >= 0.0f ? options.gameHour : kGameStartHour;
+    gameHour_ = options.gameHour;  // < 0: the map's own hour (cycleHour)
     moonLight_ = std::clamp(options.moonLight, 0, 1);
     sunSize_ = std::clamp(options.sunDisc, 0, 2);
     glare_ = std::clamp(options.glare, 0, 1);
@@ -1364,9 +1366,9 @@ class MapStage final : public Stage {
         dropdown("Luz das janelas", windowLight_, 2, [](int i) { return std::string(kWindowLight[i]); });
       }
       if (lightingMode_ == 3 && !darkIndoor()) {
-        static const char* kHours[11] = {"do jogo", "ciclo rápido", "ciclo lento", "amanhecer", "manhã", "meio-dia",
+        const char* const kHours[11] = {gameHour_ >= 0.0f ? "do jogo" : "do mapa", "ciclo rápido", "ciclo lento", "amanhecer", "manhã", "meio-dia",
                                          "tarde", "pôr do sol", "crepúsculo", "noite", "madrugada"};
-        dropdown("Hora", dayCycle_, 11, [](int i) { return std::string(kHours[i]); });
+        dropdown("Hora", dayCycle_, 11, [&kHours](int i) { return std::string(kHours[i]); });
       }
       static const char* kStance[2] = {"em pé", "para a câmera"};
       dropdown("Cards", cardStance_, 2, [](int i) { return std::string(kStance[i]); });
@@ -3312,10 +3314,11 @@ class MapStage final : public Stage {
   // the moon rises and the stars come in with the dark (atmosphere.hlsli). The board's key light is the sun while it is up, the moon
   // after: the swap falls when both sit on the horizon and light almost nothing. The meter follows twilight (a tenth for every 2.4 deg
   // the sun sinks), so the camera opens up through dusk.
-  // The sky follows an hour: a chosen one / a cycle (the panel's Hora), else the game's clock when the stage was given one.
-  bool cycleOn() const { return dayCycle_ > 0 || gameHour_ >= 0.0f; }
+  // The sky follows an hour: a chosen one / a cycle (the panel's Hora), else the game's clock when the stage was given one (the
+  // campaign), else the map's own Hora do dia (Modo teste, the Map Editor: e2::mapHour). Always on.
+  bool cycleOn() const { return true; }
   float cycleHour(float time) const {
-    if (dayCycle_ == 0 && gameHour_ >= 0.0f) return gameHour_;
+    if (dayCycle_ == 0) return gameHour_ >= 0.0f ? gameHour_ : e2::mapHour(scene_ ? scene_->timeOfDay : std::string());
     // amanhecer / pôr do sol: the disc ~6 deg up (at 6.0 / 18.0 it sits half under the horizon and the camera, metering
     // the dark ground, blows the sky out: the user's "super bright", 2026-10-19); crepúsculo: the sun 6 deg down.
     static constexpr float kFixed[8] = {6.35f, 9.0f, 12.0f, 15.0f, 17.65f, 18.6f, 22.0f, 3.0f};

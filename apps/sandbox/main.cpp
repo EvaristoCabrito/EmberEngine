@@ -803,6 +803,8 @@ int runCapture(const Options& o) {
       if (world.load("content/engine2/overworld.json")) options.world = &world;  // the status sheet's Mochila / Equipar
       if (test) testSession = freshTestSession(campaign);
       if (test) applyTestHeroes(options, testSession->save);
+      // The sky: a campaign mission at the save's hour; Modo teste at the map's own (gameHour -1).
+      if (!test) options.gameHour = static_cast<float>(e2::Overworld::campaignHour(campaign.activeSave()));
       if (options.world) setUpExplore(options, test ? testSession->save : campaign.activeSave(), world, test);
       if (options.world) {  // the party and its formation (--formation "Kael,,Neera,...": the board's cells instead of the save's)
         e2::Json save = test ? testSession->save : campaign.activeSave();
@@ -1423,9 +1425,9 @@ int runWindow(const Options& o) {
               if (v.is_number()) options.affinityScores[pair] = v.get<double>();
         }
         if (testSession) applyTestHeroes(options, testSession->save);
-        // The sky follows the game's clock: the campaign's save, or Modo teste's RPG map (the classic map has none: the map's own time of day).
+        // The sky follows the campaign's clock (the save's hour) on every campaign map; Modo teste (classic and RPG maps alike) and the
+        // editor's Testar take the map's own Hora do dia (gameHour -1; the user, 2026-10-23: "no debug o horário que estiver no mapa").
         if (!playing.empty() && !testSession) options.gameHour = static_cast<float>(e2::Overworld::campaignHour(campaign.activeSave()));
-        else if (testSession && testSession->mapMode == "rpg") options.gameHour = static_cast<float>(e2::Overworld::campaignHour(testSession->save));
         // A free-roam map: who sits there and who walks (the campaign's save, or Modo teste's); where the party comes in.
         if (hasWorld) setUpExplore(options, testSession ? testSession->save : campaign.activeSave(), world, testSession.has_value() || playing.empty());
         // The campaign's party (or Modo teste's), laid out by the Party screen's formation; the editor's Testar keeps the draft's places.
