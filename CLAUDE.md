@@ -1354,6 +1354,22 @@ Panorama image", "Tavernground in attachments for you to use on the ground layer
   room's own ceiling, never the real sky), groundTile 72 (first value, the user judges). Panorama 01 kept as it is, in the Fundo choice.
 - `MapStage::loadMapPanoramas` leaves out a panorama whose painting or ground image is not in the ground pack (logged "left out"): panorama
   02 joins the tavern (and opens first, the newest) only once a ground pack cooked after this carries `tavern-ground-v01.jpg`.
+- **Found 2026-10-22 night: the tavern keeps the Atmosfera OFF, and every panorama mode (2-6) needs it**, so panoramas 01 / 02 were drawn as
+  the plain cover-fit picture over the whole screen (Tavernground never showed).
+- **The drawn ceiling, both floors (the user: "Tavern Ceiling now in attachments add it to the ceiling on both levels", "InnsecondFloor was
+  added for making a panorama", then "we cant have this black line", "leave the full image", then InnCeiling1floor + InnGround1: "teto e
+  chão da INN, o chão pode colocar no segundo andar também"):** resolve.hlsl mode 8 `roomBackground` (needs no atmosphere: the view
+  direction from MeshFrame.view / projection, `viewDirection`): the WHOLE painting at its own angular scale (its horizon row on the horizon,
+  its own ceiling above; below, mode 5's mapping), the fit's ground image on a plane around the board (painting beyond groundFar), and above
+  the painting's top edge the drawn ceiling = `ceilingAt` (the painting's top 6 % fading into it): the image on a flat plane `ceilingHeight`
+  above the eye (the game's camera stands far above the board: a plane at room height would never be seen), `ceilingTile` world units
+  across, mirrored, no darkening. backdrop-fit.json `ceilingImage` / `ceilingHeight` (16) / `ceilingTile` (80; first values, the user
+  judges); `BackdropPlane::ceilingTexture`, ResolvePush 3 more fields. Entries (the newest opens first; the older stay in Fundo):
+  `estalagem`: 03 `"inn-panorama-v01.jpg#teto"` (Tavernground + Tavern Ceiling), 04 `"#piso"` (InnGround1 `inn-ground-v01.jpg` tile 60 +
+  InnCeiling1floor `inn-ceiling-v01.jpg`); `estalagem-andar-2`: 01 `"inn-second-floor-v01.jpg#teto"` (the user's InnsecondFloor, horizon 0.49,
+  Tavern Ceiling, no ground), 02 `"#piso"` (+ InnGround1). Ground pack `build/ground/ground-v27.pak` (JOGAR uses it). The normal camera
+  looks down at the floor image around the board; the painting and the ceiling show when the camera is tilted low. Captures
+  `captures/tavern/` (aldeia compared with the previous build: difference = capture noise).
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 

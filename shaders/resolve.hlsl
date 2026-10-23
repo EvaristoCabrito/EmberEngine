@@ -26,6 +26,9 @@ struct Push {
   float planeTile;       // ... world units per repeat
   float planeFar;        // ... beyond this distance along the ray the painting takes over
   float planeFrom;       // ... and within this many degrees of the horizon (the plane fully in from 2.5 x this)
+  uint ceilingTexture;   // modes 2-4 and 6: a room's drawn ceiling where the sky would show (kNoTexture = the sky)
+  float ceilingHeight;   // ... a flat plane this far above the eye
+  float ceilingTile;     // ... world units per repeat
 };
 // Backdrop mode 1: the painting's own horizon sits at this share of its height (the row the world's horizon is pinned
 // to), and the painting reaches its bottom row this many degrees below the horizon.
@@ -45,6 +48,79 @@ float3 skyWithAir(MeshFrame f, uint2 pixel) {
   return lerp(sky, volumeOverBackground(f, sky, pixel), exp(-max(elevation, 0.0) / radians(2.5)));
 }
 
+// A room's drawn ceiling (the user, 2026-10-22: "Tavern Ceiling ... add it to the ceiling on both levels"; CLAUDE.md: "Internos também
+// ficam sem o céu, terão um teto desenhado"): where the sky would show, the image on a flat plane ceilingHeight above the eye (the game's
+// camera stands far above the board, so a plane at the room's own height would never be seen from it), ceilingTile world units across,
+// mirrored at its edges, its beams converging toward the horizon; it darkens into the room's depth, black at the horizon.
+float3 ceilingAt(MeshFrame f, float3 dir, float pixelAngle) {
+  if (dir.y <= 1e-4) return 0.0;
+  const float t = push.ceilingHeight / dir.y;
+  const float2 hit = f.cameraPosition.xz + dir.xz * t;
+  Texture2D tile = gTextures[NonUniformResourceIndex(push.ceilingTexture)];
+  uint tw, th;
+  tile.GetDimensions(tw, th);
+  const float2 size = float2(push.ceilingTile, push.ceilingTile * float(th) / max(float(tw), 1.0));
+  float2 m = hit / size + 0.5;
+  m -= 2.0 * floor(m * 0.5);  // mirrored repeat: 0..2 -> 0..1..0
+  m = float2(m.x <= 1.0 ? m.x : 2.0 - m.x, m.y <= 1.0 ? m.y : 2.0 - m.y);
+  const float footprint = t * pixelAngle / max(dir.y, 0.05);
+  const float lod = max(log2(footprint / (size.x / float(max(tw, 1u)))), 0.0);
+  return tile.SampleLevel(gSamplers[f.materialSampler], m, lod).rgb;  // no darkening (the user, 2026-10-22: no black line)
+}
+float3 ceilingAt(MeshFrame f, AtmosphereFrame a, float3 dir, uint2 pixel) {
+  return ceilingAt(f, dir, length(skyDirection(f, a, float2(pixel) + float2(1.5, 0.5)) - dir));
+}
+
+// The view's direction through a pixel from the camera alone (no atmosphere needed: a room keeps the Atmosfera off). MeshFrame.view
+// maps world to view space looking down -z (scene.hlsli sphereVisibleHiZ), Vulkan's NDC y points down.
+float3 viewDirection(MeshFrame f, float2 pixel) {
+  const float2 ndc = pixel / f.screenSize * 2.0 - 1.0;
+  const float3 v = normalize(float3(ndc.x / f.projectionX, -ndc.y / f.projectionY, -1.0));
+  return normalize(mul((float3x3)f.view, v));
+}
+
+// Mode 8 = a room's panorama (the tavern's floors, the user, 2026-10-22: "Tavern Ceiling ... on both levels", InnsecondFloor "for making a
+// panorama"): the painting from its horizon row down (mode 5's mapping), the map's ground image on a plane around the board (planeTexture,
+// the painting beyond planeFar), the drawn ceiling above the horizon; nothing of the sky or the air, so it works with the Atmosfera off.
+float4 roomBackground(MeshFrame f, uint2 pixel) {
+  const float3 dir = viewDirection(f, float2(pixel) + 0.5);
+  const float pixelAngle = length(viewDirection(f, float2(pixel) + float2(1.5, 0.5)) - dir);
+  uint w, h;
+  gTextures[NonUniformResourceIndex(push.background)].GetDimensions(w, h);
+  SamplerState s = gSamplers[f.materialSampler];
+  const float elevation = asin(clamp(dir.y, -1.0, 1.0));
+  const float3 dl = viewDirection(f, float2(0.5, f.screenSize.y * 0.5)), dr = viewDirection(f, float2(f.screenSize.x - 0.5, f.screenSize.y * 0.5));
+  const float imageHeightRad = acos(clamp(dot(dl, dr), -1.0, 1.0)) * float(h) / max(float(w), 1.0);
+  const float horizonRow = clamp(push.fitA.x, 0.02, 0.98);
+  if (elevation >= 0.0) {
+    // The whole painting above the horizon too, its own ceiling included, at its own scale (the user, 2026-10-22: "leave the full image",
+    // "we cant have this black line"); above its top edge the drawn ceiling, the painting's top rows fading into it.
+    const float v = horizonRow - elevation / max(imageHeightRad, 1e-3);
+    const float3 ceiling = push.ceilingTexture != kNoTexture ? ceilingAt(f, dir, pixelAngle) : 0.0;
+    if (v <= 0.0) return float4(ceiling, 1.0);
+    const float3 top = gTextures[NonUniformResourceIndex(push.background)].SampleLevel(s, float2((float(pixel.x) + 0.5) / f.screenSize.x, v), 0).rgb;
+    return float4(push.ceilingTexture != kNoTexture ? lerp(ceiling, top, smoothstep(0.0, 0.06, v)) : top, 1.0);
+  }
+  const float span = (1.0 - horizonRow) * imageHeightRad, toNadir = (1.5707963 / max(span, 1e-3));
+  const float pv = saturate(horizonRow + (1.0 - horizonRow) * (1.0 - exp(elevation / max(span, 1e-3))) / max(1.0 - exp(-toNadir), 1e-3));
+  const float3 painting = gTextures[NonUniformResourceIndex(push.background)].SampleLevel(s, float2((float(pixel.x) + 0.5) / f.screenSize.x, pv), 0).rgb;
+  if (push.planeTexture == kNoTexture) return float4(painting, 1.0);
+  const float t = (push.planeY - f.cameraPosition.y) / min(dir.y, -1e-4);
+  if (t <= 0.0) return float4(painting, 1.0);
+  const float2 hit = f.cameraPosition.xz + dir.xz * t;
+  Texture2D tile = gTextures[NonUniformResourceIndex(push.planeTexture)];
+  uint tw, th;
+  tile.GetDimensions(tw, th);
+  const float2 size = float2(push.planeTile, push.planeTile * float(th) / max(float(tw), 1.0));
+  float2 m = hit / size + 0.5;
+  m -= 2.0 * floor(m * 0.5);  // mirrored repeat: 0..2 -> 0..1..0
+  m = float2(m.x <= 1.0 ? m.x : 2.0 - m.x, m.y <= 1.0 ? m.y : 2.0 - m.y);
+  const float footprint = t * pixelAngle / max(-dir.y, 0.05);
+  const float lod = max(log2(footprint / (size.x / float(max(tw, 1u)))), 0.0);
+  const float3 ground = tile.SampleLevel(s, m, lod).rgb;
+  return float4(lerp(ground, painting, smoothstep(push.planeFar * 0.55, push.planeFar, t)), 1.0);
+}
+
 // What shows where nothing was drawn: the painted backdrop (fitted to cover the screen, like a photo behind a
 // stage), black, the sky, or the clear colour.
 float4 backgroundAt(MeshFrame f, uint2 pixel) {
@@ -58,6 +134,7 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
     return float4(cloudCoverEroded(c, f.time, f.cameraPosition.xz + dir.xz * t).xxx, 1.0);
   }
   if (f.debugView != 0 || push.background == kBlackBackground) return float4(0.0, 0.0, 0.0, 1.0);
+  if (push.background != kNoTexture && push.backgroundMode == 8) return roomBackground(f, pixel);
   if (push.background != kNoTexture) {
     uint w, h;
     gTextures[NonUniformResourceIndex(push.background)].GetDimensions(w, h);
@@ -100,7 +177,8 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
       const AtmosphereFrame a = loadAtmosphere(f);
       const float3 dir = skyDirection(f, a, float2(pixel) + 0.5);
       const float elevation = asin(clamp(dir.y, -1.0, 1.0));
-      if (elevation >= 0.0) return float4(skyWithAir(f, pixel), 1.0);
+      // a room (a panorama with a drawn ceiling, the tavern's floors): the ceiling above the horizon, never the sky
+      if (elevation >= 0.0) return float4(push.ceilingTexture != kNoTexture ? ceilingAt(f, a, dir, pixel) : skyWithAir(f, pixel), 1.0);
       SamplerState s = gSamplers[f.materialSampler];
       // the regular painting from its horizon row down (mode 5's mapping), for the far band
       const float3 dl = skyDirection(f, a, float2(0.5, f.screenSize.y * 0.5)), dr = skyDirection(f, a, float2(f.screenSize.x - 0.5, f.screenSize.y * 0.5));
@@ -182,8 +260,9 @@ float4 backgroundAt(MeshFrame f, uint2 pixel) {
       // sky's own horizon colour, never the sky table's dark ground.
       const float3 horizonDir = normalize(float3(dir.x, 0.002, dir.z));
       const float3 skyHorizon = skyRadiance(a, horizonDir) * a.skyScale * f.exposure;
-      const float3 sky = lerp(skyHorizon, skyBackground(f, pixel), smoothstep(-0.004, 0.012, realElevation));
-      if (v < 0.0) return float4(volumeOverBackground(f, sky, pixel), 1.0);
+      float3 sky = lerp(skyHorizon, skyBackground(f, pixel), smoothstep(-0.004, 0.012, realElevation));
+      if (push.ceilingTexture != kNoTexture) sky = ceilingAt(f, a, dir, pixel);  // a room: its drawn ceiling, never the sky
+      if (v < 0.0) return float4(push.ceilingTexture != kNoTexture ? sky : volumeOverBackground(f, sky, pixel), 1.0);
       float x = atan2(dir.z, dir.x) - push.fitB.x;
       x -= 2.0 * kPi * round(x / (2.0 * kPi));
       x = 0.5 + x / radians(max(push.fitB.z, 1.0));

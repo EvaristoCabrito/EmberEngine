@@ -277,6 +277,10 @@ class Renderer {
     uint32_t texture = 0xFFFFFFFFu;
     float tile = 120.0f, far = 300.0f;
     float from = 10.0f;  // degrees below the horizon where the plane starts taking over from the painting
+    // A room's drawn ceiling where the sky would show (modes 2-4; resolve.hlsl ceilingAt): the image on a flat plane `ceilingHeight`
+    // above the eye, `ceilingTile` world units across; kNoTextureIndex = the sky.
+    uint32_t ceilingTexture = 0xFFFFFFFFu;
+    float ceilingHeight = 16.0f, ceilingTile = 24.0f;
   };
   void setBackground(uint32_t background, uint32_t mode = 0, glm::vec4 fitA = {}, glm::vec4 fitB = {}, const BackdropPlane& plane = {}) {
     background_ = background;

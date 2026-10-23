@@ -836,6 +836,12 @@ class MapStage final : public Stage {
         plane.from = fit.groundFromDegrees;
         // Tática looks straight down from far away: the ground image is the whole view ("desse ângulo é essa imagem e nada mais").
         plane.far = flat_ ? 1.0e9f : fit.groundFar;
+        // A room's drawn ceiling where the sky would show (the tavern's floors, the user, 2026-10-22).
+        if (!fit.ceilingImage.empty()) {
+          plane.ceilingTexture = ground_.textureIndex(e2::backdropAsset(fit.ceilingImage));
+          plane.ceilingHeight = fit.ceilingHeight;
+          plane.ceilingTile = fit.ceilingTile;
+        }
         // "Céu do panorama" (the user, 2026-10-19: "libera o céu para eu ver como fica"): 0 the image's own smoke sky, 1 the real sky
         // above the rooftops (everything above 30% of the image is sky; down to the ruins its sky is matted out by colour).
         // A room's panorama (`ceiling`: the tavern) always keeps its own top, the ceiling, whatever the choice.
@@ -847,13 +853,19 @@ class MapStage final : public Stage {
         // "Chão do vão" (OFF = mode 5 as every other map).
         const e2::MapDraft& draft = board_->draft();
         const bool floor = !draft.emberFloor.empty() && floorChoice_ == 1 && !isPanorama;
+        // A room's panorama with a drawn ceiling (the tavern's floors, the user, 2026-10-22): mode 8 (resolve.hlsl roomBackground), the
+        // painting from its horizon row down, its ground image around the board, the ceiling above the horizon (the game's camera never
+        // looks higher than ~15 deg above it: a ceiling above the painting's own top would never show); no sky, no air, so it works with
+        // the room's Atmosfera off (every other painting mode needs it, and fell back to the flat cover-fit picture here).
+        const bool roomCeiling = isPanorama && !fit.ceilingImage.empty();
+        if (roomCeiling) plane.far = flat_ ? 1.0e9f : fit.groundFar;
         if (floor) {
           plane.y = groundLow_ - draft.emberFloorDepth;
           plane.texture = ground_.textureIndex(e2::backdropAsset(draft.emberFloor));
           plane.tile = draft.emberFloorTile;
           plane.far = flat_ ? 1.0e9f : 900.0f;
         }
-        renderer.setBackground(bg, floor ? 6u : whole ? 5u : fit.alphaSky ? 4u : ownSky ? 3u : 2u, {fit.horizon, fit.bottom, fit.degreesPerHeight, fit.bottomDegrees},
+        renderer.setBackground(bg, roomCeiling ? 8u : floor ? 6u : whole ? 5u : fit.alphaSky ? 4u : ownSky ? 3u : 2u, {fit.horizon, fit.bottom, fit.degreesPerHeight, fit.bottomDegrees},
                                {centre, skyTop, fit.spanDegrees, fit.horizonDegrees}, plane);
       } else {
         renderer.setBackground(bg, background_ == 3 ? 1u : 0u);
@@ -9191,6 +9203,10 @@ class MapStage final : public Stage {
     bool alphaSky = false;         // the image's sky is truly transparent (its alpha): the real sky shows through it (mode 4)
     bool whole = false;            // the regular image, opaque, its horizon row on the world's horizon, nothing blended (mode 5)
     bool ceiling = false;          // a room's panorama: its top (the ceiling) always kept, never the real sky (mode 3, any "Céu do panorama")
+    // A room's drawn ceiling where the sky would show (content/backdrops; the user's Tavern Ceiling, 2026-10-22): a flat plane
+    // ceilingHeight above the eye, ceilingTile world units across (resolve.hlsl ceilingAt); "" = the sky as before.
+    std::string ceilingImage;
+    float ceilingHeight = 16.0f, ceilingTile = 24.0f;
     float groundTile = 120.0f, groundFar = 300.0f;
     float groundFromDegrees = 10.0f;  // the ground image takes over from this many degrees below the horizon  // its width in world units; the painting takes over beyond this distance
   };
@@ -9230,7 +9246,7 @@ class MapStage final : public Stage {
     const auto packed = [&](const std::string& file) { return !assets_.name(assetId(e2::backdropAsset(file))).empty(); };
     for (const std::string& entry : loadPanoramas(board_->draft().id)) {
       const BackdropFit fit = loadBackdropFit(entry);
-      if (!packed(panoramaFile(entry)) || (!fit.ground.empty() && !packed(fit.ground))) {
+      if (!packed(panoramaFile(entry)) || (!fit.ground.empty() && !packed(fit.ground)) || (!fit.ceilingImage.empty() && !packed(fit.ceilingImage))) {
         logWarn("panorama {} left out: not in the ground pack", entry);
         continue;
       }
@@ -9238,6 +9254,7 @@ class MapStage final : public Stage {
       panoramaFits_.push_back(fit);
       ground_.requestTexture(e2::backdropAsset(panoramaFile(entry)));
       if (!fit.ground.empty()) ground_.requestTexture(e2::backdropAsset(fit.ground));
+      if (!fit.ceilingImage.empty()) ground_.requestTexture(e2::backdropAsset(fit.ceilingImage));
     }
   }
   static std::string panoramaFile(const std::string& entry) { return entry.substr(0, entry.find('#')); }
@@ -9267,6 +9284,9 @@ class MapStage final : public Stage {
       fit.alphaSky = e.value("alphaSky", fit.alphaSky);
       fit.whole = e.value("whole", fit.whole);
       fit.ceiling = e.value("ceiling", fit.ceiling);
+      fit.ceilingImage = e.value("ceilingImage", fit.ceilingImage);
+      fit.ceilingHeight = e.value("ceilingHeight", fit.ceilingHeight);
+      fit.ceilingTile = e.value("ceilingTile", fit.ceilingTile);
       fit.groundTile = e.value("groundTile", fit.groundTile);
       fit.groundFar = e.value("groundFar", fit.groundFar);
       fit.groundFromDegrees = e.value("groundFromDegrees", fit.groundFromDegrees);
