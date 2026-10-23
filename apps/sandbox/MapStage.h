@@ -771,14 +771,17 @@ class MapStage final : public Stage {
         LocalLight& l = lights_[i];
         const glm::vec3 in = glm::normalize(glm::vec3(l.facing.x, 0.0f, l.facing.z) == glm::vec3(0.0f) ? glm::vec3(0.0f, 0.0f, 1.0f) : glm::vec3(l.facing.x, 0.0f, l.facing.z));
         // (l.facing keeps the room-ward axis in xz between frames: a beam's axis is rebuilt from it, never accumulated)
+        // A flat emitter in the wall's face (scene.hlsli lightFacing, behind < 0 = the lobe's exponent): the sky's light as a Lambert
+        // lobe about the opening's inward normal (the wall it sits in gets none, the floor in front and the walls across take it); the
+        // sun's beam as a tight lobe along its ray when it stands on the opening's outer side.
         const bool beam = lighting.sunDirection.y > 0.02f && glm::dot(ray, in) > 0.25f;
         if (beam) {
           l.facing = ray;
-          l.behind = -std::cos(glm::radians(22.0f));
+          l.behind = -12.0f;
           l.color = beamColour;
         } else {
-          l.facing = glm::normalize(in * std::cos(glm::radians(40.0f)) - glm::vec3(0.0f, std::sin(glm::radians(40.0f)), 0.0f));
-          l.behind = -std::cos(glm::radians(62.0f));
+          l.facing = in;
+          l.behind = -1.0f;
           l.color = skyColour;
         }
       }
@@ -2335,7 +2338,8 @@ class MapStage final : public Stage {
         // The opening's own light: at the inner face of the wall, mid-height, facing the room (the sky's and the sun's light coming in,
         // scaled by the hour's outdoor light each frame: frame()). Never the outside: facing / behind like a wall torch's.
         const double a = e2::emberAxisAngle(rot, connections);
-        const float out = static_cast<float>(0.32 * def->wallThicknessScale * 0.5 + 0.35);
+        // (In the wall's inner face itself, a hair in: a flat emitter there lights nothing of its own wall: scene.hlsli lightFacing.)
+        const float out = static_cast<float>(0.32 * def->wallThicknessScale * 0.5 + 0.03);
         piece.openingAt = glm::vec3{static_cast<float>(std::sin(a)) * out, def->emberStyle == "slit" ? 2.6f : 2.0f, static_cast<float>(std::cos(a)) * out};
         piece.openingBehind = out - static_cast<float>(0.32 * def->wallThicknessScale * 0.5);
       }
@@ -3282,8 +3286,8 @@ class MapStage final : public Stage {
         LocalLight l = carried(at, {1.0f, 1.0f, 1.0f}, 0.0f, kWindowLightRange, a.openingAt->y, 1.0f);
         l.range = kWindowLightRange;  // (carried() sizes the range by the candela, 0 here: the colour, cone and axis are set each frame)
         l.decay = 2.0f;
-        l.facing = glm::normalize(glm::vec3(a.openingAt->x, 0.0f, a.openingAt->z));  // into the room (frame() turns it into the cone's axis)
-        l.behind = -0.5f;
+        l.facing = glm::normalize(glm::vec3(a.openingAt->x, 0.0f, a.openingAt->z));  // into the room (frame() sets the lobe each frame)
+        l.behind = -1.0f;  // a flat emitter, Lambert (scene.hlsli lightFacing)
         lights_.push_back(l);
       }
     openingLightsTo_ = lights_.size();

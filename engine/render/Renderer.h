@@ -35,7 +35,8 @@ struct LocalLight {
   glm::vec3 color; // linear colour x intensity
   float decay;     // distance falloff exponent (Engine2: 1.25)
   glm::vec3 facing{0.0f};  // zero: every way; else only the half-space it faces is lit (Luz das janelas: an opening's light stays in the room)
-  float behind = 0.0f;     // ... fully lit down to this far behind the light along -facing, gone 0.15 further
+  float behind = 0.0f;     // ... fully lit down to this far behind the light along -facing, gone 0.15 further; < 0: a flat emitter in the
+                           // plane through the light, a cosine lobe pow(cos, -behind) about `facing` (a window's light: scene.hlsli lightFacing)
 };
 class Swapchain;
 class DebugUi;

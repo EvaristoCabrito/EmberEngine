@@ -306,6 +306,14 @@ LocalLight loadLight(MeshFrame f, uint i) { return vk::RawBufferLoad<LocalLight>
 // The share of a light a point gets from its facing (1 for a light that shines every way).
 float lightFacing(LocalLight light, float3 p) {
   if (all(light.facing == 0.0)) return 1.0;
+  if (light.behind < 0.0) {
+    // A flat emitter lying in the plane through the light (a window's or a door's light, 2026-10-23 night: the user, "a física da luz
+    // está toda mal feita": a point light in front of its wall lit that wall round the window): a cosine lobe about its normal,
+    // pow(cos, -behind) (1 = Lambert, a window's sky light; higher = the sun's beam through it), nothing in or behind its plane, so
+    // the wall it sits in gets none and the floor and the walls across take it.
+    const float c = dot(light.facing, normalize(p - light.position));
+    return c <= 0.0 ? 0.0 : pow(c, -light.behind);
+  }
   return saturate((dot(light.facing, p - light.position) + light.behind + 0.15) / 0.15);
 }
 uint clusterOffset(uint cluster) { return cluster * (kClusterMaxLights + 1) * 4; }
