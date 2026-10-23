@@ -22,7 +22,7 @@
    "vau-panorama-v03.png"
   ],
   "estalagem": ["inn-panorama-v01.jpg", "inn-panorama-v01.jpg#chao", "inn-panorama-v01.jpg#teto", "inn-panorama-v01.jpg#piso"],
-  "estalagem-andar-2": ["inn-second-floor-v01.jpg#teto", "inn-second-floor-v01.jpg#piso", "inn-second-floor-v01.jpg#teto-salao"],
+  "estalagem-andar-2": ["inn-second-floor-v01.jpg#teto", "inn-second-floor-v01.jpg#piso"],
   "bosque": ["bosque-morto-panorama-v01.png"],
   "thebridge": ["bridge-panorama-v01.jpg"],
   "random-amanita-glade": ["vau-panorama-tira-teima-v05.png"],
@@ -110,7 +110,7 @@
    "groundTile": 16.0,
    "groundFar": 300.0,
    "groundFromDegrees": 5.0,
-   "ceilingImage": "inn-ceiling-v01.jpg",
+   "ceilingImage": "tavern-ceiling-v01.jpg",
    "ceilingHeight": 24.0,
    "ceilingTile": 16.0
   },

@@ -1435,3 +1435,17 @@ Panorama image", "Tavernground in attachments for you to use on the ground layer
 
 M4 world cells + terrain · M5 lighting/atmosphere · M6 editor · M7 gameplay port + cutscene timeline.
 Exit tests and demonstration gates in ARCHITECTURE.md §9.
+- `content/engine2/backdrop-fit.json` painting entry `inn-second-floor-v01.jpg#teto-salao` (2026-10-23): made as an extra panorama when
+  the user asked only for the Andar II's CEILING to change ("não é panorama, é CEILING"); taken out of the map's list, kept unused. The
+  Andar II's `#piso` now carries the salão's ceiling (`tavern-ceiling-v01.jpg`); its previous ceiling was `inn-ceiling-v01.jpg`.
+
+- **Another instance's Inn edits of 2026-10-23 ~02:00-02:26 (the user: "uma instância entrou em demência total"), taken out of the
+  working tree on the user's "acertar o teto e ground da taverna":** `shaders/kept/inn-room-ceiling-20261023.patch` (resolve.hlsl: the
+  Inn's drawn ceiling as ONE image over a round room with `saturate` = its edge pixels smeared into streaks on screen, and mode 3's
+  "no double ceilings" fade at skyTop; backdrop-fit.json skyTop 0.25 / 0.2 on the "#piso" entries), with the full files beside it
+  (`resolve-room-ceiling-20261023.hlsl`, `backdrop-fit-room-ceiling-20261023.json`) and its earlier `resolve-room-projected-20261023.hlsl`.
+  resolve.hlsl is back to the 23:03 commit's text (97a980d, the user's 23:10 build) and skyTop to 0; its groundDepth 3 is what the user
+  asked to keep. The C++ side of it (`BackdropPlane::roomCentre* / roomRadius / roomEye`, `BackdropFit::roomRadiusShare / roomEye`:
+  Renderer.h / .cpp, MapStage.h) is still in the tree, sent to the shader and read by nothing. Its exe `build/release/bin/
+  Sandbox-20261023-0226-room-ceiling.exe` + `shaders-20261023-0226-room-ceiling/` set aside.
+
