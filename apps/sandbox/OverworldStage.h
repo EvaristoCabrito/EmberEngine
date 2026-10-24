@@ -406,17 +406,13 @@ class OverworldStage : public Stage {
   }
 
   // A film over everything, then `then`.
-  // A story moment's affinity between two heroes, the conversations' rule (BattleTalk.h applyReplyAffinity): the sorted pair key,
-  // the party leader's gains catching up faster, one decimal, -100..100.
+  // A story moment's affinity between two heroes, exactly the amount the user set (no leader catch-up): the conversations' pair
+  // score (sorted key, one decimal, -100..100).
   void addAffinity(const std::string& a, const std::string& b, double delta) {
     const std::string pair = a < b ? a + "|" + b : b + "|" + a;
     e2::Json& scores = save_["affinityScores"];
     if (!scores.is_object()) scores = e2::Json::object();
     const double score = scores.contains(pair) && scores[pair].is_number() ? scores[pair].get<double>() : 0.0;
-    std::string lead = "Kael";
-    if (const auto l = save_.find("partyLeader"); l != save_.end() && l->is_string() && world_.heroRecruited(l->get<std::string>(), save_))
-      lead = l->get<std::string>();
-    if (delta > 0 && (a == lead || b == lead)) delta = std::floor(delta * (2 - std::max(0.0, score) / 100) * 100 + 0.5) / 100;
     scores[pair] = std::clamp(std::floor((score + delta) * 10 + 0.5) / 10, -100.0, 100.0);
   }
 

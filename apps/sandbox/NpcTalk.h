@@ -107,6 +107,11 @@ struct NpcTalk {
   e2::Json save;                     // the campaign's active save while the Inn's menus are open (scratch when there is none)
   std::function<void()> previous;    // the overlay that was there before (BattleTalk)
   bool previewing = false;           // captures: `action` runs on the first frame (preview)
+  // The user's KaelNeeraINN scene (2026-10-23, ordered with the Inn's secret word): talking to Neera in the Inn with Kael leading
+  // plays it the first time; Kael and Neera gain +2 affinity after it, then her conversation opens as usual.
+  static constexpr const char* kKaelNeeraFilm = "content/films/kael-neera-inn-v01.mp4";
+  std::optional<CutsceneScreen> film;
+  std::optional<MapStage::Talk> afterFilm;  // the conversation the scene stands before
 
   // Captures (--map-ui npc:tavern / npc:smith / npc:healer): that reply's action as if the conversation had just closed.
   void preview(const std::string& a) { action = a, previewing = true; }
@@ -144,15 +149,61 @@ struct NpcTalk {
     record->saveActive(std::move(s));
   }
 
+  // The save a story moment writes into: Modo teste's own, else the campaign's active one, else the scratch one (a playtest).
+  e2::Json& storySave() {
+    if (testSave) return *testSave;
+    if (record) save = record->activeSave();
+    return save;
+  }
+  bool kaelNeeraScene(const MapStage& map, const MapStage::Talk& t) {
+    if (map.draftId().rfind("estalagem", 0) != 0 || t.name.rfind("Neera", 0) != 0) return false;
+    const e2::Json& s = storySave();
+    const auto lead = s.find("partyLeader");
+    return (lead == s.end() || !lead->is_string() || lead->get<std::string>() == "Kael") && !s.value("seenKaelNeeraInn", false);
+  }
+  void finishKaelNeeraScene() {
+    e2::Json& s = storySave();
+    s["seenKaelNeeraInn"] = true;
+    e2::Json& scores = s["affinityScores"];  // the pair's score (sorted key, one decimal, -100..100), +2 as the user said
+    if (!scores.is_object()) scores = e2::Json::object();
+    const double score = scores.contains("Kael|Neera") && scores["Kael|Neera"].is_number() ? scores["Kael|Neera"].get<double>() : 0.0;
+    scores["Kael|Neera"] = std::clamp(std::floor((score + 2) * 10 + 0.5) / 10, -100.0, 100.0);
+    write();
+  }
+
   void draw(MapStage& map) {
     if (previous) previous();
     const ImVec2 size = ImGui::GetIO().DisplaySize;
     if (std::exchange(previewing, false)) runAction(map);
-    if (!dialog && !inn)
+    if (!dialog && !inn && !film)
       if (std::optional<MapStage::Talk> t = map.takeTalk()) {
-        dialog.emplace(t->tree, npcPortraits(t->tree, map.characters()), engine2Public);
-        action.clear();
+        if (kaelNeeraScene(map, *t)) {
+          film.emplace(engine2Public, std::filesystem::absolute(kKaelNeeraFilm).string());
+          afterFilm = std::move(t);
+        } else {
+          dialog.emplace(t->tree, npcPortraits(t->tree, map.characters()), engine2Public);
+          action.clear();
+        }
       }
+    if (film) {
+      ImGui::SetNextWindowPos({0, 0});
+      ImGui::SetNextWindowSize(size);
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+      ImGui::Begin("##npcfilm", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse);
+      const bool over = film->draw(size);
+      ImGui::End();
+      ImGui::PopStyleVar(2);
+      if (over) {
+        film.reset();
+        finishKaelNeeraScene();
+        map.battleLog(tr("Afinidade Kael + Neera: +2", "Affinity Kael + Neera: +2"));
+        if (std::optional<MapStage::Talk> t = std::exchange(afterFilm, std::nullopt)) {
+          dialog.emplace(t->tree, npcPortraits(t->tree, map.characters()), engine2Public);
+          action.clear();
+        }
+      }
+    }
     if (dialog) {
       const bool closed = dialog->draw(size, [this, &map](const e2::Json& reply) {
         if (reply.contains("action") && reply["action"].is_string()) action = reply["action"].get<std::string>();
@@ -180,15 +231,15 @@ struct NpcTalk {
       ImGui::End();
       ImGui::PopStyleVar(2);
     }
-    const bool covering = dialog.has_value() || inn.has_value();
+    const bool covering = dialog.has_value() || inn.has_value() || film.has_value();
     map.inputHeld = covering;
-    map.hudHidden = inn.has_value();
+    map.hudHidden = inn.has_value() || film.has_value();
     // Turns and music held while this covers the map, let go when it stops (an overlay before this one sets them afresh
     // every frame; a battle script's own hold is never touched).
     if (covering) map.holdTurns = true, heldTurns = true;
     else if (std::exchange(heldTurns, false) && !previous) map.holdTurns = false;
-    const bool film = inn && inn->filmPlaying();  // Vargan's film carries its own sound
-    if (film) map.musicHeld = true, heldMusic = true;
+    const bool filmOn = (inn && inn->filmPlaying()) || film.has_value();  // Vargan's film and the Kael-Neera scene carry their own sound
+    if (filmOn) map.musicHeld = true, heldMusic = true;
     else if (std::exchange(heldMusic, false) && !previous) map.musicHeld = false;
   }
   bool heldTurns = false, heldMusic = false;
