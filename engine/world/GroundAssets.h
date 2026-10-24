@@ -80,12 +80,22 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"cave2-v01", "side", "ember-cave2-parede-v01", "content/ground/cave2-parede-v01.png", 3.0f},
     // The Misty Cave's level 3, A Bacia dos Esporos (cave3-v01, Attachments/MistyCave/3rdfloor, 2026-10-23; docs/MISTY_DEPTH3_PROMPTS.md):
     // the mycelium loam on plains, the mushroom-cap walkway on nave, the fallen giant mushrooms on ruins, the shelf-fungus tops on hill,
-    // the spore mire on snow. (The mycelium wall W1 was not delivered: the sides keep the default cliff surfaces.)
+    // the spore mire on snow; the mycelium wall W1 (Attachments/Underworld, delivered later the same day) on the sides.
     {"cave3-v01", "plains", "ember-cave3-micelio-v01", "content/ground/cave3-micelio-v01.png", 4.5f, true},
     {"cave3-v01", "nave", "ember-cave3-calcada-v01", "content/ground/cave3-calcada-v01.png", 4.0f, true},
     {"cave3-v01", "ruins", "ember-cave3-queda-v01", "content/ground/cave3-queda-v01.png", 4.0f, true},
     {"cave3-v01", "hill", "ember-cave3-orelha-v01", "content/ground/cave3-orelha-v01.png", 4.5f, true},
     {"cave3-v01", "snow", "ember-cave3-lodacal-v01", "content/ground/cave3-lodacal-v01.png", 4.0f, true},
+    {"cave3-v01", "side", "ember-cave3-parede-v01", "content/ground/cave3-parede-v01.png", 3.0f},
+    // Esporabrigo, the fungus-folk's village in the Bacia (sporehaven-v01, Attachments/Underworld, 2026-10-23;
+    // docs/MISTY_MISSING_GROUNDS.md): the tilled beds on plains, the felted mycelium lanes on nave, the harvest refuse on ruins, the
+    // stalk-round terraces on hill; the Bacia's mycelium wall on the sides (the village's own palisade W1 and its spore wash T5 not
+    // delivered yet).
+    {"sporehaven-v01", "plains", "ember-sporehaven-canteiros-v01", "content/ground/sporehaven-canteiros-v01.png", 4.5f, true},
+    {"sporehaven-v01", "nave", "ember-sporehaven-feltro-v01", "content/ground/sporehaven-feltro-v01.png", 4.0f, true},
+    {"sporehaven-v01", "ruins", "ember-sporehaven-colheita-v01", "content/ground/sporehaven-colheita-v01.png", 4.0f, true},
+    {"sporehaven-v01", "hill", "ember-sporehaven-talos-v01", "content/ground/sporehaven-talos-v01.png", 4.0f, true},
+    {"sporehaven-v01", "side", "ember-sporehaven-parede-v01", "content/ground/cave3-parede-v01.png", 3.0f},  // its own key: one asset per row
     // The Misty Cave's map 4, O Underdark de Mordávia (cave4-v01, Attachments/MistyCave/4rdFloor, 2026-10-23; docs/MISTY_DEPTH4_PROMPTS.md):
     // the Root-Crown's silver bark on plains, the Enclave's plank decks on nave, broken branches and crystal shards on ruins, the crown's
     // knotted burls on hill, the Glasswater Sea's shore on snow; the boughs' flanks on the sides.
