@@ -1,0 +1,20 @@
+{
+  "about": "Kael's conversation in the Inn, when another hero leads and he sits in that hero's seat (the user, 2026-10-24, with the Inn's secret word: \"criar uma árvore de diálogo nova para ele\"). MapStage findConversations gives it to the seated Kael; a pair scene of content/inn-scenes.json not seen yet plays before it.",
+  "id": "npc-kael",
+  "startId": "l1",
+  "lines": [
+    {"id": "l1", "speaker": "Kael", "portrait": "kael", "text": "Senta. A cerveja do Brue é ruim, mas é a única coisa quente que sobrou nessa terra.",
+     "replies": [
+       {"text": "Como estão as feridas?", "next": "l2"},
+       {"text": "Você parece preocupado.", "next": "l3"},
+       {"text": "Depois a gente conversa."}
+     ]},
+    {"id": "l2", "speaker": "Kael", "portrait": "kael", "text": "Fecham. Todas fecham. São as que não sangram que me tiram o sono.", "next": null},
+    {"id": "l3", "speaker": "Kael", "portrait": "kael", "text": "Cada estrada que a gente abre, alguém do outro lado já esperava por nós. Isso não é sorte. Fica de olho.",
+     "replies": [
+       {"text": "Sempre fico."},
+       {"text": "Você acha que alguém nos vende?", "next": "l4"}
+     ]},
+    {"id": "l4", "speaker": "Kael", "portrait": "kael", "text": "Acho que a cinza tem ouvidos. E que nem todo mundo nesta estalagem bebe por sede.", "next": null}
+  ]
+}

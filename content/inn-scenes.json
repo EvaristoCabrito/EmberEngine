@@ -5,6 +5,7 @@
     {"pair": ["Kael", "Salazar"], "film": "content/films/kael-salazar-inn-v01.mp4", "affinity": 2, "seen": "seenKaelSalazarInn"},
     {"pair": ["Kael", "Voss"], "film": "content/films/kael-voss-inn-v01.mp4", "affinity": 2, "seen": "seenKaelVossInn"},
     {"pair": ["Voss", "Neera"], "film": "content/films/voss-neera-inn-v01.mp4", "affinity": 2, "seen": "seenVossNeeraInn"},
-    {"pair": ["Neera", "Salazar"], "film": "content/films/neera-salazar-inn-v01.mp4", "affinity": 2, "seen": "seenNeeraSalazarInn"}
+    {"pair": ["Neera", "Salazar"], "film": "content/films/neera-salazar-inn-v01.mp4", "affinity": 2, "seen": "seenNeeraSalazarInn"},
+    {"pair": ["Salazar", "Voss"], "film": "content/films/salazar-voss-inn-v01.mp4", "affinity": 2, "seen": "seenSalazarVossInn"}
   ]
 }

@@ -9007,6 +9007,8 @@ class MapStage final : public Stage {
     for (char& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
     return s;
   }
+  // The Inn's floors only: the authored walker Kael stays, seated in the leader's place, when another hero leads.
+  bool kaelTakesSeat(const std::string& walker) const { return walker == "Kael" && draftId().rfind("estalagem", 0) == 0; }
   // GameApp startBattle's `seated` and `led` on the scene: companions not in the party leave; a leader other than the
   // authored walker takes its place with its own art (the leader seated on this map, else its catalog entry, idle).
   void arrangeScene() {
@@ -9018,6 +9020,20 @@ class MapStage final : public Stage {
     const size_t w = static_cast<size_t>(walker - units.begin());
     const auto seated = std::find_if(units.begin(), units.end(), [&](const e2::SceneUnit& u) { return u.side == "neutral" && u.name == options_.leader; });
     e2::SceneUnit led = units[w];
+    if (seated != units.end() && kaelTakesSeat(units[w].name)) {
+      // The Inn (the user, 2026-10-24, with the Inn's secret word): the leader walks with its seated art, and the authored walker
+      // (Kael) sits in the leader's seat with his own art, to be talked to (findConversations, content/inn-kael-dialog.json).
+      auto copyArt = [](e2::SceneUnit& to, const e2::SceneUnit& from) {
+        to.classId = from.classId, to.key = from.key, to.sprite = from.sprite, to.set = from.set, to.clip = from.clip, to.facing = from.facing;
+        to.mirror = from.mirror, to.boxW = from.boxW, to.boxH = from.boxH, to.foot = from.foot, to.natW = from.natW, to.natH = from.natH;
+        to.frames = from.frames, to.pace = from.pace;
+      };
+      const e2::SceneUnit walker0 = units[w], seat0 = *seated;
+      copyArt(units[w], seat0), units[w].name = options_.leader;
+      copyArt(*seated, walker0), seated->name = walker0.name;
+      logInfo("party: {} leads (walks in {}'s place), {} sits in {}'s seat", options_.leader, walker0.name, walker0.name, options_.leader);
+      return;
+    }
     if (seated != units.end()) {
       const e2::SceneUnit& s = *seated;
       led.classId = s.classId, led.key = s.key, led.sprite = s.sprite, led.set = s.set, led.clip = s.clip, led.facing = s.facing, led.mirror = s.mirror;
@@ -9063,10 +9079,16 @@ class MapStage final : public Stage {
       return;
     }
     e2::BattleUnit& s = *seated;
+    const int seatX = s.x, seatY = s.y;
+    const bool kaelSits = kaelTakesSeat(units[w].name);
     s.side = "player", s.x = units[w].x, s.y = units[w].y;
     const size_t from = static_cast<size_t>(seated - units.begin());
     std::swap(units[w], units[from]);
     std::swap(unitSounds_[w], unitSounds_[from]);
+    if (kaelSits) {  // the Inn: Kael keeps the leader's seat (arrangeScene)
+      units[from].side = "neutral", units[from].x = seatX, units[from].y = seatY;
+      return;
+    }
     drop(from);
   }
   // Each NPC's conversation: the map's neutral spawn of that name on that hex (Engine2 handleCell reads the unit's own).
@@ -9080,6 +9102,10 @@ class MapStage final : public Stage {
           npcDialog_[b] = s.dialog;
           break;
         }
+      if (!npcDialog_.contains(b) && u.name == "Kael" && kaelTakesSeat(u.name)) {  // Kael seated in the Inn: his own tree
+        std::ifstream in("content/inn-kael-dialog.json", std::ios::binary);
+        if (e2::Json tree = in ? e2::Json::parse(in, nullptr, false) : e2::Json(); tree.is_object() && tree.contains("lines")) npcDialog_[b] = tree;
+      }
     }
     if (!npcDialog_.empty()) logInfo("conversations: {} NPCs talk", npcDialog_.size());
   }
