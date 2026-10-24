@@ -1,0 +1,40 @@
+{
+  "version": "v02",
+  "lod0Triangles": 34000,
+  "lod1Triangles": 12916,
+  "highTriangles": 215230,
+  "maps": [
+    {
+      "file": "ao-2k.png",
+      "bytes": 1344919
+    },
+    {
+      "file": "base-color-2k.png",
+      "bytes": 2313749
+    },
+    {
+      "file": "metalness-2k.png",
+      "bytes": 119638
+    },
+    {
+      "file": "normal-2k.png",
+      "bytes": 3876208
+    },
+    {
+      "file": "orm-2k.png",
+      "bytes": 2473947
+    },
+    {
+      "file": "roughness-2k.png",
+      "bytes": 1715686
+    }
+  ],
+  "runtimeMaps": [
+    "base-color-2k.png",
+    "normal-2k.png",
+    "orm-2k.png"
+  ],
+  "gpuRGBA8WithMipMiB": 64,
+  "threads": 2,
+  "doorHeight": 2.4
+}

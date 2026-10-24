@@ -1,0 +1,10 @@
+{
+  "version": "v04-closed-shutters",
+  "basedOn": "v03-glass",
+  "lod0Triangles": 34052,
+  "lod1Triangles": 12969,
+  "glazingTriangles": 52,
+  "gpuRGBA8WithMipMiB": 64,
+  "threads": 2,
+  "sideWindow": "original shutters closed; original glass retained behind them"
+}

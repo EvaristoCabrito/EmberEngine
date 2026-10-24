@@ -1,0 +1,14 @@
+{
+  "version": "v03-glass",
+  "basedOn": "approved-v01",
+  "lod0Triangles": 34052,
+  "lod1Triangles": 12969,
+  "glazingTriangles": 52,
+  "gpuRGBA8WithMipMiB": 64,
+  "threads": 2,
+  "glass": {
+    "ior": 1.52,
+    "roughness": 0.1,
+    "transmission": 0.65
+  }
+}
