@@ -1566,6 +1566,19 @@ detalhes estranhos e nada a ver, deixa profissional", and "não alterar o sistem
   connector whose target is `OverworldStage::kUnderworldExit` "underworld-atlas"; main.cpp writes the map done + the flag and opens
   the world map on the Atlas, `showUnderworld`; Modo teste goes back to its RPG map on the Atlas). Capture `--map-ui underworld`.
 
+## Ambiente "Interna acima do solo"; the tower's probes leaked into every later map (2026-10-23 night)
+
+- **The leak (the user: the Bosque Morto's and the Frozen Tundra's boards half black along a stepped hex edge, units and houses black):**
+  the Renderer outlives a MapStage, and the tower's light probes + their gate request (`probesWanted_`, sticky until the next
+  `setProbes`) stayed bound after leaving the tower, so every map opened after it in the same run was shaded through the tower's room
+  mask (sun cut outside it, the tower's probes as the ambient). Now every MapStage calls `renderer.setProbes(nullptr)` in its first
+  frame (`probesReleased_`); a room of its own uploads its probes again after.
+- **"Interna acima do solo"** (the user: "make sure the tower settings are saved as Indoors AboveGround", "deixe essa opção disponível
+  no map editor"): the Map Editor's Ambiente has four choices: Externo / Interno / Interna acima do solo / Subterrâneo. The new one saves
+  `environment "indoor"` + `"aboveGround": true` (`MapDraft::aboveGround`): the tower's model, Luz das janelas on by default, the probes,
+  the openings' lights (`MapStage::windowLightMap()` = the old id list `kWindowLightMaps` OR the mark). `watchtower-gate-floor010.json` =
+  009 + the mark (009 untouched; the campaign plays the highest serial).
+
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
 - `content/engine2/backdrop-fit.json` painting entry `inn-second-floor-v01.jpg#teto-salao` (2026-10-23): made as an extra panorama when

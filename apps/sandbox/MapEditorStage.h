@@ -2220,16 +2220,25 @@ class MapEditorStage : public Stage {
     {
       // Subterrâneo (the user, 2026-10-21): the only maps free of the sun, the moon and the sky; saved as "underground": true (an
       // underground map is an interior: environment "indoor"). Externo / Interno take the mark off.
+      // Interna acima do solo (the user, 2026-10-23: the Torre de Vigia's settings): environment "indoor" + "aboveGround": true, the
+      // room lit from outside only through its windows and doors (Luz das janelas). The other three take that mark off.
       const bool underground = draft_.contains("underground") && draft_["underground"].is_boolean() && draft_["underground"].get<bool>();
       const bool indoor = draft_.value("environment", "outdoor") == "indoor";
+      const bool aboveGround = !underground && indoor && draft_.contains("aboveGround") && draft_["aboveGround"].is_boolean() && draft_["aboveGround"].get<bool>();
       static const char* kOutdoor = "Externo (sol forte, sombras marcadas)";
       static const char* kIndoor = "Interno (luz suave, sem sol direto)";
+      static const char* kAboveGround = "Interna acima do solo (luz de fora só pelas janelas e portas)";
       static const char* kUnderground = "Subterrâneo (sem sol, lua e céu)";
       ImGui::SetNextItemWidth(-110);
-      if (ImGui::BeginCombo("Ambiente", underground ? kUnderground : indoor ? kIndoor : kOutdoor)) {
-        if (ImGui::Selectable(kOutdoor, !indoor && !underground)) beginEdit(), draft_["environment"] = "outdoor", draft_.erase("underground");
-        if (ImGui::Selectable(kIndoor, indoor && !underground)) beginEdit(), draft_["environment"] = "indoor", draft_.erase("underground");
-        if (ImGui::Selectable(kUnderground, underground)) beginEdit(), draft_["environment"] = "indoor", draft_["underground"] = true;
+      if (ImGui::BeginCombo("Ambiente", underground ? kUnderground : aboveGround ? kAboveGround : indoor ? kIndoor : kOutdoor)) {
+        if (ImGui::Selectable(kOutdoor, !indoor && !underground))
+          beginEdit(), draft_["environment"] = "outdoor", draft_.erase("underground"), draft_.erase("aboveGround");
+        if (ImGui::Selectable(kIndoor, indoor && !underground && !aboveGround))
+          beginEdit(), draft_["environment"] = "indoor", draft_.erase("underground"), draft_.erase("aboveGround");
+        if (ImGui::Selectable(kAboveGround, aboveGround))
+          beginEdit(), draft_["environment"] = "indoor", draft_.erase("underground"), draft_["aboveGround"] = true;
+        if (ImGui::Selectable(kUnderground, underground))
+          beginEdit(), draft_["environment"] = "indoor", draft_["underground"] = true, draft_.erase("aboveGround");
         ImGui::EndCombo();
       }
     }

@@ -126,6 +126,10 @@ struct MapDraft {
   // EmberEngine's own: an underground map ("Subterrâneo" in the Map Editor's Ambiente; the user, 2026-10-21): the only maps free of
   // the sun, the moon and the sky. Every other map takes the game's real clock (real sun, real moon).
   bool underground = false;
+  // EmberEngine's own: an interior above the ground ("Interna acima do solo" in the Map Editor's Ambiente; the user, 2026-10-23: the
+  // Torre de Vigia's settings saved as this kind): environment "indoor" + "aboveGround": true. The room is lit from outside only through
+  // its windows and doors (Luz das janelas on by default, the light probes, the openings' lights), by the game's clock.
+  bool aboveGround = false;
   // EmberEngine's own: this map's base levels in place of the board's BASE_LEVELS (2: a level-0 floor stands 2 units over the void's
   // ground, and the board's sides go down to it). 0 = the floor at the void's ground (the Torre de Vigia's gate floor, 2026-10-23, the
   // user: "encostar o tabuleiro da torre até a porta chegar no chão": the ground image lies at the board's base, so the gate's threshold

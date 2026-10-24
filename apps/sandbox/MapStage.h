@@ -413,7 +413,7 @@ class MapStage final : public Stage {
       if (options.background < 0 && !panoramas_.empty()) background_ = 4 + static_cast<int>(panoramas_.size());
       enforcePanorama("load");
       // Luz das janelas: by map id (each map its own diorama): the watchtower's roofed floors open with it; every other map OFF.
-      windowLight_ = options.windowLight >= 0 ? std::clamp(options.windowLight, 0, 1) : kWindowLightMaps.contains(board_->draft().id) ? 1 : 0;
+      windowLight_ = options.windowLight >= 0 ? std::clamp(options.windowLight, 0, 1) : windowLightMap() ? 1 : 0;
       // (The Atmosfera is never switched off by the light through the windows: the user, 2026-10-22, "remover essa regra do jogo, não
       // existe essa regra"; it opens as on any map. The panel's OFF stays the player's choice.)
       // The moon's art on every map but Subterrâneo (one sky for the whole game): the watchtower draws the sky since 2026-10-22, and
@@ -661,6 +661,10 @@ class MapStage final : public Stage {
     renderer.setVfx(spellFx_.vfx());
     renderer.setLights(lights_);
     laps.lap("hand-over");
+    // The renderer outlives the stage: a room's probes (and its gate request) stayed bound after leaving it, so the next map was shaded
+    // through the tower's room mask (the user, 2026-10-23: the Bosque Morto's and the Frozen Tundra's boards half black along a hex edge,
+    // the units black). Every map lets the previous one's go in its first frame; a room of its own uploads them again below.
+    if (!probesReleased_) probesReleased_ = true, renderer.setProbes(nullptr);
     // Luz das janelas: the room's light probes, once baked (startProbeBake), light it from the hour's sky and the key light's bounce.
     if (probeBusy_ && probeJob_.done()) uploadProbes(renderer);
     // Until the bake lands, the room's mask and roof alone (one empty probe): the sun and the sky light nothing outside the room nor
@@ -2550,7 +2554,7 @@ class MapStage final : public Stage {
     probeUploaded_ = false;
     probeMaskUploaded_ = false;
     if (probeBusy_) jobs_.wait(probeJob_), probeBusy_ = false;
-    if (!board_ || !scene_ || !kWindowLightMaps.contains(board_->draft().id) || underground()) return;
+    if (!board_ || !scene_ || !windowLightMap() || underground()) return;
     if (roomCells_.empty()) {
       logWarn("light probes: no hex enclosed by the walls (the room is open to the board's edge); no probes");
       return;
@@ -9756,6 +9760,7 @@ class MapStage final : public Stage {
   JobCounter probeJob_;
   bool probeBusy_ = false, probeUploaded_ = false, probeMeterLogged_ = false;
   bool probeMaskUploaded_ = false;  // the mask-only volume handed over before the bake (uploadProbeMaskOnly)
+  bool probesReleased_ = false;     // the previous map's probes let go in this stage's first frame
   std::vector<uint32_t> probeFloor_;          // per column of the grid, its lowest probe in the room (the camera's meter reads them)
   float roofBottom_ = 0.0f, roofCentreY_ = 0.0f;  // ... its underside and centre (world y)
   glm::vec3 roofCentre_{0.0f};                     // ... its centre on the board (x, z)
@@ -9913,6 +9918,9 @@ class MapStage final : public Stage {
   // (The Inn's floors are NOT listed: the user, 2026-10-22, "deixa todos os mapas em paz", "não existe regra": the light through the
   // Inn's windows is the panel's choice there, and the Inn's floors keep their panoramas whatever the choice: the frame's background below.)
   inline static const std::set<std::string> kWindowLightMaps = {"watchtower-gate-floor", "watchtower-barracks", "watchtower-command"};
+  // A map lit through its windows: the listed ids, or any map the Map Editor marks "Interna acima do solo" (MapDraft::aboveGround;
+  // the user, 2026-10-23: the tower's settings saved as that kind).
+  bool windowLightMap() const { return board_ && (kWindowLightMaps.contains(board_->draft().id) || board_->draft().aboveGround); }
   // Only for the second or two the room's probes take to bake after the map loads (probeMeterLux reads the room itself after):
   // the camera's meter as a share of the outside's, never under the old torch-lit room's reading.
   static constexpr float kWindowMeterShare = 0.04f;
