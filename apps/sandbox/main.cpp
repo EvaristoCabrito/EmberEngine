@@ -60,6 +60,7 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <atomic>
 #include <charconv>
 #include <chrono>
 #include <cstdio>
@@ -67,6 +68,7 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <future>
 #include <memory>
 #include <string>
 #include <optional>
@@ -573,6 +575,41 @@ struct BlankStage final : Stage {
   Loading loading() const override { return {0, 0, 0, !preparing}; }
 };
 
+// The window's first frames (the user, 2026-10-24: "it needs to open up sooner and leave it on loading"): the title's
+// background and its loading bar while the game's data loads on a worker and the title's art decodes on another; the
+// title then opens with the same bar (TitleStage::carryLoader), counting on from here.
+struct BootStage final : Stage {
+  UiPreload* art = nullptr;            // the title's art, handed to the title afterwards
+  const std::atomic<int>* steps = nullptr;  // the data steps done
+  int totalSteps = 0;
+  loading::TitleLoader loader;
+  BlankStage blank;
+
+  void frame(Renderer& renderer, VkExtent2D size) override { blank.frame(renderer, size); }
+  // What the bar counts here (the title's bar goes on from it).
+  size_t unitsDone() const { return static_cast<size_t>(steps ? steps->load() : 0); }
+  void drawPanel() override {
+    const ImGuiIO& io = ImGui::GetIO();
+    const auto [done, total] = art ? art->update() : std::pair<size_t, size_t>{0, 0};
+    const size_t all = total + static_cast<size_t>(totalSteps);
+    loader.set(all ? static_cast<float>(done + unitsDone()) / static_cast<float>(all) : 0.0f, false, ImGui::GetTime());
+    ImGui::SetNextWindowPos({0, 0});
+    ImGui::SetNextWindowSize(io.DisplaySize);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::Begin("##boot", nullptr,
+                 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings |
+                     ImGuiWindowFlags_NoInputs);
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    TitleStage::drawBackdrop(dl, {0, 0}, io.DisplaySize);
+    const float rem = 16.0f;  // the title's canvas units
+    const auto [x, width] = TitleStage::loaderColumn(io.DisplaySize, rem);
+    loader.draw(dl, io.DisplaySize, x, width, rem, ImGui::GetTime(), io.DeltaTime);
+    ImGui::End();
+    ImGui::PopStyleVar(2);
+  }
+};
+
 MapStageOptions mapOptions(const Options& o);
 // Modo teste: the session's heroes at its level (30) and the class path each chose on the Party screen; every hero knows every
 // spell of its class at that level (the user, 2026-10-23: "todas as magias para todos os personagens no debug").
@@ -972,8 +1009,46 @@ int runCapture(const Options& o) {
 }
 
 int runWindow(const Options& o) {
+  const auto bootStart = Clock::now();
+  const auto bootMs = [&] { return std::chrono::duration<double, std::milli>(Clock::now() - bootStart).count(); };
+  const bool titleMode = o.title || (o.map.empty() && !o.battle && o.sprites.empty() && o.meshes.empty() && o.stream.empty());
+  // The campaign's save bank (save.ts) and the world map's rules (overworld.ts), Engine2's tables.
+  e2::Campaign campaign;
+  bool hasCampaign = false;
+  e2::Overworld world;
+  bool hasWorld = false;
+  // The Map Editor's saved Locais and R-Encounter (content/maps): the campaign and the world map play them, again
+  // whenever the editor saves them.
+  auto applyLocais = [&] {
+    const e2::Locais locais = e2::Locais::load("content/engine2/editor-catalog.json");
+    if (hasCampaign) e2::applyLocais(campaign.data(), locais, savedMapsDir());
+    if (hasWorld) world.applyLocais(locais, campaign.data());
+  };
+  // Every mission's intro / outro conversation (export_dialogs.ts).
+  e2::Json dialogs;
+  // Dev Controls' switches (Modo teste), applied to every map opened here.
+  DevGfx devGfx;
+  // All of it needs no GPU: it loads on a worker while the window and the GPU come up (BootStage shows the bar meanwhile),
+  // and the title's art decodes on another.
+  constexpr int kBootSteps = 4;
+  std::atomic<int> bootSteps{0};
+  std::future<void> boot = std::async(std::launch::async, [&] {
+    hasCampaign = campaign.open("content/engine2/campaign.json", o.saveBank.empty() ? e2::Campaign::savePath() : std::filesystem::path(o.saveBank));
+    ++bootSteps;
+    hasWorld = world.load("content/engine2/overworld.json");
+    ++bootSteps;
+    applyLocais();
+    ++bootSteps;
+    dialogs = loadDialogs("content/engine2/dialogs.json");
+    devGfx = DevGfx::load();
+    ++bootSteps;
+    logInfo("startup: data loaded at {:.0f} ms", bootMs());
+  });
+  std::unique_ptr<UiPreload> titleArt = titleMode ? std::make_unique<UiPreload>(TitleStage::artFiles(o.gameAssets)) : nullptr;
   Services services(o);
+  services.perf.visible = false;  // the game shows only its own screens (Ctrl+F1 brings the numbers back, in Modo teste)
   Window window({"Ember", o.width, o.height, !o.windowed});
+  logInfo("startup: window at {:.0f} ms", bootMs());
   VulkanContext context({o.validation, window.handle()});
   uint32_t width = 0, height = 0;
   window.pixelSize(width, height);
@@ -981,7 +1056,37 @@ int runWindow(const Options& o) {
   DebugUi ui(context, window.handle(), Renderer::outputFormat());
   Renderer renderer(context, swapchain.get(), swapchain->extent());
   renderer.setUi(&ui);
+  logInfo("startup: GPU ready at {:.0f} ms", bootMs());
   AudioMixer::get().setRoot(o.gameAssets);
+  // The window's first frames: the title's background and its loading bar until the data is in (BootStage); the title
+  // carries the bar on.
+  std::optional<loading::TitleLoader> bootLoader;
+  if (boot.wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
+    BootStage bootStage;
+    bootStage.art = titleArt.get(), bootStage.steps = &bootSteps, bootStage.totalSteps = kBootSteps;
+    const auto first = Clock::now();
+    auto last = first;
+    while (boot.wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
+      if (!window.pumpEvents()) {
+        boot.wait();
+        return 0;
+      }
+      window.pixelSize(width, height);
+      if (width == 0 || height == 0) {  // minimised
+        SDL_Delay(10);
+        continue;
+      }
+      const auto now = Clock::now();
+      const float dt = std::chrono::duration<float>(now - last).count();
+      last = now;
+      const bool presented = !window.consumeResized() && services.frame(ui, renderer, &bootStage, swapchain->extent(), dt, [&] {
+        return renderer.renderFrame(std::chrono::duration<float>(now - first).count());
+      });
+      if (!presented && swapchain->recreate(width, height)) renderer.resize(swapchain->extent());
+    }
+    bootLoader = bootStage.loader;
+  }
+  boot.get();
   // The title screen when asked (or when nothing else is). Its save slots open the campaign's world map; a mission
   // from there (or a test-mode map) plays in this window, then the world map comes back.
   std::optional<MissionEntry> pending;
@@ -990,24 +1095,7 @@ int runWindow(const Options& o) {
   std::optional<MissionEntry> preparingEntry;
   bool backToTitle = false, openMap = false;
   std::unique_ptr<Stage> stage;
-  // The campaign's save bank (save.ts) and the world map's rules (overworld.ts), Engine2's tables.
-  e2::Campaign campaign;
-  const bool hasCampaign = campaign.open("content/engine2/campaign.json", o.saveBank.empty() ? e2::Campaign::savePath() : std::filesystem::path(o.saveBank));
-  e2::Overworld world;
-  const bool hasWorld = world.load("content/engine2/overworld.json");
-  // The Map Editor's saved Locais and R-Encounter (content/maps): the campaign and the world map play them, again
-  // whenever the editor saves them.
-  auto applyLocais = [&] {
-    const e2::Locais locais = e2::Locais::load("content/engine2/editor-catalog.json");
-    if (hasCampaign) e2::applyLocais(campaign.data(), locais, savedMapsDir());
-    if (hasWorld) world.applyLocais(locais, campaign.data());
-  };
-  applyLocais();
-  // Every mission's intro / outro conversation (export_dialogs.ts).
-  const e2::Json dialogs = loadDialogs("content/engine2/dialogs.json");
-  // Dev Controls' switches (Modo teste), applied to every map opened here.
-  DevGfx devGfx = DevGfx::load();
-  std::string playing;        // the campaign mission being fought (its result goes into the active slot)
+  std::string playing;       // the campaign mission being fought (its result goes into the active slot)
   std::string campaignNote;   // what the world map says when the fight is left
   CampaignPaths paths;
   paths.engine2Public = o.gameAssets;
@@ -1044,7 +1132,9 @@ int runWindow(const Options& o) {
           SDL_Event quit{};
           quit.type = SDL_EVENT_QUIT;
           SDL_PushEvent(&quit);
-        });
+        },
+        std::move(titleArt));  // the first title takes the art decoding since the window opened; later ones start their own
+    if (bootLoader) title->carryLoader(*bootLoader, kBootSteps), bootLoader.reset();
     if (hasCampaign && hasWorld)
       title->onTestMode([&] {
         testSession = freshTestSession(campaign);  // GameApp ?start=test: a fresh test session every entry
@@ -1225,11 +1315,10 @@ int runWindow(const Options& o) {
     stage = std::make_unique<BlankStage>();
     services.frame(ui, renderer, stage.get(), swapchain->extent(), 0.0f, [&] { return renderer.renderFrame(static_cast<float>(clockNow())); });
   };
-  const bool titleMode = o.title || (o.map.empty() && !o.battle && o.sprites.empty() && o.meshes.empty() && o.stream.empty());
   if (titleMode) stage = makeTitle();
   else stage = makeStage(o, context, renderer, services.assets, services.jobs);
   if (dynamic_cast<MapStage*>(stage.get())) curtain.open(loading::Curtain::Kind::Battle, clockNow());
-  services.perf.visible = false;  // the game shows only its own screens (Ctrl+F1 brings the numbers back, in Modo teste)
+  logInfo("startup: first screen at {:.0f} ms", bootMs());
 
   window.setEventHook([&](const SDL_Event& event) {
     if (ui.processEvent(event)) return;

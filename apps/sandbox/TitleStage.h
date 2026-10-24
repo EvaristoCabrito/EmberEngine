@@ -46,12 +46,28 @@ class TitleStage : public Stage {
     std::filesystem::path scenes;                               // build/engine2-scenes (export_scene.ts)
     std::filesystem::path battles = "content/engine2/battles";  // export_battle.ts
   };
-  // play: a test-mode map; campaign: the chosen slot's campaign (the world map); quit: Sair.
+  // play: a test-mode map; campaign: the chosen slot's campaign (the world map); quit: Sair. `preload`: the title's art
+  // already decoding (main.cpp starts it with the window, artFiles), else the title starts it.
   TitleStage(Paths paths, e2::Campaign* campaign, std::function<void(const MissionEntry&)> play, std::function<void()> startCampaign,
-             std::function<void()> quit)
+             std::function<void()> quit, std::unique_ptr<UiPreload> preload = nullptr)
       : paths_(std::move(paths)), campaign_(campaign), play_(std::move(play)), startCampaign_(std::move(startCampaign)), quit_(std::move(quit)) {
     findMissions();
-    preload_ = std::make_unique<UiPreload>(titleArt());
+    preload_ = preload ? std::move(preload) : std::make_unique<UiPreload>(titleArt());
+  }
+  // The window's start (main.cpp BootStage): the bar that was up while the game's data loaded carries on here, its `units`
+  // counted before the art's.
+  void carryLoader(const loading::TitleLoader& loader, size_t units) { loader_ = loader, bootUnits_ = units; }
+  // The title's background (title.css .title-screen + .title-veil); its art only once decoded (never read on this thread).
+  static void drawBackdrop(ImDrawList* dl, ImVec2 a, ImVec2 b) {
+    dl->AddRectFilled(a, b, IM_COL32(14, 14, 14, 255));  // .title-screen #0e0e0e
+    if (const std::filesystem::path art = backdropFile(); uiImageLoaded(art))
+      if (const UiImage* hero = uiImage(art)) imageCover(dl, *hero, a, b, 0.5f, 0.42f);
+    verticalGradient(dl, a, b, {{0.0f, IM_COL32(8, 8, 8, 69)}, {0.36f, IM_COL32(10, 10, 10, 99)}, {0.72f, IM_COL32(10, 10, 10, 219)}, {1.0f, IM_COL32(14, 14, 14, 255)}});
+  }
+  // #title-loader's place: the menu column's left edge and its width.
+  static std::pair<float, float> loaderColumn(ImVec2 size, float rem) {
+    const float width = std::min(32.0f * rem, size.x - 2.5f * rem);
+    return {(size.x - width) * 0.5f, std::min(25.0f * rem, size.x - 2.5f * rem)};
   }
   // "Modo teste" opens Engine2's test menu through this (without it: the old list of every exported map).
   void onTestMode(std::function<void()> open) { testMode_ = std::move(open); }
@@ -111,7 +127,8 @@ class TitleStage : public Stage {
     // The title's art load (title/main.ts loadTitleResources): the bar shows how much of it has settled.
     if (preload_) {
       const auto [done, total] = preload_->update();
-      loader_.set(total ? static_cast<float>(done) / static_cast<float>(total) : 1.0f, done >= total, ImGui::GetTime());
+      const size_t all = bootUnits_ + total;
+      loader_.set(all ? static_cast<float>(bootUnits_ + done) / static_cast<float>(all) : 1.0f, done >= total, ImGui::GetTime());
     }
     rem_ = 16.0f;  // canvas units: the UI is zoomed to the window (DebugUi::kUiHeight), 24 px at 1080
     ImGui::SetNextWindowPos({0, 0});
@@ -146,10 +163,7 @@ class TitleStage : public Stage {
   void drawTitle(ImVec2 size) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     const ImVec2 a{0, 0}, b = size;
-    dl->AddRectFilled(a, b, IM_COL32(14, 14, 14, 255));  // .title-screen #0e0e0e
-    if (const UiImage* hero = uiImage(std::filesystem::path("content/backdrops/title-bg.jpg"))) imageCover(dl, *hero, a, b, 0.5f, 0.42f);
-    // .title-veil
-    verticalGradient(dl, a, b, {{0.0f, IM_COL32(8, 8, 8, 69)}, {0.36f, IM_COL32(10, 10, 10, 99)}, {0.72f, IM_COL32(10, 10, 10, 219)}, {1.0f, IM_COL32(14, 14, 14, 255)}});
+    drawBackdrop(dl, a, b);
     // .title-topline .title-mark
     spacedText(dl, uiFont(UiFont::Mark), 0.95f * kTitleText * rem_, {1.25f * rem_, 1.25f * rem_ + 0.4f * rem_}, IM_COL32(231, 199, 150, 191), "EMBER ASHES", 0.18f);
     ImGui::SetCursorScreenPos({size.x - rem_ - 2.75f * rem_, 1.25f * rem_});
@@ -287,11 +301,16 @@ class TitleStage : public Stage {
   // What the title loads before the game opens (Engine2 loadTitleResources: the title art, the loading screen's art, the
   // game's art): every menu picture of game/ui and game/title, the world map and the mission briefings, so the screens
   // after the title open at once.
-  std::vector<std::filesystem::path> titleArt() const {
+  std::vector<std::filesystem::path> titleArt() const { return artFiles(paths_.engine2Public); }
+
+ public:
+  static std::filesystem::path backdropFile() { return "content/backdrops/title-bg.jpg"; }
+  // The title's background first (the screen shows it as soon as it is in), then the rest.
+  static std::vector<std::filesystem::path> artFiles(const std::filesystem::path& engine2Public) {
     std::vector<std::filesystem::path> files;
     auto add = [&](const std::filesystem::path& dir, const char* prefix) {
       std::error_code ec;
-      for (const auto& e : std::filesystem::directory_iterator(paths_.engine2Public / dir, ec)) {
+      for (const auto& e : std::filesystem::directory_iterator(engine2Public / dir, ec)) {
         if (!e.is_regular_file()) continue;
         // wide names: Engine2's art has names no narrow conversion survives ("✕", "—"), which are skipped
         std::wstring ext = e.path().extension().wstring();
@@ -312,10 +331,13 @@ class TitleStage : public Stage {
         if (e.is_regular_file() && name.rfind("brief-", 0) == 0 && !uiImageLoaded(e.path())) files.push_back(e.path());
       }
     }
-    if (const auto map = paths_.engine2Public / "game/assets/world-map.jpg"; !uiImageLoaded(map)) files.push_back(map);
+    if (const auto map = engine2Public / "game/assets/world-map.jpg"; !uiImageLoaded(map)) files.push_back(map);
     std::sort(files.begin(), files.end());
+    if (!uiImageLoaded(backdropFile())) files.insert(files.begin(), backdropFile());
     return files;
   }
+
+ private:
 
   // --- the mission list (.save-slots-screen) -----------------------------------------------------------------------
 
@@ -468,6 +490,7 @@ class TitleStage : public Stage {
   int frames_ = 0;
   std::unique_ptr<UiPreload> preload_;
   loading::TitleLoader loader_;
+  size_t bootUnits_ = 0;  // carryLoader: what was loaded before the title, counted in its bar
 };
 
 }  // namespace ember
