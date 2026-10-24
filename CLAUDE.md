@@ -1578,6 +1578,11 @@ detalhes estranhos e nada a ver, deixa profissional", and "não alterar o sistem
   `environment "indoor"` + `"aboveGround": true` (`MapDraft::aboveGround`): the tower's model, Luz das janelas on by default, the probes,
   the openings' lights (`MapStage::windowLightMap()` = the old id list `kWindowLightMaps` OR the mark). `watchtower-gate-floor010.json` =
   009 + the mark (009 untouched; the campaign plays the highest serial).
+- **O Bosque Morto, panorama 02 (the user's order with the secret word, 2026-10-23 night):** `bosque-morto-panorama-v02.png` = v01 with
+  the faint haze of its top 20 rows cleared (alpha 0..77 there: the painting's top edge showed as a thin arc across the sky), rows 20+
+  identical; its entry carries the user's BosqueGround (`content/backdrops/bosque-ground-v01.jpg`, groundTile 16, groundFar 300,
+  groundFromDegrees 3: first values, the user judges); opens first, v01 kept in the list; relocked. Ground pack `ground-v32.pak` = v31 +
+  those two images (JOGAR uses it first).
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
