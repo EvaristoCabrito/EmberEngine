@@ -2,10 +2,9 @@
   "section": "Caverna · Underdark de Mordávia",
   "decorations": [
     {"id": "ember-cave4-bough", "image": "cave4-bough-v01", "name": "Galho ascendente", "like": "cave-basalt-006-pillar"},
-    {"id": "ember-cave4-crystal", "image": "cave4-crystal-v01", "name": "Cristal caído do teto", "like": "cave-glowing-mushrooms",
-     "light": {"color": [0.72, 0.86, 1], "intensity": 4, "radius": 4.68, "flicker": 0.06, "minHeight": 1}},
+    {"id": "ember-cave4-crystal", "image": "cave4-crystal-v01", "name": "Cristal caído do teto", "like": "cave-glowing-mushrooms", "light": {"color": [0.72, 0.86, 1], "intensity": 4, "radius": 4.68, "flicker": 0.06, "minHeight": 1}},
     {"id": "ember-cave4-burl", "image": "cave4-burl-v01", "name": "Nó de casca", "like": "cave-fractured-boulders-001"},
-    {"id": "ember-cave4-shrine", "image": "cave4-shrine-v01", "name": "Santuário do Enclave", "like": "cave-basalt-006-brazier",
-     "light": {"color": [1, 0.74, 0.36], "intensity": 3, "radius": 3.6, "flicker": 0.1, "minHeight": 1}}
+    {"id": "ember-cave4-shrine", "image": "cave4-shrine-v01", "name": "Santuário do Enclave", "like": "cave-basalt-006-brazier", "light": {"color": [1, 0.74, 0.36], "intensity": 3, "radius": 3.6, "flicker": 0.1, "minHeight": 1}},
+    {"id": "ember-cave4-bough-v2", "image": "cave4-bough-v02", "name": "Galho ascendente (inteiro)", "like": "cave-basalt-006-pillar"}
   ]
 }

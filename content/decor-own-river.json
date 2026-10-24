@@ -2,9 +2,12 @@
   "section": "Caverna · Margens do Rio Negro",
   "decorations": [
     {"id": "ember-river-column", "image": "river-column-v01", "name": "Coluna de gesso", "like": "cave-basalt-006-pillar"},
-    {"id": "ember-river-fluorite", "image": "river-fluorite-v01", "name": "Drusa de fluorita", "like": "cave-glowing-mushrooms",
-     "light": {"color": [0.66, 0.45, 1], "intensity": 3.5, "radius": 4.2, "flicker": 0.05, "minHeight": 1}},
-    {"id": "ember-river-mooring-lamp", "image": "river-mooring-lamp-v01", "name": "Lanterna de amarração", "like": "cave-basalt-006-brazier",
-     "light": {"color": [1, 0.9, 0.72], "intensity": 4, "radius": 4.68, "flicker": 0.1, "minHeight": 1}}
+    {"id": "ember-river-fluorite", "image": "river-fluorite-v01", "name": "Drusa de fluorita", "like": "cave-glowing-mushrooms", "light": {"color": [0.66, 0.45, 1], "intensity": 3.5, "radius": 4.2, "flicker": 0.05, "minHeight": 1}},
+    {"id": "ember-river-mooring-lamp", "image": "river-mooring-lamp-v01", "name": "Lanterna de amarração", "like": "cave-basalt-006-brazier", "light": {"color": [1, 0.9, 0.72], "intensity": 4, "radius": 4.68, "flicker": 0.1, "minHeight": 1}},
+    {"id": "ember-river-column-v2", "image": "river-column-v02", "name": "Coluna de gesso (inteira)", "like": "cave-basalt-006-pillar"},
+    {"id": "ember-river-ferry-wreck", "image": "river-ferry-wreck-v01", "name": "Barca naufragada", "like": "cave-fractured-boulders-001"},
+    {"id": "ember-river-gypsum-boulder", "image": "river-gypsum-boulder-v01", "name": "Rocha de flores de gesso", "like": "cave-fractured-boulders-001", "size": {"w": 2.2, "h": 2.1}},
+    {"id": "ember-river-pearl-pool", "image": "river-pearl-pool-v01", "name": "Poça de pérolas", "like": "cave-mossy-rocks", "size": {"w": 1.9, "h": 1.04}},
+    {"id": "ember-river-cairn", "image": "river-cairn-v01", "name": "Marco dos guardas do rio", "like": "cave-mossy-rocks", "size": {"w": 1.02, "h": 1.4}}
   ]
 }
