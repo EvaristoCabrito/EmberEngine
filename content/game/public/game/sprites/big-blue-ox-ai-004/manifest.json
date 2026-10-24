@@ -1,0 +1,1028 @@
+[
+  {
+    "animation": "hit",
+    "source": "C:\\Users\\evari\\Downloads\\Creature_damage_and_charge_anima\u2026_20261002210336.mp4",
+    "start": 0,
+    "end": 3.5,
+    "frames": [
+      {
+        "file": "hit-1.png",
+        "sourceFrame": 0,
+        "seconds": 0.0
+      },
+      {
+        "file": "hit-2.png",
+        "sourceFrame": 3,
+        "seconds": 0.125
+      },
+      {
+        "file": "hit-3.png",
+        "sourceFrame": 5,
+        "seconds": 0.20833333333333334
+      },
+      {
+        "file": "hit-4.png",
+        "sourceFrame": 8,
+        "seconds": 0.3333333333333333
+      },
+      {
+        "file": "hit-5.png",
+        "sourceFrame": 11,
+        "seconds": 0.4583333333333333
+      },
+      {
+        "file": "hit-6.png",
+        "sourceFrame": 13,
+        "seconds": 0.5416666666666666
+      },
+      {
+        "file": "hit-7.png",
+        "sourceFrame": 16,
+        "seconds": 0.6666666666666666
+      },
+      {
+        "file": "hit-8.png",
+        "sourceFrame": 19,
+        "seconds": 0.7916666666666666
+      },
+      {
+        "file": "hit-9.png",
+        "sourceFrame": 21,
+        "seconds": 0.875
+      },
+      {
+        "file": "hit-10.png",
+        "sourceFrame": 24,
+        "seconds": 1.0
+      },
+      {
+        "file": "hit-11.png",
+        "sourceFrame": 27,
+        "seconds": 1.125
+      },
+      {
+        "file": "hit-12.png",
+        "sourceFrame": 29,
+        "seconds": 1.2083333333333333
+      },
+      {
+        "file": "hit-13.png",
+        "sourceFrame": 32,
+        "seconds": 1.3333333333333333
+      },
+      {
+        "file": "hit-14.png",
+        "sourceFrame": 35,
+        "seconds": 1.4583333333333333
+      },
+      {
+        "file": "hit-15.png",
+        "sourceFrame": 37,
+        "seconds": 1.5416666666666667
+      },
+      {
+        "file": "hit-16.png",
+        "sourceFrame": 40,
+        "seconds": 1.6666666666666667
+      },
+      {
+        "file": "hit-17.png",
+        "sourceFrame": 43,
+        "seconds": 1.7916666666666667
+      },
+      {
+        "file": "hit-18.png",
+        "sourceFrame": 46,
+        "seconds": 1.9166666666666667
+      },
+      {
+        "file": "hit-19.png",
+        "sourceFrame": 48,
+        "seconds": 2.0
+      },
+      {
+        "file": "hit-20.png",
+        "sourceFrame": 51,
+        "seconds": 2.125
+      },
+      {
+        "file": "hit-21.png",
+        "sourceFrame": 54,
+        "seconds": 2.25
+      },
+      {
+        "file": "hit-22.png",
+        "sourceFrame": 56,
+        "seconds": 2.3333333333333335
+      },
+      {
+        "file": "hit-23.png",
+        "sourceFrame": 59,
+        "seconds": 2.4583333333333335
+      },
+      {
+        "file": "hit-24.png",
+        "sourceFrame": 62,
+        "seconds": 2.5833333333333335
+      },
+      {
+        "file": "hit-25.png",
+        "sourceFrame": 64,
+        "seconds": 2.6666666666666665
+      },
+      {
+        "file": "hit-26.png",
+        "sourceFrame": 67,
+        "seconds": 2.7916666666666665
+      },
+      {
+        "file": "hit-27.png",
+        "sourceFrame": 70,
+        "seconds": 2.9166666666666665
+      },
+      {
+        "file": "hit-28.png",
+        "sourceFrame": 72,
+        "seconds": 3.0
+      },
+      {
+        "file": "hit-29.png",
+        "sourceFrame": 75,
+        "seconds": 3.125
+      },
+      {
+        "file": "hit-30.png",
+        "sourceFrame": 78,
+        "seconds": 3.25
+      },
+      {
+        "file": "hit-31.png",
+        "sourceFrame": 80,
+        "seconds": 3.3333333333333335
+      },
+      {
+        "file": "hit-32.png",
+        "sourceFrame": 83,
+        "seconds": 3.4583333333333335
+      }
+    ],
+    "mirrored": true,
+    "cuttingModel": "u2net",
+    "outputDirectory": "C:\\emberashes03D-main\\public\\game\\sprites\\big-blue-ox-ai-004"
+  },
+  {
+    "animation": "atk",
+    "source": "C:\\Users\\evari\\Downloads\\Creature_damage_and_charge_anima\u2026_20261002210336.mp4",
+    "start": 3.5,
+    "end": 9.5,
+    "frames": [
+      {
+        "file": "atk-1.png",
+        "sourceFrame": 84,
+        "seconds": 3.5
+      },
+      {
+        "file": "atk-2.png",
+        "sourceFrame": 89,
+        "seconds": 3.7083333333333335
+      },
+      {
+        "file": "atk-3.png",
+        "sourceFrame": 93,
+        "seconds": 3.875
+      },
+      {
+        "file": "atk-4.png",
+        "sourceFrame": 98,
+        "seconds": 4.083333333333333
+      },
+      {
+        "file": "atk-5.png",
+        "sourceFrame": 102,
+        "seconds": 4.25
+      },
+      {
+        "file": "atk-6.png",
+        "sourceFrame": 107,
+        "seconds": 4.458333333333333
+      },
+      {
+        "file": "atk-7.png",
+        "sourceFrame": 112,
+        "seconds": 4.666666666666667
+      },
+      {
+        "file": "atk-8.png",
+        "sourceFrame": 116,
+        "seconds": 4.833333333333333
+      },
+      {
+        "file": "atk-9.png",
+        "sourceFrame": 121,
+        "seconds": 5.041666666666667
+      },
+      {
+        "file": "atk-10.png",
+        "sourceFrame": 126,
+        "seconds": 5.25
+      },
+      {
+        "file": "atk-11.png",
+        "sourceFrame": 130,
+        "seconds": 5.416666666666667
+      },
+      {
+        "file": "atk-12.png",
+        "sourceFrame": 135,
+        "seconds": 5.625
+      },
+      {
+        "file": "atk-13.png",
+        "sourceFrame": 139,
+        "seconds": 5.791666666666667
+      },
+      {
+        "file": "atk-14.png",
+        "sourceFrame": 144,
+        "seconds": 6.0
+      },
+      {
+        "file": "atk-15.png",
+        "sourceFrame": 149,
+        "seconds": 6.208333333333333
+      },
+      {
+        "file": "atk-16.png",
+        "sourceFrame": 153,
+        "seconds": 6.375
+      },
+      {
+        "file": "atk-17.png",
+        "sourceFrame": 158,
+        "seconds": 6.583333333333333
+      },
+      {
+        "file": "atk-18.png",
+        "sourceFrame": 162,
+        "seconds": 6.75
+      },
+      {
+        "file": "atk-19.png",
+        "sourceFrame": 167,
+        "seconds": 6.958333333333333
+      },
+      {
+        "file": "atk-20.png",
+        "sourceFrame": 172,
+        "seconds": 7.166666666666667
+      },
+      {
+        "file": "atk-21.png",
+        "sourceFrame": 176,
+        "seconds": 7.333333333333333
+      },
+      {
+        "file": "atk-22.png",
+        "sourceFrame": 181,
+        "seconds": 7.541666666666667
+      },
+      {
+        "file": "atk-23.png",
+        "sourceFrame": 185,
+        "seconds": 7.708333333333333
+      },
+      {
+        "file": "atk-24.png",
+        "sourceFrame": 190,
+        "seconds": 7.916666666666667
+      },
+      {
+        "file": "atk-25.png",
+        "sourceFrame": 195,
+        "seconds": 8.125
+      },
+      {
+        "file": "atk-26.png",
+        "sourceFrame": 199,
+        "seconds": 8.291666666666666
+      },
+      {
+        "file": "atk-27.png",
+        "sourceFrame": 204,
+        "seconds": 8.5
+      },
+      {
+        "file": "atk-28.png",
+        "sourceFrame": 209,
+        "seconds": 8.708333333333334
+      },
+      {
+        "file": "atk-29.png",
+        "sourceFrame": 213,
+        "seconds": 8.875
+      },
+      {
+        "file": "atk-30.png",
+        "sourceFrame": 218,
+        "seconds": 9.083333333333334
+      },
+      {
+        "file": "atk-31.png",
+        "sourceFrame": 222,
+        "seconds": 9.25
+      },
+      {
+        "file": "atk-32.png",
+        "sourceFrame": 227,
+        "seconds": 9.458333333333334
+      }
+    ],
+    "mirrored": true,
+    "cuttingModel": "u2net",
+    "outputDirectory": "C:\\emberashes03D-main\\public\\game\\sprites\\big-blue-ox-ai-004"
+  },
+  {
+    "animation": "move",
+    "source": "C:\\Users\\evari\\Downloads\\Creature_walking_and_charging_an\u2026_20261001032938.mp4",
+    "start": 0,
+    "end": 4,
+    "frames": [
+      {
+        "file": "move-1.png",
+        "sourceFrame": 0,
+        "seconds": 0.0
+      },
+      {
+        "file": "move-2.png",
+        "sourceFrame": 3,
+        "seconds": 0.125
+      },
+      {
+        "file": "move-3.png",
+        "sourceFrame": 6,
+        "seconds": 0.25
+      },
+      {
+        "file": "move-4.png",
+        "sourceFrame": 9,
+        "seconds": 0.375
+      },
+      {
+        "file": "move-5.png",
+        "sourceFrame": 12,
+        "seconds": 0.5
+      },
+      {
+        "file": "move-6.png",
+        "sourceFrame": 15,
+        "seconds": 0.625
+      },
+      {
+        "file": "move-7.png",
+        "sourceFrame": 18,
+        "seconds": 0.75
+      },
+      {
+        "file": "move-8.png",
+        "sourceFrame": 21,
+        "seconds": 0.875
+      },
+      {
+        "file": "move-9.png",
+        "sourceFrame": 25,
+        "seconds": 1.0416666666666667
+      },
+      {
+        "file": "move-10.png",
+        "sourceFrame": 28,
+        "seconds": 1.1666666666666667
+      },
+      {
+        "file": "move-11.png",
+        "sourceFrame": 31,
+        "seconds": 1.2916666666666667
+      },
+      {
+        "file": "move-12.png",
+        "sourceFrame": 34,
+        "seconds": 1.4166666666666667
+      },
+      {
+        "file": "move-13.png",
+        "sourceFrame": 37,
+        "seconds": 1.5416666666666667
+      },
+      {
+        "file": "move-14.png",
+        "sourceFrame": 40,
+        "seconds": 1.6666666666666667
+      },
+      {
+        "file": "move-15.png",
+        "sourceFrame": 43,
+        "seconds": 1.7916666666666667
+      },
+      {
+        "file": "move-16.png",
+        "sourceFrame": 46,
+        "seconds": 1.9166666666666667
+      },
+      {
+        "file": "move-17.png",
+        "sourceFrame": 49,
+        "seconds": 2.0416666666666665
+      },
+      {
+        "file": "move-18.png",
+        "sourceFrame": 52,
+        "seconds": 2.1666666666666665
+      },
+      {
+        "file": "move-19.png",
+        "sourceFrame": 55,
+        "seconds": 2.2916666666666665
+      },
+      {
+        "file": "move-20.png",
+        "sourceFrame": 58,
+        "seconds": 2.4166666666666665
+      },
+      {
+        "file": "move-21.png",
+        "sourceFrame": 61,
+        "seconds": 2.5416666666666665
+      },
+      {
+        "file": "move-22.png",
+        "sourceFrame": 64,
+        "seconds": 2.6666666666666665
+      },
+      {
+        "file": "move-23.png",
+        "sourceFrame": 67,
+        "seconds": 2.7916666666666665
+      },
+      {
+        "file": "move-24.png",
+        "sourceFrame": 70,
+        "seconds": 2.9166666666666665
+      },
+      {
+        "file": "move-25.png",
+        "sourceFrame": 74,
+        "seconds": 3.0833333333333335
+      },
+      {
+        "file": "move-26.png",
+        "sourceFrame": 77,
+        "seconds": 3.2083333333333335
+      },
+      {
+        "file": "move-27.png",
+        "sourceFrame": 80,
+        "seconds": 3.3333333333333335
+      },
+      {
+        "file": "move-28.png",
+        "sourceFrame": 83,
+        "seconds": 3.4583333333333335
+      },
+      {
+        "file": "move-29.png",
+        "sourceFrame": 86,
+        "seconds": 3.5833333333333335
+      },
+      {
+        "file": "move-30.png",
+        "sourceFrame": 89,
+        "seconds": 3.7083333333333335
+      },
+      {
+        "file": "move-31.png",
+        "sourceFrame": 92,
+        "seconds": 3.8333333333333335
+      },
+      {
+        "file": "move-32.png",
+        "sourceFrame": 95,
+        "seconds": 3.9583333333333335
+      }
+    ],
+    "mirrored": true,
+    "cuttingModel": "u2net",
+    "outputDirectory": "C:\\emberashes03D-main\\public\\game\\sprites\\big-blue-ox-ai-004"
+  },
+  {
+    "animation": "death",
+    "source": "C:\\Users\\evari\\Downloads\\Creature_hit_and_death_animations_20261001032320.mp4",
+    "start": 4,
+    "end": 10,
+    "frames": [
+      {
+        "file": "death-1.png",
+        "sourceFrame": 96,
+        "seconds": 4.0
+      },
+      {
+        "file": "death-2.png",
+        "sourceFrame": 101,
+        "seconds": 4.208333333333333
+      },
+      {
+        "file": "death-3.png",
+        "sourceFrame": 105,
+        "seconds": 4.375
+      },
+      {
+        "file": "death-4.png",
+        "sourceFrame": 110,
+        "seconds": 4.583333333333333
+      },
+      {
+        "file": "death-5.png",
+        "sourceFrame": 114,
+        "seconds": 4.75
+      },
+      {
+        "file": "death-6.png",
+        "sourceFrame": 119,
+        "seconds": 4.958333333333333
+      },
+      {
+        "file": "death-7.png",
+        "sourceFrame": 124,
+        "seconds": 5.166666666666667
+      },
+      {
+        "file": "death-8.png",
+        "sourceFrame": 128,
+        "seconds": 5.333333333333333
+      },
+      {
+        "file": "death-9.png",
+        "sourceFrame": 133,
+        "seconds": 5.541666666666667
+      },
+      {
+        "file": "death-10.png",
+        "sourceFrame": 138,
+        "seconds": 5.75
+      },
+      {
+        "file": "death-11.png",
+        "sourceFrame": 142,
+        "seconds": 5.916666666666667
+      },
+      {
+        "file": "death-12.png",
+        "sourceFrame": 147,
+        "seconds": 6.125
+      },
+      {
+        "file": "death-13.png",
+        "sourceFrame": 151,
+        "seconds": 6.291666666666667
+      },
+      {
+        "file": "death-14.png",
+        "sourceFrame": 156,
+        "seconds": 6.5
+      },
+      {
+        "file": "death-15.png",
+        "sourceFrame": 161,
+        "seconds": 6.708333333333333
+      },
+      {
+        "file": "death-16.png",
+        "sourceFrame": 165,
+        "seconds": 6.875
+      },
+      {
+        "file": "death-17.png",
+        "sourceFrame": 170,
+        "seconds": 7.083333333333333
+      },
+      {
+        "file": "death-18.png",
+        "sourceFrame": 174,
+        "seconds": 7.25
+      },
+      {
+        "file": "death-19.png",
+        "sourceFrame": 179,
+        "seconds": 7.458333333333333
+      },
+      {
+        "file": "death-20.png",
+        "sourceFrame": 184,
+        "seconds": 7.666666666666667
+      },
+      {
+        "file": "death-21.png",
+        "sourceFrame": 188,
+        "seconds": 7.833333333333333
+      },
+      {
+        "file": "death-22.png",
+        "sourceFrame": 193,
+        "seconds": 8.041666666666666
+      },
+      {
+        "file": "death-23.png",
+        "sourceFrame": 197,
+        "seconds": 8.208333333333334
+      },
+      {
+        "file": "death-24.png",
+        "sourceFrame": 202,
+        "seconds": 8.416666666666666
+      },
+      {
+        "file": "death-25.png",
+        "sourceFrame": 207,
+        "seconds": 8.625
+      },
+      {
+        "file": "death-26.png",
+        "sourceFrame": 211,
+        "seconds": 8.791666666666666
+      },
+      {
+        "file": "death-27.png",
+        "sourceFrame": 216,
+        "seconds": 9.0
+      },
+      {
+        "file": "death-28.png",
+        "sourceFrame": 221,
+        "seconds": 9.208333333333334
+      },
+      {
+        "file": "death-29.png",
+        "sourceFrame": 225,
+        "seconds": 9.375
+      },
+      {
+        "file": "death-30.png",
+        "sourceFrame": 230,
+        "seconds": 9.583333333333334
+      },
+      {
+        "file": "death-31.png",
+        "sourceFrame": 234,
+        "seconds": 9.75
+      },
+      {
+        "file": "death-32.png",
+        "sourceFrame": 239,
+        "seconds": 9.958333333333334
+      }
+    ],
+    "mirrored": true,
+    "cuttingModel": "u2net",
+    "outputDirectory": "C:\\emberashes03D-main\\public\\game\\sprites\\big-blue-ox-ai-004"
+  },
+  {
+    "animation": "idle",
+    "source": "C:\\Users\\evari\\Downloads\\Game_animation_reference_generat\u2026_20261002235621.mp4",
+    "start": 0,
+    "end": 10,
+    "frames": [
+      {
+        "file": "1.png",
+        "sourceFrame": 0,
+        "seconds": 0.0
+      },
+      {
+        "file": "2.png",
+        "sourceFrame": 8,
+        "seconds": 0.3333333333333333
+      },
+      {
+        "file": "3.png",
+        "sourceFrame": 15,
+        "seconds": 0.625
+      },
+      {
+        "file": "4.png",
+        "sourceFrame": 23,
+        "seconds": 0.9583333333333334
+      },
+      {
+        "file": "5.png",
+        "sourceFrame": 31,
+        "seconds": 1.2916666666666667
+      },
+      {
+        "file": "6.png",
+        "sourceFrame": 39,
+        "seconds": 1.625
+      },
+      {
+        "file": "7.png",
+        "sourceFrame": 46,
+        "seconds": 1.9166666666666667
+      },
+      {
+        "file": "8.png",
+        "sourceFrame": 54,
+        "seconds": 2.25
+      },
+      {
+        "file": "9.png",
+        "sourceFrame": 62,
+        "seconds": 2.5833333333333335
+      },
+      {
+        "file": "10.png",
+        "sourceFrame": 69,
+        "seconds": 2.875
+      },
+      {
+        "file": "11.png",
+        "sourceFrame": 77,
+        "seconds": 3.2083333333333335
+      },
+      {
+        "file": "12.png",
+        "sourceFrame": 85,
+        "seconds": 3.5416666666666665
+      },
+      {
+        "file": "13.png",
+        "sourceFrame": 93,
+        "seconds": 3.875
+      },
+      {
+        "file": "14.png",
+        "sourceFrame": 100,
+        "seconds": 4.166666666666667
+      },
+      {
+        "file": "15.png",
+        "sourceFrame": 108,
+        "seconds": 4.5
+      },
+      {
+        "file": "16.png",
+        "sourceFrame": 116,
+        "seconds": 4.833333333333333
+      },
+      {
+        "file": "17.png",
+        "sourceFrame": 123,
+        "seconds": 5.125
+      },
+      {
+        "file": "18.png",
+        "sourceFrame": 131,
+        "seconds": 5.458333333333333
+      },
+      {
+        "file": "19.png",
+        "sourceFrame": 139,
+        "seconds": 5.791666666666667
+      },
+      {
+        "file": "20.png",
+        "sourceFrame": 146,
+        "seconds": 6.083333333333333
+      },
+      {
+        "file": "21.png",
+        "sourceFrame": 154,
+        "seconds": 6.416666666666667
+      },
+      {
+        "file": "22.png",
+        "sourceFrame": 162,
+        "seconds": 6.75
+      },
+      {
+        "file": "23.png",
+        "sourceFrame": 170,
+        "seconds": 7.083333333333333
+      },
+      {
+        "file": "24.png",
+        "sourceFrame": 177,
+        "seconds": 7.375
+      },
+      {
+        "file": "25.png",
+        "sourceFrame": 185,
+        "seconds": 7.708333333333333
+      },
+      {
+        "file": "26.png",
+        "sourceFrame": 193,
+        "seconds": 8.041666666666666
+      },
+      {
+        "file": "27.png",
+        "sourceFrame": 200,
+        "seconds": 8.333333333333334
+      },
+      {
+        "file": "28.png",
+        "sourceFrame": 208,
+        "seconds": 8.666666666666666
+      },
+      {
+        "file": "29.png",
+        "sourceFrame": 216,
+        "seconds": 9.0
+      },
+      {
+        "file": "30.png",
+        "sourceFrame": 224,
+        "seconds": 9.333333333333334
+      },
+      {
+        "file": "31.png",
+        "sourceFrame": 231,
+        "seconds": 9.625
+      },
+      {
+        "file": "32.png",
+        "sourceFrame": 239,
+        "seconds": 9.958333333333334
+      }
+    ],
+    "mirrored": true,
+    "cuttingModel": "u2net",
+    "outputDirectory": "C:\\emberashes03D-main\\public\\game\\sprites\\big-blue-ox-ai-004"
+  },
+  {
+    "animation": "atk2",
+    "source": "C:\\Users\\evari\\Downloads\\charge_anima\u2026_20261003000335.mp4",
+    "start": 0,
+    "end": 10,
+    "frames": [
+      {
+        "file": "atk2-1.png",
+        "sourceFrame": 0,
+        "seconds": 0.0
+      },
+      {
+        "file": "atk2-2.png",
+        "sourceFrame": 8,
+        "seconds": 0.3333333333333333
+      },
+      {
+        "file": "atk2-3.png",
+        "sourceFrame": 15,
+        "seconds": 0.625
+      },
+      {
+        "file": "atk2-4.png",
+        "sourceFrame": 23,
+        "seconds": 0.9583333333333334
+      },
+      {
+        "file": "atk2-5.png",
+        "sourceFrame": 31,
+        "seconds": 1.2916666666666667
+      },
+      {
+        "file": "atk2-6.png",
+        "sourceFrame": 39,
+        "seconds": 1.625
+      },
+      {
+        "file": "atk2-7.png",
+        "sourceFrame": 46,
+        "seconds": 1.9166666666666667
+      },
+      {
+        "file": "atk2-8.png",
+        "sourceFrame": 54,
+        "seconds": 2.25
+      },
+      {
+        "file": "atk2-9.png",
+        "sourceFrame": 62,
+        "seconds": 2.5833333333333335
+      },
+      {
+        "file": "atk2-10.png",
+        "sourceFrame": 69,
+        "seconds": 2.875
+      },
+      {
+        "file": "atk2-11.png",
+        "sourceFrame": 77,
+        "seconds": 3.2083333333333335
+      },
+      {
+        "file": "atk2-12.png",
+        "sourceFrame": 85,
+        "seconds": 3.5416666666666665
+      },
+      {
+        "file": "atk2-13.png",
+        "sourceFrame": 93,
+        "seconds": 3.875
+      },
+      {
+        "file": "atk2-14.png",
+        "sourceFrame": 100,
+        "seconds": 4.166666666666667
+      },
+      {
+        "file": "atk2-15.png",
+        "sourceFrame": 108,
+        "seconds": 4.5
+      },
+      {
+        "file": "atk2-16.png",
+        "sourceFrame": 116,
+        "seconds": 4.833333333333333
+      },
+      {
+        "file": "atk2-17.png",
+        "sourceFrame": 123,
+        "seconds": 5.125
+      },
+      {
+        "file": "atk2-18.png",
+        "sourceFrame": 131,
+        "seconds": 5.458333333333333
+      },
+      {
+        "file": "atk2-19.png",
+        "sourceFrame": 139,
+        "seconds": 5.791666666666667
+      },
+      {
+        "file": "atk2-20.png",
+        "sourceFrame": 146,
+        "seconds": 6.083333333333333
+      },
+      {
+        "file": "atk2-21.png",
+        "sourceFrame": 154,
+        "seconds": 6.416666666666667
+      },
+      {
+        "file": "atk2-22.png",
+        "sourceFrame": 162,
+        "seconds": 6.75
+      },
+      {
+        "file": "atk2-23.png",
+        "sourceFrame": 170,
+        "seconds": 7.083333333333333
+      },
+      {
+        "file": "atk2-24.png",
+        "sourceFrame": 177,
+        "seconds": 7.375
+      },
+      {
+        "file": "atk2-25.png",
+        "sourceFrame": 185,
+        "seconds": 7.708333333333333
+      },
+      {
+        "file": "atk2-26.png",
+        "sourceFrame": 193,
+        "seconds": 8.041666666666666
+      },
+      {
+        "file": "atk2-27.png",
+        "sourceFrame": 200,
+        "seconds": 8.333333333333334
+      },
+      {
+        "file": "atk2-28.png",
+        "sourceFrame": 208,
+        "seconds": 8.666666666666666
+      },
+      {
+        "file": "atk2-29.png",
+        "sourceFrame": 216,
+        "seconds": 9.0
+      },
+      {
+        "file": "atk2-30.png",
+        "sourceFrame": 224,
+        "seconds": 9.333333333333334
+      },
+      {
+        "file": "atk2-31.png",
+        "sourceFrame": 231,
+        "seconds": 9.625
+      },
+      {
+        "file": "atk2-32.png",
+        "sourceFrame": 239,
+        "seconds": 9.958333333333334
+      }
+    ],
+    "mirrored": true,
+    "cuttingModel": "u2net",
+    "outputDirectory": "C:\\emberashes03D-main\\public\\game\\sprites\\big-blue-ox-ai-004"
+  }
+]

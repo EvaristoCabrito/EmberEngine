@@ -1,0 +1,1487 @@
+[
+  {
+    "animation": "idle",
+    "source": "C:\\Users\\evari\\Downloads\\Woman_poses_and_casts_energy_20261007224751.mp4",
+    "start": 0.9583,
+    "seconds": 3.0,
+    "frames": [
+      {
+        "file": "1.png",
+        "sourceFrame": 23,
+        "seconds": 0.9583
+      },
+      {
+        "file": "2.png",
+        "sourceFrame": 25,
+        "seconds": 1.0417
+      },
+      {
+        "file": "3.png",
+        "sourceFrame": 27,
+        "seconds": 1.125
+      },
+      {
+        "file": "4.png",
+        "sourceFrame": 29,
+        "seconds": 1.2083
+      },
+      {
+        "file": "5.png",
+        "sourceFrame": 31,
+        "seconds": 1.2917
+      },
+      {
+        "file": "6.png",
+        "sourceFrame": 33,
+        "seconds": 1.375
+      },
+      {
+        "file": "7.png",
+        "sourceFrame": 35,
+        "seconds": 1.4583
+      },
+      {
+        "file": "8.png",
+        "sourceFrame": 37,
+        "seconds": 1.5417
+      },
+      {
+        "file": "9.png",
+        "sourceFrame": 39,
+        "seconds": 1.625
+      },
+      {
+        "file": "10.png",
+        "sourceFrame": 41,
+        "seconds": 1.7083
+      },
+      {
+        "file": "11.png",
+        "sourceFrame": 43,
+        "seconds": 1.7917
+      },
+      {
+        "file": "12.png",
+        "sourceFrame": 45,
+        "seconds": 1.875
+      },
+      {
+        "file": "13.png",
+        "sourceFrame": 47,
+        "seconds": 1.9583
+      },
+      {
+        "file": "14.png",
+        "sourceFrame": 49,
+        "seconds": 2.0417
+      },
+      {
+        "file": "15.png",
+        "sourceFrame": 51,
+        "seconds": 2.125
+      },
+      {
+        "file": "16.png",
+        "sourceFrame": 53,
+        "seconds": 2.2083
+      },
+      {
+        "file": "17.png",
+        "sourceFrame": 55,
+        "seconds": 2.2917
+      },
+      {
+        "file": "18.png",
+        "sourceFrame": 57,
+        "seconds": 2.375
+      },
+      {
+        "file": "19.png",
+        "sourceFrame": 59,
+        "seconds": 2.4583
+      },
+      {
+        "file": "20.png",
+        "sourceFrame": 61,
+        "seconds": 2.5417
+      },
+      {
+        "file": "21.png",
+        "sourceFrame": 63,
+        "seconds": 2.625
+      },
+      {
+        "file": "22.png",
+        "sourceFrame": 65,
+        "seconds": 2.7083
+      },
+      {
+        "file": "23.png",
+        "sourceFrame": 67,
+        "seconds": 2.7917
+      },
+      {
+        "file": "24.png",
+        "sourceFrame": 69,
+        "seconds": 2.875
+      },
+      {
+        "file": "25.png",
+        "sourceFrame": 71,
+        "seconds": 2.9583
+      },
+      {
+        "file": "26.png",
+        "sourceFrame": 73,
+        "seconds": 3.0417
+      },
+      {
+        "file": "27.png",
+        "sourceFrame": 75,
+        "seconds": 3.125
+      },
+      {
+        "file": "28.png",
+        "sourceFrame": 77,
+        "seconds": 3.2083
+      },
+      {
+        "file": "29.png",
+        "sourceFrame": 79,
+        "seconds": 3.2917
+      },
+      {
+        "file": "30.png",
+        "sourceFrame": 81,
+        "seconds": 3.375
+      },
+      {
+        "file": "31.png",
+        "sourceFrame": 83,
+        "seconds": 3.4583
+      },
+      {
+        "file": "32.png",
+        "sourceFrame": 85,
+        "seconds": 3.5417
+      },
+      {
+        "file": "33.png",
+        "sourceFrame": 87,
+        "seconds": 3.625
+      },
+      {
+        "file": "34.png",
+        "sourceFrame": 89,
+        "seconds": 3.7083
+      },
+      {
+        "file": "35.png",
+        "sourceFrame": 91,
+        "seconds": 3.7917
+      },
+      {
+        "file": "36.png",
+        "sourceFrame": 93,
+        "seconds": 3.875
+      }
+    ],
+    "sound": null,
+    "cropBox": [
+      71,
+      112,
+      463,
+      749
+    ]
+  },
+  {
+    "animation": "cast",
+    "source": "C:\\Users\\evari\\Downloads\\Woman_poses_and_casts_energy_20261007224751.mp4",
+    "start": 6.25,
+    "seconds": 3.0,
+    "frames": [
+      {
+        "file": "cast-1.png",
+        "sourceFrame": 150,
+        "seconds": 6.25
+      },
+      {
+        "file": "cast-2.png",
+        "sourceFrame": 152,
+        "seconds": 6.3333
+      },
+      {
+        "file": "cast-3.png",
+        "sourceFrame": 154,
+        "seconds": 6.4167
+      },
+      {
+        "file": "cast-4.png",
+        "sourceFrame": 156,
+        "seconds": 6.5
+      },
+      {
+        "file": "cast-5.png",
+        "sourceFrame": 158,
+        "seconds": 6.5833
+      },
+      {
+        "file": "cast-6.png",
+        "sourceFrame": 160,
+        "seconds": 6.6667
+      },
+      {
+        "file": "cast-7.png",
+        "sourceFrame": 162,
+        "seconds": 6.75
+      },
+      {
+        "file": "cast-8.png",
+        "sourceFrame": 164,
+        "seconds": 6.8333
+      },
+      {
+        "file": "cast-9.png",
+        "sourceFrame": 166,
+        "seconds": 6.9167
+      },
+      {
+        "file": "cast-10.png",
+        "sourceFrame": 168,
+        "seconds": 7.0
+      },
+      {
+        "file": "cast-11.png",
+        "sourceFrame": 170,
+        "seconds": 7.0833
+      },
+      {
+        "file": "cast-12.png",
+        "sourceFrame": 172,
+        "seconds": 7.1667
+      },
+      {
+        "file": "cast-13.png",
+        "sourceFrame": 174,
+        "seconds": 7.25
+      },
+      {
+        "file": "cast-14.png",
+        "sourceFrame": 176,
+        "seconds": 7.3333
+      },
+      {
+        "file": "cast-15.png",
+        "sourceFrame": 178,
+        "seconds": 7.4167
+      },
+      {
+        "file": "cast-16.png",
+        "sourceFrame": 180,
+        "seconds": 7.5
+      },
+      {
+        "file": "cast-17.png",
+        "sourceFrame": 182,
+        "seconds": 7.5833
+      },
+      {
+        "file": "cast-18.png",
+        "sourceFrame": 184,
+        "seconds": 7.6667
+      },
+      {
+        "file": "cast-19.png",
+        "sourceFrame": 186,
+        "seconds": 7.75
+      },
+      {
+        "file": "cast-20.png",
+        "sourceFrame": 188,
+        "seconds": 7.8333
+      },
+      {
+        "file": "cast-21.png",
+        "sourceFrame": 190,
+        "seconds": 7.9167
+      },
+      {
+        "file": "cast-22.png",
+        "sourceFrame": 192,
+        "seconds": 8.0
+      },
+      {
+        "file": "cast-23.png",
+        "sourceFrame": 194,
+        "seconds": 8.0833
+      },
+      {
+        "file": "cast-24.png",
+        "sourceFrame": 196,
+        "seconds": 8.1667
+      },
+      {
+        "file": "cast-25.png",
+        "sourceFrame": 198,
+        "seconds": 8.25
+      },
+      {
+        "file": "cast-26.png",
+        "sourceFrame": 200,
+        "seconds": 8.3333
+      },
+      {
+        "file": "cast-27.png",
+        "sourceFrame": 202,
+        "seconds": 8.4167
+      },
+      {
+        "file": "cast-28.png",
+        "sourceFrame": 204,
+        "seconds": 8.5
+      },
+      {
+        "file": "cast-29.png",
+        "sourceFrame": 206,
+        "seconds": 8.5833
+      },
+      {
+        "file": "cast-30.png",
+        "sourceFrame": 208,
+        "seconds": 8.6667
+      },
+      {
+        "file": "cast-31.png",
+        "sourceFrame": 210,
+        "seconds": 8.75
+      },
+      {
+        "file": "cast-32.png",
+        "sourceFrame": 212,
+        "seconds": 8.8333
+      },
+      {
+        "file": "cast-33.png",
+        "sourceFrame": 214,
+        "seconds": 8.9167
+      },
+      {
+        "file": "cast-34.png",
+        "sourceFrame": 216,
+        "seconds": 9.0
+      },
+      {
+        "file": "cast-35.png",
+        "sourceFrame": 218,
+        "seconds": 9.0833
+      },
+      {
+        "file": "cast-36.png",
+        "sourceFrame": 220,
+        "seconds": 9.1667
+      }
+    ],
+    "sound": "ApparitionCast001.mp3",
+    "cropBox": [
+      71,
+      112,
+      463,
+      749
+    ]
+  },
+  {
+    "animation": "move",
+    "source": "C:\\Users\\evari\\Downloads\\ApparitionWalking.mp4",
+    "start": 2.25,
+    "seconds": 3.0,
+    "frames": [
+      {
+        "file": "move-1.png",
+        "sourceFrame": 54,
+        "seconds": 2.25
+      },
+      {
+        "file": "move-2.png",
+        "sourceFrame": 56,
+        "seconds": 2.3333
+      },
+      {
+        "file": "move-3.png",
+        "sourceFrame": 58,
+        "seconds": 2.4167
+      },
+      {
+        "file": "move-4.png",
+        "sourceFrame": 60,
+        "seconds": 2.5
+      },
+      {
+        "file": "move-5.png",
+        "sourceFrame": 62,
+        "seconds": 2.5833
+      },
+      {
+        "file": "move-6.png",
+        "sourceFrame": 64,
+        "seconds": 2.6667
+      },
+      {
+        "file": "move-7.png",
+        "sourceFrame": 66,
+        "seconds": 2.75
+      },
+      {
+        "file": "move-8.png",
+        "sourceFrame": 68,
+        "seconds": 2.8333
+      },
+      {
+        "file": "move-9.png",
+        "sourceFrame": 70,
+        "seconds": 2.9167
+      },
+      {
+        "file": "move-10.png",
+        "sourceFrame": 72,
+        "seconds": 3.0
+      },
+      {
+        "file": "move-11.png",
+        "sourceFrame": 74,
+        "seconds": 3.0833
+      },
+      {
+        "file": "move-12.png",
+        "sourceFrame": 76,
+        "seconds": 3.1667
+      },
+      {
+        "file": "move-13.png",
+        "sourceFrame": 78,
+        "seconds": 3.25
+      },
+      {
+        "file": "move-14.png",
+        "sourceFrame": 80,
+        "seconds": 3.3333
+      },
+      {
+        "file": "move-15.png",
+        "sourceFrame": 82,
+        "seconds": 3.4167
+      },
+      {
+        "file": "move-16.png",
+        "sourceFrame": 84,
+        "seconds": 3.5
+      },
+      {
+        "file": "move-17.png",
+        "sourceFrame": 86,
+        "seconds": 3.5833
+      },
+      {
+        "file": "move-18.png",
+        "sourceFrame": 88,
+        "seconds": 3.6667
+      },
+      {
+        "file": "move-19.png",
+        "sourceFrame": 90,
+        "seconds": 3.75
+      },
+      {
+        "file": "move-20.png",
+        "sourceFrame": 92,
+        "seconds": 3.8333
+      },
+      {
+        "file": "move-21.png",
+        "sourceFrame": 94,
+        "seconds": 3.9167
+      },
+      {
+        "file": "move-22.png",
+        "sourceFrame": 96,
+        "seconds": 4.0
+      },
+      {
+        "file": "move-23.png",
+        "sourceFrame": 98,
+        "seconds": 4.0833
+      },
+      {
+        "file": "move-24.png",
+        "sourceFrame": 100,
+        "seconds": 4.1667
+      },
+      {
+        "file": "move-25.png",
+        "sourceFrame": 102,
+        "seconds": 4.25
+      },
+      {
+        "file": "move-26.png",
+        "sourceFrame": 104,
+        "seconds": 4.3333
+      },
+      {
+        "file": "move-27.png",
+        "sourceFrame": 106,
+        "seconds": 4.4167
+      },
+      {
+        "file": "move-28.png",
+        "sourceFrame": 108,
+        "seconds": 4.5
+      },
+      {
+        "file": "move-29.png",
+        "sourceFrame": 110,
+        "seconds": 4.5833
+      },
+      {
+        "file": "move-30.png",
+        "sourceFrame": 112,
+        "seconds": 4.6667
+      },
+      {
+        "file": "move-31.png",
+        "sourceFrame": 114,
+        "seconds": 4.75
+      },
+      {
+        "file": "move-32.png",
+        "sourceFrame": 116,
+        "seconds": 4.8333
+      },
+      {
+        "file": "move-33.png",
+        "sourceFrame": 118,
+        "seconds": 4.9167
+      },
+      {
+        "file": "move-34.png",
+        "sourceFrame": 120,
+        "seconds": 5.0
+      },
+      {
+        "file": "move-35.png",
+        "sourceFrame": 122,
+        "seconds": 5.0833
+      },
+      {
+        "file": "move-36.png",
+        "sourceFrame": 124,
+        "seconds": 5.1667
+      }
+    ],
+    "sound": null,
+    "cropBox": [
+      71,
+      112,
+      463,
+      749
+    ]
+  },
+  {
+    "animation": "atk",
+    "source": "C:\\Users\\evari\\Downloads\\AparitionATT.mp4",
+    "start": 3.0833,
+    "seconds": 5.0,
+    "frames": [
+      {
+        "file": "atk-1.png",
+        "sourceFrame": 74,
+        "seconds": 3.0833
+      },
+      {
+        "file": "atk-2.png",
+        "sourceFrame": 76,
+        "seconds": 3.1667
+      },
+      {
+        "file": "atk-3.png",
+        "sourceFrame": 78,
+        "seconds": 3.25
+      },
+      {
+        "file": "atk-4.png",
+        "sourceFrame": 80,
+        "seconds": 3.3333
+      },
+      {
+        "file": "atk-5.png",
+        "sourceFrame": 82,
+        "seconds": 3.4167
+      },
+      {
+        "file": "atk-6.png",
+        "sourceFrame": 84,
+        "seconds": 3.5
+      },
+      {
+        "file": "atk-7.png",
+        "sourceFrame": 86,
+        "seconds": 3.5833
+      },
+      {
+        "file": "atk-8.png",
+        "sourceFrame": 88,
+        "seconds": 3.6667
+      },
+      {
+        "file": "atk-9.png",
+        "sourceFrame": 90,
+        "seconds": 3.75
+      },
+      {
+        "file": "atk-10.png",
+        "sourceFrame": 92,
+        "seconds": 3.8333
+      },
+      {
+        "file": "atk-11.png",
+        "sourceFrame": 94,
+        "seconds": 3.9167
+      },
+      {
+        "file": "atk-12.png",
+        "sourceFrame": 96,
+        "seconds": 4.0
+      },
+      {
+        "file": "atk-13.png",
+        "sourceFrame": 98,
+        "seconds": 4.0833
+      },
+      {
+        "file": "atk-14.png",
+        "sourceFrame": 100,
+        "seconds": 4.1667
+      },
+      {
+        "file": "atk-15.png",
+        "sourceFrame": 102,
+        "seconds": 4.25
+      },
+      {
+        "file": "atk-16.png",
+        "sourceFrame": 104,
+        "seconds": 4.3333
+      },
+      {
+        "file": "atk-17.png",
+        "sourceFrame": 106,
+        "seconds": 4.4167
+      },
+      {
+        "file": "atk-18.png",
+        "sourceFrame": 108,
+        "seconds": 4.5
+      },
+      {
+        "file": "atk-19.png",
+        "sourceFrame": 110,
+        "seconds": 4.5833
+      },
+      {
+        "file": "atk-20.png",
+        "sourceFrame": 112,
+        "seconds": 4.6667
+      },
+      {
+        "file": "atk-21.png",
+        "sourceFrame": 114,
+        "seconds": 4.75
+      },
+      {
+        "file": "atk-22.png",
+        "sourceFrame": 116,
+        "seconds": 4.8333
+      },
+      {
+        "file": "atk-23.png",
+        "sourceFrame": 118,
+        "seconds": 4.9167
+      },
+      {
+        "file": "atk-24.png",
+        "sourceFrame": 120,
+        "seconds": 5.0
+      },
+      {
+        "file": "atk-25.png",
+        "sourceFrame": 122,
+        "seconds": 5.0833
+      },
+      {
+        "file": "atk-26.png",
+        "sourceFrame": 124,
+        "seconds": 5.1667
+      },
+      {
+        "file": "atk-27.png",
+        "sourceFrame": 126,
+        "seconds": 5.25
+      },
+      {
+        "file": "atk-28.png",
+        "sourceFrame": 128,
+        "seconds": 5.3333
+      },
+      {
+        "file": "atk-29.png",
+        "sourceFrame": 130,
+        "seconds": 5.4167
+      },
+      {
+        "file": "atk-30.png",
+        "sourceFrame": 132,
+        "seconds": 5.5
+      },
+      {
+        "file": "atk-31.png",
+        "sourceFrame": 134,
+        "seconds": 5.5833
+      },
+      {
+        "file": "atk-32.png",
+        "sourceFrame": 136,
+        "seconds": 5.6667
+      },
+      {
+        "file": "atk-33.png",
+        "sourceFrame": 138,
+        "seconds": 5.75
+      },
+      {
+        "file": "atk-34.png",
+        "sourceFrame": 140,
+        "seconds": 5.8333
+      },
+      {
+        "file": "atk-35.png",
+        "sourceFrame": 142,
+        "seconds": 5.9167
+      },
+      {
+        "file": "atk-36.png",
+        "sourceFrame": 144,
+        "seconds": 6.0
+      },
+      {
+        "file": "atk-37.png",
+        "sourceFrame": 146,
+        "seconds": 6.0833
+      },
+      {
+        "file": "atk-38.png",
+        "sourceFrame": 148,
+        "seconds": 6.1667
+      },
+      {
+        "file": "atk-39.png",
+        "sourceFrame": 150,
+        "seconds": 6.25
+      },
+      {
+        "file": "atk-40.png",
+        "sourceFrame": 152,
+        "seconds": 6.3333
+      },
+      {
+        "file": "atk-41.png",
+        "sourceFrame": 154,
+        "seconds": 6.4167
+      },
+      {
+        "file": "atk-42.png",
+        "sourceFrame": 156,
+        "seconds": 6.5
+      },
+      {
+        "file": "atk-43.png",
+        "sourceFrame": 158,
+        "seconds": 6.5833
+      },
+      {
+        "file": "atk-44.png",
+        "sourceFrame": 160,
+        "seconds": 6.6667
+      },
+      {
+        "file": "atk-45.png",
+        "sourceFrame": 162,
+        "seconds": 6.75
+      },
+      {
+        "file": "atk-46.png",
+        "sourceFrame": 164,
+        "seconds": 6.8333
+      },
+      {
+        "file": "atk-47.png",
+        "sourceFrame": 166,
+        "seconds": 6.9167
+      },
+      {
+        "file": "atk-48.png",
+        "sourceFrame": 168,
+        "seconds": 7.0
+      },
+      {
+        "file": "atk-49.png",
+        "sourceFrame": 170,
+        "seconds": 7.0833
+      },
+      {
+        "file": "atk-50.png",
+        "sourceFrame": 172,
+        "seconds": 7.1667
+      },
+      {
+        "file": "atk-51.png",
+        "sourceFrame": 174,
+        "seconds": 7.25
+      },
+      {
+        "file": "atk-52.png",
+        "sourceFrame": 176,
+        "seconds": 7.3333
+      },
+      {
+        "file": "atk-53.png",
+        "sourceFrame": 178,
+        "seconds": 7.4167
+      },
+      {
+        "file": "atk-54.png",
+        "sourceFrame": 180,
+        "seconds": 7.5
+      },
+      {
+        "file": "atk-55.png",
+        "sourceFrame": 182,
+        "seconds": 7.5833
+      },
+      {
+        "file": "atk-56.png",
+        "sourceFrame": 184,
+        "seconds": 7.6667
+      },
+      {
+        "file": "atk-57.png",
+        "sourceFrame": 186,
+        "seconds": 7.75
+      },
+      {
+        "file": "atk-58.png",
+        "sourceFrame": 188,
+        "seconds": 7.8333
+      },
+      {
+        "file": "atk-59.png",
+        "sourceFrame": 190,
+        "seconds": 7.9167
+      },
+      {
+        "file": "atk-60.png",
+        "sourceFrame": 192,
+        "seconds": 8.0
+      }
+    ],
+    "sound": null,
+    "cropBox": [
+      71,
+      112,
+      463,
+      749
+    ]
+  },
+  {
+    "animation": "hit",
+    "source": "C:\\Users\\evari\\Downloads\\Aparrition HitreactandDeath.mp4",
+    "start": 0.5,
+    "seconds": 3.0,
+    "frames": [
+      {
+        "file": "hit-1.png",
+        "sourceFrame": 12,
+        "seconds": 0.5
+      },
+      {
+        "file": "hit-2.png",
+        "sourceFrame": 14,
+        "seconds": 0.5833
+      },
+      {
+        "file": "hit-3.png",
+        "sourceFrame": 16,
+        "seconds": 0.6667
+      },
+      {
+        "file": "hit-4.png",
+        "sourceFrame": 18,
+        "seconds": 0.75
+      },
+      {
+        "file": "hit-5.png",
+        "sourceFrame": 20,
+        "seconds": 0.8333
+      },
+      {
+        "file": "hit-6.png",
+        "sourceFrame": 22,
+        "seconds": 0.9167
+      },
+      {
+        "file": "hit-7.png",
+        "sourceFrame": 24,
+        "seconds": 1.0
+      },
+      {
+        "file": "hit-8.png",
+        "sourceFrame": 26,
+        "seconds": 1.0833
+      },
+      {
+        "file": "hit-9.png",
+        "sourceFrame": 28,
+        "seconds": 1.1667
+      },
+      {
+        "file": "hit-10.png",
+        "sourceFrame": 30,
+        "seconds": 1.25
+      },
+      {
+        "file": "hit-11.png",
+        "sourceFrame": 32,
+        "seconds": 1.3333
+      },
+      {
+        "file": "hit-12.png",
+        "sourceFrame": 34,
+        "seconds": 1.4167
+      },
+      {
+        "file": "hit-13.png",
+        "sourceFrame": 36,
+        "seconds": 1.5
+      },
+      {
+        "file": "hit-14.png",
+        "sourceFrame": 38,
+        "seconds": 1.5833
+      },
+      {
+        "file": "hit-15.png",
+        "sourceFrame": 40,
+        "seconds": 1.6667
+      },
+      {
+        "file": "hit-16.png",
+        "sourceFrame": 42,
+        "seconds": 1.75
+      },
+      {
+        "file": "hit-17.png",
+        "sourceFrame": 44,
+        "seconds": 1.8333
+      },
+      {
+        "file": "hit-18.png",
+        "sourceFrame": 46,
+        "seconds": 1.9167
+      },
+      {
+        "file": "hit-19.png",
+        "sourceFrame": 48,
+        "seconds": 2.0
+      },
+      {
+        "file": "hit-20.png",
+        "sourceFrame": 50,
+        "seconds": 2.0833
+      },
+      {
+        "file": "hit-21.png",
+        "sourceFrame": 52,
+        "seconds": 2.1667
+      },
+      {
+        "file": "hit-22.png",
+        "sourceFrame": 54,
+        "seconds": 2.25
+      },
+      {
+        "file": "hit-23.png",
+        "sourceFrame": 56,
+        "seconds": 2.3333
+      },
+      {
+        "file": "hit-24.png",
+        "sourceFrame": 58,
+        "seconds": 2.4167
+      },
+      {
+        "file": "hit-25.png",
+        "sourceFrame": 60,
+        "seconds": 2.5
+      },
+      {
+        "file": "hit-26.png",
+        "sourceFrame": 62,
+        "seconds": 2.5833
+      },
+      {
+        "file": "hit-27.png",
+        "sourceFrame": 64,
+        "seconds": 2.6667
+      },
+      {
+        "file": "hit-28.png",
+        "sourceFrame": 66,
+        "seconds": 2.75
+      },
+      {
+        "file": "hit-29.png",
+        "sourceFrame": 68,
+        "seconds": 2.8333
+      },
+      {
+        "file": "hit-30.png",
+        "sourceFrame": 70,
+        "seconds": 2.9167
+      },
+      {
+        "file": "hit-31.png",
+        "sourceFrame": 72,
+        "seconds": 3.0
+      },
+      {
+        "file": "hit-32.png",
+        "sourceFrame": 74,
+        "seconds": 3.0833
+      },
+      {
+        "file": "hit-33.png",
+        "sourceFrame": 76,
+        "seconds": 3.1667
+      },
+      {
+        "file": "hit-34.png",
+        "sourceFrame": 78,
+        "seconds": 3.25
+      },
+      {
+        "file": "hit-35.png",
+        "sourceFrame": 80,
+        "seconds": 3.3333
+      },
+      {
+        "file": "hit-36.png",
+        "sourceFrame": 82,
+        "seconds": 3.4167
+      }
+    ],
+    "sound": null,
+    "cropBox": [
+      71,
+      112,
+      463,
+      749
+    ]
+  },
+  {
+    "animation": "hit2",
+    "source": "C:\\Users\\evari\\Downloads\\Hitreact2until4secondandSound.mp4",
+    "start": 1.0,
+    "seconds": 3.0,
+    "frames": [
+      {
+        "file": "hit2-1.png",
+        "sourceFrame": 24,
+        "seconds": 1.0
+      },
+      {
+        "file": "hit2-2.png",
+        "sourceFrame": 26,
+        "seconds": 1.0833
+      },
+      {
+        "file": "hit2-3.png",
+        "sourceFrame": 28,
+        "seconds": 1.1667
+      },
+      {
+        "file": "hit2-4.png",
+        "sourceFrame": 30,
+        "seconds": 1.25
+      },
+      {
+        "file": "hit2-5.png",
+        "sourceFrame": 32,
+        "seconds": 1.3333
+      },
+      {
+        "file": "hit2-6.png",
+        "sourceFrame": 34,
+        "seconds": 1.4167
+      },
+      {
+        "file": "hit2-7.png",
+        "sourceFrame": 36,
+        "seconds": 1.5
+      },
+      {
+        "file": "hit2-8.png",
+        "sourceFrame": 38,
+        "seconds": 1.5833
+      },
+      {
+        "file": "hit2-9.png",
+        "sourceFrame": 40,
+        "seconds": 1.6667
+      },
+      {
+        "file": "hit2-10.png",
+        "sourceFrame": 42,
+        "seconds": 1.75
+      },
+      {
+        "file": "hit2-11.png",
+        "sourceFrame": 44,
+        "seconds": 1.8333
+      },
+      {
+        "file": "hit2-12.png",
+        "sourceFrame": 46,
+        "seconds": 1.9167
+      },
+      {
+        "file": "hit2-13.png",
+        "sourceFrame": 48,
+        "seconds": 2.0
+      },
+      {
+        "file": "hit2-14.png",
+        "sourceFrame": 50,
+        "seconds": 2.0833
+      },
+      {
+        "file": "hit2-15.png",
+        "sourceFrame": 52,
+        "seconds": 2.1667
+      },
+      {
+        "file": "hit2-16.png",
+        "sourceFrame": 54,
+        "seconds": 2.25
+      },
+      {
+        "file": "hit2-17.png",
+        "sourceFrame": 56,
+        "seconds": 2.3333
+      },
+      {
+        "file": "hit2-18.png",
+        "sourceFrame": 58,
+        "seconds": 2.4167
+      },
+      {
+        "file": "hit2-19.png",
+        "sourceFrame": 60,
+        "seconds": 2.5
+      },
+      {
+        "file": "hit2-20.png",
+        "sourceFrame": 62,
+        "seconds": 2.5833
+      },
+      {
+        "file": "hit2-21.png",
+        "sourceFrame": 64,
+        "seconds": 2.6667
+      },
+      {
+        "file": "hit2-22.png",
+        "sourceFrame": 66,
+        "seconds": 2.75
+      },
+      {
+        "file": "hit2-23.png",
+        "sourceFrame": 68,
+        "seconds": 2.8333
+      },
+      {
+        "file": "hit2-24.png",
+        "sourceFrame": 70,
+        "seconds": 2.9167
+      },
+      {
+        "file": "hit2-25.png",
+        "sourceFrame": 72,
+        "seconds": 3.0
+      },
+      {
+        "file": "hit2-26.png",
+        "sourceFrame": 74,
+        "seconds": 3.0833
+      },
+      {
+        "file": "hit2-27.png",
+        "sourceFrame": 76,
+        "seconds": 3.1667
+      },
+      {
+        "file": "hit2-28.png",
+        "sourceFrame": 78,
+        "seconds": 3.25
+      },
+      {
+        "file": "hit2-29.png",
+        "sourceFrame": 80,
+        "seconds": 3.3333
+      },
+      {
+        "file": "hit2-30.png",
+        "sourceFrame": 82,
+        "seconds": 3.4167
+      },
+      {
+        "file": "hit2-31.png",
+        "sourceFrame": 84,
+        "seconds": 3.5
+      },
+      {
+        "file": "hit2-32.png",
+        "sourceFrame": 86,
+        "seconds": 3.5833
+      },
+      {
+        "file": "hit2-33.png",
+        "sourceFrame": 88,
+        "seconds": 3.6667
+      },
+      {
+        "file": "hit2-34.png",
+        "sourceFrame": 90,
+        "seconds": 3.75
+      },
+      {
+        "file": "hit2-35.png",
+        "sourceFrame": 92,
+        "seconds": 3.8333
+      },
+      {
+        "file": "hit2-36.png",
+        "sourceFrame": 94,
+        "seconds": 3.9167
+      }
+    ],
+    "sound": "ApparitionHit001.mp3",
+    "cropBox": [
+      71,
+      112,
+      463,
+      749
+    ]
+  },
+  {
+    "animation": "death",
+    "source": "C:\\Users\\evari\\Downloads\\Aparrition HitreactandDeath.mp4",
+    "start": 5.0,
+    "seconds": 3.0,
+    "frames": [
+      {
+        "file": "death-1.png",
+        "sourceFrame": 120,
+        "seconds": 5.0
+      },
+      {
+        "file": "death-2.png",
+        "sourceFrame": 122,
+        "seconds": 5.0833
+      },
+      {
+        "file": "death-3.png",
+        "sourceFrame": 124,
+        "seconds": 5.1667
+      },
+      {
+        "file": "death-4.png",
+        "sourceFrame": 126,
+        "seconds": 5.25
+      },
+      {
+        "file": "death-5.png",
+        "sourceFrame": 128,
+        "seconds": 5.3333
+      },
+      {
+        "file": "death-6.png",
+        "sourceFrame": 130,
+        "seconds": 5.4167
+      },
+      {
+        "file": "death-7.png",
+        "sourceFrame": 132,
+        "seconds": 5.5
+      },
+      {
+        "file": "death-8.png",
+        "sourceFrame": 134,
+        "seconds": 5.5833
+      },
+      {
+        "file": "death-9.png",
+        "sourceFrame": 136,
+        "seconds": 5.6667
+      },
+      {
+        "file": "death-10.png",
+        "sourceFrame": 138,
+        "seconds": 5.75
+      },
+      {
+        "file": "death-11.png",
+        "sourceFrame": 140,
+        "seconds": 5.8333
+      },
+      {
+        "file": "death-12.png",
+        "sourceFrame": 142,
+        "seconds": 5.9167
+      },
+      {
+        "file": "death-13.png",
+        "sourceFrame": 144,
+        "seconds": 6.0
+      },
+      {
+        "file": "death-14.png",
+        "sourceFrame": 146,
+        "seconds": 6.0833
+      },
+      {
+        "file": "death-15.png",
+        "sourceFrame": 148,
+        "seconds": 6.1667
+      },
+      {
+        "file": "death-16.png",
+        "sourceFrame": 150,
+        "seconds": 6.25
+      },
+      {
+        "file": "death-17.png",
+        "sourceFrame": 152,
+        "seconds": 6.3333
+      },
+      {
+        "file": "death-18.png",
+        "sourceFrame": 154,
+        "seconds": 6.4167
+      },
+      {
+        "file": "death-19.png",
+        "sourceFrame": 156,
+        "seconds": 6.5
+      },
+      {
+        "file": "death-20.png",
+        "sourceFrame": 158,
+        "seconds": 6.5833
+      },
+      {
+        "file": "death-21.png",
+        "sourceFrame": 160,
+        "seconds": 6.6667
+      },
+      {
+        "file": "death-22.png",
+        "sourceFrame": 162,
+        "seconds": 6.75
+      },
+      {
+        "file": "death-23.png",
+        "sourceFrame": 164,
+        "seconds": 6.8333
+      },
+      {
+        "file": "death-24.png",
+        "sourceFrame": 166,
+        "seconds": 6.9167
+      },
+      {
+        "file": "death-25.png",
+        "sourceFrame": 168,
+        "seconds": 7.0
+      },
+      {
+        "file": "death-26.png",
+        "sourceFrame": 170,
+        "seconds": 7.0833
+      },
+      {
+        "file": "death-27.png",
+        "sourceFrame": 172,
+        "seconds": 7.1667
+      },
+      {
+        "file": "death-28.png",
+        "sourceFrame": 174,
+        "seconds": 7.25
+      },
+      {
+        "file": "death-29.png",
+        "sourceFrame": 176,
+        "seconds": 7.3333
+      },
+      {
+        "file": "death-30.png",
+        "sourceFrame": 178,
+        "seconds": 7.4167
+      },
+      {
+        "file": "death-31.png",
+        "sourceFrame": 180,
+        "seconds": 7.5
+      },
+      {
+        "file": "death-32.png",
+        "sourceFrame": 182,
+        "seconds": 7.5833
+      },
+      {
+        "file": "death-33.png",
+        "sourceFrame": 184,
+        "seconds": 7.6667
+      },
+      {
+        "file": "death-34.png",
+        "sourceFrame": 186,
+        "seconds": 7.75
+      },
+      {
+        "file": "death-35.png",
+        "sourceFrame": 188,
+        "seconds": 7.8333
+      },
+      {
+        "file": "death-36.png",
+        "sourceFrame": 190,
+        "seconds": 7.9167
+      }
+    ],
+    "sound": null,
+    "cropBox": [
+      71,
+      112,
+      463,
+      749
+    ]
+  }
+]
