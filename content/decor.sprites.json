@@ -49,17 +49,6 @@
      }
     },
     {
-     "name": "boulder-pile",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decoracoes-2d/boulder-pile.png"
-      ]
-     }
-    },
-    {
      "name": "bridge-parapet-gothic-statues-001",
      "fps": 1.0,
      "mode": "loop",
@@ -247,17 +236,6 @@
      }
     },
     {
-     "name": "cave-basalt-004-moss-rock",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decoracoes-2d/cave-basalt-004-moss-rock.png"
-      ]
-     }
-    },
-    {
      "name": "cave-basalt-004-original-bones",
      "fps": 1.0,
      "mode": "loop",
@@ -368,17 +346,6 @@
      }
     },
     {
-     "name": "cave-basalt-004-rubble",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decoracoes-2d/cave-basalt-004-rubble.png"
-      ]
-     }
-    },
-    {
      "name": "cave-basalt-004-stalagmites",
      "fps": 1.0,
      "mode": "loop",
@@ -441,17 +408,6 @@
      "frames": {
       "list": [
        "decoracoes-2d/cave-basalt-005-pillar.png"
-      ]
-     }
-    },
-    {
-     "name": "cave-basalt-005-rubble",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decoracoes-2d/cave-basalt-005-rubble.png"
       ]
      }
     },
@@ -595,17 +551,6 @@
      "frames": {
       "list": [
        "decoracoes-2d/cave-basalt-006-pillar.png"
-      ]
-     }
-    },
-    {
-     "name": "cave-basalt-006-rubble",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decoracoes-2d/cave-basalt-006-rubble.png"
       ]
      }
     },
@@ -826,17 +771,6 @@
      "frames": {
       "list": [
        "decoracoes-2d/cave-mossy-rocks.png"
-      ]
-     }
-    },
-    {
-     "name": "cave-rock-pile",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decoracoes-2d/cave-rock-pile.png"
       ]
      }
     },
@@ -4108,17 +4042,6 @@
      }
     },
     {
-     "name": "wilds-lichen-boulder",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decoracoes-2d/wilds-lichen-boulder.png"
-      ]
-     }
-    },
-    {
      "name": "wilds-moss-bridge",
      "fps": 1.0,
      "mode": "loop",
@@ -4159,17 +4082,6 @@
      "frames": {
       "list": [
        "decoracoes-2d/wilds-mossy-shrine.png"
-      ]
-     }
-    },
-    {
-     "name": "wilds-mossy-stones",
-     "fps": 1.0,
-     "mode": "loop",
-     "pack": "decor",
-     "frames": {
-      "list": [
-       "decoracoes-2d/wilds-mossy-stones.png"
       ]
      }
     },
@@ -4526,101 +4438,706 @@
      }
     },
     {
-     "name": "arid-old-well",
+     "name": "boulder-pile-clean-v01",
      "fps": 1.0,
      "mode": "loop",
      "pack": "decor",
      "frames": {
       "list": [
-       "decoracoes-2d/arid-old-well.png"
+       "decoracoes-2d/boulder-pile-clean-v01.png"
       ]
      }
     },
     {
-     "name": "arid-boulders-v02",
+     "name": "cave-basalt-004-moss-rock-clean-v01",
      "fps": 1.0,
      "mode": "loop",
      "pack": "decor",
      "frames": {
       "list": [
-       "decoracoes-2d/arid-boulders-v02.png"
+       "decoracoes-2d/cave-basalt-004-moss-rock-clean-v01.png"
       ]
      }
     },
     {
-     "name": "arid-broken-cart-v02",
+     "name": "cave-basalt-004-rubble-clean-v01",
      "fps": 1.0,
      "mode": "loop",
      "pack": "decor",
      "frames": {
       "list": [
-       "decoracoes-2d/arid-broken-cart-v02.png"
+       "decoracoes-2d/cave-basalt-004-rubble-clean-v01.png"
       ]
      }
     },
     {
-     "name": "arid-campfire-cauldron-v02",
+     "name": "cave-basalt-005-rubble-clean-v01",
      "fps": 1.0,
      "mode": "loop",
      "pack": "decor",
      "frames": {
       "list": [
-       "decoracoes-2d/arid-campfire-cauldron-v02.png"
+       "decoracoes-2d/cave-basalt-005-rubble-clean-v01.png"
       ]
      }
     },
     {
-     "name": "arid-clay-urn-v02",
+     "name": "cave-basalt-006-rubble-clean-v01",
      "fps": 1.0,
      "mode": "loop",
      "pack": "decor",
      "frames": {
       "list": [
-       "decoracoes-2d/arid-clay-urn-v02.png"
+       "decoracoes-2d/cave-basalt-006-rubble-clean-v01.png"
       ]
      }
     },
     {
-     "name": "arid-dry-bush-v02",
+     "name": "cave-rock-pile-clean-v01",
      "fps": 1.0,
      "mode": "loop",
      "pack": "decor",
      "frames": {
       "list": [
-       "decoracoes-2d/arid-dry-bush-v02.png"
+       "decoracoes-2d/cave-rock-pile-clean-v01.png"
       ]
      }
     },
     {
-     "name": "arid-ox-skeleton-rocks-v02",
+     "name": "wilds-lichen-boulder-clean-v01",
      "fps": 1.0,
      "mode": "loop",
      "pack": "decor",
      "frames": {
       "list": [
-       "decoracoes-2d/arid-ox-skeleton-rocks-v02.png"
+       "decoracoes-2d/wilds-lichen-boulder-clean-v01.png"
       ]
      }
     },
     {
-     "name": "arid-ox-skeleton-v02",
+     "name": "wilds-mossy-stones-clean-v01",
      "fps": 1.0,
      "mode": "loop",
      "pack": "decor",
      "frames": {
       "list": [
-       "decoracoes-2d/arid-ox-skeleton-v02.png"
+       "decoracoes-2d/wilds-mossy-stones-clean-v01.png"
       ]
      }
     },
     {
-     "name": "arid-ruined-camp-tent-v02",
+     "name": "arid-boulders-v03",
      "fps": 1.0,
      "mode": "loop",
      "pack": "decor",
      "frames": {
       "list": [
-       "decoracoes-2d/arid-ruined-camp-tent-v02.png"
+       "decoracoes-2d/arid-boulders-v03.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-broken-cart-v03",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-broken-cart-v03.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-campfire-cauldron-v03",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-campfire-cauldron-v03.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-clay-urn-v03",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-clay-urn-v03.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-dry-bush-v03",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-dry-bush-v03.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-old-well-v03",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-old-well-v03.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-ox-skeleton-rocks-v03",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-ox-skeleton-rocks-v03.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-ox-skeleton-v03",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-ox-skeleton-v03.png"
+      ]
+     }
+    },
+    {
+     "name": "arid-ruined-camp-tent-v03",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/arid-ruined-camp-tent-v03.png"
+      ]
+     }
+    },
+    {
+     "name": "cave-column-slender-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave-column-slender-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave-column-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave-column-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave-ember-seam-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave-ember-seam-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave-expedition-remains-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave-expedition-remains-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave-fallen-block-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave-fallen-block-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave-pale-fungi-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave-pale-fungi-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave2-hair-roots-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave2-hair-roots-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave2-puffballs-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave2-puffballs-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave2-root-column-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave2-root-column-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave2-root-ladder-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave2-root-ladder-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave2-root-stumps-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave2-root-stumps-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave2-sap-camp-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave2-sap-camp-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave2-sap-pod-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave2-sap-pod-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave3-cocoon-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave3-cocoon-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave3-shelf-boulder-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave3-shelf-boulder-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave3-trail-marker-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave3-trail-marker-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave4-bough-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave4-bough-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave4-burl-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave4-burl-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave4-crystal-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave4-crystal-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave4-shrine-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave4-shrine-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "river-column-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/river-column-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "river-fluorite-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/river-fluorite-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "river-mooring-lamp-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/river-mooring-lamp-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave-sealed-door-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave-sealed-door-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave-stake-lantern-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave-stake-lantern-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave-sunken-door-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave-sunken-door-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave2-root-knot-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave2-root-knot-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave3-cap-lantern-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave3-cap-lantern-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave3-glow-cluster-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave3-glow-cluster-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave3-spore-chimney-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave3-spore-chimney-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "cave-column-slender-v02",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave-column-slender-v02.png"
+      ]
+     }
+    },
+    {
+     "name": "cave-column-v02",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave-column-v02.png"
+      ]
+     }
+    },
+    {
+     "name": "cave2-root-column-v02",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave2-root-column-v02.png"
+      ]
+     }
+    },
+    {
+     "name": "cave4-bough-v02",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/cave4-bough-v02.png"
+      ]
+     }
+    },
+    {
+     "name": "river-cairn-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/river-cairn-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "river-column-v02",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/river-column-v02.png"
+      ]
+     }
+    },
+    {
+     "name": "river-ferry-wreck-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/river-ferry-wreck-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "river-gypsum-boulder-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/river-gypsum-boulder-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "river-pearl-pool-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/river-pearl-pool-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "deadtree-leaning-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/deadtree-leaning-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "deadtree-oak-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/deadtree-oak-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "deadtree-pine-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/deadtree-pine-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "deadtree-snag-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/deadtree-snag-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "deadtree-spiral-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/deadtree-spiral-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "deadtree-spiral-v02",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/deadtree-spiral-v02.png"
+      ]
+     }
+    },
+    {
+     "name": "deadtree-split-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/deadtree-split-v01.png"
+      ]
+     }
+    },
+    {
+     "name": "deadtree-willow-v01",
+     "fps": 1.0,
+     "mode": "loop",
+     "pack": "decor",
+     "frames": {
+      "list": [
+       "decoracoes-2d/deadtree-willow-v01.png"
       ]
      }
     }

@@ -126,7 +126,7 @@
    "briefing": "O rio ainda corta a planície queimada. Três sobreviventes. Do outro lado, a milícia que os persegue. Atravessem o vau e abram caminho.",
    "objective": "Derrote todos os inimigos",
    "win": "rout",
-   "mapFile": "vau029.json"
+   "mapFile": "vau030.json"
   },
   {
    "id": "bosque",
@@ -499,12 +499,12 @@
   {
    "id": "farmlands",
    "index": 55,
-   "title": "Farmlands",
-   "place": "Campos e pequenas casas",
-   "briefing": "Campos abertos cercam um povoado inquietante. Três lojas oferecem armas, remédios e provisões. A pequena pousada abriga o grupo; a casa dos moradores guarda histórias estranhas.",
-   "objective": "Explore os campos e visite as casas.",
+   "title": "Farmlands Revisited",
+   "place": "Campos cultivados e pequenas casas",
+   "briefing": "Campos extensos de trigo e pasto cercam o povoado. Trilhas de terra ligam a ferraria, a botica, o armazém, a pousada e a casa dos moradores.",
+   "objective": "Atravesse os campos e visite as casas do povoado.",
    "win": "rout",
-   "mapFile": "farmlands002.json"
+   "mapFile": "farmlands-revisited002.json"
   },
   {
    "id": "frozen-swamp-1-hidden-cellar",
@@ -1514,7 +1514,7 @@
    "briefing": "A caserna divide o piso entre uma ala de madeira e um arsenal de pedra. Os pilares centrais mantêm abertas duas rotas para a escada norte.",
    "objective": "Explore o andar e use as passagens para continuar pela torre.",
    "win": "escape",
-   "mapFile": "watchtower-barracks001.json"
+   "mapFile": "watchtower-barracks003.json"
   },
   {
    "id": "watchtower-beacon",
@@ -1524,7 +1524,7 @@
    "briefing": "No topo, uma plataforma de basalto sustenta o antigo braseiro de sinalização. O vento e a luz fria atravessam o último posto de vigia. Vença os sentinelas e encerre a expedição.",
    "objective": "Derrote a guarda do farol ou retorne pelos andares inferiores.",
    "win": "escape",
-   "mapFile": "watchtower-beacon001.json"
+   "mapFile": "watchtower-beacon003.json"
   },
   {
    "id": "watchtower-command",
@@ -1534,7 +1534,7 @@
    "briefing": "Calcário antigo e basalto marcam a câmara do comandante. Uma mesa de guerra domina a ala norte, mas as passagens laterais permanecem livres para manobras.",
    "objective": "Explore o andar e use as passagens para continuar pela torre.",
    "win": "escape",
-   "mapFile": "watchtower-command001.json"
+   "mapFile": "watchtower-command003.json"
   },
   {
    "id": "watchtower-gate-floor",
@@ -1544,7 +1544,7 @@
    "briefing": "O piso térreo organiza o acesso à torre: depósitos a oeste, uma sala de guarda ao norte e escadas para as fundações e os andares superiores.",
    "objective": "Explore o andar e use as passagens para continuar pela torre.",
    "win": "escape",
-   "mapFile": "watchtower-gate-floor006.json"
+   "mapFile": "watchtower-gate-floor011.json"
   },
   {
    "id": "watchtower-prison",
@@ -1554,7 +1554,7 @@
    "briefing": "A segunda fundação abriga quatro blocos de celas. Grades e pilares separam os pátios do corredor central. Gaiolas esquecidas, instrumentos de tortura e um ossário revelam o destino dos prisioneiros.",
    "objective": "Explore o andar e use as passagens para continuar pela torre.",
    "win": "escape",
-   "mapFile": "watchtower-prison002.json"
+   "mapFile": "watchtower-prison004.json"
   },
   {
    "id": "watchtower-undercroft",
@@ -1564,7 +1564,7 @@
    "briefing": "Sob a torre, arcadas antigas dividem depósitos, uma cisterna e um santuário de basalto. A passagem nordeste desce à prisão; a escada sudoeste retorna à guarnição.",
    "objective": "Explore o andar e use as passagens para continuar pela torre.",
    "win": "escape",
-   "mapFile": "watchtower-undercroft001.json"
+   "mapFile": "watchtower-undercroft002.json"
   },
   {
    "id": "wisp-forest-2",
@@ -1594,7 +1594,7 @@
    "briefing": "Past the last lantern the trails fork and fold back on themselves. Wolves den among the roots, brigands camp by the black pond, and older things keep the sunken ruins further in. Somewhere past them, a shrine the forest was never meant to give back.",
    "objective": "Encontre a passagem e derrote a Planta Carnívora para concluir a travessia.",
    "win": "escape",
-   "mapFile": "wisp-forest-crossing012.json"
+   "mapFile": "wisp-forest-crossing018.json"
   },
   {
    "id": "wisp-forest",

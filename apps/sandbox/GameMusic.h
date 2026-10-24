@@ -32,6 +32,7 @@ inline Stage::Music theme(const std::string& name) {
   if (name == "battle") return {"music.mp3", 0.4f};
   if (name == "cemetery") return {"Ember Ashes Ambient OST 0-Balanced-High.mp3", 0.4f};  // EmberEngine's own (content/music)
   if (name == "ashenForest") return {"New Claude Melisma Free 04 - AshenForest-Balanced-High.mp3", 0.4f};  // EmberEngine's own (content/music)
+  if (name == "watchtower") return {"OldTowwerDrone  trax 4 Persona 884-Balanced-High.mp3", 0.4f};  // EmberEngine's own (content/music)
   return {"LANDR-Absolute Mental Descruction umn3 10 (3)-Balanced-High.mp3", 0.4f};  // "early"
 }
 
@@ -40,11 +41,13 @@ inline bool isCemetery(const std::string& id) { return id.starts_with("cemiterio
 // Every Ashen Forest map (the user, 2026-10-22: "wire it for the Ashen forest Maps"): Ashen Forest Crossing and the Deep Ashen
 // region (deep-ashen-forest, -ravine, -root-sanctuary, ...).
 inline bool isAshenForest(const std::string& id) { return id.starts_with("ashen-forest") || id.starts_with("deep-ashen"); }
+inline bool isWatchtower(const std::string& id) { return id.starts_with("watchtower-"); }
 
 // GameApp's chain for a mission id when its battle file carries no `music` (older exports).
 inline Stage::Music forMissionId(const std::string& id) {
   if (isCemetery(id)) return theme("cemetery");
   if (isAshenForest(id)) return theme("ashenForest");
+  if (isWatchtower(id)) return theme("watchtower");
   if (id == "templo") return theme("temple");
   if (id == "aldeia") return theme("aldeia");
   if (id == "estalagem") return theme("inn");

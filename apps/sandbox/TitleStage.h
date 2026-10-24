@@ -178,7 +178,7 @@ class TitleStage : public Stage {
     y += h1 * 0.92f + 0.75f * rem_;
     // the engine line, made readable over the art (user 2026-10-16): larger, tighter tracking, opaque, with the tagline's shadow
     {
-      const char* engineLine = "EMBER ENGINE · C++ / VULKAN · VERSION 0.36.2";
+      const char* engineLine = "EMBER ENGINE · C++ / VULKAN · VERSION 0.36.3";
       spacedText(dl, uiFont(UiFont::Ui), version, {x + 0.2f * rem_, y + 2}, IM_COL32(0, 0, 0, 170), engineLine, 0.12f, false);
       spacedText(dl, uiFont(UiFont::Ui), version, {x + 0.2f * rem_, y}, IM_COL32(232, 213, 182, 245), engineLine, 0.12f, false);
     }

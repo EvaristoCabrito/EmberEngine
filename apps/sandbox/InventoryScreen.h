@@ -63,7 +63,11 @@ class InventoryScreen {
                          kDanger = IM_COL32(181, 74, 50, 255), kBorder = IM_COL32(74, 74, 74, 255);
   static constexpr const char* kPotions[7] = {"weak", "mid", "potent", "disease", "manaSmall", "manaMid", "manaLarge"};
   static constexpr const char* kBagIcon = "game/icons/refresh-001/packs/small-pouch.png";  // Engine2's, no longer drawn
-  static constexpr const char* kBagArt = "content/ui/status/mochila-brasa-v01.png";           // the user's Mochila (2026-10-19)
+  static constexpr const char* kBagArt = "content/ui/status/mochila-brasa-v02.png";           // the user's true-alpha Mochila icon
+  static const std::string& unknownItemArt() {
+    static const std::string path = std::filesystem::absolute("content/ui/inventory/unidentified-item-v01.png").string();
+    return path;
+  }
 
   struct DollSlot {
     const char* id;
@@ -82,8 +86,6 @@ class InventoryScreen {
   struct Entry {
     std::string name, icon, tip;
     int count = 0;
-    bool weapon = false;
-    bool unknown = false;  // an unknown item (docs/SKILLS_MAGE.md): a "?" in place of its art, no equip, no use
     std::string rune;  // the Conjurador's rune (world/FieldSpells): its id; the sheet edits its note
     std::vector<std::pair<std::string, std::function<void(Context&)>>> equipChoices;  // run with this frame's Context
     std::function<void(Context&)> use, discard;
@@ -449,7 +451,7 @@ class InventoryScreen {
     for (int i = 0; i < cap; ++i) {
       const ImVec2 p{o.x + (i % cols) * (cell + 8), gy + (i / cols) * (cell + 8)}, q{p.x + cell, p.y + cell};
       const Entry* e = i < static_cast<int>(entries.size()) ? &entries[static_cast<size_t>(i)] : nullptr;
-      cl->AddRectFilled(p, q, e && e->weapon ? IM_COL32(0, 0, 0, 255) : IM_COL32(17, 17, 17, 178), 6);
+      cl->AddRectFilled(p, q, IM_COL32(17, 17, 17, 178), 6);
       cl->AddRect(p, q, IM_COL32(74, 74, 74, 204), 6);
       if (!e) continue;
       ImGui::SetCursorScreenPos(p);
@@ -459,11 +461,6 @@ class InventoryScreen {
       tip(e->tip);
       ImGui::PopID();
       if (hover) cl->AddRect(p, q, kAccent, 6);
-      if (e->unknown) {  // an unknown item: a question mark in place of its art
-        ImFont* mark = uiFont(UiFont::Mark);
-        const ImVec2 ts = mark->CalcTextSizeA(cell * 0.55f, FLT_MAX, 0, "?");
-        cl->AddText(mark, cell * 0.55f, {(p.x + q.x - ts.x) / 2, (p.y + q.y - ts.y) / 2}, IM_COL32(196, 150, 232, 255), "?");
-      }
       if (const UiImage* img = art(c, e->icon)) {
         const float k = std::min(cell * 0.96f / img->width, cell * 0.96f / img->height);
         const float iw = img->width * k, ih = img->height * k;
@@ -548,7 +545,7 @@ class InventoryScreen {
     const std::vector<e2::InnRules::UnknownItem> unknowns = c.rules.unknownItems(c.save);
     auto unknownEntry = [&](const e2::InnRules::UnknownItem& u) {
       Entry e;
-      e.name = u.label, e.unknown = true, e.weapon = u.kind == "weapon";
+      e.name = u.label, e.icon = unknownItemArt();
       e.tip = u.label + "\nIdentifique com um Mago Negro (feitiço de campo) para ver o nome e os atributos.\nNão pode ser equipado nem usado; o Ferreiro compra por " +
               std::to_string(u.sell) + " Gold.";
       e.discard = [u](Context& c) {
@@ -569,7 +566,7 @@ class InventoryScreen {
       }
       const int enh = enhJ.is_number() ? enhJ.get<int>() : 0;
       Entry e;
-      e.name = w->name + (enh > 0 ? std::format(" +{}", enh) : ""), e.icon = w->icon, e.weapon = true;
+      e.name = w->name + (enh > 0 ? std::format(" +{}", enh) : ""), e.icon = w->icon;
       e.tip = w->tooltip[static_cast<size_t>(std::clamp(enh, 0, static_cast<int>(w->tooltip.size()) - 1))];
       const std::string wid = id;
       for (const std::string& h : heroes)
@@ -651,11 +648,6 @@ class InventoryScreen {
     ImFont* ui = uiFont(UiFont::Ui);
     const ImVec2 head = ImGui::GetCursorScreenPos();
     if (const UiImage* img = art(c, sheet_->icon)) dl->AddImage(img->texture, head, {head.x + 44, head.y + 44});
-    if (sheet_->unknown) {
-      ImFont* mark = uiFont(UiFont::Mark);
-      const ImVec2 ts = mark->CalcTextSizeA(30.0f, FLT_MAX, 0, "?");
-      dl->AddText(mark, 30.0f, {head.x + (44 - ts.x) / 2, head.y + (44 - ts.y) / 2}, IM_COL32(196, 150, 232, 255), "?");
-    }
     dl->PushClipRect(head, {head.x + inner - 34, head.y + 46}, true);
     dl->AddText(ui, 14.0f, {head.x + 54, head.y}, kFg, sheet_->name.c_str());
     std::string firstLines = sheet_->tip;

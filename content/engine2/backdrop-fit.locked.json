@@ -23,7 +23,7 @@
   ],
   "estalagem": ["inn-panorama-v01.jpg", "inn-panorama-v01.jpg#chao", "inn-panorama-v01.jpg#teto", "inn-panorama-v01.jpg#piso"],
   "estalagem-andar-2": ["inn-second-floor-v01.jpg#teto", "inn-second-floor-v01.jpg#piso"],
-  "bosque": ["bosque-morto-panorama-v01.png", "bosque-morto-panorama-v02.png"],
+  "bosque": ["bosque-morto-panorama-v01.png", "bosque-morto-panorama-v02.png", "bosque-morto-panorama-v04-alpha-sol.png"],
   "thebridge": ["bridge-panorama-v01.jpg"],
   "random-amanita-glade": ["vau-panorama-tira-teima-v05.png"],
   "random-blightwood-verge": ["vau-panorama-tira-teima-v05.png"],
@@ -38,7 +38,8 @@
   "random-hollow-root-den": ["vau-panorama-tira-teima-v05.png"],
   "random-mora-hollow-stream": ["vau-panorama-tira-teima-v05.png"],
   "random-mora-rootwatch": ["vau-panorama-tira-teima-v05.png"],
-  "random-river-rope-ambush": ["vau-panorama-tira-teima-v05.png"]
+  "random-river-rope-ambush": ["vau-panorama-tira-teima-v05.png"],
+  "farmlands": ["fields-revisited-panorama-v01.png"]
  },
  "paintings": {
   "inn-panorama-v01.jpg#chao": {
@@ -341,6 +342,21 @@
    "groundFar": 300.0,
    "groundFromDegrees": 3.0
   },
+  "bosque-morto-panorama-v04-alpha-sol.png": {
+    "horizon": 0.55,
+    "bottom": 1.0,
+    "skyTop": 0.0,
+    "degreesPerHeight": 40.0,
+    "bottomDegrees": 23.6,
+    "spanDegrees": 119.0,
+    "glowColumn": 0.5,
+    "horizonDegrees": 2.0,
+    "alphaSky": true,
+    "ground": "bosque-ground-v01.jpg",
+    "groundTile": 16.0,
+    "groundFar": 300.0,
+    "groundFromDegrees": 3.0
+  },
   "bridge-panorama-v01.jpg": {
    "horizon": 0.29,
    "bottom": 1.0,
@@ -394,6 +410,20 @@
    "alphaSky": true,
    "ground": "vau-ground-v01.jpg",
    "groundTile": 36.0,
+   "groundFar": 300.0,
+   "groundFromDegrees": 3.0
+  },
+  "fields-revisited-panorama-v01.png": {
+   "horizon": 0.44,
+   "bottom": 1.0,
+   "skyTop": 0.0,
+   "degreesPerHeight": 40.0,
+   "bottomDegrees": 23.6,
+   "spanDegrees": 119.0,
+   "glowColumn": 0.8,
+   "horizonDegrees": 0.0,
+   "ground": "fields-revisited-ground-v03.png",
+   "groundTile": 180.0,
    "groundFar": 300.0,
    "groundFromDegrees": 3.0
   }

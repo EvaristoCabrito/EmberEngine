@@ -2208,7 +2208,7 @@ class MapStage final : public Stage {
         };
         if (!wallBeyond(farX, farY, sx, sy) && wallBeyond(nearX, nearY, -sx, -sy)) rot ^= 2;
       }
-      const bool faced = def->emberStyle == "window" || def->emberStyle == "slit" || def->emberStyle == "wall-torch" || def->emberStyle.starts_with("gothic-");
+      const bool faced = e2::emberFacesRoom(def->emberStyle);
       if (faced) {
         // The splay / the torch faces the room: the piece's inner side (Architecture.h emberAxisAngle: (sin a, cos a) on the
         // board, the half turn flipping it) must point towards the board's centre.
@@ -2224,7 +2224,7 @@ class MapStage final : public Stage {
       // (std::optional: a MeshId is the mesh's index and the map's first mesh is 0, so 0 is a real mesh here: on a map with no
       // 3D models the first wall piece used to be dropped as "no mesh", found 2026-10-21 on the gothic bridge test.)
       auto meshOf = [&](const e2::three::Geometry& g, bool footprint) -> std::optional<MeshId> {
-      static constexpr int kParts = e2::kEmberMaterialTags;  // 0 the masonry, 1 oak, 2 iron, 3 flame, 4 dark oak, 5 a dark void, 6 the steps, 7 the gothic atlas
+      static constexpr int kParts = e2::kEmberMaterialTags;  // 0 the masonry, 1 oak, 2 iron, 3 flame, 4 dark oak, 5 a dark void, 6 the steps, 7 the gothic atlas, 8 glass, 9 the Inn's timber, 10 the Inn's door planks
       MeshBuildPart parts[kParts];
       std::map<std::array<float, 8>, uint32_t> weld[kParts];
       size_t triangles = 0;
@@ -2289,8 +2289,10 @@ class MapStage final : public Stage {
       // (At 40 / 16 / 4 the night's exposure (0.05) took it to white: a lamp bulb, not fire; capture 098 of 2026-10-21.)
       MeshMaterial flame = flat(0x3a1a08u, 0.9f, 0.0f);
       flame.emissive[0] = 16.0f, flame.emissive[1] = 5.5f, flame.emissive[2] = 0.9f;
+      // (8 glass: a pale green-grey, smooth; 9 the Inn's timber: dark oak; 10 the Inn's door planks: oak. Flat until the user's textures arrive.)
       MeshMaterial materials[kParts] = {m, flat(0x6b4a2bu, 0.82f, 0.0f), flat(0x3a3a3cu, 0.45f, 0.65f), flame, flat(0x3b2a18u, 0.85f, 0.0f),
-                                        flat(0x060504u, 1.0f, 0.0f), flat(0x55524eu, 0.9f, 0.0f), flat(0x4b4c4eu, 0.94f, 0.0f)};
+                                        flat(0x060504u, 1.0f, 0.0f), flat(0x55524eu, 0.9f, 0.0f), flat(0x4b4c4eu, 0.94f, 0.0f),
+                                        flat(0x9fb3a6u, 0.18f, 0.0f), flat(0x3b2a18u, 0.85f, 0.0f), flat(0x6b4a2bu, 0.82f, 0.0f)};
       // The kit's photographed materials (the user's textures of 2026-10-21, content/models/architecture.json "materials"): the
       // photograph instead of the flat colour; the flame's photograph is its glow (emissive x the fire, so its own oranges show).
       bool taggedTexture[kParts] = {};
@@ -2354,6 +2356,16 @@ class MapStage final : public Stage {
         piece.lightAt = {static_cast<float>(std::sin(a)) * out, 4.2f * 0.62f + 1.3f, static_cast<float>(std::cos(a)) * out};
         piece.lightBehind = out - static_cast<float>(0.32 * def->wallThicknessScale * 0.5);  // back to the wall's face
       }
+      if (def->emberStyle == "inn-sconce") {
+        // The Inn's candle lantern (2026-10-22): a candle's light at its flame (the wall torch's colour, a little over half its
+        // strength and reach), on the room's side of the wall.
+        const double a = e2::emberAxisAngle(rot, connections);
+        const std::array<double, 2> at = e2::innSconceLight(*def);
+        const float out = static_cast<float>(at[0]);
+        piece.light = e2::SceneLight{{1.0f, 0.58f, 0.26f}, 6.5f, 3.6f, 1.0f, 1.0f, static_cast<float>(std::fmod(p.x * 7.31 + p.y * 3.17, 6.28))};
+        piece.lightAt = {static_cast<float>(std::sin(a)) * out, static_cast<float>(at[1]), static_cast<float>(std::cos(a)) * out};
+        piece.lightBehind = out - static_cast<float>(0.32 * def->wallThicknessScale * 0.5);
+      }
       if (const auto flame = e2::emberStairFlame(*def, rot)) {
         // The stairs' torch: Engine2's wall torch numbers, at its flame.
         piece.light = e2::SceneLight{{1.0f, 0.58f, 0.26f}, 11.0f, 4.68f, 1.0f, 1.0f, static_cast<float>(std::fmod(p.x * 5.17 + p.y * 2.31, 6.28))};
@@ -2363,7 +2375,7 @@ class MapStage final : public Stage {
       // Luz das janelas, 100% interior (the user, 2026-10-21: "a única coisa que vem de fora é a luz em si ... nas superfícies
       // internas"): every piece of the outer ring gets a shadow skirt, a copy of itself kSkirtOffset outside that only casts shadow,
       // so the sun reaches no outer face and comes in only through the openings (the copy keeps their holes).
-      if (!def->emberStyle.empty() && !stairs && def->emberStyle != "door") {
+      if (!def->emberStyle.empty() && !stairs && !e2::emberAnimatedDoor(def->emberStyle)) {
         const double a = e2::emberAxisAngle(rot, connections);
         double nx = std::sin(a), nz = std::cos(a);
         if (nx * (x - centreX) + nz * (z - centreZ) < 0.0) nx = -nx, nz = -nz;  // pointing away from the room
@@ -2383,7 +2395,19 @@ class MapStage final : public Stage {
       // EmberEngine's pieces stand on their own hex's ground: the arch position (no odd-row half-hex shift) samples the neighbouring
       // cell on odd rows, and a rim piece beside the void read 0 there, two units under the floor (2026-10-21). Engine2's pieces as before.
       double gx = x, gz = z;
-      if (!def->emberStyle.empty() && inBoard(p.x, p.y)) gx = board_->cell(p.x, p.y).x, gz = board_->cell(p.x, p.y).z;
+      if (!def->emberStyle.empty() && inBoard(p.x, p.y)) {
+        const e2::Cell* cell = &board_->cell(p.x, p.y);
+        // A piece standing ON a void cell (the Inn's outer ring on the board's rim, 2026-10-22: the void's ground is 0, two units
+        // under the floor it closes) stands on its nearest floor cell's ground instead (orthogonal neighbours first, then diagonal).
+        if (cell->surface < 0)
+          for (const auto& [c, r] : {std::pair{p.x - 1, p.y}, std::pair{p.x + 1, p.y}, std::pair{p.x, p.y - 1}, std::pair{p.x, p.y + 1}, std::pair{p.x - 1, p.y - 1},
+                                     std::pair{p.x + 1, p.y - 1}, std::pair{p.x - 1, p.y + 1}, std::pair{p.x + 1, p.y + 1}})
+            if (inBoard(c, r) && board_->cell(c, r).surface >= 0) {
+              cell = &board_->cell(c, r);
+              break;
+            }
+        gx = cell->x, gz = cell->z;
+      }
       piece.groundSmooth = static_cast<float>(e2::groundHeightAt(*board_, e2::EdgeStyle::Smooth, gx, gz));
       piece.groundHard = static_cast<float>(e2::groundHeightAt(*board_, e2::EdgeStyle::Hard, gx, gz));
       piece.half = std::max({std::abs(minX), std::abs(maxX), std::abs(minZ), std::abs(maxZ)});
@@ -2400,7 +2424,7 @@ class MapStage final : public Stage {
                                   g.position[(v + k) * 3 + 2] + static_cast<float>(z)});
       }
       arch_.push_back(std::move(piece));
-      if (def->emberStyle == "door") {
+      if (e2::emberAnimatedDoor(def->emberStyle)) {
         // The animated door: its two leaves as their own meshes, swung about the jambs by updateDoors / placeModels.
         const size_t index = arch_.size() - 1;
         DoorState& state = doors_[index];
@@ -2825,6 +2849,7 @@ class MapStage final : public Stage {
       inst.rows[2] = {0, 0, 1, a.z};
       inst.mesh = a.mesh;
       inst.scale = 1;
+      inst.flags = kInstanceCameraFade;
       instances.push_back(inst);
       pieceBoxes_.push_back({a.x, a.z, a.half, y + a.top});
     }
@@ -2843,6 +2868,7 @@ class MapStage final : public Stage {
       inst.rows[2] = {-s, 0, c, t.z};
       inst.mesh = leaf.mesh;
       inst.scale = 1;
+      inst.flags = kInstanceCameraFade;
       instances.push_back(inst);
     }
     // Luz das janelas: the outer ring's shadow skirts (buildArchitecture), then the roof over the room.

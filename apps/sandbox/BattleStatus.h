@@ -122,7 +122,7 @@ class BattleStatusSheet {
                          kOk = IM_COL32(150, 200, 130, 255), kWarn = IM_COL32(201, 154, 92, 255), kSky = IM_COL32(125, 211, 252, 255);
 
   // The sheet's own art (the user's, 2026-10-19: StatusScreenIcons), squared and cropped from Attachments/StatusScreenIcons.
-  static constexpr const char *kMochilaIcon = "content/ui/status/mochila-brasa-v01.png", *kEquiparIcon = "content/ui/status/equipar-brasa-v01.png",
+  static constexpr const char *kMochilaIcon = "content/ui/status/mochila-brasa-v02.png", *kEquiparIcon = "content/ui/status/equipar-brasa-v02.png",
                               *kSkillsIcon = "content/ui/status/skills-brasa-v01.png";
 
   struct Condition {

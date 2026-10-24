@@ -1,0 +1,4 @@
+[info] mounted C:\EmberEngine\build\sprites\battle.pak (3070 assets)
+[info] mounted C:\EmberEngine\build\meshes\props-v7.pak (335 assets)
+[info] mounted C:\EmberEngine\build\meshes\architecture.pak (32 assets)
+[info] mounted C:\EmberEngine\build\ground\ground-v39.pak (250 assets)

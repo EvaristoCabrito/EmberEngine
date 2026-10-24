@@ -2652,6 +2652,13 @@ class MapEditorStage : public Stage {
       static const std::pair<const char*, const char*> kGothic[3] = {{"Parede gótica", "ember-arch-gothic-wall"}, {"Nicho com guardião", "ember-arch-gothic-niche"},
                                                                      {"Pilastra", "ember-arch-gothic-pier"}};
       kitButtons(kGothic, 3);
+      // The Inn's kit (2026-10-22): plastered timber-framed walls, the casement window, the one-hex door (animated) and doorway, the
+      // candle lantern; the window and the lantern turn to the room by themselves.
+      ImGui::TextColored(ImColor(180, 180, 180), "ESTALAGEM");
+      static const std::pair<const char*, const char*> kInn[5] = {{"Parede", "ember-arch-inn-wall"}, {"Janela", "ember-arch-inn-window"},
+                                                                  {"Porta", "ember-arch-inn-door"}, {"Vão", "ember-arch-inn-doorway"},
+                                                                  {"Lampião", "ember-arch-inn-sconce"}};
+      kitButtons(kInn, 5);
       int tool = -1;
       if (toggleRow({{"Clique", wallTool_ == 0}, {"Traçar parede", wallTool_ == 1}, {"Fechar sala", wallTool_ == 2}}, tool)) wallTool_ = tool, wallDragFrom_.reset();
       hint("%s", wallTool_ == 0 ? "Clique coloca uma peça; clique numa parede com Janela, Seteira ou Tocha armada e ela vira essa peça (a abertura e a tocha se viram para a sala sozinhas)."

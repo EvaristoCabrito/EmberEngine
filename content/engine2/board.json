@@ -102,7 +102,7 @@
   "door",
   "snow"
  ],
- "groundLayerCount": 40,
+ "groundLayerCount": 46,
  "groundLayers": [
   {
    "index": 0,
@@ -423,6 +423,60 @@
    "normal": null,
    "rough": null,
    "reliefGrid": null
+  },
+  {
+   "index": 40,
+   "key": "variant-wisp-forest-leaf-litter-v01",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/wisp-forest-leaf-litter-v01.png",
+   "normal": "/game/ground-variants-3d/variant-wisp-forest-leaf-litter-v01/normal.png",
+   "rough": "/game/ground-variants-3d/variant-wisp-forest-leaf-litter-v01/rough.png",
+   "reliefGrid": null
+  },
+  {
+   "index": 41,
+   "key": "variant-wisp-forest-root-soil-v01",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/wisp-forest-root-soil-v01.png",
+   "normal": "/game/ground-variants-3d/variant-wisp-forest-root-soil-v01/normal.png",
+   "rough": "/game/ground-variants-3d/variant-wisp-forest-root-soil-v01/rough.png",
+   "reliefGrid": null
+  },
+  {
+   "index": 42,
+   "key": "variant-wisp-forest-ash-litter-v01",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/wisp-forest-ash-litter-v01.png",
+   "normal": "/game/ground-variants-3d/variant-wisp-forest-ash-litter-v01/normal.png",
+   "rough": "/game/ground-variants-3d/variant-wisp-forest-ash-litter-v01/rough.png",
+   "reliefGrid": null
+  },
+  {
+   "index": 43,
+   "key": "variant-wisp-crossing-leaf-litter-v01",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/wisp-forest-leaf-litter-v01.png",
+   "normal": "/game/ground-variants-3d/variant-wisp-crossing-leaf-litter-v01/normal.png",
+   "rough": "/game/ground-variants-3d/variant-wisp-crossing-leaf-litter-v01/rough.png",
+   "reliefGrid": null
+  },
+  {
+   "index": 44,
+   "key": "variant-wisp-crossing-root-soil-v01",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/wisp-forest-root-soil-v01.png",
+   "normal": "/game/ground-variants-3d/variant-wisp-crossing-root-soil-v01/normal.png",
+   "rough": "/game/ground-variants-3d/variant-wisp-crossing-root-soil-v01/rough.png",
+   "reliefGrid": null
+  },
+  {
+   "index": 45,
+   "key": "variant-wisp-crossing-ash-litter-v01",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/wisp-forest-ash-litter-v01.png",
+   "normal": "/game/ground-variants-3d/variant-wisp-crossing-ash-litter-v01/normal.png",
+   "rough": "/game/ground-variants-3d/variant-wisp-crossing-ash-litter-v01/rough.png",
+   "reliefGrid": null
   }
  ],
  "groundVariantLayers": [
@@ -624,6 +678,54 @@
    "variant": 20,
    "file": "laje-021-stone-slabs.png",
    "label": "021",
+   "relief": 0
+  },
+  {
+   "key": "variant-wisp-forest-leaf-litter-v01",
+   "terrain": "woods",
+   "variant": 62,
+   "file": "wisp-forest-leaf-litter-v01.png",
+   "label": "Wisp · Folhas mortas",
+   "relief": 0
+  },
+  {
+   "key": "variant-wisp-forest-root-soil-v01",
+   "terrain": "woods",
+   "variant": 63,
+   "file": "wisp-forest-root-soil-v01.png",
+   "label": "Wisp · Raízes expostas",
+   "relief": 0
+  },
+  {
+   "key": "variant-wisp-forest-ash-litter-v01",
+   "terrain": "woods",
+   "variant": 64,
+   "file": "wisp-forest-ash-litter-v01.png",
+   "label": "Wisp · Cinza e folhas",
+   "relief": 0
+  },
+  {
+   "key": "variant-wisp-crossing-leaf-litter-v01",
+   "terrain": "plains",
+   "variant": 62,
+   "file": "wisp-forest-leaf-litter-v01.png",
+   "label": "Wisp Crossing · Folhas mortas",
+   "relief": 0
+  },
+  {
+   "key": "variant-wisp-crossing-root-soil-v01",
+   "terrain": "plains",
+   "variant": 63,
+   "file": "wisp-forest-root-soil-v01.png",
+   "label": "Wisp Crossing · Raízes expostas",
+   "relief": 0
+  },
+  {
+   "key": "variant-wisp-crossing-ash-litter-v01",
+   "terrain": "plains",
+   "variant": 64,
+   "file": "wisp-forest-ash-litter-v01.png",
+   "label": "Wisp Crossing · Cinza e folhas",
    "relief": 0
   }
  ],

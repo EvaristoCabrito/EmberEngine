@@ -1167,6 +1167,24 @@ uma ilusão de ótica, não precisa entender só confia")
   (`probesLo / probesHi`, `probesAddress(f)`), no uint64_t member. `--debug-view 21` paints the gate (red inside, black outside, blue = no
   probes). Captures `captures/tower/day-outside-walls.png`, `day-gate-debug.png`, `night-interior.png`.
 - Still seen on the outer faces by day: a grey veil = the Atmosfera's air over them (the fog is never touched: the user's rule).
+- **The room's exposure is every map's exposure (the user, 2026-10-23 evening: "apenas BLACK ALL OVER ZERO SKY"; the commit after
+  `98a0c011`):** with the room metering its own floor (a4226151: 28 lux from the torches at night, 62-70 lux by day against 95,000-120,000
+  outside: a 40 x 36 hall with 25 small openings, the probes' physics) the sky through the windows and above the walls was exposed 24 x
+  darker than on any other map and went black (the floor image outside is drawn raw by mode 7, so it stayed bright). Now the outdoor
+  meter and the night cap on the tower as everywhere (53dc3ea6's camera); `probeMeterLux` is read for a log line only. A local light
+  per opening was built that evening and REJECTED ("não aceito nenhum truque barato"): never fake the window light.
+  **REJECTED TWICE, NEVER AGAIN (2026-10-23 evening, the user: "de novo essa merda cara? você não registra os seus erros"):** the
+  tower at the OUTDOOR exposure at night = the torch-lit room burned white (50416a47, and before it 53dc3ea6: the room's 28 lux
+  against a moonlit meter of 6 lux); the tower at the ROOM's exposure = the sky black (a4226151 .. 98a0c011: exposure 0.01, the
+  night sky 24 x under every other map's). One frame cannot hold a 28 lux room and a 1.5 lux night at one camera exposure: the
+  conflict is physical, not a bug. Do NOT flip between the two again; the user decides how the one exposure is chosen (see the
+  question of that evening: an exposure metered between the room and the outside, or dimmer torches on the map).
+- **THE CONCEPT (the user, 2026-10-23 evening, pasted; "precisa caprichar e deixar perfeito, é um approach único com uma perspectiva
+  única"):** "TORRE, PROTÓTIPO DA ILUSÃO DE CORTE: a torre é o protótipo de como vai funcionar a ilusão em todas as áreas de cidade e
+  áreas habitadas. Ao subir, o topo da torre é cortado, um pouco mais fino a cada andar. Não há tetos. No lugar deles aparecem o sol e
+  a lua normais. INN, EXPERIMENTO DOS MAPAS SUBTERRÂNEOS: o Inn é o experimento de como serão os mapas subterrâneos. Mapas subterrâneos
+  não têm acesso ao sol nem à lua." A cutaway diorama: the roof is never drawn (the one sky, sun and moon stand where the ceiling would
+  be) while the light behaves as if the roof were there (through windows and doors only). Memory note `cutaway-illusion-tower-inn`.
 - **The sky through the windows (the user, 2026-10-23: "there is no sky or lights on the windows"):** `resolve_panorama.hlsl`'s mode 7
   (the non-Inn shader only; the Inn's resolve.hlsl keeps black) draws the one sky, `skyWithAir`, above the horizon over the floor image:
   from the game's camera it shows only through the windows and doors, at the room's exposure (white by day, as a window seen from a dark
@@ -1647,3 +1665,9 @@ detalhes estranhos e nada a ver, deixa profissional", and "não alterar o sistem
 
 M4 world cells + terrain · M5 lighting/atmosphere · M6 editor · M7 gameplay port + cutscene timeline.
 Exit tests and demonstration gates in ARCHITECTURE.md §9.
+
+## Permanent protection: atmosphere and visual effects (2026-10-24)
+
+- The user explicitly corrected the sun-removal request: the game's atmosphere and all visual effects are locked and final. Never change atmospheric sky rendering, the real sun or moon, lighting, shadows, renderer/shader behavior, or game VFX in response to an apparent extra sun. The user says they will never request an atmosphere change; interpreting a sun-removal request that way is always an error.
+- For a sun painted into a backdrop, change only that backdrop image's alpha/transparency so the fake sun shows through to the real in-game sky. Preserve the source image and use a new versioned asset; update only the references required to select it. Do not modify atmospheric or effect files or the sky lock.
+- If the active backdrop is unclear, inspect the scene routing before editing. Keep unrelated work and assets intact.

@@ -1,0 +1,46 @@
+[warn] slow frame: 51.6 ms busy = assets 0.0, stage 0.0, ui 30.3, render 21.6 (record 19.0, submit 0.2, present 2.0; waits 0.3 not counted)
+[ERROR] asset 4eb0a5254c4933b3 is in no mounted archive
+[ERROR] asset 911a65d2c8ec56ad is in no mounted archive
+[ERROR] asset 144697a974b4e9ac is in no mounted archive
+[ERROR] asset 8c49530187ebdd14 is in no mounted archive
+[ERROR] asset a2374accaa442910 is in no mounted archive
+[ERROR] asset 302c1a116ba40981 is in no mounted archive
+[ERROR] asset 96600940b2c5214f is in no mounted archive
+[ERROR] asset c29ff335ef329d16 is in no mounted archive
+[ERROR] asset 099aa10beb735d30 is in no mounted archive
+[ERROR] asset c0ae5df101c28811 is in no mounted archive
+[ERROR] asset 4bdb44e910cb7be9 is in no mounted archive
+[ERROR] asset 9aff292cd81e8c31 is in no mounted archive
+[ERROR] meshes: 4eb0a5254c4933b3 is missing
+[ERROR] meshes: 911a65d2c8ec56ad is missing
+[ERROR] meshes: 144697a974b4e9ac is missing
+[ERROR] meshes: 8c49530187ebdd14 is missing
+[ERROR] meshes: a2374accaa442910 is missing
+[ERROR] meshes: 302c1a116ba40981 is missing
+[ERROR] meshes: 96600940b2c5214f is missing
+[ERROR] meshes: c29ff335ef329d16 is missing
+[ERROR] meshes: 099aa10beb735d30 is missing
+[ERROR] meshes: c0ae5df101c28811 is missing
+[ERROR] meshes: 4bdb44e910cb7be9 is missing
+[ERROR] meshes: 9aff292cd81e8c31 is missing
+[warn] scene: model meshes/ember/wisp-forest-revisited/weeping-willow-v02.mesh is not in the mesh pack
+[warn] scene: model meshes/ember/wisp-forest-revisited/giant-dead-oak-v02.mesh is not in the mesh pack
+[warn] scene: model meshes/ember/wisp-forest-revisited/hollow-snag-v02.mesh is not in the mesh pack
+[warn] scene: model meshes/ember/wisp-forest-revisited/uprooted-leaning-v02.mesh is not in the mesh pack
+[warn] scene: model meshes/ember/wisp-forest-revisited/lightning-split-v02.mesh is not in the mesh pack
+[warn] scene: model meshes/ember/wisp-forest-revisited/spiral-twisted-v02.mesh is not in the mesh pack
+[warn] scene: model meshes/ember/wisp-forest-revisited/tall-burnt-pine-v02.mesh is not in the mesh pack
+[warn] scene: model meshes/ember/wisp-forest-revisited/broken-crown-v02.mesh is not in the mesh pack
+[warn] scene: model meshes/ember/wisp-forest-revisited/root-arch-v02.mesh is not in the mesh pack
+[warn] scene: model meshes/ember/wisp-forest-revisited/broken-stump-v01.mesh is not in the mesh pack
+[warn] scene: model meshes/ember/wisp-forest-revisited/rotted-hollow-log-v01.mesh is not in the mesh pack
+[warn] scene: model meshes/ember/wisp-forest-revisited/roots-and-fungi-v01.mesh is not in the mesh pack
+[warn] slow stage frame: 275.6 ms = sprites 274.0, uploads 1.1, rest 0.1
+[warn] slow frame: 282.1 ms busy = assets 0.3, stage 275.7, ui 1.1, render 5.2 (record 4.6, submit 0.1, present 0.2; waits 0.2 not counted)
+[warn] slow stage frame: 58.5 ms = ground 54.1, sprites 2.5, uploads 1.7, rest 0.1
+[warn] slow ui record: 211.6 ms = imgui render 0.0, refine images 0.0, textures + draw 211.5 (39 textures changed, largest 1254x1254)
+[warn] slow frame: 273.8 ms busy = assets 0.1, stage 58.9, ui 1.4, render 214.0 (record 212.8, submit 0.1, present 0.2; waits 0.6 not counted)
+[warn] slow stage frame: 52.0 ms = ground 44.9, sprites 3.6, uploads 3.3, rest 0.1
+[warn] slow ui record: 74.0 ms = imgui render 0.0, refine images 0.0, textures + draw 73.9 (25 textures changed, largest 784x1168)
+[warn] slow frame: 134.0 ms busy = assets 0.1, stage 52.9, ui 1.6, render 213.1 (record 79.1, submit 0.1, present 0.2; waits 133.6 not counted)
+[ERROR] ImGui Vulkan backend: VK_ERROR_OUT_OF_DEVICE_MEMORY

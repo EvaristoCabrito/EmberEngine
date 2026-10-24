@@ -75334,6 +75334,96 @@
    "tile": null,
    "exitKind": "connector",
    "rockStyle": null
+  },
+  "ember-watchtower-signal-brazier-v01": {
+   "footprint": [
+    {
+     "dx": 0,
+     "dy": 0
+    }
+   ],
+   "blockingFootprint": null,
+   "architectureSpan": 0,
+   "model3d": "prop",
+   "doorStyle": null,
+   "tile": null,
+   "exitKind": null,
+   "rockStyle": null
+  },
+  "ember-watchtower-arms-rack-v01": {
+   "footprint": [
+    {
+     "dx": 0,
+     "dy": 0
+    }
+   ],
+   "blockingFootprint": null,
+   "architectureSpan": 0,
+   "model3d": "prop",
+   "doorStyle": null,
+   "tile": null,
+   "exitKind": null,
+   "rockStyle": null
+  },
+  "ember-watchtower-command-table-v01": {
+   "footprint": [
+    {
+     "dx": 0,
+     "dy": 0
+    }
+   ],
+   "blockingFootprint": null,
+   "architectureSpan": 0,
+   "model3d": "prop",
+   "doorStyle": null,
+   "tile": null,
+   "exitKind": null,
+   "rockStyle": null
+  },
+  "ember-watchtower-signal-brazier-v02": {
+   "footprint": [
+    {
+     "dx": 0,
+     "dy": 0
+    }
+   ],
+   "blockingFootprint": null,
+   "architectureSpan": 0,
+   "model3d": "prop",
+   "doorStyle": null,
+   "tile": null,
+   "exitKind": null,
+   "rockStyle": null
+  },
+  "ember-watchtower-arms-rack-v02": {
+   "footprint": [
+    {
+     "dx": 0,
+     "dy": 0
+    }
+   ],
+   "blockingFootprint": null,
+   "architectureSpan": 0,
+   "model3d": "prop",
+   "doorStyle": null,
+   "tile": null,
+   "exitKind": null,
+   "rockStyle": null
+  },
+  "ember-watchtower-command-table-v02": {
+   "footprint": [
+    {
+     "dx": 0,
+     "dy": 0
+    }
+   ],
+   "blockingFootprint": null,
+   "architectureSpan": 0,
+   "model3d": "prop",
+   "doorStyle": null,
+   "tile": null,
+   "exitKind": null,
+   "rockStyle": null
   }
  },
  "decorSets": {
@@ -87282,6 +87372,7 @@
    "Long Space _Opera DJ  UMN+  022-Balanced-High.mp3",
    "MindReading UMNX  077-Balanced-High.mp3",
    "music.mp3",
+   "OldTowwerDrone  trax 4 Persona 884-Balanced-High.mp3",
    "temple.mp3",
    "TempleEntrance-Balanced-High.mp3",
    "Tragic Architecture True Persona-WorldMap-Balanced-High.mp3",
@@ -87319,6 +87410,10 @@
    ],
    "cemetery": [
     "Ember Ashes Ambient OST 0-Balanced-High.mp3",
+    0.4
+   ],
+   "watchtower": [
+    "OldTowwerDrone  trax 4 Persona 884-Balanced-High.mp3",
     0.4
    ]
   }
