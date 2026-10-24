@@ -1,0 +1,9 @@
+{
+  "about": "The Inn's pair scenes (the user, 2026-10-23/24, ordered with the Inn's secret word): in the Inn, the party leader talking to a companion seated there plays the pair's film the first time, both must be in the group; then the two gain `affinity`, and the companion's conversation opens as usual. `pair` is either order (the leader is one of the two, the one clicked is the other). `seen` = the save flag that keeps it from playing twice. A new pair = a new line here and its film in content/films (NpcTalk.h reads this file).",
+  "scenes": [
+    {"pair": ["Kael", "Neera"], "film": "content/films/kael-neera-inn-v01.mp4", "affinity": 2, "seen": "seenKaelNeeraInn"},
+    {"pair": ["Kael", "Salazar"], "film": "content/films/kael-salazar-inn-v01.mp4", "affinity": 2, "seen": "seenKaelSalazarInn"},
+    {"pair": ["Kael", "Voss"], "film": "content/films/kael-voss-inn-v01.mp4", "affinity": 2, "seen": "seenKaelVossInn"},
+    {"pair": ["Voss", "Neera"], "film": "content/films/voss-neera-inn-v01.mp4", "affinity": 2, "seen": "seenVossNeeraInn"}
+  ]
+}

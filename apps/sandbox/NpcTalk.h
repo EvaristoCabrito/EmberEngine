@@ -107,11 +107,12 @@ struct NpcTalk {
   e2::Json save;                     // the campaign's active save while the Inn's menus are open (scratch when there is none)
   std::function<void()> previous;    // the overlay that was there before (BattleTalk)
   bool previewing = false;           // captures: `action` runs on the first frame (preview)
-  // The user's KaelNeeraINN scene (2026-10-23, ordered with the Inn's secret word): talking to Neera in the Inn with Kael leading
-  // plays it the first time; Kael and Neera gain +2 affinity after it, then her conversation opens as usual.
-  static constexpr const char* kKaelNeeraFilm = "content/films/kael-neera-inn-v01.mp4";
+  // The Inn's pair scenes (content/inn-scenes.json; the user, 2026-10-23/24, ordered with the Inn's secret word): the party leader
+  // talking to a companion seated in the Inn, both in the group, plays their film the first time; the two gain its affinity after
+  // it, then the companion's conversation opens as usual.
   std::optional<CutsceneScreen> film;
   std::optional<MapStage::Talk> afterFilm;  // the conversation the scene stands before
+  e2::Json scene;                           // the scene playing (its inn-scenes.json entry)
 
   // Captures (--map-ui npc:tavern / npc:smith / npc:healer): that reply's action as if the conversation had just closed.
   void preview(const std::string& a) { action = a, previewing = true; }
@@ -155,20 +156,46 @@ struct NpcTalk {
     if (record) save = record->activeSave();
     return save;
   }
-  bool kaelNeeraScene(const MapStage& map, const MapStage::Talk& t) {
-    if (map.draftId().rfind("estalagem", 0) != 0 || t.name.rfind("Neera", 0) != 0) return false;
-    const e2::Json& s = storySave();
-    const auto lead = s.find("partyLeader");
-    return (lead == s.end() || !lead->is_string() || lead->get<std::string>() == "Kael") && !s.value("seenKaelNeeraInn", false);
+  static const e2::Json& innScenes() {
+    static const e2::Json table = [] {
+      std::ifstream in("content/inn-scenes.json", std::ios::binary);
+      e2::Json j = in ? e2::Json::parse(in, nullptr, false) : e2::Json();
+      return j.is_object() && j.contains("scenes") && j["scenes"].is_array() ? j["scenes"] : e2::Json::array();
+    }();
+    return table;
   }
-  void finishKaelNeeraScene() {
+  // The scene for this talk: on an Inn floor, the leader one of the pair, the one clicked the other, both in the group, not seen yet.
+  e2::Json innSceneFor(const MapStage& map, const MapStage::Talk& t) {
+    if (map.draftId().rfind("estalagem", 0) != 0) return {};
+    const e2::Json& s = storySave();
+    const auto l = s.find("partyLeader");
+    const std::string leader = l != s.end() && l->is_string() ? l->get<std::string>() : "Kael";
+    const std::string talked = t.name.substr(0, t.name.find(','));
+    for (const e2::Json& sc : innScenes()) {
+      const e2::Json pair = sc.value("pair", e2::Json::array());
+      if (pair.size() != 2 || !pair[0].is_string() || !pair[1].is_string()) continue;
+      const std::string a = pair[0].get<std::string>(), b = pair[1].get<std::string>();
+      if (!((a == leader && b == talked) || (b == leader && a == talked))) continue;
+      if (s.value(sc.value("seen", std::string("seen:") + a + "|" + b), false)) continue;
+      if (world && (!world->heroRecruited(a, s) || !world->heroRecruited(b, s))) continue;  // both must be in the group
+      return sc;
+    }
+    return {};
+  }
+  void finishInnScene(MapStage& map) {
+    const e2::Json pair = scene.value("pair", e2::Json::array());
+    const std::string a = pair[0].get<std::string>(), b = pair[1].get<std::string>();
+    const double delta = scene.value("affinity", 0.0);
     e2::Json& s = storySave();
-    s["seenKaelNeeraInn"] = true;
-    e2::Json& scores = s["affinityScores"];  // the pair's score (sorted key, one decimal, -100..100), +2 as the user said
+    s[scene.value("seen", std::string("seen:") + a + "|" + b)] = true;
+    e2::Json& scores = s["affinityScores"];  // the pair's score (sorted key, one decimal, -100..100), exactly the scene's amount
     if (!scores.is_object()) scores = e2::Json::object();
-    const double score = scores.contains("Kael|Neera") && scores["Kael|Neera"].is_number() ? scores["Kael|Neera"].get<double>() : 0.0;
-    scores["Kael|Neera"] = std::clamp(std::floor((score + 2) * 10 + 0.5) / 10, -100.0, 100.0);
+    const std::string key = a < b ? a + "|" + b : b + "|" + a;
+    const double score = scores.contains(key) && scores[key].is_number() ? scores[key].get<double>() : 0.0;
+    scores[key] = std::clamp(std::floor((score + delta) * 10 + 0.5) / 10, -100.0, 100.0);
     write();
+    if (delta != 0)
+      map.battleLog(std::format("{} {} + {}: {}{}", tr("Afinidade", "Affinity"), a, b, delta > 0 ? "+" : "", static_cast<int>(std::lround(delta))));
   }
 
   void draw(MapStage& map) {
@@ -177,8 +204,9 @@ struct NpcTalk {
     if (std::exchange(previewing, false)) runAction(map);
     if (!dialog && !inn && !film)
       if (std::optional<MapStage::Talk> t = map.takeTalk()) {
-        if (kaelNeeraScene(map, *t)) {
-          film.emplace(engine2Public, std::filesystem::absolute(kKaelNeeraFilm).string());
+        if (e2::Json sc = innSceneFor(map, *t); sc.is_object() && sc.contains("film")) {
+          film.emplace(engine2Public, std::filesystem::absolute(sc["film"].get<std::string>()).string());
+          scene = std::move(sc);
           afterFilm = std::move(t);
         } else {
           dialog.emplace(t->tree, npcPortraits(t->tree, map.characters()), engine2Public);
@@ -196,8 +224,7 @@ struct NpcTalk {
       ImGui::PopStyleVar(2);
       if (over) {
         film.reset();
-        finishKaelNeeraScene();
-        map.battleLog(tr("Afinidade Kael + Neera: +2", "Affinity Kael + Neera: +2"));
+        finishInnScene(map);
         if (std::optional<MapStage::Talk> t = std::exchange(afterFilm, std::nullopt)) {
           dialog.emplace(t->tree, npcPortraits(t->tree, map.characters()), engine2Public);
           action.clear();
