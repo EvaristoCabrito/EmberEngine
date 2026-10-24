@@ -1,0 +1,1370 @@
+[
+  {
+    "animation": "hit",
+    "source": "C:\\Users\\evari\\Downloads\\Creature_damage_and_charge_anima\u2026_20261002210336.mp4",
+    "start": 0,
+    "end": 3.125,
+    "frames": [
+      {
+        "file": "hit-1.png",
+        "sourceFrame": 0,
+        "seconds": 0.0,
+        "reusedFrom": "hit-1.png"
+      },
+      {
+        "file": "hit-2.png",
+        "sourceFrame": 2,
+        "seconds": 0.08333333333333333,
+        "reusedFrom": "hit-2.png"
+      },
+      {
+        "file": "hit-3.png",
+        "sourceFrame": 5,
+        "seconds": 0.20833333333333334,
+        "reusedFrom": "hit-3.png"
+      },
+      {
+        "file": "hit-4.png",
+        "sourceFrame": 7,
+        "seconds": 0.2916666666666667,
+        "reusedFrom": "hit-4.png"
+      },
+      {
+        "file": "hit-5.png",
+        "sourceFrame": 10,
+        "seconds": 0.4166666666666667,
+        "reusedFrom": "hit-5.png"
+      },
+      {
+        "file": "hit-6.png",
+        "sourceFrame": 10,
+        "seconds": 0.4166666666666667,
+        "reusedFrom": "hit-5.png"
+      },
+      {
+        "file": "hit-7.png",
+        "sourceFrame": 12,
+        "seconds": 0.5,
+        "reusedFrom": "hit-6.png"
+      },
+      {
+        "file": "hit-8.png",
+        "sourceFrame": 15,
+        "seconds": 0.625,
+        "reusedFrom": "hit-7.png"
+      },
+      {
+        "file": "hit-9.png",
+        "sourceFrame": 17,
+        "seconds": 0.7083333333333334,
+        "reusedFrom": "hit-8.png"
+      },
+      {
+        "file": "hit-10.png",
+        "sourceFrame": 19,
+        "seconds": 0.7916666666666666,
+        "reusedFrom": "hit-9.png"
+      },
+      {
+        "file": "hit-11.png",
+        "sourceFrame": 22,
+        "seconds": 0.9166666666666666,
+        "reusedFrom": "hit-10.png"
+      },
+      {
+        "file": "hit-12.png",
+        "sourceFrame": 24,
+        "seconds": 1.0,
+        "reusedFrom": "hit-11.png"
+      },
+      {
+        "file": "hit-13.png",
+        "sourceFrame": 27,
+        "seconds": 1.125,
+        "reusedFrom": "hit-12.png"
+      },
+      {
+        "file": "hit-14.png",
+        "sourceFrame": 29,
+        "seconds": 1.2083333333333333,
+        "reusedFrom": "hit-13.png"
+      },
+      {
+        "file": "hit-15.png",
+        "sourceFrame": 29,
+        "seconds": 1.2083333333333333,
+        "reusedFrom": "hit-13.png"
+      },
+      {
+        "file": "hit-16.png",
+        "sourceFrame": 31,
+        "seconds": 1.2916666666666667,
+        "reusedFrom": "hit-14.png"
+      },
+      {
+        "file": "hit-17.png",
+        "sourceFrame": 34,
+        "seconds": 1.4166666666666667,
+        "reusedFrom": "hit-15.png"
+      },
+      {
+        "file": "hit-18.png",
+        "sourceFrame": 36,
+        "seconds": 1.5,
+        "reusedFrom": "hit-16.png"
+      },
+      {
+        "file": "hit-19.png",
+        "sourceFrame": 39,
+        "seconds": 1.625,
+        "reusedFrom": "hit-17.png"
+      },
+      {
+        "file": "hit-20.png",
+        "sourceFrame": 41,
+        "seconds": 1.7083333333333333,
+        "reusedFrom": "hit-18.png"
+      },
+      {
+        "file": "hit-21.png",
+        "sourceFrame": 44,
+        "seconds": 1.8333333333333333,
+        "reusedFrom": "hit-19.png"
+      },
+      {
+        "file": "hit-22.png",
+        "sourceFrame": 46,
+        "seconds": 1.9166666666666667,
+        "reusedFrom": "hit-20.png"
+      },
+      {
+        "file": "hit-23.png",
+        "sourceFrame": 46,
+        "seconds": 1.9166666666666667,
+        "reusedFrom": "hit-20.png"
+      },
+      {
+        "file": "hit-24.png",
+        "sourceFrame": 48,
+        "seconds": 2.0,
+        "reusedFrom": "hit-21.png"
+      },
+      {
+        "file": "hit-25.png",
+        "sourceFrame": 51,
+        "seconds": 2.125,
+        "reusedFrom": "hit-22.png"
+      },
+      {
+        "file": "hit-26.png",
+        "sourceFrame": 53,
+        "seconds": 2.2083333333333335,
+        "reusedFrom": "hit-23.png"
+      },
+      {
+        "file": "hit-27.png",
+        "sourceFrame": 56,
+        "seconds": 2.3333333333333335,
+        "reusedFrom": "hit-24.png"
+      },
+      {
+        "file": "hit-28.png",
+        "sourceFrame": 58,
+        "seconds": 2.4166666666666665,
+        "reusedFrom": "hit-25.png"
+      },
+      {
+        "file": "hit-29.png",
+        "sourceFrame": 60,
+        "seconds": 2.5,
+        "reusedFrom": "hit-26.png"
+      },
+      {
+        "file": "hit-30.png",
+        "sourceFrame": 63,
+        "seconds": 2.625,
+        "reusedFrom": "hit-27.png"
+      },
+      {
+        "file": "hit-31.png",
+        "sourceFrame": 65,
+        "seconds": 2.7083333333333335,
+        "reusedFrom": "hit-28.png"
+      },
+      {
+        "file": "hit-32.png",
+        "sourceFrame": 65,
+        "seconds": 2.7083333333333335,
+        "reusedFrom": "hit-28.png"
+      },
+      {
+        "file": "hit-33.png",
+        "sourceFrame": 68,
+        "seconds": 2.8333333333333335,
+        "reusedFrom": "hit-29.png"
+      },
+      {
+        "file": "hit-34.png",
+        "sourceFrame": 70,
+        "seconds": 2.9166666666666665,
+        "reusedFrom": "hit-30.png"
+      },
+      {
+        "file": "hit-35.png",
+        "sourceFrame": 73,
+        "seconds": 3.0416666666666665,
+        "reusedFrom": "hit-31.png"
+      },
+      {
+        "file": "hit-36.png",
+        "sourceFrame": 75,
+        "seconds": 3.125,
+        "reusedFrom": "hit-32.png"
+      }
+    ],
+    "mirrored": true,
+    "cuttingModel": "u2net",
+    "outputDirectory": "C:\\emberashes03D-main\\public\\game\\sprites\\big-blue-ox-ai-006",
+    "expansion": "32 approved cutouts with four evenly distributed holds; original endpoints and playback duration preserved"
+  },
+  {
+    "animation": "atk",
+    "source": "C:\\Users\\evari\\Downloads\\Creature_damage_and_charge_anima\u2026_20261002210336.mp4",
+    "start": 3.5,
+    "end": 9.5,
+    "frames": [
+      {
+        "file": "atk-1.png",
+        "sourceFrame": 84,
+        "seconds": 3.5,
+        "reusedFrom": "atk-1.png"
+      },
+      {
+        "file": "atk-2.png",
+        "sourceFrame": 89,
+        "seconds": 3.7083333333333335,
+        "reusedFrom": "atk-2.png"
+      },
+      {
+        "file": "atk-3.png",
+        "sourceFrame": 93,
+        "seconds": 3.875,
+        "reusedFrom": "atk-3.png"
+      },
+      {
+        "file": "atk-4.png",
+        "sourceFrame": 98,
+        "seconds": 4.083333333333333,
+        "reusedFrom": "atk-4.png"
+      },
+      {
+        "file": "atk-5.png",
+        "sourceFrame": 102,
+        "seconds": 4.25,
+        "reusedFrom": "atk-5.png"
+      },
+      {
+        "file": "atk-6.png",
+        "sourceFrame": 102,
+        "seconds": 4.25,
+        "reusedFrom": "atk-5.png"
+      },
+      {
+        "file": "atk-7.png",
+        "sourceFrame": 107,
+        "seconds": 4.458333333333333,
+        "reusedFrom": "atk-6.png"
+      },
+      {
+        "file": "atk-8.png",
+        "sourceFrame": 112,
+        "seconds": 4.666666666666667,
+        "reusedFrom": "atk-7.png"
+      },
+      {
+        "file": "atk-9.png",
+        "sourceFrame": 116,
+        "seconds": 4.833333333333333,
+        "reusedFrom": "atk-8.png"
+      },
+      {
+        "file": "atk-10.png",
+        "sourceFrame": 121,
+        "seconds": 5.041666666666667,
+        "reusedFrom": "atk-9.png"
+      },
+      {
+        "file": "atk-11.png",
+        "sourceFrame": 126,
+        "seconds": 5.25,
+        "reusedFrom": "atk-10.png"
+      },
+      {
+        "file": "atk-12.png",
+        "sourceFrame": 130,
+        "seconds": 5.416666666666667,
+        "reusedFrom": "atk-11.png"
+      },
+      {
+        "file": "atk-13.png",
+        "sourceFrame": 135,
+        "seconds": 5.625,
+        "reusedFrom": "atk-12.png"
+      },
+      {
+        "file": "atk-14.png",
+        "sourceFrame": 139,
+        "seconds": 5.791666666666667,
+        "reusedFrom": "atk-13.png"
+      },
+      {
+        "file": "atk-15.png",
+        "sourceFrame": 139,
+        "seconds": 5.791666666666667,
+        "reusedFrom": "atk-13.png"
+      },
+      {
+        "file": "atk-16.png",
+        "sourceFrame": 144,
+        "seconds": 6.0,
+        "reusedFrom": "atk-14.png"
+      },
+      {
+        "file": "atk-17.png",
+        "sourceFrame": 149,
+        "seconds": 6.208333333333333,
+        "reusedFrom": "atk-15.png"
+      },
+      {
+        "file": "atk-18.png",
+        "sourceFrame": 153,
+        "seconds": 6.375,
+        "reusedFrom": "atk-16.png"
+      },
+      {
+        "file": "atk-19.png",
+        "sourceFrame": 158,
+        "seconds": 6.583333333333333,
+        "reusedFrom": "atk-17.png"
+      },
+      {
+        "file": "atk-20.png",
+        "sourceFrame": 162,
+        "seconds": 6.75,
+        "reusedFrom": "atk-18.png"
+      },
+      {
+        "file": "atk-21.png",
+        "sourceFrame": 167,
+        "seconds": 6.958333333333333,
+        "reusedFrom": "atk-19.png"
+      },
+      {
+        "file": "atk-22.png",
+        "sourceFrame": 172,
+        "seconds": 7.166666666666667,
+        "reusedFrom": "atk-20.png"
+      },
+      {
+        "file": "atk-23.png",
+        "sourceFrame": 172,
+        "seconds": 7.166666666666667,
+        "reusedFrom": "atk-20.png"
+      },
+      {
+        "file": "atk-24.png",
+        "sourceFrame": 176,
+        "seconds": 7.333333333333333,
+        "reusedFrom": "atk-21.png"
+      },
+      {
+        "file": "atk-25.png",
+        "sourceFrame": 181,
+        "seconds": 7.541666666666667,
+        "reusedFrom": "atk-22.png"
+      },
+      {
+        "file": "atk-26.png",
+        "sourceFrame": 185,
+        "seconds": 7.708333333333333,
+        "reusedFrom": "atk-23.png"
+      },
+      {
+        "file": "atk-27.png",
+        "sourceFrame": 190,
+        "seconds": 7.916666666666667,
+        "reusedFrom": "atk-24.png"
+      },
+      {
+        "file": "atk-28.png",
+        "sourceFrame": 195,
+        "seconds": 8.125,
+        "reusedFrom": "atk-25.png"
+      },
+      {
+        "file": "atk-29.png",
+        "sourceFrame": 199,
+        "seconds": 8.291666666666666,
+        "reusedFrom": "atk-26.png"
+      },
+      {
+        "file": "atk-30.png",
+        "sourceFrame": 204,
+        "seconds": 8.5,
+        "reusedFrom": "atk-27.png"
+      },
+      {
+        "file": "atk-31.png",
+        "sourceFrame": 209,
+        "seconds": 8.708333333333334,
+        "reusedFrom": "atk-28.png"
+      },
+      {
+        "file": "atk-32.png",
+        "sourceFrame": 209,
+        "seconds": 8.708333333333334,
+        "reusedFrom": "atk-28.png"
+      },
+      {
+        "file": "atk-33.png",
+        "sourceFrame": 213,
+        "seconds": 8.875,
+        "reusedFrom": "atk-29.png"
+      },
+      {
+        "file": "atk-34.png",
+        "sourceFrame": 218,
+        "seconds": 9.083333333333334,
+        "reusedFrom": "atk-30.png"
+      },
+      {
+        "file": "atk-35.png",
+        "sourceFrame": 222,
+        "seconds": 9.25,
+        "reusedFrom": "atk-31.png"
+      },
+      {
+        "file": "atk-36.png",
+        "sourceFrame": 227,
+        "seconds": 9.458333333333334,
+        "reusedFrom": "atk-32.png"
+      }
+    ],
+    "mirrored": true,
+    "cuttingModel": "u2net",
+    "outputDirectory": "C:\\emberashes03D-main\\public\\game\\sprites\\big-blue-ox-ai-006",
+    "expansion": "32 approved cutouts with four evenly distributed holds; original endpoints and playback duration preserved"
+  },
+  {
+    "animation": "move",
+    "source": "C:\\Users\\evari\\Downloads\\Creature_walking_and_charging_an\u2026_20261001032938.mp4",
+    "start": 0,
+    "end": 4,
+    "frames": [
+      {
+        "file": "move-1.png",
+        "sourceFrame": 0,
+        "seconds": 0.0,
+        "reusedFrom": "move-1.png"
+      },
+      {
+        "file": "move-2.png",
+        "sourceFrame": 3,
+        "seconds": 0.125,
+        "reusedFrom": "move-2.png"
+      },
+      {
+        "file": "move-3.png",
+        "sourceFrame": 6,
+        "seconds": 0.25,
+        "reusedFrom": "move-3.png"
+      },
+      {
+        "file": "move-4.png",
+        "sourceFrame": 9,
+        "seconds": 0.375,
+        "reusedFrom": "move-4.png"
+      },
+      {
+        "file": "move-5.png",
+        "sourceFrame": 12,
+        "seconds": 0.5,
+        "reusedFrom": "move-5.png"
+      },
+      {
+        "file": "move-6.png",
+        "sourceFrame": 12,
+        "seconds": 0.5,
+        "reusedFrom": "move-5.png"
+      },
+      {
+        "file": "move-7.png",
+        "sourceFrame": 15,
+        "seconds": 0.625,
+        "reusedFrom": "move-6.png"
+      },
+      {
+        "file": "move-8.png",
+        "sourceFrame": 18,
+        "seconds": 0.75,
+        "reusedFrom": "move-7.png"
+      },
+      {
+        "file": "move-9.png",
+        "sourceFrame": 21,
+        "seconds": 0.875,
+        "reusedFrom": "move-8.png"
+      },
+      {
+        "file": "move-10.png",
+        "sourceFrame": 25,
+        "seconds": 1.0416666666666667,
+        "reusedFrom": "move-9.png"
+      },
+      {
+        "file": "move-11.png",
+        "sourceFrame": 28,
+        "seconds": 1.1666666666666667,
+        "reusedFrom": "move-10.png"
+      },
+      {
+        "file": "move-12.png",
+        "sourceFrame": 31,
+        "seconds": 1.2916666666666667,
+        "reusedFrom": "move-11.png"
+      },
+      {
+        "file": "move-13.png",
+        "sourceFrame": 34,
+        "seconds": 1.4166666666666667,
+        "reusedFrom": "move-12.png"
+      },
+      {
+        "file": "move-14.png",
+        "sourceFrame": 37,
+        "seconds": 1.5416666666666667,
+        "reusedFrom": "move-13.png"
+      },
+      {
+        "file": "move-15.png",
+        "sourceFrame": 37,
+        "seconds": 1.5416666666666667,
+        "reusedFrom": "move-13.png"
+      },
+      {
+        "file": "move-16.png",
+        "sourceFrame": 40,
+        "seconds": 1.6666666666666667,
+        "reusedFrom": "move-14.png"
+      },
+      {
+        "file": "move-17.png",
+        "sourceFrame": 43,
+        "seconds": 1.7916666666666667,
+        "reusedFrom": "move-15.png"
+      },
+      {
+        "file": "move-18.png",
+        "sourceFrame": 46,
+        "seconds": 1.9166666666666667,
+        "reusedFrom": "move-16.png"
+      },
+      {
+        "file": "move-19.png",
+        "sourceFrame": 49,
+        "seconds": 2.0416666666666665,
+        "reusedFrom": "move-17.png"
+      },
+      {
+        "file": "move-20.png",
+        "sourceFrame": 52,
+        "seconds": 2.1666666666666665,
+        "reusedFrom": "move-18.png"
+      },
+      {
+        "file": "move-21.png",
+        "sourceFrame": 55,
+        "seconds": 2.2916666666666665,
+        "reusedFrom": "move-19.png"
+      },
+      {
+        "file": "move-22.png",
+        "sourceFrame": 58,
+        "seconds": 2.4166666666666665,
+        "reusedFrom": "move-20.png"
+      },
+      {
+        "file": "move-23.png",
+        "sourceFrame": 58,
+        "seconds": 2.4166666666666665,
+        "reusedFrom": "move-20.png"
+      },
+      {
+        "file": "move-24.png",
+        "sourceFrame": 61,
+        "seconds": 2.5416666666666665,
+        "reusedFrom": "move-21.png"
+      },
+      {
+        "file": "move-25.png",
+        "sourceFrame": 64,
+        "seconds": 2.6666666666666665,
+        "reusedFrom": "move-22.png"
+      },
+      {
+        "file": "move-26.png",
+        "sourceFrame": 67,
+        "seconds": 2.7916666666666665,
+        "reusedFrom": "move-23.png"
+      },
+      {
+        "file": "move-27.png",
+        "sourceFrame": 70,
+        "seconds": 2.9166666666666665,
+        "reusedFrom": "move-24.png"
+      },
+      {
+        "file": "move-28.png",
+        "sourceFrame": 74,
+        "seconds": 3.0833333333333335,
+        "reusedFrom": "move-25.png"
+      },
+      {
+        "file": "move-29.png",
+        "sourceFrame": 77,
+        "seconds": 3.2083333333333335,
+        "reusedFrom": "move-26.png"
+      },
+      {
+        "file": "move-30.png",
+        "sourceFrame": 80,
+        "seconds": 3.3333333333333335,
+        "reusedFrom": "move-27.png"
+      },
+      {
+        "file": "move-31.png",
+        "sourceFrame": 83,
+        "seconds": 3.4583333333333335,
+        "reusedFrom": "move-28.png"
+      },
+      {
+        "file": "move-32.png",
+        "sourceFrame": 83,
+        "seconds": 3.4583333333333335,
+        "reusedFrom": "move-28.png"
+      },
+      {
+        "file": "move-33.png",
+        "sourceFrame": 86,
+        "seconds": 3.5833333333333335,
+        "reusedFrom": "move-29.png"
+      },
+      {
+        "file": "move-34.png",
+        "sourceFrame": 89,
+        "seconds": 3.7083333333333335,
+        "reusedFrom": "move-30.png"
+      },
+      {
+        "file": "move-35.png",
+        "sourceFrame": 92,
+        "seconds": 3.8333333333333335,
+        "reusedFrom": "move-31.png"
+      },
+      {
+        "file": "move-36.png",
+        "sourceFrame": 95,
+        "seconds": 3.9583333333333335,
+        "reusedFrom": "move-32.png"
+      }
+    ],
+    "mirrored": true,
+    "cuttingModel": "u2net",
+    "outputDirectory": "C:\\emberashes03D-main\\public\\game\\sprites\\big-blue-ox-ai-006",
+    "expansion": "32 approved cutouts with four evenly distributed holds; original endpoints and playback duration preserved"
+  },
+  {
+    "animation": "death",
+    "source": "C:\\Users\\evari\\Downloads\\Creature_hit_and_death_animations_20261001032320.mp4",
+    "start": 4,
+    "end": 10,
+    "frames": [
+      {
+        "file": "death-1.png",
+        "sourceFrame": 96,
+        "seconds": 4.0,
+        "reusedFrom": "death-1.png"
+      },
+      {
+        "file": "death-2.png",
+        "sourceFrame": 101,
+        "seconds": 4.208333333333333,
+        "reusedFrom": "death-2.png"
+      },
+      {
+        "file": "death-3.png",
+        "sourceFrame": 105,
+        "seconds": 4.375,
+        "reusedFrom": "death-3.png"
+      },
+      {
+        "file": "death-4.png",
+        "sourceFrame": 110,
+        "seconds": 4.583333333333333,
+        "reusedFrom": "death-4.png"
+      },
+      {
+        "file": "death-5.png",
+        "sourceFrame": 114,
+        "seconds": 4.75,
+        "reusedFrom": "death-5.png"
+      },
+      {
+        "file": "death-6.png",
+        "sourceFrame": 114,
+        "seconds": 4.75,
+        "reusedFrom": "death-5.png"
+      },
+      {
+        "file": "death-7.png",
+        "sourceFrame": 119,
+        "seconds": 4.958333333333333,
+        "reusedFrom": "death-6.png"
+      },
+      {
+        "file": "death-8.png",
+        "sourceFrame": 124,
+        "seconds": 5.166666666666667,
+        "reusedFrom": "death-7.png"
+      },
+      {
+        "file": "death-9.png",
+        "sourceFrame": 128,
+        "seconds": 5.333333333333333,
+        "reusedFrom": "death-8.png"
+      },
+      {
+        "file": "death-10.png",
+        "sourceFrame": 133,
+        "seconds": 5.541666666666667,
+        "reusedFrom": "death-9.png"
+      },
+      {
+        "file": "death-11.png",
+        "sourceFrame": 138,
+        "seconds": 5.75,
+        "reusedFrom": "death-10.png"
+      },
+      {
+        "file": "death-12.png",
+        "sourceFrame": 142,
+        "seconds": 5.916666666666667,
+        "reusedFrom": "death-11.png"
+      },
+      {
+        "file": "death-13.png",
+        "sourceFrame": 147,
+        "seconds": 6.125,
+        "reusedFrom": "death-12.png"
+      },
+      {
+        "file": "death-14.png",
+        "sourceFrame": 151,
+        "seconds": 6.291666666666667,
+        "reusedFrom": "death-13.png"
+      },
+      {
+        "file": "death-15.png",
+        "sourceFrame": 151,
+        "seconds": 6.291666666666667,
+        "reusedFrom": "death-13.png"
+      },
+      {
+        "file": "death-16.png",
+        "sourceFrame": 156,
+        "seconds": 6.5,
+        "reusedFrom": "death-14.png"
+      },
+      {
+        "file": "death-17.png",
+        "sourceFrame": 161,
+        "seconds": 6.708333333333333,
+        "reusedFrom": "death-15.png"
+      },
+      {
+        "file": "death-18.png",
+        "sourceFrame": 165,
+        "seconds": 6.875,
+        "reusedFrom": "death-16.png"
+      },
+      {
+        "file": "death-19.png",
+        "sourceFrame": 170,
+        "seconds": 7.083333333333333,
+        "reusedFrom": "death-17.png"
+      },
+      {
+        "file": "death-20.png",
+        "sourceFrame": 174,
+        "seconds": 7.25,
+        "reusedFrom": "death-18.png"
+      },
+      {
+        "file": "death-21.png",
+        "sourceFrame": 179,
+        "seconds": 7.458333333333333,
+        "reusedFrom": "death-19.png"
+      },
+      {
+        "file": "death-22.png",
+        "sourceFrame": 184,
+        "seconds": 7.666666666666667,
+        "reusedFrom": "death-20.png"
+      },
+      {
+        "file": "death-23.png",
+        "sourceFrame": 184,
+        "seconds": 7.666666666666667,
+        "reusedFrom": "death-20.png"
+      },
+      {
+        "file": "death-24.png",
+        "sourceFrame": 188,
+        "seconds": 7.833333333333333,
+        "reusedFrom": "death-21.png"
+      },
+      {
+        "file": "death-25.png",
+        "sourceFrame": 193,
+        "seconds": 8.041666666666666,
+        "reusedFrom": "death-22.png"
+      },
+      {
+        "file": "death-26.png",
+        "sourceFrame": 197,
+        "seconds": 8.208333333333334,
+        "reusedFrom": "death-23.png"
+      },
+      {
+        "file": "death-27.png",
+        "sourceFrame": 202,
+        "seconds": 8.416666666666666,
+        "reusedFrom": "death-24.png"
+      },
+      {
+        "file": "death-28.png",
+        "sourceFrame": 207,
+        "seconds": 8.625,
+        "reusedFrom": "death-25.png"
+      },
+      {
+        "file": "death-29.png",
+        "sourceFrame": 211,
+        "seconds": 8.791666666666666,
+        "reusedFrom": "death-26.png"
+      },
+      {
+        "file": "death-30.png",
+        "sourceFrame": 216,
+        "seconds": 9.0,
+        "reusedFrom": "death-27.png"
+      },
+      {
+        "file": "death-31.png",
+        "sourceFrame": 221,
+        "seconds": 9.208333333333334,
+        "reusedFrom": "death-28.png"
+      },
+      {
+        "file": "death-32.png",
+        "sourceFrame": 221,
+        "seconds": 9.208333333333334,
+        "reusedFrom": "death-28.png"
+      },
+      {
+        "file": "death-33.png",
+        "sourceFrame": 225,
+        "seconds": 9.375,
+        "reusedFrom": "death-29.png"
+      },
+      {
+        "file": "death-34.png",
+        "sourceFrame": 230,
+        "seconds": 9.583333333333334,
+        "reusedFrom": "death-30.png"
+      },
+      {
+        "file": "death-35.png",
+        "sourceFrame": 234,
+        "seconds": 9.75,
+        "reusedFrom": "death-31.png"
+      },
+      {
+        "file": "death-36.png",
+        "sourceFrame": 239,
+        "seconds": 9.958333333333334,
+        "reusedFrom": "death-32.png"
+      }
+    ],
+    "mirrored": true,
+    "cuttingModel": "u2net",
+    "outputDirectory": "C:\\emberashes03D-main\\public\\game\\sprites\\big-blue-ox-ai-006",
+    "expansion": "32 approved cutouts with four evenly distributed holds; original endpoints and playback duration preserved"
+  },
+  {
+    "animation": "idle",
+    "source": "C:\\Users\\evari\\Downloads\\Game_animation_reference_generat\u2026_20261002235621.mp4",
+    "start": 0,
+    "end": 10,
+    "frames": [
+      {
+        "file": "1.png",
+        "sourceFrame": 0,
+        "seconds": 0.0,
+        "reusedFrom": "1.png"
+      },
+      {
+        "file": "2.png",
+        "sourceFrame": 8,
+        "seconds": 0.3333333333333333,
+        "reusedFrom": "2.png"
+      },
+      {
+        "file": "3.png",
+        "sourceFrame": 15,
+        "seconds": 0.625,
+        "reusedFrom": "3.png"
+      },
+      {
+        "file": "4.png",
+        "sourceFrame": 23,
+        "seconds": 0.9583333333333334,
+        "reusedFrom": "4.png"
+      },
+      {
+        "file": "5.png",
+        "sourceFrame": 31,
+        "seconds": 1.2916666666666667,
+        "reusedFrom": "5.png"
+      },
+      {
+        "file": "6.png",
+        "sourceFrame": 31,
+        "seconds": 1.2916666666666667,
+        "reusedFrom": "5.png"
+      },
+      {
+        "file": "7.png",
+        "sourceFrame": 39,
+        "seconds": 1.625,
+        "reusedFrom": "6.png"
+      },
+      {
+        "file": "8.png",
+        "sourceFrame": 46,
+        "seconds": 1.9166666666666667,
+        "reusedFrom": "7.png"
+      },
+      {
+        "file": "9.png",
+        "sourceFrame": 54,
+        "seconds": 2.25,
+        "reusedFrom": "8.png"
+      },
+      {
+        "file": "10.png",
+        "sourceFrame": 62,
+        "seconds": 2.5833333333333335,
+        "reusedFrom": "9.png"
+      },
+      {
+        "file": "11.png",
+        "sourceFrame": 69,
+        "seconds": 2.875,
+        "reusedFrom": "10.png"
+      },
+      {
+        "file": "12.png",
+        "sourceFrame": 77,
+        "seconds": 3.2083333333333335,
+        "reusedFrom": "11.png"
+      },
+      {
+        "file": "13.png",
+        "sourceFrame": 85,
+        "seconds": 3.5416666666666665,
+        "reusedFrom": "12.png"
+      },
+      {
+        "file": "14.png",
+        "sourceFrame": 93,
+        "seconds": 3.875,
+        "reusedFrom": "13.png"
+      },
+      {
+        "file": "15.png",
+        "sourceFrame": 93,
+        "seconds": 3.875,
+        "reusedFrom": "13.png"
+      },
+      {
+        "file": "16.png",
+        "sourceFrame": 100,
+        "seconds": 4.166666666666667,
+        "reusedFrom": "14.png"
+      },
+      {
+        "file": "17.png",
+        "sourceFrame": 108,
+        "seconds": 4.5,
+        "reusedFrom": "15.png"
+      },
+      {
+        "file": "18.png",
+        "sourceFrame": 116,
+        "seconds": 4.833333333333333,
+        "reusedFrom": "16.png"
+      },
+      {
+        "file": "19.png",
+        "sourceFrame": 123,
+        "seconds": 5.125,
+        "reusedFrom": "17.png"
+      },
+      {
+        "file": "20.png",
+        "sourceFrame": 131,
+        "seconds": 5.458333333333333,
+        "reusedFrom": "18.png"
+      },
+      {
+        "file": "21.png",
+        "sourceFrame": 139,
+        "seconds": 5.791666666666667,
+        "reusedFrom": "19.png"
+      },
+      {
+        "file": "22.png",
+        "sourceFrame": 146,
+        "seconds": 6.083333333333333,
+        "reusedFrom": "20.png"
+      },
+      {
+        "file": "23.png",
+        "sourceFrame": 146,
+        "seconds": 6.083333333333333,
+        "reusedFrom": "20.png"
+      },
+      {
+        "file": "24.png",
+        "sourceFrame": 154,
+        "seconds": 6.416666666666667,
+        "reusedFrom": "21.png"
+      },
+      {
+        "file": "25.png",
+        "sourceFrame": 162,
+        "seconds": 6.75,
+        "reusedFrom": "22.png"
+      },
+      {
+        "file": "26.png",
+        "sourceFrame": 170,
+        "seconds": 7.083333333333333,
+        "reusedFrom": "23.png"
+      },
+      {
+        "file": "27.png",
+        "sourceFrame": 177,
+        "seconds": 7.375,
+        "reusedFrom": "24.png"
+      },
+      {
+        "file": "28.png",
+        "sourceFrame": 185,
+        "seconds": 7.708333333333333,
+        "reusedFrom": "25.png"
+      },
+      {
+        "file": "29.png",
+        "sourceFrame": 193,
+        "seconds": 8.041666666666666,
+        "reusedFrom": "26.png"
+      },
+      {
+        "file": "30.png",
+        "sourceFrame": 200,
+        "seconds": 8.333333333333334,
+        "reusedFrom": "27.png"
+      },
+      {
+        "file": "31.png",
+        "sourceFrame": 208,
+        "seconds": 8.666666666666666,
+        "reusedFrom": "28.png"
+      },
+      {
+        "file": "32.png",
+        "sourceFrame": 208,
+        "seconds": 8.666666666666666,
+        "reusedFrom": "28.png"
+      },
+      {
+        "file": "33.png",
+        "sourceFrame": 216,
+        "seconds": 9.0,
+        "reusedFrom": "29.png"
+      },
+      {
+        "file": "34.png",
+        "sourceFrame": 224,
+        "seconds": 9.333333333333334,
+        "reusedFrom": "30.png"
+      },
+      {
+        "file": "35.png",
+        "sourceFrame": 231,
+        "seconds": 9.625,
+        "reusedFrom": "31.png"
+      },
+      {
+        "file": "36.png",
+        "sourceFrame": 239,
+        "seconds": 9.958333333333334,
+        "reusedFrom": "32.png"
+      }
+    ],
+    "mirrored": true,
+    "cuttingModel": "u2net",
+    "outputDirectory": "C:\\emberashes03D-main\\public\\game\\sprites\\big-blue-ox-ai-006",
+    "expansion": "32 approved cutouts with four evenly distributed holds; original endpoints and playback duration preserved"
+  },
+  {
+    "animation": "atk2",
+    "source": "C:\\Users\\evari\\Downloads\\charge_anima\u2026_20261003000335.mp4",
+    "start": 0,
+    "end": 10,
+    "frames": [
+      {
+        "file": "atk2-1.png",
+        "sourceFrame": 0,
+        "seconds": 0.0,
+        "reusedFrom": "atk2-1.png"
+      },
+      {
+        "file": "atk2-2.png",
+        "sourceFrame": 8,
+        "seconds": 0.3333333333333333,
+        "reusedFrom": "atk2-2.png"
+      },
+      {
+        "file": "atk2-3.png",
+        "sourceFrame": 15,
+        "seconds": 0.625,
+        "reusedFrom": "atk2-3.png"
+      },
+      {
+        "file": "atk2-4.png",
+        "sourceFrame": 23,
+        "seconds": 0.9583333333333334,
+        "reusedFrom": "atk2-4.png"
+      },
+      {
+        "file": "atk2-5.png",
+        "sourceFrame": 31,
+        "seconds": 1.2916666666666667,
+        "reusedFrom": "atk2-5.png"
+      },
+      {
+        "file": "atk2-6.png",
+        "sourceFrame": 31,
+        "seconds": 1.2916666666666667,
+        "reusedFrom": "atk2-5.png"
+      },
+      {
+        "file": "atk2-7.png",
+        "sourceFrame": 39,
+        "seconds": 1.625,
+        "reusedFrom": "atk2-6.png"
+      },
+      {
+        "file": "atk2-8.png",
+        "sourceFrame": 46,
+        "seconds": 1.9166666666666667,
+        "reusedFrom": "atk2-7.png"
+      },
+      {
+        "file": "atk2-9.png",
+        "sourceFrame": 54,
+        "seconds": 2.25,
+        "reusedFrom": "atk2-8.png"
+      },
+      {
+        "file": "atk2-10.png",
+        "sourceFrame": 62,
+        "seconds": 2.5833333333333335,
+        "reusedFrom": "atk2-9.png"
+      },
+      {
+        "file": "atk2-11.png",
+        "sourceFrame": 69,
+        "seconds": 2.875,
+        "reusedFrom": "atk2-10.png"
+      },
+      {
+        "file": "atk2-12.png",
+        "sourceFrame": 77,
+        "seconds": 3.2083333333333335,
+        "reusedFrom": "atk2-11.png"
+      },
+      {
+        "file": "atk2-13.png",
+        "sourceFrame": 85,
+        "seconds": 3.5416666666666665,
+        "reusedFrom": "atk2-12.png"
+      },
+      {
+        "file": "atk2-14.png",
+        "sourceFrame": 93,
+        "seconds": 3.875,
+        "reusedFrom": "atk2-13.png"
+      },
+      {
+        "file": "atk2-15.png",
+        "sourceFrame": 93,
+        "seconds": 3.875,
+        "reusedFrom": "atk2-13.png"
+      },
+      {
+        "file": "atk2-16.png",
+        "sourceFrame": 100,
+        "seconds": 4.166666666666667,
+        "reusedFrom": "atk2-14.png"
+      },
+      {
+        "file": "atk2-17.png",
+        "sourceFrame": 108,
+        "seconds": 4.5,
+        "reusedFrom": "atk2-15.png"
+      },
+      {
+        "file": "atk2-18.png",
+        "sourceFrame": 116,
+        "seconds": 4.833333333333333,
+        "reusedFrom": "atk2-16.png"
+      },
+      {
+        "file": "atk2-19.png",
+        "sourceFrame": 123,
+        "seconds": 5.125,
+        "reusedFrom": "atk2-17.png"
+      },
+      {
+        "file": "atk2-20.png",
+        "sourceFrame": 131,
+        "seconds": 5.458333333333333,
+        "reusedFrom": "atk2-18.png"
+      },
+      {
+        "file": "atk2-21.png",
+        "sourceFrame": 139,
+        "seconds": 5.791666666666667,
+        "reusedFrom": "atk2-19.png"
+      },
+      {
+        "file": "atk2-22.png",
+        "sourceFrame": 146,
+        "seconds": 6.083333333333333,
+        "reusedFrom": "atk2-20.png"
+      },
+      {
+        "file": "atk2-23.png",
+        "sourceFrame": 146,
+        "seconds": 6.083333333333333,
+        "reusedFrom": "atk2-20.png"
+      },
+      {
+        "file": "atk2-24.png",
+        "sourceFrame": 154,
+        "seconds": 6.416666666666667,
+        "reusedFrom": "atk2-21.png"
+      },
+      {
+        "file": "atk2-25.png",
+        "sourceFrame": 162,
+        "seconds": 6.75,
+        "reusedFrom": "atk2-22.png"
+      },
+      {
+        "file": "atk2-26.png",
+        "sourceFrame": 170,
+        "seconds": 7.083333333333333,
+        "reusedFrom": "atk2-23.png"
+      },
+      {
+        "file": "atk2-27.png",
+        "sourceFrame": 177,
+        "seconds": 7.375,
+        "reusedFrom": "atk2-24.png"
+      },
+      {
+        "file": "atk2-28.png",
+        "sourceFrame": 185,
+        "seconds": 7.708333333333333,
+        "reusedFrom": "atk2-25.png"
+      },
+      {
+        "file": "atk2-29.png",
+        "sourceFrame": 193,
+        "seconds": 8.041666666666666,
+        "reusedFrom": "atk2-26.png"
+      },
+      {
+        "file": "atk2-30.png",
+        "sourceFrame": 200,
+        "seconds": 8.333333333333334,
+        "reusedFrom": "atk2-27.png"
+      },
+      {
+        "file": "atk2-31.png",
+        "sourceFrame": 208,
+        "seconds": 8.666666666666666,
+        "reusedFrom": "atk2-28.png"
+      },
+      {
+        "file": "atk2-32.png",
+        "sourceFrame": 208,
+        "seconds": 8.666666666666666,
+        "reusedFrom": "atk2-28.png"
+      },
+      {
+        "file": "atk2-33.png",
+        "sourceFrame": 216,
+        "seconds": 9.0,
+        "reusedFrom": "atk2-29.png"
+      },
+      {
+        "file": "atk2-34.png",
+        "sourceFrame": 224,
+        "seconds": 9.333333333333334,
+        "reusedFrom": "atk2-30.png"
+      },
+      {
+        "file": "atk2-35.png",
+        "sourceFrame": 231,
+        "seconds": 9.625,
+        "reusedFrom": "atk2-31.png"
+      },
+      {
+        "file": "atk2-36.png",
+        "sourceFrame": 239,
+        "seconds": 9.958333333333334,
+        "reusedFrom": "atk2-32.png"
+      }
+    ],
+    "mirrored": true,
+    "cuttingModel": "u2net",
+    "outputDirectory": "C:\\emberashes03D-main\\public\\game\\sprites\\big-blue-ox-ai-006",
+    "expansion": "32 approved cutouts with four evenly distributed holds; original endpoints and playback duration preserved"
+  }
+]
