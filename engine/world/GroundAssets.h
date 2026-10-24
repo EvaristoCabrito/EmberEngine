@@ -56,10 +56,16 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     // tower's own floors, prisao-v01 the prison under it (its photo's vignette evened out by make_tile.py --flatten).
     {"torre-v01", "nave", "ember-torre-piso-v01", "content/ground/torre-piso-v01.png", 5.6f},
     {"prisao-v01", "nave", "ember-prisao-piso-v01", "content/ground/prisao-piso-v01.png", 5.2f},
+    {"watchtower-foundations-v01", "nave", "ember-watchtower-foundations-v01", "content/ground/watchtower-foundations-v01.png", 5.4f},
+    {"watchtower-prison-v01", "nave", "ember-watchtower-prison-v01", "content/ground/watchtower-prison-v01.png", 5.2f},
     // Deep Ashen Forest: charred forest litter, loose pale ash on clearings, and ash-darkened ridges.
     {"deep-ashen-v01", "woods", "ember-deep-ashen-charred-v01", "content/ground/deep-ashen-forest-ash-tile-v01.png", 4.5f},
     {"deep-ashen-v01", "hill", "ember-deep-ashen-slope-v01", "content/ground/deep-ashen-forest-ash-tile-v01.png", 4.5f},
     {"deep-ashen-v01", "plains", "ember-deep-ashen-loose-ash-v01", "content/ground/deep-ashen-forest-loose-ash-tile-v01.png", 4.0f},
+    // Bosque Morto: damp moss for woods, leaf litter for clearings, exposed roots for raised ground.
+    {"bosque-morto-v01", "woods", "ember-bosque-morto-moss-v01", "content/ground/bosque-morto-moss-v01.png", 4.5f},
+    {"bosque-morto-v01", "plains", "ember-bosque-morto-litter-v01", "content/ground/bosque-morto-litter-v01.png", 4.0f},
+    {"bosque-morto-v01", "hill", "ember-bosque-morto-roots-v01", "content/ground/bosque-morto-roots-v01.png", 4.5f},
     // The Misty Cave (cave-v01, the user's photos in Attachments/MistyCave, 2026-10-23; docs/MISTY_CAVE_PROMPTS.md T1-T5, W1; each ~4 m
     // of ground across its 784 px): bedrock floor, the old worked passage, rockfall, calcite ledges, the wet margin by the water; every
     // one over its terrain's baked art too. "side" is laid on no hex: BoardGround puts it on the board's sides and cliffs (the rock wall).

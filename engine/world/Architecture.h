@@ -32,7 +32,11 @@ struct ArchitectureDef {
   // course), "window" (a lancet window with a splayed inner embrasure, light through it), "slit" (an arrow loop), "portal" (an
   // arched doorway two hexes wide); the gothic parapet kit: "gothic-wall" (a panelled run: tracery windows on the deck side, tally
   // marks on the void side), "gothic-niche" (a hooded guardian in its niche / a drain hole), "gothic-pier" (the wall with a pilaster
-  // and its pinnacle at the hex's centre). Their masonry repeats every textureRepeat units on every face (square, world-aligned).
+  // and its pinnacle at the hex's centre); the Inn's kit (2026-10-22, "inn-*": a lime-plastered timber-framed wall with its sill beam,
+  // wall plate, studs and mid rail; "inn-window" a casement window, two leaves of leaded glass standing open into the room, the light
+  // through the opening; "inn-door" a one-hex plank door that swings into the room (animated like the watchtower's); "inn-doorway"
+  // the same frame open; "inn-sconce" the wall with an iron bracket and a candle lantern on the room's side, its own light). Their
+  // masonry repeats every textureRepeat units on every face (square, world-aligned).
   std::string emberStyle;
   double textureRepeat = 3.6;
 };
@@ -50,10 +54,12 @@ std::array<double, 3> emberDirPiece(int rotation);
 std::optional<std::array<double, 4>> emberStairHole(const ArchitectureDef& def, int rotation);
 // Their extra materials, tagged in the UVs (u = 100 * tag + 50 + the part's own u): 0 the masonry texture, 1 oak, 2 iron, 3 a flame
 // (emissive), 4 dark oak, 5 a dark void (the stairs' openings), 6 the steps' stone, 7 the gothic parapet's atlas (the carved
-// panels, the guardians, the pilasters' faces: UVs authored by the builder, like the flame's). MapStage splits them into parts and
+// panels, the guardians, the pilasters' faces: UVs authored by the builder, like the flame's); the Inn's kit (2026-10-22): 8 leaded
+// glass (the casements' panes, the lantern's), 9 the Inn's timber (sill beams, wall plates, studs, rails, the frames: UVs authored
+// along each beam's grain), 10 the Inn's door planks (UVs authored across and up the leaf). MapStage splits them into parts and
 // takes the tag off again (emberMaterialU).
 inline constexpr double kEmberUvTag = 100.0;
-inline constexpr int kEmberMaterialTags = 8;
+inline constexpr int kEmberMaterialTags = 11;
 inline int emberMaterialTag(double u) { return u >= kEmberUvTag ? static_cast<int>(u / kEmberUvTag) : 0; }
 inline double emberMaterialU(double u) {
   const int tag = emberMaterialTag(u);
@@ -61,14 +67,22 @@ inline double emberMaterialU(double u) {
 }
 // The tag's material name in ArchitectureDefs::materials ("" = always flat).
 inline const char* emberMaterialName(int tag) {
-  static const char* kNames[kEmberMaterialTags] = {"", "oak", "iron", "fire", "darkOak", "", "steps", "gothic"};
+  static const char* kNames[kEmberMaterialTags] = {"", "oak", "iron", "fire", "darkOak", "", "steps", "gothic", "glass", "innTimber", "innDoor"};
   return tag >= 0 && tag < kEmberMaterialTags ? kNames[tag] : "";
 }
 // The animated door ("door" style): one leaf (side -1 left, +1 right), closed, in the piece's own space like pieceGeometry
 // (Y up, turned by the piece's quarter turns), and its hinge there; MapStage turns the leaf about the hinge (world Y, side x
-// angle: inwards) as the door opens. The "gate" style bakes its leaves swung open into the piece.
+// angle: inwards) as the door opens. The "gate" style bakes its leaves swung open into the piece. The Inn's door ("inn-door") is
+// two hexes wide with two leaves, like the watchtower's.
+inline bool emberAnimatedDoor(const std::string& style) { return style == "door" || style == "inn-door"; }
+// The pieces whose inner side MapStage turns to the room (a window's splay, a torch, a lantern, the parapets' guardians' side).
+inline bool emberFacesRoom(const std::string& style) {
+  return style == "window" || style == "slit" || style == "wall-torch" || style == "inn-window" || style == "inn-sconce" || style.starts_with("gothic-");
+}
 three::Geometry emberDoorLeafPiece(const ArchitectureDef& def, int rotation, int side);
 std::array<double, 3> emberDoorHingePiece(const ArchitectureDef& def, int rotation, int side);
+// The Inn's sconce ("inn-sconce"): its lantern's flame as (distance out from the wall's centre plane on the room's side, height).
+std::array<double, 2> innSconceLight(const ArchitectureDef& def);
 inline constexpr double kEmberDoorOpenRadians = 1.75;  // ~100 degrees: the leaves lie back against the inner wall
 
 struct ArchitectureDefs {

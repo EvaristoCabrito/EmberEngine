@@ -1,0 +1,18 @@
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import {createProp,createPropInstances,PROP_KINDS,triangleCount,type PropKind} from './index';
+const scene=new THREE.Scene();scene.background=new THREE.Color('#b7c1c5');
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1;document.body.append(renderer.domElement);
+const camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,.1,500);const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=false;controls.maxPolarAngle=Math.PI*.49;
+scene.add(new THREE.HemisphereLight('#e5ecf1','#665e4a',2));const sun=new THREE.DirectionalLight('#fff1da',3.5);sun.position.set(-12,24,15);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-18;sun.shadow.camera.right=18;sun.shadow.camera.top=18;sun.shadow.camera.bottom=-18;sun.shadow.normalBias=.035;scene.add(sun,sun.target);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(180,25),new THREE.MeshStandardMaterial({color:'#827f6f',roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.y=-.005;ground.receiveShadow=true;scene.add(ground);
+const entries:{kind:PropKind;variant:number;label:string;x:number;object:THREE.Object3D;triangles:number}[]=[];
+const items=PROP_KINDS.flatMap<{kind:PropKind;variant:number;label:string}>(kind=>kind==='rock'?[0,1,2].map(variant=>({kind,variant,label:`rock ${variant+1}`})):kind==='chest'?[0,1,2].map(variant=>({kind,variant,label:`chest ${['small','medium','large'][variant]}`})):[{kind,variant:0,label:kind}]);
+items.forEach(({kind,variant,label},i)=>{const x=(i-(items.length-1)/2)*5.8;const object=createProp(kind,{variant});object.position.x=x;scene.add(object);const pole=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,2.65,8),new THREE.MeshStandardMaterial({color:'#d0c8b5'}));pole.position.set(x-2,1.325,1.7);pole.castShadow=pole.receiveShadow=true;scene.add(pole);entries.push({kind,variant,label,x,object,triangles:triangleCount(object)});});
+const select=document.querySelector<HTMLSelectElement>('#prop')!;entries.forEach((entry,i)=>{const option=document.createElement('option');option.value=String(i);option.textContent=entry.label;select.append(option);});
+function focus(index:number){const e=entries[index];select.value=String(index);controls.target.set(e.x,1.5,0);camera.position.set(e.x+6,5.4,8.5);sun.position.set(e.x-12,24,15);sun.target.position.set(e.x,0,0);controls.update();document.querySelector('#stats')!.textContent=`${e.label} · ${e.triangles.toLocaleString()} triangles`;render();}
+function all(){controls.target.set(0,1,0);camera.position.set(0,54,105);controls.update();document.querySelector('#stats')!.textContent=`${entries.length} props / variants · all originals preserved`;render();}
+function render(){renderer.render(scene,camera);}
+controls.addEventListener('change',render);select.addEventListener('change',()=>focus(Number(select.value)));document.querySelector('#all')!.addEventListener('click',all);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);render();});
+// Developer QA hook remains confined to this gallery.
+Object.assign(window,{__props:{entries:entries.map(({kind,variant,label,triangles})=>({kind,variant,label,triangles})),focus,all,createProp,createPropInstances,THREE,renderer,scene}});focus(0);

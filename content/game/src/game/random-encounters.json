@@ -1,0 +1,121 @@
+{
+  "regions": [
+    {
+      "id": "forest",
+      "name": "Floresta Tropical",
+      "encounterIds": [
+        "random-encounter-1",
+        "random-encounter-2",
+        "random-caravan-green-road",
+        "random-broken-antler-grove",
+        "random-river-rope-ambush",
+        "random-hollow-root-den",
+        "random-mora-rootwatch",
+        "random-mora-hollow-stream",
+        "random-amanita-glade",
+        "random-blightwood-verge",
+        "random-forest011-cedar-glade",
+        "random-forest011-hemlock-trail",
+        "random-forest011-hollow-grove",
+        "random-forest011-needle-crossing"
+      ]
+    },
+    {
+      "id": "mountain",
+      "name": "Montanha",
+      "encounterIds": [
+        "random-coldwind-saddle",
+        "random-hollow-pine-basin",
+        "random-cairnkeepers-rise",
+        "random-splintered-trunk-pass",
+        "random-rimewater-shrine",
+        "random-stoneshelf-pass",
+        "random-greycairn-plateau",
+        "random-encounter-14"
+      ]
+    },
+    {
+      "id": "swamp",
+      "name": "Pântano",
+      "encounterIds": [
+        "random-encounter-4"
+      ]
+    },
+    {
+      "id": "ice",
+      "name": "Gelo",
+      "encounterIds": [
+        "random-frostbound-sanctuary",
+        "random-bell-beneath-ice",
+        "random-small-toll-collector",
+        "random-walking-campfire",
+        "random-backward-hunt",
+        "random-icelands-blue-antlers",
+        "random-icelands-last-beacon",
+        "random-icelands-i1",
+        "random-icelands-i2",
+        "random-icelands-i3",
+        "random-icelands-i4",
+        "random-icelands-i5",
+        "random-icelands-i6",
+        "random-icelands-i7",
+        "random-icelands-i8",
+        "random-icelands-i9",
+        "random-icelands-i10",
+        "random-icelands-i11",
+        "random-icelands-i12",
+        "random-icelands-i13",
+        "random-icelands-i14"
+      ]
+    },
+    {
+      "id": "dead-nature",
+      "name": "Natureza Morta",
+      "encounterIds": []
+    },
+    {
+      "id": "underworld",
+      "name": "Submundo",
+      "encounterIds": [
+        "random-crystal-ossuary"
+      ]
+    },
+    {
+      "id": "aquatic",
+      "name": "Aquática",
+      "encounterIds": []
+    },
+    {
+      "id": "road",
+      "name": "Estrada",
+      "encounterIds": [
+        "random-encounter-5",
+        "random-encounter-3",
+        "random-encounter-6",
+        "random-encounter-7",
+        "random-encounter-8",
+        "random-encounter-11",
+        "random-encounter-12",
+        "random-encounter-13",
+        "random-road-three-routes-market",
+        "random-road-broken-milepost"
+      ]
+    },
+    {
+      "id": "plains",
+      "name": "Planície",
+      "encounterIds": [
+        "random-whispering-reeds",
+        "random-plains-windgrass",
+        "random-plains-broken-caravan",
+        "random-plains-sunken-ford",
+        "random-plains-old-stones",
+        "random-plains-silent-harvest",
+        "random-plains-hill-patrol",
+        "random-photographic-prairie",
+        "random-photographic-meadow",
+        "random-photographic-grassland"
+      ]
+    }
+  ]
+}

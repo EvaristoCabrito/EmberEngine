@@ -1,0 +1,27 @@
+{
+  "_readme": "Progression data. chapters: major story flags (a chapter can also be reached through reachedWhen, or by a quest/trigger effect setChapter). missionGates: { missionId: { visible?: Condition, unlock?: Condition } } - when `visible` is omitted a mission stays visible; otherwise it is hidden until `visible` holds. A visible mission stays locked until `unlock` holds. A mission NOT listed here keeps its normal chapter-by-chapter chain. triggers: [{ when: Condition, do: [Effect] }] fire whenever the save changes. See progression.ts for the condition and effect vocabulary.",
+  "chapters": [
+    { "id": 1, "name": "Capítulo 1" },
+    { "id": 2, "name": "Capítulo 2" },
+    { "id": 3, "name": "Capítulo 3" }
+  ],
+  "missionGates": {
+    "mordavian-woods": {
+      "visible": {
+        "any": [
+          { "questCompleted": "mudo-medalhoes" },
+          { "questCompleted": "suspeito-watchtower-captive" },
+          { "questCompleted": "porao-caliches" },
+          { "questCompleted": "brue-birolho" }
+        ]
+      }
+    },
+    "cemiterio-esquecidos": {
+      "unlock": { "questActive": "brue-birolho" }
+    },
+    "watchtower-gate-floor": {
+      "unlock": { "questActive": "suspeito-watchtower-captive" }
+    }
+  },
+  "triggers": []
+}

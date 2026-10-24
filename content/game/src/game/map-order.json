@@ -1,0 +1,54 @@
+{
+  "stonebridge": [
+    "vau",
+    "bosque",
+    "aldeia",
+    "thebridge"
+  ],
+  "wisp-forest": [
+    "wisp-forest-crossing"
+  ],
+  "estalagem": [
+    "estalagem"
+  ],
+  "ashen-forest": [
+    "ashen-forest-crossing"
+  ],
+  "cemetery": [
+    "cemiterio-esquecidos"
+  ],
+  "watchtower": [
+    "watchtower-gate-floor"
+  ],
+  "ruins": [
+    "muralha",
+    "fortaleza",
+    "templo",
+    "cripta"
+  ],
+  "dungeon": [
+    "colina",
+    "passagem",
+    "profundezas",
+    "grotto-1",
+    "grotto-2",
+    "grotto-3",
+    "grotto-4",
+    "grotto-5",
+    "grotto-6"
+  ],
+  "misty-cave": [
+    "vertente",
+    "portao",
+    "deep-mist"
+  ],
+  "mordavian-woods": [
+    "mordavian-woods"
+  ],
+  "frozen-swamp": [
+    "frozen-swamp-crossing-1"
+  ],
+  "farm": [
+    "farmlands"
+  ]
+}

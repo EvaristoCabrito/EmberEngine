@@ -1,0 +1,649 @@
+{
+  "generated_texture_maps": [
+    "bark-bough-photo-v01.png",
+    "foliage-leaves-photo-v01.png",
+    "bone-photo-v01.png",
+    "terracotta-photo-v01.png",
+    "leather-worn-photo-v01.png",
+    "dark-green-glass-photo-v01.png"
+  ],
+  "user_surface_maps": [
+    "mushroom-fallen-ground-user-v01.jpg",
+    "mushroom-mycelium-wall-user-v01.jpg",
+    "shelf-fungus-top-user-v02.jpg"
+  ],
+  "assets": [
+    {
+      "source": "content/models/forest/mature-tree-v01.glb",
+      "glb": "content/models/forest/mature-tree-v01-photo.glb",
+      "materials_textured": [
+        "bark"
+      ],
+      "embedded_images": 1,
+      "bytes": 568064,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/forest/dead-tree-v01.glb",
+      "glb": "content/models/forest/dead-tree-v01-photo.glb",
+      "materials_textured": [
+        "bark"
+      ],
+      "embedded_images": 1,
+      "bytes": 577452,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/props/sacks-v01.glb",
+      "glb": "content/models/props/sacks-v01-photo.glb",
+      "materials_textured": [
+        "burlap",
+        "rope"
+      ],
+      "embedded_images": 1,
+      "bytes": 381168,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/props/lantern-v01.glb",
+      "glb": "content/models/props/lantern-v01-photo.glb",
+      "materials_textured": [
+        "iron",
+        "glass"
+      ],
+      "embedded_images": 2,
+      "bytes": 543084,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/city/street-lamp-v01.glb",
+      "glb": "content/models/city/street-lamp-v01-photo.glb",
+      "materials_textured": [
+        "iron",
+        "glass",
+        "brass"
+      ],
+      "embedded_images": 2,
+      "bytes": 548856,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/tavern/bottles-jugs-v01.glb",
+      "glb": "content/models/tavern/bottles-jugs-v01-photo.glb",
+      "materials_textured": [
+        "dark-glass",
+        "clay",
+        "brass"
+      ],
+      "embedded_images": 3,
+      "bytes": 1025468,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/dungeon/iron-cage-v01.glb",
+      "glb": "content/models/dungeon/iron-cage-v01-photo.glb",
+      "materials_textured": [
+        "iron-rust",
+        "iron"
+      ],
+      "embedded_images": 1,
+      "bytes": 357988,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/dungeon/bone-pile-v01.glb",
+      "glb": "content/models/dungeon/bone-pile-v01-photo.glb",
+      "materials_textured": [
+        "bone"
+      ],
+      "embedded_images": 1,
+      "bytes": 471556,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/dungeon/chains-v01.glb",
+      "glb": "content/models/dungeon/chains-v01-photo.glb",
+      "materials_textured": [
+        "iron-rust",
+        "iron"
+      ],
+      "embedded_images": 1,
+      "bytes": 424380,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/extra/mushroom-cluster-v01.glb",
+      "glb": "content/models/extra/mushroom-cluster-v01-photo.glb",
+      "materials_textured": [
+        "fungus"
+      ],
+      "embedded_images": 1,
+      "bytes": 1021316,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/nature/ancient-tree-roots-v01.glb",
+      "glb": "content/models/nature/ancient-tree-roots-v01-photo.glb",
+      "materials_textured": [
+        "bark"
+      ],
+      "embedded_images": 1,
+      "bytes": 572704,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/nature/axe-cut-stump-v01.glb",
+      "glb": "content/models/nature/axe-cut-stump-v01-photo.glb",
+      "materials_textured": [
+        "bark"
+      ],
+      "embedded_images": 1,
+      "bytes": 482360,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/nature/dense-bush-v01.glb",
+      "glb": "content/models/nature/dense-bush-v01-photo.glb",
+      "materials_textured": [
+        "leaves"
+      ],
+      "embedded_images": 1,
+      "bytes": 426068,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/nature/dry-branch-pile-v01.glb",
+      "glb": "content/models/nature/dry-branch-pile-v01-photo.glb",
+      "materials_textured": [
+        "bark"
+      ],
+      "embedded_images": 1,
+      "bytes": 460208,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/nature/dry-bush-v01.glb",
+      "glb": "content/models/nature/dry-bush-v01-photo.glb",
+      "materials_textured": [
+        "bark"
+      ],
+      "embedded_images": 1,
+      "bytes": 560944,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/nature/ferns-v01.glb",
+      "glb": "content/models/nature/ferns-v01-photo.glb",
+      "materials_textured": [
+        "leaves"
+      ],
+      "embedded_images": 1,
+      "bytes": 372040,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/nature/hollow-standing-tree-v01.glb",
+      "glb": "content/models/nature/hollow-standing-tree-v01-photo.glb",
+      "materials_textured": [
+        "bark"
+      ],
+      "embedded_images": 1,
+      "bytes": 572820,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/nature/roots-with-mushrooms-v01.glb",
+      "glb": "content/models/nature/roots-with-mushrooms-v01-photo.glb",
+      "materials_textured": [
+        "bark",
+        "fungus"
+      ],
+      "embedded_images": 2,
+      "bytes": 1250940,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/nature/wild-mushrooms-v01.glb",
+      "glb": "content/models/nature/wild-mushrooms-v01-photo.glb",
+      "materials_textured": [
+        "fungus"
+      ],
+      "embedded_images": 1,
+      "bytes": 776456,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/treasure/ceramic-jars-v01.glb",
+      "glb": "content/models/treasure/ceramic-jars-v01-photo.glb",
+      "materials_textured": [
+        "clay"
+      ],
+      "embedded_images": 1,
+      "bytes": 476804,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/treasure/coiled-rope-v01.glb",
+      "glb": "content/models/treasure/coiled-rope-v01-photo.glb",
+      "materials_textured": [
+        "rope"
+      ],
+      "embedded_images": 1,
+      "bytes": 405420,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/treasure/coin-pile-v01.glb",
+      "glb": "content/models/treasure/coin-pile-v01-photo.glb",
+      "materials_textured": [
+        "gold"
+      ],
+      "embedded_images": 1,
+      "bytes": 498352,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/treasure/coin-purse-v01.glb",
+      "glb": "content/models/treasure/coin-purse-v01-photo.glb",
+      "materials_textured": [
+        "leather",
+        "rope",
+        "gold"
+      ],
+      "embedded_images": 3,
+      "bytes": 1048480,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/treasure/leather-satchel-v01.glb",
+      "glb": "content/models/treasure/leather-satchel-v01-photo.glb",
+      "materials_textured": [
+        "leather",
+        "brass"
+      ],
+      "embedded_images": 2,
+      "bytes": 707144,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/treasure/metal-safe-v01.glb",
+      "glb": "content/models/treasure/metal-safe-v01-photo.glb",
+      "materials_textured": [
+        "iron",
+        "iron-rust",
+        "brass"
+      ],
+      "embedded_images": 1,
+      "bytes": 326952,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/structures/street-brazier-v01.glb",
+      "glb": "content/models/structures/street-brazier-v01-photo.glb",
+      "materials_textured": [
+        "iron-rust",
+        "iron",
+        "coal"
+      ],
+      "embedded_images": 2,
+      "bytes": 1170520,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/interior/beer-jug-v01.glb",
+      "glb": "content/models/interior/beer-jug-v01-photo.glb",
+      "materials_textured": [
+        "clay"
+      ],
+      "embedded_images": 1,
+      "bytes": 467244,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/interior/cauldron-v01.glb",
+      "glb": "content/models/interior/cauldron-v01-photo.glb",
+      "materials_textured": [
+        "iron",
+        "dark-glass"
+      ],
+      "embedded_images": 2,
+      "bytes": 568204,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/interior/ceramic-bowl-v01.glb",
+      "glb": "content/models/interior/ceramic-bowl-v01-photo.glb",
+      "materials_textured": [
+        "clay"
+      ],
+      "embedded_images": 1,
+      "bytes": 463996,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/interior/cloth-curtain-v01.glb",
+      "glb": "content/models/interior/cloth-curtain-v01-photo.glb",
+      "materials_textured": [
+        "iron",
+        "brass",
+        "cloth-dark"
+      ],
+      "embedded_images": 2,
+      "bytes": 714796,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/interior/fireplace-grate-v01.glb",
+      "glb": "content/models/interior/fireplace-grate-v01-photo.glb",
+      "materials_textured": [
+        "iron",
+        "bark"
+      ],
+      "embedded_images": 2,
+      "bytes": 774096,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/interior/iron-pot-v01.glb",
+      "glb": "content/models/interior/iron-pot-v01-photo.glb",
+      "materials_textured": [
+        "iron"
+      ],
+      "embedded_images": 1,
+      "bytes": 334128,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/interior/table-candelabra-v01.glb",
+      "glb": "content/models/interior/table-candelabra-v01-photo.glb",
+      "materials_textured": [
+        "brass",
+        "wool",
+        "coal"
+      ],
+      "embedded_images": 3,
+      "bytes": 1486172,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/interior/wine-bottle-v01.glb",
+      "glb": "content/models/interior/wine-bottle-v01-photo.glb",
+      "materials_textured": [
+        "dark-glass"
+      ],
+      "embedded_images": 1,
+      "bytes": 222928,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/interior/worn-rug-v01.glb",
+      "glb": "content/models/interior/worn-rug-v01-photo.glb",
+      "materials_textured": [
+        "cloth-red",
+        "cloth-dark",
+        "wool"
+      ],
+      "embedded_images": 1,
+      "bytes": 366944,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/crypt/barred-gate-v01.glb",
+      "glb": "content/models/crypt/barred-gate-v01-photo.glb",
+      "materials_textured": [
+        "iron-rust",
+        "iron"
+      ],
+      "embedded_images": 1,
+      "bytes": 336032,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/crypt/chain-ring-v01.glb",
+      "glb": "content/models/crypt/chain-ring-v01-photo.glb",
+      "materials_textured": [
+        "iron-rust",
+        "iron"
+      ],
+      "embedded_images": 1,
+      "bytes": 395720,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/crypt/hook-chain-v01.glb",
+      "glb": "content/models/crypt/hook-chain-v01-photo.glb",
+      "materials_textured": [
+        "iron-rust"
+      ],
+      "embedded_images": 1,
+      "bytes": 402632,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/crypt/incomplete-skeleton-v01.glb",
+      "glb": "content/models/crypt/incomplete-skeleton-v01-photo.glb",
+      "materials_textured": [
+        "bone"
+      ],
+      "embedded_images": 1,
+      "bytes": 482244,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/crypt/iron-grate-v01.glb",
+      "glb": "content/models/crypt/iron-grate-v01-photo.glb",
+      "materials_textured": [
+        "iron-rust"
+      ],
+      "embedded_images": 1,
+      "bytes": 317552,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/crypt/lone-skull-v01.glb",
+      "glb": "content/models/crypt/lone-skull-v01-photo.glb",
+      "materials_textured": [
+        "bone"
+      ],
+      "embedded_images": 1,
+      "bytes": 365508,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/mines/giant-mushrooms-v01.glb",
+      "glb": "content/models/mines/giant-mushrooms-v01-photo.glb",
+      "materials_textured": [
+        "fungus"
+      ],
+      "embedded_images": 1,
+      "bytes": 672512,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/ember/ancient-hull-fragment-v01.glb",
+      "glb": "content/models/ember/ancient-hull-fragment-v01-photo.glb",
+      "materials_textured": [
+        "iron-rust",
+        "bronze"
+      ],
+      "embedded_images": 1,
+      "bytes": 325980,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/ember/ancient-reliquary-v01.glb",
+      "glb": "content/models/ember/ancient-reliquary-v01-photo.glb",
+      "materials_textured": [
+        "bronze",
+        "gold"
+      ],
+      "embedded_images": 1,
+      "bytes": 346200,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/ember/containment-box-v01.glb",
+      "glb": "content/models/ember/containment-box-v01-photo.glb",
+      "materials_textured": [
+        "iron",
+        "iron-rust",
+        "brass"
+      ],
+      "embedded_images": 1,
+      "bytes": 326780,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/ember/ember-container-v01.glb",
+      "glb": "content/models/ember/ember-container-v01-photo.glb",
+      "materials_textured": [
+        "iron",
+        "brass"
+      ],
+      "embedded_images": 1,
+      "bytes": 340792,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/ember/ember-lantern-v01.glb",
+      "glb": "content/models/ember/ember-lantern-v01-photo.glb",
+      "materials_textured": [
+        "iron",
+        "glass",
+        "brass"
+      ],
+      "embedded_images": 2,
+      "bytes": 545220,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/ember/god-king-transport-v01.glb",
+      "glb": "content/models/ember/god-king-transport-v01-photo.glb",
+      "materials_textured": [
+        "iron-rust",
+        "bronze",
+        "iron",
+        "glass"
+      ],
+      "embedded_images": 2,
+      "bytes": 638536,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/ember/light-crystal-v01.glb",
+      "glb": "content/models/ember/light-crystal-v01-photo.glb",
+      "materials_textured": [
+        "iron",
+        "brass"
+      ],
+      "embedded_images": 1,
+      "bytes": 341660,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/ember/mechanical-parts-v01.glb",
+      "glb": "content/models/ember/mechanical-parts-v01-photo.glb",
+      "materials_textured": [
+        "iron",
+        "bronze"
+      ],
+      "embedded_images": 1,
+      "bytes": 376924,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/ember/refined-ember-shard-v01.glb",
+      "glb": "content/models/ember/refined-ember-shard-v01-photo.glb",
+      "materials_textured": [
+        "iron"
+      ],
+      "embedded_images": 1,
+      "bytes": 320352,
+      "status": "ok"
+    },
+    {
+      "source": "content/models/ember/unknown-machine-v01.glb",
+      "glb": "content/models/ember/unknown-machine-v01-photo.glb",
+      "materials_textured": [
+        "iron",
+        "iron-rust",
+        "bronze",
+        "brass"
+      ],
+      "embedded_images": 1,
+      "bytes": 397412,
+      "status": "ok"
+    },
+    {
+      "source": "content/game/public/game/models/rocks/grey-outcrop.glb",
+      "glb": "content/game/public/game/models/rocks/grey-outcrop-photo.glb",
+      "materials_textured": [
+        "Grey granite game material"
+      ],
+      "embedded_images": 1,
+      "bytes": 849268,
+      "status": "ok"
+    },
+    {
+      "source": "content/game/public/game/models/trees/broadleaf.glb",
+      "glb": "content/game/public/game/models/trees/broadleaf-photo.glb",
+      "materials_textured": [
+        "Leaf | natural green 0",
+        "Leaf | natural green 1",
+        "Leaf | natural green 2",
+        "Leaf | natural green 3",
+        "Leaf | natural green 4",
+        "Game bark | vertex ridges"
+      ],
+      "embedded_images": 2,
+      "bytes": 16412704,
+      "status": "ok"
+    },
+    {
+      "source": "content/game/public/game/models/trees/dead-oak.glb",
+      "glb": "content/game/public/game/models/trees/dead-oak-photo.glb",
+      "materials_textured": [
+        "Dead oak | gnarled trunk, roots, branches, moss | vertex bark"
+      ],
+      "embedded_images": 1,
+      "bytes": 21676104,
+      "status": "ok"
+    },
+    {
+      "source": "content/game/public/game/models/trees/dead-snag.glb",
+      "glb": "content/game/public/game/models/trees/dead-snag-photo.glb",
+      "materials_textured": [
+        "Dead snag | broken trunk, splintered top, limb stubs | vertex bark"
+      ],
+      "embedded_images": 1,
+      "bytes": 8480616,
+      "status": "ok"
+    },
+    {
+      "source": "content/game/public/game/models/trees/snowy-pine.glb",
+      "glb": "content/game/public/game/models/trees/snowy-pine-photo.glb",
+      "materials_textured": [
+        "Pine needles | green 0",
+        "Pine needles | green 1",
+        "Pine needles | green 2",
+        "Pine needles | green 3",
+        "Game bark | vertex ridges",
+        "Snow | powder with fine grain"
+      ],
+      "embedded_images": 2,
+      "bytes": 30859160,
+      "status": "ok"
+    },
+    {
+      "source": "content/game/public/game/models/trees/twisted-stump.glb",
+      "glb": "content/game/public/game/models/trees/twisted-stump-photo.glb",
+      "materials_textured": [
+        "Twisted stump | hollow interior | vertex bark",
+        "Twisted stump | hollow split trunk, roots, shelf mushrooms | vertex bark"
+      ],
+      "embedded_images": 1,
+      "bytes": 8560924,
+      "status": "ok"
+    }
+  ]
+}

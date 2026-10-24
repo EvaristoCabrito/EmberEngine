@@ -1,0 +1,38 @@
+.return-button {
+  position: fixed;
+  z-index: 20;
+  top: max(14px, env(safe-area-inset-top));
+  left: max(14px, env(safe-area-inset-left));
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid rgba(190, 150, 95, .58);
+  border-radius: 3px;
+  background: rgba(16, 13, 11, .88);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, .48), inset 0 0 0 1px rgba(255, 220, 160, .05);
+  color: #e4d1b2;
+  font: 600 12px/1 Georgia, 'Times New Roman', serif;
+  letter-spacing: .12em;
+  text-decoration: none;
+  text-transform: uppercase;
+  backdrop-filter: blur(5px);
+}
+.return-button:hover {
+  border-color: #dfbf8e;
+  background: rgba(58, 35, 20, .94);
+  color: #f3dfbd;
+}
+.return-button:focus-visible {
+  outline: 2px solid #e6bd79;
+  outline-offset: 3px;
+}
+.return-button__arrow { font: 24px/14px Georgia, 'Times New Roman', serif; }
+.return-button--sidebar {
+  position: fixed;
+  top: 10px;
+  left: 12px;
+  margin: 0;
+}
+#app.map-list-hidden .return-button--sidebar { visibility: visible; }

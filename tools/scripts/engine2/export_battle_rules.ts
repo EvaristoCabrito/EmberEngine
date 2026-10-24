@@ -145,6 +145,7 @@ const THEMES: Record<string, [string, number]> = {
   inn: ['Connard The Barbarian 10.mp3', 0.4], hill: ['Long Space _Opera DJ  UMN+  022-Balanced-High.mp3', 0.4],
   portao: ['TempleEntrance-Balanced-High.mp3', 0.4], early: ['LANDR-Absolute Mental Descruction umn3 10 (3)-Balanced-High.mp3', 0.4],
   cemetery: ['Ember Ashes Ambient OST 0-Balanced-High.mp3', 0.4],
+  watchtower: ['OldTowwerDrone  trax 4 Persona 884-Balanced-High.mp3', 0.4],
 };
 
 const out = {

@@ -1,0 +1,18 @@
+/* One cursor scheme shared by every Engine2 screen. */
+body,
+body * {
+  cursor: url('/game/ui/pointer.png') 0 0, url('/game/ui/pointer-large.svg') 0 0, auto !important;
+}
+
+button,
+select,
+a,
+[role='button'] {
+  cursor: url('/game/ui/pointer.png') 0 0, url('/game/ui/pointer-large.svg') 0 0, pointer !important;
+}
+
+html.engine2-grabbing,
+html.engine2-grabbing * {
+  cursor: url('/game/cursors/medieval-gauntlet-grab-small.svg') 13 13,
+    url('/game/cursors/medieval-gauntlet-grab.png') 64 64, grabbing !important;
+}

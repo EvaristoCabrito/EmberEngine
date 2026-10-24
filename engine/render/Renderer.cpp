@@ -1162,14 +1162,14 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
   previousCamera_ = camera_;
   f.lightingLayers = lightingLayers_;
   f.time = time;
+  f.boardBase = boardBase_;
+  f.boardDrop = boardDrop_;
   f.lights = bufferAddress(context_, frame.lights);
   f.clusterBuffer = clusterBufferIndex_;
   // The slices follow the near plane: the 2D view's long lens stands far above the board (MapStage).
   f.clusterNear = std::max(2.0f, camera_.projection[3][2]);
   f.clusterFar = f.clusterNear + 398.0f;
   f.clusters = bufferAddress(context_, clusters_);
-  f.boardBase = boardBase_;
-  f.boardDrop = boardDrop_;
   f.fogMask = kNoTextureIndex;
   if (fogOn_ && fogMaskIndex_ != kNoIndex) {
     f.fogMask = fogMaskIndex_;

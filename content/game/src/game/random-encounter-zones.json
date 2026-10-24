@@ -1,0 +1,359 @@
+{
+  "zones": [
+    {
+      "regionId": "forest",
+      "anchorLocationId": "estalagem",
+      "outlineRoutes": [
+        [
+          "W",
+          "W",
+          "NE"
+        ],
+        [
+          "SW",
+          "W"
+        ],
+        [
+          "NE"
+        ],
+        [
+          "NW"
+        ]
+      ],
+      "hexes": [
+        {
+          "col": 4,
+          "row": 7
+        },
+        {
+          "col": 4,
+          "row": 9
+        },
+        {
+          "col": 1,
+          "row": 4
+        },
+        {
+          "col": 6,
+          "row": 6
+        },
+        {
+          "col": 4,
+          "row": 6
+        }
+      ],
+      "priority": 30
+    },
+    {
+      "regionId": "road",
+      "priority": 20,
+      "anchorLocationId": "estalagem",
+      "outlineRoutes": [
+        [
+          "SW"
+        ],
+        [
+          "W",
+          "NW",
+          "E",
+          "NW",
+          "NW",
+          "NW",
+          "E"
+        ]
+      ],
+      "hexes": [
+        {
+          "col": 5,
+          "row": 9
+        },
+        {
+          "col": 5,
+          "row": 8
+        },
+        {
+          "col": 4,
+          "row": 7
+        },
+        {
+          "col": 5,
+          "row": 7
+        },
+        {
+          "col": 5,
+          "row": 6
+        },
+        {
+          "col": 4,
+          "row": 5
+        },
+        {
+          "col": 4,
+          "row": 4
+        },
+        {
+          "col": 5,
+          "row": 4
+        }
+      ]
+    },
+    {
+      "regionId": "road",
+      "priority": 20,
+      "anchorLocationId": "ashen-forest",
+      "outlineMoves": [
+        "W",
+        "W",
+        "W"
+      ],
+      "hexes": [
+        {
+          "col": 5,
+          "row": 7
+        }
+      ]
+    },
+    {
+      "regionId": "road",
+      "priority": 20,
+      "anchorLocationId": "ashen-forest",
+      "outlineMoves": [
+        "NE",
+        "NE",
+        "W"
+      ],
+      "hexes": [
+        {
+          "col": 9,
+          "row": 6
+        },
+        {
+          "col": 9,
+          "row": 5
+        },
+        {
+          "col": 8,
+          "row": 5
+        }
+      ]
+    },
+    {
+      "regionId": "road",
+      "priority": 20,
+      "anchorLocationId": "vertente",
+      "outlineRoutes": [
+        [
+          "SW"
+        ],
+        [
+          "SE"
+        ]
+      ],
+      "hexes": [
+        {
+          "col": 5,
+          "row": 3
+        },
+        {
+          "col": 6,
+          "row": 3
+        }
+      ]
+    },
+    {
+      "regionId": "mountain",
+      "priority": 10,
+      "anchorLocationId": "vertente",
+      "outlineRoutes": [
+        [
+          "W",
+          "W",
+          "W",
+          "W"
+        ],
+        [
+          "E",
+          "E",
+          "E",
+          "E"
+        ],
+        [
+          "E",
+          "E",
+          "NE"
+        ]
+      ],
+      "hexes": [
+        {
+          "col": 5,
+          "row": 2
+        },
+        {
+          "col": 4,
+          "row": 2
+        },
+        {
+          "col": 3,
+          "row": 2
+        },
+        {
+          "col": 2,
+          "row": 2
+        },
+        {
+          "col": 7,
+          "row": 2
+        },
+        {
+          "col": 8,
+          "row": 2
+        },
+        {
+          "col": 9,
+          "row": 2
+        },
+        {
+          "col": 10,
+          "row": 2
+        },
+        {
+          "col": 8,
+          "row": 1
+        }
+      ]
+    },
+    {
+      "regionId": "mountain",
+      "anchorLocationId": "misty-cave",
+      "outlineMoves": [
+        "W",
+        "W",
+        "NW",
+        "E",
+        "NE",
+        "E",
+        "E",
+        "SE",
+        "E",
+        "SW",
+        "W"
+      ],
+      "hexes": [
+        {
+          "col": 5,
+          "row": 4
+        },
+        {
+          "col": 6,
+          "row": 4
+        },
+        {
+          "col": 7,
+          "row": 4
+        },
+        {
+          "col": 3,
+          "row": 5
+        },
+        {
+          "col": 4,
+          "row": 5
+        },
+        {
+          "col": 5,
+          "row": 5
+        },
+        {
+          "col": 6,
+          "row": 5
+        },
+        {
+          "col": 7,
+          "row": 5
+        },
+        {
+          "col": 8,
+          "row": 5
+        },
+        {
+          "col": 4,
+          "row": 6
+        },
+        {
+          "col": 5,
+          "row": 6
+        },
+        {
+          "col": 6,
+          "row": 6
+        },
+        {
+          "col": 7,
+          "row": 6
+        },
+        {
+          "col": 8,
+          "row": 6
+        }
+      ]
+    },
+    {
+      "regionId": "plains",
+      "priority": 30,
+      "anchorLocationId": "estalagem",
+      "outlineRoutes": [
+        [],
+        [
+          "W"
+        ],
+        [
+          "W",
+          "W"
+        ]
+      ],
+      "hexes": [
+        {
+          "col": 5,
+          "row": 7
+        },
+        {
+          "col": 4,
+          "row": 7
+        },
+        {
+          "col": 3,
+          "row": 7
+        }
+      ]
+    },
+    {
+      "regionId": "plains",
+      "priority": 30,
+      "anchorLocationId": "watchtower",
+      "outlineRoutes": [
+        [],
+        [
+          "NW"
+        ],
+        [
+          "NW",
+          "NW"
+        ]
+      ],
+      "hexes": [
+        {
+          "col": 2,
+          "row": 6
+        },
+        {
+          "col": 1,
+          "row": 5
+        },
+        {
+          "col": 0,
+          "row": 4
+        }
+      ]
+    }
+  ]
+}

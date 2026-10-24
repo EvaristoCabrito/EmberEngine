@@ -1,0 +1,56 @@
+{
+  "wisp-forest": [
+    {
+      "missionId": "wisp-forest-crossing-boss",
+      "floor": 1
+    }
+  ],
+  "watchtower": [
+    {
+      "missionId": "watchtower-beacon",
+      "floor": 3
+    },
+    {
+      "missionId": "watchtower-command",
+      "floor": 2
+    },
+    {
+      "missionId": "watchtower-barracks",
+      "floor": 1
+    },
+    {
+      "missionId": "watchtower-undercroft",
+      "floor": -1
+    },
+    {
+      "missionId": "watchtower-prison",
+      "floor": -2
+    }
+  ],
+  "farm": [
+    {
+      "missionId": "farmlands-smith",
+      "floor": 1
+    },
+    {
+      "missionId": "farmlands-apothecary",
+      "floor": 1
+    },
+    {
+      "missionId": "farmlands-tavern",
+      "floor": 1
+    },
+    {
+      "missionId": "farmlands-inn",
+      "floor": 1
+    },
+    {
+      "missionId": "farmlands-general-store",
+      "floor": 1
+    },
+    {
+      "missionId": "farmlands-villagers",
+      "floor": 1
+    }
+  ]
+}

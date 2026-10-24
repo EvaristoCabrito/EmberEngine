@@ -232,7 +232,8 @@ struct Field {
       const bool solidArch = arch == "wall" || arch == "door" || arch == "secretDoor" ||
                              (arch == "doorway" && def && integer(*def, "architectureSpan") > 0 && (*def)["blockingFootprint"].is_array());
       const bool blocksPath = flag(p, "blocksPath");
-      const bool lowProp = blocksPath && r.inSet("lowBlocker", id) && !house && !chest && !barricade && !cart && !rock && !solidArch;
+      const bool chair = id.find("chair") != std::string::npos;
+      const bool lowProp = blocksPath && (chair || r.inSet("lowBlocker", id)) && !house && !chest && !barricade && !cart && !rock && !solidArch;
       const int bits = (blocksPath || house || chest || barricade || cart || rock || solidArch ? kBlocked : 0) | (flag(p, "yieldsHighGround") ? kHigh : 0) | (lowProp ? kOpenShot : 0);
       if (!bits) continue;
       for (const Hex& c : placedBlockingFootprint(r, p)) {

@@ -607,10 +607,10 @@ class Renderer {
   uint32_t lightingLayers_ = 0xFFFFFFFFu;
   TerrainView terrain_;
   glm::vec4 groundClip_{-1.0e9f, -1.0e9f, 1.0e9f, 1.0e9f};
+  float boardBase_ = 0.0f, boardDrop_ = 0.0f;  // setBoardDrop: the board's sides lowered to the floor image
   std::array<glm::vec4, kGroundHoles> groundHoles_{};  // (0, 0, 0, 0) = none
   VkPipeline spritePipeline_ = VK_NULL_HANDLE;
   VkPipeline spriteDepthPipeline_ = VK_NULL_HANDLE;  // the cards' depth, after the cards
-  float boardBase_ = 0.0f, boardDrop_ = 0.0f;  // setBoardDrop: the board's sides lowered to the floor image
   VkPipeline effectPipeline_ = VK_NULL_HANDLE;
   VkPipeline vfxPipelines_[2] = {};  // depth-tested, over everything
   std::vector<VfxVertex> vfxVertices_;

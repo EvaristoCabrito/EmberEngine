@@ -10,8 +10,11 @@
     "darkOak": "/ember/textures/watchtower/dark-oak-v01.jpg",
     "steps": "/ember/textures/watchtower/steps-v01.jpg",
     "fire": "/ember/textures/watchtower/torch-fire-v01.jpg",
-    "gothic": "/ember/textures/walls/gothic-parapet-v01.jpg"
+    "gothic": "/ember/textures/walls/gothic-parapet-v01.jpg",
+    "innTimber": "/ember/textures/watchtower/dark-oak-v01.jpg",
+    "innDoor": "/ember/textures/watchtower/door-oak-v01.jpg"
   },
+  "innTexturesPending": "The Inn's kit (2026-10-22) waits for the user's generated textures (prompts in docs/INN_TEXTURES.md): content/textures/inn/plaster-v01.jpg goes on the inn-* pieces' wallTexture (repeat 2.4), timber-v01.jpg replaces innTimber, door-planks-v01.jpg replaces innDoor, leaded-glass-v01.jpg becomes the material \"glass\". Until then: the walls wear the tavern's own brick (wall-3d-tavern's tavern-v2.png, the texture the second floor had), the timber and the door the user's watchtower photographs, the glass a flat pale green.",
   "pieces": [
     {
       "id": "ember-arch-watchtower-wall",
@@ -145,9 +148,62 @@
       "heightScale": 1.05,
       "textureRepeat": 1.59,
       "footprint": "one"
+    },
+    {
+      "id": "ember-arch-inn-wall",
+      "name": "Parede da Estalagem 3D",
+      "model3d": "wall",
+      "emberStyle": "inn-wall",
+      "wallTexture": "/game/textures/walls/tavern-v2.png",
+      "wallThicknessScale": 1.3,
+      "textureRepeat": 2.4,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-inn-window",
+      "name": "Janela da Estalagem 3D",
+      "model3d": "wall",
+      "emberStyle": "inn-window",
+      "wallTexture": "/game/textures/walls/tavern-v2.png",
+      "wallThicknessScale": 1.3,
+      "textureRepeat": 2.4,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-inn-door",
+      "name": "Porta da Estalagem 3D",
+      "model3d": "door",
+      "emberStyle": "inn-door",
+      "doorStyle": "inn",
+      "wallTexture": "/game/textures/walls/tavern-v2.png",
+      "wallThicknessScale": 1.3,
+      "textureRepeat": 2.4,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-inn-doorway",
+      "name": "Vão de porta da Estalagem 3D",
+      "model3d": "doorway",
+      "emberStyle": "inn-doorway",
+      "doorStyle": "inn",
+      "wallTexture": "/game/textures/walls/tavern-v2.png",
+      "wallThicknessScale": 1.3,
+      "textureRepeat": 2.4,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-inn-sconce",
+      "name": "Lampião de parede da Estalagem 3D",
+      "model3d": "wall",
+      "emberStyle": "inn-sconce",
+      "wallTexture": "/game/textures/walls/tavern-v2.png",
+      "wallThicknessScale": 1.3,
+      "textureRepeat": 2.4,
+      "footprint": "one"
     }
   ],
   "doorVariants": {
-    "watchtower": {"open": "ember-arch-watchtower-portal", "closed": "ember-arch-watchtower-door"}
+    "watchtower": {"open": "ember-arch-watchtower-portal", "closed": "ember-arch-watchtower-door"},
+    "inn": {"open": "ember-arch-inn-doorway", "closed": "ember-arch-inn-door"}
   }
 }

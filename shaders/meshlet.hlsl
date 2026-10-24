@@ -77,6 +77,7 @@ void ASMain(uint thread : SV_GroupIndex, uint3 group : SV_GroupID) {
 struct VertexOut {
   float4 position : SV_Position;
   float2 uv : TEXCOORD0;
+  float3 worldPosition : TEXCOORD3;
 };
 
 struct PrimitiveOut {
@@ -106,9 +107,11 @@ void MSMain(uint thread : SV_GroupIndex, uint3 group : SV_GroupID, in payload Pa
 
   if (thread < vertexCount) {
     const MeshVertex v = loadVertex(mesh, loadClusterVertex(mesh, cluster.vertexOffset + thread));
-    const float4 clipPos = mul(float4(transformPoint(inst, v.position), 1.0), f.viewProjection);
+    const float3 worldPosition = transformPoint(inst, v.position);
+    const float4 clipPos = mul(float4(worldPosition, 1.0), f.viewProjection);
     verts[thread].position = clipPos;
     verts[thread].uv = v.uv;
+    verts[thread].worldPosition = worldPosition;
     clipPositions[thread] = clipPos;
   }
   GroupMemoryBarrierWithGroupSync();
@@ -141,13 +144,22 @@ struct PrimitiveIn {
 
 [[vk::ext_extension("SPV_EXT_mesh_shader")]] [[vk::ext_capability(5283)]]
 uint PSMain(VertexOut v, PrimitiveIn p) : SV_Target0 {
+  const MeshFrame f = loadFrame(push.frame);
+  const uint slot = p.visibility >> 6;
+  const uint2 item = work(f).Load2(clusterListOffset(f) + slot * 8);
+  const InstanceGpu inst = loadInstance(f, item.x);
   if (p.material != ~0u) {
-    const MeshFrame f = loadFrame(push.frame);
     const MaterialGpu m = loadMaterial(f, p.material);
     float alpha = m.baseColor.a;
     if (m.baseColorTexture != kNoTexture)
       alpha *= gTextures[NonUniformResourceIndex(m.baseColorTexture)].Sample(gSamplers[f.materialSampler], v.uv).a;
     clip(alpha - m.alphaCutoff);
+  }
+  if (inst.flags & kInstanceCameraFade) {
+    const float opacity = smoothstep(0.0, 5.0, distance(v.worldPosition, f.cameraPosition));
+    const uint2 pixel = uint2(v.position.xy);
+    const float noise = frac(52.9829189 * frac(dot(float2(pixel), float2(0.06711056, 0.00583715))));
+    clip(opacity - noise);
   }
   return p.visibility;
 }

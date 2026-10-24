@@ -343,10 +343,10 @@ Geometry referenceDoorGeometry(const ArchitectureDef& def, double tile, double h
 // + 50 + u); the flame keeps the UVs flameDrop gave it.
 void emberMasonryUVs(Geometry& g, std::pair<double, double> origin, double repeat) {
   // world units per repeat, across and up (the photographs' own proportions: the door oak is portrait, the others landscape)
-  static constexpr double kRepeat[kEmberMaterialTags][2] = {{0, 0}, {1.3, 1.95}, {0.9, 0.6}, {0, 0}, {1.2, 0.8}, {1, 1}, {1.6, 1.07}, {0, 0}};
+  static constexpr double kRepeat[kEmberMaterialTags][2] = {{0, 0}, {1.3, 1.95}, {0.9, 0.6}, {0, 0}, {1.2, 0.8}, {1, 1}, {1.6, 1.07}, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
   for (size_t i = 0; i < g.count(); ++i) {
     const int tag = emberMaterialTag(g.uv[i * 2]);
-    if (tag == 3 || tag == 7) continue;  // the flame and the gothic atlas keep the UVs their builders gave them
+    if (tag == 3 || tag == 7 || tag >= 8) continue;  // the flame, the gothic atlas and the Inn's glass / timber / planks keep the UVs their builders gave them
     const double x = g.px(i) + origin.first, y = g.py(i) + origin.second, z = g.pz(i);
     const double ru = tag ? kRepeat[std::min(tag, kEmberMaterialTags - 1)][0] : repeat, rv = tag ? kRepeat[std::min(tag, kEmberMaterialTags - 1)][1] : repeat;
     double u, v;
@@ -436,6 +436,278 @@ Geometry doorLeaf(const ArchitectureDef& def, double tile, double height, int ro
   const double hx = side * r;
   g.translate(-hx, 0, 0).rotateZ(side * swing).translate(hx, 0, 0);
   return g;
+}
+
+// --- the Inn's kit (2026-10-22, the user: "as paredes em 3D com porta, janela e luz vinda de fora similar à Watchtower no INN") ---
+//
+// Ember's frame (x along the piece, y across: -y is the room's side, z up). A lime-plastered wall carried on a timber frame: a sill
+// beam at the foot, a wall plate under the top and a mid rail (tag 9, proud of the plaster on both faces), a stud at every hex (the
+// core: a corner post at corners and junctions), a post at both ends of a lone segment. The timber's UVs run along each beam's
+// grain (woodUVs: u along the length, v across). The casement window: a rectangular opening through the wall, framed in timber with
+// a mullion and a proud sill, two leaves of leaded glass (tag 8) hinged on the jambs and standing open against the room's face: the
+// sun and the moon pass through the opening. The door: a one-hex rectangular doorway framed in timber; its plank leaf (tag 10, ledges
+// in timber, iron straps and a ring) is a mesh of its own (innDoorLeaf), hinged on the left jamb and swung into the room by
+// MapStage. The doorway: the frame open. The sconce: the wall with an iron bracket holding a candle lantern (iron cap and base, four
+// glass panes, the flame inside) on the room's side; its light is MapStage's (innSconceLight).
+namespace inn {
+constexpr double kProud = 0.05;  // the timber stands this far proud of the plaster, each face
+constexpr double kSillH = 0.19, kPlateH = 0.25, kStud = 0.22, kRailH = 0.16, kRailZ = 0.52;
+// (2026-10-23, the user on the first version: "these doors are too small ... everything is too narrow": the window 1.4 wide, the door
+// as wide as its hex allows, 0.78 of the wall tall; studs only at corners, junctions and run ends, the panels between them clean)
+constexpr double kWinW = 1.4, kWinSill = 0.28, kWinHead = 0.76;  // the opening: its width, its sill and head as shares of the height
+constexpr double kDoorW = 1.5, kDoorHead = 0.78, kLeafT = 0.08;
+constexpr double kSconceZ = 0.56, kSconceOut = 0.40, kLanternW = 0.2, kLanternH = 0.3;
+}  // namespace inn
+
+// Authored UVs for a beam in its own frame (before it is moved): u along `axis` (the grain) in repeats of `along` units, v across in
+// repeats of `across`; the end grain takes the two other axes.
+void woodUVs(Geometry& g, int tag, int axis, double along, double across) {
+  for (size_t i = 0; i < g.count(); ++i) {
+    const double p[3] = {g.px(i), g.py(i), g.pz(i)}, n[3] = {g.nx(i), g.ny(i), g.nz(i)};
+    const int b1 = (axis + 1) % 3, b2 = (axis + 2) % 3;
+    const int b = std::abs(n[b1]) < std::abs(n[b2]) ? b1 : b2;  // the face's other in-plane axis
+    double u = p[axis] / along, v = p[b] / across;
+    if (std::abs(n[axis]) > 0.5) u = p[b1] / across, v = p[b2] / across;
+    g.setUV(i, kEmberUvTag * tag + 50.0 + std::clamp(u, -49.0, 49.0), v);
+  }
+}
+// Authored UVs for a pane or a leaf in its own frame: the whole image across `w` (axis `across`) and up `h` (axis `up`), v = 1 at the top
+// (three's convention: MapStage flips v for the cooked texture).
+void paneUVs(Geometry& g, int tag, int across, int up, double w, double h) {
+  for (size_t i = 0; i < g.count(); ++i) {
+    const double p[3] = {g.px(i), g.py(i), g.pz(i)};
+    g.setUV(i, kEmberUvTag * tag + 50.0 + std::clamp(0.5 + p[across] / w, 0.0, 1.0), std::clamp(0.5 + p[up] / h, 0.0, 1.0));
+  }
+}
+
+// The Inn's door leaf, closed, in the frame's own space (the piece before its quarter turns), hinged on the left jamb (x = -kDoorW / 2
+// + 0.02) and swung `swing` radians into the room (-y).
+Geometry innDoorLeaf(const ArchitectureDef& def, double tile, double height, double swing) {
+  using namespace inn;
+  (void)def, (void)tile;
+  const double z1 = height * kDoorHead, leafW = kDoorW - 0.04, leafH = z1 - 0.03;
+  std::vector<Geometry> parts;
+  auto add = [&](Geometry g, int tag) {
+    if (tag && tag != 8 && tag != 9 && tag != 10) tagMaterial(g, tag);
+    parts.push_back(g.toNonIndexed());
+  };
+  Geometry planks = three::box(leafW, kLeafT, leafH);
+  paneUVs(planks, 10, 0, 2, leafW, leafH);
+  planks.translate(0, 0, leafH / 2 + 0.015);
+  add(std::move(planks), 10);
+  for (double z : {0.18, 0.5, 0.82}) {  // the ledges on the room's face
+    Geometry ledge = three::box(leafW - 0.1, 0.05, 0.14);
+    woodUVs(ledge, 9, 0, 1.2, 0.45);
+    ledge.translate(0, -(kLeafT / 2 + 0.025), leafH * z + 0.015);
+    add(std::move(ledge), 9);
+  }
+  for (double z : {0.2, 0.8}) {  // the iron straps from the hinge side, on the outer face; the hinge knuckles on both faces
+    Geometry strap = three::box(leafW * 0.6, 0.015, 0.09);
+    strap.translate(-leafW / 2 + leafW * 0.3 + 0.02, kLeafT / 2 + 0.008, leafH * z + 0.015);
+    add(std::move(strap), 2);
+    for (int face : {-1, 1}) {
+      Geometry knuckle = three::box(0.05, 0.03, 0.12);
+      knuckle.translate(-leafW / 2 + 0.04, face * (kLeafT / 2 + 0.012), leafH * z + 0.015);
+      add(std::move(knuckle), 2);
+    }
+  }
+  Geometry ring = three::torus(0.06, 0.012, 8, 18);
+  ring.rotateX(kPi / 2).translate(leafW / 2 - 0.16, -(kLeafT / 2 + 0.05), leafH * 0.45);
+  add(std::move(ring), 2);
+  Geometry plate = three::box(0.1, 0.012, 0.1);
+  plate.translate(leafW / 2 - 0.16, -(kLeafT / 2 + 0.006), leafH * 0.48);
+  add(std::move(plate), 2);
+  Geometry g = three::merge(parts);
+  const double hx = -(kDoorW / 2 - 0.02);
+  g.translate(-hx, 0, 0).rotateZ(-swing).translate(hx, 0, 0);
+  return g;
+}
+
+Geometry innGeometry(const ArchitectureDef& def, double tile, double height, int rotation, const std::vector<Conn>& connections) {
+  using namespace inn;
+  const double T = tile * 0.32 * def.wallThicknessScale, H = height;
+  std::vector<Geometry> parts;
+  auto plaster = [&](double w, double d, double h, double x, double y, double z, double angle = 0.0) {
+    Geometry b = three::box(w, d, h);
+    b.rotateZ(angle).translate(x, y, z);
+    parts.push_back(b.toNonIndexed());
+  };
+  auto timber = [&](double w, double d, double h, double x, double y, double z, double angle = 0.0, int grain = 0) {
+    Geometry b = three::box(w, d, h);
+    woodUVs(b, 9, grain, 1.2, 0.45);
+    b.rotateZ(angle).translate(x, y, z);
+    parts.push_back(b.toNonIndexed());
+  };
+  auto iron = [&](Geometry g) {
+    tagMaterial(g, 2);
+    parts.push_back(g.toNonIndexed());
+  };
+  // the frame's courses along a run of `length` centred at (x, y) along `angle`: the sill beam, the wall plate, the mid rail
+  auto courses = [&](double length, double x, double y, double angle, bool rail) {
+    timber(length, T + 2 * kProud, kSillH, x, y, kSillH / 2, angle);
+    timber(length, T + 2 * kProud, kPlateH, x, y, H - kPlateH / 2, angle);
+    if (rail) timber(length, T + 2 * kProud * 0.6, kRailH, x, y, H * kRailZ, angle);
+  };
+  // The candle lantern on the room's face (local -y), on a bracket at kSconceZ of the height; the flame tagged emissive.
+  auto lantern = [&](double angle) {
+    const double y0 = -(T / 2 + kProud), zb = H * kSconceZ;
+    std::vector<Geometry> t;
+    auto part = [&](Geometry g, int tag) {
+      if (tag != 8) tagMaterial(g, tag);
+      t.push_back(g.toNonIndexed());
+    };
+    Geometry plate = three::box(0.16, 0.02, 0.28);
+    plate.translate(0, y0 - 0.01, zb + 0.3);
+    part(std::move(plate), 2);
+    Geometry arm = three::box(0.03, kSconceOut + 0.02, 0.03);
+    arm.translate(0, y0 - kSconceOut / 2, zb + 0.42);
+    part(std::move(arm), 2);
+    Geometry hook = three::box(0.03, 0.03, 0.14);
+    hook.translate(0, y0 - kSconceOut, zb + 0.35);
+    part(std::move(hook), 2);
+    const double ly = y0 - kSconceOut, lw = kLanternW, lh = kLanternH;
+    Geometry cap = three::box(lw + 0.04, lw + 0.04, 0.04);
+    cap.translate(0, ly, zb + lh / 2 + 0.02);
+    part(std::move(cap), 2);
+    Geometry peak = three::box(0.08, 0.08, 0.05);
+    peak.translate(0, ly, zb + lh / 2 + 0.065);
+    part(std::move(peak), 2);
+    Geometry base = three::box(lw + 0.02, lw + 0.02, 0.03);
+    base.translate(0, ly, zb - lh / 2 - 0.015);
+    part(std::move(base), 2);
+    for (int sx : {-1, 1})
+      for (int sy : {-1, 1}) {
+        Geometry post = three::box(0.02, 0.02, lh);
+        post.translate(sx * lw / 2, ly + sy * lw / 2, zb);
+        part(std::move(post), 2);
+      }
+    // (the lantern's panes take the middle 40 % of the glass image's height: the image is a tall casement, 4 : 1)
+    for (int side : {-1, 1}) {
+      Geometry pane = three::box(lw - 0.04, 0.008, lh - 0.04);
+      paneUVs(pane, 8, 0, 2, lw - 0.04, (lh - 0.04) * 2.5);
+      pane.translate(0, ly + side * lw / 2, zb);
+      part(std::move(pane), 8);
+      Geometry pane2 = three::box(0.008, lw - 0.04, lh - 0.04);
+      paneUVs(pane2, 8, 1, 2, lw - 0.04, (lh - 0.04) * 2.5);
+      pane2.translate(side * lw / 2, ly, zb);
+      part(std::move(pane2), 8);
+    }
+    Geometry flame = flameDrop(0, 0, 0);
+    flame.scale(0.5, 0.5, 0.5).translate(0, ly, zb - lh / 2 + 0.08);
+    t.push_back(flame.toNonIndexed());
+    Geometry all = three::merge(t);
+    all.rotateZ(angle);
+    parts.push_back(std::move(all));
+  };
+  const double axis = emberAxisAngle(rotation, connections);
+  const bool horizontal = std::abs(std::cos(axis)) > 0.5;
+  const double span = connections.empty() ? tile * (horizontal ? kSqrt3 : 1.5) : std::hypot(connections.front().first, connections.front().second);
+  if (def.emberStyle == "inn-wall" || def.emberStyle == "inn-sconce") {
+    const bool sconce = def.emberStyle == "inn-sconce";
+    if (connections.empty()) {
+      plaster(span, T, H, 0, 0, H / 2);
+      courses(span, 0, 0, 0, true);
+      for (int side : {-1, 1}) timber(kStud, T + 2 * kProud, H, side * (span - kStud) / 2, 0, H / 2, 0, 2);
+      if (sconce) lantern(0.0);
+      Geometry g = three::merge(parts);
+      g.rotateZ(axis);
+      return g;
+    }
+    plaster(T, T, H, 0, 0, H / 2);
+    // the post at the core: at a corner, a junction or a run's end (a straight run keeps its plaster panels clean between them)
+    bool straight = connections.size() == 2;
+    if (straight) {
+      const auto& [ax, ay] = connections[0];
+      const auto& [bx, by] = connections[1];
+      straight = std::abs(ax * by - ay * bx) < 1e-6 * std::max(1.0, std::hypot(ax, ay) * std::hypot(bx, by)) && ax * bx + ay * by < 0.0;
+    }
+    if (!straight) timber(T + 2 * kProud, T + 2 * kProud, H, 0, 0, H / 2, 0, 2);
+    for (const auto& [cx, cy] : connections) {
+      const double angle = std::atan2(cy, cx), length = std::hypot(cx, cy) / 2 + tile * 0.01;
+      plaster(length, T, H, cx / 4, cy / 4, H / 2, angle);
+      courses(length, cx / 4, cy / 4, angle, true);
+    }
+    if (sconce) lantern(axis);
+    return three::merge(parts);
+  }
+  if (def.emberStyle == "inn-window") {
+    // A straight piece spanning to its neighbours' midpoints, pierced by the opening; the frame, the mullion, the proud sill; the
+    // two leaves standing open against the room's face (hinged on the jambs, swung ~100 degrees into the room).
+    const double length = span + tile * 0.02, hw = kWinW / 2, z0 = H * kWinSill, z1 = H * kWinHead;
+    Shape s;
+    s.moveTo(-length / 2, 0);
+    s.lineTo(-length / 2, H);
+    s.lineTo(length / 2, H);
+    s.lineTo(length / 2, 0);
+    s.closePath();
+    three::Path hole;
+    hole.moveTo(-hw, z0);
+    hole.lineTo(hw, z0);
+    hole.lineTo(hw, z1);
+    hole.lineTo(-hw, z1);
+    hole.lineTo(-hw, z0);
+    hole.closePath();
+    s.holes.push_back(hole);
+    parts.push_back(extruded(s, T, 4).toNonIndexed());
+    const double fd = T + 2 * kProud + 0.02;
+    for (int side : {-1, 1}) timber(0.14, fd, z1 - z0 + 0.28, side * (hw + 0.07), 0, (z0 + z1) / 2, 0, 2);
+    timber(kWinW + 0.28, fd, 0.14, 0, 0, z1 + 0.07);
+    timber(kWinW + 0.36, T + 2 * kProud + 0.16, 0.12, 0, 0, z0 - 0.06);
+    timber(0.08, T * 0.5, z1 - z0, 0, 0, (z0 + z1) / 2, 0, 2);
+    courses(length, 0, 0, 0, false);
+    const double leafW = hw - 0.05, leafH = z1 - z0 - 0.06, swing = 1.75;
+    for (int side : {-1, 1}) {
+      std::vector<Geometry> leaf;
+      auto member = [&](double w, double d, double h, double x, double z, int grain) {
+        Geometry b = three::box(w, d, h);
+        woodUVs(b, 9, grain, 1.2, 0.45);
+        b.translate(-side * x, 0, z);
+        leaf.push_back(b.toNonIndexed());
+      };
+      member(0.05, 0.04, leafH, 0.025, 0, 2);
+      member(0.05, 0.04, leafH, leafW - 0.025, 0, 2);
+      member(leafW, 0.04, 0.05, leafW / 2, leafH / 2 - 0.025, 0);
+      member(leafW, 0.04, 0.05, leafW / 2, -(leafH / 2 - 0.025), 0);
+      member(leafW, 0.04, 0.04, leafW / 2, 0, 0);  // the transom bar between the two panes
+      Geometry pane = three::box(leafW - 0.1, 0.015, leafH - 0.1);
+      paneUVs(pane, 8, 0, 2, leafW - 0.1, leafH - 0.1);
+      pane.translate(-side * leafW / 2, 0, 0);
+      leaf.push_back(pane.toNonIndexed());
+      Geometry g = three::merge(leaf);
+      g.rotateZ(side * swing).translate(side * hw, -(T / 2 + kProud), (z0 + z1) / 2);
+      parts.push_back(std::move(g));
+    }
+    Geometry g = three::merge(parts);
+    g.rotateZ(axis);
+    return g;
+  }
+  if (def.emberStyle == "inn-door" || def.emberStyle == "inn-doorway") {
+    // The two-hex doorway: the plaster each side and over the lintel, the timber jambs and head, the sill beam and rail stopping at
+    // the jambs, the wall plate whole, the hinge knuckles on both jambs. The leaves are their own meshes (innDoorLeaf).
+    const double width = tile * ((rotation & 1) ? 1.5 : kSqrt3) + tile * 0.02, hw = kDoorW / 2, z1 = H * kDoorHead;
+    const double sideW = width / 2 - hw;
+    for (int side : {-1, 1}) plaster(sideW, T, H, side * (hw + sideW / 2), 0, H / 2);
+    plaster(kDoorW, T, H - z1, 0, 0, (H + z1) / 2);
+    const double fd = T + 2 * kProud + 0.02;
+    for (int side : {-1, 1}) timber(0.14, fd, z1 + 0.12, side * (hw + 0.07), 0, (z1 + 0.12) / 2, 0, 2);
+    timber(kDoorW + 0.28, fd, 0.16, 0, 0, z1 + 0.08);
+    const double beamW = sideW - 0.14;
+    for (int side : {-1, 1}) {
+      timber(beamW, T + 2 * kProud, kSillH, side * (hw + 0.14 + beamW / 2), 0, kSillH / 2);
+      timber(beamW, T + 2 * kProud * 0.6, kRailH, side * (hw + 0.14 + beamW / 2), 0, H * kRailZ);
+    }
+    timber(width, T + 2 * kProud, kPlateH, 0, 0, H - kPlateH / 2);
+    if (def.emberStyle == "inn-door")
+      for (double z : {0.2, 0.8}) {
+        Geometry knuckle = three::box(0.05, 0.05, 0.12);
+        knuckle.translate(-(hw - 0.02), -(kLeafT / 2 + 0.03), (z1 - 0.03) * z + 0.015);
+        iron(std::move(knuckle));
+      }
+    Geometry g = three::merge(parts);
+    g.rotateZ(-rotation * kPi / 2);
+    return g;
+  }
+  return three::merge(parts);
 }
 
 // --- the stairs (2026-10-21, the user: "escadas 3D da torre (subindo e descendo), no kit, com luz") ---------------------------
@@ -835,6 +1107,11 @@ Geometry emberGeometry(const ArchitectureDef& def, double tile, double height, i
     emberMasonryUVs(g, origin, std::max(def.textureRepeat, 0.1));
     return g;
   }
+  if (def.emberStyle.starts_with("inn-")) {
+    Geometry g = innGeometry(def, tile, height, rotation, connections);
+    emberMasonryUVs(g, origin, std::max(def.textureRepeat, 0.1));
+    return g;
+  }
   const double T = tile * 0.32 * def.wallThicknessScale;
   const double plinthH = height * 0.065, plinthOut = T * 0.16;
   const double capH = height * 0.045, capOut = T * 0.08;
@@ -977,7 +1254,8 @@ Geometry emberGeometry(const ArchitectureDef& def, double tile, double height, i
 
 three::Geometry emberDoorLeafPiece(const ArchitectureDef& def, int rotation, int side) {
   const double height = 1.0 * 0.75 * def.heightScale * 3.5 * 1.6;  // pieceGeometry's WALL_HUMAN_SCALE, tile 1
-  Geometry g = doorLeaf(def, 1.0, height, rotation, side, 0.0);
+  if (def.emberStyle == "inn-door" && side > 0) return {};        // the Inn's door has one leaf, on the left jamb
+  Geometry g = def.emberStyle == "inn-door" ? innDoorLeaf(def, 1.0, height, 0.0) : doorLeaf(def, 1.0, height, rotation, side, 0.0);
   emberMasonryUVs(g, {0.0, 0.0}, std::max(def.textureRepeat, 0.1));
   g.rotateZ(-rotation * kPi / 2);
   g.rotateX(-kPi / 2);
@@ -986,12 +1264,24 @@ three::Geometry emberDoorLeafPiece(const ArchitectureDef& def, int rotation, int
 
 std::array<double, 3> emberDoorHingePiece(const ArchitectureDef& def, int rotation, int side) {
   const double height = 1.0 * 0.75 * def.heightScale * 3.5 * 1.6;
-  double width, radius, spring, rise;
-  emberArchOf(def, 1.0, height, rotation, width, radius, spring, rise);
+  double hx;
+  if (def.emberStyle == "inn-door") {
+    hx = -(inn::kDoorW / 2 - 0.02);
+  } else {
+    double width, radius, spring, rise;
+    emberArchOf(def, 1.0, height, rotation, width, radius, spring, rise);
+    hx = side * (radius - 0.02);
+  }
   // the jamb in the frame's space, through the piece's quarter turns (rotateZ(-rotation * pi / 2)) and up (rotateX(-pi / 2): (x, y, z) -> (x, z, -y))
-  const double hx = side * (radius - 0.02), a = -rotation * kPi / 2;
+  const double a = -rotation * kPi / 2;
   const double x = hx * std::cos(a), y = hx * std::sin(a);
   return {x, 0.0, -y};
+}
+
+std::array<double, 2> innSconceLight(const ArchitectureDef& def) {
+  const double height = 0.75 * def.heightScale * 3.5 * 1.6, T = 0.32 * def.wallThicknessScale;
+  // the flame's tip: kSconceOut beyond the timber's face, at the lantern's foot + the flame's height (flameDrop's 0.15 x 2.6 at half size)
+  return {T / 2 + inn::kProud + inn::kSconceOut, height * inn::kSconceZ - inn::kLanternH / 2 + 0.08 + 0.2};
 }
 
 std::array<double, 3> emberDirPiece(int rotation) { return emberToPiece(1, 0, 0, rotation); }
