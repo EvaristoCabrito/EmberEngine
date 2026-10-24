@@ -286,7 +286,7 @@ class MapStage final : public Stage {
     actionCamera_ = std::clamp(options.actionCamera, 0, 1);
     floorChoice_ = std::clamp(options.floorImage, 0, 1);
     windFogChoice_ = std::clamp(options.windFog, 0, 1);
-    waterLook_ = std::clamp(options.waterLook, 0, 1);
+    waterLook_ = std::clamp(options.waterLook, 0, 2);
     skyReflect_ = std::clamp(options.skyReflect, 0, 1);
     clouds_ = std::clamp(options.clouds, 0, 2);
     dayCycle_ = std::clamp(options.hour, 0, 10);
@@ -841,13 +841,13 @@ class MapStage final : public Stage {
     }
     {
       WaterView water = ground_.water(look_);
-      water.look = static_cast<uint32_t>(waterLook_);  // panel "Água": 0 the original, 1 ember (look 001)
+      water.look = static_cast<uint32_t>(waterLook_);  // panel "Água": 0 the original, 1 ember (look 001), 2 correnteza (look 002)
       renderer.setWater(water);
       // Panel "Água 3D", always drawn: 0 the original (Engine2's ThreeWater: shader look 1), 1 rio (the board's original
-      // material on the sheet: 0), 2 rio ember (look 001 on the sheet: 2).
+      // material on the sheet: 0), 2 rio ember (look 001 on the sheet: 2), 3 rio correnteza (look 002 on the sheet: 3).
       Water3DView water3d = ground_.water3d(look_);
-      static constexpr uint32_t kWater3dShader[3] = {1u, 0u, 2u};
-      water3d.look = kWater3dShader[std::clamp(water3dLook_, 0, 2)];
+      static constexpr uint32_t kWater3dShader[4] = {1u, 0u, 2u, 3u};
+      water3d.look = kWater3dShader[std::clamp(water3dLook_, 0, 3)];
       renderer.setWater3d(water3d);
     }
     // The sky's reflection map and the cloud sheet (panel "Reflexo do céu", "Nuvens"); the sheet sits well above the board.
@@ -1497,13 +1497,13 @@ class MapStage final : public Stage {
     {
       // The board's water: the original (Engine2's diorama material, the default) or look 001 "ember" (looks/water/README.md).
       // Every water stays selectable, the original is the default (the user, 2026-10-19: "NUNCA TROCAR O ASSET PADRÃO").
-      static const char* kWater[2] = {"original", "ember"};
-      dropdown("Água", waterLook_, 2, [](int i) { return std::string(kWater[i]); });
+      static const char* kWater[3] = {"original", "ember", "correnteza"};
+      dropdown("Água", waterLook_, 3, [](int i) { return std::string(kWater[i]); });
     }
     if (board_ && board_->draft().water3d.any()) {
       // No OFF: the 3D water is always drawn (the user, 2026-10-19: "só existe água 3d, não pode ficar off").
-      static const char* kWater3d[3] = {"original", "rio", "rio ember"};
-      dropdown("Água 3D", water3dLook_, 3, [](int i) { return std::string(kWater3d[i]); });
+      static const char* kWater3d[4] = {"original", "rio", "rio ember", "rio correnteza"};
+      dropdown("Água 3D", water3dLook_, 4, [](int i) { return std::string(kWater3d[i]); });
     }
     {
       // The sky's reflection map on every specular surface (water first), and the cloud sheet (sky, reflections, shadows).
