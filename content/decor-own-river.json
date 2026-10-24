@@ -1,0 +1,10 @@
+{
+  "section": "Caverna · Margens do Rio Negro",
+  "decorations": [
+    {"id": "ember-river-column", "image": "river-column-v01", "name": "Coluna de gesso", "like": "cave-basalt-006-pillar"},
+    {"id": "ember-river-fluorite", "image": "river-fluorite-v01", "name": "Drusa de fluorita", "like": "cave-glowing-mushrooms",
+     "light": {"color": [0.66, 0.45, 1], "intensity": 3.5, "radius": 4.2, "flicker": 0.05, "minHeight": 1}},
+    {"id": "ember-river-mooring-lamp", "image": "river-mooring-lamp-v01", "name": "Lanterna de amarração", "like": "cave-basalt-006-brazier",
+     "light": {"color": [1, 0.9, 0.72], "intensity": 4, "radius": 4.68, "flicker": 0.1, "minHeight": 1}}
+  ]
+}

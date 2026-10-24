@@ -1,7 +1,9 @@
 """O Underdark de Mordávia (mordavia-underdark), the Misty Cave's map 4, rebuilt from the user's art (Attachments/MistyCave/4rdFloor,
 docs/MISTY_DEPTH4_PROMPTS.md): a new version written beside the old (the campaign plays the highest serial); the old file is only read.
 
-    python -I tools/scripts/maps/make_misty_depth4.py content/maps/ember/mordavia-underdark002.json content/maps/ember/mordavia-underdark003.json
+    python -I tools/scripts/maps/make_misty_depth4.py content/maps/ember/mordavia-underdark002.json content/maps/ember/mordavia-underdark004.json
+
+(003 was the first run, before the panorama arrived; 004 adds it, the user's "Mar subterrâneo sob estrelas de cristal".)
 
 The crown of the Root-Crown (hex grid 52 x 38, pointy-top, odd rows shifted right), the colossal tree the party has climbed out onto:
   - the crown's boughs (plains: silver bark), broad roads four hexes wide over the void (the drop to the inner sea), from the west
@@ -201,7 +203,7 @@ def main():
     d.update({
         "cols": COLS, "rows": ROWS, "tiles": grid, "tileVariants": [None] * (COLS * ROWS), "tileRots": [],
         "terrainElevations": elev, "decorations": decorations, "playerSpawns": players, "enemySpawns": enemies,
-        "environment": "indoor", "underground": True, "emberTiles": "cave4-v01",
+        "environment": "indoor", "underground": True, "emberTiles": "cave4-v01", "backgroundImage": "ember-mordavia-underdark-v01",
     })
     doc = {"serial": int(out[-8:-5]), "savedAt": int(time.time() * 1000), "draft": d}
     open(out, "w", encoding="utf-8", newline="\n").write(json.dumps(doc, ensure_ascii=False, indent=2))

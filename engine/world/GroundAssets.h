@@ -105,6 +105,15 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"deep-mycelium-v01", "hill", "ember-micelio-coral-v01", "content/ground/micelio-coral-v01.png", 4.0f, true},
     {"deep-mycelium-v01", "snow", "ember-micelio-lodo-v01", "content/ground/micelio-lodo-v01.png", 4.0f, true},
     {"deep-mycelium-v01", "side", "ember-micelio-parede-v01", "content/ground/micelio-parede-v01.png", 3.0f},
+    // The Misty Cave's depth 1, As Margens do Rio Negro (river-v01, Attachments/Underworld, 2026-10-23; docs/MISTY_RIVER_PROMPTS.md):
+    // the black shale terraces with gypsum flowers on plains, the river-wardens' grooved path on nave, the river's debris on ruins, the
+    // water-carved backs of the natural rock bridges on hill, the rippled black silt of the banks on snow; the shale wall on the sides.
+    {"river-v01", "plains", "ember-river-xisto-v01", "content/ground/river-xisto-v01.png", 4.5f, true},
+    {"river-v01", "nave", "ember-river-travessia-v01", "content/ground/river-travessia-v01.png", 4.0f, true},
+    {"river-v01", "ruins", "ember-river-detritos-v01", "content/ground/river-detritos-v01.png", 4.0f, true},
+    {"river-v01", "hill", "ember-river-ponte-v01", "content/ground/river-ponte-v01.png", 4.0f, true},
+    {"river-v01", "snow", "ember-river-lodo-v01", "content/ground/river-lodo-v01.png", 4.5f, true},
+    {"river-v01", "side", "ember-river-parede-v01", "content/ground/river-parede-v01.png", 3.0f},
     // The Misty Cave's map 4, O Underdark de Mordávia (cave4-v01, Attachments/MistyCave/4rdFloor, 2026-10-23; docs/MISTY_DEPTH4_PROMPTS.md):
     // the Root-Crown's silver bark on plains, the Enclave's plank decks on nave, broken branches and crystal shards on ruins, the crown's
     // knotted burls on hill, the Glasswater Sea's shore on snow; the boughs' flanks on the sides.

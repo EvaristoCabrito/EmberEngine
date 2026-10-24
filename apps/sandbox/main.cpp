@@ -1267,7 +1267,7 @@ int runWindow(const Options& o) {
     // Screen changes happen between frames, with the GPU idle: the old screen's resources go before the new one loads.
     std::optional<MapStageOptions> retry;
     if (auto* map = dynamic_cast<MapStage*>(stage.get())) {
-      if (const std::string floor = map->wantsFloor(); floor == OverworldStage::kUnderworldExit && !pending) {
+      if (map->wantsFloor() == OverworldStage::kUnderworldExit && !pending) {
         // The Underdark of Mordávia's exit (the Misty Cave's map 4): the world map opens on the Atlas do Submundo. The campaign
         // writes the map done (a fight won first, as on any floor) and "underworldReached", so the world map's Underworld word
         // switches from then on; a test session goes back to its RPG map (Modo teste always has the Underworld).
