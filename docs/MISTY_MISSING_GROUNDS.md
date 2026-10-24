@@ -14,6 +14,10 @@ What each map of the dungeon has today (the main chain and its side maps):
 | Esporabrigo (misty-sporehaven), the Bacia's side branch | none | all: T1-T5 and W1, below |
 | Micélio Profundo (misty-deep-mycelium), the Rio Negro's side branch | none | all: T1-T5 and W1, below |
 
+**All delivered the same evening (Attachments/Underworld) and built:** the Rio Negro (river-v01, map 003), the Bacia's wall (cave3-v01
+side), Esporabrigo (sporehaven-v01, map 003), the Micélio Profundo (deep-mycelium-v01, map 002). What is still missing in the dungeon
+is decorations only: `docs/MISTY_MISSING_ART.md`.
+
 O Céu de Pedra (misty-hollow-earth) left the chain and is not listed. Same rules as every level: square images, files to
 `Attachments/MistyCave/<folder>/` with any names (folders named below).
 
