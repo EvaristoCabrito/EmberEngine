@@ -94,6 +94,8 @@ class OverworldStage : public Stage {
   // The Underdark of Mordávia's exit (the Misty Cave's map 4, mordavia-underdark): a floor connector whose target is this id opens
   // the world map on the Atlas do Submundo (main.cpp), the campaign recording "underworldReached".
   static constexpr const char* kUnderworldExit = "underworld-atlas";
+  // The Graveyard's film (CutsceneScreen opens an absolute path as it is: engine2Public / absolute = the absolute path).
+  static constexpr const char* kGraveyardFilm = "content/films/graves-intro-v01.mp4";
   void showUnderworld() {
     if (!underworld_) toggleWorld();
   }
@@ -222,7 +224,18 @@ class OverworldStage : public Stage {
         // GameApp beginMission: some missions open with their film (bound to the mission id, not its position).
         const std::string id = briefing_->draftId;
         const char* film = id == "aldeia" ? "game/aldeia-intro.mp4" : id == "thebridge" ? "game/thebridge-intro.mp4" : id == "templo" ? "game/asherah-rite.mp4" : nullptr;
-        if (film && !test()) {
+        // The Graveyard's film (the user's Graves video, 2026-10-23), the first time the party goes in: the campaign's save and
+        // Modo teste's own session save each keep the flag.
+        if (id == "cemiterio-esquecidos" && !save_.value("seenGraveyardIntro", false)) {
+          MissionEntry entry = *briefing_;
+          const std::string graves = std::filesystem::absolute(kGraveyardFilm).string();
+          playFilm(graves.c_str(), [this, entry] {
+            save_["seenGraveyardIntro"] = true;
+            addAffinity("Neera", "Salazar", 2);  // the user: "after that scene play Neera and Salazar gain +2 Affinity"
+            write();
+            if (callbacks_.play) callbacks_.play(entry);
+          });
+        } else if (film && !test()) {
           MissionEntry entry = *briefing_;
           playFilm(film, [this, entry] {
             if (callbacks_.play) callbacks_.play(entry);
@@ -393,6 +406,20 @@ class OverworldStage : public Stage {
   }
 
   // A film over everything, then `then`.
+  // A story moment's affinity between two heroes, the conversations' rule (BattleTalk.h applyReplyAffinity): the sorted pair key,
+  // the party leader's gains catching up faster, one decimal, -100..100.
+  void addAffinity(const std::string& a, const std::string& b, double delta) {
+    const std::string pair = a < b ? a + "|" + b : b + "|" + a;
+    e2::Json& scores = save_["affinityScores"];
+    if (!scores.is_object()) scores = e2::Json::object();
+    const double score = scores.contains(pair) && scores[pair].is_number() ? scores[pair].get<double>() : 0.0;
+    std::string lead = "Kael";
+    if (const auto l = save_.find("partyLeader"); l != save_.end() && l->is_string() && world_.heroRecruited(l->get<std::string>(), save_))
+      lead = l->get<std::string>();
+    if (delta > 0 && (a == lead || b == lead)) delta = std::floor(delta * (2 - std::max(0.0, score) / 100) * 100 + 0.5) / 100;
+    scores[pair] = std::clamp(std::floor((score + delta) * 10 + 0.5) / 10, -100.0, 100.0);
+  }
+
   void playFilm(const char* film, std::function<void()> then) {
     film_.emplace(paths_.engine2Public, film);
     afterFilm_ = std::move(then);

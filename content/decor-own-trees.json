@@ -1,0 +1,13 @@
+{
+  "section": "Árvores mortas",
+  "decorations": [
+    {"id": "ember-deadtree-oak", "image": "deadtree-oak-v01", "name": "Carvalho morto gigante", "like": "wilds-dead-oak", "size": {"w": 7.65, "h": 5.6}},
+    {"id": "ember-deadtree-pine", "image": "deadtree-pine-v01", "name": "Pinheiro queimado", "like": "wilds-dead-oak", "size": {"w": 2.13, "h": 6.4}},
+    {"id": "ember-deadtree-split", "image": "deadtree-split-v01", "name": "Árvore partida pelo raio", "like": "wilds-dead-oak", "size": {"w": 4.47, "h": 5.0}},
+    {"id": "ember-deadtree-willow", "image": "deadtree-willow-v01", "name": "Salgueiro morto", "like": "wilds-dead-oak", "size": {"w": 4.5, "h": 5.0}},
+    {"id": "ember-deadtree-leaning", "image": "deadtree-leaning-v01", "name": "Árvore tombada", "like": "wilds-dead-oak", "size": {"w": 5.12, "h": 4.6}},
+    {"id": "ember-deadtree-snag", "image": "deadtree-snag-v01", "name": "Tronco oco gigante", "like": "wilds-dead-oak", "size": {"w": 4.23, "h": 4.8}},
+    {"id": "ember-deadtree-spiral", "image": "deadtree-spiral-v01", "name": "Árvore retorcida", "like": "wilds-dead-oak", "size": {"w": 4.0, "h": 5.0}},
+    {"id": "ember-deadtree-spiral-b", "image": "deadtree-spiral-v02", "name": "Árvore retorcida (variação)", "like": "wilds-dead-oak", "size": {"w": 3.67, "h": 5.0}}
+  ]
+}
