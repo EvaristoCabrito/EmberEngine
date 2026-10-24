@@ -89,13 +89,22 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"cave3-v01", "side", "ember-cave3-parede-v01", "content/ground/cave3-parede-v01.png", 3.0f},
     // Esporabrigo, the fungus-folk's village in the Bacia (sporehaven-v01, Attachments/Underworld, 2026-10-23;
     // docs/MISTY_MISSING_GROUNDS.md): the tilled beds on plains, the felted mycelium lanes on nave, the harvest refuse on ruins, the
-    // stalk-round terraces on hill; the Bacia's mycelium wall on the sides (the village's own palisade W1 and its spore wash T5 not
-    // delivered yet).
+    // stalk-round terraces on hill, the spore-washing pool's edge on snow; the village's palisade of stalk rounds on the sides.
     {"sporehaven-v01", "plains", "ember-sporehaven-canteiros-v01", "content/ground/sporehaven-canteiros-v01.png", 4.5f, true},
     {"sporehaven-v01", "nave", "ember-sporehaven-feltro-v01", "content/ground/sporehaven-feltro-v01.png", 4.0f, true},
     {"sporehaven-v01", "ruins", "ember-sporehaven-colheita-v01", "content/ground/sporehaven-colheita-v01.png", 4.0f, true},
     {"sporehaven-v01", "hill", "ember-sporehaven-talos-v01", "content/ground/sporehaven-talos-v01.png", 4.0f, true},
-    {"sporehaven-v01", "side", "ember-sporehaven-parede-v01", "content/ground/cave3-parede-v01.png", 3.0f},  // its own key: one asset per row
+    {"sporehaven-v01", "snow", "ember-sporehaven-lavagem-v01", "content/ground/sporehaven-lavagem-v01.png", 4.0f, true},
+    {"sporehaven-v01", "side", "ember-sporehaven-palicada-v01", "content/ground/sporehaven-palicada-v01.png", 3.0f},
+    // O Micélio Profundo, the fungus-folk's colony by the black river (deep-mycelium-v01, Attachments/Underworld, 2026-10-23;
+    // docs/MISTY_MISSING_GROUNDS.md): the lilac mycelium lace over shale on plains, the corded shale causeways on nave, the river refuse on
+    // ruins, the coral-fungus mounds on hill, the sown river silt on snow; the shale wall wrapped in mycelium on the sides.
+    {"deep-mycelium-v01", "plains", "ember-micelio-renda-v01", "content/ground/micelio-renda-v01.png", 4.5f, true},
+    {"deep-mycelium-v01", "nave", "ember-micelio-calcada-v01", "content/ground/micelio-calcada-v01.png", 4.0f, true},
+    {"deep-mycelium-v01", "ruins", "ember-micelio-refugo-v01", "content/ground/micelio-refugo-v01.png", 4.0f, true},
+    {"deep-mycelium-v01", "hill", "ember-micelio-coral-v01", "content/ground/micelio-coral-v01.png", 4.0f, true},
+    {"deep-mycelium-v01", "snow", "ember-micelio-lodo-v01", "content/ground/micelio-lodo-v01.png", 4.0f, true},
+    {"deep-mycelium-v01", "side", "ember-micelio-parede-v01", "content/ground/micelio-parede-v01.png", 3.0f},
     // The Misty Cave's map 4, O Underdark de Mordávia (cave4-v01, Attachments/MistyCave/4rdFloor, 2026-10-23; docs/MISTY_DEPTH4_PROMPTS.md):
     // the Root-Crown's silver bark on plains, the Enclave's plank decks on nave, broken branches and crystal shards on ruins, the crown's
     // knotted burls on hill, the Glasswater Sea's shore on snow; the boughs' flanks on the sides.

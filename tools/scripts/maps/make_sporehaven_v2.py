@@ -1,14 +1,16 @@
 """Esporabrigo (misty-sporehaven), the fungus-folk's village off the Bacia dos Esporos, rebuilt with the user's art (Attachments/Underworld,
 docs/MISTY_MISSING_GROUNDS.md): a new version written beside the old (the campaign plays the highest serial); the old file is only read.
 
-    python -I tools/scripts/maps/make_sporehaven_v2.py content/maps/ember/misty-sporehaven001.json content/maps/ember/misty-sporehaven002.json
+    python -I tools/scripts/maps/make_sporehaven_v2.py content/maps/ember/misty-sporehaven001.json content/maps/ember/misty-sporehaven003.json
+
+(002 was the first run, before the spore-washing pool and the palisade arrived; 003 adds the pool.)
 
 The village (hex grid 36 x 28, pointy-top, odd rows shifted right), in a clearing of the basin:
   - the people's tilled beds (plains) filling the clearing, its ragged rim falling to the void;
   - the felted mycelium lanes (nave) from the west landing (the connector back to the Bacia) through the plaza in the middle to the east
     fields, and north and south from the plaza;
   - the stalk-round terraces (hill, level 1; the chronicler's at 2) where the homes stand (the old map's three camps), the harvest refuse
-    (ruins) heaped at the clearing's edge;
+    (ruins) heaped at the clearing's edge, the spore-washing pool (snow, still water in its middle) south of the plaza;
   - the old map's three people: Lume, the spores' guardian, by the gate; Nara, the cultivator, in the south-west fields; Orun, the
     chronicler, on the north terrace; their conversations as they were.
 The old map's settings (title, briefing, objective, win by escape, the party) are kept; no enemies (as before). The script fails if any
@@ -80,6 +82,9 @@ def main():
     # the harvest refuse heaped at the edge
     for (cx, cy) in ((32.4, 14.8), (4.6, 8.0), (5.6, 19.4), (30.6, 4.2), (21.8, 20.2)):
         carve(lambda c, r: in_ellipse(c, r, cx, cy, 1.2, 0.9), "ruins", over=("plains",))
+    # the spore-washing pool, south of the plaza between Nara's fields and the south lane
+    carve(lambda c, r: in_ellipse(c, r, 14.4, 19.6, 3.6, 2.1), "snow", over=("plains",))
+    carve(lambda c, r: in_ellipse(c, r, 14.6, 19.8, 1.9, 0.9), "water", over=("snow",))
     # the lanes and the plaza
     lanes = [[(0.6, 14.7), (8.6, 13.6), PLAZA, (27.0, 11.6), (33.4, 10.8)], [PLAZA, (17.6, 6.0), (17.4, 3.2)], [PLAZA, (19.6, 16.6), (20.4, 21.0)],
              [(8.6, 13.6), (9.0, 8.0)], [(27.0, 11.6), (27.2, 7.6)], [(27.0, 11.6), (27.0, 16.0)], [(8.6, 13.6), (10.0, 17.4)]]
@@ -143,7 +148,7 @@ def main():
         decorations.append({"id": pid, "x": c, "y": r})
 
     # --- checks -----------------------------------------------------------------------------------------------------------
-    walk = {k for k, t in tiles.items() if t in ("plains", "nave", "ruins", "hill")}
+    walk = {k for k, t in tiles.items() if t in ("plains", "nave", "ruins", "hill", "snow")}
     start = (players[0]["x"], players[0]["y"])
     seen, todo = {start}, [start]
     while todo:
@@ -161,7 +166,7 @@ def main():
     for m in must:
         if m not in seen:
             raise SystemExit(f"cut off from the party: {m}")
-    walk = {k for k, t in tiles.items() if t in ("plains", "nave", "ruins", "hill")}
+    walk = {k for k, t in tiles.items() if t in ("plains", "nave", "ruins", "hill", "snow")}
 
     grid = [tiles.get((c, r), "void") for r in range(ROWS) for c in range(COLS)]
     elev = [float(level.get((c, r), 0)) for r in range(ROWS) for c in range(COLS)]
