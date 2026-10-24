@@ -6,6 +6,9 @@
     {"id": "ember-cave-pale-fungi", "image": "cave-pale-fungi-v01", "name": "Fungos pálidos", "like": "cave-glowing-mushrooms"},
     {"id": "ember-cave-column", "image": "cave-column-v01", "name": "Coluna natural", "like": "cave-basalt-006-pillar"},
     {"id": "ember-cave-column-slender", "image": "cave-column-slender-v01", "name": "Coluna natural esguia", "like": "cave-basalt-006-edge-pillar"},
-    {"id": "ember-cave-expedition-remains", "image": "cave-expedition-remains-v01", "name": "Restos de uma expedição", "like": "cave-basalt-004-original-bones"}
+    {"id": "ember-cave-expedition-remains", "image": "cave-expedition-remains-v01", "name": "Restos de uma expedição", "like": "cave-basalt-004-original-bones"},
+    {"id": "ember-cave-sealed-door", "image": "cave-sealed-door-v01", "name": "Porta antiga selada", "like": "cave-mossy-rocks", "size": {"w": 3.82, "h": 3.0}},
+    {"id": "ember-cave-sunken-door", "image": "cave-sunken-door-v01", "name": "Porta afundada", "like": "cave-mossy-rocks", "size": {"w": 3.44, "h": 2.8}},
+    {"id": "ember-cave-stake-lantern", "image": "cave-stake-lantern-v01", "name": "Lanterna em estaca", "like": "cave-basalt-006-brazier", "size": {"w": 1.19, "h": 2.4}}
   ]
 }

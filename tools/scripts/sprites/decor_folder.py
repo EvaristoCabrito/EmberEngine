@@ -115,6 +115,8 @@ def add_own_file(cat, file):
         cat["decorations"][did] = dict(cat["decorations"][like], name=o["name"])
         if "light" in o:  # the piece's own light in place of its model's (colour, intensity, radius, flicker, minHeight)
             cat["decorations"][did]["light"] = dict(cat["decorations"][like].get("light") or {}, **o["light"])
+        if "size" in o:  # the piece's own size in world units ({"w", "h"}) in place of its model's
+            cat["decorations"][did]["size"] = dict(o["size"])
         cat["facings"][did] = [dict(f, file=o["image"], image=image) for f in cat["facings"][like]]
         ed["decorationInfo"][did] = dict(ed["decorationInfo"][like], section=section, thumb=image)
         ed["decoMeta"][did] = dict(ed["decoMeta"][like], art=image)

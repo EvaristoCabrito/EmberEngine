@@ -2,8 +2,10 @@
   "section": "Caverna · Bacia dos Esporos",
   "decorations": [
     {"id": "ember-cave3-shelf-boulder", "image": "cave3-shelf-boulder-v01", "name": "Rocha de orelhas-de-pau", "like": "cave-fractured-boulders-001"},
-    {"id": "ember-cave3-trail-marker", "image": "cave3-trail-marker-v01", "name": "Marco do Esporabrigo", "like": "cave-glowing-mushrooms",
-     "light": {"color": [0.34, 0.72, 1], "intensity": 4, "radius": 4.68, "flicker": 0.12, "minHeight": 1}},
-    {"id": "ember-cave3-cocoon", "image": "cave3-cocoon-v01", "name": "Casulo de micélio", "like": "cave-basalt-004-original-bones"}
+    {"id": "ember-cave3-trail-marker", "image": "cave3-trail-marker-v01", "name": "Marco do Esporabrigo", "like": "cave-glowing-mushrooms", "light": {"color": [0.34, 0.72, 1], "intensity": 4, "radius": 4.68, "flicker": 0.12, "minHeight": 1}},
+    {"id": "ember-cave3-cocoon", "image": "cave3-cocoon-v01", "name": "Casulo de micélio", "like": "cave-basalt-004-original-bones"},
+    {"id": "ember-cave3-glow-cluster", "image": "cave3-glow-cluster-v01", "name": "Moita luminosa", "like": "cave-glowing-mushrooms", "size": {"w": 1.56, "h": 1.4}},
+    {"id": "ember-cave3-spore-chimney", "image": "cave3-spore-chimney-v01", "name": "Chaminé de esporos", "like": "cave-mossy-rocks", "size": {"w": 2.0, "h": 2.4}},
+    {"id": "ember-cave3-cap-lantern", "image": "cave3-cap-lantern-v01", "name": "Lanterna de chapéu", "like": "cave-glowing-mushrooms", "size": {"w": 1.45, "h": 2.4}, "light": {"color": [0.34, 0.72, 1], "intensity": 4, "radius": 4.68, "flicker": 0.12, "minHeight": 1}}
   ]
 }

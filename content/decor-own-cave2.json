@@ -7,6 +7,7 @@
     {"id": "ember-cave2-root-stumps", "image": "cave2-root-stumps-v01", "name": "Tocos petrificados", "like": "cave-mossy-rocks"},
     {"id": "ember-cave2-root-ladder", "image": "cave2-root-ladder-v01", "name": "Escada de raízes", "like": "cave-basalt-006-edge-pillar"},
     {"id": "ember-cave2-puffballs", "image": "cave2-puffballs-v01", "name": "Bolotas de esporos", "like": "wilds-mushroom-stump"},
-    {"id": "ember-cave2-sap-camp", "image": "cave2-sap-camp-v01", "name": "Acampamento dos sangradores", "like": "cave-basalt-004-original-bones"}
+    {"id": "ember-cave2-sap-camp", "image": "cave2-sap-camp-v01", "name": "Acampamento dos sangradores", "like": "cave-basalt-004-original-bones"},
+    {"id": "ember-cave2-root-knot", "image": "cave2-root-knot-v01", "name": "Nó de raízes", "like": "cave-fractured-boulders-001", "size": {"w": 2.71, "h": 1.9}}
   ]
 }

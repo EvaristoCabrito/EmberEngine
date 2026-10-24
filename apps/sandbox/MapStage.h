@@ -3013,6 +3013,8 @@ class MapStage final : public Stage {
     // turn (barricades); the art's opaque base sits on the anchor; Ember's layer step moves them along their facing.
     for (const e2::SceneCard& d : scene_->cards) {
       if (lockOpened(d.id, "chest", d.x, d.z)) continue;  // a chest opened with a Gazua is gone (Engine2 drops its decoration)
+      // EmberEngine's own door card standing on a door tile (the Misty Cave's sealed doors, 2026-10-23): gone once that door is open
+      if (d.id.starts_with("ember-") && d.id.find("door") != std::string::npos && lockOpened("door", "doorTile", d.x, d.z)) continue;
       const std::string name = std::filesystem::path(d.image).stem().string();
       const SpriteClipId clip = sprites_.find("decor", name);
       if (clip == kNoSpriteClip) {
