@@ -9637,7 +9637,7 @@ class MapStage final : public Stage {
     std::set<std::string> placed;
     for (size_t i = 0; i < options_.partyFormation.size() && i < cells.size(); ++i)
       if (!options_.partyFormation[i].empty() && placed.insert(options_.partyFormation[i]).second) cells[i] = options_.partyFormation[i];
-    for (const char* h : kHeroes)
+    auto seat = [&](const std::string& h) {
       if (!placed.contains(h))
         if (const auto free = std::find(cells.begin(), cells.end(), std::string()); free != cells.end()) *free = h, placed.insert(h);
     return cells;
@@ -9651,6 +9651,13 @@ class MapStage final : public Stage {
     int best = 1 << 20;
     for (const e2::BattleUnit& u : battle_->units())
       if (u.side == "enemy" && u.alive) best = std::min(best, e2::Battle::distance(at, {u.x, u.y}));
+    };
+    for (const char* h : kHeroes) seat(h);
+    // Every other hero of the party (Isolde, any later one) gets a cell too: left out, it kept the file's hex while the formation
+    // set another hero down on it (the user, 2026-10-25: "dois personagens iniciam no mesmo hex").
+    if (battle_)
+      for (const e2::BattleUnit& u : battle_->units())
+        if (u.side == "player" && !u.summoned) seat(u.name);
     return best;
   }
   // The party set down by its Formação inicial at the map's entry (the first party spawn the editor placed: the map only gives
