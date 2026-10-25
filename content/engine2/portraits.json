@@ -10,7 +10,10 @@
   "brue": "brue",
   "o mudo": "mudinho",
   "a hospede": "mothKeeper",
-  "mercador itinerante": "travelingMerchant"
+  "mercador itinerante": "travelingMerchant",
+  "isolde": "isolde-veo",
+  "selene": "selene",
+  "salazar jovem": "salazar-jovem"
  },
  "vargan": {
   "src": "/game/portraits/vargan.png",
@@ -352,6 +355,18 @@
   "zombieDog": {
    "src": "/game/sprites/zombieDog/1.png",
    "framed": false
+  },
+  "isolde-veo": {
+   "src": "/game/portraits/isolde-bust-v01.jpg",
+   "framed": true
+  },
+  "selene": {
+   "src": "/game/portraits/selene-bust-v01.jpg",
+   "framed": true
+  },
+  "salazar-jovem": {
+   "src": "/game/portraits/salazar-jovem-bust-v01.jpg",
+   "framed": true
   }
  }
 }
