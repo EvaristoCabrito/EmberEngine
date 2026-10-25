@@ -272,6 +272,7 @@ Fighter fighterAt(const Battle& b, size_t unit, int x, int y) {
   // The Guerreiro's conditions (ours): Quebra-Guarda takes sunderPct % off DEF, Grito de Guerra adds rallyPct % to ATK.
   if (u.cond.sunderPct > 0) f.def = jsRound(f.def * (1 - u.cond.sunderPct / 100.0));
   if (u.cond.rallyPct > 0) f.atk = jsRound(f.atk * (1 + u.cond.rallyPct / 100.0));
+  if (oathActive(u)) f.atk = jsRound(f.atk * (1 + kOathAtkPct / 100.0));  // the Cruzado's Juramento
   if (u.side != "player" || u.summoned || !u.alive) return f;
   // The best affinity bonus among the party members standing next to it (BattleEngine.adjacentAllies), plus the worst penalty
   // (a neighbour it is at odds with, score -25 and below).

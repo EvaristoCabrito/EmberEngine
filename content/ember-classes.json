@@ -42,5 +42,22 @@
    "spells": {},
    "spellList": []
   }
+ },
+ "aboutHeroClasses": "EmberEngine's own hero classes (read by engine/world/BattleExport.cpp Rules, merged into content/engine2/battle-rules.json's classes with the same fields; their melee weapons of weaponTypes become usable by them). The Cruzado (the user, 2026-10-25; young Salazar's interlude class, docs/SKILLS_CRUSADER.md): level 10 at most (Spells.cpp classLevelCap), a hybrid a little under the Guerreiro and a little over the Curandeiro (each stat the two classes' mean at the level), the Arqueiro's tier table (T1 at 1, T2 at 4, T3 at 7, nothing above T3), Bênção from 1 and Cleave from 4 (his own spells come from Spells.cpp kEmberSpells); never a shield. Placeholder sprite: kaelEarly (an old warrior, on no map).",
+ "heroClasses": {
+  "crusader": {
+   "name": "Cruzado", "role": "Híbrido sagrado", "sprite": "kaelEarly", "size": 1, "editorHero": "Salazar Jovem",
+   "footprintW": null, "footprintH": null, "footprintOffsets": null, "resistances": {},
+   "minRange": 1, "maxRange": 1, "mov": 5, "boss": false, "undead": false, "summon": false,
+   "initiativeBonus": 3, "shockCharges": 0, "fantomForceCharges": 0,
+   "starterWeapon": "espada-larga", "weaponTypes": ["sword", "mace", "hammer"],
+   "stats": [[30, 7, 4, 5, 5], [34, 8, 5, 7, 6], [37, 9, 5, 9, 8], [41, 10, 6, 11, 9], [44, 11, 6, 13, 11],
+             [48, 12, 7, 15, 12], [51, 13, 7, 17, 14], [55, 14, 8, 19, 15], [58, 15, 8, 21, 17], [62, 16, 9, 23, 18]],
+   "tiers": [[1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+             [3, 1, 0, 0, 0, 0, 0, 0, 0, 0], [3, 2, 0, 0, 0, 0, 0, 0, 0, 0], [4, 2, 1, 0, 0, 0, 0, 0, 0, 0], [4, 3, 1, 0, 0, 0, 0, 0, 0, 0],
+             [5, 3, 2, 0, 0, 0, 0, 0, 0, 0], [5, 4, 2, 0, 0, 0, 0, 0, 0, 0]],
+   "spells": [["bless"], ["bless"], ["bless"], ["bless", "cleave"], ["bless", "cleave"], ["bless", "cleave"], ["bless", "cleave"],
+              ["bless", "cleave"], ["bless", "cleave"], ["bless", "cleave"]]
+  }
  }
 }

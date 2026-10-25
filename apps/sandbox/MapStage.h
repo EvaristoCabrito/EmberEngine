@@ -597,6 +597,7 @@ class MapStage final : public Stage {
       syncGlobes();
       syncWards();
       syncStatus();
+      syncCrusader();
       // Numbers held back for an effect still in the air (a Meteoro's fall).
       for (size_t i = 0; i < pendingFx_.size();) {
         if (time >= pendingFx_[i].first) showEffects(pendingFx_[i].second), pendingFx_.erase(pendingFx_.begin() + static_cast<std::ptrdiff_t>(i));
@@ -5491,7 +5492,7 @@ class MapStage final : public Stage {
       if (storm) {  // Tempestade de Gelo: the storm covers the field the rules just laid (the step aims its centre only)
         for (const e2::BattleHex& h : storm->cells) spots.push_back(hexSpot(h));
       } else if (s.kind == "warCry" || s.kind == "steelWhirlwind" || s.kind == "empowerSummons" || s.kind == "sacrificeBond" || s.kind == "provoke" ||
-                 e2::daggerStrikeKind(s.kind)) {  // Grito de Guerra: the allies it rallies (the caster among them); Redemoinho: the foes it reaches; the Conjurador's: its summons; a Nuvem's dagger: the body it flies at
+                 s.kind == "crusaderMantle" || e2::daggerStrikeKind(s.kind)) {  // Grito de Guerra: the allies it rallies (the caster among them); Redemoinho: the foes it reaches; the Conjurador's: its summons; a Nuvem's dagger: the body it flies at
         for (size_t id : s.ids)
           if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0) spots.push_back(unitSpot(static_cast<size_t>(ui)));
       } else if (s.kind == "turnUndead") {  // Expulsar Mortos-Vivos: the area's hexes; only the undead standing in it keep their card height (they are struck)
@@ -5705,6 +5706,30 @@ class MapStage final : public Stage {
         } else if (it != statusFx_.end()) {
           spellFx_.status().end(it->second, now_);
           statusFx_.erase(it);
+        }
+      }
+    }
+  }
+  // The Cruzado's standing effects (CrusaderFx::stand*): the Juramento's aura while it holds, the Manto's gold outline while the rules
+  // keep the mantle; following the unit, faded out when it lifts, the unit dies or its card is not drawn.
+  void syncCrusader() {
+    if (!battle_) return;
+    for (size_t i = 0; i < battle_->units().size(); ++i) {
+      const e2::BattleUnit& u = battle_->units()[i];
+      const int ui = sceneUnitOf(static_cast<int>(i));
+      const bool shown = u.alive && ui >= 0 && static_cast<size_t>(ui) < unitCard_.size() && unitCard_[static_cast<size_t>(ui)].drawn;
+      for (int c = 0; c < 2; ++c) {
+        const bool on = shown && (c == 0 ? e2::oathActive(u) : u.cond.mantleDice > 0);
+        const int key = static_cast<int>(i) * 2 + c;
+        const auto it = crusaderFx_.find(key);
+        if (on) {
+          const SpellEffects::Spot sp = unitSpot(static_cast<size_t>(ui));
+          if (it == crusaderFx_.end())
+            crusaderFx_[key] = spellFx_.crusader().standStart(c == 0 ? CrusaderFx::Stand::Oath : CrusaderFx::Stand::Mantle, sp.feet, sp.cardHeight, now_);
+          else spellFx_.crusader().standMove(it->second, sp.feet, sp.cardHeight);
+        } else if (it != crusaderFx_.end()) {
+          spellFx_.crusader().standEnd(it->second, now_);
+          crusaderFx_.erase(it);
         }
       }
     }
@@ -5964,7 +5989,8 @@ class MapStage final : public Stage {
                                    "spearToss",      "hookPull",      "poleVault",      "disarm",         "swapPost",      "impaleDrag",  "sentinelVigil",
                                    "circleOfHealing", "resurrection", "judgment",
                                    "placeSwap",      "boneLance",     "mirrorImage",    "detonateSummon", "sacrificeBond", "nightmare",   "empowerSummons",
-                                   "cloudOfDaggers", "daggerStrike", "dispelMagic", "globeOfInvulnerability"};
+                                   "cloudOfDaggers", "daggerStrike", "dispelMagic", "globeOfInvulnerability",
+                                   "holyStrike",     "holyTouch",    "crusaderMantle"};
     // KIND or KIND:VERSION (the version number of the Magias menu; default the menu's choice, at least 01).
     std::string kind = options_.fxTest;
     int look = 0;
@@ -7098,6 +7124,12 @@ class MapStage final : public Stage {
                                                                      : CombatFx::Kind::Physical;
           spellFx_.combat().impact(kind, struck.feet, cardHeightOf(struck), from, now_);
         }
+        // The Cruzado's holy on a blow that landed: Golpe Consagrado's flash, the Manto's spark on any blow of its bearer
+        if (!e.miss && s.type == e2::BattleStep::Type::Combat && striker >= 0 && striker != ui) {
+          const e2::BattleUnit& by = battle_->units()[x.counter ? s.def : s.att];
+          if (!x.counter && s.kind == "holyStrike") spellFx_.crusader().holyImpact({struck.feet, cardHeightOf(struck)}, from, now_);
+          else if (by.cond.mantleDice > 0) spellFx_.crusader().spark({struck.feet, cardHeightOf(struck)}, from, now_);
+        }
         if (!e.miss && e.amount > 0) {
           glm::vec3 dir = struck.feet - from;
           dir.y = 0.0f;
@@ -8184,7 +8216,9 @@ class MapStage final : public Stage {
   // What the hero can put in a socket now: its spells and skills, then the potions it carries.
   std::vector<std::string> hotbarChoices(size_t b) const {
     const e2::BattleUnit& u = battle_->units()[b];
-    std::vector<std::string> out(u.spellList.begin(), u.spellList.end());
+    std::vector<std::string> out;
+    for (const std::string& k : u.spellList)
+      if (!e2::spellPassive(k)) out.push_back(k);  // a passive (the Cruzado's Juramento) works by itself: no socket
     if (u.side == "player")
       for (int k = 0; k < 7; ++k)
         if (u.bag[k] > 0) out.push_back(std::string("potion:") + e2::kPotionIds[k]);
@@ -8235,7 +8269,7 @@ class MapStage final : public Stage {
         if (*potion == e2::kPotionIds[k]) return SocketState{u.bag[k], canAct && u.bag[k] > 0};
       return std::nullopt;
     }
-    if (std::find(u.spellList.begin(), u.spellList.end(), kind) == u.spellList.end()) return std::nullopt;
+    if (std::find(u.spellList.begin(), u.spellList.end(), kind) == u.spellList.end() || e2::spellPassive(kind)) return std::nullopt;
     const int uses = e2::spellUsesLeft(*battle_, b, kind);
     return SocketState{uses, canAct && e2::spellPorted(kind) && uses > 0};
   }
@@ -10287,6 +10321,7 @@ class MapStage final : public Stage {
   std::map<int, std::pair<int, int>> daggerFx_;  // battle unit with a Nuvem de Adagas -> its cloud (DaggerFx::start) and the count last given to it
   std::map<int, int> globeFx_;  // the rules' Globo id -> its standing bubble (MageFx::globeStart)
   std::map<int, int> statusFx_;  // battle unit x 2 (+1 = disease) -> its poison / disease effect (StatusFx::start)
+  std::map<int, int> crusaderFx_;  // battle unit x 2 (+1 = the Manto) -> its Juramento / Manto standing effect (CrusaderFx::standStart)
   std::unordered_set<int> awake_;         // enemies that have seen the party (fog)
   int roamLeader_ = -1;                   // free roam: the scene unit the party follows
   float modeSwitchAt_ = -100.0f;          // free roam's last turn into a fight (the banner)

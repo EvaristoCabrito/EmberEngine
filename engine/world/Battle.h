@@ -232,10 +232,14 @@ struct BattleUnit {
     // penetration) at the start of the victim's own turns, acidTurns more
     int acidTurns = 0, acidDice = 0, acidFaces = 0;
     double acidMag = 0;
+    // The Cruzado's (docs/SKILLS_CRUSADER.md): Manto do Cruzado (every weapon blow of the unit adds mantleDice D mantleFaces holy while
+    // mantleTurns lasts, counted like the Grito de Guerra's), and whether its Juramento has been announced this fight
+    int mantleTurns = 0, mantleDice = 0, mantleFaces = 0;
+    bool oathShown = false;
     bool any() const {
       return markTurns > 0 || plagueSpread > 0 || plagueBurst || bleedTurns > 0 || silenceTurns > 0 || decayTurns > 0 || sunderPct > 0 || rallyPct > 0 ||
              hobblePct > 0 || disarmPct > 0 || staggered || vigilPct > 0 || mirrorCopies > 0 || bondPct > 0 || empowerPct > 0 || reflectTurns > 0 || daggers > 0 ||
-             acidTurns > 0;
+             acidTurns > 0 || mantleDice > 0;
     }
   } cond;
   std::optional<int> hobbleBase;       // its MOV before Tiro Paralisante (given back when it lifts)
@@ -274,6 +278,14 @@ struct BattleUnit {
   int spellCharges = 0;              // a familiar's own spell (Míssil Mágico / Bola de Fogo / Veneno Menor)
   std::optional<int> lifeDrainCharges;  // a Familiar Maior / Radiante's Dreno de Vida
 };
+
+// The Cruzado's Juramento (docs/SKILLS_CRUSADER.md), a passive: while the unit knows it and stands under kOathHpPct % of its HP, its ATK
+// is up by kOathAtkPct % (Combat.cpp fighterAt); it lifts as soon as the HP is back over the line.
+inline constexpr int kOathHpPct = 25, kOathAtkPct = 20;
+inline bool oathActive(const BattleUnit& u) {
+  return u.alive && u.maxHp > 0 && u.hp * 100 < u.maxHp * kOathHpPct &&
+         std::find(u.spellList.begin(), u.spellList.end(), std::string("crusaderOath")) != u.spellList.end();
+}
 
 // An enemy's decision (Engine2 runAiFor's plain branch): the walk (start first; empty = stays) and the foe it strikes.
 struct AiPlan {

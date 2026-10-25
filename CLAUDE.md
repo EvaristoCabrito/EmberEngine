@@ -759,6 +759,16 @@ proper scaling", the formulas written like Salazar's own; icons in `Attachments/
   `MapStage::syncMirrors`), script step `summon:<unit>:<kind>`. Tests: `--promote Malrec=conjurer:25`,
   `--battle-script "summon:Malrec:summonFamiliar; cast:Malrec:detonateSummon:Familiar de Malrec"`.
 
+## O Cruzado: young Salazar's class (2026-10-25; the user: "a new class called Cruzader ... a bit weaker than warrior and a bit stronger
+than healer, a bit hibrid, only goes to level 10", then "never uses a shield")
+
+- **Read `docs/SKILLS_CRUSADER.md`.** Class `crusader` in `content/ember-classes.json` `heroClasses` (merged into the battle rules by
+  BattleExport's Rules; its melee swords / maces / hammers usable by it), level 10 at most (`classLevelCap`), stats the Guerreiro's and the
+  Curandeiro's mean, the Arqueiro's tiers (T1 1, T2 4, T3 7). T1 Bênção + Golpe Consagrado (`holyStrike`), T2 Cleave + Toque Sagrado
+  (`holyTouch`), T3 Juramento (`crusaderOath`, a passive: `spellPassive`, `oathActive`) + Manto do Cruzado (`crusaderMantle`). Never a shield
+  (no Golpe de Escudo). Effects `render/vfx/CrusaderFx` (MapStage `syncCrusader`). Placeholder art `kaelEarly`; editor hero "Salazar Jovem";
+  test map `cruzadotest001`.
+
 ## Magias do Mago Negro: Nuvem de Adagas (2026-10-21; the user's pasted spec, "Criar essa magia e seu efeito visual")
 
 - **Read `docs/SKILLS_MAGE.md`.** Nuvem de Adagas (`cloudOfDaggers`, T4 arcane, level 8, instant on self): 3 daggers circling Voss (4 from 12, 5

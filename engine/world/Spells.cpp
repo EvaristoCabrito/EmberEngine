@@ -160,6 +160,12 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"globeOfInvulnerability", "Globo de Invulnerabilidade", 5, "arcane", false}, "mage", 11},
     // ... and the cloud's own dagger (never learned: the cloud throws it at whoever comes at its caster)
     {{"daggerStrike", "Adaga", 4, "arcane", false}, "", 99},
+    // Cruzado (docs/SKILLS_CRUSADER.md, 2026-10-25; young Salazar's class, level 10 at most): T1 at 1, T2 at 4, T3 at 7, beside the
+    // Bênção (T1) and the Cleave (T2) it takes from the Curandeiro and the Guerreiro (grantClassSpells); never a shield
+    {{"holyStrike", "Golpe Consagrado", 1, "holy", true}, "crusader", 1},
+    {{"holyTouch", "Toque Sagrado", 2, "", false}, "crusader", 4},
+    {{"crusaderOath", "Juramento", 3, "", false}, "crusader", 7},
+    {{"crusaderMantle", "Manto do Cruzado", 3, "holy", false}, "crusader", 7},
 };
 // The base class a promotion keeps the skills of (the Guerreiro's go on into the Paladino and the Cavaleiro Pesado, the
 // Arqueiro's into the Patrulheiro and the Assassino, the Lanceiro's into the Sentinela and the Templário).
@@ -192,6 +198,10 @@ std::vector<size_t> summonsOf(const Battle& b, size_t owner) {
   for (size_t i = 0; i < b.units().size(); ++i)
     if (b.units()[i].alive && b.units()[i].summoned && b.units()[i].summonerId == id) out.push_back(i);
   return out;
+}
+// The Cruzado's (docs/SKILLS_CRUSADER.md).
+bool crusaderKind(const std::string& kind) {
+  return kind == "holyStrike" || kind == "holyTouch" || kind == "crusaderOath" || kind == "crusaderMantle";
 }
 // The Curandeiro's spells (docs/SKILLS_HEALER.md): a group heal over an area, a fallen ally raised, holy judgment over an area.
 bool healerKind(const std::string& kind) { return kind == "circleOfHealing" || kind == "resurrection" || kind == "judgment"; }
@@ -787,6 +797,20 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
     n.pct = 25 + g.n('p');
     n.rounds = 3 + g.n('R');
   }
+  // Cruzado (docs/SKILLS_CRUSADER.md): the user's own numbers, no track (the class stops at level 10)
+  else if (kind == "holyStrike") {
+    n.dice = 1, n.faces = 8;  // the holy dice on a landed blow ...
+    n.tickMul = 1.5;          // ... times this on an undead
+  } else if (kind == "holyTouch") {
+    n.range = 1;  // an ally beside him
+    n.mul = 0.9, n.dice = 1, n.faces = 6;
+  } else if (kind == "crusaderOath") {
+    n.pct = kOathAtkPct, n.spread = kOathHpPct;
+  } else if (kind == "crusaderMantle") {
+    n.radius = 2;
+    n.turns = 2;
+    n.dice = 1, n.faces = 4;  // holy on every blow
+  }
   // Mago Negro (docs/SKILLS_MAGE.md): the user's own numbers (3 daggers, 4 from 12, 5 from 15; each MAG/2 x 0.8 + 1D6, no track)
   else if (kind == "cloudOfDaggers" || kind == "daggerStrike") {
     n.count = 3 + g.n('c');
@@ -1237,22 +1261,27 @@ void levelUp(BattleUnit& u) {
 
 }  // namespace
 
+// The Cruzado stops at level 10 (the user, 2026-10-25: young Salazar's interlude class); every other class at the game's cap.
+int classLevelCap(const std::string& classId) { return classId == "crusader" ? 10 : kMaxLevel; }
+
 void raiseToLevel(BattleUnit& u, int level, int xp) {
-  while (u.level < std::min(level, kMaxLevel)) levelUp(u);
-  u.xp = u.level >= kMaxLevel ? 0 : std::max(0, xp);
+  const int cap = classLevelCap(u.classId);
+  while (u.level < std::min(level, cap)) levelUp(u);
+  u.xp = u.level >= cap ? 0 : std::max(0, xp);
 }
 
 namespace {
 
 void grantExp(BattleUnit& u, int amount) {
-  if (u.level >= kMaxLevel || amount <= 0) return;
+  const int cap = classLevelCap(u.classId);
+  if (u.level >= cap || amount <= 0) return;
   u.xp += amount;
-  while (u.xp >= expToLevel(u.level) && u.level < kMaxLevel) {
+  while (u.xp >= expToLevel(u.level) && u.level < cap) {
     u.xp -= expToLevel(u.level);
     levelUp(u);
     gNotes.push_back(gLogEnglish ? std::format("{} reached level {}!", u.name, u.level) : std::format("{} subiu para o nível {}!", u.name, u.level));
   }
-  if (u.level >= kMaxLevel) u.xp = 0;
+  if (u.level >= cap) u.xp = 0;
 }
 void gainExp(BattleUnit& u, int targetLevel, int amount, double mul = 1, bool kill = false) {
   if (amount <= 0 || u.side != "player" || !u.alive) return;
@@ -1415,6 +1444,15 @@ BattleEffect statusEffect(size_t unit, std::string text) {
   e.status = true;
   e.text = std::move(text);
   return e;
+}
+// The Cruzado's Juramento says its name the first time it wakes in a fight (it works by itself: oathActive, Battle.h).
+void noteOaths(Battle& b, std::vector<BattleEffect>& out) {
+  for (size_t i = 0; i < b.units().size(); ++i) {
+    BattleUnit& u = b.units()[i];
+    if (u.cond.oathShown || !oathActive(u)) continue;
+    u.cond.oathShown = true;
+    out.push_back(statusEffect(i, std::format("{} +{}% ATK", gLogEnglish ? "Oath" : "Juramento", kOathAtkPct)));
+  }
 }
 // Imagem Espelhada (the Conjurador's): a hostile blow on a unit with illusions standing has one chance in three of striking a copy
 // instead, which vanishes (the attack is spent: nothing lands). Draws one random number when a copy stands.
@@ -2132,6 +2170,40 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     s.dmgMul = n.mul;
     s.noCounter = hasTalent(kind, u.level);  // Sem Resposta
     steps.push_back(s);
+  } else if (kind == "holyStrike") {
+    // The Cruzado's: a weapon blow on a foe in reach that adds holy dice when it lands (x1.5 on an undead).
+    const int foe = occAt(b, cell);
+    if (foe < 0 || !targetable(b, foe)) return fail("Escolha um inimigo visível.");
+    if (!canHitFrom(b, caster, from, static_cast<size_t>(foe))) return fail("Esse inimigo não está ao alcance da arma.");
+    spend();
+    s.type = BattleStep::Type::Combat, s.def = static_cast<size_t>(foe);
+    s.dice = 0, s.spellMul = 1;
+    s.holyDice = n.dice, s.holyFaces = n.faces, s.holyUndeadMul = n.tickMul;
+    steps.push_back(s);
+  } else if (kind == "holyTouch") {
+    // The Cruzado's: an ally beside him heals the cure's formula (MAG/2 x mul + the dice).
+    const int ally = occAt(b, cell);
+    if (ally < 0 || static_cast<size_t>(ally) == caster || b.units()[static_cast<size_t>(ally)].side != u.side) return fail("Escolha um aliado ao lado.");
+    if (hexDist(from, cell) > n.range) return fail("O aliado precisa estar ao lado.");
+    spend();
+    s.type = BattleStep::Type::Heal;
+    s.def = static_cast<size_t>(ally);
+    s.tiles = {cell};
+    steps.push_back(s);
+  } else if (kind == "crusaderMantle") {
+    // The Cruzado's: he and every ally within the radius add holy dice to each weapon blow for some of their turns.
+    if (!(cell == from)) return fail("Esta magia não precisa de alvo.");
+    const std::vector<BattleHex> area = hexesWithin(b, from, n.radius);
+    s.type = BattleStep::Type::Effect;
+    s.tiles = area;
+    s.dice = 0, s.spellMul = 1;
+    for (size_t i = 0; i < b.units().size(); ++i) {
+      const BattleUnit& t = b.units()[i];
+      if (t.alive && t.side == u.side && std::any_of(area.begin(), area.end(), [&](const BattleHex& c) { return occupies(t, c.x, c.y); })) s.ids.push_back(i);
+    }
+    s.mantleTurns = n.turns, s.mantleDice = n.dice, s.mantleFaces = n.faces;
+    spend();
+    steps.push_back(s);
   } else if (kind == "warCry") {
     // Around the caster: every ally (itself too) rallied for some of its turns; from level 22 the foes in the radius are afraid.
     if (!(cell == from)) return fail("Esta habilidade não precisa de alvo.");
@@ -2509,6 +2581,13 @@ void grantClassSpells(BattleUnit& u) {
   // a hero's exclusive leaves everyone else's list, even one from an older save or battle file
   for (const EmberSpell& e : kEmberSpells)
     if (e.hero && u.name != e.hero) std::erase(u.spellList, std::string(e.data.kind));
+  // The Cruzado (docs/SKILLS_CRUSADER.md): the Curandeiro's Bênção from 1 and the Guerreiro's Cleave from 4 come before his own;
+  // he never uses a shield, so Golpe de Escudo is never his
+  if (u.classId == "crusader") {
+    std::erase(u.spellList, std::string("shieldBash"));
+    if (!contains(u.spellList, std::string("bless"))) u.spellList.push_back("bless");
+    if (u.level >= 4 && !contains(u.spellList, std::string("cleave"))) u.spellList.push_back("cleave");
+  }
   for (const std::string& k : emberSpells(u.classId, u.level, u.name))
     if (!contains(u.spellList, k)) u.spellList.push_back(k);
   // The ordinary spell bar and casting checks must grant Voss the same storm the effects preview can play.
@@ -2561,6 +2640,9 @@ std::string conditionsText(const BattleUnit& u) {
   if (u.cond.decayTurns > 0) add(std::format("Decadência -{}% ({})", u.cond.decayPct, u.cond.decayTurns));
   if (u.cond.sunderPct > 0) add(std::format("{} -{}% DEF ({})", pick("Guarda quebrada", "Guard broken"), u.cond.sunderPct, u.cond.sunderTurns + 1));
   if (u.cond.rallyPct > 0) add(std::format("{} +{}% ATK ({})", pick("Grito de Guerra", "War Cry"), u.cond.rallyPct, u.cond.rallyTurns + 1));
+  if (u.cond.mantleDice > 0)
+    add(std::format("{} +{}D{} ({})", pick("Manto do Cruzado", "Crusader's Mantle"), u.cond.mantleDice, u.cond.mantleFaces, u.cond.mantleTurns + 1));
+  if (oathActive(u)) add(std::format("{} +{}% ATK", pick("Juramento", "Oath"), kOathAtkPct));
   if (u.cond.hobblePct >= 100) add(std::format("{} ({})", pick("Empalado", "Impaled"), u.cond.hobbleTurns + 1));
   else if (u.cond.hobblePct > 0) add(std::format("{} -{}% MOV ({})", pick("Paralisado", "Crippled"), u.cond.hobblePct, u.cond.hobbleTurns + 1));
   if (u.cond.disarmPct > 0) add(std::format("{} -{}% ATK ({})", pick("Desarmado", "Disarmed"), u.cond.disarmPct, u.cond.disarmTurns + 1));
@@ -2890,6 +2972,12 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind) {
   if (kind == "leapingStrike")
     return s + std::format("\nsalta até {} hexes para junto do inimigo · ×{:g} da arma + {}D{} · sem contra-ataque{}", n.range, n.mul, n.dice, n.faces,
                            n.pct > 0 ? std::format(" · onda de choque: os outros inimigos vizinhos do pouso levam {}%", n.pct) : "");
+  // The Cruzado's
+  if (kind == "holyStrike") return s + std::format("\ngolpe de arma + {}D{} sagrado · mortos-vivos: o sagrado ×{:g}", n.dice, n.faces, n.tickMul);
+  if (kind == "holyTouch") return s + std::format("\num aliado ao lado cura {} HP", dmg(n.mul, n.dice, n.faces));
+  if (kind == "crusaderOath") return std::format("T{} · passiva\nabaixo de {}% do HP: +{}% ATK até voltar a passar de {}% · não gasta uso", e->data.tier, n.spread, n.pct, n.spread);
+  if (kind == "crusaderMantle")
+    return s + std::format("\nem volta de si, raio {} · ele e cada aliado somam {}D{} sagrado a cada golpe por {} turnos", n.radius, n.dice, n.faces, n.turns);
   // The Arqueiro's (the bow's own roll, hit chance and mastery, plus the dice)
   if (archerShot(kind)) s += std::format(" · alcance do arco{}", n.length > 0 ? std::format(" + {}", n.length) : "");
   if (kind == "venomArrow") return s + std::format("\ntiro de arco + {}D{} · {}", n.dice, n.faces, poisonTier(n.tier)->name);
@@ -3008,6 +3096,7 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"placeSwap", "Place Swap"}, {"boneLance", "Bone Lances"}, {"arcaneReflection", "Arcane Reflection"}, {"mirrorImage", "Mirror Image"}, {"detonateSummon", "Detonate Summon"},
     {"sacrificeBond", "Sacrifice Bond"}, {"nightmare", "Nightmare"}, {"empowerSummons", "Empower Summons"},
     {"cloudOfDaggers", "Cloud of Daggers"}, {"daggerStrike", "Dagger"}, {"dispelMagic", "Dispel Magic"}, {"globeOfInvulnerability", "Globe of Invulnerability"},
+    {"holyStrike", "Consecrated Strike"}, {"holyTouch", "Holy Touch"}, {"crusaderOath", "Oath"}, {"crusaderMantle", "Crusader's Mantle"},
 };
 }  // namespace
 
@@ -3035,8 +3124,9 @@ bool spellInstant(const std::string& kind) {
 // area of effect".
 bool spellSelfArea(const std::string& kind) {
   return kind == "sweep" || kind == "turnUndead" || kind == "steelWhirlwind" || kind == "warCry" || kind == "sentinelVigil" || kind == "eruption" ||
-         kind == "globeOfInvulnerability";
+         kind == "globeOfInvulnerability" || kind == "crusaderMantle";
 }
+bool spellPassive(const std::string& kind) { return kind == "crusaderOath"; }
 bool spellAimsDirection(const std::string& kind) {
   return kind == "piercing" || kind == "piercingThrust" || kind == "frost" || kind == "iceLance" || kind == "glacialGale" ||
          kind == "burningHands" || kind == "poisonBreath" || kind == "divineWrath" || kind == "stampede" || kind == "boneLance";
@@ -3162,11 +3252,11 @@ void hurtScene(Battle& b) {
 
 std::string spellPose(const std::string& kind) {
   if (kind == "cureMinor" || kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "bless" || kind == "circleOfHealing" ||
-      kind == "resurrection")
+      kind == "resurrection" || kind == "holyTouch")
     return "heal";
   if (kind == "longShot" || kind == "bloodyShot" || kind == "multiShot" || kind == "piercing" || kind == "doubleStrike" || kind == "piercingThrust" ||
       kind == "cleave" || kind == "sweep" || kind == "trip" || kind == "bullRush" || kind == "executionerStrike" || kind == "shieldBash" ||
-      kind == "shoulderSmash" || kind == "stampede" || kind == "steelWhirlwind" || kind == "guardBreak" || kind == "warCry" || kind == "leapingStrike" ||
+      kind == "shoulderSmash" || kind == "stampede" || kind == "steelWhirlwind" || kind == "guardBreak" || kind == "warCry" || kind == "leapingStrike" || kind == "holyStrike" ||
       archerShot(kind) || archerVolley(kind) || (lancerKind(kind) && kind != "sentinelVigil"))
     return "attack";
   return "cast";
@@ -3217,7 +3307,10 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   else if (kind == "boneLance") maxRange = -1;
   else if (kind == "dispelMagic") maxRange = emberNumbers(kind, u.level).range;  // the Mago Negro's: any hex in reach, no line of fire
   else if (kind == "globeOfInvulnerability") maxRange = 0;
-  else if (kind == "guardBreak") minRange = u.minRange, maxRange = u.maxRange, shot = u.maxRange > 1, arrow = true;  // the weapon's reach
+  else if (kind == "guardBreak" || kind == "holyStrike") minRange = u.minRange, maxRange = u.maxRange, shot = u.maxRange > 1, arrow = true;  // the weapon's reach
+  else if (kind == "holyTouch") minRange = 1, maxRange = 1;  // an ally beside him
+  else if (kind == "crusaderMantle") maxRange = 0;
+  else if (kind == "crusaderOath") return zone;  // a passive: nothing to aim
   else if (kind == "steelWhirlwind") maxRange = 1;
   else if (kind == "leapingStrike") maxRange = -1;  // wherever a landing exists
   else if (archerShot(kind)) minRange = u.minRange, maxRange = shotReach(u.maxRange, emberNumbers(kind, u.level).length), shot = true, arrow = true;
@@ -3329,10 +3422,20 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
     if (kind == "eruption") return cell == from ? true : fail("Esta magia não precisa de alvo.");
     // The Guerreiro's skills
     if (kind == "steelWhirlwind" || kind == "warCry") return cell == from ? true : fail("Esta habilidade não precisa de alvo.");
-    if (kind == "guardBreak") {
+    if (kind == "guardBreak" || kind == "holyStrike") {
       if (!targetable(b, here)) return fail(here < 0 ? "Não há unidade na casa selecionada." : "Escolha um inimigo visível.");
       return canHitFrom(b, caster, from, static_cast<size_t>(here)) ? true : fail("Esse inimigo não está ao alcance da arma.");
     }
+    // The Cruzado's
+    if (kind == "holyTouch") {
+      if (here < 0 || static_cast<size_t>(here) == caster || !b.units()[static_cast<size_t>(here)].alive || b.units()[static_cast<size_t>(here)].side != u.side)
+        return fail("Escolha um aliado ao lado.");
+      if (d > n.range) return fail("O aliado precisa estar ao lado.");
+      const BattleUnit& w = b.units()[static_cast<size_t>(here)];
+      return b.debugFreeCast() || w.hp < w.maxHp ? true : fail("Esse aliado está com a vida cheia.");
+    }
+    if (kind == "crusaderMantle") return cell == from ? true : fail("Esta magia não precisa de alvo.");
+    if (kind == "crusaderOath") return fail("Passiva: funciona sozinha.");
     // The Arqueiro's skills
     if (archerShot(kind)) {
       if (!targetable(b, here)) return fail(here < 0 ? "Não há unidade na casa selecionada." : "Escolha um inimigo visível.");
@@ -3468,7 +3571,7 @@ std::vector<BattleHex> spellArea(const Battle& b, size_t caster, const std::stri
       std::erase_if(ring, [&](const BattleHex& h) { return h.x == u.x && h.y == u.y; });
       return ring;
     }
-    if (kind == "warCry") return hexesWithin(b, {u.x, u.y}, n.radius);
+    if (kind == "warCry" || kind == "crusaderMantle") return hexesWithin(b, {u.x, u.y}, n.radius);
     if (archerVolley(kind)) return areaTiles(b, cell, n.radius);
     if (kind == "explosiveArrow") return hexesWithin(b, cell, 1);
     if (kind == "leapingStrike") {  // the foe's hex and where the caster lands
@@ -3518,6 +3621,7 @@ std::optional<std::vector<BattleStep>> castSpell(Battle& b, size_t caster, const
     return std::nullopt;
   };
   if (!u.alive) return fail("Unidade indisponível.");
+  if (spellPassive(kind)) return fail("Passiva: funciona sozinha.");
   if (cells.empty()) return fail("A magia precisa de um alvo.");
   if (u.cond.silenceTurns > 0) return fail("Silenciado: não pode conjurar.");
   if (static_cast<int>(cells.size()) != spellTargetCount(b, caster, kind)) return fail("Escolha todos os alvos.");
@@ -3882,6 +3986,14 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
     dmg = static_cast<int>(std::floor(elementalDamage(staffed, target.combat.resistance(element), A.mag)));
     trainResistance(target, element, actor.level, rng);
   }
+  // The Cruzado's holy on a landed blow: Golpe Consagrado's dice (x its weight on an undead) and the Manto do Cruzado's on every blow,
+  // each against the holy resistance with the striker's MAG of penetration.
+  {
+    double holy = 0;
+    if (hitStage && step.holyDice > 0) holy += rollDice(step.holyDice, step.holyFaces, 0, rng) * (target.undead ? step.holyUndeadMul : 1.0);
+    if (actor.cond.mantleDice > 0) holy += rollDice(actor.cond.mantleDice, actor.cond.mantleFaces, 0, rng);
+    if (holy > 0) dmg += static_cast<int>(std::floor(elementalDamage(holy, target.combat.resistance("holy"), A.mag)));
+  }
   dmg = marked(target, dmg);  // Marca da Ruína
   if (hitStage && !step.kind.empty() && dmg > 0) affinityDelta(b, ai, ti, -1);  // a skill that hurts a friend costs affinity
   const bool bonded = target.side != actor.side && bondRedirects(b, ti, dmg, rng, out);  // Elo de Sacrifício: its summon takes it
@@ -4061,6 +4173,7 @@ void resolveStrike(Battle& b, const BattleStep& step, bool counter, Mulberry32& 
   gNotes.clear();
   const size_t from = out.size();
   resolveStrikeImpl(b, step, counter, rng, out);
+  noteOaths(b, out);
   logEffects(b, out, from, static_cast<int>(counter ? step.def : step.att), &step);
   flushNotes(b);
 }
@@ -4145,6 +4258,7 @@ void resolveStep(Battle& b, const BattleStep& step, Mulberry32& rng, std::vector
   const size_t from = out.size();
   // Globo de Invulnerabilidade: whoever it shields from this spell is dropped from the step ("Bloqueado"); the rest of it plays.
   if (const std::optional<BattleStep> s = globeFilter(b, step, out)) resolveStepImpl(b, *s, rng, out);
+  noteOaths(b, out);
   logEffects(b, out, from, static_cast<int>(step.att), &step);
   flushNotes(b);
 }
@@ -4240,6 +4354,17 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
         out.push_back(statusEffect(id, pick("Com medo", "Afraid")));
       }
       b.noteAware(step.att, kSupportCe, kSupportVe);
+    }
+    if (step.kind == "crusaderMantle") {  // Manto do Cruzado: holy dice on every weapon blow of the unit for some of its turns
+      for (size_t id : step.ids) {
+        BattleUnit& t = b.units()[id];
+        if (!t.alive) continue;
+        t.cond.mantleDice = step.mantleDice, t.cond.mantleFaces = step.mantleFaces, t.cond.mantleTurns = std::max(t.cond.mantleTurns, step.mantleTurns);
+        if (id != step.att) supportAffinity(b, step.att, id);
+        out.push_back(statusEffect(id, pick("Manto do Cruzado", "Crusader's Mantle")));
+      }
+      b.noteAware(step.att, kSupportCe, kSupportVe);
+      return;
     }
     // The Conjurador's (docs/SKILLS_CONJURER.md)
     if (step.kind == "mirrorImage") {
@@ -4874,6 +4999,7 @@ void startOfTurnEffects(Battle& b, size_t unit, Mulberry32& rng, std::vector<Bat
   gNotes.clear();
   const size_t from = out.size();
   startOfTurnEffectsImpl(b, unit, rng, out);
+  noteOaths(b, out);
   logEffects(b, out, from, -1, nullptr);
   flushNotes(b);
 }
@@ -4953,6 +5079,10 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
   if (u.cond.rallyPct > 0) {
     if (u.cond.rallyTurns > 0) --u.cond.rallyTurns;
     else u.cond.rallyPct = 0;
+  }
+  if (u.cond.mantleDice > 0) {  // the Cruzado's Manto: counted like the Grito de Guerra
+    if (u.cond.mantleTurns > 0) --u.cond.mantleTurns;
+    else u.cond.mantleDice = u.cond.mantleFaces = 0;
   }
   if (u.cond.hobblePct > 0) {
     if (u.cond.hobbleTurns > 0) --u.cond.hobbleTurns;

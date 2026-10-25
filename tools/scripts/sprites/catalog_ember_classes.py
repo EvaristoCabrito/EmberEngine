@@ -34,6 +34,26 @@ def main():
             editor["classOrder"].append(key)
         editor["classSprite"][key] = c["sprite"]
         print(f"{key}: {c['name']} ({idle['set']}/{idle['clip']}, box {idle['box']}, size {c.get('size', 1)})")
+    # EmberEngine's own hero classes (content/ember-classes.json heroClasses; the Cruzado, 2026-10-25): in the editor's class list with
+    # their placeholder art, and each one's hero (editorHero) in the hero list, placed by name as a player spawn
+    hero_classes = json.load(open(os.path.join(ROOT, "content", "ember-classes.json"), encoding="utf-8")).get("heroClasses", {})
+    for key, c in hero_classes.items():
+        hero = next((h for h in roster["heroes"] if h.get("key") == c["sprite"]), None)
+        idle = next((p for p in (hero or {}).get("poses", []) if p["pose"] == "idle"), None)
+        if idle is None:
+            raise SystemExit(f"{key}: no idle pose for its sprite {c['sprite']} in the roster")
+        art = {"key": c["sprite"], "sprite": c["sprite"], "set": idle["set"], "clip": idle["clip"], "box": idle["box"], "nat": idle["nat"],
+               "frames": idle["frames"], "pace": idle["pace"], "reversed": bool(hero.get("reversed", False))}
+        catalog["classes"][key] = art
+        editor["classes"][key] = {"name": c["name"], "role": c.get("role", ""), "summon": False}
+        if key not in editor["classOrder"]:
+            editor["classOrder"].append(key)
+        editor["classSprite"][key] = c["sprite"]
+        if c.get("editorHero"):
+            catalog["heroes"][c["editorHero"]] = dict(art, classId=key)
+            if not any(h["name"] == c["editorHero"] for h in editor["editorHeroes"]):
+                editor["editorHeroes"].append({"name": c["editorHero"], "classId": key})
+        print(f"{key}: {c['name']} (hero class, {idle['set']}/{idle['clip']}, box {idle['box']})")
     # EmberEngine's own heroes (content/sprite-overrides.json sets whose newHero is a "hero" with a classId; Isolde, 2026-10-24): placed
     # by name as a player spawn (the editor's hero list), drawn with their idle, playing by their class's rules
     overrides = json.load(open(os.path.join(ROOT, "content", "sprite-overrides.json"), encoding="utf-8"))

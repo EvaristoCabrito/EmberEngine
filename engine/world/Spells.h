@@ -108,6 +108,10 @@ struct BattleStep {
   // The Mago Negro's (docs/SKILLS_MAGE.md)
   int daggers = 0;                     // Nuvem de Adagas on the caster (Type::Effect): the daggers circling it
   int globeRadius = 0, globeRounds = 0, globeTier = 0;  // Globo de Invulnerabilidade round the caster (Type::Effect): its bubble (`tiles`)
+  // The Cruzado's (docs/SKILLS_CRUSADER.md)
+  int holyDice = 0, holyFaces = 0;     // Golpe Consagrado: a landed blow adds this much holy damage ...
+  double holyUndeadMul = 1;            // ... times this on an undead
+  int mantleTurns = 0, mantleDice = 0, mantleFaces = 0;  // Manto do Cruzado on every unit of `ids` (Type::Effect)
 };
 
 // What a step did, for the window: a number over a unit, a miss, a heal, a death.
@@ -189,6 +193,10 @@ bool spellPorted(const std::string& kind);
 bool spellWeaponAbility(const std::string& kind);
 // A spell cast at once, with no aim (Criar Comida e Água): cast it at the caster's own hex.
 bool spellInstant(const std::string& kind);
+// A passive (the Cruzado's Juramento): listed with the unit's spells, never cast, no use spent; it works by itself.
+bool spellPassive(const std::string& kind);
+// The highest level a class reaches (the Cruzado: 10); every other class the game's own cap (30).
+int classLevelCap(const std::string& classId);
 // A spell centred on its caster whose area is shown first, then confirmed (Varredura, Expulsar Mortos-Vivos).
 bool spellSelfArea(const std::string& kind);
 // A spell aimed by direction from the caster (a line or a cone through any hex): every hex is a valid aim, so the window
