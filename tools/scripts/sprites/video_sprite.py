@@ -278,8 +278,33 @@ def main():
                       else unmix(rgb[i], alpha[i], plate) for i in range(len(rgb))]
         else:
             frames = [unmix(rgb[i], alpha[i], plate) for i in range(len(rgb))]
+        if "exposure" in c:
+            # `exposure` (stops; the user, 2026-10-24, Isolde's hit on a darker stone-wall set: "a shade lighter to match the
+            # other light"): the figure's colour scaled in linear light, as more light on her, the alpha untouched
+            g = 2.0 ** float(c["exposure"])
+            for f in frames:
+                x = f[..., :3] / 255.0
+                x = np.where(x <= 0.04045, x / 12.92, ((x + 0.055) / 1.055) ** 2.4) * g
+                f[..., :3] = np.where(x <= 0.0031308, x * 12.92, 1.055 * np.clip(x, 0, 1) ** (1 / 2.4) - 0.055).clip(0, 1) * 255
+        if "colorMatch" in c:
+            # `colorMatch` (the user, 2026-10-24, the same hit: "you can match it all if possible"): one curve per channel, in
+            # linear light, measured by tools/scripts/sprites/match_light.py against the hero's reference clip (it starts at
+            # black); past the curve's top a value keeps the top's ratio (the brightest glints are scaled, not flattened), the
+            # alpha untouched
+            for f in frames:
+                x = f[..., :3] / 255.0
+                x = np.where(x <= 0.04045, x / 12.92, ((x + 0.055) / 1.055) ** 2.4)
+                for k, ch in enumerate("rgb"):
+                    xin, xout = np.array(c["colorMatch"][ch], np.float64).T
+                    v = x[..., k]
+                    x[..., k] = np.where(v > xin[-1], v * (xout[-1] / xin[-1]), np.interp(v, xin, xout))
+                f[..., :3] = np.where(x <= 0.0031308, x * 12.92, 1.055 * np.clip(x, 0, 1) ** (1 / 2.4) - 0.055).clip(0, 1) * 255
         n = len(frames)
         info = {"video": c.get("video", c.get("sheet")), "first": c["first"], "last": c["last"]}
+        if "exposure" in c:
+            info["exposure"] = float(c["exposure"])
+        if "colorMatch" in c:
+            info["colorMatch"] = c["colorMatch"]["reference"]
         # Every video is framed its own way (the cast is landscape, ~660 px of figure; the staff counter ~4% closer than the
         # idle) and he steps in some (both strikes settle back in their first half second): each clip's frames are set on
         # its own feet line, and its median hood top to boot row is `figureUnits` tall, so he stands as tall on the same

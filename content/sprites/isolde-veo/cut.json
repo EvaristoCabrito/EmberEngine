@@ -1,0 +1,426 @@
+{
+ "about": "Isolde, a new main character, cut from the user's videos (Attachments/Isolde, 2026-10-24) like Voss: every native frame at 24 fps, the video's own resolution (Personagens Alta); cut-64-media.json / cut-36-media.json are her Média / Leve. tools/scripts/sprites/video_matte.py (BiRefNet) then tools/scripts/sprites/video_sprite.py this file. IsoldeIdleandCasting.mp4: idle 0-5 s, the cast from 5 s (the red rune on the staff), at rest again by ~8.8 s; Fallat3sec.mp4: the fall (no death, the user) from 3 s, lying still by ~6.2 s; IsoldeHitReact.mp4: struck at ~0.7 s, upright again by ~2 s; IsoldeRightWalkstartsat2sec.mp4 / IsoldeLeftWalk.mp4: the walks, in place.",
+ "set": "isolde-veo",
+ "version": "v01",
+ "figureUnits": 2.66,
+ "figureNote": "first value: Neera's height (2.66 units); each clip's median head top to boot row; the user judges her size in play",
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-veo/all",
+   "video": "Attachments/Isolde/IsoldeIdleandCasting.mp4",
+   "first": 0,
+   "last": 115,
+   "loopMin": 48,
+   "loopMax": 115,
+   "mode": "loop"
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/isolde-veo/walk-right",
+   "video": "Attachments/Isolde/IsoldeRightWalkstartsat2sec.mp4",
+   "first": 30,
+   "last": 143,
+   "loopMin": 24,
+   "loopMax": 100,
+   "mode": "loop",
+   "why": "the video opens on a stone wall and cuts to the studio at frame 24; she walks from 2 s"
+  },
+  {
+   "clip": "move-left",
+   "pose": "walkLeft",
+   "kind": "walk",
+   "src": "build/video-cut/isolde-veo/walk-left",
+   "video": "Attachments/Isolde/IsoldeLeftWalk.mp4",
+   "first": 36,
+   "last": 143,
+   "loopMin": 24,
+   "loopMax": 100,
+   "mode": "loop",
+   "why": "she turns from the front to her left profile in the first second, then walks in place from ~1.5 s"
+  },
+  {
+   "clip": "cast",
+   "pose": "cast",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-veo/all",
+   "video": "Attachments/Isolde/IsoldeIdleandCasting.mp4",
+   "first": 116,
+   "last": 214,
+   "mode": "once",
+   "bodyAt": -0.226
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "label": "Dano",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-veo/hit",
+   "video": "Attachments/Isolde/IsoldeHitReact.mp4",
+   "first": 12,
+   "last": 56,
+   "mode": "once",
+   "why": "the user, 2026-10-24: the video generator kept the stone wall on a second try, \"make her a shade lighter to match the other light\" (measured: 0.50 stops darker than the studio idle, her shadows ~1 stop), then \"you can match it all if possible\": colorMatch, written by tools/scripts/sprites/match_light.py from her standing frames against the idle",
+   "colorMatch": {
+    "reference": "build/video-cut/isolde-veo/all 0:94",
+    "frames": "0:11,56:95",
+    "r": [
+     [
+      0.0,
+      0.000759
+     ],
+     [
+      0.000304,
+      0.001315
+     ],
+     [
+      0.000607,
+      0.002125
+     ],
+     [
+      0.000911,
+      0.002884
+     ],
+     [
+      0.001518,
+      0.004025
+     ],
+     [
+      0.002428,
+      0.005182
+     ],
+     [
+      0.003035,
+      0.006512
+     ],
+     [
+      0.004025,
+      0.008023
+     ],
+     [
+      0.005182,
+      0.009721
+     ],
+     [
+      0.006049,
+      0.011612
+     ],
+     [
+      0.007499,
+      0.014444
+     ],
+     [
+      0.009134,
+      0.016807
+     ],
+     [
+      0.011612,
+      0.020289
+     ],
+     [
+      0.013702,
+      0.024158
+     ],
+     [
+      0.015996,
+      0.028426
+     ],
+     [
+      0.019382,
+      0.033105
+     ],
+     [
+      0.024158,
+      0.039546
+     ],
+     [
+      0.029557,
+      0.048172
+     ],
+     [
+      0.038204,
+      0.059511
+     ],
+     [
+      0.05448,
+      0.084376
+     ],
+     [
+      0.078187,
+      0.122139
+     ],
+     [
+      0.114435,
+      0.171441
+     ],
+     [
+      0.212231,
+      0.270498
+     ],
+     [
+      0.300544,
+      0.371238
+     ],
+     [
+      0.428691,
+      0.533276
+     ],
+     [
+      0.520996,
+      0.630757
+     ],
+     [
+      0.630757,
+      0.737911
+     ]
+    ],
+    "g": [
+     [
+      0.0,
+      0.000683
+     ],
+     [
+      0.000304,
+      0.001366
+     ],
+     [
+      0.000607,
+      0.002125
+     ],
+     [
+      0.000911,
+      0.002732
+     ],
+     [
+      0.001518,
+      0.003677
+     ],
+     [
+      0.002125,
+      0.004391
+     ],
+     [
+      0.002732,
+      0.005182
+     ],
+     [
+      0.003347,
+      0.006512
+     ],
+     [
+      0.004391,
+      0.008023
+     ],
+     [
+      0.005182,
+      0.009134
+     ],
+     [
+      0.006512,
+      0.01096
+     ],
+     [
+      0.008023,
+      0.012983
+     ],
+     [
+      0.009134,
+      0.015209
+     ],
+     [
+      0.01096,
+      0.017642
+     ],
+     [
+      0.012983,
+      0.020289
+     ],
+     [
+      0.015209,
+      0.024158
+     ],
+     [
+      0.0185,
+      0.028426
+     ],
+     [
+      0.024158,
+      0.036889
+     ],
+     [
+      0.035601,
+      0.05448
+     ],
+     [
+      0.05448,
+      0.078187
+     ],
+     [
+      0.082283,
+      0.111932
+     ],
+     [
+      0.144128,
+      0.177888
+     ],
+     [
+      0.201556,
+      0.242281
+     ],
+     [
+      0.300544,
+      0.346704
+     ],
+     [
+      0.381326,
+      0.434154
+     ],
+     [
+      0.520996,
+      0.564712
+     ]
+    ],
+    "b": [
+     [
+      0.0,
+      0.000364
+     ],
+     [
+      0.000304,
+      0.001366
+     ],
+     [
+      0.000607,
+      0.001821
+     ],
+     [
+      0.000911,
+      0.002428
+     ],
+     [
+      0.001518,
+      0.003035
+     ],
+     [
+      0.001821,
+      0.003677
+     ],
+     [
+      0.002428,
+      0.004777
+     ],
+     [
+      0.003347,
+      0.005605
+     ],
+     [
+      0.004025,
+      0.006512
+     ],
+     [
+      0.004777,
+      0.008023
+     ],
+     [
+      0.006049,
+      0.009721
+     ],
+     [
+      0.006995,
+      0.01096
+     ],
+     [
+      0.009134,
+      0.012983
+     ],
+     [
+      0.01033,
+      0.015209
+     ],
+     [
+      0.012286,
+      0.0185
+     ],
+     [
+      0.015209,
+      0.021219
+     ],
+     [
+      0.017642,
+      0.026241
+     ],
+     [
+      0.022174,
+      0.031896
+     ],
+     [
+      0.031896,
+      0.045186
+     ],
+     [
+      0.048172,
+      0.066626
+     ],
+     [
+      0.072272,
+      0.093059
+     ],
+     [
+      0.122139,
+      0.14996
+     ],
+     [
+      0.174647,
+      0.201556
+     ],
+     [
+      0.266356,
+      0.287441
+     ],
+     [
+      0.341914,
+      0.361307
+     ],
+     [
+      0.502887,
+      0.520996
+     ]
+    ]
+   },
+   "bodyAt": -0.226
+  },
+  {
+   "clip": "counter-staff",
+   "pose": "counterStaff",
+   "label": "Contra-ataque (cajado)",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-veo/counter-staff",
+   "video": "Attachments/Isolde/IsoldeStaffCounter.mp4",
+   "first": 18,
+   "last": 112,
+   "impactFrame": 42,
+   "mode": "once",
+   "why": "the user, 2026-10-24: her counter when the foe is beside her; she raises the staff at ~0.8 s, the thrust lands at frame 42 (the staff fully out), a spin, at rest by ~4.5 s",
+   "bodyAt": -0.226
+  },
+  {
+   "clip": "fall",
+   "pose": "death",
+   "label": "Queda",
+   "kind": "stand",
+   "src": "build/video-cut/isolde-veo/fall",
+   "video": "Attachments/Isolde/Fallat3sec.mp4",
+   "first": 72,
+   "last": 170,
+   "standUntil": 92,
+   "mode": "once",
+   "bodyAt": -0.226,
+   "why": "the user, 2026-10-24: \"there is only fall no death\": her fall (Fallat3sec.mp4 from 3 s), played when her HP reaches 0"
+  }
+ ],
+ "bodyNote": "bodyAt -0.226 on every standing clip but the idle: the head where the idle has it (measured on its first frame), so she never slides sideways when a pose starts"
+}

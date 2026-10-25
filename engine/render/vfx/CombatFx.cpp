@@ -143,6 +143,7 @@ CombatPalette CombatPalette::of(const char* element) {
   if (is("fire")) return {{1.0f, 0.5f, 0.18f}, {1.0f, 0.92f, 0.7f}, {1.0f, 0.38f, 0.08f}};
   if (is("frost") || is("ice") || is("cold")) return {{0.5f, 0.78f, 1.0f}, {0.92f, 0.98f, 1.0f}, {0.4f, 0.7f, 1.0f}};
   if (is("lightning") || is("shock")) return {{0.62f, 0.75f, 1.0f}, {0.95f, 0.97f, 1.0f}, {0.5f, 0.62f, 1.0f}};
+  if (is("ember")) return {{1.0f, 0.34f, 0.12f}, {1.0f, 0.8f, 0.52f}, {0.92f, 0.14f, 0.05f}};  // a live coal: Isolde's rune red, a hot heart
   return {};  // Arcano
 }
 
@@ -176,7 +177,7 @@ float CombatFx::flightSeconds(glm::vec3 fromFeet, glm::vec3 toFeet) {
 }
 
 void CombatFx::bolt(glm::vec3 casterFeet, float casterHeight, glm::vec3 targetFeet, float targetHeight, float start, float release, float impact,
-                    const CombatPalette& palette, float strength) {
+                    const CombatPalette& palette, float strength, BoltLook look) {
   casterHeight = std::clamp(casterHeight, 1.0f, 4.0f), targetHeight = std::clamp(targetHeight, 1.0f, 4.0f);
   const glm::vec3 dir = flatDir(targetFeet - casterFeet, glm::vec3(0.0f, 0.0f, 1.0f));
   Bolt b;
@@ -188,6 +189,7 @@ void CombatFx::bolt(glm::vec3 casterFeet, float casterHeight, glm::vec3 targetFe
   b.palette = palette;
   b.seed = 0xb017u + 104729u * ++serial_;
   b.strength = std::clamp(strength, 0.1f, 1.0f);
+  b.look = look;
   bolts_.push_back(b);
 }
 
@@ -636,6 +638,7 @@ void CombatFx::buildImpact(const Impact& im, float now, const Camera& camera, Vf
 
 void CombatFx::buildBolt(const Bolt& b, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) {
   if (now < b.start) return;
+  if (b.look == BoltLook::Ember) return buildEmberBolt(b, now, camera, frame, lights);
   const Draw draw{frame};
   const glm::vec3 eye = camera.position;
   const CombatPalette& pal = b.palette;
@@ -699,6 +702,96 @@ void CombatFx::buildBolt(const Bolt& b, float now, const Camera& camera, VfxFram
     const glm::vec3 d = sphereDir(hash01(b.seed, n, 2), hash01(b.seed, n, 3));
     const glm::vec3 p = b.at(0.3f * ub + 0.7f * ub * ub) + d * 0.35f * tau + glm::vec3(0.0f, -0.4f * tau * tau, 0.0f);
     streaks_.push_back(streak(pulled(p, eye, kPull), glm::vec3(0.0f), 0.04f * k * (1.0f - 0.5f * u), (1.0f - u) * 0.9f, pal.energy, 2.2f));
+  }
+}
+
+// Isolde's ember bolt (the user, 2026-10-24): her plain attack and counter, a lesser blow than her spells (the stage passes a
+// strength under 1). The Arcano bolt's clock and path; a burning coal in place of the energy.
+void CombatFx::buildEmberBolt(const Bolt& b, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights) {
+  const Draw draw{frame};
+  const glm::vec3 eye = camera.position;
+  const CombatPalette& pal = b.palette;
+  const float k = std::clamp(b.casterHeight / 2.0f, 0.7f, 1.4f) * std::sqrt(b.strength);
+  const glm::vec3 hand = pulled(b.hand, eye, kPull);
+  // A coal's glow never holds still: two slow waves and a fast one, 0.7..1.15.
+  auto flicker = [&](float t, uint32_t salt) {
+    const float o = hash01(b.seed, salt, 9) * kTau;
+    return 0.92f + 0.12f * std::sin(t * 11.0f + o) + 0.07f * std::sin(t * 23.0f + 2.0f * o) + 0.04f * std::sin(t * 47.0f + o);
+  };
+
+  // --- The launch: a spit of sparks thrown forward from the staff, a short orange flash. ---
+  if (now >= b.release && now < b.release + 0.22f) {
+    const float tau = now - b.release;
+    const float f = 1.0f - ease(0.0f, 0.12f, tau);
+    if (f > 0.0f) streaks_.push_back(streak(hand, glm::vec3(0.0f), 0.38f * k * (0.6f + 0.4f * f), f, pal.light, 2.4f));
+    for (int i = 0; i < 9; ++i) {
+      const uint32_t n = static_cast<uint32_t>(i) + 50u;
+      const glm::vec3 d = glm::normalize(sphereDir(hash01(b.seed, n, 1), hash01(b.seed, n, 2)) * 0.7f + b.dir);  // forward, fanned
+      const float speed = (3.0f + 2.5f * hash01(b.seed, n, 3)) * k, life = 0.12f + 0.1f * hash01(b.seed, n, 4);
+      if (tau > life) continue;
+      const float u = tau / life;
+      const glm::vec3 v = d * speed * std::exp(-5.0f * tau) + glm::vec3(0.0f, -kGravity * 0.4f * tau, 0.0f);
+      const glm::vec3 p = hand + d * speed * (1.0f - std::exp(-5.0f * tau)) / 5.0f + glm::vec3(0.0f, -kGravity * 0.2f * tau * tau, 0.0f);
+      streaks_.push_back(streak(pulled(p, eye, kPull), v * 0.03f, 0.016f * k, 1.0f - u, i % 3 == 0 ? pal.core : pal.light, 2.4f));
+    }
+  }
+
+  // --- The flight: the coal, its heat haze, a thin glowing trail, its flickering light. ---
+  if (now >= b.release && now < b.impact) {
+    const float s = b.progress(now);
+    const glm::vec3 head = b.at(s);
+    const glm::vec3 ahead = b.at(std::min(1.0f, s + 0.02f));
+    const glm::vec3 vdir = glm::length(ahead - head) > 1e-5f ? glm::normalize(ahead - head) : b.dir;
+    const glm::vec3 headDrawn = pulled(head, eye, kPull);
+    const float fl = flicker(now, 1u);
+    const float r = 0.07f * k;
+    // the heart: white-orange, a little longer than wide; the skin: crimson, its glow breathing with the flicker
+    const glm::mat4 heart = glm::translate(glm::mat4(1.0f), headDrawn) * alignY(vdir) * glm::scale(glm::mat4(1.0f), {r, r * 1.8f, r});
+    draw(sphereFirst_, sphereCount_, heart, kModeEnergy, now, 1.6f * fl, 1.0f, pal.light, 0.04f, glm::vec4(pal.core, 1.0f), head, VfxBlend::Additive);
+    const glm::mat4 skin = glm::translate(glm::mat4(1.0f), headDrawn) * alignY(vdir) * glm::scale(glm::mat4(1.0f), {r * 2.0f, r * 2.8f, r * 2.0f});
+    draw(sphereFirst_, sphereCount_, skin, kModeEnergy, now, 0.8f * fl, 0.8f, pal.energy, 0.18f, glm::vec4(pal.light, 0.0f), head, VfxBlend::Additive);
+    // the trail: thinner and shorter than the Arcano one, cooling from orange at the head to crimson at its tail
+    const float tail = std::min(s, 0.22f);
+    if (tail > 0.01f) {
+      three::CatmullRom path;
+      for (int j = 0; j <= 8; ++j) path.points.push_back(pulled(b.at(s - tail + tail * static_cast<float>(j) / 8.0f), eye, kPull));
+      const std::vector<VfxVertex> tube = vfxgeo::tube(path, 18, 0.03f * k, 8);
+      draw(frame.addVertices(tube), static_cast<uint32_t>(tube.size()), glm::mat4(1.0f), kModeTrail, now, 1.0f * fl, 0.8f, pal.energy, 0.0f,
+           glm::vec4(pal.light, 0.0f), head, VfxBlend::Additive);
+    }
+    lights.push_back({head, pal.light, 9.0f * b.strength * fl, 2.8f * k});
+  }
+
+  // --- The smoke: a wisp of dark smoke left hanging where the coal passed, rising and spreading as it thins. ---
+  for (int i = 0; i < 10; ++i) {
+    const uint32_t n = static_cast<uint32_t>(i) + 90u;
+    const float ub = (static_cast<float>(i) + 0.5f) / 10.0f;
+    const float tb = b.release + ub * (b.impact - b.release);
+    const float tau = now - tb, life = 0.7f + 0.25f * hash01(b.seed, n, 1);
+    if (tau < 0.0f || tau > life) continue;
+    const float u = tau / life;
+    const glm::vec3 drift{(hash01(b.seed, n, 2) - 0.5f) * 0.25f, 0.45f, (hash01(b.seed, n, 3) - 0.5f) * 0.25f};
+    const glm::vec3 p = b.at(0.3f * ub + 0.7f * ub * ub) + drift * tau;
+    const float size = (0.09f + 0.3f * easeOut(0.0f, 1.0f, u)) * k;
+    const float alpha = 0.32f * ease(0.0f, 0.08f, tau) * (1.0f - ease(0.3f, 1.0f, u));
+    const glm::vec3 albedo = glm::vec3(0.075f, 0.065f, 0.06f) * (0.85f + 0.3f * hash01(b.seed, n, 4));
+    puffs_.push_back(puff(pulled(p, eye, kPull), size, hash01(b.seed, n, 5) * kTau + tau * 0.8f, hash01(b.seed, n, 6) * 37.0f, alpha, albedo));
+  }
+
+  // --- The cinders: shed along the path, they rise on the heat, wobble, flicker and go out. ---
+  for (int i = 0, cinders = static_cast<int>(22.0f * b.strength + 0.5f); i < cinders; ++i) {
+    const uint32_t n = static_cast<uint32_t>(i) + 70u;
+    const float ub = (static_cast<float>(i) + 0.5f) / static_cast<float>(cinders);
+    const float tb = b.release + ub * (b.impact - b.release);
+    const float tau = now - tb, life = 0.45f + 0.4f * hash01(b.seed, n, 1);
+    if (tau < 0.0f || tau > life) continue;
+    const float u = tau / life;
+    const glm::vec3 kick = sphereDir(hash01(b.seed, n, 2), hash01(b.seed, n, 3)) * 0.25f;
+    const float wob = hash01(b.seed, n, 4) * kTau;
+    const glm::vec3 sway{std::sin(tau * 9.0f + wob) * 0.04f, 0.0f, std::cos(tau * 7.0f + wob) * 0.04f};
+    const glm::vec3 p = b.at(0.3f * ub + 0.7f * ub * ub) + kick * tau + glm::vec3(0.0f, 0.55f * tau * tau + 0.1f * tau, 0.0f) + sway;
+    const float glow = (1.0f - u) * std::clamp(flicker(now, n), 0.0f, 1.2f);
+    streaks_.push_back(streak(pulled(p, eye, kPull), glm::vec3(0.0f), 0.022f * k * (1.0f - 0.4f * u), glow * 0.9f, u < 0.4f ? pal.light : pal.energy, 2.2f));
   }
 }
 

@@ -43,6 +43,34 @@
    "packs": {"base": "field", "move": "field", "move-left": "field"}
   },
   {
+   "set": "isolde-veo",
+   "version": "v01",
+   "hero": "isolde",
+   "newHero": {"name": "Isolde", "group": "hero", "sprite": "isolde-veo", "reversed": false, "classId": "conjurer"},
+   "cut": "content/sprites/isolde-veo/cut.json",
+   "why": "the user, 2026-10-24: Isolde, a new main character, from their videos (Attachments/Isolde) like Voss, in all three quality settings; a conjurer with the conjurer's spells until her own; her plain attack and her ranged counter play her cast (the ember bolt), the staff counter when the foe is beside her",
+   "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "cast": "cast", "counterStaff": "counter-staff", "hit": "hit", "death": "fall"},
+   "labels": {"idle": "Parado", "walk": "Andar", "walkLeft": "Andar (esquerda)", "cast": "Conjurar", "counterStaff": "Contra-ataque (cajado)", "hit": "Dano", "death": "Queda"},
+   "packs": {"base": "field", "move": "field", "move-left": "field"},
+   "strides": {"move": 1.0, "move-left": 1.0}
+  },
+  {
+   "set": "isolde-veo-64-media",
+   "version": "media64-v01",
+   "mediumOf": {"hero": "isolde", "set": "isolde-veo"},
+   "cut": "content/sprites/isolde-veo/cut-64-media.json",
+   "why": "Isolde's Personagens Média, as Voss's: every clip at ~610 px of figure with 64 frames (picked evenly, the clip's timing kept)",
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "isolde-veo-36-media",
+   "version": "media36-v01",
+   "lightOf": {"hero": "isolde", "set": "isolde-veo"},
+   "cut": "content/sprites/isolde-veo/cut-36-media.json",
+   "why": "Isolde's Personagens Leve, as Voss's: every clip at ~610 px of figure with 36 frames; Leve draws it halved",
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
    "set": "neera-hydra",
    "version": "v01",
    "hero": "neera",

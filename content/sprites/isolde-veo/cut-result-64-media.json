@@ -1,0 +1,233 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Isolde/IsoldeIdleandCasting.mp4",
+   "first": 0,
+   "last": 115,
+   "bootRow": 1221,
+   "bootRows": [
+    1213,
+    1233
+   ],
+   "loopFirst": 1,
+   "loopLast": 109,
+   "seamSteps": 2.41,
+   "frameCountFrom": 109,
+   "figurePx": 1100.0,
+   "scaledTo": 610.5,
+   "frames": 64,
+   "frameMs": 70.96354166666666,
+   "nat": [
+    347,
+    636
+   ],
+   "crop": [
+    3,
+    3,
+    341,
+    630
+   ],
+   "box": {
+    "w": 1.51378,
+    "h": 2.77454,
+    "foot": 0.02808
+   },
+   "pattern": "content/sprites/isolde-veo/base-media64-v01/base-{}.png"
+  },
+  "move": {
+   "video": "Attachments/Isolde/IsoldeRightWalkstartsat2sec.mp4",
+   "first": 30,
+   "last": 143,
+   "loopFirst": 54,
+   "loopLast": 100,
+   "seamSteps": 1.55,
+   "bootRow": 1170,
+   "bodyDrift": [
+    -45,
+    -12
+   ],
+   "figurePx": 1031.0,
+   "scaledTo": 609.8,
+   "frames": 47,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    339,
+    634
+   ],
+   "crop": [
+    3,
+    4,
+    334,
+    627
+   ],
+   "box": {
+    "w": 1.47835,
+    "h": 2.76482,
+    "foot": 0.02748
+   },
+   "pattern": "content/sprites/isolde-veo/move-media64-v01/move-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/Isolde/IsoldeLeftWalk.mp4",
+   "first": 36,
+   "last": 143,
+   "loopFirst": 45,
+   "loopLast": 96,
+   "seamSteps": 1.9,
+   "bootRow": 1162,
+   "bodyDrift": [
+    22,
+    54
+   ],
+   "figurePx": 976.0,
+   "scaledTo": 609.9,
+   "frames": 52,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    341,
+    638
+   ],
+   "crop": [
+    3,
+    3,
+    335,
+    631
+   ],
+   "box": {
+    "w": 1.48535,
+    "h": 2.77904,
+    "foot": 0.06723
+   },
+   "pattern": "content/sprites/isolde-veo/move-left-media64-v01/move-left-{}.png"
+  },
+  "cast": {
+   "video": "Attachments/Isolde/IsoldeIdleandCasting.mp4",
+   "first": 116,
+   "last": 214,
+   "bootRow": 1214,
+   "bootRows": [
+    1213,
+    1214
+   ],
+   "frameCountFrom": 99,
+   "figurePx": 1087.0,
+   "bodyAt": -0.2264,
+   "scaledTo": 610.0,
+   "frames": 64,
+   "frameMs": 64.453125,
+   "nat": [
+    343,
+    633
+   ],
+   "crop": [
+    3,
+    3,
+    313,
+    627
+   ],
+   "box": {
+    "w": 1.49518,
+    "h": 2.75933,
+    "foot": 0.01861
+   },
+   "pattern": "content/sprites/isolde-veo/cast-media64-v01/cast-{}.png"
+  },
+  "hit": {
+   "video": "Attachments/Isolde/IsoldeHitReact.mp4",
+   "first": 12,
+   "last": 56,
+   "colorMatch": "build/video-cut/isolde-veo/all 0:94",
+   "bootRow": 1272,
+   "bootRows": [
+    1252,
+    1279
+   ],
+   "figurePx": 1206.0,
+   "bodyAt": -0.2261,
+   "scaledTo": 609.6,
+   "frames": 45,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    376,
+    647
+   ],
+   "crop": [
+    12,
+    0,
+    364,
+    647
+   ],
+   "box": {
+    "w": 1.641,
+    "h": 2.82373,
+    "foot": 0.01436
+   },
+   "pattern": "content/sprites/isolde-veo/hit-media64-v01/hit-{}.png"
+  },
+  "counter-staff": {
+   "video": "Attachments/Isolde/IsoldeStaffCounter.mp4",
+   "first": 18,
+   "last": 112,
+   "bootRow": 1220,
+   "bootRows": [
+    1187,
+    1255
+   ],
+   "frameCountFrom": 95,
+   "figurePx": 1018.0,
+   "bodyAt": -0.226,
+   "scaledTo": 609.8,
+   "frames": 64,
+   "frameMs": 61.84895833333333,
+   "nat": [
+    440,
+    738
+   ],
+   "crop": [
+    9,
+    3,
+    431,
+    732
+   ],
+   "box": {
+    "w": 1.92053,
+    "h": 3.22125,
+    "foot": 0.03573
+   },
+   "pattern": "content/sprites/isolde-veo/counter-staff-media64-v01/counter-staff-{}.png",
+   "impact": 0.2526
+  },
+  "fall": {
+   "video": "Attachments/Isolde/Fallat3sec.mp4",
+   "first": 72,
+   "last": 170,
+   "bootRow": 1204,
+   "bootRows": [
+    1204,
+    1204
+   ],
+   "frameCountFrom": 99,
+   "figurePx": 1021.0,
+   "bodyAt": -0.2254,
+   "scaledTo": 609.5,
+   "frames": 64,
+   "frameMs": 64.453125,
+   "nat": [
+    440,
+    637
+   ],
+   "crop": [
+    0,
+    3,
+    430,
+    631
+   ],
+   "box": {
+    "w": 1.9201,
+    "h": 2.77978,
+    "foot": 0.04601
+   },
+   "pattern": "content/sprites/isolde-veo/fall-media64-v01/fall-{}.png"
+  }
+ }
+}

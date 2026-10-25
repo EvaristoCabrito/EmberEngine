@@ -17,6 +17,13 @@
 //              embers shed along the path, its light travelling with it;
 //     impact   when it arrives (= the rules' impact: damage, numbers, the hit pose and the recoil land then): the Magical
 //              impact above.
+//   Ember bolt (Isolde's plain attack and counter; the user, 2026-10-24: "a different visual spell FX, weaker than regular
+//   spells ... in 3D matching her ember colors"): the same clock and path, a burning cinder in place of the energy -
+//     launch   a spit of sparks thrown forward from the staff;
+//     flight   a hot coal (white-orange heart, crimson skin) that flickers, a thin glowing trail, a wisp of dark smoke left
+//              hanging and rising behind it, cinders shed that rise on the heat and wobble as they die, a flickering
+//              warm light;
+//     impact   the Magical impact in the ember palette (CombatPalette::of("ember")).
 //
 // Everything is world space (y up), drawn with the Combat material (shaders/vfx.hlsl). Points near a unit's card are
 // pulled toward the eye (kPull: same place on screen, in front of the card, which is itself drawn 1.2 units nearer).
@@ -36,7 +43,7 @@ struct CombatPalette {
   glm::vec3 light{0.62f, 0.32f, 1.0f};
   glm::vec3 core{0.96f, 0.88f, 1.0f};
   glm::vec3 energy{0.55f, 0.26f, 1.0f};
-  // By the element the rules use ("arcane", "fire", "frost", "lightning", ...): Arcano for anything else.
+  // By the element the rules use ("arcane", "fire", "frost", "lightning", "ember", ...): Arcano for anything else.
   static CombatPalette of(const char* element);
 };
 
@@ -53,6 +60,8 @@ class CombatFx {
   // soft pillar of light rising through the body, sparks spiralling from the feet to above the head, a crown ring of light
   // over it, a warm golden light; nothing aimed (`from` is ignored).
   enum class Kind { Physical, Heavy, Magical, MagicalMiss, Slash, HeavySlash, Thrust, ArrowHit, HeavyArrowHit, LevelUp };
+  // The bolt's look: Arcane (the energy bolt) or Ember (Isolde's burning cinder).
+  enum class BoltLook { Arcane, Ember };
 
   // A blow lands at `at` on a unit standing at `feet` with its card `height` tall; `from` = where the striker stands
   // (the blow's direction).
@@ -61,7 +70,7 @@ class CombatFx {
   // The Arcano bolt: the caster's pose starts at `start`, it lets go at `release`, the bolt lands at `impact` (the
   // stage asks flightSeconds for it).
   void bolt(glm::vec3 casterFeet, float casterHeight, glm::vec3 targetFeet, float targetHeight, float start, float release, float impact,
-            const CombatPalette& palette = {}, float strength = 1.0f);
+            const CombatPalette& palette = {}, float strength = 1.0f, BoltLook look = BoltLook::Arcane);
   // Seconds the bolt flies between two units (accelerating: slower at short range than a constant speed would be).
   static float flightSeconds(glm::vec3 fromFeet, glm::vec3 toFeet);
 
@@ -90,12 +99,14 @@ class CombatFx {
     CombatPalette palette;
     uint32_t seed;
     float strength = 1.0f;
-    float end() const { return impact + 0.65f; }  // its embers outlive it
+    BoltLook look = BoltLook::Arcane;
+    float end() const { return impact + (look == BoltLook::Ember ? 1.0f : 0.65f); }  // its embers (an ember bolt's smoke) outlive it
     glm::vec3 at(float s) const;  // the path, s 0..1 (hand -> target)
     float progress(float now) const;  // 0..1 along the path (accelerating)
   };
   void buildImpact(const Impact& i, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   void buildBolt(const Bolt& b, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
+  void buildEmberBolt(const Bolt& b, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
 
   std::vector<Impact> impacts_;
   std::vector<Bolt> bolts_;

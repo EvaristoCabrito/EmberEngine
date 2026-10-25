@@ -5108,7 +5108,7 @@ class MapStage final : public Stage {
     bool affinityDone = false;  // the action's first step is over: its neighbours' affinity was built
     bool bolt = false;     // this strike is an Arcano bolt (CombatFx): it lands when the bolt arrives
     std::string element;   // the bolt's element (its palette)
-    float boltStrength = 1.0f;  // Voss's plain bolt is a lesser one than his Míssil Mágico (the user, 2026-10-20)
+    float boltStrength = 1.0f;  // Voss's plain bolt is a lesser one than his Míssil Mágico (the user, 2026-10-20); Isolde's ember bolt too
     bool arrow = false;    // this strike is a bow shot: the arrow flies and lands on the hit
     bool interrupt = false;  // a sentinel's thrust out of its turn (Vigília da Sentinela): nothing of the owner's turn is spent
   };
@@ -5412,9 +5412,14 @@ class MapStage final : public Stage {
       x.impact = release + CombatFx::flightSeconds(from.feet, to.feet);
       x.end = std::max(x.end, x.impact + 0.6f + kExchangeGap / actionRate());
       const size_t su = static_cast<size_t>(striker);
-      x.boltStrength = su < unitCatalog_.size() && unitCatalog_[su] && unitCatalog_[su]->key == "voss" ? 0.55f : 1.0f;
+      const std::string hero = su < unitCatalog_.size() && unitCatalog_[su] ? unitCatalog_[su]->key : std::string();
+      // Isolde's plain attack and counter (the user, 2026-10-24: like Voss's, "a different visual spell FX, weaker than regular
+      // spells ... matching her ember colors"): the ember bolt, its impact in the ember palette, a lesser blow like his
+      const bool ember = hero == "isolde";
+      if (ember) x.element = "ember";
+      x.boltStrength = hero == "voss" || ember ? 0.55f : 1.0f;
       spellFx_.combat().bolt(from.feet, cardHeightOf(from), to.feet, cardHeightOf(to), now_, release, x.impact, CombatPalette::of(x.element.c_str()),
-                             x.boltStrength);
+                             x.boltStrength, ember ? CombatFx::BoltLook::Ember : CombatFx::BoltLook::Arcane);
     }
     // A bow's plain attack or counter shoots the arrow Tiro Longo already flies (SpellEffects::arrow), landing on the hit.
     x.arrow = !x.bolt && striker >= 0 && target >= 0 && strikeIsArrow(s, x.counter);
