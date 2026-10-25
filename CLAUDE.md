@@ -1578,6 +1578,20 @@ detalhes estranhos e nada a ver, deixa profissional", and "não alterar o sistem
   the bedrooms, which get the Torre's photographed simple bed (two in the wide rooms), a stool, a trunk (crate v02), a candle, a rug or a
   bookshelf (Nara's, Erasmo's); the corridor two benches and a barrel at each end. NPCs, spawn, tiles and the stairs as in 004.
 
+## A Estalagem: os móveis em 3D, os dois andares (2026-10-25; the user's order WITH the Inn's word: "remover as mesas e cadeiras e
+outros objetos 2d e colocar as novas mesas e cadeiras e outros objetos de bar 3D", "o mesmo no segundo andar temos camas 3D", "os 2D que
+permanecerem no INN continuem la", "a não ser que tenha mais mesas e cadeiras", the Meshy hearth "no lugar da atual")
+
+- `tools/scripts/maps/make_inn_3d_furniture.py` (refuses on any overlap / unreachable NPC, stairs or door; never overwrites a version):
+  **`estalagem007`** = 006 as committed: workbenches → `ember-tavern-table-v02`, the two beside Brue → `ember-tavern-counter` (the bar,
+  2..5 on row 4), stools + the broken chair → `ember-tavern-chair-v02` turned to their table, two more chairs at the long table, the
+  fireplace → `ember-tavern-stone-hearth` (Meshy); every other 2D piece stays. **`estalagem-andar-2006`** = 004 (the version the game
+  played): workbenches → tables in their own room, stools → `ember-interior-stool`, a `ember-interior-simple-bed-v02` in each bedroom;
+  `content/maps/active.json` now plays 6. Every piece was already cooked in `props-v8.pak`. The other agent's in-place 006 edit
+  (uncommitted, ids `prop-3d-tavern-*` that only the old TypeScript game knew: the scene had 0 models) is left as it is, not played.
+- Chair facing: the chair's back is +z at rot 0, 1 = back -x, 3 = back +x (from kit_tavern.py and SceneBuilder's quarter turns); the
+  hearth's front at rot 0 was not checked.
+
 ## Torre de Vigia 009: o tabuleiro no chão; Overworld / Underworld no mapa-múndi (2026-10-23)
 
 - **The gate's threshold on the floor (the user: "pode encostar o tabuleiro da torre até a porta chegar no chão?"):** every map's floor
