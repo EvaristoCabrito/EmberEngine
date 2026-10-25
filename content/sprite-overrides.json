@@ -76,8 +76,9 @@
    "hero": "neera",
    "cut": "content/sprites/neera-hydra/cut.json",
    "why": "the user, 2026-10-22: \"add these new animations to Neera, they should have the same size, we dont need to keep the previous\" (Hydra+ sheets: Idle and Offhand); neera-v2-001's idle and atk-short stay in the pack, unused",
-   "poses": {"idle": "idle", "attackShort": "atk-short", "walk": "move", "attack": "atk"},
-   "labels": {"idle": "Parado", "attackShort": "Mão Secundária", "walk": "Andar", "attack": "Atacar"},
+   "poses": {"attackShort": "atk-short", "walk": "move"},
+   "labels": {"attackShort": "Mão Secundária", "walk": "Andar"},
+   "whyIdleAttack": "the user, 2026-10-25: \"recupere os sprites de Neera antes das ultimas mudanças, ela começou a virar reptiliana\", \"recover only Idle and ATT the rest is fine\": idle and attack are neera-v2-001's again; this set's idle and atk clips stay in the pack, unused",
    "packs": {"idle": "field", "move": "field"},
    "strides": {"move": 2.0},
    "whyWalk": "the user, 2026-10-22: \"WalkRight ... now add this new one\" (walk to the right; walkLeft keeps neera-v2-001's move-left until a left sheet exists)"
