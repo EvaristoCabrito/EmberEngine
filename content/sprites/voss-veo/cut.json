@@ -13,9 +13,8 @@
    "video": "Attachments/VeoVoss/Idle/VossV2Idle.mp4",
    "first": 16,
    "last": 120,
-   "loopMin": 48,
-   "loopMax": 100,
-   "mode": "loop"
+   "mode": "pingpong",
+   "why": "the user, 2026-10-25: the idle jumped where its loop restarted (the video never comes back to its first pose): played back and forth (\"try 1\"), the whole stretch, no seam"
   },
   {
    "clip": "move",
@@ -23,11 +22,12 @@
    "kind": "walk",
    "src": "build/video-cut/voss-veo/walk-right",
    "video": "Attachments/VeoVoss/WalkRight/Voss_walking_to_the_right_20261017230249.mp4",
-   "first": 40,
-   "last": 130,
-   "loopMin": 40,
-   "loopMax": 86,
-   "mode": "loop"
+   "first": 29,
+   "last": 152,
+   "loopMin": 88,
+   "loopMax": 121,
+   "mode": "loop",
+   "why": "the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (29..152, 124 frames), the seam trims at most 24; the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (29..152, 124 frames), the seam trims at most 36"
   },
   {
    "clip": "move-left",
@@ -35,11 +35,12 @@
    "kind": "walk",
    "src": "build/video-cut/voss-veo/walk-left",
    "video": "Attachments/VeoVoss/Walk Left/Character_walking_left_with_staff_20261017230240.mp4",
-   "first": 30,
-   "last": 170,
-   "loopMin": 40,
-   "loopMax": 110,
-   "mode": "loop"
+   "first": 0,
+   "last": 148,
+   "loopMin": 101,
+   "loopMax": 146,
+   "mode": "loop",
+   "why": "the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (0..148, 149 frames), the seam trims at most 24; the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (0..148, 149 frames), the seam trims at most 48"
   },
   {
    "clip": "cast",

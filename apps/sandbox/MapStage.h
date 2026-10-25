@@ -3834,19 +3834,27 @@ class MapStage final : public Stage {
   // figure) is pinned and drawn from it; the others as in Alta. Only the chosen copy is loaded.
   void pinUnitArt() {
     sprites_.setLight(gamePrefs().characters == "leve");
-    // Leve halves the medium copy where there is one (the user, 2026-10-21: "criar a versão leve ... para eu poder comparar
-    // os 3"): Voss at ~1100 / ~610 / ~305 px of figure in Alta / Média / Leve; without a copy Leve halves the full clip as before
+    // Média and Leve draw a pose's own copies where it has them (Voss / Isolde: all frames ~1100 px / 64 frames ~610 px / 36
+    // frames ~610 px; pinArt never halves a copy); without a copy Leve halves the full clip as before
     mediumArt_ = gamePrefs().characters == "media" || gamePrefs().characters == "leve";
     // A pose with a Leve copy of its own (HeroPose::light: Voss's 36-frame cut, the user 2026-10-22: "36 is on with LEVE, 64 is
-    // on with Medium, High plays the full version") draws it in Leve, still halved like every Leve.
+    // on with Medium, High plays the full version") draws it in Leve.
+  // A pose drawn from its own Média / Leve copy (fewer frames at ~610 px) is never halved on top of it, neither by Leve nor by
+  // Alta's fallback when the GPU is short (the user, 2026-10-25: "tem como fazer a leve 36 quadros sem pixelar as imagens? fica
+  // bem feio mesmo", "médio do voss 64 sem pixels": 36 frames halved came out ~305 px of figure); the cast's poses without a
+  // copy are halved by Leve as before.
     lightArt_ = gamePrefs().characters == "leve";
     for (size_t i = 0; i < scene_->units.size(); ++i) pinArt(scene_->units[i], i < unitCatalog_.size() ? unitCatalog_[i] : nullptr);
   }
   void pinArt(const e2::SceneUnit& u, const e2::Hero* entry) {
     const bool two = twoVersionCast().contains(entry ? entry->key : u.key);
-    sprites_.pin(sceneArtSet(u, entry), u.clip, two);
+    const std::string& own = sceneArtSet(u, entry);
+    sprites_.pin(own, u.clip, two && own == u.set);
     if (entry)
-      for (const e2::HeroPose& p : entry->poses) sprites_.pin(artSet(p), p.clip, two);
+      for (const e2::HeroPose& p : entry->poses) {
+        const std::string& set = artSet(p);
+        sprites_.pin(set, p.clip, two && set == p.set);
+      }
   }
   const std::string& artSet(const e2::HeroPose& p) const {
     if (lightArt_ && !p.light.empty()) return p.light;

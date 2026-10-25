@@ -142,6 +142,11 @@ def main():
             r = cut[name]
             per = r["frameMs"] * 240 / 1000  # ticks a frame (10 at 24 fps)
             pace = [min(r["frames"] - 1, math.floor(t / per)) for t in range(round(r["frames"] * per))]
+            if spec[name]["mode"] == "pingpong" and r["frames"] > 2:
+                # back and forth (the user, 2026-10-25, the idles' jump at the loop: "try 1"): 0 .. n-1 .. 1, each frame its own
+                # time, as the old pingpong poses are paced; the loop never restarts, so it never jumps
+                back = list(range(r["frames"] - 2, 0, -1))
+                pace += [b for b in back for _ in range(round(per))]
             fields = dict(set=st["set"], clip=name, box=r["box"], nat=r["nat"], crop=r["crop"], frames=r["frames"], pace=pace,
                           doneAt=-1)
             if "impact" in r:

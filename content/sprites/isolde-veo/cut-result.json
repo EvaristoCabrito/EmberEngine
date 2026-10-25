@@ -34,17 +34,14 @@
   "base": {
    "video": "Attachments/Isolde/IsoldeIdleandCasting.mp4",
    "first": 0,
-   "last": 115,
+   "last": 109,
    "bootRow": 1221,
    "bootRows": [
     1213,
     1233
    ],
-   "loopFirst": 1,
-   "loopLast": 109,
-   "seamSteps": 2.41,
    "figurePx": 1100.0,
-   "frames": 109,
+   "frames": 110,
    "frameMs": 41.666666666666664,
    "nat": [
     634,
@@ -125,50 +122,50 @@
   },
   "move": {
    "video": "Attachments/Isolde/IsoldeRightWalkstartsat2sec.mp4",
-   "first": 30,
+   "first": 26,
    "last": 143,
-   "loopFirst": 54,
-   "loopLast": 100,
-   "seamSteps": 1.55,
-   "bootRow": 1170,
+   "loopFirst": 46,
+   "loopLast": 140,
+   "seamSteps": 2.48,
+   "bootRow": 1169,
    "bodyDrift": [
-    -45,
-    -12
+    -49,
+    -16
    ],
-   "figurePx": 1031.0,
-   "frames": 47,
+   "figurePx": 1032.0,
+   "frames": 95,
    "frameMs": 41.666666666666664,
    "nat": [
-    573,
-    1072
+    578,
+    1073
    ],
    "crop": [
-    5,
+    4,
     6,
-    564,
-    1061
+    570,
+    1062
    ],
    "box": {
-    "w": 1.47835,
-    "h": 2.76578,
-    "foot": 0.02838
+    "w": 1.48981,
+    "h": 2.76568,
+    "foot": 0.02835
    },
    "pattern": "content/sprites/isolde-veo/move-v01/move-{}.png"
   },
   "move-left": {
    "video": "Attachments/Isolde/IsoldeLeftWalk.mp4",
-   "first": 36,
+   "first": 30,
    "last": 143,
-   "loopFirst": 45,
-   "loopLast": 96,
-   "seamSteps": 1.9,
+   "loopFirst": 54,
+   "loopLast": 132,
+   "seamSteps": 2.46,
    "bootRow": 1162,
    "bodyDrift": [
-    22,
-    54
+    31,
+    59
    ],
-   "figurePx": 976.0,
-   "frames": 52,
+   "figurePx": 974.0,
+   "frames": 79,
    "frameMs": 41.666666666666664,
    "nat": [
     545,
@@ -181,9 +178,9 @@
     1009
    ],
    "box": {
-    "w": 1.48535,
-    "h": 2.78264,
-    "foot": 0.06814
+    "w": 1.4884,
+    "h": 2.78836,
+    "foot": 0.06828
    },
    "pattern": "content/sprites/isolde-veo/move-left-v01/move-left-{}.png"
   },

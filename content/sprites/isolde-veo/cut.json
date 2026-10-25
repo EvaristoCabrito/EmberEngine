@@ -12,10 +12,9 @@
    "src": "build/video-cut/isolde-veo/all",
    "video": "Attachments/Isolde/IsoldeIdleandCasting.mp4",
    "first": 0,
-   "last": 115,
-   "loopMin": 48,
-   "loopMax": 115,
-   "mode": "loop"
+   "last": 109,
+   "mode": "pingpong",
+   "why": "the user, 2026-10-25: the idle jumped where its loop restarted (the video never comes back to its first pose): played back and forth (\"try 1\"), the whole stretch, no seam"
   },
   {
    "clip": "move",
@@ -23,12 +22,12 @@
    "kind": "walk",
    "src": "build/video-cut/isolde-veo/walk-right",
    "video": "Attachments/Isolde/IsoldeRightWalkstartsat2sec.mp4",
-   "first": 30,
+   "first": 26,
    "last": 143,
-   "loopMin": 24,
-   "loopMax": 100,
+   "loopMin": 94,
+   "loopMax": 115,
    "mode": "loop",
-   "why": "the video opens on a stone wall and cuts to the studio at frame 24; she walks from 2 s"
+   "why": "the video opens on a stone wall and cuts to the studio at frame 24; she walks from 2 s; the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (26..143, 118 frames), the seam trims at most 24"
   },
   {
    "clip": "move-left",
@@ -36,12 +35,12 @@
    "kind": "walk",
    "src": "build/video-cut/isolde-veo/walk-left",
    "video": "Attachments/Isolde/IsoldeLeftWalk.mp4",
-   "first": 36,
+   "first": 30,
    "last": 143,
-   "loopMin": 24,
-   "loopMax": 100,
+   "loopMin": 78,
+   "loopMax": 111,
    "mode": "loop",
-   "why": "she turns from the front to her left profile in the first second, then walks in place from ~1.5 s"
+   "why": "she turns from the front to her left profile in the first second, then walks in place from ~1.5 s; the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (30..143, 114 frames), the seam trims at most 24; the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (30..143, 114 frames), the seam trims at most 36"
   },
   {
    "clip": "cast",
