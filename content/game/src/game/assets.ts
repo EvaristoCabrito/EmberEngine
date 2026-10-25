@@ -873,7 +873,7 @@ export async function loadGameArt(): Promise<GameArt> {
     // Câmara Profunda: the burial vault with the skylight.
     "cemiterio-esquecidos-cripta-2": await loadImage(encodeURI("/game/assets/2Cemitério dos Esquecidos — Câmara Profunda✕.jpg")),
     // A Estalagem do Osso Seco (the walkable Inn): the tavern interior behind the board.
-    estalagem: await loadImage("/game/assets/INNbackground.jpg"),
+    estalagem: await loadImage("/game/assets/INNbackground-v02.png"),
     // As Profundezas Enevoadas (Misty Cave dungeon): the torch-lit cavern passage.
     "misty-cave-dungeon": await loadImage(encodeURI("/game/assets/As Profundezas EnevoadasBackground2.jpg")),
     // The other floors of the cemetery, each with its own picture (file names say which floor).

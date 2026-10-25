@@ -66,6 +66,14 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"bosque-morto-v01", "woods", "ember-bosque-morto-moss-v01", "content/ground/bosque-morto-moss-v01.png", 4.5f},
     {"bosque-morto-v01", "plains", "ember-bosque-morto-litter-v01", "content/ground/bosque-morto-litter-v01.png", 4.0f},
     {"bosque-morto-v01", "hill", "ember-bosque-morto-roots-v01", "content/ground/bosque-morto-roots-v01.png", 4.5f},
+    // Bosque Morto v08: pale ground-level earth at the forest edge, leaf litter through the clearings, moss on raised ground.
+    {"bosque-morto-v02", "woods", "ember-bosque-morto-earth-leaves-v02", "content/ground/bosque-morto-earth-leaves-v02.png", 4.0f},
+    {"bosque-morto-v02", "plains", "ember-bosque-morto-leaf-moss-v02", "content/ground/bosque-morto-leaf-moss-v02.png", 4.0f},
+    {"bosque-morto-v02", "hill", "ember-bosque-morto-moss-center-v02", "content/ground/bosque-morto-moss-center-v02.png", 4.0f},
+    // Bosque Morto v09: varied forest and clearing ground; props remain independent decorations.
+    {"bosque-morto-v03", "woods", "ember-bosque-morto-earth-leaves-v03", "content/ground/bosque-morto-earth-leaves-v02.png", 4.0f},
+    {"bosque-morto-v03", "plains", "ember-bosque-morto-leaf-moss-v03", "content/ground/bosque-morto-leaf-moss-v02.png", 4.0f},
+    {"bosque-morto-v03", "hill", "ember-bosque-morto-moss-center-v03", "content/ground/bosque-morto-moss-center-v02.png", 4.0f},
     // The Misty Cave (cave-v01, the user's photos in Attachments/MistyCave, 2026-10-23; docs/MISTY_CAVE_PROMPTS.md T1-T5, W1; each ~4 m
     // of ground across its 784 px): bedrock floor, the old worked passage, rockfall, calcite ledges, the wet margin by the water; every
     // one over its terrain's baked art too. "side" is laid on no hex: BoardGround puts it on the board's sides and cliffs (the rock wall).

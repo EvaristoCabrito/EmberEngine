@@ -13,7 +13,12 @@ if not exist "%EXE%" (
   goto :fim
 )
 
-set "GROUND=%ART%\ground\ground-v40.pak"
+set "GROUND=%ART%\ground\ground-v45.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v44.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v43.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v42.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v41.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v40.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v38.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v37.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v36.pak"
@@ -52,7 +57,8 @@ if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v4.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v3.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v2.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground.pak"
-set "MESHES=%ART%\meshes\props-v9.pak"
+set "MESHES=%ART%\meshes\props-v10.pak"
+if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v9.pak"
 if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v8.pak"
 if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v6.pak"
 if not exist "%MESHES%" set "MESHES=%ART%\meshes\props-v5.pak"

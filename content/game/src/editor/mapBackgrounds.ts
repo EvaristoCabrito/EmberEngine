@@ -25,7 +25,7 @@ export const MAP_BACKGROUNDS: MapBackground[] = [
   { id: 'scene-wisp-crossing-panorama', label: 'Travessia da Floresta dos Wisps · Panorâmica', file: 'wisp-forest-crossing-panorama-v04-alpha.png', kind: 'battle', mapIds: ['wisp-forest-crossing'] },
   { id: 'scene-cemetery-ground', label: 'Cemitério dos Esquecidos', file: 'CemiteryBackground.jpg', kind: 'battle', mapIds: ['cemiterio-esquecidos', 'cemetery-ground-part-ii', 'cemetery-ground-deep-crypt-1'] },
   { id: 'scene-cemetery-deep-chamber', label: 'Cemitério · Câmara profunda', file: '2Cemitério dos Esquecidos — Câmara Profunda✕.jpg', kind: 'battle', mapIds: ['cemiterio-esquecidos-cripta-2', 'cemetery-ground-deep-crypt-2'] },
-  { id: 'scene-inn', label: 'Estalagem do Osso Seco', file: 'INNbackground.jpg', kind: 'battle', mapIds: ['estalagem'] },
+  { id: 'scene-inn', label: 'Estalagem do Osso Seco', file: 'INNbackground-v02.png', kind: 'battle', mapIds: ['estalagem'] },
   { id: 'scene-misty-cave', label: 'Profundezas Enevoadas', file: 'As Profundezas EnevoadasBackground2.jpg', kind: 'battle', mapIds: ['misty-cave-dungeon', 'deep-mist', 'misty-root-descent', 'misty-spore-basin', 'misty-blackwater-shelf', 'misty-hollow-earth', 'misty-sporehaven', 'misty-deep-mycelium'] },
   { id: 'scene-cemetery-crypt', label: 'Cemitério · Cripta', file: 'Andar 3Cemitério dos Esquecidos — Cripta✕.jpg', kind: 'battle', mapIds: ['cemiterio-esquecidos-cripta', 'cemetery-ground-deep-crypt-3'] },
   { id: 'scene-cemetery-mausoleum', label: 'Cemitério · Mausoléu', file: 'Andar 4Cemitério dos Esquecidos — Mausoléu✕.jpg', kind: 'battle', mapIds: ['cemiterio-esquecidos-mausoleu', 'cemetery-ground-deep-crypt-4'] },
