@@ -369,7 +369,7 @@ bool InnRules::fitsSlot(const InnGear& item, const std::string& slot) {
 bool InnRules::offHandBlocked(const Json& save, const std::string& hero) const {
   const Json& id = child(child(save, "equipped"), hero);
   const InnWeapon* w = id.is_string() ? data_.weapon(id.get<std::string>()) : nullptr;
-  return w && w->twoHanded;
+  return w && w->twoHanded && w->weaponType != "bow";  // a bow leaves the off hand free (the user, 2026-10-25)
 }
 
 // inventory.ts equipSharedItem / unequipSharedItem (and GameApp: unequipping needs room in the bag).

@@ -372,6 +372,7 @@ class InventoryScreen {
       }
       if (!shown) ImGui::TextColored(ImColor(kMuted), "Nenhum item na Mochila para esse espaço ainda.");
     }
+    ImGui::Dummy({0, 0});  // the rows end with SetCursorScreenPos: an item after it, as ImGui asks
     const ImVec2 a = ImGui::GetWindowPos(), b{a.x + ImGui::GetWindowSize().x, a.y + ImGui::GetWindowSize().y};
     split.SetCurrentChannel(dl, 0);
     emberPanel(dl, a, b);
@@ -588,7 +589,7 @@ class InventoryScreen {
       const std::string iid = id;
       for (const std::string& h : heroes) {
         const std::string cls = c.rules.heroClass(c.save, h);
-        // targetSlotFor: a ring takes the free finger (ring1 first); no off-hand under a two-handed weapon.
+        // targetSlotFor: a ring takes the free finger (ring1 first); no off-hand under a two-handed weapon (a bow is not one).
         std::string slot = item->slot;
         const e2::Json& worn = c.save.value("equipment", e2::Json::object()).value(h, e2::Json::object());
         if (item->slot == "ring1" || item->slot == "ring2") slot = worn.contains("ring1") && worn["ring1"].is_string() ? "ring2" : "ring1";

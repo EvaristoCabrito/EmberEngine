@@ -106,9 +106,9 @@ bool equipFromSave(BattleUnit& u, const Loadouts& arms, const Json& save) {
   // reach: the weapon's own (the class's without one), +1 for the mage classes
   u.minRange = w ? w->minRange : cls->minRange;
   u.maxRange = (w ? w->maxRange : cls->maxRange) + (arms.mageRangeBonus(u.classId) ? 1 : 0);
-  // the off hand: save.equipment[hero].offHand, never beside a two-handed weapon
+  // the off hand: save.equipment[hero].offHand, never beside a two-handed weapon; a bow is not one (the user, 2026-10-25)
   const OffHandDef* off = nullptr;
-  if (!(w && w->twoHanded)) {
+  if (!(w && w->twoHanded && w->weaponType != "bow")) {
     const Json equipment = save.value("equipment", Json::object());
     if (equipment.is_object() && equipment.contains(u.name) && equipment[u.name].is_object())
       if (const std::string id = text(equipment[u.name], "offHand"); !id.empty()) off = arms.offHand(id);
