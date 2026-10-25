@@ -5331,7 +5331,11 @@ class MapStage final : public Stage {
     }
     // A counter on a foe beside it: the unit's staff blow when it has one (Voss; the user, 2026-10-17: "he will counter with
     // his staff when the enemy is close ranged, and ... the regular mage ATT when in distance"). No bolt flies from it.
-    const bool staffCounter = s.type == StepType::Combat && x.counter && striker >= 0 &&
+    // Isolde also strikes with it when she attacks a foe beside her (the user, 2026-10-25: "when she is too close for a bolt, them
+    // she hits with the staff for fun effects, doesnt change her DMG"): only the look; the rules' blow is the same.
+    const bool isolde = striker >= 0 && static_cast<size_t>(striker) < unitCatalog_.size() && unitCatalog_[static_cast<size_t>(striker)] &&
+                        unitCatalog_[static_cast<size_t>(striker)]->key == "isolde";
+    const bool staffCounter = s.type == StepType::Combat && (x.counter || (isolde && s.kind.empty())) && striker >= 0 &&
                               hasPose(static_cast<size_t>(striker), "counterStaff") && strikeBeside(s);
     if (staffCounter) pose = "counterStaff";
     const float length = (striker >= 0 && !pose.empty() ? poseSeconds(static_cast<size_t>(striker), pose) : 0.6f) / actionRate();
