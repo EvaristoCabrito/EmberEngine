@@ -90,6 +90,7 @@ struct EmberSpell {
   SpellData data;
   const char* cls;  // the class that learns it
   int learn;        // at this level
+  const char* hero = nullptr;  // only this hero of the class learns it (a hero's exclusive), else every one
 };
 constexpr EmberSpell kEmberSpells[] = {
     // Bruxo: enfeeblement and damage over time
@@ -144,10 +145,11 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"judgment", "Julgamento", 5, "holy", false}, "healer", 14},
     // Conjurador: combat spells open with their tier (1 / 3 / 6 / 8 / 11); their existing scaling tracks keep their dates.
     // The Arcanista and the Necromante keep them. The field spells (Marcar Runa, Retornar) live in world/FieldSpells.
+    // Reflexo Arcano is Isolde's alone and Imagem Espelhada Malrec's alone; Detonar Invocação is T5 (the user, 2026-10-25).
     {{"placeSwap", "Troca de Lugar", 1, "", false}, "conjurer", 1},
-    {{"arcaneReflection", "Reflexo Arcano", 2, "arcane", false}, "conjurer", 3},
-    {{"mirrorImage", "Imagem Espelhada", 2, "", false}, "conjurer", 3},
-    {{"detonateSummon", "Detonar Invocação", 3, "arcane", false}, "conjurer", 6},
+    {{"arcaneReflection", "Reflexo Arcano", 2, "arcane", false}, "conjurer", 3, "Isolde"},
+    {{"mirrorImage", "Imagem Espelhada", 2, "", false}, "conjurer", 3, "Malrec"},
+    {{"detonateSummon", "Detonar Invocação", 5, "arcane", false}, "conjurer", 11},
     {{"sacrificeBond", "Elo de Sacrifício", 5, "", false}, "conjurer", 11},
     {{"nightmare", "Pesadelo", 4, "arcane", false}, "conjurer", 8},
     {{"boneLance", "Lança de Ossos", 6, "darkness", false}, "necromancer", 15},  // the Necromante's T6 (the user, 2026-10-20)
@@ -2368,11 +2370,11 @@ int spellLearnLevel(const std::string& kind) {
   const EmberSpell* e = emberSpell(kind);
   return e ? e->learn : 0;
 }
-std::vector<std::string> emberSpells(const std::string& classId, int level) {
+std::vector<std::string> emberSpells(const std::string& classId, int level, const std::string& hero) {
   std::vector<std::string> out;
   const std::string family = emberClassFamily(classId);
   for (const EmberSpell& e : kEmberSpells)
-    if ((classId == e.cls || family == e.cls) && level >= e.learn) out.push_back(e.data.kind);
+    if ((classId == e.cls || family == e.cls) && level >= e.learn && (!e.hero || hero == e.hero)) out.push_back(e.data.kind);
   return out;
 }
 std::vector<std::string> checkSpellTracks(std::vector<std::string>* report) {
@@ -2504,7 +2506,10 @@ std::vector<std::string> checkSpellTracks(std::vector<std::string>* report) {
   return fails;
 }
 void grantClassSpells(BattleUnit& u) {
-  for (const std::string& k : emberSpells(u.classId, u.level))
+  // a hero's exclusive leaves everyone else's list, even one from an older save or battle file
+  for (const EmberSpell& e : kEmberSpells)
+    if (e.hero && u.name != e.hero) std::erase(u.spellList, std::string(e.data.kind));
+  for (const std::string& k : emberSpells(u.classId, u.level, u.name))
     if (!contains(u.spellList, k)) u.spellList.push_back(k);
   // The ordinary spell bar and casting checks must grant Voss the same storm the effects preview can play.
   // Keep its existing casting implementation; this is a class unlock, not a new spell formula.

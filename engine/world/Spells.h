@@ -134,8 +134,8 @@ struct BattleEffect {
 std::string emberSpellClass(const std::string& kind);
 // The level a class learns it at (0 = not one of ours).
 int spellLearnLevel(const std::string& kind);
-// The kinds a class knows at a level, in learning order (empty for Engine2's classes).
-std::vector<std::string> emberSpells(const std::string& classId, int level);
+// The kinds a class knows at a level, in learning order (empty for Engine2's classes); a hero's exclusive only for that hero.
+std::vector<std::string> emberSpells(const std::string& classId, int level, const std::string& hero = {});
 // Every spell's numbers level by level, as the casts read them, from the level it is learned to 60 (Ember Ashes II's cap):
 // one small change on each of the 14 levels after learning where its track has a step, none where it has none, none after
 // (the user, 2026-10-20). Returns the failures, empty when every spell keeps the rule; `report` gets a line per spell.
