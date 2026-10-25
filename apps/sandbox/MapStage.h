@@ -1208,8 +1208,57 @@ class MapStage final : public Stage {
   void clampGoal() {
     pitch_ = std::clamp(pitch_, minPitch(), kMaxPitch);
     distance_ = std::clamp(distance_, kMinDistance, maxDistance_);
-    // The pivot is free (the user, 2026-10-25: "camera livre at all times"): no limit to where the pan goes (kPanInset stays, unused).
+    // The pivot stays over the board or at most kPivotMarginHexes past its edge (the user, 2026-10-25: "it has always been 3 to 5
+    // hexes away", "não pode existir nenhum canto do tabuleiro invisível"): every corner can still be brought to the screen's centre.
+    const float margin = kPivotMarginHexes * std::sqrt(3.0f);  // a hex column is sqrt(3) wide
+    target_.x = std::clamp(target_.x, boardCenter_.x - boardWidth_ * 0.5f - margin, boardCenter_.x + boardWidth_ * 0.5f + margin);
+    target_.z = std::clamp(target_.z, boardCenter_.z - boardDepth_ * 0.5f - margin, boardCenter_.z + boardDepth_ * 0.5f + margin);
+    distance_ = std::min(distance_, solidGroundDistance());
   }
+  // The farthest zoom at which the floor image is still solid right in front of the board (the user, 2026-10-25: "when you zoom out
+  // from this angle the ground disappears ... where the ground remains solid"). resolve_panorama.hlsl draws the floor image fully only
+  // where a ray goes at least 2.5 x groundFromDegrees under the horizon and less than 0.55 x groundFar from the eye; beyond that the
+  // painting shows and the board floats. Read only: the panorama code is untouched; this limits the camera alone.
+  // One rule for every map (the user, 2026-10-25: "todos os mapas precisam do mesmo comportamento"): the chosen panorama's own floor
+  // numbers when it lays a floor image, else the common ones (3 deg, 300 units: what the panoramas' floors use).
+  auto groundFit() const {
+    const int panorama = background_ - 5;
+    const BackdropFit* fit = panorama >= 0 && panorama < static_cast<int>(panoramaFits_.size()) ? &panoramaFits_[static_cast<size_t>(panorama)]
+                             : background_ >= 4                                                   ? &backdropFit_
+                                                                                                   : nullptr;
+    return fit && !fit->ground.empty() ? fit : static_cast<const BackdropFit*>(nullptr);
+  }
+  float solidGroundDistance() const {
+    const auto* fit = groundFit();
+    const float fromDegrees = fit ? fit->groundFromDegrees : 3.0f, far = fit ? fit->groundFar : 300.0f, depth = fit ? fit->groundDepth : 0.0f;
+    const float planeY = (look_ == e2::EdgeStyle::Smooth ? groundLow_ - 0.35f : std::min(0.0f, groundLow_)) - depth;
+    const float minDepression = glm::radians(fromDegrees * 2.5f), maxRay = far * 0.55f;
+    // The board's near edge: from the pivot toward the eye, to the board's rectangle (0 when the pivot is already off the board).
+    const glm::vec2 toEye{std::sin(yaw_), std::cos(yaw_)};
+    const float hx = boardWidth_ * 0.5f, hz = boardDepth_ * 0.5f;
+    const glm::vec2 p{target_.x - boardCenter_.x, target_.z - boardCenter_.z};
+    float s = 0.0f;
+    if (std::abs(p.x) <= hx && std::abs(p.y) <= hz) {
+      const float sx = std::abs(toEye.x) > 1e-5f ? ((toEye.x > 0 ? hx : -hx) - p.x) / toEye.x : 1e9f;
+      const float sz = std::abs(toEye.y) > 1e-5f ? ((toEye.y > 0 ? hz : -hz) - p.y) / toEye.y : 1e9f;
+      s = std::min(sx, sz);
+    }
+    const float pitch = flat_ ? glm::radians(90.0f) : std::max(pitch_, kMinEyePitch), rise = target_.y - planeY;  // Tática looks straight down
+    auto solid = [&](float d) {
+      const float e = rise + d * std::sin(pitch), h = d * std::cos(pitch) - s;
+      if (h <= 0.0f) return e <= maxRay;
+      return std::atan2(e, h) >= minDepression && std::sqrt(e * e + h * h) <= maxRay;
+    };
+    if (solid(maxDistance_)) return maxDistance_;
+    if (!solid(kMinDistance)) return kMinDistance;
+    float lo = kMinDistance, hi = maxDistance_;
+    for (int i = 0; i < 24; ++i) {
+      const float mid = 0.5f * (lo + hi);
+      (solid(mid) ? lo : hi) = mid;
+    }
+    return lo;
+  }
+  static constexpr float kPivotMarginHexes = 4.0f;
   static constexpr float kPanInset = 0.6f;  // the pivot's distance from the board's edges, in view half heights
 
   struct OrbitView {
