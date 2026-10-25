@@ -88,8 +88,9 @@ add_library(EmberEngine STATIC
 target_include_directories(EmberEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(EmberEngine PUBLIC SDL3::SDL3 volk glm::glm vma stb imgui nlohmann_json PRIVATE zstd)
 target_link_libraries(EmberEngine PRIVATE meshoptimizer clusterlod lunasvg::lunasvg)
-# Films (media/VideoPlayer): Windows Media Foundation.
-target_link_libraries(EmberEngine PRIVATE mfplat mfreadwrite mfuuid ole32)
+# Films (media/VideoPlayer): AV1 + Opus in WebM through our own decoders (dav1d, libopus, libwebm's reader); H.264 MP4s
+# through Windows Media Foundation.
+target_link_libraries(EmberEngine PRIVATE dav1d opus webm_reader mfplat mfreadwrite mfuuid ole32)
 target_compile_definitions(EmberEngine PUBLIC
   VK_NO_PROTOTYPES
   VMA_STATIC_VULKAN_FUNCTIONS=0

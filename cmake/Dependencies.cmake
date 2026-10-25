@@ -66,6 +66,29 @@ FetchContent_Declare(zstd
   GIT_SHALLOW TRUE
   SOURCE_SUBDIR build/cmake)
 
+# Films in AV1 + Opus (WebM; media/VideoPlayer, the user 2026-10-25: our own decoders, every PC plays them the same, AV1 about
+# half of H.264's size). dav1d (VideoLAN's AV1 decoder) builds with Meson upstream, so it is compiled here by our own target
+# (cmake/Dav1d.cmake); libwebm gives only its Matroska reader; Opus builds with its own CMake.
+FetchContent_Declare(dav1d
+  GIT_REPOSITORY https://code.videolan.org/videolan/dav1d.git
+  GIT_TAG 1.5.4
+  GIT_SHALLOW TRUE
+  SOURCE_SUBDIR do-not-build)
+FetchContent_Declare(libwebm
+  GIT_REPOSITORY https://chromium.googlesource.com/webm/libwebm
+  GIT_TAG libwebm-1.0.0.32
+  GIT_SHALLOW TRUE
+  SOURCE_SUBDIR do-not-build)
+set(OPUS_BUILD_PROGRAMS OFF CACHE BOOL "" FORCE)
+set(OPUS_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(OPUS_BUILD_SHARED_LIBRARY OFF CACHE BOOL "" FORCE)
+set(OPUS_INSTALL_PKG_CONFIG_MODULE OFF CACHE BOOL "" FORCE)
+set(OPUS_INSTALL_CMAKE_CONFIG_MODULE OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(opus
+  GIT_REPOSITORY https://github.com/xiph/opus.git
+  GIT_TAG v1.6.1
+  GIT_SHALLOW TRUE)
+
 # --- Cooking tools only (never linked into the game) ---------------------------------------------
 
 # BC7 encoder: bc7e's pure C++ port inside Basis Universal (only those two files are built)
@@ -105,7 +128,17 @@ FetchContent_Declare(cgltf
   GIT_SHALLOW TRUE
   SOURCE_SUBDIR do-not-build)
 
-FetchContent_MakeAvailable(SDL3 volk vma glm stb imgui lunasvg zstd basisu bc7enc_rdo nlohmann_json meshoptimizer cgltf)
+FetchContent_MakeAvailable(SDL3 volk vma glm stb imgui lunasvg zstd dav1d libwebm opus basisu bc7enc_rdo nlohmann_json meshoptimizer cgltf)
+include(${CMAKE_CURRENT_LIST_DIR}/Dav1d.cmake)
+
+# libwebm: only the Matroska / WebM reader (the muxer, the tools and the tests stay out)
+add_library(webm_reader STATIC
+  ${libwebm_SOURCE_DIR}/mkvparser/mkvparser.cc
+  ${libwebm_SOURCE_DIR}/mkvparser/mkvreader.cc)
+target_include_directories(webm_reader SYSTEM PUBLIC ${libwebm_SOURCE_DIR})
+if(MSVC)
+  target_compile_options(webm_reader PRIVATE /W0)
+endif()
 
 add_library(vma INTERFACE)
 target_include_directories(vma SYSTEM INTERFACE ${vma_SOURCE_DIR}/include)

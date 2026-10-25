@@ -1,9 +1,13 @@
 #pragma once
 
-// Plays a film (the game's cutscenes: H.264 + AAC in MP4) for the UI: Windows Media Foundation decodes it on a worker
-// thread (hardware where the GPU offers it; no extra library), the sound goes out through an SDL3 audio stream, and the
-// picture is an ImGui texture updated as the film plays. The sound is the clock (the picture follows it); a film
-// without sound runs on the wall clock.
+// Plays a film (the game's cutscenes) for the UI, decoded on a worker thread: the sound goes out through an SDL3 audio
+// stream, and the picture is an ImGui texture updated as the film plays. The sound is the clock (the picture follows it);
+// a film without sound runs on the wall clock.
+//   .webm (AV1 + Opus; the user, 2026-10-25: our own decoders, the same on every PC, AV1 about half of H.264's size): libwebm
+//         reads the file, dav1d decodes the picture, libopus the sound. A film asked for as .mp4 plays its .webm twin when
+//         one lies beside it (the MP4 is kept).
+//   .mp4  (H.264 + AAC): Windows Media Foundation (hardware where the GPU offers it).
+// Each film logs its decode cost when it ends (ms per picture, average and worst), to compare the two.
 
 #include <atomic>
 #include <condition_variable>
@@ -40,6 +44,10 @@ class VideoPlayer {
   // The sound's level, 0..1 (Opções' cutscene volume); muting keeps it.
   void setVolume(float volume);
   bool muted() const { return muted_; }
+  // Sandbox --film-check: decodes the film (and its .webm twin, for an .mp4) as fast as it goes, pictures and sound thrown away,
+  // and logs each one's decode cost and speed; the number of films that failed. `still` (optional): picture number `stillAt` of
+  // each film written beside it as <still stem>-<decoder>.png, to compare the two decoders' colours.
+  static int check(const std::filesystem::path& film, const std::filesystem::path& still = {}, int stillAt = 100);
 
  private:
   struct Frame {
@@ -47,6 +55,14 @@ class VideoPlayer {
     std::vector<uint8_t> rgba;
   };
   void decode(std::filesystem::path file);
+  void decodeMediaFoundation(const std::filesystem::path& file);
+  void decodeWebm(const std::filesystem::path& file);
+  // Shared by both decoders: the sound device at the film's format, a picture into the queue (waits for room, unless the
+  // sound runs low: a file whose sound lies further on than its pictures must not stall the clock), sound to the device.
+  void openSound(int rate, int channels);
+  void pushPicture(Frame&& frame);
+  void pushSound(const float* samples, size_t bytes);
+  void logCost(const std::filesystem::path& file, const char* decoder) const;
   void stop();
 
   std::thread worker_;
@@ -62,6 +78,13 @@ class VideoPlayer {
   double wallStart_ = -1, lastPts_ = 0;
   mutable double drainedAt_ = -1;  // when the last sound was heard (time() carries on from the wall clock)
   bool shown_ = false, muted_ = false;
+  bool soundStarted_ = false;  // the device resumes with the first picture
+  bool bench_ = false;         // check(): no device, no queue, pictures dropped as they come
+  std::filesystem::path stillPath_;  // check(): where picture `stillAt_` is written (empty = none)
+  int stillAt_ = 0, benchCount_ = 0;
+  // decode cost (worker only): seconds spent decoding + converting pictures, the worst one, how many
+  double costSum_ = 0, costMax_ = 0;
+  int costFrames_ = 0;
   std::atomic<float> volume_{1.0f};
   UiImage image_;
   void* texture_ = nullptr;  // ImTextureData, kept for reuse (see VideoPlayer.cpp)

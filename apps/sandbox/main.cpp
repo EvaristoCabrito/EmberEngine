@@ -94,6 +94,7 @@
 #include "LoadingScreens.h"
 #include "TitleStage.h"
 #include "media/AudioMixer.h"
+#include "media/VideoPlayer.h"
 #include "OverworldStage.h"
 #include "BattleTalk.h"
 #include "NpcTalk.h"
@@ -1789,6 +1790,10 @@ int main(int argc, char** argv) {
   // --audio-check [engine2 public folder]: decode every effect and the start of every track (exit 1 if any fails).
   if (argc >= 2 && std::string_view(argv[1]) == "--audio-check")
     return ember::AudioMixer::check(argc >= 3 ? argv[2] : "content/game/public") == 0 ? 0 : 1;
+  // --film-check <film> [still.png [picture]]: decode it (and its .webm twin, for an .mp4) flat out; logs each decoder's cost
+  // (exit 1 if any fails); with a still, that picture of each is written as <still>-h264.png / -av1.png.
+  if (argc >= 3 && std::string_view(argv[1]) == "--film-check")
+    return ember::VideoPlayer::check(argv[2], argc >= 4 ? argv[3] : "", argc >= 5 ? std::atoi(argv[4]) : 100) == 0 ? 0 : 1;
   if (argc >= 2 && std::string_view(argv[1]) == "--cursor-check")
     return ember::DebugUi::checkCursors(argc >= 3 ? argv[2] : "build/cursor-check");
   const Options options = parse(argc, argv);

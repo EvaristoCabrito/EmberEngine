@@ -24,6 +24,13 @@
 #include <mfidl.h>
 #include <mfreadwrite.h>
 
+#include <cstdio>
+
+#include <dav1d/dav1d.h>
+#include <mkvparser/mkvparser.h>
+#include <opus.h>
+#include <stb_image_write.h>
+
 #include "core/Log.h"
 
 namespace ember {
@@ -60,6 +67,66 @@ ImTextureData* textureFor(int w, int h) {
   return slot.get();
 }
 
+// libwebm reads through this: the file by its wide path (any name), positioned reads.
+class WebmFile : public mkvparser::IMkvReader {
+ public:
+  ~WebmFile() override {
+    if (file_) std::fclose(file_);
+  }
+  bool open(const std::filesystem::path& path) {
+    file_ = _wfopen(path.c_str(), L"rb");
+    if (!file_ || _fseeki64(file_, 0, SEEK_END) != 0) return false;
+    size_ = _ftelli64(file_);
+    return size_ > 0;
+  }
+  int Read(long long pos, long len, unsigned char* buf) override {
+    if (pos < 0 || len < 0 || pos + len > size_ || _fseeki64(file_, pos, SEEK_SET) != 0) return -1;
+    return std::fread(buf, 1, static_cast<size_t>(len), file_) == static_cast<size_t>(len) ? 0 : -1;
+  }
+  int Length(long long* total, long long* available) override {
+    if (total) *total = size_;
+    if (available) *available = size_;
+    return 0;
+  }
+
+ private:
+  FILE* file_ = nullptr;
+  long long size_ = 0;
+};
+
+// A dav1d picture (8-bit 4:2:0) to RGBA: BT.709 or BT.601 as the stream says (untagged: 709 from 720 rows up, else 601, as
+// players do), limited or full range; 16.16 fixed point.
+void yuvToRgba(const Dav1dPicture& pic, uint8_t* out) {
+  const int w = pic.p.w, h = pic.p.h;
+  const Dav1dSequenceHeader* seq = pic.seq_hdr;
+  const bool full = seq && seq->color_range;
+  const Dav1dMatrixCoefficients m = seq ? seq->mtrx : DAV1D_MC_UNKNOWN;
+  const bool bt709 = m == DAV1D_MC_BT709 || (m != DAV1D_MC_BT601 && m != DAV1D_MC_BT470BG && h >= 720);
+  const double kr = bt709 ? 0.2126 : 0.299, kb = bt709 ? 0.0722 : 0.114, kg = 1.0 - kr - kb;
+  const double ys = full ? 1.0 : 255.0 / 219.0, cs = full ? 1.0 : 255.0 / 224.0;
+  const int yo = full ? 0 : 16;
+  auto fx = [](double v) { return static_cast<int>(std::lround(v * 65536.0)); };
+  const int cy = fx(ys), crv = fx(cs * 2.0 * (1.0 - kr)), cbu = fx(cs * 2.0 * (1.0 - kb));
+  const int cgu = fx(cs * 2.0 * (1.0 - kb) * kb / kg), cgv = fx(cs * 2.0 * (1.0 - kr) * kr / kg);
+  auto clamp8 = [](int v) { return static_cast<uint8_t>(v < 0 ? 0 : v > 255 ? 255 : v); };
+  const auto* yPlane = static_cast<const uint8_t*>(pic.data[0]);
+  const auto* uPlane = static_cast<const uint8_t*>(pic.data[1]);
+  const auto* vPlane = static_cast<const uint8_t*>(pic.data[2]);
+  for (int y = 0; y < h; ++y) {
+    const uint8_t* yr = yPlane + static_cast<ptrdiff_t>(pic.stride[0]) * y;
+    const uint8_t* ur = uPlane + static_cast<ptrdiff_t>(pic.stride[1]) * (y >> 1);
+    const uint8_t* vr = vPlane + static_cast<ptrdiff_t>(pic.stride[1]) * (y >> 1);
+    uint8_t* dst = out + static_cast<size_t>(y) * w * 4;
+    for (int x = 0; x < w; ++x) {
+      const int l = (yr[x] - yo) * cy + 32768, u = ur[x >> 1] - 128, v = vr[x >> 1] - 128;
+      dst[x * 4 + 0] = clamp8((l + crv * v) >> 16);
+      dst[x * 4 + 1] = clamp8((l - cgu * u - cgv * v) >> 16);
+      dst[x * 4 + 2] = clamp8((l + cbu * u) >> 16);
+      dst[x * 4 + 3] = 255;
+    }
+  }
+}
+
 }  // namespace
 
 VideoPlayer::~VideoPlayer() { stop(); }
@@ -79,12 +146,242 @@ bool VideoPlayer::open(const std::filesystem::path& file) {
     return false;
   }
   if (!SDL_WasInit(SDL_INIT_AUDIO) && !SDL_InitSubSystem(SDL_INIT_AUDIO)) logError("audio: {}", SDL_GetError());
-  worker_ = std::thread([this, file] { decode(file); });
+  // A film asked for as .mp4 plays its AV1 twin when there is one (the MP4 stays for whoever has no .webm yet)
+  std::filesystem::path play = file;
+  if (play.extension() == ".mp4") {
+    std::filesystem::path twin = play;
+    twin.replace_extension(".webm");
+    if (std::filesystem::exists(twin, error)) play = twin;
+  }
+  worker_ = std::thread([this, play] { decode(play); });
   return true;
 }
 
-// The worker: Media Foundation's source reader, converting the picture to 32-bit RGB and the sound to float PCM.
 void VideoPlayer::decode(std::filesystem::path file) {
+  if (file.extension() == ".webm") decodeWebm(file);
+  else decodeMediaFoundation(file);
+  ended_ = true;
+}
+
+void VideoPlayer::openSound(int rate, int channels) {
+  audioRate_ = rate, audioChannels_ = channels;
+  if (bench_) return;
+  SDL_AudioSpec spec{SDL_AUDIO_F32, audioChannels_, audioRate_};
+  if (SDL_AudioStream* s = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, nullptr, nullptr)) {
+    SDL_SetAudioStreamGain(s, muted_ ? 0.0f : volume_.load());
+    audio_ = s;
+  } else {
+    logError("film sound: {}", SDL_GetError());
+  }
+}
+
+void VideoPlayer::pushPicture(Frame&& frame) {
+  if (bench_) {
+    if (!stillPath_.empty() && benchCount_ == stillAt_)
+      stbi_write_png(stillPath_.string().c_str(), width_, height_, 4, frame.rgba.data(), width_ * 4);
+    ++benchCount_;
+    return;
+  }
+  // Room for 8 pictures; while the sound has under a quarter second left to play, more may queue (the sound it waits for lies
+  // further on in the file than these pictures).
+  auto soundLow = [&] {
+    SDL_AudioStream* s = audio_.load();
+    return s && soundStarted_ && SDL_GetAudioStreamQueued(s) < static_cast<int>(0.25 * 4.0 * audioChannels_ * audioRate_);
+  };
+  std::unique_lock lock(mutex_);
+  while (!stopping_ && frames_.size() >= 8 && !(frames_.size() < 64 && soundLow())) room_.wait_for(lock, std::chrono::milliseconds(20));
+  frames_.push_back(std::move(frame));
+  if (!soundStarted_ && audio_.load()) SDL_ResumeAudioStreamDevice(audio_.load());
+  soundStarted_ = true;
+}
+
+void VideoPlayer::pushSound(const float* samples, size_t bytes) {
+  SDL_AudioStream* s = audio_.load();
+  if (!s || bytes == 0) return;
+  SDL_PutAudioStreamData(s, samples, static_cast<int>(bytes));
+  audioPushed_ = audioPushed_.load() + static_cast<double>(bytes) / (4.0 * audioChannels_ * audioRate_);
+}
+
+int VideoPlayer::check(const std::filesystem::path& film, const std::filesystem::path& still, int stillAt) {
+  std::vector<std::filesystem::path> files{film};
+  std::error_code error;
+  if (film.extension() == ".mp4") {
+    std::filesystem::path twin = film;
+    twin.replace_extension(".webm");
+    if (std::filesystem::exists(twin, error)) files.push_back(twin);
+  }
+  int bad = 0;
+  for (const std::filesystem::path& f : files) {
+    VideoPlayer p;
+    p.bench_ = true;
+    if (!still.empty()) {
+      p.stillAt_ = stillAt;
+      p.stillPath_ = still.parent_path() / (still.stem().string() + (f.extension() == ".webm" ? "-av1.png" : "-h264.png"));
+    }
+    const double t0 = nowSeconds();
+    p.decode(f);
+    const double wall = nowSeconds() - t0;
+    logInfo("film check {}: {} pictures in {:.2f} s = {:.0f} pictures a second{}", f.filename().string(), p.costFrames_, wall,
+            wall > 0 ? p.costFrames_ / wall : 0.0, p.failed_ ? " (FAILED)" : "");
+    if (p.failed_ || p.costFrames_ == 0) ++bad;
+  }
+  return bad;
+}
+
+void VideoPlayer::logCost(const std::filesystem::path& file, const char* decoder) const {
+  if (costFrames_ == 0) return;
+  logInfo("film {}: {} {}x{}, {} pictures, decode {:.2f} ms a picture (worst {:.2f} ms), {:.1f} MB", file.filename().string(), decoder, width_,
+          height_, costFrames_, 1000.0 * costSum_ / costFrames_, 1000.0 * costMax_,
+          static_cast<double>(std::filesystem::file_size(file)) / (1024.0 * 1024.0));
+}
+
+// AV1 + Opus in WebM: libwebm walks the file's clusters in order, dav1d decodes each picture (its own threads), libopus each
+// sound packet (48 kHz float; the stream's pre-skip dropped from the start).
+void VideoPlayer::decodeWebm(const std::filesystem::path& file) {
+  WebmFile reader;
+  long long pos = 0;
+  mkvparser::EBMLHeader ebml;
+  mkvparser::Segment* rawSegment = nullptr;
+  if (!reader.open(file) || ebml.Parse(&reader, pos) < 0 || mkvparser::Segment::CreateInstance(&reader, pos, rawSegment) != 0 || !rawSegment) {
+    logError("film unreadable: {}", file.string());
+    failed_ = true;
+    return;
+  }
+  std::unique_ptr<mkvparser::Segment> segment(rawSegment);
+  if (segment->Load() < 0) {
+    logError("film unreadable: {}", file.string());
+    failed_ = true;
+    return;
+  }
+  long long videoTrack = -1, audioTrack = -1;
+  int preSkip = 0;
+  OpusDecoder* opus = nullptr;
+  const mkvparser::Tracks* tracks = segment->GetTracks();
+  for (unsigned long i = 0; tracks && i < tracks->GetTracksCount(); ++i) {
+    const mkvparser::Track* t = tracks->GetTrackByIndex(i);
+    if (!t || !t->GetCodecId()) continue;
+    const std::string codec = t->GetCodecId();
+    if (videoTrack < 0 && t->GetType() == mkvparser::Track::kVideo && codec == "V_AV1") {
+      videoTrack = t->GetNumber();
+    } else if (audioTrack < 0 && t->GetType() == mkvparser::Track::kAudio && codec == "A_OPUS") {
+      const auto* a = static_cast<const mkvparser::AudioTrack*>(t);
+      const int channels = static_cast<int>(a->GetChannels());
+      size_t headSize = 0;
+      const unsigned char* head = t->GetCodecPrivate(headSize);  // OpusHead: pre-skip at bytes 10-11
+      if (channels < 1 || channels > 2) {
+        logError("film sound: {} channels (only mono / stereo films are played)", channels);
+        continue;
+      }
+      int err = 0;
+      opus = opus_decoder_create(48000, channels, &err);
+      if (err != OPUS_OK) {
+        logError("film sound: {}", opus_strerror(err));
+        opus = nullptr;
+        continue;
+      }
+      if (head && headSize >= 12) preSkip = head[10] | (head[11] << 8);
+      audioTrack = t->GetNumber();
+      openSound(48000, channels);
+    }
+  }
+  if (videoTrack < 0) {
+    logError("film {}: no AV1 picture track", file.string());
+    failed_ = true;
+    if (opus) opus_decoder_destroy(opus);
+    return;
+  }
+  Dav1dSettings settings;
+  dav1d_default_settings(&settings);
+  settings.n_threads = 0;  // as many as the machine has
+  Dav1dContext* dav1d = nullptr;
+  if (dav1d_open(&dav1d, &settings) < 0) {
+    logError("film {}: the AV1 decoder did not start", file.string());
+    failed_ = true;
+    if (opus) opus_decoder_destroy(opus);
+    return;
+  }
+  // One picture from dav1d, out to the queue: true when one came. While decoding it is asked once after each packet (dav1d's
+  // own loop: asking again at once would flush its frame threads); at the end, until it has none left.
+  bool pictureFailed = false;
+  auto takePicture = [&](double& spent) {
+    Dav1dPicture pic{};
+    const auto t0 = std::chrono::steady_clock::now();
+    const int got = dav1d_get_picture(dav1d, &pic);
+    if (got < 0) {
+      if (got != DAV1D_ERR(EAGAIN)) pictureFailed = true;
+      return false;
+    }
+    if (pic.p.layout != DAV1D_PIXEL_LAYOUT_I420 || pic.p.bpc != 8) {
+      logError("film {}: only 8-bit 4:2:0 AV1 is played", file.string());
+      dav1d_picture_unref(&pic);
+      pictureFailed = true;
+      return false;
+    }
+    width_ = pic.p.w, height_ = pic.p.h;
+    Frame frame;
+    frame.pts = static_cast<double>(pic.m.timestamp) / 1e9;
+    frame.rgba.resize(static_cast<size_t>(width_) * height_ * 4);
+    yuvToRgba(pic, frame.rgba.data());
+    dav1d_picture_unref(&pic);
+    spent += std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+    costSum_ += spent, costMax_ = std::max(costMax_, spent), ++costFrames_;
+    spent = 0;
+    pushPicture(std::move(frame));
+    return true;
+  };
+  std::vector<unsigned char> packet;
+  std::vector<float> pcm(5760 * 2);  // 120 ms at 48 kHz, stereo: Opus's longest frame
+  int skip = preSkip;
+  double spent = 0;  // decode time not yet given to a picture
+  const mkvparser::Cluster* cluster = segment->GetFirst();
+  while (!stopping_ && !pictureFailed && cluster && !cluster->EOS()) {
+    const mkvparser::BlockEntry* entry = nullptr;
+    if (cluster->GetFirst(entry) < 0) break;
+    while (!stopping_ && !pictureFailed && entry && !entry->EOS()) {
+      const mkvparser::Block* block = entry->GetBlock();
+      const long long track = block->GetTrackNumber();
+      for (int k = 0; k < block->GetFrameCount() && (track == videoTrack || track == audioTrack); ++k) {
+        const mkvparser::Block::Frame& f = block->GetFrame(k);
+        packet.resize(static_cast<size_t>(f.len));
+        if (f.Read(&reader, packet.data()) < 0) continue;
+        if (track == videoTrack) {
+          const auto t0 = std::chrono::steady_clock::now();
+          Dav1dData data{};
+          uint8_t* bytes = dav1d_data_create(&data, packet.size());
+          if (!bytes) continue;
+          std::memcpy(bytes, packet.data(), packet.size());
+          data.m.timestamp = block->GetTime(cluster);  // nanoseconds
+          while (data.sz > 0 && !stopping_ && !pictureFailed) {
+            const int sent = dav1d_send_data(dav1d, &data);
+            spent += std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+            if (sent < 0 && sent != DAV1D_ERR(EAGAIN)) {
+              pictureFailed = true;
+              break;
+            }
+            takePicture(spent);
+          }
+          if (data.sz > 0) dav1d_data_unref(&data);
+        } else if (opus) {
+          const int n = opus_decode_float(opus, packet.data(), static_cast<opus_int32>(packet.size()), pcm.data(), 5760, 0);
+          if (n <= 0) continue;
+          const int drop = std::min(skip, n);
+          skip -= drop;
+          pushSound(pcm.data() + static_cast<size_t>(drop) * audioChannels_, static_cast<size_t>(n - drop) * audioChannels_ * sizeof(float));
+        }
+      }
+      if (cluster->GetNext(entry, entry) < 0) break;
+    }
+    cluster = segment->GetNext(cluster);
+  }
+  while (!stopping_ && !pictureFailed && takePicture(spent)) {}  // the pictures still inside the decoder
+  if (pictureFailed) logError("film {}: AV1 decoding failed", file.string());
+  dav1d_close(&dav1d);
+  if (opus) opus_decoder_destroy(opus);
+  logCost(file, "AV1 (dav1d)");
+}
+
+// H.264 + AAC in MP4: Media Foundation's source reader, converting the picture to 32-bit RGB and the sound to float PCM.
+void VideoPlayer::decodeMediaFoundation(const std::filesystem::path& file) {
   const HRESULT com = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
   MFStartup(MF_VERSION);
   {
@@ -128,22 +425,15 @@ void VideoPlayer::decode(std::filesystem::path file) {
         if (audioOk) {
           Com<IMFMediaType> audio;
           reader->GetCurrentMediaType(static_cast<DWORD>(MF_SOURCE_READER_FIRST_AUDIO_STREAM), &audio);
-          audioRate_ = static_cast<int>(MFGetAttributeUINT32(audio.p, MF_MT_AUDIO_SAMPLES_PER_SECOND, 48000));
-          audioChannels_ = static_cast<int>(MFGetAttributeUINT32(audio.p, MF_MT_AUDIO_NUM_CHANNELS, 2));
-          SDL_AudioSpec spec{SDL_AUDIO_F32, audioChannels_, audioRate_};
-          if (SDL_AudioStream* s = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, nullptr, nullptr)) {
-            SDL_SetAudioStreamGain(s, muted_ ? 0.0f : volume_.load());
-            audio_ = s;
-          } else {
-            logError("film sound: {}", SDL_GetError());
-          }
+          openSound(static_cast<int>(MFGetAttributeUINT32(audio.p, MF_MT_AUDIO_SAMPLES_PER_SECOND, 48000)),
+                    static_cast<int>(MFGetAttributeUINT32(audio.p, MF_MT_AUDIO_NUM_CHANNELS, 2)));
         }
         bool videoDone = false, audioDone = !audio_.load();
-        bool started = false;
         while (!stopping_ && !(videoDone && audioDone)) {
           DWORD stream = 0, flags = 0;
           LONGLONG ts = 0;
           Com<IMFSample> sample;
+          const auto t0 = std::chrono::steady_clock::now();
           if (FAILED(reader->ReadSample(static_cast<DWORD>(MF_SOURCE_READER_ANY_STREAM), 0, &stream, &flags, &ts, &sample))) break;
           Com<IMFMediaType> current;
           reader->GetCurrentMediaType(stream, &current);
@@ -185,25 +475,22 @@ void VideoPlayer::decode(std::filesystem::path file) {
             }
             if (locked2d) buffer2d->Unlock2D();
             else buffer->Unlock();
-            std::unique_lock lock(mutex_);
-            room_.wait(lock, [&] { return stopping_ || frames_.size() < 8; });
-            frames_.push_back(std::move(frame));
-            if (!started && audio_.load()) SDL_ResumeAudioStreamDevice(audio_.load());
-            started = true;
-          } else if (SDL_AudioStream* s = audio_.load()) {
+            const double spent = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+            costSum_ += spent, costMax_ = std::max(costMax_, spent), ++costFrames_;
+            pushPicture(std::move(frame));
+          } else if (audio_.load()) {
             BYTE* data = nullptr;
             DWORD length = 0;
             if (SUCCEEDED(buffer->Lock(&data, nullptr, &length))) {
-              SDL_PutAudioStreamData(s, data, static_cast<int>(length));
-              audioPushed_ = audioPushed_.load() + static_cast<double>(length) / (4.0 * audioChannels_ * audioRate_);
+              pushSound(reinterpret_cast<const float*>(data), length);
               buffer->Unlock();
             }
           }
         }
+        logCost(file, "H.264 (Media Foundation)");
       }
     }
   }
-  ended_ = true;
   MFShutdown();
   if (SUCCEEDED(com)) CoUninitialize();
 }
