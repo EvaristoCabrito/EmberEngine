@@ -343,7 +343,7 @@ Geometry referenceDoorGeometry(const ArchitectureDef& def, double tile, double h
 // + 50 + u); the flame keeps the UVs flameDrop gave it.
 void emberMasonryUVs(Geometry& g, std::pair<double, double> origin, double repeat) {
   // world units per repeat, across and up (the photographs' own proportions: the door oak is portrait, the others landscape)
-  static constexpr double kRepeat[kEmberMaterialTags][2] = {{0, 0}, {1.3, 1.95}, {0.9, 0.6}, {0, 0}, {1.2, 0.8}, {1, 1}, {1.6, 1.07}, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
+  static constexpr double kRepeat[kEmberMaterialTags][2] = {{0, 0}, {1.3, 1.95}, {0.9, 0.6}, {0, 0}, {1.2, 0.8}, {1, 1}, {1.6, 1.07}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
   for (size_t i = 0; i < g.count(); ++i) {
     const int tag = emberMaterialTag(g.uv[i * 2]);
     if (tag == 3 || tag == 7 || tag >= 8) continue;  // the flame, the gothic atlas and the Inn's glass / timber / planks keep the UVs their builders gave them
@@ -457,6 +457,9 @@ constexpr double kSillH = 0.19, kPlateH = 0.25, kStud = 0.22, kRailH = 0.16, kRa
 constexpr double kWinW = 1.4, kWinSill = 0.28, kWinHead = 0.76;  // the opening: its width, its sill and head as shares of the height
 constexpr double kDoorW = 1.5, kDoorHead = 0.78, kLeafT = 0.08;
 constexpr double kSconceZ = 0.56, kSconceOut = 0.40, kLanternW = 0.2, kLanternH = 0.3;
+// (2026-10-25, the user: "make better walls"): the frame stands on a coursed stone footing (tag 11), proud of the timber on both faces,
+// the sill beam on top of it, as a timber-framed inn is built off the damp ground.
+constexpr double kFootH = 0.46, kFootProud = 0.09;
 }  // namespace inn
 
 // Authored UVs for a beam in its own frame (before it is moved): u along `axis` (the grain) in repeats of `along` units, v across in
@@ -542,9 +545,18 @@ Geometry innGeometry(const ArchitectureDef& def, double tile, double height, int
     tagMaterial(g, 2);
     parts.push_back(g.toNonIndexed());
   };
-  // the frame's courses along a run of `length` centred at (x, y) along `angle`: the sill beam, the wall plate, the mid rail
+  // the stone footing along a run of `length` centred at (x, y) along `angle` (UVs along the run: the coursed stones' rows)
+  auto footing = [&](double length, double x, double y, double angle) {
+    Geometry b = three::box(length, T + 2 * kFootProud, kFootH);
+    woodUVs(b, 11, 0, 1.6, 0.55);
+    b.rotateZ(angle).translate(x, y, kFootH / 2);
+    parts.push_back(b.toNonIndexed());
+  };
+  // the frame's courses along a run of `length` centred at (x, y) along `angle`: the footing, the sill beam on it, the wall plate,
+  // the mid rail
   auto courses = [&](double length, double x, double y, double angle, bool rail) {
-    timber(length, T + 2 * kProud, kSillH, x, y, kSillH / 2, angle);
+    footing(length, x, y, angle);
+    timber(length, T + 2 * kProud, kSillH, x, y, kFootH + kSillH / 2, angle);
     timber(length, T + 2 * kProud, kPlateH, x, y, H - kPlateH / 2, angle);
     if (rail) timber(length, T + 2 * kProud * 0.6, kRailH, x, y, H * kRailZ, angle);
   };
@@ -693,7 +705,8 @@ Geometry innGeometry(const ArchitectureDef& def, double tile, double height, int
     timber(kDoorW + 0.28, fd, 0.16, 0, 0, z1 + 0.08);
     const double beamW = sideW - 0.14;
     for (int side : {-1, 1}) {
-      timber(beamW, T + 2 * kProud, kSillH, side * (hw + 0.14 + beamW / 2), 0, kSillH / 2);
+      footing(beamW, side * (hw + 0.14 + beamW / 2), 0, 0.0);
+      timber(beamW, T + 2 * kProud, kSillH, side * (hw + 0.14 + beamW / 2), 0, kFootH + kSillH / 2);
       timber(beamW, T + 2 * kProud * 0.6, kRailH, side * (hw + 0.14 + beamW / 2), 0, H * kRailZ);
     }
     timber(width, T + 2 * kProud, kPlateH, 0, 0, H - kPlateH / 2);

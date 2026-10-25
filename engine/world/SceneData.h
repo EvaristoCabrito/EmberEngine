@@ -44,6 +44,7 @@ struct SceneModel {
   std::string id, model, file;  // file: Engine2 URL, "/game/models/<path>.glb"
   float height = 1;             // uniform scale to this height, base centred on the anchor
   float x = 0, z = 0, groundSmooth = 0, groundHard = 0, rotY = 0;
+  std::optional<SceneLight> light;  // a 3D piece that gives light (the Meshy hearth's fire: models.json "light"; SceneBuilder)
 };
 
 struct SceneUnit {

@@ -74,7 +74,7 @@ def main(models_path='content/models/models.json', catalog_path='content/engine2
             'name': m['name'], 'footprint': FOOTPRINTS[m.get('footprint', 'one')], 'blockingFootprint': None, 'architectureSpan': False,
             'architecture': False, 'model3d': 'prop',
             'model': {'model': m['model'], 'file': m['file'], 'height': m['height']},
-            'mirrorAlternate': False, 'exitKind': None, 'size': {'w': m['width'], 'h': m['height']}, 'light': None, 'standOn': False,
+            'mirrorAlternate': False, 'exitKind': None, 'size': {'w': m['width'], 'h': m['height']}, 'light': m.get('light'), 'standOn': False,
             'lockYaw': False, 'nudge': 0,
         }
         editor['decoMeta'][mid] = {'model3d': 'prop', 'exitKind': None, 'props3d': True, 'rockStyle': False, 'thickWall': False, 'doorStyle': None,

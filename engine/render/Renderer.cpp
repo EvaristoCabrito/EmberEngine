@@ -1276,10 +1276,11 @@ void Renderer::writeFrame(Frame& frame, VkCommandBuffer cmd, float time) {
   f.probes = 0;
   // The room's gate (lighting.hlsli probeRoom: its mask and roof, in the output buffer's header) holds whenever the stage asks, with
   // or without the sky (the user, 2026-10-23: "não é para desenhar a luz na superfície nem nas paredes, ela só entra pela janela");
-  // the relight itself needs the sky's SH (the atmosphere).
+  // the relight runs with or without the sky: without it the probes carry the fires' bounce alone (probes.hlsl; the Inn, the
+  // underground maps: the user, 2026-10-25, "Sonda, Frostbyte, Unreal 5, Luminous").
   // (The stage's request holds until the next setProbes: a frame rendered without a stage update, a capture's extra frame, keeps the gate.)
   probeGateThisFrame_ = probeCount_ > 0 && probesWanted_;
-  probesThisFrame_ = probeGateThisFrame_ && atmoThisFrame_;
+  probesThisFrame_ = probeGateThisFrame_;
   if (probeGateThisFrame_) f.probes = bufferAddress(context_, probeOutput_);
   if (probesThisFrame_) {
     if (frame.probeRead.size < VkDeviceSize{probeCount_} * sizeof(float)) {

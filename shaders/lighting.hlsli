@@ -132,6 +132,7 @@ float localShadow(float4x4 lightMatrix, uint mapIndex, uint samplerIndex, float 
 
 // Local lights through the cluster this point falls in. Engine2's falloff (three.js punctual lights):
 // 1 / max(d^decay, 0.01), windowed to zero at the range by (1 - (d / range)^4)^2.
+static const float kLightSourceRadius = 0.5;  // world units (~35 cm: a flame with its glow and bracket)
 float3 localLights(MeshFrame f, Surface s, float3 view, float3 diffuseColor, float3 f0, float a, float nv) {
   if ((f.lightingLayers & kLayerLocal) == 0 || f.lightCount == 0) return 0.0;
   // (Each light already carries its source's sight: Renderer dims or drops lights out of sight.)
@@ -156,7 +157,10 @@ float3 localLights(MeshFrame f, Surface s, float3 view, float3 diffuseColor, flo
     const float3 l = toLight / max(d, 1e-4);
     const float ratio = d / light.range;
     const float window = saturate(1.0 - ratio * ratio * ratio * ratio);
-    float falloff = window * window / max(pow(d, light.decay), 0.01) * lightFacing(light, s.position);
+    // A physical light (decay 2) is a small sphere, not a point (Karis 2013, Frostbite 2014): 1 / (d^2 + r^2), so the wall beside a
+    // flame takes no white hot spot (the user, 2026-10-25: "muito bloom, pouco radius"); from a unit away it is the inverse square.
+    float falloff = window * window / (light.decay == 2.0 ? d * d + kLightSourceRadius * kLightSourceRadius : max(pow(d, light.decay), 0.01)) *
+                    lightFacing(light, s.position);
     if (spellShadow && distance(light.position, spellLight) < 1e-3) falloff *= spellLit;
     float3 n = s.normal;
     if (s.twoSidedLocal > 0.0 && dot(n, l) < 0.0) n = -n;

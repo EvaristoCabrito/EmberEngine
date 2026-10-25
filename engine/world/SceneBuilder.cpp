@@ -266,6 +266,10 @@ SceneData buildScene(const Board& board, const EditorCatalog& catalog, std::map<
       m.x = static_cast<float>(cx), m.z = static_cast<float>(cz);
       heights(cx, cz, m.groundSmooth, m.groundHard);
       m.rotY = static_cast<float>(-p.rot * std::numbers::pi / 2);
+      if (def->light) {  // a 3D piece with its own fire (the hearth): lit like the cards' fires
+        m.light = def->light;
+        m.light->seed = static_cast<float>(jsMod(p.x * 7.31 + p.y * 3.17, 6.28));
+      }
       s.models.push_back(std::move(m));
       continue;
     }

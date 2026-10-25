@@ -59,7 +59,7 @@ std::optional<std::array<double, 4>> emberStairHole(const ArchitectureDef& def, 
 // along each beam's grain), 10 the Inn's door planks (UVs authored across and up the leaf). MapStage splits them into parts and
 // takes the tag off again (emberMaterialU).
 inline constexpr double kEmberUvTag = 100.0;
-inline constexpr int kEmberMaterialTags = 11;
+inline constexpr int kEmberMaterialTags = 12;  // (11: the Inn's stone footing, 2026-10-25)
 inline int emberMaterialTag(double u) { return u >= kEmberUvTag ? static_cast<int>(u / kEmberUvTag) : 0; }
 inline double emberMaterialU(double u) {
   const int tag = emberMaterialTag(u);
@@ -67,7 +67,7 @@ inline double emberMaterialU(double u) {
 }
 // The tag's material name in ArchitectureDefs::materials ("" = always flat).
 inline const char* emberMaterialName(int tag) {
-  static const char* kNames[kEmberMaterialTags] = {"", "oak", "iron", "fire", "darkOak", "", "steps", "gothic", "glass", "innTimber", "innDoor"};
+  static const char* kNames[kEmberMaterialTags] = {"", "oak", "iron", "fire", "darkOak", "", "steps", "gothic", "glass", "innTimber", "innDoor", "innStone"};
   return tag >= 0 && tag < kEmberMaterialTags ? kNames[tag] : "";
 }
 // The animated door ("door" style): one leaf (side -1 left, +1 right), closed, in the piece's own space like pieceGeometry

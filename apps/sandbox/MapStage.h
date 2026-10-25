@@ -561,27 +561,34 @@ class MapStage final : public Stage {
       cam_.distance *= std::pow(distance_ / cam_.distance, k);  // zoom glides evenly in scale
       shotLift_ += (shotLiftGoal_ - shotLift_) * k;
     }
-    // The ground under the pivot (the camera always turns around a point on the board), and the eye never inside
-    // the ground or a 3D piece: the tilt rises just enough to clear it.
-    cam_.target.y = pivotHeight(cam_.target);
-    for (int i = 0; i < 8 && !flat_; ++i) {
-      const glm::vec3 eye = eyeOf(eyeView(cam_));
-      const float floor = clearanceAt(eye.x, eye.z) + kEyeClearance;
-      if (eye.y >= floor) break;
-      const float need = std::asin(std::clamp((floor - cam_.target.y) / cam_.distance, -1.0f, 1.0f));
-      cam_.pitch = std::min(std::max(cam_.pitch, need + 0.002f), kMaxPitch);
-      if (pitch_ < cam_.pitch) pitch_ = cam_.pitch;  // the goal does not pull it back into the ground
-    }
+    // The ground under the pivot (the camera always turns around a point on the board), gliding like the rest of the view: the
+    // board's heights step from hex to hex, and set at once they made the camera climb and drop in steps while it slid (the user,
+    // 2026-10-25: "andando em um trilho ... sobe e desce"). The camera avoids nothing (the user, 2026-10-25: "A CAMERA NAO DESVIA DE
+    // NADA"): no tilt is forced to clear the ground or a piece (clearanceAt stays, unused here).
+    const float pivotGround = pivotHeight(cam_.target);
+    if (measuring_ || !pivotGlides_) cam_.target.y = pivotGround, pivotGlides_ = true;
+    else cam_.target.y += (pivotGround - cam_.target.y) * (1.0f - std::exp(-dt * kGlide));
     noteShotGoal();  // the goal as the shot leaves it this frame: a different one next frame was the player's hand
+    // The camera log (the user, 2026-10-25: "faz um novo log"): while the player moves the camera (arrows, drags, the wheel) or the
+    // battle script's "pan" holds a key, where the camera is, frame by frame, into the game's log.
+    if (scriptPanKey_ || std::exchange(cameraMoved_, false)) {
+      const glm::vec3 eye = eyeOf(eyeView(cam_));
+      logInfo("camera trace: t {:.3f} dt {:.4f} goal ({:.2f}, {:.2f}) pivot ({:.2f}, {:.2f}, {:.2f}) pitch {:.1f} (goal {:.1f}) distance {:.1f} eye y {:.2f} drop {:.1f}",
+              time, dt, target_.x, target_.z, cam_.target.x, cam_.target.y, cam_.target.z, glm::degrees(cam_.pitch), glm::degrees(pitch_), cam_.distance, eye.y,
+              roomDrop());
+    }
     // Tática: straight down from far away through the long lens, framing what the normal lens frames at this distance;
     // the top of the screen is the board's far side (-z). Its near plane hugs the board (Engine2: distance - 200).
     // The action camera's lift raises the eye and the look point together (the figures' chests at the centre of a close shot).
     const float flatDistance = cam_.distance * std::tan(glm::radians(kFov * 0.5f)) / std::tan(glm::radians(kFlatFov * 0.5f));
     const Camera camera = flat_ ? Camera::lookAt(cam_.target + glm::vec3(0.0f, flatDistance, 0.0f), cam_.target, glm::radians(kFlatFov), aspect,
                                                  std::max(kNear, flatDistance - 200.0f), {0.0f, 0.0f, -1.0f})
-                                : Camera::lookAt(eyeOf(eyeView(cam_)) + glm::vec3(0.0f, roomDrop() + shotLift_, 0.0f),
-                                                 lookTarget(cam_) + glm::vec3(0.0f, roomDrop() + shotLift_, 0.0f), glm::radians(kFov), aspect, kNear);
+                                // the camera goes down with the board the room lowered, by exactly as much (the user, 2026-10-25: "sempre perto
+                                // do tabuleiro se o tabuleiro desceu ela desce exatamente na mesma proporção"): no roomDrop on the eye or the look
+                                : Camera::lookAt(eyeOf(eyeView(cam_)) + glm::vec3(0.0f, shotLift_, 0.0f),
+                                                 lookTarget(cam_) + glm::vec3(0.0f, shotLift_, 0.0f), glm::radians(kFov), aspect, kNear);
     lastCamera_ = camera;
+    if (modelsPlaced_) updateCutaway(camera);
     drawList_.clear();
     frontCards_.clear();
     laps.lap("goal+eye");
@@ -682,8 +689,10 @@ class MapStage final : public Stage {
     // Until the bake lands, the room's mask and roof alone (one empty probe): the sun and the sky light nothing outside the room nor
     // on its roof from the first frame (the user, 2026-10-23: "eu não quero sol nas paredes externas e nem no topo do mapa"); the
     // room itself waits for its probes in the fires' light.
+    // (Every interior map's probes: the window-lit rooms', and the fires' bounce where no light comes from outside.)
+    const bool probeLit = windowLight() || darkIndoor();
     if (probeBusy_ && !probeUploaded_ && !probeMaskUploaded_ && windowLight()) uploadProbeMaskOnly(renderer);
-    const bool probesLive = probeUploaded_ && windowLight() && lightingMode_ == 3;
+    const bool probesLive = probeUploaded_ && probeLit && lightingMode_ == 3;
     if (probeBusy_ && !probeUploaded_ && probeMaskUploaded_ && windowLight() && lightingMode_ == 3) renderer.useProbes();
     if (probesLive) {
       renderer.useProbes();
@@ -1142,6 +1151,8 @@ class MapStage final : public Stage {
       else if (selected_ >= 0 && result_.empty() && !myTurn()) select(-1);
       else if (!menuOptions_.isOpen()) pauseOpen_ = !pauseOpen_;  // nothing picked, or the hero whose turn it is: the battle menu
     }
+    if ((e.type == SDL_EVENT_MOUSE_MOTION && (e.motion.state & (SDL_BUTTON_RMASK | SDL_BUTTON_MMASK) || panning_)) || e.type == SDL_EVENT_MOUSE_WHEEL)
+      cameraMoved_ = true;  // the camera log (frame)
     if (e.type == SDL_EVENT_MOUSE_MOTION && (e.motion.state & SDL_BUTTON_RMASK) && !flat_) {  // Tática never turns
       yaw_ -= e.motion.xrel * kTurnPerPixel;
       pitch_ = std::clamp(pitch_ + e.motion.yrel * kTurnPerPixel, minPitch(), kMaxPitch);
@@ -1180,11 +1191,12 @@ class MapStage final : public Stage {
     const float yaw = flat_ ? 0.0f : yaw_;  // Tática: up on screen is the board's far side
     const glm::vec3 forward{-std::sin(yaw), 0.0f, -std::cos(yaw)}, right{std::cos(yaw), 0.0f, -std::sin(yaw)};
     glm::vec3 move{0.0f};
-    if (k[SDL_SCANCODE_W] || k[SDL_SCANCODE_UP]) move += forward;
-    if (k[SDL_SCANCODE_S] || k[SDL_SCANCODE_DOWN]) move -= forward;
-    if (k[SDL_SCANCODE_D] || k[SDL_SCANCODE_RIGHT]) move += right;
-    if (k[SDL_SCANCODE_A] || k[SDL_SCANCODE_LEFT]) move -= right;
+    if (k[SDL_SCANCODE_W] || k[SDL_SCANCODE_UP] || scriptPanKey_ == 'w') move += forward;
+    if (k[SDL_SCANCODE_S] || k[SDL_SCANCODE_DOWN] || scriptPanKey_ == 's') move -= forward;
+    if (k[SDL_SCANCODE_D] || k[SDL_SCANCODE_RIGHT] || scriptPanKey_ == 'd') move += right;
+    if (k[SDL_SCANCODE_A] || k[SDL_SCANCODE_LEFT] || scriptPanKey_ == 'a') move -= right;
     if (glm::length(move) < 1e-4f) return;
+    cameraMoved_ = true;  // the camera log (frame)
     const float fast = k[SDL_SCANCODE_LSHIFT] || k[SDL_SCANCODE_RSHIFT] ? 2.0f : 1.0f;
     target_ += glm::normalize(move) * std::max(distance_, 6.0f) * kPanPerSecond * fast * dt;
   }
@@ -1196,13 +1208,7 @@ class MapStage final : public Stage {
   void clampGoal() {
     pitch_ = std::clamp(pitch_, minPitch(), kMaxPitch);
     distance_ = std::clamp(distance_, kMinDistance, maxDistance_);
-    const e2::Board::Bounds b = board_->bounds();
-    const float inset = distance_ * std::tan(glm::radians(kFov * 0.5f)) * kPanInset;
-    const float halfX = static_cast<float>(b.x1 - b.x0) * 0.5f, halfZ = static_cast<float>(b.z1 - b.z0) * 0.5f;
-    const float midX = static_cast<float>(b.x0 + b.x1) * 0.5f, midZ = static_cast<float>(b.z0 + b.z1) * 0.5f;
-    const float reachX = std::max(halfX - inset, 0.0f), reachZ = std::max(halfZ - inset, 0.0f);
-    target_.x = std::clamp(target_.x, midX - reachX, midX + reachX);
-    target_.z = std::clamp(target_.z, midZ - reachZ, midZ + reachZ);
+    // The pivot is free (the user, 2026-10-25: "camera livre at all times"): no limit to where the pan goes (kPanInset stays, unused).
   }
   static constexpr float kPanInset = 0.6f;  // the pivot's distance from the board's edges, in view half heights
 
@@ -1240,13 +1246,11 @@ class MapStage final : public Stage {
     }
     return sum / 7.0f;
   }
-  // The highest solid thing at (x, z): the ground on the board, and the top of any 3D piece standing there.
+  // The ground at (x, z) the eye keeps above: the board's ground, or the floor round it. Only the ground (the user, 2026-10-25: a 3D
+  // piece under the eye lifted and stopped the camera, a rule nobody asked for; pieceBoxes_ are kept, unused here).
   float clearanceAt(float x, float z) const {
     const e2::Board::Bounds b = board_->bounds();
-    float top = x < b.x0 || x > b.x1 || z < b.z0 || z > b.z1 ? groundLow_ : groundAt(x, z);
-    for (const PieceBox& p : pieceBoxes_)
-      if (std::abs(x - p.x) < p.radius && std::abs(z - p.z) < p.radius) top = std::max(top, p.top);
-    return top;
+    return x < b.x0 || x > b.x1 || z < b.z0 || z > b.z1 ? groundLow_ : groundAt(x, z);
   }
   // The ground point under a window position (window coordinates), on the pivot's level; none above the horizon.
   std::optional<glm::vec3> groundUnder(SDL_WindowID id, float mx, float my) const {
@@ -2113,6 +2117,10 @@ class MapStage final : public Stage {
     bool hasSkirt = false;                           // an outer-ring piece: its shadow-only copy stands `skirt` outside it
     glm::vec2 skirt{0.0f};
     float deckHalf = 0.0f;                           // a parapet piece (the gothic kit): half its thickness, where the bridge's deck ends (deckClip)
+    // The Inn's cutaway (the user, 2026-10-25: the near wall hid the whole hall): an Inn kit piece between the camera and what it looks
+    // at is drawn cut down to its footing (cutMesh; doors and doorways: not drawn, the gap reads as the opening); updateCutaway.
+    bool cuttable = false, cut = false;
+    std::optional<MeshId> cutMesh;
   };
   // The animated door (ember-arch-watchtower-door): its leaves (own meshes, swung about their hinges) and each door's state.
   struct DoorLeaf {
@@ -2153,6 +2161,8 @@ class MapStage final : public Stage {
     roomCells_.clear();
     if (scene_->pieces.empty()) {
       buildRoof();
+      probeUploaded_ = false;
+      probeBakePending_ = true;  // a cave's fires bounce off its ground (startProbeBake: interior maps only)
       return;
     }
     const e2::EditorCatalog& catalog = architectureCatalog();
@@ -2310,7 +2320,8 @@ class MapStage final : public Stage {
       // (8 glass: a pale green-grey, smooth; 9 the Inn's timber: dark oak; 10 the Inn's door planks: oak. Flat until the user's textures arrive.)
       MeshMaterial materials[kParts] = {m, flat(0x6b4a2bu, 0.82f, 0.0f), flat(0x3a3a3cu, 0.45f, 0.65f), flame, flat(0x3b2a18u, 0.85f, 0.0f),
                                         flat(0x060504u, 1.0f, 0.0f), flat(0x55524eu, 0.9f, 0.0f), flat(0x4b4c4eu, 0.94f, 0.0f),
-                                        flat(0x9fb3a6u, 0.18f, 0.0f), flat(0x3b2a18u, 0.85f, 0.0f), flat(0x6b4a2bu, 0.82f, 0.0f)};
+                                        flat(0x9fb3a6u, 0.18f, 0.0f), flat(0x3b2a18u, 0.85f, 0.0f), flat(0x6b4a2bu, 0.82f, 0.0f),
+                                        flat(0x5e5850u, 0.92f, 0.0f)};  // (11 the Inn's stone footing: flat until its texture arrives)
       // The kit's photographed materials (the user's textures of 2026-10-21, content/models/architecture.json "materials"): the
       // photograph instead of the flat colour; the flame's photograph is its glow (emissive x the fire, so its own oranges show).
       bool taggedTexture[kParts] = {};
@@ -2430,6 +2441,17 @@ class MapStage final : public Stage {
       piece.groundHard = static_cast<float>(e2::groundHeightAt(*board_, e2::EdgeStyle::Hard, gx, gz));
       piece.half = std::max({std::abs(minX), std::abs(maxX), std::abs(minZ), std::abs(maxZ)});
       piece.top = maxY;
+      if (def->emberStyle.starts_with("inn-")) {
+        // The cut piece: the same run as a plain wall kCutHeight tall (the stone footing and the sill beam on it), windows and lanterns
+        // included; a door or a doorway is left out while cut.
+        piece.cuttable = true;
+        if (!e2::emberAnimatedDoor(def->emberStyle) && def->emberStyle != "inn-doorway") {
+          e2::ArchitectureDef low = *def;
+          low.emberStyle = "inn-wall";
+          low.heightScale = def->heightScale * kCutHeight / std::max(maxY, 0.1f);
+          piece.cutMesh = meshOf(e2::pieceGeometry(low, rot, connections, {x, -z}), false);
+        }
+      }
       if (def->emberStyle.starts_with("gothic-")) piece.deckHalf = static_cast<float>(0.32 * def->wallThicknessScale * 0.5);
       piece.blocks = def->model3d == "wall" || def->model3d == "door" || def->model3d == "secretDoor";
       // The room's surfaces for its light probes (Luz das janelas, startProbeBake): the piece as drawn, on its ground. (A door's
@@ -2488,6 +2510,26 @@ class MapStage final : public Stage {
     // The probes bake once the first frame has laid the room's fires (buildLights): their light bounces into the probes too.
     probeUploaded_ = false;
     probeBakePending_ = true;
+  }
+
+  // The Inn's cutaway (2026-10-25): every Inn kit piece standing between the camera and the point it looks at (its pivot), along the
+  // view's ground direction, is cut down to its footing, so the near walls never hide the rooms; the far walls stand whole. A little
+  // hysteresis keeps a piece from flickering while the pivot glides past it; a camera looking straight down (Tática) cuts nothing.
+  static constexpr float kCutHeight = 0.9f;
+  void updateCutaway(const Camera& camera) {
+    glm::vec2 forward{camera.forward.x, camera.forward.z};
+    const float len = glm::length(forward);
+    bool changed = false;
+    for (ArchPiece& a : arch_) {
+      if (!a.cuttable) continue;
+      bool cut = false;
+      if (!flat_ && len > 0.2f) {
+        const float d = glm::dot(glm::vec2(a.x - cam_.target.x, a.z - cam_.target.z), forward / len);
+        cut = a.cut ? d < -0.8f : d < -1.2f;
+      }
+      if (cut != a.cut) a.cut = cut, changed = true;
+    }
+    if (changed) placeModels();
   }
 
   // The animated door (the user, 2026-10-21: "keep new door this asset for closed doors, can you animate it opening?"): its leaves
@@ -2596,11 +2638,16 @@ class MapStage final : public Stage {
     probeUploaded_ = false;
     probeMaskUploaded_ = false;
     if (probeBusy_) jobs_.wait(probeJob_), probeBusy_ = false;
-    if (!board_ || !scene_ || !windowLightMap() || underground()) return;
-    if (roomCells_.empty()) {
+    // Every map with no outside light (the Inn, the underground maps: the user, 2026-10-25, "Sonda, Frostbyte, Unreal 5, Luminous",
+    // "a taverna é protótipo de mapa do submundo") bakes its fires' bounce too: their probes are the room's only indirect light.
+    if (!board_ || !scene_ || !(windowLightMap() || interiorMap())) return;
+    if (roomCells_.empty() && windowLightMap() && !underground()) {
       logWarn("light probes: no hex enclosed by the walls (the room is open to the board's edge); no probes");
       return;
     }
+    if (roomCells_.empty())  // a cave, a room open to the board's edge: the whole board is the room
+      for (int r = 0; r < board_->layout().rows; ++r)
+        for (int c = 0; c < board_->layout().cols; ++c) roomCells_.insert({c, r});
     const e2::HexLayout& L = board_->layout();
     auto groundAt = [&](float x, float z) { return static_cast<float>(e2::groundHeightAt(*board_, look_, x, z)); };
     ProbeBakeInput in;
@@ -2860,21 +2907,23 @@ class MapStage final : public Stage {
     modelCount_ = static_cast<uint32_t>(instances.size());
     // Ember's architecture: each piece's own mesh, stood on the ground the board shows.
     for (const ArchPiece& a : arch_) {
+      if (a.cut && !a.cutMesh) continue;  // a door or a doorway in the cutaway: its gap is the opening
       const float y = groundOf(a.groundSmooth, a.groundHard);
       InstanceGpu inst{};
       inst.rows[0] = {1, 0, 0, a.x};
       inst.rows[1] = {0, 1, 0, y};
       inst.rows[2] = {0, 0, 1, a.z};
-      inst.mesh = a.mesh;
+      inst.mesh = a.cut ? *a.cutMesh : a.mesh;
       inst.scale = 1;
       inst.flags = kInstanceCameraFade;
       instances.push_back(inst);
-      pieceBoxes_.push_back({a.x, a.z, a.half, y + a.top});
+      pieceBoxes_.push_back({a.x, a.z, a.half, y + (a.cut ? kCutHeight : a.top)});
     }
     // The animated doors' leaves: each turned about its hinge (world Y, side x the door's angle: inwards) on its piece's ground.
     for (const DoorLeaf& leaf : doorLeaves_) {
       if (leaf.piece >= arch_.size()) continue;
       const ArchPiece& a = arch_[leaf.piece];
+      if (a.cut) continue;
       const float angle = static_cast<float>(leaf.side) * doors_[leaf.piece].angle;
       const float c = std::cos(angle), s = std::sin(angle);
       const glm::vec3 base{a.x, groundOf(a.groundSmooth, a.groundHard), a.z};
@@ -3244,6 +3293,12 @@ class MapStage final : public Stage {
               [&](const SpriteInstance& a, const SpriteInstance& b) { return glm::dot(a.origin - eye, fwd) > glm::dot(b.origin - eye, fwd); });
   }
 
+  // Every fire's light radius twice its own (the user, 2026-10-25: "dobrar o radius da luz de todas as tochas, velas, lareiras braziers
+  // etc"): every light-giving decoration and the walls' torches, on every map (the user: "é para mexer nos objetos que produzem luz",
+  // the objects, wherever they stand). In the real light the radius is the flux's (intensity x reach^2), so the light near the flame
+  // is 4x as strong too.
+  static constexpr float kFireRadiusMul = 2.0f;
+  float fireRadiusMul() const { return kFireRadiusMul; }
   // Engine2's CarriedLight: three.js point light, decay 1.25, cut off at hypot(radius, height) x 2.5, colour x
   // intensity x 3.2 x flicker.
   LocalLight carried(glm::vec3 at, const std::array<float, 3>& color, float intensity, float radius, float height, float flick) const {
@@ -3305,7 +3360,16 @@ class MapStage final : public Stage {
       // decoration objects").
       const float power = d.id.find("torch") != std::string::npos ? kTorchPower : kDecorLightPower;
       fireFlicker_.push_back(flicker(time, d.light->seed, d.light->flicker));
-      lights_.push_back(carried(at, flameLight(d.id) ? kFlameLightColor : d.light->color, d.light->intensity * power, d.light->radius, height,
+      lights_.push_back(carried(at, flameLight(d.id) ? kFlameLightColor : d.light->color, d.light->intensity * power, d.light->radius * fireRadiusMul(), height,
+                                fireFlicker_.back()));
+    }
+    // A 3D piece with its own fire (the Meshy hearth; models.json "light"): lit as every other light-giving decoration.
+    for (const e2::SceneModel& m : scene_->models) {
+      if (!m.light) continue;
+      const glm::vec3 at = glm::vec3(m.x, groundOf(m.groundSmooth, m.groundHard) + m.light->minHeight, m.z);
+      fireFlicker_.push_back(flicker(time, m.light->seed, m.light->flicker));
+      fireUpright_.push_back(at);
+      lights_.push_back(carried(at, m.light->color, m.light->intensity * kDecorLightPower, m.light->radius * fireRadiusMul(), m.light->minHeight,
                                 fireFlicker_.back()));
     }
     // The torch brackets on EmberEngine's walls and stairs (buildArchitecture): their fire, flickering like a map torch, as strong.
@@ -3314,7 +3378,7 @@ class MapStage final : public Stage {
       const glm::vec3 at = glm::vec3(a.x, groundOf(a.groundSmooth, a.groundHard), a.z) + a.lightAt;
       fireFlicker_.push_back(flicker(time, a.light->seed, a.light->flicker));
       fireUpright_.push_back(at);
-      LocalLight l = carried(at, kFlameLightColor, a.light->intensity * kTorchPower, a.light->radius, a.lightAt.y, fireFlicker_.back());
+      LocalLight l = carried(at, kFlameLightColor, a.light->intensity * kTorchPower, a.light->radius * fireRadiusMul(), a.lightAt.y, fireFlicker_.back());
       if (a.lightBehind > 0.0f) {
         // A wall's torch lights its own side of the wall only (a local light casts no shadow: it lit the board's outer sides through the
         // outer walls, capture skirt-f-night of 2026-10-21).
@@ -3517,6 +3581,10 @@ class MapStage final : public Stage {
       l.groundColor = Renderer::srgb(t.stageGround);
       l.ambientIntensity = kIndoorAmbientLux * ambientMul;
       meterLux_ = l.sunIntensity * std::max(sinElevation, 0.3f) + l.ambientIntensity;
+      // No light from outside (the user, 2026-10-25: "a taverna é protótipo de mapa do submundo, ela não tem acesso ao sol"): once the
+      // room's probes carry its fires' bounce, the fill (a sun from the map's hour, its colour from the hour's preset: another colour
+      // on every floor) and the hemisphere are gone; the fires and their bounce are the room's only light. The camera keeps its meter.
+      if (probeUploaded_) l.sunIntensity = 0.0f, l.ambientIntensity = 0.0f;
       return l;
     }
     // Through the air: the key light's colour (luminance 1) and how much of it reaches the ground.
@@ -6276,6 +6344,8 @@ class MapStage final : public Stage {
     if (options_.battleScript.empty() || scriptDone_ || !battle_ || !scene_ || readyFrames_ < 10) return;
     holdTurns = true;
     if (busy()) return;
+    if (scriptPanKey_ && now_ < scriptPanUntil_) return;  // "pan": the key still held
+    if (scriptPanKey_) logInfo("battle script: pan {} released", scriptPanKey_), scriptPanKey_ = 0;
     if (scriptCheck_) {
       const std::string why = scriptCheck_();
       scriptCheck_ = nullptr;
@@ -6309,6 +6379,11 @@ class MapStage final : public Stage {
     const bool refuse = p[0] == "refuse";
     if (refuse) p.erase(p.begin());
     if (p.empty()) return fail("empty step");
+    if (p[0] == "pan" && p.size() > 2 && !p[1].empty()) {
+      // "pan:<w|a|s|d>:<seconds>": that arrow held for the time (panKeys reads it as the keyboard), the camera traced every frame
+      scriptPanKey_ = p[1][0], scriptPanUntil_ = now_ + static_cast<float>(std::atof(p[2].c_str()));
+      return logInfo("battle script: pan {} held {} s", p[1], p[2]);
+    }
     if (p[0] == "hurt") {
       // the scene's wounds, sickness and hunger; the spell uses it halves are given back (the steps cast them)
       std::vector<std::array<int, 10>> uses;
@@ -10263,6 +10338,7 @@ class MapStage final : public Stage {
   // a roof that only casts shadow (buildRoof); the sky is never drawn. OFF = the old indoor fill light (darkIndoor).
   bool windowLight() const { return windowLight_ == 1 && scene_ && scene_->environment == "indoor" && !underground(); }
   bool darkIndoor() const { return scene_ && (scene_->environment == "indoor" || underground()) && !windowLight(); }
+  bool interiorMap() const { return scene_ && (scene_->environment == "indoor" || underground()); }
   // Subterrâneo (MapDraft::underground, the Map Editor's Ambiente; the user, 2026-10-21): the only maps free of the sun, the moon and
   // the sky: the indoor light path with no light from outside, whatever the map's lists say.
   bool underground() const { return board_ && board_->draft().underground; }
@@ -10586,6 +10662,10 @@ class MapStage final : public Stage {
   std::map<int, int> globeFx_;  // the rules' Globo id -> its standing bubble (MageFx::globeStart)
   std::map<int, int> statusFx_;  // battle unit x 2 (+1 = disease) -> its poison / disease effect (StatusFx::start)
   std::map<int, int> crusaderFx_;  // battle unit x 2 (+1 = the Manto) -> its Juramento / Manto standing effect (CrusaderFx::standStart)
+  bool pivotGlides_ = false;       // the pivot's height glides after its first frame (set at once on the first)
+  bool cameraMoved_ = false;       // the player moved the camera this frame (the camera log)
+  char scriptPanKey_ = 0;          // the battle script's "pan": the arrow held ('w' / 'a' / 's' / 'd'; 0 = none) ...
+  float scriptPanUntil_ = -1.0f;   // ... until this scene time
   std::unordered_set<int> awake_;         // enemies that have seen the party (fog)
   int roamLeader_ = -1;                   // free roam: the scene unit the party follows
   float modeSwitchAt_ = -100.0f;          // free roam's last turn into a fight (the banner)

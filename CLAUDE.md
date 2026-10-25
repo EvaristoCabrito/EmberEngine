@@ -1592,6 +1592,28 @@ permanecerem no INN continuem la", "a não ser que tenha mais mesas e cadeiras",
 - Chair facing: the chair's back is +z at rot 0, 1 = back -x, 3 = back +x (from kit_tavern.py and SceneBuilder's quarter turns); the
   hearth's front at rot 0 was not checked.
 
+## A Estalagem maior e fechada: estalagem008 + estalagem-andar-2007 (2026-10-25; the user's order WITH the Inn's word: "make better walls,
+larger tavern overall ... add the 3D objects, not just a couple of table", "even the main Map, it cant be just one wide open area", "one big
+open area with large tables ... some separate rooms for NPCs and services, use the old school warrior, besteiro etc sprites instead of enemies")
+
+- `tools/scripts/maps/make_inn_v8.py` (refuses on overlaps, unreachable NPCs / doors / stairs, a lantern on a wall not facing a room;
+  never overwrites): **salão 008** 40 x 28 = the great hall (bar of 3 counters + stools + shelves, the Meshy hearth NW, 9 long refectory
+  tables `ember-tavern-table-messhall` with benches and chairs, 3 small tables) + kitchen, store, healer's room, Vargan's armoury (north
+  wing), back room and stairs room (east wing), front door; **Andar II 007** 41 x 27 = 7 bedrooms + the stairs room, corridor rows 12-14;
+  the 7 torch cards became candle lanterns (`ember-arch-inn-sconce`) inside the walls. `content/maps/active.json` plays Andar II 7.
+- Sprites: Vargan `swordsman`, Guarda de Folga `baseCrossbowman` (portrait BaseCrossbowman), A Hóspede `mothKeeper` (portraits.json speaker
+  "a hospede" → mothKeeper); four new mercenaries (Soldado, Piqueiro, Besteiro, Capitão) with one line each. **No real portrait yet:**
+  Nara (`roadCartographer`), Erasmo (`shadowScholar`), Ada (`wanderingTinker`): their dialog shows the sprite's first frame.
+- **Walls:** the Inn kit stands on a stone footing (`Architecture.cpp innGeometry` `footing`, tag 11 "innStone", flat until
+  `inn-footing-stone-v01.jpg` arrives: prompt in docs/INN_TEXTURES.md §5). **Cutaway** (MapStage `updateCutaway`, `ArchPiece::cutMesh`,
+  `kCutHeight` 0.9): every `inn-*` piece between the camera and its pivot is drawn as a low wall (doors / doorways not drawn); Tática cuts none.
+- **3D props with a light:** models.json `"light"` → catalog → `SceneModel::light` (SceneBuilder) → MapStage buildLights (the hearth's
+  fire = the inn-fireplace card's numbers, x kDecorLightPower, radius x fireRadiusMul). New models (the other agent's): `ember-tavern-chair-v04`
+  (back -z: rot + 2 against v02), `-table-small`, `-table-messhall` (triple), scaled 1.5 from metres; pack `build/meshes/props-v9.pak` (= v8 + them,
+  cooked from build/meshes/src-v2; JOGAR uses it).
+- Verified: both floors open in release (`--title-screen mission:estalagem` / `mission:estalagem-andar-2`): 219 / 270 pieces built, probes baked,
+  the near walls cut. Not verified: the look in the window (the user judges), walking through every door, the NPC dialogs' portraits in play.
+
 ## Torre de Vigia 009: o tabuleiro no chão; Overworld / Underworld no mapa-múndi (2026-10-23)
 
 - **The gate's threshold on the floor (the user: "pode encostar o tabuleiro da torre até a porta chegar no chão?"):** every map's floor

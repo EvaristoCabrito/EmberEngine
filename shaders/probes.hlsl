@@ -40,30 +40,34 @@ void CSRelight(uint id : SV_DispatchThreadID) {
   const uint64_t probe = push.bake + 64u + uint64_t(id) * uint64_t((1u + 81u + 27u + keyCount * 4u) * 4u);
   const uint64_t dst = push.output + 64u + uint64_t(id) * 144u;
   const float valid = vk::RawBufferLoad<float>(probe);
-  if (valid < 0.5 || f.atmosphere == 0) {
+  if (valid < 0.5) {
     [unroll] for (uint c = 0; c < 9; ++c) vk::RawBufferStore<float4>(dst + c * 16u, float4(0.0, 0.0, 0.0, 0.0));
     vk::RawBufferStore<float>(push.readback + uint64_t(id) * 4u, 0.0);
     return;
   }
-  // The sky's radiance: CSAmbient's unscaled irradiance (after the ambient the passes read), one band factor back, the exposure in.
-  const uint64_t sh = loadAtmosphere(f).ambient + 144u;
-  float3 sky[9];
-  [unroll] for (uint c = 0; c < 9; ++c) sky[c] = vk::RawBufferLoad<float4>(sh + c * 16u).rgb / kBandIrradiance[c] * f.exposure;
-  // The radiance arriving at the probe: the transfer of the sky ...
   float3 radiance[9];
-  [unroll] for (uint i = 0; i < 9; ++i) {
-    float3 sum = 0.0;
-    [unroll] for (uint j = 0; j < 9; ++j) sum += bakeAt(probe + (1u + i * 9u + j) * 4u) * sky[j];
-    radiance[i] = sum;
-  }
-  // ... and the key light's bounce (unit irradiance in the table; the key's own, through the clouds, exposure in).
-  const float3 origin = vk::RawBufferLoad<float4>(push.bake).xyz, spacing = vk::RawBufferLoad<float4>(push.bake + 16u).xyz;
-  const uint4 dims = vk::RawBufferLoad<uint4>(push.bake + 32u);
-  const float3 at = origin + float3(id % dims.x, id / (dims.x * dims.z), (id / dims.x) % dims.z) * spacing;
-  const float3 keyIrradiance = f.sunColor * f.sunIntensity * cloudShadow(f, at);
-  [unroll] for (uint t = 0; t < 3; ++t) {
-    const uint64_t row = probe + (1u + 81u + 27u + push.key[t] * 4u) * 4u;
-    [unroll] for (uint i = 0; i < 4; ++i) radiance[i] += push.weight[t] * bakeAt(row + i * 4u) * keyIrradiance;
+  [unroll] for (uint i = 0; i < 9; ++i) radiance[i] = 0.0;
+  // Without the sky (a room no outside light reaches: the Inn, the underground maps) the probes carry the fires' bounce alone.
+  if (f.atmosphere != 0) {
+    // The sky's radiance: CSAmbient's unscaled irradiance (after the ambient the passes read), one band factor back, the exposure in.
+    const uint64_t sh = loadAtmosphere(f).ambient + 144u;
+    float3 sky[9];
+    [unroll] for (uint c = 0; c < 9; ++c) sky[c] = vk::RawBufferLoad<float4>(sh + c * 16u).rgb / kBandIrradiance[c] * f.exposure;
+    // The radiance arriving at the probe: the transfer of the sky ...
+    [unroll] for (uint i = 0; i < 9; ++i) {
+      float3 sum = 0.0;
+      [unroll] for (uint j = 0; j < 9; ++j) sum += bakeAt(probe + (1u + i * 9u + j) * 4u) * sky[j];
+      radiance[i] = sum;
+    }
+    // ... and the key light's bounce (unit irradiance in the table; the key's own, through the clouds, exposure in).
+    const float3 origin = vk::RawBufferLoad<float4>(push.bake).xyz, spacing = vk::RawBufferLoad<float4>(push.bake + 16u).xyz;
+    const uint4 dims = vk::RawBufferLoad<uint4>(push.bake + 32u);
+    const float3 at = origin + float3(id % dims.x, id / (dims.x * dims.z), (id / dims.x) % dims.z) * spacing;
+    const float3 keyIrradiance = f.sunColor * f.sunIntensity * cloudShadow(f, at);
+    [unroll] for (uint t = 0; t < 3; ++t) {
+      const uint64_t row = probe + (1u + 81u + 27u + push.key[t] * 4u) * 4u;
+      [unroll] for (uint i = 0; i < 4; ++i) radiance[i] += push.weight[t] * bakeAt(row + i * 4u) * keyIrradiance;
+    }
   }
   // ... and the fires' bounce (candela-based, the exposure in); shown as bright as the fires themselves are (fireScale), metered as is.
   float3 fire[9];

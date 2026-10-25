@@ -348,7 +348,18 @@
       "width": 2.791,
       "footprint": "pair",
       "section": "Objetos",
-      "blocks": true
+      "blocks": true,
+      "light": {
+        "color": [
+          1,
+          0.58,
+          0.26
+        ],
+        "intensity": 14,
+        "radius": 4.68,
+        "flicker": 0.8,
+        "minHeight": 0.7
+      }
     },
     {
       "id": "ember-dungeon-pillar",
@@ -3602,6 +3613,42 @@
       "section": "Watchtower · Objetos 3D",
       "blocks": false,
       "triangles": 9824
+    },
+    {
+      "id": "ember-tavern-chair-v04",
+      "name": "Cadeira de taverna 3D IV",
+      "kit": "tavern",
+      "model": "ember-chair-v04",
+      "file": "/game/ember/tavern/chair-v04.glb",
+      "height": 1.5,
+      "width": 0.73,
+      "footprint": "one",
+      "section": "Objetos",
+      "blocks": true
+    },
+    {
+      "id": "ember-tavern-table-small",
+      "name": "Mesa pequena de taverna 3D",
+      "kit": "tavern",
+      "model": "ember-table-small",
+      "file": "/game/ember/tavern/table-small-v01.glb",
+      "height": 1.14,
+      "width": 2.33,
+      "footprint": "pair",
+      "section": "Objetos",
+      "blocks": true
+    },
+    {
+      "id": "ember-tavern-table-messhall",
+      "name": "Mesa comprida de refeitório 3D",
+      "kit": "tavern",
+      "model": "ember-table-messhall",
+      "file": "/game/ember/tavern/table-messhall-v01.glb",
+      "height": 1.17,
+      "width": 5.03,
+      "footprint": "triple",
+      "section": "Objetos",
+      "blocks": true
     }
   ]
 }
