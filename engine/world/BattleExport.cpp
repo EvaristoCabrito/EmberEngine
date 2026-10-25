@@ -448,6 +448,9 @@ struct Spawner {
   static bool isArcaneCaster(const std::string& c) {
     return oneOf(c, {"mage", "voss", "elementalist", "warlock", "cultist", "cultistV2"}) || isBirolho(c);
   }
+  // Isolde (ours, the user 2026-10-24): a conjurer whose plain attack and counter work like a mage's ("its counter and ATT like a
+  // mage"): the bolt at range, the staff beside her (MapStage); her class, reach and spells stay the conjurer's.
+  static bool isArcaneCaster(const Unit& u) { return isArcaneCaster(u.classId) || u.name == "Isolde"; }
   // weaponSkills.ts equippedWeaponType (the main hand)
   std::string weaponType(const Unit& u) const {
     if (u.weaponId.empty()) return "";
@@ -679,7 +682,7 @@ struct Cues {
   json attack(const Unit& u, bool counter) const {
     const bool arrow = counter ? sp.isArrowAttack(u) : (oneOf(u.classId, {"brigand", "baseCrossbowman", "brigandCrossbowman"}) || sp.isArrowAttack(u));
     if (arrow) return arrowAttack(u, true);
-    if (Spawner::isArcaneCaster(u.classId)) {
+    if (Spawner::isArcaneCaster(u)) {
       if (u.sprite == "cultist-v2") return cue("cultistV2Attack");
       return monsterOr(u.sprite, "attack", cue("magicAttack"));
     }
@@ -712,7 +715,7 @@ struct Cues {
   }
   json all(const Unit& u) const {
     const bool arrow = oneOf(u.classId, {"brigand", "baseCrossbowman", "brigandCrossbowman"}) || sp.isArrowAttack(u);
-    const bool arcane = !arrow && Spawner::isArcaneCaster(u.classId);
+    const bool arcane = !arrow && Spawner::isArcaneCaster(u);
     json spells = json::object();
     std::vector<std::string> kinds;
     for (const json& k : sp.spellList(u.classId, u.level, u.name)) kinds.push_back(k.get<std::string>());
@@ -1113,7 +1116,7 @@ std::optional<json> exportBattle(const json& mapFile, std::string* error, int pl
     } else {
       combat["staff"] = nullptr;
     }
-    combat["arcane"] = Spawner::isArcaneCaster(u.classId);
+    combat["arcane"] = Spawner::isArcaneCaster(u);
     combat["arrow"] = sp.isArrowAttack(u);
     combat["resistances"] = u.resistances;
     combat["faceDx"] = u.facing, combat["faceDy"] = 0, combat["facing"] = u.facing;
