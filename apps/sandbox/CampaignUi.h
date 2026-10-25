@@ -152,7 +152,10 @@ inline std::optional<MissionEntry> campaignMission(const e2::Campaign& campaign,
   e.battle = paths.campaign / "battles" / (map.stem + ".battle.json");
   const auto stamp = [&](const std::filesystem::path& p) { return std::filesystem::exists(p, ec) ? std::filesystem::last_write_time(p, ec) : std::filesystem::file_time_type::min(); };
   const auto made = std::min({stamp(e.map), stamp(e.scene), stamp(e.battle)});
-  e.prepare = made == std::filesystem::file_time_type::min() || made < stamp(map.file);
+  // ... or older than the data they are made with: the rules (a hero added to the party, 2026-10-25: Isolde) and the catalog
+  const auto source = std::max({stamp(map.file), stamp("content/ember-classes.json"), stamp("content/engine2/battle-rules.json"),
+                                stamp("content/engine2/editor-catalog.json")});
+  e.prepare = made == std::filesystem::file_time_type::min() || made < source;
   e.campaignId = m->id;
   return e;
 }

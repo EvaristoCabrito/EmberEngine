@@ -89,6 +89,16 @@ class Rules {
             if (w.is_object() && !flag(w, "ranged") && listed(def["weaponTypes"], str(w, "weaponType")) && w["usableBy"].is_array() && !listed(w["usableBy"], id))
               w["usableBy"].push_back(id);
         }
+      // EmberEngine's own heroes (content/ember-classes.json heroes; Isolde, 2026-10-25: "the full party at debug mode should include
+      // her, as a stress test too because the goal is a 8 members party"): added after the table's six, so every prepared map seats
+      // them; the campaign keeps only the heroes its save recruited (main.cpp setUpParty), Modo teste seats everyone
+      if (ember.is_object() && ember.contains("heroes") && ember["heroes"].is_array())
+        for (const json& h : ember["heroes"]) {
+          const std::string name = str(h, "name"), classId = str(h, "classId");
+          if (name.empty() || classId.empty()) continue;
+          if (!listed(r.j_["campaignHeroOrder"], name)) r.j_["campaignHeroOrder"].push_back(name);
+          r.j_["campaignHeroClasses"][name] = classId;
+        }
       return r;
     }();
     return rules ? &*rules : nullptr;

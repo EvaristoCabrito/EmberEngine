@@ -60,7 +60,8 @@ inline TestSession freshTestSession(const e2::Campaign& campaign) {
   TestSession s;
   s.save = campaign.emptySave();
   e2::Json levels = e2::Json::object();
-  for (const char* h : {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec"}) levels[h] = kDefaultTestLevel;
+  // the six and EmberEngine's own heroes (content/ember-classes.json heroes: Isolde), every one at the test level with its spells
+  for (const char* h : {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec", "Isolde"}) levels[h] = kDefaultTestLevel;
   s.save["levels"] = levels;
   s.save["ember"] = kTestEmber;
   return s;
