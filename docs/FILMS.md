@@ -9,7 +9,12 @@ AV1 about half of H.264's size; ~28 hours of film planned at 420p):
 - A film asked for as `game/<name>.mp4` plays `game/<name>.webm` when that file lies beside it. The MP4 is kept; subtitles are
   found by the name, so nothing else changes.
 
-## Encoding a film
+**REJECTED (the user, 2026-10-25):** the intro encoded with the command below (CRF 30, from the game's own MP4s) "looks like
+garbage" in play, although SSIM 0.98 / PSNR 43 dB and a still frame looked fine. Both copies were removed (319dbb6e) and no film
+is encoded; the game plays the MP4s. Encode a film only on the user's order, from their master, with settings they judged in
+motion; never trust SSIM / PSNR / stills for a film.
+
+## Encoding a film (the rejected settings, kept as a record)
 
 From the best master there is (re-encoding an already compressed copy costs a little quality), with ffmpeg's SVT-AV1:
 
