@@ -93,7 +93,7 @@ for (const h of heroes) {
 }
 const startingWeapons = new Set<string>(['cajado-da-galhada', 'punhal-curvo']);
 for (const c of Object.keys(data.CLASSES)) { const id = data.starterWeaponFor(c); if (id) startingWeapons.add(id); }
-const weapons = Object.values(data.WEAPONS as Record<string, { id: string; name: string; price: number }>).map((w) => ({
+const weapons = Object.values(data.WEAPONS as Record<string, { id: string; name: string; price: number; questOnly?: boolean }>).filter((w) => !w.questOnly).map((w) => ({
   id: w.id, name: w.name, price: w.price, power: data.gearPowerLevel(w.price), starting: startingWeapons.has(w.id),
 }));
 const equipment = Object.values(data.EQUIPMENT as Record<string, { id: string; name: string; price?: number; slot: string; hp?: number; resistances?: Record<string, number> }>).map((e) => ({

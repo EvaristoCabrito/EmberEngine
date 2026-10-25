@@ -25,6 +25,7 @@ struct InnPotion {
 struct InnWeapon {
   std::string id, name, bonusClass, bonusClassName, magic, dice, range, icon;
   int price = 0;
+  bool questOnly = false;
   std::optional<int> recommendedLevel;
   double power = 0;
   bool twoHanded = false;

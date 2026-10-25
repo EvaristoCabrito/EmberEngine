@@ -4,7 +4,7 @@ import type { PotionId, SaveData } from '../ember/types';
 
 export function buyWeapon(save: SaveData, id: string): SaveData | null {
   const weapon = WEAPONS[id];
-  if (!weapon || save.weapons[id] != null || !partyBagHasRoom(save, 1) || save.ember < weapon.price) return null;
+  if (!weapon || weapon.questOnly || save.weapons[id] != null || !partyBagHasRoom(save, 1) || save.ember < weapon.price) return null;
   return { ...save, ember: save.ember - weapon.price, emberSeeded: true, weapons: { ...save.weapons, [id]: 0 }, pendingMission: null };
 }
 export function buyEquipment(save: SaveData, id: string): SaveData | null {

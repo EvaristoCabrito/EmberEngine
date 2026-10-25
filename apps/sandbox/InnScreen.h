@@ -353,11 +353,18 @@ class InnScreen {
           std::string reward = std::format("Recompensa: {} Gold", q->value("reward", 0));
           for (const e2::Json& p : q->value("rewardPotions", e2::Json::array()))
             if (const e2::InnPotion* pp = c.data.potion(p.get<std::string>())) reward += " + " + pp->label;
+          for (const e2::Json& id : q->value("rewardWeapons", e2::Json::array()))
+            if (id.is_string()) if (const e2::InnWeapon* weapon = c.data.weapon(id.get<std::string>())) reward += " + " + weapon->name;
           text(reward, 12.0f, kMuted, w);
         }
         ImGui::PushID(id.c_str());
         if (status == "available" && button("##accept", "Aceitar missão", w, 40, true)) apply(c, c.rules.acceptQuest(c.save, id));
-        if (status == "ready" && button("##turnin", std::format("Entregar · {} Gold", q->value("reward", 0)), w, 40, true)) apply(c, c.rules.turnInQuest(c.save, id));
+        const e2::Json rewardWeapons = q->value("rewardWeapons", e2::Json::array());
+        const e2::Json ownedWeapons = c.save.value("weapons", e2::Json::object());
+        const bool hasUnownedWeaponReward = std::any_of(rewardWeapons.begin(), rewardWeapons.end(), [&](const e2::Json& weapon) { return weapon.is_string() && !ownedWeapons.contains(weapon.get<std::string>()); });
+        const bool rewardBagFull = hasUnownedWeaponReward && !c.world.bagHasRoom(c.save, 1);
+        if (status == "ready" && rewardBagFull) text("Libere espaço na mochila para receber a arma.", 12.0f, kMuted, w);
+        if (status == "ready" && button("##turnin", std::format("Entregar · {} Gold", q->value("reward", 0)), w, 40, true, rewardBagFull)) apply(c, c.rules.turnInQuest(c.save, id));
         ImGui::PopID();
       });
     }
@@ -529,7 +536,7 @@ class InnScreen {
       // The pool: weapons this hero's class can wield, weakest first.
       std::vector<const e2::InnWeapon*> pool;
       for (const e2::InnWeapon& wpn : c.data.weapons)
-        if (wpn.price > 0 && std::find(wpn.usableBy.begin(), wpn.usableBy.end(), cls) != wpn.usableBy.end()) pool.push_back(&wpn);
+        if (!wpn.questOnly && wpn.price > 0 && std::find(wpn.usableBy.begin(), wpn.usableBy.end(), cls) != wpn.usableBy.end()) pool.push_back(&wpn);
       std::stable_sort(pool.begin(), pool.end(), [](const auto* a, const auto* b) { return a->power < b->power; });
       const e2::Json& owned = c.save.value("weapons", e2::Json::object());
       const std::string equippedId = c.save.value("equipped", e2::Json::object()).value(smithHero_, "");

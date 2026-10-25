@@ -964,6 +964,7 @@ function SmithPanel({
   const pool = useMemo(
     () =>
       Object.values(WEAPONS)
+        .filter((weapon) => !weapon.questOnly)
         .filter((weapon) => merchantGear ? weapon.price >= 320 && weapon.price <= 1300 : test || weapon.price > 0)
         .filter((weapon) => !farmlandsService || isFarmlandsSmithWeapon(weapon.id))
         .filter((weapon) => weapon.usableBy.includes(classId))

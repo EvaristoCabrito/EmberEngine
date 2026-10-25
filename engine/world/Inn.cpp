@@ -66,6 +66,7 @@ bool InnData::load(const std::filesystem::path& file) {
   for (const Json& w : j["weapons"]) {
     InnWeapon x;
     x.id = w["id"], x.name = w["name"], x.price = w["price"].get<int>();
+    x.questOnly = w.value("questOnly", false);
     if (w["recommendedLevel"].is_number()) x.recommendedLevel = w["recommendedLevel"].get<int>();
     if (w["bonusClass"].is_string()) x.bonusClass = w["bonusClass"], x.bonusClassName = w["bonusClassName"].is_string() ? w["bonusClassName"].get<std::string>() : "";
     if (w["magic"].is_string()) x.magic = w["magic"];
@@ -281,7 +282,7 @@ std::optional<Json> InnRules::cureAilments(const Json& save, const std::vector<s
 
 std::optional<Json> InnRules::buyWeapon(const Json& save, const std::string& weaponId) const {
   const InnWeapon* w = data_.weapon(weaponId);
-  if (!w || child(save, "weapons").contains(weaponId)) return std::nullopt;
+  if (!w || w->questOnly || child(save, "weapons").contains(weaponId)) return std::nullopt;
   if (!world_.bagHasRoom(save, 1) || ember(save) < w->price) return std::nullopt;
   Json next = save;
   next["ember"] = ember(save) - w->price;
@@ -825,6 +826,15 @@ std::optional<Json> InnRules::turnInQuest(const Json& save, const std::string& q
         break;
       }
   }
+  const Json rewardWeapons = quest->value("rewardWeapons", Json::array());
+  int newWeaponRewards = 0;
+  for (const Json& id : rewardWeapons)
+    if (id.is_string() && !child(save, "weapons").contains(id.get<std::string>())) ++newWeaponRewards;
+  if (newWeaponRewards > 0 && !world_.bagHasRoom(save, newWeaponRewards)) return std::nullopt;
+  Json& weapons = next["weapons"];
+  if (!weapons.is_object()) weapons = Json::object();
+  for (const Json& id : rewardWeapons)
+    if (id.is_string() && !weapons.contains(id.get<std::string>())) weapons[id.get<std::string>()] = 0;
   next["ember"] = ember(save) + quest->value("reward", 0);
   next["emberSeeded"] = true;
   Json active = Json::array();

@@ -13,6 +13,7 @@ export interface MageStaffMagic {
 
 /** Former Healer staffs keep their artwork, IDs and damage dice, and now belong to mages. */
 export const MAGE_STAFF_MAGIC: Readonly<Record<string, MageStaffMagic>> = {
+  "staff-of-ember-v01": { attackElement: "ember" },
   "cajado-da-renovacao": { magBonus: 1, regeneration: 2, resistances: { ice: 10 } },
   "cajado-da-esperanca": { attackElement: "holy", regeneration: 3, resistances: { darkness: 15 }, elementalBonusPct: { holy: 10 } },
   "cajado-da-graca": { magBonus: 2, dexBonus: 2, resistances: { holy: 15 }, elementalBonusPct: { arcane: 10 } },

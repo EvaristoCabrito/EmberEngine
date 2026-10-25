@@ -2959,7 +2959,7 @@ export function weightedLootPick(rng: () => number, maxLevel = MAX_LEVEL, ownedW
   const startingWeapons = startingWeaponIds();
   const build = (level: number): [LootDrop, number][] => [
     ...Object.values(WEAPONS)
-      .filter((w) => !startingWeapons.has(w.id) && gearPowerLevel(w.price) <= level && !ownedWeaponIds.has(w.id))
+      .filter((w) => !w.questOnly && !startingWeapons.has(w.id) && gearPowerLevel(w.price) <= level && !ownedWeaponIds.has(w.id))
       .map((w): [LootDrop, number] => [{ kind: "weapon", id: w.id }, priceWeight(w.price)]),
     ...Object.values(EQUIPMENT)
       .filter((e) => !startingWeapons.has(e.id) && gearPowerLevel(e.lootPrice ?? e.price ?? 60) <= level)
@@ -2977,7 +2977,7 @@ export function weightedLootPick(rng: () => number, maxLevel = MAX_LEVEL, ownedW
  * to every non-starting weapon in the game. Starting weapons stay excluded from fallback pools. */
 export function weightedWeaponPick(rng: () => number, ids: string[] = Object.keys(WEAPONS), maxLevel = MAX_LEVEL): string {
   const startingWeapons = startingWeaponIds();
-  const lootable = (id: string) => !!WEAPONS[id] && !startingWeapons.has(id);
+  const lootable = (id: string) => !!WEAPONS[id] && !WEAPONS[id]!.questOnly && !startingWeapons.has(id);
   const eligible = ids.filter(lootable);
   // Even an empty or starter-only requested pool must never fall back to free weapons.
   const candidates = eligible.length > 0 ? eligible : Object.keys(WEAPONS).filter(lootable);
@@ -3145,6 +3145,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   "bastao-dos-restos": wpn("staff", "bastao-dos-restos", "Bastão dos Restos", ARCANE_ALL, 7, REACH, "necromancer", 1),
   "cajado-do-arcano-puro": wpn("staff", "cajado-do-arcano-puro", "Cajado do Arcano Puro", ARCANE_ALL, 8, REACH, "sorcerer", 1),
   "cajado-da-praga": wpn("staff", "cajado-da-praga", "Cajado da Praga", ARCANE_ALL, 9, REACH, "necromancer", 1),
+  "staff-of-ember-v01": { ...wpn("staff", "staff-of-ember-v01", "Staff of Ember", ARCANE_ALL, 9, REACH, "conjurer", 2), questOnly: true },
 
   // Earlier ornate healer staffs are now mage-only through MAGE_STAFF_MAGIC in wpn.
   // Progressão contígua 1D4→2D12, sem pular tier — cada rung do 1 ao 9 tem um cajado.

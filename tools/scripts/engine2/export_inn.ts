@@ -26,13 +26,13 @@ const innSource = readFileSync(`${E2}/src/game/InnScreen.tsx`, 'utf8');
 const innPrice = (name: string) => Number(new RegExp('export const ' + name + ' = ([0-9]+);').exec(innSource)?.[1]);
 const inn = { NIGHT_REST_PRICE: innPrice('NIGHT_REST_PRICE'), HEALER_CAST_PRICE: innPrice('HEALER_CAST_PRICE'), HEALER_AILMENT_PRICE: innPrice('HEALER_AILMENT_PRICE') };
 
-type Weapon = { id: string; name: string; price: number; usableBy: string[]; recommendedLevel?: number; bonusClass?: string; magic?: unknown; twoHanded?: boolean };
+type Weapon = { id: string; name: string; price: number; questOnly?: boolean; usableBy: string[]; recommendedLevel?: number; bonusClass?: string; magic?: unknown; twoHanded?: boolean };
 type Gear = { id: string; name: string; price?: number; slot: string; usableBy?: string[]; hp?: number; atk?: number; mag?: number; def?: number; dex?: number; mov?: number; kind?: string; dmgMul?: number; dice?: number; faces?: number };
 const maxEnh = data.WEAPON_MAX_ENH as number;
 const heroClasses = [...new Set(['swordsman', 'archer', 'mage', 'healer', 'aldric', 'conjurer', ...Object.values(data.PROMOTIONS as Record<string, string[]>).flat()])]
   .filter((c) => (data.CLASSES as Record<string, unknown>)[c]);
 const weapons = Object.values(data.WEAPONS as Record<string, Weapon>).map((w) => ({
-  id: w.id, name: w.name, price: w.price, usableBy: w.usableBy, recommendedLevel: w.recommendedLevel ?? null,
+  id: w.id, name: w.name, price: w.price, ...(w.questOnly ? { questOnly: true } : {}), usableBy: w.usableBy, recommendedLevel: w.recommendedLevel ?? null,
   bonusClass: w.bonusClass && data.isPlayableClassForDisplay(w.bonusClass) ? w.bonusClass : null,
   bonusClassName: w.bonusClass && data.isPlayableClassForDisplay(w.bonusClass) ? (data.CLASSES as Record<string, { name: string }>)[w.bonusClass]?.name ?? null : null,
   magic: w.magic ? data.weaponMagicSummary(w) : null,

@@ -990,6 +990,8 @@ export interface UnitPublic {
 export interface WeaponDef {
   /** Name-specific passive magic on the earlier mage staff family. */
   magic?: import("./mageStaffMagic").MageStaffMagic;
+  /** Quest rewards may be equipped and sold, but never offered or purchased at shops. */
+  questOnly?: boolean;
   /** Suggested campaign level for an authored weapon series; does not restrict equipping. */
   recommendedLevel?: number;
   id: string;
