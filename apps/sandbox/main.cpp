@@ -134,6 +134,8 @@ struct Options {
   bool movingLight = false, spellLight = false;
   std::string fxTest;
   std::string battleScript;  // --battle-script: MapStage::runScript's steps
+  std::string cutscene;      // --cutscene: on-map cutscene scripts played on the map (MapStage::runCutsceneQueue)
+  float cutsceneAuto = 0.0f; // --cutscene-auto SECONDS: its dialogue lines dismissed by themselves
   // --promote Name=class[:level],...: a hero's promotion ("warlock" / "elementalist") and, optionally, its level for the
   // fight (tests of the promotions' spells; the campaign reads the save's promotions instead).
   std::map<std::string, std::string> promote;
@@ -306,6 +308,8 @@ Options parse(int argc, char** argv) {
     else if (arg == "--star-look" && hasValue) o.starLook = std::atoi(argv[++i]);
     else if (arg == "--heroes" && hasValue) o.heroes = argv[++i];
     else if (arg == "--battle-rules" && hasValue) o.battleRules = argv[++i];
+    else if (arg == "--cutscene" && hasValue) o.cutscene = argv[++i];
+    else if (arg == "--cutscene-auto" && hasValue) o.cutsceneAuto = static_cast<float>(std::atof(argv[++i]));
     else if (arg == "--dev-gfx" && hasValue) o.devGfx = argv[++i];
     else if (arg == "--editor-script" && hasValue) o.editorScript = argv[++i];
     else if (arg == "--title") o.title = true;
@@ -662,6 +666,8 @@ MapStageOptions mapOptions(const Options& o) {
     m.spellLight = o.spellLight;
     m.fxTest = o.fxTest;
     m.battleScript = o.battleScript;
+    m.cutscene = o.cutscene;
+    m.cutsceneAuto = o.cutsceneAuto;
     m.tatica = o.tatica;
     m.spellsMenuOpen = o.spellsMenuOpen;
     m.measureSeconds = o.measureSeconds;

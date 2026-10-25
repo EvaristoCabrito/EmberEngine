@@ -1,0 +1,12 @@
+{
+  "format": "ember-cutscene-1",
+  "id": "test-unreachable",
+  "_note": "TEMPORARY TEST SCRIPT: a destination occupied by another unit (Voss stands at 16,23 when the battle opens), then one off the board; the cutscene must fail at the first and give the controls back.",
+  "actors": {
+    "A": { "unit": "Kael" }
+  },
+  "steps": [
+    { "do": "move", "actor": "A", "to": [16, 23] },
+    { "do": "move", "actor": "A", "to": [999, 999] }
+  ]
+}

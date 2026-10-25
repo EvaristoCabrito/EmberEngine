@@ -1,0 +1,11 @@
+{
+  "format": "ember-cutscene-1",
+  "id": "test-bad-actor",
+  "_note": "TEMPORARY TEST SCRIPT: the actor names a unit that is not on the map; the script must be refused before it starts.",
+  "actors": {
+    "A": { "unit": "Ninguém" }
+  },
+  "steps": [
+    { "do": "wait", "seconds": 0.5 }
+  ]
+}

@@ -94,6 +94,9 @@
 #include "world/Architecture.h"
 #include "world/ProbeBake.h"
 #include "world/SceneBuilder.h"
+#include "world/CutsceneScript.h"
+#include "DialogScreen.h"
+#include "Portraits.h"
 
 namespace ember {
 
@@ -121,6 +124,12 @@ struct MapStageOptions {
   // Battle test (runScript): steps run through the battle bar's own calls, each checked when it has played; the
   // run fails (exit 3) if any check fails. "hurt; cast:Salazar:cureWounds:Kael; food:Salazar; potion:Kael:mid:Kael".
   std::string battleScript;
+  // On-map cutscene test (playCutscene): these scripts (content/cutscenes/<id>.json, comma-separated) played one after another
+  // once the map is ready; the run ends when the last is over, and fails (exit 3) if one fails. "!<id>" = that script is
+  // expected to be refused / to fail. cutsceneAuto > 0: every dialogue line is dismissed by itself after that many seconds
+  // (nobody clicks in a capture).
+  std::string cutscene;
+  float cutsceneAuto = 0.0f;
   bool tatica = false;  // open in the 2D view (Tática), for captures
   bool spellsMenu = true;  // the Magias window (every spell's effect version, loose effects; test mode)
   bool choicesPanel = true;  // the Escolhas window (the look switches; test mode)
@@ -531,6 +540,8 @@ class MapStage final : public Stage {
     if (talkAfterWalk_ >= 0 && !busy()) talkRequest_ = std::exchange(talkAfterWalk_, -1);  // walked up to the NPC: they talk
     runScript();
     laps.lap("script");
+    runCutsceneQueue();
+    updateCutscene();
     updateRoaming();
     laps.lap("roaming");
     updateTurns();
@@ -1070,7 +1081,7 @@ class MapStage final : public Stage {
   // camera bar never reach here (ImGui takes them).
   void event(const SDL_Event& e) override {
     if (e.type == SDL_EVENT_MOUSE_MOTION) mouse_ = {e.motion.x, e.motion.y}, mouseWindow_ = e.motion.windowID;
-    if (inputHeld) {  // a conversation or the Inn's menus over the map (NpcTalk.h): nothing reaches the board
+    if (inputHeld || cutscene_) {  // a conversation, the Inn's menus (NpcTalk.h) or an on-map cutscene: nothing reaches the board
       leftDown_.reset(), endPan();
       return;
     }
@@ -1402,6 +1413,11 @@ class MapStage final : public Stage {
     if (!result_.empty() && now_ - resultAt_ > kResultDelay) return drawResultScreen();
     if (options_.editorClick) return drawCameraBar();  // the map editor's preview: its own panels around it
     drawAirParticles();
+    if (cutscene_) {  // a cutscene owns the board: no grid, no battle bar, only the camera bar and its own dialogue line
+      drawCameraBar();
+      drawCutsceneDialog();
+      return;
+    }
     drawMarks();
     drawCameraBar();
     drawTurnBar();
@@ -1950,9 +1966,10 @@ class MapStage final : public Stage {
   bool done() const override {
     if (failed_) return true;
     if (!options_.battleScript.empty()) return scriptDone_ && readyFrames_ >= 30;
+    if (!options_.cutscene.empty()) return cutsceneQueueDone_ && readyFrames_ >= 30;
     return options_.measureSeconds > 0.0f ? measured_ : readyFrames_ >= 30;
   }
-  bool passed() const override { return !failed_ && ground_.ready() && measurePassed_ && !scriptFailed_; }
+  bool passed() const override { return !failed_ && ground_.ready() && measurePassed_ && !scriptFailed_ && !cutsceneTestFailed_; }
 
  private:
   static constexpr float kFov = 30.0f, kNear = 0.5f;  // Engine2's normal lens
@@ -4680,7 +4697,7 @@ class MapStage final : public Stage {
 
   // Something is playing that input must not cut into: a walk, a strike, an enemy's turn, the battle's end.
   bool busy() const {
-    if (exchange_ || enemyTurn_ || !result_.empty() || sightPause()) return true;
+    if (exchange_ || enemyTurn_ || !result_.empty() || sightPause() || cutscene_) return true;
     return std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
   }
 
@@ -4864,8 +4881,233 @@ class MapStage final : public Stage {
     return met;
   }
 
+
+  // ---------------------------------------------------------------------------------------------------------------------
+  // On-map cutscenes (docs/CUTSCENES.md): a script (world/CutsceneScript.h) directs the units already on the map, one step
+  // at a time, each finished before the next begins: move (the map's own pathfinding and walk poses, over when the card
+  // arrives), face (the six hex directions or another actor; the board heading and the card's side as a strike would set
+  // them), say (the game's dialogue box, DialogScreen, over the visible map; the scene goes on when the player dismisses the
+  // line), wait (the scene clock). While it plays the board takes no input (event()), the turn loop and free roam hold, the
+  // grid and the battle bar are not drawn; the camera bar stays. When it ends (or fails: a missing actor, an occupied or
+  // unreachable destination) the picked unit, the hold and the controls come back as they were. The cutscene reports; what
+  // happens next is the caller's (a map event, a mission, the campaign).
+  // ---------------------------------------------------------------------------------------------------------------------
+
+  // Starts content/cutscenes/<id>.json over the loaded map. False (and a log line) when the file is refused, an actor is
+  // not on the map, or another cutscene is playing. The map must be ready (its battle and scene loaded).
+  bool playCutscene(const std::string& id) {
+    if (cutscene_) return logError("cutscene {}: refused, {} is still playing", id, cutscene_->script.id), false;
+    if (!battle_ || !scene_) return logError("cutscene {}: refused, the map is not ready", id), false;
+    std::string why;
+    std::optional<e2::CutsceneScript> script = e2::CutsceneScript::load("content/cutscenes/" + id + ".json", &why);
+    if (!script) return logError("cutscene {}: refused ({})", id, why), false;
+    Cutscene c;
+    c.script = std::move(*script);
+    for (const auto& [actor, unit] : c.script.actors) {
+      const int ui = sceneUnitNamed(unit);
+      if (ui < 0) return logError("cutscene {}: refused, actor \"{}\" = \"{}\" is not on the map", id, actor, unit), false;
+      c.units[actor] = static_cast<size_t>(ui);
+    }
+    // The control state taken over, given back at the end.
+    c.selected = selected_;
+    c.heldTurns = holdTurns;
+    c.started = now_;
+    cutsceneFailed_ = false, cutsceneWhy_.clear(), cutsceneDone_ = false;
+    cutscene_ = std::move(c);
+    holdTurns = true;
+    spellMode_.clear(), attackMode_ = false, offHandMode_ = false, pendingStrike_ = -1, talkAfterWalk_ = -1;
+    select(-1);
+    logInfo("cutscene {}: start ({} actors, {} steps)", id, cutscene_->units.size(), cutscene_->script.steps.size());
+    return true;
+  }
+  bool cutsceneActive() const { return cutscene_.has_value(); }
+  // The last cutscene's end: over, and whether it failed (and why).
+  bool cutsceneDone() const { return cutsceneDone_; }
+  bool cutsceneFailed() const { return cutsceneFailed_; }
+  const std::string& cutsceneWhy() const { return cutsceneWhy_; }
+  // Ends the playing cutscene at once, whatever its step (a map left, an error): every walk it started stops on the hex
+  // the card is stepping onto, the dialogue closes, the controls come back.
+  void stopCutscene(const std::string& why) {
+    if (!cutscene_) return;
+    const bool failed = !why.empty();
+    const std::string id = cutscene_->script.id;
+    const size_t step = cutscene_->step;
+    for (const auto& [actor, ui] : cutscene_->units) {
+      Walk& w = unitWalk_[ui];
+      if (w.points.empty() || w.hexes.empty() || unitBattle_[ui] < 0) continue;
+      e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[ui])];
+      const int there = battle_->unitAt(w.hexes.front().x, w.hexes.front().y);
+      if (there < 0 || there == unitBattle_[ui]) u.x = w.hexes.front().x, u.y = w.hexes.front().y;
+      w.points.resize(1), w.hexes.resize(1);
+    }
+    cutsceneDialog_.reset();
+    holdTurns = cutscene_->heldTurns || !options_.battleScript.empty();
+    const int back = cutscene_->selected;
+    cutscene_.reset();
+    if (back >= 0 && back < static_cast<int>(unitBattle_.size()) && unitBattle_[static_cast<size_t>(back)] >= 0 &&
+        battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(back)])].alive)
+      select(back);
+    refreshReach();
+    cutsceneDone_ = true, cutsceneFailed_ = failed, cutsceneWhy_ = why;
+    if (failed) logError("cutscene {}: FAIL at step {} ({}); controls back", id, step, why);
+    else logInfo("cutscene {}: over ({} steps); controls back", id, step);
+  }
+
+  void updateCutscene() {
+    if (!cutscene_ || !battle_ || !scene_) return;
+    Cutscene& c = *cutscene_;
+    // The step in play: over?
+    if (c.waiting) {
+      switch (c.script.steps[c.step].kind) {
+        case e2::CutsceneStep::Kind::Move: {
+          const size_t ui = c.units[c.script.steps[c.step].actor];
+          if (!unitWalk_[ui].points.empty()) return;
+          break;
+        }
+        case e2::CutsceneStep::Kind::Say:
+          if (cutsceneDialog_) {
+            if (options_.cutsceneAuto > 0.0f && now_ - c.stepStart >= options_.cutsceneAuto) cutsceneDialog_.reset();  // a capture: dismissed by itself
+            else return;
+          }
+          break;
+        case e2::CutsceneStep::Kind::Wait:
+          if (now_ - c.stepStart < c.script.steps[c.step].seconds) return;
+          break;
+        case e2::CutsceneStep::Kind::Face: break;
+      }
+      c.waiting = false;
+      ++c.step;
+    }
+    if (c.step >= c.script.steps.size()) return stopCutscene("");
+    // The next step begins.
+    const e2::CutsceneStep& st = c.script.steps[c.step];
+    c.stepStart = now_;
+    c.waiting = true;
+    auto fail = [&](const std::string& why) { stopCutscene(why); };
+    auto unitOf = [&](const std::string& actor) -> std::optional<size_t> {
+      const auto it = c.units.find(actor);
+      if (it == c.units.end() || unitBattle_[it->second] < 0) return std::nullopt;
+      if (!battle_->units()[static_cast<size_t>(unitBattle_[it->second])].alive) return std::nullopt;
+      return it->second;
+    };
+    switch (st.kind) {
+      case e2::CutsceneStep::Kind::Move: {
+        const std::optional<size_t> ui = unitOf(st.actor);
+        if (!ui) return fail("actor \"" + st.actor + "\" is not standing on the map");
+        const size_t b = static_cast<size_t>(unitBattle_[*ui]);
+        e2::BattleUnit& u = battle_->units()[b];
+        if (!battle_->inBounds(st.x, st.y)) return fail(std::format("({}, {}) is off the board", st.x, st.y));
+        if (u.x == st.x && u.y == st.y) return logInfo("cutscene {}: step {} move {}: already there", c.script.id, c.step, st.actor);
+        if (!battle_->cell(st.x, st.y).passable) return fail(std::format("({}, {}) is not walkable", st.x, st.y));
+        if (const int there = battle_->unitAt(st.x, st.y); there >= 0 && there != static_cast<int>(b))
+          return fail(std::format("({}, {}) is occupied by {}", st.x, st.y, battle_->units()[static_cast<size_t>(there)].name));
+        // Its route with the whole floor in reach (free roam's reach), whatever its movement this turn.
+        e2::Battle look = *battle_;
+        look.units()[b].mov = look.cols() * look.rows(), look.units()[b].moveUsed = 0;
+        const std::vector<e2::ReachCell> reach = look.reachable(b, false);
+        std::vector<e2::BattleHex> route = e2::Battle::path(reach, st.x, st.y);
+        if (route.size() < 2) return fail(std::format("({}, {}) is unreachable for {}", st.x, st.y, u.name));
+        std::vector<e2::BattleEffect> fx;
+        walkHexes(b, route, fx);  // the rules of the ground underfoot (a hazard, a gate) as in any walk
+        if (route.size() < 2) return fail("the walk could not start");
+        animateAlong(*ui, route, stepSeconds());
+        const auto [hx, hy] = e2::heading(route[route.size() - 2], route.back());
+        u.faceDx = hx, u.faceDy = hy;
+        playCues(sounds(b, route[1].x < route[0].x ? "walkLeft" : "walk"));
+        logInfo("cutscene {}: step {} move {} ({}, {}) -> ({}, {}), {} hexes", c.script.id, c.step, st.actor, route.front().x, route.front().y, u.x, u.y, route.size() - 1);
+        return;
+      }
+      case e2::CutsceneStep::Kind::Face: {
+        const std::optional<size_t> ui = unitOf(st.actor);
+        if (!ui) return fail("actor \"" + st.actor + "\" is not standing on the map");
+        if (!st.toward.empty()) {
+          const std::optional<size_t> other = unitOf(st.toward);
+          if (!other) return fail("actor \"" + st.toward + "\" is not standing on the map");
+          faceToward(*ui, *other);
+        } else {
+          faceDirection(*ui, st.direction);
+        }
+        logInfo("cutscene {}: step {} face {} {}", c.script.id, c.step, st.actor,
+                st.toward.empty() ? std::string(e2::CutsceneScript::kDirections[static_cast<size_t>(st.direction)]) : "toward " + st.toward);
+        return;
+      }
+      case e2::CutsceneStep::Kind::Say: {
+        const std::optional<size_t> ui = unitOf(st.actor);
+        if (!ui) return fail("actor \"" + st.actor + "\" is not standing on the map");
+        const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[*ui])];
+        // One line as a dialogue tree (DialogScreen's input): the speaker's name, the text and its translations as any line's.
+        e2::Json line = {{"id", "l"}, {"speaker", u.name}, {"text", st.text}};
+        if (st.translations.is_object()) line["translations"] = st.translations;
+        if (!st.portrait.empty()) line["portrait"] = st.portrait;
+        e2::Json tree = {{"id", std::format("cutscene:{}:{}", c.script.id, c.step)}, {"startId", "l"}, {"lines", e2::Json::array({line})}};
+        cutsceneDialog_.emplace(tree, npcPortraits(tree, characters()), options_.engine2Public);
+        logInfo("cutscene {}: step {} say {}: \"{}\"", c.script.id, c.step, st.actor, st.text);
+        return;
+      }
+      case e2::CutsceneStep::Kind::Wait:
+        logInfo("cutscene {}: step {} wait {:.2f} s", c.script.id, c.step, st.seconds);
+        return;
+    }
+  }
+
+  // Turn a unit to one of the six hex directions (Battle::neighbors' order: e ne nw w sw se; n = towards smaller y): the
+  // board heading towards that neighbour and the card's side from where the camera stands (faceToward's rule).
+  void faceDirection(size_t ui, int direction) {
+    const size_t b = static_cast<size_t>(unitBattle_[ui]);
+    e2::BattleUnit& u = battle_->units()[b];
+    const std::vector<e2::BattleHex> around = e2::Battle::neighbors(u.x, u.y);
+    const e2::BattleHex to = around[static_cast<size_t>(std::clamp(direction, 0, 5))];
+    const auto [hx, hy] = e2::heading({u.x, u.y}, to);
+    u.faceDx = hx, u.faceDy = hy;
+    // The card's side: the neighbour's place in the world against the unit's, seen from the camera (updateUnits' rule).
+    const glm::vec2 d = anchorWorld(u, to) - anchorWorld(u, {u.x, u.y});
+    const float yaw = flat_ ? 0.0f : cam_.yaw;
+    const float screenX = d.x * std::cos(yaw) - d.y * std::sin(yaw);
+    if (std::abs(screenX) > 0.05f) unitFacing_[ui] = screenX > 0.0f ? 1 : -1;
+  }
+
+  // The cutscene's dialogue line (drawPanel): the game's own box over the visible map; the scene goes on when it closes.
+  void drawCutsceneDialog() {
+    if (!cutsceneDialog_) return;
+    if (cutsceneDialog_->draw(ImGui::GetIO().DisplaySize)) cutsceneDialog_.reset();
+  }
+
+  // --cutscene: the listed scripts, one after another, once the map is ready; "!<id>" must be refused or fail.
+  void runCutsceneQueue() {
+    if (options_.cutscene.empty() || cutsceneQueueDone_ || !battle_ || !scene_ || readyFrames_ < 10) return;
+    if (cutscene_) return;
+    if (cutsceneQueueStarted_) {  // the last one is over: its verdict
+      const bool expectFail = cutsceneQueueLabel_.starts_with('!');
+      if (cutsceneFailed_ != expectFail) {
+        cutsceneTestFailed_ = true;
+        logError("cutscene test {}: FAIL ({})", cutsceneQueueLabel_, expectFail ? "it was expected to fail and did not" : cutsceneWhy_);
+      } else {
+        logInfo("cutscene test {}: PASS", cutsceneQueueLabel_);
+      }
+      cutsceneQueueStarted_ = false;
+    }
+    if (cutsceneQueueAt_ >= options_.cutscene.size()) {
+      cutsceneQueueDone_ = true;
+      return logInfo("cutscene test: {}", cutsceneTestFailed_ ? "FAIL" : "PASS");
+    }
+    size_t end = options_.cutscene.find(',', cutsceneQueueAt_);
+    if (end == std::string::npos) end = options_.cutscene.size();
+    cutsceneQueueLabel_ = options_.cutscene.substr(cutsceneQueueAt_, end - cutsceneQueueAt_);
+    cutsceneQueueAt_ = end + 1;
+    if (cutsceneQueueLabel_.empty()) return;
+    const bool expectFail = cutsceneQueueLabel_.starts_with('!');
+    const std::string id = expectFail ? cutsceneQueueLabel_.substr(1) : cutsceneQueueLabel_;
+    cutsceneQueueStarted_ = true;
+    if (!playCutscene(id)) {  // refused before it began: the verdict at once
+      cutsceneFailed_ = true, cutsceneWhy_ = "refused", cutsceneDone_ = true;
+      if (!expectFail) cutsceneTestFailed_ = true, logError("cutscene test {}: FAIL (refused)", cutsceneQueueLabel_);
+      else logInfo("cutscene test {}: PASS (refused, as expected)", cutsceneQueueLabel_);
+      cutsceneQueueStarted_ = false;
+    }
+  }
+
   void updateRoaming() {
-    if (!battle_ || !scene_ || !roams_ || !result_.empty()) return;
+    if (!battle_ || !scene_ || !roams_ || !result_.empty() || cutscene_) return;  // a cutscene: nobody meets anyone meanwhile
     if (fog_ && !noFog_ && !fogReady_) return;  // the fog's first sight decides whether the map opens in free roam or a fight
     if (!battle_->roaming()) {
       // The fight is over once no enemy is in sight, dead or only out of view (the user, 2026-10-17: the party does not hunt a
@@ -6263,6 +6505,11 @@ class MapStage final : public Stage {
         return "";
       };
       return logInfo("battle script: talk {}", p[1]);
+    }
+    if (p[0] == "cutscene" && p.size() > 1) {  // "cutscene:<id>": the on-map cutscene content/cutscenes/<id>.json, checked when it is over
+      if (!playCutscene(p[1])) return fail("the cutscene was refused");
+      scriptCheck_ = [this]() -> std::string { return cutsceneFailed_ ? "the cutscene failed: " + cutsceneWhy_ : std::string(); };
+      return logInfo("battle script: cutscene {}", p[1]);
     }
     if (p[0] == "stairs") {  // "stairs": the finish prompt's "Sim" on the floor connector a hero stands on
       const e2::Battle::Exit* x = battle_->activeExit();
@@ -10264,6 +10511,23 @@ class MapStage final : public Stage {
     std::string fadeSound;          // its walk cue, faded out when it arrives (a monster's own)
   };
   std::vector<Walk> unitWalk_;
+  // On-map cutscene in play (playCutscene / updateCutscene).
+  struct Cutscene {
+    e2::CutsceneScript script;
+    std::map<std::string, size_t> units;  // actor -> scene unit
+    size_t step = 0;
+    bool waiting = false;                 // the step at `step` is playing
+    float stepStart = 0.0f, started = 0.0f;
+    int selected = -1;                    // the control state taken over: the picked unit and the turns' hold
+    bool heldTurns = false;
+  };
+  std::optional<Cutscene> cutscene_;
+  std::optional<DialogScreen> cutsceneDialog_;
+  bool cutsceneDone_ = false, cutsceneFailed_ = false;
+  std::string cutsceneWhy_;
+  size_t cutsceneQueueAt_ = 0;  // --cutscene: the list's cursor, the script playing, the verdicts
+  std::string cutsceneQueueLabel_;
+  bool cutsceneQueueStarted_ = false, cutsceneQueueDone_ = false, cutsceneTestFailed_ = false;
   struct CardRect {  // a unit's card as drawn this frame, for picking
     glm::vec3 origin{0.0f};  // bottom centre
     float width = 0.0f, height = 0.0f;

@@ -1,0 +1,18 @@
+{
+  "format": "ember-cutscene-1",
+  "id": "test-aldeia",
+  "_note": "TEMPORARY TEST SCRIPT (Interlude step 1): aldeia015's test battle, Kael (A) and Neera (B). Not a game scene.",
+  "actors": {
+    "A": { "unit": "Kael" },
+    "B": { "unit": "Neera" }
+  },
+  "steps": [
+    { "do": "face", "actor": "A", "direction": "w" },
+    { "do": "move", "actor": "A", "to": [14, 19] },
+    { "do": "face", "actor": "B", "toward": "A" },
+    { "do": "say", "actor": "A", "text": "A vila está em silêncio. Fiquem atentos.", "translations": { "en": "The village is silent. Stay sharp." } },
+    { "do": "say", "actor": "B", "text": "Vejo movimento perto do poço.", "translations": { "en": "I see movement by the well." } },
+    { "do": "wait", "seconds": 1.0 },
+    { "do": "move", "actor": "A", "to": [12, 17] }
+  ]
+}

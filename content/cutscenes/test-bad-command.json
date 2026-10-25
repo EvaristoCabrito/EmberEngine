@@ -1,0 +1,12 @@
+{
+  "format": "ember-cutscene-1",
+  "id": "test-bad-command",
+  "_note": "TEMPORARY TEST SCRIPT: an unknown action and a malformed coordinate; the file must be refused whole.",
+  "actors": {
+    "A": { "unit": "Kael" }
+  },
+  "steps": [
+    { "do": "move", "actor": "A", "to": [14, 19] },
+    { "do": "teleport", "actor": "A", "to": "far" }
+  ]
+}

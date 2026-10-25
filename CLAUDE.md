@@ -1614,6 +1614,23 @@ detalhes estranhos e nada a ver, deixa profissional", and "não alterar o sistem
   groundFromDegrees 3: first values, the user judges); opens first, v01 kept in the list; relocked. Ground pack `ground-v32.pak` = v31 +
   those two images (JOGAR uses it first).
 
+## Cutscenes no mapa, Passo 1 do Interlúdio (2026-10-25; the user's pasted spec "INTERLUDE & ON-MAP CUTSCENE SYSTEM", "faz paço 1")
+
+- **Read `docs/CUTSCENES.md`.** `engine/world/CutsceneScript.h/.cpp` (the format "ember-cutscene-1": id, actors by unit name, steps
+  move / face / say / wait; refused whole on an unknown action, undeclared actor, malformed coordinate or duration) +
+  MapStage's controller (`playCutscene(id)` reads `content/cutscenes/<id>.json`, `updateCutscene` one step at a time, each over
+  before the next, `stopCutscene(why)` gives the controls back; `faceDirection`; `drawCutsceneDialog` = the game's DialogScreen
+  over the visible map). `apps/sandbox/Portraits.h` = `speakerKey` / `npcPortraits` moved out of NpcTalk.h (shared). While a
+  cutscene plays: no board input, turns and free roam held, grid and battle bar not drawn, camera bar kept; the picked unit and
+  `holdTurns` restored after. Test: `--cutscene a,!b,c --cutscene-auto 1.5` (`!` = must be refused / fail), battle script step
+  `cutscene:<id>`; the `content/cutscenes/test-*.json` are temporary test scripts (the real scenes come from the user).
+- **The Interlude's design (the user, 2026-10-25, pasted while step 1 was built; steps 2+ NOT started):** party of exactly three,
+  Isolde (Conjurer, persistent: her Interlude levels carry to the campaign when she joins later), young Salazar (Cruzado, a
+  separate character from present-day Salazar), Selene (Conjurer, Interlude only); the Ruins are quest-gated (all of Salazar's
+  quests, not written yet; an unconfigured gate = locked); first entry runs the Interlude once (NOT_STARTED / ACTIVE / COMPLETED).
+  Scene scripts: both ways wanted ("sim pode ter os dois sistemas"): the JSON by hand / by AI now, a visual command-list editor
+  (RPG Maker's event list with hex picking on the preview) later, over the same format.
+
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
 - `content/engine2/backdrop-fit.json` painting entry `inn-second-floor-v01.jpg#teto-salao` (2026-10-23): made as an extra panorama when
