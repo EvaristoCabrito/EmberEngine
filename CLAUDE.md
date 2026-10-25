@@ -1660,12 +1660,27 @@ open area with large tables ... some separate rooms for NPCs and services, use t
   cutscene plays: no board input, turns and free roam held, grid and battle bar not drawn, camera bar kept; the picked unit and
   `holdTurns` restored after. Test: `--cutscene a,!b,c --cutscene-auto 1.5` (`!` = must be refused / fail), battle script step
   `cutscene:<id>`; the `content/cutscenes/test-*.json` are temporary test scripts (the real scenes come from the user).
-- **The Interlude's design (the user, 2026-10-25, pasted while step 1 was built; steps 2+ NOT started):** party of exactly three,
+- **The Interlude's design (the user, 2026-10-25, pasted while step 1 was built):** party of exactly three,
   Isolde (Conjurer, persistent: her Interlude levels carry to the campaign when she joins later), young Salazar (Cruzado, a
   separate character from present-day Salazar), Selene (Conjurer, Interlude only); the Ruins are quest-gated (all of Salazar's
   quests, not written yet; an unconfigured gate = locked); first entry runs the Interlude once (NOT_STARTED / ACTIVE / COMPLETED).
   Scene scripts: both ways wanted ("sim pode ter os dois sistemas"): the JSON by hand / by AI now, a visual command-list editor
   (RPG Maker's event list with hex picking on the preview) later, over the same format.
+- **Step 2 (2026-10-25, "Faz o Passo 2"): read `docs/INTERLUDE.md`.** `engine/world/Interlude.h/.cpp` + `content/interlude.json`
+  (`ruinsLocation`, `requiredQuests` (EMPTY today = the Ruins shut in every campaign; Modo teste or the save flag
+  `interlude:ruins-open` open them for tests), the party of three with levels / starter weapons, `leader`, `missions` = map ids in
+  content/maps/ember). `interludeBegin` moves the present party's fields (`interludePartyKeys`) under `save.interlude.present` and
+  writes the historical party's; `interludeAdvance` after each chapter mission (main.cpp finishCampaignFight / markVisited);
+  `interludeComplete` restores them whole, keeps Isolde's level / XP / skills / points / promotion under `interlude.isolde`;
+  `recruitIsolde` (not wired to any event yet) brings them into the party once. OverworldStage: the Ruins' pin locked by the gate,
+  the entry starts / resumes the chapter (`enterLocation`, `openMission` → `CampaignUi.h interludeMission`); main.cpp
+  `setUpParty` / `setUpExplore` seat exactly the three while ACTIVE. `Cooker check-interlude <interlude.json> <overworld.json>
+  <campaign.json>` (34 checks, PASS). TEMPORARY content: `content/maps/ember/interlude-placeholder001.json` (the Cruzado test
+  board with the three + 3 foes; scratchpad make_interlude_placeholder.py); Selene has no art (a conjurer spawn draws the class
+  sprite). Captures: `--title-screen map --save-bank <copy> --map-ui enter:ruins`, `--title-screen mission:interlude-placeholder`.
+  Limits: the world map's party panel / leader figure still list the six present heroes while ACTIVE (kHeroes); the full
+  in-game loop (map → chapter fight → victory → the Ruins) is covered by the Cooker check and the captures of its halves, not by
+  one scripted run (the main loop has no capture harness).
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 

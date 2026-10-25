@@ -48,6 +48,7 @@
 #include "world/Companions.h"
 #include "world/FieldSpells.h"
 #include "world/Inn.h"
+#include "world/Interlude.h"
 #include "world/Overworld.h"
 #include "world/Spells.h"
 
@@ -68,9 +69,12 @@ class OverworldStage : public Stage {
 
   // `testSave`: Engine2's Modo teste (GameApp testMode): the map runs on that save (held by the caller for the whole
   // test session, never the real bank) and every travel / party / mission restriction is lifted (Overworld `test`).
+  // `interlude`: the historical chapter's data (content/interlude.json; docs/INTERLUDE.md), when loaded: the Ruins' quest gate and
+  // the chapter's start on the first entry there.
   OverworldStage(CampaignPaths paths, e2::Campaign& campaign, const e2::Overworld& world, Callbacks callbacks, std::string notice = {},
-                 e2::Json* testSave = nullptr)
-      : paths_(std::move(paths)), campaign_(campaign), world_(world), callbacks_(std::move(callbacks)), notice_(std::move(notice)), testSave_(testSave) {
+                 e2::Json* testSave = nullptr, const e2::InterludeData* interlude = nullptr)
+      : paths_(std::move(paths)), campaign_(campaign), world_(world), callbacks_(std::move(callbacks)), notice_(std::move(notice)), testSave_(testSave),
+        interlude_(interlude) {
     hasInn_ = innData_.load("content/engine2/inn.json");
     hasCompanions_ = companions_.load("content/engine2/companions.json", "content/engine2/companions-pt.json");
     save_ = testSave_ ? *testSave_ : campaign_.activeSave();
@@ -98,6 +102,14 @@ class OverworldStage : public Stage {
   static constexpr const char* kGraveyardFilm = "content/films/graves-intro-v01.mp4";
   void showUnderworld() {
     if (!underworld_) toggleWorld();
+  }
+  // The location's mission list opened as a click on its pin would (main.cpp: back from the Interlude, the present-day Ruins).
+  void openLocationPanel(const std::string& id) { open_ = id; }
+  // A location's status as the pins show it: the world's rules, and the Ruins shut by the Interlude's quest gate (never in Modo teste).
+  std::string locationStatus(const e2::MapLocation& loc) const {
+    std::string st = world_.locationStatus(loc, save_, test());
+    if (interlude_ && !test() && loc.id == interlude_->ruinsLocation && st != "locked" && !e2::ruinsOpen(*interlude_, world_, save_)) st = "locked";
+    return st;
   }
 
   // Captures: a panel opened as a click would ("party", "skills", "quests", "options", "move", "location:<id>", "save").
@@ -129,6 +141,9 @@ class OverworldStage : public Stage {
     if (what == "options") options_ = true;
     if (what == "move") movementOpen_ = true;
     if (what.starts_with("location:")) open_ = what.substr(9);
+    if (what.starts_with("enter:"))  // "enter:<id>": the location entered as a click on its pin would (the Ruins: the Interlude's gate and start)
+      for (const e2::MapLocation& loc : world_.locations())
+        if (loc.id == what.substr(6)) enterLocation(loc, locationStatus(loc));
     if (what == "save") slots_.emplace(), slots_->open(SlotScreen::Mode::Save, true);
     if ((what == "pack" || what == "doll") && hasInn_) inventory_.emplace("Kael", what == "pack");
     if (what.starts_with("inn") && hasInn_) {
@@ -368,8 +383,10 @@ class OverworldStage : public Stage {
       }
     }
     std::string error;
-    if (std::optional<MissionEntry> e = test() ? testMission(campaign_, paths_, id, error) : campaignMission(campaign_, paths_, id, error))
-      briefing_ = std::move(e);
+    std::optional<MissionEntry> e;
+    if (interlude_ && interlude_->hasMission(id)) e = interludeMission(paths_, id, error, test());  // the chapter's own maps (no campaign.json entry)
+    else e = test() ? testMission(campaign_, paths_, id, error) : campaignMission(campaign_, paths_, id, error);
+    if (e) briefing_ = std::move(e);
     else notice_ = error;
   }
 
@@ -750,7 +767,7 @@ class OverworldStage : public Stage {
       for (const e2::Json& h : save_.value("exploredHexes", e2::Json::array()))
         if (h.is_string() && h.get<std::string>() == std::format("{},{}", loc.col, loc.row)) explored = true;
       if (!explored) continue;
-      pins.push_back({&loc, world_.locationStatus(loc, save_, test())});
+      pins.push_back({&loc, locationStatus(loc)});
     }
     for (const auto& [loc, st] : pins) {
       const ImVec2 c = at(loc->x, loc->y);
@@ -858,6 +875,28 @@ class OverworldStage : public Stage {
 
   void enterLocation(const e2::MapLocation& loc, const std::string& st) {
     if (loc.deadlineDay && num(save_, "gameClock", 0) > *loc.deadlineDay) return showHint("Prazo esgotado por aqui.");
+    // The Ruins (docs/INTERLUDE.md): shut until Salazar's quests are done; the first legitimate entry starts the Interlude (the present
+    // party put aside, the historical one in, its first map pending), a chapter left half-way goes on at its pending map, and once the
+    // chapter is completed the Ruins open as any present-day location. Never in Modo teste (every location open, no chapter).
+    if (interlude_ && !test() && loc.id == interlude_->ruinsLocation) {
+      if (!e2::ruinsOpen(*interlude_, world_, save_)) {
+        flashId_ = loc.id, flashAt_ = now_;
+        logInfo("ruins: shut ({})", e2::ruinsLockedReason(*interlude_, world_, save_));
+        return showHint(tr("As Ruínas estão fechadas: termine antes as missões de Salazar.", "The Ruins are shut: finish Salazar's quests first."));
+      }
+      const e2::InterludeState state = e2::interludeState(save_);
+      if (state == e2::InterludeState::NotStarted) {
+        std::string why;
+        if (!e2::interludeBegin(*interlude_, save_, &why)) return showHint("Interlúdio: " + why);
+        write();
+        logInfo("interlude: begun; the historical party is in, {} pending", interlude_->missions.front());
+        return openMission(interlude_->missions.front(), true);
+      }
+      if (state == e2::InterludeState::Active) {
+        const std::string id = e2::interludeMission(*interlude_, save_);
+        if (!id.empty()) return openMission(id, true);
+      }
+    }
     if (st == "locked") {
       flashId_ = loc.id, flashAt_ = now_;
       return;
@@ -1071,7 +1110,7 @@ class OverworldStage : public Stage {
     if (standing) {
       const std::string label = "Explorar " + standing->name;
       ImGui::SetCursorScreenPos({a.x + pad, b.y - pad - 44.0f});
-      if (ImGui::InvisibleButton("##explore", {ui->CalcTextSizeA(12.0f, FLT_MAX, 0, label.c_str()).x, 44.0f})) enterLocation(*standing, world_.locationStatus(*standing, save_, test()));
+      if (ImGui::InvisibleButton("##explore", {ui->CalcTextSizeA(12.0f, FLT_MAX, 0, label.c_str()).x, 44.0f})) enterLocation(*standing, locationStatus(*standing));
       dl->AddText(ui, 12.0f, {a.x + pad, b.y - pad - 28.0f}, kAccent, label.c_str());
     }
   }
@@ -2209,6 +2248,7 @@ class OverworldStage : public Stage {
   int formationPick_ = -1;
   std::string formationSaved_;
   e2::Json* testSave_ = nullptr;  // Modo teste: the session's save (see the constructor)
+  const e2::InterludeData* interlude_ = nullptr;  // the historical chapter's data (the Ruins' gate, its start), when loaded
   std::string flashId_;
   float flashAt_ = -10;
   int zoom_ = 3;

@@ -160,6 +160,33 @@ inline std::optional<MissionEntry> campaignMission(const e2::Campaign& campaign,
   return e;
 }
 
+// An Interlude mission (world/Interlude.h; docs/INTERLUDE.md): its id is a map id in content/maps/ember (the newest serial plays),
+// with no entry in campaign.json; its game files are made the same way as any campaign mission's (MapExport.h). `campaignId`
+// is the mission id itself (its result goes into the active slot, where the historical party lives while the chapter is on).
+inline std::optional<MissionEntry> interludeMission(const CampaignPaths& paths, const std::string& id, std::string& error, bool test = false) {
+  const int serial = highestMapSerial(savedMapsDir(), id);
+  if (serial <= 0) {
+    error = "O mapa do Interlúdio " + id + " não existe em " + savedMapsDir().generic_string() + ".";
+    return std::nullopt;
+  }
+  const std::string stem = std::format("{}{:03}", id, serial);
+  MissionEntry e;
+  e.id = stem, e.draftId = id, e.title = id;
+  const std::filesystem::path file = savedMapsDir() / (stem + ".json");
+  missionTextsFromDraft(e, file);
+  e.source = file;
+  e.map = paths.campaign / "maps" / (stem + ".json");
+  e.scene = paths.campaign / "scenes" / (stem + ".scene.json");
+  e.battle = paths.campaign / "battles" / (stem + ".battle.json");
+  std::error_code ec;
+  const auto stamp = [&](const std::filesystem::path& p) { return std::filesystem::exists(p, ec) ? std::filesystem::last_write_time(p, ec) : std::filesystem::file_time_type::min(); };
+  const auto made = std::min({stamp(e.map), stamp(e.scene), stamp(e.battle)});
+  const auto source = std::max({stamp(file), stamp("content/ember-classes.json"), stamp("content/engine2/battle-rules.json"), stamp("content/engine2/editor-catalog.json")});
+  e.prepare = made == std::filesystem::file_time_type::min() || made < source;
+  e.campaignId = test ? std::string() : id;
+  return e;
+}
+
 // Test mode opens the campaign's exact prepared map, scene and battle. Its only gameplay differences come from the
 // fresh test save (full party at level 30) and the unlocked map picker; it never uses a second export or combat pipeline.
 inline std::optional<MissionEntry> campaignMission(const e2::Campaign& campaign, const CampaignPaths& paths, const std::string& id, std::string& error);

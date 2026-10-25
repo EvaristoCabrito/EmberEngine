@@ -103,6 +103,7 @@
 #include "world/Locais.h"
 #include "TestModeStage.h"
 #include "world/Campaign.h"
+#include "world/Interlude.h"
 #include "world/Overworld.h"
 #include "MeshStage.h"
 #include "SpriteParade.h"
@@ -720,15 +721,34 @@ MapStageOptions mapOptions(const Options& o) {
   }
 }
 
+// A campaign fight's heroes as the save has them: levels and XP, promotions (save.ts promotions: the Mago Negro's path chosen on the
+// Party screen), their condition (GameApp startBattle's roster; HeroHandoff.h) and the party's affinities (save.affinityScores: the
+// bonus between neighbours follows them, and the fight moves them). The game's loop and the mission captures alike.
+void applySaveHeroes(MapStageOptions& options, const e2::Json& save) {
+  const e2::Json levels = save.value("levels", e2::Json::object()), xp = save.value("xp", e2::Json::object());
+  for (const auto& [name, level] : levels.items())
+    if (level.is_number_integer()) options.heroProgress[name] = {level.get<int>(), xp.value(name, 0)};
+  const e2::Json promotions = save.value("promotions", e2::Json::object());
+  if (promotions.is_object())
+    for (const auto& [name, cls] : promotions.items())
+      if (cls.is_string()) options.heroClass[name] = cls.get<std::string>();
+  options.heroState = heroStatesFromSave(save);
+  if (const e2::Json scores = save.value("affinityScores", e2::Json::object()); scores.is_object())
+    for (const auto& [pair, v] : scores.items())
+      if (v.is_number()) options.affinityScores[pair] = v.get<double>();
+}
+
 // GameApp startBattle on a free-roam map (mission.explore, the walkable Inn): the companions not recruited yet are not seated
 // there (a campaign only: Modo teste seats everyone), and the save's party leader walks (partyLeaderOf: the saved leader
 // while recruited, else Kael).
-void setUpExplore(MapStageOptions& options, const e2::Json& save, const e2::Overworld& world, bool test) {
+// `interlude` (docs/INTERLUDE.md): while the historical chapter is on, its own leader walks.
+void setUpExplore(MapStageOptions& options, const e2::Json& save, const e2::Overworld& world, bool test, const e2::InterludeData* interlude = nullptr) {
   std::ifstream in(options.battle, std::ios::binary);
   const e2::Json battle = in ? e2::Json::parse(in, nullptr, false) : e2::Json();
   if (!battle.is_object() || !battle.value("explore", false)) return;
   for (const char* hero : {"Neera", "Voss", "Salazar", "Aldric", "Malrec"})
     if (!test && !world.heroRecruited(hero, save)) options.absentNeutrals.insert(hero);
+  if (options.leader.empty() && !test && interlude && e2::interludeState(save) == e2::InterludeState::Active) options.leader = interlude->leader;
   if (options.leader.empty())
     if (const auto l = save.find("partyLeader"); l != save.end() && l->is_string() && (test || world.heroRecruited(l->get<std::string>(), save)))
       options.leader = l->get<std::string>();
@@ -737,14 +757,19 @@ void setUpExplore(MapStageOptions& options, const e2::Json& save, const e2::Over
 // The party of a fight (campaignParty.ts: "campaign progression defines the party; editor spawns only provide entry positions"):
 // in the campaign the heroes the save has recruited (`campaign`), in Modo teste every hero of the battle file; laid out by the
 // save's Formação inicial at the map's entry (MapStage::placeFormation). Free-roam maps are setUpExplore's.
-void setUpParty(MapStageOptions& options, const e2::Json& save, const e2::Overworld& world, bool campaign) {
+// `interlude` (docs/INTERLUDE.md): while the historical chapter is on, the party is exactly its three heroes, nobody of the present.
+void setUpParty(MapStageOptions& options, const e2::Json& save, const e2::Overworld& world, bool campaign, const e2::InterludeData* interlude = nullptr) {
   std::ifstream in(options.battle, std::ios::binary);
   const e2::Json battle = in ? e2::Json::parse(in, nullptr, false) : e2::Json();
   if (!battle.is_object() || battle.value("explore", false)) return;
   if (campaign) {
     std::set<std::string> roster;
-    for (const char* hero : {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec"})
-      if (world.heroRecruited(hero, save)) roster.insert(hero);
+    if (interlude && e2::interludeState(save) == e2::InterludeState::Active) {
+      for (const e2::InterludeHero& h : interlude->party) roster.insert(h.name);
+    } else {
+      for (const char* hero : {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec"})
+        if (world.heroRecruited(hero, save)) roster.insert(hero);
+    }
     options.partyRoster = std::move(roster);
   }
   if (const auto f = save.find("partyFormation"); f != save.end() && f->is_array())
@@ -827,9 +852,12 @@ int runCapture(const Options& o) {
     campaignPaths.engine2Public = o.gameAssets;
     campaignPaths.maps = !o.maps.empty() ? std::filesystem::path(o.maps) : std::filesystem::path("content/maps/ember");
     campaignPaths.scenes = o.scenes;
+    e2::InterludeData interludeData;  // the Interlude's gate and start on the world map (docs/INTERLUDE.md), as in the game
+    const bool hasInterludeData = interludeData.load("content/interlude.json");
     if (o.title && o.titleScreen == "map" && hasCampaign && world.load("content/engine2/overworld.json")) {
-      // --title-screen map: the active slot's world map (--map-ui: party / quests / options / event / location opened).
-      auto map = std::make_unique<OverworldStage>(campaignPaths, campaign, world, OverworldStage::Callbacks{});
+      // --title-screen map: the active slot's world map (--map-ui: party / quests / options / event / location opened; enter:<id>).
+      auto map = std::make_unique<OverworldStage>(campaignPaths, campaign, world, OverworldStage::Callbacks{}, std::string(), nullptr,
+                                                  hasInterludeData ? &interludeData : nullptr);
       if (!o.mapUi.empty()) map->preview(o.mapUi);
       stage = std::move(map);
     } else if (o.title && o.titleScreen.starts_with("mission") && hasCampaign) {
@@ -838,7 +866,9 @@ int runCapture(const Options& o) {
       const bool test = o.titleScreen.starts_with("mission-test:");
       const std::string id = o.titleScreen.substr(o.titleScreen.find(':') + 1);
       std::string error;
-      std::optional<MissionEntry> m = test ? testMission(campaign, campaignPaths, id, error) : campaignMission(campaign, campaignPaths, id, error);
+      std::optional<MissionEntry> m = hasInterludeData && interludeData.hasMission(id) ? interludeMission(campaignPaths, id, error, test)
+                                      : test                                            ? testMission(campaign, campaignPaths, id, error)
+                                                                                        : campaignMission(campaign, campaignPaths, id, error);
       if (!m) fatal(error);
       if (m->prepare) {  // the campaign's game files made first, as the game makes them when the mission opens
         const MapExportResult made = exportMap(m->source, m->id, campaignPaths, std::filesystem::path(o.gameAssets).parent_path(),
@@ -854,12 +884,13 @@ int runCapture(const Options& o) {
       if (world.load("content/engine2/overworld.json")) options.world = &world;  // the status sheet's Mochila / Equipar
       if (test) testSession = freshTestSession(campaign);
       if (test) applyTestHeroes(options, testSession->save);
+      else applySaveHeroes(options, campaign.activeSave());  // the campaign's heroes as the save has them (levels, promotions, condition)
       // The sky: a campaign mission at the save's hour; Modo teste at the map's own (gameHour -1).
       if (!test) {
         options.gameHour = static_cast<float>(e2::Overworld::campaignHour(campaign.activeSave()));
         if (options.moonPhase.empty()) options.moonPhase = e2::campaignMoonPhase(campaign.activeSave().value("gameClock", 0));
       }
-      if (options.world) setUpExplore(options, test ? testSession->save : campaign.activeSave(), world, test);
+      if (options.world) setUpExplore(options, test ? testSession->save : campaign.activeSave(), world, test, hasInterludeData ? &interludeData : nullptr);
       if (options.world) {  // the party and its formation (--formation "Kael,,Neera,...": the board's cells instead of the save's)
         e2::Json save = test ? testSession->save : campaign.activeSave();
         if (!o.formation.empty()) {
@@ -870,7 +901,7 @@ int runCapture(const Options& o) {
             at = end + 1;
           }
         }
-        setUpParty(options, save, world, !test);
+        setUpParty(options, save, world, !test, hasInterludeData ? &interludeData : nullptr);
       }
       auto missionStage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
       missionStage->setCampaign(&campaign, test ? std::string() : id, id, test);  // the campaign's own save backs the inventory
@@ -1024,6 +1055,9 @@ int runWindow(const Options& o) {
   bool hasCampaign = false;
   e2::Overworld world;
   bool hasWorld = false;
+  // The Interlude (docs/INTERLUDE.md): the Ruins' quest gate, the historical chapter's party and maps (content/interlude.json).
+  e2::InterludeData interlude;
+  bool hasInterlude = false;
   // The Map Editor's saved Locais and R-Encounter (content/maps): the campaign and the world map play them, again
   // whenever the editor saves them.
   auto applyLocais = [&] {
@@ -1043,6 +1077,11 @@ int runWindow(const Options& o) {
     hasCampaign = campaign.open("content/engine2/campaign.json", o.saveBank.empty() ? e2::Campaign::savePath() : std::filesystem::path(o.saveBank));
     ++bootSteps;
     hasWorld = world.load("content/engine2/overworld.json");
+    {
+      std::string why;
+      hasInterlude = interlude.load("content/interlude.json", &why);
+      if (!hasInterlude) logWarn("interlude: content/interlude.json not loaded ({}): the Ruins open as any location, no chapter", why);
+    }
     ++bootSteps;
     applyLocais();
     ++bootSteps;
@@ -1114,6 +1153,7 @@ int runWindow(const Options& o) {
   std::optional<TestModeStage::Screen> openTest;  // a test-mode screen to open
   bool openTestRpg = false;                       // the RPG map on the test session's save
   bool openUnderworld = false;                    // the world map opens on the Atlas do Submundo (the Underdark's exit)
+  std::string openLocation;                       // the world map opens with this location's mission list (back from the Interlude: the Ruins)
   bool openSpells = false, inSpells = false;      // Teste de Magias: the spells test battle (open it / it is open)
   // Map Editor: open it / a Testar battle from it is open; the draft it was editing (kept while the game runs, as
   // GameApp's editorDraft).
@@ -1184,7 +1224,8 @@ int runWindow(const Options& o) {
     callbacks.title = [&] { openTest = TestModeStage::Screen::Menu; };  // onBack / Voltar à tela inicial: the test menu
     callbacks.fullscreen = toggleFullscreen;
     callbacks.gfx = &devGfx;
-    return std::make_unique<OverworldStage>(paths, campaign, world, std::move(callbacks), std::exchange(campaignNote, {}), &testSession->save);
+    return std::make_unique<OverworldStage>(paths, campaign, world, std::move(callbacks), std::exchange(campaignNote, {}), &testSession->save,
+                                            hasInterlude ? &interlude : nullptr);
   };
   auto makeMap = [&]() -> std::unique_ptr<Stage> {
     if (!hasWorld) {
@@ -1198,7 +1239,10 @@ int runWindow(const Options& o) {
     callbacks.gfx = &devGfx;
     callbacks.resume = [&](const MissionEntry& m) { pending = m, resumeNext = true; };
     callbacks.resumeSaved = std::exchange(resumeOnMap, false);
-    return std::make_unique<OverworldStage>(paths, campaign, world, std::move(callbacks), std::exchange(campaignNote, {}));
+    auto map = std::make_unique<OverworldStage>(paths, campaign, world, std::move(callbacks), std::exchange(campaignNote, {}), nullptr,
+                                                hasInterlude ? &interlude : nullptr);
+    if (!openLocation.empty()) map->openLocationPanel(std::exchange(openLocation, {}));
+    return map;
   };
   // campaign.ts finishBattle (its heroes part and the mission's completion): each hero's level, XP and HP into the
   // active slot, the pending mission cleared, and on a victory the mission completed. Loot, ember, rations, quests and
@@ -1287,6 +1331,13 @@ int runWindow(const Options& o) {
     } else {
       save["pendingMission"] = playing;  // a lost fight is played again from its briefing
     }
+    // The Interlude (docs/INTERLUDE.md): a chapter mission won moves the chapter on (the next map pending), the last one ends it (the
+    // present party back, Isolde's progression kept, the Ruins open as the present-day location), in the same write as the victory.
+    bool interludeOver = false;
+    if (won && hasInterlude && e2::interludeAdvance(interlude, save, playing)) {
+      interludeOver = e2::interludeState(save) == e2::InterludeState::Completed;
+      logInfo("interlude: {} done: {}", playing, interludeOver ? "the chapter is complete, the present party is back" : "next map " + save.value("pendingMission", std::string()));
+    }
     const bool ok = campaign.saveActive(std::move(save));
     if (advancing) {
       if (!ok) logWarn("{}: the victory could not be written before the next floor", playing);
@@ -1297,6 +1348,10 @@ int runWindow(const Options& o) {
     campaignNote = !ok ? "Não foi possível gravar o progresso (" + e2::Campaign::savePath().string() + ")."
                    : won ? name + ": vitória gravada no espaço " + std::to_string(campaign.bank().lastSlot + 1) + "."
                          : name + ": derrota. O combate fica pendente no espaço " + std::to_string(campaign.bank().lastSlot + 1) + ".";
+    if (ok && interludeOver) {
+      campaignNote = tr("Interlúdio concluído: o grupo voltou ao presente.", "Interlude complete: the party is back in the present.");
+      openLocation = interlude.ruinsLocation;  // the present-day Ruins, where the party stood when the chapter began
+    }
     playing.clear();
     openMap = true;  // GameApp ResultScreen "Mapa": back to the world map
   };
@@ -1309,6 +1364,11 @@ int runWindow(const Options& o) {
     if (std::find(done.begin(), done.end(), id) == done.end()) done.push_back(id);
     save["pendingMission"] = nullptr;
     save["battle"] = nullptr;
+    // An Interlude free-roam map left by its waypoint counts as done for the chapter (docs/INTERLUDE.md)
+    if (hasInterlude && e2::interludeAdvance(interlude, save, id) && e2::interludeState(save) == e2::InterludeState::Completed) {
+      campaignNote = tr("Interlúdio concluído: o grupo voltou ao presente.", "Interlude complete: the party is back in the present.");
+      openLocation = interlude.ruinsLocation;
+    }
     if (!campaign.saveActive(std::move(save))) logWarn("{}: the visit could not be written", id);
   };
   // Engine2's loading curtain (LoadingScreens.h): up before a battle is built, over the world map as it opens.
@@ -1532,24 +1592,7 @@ int runWindow(const Options& o) {
         playing = pending->campaignId;
         // Magias and Escolhas are Modo teste's tools: a campaign battle shows only the game (user 2026-10-16).
         options.spellsMenu = options.choicesPanel = testSession.has_value() || playing.empty();
-        if (!playing.empty() && !testSession) {
-          // The heroes as the save has them (levels and XP).
-          const e2::Json save = campaign.activeSave();
-          const e2::Json levels = save.value("levels", e2::Json::object()), xp = save.value("xp", e2::Json::object());
-          for (const auto& [name, level] : levels.items())
-            if (level.is_number_integer()) options.heroProgress[name] = {level.get<int>(), xp.value(name, 0)};
-          // ... and their promotions (save.ts promotions: the Mago Negro's path chosen on the Party screen).
-          const e2::Json promotions = save.value("promotions", e2::Json::object());
-          if (promotions.is_object())
-            for (const auto& [name, cls] : promotions.items())
-              if (cls.is_string()) options.heroClass[name] = cls.get<std::string>();
-          // ... and their condition (GameApp startBattle's roster; HeroHandoff.h).
-          options.heroState = heroStatesFromSave(save);
-          // ... and the party's affinities (save.affinityScores): the bonus between neighbours follows them, and the fight moves them
-          if (const e2::Json scores = save.value("affinityScores", e2::Json::object()); scores.is_object())
-            for (const auto& [pair, v] : scores.items())
-              if (v.is_number()) options.affinityScores[pair] = v.get<double>();
-        }
+        if (!playing.empty() && !testSession) applySaveHeroes(options, campaign.activeSave());
         if (testSession) applyTestHeroes(options, testSession->save);
         // The sky follows the campaign's clock (the save's hour) on every campaign map; Modo teste (classic and RPG maps alike) and the
         // editor's Testar take the map's own Hora do dia (gameHour -1; the user, 2026-10-23: "no debug o horário que estiver no mapa").
@@ -1560,9 +1603,10 @@ int runWindow(const Options& o) {
           if (options.moonPhase.empty()) options.moonPhase = e2::campaignMoonPhase(save.value("gameClock", 0));
         }
         // A free-roam map: who sits there and who walks (the campaign's save, or Modo teste's); where the party comes in.
-        if (hasWorld) setUpExplore(options, testSession ? testSession->save : campaign.activeSave(), world, testSession.has_value() || playing.empty());
+        if (hasWorld) setUpExplore(options, testSession ? testSession->save : campaign.activeSave(), world, testSession.has_value() || playing.empty(), hasInterlude ? &interlude : nullptr);
         // The campaign's party (or Modo teste's), laid out by the Party screen's formation; the editor's Testar keeps the draft's places.
-        if (hasWorld && !inEditorTest) setUpParty(options, testSession ? testSession->save : campaign.activeSave(), world, !testSession && !playing.empty());
+        if (hasWorld && !inEditorTest)
+          setUpParty(options, testSession ? testSession->save : campaign.activeSave(), world, !testSession && !playing.empty(), hasInterlude ? &interlude : nullptr);
         options.arrivedFrom = std::exchange(arriveFrom, {});
         options.preserveKnockouts = std::exchange(preserveKnockouts, false);
         // A dungeon's dead stay dead (crossingDefeatedSpawns; a campaign only), and the Wisp crossing's exits lead to the lair until

@@ -21,6 +21,7 @@
 //   Cooker check-spell-tracks                                       every spell's numbers level by level: one change a level
 //   Cooker check-campaign <campaign.json>                            compare the C++ save slots (slotProgress) with Engine2's
 //   Cooker check-overworld <overworld.json> <references.json>        compare the C++ world-map rules with Engine2's answers
+//   Cooker check-interlude <interlude.json> <overworld.json> <campaign.json>   the Interlude's gate / party switch / return on synthetic saves
 //   Cooker check-scene-builder <board.json> <editor-catalog.json> <engine2 public> <scenes dir> <map.json...>
 //                                                                    compare the C++ scene builder with export_scene.ts
 //   Cooker sprite-preview <manifest> <source root> <cache dir> <set> <clip> <frame> <out.png>
@@ -47,6 +48,7 @@
 #include "BattleCheck.h"
 #include "world/Campaign.h"
 #include "world/Overworld.h"
+#include "world/Interlude.h"
 #include "world/BattleExport.h"
 #include "world/Progression.h"
 #include "world/Spells.h"
@@ -349,6 +351,24 @@ int checkOverworldCommand(const std::vector<std::string_view>& args) {
   return ember::e2::checkOverworld(world, std::filesystem::path(args[1])) == 0 ? 0 : 1;
 }
 
+// The Interlude's campaign rules on synthetic saves (world/Interlude.h: the Ruins' gate, begin / advance / complete, Isolde's
+// recruitment, an old save).
+int checkInterludeCommand(const std::vector<std::string_view>& args) {
+  if (args.size() != 3) fatal("usage: Cooker check-interlude <interlude.json> <overworld.json> <campaign.json>");
+  ember::e2::InterludeData data;
+  std::string why;
+  if (!data.load(std::string(args[0]), &why)) {
+    ember::logError("check-interlude: {}", why);
+    return 1;
+  }
+  ember::e2::Overworld world;
+  if (!world.load(std::filesystem::path(args[1]))) return 1;
+  ember::e2::Campaign campaign;
+  const std::filesystem::path scratch = std::filesystem::temp_directory_path() / "ember-check-interlude.json";
+  if (!campaign.open(std::filesystem::path(args[2]), scratch)) return 1;
+  return ember::e2::checkInterlude(data, world, campaign.emptySave()) == 0 ? 0 : 1;
+}
+
 // The game's own map preparation by hand (what the game does when a mission opens: apps/sandbox/MapExport.h).
 int prepareMapCommand(const std::vector<std::string_view>& args) {
   if (args.size() < 2) fatal("usage: Cooker prepare-map <map.json> <out map.json>");
@@ -492,6 +512,7 @@ int main(int argc, char** argv) {
   if (command == "check-campaign") return checkCampaignCommand(args);
   if (command == "check-spell-tracks") return checkSpellTracksCommand(args);
   if (command == "check-overworld") return checkOverworldCommand(args);
+  if (command == "check-interlude") return checkInterludeCommand(args);
   if (command == "check-scene-builder") return checkSceneBuilderCommand(args);
   if (command == "check-dress") return checkDressCommand(args);
   if (command == "check-architecture") return checkArchitectureCommand(args);

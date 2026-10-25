@@ -68,6 +68,7 @@ add_library(EmberEngine STATIC
   world/Water3D.cpp
   world/Battle.cpp
   world/CutsceneScript.cpp
+  world/Interlude.cpp
   world/BattleExport.cpp
   world/Progression.cpp
   world/BattleSave.cpp
