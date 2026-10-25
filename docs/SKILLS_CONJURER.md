@@ -11,9 +11,9 @@ Elo de Sacrifício is T5, costs one T5 use and keeps its battle-long effect. T3 
 Titã, Elo de Sacrifício and Detonar Invocação (moved from T3, the user, 2026-10-25: learned at 11, costs a T5 use; its scaling
 track keeps its dates). T1 keeps its three combat spells.
 
-**Exclusives (the user, 2026-10-25):** Reflexo Arcano is Isolde's alone and Imagem Espelhada Malrec's alone (both are `conjurer`, so
-`EmberSpell::hero` names the one hero who learns it; `grantClassSpells` also takes it out of anyone else's list, an older save's
-included). Each of them therefore has three T2 spells.
+**No exclusives (the user, 2026-10-25, later the same day):** Reflexo Arcano is T3 (learned at 6, a T3 use) and Imagem Espelhada T2
+(learned at 3), both for every Conjurador. They were Isolde's / Malrec's alone for a few hours (`EmberSpell::hero`, still in the code for
+any later exclusive). T3 therefore holds Familiar Radiante and Reflexo Arcano.
 
 Code: `engine/world/Spells.cpp` (`kEmberSpells`, `conjurerKind`, `summonsOf`, `ownSummonAt`, `mirrorAbsorbs`,
 `bondRedirects`, `emberNumbers`, `castEmber`, the Effect branches of `resolveStep` (illusions, bond, empowerment, the swap shared with
@@ -35,8 +35,8 @@ reach of the aimed ones grows with the level like every other mage's (`reachGrow
 | Nível · tier | Magia (kind) | Alvo | Efeito | Escala |
 |---|---|---|---|---|
 | 1 · T1 | Troca de Lugar (`placeSwap`) | aliado ou invocação a até 6 (um hex cada) | os dois trocam de lugar; nada mais | alcance cresce com o nível |
-| 3 · T2 | Reflexo Arcano (`arcaneReflection`), só a Isolde | ela mesma (instantânea) | por 2 turnos dele, a primeira magia inimiga que o atingir volta 40 % para quem a lançou (sem resistência: é a magia dela) e a guarda acaba; o resto ele recebe. Talento Absorção (nível 8): do que não volta, 10 % vira cura em vez de ferir | a trilha (docs/SPELLS_SCALING.md): reflexo até 90 %, duração até 6 turnos, absorção até 50 % |
-| 3 · T2 | Imagem Espelhada (`mirrorImage`), só o Malrec | aliado a até 6 (ele mesmo também) | 2 cópias ilusórias por 3 rodadas; cada ataque inimigo (golpe ou magia) tem 1 chance em 3 de acertar uma cópia, que some ("Ilusão") | 3 cópias no 16, 4 rodadas no 21, 4 cópias no 27 |
+| 6 · T3 | Reflexo Arcano (`arcaneReflection`) | ela mesma (instantânea) | por 2 turnos dele, a primeira magia inimiga que o atingir volta 40 % para quem a lançou (sem resistência: é a magia dela) e a guarda acaba; o resto ele recebe. Talento Absorção (nível 8): do que não volta, 10 % vira cura em vez de ferir | a trilha (docs/SPELLS_SCALING.md): reflexo até 90 %, duração até 6 turnos, absorção até 50 % |
+| 3 · T2 | Imagem Espelhada (`mirrorImage`) | aliado a até 6 (ele mesmo também) | 2 cópias ilusórias por 3 rodadas; cada ataque inimigo (golpe ou magia) tem 1 chance em 3 de acertar uma cópia, que some ("Ilusão") | 3 cópias no 16, 4 rodadas no 21, 4 cópias no 27 |
 | 11 · T5 | Detonar Invocação (`detonateSummon`) | uma invocação sua a até 6 | ela explode e some; todos a até 1 hex dela (os dois lados) levam MAG/2 × 1.8 + 2D8 arcano | 3D8 no 17, ×2.1 no 20, raio 2 no 24, 4D8 no 26, ×2.4 no 28 |
 | 8 · T4 | Pesadelo (`nightmare`) | hex a até 6, raio 2, sem linha de tiro | arcano, MAG/2 × 1.5 + 2D8 em cada inimigo; quem dorme pela Teia dos Sonhos leva o dobro; cada atingido de pé tem 25 % de chance de ficar com medo por 1 turno | 3D8 no 18, 35 % no 21, ×1.8 no 24, raio 3 no 25, medo 2 turnos no 27, 4D8 no 30 |
 | 8 · T4 | Fortalecer Invocações (`empowerSummons`) | ele mesmo (instantânea; precisa de invocação em campo) | todas as invocações dele: +25 % em todos os atributos (ATK, MAG, DEF, DEX, MOV) por 3 rodadas; os valores inteiros voltam ao fim | +30 % no 20, 4 rodadas no 24, +40 % no 28 |
@@ -77,8 +77,7 @@ field spells only).
 
 ## How it reaches the game
 
-- Learned by level (`grantClassSpells`): a Conjurador / Arcanista / Necromante learns Troca at 1, Reflexo (Isolde only) and Imagem
-  (Malrec only) at 3, Pesadelo and Fortalecer at 8, and Elo and Detonar at 11 (T5). Marcar Runa needs level 5 and T2 uses, Retornar level 7 and T3 uses; both are rows
+- Learned by level (`grantClassSpells`): a Conjurador / Arcanista / Necromante learns Troca at 1, Imagem at 3, Reflexo at 6, Pesadelo and Fortalecer at 8, and Elo and Detonar at 11 (T5). Marcar Runa needs level 5 and T2 uses, Retornar level 7 and T3 uses; both are rows
   of the world map's field-spells menu ("Marcar", "Runas").
 - HUD: the socket shows the user's icon; its tooltip the numbers at the hero's level (`spellTooltip`); the sheet shows "Imagem
   Espelhada ×N (R)", "Elo de Sacrifício N%", "Fortalecido +N% (R)" among the conditions.

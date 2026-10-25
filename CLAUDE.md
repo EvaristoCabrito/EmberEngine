@@ -747,9 +747,9 @@ proper scaling", the formulas written like Salazar's own; icons in `Attachments/
   sides), Pesadelo (8, T4: range 6, radius 2, MAG/2 × 1.5 + 2D8, sleepers ×2, 25 % fear), Fortalecer Invocações (8, T4: every summon
   +25 % all stats for 3 rounds), Elo de Sacrifício (11, T5: for the fight, hits on him go to his nearest summon; costs one T5 use).
   Combat learning follows tier openings: T1 at 1, T2 at 3, T3 at 6, T4 at 8, T5 at 11. All existing scaling dates stay unchanged.
-  T3: Familiar Radiante. T5: Familiar Titã + Elo de Sacrifício + Detonar Invocação (T5 since 2026-10-25, the user). Keep T1's three
-  combat spells. **Reflexo Arcano = Isolde's exclusive, Imagem Espelhada = Malrec's (the user, 2026-10-25; both `conjurer`:
-  `EmberSpell::hero`, `grantClassSpells` drops them from anyone else's list).**
+  T3: Familiar Radiante + Reflexo Arcano. T5: Familiar Titã + Elo de Sacrifício + Detonar Invocação (T5 since 2026-10-25, the user).
+  Keep T1's three combat spells. **Reflexo Arcano = T3 (learned at 6), Imagem Espelhada = T2 (3), both for every Conjurador (the
+  user, 2026-10-25, ending the few-hours Isolde / Malrec exclusives; `EmberSpell::hero` stays for any later one).**
   Field: Marcar Runa (5, T2: a rune of the hex as a bag item, `save.runes`, a slot each, note editable in the Mochila's sheet) and
   Retornar (7, T3: the party to a rune's hex; the rune stays). "conjurer" family = `conjurer` / `sorcerer` / `necromancer`.
 - Code: `Spells.cpp` (`conjurerKind`, `summonsOf`, `ownSummonAt`, `mirrorAbsorbs` + `bondRedirects` hooked into resolveStrike and

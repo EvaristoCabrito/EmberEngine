@@ -145,10 +145,10 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"judgment", "Julgamento", 5, "holy", false}, "healer", 14},
     // Conjurador: combat spells open with their tier (1 / 3 / 6 / 8 / 11); their existing scaling tracks keep their dates.
     // The Arcanista and the Necromante keep them. The field spells (Marcar Runa, Retornar) live in world/FieldSpells.
-    // Reflexo Arcano is Isolde's alone and Imagem Espelhada Malrec's alone; Detonar Invocação is T5 (the user, 2026-10-25).
+    // Detonar Invocação is T5; Reflexo Arcano is T3 and Imagem Espelhada T2, both for every Conjurador (the user, 2026-10-25).
     {{"placeSwap", "Troca de Lugar", 1, "", false}, "conjurer", 1},
-    {{"arcaneReflection", "Reflexo Arcano", 2, "arcane", false}, "conjurer", 3, "Isolde"},
-    {{"mirrorImage", "Imagem Espelhada", 2, "", false}, "conjurer", 3, "Malrec"},
+    {{"arcaneReflection", "Reflexo Arcano", 3, "arcane", false}, "conjurer", 6},
+    {{"mirrorImage", "Imagem Espelhada", 2, "", false}, "conjurer", 3},
     {{"detonateSummon", "Detonar Invocação", 5, "arcane", false}, "conjurer", 11},
     {{"sacrificeBond", "Elo de Sacrifício", 5, "", false}, "conjurer", 11},
     {{"nightmare", "Pesadelo", 4, "arcane", false}, "conjurer", 8},
