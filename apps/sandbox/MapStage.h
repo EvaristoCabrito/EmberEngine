@@ -5109,7 +5109,7 @@ class MapStage final : public Stage {
     bool bolt = false;     // this strike is an Arcano bolt (CombatFx): it lands when the bolt arrives
     std::string element;   // the bolt's element (its palette)
     float boltStrength = 1.0f;  // Voss's plain bolt is a lesser one than his Míssil Mágico (the user, 2026-10-20); Isolde's ember bolt too
-    bool emberStaff = false;    // Isolde's staff blow: a magical hit (the ember impact, her staff glowing), no bolt
+    bool magicStaff = false;    // Isolde's / Voss's staff blow: a magical hit (the impact in their colour, the staff glowing), no bolt
     bool arrow = false;    // this strike is a bow shot: the arrow flies and lands on the hit
     bool interrupt = false;  // a sentinel's thrust out of its turn (Vigília da Sentinela): nothing of the owner's turn is spent
   };
@@ -5334,15 +5334,17 @@ class MapStage final : public Stage {
     // his staff when the enemy is close ranged, and ... the regular mage ATT when in distance"). No bolt flies from it.
     // Isolde also strikes with it when she attacks a foe beside her (the user, 2026-10-25: "when she is too close for a bolt, them
     // she hits with the staff for fun effects, doesnt change her DMG"): only the look; the rules' blow is the same.
-    const bool isolde = striker >= 0 && static_cast<size_t>(striker) < unitCatalog_.size() && unitCatalog_[static_cast<size_t>(striker)] &&
-                        unitCatalog_[static_cast<size_t>(striker)]->key == "isolde";
+    const std::string strikerKey = striker >= 0 && static_cast<size_t>(striker) < unitCatalog_.size() && unitCatalog_[static_cast<size_t>(striker)]
+                                       ? unitCatalog_[static_cast<size_t>(striker)]->key : std::string();
+    const bool isolde = strikerKey == "isolde";
     const bool staffCounter = s.type == StepType::Combat && (x.counter || (isolde && s.kind.empty())) && striker >= 0 &&
                               hasPose(static_cast<size_t>(striker), "counterStaff") && strikeBeside(s);
     if (staffCounter) pose = "counterStaff";
-    // Hers is a magical staff hit (the user, 2026-10-25: "think of it a magical staff hit, on malrec's animation it's obvious"): it
-    // lands with the ember impact at her bolt's lesser strength, and the staff glows ember while she swings
-    x.emberStaff = staffCounter && isolde;
-    if (x.emberStaff) x.element = "ember", x.boltStrength = 0.55f;
+    // Theirs is a magical staff hit (the user, 2026-10-25: "think of it a magical staff hit, on malrec's animation it's obvious";
+    // then "can you do a purple effect for Voss' staff too?"): it lands with the magic impact at their plain bolt's lesser strength
+    // and the staff glows while they swing - Isolde's in ember, Voss's in his Arcano violet
+    x.magicStaff = staffCounter && (isolde || strikerKey == "voss");
+    if (x.magicStaff) x.element = isolde ? "ember" : "arcane", x.boltStrength = 0.55f;
     const float length = (striker >= 0 && !pose.empty() ? poseSeconds(static_cast<size_t>(striker), pose) : 0.6f) / actionRate();
     x.impact = now_ + length * (striker >= 0 && !pose.empty() ? poseImpact(static_cast<size_t>(striker), pose) : kImpactShare);
     x.end = now_ + length + kExchangeGap / actionRate();
@@ -5399,7 +5401,7 @@ class MapStage final : public Stage {
                           (!s.kind.empty() && e2::spellPose(s.kind) == "attack");  // a weapon skill played in the cast pose (Neera's) is no spell light
       const bool cast = !attack && s.type != StepType::Potion && s.type != StepType::Move && !kNotCasts.contains(s.kind);
       const bool heal = s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food;
-      if (cast || (attack && malrec) || x.emberStaff) glows_.push_back({su, now_, now_ + length, castTint(s.kind, heal, hero, attack)});
+      if (cast || (attack && malrec) || x.magicStaff) glows_.push_back({su, now_, now_ + length, castTint(s.kind, heal, hero, attack)});
     }
     // A spell waits for its caster's whole cast pose (the user, 2026-10-17: "as magias esperem a animação dos sprites de
     // casting antes de aparecerem em todos os casos"): its effect, its sound and its hit come after the pose. Weapon skills,
@@ -7082,7 +7084,7 @@ class MapStage final : public Stage {
         const glm::vec3 from = striker >= 0 && striker != ui ? unitWorld(static_cast<size_t>(striker)) : struck.feet - glm::vec3(0.0f, 0.0f, 1.0f);
         const e2::BattleUnit& bu = battle_->units()[e.unit];
         const bool heavy = e.crit || e.died || (bu.maxHp > 0 && e.amount * 10 >= bu.maxHp * 3);
-        if (x.bolt || x.emberStaff) {  // a bolt's arrival, or Isolde's magical staff hit
+        if (x.bolt || x.magicStaff) {  // a bolt's arrival, or Isolde's / Voss's magical staff hit
           spellFx_.combat().impact(e.miss ? CombatFx::Kind::MagicalMiss : CombatFx::Kind::Magical, struck.feet, cardHeightOf(struck), from, now_,
                                    CombatPalette::of(x.element.c_str()), x.boltStrength);
         } else if ((x.arrow || bowSkill) && !e.miss) {
@@ -10201,7 +10203,7 @@ class MapStage final : public Stage {
         {"magicMissile", 0xc7b4ff}, {"magicMissileV2", 0xc7b4ff}, {"phantasmalForce", 0xc7b4ff}, {"fantomForce", 0xc7b4ff},
         {"webOfDreams", 0xd8c8ff}, {"warp", 0xb48cff}};
     uint32_t h = 0xffe6c0;
-    if (attack) h = hero == "isolde" ? 0xff5a2a : 0xffd45a;  // Isolde's staff hit glows ember (her rune's red-orange)
+    if (attack) h = hero == "isolde" ? 0xff5a2a : hero == "voss" ? 0xa066ff : 0xffd45a;  // the staff hits: Isolde's ember, Voss's violet
     else if (hero == "malrec") h = 0x4f9dff;
     else if (hero == "salazar") h = 0xffd45a;
     else if (hero == "voss") h = 0xa066ff;
