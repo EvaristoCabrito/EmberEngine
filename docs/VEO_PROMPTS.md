@@ -51,16 +51,17 @@ the camera.
 Why: Voss turns toward the camera in the last second of his right walk and stops in the last 2 s of his left walk; Isolde's left walk
 spends its first second turning. Only the steady part can be looped.
 
-Always add which hand holds the staff and where that puts it in this direction (the user, 2026-10-26, Isolde: her left walk came out
-with the staff in her LEFT hand while every other clip has it in her RIGHT, so her two walks looked like mirror copies):
+Always add which hand holds the staff and where that puts it in this direction (the user, 2026-10-26, Isolde: her right walk came out
+with the staff in her LEFT hand, held by the far arm while the near arm hung empty, while every other clip has it in her RIGHT, so her
+two walks looked like mirror copies):
 ```
-The character holds the [STAFF] in the [RIGHT] hand only, the same hand as in every other video. Walking to the [LEFT], that hand is on
-the far side of the body: the [STAFF] is seen partly behind the body, never crossing in front of it. The other hand swings freely.
+The character holds the [STAFF] in the [RIGHT] hand only, the same hand as in every other video. Walking to the [RIGHT], that hand is the
+one nearest the camera: the [STAFF] is held by the near arm, in front of the body. The other arm, on the far side, swings freely and empty.
 ```
 (A right-handed character walking to the right has the staff hand nearest the camera, the staff in front of the body; walking to the
 left, the staff hand is on the far side, the staff partly behind the body. A left-handed one the other way round.)
 
-Isolde's walk left (right-handed), the whole prompt:
+Isolde's walk right (right-handed), the whole prompt:
 ```
 Full-body shot of a young woman with long wavy copper-red hair and freckles, wearing a black studded leather corset with dark leather
 shoulder guards and bracers, a long tattered black cloak, a tattered dark burgundy skirt and tall black leather boots, carrying a tall
@@ -70,11 +71,11 @@ light, no shadows on the wall. Locked-off static camera at chest height, no came
 whole body, the head, the feet and the entire staff stay inside the frame at all times, with a clear margin of empty backdrop above the
 staff's head, below the feet and on both sides. The character fills about 80% of the frame's height. Realistic, photographic, sharp
 focus, natural colors.
-She walks in place to the LEFT in exact profile view, as if on a treadmill: the body stays in the center of the frame while the legs
+She walks in place to the RIGHT in exact profile view, as if on a treadmill: the body stays in the center of the frame while the legs
 and the cloak move in a steady, natural walking rhythm at a constant pace, for the whole video. She holds the staff in her RIGHT hand
-only, the same hand as in every other video: walking to the left, that hand is on the far side of her body, so the staff is seen
-partly behind her body, upright, planted lightly with each step, never crossing in front of her. Her left arm, nearest the camera,
-swings freely and empty. She is already walking in the first frame and keeps walking until the last frame, never slowing down, never
+only, the same hand as in every other video: walking to the right, her right arm is the one nearest the camera, so she holds the staff
+with that near arm, upright in front of her body, planted lightly with each step. Her left arm, on the far side of her body, swings
+freely and empty. She is already walking in the first frame and keeps walking until the last frame, never slowing down, never
 stopping, never turning toward the camera.
 ```
 
