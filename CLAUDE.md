@@ -14,6 +14,11 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
 
 ## How to work with this user (hard rules)
 
+- **NEVER CHANGE THE PERMISSION MODE (the user, 2026-10-26: "EU MUDO E VOCE DESMUDA ... SALVE, PARE DE FAZER ISSO").** Manual /
+  Aceitar edições / Auto / Plan is the user's choice: never `set_session_permission_mode` (any session), never `permissions.defaultMode`
+  in any settings.json, never because of a complaint or a question about it. Answer in words; the user changes it in the app.
+  Memory note `never-change-permission-mode`.
+
 - **ONE GAME CODE: Modo teste (Debug) = the campaign, with exactly three differences (the user, 2026-10-25, pasted dozens of times:
   "The ONLY diference between Debug and normal mode is: Starts with full party at level 30, a billion gold pieces and can go anywhere
   in the map, everything is unlocked, other than that NOTHING AT ALL IS DIFERENT", "STOP SPLITING INTO TWO DIFRENTE GAME CODES").**
