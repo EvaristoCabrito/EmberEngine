@@ -8562,6 +8562,13 @@ class MapStage final : public Stage {
       for (const auto& [sprite, file] : kClose)
         if (u.sprite == sprite && std::filesystem::exists(file))
           if (const UiImage* close = uiImage(file)) return close;
+      // The Interlude's heroes by name, as their busts (portraitFileOf): cut from the user's photos at the same close distance.
+      static const std::pair<const char*, const char*> kCloseByName[] = {{"Isolde", "content/ui/portraits/isolde-close-v01.jpg"},
+                                                                         {"Selene", "content/ui/portraits/selene-close-v01.jpg"},
+                                                                         {"Salazar Jovem", "content/ui/portraits/salazar-jovem-close-v01.jpg"}};
+      for (const auto& [name, file] : kCloseByName)
+        if (u.side == "player" && u.name == name && std::filesystem::exists(file))
+          if (const UiImage* close = uiImage(file)) return close;
       return portraitOf(u);
     };
     hooks.spellIcon = [this](const std::string& kind) { return spellIconOf(kind); };
