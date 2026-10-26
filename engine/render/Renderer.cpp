@@ -143,8 +143,8 @@ struct WaterPush {
   VkDeviceAddress frame;
   VkDeviceAddress vertices;
   VkDeviceAddress indices;
-  uint32_t look;  // shaders/water.hlsl: 0 Engine2, 1 look 001 "ember"
-  uint32_t pad;
+  uint32_t look;  // shaders/water.hlsl: 0 Engine2, 1 look 001 "ember", 2 look 002, 3 look 003 "decente"
+  uint32_t backdrop, depth, sampler;  // look 003: the scene under the water, the depth, a linear clamp sampler (bindless)
 };
 
 struct ProbePush {  // shaders/probes.hlsl
@@ -173,6 +173,7 @@ struct Water3DPush {  // shaders/water3d.hlsl
   float color[3];
   float opacity, normalScale, roughness, modern, v4, repeat;
   uint32_t look;
+  uint32_t backdrop, depth, sampler;  // look 4 (look 003): as WaterPush's
 };
 static_assert(offsetof(Water3DPush, look) == 72 && sizeof(Water3DPush) <= Bindless::kPushConstantBytes);
 static_assert(sizeof(SpritePush) <= Bindless::kPushConstantBytes);
@@ -850,7 +851,8 @@ void Renderer::createTargets(VkExtent2D size) {
   size_ = size;
   sceneColor_ = createImage(context_, {kSceneColorFormat, size,
                                        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
-                                           VK_IMAGE_USAGE_STORAGE_BIT});
+                                           VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT});
+  waterBackdrop_ = createImage(context_, {kSceneColorFormat, size, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT});
   depth_ = createImage(context_, {kDepthFormat, size,
                                   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT});
   output_ = createImage(context_, {kOutputFormat, size,
@@ -905,6 +907,7 @@ void Renderer::createTargets(VkExtent2D size) {
     hizIndex_ = bindless_.addSampledImage(hiz_.view, VK_IMAGE_LAYOUT_GENERAL);
     depthIndex_ = bindless_.addSampledImage(depth_.view, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
     sceneColorIndex_ = bindless_.addSampledImage(sceneColor_.view);
+    waterBackdropIndex_ = bindless_.addSampledImage(waterBackdrop_.view);
     sceneColorStorageIndex_ = bindless_.addStorageImage(sceneColor_.view);
     visibilityIndex_ = bindless_.addStorageImage(visibility_.view);
     bankMarchStorage_ = bindless_.addStorageImage(bankMarch_.view);
@@ -922,6 +925,7 @@ void Renderer::createTargets(VkExtent2D size) {
     bindless_.setSampledImage(hizIndex_, hiz_.view, VK_IMAGE_LAYOUT_GENERAL);
     bindless_.setSampledImage(depthIndex_, depth_.view, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
     bindless_.setSampledImage(sceneColorIndex_, sceneColor_.view);
+    bindless_.setSampledImage(waterBackdropIndex_, waterBackdrop_.view);
     bindless_.setStorageImage(sceneColorStorageIndex_, sceneColor_.view);
     bindless_.setStorageImage(visibilityIndex_, visibility_.view);
     bindless_.setStorageImage(bankMarchStorage_, bankMarch_.view);
@@ -932,6 +936,7 @@ void Renderer::createTargets(VkExtent2D size) {
 
 void Renderer::destroyTargets() {
   destroyImage(context_, sceneColor_);
+  destroyImage(context_, waterBackdrop_);
   destroyImage(context_, depth_);
   destroyImage(context_, output_);
   destroyImage(context_, visibility_);
@@ -2190,11 +2195,53 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(groundPush), &groundPush);
       vkCmdDraw(cmd, 6, 1, 0, 0);
     }
+    // Water look 003 reads the scene under it (water_look003.hlsli): the pass stops after the ground, its colour is copied, the
+    // depth turns read-only (tested and sampled) while the water draws, then the pass goes on with the cards. Every other water
+    // keeps the one pass.
+    const bool refract = terrain_ && waterRefracts();
+    if (refract) {
+      vkCmdEndRendering(cmd);
+      const uint32_t copyScope = gpuTimer_.begin(cmd, "water backdrop");
+      transition(cmd, sceneColor_.image, sceneColor_.aspect,
+                 {VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                  VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_READ_BIT});
+      // The previous frame's water may still be reading the copy.
+      transition(cmd, waterBackdrop_.image, waterBackdrop_.aspect,
+                 {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_NONE,
+                  VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT});
+      VkImageCopy region{};
+      region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+      region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+      region.extent = {size_.width, size_.height, 1};
+      vkCmdCopyImage(cmd, sceneColor_.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, waterBackdrop_.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+                     &region);
+      transition(cmd, waterBackdrop_.image, waterBackdrop_.aspect,
+                 {VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_2_COPY_BIT,
+                  VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
+      transition(cmd, sceneColor_.image, sceneColor_.aspect,
+                 {VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COPY_BIT,
+                  VK_ACCESS_2_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                  VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT});
+      transition(cmd, depth_.image, depth_.aspect,
+                 {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+                  VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                  VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                  VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                  VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT});
+      gpuTimer_.end(cmd, copyScope);
+      color.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+      depth.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+      depth.imageLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+      depth.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
+      vkCmdBeginRendering(cmd, &scene);
+      setViewport(cmd, size_);
+    }
     if (terrain_ && water_) {
       // The board's water: transparent, over the ground, under the cards.
       const uint32_t waterScope = gpuTimer_.begin(cmd, "water");
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, waterPipeline_);
-      const WaterPush waterPush{bufferAddress(context_, frame.meshFrame), water_.vertices, water_.indices, water_.look, 0};
+      const WaterPush waterPush{bufferAddress(context_, frame.meshFrame), water_.vertices, water_.indices, water_.look,
+                                waterBackdropIndex_, depthIndex_, linearClampIndex_};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(waterPush), &waterPush);
       vkCmdDraw(cmd, water_.count, 1, 0, 0);
       gpuTimer_.end(cmd, waterScope);
@@ -2206,10 +2253,26 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       const Water3DView& w = water3d_;
       const Water3DPush push{bufferAddress(context_, frame.meshFrame), w.vertices, w.indices, w.colorMap, w.normalMap, w.roughMap,
                              {w.color[0], w.color[1], w.color[2]}, w.opacity, w.normalScale, w.roughness, w.modern, w.v4, w.repeat,
-                             w.look};
+                             w.look, waterBackdropIndex_, depthIndex_, linearClampIndex_};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
       vkCmdDraw(cmd, w.count, 1, 0, 0);
       gpuTimer_.end(cmd, scope);
+    }
+    if (refract) {
+      // The depth writable again for the cards.
+      vkCmdEndRendering(cmd);
+      transition(cmd, depth_.image, depth_.aspect,
+                 {VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                  VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                  VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+                  VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                  VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT});
+      memoryBarrier(cmd, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                    VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
+      depth.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+      depth.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+      vkCmdBeginRendering(cmd, &scene);
+      setViewport(cmd, size_);
     }
     // Effects lying on the ground under the characters (Expulsar Mortos-Vivos' sigil): with the ground, before the cards.
     {

@@ -19,8 +19,10 @@
 //   1 leito  Engine2's ThreeWater material above, with the river-bed stand-in texture (dark slate)
 //   2 rio, ember  the board's water in look 001 (water_look001.hlsli), with this sheet's depth (body colour, shore foam)
 //   3 rio, correnteza  the board's water in look 002 (water_look002.hlsli), with this sheet's depth
+//   4 rio, decente  the board's water in look 003 (water_look003.hlsli: reads the scene under it), edges by the brush coverage
 #include "water_look001.hlsli"
 #include "water_look002.hlsli"
+#include "water_look003.hlsli"
 
 struct Push {
   uint64_t frame;     // MeshFrame
@@ -29,7 +31,8 @@ struct Push {
   uint colorMap, normalMap, roughMap;  // bindless (kNoTexture: none)
   float colorR, colorG, colorB;        // material colour (linear)
   float opacity, normalScale, roughness, modern, v4, repeat;
-  uint look;  // 0 rio, 1 leito, 2 rio in look 001 (ember), 3 rio in look 002 (correnteza)
+  uint look;  // 0 rio, 1 leito, 2 rio in look 001 (ember), 3 rio in look 002 (correnteza), 4 rio in look 003 (decente)
+  uint backdrop, depthTexture, linearSampler;  // look 4: the scene under the water, its depth, a linear clamp sampler
 };
 [[vk::push_constant]] Push push;
 
@@ -111,6 +114,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
   if (neverSeen(f, i.world)) discard;  // never-seen water is not drawn (R7)
   if (push.look == 2) return emberWater(f, i.world, float3(0.0, 1.0, 0.0), max(i.depth, 0.0), i.coverage);
   if (push.look == 3) return emberWater002(f, i.world, max(i.depth, 0.0), i.coverage);
+  if (push.look == 4) return emberWater003(f, i.world, i.position, push.backdrop, push.depthTexture, push.linearSampler, i.coverage);
 
   if (push.look == 0) {  // rio: water.hlsl's material on this sheet
     const float2 ruv = i.world.xz / 4.0 + float2(0.02, 0.013) * t;

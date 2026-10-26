@@ -50,7 +50,8 @@ static_assert(sizeof(WaterVertexGpu) == 16);
 struct WaterView {
   VkDeviceAddress vertices = 0, indices = 0;
   uint32_t count = 0;  // indices
-  uint32_t look = 0;   // shaders/water.hlsl: 0 Engine2's diorama water, 1 look 001 "ember" (water_look001.hlsli)
+  uint32_t look = 0;   // shaders/water.hlsl: 0 Engine2's diorama water, 1 look 001 "ember" (water_look001.hlsli), 2 look 002,
+                       // 3 look 003 "decente" (reads the scene below it: Renderer::waterRefracts)
   explicit operator bool() const { return vertices != 0 && count != 0; }
 };
 
@@ -71,7 +72,8 @@ struct Water3DView {
   uint32_t colorMap = 0, normalMap = 0, roughMap = 0;  // bindless
   float color[3]{};    // linear
   float opacity = 0, normalScale = 0, roughness = 0, modern = 0, v4 = 0, repeat = 1;
-  uint32_t look = 0;  // shaders/water3d.hlsl: 0 rio (the board's river material), 1 leito (Engine2's ThreeWater)
+  uint32_t look = 0;  // shaders/water3d.hlsl: 0 rio (the board's river material), 1 leito (Engine2's ThreeWater), 2 / 3 looks
+                      // 001 / 002, 4 look 003 "decente" (reads the scene below it: Renderer::waterRefracts)
   explicit operator bool() const { return vertices != 0 && count != 0; }
 };
 

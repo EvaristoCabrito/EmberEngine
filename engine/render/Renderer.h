@@ -636,6 +636,11 @@ class Renderer {
   std::vector<VkImageView> hizLevelViews_;
   std::vector<uint32_t> hizLevelIndices_;
   uint32_t hizIndex_ = kNoIndex, depthIndex_ = kNoIndex;
+  // Water look 003 (water_look003.hlsli): the scene under the water (ground, 3D pieces) copied before the water is drawn, read
+  // with the depth for its refraction and thickness. Used only when a water sheet draws look 003 (waterRefracts).
+  Image waterBackdrop_;
+  uint32_t waterBackdropIndex_ = kNoIndex;
+  bool waterRefracts() const { return (water_ && water_.look == 3) || (water3d_ && water3d_.look == 4); }
   VkExtent2D hizSize_{};
   VkSampler minSampler_ = VK_NULL_HANDLE;
   uint32_t minSamplerIndex_ = 0;
