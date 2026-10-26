@@ -362,6 +362,14 @@ class MapEditorStage : public Stage {
       for (const e2::Json& v : tr["versions"])
         if (!hidden.contains(v.value("variant", 0))) te.versions.push_back({v.value("variant", 0), s(v, "label"), s(v, "thumb")});
       if (e.contains("terrainThumb") && e["terrainThumb"].contains(te.id) && e["terrainThumb"][te.id].is_string()) te.thumb = e["terrainThumb"][te.id].get<std::string>();
+      // The water looks as versions of Água (render/BoardGround.h waterLookOfVariant; the user, 2026-10-26): variants 31..33 =
+      // Água 01..03, 34 = Água original (every other water tile draws 03, the default); the ground under them the 001 tile's.
+      if (te.id == "water") {
+        const std::string thumb = te.versions.empty() ? std::string() : te.versions.front().thumb;
+        for (int k = 0; k < 3; ++k) te.versions.push_back({kWaterLookFirstVariant + k, std::format("Água 0{}", k + 1), thumb});
+        te.versions.push_back({kWaterOriginalVariant, "Água original", thumb});
+        te.variantCount = std::max(te.variantCount, kWaterOriginalVariant + 1);
+      }
       t.terrains.push_back(std::move(te));
     }
     for (const auto& [id, ti] : e["terrainInfo"].items())
@@ -369,6 +377,12 @@ class MapEditorStage : public Stage {
     const e2::Json tileVariantNamesTable = e.value("tileVariantNames", e2::Json::object());  // a copy: items() of a temporary dangles
     for (const auto& [id, names] : tileVariantNamesTable.items())
       for (const e2::Json& n : names) t.variantNames[id].push_back(n.is_string() ? n.get<std::string>() : std::string());
+    if (auto water = t.terrainInfo.find("water"); water != t.terrainInfo.end())
+      water->second.variantCount = std::max(water->second.variantCount, kWaterOriginalVariant + 1);
+    std::vector<std::string>& waterNames = t.variantNames["water"];
+    waterNames.resize(std::max<size_t>(waterNames.size(), kWaterOriginalVariant + 1));
+    for (int k = 0; k < 3; ++k) waterNames[kWaterLookFirstVariant + k] = std::format("Água 0{}", k + 1);
+    waterNames[kWaterOriginalVariant] = "Água original";
     for (const e2::Json& v : e["city"]) t.city.push_back({v.value("variant", 0), s(v, "label"), s(v, "thumb")});
     for (const e2::Json& id : e["decorationOrder"]) t.decorationOrder.push_back(id.get<std::string>());
     for (const e2::Json& id : e["decorationSections"]) t.decorationSections.push_back(id.get<std::string>());

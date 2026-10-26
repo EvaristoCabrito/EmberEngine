@@ -640,7 +640,9 @@ class Renderer {
   // with the depth for its refraction and thickness. Used only when a water sheet draws look 003 (waterRefracts).
   Image waterBackdrop_;
   uint32_t waterBackdropIndex_ = kNoIndex;
-  bool waterRefracts() const { return (water_ && water_.look == 3) || (water3d_ && water3d_.look == 4); }
+  bool waterRefracts() const {
+    return (water_ && (water_.look == 3 || (water_.look == 0 && water_.lookCount[3] > 0))) || (water3d_ && water3d_.look == 4);
+  }
   VkExtent2D hizSize_{};
   VkSampler minSampler_ = VK_NULL_HANDLE;
   uint32_t minSamplerIndex_ = 0;

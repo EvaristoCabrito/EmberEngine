@@ -294,7 +294,7 @@ class MapStage final : public Stage {
     actionCamera_ = std::clamp(options.actionCamera, 0, 1);
     floorChoice_ = std::clamp(options.floorImage, 0, 1);
     windFogChoice_ = std::clamp(options.windFog, 0, 1);
-    waterLook_ = std::clamp(options.waterLook, 0, 3);
+    waterLook_ = std::clamp(options.waterLook, 0, 4);
     skyReflect_ = std::clamp(options.skyReflect, 0, 1);
     clouds_ = std::clamp(options.clouds, 0, 2);
     dayCycle_ = std::clamp(options.hour, 0, 10);
@@ -863,15 +863,17 @@ class MapStage final : public Stage {
     }
     {
       WaterView water = ground_.water(look_);
-      // The panel's one "Água" sets both waters of the map (the user, 2026-10-26: "eu quero todas no mesmo lugar"): 0 original =
-      // each water its own original (the board's diorama water, the painted sheet's ThreeWater: shader look 1), 1..3 = looks
-      // 001..003 on both (the sheet's shader looks 2..4). The sheet's "rio" (the board's original material on it: shader look 0)
-      // is no longer offered.
-      water.look = static_cast<uint32_t>(waterLook_);
+      // The panel's one "Água" sets both waters of the map (the user, 2026-10-26: "eu quero todas no mesmo lugar"): 0 padrão =
+      // each water as the map has it (the board's water tiles their own versions, look 003 unless Terreno → Água says otherwise:
+      // WaterView::lookCount; the painted sheet its ThreeWater: shader look 1), 1 original everywhere (the sheet's ThreeWater),
+      // 2..4 = looks 001..003 on all of it (the sheet's shader looks 2..4). The sheet's "rio" (shader look 0) is no longer offered.
+      static constexpr uint32_t kBoardWater[5] = {0u, WaterView::kOriginalEverywhere, 1u, 2u, 3u};
+      static constexpr uint32_t kWater3dShader[5] = {1u, 1u, 2u, 3u, 4u};
+      const int choice = std::clamp(waterLook_, 0, 4);
+      water.look = kBoardWater[choice];
       renderer.setWater(water);
       Water3DView water3d = ground_.water3d(look_);
-      static constexpr uint32_t kWater3dShader[4] = {1u, 2u, 3u, 4u};
-      water3d.look = kWater3dShader[std::clamp(waterLook_, 0, 3)];
+      water3d.look = kWater3dShader[choice];
       renderer.setWater3d(water3d);
     }
     // The sky's reflection map and the cloud sheet (panel "Reflexo do céu", "Nuvens"); the sheet sits well above the board.
@@ -1566,10 +1568,11 @@ class MapStage final : public Stage {
     }
     {
       // Every water of the map in one place: the original or a numbered look (looks/water/README.md), the same on the board's
-      // water and the painted sheet. The original is the default (the user, 2026-10-19: "NUNCA TROCAR O ASSET PADRÃO"); no OFF
-      // (the user, 2026-10-19: "só existe água 3d, não pode ficar off").
-      static const char* kWater[4] = {"original", "01", "02", "03"};
-      dropdown("Água", waterLook_, 4, [](int i) { return std::string(kWater[i]); });
+      // water and the painted sheet. "padrão" = as the map has it (look 003 on its water tiles: the user, 2026-10-26, "eu quero
+      // essa da foto como padrão mas manter a original no jogo"); the original stays a choice; no OFF (the user, 2026-10-19:
+      // "só existe água 3d, não pode ficar off").
+      static const char* kWater[5] = {"padrão", "original", "01", "02", "03"};
+      dropdown("Água", waterLook_, 5, [](int i) { return std::string(kWater[i]); });
     }
     {
       // The sky's reflection map on every specular surface (water first), and the cloud sheet (sky, reflections, shadows).
@@ -10512,8 +10515,8 @@ class MapStage final : public Stage {
     }
     return fit;
   }
-  // The panel's "Água", for both waters of the map: 0 the original (each its own, the default: the user, 2026-10-19, "NUNCA
-  // TROCAR O ASSET PADRÃO"), 1..3 looks 001..003 (shaders/water_lookNNN.hlsli), options only.
+  // The panel's "Água", for both waters of the map: 0 padrão (as the map has it: look 003 by default on its water tiles), 1 the
+  // original, 2..4 looks 001..003 (shaders/water_lookNNN.hlsli).
   int waterLook_ = 0;
   int skyReflect_ = 1;   // the panel's "Reflexo do céu": 0 OFF (the SH sky), 1 the sky's reflection map (skyreflect.hlsl)
   int clouds_ = 2;       // the panel's "Nuvens": 0 OFF, 1 básica (shaders/clouds.hlsli), 2 volumétricas (cloudsvol.hlsli, look 001)

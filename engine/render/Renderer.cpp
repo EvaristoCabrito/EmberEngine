@@ -2240,10 +2240,18 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       // The board's water: transparent, over the ground, under the cards.
       const uint32_t waterScope = gpuTimer_.begin(cmd, "water");
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, waterPipeline_);
-      const WaterPush waterPush{bufferAddress(context_, frame.meshFrame), water_.vertices, water_.indices, water_.look,
-                                waterBackdropIndex_, depthIndex_, linearClampIndex_};
-      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(waterPush), &waterPush);
-      vkCmdDraw(cmd, water_.count, 1, 0, 0);
+      // One draw per group of tiles with the same look (WaterView::lookCount); the panel's choice, when set, overrides them all.
+      uint32_t first = 0;
+      for (uint32_t k = 0; k < 4; ++k) {
+        const uint32_t count = water_.lookCount[k];
+        if (count == 0) continue;
+        const WaterPush waterPush{bufferAddress(context_, frame.meshFrame), water_.vertices, water_.indices + VkDeviceAddress(first) * 4,
+                                  water_.look == 0 ? k : water_.look == WaterView::kOriginalEverywhere ? 0u : water_.look,
+                                  waterBackdropIndex_, depthIndex_, linearClampIndex_};
+        vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(waterPush), &waterPush);
+        vkCmdDraw(cmd, count, 1, 0, 0);
+        first += count;
+      }
       gpuTimer_.end(cmd, waterScope);
     }
     if (terrain_ && water3d_) {

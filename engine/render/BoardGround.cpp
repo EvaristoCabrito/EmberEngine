@@ -185,7 +185,32 @@ bool BoardGround::build(const e2::Board& board) {
       std::memcpy(w.vertices[v].position, &g.positions[v * 3], 12);
       w.vertices[v].normal = octEncode(&g.normals[v * 3]);
     }
-    w.indices = g.indices;
+    // The triangles grouped by their tile's look (waterLookOfVariant): a water tile its own, a bank beside water the look of
+    // the water next to it, so each group draws in one go.
+    std::vector<uint32_t> grouped[4];
+    const e2::HexLayout& layout = board.layout();
+    auto lookOf = [&](const e2::Cell& c) { return waterLookOfVariant(board.draft().variant(c.i)); };
+    for (size_t t = 0; t + 2 < g.indices.size(); t += 3) {
+      float x = 0.0f, z = 0.0f;
+      for (int k = 0; k < 3; ++k) x += g.positions[g.indices[t + k] * 3] / 3.0f, z += g.positions[g.indices[t + k] * 3 + 2] / 3.0f;
+      const e2::Cell& cell = board.cellAt(x, z);
+      uint32_t look = kWaterDefaultLook;
+      if (cell.water) {
+        look = lookOf(cell);
+      } else {  // a bank: the look of the first water hex beside it
+        for (const auto& [nc, nr] : e2::neighbors(layout, cell.c, cell.r))
+          if (const e2::Cell& n = board.cell(nc, nr); n.water) {
+            look = lookOf(n);
+            break;
+          }
+      }
+      grouped[look].insert(grouped[look].end(), g.indices.begin() + t, g.indices.begin() + t + 3);
+    }
+    w.indices.clear();
+    for (int k = 0; k < 4; ++k) {
+      w.lookCount[k] = static_cast<uint32_t>(grouped[k].size());
+      w.indices.insert(w.indices.end(), grouped[k].begin(), grouped[k].end());
+    }
     w.vertexBuffer = createDeviceBuffer(context_, w.vertices.size() * sizeof(WaterVertexGpu), usage, true);
     w.indexBuffer = createDeviceBuffer(context_, w.indices.size() * sizeof(uint32_t), usage, true);
     w.vertexUpload = {};
@@ -410,7 +435,9 @@ bool BoardGround::ready() const {
 WaterView BoardGround::water(e2::EdgeStyle style) const {
   const Water& w = water_[style == e2::EdgeStyle::Smooth ? 0 : 1];
   if (!w.vertexBuffer.buffer || !uploads_.finished(w.vertexUpload) || !uploads_.finished(w.indexUpload)) return {};
-  return {bufferAddress(context_, w.vertexBuffer), bufferAddress(context_, w.indexBuffer), static_cast<uint32_t>(w.indices.size())};
+  WaterView view{bufferAddress(context_, w.vertexBuffer), bufferAddress(context_, w.indexBuffer), static_cast<uint32_t>(w.indices.size())};
+  std::copy(std::begin(w.lookCount), std::end(w.lookCount), view.lookCount);
+  return view;
 }
 
 TerrainView BoardGround::view(e2::EdgeStyle style) const {

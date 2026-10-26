@@ -47,11 +47,26 @@ struct WaterVertexGpu {
 };
 static_assert(sizeof(WaterVertexGpu) == 16);
 
+// The Map Editor's Terreno → Água versions (the user, 2026-10-26): variants 31..33 = "Água 01..03" (water looks 001..003), 34 =
+// "Água original" (look 0); every other water tile draws look 003, the default ("eu quero essa da foto como padrão mas manter a
+// original no jogo"). The ground under them is the 001 tile's (no layer of their own).
+constexpr int kWaterLookFirstVariant = 31;
+constexpr int kWaterOriginalVariant = 34;
+constexpr uint32_t kWaterDefaultLook = 3;
+inline uint32_t waterLookOfVariant(int variant) {
+  if (variant == kWaterOriginalVariant) return 0u;
+  return variant >= kWaterLookFirstVariant && variant < kWaterLookFirstVariant + 3 ? static_cast<uint32_t>(variant - kWaterLookFirstVariant + 1)
+                                                                                    : kWaterDefaultLook;
+}
+
 struct WaterView {
   VkDeviceAddress vertices = 0, indices = 0;
   uint32_t count = 0;  // indices
-  uint32_t look = 0;   // shaders/water.hlsl: 0 Engine2's diorama water, 1 look 001 "ember" (water_look001.hlsli), 2 look 002,
-                       // 3 look 003 "decente" (reads the scene below it: Renderer::waterRefracts)
+  uint32_t lookCount[4]{};  // the indices grouped by the tiles' own look (0 original, 1..3 looks 001..003), in that order
+  uint32_t look = 0;   // the panel's "Água": 0 = each tile its own look (lookCount), 1..3 = that look everywhere, 4 = the original
+                       // everywhere; shaders/water.hlsl: 0 the original diorama water, 1 look 001 "ember" (water_look001.hlsli),
+                       // 2 look 002, 3 look 003 (reads the scene below it: Renderer::waterRefracts)
+  static constexpr uint32_t kOriginalEverywhere = 4;
   explicit operator bool() const { return vertices != 0 && count != 0; }
 };
 
@@ -156,7 +171,8 @@ class BoardGround {
   Mesh meshes_[3];  // smooth, hard, tabletop
   struct Water {
     std::vector<WaterVertexGpu> vertices;
-    std::vector<uint32_t> indices;
+    std::vector<uint32_t> indices;  // grouped by look (WaterView::lookCount)
+    uint32_t lookCount[4]{};
     Buffer vertexBuffer, indexBuffer;
     ImageUpload vertexUpload, indexUpload;
   };
