@@ -4939,8 +4939,8 @@ class MapStage final : public Stage {
     }
     if (u.side == "player") {
       undo_.clear();
-      return select(ui);
       turnFocus(static_cast<size_t>(ui));  // Câmera de ação: its turn, the camera on it
+      return select(ui);
     }
     // Under fog an enemy that has not seen the party yet holds its ground (Engine2 wakeIfSeesParty; here: once the
     // party sees its hex).
@@ -4953,8 +4953,8 @@ class MapStage final : public Stage {
       awake_.insert(active);
     }
     select(-1);
-    if (std::optional<e2::AiCast> cast = e2::planEnemyCast(*battle_, static_cast<size_t>(active))) {
     turnFocus(static_cast<size_t>(ui));  // Câmera de ação: its turn, the camera on it (turnFocus skips a hex the fog hides)
+    if (std::optional<e2::AiCast> cast = e2::planEnemyCast(*battle_, static_cast<size_t>(active))) {
       EnemyTurn t;
       t.unit = static_cast<size_t>(ui);
       t.steps = cast->steps;
@@ -5493,8 +5493,8 @@ class MapStage final : public Stage {
     size_t step = 0;
     bool counter = false;  // the defender's strike back is playing
     float impact = 0.0f, end = 0.0f;
-    bool landed = false;   // this step's roll is in
     float release = 0.0f;  // a spell's cast pose is over and its effect leaves the caster (0: no cast pose to wait for)
+    bool landed = false;   // this step's roll is in
     size_t owner = 0;      // the scene unit whose action this is
     bool affinityDone = false;  // the action's first step is over: its neighbours' affinity was built
     bool bolt = false;     // this strike is an Arcano bolt (CombatFx): it lands when the bolt arrives
@@ -5740,9 +5740,9 @@ class MapStage final : public Stage {
     x.impact = now_ + length * (striker >= 0 && !pose.empty() ? poseImpact(static_cast<size_t>(striker), pose) : kImpactShare);
     x.end = now_ + length + kExchangeGap / actionRate();
     x.landed = false;
+    x.release = 0.0f;
     if (s.type == StepType::Move && (s.kind == "leapingStrike" || s.kind == "poleVault") && striker >= 0 && s.path.size() >= 2) {
       // Salto Devastador: the rules stand the unit on the landing at once; the card flies there on an arc (leapOffset) while
-    x.release = 0.0f;
       // the trail of steel light follows it and the crater opens as it lands (SpellEffects::leapFlight). Salto de Vara (the
       // Lanceiro's): the same flight, higher, over the foe the next step strikes, the lance planted beside it (vaultFlight).
       const bool vault = s.kind == "poleVault";
@@ -5801,9 +5801,9 @@ class MapStage final : public Stage {
     const bool magic = striker >= 0 && !x.counter && !s.kind.empty() && !pose.empty() && s.type != StepType::Combat &&
                        s.type != StepType::Potion && e2::spellPose(s.kind) != "attack";
     const float fxStart = magic ? now_ + length : now_;
+    x.release = magic ? fxStart : 0.0f;  // Câmera de ação: on the caster until then, then on the target / area
     auto afterPose = [&](e2::Json cues) {
       if (magic && cues.is_array())
-    x.release = magic ? fxStart : 0.0f;  // Câmera de ação: on the caster until then, then on the target / area
         for (e2::Json& c : cues) c["delay"] = c.value("delay", 0.0f) + length;
       return cues;
     };
@@ -7619,6 +7619,7 @@ class MapStage final : public Stage {
   static constexpr float kShotFill = 0.55f;      // a close shot: the taller card fills this share of the screen's height
   static constexpr float kShotPushIn = 0.92f;    // the impact's push-in (share of the distance)
   static constexpr float kShotDeathHold = 1.5f;  // seconds held on the fallen, at the normal pace
+  static constexpr float kShotSummonHold = 1.6f;  // seconds held on a familiar after it appears (its summon animation), at the normal pace
 
   bool actionCameraOn() const { return actionCamera_ == 1 && !flat_ && scene_ && battle_ && board_; }
   // A unit standing on a hex the player sees (without fog of war: everyone).
@@ -7669,7 +7670,6 @@ class MapStage final : public Stage {
     s.keys.push_back({impactAt, mid, yaw, pitch, d * kShotPushIn, h * 0.38f});
   }
   // A shot at range: behind the shooter looking down the line, then the pivot on the target as the arrow / bolt lands.
-  static constexpr float kShotSummonHold = 1.6f;  // seconds held on a familiar after it appears (its summon animation), at the normal pace
   void rangedShot(ActionShot& s, size_t striker, size_t target, float impactAt) {
     const SpellEffects::Spot a = unitSpot(striker), b = unitSpot(target);
     const float ha = cardHeightOf(a), hb = cardHeightOf(b);
@@ -7720,12 +7720,31 @@ class MapStage final : public Stage {
   void planShot(const Exchange& x) {
     if (!actionCameraOn()) return;
     const e2::BattleStep& s = x.steps[x.step];
-    using StepType = e2::BattleStep::Type;
     const int striker = sceneUnitOf(static_cast<int>(x.counter ? s.def : s.att));
     if (striker < 0 || !unitOnLitHex(static_cast<size_t>(striker))) return;
     const size_t su = static_cast<size_t>(striker);
     ActionShot& shot = openShot();
+    frameStep(shot, x, su);
+    if (x.release > now_ + 0.05f && !shot.keys.empty()) {
+      for (ShotKey& k : shot.keys) k.at = std::max(k.at, x.release);
+      const SpellEffects::Spot a = unitSpot(su);
+      const float h = cardHeightOf(a);
+      shot.keys.insert(shot.keys.begin(), ShotKey{now_, a.feet, shot.keys.front().yaw, kShotCasterPitch, closeDistance(h, 0.0f), h * 0.4f});
+    }
+  }
+  void frameStep(ActionShot& shot, const Exchange& x, size_t su) {
+    const e2::BattleStep& s = x.steps[x.step];
+    using StepType = e2::BattleStep::Type;
+    const int striker = static_cast<int>(su);
     const float impact = std::max(now_, x.impact);
+    // A summon (the user, 2026-10-26: "se for um familiar também e tem que dar tempo de ver a animação de summon"): the hex where
+    // the familiar appears, held after the action until its summon animation is over.
+    if (s.kind.rfind("summon", 0) == 0 && !s.tiles.empty()) {
+      const glm::vec3 casterAt = unitWorld(su), at = hexSpot(s.tiles.front()).feet;
+      shot.keys.push_back({now_, at, shotYaw(casterAt, at, 0.3491f), kShotCasterPitch, closeDistance(2.0f, 0.0f) * 1.1f, 0.8f});
+      shot.holdUntil = std::max(shot.holdUntil, impact + kShotSummonHold / actionRate());
+      return;
+    }
     if (s.type == StepType::Combat) {
       const int target = sceneUnitOf(static_cast<int>(x.counter ? s.att : s.def));
       if (target < 0 || target == striker) return casterShot(shot, su, -1, impact);
@@ -7774,27 +7793,7 @@ class MapStage final : public Stage {
       if (shot_) endShot(true);
       return;
     }
-    frameStep(shot, x, su);
-    if (x.release > now_ + 0.05f && !shot.keys.empty()) {
-      for (ShotKey& k : shot.keys) k.at = std::max(k.at, x.release);
-      const SpellEffects::Spot a = unitSpot(su);
-      const float h = cardHeightOf(a);
-      shot.keys.insert(shot.keys.begin(), ShotKey{now_, a.feet, shot.keys.front().yaw, kShotCasterPitch, closeDistance(h, 0.0f), h * 0.4f});
-    }
-  }
-  void frameStep(ActionShot& shot, const Exchange& x, size_t su) {
-    const e2::BattleStep& s = x.steps[x.step];
-    using StepType = e2::BattleStep::Type;
-    const int striker = static_cast<int>(su);
     ActionShot* s = shot_ ? &*shot_ : nullptr;
-    // A summon (the user, 2026-10-26: "se for um familiar também e tem que dar tempo de ver a animação de summon"): the hex where
-    // the familiar appears, held after the action until its summon animation is over.
-    if (s.kind.rfind("summon", 0) == 0 && !s.tiles.empty()) {
-      const glm::vec3 casterAt = unitWorld(su), at = hexSpot(s.tiles.front()).feet;
-      shot.keys.push_back({now_, at, shotYaw(casterAt, at, 0.3491f), kShotCasterPitch, closeDistance(2.0f, 0.0f) * 1.1f, 0.8f});
-      shot.holdUntil = std::max(shot.holdUntil, impact + kShotSummonHold / actionRate());
-      return;
-    }
     // The player moved the camera since the shot last wrote it: the shot is theirs no more (no view to give back).
     if (s && s->written && (glm::distance(target_, s->wroteTarget) > 1e-3f || std::abs(yaw_ - s->wroteYaw) > 1e-4f ||
                            std::abs(pitch_ - s->wrotePitch) > 1e-4f || std::abs(distance_ - s->wroteDistance) > 1e-3f)) {
@@ -7822,6 +7821,18 @@ class MapStage final : public Stage {
       }
       if (!exchange_ && now_ >= s->holdUntil) return endShot(true);
     }
+    clampGoal();
+  }
+  // A unit's turn begins (the user, 2026-10-26: "quando for a vez de determinado personagem se mover a camera deve centrar nele para
+  // servir de aviso"): the pivot glides to it, the player's turn, tilt and zoom kept. During a shot (a death still held) the view the
+  // shot gives back is moved instead, so the camera lands on it once the shot is over. Not on a hex the fog hides.
+  void turnFocus(size_t ui) {
+    if (!actionCameraOn() || ui >= unitPos_.size() || !unitOnLitHex(ui)) return;
+    if (shot_) {
+      shot_->playerTarget = unitWorld(ui);
+      return;
+    }
+    target_ = unitWorld(ui);
     clampGoal();
   }
   // The shot is over: the player's view back (unless they took the camera themselves).
@@ -7873,18 +7884,6 @@ class MapStage final : public Stage {
           for (const e2::BattleHex& c : aimArea(b, *hover_)) add(c, IM_COL32(214, 168, 255, 96), 1.0f);
         add(*hover_, IM_COL32(8, 12, 16, 242), 0.985f, border(0.985f));
         add(*hover_, aimValid(b, *hover_) ? IM_COL32(236, 214, 255, 255) : IM_COL32(231, 133, 115, 242), 0.94f, border(0.94f));
-  // A unit's turn begins (the user, 2026-10-26: "quando for a vez de determinado personagem se mover a camera deve centrar nele para
-  // servir de aviso"): the pivot glides to it, the player's turn, tilt and zoom kept. During a shot (a death still held) the view the
-  // shot gives back is moved instead, so the camera lands on it once the shot is over. Not on a hex the fog hides.
-  void turnFocus(size_t ui) {
-    if (!actionCameraOn() || ui >= unitPos_.size() || !unitOnLitHex(ui)) return;
-    if (shot_) {
-      shot_->playerTarget = unitWorld(ui);
-      return;
-    }
-    target_ = unitWorld(ui);
-    clampGoal();
-  }
       }
       for (const e2::BattleHex& c : spellCells_) add(c, IM_COL32(255, 214, 102, 255), 0.7f, border(0.7f));
       const e2::BattleUnit& u = battle_->units()[b];
