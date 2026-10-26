@@ -24,6 +24,7 @@
 
 #include "CampaignUi.h"
 #include "GamePrefs.h"
+#include "Portraits.h"
 #include "render/UiArt.h"
 #include "world/Battle.h"
 #include "world/FieldSpells.h"
@@ -192,7 +193,8 @@ class BattleStatusSheet {
     if (hooks.portraitWhole && hooks.portraitWhole(u)) boxH = 162.0f;
     const ImVec2 pa = top, pb{top.x + 108.0f, top.y + boxH};
     dl->AddRectFilled(pa, pb, IM_COL32(0, 0, 0, 255), 8.0f);
-    if (face) coverRounded(dl, *face, pa, pb, 8.0f, IM_COL32_WHITE, 0.5f, 0.3f);
+    if (const HeroPortrait* hero = face && player ? heroPortrait(u.name) : nullptr) drawHeroPortrait(dl, *face, pa, pb, *hero, 8.0f);
+    else if (face) coverRounded(dl, *face, pa, pb, 8.0f, IM_COL32_WHITE, 0.5f, 0.3f);
     dl->AddRect(pa, pb, kBorder, 8.0f);
     float bottom = pb.y;
     if (player) {

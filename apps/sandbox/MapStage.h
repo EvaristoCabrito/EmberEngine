@@ -8130,13 +8130,10 @@ class MapStage final : public Stage {
     return file.empty() ? nullptr : uiImage(file);
   }
   std::filesystem::path portraitFileOf(const e2::BattleUnit& u) const {
-    // The Interlude's heroes by name (docs/INTERLUDE.md; the user's photos cut as the other MCs' busts, 2026-10-25): Salazar Jovem and
-    // Selene share their sprites with other units (kaelEarly, the conjurer's), so the name decides before the sprite does.
-    static const std::pair<const char*, const char*> kByName[] = {{"Isolde", "game/portraits/isolde-bust-v03.jpg"},
-                                                                  {"Selene", "game/portraits/selene-bust-v03.jpg"},
-                                                                  {"Salazar Jovem", "game/portraits/salazar-jovem-bust-v03.jpg"}};
-    for (const auto& [name, file] : kByName)
-      if (u.side == "player" && u.name == name) return options_.engine2Public / file;
+    // A hero of the party: THE one portrait, by name (content/hero-portraits.json, Portraits.h; the user, 2026-10-25: "consolida
+    // tudo em um só retrato"). The name decides before the sprite does (Salazar Jovem and Selene share sprites with other units).
+    if (u.side == "player")
+      if (const HeroPortrait* hero = heroPortrait(u.name)) return options_.engine2Public / hero->file;
     static const std::pair<const char*, const char*> kHero[] = {
         {"defaultWarrior", "game/portraits/kael.png"}, {"kaelFinal", "game/portraits/kael-final-face-001.jpg"},
         {"neera", "game/portraits/NeeraProperSide-profile.jpg"}, {"voss", "game/portraits/voss.png"},
@@ -8555,6 +8552,9 @@ class MapStage final : public Stage {
     // The close-up photos only on the status sheet (the user, 2026-10-18: "zoom só no status"); every other screen keeps the originals.
     hooks.portraitWhole = [](const e2::BattleUnit& u) { return u.side == "player"; };  // the party's 2:3 box (the user, 2026-10-18)
     hooks.portrait = [this](const e2::BattleUnit& u) -> const UiImage* {
+      // a hero of the party: THE one portrait, as on every screen (the user, 2026-10-25: "consolida tudo em um só retrato"); the
+      // close-ups below stay for no hero now (kept, not drawn)
+      if (u.side == "player" && heroPortrait(u.name)) return portraitOf(u);
       static const std::pair<const char*, const char*> kClose[] = {{"kaelFinal", "content/ui/portraits/kael-close-v01.jpg"}, {"neera", "content/ui/portraits/neera-close-v01.jpg"},
                                                                    {"voss", "content/ui/portraits/voss-close-v01.jpg"},
                                                                    {"aldric", "content/ui/portraits/aldric-close-v02.jpg"},
@@ -8872,7 +8872,8 @@ class MapStage final : public Stage {
       if (const UiImage* face = portraitOf(u)) {
         const ImVec2 p{x, rowY}, q{x + 56.0f, rowY + 80.0f};
         dl->AddRectFilled(p, q, IM_COL32(17, 17, 17, 255), 6.0f);
-        imageCover(dl, *face, p, q, 0.5f, 0.3f);
+        if (const HeroPortrait* hero = u.side == "player" ? heroPortrait(u.name) : nullptr) drawHeroPortrait(dl, *face, p, q, *hero);
+        else imageCover(dl, *face, p, q, 0.5f, 0.3f);
         dl->AddRect(p, q, IM_COL32(74, 74, 74, 255), 6.0f);
         // a click on the portrait opens the status sheet of that unit (any side)
         ImGui::SetCursorScreenPos(p);

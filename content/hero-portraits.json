@@ -1,0 +1,14 @@
+{
+ "_comment": "THE one portrait of each hero (the user, 2026-10-25: 'consolida tudo em um só retrato'). Every screen draws a hero from here and nowhere else: world map (party panel, Party menu, class path, conversations, formation), battle bar, status sheet, dialogs. file = under the art folder (content/game/public). The six heroes keep the framing the user approved on the world map: anchorY = which part stays when the box is shorter than the picture (0 = the top, the forehead never cut; Neera 0.5 = the middle, 'Neera was perfect before'). face = for a full photo, the face box measured by tools/scripts/portraits/face_boxes.py (YuNet, OpenCV 5.0.0.93) as shares of the picture (centre x, centre y, height): framed as Neera is (Portraits.h kPortraitFaceShare / kPortraitFaceAt).",
+ "heroes": {
+  "Kael": {"file": "game/portraits/kael-final-face-001.jpg"},
+  "Neera": {"file": "game/portraits/NeeraProperSide-profile.jpg", "anchorY": 0.5},
+  "Voss": {"file": "game/portraits/voss-v2-bust.jpg"},
+  "Salazar": {"file": "game/portraits/salazar-v2-bust.jpg"},
+  "Aldric": {"file": "game/portraits/aldric-profile-001.jpg"},
+  "Malrec": {"file": "game/portraits/conjurer-002.png"},
+  "Isolde": {"file": "game/portraits/isolde-portrait-v05.jpg", "face": [0.5049, 0.1042, 0.0943]},
+  "Selene": {"file": "game/portraits/selene-portrait-v04.jpg", "face": [0.4992, 0.1452, 0.1588]},
+  "Salazar Jovem": {"file": "game/portraits/salazar-jovem-portrait-v04.jpg", "face": [0.5052, 0.1322, 0.0895]}
+ }
+}

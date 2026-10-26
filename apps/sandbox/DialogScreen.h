@@ -16,6 +16,7 @@
 
 #include "CampaignUi.h"
 #include "GamePrefs.h"
+#include "Portraits.h"
 #include "render/UiArt.h"
 #include "world/Campaign.h"
 
@@ -59,7 +60,10 @@ class DialogScreen {
     const float inner = w - 40;
     const ImVec2 at = ImGui::GetCursorScreenPos();
     float textX = at.x;
-    const e2::Json& portrait = portraits_.value(tree_.value("id", "") + ":" + line->value("id", ""), e2::Json());
+    // a hero speaks with THE one portrait (Portraits.h heroPortrait), whatever conversation this is; anyone else as the tree says
+    const HeroPortrait* hero = heroPortrait(line->value("speaker", ""));
+    const e2::Json portrait = hero ? e2::Json{{"src", "/" + hero->file}, {"framed", true}}
+                                   : portraits_.value(tree_.value("id", "") + ":" + line->value("id", ""), e2::Json());
     if (portrait.is_object()) {
       std::string src = portrait.value("src", "");
       if (const size_t q = src.find('?'); q != std::string::npos) src.resize(q);
@@ -69,7 +73,8 @@ class DialogScreen {
       const float pw = 80, ph = framed ? 96.0f : 80.0f;
       if (img) {
         if (framed) {
-          imageCover(dl, *img, at, {at.x + pw, at.y + ph});
+          if (hero) drawHeroPortrait(dl, *img, at, {at.x + pw, at.y + ph}, *hero);
+          else imageCover(dl, *img, at, {at.x + pw, at.y + ph});
           dl->AddRect(at, {at.x + pw, at.y + ph}, IM_COL32(74, 74, 74, 255), 8, 1.0f);
         } else {
           const float k = std::min(pw / img->width, ph / img->height);
