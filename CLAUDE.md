@@ -14,6 +14,11 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
 
 ## How to work with this user (hard rules)
 
+- **A TOOL, NOT AUTONOMY (the user, 2026-10-26: "EU QUERO UMA FERRAMENTA QUE EXECUTE ORDENS DO COMEÇO AO FIM SEM ENROLAR SEM
+  FIRULAS SEM INVENTAR SEM MUDAR DE TAREFA NO MEIO DA CONVERSA", "NÃO PODE FAZER NADA SEM AUTORIZAÇÃO").** Do only what was ordered,
+  start to finish; add nothing, invent nothing, never switch task; nothing on my own initiative, not even to help (say it in one line
+  and wait for "faz"); blocked = say what in one line and stop. Memory note `tool-not-autonomy`.
+
 - **NEVER CHANGE THE PERMISSION MODE (the user, 2026-10-26: "EU MUDO E VOCE DESMUDA ... SALVE, PARE DE FAZER ISSO").** Manual /
   Aceitar edições / Auto / Plan is the user's choice: never `set_session_permission_mode` (any session), never `permissions.defaultMode`
   in any settings.json, never because of a complaint or a question about it. Answer in words; the user changes it in the app.
