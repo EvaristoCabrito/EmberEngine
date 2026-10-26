@@ -8,7 +8,7 @@
     "selene": { "unit": "Selene" }
   },
   "steps": [
-    { "do": "move", "actor": "isolde", "to": [14, 20] },
+    { "do": "move", "actor": "isolde", "to": [29, 36] },
     { "do": "face", "actor": "salazar", "toward": "isolde" },
     { "do": "face", "actor": "selene", "toward": "isolde" },
     { "do": "say", "actor": "isolde", "text": "A cidade. Vinte e cinco anos antes de virar ruína.", "translations": { "en": "The city. Twenty-five years before it became a ruin." } },

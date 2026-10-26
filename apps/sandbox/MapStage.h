@@ -3983,8 +3983,10 @@ class MapStage final : public Stage {
       const e2::CatalogDecoration* cd = catalog.decoration(d.id);
       if (!cd) continue;
       // EmberEngine's walls and doors are solid like Engine2's own (hexprops solidArchitecture); an open portal is walked through.
+      // Of the other props only a barricade blocks (the user, 2026-10-25: "a única coisa que bloqueia é barricada"); the editor's blocksPath
+      // mark is ignored.
       const bool solidWall = cd->architecture && (cd->model3d == "wall" || cd->model3d == "door" || cd->model3d == "secretDoor");
-      if (!d.blocksPath && !solidWall) continue;
+      if (!solidWall && d.id.find("barricade") == std::string::npos) continue;
       for (const e2::FootOffset& f : e2::placedFootprint(*cd, d.x, d.y, d.rot)) {
         const int x = d.x + f.dx, y = d.y + f.dy;
         if (!e2::inBoard(L, x, y)) continue;

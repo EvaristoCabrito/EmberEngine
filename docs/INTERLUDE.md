@@ -62,15 +62,23 @@ Ember and statuses do not transfer (the recruitment design decides those).
 
 ## Step 3: the vertical slice (placeholders, 2026-10-25: "cria qualquer placeholder depois crio em cima")
 
-The whole chapter as one playable path, with two TEMPORARY maps the user replaces:
-1. `interlude-city` (`content/maps/ember/interlude-city001.json`, scratchpad make_interlude_city.py): the placeholder board as a
-   free-roam city, the three as spawns, no foes, a "Passagem de Andar" (floor connector) at (14, 10) leading to the fight. Opens
-   with the scene `interlude-city-opening` (triggers.json onOpen: Isolde walks, the two turn to her, three lines, a wait, a turn).
-   Leaving by the passage marks the map done for the chapter (main.cpp connector branch -> markVisited -> interludeAdvance) and
-   opens the fight with the party placed beside the way back (arrivedFrom).
-2. `interlude-placeholder` (the fight): opens with `interlude-placeholder-opening` (young Salazar turns, two lines); the turn loop
-   holds until the scene ends; winning completes the chapter (finishCampaignFight -> interludeAdvance -> interludeComplete) and the
-   world map opens on the present-day Ruins' list.
+The whole chapter as one playable path. The maps are mine to make (the user, 2026-10-25: "eu não tenho mapas de cidade nenhuma, você
+vai criar"); the panorama / ground photos of the city are theirs, later.
+1. `interlude-city` (`content/maps/ember/interlude-city003.json`, `tools/scripts/maps/make_interlude_city.py`; 001 / 002 were the
+   first cuts and stay unused): the walled city, 60 x 45: a battlement ring with towers and two open gates (south: the party's entry;
+   north: the passage out), the ring road, the N-S and E-W avenues crossing at the plaza (fountain, benches, lamps, notice board),
+   NW the market square (stalls, carts, well, forge, storehouses), NE the noble quarter (the Salazar family's house facing its garden
+   and fountain, knight statues, trees, fine houses), SW the poor quarter (stone huts, firewood, troughs), SE the temple (twin spires
+   in an enclosure of temple walls opening west, columns at the mouth, penitent statues, ritual braziers), lamps along the avenues,
+   eight townsfolk as neutrals. `content/interlude/city-plan.json` holds the geography (walls, gates, streets, plaza, districts,
+   landmarks) the present-day Ruins must follow. Opens with `interlude-city-opening` (Isolde walks up the avenue, the two turn to
+   her, three lines). The north gate's passage (floor connector at (29, 2)) marks the map done for the chapter (main.cpp connector
+   branch -> markVisited -> interludeAdvance) and opens the fight with the party inside the north gate (arrivedFrom).
+2. `interlude-placeholder` (`interlude-placeholder003.json`, the same generator): the same city as a rout mission, the party inside
+   the north gate, seven foes on the avenue, the plaza and the temple; opens with `interlude-placeholder-opening` (young Salazar turns,
+   two lines); the turn loop holds until the scene ends; winning completes the chapter (finishCampaignFight -> interludeAdvance ->
+   interludeComplete) and the world map opens on the present-day Ruins' list.
+Blocking on these maps follows the rule of 2026-10-25: only barricades and architecture walls block; houses and props never.
 A defeat keeps the fight pending ("Tentar de novo" / the briefing again); a save loaded mid-chapter resumes at its pending map.
 
 ## Checks

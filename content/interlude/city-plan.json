@@ -1,0 +1,143 @@
+{
+ "format": "ember-city-plan-1",
+ "cols": 60,
+ "rows": 45,
+ "walls": {
+  "west": 1,
+  "east": 58,
+  "north": 1,
+  "south": 43,
+  "southGate": [
+   [
+    29,
+    43
+   ],
+   [
+    30,
+    43
+   ]
+  ],
+  "northGate": [
+   [
+    29,
+    1
+   ],
+   [
+    30,
+    1
+   ]
+  ],
+  "passage": [
+   29,
+   2
+  ]
+ },
+ "streets": {
+  "ringRoad": {
+   "west": 3,
+   "east": 56,
+   "north": 3,
+   "south": 41
+  },
+  "avenueNS": [
+   28,
+   31
+  ],
+  "avenueEW": [
+   21,
+   23
+  ],
+  "sideStreetsCols": [
+   [
+    13,
+    14
+   ],
+   [
+    44,
+    45
+   ]
+  ],
+  "sideStreetsRows": [
+   [
+    11,
+    12
+   ],
+   [
+    32,
+    33
+   ]
+  ]
+ },
+ "plaza": [
+  25,
+  18,
+  34,
+  26
+ ],
+ "districts": {
+  "market": [
+   4,
+   4,
+   27,
+   20
+  ],
+  "noble": [
+   32,
+   4,
+   55,
+   20
+  ],
+  "poor": [
+   4,
+   24,
+   27,
+   40
+  ],
+  "temple": [
+   32,
+   24,
+   55,
+   40
+  ]
+ },
+ "landmarks": {
+  "plazaFountain": [
+   29,
+   22
+  ],
+  "marketSquare": [
+   15,
+   13,
+   27,
+   20
+  ],
+  "well": [
+   20,
+   16
+  ],
+  "forge": [
+   7,
+   8
+  ],
+  "salazarHouse": [
+   46,
+   7
+  ],
+  "salazarGarden": [
+   45,
+   9,
+   51,
+   12
+  ],
+  "temple": [
+   36,
+   26,
+   52,
+   39
+  ],
+  "templeSpires": [
+   43,
+   31
+  ]
+ }
+}

@@ -1689,6 +1689,17 @@ open area with large tables ... some separate rooms for NPCs and services, use t
   Limits: the world map's party panel / leader figure still list the six present heroes while ACTIVE (kHeroes); the full
   in-game loop (map → chapter fight → victory → the Ruins) is covered by the Cooker check and the captures of its halves, not by
   one scripted run (the main loop has no capture harness).
+- **ONLY BARRICADES BLOCK (the user, 2026-10-25, furious: "NÃO QUERO DECORAÇÃO BLOQUEANDO MAIS NADA ... a única coisa que bloqueia é
+  barricada"):** a decoration blocks a hex only when it is a barricade (id contains "barricade", or the rules' barricadeLike set);
+  architecture walls / doors / secret doors stay solid (rooms keep their walls); houses, rocks, carts, chests, props and the editor's
+  blocksPath mark never block (BattleExport.cpp refreshOverlay, MapStage blockEmberProps). `Cooker check-battle-export`'s "blocked"
+  cells differ from the TypeScript exporter's by design now. Memory note `only-barricades-block`.
+- **The city (2026-10-25, the user: "eu não tenho mapas de cidade nenhuma, você vai criar"; capricho máximo is mine, their prompts
+  are one-shot):** `tools/scripts/maps/make_interlude_city.py` → `interlude-city003` (60 x 45, the walled city: battlement ring with
+  towers and two open gates, ring road, two avenues, plaza with the fountain, NW market square, NE noble quarter with the Salazar house
+  and its garden, SW poor quarter of stone huts, SE temple enclosure (temple-3d walls, twin spires), lamps; eight townsfolk as
+  neutrals; the north gate's passage → the mission) and `interlude-placeholder003` (the same city, seven foes on the avenue / plaza /
+  temple). `content/interlude/city-plan.json` = the geography the present-day Ruins must follow. 002 (a rough first cut) stays unused.
 - **Step 3 (2026-10-25, "cria qualquer placeholder depois crio em cima"): read docs/INTERLUDE.md § Step 3 and docs/CUTSCENES.md
   § Map events.** `content/cutscenes/triggers.json` onOpen (map id → script; MapStage `runCutsceneTriggers`, after the loading
   curtain, every time the map opens; a battle script waits for it). Chapter = `interlude-city` (TEMPORARY free-roam city,

@@ -257,10 +257,14 @@ struct Field {
       const std::string arch = def ? str(*def, "model3d") : "";
       const bool solidArch = arch == "wall" || arch == "door" || arch == "secretDoor" ||
                              (arch == "doorway" && def && integer(*def, "architectureSpan") > 0 && (*def)["blockingFootprint"].is_array());
-      const bool blocksPath = flag(p, "blocksPath");
-      const bool chair = id.find("chair") != std::string::npos;
-      const bool lowProp = blocksPath && (chair || r.inSet("lowBlocker", id)) && !house && !chest && !barricade && !cart && !rock && !solidArch;
-      const int bits = (blocksPath || house || chest || barricade || cart || rock || solidArch ? kBlocked : 0) | (flag(p, "yieldsHighGround") ? kHigh : 0) | (lowProp ? kOpenShot : 0);
+      // The user (2026-10-25: "NÃO QUERO DECORAÇÃO BLOQUEANDO MAIS NADA ... a única coisa que bloqueia é barricada"): a decoration
+      // blocks a hex only when it is a barricade (its id says so, or the rules' barricadeLike set); houses, chests, carts, rocks and
+      // the editor's blocksPath mark block nothing. Architecture stays solid (walls, doors, secret doors, a closed doorway span: a
+      // room keeps its walls). The other sets are read for the shot rules only.
+      const bool barricadeId = id.find("barricade") != std::string::npos;
+      (void)house, (void)chest, (void)cart, (void)rock;
+      const bool lowProp = false;
+      const int bits = (solidArch || barricade || barricadeId ? kBlocked : 0) | (flag(p, "yieldsHighGround") ? kHigh : 0) | (lowProp ? kOpenShot : 0);
       if (!bits) continue;
       for (const Hex& c : placedBlockingFootprint(r, p)) {
         const int x = integer(p, "x") + c.x, y = integer(p, "y") + c.y;
