@@ -1,0 +1,13 @@
+{
+ "about": "Selene (the Interlude's conjurer) from the user's sheets (C:/Users/evari/Desktop/Characters/Salazar/Selene, copied as Attachments/Selene; 36 frames 6 x 6 each), 2026-10-25: \"try to make all the animations with these, I will create more later\". Every frame and its timing as drawn, alpha as drawn, no resampling. The casting sheet holds her smaller (fitted to its widest frame) and the walk is a wide frame: each clip's figure is measured on its own and stands figureUnits tall, so she is one height in every clip.",
+ "set": "selene",
+ "version": "v01",
+ "figureUnits": 2.66,
+ "figureNote": "first value: Isolde's height (2.66 units, Neera's); the user judges her size in play",
+ "clips": [
+  {"clip": "base", "version": "v02", "pose": "idle", "kind": "stand", "sheet": "Attachments/Selene/Idle2/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "pingpong", "bodyAt": 0.0, "why": "the user, 2026-10-26: the first idle (Attachments/Selene/Idle, base-v01, kept on disk) looked deformed in play: \"tente usar essa versão no lugar: Attachments/Selene/Idle2\""},
+  {"clip": "atk", "pose": "attack", "kind": "stand", "sheet": "Attachments/Selene/ATT/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "once", "bodyAt": 0.0},
+  {"clip": "cast", "pose": "cast", "kind": "stand", "sheet": "Attachments/Selene/Casting/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "once", "bodyAt": 0.0},
+  {"clip": "move", "pose": "walk", "kind": "walk", "sheet": "Attachments/Selene/WalkRightLooped/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "loop", "bodyAt": 0.0}
+ ]
+}

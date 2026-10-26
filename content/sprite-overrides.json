@@ -97,6 +97,18 @@
    "packs": {"base": "field", "move": "field", "move-left": "field"}
   },
   {
+   "set": "selene",
+   "version": "v01",
+   "hero": "selene",
+   "newHero": {"name": "Selene", "group": "hero", "sprite": "selene", "reversed": false, "classId": "conjurer"},
+   "cut": "content/sprites/selene/cut.json",
+   "why": "the user, 2026-10-25: Selene's sheets (Desktop/Characters/Salazar/Selene, copied as Attachments/Selene), \"só corta e liga no roster, não cozinha o pack ainda\", then \"try to make all the animations with these, I will create more later\": idle, attack (her dagger), cast, walk right; no walk left yet (the walk right plays both ways)",
+   "poses": {"idle": "base", "attack": "atk", "cast": "cast", "walk": "move"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "cast": "Conjurar", "walk": "Andar"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
    "set": "neera-hydra",
    "version": "v01",
    "hero": "neera",

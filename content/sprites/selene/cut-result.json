@@ -1,0 +1,127 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/Selene/Idle2/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "bootRow": 620,
+   "bootRows": [
+    620,
+    620
+   ],
+   "figurePx": 614.0,
+   "bodyAt": 0.0,
+   "frames": 36,
+   "frameMs": 79.0,
+   "nat": [
+    447,
+    626
+   ],
+   "crop": [
+    2,
+    2,
+    395,
+    620
+   ],
+   "box": {
+    "w": 1.93651,
+    "h": 2.71199,
+    "foot": 0.02166
+   },
+   "pattern": "content/sprites/selene/base-v02/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/Selene/ATT/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "bootRow": 511,
+   "bootRows": [
+    508,
+    534
+   ],
+   "figurePx": 478.5,
+   "bodyAt": 0.0,
+   "frames": 36,
+   "frameMs": 94.0,
+   "nat": [
+    497,
+    523
+   ],
+   "crop": [
+    5,
+    5,
+    395,
+    513
+   ],
+   "box": {
+    "w": 2.76284,
+    "h": 2.90738,
+    "foot": 0.11118
+   },
+   "pattern": "content/sprites/selene/atk-v01/atk-{}.png"
+  },
+  "cast": {
+   "video": "Attachments/Selene/Casting/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "bootRow": 857,
+   "bootRows": [
+    856,
+    857
+   ],
+   "figurePx": 588.0,
+   "bodyAt": 0.0,
+   "frames": 36,
+   "frameMs": 79.0,
+   "nat": [
+    662,
+    865
+   ],
+   "crop": [
+    0,
+    0,
+    640,
+    860
+   ],
+   "box": {
+    "w": 2.99476,
+    "h": 3.9131,
+    "foot": 0.03167
+   },
+   "pattern": "content/sprites/selene/cast-v01/cast-{}.png"
+  },
+  "move": {
+   "video": "Attachments/Selene/WalkRightLooped/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "loopFirst": 0,
+   "loopLast": 35,
+   "seamSteps": NaN,
+   "bootRow": 700,
+   "bodyDrift": [
+    -19,
+    4
+   ],
+   "figurePx": 687.0,
+   "bodyAt": 0.0,
+   "frames": 36,
+   "frameMs": 79.0,
+   "nat": [
+    675,
+    708
+   ],
+   "crop": [
+    6,
+    3,
+    568,
+    700
+   ],
+   "box": {
+    "w": 2.61354,
+    "h": 2.74131,
+    "foot": 0.0271
+   },
+   "pattern": "content/sprites/selene/move-v01/move-{}.png"
+  }
+ }
+}
