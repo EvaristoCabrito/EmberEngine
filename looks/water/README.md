@@ -3,9 +3,11 @@
 The user's rule (2026-10-14): every look is saved in a numbered series and kept until the user deletes it after seeing it
 live. A change is a new look, never an edit of a saved one.
 
-- See them live: panel "Escolhas" → **Água** (original / ember / correnteza / decente) in a Modo teste battle; `--water N` (0 the
-  original, 1 = look 001, 2 = look 002, 3 = look 003). "Água 3D" → original / rio / rio ember / rio correnteza / rio decente (the Map
-  Editor's sheet with its depth; `--water3d N`, 4 = look 003).
+- See them live: panel "Escolhas" → **Água** (original / 01 / 02 / 03) in a battle; `--water N` (0 the original, 1..3 = looks
+  001..003). One choice for every water of the map (the user, 2026-10-26: "eu quero todas no mesmo lugar"): the board's water and the
+  Map Editor's painted sheet (Água 3D brush, which also knows its depth) take the same look; "original" keeps each its own original
+  (the board's diorama water, the sheet's ThreeWater). The sheet's old "rio" (the board's original material on it, water3d.hlsl
+  look 0) is no longer offered in the panel; its code stays.
 - Each look: `shaders/water_lookNNN.hlsli` (frozen; called by water.hlsl for the board's water and by water3d.hlsl for the
   Map Editor's sheet, which also knows its depth), captures here (`NNN/*.png`, local, git-ignored), git tag `water-look-NNN`.
 - "Engine2" = Engine2's diorama water (water.hlsl: #2f86a8, roughness 0.5, the 128 px ripple tile scrolling).

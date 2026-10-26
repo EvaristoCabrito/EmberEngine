@@ -161,7 +161,6 @@ struct MapStageOptions {
   // Water (2026-10-19): the panel's "Água" (0 the original = Engine2's diorama water, the default; 1 look 001 "ember";
   // --water N), "Reflexo do céu" (0 OFF, 1 the sky's reflection map; --sky-reflect N) and "Nuvens" (0 OFF, 1 básica; --clouds N).
   int waterLook = 0;
-  int water3dLook = 0;  // "Água 3D": 0 the original (the default) .. 4 rio decente (look 003; --water3d N)
   int skyReflect = 1;
   int clouds = 2;     // "Nuvens": 0 OFF, 1 básica (the sheets), 2 volumétricas (look 001, the default; --clouds N)
   int moonLight = 1;  // the panel's "Luar" (light mode real): 0 físico, 1 cinema (--moonlight N)
@@ -296,7 +295,6 @@ class MapStage final : public Stage {
     floorChoice_ = std::clamp(options.floorImage, 0, 1);
     windFogChoice_ = std::clamp(options.windFog, 0, 1);
     waterLook_ = std::clamp(options.waterLook, 0, 3);
-    water3dLook_ = std::clamp(options.water3dLook, 0, 4);
     skyReflect_ = std::clamp(options.skyReflect, 0, 1);
     clouds_ = std::clamp(options.clouds, 0, 2);
     dayCycle_ = std::clamp(options.hour, 0, 10);
@@ -865,15 +863,15 @@ class MapStage final : public Stage {
     }
     {
       WaterView water = ground_.water(look_);
-      // panel "Água": 0 the original, 1 ember (look 001), 2 correnteza (look 002), 3 decente (look 003)
+      // The panel's one "Água" sets both waters of the map (the user, 2026-10-26: "eu quero todas no mesmo lugar"): 0 original =
+      // each water its own original (the board's diorama water, the painted sheet's ThreeWater: shader look 1), 1..3 = looks
+      // 001..003 on both (the sheet's shader looks 2..4). The sheet's "rio" (the board's original material on it: shader look 0)
+      // is no longer offered.
       water.look = static_cast<uint32_t>(waterLook_);
       renderer.setWater(water);
-      // Panel "Água 3D", always drawn: 0 the original (Engine2's ThreeWater: shader look 1), 1 rio (the board's original
-      // material on the sheet: 0), 2 rio ember (look 001 on the sheet: 2), 3 rio correnteza (look 002 on the sheet: 3),
-      // 4 rio decente (look 003 on the sheet: 4).
       Water3DView water3d = ground_.water3d(look_);
-      static constexpr uint32_t kWater3dShader[5] = {1u, 0u, 2u, 3u, 4u};
-      water3d.look = kWater3dShader[std::clamp(water3dLook_, 0, 4)];
+      static constexpr uint32_t kWater3dShader[4] = {1u, 2u, 3u, 4u};
+      water3d.look = kWater3dShader[std::clamp(waterLook_, 0, 3)];
       renderer.setWater3d(water3d);
     }
     // The sky's reflection map and the cloud sheet (panel "Reflexo do céu", "Nuvens"); the sheet sits well above the board.
@@ -1567,15 +1565,11 @@ class MapStage final : public Stage {
       dropdown("Câmera de ação", actionCamera_, 2, [](int i) { return std::string(kActionCamera[i]); });
     }
     {
-      // The board's water: the original (Engine2's diorama material, the default) or look 001 "ember" (looks/water/README.md).
-      // Every water stays selectable, the original is the default (the user, 2026-10-19: "NUNCA TROCAR O ASSET PADRÃO").
-      static const char* kWater[4] = {"original", "ember", "correnteza", "decente"};
+      // Every water of the map in one place: the original or a numbered look (looks/water/README.md), the same on the board's
+      // water and the painted sheet. The original is the default (the user, 2026-10-19: "NUNCA TROCAR O ASSET PADRÃO"); no OFF
+      // (the user, 2026-10-19: "só existe água 3d, não pode ficar off").
+      static const char* kWater[4] = {"original", "01", "02", "03"};
       dropdown("Água", waterLook_, 4, [](int i) { return std::string(kWater[i]); });
-    }
-    if (board_ && board_->draft().water3d.any()) {
-      // No OFF: the 3D water is always drawn (the user, 2026-10-19: "só existe água 3d, não pode ficar off").
-      static const char* kWater3d[5] = {"original", "rio", "rio ember", "rio correnteza", "rio decente"};
-      dropdown("Água 3D", water3dLook_, 5, [](int i) { return std::string(kWater3d[i]); });
     }
     {
       // The sky's reflection map on every specular surface (water first), and the cloud sheet (sky, reflections, shadows).
@@ -10518,11 +10512,8 @@ class MapStage final : public Stage {
     }
     return fit;
   }
-  // The panel's "Água 3D": 0 the original (Engine2's ThreeWater, the default), 1 rio (the board's original material),
-  // 2 rio ember (look 001); never off.
-  int water3dLook_ = 0;
-  // The panel's "Água": 0 the original (Engine2's diorama water, the default: the user, 2026-10-19, "NUNCA TROCAR O ASSET
-  // PADRÃO"), 1 look 001 "ember" (shaders/water_look001.hlsli), an option only.
+  // The panel's "Água", for both waters of the map: 0 the original (each its own, the default: the user, 2026-10-19, "NUNCA
+  // TROCAR O ASSET PADRÃO"), 1..3 looks 001..003 (shaders/water_lookNNN.hlsli), options only.
   int waterLook_ = 0;
   int skyReflect_ = 1;   // the panel's "Reflexo do céu": 0 OFF (the SH sky), 1 the sky's reflection map (skyreflect.hlsl)
   int clouds_ = 2;       // the panel's "Nuvens": 0 OFF, 1 básica (shaders/clouds.hlsli), 2 volumétricas (cloudsvol.hlsli, look 001)
