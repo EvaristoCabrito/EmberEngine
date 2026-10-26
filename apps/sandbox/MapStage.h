@@ -8261,9 +8261,8 @@ class MapStage final : public Stage {
       dl->AddRect(a, b, hover ? IM_COL32(226, 170, 100, 216) : IM_COL32(190, 150, 95, enabled ? 128 : 60), 2.0f);
     }
     const ImU32 ink = active ? IM_COL32(255, 241, 216, fade) : hover ? IM_COL32(255, 224, 180, 255) : IM_COL32(226, 194, 148, fade);
-    uiIcon(dl, icon, {(a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f}, std::round(side * 0.56f), ink);
-    if (hover) ImGui::SetTooltip("%s", tr("Atalhos", "Shortcuts").c_str());
-    return clicked && enabled;
+    uiIcon(dl, icon, {(a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f}, std::round(side * 0.62f), ink);
+    return clicked && enabled;  // no hover label (the user, 2026-10-25: the "Atalhos" tooltip covered the next button)
   }
 
   // .ember-socket: a spell's icon with its uses left in the corner (lit while it is being aimed). `key` >= 0: the battle
@@ -8924,8 +8923,8 @@ class MapStage final : public Stage {
     else drawActionsRow(a, b);
     const bool mine = myTurn() && !busy();
     const bool turns = !battle_->roaming();  // free roam has no turns to end
-    // Every button of the bar follows the row from the left, in one run (the user, 2026-10-25: "move them to the left, all of
-    // them": nothing stands alone in the right corner any more). The sockets take the room left over (hudRightEdge_).
+    // The command buttons follow the row's commands (Atacar .. Fugir) in one group on the right; the icons stay on the left
+    // (the user, 2026-10-25: "Botão de atacar e tudo mais na direita", "ONLY COMMAND not the icons").
     const auto labelW = [&](const std::string& s) { return spacedTextWidth(uiFont(UiFont::Mark), 16.0f, s.c_str(), 0.06f) + 28.0f; };
     const float gap = ImGui::GetStyle().ItemSpacing.x;
     {  // the combat log: its switch, and (while it shows) the whole log full screen
@@ -8972,20 +8971,45 @@ class MapStage final : public Stage {
       ImGui::SameLine();
       if (emberButton("##endturn", "Fim do turno", false, mine && turns)) endUnitTurn();
     }
+    // the row's width this frame: next frame it starts that far from the right edge (the whole bar on the right, the user,
+    // 2026-10-25: "Botão de atacar e tudo mais na direita")
+    barRowW_ = ImGui::GetItemRectMax().x - barRowX_;
     ImGui::End();
     ImGui::PopStyleVar(3);
   }
 
   // The battle bar's actions: Atacar, the off-hand, Arrombar, Esperar, Cancelar, Fugir combate, the spells and potions.
   void drawActionsRow(ImVec2 a, ImVec2 b) {
-    // the actions row
-    ImGui::SetCursorScreenPos({a.x + 10.0f, b.y - 32.0f - 10.0f});
+    // The icons (F1..F12 sockets + Atalhos) on the left; every command button in one group ending at the screen's right edge
+    // (its width measured last frame). The user, 2026-10-25: "Botão de atacar e tudo mais na direita", "ONLY COMMAND not the icons".
+    const float rowY = b.y - 32.0f - 10.0f;
+    barRowX_ = std::max(a.x + 10.0f, std::round(ImGui::GetIO().DisplaySize.x - 20.0f - barRowW_));
+    ImGui::SetCursorScreenPos({a.x + 10.0f, rowY});
     const bool mine = myTurn() && !busy();
     // The actor's battle index, read once: Esperar and a failed Fugir combate let go of the unit (select(-1)) mid-row, and the
     // rest of the row is still drawn this frame (reading unitBattle_[selected_] after that indexed -1: the crash of 2026-10-17).
     const size_t me = mine ? static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]) : 0;
     const e2::BattleUnit* actor = mine ? &battle_->units()[me] : nullptr;
     const bool canAct = actor && !actor->acted;
+    if (actor) {  // a party unit (myTurn)
+      // The 12 sockets (F1..F12) and "Atalhos"; they shrink when the commands on the right leave less room.
+      const float spacing = ImGui::GetStyle().ItemSpacing.x;
+      const float editW = 32.0f;  // the "Atalhos" icon button (square)
+      const float room = barRowX_ - 24.0f - (a.x + 10.0f) - editW - spacing;
+      const float side = std::clamp(std::floor(room / kHotbarSlots - spacing), 24.0f, 36.0f);
+      const Hotbar& bar = hotbarOf(me);
+      for (int i = 0; i < kHotbarSlots; ++i) {
+        if (i > 0) ImGui::SameLine();
+        const std::string& kind = bar[static_cast<size_t>(i)];
+        const std::optional<SocketState> s = socketState(me, kind, canAct);
+        if (spellSocket(std::format("##slot{}", i).c_str(), s ? kind : std::string(), s ? s->uses : 0, s && s->usable, s && spellMode_ == kind, side, i))
+          startSpell(kind);
+      }
+      ImGui::SameLine();
+      if (emberIconButton("##hotbaredit", "keyboard",hotbarEdit_, true)) hotbarEdit_ = !hotbarEdit_, hotbarHero_ = static_cast<int>(me);
+      ImGui::SameLine();
+    }
+    ImGui::SetCursorScreenPos({barRowX_, rowY});
     // Atacar always opens (the grid shows the weapon's zone even with nobody in it), so the player sees its reach.
     if (emberButton("##attack", "Atacar", true, canAct && spellMode_.empty())) attackMode_ = !attackMode_, offHandMode_ = false, refreshReach();
     if (actor && (actor->combat.offHandWeapon || actor->combat.offHandShield)) {  // Engine2's "Mão Secundária": the dagger or katar strikes, or the shield bashes
@@ -9020,39 +9044,25 @@ class MapStage final : public Stage {
       const std::string label = tr("Fugir combate · ", "Flee battle · ") + std::format("{:.0f}%", fleeChance(*actor));
       if (emberButton("##flee", label.c_str(), false, canAct && !aiming) || (canAct && !aiming && scriptPressed("flee"))) attemptFlee();
     }
-    if (actor) {  // a party unit (myTurn)
-      // The 12 sockets (F1..F12) and "Atalhos"; they shrink when the row is crowded (Mão Secundária, Arrombar, Fugir).
-      const float spacing = ImGui::GetStyle().ItemSpacing.x;
-      const float editW = 32.0f;  // the "Atalhos" icon button (square)
-      const float from = ImGui::GetItemRectMax().x + spacing, room = hudRightEdge_ - 12.0f - from - editW - spacing;
-      const float side = std::clamp(std::floor(room / kHotbarSlots - spacing), 24.0f, 36.0f);
-      const Hotbar& bar = hotbarOf(me);
-      for (int i = 0; i < kHotbarSlots; ++i) {
-        ImGui::SameLine();
-        const std::string& kind = bar[static_cast<size_t>(i)];
-        const std::optional<SocketState> s = socketState(me, kind, canAct);
-        if (spellSocket(std::format("##slot{}", i).c_str(), s ? kind : std::string(), s ? s->uses : 0, s && s->usable, s && spellMode_ == kind, side, i))
-          startSpell(kind);
-      }
-      ImGui::SameLine();
-      if (emberIconButton("##hotbaredit", "layout-grid", hotbarEdit_, true)) hotbarEdit_ = !hotbarEdit_, hotbarHero_ = static_cast<int>(me);
-    }
   }
 
   // Free roam (GameApp's explore row): how to play it; a Gazua still opens a chest or door beside the leader (Arrombar).
   void drawExploreRow(ImVec2 a, ImVec2 b) {
-    ImGui::SetCursorScreenPos({a.x + 10.0f, b.y - 32.0f - 10.0f});
+    // the hint on the left, the commands (Arrombar, then the caller's Missões / Log / Sair) on the right, like the fight's row
+    const float rowY = b.y - 32.0f - 10.0f;
+    barRowX_ = std::max(a.x + 10.0f, std::round(ImGui::GetIO().DisplaySize.x - 20.0f - barRowW_));
+    const std::string hint = tr("Clique no chão para andar · clique em alguém para conversar.", "Click the ground to walk · click someone to talk.");
+    ImGui::GetWindowDrawList()->AddText(uiFont(UiFont::Ui), 13.0f, {a.x + 10.0f, rowY + 9.0f}, IM_COL32(180, 180, 180, 255), hint.c_str());
+    ImGui::SetCursorScreenPos({barRowX_, rowY});
+    bool drew = false;
     if (myTurn() && !busy()) {
       const size_t me = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
       if (battle_->units()[me].lockpick > 0 && battle_->adjacentLock(me) >= 0) {
         if (emberButton("##lockpick", tr("Arrombar", "Pick lock").c_str(), false, true, 32.0f, "lockpick.png")) openLock();
-        ImGui::SameLine();
+        drew = true;
       }
     }
-    const ImVec2 p = ImGui::GetCursorScreenPos();
-    const std::string hint = tr("Clique no chão para andar · clique em alguém para conversar.", "Click the ground to walk · click someone to talk.");
-    ImGui::GetWindowDrawList()->AddText(uiFont(UiFont::Ui), 13.0f, {p.x, p.y + 9.0f}, IM_COL32(180, 180, 180, 255), hint.c_str());
-    ImGui::Dummy({uiFont(UiFont::Ui)->CalcTextSizeA(13.0f, FLT_MAX, 0, hint.c_str()).x, 32.0f});
+    if (!drew) ImGui::Dummy({0.0f, 32.0f});  // the anchor the caller's buttons follow
   }
 
   static int xpToLevel(int level) {
@@ -10768,7 +10778,8 @@ class MapStage final : public Stage {
   std::map<std::string, Hotbar> hotbars_;                            // each hero's 12 sockets this fight (hotbarOf)
   bool hotbarEdit_ = false;                                          // "Atalhos" open
   int hotbarHero_ = -1;                                              // ... for this battle unit
-  float hudRightEdge_ = 1.0e9f;                                      // where the bar's right-hand buttons begin (last frame)
+  float barRowX_ = 0.0f, barRowW_ = 0.0f;                         // the battle bar's row: where it starts, its width (last frame)
+  float hudRightEdge_ = 1.0e9f;                                    // where the bar's right-hand buttons begin (last frame)
   int selected_ = -1;                     // the picked scene unit
   std::vector<e2::ReachCell> reach_;      // where it can stop
   std::vector<e2::ReachCell> reachPaths_; // every hex it can pass (its routes)
