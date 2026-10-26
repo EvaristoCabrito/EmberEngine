@@ -1,0 +1,226 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/SalazarOG/Idle/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "bootRow": 722,
+   "bootRows": [
+    720,
+    723
+   ],
+   "figurePx": 715.0,
+   "bodyAt": 0.0,
+   "scaledTo": 587.3,
+   "frames": 36,
+   "frameMs": 127.0,
+   "nat": [
+    427,
+    598
+   ],
+   "crop": [
+    92,
+    1,
+    333,
+    595
+   ],
+   "box": {
+    "w": 1.88655,
+    "h": 2.64205,
+    "foot": 0.01775
+   },
+   "pattern": "content/sprites/salazar-v3/base-v02/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/SalazarOG/ATT/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "bootRow": 708,
+   "bootRows": [
+    707,
+    708
+   ],
+   "figurePx": 642.0,
+   "bodyAt": 0.0,
+   "scaledTo": 587.3,
+   "frames": 36,
+   "frameMs": 97.0,
+   "nat": [
+    527,
+    655
+   ],
+   "crop": [
+    66,
+    3,
+    461,
+    647
+   ],
+   "box": {
+    "w": 2.32733,
+    "h": 2.8926,
+    "foot": 0.02809
+   },
+   "pattern": "content/sprites/salazar-v3/atk-v02/atk-{}.png"
+  },
+  "cast": {
+   "video": "Attachments/SalazarOG/Casting/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "bootRow": 745,
+   "bootRows": [
+    745,
+    745
+   ],
+   "figurePx": 587.0,
+   "bodyAt": 0.0,
+   "frames": 36,
+   "frameMs": 95.0,
+   "nat": [
+    563,
+    753
+   ],
+   "crop": [
+    59,
+    0,
+    504,
+    748
+   ],
+   "box": {
+    "w": 2.48794,
+    "h": 3.32757,
+    "foot": 0.03093
+   },
+   "pattern": "content/sprites/salazar-v3/cast-v02/cast-{}.png"
+  },
+  "heal": {
+   "video": "Attachments/SalazarOG/Healing/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "bootRow": 633,
+   "bootRows": [
+    633,
+    633
+   ],
+   "figurePx": 591.0,
+   "bodyAt": 0.0,
+   "scaledTo": 587.3,
+   "frames": 36,
+   "frameMs": 102.0,
+   "nat": [
+    563,
+    637
+   ],
+   "crop": [
+    103,
+    3,
+    460,
+    628
+   ],
+   "box": {
+    "w": 2.48866,
+    "h": 2.81577,
+    "foot": 0.03074
+   },
+   "pattern": "content/sprites/salazar-v3/heal-v02/heal-{}.png"
+  },
+  "move-left": {
+   "video": "Attachments/SalazarOG/WalkLeft/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "loopFirst": 0,
+   "loopLast": 35,
+   "seamSteps": NaN,
+   "bootRow": 696,
+   "bodyDrift": [
+    -9,
+    9
+   ],
+   "figurePx": 681.5,
+   "bodyAt": 0.0,
+   "scaledTo": 587.4,
+   "frames": 36,
+   "frameMs": 120.0,
+   "nat": [
+    406,
+    612
+   ],
+   "crop": [
+    51,
+    0,
+    350,
+    608
+   ],
+   "box": {
+    "w": 1.79277,
+    "h": 2.7024,
+    "foot": 0.04918
+   },
+   "pattern": "content/sprites/salazar-v3/move-left-v02/move-left-{}.png"
+  },
+  "move": {
+   "video": "Attachments/SalazarOG/Walkright2/sprite-max-px-frames-49-rows-7-cols-7.png",
+   "first": 0,
+   "last": 48,
+   "loopFirst": 0,
+   "loopLast": 48,
+   "seamSteps": NaN,
+   "bootRow": 607,
+   "bodyDrift": [
+    -6,
+    6
+   ],
+   "figurePx": 595.0,
+   "bodyAt": 0.0,
+   "scaledTo": 587.3,
+   "frames": 49,
+   "frameMs": 79.0,
+   "nat": [
+    444,
+    614
+   ],
+   "crop": [
+    6,
+    0,
+    351,
+    610
+   ],
+   "box": {
+    "w": 1.96185,
+    "h": 2.71301,
+    "foot": 0.06104
+   },
+   "pattern": "content/sprites/salazar-v3/move-v02/move-{}.png"
+  },
+  "cast-back": {
+   "video": "Attachments/SalazarOG/Back/back.png",
+   "first": 0,
+   "last": 0,
+   "bootRow": 725,
+   "bootRows": [
+    725,
+    725
+   ],
+   "figurePx": 716.0,
+   "bodyAt": 0.0,
+   "scaledTo": 586.7,
+   "frames": 1,
+   "frameMs": 1000.0,
+   "nat": [
+    460,
+    599
+   ],
+   "crop": [
+    64,
+    3,
+    281,
+    593
+   ],
+   "box": {
+    "w": 2.03245,
+    "h": 2.6466,
+    "foot": 0.0177
+   },
+   "pattern": "content/sprites/salazar-v3/cast-back-v02/cast-back-{}.png"
+  }
+ }
+}

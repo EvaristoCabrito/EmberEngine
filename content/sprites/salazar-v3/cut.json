@@ -1,0 +1,16 @@
+{
+ "about": "Salazar from the user's original sheets (C:/Users/evari/Desktop/Characters/Salazar, copied as Attachments/SalazarOG; ludo.ai, 36 frames 6 x 6 each), 2026-10-25: \"delete current version re cut properly\". salazar-final's frames were those sheets shrunk to 416 x 613 (his figure ~480 px). v02 (the user, the same night: \"you need to normalize all sizes, you cant keep random pixels shifting\", then \"every Salazar clip at 587 px in every setting\"): every clip's figure at 587 px, the smallest any of his sheets holds (the cast: ludo.ai fits its widest frame into a 504 px cell), so no clip is enlarged and his detail never changes between animations; Alta, Média and Leve show the same. The walk right is the user's newest (Walkright2, 49 frames, 2026-10-17) and the back picture is his (SalazarBack, 2026-10-17, as a one-frame sheet). v01 (each clip at its own size, 587-716 px) stays in the folders, not in use.",
+ "set": "salazar-v3",
+ "version": "v02",
+ "figureUnits": 2.594,
+ "figureNote": "hood top to boot of the old walk right (move-v03: 595 px of 622 at box h 2.71167): his height on the board as before",
+ "clips": [
+  {"clip": "base", "pose": "idle", "kind": "stand", "sheet": "Attachments/SalazarOG/Idle/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "pingpong", "bodyAt": 0.0, "scaleTo": 587},
+  {"clip": "atk", "pose": "attack", "kind": "stand", "sheet": "Attachments/SalazarOG/ATT/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "once", "bodyAt": 0.0, "scaleTo": 587},
+  {"clip": "cast", "pose": "cast", "kind": "stand", "sheet": "Attachments/SalazarOG/Casting/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "once", "bodyAt": 0.0, "scaleTo": 587},
+  {"clip": "heal", "pose": "heal", "kind": "stand", "sheet": "Attachments/SalazarOG/Healing/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "once", "bodyAt": 0.0, "scaleTo": 587},
+  {"clip": "move", "pose": "walk", "kind": "walk", "sheet": "Attachments/SalazarOG/Walkright2/sprite-max-px-frames-49-rows-7-cols-7.png", "first": 0, "last": 48, "mode": "loop", "bodyAt": 0.0, "scaleTo": 587},
+  {"clip": "move-left", "pose": "walkLeft", "kind": "walk", "sheet": "Attachments/SalazarOG/WalkLeft/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "loop", "bodyAt": 0.0, "scaleTo": 587},
+  {"clip": "cast-back", "pose": "castBack", "kind": "stand", "sheet": "Attachments/SalazarOG/Back/back.png", "first": 0, "last": 0, "mode": "once", "bodyAt": 0.0, "scaleTo": 587}
+ ]
+}

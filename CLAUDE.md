@@ -1700,6 +1700,12 @@ open area with large tables ... some separate rooms for NPCs and services, use t
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
+- Salazar (2026-10-25, salazar-v3 v02 = every clip at 587 px from the user's sheets, `Attachments/SalazarOG`): `content/sprites/salazar-v3/*-v01`
+  (v01: each clip at its own size, 587-716 px), the 610 px Leve copy `salazar-v3-36-media` (`unused` in sprite-overrides.json),
+  `content/sprites/salazar-final/move-v02` (the first 49-frame walk right), `move-v03` (Walkright2 at 595 px) and `cast-back-v01` (still
+  cooked as salazar-final's clips, drawn by nobody). The old shrunk frames (`content/game/public/game/sprites/salazar-final/*.png`, 216)
+  were deleted on the user's order ("delete current version").
+
 - `content/engine2/backdrop-fit.json` painting entry `inn-second-floor-v01.jpg#teto-salao` (2026-10-23): made as an extra panorama when
   the user asked only for the Andar II's CEILING to change ("não é panorama, é CEILING"); taken out of the map's list, kept unused. The
   Andar II's `#piso` now carries the salão's ceiling (`tavern-ceiling-v01.jpg`); its previous ceiling was `inn-ceiling-v01.jpg`.

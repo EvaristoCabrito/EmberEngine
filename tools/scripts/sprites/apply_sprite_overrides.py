@@ -157,6 +157,9 @@ def main():
                 hero["poses"].append(p)
             p.pop("bodyShift", None)  # Engine2's per-frame shift belonged to its own art
             p.pop("impact", None)
+            # the copies' marks are made again by their own entries, listed after this set (a copy no longer in use leaves none)
+            p.pop("medium", None)
+            p.pop("light", None)
             p.update(fields)
         for table in strides:
             if table is not None:

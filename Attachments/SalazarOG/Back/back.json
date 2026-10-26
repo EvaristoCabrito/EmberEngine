@@ -1,0 +1,16 @@
+{
+ "frames": {
+  "frame_000": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 503,
+    "h": 731
+   },
+   "duration": 1000
+  }
+ },
+ "meta": {
+  "about": "one frame: the back picture as the game had it (content/sprites/salazar-final/cast-back-v01, from the user SalazarBack.png, 2026-10-17), as a one-frame sheet for video_sprite.py"
+ }
+}

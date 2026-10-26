@@ -1,0 +1,15 @@
+{
+ "about": "Salazar's Leve copy (the user, 2026-10-25: \"pode deixar uma copia com 610 em leve\"): salazar-v3's clips with the figure brought down to 610 px where it is taller (idle, attack, walk left); cast and heal are already under 610 and stay at their own size. 36 frames, as the sheets have.",
+ "set": "salazar-v3-36-media",
+ "version": "media36-v01",
+ "result": "cut-result-36-media.json",
+ "frameCount": 36,
+ "figureUnits": 2.594,
+ "clips": [
+  {"clip": "base", "pose": "idle", "kind": "stand", "sheet": "Attachments/SalazarOG/Idle/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "pingpong", "bodyAt": 0.0, "scaleTo": 610},
+  {"clip": "atk", "pose": "attack", "kind": "stand", "sheet": "Attachments/SalazarOG/ATT/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "once", "bodyAt": 0.0, "scaleTo": 610},
+  {"clip": "cast", "pose": "cast", "kind": "stand", "sheet": "Attachments/SalazarOG/Casting/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "once", "bodyAt": 0.0, "scaleTo": 610},
+  {"clip": "heal", "pose": "heal", "kind": "stand", "sheet": "Attachments/SalazarOG/Healing/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "once", "bodyAt": 0.0, "scaleTo": 610},
+  {"clip": "move-left", "pose": "walkLeft", "kind": "walk", "sheet": "Attachments/SalazarOG/WalkLeft/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "loop", "bodyAt": 0.0, "scaleTo": 610}
+ ]
+}

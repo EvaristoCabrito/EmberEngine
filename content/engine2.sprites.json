@@ -3225,46 +3225,6 @@
   {
    "clips": [
     {
-     "fps": 12.0,
-     "frames": {
-      "count": 36,
-      "pattern": "sprites/salazar-final/{}.png"
-     },
-     "mode": "pingpong",
-     "name": "base",
-     "pack": "field"
-    },
-    {
-     "fps": 12.0,
-     "frames": {
-      "count": 36,
-      "pattern": "sprites/salazar-final/atk-{}.png"
-     },
-     "mode": "once",
-     "name": "atk",
-     "pack": "combat"
-    },
-    {
-     "fps": 12.0,
-     "frames": {
-      "count": 36,
-      "pattern": "sprites/salazar-final/cast-{}.png"
-     },
-     "mode": "once",
-     "name": "cast",
-     "pack": "combat"
-    },
-    {
-     "fps": 12.0,
-     "frames": {
-      "count": 36,
-      "pattern": "sprites/salazar-final/heal-{}.png"
-     },
-     "mode": "once",
-     "name": "heal",
-     "pack": "combat"
-    },
-    {
      "fps": 18.94700050354004,
      "frames": {
       "count": 36,
@@ -3272,16 +3232,6 @@
      },
      "mode": "loop",
      "name": "move",
-     "pack": "field"
-    },
-    {
-     "fps": 18.94700050354004,
-     "frames": {
-      "count": 36,
-      "pattern": "sprites/salazar-final/move-left-{}.png"
-     },
-     "mode": "loop",
-     "name": "move-left",
      "pack": "field"
     }
    ],
@@ -3940,7 +3890,7 @@
      "pack": "combat"
     },
     {
-     "fps": 20.847000122070313,
+     "fps": 20.847000122070312,
      "frames": {
       "count": 64,
       "pattern": "sprites/voss-final/move-{}.png"
@@ -3950,7 +3900,7 @@
      "pack": "field"
     },
     {
-     "fps": 20.847000122070313,
+     "fps": 20.847000122070312,
      "frames": {
       "count": 64,
       "pattern": "sprites/voss-final/move-left-{}.png"

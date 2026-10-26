@@ -7,6 +7,46 @@
  ],
  "sets": [
   {
+   "set": "salazar-v3",
+   "version": "v02",
+   "hero": "salazar",
+   "cut": "content/sprites/salazar-v3/cut.json",
+   "why": "the user, 2026-10-25: \"salazar looks severely lower res than neera\", \"delete current version re cut properly\", then \"every Salazar clip at 587 px in every setting\": salazar-final's frames were the user's sheets shrunk to 416 x 613; this set is his sheets (Attachments/SalazarOG: the 10-10 originals, Walkright2, the back picture), every clip's figure at 587 px. salazar-final's walk right (move v03) and back picture (cast-back v01) stay in the pack, not in use.",
+   "poses": {
+    "idle": "base",
+    "attack": "atk",
+    "cast": "cast",
+    "heal": "heal",
+    "walk": "move",
+    "walkLeft": "move-left",
+    "castBack": "cast-back"
+   },
+   "packs": {
+    "base": "field",
+    "move": "field",
+    "move-left": "field"
+   },
+   "strides": {
+    "move": 2.0,
+    "move-left": 2.12
+   }
+  },
+  {
+   "set": "salazar-v3-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/salazar-v3/cut-36-media.json",
+   "why": "610 px Leve copy of salazar-v3 v01 (idle, attack, walk left), made 2026-10-25; not in use since v02 puts every clip at 587 px (under 610: Leve draws the same). Kept.",
+   "lightOf": {
+    "hero": "salazar",
+    "set": "salazar-v3"
+   },
+   "packs": {
+    "base": "field",
+    "move-left": "field"
+   },
+   "unused": true
+  },
+  {
    "set": "voss-veo",
    "version": "v01",
    "hero": "voss",

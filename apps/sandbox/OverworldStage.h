@@ -978,8 +978,8 @@ class OverworldStage : public Stage {
          {"sprites/neera/neera-v2-001/move-left-{}.png", 36, 24.0f, 414, 486, 100, 0, 314, 486}},
         {"Voss", {"content/sprites/voss-veo/move-v01/move-{}.png", 61, 24.0f, 609, 1189, 5, 6, 602, 1178},
          {"content/sprites/voss-veo/move-left-v01/move-left-{}.png", 106, 24.0f, 653, 1210, 0, 6, 646, 1199}},
-        {"Salazar", {"content/sprites/salazar-final/move-v03/move-{}.png", 49, 12.658f, 380, 622, 21, 0, 358, 622},
-         {"sprites/salazar-final/move-left-{}.png", 36, 18.947f, 416, 613, 45, 115, 292, 498}},
+        {"Salazar", {"content/sprites/salazar-v3/move-v02/move-{}.png", 49, 12.658f, 444, 614, 6, 0, 351, 610},
+         {"content/sprites/salazar-v3/move-left-v02/move-left-{}.png", 36, 18.947f, 406, 612, 51, 0, 350, 608}},
         {"Aldric", {"sprites/aldric/move-{}.png", 36, 24.0f, 396, 584, 10, 0, 386, 582}, {"sprites/aldric/move-left-{}.png", 36, 24.0f, 388, 586, 0, 0, 378, 583}},
         {"Malrec", {"sprites/malrec/move-{}.png", 36, 24.0f, 392, 682, 5, 0, 387, 682}, {}}};
     const WalkSheet* walk = nullptr;
@@ -1008,6 +1008,14 @@ class OverworldStage : public Stage {
       const int frame = 1 + (static_cast<int>(std::floor(now_ * 24.0f / kEvery)) % (kFrames / kEvery)) * kEvery;
       left = 5, top = 5, width = 644, height = 1144, cw = 654, ch = 1154;
       framePath = std::filesystem::path("content/sprites/voss-veo/base-v01") / ("base-" + std::to_string(frame) + ".png");
+    } else if (hero == "Salazar") {
+      // His idle cut from the user's original sheet (salazar-v3 v02, every clip at 587 px; the user 2026-10-25: "re cut properly"):
+      // every 3rd of its 36 frames, back and forth at the old pace (36 / 3 frames a second), the clip's crop box in its 427 x 598 frame.
+      constexpr int kFrames = 36, kEvery = 3, kCycle = kFrames * 2 - 2;
+      const int step = static_cast<int>(std::floor(now_ * kFrames / 3.0)) % kCycle;
+      const int source = step < kFrames ? step : kCycle - step;
+      left = 92, top = 1, width = 333, height = 595, cw = 427, ch = 598;
+      framePath = std::filesystem::path("content/sprites/salazar-v3/base-v02") / ("base-" + std::to_string(1 + (source / kEvery) * kEvery) + ".png");
     } else {
       const Sheet* sheet = &kSheets[0];
       for (const Sheet& s : kSheets)
