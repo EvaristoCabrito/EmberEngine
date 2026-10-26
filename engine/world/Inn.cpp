@@ -6,6 +6,7 @@
 
 #include "core/Log.h"
 #include "world/Battle.h"  // UnknownItemRules (content/unknown-items.json)
+#include "world/Loadout.h"  // heroArms (content/hero-arms.json)
 
 namespace ember::e2 {
 
@@ -110,6 +111,12 @@ bool InnData::load(const std::filesystem::path& file) {
     if (!a.is_discarded() && a.is_object() && a.contains("weapons") && a["weapons"].is_object())
       for (InnWeapon& w : weapons)
         if (a["weapons"].contains(w.id) && a["weapons"][w.id].is_object()) w.weaponType = a["weapons"][w.id].value("weaponType", "");
+    // ... and each off-hand weapon's (a hero with arms of her own wields them in the main hand: Selene's daggers)
+    if (!a.is_discarded() && a.is_object() && a.contains("offHand") && a["offHand"].is_object())
+      for (InnGear& g : equipment)
+        if (a["offHand"].contains(g.id) && a["offHand"][g.id].is_object() && a["offHand"][g.id].contains("weaponType") &&
+            a["offHand"][g.id]["weaponType"].is_string())  // a shield's is null
+          g.weaponType = a["offHand"][g.id]["weaponType"].get<std::string>();
   }
   logInfo("inn: {} weapons, {} gear, {} potions", weapons.size(), equipment.size(), potions.size());
   return true;
@@ -347,6 +354,7 @@ std::optional<Json> InnRules::equipWeapon(const Json& save, const std::string& h
   } else {
     if (!child(save, "weapons").contains(weaponId)) return std::nullopt;
     if (weaponUnknown(save, weaponId)) return std::nullopt;  // an unknown weapon is never wielded (Identificar first)
+    if (heroArms(hero)) return std::nullopt;  // a hero with arms of her own wields only her pieces (Selene: daggers, never a staff)
     if (!next["equipped"].is_object()) next["equipped"] = Json::object();
     std::vector<std::string> drop;
     for (const auto& [owner, id] : next["equipped"].items())
@@ -364,6 +372,12 @@ bool InnRules::fitsSlot(const InnGear& item, const std::string& slot) {
   if (item.slot == slot) return true;
   if ((item.slot == "ring1" || item.slot == "ring2") && (slot == "ring1" || slot == "ring2")) return true;
   return item.slot == "shoulders" && slot == "back";
+}
+
+bool InnRules::fitsHeroSlot(const InnGear& item, const std::string& hero, const std::string& slot) {
+  const HeroArms* own = heroArms(hero);
+  if (slot == "mainHand") return own && item.kind == "weapon" && std::find(own->weaponTypes.begin(), own->weaponTypes.end(), item.weaponType) != own->weaponTypes.end();
+  return fitsSlot(item, slot);
 }
 
 bool InnRules::offHandBlocked(const Json& save, const std::string& hero) const {
@@ -388,7 +402,7 @@ std::optional<Json> InnRules::equipItem(const Json& save, const std::string& her
     return next;
   }
   const InnGear* item = data_.gear(itemId);
-  if (!item || !fitsSlot(*item, slot)) return std::nullopt;
+  if (!item || !fitsHeroSlot(*item, hero, slot)) return std::nullopt;
   const int total = static_cast<int>(num(child(save, "looseEquipment"), itemId).value_or(0));
   const int reserve = total - gearUnknown(save, itemId);  // the known copies only: an unknown piece is never worn (Identificar first)
   if (current == itemId) return save;

@@ -1,0 +1,6 @@
+{
+ "about": "A hero whose arms are her own, not her class's (read by engine/world/Loadout.cpp heroArms; the Inn's equip rules, the inventory and the fight follow it). weaponTypes = the only weapons she wields in her main hand; starter = what she fights with when her main hand is empty. A hero listed here keeps her main-hand weapon in save.equipment[hero].mainHand (the off-hand pieces of those types), never in save.equipped. Selene (the user, 2026-10-26): 'she doesnt equip staves only Daggers, which are not normally used by Conjurers', 'adagas na main hand sim'.",
+ "heroes": {
+  "Selene": {"weaponTypes": ["dagger"], "starter": "punhal-curvo"}
+ }
+}

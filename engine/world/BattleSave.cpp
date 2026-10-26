@@ -84,7 +84,9 @@ nlohmann::json Battle::snapshot() const {
                    {"bondPct", c.bondPct},       {"empowerPct", c.empowerPct},   {"empowerRounds", c.empowerRounds},
                    {"reflectTurns", c.reflectTurns}, {"reflectPct", c.reflectPct}, {"reflectHealPct", c.reflectHealPct}, {"daggers", c.daggers},
                    {"acidTurns", c.acidTurns},   {"acidDice", c.acidDice},       {"acidFaces", c.acidFaces},       {"acidMag", c.acidMag},
-                   {"mantleTurns", c.mantleTurns}, {"mantleDice", c.mantleDice}, {"mantleFaces", c.mantleFaces},   {"oathShown", c.oathShown}};
+                   {"mantleTurns", c.mantleTurns}, {"mantleDice", c.mantleDice}, {"mantleFaces", c.mantleFaces},   {"oathShown", c.oathShown},
+                   {"arcaneMarkDice", c.arcaneMarkDice}, {"arcaneMarkFaces", c.arcaneMarkFaces}, {"arcaneMarkTurns", c.arcaneMarkTurns},
+                   {"arcaneMarkBy", c.arcaneMarkBy}};
     }
     if (u.empowerBase)
       s["empowerBase"] = {{"atk", u.empowerBase->atk}, {"mag", u.empowerBase->mag}, {"def", u.empowerBase->def}, {"dex", u.empowerBase->dex}, {"mov", u.empowerBase->mov}};
@@ -267,6 +269,8 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       o.empowerPct = c.value("empowerPct", 0), o.empowerRounds = c.value("empowerRounds", 0);
       o.acidTurns = c.value("acidTurns", 0), o.acidDice = c.value("acidDice", 0), o.acidFaces = c.value("acidFaces", 0), o.acidMag = c.value("acidMag", 0.0);
       o.mantleTurns = c.value("mantleTurns", 0), o.mantleDice = c.value("mantleDice", 0), o.mantleFaces = c.value("mantleFaces", 0), o.oathShown = c.value("oathShown", false);
+      o.arcaneMarkDice = c.value("arcaneMarkDice", 0), o.arcaneMarkFaces = c.value("arcaneMarkFaces", 0), o.arcaneMarkTurns = c.value("arcaneMarkTurns", 0);
+      o.arcaneMarkBy = c.value("arcaneMarkBy", -1);
       o.reflectTurns = c.value("reflectTurns", 0), o.reflectPct = c.value("reflectPct", 0), o.reflectHealPct = c.value("reflectHealPct", 0);
       o.daggers = c.value("daggers", 0);
     }

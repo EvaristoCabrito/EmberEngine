@@ -45,6 +45,7 @@ add_library(EmberEngine STATIC
   render/vfx/LancerFx.cpp
   render/vfx/HealerFx.cpp
   render/vfx/CrusaderFx.cpp
+  render/vfx/SeleneFx.cpp
   render/vfx/ConjurerFx.cpp
   render/vfx/StatusFx.cpp
   render/vfx/DaggerFx.cpp

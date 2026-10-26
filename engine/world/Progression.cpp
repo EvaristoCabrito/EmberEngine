@@ -25,6 +25,7 @@ bool gEnabled = true;
 struct Tables {
   std::map<std::string, std::vector<Row>> classes;  // Engine2 statsFor per level 1..30
   std::map<std::string, Row> heroGain;              // by hero name
+  std::map<std::string, Row> heroBase;              // a hero's own level-1 extra over her class's row (Selene: +3 ATK)
   std::map<std::string, std::string> heroOfClass;   // a hero's classes -> the hero
   std::map<std::string, std::string> heroClass;     // the hero -> its first class (its level-1 MAG)
 };
@@ -54,8 +55,15 @@ const Tables& tables() {
         Row gain{};
         for (size_t k = 0; k < 5; ++k) gain[k] = h["gain"][k].get<int>();
         t.heroGain[hero] = gain;
+        if (h.contains("baseBonus") && h["baseBonus"].is_array() && h["baseBonus"].size() == 5) {
+          Row extra{};
+          for (size_t k = 0; k < 5; ++k) extra[k] = h["baseBonus"][k].get<int>();
+          t.heroBase[hero] = extra;
+        }
         const json& classes = h["classes"];
-        for (const json& c : classes) t.heroOfClass[c.get<std::string>()] = hero;
+        // a hero who shares her class with another (Selene, a Conjuradora like Malrec) never stands for that class
+        if (!h.value("sharesClass", false))
+          for (const json& c : classes) t.heroOfClass[c.get<std::string>()] = hero;
         if (classes.empty() || !t.classes.count(classes[0].get<std::string>()))
           logError("progression: {}'s class is not in content/engine2/class-stats.json", hero);
         else
@@ -207,6 +215,9 @@ void applyProgression(BattleUnit& u) {
     // The level-1 MAG is the class table's own (its MAG column is ours, the heroes' starts included).
     if (const auto own = t.heroClass.find(u.name); own != t.heroClass.end())
       if (const std::vector<Row>* rows = classRows(own->second)) base[2] = (*rows)[0][2];
+    // ... plus the hero's own level-1 extra (content/progression.json baseBonus; Selene's +3 ATK)
+    if (const auto extra = t.heroBase.find(u.name); extra != t.heroBase.end())
+      for (size_t k = 0; k < 5; ++k) base[k] += extra->second[k];
     // Engine2's stats at the unit's level (its growth rows, else its class), then the hero's own rows.
     const int level = std::max(1, u.level);
     if (!u.growth.empty() && static_cast<size_t>(level) <= u.growth.size()) {

@@ -236,10 +236,14 @@ struct BattleUnit {
     // mantleTurns lasts, counted like the Grito de Guerra's), and whether its Juramento has been announced this fight
     int mantleTurns = 0, mantleDice = 0, mantleFaces = 0;
     bool oathShown = false;
+    // Selene's Lâmina Arcana (docs/SKILLS_CONJURER.md): the arcane mark, on while arcaneMarkDice > 0; it bursts for arcaneMarkDice D
+    // arcaneMarkFaces arcane (from the unit arcaneMarkBy, a battle index) when the unit walks, and lifts unburst after arcaneMarkTurns
+    // more of the unit's own turns, counted like the Quebra-Guarda
+    int arcaneMarkDice = 0, arcaneMarkFaces = 0, arcaneMarkTurns = 0, arcaneMarkBy = -1;
     bool any() const {
       return markTurns > 0 || plagueSpread > 0 || plagueBurst || bleedTurns > 0 || silenceTurns > 0 || decayTurns > 0 || sunderPct > 0 || rallyPct > 0 ||
              hobblePct > 0 || disarmPct > 0 || staggered || vigilPct > 0 || mirrorCopies > 0 || bondPct > 0 || empowerPct > 0 || reflectTurns > 0 || daggers > 0 ||
-             acidTurns > 0 || mantleDice > 0;
+             acidTurns > 0 || mantleDice > 0 || arcaneMarkDice > 0;
     }
   } cond;
   std::optional<int> hobbleBase;       // its MOV before Tiro Paralisante (given back when it lifts)

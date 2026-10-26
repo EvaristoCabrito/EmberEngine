@@ -616,6 +616,7 @@ class MapStage final : public Stage {
       syncWards();
       syncStatus();
       syncCrusader();
+      syncArcaneMarks();
       // Numbers held back for an effect still in the air (a Meteoro's fall).
       for (size_t i = 0; i < pendingFx_.size();) {
         if (time >= pendingFx_[i].first) showEffects(pendingFx_[i].second), pendingFx_.erase(pendingFx_.begin() + static_cast<std::ptrdiff_t>(i));
@@ -5710,6 +5711,7 @@ class MapStage final : public Stage {
     std::string pose = s.type == StepType::Combat ? (strikeIsOffHand(s, x.counter) ? "attackShort" : "attack") : s.type == StepType::Potion ? "" : e2::spellPose(s.kind);
     if (pose == "attackShort" && striker >= 0 && !hasPose(static_cast<size_t>(striker), pose)) pose = "attack";  // no off-hand sheet: the main one
     if (e2::daggerStrikeKind(s.kind)) pose.clear();  // a Nuvem de Adagas dagger flies on its own: its caster plays no pose
+    if (e2::arcaneMarkBurstKind(s.kind)) pose.clear();  // a Marca Arcana goes off on its own: Selene plays no pose
     if (striker >= 0 && !pose.empty() && !hasPose(static_cast<size_t>(striker), pose)) pose = hasPose(static_cast<size_t>(striker), "cast") ? "cast" : "attack";
     // Neera's skill animation plays on every skill she uses, the bow skills too (the user, 2026-10-19); her plain attacks and
     // counters keep the shot. A skill is any step with a kind that is not a counter, a potion or a walk. Neera v2 plays her own
@@ -5884,7 +5886,8 @@ class MapStage final : public Stage {
       if (storm) {  // Tempestade de Gelo: the storm covers the field the rules just laid (the step aims its centre only)
         for (const e2::BattleHex& h : storm->cells) spots.push_back(hexSpot(h));
       } else if (s.kind == "warCry" || s.kind == "steelWhirlwind" || s.kind == "empowerSummons" || s.kind == "sacrificeBond" || s.kind == "provoke" ||
-                 s.kind == "crusaderMantle" || e2::daggerStrikeKind(s.kind)) {  // Grito de Guerra: the allies it rallies (the caster among them); Redemoinho: the foes it reaches; the Conjurador's: its summons; a Nuvem's dagger: the body it flies at
+                 s.kind == "crusaderMantle" || e2::daggerStrikeKind(s.kind) ||
+                 e2::arcaneMarkBurstKind(s.kind)) {  // Grito de Guerra: the allies it rallies (the caster among them); Redemoinho: the foes it reaches; the Conjurador's: its summons; a Nuvem's dagger: the body it flies at; a Marca Arcana: the marked body
         for (size_t id : s.ids)
           if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0) spots.push_back(unitSpot(static_cast<size_t>(ui)));
       } else if (s.kind == "turnUndead") {  // Expulsar Mortos-Vivos: the area's hexes; only the undead standing in it keep their card height (they are struck)
@@ -6126,6 +6129,25 @@ class MapStage final : public Stage {
       }
     }
   }
+  // Selene's Marca Arcana standing on every unit the rules keep marked (SeleneFx::stand*): following it, faded out when it bursts or
+  // lifts, the unit dies or its card is not drawn.
+  void syncArcaneMarks() {
+    if (!battle_) return;
+    for (size_t i = 0; i < battle_->units().size(); ++i) {
+      const e2::BattleUnit& u = battle_->units()[i];
+      const int ui = sceneUnitOf(static_cast<int>(i));
+      const bool on = u.alive && u.cond.arcaneMarkDice > 0 && ui >= 0 && static_cast<size_t>(ui) < unitCard_.size() && unitCard_[static_cast<size_t>(ui)].drawn;
+      const auto it = arcaneMarkFx_.find(i);
+      if (on) {
+        const SpellEffects::Spot sp = unitSpot(static_cast<size_t>(ui));
+        if (it == arcaneMarkFx_.end()) arcaneMarkFx_[i] = spellFx_.selene().standStart(sp.feet, sp.cardHeight, now_);
+        else spellFx_.selene().standMove(it->second, sp.feet, sp.cardHeight);
+      } else if (it != arcaneMarkFx_.end()) {
+        spellFx_.selene().standEnd(it->second, now_);
+        arcaneMarkFx_.erase(it);
+      }
+    }
+  }
   // Imagem Espelhada's standing illusions (ConjurerFx::mirror*) beside every unit that has them, following it, one fewer when a copy is
   // struck, gone when they end.
   // Reflexo Arcano standing: while the ward lasts, only the warded unit's own casting light shows it (the user, 2026-10-20: "fica
@@ -6212,14 +6234,19 @@ class MapStage final : public Stage {
   // (e2::daggerInterrupts: `melee` = whom its blow or weapon skill strikes, `arrived` = it walked here), played as one exchange of
   // their own.
   bool playInterrupts(size_t attacker, const std::vector<size_t>& targets, const std::vector<size_t>& melee = {}, bool arrived = false) {
-    std::vector<e2::BattleStep> steps = e2::vigilInterrupts(*battle_, attacker, targets);
+    // Selene's Marca Arcana goes off first (e2::arcaneMarkInterrupts: the marked attacker walked).
+    std::vector<e2::BattleStep> steps = e2::arcaneMarkInterrupts(*battle_, attacker, arrived);
+    const std::vector<e2::BattleStep> vigils = e2::vigilInterrupts(*battle_, attacker, targets);
     const std::vector<e2::BattleStep> daggers = e2::daggerInterrupts(*battle_, attacker, melee, arrived);
+    steps.insert(steps.end(), vigils.begin(), vigils.end());
     steps.insert(steps.end(), daggers.begin(), daggers.end());
     if (steps.empty()) return false;
     const int owner = sceneUnitOf(static_cast<int>(steps.front().att));
     if (owner < 0) return false;
     const std::string& who = battle_->units()[steps.front().att].name;
-    tip_ = e2::daggerStrikeKind(steps.front().kind) ? who + tr(": uma adaga voa!", ": a dagger flies!") : who + tr(" interrompe o ataque!", " interrupts the attack!");
+    tip_ = e2::arcaneMarkBurstKind(steps.front().kind) ? battle_->units()[attacker].name + tr(": a Marca Arcana explode!", ": the Arcane Mark bursts!")
+           : e2::daggerStrikeKind(steps.front().kind)  ? who + tr(": uma adaga voa!", ": a dagger flies!")
+                                                      : who + tr(" interrompe o ataque!", " interrupts the attack!");
     tipAt_ = now_;
     play(steps, static_cast<size_t>(owner), true);
     return exchange_.has_value();
@@ -6382,7 +6409,7 @@ class MapStage final : public Stage {
                                    "circleOfHealing", "resurrection", "judgment",
                                    "placeSwap",      "boneLance",     "mirrorImage",    "detonateSummon", "sacrificeBond", "nightmare",   "empowerSummons",
                                    "cloudOfDaggers", "daggerStrike", "dispelMagic", "globeOfInvulnerability",
-                                   "holyStrike",     "holyTouch",    "crusaderMantle"};
+                                   "holyStrike",     "holyTouch",    "crusaderMantle", "arcaneBlade",   "arcaneMarkBurst"};
     // KIND or KIND:VERSION (the version number of the Magias menu; default the menu's choice, at least 01).
     std::string kind = options_.fxTest;
     int look = 0;
@@ -6861,6 +6888,21 @@ class MapStage final : public Stage {
       };
       return logInfo("battle script: dagger {} -> {}: the cloud throws", p[1], p[2]);
     }
+    if (p[0] == "markwalk") {
+      // "markwalk:<unit>": the unit has just walked: Selene's Marca Arcana on it must go off (1D8 arcane, the mark spent)
+      const e2::BattleUnit& w = battle_->units()[cb];
+      const int hpBefore = w.hp, turnsBefore = w.cond.arcaneMarkTurns;
+      if (w.cond.arcaneMarkDice <= 0) return fail("the unit carries no Marca Arcana");
+      if (!playInterrupts(cb, {}, {}, true)) return fail("the mark did not go off");
+      scriptCheck_ = [this, cb, hpBefore, turnsBefore]() -> std::string {
+        const e2::BattleUnit& u = battle_->units()[cb];
+        logInfo("battle script: markwalk: {} hp {} -> {}{} (the mark held {} more turns)", u.name, hpBefore, u.hp, u.alive ? "" : " (dead)", turnsBefore);
+        for (size_t k = battle_->log().size() > 4 ? battle_->log().size() - 4 : 0; k < battle_->log().size(); ++k) logInfo("battle script: log | {}", battle_->log()[k]);
+        if (u.cond.arcaneMarkDice > 0) return "the mark is still on";
+        return u.hp < hpBefore || !u.alive ? "" : "the burst did no damage";
+      };
+      return logInfo("battle script: markwalk {}: the Marca Arcana goes off", p[1]);
+    }
     if (p[0] == "highshot" && p.size() > 2) {
       // "highshot:<archer>:<target>": the archers' high ground (Battle.h kHighGroundHit) from where both stand: line of fire, hit %
       // and damage, then the same with the board's elevation ignored (every cell's level 0)
@@ -7090,6 +7132,8 @@ class MapStage final : public Stage {
       // The Guerreiro's: a weapon roll may miss (the uses and the turn were spent above); the conditions when it lands.
       if (kind == "warCry") return t.cond.rallyPct > 0 ? "" : "not rallied";
       if (kind == "guardBreak") return t.cond.sunderPct > 0 || !t.alive ? "" : t.hp < before.hp ? "hurt but the guard not broken" : (logInfo("battle script: {} missed", kind), std::string());
+      if (kind == "arcaneBlade")  // Selene's: the blow may miss; landed, the mark is laid
+        return t.cond.arcaneMarkDice > 0 || !t.alive ? "" : t.hp < before.hp ? "hurt but not marked" : (logInfo("battle script: {} missed", kind), std::string());
       if (kind == "steelWhirlwind" || kind == "leapingStrike") {
         if (t.hp < before.hp || !t.alive) return "";
         logInfo("battle script: {} missed", kind);
@@ -7532,6 +7576,7 @@ class MapStage final : public Stage {
         if (!e.miss && s.type == e2::BattleStep::Type::Combat && striker >= 0 && striker != ui) {
           const e2::BattleUnit& by = battle_->units()[x.counter ? s.def : s.att];
           if (!x.counter && s.kind == "holyStrike") spellFx_.crusader().holyImpact({struck.feet, cardHeightOf(struck)}, from, now_);
+          else if (!x.counter && s.kind == "arcaneBlade") spellFx_.selene().markImpact({struck.feet, cardHeightOf(struck)}, from, now_);  // Selene's mark laid
           else if (by.cond.mantleDice > 0) spellFx_.crusader().spark({struck.feet, cardHeightOf(struck)}, from, now_);
         }
         if (!e.miss && e.amount > 0) {
@@ -10863,6 +10908,7 @@ class MapStage final : public Stage {
   std::map<int, int> globeFx_;  // the rules' Globo id -> its standing bubble (MageFx::globeStart)
   std::map<int, int> statusFx_;  // battle unit x 2 (+1 = disease) -> its poison / disease effect (StatusFx::start)
   std::map<int, int> crusaderFx_;  // battle unit x 2 (+1 = the Manto) -> its Juramento / Manto standing effect (CrusaderFx::standStart)
+  std::map<size_t, int> arcaneMarkFx_;  // battle unit -> Selene's Marca Arcana standing on it (SeleneFx::standStart)
   bool pivotGlides_ = false;       // the pivot's height glides after its first frame (set at once on the first)
   bool cameraMoved_ = false;       // the player moved the camera this frame (the camera log)
   char scriptPanKey_ = 0;          // the battle script's "pan": the arrow held ('w' / 'a' / 's' / 'd'; 0 = none) ...

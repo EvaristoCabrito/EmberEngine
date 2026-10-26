@@ -5,6 +5,7 @@
 #include <fstream>
 
 #include "core/Log.h"
+#include "world/Loadout.h"  // heroArms (Selene's dagger)
 #include "world/Overworld.h"
 
 namespace ember::e2 {
@@ -171,18 +172,21 @@ bool interludeBegin(const InterludeData& data, Json& save, std::string* why) {
   for (const std::string& k : interludePartyKeys()) next.erase(k);
   // The historical party: levels as the data says, XP 0, a fresh starter bag each, the class's weapon in hand.
   Json levels = Json::object(), xp = Json::object(), bags = Json::object(), equipped = Json::object(), weapons = Json::object();
+  Json equipment = Json::object();
   for (const InterludeHero& h : data.party) {
     levels[h.name] = h.level;
     xp[h.name] = 0;
     bags[h.name] = Json{{"mid", 2}, {"weak", 2}, {"potent", 1}, {"disease", 1}, {"manaSmall", 1}, {"manaMid", 0}, {"manaLarge", 0}, {"lockpick", 3}};
-    if (!h.weapon.empty()) {
+    if (!h.weapon.empty() && heroArms(h.name)) {
+      equipment[h.name] = Json{{"mainHand", h.weapon}};  // a hero with arms of her own holds her piece (Selene's dagger) as worn gear
+    } else if (!h.weapon.empty()) {
       equipped[h.name] = h.weapon;
       weapons[h.weapon] = 0;
     }
     addFlag(next, "recruited:" + h.name);
   }
   next["levels"] = levels, next["xp"] = xp, next["statPointAllocations"] = Json::object(), next["bags"] = bags;
-  next["promotions"] = Json::object(), next["weapons"] = weapons, next["equipped"] = equipped, next["equipment"] = Json::object();
+  next["promotions"] = Json::object(), next["weapons"] = weapons, next["equipped"] = equipped, next["equipment"] = equipment;
   next["looseEquipment"] = Json::object(), next["spellUses"] = Json::object(), next["ember"] = 0, next["unitHp"] = Json::object();
   next["heroHunger"] = Json::object(), next["heroDiseases"] = Json::object(), next["heroPoisons"] = Json::object(), next["heroSkills"] = Json::object();
   next["partyLeader"] = data.leader, next["hotbars"] = Json::object(), next["affinityScores"] = Json::object();

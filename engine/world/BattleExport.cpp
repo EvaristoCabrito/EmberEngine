@@ -11,6 +11,7 @@
 
 #include "core/Log.h"
 #include "world/Board.h"
+#include "world/Loadout.h"
 
 namespace ember::e2 {
 
@@ -19,6 +20,16 @@ int classLevelCap(const std::string& classId);  // world/Spells.h (the Cruzado s
 namespace {
 
 using json = nlohmann::json;
+
+// The weapons' table the fight's loadouts read (content/engine2/weapons.json): a hero with arms of her own wields an off-hand piece
+const Loadouts& sharedLoadouts() {
+  static const Loadouts arms = [] {
+    Loadouts l;
+    l.load("content/engine2/weapons.json");
+    return l;
+  }();
+  return arms;
+}
 
 struct Hex {
   int x = 0, y = 0;
@@ -416,6 +427,7 @@ struct Unit {
   int initiative = 0, shockCharges = 0, frostCharges = 0, fantomForceCharges = 0;
   std::array<int, 10> spells{};
   std::string weaponId;  // empty = none
+  std::string ownWeapon;  // a hero with arms of her own (heroArms; Selene): her main hand's piece (an off-hand dagger), weaponId empty
   json footprintOffsets = nullptr, footprintW = nullptr, footprintH = nullptr;
   json resistances = json::object(), bag = json::object();
   std::vector<std::string> weaponTypes;  // the class's pool (weaponTypesForClass), players only
@@ -525,9 +537,14 @@ struct Spawner {
     if (side == "player" && has(*cls, "starterWeapon")) u.weaponId = str(*cls, "starterWeapon");
     const json* weapon = u.weaponId.empty() ? nullptr : r.weapon(u.weaponId);
     if (weapon && !contains((*weapon)["usableBy"], u.classId)) { u.weaponId = str(*cls, "starterWeapon"); weapon = u.weaponId.empty() ? nullptr : r.weapon(u.weaponId); }
+    // A hero with arms of her own (content/hero-arms.json; Selene): her starter dagger in the main hand, never her class's staff
+    const HeroArms* ownArms = side == "player" ? heroArms(u.name) : nullptr;
+    const OffHandDef* ownPiece = ownArms ? sharedLoadouts().offHand(ownArms->starter) : nullptr;
+    if (ownArms) u.weaponId.clear(), u.ownWeapon = ownArms->starter, weapon = nullptr;
     const json* magic = weapon && has(*weapon, "magic") ? &(*weapon)["magic"] : nullptr;  // gearStatBonus: the weapon's own magic
-    u.minRange = weapon ? integer(*weapon, "minRange", 1) : integer(*cls, "minRange", 1);
-    u.maxRange = (weapon ? integer(*weapon, "maxRange", 1) : integer(*cls, "maxRange", 1)) + (contains(r.all()["mageRangeBonusClasses"], u.classId) ? 1 : 0);
+    u.minRange = ownPiece ? ownPiece->minRange : weapon ? integer(*weapon, "minRange", 1) : integer(*cls, "minRange", 1);
+    u.maxRange = ownPiece ? ownPiece->maxRange
+                          : (weapon ? integer(*weapon, "maxRange", 1) : integer(*cls, "maxRange", 1)) + (contains(r.all()["mageRangeBonusClasses"], u.classId) ? 1 : 0);
     u.maxHp = u.hp = hp;
     u.atk = atk;
     u.mag = mag + (magic ? integer(*magic, "magBonus") : 0);
@@ -535,7 +552,8 @@ struct Spawner {
     u.dex = dex + (magic ? integer(*magic, "dexBonus") : 0);
     const json* magicRes = magic && has(*magic, "resistances") ? &(*magic)["resistances"] : nullptr;
     u.resistances = sumResistances({&(*cls)["resistances"], magicRes});
-    if (side == "player") for (const json& t : (*cls)["weaponTypes"]) u.weaponTypes.push_back(t.get<std::string>());
+    if (ownArms) u.weaponTypes = ownArms->weaponTypes;
+    else if (side == "player") for (const json& t : (*cls)["weaponTypes"]) u.weaponTypes.push_back(t.get<std::string>());
     u.initiative = integer(*cls, "initiativeBonus");
     u.holdsPosition = flag(s, "holdsPosition");
     u.mov = u.holdsPosition ? 0 : integer(*cls, "mov");
@@ -1112,9 +1130,10 @@ std::optional<json> exportBattle(const json& mapFile, std::string* error, int pl
     const json& fantom = r.row(r.all()["enemyPools"]["fantomDice"], u.level);
     o["fantomForceDice"] = {{"dice", fantom[0]}, {"faces", fantom[1]}};
     o["xp"] = 0, o["guaranteedDrop"] = u.guaranteedDrop;
-    const std::string type = sp.weaponType(u);
+    const OffHandDef* ownPiece = u.ownWeapon.empty() ? nullptr : sharedLoadouts().offHand(u.ownWeapon);  // Selene's dagger
+    const std::string type = ownPiece ? ownPiece->weaponType : sp.weaponType(u);
     o["weaponType"] = type.empty() ? json(nullptr) : json(type);
-    o["trainsWeapon"] = sp.trains(u, type);
+    o["trainsWeapon"] = ownPiece ? true : sp.trains(u, type);
     o["weaponSkill"] = 0, o["offWeaponType"] = nullptr, o["offTrainsWeapon"] = false, o["offWeaponSkill"] = 0, o["healingSkill"] = 0;
     o["bag"] = u.bag, o["diseased"] = false, o["diseaseBase"] = nullptr, o["poisoned"] = false, o["poisonTier"] = nullptr;
     o["fullness"] = 100, o["hungerPenaltyPct"] = 0;
@@ -1135,8 +1154,10 @@ std::optional<json> exportBattle(const json& mapFile, std::string* error, int pl
     json combat;
     const json* w = u.weaponId.empty() ? nullptr : r.weapon(u.weaponId);
     combat["weapon"] = w ? json{{"dice", (*w)["dice"]}, {"faces", (*w)["faces"]}, {"bonus", integer(*w, "bonus")}, {"ranged", flag(*w, "ranged")}, {"classBonus", str(*w, "bonusClass") == u.classId}} : json(nullptr);
+    if (ownPiece) combat["weapon"] = {{"dice", ownPiece->dice}, {"faces", ownPiece->faces}, {"bonus", ownPiece->bonus}, {"ranged", false}, {"classBonus", false}};
     combat["weaponEnh"] = 0;
-    combat["mastery"] = sp.mastery(u, type);
+    combat["mastery"] = ownPiece ? json{{"accuracy", number(r.all()["weaponSkill"], "accuracy", 75)}, {"damage", number(r.all()["weaponSkill"], "damage", 1)}}
+                                 : sp.mastery(u, type);
     combat["offMastery"] = sp.mastery(u, "");
     combat["offHand"] = nullptr;
     if (const json* magic = sp.staffMagic(u)) {

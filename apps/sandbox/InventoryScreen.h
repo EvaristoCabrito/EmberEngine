@@ -25,6 +25,7 @@
 #include "render/UiArt.h"
 #include "world/FieldSpells.h"
 #include "world/Inn.h"
+#include "world/Loadout.h"  // heroArms (Selene's daggers)
 
 namespace ember {
 
@@ -206,9 +207,10 @@ class InventoryScreen {
     const std::string weaponId = c.save.value("equipped", e2::Json::object()).value(hero_, "");
     const e2::InnWeapon* weapon = c.data.weapon(weaponId);
     const int enh = c.save.value("weapons", e2::Json::object()).value(weaponId, 0);
+    const bool ownArms = e2::heroArms(hero_) != nullptr;  // Selene: her main hand holds a piece of gear (her dagger), worn like any
     for (const DollSlot& s : kDollSlots) {
       const ImVec2 p{o.x + w * s.left / 100, o.y + h * s.top / 100}, q{p.x + w * s.width / 100, p.y + h * s.height / 100};
-      const bool isWeapon = std::string(s.id) == "mainHand";
+      const bool isWeapon = std::string(s.id) == "mainHand" && !ownArms;
       const std::string itemId = isWeapon ? weaponId : worn.value(s.id, "");
       const e2::InnGear* item = isWeapon ? nullptr : c.data.gear(itemId);
       const std::string icon = isWeapon ? (weapon ? weapon->icon : "") : item ? item->icon : "";
@@ -310,7 +312,7 @@ class InventoryScreen {
     };
     const e2::Json& worn = c.save.value("equipment", e2::Json::object()).value(hero_, e2::Json::object());
     const e2::Json& loose = c.save.value("looseEquipment", e2::Json::object());
-    if (slot == "mainHand") {
+    if (slot == "mainHand" && !e2::heroArms(hero_)) {
       const std::string weaponId = c.save.value("equipped", e2::Json::object()).value(hero_, "");
       if (c.data.weapon(weaponId) && plain("##unequip", "Desequipar")) {
         apply(c, c.rules.equipWeapon(c.save, hero_, ""));
@@ -351,16 +353,16 @@ class InventoryScreen {
       }
       int shown = 0;
       for (const e2::InnGear& it : c.data.equipment) {
-        if (!e2::InnRules::fitsSlot(it, slot)) continue;
+        if (!e2::InnRules::fitsHeroSlot(it, hero_, slot)) continue;  // Selene's main hand: her daggers
         const int owned = loose.value(it.id, 0) - c.rules.gearUnknown(c.save, it.id);  // the known copies (an unknown piece is not worn)
         if (owned <= 0 && wearerOf(it.id).empty()) continue;
-        if (it.usableBy && std::find(it.usableBy->begin(), it.usableBy->end(), cls) == it.usableBy->end()) continue;
+        if (slot != "mainHand" && it.usableBy && std::find(it.usableBy->begin(), it.usableBy->end(), cls) == it.usableBy->end()) continue;
         ++shown;
         const bool equipped = here == it.id;
         const std::string wearer = wearerOf(it.id);
         const bool onOtherFinger = otherRing == it.id && owned <= 0;
         std::string detail = it.kind == "shield" ? std::format("Investida de Escudo · {}% dano · 70% atordoa", static_cast<int>(std::floor(it.dmgMul * 100 + 0.5)))
-                             : it.kind == "weapon" ? std::format("{}D{} · Mão secundária", it.dice, it.faces)
+                             : it.kind == "weapon" ? std::format("{}D{} · {}", it.dice, it.faces, slot == "mainHand" ? "Mão principal" : "Mão secundária")
                                                    : it.summary;
         std::vector<std::pair<std::string, ImU32>> lines{{upperUtf8(it.typeSlot), kMuted}, {detail, kMuted}};
         const std::string right = equipped ? "Equipado" : onOtherFinger ? "já no outro anel" : !wearer.empty() ? "em " + wearer : "";
@@ -571,7 +573,7 @@ class InventoryScreen {
       e.tip = w->tooltip[static_cast<size_t>(std::clamp(enh, 0, static_cast<int>(w->tooltip.size()) - 1))];
       const std::string wid = id;
       for (const std::string& h : heroes)
-        if (std::find(w->usableBy.begin(), w->usableBy.end(), c.rules.heroClass(c.save, h)) != w->usableBy.end())
+        if (!e2::heroArms(h) && std::find(w->usableBy.begin(), w->usableBy.end(), c.rules.heroClass(c.save, h)) != w->usableBy.end())
           e.equipChoices.push_back({h, [this, h, wid](Context& c) {
                                       apply(c, c.rules.equipWeapon(c.save, h, wid));
                                       hero_ = h, glow("mainHand");
@@ -593,9 +595,10 @@ class InventoryScreen {
         std::string slot = item->slot;
         const e2::Json& worn = c.save.value("equipment", e2::Json::object()).value(h, e2::Json::object());
         if (item->slot == "ring1" || item->slot == "ring2") slot = worn.contains("ring1") && worn["ring1"].is_string() ? "ring2" : "ring1";
-        if (item->slot == "offHand" && c.rules.offHandBlocked(c.save, h)) continue;
-        if (!e2::InnRules::fitsSlot(*item, slot)) continue;
-        if (item->usableBy && std::find(item->usableBy->begin(), item->usableBy->end(), cls) == item->usableBy->end()) continue;
+        if (e2::InnRules::fitsHeroSlot(*item, h, "mainHand")) slot = "mainHand";  // Selene's dagger goes in her main hand
+        if (slot == "offHand" && c.rules.offHandBlocked(c.save, h)) continue;
+        if (!e2::InnRules::fitsHeroSlot(*item, h, slot)) continue;
+        if (slot != "mainHand" && item->usableBy && std::find(item->usableBy->begin(), item->usableBy->end(), cls) == item->usableBy->end()) continue;
         e.equipChoices.push_back({h, [this, h, slot, iid](Context& c) {
                                     apply(c, c.rules.equipItem(c.save, h, slot, iid));
                                     hero_ = h, glow(slot);

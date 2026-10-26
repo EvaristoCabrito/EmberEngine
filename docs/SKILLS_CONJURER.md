@@ -15,6 +15,29 @@ track keeps its dates). T1 keeps its three combat spells.
 (learned at 3), both for every Conjurador. They were Isolde's / Malrec's alone for a few hours (`EmberSpell::hero`, still in the code for
 any later exclusive). T3 therefore holds Familiar Radiante and Reflexo Arcano.
 
+**Lâmina Arcana (`arcaneBlade`), Selene's own T1 (the user, 2026-10-26: "magia T1 exclusiva da Selene. Ela acerta o alvo com a adaga
+e deixa uma marca arcana nele, que explode causando 1D8 se o alvo se mover"; "criar uma escala até o nivel 10, fazer ela durar mais de
+um turno conforme evoluir").** `EmberSpell::hero` "Selene": no other Conjurador learns it. A blow of her weapon (its own roll, hit
+chance and mastery, like the Golpe Consagrado) on a foe beside her (range 1, a dagger); a miss is a miss. Landed, it leaves the
+**Marca Arcana** (`Conditions::arcaneMark*`): when the marked foe walks (its own walk on its turn), the mark goes off before it acts
+(`arcaneMarkInterrupts`, played with the Vigília and the Nuvem de Adagas), 1D8 arcane against its arcane resistance with Selene's MAG
+of penetration (`arcaneMarkBurst`, never learned), and is spent. Unburst, it holds through N of the foe's own turns, counted like the
+Quebra-Guarda: 1 turn, 2 from level 4, 3 from 7, 4 at 10 (her cap); 1D8 at every level (first values, the user judges). A new blow
+on a marked foe lays the mark afresh. If Selene has fallen, the mark does not go off. Not done: a foe moved by another's skill
+(thrown, pulled, dragged) does not set it off, only its own walk. Effect `render/vfx/SeleneFx` (3D: the dagger's violet glow, the
+cut and the rune drawn on the ground, the rune standing at the marked foe's feet, the burst); icon `content/ui/spells/arcaneBlade.jpg`
+(the user's `Attachments/Selene/LaminaArcana.jpg`). Script steps `cast:Selene:arcaneBlade:<foe>`, `markwalk:<foe>`.
+
+**Selene's arms and ATK (the user, 2026-10-26: "she doesnt equip staves only Daggers, which are not normally used by Conjurers, she
+gains 1 ATT bonus point on top of the regular gains every level", "adagas na main hand sim", "no nível 1 ela já tem 3 pontos de ATK
+adicionais acima do Conjurer normal").** `content/hero-arms.json` (world/Loadout.h `heroArms`): her main hand takes only daggers (the
+off-hand daggers: punhal-curvo, katar, adaga-sombria ...), kept in `save.equipment.Selene.mainHand`, never a staff (`InnRules::equipWeapon`
+refuses one, `fitsHeroSlot`; the Equipar doll and the Mochila list her daggers for the main hand); with none, her starter `punhal-curvo`.
+Her blow is a dagger's, at full damage, melee, no arcane bolt, training the dagger skill (Loadout `equipOwnArms`, BattleExport `ownWeapon`
+for a freshly prepared battle). The Interlude gives her the punhal (`content/interlude.json`). ATK: `content/progression.json` Selene =
+the Conjurador's gains (Malrec's [3, 0, 3, 1, 1]) + 1 ATK a level, and `baseBonus` +3 ATK at level 1 (`sharesClass`: Malrec stays the
+conjurer class's hero). Not done: Vargan's shop still offers staves by class (she cannot wield them).
+
 Code: `engine/world/Spells.cpp` (`kEmberSpells`, `conjurerKind`, `summonsOf`, `ownSummonAt`, `mirrorAbsorbs`,
 `bondRedirects`, `emberNumbers`, `castEmber`, the Effect branches of `resolveStep` (illusions, bond, empowerment, the swap shared with
 Troca de Posto), the sacrifice before a spell's hits, the fear rider, `spellTooltip`, `spellZone`, `spellAimValid`, `spellArea`),

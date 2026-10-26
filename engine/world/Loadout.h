@@ -54,6 +54,14 @@ class Loadouts {
   std::vector<std::string> mageRangeBonus_;
 };
 
+// A hero whose arms are her own (content/hero-arms.json; Selene: daggers in her main hand, never a staff), nullptr for every other.
+// Her main-hand weapon is an off-hand piece of those types, kept in save.equipment[hero].mainHand; the starter when there is none.
+struct HeroArms {
+  std::vector<std::string> weaponTypes;
+  std::string starter;
+};
+const HeroArms* heroArms(const std::string& hero);
+
 // spawnUnit's weapon part on a hero already in a battle: its weapons from `save`, reach, staff magic, the arrow / arcane basic
 // attack, and both hands' mastery. Returns false (the unit untouched) when the class is unknown.
 bool equipFromSave(BattleUnit& u, const Loadouts& arms, const Json& save);

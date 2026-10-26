@@ -40,6 +40,7 @@ struct InnGear {
   double dmgMul = 0.75;
   bool pouch = false;
   std::optional<std::vector<std::string>> usableBy;
+  std::string weaponType;  // ours: an off-hand weapon's type ("dagger"; content/engine2/weapons.json offHand)
 };
 
 struct InnData {
@@ -87,6 +88,8 @@ class InnRules {
   std::optional<Json> equipWeapon(const Json& save, const std::string& hero, const std::string& weaponId) const;  // "" = unequip
   // --- the inventory (inventory.ts, GameApp's Mochila handlers) ---
   static bool fitsSlot(const InnGear& item, const std::string& slot);  // equipmentFitsSlot
+  // ... for this hero: a hero with arms of her own (world/Loadout.h heroArms; Selene) takes a piece of her types in "mainHand"
+  static bool fitsHeroSlot(const InnGear& item, const std::string& hero, const std::string& slot);
   bool offHandBlocked(const Json& save, const std::string& hero) const;  // a two-handed main weapon
   // equipSharedItem (itemId) / unequipSharedItem ("" : the piece back into the stash, if the bag has room).
   std::optional<Json> equipItem(const Json& save, const std::string& hero, const std::string& slot, const std::string& itemId) const;

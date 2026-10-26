@@ -39,6 +39,7 @@
 #include "render/vfx/ConjurerFx.h"
 #include "render/vfx/HealerFx.h"
 #include "render/vfx/CrusaderFx.h"
+#include "render/vfx/SeleneFx.h"
 #include "render/vfx/LancerFx.h"
 #include "render/vfx/StatusFx.h"
 #include "render/vfx/DaggerFx.h"
@@ -152,7 +153,7 @@ class SpellEffects {
   void build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out, std::vector<Light>& lights);
   const VfxFrame& vfx() const { return vfx_; }
   bool active(float now) const;
-  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), dreamWebs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), frosts_.clear(), warrior_.clear(), arms_.clear(), ranger_.clear(), lancer_.clear(), turnUndead_.clear(), healer_.clear(), conjurer_.clear(), status_.clear(), daggers_.clear(), mage_.clear(), crusader_.clear(); }
+  void clear() { combat_.clear(), elements_.clear(), missiles_.clear(), fireballs_.clear(), blesses_.clear(), venoms_.clear(), phantasms_.clear(), webs_.clear(), dreamWebs_.clear(), burns_.clear(), cleaves_.clear(), sweeps_.clear(), holies_.clear(), storms_.clear(), bolts_.clear(), lightnings_.clear(), frosts_.clear(), warrior_.clear(), arms_.clear(), ranger_.clear(), lancer_.clear(), turnUndead_.clear(), healer_.clear(), conjurer_.clear(), status_.clear(), daggers_.clear(), mage_.clear(), crusader_.clear(), selene_.clear(); }
   // The Mago Negro's Nuvem de Adagas standing round its caster (vfx/DaggerFx, ours, 3D): the stage keeps one cloud per unit (MapStage
   // syncDaggers); cast() plays the conjuring, the thrown dagger ("daggerStrike") and, through intercept(), the shot knocked down.
   DaggerFx& daggers() { return daggers_; }
@@ -167,6 +168,9 @@ class SpellEffects {
   // The Cruzado's (vfx/CrusaderFx, ours, 3D): cast() plays the casts; the stage times the holy flash and the mantle's sparks on the blows
   // that land and keeps the standing Juramento / Manto (MapStage syncCrusader).
   CrusaderFx& crusader() { return crusader_; }
+  // Selene's Lâmina Arcana (vfx/SeleneFx, ours, 3D): cast() plays the blade's glow and the mark's burst; the stage times the mark laid on
+  // a landed blow and keeps the standing mark (MapStage syncArcaneMarks).
+  SeleneFx& selene() { return selene_; }
   // A version that keeps Engine2's own timeline decides when the hit lands: seconds from the cast (Míssil Mágico 02:
   // Engine2's charge, then the flight). Below 0: the version lands on the caller's impact (the pose's).
   float impactDelay(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const;
@@ -299,6 +303,8 @@ class SpellEffects {
   static bool isHealer(const std::string& kind) { return kind == "circleOfHealing" || kind == "resurrection" || kind == "judgment"; }
   CrusaderFx crusader_;    // the Cruzado's Golpe Consagrado / Toque Sagrado / Juramento / Manto do Cruzado (ours, 3D)
   static bool isCrusader(const std::string& kind) { return kind == "holyStrike" || kind == "holyTouch" || kind == "crusaderMantle"; }
+  SeleneFx selene_;        // Selene's Lâmina Arcana and its mark (ours, 3D)
+  static bool isSelene(const std::string& kind) { return kind == "arcaneBlade" || kind == "arcaneMarkBurst"; }
   ConjurerFx conjurer_;    // the Conjurador's seven (ours, 3D)
   StatusFx status_;        // poison / disease on the units (ours, 3D)
   DaggerFx daggers_;       // the Mago Negro's Nuvem de Adagas (ours, 3D)

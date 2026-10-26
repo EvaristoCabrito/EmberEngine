@@ -7,6 +7,7 @@
   "Neera":   { "gain": [4, 2, 2, 2, 3], "classes": ["neera", "archer"] },
   "Voss":    { "gain": [3, 0, 3, 1, 1], "classes": ["voss", "mage", "warlock", "elementalist"] },
   "Salazar": { "gain": [4, 2, 2, 2, 1], "classes": ["salazar", "healer"] },
-  "Malrec":  { "gain": [3, 0, 3, 1, 1], "classes": ["conjurer"] }
+  "Malrec":  { "gain": [3, 0, 3, 1, 1], "classes": ["conjurer"] },
+  "Selene":  { "gain": [3, 1, 3, 1, 1], "baseBonus": [0, 3, 0, 0, 0], "classes": ["conjurer"], "sharesClass": true, "note": "the user, 2026-10-26: a Conjuradora's gains + 1 ATK every level, and already +3 ATK at level 1; sharesClass: Malrec stays the conjurer class's hero" }
  }
 }

@@ -166,6 +166,10 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"holyTouch", "Toque Sagrado", 2, "", false}, "crusader", 4},
     {{"crusaderOath", "Juramento", 3, "", false}, "crusader", 7},
     {{"crusaderMantle", "Manto do Cruzado", 3, "holy", false}, "crusader", 7},
+    // Selene's own (the user, 2026-10-26): Lâmina Arcana, her T1, no other Conjurador learns it
+    {{"arcaneBlade", "Lâmina Arcana", 1, "arcane", true}, "conjurer", 1, "Selene"},
+    // ... and its mark going off (never learned: the marked foe walks)
+    {{"arcaneMarkBurst", "Marca Arcana", 1, "arcane", false}, "", 99},
 };
 // The base class a promotion keeps the skills of (the Guerreiro's go on into the Paladino and the Cavaleiro Pesado, the
 // Arqueiro's into the Patrulheiro and the Assassino, the Lanceiro's into the Sentinela and the Templário).
@@ -811,6 +815,13 @@ EmberNumbers emberNumbers(const std::string& kind, int level) {
     n.turns = 2;
     n.dice = 1, n.faces = 4;  // holy on every blow
   }
+  // Selene's (the user's numbers, 2026-10-26): a blow beside her; the mark bursts for 1D8 arcane when the foe walks, and holds
+  // through 1 of its turns, 2 from level 4, 3 from 7, 4 at 10 (her cap)
+  else if (kind == "arcaneBlade" || kind == "arcaneMarkBurst") {
+    n.range = 1;
+    n.dice = 1, n.faces = 8;
+    n.turns = 1 + (lv >= 4) + (lv >= 7) + (lv >= 10);
+  }
   // Mago Negro (docs/SKILLS_MAGE.md): the user's own numbers (3 daggers, 4 from 12, 5 from 15; each MAG/2 x 0.8 + 1D6, no track)
   else if (kind == "cloudOfDaggers" || kind == "daggerStrike") {
     n.count = 3 + g.n('c');
@@ -935,6 +946,12 @@ Cube cubeRound(double q, double r, double s) {
   return {rq, rr, rs};
 }
 int hexDist(BattleHex a, BattleHex b) { return Battle::distance(a, b); }
+// Whether any hex of unit `who`'s body lies within `range` of `from` (a blow beside a big body reaches it by any of its hexes).
+bool besideUnit(const Battle& b, BattleHex from, size_t who, int range) {
+  const BattleUnit& t = b.units()[who];
+  const std::vector<BattleHex> body = Battle::footprint(t, t.x, t.y);
+  return std::any_of(body.begin(), body.end(), [&](const BattleHex& c) { return hexDist(from, c) <= range; });
+}
 
 // piercingLine: from `from` through `through` and on to the board's edge, any angle.
 std::vector<BattleHex> piercingLine(const Battle& b, BattleHex from, BattleHex through) {
@@ -2180,6 +2197,16 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
     s.dice = 0, s.spellMul = 1;
     s.holyDice = n.dice, s.holyFaces = n.faces, s.holyUndeadMul = n.tickMul;
     steps.push_back(s);
+  } else if (kind == "arcaneBlade") {
+    // Selene's: a blow of her weapon on a foe beside her; landed, it leaves the arcane mark (it bursts if the foe walks).
+    const int foe = occAt(b, cell);
+    if (foe < 0 || !targetable(b, foe)) return fail("Escolha um inimigo visível.");
+    if (!besideUnit(b, from, static_cast<size_t>(foe), n.range)) return fail("O inimigo precisa estar ao lado.");
+    spend();
+    s.type = BattleStep::Type::Combat, s.def = static_cast<size_t>(foe);
+    s.dice = 0, s.spellMul = 1;
+    s.arcaneMarkDice = n.dice, s.arcaneMarkFaces = n.faces, s.arcaneMarkTurns = n.turns;
+    steps.push_back(s);
   } else if (kind == "holyTouch") {
     // The Cruzado's: an ally beside him heals the cure's formula (MAG/2 x mul + the dice).
     const int ally = occAt(b, cell);
@@ -2639,6 +2666,8 @@ std::string conditionsText(const BattleUnit& u) {
   if (u.cond.silenceTurns > 0) add(std::format("Silenciado ({})", u.cond.silenceTurns));
   if (u.cond.decayTurns > 0) add(std::format("Decadência -{}% ({})", u.cond.decayPct, u.cond.decayTurns));
   if (u.cond.sunderPct > 0) add(std::format("{} -{}% DEF ({})", pick("Guarda quebrada", "Guard broken"), u.cond.sunderPct, u.cond.sunderTurns + 1));
+  if (u.cond.arcaneMarkDice > 0)
+    add(std::format("{} {}D{} ({})", pick("Marca Arcana", "Arcane Mark"), u.cond.arcaneMarkDice, u.cond.arcaneMarkFaces, u.cond.arcaneMarkTurns + 1));
   if (u.cond.rallyPct > 0) add(std::format("{} +{}% ATK ({})", pick("Grito de Guerra", "War Cry"), u.cond.rallyPct, u.cond.rallyTurns + 1));
   if (u.cond.mantleDice > 0)
     add(std::format("{} +{}D{} ({})", pick("Manto do Cruzado", "Crusader's Mantle"), u.cond.mantleDice, u.cond.mantleFaces, u.cond.mantleTurns + 1));
@@ -2974,6 +3003,10 @@ std::string spellTooltip(const BattleUnit& c, const std::string& kind) {
                            n.pct > 0 ? std::format(" · onda de choque: os outros inimigos vizinhos do pouso levam {}%", n.pct) : "");
   // The Cruzado's
   if (kind == "holyStrike") return s + std::format("\ngolpe de arma + {}D{} sagrado · mortos-vivos: o sagrado ×{:g}", n.dice, n.faces, n.tickMul);
+  // Selene's
+  if (kind == "arcaneBlade")
+    return s + std::format("\ngolpe de arma num inimigo ao lado · acertou: Marca Arcana por {} {} · se ele andar, explode: {}D{} arcano", n.turns,
+                           n.turns == 1 ? "turno" : "turnos", n.dice, n.faces);
   if (kind == "holyTouch") return s + std::format("\num aliado ao lado cura {} HP", dmg(n.mul, n.dice, n.faces));
   if (kind == "crusaderOath") return std::format("T{} · passiva\nabaixo de {}% do HP: +{}% ATK até voltar a passar de {}% · não gasta uso", e->data.tier, n.spread, n.pct, n.spread);
   if (kind == "crusaderMantle")
@@ -3097,6 +3130,7 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"sacrificeBond", "Sacrifice Bond"}, {"nightmare", "Nightmare"}, {"empowerSummons", "Empower Summons"},
     {"cloudOfDaggers", "Cloud of Daggers"}, {"daggerStrike", "Dagger"}, {"dispelMagic", "Dispel Magic"}, {"globeOfInvulnerability", "Globe of Invulnerability"},
     {"holyStrike", "Consecrated Strike"}, {"holyTouch", "Holy Touch"}, {"crusaderOath", "Oath"}, {"crusaderMantle", "Crusader's Mantle"},
+    {"arcaneBlade", "Arcane Blade"}, {"arcaneMarkBurst", "Arcane Mark"},
 };
 }  // namespace
 
@@ -3257,6 +3291,7 @@ std::string spellPose(const std::string& kind) {
   if (kind == "longShot" || kind == "bloodyShot" || kind == "multiShot" || kind == "piercing" || kind == "doubleStrike" || kind == "piercingThrust" ||
       kind == "cleave" || kind == "sweep" || kind == "trip" || kind == "bullRush" || kind == "executionerStrike" || kind == "shieldBash" ||
       kind == "shoulderSmash" || kind == "stampede" || kind == "steelWhirlwind" || kind == "guardBreak" || kind == "warCry" || kind == "leapingStrike" || kind == "holyStrike" ||
+      kind == "arcaneBlade" ||
       archerShot(kind) || archerVolley(kind) || (lancerKind(kind) && kind != "sentinelVigil"))
     return "attack";
   return "cast";
@@ -3309,6 +3344,7 @@ std::vector<BattleHex> spellZone(const Battle& b, size_t caster, const std::stri
   else if (kind == "globeOfInvulnerability") maxRange = 0;
   else if (kind == "guardBreak" || kind == "holyStrike") minRange = u.minRange, maxRange = u.maxRange, shot = u.maxRange > 1, arrow = true;  // the weapon's reach
   else if (kind == "holyTouch") minRange = 1, maxRange = 1;  // an ally beside him
+  else if (kind == "arcaneBlade") minRange = 1, maxRange = 1;  // Selene's: a foe beside her
   else if (kind == "crusaderMantle") maxRange = 0;
   else if (kind == "crusaderOath") return zone;  // a passive: nothing to aim
   else if (kind == "steelWhirlwind") maxRange = 1;
@@ -3425,6 +3461,11 @@ bool spellAimValid(const Battle& b, size_t caster, const std::string& kind, Batt
     if (kind == "guardBreak" || kind == "holyStrike") {
       if (!targetable(b, here)) return fail(here < 0 ? "Não há unidade na casa selecionada." : "Escolha um inimigo visível.");
       return canHitFrom(b, caster, from, static_cast<size_t>(here)) ? true : fail("Esse inimigo não está ao alcance da arma.");
+    }
+    // Selene's
+    if (kind == "arcaneBlade") {
+      if (!targetable(b, here)) return fail(here < 0 ? "Não há unidade na casa selecionada." : "Escolha um inimigo visível.");
+      return besideUnit(b, from, static_cast<size_t>(here), n.range) ? true : fail("O inimigo precisa estar ao lado.");
     }
     // The Cruzado's
     if (kind == "holyTouch") {
@@ -4030,6 +4071,10 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
       target.cond.sunderPct = std::max(target.cond.sunderPct, step.sunderPct);
       target.cond.sunderTurns = std::max(target.cond.sunderTurns, step.sunderTurns);
     }
+    if (hitStage && step.arcaneMarkDice > 0) {  // Lâmina Arcana: the arcane mark, until the foe walks or its turns run out
+      target.cond.arcaneMarkDice = step.arcaneMarkDice, target.cond.arcaneMarkFaces = step.arcaneMarkFaces;
+      target.cond.arcaneMarkTurns = step.arcaneMarkTurns, target.cond.arcaneMarkBy = static_cast<int>(ai);
+    }
     if (hitStage && step.disarmPct > 0) {  // Desarmar: the weapon knocked away, ATK down and no counter for some of its turns
       target.cond.disarmPct = std::max(target.cond.disarmPct, step.disarmPct);
       target.cond.disarmTurns = std::max(target.cond.disarmTurns, step.disarmTurns);
@@ -4056,6 +4101,7 @@ void resolveStrikeImpl(Battle& b, const BattleStep& step, bool counter, Mulberry
     afterDeath(b, ti, out);
   } else {
     if (hitStage && step.sunderPct > 0) out.push_back(statusEffect(ti, std::format("{} -{}%", pick("Guarda quebrada", "Guard broken"), step.sunderPct)));
+    if (hitStage && step.arcaneMarkDice > 0) out.push_back(statusEffect(ti, pick("Marca Arcana", "Arcane Mark")));
     if (hitStage && step.disarmPct > 0) out.push_back(statusEffect(ti, std::format("{} -{}% ATK", pick("Desarmado", "Disarmed"), step.disarmPct)));
   }
 }
@@ -4166,6 +4212,22 @@ std::vector<BattleStep> daggerInterrupts(const Battle& b, size_t attacker, const
       steps.push_back(st);
     }
   }
+  return steps;
+}
+
+bool arcaneMarkBurstKind(const std::string& kind) { return kind == "arcaneMarkBurst"; }
+
+std::vector<BattleStep> arcaneMarkInterrupts(const Battle& b, size_t walker, bool walked) {
+  std::vector<BattleStep> steps;
+  if (!walked || walker >= b.units().size()) return steps;
+  const BattleUnit& w = b.units()[walker];
+  const int by = w.cond.arcaneMarkBy;
+  if (!w.alive || w.cond.arcaneMarkDice <= 0 || by < 0 || static_cast<size_t>(by) >= b.units().size() || !b.units()[static_cast<size_t>(by)].alive) return steps;
+  BattleStep st;
+  st.type = BattleStep::Type::Spell, st.att = static_cast<size_t>(by), st.kind = "arcaneMarkBurst";
+  st.ids = {walker}, st.tiles = {{w.x, w.y}};
+  st.dice = w.cond.arcaneMarkDice, st.faces = w.cond.arcaneMarkFaces, st.bonus = 0, st.spellMul = 0;
+  steps.push_back(st);
   return steps;
 }
 
@@ -4620,6 +4682,11 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     if (att.cond.daggers <= 0) return;
     att.cond.daggers -= 1;
   }
+  if (step.kind == "arcaneMarkBurst") {  // Marca Arcana: the mark goes off once; gone meanwhile (lifted, burst), nothing happens
+    if (step.ids.empty() || b.units()[step.ids[0]].cond.arcaneMarkDice <= 0) return;
+    BattleUnit::Conditions& c = b.units()[step.ids[0]].cond;
+    c.arcaneMarkDice = c.arcaneMarkFaces = c.arcaneMarkTurns = 0, c.arcaneMarkBy = -1;
+  }
   if (step.kind == "bless") {  // applyBless: +pct% to hit for some rounds, for every ally still standing
     for (size_t id : step.ids) {
       BattleUnit& ally = b.units()[id];
@@ -4679,6 +4746,8 @@ void resolveStepImpl(Battle& b, const BattleStep& step, Mulberry32& rng, std::ve
     if (step.centerId && id == *step.centerId) {
       const int roll = rollDice(step.centerDice, step.centerFaces, step.centerBonus, rng);
       dmg = spellDamage(b, step.att, id, step.centerMul, roll, rng);
+    } else if (step.kind == "arcaneMarkBurst") {
+      dmg = rollDice(step.dice, step.faces, 0, rng);  // Marca Arcana: its dice alone (the arcane resistance below, with the marker's MAG)
     } else if (step.dice > 0) {
       const int roll = rollDice(step.dice, step.faces, step.bonus, rng);
       dmg = spellDamage(b, step.att, id, step.spellMul, roll, rng);
@@ -5083,6 +5152,10 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
   if (u.cond.mantleDice > 0) {  // the Cruzado's Manto: counted like the Grito de Guerra
     if (u.cond.mantleTurns > 0) --u.cond.mantleTurns;
     else u.cond.mantleDice = u.cond.mantleFaces = 0;
+  }
+  if (u.cond.arcaneMarkDice > 0) {  // Selene's Marca Arcana: lifts unburst the same way
+    if (u.cond.arcaneMarkTurns > 0) --u.cond.arcaneMarkTurns;
+    else u.cond.arcaneMarkDice = u.cond.arcaneMarkFaces = 0, u.cond.arcaneMarkBy = -1;
   }
   if (u.cond.hobblePct > 0) {
     if (u.cond.hobbleTurns > 0) --u.cond.hobbleTurns;

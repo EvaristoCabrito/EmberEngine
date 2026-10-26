@@ -112,6 +112,8 @@ struct BattleStep {
   int holyDice = 0, holyFaces = 0;     // Golpe Consagrado: a landed blow adds this much holy damage ...
   double holyUndeadMul = 1;            // ... times this on an undead
   int mantleTurns = 0, mantleDice = 0, mantleFaces = 0;  // Manto do Cruzado on every unit of `ids` (Type::Effect)
+  // Selene's Lâmina Arcana (docs/SKILLS_CONJURER.md): a landed blow marks the foe (dice D faces arcane if it walks, for turns of its own)
+  int arcaneMarkDice = 0, arcaneMarkFaces = 0, arcaneMarkTurns = 0;
 };
 
 // What a step did, for the window: a number over a unit, a miss, a heal, a death.
@@ -175,6 +177,11 @@ std::vector<BattleStep> vigilInterrupts(const Battle& b, size_t attacker, const 
 std::vector<BattleStep> daggerInterrupts(const Battle& b, size_t attacker, const std::vector<size_t>& meleeTargets, bool arrived);
 // The daggers' own strike: a spell step the cloud throws (never learned).
 bool daggerStrikeKind(const std::string& kind);
+// Selene's Lâmina Arcana (docs/SKILLS_CONJURER.md): the mark on `walker` going off because it walked (`walked`): one step from whoever
+// marked it, its dice in arcane damage, the mark spent as it resolves. Empty when it carries no mark, did not walk, or its marker fell.
+std::vector<BattleStep> arcaneMarkInterrupts(const Battle& b, size_t walker, bool walked);
+// The mark's burst: a spell step the mark plays (never learned).
+bool arcaneMarkBurstKind(const std::string& kind);
 // Globo de Invulnerabilidade: `kind` cast by `caster` from where it stands would fail on `target` (inside a globe the caster is not in, the
 // spell's tier within the globe's; blows, arrows and weapon skills never).
 bool globeBlocks(const Battle& b, size_t caster, const std::string& kind, size_t target);

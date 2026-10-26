@@ -25,7 +25,58 @@ bool has(const std::vector<std::string>& list, const std::string& v) { return st
 // weaponTypes.ts cleanWeaponSkill: a finite number bounded to 0..100, anything else 0.
 double cleanSkill(const Json& v) { return v.is_number() && std::isfinite(v.get<double>()) ? std::clamp(v.get<double>(), 0.0, 100.0) : 0.0; }
 
+// A hero with arms of her own (heroArms): her main hand is the piece of her types in save.equipment[hero].mainHand (her starter
+// without one), a plain blow at full damage (no staff, no arcane bolt, no arrow); the off hand and the mastery as anyone's.
+bool equipOwnArms(BattleUnit& u, const Loadouts& arms, const HeroArms& own, const Json& save) {
+  const Json equipment = save.value("equipment", Json::object());
+  const Json worn = equipment.is_object() && equipment.contains(u.name) && equipment[u.name].is_object() ? equipment[u.name] : Json::object();
+  std::string mainId = text(worn, "mainHand");
+  const OffHandDef* w = arms.offHand(mainId);
+  if (!w || w->kind != "weapon" || !has(own.weaponTypes, w->weaponType)) mainId = own.starter, w = arms.offHand(own.starter);
+  const OffHandDef* off = arms.offHand(text(worn, "offHand"));
+  u.minRange = w ? w->minRange : 1, u.maxRange = w ? w->maxRange : 1;
+  CombatProfile& p = u.combat;
+  p.hasWeapon = w != nullptr;
+  p.dice = w ? w->dice : 0, p.faces = w ? w->faces : 0, p.bonus = w ? w->bonus : 0, p.enh = 0;
+  p.ranged = false, p.classBonus = false, p.arrow = false, p.arcane = false;
+  p.offHandWeapon = off && off->kind == "weapon", p.offHandShield = off && off->kind == "shield";
+  p.offMinRange = off ? off->minRange : 1, p.offMaxRange = off ? off->maxRange : 1;
+  p.offDice = off ? off->dice : 1, p.offFaces = off ? off->faces : 4, p.offBonus = off ? off->bonus : 0, p.offShieldMul = off ? off->dmgMul : 0.75;
+  p.staff = false, p.staffElement = "arcane", p.staffBonusPct = 0, p.staffBonuses.clear(), p.staffLifeStealPct = 0, p.staffRegen = 0;
+  const Json skills = save.value("heroSkills", Json::object());
+  const Json mine = skills.is_object() && skills.contains(u.name) && skills[u.name].is_object() ? skills[u.name] : Json::object();
+  auto skillOf = [&](const std::string& type) { return has(own.weaponTypes, type) && mine.contains(type + "Weapon") ? cleanSkill(mine[type + "Weapon"]) : 0.0; };
+  const std::string mainType = w ? w->weaponType : std::string();
+  const std::string offType = off && off->kind == "weapon" && (off->usableBy.empty() || has(off->usableBy, u.classId)) ? off->weaponType : std::string();
+  auto mastery = [&](const std::string& type, double& accuracy, double& damage) {
+    if (type.empty() || !has(own.weaponTypes, type)) {
+      accuracy = 100, damage = 1;
+      return;
+    }
+    const double v = skillOf(type);
+    accuracy = 75 + v, damage = (100 + v) / 100;
+  };
+  mastery(mainType, p.accuracy, p.damageMul);
+  mastery(offType, p.offAccuracy, p.offDamageMul);
+  u.weaponType = mainType, u.trainsWeapon = !mainType.empty(), u.weaponSkill = mainType.empty() ? 0 : skillOf(mainType);
+  u.offWeaponType = offType, u.offTrainsWeapon = !offType.empty() && has(own.weaponTypes, offType), u.offWeaponSkill = offType.empty() ? 0 : skillOf(offType);
+  return true;
+}
+
 }  // namespace
+
+const HeroArms* heroArms(const std::string& hero) {
+  static const std::map<std::string, HeroArms> table = [] {
+    std::map<std::string, HeroArms> out;
+    std::ifstream in("content/hero-arms.json", std::ios::binary);
+    const Json j = in ? Json::parse(in, nullptr, false) : Json();
+    if (j.is_object() && j.contains("heroes") && j["heroes"].is_object())
+      for (const auto& [name, h] : j["heroes"].items()) out[name] = {strings(h, "weaponTypes"), text(h, "starter")};
+    return out;
+  }();
+  const auto it = table.find(hero);
+  return it == table.end() ? nullptr : &it->second;
+}
 
 bool Loadouts::load(const std::filesystem::path& file) {
   std::ifstream in(file, std::ios::binary);
@@ -89,6 +140,7 @@ bool Loadouts::mageRangeBonus(const std::string& classId) const { return has(mag
 bool equipFromSave(BattleUnit& u, const Loadouts& arms, const Json& save) {
   const ClassArms* cls = arms.arms(u.classId);
   if (!cls) return false;
+  if (const HeroArms* own = heroArms(u.name)) return equipOwnArms(u, arms, *own, save);  // Selene: her daggers
   // GameApp startBattle: weapons[hero] = {id: save.equipped[hero], enh: save.weapons[id] ?? 0}; spawnUnit: the class's starter when
   // the hero has none, or wields one its class cannot
   std::string weaponId;

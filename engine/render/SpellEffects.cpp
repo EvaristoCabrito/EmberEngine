@@ -103,6 +103,8 @@ int SpellEffects::looks(const std::string& kind) {
                                  "circleOfHealing", "resurrection", "judgment",
                                  // the Cruzado's (vfx/CrusaderFx, ours, 3D)
                                  "holyStrike", "holyTouch", "crusaderMantle",
+                                 // Selene's (vfx/SeleneFx, ours, 3D)
+                                 "arcaneBlade", "arcaneMarkBurst",
                                  // the Conjurador's (vfx/ConjurerFx, ours, 3D)
                                  "placeSwap", "boneLance", "mirrorImage", "detonateSummon", "sacrificeBond", "nightmare", "empowerSummons",
                                  // the ones that had none (vfx/ArmsFx, the two new arrows of vfx/RangerFx; ours, 3D, 2026-10-20)
@@ -197,6 +199,7 @@ float SpellEffects::leadIn(const std::string& kind, int look, const Spot& caster
   if (kind == "turnUndead" && look >= 1) return TurnUndead::kLead;  // the sigil gathers, then the burst
   if (isHealer(kind)) return HealerFx::leadIn(kind);                // the Curandeiro's: the light gathers, then lands
   if (isCrusader(kind) && kind != "holyStrike") return CrusaderFx::leadIn(kind);  // the Cruzado's
+  if (kind == "arcaneMarkBurst") return SeleneFx::leadIn(kind);      // Selene's mark: the rune flares, then the burst
   if (isConjurer(kind)) return ConjurerFx::leadIn(kind);            // the Conjurador's
   if (kind == "dispelMagic") return MageFx::kDispelLead;             // the Mago Negro's: the light gathers, then the wave
   if (kind.rfind("summon", 0) == 0) return 0.9f;                     // the summoning circle, then the familiar
@@ -248,6 +251,7 @@ bool SpellEffects::cast(const std::string& kind, int look, const Spot& caster, c
     if (kind == "turnUndead") end = std::max(end, turnUndead_.latestEnd());
     if (isHealer(kind)) end = std::max(end, healer_.latestEnd());
     if (isCrusader(kind)) end = std::max(end, crusader_.latestEnd());
+    if (isSelene(kind)) end = std::max(end, selene_.latestEnd());
     if (isConjurer(kind)) end = std::max(end, conjurer_.latestEnd());
     if (isDagger(kind)) end = std::max(end, daggers_.latestEnd());
     if (isMage(kind)) end = std::max(end, mage_.latestEnd());
@@ -432,6 +436,14 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
       }
       crusader_.mantle(caster.feet, caster.cardHeight, std::max(radius + 1.0f, 2.5f * 1.7320508f), std::move(allies), impact);
     }
+    return true;
+  }
+  // Selene's (SeleneFx, ours, 3D). Targets: Lâmina Arcana the foe (the mark it lays is the stage's, on a landed blow); the mark's burst
+  // the marked body.
+  if (isSelene(kind)) {
+    if (targets.empty()) return true;
+    if (kind == "arcaneBlade") selene_.bladeGlow(caster.feet, caster.cardHeight, targets.front().feet, start, impact);
+    else selene_.burst({targets.front().feet, heightOf(targets.front())}, impact);
     return true;
   }
   // The Curandeiro's spells (HealerFx, ours, 3D). Targets: the area's hexes (cardHeight 0) with the bodies it reaches keeping their
@@ -975,7 +987,7 @@ void SpellEffects::disarmed(const Spot& foe, const Spot& from, float at) { lance
 
 bool SpellEffects::active(float now) const {
   if (combat_.active(now) || warrior_.active(now) || arms_.active(now) || ranger_.active(now) || lancer_.active(now) || turnUndead_.active(now) || healer_.active(now) ||
-      conjurer_.active(now) || daggers_.active(now) || mage_.active(now) || crusader_.active(now))
+      conjurer_.active(now) || daggers_.active(now) || mage_.active(now) || crusader_.active(now) || selene_.active(now))
     return true;
   if (std::any_of(missiles_.begin(), missiles_.end(), [&](const MagicMissileV2& m) { return !m.done(now); })) return true;
   if (std::any_of(fireballs_.begin(), fireballs_.end(), [&](const Fireball& f) { return !f.done(now); })) return true;
@@ -1057,6 +1069,7 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   turnUndead_.build(now, camera, vfx_, vfxLights);
   healer_.build(now, camera, vfx_, vfxLights);
   crusader_.build(now, camera, vfx_, vfxLights);
+  selene_.build(now, camera, vfx_, vfxLights);
   conjurer_.build(now, camera, vfx_, vfxLights);
   status_.build(now, camera, vfx_, vfxLights);
   daggers_.build(now, camera, vfx_, vfxLights);
