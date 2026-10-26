@@ -31,6 +31,15 @@ seconds cut by the user: 42.56 s vs 45.16 s; the subtitles end at 42.1 s), same 
 wisp-entrance.mp4), same command: 18.3 MB -> 3.8 MB. `--film-check`: 103 pictures/s, 12.6 ms a picture, worst 69 ms. The 640x350
 `wisp-entrance.mp4` stays beside it.
 
+**In use (the user, 2026-10-26: "EmberMovieBurningVillage will need subtiles resync"):** aldeia's briefing film
+`game/aldeia-intro.webm` = the user's 1080p master `Attachments/EmberMovieBurningVillage.mp4`, a new cut of aldeia-intro.mp4
+(9.66 s vs 14.40 s): the old 0-1.09 s and ~6.1-9.7 s are gone. Found by correlating the two films' sound: new = old - 1.088 s
+before the middle cut, new = old - 4.713 s after it (the last line's sound matches at 0.96-0.99). Same command: 14.0 MB -> 2.9 MB;
+`--film-check` 100 pictures/s, worst 72 ms. **The four `subtitles/aldeia-intro.*.vtt` were moved to the new cut** (times only;
+"Corram!" / "Run!" keeps its last 0.6 s, 0-0.612, its start fell in the cut); the old timings are kept in
+`subtitles/kept/aldeia-intro-640x350/` (the game does not read that folder). The 640x350 `aldeia-intro.mp4` stays beside it, but
+its subtitles are now the new cut's.
+
 ## Encoding a film (the settings used)
 
 From the best master there is (re-encoding an already compressed copy costs a little quality), with ffmpeg's SVT-AV1:

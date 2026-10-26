@@ -1721,6 +1721,9 @@ open area with large tables ... some separate rooms for NPCs and services, use t
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
+- `content/game/public/game/subtitles/kept/aldeia-intro-640x350/` (2026-10-26): the four aldeia-intro subtitle files with the old
+  640x350 film's timings, kept when they were resynced to the user's 1080p cut (`aldeia-intro.webm`; docs/FILMS.md).
+
 - `content/maps/kept/thebridge027-lifted-board-20261025.json` (2026-10-25): bridge 026 + `emberBaseLevels` 60, made to put the bottom
   far below the bridge. It cannot: the panorama's ground plane lies at the board's own base (MapStage, `plane.y = boardBase -
   fit.groundDepth`), so lifting the board lifts the ground with it (and the camera's altitude in the atmosphere). The depth below the
