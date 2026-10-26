@@ -144,7 +144,6 @@ struct MapStageOptions {
   bool volume = true;
   bool airParticles = true;  // the map's wisps and dust motes (Dev Controls "Efeitos atmosféricos" off: none)
   int fogLook = 8;  // the fog look shown first (render/FogLooks.h numbers): 008 = 003 without the veil up close
-  int gridLook = 2;  // the panel's "Grade" at the start: 0 OFF, 1 antiga (the marks), 2 = look 001 (--grid-look N)
   int cardStance = 1;  // the panel's "Cards" at the start: 0 em pé (vertical), 1 para a câmera (--cards N)
   int barsFade = 1;    // the panel's "Vida perto" at the start: 0 OFF, 1 bars near the camera fade (--bars-fade N)
   int actionCamera = 1;  // the panel's "Câmera de ação" at the start: 0 OFF, 1 cinema (--action-camera N)
@@ -289,7 +288,7 @@ class MapStage final : public Stage {
     pitch_ += glm::radians(options.tiltDegrees);
     flat_ = options.tatica;
     atmosChoice_ = options.atmos >= 0 ? std::clamp(options.atmos, 0, 3) : 2;
-    gridLook_ = std::clamp(options.gridLook, 0, 2);
+    gridLook_ = 2;  // Show only tactical movement, route, target and cursor regions; no board-wide hex outlines.
     cardStance_ = std::clamp(options.cardStance, 0, 1);
     barsFade_ = std::clamp(options.barsFade, 0, 1);
     actionCamera_ = std::clamp(options.actionCamera, 0, 1);
@@ -540,6 +539,7 @@ class MapStage final : public Stage {
     if (talkAfterWalk_ >= 0 && !busy()) talkRequest_ = std::exchange(talkAfterWalk_, -1);  // walked up to the NPC: they talk
     runScript();
     laps.lap("script");
+    runCutsceneTriggers();
     runCutsceneQueue();
     updateCutscene();
     updateRoaming();
@@ -1553,9 +1553,6 @@ class MapStage final : public Stage {
         int path = u.classId == "elementalist" ? 1 : u.classId == "warlock" ? 2 : 0;
         if (dropdown(u.name.c_str(), path, 3, [](int i) { return std::string(kPaths[i]); })) e2::setPromotion(u, kIds[path]);
       }
-      // The battle grid: the old marks, or a saved look (looks/grid/README.md).
-      static const char* kGrid[3] = {"OFF", "antiga", "001"};
-      dropdown("Grade", gridLook_, 3, [](int i) { return std::string(kGrid[i]); });
       // Health bars and numbers of the units near the camera: shown always, or fading away as their card fills the
       // screen (drawHealthBars).
       static const char* kBars[2] = {"OFF", "somem"};
@@ -2018,7 +2015,7 @@ class MapStage final : public Stage {
 
   bool done() const override {
     if (failed_) return true;
-    if (!options_.battleScript.empty()) return scriptDone_ && readyFrames_ >= 30;
+    if (!options_.battleScript.empty()) return scriptDone_ && readyFrames_ >= 30 && !cutscene_;  // a map's opening scene plays out first
     if (!options_.cutscene.empty()) return cutsceneQueueDone_ && readyFrames_ >= 30;
     return options_.measureSeconds > 0.0f ? measured_ : readyFrames_ >= 30;
   }
@@ -3839,13 +3836,13 @@ class MapStage final : public Stage {
     mediumArt_ = gamePrefs().characters == "media" || gamePrefs().characters == "leve";
     // A pose with a Leve copy of its own (HeroPose::light: Voss's 36-frame cut, the user 2026-10-22: "36 is on with LEVE, 64 is
     // on with Medium, High plays the full version") draws it in Leve.
+    lightArt_ = gamePrefs().characters == "leve";
+    for (size_t i = 0; i < scene_->units.size(); ++i) pinArt(scene_->units[i], i < unitCatalog_.size() ? unitCatalog_[i] : nullptr);
+  }
   // A pose drawn from its own Média / Leve copy (fewer frames at ~610 px) is never halved on top of it, neither by Leve nor by
   // Alta's fallback when the GPU is short (the user, 2026-10-25: "tem como fazer a leve 36 quadros sem pixelar as imagens? fica
   // bem feio mesmo", "médio do voss 64 sem pixels": 36 frames halved came out ~305 px of figure); the cast's poses without a
   // copy are halved by Leve as before.
-    lightArt_ = gamePrefs().characters == "leve";
-    for (size_t i = 0; i < scene_->units.size(); ++i) pinArt(scene_->units[i], i < unitCatalog_.size() ? unitCatalog_[i] : nullptr);
-  }
   void pinArt(const e2::SceneUnit& u, const e2::Hero* entry) {
     const bool two = twoVersionCast().contains(entry ? entry->key : u.key);
     const std::string& own = sceneArtSet(u, entry);
@@ -5197,6 +5194,25 @@ class MapStage final : public Stage {
     if (cutsceneDialog_->draw(ImGui::GetIO().DisplaySize)) cutsceneDialog_.reset();
   }
 
+  // Map events that start a cutscene (content/cutscenes/triggers.json): "onOpen" by map id, played once the map is ready and the
+  // loading curtain is gone, every time the map opens (a reload replays it: the map's opening is the safe checkpoint). Not in
+  // the Map Editor's preview, nor under a --cutscene test run (which plays its own list).
+  void runCutsceneTriggers() {
+    if (openingDone_ || !battle_ || !scene_ || readyFrames_ < 30 || !loading().ready) return;
+    openingDone_ = true;  // (a battle script waits for this moment, so its steps never run before the map's opening scene)
+    if (options_.editorClick || !options_.cutscene.empty()) return;
+    static const e2::Json table = [] {
+      std::ifstream in("content/cutscenes/triggers.json", std::ios::binary);
+      e2::Json j = in ? e2::Json::parse(in, nullptr, false) : e2::Json();
+      return j.is_object() ? j : e2::Json::object();
+    }();
+    const e2::Json onOpen = table.value("onOpen", e2::Json::object());
+    const std::string id = onOpen.is_object() ? onOpen.value(draftId(), std::string()) : std::string();
+    if (id.empty()) return;
+    logInfo("cutscene trigger: {} opens with {}", draftId(), id);
+    playCutscene(id);
+  }
+
   // --cutscene: the listed scripts, one after another, once the map is ready; "!<id>" must be refused or fail.
   void runCutsceneQueue() {
     if (options_.cutscene.empty() || cutsceneQueueDone_ || !battle_ || !scene_ || readyFrames_ < 10) return;
@@ -6398,7 +6414,7 @@ class MapStage final : public Stage {
     return false;
   }
   void runScript() {
-    if (options_.battleScript.empty() || scriptDone_ || !battle_ || !scene_ || readyFrames_ < 10) return;
+    if (options_.battleScript.empty() || scriptDone_ || !battle_ || !scene_ || readyFrames_ < 10 || !openingDone_) return;
     holdTurns = true;
     if (busy()) return;
     if (scriptPanKey_ && now_ < scriptPanUntil_) return;  // "pan": the key still held
@@ -8113,10 +8129,6 @@ class MapStage final : public Stage {
     return file.empty() ? nullptr : uiImage(file);
   }
   std::filesystem::path portraitFileOf(const e2::BattleUnit& u) const {
-    static const std::pair<const char*, const char*> kHero[] = {
-        {"defaultWarrior", "game/portraits/kael.png"}, {"kaelFinal", "game/portraits/kael-final-face-001.jpg"},
-        {"neera", "game/portraits/NeeraProperSide-profile.jpg"}, {"voss", "game/portraits/voss.png"},
-        {"salazar", "game/portraits/salazar-v2-bust.jpg"}, {"aldric", "game/portraits/aldric-profile-001.jpg"},
     // The Interlude's heroes by name (docs/INTERLUDE.md; the user's photos cut as the other MCs' busts, 2026-10-25): Salazar Jovem and
     // Selene share their sprites with other units (kaelEarly, the conjurer's), so the name decides before the sprite does.
     static const std::pair<const char*, const char*> kByName[] = {{"Isolde", "game/portraits/isolde-bust-v01.jpg"},
@@ -8124,6 +8136,10 @@ class MapStage final : public Stage {
                                                                   {"Salazar Jovem", "game/portraits/salazar-jovem-bust-v01.jpg"}};
     for (const auto& [name, file] : kByName)
       if (u.side == "player" && u.name == name) return options_.engine2Public / file;
+    static const std::pair<const char*, const char*> kHero[] = {
+        {"defaultWarrior", "game/portraits/kael.png"}, {"kaelFinal", "game/portraits/kael-final-face-001.jpg"},
+        {"neera", "game/portraits/NeeraProperSide-profile.jpg"}, {"voss", "game/portraits/voss.png"},
+        {"salazar", "game/portraits/salazar-v2-bust.jpg"}, {"aldric", "game/portraits/aldric-profile-001.jpg"},
         {"defaultLancer", "game/portraits/aldric-profile-001.jpg"}, {"sandoval", "game/portraits/sandoval-001.jpg"},
         {"conjurer", "game/portraits/conjurer-002.png"}, {"malrec", "game/portraits/conjurer-002.png"},
         {"theButcher", "game/portraits/the-butcher-portrait-001.jpg"}, {"familiar3", "game/portraits/familiar3-profile.jpeg"},
@@ -8220,6 +8236,34 @@ class MapStage final : public Stage {
     const ImU32 ink = primary ? IM_COL32(255, 241, 216, fade) : hover ? IM_COL32(255, 224, 180, 255) : IM_COL32(226, 194, 148, fade);
     spacedText(dl, font, size, {p.x, p.y + 1}, IM_COL32(0, 0, 0, fade), label, 0.06f, false);
     spacedText(dl, font, size, p, ink, label, 0.06f, false);
+    return clicked && enabled;
+  }
+
+  // A square ember button with a lucide icon in place of a word (the bar's "Atalhos"; the user, 2026-10-25: an icon, not a word).
+  bool emberIconButton(const char* id, const char* icon, bool active, bool enabled, float side = 32.0f) {
+    ImGui::BeginDisabled(!enabled);
+    const bool clicked = ImGui::InvisibleButton(id, {side, side});
+    const bool hover = enabled && ImGui::IsItemHovered();
+    ImGui::EndDisabled();
+    const ImVec2 a = ImGui::GetItemRectMin(), b = ImGui::GetItemRectMax();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const int fade = enabled ? 255 : 102;
+    auto k = [&](int r, int g, int bl) {
+      const float m = hover ? 1.1f : 1.0f;
+      return IM_COL32(std::min(255, static_cast<int>(r * m)), std::min(255, static_cast<int>(g * m)), std::min(255, static_cast<int>(bl * m)), fade);
+    };
+    for (int i = 4; i >= 1; --i) dl->AddRectFilled({a.x - i, a.y + i * 2.0f}, {b.x + i, b.y + i * 2.0f}, IM_COL32(0, 0, 0, enabled ? 28 : 12), 3.0f);
+    dl->AddRect({a.x - 1, a.y - 1}, {b.x + 1, b.y + 1}, IM_COL32(0, 0, 0, fade), 2.0f);
+    if (active) {
+      verticalGradient(dl, a, b, {{0.0f, k(0xd9, 0x62, 0x1c)}, {0.55f, k(0x9c, 0x2f, 0x10)}, {1.0f, k(0x56, 0x17, 0x08)}});
+      dl->AddRect(a, b, IM_COL32(255, 200, 130, enabled ? 128 : 50), 2.0f);
+    } else {
+      verticalGradient(dl, a, b, {{0.0f, k(0x23, 0x23, 0x23)}, {0.55f, k(0x0a, 0x0a, 0x0a)}, {1.0f, k(0x1a, 0x1a, 0x1a)}});
+      dl->AddRect(a, b, hover ? IM_COL32(226, 170, 100, 216) : IM_COL32(190, 150, 95, enabled ? 128 : 60), 2.0f);
+    }
+    const ImU32 ink = active ? IM_COL32(255, 241, 216, fade) : hover ? IM_COL32(255, 224, 180, 255) : IM_COL32(226, 194, 148, fade);
+    uiIcon(dl, icon, {(a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f}, std::round(side * 0.56f), ink);
+    if (hover) ImGui::SetTooltip("%s", tr("Atalhos", "Shortcuts").c_str());
     return clicked && enabled;
   }
 
@@ -8874,46 +8918,53 @@ class MapStage final : public Stage {
     else drawActionsRow(a, b);
     const bool mine = myTurn() && !busy();
     const bool turns = !battle_->roaming();  // free roam has no turns to end
-    const float endW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, "Fim do turno", 0.06f) + 28.0f;
+    // Every button of the bar follows the row from the left, in one run (the user, 2026-10-25: "move them to the left, all of
+    // them": nothing stands alone in the right corner any more). The sockets take the room left over (hudRightEdge_).
+    const auto labelW = [&](const std::string& s) { return spacedTextWidth(uiFont(UiFont::Mark), 16.0f, s.c_str(), 0.06f) + 28.0f; };
+    const float gap = ImGui::GetStyle().ItemSpacing.x;
     {  // the combat log: its switch, and (while it shows) the whole log full screen
       const std::string openLabel = tr("Abrir log", "Open log");
       const char* logLabel = showLog_ ? "Resumo" : "Log";
-      const float openW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, openLabel.c_str(), 0.06f) + 28.0f;
-      const float logW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, logLabel, 0.06f) + 28.0f;
       // (no "Status" here: the portrait opens the sheet; the user, 2026-10-18)
-      const float endX = io.DisplaySize.x - endW - 20.0f, openX = endX - 6.0f - openW, logX = (showLog_ ? openX : endX) - 6.0f - logW;
       // the quest log (Engine2's world-map "Missões", here in the fight too)
       const std::string questLabel = tr("Missões", "Quests");
-      const float questW = options_.world ? spacedTextWidth(uiFont(UiFont::Mark), 16.0f, questLabel.c_str(), 0.06f) + 28.0f : 0.0f;
-      const float questX = questW > 0.0f ? logX - 6.0f - questW : logX;
-      hudRightEdge_ = questX;  // the actions row's sockets stop short of it (next frame)
+      const bool finishing = battle_->winAvailable() && result_.empty();
+      const std::string finishLabel = battle_->activeExit() ? tr("Usar waypoint", "Use waypoint") : tr("Encerrar missão", "End mission");
+      // what the trailing buttons take: the sockets stop short of it (next frame)
+      float trailing = labelW(logLabel) + gap;
+      if (showLog_) trailing += labelW(openLabel) + gap;
+      if (options_.world) trailing += labelW(questLabel) + gap;
+      if (finishing) trailing += labelW(finishLabel) + gap;
+      if (turns) trailing += labelW("Fim do turno") + gap;
+      else if (explores_) trailing += labelW(tr("Sair", "Leave")) + gap;
+      hudRightEdge_ = io.DisplaySize.x - 20.0f - trailing;
       // Engine2's footer: "Encerrar missão" / "Usar waypoint" once the end is on offer
-      if (battle_->winAvailable() && result_.empty()) {
-        const std::string finishLabel = battle_->activeExit() ? tr("Usar waypoint", "Use waypoint") : tr("Encerrar missão", "End mission");
-        const float finishW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, finishLabel.c_str(), 0.06f) + 28.0f;
-        hudRightEdge_ = questX - 6.0f - finishW;
-        ImGui::SameLine(questX - 6.0f - finishW);
+      if (finishing) {
+        ImGui::SameLine();
         if (emberButton("##finishbtn", finishLabel.c_str(), true, !busy())) {
           if (battle_->activeExit()) winDismissed_ = false;
           else confirmFinishNow();
         }
       }
-      if (questW > 0.0f) {
-        ImGui::SameLine(questX);
+      if (options_.world) {
+        ImGui::SameLine();
         if (emberButton("##questbtn", questLabel.c_str(), false, true)) questLog_ = true;
       }
-      ImGui::SameLine(logX);
+      ImGui::SameLine();
       if (emberButton("##logbtn", logLabel, false, true)) showLog_ = !showLog_, logPinned_ = true, logJustOpened_ = showLog_;
       if (showLog_) {
-        ImGui::SameLine(openX);
+        ImGui::SameLine();
         if (emberButton("##openlog", openLabel.c_str(), false, true)) logFull_ = true, logFullJustOpened_ = true;
       }
     }
-    ImGui::SameLine(io.DisplaySize.x - endW - 20.0f);
     if (!turns) {  // free roam: an explore mission's "Sair" (Engine2 onQuit) in place of Fim do turno; nothing on a fight's map
-      if (explores_ && emberButton("##leave", tr("Sair", "Leave").c_str(), true, !busy())) titleRequested_ = true;
-    } else if (emberButton("##endturn", "Fim do turno", false, mine && turns)) {
-      endUnitTurn();
+      if (explores_) {
+        ImGui::SameLine();
+        if (emberButton("##leave", tr("Sair", "Leave").c_str(), true, !busy())) titleRequested_ = true;
+      }
+    } else {
+      ImGui::SameLine();
+      if (emberButton("##endturn", "Fim do turno", false, mine && turns)) endUnitTurn();
     }
     ImGui::End();
     ImGui::PopStyleVar(3);
@@ -8966,7 +9017,7 @@ class MapStage final : public Stage {
     if (actor) {  // a party unit (myTurn)
       // The 12 sockets (F1..F12) and "Atalhos"; they shrink when the row is crowded (Mão Secundária, Arrombar, Fugir).
       const float spacing = ImGui::GetStyle().ItemSpacing.x;
-      const float editW = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, tr("Atalhos", "Shortcuts").c_str(), 0.06f) + 28.0f;
+      const float editW = 32.0f;  // the "Atalhos" icon button (square)
       const float from = ImGui::GetItemRectMax().x + spacing, room = hudRightEdge_ - 12.0f - from - editW - spacing;
       const float side = std::clamp(std::floor(room / kHotbarSlots - spacing), 24.0f, 36.0f);
       const Hotbar& bar = hotbarOf(me);
@@ -8978,7 +9029,7 @@ class MapStage final : public Stage {
           startSpell(kind);
       }
       ImGui::SameLine();
-      if (emberButton("##hotbaredit", tr("Atalhos", "Shortcuts").c_str(), hotbarEdit_, true)) hotbarEdit_ = !hotbarEdit_, hotbarHero_ = static_cast<int>(me);
+      if (emberIconButton("##hotbaredit", "layout-grid", hotbarEdit_, true)) hotbarEdit_ = !hotbarEdit_, hotbarHero_ = static_cast<int>(me);
     }
   }
 
@@ -9655,6 +9706,13 @@ class MapStage final : public Stage {
     auto seat = [&](const std::string& h) {
       if (!placed.contains(h))
         if (const auto free = std::find(cells.begin(), cells.end(), std::string()); free != cells.end()) *free = h, placed.insert(h);
+    };
+    for (const char* h : kHeroes) seat(h);
+    // Every other hero of the party (Isolde, any later one) gets a cell too: left out, it kept the file's hex while the formation
+    // set another hero down on it (the user, 2026-10-25: "dois personagens iniciam no mesmo hex").
+    if (battle_)
+      for (const e2::BattleUnit& u : battle_->units())
+        if (u.side == "player" && !u.summoned) seat(u.name);
     return cells;
   }
   size_t formationRank(const std::string& hero) const {
@@ -9666,13 +9724,6 @@ class MapStage final : public Stage {
     int best = 1 << 20;
     for (const e2::BattleUnit& u : battle_->units())
       if (u.side == "enemy" && u.alive) best = std::min(best, e2::Battle::distance(at, {u.x, u.y}));
-    };
-    for (const char* h : kHeroes) seat(h);
-    // Every other hero of the party (Isolde, any later one) gets a cell too: left out, it kept the file's hex while the formation
-    // set another hero down on it (the user, 2026-10-25: "dois personagens iniciam no mesmo hex").
-    if (battle_)
-      for (const e2::BattleUnit& u : battle_->units())
-        if (u.side == "player" && !u.summoned) seat(u.name);
     return best;
   }
   // The party set down by its Formação inicial at the map's entry (the first party spawn the editor placed: the map only gives
@@ -10675,6 +10726,7 @@ class MapStage final : public Stage {
   size_t cutsceneQueueAt_ = 0;  // --cutscene: the list's cursor, the script playing, the verdicts
   std::string cutsceneQueueLabel_;
   bool cutsceneQueueStarted_ = false, cutsceneQueueDone_ = false, cutsceneTestFailed_ = false;
+  bool openingDone_ = false;  // the map's onOpen trigger looked up once (runCutsceneTriggers)
   struct CardRect {  // a unit's card as drawn this frame, for picking
     glm::vec3 origin{0.0f};  // bottom centre
     float width = 0.0f, height = 0.0f;
@@ -10896,7 +10948,7 @@ class MapStage final : public Stage {
   static constexpr float kBorderInner = 0.47f / 0.5f;  // Engine2 BORDER_INNER: a hex border's inner edge
   std::vector<Renderer::GroundMark> groundMarks_;  // this frame's battle grid (collectMarks)
   std::vector<Renderer::GridCell> gridCells_;      // ... for the numbered looks (collectGrid)
-  int gridLook_ = 2;  // panel "Grade": 0 OFF, 1 antiga (the marks), 2.. = look 001.. (looks/grid/README.md)
+  int gridLook_ = 2;  // Tactical overlays only; the terrain's permanent hex outlines stay hidden.
   int cardStance_ = 1;  // panel "Cards": 0 em pé (vertical), 1 para a câmera (leaning back with the tilt, upright on screen)
   int barsFade_ = 1;    // panel "Vida perto": 0 OFF (bars always shown), 1 the bars of units near the camera fade away
   int actionCamera_ = 1;  // panel "Câmera de ação": 0 OFF, 1 cinema (the shots of every action: applyActionShot)

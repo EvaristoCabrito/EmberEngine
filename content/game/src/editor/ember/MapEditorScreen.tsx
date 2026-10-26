@@ -11,6 +11,7 @@ import { type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactN
 import { ChevronLeft, Dices, Grip, Shuffle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { THREE_D_DOOR_VARIANTS, decorationPlacementArt, SOLID_CART_DECOR_IDS, BARRICADE_LIKE_DECOR, BIG_HOUSE_DECOR_IDS, SOLID_HOUSE_DECOR_IDS, SOLID_ROCK_DECOR_IDS, CLASSES, DEADWOODS_DECOR_IDS, FOREST_DECOR_IDS, DECORATIONS, HOUSE_DECOR_IDS, MAX_GRID, MAX_LEVEL, MIN_GRID, TERRAIN, barricadeDecor, decorationCells, placedFootprint, decorationImage, decorationImageWebp, enemyLevelFor, dressMap, isSummonClass, MUSIC_TRACKS, SUMMON_CLASSES, parseLayout, terrainNote } from "../../ember/data";
+import { MODELS } from "../../world/models";
 import { ENCOUNTER_NPC_IDS, encounterNpcSpawn, type EncounterNpcId } from "../../ember/encounter-npcs";
 import { DEFAULT_AMBIENT_INTENSITY, DEFAULT_BLOOM_INTENSITY, DEFAULT_SUN_INTENSITY, TIME_OF_DAY_LIGHT } from "../../ember/battleLight";
 import { LIGHT_DEFS } from "../../ember/lighting";
@@ -2038,7 +2039,48 @@ export function MapEditorScreen({
   // "Todas" stays pinned first (it's the "show everything" reset, not a real category);
   // every actual category below it is kept in alphabetical order.
   const decorationSections = ["Todas", "Barricada", "Cave", "City", "Forest", "Houses", "Lights", "Madeira Morta", "Natureza", "Objetos", "Pedras e relevo", "Pontes", "Ruínas e construções", "Shops", "Torture", "Waypoints", "Wilds"];
-  const visibleDecorOptions = mode === "architecture" ? architectureOptions : decoSection === "Todas" ? decorOptions : decorOptions.filter((dec) => decorationSectionFor(dec.id) === decoSection);
+  const is3dObjectCatalog = mode === "architecture" && architectureDecorations;
+  const registered3dObjectOptions = architectureOptions.filter((dec) =>
+    !!dec.rockStyle || !!(dec.treeModel && MODELS[dec.treeModel]) || !!(dec.propModel && MODELS[dec.propModel]),
+  );
+  const threeDDecorationSectionFor = (dec: (typeof architectureOptions)[number]) => {
+    if (dec.treeModel) return "Árvores";
+    if (dec.propModel?.startsWith("wisp-revisited-")) return "Natureza";
+    if (dec.id.includes("tavern")) return "Taverna";
+    if (dec.id.includes("watchtower")) return "Torre de vigia";
+    if (dec.id.includes("vau-cottage")) return "Casas";
+    if (dec.id.includes("vau-well")) return "Poços";
+    return decorationSectionFor(dec.id);
+  };
+  const threeDDecorationSections = Array.from(new Set(registered3dObjectOptions.map(threeDDecorationSectionFor)))
+    .sort((a, b) => byName(a, b));
+  const threeDDecorationSectionLabel = (section: string) => ({
+    Barricada: "Barricadas",
+    Cave: "Cavernas",
+    City: "Cidade",
+    Forest: "Floresta",
+    Houses: "Casas",
+    Lights: "Luzes",
+    "Madeira Morta": "Madeira morta",
+    Natureza: "Natureza",
+    Objetos: "Outros objetos",
+    "Pedras e relevo": "Pedras e relevo",
+    Pontes: "Pontes",
+    "Ruínas e construções": "Ruínas e construções",
+    Shops: "Lojas",
+    Taverna: "Taverna",
+    Torture: "Tortura",
+    "Torre de vigia": "Torre de vigia",
+    Waypoints: "Rotas",
+    Wilds: "Natureza selvagem",
+    Árvores: "Árvores",
+    Poços: "Poços",
+  } as Record<string, string>)[section] ?? section;
+  const visibleDecorOptions = mode === "architecture"
+    ? (is3dObjectCatalog
+      ? registered3dObjectOptions.filter((dec) => decoSection === "Todas" || threeDDecorationSectionFor(dec) === decoSection)
+      : architectureOptions).sort((a, b) => byName(a.name, b.name))
+    : (decoSection === "Todas" ? decorOptions : decorOptions.filter((dec) => decorationSectionFor(dec.id) === decoSection));
 
   // Clicking a placed prop is also a lookup action: open its palette section and arm the
   // exact matching brush, so the highlighted menu entry always tells the author its name.
@@ -2678,6 +2720,7 @@ export function MapEditorScreen({
                   setMode(m === "props3d" ? "architecture" : m);
                   if (m === "architecture" || m === "props3d") {
                     setArchitectureDecorations(m === "props3d");
+                    if (m === "props3d") setDecoSection("Todas");
                     setDecoBrush(m === "props3d" ? "prop-3d-tavern-table" : thickWalls ? "castle-3d-thick" : "wall-3d-stone");
                   }
                   if (m === "elevation" || m === "water") setTerrain3D(true);
@@ -2878,7 +2921,7 @@ export function MapEditorScreen({
             </p>}
 
             <div className={mode === "architecture" ? "border border-border rounded-md p-1.5 bg-bg/40" : "ember-scrollbar overflow-x-auto overflow-y-hidden border border-border rounded-md p-1.5 bg-bg/40 h-28 min-h-[104px] min-w-[280px]"}>
-              <div className={mode === "architecture" ? "grid grid-cols-2 xl:grid-cols-3 gap-1.5" : "grid grid-rows-2 grid-flow-col auto-cols-max gap-1.5"}>
+              <div className={is3dObjectCatalog ? "flex flex-col gap-1" : mode === "architecture" ? "grid grid-cols-2 xl:grid-cols-3 gap-1.5" : "grid grid-rows-2 grid-flow-col auto-cols-max gap-1.5"}>
                 {visibleDecorOptions.map((dec) => {
                   const excluded = shuffleExclude.has(dec.id);
                   return (
@@ -2891,9 +2934,9 @@ export function MapEditorScreen({
                         title={`${dec.name} · ${dec.footprint.length} hexes`}
                         aria-pressed={decoBrush === dec.id}
                         onClick={() => { setDecoBrush(dec.id); setSelectedPlacedDecoration(null); setTurningDeco(false); }}
-                        className="flex items-center gap-1.5"
+                        className={`flex items-center ${is3dObjectCatalog ? "w-full text-left px-2 py-1" : "gap-1.5"}`}
                       >
-                        {dec.model3d && !dec.wallTexture ? <span className="size-6 grid place-items-center rounded-sm border border-border text-[10px] font-semibold">3D</span> : <img
+                        {!is3dObjectCatalog && (dec.model3d && !dec.wallTexture ? <span className="size-6 grid place-items-center rounded-sm border border-border text-[10px] font-semibold">3D</span> : <img
                           src={dec.wallTexture ?? decorationImage(dec.id)}
                           alt=""
                           className="size-6 rounded-sm object-cover bg-bg"
@@ -2901,8 +2944,10 @@ export function MapEditorScreen({
                             e.currentTarget.onerror = null;
                             e.currentTarget.src = decorationImageWebp(dec.id);
                           }}
-                        />}
-                        {dec.name}
+                        />)}
+                        {is3dObjectCatalog
+                          ? dec.name.replace(/\s*3D\b/g, "").replace(/\s*·\s*Wisp(?: Crossing)?/g, "").replace(/Watchtower/g, "torre de vigia")
+                          : dec.name}
                       </button>
                       {!dec.model3d && <button
                         type="button"
@@ -3109,11 +3154,11 @@ export function MapEditorScreen({
             >
               ↷ Refazer
             </Button>
-            {mode !== "architecture" && <label className="flex items-center gap-1 rounded-md border border-border bg-bg px-2 py-1 text-xs" title="Categoria atualmente exibida na paleta de decorações">
-              <span className="text-muted">Decorações</span>
+            {(mode !== "architecture" || is3dObjectCatalog) && <label className="flex items-center gap-1 rounded-md border border-border bg-bg px-2 py-1 text-xs" title="Categoria atualmente exibida na paleta">
+              <span className="text-muted">{is3dObjectCatalog ? "Objetos 3D" : "Decorações"}</span>
               <select className="max-w-36 bg-transparent text-fg outline-none" value={decoSection} onChange={(e) => setDecoSection(e.target.value)}>
-                {decorationSections.map((section) => (
-                  <option key={section} value={section}>{section}</option>
+                {(is3dObjectCatalog ? ["Todas", ...threeDDecorationSections] : decorationSections).map((section) => (
+                  <option key={section} value={section}>{is3dObjectCatalog ? section === "Todas" ? "Todos" : threeDDecorationSectionLabel(section) : section}</option>
                 ))}
               </select>
             </label>}

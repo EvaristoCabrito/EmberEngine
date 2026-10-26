@@ -16,6 +16,9 @@ export const MODELS: Record<string, ModelDef> = {
   'tavern-barrel': { file: 'props/tavern-barrel.glb', height: 1.3 },      // ≈ 0.9 m
   'tavern-table': { file: 'props/tavern-table.glb', height: 2.2 },        // ≈ 1.5 m: twice Ember's 75 cm (user's call)
   'tavern-chair': { file: 'props/tavern-chair.glb', height: 1.45 },       // ≈ 1 m to the top of the back
+  'tavern-table-small-v01': { file: 'props/tavern-table-small-v01.glb', height: 1.12 },
+  'tavern-table-messhall-v01': { file: 'props/tavern-table-messhall-v01.glb', height: 1.15 },
+  'tavern-chair-v04': { file: 'props/tavern-chair-v04.glb', height: 1.47 },
   'tavern-candlestick': { file: 'props/tavern-candlestick.glb', height: 0.4 }, // ≈ 27 cm
   'tavern-mug': { file: 'props/tavern-mug.glb', height: 0.15 },           // ≈ 10 cm
   'watchtower-signal-brazier-v01': { file: 'props/watchtower-signal-brazier-v01.glb', height: 2.43 },

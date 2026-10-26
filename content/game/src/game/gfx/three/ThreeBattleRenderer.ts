@@ -1756,8 +1756,8 @@ export class ThreeBattleRenderer {
     for (const p of engine.decorations) {
       const def = wallDefinition(p.id);
       if (!def) continue;
-      if ((def.treeModel || def.propModel === "grey-outcrop" || def.propModel?.startsWith("tavern-") || def.propModel?.startsWith("watchtower-")) && engine.tacticsCamera) {
-        const mesh = this.trees.create(def.treeModel ?? (def.propModel as "grey-outcrop" | "tavern-barrel" | "tavern-chair" | "tavern-candlestick" | "tavern-mug" | "tavern-table" | "watchtower-signal-brazier-v01" | "watchtower-arms-rack-v01" | "watchtower-command-table-v01" | "watchtower-signal-brazier-v02" | "watchtower-arms-rack-v02" | "watchtower-command-table-v02"), tile);
+      if ((def.treeModel || def.propModel === "grey-outcrop" || def.propModel?.startsWith("tavern-") || def.propModel?.startsWith("vau-") || def.propModel?.startsWith("watchtower-")) && engine.tacticsCamera) {
+        const mesh = this.trees.create(def.treeModel ?? (def.propModel as "grey-outcrop" | "tavern-barrel" | "tavern-chair" | "tavern-candlestick" | "tavern-mug" | "tavern-table" | "tavern-table-small-v01" | "tavern-table-messhall-v01" | "tavern-chair-v04" | "vau-gothic-cottage-v01" | "vau-well-v01" | "watchtower-signal-brazier-v01" | "watchtower-arms-rack-v01" | "watchtower-command-table-v01" | "watchtower-signal-brazier-v02" | "watchtower-arms-rack-v02" | "watchtower-command-table-v02"), tile);
         if (mesh) {
           const { wx, wy } = this.boardWorld(p.x, p.y, tile);
           mesh.position.set(wx, -wy, engine.tacticsCamera ? this.groundHeight(p.x, p.y, tile) : this.groundHeight(p.x, p.y, tile) + 1);

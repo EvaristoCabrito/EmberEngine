@@ -614,6 +614,12 @@ export const DECORATIONS: Record<string, DecorationDef> = {
   "prop-3d-tavern-candlestick": { id: "prop-3d-tavern-candlestick", name: "Castiçal de parede 3D", footprint: DECO_ONE, model3d: "prop", propModel: "tavern-candlestick" },
   "prop-3d-tavern-mug": { id: "prop-3d-tavern-mug", name: "Caneca de metal 3D", footprint: DECO_ONE, model3d: "prop", propModel: "tavern-mug" },
   "prop-3d-tavern-table": { id: "prop-3d-tavern-table", name: "Mesa redonda da taverna 3D", footprint: DECO_ONE, model3d: "prop", propModel: "tavern-table" },
+  "prop-3d-tavern-table-small-v01": { id: "prop-3d-tavern-table-small-v01", name: "Mesa pequena da estalagem 3D", footprint: DECO_ONE, model3d: "prop", propModel: "tavern-table-small-v01" },
+  "prop-3d-tavern-table-messhall-v01": { id: "prop-3d-tavern-table-messhall-v01", name: "Mesa comprida da estalagem 3D", footprint: DECO_ONE, model3d: "prop", propModel: "tavern-table-messhall-v01" },
+  "prop-3d-tavern-chair-v04": { id: "prop-3d-tavern-chair-v04", name: "Cadeira da estalagem 3D", footprint: DECO_ONE, model3d: "prop", propModel: "tavern-chair-v04" },
+  "prop-3d-vau-cottage-v01": { id: "prop-3d-vau-cottage-v01", name: "Casa de madeira do Vau 3D", footprint: DECO_BLOCK_5, model3d: "prop", propModel: "vau-gothic-cottage-v01" },
+  "prop-3d-vau-well-v01": { id: "prop-3d-vau-well-v01", name: "Poço de pedra do Vau 3D", footprint: DECO_ONE, model3d: "prop", propModel: "vau-well-v01" },
+  "prop-3d-vau-boulder-v01": { id: "prop-3d-vau-boulder-v01", name: "Afloramento rochoso do Vau 3D", footprint: DECO_PAIR, model3d: "prop", propModel: "grey-outcrop" },
   "ember-watchtower-signal-brazier-v01": { id: "ember-watchtower-signal-brazier-v01", name: "Braseiro de sinal · Watchtower 3D", footprint: DECO_ONE, model3d: "prop", propModel: "watchtower-signal-brazier-v01" },
   "ember-watchtower-arms-rack-v01": { id: "ember-watchtower-arms-rack-v01", name: "Suporte de armas · Watchtower 3D", footprint: DECO_ONE, model3d: "prop", propModel: "watchtower-arms-rack-v01" },
   "ember-watchtower-command-table-v01": { id: "ember-watchtower-command-table-v01", name: "Mesa de comando · Watchtower 3D", footprint: DECO_ONE, model3d: "prop", propModel: "watchtower-command-table-v01" },
@@ -815,7 +821,7 @@ export const CHEST_DECOR_IDS = new Set(["forest-photographic-011-chest","ice-pho
 
 /** Small/wide house artwork uses the five-hex ground base under its visible structure, so
  * the full building area is impassable. Kept separate from BIG_HOUSE_DECOR_IDS. */
-export const HOUSE_DECOR_IDS = new Set(["small-house", "stone-hut", "burning-house", "burnt-house-ruins"]);
+export const HOUSE_DECOR_IDS = new Set(["small-house", "stone-hut", "prop-3d-vau-cottage-v01", "burning-house", "burnt-house-ruins"]);
 
 /** Retained empty set for renderer compatibility; the large mansion prop was removed. */
 export const BIG_HOUSE_DECOR_IDS = new Set<string>();
@@ -841,7 +847,7 @@ export const SOLID_CART_DECOR_IDS = new Set([
 
 /** Rock props are solid decorations; their art must never replace the ground with column terrain. */
 /** Low props: "Bloquear caminho" stops walking through them, but arrows and sight pass over (a well is knee-high). */
-export const LOW_BLOCKER_DECOR_IDS = new Set<string>(["well", "wilds-wishing-well", "tombstones"]);
+export const LOW_BLOCKER_DECOR_IDS = new Set<string>(["well", "wilds-wishing-well", "prop-3d-vau-well-v01", "tombstones"]);
 export const SOLID_ROCK_DECOR_IDS = new Set(["farmland-photographic-014-table", "farmland-photographic-014-bed","farmland-photographic-013-forge", "farmland-photographic-013-cabinet", "farmland-photographic-013-table", "farmland-photographic-013-bed", "forest-photographic-012-cedar", "forest-photographic-012-hemlock","forest-photographic-011-cedar", "forest-photographic-011-hemlock", "forest-photographic-011-log","ice-photographic-010-boulders", "ice-photographic-010-ridge","cave-basalt-008-overhang", "cave-basalt-008-moss-rock",
   "cave-basalt-006-wall", "cave-basalt-006-pillar", "cave-basalt-006-rubble", "cave-basalt-006-stalagmites", "cave-basalt-006-overhang", "cave-basalt-006-crystals", "cave-basalt-006-moss-rock", "cave-basalt-006-edge-pillar", "cave-basalt-006-cliff", "cave-basalt-006-pillar-short", "cave-limestone-007-wall",
   "cave-basalt-004-original-wall", "cave-basalt-004-original-pillar", "cave-basalt-004-original-rubble", "cave-basalt-004-original-stalagmites", "cave-basalt-004-original-overhang", "cave-basalt-004-original-crystals", "cave-basalt-004-original-moss-rock",
@@ -850,7 +856,7 @@ export const SOLID_ROCK_DECOR_IDS = new Set(["farmland-photographic-014-table", 
   "cave-basalt-004-wall", "cave-basalt-004-cliff", "cave-basalt-004-edge-pillar", "cave-basalt-004-pillar", "cave-basalt-004-rubble", "cave-basalt-004-stalagmites", "cave-basalt-004-overhang",
   "cave-wall-stalagmites-002", "cave-wall-shelf-002", "cave-wall-boulders-002",
   "cave-slate-shelf-001", "cave-fractured-boulders-001", "cave-limestone-spires-001",
-  "rocks-3d-grey-outcrop", "spike-rocks", "rocky-outcrop", "boulder-pile", "twin-spires",
+  "rocks-3d-grey-outcrop", "spike-rocks", "rocky-outcrop", "prop-3d-vau-boulder-v01", "boulder-pile", "twin-spires",
   "large-boulder", "spike-rocks-2", "mossy-rocks", "mossy-boulder", "boulder-mound", "spike-crown",
 ]);
 

@@ -1240,7 +1240,7 @@
         "y": 1
       },
       {
-        "id": "city-stool",
+        "id": "prop-3d-tavern-chair-v04",
         "x": 16,
         "y": 2
       },
@@ -1250,22 +1250,22 @@
         "y": 2
       },
       {
-        "id": "city-workbench",
+        "id": "prop-3d-tavern-table-small-v01",
         "x": 10,
         "y": 7
       },
       {
-        "id": "city-stool",
+        "id": "prop-3d-tavern-chair-v04",
         "x": 9,
         "y": 7
       },
       {
-        "id": "city-workbench",
+        "id": "prop-3d-tavern-table-small-v01",
         "x": 13,
         "y": 7
       },
       {
-        "id": "city-stool",
+        "id": "prop-3d-tavern-chair-v04",
         "x": 14,
         "y": 7
       },
@@ -1275,7 +1275,7 @@
         "y": 9
       },
       {
-        "id": "city-workbench",
+        "id": "prop-3d-tavern-table-small-v01",
         "x": 5,
         "y": 9
       },
@@ -1285,14 +1285,34 @@
         "y": 9
       },
       {
-        "id": "city-stool",
+        "id": "prop-3d-tavern-chair-v04",
         "x": 6,
         "y": 9
       },
       {
-        "id": "city-workbench",
+        "id": "prop-3d-tavern-table-messhall-v01",
         "x": 18,
         "y": 8
+      },
+      {
+        "id": "prop-3d-tavern-chair-v04",
+        "x": 17,
+        "y": 7
+      },
+      {
+        "id": "prop-3d-tavern-chair-v04",
+        "x": 19,
+        "y": 7
+      },
+      {
+        "id": "prop-3d-tavern-chair-v04",
+        "x": 17,
+        "y": 9
+      },
+      {
+        "id": "prop-3d-tavern-chair-v04",
+        "x": 19,
+        "y": 9
       },
       {
         "id": "light-candle",
@@ -1342,7 +1362,7 @@
         "y": 5
       },
       {
-        "id": "city-broken-chair",
+        "id": "prop-3d-tavern-chair-v04",
         "x": 4,
         "y": 13
       },
@@ -1363,12 +1383,12 @@
         "targetMapId": "estalagem-andar-2"
       },
       {
-        "id": "city-workbench",
+        "id": "prop-3d-tavern-table-small-v01",
         "x": 2,
         "y": 4
       },
       {
-        "id": "city-workbench",
+        "id": "prop-3d-tavern-table-small-v01",
         "x": 4,
         "y": 4
       }
