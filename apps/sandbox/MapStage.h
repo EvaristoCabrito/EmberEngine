@@ -8638,8 +8638,8 @@ class MapStage final : public Stage {
   }
 
   // --- The battle bar's 12 sockets, F1..F12, per hero (ours; the user, 2026-10-18) ------------------------------------------
-  // Each socket holds a spell / skill kind or "potion:<id>" ("" = empty). A hero with no layout of its own gets its spells and
-  // then the potions it carries, in order. A campaign keeps each hero's layout in the save ("hotbars": name -> 12 entries);
+  // Each socket holds a spell / skill kind or "potion:<id>" ("" = empty). A hero with no layout of its own gets defaultHotbar
+  // (the potions it carries on the last sockets, its spells from F1 before them). A campaign keeps each hero's layout in the save ("hotbars": name -> 12 entries);
   // Modo teste keeps it for the session, never in the bank. "Atalhos" opens the editor (drag into a socket).
   static constexpr int kHotbarSlots = 12;
   using Hotbar = std::array<std::string, kHotbarSlots>;
@@ -8648,16 +8648,34 @@ class MapStage final : public Stage {
     return kept;
   }
   bool hotbarInSave() const { return campaign_ && !testMode_ && !playtest_; }
-  // What the hero can put in a socket now: its spells and skills, then the potions it carries.
+  // What the hero can put in a socket: its spells and skills, then every potion kind, carried or not (the user, 2026-10-25:
+  // "eu preciso poder colocar as poções nos atalhos"; a socket of a potion the hero has none of shows 0 and waits for one).
   std::vector<std::string> hotbarChoices(size_t b) const {
-    const e2::BattleUnit& u = battle_->units()[b];
+    std::vector<std::string> out = hotbarSpells(b);
+    if (battle_->units()[b].side == "player")
+      for (int k = 0; k < 7; ++k) out.push_back(std::string("potion:") + e2::kPotionIds[k]);
+    return out;
+  }
+  std::vector<std::string> hotbarSpells(size_t b) const {
     std::vector<std::string> out;
-    for (const std::string& k : u.spellList)
+    for (const std::string& k : battle_->units()[b].spellList)
       if (!e2::spellPassive(k)) out.push_back(k);  // a passive (the Cruzado's Juramento) works by itself: no socket
+    return out;
+  }
+  // A hero with no layout yet: the potions it carries on the last sockets (F12 the last of them), its spells from F1 in
+  // the sockets left before them; the spells that do not fit are placed by the player in Atalhos (the user, 2026-10-25).
+  Hotbar defaultHotbar(size_t b) const {
+    const e2::BattleUnit& u = battle_->units()[b];
+    Hotbar bar{};
+    std::vector<std::string> potions;
     if (u.side == "player")
       for (int k = 0; k < 7; ++k)
-        if (u.bag[k] > 0) out.push_back(std::string("potion:") + e2::kPotionIds[k]);
-    return out;
+        if (u.bag[k] > 0) potions.push_back(std::string("potion:") + e2::kPotionIds[k]);
+    const size_t first = bar.size() - std::min(potions.size(), bar.size());
+    for (size_t i = 0; i < potions.size() && first + i < bar.size(); ++i) bar[first + i] = potions[i];
+    const std::vector<std::string> spells = hotbarSpells(b);
+    for (size_t i = 0; i < first && i < spells.size(); ++i) bar[i] = spells[i];
+    return bar;
   }
   Hotbar& hotbarOf(size_t b) {
     const e2::BattleUnit& u = battle_->units()[b];
@@ -8675,10 +8693,7 @@ class MapStage final : public Stage {
     } else if (const auto it = sessionHotbars().find(u.name); it != sessionHotbars().end()) {
       bar = it->second, stored = true;
     }
-    if (!stored) {
-      const std::vector<std::string> choices = hotbarChoices(b);
-      for (size_t i = 0; i < bar.size() && i < choices.size(); ++i) bar[i] = choices[i];
-    }
+    if (!stored) bar = defaultHotbar(b);
     return hotbars_[u.name] = bar;
   }
   void storeHotbar(size_t b) {
