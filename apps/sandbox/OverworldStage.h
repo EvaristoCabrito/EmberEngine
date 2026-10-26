@@ -297,7 +297,10 @@ class OverworldStage : public Stage {
   static constexpr const char* kHeroes[7] = {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec", "Isolde"};
   // EmberEngine's own heroes have no row in the world tables (baseClass, portraits): their class and bust from here.
   static const char* ownHeroClass(const std::string& hero) { return hero == "Isolde" ? "conjurer" : nullptr; }
-  static const char* ownHeroPortrait(const std::string& hero) { return hero == "Isolde" ? "game/portraits/isolde-bust-v03.jpg" : nullptr; }
+  static const char* ownHeroPortrait(const std::string& hero) { return hero == "Isolde" ? "game/portraits/isolde-bust-v04.jpg" : nullptr; }
+  // A hero's portrait in its box: cut from the bottom only, never the forehead (the user, 2026-10-25: "para de cortar a testa dos
+  // personagens"); the tall busts (2:3) lost their top in a centred cut.
+  static void portraitCover(ImDrawList* dl, const UiImage& img, ImVec2 a, ImVec2 b) { imageCover(dl, img, a, b, 0.5f, 0.0f); }
   int baseMaxHp(const std::string& hero) const {
     if (const int hp = world_.maxHp(save_, hero); hp > 0) return hp;
     const char* cls = ownHeroClass(hero);
@@ -1109,7 +1112,7 @@ class OverworldStage : public Stage {
         if (const char* own = ownHeroPortrait(hero)) src = own;
       if (const size_t q = src.find('?'); q != std::string::npos) src.resize(q);
       if (!src.empty() && src[0] == '/') src.erase(0, 1);
-      if (const UiImage* img = uiImage(paths_.engine2Public / std::filesystem::path(reinterpret_cast<const char8_t*>(src.c_str())))) imageCover(dl, *img, {x, y}, {x + 40, y + 48});
+      if (const UiImage* img = uiImage(paths_.engine2Public / std::filesystem::path(reinterpret_cast<const char8_t*>(src.c_str())))) portraitCover(dl, *img, {x, y}, {x + 40, y + 48});
       ImGui::SetCursorScreenPos({x, y});
       ImGui::PushID(hero.c_str());
       if (ImGui::InvisibleButton("##portrait", {40, 48}) && hasInn_) inventory_.emplace(hero, true);  // Inventário de <hero>
@@ -2236,7 +2239,7 @@ class OverworldStage : public Stage {
       if (const char* own = ownHeroPortrait(hero)) src = own;
     if (const size_t q = src.find('?'); q != std::string::npos) src.resize(q);
     if (!src.empty() && src[0] == '/') src.erase(0, 1);
-    if (const UiImage* img = uiImage(paths_.engine2Public / std::filesystem::path(reinterpret_cast<const char8_t*>(src.c_str())))) imageCover(dl, *img, a, b);
+    if (const UiImage* img = uiImage(paths_.engine2Public / std::filesystem::path(reinterpret_cast<const char8_t*>(src.c_str())))) portraitCover(dl, *img, a, b);
   }
 
   CampaignPaths paths_;
