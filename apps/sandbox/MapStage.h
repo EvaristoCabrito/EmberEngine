@@ -8130,9 +8130,9 @@ class MapStage final : public Stage {
   std::filesystem::path portraitFileOf(const e2::BattleUnit& u) const {
     // The Interlude's heroes by name (docs/INTERLUDE.md; the user's photos cut as the other MCs' busts, 2026-10-25): Salazar Jovem and
     // Selene share their sprites with other units (kaelEarly, the conjurer's), so the name decides before the sprite does.
-    static const std::pair<const char*, const char*> kByName[] = {{"Isolde", "game/portraits/isolde-bust-v01.jpg"},
-                                                                  {"Selene", "game/portraits/selene-bust-v01.jpg"},
-                                                                  {"Salazar Jovem", "game/portraits/salazar-jovem-bust-v01.jpg"}};
+    static const std::pair<const char*, const char*> kByName[] = {{"Isolde", "game/portraits/isolde-bust-v03.jpg"},
+                                                                  {"Selene", "game/portraits/selene-bust-v03.jpg"},
+                                                                  {"Salazar Jovem", "game/portraits/salazar-jovem-bust-v03.jpg"}};
     for (const auto& [name, file] : kByName)
       if (u.side == "player" && u.name == name) return options_.engine2Public / file;
     static const std::pair<const char*, const char*> kHero[] = {

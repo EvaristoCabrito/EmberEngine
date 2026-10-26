@@ -1,0 +1,8 @@
+{
+  "format": "ember-cutscene-triggers-1",
+  "_about": "Map events that start an on-map cutscene (docs/CUTSCENES.md): onOpen = the script played once the map is ready (every time it opens), by map id. Read by MapStage (playCutscene). TEMPORARY entries for the Interlude's placeholder maps.",
+  "onOpen": {
+    "interlude-city": "interlude-city-opening",
+    "interlude-placeholder": "interlude-placeholder-opening"
+  }
+}

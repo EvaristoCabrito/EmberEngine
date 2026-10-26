@@ -1689,6 +1689,14 @@ open area with large tables ... some separate rooms for NPCs and services, use t
   Limits: the world map's party panel / leader figure still list the six present heroes while ACTIVE (kHeroes); the full
   in-game loop (map → chapter fight → victory → the Ruins) is covered by the Cooker check and the captures of its halves, not by
   one scripted run (the main loop has no capture harness).
+- **Step 3 (2026-10-25, "cria qualquer placeholder depois crio em cima"): read docs/INTERLUDE.md § Step 3 and docs/CUTSCENES.md
+  § Map events.** `content/cutscenes/triggers.json` onOpen (map id → script; MapStage `runCutsceneTriggers`, after the loading
+  curtain, every time the map opens; a battle script waits for it). Chapter = `interlude-city` (TEMPORARY free-roam city,
+  `interlude-city001.json`, a floor connector at (14, 10) to the fight; scene `interlude-city-opening`) then `interlude-placeholder`
+  (scene `interlude-placeholder-opening`). main.cpp: a floor connector to a chapter map resolves through `interludeMission`, and
+  leaving an Interlude exploration map by it runs `markVisited` (→ `interludeAdvance`). The portraits of the three: the user's
+  photos cut as busts (`game/portraits/isolde-bust-v03.jpg`, `selene-`, `salazar-jovem-`; v01 and v02 were cut too tight / too loose and stay unused; portraits.json + MapStage
+  `portraitFileOf` by name).
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 

@@ -1,0 +1,20 @@
+{
+  "format": "ember-cutscene-1",
+  "id": "interlude-city-opening",
+  "_note": "TEMPORARY placeholder scene (Interlude step 3): the three arrive in the old city. The user's real scene replaces it.",
+  "actors": {
+    "isolde": { "unit": "Isolde" },
+    "salazar": { "unit": "Salazar Jovem" },
+    "selene": { "unit": "Selene" }
+  },
+  "steps": [
+    { "do": "move", "actor": "isolde", "to": [14, 20] },
+    { "do": "face", "actor": "salazar", "toward": "isolde" },
+    { "do": "face", "actor": "selene", "toward": "isolde" },
+    { "do": "say", "actor": "isolde", "text": "A cidade. Vinte e cinco anos antes de virar ruína.", "translations": { "en": "The city. Twenty-five years before it became a ruin." } },
+    { "do": "say", "actor": "salazar", "text": "Minha família ainda vive aqui. Por enquanto.", "translations": { "en": "My family still lives here. For now." } },
+    { "do": "say", "actor": "selene", "text": "Então vamos antes que alguém nos veja.", "translations": { "en": "Then let us go before anyone sees us." } },
+    { "do": "wait", "seconds": 0.8 },
+    { "do": "face", "actor": "isolde", "direction": "ne" }
+  ]
+}

@@ -357,15 +357,15 @@
    "framed": false
   },
   "isolde-veo": {
-   "src": "/game/portraits/isolde-bust-v01.jpg",
+   "src": "/game/portraits/isolde-bust-v03.jpg",
    "framed": true
   },
   "selene": {
-   "src": "/game/portraits/selene-bust-v01.jpg",
+   "src": "/game/portraits/selene-bust-v03.jpg",
    "framed": true
   },
   "salazar-jovem": {
-   "src": "/game/portraits/salazar-jovem-bust-v01.jpg",
+   "src": "/game/portraits/salazar-jovem-bust-v03.jpg",
    "framed": true
   }
  }

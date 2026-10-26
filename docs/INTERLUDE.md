@@ -60,6 +60,19 @@ Ember and statuses do not transfer (the recruitment design decides those).
   `interludeAdvance`: the next map pending, or the chapter complete; then the world map opens with the Ruins' mission list and the
   note "Interlúdio concluído: o grupo voltou ao presente."
 
+## Step 3: the vertical slice (placeholders, 2026-10-25: "cria qualquer placeholder depois crio em cima")
+
+The whole chapter as one playable path, with two TEMPORARY maps the user replaces:
+1. `interlude-city` (`content/maps/ember/interlude-city001.json`, scratchpad make_interlude_city.py): the placeholder board as a
+   free-roam city, the three as spawns, no foes, a "Passagem de Andar" (floor connector) at (14, 10) leading to the fight. Opens
+   with the scene `interlude-city-opening` (triggers.json onOpen: Isolde walks, the two turn to her, three lines, a wait, a turn).
+   Leaving by the passage marks the map done for the chapter (main.cpp connector branch -> markVisited -> interludeAdvance) and
+   opens the fight with the party placed beside the way back (arrivedFrom).
+2. `interlude-placeholder` (the fight): opens with `interlude-placeholder-opening` (young Salazar turns, two lines); the turn loop
+   holds until the scene ends; winning completes the chapter (finishCampaignFight -> interludeAdvance -> interludeComplete) and the
+   world map opens on the present-day Ruins' list.
+A defeat keeps the fight pending ("Tentar de novo" / the briefing again); a save loaded mid-chapter resumes at its pending map.
+
 ## Checks
 
 ```

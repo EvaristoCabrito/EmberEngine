@@ -53,6 +53,13 @@ undeclared actor, a malformed coordinate or duration refuse the file whole, nami
   each actor on the hex its card was stepping onto.
 - It reports (`cutsceneDone()` / `cutsceneFailed()` / `cutsceneWhy()` and the log); what happens next is the caller's.
 
+## Map events: `content/cutscenes/triggers.json`
+
+`"onOpen": { "<map id>": "<script id>" }`: the script plays once the map is ready and the loading curtain is gone, every time the
+map opens (MapStage `runCutsceneTriggers`; a reload replays it: the map's opening is the safe checkpoint). Not in the Map Editor's
+preview, not under a `--cutscene` test run. A battle script waits for the opening scene; a capture with one ends after it. Other
+events (a waypoint reached, a victory) are not wired yet: add them here when a scene needs them.
+
 ## Testing
 
 ```

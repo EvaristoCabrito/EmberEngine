@@ -1448,13 +1448,17 @@ int runWindow(const Options& o) {
         map->clearFloor();
         std::string error;
         const bool test = testSession || playing.empty();
-        std::optional<MissionEntry> next = test ? testMission(campaign, paths, floor, error) : campaignMission(campaign, paths, floor, error);
+        std::optional<MissionEntry> next = hasInterlude && interlude.hasMission(floor) ? interludeMission(paths, floor, error, test)  // a chapter map (docs/INTERLUDE.md)
+                                           : test                                      ? testMission(campaign, paths, floor, error)
+                                                                                       : campaignMission(campaign, paths, floor, error);
         const e2::Json completed = test ? e2::Json::array() : campaign.activeSave().value("completed", e2::Json::array());
         const bool lairDone = std::find(completed.begin(), completed.end(), "wisp-forest-crossing-boss") != completed.end();
         if (!next) {
           logWarn("floor connector to {}: {}", floor, error);
         } else if (!test && floor == "wisp-forest-crossing-boss" && lairDone) {
           logWarn("floor connector to {}: the lair is done (GameApp startBattle refuses it)", floor);
+          // An Interlude exploration map left by its passage: done for the chapter, the next map pending (markVisited advances it)
+          if (!test && map->explores() && hasInterlude && interlude.hasMission(playing)) markVisited(playing, map);
         } else {
           // A fight won on its stairs: the victory is written first (persistVictory: HP carried, the dead stay dead), as Engine2
           // writes it when the result screen shows; a free-roam floor (the walkable Inn) writes nothing here.

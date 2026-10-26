@@ -1,0 +1,16 @@
+{
+  "format": "ember-cutscene-1",
+  "id": "interlude-placeholder-opening",
+  "_note": "TEMPORARY placeholder scene (Interlude step 3): the fight begins. The user's real scene replaces it.",
+  "actors": {
+    "isolde": { "unit": "Isolde" },
+    "salazar": { "unit": "Salazar Jovem" },
+    "selene": { "unit": "Selene" }
+  },
+  "steps": [
+    { "do": "face", "actor": "salazar", "direction": "nw" },
+    { "do": "say", "actor": "salazar", "text": "Eles já estão aqui. Fiquem atrás de mim.", "translations": { "en": "They are already here. Stay behind me." } },
+    { "do": "say", "actor": "isolde", "text": "Ninguém fica atrás de ninguém, Salazar.", "translations": { "en": "Nobody stays behind anybody, Salazar." } },
+    { "do": "wait", "seconds": 0.6 }
+  ]
+}

@@ -5,11 +5,31 @@
   "_requiredQuests": "Salazar's quest ids (content/engine2/overworld.json quests) that must all be done before the Ruins open. EMPTY = the Ruins stay shut (an unconfigured gate never opens by accident). Modo teste, and the developer flag \"interlude:ruins-open\" in save.flags, open them for testing.",
   "requiredQuests": [],
   "party": [
-    { "name": "Isolde", "classId": "conjurer", "level": 1, "weapon": "cajado-de-osso", "persistent": true },
-    { "name": "Salazar Jovem", "classId": "crusader", "level": 5, "weapon": "espada-larga" },
-    { "name": "Selene", "classId": "conjurer", "level": 1, "weapon": "cajado-de-osso", "temporary": true }
+    {
+      "name": "Isolde",
+      "classId": "conjurer",
+      "level": 1,
+      "weapon": "cajado-de-osso",
+      "persistent": true
+    },
+    {
+      "name": "Salazar Jovem",
+      "classId": "crusader",
+      "level": 5,
+      "weapon": "espada-larga"
+    },
+    {
+      "name": "Selene",
+      "classId": "conjurer",
+      "level": 1,
+      "weapon": "cajado-de-osso",
+      "temporary": true
+    }
   ],
   "leader": "Isolde",
-  "_missions": "The chapter's maps in order (mission id = map id in content/maps/ember, the newest serial plays). TEMPORARY: one placeholder map until the user's Interlude maps arrive.",
-  "missions": ["interlude-placeholder"]
+  "_missions": "The chapter's maps in order (mission id = map id in content/maps/ember, the newest serial plays). TEMPORARY: a placeholder exploration map (interlude-city: free roam, a floor connector to the fight) and a placeholder fight (interlude-placeholder) until the user's Interlude maps arrive.",
+  "missions": [
+    "interlude-city",
+    "interlude-placeholder"
+  ]
 }
