@@ -121,36 +121,36 @@
    "pattern": "content/sprites/isolde-veo/fall-v01/fall-{}.png"
   },
   "move": {
-   "video": "Attachments/Isolde/IsoldeRightWalkstartsat2sec.mp4",
-   "first": 26,
-   "last": 143,
-   "loopFirst": 46,
-   "loopLast": 140,
-   "seamSteps": 2.48,
-   "bootRow": 1169,
+   "video": "Attachments/IsoldeWalkHighLong.mp4",
+   "first": 7,
+   "last": 191,
+   "loopFirst": 41,
+   "loopLast": 170,
+   "seamSteps": 2.29,
+   "bootRow": 1227,
    "bodyDrift": [
-    -49,
-    -16
+    4,
+    31
    ],
-   "figurePx": 1032.0,
-   "frames": 95,
+   "figurePx": 1155.0,
+   "frames": 130,
    "frameMs": 41.666666666666664,
    "nat": [
-    578,
-    1073
+    667,
+    1198
    ],
    "crop": [
-    4,
+    5,
     6,
-    570,
-    1062
+    662,
+    1186
    ],
    "box": {
-    "w": 1.48981,
-    "h": 2.76568,
-    "foot": 0.02835
+    "w": 1.53612,
+    "h": 2.75903,
+    "foot": 0.02764
    },
-   "pattern": "content/sprites/isolde-veo/move-v01/move-{}.png"
+   "pattern": "content/sprites/isolde-veo/move-v02/move-{}.png"
   },
   "move-left": {
    "video": "Attachments/Isolde/IsoldeLeftWalk.mp4",

@@ -22,14 +22,15 @@
    "clip": "move",
    "pose": "walk",
    "kind": "walk",
-   "src": "build/video-cut/isolde-veo/walk-right",
-   "video": "Attachments/Isolde/IsoldeRightWalkstartsat2sec.mp4",
-   "first": 30,
-   "last": 143,
-   "loopMin": 24,
-   "loopMax": 100,
+   "src": "build/video-cut/isolde-veo/walk-right-v2",
+   "video": "Attachments/IsoldeWalkHighLong.mp4",
+   "first": 7,
+   "last": 191,
+   "loopMin": 130,
+   "loopMax": 183,
    "mode": "loop",
-   "scaleTo": 610
+   "scaleTo": 610,
+   "version": "media36-v02"
   },
   {
    "clip": "move-left",

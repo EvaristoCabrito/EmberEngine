@@ -20,14 +20,15 @@
    "clip": "move",
    "pose": "walk",
    "kind": "walk",
-   "src": "build/video-cut/isolde-veo/walk-right",
-   "video": "Attachments/Isolde/IsoldeRightWalkstartsat2sec.mp4",
-   "first": 26,
-   "last": 143,
-   "loopMin": 94,
-   "loopMax": 115,
+   "src": "build/video-cut/isolde-veo/walk-right-v2",
+   "video": "Attachments/IsoldeWalkHighLong.mp4",
+   "first": 7,
+   "last": 191,
+   "loopMin": 130,
+   "loopMax": 183,
    "mode": "loop",
-   "why": "the video opens on a stone wall and cuts to the studio at frame 24; she walks from 2 s; the user, 2026-10-25: \"usar o máximo de tempo possível do video\": the whole walk (26..143, 118 frames), the seam trims at most 24"
+   "why": "the user's new walk right (2026-10-26, Attachments/IsoldeWalkHighLong.mp4: the staff in her right hand, in front of her body; \"we dont need that wall frame\"): frames 7-191 (0-6 are a stone-wall shot), the loop searched among the longest lengths",
+   "version": "v02"
   },
   {
    "clip": "move-left",

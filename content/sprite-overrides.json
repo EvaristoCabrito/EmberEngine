@@ -78,7 +78,7 @@
    "poses": {"idle": "base", "walk": "move", "walkLeft": "move-left", "cast": "cast", "counterStaff": "counter-staff", "hit": "hit", "death": "fall"},
    "labels": {"idle": "Parado", "walk": "Andar", "walkLeft": "Andar (esquerda)", "cast": "Conjurar", "counterStaff": "Contra-ataque (cajado)", "hit": "Dano", "death": "Queda"},
    "packs": {"base": "field", "move": "field", "move-left": "field"},
-   "strides": {"move": 1.0, "move-left": 1.0}
+   "strides": {"move": 3.0, "move-left": 1.0}
   },
   {
    "set": "isolde-veo-64-media",

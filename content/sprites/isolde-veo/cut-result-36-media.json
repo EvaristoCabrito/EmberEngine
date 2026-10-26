@@ -35,38 +35,38 @@
    "pattern": "content/sprites/isolde-veo/base-media36-v01/base-{}.png"
   },
   "move": {
-   "video": "Attachments/Isolde/IsoldeRightWalkstartsat2sec.mp4",
-   "first": 30,
-   "last": 143,
-   "loopFirst": 54,
-   "loopLast": 100,
-   "seamSteps": 1.55,
-   "bootRow": 1170,
+   "video": "Attachments/IsoldeWalkHighLong.mp4",
+   "first": 7,
+   "last": 191,
+   "loopFirst": 41,
+   "loopLast": 170,
+   "seamSteps": 2.29,
+   "bootRow": 1227,
    "bodyDrift": [
-    -45,
-    -12
+    4,
+    31
    ],
-   "frameCountFrom": 47,
-   "figurePx": 1031.0,
+   "frameCountFrom": 130,
+   "figurePx": 1155.0,
    "scaledTo": 609.8,
    "frames": 36,
-   "frameMs": 54.398148148148145,
+   "frameMs": 150.46296296296293,
    "nat": [
-    339,
-    634
+    350,
+    632
    ],
    "crop": [
+    2,
     3,
-    4,
-    334,
-    627
+    348,
+    626
    ],
    "box": {
-    "w": 1.47835,
-    "h": 2.76482,
-    "foot": 0.02748
+    "w": 1.52691,
+    "h": 2.75716,
+    "foot": 0.02431
    },
-   "pattern": "content/sprites/isolde-veo/move-media36-v01/move-{}.png"
+   "pattern": "content/sprites/isolde-veo/move-media36-v02/move-{}.png"
   },
   "move-left": {
    "video": "Attachments/Isolde/IsoldeLeftWalk.mp4",
