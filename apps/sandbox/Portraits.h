@@ -52,16 +52,19 @@ inline const HeroPortrait* heroPortrait(const std::string& name) {
 // picture shown puts the face at kPortraitFaceShare of the box's height, centred across, its centre kPortraitFaceAt down (a picture
 // too tight to zoom out that far shows as much of itself as the box's shape allows, the face as close to its place as the edges
 // let it). Without one, the picture covers the box, cut on the sides or from below (anchorY).
+// The status sheet frames a measured face closer, as close as the six heroes' busts stand in its tall box (their faces 0.3-0.6 of
+// it, most near 0.45; the user, 2026-10-26: "selene ainda precisa do crop mais próximo na tela de status como os outros").
+inline constexpr float kStatusFaceShare = 0.45f, kStatusFaceAt = 0.38f;
 inline void drawHeroPortrait(ImDrawList* dl, const UiImage& img, ImVec2 a, ImVec2 b, const HeroPortrait& p, float rounding = 0.0f,
-                             ImU32 tint = IM_COL32_WHITE) {
+                             ImU32 tint = IM_COL32_WHITE, float faceShare = kPortraitFaceShare, float faceAt = kPortraitFaceAt) {
   const float bw = b.x - a.x, bh = b.y - a.y, iw = static_cast<float>(img.width), ih = static_cast<float>(img.height);
   if (bw <= 0 || bh <= 0 || iw <= 0 || ih <= 0) return;
   float winW, winH, x0, y0;  // the window of the picture shown, in its pixels
   if (p.faceH > 0.0f) {
-    winH = std::min({p.faceH * ih / kPortraitFaceShare, ih, iw * bh / bw});
+    winH = std::min({p.faceH * ih / faceShare, ih, iw * bh / bw});
     winW = winH * bw / bh;
     x0 = std::clamp(p.faceX * iw - winW * 0.5f, 0.0f, iw - winW);
-    y0 = std::clamp(p.faceY * ih - winH * kPortraitFaceAt, 0.0f, ih - winH);
+    y0 = std::clamp(p.faceY * ih - winH * faceAt, 0.0f, ih - winH);
   } else {
     const float scale = std::max(bw / iw, bh / ih);
     winW = bw / scale, winH = bh / scale;
