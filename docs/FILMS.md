@@ -18,7 +18,13 @@ motion; never trust SSIM / PSNR / stills for a film.
 campaign's intro `game/vau-intro.webm` = the user's 1080p master `Attachments/EmberMovieIntro.mp4` (same cut as vau-intro.mp4,
 97.84 s) through the command below, unchanged (CRF 30): 142 MB -> 21.7 MB, 1.9 Mbps. `--film-check`: 81 pictures/s (25 needed),
 16.6 ms a picture, worst 163 ms (absorbed by the picture queue: not seen in play). The 640x350 `vau-intro.mp4` stays beside it.
-The 2026-10-25 rejection was the same settings from the 640x350 MP4; this one is from a 1080p master. Not judged in motion yet.
+The 2026-10-25 rejection was the same settings from the 640x350 MP4; this one is from a 1080p master. The user, after watching it:
+"the quality doesnt seem affected by the codec".
+
+**In use (the user, 2026-10-26: "EmberINNarrival you can do this video now too"):** the first Inn visit's film
+`game/inn-arrival.webm` = the user's 1080p master `Attachments/EmberINNarrival.mp4` (the same start as inn-arrival.mp4, its last
+seconds cut by the user: 42.56 s vs 45.16 s; the subtitles end at 42.1 s), same command: 61.5 MB -> 13.3 MB. `--film-check`:
+105 pictures/s, 12.7 ms a picture, worst 87 ms. The 640x350 `inn-arrival.mp4` stays beside it.
 
 ## Encoding a film (the settings used)
 
