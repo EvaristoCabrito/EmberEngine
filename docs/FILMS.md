@@ -40,6 +40,12 @@ before the middle cut, new = old - 4.713 s after it (the last line's sound match
 `subtitles/kept/aldeia-intro-640x350/` (the game does not read that folder). The 640x350 `aldeia-intro.mp4` stays beside it, but
 its subtitles are now the new cut's.
 
+**In use (the user, 2026-10-26: "aplicar essa no codec EmberMovieSmith1"):** the first forge visit's film `game/smith-intro.webm`
+= the user's 1080p master `Attachments/EmberMovieSmith1.mp4` (15.06 s vs 15.04 s, but every line's sound 2.000 s earlier: the
+correlation scores 1.00 on all four). Same command: 22.3 MB -> 4.8 MB; `--film-check` 105 pictures/s, worst 76 ms. **The four
+`subtitles/smith-intro.*.vtt` shifted by -2.000 s** (times only); the old timings kept in `subtitles/kept/smith-intro-752x416/`.
+The 752x416 `smith-intro.mp4` stays beside it, with the new cut's subtitles.
+
 ## Encoding a film (the settings used)
 
 From the best master there is (re-encoding an already compressed copy costs a little quality), with ffmpeg's SVT-AV1:

@@ -1723,6 +1723,7 @@ open area with large tables ... some separate rooms for NPCs and services, use t
 
 - `content/game/public/game/subtitles/kept/aldeia-intro-640x350/` (2026-10-26): the four aldeia-intro subtitle files with the old
   640x350 film's timings, kept when they were resynced to the user's 1080p cut (`aldeia-intro.webm`; docs/FILMS.md).
+  Likewise `subtitles/kept/smith-intro-752x416/` (smith-intro's four files before their -2.0 s shift to `smith-intro.webm`).
 
 - `content/maps/kept/thebridge027-lifted-board-20261025.json` (2026-10-25): bridge 026 + `emberBaseLevels` 60, made to put the bottom
   far below the bridge. It cannot: the panorama's ground plane lies at the board's own base (MapStage, `plane.y = boardBase -
