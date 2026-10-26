@@ -197,6 +197,35 @@ def main():
                 p["speed"] = sp["factor"]
                 print(f"{sp['hero']} {p['pose']}: {sp['factor']}x as fast ({len(old)} -> {len(p['pace'])} ticks)")
 
+    # "feet": the heroes whose art has empty rows under the feet that the box's foot line does not count (Aldric's standing poses:
+    # 0.18 units of air, foot 0, so he stood off his hex; the user, 2026-10-25: "Aldric is totally off set from his hex placement").
+    # Each pose's foot = the empty share under the lowest solid row (alpha > 128) over all its frames x the box's height, as the
+    # video cuts' feet lines are; measured from the frames every run.
+    if over.get("feet"):
+        from PIL import Image
+        sets = {s["name"]: {c["name"]: c for c in s["clips"]} for s in manifest["sets"]}
+        public = os.path.join(ROOT, "content", "game", "public", "game")
+        for key in over["feet"]:
+            hero = next((h for h in roster["heroes"] if h.get("key") == key), None)
+            if hero is None:
+                raise SystemExit(f"feet: {key} not in {roster_path}")
+            for p in hero["poses"]:
+                c = sets.get(p["set"], {}).get(p["clip"])
+                if not c:
+                    raise SystemExit(f"feet: {key} {p['pose']}: {p['set']}/{p['clip']} not in {manifest_path}")
+                pattern = c["frames"]["pattern"]
+                if not os.path.isabs(pattern):
+                    pattern = os.path.join(public, pattern)
+                low = height = 0
+                for i in range(1, c["frames"]["count"] + 1):
+                    with Image.open(pattern.replace("{}", str(i))) as im:
+                        height = im.height
+                        box = im.getchannel("A").point(lambda v: 255 if v > 128 else 0).getbbox()
+                    if box:
+                        low = max(low, box[3])
+                p["box"]["foot"] = round((height - low) / height * p["box"]["h"], 5)
+            print(f"feet {key}: " + ", ".join(f"{p['pose']} {p['box']['foot']}" for p in hero["poses"]))
+
     save(manifest_path, manifest, 1)
     save(roster_path, roster, None)
     for p, table in zip(strides_paths, strides):
