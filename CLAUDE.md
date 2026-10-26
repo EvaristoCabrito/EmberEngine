@@ -14,6 +14,14 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
 
 ## How to work with this user (hard rules)
 
+- **ONE GAME CODE: Modo teste (Debug) = the campaign, with exactly three differences (the user, 2026-10-25, pasted dozens of times:
+  "The ONLY diference between Debug and normal mode is: Starts with full party at level 30, a billion gold pieces and can go anywhere
+  in the map, everything is unlocked, other than that NOTHING AT ALL IS DIFERENT", "STOP SPLITING INTO TWO DIFRENTE GAME CODES").**
+  Same maps and prepared files (testMission = campaignMission), same art (every unit's idle from the catalog, one source), same sprite
+  quality rule for every unit (no "cast" list), same combat, same screens. The three differences live only in the test save
+  (TestModeStage `freshTestSession`). Never add a mode check, a per-character table or a second data source. Memory note
+  `debug-mode-only-differences`.
+
 - **Forget Engine2 exists (the user, 2026-10-20: "eu não quero mais nada baseado no engine 2", "esquecer que ele existe").** It
   overrides every Engine2 mention in this file: never base a design, number, rule or look on it, never run or propose parity checks
   against it, never write its name in new code, commits, docs or replies. The game's own rules (Como jogar, the spell tables) are

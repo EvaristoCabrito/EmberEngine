@@ -250,7 +250,7 @@ class OverworldStage : public Stage {
             write();
             if (callbacks_.play) callbacks_.play(entry);
           });
-        } else if (film && !test()) {
+        } else if (film) {  // Modo teste too: it differs only by the party at 30, the Gold and everything unlocked (the user, 2026-10-25)
           MissionEntry entry = *briefing_;
           playFilm(film, [this, entry] {
             if (callbacks_.play) callbacks_.play(entry);
@@ -365,7 +365,7 @@ class OverworldStage : public Stage {
       }
       if (id == "estalagem") return enterInn();
       // Wisp Forest's entrance film, the first time the party goes into any of its missions (GameApp openMission).
-      if (!test() && !save_.value("seenWispForestIntro", false)) {
+      if (!save_.value("seenWispForestIntro", false)) {  // Modo teste too (its session save keeps "seen"; nothing is written)
         for (const e2::MapLocation& l : world_.locations()) {
           if (l.id != "wisp-forest" || std::find(l.missionIds.begin(), l.missionIds.end(), id) == l.missionIds.end()) continue;
           bool any = false;
@@ -398,7 +398,7 @@ class OverworldStage : public Stage {
       notice_ = "Sem dados da Estalagem (content/engine2/inn.json).";
       return;
     }
-    if (!test() && !save_.value("seenInnArrivalIntro", false)) {
+    if (!save_.value("seenInnArrivalIntro", false)) {  // Modo teste too (its session save keeps "seen"; nothing is written)
       playFilm("game/inn-arrival.mp4", [this] {
         save_["seenInnArrivalIntro"] = true;
         enterInn();

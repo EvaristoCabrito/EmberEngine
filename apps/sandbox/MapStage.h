@@ -3801,11 +3801,12 @@ class MapStage final : public Stage {
       const auto it = byKey.find(scene_->units[i].key);
       if (it != byKey.end()) unitCatalog_[i] = it->second;
       else unknown.push_back(scene_->units[i].name + " (" + scene_->units[i].key + ")");
-      // Art EmberEngine replaced (content/sprite-overrides.json "sets", e.g. Voss cut from video): the scene file still
-      // names Engine2's idle, so the unit takes the catalog's.
+      // One source for a unit's art on every map and in every mode (the user, 2026-10-25: "same art, same rules"): the catalog's
+      // idle, always; the scene file's copy of it (its frames, pace, box) is never used, even when it names the same set (Isolde's
+      // kept a stale forward-only pace that way while Voss's, a different set name, was replaced).
       const e2::HeroPose* idle = unitCatalog_[i] ? unitCatalog_[i]->find(kIdle) : nullptr;
       e2::SceneUnit& su = scene_->units[i];
-      if (idle && !idle->pace.empty() && idle->set != su.set) {
+      if (idle && !idle->pace.empty()) {
         su.set = idle->set, su.clip = idle->clip, su.boxW = idle->boxW, su.boxH = idle->boxH, su.foot = idle->foot;
         su.frames = idle->frames, su.pace = idle->pace, su.natW = su.natH = 0;
       }
@@ -3825,32 +3826,29 @@ class MapStage final : public Stage {
   }
 
   // Every pose the map's units can play is loaded before the fight opens and held to its end (the user, 2026-10-18: a pose
-  // streamed in on its first frame drew from the 64 px tail, a blur at every change of animation). The cast with two
-  // versions (content/sprite-quality.json) follows Opções > Gráficos > Personagens: Alta (full resolution) / Leve (half).
-  // Média (the default, the user 2026-10-21): a pose with a medium copy (HeroPose::medium, e.g. voss-veo-media at ~610 px of
-  // figure) is pinned and drawn from it; the others as in Alta. Only the chosen copy is loaded.
+  // streamed in on its first frame drew from the 64 px tail, a blur at every change of animation). Only the chosen copy is loaded.
+  // One rule for every unit, heroes and monsters alike (the user, 2026-10-25: "same art, same rules"; content/sprite-quality.json's
+  // lists no longer decide anything): Alta = the full clip; Média = the pose's 64-frame copy where it has one; Leve = its 36-frame
+  // copy, else the Média one; a pose without a copy plays its full clip in every setting. Leve never halves anything (halved frames
+  // pixelate: "anything less is just nasty looking"); only Alta's fallback when the GPU is short halves full clips, for everyone.
   void pinUnitArt() {
-    sprites_.setLight(gamePrefs().characters == "leve");
-    // Média and Leve draw a pose's own copies where it has them (Voss / Isolde: all frames ~1100 px / 64 frames ~610 px / 36
-    // frames ~610 px; pinArt never halves a copy); without a copy Leve halves the full clip as before
+    sprites_.setLight(false);
     mediumArt_ = gamePrefs().characters == "media" || gamePrefs().characters == "leve";
     // A pose with a Leve copy of its own (HeroPose::light: Voss's 36-frame cut, the user 2026-10-22: "36 is on with LEVE, 64 is
     // on with Medium, High plays the full version") draws it in Leve.
     lightArt_ = gamePrefs().characters == "leve";
     for (size_t i = 0; i < scene_->units.size(); ++i) pinArt(scene_->units[i], i < unitCatalog_.size() ? unitCatalog_[i] : nullptr);
   }
-  // A pose drawn from its own Média / Leve copy (fewer frames at ~610 px) is never halved on top of it, neither by Leve nor by
-  // Alta's fallback when the GPU is short (the user, 2026-10-25: "tem como fazer a leve 36 quadros sem pixelar as imagens? fica
-  // bem feio mesmo", "médio do voss 64 sem pixels": 36 frames halved came out ~305 px of figure); the cast's poses without a
-  // copy are halved by Leve as before.
+  // A pose drawn from its own Média / Leve copy is never halved on top of it, not even by Alta's fallback when the GPU is short
+  // (the user, 2026-10-25: "tem como fazer a leve 36 quadros sem pixelar as imagens? fica bem feio mesmo": 36 frames halved came
+  // out ~305 px of figure).
   void pinArt(const e2::SceneUnit& u, const e2::Hero* entry) {
-    const bool two = twoVersionCast().contains(entry ? entry->key : u.key);
     const std::string& own = sceneArtSet(u, entry);
-    sprites_.pin(own, u.clip, two && own == u.set);
+    sprites_.pin(own, u.clip, own == u.set);
     if (entry)
       for (const e2::HeroPose& p : entry->poses) {
         const std::string& set = artSet(p);
-        sprites_.pin(set, p.clip, two && set == p.set);
+        sprites_.pin(set, p.clip, set == p.set);
       }
   }
   const std::string& artSet(const e2::HeroPose& p) const {
@@ -3885,7 +3883,8 @@ class MapStage final : public Stage {
     if (!files.empty()) hudPreload_ = std::make_unique<UiPreload>(std::move(files));
   }
 
-  // The catalog keys with Alta / Leve sprites: content/sprite-quality.json's cast, villains and bosses.
+  // The catalog keys with Alta / Leve sprites: content/sprite-quality.json's cast, villains and bosses. Not in use since
+  // 2026-10-25 (one rule for every unit, pinUnitArt); kept.
   static const std::unordered_set<std::string>& twoVersionCast() {
     static const std::unordered_set<std::string> keys = [] {
       std::unordered_set<std::string> out;
