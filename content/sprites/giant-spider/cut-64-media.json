@@ -1,0 +1,84 @@
+{
+ "about": "giant-spider's Personagens Média (tools/scripts/sprites/quality_copies.py, the rule of 2026-10-25): every clip of cut.json from the same matted frames, at most 64 frames picked evenly (no blend, the clip's timing kept), the figure ~916 px tall (a clip already shorter keeps its own size).",
+ "set": "giant-spider-64-media",
+ "version": "media64-v01",
+ "figureUnits": 1.6987,
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/giant-spider/idlecast",
+   "video": "Attachments/Giant Spider/Giant_spider_performing IdleandCasting.mp4",
+   "first": 0,
+   "last": 90,
+   "loopMin": 40,
+   "loopMax": 90,
+   "mode": "loop",
+   "scaleTo": 916
+  },
+  {
+   "clip": "cast",
+   "pose": "cast",
+   "kind": "stand",
+   "src": "build/video-cut/giant-spider/idlecast",
+   "video": "Attachments/Giant Spider/Giant_spider_performing IdleandCasting.mp4",
+   "first": 90,
+   "last": 216,
+   "impactFrame": 162,
+   "mode": "once",
+   "scaleTo": 916
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/giant-spider/moveatk",
+   "video": "Attachments/Giant Spider/Giant_spider_animation_movementandATT.mp4",
+   "first": 30,
+   "last": 116,
+   "loopMin": 36,
+   "loopMax": 110,
+   "mode": "loop",
+   "scaleTo": 916
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "src": "build/video-cut/giant-spider/moveatk",
+   "video": "Attachments/Giant Spider/Giant_spider_animation_movementandATT.mp4",
+   "first": 138,
+   "last": 204,
+   "impactFrame": 174,
+   "mode": "once",
+   "scaleTo": 916
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "kind": "stand",
+   "src": "build/video-cut/giant-spider/hit",
+   "video": "Attachments/Giant Spider/Spider_reacting_to_impact_20261022115011.mp4",
+   "first": 30,
+   "last": 110,
+   "mode": "once",
+   "scaleTo": 916
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "kind": "stand",
+   "src": "build/video-cut/giant-spider/death",
+   "video": "Attachments/Giant Spider/Giant_spider-Deathat5secs.mp4",
+   "first": 120,
+   "last": 239,
+   "standUntil": 168,
+   "mode": "once",
+   "scaleTo": 916
+  }
+ ],
+ "figureNote": "set so the idle body (its opaque box) is 3.5 units wide",
+ "result": "cut-result-64-media.json",
+ "frameCount": 64
+}

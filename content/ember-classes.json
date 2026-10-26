@@ -1,5 +1,5 @@
 {
- "about": "EmberEngine's own unit classes (read by engine/world/Battle.cpp applyEmberClass). A battle file's exporter knows only the old classes, so a unit of these arrives under a stand-in and is made what its class says here: stats at its level from content/engine2/class-stats.json, movement, body size (hexes), its blow (strikesWith atk = the weapon's dice on ATK), resistances, spell uses per tier and spells, its names. Ranks in content/enemy-ranks.json. The Corrosive Slime (the user, 2026-10-22): AD&D 2e's oozes are immune to acid (Veneno here, the game's acid); the Small Slime casts Milf's Acid Arrow twice (tier 2) and Névoa Ácida once (tier 3) a fight, the Large Slime three and two, its stats 75% higher, two hexes.",
+ "about": "EmberEngine's own unit classes (read by engine/world/Battle.cpp applyEmberClass). A battle file's exporter knows only the old classes, so a unit of these arrives under a stand-in and is made what its class says here: stats at its level from content/engine2/class-stats.json, movement, body size (hexes), its blow (strikesWith atk = the weapon's dice on ATK), resistances, spell uses per tier and spells, its names. Ranks in content/enemy-ranks.json. The Corrosive Slime (the user, 2026-10-22): AD&D 2e's oozes are immune to acid (Veneno here, the game's acid); the Small Slime casts Milf's Acid Arrow twice (tier 2) and Névoa Ácida once (tier 3) a fight, the Large Slime three and two, its stats 75% higher, three hexes (two until 2026-10-26, the user: size 3 should do him fine).",
  "standIn": "zombie",
  "aboutHeroes": "EmberEngine's own heroes beside the campaign's six (read by engine/world/BattleExport.cpp Rules: added to the hero order and classes, so every prepared map seats them). Modo teste's party seats them all (the user, 2026-10-25: 'the full party at debug mode should include her, as a stress test too because the goal is a 8 members party'); the campaign keeps only the heroes its save has recruited. Isolde = a conjurer (the conjurer's spells until her own), her plain attack and counters like Voss's (BattleExport isArcaneCaster, MapStage's staff blow).",
  "heroes": [{"name": "Isolde", "classId": "conjurer"}],
@@ -14,7 +14,7 @@
   },
   "corrosiveSlimeLarge": {
    "name": "Slime Corrosivo Grande", "nameEn": "Large Corrosive Slime", "role": "Gosma",
-   "sprite": "corrosive-slime", "size": 2, "mov": 3, "strikesWith": "atk",
+   "sprite": "corrosive-slime", "size": 3, "mov": 3, "strikesWith": "atk",
    "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
    "resistances": {"poison": 100},
    "spells": {"tier2": 3, "tier3": 2},

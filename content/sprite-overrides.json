@@ -127,10 +127,45 @@
   {
    "set": "corrosive-slime-media",
    "version": "media-v01",
-   "mediumOf": {"hero": "corrosiveSlime", "set": "corrosive-slime"},
+   "mediumOf": {
+    "hero": "corrosiveSlime",
+    "set": "corrosive-slime"
+   },
    "cut": "content/sprites/corrosive-slime/cut-media.json",
-   "why": "the Corrosive Slime's medium copy (Personagens: Média, the default; Leve halves it): every clip at 0.555 of the video's size",
-   "packs": {"base": "field", "move": "field"}
+   "why": "not in use since 2026-10-26 (the user: Média / Leve by the heroes' rule, 64 / 36 frames, never under 610 px: this copy was every frame at 0.555 of the size); kept",
+   "packs": {
+    "base": "field",
+    "move": "field"
+   },
+   "unused": true
+  },
+  {
+   "set": "corrosive-slime-64",
+   "version": "v01",
+   "cut": "content/sprites/corrosive-slime-64/cut.json",
+   "why": "the Slime's Personagens Média (the user, 2026-10-26: \"wire the Slime's 64 / 36 cuts as Média / Leve\"): the Slime64 test unit's cut, 64 frames at the video's own size (562 px, under 916)",
+   "mediumOf": {
+    "hero": "corrosiveSlime",
+    "set": "corrosive-slime"
+   },
+   "packs": {
+    "base": "field",
+    "move": "field"
+   }
+  },
+  {
+   "set": "corrosive-slime-36",
+   "version": "v01",
+   "cut": "content/sprites/corrosive-slime-36/cut.json",
+   "why": "the Slime's Personagens Leve (the same order): the Slime36 test unit's cut, 36 frames at its own size (under 610)",
+   "lightOf": {
+    "hero": "corrosiveSlime",
+    "set": "corrosive-slime"
+   },
+   "packs": {
+    "base": "field",
+    "move": "field"
+   }
   },
   {
    "set": "giant-spider",
@@ -147,10 +182,45 @@
   {
    "set": "giant-spider-media",
    "version": "media-v01",
-   "mediumOf": {"hero": "giantSpider", "set": "giant-spider"},
+   "mediumOf": {
+    "hero": "giantSpider",
+    "set": "giant-spider"
+   },
    "cut": "content/sprites/giant-spider/cut-media.json",
-   "why": "the Giant Spider's medium copy (Personagens: Média, the default; Leve halves it): every clip at 0.555 of the video's size",
-   "packs": {"base": "field", "move": "field"}
+   "why": "not in use since 2026-10-26 (the user: Média / Leve by the heroes' rule, 64 / 36 frames, never under 610 px: this copy was every frame at 0.555 of the size); kept",
+   "packs": {
+    "base": "field",
+    "move": "field"
+   },
+   "unused": true
+  },
+  {
+   "set": "giant-spider-64-media",
+   "version": "media64-v01",
+   "cut": "content/sprites/giant-spider/cut-64-media.json",
+   "why": "the Spider's Personagens Média (the user, 2026-10-26): 64 frames from the same mattes, its own size (403-455 px)",
+   "mediumOf": {
+    "hero": "giantSpider",
+    "set": "giant-spider"
+   },
+   "packs": {
+    "base": "field",
+    "move": "field"
+   }
+  },
+  {
+   "set": "giant-spider-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/giant-spider/cut-36-media.json",
+   "why": "the Spider's Personagens Leve (the same order): 36 frames from the same mattes, its own size",
+   "lightOf": {
+    "hero": "giantSpider",
+    "set": "giant-spider"
+   },
+   "packs": {
+    "base": "field",
+    "move": "field"
+   }
   },
   {
    "set": "corrosive-slime-36",
