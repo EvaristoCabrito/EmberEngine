@@ -291,7 +291,20 @@ class OverworldStage : public Stage {
  private:
   static constexpr float kRem = 16.0f;  // CSS px are canvas units (DebugUi::kUiHeight)
   static constexpr float kZoomStops[4] = {70, 90, 110, 130};
-  static constexpr const char* kHeroes[6] = {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec"};
+  // The six, then EmberEngine's own heroes (content/ember-classes.json "heroes": Isolde). Modo teste's party is everyone (the user,
+  // 2026-10-25: "precisa adicionar Isolde a party no mapa mundi do debug"); the campaign keeps only the recruited (heroRecruited:
+  // "recruited:Isolde" flag).
+  static constexpr const char* kHeroes[7] = {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec", "Isolde"};
+  // EmberEngine's own heroes have no row in the world tables (baseClass, portraits): their class and bust from here.
+  static const char* ownHeroClass(const std::string& hero) { return hero == "Isolde" ? "conjurer" : nullptr; }
+  static const char* ownHeroPortrait(const std::string& hero) { return hero == "Isolde" ? "game/portraits/isolde-bust-v03.jpg" : nullptr; }
+  int baseMaxHp(const std::string& hero) const {
+    if (const int hp = world_.maxHp(save_, hero); hp > 0) return hp;
+    const char* cls = ownHeroClass(hero);
+    const e2::Json& promo = save_.contains("promotions") ? save_["promotions"].value(hero, e2::Json()) : e2::Json();
+    const std::string classId = promo.is_string() ? promo.get<std::string>() : cls ? cls : "";
+    return classId.empty() ? 0 : world_.classHp(classId, static_cast<int>(num(save_.value("levels", e2::Json::object()), hero, 1)));
+  }
   static constexpr ImU32 kAccent = IM_COL32(216, 216, 216, 255), kMuted = IM_COL32(180, 180, 180, 255), kFg = IM_COL32(240, 240, 240, 255),
                          kDanger = IM_COL32(181, 74, 50, 255), kBorder = IM_COL32(74, 74, 74, 255);
 
@@ -338,7 +351,7 @@ class OverworldStage : public Stage {
             if (e["id"] == id) gear += e.value("hp", 0.0);
     const double streak = num(save_, "hungerStreak", 0);
     const double penalty = std::min(0.9, std::max(0.0, streak - 3) * 0.1);
-    return static_cast<int>(std::floor((world_.maxHp(save_, hero) + gear) * (1 - penalty) + 0.5));
+    return static_cast<int>(std::floor((baseMaxHp(hero) + gear) * (1 - penalty) + 0.5));
   }
 
   // GameApp openMission: gated missions must be open; a finished mission only re-opens when it is a dungeon.
@@ -469,7 +482,7 @@ class OverworldStage : public Stage {
     if (fed && (num(save_, "hungerStreak", 0) > 0 || num(save_, "hungerHours", 0) > 0)) {
       bool all = true;
       for (const std::string& hero : partyHeroes()) {
-        const double hp = num(save_.value("unitHp", e2::Json::object()), hero, world_.maxHp(save_, hero));
+        const double hp = num(save_.value("unitHp", e2::Json::object()), hero, baseMaxHp(hero));
         if (hp > 0 && !(num(save_.value("heroHunger", e2::Json::object()), hero, 100) > 0)) all = false;
       }
       if (all) save_["hungerStreak"] = 0, save_["hungerHours"] = 0;
@@ -955,7 +968,9 @@ class OverworldStage : public Stage {
     bool contains(ImVec2 p) const { return p.x >= a.x && p.x <= b.x && p.y >= a.y && p.y <= b.y; }
   };
   // `walkTime` >= 0: walking for that long (its walk clip, the left one when it goes left and has one, else the right one mirrored).
-  Box drawLeader(ImDrawList* dl, ImVec2 foot, const std::string& hero, float walkTime = -1.0f) {
+  Box drawLeader(ImDrawList* dl, ImVec2 foot, const std::string& who, float walkTime = -1.0f) {
+    // EmberEngine's own heroes (Isolde) have no world-map figure yet: Kael's stands in (their frame tables are the six's only)
+    const std::string hero = ownHeroClass(who) ? std::string("Kael") : who;
     struct Sheet {
       const char* hero;
       const char* dir;
@@ -1087,8 +1102,11 @@ class OverworldStage : public Stage {
     float x = a.x + pad;
     const float y = a.y + pad + 12.0f * 1.4f + 8.0f;
     for (const std::string& hero : heroes) {
-      const e2::Json& portrait = world_.tables()["portraits"][hero];
-      std::string src = portrait.value("src", "");
+      const e2::Json& portraits = world_.tables()["portraits"];
+      const auto found = portraits.is_object() ? portraits.find(hero) : portraits.end();  // a const [] on a missing key crashes
+      std::string src = portraits.is_object() && found != portraits.end() && found->is_object() ? found->value("src", "") : std::string();
+      if (src.empty())
+        if (const char* own = ownHeroPortrait(hero)) src = own;
       if (const size_t q = src.find('?'); q != std::string::npos) src.resize(q);
       if (!src.empty() && src[0] == '/') src.erase(0, 1);
       if (const UiImage* img = uiImage(paths_.engine2Public / std::filesystem::path(reinterpret_cast<const char8_t*>(src.c_str())))) imageCover(dl, *img, {x, y}, {x + 40, y + 48});
@@ -1313,7 +1331,9 @@ class OverworldStage : public Stage {
     };
     std::vector<Row> rows;
     for (const std::string& hero : heroes) {
-      const std::string base = world_.tables()["baseClass"].value(hero, "");
+      std::string base = world_.tables()["baseClass"].value(hero, "");
+      if (base.empty())
+        if (const char* own = ownHeroClass(hero)) base = own;
       for (const Path& p : kPaths)
         if (base == p.base) {
           rows.push_back({hero, &p});
@@ -2212,6 +2232,8 @@ class OverworldStage : public Stage {
   void portrait(ImDrawList* dl, const std::string& hero, ImVec2 a, ImVec2 b) {
     const e2::Json& p = world_.tables()["portraits"].value(hero, e2::Json::object());
     std::string src = p.value("src", "");
+    if (src.empty())
+      if (const char* own = ownHeroPortrait(hero)) src = own;
     if (const size_t q = src.find('?'); q != std::string::npos) src.resize(q);
     if (!src.empty() && src[0] == '/') src.erase(0, 1);
     if (const UiImage* img = uiImage(paths_.engine2Public / std::filesystem::path(reinterpret_cast<const char8_t*>(src.c_str())))) imageCover(dl, *img, a, b);

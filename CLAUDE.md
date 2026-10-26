@@ -1711,6 +1711,12 @@ open area with large tables ... some separate rooms for NPCs and services, use t
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
+- `content/maps/kept/thebridge027-lifted-board-20261025.json` (2026-10-25): bridge 026 + `emberBaseLevels` 60, made to put the bottom
+  far below the bridge. It cannot: the panorama's ground plane lies at the board's own base (MapStage, `plane.y = boardBase -
+  fit.groundDepth`), so lifting the board lifts the ground with it (and the camera's altitude in the atmosphere). The depth below the
+  bridge is the panorama's `groundDepth` in backdrop-fit.json: locked, only with the user's word. Moved out of content/maps/ember so
+  the campaign keeps playing 026.
+
 - Salazar (2026-10-25, salazar-v3 v02 = every clip at 587 px from the user's sheets, `Attachments/SalazarOG`): `content/sprites/salazar-v3/*-v01`
   (v01: each clip at its own size, 587-716 px), the 610 px Leve copy `salazar-v3-36-media` (`unused` in sprite-overrides.json),
   `content/sprites/salazar-final/move-v02` (the first 49-frame walk right), `move-v03` (Walkright2 at 595 px) and `cast-back-v01` (still
