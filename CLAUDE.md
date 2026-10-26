@@ -1717,11 +1717,10 @@ open area with large tables ... some separate rooms for NPCs and services, use t
   bridge is the panorama's `groundDepth` in backdrop-fit.json: locked, only with the user's word. Moved out of content/maps/ember so
   the campaign keeps playing 026.
 
-- Salazar (2026-10-25, salazar-v3 v02 = every clip at 587 px from the user's sheets, `Attachments/SalazarOG`): `content/sprites/salazar-v3/*-v01`
-  (v01: each clip at its own size, 587-716 px), the 610 px Leve copy `salazar-v3-36-media` (`unused` in sprite-overrides.json),
-  `content/sprites/salazar-final/move-v02` (the first 49-frame walk right), `move-v03` (Walkright2 at 595 px) and `cast-back-v01` (still
-  cooked as salazar-final's clips, drawn by nobody). The old shrunk frames (`content/game/public/game/sprites/salazar-final/*.png`, 216)
-  were deleted on the user's order ("delete current version").
+- Salazar (salazar-v3 v02 = every clip at 587 px from the user's sheets, `Attachments/SalazarOG`): nothing of his old art is kept. The old
+  shrunk frames (`content/game/public/game/sprites/salazar-final/*.png`, 216) were deleted on 2026-10-25 ("delete current version"); salazar-v3
+  v01, its 610 px Leve copy and `content/sprites/salazar-final` (move v02 / v03, cast-back v01) on 2026-10-26 ("you can clear all these junk
+  files"; they are in git history before that commit).
 
 - `content/engine2/backdrop-fit.json` painting entry `inn-second-floor-v01.jpg#teto-salao` (2026-10-23): made as an extra panorama when
   the user asked only for the Andar II's CEILING to change ("não é panorama, é CEILING"); taken out of the map's list, kept unused. The

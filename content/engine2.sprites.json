@@ -3225,21 +3225,6 @@
   {
    "clips": [
     {
-     "fps": 18.94700050354004,
-     "frames": {
-      "count": 36,
-      "pattern": "sprites/salazar-final/move-{}.png"
-     },
-     "mode": "loop",
-     "name": "move",
-     "pack": "field"
-    }
-   ],
-   "name": "salazar-final"
-  },
-  {
-   "clips": [
-    {
      "fps": 8.461999893188477,
      "frames": {
       "count": 12,

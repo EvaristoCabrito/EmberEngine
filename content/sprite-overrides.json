@@ -32,21 +32,6 @@
    }
   },
   {
-   "set": "salazar-v3-36-media",
-   "version": "media36-v01",
-   "cut": "content/sprites/salazar-v3/cut-36-media.json",
-   "why": "610 px Leve copy of salazar-v3 v01 (idle, attack, walk left), made 2026-10-25; not in use since v02 puts every clip at 587 px (under 610: Leve draws the same). Kept.",
-   "lightOf": {
-    "hero": "salazar",
-    "set": "salazar-v3"
-   },
-   "packs": {
-    "base": "field",
-    "move-left": "field"
-   },
-   "unused": true
-  },
-  {
    "set": "voss-veo",
    "version": "v01",
    "hero": "voss",
@@ -219,45 +204,6 @@
   }
  ],
  "clips": [
-  {
-   "set": "salazar-final",
-   "clip": "move",
-   "version": "v03",
-   "why": "the user's second sheet (Attachments/Salazar/Walkright2, ludo.ai, 7 x 7, 79 ms a frame), 2026-10-17. As drawn, the boot on the ground climbs 12-19 px in the cell during each stance and drops back (frames 3-22: 613 -> 601, 28-48: 617 -> 598), so with the card's feet fixed he floated off the ground and fell back. Each frame moved up / down by whole pixels (no resampling) so the boot standing on the ground sits on row 610 in every frame (scratchpad align_sole.py: lowest row of a solid boot 16 rows tall, which skips the opaque contact-shadow ghosts under frames 23-24 / 46-47). v02 (the first sheet) stays in content/sprites",
-   "frames": {"count": 49, "pattern": "content/sprites/salazar-final/move-v03/move-{}.png"},
-   "frameMs": 79,
-   "strides": 2.0,
-   "poses": [
-    {
-     "hero": "salazar",
-     "pose": "walk",
-     "nat": [380, 622],
-     "crop": [21, 0, 358, 622],
-     "box": {"w": 1.65665, "h": 2.71167, "foot": 0.02472},
-     "boxNote": "same figure size and feet line as Engine2's clip: its figure 473 px tall at 3.3843 / 613 units a pixel, 13 px of margin under the feet; this art's figure is 599 px tall with 12 px under the feet"
-    }
-   ]
-  },
-  {
-   "set": "salazar-final",
-   "clip": "cast-back",
-   "version": "v01",
-   "add": {"mode": "once", "pack": "combat"},
-   "why": "the user's picture of Salazar from the back (2026-10-17): after his cast pose he turns away and Mãos Flamejantes leaves his hands when its target lies away from the camera",
-   "frames": {"count": 1, "pattern": "content/sprites/salazar-final/cast-back-v01/cast-back-{}.png"},
-   "frameMs": 1000,
-   "poses": [
-    {
-     "hero": "salazar",
-     "pose": "castBack",
-     "label": "Conjurar (costas)",
-     "nat": [503, 731],
-     "crop": [78, 4, 343, 723],
-     "box": {"w": 1.85135, "h": 2.69052, "foot": 0.01504},
-     "boxNote": "tools/scripts/sprites/prepare_still_pose.py source-SalazarBack.png against Engine2's idle frame 1 (box h 3.3843): the figure head to feet as tall in the world as in the idle (2.661 units), 723 px (1.5x the idle's 482)"
-    }
-   ]
-  },
   {
    "set": "voss-final",
    "clip": "cast-back",

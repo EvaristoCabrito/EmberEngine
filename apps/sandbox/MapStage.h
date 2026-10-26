@@ -3289,8 +3289,11 @@ class MapStage final : public Stage {
       boxW *= 1.0f + (1.0f - squash) * 0.6f, boxH *= squash;
       // Engine2's mirroring: the art's facing against the unit's, except cuts drawn for the left (and directional
       // walks while moving), which are never mirrored.
+      // A unit with a walk of its own for each side (a "walkLeft" pose beside "walk": Isolde's and Voss's videos, 2026-10-25, the
+      // user: "só tem o walk de um lado, eu fiz dois videos um para cada") is never mirrored while walking, whatever its sprite.
+      const bool ownSides = walking && entry && entry->find("walkLeft") && !entry->find("walkLeft")->pace.empty();
       const bool leftCut = shown == "walkLeft" || shown == "attackLeft" || shown == "attack2Left" || shown == "castLeft" ||
-                           (walking && kDirectionalWalk.contains(u.sprite));
+                           (walking && kDirectionalWalk.contains(u.sprite)) || ownSides;
       // Engine2 UnitActor.drawnReversed: Kael Final's idle is drawn turned left, but his walk and attacks face right
       // (and the old Kael's attacks), so those poses are not reversed: reading his idle for them walked him backwards.
       static const std::unordered_set<std::string> kAttackPoses = {"attack", "attackLeft", "attack2", "attack2Left", "attackShort",
