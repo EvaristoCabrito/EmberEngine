@@ -152,7 +152,7 @@ bool BoardGround::build(const e2::Board& board) {
   // The walls are painted like the edge's lip (terrain.hlsl, push.wallFrom; the user: "deixar o preenchimento inteiro da mesma cor
   // que o resto das bordas"): the vertices from wallFrom on are theirs.
   uint32_t wallFrom = 0;
-  {
+  if (!board.draft().emberNoSides) {  // a suspended board (the bridge, MapDraft::emberNoSides) stands with no side walls
     double low = 0;
     bool any = false;
     for (const e2::Cell& c : board.cells()) low = any ? std::min(low, c.groundY) : c.groundY, any = true;
