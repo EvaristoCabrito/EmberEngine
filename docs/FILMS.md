@@ -14,7 +14,13 @@ garbage" in play, although SSIM 0.98 / PSNR 43 dB and a still frame looked fine.
 is encoded; the game plays the MP4s. Encode a film only on the user's order, from their master, with settings they judged in
 motion; never trust SSIM / PSNR / stills for a film.
 
-## Encoding a film (the rejected settings, kept as a record)
+**In use (the user, 2026-10-26: "passar essa intro por esse sistema", then "coloca o AV1 1080p como a abertura"):** the new
+campaign's intro `game/vau-intro.webm` = the user's 1080p master `Attachments/EmberMovieIntro.mp4` (same cut as vau-intro.mp4,
+97.84 s) through the command below, unchanged (CRF 30): 142 MB -> 21.7 MB, 1.9 Mbps. `--film-check`: 81 pictures/s (25 needed),
+16.6 ms a picture, worst 163 ms (absorbed by the picture queue: not seen in play). The 640x350 `vau-intro.mp4` stays beside it.
+The 2026-10-25 rejection was the same settings from the 640x350 MP4; this one is from a 1080p master. Not judged in motion yet.
+
+## Encoding a film (the settings used)
 
 From the best master there is (re-encoding an already compressed copy costs a little quality), with ffmpeg's SVT-AV1:
 
