@@ -51,6 +51,18 @@ film `content/films/graves-intro-v01.webm` = the user's 1080p master `Attachment
 the same length as graves-intro-v01.mp4; no subtitle files exist for it). Same command: 30.5 MB -> 4.4 MB; `--film-check` 114
 pictures/s, worst 69 ms. The 640x350 `graves-intro-v01.mp4` stays beside it.
 
+**In use (the user, 2026-10-26: "the new cuts are in attachments, now pass all videos thought the codec"):** the three Inn pair
+scenes that were rendered at 640x350, from the user's 1080p cuts, same command, beside their MP4s in `content/films/` (no subtitle
+files; every line's sound within 0.03 s of the old film's):
+
+| film | master | length | size | `--film-check` |
+|---|---|---|---|---|
+| `kael-voss-inn-v01.webm` | `Attachments/KaelVossINN.mp4` | 10.04 s (old 10.32) | 14.7 MB -> 2.4 MB | 112 pictures/s, worst 66 ms |
+| `neera-salazar-inn-v01.webm` | `Attachments/SalaZarNeeraINN.mp4` | 11.72 s (old 12.16) | 17.1 MB -> 3.1 MB | 110 pictures/s, worst 80 ms |
+| `voss-neera-inn-v01.webm` | `Attachments/VossNeeraINN.mp4` | 12.80 s (old 13.12) | 18.7 MB -> 2.8 MB | 115 pictures/s, worst 74 ms |
+
+`Attachments/Dorama25agp.mp4` (128 s) matches no film the game plays: not encoded.
+
 ## Encoding a film (the settings used)
 
 From the best master there is (re-encoding an already compressed copy costs a little quality), with ffmpeg's SVT-AV1:
