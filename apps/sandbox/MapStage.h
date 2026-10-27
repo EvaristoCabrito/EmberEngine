@@ -3450,7 +3450,9 @@ class MapStage final : public Stage {
     // A 3D piece with its own fire (the Meshy hearth; models.json "light"): lit as every other light-giving decoration.
     for (const e2::SceneModel& m : scene_->models) {
       if (!m.light) continue;
-      const glm::vec3 at = glm::vec3(m.x, groundOf(m.groundSmooth, m.groundHard) + m.light->minHeight, m.z);
+      // the flame's offset turns with the piece as placeModels turns it (x' = x cos + z sin, z' = -x sin + z cos)
+      const float c = std::cos(m.rotY), sn = std::sin(m.rotY), ox = m.light->offsetX, oz = m.light->offsetZ;
+      const glm::vec3 at = glm::vec3(m.x + c * ox + sn * oz, groundOf(m.groundSmooth, m.groundHard) + m.light->minHeight, m.z - sn * ox + c * oz);
       fireFlicker_.push_back(flicker(time, m.light->seed, m.light->flicker));
       fireUpright_.push_back(at);
       lights_.push_back(carried(at, m.light->color, m.light->intensity * kDecorLightPower, m.light->radius * fireRadiusMul(), m.light->minHeight,

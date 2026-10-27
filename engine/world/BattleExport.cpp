@@ -1216,7 +1216,9 @@ std::optional<json> exportBattle(const json& mapFile, std::string* error, int pl
 json sceneJson(const SceneData& s, const MapDraft& draft, const std::map<std::string, int>& skipped) {
   const auto light = [](const std::optional<SceneLight>& l) -> json {
     if (!l) return nullptr;
-    return {{"color", {l->color[0], l->color[1], l->color[2]}}, {"intensity", l->intensity}, {"radius", l->radius}, {"flicker", l->flicker}, {"minHeight", l->minHeight}, {"seed", l->seed}};
+    json out = {{"color", {l->color[0], l->color[1], l->color[2]}}, {"intensity", l->intensity}, {"radius", l->radius}, {"flicker", l->flicker}, {"minHeight", l->minHeight}, {"seed", l->seed}};
+    if (l->offsetX != 0 || l->offsetZ != 0) out["offset"] = {l->offsetX, l->offsetZ};
+    return out;
   };
   const auto opt = [](const std::optional<float>& v) -> json { return v ? json(*v) : json(nullptr); };
   json decor = json::array();

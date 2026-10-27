@@ -20,6 +20,7 @@ struct SceneLight {
   float flicker = 0;    // 0 steady .. 1 full fire flicker
   float minHeight = 1;  // a map light never sits lower than this above the ground
   float seed = 0;       // flicker phase
+  float offsetX = 0, offsetZ = 0;  // a 3D piece's flame off its centre, in the model's frame (the street lamp's hanging lantern)
 };
 
 struct SceneArt {

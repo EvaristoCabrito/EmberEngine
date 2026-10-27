@@ -267,6 +267,33 @@
       "blocks": false
     },
     {
+      "id": "ember-city-street-lamp-v02",
+      "name": "Candeeiro de rua 3D v02",
+      "kit": "city",
+      "model": "ember-street-lamp-v02",
+      "file": "/game/ember/city/street-lamp-v02.glb",
+      "height": 4.03,
+      "width": 1.563,
+      "footprint": "one",
+      "section": "City",
+      "blocks": false,
+      "light": {
+        "color": [
+          1,
+          0.7,
+          0.36
+        ],
+        "intensity": 7,
+        "radius": 4.29,
+        "flicker": 0.4,
+        "minHeight": 2.58,
+        "offset": [
+          0.512,
+          0.0
+        ]
+      }
+    },
+    {
       "id": "ember-city-bench",
       "name": "Banco de rua 3D",
       "kit": "city",

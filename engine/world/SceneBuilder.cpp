@@ -34,6 +34,8 @@ std::optional<SceneLight> lightOf(const json& j) {
   l.radius = num(j, "radius");
   l.flicker = num(j, "flicker");
   l.minHeight = num(j, "minHeight", 1);
+  if (j.contains("offset") && j["offset"].is_array() && j["offset"].size() == 2)
+    l.offsetX = j["offset"][0].get<float>(), l.offsetZ = j["offset"][1].get<float>();
   return l;
 }
 
