@@ -842,7 +842,10 @@ class OverworldStage : public Stage {
     {
       double tx = px, ty = py;
       if (standing) tx = standing->x, ty = standing->y;
-      if (partyX_ < 0) partyX_ = static_cast<float>(tx), partyY_ = static_cast<float>(ty), fromX_ = partyX_, fromY_ = partyY_, moveAt_ = -10;
+      // The first frame stands on the hex in idle: the target too (left at -1 it read as a step and played a walk in place).
+      if (partyX_ < 0)
+        partyX_ = static_cast<float>(tx), partyY_ = static_cast<float>(ty), fromX_ = partyX_, fromY_ = partyY_, targetX_ = partyX_,
+        targetY_ = partyY_, moveAt_ = -10;
       if (std::abs(targetX_ - tx) > 1e-6 || std::abs(targetY_ - ty) > 1e-6) {
         fromX_ = partyX_, fromY_ = partyY_, targetX_ = static_cast<float>(tx), targetY_ = static_cast<float>(ty), moveAt_ = now_;
         if (col != prevCol_) facingLeft_ = col < prevCol_;
