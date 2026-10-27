@@ -23,6 +23,7 @@ Esquiva / 2). Escape: min(100, 60 + DEX / 3).
 | F | 0.5 | 5 | 10 | 15 |
 | E | 1.0 | 10 | 20 | 30 |
 | D | 1.5 | 15 | 30 | 45 |
+| D+ | 1.75 | 17.5 | 35 | 52.5 |
 | C | 2.0 | 20 | 40 | 60 |
 | B | 2.5 | 25 | 50 | 75 |
 | A | 3.0 | 30 | 60 | 90 |
@@ -37,6 +38,9 @@ Esquiva / 2). Escape: min(100, 60 + DEX / 3).
 - **E**: War Dog (wardog, wardog2), Horror, Mordavian Wolf, Muda (sapling), Zombie (zombie, zombie2), and every other
   non-human: Cobalt Blue Deer (swampBlueCalf).
 - **D**: the big ones: Undead Ox (undeadOx), Cave Troll (troll, troll2), Ancient Golem (ancientGolem); and The Butcher (theButcher).
+- **D+** (the user, 2026-10-27: "ele é tipo um D+"; halfway between D and C): Chain-Bound Penitent (chainBoundPenitent), a warrior
+  a little stronger than The Butcher (its stats x1.10, content/engine2/class-stats.json) with strong magic resistance (50 % to arcane,
+  darkness, ember, fire, holy, ice, lightning); first values.
 - **B**: Carnivorous Plant (carnivorousPlant).
 - **A**: Birolho (birolho, birolho2, birolho3, birolhoLegs, birolhoLegs2).
 - **S**: Asherah.

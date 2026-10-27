@@ -1,13 +1,13 @@
 {
  "about": "EmberEngine's own enemy ranks (the user, 2026-10-18; docs/ENEMY_RANKS.md). Every unit not on the party's side gets skills = perLevel[rank] x its level (cap 100): its weapon skill (accuracy 75 + skill, dice x (100 + skill) / 100, like a hero), Esquiva and every resistance. A class not listed is the default rank. Read by engine/world/Progression.cpp; off in the Cooker's checks.",
- "perLevel": { "F": 0.5, "E": 1.0, "D": 1.5, "C": 2.0, "B": 2.5, "A": 3.0, "S": 3.5, "S+": 4.0, "S++": 4.5 },
+ "perLevel": { "F": 0.5, "E": 1.0, "D": 1.5, "D+": 1.75, "C": 2.0, "B": 2.5, "A": 3.0, "S": 3.5, "S+": 4.0, "S++": 4.5 },
  "cap": 100,
  "default": "F",
  "classes": {
   "wardog": "E", "wardog2": "E", "horror": "E", "mordavianWolfFinal": "E", "sapling": "E",
   "zombie": "E", "zombie2": "E", "swampBlueCalf": "E",
   "undeadOx": "D", "troll": "D", "troll2": "D", "ancientGolem": "D", "theButcher": "D", "corrosiveSlime": "D",
-  "corrosiveSlimeLarge": "C", "giantSpider": "D", "corrosiveSlime36": "D", "corrosiveSlime64": "D", "swampBlueDeer": "E",
+  "corrosiveSlimeLarge": "C", "giantSpider": "D", "corrosiveSlime36": "D", "corrosiveSlime64": "D", "swampBlueDeer": "E", "chainBoundPenitent": "D+",
   "carnivorousPlant": "B",
   "birolho": "A", "birolho2": "A", "birolho3": "A", "birolhoLegs": "A", "birolhoLegs2": "A",
   "asherah": "S"

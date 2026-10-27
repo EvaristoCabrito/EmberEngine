@@ -271,6 +271,18 @@
    }
   },
   {
+   "set": "chain-bound-penitent",
+   "version": "v01",
+   "hero": "chainBoundPenitent",
+   "newHero": {"name": "Penitente Acorrentado", "group": "monster", "sprite": "chain-bound-penitent", "reversed": false},
+   "cut": "content/sprites/chain-bound-penitent/cut.json",
+   "why": "the user, 2026-10-27: the Chain-Bound Penitent from their sheets (Attachments/ChainBoundPenitent), \"mirror ATT and walk\", one resolution (no Média / Leve copies), the hit react later",
+   "poses": {"idle": "base", "attack": "atk", "walk": "move"},
+   "labels": {"idle": "Parado", "attack": "Atacar", "walk": "Andar"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
    "set": "corrosive-slime-36",
    "version": "v01",
    "hero": "corrosiveSlime36",

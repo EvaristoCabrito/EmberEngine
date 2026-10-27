@@ -1,0 +1,12 @@
+{
+ "about": "Chain-Bound Penitent from the user's sheets (Attachments/ChainBoundPenitent: Idle, ATT, WalkLeft; 36 frames 6 x 6 each), 2026-10-27: \"new unit for you to make\", then \"mirror ATT and walk for this one, will do hit react later, its just a simple strong monster without all the Res changes between modes\". Every frame and its timing as drawn, alpha as drawn, no resampling; one resolution (no Média / Leve copies). Each clip's figure is measured on its own and stands figureUnits tall.",
+ "set": "chain-bound-penitent",
+ "version": "v01",
+ "figureUnits": 3.0,
+ "figureNote": "first value: a big brute, a little over a man (Kael 2.66); the user judges his size in play",
+ "clips": [
+  {"clip": "base", "pose": "idle", "kind": "stand", "sheet": "Attachments/ChainBoundPenitent/Idle/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "pingpong", "bodyAt": 0.0},
+  {"clip": "atk", "pose": "attack", "kind": "stand", "sheet": "Attachments/ChainBoundPenitent/ATT/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "impactFrame": 19, "mode": "once", "mirror": true, "bodyAt": 0.0, "why": "the user: mirrored; raised over the head 8-18, the cleaver comes down at 19"},
+  {"clip": "move", "pose": "walk", "kind": "walk", "sheet": "Attachments/ChainBoundPenitent/WalkLeft/sprite-max-px-frames-36-rows-6-cols-6.png", "first": 0, "last": 35, "mode": "loop", "mirror": true, "bodyAt": 0.0, "why": "the user: mirrored (the sheet walks left); the whole sheet is the loop"}
+ ]
+}

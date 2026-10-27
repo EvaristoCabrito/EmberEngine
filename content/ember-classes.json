@@ -51,6 +51,21 @@
    "resistances": {},
    "spells": {},
    "spellList": []
+  },
+  "chainBoundPenitent": {
+   "name": "Penitente Acorrentado", "nameEn": "Chain-Bound Penitent", "role": "Bruto",
+   "sprite": "chain-bound-penitent", "size": 1, "mov": 4, "strikesWith": "atk",
+   "weapon": {"dice": 2, "faces": 6, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {"arcane": 50, "darkness": 50, "ember": 50, "fire": 50, "holy": 50, "ice": 50, "lightning": 50},
+   "spells": {},
+   "spellList": [],
+   "sounds": {
+    "attack": [{"file": "HeavyCleave-Balanced-Medium.mp3", "volume": 0.55, "offset": 0, "delay": 0, "exclusive": true}],
+    "counter": [{"file": "HeavyCleave-Balanced-Medium.mp3", "volume": 0.55, "offset": 0, "delay": 0, "exclusive": true}],
+    "walk": [{"file": "HeavySteps1-Balanced-Medium.mp3", "volume": 0.45, "offset": 0, "delay": 0, "exclusive": true}],
+    "walkLeft": [{"file": "HeavySteps1-Balanced-Medium.mp3", "volume": 0.45, "offset": 0, "delay": 0, "exclusive": true}],
+    "walkFade": true
+   }
   }
  },
  "aboutHeroClasses": "EmberEngine's own hero classes (read by engine/world/BattleExport.cpp Rules, merged into content/engine2/battle-rules.json's classes with the same fields; their melee weapons of weaponTypes become usable by them). The Cruzado (the user, 2026-10-25; young Salazar's interlude class, docs/SKILLS_CRUSADER.md): level 10 at most (Spells.cpp classLevelCap), a hybrid a little under the Guerreiro and a little over the Curandeiro (each stat the two classes' mean at the level), the Arqueiro's tier table (T1 at 1, T2 at 4, T3 at 7, nothing above T3), Bênção from 1 and Cleave from 4 (his own spells come from Spells.cpp kEmberSpells); never a shield. Placeholder sprite: kaelEarly (an old warrior, on no map).",

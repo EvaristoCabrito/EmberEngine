@@ -965,7 +965,9 @@ std::optional<json> exportBattle(const json& mapFile, std::string* error, int pl
   f.refreshOverlay();
 
   // The game's own classes (content/ember-classes.json): spawned as the stand-in, named back below
-  struct Ember { std::string classId, sprite, name; bool named = false; };
+  // `sounds`: the class's own cues (content/ember-classes.json "sounds", by cue name: attack, counter, walk, walkLeft, walkFade, hit,
+  // death, ...), over the stand-in's (the Chain-Bound Penitent's cleave and steps, the user's own files, 2026-10-27)
+  struct Ember { std::string classId, sprite, name; bool named = false; json sounds; };
   std::map<Hex, Ember> emberAt;
   {
     std::ifstream in("content/ember-classes.json", std::ios::binary);
@@ -978,7 +980,8 @@ std::optional<json> exportBattle(const json& mapFile, std::string* error, int pl
           const std::string c = str(s, "classId");
           if (!classes.contains(c)) continue;
           const json& e = classes[c];
-          emberAt[{integer(s, "x"), integer(s, "y")}] = {c, str(e, "sprite"), str(e, "name"), !str(s, "name").empty() && str(s, "name") != str(e, "name")};
+          emberAt[{integer(s, "x"), integer(s, "y")}] = {c, str(e, "sprite"), str(e, "name"), !str(s, "name").empty() && str(s, "name") != str(e, "name"),
+                                                        e.contains("sounds") && e["sounds"].is_object() ? e["sounds"] : json()};
           s["classId"] = standIn;
         }
   }
@@ -1180,6 +1183,8 @@ std::optional<json> exportBattle(const json& mapFile, std::string* error, int pl
         o["classId"] = e->second.classId, o["sprite"] = e->second.sprite, o["className"] = e->second.name;
         if (!e->second.named) o["name"] = e->second.name;
         o["undead"] = false, o["boss"] = false, o["spellList"] = json::array();
+        if (e->second.sounds.is_object())
+          for (const auto& [k, v] : e->second.sounds.items()) o["sounds"][k] = v;
       }
     }
     unitsOut.push_back(std::move(o));

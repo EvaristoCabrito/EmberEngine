@@ -1,0 +1,98 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/ChainBoundPenitent/Idle/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "bootRow": 528,
+   "bootRows": [
+    527,
+    528
+   ],
+   "figurePx": 513.0,
+   "bodyAt": 0.0,
+   "frames": 36,
+   "frameMs": 102.0,
+   "nat": [
+    561,
+    536
+   ],
+   "crop": [
+    2,
+    3,
+    426,
+    529
+   ],
+   "box": {
+    "w": 3.2807,
+    "h": 3.1345,
+    "foot": 0.04094
+   },
+   "pattern": "content/sprites/chain-bound-penitent/base-v01/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/ChainBoundPenitent/ATT/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "bootRow": 609,
+   "bootRows": [
+    609,
+    609
+   ],
+   "figurePx": 406.0,
+   "bodyAt": 0.0,
+   "frames": 36,
+   "frameMs": 90.0,
+   "nat": [
+    601,
+    617
+   ],
+   "crop": [
+    159,
+    2,
+    442,
+    610
+   ],
+   "box": {
+    "w": 4.44089,
+    "h": 4.55911,
+    "foot": 0.05172
+   },
+   "pattern": "content/sprites/chain-bound-penitent/atk-v01/atk-{}.png",
+   "impact": 0.5278
+  },
+  "move": {
+   "video": "Attachments/ChainBoundPenitent/WalkLeft/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "first": 0,
+   "last": 35,
+   "loopFirst": 0,
+   "loopLast": 35,
+   "seamSteps": NaN,
+   "bootRow": 478,
+   "bodyDrift": [
+    -2,
+    25
+   ],
+   "figurePx": 461.5,
+   "bodyAt": 0.0,
+   "frames": 36,
+   "frameMs": 101.0,
+   "nat": [
+    505,
+    496
+   ],
+   "crop": [
+    103,
+    4,
+    397,
+    487
+   ],
+   "box": {
+    "w": 3.28277,
+    "h": 3.22427,
+    "foot": 0.11051
+   },
+   "pattern": "content/sprites/chain-bound-penitent/move-v01/move-{}.png"
+  }
+ }
+}

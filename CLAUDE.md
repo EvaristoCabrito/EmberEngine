@@ -1497,6 +1497,12 @@ titles", then "Faz a câmera de ação como proposta")
   `catalog_ember_classes.py` once: the overrides list every set, so each one's cut must exist) → cook. Long mattes run unattended from Task
   Scheduler (`EmberSpiderMatte`: scratchpad spider/matte.ps1 through hidden.vbs, no window; two mattes at once, resumes after power cuts,
   then cuts + roster + cook).
+- **Chain-Bound Penitent** (`chainBoundPenitent`, "Penitente Acorrentado", 2026-10-27): the user's 36-frame sheets
+  (`Attachments/ChainBoundPenitent`: Idle, ATT, WalkLeft), set `chain-bound-penitent`, one resolution (no Média / Leve: "a simple strong
+  monster without all the Res changes"); ATT and walk mirrored (the user), idle as drawn; no hit yet ("will do hit react later"). Rank D+
+  (new in enemy-ranks.json: 1.75 a level), a warrior a little stronger than The Butcher (its stats x1.10), 50 % against arcane, darkness,
+  ember, fire, holy, ice, lightning; first values. Its own sounds (the user's HeavyCleave / HeavySteps, copied to SoundFX) come from
+  `ember-classes.json` "sounds", which BattleExport now lays over the stand-in's cues (any ember class may carry them).
 - Test battle: `content/maps/ember/beasttest001.json` (Map Editor: open, Testar) = `build/engine2-test/{maps,battles}/beasttest.*` (aldeia015 +
   Small, Large, Slime36, Slime64, spider). Verified: release capture exit 0, all five drawn, their Média sets pinned. **Not verified:** the AI
   casting both acid spells in play, debug + validation, the spider's look and size in the window (the user judges).
