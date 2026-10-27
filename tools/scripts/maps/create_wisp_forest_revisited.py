@@ -20,7 +20,7 @@ TREES = [
 ]
 PROPS = [
     ('ember-wisp-revisited-broken-stump', 4, 3),
-    ('ember-wisp-revisited-rotted-hollow-log', 5, 14),
+    ('ember-wisp-revisited-rotted-hollow-log-v02', 5, 14),
     ('ember-wisp-revisited-roots-and-fungi', 14, 15),
 ]
 

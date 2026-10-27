@@ -22,7 +22,7 @@ TREE_POSITIONS = {
 }
 PROP_POSITIONS = {
     'ember-wisp-revisited-broken-stump': (7, 5),
-    'ember-wisp-revisited-rotted-hollow-log': (36, 22),
+    'ember-wisp-revisited-rotted-hollow-log-v02': (36, 22),
     'ember-wisp-revisited-roots-and-fungi': (9, 31),
 }
 

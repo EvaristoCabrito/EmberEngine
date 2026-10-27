@@ -59,6 +59,7 @@ export const MODELS: Record<string, ModelDef> = {
   'wisp-revisited-root-arch-v02': { file: 'wisp-forest-revisited/root-arch-v02.glb', height: 8.577 },
   'wisp-revisited-broken-stump': { file: 'wisp-forest-revisited/broken-stump-v01.glb', height: 1.454 },
   'wisp-revisited-rotted-hollow-log': { file: 'wisp-forest-revisited/rotted-hollow-log-v01.glb', height: 1.06 },
+  'wisp-revisited-rotted-hollow-log-v02': { file: 'wisp-forest-revisited/rotted-hollow-log-v02.glb', height: 0.760 },
   'wisp-revisited-roots-and-fungi': { file: 'wisp-forest-revisited/roots-and-fungi-v01.glb', height: 0.387 },
   'grey-outcrop': { file: 'rocks/grey-outcrop.glb', height: 2.3 },
   'vau-large-stone-v01': { file: 'rocks/vau-large-stone-v01.glb', height: 2.586 },

@@ -16,7 +16,7 @@ POSITIONS={
     'ember-wisp-revisited-weeping-willow-v02':(10,2),
     'ember-wisp-revisited-tall-burnt-pine-v02':(4,5),
     'ember-wisp-revisited-broken-stump':(13,3),
-    'ember-wisp-revisited-rotted-hollow-log':(5,14),
+    'ember-wisp-revisited-rotted-hollow-log-v02':(5,14),
     'ember-wisp-revisited-roots-and-fungi':(15,4),
 }
 

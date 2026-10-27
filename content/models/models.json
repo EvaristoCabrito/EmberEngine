@@ -3311,6 +3311,19 @@
       "footprint": "triple",
       "section": "Objetos",
       "blocks": true
+    },
+    {
+      "id": "ember-wisp-revisited-rotted-hollow-log-v02",
+      "name": "Tronco oco apodrecido 3D · Wisp · v02",
+      "kit": "wisp-forest-revisited",
+      "model": "rotted-hollow-log",
+      "file": "/game/ember/wisp-forest-revisited/rotted-hollow-log-v02.glb",
+      "height": 0.76,
+      "width": 3.41,
+      "footprint": "one",
+      "section": "Natureza · Wisp Forest",
+      "blocks": true,
+      "triangles": 30480
     }
   ]
 }

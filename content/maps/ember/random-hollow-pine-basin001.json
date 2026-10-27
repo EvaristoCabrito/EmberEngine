@@ -2502,14 +2502,14 @@
     "baseVariant": 0,
     "decorations": [
       {
-        "id": "wilds-hollow-log",
+        "id": "ember-wisp-revisited-rotted-hollow-log-v02",
         "x": 1,
         "y": 1,
         "blocksPath": true,
         "rot": 3
       },
       {
-        "id": "wilds-hollow-log",
+        "id": "ember-wisp-revisited-rotted-hollow-log-v02",
         "x": 3,
         "y": 1,
         "blocksPath": true,
@@ -2558,14 +2558,14 @@
         "rot": 1
       },
       {
-        "id": "wilds-hollow-log",
+        "id": "ember-wisp-revisited-rotted-hollow-log-v02",
         "x": 19,
         "y": 1,
         "blocksPath": true,
         "rot": 3
       },
       {
-        "id": "wilds-hollow-log",
+        "id": "ember-wisp-revisited-rotted-hollow-log-v02",
         "x": 21,
         "y": 1,
         "blocksPath": true,
@@ -2656,14 +2656,14 @@
         "rot": 3
       },
       {
-        "id": "wilds-hollow-log",
+        "id": "ember-wisp-revisited-rotted-hollow-log-v02",
         "x": 11,
         "y": 5,
         "blocksPath": true,
         "rot": 5
       },
       {
-        "id": "wilds-hollow-log",
+        "id": "ember-wisp-revisited-rotted-hollow-log-v02",
         "x": 13,
         "y": 5,
         "blocksPath": true,
@@ -2691,14 +2691,14 @@
         "rot": 1
       },
       {
-        "id": "wilds-hollow-log",
+        "id": "ember-wisp-revisited-rotted-hollow-log-v02",
         "x": 7,
         "y": 7,
         "blocksPath": true,
         "rot": 3
       },
       {
-        "id": "wilds-hollow-log",
+        "id": "ember-wisp-revisited-rotted-hollow-log-v02",
         "x": 25,
         "y": 7,
         "blocksPath": true,
@@ -2712,14 +2712,14 @@
         "rot": 5
       },
       {
-        "id": "wilds-hollow-log",
+        "id": "ember-wisp-revisited-rotted-hollow-log-v02",
         "x": 3,
         "y": 9,
         "blocksPath": true,
         "rot": 1
       },
       {
-        "id": "wilds-hollow-log",
+        "id": "ember-wisp-revisited-rotted-hollow-log-v02",
         "x": 5,
         "y": 9,
         "blocksPath": true,
@@ -2740,7 +2740,7 @@
         "rot": 5
       },
       {
-        "id": "wilds-hollow-log",
+        "id": "ember-wisp-revisited-rotted-hollow-log-v02",
         "x": 1,
         "y": 11,
         "blocksPath": true,
@@ -2775,7 +2775,7 @@
         "rot": 1
       },
       {
-        "id": "wilds-hollow-log",
+        "id": "ember-wisp-revisited-rotted-hollow-log-v02",
         "x": 11,
         "y": 15,
         "blocksPath": true,
