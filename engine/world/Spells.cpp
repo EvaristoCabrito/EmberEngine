@@ -154,7 +154,7 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"nightmare", "Pesadelo", 4, "arcane", false}, "conjurer", 8},
     {{"boneLance", "Lança de Ossos", 6, "darkness", false}, "necromancer", 15},  // the Necromante's T6 (the user, 2026-10-20)
     // the Arcanista's T8 summon (the user, 2026-10-27), beside the Necromante's Cão Zumbi (T8 since the same day, grantClassSpells)
-    {{"summonSwampDeer", "Cervo Azul do Pântano", 8, "", false}, "sorcerer", 18},
+    {{"summonSwampDeer", "Cervo Azul do Pântano", 8, "", false}, "sorcerer", 20},
     {{"empowerSummons", "Fortalecer Invocações", 4, "", false}, "conjurer", 8},
     // Mago Negro (docs/SKILLS_MAGE.md, 2026-10-21; Voss, class `mage` / `voss`): the Bruxo and the Elementalista keep them
     {{"cloudOfDaggers", "Nuvem de Adagas", 4, "arcane", false}, "mage", 8},
@@ -431,8 +431,8 @@ constexpr SpellTrack kSpellTracks[] = {
     {"summonFamiliar3", 15, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
     {"sacrificeBond", 11, "p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3"},
     {"nightmare", 13, "r1 a1 d1 r1 m0.15 r1 p10 t1 r1 a1 r1 d1 m0.15 r1"},
-    {"summonZombieDog", 18, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
-    {"summonSwampDeer", 18, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
+    {"summonZombieDog", 20, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
+    {"summonSwampDeer", 20, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
     {"empowerSummons", 15, "p1 p1 p1 R1 p1 p1 p1 p1 p1 p1 R1 p1 p1 p1"},
     {"boneLance", 15, "m0.1 l1 d1 f2 Z1 m0.1 t1 p10 m0.1 l1 d1 f2 p10 m0.1"},
     {"markOfRuin", 15, "r1 p5 m0.05 r1 t1 d1 r1 p5 m0.05 f2 r1 p5 m0.05 r1"},
@@ -2631,13 +2631,14 @@ void grantClassSpells(BattleUnit& u) {
     u.spellList.push_back("iceStorm");
   if (progressionEnabled() && u.side == "player") {
     // the user, 2026-10-27: the Numen (the old Familiar Titã) is a T6 the Arcanista and the Necromante share (T6 opens at 15), the Cão Zumbi the
-    // Necromante's T8 (opens at 18), beside the Arcanista's Cervo Azul do Pântano (kEmberSpells)
+    // Necromante's T8, both T8 summons from 20 (the user, 2026-10-27: "espaçar mais o ganho de familiares"), beside the Arcanista's Cervo
+    // Azul do Pântano (kEmberSpells)
     auto grant = [&](const char* kind, bool has) {
       if (!has) std::erase(u.spellList, std::string(kind));
       else if (!contains(u.spellList, std::string(kind))) u.spellList.push_back(kind);
     };
     grant("summonFamiliar3", (u.classId == "sorcerer" || u.classId == "necromancer") && u.level >= 15);
-    grant("summonZombieDog", u.classId == "necromancer" && u.level >= 18);
+    grant("summonZombieDog", u.classId == "necromancer" && u.level >= 20);
   }
 }
 std::string promotionName(const std::string& classId) {

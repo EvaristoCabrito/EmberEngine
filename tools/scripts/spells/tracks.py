@@ -63,7 +63,7 @@ S = {
     "summonFamiliar3": (15, dict(r=2), [("r", 1, 6)]),  # Numen (the old Familiar Titã): the Arcanista's and the Necromante's T6 (the user, 2026-10-27)
     "sacrificeBond": (11, dict(p=100), [("p", -3, 14)]),
     "nightmare": (13, dict(r=6, a=0, d=2, f=8, m=1.5, p=25, t=1), [("r", 1, 6), ("a", 1, 2), ("d", 1, 2), ("m", 0.15, 2), ("p", 10, 1), ("t", 1, 1)]),
-    "summonZombieDog": (18, dict(r=2), [("r", 1, 6)]),  # Cão Zumbi: the Necromante's T8 (the user, 2026-10-27)
+    "summonZombieDog": (20, dict(r=2), [("r", 1, 6)]),  # Cão Zumbi: the Necromante's T8, from 20 (the user, 2026-10-27)
     "summonSwampDeer": (None, dict(r=2), [("r", 1, 6)]),  # Cervo Azul do Pântano: the Arcanista's T8 (the user, 2026-10-27)
     "empowerSummons": (15, dict(p=25, R=3), [("p", 1, 12), ("R", 1, 2)]),
     # the Necromante's T6 (the user, 2026-10-20: "deixar a magia Lança de Ossos como T6 para necromancer, e adaptar para algo mais forte e mais único")
@@ -503,7 +503,7 @@ um anel por vez, duas ou três vezes; o Veneno Cáustico tem a maior área do jo
 O Ember Ashes I para no nível 30; uma magia aprendida depois do 16 continua a escala no Ember Ashes II (teto 60), que já está
 programado: os níveis além do 30 só não se alcançam ainda.
 
-Numen (o antigo Familiar Titã) é Tier 6 do Arcanista e do Necromante (nível 15); o Cão Zumbi é Tier 8 do Necromante e o Cervo Azul do Pântano Tier 8 do Arcanista (nível 18) (o usuário, 2026-10-27).
+Numen (o antigo Familiar Titã) é Tier 6 do Arcanista e do Necromante (nível 15); o Cão Zumbi é Tier 8 do Necromante e o Cervo Azul do Pântano Tier 8 do Arcanista (nível 20) (o usuário, 2026-10-27).
 
 As habilidades do Guerreiro, do Cavaleiro Pesado e do Lanceiro seguem a mesma regra; quase tudo nelas é dano (dados, faces, peso da
 arma), e cada uma ganha um **talento** num nível da trilha (o usuário, 2026-10-20: "eles não tem muito o que escalar além de dano, mas

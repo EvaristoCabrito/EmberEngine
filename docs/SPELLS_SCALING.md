@@ -10,7 +10,7 @@ um anel por vez, duas ou três vezes; o Veneno Cáustico tem a maior área do jo
 O Ember Ashes I para no nível 30; uma magia aprendida depois do 16 continua a escala no Ember Ashes II (teto 60), que já está
 programado: os níveis além do 30 só não se alcançam ainda.
 
-Numen (o antigo Familiar Titã) é Tier 6 do Arcanista e do Necromante (nível 15); o Cão Zumbi é Tier 8 do Necromante e o Cervo Azul do Pântano Tier 8 do Arcanista (nível 18) (o usuário, 2026-10-27).
+Numen (o antigo Familiar Titã) é Tier 6 do Arcanista e do Necromante (nível 15); o Cão Zumbi é Tier 8 do Necromante e o Cervo Azul do Pântano Tier 8 do Arcanista (nível 20) (o usuário, 2026-10-27).
 
 As habilidades do Guerreiro, do Cavaleiro Pesado e do Lanceiro seguem a mesma regra; quase tudo nelas é dano (dados, faces, peso da
 arma), e cada uma ganha um **talento** num nível da trilha (o usuário, 2026-10-20: "eles não tem muito o que escalar além de dano, mas
@@ -216,15 +216,15 @@ Nível a nível: 14: +1 hex de alcance, 15: +1 anel, 16: +1 dado, 17: +1 hex de 
 
 ### Cão Zumbi (Necromante, T8)
 
-Escala do nível 18 ao 32, uma melhoria pequena por nível: alcance 2 → 8.
+Escala do nível 20 ao 34, uma melhoria pequena por nível: alcance 2 → 8.
 
-Nível a nível: 20: +1 hex de alcance, 22: +1 hex de alcance, 24: +1 hex de alcance, 27: +1 hex de alcance, 29: +1 hex de alcance, 31: +1 hex de alcance.
+Nível a nível: 22: +1 hex de alcance, 24: +1 hex de alcance, 26: +1 hex de alcance, 29: +1 hex de alcance, 31: +1 hex de alcance, 33: +1 hex de alcance.
 
 ### Cervo Azul do Pântano (Arcanista, T8)
 
-Escala do nível 18 ao 32, uma melhoria pequena por nível: alcance 2 → 8.
+Escala do nível 20 ao 34, uma melhoria pequena por nível: alcance 2 → 8.
 
-Nível a nível: 20: +1 hex de alcance, 22: +1 hex de alcance, 24: +1 hex de alcance, 27: +1 hex de alcance, 29: +1 hex de alcance, 31: +1 hex de alcance.
+Nível a nível: 22: +1 hex de alcance, 24: +1 hex de alcance, 26: +1 hex de alcance, 29: +1 hex de alcance, 31: +1 hex de alcance, 33: +1 hex de alcance.
 
 ### Fortalecer Invocações
 

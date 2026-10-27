@@ -767,8 +767,8 @@ proper scaling", the formulas written like Salazar's own; icons in `Attachments/
   Combat learning follows tier openings: T1 at 1, T2 at 3, T3 at 6, T4 at 8, T5 at 11. All existing scaling dates stay unchanged.
   T3: Familiar Radiante + Reflexo Arcano. T5: Elo de Sacrifício + Detonar Invocação (T5 since 2026-10-25, the user).
   **Promotion summons (the user, 2026-10-27; docs/SKILLS_CONJURER.md end):** Numen (`summonFamiliar3`, the old Familiar Titã) = T6 of the
-  Arcanista and the Necromante (15); Cão Zumbi = the Necromante's T8 (18); Cervo Azul do Pântano (`summonSwampDeer`) = the Arcanista's T8
-  (18), icon `content/ui/spells/summonSwampDeer.jpg`. T8 summons x1.25 the caster (`kT8SummonScale`, first value). Coming, not built:
+  Arcanista and the Necromante (15); Cão Zumbi = the Necromante's T8 (20); Cervo Azul do Pântano (`summonSwampDeer`) = the Arcanista's T8
+  (20), icon `content/ui/spells/summonSwampDeer.jpg`. T8 summons x1.25 the caster (`kT8SummonScale`, first value). Coming, not built:
   Telesm (a new defender familiar, T2 for Selene, T3 others; art to be scanned) and Hipóstase (the ultimate summon of Ember I); their icons
   are in Attachments (`Summon Telesm.jpg`, `SummonHypostasis.jpg`).
   Keep T1's three combat spells. **Reflexo Arcano = T3 (learned at 6), Imagem Espelhada = T2 (3), both for every Conjurador (the
