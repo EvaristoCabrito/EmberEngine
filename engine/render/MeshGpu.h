@@ -30,7 +30,7 @@ struct InstanceGpu {
   uint32_t mesh;
   float scale;        // largest axis scale (bounds and LOD error)
   uint32_t flags;     // kInstance* below
-  uint32_t pad;
+  uint32_t pad;        // flipbook frame for meshes with kMaterialFlipbook
 };
 static_assert(sizeof(InstanceGpu) == 64);
 // InstanceGpu::flags (shaders/cull.hlsl): drawn only into the sun's shadow map (a roof that darkens a room without hiding it from

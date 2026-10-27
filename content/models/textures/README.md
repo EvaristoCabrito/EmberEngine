@@ -19,4 +19,3 @@ Downscaled copies (max 1024, JPEG q92) of Engine2 assets (C:/Engine2/public/game
 - `mossy-ground.jpg` <- `ground-claude/hill/color.png` (1024x1024)
 - `ruins-floor.jpg` <- `ground-claude/ruins/color.png` (1024x1024)
 - `ruins-floor-normal.jpg` <- `ground-claude/ruins/normal.png` (1024x1024)
-- `river-rocks.jpg` <- `ground-engine2-v3/river-rocks/color.png` (512x512)

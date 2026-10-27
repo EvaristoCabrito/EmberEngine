@@ -30,6 +30,19 @@ and stands it with its base centred on the anchor hex (MapStage::placeModels, En
 4. **In the game**: `--meshes build/meshes/props-v2.pak` (JOGAR.bat). The Map Editor's 3D palette places any
    `ember-*` id; `tools/scripts/models/make_showcase_draft.py` writes a draft showing one of each.
 
+## Tree Creating Pipeline
+
+Use this workflow for new tree props and their leafy variants. Keep each approved tree as its own version; never replace an earlier model.
+
+1. **Lock the reference.** Record the requested silhouette, trunk-base shape, branch spread, bark treatment, roots, and foliage. Follow the supplied reference for those choices; do not add exposed roots or foliage unless requested.
+2. **Build the bare tree in Blender 5.2.** Use real tapered trunk, limb, fork, and twig geometry with the existing photographic bark texture. Fuse limb junctions into the trunk, keep the ground contact level, and save both `.blend` and textured `.glb` with a new `-vNN` filename. For a leafy version, start from that exact approved bare model and keep it as a separate asset.
+3. **Reuse the approved leaf source.** Individual photo-textured leaf geometry comes from `content/models/forest/mature-tree-v04-photo.glb`, using `content/models/textures/foliage-leaves-photo-v01.png`. Place leaves along the tree's branch network, preserving their natural scale, varied rotation, and visible branch structure; tune canopy density to the silhouette.
+4. **Render the review asset offline.** Show separate three-quarter, front, branch-junction, and base views. Keep previews in the review folder. Present each proposed tree version individually and wait for explicit approval before copying it into game or editor assets. Do not open the game or browser for visual checks.
+5. **Register only approved versions.** Copy the `.blend` and `.glb` into `content/models/nature/`; mirror the `.glb` into `content/game/public/game/models/nature/` and `content/game/public/game/ember/nature/`. Add the matching IDs, dimensions, footprint, and triangle count to `content/models/models.json`; register the same model in `content/engine2/editor-catalog.json`, `content/game/src/world/models.ts`, and `content/game/src/ember/data.ts`.
+6. **Place only when requested.** A registered prop is available in the editor palette and game runtime. Add it to a map only when the user names or approves the map and placement. Preserve all existing model files and map placements.
+
+Current example: `colossal-dead-oak-v01` is the approved bare tree with a broad, near-cylindrical stump-like base and no exposed roots; `colossal-dead-oak-leafy-v01` is its separate leafy version.
+
 ## Checks
 
 - `Sandbox --meshes build/meshes/props-v2.pak --grid 8 --capture captures/models/NNN.png` (every mesh on a grid at
@@ -132,12 +145,14 @@ light sources: a map light must be placed beside them.
 | ember-nature-abandoned-nest | Ninho abandonado 3D | nature/abandoned-nest-v01.glb | 1.15 × 1.53 | 1800 | one, passável |
 | ember-nature-ancient-tree-roots | Árvore antiga com raízes expostas 3D | nature/ancient-tree-roots-v01.glb | 6.92 × 8.33 | 2992 | triple |
 | ember-nature-axe-cut-stump | Toco cortado a machado 3D | nature/axe-cut-stump-v01.glb | 1.79 × 0.88 | 1118 | one |
-| ember-nature-cracked-boulder | Rocha rachada 3D | nature/cracked-boulder-v01.glb | 2.78 × 1.82 | 1460 | pair |
+| ember-nature-colossal-dead-oak | Carvalho morto colossal 3D | nature/colossal-dead-oak-v01.glb | 7.58 × 6.58 | 1035940 | triple |
+| ember-nature-colossal-dead-oak-leafy | Carvalho morto colossal frondoso 3D | nature/colossal-dead-oak-leafy-v01.glb | 7.58 × 6.58 | 1035940 | triple |
 | ember-nature-dense-bush | Arbusto denso 3D | nature/dense-bush-v01.glb | 2.32 × 1.48 | 1920 | pair |
 | ember-nature-dry-branch-pile | Galhos secos empilhados 3D | nature/dry-branch-pile-v01.glb | 2.46 × 0.78 | 376 | pair, passável |
 | ember-nature-dry-bush | Arbusto seco 3D | nature/dry-bush-v01.glb | 2.55 × 1.30 | 1360 | pair, passável |
 | ember-nature-exposed-roots | Raízes expostas 3D | nature/exposed-roots-v01.glb | 2.73 × 1.04 | 7236 | pair, passável |
 | ember-nature-ferns | Samambaias 3D | nature/ferns-v01.glb | 1.57 × 0.96 | 288 | one, passável |
+| ember-nature-gray-boulder | Pedra cinza irregular 3D | nature/cracked-boulder-v02.glb | 2.78 × 1.82 | 20480 | pair |
 | ember-nature-hollow-standing-tree | Árvore oca em pé 3D | nature/hollow-standing-tree-v01.glb | 5.46 × 5.83 | 2498 | triple |
 | ember-nature-leaf-litter | Folhas e galhos acumulados 3D | nature/leaf-litter-v01.glb | 2.21 × 0.14 | 188 | pair, passável |
 | ember-nature-lichen-rocks | Pedras com líquen 3D | nature/lichen-rocks-v01.glb | 2.19 × 0.71 | 1920 | pair, passável |
@@ -226,33 +241,24 @@ light sources: a map light must be placed beside them.
 | ember-frost-snowy-dry-bush | Arbusto seco coberto de neve 3D | frost/snowy-dry-bush-v01.glb | 2.33 × 1.52 | 2160 | pair, passável |
 | ember-frost-snowy-grave-marker | Lápide coberta de neve 3D | frost/snowy-grave-marker-v01.glb | 1.94 × 1.53 | 2912 | one |
 | ember-crypt-ancient-bookshelf | Estante de livros antigos 3D | crypt/ancient-bookshelf-v01.glb | 1.58 × 2.31 | 1804 | one |
-| ember-crypt-ancient-tombstone | Lápide antiga 3D | crypt/ancient-tombstone-v01.glb | 1.50 × 2.05 | 3228 | one |
-| ember-crypt-artifact-pedestal | Pedestal para artefato 3D | crypt/artifact-pedestal-v01.glb | 1.10 × 1.30 | 556 | one |
-| ember-crypt-barred-gate | Portão de barras 3D | crypt/barred-gate-v01.glb | 2.38 × 3.02 | 410 | pair |
-| ember-crypt-chain-ring | Argola com corrente 3D | crypt/chain-ring-v01.glb | 0.42 × 1.83 | 2028 | one, passável |
-| ember-crypt-collapsed-ceiling | Entulho de teto desabado 3D | crypt/collapsed-ceiling-v01.glb | 3.01 × 1.27 | 816 | pair |
-| ember-crypt-column-base | Base de coluna destruída 3D | crypt/column-base-v01.glb | 1.70 × 1.22 | 1068 | one |
-| ember-crypt-cracked-pillar | Pilar rachado 3D | crypt/cracked-pillar-v01.glb | 1.69 × 4.22 | 2110 | one |
-| ember-crypt-deity-statue | Estátua de divindade 3D | crypt/deity-statue-v01.glb | 1.80 × 3.83 | 3928 | one |
-| ember-crypt-funeral-urns | Urnas funerárias 3D | crypt/funeral-urns-v01.glb | 1.41 × 1.02 | 616 | one |
-| ember-crypt-hook-chain | Corrente com gancho 3D | crypt/hook-chain-v01.glb | 0.69 × 2.54 | 2330 | one, passável |
-| ember-crypt-incomplete-skeleton | Esqueleto incompleto 3D | crypt/incomplete-skeleton-v01.glb | 2.67 × 0.43 | 2918 | pair, passável |
-| ember-crypt-inscribed-stones | Pedras com inscrições 3D | crypt/inscribed-stones-v01.glb | 2.91 × 1.96 | 2660 | pair |
-| ember-crypt-iron-grate | Grade de ferro no chão 3D | crypt/iron-grate-v01.glb | 1.50 × 0.08 | 172 | one, passável |
+| ember-crypt-ancient-tombstone | Lápide antiga 3D | crypt/ancient-tombstone-v03.glb | 1.50 × 1.91 | 536 | one |
+| ember-crypt-artifact-pedestal | Pedestal para artefato 3D | crypt/artifact-pedestal-v02.glb | 1.10 × 1.31 | 752 | one |
+| ember-crypt-barred-gate | Portão de barras 3D | crypt/barred-gate-v02.glb | 2.38 × 2.97 | 3068 | pair |
+| ember-crypt-chain-ring | Argola com corrente 3D | crypt/chain-ring-v02.glb | 0.36 × 1.78 | 8884 | one, passável |
+| ember-crypt-column-base | Base de coluna destruída 3D | crypt/column-base-v02.glb | 1.70 × 1.21 | 874 | one |
+| ember-crypt-cracked-pillar | Pilar rachado 3D | crypt/cracked-pillar-v02.glb | 1.62 × 3.70 | 2156 | one |
+| ember-crypt-funeral-urns | Urnas funerárias 3D | crypt/funeral-urns-v02.glb | 1.43 × 1.07 | 21376 | one |
+| ember-crypt-hook-chain | Corrente com gancho 3D | crypt/hook-chain-v02.glb | 0.69 × 2.54 | 2320 | one, passável |
 | ember-crypt-iron-trapdoor | Alçapão de ferro 3D | crypt/iron-trapdoor-v01.glb | 1.50 × 0.13 | 416 | one, passável |
-| ember-crypt-lone-skull | Crânio 3D | crypt/lone-skull-v01.glb | 0.55 × 0.46 | 658 | one, passável |
-| ember-crypt-ritual-brazier | Braseiro ritualístico 3D | crypt/ritual-brazier-v01.glb | 1.36 × 1.31 | 1372 | one |
+| ember-crypt-ritual-brazier | Braseiro ritualístico 3D | crypt/ritual-brazier-v02.glb | 1.52 × 2.96 | 2666 | one |
 | ember-crypt-ritual-table | Mesa de ritual 3D | crypt/ritual-table-v01.glb | 2.21 × 1.16 | 440 | pair |
-| ember-crypt-sarcophagus-broken-lid | Sarcófago com tampa quebrada 3D | crypt/sarcophagus-broken-lid-v01.glb | 3.38 × 1.68 | 3364 | pair |
+| ember-crypt-sarcophagus-broken-lid | Sarcófago com tampa quebrada 3D | crypt/sarcophagus-broken-lid-v03.glb | 3.11 × 1.68 | 3320 | pair |
 | ember-crypt-sarcophagus | Sarcófago fechado 3D | crypt/sarcophagus-v01.glb | 2.71 × 1.40 | 3320 | pair |
-| ember-crypt-secret-stone-door | Porta secreta de pedra 3D | crypt/secret-stone-door-v01.glb | 2.60 × 3.21 | 140 | pair |
-| ember-crypt-statue-fragments | Fragmentos de estátua 3D | crypt/statue-fragments-v01.glb | 2.34 × 1.39 | 1060 | pair |
-| ember-crypt-stone-capital | Capitel de pedra 3D | crypt/stone-capital-v01.glb | 1.44 × 1.12 | 764 | one |
-| ember-crypt-stone-pulpit | Púlpito de pedra 3D | crypt/stone-pulpit-v01.glb | 1.51 × 1.55 | 440 | one |
-| ember-crypt-stone-tomb | Túmulo de pedra 3D | crypt/stone-tomb-v01.glb | 2.45 × 0.89 | 136 | pair |
-| ember-crypt-wall-blocks | Blocos de muralha 3D | crypt/wall-blocks-v01.glb | 4.06 × 1.40 | 528 | pair |
-| ember-mines-ancient-fragments | Fragmentos arquitetônicos 3D | mines/ancient-fragments-v01.glb | 3.20 × 0.80 | 574 | pair |
-| ember-mines-bioluminescent-fungi | Fungos bioluminescentes 3D | mines/bioluminescent-fungi-v01.glb | 1.60 × 0.72 | 1280 | one, passável |
+| ember-crypt-secret-stone-door | Porta secreta de pedra 3D | crypt/secret-stone-door-v02.glb | 2.60 × 3.21 | 3568 | pair |
+| ember-crypt-stone-tomb | Túmulo de pedra 3D | crypt/stone-tomb-v03.glb | 2.45 × 0.89 | 5452 | pair |
+| ember-mines-bioluminescent-fungi-v02 | Cogumelos bioluminescentes castanhos 3D · v02 | mines/bioluminescent-fungi-v02.glb | 1.53 × 0.73 | 14,460 | one, passável |
+| ember-mines-amanita-muscaria-v01 | Amanita muscaria 3D · v01 | mines/amanita-muscaria-v01.glb | 1.43 × 0.73 | 34,760 | one, passável |
+| ember-mines-chanterelle-v01 | Cantarelos dourados 3D · v01 | mines/chanterelle-cluster-v01.glb | 1.14 × 0.80 | 23,728 | one, passável |
 | ember-mines-boat-wreck | Restos de embarcação 3D | mines/boat-wreck-v01.glb | 5.20 × 1.71 | 2410 | triple |
 | ember-mines-cargo-lift | Elevador de carga 3D | mines/cargo-lift-v01.glb | 2.75 × 4.35 | 3992 | pair |
 | ember-mines-dwarven-door | Porta de fortaleza anã 3D | mines/dwarven-door-v01.glb | 4.00 × 4.30 | 806 | pair |
@@ -277,31 +283,14 @@ light sources: a map light must be placed beside them.
 | ember-mines-rock-arch-formation | Arco de pedra natural 3D | mines/rock-arch-formation-v01.glb | 5.29 × 2.56 | 2752 | triple |
 | ember-mines-stalactites | Estalactites 3D | mines/stalactites-v01.glb | 2.74 × 3.61 | 4416 | pair |
 | ember-mines-stalagmites | Estalagmites 3D | mines/stalagmites-v01.glb | 2.20 × 1.75 | 2912 | pair |
-| ember-mines-stone-brazier | Braseiro de pedra 3D | mines/stone-brazier-v01.glb | 1.56 × 1.29 | 872 | one |
+| ember-mines-stone-brazier | Braseiro de pedra 3D | mines/stone-brazier-v02.glb | 1.56 × 1.29 | 8352 | one |
 | ember-mines-tunnel-entrance | Entrada de túnel 3D | mines/tunnel-entrance-v01.glb | 7.04 × 5.27 | 2228 | triple |
-| ember-mines-tunnel-marker | Marco de túnel 3D | mines/tunnel-marker-v01.glb | 0.44 × 1.70 | 308 | one |
-| ember-mines-winch | Guincho 3D | mines/winch-v01.glb | 1.61 × 1.28 | 1720 | one |
+| ember-mines-tunnel-marker | Marco de túnel 3D | mines/tunnel-marker-v02.glb | 0.44 × 1.70 | 312 | one |
+| ember-mines-winch | Guincho 3D | mines/winch-v02.glb | 1.61 × 1.28 | 6280 | one |
 | ember-mines-wooden-platform | Plataforma de madeira 3D | mines/wooden-platform-v01.glb | 2.78 × 0.46 | 748 | pair, passável |
-| ember-ember-ancient-hull-fragment | Fragmento de casco antigo 3D | ember/ancient-hull-fragment-v01.glb | 4.53 × 1.20 | 432 | triple |
-| ember-ember-ancient-pedestal | Pedestal antigo 3D | ember/ancient-pedestal-v01.glb | 1.50 × 1.43 | 864 | one |
-| ember-ember-ancient-reliquary | Relicário antigo 3D | ember/ancient-reliquary-v01.glb | 0.74 × 0.67 | 1136 | one, passável |
-| ember-ember-containment-box | Caixa de contenção 3D | ember/containment-box-v01.glb | 1.06 × 0.68 | 282 | one |
-| ember-ember-cracked-ceremonial-stone | Pedra cerimonial rachada 3D | ember/cracked-ceremonial-stone-v01.glb | 1.22 × 2.72 | 506 | one |
-| ember-ember-cult-symbol-stone | Símbolo de culto em pedra 3D | ember/cult-symbol-stone-v01.glb | 1.80 × 1.90 | 840 | one |
-| ember-ember-ember-container | Recipiente de Ember 3D | ember/ember-container-v01.glb | 0.70 × 1.07 | 792 | one, passável |
-| ember-ember-ember-extraction-altar | Altar de extração de Ember 3D | ember/ember-extraction-altar-v01.glb | 2.20 × 2.50 | 1048 | pair |
-| ember-ember-ember-lantern | Lanterna de Ember 3D | ember/ember-lantern-v01.glb | 0.39 × 0.94 | 408 | one, passável |
-| ember-ember-ember-transformed-statue | Estátua transformada pelo Ember 3D | ember/ember-transformed-statue-v01.glb | 1.70 × 3.28 | 4188 | one |
-| ember-ember-god-king-transport | Transporte do God-King 3D | ember/god-king-transport-v01.glb | 5.20 × 2.77 | 3300 | triple |
-| ember-ember-lift-mechanism-part | Mecanismo de elevação 3D | ember/lift-mechanism-part-v01.glb | 1.77 × 1.48 | 1808 | one |
-| ember-ember-light-crystal | Cristal de iluminação 3D | ember/light-crystal-v01.glb | 0.84 × 1.55 | 504 | one, passável |
-| ember-ember-mechanical-parts | Peças mecânicas 3D | ember/mechanical-parts-v01.glb | 1.81 × 0.47 | 1270 | one, passável |
-| ember-ember-obelisk-fragment | Fragmento de obelisco 3D | ember/obelisk-fragment-v01.glb | 2.07 × 2.77 | 46 | pair |
-| ember-ember-raw-ember-deposit | Depósito de Ember bruto 3D | ember/raw-ember-deposit-v01.glb | 2.42 × 1.61 | 644 | pair |
-| ember-ember-refined-ember-shard | Fragmento de Ember refinado 3D | ember/refined-ember-shard-v01.glb | 0.52 × 1.02 | 192 | one, passável |
-| ember-ember-ritual-totem | Totem ritualístico 3D | ember/ritual-totem-v01.glb | 1.01 × 2.69 | 1628 | one |
-| ember-ember-ritual-vessel | Recipiente ritual 3D | ember/ritual-vessel-v01.glb | 0.79 × 1.32 | 1552 | one, passável |
-| ember-ember-unknown-machine | Máquina antiga 3D | ember/unknown-machine-v01.glb | 2.35 × 2.05 | 2004 | pair |
+| ember-ember-ancient-reliquary | Relicário antigo 3D | ember/ancient-reliquary-v02-photo.glb | 0.74 × 0.67 | 336 | one, passável |
+| ember-ember-containment-box | Caixa de contenção 3D | ember/containment-box-v02-wood.glb | 1.06 × 0.68 | 13472 | one |
+| ember-ember-ember-lantern | Lanterna de Ember 3D | ember/ember-lantern-v02.glb | 0.49 × 0.98 | 7876 | one, passável |
 
 Not built from the list: items that already existed (see above) and pure variants of them.
 

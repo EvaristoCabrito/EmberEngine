@@ -1,8 +1,8 @@
 {
   "regions": [
     {
-      "id": "forest",
-      "name": "Floresta Tropical",
+      "id": "bosque",
+      "name": "Bosque",
       "encounterIds": [
         "random-encounter-1",
         "random-encounter-2",
@@ -119,3 +119,4 @@
     }
   ]
 }
+

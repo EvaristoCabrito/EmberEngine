@@ -88,7 +88,7 @@ class OverworldStage : public Stage {
     // A new campaign opens with Engine2's films: the boot vignette, then O Vau's intro (GameApp boot -> vauIntro).
     if (!testSave_ && campaign_.freshCampaign && id == "vau") {
       campaign_.freshCampaign = false;
-      playFilm("game/title-open.mp4", [this] { playFilm("game/vau-intro.mp4", [this] { openMission("vau", true); }); });
+      playFilm("game/title-open.mp4", [this] { playFilm("game/vau-intro.webm", [this] { openMission("vau", true); }); });
       return;
     }
     if (!id.empty() && callbacks_.resumeSaved && resumeSavedFight(id)) return;
@@ -99,7 +99,7 @@ class OverworldStage : public Stage {
   // the world map on the Atlas do Submundo (main.cpp), the campaign recording "underworldReached".
   static constexpr const char* kUnderworldExit = "underworld-atlas";
   // The Graveyard's film (CutsceneScreen opens an absolute path as it is: engine2Public / absolute = the absolute path).
-  static constexpr const char* kGraveyardFilm = "content/films/graves-intro-v01.mp4";
+  static constexpr const char* kGraveyardFilm = "content/films/graves-intro-v01.webm";
   void showUnderworld() {
     if (!underworld_) toggleWorld();
   }
@@ -238,7 +238,7 @@ class OverworldStage : public Stage {
       else if (r > 0 && callbacks_.play) {
         // GameApp beginMission: some missions open with their film (bound to the mission id, not its position).
         const std::string id = briefing_->draftId;
-        const char* film = id == "aldeia" ? "game/aldeia-intro.mp4" : id == "thebridge" ? "game/thebridge-intro.mp4" : id == "templo" ? "game/asherah-rite.mp4" : nullptr;
+        const char* film = id == "aldeia" ? "game/aldeia-intro.webm" : id == "thebridge" ? "game/thebridge-intro.mp4" : id == "templo" ? "game/asherah-rite.mp4" : nullptr;
         // The Graveyard's film (the user's Graves video, 2026-10-23), the first time the party goes in: the campaign's save and
         // Modo teste's own session save each keep the flag.
         if (id == "cemiterio-esquecidos" && !save_.value("seenGraveyardIntro", false)) {
@@ -290,13 +290,15 @@ class OverworldStage : public Stage {
 
  private:
   static constexpr float kRem = 16.0f;  // CSS px are canvas units (DebugUi::kUiHeight)
-  static constexpr float kZoomStops[4] = {70, 90, 110, 130};
+  static constexpr float kOverworldZoomStops[4] = {110, 130, 150, 170};
+  static constexpr float kUnderworldZoomStops[4] = {70, 90, 110, 130};
   // The six, then EmberEngine's own heroes (content/ember-classes.json "heroes": Isolde). Modo teste's party is everyone (the user,
   // 2026-10-25: "precisa adicionar Isolde a party no mapa mundi do debug"); the campaign keeps only the recruited (heroRecruited:
   // "recruited:Isolde" flag).
-  static constexpr const char* kHeroes[7] = {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec", "Isolde"};
+  // Selene too (the user, 2026-10-25: "make her available in debug mode as stress test"; never recruited in the campaign yet).
+  static constexpr const char* kHeroes[8] = {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec", "Isolde", "Selene"};
   // EmberEngine's own heroes have no row in the world tables (baseClass, portraits): their class and bust from here.
-  static const char* ownHeroClass(const std::string& hero) { return hero == "Isolde" ? "conjurer" : nullptr; }
+  static const char* ownHeroClass(const std::string& hero) { return hero == "Isolde" || hero == "Selene" ? "conjurer" : nullptr; }
   int baseMaxHp(const std::string& hero) const {
     if (const int hp = world_.maxHp(save_, hero); hp > 0) return hp;
     const char* cls = ownHeroClass(hero);
@@ -383,7 +385,7 @@ class OverworldStage : public Stage {
           bool any = false;
           for (const std::string& m : l.missionIds) any = any || completed(m);
           if (any) break;
-          playFilm("game/wisp-entrance.mp4", [this, id] {
+          playFilm("game/wisp-entrance.webm", [this, id] {
             save_["seenWispForestIntro"] = true;
             save_["pendingMission"] = nullptr;
             save_["battle"] = nullptr;
@@ -411,7 +413,7 @@ class OverworldStage : public Stage {
       return;
     }
     if (!save_.value("seenInnArrivalIntro", false)) {  // Modo teste too (its session save keeps "seen"; nothing is written)
-      playFilm("game/inn-arrival.mp4", [this] {
+      playFilm("game/inn-arrival.webm", [this] {
         save_["seenInnArrivalIntro"] = true;
         enterInn();
       });
@@ -701,7 +703,8 @@ class OverworldStage : public Stage {
     const UiImage* map = uiImage(underworld_ ? std::filesystem::path(kUnderworldAtlas) : paths_.engine2Public / "game/assets/world-map.jpg");
     mapDrawn_ = true;
     const float vw = b.x - a.x, vh = b.y - a.y;
-    const float imgW = vw * kZoomStops[zoom_] / 100.0f;
+    const float zoomPercent = underworld_ ? kUnderworldZoomStops[underworldZoom_] : kOverworldZoomStops[zoom_];
+    const float imgW = vw * zoomPercent / 100.0f;
     const float imgH = map ? imgW * static_cast<float>(map->height) / static_cast<float>(map->width) : vh * 0.7f;
     const float contentW = imgW + 16.0f, contentH = imgH + 16.0f;
     const e2::Json& pos = save_["overworldPos"];
@@ -1055,18 +1058,21 @@ class OverworldStage : public Stage {
       }
       framePath = paths_.engine2Public / (std::string("game/sprites/") + sheet->dir + (hero == "Neera" ? "" : "/") + std::to_string(file) + ".png");
     }
-    const float scale = 48.0f / height;
+    const float zoomScale = kOverworldZoomStops[zoom_] / kOverworldZoomStops[0];
+    const float markerHeight = 48.0f * zoomScale;
+    const float scale = markerHeight / height;
     const float boxW = width * scale;
-    // flex h-12 w-16 items-end justify-center: a 64 x 48 box, its bottom on the hex (translate -50%, -100%).
-    const Box button{{foot.x - std::max(32.0f, boxW / 2), foot.y - 48.0f}, {foot.x + std::max(32.0f, boxW / 2), foot.y}};
+    // The 64 x 48 marker grows with the map zoom, with its bottom kept on the hex.
+    const float boxHalfW = std::max(32.0f * zoomScale, boxW / 2);
+    const Box button{{foot.x - boxHalfW, foot.y - markerHeight}, {foot.x + boxHalfW, foot.y}};
     if (const UiImage* img = uiImage(framePath)) {
-      const float x0 = foot.x - boxW / 2, y0 = foot.y - 48.0f;
+      const float x0 = foot.x - boxW / 2, y0 = foot.y - markerHeight;
       // The crop box of the frame, in texture coordinates.
       float u0 = left / cw, v0 = top / ch, u1 = (left + width) / cw, v1 = (top + height) / ch;
       if (mirror) std::swap(u0, u1);
       // drop-shadow(0 2px 3px rgba(0,0,0,.6))
-      dl->AddImage(img->texture, {x0, y0 + 2}, {x0 + boxW, y0 + 50}, {u0, v0}, {u1, v1}, IM_COL32(0, 0, 0, 120));
-      dl->AddImage(img->texture, {x0, y0}, {x0 + boxW, y0 + 48}, {u0, v0}, {u1, v1});
+      dl->AddImage(img->texture, {x0, y0 + 2}, {x0 + boxW, y0 + markerHeight + 2}, {u0, v0}, {u1, v1}, IM_COL32(0, 0, 0, 120));
+      dl->AddImage(img->texture, {x0, y0}, {x0 + boxW, y0 + markerHeight}, {u0, v0}, {u1, v1});
     }
     return button;
   }
@@ -1134,7 +1140,10 @@ class OverworldStage : public Stage {
   }
 
   void drawZoom(ImVec2 size) {
-    if (worldMapZoomBox(size, zoom_, event_ || open_ || questLog_ || party_ || options_ || !save_.value("seenOverworldIntro", false))) recentre_ = true;
+    const bool inert = event_ || open_ || questLog_ || party_ || options_ || !save_.value("seenOverworldIntro", false);
+    const bool changed = underworld_ ? worldMapZoomBox(size, underworldZoom_, inert)
+                                     : worldMapZoomBox(size, zoom_, inert, 4, 1, 4);
+    if (changed) recentre_ = true;
   }
 
   // --- dialogs ----------------------------------------------------------------------------------------------------------
@@ -2271,7 +2280,8 @@ class OverworldStage : public Stage {
   const e2::InterludeData* interlude_ = nullptr;  // the historical chapter's data (the Ruins' gate, its start), when loaded
   std::string flashId_;
   float flashAt_ = -10;
-  int zoom_ = 3;
+  int zoom_ = 0;
+  int underworldZoom_ = 3;
   float scrollX_ = 0, scrollY_ = 0, centreX_ = 0.5f, centreY_ = 0.5f;
   bool centred_ = false, recentre_ = false;
   bool underworld_ = false;                          // the Underworld's Atlas on show instead of the overworld (toggleWorld)

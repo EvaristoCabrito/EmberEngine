@@ -6,8 +6,8 @@ AV1 about half of H.264's size; ~28 hours of film planned at 420p):
 - **`.webm` = AV1 picture + Opus sound**, decoded by our own libraries: libwebm 1.0.0.32 (its Matroska reader only), dav1d 1.5.4
   (VideoLAN's AV1 decoder, compiled by `cmake/Dav1d.cmake`: C only, 8-bit, threaded) and Opus 1.6.1. Plays the same on every PC.
 - **`.mp4` = H.264 + AAC**, through Windows Media Foundation, as before.
-- A film asked for as `game/<name>.mp4` plays `game/<name>.webm` when that file lies beside it. The MP4 is kept; subtitles are
-  found by the name, so nothing else changes.
+- Older MP4 callers still fall back to a same-name WebM. The replaced FMVs below now request WebM directly; their old runtime
+  MP4 copies were removed. Subtitle sidecars are still found by the film name.
 
 **REJECTED (the user, 2026-10-25):** the intro encoded with the command below (CRF 30, from the game's own MP4s) "looks like
 garbage" in play, although SSIM 0.98 / PSNR 43 dB and a still frame looked fine. Both copies were removed (319dbb6e) and no film
@@ -17,19 +17,21 @@ motion; never trust SSIM / PSNR / stills for a film.
 **In use (the user, 2026-10-26: "passar essa intro por esse sistema", then "coloca o AV1 1080p como a abertura"):** the new
 campaign's intro `game/vau-intro.webm` = the user's 1080p master `Attachments/EmberMovieIntro.mp4` (same cut as vau-intro.mp4,
 97.84 s) through the command below, unchanged (CRF 30): 142 MB -> 21.7 MB, 1.9 Mbps. `--film-check`: 81 pictures/s (25 needed),
-16.6 ms a picture, worst 163 ms (absorbed by the picture queue: not seen in play). The 640x350 `vau-intro.mp4` stays beside it.
+16.6 ms a picture, worst 163 ms (absorbed by the picture queue: not seen in play). The old 640x350 `vau-intro.mp4` runtime
+copy was removed on 2026-10-26; the game now requests the WebM directly.
 The 2026-10-25 rejection was the same settings from the 640x350 MP4; this one is from a 1080p master. The user, after watching it:
 "the quality doesnt seem affected by the codec".
 
 **In use (the user, 2026-10-26: "EmberINNarrival you can do this video now too"):** the first Inn visit's film
 `game/inn-arrival.webm` = the user's 1080p master `Attachments/EmberINNarrival.mp4` (the same start as inn-arrival.mp4, its last
 seconds cut by the user: 42.56 s vs 45.16 s; the subtitles end at 42.1 s), same command: 61.5 MB -> 13.3 MB. `--film-check`:
-105 pictures/s, 12.7 ms a picture, worst 87 ms. The 640x350 `inn-arrival.mp4` stays beside it.
+105 pictures/s, 12.7 ms a picture, worst 87 ms. The old 640x350 `inn-arrival.mp4` runtime copy was removed on 2026-10-26;
+the game now requests the WebM directly.
 
 **In use (the user, 2026-10-26: "EmberMovieWISP1 now do this one"):** the first Wisp Forest mission's film
 `game/wisp-entrance.webm` = the user's 1080p master `Attachments/EmberMovieWISP1.mp4` (12.56 s, the same length as
-wisp-entrance.mp4), same command: 18.3 MB -> 3.8 MB. `--film-check`: 103 pictures/s, 12.6 ms a picture, worst 69 ms. The 640x350
-`wisp-entrance.mp4` stays beside it.
+wisp-entrance.mp4), same command: 18.3 MB -> 3.8 MB. `--film-check`: 103 pictures/s, 12.6 ms a picture, worst 69 ms. The old
+640x350 `wisp-entrance.mp4` runtime copy was removed on 2026-10-26; the game now requests the WebM directly.
 
 **In use (the user, 2026-10-26: "EmberMovieBurningVillage will need subtiles resync"):** aldeia's briefing film
 `game/aldeia-intro.webm` = the user's 1080p master `Attachments/EmberMovieBurningVillage.mp4`, a new cut of aldeia-intro.mp4
@@ -37,23 +39,25 @@ wisp-entrance.mp4), same command: 18.3 MB -> 3.8 MB. `--film-check`: 103 picture
 before the middle cut, new = old - 4.713 s after it (the last line's sound matches at 0.96-0.99). Same command: 14.0 MB -> 2.9 MB;
 `--film-check` 100 pictures/s, worst 72 ms. **The four `subtitles/aldeia-intro.*.vtt` were moved to the new cut** (times only;
 "Corram!" / "Run!" keeps its last 0.6 s, 0-0.612, its start fell in the cut); the old timings are kept in
-`subtitles/kept/aldeia-intro-640x350/` (the game does not read that folder). The 640x350 `aldeia-intro.mp4` stays beside it, but
-its subtitles are now the new cut's.
+`subtitles/kept/aldeia-intro-640x350/` (the game does not read that folder). The old 640x350 `aldeia-intro.mp4` runtime copy was
+removed on 2026-10-26; the game now requests the WebM directly, and its subtitles remain synced to the new cut.
 
 **In use (the user, 2026-10-26: "aplicar essa no codec EmberMovieSmith1"):** the first forge visit's film `game/smith-intro.webm`
 = the user's 1080p master `Attachments/EmberMovieSmith1.mp4` (15.06 s vs 15.04 s, but every line's sound 2.000 s earlier: the
 correlation scores 1.00 on all four). Same command: 22.3 MB -> 4.8 MB; `--film-check` 105 pictures/s, worst 76 ms. **The four
 `subtitles/smith-intro.*.vtt` shifted by -2.000 s** (times only); the old timings kept in `subtitles/kept/smith-intro-752x416/`.
-The 752x416 `smith-intro.mp4` stays beside it, with the new cut's subtitles.
+The old 752x416 `smith-intro.mp4` runtime copy was removed on 2026-10-26; the game now requests the WebM directly, with the new
+cut's subtitles.
 
 **In use (the user, 2026-10-26: "this video for the graveyard scene NeeraSalazarGraveDorama25agp"):** the Graveyard's first-entry
 film `content/films/graves-intro-v01.webm` = the user's 1080p master `Attachments/NeeraSalazarGraveDorama25agp.mp4` (21.08 s,
-the same length as graves-intro-v01.mp4; no subtitle files exist for it). Same command: 30.5 MB -> 4.4 MB; `--film-check` 114
-pictures/s, worst 69 ms. The 640x350 `graves-intro-v01.mp4` stays beside it.
+the same length as the former `graves-intro-v01.mp4`; no subtitle files existed at the time). Same command: 30.5 MB -> 4.4 MB;
+`--film-check` 114 pictures/s, worst 69 ms. The old 640x350 MP4 runtime copy was removed on 2026-10-26; the game now requests
+the WebM directly.
 
 **In use (the user, 2026-10-26: "the new cuts are in attachments, now pass all videos thought the codec"):** the three Inn pair
-scenes that were rendered at 640x350, from the user's 1080p cuts, same command, beside their MP4s in `content/films/` (no subtitle
-files; every line's sound within 0.03 s of the old film's):
+scenes that were rendered at 640x350, from the user's 1080p cuts, encoded with the same command (no subtitle files existed at the
+time; every line's sound is within 0.03 s of the old film's):
 
 | film | master | length | size | `--film-check` |
 |---|---|---|---|---|
@@ -62,6 +66,12 @@ files; every line's sound within 0.03 s of the old film's):
 | `voss-neera-inn-v01.webm` | `Attachments/VossNeeraINN.mp4` | 12.80 s (old 13.12) | 18.7 MB -> 2.8 MB | 115 pictures/s, worst 74 ms |
 
 `Attachments/Dorama25agp.mp4` (128 s) matches no film the game plays: not encoded.
+
+**Current FMV routes (2026-10-26):** the game requests `.webm` directly for `vau-intro`, `inn-arrival`, `wisp-entrance`,
+`aldeia-intro`, `smith-intro`, `graves-intro-v01`, `kael-voss-inn-v01`, `neera-salazar-inn-v01`, and `voss-neera-inn-v01`.
+Their old in-game MP4 copies and byte-identical WebM copies under `Attachments/` were removed after verifying each target hash.
+The supplied MP4 masters remain under `Attachments/`. Four English subtitle sidecars were added for the graveyard and the three
+latest Inn pair scenes. `Dorama25agp.mp4` remains outside the game and untouched.
 
 ## Encoding a film (the settings used)
 

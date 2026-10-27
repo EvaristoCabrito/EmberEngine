@@ -2272,7 +2272,7 @@ export function GameApp() {
 
       {screen === "vauIntro" && (
         <CutsceneScreen
-          src="/game/vau-intro.mp4"
+          src="/game/vau-intro.webm"
           onSkip={() => {
             setMissionId("vau");
             setScreen("briefing");
@@ -2281,11 +2281,11 @@ export function GameApp() {
       )}
 
       {screen === "wispForestIntro" && (
-        <CutsceneScreen src="/game/wisp-entrance.mp4" subtitles={{ pt: "/game/subtitles/wisp-entrance.pt.vtt", en: "/game/subtitles/wisp-entrance.en.vtt" }} onSkip={finishWispForestIntro} />
+        <CutsceneScreen src="/game/wisp-entrance.webm" subtitles={{ pt: "/game/subtitles/wisp-entrance.pt.vtt", en: "/game/subtitles/wisp-entrance.en.vtt" }} onSkip={finishWispForestIntro} />
       )}
 
       {screen === "innArrivalIntro" && (
-        <CutsceneScreen src="/game/inn-arrival.mp4" subtitles={{ pt: "/game/subtitles/inn-arrival.pt.vtt", en: "/game/subtitles/inn-arrival.en.vtt" }} onSkip={finishInnArrivalIntro} />
+        <CutsceneScreen src="/game/inn-arrival.webm" subtitles={{ pt: "/game/subtitles/inn-arrival.pt.vtt", en: "/game/subtitles/inn-arrival.en.vtt" }} onSkip={finishInnArrivalIntro} />
       )}
 
       {screen === "mapEditor" && art && (
@@ -2797,7 +2797,7 @@ export function GameApp() {
         <CutsceneScreen
           src={
             missionId === "aldeia"
-              ? "/game/aldeia-intro.mp4"
+              ? "/game/aldeia-intro.webm"
               : missionId === "thebridge"
                 ? "/game/thebridge-intro.mp4"
                 : "/game/asherah-rite.mp4"
@@ -4715,7 +4715,7 @@ const BUILDER_TERRAIN: TerrainId[] = [
  * than deleted: variant indices are positional, so dropping one would shift every later
  * variant and repaint saved maps. plains 15 = "Trilha de Terra". */
 const HIDDEN_VARIANTS: Partial<Record<TerrainId, number[]>> = {
-  plains: [15, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38],
+  plains: [15, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 57, 59, 60],
   // Keep these saved-map indices intact while removing them from the water picker.
   water: [3, 7],
 };

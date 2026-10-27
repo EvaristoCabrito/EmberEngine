@@ -2399,11 +2399,6 @@
         "y": 7
       },
       {
-        "id": "ember-crypt-inscribed-stones",
-        "x": 8,
-        "y": 15
-      },
-      {
         "id": "ember-crypt-chain-ring",
         "x": 19,
         "y": 15
@@ -2412,16 +2407,6 @@
         "id": "ember-crypt-artifact-pedestal",
         "x": 7,
         "y": 22
-      },
-      {
-        "id": "ember-crypt-lone-skull",
-        "x": 18,
-        "y": 22
-      },
-      {
-        "id": "ember-crypt-iron-grate",
-        "x": 11,
-        "y": 11
       },
       {
         "id": "ember-crypt-ancient-tombstone",

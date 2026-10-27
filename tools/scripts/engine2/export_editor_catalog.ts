@@ -32,6 +32,9 @@ const lighting = await import(`${E2}/src/ember/lighting.ts`);
 const catalog = await import(`${E2}/src/units/catalog.ts`);
 const visual = await import(`${E2}/src/units/visual.ts`);
 const backgrounds = await import(`${E2}/src/editor/mapBackgrounds.ts`);
+// EmberEngine's versioned panorama assets live beside its other own backdrops and are maintained in that registry.
+const OWN_PANORAMAS: { id: string; label: string; file: string }[] =
+  JSON.parse(readFileSync(`${dirname(fileURLToPath(import.meta.url))}/../../../content/backdrops-own.json`, 'utf8')).backgrounds;
 const decorFiles: string[] = JSON.parse(readFileSync(`${E2}/src/world/decor-files.json`, 'utf8'));
 const prepared: Record<string, { n: number; natW: number; natH: number; x: number; y: number; w: number; h: number }> =
   JSON.parse(readFileSync(`${E2}/src/units/prepared.json`, 'utf8'));
@@ -142,12 +145,17 @@ const battleLight = await import(`${E2}/src/ember/battleLight.ts`);
 const npcs = await import(`${E2}/src/ember/encounter-npcs.ts`);
 const byName = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 const BUILDER_TERRAIN = ['plains', 'woods', 'water', 'ruins', 'ember', 'hill', 'flame', 'nave', 'column', 'door', 'void', 'snow'];
-const TERRAIN_SWATCH: Record<string, string> = { plains: '#9c8f6f', woods: '#3f5c3a', ruins: '#6b6560', water: '#2c5f7a', ember: '#7a2c2c', hill: '#8a7a4f',
+const TERRAIN_SWATCH: Record<string, string> = { plains: '#5f8c28', woods: '#3f5c3a', ruins: '#6b6560', water: '#2c5f7a', ember: '#7a2c2c', hill: '#8a7a4f',
   flame: '#b5501f', column: '#4a4a52', nave: '#26262c', barricade: '#5a4630', door: '#4a3524', void: '#000000', snow: '#d8dee2' };
 const HIDDEN_VARIANTS: Record<string, number[]> = { plains: [15, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38], water: [3, 7] };
 // thumbFor (the procedural plains 001 has no file: the swatch stands in) and groundVersions
 const thumbFor = (terrain: string, variant: number): string | null =>
-  terrain === 'void' ? null : terrain === 'plains' && variant === 48 ? '/game/ground-claude/049-plains/color.png'
+  terrain === 'void' ? null : terrain === 'plains' && variant === 70 ? 'content/ground/plains-grass-ground-v01.png'
+    : terrain === 'plains' && variant === 71 ? 'content/ground/plains-grass-ground-v02-seamless.png'
+    : terrain === 'plains' && variant === 72 ? 'content/ground/plains-grass-ground-v03.png'
+    : terrain === 'plains' && variant === 73 ? 'content/ground/plains-grass-ground-v01-seamless.png'
+    : terrain === 'plains' && variant === 74 ? 'content/ground/plains-grass-ground-v03-seamless.png'
+    : terrain === 'plains' && variant === 48 ? '/game/ground-claude/049-plains/color.png'
     : terrain === 'plains' && variant === 0 ? null : tv.tileVariantSrc(terrain, variant);
 function groundVersions(terrain: string) {
   const list: { variant: number; thumb: string | null; label?: string }[] = [{ variant: 0, thumb: thumbFor(terrain, 0) }];
@@ -158,6 +166,11 @@ function groundVersions(terrain: string) {
     list.push({ variant: entry.variant, thumb: thumbFor(terrain, entry.variant) });
   for (const entry of tv.GROUND_VARIANT_LAYERS.filter((item: any) => item.terrain === terrain && item.key !== 'photo-city' && item.key !== 'city-stone-paving' && item.key !== 'city-indoor-wood' && item.key !== 'variant-flame-005-fire' && item.key !== 'laje-021-stone-slabs'))
     list.push({ variant: entry.variant, thumb: thumbFor(terrain, entry.variant) });
+  if (terrain === 'plains') {
+    list.push({ variant: 70, thumb: thumbFor(terrain, 70) }, { variant: 71, thumb: thumbFor(terrain, 71) },
+      { variant: 72, thumb: thumbFor(terrain, 72) }, { variant: 73, thumb: thumbFor(terrain, 73) },
+      { variant: 74, thumb: thumbFor(terrain, 74) });
+  }
   if (terrain === 'plains') { const k = list.findIndex((v) => v.variant === 55); if (k > 1) list.splice(1, 0, ...list.splice(k, 1)); }
   if (terrain === 'plains') return list.map((v, i) => ({ ...v, label: String(i + 1).padStart(3, '0') }));
   return list.map((v) => ({ ...v, label: tv.GROUND_VARIANT_LAYERS.find((item: any) => item.terrain === terrain && item.variant === v.variant)?.label ?? String(v.variant + 1).padStart(3, '0') }));
@@ -211,12 +224,12 @@ const editor = {
     spawn: id === 'breadLady' ? null : npcs.encounterNpcSpawn(id, 0, 0) })),
   timeOfDay: Object.fromEntries(Object.entries(battleLight.TIME_OF_DAY_LIGHT).map(([k, v]: [string, any]) => [k, { label: v.label, moon: v.moon, key: v.key, ambient: v.ambient }])),
   defaults: { sun: battleLight.DEFAULT_SUN_INTENSITY, ambient: battleLight.DEFAULT_AMBIENT_INTENSITY, bloom: battleLight.DEFAULT_BLOOM_INTENSITY },
-  backgrounds: backgrounds.MAP_BACKGROUNDS.map((b: any) => ({ id: b.id, label: b.label, file: b.file })),
+  backgrounds: [...backgrounds.MAP_BACKGROUNDS.map((b: any) => ({ id: b.id, label: b.label, file: b.file })), ...OWN_PANORAMAS],
   music: [...data.MUSIC_TRACKS, ...OWN_MUSIC.filter((f) => !data.MUSIC_TRACKS.includes(f))].sort(byName),
   // the City brush: plains with the city layers (Stone paving = ENGINE2_V3_CITY_VARIANT, then photo-city / indoor wood)
   city: [{ variant: tv.ENGINE2_V3_CITY_VARIANT, label: 'Stone paving', thumb: thumbFor('plains', tv.ENGINE2_V3_CITY_VARIANT) },
     ...tv.GROUND_VARIANT_LAYERS.filter((e: any) => e.key === 'photo-city' || e.key === 'city-indoor-wood').map((e: any) => ({ variant: e.variant, label: e.label, thumb: thumbFor('plains', e.variant) }))],
-  terrainThumb: Object.fromEntries(BUILDER_TERRAIN.map((t) => [t, thumbFor(t, 0)])),
+  terrainThumb: Object.fromEntries(BUILDER_TERRAIN.map((t) => [t, t === 'plains' ? 'content/ground/plains-grass-ground-v01.png' : thumbFor(t, 0)])),
 };
 
 // --- the rest of the editor's tables (3D pieces, rule switches, Gerar terreno's pools, Locais, R-Encounter) ---
@@ -247,6 +260,7 @@ const decoMeta = Object.fromEntries(Object.keys(DECORATIONS).map((id) => {
 }));
 const tileVariantNames = Object.fromEntries(Object.keys(data.TERRAIN).map((t) =>
   [t, Array.from({ length: tv.TILE_VARIANT_COUNT[t] ?? 1 }, (_, v) => tv.tileVariantName(t, v))]));
+if (tileVariantNames.plains.length > 56) tileVariantNames.plains[56] = '';
 const e2json = (file: string) => JSON.parse(readFileSync(`${E2}/src/campaign/${file}`, 'utf8'));
 Object.assign(editor, {
   maxLevel: data.MAX_LEVEL,
@@ -280,7 +294,7 @@ const out = {
   source: 'Engine2 tables via tools/scripts/engine2/export_editor_catalog.ts',
   decorations, facings, heroes, classes, editor,
   backgrounds: { byMap: Object.fromEntries(backgrounds.MAP_BACKGROUNDS.flatMap((b: any) => (b.mapIds ?? []).map((m: string) => [m, b.file]))),
-    byId: Object.fromEntries(backgrounds.MAP_BACKGROUNDS.map((b: any) => [b.id, b.file])) },
+    byId: Object.fromEntries([...backgrounds.MAP_BACKGROUNDS.map((b: any) => [b.id, b.file]), ...OWN_PANORAMAS.map((b) => [b.id, b.file])]) },
 };
 mkdirSync(dirname(outPath), { recursive: true });
 writeFileSync(outPath, JSON.stringify(out));

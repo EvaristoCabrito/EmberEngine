@@ -43,6 +43,19 @@ struct EmberGroundTile {
   float tile;
   bool overBaked = false;  // also over the terrain's baked art (by default a tile takes only the hexes the procedural surfaces had)
 };
+struct EmberGroundVariant {
+  std::string_view terrain, key, file;
+  int variant;
+  float tile;
+};
+inline constexpr EmberGroundVariant kEmberGroundVariants[] = {
+    // Map Editor's Planície 008/009: approved per-cell tile versions; the base green tile remains unchanged.
+    {"plains", "ember-plains-grass-v1", "content/ground/plains-grass-ground-v01.png", 70, 4.0f},
+    {"plains", "ember-plains-grass-v2-seamless", "content/ground/plains-grass-ground-v02-seamless.png", 71, 4.0f},
+    {"plains", "ember-plains-grass-v3", "content/ground/plains-grass-ground-v03.png", 72, 4.0f},
+    {"plains", "ember-plains-grass-v1-seamless", "content/ground/plains-grass-ground-v01-seamless.png", 73, 4.0f},
+    {"plains", "ember-plains-grass-v3-seamless", "content/ground/plains-grass-ground-v03-seamless.png", 74, 4.0f},
+};
 inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"cemiterio-v01", "plains", "ember-cemiterio-relva-neve-v01", "content/ground/cemiterio-relva-neve-v01.png", 4.5f},  // cemi01: snow over dead grass
     {"cemiterio-v01", "snow", "ember-cemiterio-trilha-v01", "content/ground/cemiterio-trilha-v01.png", 5.0f},        // cemi02: trodden slush, the paths
@@ -74,6 +87,11 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"bosque-morto-v03", "woods", "ember-bosque-morto-earth-leaves-v03", "content/ground/bosque-morto-earth-leaves-v02.png", 4.0f},
     {"bosque-morto-v03", "plains", "ember-bosque-morto-leaf-moss-v03", "content/ground/bosque-morto-leaf-moss-v02.png", 4.0f},
     {"bosque-morto-v03", "hill", "ember-bosque-morto-moss-center-v03", "content/ground/bosque-morto-moss-center-v02.png", 4.0f},
+    // Bosque Morto v11: one map-wide gradual transition; every terrain samples the same field to avoid hex-shaped patches.
+    {"bosque-morto-v04", "woods", "ember-bosque-morto-ground-mask-v02-woods", "content/ground/bosque-morto-ground-mask-v02.png", 36.0f},
+    {"bosque-morto-v04", "plains", "ember-bosque-morto-ground-mask-v02-plains", "content/ground/bosque-morto-ground-mask-v02.png", 36.0f},
+    {"bosque-morto-v04", "hill", "ember-bosque-morto-ground-mask-v02-hill", "content/ground/bosque-morto-ground-mask-v02.png", 36.0f},
+    {"bosque-morto-v04", "barricade", "ember-bosque-morto-ground-mask-v02-barricade", "content/ground/bosque-morto-ground-mask-v02.png", 36.0f},
     // The Misty Cave (cave-v01, the user's photos in Attachments/MistyCave, 2026-10-23; docs/MISTY_CAVE_PROMPTS.md T1-T5, W1; each ~4 m
     // of ground across its 784 px): bedrock floor, the old worked passage, rockfall, calcite ledges, the wet margin by the water; every
     // one over its terrain's baked art too. "side" is laid on no hex: BoardGround puts it on the board's sides and cliffs (the rock wall).

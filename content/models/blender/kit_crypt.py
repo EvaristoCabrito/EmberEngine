@@ -26,32 +26,6 @@ def column_base():
     return g(p)
 
 
-def stone_capital():
-    cap = stone_block('cap', (1.3, 1.3, 0.4), (0, 0, 0.75), 603, 'masonry-crypt', bev=0.04)
-    flare = lathe('flare', [(0, 0), (0.55, 0), (0.62, 0.3), (0.72, 0.5), (0.6, 0.55), (0, 0.55)], segs=20, mat=M('masonry-crypt'))
-    subdivide(flare, 1, simple=True)
-    displace(flare, 0.03, 0.2, seed=603)
-    apply_mods(flare)
-    box_uv(flare, 1.1)
-    o = join([cap, flare], 'stone-capital')
-    o.rotation_euler = (0.12, 0.05, 0)
-    apply_transform(o)
-    smooth(o, 40)
-    return g(o)
-
-
-def iron_grate():
-    parts = [plank_box('frame', (1.5, 1.5, 0.08), (0, 0, 0.04), 'iron-rust', 0.01, 1.0)]
-    boolean(parts[0], box('hole', (1.3, 1.3, 0.2), loc=(0, 0, 0.04)))
-    for i in range(7):
-        parts.append(box(f'bar{i}', (1.32, 0.05, 0.05), loc=(0, -0.6 + i * 0.2, 0.04), mat=M('iron-rust')))
-    for i in range(2):
-        parts.append(box(f'cross{i}', (0.05, 1.32, 0.05), loc=(-0.3 + i * 0.6, 0, 0.04), mat=M('iron-rust')))
-    o = join(parts, 'iron-grate')
-    smooth(o, 40)
-    return g(o)
-
-
 def barred_gate():
     W, H = 2.2, 2.9
     parts = [box('postL', (0.12, 0.12, H), loc=(-W * 0.5, 0, H * 0.5), mat=M('iron-rust')), box('postR', (0.12, 0.12, H), loc=(W * 0.5, 0, H * 0.5), mat=M('iron-rust')),
@@ -155,30 +129,6 @@ def funeral_urns():
     return g(o)
 
 
-def lone_skull():
-    return g(skull('skull', (0, 0, 0), r=0.24, seed=608))
-
-
-def incomplete_skeleton(seed=609):
-    rng = rand(seed)
-    parts = [skull('skull', (-0.9, 0.05, 0), r=0.22, seed=seed)]
-    for i in range(9):
-        parts.append(cylinder(f'vert{i}', 0.06, 0.06, 0.08, loc=(-0.55 + i * 0.12, 0, 0.07), rot=(0, math.pi / 2, 0), segs=8, mat=M('bone')))
-    for i in range(5):
-        for sy in (-1, 1):
-            r = kit_extra.arc(f'rib{i}{sy}', 0.28 - i * 0.02, 0.018, math.pi * 0.8, loc=(-0.45 + i * 0.13, 0, 0.08), rot=(math.pi / 2 + sy * 0.5, 0, sy * math.pi / 2), mat=M('bone'), segs=14, ring=5)
-            parts.append(r)
-    parts.append(bone('arm', 0.55, (-0.3, 0.45, 0.05), (1, 0.3, 0), r=0.04))
-    parts.append(bone('leg', 0.75, (0.9, -0.2, 0.06), (1, -0.4, 0), r=0.05))
-    parts.append(bone('leg2', 0.6, (1.3, 0.3, 0.05), (0.7, 1, 0), r=0.045))
-    parts.append(stone_block('pelvis', (0.3, 0.45, 0.12), (0.5, 0, 0.06), seed, 'masonry', bev=0.04, disp=0))
-    o = join(parts, 'incomplete-skeleton')
-    clamp_floor(o, 0.0)
-    vertex_colors(o, BONE, 0.2, 0.3, seed)
-    set_material_where(o, M('bone'), lambda c, n: True)
-    smooth(o, 50)
-    return g(o)
-
 
 def stone_tomb():
     body = stone_block('body', (2.3, 1.1, 0.75), (0, 0, 0.375), 610, 'masonry-mossy', bev=0.04)
@@ -243,15 +193,6 @@ def ancient_bookshelf(seed=614):
     return g(o)
 
 
-def stone_pulpit():
-    base = pillar('base', [(0, 0), (0.6, 0), (0.6, 0.2), (0.4, 0.3), (0.35, 1.2), (0.5, 1.3), (0, 1.3)], 615, segs=8, chips=0, disp=0.02)
-    top = stone_block('top', (0.9, 0.7, 0.1), (0, -0.1, 1.4), 615, 'masonry-crypt', bev=0.02, rot=(0.3, 0, 0))
-    parts = [base, top, stone_block('step', (1.2, 0.6, 0.25), (0, 0.6, 0.125), 616, 'masonry-crypt', bev=0.02)]
-    o = join(parts, 'stone-pulpit')
-    smooth(o, 40)
-    return g(o)
-
-
 def hook_chain():
     parts = [torus('ring', 0.12, 0.025, loc=(0, 0, 2.4), rot=(math.pi / 2, 0, 0), mat=M('iron-rust'), segs=18, ring=6), chain('chain', (0, 0, 2.3), (0, 0, 0.75), 13, link=0.06)]
     hook = kit_extra.arc('hook', 0.12, 0.022, math.pi * 1.3, loc=(0.0, 0, 0.6), rot=(math.pi / 2, 0, -math.pi / 2), mat=M('iron-rust'), segs=16, ring=6)
@@ -271,33 +212,6 @@ def collapsed_ceiling(seed=617):
     for i in range(3):
         parts.append(plank_box(f'beam{i}', (rng.uniform(1.8, 2.6), 0.2, 0.2), (rng.uniform(-0.4, 0.4), rng.uniform(-0.5, 0.5), 0.5 + i * 0.25), 'planks-dark', 0.01, 1.0, rot=(rng.uniform(-0.3, 0.3), rng.uniform(-0.3, 0.3), rng.uniform(0, 3))))
     return g(join(parts, 'collapsed-ceiling'))
-
-
-def wall_blocks(seed=618):
-    parts = []
-    for row in range(3):
-        for i in range(4 - row % 2):
-            x = (i - (3 - row % 2) * 0.5) * 0.85
-            parts.append(stone_block(f'b{row}{i}', (0.8, 0.55, 0.45), (x, 0, 0.225 + row * 0.46), seed + row * 10 + i, 'masonry', bev=0.03))
-    parts.append(stone_block('fallen', (0.8, 0.55, 0.45), (1.9, 0.5, 0.225), seed + 50, 'masonry-mossy', bev=0.03, rot=(0.1, 0, 0.5)))
-    o = join(parts, 'wall-blocks')
-    smooth(o, 40)
-    return g(o)
-
-
-def statue_fragments(seed=619):
-    f = figure('statue', 2.6, 'masonry-crypt', hood=True, seed=seed)
-    boolean(f, box('cut', (3, 3, 2), loc=(0, 0, 2.3), rot=(0.3, 0.2, 0)))
-    f.rotation_euler = (0, 0.25, 0)
-    apply_transform(f)
-    head = sphere('head', 0.26, (1.2, 0.5, 0.22), subdiv=3, mat=M('masonry-crypt'))
-    box_uv(head, 1.0)
-    arm = cylinder('arm', 0.13, 0.11, 0.9, loc=(0.9, -0.6, 0.12), rot=(0, math.pi / 2, 0.8), segs=12, mat=M('masonry-crypt'))
-    box_uv(arm, 1.0)
-    o = join([f, head, arm, block_pile('bits', seed, n=6, smax=0.35, spread=0.9, mat='masonry-crypt', dust=None)], 'statue-fragments')
-    clamp_floor(o, 0.0)
-    smooth(o, 50)
-    return g(o)
 
 
 def deity_statue():
@@ -335,32 +249,13 @@ def iron_trapdoor():
     return g(o)
 
 
-def inscribed_stones(seed=623):
-    rng = rand(seed)
-    parts = []
-    for i, (x, y, h) in enumerate(((0, 0, 1.9), (-1.1, 0.4, 1.4), (1.0, 0.5, 1.2))):
-        s = box(f'stone{i}', (0.7, 0.3, h), loc=(x, y, h * 0.5), rot=(rng.uniform(-0.08, 0.08), rng.uniform(-0.08, 0.08), rng.uniform(-0.4, 0.4)), mat=M('masonry-crypt'))
-        for k in range(5):
-            z = 0.3 + k * (h - 0.5) / 5
-            boolean(s, box(f'g{i}{k}', (0.4 if k % 2 else 0.25, 0.08, 0.03), loc=(x + rng.uniform(-0.1, 0.1), y - 0.15, z), rot=(0, 0, 0)))
-            boolean(s, cylinder(f'c{i}{k}', 0.06, 0.06, 0.08, loc=(x + rng.uniform(-0.2, 0.2), y - 0.15, z + 0.08), rot=(math.pi / 2, 0, 0), segs=8))
-        subdivide(s, 1, simple=True)
-        displace(s, 0.02, 0.2, seed=seed + i)
-        apply_mods(s)
-        box_uv(s, 1.0)
-        parts.append(s)
-    o = join(parts, 'inscribed-stones')
-    smooth(o, 40)
-    return g(o)
-
 
 if __name__ == '__main__':
     run('crypt', [
-        ('cracked-pillar', cracked_pillar), ('column-base', column_base), ('stone-capital', stone_capital), ('iron-grate', iron_grate), ('barred-gate', barred_gate),
+        ('cracked-pillar', cracked_pillar), ('column-base', column_base),  ('barred-gate', barred_gate),
         ('chain-ring', chain_ring), ('ritual-brazier', ritual_brazier), ('artifact-pedestal', artifact_pedestal), ('sarcophagus', sarcophagus),
-        ('sarcophagus-broken-lid', sarcophagus_broken_lid), ('funeral-urns', funeral_urns), ('lone-skull', lone_skull), ('incomplete-skeleton', incomplete_skeleton),
+        ('sarcophagus-broken-lid', sarcophagus_broken_lid), ('funeral-urns', funeral_urns), 
         ('stone-tomb', stone_tomb), ('ancient-tombstone', ancient_tombstone), ('ritual-table', ritual_table), ('ancient-bookshelf', ancient_bookshelf),
-        ('stone-pulpit', stone_pulpit), ('hook-chain', hook_chain), ('collapsed-ceiling', collapsed_ceiling), ('wall-blocks', wall_blocks),
-        ('statue-fragments', statue_fragments), ('deity-statue', deity_statue), ('secret-stone-door', secret_stone_door), ('iron-trapdoor', iron_trapdoor),
-        ('inscribed-stones', inscribed_stones),
+         ('hook-chain', hook_chain), ('collapsed-ceiling', collapsed_ceiling), 
+         ('deity-statue', deity_statue), ('secret-stone-door', secret_stone_door), ('iron-trapdoor', iron_trapdoor),
     ])

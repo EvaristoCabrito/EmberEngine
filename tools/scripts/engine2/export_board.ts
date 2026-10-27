@@ -42,12 +42,13 @@ const emberData = await import(`${E2}/src/ember/data.ts`);
 // files; otherwise the first Claude folder with a colour map. Missing files = the layer is absent
 // (Engine2 then keeps the procedural ground there).
 const exists = (url: string) => existsSync(`${PUBLIC}${url}`);
-const terrains: string[] = [...board.GROUND_LAYERS, 'city', 'shallow-water', 'river-rocks', ...variants.GROUND_VARIANT_LAYERS.map((e: { key: string }) => e.key)];
-const COLOR_ONLY = new Set(['variant-plains-real-grass', 'variant-plains-real-grass-009', 'variant-plains-meadow-3d', 'variant-plains-tall-3d',
+const groundVariantLayers = variants.GROUND_VARIANT_LAYERS;
+const terrains: string[] = [...board.GROUND_LAYERS, 'city', 'shallow-water', 'river-rocks', ...groundVariantLayers.map((e: { key: string }) => e.key)];
+const COLOR_ONLY = new Set(['variant-plains-meadow-natural-v01', 'variant-plains-meadow-natural-v02', 'variant-plains-meadow-scrub-rare-v01', 'variant-plains-real-grass', 'variant-plains-real-grass-009',
+  'variant-plains-vau-grass-v01',
   'variant-flame-005-fire', 'city-stone-paving', 'city-indoor-wood', 'laje-021-stone-slabs']);
 const groundLayers = terrains.map((terrain, index) => {
-  const variant = variants.GROUND_VARIANT_LAYERS.find((e: { key: string }) => e.key === terrain);
-  if (variant?.key === 'variant-plains-smooth') return { index, key: terrain, procedural: 'smooth-plains' };
+  const variant = groundVariantLayers.find((e: { key: string }) => e.key === terrain);
   if (variant) {
     const paths = variants.groundVariantMaps(variant);
     const colorOnly = COLOR_ONLY.has(variant.key);
@@ -74,7 +75,7 @@ const data = {
   groundLayerTerrains: board.GROUND_LAYERS,
   groundLayerCount: board.GROUND_LAYER_COUNT,
   groundLayers,
-  groundVariantLayers: variants.GROUND_VARIANT_LAYERS,
+  groundVariantLayers,
   engine2V3GroundVariants: variants.ENGINE2_V3_GROUND_VARIANTS,
   engine2V3CityVariant: variants.ENGINE2_V3_CITY_VARIANT,
   claudeVariant: variants.CLAUDE_VARIANT,

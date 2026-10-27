@@ -4,6 +4,27 @@
     {"id": "ember-misty-root-descent-v01", "label": "Garganta das Raízes · O abismo", "file": "misty-root-descent-bg-v01.png"},
     {"id": "ember-misty-spore-basin-v01", "label": "Bacia dos Esporos · A floresta de cogumelos", "file": "misty-spore-basin-bg-v01.png"},
     {"id": "ember-misty-blackwater-shelf-v01", "label": "Margens do Rio Negro · Sob as pontes naturais", "file": "misty-blackwater-shelf-bg-v01.png"},
-    {"id": "ember-mordavia-underdark-v01", "label": "Underdark de Mordávia · O outro horizonte", "file": "mordavia-underdark-bg-v01.png"}
+    {"id": "ember-mordavia-underdark-v01", "label": "Underdark de Mordávia · O outro horizonte", "file": "mordavia-underdark-bg-v01.png"},
+    {"id": "ember-panorama-aldeia-fogo-v01", "label": "Aldeia · Fogo · V01", "file": "aldeia-fogo-v01.png"},
+    {"id": "ember-panorama-aldeia-fundo2-v01", "label": "Aldeia · Fundo 2 · V01", "file": "aldeia-fundo2-v01.jpg"},
+    {"id": "ember-panorama-aldeia-paisagem-v01", "label": "Aldeia · Paisagem · V01", "file": "aldeia-paisagem-v01.png"},
+    {"id": "ember-panorama-ashen-forest-v01", "label": "Bosque de Cinzas · V01", "file": "ashen-forest-bg-v01.jpg"},
+    {"id": "ember-panorama-ashen-forest-v02", "label": "Bosque de Cinzas · V02", "file": "ashen-forest-bg-v02.jpg"},
+    {"id": "ember-panorama-ashen-forest-v03", "label": "Bosque de Cinzas · V03", "file": "ashen-forest-bg-v03.jpg"},
+    {"id": "ember-panorama-bosque-morto-v01", "label": "Bosque Morto · Panorama V01", "file": "bosque-morto-panorama-v01.png"},
+    {"id": "ember-panorama-bosque-morto-v02", "label": "Bosque Morto · Panorama V02", "file": "bosque-morto-panorama-v02.png"},
+    {"id": "ember-panorama-bosque-morto-v03", "label": "Bosque Morto · Panorama V03", "file": "bosque-morto-panorama-v03-alpha-sol.png"},
+    {"id": "ember-panorama-bosque-morto-v04", "label": "Bosque Morto · Panorama V04", "file": "bosque-morto-panorama-v04-alpha-sol.png"},
+    {"id": "ember-panorama-ponte-v02", "label": "Ponte · Panorama V02", "file": "bridge-panorama-v02-alpha.png"},
+    {"id": "ember-panorama-campos-revisitados-v01", "label": "Campos Revisitados · Panorama V01", "file": "fields-revisited-panorama-v01.png"},
+    {"id": "ember-panorama-estalagem-v01", "label": "Estalagem · Panorama V01", "file": "inn-panorama-v01.jpg"},
+    {"id": "ember-panorama-estalagem-andar-2-v01", "label": "Estalagem · Segundo andar V01", "file": "inn-second-floor-v01.jpg"},
+    {"id": "ember-panorama-vau-v01", "label": "Vau · Panorama V01", "file": "vau-panorama-v01.png"},
+    {"id": "ember-panorama-vau-v02", "label": "Vau · Panorama V02", "file": "vau-panorama-v02.png"},
+    {"id": "ember-panorama-vau-v03", "label": "Vau · Panorama V03", "file": "vau-panorama-v03.png"},
+    {"id": "ember-panorama-vau-tira-teima-v04", "label": "Vau · Panorama tira-teima V04", "file": "vau-panorama-tira-teima-v04.jpg"},
+    {"id": "ember-panorama-vau-tira-teima-v05", "label": "Vau · Panorama tira-teima V05", "file": "vau-panorama-tira-teima-v05.png"},
+    {"id": "ember-panorama-torre-vigia-v01", "label": "Torre de Vigia · Entrada V01", "file": "watchtower-entry-panorama-v01.png"},
+    {"id": "ember-panorama-torre-vigia-v02", "label": "Torre de Vigia · Entrada V02", "file": "watchtower-entry-panorama-v02.png"}
   ]
 }

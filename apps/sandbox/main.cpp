@@ -31,7 +31,6 @@
 //        farthest enemy and back). Pixel checks: [--scene-time T] (scene clock pinned) [--no-ui] [--debug-view 3]
 //        (the fog mask each surface read), then tools/scripts/check_fog.py. [--volume 0]: no volumetric fog;
 //        [--fog-look N]: which saved fog look (render/FogLooks.h; in a window, the Map panel's dropdown).
-//        [--grid-look N]: the battle grid (panel "Grade"): 0 OFF, 1 the old marks, 2 look 001 (looks/grid/README.md).
 //        [--cards N]: 0 vertical cards, 1 (default) cards leaning back with the camera's tilt, upright on screen (panel "Cards").
 //        [--water N]: the board's water (panel "Água"): 0 Engine2's, 1 (default) look 001 "ember" (looks/water/README.md).
 //        [--sky-reflect N]: 0 OFF, 1 (default) the sky's reflection map on water and specular surfaces (panel "Reflexo do céu").
@@ -160,7 +159,6 @@ struct Options {
   bool scout = false, noUi = false, volume = true;
   bool windowed = false;  // --windowed or --size: a window instead of the whole screen
   int fogLook = 8;
-  int gridLook = 2;  // --grid-look N: the battle grid (panel "Grade"): 0 OFF, 1 the old marks, 2 look 001
   int cardStance = 1;  // --cards N: 0 vertical cards, 1 leaning back with the camera's tilt (panel "Cards")
   int barsFade = 1;    // --bars-fade N: 0 bars always shown, 1 the bars of units near the camera fade (panel "Vida perto")
   int actionCamera = 1;  // --action-camera N: 0 OFF, 1 cinema (panel "Câmera de ação": the shots of every blow, shot and spell)
@@ -285,7 +283,6 @@ Options parse(int argc, char** argv) {
     else if (arg == "--scout") o.scout = true;
     else if (arg == "--volume" && hasValue) o.volume = std::atoi(argv[++i]) != 0;
     else if (arg == "--fog-look" && hasValue) o.fogLook = std::atoi(argv[++i]);
-    else if (arg == "--grid-look" && hasValue) o.gridLook = std::atoi(argv[++i]);
     else if (arg == "--cards" && hasValue) o.cardStance = std::atoi(argv[++i]);
     else if (arg == "--bars-fade" && hasValue) o.barsFade = std::atoi(argv[++i]);
     else if (arg == "--action-camera" && hasValue) o.actionCamera = std::atoi(argv[++i]);
@@ -677,7 +674,6 @@ MapStageOptions mapOptions(const Options& o) {
     m.scout = o.scout;
     m.volume = o.volume;
     m.fogLook = o.fogLook;
-    m.gridLook = o.gridLook;
     m.cardStance = o.cardStance;
     m.barsFade = o.barsFade;
     m.actionCamera = o.actionCamera;
@@ -1156,6 +1152,7 @@ int runWindow(const Options& o) {
   bool openUnderworld = false;                    // the world map opens on the Atlas do Submundo (the Underdark's exit)
   std::string openLocation;                       // the world map opens with this location's mission list (back from the Interlude: the Ruins)
   bool openSpells = false, inSpells = false;      // Teste de Magias: the spells test battle (open it / it is open)
+  std::optional<std::pair<VfxElement, int>> pendingElementPreview;
   // Map Editor: open it / a Testar battle from it is open; the draft it was editing (kept while the game runs, as
   // GameApp's editorDraft).
   bool openEditor = false, inEditorTest = false;
@@ -1198,6 +1195,10 @@ int runWindow(const Options& o) {
     callbacks.rpgMap = [&] { openTestRpg = true; };
     callbacks.play = [&](const MissionEntry& m) { pending = m; };
     callbacks.spells = [&] { openSpells = true; };
+    callbacks.previewElement = [&](VfxElement element, int version) {
+      pendingElementPreview = std::pair{element, version};
+      openSpells = true;
+    };
     callbacks.editor = [&] { openEditor = true; };
     callbacks.fullscreen = toggleFullscreen;
     return std::make_unique<TestModeStage>(paths, campaign, world, *testSession, devGfx, std::move(callbacks), screen, std::exchange(campaignNote, {}));
@@ -1449,7 +1450,9 @@ int runWindow(const Options& o) {
         map->clearFloor();
         std::string error;
         const bool test = testSession || playing.empty();
-        std::optional<MissionEntry> next = test ? testMission(campaign, paths, floor, error) : campaignMission(campaign, paths, floor, error);
+        std::optional<MissionEntry> next = hasInterlude && interlude.hasMission(floor) ? interludeMission(paths, floor, error, test)  // a chapter map (docs/INTERLUDE.md)
+                                           : test                                      ? testMission(campaign, paths, floor, error)
+                                                                                       : campaignMission(campaign, paths, floor, error);
         const e2::Json completed = test ? e2::Json::array() : campaign.activeSave().value("completed", e2::Json::array());
         const bool lairDone = std::find(completed.begin(), completed.end(), "wisp-forest-crossing-boss") != completed.end();
         if (!next) {
@@ -1460,6 +1463,8 @@ int runWindow(const Options& o) {
           // A fight won on its stairs: the victory is written first (persistVictory: HP carried, the dead stay dead), as Engine2
           // writes it when the result screen shows; a free-roam floor (the walkable Inn) writes nothing here.
           if (!test && !map->explores() && map->battleResult() == "victory") finishCampaignFight(*map, true);
+          // An Interlude exploration map left by its passage: done for the chapter, the next map pending (markVisited advances it)
+          if (!test && map->explores() && hasInterlude && interlude.hasMission(playing)) markVisited(playing, map);
           arriveFrom = map->draftId();
           preserveKnockouts = true;
           pending = std::move(next);
@@ -1562,6 +1567,11 @@ int runWindow(const Options& o) {
         renderer.setDebugView(o.debugView);
         MapStageOptions options = mapOptions(spells);
         options.spellsMenuOpen = true;
+        if (pendingElementPreview) {
+          options.elementPreview = static_cast<int>(pendingElementPreview->first);
+          options.elementPreviewVersion = pendingElementPreview->second;
+          pendingElementPreview.reset();
+        }
         devGfx.apply(options, renderer);
         curtainBeforeBattle();
         auto spellsMap = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);

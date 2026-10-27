@@ -44,6 +44,7 @@ import { tacticalGridStyleQuiet as tacticalGridStyle, GRID_ROUTE, GRID_MOVE, GRI
 
 import * as THREE from "three";
 import { isHexGroundVariant } from "../../assets";
+import { GROUND_VARIANT_LAYERS, groundVariantMaps } from "../../../ember/tileVariants";
 import { drawGroundTexture, drawHexGround, GROUND_TEXTURE_INSET, GROUND_TEXTURE_SPAN } from "../../hexGround";
 import { configureWallDepth, createWallGeometry } from "./ThreeWalls";
 import { lightTacticsMaterial, tacticsProp } from "./ThreeTacticsGeometry";
@@ -1282,6 +1283,15 @@ export class ThreeBattleRenderer {
     const key = `${id}:${variant}`;
     const hit = this.materialCache.get(key);
     if (hit) return hit;
+    const groundVariant = GROUND_VARIANT_LAYERS.find((entry) => entry.terrain === id && entry.variant === variant);
+    if (groundVariant) {
+      const texture = this.tacticsTexture(groundVariantMaps(groundVariant).color);
+      const material = new THREE.MeshLambertMaterial({ map: texture });
+      this.groundAO.patch(material);
+      groundDepthLayer(material, this.groundDepthLayerEnabled);
+      this.materialCache.set(key, material);
+      return material;
+    }
     const variants = this.engine.art.tiles[id];
     const img = variants?.[variant] ?? variants?.[0];
     if (!img) return this.fallbackMaterial;

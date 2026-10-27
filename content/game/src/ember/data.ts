@@ -620,6 +620,8 @@ export const DECORATIONS: Record<string, DecorationDef> = {
   "prop-3d-vau-cottage-v01": { id: "prop-3d-vau-cottage-v01", name: "Casa de madeira do Vau 3D", footprint: DECO_BLOCK_5, model3d: "prop", propModel: "vau-gothic-cottage-v01" },
   "prop-3d-vau-well-v01": { id: "prop-3d-vau-well-v01", name: "Poço de pedra do Vau 3D", footprint: DECO_ONE, model3d: "prop", propModel: "vau-well-v01" },
   "prop-3d-vau-boulder-v01": { id: "prop-3d-vau-boulder-v01", name: "Afloramento rochoso do Vau 3D", footprint: DECO_PAIR, model3d: "prop", propModel: "grey-outcrop" },
+  "prop-3d-vau-stone-v01": { id: "prop-3d-vau-stone-v01", name: "Pedra grande do Vau 3D · v01", footprint: DECO_PAIR, model3d: "prop", propModel: "vau-large-stone-v01" },
+  "prop-3d-vau-red-outcrop-v01": { id: "prop-3d-vau-red-outcrop-v01", name: "Afloramento rochoso vermelho do Vau 3D · v01", footprint: DECO_PAIR, model3d: "prop", propModel: "vau-red-outcrop-v01" },
   "ember-watchtower-signal-brazier-v01": { id: "ember-watchtower-signal-brazier-v01", name: "Braseiro de sinal · Watchtower 3D", footprint: DECO_ONE, model3d: "prop", propModel: "watchtower-signal-brazier-v01" },
   "ember-watchtower-arms-rack-v01": { id: "ember-watchtower-arms-rack-v01", name: "Suporte de armas · Watchtower 3D", footprint: DECO_ONE, model3d: "prop", propModel: "watchtower-arms-rack-v01" },
   "ember-watchtower-command-table-v01": { id: "ember-watchtower-command-table-v01", name: "Mesa de comando · Watchtower 3D", footprint: DECO_ONE, model3d: "prop", propModel: "watchtower-command-table-v01" },
@@ -627,12 +629,22 @@ export const DECORATIONS: Record<string, DecorationDef> = {
   "ember-watchtower-arms-rack-v02": { id: "ember-watchtower-arms-rack-v02", name: "Suporte de armas · Watchtower 3D · v02", footprint: DECO_ONE, model3d: "prop", propModel: "watchtower-arms-rack-v02" },
   "ember-watchtower-command-table-v02": { id: "ember-watchtower-command-table-v02", name: "Mesa de comando · Watchtower 3D · v02", footprint: DECO_ONE, model3d: "prop", propModel: "watchtower-command-table-v02" },
   "tree-3d-broadleaf": { id: "tree-3d-broadleaf", name: "Árvore realista 3D", footprint: [{ dx: 0, dy: 0 }], model3d: "tree", treeModel: "broadleaf" },
+  "ember-nature-great-branching-bough": { id: "ember-nature-great-branching-bough", name: "Galho ramificado de árvore colossal 3D", footprint: [{ dx: -1, dy: 0 }, { dx: 0, dy: 0 }, { dx: 1, dy: 0 }], model3d: "tree", treeModel: "ember-great-branching-bough" },
+  "ember-nature-great-branching-bough-leafy": { id: "ember-nature-great-branching-bough-leafy", name: "Árvore colossal ramificada com folhas 3D", footprint: [{ dx: -1, dy: 0 }, { dx: 0, dy: 0 }, { dx: 1, dy: 0 }], model3d: "tree", treeModel: "ember-great-branching-bough-leafy" },
+  "ember-nature-colossal-dead-oak": { id: "ember-nature-colossal-dead-oak", name: "Carvalho morto colossal 3D", footprint: [{ dx: -1, dy: 0 }, { dx: 0, dy: 0 }, { dx: 1, dy: 0 }], model3d: "tree", treeModel: "ember-colossal-dead-oak" },
+  "ember-nature-colossal-dead-oak-leafy": { id: "ember-nature-colossal-dead-oak-leafy", name: "Carvalho morto colossal frondoso 3D", footprint: [{ dx: -1, dy: 0 }, { dx: 0, dy: 0 }, { dx: 1, dy: 0 }], model3d: "tree", treeModel: "ember-colossal-dead-oak-leafy" },
+  "ember-forest-mature-tree-v04-photo": { id: "ember-forest-mature-tree-v04-photo", name: "Árvore frondosa 3D · v04", footprint: [{ dx: 0, dy: 0 }], model3d: "prop", propModel: "mature-tree-v04-photo" },
+  "ember-mines-amanita-muscaria-v01": { id: "ember-mines-amanita-muscaria-v01", name: "Amanita muscaria 3D · v01", footprint: DECO_ONE, model3d: "prop", propModel: "ember-amanita-muscaria-v01" },
   "tree-3d-snowy-pine": { id: "tree-3d-snowy-pine", name: "Pinheiro nevado 3D", footprint: [{ dx: 0, dy: 0 }], model3d: "tree", treeModel: "snowy-pine" },
   // Wisp Forest dead trees in 3D (assets/blender/create_dead_trees.py), matching the 2D
   // wilds-dead-oak, dead-tree and wilds-twisted-tree art; same height as the other 3D trees.
   "tree-3d-dead-oak": { id: "tree-3d-dead-oak", name: "Carvalho morto 3D", footprint: [{ dx: 0, dy: 0 }], model3d: "tree", treeModel: "dead-oak" },
+  "tree-3d-dead-oak-v02": { id: "tree-3d-dead-oak-v02", name: "Carvalho morto 3D · v02", footprint: [{ dx: 0, dy: 0 }], model3d: "tree", treeModel: "dead-oak-v02" },
+  "tree-3d-dead-oak-v03-leafy": { id: "tree-3d-dead-oak-v03-leafy", name: "Carvalho retorcido frondoso 3D · v03", footprint: [{ dx: 0, dy: 0 }], model3d: "tree", treeModel: "dead-oak-v03-leafy" },
   "tree-3d-dead-snag": { id: "tree-3d-dead-snag", name: "Árvore morta 3D", footprint: [{ dx: 0, dy: 0 }], model3d: "tree", treeModel: "dead-snag" },
+  "tree-3d-dead-snag-v02": { id: "tree-3d-dead-snag-v02", name: "Árvore morta 3D · v02", footprint: [{ dx: 0, dy: 0 }], model3d: "tree", treeModel: "dead-snag-v02" },
   "tree-3d-twisted-stump": { id: "tree-3d-twisted-stump", name: "Árvore retorcida 3D", footprint: [{ dx: 0, dy: 0 }], model3d: "tree", treeModel: "twisted-stump" },
+  "tree-3d-twisted-stump-v02": { id: "tree-3d-twisted-stump-v02", name: "Árvore retorcida 3D · v02", footprint: [{ dx: 0, dy: 0 }], model3d: "tree", treeModel: "twisted-stump-v02" },
   "ember-wisp-revisited-weeping-willow-v02": { id: "ember-wisp-revisited-weeping-willow-v02", name: "Salgueiro morto pendente 3D · Wisp", footprint: DECO_ONE, model3d: "tree", treeModel: "wisp-revisited-weeping-willow-v02" },
   "ember-wisp-revisited-giant-dead-oak-v02": { id: "ember-wisp-revisited-giant-dead-oak-v02", name: "Carvalho morto gigante 3D · Wisp", footprint: DECO_ONE, model3d: "tree", treeModel: "wisp-revisited-giant-dead-oak-v02" },
   "ember-wisp-revisited-hollow-snag-v02": { id: "ember-wisp-revisited-hollow-snag-v02", name: "Árvore morta oca 3D · Wisp", footprint: DECO_ONE, model3d: "tree", treeModel: "wisp-revisited-hollow-snag-v02" },
@@ -896,7 +908,7 @@ export const SOLID_ROCK_DECOR_IDS = new Set(["farmland-photographic-014-table", 
   "cave-basalt-004-wall", "cave-basalt-004-cliff", "cave-basalt-004-edge-pillar", "cave-basalt-004-pillar", "cave-basalt-004-rubble", "cave-basalt-004-stalagmites", "cave-basalt-004-overhang",
   "cave-wall-stalagmites-002", "cave-wall-shelf-002", "cave-wall-boulders-002",
   "cave-slate-shelf-001", "cave-fractured-boulders-001", "cave-limestone-spires-001",
-  "rocks-3d-grey-outcrop", "spike-rocks", "rocky-outcrop", "prop-3d-vau-boulder-v01", "boulder-pile", "twin-spires",
+  "rocks-3d-grey-outcrop", "spike-rocks", "rocky-outcrop", "prop-3d-vau-boulder-v01", "prop-3d-vau-stone-v01", "prop-3d-vau-red-outcrop-v01", "boulder-pile", "twin-spires",
   "large-boulder", "boulder-cluster", "broken-cliff-wall", "broken-wall-segment",
   "spike-rocks-2", "mossy-rocks", "mossy-boulder", "boulder-mound", "spike-crown",
 ]);
@@ -6765,3 +6777,4 @@ export function heroRecruited(name: string, completed: string[], flags: string[]
   if (joinIndex <= 0) return true;
   return completed.some((id) => (missionById(id)?.index ?? -1) >= joinIndex - 1);
 }
+

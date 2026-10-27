@@ -152,12 +152,13 @@ VfxFlipbook SpellEffects::flipbook(const char* clipName) {
           static_cast<float>(h.width), static_cast<float>(h.height)};
 }
 
-ElementSpritesV2 SpellEffects::elementV2(VfxElement element) {
+ElementSpritesV2 SpellEffects::elementV2(VfxElement element, int version) {
   ElementSpritesV2 e = ElementSpritesV2::defaults(element);
   const std::string name = vfxElementName(element);
-  e.main = flipbook((name + "-v2-main-flipbook-4x4").c_str());
-  e.secondary = flipbook((name + "-v2-secondary-flipbook-4x4").c_str());
-  e.particles = flipbook((name + "-v2-particles-flipbook-4x4").c_str());
+  const std::string prefix = name + (version == 3 ? "-v3-" : "-v2-");
+  e.main = flipbook((prefix + "main-flipbook-4x4").c_str());
+  e.secondary = flipbook((prefix + "secondary-flipbook-4x4").c_str());
+  e.particles = flipbook((prefix + "particles-flipbook-4x4").c_str());
   return e;
 }
 
@@ -900,6 +901,12 @@ void SpellEffects::play(const std::string& clipName, const Spot& at, float start
   if (!has("arrow")) e.lightColor = color, e.lightIntensity = 10.0f, e.lightRadius = 3.5f, e.lightDecay = 1.0f;
 }
 
+void SpellEffects::previewElement(VfxElement element, int version, const Spot& at, float start) {
+  if (version != 2 && version != 3) return;
+  elementPreviews_.clear();
+  elementPreviews_.push_back({element, version, at.feet + glm::vec3(0.0f, 0.04f, 0.0f), start});
+}
+
 void SpellEffects::strike(const Spot& target, float at, bool crit) {
   static const char* kImpacts[4] = {"impact-1", "impact-2", "impact-3", "impact-4"};
   const glm::vec3 jitter{(random() - 0.5f) * 0.3f, (random() - 0.5f) * 0.3f, 0.0f};
@@ -1017,6 +1024,8 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   std::erase_if(holies_, [&](const HolyLight& h) { return h.done(now); });
   vfx_.clear();
   std::vector<VfxLight> vfxLights;
+  for (const ElementPreview& preview : elementPreviews_)
+    elementV2(preview.element, preview.version).build(preview.at, now - preview.start, 1.0f, vfx_);
   for (Bless& b : blesses_) b.build(now, camera, vfx_, vfxLights);
   for (HolyLight& h : holies_) h.build(now, camera, vfx_, vfxLights);
   std::erase_if(venoms_, [&](const CausticVenom& v) { return v.done(now); });

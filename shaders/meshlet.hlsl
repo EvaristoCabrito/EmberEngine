@@ -152,7 +152,8 @@ uint PSMain(VertexOut v, PrimitiveIn p) : SV_Target0 {
     const MaterialGpu m = loadMaterial(f, p.material);
     float alpha = m.baseColor.a;
     if (m.baseColorTexture != kNoTexture)
-      alpha *= gTextures[NonUniformResourceIndex(m.baseColorTexture)].Sample(gSamplers[f.materialSampler], v.uv).a;
+      alpha *= gTextures[NonUniformResourceIndex(m.baseColorTexture)].Sample(gSamplers[f.materialSampler],
+                                                                              flipbookUv(v.uv, m.flags, inst.pad)).a;
     clip(alpha - m.alphaCutoff);
   }
   if (inst.flags & kInstanceCameraFade) {
@@ -169,10 +170,14 @@ uint PSMain(VertexOut v, PrimitiveIn p) : SV_Target0 {
 void PSShadow(VertexOut v, PrimitiveIn p) {
   if (p.material != ~0u) {
     const MeshFrame f = loadFrame(push.frame);
+    const uint slot = p.visibility >> 6;
+    const uint2 item = work(f).Load2(clusterListOffset(f) + slot * 8);
+    const InstanceGpu inst = loadInstance(f, item.x);
     const MaterialGpu m = loadMaterial(f, p.material);
     float alpha = m.baseColor.a;
     if (m.baseColorTexture != kNoTexture)
-      alpha *= gTextures[NonUniformResourceIndex(m.baseColorTexture)].Sample(gSamplers[f.materialSampler], v.uv).a;
+      alpha *= gTextures[NonUniformResourceIndex(m.baseColorTexture)].Sample(gSamplers[f.materialSampler],
+                                                                              flipbookUv(v.uv, m.flags, inst.pad)).a;
     clip(alpha - m.alphaCutoff);
   }
 }

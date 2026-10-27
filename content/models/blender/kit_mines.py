@@ -355,20 +355,6 @@ def giant_mushrooms():
     return g(o)
 
 
-def bioluminescent_fungi():
-    rng = rand(722)
-    base = rock('base', (1.6, 1.3, 0.5), 722, 'stone', top='moss')
-    parts = [base]
-    for i in range(10):
-        r, h = rng.uniform(0.06, 0.16), rng.uniform(0.15, 0.4)
-        prof = [(0, h + r * 0.5), (r * 0.8, h + r * 0.3), (r, h), (r * 0.3, h - r * 0.1), (r * 0.18, 0.02), (0, 0)]
-        m = lathe(f'f{i}', prof, segs=12, loc=(rng.uniform(-0.6, 0.6), rng.uniform(-0.5, 0.5), 0.15 + rng.uniform(0, 0.2)), mat=M('bio-glow'))
-        parts.append(m)
-    o = join(parts, 'bioluminescent-fungi')
-    smooth(o, 50)
-    return g(o)
-
-
 def petrified_roots(seed=723):
     rng = rand(seed)
     parts = []
@@ -438,5 +424,5 @@ if __name__ == '__main__':
         ('rock-arch-formation', rock_arch_formation), ('narrow-wooden-bridge', narrow_wooden_bridge), ('mine-walkway', mine_walkway), ('cargo-lift', cargo_lift),
         ('winch', winch), ('lift-chain', lift_chain), ('wooden-platform', wooden_platform), ('mine-barricade', mine_barricade), ('dwarven-door', dwarven_door),
         ('dwarven-pillar', dwarven_pillar), ('stone-brazier', stone_brazier), ('tunnel-marker', tunnel_marker), ('giant-mushrooms', giant_mushrooms),
-        ('bioluminescent-fungi', bioluminescent_fungi), ('petrified-roots', petrified_roots), ('boat-wreck', boat_wreck), ('ancient-fragments', ancient_fragments),
+        ('petrified-roots', petrified_roots), ('boat-wreck', boat_wreck), ('ancient-fragments', ancient_fragments),
     ])

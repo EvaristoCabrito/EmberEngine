@@ -1,11 +1,10 @@
 @echo off
-rem JOGAR.bat - dois cliques e o jogo abre: sempre o ultimo build local (build\release\bin\Sandbox.exe),
-rem o mesmo que o Claude compila depois de cada mudanca. A arte vem de C:\EmberEngine\build.
+rem JOGAR.bat - dois cliques e o jogo abre com o build local do editor. A arte vem de C:\EmberEngine\build.
 setlocal EnableExtensions
 set "HERE=%~dp0"
 if "%HERE:~-1%"=="\" set "HERE=%HERE:~0,-1%"
 set "ART=C:\EmberEngine\build"
-set "EXE=C:\EmberEngine\build\release\bin\Sandbox.exe"
+set "EXE=%ART%\release\bin\Sandbox.exe"
 cd /d "%HERE%"
 
 if not exist "%EXE%" (
@@ -13,7 +12,17 @@ if not exist "%EXE%" (
   goto :fim
 )
 
-set "GROUND=%ART%\ground\ground-v45.pak"
+set "GROUND=%ART%\ground\ground-v55.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v54.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v53.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v52.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v51.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v50.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v49.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v48.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v47.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v46.pak"
+if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v45.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v44.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v43.pak"
 if not exist "%GROUND%" set "GROUND=%ART%\ground\ground-v42.pak"

@@ -29,10 +29,20 @@ export const MODELS: Record<string, ModelDef> = {
   'watchtower-command-table-v02': { file: 'props/watchtower-command-table-v02.glb', height: 1.2 },
   // Ember's trees and grey outcrop, at Ember's own size (hex radii: trees 4.8, outcrop 2.3)
   'broadleaf': { file: 'trees/broadleaf.glb', height: 4.8 },
+  'mature-tree-v04-photo': { file: 'forest/mature-tree-v04-photo.glb', height: 8.692 },
+  'ember-great-branching-bough': { file: 'nature/great-branching-bough-v01.glb', height: 6.043 },
+  'ember-great-branching-bough-leafy': { file: 'nature/great-branching-bough-leafy-v01.glb', height: 6.510 },
+  'ember-colossal-dead-oak': { file: 'nature/colossal-dead-oak-v01.glb', height: 6.346 },
+  'ember-colossal-dead-oak-leafy': { file: 'nature/colossal-dead-oak-leafy-v01.glb', height: 6.580 },
+  'ember-amanita-muscaria-v01': { file: 'mines/amanita-muscaria-v01.glb', height: 0.725 },
   'snowy-pine': { file: 'trees/snowy-pine.glb', height: 4.8 },
   'dead-oak': { file: 'trees/dead-oak.glb', height: 4.8 },
+  'dead-oak-v02': { file: 'trees/dead-oak-v02.glb', height: 4.8 },
+  'dead-oak-v03-leafy': { file: 'trees/dead-oak-v03-leafy.glb', height: 4.8 },
   'dead-snag': { file: 'trees/dead-snag.glb', height: 4.8 },
+  'dead-snag-v02': { file: 'trees/dead-snag-v02.glb', height: 4.8 },
   'twisted-stump': { file: 'trees/twisted-stump.glb', height: 4.8 },
+  'twisted-stump-v02': { file: 'trees/twisted-stump-v02.glb', height: 4.8 },
   // Wisp Forest Crossing's versioned Revisited trees and grounded props.
   'wisp-crossing-ancient-dead-oak-v02': { file: 'wisp-crossing-trees/ancient-dead-oak-v02.glb', height: 11.155 },
   'wisp-crossing-weeping-willow-v02': { file: 'wisp-crossing-trees/weeping-willow-v02.glb', height: 11.074 },
@@ -51,6 +61,8 @@ export const MODELS: Record<string, ModelDef> = {
   'wisp-revisited-rotted-hollow-log': { file: 'wisp-forest-revisited/rotted-hollow-log-v01.glb', height: 1.06 },
   'wisp-revisited-roots-and-fungi': { file: 'wisp-forest-revisited/roots-and-fungi-v01.glb', height: 0.387 },
   'grey-outcrop': { file: 'rocks/grey-outcrop.glb', height: 2.3 },
+  'vau-large-stone-v01': { file: 'rocks/vau-large-stone-v01.glb', height: 2.586 },
+  'vau-red-outcrop-v01': { file: 'rocks/vau-red-outcrop-v01.glb', height: 2.606 },
 };
 
 const loader = new GLTFLoader();
@@ -78,3 +90,4 @@ export async function loadModel(name: keyof typeof MODELS | string): Promise<THR
   }
   return (await src).clone(true);
 }
+

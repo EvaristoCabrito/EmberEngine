@@ -142,6 +142,9 @@ struct MapDraft {
   // The map's backdrop pick (Engine2 draft.backgroundImage: absent = the map's own, "" = none) and its lighting
   // sliders as authored (absent = the time of day's default).
   std::optional<std::string> backgroundImage;
+  // The map's top-down Ground image around the board: absent = the selected Panorama's Ground, "" = none, otherwise
+  // an image under content/backdrops. This is separate from per-hex tile variants and from emberFloor below the board.
+  std::optional<std::string> groundImage;
   std::optional<double> sunIntensity, ambientIntensity, bloomSlider;
   // Ember's 3D water (the Map Editor's Água 3D: waterLevels, waterFootprints, waterPatches, waterVersion).
   Water3DMap water3d;

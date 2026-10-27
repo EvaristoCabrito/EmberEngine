@@ -6219,14 +6219,14 @@
         [
          [
           {
-           "text": "Nv3: 3 hexes · acerto % 1 · rodadas 3 | Nv10: raio 1 · acerto % 5 · rodadas 5 | Nv17: raio 2 · acerto % 8 · rodadas 8"
+           "text": "—"
           }
          ]
         ],
         [
          [
           {
-           "text": "Abençoa os aliados na área em volta de você: acertam mais por algumas rodadas. Escala do nível 3 ao 17, uma melhoria pequena por nível: área 3 hexes → 2 anéis; acerto % 1 → 8; rodadas 3 → 8.",
+           "text": "Healer nível 3. Raio 3; +1% de acerto por nível até +10% no nível 13. Duração: 3 turnos no nível 3; 4 no 5; 5 no 7; 6 no 9; 7 no 12; 8 no 15.",
            "muted": true
           }
          ]
@@ -6260,7 +6260,14 @@
         [
          [
           {
-           "text": "Nv1: alcance 5 · mísseis 1 · ×1,15 | Nv8: alcance 9 · mísseis 2 · ×1,25 | Nv15: alcance 12 · mísseis 4 · ×1,35",
+           "text": "MAG 10: 5 + 1D4"
+          },
+          {
+           "text": " · MAG 20: 11 + 1D4",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: 23 + 1D4",
            "muted": true
           }
          ]
@@ -6268,7 +6275,7 @@
         [
          [
           {
-           "text": "Dispara mísseis de força arcana. Cada míssil escolhe o seu alvo (pode ser o mesmo inimigo mais de uma vez); só precisa ver o inimigo. Escala do nível 1 ao 15, uma melhoria pequena por nível: alcance 5 → 12; mísseis 1 → 4; peso do MAG 1,15 → 1,35.",
+           "text": "Nunca erra. 1 míssil, 2 no nível 3, 3 no nível 6 — um alvo cada.",
            "muted": true
           }
          ]
@@ -6302,7 +6309,14 @@
         [
          [
           {
-           "text": "Nv1: dano 1D8 · alcance 7 · bônus no arco 0 | Nv8: dano 2D10 · alcance 10 · bônus no arco 2 | Nv15: dano 4D12 · alcance 12 · bônus no arco 4",
+           "text": "Nv1: arma + 1D8"
+          },
+          {
+           "text": " · Nv7: arma + 2D6",
+           "muted": true
+          },
+          {
+           "text": " · Nv14: arma + 2D12",
            "muted": true
           }
          ]
@@ -6310,7 +6324,7 @@
         [
          [
           {
-           "text": "Um tiro de arco de longe: o dano da arma mais os dados da habilidade. Escala do nível 1 ao 15, uma melhoria pequena por nível: dano 1D8 → 4D12; alcance 7 → 12; bônus no arco 0 → 4.",
+           "text": "Alcance 7. Dado sobe em níveis 2,3,5,7,9,12,14.",
            "muted": true
           }
          ]
@@ -6344,7 +6358,14 @@
         [
          [
           {
-           "text": "Nv1: dano 1D6 · alcance 2 · ×1 | Nv8: dano 3D6 · alcance 4 · ×1,15 | Nv15: dano 4D6 · alcance 6 · ×1,35",
+           "text": "MAG 10: 5 + 1D6 (cura)"
+          },
+          {
+           "text": " · MAG 20: 10 + 1D6 (cura)",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: 20 + 1D6 (cura)",
            "muted": true
           }
          ]
@@ -6352,7 +6373,7 @@
         [
          [
           {
-           "text": "Cura um aliado (ou você) até o alcance. Cada ponto da perícia Cura soma 1% à cura. Escala do nível 1 ao 15, uma melhoria pequena por nível: dano 1D6 → 4D6; alcance 2 → 6; peso do MAG 1 → 1,35.",
+           "text": "—",
            "muted": true
           }
          ]
@@ -6386,7 +6407,14 @@
         [
          [
           {
-           "text": "Nv1: ×1 | Nv8: dano 1D6 · ×1,25 | Nv15: dano 2D8 · ×1,45 · talento Terceiro Golpe",
+           "text": "Nv1: 2× dano de arma"
+          },
+          {
+           "text": " · Nv7: 2× (arma + 2D4)",
+           "muted": true
+          },
+          {
+           "text": " · Nv14: 2× (arma + 2D8)",
            "muted": true
           }
          ]
@@ -6394,7 +6422,7 @@
         [
          [
           {
-           "text": "Dois golpes de arma seguidos no mesmo inimigo; o primeiro não recebe contra-ataque. Escala do nível 1 ao 15, uma melhoria pequena por nível: dano 0 → 2D8; peso da arma 1 → 1,45; talento Terceiro Golpe (um terceiro golpe com metade do dano, sem contra-ataque).",
+           "text": "Ataca duas vezes; cada acerto rola seu próprio bônus (não acumula).",
            "muted": true
           }
          ]
@@ -6428,7 +6456,14 @@
         [
          [
           {
-           "text": "Nv3: alcance 4 · raio 0 · inimizade extra % 0 | Nv10: alcance 7 · raio 1 · inimizade extra % 30 | Nv17: alcance 10 · raio 1 · inimizade extra % 60 · talento Fúria Contida",
+           "text": "Nv1: um inimigo, alcance 4"
+          },
+          {
+           "text": " · Nv7: inimigos em raio 1, alcance 5",
+           "muted": true
+          },
+          {
+           "text": " · Nv14: inimigos em raio 3, alcance 7",
            "muted": true
           }
          ]
@@ -6436,7 +6471,7 @@
         [
          [
           {
-           "text": "Chama a atenção dos inimigos na área mirada: eles passam a querer atacar você. Escala do nível 3 ao 17, uma melhoria pequena por nível: alcance 4 → 10; raio 0 → 1; inimizade extra % 0 → 60; talento Fúria Contida (o guerreiro ganha +10% de ATK por 2 turnos).",
+           "text": "Aprendido no nível 3. Sem dano: os inimigos atingidos passam a mirar o guerreiro até alguém gerar mais inimizade. Vira área de raio 1 no nível 6, 2 no 9, 3 no 12 e 4 no 15; o alcance sobe de 4 até 8.",
            "muted": true
           }
          ]
@@ -6470,14 +6505,14 @@
         [
          [
           {
-           "text": "Nv1: hexes além da arma 0 · ×1 · DEF ignorada % 20 | Nv8: hexes além da arma 1 · ×1,2 · DEF ignorada % 30 | Nv15: hexes além da arma 2 · ×1,35 · DEF ignorada % 40 · talento Atravessar"
+           "text": "dano de arma, −20% armadura"
           }
          ]
         ],
         [
          [
           {
-           "text": "Uma estocada em linha que atravessa os inimigos e ignora parte da DEF; depois do primeiro, cada um leva metade. Escala do nível 1 ao 15, uma melhoria pequena por nível: hexes além da arma 0 → 2; peso da arma 1 → 1,35; DEF ignorada % 20 → 40; talento Atravessar (os alvos depois do primeiro levam 75% do dano, não 50%).",
+           "text": "Acerta em linha; o segundo alvo recebe metade.",
            "muted": true
           }
          ]
@@ -6511,14 +6546,14 @@
         [
          [
           {
-           "text": "Nv1: alcance 2 | Nv8: alcance 5 | Nv15: alcance 8"
+           "text": "—"
           }
          ]
         ],
         [
          [
           {
-           "text": "Invoca um familiar num hex livre até o alcance; ele luta ao seu lado. Escala do nível 1 ao 15, uma melhoria pequena por nível: alcance 2 → 8.",
+           "text": "Invoca aliado com 50% dos atributos atuais — pode lançar Míssil Mágico por conta própria.",
            "muted": true
           }
          ]
@@ -6552,7 +6587,14 @@
         [
          [
           {
-           "text": "Nv3: dano 1D4 · comprimento 1 · ×1,05 | Nv10: dano 2D6 · comprimento 2 · ×1,21 | Nv17: dano 3D8 · comprimento 3 · ×1,37",
+           "text": "MAG 10: 5 + 1D4"
+          },
+          {
+           "text": " · MAG 20: 10 + 1D4",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: 21 + 1D4",
            "muted": true
           }
          ]
@@ -6560,7 +6602,7 @@
         [
          [
           {
-           "text": "Um cone de veneno à sua frente: todos dentro levam dano e ficam envenenados, aliados também. Escala do nível 3 ao 17, uma melhoria pequena por nível: dano 1D4 → 3D8; comprimento 1 → 3; peso do MAG 1,05 → 1,37.",
+           "text": "Aprendido no nível 3; progressão começa no nível 3. Cone de raio 1–5. Progressão de dano de Mãos Flamejantes atrasada em 2 níveis. Veneno Menor: 1D4 por turno; atinge aliados também.",
            "muted": true
           }
          ]
@@ -6594,7 +6636,14 @@
         [
          [
           {
-           "text": "Nv5: dano por turno 1D6 · alcance 6 · ×1,5 | Nv12: dano por turno 2D6 · alcance 9 · ×1,95 | Nv19: dano por turno 2D8 · alcance 12 · ×2,4",
+           "text": "Nv1: 150% dano de arma + sangramento por 1D6 rodadas"
+          },
+          {
+           "text": " · Nv7: 200% dano de arma + sangramento por 1D6 rodadas",
+           "muted": true
+          },
+          {
+           "text": " · Nv14: 250% dano de arma + sangramento por 2D4 rodadas",
            "muted": true
           }
          ]
@@ -6602,7 +6651,7 @@
         [
          [
           {
-           "text": "Um tiro que multiplica o dano da arma e deixa o alvo sangrando por algumas rodadas. Escala do nível 5 ao 19, uma melhoria pequena por nível: dano por turno 1D6 → 2D8; alcance 6 → 12; peso do arco 1,5 → 2,4.",
+           "text": "Aprendido no nível 5. Sangramento causa 1D8 por ação; a duração aumenta nos níveis 8, 12 e 15.",
            "muted": true
           }
          ]
@@ -6636,14 +6685,14 @@
         [
          [
           {
-           "text": "Nv3: alcance 2 | Nv10: alcance 5 | Nv17: alcance 8"
+           "text": "—"
           }
          ]
         ],
         [
          [
           {
-           "text": "Invoca um familiar maior num hex livre até o alcance. Escala do nível 3 ao 17, uma melhoria pequena por nível: alcance 2 → 8.",
+           "text": "Invoca aliado maior, com 75% dos atributos atuais — pode lançar Míssil Mágico ou Dreno de Vida por conta própria.",
            "muted": true
           }
          ]
@@ -6677,7 +6726,14 @@
         [
          [
           {
-           "text": "Nv3: dano 2D8 · alcance 5 · ×2 | Nv10: dano 3D8 · alcance 9 · ×2,2 | Nv17: dano 5D8 · alcance 12 · ×2,4",
+           "text": "MAG 10: 10 + 2D8"
+          },
+          {
+           "text": " · MAG 20: 20 + 2D8",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: 40 + 2D8",
            "muted": true
           }
          ]
@@ -6685,7 +6741,7 @@
         [
          [
           {
-           "text": "Um raio num inimigo que você vê; o choque fica nele e volta a atingi-lo no começo do turno dele. Escala do nível 3 ao 17, uma melhoria pequena por nível: dano 2D8 → 5D8; alcance 5 → 12; peso do MAG 2 → 2,4.",
+           "text": "Atravessa cobertura e barricadas. Eco em outro alvo adjacente: 1D12+2.",
            "muted": true
           }
          ]
@@ -6768,7 +6824,14 @@
         [
          [
           {
-           "text": "Nv3: dano 2D6 · alcance 3 · ×1,6 | Nv10: dano 4D6 · alcance 4 · ×1,8 | Nv17: dano 5D6 · alcance 5 · ×2,05",
+           "text": "MAG 10: 8 + 2D6 (cura)"
+          },
+          {
+           "text": " · MAG 20: 16 + 2D6 (cura)",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: 32 + 2D6 (cura)",
            "muted": true
           }
          ]
@@ -6776,7 +6839,7 @@
         [
          [
           {
-           "text": "Cura forte num aliado (ou você) até o alcance. Cada ponto da perícia Cura soma 1% à cura. Escala do nível 3 ao 17, uma melhoria pequena por nível: dano 2D6 → 5D6; alcance 3 → 5; peso do MAG 1,6 → 2,05.",
+           "text": "—",
            "muted": true
           }
          ]
@@ -6810,7 +6873,14 @@
         [
          [
           {
-           "text": "Nv4: dano 1D8 · ×1 | Nv11: dano 2D10 · ×1,25 | Nv18: dano 2D12 · ×1,5 · talento Corte Baixo",
+           "text": "Nv1: arma + 1D8"
+          },
+          {
+           "text": " · Nv7: arma + 1D8",
+           "muted": true
+          },
+          {
+           "text": " · Nv14: arma + 2D8",
            "muted": true
           }
          ]
@@ -6818,7 +6888,7 @@
         [
          [
           {
-           "text": "Um golpe em arco nos 3 hexes à sua frente, só nos inimigos; contra corpos grandes (3 hexes ou mais) o dano dobra. Escala do nível 4 ao 18, uma melhoria pequena por nível: dano 1D8 → 2D12; peso da arma 1 → 1,5; talento Corte Baixo (os atingidos ficam Paralisados (-25% de MOV) por 1 turno).",
+           "text": "Atinge até 3 hexes. x2 em criaturas grandes (3+ hexes). Dado sobe nos níveis 9, 11 e 14.",
            "muted": true
           }
          ]
@@ -6852,14 +6922,14 @@
         [
          [
           {
-           "text": "Nv4: ×1 | Nv11: dano 1D6 · ×1,25 | Nv18: dano 1D10 · ×1,45 · talento Varrer Longe"
+           "text": "dano de arma"
           }
          ]
         ],
         [
          [
           {
-           "text": "Um giro da lança em volta de você: os inimigos ao lado levam o golpe e são empurrados. Escala do nível 4 ao 18, uma melhoria pequena por nível: dano 0 → 1D10; peso da arma 1 → 1,45; talento Varrer Longe (empurra 2 hexes em vez de 1).",
+           "text": "Inimigos a até 2 hexes; empurra 1 hex. Prévia da área antes de confirmar.",
            "muted": true
           }
          ]
@@ -6893,14 +6963,14 @@
         [
          [
           {
-           "text": "Nv3: alcance 7 · 3 hexes · chance de sono % 25 | Nv10: alcance 10 · raio 1 · chance de sono % 40 | Nv17: alcance 12 · raio 2 · chance de sono % 60"
+           "text": "—"
           }
          ]
         ],
         [
          [
           {
-           "text": "Uma teia no hex mirado que fica 3 rodadas: quem está nela pode adormecer (1D4 turnos), aliados também; quem dorme leva 25% a mais de dano. Escala do nível 3 ao 17, uma melhoria pequena por nível: alcance 7 → 12; área 3 hexes → 2 anéis; chance de sono % 25 → 60.",
+           "text": "Alcance 7. Raio 1 (2 no nível 7, 3 no nível 12). 25% de dormir por 1D4 turnos (+25% dano ao acordar); prende o movimento a 1 hex na área por 3 turnos.",
            "muted": true
           }
          ]
@@ -6934,7 +7004,14 @@
         [
          [
           {
-           "text": "Nv5: dano 1D6 · comprimento 2 · ×1,1 | Nv12: dano 3D6 · comprimento 5 · ×1,2 | Nv19: dano 4D6 · comprimento 8 · ×1,35",
+           "text": "MAG 10: 5 + 1D6"
+          },
+          {
+           "text": " · MAG 20: 11 + 1D6",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: 22 + 1D6",
            "muted": true
           }
          ]
@@ -6942,7 +7019,7 @@
         [
          [
           {
-           "text": "Uma linha de gelo que sai do seu lado na direção que você mira e atinge todos sobre ela, aliados também. Escala do nível 5 ao 19, uma melhoria pequena por nível: dano 1D6 → 4D6; comprimento 2 → 8; peso do MAG 1,1 → 1,35.",
+           "text": "Aprendido no nível 5. Linha de 2 hexes à frente; +1 hex a cada 4 níveis. Dano de Ice e fogo amigo. Cultist V2: 1 carga inicial, +1 nos níveis 5, 12 e 20.",
            "muted": true
           }
          ]
@@ -6976,14 +7053,14 @@
         [
          [
           {
-           "text": "Nv6: alcance 2 | Nv13: alcance 5 | Nv20: alcance 8"
+           "text": "—"
           }
          ]
         ],
         [
          [
           {
-           "text": "Invoca um familiar radiante num hex livre até o alcance. Escala do nível 6 ao 20, uma melhoria pequena por nível: alcance 2 → 8.",
+           "text": "Invoca aliado radiante, com 75% dos atributos atuais — pode lançar Míssil Mágico ou Dreno de Vida por conta própria.",
            "muted": true
           }
          ]
@@ -7058,14 +7135,14 @@
         [
          [
           {
-           "text": "Nv8: dano 1D8 · ×1 | Nv15: dano 2D10 · ×1,25 | Nv22: dano 3D10 · ×1,5 · talento Tendão Cortado"
+           "text": "arma +1D8"
           }
          ]
         ],
         [
          [
           {
-           "text": "Uma rasteira sem contra-ataque: o alvo sangra 1D8 a cada ação e perde 10% de todos os atributos pelo resto da luta. Escala do nível 8 ao 22, uma melhoria pequena por nível: dano 1D8 → 3D10; peso da arma 1 → 1,5; talento Tendão Cortado (a Rasteira tira 20% de todos os atributos, não 10%).",
+           "text": "Causa Sangramento (1D8 a cada ação); −10% de status pro resto da batalha.",
            "muted": true
           }
          ]
@@ -7099,7 +7176,14 @@
         [
          [
           {
-           "text": "Nv6: dano 2D6 · alcance 5 · 3 hexes | Nv13: dano 4D6 · alcance 9 · raio 1 | Nv20: dano 6D6 · alcance 12 · raio 3",
+           "text": "MAG 10: 6 + 2D6"
+          },
+          {
+           "text": " · MAG 20: 13 + 2D6",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: 27 + 2D6",
            "muted": true
           }
          ]
@@ -7107,7 +7191,7 @@
         [
          [
           {
-           "text": "Explode no hex que você mira: todos na área levam o mesmo dano, aliados também. Precisa de linha de tiro até o hex. Escala do nível 6 ao 20, uma melhoria pequena por nível: dano 2D6 → 6D6; alcance 5 → 12; área 3 hexes → 3 anéis.",
+           "text": "Área de raio 2.",
            "muted": true
           }
          ]
@@ -7141,14 +7225,39 @@
         [
          [
           {
-           "text": "Nv6: dano 4D6 · 3 hexes · ×1,6 | Nv13: dano 6D6 · raio 3 · ×1,95 | Nv20: dano 9D6 · raio 5 · ×2,3"
+           "text": "Níveis 6–8: alcance 4, área de 61 hexes, duração 2 rodadas, dano ⌊⌊MAG / 2⌋ × 1.6⌋ + 4D6"
+          }
+         ],
+         [
+          {
+           "text": "Níveis 9–11: alcance 5, área de 91 hexes, duração 2 rodadas, dano ⌊⌊MAG / 2⌋ × 1.8⌋ + 5D6"
+          }
+         ],
+         [
+          {
+           "text": "Níveis 12–14: alcance 6, área de 127 hexes, duração 2 rodadas, dano ⌊⌊MAG / 2⌋ × 2⌋ + 6D6"
+          }
+         ],
+         [
+          {
+           "text": "Níveis 15–17: alcance 7, área de 169 hexes, duração 2 rodadas, dano ⌊⌊MAG / 2⌋ × 2.2⌋ + 7D6"
+          }
+         ],
+         [
+          {
+           "text": "Níveis 18–21: alcance 8, área de 217 hexes, duração 2 rodadas, dano ⌊⌊MAG / 2⌋ × 2.4⌋ + 8D6"
+          }
+         ],
+         [
+          {
+           "text": "Níveis 22–30 (capped at 22): alcance 9, área de 271 hexes, duração 2 rodadas, dano ⌊⌊MAG / 2⌋ × 2.6⌋ + 10D6"
           }
          ]
         ],
         [
          [
           {
-           "text": "Luz sagrada em volta do sacerdote: só os mortos-vivos na área levam dano, e os que sobrevivem fogem com medo por 2 turnos. Escala do nível 6 ao 20, uma melhoria pequena por nível: dano 4D6 → 9D6; área 3 hexes → 5 anéis; peso do MAG 1,6 → 2,3.",
+           "text": "Preview the area around the priest, then confirm or cancel; no target selection. Holy damage and 2 own turns of fear: undead retreat without attacking. Radius grows at every breakpoint from 4 to 9 hexes (61–271 affected cells). Other creature types are completely unaffected.",
            "muted": true
           }
          ]
@@ -7182,14 +7291,14 @@
         [
          [
           {
-           "text": "Nv6: alcance 2 | Nv13: alcance 3 | Nv20: alcance 4"
+           "text": "—"
           }
          ]
         ],
         [
          [
           {
-           "text": "Tira a doença e o veneno de um aliado (ou de você) até o alcance. Escala do nível 6 ao 20, uma melhoria pequena por nível: alcance 2 → 4.",
+           "text": "Clériga T3. Cura doença e veneno. Luz teal.",
            "muted": true
           }
          ]
@@ -7223,7 +7332,14 @@
         [
          [
           {
-           "text": "Nv7: alcance 6 · alvos 2 | Nv14: dano 2D8 · alcance 9 · alvos 2 | Nv21: dano 3D12 · alcance 12 · alvos 3",
+           "text": "Nv1: arma por alvo"
+          },
+          {
+           "text": " · Nv7: arma por alvo",
+           "muted": true
+          },
+          {
+           "text": " · Nv14: arma + 2D4 por alvo",
            "muted": true
           }
          ]
@@ -7231,7 +7347,7 @@
         [
          [
           {
-           "text": "Várias flechas de uma vez, cada uma mirada num inimigo (pode repetir). Escala do nível 7 ao 21, uma melhoria pequena por nível: dano 0 → 3D12; alcance 6 → 12; alvos 2 → 3.",
+           "text": "2 alvos (3 no nível 11), alcance 6. Dado sobe no nível 8 e 13.",
            "muted": true
           }
          ]
@@ -7306,7 +7422,7 @@
         [
          [
           {
-           "text": "T5",
+           "text": "T4",
            "muted": true
           }
          ]
@@ -7314,14 +7430,14 @@
         [
          [
           {
-           "text": "Nv11: alcance 2 | Nv18: alcance 5 | Nv25: alcance 8"
+           "text": "—"
           }
          ]
         ],
         [
          [
           {
-           "text": "Invoca o Familiar Titã num hex livre até o alcance. Escala do nível 11 ao 25, uma melhoria pequena por nível: alcance 2 → 8.",
+           "text": "Invoca aliado com 100% dos atributos atuais — pode lançar Bola de Fogo por conta própria.",
            "muted": true
           }
          ]
@@ -7421,7 +7537,14 @@
         [
          [
           {
-           "text": "Nv8: dano 2D4 · alcance 6 · 3 hexes · ×1,4 | Nv15: dano 4D4 · alcance 9 · raio 1 · ×1,5 | Nv22: dano 5D4 · alcance 12 · raio 2 · ×1,7",
+           "text": "MAG 10: centro 7 + 2D4 · adjacente 5 + 1D4"
+          },
+          {
+           "text": " · MAG 20: centro 14 + 2D4 · adjacente 10 + 1D4",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: centro 28 + 2D4 · adjacente 20 + 1D4",
            "muted": true
           }
          ]
@@ -7429,7 +7552,7 @@
         [
          [
           {
-           "text": "Luz sagrada no hex mirado: o centro leva o golpe forte, a área em volta leva menos, aliados também. Escala do nível 8 ao 22, uma melhoria pequena por nível: dano 2D4 → 5D4; alcance 6 → 12; área 3 hexes → 2 anéis; peso do MAG 1,4 → 1,7.",
+           "text": "Somente Salazar. Alcance 6; raio 1; dano Holy e atinge até seis hexes adjacentes.",
            "muted": true
           }
          ]
@@ -7463,7 +7586,14 @@
         [
          [
           {
-           "text": "Nv11: dano 1D8 · alcance 1 · ×1,2 | Nv18: dano 3D8 · alcance 2 · ×1,4 | Nv25: dano 4D8 · alcance 3 · ×1,65",
+           "text": "MAG 10: 6 + 1D8 (cura)"
+          },
+          {
+           "text": " · MAG 20: 12 + 1D8 (cura)",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: 24 + 1D8 (cura)",
            "muted": true
           }
          ]
@@ -7471,7 +7601,7 @@
         [
          [
           {
-           "text": "Imposição de mãos: cura um aliado bem perto. Cada ponto da perícia Cura soma 1% à cura. Escala do nível 11 ao 25, uma melhoria pequena por nível: dano 1D8 → 4D8; alcance 1 → 3; peso do MAG 1,2 → 1,65.",
+           "text": "Entre Cura Menor e Cura Média; usos próprios do Paladino.",
            "muted": true
           }
          ]
@@ -7505,7 +7635,14 @@
         [
          [
           {
-           "text": "Nv11: dano 1D8 · hexes de largura 1 · ×1 | Nv18: dano 2D10 · hexes de largura 2 · ×1,2 | Nv25: dano 2D12 · hexes de largura 3 · ×1,4 · talento Derrubar",
+           "text": "Nv1: arma + 1D8"
+          },
+          {
+           "text": " · Nv7: arma + 1D8",
+           "muted": true
+          },
+          {
+           "text": " · Nv14: arma + 1D8",
            "muted": true
           }
          ]
@@ -7513,7 +7650,7 @@
         [
          [
           {
-           "text": "Uma investida de ombro (mãos livres, sem escudo) nos hexes à sua frente: dano e empurra 2 hexes. Escala do nível 11 ao 25, uma melhoria pequena por nível: dano 1D8 → 2D12; hexes de largura 1 → 3; peso da arma 1 → 1,4; talento Derrubar (os atingidos ficam Desequilibrados (sem contra-ataque) até o próximo turno deles).",
+           "text": "Requer sem escudo. Arco de hexes cresce até 4; empurra 2 hexes.",
            "muted": true
           }
          ]
@@ -7547,7 +7684,14 @@
         [
          [
           {
-           "text": "Nv15: dano 3D12 · alcance 7 · ×3 | Nv22: dano 4D12 · alcance 10 · ×3,3 | Nv29: dano 6D12 · alcance 12 · ×3,6",
+           "text": "MAG 10: 15 + 3D12+8"
+          },
+          {
+           "text": " · MAG 20: 30 + 3D12+8",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: 60 + 3D12+8",
            "muted": true
           }
          ]
@@ -7555,7 +7699,7 @@
         [
          [
           {
-           "text": "Um raio maior num inimigo; o choque fica nele e volta a atingi-lo, mais forte, no começo do turno dele. Escala do nível 15 ao 29, uma melhoria pequena por nível: dano 3D12 → 6D12; alcance 7 → 12; peso do MAG 3 → 3,6.",
+           "text": "Elementalista T5. Atravessa cobertura e barricadas. Eco 2D12+8.",
            "muted": true
           }
          ]
@@ -7589,7 +7733,14 @@
         [
          [
           {
-           "text": "Nv11: dano 1D10 · alcance 7 · 3 hexes · ×1,5 | Nv18: dano 2D10 · alcance 10 · raio 2 · ×1,6 | Nv25: dano 3D10 · alcance 12 · raio 4 · ×1,8",
+           "text": "MAG 10: centro 7 + 1D10 · respingo 5 + 1D6"
+          },
+          {
+           "text": " · MAG 20: centro 15 + 1D10 · respingo 11 + 1D6",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: centro 30 + 1D10 · respingo 22 + 1D6",
            "muted": true
           }
          ]
@@ -7597,7 +7748,7 @@
         [
          [
           {
-           "text": "Ácido venenoso no hex mirado: quem está no centro leva o golpe forte, os outros na área levam o respingo; todos ficam envenenados, aliados também. Escala do nível 11 ao 25, uma melhoria pequena por nível: dano 1D10 → 3D10; alcance 7 → 12; área 3 hexes → 4 anéis; peso do MAG 1,5 → 1,8.",
+           "text": "Alcance 7. Veneno: 1D10 no início de cada turno do alvo, até curado (−10 pontos de Poison Resistance). Área de raio 3, pega os dois lados.",
            "muted": true
           }
          ]
@@ -7631,7 +7782,14 @@
         [
          [
           {
-           "text": "Nv15: 3 hexes · proteção % 20 · rodadas 3 | Nv22: raio 1 · proteção % 28 · rodadas 5 | Nv29: raio 2 · proteção % 36 · rodadas 7",
+           "text": "Nv1: raio 1, −20% dano, 3 rodadas"
+          },
+          {
+           "text": " · Nv7: raio 1, −20% dano, 3 rodadas",
+           "muted": true
+          },
+          {
+           "text": " · Nv14: raio 1, −20% dano, 3 rodadas",
            "muted": true
           }
          ]
@@ -7639,7 +7797,7 @@
         [
          [
           {
-           "text": "Uma aura em volta de você: aliados dentro dela levam menos dano enquanto durar. Escala do nível 15 ao 29, uma melhoria pequena por nível: área 3 hexes → 2 anéis; proteção % 20 → 36; rodadas 3 → 7.",
+           "text": "Instantânea, centrada em si mesmo — sem mira. Escala nos níveis 20, 22, 24, 26, 28 e 30.",
            "muted": true
           }
          ]
@@ -7673,7 +7831,14 @@
         [
          [
           {
-           "text": "Nv15: 3 hexes · intimidação % 20 · rodadas 3 | Nv22: raio 1 · intimidação % 30 · rodadas 4 | Nv29: raio 2 · intimidação % 38 · rodadas 6",
+           "text": "Nv1: raio 1, +20% dano, 3 rodadas"
+          },
+          {
+           "text": " · Nv7: raio 1, +20% dano, 3 rodadas",
+           "muted": true
+          },
+          {
+           "text": " · Nv14: raio 1, +20% dano, 3 rodadas",
            "muted": true
           }
          ]
@@ -7681,7 +7846,7 @@
         [
          [
           {
-           "text": "Uma presença em volta de você: inimigos dentro dela levam mais dano enquanto durar. Escala do nível 15 ao 29, uma melhoria pequena por nível: área 3 hexes → 2 anéis; intimidação % 20 → 38; rodadas 3 → 6.",
+           "text": "Instantânea, centrada em si mesmo — o oposto da Aura de Proteção, mesma escala.",
            "muted": true
           }
          ]
@@ -7715,7 +7880,14 @@
         [
          [
           {
-           "text": "Nv18: dano 1D10 · alcance 4 | Nv25: dano 3D12 · alcance 8 | Nv32: dano 6D12 · alcance 12",
+           "text": "Nv1: arma + MAG/2 + 1D10"
+          },
+          {
+           "text": " · Nv7: arma + MAG/2 + 1D10",
+           "muted": true
+          },
+          {
+           "text": " · Nv14: arma + MAG/2 + 1D10",
            "muted": true
           }
          ]
@@ -7723,7 +7895,7 @@
         [
          [
           {
-           "text": "Uma linha reta de fúria sagrada a partir de você: os inimigos sobre ela levam o dano, somado à metade da sua MAG. Escala do nível 18 ao 32, uma melhoria pequena por nível: dano 1D10 → 6D12; alcance 4 → 12.",
+           "text": "Linha reta mirada, alcance 4 — nunca atinge aliados. Dado sobe nos níveis 19, 22, 26 e 30.",
            "muted": true
           }
          ]
@@ -7757,7 +7929,14 @@
         [
          [
           {
-           "text": "Nv18: dano 1D10 · alcance 4 · ×1 | Nv25: dano 2D12 · alcance 6 · ×1,15 | Nv32: dano 3D12 · alcance 8 · ×1,3 · talento Pisoteio",
+           "text": "Nv1: arma + 1D10"
+          },
+          {
+           "text": " · Nv7: arma + 1D10",
+           "muted": true
+          },
+          {
+           "text": " · Nv14: arma + 1D10",
            "muted": true
           }
          ]
@@ -7765,7 +7944,7 @@
         [
          [
           {
-           "text": "Uma corrida em linha reta: todos sobre ela levam o golpe, aliados também. Escala do nível 18 ao 32, uma melhoria pequena por nível: dano 1D10 → 3D12; alcance 4 → 8; peso da arma 1 → 1,3; talento Pisoteio (os atingidos são empurrados 1 hex).",
+           "text": "Linha reta mirada, alcance 4 — atinge aliados também. Dado sobe nos níveis 21, 24, 27 e 30.",
            "muted": true
           }
          ]
@@ -7812,7 +7991,7 @@
          "accent": true
         },
         {
-         "text": ": limite entre 0% e 100% de (75% + proficiência da arma + bônus de acerto + 10% pelas costas + (DEX do atacante − DEX do defensor) ÷ 3 − Esquiva do defensor ÷ 2)"
+         "text": ": limite entre 0% e 100% de (75% + proficiência da arma + bônus de acerto − DEX do defensor)"
         }
        ],
        [
@@ -7969,7 +8148,7 @@
       "mt": 0.5,
       "spans": [
        {
-        "text": "Exemplo de precisão: proficiência 20, bônus de acerto 0, atacante com DEX 21 e defensor com DEX 15 → 75 + 20 + (21 − 15) ÷ 3 = 97% de chance. Ao contrário, atacante com DEX 15 e defensor com DEX 21 → 75 + 20 − 2 = 93%. Em 100 pontos de proficiência, a precisão base chega a 175%; o limite final ainda é aplicado depois da DEX."
+        "text": "Exemplo de precisão: proficiência 20, bônus de acerto 0 e defensor com DEX 15 → 75 + 20 − 15 = 80% de chance. Em 100 pontos de proficiência, a precisão base chega a 175%; o limite final ainda é aplicado depois da DEX do defensor."
        }
       ]
      },
@@ -7983,11 +8162,11 @@
       "lines": [
        [
         {
-         "text": "Acerto e esquiva",
+         "text": "Precisão contra você",
          "accent": true
         },
         {
-         "text": ": a cada 3 pontos de DEX que o atacante tem a mais que o alvo, +1% de acerto; a cada 3 a menos, −1%. Limitado entre 0% e 100%."
+         "text": ": chance do ataque − sua DEX, limitado entre 0% e 100%."
         }
        ],
        [
@@ -15029,14 +15208,14 @@
         [
          [
           {
-           "text": "Lv3: 3 hexes · hit % 1 · rounds 3 | Lv10: radius 1 · hit % 5 · rounds 5 | Lv17: radius 2 · hit % 8 · rounds 8"
+           "text": "—"
           }
          ]
         ],
         [
          [
           {
-           "text": "Blesses the allies in the area around you: they hit more often for a few rounds. Scales from level 3 to 17, one small improvement a level: area 3 hexes → 2 rings; hit % 1 → 8; rounds 3 → 8.",
+           "text": "Healer, level 3. Radius 3; +1% hit chance per level, up to +10% at level 13. Duration: 3 turns at level 3; 4 at 5; 5 at 7; 6 at 9; 7 at 12; 8 at 15.",
            "muted": true
           }
          ]
@@ -15070,7 +15249,14 @@
         [
          [
           {
-           "text": "Lv1: range 5 · missiles 1 · ×1.15 | Lv8: range 9 · missiles 2 · ×1.25 | Lv15: range 12 · missiles 4 · ×1.35",
+           "text": "MAG 10: 5 + 1D4"
+          },
+          {
+           "text": " · MAG 20: 11 + 1D4",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: 23 + 1D4",
            "muted": true
           }
          ]
@@ -15078,7 +15264,7 @@
         [
          [
           {
-           "text": "Fires missiles of arcane force. Each missile picks its own target (the same foe more than once is fine); it only needs to see the foe. Scales from level 1 to 15, one small improvement a level: range 5 → 12; missiles 1 → 4; MAG weight 1.15 → 1.35.",
+           "text": "Never misses. 1 missile, 2 at level 3, 3 at level 6 — each targets one unit.",
            "muted": true
           }
          ]
@@ -15112,7 +15298,14 @@
         [
          [
           {
-           "text": "Lv1: damage 1D8 · range 7 · bow bonus 0 | Lv8: damage 2D10 · range 10 · bow bonus 2 | Lv15: damage 4D12 · range 12 · bow bonus 4",
+           "text": "Lv 1: weapon + 1D8"
+          },
+          {
+           "text": " · Lv 7: weapon + 2D6",
+           "muted": true
+          },
+          {
+           "text": " · Lv 14: weapon + 2D12",
            "muted": true
           }
          ]
@@ -15120,7 +15313,7 @@
         [
          [
           {
-           "text": "A long bow shot: the weapon's damage plus the skill's dice. Scales from level 1 to 15, one small improvement a level: damage 1D8 → 4D12; range 7 → 12; bow bonus 0 → 4.",
+           "text": "Range 7. Damage die increases at levels 2, 3, 5, 7, 9, 12, and 14.",
            "muted": true
           }
          ]
@@ -15154,7 +15347,14 @@
         [
          [
           {
-           "text": "Lv1: damage 1D6 · range 2 · ×1 | Lv8: damage 3D6 · range 4 · ×1.15 | Lv15: damage 4D6 · range 6 · ×1.35",
+           "text": "MAG 10: 5 + 1D6 (healing)"
+          },
+          {
+           "text": " · MAG 20: 10 + 1D6 (healing)",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: 20 + 1D6 (healing)",
            "muted": true
           }
          ]
@@ -15162,7 +15362,7 @@
         [
          [
           {
-           "text": "Heals an ally (or yourself) within reach. Each point of the Healing skill adds 1% to it. Scales from level 1 to 15, one small improvement a level: damage 1D6 → 4D6; range 2 → 6; MAG weight 1 → 1.35.",
+           "text": "—",
            "muted": true
           }
          ]
@@ -15196,7 +15396,14 @@
         [
          [
           {
-           "text": "Lv1: ×1 | Lv8: damage 1D6 · ×1.25 | Lv15: damage 2D8 · ×1.45 · talent Third Blow",
+           "text": "Lv 1: 2× weapon damage"
+          },
+          {
+           "text": " · Lv 7: 2× (weapon + 2D4)",
+           "muted": true
+          },
+          {
+           "text": " · Lv 14: 2× (weapon + 2D8)",
            "muted": true
           }
          ]
@@ -15204,7 +15411,7 @@
         [
          [
           {
-           "text": "Two weapon blows in a row on the same foe; the first cannot be countered. Scales from level 1 to 15, one small improvement a level: damage 0 → 2D8; weapon weight 1 → 1.45; talent Third Blow (a third blow at half damage, no counter).",
+           "text": "Attacks twice; each hit rolls its own bonus (bonuses do not stack).",
            "muted": true
           }
          ]
@@ -15238,7 +15445,14 @@
         [
          [
           {
-           "text": "Lv3: range 4 · radius 0 · extra enmity % 0 | Lv10: range 7 · radius 1 · extra enmity % 30 | Lv17: range 10 · radius 1 · extra enmity % 60 · talent Held Fury",
+           "text": "Lv 1: um inimigo, range 4"
+          },
+          {
+           "text": " · Lv 7: inimigos em radius 1, range 5",
+           "muted": true
+          },
+          {
+           "text": " · Lv 14: inimigos em radius 3, range 7",
            "muted": true
           }
          ]
@@ -15246,7 +15460,7 @@
         [
          [
           {
-           "text": "Draws the attention of the foes in the aimed area: they turn to attack you. Scales from level 3 to 17, one small improvement a level: range 4 → 10; radius 0 → 1; extra enmity % 0 → 60; talent Held Fury (the warrior gains +10% ATK for 2 turns).",
+           "text": "Warrior Tier 1, learned at level 3. No damage: every enemy it reaches turns on the warrior until someone generates more enmity. Becomes an area of radius 1 at level 6, 2 at 9, 3 at 12 and 4 at 15; reach grows from 4 to 8.",
            "muted": true
           }
          ]
@@ -15280,14 +15494,14 @@
         [
          [
           {
-           "text": "Lv1: hexes past the weapon 0 · ×1 · DEF ignored % 20 | Lv8: hexes past the weapon 1 · ×1.2 · DEF ignored % 30 | Lv15: hexes past the weapon 2 · ×1.35 · DEF ignored % 40 · talent Run Through"
+           "text": "weapon damage, −20% armor"
           }
          ]
         ],
         [
          [
           {
-           "text": "A thrust in a line that runs through the foes and ignores part of their DEF; after the first, each takes half. Scales from level 1 to 15, one small improvement a level: hexes past the weapon 0 → 2; weapon weight 1 → 1.35; DEF ignored % 20 → 40; talent Run Through (the targets after the first take 75% of the damage, not 50%).",
+           "text": "Hits in a line; the second target takes half damage.",
            "muted": true
           }
          ]
@@ -15321,14 +15535,14 @@
         [
          [
           {
-           "text": "Lv1: range 2 | Lv8: range 5 | Lv15: range 8"
+           "text": "—"
           }
          ]
         ],
         [
          [
           {
-           "text": "Summons a familiar on a free hex within reach; it fights at your side. Scales from level 1 to 15, one small improvement a level: range 2 → 8.",
+           "text": "Summons an ally with 50% of your current stats. It can cast Magic Missile on its own.",
            "muted": true
           }
          ]
@@ -15362,7 +15576,14 @@
         [
          [
           {
-           "text": "Lv3: damage 1D4 · length 1 · ×1.05 | Lv10: damage 2D6 · length 2 · ×1.21 | Lv17: damage 3D8 · length 3 · ×1.37",
+           "text": "MAG 10: 5 + 1D4"
+          },
+          {
+           "text": " · MAG 20: 10 + 1D4",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: 21 + 1D4",
            "muted": true
           }
          ]
@@ -15370,7 +15591,7 @@
         [
          [
           {
-           "text": "A cone of poison in front of you: everyone in it takes damage and is poisoned, allies too. Scales from level 3 to 17, one small improvement a level: damage 1D4 → 3D8; length 1 → 3; MAG weight 1.05 → 1.37.",
+           "text": "Learned at level 3; progression begins at level 3. Cone radius 1–5. Burning Hands damage progression is delayed by 2 levels. Minor Poison deals 1D4 per turn; it can hit allies too.",
            "muted": true
           }
          ]
@@ -15404,7 +15625,14 @@
         [
          [
           {
-           "text": "Lv5: damage per turn 1D6 · range 6 · ×1.5 | Lv12: damage per turn 2D6 · range 9 · ×1.95 | Lv19: damage per turn 2D8 · range 12 · ×2.4",
+           "text": "Lv 1: 150% weapon damage + sangramento por 1D6 rounds"
+          },
+          {
+           "text": " · Lv 7: 200% weapon damage + sangramento por 1D6 rounds",
+           "muted": true
+          },
+          {
+           "text": " · Lv 14: 250% weapon damage + sangramento por 2D4 rounds",
            "muted": true
           }
          ]
@@ -15412,7 +15640,7 @@
         [
          [
           {
-           "text": "A shot that multiplies the weapon's damage and leaves the target bleeding for some rounds. Scales from level 5 to 19, one small improvement a level: damage per turn 1D6 → 2D8; range 6 → 12; bow weight 1.5 → 2.4.",
+           "text": "Archer Tier 2, learned at level 5. Deals weapon damage with a level-based multiplier and causes 1D8 bleeding damage per action for 1D6 rounds (1D8 at level 8, 2D4 at level 12, 2D6 at level 15).",
            "muted": true
           }
          ]
@@ -15446,14 +15674,14 @@
         [
          [
           {
-           "text": "Lv3: range 2 | Lv10: range 5 | Lv17: range 8"
+           "text": "—"
           }
          ]
         ],
         [
          [
           {
-           "text": "Summons a greater familiar on a free hex within reach. Scales from level 3 to 17, one small improvement a level: range 2 → 8.",
+           "text": "Summons a greater ally with 75% of your current stats. It can cast Magic Missile or Life Drain on its own.",
            "muted": true
           }
          ]
@@ -15487,7 +15715,14 @@
         [
          [
           {
-           "text": "Lv3: damage 2D8 · range 5 · ×2 | Lv10: damage 3D8 · range 9 · ×2.2 | Lv17: damage 5D8 · range 12 · ×2.4",
+           "text": "MAG 10: 10 + 2D8"
+          },
+          {
+           "text": " · MAG 20: 20 + 2D8",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: 40 + 2D8",
            "muted": true
           }
          ]
@@ -15495,7 +15730,7 @@
         [
          [
           {
-           "text": "A bolt at a foe you can see; the shock stays on it and strikes it again at the start of its turn. Scales from level 3 to 17, one small improvement a level: damage 2D8 → 5D8; range 5 → 12; MAG weight 2 → 2.4.",
+           "text": "Pierces cover and barricades. Echoes to another adjacent target for 1D12+2.",
            "muted": true
           }
          ]
@@ -15578,7 +15813,14 @@
         [
          [
           {
-           "text": "Lv3: damage 2D6 · range 3 · ×1.6 | Lv10: damage 4D6 · range 4 · ×1.8 | Lv17: damage 5D6 · range 5 · ×2.05",
+           "text": "MAG 10: 8 + 2D6 (healing)"
+          },
+          {
+           "text": " · MAG 20: 16 + 2D6 (healing)",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: 32 + 2D6 (healing)",
            "muted": true
           }
          ]
@@ -15586,7 +15828,7 @@
         [
          [
           {
-           "text": "A strong heal on an ally (or yourself) within reach. Each point of the Healing skill adds 1% to it. Scales from level 3 to 17, one small improvement a level: damage 2D6 → 5D6; range 3 → 5; MAG weight 1.6 → 2.05.",
+           "text": "—",
            "muted": true
           }
          ]
@@ -15620,7 +15862,14 @@
         [
          [
           {
-           "text": "Lv4: damage 1D8 · ×1 | Lv11: damage 2D10 · ×1.25 | Lv18: damage 2D12 · ×1.5 · talent Low Cut",
+           "text": "Lv 1: weapon + 1D8"
+          },
+          {
+           "text": " · Lv 7: weapon + 1D8",
+           "muted": true
+          },
+          {
+           "text": " · Lv 14: weapon + 2D8",
            "muted": true
           }
          ]
@@ -15628,7 +15877,7 @@
         [
          [
           {
-           "text": "A sweeping blow over the 3 hexes in front of you, foes only; against large bodies (3 hexes or more) the damage doubles. Scales from level 4 to 18, one small improvement a level: damage 1D8 → 2D12; weapon weight 1 → 1.5; talent Low Cut (the struck are Crippled (-25% MOV) for 1 turn).",
+           "text": "Hits up to 3 hexes. x2 against large creatures (3+ hexes). Damage die increases at levels 9, 11, and 14.",
            "muted": true
           }
          ]
@@ -15662,14 +15911,14 @@
         [
          [
           {
-           "text": "Lv4: ×1 | Lv11: damage 1D6 · ×1.25 | Lv18: damage 1D10 · ×1.45 · talent Sweep Away"
+           "text": "weapon damage"
           }
          ]
         ],
         [
          [
           {
-           "text": "A turn of the lance around you: the foes beside you take the blow and are pushed. Scales from level 4 to 18, one small improvement a level: damage 0 → 1D10; weapon weight 1 → 1.45; talent Sweep Away (pushes 2 hexes instead of 1).",
+           "text": "Enemies within 2 hexes; knocks them back 1 hex. Shows the area before confirming.",
            "muted": true
           }
          ]
@@ -15703,14 +15952,14 @@
         [
          [
           {
-           "text": "Lv3: range 7 · 3 hexes · sleep chance % 25 | Lv10: range 10 · radius 1 · sleep chance % 40 | Lv17: range 12 · radius 2 · sleep chance % 60"
+           "text": "—"
           }
          ]
         ],
         [
          [
           {
-           "text": "A web on the aimed hex that stays 3 rounds: whoever is in it may fall asleep (1D4 turns), allies too; sleepers take 25% more damage. Scales from level 3 to 17, one small improvement a level: range 7 → 12; area 3 hexes → 2 rings; sleep chance % 25 → 60.",
+           "text": "Range 7. Radius 1 (2 at level 7, 3 at level 12). 25% chance to sleep for 1D4 turns (+25% damage when awakened); movement is limited to 1 hex in the area for 3 turns.",
            "muted": true
           }
          ]
@@ -15744,7 +15993,14 @@
         [
          [
           {
-           "text": "Lv5: damage 1D6 · length 2 · ×1.1 | Lv12: damage 3D6 · length 5 · ×1.2 | Lv19: damage 4D6 · length 8 · ×1.35",
+           "text": "MAG 10: 5 + 1D6"
+          },
+          {
+           "text": " · MAG 20: 11 + 1D6",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: 22 + 1D6",
            "muted": true
           }
          ]
@@ -15752,7 +16008,7 @@
         [
          [
           {
-           "text": "A line of ice from beside you toward where you aim; it strikes everyone on it, allies too. Scales from level 5 to 19, one small improvement a level: damage 1D6 → 4D6; length 2 → 8; MAG weight 1.1 → 1.35.",
+           "text": "Learned at level 5. A line of 2 hexes ahead, +1 hex every 4 levels. Ice damage; can hit allies. Cultist V2: 1 starting charge, +1 at levels 5, 12, and 20.",
            "muted": true
           }
          ]
@@ -15786,14 +16042,14 @@
         [
          [
           {
-           "text": "Lv6: range 2 | Lv13: range 5 | Lv20: range 8"
+           "text": "—"
           }
          ]
         ],
         [
          [
           {
-           "text": "Summons a radiant familiar on a free hex within reach. Scales from level 6 to 20, one small improvement a level: range 2 → 8.",
+           "text": "Summons a radiant ally with 75% of your current stats. It can cast Magic Missile or Life Drain on its own.",
            "muted": true
           }
          ]
@@ -15868,14 +16124,14 @@
         [
          [
           {
-           "text": "Lv8: damage 1D8 · ×1 | Lv15: damage 2D10 · ×1.25 | Lv22: damage 3D10 · ×1.5 · talent Cut Tendon"
+           "text": "weapon +1D8"
           }
          ]
         ],
         [
          [
           {
-           "text": "A trip that cannot be countered: the target bleeds 1D8 on each action and loses 10% of every stat for the rest of the fight. Scales from level 8 to 22, one small improvement a level: damage 1D8 → 3D10; weapon weight 1 → 1.5; talent Cut Tendon (the Trip takes 20% off every stat, not 10%).",
+           "text": "Causes Bleeding (1D8 at the start of each action); −10% to stats for the rest of the battle.",
            "muted": true
           }
          ]
@@ -15909,7 +16165,14 @@
         [
          [
           {
-           "text": "Lv6: damage 2D6 · range 5 · 3 hexes | Lv13: damage 4D6 · range 9 · radius 1 | Lv20: damage 6D6 · range 12 · radius 3",
+           "text": "MAG 10: 6 + 2D6"
+          },
+          {
+           "text": " · MAG 20: 13 + 2D6",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: 27 + 2D6",
            "muted": true
           }
          ]
@@ -15917,7 +16180,7 @@
         [
          [
           {
-           "text": "Bursts on the hex you aim at: everyone in the area takes the same damage, allies too. Needs a clear shot to the hex. Scales from level 6 to 20, one small improvement a level: damage 2D6 → 6D6; range 5 → 12; area 3 hexes → 3 rings.",
+           "text": "Area radius 2.",
            "muted": true
           }
          ]
@@ -15951,14 +16214,39 @@
         [
          [
           {
-           "text": "Lv6: damage 4D6 · 3 hexes · ×1.6 | Lv13: damage 6D6 · radius 3 · ×1.95 | Lv20: damage 9D6 · radius 5 · ×2.3"
+           "text": "Levels 6–8: range 4, area of 61 hexes, duration 2 rounds, damage ⌊⌊MAG / 2⌋ × 1.6⌋ + 4D6"
+          }
+         ],
+         [
+          {
+           "text": "Levels 9–11: range 5, area of 91 hexes, duration 2 rounds, damage ⌊⌊MAG / 2⌋ × 1.8⌋ + 5D6"
+          }
+         ],
+         [
+          {
+           "text": "Levels 12–14: range 6, area of 127 hexes, duration 2 rounds, damage ⌊⌊MAG / 2⌋ × 2⌋ + 6D6"
+          }
+         ],
+         [
+          {
+           "text": "Levels 15–17: range 7, area of 169 hexes, duration 2 rounds, damage ⌊⌊MAG / 2⌋ × 2.2⌋ + 7D6"
+          }
+         ],
+         [
+          {
+           "text": "Levels 18–21: range 8, area of 217 hexes, duration 2 rounds, damage ⌊⌊MAG / 2⌋ × 2.4⌋ + 8D6"
+          }
+         ],
+         [
+          {
+           "text": "Levels 22–30 (capped at 22): range 9, area of 271 hexes, duration 2 rounds, damage ⌊⌊MAG / 2⌋ × 2.6⌋ + 10D6"
           }
          ]
         ],
         [
          [
           {
-           "text": "Holy light around the priest: only the undead in the area take damage, and the ones left standing flee in fear for 2 turns. Scales from level 6 to 20, one small improvement a level: damage 4D6 → 9D6; area 3 hexes → 5 rings; MAG weight 1.6 → 2.3.",
+           "text": "Preview the area around the priest, then confirm or cancel; no target selection. Holy damage and 2 own turns of fear: undead retreat without attacking. Radius grows at every breakpoint from 4 to 9 hexes (61–271 affected cells). Other creature types are completely unaffected.",
            "muted": true
           }
          ]
@@ -15992,14 +16280,14 @@
         [
          [
           {
-           "text": "Lv6: range 2 | Lv13: range 3 | Lv20: range 4"
+           "text": "—"
           }
          ]
         ],
         [
          [
           {
-           "text": "Removes disease and poison from an ally (or yourself) within reach. Scales from level 6 to 20, one small improvement a level: range 2 → 4.",
+           "text": "Cleric T3. Cures disease and poison. Teal light.",
            "muted": true
           }
          ]
@@ -16033,7 +16321,14 @@
         [
          [
           {
-           "text": "Lv7: range 6 · targets 2 | Lv14: damage 2D8 · range 9 · targets 2 | Lv21: damage 3D12 · range 12 · targets 3",
+           "text": "Lv 1: weapon por alvo"
+          },
+          {
+           "text": " · Lv 7: weapon por alvo",
+           "muted": true
+          },
+          {
+           "text": " · Lv 14: weapon + 2D4 por alvo",
            "muted": true
           }
          ]
@@ -16041,7 +16336,7 @@
         [
          [
           {
-           "text": "Several arrows at once, each aimed at a foe (the same one is fine). Scales from level 7 to 21, one small improvement a level: damage 0 → 3D12; range 6 → 12; targets 2 → 3.",
+           "text": "2 targets (3 at level 11), range 6. Damage die increases at levels 8 and 13.",
            "muted": true
           }
          ]
@@ -16116,7 +16411,7 @@
         [
          [
           {
-           "text": "T5",
+           "text": "T4",
            "muted": true
           }
          ]
@@ -16124,14 +16419,14 @@
         [
          [
           {
-           "text": "Lv11: range 2 | Lv18: range 5 | Lv25: range 8"
+           "text": "—"
           }
          ]
         ],
         [
          [
           {
-           "text": "Summons the Titan Familiar on a free hex within reach. Scales from level 11 to 25, one small improvement a level: range 2 → 8.",
+           "text": "Summons an ally with 100% of your current stats. It can cast Fireball on its own.",
            "muted": true
           }
          ]
@@ -16231,7 +16526,14 @@
         [
          [
           {
-           "text": "Lv8: damage 2D4 · range 6 · 3 hexes · ×1.4 | Lv15: damage 4D4 · range 9 · radius 1 · ×1.5 | Lv22: damage 5D4 · range 12 · radius 2 · ×1.7",
+           "text": "MAG 10: center 7 + 2D4 · adjacente 5 + 1D4"
+          },
+          {
+           "text": " · MAG 20: center 14 + 2D4 · adjacente 10 + 1D4",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: center 28 + 2D4 · adjacente 20 + 1D4",
            "muted": true
           }
          ]
@@ -16239,7 +16541,7 @@
         [
          [
           {
-           "text": "Holy light on the aimed hex: the centre takes the strong hit, the area around less, allies too. Scales from level 8 to 22, one small improvement a level: damage 2D4 → 5D4; range 6 → 12; area 3 hexes → 2 rings; MAG weight 1.4 → 1.7.",
+           "text": "Salazar only. Range 6; radius 1; Holy damage, affecting up to six adjacent hexes.",
            "muted": true
           }
          ]
@@ -16273,7 +16575,14 @@
         [
          [
           {
-           "text": "Lv11: damage 1D8 · range 1 · ×1.2 | Lv18: damage 3D8 · range 2 · ×1.4 | Lv25: damage 4D8 · range 3 · ×1.65",
+           "text": "MAG 10: 6 + 1D8 (healing)"
+          },
+          {
+           "text": " · MAG 20: 12 + 1D8 (healing)",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: 24 + 1D8 (healing)",
            "muted": true
           }
          ]
@@ -16281,7 +16590,7 @@
         [
          [
           {
-           "text": "Laying on of hands: heals an ally close by. Each point of the Healing skill adds 1% to it. Scales from level 11 to 25, one small improvement a level: damage 1D8 → 4D8; range 1 → 3; MAG weight 1.2 → 1.65.",
+           "text": "Between Minor and Medium Heal; exclusive uses for the Paladin.",
            "muted": true
           }
          ]
@@ -16315,7 +16624,14 @@
         [
          [
           {
-           "text": "Lv11: damage 1D8 · hexes wide 1 · ×1 | Lv18: damage 2D10 · hexes wide 2 · ×1.2 | Lv25: damage 2D12 · hexes wide 3 · ×1.4 · talent Knock Down",
+           "text": "Lv 1: weapon + 1D8"
+          },
+          {
+           "text": " · Lv 7: weapon + 1D8",
+           "muted": true
+          },
+          {
+           "text": " · Lv 14: weapon + 1D8",
            "muted": true
           }
          ]
@@ -16323,7 +16639,7 @@
         [
          [
           {
-           "text": "A shoulder charge (free hands, no shield) over the hexes in front of you: damage and a 2-hex push. Scales from level 11 to 25, one small improvement a level: damage 1D8 → 2D12; hexes wide 1 → 3; weapon weight 1 → 1.4; talent Knock Down (the struck are Off balance (no counter) until their next turn).",
+           "text": "Requires no shield. Hex arc grows to 4; knocks targets back 2 hexes.",
            "muted": true
           }
          ]
@@ -16357,7 +16673,14 @@
         [
          [
           {
-           "text": "Lv15: damage 3D12 · range 7 · ×3 | Lv22: damage 4D12 · range 10 · ×3.3 | Lv29: damage 6D12 · range 12 · ×3.6",
+           "text": "MAG 10: 15 + 3D12+8"
+          },
+          {
+           "text": " · MAG 20: 30 + 3D12+8",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: 60 + 3D12+8",
            "muted": true
           }
          ]
@@ -16365,7 +16688,7 @@
         [
          [
           {
-           "text": "A greater bolt at a foe; the shock stays on it and strikes it again, harder, at the start of its turn. Scales from level 15 to 29, one small improvement a level: damage 3D12 → 6D12; range 7 → 12; MAG weight 3 → 3.6.",
+           "text": "Elementalist T5. Pierces cover and barricades. Echo: 2D12+8.",
            "muted": true
           }
          ]
@@ -16399,7 +16722,14 @@
         [
          [
           {
-           "text": "Lv11: damage 1D10 · range 7 · 3 hexes · ×1.5 | Lv18: damage 2D10 · range 10 · radius 2 · ×1.6 | Lv25: damage 3D10 · range 12 · radius 4 · ×1.8",
+           "text": "MAG 10: center 7 + 1D10 · splash 5 + 1D6"
+          },
+          {
+           "text": " · MAG 20: center 15 + 1D10 · splash 11 + 1D6",
+           "muted": true
+          },
+          {
+           "text": " · MAG 40: center 30 + 1D10 · splash 22 + 1D6",
            "muted": true
           }
          ]
@@ -16407,7 +16737,7 @@
         [
          [
           {
-           "text": "Poisonous acid on the aimed hex: whoever stands in the centre takes the strong hit, the others in the area the splash; all are poisoned, allies too. Scales from level 11 to 25, one small improvement a level: damage 1D10 → 3D10; range 7 → 12; area 3 hexes → 4 rings; MAG weight 1.5 → 1.8.",
+           "text": "Range 7. Medium Poison: 1D10 at the start of each turn until cured. Radius 3; affects both sides.",
            "muted": true
           }
          ]
@@ -16441,7 +16771,14 @@
         [
          [
           {
-           "text": "Lv15: 3 hexes · protection % 20 · rounds 3 | Lv22: radius 1 · protection % 28 · rounds 5 | Lv29: radius 2 · protection % 36 · rounds 7",
+           "text": "Lv 1: radius 1, −20% damage, 3 rounds"
+          },
+          {
+           "text": " · Lv 7: radius 1, −20% damage, 3 rounds",
+           "muted": true
+          },
+          {
+           "text": " · Lv 14: radius 1, −20% damage, 3 rounds",
            "muted": true
           }
          ]
@@ -16449,7 +16786,7 @@
         [
          [
           {
-           "text": "An aura around you: allies inside it take less damage while it lasts. Scales from level 15 to 29, one small improvement a level: area 3 hexes → 2 rings; protection % 20 → 36; rounds 3 → 7.",
+           "text": "Instant, centered on self — no aiming. Scales at levels 20, 22, 24, 26, 28, and 30.",
            "muted": true
           }
          ]
@@ -16483,7 +16820,14 @@
         [
          [
           {
-           "text": "Lv15: 3 hexes · intimidation % 20 · rounds 3 | Lv22: radius 1 · intimidation % 30 · rounds 4 | Lv29: radius 2 · intimidation % 38 · rounds 6",
+           "text": "Lv 1: radius 1, +20% damage, 3 rounds"
+          },
+          {
+           "text": " · Lv 7: radius 1, +20% damage, 3 rounds",
+           "muted": true
+          },
+          {
+           "text": " · Lv 14: radius 1, +20% damage, 3 rounds",
            "muted": true
           }
          ]
@@ -16491,7 +16835,7 @@
         [
          [
           {
-           "text": "A presence around you: foes inside it take more damage while it lasts. Scales from level 15 to 29, one small improvement a level: area 3 hexes → 2 rings; intimidation % 20 → 38; rounds 3 → 6.",
+           "text": "Instant, centered on self — no aiming. The opposite of Aura of Protection, with the same scaling.",
            "muted": true
           }
          ]
@@ -16525,7 +16869,14 @@
         [
          [
           {
-           "text": "Lv18: damage 1D10 · range 4 | Lv25: damage 3D12 · range 8 | Lv32: damage 6D12 · range 12",
+           "text": "Lv 1: weapon + MAG/2 + 1D10"
+          },
+          {
+           "text": " · Lv 7: weapon + MAG/2 + 1D10",
+           "muted": true
+          },
+          {
+           "text": " · Lv 14: weapon + MAG/2 + 1D10",
            "muted": true
           }
          ]
@@ -16533,7 +16884,7 @@
         [
          [
           {
-           "text": "A straight line of holy wrath from you: the foes on it take the damage, plus half your MAG. Scales from level 18 to 32, one small improvement a level: damage 1D10 → 6D12; range 4 → 12.",
+           "text": "Aimed straight line, range 4 — never hits allies. Damage die increases at levels 19, 22, 26, and 30.",
            "muted": true
           }
          ]
@@ -16567,7 +16918,14 @@
         [
          [
           {
-           "text": "Lv18: damage 1D10 · range 4 · ×1 | Lv25: damage 2D12 · range 6 · ×1.15 | Lv32: damage 3D12 · range 8 · ×1.3 · talent Trample",
+           "text": "Lv 1: weapon + 1D10"
+          },
+          {
+           "text": " · Lv 7: weapon + 1D10",
+           "muted": true
+          },
+          {
+           "text": " · Lv 14: weapon + 1D10",
            "muted": true
           }
          ]
@@ -16575,7 +16933,7 @@
         [
          [
           {
-           "text": "A straight-line charge: everyone on it takes the blow, allies too. Scales from level 18 to 32, one small improvement a level: damage 1D10 → 3D12; range 4 → 8; weapon weight 1 → 1.3; talent Trample (the struck are pushed 1 hex).",
+           "text": "Aimed straight line, range 4 — hits allies too. Damage die increases at levels 21, 24, 27, and 30.",
            "muted": true
           }
          ]
@@ -16622,7 +16980,7 @@
          "accent": true
         },
         {
-         "text": ": Clamp (75% + weapon proficiency + hit bonus + 10% from behind + (attacker DEX − defender DEX) ÷ 3 − defender Dodging ÷ 2) to 0%–100%."
+         "text": ": Clamp (75% + weapon proficiency + hit bonus − defender DEX) to 0%–100%."
         }
        ],
        [
@@ -16779,7 +17137,7 @@
       "mt": 0.5,
       "spans": [
        {
-        "text": "Accuracy example: proficiency 20, no hit bonus, attacker DEX 21, defender DEX 15 → 75 + 20 + (21 − 15) ÷ 3 = 97% chance. The other way round, attacker DEX 15 against defender DEX 21 → 75 + 20 − 2 = 93%. At 100 proficiency, base accuracy reaches 175%; the final cap is applied after DEX."
+        "text": "Accuracy example: proficiency 20, no hit bonus, defender DEX 15 → 75 + 20 − 15 = 80% chance. At 100 proficiency, base accuracy reaches 175%; the final cap is applied after subtracting defender DEX."
        }
       ]
      },
@@ -16793,11 +17151,11 @@
       "lines": [
        [
         {
-         "text": "Hit and dodge",
+         "text": "Accuracy against you",
          "accent": true
         },
         {
-         "text": ": every 3 DEX the attacker has over the target adds 1% to hit; every 3 under takes 1% off. Clamped to 0%–100%."
+         "text": ": attack chance − your DEX, clamped to 0%–100%."
         }
        ],
        [

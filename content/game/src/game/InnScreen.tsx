@@ -1295,7 +1295,7 @@ function SmithIntroScreen({ onSkip }: { muted: boolean; onMute: () => void; onSk
   // here only affects this video and never carries over to the rest of the game.
   const [muted, setLocalMuted] = useState(false);
   const prefs = useGamePreferences();
-  const subtitleTracks = CUTSCENE_SUBTITLES["/game/smith-intro.mp4"];
+  const subtitleTracks = CUTSCENE_SUBTITLES["/game/smith-intro.webm"];
   const selectedSubtitle = prefs.subtitles ? subtitleTracks?.[prefs.subtitleLanguage] : undefined;
   useEffect(() => {
     syncSubtitles(ref.current?.textTracks, prefs.subtitles, prefs.subtitleLanguage);
@@ -1334,7 +1334,7 @@ function SmithIntroScreen({ onSkip }: { muted: boolean; onMute: () => void; onSk
   return (
     <section className="relative h-dvh w-dvw bg-black overflow-hidden">
       <div className="cutscene-stage">
-        <video ref={ref} src="/game/smith-intro.mp4" playsInline autoPlay preload="auto" onEnded={onSkip} onError={onSkip}>
+        <video ref={ref} src="/game/smith-intro.webm" playsInline autoPlay preload="auto" onEnded={onSkip} onError={onSkip}>
           {selectedSubtitle && <track key={selectedSubtitle} kind="subtitles" src={selectedSubtitle} srcLang={prefs.subtitleLanguage === "pt" ? "pt-BR" : "en"} label={prefs.subtitleLanguage === "pt" ? "Português (Brasil)" : "English"} default onLoad={() => syncSubtitles(ref.current?.textTracks, prefs.subtitles, prefs.subtitleLanguage)} />}
         </video>
       </div>

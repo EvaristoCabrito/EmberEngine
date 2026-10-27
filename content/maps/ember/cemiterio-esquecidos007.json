@@ -8768,13 +8768,6 @@
         "blocksPath": true
       },
       {
-        "id": "ember-nature-cracked-boulder",
-        "x": 12,
-        "y": 12,
-        "rot": 4,
-        "blocksPath": true
-      },
-      {
         "id": "ember-winter-frost-dead-tree",
         "x": 12,
         "y": 13,
@@ -9131,46 +9124,18 @@
         "y": 3,
         "blocksPath": true
       },
-      {
-        "id": "ember-crypt-deity-statue",
-        "x": 30,
-        "y": 2,
-        "blocksPath": true
-      },
+      
       {
         "id": "ember-structures-scattered-blocks",
         "x": 23,
         "y": 3,
         "blocksPath": true
       },
-      {
-        "id": "ember-crypt-statue-fragments",
-        "x": 37,
-        "y": 5,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-crypt-collapsed-ceiling",
-        "x": 24,
-        "y": 8,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-crypt-collapsed-ceiling",
-        "x": 36,
-        "y": 9,
-        "blocksPath": true
-      },
+      
       {
         "id": "ember-structures-scattered-blocks",
         "x": 26,
         "y": 10,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-crypt-collapsed-ceiling",
-        "x": 34,
-        "y": 2,
         "blocksPath": true
       },
       {
@@ -9185,12 +9150,7 @@
         "y": 11,
         "blocksPath": true
       },
-      {
-        "id": "ember-crypt-stone-pulpit",
-        "x": 31,
-        "y": 4,
-        "blocksPath": true
-      },
+      
       {
         "id": "stone-hut",
         "x": 43,
@@ -9444,50 +9404,14 @@
         "blocksPath": true
       },
       {
-        "id": "ember-extra-grave-marker-v03",
-        "x": 18,
-        "y": 38,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-extra-grave-marker-v03",
-        "x": 20,
-        "y": 38,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-extra-grave-marker-v03",
-        "x": 22,
-        "y": 38,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-extra-grave-marker-v03",
-        "x": 24,
-        "y": 38,
-        "blocksPath": true
-      },
-      {
         "id": "ember-crypt-stone-tomb-v02",
         "x": 18,
         "y": 40,
         "blocksPath": true
       },
       {
-        "id": "ember-extra-grave-marker-v03",
-        "x": 20,
-        "y": 40,
-        "blocksPath": true
-      },
-      {
         "id": "ember-crypt-stone-tomb-v02",
         "x": 22,
-        "y": 40,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-extra-grave-marker-v03",
-        "x": 24,
         "y": 40,
         "blocksPath": true
       },
@@ -9498,39 +9422,9 @@
         "blocksPath": true
       },
       {
-        "id": "ember-extra-grave-marker-v03",
-        "x": 35,
-        "y": 38,
-        "blocksPath": true
-      },
-      {
         "id": "ember-crypt-stone-tomb-v02",
         "x": 37,
         "y": 38,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-extra-grave-marker-v03",
-        "x": 39,
-        "y": 38,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-extra-grave-marker-v03",
-        "x": 41,
-        "y": 38,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-extra-grave-marker-v03",
-        "x": 39,
-        "y": 40,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-extra-grave-marker-v03",
-        "x": 41,
-        "y": 40,
         "blocksPath": true
       },
       {
@@ -9651,18 +9545,6 @@
         "id": "ember-crypt-ancient-tombstone-v02",
         "x": 24,
         "y": 22,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-extra-grave-marker-v03",
-        "x": 16,
-        "y": 14,
-        "blocksPath": true
-      },
-      {
-        "id": "ember-extra-grave-marker-v03",
-        "x": 16,
-        "y": 18,
         "blocksPath": true
       },
       {
@@ -10583,11 +10465,6 @@
         "blocksPath": true
       },
       {
-        "id": "ember-crypt-lone-skull",
-        "x": 7,
-        "y": 11
-      },
-      {
         "id": "ember-dungeon-bone-pile",
         "x": 6,
         "y": 14
@@ -10596,11 +10473,6 @@
         "id": "ember-dungeon-bone-pile",
         "x": 10,
         "y": 16
-      },
-      {
-        "id": "ember-crypt-lone-skull",
-        "x": 9,
-        "y": 10
       },
       {
         "id": "locked-chest",

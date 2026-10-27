@@ -51,7 +51,8 @@ function thumbFor(terrain: TerrainId, variant: number): string {
 
 /** Baked ground variants appear beside the original surface and keep their own saved indices. */
 function groundVersions(terrain: TerrainId): { label: string; variant: number; thumb: string }[] {
-  const list = [{ variant: 0, thumb: thumbFor(terrain, 0) }];
+  // Bosque 001 duplicates the base swatch; keep its saved index valid, but omit it from the picker.
+  const list = terrain === "woods" ? [] : [{ variant: 0, thumb: thumbFor(terrain, 0) }];
   if (terrain === "plains") list.push({ variant: 48, thumb: thumbFor("plains", 48) });
   const claude = CLAUDE_VARIANT[terrain];
   if (claude !== undefined) list.push({ variant: claude, thumb: thumbFor(terrain, claude) });
@@ -481,7 +482,7 @@ const BUILDER_TERRAIN: TerrainId[] = [
  * than deleted: variant indices are positional, so dropping one would shift every later
  * variant and repaint saved maps. plains 15 = "Trilha de Terra". */
 const HIDDEN_VARIANTS: Partial<Record<TerrainId, number[]>> = {
-  plains: [15, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38],
+  plains: [15, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 57, 59, 60],
   // Keep these saved-map indices intact while removing them from the water picker.
   water: [3, 7],
 };
@@ -2006,6 +2007,7 @@ export function MapEditorScreen({
     .sort((a, b) => Number(a.model3d === "wall") - Number(b.model3d === "wall"));
   const decorationSectionFor = (id: string) => {
     if (DECORATIONS[id]?.exitKind) return "Waypoints";
+    if (id === "prop-3d-vau-stone-v01" || id === "prop-3d-vau-red-outcrop-v01") return "Pedras e relevo";
     if (id === "merchant-covered-cart-001" || id === "city-market-stall" || id === "city-market-stall-2" || id === "city-market-wagon-new") return "Shops";
     // Everything that emits light (see LIGHT_DEFS), burning houses included, in one place.
     if (LIGHT_DEFS[id]) return "Lights";
@@ -2809,7 +2811,7 @@ export function MapEditorScreen({
                           setVariant((v) => ((v >= 21 && v <= 38 && v !== 22) || v === ENGINE2_V3_CITY_VARIANT || v === 54 || v === 61 ? v : ENGINE2_V3_CITY_VARIANT));
                         } else {
                           setCityMode(false);
-                          setVariant((v) => terrain === 'barricade' ? tileVariant : (terrain === "plains" && ((v >= 21 && v <= 38) || v === ENGINE2_V3_CITY_VARIANT || v === 54) ? 0 : Math.min(v, (TILE_VARIANT_COUNT[terrain] ?? 1) - 1)));
+                          setVariant((v) => terrain === 'barricade' ? tileVariant : terrain === "woods" && (v === 0 || v >= 69) ? 66 : terrain === "plains" && ((v >= 21 && v <= 38) || v === ENGINE2_V3_CITY_VARIANT || v === 54) ? 0 : Math.min(v, (TILE_VARIANT_COUNT[terrain] ?? 1) - 1));
                         }
                       }}
                       className={`text-xs px-1.5 py-1 rounded-md border flex items-center gap-1.5 ${selected ? "border-accent" : "border-border"}`}

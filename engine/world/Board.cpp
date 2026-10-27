@@ -86,6 +86,14 @@ std::optional<BoardData> BoardData::load(const std::filesystem::path& boardJson)
     return std::nullopt;
   }
   d.engine2LayerCount = d.groundLayerCount;
+  for (const EmberGroundVariant& v : kEmberGroundVariants) {
+    GroundLayerSource s;
+    s.key = v.key;
+    s.file = v.file;
+    s.tile = v.tile;
+    d.groundVariantLayers.push_back({std::string(v.key), std::string(v.terrain), v.variant, 0.0});
+    d.groundLayers.push_back(std::move(s));
+  }
   for (const EmberGroundTile& t : kEmberGroundTiles) {
     GroundLayerSource s;
     s.key = t.key;
@@ -175,6 +183,7 @@ std::optional<MapDraft> MapDraft::fromJson(const json& d) {
   if (d.contains("wispColor") && d["wispColor"].is_number()) m.wispColor = d["wispColor"].get<unsigned>();
   m.bloomIntensity = num("bloomIntensity", 0.0f);
   if (d.contains("backgroundImage") && d["backgroundImage"].is_string()) m.backgroundImage = d["backgroundImage"].get<std::string>();
+  if (d.contains("groundImage") && d["groundImage"].is_string()) m.groundImage = d["groundImage"].get<std::string>();
   if (d.contains("sunIntensity") && d["sunIntensity"].is_number()) m.sunIntensity = d["sunIntensity"].get<double>();
   if (d.contains("ambientIntensity") && d["ambientIntensity"].is_number()) m.ambientIntensity = d["ambientIntensity"].get<double>();
   if (d.contains("bloomIntensity") && d["bloomIntensity"].is_number()) m.bloomSlider = d["bloomIntensity"].get<double>();

@@ -42,6 +42,9 @@ def main():
                      os.path.join(ROOT, "build", "engine2-scenes", "walk-strides.json")]
     strides = [load(p) if os.path.exists(p) else None for p in strides_paths]
 
+    # poses a whole set below takes over (salazar-v3's walk over salazar-final's move, 2026-10-25): on a roster this script has
+    # already patched they point at that set, so the old clip's override finds nothing there and has nothing to do
+    by_sets = {(st["hero"], pose) for st in over.get("sets", []) if "hero" in st and not st.get("unused") for pose in st.get("poses", {})}
     for c in over["clips"]:
         pattern = os.path.join(ROOT, c["frames"]["pattern"]).replace("\\", "/")
         count = c["frames"]["count"]
@@ -81,7 +84,7 @@ def main():
                                        "clip": c["clip"], "box": want["box"], "nat": want["nat"], "crop": want["crop"],
                                        "frames": count, "pace": pace, "doneAt": -1})
                     done += 1
-            if not done:
+            if not done and (want["hero"], want["pose"]) not in by_sets:
                 raise SystemExit(f"{want['hero']} {want['pose']}: not in {roster_path}")
         for table in strides:
             if table is not None and "strides" in c:

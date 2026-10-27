@@ -13,6 +13,7 @@ namespace ember {
 
 enum class VfxElement { Fire, Frost, Lightning, Poison, Arcane, Holy, Shadow, Ember };
 const char* vfxElementName(VfxElement e);  // "fire", "frost", ... (the sheets' file names)
+const char* vfxElementLabel(VfxElement e); // Portuguese names for the preview menus
 
 struct ElementSpritesV2 {
   // The three sheets: main, secondary, particles (VfxFlipbook of each cooked clip).

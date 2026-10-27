@@ -456,19 +456,22 @@ void CSResolve(uint2 pixel : SV_DispatchThreadID) {
 
   const MaterialGpu m = loadMaterial(f, mesh.materialBase + clusterMaterial(cluster));
   SamplerState s = gSamplers[f.materialSampler];
+  const float2 materialUv = flipbookUv(uv, m.flags, inst.pad);
+  const float2 materialUvDx = flipbookGradient(uvDx, m.flags);
+  const float2 materialUvDy = flipbookGradient(uvDy, m.flags);
   float4 baseColor = m.baseColor * vertexColor;
   if (m.baseColorTexture != kNoTexture)
-    baseColor *= gTextures[NonUniformResourceIndex(m.baseColorTexture)].SampleGrad(s, uv, uvDx, uvDy);
+    baseColor *= gTextures[NonUniformResourceIndex(m.baseColorTexture)].SampleGrad(s, materialUv, materialUvDx, materialUvDy);
   float occlusion = 1.0, roughness = m.roughness, metallic = m.metallic;
   if (m.ormTexture != kNoTexture) {
-    const float3 orm = gTextures[NonUniformResourceIndex(m.ormTexture)].SampleGrad(s, uv, uvDx, uvDy).rgb;
+    const float3 orm = gTextures[NonUniformResourceIndex(m.ormTexture)].SampleGrad(s, materialUv, materialUvDx, materialUvDy).rgb;
     occlusion = lerp(1.0, orm.r, m.occlusionStrength);
     roughness *= orm.g;
     metallic *= orm.b;
   }
   float3 n = normal;
   if (m.normalTexture != kNoTexture) {
-    float2 xy = gTextures[NonUniformResourceIndex(m.normalTexture)].SampleGrad(s, uv, uvDx, uvDy).rg * 2.0 - 1.0;
+    float2 xy = gTextures[NonUniformResourceIndex(m.normalTexture)].SampleGrad(s, materialUv, materialUvDx, materialUvDy).rg * 2.0 - 1.0;
     xy *= m.normalScale;
     const float3 tn = float3(xy, sqrt(saturate(1.0 - dot(xy, xy))));
     const float3 bitangent = cross(normal, tangentWorld) * tangent.w;
@@ -476,7 +479,7 @@ void CSResolve(uint2 pixel : SV_DispatchThreadID) {
   }
   float3 emissive = m.emissive;
   if (m.emissiveTexture != kNoTexture)
-    emissive *= gTextures[NonUniformResourceIndex(m.emissiveTexture)].SampleGrad(s, uv, uvDx, uvDy).rgb;
+    emissive *= gTextures[NonUniformResourceIndex(m.emissiveTexture)].SampleGrad(s, materialUv, materialUvDx, materialUvDy).rgb;
 
   // Provisional lighting (lighting.hlsli): sun and a sky/ground hemisphere.
   const float3 view = normalize(f.cameraPosition - position);

@@ -9,12 +9,12 @@ import type { TerrainId } from "./types";
 export const TILE_VARIANT_COUNT: Record<TerrainId, number> = {
   // 049 is the first numbered Engine2 PBR plains base. Keep every earlier index stable.
   // Claude's baked tiles remain at their original indices; the Engine2 V3 material versions append after them.
-  plains: 66,
-  woods: 66,
+  plains: 76,
+  woods: 69,
   ruins: 11,
   water: 31,
   ember: 9,
-  hill: 8,
+  hill: 9,
   flame: 7,
   column: 6,
   nave: 22,
@@ -26,8 +26,8 @@ export const TILE_VARIANT_COUNT: Record<TerrainId, number> = {
   snow: 22,
 };
 
-/** Append-only photographic materials. Never reuse an existing saved-map variant index.
- * Each has separate normal/roughness data and geometric relief; source artwork stays intact. */
+/** Append-only ground materials. Never reuse an existing saved-map variant index.
+ * Normal, roughness, and relief inputs are optional; source artwork stays intact. */
 export const GROUND_VARIANT_LAYERS = [
   { key: 'variant-plains-meadow-v2', terrain: 'plains', variant: 52, file: 'plains-meadow-v2.png', label: 'Meadow II', relief: 0.08 },
   // moved from Barricada to Bosque on request (no saved map used it as barricade 2)
@@ -47,8 +47,7 @@ export const GROUND_VARIANT_LAYERS = [
   { key: 'photo-column', terrain: 'column', variant: 5, file: '../ground-engine2-v4/column/color.png', label: 'Coluna · Photo 3D', relief: 0.16 },
   { key: 'photo-nave', terrain: 'nave', variant: 21, file: '../ground-engine2-v4/nave/color.png', label: 'Laje · Photo 3D', relief: 0.06 },
   { key: 'photo-door', terrain: 'door', variant: 3, file: '../ground-engine2-v4/door/color.png', label: 'Porta · Photo 3D', relief: 0.06 },
-  { key: 'variant-plains-smooth', terrain: 'plains', variant: 56, file: '../ground-claude/049-plains/color.png', label: 'Planicie suave 007', relief: 0 },
-  { key: 'variant-plains-real-grass', terrain: 'plains', variant: 57, file: 'plains-real-grass-008-reference.png', label: 'Planicie real 008', relief: 0 },
+  { key: 'variant-plains-real-grass', terrain: 'plains', variant: 57, file: 'plains-real-grass-008.png', label: 'Planície real 008', relief: 0 },
   { key: 'variant-plains-real-grass-009', terrain: 'plains', variant: 58, file: 'plains-real-grass-009.png', label: 'Planicie real 009', relief: 0 },
   { key: 'variant-plains-meadow-3d', terrain: 'plains', variant: 59, file: 'plains-real-grass-008-reference.png', label: 'Prado 3D 010', relief: 0 },
   { key: 'variant-plains-tall-3d', terrain: 'plains', variant: 60, file: 'plains-real-grass-008-reference.png', label: 'Grama alta 3D 011', relief: 0 },
@@ -67,6 +66,15 @@ export const GROUND_VARIANT_LAYERS = [
   { key: 'variant-wisp-crossing-leaf-litter-v01', terrain: 'plains', variant: 62, file: 'wisp-forest-leaf-litter-v01.png', label: 'Wisp Crossing · Folhas mortas', relief: 0 },
   { key: 'variant-wisp-crossing-root-soil-v01', terrain: 'plains', variant: 63, file: 'wisp-forest-root-soil-v01.png', label: 'Wisp Crossing · Raízes expostas', relief: 0 },
   { key: 'variant-wisp-crossing-ash-litter-v01', terrain: 'plains', variant: 64, file: 'wisp-forest-ash-litter-v01.png', label: 'Wisp Crossing · Cinza e folhas', relief: 0 },
+  { key: 'variant-plains-meadow-natural-v01', terrain: 'plains', variant: 66, file: 'plains-meadow-natural-v01.png', label: 'Planície natural · I', relief: 0 },
+  { key: 'variant-plains-meadow-natural-v02', terrain: 'plains', variant: 67, file: 'plains-meadow-natural-v02.png', label: 'Planície natural · II', relief: 0 },
+  { key: 'variant-plains-meadow-scrub-rare-v01', terrain: 'plains', variant: 68, file: 'plains-meadow-scrub-rare-v01.png', label: 'Planície rala · rara', relief: 0 },
+  { key: 'variant-plains-vau-grass-v01', terrain: 'plains', variant: 69, file: 'plains-vau-grass-v01.png', label: 'Vau · grama verde', relief: 0 },
+  { key: 'variant-bosque-morto-moss-v01', terrain: 'woods', variant: 66, file: 'bosque-morto-moss-v01.png', label: 'Bosque Morto · Musgo', relief: 0 },
+  { key: 'variant-bosque-morto-ash-light-v01', terrain: 'woods', variant: 67, file: 'deep-ashen-forest-loose-ash-tile-v01.png', label: 'Cinzas claras · piso completo', relief: 0 },
+  { key: 'variant-bosque-morto-ash-dark-v01', terrain: 'woods', variant: 68, file: 'deep-ashen-forest-ash-tile-v01.png', label: 'Cinzas escuras · piso completo', relief: 0 },
+  { key: 'variant-bosque-morto-litter-v01', terrain: 'plains', variant: 75, file: 'bosque-morto-litter-v01.png', label: 'Bosque Morto · Folhas', relief: 0 },
+  { key: 'variant-bosque-morto-roots-v01', terrain: 'hill', variant: 8, file: 'bosque-morto-roots-v01.png', label: 'Bosque Morto · Raízes', relief: 0 },
 ] as const;
 
 /** Stable lookup for new per-variant 3D material layers. */
@@ -100,6 +108,7 @@ export function isGroundTileVariant(id: TerrainId, variant: number): boolean {
   return id !== "column" && (
     ENGINE2_V3_GROUND_VARIANTS.some((entry) => entry.terrain === id && entry.variant === variant) ||
     GROUND_VARIANT_LAYERS.some((entry) => entry.terrain === id && entry.variant === variant) ||
+    (id === "plains" && variant >= 70 && variant <= 74) ||
     HEX_GROUND_001[id]?.variant === variant ||
     (id === "woods" && (variant === 10 || variant === 11)) ||
     (id === "water" && variant === 23) ||
@@ -134,6 +143,12 @@ export const HEX_GROUND_001: Partial<Record<TerrainId, { variant: number; file: 
  * Two variants of the same terrain differ only in art, so this is the only way to tell
  * from a painted map which of them a cell is actually using. */
 export function tileVariantName(id: TerrainId, variant: number): string {
+  if (id === "plains" && variant === 56) return "";
+  if (id === "plains" && variant === 70) return "Capim denso de planície";
+  if (id === "plains" && variant === 71) return "Capim de planície · V2 seamless";
+  if (id === "plains" && variant === 72) return "Capim de planície · V3";
+  if (id === "plains" && variant === 73) return "Capim de planície · V1 seamless";
+  if (id === "plains" && variant === 74) return "Capim de planície · V3 seamless";
   const addedGround = GROUND_VARIANT_LAYERS.find((entry) => entry.terrain === id && entry.variant === variant);
   if (addedGround) return addedGround.label;
   const engine2V3 = ENGINE2_V3_GROUND_VARIANTS.find((entry) => entry.terrain === id && entry.variant === variant);
@@ -198,12 +213,17 @@ export function tileVariantName(id: TerrainId, variant: number): string {
 }
 
 export function isHexGroundVariant(id: TerrainId, variant: number): boolean {
-  return id !== "column" && (ENGINE2_V3_GROUND_VARIANTS.some((entry) => entry.terrain === id && entry.variant === variant) || GROUND_VARIANT_LAYERS.some((entry) => entry.terrain === id && entry.variant === variant) || (id === "woods" && (variant === 10 || variant === 11)) || (id === "water" && variant === 23) || HEX_GROUND_001[id]?.variant === variant || (id === "plains" && variant >= 39 && variant <= 47) || (id === "snow" && variant >= 16 && variant <= 20) || (id === "nave" && variant >= 3 && variant <= 18));
+  return id !== "column" && (ENGINE2_V3_GROUND_VARIANTS.some((entry) => entry.terrain === id && entry.variant === variant) || GROUND_VARIANT_LAYERS.some((entry) => entry.terrain === id && entry.variant === variant) || (id === "woods" && (variant === 10 || variant === 11)) || (id === "water" && variant === 23) || HEX_GROUND_001[id]?.variant === variant || (id === "plains" && ((variant >= 39 && variant <= 47) || (variant >= 70 && variant <= 74))) || (id === "snow" && variant >= 16 && variant <= 20) || (id === "nave" && variant >= 3 && variant <= 18));
 }
 
 /** Tile-picker previews fall back to the closest photoreal 3D surface when a legacy per-variant
  * image was removed with the retired 2D renderer. */
 export function tileVariantSrc(id: TerrainId, variant: number): string {
+  if (id === "plains" && variant === 70) return "content/ground/plains-grass-ground-v01.png";
+  if (id === "plains" && variant === 71) return "content/ground/plains-grass-ground-v02-seamless.png";
+  if (id === "plains" && variant === 72) return "content/ground/plains-grass-ground-v03.png";
+  if (id === "plains" && variant === 73) return "content/ground/plains-grass-ground-v01-seamless.png";
+  if (id === "plains" && variant === 74) return "content/ground/plains-grass-ground-v03-seamless.png";
   const addedGround = GROUND_VARIANT_LAYERS.find((entry) => entry.terrain === id && entry.variant === variant);
   if (addedGround) return groundVariantMaps(addedGround).color;
   const engine2V3 = ENGINE2_V3_GROUND_VARIANTS.find((entry) => entry.terrain === id && entry.variant === variant);

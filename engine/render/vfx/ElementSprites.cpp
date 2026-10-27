@@ -34,6 +34,11 @@ const char* vfxElementName(VfxElement e) {
   return k[static_cast<int>(e)];
 }
 
+const char* vfxElementLabel(VfxElement e) {
+  static const char* k[8] = {"Fogo", "Gelo", "Raio", "Veneno", "Arcano", "Sagrado", "Sombra", "Brasa"};
+  return k[static_cast<int>(e)];
+}
+
 ElementSpritesV2 ElementSpritesV2::defaults(VfxElement element) {
   // DEFAULT_PIXEL_SETTINGS + PIXEL_DEFAULTS[element] + PIXEL_V2_DEFAULTS[element]: only emissive, opacity and
   // animationSpeed reach the V2 sprites.

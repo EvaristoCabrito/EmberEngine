@@ -204,6 +204,8 @@ bool spellInstant(const std::string& kind);
 bool spellPassive(const std::string& kind);
 // The highest level a class reaches (the Cruzado: 10); every other class the game's own cap (30).
 int classLevelCap(const std::string& classId);
+// The highest level a hero reaches: its class's, or lower for a hero of its own (Selene: 10).
+int heroLevelCap(const std::string& name, const std::string& classId);
 // A spell centred on its caster whose area is shown first, then confirmed (Varredura, Expulsar Mortos-Vivos).
 bool spellSelfArea(const std::string& kind);
 // A spell aimed by direction from the caster (a line or a cone through any hex): every hex is a valid aim, so the window

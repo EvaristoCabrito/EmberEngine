@@ -16,6 +16,7 @@
 namespace ember::e2 {
 
 int classLevelCap(const std::string& classId);  // world/Spells.h (the Cruzado stops at 10)
+int heroLevelCap(const std::string& name, const std::string& classId);  // world/Spells.h (Selene stops at 10)
 
 namespace {
 
@@ -526,7 +527,7 @@ struct Spawner {
       return std::nullopt;
     }
     const json& notorious = r.all()["notoriousLevelBonus"];
-    u.level = side == "player" ? std::min(enemyLevel, classLevelCap(u.classId)) : enemyLevel + (side == "enemy" && notorious.contains(u.name) ? notorious[u.name].get<int>() : 0);
+    u.level = side == "player" ? std::min(enemyLevel, heroLevelCap(u.name, u.classId)) : enemyLevel + (side == "enemy" && notorious.contains(u.name) ? notorious[u.name].get<int>() : 0);
     const json& st = r.row((*cls)["stats"], u.level);
     int hp = st[0].get<int>(), atk = st[1].get<int>(), mag = st[2].get<int>(), def = st[3].get<int>(), dex = st[4].get<int>();
     if (side == "enemy") {

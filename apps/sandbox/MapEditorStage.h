@@ -361,7 +361,26 @@ class MapEditorStage : public Stage {
       for (const e2::Json& h : tr["hidden"]) hidden.insert(h.get<int>());
       for (const e2::Json& v : tr["versions"])
         if (!hidden.contains(v.value("variant", 0))) te.versions.push_back({v.value("variant", 0), s(v, "label"), s(v, "thumb")});
+      if (te.id == "plains") {
+        te.versions.erase(std::remove_if(te.versions.begin(), te.versions.end(), [](const Version& v) { return v.variant == 56; }), te.versions.end());
+        const auto addVersionIfMissing = [&](int variant, std::string label, std::string thumb) {
+          if (std::none_of(te.versions.begin(), te.versions.end(), [&](const Version& v) { return v.variant == variant; }))
+            te.versions.push_back({variant, std::move(label), std::move(thumb)});
+        };
+        addVersionIfMissing(70, "", "content/ground/plains-grass-ground-v01.png");
+        addVersionIfMissing(71, "", "content/ground/plains-grass-ground-v02-seamless.png");
+        addVersionIfMissing(72, "", "content/ground/plains-grass-ground-v03.png");
+        addVersionIfMissing(73, "", "content/ground/plains-grass-ground-v01-seamless.png");
+        addVersionIfMissing(74, "", "content/ground/plains-grass-ground-v03-seamless.png");
+        int label = 1;
+        for (Version& v : te.versions) v.label = std::format("{:03}", label++);
+        te.variantCount = std::max(te.variantCount, 75);
+      }
       if (e.contains("terrainThumb") && e["terrainThumb"].contains(te.id) && e["terrainThumb"][te.id].is_string()) te.thumb = e["terrainThumb"][te.id].get<std::string>();
+      if (te.id == "plains") {
+        te.swatch = "#5f8c28";
+        te.thumb = "content/ground/plains-grass-ground-v01.png";
+      }
       // The water looks as versions of Água (render/BoardGround.h waterLookOfVariant; the user, 2026-10-26): variants 31..33 =
       // Água 01..03, 34 = Água original (every other water tile draws 03, the default); the ground under them the 001 tile's.
       if (te.id == "water") {
@@ -374,9 +393,24 @@ class MapEditorStage : public Stage {
     }
     for (const auto& [id, ti] : e["terrainInfo"].items())
       t.terrainInfo[id] = TerrainEntry{id, s(ti, "name"), {}, {}, {}, ti.value("variantCount", 1), ti.value("height", 0.0), ti.value("passable", true), {}};
+    if (auto plains = t.terrainInfo.find("plains"); plains != t.terrainInfo.end()) plains->second.variantCount = std::max(plains->second.variantCount, 75);
     const e2::Json tileVariantNamesTable = e.value("tileVariantNames", e2::Json::object());  // a copy: items() of a temporary dangles
     for (const auto& [id, names] : tileVariantNamesTable.items())
       for (const e2::Json& n : names) t.variantNames[id].push_back(n.is_string() ? n.get<std::string>() : std::string());
+    std::vector<std::string>& plainsNames = t.variantNames["plains"];
+    plainsNames.resize(std::max<size_t>(plainsNames.size(), 75));
+    plainsNames[56].clear();
+    plainsNames[57] = "Planície real 008";
+    plainsNames[58] = "Planície real 009";
+    plainsNames[66] = "Planície natural · I";
+    plainsNames[67] = "Planície natural · II";
+    plainsNames[68] = "Planície rala · rara";
+    plainsNames[69] = "Vau · grama verde";
+    plainsNames[70] = "Capim denso de planície";
+    plainsNames[71] = "Capim de planície · V2 seamless";
+    plainsNames[72] = "Capim de planície · V3";
+    plainsNames[73] = "Capim de planície · V1 seamless";
+    plainsNames[74] = "Capim de planície · V3 seamless";
     if (auto water = t.terrainInfo.find("water"); water != t.terrainInfo.end())
       water->second.variantCount = std::max(water->second.variantCount, kWaterOriginalVariant + 1);
     std::vector<std::string>& waterNames = t.variantNames["water"];
@@ -1907,6 +1941,7 @@ class MapEditorStage : public Stage {
     drawToolbar();
     ImGui::Separator();
     drawSettings();
+    if (ImGui::CollapsingHeader("Ground e Panorama", ImGuiTreeNodeFlags_DefaultOpen)) drawGroundAndPanorama();
     if (ImGui::CollapsingHeader("Iluminação", ImGuiTreeNodeFlags_DefaultOpen)) drawLighting();
     drawSizeAndModes();
     drawModePanel();
@@ -2208,29 +2243,74 @@ class MapEditorStage : public Stage {
     return count > 0 && count == (maxX - minX + 1) * (maxY - minY + 1);
   }
 
-  void drawLighting() {
+  void drawGroundAndPanorama() {
+    {
+      const bool hasOverride = draft_.contains("groundImage") && draft_["groundImage"].is_string();
+      const std::string current = hasOverride ? draft_["groundImage"].get<std::string>() : std::string{};
+      const std::string shown = !hasOverride ? "Ground padrão do Panorama" : current.empty() ? "Sem Ground" : current;
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("Ground", shown.c_str())) {
+        if (ImGui::Selectable("Ground padrão do Panorama##ground-default", !hasOverride)) beginEdit(), draft_.erase("groundImage");
+        if (ImGui::Selectable("Sem Ground##ground-none", hasOverride && current.empty())) beginEdit(), draft_["groundImage"] = "";
+        for (const std::string& file : groundImageChoices())
+          if (ImGui::Selectable(std::format("{}##ground-{}", file, file).c_str(), hasOverride && current == file)) beginEdit(), draft_["groundImage"] = file;
+        ImGui::EndCombo();
+      }
+      hint("Padrão segue o Ground do Panorama; a lista contém as imagens de Ground registradas.");
+      if (hasOverride && !current.empty())
+        if (const UiImage* img = uiImage(std::filesystem::path("content/backdrops") / std::filesystem::u8path(current))) {
+          const float w = ImGui::GetContentRegionAvail().x, h = 96;
+          const float aspect = static_cast<float>(img->width) / std::max(1.0f, static_cast<float>(img->height));
+          const float vis = std::min(1.0f, (w / h) / aspect), v0 = (1.0f - std::min(1.0f, aspect / (w / h))) * 0.5f;
+          ImGui::Image(img->texture, {w, h}, {(1.0f - vis) * 0.5f, v0}, {(1.0f + vis) * 0.5f, 1.0f - v0});
+        }
+    }
     {
       const std::string current = draft_.contains("backgroundImage") && draft_["backgroundImage"].is_string() ? draft_["backgroundImage"].get<std::string>() : "";
       std::string shown = "Vazio preto", file;
       for (const auto& [id, label, f] : editor_.backgrounds)
         if (id == current) shown = label, file = f;
-      ImGui::SetNextItemWidth(-110);
-      if (ImGui::BeginCombo("Imagem de fundo", shown.c_str())) {
+      ImGui::SetNextItemWidth(-1);
+      if (ImGui::BeginCombo("Panorama", shown.c_str())) {
         if (ImGui::Selectable("Vazio preto", current.empty())) beginEdit(), draft_["backgroundImage"] = "";
         for (const auto& [id, label, f] : editor_.backgrounds)
           if (ImGui::Selectable(std::format("{}##{}", label, id).c_str(), id == current)) beginEdit(), draft_["backgroundImage"] = id;
         ImGui::EndCombo();
       }
-      if (!file.empty())
-        if (const UiImage* img = uiImage(std::filesystem::path("content/backdrops") / std::filesystem::u8path(file))) {
+      if (!file.empty()) {
+        std::filesystem::path preview = std::filesystem::path("content/backdrops") / std::filesystem::u8path(file);
+        if (!std::filesystem::exists(preview)) preview = std::filesystem::path("content/briefings") / std::filesystem::u8path(file);
+        if (const UiImage* img = uiImage(preview)) {
           const float w = ImGui::GetContentRegionAvail().x, h = 96;
           const float aspect = static_cast<float>(img->width) / std::max(1.0f, static_cast<float>(img->height));
           // object-cover: the middle band of the image
           const float vis = std::min(1.0f, (w / h) / aspect), v0 = (1.0f - std::min(1.0f, aspect / (w / h))) * 0.5f;
           ImGui::Image(img->texture, {w, h}, {(1.0f - vis) * 0.5f, v0}, {(1.0f + vis) * 0.5f, 1.0f - v0});
         }
-      hint("Pasta: content/backdrops — JPG, PNG ou WebP");
+      }
+      hint("Panoramas registrados no catálogo do editor: %d", static_cast<int>(editor_.backgrounds.size()));
     }
+  }
+
+  static const std::vector<std::string>& groundImageChoices() {
+    static const std::vector<std::string> files = [] {
+      std::set<std::string> found;
+      std::ifstream in("content/engine2/backdrop-fit.json");
+      const e2::Json fit = in ? e2::Json::parse(in, nullptr, false) : e2::Json();
+      if (fit.is_object() && fit.contains("paintings") && fit["paintings"].is_object())
+        for (const auto& [_, entry] : fit["paintings"].items())
+          if (entry.is_object() && entry.contains("ground") && entry["ground"].is_string())
+            found.insert(entry["ground"].get<std::string>());
+      std::error_code ec;
+      for (std::filesystem::directory_iterator it("content/backdrops", ec), end; !ec && it != end; it.increment(ec))
+        if (it->is_regular_file(ec) && it->path().filename().string().find("-ground-v") != std::string::npos)
+          found.insert(it->path().filename().string());
+      return std::vector<std::string>(found.begin(), found.end());
+    }();
+    return files;
+  }
+
+  void drawLighting() {
     {
       // Subterrâneo (the user, 2026-10-21): the only maps free of the sun, the moon and the sky; saved as "underground": true (an
       // underground map is an interior: environment "indoor"). Externo / Interno take the mark off.
@@ -2403,7 +2483,10 @@ class MapEditorStage : public Stage {
     const bool clicked = ImGui::InvisibleButton(id, {size, size});
     ImDrawList* dl = ImGui::GetWindowDrawList();
     constexpr std::string_view decor = "/game/decorations/";
-    const std::filesystem::path own = thumb.starts_with(decor) ? std::filesystem::path("decoracoes-2d") / thumb.substr(decor.size()) : std::filesystem::path();
+    constexpr std::string_view ownGround = "content/ground/";
+    const std::filesystem::path projectRoot = base_.engine2Public.parent_path().parent_path().parent_path();
+    const std::filesystem::path own = thumb.starts_with(decor) ? std::filesystem::path("decoracoes-2d") / thumb.substr(decor.size())
+                                        : thumb.starts_with(ownGround) ? projectRoot / thumb : std::filesystem::path();
     const UiImage* image = thumb.empty() ? nullptr
                            : uiImage(!own.empty() && std::filesystem::exists(own) ? own : base_.engine2Public / thumb.substr(thumb.starts_with('/') ? 1 : 0));
     if (image) {

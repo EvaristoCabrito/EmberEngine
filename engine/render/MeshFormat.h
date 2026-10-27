@@ -103,6 +103,7 @@ static_assert(sizeof(MeshNode) == 32);
 enum MeshMaterialFlags : uint32_t {
   kMaterialAlphaMask = 1u << 0,    // alpha-tested at alphaCutoff
   kMaterialDoubleSided = 1u << 1,
+  kMaterialFlipbook = 1u << 2,     // 4x4 atlas frame comes from InstanceGpu::pad
 };
 
 // glTF metallic-roughness. Textures are separate assets (TextureFormat.h); 0 = none (factor only).

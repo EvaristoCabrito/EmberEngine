@@ -314,7 +314,7 @@ connectors = [(d['x'], d['y']) for d in decos if d['id'] in ('floor-connector', 
 
 # the hollow's rim: movement does not climb by height, so the ridge's inner ring is closed by solid
 # rocks and dead trees; the cleft is the only way down
-RIM = ['ember-winter-snow-boulder', 'ember-nature-cracked-boulder', 'ember-frost-ice-cracked-rocks', 'ember-winter-frost-dead-tree',
+RIM = ['ember-winter-snow-boulder', 'ember-frost-ice-cracked-rocks', 'ember-winter-frost-dead-tree',
        'ember-forest-dead-tree', 'wilds-thorn-bramble', 'dead-tree', 'wilds-twisted-tree']
 rim_cells = sorted((p for p in cells() if 5.2 < math.hypot(wx(*p) - lx, wz(p[1]) - lz) <= 7.0 and p not in cleft),
                    key=lambda p: math.atan2(wz(p[1]) - lz, wx(*p) - lx))
@@ -354,10 +354,9 @@ for c, r in [(27, 4), (33, 4), (27, 8), (33, 8)]:
 place('ember-dungeon-broken-arch', 29, 3)
 place('ember-crypt-deity-statue', 30, 2)
 for c, r in [(23, 3), (37, 5), (24, 8), (36, 9), (26, 10), (34, 2)]:
-    place(rng.choice(['ember-crypt-collapsed-ceiling', 'ember-crypt-statue-fragments', 'ember-structures-scattered-blocks', 'ember-crypt-column-base']), c, r)
+    place(rng.choice(['ember-crypt-collapsed-ceiling', 'ember-structures-scattered-blocks', 'ember-crypt-column-base']), c, r)
 place('Brazier3', 28, 11, allow_path=True)
 place('Brazier3', 32, 11, allow_path=True)
-place('ember-crypt-stone-pulpit', 31, 4, allow_path=True)
 
 # the mausoleum terrace: the families' tombs in rows, statues, braziers by the door
 for c, r in [(43, 8), (43, 14), (51, 8), (51, 14)]:

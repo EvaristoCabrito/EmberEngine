@@ -96,7 +96,7 @@ async function loadSet(set: Exclude<GroundSet, 'proto'>): Promise<Loaded> {
     if (addedVariant?.key === 'variant-plains-smooth') {
       return { color: await createImageBitmap(await smoothPlainsCanvas()), normal: null, rough: null };
     }
-    if (addedVariant?.key === 'variant-plains-real-grass' || addedVariant?.key === 'variant-plains-real-grass-009' || addedVariant?.key === 'variant-plains-meadow-3d' || addedVariant?.key === 'variant-plains-tall-3d' || addedVariant?.key === 'variant-flame-005-fire' || addedVariant?.key === 'city-stone-paving' || addedVariant?.key === 'city-indoor-wood' || addedVariant?.key === 'laje-021-stone-slabs') {
+    if (addedVariant?.key === 'variant-plains-real-grass' || addedVariant?.key === 'variant-plains-real-grass-009' || addedVariant?.key === 'variant-plains-meadow-3d' || addedVariant?.key === 'variant-plains-tall-3d' || addedVariant?.key === 'variant-flame-005-fire' || addedVariant?.key === 'city-stone-paving' || addedVariant?.key === 'city-indoor-wood' || addedVariant?.key === 'laje-021-stone-slabs' || addedVariant?.key === 'variant-plains-meadow-natural-v01' || addedVariant?.key === 'variant-plains-meadow-natural-v02' || addedVariant?.key === 'variant-plains-meadow-scrub-rare-v01' || addedVariant?.key === 'variant-plains-vau-grass-v01') {
       const color = await bitmap(groundVariantMaps(addedVariant).color);
       if (!color) throw new Error(`Missing grass texture: ${addedVariant.key}`);
       return { color, normal: null, rough: null };

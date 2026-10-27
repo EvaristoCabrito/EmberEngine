@@ -2397,11 +2397,6 @@
         "rot": 0
       },
       {
-        "id": "ember-crypt-iron-grate",
-        "x": 8,
-        "y": 7
-      },
-      {
         "id": "ember-dungeon-pillar-v02",
         "x": 18,
         "y": 7
@@ -2417,19 +2412,9 @@
         "y": 15
       },
       {
-        "id": "ember-crypt-incomplete-skeleton",
-        "x": 7,
-        "y": 22
-      },
-      {
         "id": "ember-crypt-funeral-urns",
         "x": 18,
         "y": 22
-      },
-      {
-        "id": "ember-crypt-lone-skull",
-        "x": 11,
-        "y": 11
       },
       {
         "id": "ember-dungeon-chains",

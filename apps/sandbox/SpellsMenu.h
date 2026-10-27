@@ -19,6 +19,7 @@
 
 #include <imgui.h>
 
+#include <array>
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -180,7 +181,8 @@ class SpellsMenu {
 
   // The window. test(kind, version) casts a spell's version; play(clip) plays one loose effect.
   // `open`: shown opened with every list unfolded (captures).
-  void draw(const std::function<void(const std::string&, int)>& test, const std::function<void(const std::string&)>& play, bool open = false) {
+  void draw(const std::function<void(const std::string&, int)>& test, const std::function<void(const std::string&)>& play,
+            const std::function<void(VfxElement, int)>& previewElement, bool open = false) {
     ImGui::SetNextWindowPos({8, open ? 44.0f : 300.0f}, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowCollapsed(!open, ImGuiCond_FirstUseEver);
     const ImGuiTreeNodeFlags unfold = open ? ImGuiTreeNodeFlags_DefaultOpen : 0;
@@ -205,6 +207,23 @@ class SpellsMenu {
     }
     if (ImGui::CollapsingHeader("Itens", unfold))
       for (const SpellEntry& s : allItems()) spellRow(s, test);
+    if (ImGui::CollapsingHeader("Efeitos elementais", unfold)) {
+      for (int i = 0; i < 8; ++i) {
+        const auto element = static_cast<VfxElement>(i);
+        int& version = elementVersions_[static_cast<size_t>(i)];
+        ImGui::PushID(i);
+        ImGui::SetNextItemWidth(230.0f);
+        const std::string selected = std::format("{} V{}", vfxElementLabel(element), version);
+        if (ImGui::BeginCombo("##elementVersion", selected.c_str())) {
+          for (int choice : {2, 3})
+            if (ImGui::Selectable(std::format("{} V{}", vfxElementLabel(element), choice).c_str(), version == choice)) version = choice;
+          ImGui::EndCombo();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Visualizar")) previewElement(element, version);
+        ImGui::PopID();
+      }
+    }
     if (ImGui::CollapsingHeader("Efeitos soltos", unfold)) {
       for (const Group& g : groups_) {
         int& pick = loosePick_[g.name];
@@ -291,6 +310,7 @@ class SpellsMenu {
   int side_ = 0;                          // the side the menu is choosing for
   std::vector<Group> groups_;
   std::map<std::string, int> loosePick_;
+  std::array<int, 8> elementVersions_{2, 2, 2, 2, 2, 2, 2, 2};
 };
 
 }  // namespace ember

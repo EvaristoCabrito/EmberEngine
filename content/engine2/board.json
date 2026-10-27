@@ -21,7 +21,7 @@
  },
  "terrain": {
   "plains": {
-   "name": "Planície",
+   "name": "PlanÃ­cie",
    "surface": "grass",
    "passable": true
   },
@@ -31,12 +31,12 @@
    "passable": true
   },
   "ruins": {
-   "name": "Ruínas",
+   "name": "RuÃ­nas",
    "surface": "pavers",
    "passable": true
   },
   "water": {
-   "name": "Água",
+   "name": "Ãgua",
    "surface": "gravel",
    "passable": false
   },
@@ -102,7 +102,7 @@
   "door",
   "snow"
  ],
- "groundLayerCount": 46,
+ "groundLayerCount": 49,
  "groundLayers": [
   {
    "index": 0,
@@ -349,20 +349,6 @@
   },
   {
    "index": 31,
-   "key": "variant-plains-smooth",
-   "procedural": "smooth-plains"
-  },
-  {
-   "index": 32,
-   "key": "variant-plains-real-grass",
-   "relief": 0,
-   "color": "/game/ground-variant-tiles/plains-real-grass-008-reference.png",
-   "normal": null,
-   "rough": null,
-   "reliefGrid": null
-  },
-  {
-   "index": 33,
    "key": "variant-plains-real-grass-009",
    "relief": 0,
    "color": "/game/ground-variant-tiles/plains-real-grass-009.png",
@@ -371,25 +357,7 @@
    "reliefGrid": null
   },
   {
-   "index": 34,
-   "key": "variant-plains-meadow-3d",
-   "relief": 0,
-   "color": "/game/ground-variant-tiles/plains-real-grass-008-reference.png",
-   "normal": null,
-   "rough": null,
-   "reliefGrid": null
-  },
-  {
-   "index": 35,
-   "key": "variant-plains-tall-3d",
-   "relief": 0,
-   "color": "/game/ground-variant-tiles/plains-real-grass-008-reference.png",
-   "normal": null,
-   "rough": null,
-   "reliefGrid": null
-  },
-  {
-   "index": 36,
+   "index": 32,
    "key": "variant-flame-005-fire",
    "relief": 0,
    "color": "/game/ground-variant-tiles/flame-005-fire.png",
@@ -398,7 +366,7 @@
    "reliefGrid": null
   },
   {
-   "index": 37,
+   "index": 33,
    "key": "city-stone-paving",
    "relief": 0,
    "color": "/game/ground-variant-tiles/city-stone-paving.png",
@@ -407,7 +375,7 @@
    "reliefGrid": null
   },
   {
-   "index": 38,
+   "index": 34,
    "key": "city-indoor-wood",
    "relief": 0,
    "color": "/game/ground-variant-tiles/city-indoor-wood.png",
@@ -416,7 +384,7 @@
    "reliefGrid": null
   },
   {
-   "index": 39,
+   "index": 35,
    "key": "laje-021-stone-slabs",
    "relief": 0,
    "color": "/game/ground-variant-tiles/laje-021-stone-slabs.png",
@@ -425,7 +393,7 @@
    "reliefGrid": null
   },
   {
-   "index": 40,
+   "index": 36,
    "key": "variant-wisp-forest-leaf-litter-v01",
    "relief": 0,
    "color": "/game/ground-variant-tiles/wisp-forest-leaf-litter-v01.png",
@@ -434,7 +402,7 @@
    "reliefGrid": null
   },
   {
-   "index": 41,
+   "index": 37,
    "key": "variant-wisp-forest-root-soil-v01",
    "relief": 0,
    "color": "/game/ground-variant-tiles/wisp-forest-root-soil-v01.png",
@@ -443,7 +411,7 @@
    "reliefGrid": null
   },
   {
-   "index": 42,
+   "index": 38,
    "key": "variant-wisp-forest-ash-litter-v01",
    "relief": 0,
    "color": "/game/ground-variant-tiles/wisp-forest-ash-litter-v01.png",
@@ -452,7 +420,7 @@
    "reliefGrid": null
   },
   {
-   "index": 43,
+   "index": 39,
    "key": "variant-wisp-crossing-leaf-litter-v01",
    "relief": 0,
    "color": "/game/ground-variant-tiles/wisp-forest-leaf-litter-v01.png",
@@ -461,7 +429,7 @@
    "reliefGrid": null
   },
   {
-   "index": 44,
+   "index": 40,
    "key": "variant-wisp-crossing-root-soil-v01",
    "relief": 0,
    "color": "/game/ground-variant-tiles/wisp-forest-root-soil-v01.png",
@@ -470,12 +438,67 @@
    "reliefGrid": null
   },
   {
-   "index": 45,
+   "index": 41,
    "key": "variant-wisp-crossing-ash-litter-v01",
    "relief": 0,
    "color": "/game/ground-variant-tiles/wisp-forest-ash-litter-v01.png",
    "normal": "/game/ground-variants-3d/variant-wisp-crossing-ash-litter-v01/normal.png",
    "rough": "/game/ground-variants-3d/variant-wisp-crossing-ash-litter-v01/rough.png",
+   "reliefGrid": null
+  },
+  {
+   "index": 42,
+   "key": "variant-plains-meadow-natural-v01",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/plains-meadow-natural-v01.png",
+   "normal": null,
+   "rough": null,
+   "reliefGrid": null
+  },
+  {
+   "index": 43,
+   "key": "variant-plains-meadow-natural-v02",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/plains-meadow-natural-v02.png",
+   "normal": null,
+   "rough": null,
+   "reliefGrid": null
+  },
+  {
+   "index": 44,
+   "key": "variant-plains-meadow-scrub-rare-v01",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/plains-meadow-scrub-rare-v01.png",
+   "normal": null,
+   "rough": null,
+   "reliefGrid": null
+  },
+  {"index":45,"key":"variant-plains-real-grass","relief":0,"color":"/game/ground-variant-tiles/plains-real-grass-008.png","normal":null,"rough":null,"reliefGrid":null},
+  {
+   "index": 46,
+   "key": "variant-plains-meadow-3d",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/plains-real-grass-008-reference.png",
+   "normal": null,
+   "rough": null,
+   "reliefGrid": null
+  },
+  {
+   "index": 47,
+   "key": "variant-plains-tall-3d",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/plains-real-grass-008-reference.png",
+   "normal": null,
+   "rough": null,
+   "reliefGrid": null
+  },
+  {
+   "index": 48,
+   "key": "variant-plains-vau-grass-v01",
+   "relief": 0,
+   "color": "/game/ground-variant-tiles/plains-vau-grass-v01.png",
+   "normal": null,
+   "rough": null,
    "reliefGrid": null
   }
  ],
@@ -493,7 +516,7 @@
    "terrain": "plains",
    "variant": 55,
    "file": "plains-vivid.png",
-   "label": "Planície vívida",
+   "label": "PlanÃ­cie vÃ­vida",
    "relief": 0
   },
   {
@@ -517,7 +540,7 @@
    "terrain": "plains",
    "variant": 53,
    "file": "../ground-engine2-v4/plains/color.png",
-   "label": "Planície · Photo 3D",
+   "label": "PlanÃ­cie Â· Photo 3D",
    "relief": 0.08
   },
   {
@@ -525,7 +548,7 @@
    "terrain": "plains",
    "variant": 54,
    "file": "../ground-engine2-v4/city/color.png",
-   "label": "City · Photo 3D",
+   "label": "City Â· Photo 3D",
    "relief": 0.06
   },
   {
@@ -533,7 +556,7 @@
    "terrain": "woods",
    "variant": 15,
    "file": "../ground-engine2-v4/woods/color.png",
-   "label": "Bosque · Photo 3D",
+   "label": "Bosque Â· Photo 3D",
    "relief": 0.12
   },
   {
@@ -541,7 +564,7 @@
    "terrain": "ruins",
    "variant": 10,
    "file": "../ground-engine2-v4/ruins/color.png",
-   "label": "Ruínas · Photo 3D",
+   "label": "RuÃ­nas Â· Photo 3D",
    "relief": 0.16
   },
   {
@@ -549,7 +572,7 @@
    "terrain": "water",
    "variant": 29,
    "file": "../ground-engine2-v4/shallow-water/color.png",
-   "label": "Água rasa · Photo 3D",
+   "label": "Ãgua rasa Â· Photo 3D",
    "relief": 0.1
   },
   {
@@ -557,7 +580,7 @@
    "terrain": "water",
    "variant": 30,
    "file": "../ground-engine2-v4/river-rocks/color.png",
-   "label": "Pedras do vau · Photo 3D",
+   "label": "Pedras do vau Â· Photo 3D",
    "relief": 0.24
   },
   {
@@ -565,7 +588,7 @@
    "terrain": "ember",
    "variant": 8,
    "file": "../ground-engine2-v4/ember/color.png",
-   "label": "Brasa · Photo 3D",
+   "label": "Brasa Â· Photo 3D",
    "relief": 0.1
   },
   {
@@ -573,7 +596,7 @@
    "terrain": "hill",
    "variant": 7,
    "file": "../ground-engine2-v4/hill/color.png",
-   "label": "Colina · Photo 3D",
+   "label": "Colina Â· Photo 3D",
    "relief": 0.12
   },
   {
@@ -581,7 +604,7 @@
    "terrain": "flame",
    "variant": 6,
    "file": "../ground-engine2-v4/flame/color.png",
-   "label": "Chama · Photo 3D",
+   "label": "Chama Â· Photo 3D",
    "relief": 0.1
   },
   {
@@ -589,7 +612,7 @@
    "terrain": "column",
    "variant": 5,
    "file": "../ground-engine2-v4/column/color.png",
-   "label": "Coluna · Photo 3D",
+   "label": "Coluna Â· Photo 3D",
    "relief": 0.16
   },
   {
@@ -597,7 +620,7 @@
    "terrain": "nave",
    "variant": 21,
    "file": "../ground-engine2-v4/nave/color.png",
-   "label": "Laje · Photo 3D",
+   "label": "Laje Â· Photo 3D",
    "relief": 0.06
   },
   {
@@ -605,24 +628,8 @@
    "terrain": "door",
    "variant": 3,
    "file": "../ground-engine2-v4/door/color.png",
-   "label": "Porta · Photo 3D",
+   "label": "Porta Â· Photo 3D",
    "relief": 0.06
-  },
-  {
-   "key": "variant-plains-smooth",
-   "terrain": "plains",
-   "variant": 56,
-   "file": "../ground-claude/049-plains/color.png",
-   "label": "Planicie suave 007",
-   "relief": 0
-  },
-  {
-   "key": "variant-plains-real-grass",
-   "terrain": "plains",
-   "variant": 57,
-   "file": "plains-real-grass-008-reference.png",
-   "label": "Planicie real 008",
-   "relief": 0
   },
   {
    "key": "variant-plains-real-grass-009",
@@ -630,22 +637,6 @@
    "variant": 58,
    "file": "plains-real-grass-009.png",
    "label": "Planicie real 009",
-   "relief": 0
-  },
-  {
-   "key": "variant-plains-meadow-3d",
-   "terrain": "plains",
-   "variant": 59,
-   "file": "plains-real-grass-008-reference.png",
-   "label": "Prado 3D 010",
-   "relief": 0
-  },
-  {
-   "key": "variant-plains-tall-3d",
-   "terrain": "plains",
-   "variant": 60,
-   "file": "plains-real-grass-008-reference.png",
-   "label": "Grama alta 3D 011",
    "relief": 0
   },
   {
@@ -685,7 +676,7 @@
    "terrain": "woods",
    "variant": 62,
    "file": "wisp-forest-leaf-litter-v01.png",
-   "label": "Wisp · Folhas mortas",
+   "label": "Wisp Â· Folhas mortas",
    "relief": 0
   },
   {
@@ -693,7 +684,7 @@
    "terrain": "woods",
    "variant": 63,
    "file": "wisp-forest-root-soil-v01.png",
-   "label": "Wisp · Raízes expostas",
+   "label": "Wisp Â· RaÃ­zes expostas",
    "relief": 0
   },
   {
@@ -701,7 +692,7 @@
    "terrain": "woods",
    "variant": 64,
    "file": "wisp-forest-ash-litter-v01.png",
-   "label": "Wisp · Cinza e folhas",
+   "label": "Wisp Â· Cinza e folhas",
    "relief": 0
   },
   {
@@ -709,7 +700,7 @@
    "terrain": "plains",
    "variant": 62,
    "file": "wisp-forest-leaf-litter-v01.png",
-   "label": "Wisp Crossing · Folhas mortas",
+   "label": "Wisp Crossing Â· Folhas mortas",
    "relief": 0
   },
   {
@@ -717,7 +708,7 @@
    "terrain": "plains",
    "variant": 63,
    "file": "wisp-forest-root-soil-v01.png",
-   "label": "Wisp Crossing · Raízes expostas",
+   "label": "Wisp Crossing Â· RaÃ­zes expostas",
    "relief": 0
   },
   {
@@ -725,7 +716,56 @@
    "terrain": "plains",
    "variant": 64,
    "file": "wisp-forest-ash-litter-v01.png",
-   "label": "Wisp Crossing · Cinza e folhas",
+   "label": "Wisp Crossing Â· Cinza e folhas",
+   "relief": 0
+  },
+  {
+   "key": "variant-plains-meadow-natural-v01",
+   "terrain": "plains",
+   "variant": 66,
+   "file": "plains-meadow-natural-v01.png",
+   "label": "PlanÃ­cie natural Â· I",
+   "relief": 0
+  },
+  {
+   "key": "variant-plains-meadow-natural-v02",
+   "terrain": "plains",
+   "variant": 67,
+   "file": "plains-meadow-natural-v02.png",
+   "label": "PlanÃ­cie natural Â· II",
+   "relief": 0
+  },
+  {
+   "key": "variant-plains-meadow-scrub-rare-v01",
+   "terrain": "plains",
+   "variant": 68,
+   "file": "plains-meadow-scrub-rare-v01.png",
+   "label": "PlanÃ­cie rala Â· rara",
+   "relief": 0
+  },
+  {"key":"variant-plains-real-grass","terrain":"plains","variant":57,"file":"plains-real-grass-008.png","label":"Planicie real 008","relief":0},
+  {
+   "key": "variant-plains-meadow-3d",
+   "terrain": "plains",
+   "variant": 59,
+   "file": "plains-real-grass-008-reference.png",
+   "label": "Prado 3D 010",
+   "relief": 0
+  },
+  {
+   "key": "variant-plains-tall-3d",
+   "terrain": "plains",
+   "variant": 60,
+   "file": "plains-real-grass-008-reference.png",
+   "label": "Grama alta 3D 011",
+   "relief": 0
+  },
+  {
+   "key": "variant-plains-vau-grass-v01",
+   "terrain": "plains",
+   "variant": 69,
+   "file": "plains-vau-grass-v01.png",
+   "label": "Vau grass V01",
    "relief": 0
   }
  ],

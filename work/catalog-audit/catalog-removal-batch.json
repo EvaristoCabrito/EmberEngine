@@ -1,0 +1,50 @@
+{
+  "status": "pending-batch-removal",
+  "items": [
+    {
+      "assetId": "ember-mines-petrified-roots",
+      "decision": "remove-from-game",
+      "sources": [
+        "content/models/mines/petrified-roots-v01.glb",
+        "content/models/mines/petrified-roots-v01.blend"
+      ],
+      "deleteScope": [
+        "map placements",
+        "model and editor catalogs",
+        "source and runtime files",
+        "staged copies and cooked mesh packs",
+        "cooked cache entries"
+      ]
+    },
+    {
+      "assetId": "ember-mines-boat-wreck",
+      "decision": "remove-from-game",
+      "sources": [
+        "content/models/mines/boat-wreck-v01.glb",
+        "content/models/mines/boat-wreck-v01.blend"
+      ],
+      "deleteScope": [
+        "map placements",
+        "model and editor catalogs",
+        "source and runtime files",
+        "staged copies and cooked mesh packs",
+        "cooked cache entries"
+      ]
+    },
+    {
+      "assetId": "ember-mines-cargo-lift",
+      "decision": "remove-from-game",
+      "sources": [
+        "content/models/mines/cargo-lift-v01.glb",
+        "content/models/mines/cargo-lift-v01.blend"
+      ],
+      "deleteScope": [
+        "map placements",
+        "model and editor catalogs",
+        "source and runtime files",
+        "staged copies and cooked mesh packs",
+        "cooked cache entries"
+      ]
+    }
+  ]
+}

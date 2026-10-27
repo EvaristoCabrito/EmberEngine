@@ -134,6 +134,8 @@ struct MapStageOptions {
   bool spellsMenu = true;  // the Magias window (every spell's effect version, loose effects; test mode)
   bool choicesPanel = true;  // the Escolhas window (the look switches; test mode)
   bool spellsMenuOpen = false;  // ... opened with every list unfolded (captures)
+  int elementPreview = -1;  // Dev Controls: preview this existing element on the spells test map (-1 = none)
+  int elementPreviewVersion = 2;
   // Gameplay measurement: for this many seconds the camera turns a full circle and zooms in and out twice
   // while units animate and lights move and flicker; every frame's main-thread and GPU time is recorded.
   float measureSeconds = 0.0f;
@@ -413,6 +415,7 @@ class MapStage final : public Stage {
                     : !scene_->backdrop.empty() && (aldeia() || scene_->environment != "indoor") ? 4
                                                                                                   : 1;
       if (!scene_->backdrop.empty()) backdropFit_ = loadBackdropFit(scene_->backdrop);
+      if (board_->draft().groundImage) backdropFit_.ground = *board_->draft().groundImage;
       if (!backdropFit_.ground.empty()) ground_.requestTexture(e2::backdropAsset(backdropFit_.ground));
       if (!board_->draft().emberFloor.empty()) ground_.requestTexture(e2::backdropAsset(board_->draft().emberFloor));
       // The map's own panoramas (backdrop-fit.json "panoramas" by map id; the panel's Fundo after its five entries).
@@ -530,6 +533,7 @@ class MapStage final : public Stage {
     if (!measuring_) panKeys(dt);
     updatePanHold();
     now_ = time;
+    updateHearthFireFlipbook(time);
     laps.lap("camera");
     updateUnits(dt);
     laps.lap("units");
@@ -1482,10 +1486,20 @@ class MapStage final : public Stage {
     drawPauseMenu();
     if (options_.choicesPanel) drawChoices();
     if (options_.spellsMenu && scene_ && menuCaster() >= 0) {
+      if (options_.elementPreview >= 0 && options_.elementPreview < 8) {
+        const size_t caster = static_cast<size_t>(menuCaster());
+        spellFx_.previewElement(static_cast<VfxElement>(options_.elementPreview), options_.elementPreviewVersion,
+                                unitSpot(nearestTarget(caster, false)), now_);
+        options_.elementPreview = -1;
+      }
       spellsMenu_.draw([this](const std::string& kind, int look) { testCast(static_cast<size_t>(menuCaster()), kind, look, now_); },
                        [this](const std::string& clip) {
                          const size_t caster = static_cast<size_t>(menuCaster());
                          spellFx_.play(clip, unitSpot(nearestTarget(caster, false)), now_);
+                       },
+                       [this](VfxElement element, int version) {
+                         const size_t caster = static_cast<size_t>(menuCaster());
+                         spellFx_.previewElement(element, version, unitSpot(nearestTarget(caster, false)), now_);
                        },
                        options_.spellsMenuOpen);
     }
@@ -2927,6 +2941,7 @@ class MapStage final : public Stage {
   void placeModels() {
     modelsPlaced_ = true;
     std::vector<InstanceGpu> instances;
+    hearthFireInstances_.clear();
     pieceBoxes_.clear();
     for (const e2::SceneModel& m : scene_->models) {
       if (lockOpened(m.id, "doorDecor", m.x, m.z)) continue;  // the door was picked open: its closed model is gone
@@ -2948,7 +2963,9 @@ class MapStage final : public Stage {
       inst.rows[2] = {-sn * k, 0, c * k, t.z};
       inst.mesh = modelMeshes_.at(asset);
       inst.scale = k;
+      const uint32_t instanceIndex = static_cast<uint32_t>(instances.size());
       instances.push_back(inst);
+      if (m.id == "ember-tavern-stone-hearth") hearthFireInstances_.push_back(instanceIndex);
       const float half = 0.5f * k * std::max(h->boundsMax[0] - h->boundsMin[0], h->boundsMax[2] - h->boundsMin[2]);
       pieceBoxes_.push_back({m.x, m.z, half, t.y + m.height});
     }
@@ -3020,8 +3037,21 @@ class MapStage final : public Stage {
     if (windowLight() && roofMesh_)
       logInfo("window light: roof slab {:.2f} .. {:.2f} (ground top {:.2f}), {} wall pieces (tops at their ground + 4.2), {} instances", roofBottom_,
               2.0f * roofCentreY_ - roofBottom_, boardTop_, arch_.size(), instances.size());
-    meshes_.setInstances(instances);
+    placedInstances_ = std::move(instances);
+    meshes_.setInstances(placedInstances_);
+    lastHearthFireFrame_ = -1;
     placedLook_ = look_;
+  }
+
+  void updateHearthFireFlipbook(float time) {
+    if (hearthFireInstances_.empty()) return;
+    int frame = static_cast<int>(std::floor(time * 14.0f)) % 16;
+    if (frame < 0) frame += 16;
+    if (frame == lastHearthFireFrame_) return;
+    for (const uint32_t index : hearthFireInstances_)
+      if (index < placedInstances_.size()) placedInstances_[index].pad = static_cast<uint32_t>(frame);
+    meshes_.setInstances(placedInstances_);
+    lastHearthFireFrame_ = frame;
   }
 
   // One card: the whole art spans w x h world units with its bottom centre at `local` (card-local x along
@@ -5862,7 +5892,12 @@ class MapStage final : public Stage {
       // The crossbowmen's bolt (the user, 2026-10-20: Arrow1 on every attack and skill), besides their own cues.
       const bool crossbow = key == "brigandCrossbowman" || key == "baseCrossbowman" || key == "brigand";
       if (crossbow && s.type != StepType::Potion && s.type != StepType::Move && (s.type == StepType::Combat || !s.kind.empty())) playCues(cue("Arrows1.mp3"));
-      if (staffCounter) playCues(cue("ATT01Blunt.mp3"));  // the staff's blow, not his cast (the user, 2026-10-20: Blunt01)
+      // Selene's own sounds (the user, 2026-10-25, with her sheets in Attachments/Selene): her casting as her cast pose begins (the
+      // spell's own cue still follows), her dagger on her attack, the other dagger cut on her counter
+      const bool selene = key == "selene";
+      if (selene && magic) playCues(cue("CastingSeleneBalanced-Medium.mp3"));
+      if (selene && s.type == StepType::Combat) playCues(cue(x.counter ? "SelenesDagger.mp3" : "DaggerMasteredSelene.mp3"));
+      else if (staffCounter) playCues(cue("ATT01Blunt.mp3"));  // the staff's blow, not his cast (the user, 2026-10-20: Blunt01)
       else if (neeraDagger || e2::daggerStrikeKind(s.kind)) playCues(cue("BladeSlash1Dagger.mp3"));  // her off-hand dagger (the user, 2026-10-20: Dagger1); a Nuvem's dagger
       else if (s.type == StepType::Potion) playCues(cue("Healing01-Balanced-High.mp3"));  // every potion (the user, 2026-10-20)
       else if (key == "voss" && (s.kind == "magicMissile" || s.kind == "magicMissileV2")) playCues(afterPose(cue("Spellcast01.mp3")));  // the default cast
@@ -10444,7 +10479,8 @@ class MapStage final : public Stage {
   void loadMapPanoramas() {
     const auto packed = [&](const std::string& file) { return !assets_.name(assetId(e2::backdropAsset(file))).empty(); };
     for (const std::string& entry : loadPanoramas(board_->draft().id)) {
-      const BackdropFit fit = loadBackdropFit(entry);
+      BackdropFit fit = loadBackdropFit(entry);
+      if (board_->draft().groundImage) fit.ground = *board_->draft().groundImage;
       if (!packed(panoramaFile(entry)) || (!fit.ground.empty() && !packed(fit.ground)) || (!fit.ceilingImage.empty() && !packed(fit.ceilingImage))) {
         logWarn("panorama {} left out: not in the ground pack", entry);
         continue;
@@ -10461,6 +10497,7 @@ class MapStage final : public Stage {
     if (panoramas_.empty() && scene_ && !scene_->backdrop.empty() && packed(scene_->backdrop)) {
       panoramas_.push_back(scene_->backdrop);
       panoramaFits_.push_back(loadBackdropFit(scene_->backdrop));
+      if (board_->draft().groundImage) panoramaFits_.back().ground = *board_->draft().groundImage;
       ground_.requestTexture(e2::backdropAsset(scene_->backdrop));
       if (!panoramaFits_.back().ground.empty()) ground_.requestTexture(e2::backdropAsset(panoramaFits_.back().ground));
       logInfo("panoramas {}: none listed, its painting {} is its panorama", board_->draft().id, scene_->backdrop);
@@ -10527,6 +10564,9 @@ class MapStage final : public Stage {
   int atmosChoice_ = 2, climaChoice_ = 0;
   std::vector<Volumetrics::Profile> atmosProfiles_;
   std::unordered_map<std::string, MeshId> modelMeshes_;
+  std::vector<InstanceGpu> placedInstances_;
+  std::vector<uint32_t> hearthFireInstances_;
+  int lastHearthFireFrame_ = -1;
   std::unordered_map<const std::vector<int>*, PaceLoop> loops_;
   std::vector<SpriteInstance> drawList_;
   std::vector<SpriteInstance> frontCards_;  // casters drawn again over their own spell (Renderer::setFrontCards)

@@ -23088,11 +23088,6 @@
         "y": 58
       },
       {
-        "id": "ember-crypt-iron-grate",
-        "x": 24,
-        "y": 26
-      },
-      {
         "id": "ember-dungeon-iron-cage",
         "x": 72,
         "y": 26
@@ -23113,11 +23108,6 @@
         "y": 40
       },
       {
-        "id": "ember-crypt-incomplete-skeleton",
-        "x": 78,
-        "y": 40
-      },
-      {
         "id": "ember-crypt-ancient-bookshelf",
         "x": 36,
         "y": 18
@@ -23126,11 +23116,6 @@
         "id": "ember-crypt-barred-gate",
         "x": 60,
         "y": 18
-      },
-      {
-        "id": "ember-crypt-lone-skull",
-        "x": 36,
-        "y": 62
       },
       {
         "id": "ember-crypt-funeral-urns",

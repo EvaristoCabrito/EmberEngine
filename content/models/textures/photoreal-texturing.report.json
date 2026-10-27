@@ -420,16 +420,6 @@
       "status": "ok"
     },
     {
-      "source": "content/models/crypt/incomplete-skeleton-v01.glb",
-      "glb": "content/models/crypt/incomplete-skeleton-v01-photo.glb",
-      "materials_textured": [
-        "bone"
-      ],
-      "embedded_images": 1,
-      "bytes": 482244,
-      "status": "ok"
-    },
-    {
       "source": "content/models/crypt/iron-grate-v01.glb",
       "glb": "content/models/crypt/iron-grate-v01-photo.glb",
       "materials_textured": [
@@ -460,17 +450,6 @@
       "status": "ok"
     },
     {
-      "source": "content/models/ember/ancient-hull-fragment-v01.glb",
-      "glb": "content/models/ember/ancient-hull-fragment-v01-photo.glb",
-      "materials_textured": [
-        "iron-rust",
-        "bronze"
-      ],
-      "embedded_images": 1,
-      "bytes": 325980,
-      "status": "ok"
-    },
-    {
       "source": "content/models/ember/ancient-reliquary-v01.glb",
       "glb": "content/models/ember/ancient-reliquary-v01-photo.glb",
       "materials_textured": [
@@ -491,87 +470,6 @@
       ],
       "embedded_images": 1,
       "bytes": 326780,
-      "status": "ok"
-    },
-    {
-      "source": "content/models/ember/ember-container-v01.glb",
-      "glb": "content/models/ember/ember-container-v01-photo.glb",
-      "materials_textured": [
-        "iron",
-        "brass"
-      ],
-      "embedded_images": 1,
-      "bytes": 340792,
-      "status": "ok"
-    },
-    {
-      "source": "content/models/ember/ember-lantern-v01.glb",
-      "glb": "content/models/ember/ember-lantern-v01-photo.glb",
-      "materials_textured": [
-        "iron",
-        "glass",
-        "brass"
-      ],
-      "embedded_images": 2,
-      "bytes": 545220,
-      "status": "ok"
-    },
-    {
-      "source": "content/models/ember/god-king-transport-v01.glb",
-      "glb": "content/models/ember/god-king-transport-v01-photo.glb",
-      "materials_textured": [
-        "iron-rust",
-        "bronze",
-        "iron",
-        "glass"
-      ],
-      "embedded_images": 2,
-      "bytes": 638536,
-      "status": "ok"
-    },
-    {
-      "source": "content/models/ember/light-crystal-v01.glb",
-      "glb": "content/models/ember/light-crystal-v01-photo.glb",
-      "materials_textured": [
-        "iron",
-        "brass"
-      ],
-      "embedded_images": 1,
-      "bytes": 341660,
-      "status": "ok"
-    },
-    {
-      "source": "content/models/ember/mechanical-parts-v01.glb",
-      "glb": "content/models/ember/mechanical-parts-v01-photo.glb",
-      "materials_textured": [
-        "iron",
-        "bronze"
-      ],
-      "embedded_images": 1,
-      "bytes": 376924,
-      "status": "ok"
-    },
-    {
-      "source": "content/models/ember/refined-ember-shard-v01.glb",
-      "glb": "content/models/ember/refined-ember-shard-v01-photo.glb",
-      "materials_textured": [
-        "iron"
-      ],
-      "embedded_images": 1,
-      "bytes": 320352,
-      "status": "ok"
-    },
-    {
-      "source": "content/models/ember/unknown-machine-v01.glb",
-      "glb": "content/models/ember/unknown-machine-v01-photo.glb",
-      "materials_textured": [
-        "iron",
-        "iron-rust",
-        "bronze",
-        "brass"
-      ],
-      "embedded_images": 1,
-      "bytes": 397412,
       "status": "ok"
     },
     {

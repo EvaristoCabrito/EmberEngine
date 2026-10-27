@@ -22,6 +22,7 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <format>
 #include <functional>
@@ -38,8 +39,10 @@
 #include "render/Camera.h"
 #include "render/DebugUi.h"
 #include "render/MeshScene.h"
+#include "world/Spells.h"
 #include "render/Renderer.h"
 #include "render/UiArt.h"
+#include "render/vfx/ElementSprites.h"
 #include "world/Campaign.h"
 #include "world/Overworld.h"
 
@@ -62,6 +65,7 @@ inline TestSession freshTestSession(const e2::Campaign& campaign) {
   e2::Json levels = e2::Json::object();
   // the six and EmberEngine's own heroes (content/ember-classes.json heroes: Isolde), every one at the test level with its spells
   for (const char* h : {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec", "Isolde"}) levels[h] = kDefaultTestLevel;
+  levels["Selene"] = std::min(kDefaultTestLevel, e2::heroLevelCap("Selene", "conjurer"));  // her cap: 10 (the user, 2026-10-25)
   s.save["levels"] = levels;
   s.save["ember"] = kTestEmber;
   return s;
@@ -76,6 +80,7 @@ class TestModeStage : public Stage {
     std::function<void(const MissionEntry&)> play;  // a mission's test battle
     std::function<void()> editor;                   // Map Editor
     std::function<void()> spells;                   // Teste de Magias (ours, user 2026-10-16): the spells test battle
+    std::function<void(VfxElement, int)> previewElement;  // selected V2/V3 effect in that test battle
     std::function<void()> fullscreen;               // Opções: Tela cheia
   };
 
@@ -686,7 +691,28 @@ class TestModeStage : public Stage {
       y += 36 + 12;
     }
     wrapped(dl, sans(), 12.0f, {x, y + 4}, kMuted, "Salvo neste computador. Vale em qualquer combate aberto depois.", w);
-    ImGui::SetCursorScreenPos({x, y + 24});
+    y += 32;
+    caps(dl, {x, y}, 14.0f, kMuted, "Efeitos elementais", 0.14f);
+    y += 28;
+    for (int i = 0; i < 8; ++i) {
+      const auto element = static_cast<VfxElement>(i);
+      int& version = elementVersions_[static_cast<size_t>(i)];
+      ImGui::PushID(i);
+      ImGui::SetCursorScreenPos({x, y});
+      ImGui::SetNextItemWidth(w - 130);
+      const std::string selected = std::format("{} V{}", vfxElementLabel(element), version);
+      if (ImGui::BeginCombo("##elementVersion", selected.c_str())) {
+        for (int choice : {2, 3})
+          if (ImGui::Selectable(std::format("{} V{}", vfxElementLabel(element), choice).c_str(), version == choice)) version = choice;
+        ImGui::EndCombo();
+      }
+      ImGui::SetCursorScreenPos({x + w - 120, y});
+      if (ImGui::Button("Visualizar", {120, 0}) && callbacks_.previewElement) callbacks_.previewElement(element, version);
+      ImGui::PopID();
+      y += 38;
+    }
+    y += 8;
+    ImGui::SetCursorScreenPos({x, y});
     ImGui::Dummy({1, 20});
     ImGui::EndChild();
     if (changed && !g.save()) notice_ = "Não foi possível gravar " + DevGfx::path().string() + ".";
@@ -748,6 +774,7 @@ class TestModeStage : public Stage {
   const e2::Overworld& world_;
   TestSession& session_;
   DevGfx& devGfx_;
+  std::array<int, 8> elementVersions_{2, 2, 2, 2, 2, 2, 2, 2};
   Callbacks callbacks_;
   Screen screen_ = Screen::Menu, briefingFrom_ = Screen::WorldMap;
   std::string notice_;

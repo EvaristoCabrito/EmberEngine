@@ -53,7 +53,7 @@ class InnScreen {
       // InnScreen's first view: the healer's service, or the forge (Vargan's film first, the first time), or the tavern.
       started_ = true;
       if (entry_ == Entry::Healer) view_ = View::Healer;
-      else if (entry_ == Entry::Smith && !c.save.value("seenSmithIntro", false)) film_.emplace(c.engine2Public, "game/smith-intro.mp4");
+      else if (entry_ == Entry::Smith && !c.save.value("seenSmithIntro", false)) film_.emplace(c.engine2Public, "game/smith-intro.webm");
       else if (entry_ == Entry::Smith) view_ = View::Smith;
     }
     if (std::exchange(leaveNow_, false)) return true;
@@ -243,7 +243,7 @@ class InnScreen {
       x -= 12 + 100;
       ImGui::SetCursorScreenPos({x, 16});
       if (emberTextPlate("##smith", {100, 40}, "FERREIRO", 12.0f)) {
-        if (!c.save.value("seenSmithIntro", false)) film_.emplace(c.engine2Public, "game/smith-intro.mp4");  // enterSmith
+        if (!c.save.value("seenSmithIntro", false)) film_.emplace(c.engine2Public, "game/smith-intro.webm");  // enterSmith
         else view_ = View::Smith, smithNote_.clear();
       }
     }

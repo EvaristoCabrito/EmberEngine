@@ -26,7 +26,7 @@ namespace ember {
 
 class CutsceneScreen {
  public:
-  // `film`: a path under Engine2's public folder ("game/vau-intro.mp4"); its pt-BR subtitles are found by name.
+  // `film`: a path under Engine2's public folder ("game/vau-intro.webm"); its subtitles are found by name.
   CutsceneScreen(const std::filesystem::path& engine2Public, const std::string& film) {
     player_ = std::make_unique<VideoPlayer>();
     player_->open(engine2Public / film);

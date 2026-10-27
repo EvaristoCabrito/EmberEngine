@@ -85,6 +85,18 @@ struct MaterialGpu {  // 80 bytes
 static const uint kNoTexture = 0xFFFFFFFFu;
 static const uint kMaterialAlphaMask = 1u;
 static const uint kMaterialDoubleSided = 2u;
+static const uint kMaterialFlipbook = 4u;
+
+float2 flipbookUv(float2 uv, uint flags, uint frame) {
+  if ((flags & kMaterialFlipbook) == 0u) return uv;
+  const uint index = frame & 15u;
+  const float2 tile = float2(index & 3u, index >> 2u);  // atlas row zero is the image's top row
+  return (uv + tile) * 0.25;
+}
+
+float2 flipbookGradient(float2 gradient, uint flags) {
+  return (flags & kMaterialFlipbook) != 0u ? gradient * 0.25 : gradient;
+}
 
 // Matches ember::MeshFrame (Renderer.cpp): everything the mesh passes know about this frame.
 struct MeshFrame {

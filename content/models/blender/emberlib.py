@@ -149,7 +149,6 @@ def M(name):
         'wool': dict(flat=(0.6, 0.55, 0.45), roughness=1.0),
         'ember-glow': dict(flat=(0.7, 0.12, 0.04), roughness=0.25, emission=(1.0, 0.25, 0.05, 4.0)),
         'bio-glow': dict(flat=(0.2, 0.75, 0.65), roughness=0.5, emission=(0.2, 0.9, 0.7, 2.5)),
-        'light-crystal': dict(flat=(0.6, 0.8, 0.95), roughness=0.15, emission=(0.5, 0.75, 1.0, 3.0)),
         'pale-crystal': dict(flat=(0.78, 0.8, 0.84), roughness=0.2),
         'amethyst': dict(flat=(0.4, 0.22, 0.55), roughness=0.2),
         'gold': dict(flat=(0.85, 0.65, 0.25), roughness=0.3, metallic=1.0),

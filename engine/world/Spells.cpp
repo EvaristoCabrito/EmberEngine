@@ -1280,9 +1280,13 @@ void levelUp(BattleUnit& u) {
 
 // The Cruzado stops at level 10 (the user, 2026-10-25: young Salazar's interlude class); every other class at the game's cap.
 int classLevelCap(const std::string& classId) { return classId == "crusader" ? 10 : kMaxLevel; }
+// Selene stops at 10 too, though a Conjurador (the user, 2026-10-25: "her level cap is 10"); every other hero at the class's cap.
+int heroLevelCap(const std::string& name, const std::string& classId) {
+  return name == "Selene" ? std::min(10, classLevelCap(classId)) : classLevelCap(classId);
+}
 
 void raiseToLevel(BattleUnit& u, int level, int xp) {
-  const int cap = classLevelCap(u.classId);
+  const int cap = heroLevelCap(u.name, u.classId);
   while (u.level < std::min(level, cap)) levelUp(u);
   u.xp = u.level >= cap ? 0 : std::max(0, xp);
 }
@@ -1290,7 +1294,7 @@ void raiseToLevel(BattleUnit& u, int level, int xp) {
 namespace {
 
 void grantExp(BattleUnit& u, int amount) {
-  const int cap = classLevelCap(u.classId);
+  const int cap = heroLevelCap(u.name, u.classId);
   if (u.level >= cap || amount <= 0) return;
   u.xp += amount;
   while (u.xp >= expToLevel(u.level) && u.level < cap) {

@@ -345,6 +345,7 @@ class MeshBuilder {
   MeshMaterial material(const cgltf_data& data, const cgltf_material& src, size_t index, Cooked& out) {
     MeshMaterial m = defaultMaterial();
     const std::string name = src.name ? src.name : std::to_string(index);
+    if (name == "Hearth flame flipbook") m.flags |= kMaterialFlipbook;
     if (options_.remeshResolution > 0) {
       // A remeshed proxy has no UVs (yet): factors only, no texture slots that would sample garbage.
       if (src.has_pbr_metallic_roughness) {

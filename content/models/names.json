@@ -5,20 +5,76 @@
     "hollow-standing-tree": "Árvore oca em pé 3D",
     "rotten-fallen-log": "Tronco caído apodrecido 3D",
     "rotten-stump": "Toco apodrecido 3D",
-    "dry-branch-pile": ["Galhos secos empilhados 3D", {"blocks": false}],
-    "exposed-roots": ["Raízes expostas 3D", {"blocks": false}],
+    "dry-branch-pile": [
+      "Galhos secos empilhados 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "exposed-roots": [
+      "Raízes expostas 3D",
+      {
+        "blocks": false
+      }
+    ],
     "root-arch": "Arco de raízes 3D",
-    "cracked-boulder": ["Rocha rachada 3D", {"section": "Pedras e relevo"}],
-    "lichen-rocks": ["Pedras com líquen 3D", {"section": "Pedras e relevo", "blocks": false}],
-    "ferns": ["Samambaias 3D", {"blocks": false}],
-    "dry-bush": ["Arbusto seco 3D", {"blocks": false}],
+    "cracked-boulder": [
+      "Rocha rachada 3D",
+      {
+        "section": "Pedras e relevo"
+      }
+    ],
+    "lichen-rocks": [
+      "Pedras com líquen 3D",
+      {
+        "section": "Pedras e relevo",
+        "blocks": false
+      }
+    ],
+    "ferns": [
+      "Samambaias 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "dry-bush": [
+      "Arbusto seco 3D",
+      {
+        "blocks": false
+      }
+    ],
     "dense-bush": "Arbusto denso 3D",
-    "wild-mushrooms": ["Cogumelos silvestres 3D", {"blocks": false}],
-    "roots-with-mushrooms": ["Raízes com cogumelos 3D", {"blocks": false}],
-    "leaf-litter": ["Folhas e galhos acumulados 3D", {"blocks": false}],
+    "wild-mushrooms": [
+      "Cogumelos silvestres 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "roots-with-mushrooms": [
+      "Raízes com cogumelos 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "leaf-litter": [
+      "Folhas e galhos acumulados 3D",
+      {
+        "blocks": false
+      }
+    ],
     "axe-cut-stump": "Toco cortado a machado 3D",
-    "abandoned-nest": ["Ninho abandonado 3D", {"blocks": false}],
-    "log-over-stream": ["Tronco sobre o riacho 3D", {"footprint": "triple"}],
+    "abandoned-nest": [
+      "Ninho abandonado 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "log-over-stream": [
+      "Tronco sobre o riacho 3D",
+      {
+        "footprint": "triple"
+      }
+    ],
     "uprooted-tree": "Árvore caída com raízes arrancadas 3D"
   },
   "treasure": {
@@ -29,18 +85,58 @@
     "broken-chest": "Baú destruído 3D",
     "stone-ark": "Arca de pedra 3D",
     "metal-safe": "Cofre metálico 3D",
-    "jewel-box": ["Caixa de joias 3D", {"blocks": false}],
-    "coin-pile": ["Pilha de moedas 3D", {"blocks": false}],
-    "coin-purse": ["Sacola de moedas 3D", {"blocks": false}],
-    "leather-satchel": ["Bolsa de couro 3D", {"blocks": false}],
+    "jewel-box": [
+      "Caixa de joias 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "coin-pile": [
+      "Pilha de moedas 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "coin-purse": [
+      "Sacola de moedas 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "leather-satchel": [
+      "Bolsa de couro 3D",
+      {
+        "blocks": false
+      }
+    ],
     "broken-crate": "Caixote quebrado 3D",
     "open-barrel": "Barril aberto 3D",
-    "broken-barrel": ["Barril quebrado 3D", {"blocks": false}],
+    "broken-barrel": [
+      "Barril quebrado 3D",
+      {
+        "blocks": false
+      }
+    ],
     "wicker-baskets": "Cestos de vime 3D",
     "ceramic-jars": "Jarras de cerâmica 3D",
-    "coiled-rope": ["Corda enrolada 3D", {"blocks": false}],
-    "hanging-lantern": ["Lanterna suspensa 3D", {"blocks": false}],
-    "unlit-torch": ["Tocha apagada 3D", {"blocks": false}],
+    "coiled-rope": [
+      "Corda enrolada 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "hanging-lantern": [
+      "Lanterna suspensa 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "unlit-torch": [
+      "Tocha apagada 3D",
+      {
+        "blocks": false
+      }
+    ],
     "weapon-rack": "Suporte de armas 3D",
     "shield-stand": "Estante de escudos 3D",
     "workbench": "Mesa de trabalho 3D"
@@ -48,23 +144,104 @@
   "structures": {
     "_section": "City",
     "animal-trough": "Bebedouro de animais 3D",
-    "hanging-sign-post": ["Poste com placa suspensa 3D", {"blocks": false}],
-    "wooden-gate": ["Portão de madeira 3D", {"section": "Barricada"}],
-    "barred-door": ["Porta de masmorra com barras 3D", {"section": "Ruínas e construções"}],
-    "shuttered-window": ["Janela com venezianas 3D", {"section": "Ruínas e construções"}],
-    "broken-window": ["Janela quebrada 3D", {"section": "Ruínas e construções"}],
-    "window-frame": ["Caixilho de janela 3D", {"section": "Ruínas e construções"}],
-    "wooden-ladder": ["Escada de madeira 3D", {"blocks": false}],
-    "stone-stairs": ["Escada de pedra 3D", {"section": "Ruínas e construções"}],
-    "cloth-awning": ["Toldo de tecido 3D", {"section": "Shops", "blocks": false}],
-    "vendor-cart": ["Carrinho de vendedor 3D", {"section": "Shops"}],
+    "hanging-sign-post": [
+      "Poste com placa suspensa 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "wooden-gate": [
+      "Portão de madeira 3D",
+      {
+        "section": "Barricada"
+      }
+    ],
+    "barred-door": [
+      "Porta de masmorra com barras 3D",
+      {
+        "section": "Ruínas e construções"
+      }
+    ],
+    "shuttered-window": [
+      "Janela com venezianas 3D",
+      {
+        "section": "Ruínas e construções"
+      }
+    ],
+    "broken-window": [
+      "Janela quebrada 3D",
+      {
+        "section": "Ruínas e construções"
+      }
+    ],
+    "window-frame": [
+      "Caixilho de janela 3D",
+      {
+        "section": "Ruínas e construções"
+      }
+    ],
+    "wooden-ladder": [
+      "Escada de madeira 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "stone-stairs": [
+      "Escada de pedra 3D",
+      {
+        "section": "Ruínas e construções"
+      }
+    ],
+    "cloth-awning": [
+      "Toldo de tecido 3D",
+      {
+        "section": "Shops",
+        "blocks": false
+      }
+    ],
+    "vendor-cart": [
+      "Carrinho de vendedor 3D",
+      {
+        "section": "Shops"
+      }
+    ],
     "brick-pile": "Pilha de tijolos 3D",
-    "broken-column": ["Coluna quebrada 3D", {"section": "Ruínas e construções"}],
-    "scattered-blocks": ["Blocos de pedra espalhados 3D", {"section": "Pedras e relevo"}],
-    "roof-debris": ["Escombros de telhado 3D", {"section": "Ruínas e construções"}],
-    "wooden-gutter": ["Calha de madeira 3D", {"blocks": false}],
-    "flag-bracket": ["Suporte de bandeira 3D", {"blocks": false}],
-    "street-brazier": ["Braseiro de rua 3D", {"section": "Lights"}],
+    "broken-column": [
+      "Coluna quebrada 3D",
+      {
+        "section": "Ruínas e construções"
+      }
+    ],
+    "scattered-blocks": [
+      "Blocos de pedra espalhados 3D",
+      {
+        "section": "Pedras e relevo"
+      }
+    ],
+    "roof-debris": [
+      "Escombros de telhado 3D",
+      {
+        "section": "Ruínas e construções"
+      }
+    ],
+    "wooden-gutter": [
+      "Calha de madeira 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "flag-bracket": [
+      "Suporte de bandeira 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "street-brazier": [
+      "Braseiro de rua 3D",
+      {
+        "section": "Lights"
+      }
+    ],
     "road-marker": "Marco de pedra na estrada 3D"
   },
   "interior": {
@@ -72,23 +249,88 @@
     "long-bench": "Banco comprido 3D",
     "drink-shelf": "Prateleira de bebidas 3D",
     "bookshelf": "Estante de madeira 3D",
-    "wooden-mug": ["Caneca de madeira 3D", {"blocks": false}],
-    "pewter-tankard": ["Caneca de estanho 3D · TripoSR", {"blocks": false}],
-    "wine-bottle": ["Garrafa de vinho vazia 3D", {"blocks": false}],
-    "beer-jug": ["Jarra de cerveja 3D", {"blocks": false}],
-    "wooden-plate": ["Prato de madeira 3D", {"blocks": false}],
-    "ceramic-bowl": ["Tigela de cerâmica 3D", {"blocks": false}],
-    "table-candelabra": ["Candelabro de mesa 3D", {"blocks": false}],
-    "hanging-chandelier": ["Candelabro suspenso 3D", {"blocks": false}],
-    "fireplace-grate": ["Grade de lareira 3D", {"blocks": false}],
+    "wooden-mug": [
+      "Caneca de madeira 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "pewter-tankard": [
+      "Caneca de estanho 3D · TripoSR",
+      {
+        "blocks": false
+      }
+    ],
+    "wine-bottle": [
+      "Garrafa de vinho vazia 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "beer-jug": [
+      "Jarra de cerveja 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "wooden-plate": [
+      "Prato de madeira 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "ceramic-bowl": [
+      "Tigela de cerâmica 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "table-candelabra": [
+      "Candelabro de mesa 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "hanging-chandelier": [
+      "Candelabro suspenso 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "fireplace-grate": [
+      "Grade de lareira 3D",
+      {
+        "blocks": false
+      }
+    ],
     "barrel-rack": "Suporte para barris 3D",
     "kitchen-cabinet": "Armário de cozinha 3D",
     "pantry-shelf": "Prateleira de mantimentos 3D",
     "cauldron": "Caldeirão 3D",
-    "iron-pot": ["Panela de ferro 3D", {"blocks": false}],
-    "utensils-set": ["Utensílios de cozinha 3D", {"blocks": false}],
-    "worn-rug": ["Tapete gasto 3D", {"blocks": false}],
-    "cloth-curtain": ["Cortina de tecido 3D", {"blocks": false}],
+    "iron-pot": [
+      "Panela de ferro 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "utensils-set": [
+      "Utensílios de cozinha 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "worn-rug": [
+      "Tapete gasto 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "cloth-curtain": [
+      "Cortina de tecido 3D",
+      {
+        "blocks": false
+      }
+    ],
     "simple-bed": "Cama simples 3D",
     "stool": "Banquinho 3D",
     "folding-screen": "Biombo de madeira 3D"
@@ -97,105 +339,248 @@
     "_section": "Wilds",
     "snow-crown-tree": "Árvore com neve na copa 3D",
     "frozen-stump": "Toco congelado 3D",
-    "ice-cracked-rocks": ["Pedras com gelo nas rachaduras 3D", {"section": "Pedras e relevo", "blocks": false}],
+    "ice-cracked-rocks": [
+      "Pedras com gelo nas rachaduras 3D",
+      {
+        "section": "Pedras e relevo",
+        "blocks": false
+      }
+    ],
     "icicles": "Estalactites de gelo 3D",
     "ice-stalagmites": "Estalagmites de gelo 3D",
-    "snow-drift": ["Monte de neve 3D", {"blocks": false}],
-    "frozen-branches": ["Galhos congelados 3D", {"blocks": false}],
-    "snowy-dry-bush": ["Arbusto seco coberto de neve 3D", {"blocks": false}],
-    "buried-fence": ["Cerca soterrada na neve 3D", {"section": "Barricada"}],
+    "snow-drift": [
+      "Monte de neve 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "frozen-branches": [
+      "Galhos congelados 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "snowy-dry-bush": [
+      "Arbusto seco coberto de neve 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "buried-fence": [
+      "Cerca soterrada na neve 3D",
+      {
+        "section": "Barricada"
+      }
+    ],
     "frozen-barrel": "Barril congelado 3D",
     "snow-abandoned-cart": "Carrinho abandonado na neve 3D",
-    "icy-post": ["Poste coberto de gelo 3D", {"blocks": false}],
+    "icy-post": [
+      "Poste coberto de gelo 3D",
+      {
+        "blocks": false
+      }
+    ],
     "frozen-well": "Poço congelado 3D",
     "snowy-grave-marker": "Lápide coberta de neve 3D",
-    "frozen-bridge": ["Ponte de madeira congelada 3D", {"section": "Pontes", "footprint": "triple"}],
-    "abandoned-camp": ["Acampamento abandonado 3D", {"footprint": "triple"}]
+    "frozen-bridge": [
+      "Ponte de madeira congelada 3D",
+      {
+        "section": "Pontes",
+        "footprint": "triple"
+      }
+    ],
+    "abandoned-camp": [
+      "Acampamento abandonado 3D",
+      {
+        "footprint": "triple"
+      }
+    ]
   },
   "crypt": {
     "_section": "Cave",
     "cracked-pillar": "Pilar rachado 3D",
     "column-base": "Base de coluna destruída 3D",
-    "stone-capital": "Capitel de pedra 3D",
-    "iron-grate": ["Grade de ferro no chão 3D", {"blocks": false}],
     "barred-gate": "Portão de barras 3D",
-    "chain-ring": ["Argola com corrente 3D", {"blocks": false}],
-    "ritual-brazier": ["Braseiro ritualístico 3D", {"section": "Lights"}],
+    "chain-ring": [
+      "Argola com corrente 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "ritual-brazier": [
+      "Braseiro ritualístico 3D",
+      {
+        "section": "Lights"
+      }
+    ],
     "artifact-pedestal": "Pedestal para artefato 3D",
     "sarcophagus": "Sarcófago fechado 3D",
     "sarcophagus-broken-lid": "Sarcófago com tampa quebrada 3D",
     "funeral-urns": "Urnas funerárias 3D",
-    "lone-skull": ["Crânio 3D", {"blocks": false}],
-    "incomplete-skeleton": ["Esqueleto incompleto 3D", {"blocks": false}],
     "stone-tomb": "Túmulo de pedra 3D",
     "ancient-tombstone": "Lápide antiga 3D",
     "ritual-table": "Mesa de ritual 3D",
     "ancient-bookshelf": "Estante de livros antigos 3D",
-    "stone-pulpit": "Púlpito de pedra 3D",
-    "hook-chain": ["Corrente com gancho 3D", {"blocks": false}],
+    "hook-chain": [
+      "Corrente com gancho 3D",
+      {
+        "blocks": false
+      }
+    ],
     "collapsed-ceiling": "Entulho de teto desabado 3D",
-    "wall-blocks": "Blocos de muralha 3D",
-    "statue-fragments": "Fragmentos de estátua 3D",
     "deity-statue": "Estátua de divindade 3D",
-    "secret-stone-door": ["Porta secreta de pedra 3D", {"section": "Ruínas e construções"}],
-    "iron-trapdoor": ["Alçapão de ferro 3D", {"blocks": false}],
-    "inscribed-stones": "Pedras com inscrições 3D"
+    "secret-stone-door": [
+      "Porta secreta de pedra 3D",
+      {
+        "section": "Ruínas e construções"
+      }
+    ],
+    "iron-trapdoor": [
+      "Alçapão de ferro 3D",
+      {
+        "blocks": false
+      }
+    ]
   },
   "mines": {
     "_section": "Cave",
-    "tunnel-entrance": ["Entrada de túnel 3D", {"footprint": "triple"}],
-    "mine-rails": ["Trilhos de mineração 3D", {"blocks": false, "footprint": "triple"}],
+    "tunnel-entrance": [
+      "Entrada de túnel 3D",
+      {
+        "footprint": "triple"
+      }
+    ],
+    "mine-rails": [
+      "Trilhos de mineração 3D",
+      {
+        "blocks": false,
+        "footprint": "triple"
+      }
+    ],
     "ore-cart": "Carrinho de minério 3D",
-    "pickaxe-on-rock": ["Picareta na rocha 3D", {"blocks": false}],
+    "pickaxe-on-rock": [
+      "Picareta na rocha 3D",
+      {
+        "blocks": false
+      }
+    ],
     "mining-shovel": "Pá de mineração 3D",
     "powder-barrel": "Barril de pólvora 3D",
     "ore-crates": "Caixotes de minério 3D",
-    "raw-ore-pile": ["Pilha de minério bruto 3D", {"blocks": false}],
+    "raw-ore-pile": [
+      "Pilha de minério bruto 3D",
+      {
+        "blocks": false
+      }
+    ],
     "mineral-crystals": "Cristais minerais 3D",
     "ember-vein-wall": "Veio de Ember na parede 3D",
     "large-crystal-formation": "Grande formação cristalina 3D",
     "natural-stone-column": "Coluna natural de pedra 3D",
     "stalactites": "Estalactites 3D",
     "stalagmites": "Estalagmites 3D",
-    "rock-arch-formation": ["Arco de pedra natural 3D", {"footprint": "triple"}],
-    "narrow-wooden-bridge": ["Ponte estreita de madeira 3D", {"section": "Pontes", "footprint": "triple", "blocks": false}],
-    "mine-walkway": ["Passarela de mineração 3D", {"section": "Pontes", "footprint": "triple"}],
+    "rock-arch-formation": [
+      "Arco de pedra natural 3D",
+      {
+        "footprint": "triple"
+      }
+    ],
+    "narrow-wooden-bridge": [
+      "Ponte estreita de madeira 3D",
+      {
+        "section": "Pontes",
+        "footprint": "triple",
+        "blocks": false
+      }
+    ],
+    "mine-walkway": [
+      "Passarela de mineração 3D",
+      {
+        "section": "Pontes",
+        "footprint": "triple"
+      }
+    ],
     "cargo-lift": "Elevador de carga 3D",
     "winch": "Guincho 3D",
-    "lift-chain": ["Corrente de elevador 3D", {"blocks": false}],
-    "wooden-platform": ["Plataforma de madeira 3D", {"blocks": false}],
-    "mine-barricade": ["Barricada de mineração 3D", {"section": "Barricada"}],
-    "dwarven-door": ["Porta de fortaleza anã 3D", {"section": "Ruínas e construções"}],
+    "lift-chain": [
+      "Corrente de elevador 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "wooden-platform": [
+      "Plataforma de madeira 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "mine-barricade": [
+      "Barricada de mineração 3D",
+      {
+        "section": "Barricada"
+      }
+    ],
+    "dwarven-door": [
+      "Porta de fortaleza anã 3D",
+      {
+        "section": "Ruínas e construções"
+      }
+    ],
     "dwarven-pillar": "Pilar anão 3D",
-    "stone-brazier": ["Braseiro de pedra 3D", {"section": "Lights"}],
+    "stone-brazier": [
+      "Braseiro de pedra 3D",
+      {
+        "section": "Lights"
+      }
+    ],
     "tunnel-marker": "Marco de túnel 3D",
     "giant-mushrooms": "Cogumelos subterrâneos gigantes 3D",
-    "bioluminescent-fungi": ["Fungos bioluminescentes 3D", {"blocks": false}],
-    "petrified-roots": ["Raízes petrificadas 3D", {"blocks": false}],
-    "boat-wreck": ["Restos de embarcação 3D", {"footprint": "triple"}],
-    "ancient-fragments": "Fragmentos arquitetônicos 3D"
+    "petrified-roots": [
+      "Raízes petrificadas 3D",
+      {
+        "blocks": false
+      }
+    ],
+    "boat-wreck": [
+      "Restos de embarcação 3D",
+      {
+        "footprint": "triple"
+      }
+    ],
+    "ancient-fragments": "Fragmentos arquitetônicos 3D",
+    "bioluminescent-fungi-v02": [
+      "Cogumelos bioluminescentes castanhos 3D · v02",
+      {
+        "blocks": false
+      }
+    ],
+    "amanita-muscaria-v01": [
+      "Amanita muscaria 3D · v01",
+      {
+        "blocks": false
+      }
+    ],
+    "chanterelle-cluster-v01": [
+      "Cantarelos dourados 3D · v01",
+      {
+        "blocks": false
+      }
+    ]
   },
   "ember": {
     "_section": "Objetos",
-    "refined-ember-shard": ["Fragmento de Ember refinado 3D", {"blocks": false}],
-    "raw-ember-deposit": "Depósito de Ember bruto 3D",
-    "ember-container": ["Recipiente de Ember 3D", {"blocks": false}],
-    "ember-lantern": ["Lanterna de Ember 3D", {"blocks": false}],
-    "ember-extraction-altar": "Altar de extração de Ember 3D",
+    "ember-lantern": [
+      "Lanterna de Ember 3D",
+      {
+        "blocks": false
+      }
+    ],
     "containment-box": "Caixa de contenção 3D",
-    "ancient-reliquary": ["Relicário antigo 3D", {"blocks": false}],
-    "cult-symbol-stone": "Símbolo de culto em pedra 3D",
-    "ritual-totem": "Totem ritualístico 3D",
-    "ember-transformed-statue": "Estátua transformada pelo Ember 3D",
-    "cracked-ceremonial-stone": "Pedra cerimonial rachada 3D",
-    "obelisk-fragment": "Fragmento de obelisco 3D",
-    "ancient-pedestal": "Pedestal antigo 3D",
-    "unknown-machine": "Máquina antiga 3D",
-    "mechanical-parts": ["Peças mecânicas 3D", {"blocks": false}],
-    "god-king-transport": ["Transporte do God-King 3D", {"footprint": "triple"}],
-    "ancient-hull-fragment": ["Fragmento de casco antigo 3D", {"footprint": "triple"}],
-    "lift-mechanism-part": "Mecanismo de elevação 3D",
-    "light-crystal": ["Cristal de iluminação 3D", {"blocks": false, "section": "Lights"}],
-    "ritual-vessel": ["Recipiente ritual 3D", {"blocks": false}]
+    "ancient-reliquary": [
+      "Relicário antigo 3D",
+      {
+        "blocks": false
+      }
+    ]
   }
 }

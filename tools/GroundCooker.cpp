@@ -8,6 +8,9 @@
 #include <format>
 #include <fstream>
 #include <optional>
+#include <set>
+
+#include <nlohmann/json.hpp>
 
 #include "Engine2Textures.h"
 #include "TextureCooker.h"
@@ -112,23 +115,32 @@ bool cookGround(JobSystem& jobs, const GroundCookOptions& options, std::vector<P
   work.push_back({e2::groundPlains049Asset("color"), TextureFormat::Bc7Srgb, plains049 / "color.png", {}});
   work.push_back({e2::groundPlains049Asset("normal"), TextureFormat::Bc5Unorm, plains049 / "normal.png", {}});
   work.push_back({e2::groundPlains049Asset("rough"), TextureFormat::Bc7Unorm, plains049 / "rough.png", {}});
-  // The painted backdrops (screen backgrounds: basic BC7 is plenty, and much less work than slow).
+  // The painted map backgrounds and editor-selectable briefing backgrounds (basic BC7 is plenty, and much less work than slow).
   std::vector<std::string> backdropAssets;
   {
-    // Every painted background lives in one folder of the project, content/backdrops (Engine2's 39 copied there, the user's own beside them:
-    // the user, 2026-10-20: "quero todos em uma pasta no EmberEngine"); Engine2's folder is no longer read.
-    for (const std::filesystem::path& folder : {std::filesystem::path("content/backdrops")}) {
+    std::set<std::string> editorBackgroundFiles;
+    std::ifstream catalogFile("content/engine2/editor-catalog.json");
+    const nlohmann::json catalog = catalogFile ? nlohmann::json::parse(catalogFile, nullptr, false) : nlohmann::json();
+    if (catalog.is_object() && catalog.contains("backgrounds") && catalog["backgrounds"].is_object() && catalog["backgrounds"].contains("byId") && catalog["backgrounds"]["byId"].is_object())
+      for (const auto& [_, file] : catalog["backgrounds"]["byId"].items())
+        if (file.is_string()) editorBackgroundFiles.insert(file.get<std::string>());
+    std::set<std::string> cookedBackdropFiles;
+    // Keep the project's originals in their existing folders; the Engine2 source folder is never read.
+    for (const std::filesystem::path& folder : {std::filesystem::path("content/backdrops"), std::filesystem::path("content/briefings")}) {
       std::error_code error;
       for (const auto& entry : std::filesystem::directory_iterator(folder, error)) {
         const std::string ext = entry.path().extension().string();
         if (ext != ".jpg" && ext != ".jpeg" && ext != ".png") continue;
         const std::u8string name = entry.path().filename().u8string();
-        {  // the briefings, the title's art and the shops' pictures are read as files by the UI: not cooked into the ground pack
+        const std::string file(name.begin(), name.end());
+        if (folder == "content/briefings" && !editorBackgroundFiles.contains(file)) continue;
+        if (folder == "content/backdrops") {  // title, shop and briefing UI art remains in its own UI path
           std::string lower(name.begin(), name.end());
           std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
           if (lower.find("brief") != std::string::npos || lower.rfind("title-bg", 0) == 0 || lower.rfind("backpack-bg", 0) == 0 || lower.rfind("farmlands-", 0) == 0) continue;
         }
-        work.push_back({e2::backdropAsset(std::string(name.begin(), name.end())), TextureFormat::Bc7Srgb, entry.path(), {}});
+        if (!cookedBackdropFiles.insert(file).second) continue;
+        work.push_back({e2::backdropAsset(file), TextureFormat::Bc7Srgb, entry.path(), {}});
         backdropAssets.push_back(work.back().asset);
       }
     }

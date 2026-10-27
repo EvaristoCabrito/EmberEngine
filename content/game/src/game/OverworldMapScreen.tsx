@@ -33,7 +33,9 @@ const PARTY_SKILL_ORDER = [
 
 export type LocationStatus = "locked" | "available" | "done";
 
-const ZOOM_STOPS = [70, 90, 110, 130];
+const ZOOM_STOPS = [110, 130, 150, 170];
+const ZOOM_LEVEL_OFFSET = 1;
+const ZOOM_LEVEL_COUNT = 4;
 
 /** Idle-breathing frames of the party leader's own battle sprite (Party menu; Kael by default:
  * public/game/sprites/Kael_Final/kael-final-002, see assets.ts's "kaelFinal" entry). Only every
@@ -50,7 +52,7 @@ const LEADER_MARKER: Record<AffinityHero, { dir: string; idle: number; bust: str
   Malrec: { dir: "malrec", idle: 36, bust: "" },
 };
 
-function LeaderMarker({ hero, facingLeft }: { hero: AffinityHero; facingLeft: boolean }) {
+function LeaderMarker({ hero, facingLeft, zoomScale }: { hero: AffinityHero; facingLeft: boolean; zoomScale: number }) {
   const sheet = LEADER_MARKER[hero];
   const frames = sheet.idle === 36 ? Array.from({ length: 12 }, (_, i) => 1 + i * 3) : Array.from({ length: sheet.idle }, (_, i) => 1 + i);
   const [frame, setFrame] = useState(0);
@@ -80,10 +82,11 @@ function LeaderMarker({ hero, facingLeft }: { hero: AffinityHero; facingLeft: bo
     return [left, top, right - left, bottom - top, sampledBounds[0][4], sampledBounds[0][5]];
   })() : sampledBounds[frameIndex];
   const [left, top, width, height, canvasWidth, canvasHeight] = bounds;
-  const scale = 48 / height;
+  const markerHeight = 48 * zoomScale;
+  const scale = markerHeight / height;
   return (
-    <span className="flex h-12 w-16 items-end justify-center select-none drop-shadow-[0_2px_3px_rgba(0,0,0,0.6)]" style={{ transform: facingLeft ? "scaleX(-1)" : undefined }}>
-      <span className="relative block shrink-0 overflow-hidden" style={{ width: width * scale, height: 48 }}>
+    <span className="flex items-end justify-center select-none drop-shadow-[0_2px_3px_rgba(0,0,0,0.6)]" style={{ width: 64 * zoomScale, height: markerHeight, transform: facingLeft ? "scaleX(-1)" : undefined }}>
+      <span className="relative block shrink-0 overflow-hidden" style={{ width: width * scale, height: markerHeight }}>
     <img
       src={`/game/sprites/${sheet.dir}${hero === "Neera" ? "" : "/"}${frames[frame % frames.length]}.png${sheet.bust}`}
       alt=""
@@ -287,7 +290,7 @@ export function OverworldMapScreen({
   }, [mapLoading.failed]);
   const [flashId, setFlashId] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
-  const [zoomIdx, setZoomIdx] = useState(ZOOM_STOPS.length - 1);
+  const [zoomIdx, setZoomIdx] = useState(0);
   const [fieldSpellsOpen, setFieldSpellsOpen] = useState(false);
   const [warpVisual, setWarpVisual] = useState<"forming" | "open" | "closing" | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -834,7 +837,7 @@ export function OverworldMapScreen({
               className="absolute z-20 -translate-x-1/2 -translate-y-full min-w-11 min-h-11 transition-all duration-500 ease-in-out focus-visible:outline-2 focus-visible:outline-accent"
               style={{ left: `${partyWorld.x}%`, top: `${partyWorld.y}%` }}
             >
-              <LeaderMarker hero={leader} facingLeft={facingLeft} />
+              <LeaderMarker hero={leader} facingLeft={facingLeft} zoomScale={ZOOM_STOPS[zoomIdx] / ZOOM_STOPS[0]} />
             </button>
           </div>
         </div>
@@ -1067,7 +1070,7 @@ export function OverworldMapScreen({
             <ZoomIn className="size-5" />
           </button>
           <div className="text-center text-[10px] tabular-nums text-muted py-0.5">
-            {ZOOM_STOPS.length - zoomIdx}/{ZOOM_STOPS.length}
+            {zoomIdx + ZOOM_LEVEL_OFFSET}/{ZOOM_LEVEL_COUNT}
           </div>
           <button
             type="button"

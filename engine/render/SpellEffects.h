@@ -89,6 +89,8 @@ class SpellEffects {
   // One fx clip on its own (the Spells menu's loose effects): played once at the spot, placed by what the art is
   // (a pillar stands on the feet, a ring lies around them, a burst sits on the body), with a light of its colour.
   void play(const std::string& clipName, const Spot& at, float start);
+  // Preview an existing complete elemental effect, without changing any spell's selected look.
+  void previewElement(VfxElement element, int version, const Spot& at, float start);
   // A potion handed over or drunk (kind "potion", version `look`): its colour by what it does (Engine2 POTIONS effect:
   // "heal", "disease", "mana").
   bool potion(const std::string& effect, int look, const Spot& target, float start, float impact, int owner = -1);
@@ -319,7 +321,9 @@ class SpellEffects {
   std::vector<std::pair<BurningHands, bool>> burns_;  // Mãos Flamejantes 01 / Sopro Venenoso 01 (poison) = BurningHandsV2VFX
   // An fx clip of the battle pack as the effect runtime samples it (requested on screen; empty while not loaded).
   VfxFlipbook flipbook(const char* clipName);
-  ElementSpritesV2 elementV2(VfxElement element);
+  ElementSpritesV2 elementV2(VfxElement element, int version = 2);
+  struct ElementPreview { VfxElement element; int version; glm::vec3 at; float start; };
+  std::vector<ElementPreview> elementPreviews_;
   // Bless's allies as BlessVFX takes them: anchor + 0.9, hex distance from the caster.
   static std::vector<Bless::Ally> blessAllies(const Spot& caster, const std::vector<Spot>& targets);
   // Fireball's flight goes to the target hex's ground (BattleSpells3D at(): 0.04 up); its area's radius (the farthest
