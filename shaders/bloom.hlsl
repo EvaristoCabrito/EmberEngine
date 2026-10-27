@@ -22,14 +22,25 @@ float luma(float3 c) {
   return dot(c, float3(0.2126, 0.7152, 0.0722));
 }
 
+// The most a water pixel feeds the bloom (scene luminance; ACES puts it at ~0.88 on screen, just past the threshold).
+static const float kWaterBloomCap = 1.5;
+
 // The part of the scene colour that blooms: smoothstep over the display luminance, like the old gather.
 float3 brightAt(float2 uv) {
-  float3 c = gTextures[NonUniformResourceIndex(push.source)].SampleLevel(gSamplers[push.sampler], uv, 0).rgb;
+  const float4 scene = gTextures[NonUniformResourceIndex(push.source)].SampleLevel(gSamplers[push.sampler], uv, 0);
+  float3 c = scene.rgb;
   // A NaN or an infinity in the scene colour (a half float past 65504 is infinite; the Karis weight then makes it NaN) spread
   // through the pyramid's filters into black rectangles that flickered over the board (the user, 2026-10-23, Wisp Forest): a NaN
   // blooms nothing, an infinity blooms as the brightest half float. Finite colours are untouched.
   c = float3(isnan(c.r) ? 0.0 : c.r, isnan(c.g) ? 0.0 : c.g, isnan(c.b) ? 0.0 : c.b);
   c = min(c, 65504.0);
+  // The water's glints (the user, 2026-10-27: their halo covered the characters standing in front): where the water lies
+  // (the scene's alpha lowered by its cover, Renderer's water pipelines) the colour feeds the bloom at most at
+  // kWaterBloomCap luminance, just past the threshold; the water drawn on screen is unchanged.
+  const float a = scene.a;
+  const float water = isnan(a) ? 0.0 : saturate(1.0 - a);
+  const float l = luma(c);
+  if (water > 0.0 && l > kWaterBloomCap) c = lerp(c, c * (kWaterBloomCap / l), water);
   return c * smoothstep(0.75, 0.85, luma(acesFilmic(c)));
 }
 

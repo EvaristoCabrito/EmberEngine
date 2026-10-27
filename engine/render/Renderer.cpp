@@ -586,6 +586,9 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   water.depthWrite = false;
   water.alphaBlend = true;
   water.premultipliedAlpha = true;
+  // The scene's alpha is 1 under the water (the ground writes it); the water lowers it by its cover and the cards raise it
+  // again, so the bloom knows the water's own pixels and limits their glints (the halo spread over the characters).
+  water.alphaMarks = true;
   waterPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), water);
   water.vertexShader = "water3d.VSMain";
   water.fragmentShader = "water3d.PSMain";

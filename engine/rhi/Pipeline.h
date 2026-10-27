@@ -28,6 +28,9 @@ struct GraphicsPipelineDesc {
   VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
   bool alphaBlend = false;
   bool premultipliedAlpha = false;  // with alphaBlend: colour is already multiplied by alpha
+  // With alphaBlend: the target's alpha is multiplied by (1 - source alpha) instead of blended towards 1, so the pass leaves
+  // a mark where it lies (the water, for the bloom: shaders/bloom.hlsl brightAt); the colour blends as usual.
+  bool alphaMarks = false;
 };
 
 // Dynamic-rendering pipeline on the shared bindless layout; viewport and scissor are dynamic.
