@@ -10,7 +10,7 @@ um anel por vez, duas ou três vezes; o Veneno Cáustico tem a maior área do jo
 O Ember Ashes I para no nível 30; uma magia aprendida depois do 16 continua a escala no Ember Ashes II (teto 60), que já está
 programado: os níveis além do 30 só não se alcançam ainda.
 
-Familiar Titã é Tier 5 (nível 11); o Cão Zumbi é Tier 6 do Necromante (nível 15, a promoção) (o usuário, 2026-10-20).
+Numen (o antigo Familiar Titã) é Tier 6 do Arcanista e do Necromante (nível 15); o Cão Zumbi é Tier 8 do Necromante e o Cervo Azul do Pântano Tier 8 do Arcanista (nível 18) (o usuário, 2026-10-27).
 
 As habilidades do Guerreiro, do Cavaleiro Pesado e do Lanceiro seguem a mesma regra; quase tudo nelas é dano (dados, faces, peso da
 arma), e cada uma ganha um **talento** num nível da trilha (o usuário, 2026-10-20: "eles não tem muito o que escalar além de dano, mas
@@ -196,11 +196,11 @@ Escala do nível 9 ao 23, uma melhoria pequena por nível: dano 2D8 → 5D8; alc
 
 Nível a nível: 10: +0,12 peso do MAG, 11: +1 hex de alcance, 12: +1 dado, 13: +1 anel, 14: +0,12 peso do MAG, 15: +1 hex de alcance, 16: +1 dado, 17: +0,12 peso do MAG, 18: +1 hex de alcance, 19: +0,12 peso do MAG, 20: +1 anel, 21: +1 dado, 22: +1 hex de alcance, 23: +0,12 peso do MAG.
 
-### Familiar Titã (T5)
+### Numen (Arcanista e Necromante, T6)
 
-Escala do nível 11 ao 25, uma melhoria pequena por nível: alcance 2 → 8.
+Escala do nível 15 ao 29, uma melhoria pequena por nível: alcance 2 → 8.
 
-Nível a nível: 13: +1 hex de alcance, 15: +1 hex de alcance, 17: +1 hex de alcance, 20: +1 hex de alcance, 22: +1 hex de alcance, 24: +1 hex de alcance.
+Nível a nível: 17: +1 hex de alcance, 19: +1 hex de alcance, 21: +1 hex de alcance, 24: +1 hex de alcance, 26: +1 hex de alcance, 28: +1 hex de alcance.
 
 ### Elo de Sacrifício
 
@@ -214,11 +214,17 @@ Escala do nível 13 ao 27, uma melhoria pequena por nível: dano 2D8 → 4D8; al
 
 Nível a nível: 14: +1 hex de alcance, 15: +1 anel, 16: +1 dado, 17: +1 hex de alcance, 18: +0,15 peso do MAG, 19: +1 hex de alcance, 20: +10 chance de medo %, 21: +1 turnos de medo, 22: +1 hex de alcance, 23: +1 anel, 24: +1 hex de alcance, 25: +1 dado, 26: +0,15 peso do MAG, 27: +1 hex de alcance.
 
-### Cão Zumbi (Necromante, T6)
+### Cão Zumbi (Necromante, T8)
 
-Escala do nível 15 ao 29, uma melhoria pequena por nível: alcance 2 → 8.
+Escala do nível 18 ao 32, uma melhoria pequena por nível: alcance 2 → 8.
 
-Nível a nível: 17: +1 hex de alcance, 19: +1 hex de alcance, 21: +1 hex de alcance, 24: +1 hex de alcance, 26: +1 hex de alcance, 28: +1 hex de alcance.
+Nível a nível: 20: +1 hex de alcance, 22: +1 hex de alcance, 24: +1 hex de alcance, 27: +1 hex de alcance, 29: +1 hex de alcance, 31: +1 hex de alcance.
+
+### Cervo Azul do Pântano (Arcanista, T8)
+
+Escala do nível 18 ao 32, uma melhoria pequena por nível: alcance 2 → 8.
+
+Nível a nível: 20: +1 hex de alcance, 22: +1 hex de alcance, 24: +1 hex de alcance, 27: +1 hex de alcance, 29: +1 hex de alcance, 31: +1 hex de alcance.
 
 ### Fortalecer Invocações
 

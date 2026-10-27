@@ -7406,7 +7406,7 @@
         [
          [
           {
-           "text": "Invocar Familiar Titã",
+           "text": "Invocar Numen",
            "medium": true
           }
          ]
@@ -7414,7 +7414,7 @@
         [
          [
           {
-           "text": "Conjurador",
+           "text": "Arcanista / Necromante",
            "muted": true
           }
          ]
@@ -7422,7 +7422,7 @@
         [
          [
           {
-           "text": "T4",
+           "text": "T6",
            "muted": true
           }
          ]
@@ -16395,7 +16395,7 @@
         [
          [
           {
-           "text": "Summon Titan Familiar",
+           "text": "Summon Numen",
            "medium": true
           }
          ]
@@ -16403,7 +16403,7 @@
         [
          [
           {
-           "text": "Conjurer",
+           "text": "Sorcerer / Necromancer",
            "muted": true
           }
          ]
@@ -16411,7 +16411,7 @@
         [
          [
           {
-           "text": "T4",
+           "text": "T6",
            "muted": true
           }
          ]

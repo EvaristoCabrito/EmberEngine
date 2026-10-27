@@ -7,8 +7,8 @@ EmberEngine's own spells (2026-10-20; the user: "do the same process for these C
 Invocação in Drenar Vida's place: "o Malrec explode uma das próprias invocações. Todos a até 1 hex dela levam MAG/2×1.8+2D8, e
 a invocação some"). Malrec (`conjurer`; the Arcanista and the Necromante are his promotions, `emberClassFamily` → `conjurer`) learns
 the combat spells below when their tier opens in `inn.json` (`tierUses`): T1 at 1, T2 at 3, T3 at 6, T4 at 8 and T5 at 11.
-Elo de Sacrifício is T5, costs one T5 use and keeps its battle-long effect. T3 contains Familiar Radiante; T5 contains Familiar
-Titã, Elo de Sacrifício and Detonar Invocação (moved from T3, the user, 2026-10-25: learned at 11, costs a T5 use; its scaling
+Elo de Sacrifício is T5, costs one T5 use and keeps its battle-long effect. T3 contains Familiar Radiante; T5 contains
+Elo de Sacrifício and Detonar Invocação (moved from T3, the user, 2026-10-25: learned at 11, costs a T5 use; its scaling
 track keeps its dates). T1 keeps its three combat spells.
 
 **No exclusives (the user, 2026-10-25, later the same day):** Reflexo Arcano is T3 (learned at 6, a T3 use) and Imagem Espelhada T2
@@ -114,3 +114,13 @@ field spells only).
 See the commit message. Not verified: the look of each effect in the window (the user judges); the balance; an enemy never uses them
 (no AI); the runes' rows, Retornar's list and the note typed in the Mochila in the window (captures only); the illusion's one-in-three
 and the bond over many blows (the code path, not a statistic).
+
+## Invocações das promoções (the user, 2026-10-27)
+
+- **Numen** (`summonFamiliar3`, the old Familiar Titã, same creature and numbers): a T6 the Arcanista (`sorcerer`) and the Necromante share,
+  learned at 15 (T6 opens); a plain Conjurador no longer has it (`grantClassSpells`).
+- **Cão Zumbi** (`summonZombieDog`): the Necromante's T8, learned at 18 (T8 opens); stats x1.25 of the caster (a first value, `kT8SummonScale`).
+- **Cervo Azul do Pântano** (`summonSwampDeer`, class `swampBlueDeer`, content/engine2/summons.json): the Arcanista's T8, learned at 18,
+  x1.25 of the caster, no spell of its own; comes in the Familiar Radiante's blue summon light (ArmsFx Radiant).
+- Coming (the user): **Telesm**, a new defender familiar (T2 for Selene, T3 for the others; art to be scanned), and **Hipóstase**
+  (Summon Hypostasis), the ultimate summon of Ember I. Neither is built.

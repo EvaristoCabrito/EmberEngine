@@ -485,9 +485,12 @@ class BattleStatusSheet {
         SpellRow row;
         row.kind = r.value("kind", "");
         row.tier = r.contains("tier") && r["tier"].is_number() ? r["tier"].get<int>() : 0;
-        if (const int ours = e2::spellTierNumber(row.kind); ours > 0) row.tier = ours;  // ours (Spells.cpp unitTierOf): Investida T3, Familiar Titã T5, Cão Zumbi T6
-        // the Cão Zumbi is the Necromante's (grantClassSpells): a hero without it has no line for it
-        if (row.kind == "summonZombieDog" && u.side == "player" && std::find(u.spellList.begin(), u.spellList.end(), row.kind) == u.spellList.end()) continue;
+        if (const int ours = e2::spellTierNumber(row.kind); ours > 0) row.tier = ours;  // ours (Spells.cpp unitTierOf): Investida T3, Numen T6, Cão Zumbi T8
+        // the Numen (the Arcanista's and the Necromante's) and the Cão Zumbi (the Necromante's) are granted by grantClassSpells:
+        // a hero without one has no line for it
+        if ((row.kind == "summonZombieDog" || row.kind == "summonFamiliar3") && u.side == "player" &&
+            std::find(u.spellList.begin(), u.spellList.end(), row.kind) == u.spellList.end())
+          continue;
         row.uses = row.tier >= 1 && row.tier <= 10 ? u.spells[row.tier - 1] : 0;
         if (r.value("uses", false) && row.uses <= 0) continue;
         std::string text = tr(r.value("text", ""));

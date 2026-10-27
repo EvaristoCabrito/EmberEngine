@@ -664,9 +664,17 @@ struct SummonSpec {
 };
 constexpr SummonSpec kSummons[] = {{"summonFamiliar", "familiar", 0.5, 4, "Familiar de"},
                                    {"summonFamiliar2", "familiar2", 0.75, 4, "Familiar Maior de"},
-                                   {"summonFamiliar3", "familiar3", 1.0, 5, "Familiar Titã de"},
+                                   {"summonFamiliar3", "familiar3", 1.0, 5, "Numen de"},
                                    {"summonFamiliar4", "familiar4", 0.75, 4, "Familiar Radiante de"},
-                                   {"summonZombieDog", "zombieDog", 1.0, 4, "Cão Zumbi de"}};
+                                   {"summonZombieDog", "zombieDog", 1.0, 4, "Cão Zumbi de"},
+                                   // the Arcanista's T8 (the user, 2026-10-27): kT8SummonScale
+                                   {"summonSwampDeer", "swampBlueDeer", 1.25, 4, "Cervo Azul do Pântano de"}};
+// The T8 summons (the user, 2026-10-27: the Arcanista's Cervo, the Necromante's Cão Zumbi): a quarter over the T6 Numen's 1.0, a first
+// value the user sets; the Cão Zumbi keeps its old 1.0 in the Cooker's checks (progression off).
+constexpr double kT8SummonScale = 1.25;
+double summonScale(const SummonSpec& sp) {
+  return std::string(sp.kind) == "summonZombieDog" && progressionEnabled() ? kT8SummonScale : sp.scale;
+}
 const SummonSpec* summonSpec(const std::string& kind) {
   for (const SummonSpec& s : kSummons)
     if (kind == s.kind) return &s;
@@ -700,9 +708,10 @@ BattleUnit makeSummon(const Battle& b, const BattleUnit& caster, const SummonSpe
   f.name = std::string(sp.prefix) + " " + caster.name;
   f.classId = cls.id, f.className = cls.name, f.sprite = cls.sprite, f.side = "player";
   f.x = cell.x, f.y = cell.y, f.alive = true;
-  f.maxHp = std::max(1, static_cast<int>(jsRound(caster.maxHp * sp.scale))), f.hp = f.maxHp;
-  f.atk = static_cast<int>(jsRound(caster.atk * sp.scale)), f.mag = static_cast<int>(jsRound(caster.mag * sp.scale));
-  f.def = static_cast<int>(jsRound(caster.def * sp.scale)), f.dex = static_cast<int>(jsRound(caster.dex * sp.scale));
+  const double scale = summonScale(sp);
+  f.maxHp = std::max(1, static_cast<int>(jsRound(caster.maxHp * scale))), f.hp = f.maxHp;
+  f.atk = static_cast<int>(jsRound(caster.atk * scale)), f.mag = static_cast<int>(jsRound(caster.mag * scale));
+  f.def = static_cast<int>(jsRound(caster.def * scale)), f.dex = static_cast<int>(jsRound(caster.dex * scale));
   f.combat.resistances = cls.resistances;
   f.initiativeBonus = cls.initiativeBonus, f.initiative = initiativeRoll + cls.initiativeBonus;
   f.mov = cls.mov, f.minRange = cls.minRange, f.maxRange = cls.maxRange, f.size = cls.size;
@@ -710,7 +719,9 @@ BattleUnit makeSummon(const Battle& b, const BattleUnit& caster, const SummonSpe
   f.level = caster.level, f.xp = 0, f.summoned = true, f.faceDx = 1.0, f.faceDy = 0.0, f.facing = 1;
   f.fullness = 100;
   const std::string k = sp.kind;
-  f.spellCharges = k == "summonFamiliar4" ? 3 : k == "summonZombieDog" ? d.dogVenom : k == "summonFamiliar3" ? chargesAt(d.spellCharges, caster.level) : chargesAt(d.missileCharges, caster.level);
+  f.spellCharges = k == "summonFamiliar4" ? 3 : k == "summonZombieDog" ? d.dogVenom : k == "summonFamiliar3" ? chargesAt(d.spellCharges, caster.level)
+                 : k == "summonSwampDeer" ? 0  // no spell of its own: it fights with its antlers
+                                          : chargesAt(d.missileCharges, caster.level);
   if (k == "summonFamiliar2" || k == "summonFamiliar4") f.lifeDrainCharges = chargesAt(d.drainCharges, caster.level);
   f.summonerId = caster.id;
   return f;

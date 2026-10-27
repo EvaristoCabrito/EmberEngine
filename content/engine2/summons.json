@@ -33,7 +33,7 @@
   },
   "familiar3": {
    "id": "familiar3",
-   "name": "Familiar Titã",
+   "name": "Numen",
    "role": "Invocação",
    "sprite": "familiar3",
    "mov": 5,
@@ -105,6 +105,21 @@
      "dy": 0
     }
    ],
+   "footprintW": null,
+   "footprintH": null,
+   "resistances": {},
+   "initiativeBonus": 5
+  },
+  "swampBlueDeer": {
+   "id": "swampBlueDeer",
+   "name": "Cervo Azul do Pântano",
+   "role": "Invocação",
+   "sprite": "swamp-blue-deer",
+   "mov": 5,
+   "minRange": 1,
+   "maxRange": 1,
+   "size": 1,
+   "footprintOffsets": null,
    "footprintW": null,
    "footprintH": null,
    "resistances": {},

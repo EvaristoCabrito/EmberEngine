@@ -71,7 +71,7 @@ constexpr SpellData kSpells[] = {
     {"phantasmalForce", "Força Fantasmagórica", 1, "arcane", false},
     {"webOfDreams", "Teia dos Sonhos", 2, "arcane", false},
     {"summonFamiliar2", "Familiar Maior", 2, "", false},
-    {"summonFamiliar3", "Familiar 3", 4, "", false},
+    {"summonFamiliar3", "Invocar Numen", 4, "", false},  // the old Familiar Titã (the user, 2026-10-27: "Summon Numen")
     {"summonFamiliar4", "Familiar Radiante", 3, "", false},
     {"summonZombieDog", "Cão Zumbi", 5, "", false},
     {"lightningTier3", "Relâmpago 3", 5, "lightning", false},
@@ -153,6 +153,8 @@ constexpr EmberSpell kEmberSpells[] = {
     {{"sacrificeBond", "Elo de Sacrifício", 5, "", false}, "conjurer", 11},
     {{"nightmare", "Pesadelo", 4, "arcane", false}, "conjurer", 8},
     {{"boneLance", "Lança de Ossos", 6, "darkness", false}, "necromancer", 15},  // the Necromante's T6 (the user, 2026-10-20)
+    // the Arcanista's T8 summon (the user, 2026-10-27), beside the Necromante's Cão Zumbi (T8 since the same day, grantClassSpells)
+    {{"summonSwampDeer", "Cervo Azul do Pântano", 8, "", false}, "sorcerer", 18},
     {{"empowerSummons", "Fortalecer Invocações", 4, "", false}, "conjurer", 8},
     // Mago Negro (docs/SKILLS_MAGE.md, 2026-10-21; Voss, class `mage` / `voss`): the Bruxo and the Elementalista keep them
     {{"cloudOfDaggers", "Nuvem de Adagas", 4, "arcane", false}, "mage", 8},
@@ -240,8 +242,8 @@ int spellTierOf(const std::string& kind) {
 bool bullRushTier3() { return progressionEnabled(); }
 int unitTierOf(const BattleUnit& u, const std::string& kind) {
   if (kind == "bullRush" && u.side == "player" && bullRushTier3()) return 3;
-  if (kind == "summonFamiliar3" && progressionEnabled()) return 5;  // Familiar Titã (the user, 2026-10-20)
-  if (kind == "summonZombieDog" && progressionEnabled()) return 6;  // the Necromante's Cão Zumbi
+  if (kind == "summonFamiliar3" && progressionEnabled()) return 6;  // Numen (the old Familiar Titã): the Arcanista's and the Necromante's T6 (the user, 2026-10-27)
+  if (kind == "summonZombieDog" && progressionEnabled()) return 8;  // the Necromante's Cão Zumbi: T8 (the user, 2026-10-27)
   return spellTierOf(kind);
 }
 std::string elementOf(const std::string& kind) {
@@ -426,10 +428,11 @@ constexpr SpellTrack kSpellTracks[] = {
     {"summonFamiliar4", 6, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
     {"mirrorImage", 7, "p3 r1 R1 c1 p3 r1 R1 p3 r1 p3 c1 R1 r1 p3"},
     {"detonateSummon", 9, "m0.12 r1 d1 a1 m0.12 r1 d1 m0.12 r1 m0.12 a1 d1 r1 m0.12"},
-    {"summonFamiliar3", 11, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
+    {"summonFamiliar3", 15, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
     {"sacrificeBond", 11, "p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3 p-3"},
     {"nightmare", 13, "r1 a1 d1 r1 m0.15 r1 p10 t1 r1 a1 r1 d1 m0.15 r1"},
-    {"summonZombieDog", 15, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
+    {"summonZombieDog", 18, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
+    {"summonSwampDeer", 18, "- r1 - r1 - r1 - - r1 - r1 - r1 -"},
     {"empowerSummons", 15, "p1 p1 p1 R1 p1 p1 p1 p1 p1 p1 R1 p1 p1 p1"},
     {"boneLance", 15, "m0.1 l1 d1 f2 Z1 m0.1 t1 p10 m0.1 l1 d1 f2 p10 m0.1"},
     {"markOfRuin", 15, "r1 p5 m0.05 r1 t1 d1 r1 p5 m0.05 f2 r1 p5 m0.05 r1"},
@@ -2627,9 +2630,14 @@ void grantClassSpells(BattleUnit& u) {
       !contains(u.spellList, std::string("iceStorm")))
     u.spellList.push_back("iceStorm");
   if (progressionEnabled() && u.side == "player") {
-    const bool necromancer = u.classId == "necromancer" && u.level >= 15;
-    if (!necromancer) std::erase(u.spellList, std::string("summonZombieDog"));
-    else if (!contains(u.spellList, std::string("summonZombieDog"))) u.spellList.push_back("summonZombieDog");
+    // the user, 2026-10-27: the Numen (the old Familiar Titã) is a T6 the Arcanista and the Necromante share (T6 opens at 15), the Cão Zumbi the
+    // Necromante's T8 (opens at 18), beside the Arcanista's Cervo Azul do Pântano (kEmberSpells)
+    auto grant = [&](const char* kind, bool has) {
+      if (!has) std::erase(u.spellList, std::string(kind));
+      else if (!contains(u.spellList, std::string(kind))) u.spellList.push_back(kind);
+    };
+    grant("summonFamiliar3", (u.classId == "sorcerer" || u.classId == "necromancer") && u.level >= 15);
+    grant("summonZombieDog", u.classId == "necromancer" && u.level >= 18);
   }
 }
 std::string promotionName(const std::string& classId) {
@@ -2753,8 +2761,9 @@ std::string spellExplain(const std::string& kind, bool en) {
       {"summonFamiliar", "Invoca um familiar num hex livre até o alcance; ele luta ao seu lado.", "Summons a familiar on a free hex within reach; it fights at your side."},
       {"summonFamiliar2", "Invoca um familiar maior num hex livre até o alcance.", "Summons a greater familiar on a free hex within reach."},
       {"summonFamiliar4", "Invoca um familiar radiante num hex livre até o alcance.", "Summons a radiant familiar on a free hex within reach."},
-      {"summonFamiliar3", "Invoca o Familiar Titã num hex livre até o alcance.", "Summons the Titan Familiar on a free hex within reach."},
+      {"summonFamiliar3", "Invoca o Numen num hex livre até o alcance.", "Summons the Numen on a free hex within reach."},
       {"summonZombieDog", "Invoca um Cão Zumbi num hex livre até o alcance; a mordida dele envenena.", "Summons a Zombie Dog on a free hex within reach; its bite poisons."},
+      {"summonSwampDeer", "Invoca o Cervo Azul do Pântano num hex livre até o alcance; ele luta ao seu lado.", "Summons the Swamp Blue Deer on a free hex within reach; it fights at your side."},
       {"longShot", "Um tiro de arco de longe: o dano da arma mais os dados da habilidade.", "A long bow shot: the weapon's damage plus the skill's dice."},
       {"bloodyShot", "Um tiro que multiplica o dano da arma e deixa o alvo sangrando por algumas rodadas.",
        "A shot that multiplies the weapon's damage and leaves the target bleeding for some rounds."},
@@ -3112,8 +3121,8 @@ constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"fireball", "Fireball"}, {"iceStorm", "Ice Storm"}, {"acidCloud", "Acid Cloud"}, {"acidArrow", "Milf's Acid Arrow"}, {"causticVenom", "Caustic Venom"}, {"poisonBreath", "Poison Breath"},
     {"warp", "Warp"}, {"bless", "Bless"}, {"burningHands", "Burning Hands"}, {"turnUndead", "Turn Undead"},
     {"divineBolt", "Divine Bolt"}, {"summonFamiliar", "Summon Familiar"}, {"phantasmalForce", "Phantasmal Force"},
-    {"webOfDreams", "Web of Dreams"}, {"summonFamiliar2", "Greater Familiar"}, {"summonFamiliar3", "Familiar 3"},
-    {"summonFamiliar4", "Radiant Familiar"}, {"summonZombieDog", "Zombie Dog"}, {"lightningTier3", "Lightning 3"},
+    {"webOfDreams", "Web of Dreams"}, {"summonFamiliar2", "Greater Familiar"}, {"summonFamiliar3", "Summon Numen"},
+    {"summonFamiliar4", "Radiant Familiar"}, {"summonZombieDog", "Zombie Dog"}, {"summonSwampDeer", "Swamp Blue Deer"}, {"lightningTier3", "Lightning 3"},
     {"minorVenom", "Minor Venom"}, {"familiarLifeDrain", "Life Drain"}, {"divineWrath", "Divine Wrath"},
     {"shoulderSmash", "Shoulder Smash"}, {"stampede", "Stampede"}, {"auraOfProtection", "Aura of Protection"},
     {"intimidatingPresence", "Intimidating Presence"}, {"secondWind", "Second Wind"},
@@ -3303,8 +3312,8 @@ std::string spellPose(const std::string& kind) {
 
 int spellTierNumber(const std::string& kind) {
   if (kind == "bullRush" && bullRushTier3()) return 3;  // the heroes' (unitTierOf)
-  if (kind == "summonFamiliar3" && progressionEnabled()) return 5;
-  if (kind == "summonZombieDog" && progressionEnabled()) return 6;
+  if (kind == "summonFamiliar3" && progressionEnabled()) return 6;
+  if (kind == "summonZombieDog" && progressionEnabled()) return 8;
   return spellTierOf(kind == "magicMissileV2" ? "magicMissile" : kind);
 }
 
@@ -3674,6 +3683,7 @@ std::optional<std::vector<BattleStep>> castSpell(Battle& b, size_t caster, const
   if (checkUses && spellUsesLeft(b, caster, kind) <= 0) return fail("Sem usos restantes.");
   for (const BattleHex& c : cells)
     if (!spellAimValid(b, caster, kind, c, error)) return std::nullopt;
+  if (summonSpec(kind)) return castE2(b, caster, kind, cells, error, checkUses);  // every summon, the Cervo (one of ours) too
   if (emberSpell(kind)) return castEmber(b, caster, kind, cells, error);
   if (e2Kind(kind)) return castE2(b, caster, kind, cells, error, checkUses);
   const BattleHex cell = cells[0];

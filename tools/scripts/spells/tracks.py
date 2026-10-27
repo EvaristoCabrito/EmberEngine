@@ -60,10 +60,11 @@ S = {
     "summonFamiliar4": (6, dict(r=2), [("r", 1, 6)]),
     "mirrorImage": (7, dict(r=6, c=2, R=3, p=33), [("r", 1, 4), ("c", 1, 2), ("R", 1, 3), ("p", 3, 5)]),
     "detonateSummon": (9, dict(r=6, a=0, d=2, f=8, m=1.8), [("r", 1, 4), ("a", 1, 2), ("d", 1, 3), ("m", 0.12, 5)]),
-    "summonFamiliar3": (11, dict(r=2), [("r", 1, 6)]),  # Familiar Titã: T5 (the user, 2026-10-20)
+    "summonFamiliar3": (15, dict(r=2), [("r", 1, 6)]),  # Numen (the old Familiar Titã): the Arcanista's and the Necromante's T6 (the user, 2026-10-27)
     "sacrificeBond": (11, dict(p=100), [("p", -3, 14)]),
     "nightmare": (13, dict(r=6, a=0, d=2, f=8, m=1.5, p=25, t=1), [("r", 1, 6), ("a", 1, 2), ("d", 1, 2), ("m", 0.15, 2), ("p", 10, 1), ("t", 1, 1)]),
-    "summonZombieDog": (15, dict(r=2), [("r", 1, 6)]),  # Cão Zumbi: the Necromante's T6 (the user, 2026-10-20)
+    "summonZombieDog": (18, dict(r=2), [("r", 1, 6)]),  # Cão Zumbi: the Necromante's T8 (the user, 2026-10-27)
+    "summonSwampDeer": (None, dict(r=2), [("r", 1, 6)]),  # Cervo Azul do Pântano: the Arcanista's T8 (the user, 2026-10-27)
     "empowerSummons": (15, dict(p=25, R=3), [("p", 1, 12), ("R", 1, 2)]),
     # the Necromante's T6 (the user, 2026-10-20: "deixar a magia Lança de Ossos como T6 para necromancer, e adaptar para algo mais forte e mais único")
     "boneLance": (None, dict(l=4, d=2, f=8, m=1.8, t=1, p=50), [("m", 0.1, 4), ("l", 1, 2), ("d", 1, 2), ("f", 2, 2), ("t", 1, 1), ("Z", 1, 1), ("p", 10, 2)]),
@@ -361,7 +362,7 @@ ROW_KIND = {0: "bless", 1: "magicMissile", 2: "longShot", 3: "cureMinor", 4: "do
             15: "sweep", 16: "webOfDreams", 17: "frost", 18: "summonFamiliar4", 20: "trip", 21: "fireball", 22: "turnUndead",
             23: "cureDisease", 24: "multiShot", 26: "summonFamiliar3", 28: "divineBolt", 29: "cureLight", 30: "shoulderSmash",
             31: "lightningTier3", 32: "causticVenom", 33: "auraOfProtection", 34: "intimidatingPresence", 35: "divineWrath", 36: "stampede"}
-ROW_TIER = {26: "T5"}  # Familiar Titã (the user, 2026-10-20)
+ROW_TIER = {26: "T6"}  # Numen (the user, 2026-10-27)
 fn = src[src.index("std::string spellExplain(const std::string& kind, bool en) {"):]
 fn = fn[:fn.index("  for (const Line& l : kLines)")]
 EXPLAIN = {k: (pt, en)
@@ -467,8 +468,9 @@ NAMES = {
     "auraOfProtection": "Aura de Proteção", "intimidatingPresence": "Presença Intimidante", "divineWrath": "Ira Divina",
     "summonFamiliar": "Invocar Familiar", "phantasmalForce": "Força Fantasmagórica", "webOfDreams": "Teia dos Sonhos",
     "summonFamiliar2": "Familiar Maior", "placeSwap": "Troca de Lugar", "boneLance": "Lança de Ossos (Necromante, T6)", "arcaneReflection": "Reflexo Arcano", "summonFamiliar4": "Familiar Radiante",
-    "mirrorImage": "Imagem Espelhada", "detonateSummon": "Detonar Invocação", "summonFamiliar3": "Familiar Titã (T5)",
-    "sacrificeBond": "Elo de Sacrifício", "nightmare": "Pesadelo", "summonZombieDog": "Cão Zumbi (Necromante, T6)",
+    "mirrorImage": "Imagem Espelhada", "detonateSummon": "Detonar Invocação", "summonFamiliar3": "Numen (Arcanista e Necromante, T6)",
+    "sacrificeBond": "Elo de Sacrifício", "nightmare": "Pesadelo", "summonZombieDog": "Cão Zumbi (Necromante, T8)",
+    "summonSwampDeer": "Cervo Azul do Pântano (Arcanista, T8)",
     "empowerSummons": "Fortalecer Invocações", "markOfRuin": "Marca da Ruína", "creepingPlague": "Praga Rastejante",
     "lifeDrain": "Dreno de Vida", "shroudOfShadows": "Mortalha de Sombras", "hemorrhage": "Hemorragia", "profaneSilence": "Silêncio Profano",
     "blackPestilence": "Peste Negra", "curseOfDecay": "Maldição da Decadência", "soulHarvest": "Colheita de Almas",
@@ -501,7 +503,7 @@ um anel por vez, duas ou três vezes; o Veneno Cáustico tem a maior área do jo
 O Ember Ashes I para no nível 30; uma magia aprendida depois do 16 continua a escala no Ember Ashes II (teto 60), que já está
 programado: os níveis além do 30 só não se alcançam ainda.
 
-Familiar Titã é Tier 5 (nível 11); o Cão Zumbi é Tier 6 do Necromante (nível 15, a promoção) (o usuário, 2026-10-20).
+Numen (o antigo Familiar Titã) é Tier 6 do Arcanista e do Necromante (nível 15); o Cão Zumbi é Tier 8 do Necromante e o Cervo Azul do Pântano Tier 8 do Arcanista (nível 18) (o usuário, 2026-10-27).
 
 As habilidades do Guerreiro, do Cavaleiro Pesado e do Lanceiro seguem a mesma regra; quase tudo nelas é dano (dados, faces, peso da
 arma), e cada uma ganha um **talento** num nível da trilha (o usuário, 2026-10-20: "eles não tem muito o que escalar além de dano, mas
