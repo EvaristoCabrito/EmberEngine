@@ -140,6 +140,22 @@ class OverworldStage : public Stage {
     if (what == "quests") questLog_ = true;
     if (what == "options") options_ = true;
     if (what == "move") movementOpen_ = true;
+    if (what.starts_with("walk:"))  // "walk:<col>,<row>;...": each step clicked as the player would (leader, then the hex), logged
+      for (size_t at = 5; at < what.size();) {
+        const size_t end = std::min(what.find(';', at), what.size());
+        const std::string s = what.substr(at, end - at);
+        at = end + 1;
+        const size_t comma = s.find(',');
+        if (comma == std::string::npos) continue;
+        const int c = std::stoi(s.substr(0, comma)), r = std::stoi(s.substr(comma + 1));
+        const e2::Json& pos = save_["overworldPos"];
+        const int fc = pos.value("col", 0), fr = pos.value("row", 0);
+        const bool allowed = world_.canStep(save_, {fc, fr}, {c, r}, test());
+        movementOpen_ = true;
+        walkTo(c, r);
+        logInfo("walk: ({},{}) -> ({},{}): canStep {}, now at ({},{})", fc, fr, c, r, allowed, save_["overworldPos"].value("col", 0),
+                save_["overworldPos"].value("row", 0));
+      }
     if (what.starts_with("location:")) open_ = what.substr(9);
     if (what.starts_with("enter:"))  // "enter:<id>": the location entered as a click on its pin would (the Ruins: the Interlude's gate and start)
       for (const e2::MapLocation& loc : world_.locations())
