@@ -386,6 +386,15 @@ def main():
             frames = [frames[k] for k in pick]
             frame_ms = frame_ms * n_full / want_n
             info["frameCountFrom"] = n_full
+        # `frameStepNear` (the spec's; the user, 2026-10-27, Voss's Leve "com passo inteiro, como os besteiros"): every Nth frame
+        # of the clip, N the whole number that leaves about that many, each held N frames' time: one fixed time a frame and one
+        # even step of motion (the game maps the full clip's frame f to f / N, MapStage lightStepOf)
+        near = spec.get("frameStepNear")
+        if near and not want_n:
+            step = max(1, round(n_full / near))
+            frames = frames[::step]
+            frame_ms = frame_ms * step
+            info.update(frameStep=step, frameStepFrom=n_full)
         # `figurePx` (a clip's or the spec's): one fixed figure height in pixels instead of the clip's measured one, for a creature
         # whose shape changes (the Corrosive Slime flattens to walk and to strike, 2026-10-22) filmed with one camera in every video:
         # every clip then keeps the same pixel scale, so it is drawn the same size in every pose

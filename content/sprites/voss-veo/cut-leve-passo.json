@@ -1,0 +1,152 @@
+{
+ "about": "Voss's Personagens Leve with an integer step (the user, 2026-10-27: \"refaz só o Voss Leve com passo inteiro (cada N-ésimo frame) e tempo fixo por frame, como os besteiros\"): every clip cut exactly as cut.json (same stretch, loop search, keys), at ~610 px of figure (scaleTo), then every Nth frame, N = round(frames / 36), each held N frames' time; the game shows the full clip's frame f as f / N (roster lightStep). voss-veo-36-media (36 picked evenly from loops cut on 2026-10-22, before cut.json's walks and idle changed) kept, not in use.",
+ "set": "voss-veo-leve-passo",
+ "version": "leve-passo-v01",
+ "result": "cut-result-leve-passo.json",
+ "figureUnits": 2.687,
+ "figureNote": "each clip's median hood top to boot row, as tall as voss-final's idle (the cast-back pose's note: 2.687 units)",
+ "frameStepNear": 36,
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/idle",
+   "video": "Attachments/VeoVoss/Idle/VossV2Idle.mp4",
+   "first": 16,
+   "last": 120,
+   "mode": "pingpong",
+   "scaleTo": 610
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/voss-veo/walk-right",
+   "video": "Attachments/VeoVoss/WalkRight/Voss_walking_to_the_right_20261017230249.mp4",
+   "first": 29,
+   "last": 152,
+   "loopMin": 88,
+   "loopMax": 121,
+   "mode": "loop",
+   "scaleTo": 610
+  },
+  {
+   "clip": "move-left",
+   "pose": "walkLeft",
+   "kind": "walk",
+   "src": "build/video-cut/voss-veo/walk-left",
+   "video": "Attachments/VeoVoss/Walk Left/Character_walking_left_with_staff_20261017230240.mp4",
+   "first": 0,
+   "last": 148,
+   "loopMin": 101,
+   "loopMax": 146,
+   "mode": "loop",
+   "scaleTo": 610
+  },
+  {
+   "clip": "cast",
+   "pose": "cast",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/cast",
+   "video": "Attachments/VeoVoss/Casting/Voss_casting_purple_arcane_spell_20261017231306.mp4",
+   "first": 8,
+   "last": 120,
+   "mode": "once",
+   "wallKey": {
+    "region": [
+     330,
+     0,
+     660,
+     380
+    ],
+    "low": 30,
+    "high": 110,
+    "feather": 56,
+    "why": "the user, 2026-10-20: half of the staff vanished at the end of the cast (v01 frames 77-90: the model dropped the flash, the burst and the staff's head as background); v01 kept"
+   },
+   "bodyAt": -0.242,
+   "scaleTo": 610
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/attack",
+   "video": "Attachments/VeoVoss/CounterDistance/CounterDistanceat420sec.mp4",
+   "first": 101,
+   "last": 212,
+   "impactFrame": 162,
+   "mode": "once",
+   "scaleTo": 610
+  },
+  {
+   "clip": "counter-staff",
+   "pose": "counterStaff",
+   "label": "Contra-ataque (cajado)",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/counter-staff",
+   "video": "Attachments/VeoVoss/CounterStaff/CounterClseat4sec.mp4",
+   "first": 96,
+   "last": 220,
+   "impactFrame": 166,
+   "mode": "once",
+   "scaleTo": 610
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "label": "Dano",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/hit",
+   "video": "Attachments/VeoVoss/HitandDeath/VossHitDeath.mp4",
+   "first": 28,
+   "last": 72,
+   "mode": "once",
+   "bodyAt": -0.242,
+   "wallKey": {
+    "region": [
+     220,
+     0,
+     560,
+     260
+    ],
+    "low": 25,
+    "high": 110,
+    "feather": 40,
+    "why": "the user, 2026-10-21: the staff was missing in the first frame (video 28-30: the model dropped the glowing staff head as background; the purple glow gone in the later frames too)"
+   },
+   "scaleTo": 610
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "label": "Morte",
+   "kind": "stand",
+   "src": "build/video-cut/voss-veo/death",
+   "video": "Attachments/VeoVoss/HitandDeath/VossHitDeath.mp4",
+   "first": 134,
+   "last": 212,
+   "standUntil": 150,
+   "mode": "once",
+   "bodyAt": -0.242,
+   "wallKey": {
+    "region": [
+     0,
+     0,
+     385,
+     650
+    ],
+    "frames": [
+     150,
+     161
+    ],
+    "low": 28,
+    "high": 210,
+    "feather": 30,
+    "why": "video 152-161: the falling staff is motion-blurred and the model took it for background (white head, the shaft gone, frame 160 almost empty); the region is the staff's sweep left of the body; only while it falls (before, the purple glow lit the wall; after, its shadow lies on the floor); low / high = a dark staff over the 230 wall, so alpha follows the blur; low 28: under it the wall's darker top corner leaked faint patches (alpha <= 23)"
+   },
+   "scaleTo": 610
+  }
+ ]
+}

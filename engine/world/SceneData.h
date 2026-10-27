@@ -96,6 +96,7 @@ struct HeroPose {
   float impact = -1;         // strike poses: share of the pose at which the blow lands (art cut from video); -1 = the default
   std::string medium;        // the same clip at ~610 px of figure in this sprite set (Personagens Média); empty = none
   std::string light;         // the clip's own Leve copy in this sprite set (fewer frames, e.g. Voss's 36); empty = Leve halves `medium`
+  int lightStep = 0;         // the Leve copy holds every Nth frame of the clip (video_sprite.py frameStepNear); 0 = picked evenly
   // Poses Engine2 holds on their hex (units/catalog.ts centerBody): per frame, how far right of frame 1 the body sits, as a
   // share of the pose's width (tools/scripts/engine2/measure_body_shift.py); empty = the pose plays as drawn.
   std::vector<float> bodyShift;

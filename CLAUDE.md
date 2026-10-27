@@ -1721,6 +1721,10 @@ open area with large tables ... some separate rooms for NPCs and services, use t
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
+- Sprite set `voss-veo-36-media` (2026-10-27): Voss's old Leve (36 frames picked evenly from loops cut on 2026-10-22, played on the
+  full clip's timing: uneven steps). Replaced by `voss-veo-leve-passo` (cut.json's clips, every Nth frame, `frameStepNear` 36, roster
+  `lightStep`, MapStage `lightStepOf`); still in the pack, drawn by nobody, its frames in `content/sprites/voss-veo/*-media36-v01/`.
+
 - `content/game/public/game/subtitles/kept/aldeia-intro-640x350/` (2026-10-26): the four aldeia-intro subtitle files with the old
   640x350 film's timings, kept when they were resynced to the user's 1080p cut (`aldeia-intro.webm`; docs/FILMS.md).
   Likewise `subtitles/kept/smith-intro-752x416/` (smith-intro's four files before their -2.0 s shift to `smith-intro.webm`).

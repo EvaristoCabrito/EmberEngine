@@ -63,9 +63,19 @@
   {
    "set": "voss-veo-36-media",
    "version": "media36-v01",
-   "lightOf": {"hero": "voss", "set": "voss-veo"},
+   "unused": true,
+   "wasLightOf": {"hero": "voss", "set": "voss-veo"},
+   "unusedWhy": "the user, 2026-10-27: \"refaz só o Voss Leve com passo inteiro\": voss-veo-leve-passo is Voss's Leve now; this copy (36 picked evenly, loops of 2026-10-22) stays in the pack, drawn by nobody",
    "cut": "content/sprites/voss-veo/cut-36-media.json",
    "why": "the user, 2026-10-22: \"36 is on with LEVE setup\": every clip at ~610 px of figure with 36 frames; Personagens Leve draws it halved",
+   "packs": {"base": "field", "move": "field", "move-left": "field"}
+  },
+  {
+   "set": "voss-veo-leve-passo",
+   "version": "leve-passo-v01",
+   "lightOf": {"hero": "voss", "set": "voss-veo"},
+   "cut": "content/sprites/voss-veo/cut-leve-passo.json",
+   "why": "the user, 2026-10-27: \"refaz só o Voss Leve com passo inteiro (cada N-ésimo frame) e tempo fixo por frame, como os besteiros\": cut.json's clips at ~610 px, every Nth frame (about 36), one fixed time a frame; Personagens Leve draws it halved",
    "packs": {"base": "field", "move": "field", "move-left": "field"}
   },
   {

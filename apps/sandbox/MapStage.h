@@ -3306,9 +3306,12 @@ class MapStage final : public Stage {
         frame = loopFrame(u.pace, u.frames, time * 240.0);
       }
       // A copy with fewer frames (Voss's 64 / 36-frame Média / Leve, the user 2026-10-22) plays on the full clip's timing: the
-      // full clip's frame mapped to the copy's, so the pose keeps its length and its blow lands at the same moment.
-      if (const uint32_t n = sprites_.header(clip).frames, full = static_cast<uint32_t>(p ? p->frames : u.frames); n > 0 && full > n)
-        frame = std::min(n - 1, static_cast<uint32_t>(static_cast<uint64_t>(frame) * n / full));
+      // full clip's frame mapped to the copy's, so the pose keeps its length and its blow lands at the same moment. A copy cut
+      // with an integer step (every Nth frame: Voss's Leve, the user 2026-10-27) shows frame f / N: one fixed time a frame.
+      if (const uint32_t n = sprites_.header(clip).frames, full = static_cast<uint32_t>(p ? p->frames : u.frames); n > 0 && full > n) {
+        const uint32_t step = lightStepOf(p ? p : scenePose(u, entry));
+        frame = std::min(n - 1, step > 0 ? frame / step : static_cast<uint32_t>(static_cast<uint64_t>(frame) * n / full));
+      }
       // A unit drawn at its own size (content/unit-size.json; the user, 2026-10-22: the Cultista Ancestral ~10% smaller), every
       // pose alike, feet kept on the ground.
       const float size = unitSize(entry ? entry->key : u.key);
@@ -3896,6 +3899,17 @@ class MapStage final : public Stage {
       for (const e2::HeroPose& p : entry->poses)
         if (p.set == u.set && p.clip == u.clip && (!p.medium.empty() || (lightArt_ && !p.light.empty()))) return artSet(p);
     return u.set;
+  }
+  // The catalog pose a scene unit's own clip (its idle) is, if any.
+  const e2::HeroPose* scenePose(const e2::SceneUnit& u, const e2::Hero* entry) const {
+    if (entry)
+      for (const e2::HeroPose& p : entry->poses)
+        if (p.set == u.set && p.clip == u.clip) return &p;
+    return nullptr;
+  }
+  // The step of the pose's Leve copy (every Nth frame) when that copy is the one drawn; 0 = none.
+  uint32_t lightStepOf(const e2::HeroPose* p) const {
+    return p && lightArt_ && !p->light.empty() && p->lightStep > 0 ? static_cast<uint32_t>(p->lightStep) : 0;
   }
   bool mediumArt_ = false;  // Personagens: Média or Leve, taken when the fight loads (pinUnitArt)
   bool lightArt_ = false;   // Personagens: Leve (a pose's own Leve copy wins over its Média one)

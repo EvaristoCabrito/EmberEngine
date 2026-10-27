@@ -127,8 +127,15 @@ def main():
                 if p.get("set") == of["set"] and p.get("clip") in cut:
                     p[field] = st["set"]
                     marked.append(p["pose"])
+                    if field == "light" and cut[p["clip"]].get("frameStep"):
+                        # cut with an integer step (every Nth frame, voss-veo-leve-passo): the game shows the clip's frame f as f / N
+                        p["lightStep"] = cut[p["clip"]]["frameStep"]
+                    elif field == "light":
+                        p.pop("lightStep", None)
                 else:
                     p.pop(field, None)
+                    if field == "light":
+                        p.pop("lightStep", None)
             print(f"{st['set']} {st['version']}: {len(clips)} clips, the {field} copy of {of['hero']}'s {', '.join(marked)}")
         if "mediumOf" in st or "lightOf" in st:
             continue
@@ -163,6 +170,7 @@ def main():
             # the copies' marks are made again by their own entries, listed after this set (a copy no longer in use leaves none)
             p.pop("medium", None)
             p.pop("light", None)
+            p.pop("lightStep", None)
             p.update(fields)
         for table in strides:
             if table is not None:
