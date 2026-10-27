@@ -61,7 +61,7 @@
    "pattern": "content/sprites/selene/atk-v01/atk-{}.png"
   },
   "cast": {
-   "video": "Attachments/Selene/Casting/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "video": "content/sprites/selene/src/casting-v02.png",
    "first": 0,
    "last": 35,
    "bootRow": 857,
@@ -74,54 +74,54 @@
    "frames": 36,
    "frameMs": 79.0,
    "nat": [
-    662,
-    865
+    604,
+    781
    ],
    "crop": [
-    0,
-    0,
-    640,
-    860
+    46,
+    48,
+    482,
+    728
    ],
    "box": {
-    "w": 2.99476,
-    "h": 3.9131,
+    "w": 2.73238,
+    "h": 3.5331,
     "foot": 0.03167
    },
-   "pattern": "content/sprites/selene/cast-v01/cast-{}.png"
+   "pattern": "content/sprites/selene/cast-v02/cast-{}.png"
   },
   "move": {
-   "video": "Attachments/Selene/WalkRightLooped/sprite-max-px-frames-36-rows-6-cols-6.png",
+   "video": "Attachments/Selene/WalkRightV1/sprite-max-px-frames-36-rows-6-cols-6.png",
    "first": 0,
    "last": 35,
-   "loopFirst": 0,
-   "loopLast": 35,
-   "seamSteps": NaN,
+   "loopFirst": 11,
+   "loopLast": 32,
+   "seamSteps": 0.81,
    "bootRow": 700,
    "bodyDrift": [
     -19,
-    4
+    3
    ],
    "figurePx": 687.0,
    "bodyAt": 0.0,
-   "frames": 36,
+   "frames": 22,
    "frameMs": 79.0,
    "nat": [
-    675,
+    670,
     708
    ],
    "crop": [
     6,
     3,
-    568,
+    565,
     700
    ],
    "box": {
-    "w": 2.61354,
+    "w": 2.59418,
     "h": 2.74131,
     "foot": 0.0271
    },
-   "pattern": "content/sprites/selene/move-v01/move-{}.png"
+   "pattern": "content/sprites/selene/move-v02/move-{}.png"
   }
  }
 }
