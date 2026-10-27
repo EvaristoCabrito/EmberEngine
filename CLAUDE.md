@@ -1732,6 +1732,11 @@ open area with large tables ... some separate rooms for NPCs and services, use t
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
+- Sprite clip `neera-hydra/atk-short-v01` (2026-10-27): Neera's Hydra+ off-hand (dagger) strike, in use 2026-10-22..27. The user:
+  "Can we get Neera's Dagger animation back to the previous version?": `attackShort` is neera-v2-001's `atk-short` again
+  (sprite-overrides.json, roster.json's entry from a fresh export_heroes.ts; previous roster kept as
+  `build/engine2-scenes/roster-20261027-before-neera-dagger.json`). The Hydra clip stays in battle.pak, drawn by nobody.
+
 - Sprite set `voss-veo-36-media` (2026-10-27): Voss's old Leve (36 frames picked evenly from loops cut on 2026-10-22, played on the
   full clip's timing: uneven steps). Replaced by `voss-veo-leve-passo` (cut.json's clips, every Nth frame, `frameStepNear` 36, roster
   `lightStep`, MapStage `lightStepOf`); still in the pack, drawn by nobody, its frames in `content/sprites/voss-veo/*-media36-v01/`.
