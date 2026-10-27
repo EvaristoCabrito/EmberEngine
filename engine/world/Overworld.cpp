@@ -361,18 +361,22 @@ bool Overworld::wispForestUncleared(const Json& save) const {
   return false;
 }
 
-// The world map is free to explore (the user, 2026-10-27: "free to explore in most parts, there is very little gatekeeping
-// other than main scenario locais not being acessible"): any map cell next to the party, once O Vau (the campaign's opening
-// fight) is behind it. The main story's locked places stay shut where they are entered (locationStatus / missionAccess), not
-// on the road. overworld.ts's linear opening (the road row Start -> Inn, Stone Bridge's missions before going east) and the
-// Wisp Forest eastward line are gone: one step off the Inn's hex left every exit refused, the way back included ("from the
-// INN I can move one to the upper left and then I cant move"). from is kept for the callers.
+// overworld.ts canStepOverworld.
 bool Overworld::canStep(const Json& save, OverworldHex from, OverworldHex to, bool test) const {
-  (void)from;
   if (!isCell(to.col, to.row)) return false;
   if (to == ashenBlocked_) return false;
   if (test) return true;  // Modo teste: the whole grid open (removed cells stay excluded)
-  return has(child(save, "completed"), "vau");
+  const Json& completed = child(save, "completed");
+  if (!has(completed, "vau")) return false;
+  if (wisp_ && from.col <= wisp_->col && to.col > wisp_->col && wispForestUncleared(save)) return false;
+  if (has(completed, "estalagem") || from == inn_) return true;
+  if (to.row != start_.row || to.col < start_.col || to.col > inn_.col) return false;
+  const bool atStart = from == start_;
+  if (to.col < from.col) return true;
+  if (atStart) return to.row == from.row && to.col == from.col + 1;
+  for (const std::string& id : stoneBridgeMissionIds_)
+    if (!has(completed, id)) return false;
+  return to.col > from.col;
 }
 
 Json Overworld::teleport(const Json& save, OverworldHex to) {
