@@ -377,6 +377,12 @@ def main():
                     pc = f[..., :3] * f[..., 3:] / 255 * (1 - t) + g[..., :3] * g[..., 3:] / 255 * t
                     frames[n - xf + k] = np.dstack([pc / np.maximum(pa, 1e-4), pa * 255]).astype(np.float32)
                 info["crossfade"] = xf
+        if c.get("pingPongFromLast"):
+            # (the user, 2026-10-27, the Swamp Blue Deer's hit: the projectile's frames left out, "ping pong like starting from the
+            # last frame"): the clip played from its last frame back to its first and on to its last again, every frame the
+            # video's own; it starts and ends on the last frame
+            frames = frames[::-1] + frames[1:]
+            info["pingPongFromLast"] = True
         # `frameCount` (a clip's or the spec's; the user, 2026-10-22, "Slime36 with 36 frames per animation"): that many of the
         # clip's frames, picked evenly from its first to its last, each kept as it is (no blend); the clip keeps its duration
         n_full = len(frames)

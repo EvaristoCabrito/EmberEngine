@@ -1,0 +1,192 @@
+{
+ "clips": {
+  "base": {
+   "video": "Attachments/SwampBlueDeer/SwampBlueDeerIdleATT.mp4",
+   "first": 0,
+   "last": 96,
+   "bootRow": 673,
+   "bootRows": [
+    672,
+    674
+   ],
+   "loopFirst": 44,
+   "loopLast": 83,
+   "seamSteps": 4.76,
+   "figurePx": 587.0,
+   "frames": 40,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    614,
+    657
+   ],
+   "crop": [
+    7,
+    5,
+    601,
+    647
+   ],
+   "box": {
+    "w": 3.08569,
+    "h": 3.30179,
+    "foot": 0.0402
+   },
+   "pattern": "content/sprites/swamp-blue-deer/base-media64-v01/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/SwampBlueDeer/SwampBlueDeerIdleATT.mp4",
+   "first": 96,
+   "last": 166,
+   "bootRow": 644,
+   "bootRows": [
+    641,
+    674
+   ],
+   "frameCountFrom": 71,
+   "figurePx": 570.0,
+   "frames": 64,
+   "frameMs": 46.22395833333333,
+   "nat": [
+    668,
+    675
+   ],
+   "crop": [
+    8,
+    0,
+    656,
+    670
+   ],
+   "box": {
+    "w": 3.45719,
+    "h": 3.49342,
+    "foot": 0.15526
+   },
+   "pattern": "content/sprites/swamp-blue-deer/atk-media64-v01/atk-{}.png",
+   "impact": 0.6479
+  },
+  "move": {
+   "video": "Attachments/SwampBlueDeer/SwampBlueDeerWalking.mp4",
+   "first": 12,
+   "last": 186,
+   "loopFirst": 20,
+   "loopLast": 115,
+   "seamSteps": 1.14,
+   "bootRow": 677,
+   "bodyDrift": [
+    -27,
+    -11
+   ],
+   "frameCountFrom": 96,
+   "figurePx": 601.0,
+   "frames": 64,
+   "frameMs": 62.5,
+   "nat": [
+    656,
+    718
+   ],
+   "crop": [
+    8,
+    5,
+    643,
+    709
+   ],
+   "box": {
+    "w": 3.21997,
+    "h": 3.52429,
+    "foot": 0.20125
+   },
+   "pattern": "content/sprites/swamp-blue-deer/move-media64-v01/move-{}.png"
+  },
+  "cast": {
+   "video": "Attachments/SwampBlueDeer/SwampBlueDeerCasting.mp4",
+   "first": 16,
+   "last": 112,
+   "bootRow": 683,
+   "bootRows": [
+    648,
+    686
+   ],
+   "frameCountFrom": 97,
+   "figurePx": 592.0,
+   "frames": 64,
+   "frameMs": 63.151041666666664,
+   "nat": [
+    683,
+    716
+   ],
+   "crop": [
+    8,
+    6,
+    669,
+    705
+   ],
+   "box": {
+    "w": 3.40346,
+    "h": 3.56791,
+    "foot": 0.17939
+   },
+   "pattern": "content/sprites/swamp-blue-deer/cast-media64-v01/cast-{}.png",
+   "impact": 0.5361
+  },
+  "hit": {
+   "video": "Attachments/SwampBlueDeer/SwampBlueDeerHitReact1.mp4",
+   "first": 28,
+   "last": 95,
+   "bootRow": 684,
+   "bootRows": [
+    634,
+    685
+   ],
+   "pingPongFromLast": true,
+   "frameCountFrom": 135,
+   "figurePx": 594.5,
+   "frames": 64,
+   "frameMs": 87.890625,
+   "nat": [
+    778,
+    702
+   ],
+   "crop": [
+    10,
+    5,
+    764,
+    697
+   ],
+   "box": {
+    "w": 3.86056,
+    "h": 3.48343,
+    "foot": 0.17368
+   },
+   "pattern": "content/sprites/swamp-blue-deer/hit-media64-v01/hit-{}.png"
+  },
+  "death": {
+   "video": "Attachments/SwampBlueDeer/SwampBlueDearFall.mp4",
+   "first": 15,
+   "last": 95,
+   "bootRow": 685,
+   "bootRows": [
+    685,
+    685
+   ],
+   "frameCountFrom": 81,
+   "figurePx": 617.5,
+   "frames": 64,
+   "frameMs": 52.734375,
+   "nat": [
+    778,
+    696
+   ],
+   "crop": [
+    9,
+    5,
+    764,
+    686
+   ],
+   "box": {
+    "w": 3.71676,
+    "h": 3.32502,
+    "foot": 0.04777
+   },
+   "pattern": "content/sprites/swamp-blue-deer/death-media64-v01/death-{}.png"
+  }
+ }
+}

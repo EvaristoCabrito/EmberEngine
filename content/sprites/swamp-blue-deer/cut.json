@@ -1,0 +1,82 @@
+{
+ "about": "Swamp Blue Deer from the user's videos (Attachments/SwampBlueDeer, 2026-10-26): idle + attack, walking, casting, fall; 24 fps, 1280 x 720. The user, 2026-10-27: \"use the Tek for 64 and 36 frames, no need to max out this one\": only the 64- and 36-frame copies are cut (tools/scripts/sprites/quality_copies.py), never this spec itself, so there is no all-frames Alta.",
+ "set": "swamp-blue-deer",
+ "version": "v01",
+ "figureUnits": 2.95,
+ "figureNote": "antler tips to hooves as tall as the old Cobalt Blue Deer's card (2.95 units); a first value, the user judges",
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/swamp-blue-deer/idleatk",
+   "video": "Attachments/SwampBlueDeer/SwampBlueDeerIdleATT.mp4",
+   "first": 0,
+   "last": 96,
+   "loopMin": 40,
+   "loopMax": 96,
+   "mode": "loop"
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "src": "build/video-cut/swamp-blue-deer/idleatk",
+   "video": "Attachments/SwampBlueDeer/SwampBlueDeerIdleATT.mp4",
+   "first": 96,
+   "last": 166,
+   "impactFrame": 142,
+   "mode": "once",
+   "why": "rears 104-136, the front hooves come down at 142, standing again by 166"
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/swamp-blue-deer/move",
+   "video": "Attachments/SwampBlueDeer/SwampBlueDeerWalking.mp4",
+   "first": 12,
+   "last": 186,
+   "loopMin": 40,
+   "loopMax": 170,
+   "mode": "loop",
+   "why": "walking to the right from ~12 to the end"
+  },
+  {
+   "clip": "cast",
+   "pose": "cast",
+   "kind": "stand",
+   "src": "build/video-cut/swamp-blue-deer/cast",
+   "video": "Attachments/SwampBlueDeer/SwampBlueDeerCasting.mp4",
+   "first": 16,
+   "last": 112,
+   "impactFrame": 68,
+   "mode": "once",
+   "why": "rears 28-80, the antlers blaze 60-76, settled by ~100"
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "kind": "stand",
+   "src": "build/video-cut/swamp-blue-deer/hit",
+   "video": "Attachments/SwampBlueDeer/SwampBlueDeerHitReact1.mp4",
+   "first": 28,
+   "last": 95,
+   "pingPongFromLast": true,
+   "mode": "once",
+   "why": "the user, 2026-10-27: the projectile left out (it crosses frames 9-27 with its smoke), \"ping pong starting from the last frame\": 95 back to 28, the most flinched clean frame, and on to 95 again"
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "kind": "stand",
+   "src": "build/video-cut/swamp-blue-deer/death",
+   "video": "Attachments/SwampBlueDeer/SwampBlueDearFall.mp4",
+   "first": 15,
+   "last": 95,
+   "standUntil": 30,
+   "mode": "once",
+   "why": "starts to fold at ~33, down by ~54, lies to the end"
+  }
+ ]
+}

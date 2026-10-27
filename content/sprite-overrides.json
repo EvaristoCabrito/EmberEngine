@@ -245,6 +245,32 @@
    }
   },
   {
+   "set": "swamp-blue-deer-64-media",
+   "version": "media64-v01",
+   "hero": "swampBlueDeer",
+   "newHero": {"name": "Cervo Azul do Pântano", "group": "monster", "sprite": "swamp-blue-deer", "reversed": false},
+   "cut": "content/sprites/swamp-blue-deer/cut-64-media.json",
+   "why": "the user, 2026-10-27: the Swamp Blue Deer from their videos (Attachments/SwampBlueDeer), \"use the Tek for 64 and 36 frames, no need to max out this one\": no all-frames Alta; the 64-frame copy is the unit's own art (Alta and Média draw it), the 36-frame copy its Leve",
+   "poses": {"idle": "base", "walk": "move", "attack": "atk", "cast": "cast", "hit": "hit", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "attack": "Atacar", "cast": "Conjurar", "hit": "Dano", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "swamp-blue-deer-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/swamp-blue-deer/cut-36-media.json",
+   "why": "the Deer's Personagens Leve (the same order): 36 frames from the same mattes",
+   "lightOf": {
+    "hero": "swampBlueDeer",
+    "set": "swamp-blue-deer-64-media"
+   },
+   "packs": {
+    "base": "field",
+    "move": "field"
+   }
+  },
+  {
    "set": "corrosive-slime-36",
    "version": "v01",
    "hero": "corrosiveSlime36",

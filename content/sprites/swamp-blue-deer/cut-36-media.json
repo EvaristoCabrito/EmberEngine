@@ -1,0 +1,85 @@
+{
+ "about": "swamp-blue-deer's Personagens Leve (tools/scripts/sprites/quality_copies.py, the rule of 2026-10-25): every clip of cut.json from the same matted frames, at most 36 frames picked evenly (no blend, the clip's timing kept), the figure ~610 px tall (a clip already shorter keeps its own size).",
+ "set": "swamp-blue-deer-36-media",
+ "version": "media36-v01",
+ "figureUnits": 2.95,
+ "figureNote": "antler tips to hooves as tall as the old Cobalt Blue Deer's card (2.95 units); a first value, the user judges",
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/swamp-blue-deer/idleatk",
+   "video": "Attachments/SwampBlueDeer/SwampBlueDeerIdleATT.mp4",
+   "first": 0,
+   "last": 96,
+   "loopMin": 40,
+   "loopMax": 96,
+   "mode": "loop",
+   "scaleTo": 610
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "src": "build/video-cut/swamp-blue-deer/idleatk",
+   "video": "Attachments/SwampBlueDeer/SwampBlueDeerIdleATT.mp4",
+   "first": 96,
+   "last": 166,
+   "impactFrame": 142,
+   "mode": "once",
+   "scaleTo": 610
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/swamp-blue-deer/move",
+   "video": "Attachments/SwampBlueDeer/SwampBlueDeerWalking.mp4",
+   "first": 12,
+   "last": 186,
+   "loopMin": 40,
+   "loopMax": 170,
+   "mode": "loop",
+   "scaleTo": 610
+  },
+  {
+   "clip": "cast",
+   "pose": "cast",
+   "kind": "stand",
+   "src": "build/video-cut/swamp-blue-deer/cast",
+   "video": "Attachments/SwampBlueDeer/SwampBlueDeerCasting.mp4",
+   "first": 16,
+   "last": 112,
+   "impactFrame": 68,
+   "mode": "once",
+   "scaleTo": 610
+  },
+  {
+   "clip": "hit",
+   "pose": "hit",
+   "kind": "stand",
+   "src": "build/video-cut/swamp-blue-deer/hit",
+   "video": "Attachments/SwampBlueDeer/SwampBlueDeerHitReact1.mp4",
+   "first": 28,
+   "last": 95,
+   "pingPongFromLast": true,
+   "mode": "once",
+   "scaleTo": 610
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "kind": "stand",
+   "src": "build/video-cut/swamp-blue-deer/death",
+   "video": "Attachments/SwampBlueDeer/SwampBlueDearFall.mp4",
+   "first": 15,
+   "last": 95,
+   "standUntil": 30,
+   "mode": "once",
+   "scaleTo": 610
+  }
+ ],
+ "result": "cut-result-36-media.json",
+ "frameCount": 36
+}
