@@ -901,7 +901,8 @@ int runCapture(const Options& o) {
         setUpParty(options, save, world, !test, hasInterludeData ? &interludeData : nullptr);
       }
       auto missionStage = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
-      missionStage->setCampaign(&campaign, test ? std::string() : id, id, test);  // the campaign's own save backs the inventory
+      missionStage->setCampaign(&campaign, test ? std::string() : id, id, test,
+                                test && testSession ? &testSession->save : nullptr);  // the campaign's own save backs the inventory
       // The people who talk (NpcTalk.h); a capture never writes the bank (no campaign record: the Inn's menus read a copy).
       auto talk = attachNpcTalk(*missionStage, o.gameAssets, options.world, nullptr, test ? &testSession->save : nullptr, campaign.activeSave());
       if (missionStage->draftId().rfind("estalagem", 0) == 0) missionStage->setMusic(music::theme("inn"));
@@ -1251,9 +1252,10 @@ int runWindow(const Options& o) {
   // story progression are not ported yet.
   // `advancing`: a floor connector taken (the result screen's Subir / Descer): the next floor opens right after, so no note and
   // no world map.
-  auto finishCampaignFight = [&](const MapStage& map, bool advancing = false) {
-    if (playing.empty() || map.battleResult().empty()) return;
-    e2::Json save = campaign.activeSave();
+  // The fight's outcome folded into `save` (the part of finishCampaignFight below that writes the save). Modo teste folds its
+  // fights into the session's save through it too (the user, 2026-10-27: "still no changes in debug mode after clearing a map";
+  // Debug = the campaign but for the test save's three differences). Returns true on a victory.
+  auto foldFight = [&](e2::Json& save, const MapStage& map, const std::string& missionId) {
     const bool victory = map.battleResult() == "victory";
     if (victory) save["unitHp"] = e2::Json::object();  // persistVictory: unitHp is this fight's heroes, after the camp (campHp)
     for (const HeroOutcome& h : map.heroOutcomes()) {
@@ -1271,10 +1273,10 @@ int runWindow(const Options& o) {
       }
     }
     // mapstore keepsDefeatedSpawns: a dungeon keeps the enemies and neutrals killed here dead on every later visit
-    if (const e2::MapMission* mm = hasWorld ? world.mission(playing) : nullptr; victory && mm && mm->keepsSpawns) {
+    if (const e2::MapMission* mm = hasWorld ? world.mission(missionId) : nullptr; victory && mm && mm->keepsSpawns) {
       e2::Json& dead = save["crossingDefeatedSpawns"];
       if (!dead.is_object()) dead = e2::Json::object();
-      e2::Json& list = dead[playing];
+      e2::Json& list = dead[missionId];
       if (!list.is_array()) list = e2::Json::array();
       for (const std::string& id : map.fallenSpawns())
         if (std::find(list.begin(), list.end(), id) == list.end()) list.push_back(id);
@@ -1323,16 +1325,22 @@ int runWindow(const Options& o) {
       if (!done.is_array()) done = e2::Json::array();
       const bool wispDone = std::find(done.begin(), done.end(), "wisp-forest-crossing") != done.end() ||
                             std::find(done.begin(), done.end(), "wisp-forest-crossing-boss") != done.end();
-      std::vector<std::string> ids{playing};
-      if (playing == "wisp-forest-crossing" && !wispDone) ids.clear();
-      if (playing == "wisp-forest-crossing-boss") ids.push_back("wisp-forest-crossing");
+      std::vector<std::string> ids{missionId};
+      if (missionId == "wisp-forest-crossing" && !wispDone) ids.clear();
+      if (missionId == "wisp-forest-crossing-boss") ids.push_back("wisp-forest-crossing");
       for (const std::string& id : ids)
         if (std::find(done.begin(), done.end(), id) == done.end()) done.push_back(id);
       // Inn quests (persistVictory): the pickups found here, and this mission's quest targets that fell, accepted or not
       e2::foldQuestProgress(save, map.questFound(), map.questKills());
     } else {
-      save["pendingMission"] = playing;  // a lost fight is played again from its briefing
+      save["pendingMission"] = missionId;  // a lost fight is played again from its briefing
     }
+    return won;
+  };
+  auto finishCampaignFight = [&](const MapStage& map, bool advancing = false) {
+    if (playing.empty() || map.battleResult().empty()) return;
+    e2::Json save = campaign.activeSave();
+    const bool won = foldFight(save, map, playing);
     // The Interlude (docs/INTERLUDE.md): a chapter mission won moves the chapter on (the next map pending), the last one ends it (the
     // present party back, Isolde's progression kept, the Ruins open as the present-day location), in the same write as the victory.
     bool interludeOver = false;
@@ -1463,6 +1471,7 @@ int runWindow(const Options& o) {
           // A fight won on its stairs: the victory is written first (persistVictory: HP carried, the dead stay dead), as Engine2
           // writes it when the result screen shows; a free-roam floor (the walkable Inn) writes nothing here.
           if (!test && !map->explores() && map->battleResult() == "victory") finishCampaignFight(*map, true);
+          if (testSession && !map->explores() && map->battleResult() == "victory") foldFight(testSession->save, *map, map->draftId());
           // An Interlude exploration map left by its passage: done for the chapter, the next map pending (markVisited advances it)
           if (!test && map->explores() && hasInterlude && interlude.hasMission(playing)) markVisited(playing, map);
           arriveFrom = map->draftId();
@@ -1481,7 +1490,9 @@ int runWindow(const Options& o) {
         } else if (inSpells) {
           openTest = TestModeStage::Screen::Menu;  // Teste de Magias: back to the test menu
         } else if (testSession) {
-          // A test battle never writes anything (GameApp: every save write is !testMode); back to the test map.
+          // A test fight that ended is folded into the session's save as the campaign folds its own (levels, XP, HP, skills,
+          // loot, completed); back to the test map.
+          if (!map->explores() && !map->battleResult().empty()) foldFight(testSession->save, *map, map->draftId());
           if (testSession->mapMode == "rpg") openTestRpg = true;
           else openTest = TestModeStage::Screen::WorldMap;
         } else if (!playing.empty() && !map->battleResult().empty()) {
@@ -1509,7 +1520,8 @@ int runWindow(const Options& o) {
       curtainBeforeBattle();
       auto again = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, *retry);
       again->setMenus(toggleFullscreen, &devGfx);
-      again->setCampaign(hasCampaign ? &campaign : nullptr, playing, std::filesystem::path(retry->map).stem().string(), testSession.has_value());
+      again->setCampaign(hasCampaign ? &campaign : nullptr, playing, std::filesystem::path(retry->map).stem().string(), testSession.has_value(),
+                         testSession ? &testSession->save : nullptr);
       again->setPlaytest(inEditorTest);
       if (!playing.empty() && dialogs.is_object())
         attachBattleTalk(*again, playing, dialogs, paths.engine2Public, world, testSession ? nullptr : &campaign);
@@ -1636,7 +1648,8 @@ int runWindow(const Options& o) {
         auto map = std::make_unique<MapStage>(context, renderer, services.assets, services.jobs, options);
         map->setMenus(toggleFullscreen, &devGfx);
         map->setPlaytest(inEditorTest);
-        map->setCampaign(hasCampaign ? &campaign : nullptr, playing, pending->id, testSession.has_value() || playing.empty());
+        map->setCampaign(hasCampaign ? &campaign : nullptr, playing, pending->id, testSession.has_value() || playing.empty(),
+                         testSession ? &testSession->save : nullptr);
         // A fight saved mid-way, resumed (GameApp startBattle with resume: applySnapshot); its intro already played.
         bool resumed = false;
         if (std::exchange(resumeNext, false) && !playing.empty()) {

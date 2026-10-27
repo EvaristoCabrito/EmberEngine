@@ -535,6 +535,12 @@ class BattleStatusSheet {
     return rows;
   }
 
+  // A skill's points with both decimals always shown (the user, 2026-10-27: "display every little 0.01%"): 0,30 / 0,07.
+  static std::string skillText(double v, bool en) {
+    std::string t = std::format("{:.2f}", v);
+    if (!en) std::replace(t.begin(), t.end(), '.', ',');
+    return t;
+  }
   static std::string pointsText(double v, bool en) {
     std::string t = std::format("{:.2f}", v);
     while (t.back() == '0') t.pop_back();
@@ -686,11 +692,11 @@ class BattleStatusSheet {
       bd->AddRect(pa, {pa.x + bw, pa.y + panelH}, kBorder, 8.0f);
       float sy = pa.y + 10.0f;
       for (const auto& [id, v] : skills) {
-        const std::string value = std::format("{}/100", pointsText(v, en));
+        const std::string value = std::format("{}/100", skillText(v, en));
         const float vw = ui->CalcTextSizeA(14.0f, FLT_MAX, 0.0f, value.c_str()).x;
         std::string name = skillName(id, en);
-        if (id == "healing") name += en ? std::format(" · +{}% healing", pointsText(v, en)) : std::format(" · +{}% de cura", pointsText(v, en));
-        if (id == "dodging") name += en ? std::format(" · -{}% to be hit", pointsText(v / 2, en)) : std::format(" · -{}% de acerto contra", pointsText(v / 2, en));
+        if (id == "healing") name += en ? std::format(" · +{}% healing", skillText(v, en)) : std::format(" · +{}% de cura", skillText(v, en));
+        if (id == "dodging") name += en ? std::format(" · -{}% to be hit", skillText(v / 2, en)) : std::format(" · -{}% de acerto contra", skillText(v / 2, en));
         bd->AddText(ui, 14.0f, {pa.x + 14.0f, sy}, kFg, name.c_str());
         bd->AddText(ui, 14.0f, {pa.x + bw - 14.0f - vw, sy}, kMuted, value.c_str());
         bd->AddRectFilled({pa.x + 14.0f, sy + 22.0f}, {pa.x + bw - 14.0f, sy + 28.0f}, kBorder, 3.0f);

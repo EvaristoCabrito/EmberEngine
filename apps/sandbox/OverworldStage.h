@@ -2110,9 +2110,12 @@ class OverworldStage : public Stage {
         const double points = num(save_.value("heroSkills", e2::Json::object()).value(hero, e2::Json::object()), id, 0);
         const bool on = training == id;
         std::string name = id == "dodging" ? tr("Esquiva", "Dodging") : t["skillNames"].value(id, id);
-        if (id == "healing") name += std::format(" · +{}% healing", std::round(points * 100) / 100);
+        // both decimals always shown, as in the battle's Skills (the user, 2026-10-27: "display every little 0.01%")
+        std::string shownPoints = std::format("{:.2f}", points);
+        if (!uiEnglish()) std::replace(shownPoints.begin(), shownPoints.end(), '.', ',');
+        if (id == "healing") name += std::format(" · +{}% healing", shownPoints);
         dl->AddText(ui, 14.0f, {x + 12, y}, kFg, name.c_str());
-        const std::string value = std::format("{}/{}", std::round(points * 100) / 100, cap);
+        const std::string value = std::format("{}/{}", shownPoints, cap);
         const float vw = ui->CalcTextSizeA(14.0f, FLT_MAX, 0, value.c_str()).x;
         dl->AddText(ui, 14.0f, {x + cardW - 12 - vw, y}, kMuted, value.c_str());
         ImGui::PushID((hero + id).c_str());

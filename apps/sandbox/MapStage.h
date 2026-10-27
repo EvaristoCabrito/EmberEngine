@@ -1756,16 +1756,17 @@ class MapStage final : public Stage {
   }
   // --- Save / Load in battle (GameApp's battle menu Save and Load, Engine2's BattleSnapshot) ---
   // The campaign this fight belongs to: its slots, the campaign mission id and the map's key (a fight saved on another
-  // map file is not resumed). `testMode`: Modo teste writes nothing, so its menu has no Save.
-  void setCampaign(e2::Campaign* campaign, std::string missionId, std::string mapKey, bool testMode) {
+  // map file is not resumed). `testMode`: Modo teste's menu has no Save. `testSave`: Modo teste's session save, which its heroes
+  // wear and train from as a campaign fight does from the slot (Debug = the campaign; the fight is folded back by main.cpp).
+  void setCampaign(e2::Campaign* campaign, std::string missionId, std::string mapKey, bool testMode, const e2::Json* testSave = nullptr) {
     campaign_ = campaign, missionId_ = std::move(missionId), mapKey_ = std::move(mapKey), testMode_ = testMode;
     // The Inn quests' pickups lying on this mission's map (GameApp startBattle: quests.ts activePickupsFor; never in Modo teste).
     if (battle_ && campaign_ && !testMode_ && !playtest_ && options_.world)
       battle_->setQuestPickups(e2::activeQuestPickups(questTable("quests"), campaign_->activeSave(), missionId_));
     // A campaign fight: each hero wears what the save has it wearing (Engine2 spawnUnit's gearStatBonus on HP / ATK / MAG / DEF /
     // DEX / movement), its HP as the save carries it (full when it carries none).
-    if (!campaign_ || testMode_ || playtest_ || !battle_ || !ensureInnRules()) return;
-    const e2::Json save = campaign_->activeSave();
+    if (!campaign_ || (testMode_ && !testSave) || playtest_ || !battle_ || !ensureInnRules()) return;
+    const e2::Json save = testMode_ ? *testSave : campaign_->activeSave();
     static const e2::Loadouts arms = [] {
       e2::Loadouts l;
       l.load("content/engine2/weapons.json");
