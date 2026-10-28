@@ -51,6 +51,7 @@
 #include "world/Inn.h"
 #include "world/Interlude.h"
 #include "world/Overworld.h"
+#include "world/Underworld.h"
 #include "world/Spells.h"
 
 namespace ember {
@@ -77,6 +78,7 @@ class OverworldStage : public Stage {
       : paths_(std::move(paths)), campaign_(campaign), world_(world), callbacks_(std::move(callbacks)), notice_(std::move(notice)), testSave_(testSave),
         interlude_(interlude) {
     hasInn_ = innData_.load("content/data/inn.json");
+    hasUnder_ = under_.load("content/data/underworld.json");
     hasCompanions_ = companions_.load("content/data/companions.json", "content/data/companions-pt.json");
     save_ = testSave_ ? *testSave_ : campaign_.activeSave();
     const ember::Json& pos = save_["overworldPos"];
@@ -634,7 +636,7 @@ class OverworldStage : public Stage {
     }
     emberKicker(dl, {left, top + 4.0f}, 14.0f, test() ? "MODO TESTE · RPG" : "CAMPANHA · RPG");
     // The world's name is the switch (the user, 2026-10-23: "near the upper left corner, you click the word Overworld and it switches
-    // to Underworld"): Modo teste always; the campaign only once the party has reached the Underworld (save "underworldReached").
+    // to Underworld"): Modo teste only (underworldOpen).
     {
       const char* word = underworld_ ? "Underworld" : "Overworld";
       ImFont* mark = uiFont(UiFont::Mark);
@@ -768,13 +770,92 @@ class OverworldStage : public Stage {
   // game/assets/world-map.jpg) stay where they are.
   static constexpr const char* kUnderworldAtlas = "content/worldmap/underworld-atlas-v02.png";
   static constexpr const char* kWorldMap = "content/worldmap/world-map-v02.png";
-  // Whether the word at the upper left switches worlds: Modo teste always, the campaign once the party has reached the Underworld.
-  bool underworldOpen() const { return test() || save_.value("underworldReached", false); }
+  // Whether the word at the upper left switches worlds: Modo teste only, its "go anywhere" (the user, 2026-10-28: "no jogo haverão
+  // algumas passagens, não se pode mudar assim, é só no debug"); the campaign crosses by the game's passages (showUnderworld).
+  bool underworldOpen() const { return test(); }
   void toggleWorld() {
     underworld_ = !underworld_;
     std::swap(centreX_, otherCentreX_), std::swap(centreY_, otherCentreY_);  // each world keeps its own view
     recentre_ = true;
     movementOpen_ = false;
+    partyX_ = -1;  // the leader stands on the shown world's hex at once (one walk state, shared by both worlds)
+  }
+
+  // The Underworld's board (world/Underworld, content/data/underworld.json; the user, 2026-10-28: "when I flip to the Underworld
+  // Map I want my character in there at the starting position", "também anda"): the leader on the party's hex (Temple Descend the
+  // first time), a click on the leader opens the neighbouring cells as step hexes, a click on one walks there (as the Overworld's
+  // leader walks); Temple Descend's pin on the user's mark. A step moves the party only (Underworld::step).
+  void drawUnderworld(ImDrawList* dl, ImVec2 o, float imgW, float imgH, bool overViewport, bool clicked) {
+    if (!hasUnder_) return;
+    auto at = [&](double xPct, double yPct) { return ImVec2{o.x + static_cast<float>(xPct) / 100.0f * imgW, o.y + static_cast<float>(yPct) / 100.0f * imgH}; };
+    const ImVec2 mouse = ImGui::GetIO().MousePos;
+    const ember::OverworldHex pos = under_.position(save_);
+    std::vector<ember::OverworldHex> dots;
+    for (const ember::OverworldHex& n : ember::Overworld::neighbors(pos.col, pos.row))
+      if (under_.isCell(n.col, n.row)) dots.push_back(n);
+    std::optional<ember::OverworldHex> clickedDot;
+    const ember::MapLocation* clickedPin = nullptr;
+    bool clickedLeader = false;
+    // Pins (the Overworld's look: a dark disc, the accent ring, the map-pin icon), the name on hover.
+    for (const ember::MapLocation& loc : under_.locations()) {
+      const ImVec2 c = at(loc.x, loc.y);
+      const float r = 20.0f;
+      const bool hover = overViewport && std::hypot(mouse.x - c.x, mouse.y - c.y) <= r;
+      const float s = hover ? 1.1f : 1.0f;
+      dl->AddCircleFilled(c, r * s, IM_COL32(17, 17, 17, 204), 32);
+      dl->AddCircle(c, r * s - 1, kAccent, 32, 2.0f);
+      iconMapPin(dl, c, 16 * s, IM_COL32(216, 216, 216, 255));
+      if (hover) ImGui::SetTooltip("%s", loc.name.c_str());
+      if (hover && clicked) clickedPin = &loc;
+    }
+    // Step hexes (movement open): the Overworld's shape and wash, at the board's own size.
+    if (movementOpen_)
+      for (const ember::OverworldHex& d : dots) {
+        const ember::OverworldCell* cell = under_.cell(d.col, d.row);
+        const ImVec2 c = at(cell->x, cell->y);
+        const float w = std::max(44.0f, static_cast<float>(under_.hexWidth()) / 100.0f * imgW);
+        const float h = std::max(44.0f, w * 2.0f / std::sqrt(3.0f));
+        const ImVec2 p[6] = {{c.x, c.y - h / 2}, {c.x + w / 2, c.y - h / 4}, {c.x + w / 2, c.y + h / 4}, {c.x, c.y + h / 2}, {c.x - w / 2, c.y + h / 4}, {c.x - w / 2, c.y - h / 4}};
+        const bool hover = overViewport && std::abs(mouse.x - c.x) < w / 2 && std::abs(mouse.y - c.y) < h / 2 - std::abs(mouse.x - c.x) / (w / 2) * h / 4;
+        dl->AddConvexPolyFilled(p, 6, hover ? IM_COL32(216, 216, 216, 204) : IM_COL32(216, 216, 216, 122));
+        if (hover) dl->AddPolyline(p, 6, kFg, 2.0f, ImDrawFlags_Closed);
+        if (hover && clicked) clickedDot = d;
+      }
+    // The leader: walked hex to hex as on the Overworld, turned by the side the hex lies on.
+    {
+      double tx = 0, ty = 0;
+      under_.hexToWorld(pos.col, pos.row, tx, ty);
+      if (partyX_ < 0)
+        partyX_ = static_cast<float>(tx), partyY_ = static_cast<float>(ty), fromX_ = partyX_, fromY_ = partyY_, targetX_ = partyX_,
+        targetY_ = partyY_, moveAt_ = -10;
+      if (std::abs(targetX_ - static_cast<float>(tx)) > 1e-3f || std::abs(targetY_ - static_cast<float>(ty)) > 1e-3f) {
+        if (std::abs(static_cast<float>(tx) - targetX_) > 1e-3f) facingLeft_ = static_cast<float>(tx) < targetX_;
+        fromX_ = partyX_, fromY_ = partyY_, targetX_ = static_cast<float>(tx), targetY_ = static_cast<float>(ty), moveAt_ = now_;
+      }
+      constexpr float kWalkSeconds = 1.0f;  // the Overworld's pace
+      const float k = std::clamp((now_ - moveAt_) / kWalkSeconds, 0.0f, 1.0f);
+      partyX_ = fromX_ + (targetX_ - fromX_) * k, partyY_ = fromY_ + (targetY_ - fromY_) * k;
+      const Box box = drawLeader(dl, at(partyX_, partyY_), leader(), k < 1.0f ? now_ - moveAt_ : -1.0f);
+      if (overViewport && box.contains(mouse) && clicked) clickedLeader = true;
+    }
+    if (clicked) {
+      const ember::OverworldHex under = under_.worldToHex((mouse.x - o.x) / imgW * 100.0, (mouse.y - o.y) / imgH * 100.0);
+      logInfo("underworld click: at ({},{}) movement {}, mouse on hex ({},{}) {} -> {}", pos.col, pos.row, movementOpen_ ? "open" : "closed",
+              under.col, under.row, under_.isCell(under.col, under.row) ? "on the board" : "OFF the board",
+              clickedDot ? std::format("step hex ({},{})", clickedDot->col, clickedDot->row)
+              : clickedLeader ? std::string("leader")
+              : clickedPin ? "pin " + clickedPin->id
+                           : std::string("nothing"));
+    }
+    if (clickedDot) {
+      movementOpen_ = false;
+      if (under_.step(save_, *clickedDot)) write();
+    } else if (clickedLeader) {
+      movementOpen_ = !movementOpen_;
+    } else if (clickedPin && movementOpen_ && std::ranges::find(dots, ember::OverworldHex{clickedPin->col, clickedPin->row}) != dots.end()) {
+      movementOpen_ = false;
+      if (under_.step(save_, {clickedPin->col, clickedPin->row})) write();
+    }
   }
 
   void drawViewport(ImVec2 a, ImVec2 b) {
@@ -792,9 +873,13 @@ class OverworldStage : public Stage {
     const int col = pos.value("col", 0), row = pos.value("row", 0);
     double px = 0, py = 0;
     ember::Overworld::hexToWorld(col, row, px, py);
-    // Opens centred on the party (mount), keeps the centre when zooming.
-    if (!centred_) {
-      centreX_ = static_cast<float>(px / 100.0), centreY_ = static_cast<float>(py / 100.0), centred_ = true, recentre_ = true;
+    if (underworld_) {
+      const ember::OverworldHex u = under_.position(save_);
+      under_.hexToWorld(u.col, u.row, px, py);
+    }
+    // Opens centred on the party (mount), keeps the centre when zooming; each world the first time it shows.
+    if (bool& done = underworld_ ? underCentred_ : centred_; !done) {
+      centreX_ = static_cast<float>(px / 100.0), centreY_ = static_cast<float>(py / 100.0), done = true, recentre_ = true;
     }
     if (recentre_) {
       scrollX_ = centreX_ * contentW - vw / 2, scrollY_ = centreY_ * contentH - vh / 2;
@@ -842,7 +927,8 @@ class OverworldStage : public Stage {
     const bool fxOn = fx_ && fxConfig_[fxWorld].enabled && fxMap_[fxWorld] != WorldMapFx::kNoTexture;
     if (fxOn) drawLitMap(dl, o, imgW, imgH, a, b);
     else if (map) dl->AddImageRounded(map->texture, o, {o.x + imgW, o.y + imgH}, {0, 0}, {1, 1}, IM_COL32_WHITE, 8.0f);
-    if (underworld_) {  // the Atlas alone: no fog of war, no sky (it is underground), no pins, no steps, no leader there yet
+    if (underworld_) {  // the Atlas: no fog of war, no sky (it is underground); its board, Temple Descend and the leader
+      drawUnderworld(dl, o, imgW, imgH, overViewport, clicked);
       dl->PopClipRect();
       return;
     }
@@ -1027,9 +1113,10 @@ class OverworldStage : public Stage {
     if (loc.deadlineDay && num(save_, "gameClock", 0) > *loc.deadlineDay) return showHint("Prazo esgotado por aqui.");
     // The Ruins (docs/INTERLUDE.md): shut until Salazar's quests are done; the first legitimate entry starts the Interlude (the present
     // party put aside, the historical one in, its first map pending), a chapter left half-way goes on at its pending map, and once the
-    // chapter is completed the Ruins open as any present-day location. Never in Modo teste (every location open, no chapter).
-    if (interlude_ && !test() && loc.id == interlude_->ruinsLocation) {
-      if (!ember::ruinsOpen(*interlude_, world_, save_)) {
+    // chapter is completed the Ruins open as any present-day location. Modo teste: the gate open (everything unlocked), the chapter
+    // the same, on the session's own save.
+    if (interlude_ && loc.id == interlude_->ruinsLocation) {
+      if (!ember::ruinsOpen(*interlude_, world_, save_, test())) {
         flashId_ = loc.id, flashAt_ = now_;
         logInfo("ruins: shut ({})", ember::ruinsLockedReason(*interlude_, world_, save_));
         return showHint(tr("As Ruínas estão fechadas: termine antes as missões de Salazar.", "The Ruins are shut: finish Salazar's quests first."));
@@ -2468,6 +2555,8 @@ class OverworldStage : public Stage {
   ember::InnData innData_;
   ember::InnRules innRules_{innData_, world_};
   bool hasInn_ = false;
+  ember::Underworld under_;  // the Underworld's board (drawUnderworld)
+  bool hasUnder_ = false, underCentred_ = false;
   ember::Companions companions_;
   bool hasCompanions_ = false;
   bool fieldSpells_ = false;     // the field-spells menu is open

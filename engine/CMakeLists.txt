@@ -80,6 +80,7 @@ add_library(EmberEngine STATIC
   world/Campaign.cpp
   world/Locais.cpp
   world/Overworld.cpp
+  world/Underworld.cpp
   world/Inn.cpp
   world/Quests.cpp
   world/Companions.cpp
