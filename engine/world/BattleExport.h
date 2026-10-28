@@ -40,6 +40,10 @@ bool prepareCampaignMap(const std::filesystem::path& mapFile, const std::filesys
 // the test battles in build/test-maps were made at 15).
 std::optional<nlohmann::json> exportBattle(const nlohmann::json& mapFile, std::string* error, int playerLevel = 1);
 
+// The named heroes as a prepared map seats them (each with its campaign class, campaignHeroClasses), fresh at level 1, on a
+// one-row board of plains: exportBattle's own units, for a screen that shows a hero outside a fight (the world map's status sheet).
+std::optional<nlohmann::json> partyBattle(const std::vector<std::string>& heroes, std::string* error);
+
 // The class's spell list at `level` (battle-rules.json classes.<id>.spells; Salazar's own row, spellsSalazar, for `name`
 // "Salazar"), as a fresh unit of that level is spawned with. Empty for a class the rules do not know.
 std::vector<std::string> classSpellsAt(const std::string& classId, int level, const std::string& name);

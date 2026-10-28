@@ -1767,32 +1767,41 @@ class MapStage final : public Stage {
     // DEX / movement), its HP as the save carries it (full when it carries none).
     if (!campaign_ || (testMode_ && !testSave) || playtest_ || !battle_ || !ensureInnRules()) return;
     const ember::Json save = testMode_ ? *testSave : campaign_->activeSave();
+    for (ember::BattleUnit& u : battle_->units()) {
+      if (u.side != "player" || u.summoned || !u.alive) continue;
+      wearFromSave(u, save, *innRules_);
+      skillsAtStart_[u.name] = trainedSkills(u);  // what it knew as the fight opened: the end adds only what it trained here
+    }
+  }
+  // A hero as the save has it equipped (setCampaign; the world map's status sheet too): it wields what it has equipped (main hand,
+  // off hand, their reach, staff magic and mastery: ember::equipFromSave), its Esquiva (ours: save.heroSkills[hero].dodging), the
+  // worn pieces' stats (InnRules::gearBonus), its HP kept full when it was.
+  static void wearFromSave(ember::BattleUnit& u, const ember::Json& save, const ember::InnRules& rules) {
     static const ember::Loadouts arms = [] {
       ember::Loadouts l;
       l.load("content/data/weapons.json");
       return l;
     }();
-    for (ember::BattleUnit& u : battle_->units()) {
-      if (u.side != "player" || u.summoned || !u.alive) continue;
-      // ... and wields what it has equipped: main hand, off hand, their reach, staff magic and mastery (ember::equipFromSave)
-      if (!ember::equipFromSave(u, arms, save)) logWarn("{}: class {} has no weapon data: it keeps the battle file's weapon", u.name, u.classId);
-      // ... and its Esquiva (ours: save.heroSkills[hero].dodging)
-      if (const ember::Json skills = save.value("heroSkills", ember::Json::object()); skills.is_object() && skills.contains(u.name) &&
-                                                                             skills[u.name].is_object() && skills[u.name].contains("dodging") &&
-                                                                             skills[u.name]["dodging"].is_number()) {
-        const double v = skills[u.name]["dodging"].get<double>();
-        bool set = false;
-        for (auto& [id, value] : u.skills)
-          if (id == "dodging") value = v, set = true;
-        if (!set) u.skills.emplace_back("dodging", v);
-      }
-      const bool full = u.hp >= u.maxHp;
-      const ember::InnRules::GearBonus g = innRules_->gearBonus(save, u.name, u.classId);
-      u.gearHp = g.hp, u.gearAtk = g.atk, u.gearMag = g.mag, u.gearDef = g.def, u.gearDex = g.dex, u.gearMov = g.mov;
-      ember::reapplyGear(u);
-      u.hp = full ? u.maxHp : std::min(u.maxHp, u.hp);
-      skillsAtStart_[u.name] = trainedSkills(u);  // what it knew as the fight opened: the end adds only what it trained here
+    if (!ember::equipFromSave(u, arms, save)) logWarn("{}: class {} has no weapon data: it keeps the battle file's weapon", u.name, u.classId);
+    if (const ember::Json skills = save.value("heroSkills", ember::Json::object()); skills.is_object() && skills.contains(u.name) &&
+                                                                           skills[u.name].is_object() && skills[u.name].contains("dodging") &&
+                                                                           skills[u.name]["dodging"].is_number()) {
+      const double v = skills[u.name]["dodging"].get<double>();
+      bool set = false;
+      for (auto& [id, value] : u.skills)
+        if (id == "dodging") value = v, set = true;
+      if (!set) u.skills.emplace_back("dodging", v);
     }
+    const bool full = u.hp >= u.maxHp;
+    const ember::InnRules::GearBonus g = rules.gearBonus(save, u.name, u.classId);
+    u.gearHp = g.hp, u.gearAtk = g.atk, u.gearMag = g.mag, u.gearDef = g.def, u.gearDex = g.dex, u.gearMov = g.mov;
+    ember::reapplyGear(u);
+    u.hp = full ? u.maxHp : std::min(u.maxHp, u.hp);
+  }
+  // XP to the next level (Ember xpToNextLevel).
+  static int xpToLevel(int level) {
+    const int c = std::max(1, std::min(29, level));
+    return c >= 28 ? 600 : c >= 23 ? 500 : c >= 18 ? 400 : c >= 13 ? 300 : c >= 8 ? 225 : c >= 3 ? 150 : 100;
   }
   // The fight as Ember's BattleSnapshot (captureSnapshot): an action in flight spends the acting unit's action (and,
   // an enemy's or one with no movement left, its turn), so it is neither replayed nor lost on load.
@@ -8286,13 +8295,17 @@ class MapStage final : public Stage {
     return file.empty() ? nullptr : uiImage(file);
   }
   // The file spellIconOf draws for `kind`, or none.
-  std::filesystem::path spellIconFileOf(const std::string& kind) const {
+  std::filesystem::path spellIconFileOf(const std::string& kind) const { return spellIconFile(options_.artRoot, kind); }
+
+ public:
+  // spellIconFileOf for any screen (the world map's status sheet), the art folder given.
+  static std::filesystem::path spellIconFile(const std::filesystem::path& artRoot, const std::string& kind) {
     if (!ember::emberSpellClass(kind).empty()) {  // ours: the user's art when there is one (none yet for some: the initials)
       const std::filesystem::path own = std::filesystem::path("content/ui/spells") / (kind + ".jpg");
       std::error_code ec;
       if (std::filesystem::exists(own, ec)) return own;
     }
-    if (const std::optional<std::string> potion = potionOf(kind)) return options_.artRoot / "game/icons" / ("potion-" + *potion + ".png");
+    if (const std::optional<std::string> potion = potionOf(kind)) return artRoot / "game/icons" / ("potion-" + *potion + ".png");
     static const std::pair<const char*, const char*> kIcons[] = {
         {"doubleStrike", "refresh-001/spells/cleave-crossed-blades.png"}, {"cleave", "refresh-001/spells/cleave.png"},
         {"fireball", "refresh-001/spells/fireball.png"}, {"frost", "frost.jpg"}, {"iceStorm", "ice-storm.jpg"},
@@ -8311,9 +8324,11 @@ class MapStage final : public Stage {
         {"burningHands", "burning-hands.png"}, {"poisonBreath", "poison-breath.png"}, {"createFoodAndWater", "create-food-and-water.png"},
         {"turnUndead", "turn-undead.jpg"}};
     for (const auto& [k, file] : kIcons)
-      if (kind == k) return options_.artRoot / "game/icons" / file;
+      if (kind == k) return artRoot / "game/icons" / file;
     return {};
   }
+
+ private:
 
   // .ember-btn.ember-btn-sm: Pirata One, primary (the ember gradient) or ghost (dark iron, an ember underline on hover).
   // `icon` (a file under Ember's game/icons, e.g. "lockpick.png") is drawn before the label.
@@ -9189,11 +9204,6 @@ class MapStage final : public Stage {
       }
     }
     if (!drew) ImGui::Dummy({0.0f, 32.0f});  // the anchor the caller's buttons follow
-  }
-
-  static int xpToLevel(int level) {
-    const int c = std::max(1, std::min(29, level));
-    return c >= 28 ? 600 : c >= 23 ? 500 : c >= 18 ? 400 : c >= 13 ? 300 : c >= 8 ? 225 : c >= 3 ? 150 : 100;
   }
 
   // Cancelar: the last walk taken back: its hex, heading, the movement it spent and where it stood on screen.

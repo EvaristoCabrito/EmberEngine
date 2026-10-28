@@ -12,7 +12,8 @@
 // events; the location's mission list; the quest log; the Party menu (leader, formation, affinities, road training);
 // the first-visit explainer. A mission opens its briefing, then its fight (main.cpp).
 //
-// The Inn's pin opens the Inn (InnScreen.h); a portrait in the party panel opens that hero's Mochila (InventoryScreen.h).
+// The Inn's pin opens the Inn (InnScreen.h); a portrait in the party panel opens that hero's status sheet (BattleStatus.h), whose
+// Mochila / Equipar open InventoryScreen.h.
 // Not ported yet: field spells (Create Food and Water, Warp), the status sheet, the Inn's arrival film and walkable room,
 // intro cutscenes, sound.
 
@@ -23,6 +24,7 @@
 #include <chrono>
 #include <cmath>
 #include <format>
+#include <fstream>
 #include <functional>
 #include <optional>
 #include <random>
@@ -30,11 +32,13 @@
 #include <string>
 #include <vector>
 
+#include "BattleStatus.h"
 #include "CampaignUi.h"
 #include "CutsceneScreen.h"
 #include "DialogScreen.h"
 #include "EmberMenus.h"
 #include "GameMusic.h"
+#include "HeroHandoff.h"  // heroStatesFromSave, MapStage (the status sheet's hero, as a fight seats it)
 #include "InnScreen.h"
 #include "QuestLog.h"
 #include "Stage.h"
@@ -44,6 +48,7 @@
 #include "render/Renderer.h"
 #include "render/UiArt.h"
 #include "render/WorldMapFx.h"
+#include "world/BattleExport.h"
 #include "world/Campaign.h"
 #include "world/Combat.h"
 #include "world/Companions.h"
@@ -184,6 +189,7 @@ class OverworldStage : public Stage {
         if (loc.id == what.substr(6)) enterLocation(loc, locationStatus(loc));
     if (what == "save") slots_.emplace(), slots_->open(SlotScreen::Mode::Save, true);
     if ((what == "pack" || what == "doll") && hasInn_) inventory_.emplace("Kael", what == "pack");
+    if (what.starts_with("status:")) openSheet(what.substr(7));
     if (what.starts_with("inn") && hasInn_) {
       inn_.emplace();
       if (what.size() > 4) inn_->preview(what.substr(4));
@@ -268,6 +274,7 @@ class OverworldStage : public Stage {
     if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.key == SDLK_ESCAPE) {
       // Esc: closes what is open; on the bare map it opens Opções (OptionsButton escapeKey).
       if (convDialog_) convDialog_.reset();
+      else if (sheet_.isOpen()) sheet_.closeConditionOrSheet();
       else if (!warpHero_.empty()) warpHero_.clear();
       else if (!recallHero_.empty()) recallHero_.clear();
       else if (!identifyHero_.empty()) identifyHero_.clear();
@@ -301,7 +308,10 @@ class OverworldStage : public Stage {
       }
     } else if (inventory_) {
       InventoryScreen::Context context{save_, [this] { write(); }, innRules_, innData_, world_, paths_.artRoot};
-      if (inventory_->draw(io.DisplaySize, context)) inventory_.reset();
+      if (inventory_->draw(io.DisplaySize, context)) {
+        inventory_.reset();
+        if (!sheetReturn_.empty()) openSheet(std::exchange(sheetReturn_, {}));  // opened from the sheet: back to it, as now worn
+      }
     } else if (inn_) {
       InnScreen::Context context{save_, [this] { write(); }, innRules_, innData_, world_, paths_.artRoot};
       if (inn_->draw(io.DisplaySize, context)) inn_.reset();  // GameApp returnToCurrentMap
@@ -356,6 +366,7 @@ class OverworldStage : public Stage {
       }
     } else {
       drawMap(io.DisplaySize);
+      drawSheet();
     }
     ImGui::End();
     ImGui::PopStyleVar(2);
@@ -856,6 +867,99 @@ class OverworldStage : public Stage {
       movementOpen_ = false;
       if (under_.step(save_, {clickedPin->col, clickedPin->row})) write();
     }
+  }
+
+  // The status sheet from a portrait (the user, 2026-10-28: "when I click a portrait in the world map I also want it to open up the
+  // status screen for that character"): the battle's own sheet (BattleStatus.h) over the party as a fight would seat it, built by
+  // the same steps: fresh units of their campaign classes (partyBattle), then the save's levels and XP, promotions, class spells,
+  // condition (heroStatesFromSave + applyHeroState) and what they wear (wearFromSave). Mochila / Equipar open the inventory and
+  // come back to the sheet; a level-up point is written into the save as a fight writes it.
+  void openSheet(const std::string& hero) {
+    std::string error;
+    const std::optional<ember::Json> party = ember::partyBattle(partyHeroes(), &error);
+    if (!party) return logWarn("status sheet: {}", error);
+    const std::filesystem::path file = std::filesystem::temp_directory_path() / "ember-party-sheet.battle.json";
+    std::ofstream(file, std::ios::binary) << party->dump();
+    sheetBattle_ = ember::Battle::load(file);
+    if (!sheetBattle_) return;
+    const ember::Json levels = save_.value("levels", ember::Json::object()), xp = save_.value("xp", ember::Json::object());
+    const ember::Json promotions = save_.value("promotions", ember::Json::object());
+    const auto states = ember::heroStatesFromSave(save_);
+    std::optional<size_t> at;
+    for (size_t i = 0; i < sheetBattle_->units().size(); ++i) {
+      ember::BattleUnit& u = sheetBattle_->units()[i];
+      if (u.side != "player") continue;
+      if (levels.contains(u.name) && levels[u.name].is_number_integer()) ember::raiseToLevel(u, levels[u.name].get<int>(), xp.value(u.name, 0));
+      if (promotions.contains(u.name) && promotions[u.name].is_string()) ember::setPromotion(u, promotions[u.name].get<std::string>());
+      ember::grantClassSpells(u);
+      if (const auto it = states.find(u.name); it != states.end()) MapStage::applyHeroState(u, it->second);
+      if (hasInn_) MapStage::wearFromSave(u, save_, innRules_);
+      if (u.name == hero) at = i;
+    }
+    if (at) sheet_.open(*at);
+  }
+  void drawSheet() {
+    if (!sheet_.isOpen() || !sheetBattle_) return;
+    ember::BattleStatusSheet::Hooks hooks;
+    hooks.portraitWhole = [](const ember::BattleUnit& u) { return u.side == "player"; };
+    hooks.portrait = [this](const ember::BattleUnit& u) -> const UiImage* {
+      const std::string file = unitPortraitFile(u.name, u.sprite);
+      std::error_code ec;
+      return file.empty() || !std::filesystem::exists(paths_.artRoot / file, ec) ? nullptr : uiImage(paths_.artRoot / file);
+    };
+    hooks.spellIcon = [this](const std::string& kind) -> const UiImage* {
+      const std::filesystem::path file = MapStage::spellIconFile(paths_.artRoot, kind);
+      return file.empty() ? nullptr : uiImage(file);
+    };
+    hooks.xpToLevel = [](int level) { return MapStage::xpToLevel(level); };
+    hooks.allocation = [](const ember::BattleUnit& u) { return std::array<int, 5>{u.pointHp, u.pointAtk, u.pointMag, u.pointDef, u.pointDex}; };
+    hooks.adjust = [this](size_t unit, int stat, int delta) { return adjustSheetPoint(unit, stat, delta); };
+    if (hasInn_) {
+      auto open = [this](size_t unit, bool pack) {
+        const std::string name = sheetBattle_->units()[unit].name;
+        sheet_.close();
+        sheetReturn_ = name;
+        inventory_.emplace(name, pack);
+      };
+      hooks.openPack = [open](size_t unit) { open(unit, true); };
+      hooks.openEquip = [open](size_t unit) { open(unit, false); };
+      hooks.gearLines = [this](const ember::BattleUnit& u, const char* stat) { return innRules_.gearLines(save_, u.name, stat); };
+      hooks.potionTip = [this](const std::string& id) -> std::string {
+        const ember::InnPotion* p = innData_.potion(id);
+        return p ? p->tooltip : std::string();
+      };
+      hooks.lockpickTip = [this] { return innData_.lockpickTooltip; };
+    }
+    hooks.order = [this] {
+      std::vector<size_t> order;
+      for (size_t i = 0; i < sheetBattle_->units().size(); ++i)
+        if (sheetBattle_->units()[i].side == "player") order.push_back(i);
+      return order;
+    };
+    sheet_.draw(*sheetBattle_, paths_.artRoot, hooks);
+  }
+  // MapStage adjustStatPoint's rule (three points per level past the first; a point on vitality heals as much), the allocation written
+  // into the save (statPointAllocations), as a campaign fight writes it; Modo teste into its session save.
+  bool adjustSheetPoint(size_t b, int stat, int delta) {
+    if (!sheetBattle_ || b >= sheetBattle_->units().size() || stat < 0 || stat > 4) return false;
+    ember::BattleUnit& u = sheetBattle_->units()[b];
+    if (u.side != "player") return false;
+    int* slot[5] = {&u.pointHp, &u.pointAtk, &u.pointMag, &u.pointDef, &u.pointDex};
+    const int spent = u.pointHp + u.pointAtk + u.pointMag + u.pointDef + u.pointDex, budget = std::max(0, (u.level - 1) * 3);
+    if ((delta > 0 && spent >= budget) || (delta < 0 && *slot[stat] <= 0)) return false;
+    const int previousMax = u.maxHp;
+    *slot[stat] += delta;
+    ember::reapplyGear(u);
+    if (stat == 0 && delta > 0) u.hp = std::min(u.maxHp, u.hp + (u.maxHp - previousMax));
+    static const char* kNames[5] = {"hp", "atk", "mag", "def", "dex"};
+    ember::Json& all = save_["statPointAllocations"];
+    if (!all.is_object()) all = ember::Json::object();
+    ember::Json& mine = all[u.name];
+    if (!mine.is_object()) mine = ember::Json::object();
+    if (*slot[stat] > 0) mine[kNames[stat]] = *slot[stat];
+    else mine.erase(kNames[stat]);
+    write();
+    return true;
   }
 
   void drawViewport(ImVec2 a, ImVec2 b) {
@@ -1409,7 +1513,7 @@ class OverworldStage : public Stage {
       portrait(dl, hero, {x, y}, {x + 40, y + 48});
       ImGui::SetCursorScreenPos({x, y});
       ImGui::PushID(hero.c_str());
-      if (ImGui::InvisibleButton("##portrait", {40, 48}) && hasInn_) inventory_.emplace(hero, true);  // Inventário de <hero>
+      if (ImGui::InvisibleButton("##portrait", {40, 48})) openSheet(hero);  // its status sheet (Mochila / Equipar inside it)
       if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", hero.c_str());
       ImGui::PopID();
       // HungerBar: 4 px, the first 100 of 120 in the accent (red at 25 or less), the overfed part gold.
@@ -2555,6 +2659,9 @@ class OverworldStage : public Stage {
   ember::InnData innData_;
   ember::InnRules innRules_{innData_, world_};
   bool hasInn_ = false;
+  std::optional<ember::Battle> sheetBattle_;  // the party the status sheet shows (openSheet)
+  ember::BattleStatusSheet sheet_;
+  std::string sheetReturn_;  // the hero whose sheet opened the inventory: back to it when it closes
   ember::Underworld under_;  // the Underworld's board (drawUnderworld)
   bool hasUnder_ = false, underCentred_ = false;
   ember::Companions companions_;

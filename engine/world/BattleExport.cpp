@@ -830,6 +830,25 @@ void legacyClassIds(const Rules& r, json& draft) {
 
 }  // namespace
 
+std::optional<json> partyBattle(const std::vector<std::string>& heroes, std::string* error) {
+  const Rules* rules = Rules::shared();
+  if (!rules) {
+    if (error) *error = "content/data/battle-rules.json missing";
+    return std::nullopt;
+  }
+  const json& classes = rules->all()["campaignHeroClasses"];
+  json draft = {{"id", "party-sheet"}, {"index", 0}, {"cols", std::max<size_t>(1, heroes.size())}, {"rows", 1}, {"playerSpawns", json::array()}};
+  for (size_t i = 0; i < heroes.size(); ++i) {
+    const std::string classId = classes.is_object() ? str(classes, heroes[i].c_str()) : std::string();
+    if (classId.empty()) {
+      if (error) *error = "no campaign class for " + heroes[i];
+      return std::nullopt;
+    }
+    draft["playerSpawns"].push_back({{"name", heroes[i]}, {"classId", classId}, {"x", static_cast<int>(i)}, {"y", 0}});
+  }
+  return exportBattle(draft, error);
+}
+
 std::vector<std::string> classSpellsAt(const std::string& classId, int level, const std::string& name) {
   std::vector<std::string> out;
   const Rules* r = Rules::shared();
