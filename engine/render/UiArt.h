@@ -122,10 +122,79 @@ inline const char* classicBriefArt(const std::string& id) {
 // The briefing art drawn for a mission id, from content/briefings (the project's one folder of briefings; the backgrounds are in
 // content/backdrops): EmberEngine's own first, else the file the mission's table names (Ember's name, its copy here). Nothing is read from
 // Ember's folders (the user, 2026-10-20: "JAMAIS em dois engines"); empty = none.
+// Random encounters (ids "random-..."): their own art (the user's, 2026-10-28: Attachments/Briefings), the same art repeated on the
+// encounters that look alike, the two merchants' old backgrounds, else the one shared random-encounter picture.
 inline std::filesystem::path briefArtFile(const std::string& id, const std::filesystem::path& /*artRoot, unused: kept for the callers*/) {
-  static const std::pair<const char*, const char*> kOwn[] = {{"ashen-forest-crossing", "content/briefings/ashen-forest-brief-v02.jpg"}};
+  static const std::pair<const char*, const char*> kOwn[] = {
+      {"ashen-forest-crossing", "content/briefings/ashen-forest-brief-v02.jpg"},
+      {"random-encounter-11", "content/backdrops/merchant-road-background-001.jpg"},
+      {"random-encounter-14", "content/backdrops/merchant-snow-market-background-001.jpg"},
+      {"random-amanita-glade", "content/briefings/brief-random-amanita-glade-v01.jpg"},
+      {"random-backward-hunt", "content/briefings/brief-random-backward-hunt-v01.jpg"},
+      {"random-bell-beneath-ice", "content/briefings/brief-random-bell-beneath-ice-v01.jpg"},
+      {"random-blightwood-verge", "content/briefings/brief-random-blightwood-verge-v01.jpg"},
+      {"random-broken-antler-grove", "content/briefings/brief-random-broken-antler-grove-v01.jpg"},
+      {"random-cairnkeepers-rise", "content/briefings/brief-random-cairnkeepers-rise-v01.jpg"},
+      {"random-caravan-green-road", "content/briefings/brief-random-caravan-green-road-v01.jpg"},
+      {"random-coldwind-saddle", "content/briefings/brief-random-coldwind-saddle-v01.jpg"},
+      {"random-crystal-ossuary", "content/briefings/brief-random-crystal-ossuary-v01.jpg"},
+      {"random-encounter-12", "content/briefings/brief-random-encounter-12-v01.jpg"},
+      {"random-encounter-13", "content/briefings/brief-random-encounter-13-v01.jpg"},
+      {"random-encounter-3", "content/briefings/brief-random-encounter-3-v01.jpg"},
+      {"random-frostbound-sanctuary", "content/briefings/brief-random-frostbound-sanctuary-v01.jpg"},
+      {"random-greycairn-plateau", "content/briefings/brief-random-greycairn-plateau-v01.jpg"},
+      {"random-hollow-pine-basin", "content/briefings/brief-random-hollow-pine-basin-v01.jpg"},
+      {"random-hollow-root-den", "content/briefings/brief-random-hollow-root-den-v01.jpg"},
+      {"random-icelands-blue-antlers", "content/briefings/brief-random-icelands-blue-antlers-v01.jpg"},
+      {"random-icelands-last-beacon", "content/briefings/brief-random-icelands-last-beacon-v01.jpg"},
+      {"random-mora-hollow-stream", "content/briefings/brief-random-mora-hollow-stream-v01.jpg"},
+      {"random-mora-rootwatch", "content/briefings/brief-random-mora-rootwatch-v01.jpg"},
+      {"random-plains-broken-caravan", "content/briefings/brief-random-plains-broken-caravan-v01.jpg"},
+      {"random-plains-hill-patrol", "content/briefings/brief-random-plains-hill-patrol-v01.jpg"},
+      {"random-plains-old-stones", "content/briefings/brief-random-plains-old-stones-v01.jpg"},
+      {"random-plains-silent-harvest", "content/briefings/brief-random-plains-silent-harvest-v01.jpg"},
+      {"random-plains-sunken-ford", "content/briefings/brief-random-plains-sunken-ford-v01.jpg"},
+      {"random-plains-windgrass", "content/briefings/brief-random-plains-windgrass-v01.jpg"},
+      {"random-rimewater-shrine", "content/briefings/brief-random-rimewater-shrine-v01.jpg"},
+      {"random-river-rope-ambush", "content/briefings/brief-random-river-rope-ambush-v01.jpg"},
+      {"random-road-broken-milepost", "content/briefings/brief-random-road-broken-milepost-v01.jpg"},
+      {"random-road-three-routes-market", "content/briefings/brief-random-road-three-routes-market-v01.jpg"},
+      {"random-small-toll-collector", "content/briefings/brief-random-small-toll-collector-v01.jpg"},
+      {"random-splintered-trunk-pass", "content/briefings/brief-random-splintered-trunk-pass-v01.jpg"},
+      {"random-stoneshelf-pass", "content/briefings/brief-random-stoneshelf-pass-v01.jpg"},
+      {"random-walking-campfire", "content/briefings/brief-random-walking-campfire-v01.jpg"},
+      {"random-whispering-reeds", "content/briefings/brief-random-whispering-reeds-v01.jpg"},
+      {"random-encounter-7", "content/briefings/brief-random-encounter-7-v02.jpg"},
+      {"random-encounter-1", "content/briefings/brief-random-amanita-glade-v01.jpg"},
+      {"random-encounter-10", "content/briefings/brief-random-amanita-glade-v01.jpg"},
+      {"random-encounter-2", "content/briefings/brief-random-hollow-root-den-v01.jpg"},
+      {"random-encounter-4", "content/briefings/brief-random-river-rope-ambush-v01.jpg"},
+      {"random-encounter-5", "content/briefings/brief-random-road-three-routes-market-v01.jpg"},
+      {"random-encounter-6", "content/briefings/brief-random-plains-sunken-ford-v01.jpg"},
+      {"random-encounter-8", "content/briefings/brief-random-encounter-7-v01.jpg"},
+      {"random-encounter-9", "content/briefings/brief-random-encounter-3-v01.jpg"},
+      {"random-forest011-cedar-glade", "content/briefings/brief-random-encounter-13-v01.jpg"},
+      {"random-forest011-hemlock-trail", "content/briefings/brief-random-encounter-3-v01.jpg"},
+      {"random-forest011-hollow-grove", "content/briefings/brief-random-amanita-glade-v01.jpg"},
+      {"random-forest011-needle-crossing", "content/briefings/brief-random-hollow-pine-basin-v01.jpg"},
+      {"random-icelands-i1", "content/briefings/brief-random-coldwind-saddle-v01.jpg"},
+      {"random-icelands-i2", "content/briefings/brief-random-coldwind-saddle-v01.jpg"},
+      {"random-icelands-i3", "content/briefings/brief-random-bell-beneath-ice-v01.jpg"},
+      {"random-icelands-i4", "content/briefings/brief-random-icelands-blue-antlers-v01.jpg"},
+      {"random-icelands-i6", "content/briefings/brief-random-small-toll-collector-v01.jpg"},
+      {"random-icelands-i7", "content/briefings/brief-random-plains-old-stones-grey-v01.jpg"},
+      {"random-icelands-i8", "content/briefings/brief-random-bell-beneath-ice-v01.jpg"},
+      {"random-icelands-i9", "content/briefings/brief-random-coldwind-saddle-v01.jpg"},
+      {"random-icelands-i10", "content/briefings/brief-random-backward-hunt-v01.jpg"},
+      {"random-icelands-i12", "content/briefings/brief-random-icelands-last-beacon-v01.jpg"},
+      {"random-icelands-i13", "content/briefings/brief-random-small-toll-collector-v01.jpg"},
+      {"random-icelands-i14", "content/briefings/brief-random-icelands-blue-antlers-v01.jpg"},
+      {"random-photographic-grassland", "content/briefings/brief-random-plains-hill-patrol-v01.jpg"},
+      {"random-photographic-meadow", "content/briefings/brief-random-plains-sunken-ford-v01.jpg"},
+      {"random-photographic-prairie", "content/briefings/brief-random-plains-windgrass-v01.jpg"}};
   for (const auto& [k, v] : kOwn)
     if (id == k) return std::filesystem::path(v);
+  if (id.rfind("random-", 0) == 0) return std::filesystem::path("content/briefings/random-encounter-briefing.jpg");
   const char* art = classicBriefArt(id);
   if (!*art) return {};
   const std::filesystem::path name = std::filesystem::u8path(art).filename();
