@@ -168,6 +168,14 @@ class OverworldStage : public Stage {
         if (briefing_) briefing_.reset();  // a road battle's briefing: closed as Voltar would, the walk goes on
         event_.reset();
       }
+    if (what.starts_with("walkslow:"))  // "walkslow:<col>,<row>;...": one step every 45 frames while the map draws (the leader walks between them)
+      for (size_t at = 9; at < what.size();) {
+        const size_t end = std::min(what.find(';', at), what.size());
+        const std::string s = what.substr(at, end - at);
+        at = end + 1;
+        const size_t comma = s.find(',');
+        if (comma != std::string::npos) slowSteps_.push_back({std::stoi(s.substr(0, comma)), std::stoi(s.substr(comma + 1))});
+      }
     if (what.starts_with("location:")) open_ = what.substr(9);
     if (what.starts_with("enter:"))  // "enter:<id>": the location entered as a click on its pin would (the Ruins: the Interlude's gate and start)
       for (const e2::MapLocation& loc : world_.locations())
@@ -187,7 +195,9 @@ class OverworldStage : public Stage {
   }
   // Captures end after a second of frames (time for Engine2's art to load), or once a previewed film got that far; a measured
   // capture (--map-ui measure[:underworld]) runs three seconds for the mean.
-  bool done() const override { return frames_ > (measure_ ? 180 : 60) && (!film_ || film_->time() >= previewFilmAt_); }
+  bool done() const override {
+    return frames_ > (measure_ ? 180 : 60) && slowNext_ >= slowSteps_.size() && frames_ > slowLast_ + 60 && (!film_ || film_->time() >= previewFilmAt_);
+  }
   void endFrame(double busyMs) override {
     if (frames_ > 60 && frames_ <= 180) measureCpuMs_ += busyMs, ++measureCpuFrames_;
   }
@@ -924,7 +934,10 @@ class OverworldStage : public Stage {
       if (partyX_ < 0)
         partyX_ = static_cast<float>(tx), partyY_ = static_cast<float>(ty), fromX_ = partyX_, fromY_ = partyY_, targetX_ = partyX_,
         targetY_ = partyY_, moveAt_ = -10;
-      if (std::abs(targetX_ - tx) > 1e-6 || std::abs(targetY_ - ty) > 1e-6) {
+      // Compared as the floats they are stored in: a double hex centre against its own float copy differs by more than 1e-6 on some
+      // hexes ((4,7): 38.97114317 vs 38.97114182), which restarted the walk every frame and left the leader drawn on the hex before
+      // while the party (and its step hexes) stood on the new one (the user, 2026-10-28: "o grid saiu do lugar").
+      if (std::abs(targetX_ - static_cast<float>(tx)) > 1e-3f || std::abs(targetY_ - static_cast<float>(ty)) > 1e-3f) {
         fromX_ = partyX_, fromY_ = partyY_, targetX_ = static_cast<float>(tx), targetY_ = static_cast<float>(ty), moveAt_ = now_;
         if (col != prevCol_) facingLeft_ = col < prevCol_;
         prevCol_ = col;
@@ -936,6 +949,18 @@ class OverworldStage : public Stage {
       partyX_ = fromX_ + (targetX_ - fromX_) * k, partyY_ = fromY_ + (targetY_ - fromY_) * k;
       const ImVec2 foot = at(partyX_, partyY_);
       const Box box = drawLeader(dl, foot, leader(), k < 1.0f ? now_ - moveAt_ : -1.0f);
+      if (!slowSteps_.empty() && frames_ % 15 == 0)
+        logInfo("leader: party at ({},{}), drawn at {:.1f} %, {:.1f} % (target {:.1f}, {:.1f}; hex centre {:.1f}, {:.1f}), walk {:.2f}, box {:.1f}..{:.1f} %, {:.1f}..{:.1f} %",
+                col, row, partyX_, partyY_, targetX_, targetY_, px, py, k, (box.a.x - o.x) / imgW * 100, (box.b.x - o.x) / imgW * 100,
+                (box.a.y - o.y) / imgH * 100, (box.b.y - o.y) / imgH * 100);
+      // walkslow: the next step, clicked as the player would (the leader, then the hex), once the walk before it is over
+      if (slowNext_ < slowSteps_.size() && frames_ >= slowLast_ + 45) {
+        movementOpen_ = true;
+        walkTo(slowSteps_[slowNext_].col, slowSteps_[slowNext_].row);
+        if (briefing_) logInfo("walkslow: road battle {} closed (Voltar)", briefing_->id), briefing_.reset();
+        event_.reset();
+        ++slowNext_, slowLast_ = frames_;
+      }
       if (overViewport && box.contains(mouse) && clicked) clickedLeader = true;
     }
     dl->PopClipRect();
@@ -2494,6 +2519,9 @@ class OverworldStage : public Stage {
   float shownHour_ = -1;  // a hora da luz na tela (segue o relógio em hourEaseSeconds)
   float lastHourAt_ = 0;
   bool measure_ = false;  // --map-ui measure
+  std::vector<e2::OverworldHex> slowSteps_;  // --map-ui walkslow:...
+  size_t slowNext_ = 0;
+  int slowLast_ = 0;
   double measureUiMs_ = 0, measureCpuMs_ = 0;
   int measureFrames_ = 0, measureCpuFrames_ = 0;
 };
