@@ -793,6 +793,14 @@ class OverworldStage : public Stage {
       if (io.KeyShift) scrollX_ -= io.MouseWheel * 100.0f;
       else scrollY_ -= io.MouseWheel * 100.0f;
     }
+    // As setas do teclado dão pan no mapa (o usuário, 2026-10-27), enquanto nenhum painel está aberto nem um campo de texto tem o foco.
+    if (!io.WantTextInput && !open_ && !party_ && !questLog_ && !options_ && !slots_ && !briefing_ && !fieldSpells_ && !convDialog_) {
+      const float pan = 700.0f * std::clamp(io.DeltaTime, 0.0f, 0.1f);
+      if (ImGui::IsKeyDown(ImGuiKey_LeftArrow)) scrollX_ -= pan;
+      if (ImGui::IsKeyDown(ImGuiKey_RightArrow)) scrollX_ += pan;
+      if (ImGui::IsKeyDown(ImGuiKey_UpArrow)) scrollY_ -= pan;
+      if (ImGui::IsKeyDown(ImGuiKey_DownArrow)) scrollY_ += pan;
+    }
     scrollX_ = std::clamp(scrollX_, 0.0f, std::max(0.0f, contentW - vw));
     scrollY_ = std::clamp(scrollY_, 0.0f, std::max(0.0f, contentH - vh));
     const bool clicked = overViewport && ImGui::IsMouseReleased(ImGuiMouseButton_Left) && !dragMoved_;

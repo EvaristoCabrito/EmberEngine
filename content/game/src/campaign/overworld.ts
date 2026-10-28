@@ -73,7 +73,6 @@ export function wispForestHex(): Point | null {
 export function canStepOverworld(save: SaveData, from: Point, to: Point, test = false): boolean {
   // Removed map cells are permanent exclusions, including during test-mode travel.
   if (!isOverworldCell(to.x, to.y)) return false;
-  if (to.x === ASHEN_FOREST_BLOCKED_HEX.x && to.y === ASHEN_FOREST_BLOCKED_HEX.y) return false;
   // Modo teste: full freedom to walk anywhere, same as every other test-mode override —
   // testing movement range/random encounters needs the whole grid open, not just the
   // linear tutorial route out of Stone Bridge.
@@ -173,37 +172,27 @@ const OVERWORLD_OFF_MAP_HEXES = new Set<string>([
   // -> SE -> (4,10) -> SE -> (4,11). West of (4,10) is (3,10), blank margin. West of (4,11),
   // (3,11), turned out to actually be on the landmass (walkable from Frozen Swamp's west
   // side) — reported and restored rather than left wrongly excluded.
-  key(3, 10),
   // Lower-left (SW) and lower-right (SE) neighbors of the Frozen Swamp hex (5,11) — both
   // reported as blank margin south of the swamp.
-  key(5, 12),
-  key(6, 12),
   // One step east of Frozen Swamp then one more east — (7,11) is blank margin.
-  key(7, 11),
   // Lower-right (SE) neighbor of (6,11), directly below the party's current hex.
-  key(7, 12),
   // From (6,11), NE to (7,10), then that hex's own E (8,10) is blank margin. Its NE, (7,9),
   // turned out to actually be on the landmass (walkable from (6,9)'s east side) — reported
   // and restored rather than left wrongly excluded.
-  key(8, 10),
   // East of the restored (7,9), across the party's actual walked path — blank margin.
-  key(8, 9),
   // From the Inn (5,7): 3x E to (8,7), then SE to (9,8) — that hex's own SE, (9,9), is blank
   // margin.
-  key(9, 9),
   // One step east of (9,8), at (10,8) — its own SE, (10,9), is blank margin.
-  key(10, 9),
   // From Frozen Swamp (5,11): W, SW, SW lands at (3,13) — its own W, (2,13), is blank margin.
   key(2, 13),
   // Upper-left (NW) and upper-right (NE) neighbors of Misty Cave (6,6) — both blank margin.
-  key(5, 5),
-  key(6, 5),
 ]);
 
 /** Finite logical board, independent of the map's rendered dimensions and zoom. */
+// The user (2026-10-27): the hex-by-hex survey marked TERRAIN, never blocks; only the blank margin (the void) is off the
+// board. (5,5) (6,5) (8,9) (9,9) (10,9) (8,10) (7,11) (7,12) (5,12) (6,12) (3,10) are cells again; (9,8) is never blocked.
 export function isOverworldCell(col: number, row: number): boolean {
   if (!Number.isInteger(col) || !Number.isInteger(row)) return false;
-  if (col === ASHEN_FOREST_BLOCKED_HEX.x && row === ASHEN_FOREST_BLOCKED_HEX.y) return false;
   if (OVERWORLD_OFF_MAP_HEXES.has(key(col, row))) return false;
   const p = hexToWorld(col, row);
   return col >= OVERWORLD_WEST_EDGE_COL && p.x >= 0 && p.x <= 100 && p.y >= 0 && p.y <= 100;

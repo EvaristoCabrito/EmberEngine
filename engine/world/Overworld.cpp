@@ -364,7 +364,7 @@ bool Overworld::wispForestUncleared(const Json& save) const {
 // overworld.ts canStepOverworld.
 bool Overworld::canStep(const Json& save, OverworldHex from, OverworldHex to, bool test) const {
   if (!isCell(to.col, to.row)) return false;
-  if (to == ashenBlocked_) return false;
+  // No Ashen Forest block (the user, 2026-10-27: "não existe bloqueio de floresta cinzenta"); `ashenBlocked_` is read for nothing now.
   if (test) return true;  // Modo teste: the whole grid open (removed cells stay excluded)
   const Json& completed = child(save, "completed");
   if (!has(completed, "vau")) return false;
