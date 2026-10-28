@@ -1,6 +1,6 @@
 {
   "_": "Submundo: sem sol, sem lua, sem céu; a luz vem das plantas e animais que brilham, num ciclo próprio sobre o relógio da campanha (cycle: acordam em wakeHour, sobem em riseHours, brilham glowHours, apagam em fadeHours, tudo a cada periodHours), e a névoa de caverna entre as galerias (render/WorldMapFx.h, shaders/worldmap.hlsl). mask = PNG com R = onde a névoa se acumula e G = onde há seres que brilham (vazio = heurística: o saturado e frio da pintura); só depois de aprovada.",
-  "enabled": true,
+  "enabled": false,
   "mask": "",
   "cycle": {"wakeHour": 6, "riseHours": 2, "glowHours": 8, "fadeHours": 3, "periodHours": 20},
   "glow": {"color": [0.35, 0.9, 0.8], "radius": 0.02, "ambient": 0.35, "peakContrast": 1.15, "peakSaturation": 1.05, "sleepSaturation": 0.7},
