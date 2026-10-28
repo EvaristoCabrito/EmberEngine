@@ -9,6 +9,7 @@
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -26,7 +27,7 @@ class Bindless;
 // Os 16 float4 lidos pelo shader (worldmap.hlsl Params), já interpolados pela hora.
 struct WorldMapParams {
   glm::vec4 tint, grade, light, vignette, fogColor, fogShape, lowColor, lowShape, glowColor, dark, caveColor, caveShape;
-  glm::vec4 extra[4]{};
+  glm::vec4 extra[4]{};  // [1] mapa-múndi: a cor do céu nas sombras (rgb) e quanto (w); [2] as luzes: x acesas (0..1), y tremor, z halo; [0] Submundo: a luz ambiente no auge (x)
 };
 static_assert(sizeof(WorldMapParams) == 16 * 16);
 
@@ -37,7 +38,7 @@ struct WorldMapConfig {
   // Mapa-múndi: uma chave por hora (0..24, cíclico), interpolada suavemente.
   struct HourKey {
     float hour = 12;
-    glm::vec3 tint{1, 1, 1};
+    glm::vec3 tint{1, 1, 1};  // a cor da luz, nas partes claras da pintura
     float exposure = 1;
     float contrast = 1.1f, saturation = 1, lift = 0, gamma = 1;
     glm::vec2 lightDir{-0.6f, -0.8f};
@@ -45,8 +46,31 @@ struct WorldMapConfig {
     glm::vec3 fogColor{0.05f, 0.05f, 0.06f};
     glm::vec3 lowColor{0.5f, 0.55f, 0.6f};
     float lowStrength = 0.5f;
+    // A cor do céu, nas sombras (o escuro da pintura): um multiply só não dá rosa no claro e azul na sombra ao mesmo tempo, que é o
+    // que faz um amanhecer parecer amanhecer (o usuário, 2026-10-27). shadowMix 0 = só a tint, como antes.
+    // No fim da struct: as chaves padrão em WorldMapFx.cpp são inicializadas por posição.
+    glm::vec3 shadow{1, 1, 1};
+    float shadowMix = 1;
+    float lightsOn = 0;  // 0..1: quanto as fontes de luz do mapa estão acesas nesta hora (1 à noite)
   };
   std::vector<HourKey> keys;
+  // As fontes de luz quentes sobre a pintura (a referência do usuário, 2026-10-27: Axie Terrariums à noite: a cena azul e cada
+  // casa / caldeirão com o seu halo laranja iluminando o chão em volta). Uma luz em cada local do mapa-múndi (overworld.json), a
+  // do grupo onde o líder está, mais as "extra" do arquivo; por local, "overrides" por id. Unidades: uv da pintura (0..1).
+  struct MapLight {
+    glm::vec2 uv{0, 0};
+    float radius = 0.05f, strength = 1;
+    glm::vec3 color{1, 0.62f, 0.3f};
+    float seed = 0;
+  };
+  struct LightStyle {
+    glm::vec3 color{1, 0.62f, 0.3f};
+    float radius = 0.05f, strength = 1.2f;
+  };
+  LightStyle locationLight, partyLight{{1, 0.72f, 0.42f}, 0.035f, 1.0f};
+  std::map<std::string, LightStyle> lightOverrides;  // por id de local
+  std::vector<MapLight> extraLights;
+  float lightFlicker = 0.08f, lightHalo = 0.35f;
   float fogDensity = 0.92f, fogScale = 9, fogWind = 0.02f, fogEdge = 0.22f, fogShade = 0.35f;
   float lowScale = 18, lowSpeed = 0.025f, lowHeight = 1, lowThreshold = 0.32f;
   float vignette = 0.45f, vignetteRadius = 0.55f, vignetteSoft = 0.6f, shoulder = 1;
@@ -86,7 +110,9 @@ class WorldMapFx {
     int quality = 2;  // 0 baixa, 1 média, 2 alta (Qualidade gráfica)
     float time = 0, rounding = 8, glow = 0;
     WorldMapParams params;
+    std::vector<WorldMapConfig::MapLight> lights;  // as fontes de luz deste quadro (até kMaxLights)
   };
+  static constexpr uint32_t kMaxLights = 96;
   void draw(ImDrawList* dl, const Draw& d);
 
   // Mapa-múndi: os parâmetros da hora (0..24, fração), das chaves do arquivo.
@@ -123,6 +149,7 @@ class WorldMapFx {
   // Os parâmetros por quadro: um anel de buffers visíveis ao host, lidos pelo shader pelo endereço (kFramesInFlight + folga).
   static constexpr uint32_t kParamSlots = 8;
   std::array<Buffer, kParamSlots> params_{};
+  std::array<Buffer, kParamSlots> lights_{};  // kMaxLights x 32 bytes por slot
   std::array<Slot, kParamSlots> slots_{};
   uint32_t next_ = 0;
 };

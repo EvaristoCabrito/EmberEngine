@@ -805,7 +805,7 @@ class OverworldStage : public Stage {
     // guerra viva, a névoa baixa / de caverna e o acabamento de cor; com o arquivo em "enabled": false, o desenho de antes.
     const int fxWorld = underworld_ ? 1 : 0;
     const bool fxOn = fx_ && fxConfig_[fxWorld].enabled && fxMap_[fxWorld] != WorldMapFx::kNoTexture;
-    if (fxOn) drawLitMap(dl, o, imgW, imgH, a, b);
+    if (fxOn) drawLitMap(dl, o, imgW, imgH, a, b, {static_cast<float>(px) / 100.0f, static_cast<float>(py) / 100.0f});
     else if (map) dl->AddImageRounded(map->texture, o, {o.x + imgW, o.y + imgH}, {0, 0}, {1, 1}, IM_COL32_WHITE, 8.0f);
     if (underworld_) {  // the Atlas alone: no fog of war, no sky (it is underground), no pins, no steps, no leader there yet
       dl->PopClipRect();
@@ -994,9 +994,28 @@ class OverworldStage : public Stage {
 
   // A pintura com a luz e a névoa (WorldMapFx): o revelado de hoje (os mesmos círculos de drawFog, numa textura refeita só
   // quando os hexágonos explorados mudam), a hora do relógio suavizada na tela, o ciclo dos seres no Submundo.
-  void drawLitMap(ImDrawList* dl, ImVec2 o, float w, float h, ImVec2 viewA, ImVec2 viewB) {
+  void drawLitMap(ImDrawList* dl, ImVec2 o, float w, float h, ImVec2 viewA, ImVec2 viewB, glm::vec2 partyUv) {
     const WorldMapConfig& c = fxConfig_[underworld_ ? 1 : 0];
     WorldMapFx::Draw d;
+    if (!underworld_) {  // as fontes de luz: uma por local do mapa (overworld.json, x / y em % da pintura), a do grupo, as extra
+      float seed = 0.0f;
+      for (const e2::MapLocation& loc : world_.locations()) {
+        const auto it = c.lightOverrides.find(loc.id);
+        const WorldMapConfig::LightStyle& s = it != c.lightOverrides.end() ? it->second : c.locationLight;
+        if (s.strength <= 0.0f) continue;
+        WorldMapConfig::MapLight l;
+        l.uv = {static_cast<float>(loc.x) / 100.0f, static_cast<float>(loc.y) / 100.0f};
+        l.radius = s.radius, l.strength = s.strength, l.color = s.color, l.seed = seed;
+        seed += 1.3f;
+        d.lights.push_back(l);
+      }
+      for (const WorldMapConfig::MapLight& l : c.extraLights) d.lights.push_back(l);
+      if (c.partyLight.strength > 0.0f) {
+        WorldMapConfig::MapLight l;
+        l.uv = partyUv, l.radius = c.partyLight.radius, l.strength = c.partyLight.strength, l.color = c.partyLight.color, l.seed = 99.0f;
+        d.lights.push_back(l);
+      }
+    }
     d.rectMin = o, d.rectMax = {o.x + w, o.y + h}, d.viewMin = viewA, d.viewMax = viewB;
     d.map = fxMap_[underworld_ ? 1 : 0], d.mask = fxMask_[underworld_ ? 1 : 0];
     d.underworld = underworld_;
