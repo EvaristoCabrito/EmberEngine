@@ -8270,28 +8270,13 @@ class MapStage final : public Stage {
     const std::filesystem::path file = portraitFileOf(u);
     return file.empty() ? nullptr : uiImage(file);
   }
+  // One path, one portrait (the user, 2026-10-28: "same NPC same portrait", "ONLY ONE PATH ONLY ONE PORTRAIT", "remove all alternate
+  // paths"): Portraits.h unitPortrait, the same one its conversations show.
   std::filesystem::path portraitFileOf(const ember::BattleUnit& u) const {
-    // A hero of the party: THE one portrait, by name (content/hero-portraits.json, Portraits.h; the user, 2026-10-25: "consolida
-    // tudo em um só retrato"). The name decides before the sprite does (Salazar Jovem and Selene share sprites with other units).
-    if (u.side == "player")
-      if (const HeroPortrait* hero = heroPortrait(u.name)) return options_.artRoot / hero->file;
-    static const std::pair<const char*, const char*> kHero[] = {
-        {"defaultWarrior", "game/portraits/kael.png"}, {"kaelFinal", "game/portraits/kael-final-face-001.jpg"},
-        {"neera", "game/portraits/NeeraProperSide-profile.jpg"}, {"voss", "game/portraits/voss.png"},
-        {"salazar", "game/portraits/salazar-v2-bust.jpg"}, {"aldric", "game/portraits/aldric-profile-001.jpg"},
-        {"defaultLancer", "game/portraits/aldric-profile-001.jpg"}, {"sandoval", "game/portraits/sandoval-001.jpg"},
-        {"conjurer", "game/portraits/conjurer-002.png"}, {"malrec", "game/portraits/conjurer-002.png"},
-        {"theButcher", "game/portraits/the-butcher-portrait-001.jpg"}, {"familiar3", "game/portraits/familiar3-profile.jpeg"},
-        {"familiar", "game/portraits/familiar1-profile.png"}};
-    const std::filesystem::path root = options_.artRoot;
-    for (const auto& [sprite, file] : kHero)
-      if (u.sprite == sprite) return root / file;
+    const std::string file = unitPortraitFile(u.name, u.sprite);
     std::error_code error;
-    const std::filesystem::path cut = root / "game/portraits/sprites" / (u.sprite + ".png");
-    if (std::filesystem::exists(cut, error)) return cut;
-    const std::filesystem::path frame = root / "game/sprites" / u.sprite / "1.png";
-    if (std::filesystem::exists(frame, error)) return frame;
-    return {};
+    if (file.empty() || !std::filesystem::exists(options_.artRoot / file, error)) return {};
+    return options_.artRoot / file;
   }
 
   // GameApp slotIcon / data.ts spellIcon. EmberEngine's own spells (the Mago Negro's promotions) take the user's art,
@@ -8692,26 +8677,8 @@ class MapStage final : public Stage {
     BattleStatusSheet::Hooks hooks;
     // The close-up photos only on the status sheet (the user, 2026-10-18: "zoom só no status"); every other screen keeps the originals.
     hooks.portraitWhole = [](const ember::BattleUnit& u) { return u.side == "player"; };  // the party's 2:3 box (the user, 2026-10-18)
-    hooks.portrait = [this](const ember::BattleUnit& u) -> const UiImage* {
-      // a hero of the party: THE one portrait, as on every screen (the user, 2026-10-25: "consolida tudo em um só retrato"); the
-      // close-ups below stay for no hero now (kept, not drawn)
-      if (u.side == "player" && heroPortrait(u.name)) return portraitOf(u);
-      static const std::pair<const char*, const char*> kClose[] = {{"kaelFinal", "content/ui/portraits/kael-close-v01.jpg"}, {"neera", "content/ui/portraits/neera-close-v01.jpg"},
-                                                                   {"voss", "content/ui/portraits/voss-close-v01.jpg"},
-                                                                   {"aldric", "content/ui/portraits/aldric-close-v02.jpg"},
-                                                                   {"defaultLancer", "content/ui/portraits/aldric-close-v02.jpg"}};
-      for (const auto& [sprite, file] : kClose)
-        if (u.sprite == sprite && std::filesystem::exists(file))
-          if (const UiImage* close = uiImage(file)) return close;
-      // The Interlude's heroes by name, as their busts (portraitFileOf): cut from the user's photos at the same close distance.
-      static const std::pair<const char*, const char*> kCloseByName[] = {{"Isolde", "content/ui/portraits/isolde-close-v01.jpg"},
-                                                                         {"Selene", "content/ui/portraits/selene-close-v01.jpg"},
-                                                                         {"Salazar Jovem", "content/ui/portraits/salazar-jovem-close-v01.jpg"}};
-      for (const auto& [name, file] : kCloseByName)
-        if (u.side == "player" && u.name == name && std::filesystem::exists(file))
-          if (const UiImage* close = uiImage(file)) return close;
-      return portraitOf(u);
-    };
+    // the one portrait of every unit (portraitFileOf); the old close-up files in content/ui/portraits stay on disk, drawn by nobody
+    hooks.portrait = [this](const ember::BattleUnit& u) -> const UiImage* { return portraitOf(u); };
     hooks.spellIcon = [this](const std::string& kind) { return spellIconOf(kind); };
     hooks.xpToLevel = [](int level) { return xpToLevel(level); };
     hooks.allocation = [](const ember::BattleUnit& u) { return std::array<int, 5>{u.pointHp, u.pointAtk, u.pointMag, u.pointDef, u.pointDex}; };

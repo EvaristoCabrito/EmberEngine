@@ -17546,19 +17546,10 @@
    "name": "Mordavian Wolf",
    "role": "Fera",
    "sprite": "mordavian-wolf",
-   "size": 2,
+   "size": 1,
    "footprintW": null,
    "footprintH": null,
-   "footprintOffsets": [
-    {
-     "dx": 0,
-     "dy": 0
-    },
-    {
-     "dx": 1,
-     "dy": 0
-    }
-   ],
+   "footprintOffsets": null,
    "resistances": {},
    "minRange": 1,
    "maxRange": 1,
@@ -18182,19 +18173,10 @@
    "name": "Mordavian Wolf Final",
    "role": "Fera",
    "sprite": "mordavian-wolf-final",
-   "size": 2,
+   "size": 1,
    "footprintW": null,
    "footprintH": null,
-   "footprintOffsets": [
-    {
-     "dx": 0,
-     "dy": 0
-    },
-    {
-     "dx": 1,
-     "dy": 0
-    }
-   ],
+   "footprintOffsets": null,
    "resistances": {},
    "minRange": 1,
    "maxRange": 1,

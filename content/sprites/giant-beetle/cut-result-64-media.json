@@ -1,0 +1,130 @@
+{
+ "clips": {
+  "move": {
+   "video": "Attachments/GiantBeetle/GiantBeetleWalk.mp4",
+   "first": 0,
+   "last": 143,
+   "loopFirst": 80,
+   "loopLast": 119,
+   "seamSteps": 1.8,
+   "bootRow": 622,
+   "bodyDrift": [
+    -73,
+    42
+   ],
+   "figurePx": 448.0,
+   "frames": 40,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    1034,
+    507
+   ],
+   "crop": [
+    6,
+    5,
+    1023,
+    496
+   ],
+   "box": {
+    "w": 3.05861,
+    "h": 1.49972,
+    "foot": 0.08874
+   },
+   "pattern": "content/sprites/giant-beetle/move-media64-v01/move-{}.png"
+  },
+  "base": {
+   "video": "Attachments/GiantBeetle/GiantBeetleIdle.mp4",
+   "first": 0,
+   "last": 143,
+   "bootRow": 618,
+   "bootRows": [
+    613,
+    620
+   ],
+   "loopFirst": 45,
+   "loopLast": 97,
+   "seamSteps": 5.44,
+   "figurePx": 448.0,
+   "frames": 53,
+   "frameMs": 41.666666666666664,
+   "nat": [
+    882,
+    564
+   ],
+   "crop": [
+    4,
+    5,
+    874,
+    554
+   ],
+   "box": {
+    "w": 2.60899,
+    "h": 1.66833,
+    "foot": 0.05029
+   },
+   "pattern": "content/sprites/giant-beetle/base-media64-v01/base-{}.png"
+  },
+  "atk": {
+   "video": "Attachments/GiantBeetle/Giant_beetle_attacking_and_falling_20261026232021.mp4",
+   "first": 0,
+   "last": 140,
+   "bootRow": 648,
+   "bootRows": [
+    645,
+    651
+   ],
+   "frameCountFrom": 141,
+   "figurePx": 448.0,
+   "frames": 64,
+   "frameMs": 91.796875,
+   "nat": [
+    957,
+    626
+   ],
+   "crop": [
+    5,
+    5,
+    947,
+    615
+   ],
+   "box": {
+    "w": 2.83084,
+    "h": 1.85173,
+    "foot": 0.06212
+   },
+   "pattern": "content/sprites/giant-beetle/atk-media64-v01/atk-{}.png",
+   "impact": 0.4113
+  },
+  "death": {
+   "video": "Attachments/GiantBeetle/Giant_beetle_attacking_and_falling_20261026232021.mp4",
+   "first": 138,
+   "last": 239,
+   "mirrorFrom": 164,
+   "bootRow": 647,
+   "bootRows": [
+    647,
+    647
+   ],
+   "frameCountFrom": 102,
+   "figurePx": 448.0,
+   "frames": 64,
+   "frameMs": 66.40625,
+   "nat": [
+    960,
+    545
+   ],
+   "crop": [
+    4,
+    5,
+    951,
+    535
+   ],
+   "box": {
+    "w": 2.83971,
+    "h": 1.61213,
+    "foot": 0.06212
+   },
+   "pattern": "content/sprites/giant-beetle/death-media64-v01/death-{}.png"
+  }
+ }
+}

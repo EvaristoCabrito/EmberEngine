@@ -25,6 +25,7 @@
 #include "CampaignUi.h"
 #include "CutsceneScreen.h"
 #include "InventoryScreen.h"
+#include "Portraits.h"
 #include "render/UiArt.h"
 #include "world/Inn.h"
 
@@ -87,22 +88,22 @@ class InnScreen {
     const char* id;
     const char* name;
     const char* role;
-    const char* portrait;
+    const char* sprite;  // the NPC's one portrait = Portraits.h unitPortraitFile(name, sprite), as in its conversations and in battle
     const char* talk;
     bool shop;
   };
   static constexpr Npc kNpcs[4] = {
-      {"brue", "Brue", "Estalajadeiro", "game/portraits/brue.png",
+      {"brue", "Brue", "Estalajadeiro", "brue",
        "O fogo ainda pega. As camas, não. Gold compra o que sobrou da adega. Salazar pode levar frasco — não precisa, mas o copo não recusa.", true},
-      {"mudo", "O Mudo", "Viajante", "game/portraits/mudo.png",
+      {"mudo", "O Mudo", "Viajante", "mudinho",
        "Ele não fala. Nunca. Carrega uma pequena tábua de madeira e um pedaço de giz, e usa-a para responder quando não pode simplesmente apontar ou ir "
        "embora. Na tábua, uma frase aparece repetidamente: “Não fique parado por muito tempo.” Ninguém sabe de onde ele veio. Conhece estradas que não "
        "aparecem em mapa algum e parece sempre estar a caminho de algum lugar. Quando perguntam quanto custa uma bebida na velha adega, ele escreve "
        "apenas: “Ainda tem preço.”",
        false},
-      {"suspicious", "Cliente Suspeito", "Viajante", "game/portraits/1beca9c9-789c-4b44-8930-c53b88c982ac.jpg",
+      {"suspicious", "Cliente Suspeito", "Viajante", "shadyPatron",
        "Ele mantém o rosto meio escondido e observa quem entra e quem sai. Parece escolher cada palavra antes de pronunciá-la.", false},
-      {"porao", "A Hóspede", "Porão", "game/portraits/porao.png",
+      {"porao", "A Hóspede", "Porão", "mothKeeper",
        "Não subo. O chão me conhece. Tragam histórias, não luz. Se Brue ainda mede Gold, o mundo não acabou.", false},
   };
   static constexpr const char* kPotionOrder[7] = {"weak", "mid", "potent", "disease", "manaSmall", "manaMid", "manaLarge"};
@@ -281,7 +282,7 @@ class InnScreen {
         ImGui::PopID();
         ImDrawList* d = ImGui::GetWindowDrawList();
         emberSlot(d, a, {a.x + cw, a.y + cw * 1.5f + 28}, hover || npc_ == i);
-        if (const UiImage* img = art(c, kNpcs[i].portrait)) imageCover(d, *img, {a.x + 1, a.y + 1}, {a.x + cw - 1, a.y + cw * 1.5f});
+        if (const UiImage* img = art(c, unitPortraitFile(kNpcs[i].name, kNpcs[i].sprite))) imageCover(d, *img, {a.x + 1, a.y + 1}, {a.x + cw - 1, a.y + cw * 1.5f});
         if (npc_ == i) d->AddRectFilled(a, {a.x + 3, a.y + cw * 1.5f + 28}, IM_COL32(217, 98, 28, 255));
         d->AddText(uiFont(UiFont::Ui), 12.0f, {a.x + 8, a.y + cw * 1.5f + 6}, IM_COL32(226, 194, 148, 255), kNpcs[i].name);
       }
@@ -291,7 +292,7 @@ class InnScreen {
     // What they say.
     panel(colW, 12, [&](float w) {
       const ImVec2 a = ImGui::GetCursorScreenPos();
-      if (const UiImage* img = art(c, npc.portrait)) imageCover(ImGui::GetWindowDrawList(), *img, a, {a.x + 64, a.y + 96});
+      if (const UiImage* img = art(c, unitPortraitFile(npc.name, npc.sprite))) imageCover(ImGui::GetWindowDrawList(), *img, a, {a.x + 64, a.y + 96});
       ImGui::SetCursorScreenPos({a.x + 76, a.y});
       ImGui::BeginGroup();
       text(std::format("{} · {}", npc.name, npc.role), 14.0f, kFg, w - 76);
@@ -832,8 +833,8 @@ class InnScreen {
         const bool glow = healing_ == h;
         if (glow)
           for (int k = 4; k >= 1; --k) d->AddCircleFilled({a.x + 32, a.y + 32}, 32 + k * 4.0f, IM_COL32(255, 211, 105, 30), 32);
-        const ember::Json& portrait = c.world.tables()["portraits"].value(h, ember::Json::object());
-        if (const UiImage* img = art(c, portrait.value("src", ""))) {
+        // the hero's one portrait (Portraits.h), as on every screen
+        if (const UiImage* img = art(c, unitPortraitFile(h, ""))) {
           d->AddImageRounded(img->texture, a, {a.x + 64, a.y + 64}, {0, 0}, {1, 1}, IM_COL32_WHITE, 32);
         }
         if (glow) d->AddCircle({a.x + 32, a.y + 32}, 33, IM_COL32(253, 230, 138, 255), 32, 2);

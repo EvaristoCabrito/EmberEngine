@@ -66,6 +66,15 @@
     "walkLeft": [{"file": "HeavySteps1-Balanced-Medium.mp3", "volume": 0.45, "offset": 0, "delay": 0, "exclusive": true}],
     "walkFade": true
    }
+  },
+  "giantBeetle": {
+   "name": "Besouro Gigante", "nameEn": "Giant Beetle", "role": "Fera",
+   "sprite": "giant-beetle", "size": 1, "mov": 4, "strikesWith": "atk",
+   "weapon": {"dice": 1, "faces": 8, "bonus": 0, "minRange": 1, "maxRange": 1},
+   "resistances": {},
+   "spells": {},
+   "spellList": [],
+   "about": "The user, 2026-10-28: Attachments/GiantBeetle, body type 1, 64 / 36 frames like the Deer. Working numbers, the user's to set: 1 hex, mov 4, a 1D8 horn blow, stats the Mordavian Wolf's row, rank D, no spells."
   }
  },
  "aboutHeroClasses": "EmberEngine's own hero classes (read by engine/world/BattleExport.cpp Rules, merged into content/data/battle-rules.json's classes with the same fields; their melee weapons of weaponTypes become usable by them). The Cruzado (the user, 2026-10-25; young Salazar's interlude class, docs/SKILLS_CRUSADER.md): level 10 at most (Spells.cpp classLevelCap), a hybrid a little under the Guerreiro and a little over the Curandeiro (each stat the two classes' mean at the level), the Arqueiro's tier table (T1 at 1, T2 at 4, T3 at 7, nothing above T3), Bênção from 1 and Cleave from 4 (his own spells come from Spells.cpp kEmberSpells); never a shield. Placeholder sprite: kaelEarly (an old warrior, on no map).",

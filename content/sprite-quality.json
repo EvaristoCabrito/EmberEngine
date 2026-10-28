@@ -3,6 +3,6 @@
  "cast": ["kael", "neera", "voss", "salazar", "aldric", "malrec", "isolde"],
  "villains": [],
  "bosses": [],
- "monsters": ["corrosiveSlime", "corrosiveSlimeLarge", "giantSpider", "corrosiveSlime36", "corrosiveSlime64", "swampBlueDeer"],
+ "monsters": ["corrosiveSlime", "corrosiveSlimeLarge", "giantSpider", "corrosiveSlime36", "corrosiveSlime64", "swampBlueDeer", "giantBeetle"],
  "monstersAbout": "Monsters cut from video in the three resolutions (the user, 2026-10-22, the Corrosive Slime: \"in all 3 resolutions\"): Alta = the video's own, Média = their medium copy, Leve = half of it."
 }

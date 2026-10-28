@@ -278,6 +278,25 @@ def main():
                       else unmix(rgb[i], alpha[i], plate) for i in range(len(rgb))]
         else:
             frames = [unmix(rgb[i], alpha[i], plate) for i in range(len(rgb))]
+        if "mirrorFrom" in c:
+            # `mirrorFrom` (the user, 2026-10-28, the Giant Beetle's fall: "no final quando ele morre ele vira para o lado errado"):
+            # the video's frames from this one on (video numbering) are turned left for right, before anything else, about the
+            # middle column of that first frame's body (its opaque box), so the body stays where it lay and only its facing
+            # changes: a creature the video turned round as it fell ends lying the way it stood. Composes with `mirror` (the
+            # whole clip turned after the cut).
+            k = c["mirrorFrom"] - c["first"]
+            xs = np.nonzero((frames[k][..., 3] > 128).any(0))[0]
+            axis2 = int(xs.min() + xs.max())  # twice the axis column: x -> axis2 - x
+            w = frames[k].shape[1]
+            src = axis2 - np.arange(w)
+            ok = (src >= 0) & (src < w)
+
+            def turned(f):
+                g = np.zeros_like(f)
+                g[:, ok] = f[:, src[ok]]
+                return g
+
+            frames = [turned(f) if i >= k else f for i, f in enumerate(frames)]
         if "exposure" in c:
             # `exposure` (stops; the user, 2026-10-24, Isolde's hit on a darker stone-wall set: "a shade lighter to match the
             # other light"): the figure's colour scaled in linear light, as more light on her, the alpha untouched
@@ -305,6 +324,8 @@ def main():
             info["exposure"] = float(c["exposure"])
         if "colorMatch" in c:
             info["colorMatch"] = c["colorMatch"]["reference"]
+        if "mirrorFrom" in c:
+            info["mirrorFrom"] = c["mirrorFrom"]
         # Every video is framed its own way (the cast is landscape, ~660 px of figure; the staff counter ~4% closer than the
         # idle) and he steps in some (both strikes settle back in their first half second): each clip's frames are set on
         # its own feet line, and its median hood top to boot row is `figureUnits` tall, so he stands as tall on the same

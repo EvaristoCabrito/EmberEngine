@@ -90,26 +90,49 @@ inline std::string speakerKey(const std::string& name) {
   return a == std::string::npos ? std::string() : out.substr(a, b - a + 1);
 }
 
-// export_dialogs.ts portraitOf over portraits.json: each line's {src, framed} by "<treeId>:<lineId>" (DialogScreen's input).
-// `characters`: the units on the board (name, sprite): a line's portrait falls back to its speaker's own art.
-inline ember::Json npcPortraits(const ember::Json& tree, const std::vector<std::pair<std::string, std::string>>& characters) {
+// THE one portrait of every character (the user, 2026-10-28: "same NPC same portrait", "ONLY ONE PATH ONLY ONE PORTRAIT", "remove all
+// alternate paths"), asked by the conversations, the mission dialogs, the battle and the Inn alike: a hero by name = its hero
+// portrait; anyone else = content/data/portraits.json, by name first (Vargan's own entry; the table's speakers name -> sprite), then
+// by sprite; a sprite the table does not list shows its first frame. {src, framed}: src under the art folder with a leading '/'.
+inline const ember::Json& portraitTable() {
   static const ember::Json table = [] {
     std::ifstream in("content/data/portraits.json", std::ios::binary);
     ember::Json j = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
     return j.is_object() ? j : ember::Json::object();
   }();
+  return table;
+}
+inline ember::Json unitPortrait(const std::string& name, const std::string& sprite) {
+  // a hero, by name: THE hero portrait (content/hero-portraits.json), on every screen and in every conversation
+  if (const HeroPortrait* hero = heroPortrait(name)) return {{"src", "/" + hero->file}, {"framed", true}};
+  const ember::Json& table = portraitTable();
+  const std::string key = speakerKey(name);
+  if (key == "vargan" && table.contains("vargan")) return table["vargan"];
   const ember::Json speakers = table.value("speakers", ember::Json::object()), sprites = table.value("sprites", ember::Json::object());
-  auto portraitFor = [&](const std::string& sprite) -> ember::Json {
-    if (sprites.contains(sprite)) return sprites[sprite];
-    return {{"src", "/game/sprites/" + sprite + "/1.png"}, {"framed", false}};  // assets.ts portraitFor's fallback
-  };
+  const std::string s = speakers.value(key, sprite);
+  if (sprites.contains(s)) return sprites[s];
+  return {{"src", "/game/sprites/" + s + "/1.png"}, {"framed", false}};  // assets.ts portraitFor's fallback
+}
+// unitPortrait's file under the art folder (its '/' and any "?v=N" off).
+inline std::string unitPortraitFile(const std::string& name, const std::string& sprite) {
+  std::string src = unitPortrait(name, sprite).value("src", "");
+  if (const size_t q = src.find('?'); q != std::string::npos) src.resize(q);
+  if (!src.empty() && src.front() == '/') src.erase(0, 1);
+  return src;
+}
+
+// export_dialogs.ts portraitOf over portraits.json: each line's {src, framed} by "<treeId>:<lineId>" (DialogScreen's input).
+// `characters`: the units on the board (name, sprite): a line's portrait falls back to its speaker's own art.
+inline ember::Json npcPortraits(const ember::Json& tree, const std::vector<std::pair<std::string, std::string>>& characters) {
+  const ember::Json& table = portraitTable();
+  const ember::Json speakers = table.value("speakers", ember::Json::object());
   ember::Json out = ember::Json::object();
   const ember::Json lines = tree.value("lines", ember::Json::array());
   for (const ember::Json& line : lines) {
     const std::string speaker = speakerKey(line.value("speaker", ""));
     const std::string key = tree.value("id", "") + ":" + line.value("id", "");
     if (speaker == "vargan") {
-      out[key] = table.value("vargan", ember::Json());
+      out[key] = unitPortrait(line.value("speaker", ""), "");
       continue;
     }
     std::string sprite = speakers.value(speaker, "");
@@ -134,7 +157,7 @@ inline ember::Json npcPortraits(const ember::Json& tree, const std::vector<std::
           sprite = l.value("portrait", "");
           break;
         }
-    out[key] = sprite.empty() ? ember::Json() : portraitFor(sprite);
+    out[key] = sprite.empty() ? ember::Json() : unitPortrait("", sprite);
   }
   return out;
 }

@@ -21,7 +21,7 @@
  },
  "sprites": {
   "Asherah": {
-   "src": "/game/portraits/sprites/Asherah.png?v=1",
+   "src": "/game/portraits/sprites/Asherah.png",
    "framed": true
   },
   "BaseCrossbowman": {
@@ -65,7 +65,7 @@
    "framed": true
   },
   "ancient-golem": {
-   "src": "/game/portraits/sprites/ancient-golem.png?v=1",
+   "src": "/game/portraits/sprites/ancient-golem.png",
    "framed": true
   },
   "apparition": {
@@ -125,7 +125,7 @@
    "framed": false
   },
   "cobalt-blue-deer": {
-   "src": "/game/portraits/sprites/cobalt-blue-deer.png?v=1",
+   "src": "/game/portraits/sprites/cobalt-blue-deer.png",
    "framed": true
   },
   "conjurer": {
@@ -149,27 +149,27 @@
    "framed": true
   },
   "familiar2": {
-   "src": "/game/sprites/familiar2/1.png",
-   "framed": false
+   "src": "/game/portraits/sprites/familiar2.png",
+   "framed": true
   },
   "familiar3": {
    "src": "/game/portraits/familiar3-profile.jpeg?v=3",
    "framed": true
   },
   "familiar4": {
-   "src": "/game/sprites/familiar4/1.png",
-   "framed": false
+   "src": "/game/portraits/sprites/familiar4.png",
+   "framed": true
   },
   "healerRecruit": {
    "src": "/game/sprites/healerRecruit/1.png",
    "framed": false
   },
   "horror": {
-   "src": "/game/portraits/sprites/horror.png?v=1",
+   "src": "/game/portraits/sprites/horror.png",
    "framed": true
   },
   "jacare": {
-   "src": "/game/portraits/sprites/jacare.png?v=1",
+   "src": "/game/portraits/sprites/jacare.png",
    "framed": true
   },
   "kaelEarly": {
@@ -221,8 +221,8 @@
    "framed": true
   },
   "mothKeeper": {
-   "src": "/game/sprites/mothKeeper/1.png",
-   "framed": false
+   "src": "/game/portraits/porao.png",
+   "framed": true
   },
   "mudinho": {
    "src": "/game/portraits/mudo.png",
@@ -249,7 +249,7 @@
    "framed": true
   },
   "plague-bearing-cattle": {
-   "src": "/game/portraits/sprites/plague-bearing-cattle.png?v=1",
+   "src": "/game/portraits/sprites/plague-bearing-cattle.png",
    "framed": true
   },
   "punisher": {
@@ -333,7 +333,7 @@
    "framed": false
   },
   "wardog": {
-   "src": "/game/portraits/sprites/wardog.png?v=1",
+   "src": "/game/portraits/sprites/wardog.png",
    "framed": true
   },
   "wardog2": {
@@ -353,8 +353,8 @@
    "framed": true
   },
   "zombieDog": {
-   "src": "/game/sprites/zombieDog/1.png",
-   "framed": false
+   "src": "/game/portraits/sprites/zombieDog.png",
+   "framed": true
   },
   "isolde-veo": {
    "src": "/game/portraits/isolde-bust-v03.jpg",
@@ -366,6 +366,34 @@
   },
   "salazar-jovem": {
    "src": "/game/portraits/salazar-jovem-bust-v03.jpg",
+   "framed": true
+  },
+  "giant-beetle": {
+   "src": "/game/portraits/sprites/giant-beetle.png",
+   "framed": true
+  },
+  "giant-spider": {
+   "src": "/game/portraits/sprites/giant-spider.png",
+   "framed": true
+  },
+  "swamp-blue-deer": {
+   "src": "/game/portraits/sprites/swamp-blue-deer.png",
+   "framed": true
+  },
+  "chain-bound-penitent": {
+   "src": "/game/portraits/sprites/chain-bound-penitent.png",
+   "framed": true
+  },
+  "corrosive-slime": {
+   "src": "/game/portraits/sprites/corrosive-slime.png",
+   "framed": true
+  },
+  "corrosive-slime-36": {
+   "src": "/game/portraits/sprites/corrosive-slime-36.png",
+   "framed": true
+  },
+  "corrosive-slime-64": {
+   "src": "/game/portraits/sprites/corrosive-slime-64.png",
    "framed": true
   }
  }

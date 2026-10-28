@@ -1,0 +1,23 @@
+{
+ "about": "Monster portraits only (tools/scripts/sprites/monster_portraits.py; the user, 2026-10-28: \"um frame bem cropado dos monstros\", \"PARE DE CROPAR TORTO\", and: NPCs keep their own portraits, never touched here; every monster here becomes its row in content/data/portraits.json, the one portrait table): sprite id -> the source frame (repo-relative), the subject = 'auto' (an upright figure: head and shoulders from its alpha) or 'box' [x0, y0, x1, y1] as shares of the frame (a beast's head, set by hand). Written to content/assets/game/portraits/sprites/<sprite>.png, centred where the battle's portrait boxes show it; a file already there is kept in portraits/sprites/kept-<date>/. 'ours': a file made by this tool before (overwritten, not kept). Asherah, horror and wardog have only 128 px frames: centred, but as soft as their frame.",
+ "portraits": {
+  "giant-beetle": {"src": "content/sprites/giant-beetle/base-media36-v01/base-1.png", "box": [0.74, 0.36, 0.94, 0.72], "keep": [0.66, 0.08, 1.0, 0.80], "ours": true},
+  "giant-spider": {"src": "content/sprites/giant-spider/base-media36-v01/base-1.png", "box": [0.33, 0.20, 0.67, 0.95], "ours": true},
+  "swamp-blue-deer": {"src": "content/sprites/swamp-blue-deer/base-media36-v01/base-1.png", "box": [0.58, 0.0, 1.0, 0.42], "ours": true},
+  "chain-bound-penitent": {"src": "content/sprites/chain-bound-penitent/base-v01/base-1.png", "ours": true},
+  "corrosive-slime": {"src": "content/sprites/corrosive-slime/base-v01/base-1.png", "box": [0.20, 0.02, 0.80, 0.70], "ours": true},
+  "corrosive-slime-36": {"src": "content/sprites/corrosive-slime-36/base-v01/base-1.png", "box": [0.20, 0.02, 0.80, 0.70], "ours": true},
+  "corrosive-slime-64": {"src": "content/sprites/corrosive-slime-64/base-v01/base-1.png", "box": [0.20, 0.02, 0.80, 0.70], "ours": true},
+
+  "familiar2": {"src": "content/assets/game/sprites/familiar2/1.png", "box": [0.30, 0.06, 0.58, 0.55]},
+  "familiar4": {"src": "content/assets/game/sprites/familiar4/1.png", "box": [0.445, 0.05, 0.685, 0.55]},
+  "zombieDog": {"src": "content/assets/game/sprites/zombieDog/1.png", "box": [0.70, 0.20, 0.97, 0.60]},
+  "plague-bearing-cattle": {"src": "content/assets/game/sprites/plague-bearing-cattle/1.png", "box": [0.68, 0.10, 0.90, 0.52]},
+  "jacare": {"src": "content/assets/game/sprites/jacare/1.png", "box": [0.55, 0.10, 0.82, 0.85]},
+  "cobalt-blue-deer": {"src": "content/assets/game/sprites/cobalt-blue-deer/1.png", "box": [0.17, 0.0, 0.73, 0.36]},
+  "ancient-golem": {"src": "content/assets/game/sprites/ancient-golem/1.png", "box": [0.33, 0.18, 0.67, 0.55]},
+  "wardog": {"src": "content/assets/game/sprites/wardog/1.png", "box": [0.70, 0.22, 0.98, 0.70]},
+  "horror": {"src": "content/assets/game/sprites/horror/1.png"},
+  "Asherah": {"src": "content/assets/game/sprites/Asherah/1.png"}
+ }
+}

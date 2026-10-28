@@ -973,7 +973,7 @@ int runCapture(const Options& o) {
         world.load("content/data/overworld.json");
         if (auto talk = attachBattleTalk(*map, mission, loadDialogs("content/data/dialogs.json"), o.gameAssets, world, nullptr); talk && outro) {
           talk->introDone = true;
-          talk->open("outro", "outroEnabled");
+          talk->open(*map, "outro", "outroEnabled");
         }
       }
     }

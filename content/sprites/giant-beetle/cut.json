@@ -1,0 +1,66 @@
+{
+ "about": "Giant Beetle from the user's videos (Attachments/GiantBeetle, 2026-10-28): idle, walk, attack + fall in one video; 24 fps, 1280 x 720. The user: body type 1, \"formatos 64 frames e 36 como os últimos\": only the 64- and 36-frame copies are cut (tools/scripts/sprites/quality_copies.py), never this spec itself, so there is no all-frames Alta. Every video faces left: every clip is mirrored to face right like every unit's idle. The fall: \"no final quando ele morre ele vira para o lado errado\": the video turns the body round between frames 163 and 164 (the head jumps from the left to the right), so the frames from 164 on are mirrored back (mirrorFrom) and it lies the way it stood.",
+ "set": "giant-beetle",
+ "version": "v01",
+ "figureUnits": 1.3252,
+ "figureNote": "the idle body (horn tip to rear) 2.6 units wide, ~1.5 hexes for a one-hex giant; frame 0 of the idle is 879 x 448 px, so its height is 2.6 x 448 / 879; a first value, the user judges",
+ "figurePx": 448,
+ "figurePxNote": "one camera in every video and a body that rears and rolls: every clip keeps the idle's pixel scale (the Corrosive Slime's rule)",
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/giant-beetle/idle",
+   "video": "Attachments/GiantBeetle/GiantBeetleIdle.mp4",
+   "first": 0,
+   "last": 143,
+   "loopMin": 40,
+   "loopMax": 144,
+   "mode": "loop",
+   "mirror": true,
+   "why": "breathing in place the whole video, facing left"
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "src": "build/video-cut/giant-beetle/atkfall",
+   "video": "Attachments/GiantBeetle/Giant_beetle_attacking_and_falling_20261026232021.mp4",
+   "first": 0,
+   "last": 140,
+   "impactFrame": 58,
+   "mode": "once",
+   "mirror": true,
+   "why": "rears back 36-50, lunges low with the horn 52-62 (the thrust at 58), settles standing by ~130; the fall begins at 142"
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/giant-beetle/walk",
+   "video": "Attachments/GiantBeetle/GiantBeetleWalk.mp4",
+   "first": 0,
+   "last": 143,
+   "loopMin": 40,
+   "loopMax": 140,
+   "mode": "loop",
+   "mirror": true,
+   "why": "walking the whole video, on a white ground, facing left like the others"
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "kind": "stand",
+   "src": "build/video-cut/giant-beetle/atkfall",
+   "video": "Attachments/GiantBeetle/Giant_beetle_attacking_and_falling_20261026232021.mp4",
+   "first": 138,
+   "last": 239,
+   "standUntil": 152,
+   "mirrorFrom": 164,
+   "mode": "once",
+   "mirror": true,
+   "why": "standing to ~156, folds and rolls over 158-163 with the head still on the left, then from 164 lies on its back with the head on the RIGHT (the video turned it): 164 on mirrored back, so the head stays where it was; still to the end"
+  }
+ ]
+}

@@ -272,6 +272,32 @@
    }
   },
   {
+   "set": "giant-beetle-64-media",
+   "version": "media64-v01",
+   "hero": "giantBeetle",
+   "newHero": {"name": "Besouro Gigante", "group": "monster", "sprite": "giant-beetle", "reversed": false},
+   "cut": "content/sprites/giant-beetle/cut-64-media.json",
+   "why": "the user, 2026-10-28: the Giant Beetle from their videos (Attachments/GiantBeetle), body type 1, \"formatos 64 frames e 36 como os últimos\": no all-frames Alta; the 64-frame copy is the unit's own art (Alta and Média draw it), the 36-frame copy its Leve",
+   "poses": {"idle": "base", "walk": "move", "attack": "atk", "death": "death"},
+   "labels": {"idle": "Parado", "walk": "Andar", "attack": "Atacar", "death": "Morte"},
+   "packs": {"base": "field", "move": "field"},
+   "strides": {"move": 1.0}
+  },
+  {
+   "set": "giant-beetle-36-media",
+   "version": "media36-v01",
+   "cut": "content/sprites/giant-beetle/cut-36-media.json",
+   "why": "the Beetle's Personagens Leve (the same order): 36 frames from the same mattes",
+   "lightOf": {
+    "hero": "giantBeetle",
+    "set": "giant-beetle-64-media"
+   },
+   "packs": {
+    "base": "field",
+    "move": "field"
+   }
+  },
+  {
    "set": "chain-bound-penitent",
    "version": "v01",
    "hero": "chainBoundPenitent",

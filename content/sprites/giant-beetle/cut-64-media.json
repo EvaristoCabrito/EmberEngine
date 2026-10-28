@@ -1,0 +1,68 @@
+{
+ "about": "giant-beetle's Personagens Média (tools/scripts/sprites/quality_copies.py, the rule of 2026-10-25): every clip of cut.json from the same matted frames, at most 64 frames picked evenly (no blend, the clip's timing kept), the figure ~916 px tall (a clip already shorter keeps its own size).",
+ "set": "giant-beetle-64-media",
+ "version": "media64-v01",
+ "figureUnits": 1.3252,
+ "figureNote": "the idle body (horn tip to rear) 2.6 units wide, ~1.5 hexes for a one-hex giant; frame 0 of the idle is 879 x 448 px, so its height is 2.6 x 448 / 879; a first value, the user judges",
+ "figurePx": 448,
+ "figurePxNote": "one camera in every video and a body that rears and rolls: every clip keeps the idle's pixel scale (the Corrosive Slime's rule)",
+ "clips": [
+  {
+   "clip": "base",
+   "pose": "idle",
+   "kind": "stand",
+   "src": "build/video-cut/giant-beetle/idle",
+   "video": "Attachments/GiantBeetle/GiantBeetleIdle.mp4",
+   "first": 0,
+   "last": 143,
+   "loopMin": 40,
+   "loopMax": 144,
+   "mode": "loop",
+   "mirror": true,
+   "scaleTo": 916
+  },
+  {
+   "clip": "atk",
+   "pose": "attack",
+   "kind": "stand",
+   "src": "build/video-cut/giant-beetle/atkfall",
+   "video": "Attachments/GiantBeetle/Giant_beetle_attacking_and_falling_20261026232021.mp4",
+   "first": 0,
+   "last": 140,
+   "impactFrame": 58,
+   "mode": "once",
+   "mirror": true,
+   "scaleTo": 916
+  },
+  {
+   "clip": "move",
+   "pose": "walk",
+   "kind": "walk",
+   "src": "build/video-cut/giant-beetle/walk",
+   "video": "Attachments/GiantBeetle/GiantBeetleWalk.mp4",
+   "first": 0,
+   "last": 143,
+   "loopMin": 40,
+   "loopMax": 140,
+   "mode": "loop",
+   "mirror": true,
+   "scaleTo": 916
+  },
+  {
+   "clip": "death",
+   "pose": "death",
+   "kind": "stand",
+   "src": "build/video-cut/giant-beetle/atkfall",
+   "video": "Attachments/GiantBeetle/Giant_beetle_attacking_and_falling_20261026232021.mp4",
+   "first": 138,
+   "last": 239,
+   "standUntil": 152,
+   "mirrorFrom": 164,
+   "mode": "once",
+   "mirror": true,
+   "scaleTo": 916
+  }
+ ],
+ "result": "cut-result-64-media.json",
+ "frameCount": 64
+}

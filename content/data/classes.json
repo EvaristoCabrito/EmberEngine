@@ -295,6 +295,7 @@
   "corrosiveSlime36": {"mov": 3},
   "corrosiveSlime64": {"mov": 3},
   "swampBlueDeer": {"mov": 5},
-  "chainBoundPenitent": {"mov": 4}
+  "chainBoundPenitent": {"mov": 4},
+  "giantBeetle": {"mov": 4}
  }
 }

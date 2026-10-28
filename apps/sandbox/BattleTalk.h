@@ -80,7 +80,7 @@ struct BattleTalk {
   std::optional<CutsceneScreen> film;
 
   // A conversation opens unless this campaign already had it; it is recorded the moment it opens (markDialogSeen).
-  void open(const char* kind, const char* enabledKey) {
+  void open(MapStage& map, const char* kind, const char* enabledKey) {
     const ember::Json tree = entry.value(kind, ember::Json());
     if (!tree.is_object() || !entry.value(enabledKey, true)) return;
     const std::string key = std::string(kind) + ":" + mission + ":" + tree.value("id", "");
@@ -92,19 +92,20 @@ struct BattleTalk {
       seen.push_back(key);
       record->saveActive(std::move(save));
     }
-    dialog.emplace(tree, entry.value("portraits", ember::Json::object()), artRoot);
+    // each line's portrait = the one portrait of its speaker (Portraits.h), never the copy baked into dialogs.json
+    dialog.emplace(tree, npcPortraits(tree, map.characters()), artRoot);
   }
 
   void draw(MapStage& map) {
     const ImVec2 size = ImGui::GetIO().DisplaySize;
     if (!introDone) {
       introDone = true;
-      open("intro", "introEnabled");
+      open(map, "intro", "introEnabled");
     }
     const bool won = map.battleResult() == "victory";
     if (won && !outroDone) {
       outroDone = true;
-      open("outro", "outroEnabled");
+      open(map, "outro", "outroEnabled");
     }
     if (dialog) {
       const bool closed = dialog->draw(size, [this, &map](const ember::Json& reply) {
