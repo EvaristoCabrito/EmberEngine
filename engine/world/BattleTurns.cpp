@@ -209,6 +209,27 @@ int Battle::enmityTarget(size_t enemy) const {
   return best;
 }
 
+double Battle::enmityOf(size_t enemy, size_t hero) const {
+  for (const Enmity& e : enmity_)
+    if (e.enemy == enemy && e.hero == hero) return e.ce + e.ve;
+  return 0;
+}
+
+// Ours (2026-10-28; the user: enemies "ignore the target in front to chase someone unreachable", yet must "chase the ones causing
+// it most damage"): a weapon hit of 10 is 40 enmity, so at this weight it is worth a foe nearly down (+20); a hit twice as hard
+// outweighs the most wounded foe on the board, but never a strike that is not possible.
+constexpr double kEnmityScoreWeight = 0.5;
+
+double Battle::enmityBonus(size_t enemy, size_t hero) const { return enmityOf(enemy, hero) * kEnmityScoreWeight; }
+
+std::vector<size_t> Battle::aiTargets(size_t enemy) const {
+  std::vector<size_t> heroes;
+  for (size_t i = 0; i < units_.size(); ++i)
+    if (units_[i].side == "player" && units_[i].alive) heroes.push_back(i);
+  std::stable_sort(heroes.begin(), heroes.end(), [&](size_t a, size_t b) { return enmityOf(enemy, a) > enmityOf(enemy, b); });
+  return heroes;
+}
+
 std::vector<int> Battle::distanceField(BattleHex from) const {
   std::vector<int> dist(cells_.size(), -1);
   if (!inBounds(from.x, from.y)) return dist;
@@ -239,14 +260,8 @@ std::vector<int> Battle::distanceField(BattleHex from) const {
 AiPlan Battle::planEnemy(size_t unit) const {
   const BattleUnit& u = units_[unit];
   const std::vector<ReachCell> reach = reachable(unit, true), walk = reachable(unit, false);
-  // Enmity: whoever tops its table, else every hero standing.
-  std::vector<size_t> heroes;
-  if (const int focus = enmityTarget(unit); focus >= 0) {
-    heroes.push_back(static_cast<size_t>(focus));
-  } else {
-    for (size_t i = 0; i < units_.size(); ++i)
-      if (units_[i].side == "player" && units_[i].alive) heroes.push_back(i);
-  }
+  // Every hero standing, the enmity target first; enmity weighs the choice (enmityBonus), it never hides a foe in reach.
+  const std::vector<size_t> heroes = aiTargets(unit);
   // Tempestade de Gelo (ours, 2026-10-21; the user: "os inimigos não tentam escapar dela"): a hex is unsafe when its body there stands
   // in a storm, or, for one not in a storm yet, when the walk there crosses one. It strikes and closes in from safe hexes when it has
   // any; one caught inside with no safe strike gets out first. Only when nowhere safe is in reach does it act as before.
@@ -278,7 +293,7 @@ AiPlan Battle::planEnemy(size_t unit) const {
     for (size_t h : heroes) {
       if (!canHitFrom(*this, unit, {c.x, c.y}, h)) continue;
       const BattleUnit& foe = units_[h];
-      const double score = (foe.maxHp - foe.hp) * 3 + cell(c.x, c.y).def * 2 + (foe.hp <= 8 ? 20 : 0);
+      const double score = (foe.maxHp - foe.hp) * 3 + cell(c.x, c.y).def * 2 + (foe.hp <= 8 ? 20 : 0) + enmityBonus(unit, h);
       if (!bestScore || score > *bestScore) bestScore = score, from = {c.x, c.y}, plan.target = static_cast<int>(h);
     }
   if (bestScore) {
@@ -286,7 +301,8 @@ AiPlan Battle::planEnemy(size_t unit) const {
     return plan;
   }
   if (heroes.empty()) return plan;
-  // Close in on the nearest hero by real walking distance (walls and pillars count), not a straight line.
+  // Close in by real walking distance (walls and pillars count), not a straight line: on the hero it holds the most enmity for
+  // when a walk reaches it (heroes come enmity first), else on the nearest hero it can walk to.
   std::vector<std::vector<int>> fields;
   for (size_t h : heroes) fields.push_back(distanceField({units_[h].x, units_[h].y}));
   auto at = [&](const std::vector<int>& f, int x, int y) {
@@ -296,6 +312,13 @@ AiPlan Battle::planEnemy(size_t unit) const {
   const std::vector<int>* nearest = &fields.front();
   for (const std::vector<int>& f : fields)
     if (at(f, u.x, u.y) < at(*nearest, u.x, u.y)) nearest = &f;
+  for (size_t i = 0; i < heroes.size(); ++i) {
+    if (enmityOf(unit, heroes[i]) <= 0) break;
+    if (at(fields[i], u.x, u.y) < std::numeric_limits<double>::infinity()) {
+      nearest = &fields[i];
+      break;
+    }
+  }
   // Human-sized hostiles recognise either open Warp mouth as a way to pursue the party through (the walk to the nearer mouth by real
   // distance); their ordinary pursuit resumes after the crossing.
   std::vector<std::vector<int>> gateFields;

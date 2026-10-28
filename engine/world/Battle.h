@@ -705,6 +705,12 @@ class Battle {
   // --- Enmity (Ember enmity.ts): who each enemy goes after ---
   void noteWeaponDamage(size_t attacker, size_t target, int dmg);
   int enmityTarget(size_t enemy) const;  // the hero topping its table, or -1
+  // Ours (2026-10-28): the enmity (ce + ve) `enemy` holds for `hero`, 0 when none; a weight in the AI's choice, never a filter.
+  double enmityOf(size_t enemy, size_t hero) const;
+  // The score bonus that enmity gives a foe in the AI's choice (kEnmityScoreWeight x the enmity).
+  double enmityBonus(size_t enemy, size_t hero) const;
+  // Every hero standing, the one topping the enemy's table first (then table order); the AI's candidate list.
+  std::vector<size_t> aiTargets(size_t enemy) const;
   // Ember terrainDistanceField: the walking cost from a hex to every hex, terrain only.
   std::vector<int> distanceField(BattleHex from) const;  // per cell, -1 = unreachable
   // The enemy's decision for its turn (runAiFor's plain branch: strike the best foe it can reach, else close in).

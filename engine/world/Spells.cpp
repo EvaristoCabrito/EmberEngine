@@ -5546,17 +5546,11 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
   if (!u.alive || u.side != "enemy") return std::nullopt;
   if (u.cond.silenceTurns > 0) return std::nullopt;  // Silêncio Profano: it swings its weapon instead
   const std::vector<ReachCell> reach = b.reachable(unit, true), walk = b.reachable(unit, false);
-  // Enmity: whoever tops its table, else every hero standing.
-  std::vector<size_t> heroes;
-  if (const int focus = b.enmityTarget(unit); focus >= 0) {
-    heroes.push_back(static_cast<size_t>(focus));
-  } else {
-    for (size_t i = 0; i < b.units().size(); ++i)
-      if (b.units()[i].side == "player" && b.units()[i].alive) heroes.push_back(i);
-  }
+  // Every hero standing, the enmity target first; enmity weighs the choice (enmityBonus), it never hides a foe in range.
+  const std::vector<size_t> heroes = b.aiTargets(unit);
   auto score = [&](size_t h) {
     const BattleUnit& f = b.units()[h];
-    return (f.maxHp - f.hp) * 3 + (f.hp <= 8 ? 20 : 0);
+    return static_cast<int>((f.maxHp - f.hp) * 3 + (f.hp <= 8 ? 20 : 0) + b.enmityBonus(unit, h));
   };
   struct Pick {
     size_t foe = 0;
