@@ -1,7 +1,7 @@
 #pragma once
 
 // The light of the cures, the meal and the potions: ours, in 3D (user, 2026-10-16: "make new similar ones now in 3d",
-// after Engine2's 2D holy art, engine.ts drawDivineLight / drawPotionBurst, was set aside on branch wip/2d-canvas-fx).
+// after Ember's 2D holy art, engine.ts drawDivineLight / drawPotionBurst, was set aside on branch wip/2d-canvas-fx).
 // Cura Menor 02, Cura Média 01, Mãos Curativas 01, Curar Doença 01, Criar Comida e Água 01, Poção 01.
 //
 // On every unit it reaches, a shaft of light comes down from above (a volume the eye sees through, brightest at its

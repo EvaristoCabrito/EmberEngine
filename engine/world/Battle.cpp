@@ -10,7 +10,7 @@
 #include "world/Progression.h"
 #include "world/Spells.h"
 
-namespace ember::e2 {
+namespace ember {
 
 namespace {
 
@@ -77,13 +77,13 @@ bool fliesOverWater(const BattleUnit& u, const BattleCell& c) {
 
 bool isTroll(const BattleUnit& u) { return u.classId == "troll" || u.classId == "troll2"; }
 
-// Every class's own movement (Engine2's class table, tools/scripts/engine2/export_classes.ts), read once: -1 = unknown.
+// Every class's own movement (Ember's class table, tools/scripts/data/export_classes.ts), read once: -1 = unknown.
 int classMov(const std::string& classId) {
   static const json table = [] {
-    std::ifstream in("content/engine2/classes.json", std::ios::binary);
+    std::ifstream in("content/data/classes.json", std::ios::binary);
     json j = in ? json::parse(in, nullptr, false) : json();
     if (!in || j.is_discarded() || !j.contains("classes")) {
-      logError("battle: cannot read content/engine2/classes.json (export it with tools/scripts/engine2/export_classes.ts)");
+      logError("battle: cannot read content/data/classes.json (export it with tools/scripts/data/export_classes.ts)");
       return json::object();
     }
     return j["classes"];
@@ -93,7 +93,7 @@ int classMov(const std::string& classId) {
 
 // EmberEngine's own classes (content/ember-classes.json; the Corrosive Slime, 2026-10-22): a battle file's exporter knows only the old
 // classes, so a unit of ours arrives under a stand-in and is made here what its class says: stats at its level from
-// content/engine2/class-stats.json, movement, body size, weapon, resistances, spell uses and spells, its names.
+// content/data/class-stats.json, movement, body size, weapon, resistances, spell uses and spells, its names.
 const json& emberClasses() {
   static const json table = [] {
     std::ifstream in("content/ember-classes.json", std::ios::binary);
@@ -104,7 +104,7 @@ const json& emberClasses() {
 }
 const json& classStatTable() {
   static const json table = [] {
-    std::ifstream in("content/engine2/class-stats.json", std::ios::binary);
+    std::ifstream in("content/data/class-stats.json", std::ios::binary);
     json j = in ? json::parse(in, nullptr, false) : json();
     return j.is_object() && j.contains("classes") && j["classes"].is_object() ? j["classes"] : json::object();
   }();
@@ -122,7 +122,7 @@ void applyEmberClass(BattleUnit& o) {
     o.hp = whole ? o.maxHp : std::min(o.hp, o.maxHp);
     o.growth.clear();  // the class table's own row: no gear on top
   } else {
-    logError("battle: class '{}' of {} has no rows in content/engine2/class-stats.json", o.classId, o.name);
+    logError("battle: class '{}' of {} has no rows in content/data/class-stats.json", o.classId, o.name);
   }
   o.mov = integer(c, "mov", o.mov);
   o.size = integer(c, "size", 1);
@@ -167,7 +167,7 @@ int Battle::adjacentLock(size_t unit) const {
 
 std::shared_ptr<const LootTables> LootTables::shared() {
   static const std::shared_ptr<const LootTables> tables = []() -> std::shared_ptr<const LootTables> {
-    std::ifstream in("content/engine2/overworld.json");
+    std::ifstream in("content/data/overworld.json");
     if (!in) return nullptr;
     const json j = json::parse(in, nullptr, false);
     if (j.is_discarded() || !j.contains("tables")) return nullptr;
@@ -207,7 +207,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
   std::ifstream in(battleJson, std::ios::binary);
   const json j = in ? json::parse(in, nullptr, false) : json();
   if (!in || j.is_discarded() || !j.contains("cells") || !j.contains("units")) {
-    logError("battle: cannot read {} (export it with tools/scripts/engine2/export_battle.ts)", battleJson.string());
+    logError("battle: cannot read {} (export it with tools/scripts/data/export_battle.ts)", battleJson.string());
     return std::nullopt;
   }
   Battle b;
@@ -233,7 +233,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
       b.exits_.push_back(std::move(e));
     }
   // A file from before `explore` / `baseMov`: an explore mission shows as every unit carrying the whole board as its
-  // movement (Engine2's free-roam reach). It roams like a new file, each unit moving as its class does, so every map
+  // movement (Ember's free-roam reach). It roams like a new file, each unit moving as its class does, so every map
   // behaves the same whenever its file was made.
   bool olderExplore = false;
   if (!j.contains("explore") && j["units"].is_array() && !j["units"].empty()) {
@@ -296,7 +296,7 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
     if (olderExplore && !u.contains("baseMov")) {
       const int own = classMov(text(u, "classId"));
       if (own >= 0) o.mov = own;
-      else logError("battle {}: class '{}' of {} is not in content/engine2/classes.json", b.map_, text(u, "classId"), text(u, "name"));
+      else logError("battle {}: class '{}' of {} is not in content/data/classes.json", b.map_, text(u, "classId"), text(u, "name"));
     }
     o.hp = integer(u, "hp");
     o.maxHp = integer(u, "maxHp");
@@ -414,9 +414,9 @@ std::optional<Battle> Battle::load(const std::filesystem::path& battleJson) {
       applyEmberClass(o);
       o.atkBlows = emberClasses()[o.classId].value("strikesWith", std::string("atk")) == "atk";
     }
-    applyProgression(o);  // EmberEngine's own growth over Engine2's (gear kept; off in the Cooker's checks)
+    applyProgression(o);  // EmberEngine's own growth over Ember's (gear kept; off in the Cooker's checks)
     // Ours (the user, 2026-10-18: "cultista de level 15 pode usar 1X"): a cultist of level 15 or more brings one Tempestade de
-    // Gelo (its tier-4 use; Engine2's cultists have none). Off in the Cooker's checks, like the progression.
+    // Gelo (its tier-4 use; Ember's cultists have none). Off in the Cooker's checks, like the progression.
     if (progressionEnabled() && o.side == "enemy" && (o.classId == "cultist" || o.classId == "cultistV2") && o.level >= 15) o.spells[3] = 1;
     if (progressionEnabled() && o.side == "enemy" &&
         (o.classId == "birolho" || o.classId == "birolho2" || o.classId == "birolho3" || o.classId == "birolhoLegs" ||
@@ -645,12 +645,12 @@ std::optional<int> Battle::stepCost(int x, int y, const BattleUnit& self, const 
 
 std::vector<ReachCell> Battle::reachable(size_t unit, bool pruneStops) const {
   const BattleUnit& u = units_[unit];
-  // Free roam (Engine2 effectiveUnitForReach on an explore mission): any reachable hex, however far.
+  // Free roam (Ember effectiveUnitForReach on an explore mission): any reachable hex, however far.
   // effectiveUnitForReach: a unit whose cell was webbed when its turn began (turnRestrained) walks one hex at most.
   const int remaining = std::max(0, u.mov - u.moveUsed);
   const int mov = roaming_ ? cols_ * rows_ : turnRestrained_ ? std::min(1, remaining) : remaining;
   const std::vector<int> occ = occupancy();
-  // The reach in Engine2's insertion order (a Map there): `at` finds a hex's entry.
+  // The reach in Ember's insertion order (a Map there): `at` finds a hex's entry.
   std::vector<ReachCell> result;
   std::vector<int> at(cells_.size(), -1);
   auto slot = [&](int x, int y) -> int* { return inBounds(x, y) ? &at[static_cast<size_t>(y * cols_ + x)] : nullptr; };
@@ -769,4 +769,4 @@ void Battle::newTurn() {
   for (BattleUnit& u : units_) u.moveUsed = 0, u.acted = false;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

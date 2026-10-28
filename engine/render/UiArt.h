@@ -1,7 +1,7 @@
 #pragma once
 
-// The game's look in its menus and HUD: Engine2's own fonts (title.css: Newsreader for titles, Figtree for text,
-// Pirata One for marks and buttons; bundled in content/fonts, OFL) and its art, read at run time from Engine2's public
+// The game's look in its menus and HUD: Ember's own fonts (title.css: Newsreader for titles, Figtree for text,
+// Pirata One for marks and buttons; bundled in content/fonts, OFL) and its art, read at run time from Ember's public
 // folder (title backgrounds, panels, portraits) and shown through Dear ImGui.
 
 #include <filesystem>
@@ -36,14 +36,14 @@ void refineUiImages(ImDrawData* drawData);
 // destination pixel when shrinking (every source pixel averaged). dstW is the new length along that axis.
 std::vector<float> uiResampleAxis(const std::vector<float>& src, int srcW, int srcH, int dstW, bool horizontal);
 
-// A lucide icon (content/ui/lucide/<name>.svg, Engine2's lucide 0.510.0) rasterised at its exact pixel size on screen
-// and tinted with `ink`; `size` = its 24-unit box in UI units (Engine2: size-4 = 16), centred on `centre`.
-// strokeWidth: the SVG's stroke in its 24 box (lucide 2; Engine2's options headings 1.5).
+// A lucide icon (content/ui/lucide/<name>.svg, Ember's lucide 0.510.0) rasterised at its exact pixel size on screen
+// and tinted with `ink`; `size` = its 24-unit box in UI units (Ember: size-4 = 16), centred on `centre`.
+// strokeWidth: the SVG's stroke in its 24 box (lucide 2; Ember's options headings 1.5).
 void uiIcon(ImDrawList* dl, const char* name, ImVec2 centre, float size, ImU32 ink, float strokeWidth = 2.0f);
 // The same for an SVG given as text (white = ink); `key` names it in the raster cache.
 void uiIconSvg(ImDrawList* dl, const std::string& key, const std::string& svg, ImVec2 centre, float size, ImU32 ink);
 
-// The title screen's art load (Engine2 title/main.ts loadTitleResources): files decoded one after another on a
+// The title screen's art load (Ember title/main.ts loadTitleResources): files decoded one after another on a
 // background thread and handed to uiImage's cache on the main thread, so the screens after the title open at once
 // and the loading bar shows the real count. Main thread: update() once per frame.
 class UiPreload {
@@ -68,7 +68,7 @@ class UiPreload {
   std::jthread worker_;  // last: started once everything it touches exists
 };
 
-// Engine2's title.css helpers for an ImGui draw list.
+// Ember's title.css helpers for an ImGui draw list.
 // A vertical gradient through colour stops (position 0..1, colour).
 struct GradientStop {
   float at;
@@ -83,7 +83,7 @@ void imageContain(ImDrawList* dl, const UiImage& image, ImVec2 a, ImVec2 b, ImU3
 float spacedTextWidth(ImFont* font, float size, const char* text, float spacingEm);
 void spacedText(ImDrawList* dl, ImFont* font, float size, ImVec2 at, ImU32 color, const char* text, float spacingEm, bool shadow = true);
 
-// --- Engine2's ember-ui pieces (src/ember-ui/styles.css) ---------------------------------------------------------------
+// --- Ember's ember-ui pieces (src/ember-ui/styles.css) ---------------------------------------------------------------
 // .ember-panel: iron plate, gold hairline, L-shaped gold corners and an ember seam on top.
 void emberPanel(ImDrawList* dl, ImVec2 a, ImVec2 b);
 // .ember-rule: a gold hairline fading at both ends with a small diamond in the middle.
@@ -96,8 +96,8 @@ void emberTitle(ImDrawList* dl, ImVec2 at, float size, const char* text);
 // .ember-btn (.ember-btn-primary / .ember-btn-ghost), full size: Pirata One capitals and the gold diamond caps.
 bool emberBigButton(const char* id, const char* label, ImVec2 at, ImVec2 size, bool primary, float fontSize);
 
-// Engine2's briefing art per mission id (GameApp BRIEF_ART), a path under its public folder; empty = none.
-inline const char* engine2BriefArt(const std::string& id) {
+// Ember's briefing art per mission id (GameApp BRIEF_ART), a path under its public folder; empty = none.
+inline const char* classicBriefArt(const std::string& id) {
   static const std::pair<const char*, const char*> kArt[] = {
       {"farmlands", "game/assets/brief-farmlands.jpg"}, {"vau", "game/assets/brief-vau.jpg"}, {"bosque", "game/assets/brief-bosque.jpg"},
       {"aldeia", "game/assets/brief-aldeia.jpg"}, {"muralha", "game/assets/brief-muralha.jpg"}, {"fortaleza", "game/assets/brief-fortaleza.jpg"},
@@ -120,13 +120,13 @@ inline const char* engine2BriefArt(const std::string& id) {
 }
 
 // The briefing art drawn for a mission id, from content/briefings (the project's one folder of briefings; the backgrounds are in
-// content/backdrops): EmberEngine's own first, else the file the mission's table names (Engine2's name, its copy here). Nothing is read from
-// Engine2's folders (the user, 2026-10-20: "JAMAIS em dois engines"); empty = none.
-inline std::filesystem::path briefArtFile(const std::string& id, const std::filesystem::path& /*engine2Public, unused: kept for the callers*/) {
+// content/backdrops): EmberEngine's own first, else the file the mission's table names (Ember's name, its copy here). Nothing is read from
+// Ember's folders (the user, 2026-10-20: "JAMAIS em dois engines"); empty = none.
+inline std::filesystem::path briefArtFile(const std::string& id, const std::filesystem::path& /*artRoot, unused: kept for the callers*/) {
   static const std::pair<const char*, const char*> kOwn[] = {{"ashen-forest-crossing", "content/briefings/ashen-forest-brief-v02.jpg"}};
   for (const auto& [k, v] : kOwn)
     if (id == k) return std::filesystem::path(v);
-  const char* art = engine2BriefArt(id);
+  const char* art = classicBriefArt(id);
   if (!*art) return {};
   const std::filesystem::path name = std::filesystem::u8path(art).filename();
   std::error_code ec;

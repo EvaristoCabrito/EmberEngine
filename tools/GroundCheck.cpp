@@ -39,8 +39,8 @@ Diff compare(const std::vector<float>& ours, const std::vector<float>& theirs, d
   return d;
 }
 
-// Engine2 splits the per-vertex weights into vec4 attributes: splatA, splatB, groundA, groundB, ...
-// Its `stride` weights per vertex land in rows of `ours` (EmberEngine's own ground layers after Engine2's stay 0).
+// Ember splits the per-vertex weights into vec4 attributes: splatA, splatB, groundA, groundB, ...
+// Its `stride` weights per vertex land in rows of `ours` (EmberEngine's own ground layers after Ember's stay 0).
 bool loadWeights(const std::filesystem::path& dir, const std::string& name, uint32_t stride, uint32_t ours, size_t vertices, std::vector<float>& out) {
   out.assign(vertices * ours, 0.0f);
   for (uint32_t part = 0; part * 4 < stride; ++part) {
@@ -53,7 +53,7 @@ bool loadWeights(const std::filesystem::path& dir, const std::string& name, uint
   return true;
 }
 
-bool checkOne(const std::filesystem::path& dir, const std::string& name, const e2::GroundGeometry& g, uint32_t engine2Stride) {
+bool checkOne(const std::filesystem::path& dir, const std::string& name, const ember::GroundGeometry& g, uint32_t classicStride) {
   std::vector<float> pos, nor, weights;
   std::vector<uint32_t> index;
   if (!readRaw(dir / (name + ".position.f32"), pos) || !readRaw(dir / (name + ".normal.f32"), nor)) {
@@ -63,7 +63,7 @@ bool checkOne(const std::filesystem::path& dir, const std::string& name, const e
   const size_t vertices = pos.size() / 3;
   bool ok = true;
   if (vertices != g.vertexCount()) {
-    logError("  {}: {} vertices, Engine2 {}", name, g.vertexCount(), vertices);
+    logError("  {}: {} vertices, Ember {}", name, g.vertexCount(), vertices);
     return false;
   }
   if (std::filesystem::exists(dir / (name + ".index.u32"))) {
@@ -71,14 +71,14 @@ bool checkOne(const std::filesystem::path& dir, const std::string& name, const e
     if (index != g.indices) {
       size_t first = 0;
       while (first < index.size() && first < g.indices.size() && index[first] == g.indices[first]) ++first;
-      logError("  {}: indices differ ({} vs Engine2 {}, first difference at {})", name, g.indices.size(), index.size(), first);
+      logError("  {}: indices differ ({} vs Ember {}, first difference at {})", name, g.indices.size(), index.size(), first);
       ok = false;
     }
   } else if (!g.indices.empty()) {
-    logError("  {}: indexed here, not in Engine2", name);
+    logError("  {}: indexed here, not in Ember", name);
     ok = false;
   }
-  if (!loadWeights(dir, name, engine2Stride, g.stride, vertices, weights)) {
+  if (!loadWeights(dir, name, classicStride, g.stride, vertices, weights)) {
     logError("  {}: reference weights missing", name);
     return false;
   }
@@ -90,14 +90,14 @@ bool checkOne(const std::filesystem::path& dir, const std::string& name, const e
 
 }  // namespace
 
-bool checkGround(const std::filesystem::path& boardJson, const std::filesystem::path& mapJson, const std::filesystem::path& engine2Public,
+bool checkGround(const std::filesystem::path& boardJson, const std::filesystem::path& mapJson, const std::filesystem::path& artRoot,
                  const std::filesystem::path& referenceRoot) {
-  const std::optional<e2::BoardData> data = e2::BoardData::load(boardJson);
-  std::optional<e2::MapDraft> draft = e2::MapDraft::load(mapJson);
+  const std::optional<ember::BoardData> data = ember::BoardData::load(boardJson);
+  std::optional<ember::MapDraft> draft = ember::MapDraft::load(mapJson);
   if (!data || !draft) return false;
   const std::filesystem::path dir = referenceRoot / draft->id;
-  e2::Board board(*data, std::move(*draft));
-  if (!board.loadRelief(engine2Public)) return false;
+  ember::Board board(*data, std::move(*draft));
+  if (!board.loadRelief(artRoot)) return false;
   logInfo("{}: {}x{} hexes", board.draft().id, board.layout().cols, board.layout().rows);
 
   // Cells.
@@ -111,7 +111,7 @@ bool checkGround(const std::filesystem::path& boardJson, const std::filesystem::
   size_t cellErrors = 0;
   for (size_t i = 0; i < cells.size(); ++i) {
     const nlohmann::json& r = cells[i];
-    const e2::Cell& c = board.cells()[i];
+    const ember::Cell& c = board.cells()[i];
     const bool same = r["type"] == c.type && r["level"].get<double>() == c.level && r["surface"].get<int>() == c.surface &&
                       r["ground"].get<int>() == c.ground && std::abs(r["groundY"].get<double>() - c.groundY) < 1e-12 &&
                       r["water"].get<bool>() == c.water && std::abs(r["waterY"].get<double>() - c.waterY) < 1e-12 &&
@@ -121,18 +121,18 @@ bool checkGround(const std::filesystem::path& boardJson, const std::filesystem::
   logInfo("  cells: {} of {} match", cells.size() - cellErrors, cells.size());
   ok = ok && cellErrors == 0;
 
-  const uint32_t engine2Stride = 8 + static_cast<uint32_t>(board.data().engine2LayerCount);  // 8 surfaces (GroundMesh)
-  ok = checkOne(dir, "smooth", e2::buildSmoothGround(board), engine2Stride) && ok;
-  ok = checkOne(dir, "hard", e2::buildHardGround(board), engine2Stride) && ok;
+  const uint32_t classicStride = 8 + static_cast<uint32_t>(board.data().classicLayerCount);  // 8 surfaces (GroundMesh)
+  ok = checkOne(dir, "smooth", ember::buildSmoothGround(board), classicStride) && ok;
+  ok = checkOne(dir, "hard", ember::buildHardGround(board), classicStride) && ok;
 
   // Water (no weights).
-  for (const auto& [name, style] : {std::pair{"water-smooth", e2::EdgeStyle::Smooth}, std::pair{"water-hard", e2::EdgeStyle::Hard}}) {
-    const e2::WaterGeometry w = e2::buildWater(board, style);
+  for (const auto& [name, style] : {std::pair{"water-smooth", ember::EdgeStyle::Smooth}, std::pair{"water-hard", ember::EdgeStyle::Hard}}) {
+    const ember::WaterGeometry w = ember::buildWater(board, style);
     std::vector<float> pos, nor;
     std::vector<uint32_t> index;
     const bool present = readRaw(dir / (std::string(name) + ".position.f32"), pos);
     if (!present) {
-      if (!w.positions.empty()) logError("  {}: built here, absent in Engine2", name), ok = false;
+      if (!w.positions.empty()) logError("  {}: built here, absent in Ember", name), ok = false;
       continue;
     }
     readRaw(dir / (std::string(name) + ".normal.f32"), nor);
@@ -150,13 +150,13 @@ bool checkGround(const std::filesystem::path& boardJson, const std::filesystem::
   double worst = 0;
   for (const nlohmann::json& h : manifest["heights"]) {
     const double x = h["x"], z = h["z"];
-    worst = std::max({worst, std::abs(e2::groundHeightAt(board, e2::EdgeStyle::Smooth, x, z) - h["smooth"].get<double>()),
-                      std::abs(e2::groundHeightAt(board, e2::EdgeStyle::Hard, x, z) - h["hard"].get<double>())});
+    worst = std::max({worst, std::abs(ember::groundHeightAt(board, ember::EdgeStyle::Smooth, x, z) - h["smooth"].get<double>()),
+                      std::abs(ember::groundHeightAt(board, ember::EdgeStyle::Hard, x, z) - h["hard"].get<double>())});
   }
   logInfo("  heights: {} points, worst difference {:.2e}", manifest["heights"].size(), worst);
   ok = ok && worst < 1e-9;
-  if (ok) logInfo("ground matches Engine2");
-  else logError("ground DIFFERS from Engine2");
+  if (ok) logInfo("ground matches Ember");
+  else logError("ground DIFFERS from Ember");
   return ok;
 }
 

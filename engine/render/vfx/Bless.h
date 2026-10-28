@@ -1,13 +1,13 @@
 #pragma once
 
-// Engine2's BlessVFX (src/vfx/legacy/three/BlessVFX.ts) with DEFAULT_BLESS_VFX_SETTINGS, as BattleSpells3D plays it,
+// Ember's BlessVFX (src/vfx/legacy/three/BlessVFX.ts) with DEFAULT_BLESS_VFX_SETTINGS, as BattleSpells3D plays it,
 // ported to the effect runtime: Bênção 01. A golden core gathers before the caster with rising motes (0.3 s), then a
 // rippling amber-to-ivory wave ring spreads over the spell's radius (BLESS.radius 3 hexes) in 0.55 s; as it reaches
 // each ally, eight golden strands coil down around them with orbiting motes and a warm light, and are absorbed
-// (0.78 s). Everything fades by 1.75 s. Its math runs in Ember's frame (z up) as Engine2's does; where Engine2 used
+// (0.78 s). Everything fades by 1.75 s. Its math runs in Ember's frame (z up) as Ember's does; where Ember used
 // its own y as "down" for motes, core and strands (Ember's top-down canvas), that y lies along the board here too.
 //
-// Not carried over: the lights' shadows (Engine2: 256 px maps; our local lights have none yet).
+// Not carried over: the lights' shadows (Ember: 256 px maps; our local lights have none yet).
 
 #include <vector>
 
@@ -27,7 +27,7 @@ class Bless {
   Bless(glm::vec3 center, float radiusWorld, std::vector<Ally> allies, float start);
 
   static constexpr float kWaveRelease = 0.3f, kDuration = 1.5f;
-  // When the wave reaches an ally this far away (Engine2 applies the blessing then).
+  // When the wave reaches an ally this far away (Ember applies the blessing then).
   static float reachSeconds(float distanceHexes);
   bool done(float now) const { return now - start_ >= kDuration + 0.25f; }
   float end() const { return start_ + kDuration + 0.25f; }

@@ -1,8 +1,8 @@
 #pragma once
 
-// The bits of three.js math Engine2's effects lean on, with three's exact behaviour (r16x src/math, src/extras/curves):
+// The bits of three.js math Ember's effects lean on, with three's exact behaviour (r16x src/math, src/extras/curves):
 // smoothstep, the centripetal Catmull-Rom curve, setFromUnitVectors, Euler XYZ, colour hex (sRGB -> linear, as three's
-// ColorManagement does for hex colours), Engine2's LCG random.
+// ColorManagement does for hex colours), Ember's LCG random.
 
 #include <algorithm>
 #include <cmath>
@@ -142,7 +142,7 @@ inline void frenetFrames(const CatmullRom& path, int segments, std::vector<glm::
 // Curve.getPointAt(u): by arc length.
 inline glm::vec3 getPointAt(const CatmullRom& path, float u, const std::vector<float>& lengths) { return path.getPoint(path.getUtoTmapping(u, lengths)); }
 
-// Engine2's mulberry (PhantasmalForceVFX): state += 0x6d2b79f5, mixed, / 2^32.
+// Ember's mulberry (PhantasmalForceVFX): state += 0x6d2b79f5, mixed, / 2^32.
 struct Mulberry {
   uint32_t state = 0;
   float next() {
@@ -248,7 +248,7 @@ inline glm::vec3 hex(uint32_t h) {
   return {c((h >> 16) & 255), c((h >> 8) & 255), c(h & 255)};
 }
 
-// Engine2's effect random: an LCG over uint32 (Math.imul(rng, 1664525) + 1013904223), / 2^32.
+// Ember's effect random: an LCG over uint32 (Math.imul(rng, 1664525) + 1013904223), / 2^32.
 struct Lcg {
   uint32_t state = 1;
   float next() {

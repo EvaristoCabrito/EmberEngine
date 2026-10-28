@@ -1,11 +1,11 @@
 #pragma once
 
-// An Ember map and its board, as Engine2 builds them (C:/Engine2/src/map/board.ts, ember/tileVariants.ts),
-// ported to C++. Engine2's game design is the reference: same cells, elevations, surfaces and ground
+// An Ember map and its board, as Ember builds them (src/map/board.ts, ember/tileVariants.ts),
+// ported to C++. Ember's game design is the reference: same cells, elevations, surfaces and ground
 // layers, so every saved map keeps its look and its rules.
 //
-// The tables come from content/engine2/board.json, exported from Engine2's own source
-// (tools/scripts/engine2/export_board.ts); the rules that read them are here.
+// The tables come from content/data/board.json, exported from Ember's own source
+// (tools/scripts/data/export_board.ts); the rules that read them are here.
 
 #include <filesystem>
 #include <map>
@@ -20,7 +20,7 @@
 #include "world/Water3D.h"
 #include "world/Hex.h"
 
-namespace ember::e2 {
+namespace ember {
 
 struct TerrainInfo {
   std::string name;
@@ -34,7 +34,7 @@ struct GroundLayerSource {
   std::string key;
   bool absent = false;
   std::string procedural;           // "smooth-plains": generated, no file
-  std::string color, normal, rough;  // URLs under Engine2's public/ ("/game/..."); empty = none
+  std::string color, normal, rough;  // URLs under Ember's public/ ("/game/..."); empty = none
   double relief = 0;                 // vertex relief height (world units) when reliefGrid is set
   std::string reliefGrid;
   std::string file;                  // EmberEngine's own tile (kEmberGroundTiles): a project file, in place of `color`
@@ -47,7 +47,7 @@ struct GroundVariantLayer {
   double relief = 0;
 };
 
-// Engine2's board and ground tables.
+// Ember's board and ground tables.
 struct BoardData {
   int baseLevels = 2;
   double mountainRock = 7, mountainSnow = 11;
@@ -55,15 +55,15 @@ struct BoardData {
   std::unordered_map<std::string, TerrainInfo> terrain;
   std::vector<std::string> groundLayerTerrains;    // the 12 base terrain layers
   int groundLayerCount = 0;                         // base + city, shallow water, river rocks + variant layers + EmberEngine's tiles
-  int engine2LayerCount = 0;                        // the layers Engine2 knows (the first ones)
+  int classicLayerCount = 0;                        // the layers Ember knows (the first ones)
   std::vector<GroundLayerSource> groundLayers;      // groundLayerCount entries
   std::vector<GroundVariantLayer> groundVariantLayers;
-  std::vector<std::pair<std::string, int>> engine2V3;  // (terrain, variant), in table order; key "city" first match
-  std::vector<std::string> engine2V3Keys;
-  int engine2V3CityVariant = 50;
+  std::vector<std::pair<std::string, int>> classicV3;  // (terrain, variant), in table order; key "city" first match
+  std::vector<std::string> classicV3Keys;
+  int classicV3CityVariant = 50;
   std::unordered_map<std::string, int> claudeVariant;
   std::vector<std::string> architectureDecorations;  // sorted
-  // "<set>|<terrain>" -> the layer of EmberEngine's own ground tile (appended after Engine2's); terrain "" = its grass /
+  // "<set>|<terrain>" -> the layer of EmberEngine's own ground tile (appended after Ember's); terrain "" = its grass /
   // forest surfaces (GroundAssets.h kEmberGroundTiles)
   std::unordered_map<std::string, int> emberGroundLayer;
   std::unordered_set<std::string> emberGroundOver;  // the "set|terrain" keys whose tile also covers the terrain's baked art
@@ -86,7 +86,7 @@ struct MapDecoration {
 struct MapSpawn {
   std::string name, classId;
   int x = 0, y = 0;
-  nlohmann::json dialog;  // an NPC's conversation (Engine2 Spawn.dialog: a DialogTree), null when it has none
+  nlohmann::json dialog;  // an NPC's conversation (Ember Spawn.dialog: a DialogTree), null when it has none
 };
 
 // An Ember map file ({serial, savedAt, draft}); only the fields EmberEngine reads so far.
@@ -99,9 +99,9 @@ struct MapDraft {
   std::vector<MapDecoration> decorations;
   std::vector<MapSpawn> playerSpawns, enemySpawns, neutralSpawns;
   std::string environment, timeOfDay;
-  std::string moonPhase;  // the Map Editor's Lua (e2::kMoonPhases name; "" = full): Modo teste's moon on this map
-  bool fog = false;  // the mission hides what the party has not seen (Engine2 mission.fog)
-  // The map editor's atmosphere (Engine2 Mission): its mist (Névoa type, intensity, speed), wisps and bloom.
+  std::string moonPhase;  // the Map Editor's Lua (ember::kMoonPhases name; "" = full): Modo teste's moon on this map
+  bool fog = false;  // the mission hides what the party has not seen (Ember mission.fog)
+  // The map editor's atmosphere (Ember Mission): its mist (Névoa type, intensity, speed), wisps and bloom.
   std::string mistType;
   float mistIntensity = 0.0f, mistSpeed = 1.0f;
   float wispIntensity = 0.0f, wispSpeed = 1.0f;
@@ -139,7 +139,7 @@ struct MapDraft {
   // touches it and no side wall stands under the door). Absent = the board's own.
   std::optional<int> emberBaseLevels;
 
-  // The map's backdrop pick (Engine2 draft.backgroundImage: absent = the map's own, "" = none) and its lighting
+  // The map's backdrop pick (Ember draft.backgroundImage: absent = the map's own, "" = none) and its lighting
   // sliders as authored (absent = the time of day's default).
   std::optional<std::string> backgroundImage;
   // The map's top-down Ground image around the board: absent = the selected Panorama's Ground, "" = none, otherwise
@@ -150,7 +150,7 @@ struct MapDraft {
   Water3DMap water3d;
 
   static std::optional<MapDraft> load(const std::filesystem::path& mapJson);
-  // The same from a draft already in memory (Engine2's MapDraft JSON: the map editor's working copy).
+  // The same from a draft already in memory (Ember's MapDraft JSON: the map editor's working copy).
   static std::optional<MapDraft> fromJson(const nlohmann::json& draft);
   int variant(int i) const { return i < static_cast<int>(tileVariants.size()) && tileVariants[i] ? *tileVariants[i] : 0; }
   bool hasVariant(int i) const { return i < static_cast<int>(tileVariants.size()) && tileVariants[i].has_value(); }
@@ -196,10 +196,10 @@ class Board {
   };
   Bounds bounds() const { return {-layout_.ox, layout_.ox, -layout_.oz - 0.6, layout_.oz + 0.6}; }
 
-  // Relief grids for the photographic layers this map uses (Engine2: prepareTerrainRelief), read from
-  // Engine2's public/ folder. False when a needed grid is missing or damaged.
-  bool loadRelief(const std::filesystem::path& engine2Public);
-  // Engine2's terrainReliefAt: real relief of the photographic layers under a point.
+  // Relief grids for the photographic layers this map uses (Ember: prepareTerrainRelief), read from
+  // Ember's public/ folder. False when a needed grid is missing or damaged.
+  bool loadRelief(const std::filesystem::path& artRoot);
+  // Ember's terrainReliefAt: real relief of the photographic layers under a point.
   double reliefAt(double x, double z) const;
 
  private:
@@ -210,4 +210,4 @@ class Board {
   std::map<int, ReliefGrid> relief_;  // variant layer index -> grid
 };
 
-}  // namespace ember::e2
+}  // namespace ember

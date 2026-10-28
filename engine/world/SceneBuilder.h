@@ -1,10 +1,10 @@
 #pragma once
 
-// A map's scene built in C++ from its draft, the way tools/scripts/engine2/export_scene.ts + measure_art.py build it
-// from Engine2's own rules: decoration cards (art facing, size, light, layer), 3D models, architecture and units
-// (idle pose, box, pacing), each placed on the board. Engine2's tables come resolved per decoration and per unit from
-// content/engine2/editor-catalog.json (export_editor_catalog.ts + measure_art.py --catalog), so any draft (the map
-// editor's working copy) gets its scene at once, without running Engine2.
+// A map's scene built in C++ from its draft, the way tools/scripts/data/export_scene.ts + measure_art.py build it
+// from Ember's own rules: decoration cards (art facing, size, light, layer), 3D models, architecture and units
+// (idle pose, box, pacing), each placed on the board. Ember's tables come resolved per decoration and per unit from
+// content/data/editor-catalog.json (export_editor_catalog.ts + measure_art.py --catalog), so any draft (the map
+// editor's working copy) gets its scene at once, without running Ember.
 //
 // Cooker check-scene-builder compares the result with export_scene.ts's scene for every campaign map.
 
@@ -19,7 +19,7 @@
 #include "world/Board.h"
 #include "world/SceneData.h"
 
-namespace ember::e2 {
+namespace ember {
 
 struct FootOffset {
   int dx = 0, dy = 0;
@@ -83,6 +83,6 @@ SceneData buildScene(const Board& board, const EditorCatalog& catalog, std::map<
 // Cooker check-scene-builder: the C++ scene of each map against export_scene.ts's (scene file per map, same stem).
 // Returns the number of differences.
 int checkSceneBuilder(const BoardData& data, const EditorCatalog& catalog, const std::vector<std::filesystem::path>& maps,
-                      const std::filesystem::path& scenes, const std::filesystem::path& engine2Public);
+                      const std::filesystem::path& scenes, const std::filesystem::path& artRoot);
 
-}  // namespace ember::e2
+}  // namespace ember

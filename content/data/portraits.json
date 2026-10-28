@@ -1,0 +1,372 @@
+{
+ "source": "Ember src/game/assets.ts portraitFor + DialogOverlay.tsx speakerPortraits via tools/scripts/data/export_portraits.ts",
+ "speakers": {
+  "kael": "kaelFinal",
+  "neera": "neera",
+  "voss": "voss",
+  "salazar": "salazar",
+  "aldric": "aldric",
+  "malrec": "malrec",
+  "brue": "brue",
+  "o mudo": "mudinho",
+  "a hospede": "mothKeeper",
+  "mercador itinerante": "travelingMerchant",
+  "isolde": "isolde-veo",
+  "selene": "selene",
+  "salazar jovem": "salazar-jovem"
+ },
+ "vargan": {
+  "src": "/game/portraits/vargan.png",
+  "framed": true
+ },
+ "sprites": {
+  "Asherah": {
+   "src": "/game/portraits/sprites/Asherah.png?v=1",
+   "framed": true
+  },
+  "BaseCrossbowman": {
+   "src": "/game/portraits/sprites/BaseCrossbowman.png?v=1",
+   "framed": true
+  },
+  "BasePikeman": {
+   "src": "/game/portraits/sprites/BasePikeman.png?v=1",
+   "framed": true
+  },
+  "BirolhoLegs": {
+   "src": "/game/portraits/sprites/BirolhoLegs.png?v=1",
+   "framed": true
+  },
+  "BirolhoLegs2": {
+   "src": "/game/portraits/sprites/BirolhoLegs2.png?v=1",
+   "framed": true
+  },
+  "BossVoss": {
+   "src": "/game/portraits/voss.png",
+   "framed": true
+  },
+  "BrigandCrossbowman": {
+   "src": "/game/portraits/sprites/BrigandCrossbowman.png?v=1",
+   "framed": true
+  },
+  "EmberedWraith": {
+   "src": "/game/portraits/sprites/EmberedWraith.png?v=1",
+   "framed": true
+  },
+  "RoccoTheBird": {
+   "src": "/game/portraits/sprites/RoccoTheBird.png?v=1",
+   "framed": true
+  },
+  "StagWolf": {
+   "src": "/game/portraits/sprites/StagWolf.png?v=1",
+   "framed": true
+  },
+  "aldric": {
+   "src": "/game/portraits/aldric-profile-001.jpg?v=3",
+   "framed": true
+  },
+  "ancient-golem": {
+   "src": "/game/portraits/sprites/ancient-golem.png?v=1",
+   "framed": true
+  },
+  "apparition": {
+   "src": "/game/portraits/sprites/apparition.png?v=1",
+   "framed": true
+  },
+  "archerRecruit": {
+   "src": "/game/sprites/archerRecruit/1.png",
+   "framed": false
+  },
+  "beberrao": {
+   "src": "/game/portraits/c471772d-7d79-46bf-be64-77a6b662b929.jpg",
+   "framed": true
+  },
+  "bellCollector": {
+   "src": "/game/sprites/bellCollector/1.png",
+   "framed": false
+  },
+  "big-blue-ox-002": {
+   "src": "/game/portraits/sprites/big-blue-ox-002.png?v=1",
+   "framed": true
+  },
+  "birolho": {
+   "src": "/game/portraits/sprites/birolho.png?v=1",
+   "framed": true
+  },
+  "birolho2": {
+   "src": "/game/portraits/sprites/birolho2.png?v=1",
+   "framed": true
+  },
+  "birolho3": {
+   "src": "/game/portraits/sprites/birolho3.png?v=1",
+   "framed": true
+  },
+  "breadLady": {
+   "src": "/game/portraits/738c99c0-0bfa-472c-ab94-d16b91d2b2d8.jpg",
+   "framed": true
+  },
+  "brigand": {
+   "src": "/game/portraits/sprites/brigand.png?v=1",
+   "framed": true
+  },
+  "brue": {
+   "src": "/game/portraits/brue.png",
+   "framed": true
+  },
+  "captain": {
+   "src": "/game/portraits/sprites/captain.png?v=1",
+   "framed": true
+  },
+  "carnivorous-plant-001": {
+   "src": "/game/portraits/sprites/carnivorous-plant-001.png?v=1",
+   "framed": true
+  },
+  "charcoalBurner": {
+   "src": "/game/sprites/charcoalBurner/1.png",
+   "framed": false
+  },
+  "cobalt-blue-deer": {
+   "src": "/game/portraits/sprites/cobalt-blue-deer.png?v=1",
+   "framed": true
+  },
+  "conjurer": {
+   "src": "/game/portraits/conjurer-002.png?v=2",
+   "framed": true
+  },
+  "crazyLady": {
+   "src": "/game/portraits/porao.png",
+   "framed": true
+  },
+  "cultist-v2": {
+   "src": "/game/portraits/sprites/cultist-v2.png?v=1",
+   "framed": true
+  },
+  "defaultWarrior": {
+   "src": "/game/portraits/kael.png?v=2",
+   "framed": true
+  },
+  "familiar": {
+   "src": "/game/portraits/familiar1-profile.png?v=4",
+   "framed": true
+  },
+  "familiar2": {
+   "src": "/game/sprites/familiar2/1.png",
+   "framed": false
+  },
+  "familiar3": {
+   "src": "/game/portraits/familiar3-profile.jpeg?v=3",
+   "framed": true
+  },
+  "familiar4": {
+   "src": "/game/sprites/familiar4/1.png",
+   "framed": false
+  },
+  "healerRecruit": {
+   "src": "/game/sprites/healerRecruit/1.png",
+   "framed": false
+  },
+  "horror": {
+   "src": "/game/portraits/sprites/horror.png?v=1",
+   "framed": true
+  },
+  "jacare": {
+   "src": "/game/portraits/sprites/jacare.png?v=1",
+   "framed": true
+  },
+  "kaelEarly": {
+   "src": "/game/sprites/kaelEarly/1.png",
+   "framed": false
+  },
+  "kaelFinal": {
+   "src": "/game/portraits/kael-final-face-001.jpg?v=1",
+   "framed": true
+  },
+  "lancer": {
+   "src": "/game/sprites/lancer/1.png",
+   "framed": false
+  },
+  "lostCourier": {
+   "src": "/game/sprites/lostCourier/1.png",
+   "framed": false
+  },
+  "mageRecruit": {
+   "src": "/game/sprites/mageRecruit/1.png",
+   "framed": false
+  },
+  "malrec": {
+   "src": "/game/portraits/conjurer-002.png?v=2",
+   "framed": true
+  },
+  "marshTrapper": {
+   "src": "/game/sprites/marshTrapper/1.png",
+   "framed": false
+  },
+  "militia-v2": {
+   "src": "/game/portraits/sprites/militia-v2.png?v=1",
+   "framed": true
+  },
+  "minor-horror-001": {
+   "src": "/game/portraits/sprites/minor-horror-001.png?v=1",
+   "framed": true
+  },
+  "mordavian-wolf": {
+   "src": "/game/portraits/sprites/mordavian-wolf.png?v=1",
+   "framed": true
+  },
+  "mordavian-wolf-final": {
+   "src": "/game/portraits/sprites/mordavian-wolf-final.png?v=1",
+   "framed": true
+  },
+  "morvenian-wolf": {
+   "src": "/game/portraits/sprites/morvenian-wolf.png?v=1",
+   "framed": true
+  },
+  "mothKeeper": {
+   "src": "/game/sprites/mothKeeper/1.png",
+   "framed": false
+  },
+  "mudinho": {
+   "src": "/game/portraits/mudo.png",
+   "framed": true
+  },
+  "mushroomForager": {
+   "src": "/game/sprites/mushroomForager/1.png",
+   "framed": false
+  },
+  "neera": {
+   "src": "/game/portraits/NeeraProperSide-profile.jpg",
+   "framed": true
+  },
+  "oldHealer": {
+   "src": "/game/portraits/29ef0f7e-4b87-4c0d-a55f-f16fb5a6a1ea.jpg",
+   "framed": true
+  },
+  "peasant1": {
+   "src": "/game/portraits/d8def2e7-59bb-42cc-8a8e-36c7df1c22fb.jpg",
+   "framed": true
+  },
+  "pikeman": {
+   "src": "/game/portraits/sprites/pikeman.png?v=1",
+   "framed": true
+  },
+  "plague-bearing-cattle": {
+   "src": "/game/portraits/sprites/plague-bearing-cattle.png?v=1",
+   "framed": true
+  },
+  "punisher": {
+   "src": "/game/portraits/sprites/punisher.png?v=1",
+   "framed": true
+  },
+  "ratCatcher": {
+   "src": "/game/sprites/ratCatcher/1.png",
+   "framed": false
+  },
+  "roadCartographer": {
+   "src": "/game/sprites/roadCartographer/1.png",
+   "framed": false
+  },
+  "salazar": {
+   "src": "/game/portraits/salazar-v2-bust.jpg?v=2",
+   "framed": true
+  },
+  "sandoval": {
+   "src": "/game/portraits/sandoval-001.jpg?v=1",
+   "framed": true
+  },
+  "sapling-001": {
+   "src": "/game/portraits/sprites/sapling-001.png?v=1",
+   "framed": true
+  },
+  "shadowScholar": {
+   "src": "/game/sprites/shadowScholar/1.png",
+   "framed": false
+  },
+  "shadyPatron": {
+   "src": "/game/portraits/1beca9c9-789c-4b44-8930-c53b88c982ac.jpg",
+   "framed": true
+  },
+  "soldier": {
+   "src": "/game/portraits/sprites/soldier.png?v=1",
+   "framed": true
+  },
+  "sorcerer": {
+   "src": "/game/portraits/sprites/sorcerer.png?v=1",
+   "framed": true
+  },
+  "soupLady": {
+   "src": "/game/portraits/101b6fe6-9fc2-4416-b8c7-642d3699c4f4.jpg",
+   "framed": true
+  },
+  "swampFerryman": {
+   "src": "/game/sprites/swampFerryman/1.png",
+   "framed": false
+  },
+  "theButcher": {
+   "src": "/game/portraits/the-butcher-portrait-001.jpg?v=1",
+   "framed": true
+  },
+  "travelingMerchant": {
+   "src": "/game/portraits/traveling-merchant.png",
+   "framed": false
+  },
+  "troll": {
+   "src": "/game/portraits/sprites/troll.png?v=1",
+   "framed": true
+  },
+  "troll2": {
+   "src": "/game/portraits/sprites/troll2.png?v=1",
+   "framed": true
+  },
+  "undeadOx": {
+   "src": "/game/portraits/sprites/undeadOx.png?v=1",
+   "framed": true
+  },
+  "villagerF1": {
+   "src": "/game/portraits/1d7928dc-3fec-4d11-92d3-bd7a2d1637fb.jpg",
+   "framed": true
+  },
+  "voss": {
+   "src": "/game/portraits/voss-v2-bust.jpg?v=1",
+   "framed": true
+  },
+  "wanderingTinker": {
+   "src": "/game/sprites/wanderingTinker/1.png",
+   "framed": false
+  },
+  "wardog": {
+   "src": "/game/portraits/sprites/wardog.png?v=1",
+   "framed": true
+  },
+  "wardog2": {
+   "src": "/game/portraits/sprites/wardog2.png?v=1",
+   "framed": true
+  },
+  "woodsman": {
+   "src": "/game/portraits/9c0b071f-d203-4ef3-9c46-e4dac49dd975.jpg",
+   "framed": true
+  },
+  "zombie": {
+   "src": "/game/portraits/sprites/zombie.png?v=1",
+   "framed": true
+  },
+  "zombie2": {
+   "src": "/game/portraits/sprites/zombie2.png?v=1",
+   "framed": true
+  },
+  "zombieDog": {
+   "src": "/game/sprites/zombieDog/1.png",
+   "framed": false
+  },
+  "isolde-veo": {
+   "src": "/game/portraits/isolde-bust-v03.jpg",
+   "framed": true
+  },
+  "selene": {
+   "src": "/game/portraits/selene-bust-v03.jpg",
+   "framed": true
+  },
+  "salazar-jovem": {
+   "src": "/game/portraits/salazar-jovem-bust-v03.jpg",
+   "framed": true
+  }
+ }
+}

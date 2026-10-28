@@ -89,7 +89,7 @@ float airShadow(MeshFrame f, float3 p) {
   return lit;
 }
 
-// Local lights scattered towards the camera at p (the light cluster p falls in; Engine2's falloff).
+// Local lights scattered towards the camera at p (the light cluster p falls in; Ember's falloff).
 float3 airLocalLights(MeshFrame f, float3 p, float3 toCamera, float g) {
   if ((f.lightingLayers & kLayerLocal) == 0 || f.lightCount == 0) return 0.0;
   const float4 clip = mul(float4(p, 1.0), f.viewProjection);

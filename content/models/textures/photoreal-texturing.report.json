@@ -473,8 +473,8 @@
       "status": "ok"
     },
     {
-      "source": "content/game/public/game/models/rocks/grey-outcrop.glb",
-      "glb": "content/game/public/game/models/rocks/grey-outcrop-photo.glb",
+      "source": "content/assets/game/models/rocks/grey-outcrop.glb",
+      "glb": "content/assets/game/models/rocks/grey-outcrop-photo.glb",
       "materials_textured": [
         "Grey granite game material"
       ],
@@ -483,8 +483,8 @@
       "status": "ok"
     },
     {
-      "source": "content/game/public/game/models/trees/broadleaf.glb",
-      "glb": "content/game/public/game/models/trees/broadleaf-photo.glb",
+      "source": "content/assets/game/models/trees/broadleaf.glb",
+      "glb": "content/assets/game/models/trees/broadleaf-photo.glb",
       "materials_textured": [
         "Leaf | natural green 0",
         "Leaf | natural green 1",
@@ -498,8 +498,8 @@
       "status": "ok"
     },
     {
-      "source": "content/game/public/game/models/trees/dead-oak.glb",
-      "glb": "content/game/public/game/models/trees/dead-oak-photo.glb",
+      "source": "content/assets/game/models/trees/dead-oak.glb",
+      "glb": "content/assets/game/models/trees/dead-oak-photo.glb",
       "materials_textured": [
         "Dead oak | gnarled trunk, roots, branches, moss | vertex bark"
       ],
@@ -508,8 +508,8 @@
       "status": "ok"
     },
     {
-      "source": "content/game/public/game/models/trees/dead-snag.glb",
-      "glb": "content/game/public/game/models/trees/dead-snag-photo.glb",
+      "source": "content/assets/game/models/trees/dead-snag.glb",
+      "glb": "content/assets/game/models/trees/dead-snag-photo.glb",
       "materials_textured": [
         "Dead snag | broken trunk, splintered top, limb stubs | vertex bark"
       ],
@@ -518,8 +518,8 @@
       "status": "ok"
     },
     {
-      "source": "content/game/public/game/models/trees/snowy-pine.glb",
-      "glb": "content/game/public/game/models/trees/snowy-pine-photo.glb",
+      "source": "content/assets/game/models/trees/snowy-pine.glb",
+      "glb": "content/assets/game/models/trees/snowy-pine-photo.glb",
       "materials_textured": [
         "Pine needles | green 0",
         "Pine needles | green 1",
@@ -533,8 +533,8 @@
       "status": "ok"
     },
     {
-      "source": "content/game/public/game/models/trees/twisted-stump.glb",
-      "glb": "content/game/public/game/models/trees/twisted-stump-photo.glb",
+      "source": "content/assets/game/models/trees/twisted-stump.glb",
+      "glb": "content/assets/game/models/trees/twisted-stump-photo.glb",
       "materials_textured": [
         "Twisted stump | hollow interior | vertex bark",
         "Twisted stump | hollow split trunk, roots, shelf mushrooms | vertex bark"

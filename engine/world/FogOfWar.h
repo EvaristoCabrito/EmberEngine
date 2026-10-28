@@ -1,9 +1,9 @@
 #pragma once
 
 // Ember's fog of war (ARCHITECTURE §7.0 R7).
-//   states  Engine2's (src/rules/fog.ts): never seen, remembered, in sight; remembered never falls back to
-//           never seen. Every living party unit is an eye with its own vision range (kSightRadius; Engine2's 7).
-//   sight   EmberEngine's own line of sight in the 3D board (Engine2's was never finished; the user,
+//   states  Ember's (src/rules/fog.ts): never seen, remembered, in sight; remembered never falls back to
+//           never seen. Every living party unit is an eye with its own vision range (kSightRadius; Ember's 7).
+//   sight   EmberEngine's own line of sight in the 3D board (Ember's was never finished; the user,
 //           2026-10-14: occlusion-based). A ray from the eye (kEyeHeight above its hex) to a point
 //           kTargetHeight above the target hex's ground; a hex the ray passes whose top (ground + whatever
 //           stands on it: buildings, trees, tall cards) rises above the ray blocks it. The blocker itself is
@@ -14,7 +14,7 @@
 //           sight is in sight too: nothing hides alone in the middle of open ground (the user, 2026-10-15);
 //           an enclosed group of up to 3 never-seen hexes with only explored neighbours counts as seen
 //           (in sight if they all are, remembered otherwise).
-//   mask    Engine2's look (src/render/fogOfWar.ts + battleAtmosphere3d.ts syncFog): per-texel darkness
+//   mask    Ember's look (src/render/fogOfWar.ts + battleAtmosphere3d.ts syncFog): per-texel darkness
 //           (never seen = 1, remembered = 0.6, in sight = 0), feathered only inside remembered hexes, and
 //           never any fog within one hex of a party unit.
 // The renderer reads the mask as tactical visibility (shaders/lighting.hlsli tacticalSight); every light,
@@ -26,15 +26,15 @@
 
 #include "world/Board.h"
 
-namespace ember::e2 {
+namespace ember {
 
 inline constexpr uint8_t kFogUnseen = 0, kFogExplored = 1, kFogVisible = 2;
-inline constexpr int kSightRadius = 12;           // the user, 2026-10-18: 9 (Engine2's SIGHT_RADIUS 7), then 12 ("aumentar o line of sight")
+inline constexpr int kSightRadius = 12;           // the user, 2026-10-18: 9 (Ember's SIGHT_RADIUS 7), then 12 ("aumentar o line of sight")
 // Ground the party has left stays drawn as in sight for this long, then darkens to remembered (the user, 2026-10-18: "a
 // área que o grupo deixou continua clara como vista por 3 minutos, depois escurece"). The look only: what the party sees
 // (enemies drawn, combat starting, aims) is still the sight of this moment.
 inline constexpr double kLingerSeconds = 180.0;
-inline constexpr float kExploredAlpha = 0.6f;      // Engine2 EXPLORED_ALPHA (darkness over remembered ground)
+inline constexpr float kExploredAlpha = 0.6f;      // Ember EXPLORED_ALPHA (darkness over remembered ground)
 inline constexpr float kEyeHeight = 1.6f;          // eyes above their hex's ground (world units = hex radii)
 inline constexpr float kTargetHeight = 0.8f;       // a hex is seen when a body standing there is (half its height)
 inline constexpr float kBlockHeight = 1.2f;        // a standing card at least this tall blocks sight ...
@@ -45,7 +45,7 @@ struct HexPoint {
   bool operator==(const HexPoint&) const = default;
 };
 
-// Engine2's odd-r hex distance and hex line (src/rules/pathfinding.ts).
+// Ember's odd-r hex distance and hex line (src/rules/pathfinding.ts).
 int hexDistance(HexPoint a, HexPoint b);
 std::vector<HexPoint> hexLine(HexPoint a, HexPoint b);
 
@@ -79,7 +79,7 @@ class FogOfWar {
   // What was visible becomes remembered, then every hex within an eye's radius that it can see is visible.
   void relight(std::span<const Eye> eyes);
   uint8_t state(int c, int r) const { return cells_[static_cast<size_t>(indexOf(layout_, c, r))]; }
-  // A resumed fight's explored hexes (Engine2 restoreExplored): each marked seen comes back explored; what is in sight
+  // A resumed fight's explored hexes (Ember restoreExplored): each marked seen comes back explored; what is in sight
   // falls out of the next relight.
   void restoreExplored(const std::vector<uint8_t>& seen) {
     for (size_t i = 0; i < cells_.size() && i < seen.size(); ++i)
@@ -93,7 +93,7 @@ class FogOfWar {
   // Bumped by every relight: the mask (and the shadows that read it) must be redrawn.
   uint64_t version() const { return version_; }
 
-  // Engine2's mask for the current states; `party` are the hexes the party stands on (clear within one hex). Remembered
+  // Ember's mask for the current states; `party` are the hexes the party stands on (clear within one hex). Remembered
   // hexes still inside their kLingerSeconds are painted as in sight.
   FogMask paint(const Board& board, std::span<const HexPoint> party) const;
   // The states the mask is painted from (paint's first step): in sight, plus remembered ground still inside its linger, plus the hexes
@@ -114,4 +114,4 @@ class FogOfWar {
   uint64_t version_ = 0;
 };
 
-}  // namespace ember::e2
+}  // namespace ember

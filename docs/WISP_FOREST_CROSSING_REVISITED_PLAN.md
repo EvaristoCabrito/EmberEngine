@@ -26,7 +26,7 @@
 
 - As texturas fotográficas de folhas mortas, solo enraizado e cinza foram reutilizadas do kit Wisp Forest Revisited. Seus mapas normal/roughness foram registrados para `plains` em chaves próprias; os assets de `woods` continuam iguais.
 - Variantes aplicadas em `015`: 647 células `plains` com folhas, 111 com raízes e 18 com cinza; 79 células `woods` com folhas e 33 com raízes.
-- `content/engine2/board.json` contém 46 layers e corresponde ao export do Engine2. O cooker exportou 213 cards, 12 modelos 3D e 33 unidades, sem itens ignorados.
+- `content/data/board.json` contém 46 layers e corresponde ao export do Engine2. O cooker exportou 213 cards, 12 modelos 3D e 33 unidades, sem itens ignorados.
 - `build/ground/wisp-crossing-revisited-ground-v01.pak` cozinhou 248 texturas sem falhas. Os meshes v02 reutilizam `build/meshes/wisp-forest-revisited-v02.pak`, que já contém as nove árvores v02 e os três props.
 
 ## Captura e validação pendente
@@ -39,4 +39,4 @@ A prévia de composição da revisão 017 foi renderizada offline no Blender e c
 - Variantes de superfície: `tools/scripts/maps/apply_wisp_crossing_surface_variants.py`
 - Prévia Blender: `tools/scripts/models/render_wisp_crossing_preview.py`
 - Mapa ligado à campanha: `content/maps/ember/wisp-forest-crossing017.json`
-- Campanha: `content/engine2/campaign.json`
+- Campanha: `content/data/campaign.json`

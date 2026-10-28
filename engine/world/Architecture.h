@@ -1,13 +1,13 @@
 #pragma once
 
 // Ember's 3D architecture (model3d wall / doorway / door / secretDoor: plain and thick walls, arched doorways and doors,
-// castle walls, towers and gates, temple facades, rock walls, the timber and dungeon reference doors), built as Engine2
+// castle walls, towers and gates, temple facades, rock walls, the timber and dungeon reference doors), built as Ember
 // builds it: Ember's createWallGeometry (src/game/gfx/three/ThreeWalls.ts + ThreeCastle / ThreeTemple / ThreeRocks /
-// ThreeReferenceDoors) in its physical form, placed by Engine2's decor.ts addArchitecture (square-grid cells, joins to
+// ThreeReferenceDoors) in its physical form, placed by Ember's decor.ts addArchitecture (square-grid cells, joins to
 // the neighbouring architecture, a human-sized height, the piece stood on the ground). Y up, rows along +Z, like the
 // board.
 //
-// Cooker check-architecture compares every piece's solid with Engine2's own (export_architecture_refs.ts).
+// Cooker check-architecture compares every piece's solid with Ember's own (export_architecture_refs.ts).
 
 #include <filesystem>
 #include <map>
@@ -19,9 +19,9 @@
 
 #include "world/ThreeGeometry.h"
 
-namespace ember::e2 {
+namespace ember {
 
-// The DecorationDef fields the builders read (content/engine2/editor-catalog.json "editor"."architectureDefs").
+// The DecorationDef fields the builders read (content/data/editor-catalog.json "editor"."architectureDefs").
 struct ArchitectureDef {
   std::string id, model3d;
   double heightScale = 1, wallThicknessScale = 1;
@@ -123,4 +123,4 @@ three::Geometry pieceGeometry(const ArchitectureDef& def, int rotation, const st
 // Cooker check-architecture: every reference case (export_architecture_refs.ts) built here. Returns the differences.
 int checkArchitecture(const std::filesystem::path& refs, const ArchitectureDefs& defs);
 
-}  // namespace ember::e2
+}  // namespace ember

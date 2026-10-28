@@ -1,11 +1,11 @@
 """A test draft for the gothic parapet kit: thebridge023 with its parapet cards replaced by runs of the 3D pieces on the two
 parapet rows (pilaster, window, guardian, window, every four hexes), plus a short free-standing L at the west end to show a corner
-and a run end. Written to build/engine2-test/maps/thebridge-gothic.json (the test pipeline runs on it); content/ untouched."""
+and a run end. Written to build/test-maps/maps/thebridge-gothic.json (the test pipeline runs on it); content/ untouched."""
 import json
 import sys
 
 src = 'C:/EmberEngine/content/maps/ember/thebridge023.json'
-out = 'C:/EmberEngine/build/engine2-test/maps/thebridge-gothic-src.json'
+out = 'C:/EmberEngine/build/test-maps/maps/thebridge-gothic-src.json'
 doc = json.load(open(src, encoding='utf-8'))
 d = doc['draft']
 d['id'] = 'thebridge-gothic'

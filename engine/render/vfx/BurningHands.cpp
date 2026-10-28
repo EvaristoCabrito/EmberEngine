@@ -50,7 +50,7 @@ BurningHands::BurningHands(glm::vec3 origin, const std::vector<glm::vec3>& cells
   settings_.flowDirection = {direction_.x, direction_.y, 0.0f};
   settings_.flowSpeed = 3.5f;
   settings_.flowSpread = std::min(1.0f, std::atan2(width_ * 0.5f, length_) * 1.5f);
-  // seedFor("spray", 0), with Engine2's cast id "burning-hands-v2-1" (18 characters).
+  // seedFor("spray", 0), with Ember's cast id "burning-hands-v2-1" (18 characters).
   const uint32_t baseSeed = static_cast<uint32_t>((static_cast<uint64_t>(kTongueCount) * 2654435761ull + 18ull * 2246822519ull) & 0xFFFFFFFFull);
   const uint32_t seed = baseSeed ^ 0x85ebca6bu ^ (1u * 0x27d4eb2fu);
   emitter_.setSeed(seed ? seed : 1u);
@@ -89,7 +89,7 @@ void BurningHands::build(float now, const Camera&, const VfxFlipbook& sheet, Vfx
   advance(t);
   const glm::mat4 group = vfxEmberToWorld() * glm::translate(glm::mat4(1.0f), origin_);
   const glm::vec3 sight = vfxFromEmber(origin_);
-  // The emitter's mesh: 0.2 above the hands, scale 1; NormalBlending, no depth test (Engine2's particle material).
+  // The emitter's mesh: 0.2 above the hands, scale 1; NormalBlending, no depth test (Ember's particle material).
   // Version 2 simulates in the world frame (y up), at the hands 0.2 above the caster's point.
   const glm::mat4 model = version_ == 2 ? glm::translate(glm::mat4(1.0f), vfxFromEmber(origin_) + glm::vec3(0.0f, 0.2f, 0.0f))
                                         : group * glm::translate(glm::mat4(1.0f), {0.0f, 0.0f, 0.2f});

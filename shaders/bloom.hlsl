@@ -1,4 +1,4 @@
-// Engine2's bloom (UnrealBloomPass: threshold 0.75, radius 0.3, strength = the map's bloomIntensity) as a mip pyramid:
+// Ember's bloom (UnrealBloomPass: threshold 0.75, radius 0.3, strength = the map's bloomIntensity) as a mip pyramid:
 // what clears the threshold is brought down five levels (13-tap filter; the first level with a Karis average so a
 // small, very bright flame does not shimmer), then built back up with a 3x3 tent, each level adding its own weight. The
 // result in level 0 is smooth at every size: the old tonemap-side gather picked the light up in three sparse rings and a

@@ -4,7 +4,7 @@ O kit `ember-arch-inn-*` (content/models/architecture.json, geometria em engine/
 quatro texturas. Até elas chegarem, o jogo usa: reboco = cor chapada cinza (0x8b8b86), vigas = a foto `madeiraescura` da Torre,
 porta = a foto `door-oak` da Torre, vidro = verde-acinzentado chapado. Quando os arquivos existirem com estes nomes, as entradas
 `innTimber`, `innDoor`, `glass` e o `wallTexture` das peças `inn-*` em architecture.json passam a apontar para eles e o
-`build/meshes/architecture.pak` é cozinhado de novo (`Cooker architecture content/engine2/editor-catalog.json C:/Engine2/public
+`build/meshes/architecture.pak` é cozinhado de novo (`Cooker architecture content/data/editor-catalog.json C:/Engine2/public
 build/meshes/architecture.pak`).
 
 Entregar em `Attachments/inn/` com estes nomes (JPG, qualidade máxima). Como cada uma é mapeada:

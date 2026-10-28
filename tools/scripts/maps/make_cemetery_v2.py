@@ -35,7 +35,7 @@ SERIAL = 8
 TOMB_VERSIONS = {'ember-crypt-sarcophagus-broken-lid': 'ember-crypt-sarcophagus-broken-lid-v02', 'ember-crypt-stone-tomb': 'ember-crypt-stone-tomb-v02',
                  'ember-crypt-sarcophagus': 'ember-crypt-sarcophagus-v02', 'ember-crypt-ancient-tombstone': 'ember-crypt-ancient-tombstone-v02',
                  'ember-extra-grave-marker': 'ember-extra-grave-marker-v03'}
-CATALOG = 'content/engine2/editor-catalog.json'
+CATALOG = 'content/data/editor-catalog.json'
 
 COLS, ROWS = 60, 48
 SQ3 = math.sqrt(3.0)

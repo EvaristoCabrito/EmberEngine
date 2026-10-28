@@ -101,11 +101,11 @@ void BoardGround::texture(const std::string& asset) {
   }
 }
 
-bool BoardGround::build(const e2::Board& board) {
-  const e2::BoardData& data = board.data();
+bool BoardGround::build(const ember::Board& board) {
+  const ember::BoardData& data = board.data();
   // The palette: the baked layers this map's cells use, in layer order.
   std::vector<int> palette;
-  for (const e2::Cell& c : board.cells())
+  for (const ember::Cell& c : board.cells())
     if (c.ground >= 0 && std::find(palette.begin(), palette.end(), c.ground) == palette.end()) palette.push_back(c.ground);
   std::sort(palette.begin(), palette.end());
   if (palette.size() > kTerrainPaletteSize) {
@@ -128,24 +128,24 @@ bool BoardGround::build(const e2::Board& board) {
   {
     const std::string& set = board.draft().emberTiles;
     if (const auto side = data.emberGroundLayer.find((set.empty() ? board.draft().id : set) + "|side"); side != data.emberGroundLayer.end())
-      sideAsset = e2::groundLayerAsset(data.groundLayers[side->second].key, "color");
+      sideAsset = ember::groundLayerAsset(data.groundLayers[side->second].key, "color");
   }
-  for (size_t k = 0; k < 9; ++k) want(!sideAsset.empty() && (k == 7 || k == 8) ? sideAsset : e2::groundProtoAsset(kProto[k]), protoWord + k);
-  want(e2::groundPlains049Asset("color"), offsetof(TerrainGpu, plains049Color) / 4);
-  want(e2::groundPlains049Asset("rough"), offsetof(TerrainGpu, plains049Rough) / 4);
+  for (size_t k = 0; k < 9; ++k) want(!sideAsset.empty() && (k == 7 || k == 8) ? sideAsset : ember::groundProtoAsset(kProto[k]), protoWord + k);
+  want(ember::groundPlains049Asset("color"), offsetof(TerrainGpu, plains049Color) / 4);
+  want(ember::groundPlains049Asset("rough"), offsetof(TerrainGpu, plains049Rough) / 4);
   for (size_t k = 0; k < palette.size(); ++k) {
-    const e2::GroundLayerSource& layer = data.groundLayers[palette[k]];
-    if (layer.absent) continue;  // Engine2: this set has no such layer; the procedural ground stays
+    const ember::GroundLayerSource& layer = data.groundLayers[palette[k]];
+    if (layer.absent) continue;  // Ember: this set has no such layer; the procedural ground stays
     record_.layerTile[k] = layer.tile;
-    want(e2::groundLayerAsset(layer.key, "color"), offsetof(TerrainGpu, layerColor) / 4 + k);
-    want(e2::groundLayerAsset(layer.key, "color"), offsetof(TerrainGpu, layerHas) / 4 + k);  // 1 once resident
-    if (!layer.normal.empty()) want(e2::groundLayerAsset(layer.key, "normal"), offsetof(TerrainGpu, layerNormal) / 4 + k);
-    if (!layer.rough.empty()) want(e2::groundLayerAsset(layer.key, "rough"), offsetof(TerrainGpu, layerRough) / 4 + k);
+    want(ember::groundLayerAsset(layer.key, "color"), offsetof(TerrainGpu, layerColor) / 4 + k);
+    want(ember::groundLayerAsset(layer.key, "color"), offsetof(TerrainGpu, layerHas) / 4 + k);  // 1 once resident
+    if (!layer.normal.empty()) want(ember::groundLayerAsset(layer.key, "normal"), offsetof(TerrainGpu, layerNormal) / 4 + k);
+    if (!layer.rough.empty()) want(ember::groundLayerAsset(layer.key, "rough"), offsetof(TerrainGpu, layerRough) / 4 + k);
   }
   stats_.textures = static_cast<uint32_t>(textures_.size());
 
   // Geometry, every look.
-  e2::GroundGeometry looks[3] = {e2::buildSmoothGround(board), e2::buildHardGround(board), e2::buildTabletopGround(board)};
+  ember::GroundGeometry looks[3] = {ember::buildSmoothGround(board), ember::buildHardGround(board), ember::buildTabletopGround(board)};
   // The smooth look's cut edge is only a thin lip (0.35 under its ground): under raised ground the board showed huge holes (the
   // user, 2026-10-19: "quero que o cenário não tenha esses buracos enormes na elevações, pode preencher tudo?"). Its sides go down
   // to the lowest ground's lip, where the map's ground plane lies (MapStage). The hard and tabletop walls already reach the base.
@@ -155,9 +155,9 @@ bool BoardGround::build(const e2::Board& board) {
   if (!board.draft().emberNoSides) {  // a suspended board (the bridge, MapDraft::emberNoSides) stands with no side walls
     double low = 0;
     bool any = false;
-    for (const e2::Cell& c : board.cells()) low = any ? std::min(low, c.groundY) : c.groundY, any = true;
+    for (const ember::Cell& c : board.cells()) low = any ? std::min(low, c.groundY) : c.groundY, any = true;
     wallFrom = static_cast<uint32_t>(looks[0].vertexCount());
-    e2::closeBoardSides(looks[0], low - 0.35);
+    ember::closeBoardSides(looks[0], low - 0.35);
     if (looks[0].vertexCount() == wallFrom) wallFrom = 0;
   }
   // The walls take no light and no shadow of their own (the user, 2026-10-23: "esse sombreado nas bordas do tabuleiro tem que acabar,
@@ -177,7 +177,7 @@ bool BoardGround::build(const e2::Board& board) {
   // Water, both looks (its sheet follows each look's shore).
   const VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
   for (int i = 0; i < 2; ++i) {
-    const e2::WaterGeometry g = e2::buildWater(board, i == 0 ? e2::EdgeStyle::Smooth : e2::EdgeStyle::Hard);
+    const ember::WaterGeometry g = ember::buildWater(board, i == 0 ? ember::EdgeStyle::Smooth : ember::EdgeStyle::Hard);
     if (g.indices.empty()) continue;
     Water& w = water_[i];
     w.vertices.resize(g.positions.size() / 3);
@@ -188,18 +188,18 @@ bool BoardGround::build(const e2::Board& board) {
     // The triangles grouped by their tile's look (waterLookOfVariant): a water tile its own, a bank beside water the look of
     // the water next to it, so each group draws in one go.
     std::vector<uint32_t> grouped[4];
-    const e2::HexLayout& layout = board.layout();
-    auto lookOf = [&](const e2::Cell& c) { return waterLookOfVariant(board.draft().variant(c.i)); };
+    const ember::HexLayout& layout = board.layout();
+    auto lookOf = [&](const ember::Cell& c) { return waterLookOfVariant(board.draft().variant(c.i)); };
     for (size_t t = 0; t + 2 < g.indices.size(); t += 3) {
       float x = 0.0f, z = 0.0f;
       for (int k = 0; k < 3; ++k) x += g.positions[g.indices[t + k] * 3] / 3.0f, z += g.positions[g.indices[t + k] * 3 + 2] / 3.0f;
-      const e2::Cell& cell = board.cellAt(x, z);
+      const ember::Cell& cell = board.cellAt(x, z);
       uint32_t look = kWaterDefaultLook;
       if (cell.water) {
         look = lookOf(cell);
       } else {  // a bank: the look of the first water hex beside it
-        for (const auto& [nc, nr] : e2::neighbors(layout, cell.c, cell.r))
-          if (const e2::Cell& n = board.cell(nc, nr); n.water) {
+        for (const auto& [nc, nr] : ember::neighbors(layout, cell.c, cell.r))
+          if (const ember::Cell& n = board.cell(nc, nr); n.water) {
             look = lookOf(n);
             break;
           }
@@ -227,24 +227,24 @@ bool BoardGround::build(const e2::Board& board) {
   return true;
 }
 
-// Ember's 3D water: Engine2's sheet (world/Water3D, in its battle board's tile frame) moved onto this board. Engine2's
+// Ember's 3D water: Ember's sheet (world/Water3D, in its battle board's tile frame) moved onto this board. Ember's
 // battle ground rises 1.5 tile per level, this one 1 (kStep): heights are divided by 1.5, the ground's depth under
-// the water multiplied back. Its textures (public/game/textures/water*/water-*.png) are not in Engine2's repository:
+// the water multiplied back. Its textures (public/game/textures/water*/water-*.png) are not in Ember's repository:
 // the ground pack's own water layer (ground-claude/water) stands in.
-void BoardGround::buildWater3D(const e2::Board& board) {
-  const e2::Water3DMap& map = board.draft().water3d;
+void BoardGround::buildWater3D(const ember::Board& board) {
+  const ember::Water3DMap& map = board.draft().water3d;
   if (!map.any()) return;
-  const e2::HexLayout& L = board.layout();
-  const double base = board.baseLevels() * e2::kStep;
-  const double toX = -e2::kSqrt3 * 0.5 - L.ox, toZ = -3.4 - L.oz;  // Engine2 board (x, y) -> this world (x, z)
+  const ember::HexLayout& L = board.layout();
+  const double base = board.baseLevels() * ember::kStep;
+  const double toX = -ember::kSqrt3 * 0.5 - L.ox, toZ = -3.4 - L.oz;  // Ember board (x, y) -> this world (x, z)
   const VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
   for (int i = 0; i < 2; ++i) {
-    const e2::EdgeStyle style = i == 0 ? e2::EdgeStyle::Smooth : e2::EdgeStyle::Hard;
-    // landscape.heightAt(x, -y) in Engine2's tiles
+    const ember::EdgeStyle style = i == 0 ? ember::EdgeStyle::Smooth : ember::EdgeStyle::Hard;
+    // landscape.heightAt(x, -y) in Ember's tiles
     const auto ground = [&](double x3, double y3) {
-      return (e2::groundHeightAt(board, style, x3 + toX, -y3 + toZ) - base) / e2::kStep * 1.5;
+      return (ember::groundHeightAt(board, style, x3 + toX, -y3 + toZ) - base) / ember::kStep * 1.5;
     };
-    const e2::Water3DSheet sheet = e2::buildWater3D(map, ground);
+    const ember::Water3DSheet sheet = ember::buildWater3D(map, ground);
     if (sheet.empty()) continue;
     Water3D& w = water3d_[i];
     w.vertices.resize(sheet.coverage.size());
@@ -252,7 +252,7 @@ void BoardGround::buildWater3D(const e2::Board& board) {
       Water3DVertexGpu& o = w.vertices[v];
       const float x3 = sheet.position[v * 3], y3 = sheet.position[v * 3 + 1], z3 = sheet.position[v * 3 + 2];
       o.position[0] = static_cast<float>(x3 + toX);
-      o.position[1] = static_cast<float>(base + z3 / 1.5 * e2::kStep);
+      o.position[1] = static_cast<float>(base + z3 / 1.5 * ember::kStep);
       o.position[2] = static_cast<float>(-y3 + toZ);
       o.coverage = sheet.coverage[v];
       o.depth = sheet.depth[v];
@@ -276,7 +276,7 @@ void BoardGround::buildWater3D(const e2::Board& board) {
     logInfo("3D water ({}): {} vertices, {} triangles, {} covered points above the ground", i == 0 ? "smooth" : "hard", w.vertices.size(),
             w.indices.size() / 3, above);
   }
-  for (const char* role : {"color", "normal", "rough"}) texture(e2::groundLayerAsset("water", role));
+  for (const char* role : {"color", "normal", "rough"}) texture(ember::groundLayerAsset("water", role));
   stats_.textures = static_cast<uint32_t>(textures_.size());
   // ThreeWater.setVersion's numbers (colours are sRGB hex)
   const std::string& v = map.version;
@@ -294,20 +294,20 @@ void BoardGround::buildWater3D(const e2::Board& board) {
   water3dMaterial_.repeat = v3 ? 0.5f : v4 ? 0.75f : 1.0f;
 }
 
-Water3DView BoardGround::water3d(e2::EdgeStyle style) const {
-  const Water3D& w = water3d_[style == e2::EdgeStyle::Smooth ? 0 : 1];
+Water3DView BoardGround::water3d(ember::EdgeStyle style) const {
+  const Water3D& w = water3d_[style == ember::EdgeStyle::Smooth ? 0 : 1];
   if (!w.vertexBuffer.buffer || !uploads_.finished(w.vertexUpload) || !uploads_.finished(w.indexUpload)) return {};
   Water3DView view = water3dMaterial_;
   view.vertices = bufferAddress(context_, w.vertexBuffer);
   view.indices = bufferAddress(context_, w.indexBuffer);
   view.count = static_cast<uint32_t>(w.indices.size());
-  view.colorMap = textureIndex(e2::groundLayerAsset("water", "color"));
-  view.normalMap = textureIndex(e2::groundLayerAsset("water", "normal"));
-  view.roughMap = textureIndex(e2::groundLayerAsset("water", "rough"));
+  view.colorMap = textureIndex(ember::groundLayerAsset("water", "color"));
+  view.normalMap = textureIndex(ember::groundLayerAsset("water", "normal"));
+  view.roughMap = textureIndex(ember::groundLayerAsset("water", "rough"));
   return view;
 }
 
-void BoardGround::pack(const e2::GroundGeometry& g, const std::vector<int>& palette, Mesh& out) {
+void BoardGround::pack(const ember::GroundGeometry& g, const std::vector<int>& palette, Mesh& out) {
   const size_t n = g.vertexCount();
   out.vertices.resize(n);
   std::vector<float> layerWeights(kTerrainPaletteSize);
@@ -432,23 +432,23 @@ bool BoardGround::ready() const {
   return true;
 }
 
-WaterView BoardGround::water(e2::EdgeStyle style) const {
-  const Water& w = water_[style == e2::EdgeStyle::Smooth ? 0 : 1];
+WaterView BoardGround::water(ember::EdgeStyle style) const {
+  const Water& w = water_[style == ember::EdgeStyle::Smooth ? 0 : 1];
   if (!w.vertexBuffer.buffer || !uploads_.finished(w.vertexUpload) || !uploads_.finished(w.indexUpload)) return {};
   WaterView view{bufferAddress(context_, w.vertexBuffer), bufferAddress(context_, w.indexBuffer), static_cast<uint32_t>(w.indices.size())};
   std::copy(std::begin(w.lookCount), std::end(w.lookCount), view.lookCount);
   return view;
 }
 
-TerrainView BoardGround::view(e2::EdgeStyle style) const {
+TerrainView BoardGround::view(ember::EdgeStyle style) const {
   if (!ready()) return {};
-  const Mesh& m = meshes_[style == e2::EdgeStyle::Smooth ? 0 : style == e2::EdgeStyle::Hard ? 1 : 2];
+  const Mesh& m = meshes_[style == ember::EdgeStyle::Smooth ? 0 : style == ember::EdgeStyle::Hard ? 1 : 2];
   TerrainView v;
   v.record = bufferAddress(context_, recordBuffer_);
   v.vertices = bufferAddress(context_, m.vertexBuffer);
   v.indices = m.indices.empty() ? 0 : bufferAddress(context_, m.indexBuffer);
   v.count = m.count;
-  v.seamStep = style == e2::EdgeStyle::Tabletop ? static_cast<float>(e2::kStep) : 0.0f;
+  v.seamStep = style == ember::EdgeStyle::Tabletop ? static_cast<float>(ember::kStep) : 0.0f;
   v.wallFrom = m.wallFrom;
   return v;
 }

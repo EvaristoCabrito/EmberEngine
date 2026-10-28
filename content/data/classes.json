@@ -1,0 +1,300 @@
+{
+ "source": "Ember src/game/data.ts CLASSES (statsFor mov)",
+ "classes": {
+  "aldric": {
+   "mov": 5
+  },
+  "ancientGolem": {
+   "mov": 5
+  },
+  "apparition": {
+   "mov": 5
+  },
+  "archer": {
+   "mov": 6
+  },
+  "asherah": {
+   "mov": 5
+  },
+  "assassin": {
+   "mov": 6
+  },
+  "baseCrossbowman": {
+   "mov": 3
+  },
+  "basePikeman": {
+   "mov": 3
+  },
+  "beberrao": {
+   "mov": 3
+  },
+  "bellCollector": {
+   "mov": 3
+  },
+  "bigBlueCalf": {
+   "mov": 5
+  },
+  "birolho": {
+   "mov": 5
+  },
+  "birolho2": {
+   "mov": 5
+  },
+  "birolho3": {
+   "mov": 5
+  },
+  "birolhoLegs": {
+   "mov": 5
+  },
+  "birolhoLegs2": {
+   "mov": 5
+  },
+  "bishop": {
+   "mov": 5
+  },
+  "bossVoss": {
+   "mov": 5
+  },
+  "breadLady": {
+   "mov": 4
+  },
+  "brigand": {
+   "mov": 3
+  },
+  "brigandCrossbowman": {
+   "mov": 3
+  },
+  "brue": {
+   "mov": 3
+  },
+  "captain": {
+   "mov": 4
+  },
+  "carnivorousPlant": {
+   "mov": 5
+  },
+  "charcoalBurner": {
+   "mov": 3
+  },
+  "cleric": {
+   "mov": 5
+  },
+  "conjurer": {
+   "mov": 5
+  },
+  "crazyLady": {
+   "mov": 3
+  },
+  "cultist": {
+   "mov": 3
+  },
+  "cultistV2": {
+   "mov": 3
+  },
+  "elementalist": {
+   "mov": 5
+  },
+  "emberedWraith": {
+   "mov": 6
+  },
+  "familiar": {
+   "mov": 5
+  },
+  "familiar2": {
+   "mov": 5
+  },
+  "familiar3": {
+   "mov": 5
+  },
+  "familiar4": {
+   "mov": 5
+  },
+  "healer": {
+   "mov": 5
+  },
+  "heavyKnight": {
+   "mov": 4
+  },
+  "horror": {
+   "mov": 5
+  },
+  "jacare": {
+   "mov": 5
+  },
+  "kaelEarly": {
+   "mov": 5
+  },
+  "kaelFinal": {
+   "mov": 5
+  },
+  "lancer": {
+   "mov": 5
+  },
+  "lostCourier": {
+   "mov": 3
+  },
+  "mage": {
+   "mov": 5
+  },
+  "marshTrapper": {
+   "mov": 3
+  },
+  "miliciaV2": {
+   "mov": 4
+  },
+  "minorHorror": {
+   "mov": 4
+  },
+  "mordavianWolf": {
+   "mov": 6
+  },
+  "mordavianWolfFinal": {
+   "mov": 6
+  },
+  "morvenianWolf": {
+   "mov": 6
+  },
+  "mothKeeper": {
+   "mov": 3
+  },
+  "mudinho": {
+   "mov": 4
+  },
+  "mushroomForager": {
+   "mov": 3
+  },
+  "necromancer": {
+   "mov": 5
+  },
+  "neera": {
+   "mov": 6
+  },
+  "oldHealer": {
+   "mov": 3
+  },
+  "paladin": {
+   "mov": 5
+  },
+  "peasant1": {
+   "mov": 4
+  },
+  "pikeman": {
+   "mov": 3
+  },
+  "plagueBearingCattle": {
+   "mov": 4
+  },
+  "punisher": {
+   "mov": 3
+  },
+  "ranger": {
+   "mov": 6
+  },
+  "ratCatcher": {
+   "mov": 3
+  },
+  "roadCartographer": {
+   "mov": 3
+  },
+  "roccoTheBird": {
+   "mov": 5
+  },
+  "rogue": {
+   "mov": 6
+  },
+  "salazar": {
+   "mov": 5
+  },
+  "sandoval": {
+   "mov": 5
+  },
+  "sapling": {
+   "mov": 4
+  },
+  "sentinel": {
+   "mov": 5
+  },
+  "shadowScholar": {
+   "mov": 3
+  },
+  "shadyPatron": {
+   "mov": 3
+  },
+  "soldier": {
+   "mov": 3
+  },
+  "sorcerer": {
+   "mov": 5
+  },
+  "soupLady": {
+   "mov": 3
+  },
+  "stagWolf": {
+   "mov": 6
+  },
+  "swampBlueCalf": {
+   "mov": 5
+  },
+  "swampFerryman": {
+   "mov": 3
+  },
+  "swordsman": {
+   "mov": 5
+  },
+  "templar": {
+   "mov": 5
+  },
+  "theButcher": {
+   "mov": 4
+  },
+  "travelingMerchant": {
+   "mov": 3
+  },
+  "troll": {
+   "mov": 5
+  },
+  "troll2": {
+   "mov": 5
+  },
+  "undeadOx": {
+   "mov": 4
+  },
+  "villagerF1": {
+   "mov": 4
+  },
+  "voss": {
+   "mov": 5
+  },
+  "wanderingTinker": {
+   "mov": 3
+  },
+  "wardog": {
+   "mov": 5
+  },
+  "wardog2": {
+   "mov": 5
+  },
+  "warlock": {
+   "mov": 5
+  },
+  "woodsman": {
+   "mov": 4
+  },
+  "zombie": {
+   "mov": 3
+  },
+  "zombie2": {
+   "mov": 3
+  },
+  "zombieDog": {
+   "mov": 5
+  },
+  "corrosiveSlime": {"mov": 3},
+  "corrosiveSlimeLarge": {"mov": 3},
+  "giantSpider": {"mov": 4},
+  "corrosiveSlime36": {"mov": 3},
+  "corrosiveSlime64": {"mov": 3},
+  "swampBlueDeer": {"mov": 5},
+  "chainBoundPenitent": {"mov": 4}
+ }
+}

@@ -1,13 +1,13 @@
 #pragma once
 
-// Engine2's deterministic noise (C:/Engine2/src/core/noise.ts), ported bit for bit: the ground's shape
+// Ember's deterministic noise (src/core/noise.ts), ported bit for bit: the ground's shape
 // and its procedural textures depend on it. Arithmetic follows JavaScript: doubles everywhere,
 // Math.imul's 32-bit wrap, ToInt32 on bitwise operands, % with the sign of the dividend.
 
 #include <cmath>
 #include <cstdint>
 
-namespace ember::e2 {
+namespace ember {
 
 // ECMAScript ToInt32.
 inline uint32_t toUint32(double v) {
@@ -74,4 +74,4 @@ inline double pfbm(double x, double y, double px, double py, int octaves = 5) {
 // JavaScript's Math.round (halves round up, towards +infinity).
 inline double jsRound(double v) { return std::floor(v + 0.5); }
 
-}  // namespace ember::e2
+}  // namespace ember

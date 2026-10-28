@@ -1,6 +1,6 @@
-"""EmberEngine's own unit classes (content/ember-classes.json) into the Map Editor's catalog (content/engine2/editor-catalog.json), so
+"""EmberEngine's own unit classes (content/ember-classes.json) into the Map Editor's catalog (content/data/editor-catalog.json), so
 they can be placed on a map and the scene builder draws them: the class's art (its catalog entry's idle pose in
-build/engine2-scenes/roster.json: set, clip, box, size, frames, pace; a two-hex body centred over its two hexes), its name and role
+build/scenes/roster.json: set, clip, box, size, frames, pace; a two-hex body centred over its two hexes), its name and role
 in the editor's class list, its sprite; and EmberEngine's own heroes (newHero entries of content/sprite-overrides.json with a
 classId) into the editor's hero list. Idempotent; run after apply_sprite_overrides.py (which makes the roster entries) and again
 after export_editor_catalog.ts rewrites the catalog.
@@ -15,8 +15,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.a
 
 def main():
     classes = json.load(open(os.path.join(ROOT, "content", "ember-classes.json"), encoding="utf-8"))["classes"]
-    roster = json.load(open(os.path.join(ROOT, "build", "engine2-scenes", "roster.json"), encoding="utf-8"))
-    path = os.path.join(ROOT, "content", "engine2", "editor-catalog.json")
+    roster = json.load(open(os.path.join(ROOT, "build", "ember-scenes", "roster.json"), encoding="utf-8"))
+    path = os.path.join(ROOT, "content", "ember", "editor-catalog.json")
     catalog = json.load(open(path, encoding="utf-8"))
     editor = catalog["editor"]
     for key, c in classes.items():

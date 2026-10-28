@@ -44,12 +44,12 @@ Fireball::Fireball(glm::vec3 origin, glm::vec3 target, float aoeRadius, float st
   travel_ = travelSeconds(origin, target);
   // cast(): Etapa 02 was authored for a one-hex preview; scaled to the combat footprint, the footprint its hard limit.
   impactScale_ = std::max(1.0f, aoe_ * 0.72f);
-  // FireballImpactVFX.setOrigin: 0.02 above (along Engine2's own y, which in the Ember frame lies on the board).
+  // FireballImpactVFX.setOrigin: 0.02 above (along Ember's own y, which in the Ember frame lies on the board).
   origin_ = target_ + glm::vec3(0.0f, 0.02f, 0.0f);
   buildParticles();
 }
 
-// FireballImpactVFX.build: every layer's particles from the seed, in Engine2's order (smoke first).
+// FireballImpactVFX.build: every layer's particles from the seed, in Ember's order (smoke first).
 void Fireball::buildParticles() {
   three::Lcg rand;
   rand.state = s_.seed;
@@ -118,7 +118,7 @@ void Fireball::build(float now, const Camera& camera, const VfxFlipbook& fire, V
     d.gpu.texture = texture;
     d.instances = instances;
     d.blend = blend;
-    d.depthTest = true;  // Engine2: the projectile and the impact (worldOcclusion) are depth-tested
+    d.depthTest = true;  // Ember: the projectile and the impact (worldOcclusion) are depth-tested
     frame.draws.push_back(d);
   };
 

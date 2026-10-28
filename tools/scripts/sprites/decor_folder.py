@@ -7,9 +7,9 @@ before defringe_red.py.)
 
 - content/decor.sprites.json: one clip per PNG in the folder (clip = file name without extension), frames
   "decoracoes-2d/<file>" (relative to the repo; fx_sprites.py makes them absolute when it merges the battle manifest);
-- build/sprites/battle.sprites.json: its "decor" set replaced the same way (absolute paths, so the Cooker's Engine2 root does
+- build/sprites/battle.sprites.json: its "decor" set replaced the same way (absolute paths, so the Cooker's Ember root does
   not apply);
-- content/engine2/editor-catalog.json: a removed duplicate's catalog art points at the copy that was kept (content/decor-dupes.json:
+- content/data/editor-catalog.json: a removed duplicate's catalog art points at the copy that was kept (content/decor-dupes.json:
   removed file -> kept file; SceneData::load does the same for scenes exported earlier), then every 2D decoration whose art is
   no longer in the folder is dropped from the catalog's decoration tables (decorations, facings, decorationInfo, decoMeta,
   decorationOrder; never elsewhere: an id can also name a place). 3D pieces keep their
@@ -19,7 +19,7 @@ before defringe_red.py.)
   Their ids start with "ember-", so a map using them is built by SceneBuilder (MapStage hasEmberProps).
 
 Run it after export_editor_catalog.ts (which rewrites the catalog) and after fx_sprites.py / apply_sprite_overrides.py (which
-rewrite the battle manifest), then `measure_art.py --catalog content/engine2/editor-catalog.json C:/Engine2/public` (the kept
+rewrite the battle manifest), then `measure_art.py --catalog content/data/editor-catalog.json public` (the kept
 copies need their measures) and cook battle.pak again. Idempotent.
 
     python -I tools/scripts/sprites/decor_folder.py
@@ -154,7 +154,7 @@ def patch_catalog(path, dupes):
         if images and not d.get("model3d") and not d.get("model") and all(i[len(PREFIX):] not in present for i in images):
             removed.add(did)
     cat = scrub(cat, removed)
-    sys.path.insert(0, os.path.join(ROOT, "tools", "scripts", "engine2"))
+    sys.path.insert(0, os.path.join(ROOT, "tools", "scripts", "ember"))
     from measure_art import measure
     for kept in dupes.values():  # the kept copy's measures (the catalog had only the removed one's)
         if f"{PREFIX}{kept}.png" not in cat["measures"] and f"{kept}.png" in present:
@@ -173,7 +173,7 @@ def main():
     battle = os.path.join(ROOT, "build", "sprites", "battle.sprites.json")
     if os.path.exists(battle):
         patch_manifest(battle, absolute=True)
-    patch_catalog(os.path.join(ROOT, "content", "engine2", "editor-catalog.json"), dupes)
+    patch_catalog(os.path.join(ROOT, "content", "ember", "editor-catalog.json"), dupes)
 
 
 if __name__ == "__main__":

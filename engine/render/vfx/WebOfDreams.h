@@ -1,13 +1,13 @@
 #pragma once
 
-// Engine2's WebOfDreamsVFX / WebZoneVFX (src/vfx/legacy/three/WebOfDreamsVFX.ts) with DEFAULT_WEB_OF_DREAMS_VFX_SETTINGS,
+// Ember's WebOfDreamsVFX / WebZoneVFX (src/vfx/legacy/three/WebOfDreamsVFX.ts) with DEFAULT_WEB_OF_DREAMS_VFX_SETTINGS,
 // ported to the effect runtime: Teia dos Sonhos 01. After the web shot's flight (WEB_SHOT_TRAVEL 0.85 s; the shot
-// itself is Engine2's 2D canvas art, not part of this effect) a net forms over the zone: eight knots around its edge
+// itself is Ember's 2D canvas art, not part of this effect) a net forms over the zone: eight knots around its edge
 // joined by a seeded lattice of 24 tapered threads (ring links, cross-bracing, loose tendrils) that grow in, wave and
 // carry travelling pulses, tighten at 1.04-1.48 s with a binding flash at 1.42 s; glowing knots, 32 drifting
 // shards, a central light and two travelling lights; every unit inside is wrapped by its own strands. In battle the
-// zone holds while the rules keep it; here it holds until `releaseAt` (Engine2's preview: 2.6 s after the cast) and
-// fades over 0.9 s. Its math runs in Ember's frame (z up) as Engine2's does.
+// zone holds while the rules keep it; here it holds until `releaseAt` (Ember's preview: 2.6 s after the cast) and
+// fades over 0.9 s. Its math runs in Ember's frame (z up) as Ember's does.
 //
 // Not carried over: the central light's shadow.
 

@@ -1,5 +1,5 @@
 import json,pathlib
-files=[r'content/maps/ember/cemiterio-esquecidos007.json',r'content/maps/ember/cemiterio-esquecidos008.json',r'content/models/models.json',r'content/engine2/editor-catalog.json']
+files=[r'content/maps/ember/cemiterio-esquecidos007.json',r'content/maps/ember/cemiterio-esquecidos008.json',r'content/models/models.json',r'content/data/editor-catalog.json']
 target='ember-extra-grave-marker-v03'
 def walk(x,path='$'):
  if isinstance(x,dict):

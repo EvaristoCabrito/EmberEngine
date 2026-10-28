@@ -3,7 +3,7 @@
 // is look 002.
 //   waves    six directional waves of falling wavelength (5.2 .. 0.37 units) with analytic slopes, the finest ones fading
 //            where they would be narrower than a few pixels (no sparkle at a distance), and a drifting noise ripple
-//   body     the water's own colour: Engine2's river blue (#2f86a8) in the shallows, deepening to a dark teal with the depth
+//   body     the water's own colour: Ember's river blue (#2f86a8) in the shallows, deepening to a dark teal with the depth
 //            below (Beer's law) where the sheet knows its depth; without a depth the body is mid-deep
 //   light    the lighting contract: sun highlight (GGX, roughness 0.10), the sky's reflection map by Fresnel
 //            (lighting.hlsli indirectSpecular: clouds, dusk, all of it), the sky's light on the body, the cloud shadows
@@ -54,7 +54,7 @@ float4 emberWater(MeshFrame f, float3 world, float3 up, float depth, float cover
   // The body: river blue in the shallows, dark teal deep down.
   const float3 shallow = srgbToLinear3(float3(0x2f, 0x86, 0xa8) / 255.0);
   const float3 deep = float3(0.02, 0.07, 0.11);
-  // (a sheet that knows no depth keeps the river blue: Engine2's water read bright and the user wants that blue; clear
+  // (a sheet that knows no depth keeps the river blue: Ember's water read bright and the user wants that blue; clear
   // water: a unit of depth takes less than half the way to the deep colour)
   const float d = depth >= 0.0 ? depth : 0.3;
   const float3 body = lerp(shallow, deep, 1.0 - exp(-d * 0.6));

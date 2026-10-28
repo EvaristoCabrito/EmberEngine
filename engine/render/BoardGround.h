@@ -1,6 +1,6 @@
 #pragma once
 
-// The board's ground on the GPU (Engine2's terrain, engine/world/GroundMesh.h): both looks built at load
+// The board's ground on the GPU (Ember's terrain, engine/world/GroundMesh.h): both looks built at load
 // and kept resident, so switching between them (R8, a player setting) is instant; the ground textures
 // the map uses streamed from the archive (world/GroundAssets.h). Drawn by the renderer's terrain pass
 // (shaders/terrain.hlsl).
@@ -70,13 +70,13 @@ struct WaterView {
   explicit operator bool() const { return vertices != 0 && count != 0; }
 };
 
-// Ember's 3D water (world/Water3D: the Map Editor's Agua 3D), in this board's world, and Engine2's material
+// Ember's 3D water (world/Water3D: the Map Editor's Agua 3D), in this board's world, and Ember's material
 // numbers for the map's water version (ThreeWater.setVersion).
 struct Water3DVertexGpu {
   float position[3];  // the still surface
   float coverage;     // brush coverage (edges fade, < 0.05 not drawn)
-  float depth;        // above the ground, in Engine2 tiles (shore foam)
-  float point[2];     // Engine2's tile frame (x, -y): waves and patterns
+  float depth;        // above the ground, in Ember tiles (shore foam)
+  float point[2];     // Ember's tile frame (x, -y): waves and patterns
   float pad;
 };
 static_assert(sizeof(Water3DVertexGpu) == 32);
@@ -87,7 +87,7 @@ struct Water3DView {
   uint32_t colorMap = 0, normalMap = 0, roughMap = 0;  // bindless
   float color[3]{};    // linear
   float opacity = 0, normalScale = 0, roughness = 0, modern = 0, v4 = 0, repeat = 1;
-  uint32_t look = 0;  // shaders/water3d.hlsl: 0 rio (the board's river material), 1 leito (Engine2's ThreeWater), 2 / 3 looks
+  uint32_t look = 0;  // shaders/water3d.hlsl: 0 rio (the board's river material), 1 leito (Ember's ThreeWater), 2 / 3 looks
                       // 001 / 002, 4 look 003 "decente" (reads the scene below it: Renderer::waterRefracts)
   explicit operator bool() const { return vertices != 0 && count != 0; }
 };
@@ -115,16 +115,16 @@ class BoardGround {
 
   // Builds both looks for the board and requests its textures. False if the map needs more baked layers
   // than the palette holds.
-  bool build(const e2::Board& board);
+  bool build(const ember::Board& board);
   // Once per frame: streaming.
   void update();
   bool ready() const;
   // Another texture from the ground pack (the moon's phase art: GroundAssets.h), resident with the ground.
   void requestTexture(const std::string& asset) { texture(asset); }
   uint32_t textureIndex(const std::string& asset) const;  // bindless; kNoTextureIndex until resident
-  TerrainView view(e2::EdgeStyle style) const;
-  WaterView water(e2::EdgeStyle style) const;  // empty when the map has none
-  Water3DView water3d(e2::EdgeStyle style) const;  // empty when the map has no 3D water
+  TerrainView view(ember::EdgeStyle style) const;
+  WaterView water(ember::EdgeStyle style) const;  // empty when the map has none
+  Water3DView water3d(ember::EdgeStyle style) const;  // empty when the map has no 3D water
   // The renderer must wait for this upload-timeline value before drawing the ground.
   uint64_t uploadWaitValue() const { return uploadWaitValue_; }
 
@@ -153,9 +153,9 @@ class BoardGround {
   };
 
   void texture(const std::string& asset);  // requests it once
-  void pack(const e2::GroundGeometry& g, const std::vector<int>& palette, Mesh& out);
+  void pack(const ember::GroundGeometry& g, const std::vector<int>& palette, Mesh& out);
   void upload(Mesh& mesh);
-  void buildWater3D(const e2::Board& board);
+  void buildWater3D(const ember::Board& board);
   void updateTexture(Texture& t);
 
   VulkanContext& context_;

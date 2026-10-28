@@ -1,8 +1,8 @@
 // EmberEngine's own spells' visuals (the Bruxo's and the Elementalista's T6-T10, world/Spells.cpp kEmberSpells), version
-// 01: flipbook cards from Engine2's fx sheets (shadow, poison, fire, frost, lightning, ember, warp, holy) with lights of
+// 01: flipbook cards from Ember's fx sheets (shadow, poison, fire, frost, lightning, ember, warp, holy) with lights of
 // their own, laid out on the stage's clock so the hit lands on `impact` (the pose's), plus the zones that stay on the
 // board (burning ground, the Mortalha de Sombras, a Meteoro's mark) and the Meteoro's fall. The look is ours; the art is
-// Engine2's (content/fx/effects-list.md). Numbers and timings here are visuals only: the rules decide what happens.
+// Ember's (content/fx/effects-list.md). Numbers and timings here are visuals only: the rules decide what happens.
 
 #include "render/SpellEffects.h"
 

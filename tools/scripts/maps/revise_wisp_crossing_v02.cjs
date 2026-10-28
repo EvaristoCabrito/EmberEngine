@@ -20,7 +20,7 @@ let groundTiles=0;
 for(let i=0;i<draft.tiles.length;i++) if(['plains','woods'].includes(draft.tiles[i])&&draft.tileVariants[i]===62){draft.tileVariants[i]=65;groundTiles++;}
 source.serial+=1; source.savedAt=Date.now(); source.draft=draft;
 fs.writeFileSync(outPath,JSON.stringify(source,null,2)+'\n');
-const campaignPath='content/engine2/campaign.json', campaign=JSON.parse(fs.readFileSync(campaignPath,'utf8'));
+const campaignPath='content/data/campaign.json', campaign=JSON.parse(fs.readFileSync(campaignPath,'utf8'));
 const mission=campaign.missions.find(x=>x.id==='wisp-forest-crossing'); if(!mission) throw Error('campaign mission missing');
 mission.mapFile='wisp-forest-crossing018.json'; fs.writeFileSync(campaignPath,JSON.stringify(campaign,null,2)+'\n');
 console.log(JSON.stringify({from:inPath,to:outPath,serial:source.serial,replacedTrees:old3d.length+old2d.length,removedClutter:before-(draft.decorations.length+treePoints.length),new3dTrees:treePoints.length,decorations:draft.decorations.length,groundCellsUpdated:groundTiles,players:draft.playerSpawns.length,enemies:draft.enemySpawns.length,fog:draft.fog,mission:mission.mapFile}));

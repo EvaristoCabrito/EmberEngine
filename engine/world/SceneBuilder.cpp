@@ -8,7 +8,7 @@
 #include "core/Log.h"
 #include "world/GroundMesh.h"
 
-namespace ember::e2 {
+namespace ember {
 
 namespace {
 
@@ -65,7 +65,7 @@ bool EditorCatalog::load(const std::filesystem::path& file) {
   std::ifstream in(file, std::ios::binary);
   const json j = in ? json::parse(in, nullptr, false) : json();
   if (!in || j.is_discarded() || !j.contains("decorations")) {
-    logError("editor catalog: cannot read {} (tools/scripts/engine2/export_editor_catalog.ts + measure_art.py --catalog)", file.string());
+    logError("editor catalog: cannot read {} (tools/scripts/data/export_editor_catalog.ts + measure_art.py --catalog)", file.string());
     return false;
   }
   for (const auto& [id, d] : j["decorations"].items()) {
@@ -307,7 +307,7 @@ SceneData buildScene(const Board& board, const EditorCatalog& catalog, std::map<
     s.cards.push_back(std::move(c));
   }
 
-  // Units: Engine2's dioramaView.placeUnits + UnitActor (idle pose).
+  // Units: Ember's dioramaView.placeUnits + UnitActor (idle pose).
   const std::pair<const std::vector<MapSpawn>*, const char*> sides[3] = {
       {&draft.playerSpawns, "player"}, {&draft.enemySpawns, "enemy"}, {&draft.neutralSpawns, "neutral"}};
   for (const auto& [list, side] : sides)
@@ -357,7 +357,7 @@ SceneData buildScene(const Board& board, const EditorCatalog& catalog, std::map<
 // --- the check against export_scene.ts ------------------------------------------------------------------------------
 
 int checkSceneBuilder(const BoardData& data, const EditorCatalog& catalog, const std::vector<std::filesystem::path>& maps,
-                      const std::filesystem::path& scenes, const std::filesystem::path& engine2Public) {
+                      const std::filesystem::path& scenes, const std::filesystem::path& artRoot) {
   int differences = 0, checked = 0;
   size_t cards = 0, models = 0, units = 0;
   auto report = [&](const std::string& what) {
@@ -373,7 +373,7 @@ int checkSceneBuilder(const BoardData& data, const EditorCatalog& catalog, const
       continue;
     }
     Board board(data, std::move(*draft));
-    if (!board.loadRelief(engine2Public)) report(mapFile.stem().string() + ": relief");
+    if (!board.loadRelief(artRoot)) report(mapFile.stem().string() + ": relief");
     const SceneData s = buildScene(board, catalog);
     const std::string m = mapFile.stem().string();
     ++checked;
@@ -421,4 +421,4 @@ int checkSceneBuilder(const BoardData& data, const EditorCatalog& catalog, const
   return differences;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

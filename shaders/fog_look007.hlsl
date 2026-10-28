@@ -1,4 +1,4 @@
-// FOG LOOK 007 (2026-10-14): look 005's swirl (Claude's interpretation) on the real values of Engine2's mist4
+// FOG LOOK 007 (2026-10-14): look 005's swirl (Claude's interpretation) on the real values of Ember's mist4
 // from the user's reference (look 006): the fog of war decides where the mist lies; it turns slowly round the
 // party's clearing, slower farther out, its pattern drifting gently inward. Two phases of the turn cross-fade (each runs `period` seconds, then starts over
 // unseen under the other), so the mist never winds into ever-tighter streaks. Not yet seen by the user.
@@ -7,7 +7,7 @@
 //
 // The fog of war's mist (R7, the user, 2026-10-14): believable volumetric ground mist, densest over never-seen
 // (black) ground, thinner over remembered ground, none in sight; soft everywhere, no edges, and the black may
-// show through. Its model is Engine2's volumetric mist (C:/Engine2/src/render/volumetricFog.ts, the "fog1"
+// show through. Its model is Ember's volumetric mist (src/render/volumetricFog.ts, the "fog1"
 // preset in src/game/mist3d.ts); the code is ours:
 //   - a layer `thickness` deep over the local ground, densest at the ground, thicker in the low places (it
 //     pools), thinning with height (heightPow);

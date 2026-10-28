@@ -39,10 +39,10 @@ void checkVk(VkResult result) {
 
 bool gGrabRequested = false;
 
-// Engine2 shows both cursor images at 26.25 CSS px (their SVG wrappers), times the screen's scale in the browser.
+// Ember shows both cursor images at 26.25 CSS px (their SVG wrappers), times the screen's scale in the browser.
 constexpr float kCursorSize = 26.25f;
 
-// An Engine2 cursor image at `size` pixels (RGBA, straight alpha); nullptr if the file is missing.
+// An Ember cursor image at `size` pixels (RGBA, straight alpha); nullptr if the file is missing.
 SDL_Surface* cursorImage(const char* file, int size) {
   int w = 0, h = 0, n = 0;
   stbi_uc* pixels = stbi_load(file, &w, &h, &n, 4);
@@ -73,7 +73,7 @@ SDL_Surface* cursorImage(const char* file, int size) {
   return surface;
 }
 
-// The cursors: Engine2's file, its hot spot in its 26.25 px box (styles.css).
+// The cursors: Ember's file, its hot spot in its 26.25 px box (styles.css).
 struct CursorSpec {
   const char* name;
   const char* file;
@@ -133,7 +133,7 @@ DebugUi::DebugUi(VulkanContext& context, SDL_Window* window, VkFormat targetForm
   ImGuiIO& io = ImGui::GetIO();
   io.IniFilename = nullptr;  // layouts are saved deliberately by the editor, not on every exit
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // no keyboard navigation: the arrows and WASD always move the camera
-  io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;  // the cursor is Engine2's own (applyCursor), not Windows' arrow
+  io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;  // the cursor is Ember's own (applyCursor), not Windows' arrow
   ImGui::StyleColorsDark();
   // A readable font (user, 2026-10-15: ImGui's pixel font refused): Windows' own Segoe UI, read from the system's
   // fonts folder at run time (nothing bundled); ImGui's built-in font if it is missing.
@@ -145,7 +145,7 @@ DebugUi::DebugUi(VulkanContext& context, SDL_Window* window, VkFormat targetForm
   std::error_code error;
   if (std::filesystem::exists(segoe, error)) io.FontDefault = io.Fonts->AddFontFromFileTTF(segoe.c_str(), 18.0f);
   else logError("UI font not found: {}", segoe);
-  loadUiFonts();  // Engine2's own fonts for the menus and HUD (render/UiArt.h)
+  loadUiFonts();  // Ember's own fonts for the menus and HUD (render/UiArt.h)
   ImGuiStyle& style = ImGui::GetStyle();
   style.FramePadding = {10.0f, 6.0f};
   style.ItemSpacing = {10.0f, 8.0f};
@@ -162,7 +162,7 @@ DebugUi::DebugUi(VulkanContext& context, SDL_Window* window, VkFormat targetForm
   info.Device = context.device;
   info.QueueFamily = context.queueFamily;
   info.Queue = context.queue;
-  // Backend-owned pool: one set per UI image (font atlas, Engine2's art: portraits, every weapon and gear icon the shops
+  // Backend-owned pool: one set per UI image (font atlas, Ember's art: portraits, every weapon and gear icon the shops
   // and the inventory show).
   info.DescriptorPoolSize = 4096;
   info.MinImageCount = kFramesInFlight;
@@ -234,8 +234,8 @@ void DebugUi::newFrame(VkExtent2D size, float deltaSeconds) {
   frameOpen_ = true;
 }
 
-// Engine2's rule (ember-ui/styles.css): its arrow everywhere, buttons and disabled ones included, the gauntlet while
-// dragging; the text bar over a text field (the browser's own, which Engine2 left alone).
+// Ember's rule (ember-ui/styles.css): its arrow everywhere, buttons and disabled ones included, the gauntlet while
+// dragging; the text bar over a text field (the browser's own, which Ember left alone).
 void DebugUi::applyCursor() {
   const bool grab = gGrabRequested;
   gGrabRequested = false;

@@ -4,11 +4,11 @@ from pathlib import Path
 
 ROOT = Path(r"C:\EmberEngine")
 OUT = ROOT / "work/plains-random-panorama-proposal-20261026"
-TEXTURE_1 = ROOT / "content/game/public/game/ground-variant-tiles/plains-meadow-natural-v01.png"
-TEXTURE_2 = ROOT / "content/game/public/game/ground-variant-tiles/plains-meadow-natural-v02.png"
-TEXTURE_3 = ROOT / "content/game/public/game/ground-variant-tiles/plains-meadow-scrub-rare-v01.png"
-HILL_TEXTURE = ROOT / "content/game/public/game/ground-engine2-v4/hill/color.png"
-WATER_TEXTURE = ROOT / "content/game/public/game/ground-engine2-v4/shallow-water/color.png"
+TEXTURE_1 = ROOT / "content/assets/game/ground-variant-tiles/plains-meadow-natural-v01.png"
+TEXTURE_2 = ROOT / "content/assets/game/ground-variant-tiles/plains-meadow-natural-v02.png"
+TEXTURE_3 = ROOT / "content/assets/game/ground-variant-tiles/plains-meadow-scrub-rare-v01.png"
+HILL_TEXTURE = ROOT / "content/assets/game/ground-engine2-v4/hill/color.png"
+WATER_TEXTURE = ROOT / "content/assets/game/ground-engine2-v4/shallow-water/color.png"
 
 
 def remove_scene_objects():

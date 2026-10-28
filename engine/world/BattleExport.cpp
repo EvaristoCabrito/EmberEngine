@@ -13,7 +13,7 @@
 #include "world/Board.h"
 #include "world/Loadout.h"
 
-namespace ember::e2 {
+namespace ember {
 
 int classLevelCap(const std::string& classId);  // world/Spells.h (the Cruzado stops at 10)
 int heroLevelCap(const std::string& name, const std::string& classId);  // world/Spells.h (Selene stops at 10)
@@ -22,11 +22,11 @@ namespace {
 
 using json = nlohmann::json;
 
-// The weapons' table the fight's loadouts read (content/engine2/weapons.json): a hero with arms of her own wields an off-hand piece
+// The weapons' table the fight's loadouts read (content/data/weapons.json): a hero with arms of her own wields an off-hand piece
 const Loadouts& sharedLoadouts() {
   static const Loadouts arms = [] {
     Loadouts l;
-    l.load("content/engine2/weapons.json");
+    l.load("content/data/weapons.json");
     return l;
   }();
   return arms;
@@ -70,16 +70,16 @@ double number(const json& j, const char* key, double fallback = 0) {
 bool flag(const json& j, const char* key) { return j.is_object() && j.contains(key) && j[key].is_boolean() && j[key].get<bool>(); }
 bool has(const json& j, const char* key) { return j.is_object() && j.contains(key) && !j[key].is_null(); }
 
-// --- the rule tables (content/engine2/battle-rules.json) --------------------------------------------------------------
+// --- the rule tables (content/data/battle-rules.json) --------------------------------------------------------------
 
 class Rules {
  public:
   static const Rules* shared() {
     static const std::optional<Rules> rules = []() -> std::optional<Rules> {
-      std::ifstream in("content/engine2/battle-rules.json", std::ios::binary);
+      std::ifstream in("content/data/battle-rules.json", std::ios::binary);
       json j = in ? json::parse(in, nullptr, false) : json();
       if (!in || j.is_discarded() || !j.contains("classes") || !j.contains("terrain") || !j.contains("decorations")) {
-        logError("battle export: cannot read content/engine2/battle-rules.json (tools/scripts/engine2/export_battle_rules.ts)");
+        logError("battle export: cannot read content/data/battle-rules.json (tools/scripts/data/export_battle_rules.ts)");
         return std::nullopt;
       }
       Rules r;
@@ -925,7 +925,7 @@ bool prepareCampaignMap(const std::filesystem::path& mapFile, const std::filesys
 std::optional<json> exportBattle(const json& mapFile, std::string* error, int playerLevel) {
   const Rules* rules = Rules::shared();
   if (!rules) {
-    if (error) *error = "content/engine2/battle-rules.json missing";
+    if (error) *error = "content/data/battle-rules.json missing";
     return std::nullopt;
   }
   const Rules& r = *rules;
@@ -1317,4 +1317,4 @@ int checkBattleExport(const std::filesystem::path& maps, const std::vector<std::
   return failed;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

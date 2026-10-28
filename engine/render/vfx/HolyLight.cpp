@@ -42,7 +42,7 @@ struct StyleData {
   glm::vec3 moteColor, moteColor2;  // every other mote takes the second colour
   Motes moteMode;
   float ground;                     // the ground glow's radius (metres)
-  float light;                      // its real light's intensity (Engine2's PointLight terms)
+  float light;                      // its real light's intensity (Ember's PointLight terms)
   glm::vec3 lightColor;
 };
 

@@ -1,12 +1,12 @@
 """EmberEngine's 3D prop kits: the shared Blender library (headless, Blender 5.2).
 
-Units: 1 Blender unit = 1 world unit = one hex radius (Engine2's scale: a human is 2.65 units, 1 unit ~ 0.68 m).
+Units: 1 Blender unit = 1 world unit = one hex radius (Ember's scale: a human is 2.65 units, 1 unit ~ 0.68 m).
 Every asset is authored at its in-game size, standing on z = 0, centred on the origin; the catalog's `height` equals
 the authored height, so the engine's uniform fit (MapStage::placeModels) is a no-op. The glTF exporter turns Z-up
 into glTF's Y-up.
 
-Textures: content/models/textures (downscaled copies of Engine2's own photo textures, see its README); bark and
-leaves are vertex colours, the convention Engine2's trees already use (dead-oak.glb, broadleaf.glb: "vertex bark").
+Textures: content/models/textures (downscaled copies of Ember's own photo textures, see its README); bark and
+leaves are vertex colours, the convention Ember's trees already use (dead-oak.glb, broadleaf.glb: "vertex bark").
 
 Run a kit:  blender -b --python content/models/blender/kit_forest.py -- [asset-name ...]
 Each asset is saved as <kit>/<name>-vNN.blend + .glb (a new version is a new file: nothing is overwritten).

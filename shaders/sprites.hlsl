@@ -3,11 +3,11 @@
 // and blended premultiplied, so edges never fringe.
 //
 // A card stands on its feet: either turning about the vertical axis to face the camera (units) or along a fixed
-// axis (decorations stand square to the hex rows, as in Engine2); by default it leans back with the camera's tilt so
+// axis (decorations stand square to the hex rows, as in Ember); by default it leans back with the camera's tilt so
 // it projects upright anywhere on screen (Push.lean; panel "Cards"). Lit cards go through the lighting contract
-// (lighting.hlsli) with Engine2's card model as the baseline (src/units/spriteMaterial.ts): the shading
+// (lighting.hlsli) with Ember's card model as the baseline (src/units/spriteMaterial.ts): the shading
 // normal faces out of the card tilted upward (y 0.55 against z 1), diffuse light wraps around (0.85), no
-// specular, and a lit card never exceeds twice its painted colour. Painted flames glow (Engine2's emit
+// specular, and a lit card never exceeds twice its painted colour. Painted flames glow (Ember's emit
 // mask). Cards receive the sun's shadow from the ground and 3D pieces, but not from other cards (their
 // shadow map holds the card itself, which would shadow itself; ARCHITECTURE §7.1).
 #include "lighting.hlsli"
@@ -40,11 +40,11 @@ struct Push {
 };
 [[vk::push_constant]] Push push;
 
-static const float kTilt = 0.55;      // Engine2 TILT
-static const float kWrap = 0.85;      // Engine2 WRAP
-static const float kMaxLit = 2.0;     // Engine2 MAX_LIT
-static const float kUnitFront = 1.2;  // Engine2 UNIT_FRONT
-static const float kGlowRadius = 0.1; // Engine2 GLOW_RADIUS
+static const float kTilt = 0.55;      // Ember TILT
+static const float kWrap = 0.85;      // Ember WRAP
+static const float kMaxLit = 2.0;     // Ember MAX_LIT
+static const float kUnitFront = 1.2;  // Ember UNIT_FRONT
+static const float kGlowRadius = 0.1; // Ember GLOW_RADIUS
 
 struct VSOut {
   float4 position : SV_Position;
@@ -109,12 +109,12 @@ float4 PSMain(VSOut i) : SV_Target0 {
     surface.specular = 0.0;
     // Shadows from the ground and 3D pieces, not from the cards' own map (a flat card would shadow itself).
     surface.receivesCardShadow = 0.0;
-    if (s.flags & 4u) surface.twoSidedLocal = 1.0;  // units (Engine2: pointLightsOnBothSides)
-    // The whole card takes the fog of war where it stands (Engine2's DecorLayer.shade).
+    if (s.flags & 4u) surface.twoSidedLocal = 1.0;  // units (Ember: pointLightsOnBothSides)
+    // The whole card takes the fog of war where it stands (Ember's DecorLayer.shade).
     const Sight sight = tacticalSight(f, s.origin);
     if (f.debugView == kDebugFog) return float4(float3(1.0 - sight.color, sight.local, 1.0) * c.a, c.a);
     if (f.debugView == kDebugFogStates) return float4(fogStateColor(fogAlpha(f, s.origin)) * c.a, c.a);
-    // Engine2's MAX_LIT, on the sun and sky and on the local lights each: by day the sun alone brought a card near the cap and a
+    // Ember's MAX_LIT, on the sun and sky and on the local lights each: by day the sun alone brought a card near the cap and a
     // caster's own light could add nothing (the user, 2026-10-18: Malrec's blue casting light "não mudou nada").
     // The local share is capped on its brightness, not per channel, so a coloured light can tint the figure (a blue light on a grey
     // robe could add only 2x the robe's little blue).
@@ -124,7 +124,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
     const float localCap = dot(c.rgb, kLuma) * kMaxLit * f.litCap, localLuma = dot(local, kLuma);
     color = min(base, c.rgb * kMaxLit * f.litCap) + local * (localLuma > localCap ? localCap / max(localLuma, 1e-6) : 1.0);
     if (s.emitLevel > 0.0) {
-      // Engine2's flame mask: bright, saturated pixels close to the light's colour glow, and so does the lit
+      // Ember's flame mask: bright, saturated pixels close to the light's colour glow, and so does the lit
       // glass just around where the light sits on the card.
       // A unit painted as glowing (emitAt.z < 0: the Cobalt Blue Deer): its whole body glows, antlers and white coat alike (the
       // user, 2026-10-18: "o corpo dele tem que brilhar"); only its dark pixels (eyes, hooves' shade) stay unlit. No glass.

@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 MODELS = ROOT / 'content/models/models.json'
-CATALOG = ROOT / 'content/engine2/editor-catalog.json'
+CATALOG = ROOT / 'content/data/editor-catalog.json'
 KIT = ROOT / 'content/models/wisp-forest-revisited'
 ASSETS = [
     ('weeping-willow', 'Salgueiro morto pendente 3D', 'Natureza · Wisp Forest', True),

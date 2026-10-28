@@ -1,14 +1,14 @@
 #pragma once
 
-// Engine2's MagicMissileV2VFX (src/vfx/legacy/three/MagicMissileV2VFX.ts, as BattleSpells3D plays it: one missile,
+// Ember's MagicMissileV2VFX (src/vfx/legacy/three/MagicMissileV2VFX.ts, as BattleSpells3D plays it: one missile,
 // the default settings), ported to the effect runtime: Míssil Mágico 02. One bolt gathers above the caster for 0.95 s
 // (a distorted violet core inside a banded shell, three arcane threads trailing from it), then flies a curved, seeking
 // path to the target's body (0.8-1.3 s), trailing a fragmented ribbon and 28 crystal shards, a violet light riding with
 // it; on the hit it collapses into a burst ring, four spinning fracture arcs and a swirl of shards, with a white flash
-// fading over 0.78 s. Drawn in the foreground (Engine2: depthTest false). Its math runs in Ember's frame (z up), as
-// Engine2's does, and is turned into ours at the end.
+// fading over 0.78 s. Drawn in the foreground (Ember: depthTest false). Its math runs in Ember's frame (z up), as
+// Ember's does, and is turned into ours at the end.
 //
-// Not carried over: the two lights cast no shadows here (Engine2 gave them 256 px shadow maps; our local lights have
+// Not carried over: the two lights cast no shadows here (Ember gave them 256 px shadow maps; our local lights have
 // none yet); three.js lines (1 px) are drawn as thin ribbons.
 
 #include <vector>
@@ -31,7 +31,7 @@ class MagicMissileV2 {
     uint32_t seed = 44721;
   };
 
-  // origin: Engine2's caster point (its anchor, 0.9 above the ground); target: the struck body's middle. World space.
+  // origin: Ember's caster point (its anchor, 0.9 above the ground); target: the struck body's middle. World space.
   MagicMissileV2(glm::vec3 origin, glm::vec3 target, float start);
 
   static constexpr float kLaunchAt = 0.95f;   // bolt.launchAt

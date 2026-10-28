@@ -1,10 +1,10 @@
 #pragma once
 
-// Combat on a battle's board: Ember's rules for a plain weapon attack (Engine2 src/game/combat.ts: makeForecast,
+// Combat on a battle's board: Ember's rules for a plain weapon attack (Ember src/game/combat.ts: makeForecast,
 // previewDamage, rollDamage, canCounter, isRearAttack, terrainBonus; pathfinding.ts canHitFrom, clearShot,
 // shotBlocker, hexLine; the engine's affinity bonus and its arcane / staff element step on a hit), ported step for
-// step with JavaScript's number rules (doubles, Math.round, Math.floor) and Engine2's mulberry32 random numbers, so the
-// same seed gives the same rolls. Cooker check-battle compares forecasts and seeded rolls with Engine2's own.
+// step with JavaScript's number rules (doubles, Math.round, Math.floor) and Ember's mulberry32 random numbers, so the
+// same seed gives the same rolls. Cooker check-battle compares forecasts and seeded rolls with Ember's own.
 
 #include <cstdint>
 #include <optional>
@@ -13,9 +13,9 @@
 
 #include "world/Battle.h"
 
-namespace ember::e2 {
+namespace ember {
 
-// Engine2's mulberry32: one 32-bit state, numbers in [0, 1).
+// Ember's mulberry32: one 32-bit state, numbers in [0, 1).
 class Mulberry32 {
  public:
   explicit Mulberry32(uint32_t seed) : a_(seed) {}
@@ -78,7 +78,7 @@ double weaponAccuracy(const Battle& b, const Fighter& attacker, bool offHand);
 Fighter fighterAt(const Battle& b, size_t unit, int x, int y);
 // Whether the unit, standing at `from`, reaches the foe with its weapon and has a clear shot (canHitFrom).
 bool canHitFrom(const Battle& b, size_t unit, BattleHex from, size_t foe, bool withDecorations = true);
-// The same with the off-hand weapon's reach (Engine2 offHandReach: a dagger or katar beside a bow reaches by its own range,
+// The same with the off-hand weapon's reach (Ember offHandReach: a dagger or katar beside a bow reaches by its own range,
 // the bow's minimum would leave an adjacent foe out of reach).
 bool canOffHandHit(const Battle& b, size_t unit, BattleHex from, size_t foe, bool withDecorations = true);
 // Whether the off-hand action ("Mão Secundária") reaches the foe from `from`: a dagger / katar by its own reach, a shield's bash by the
@@ -87,12 +87,12 @@ bool canOffHandAct(const Battle& b, size_t unit, BattleHex from, size_t foe, boo
 // The forecast the battle shows for an attack from `from` (makeForecast).
 // `useSkill` false: a blow without the weapon's mastery (a shield's bash: 100% to hit, no rear bonus, no staff element).
 Forecast forecast(const Battle& b, size_t attacker, BattleHex from, size_t defender, bool offHand = false, bool useSkill = true);
-// A real plain attack's hit (rollDamage, then the arcane bolt / staff element step), drawing from `rng` in Engine2's
+// A real plain attack's hit (rollDamage, then the arcane bolt / staff element step), drawing from `rng` in Ember's
 // order. The attacker stands where it is.
 Hit rollHit(const Battle& b, const Fighter& attacker, const Fighter& defender, Mulberry32& rng);
 // The defender can strike back at an attacker standing at `from` (canCounter).
 bool canCounter(const Battle& b, const Fighter& attacker, BattleHex from, const Fighter& defender);
-// Engine2 hexCenter's heading from one hex to another (screen units: its faceDx / faceDy).
+// Ember hexCenter's heading from one hex to another (screen units: its faceDx / faceDy).
 std::pair<double, double> heading(BattleHex from, BattleHex to);
 
-}  // namespace ember::e2
+}  // namespace ember

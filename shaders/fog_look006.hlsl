@@ -1,12 +1,12 @@
-// FOG LOOK 006 (2026-10-14): Engine2's "mist4" exactly as in the user's reference image (a slow vortex around
-// the board's edges, the centre clear; intensity 0.3, speed 0.6 as on Engine2's cemiterio-esquecidos003), over
-// our fog of war. Its density ignores the fog-of-war mask, as Engine2's mist4 did; the ground it follows under
+// FOG LOOK 006 (2026-10-14): Ember's "mist4" exactly as in the user's reference image (a slow vortex around
+// the board's edges, the centre clear; intensity 0.3, speed 0.6 as on Ember's cemiterio-esquecidos003), over
+// our fog of war. Its density ignores the fog-of-war mask, as Ember's mist4 did; the ground it follows under
 // never-seen hexes is still the board's mean. Not yet seen by the user. Frozen once seen: never edit a saved
 // look; new looks go in new files (shaders/fog_lookNNN.hlsl). Only the user deletes looks.
 //
 // The fog of war's mist (R7, the user, 2026-10-14): believable volumetric ground mist, densest over never-seen
 // (black) ground, thinner over remembered ground, none in sight; soft everywhere, no edges, and the black may
-// show through. Its model is Engine2's volumetric mist (C:/Engine2/src/render/volumetricFog.ts, the "fog1"
+// show through. Its model is Ember's volumetric mist (src/render/volumetricFog.ts, the "fog1"
 // preset in src/game/mist3d.ts); the code is ours:
 //   - a layer `thickness` deep over the local ground, densest at the ground, thicker in the low places (it
 //     pools), thinning with height (heightPow);
@@ -56,7 +56,7 @@ struct CloudFrame {
   uint2 fullSize;
   uint2 pad;
   float2 center;           // the board's centre: the vortex and the clear centre
-  float swirl;             // vortex turn rate (Engine2 uSwirl)
+  float swirl;             // vortex turn rate (Ember uSwirl)
   float clearRadius;       // no mist inside this radius ...
   float edgeRadius;        // ... full mist beyond this one
   float3 pad2;
@@ -99,7 +99,7 @@ float2 coverage(MeshFrame f, CloudFrame c, float2 xz) {
 
 float density(MeshFrame f, CloudFrame c, float3 p) {
   float2 k = coverage(f, c, p.xz);
-  // Engine2 mist4: the vortex's mask (clear centre, full at the edges) instead of the fog-of-war coverage.
+  // Ember mist4: the vortex's mask (clear centre, full at the edges) instead of the fog-of-war coverage.
   const float2 rel = p.xz - c.center;
   const float r = length(rel);
   k.x = smoothstep(c.clearRadius, c.edgeRadius, r);
@@ -109,7 +109,7 @@ float density(MeshFrame f, CloudFrame c, float3 p) {
   float h = saturate((c.thickness - (p.y - k.y)) / max(c.thickness, 1e-3));
   if (h <= 0.0) return 0.0;
   h *= 1.0 + c.pool * (c.groundRange.y - k.y) / max(c.groundRange.y - c.groundRange.x, 1e-3);
-  // A slow vortex round the board: the farther out, the slower it turns (Engine2's, as it was).
+  // A slow vortex round the board: the farther out, the slower it turns (Ember's, as it was).
   float3 q = p;
   const float a = c.swirl * c.time * c.speed / (1.0 + r * 0.08);
   const float ca = cos(a), sa = sin(a);

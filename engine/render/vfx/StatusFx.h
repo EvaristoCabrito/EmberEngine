@@ -1,7 +1,7 @@
 #pragma once
 
-// Poison and disease on a unit (ours, 3D on the effect runtime, 2026-10-20; the user: Engine2 drew them in WebGL and they were
-// missing here, "recria algo similar em 3D"). Engine2's drawStatusFx was a flat sheet at the unit's feet: a faint haze, eight
+// Poison and disease on a unit (ours, 3D on the effect runtime, 2026-10-20; the user: Ember drew them in WebGL and they were
+// missing here, "recria algo similar em 3D"). Ember's drawStatusFx was a flat sheet at the unit's feet: a faint haze, eight
 // motes rising feet to head and two thin wavering vapour lines, green and quick for poison, violet and slow for disease, both
 // layered when a unit has both. Here the same idea stands in the world round the body:
 //

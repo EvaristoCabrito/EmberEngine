@@ -84,7 +84,7 @@ A defeat keeps the fight pending ("Tentar de novo" / the briefing again); a save
 ## Checks
 
 ```
-Cooker check-interlude content/interlude.json content/engine2/overworld.json content/engine2/campaign.json
+Cooker check-interlude content/interlude.json content/data/overworld.json content/data/campaign.json
 ```
 runs the cycle on synthetic saves: an old save is NOT_STARTED; an unconfigured gate is shut, Modo teste and the flag open it,
 a required quest not done keeps it shut and done opens it; begin puts exactly the three in (the present's numbers gone, `completed`

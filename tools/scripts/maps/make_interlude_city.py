@@ -36,8 +36,8 @@ sys.stdout.reconfigure(encoding='utf-8')
 ROOT = 'C:/EmberEngine'
 COLS, ROWS = 60, 45
 rng = random.Random(20261025)
-catalog = json.load(open(f'{ROOT}/content/engine2/editor-catalog.json', encoding='utf-8'))['decorations']
-rules = json.load(open(f'{ROOT}/content/engine2/battle-rules.json', encoding='utf-8'))
+catalog = json.load(open(f'{ROOT}/content/data/editor-catalog.json', encoding='utf-8'))['decorations']
+rules = json.load(open(f'{ROOT}/content/data/battle-rules.json', encoding='utf-8'))
 base = json.load(open(f'{ROOT}/content/maps/ember/cruzadotest001.json', encoding='utf-8'))['draft']  # lighting / mist / music settings
 
 tiles = ['plains'] * (COLS * ROWS)

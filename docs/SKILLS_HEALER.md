@@ -9,8 +9,8 @@ Code: `engine/world/Spells.cpp` (`kEmberSpells`, `healerKind`, `fallenAllyAt`, `
 resurrection as Heal steps, the judgment through the area branch with the undead's weight in `perTargetMul`; `resolveStep`'s Heal
 branch heals every id of `ids`, its `resurrection` branch stands the fallen up; `spellTooltip`, `spellPose`, `spellZone`,
 `spellAimValid`), `Spells.h` (`BattleEffect::revived`), `engine/world/FieldSpells.*` (the two field spells),
-`engine/world/Overworld.cpp` (`step`: the Prece's hexes), `content/engine2/undead-encounters.json`
-(`tools/scripts/engine2/undead_encounters.py`), `engine/render/vfx/HealerFx.*` (the effects, 3D), `render/SpellEffects.cpp`
+`engine/world/Overworld.cpp` (`step`: the Prece's hexes), `content/data/undead-encounters.json`
+(`tools/scripts/data/undead_encounters.py`), `engine/render/vfx/HealerFx.*` (the effects, 3D), `render/SpellEffects.cpp`
 (`castEffect`), `apps/sandbox/MapStage.h` (the areas' spots, the card back on a revival, `--fx-test`, the battle script's `kill` step and
 checks), `apps/sandbox/OverworldStage.h` (the field-spells menu's rows). Icons: the user's art (`Attachments/HealerIcons`) in
 `content/ui/spells/<kind>.jpg` (784 × 1168, centre-cropped in the HUD socket and heading the field rows).

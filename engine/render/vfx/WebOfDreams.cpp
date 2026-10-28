@@ -171,7 +171,7 @@ WebOfDreams::WebOfDreams(glm::vec3 center, float radiusTiles, const std::vector<
 void WebOfDreams::build(float now, const Camera&, VfxFrame& frame, std::vector<VfxLight>& lights) {
   const float since = now - start_ - kShotTravel;
   if (since < 0.0f || done(now)) return;
-  // The field's own clock stops while it releases (Engine2: elapsed frozen, releaseElapsed runs).
+  // The field's own clock stops while it releases (Ember: elapsed frozen, releaseElapsed runs).
   const bool releasing = now >= releaseAt_;
   const float e = std::min(since, releaseAt_ - start_ - kShotTravel) * kFormationSpeed;
   const float release = releasing ? three::smoothstep(now - releaseAt_, 0.0f, kRelease) : 0.0f;

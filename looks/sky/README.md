@@ -16,7 +16,7 @@ transição com sol, lua, tudo que existe na atmosfera, perfeição total, tripl
 - Captures here: `NNN/*.png` (local, git-ignored); git tag `sky-look-NNN`.
 - Capture line (aldeia015, the sky in the frame):
   `Sandbox --map C:/Engine2/maps/ember/aldeia015.json --ground build/ground/ground-v4.pak --scene
-  build/engine2-scenes/aldeia015.scene.json --sprites build/sprites/battle.pak --meshes build/meshes/props-v2.pak --fog 0
+  build/scenes/aldeia015.scene.json --sprites build/sprites/battle.pak --meshes build/meshes/props-v2.pak --fog 0
   --background 1 --tilt -15 --hour N --capture x.png` (N: 3 amanhecer, 4 manhã, 5 meio-dia, 6 tarde, 7 pôr do sol, 8 crepúsculo,
   9 noite, 10 madrugada).
 

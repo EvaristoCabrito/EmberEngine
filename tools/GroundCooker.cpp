@@ -12,7 +12,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "Engine2Textures.h"
+#include "ProceduralTextures.h"
 #include "TextureCooker.h"
 #include "core/Log.h"
 #include "render/TextureFormat.h"
@@ -48,7 +48,7 @@ bool writeFile(const std::filesystem::path& path, const void* data, size_t size)
   return static_cast<bool>(file);
 }
 
-// One texture to cook: from a PNG under Engine2's public folder, or procedural.
+// One texture to cook: from a PNG under Ember's public folder, or procedural.
 struct Job {
   std::string asset;
   TextureFormat format;
@@ -71,17 +71,17 @@ bool decode(const std::vector<uint8_t>& bytes, Rgba8& image) {
   return true;
 }
 
-// Byte-for-byte comparison of the procedural surfaces with Engine2's (export_textures.ts).
+// Byte-for-byte comparison of the procedural surfaces with Ember's (export_textures.ts).
 bool checkProcedural(const std::filesystem::path& dir) {
-  std::vector<std::string_view> names(std::begin(kEngine2ProtoLayers), std::end(kEngine2ProtoLayers));
+  std::vector<std::string_view> names(std::begin(kClassicProtoLayers), std::end(kClassicProtoLayers));
   names.push_back("smooth-plains");
   bool ok = true;
   for (const std::string_view name : names) {
     Rgba8 ours;
     std::vector<uint8_t> theirs;
-    engine2ProceduralTexture(name, ours);
+    classicProceduralTexture(name, ours);
     if (!readFile(dir / (std::string(name) + ".rgba"), theirs) || theirs.size() != ours.pixels.size()) {
-      logError("  {}: Engine2 reference missing or a different size", name);
+      logError("  {}: Ember reference missing or a different size", name);
       ok = false;
       continue;
     }
@@ -92,8 +92,8 @@ bool checkProcedural(const std::filesystem::path& dir) {
         ++differ;
         worst = std::max(worst, std::abs(int(theirs[i]) - int(ours.pixels[i])));
       }
-    if (differ) logError("  {}: {} of {} bytes differ from Engine2 (worst by {})", name, differ, theirs.size(), worst);
-    else logInfo("  {}: {}x{} identical to Engine2", name, ours.width, ours.height);
+    if (differ) logError("  {}: {} of {} bytes differ from Ember (worst by {})", name, differ, theirs.size(), worst);
+    else logInfo("  {}: {}x{} identical to Ember", name, ours.width, ours.height);
     ok = ok && differ == 0;
   }
   return ok;
@@ -104,28 +104,28 @@ bool checkProcedural(const std::filesystem::path& dir) {
 bool cookGround(JobSystem& jobs, const GroundCookOptions& options, std::vector<PakSource>& out, GroundCookReport& report) {
   const auto start = std::chrono::steady_clock::now();
   report = {};
-  const std::optional<e2::BoardData> data = e2::BoardData::load(options.boardJson);
+  const std::optional<ember::BoardData> data = ember::BoardData::load(options.boardJson);
   if (!data) return false;
   if (!options.checkDir.empty() && !checkProcedural(options.checkDir)) return false;
 
   std::vector<Job> work;
-  for (const std::string_view surface : kEngine2ProtoLayers)
-    work.push_back({e2::groundProtoAsset(surface), TextureFormat::Bc7Srgb, {}, std::string(surface)});
-  const std::filesystem::path plains049 = options.engine2Public / "game/ground-claude/049-plains";
-  work.push_back({e2::groundPlains049Asset("color"), TextureFormat::Bc7Srgb, plains049 / "color.png", {}});
-  work.push_back({e2::groundPlains049Asset("normal"), TextureFormat::Bc5Unorm, plains049 / "normal.png", {}});
-  work.push_back({e2::groundPlains049Asset("rough"), TextureFormat::Bc7Unorm, plains049 / "rough.png", {}});
+  for (const std::string_view surface : kClassicProtoLayers)
+    work.push_back({ember::groundProtoAsset(surface), TextureFormat::Bc7Srgb, {}, std::string(surface)});
+  const std::filesystem::path plains049 = options.artRoot / "game/ground-claude/049-plains";
+  work.push_back({ember::groundPlains049Asset("color"), TextureFormat::Bc7Srgb, plains049 / "color.png", {}});
+  work.push_back({ember::groundPlains049Asset("normal"), TextureFormat::Bc5Unorm, plains049 / "normal.png", {}});
+  work.push_back({ember::groundPlains049Asset("rough"), TextureFormat::Bc7Unorm, plains049 / "rough.png", {}});
   // The painted map backgrounds and editor-selectable briefing backgrounds (basic BC7 is plenty, and much less work than slow).
   std::vector<std::string> backdropAssets;
   {
     std::set<std::string> editorBackgroundFiles;
-    std::ifstream catalogFile("content/engine2/editor-catalog.json");
+    std::ifstream catalogFile("content/data/editor-catalog.json");
     const nlohmann::json catalog = catalogFile ? nlohmann::json::parse(catalogFile, nullptr, false) : nlohmann::json();
     if (catalog.is_object() && catalog.contains("backgrounds") && catalog["backgrounds"].is_object() && catalog["backgrounds"].contains("byId") && catalog["backgrounds"]["byId"].is_object())
       for (const auto& [_, file] : catalog["backgrounds"]["byId"].items())
         if (file.is_string()) editorBackgroundFiles.insert(file.get<std::string>());
     std::set<std::string> cookedBackdropFiles;
-    // Keep the project's originals in their existing folders; the Engine2 source folder is never read.
+    // Keep the project's originals in their existing folders; the Ember source folder is never read.
     for (const std::filesystem::path& folder : {std::filesystem::path("content/backdrops"), std::filesystem::path("content/briefings")}) {
       std::error_code error;
       for (const auto& entry : std::filesystem::directory_iterator(folder, error)) {
@@ -140,28 +140,28 @@ bool cookGround(JobSystem& jobs, const GroundCookOptions& options, std::vector<P
           if (lower.find("brief") != std::string::npos || lower.rfind("title-bg", 0) == 0 || lower.rfind("backpack-bg", 0) == 0 || lower.rfind("farmlands-", 0) == 0) continue;
         }
         if (!cookedBackdropFiles.insert(file).second) continue;
-        work.push_back({e2::backdropAsset(file), TextureFormat::Bc7Srgb, entry.path(), {}});
+        work.push_back({ember::backdropAsset(file), TextureFormat::Bc7Srgb, entry.path(), {}});
         backdropAssets.push_back(work.back().asset);
       }
     }
   }
-  for (const char* phase : e2::kMoonPhases)
-    work.push_back({e2::skyMoonAsset(phase), TextureFormat::Bc7Srgb, publicFile(options.engine2Public, e2::moonPhaseIcon(phase)), {}});
-  for (const e2::GroundLayerSource& layer : data->groundLayers) {
+  for (const char* phase : ember::kMoonPhases)
+    work.push_back({ember::skyMoonAsset(phase), TextureFormat::Bc7Srgb, publicFile(options.artRoot, ember::moonPhaseIcon(phase)), {}});
+  for (const ember::GroundLayerSource& layer : data->groundLayers) {
     if (layer.absent) continue;
     if (!layer.file.empty()) {  // EmberEngine's own tile, a project file (content/ground)
-      work.push_back({e2::groundLayerAsset(layer.key, "color"), TextureFormat::Bc7Srgb, layer.file, {}});
+      work.push_back({ember::groundLayerAsset(layer.key, "color"), TextureFormat::Bc7Srgb, layer.file, {}});
       continue;
     }
     if (!layer.procedural.empty()) {
-      work.push_back({e2::groundLayerAsset(layer.key, "color"), TextureFormat::Bc7Srgb, {}, layer.procedural});
+      work.push_back({ember::groundLayerAsset(layer.key, "color"), TextureFormat::Bc7Srgb, {}, layer.procedural});
       continue;
     }
-    work.push_back({e2::groundLayerAsset(layer.key, "color"), TextureFormat::Bc7Srgb, publicFile(options.engine2Public, layer.color), {}});
+    work.push_back({ember::groundLayerAsset(layer.key, "color"), TextureFormat::Bc7Srgb, publicFile(options.artRoot, layer.color), {}});
     if (!layer.normal.empty())
-      work.push_back({e2::groundLayerAsset(layer.key, "normal"), TextureFormat::Bc5Unorm, publicFile(options.engine2Public, layer.normal), {}});
+      work.push_back({ember::groundLayerAsset(layer.key, "normal"), TextureFormat::Bc5Unorm, publicFile(options.artRoot, layer.normal), {}});
     if (!layer.rough.empty())
-      work.push_back({e2::groundLayerAsset(layer.key, "rough"), TextureFormat::Bc7Unorm, publicFile(options.engine2Public, layer.rough), {}});
+      work.push_back({ember::groundLayerAsset(layer.key, "rough"), TextureFormat::Bc7Unorm, publicFile(options.artRoot, layer.rough), {}});
   }
 
   for (const Job& job : work) {
@@ -184,7 +184,7 @@ bool cookGround(JobSystem& jobs, const GroundCookOptions& options, std::vector<P
       ++report.fromCache;
     } else {
       Rgba8 image;
-      const bool decoded = job.procedural.empty() ? decode(source, image) : engine2ProceduralTexture(job.procedural, image);
+      const bool decoded = job.procedural.empty() ? decode(source, image) : classicProceduralTexture(job.procedural, image);
       if (!decoded) {
         logError("ground: cannot decode {}", job.procedural.empty() ? job.file.string() : job.procedural);
         ++report.failed;

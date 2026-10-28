@@ -39,7 +39,7 @@ Esquiva / 2). Escape: min(100, 60 + DEX / 3).
   non-human: Cobalt Blue Deer (swampBlueCalf).
 - **D**: the big ones: Undead Ox (undeadOx), Cave Troll (troll, troll2), Ancient Golem (ancientGolem); and The Butcher (theButcher).
 - **D+** (the user, 2026-10-27: "ele é tipo um D+"; halfway between D and C): Chain-Bound Penitent (chainBoundPenitent), a warrior
-  a little stronger than The Butcher (its stats x1.10, content/engine2/class-stats.json) with strong magic resistance (50 % to arcane,
+  a little stronger than The Butcher (its stats x1.10, content/data/class-stats.json) with strong magic resistance (50 % to arcane,
   darkness, ember, fire, holy, ice, lightning); first values.
 - **B**: Carnivorous Plant (carnivorousPlant).
 - **A**: Birolho (birolho, birolho2, birolho3, birolhoLegs, birolhoLegs2).

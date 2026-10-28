@@ -6,7 +6,7 @@ and Toque Sagrado"). Young Salazar's interlude class, apart from the adult Salaz
 
 ## The class
 
-- Data: `content/ember-classes.json` `heroClasses.crusader` (the same fields as `content/engine2/battle-rules.json`'s classes; `engine/world/
+- Data: `content/ember-classes.json` `heroClasses.crusader` (the same fields as `content/data/battle-rules.json`'s classes; `engine/world/
   BattleExport.cpp` Rules merges it in, and every melee sword / mace / hammer becomes usable by it). Never a shield: no shield, no other
   gear, no Golpe de Escudo (`grantClassSpells` removes it from his list).
 - Level 10 at most (`Spells.cpp classLevelCap`: experience stops there; the exporter places him at 10 at most).

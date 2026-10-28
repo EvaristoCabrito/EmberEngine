@@ -11,7 +11,7 @@ namespace {
 
 constexpr float kFlickerStep = 0.05f;  // a bolt changes shape this often (seconds)
 
-// Engine2's colours for these lights (battleSpellOverlay3d / emitters): arcane violet, lightning blue-white, frost
+// Ember's colours for these lights (battleSpellOverlay3d / emitters): arcane violet, lightning blue-white, frost
 // (0xb6e7ff), holy gold, a struck blow's warm spark.
 constexpr std::array<float, 3> kViolet{0.62f, 0.32f, 1.0f};
 constexpr std::array<float, 3> kBolt{0.72f, 0.86f, 1.0f};
@@ -63,22 +63,22 @@ int SpellEffects::looks(const std::string& kind) {
   // the meal and the potion.
   if (kind == "cureMinor") return 2;
   if (kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "createFoodAndWater" || kind == "potion") return 1;
-  // 02: Engine2's own effect, ported (render/vfx/*).
+  // 02: Ember's own effect, ported (render/vfx/*).
   // 03: ours in 3D (vfx/SpellBolts; the user, 2026-10-18: "the current ones are too bland"). 04: 03 small (the enemies').
   if (kind == "magicMissile" || kind == "magicMissileV2") return 4;
   if (kind == "divineBolt") return 1;  // 01: ours in 3D (vfx/SpellBolts)
   if (kind == "turnUndead") return 1;  // 01: ours in 3D (vfx/TurnUndead)
   if (isLightning(kind, 2)) return 3;  // 01 the flipbook cards, 02 ours in 3D (vfx/Lightning), 03 02 small (the enemies')
-  // 01 Engine2's BurningHandsV2VFX as it was, 02 its cone opening outward (ours).
+  // 01 Ember's BurningHandsV2VFX as it was, 02 its cone opening outward (ours).
   if (kind == "burningHands" || kind == "poisonBreath") return 2;
-  // Tempestade de Gelo: 01 Engine2's Blizzard2D (the enemies'), 02 ours in 3D (the heroes'): vfx/IceStorm.
+  // Tempestade de Gelo: 01 Ember's Blizzard2D (the enemies'), 02 ours in 3D (the heroes'): vfx/IceStorm.
   if (kind == "iceStorm") return 2;
   if (kind == "acidCloud") return 1;
   if (kind == "frost") return 2;  // 01 the flipbook cards, 02 ours in 3D (vfx/FrostLine)
-  // Teia dos Sonhos: 01 Engine2's WebOfDreamsVFX as ported (the net alone), 02 ours in 3D with the whole spell (vfx/DreamWeb).
+  // Teia dos Sonhos: 01 Ember's WebOfDreamsVFX as ported (the net alone), 02 ours in 3D with the whole spell (vfx/DreamWeb).
   if (kind == "webOfDreams") return 2;
-  // 01 of a spell with no flipbook-card version: Engine2's own effect, ported.
-  if (kind == "causticVenom") return 2;  // 01 Engine2's CausticVenomVFX, 02 its impact in 3D (vfx/CausticVenom: smoke, light)
+  // 01 of a spell with no flipbook-card version: Ember's own effect, ported.
+  if (kind == "causticVenom") return 2;  // 01 Ember's CausticVenomVFX, 02 its impact in 3D (vfx/CausticVenom: smoke, light)
   if (kind == "fireball" || kind == "bless" || kind == "phantasmalForce" ||
       kind == "webOfDreams" || kind == "burningHands" || kind == "poisonBreath" || kind == "cleave" || kind == "sweep")
     return 1;
@@ -118,10 +118,10 @@ int SpellEffects::looks(const std::string& kind) {
   return 0;
 }
 
-int SpellEffects::engine2Look(const std::string& kind) {
-  if (kind == "cureMinor") return 2;  // HolyLight (Engine2's own was 2D)
+int SpellEffects::classicLook(const std::string& kind) {
+  if (kind == "cureMinor") return 2;  // HolyLight (Ember's own was 2D)
   if (kind == "cureWounds" || kind == "cureLight" || kind == "cureDisease" || kind == "createFoodAndWater" || kind == "potion") return 1;
-  if (kind == "magicMissile" || kind == "magicMissileV2") return 3;  // ours in 3D (SpellBolts; 02 = Engine2's MagicMissileV2VFX)
+  if (kind == "magicMissile" || kind == "magicMissileV2") return 3;  // ours in 3D (SpellBolts; 02 = Ember's MagicMissileV2VFX)
   if (kind == "divineBolt") return 1;                                // ours in 3D (SpellBolts)
   if (kind == "turnUndead") return 1;                                // ours in 3D (vfx/TurnUndead)
   if (isLightning(kind, 2)) return 2;                                // Raio, ours in 3D (vfx/Lightning; 01 = the cards, the enemies')
@@ -134,7 +134,7 @@ int SpellEffects::engine2Look(const std::string& kind) {
   if (kind == "cleave") return 1;                                    // CleaveSweepVFX
   if (kind == "piercingThrust") return 2;                            // ours in 3D (vfx/LancerFx; 01 = the flipbook burst)
   if (kind == "sweep") return 1;                                     // VarreduraVFX
-  if (kind == "iceStorm") return 2;  // ours in 3D (Engine2's Blizzard2D, 01, is the enemies': content/fx/spell-looks.json)
+  if (kind == "iceStorm") return 2;  // ours in 3D (Ember's Blizzard2D, 01, is the enemies': content/fx/spell-looks.json)
   if (kind == "acidCloud") return 1;
   if (kind == "frost") return 2;     // Frost, ours in 3D (vfx/FrostLine; 01 = the cards, the enemies')
   return 0;
@@ -166,15 +166,15 @@ std::vector<Bless::Ally> SpellEffects::blessAllies(const Spot& caster, const std
   std::vector<Bless::Ally> allies;
   for (const Spot& s : targets) {
     const glm::vec2 d{s.feet.x - caster.feet.x, s.feet.z - caster.feet.z};
-    allies.push_back({engine2Origin(s), std::round(glm::length(d) / std::sqrt(3.0f))});
+    allies.push_back({classicOrigin(s), std::round(glm::length(d) / std::sqrt(3.0f))});
   }
   return allies;
 }
 
 float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const {
   if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2 && !targets.empty())
-    return MagicMissileV2::impactDelay(engine2Origin(caster), targets.front().body);
-  if (kind == "fireball" && look == 1 && !targets.empty()) return Fireball::travelSeconds(engine2Origin(caster), fireballTarget(targets));
+    return MagicMissileV2::impactDelay(classicOrigin(caster), targets.front().body);
+  if (kind == "fireball" && look == 1 && !targets.empty()) return Fireball::travelSeconds(classicOrigin(caster), fireballTarget(targets));
   if (kind == "phantasmalForce" && look == 1) return PhantasmalForce::kImpactAt;
   if (kind == "spectralBolt" && !targets.empty()) return ArmsFx::spectralFlight(caster.feet, areaCentre(targets).feet);
   if (kind == "webOfDreams" && look >= 1) return look == 2 ? DreamWeb::kShotTravel : WebOfDreams::kShotTravel;
@@ -184,7 +184,7 @@ float SpellEffects::impactDelay(const std::string& kind, int look, const Spot& c
     return SpellBolt::flightSeconds(style, caster.feet, (kind == "divineBolt" ? areaCentre(targets) : targets.front()).feet);
   }
   if (kind == "causticVenom" && look >= 1 && !targets.empty())
-    return CausticVenom::kCharge + CausticVenom::travelSeconds(engine2Origin(caster), aimedHex(targets));
+    return CausticVenom::kCharge + CausticVenom::travelSeconds(classicOrigin(caster), aimedHex(targets));
   if (kind == "bless" && look == 1) {
     // The blessing lands on the nearest ally as the wave reaches it.
     float first = Bless::reachSeconds(3.0f);
@@ -572,8 +572,8 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
       bolts_.emplace_back(SpellBolt::Style::Arcane, caster.feet, heightOf(caster), targets.front().feet, heightOf(targets.front()), std::vector<glm::vec3>{},
                           start, impact, 0xa11ce5u, look == 4 ? kTinyFx : 1.0f);
     }
-  } else if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2) missiles_.emplace_back(engine2Origin(caster), targets.front().body, start);
-  else if (kind == "fireball") fireballs_.emplace_back(engine2Origin(caster), fireballTarget(targets), fireballArea(targets), start);
+  } else if ((kind == "magicMissile" || kind == "magicMissileV2") && look == 2) missiles_.emplace_back(classicOrigin(caster), targets.front().body, start);
+  else if (kind == "fireball") fireballs_.emplace_back(classicOrigin(caster), fireballTarget(targets), fireballArea(targets), start);
   else if (kind == "phantasmalForce") phantasms_.emplace_back(targets.front().body, start);
   else if (kind == "cleave" || kind == "sweep") {
     // BattleSpells3D: Cleave's blade swings at weapon height (0.7) through its targets, Varredura's wave runs on the
@@ -589,7 +589,7 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     std::vector<glm::vec3> cells;
     for (const Spot& s : targets) cells.push_back(s.feet + glm::vec3(0.0f, 0.04f, 0.0f));
     const bool poison = kind == "poisonBreath";
-    burns_.emplace_back(BurningHands(engine2Origin(caster), cells, poison, start, look), poison);
+    burns_.emplace_back(BurningHands(classicOrigin(caster), cells, poison, start, look), poison);
   } else if (kind == "webOfDreams" && look == 2 && !targets.empty()) {
     // Ours (vfx/DreamWeb): the shot from the caster, the floor on every hex, the net over the zone's middle hex (the rules list the
     // area row by row: the nearest hex to its mean, not the first), each unit in it wrapped.
@@ -611,9 +611,9 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     dreamWebs_.back().id = ++webSerial_;
   } else if (kind == "webOfDreams") {
     // The zone on the aimed hex (WEB_OF_DREAMS.size 1: webZoneRadiusTiles = sqrt 3 + 1); the units in it wrapped. It holds
-    // as Engine2's preview does (2.6 s after the cast), then releases.
+    // as Ember's preview does (2.6 s after the cast), then releases.
     std::vector<glm::vec3> wrapped;
-    for (const Spot& s : targets) wrapped.push_back(engine2Origin(s));
+    for (const Spot& s : targets) wrapped.push_back(classicOrigin(s));
     webs_.emplace_back(targets.front().feet + glm::vec3(0.0f, 0.04f, 0.0f), std::sqrt(3.0f) + 1.0f, wrapped, start, start + 2.6f);
   }
   else if (kind == "iceStorm") {
@@ -627,9 +627,9 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
   } else if (kind == "causticVenom") {
     std::vector<glm::vec3> hexes;
     for (const Spot& s : targets) hexes.push_back(s.feet + glm::vec3(0.0f, 0.04f, 0.0f));
-    // 01 Engine2's CausticVenomVFX (the heroes' default); 02 the same flight, the impact in 3D (green smoke lit by the scene, a green
+    // 01 Ember's CausticVenomVFX (the heroes' default); 02 the same flight, the impact in 3D (green smoke lit by the scene, a green
     // light, droplets).
-    venoms_.emplace_back(look >= 2 ? 2 : 1, engine2Origin(caster), aimedHex(targets), hexes, start);
+    venoms_.emplace_back(look >= 2 ? 2 : 1, classicOrigin(caster), aimedHex(targets), hexes, start);
   } else if (kind == "bless") blesses_.emplace_back(caster.feet + glm::vec3(0.0f, 0.04f, 0.0f), 3.0f * std::sqrt(3.0f), blessAllies(caster, targets), start);
   else if (kind == "magicMissile" || kind == "magicMissileV2") magicMissile(caster, targets.front(), start, impact);
   else if (kind == "lightning" || kind == "lightningTier3") lightning(caster, targets, start, impact, false);
@@ -657,7 +657,7 @@ void SpellEffects::magicMissile(const Spot& caster, const Spot& target, float st
   const glm::vec3 d = target.body - caster.body;
   const float dist = glm::length(d);
   const glm::vec3 dir = dist > 1e-3f ? d / dist : glm::vec3(1, 0, 0);
-  const float travel = std::clamp(dist / 14.0f, 0.25f, 0.6f);  // Engine2 SPELL_TRAVEL 0.6 at most
+  const float travel = std::clamp(dist / 14.0f, 0.25f, 0.6f);  // Ember SPELL_TRAVEL 0.6 at most
   const float launch = std::max(start + 0.05f, impact - travel);
 
   Element& ring = add("arcane-v3-secondary-flipbook-4x4", start, launch - start + 0.3f);
@@ -710,7 +710,7 @@ void SpellEffects::magicMissile(const Spot& caster, const Spot& target, float st
 // One strike from the sky (Relâmpago, Choque, the echo): the bolt art changing shape every 50 ms, the lightning
 // eruption and ring at the feet, sparks on the body, a blue-white flash. scale 1 = Relâmpago.
 void SpellEffects::bolt(const Spot& target, float at, float scale) {
-  Element& core = add("lightning-core-v1", at, (scale >= 1.0f ? 0.72f : 0.42f) * 0.6f);  // Engine2 LIGHTNING_RAIO / STRIKE_DUR
+  Element& core = add("lightning-core-v1", at, (scale >= 1.0f ? 0.72f : 0.42f) * 0.6f);  // Ember LIGHTNING_RAIO / STRIKE_DUR
   core.flicker = {clip("lightning-core-v1"), clip("lightning-core-v2"), clip("lightning-core-v3")};
   core.from = core.to = target.feet;
   core.pivot = {0.5f, 0.03f};
@@ -759,7 +759,7 @@ void SpellEffects::lightning(const Spot& caster, const std::vector<Spot>& target
 void SpellEffects::echo(const Spot& target, float at) { bolt(target, at, 0.6f); }
 
 // Frost: cold gathers on the caster; ice erupts on every hex of the area, nearest first, each with its ring and an
-// icy flash (Engine2 FROST_FLASH: a strong lantern, gone in a fraction of a second).
+// icy flash (Ember FROST_FLASH: a strong lantern, gone in a fraction of a second).
 void SpellEffects::frost(const Spot& caster, const std::vector<Spot>& targets, float start, float impact) {
   burst("frost-v3-particles-flipbook-4x4", caster.body, start + 0.1f, std::max(impact - start, 0.3f), 1.3f, glm::vec3(1.1f), 0.6f);
   Element& gather = add("frost-v3-secondary-flipbook-4x4", start, impact - start + 0.2f);
@@ -797,7 +797,7 @@ void SpellEffects::frost(const Spot& caster, const std::vector<Spot>& targets, f
 }
 
 // Cura Menor: a gold ring under the caster while it prays; on the healed unit a ring of light, a pillar rising
-// through it and motes on its body, with a warm glow (Engine2 holyDuration: about a second).
+// through it and motes on its body, with a warm glow (Ember holyDuration: about a second).
 void SpellEffects::cure(const Spot& caster, const std::vector<Spot>& targets, float start, float impact) {
   Element& pray = add("holy-v2-secondary-flipbook-4x4", start, impact - start + 0.2f);
   pray.from = pray.to = caster.feet;
@@ -890,7 +890,7 @@ void SpellEffects::play(const std::string& clipName, const Spot& at, float start
     e.pivot = {0.5f, 0.06f};
     e.height = 2.6f;
   }
-  // Its light: the element's colour (Engine2's light colours), a moderate glow.
+  // Its light: the element's colour (Ember's light colours), a moderate glow.
   std::array<float, 3> color{1.0f, 0.9f, 0.75f};
   if (has("arcane") || has("warp")) color = kViolet;
   else if (has("lightning")) color = kBolt;
@@ -1018,7 +1018,7 @@ bool SpellEffects::active(float now) const {
 void SpellEffects::build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out,
                          std::vector<Light>& lights) {
   std::erase_if(elements_, [&](const Element& e) { return e.end <= now; });
-  // Engine2's ported effects: their own geometry and lights.
+  // Ember's ported effects: their own geometry and lights.
   std::erase_if(missiles_, [&](const MagicMissileV2& m) { return m.done(now); });
   std::erase_if(fireballs_, [&](const Fireball& f) { return f.done(now); });
   std::erase_if(blesses_, [&](const Bless& b) { return b.done(now); });
@@ -1053,7 +1053,7 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   for (const AcidCloud& cloud : acidClouds_) cloud.build(now, camera, vfx_, vfxLights);
   for (MagicMissileV2& m : missiles_) m.build(now, camera, vfx_, vfxLights);
   if (!fireballs_.empty()) {
-    // The impact's fire flipbook (Engine2 loadFireFlipbook: fx/fire-flipbook-4x4.png), from the battle pack.
+    // The impact's fire flipbook (Ember loadFireFlipbook: fx/fire-flipbook-4x4.png), from the battle pack.
     const VfxFlipbook fire = flipbook("fire-flipbook-4x4");
     for (Fireball& f : fireballs_) f.build(now, camera, fire, vfx_, vfxLights);
   }
@@ -1065,10 +1065,10 @@ void SpellEffects::build(float now, const Camera& camera, bool flat, float flatT
   for (const FrostLine& f : frosts_) f.build(now, vfx_, vfxLights);
   std::erase_if(storms_, [&](const IceStorm& s) { return s.done(now); });
   if (!storms_.empty()) {
-    // Engine2's two sheets, only when a storm of version 01 is on the board.
-    const bool engine2 = std::any_of(storms_.begin(), storms_.end(), [](const IceStorm& s) { return s.version() == 1; });
-    const VfxFlipbook ice = engine2 ? flipbook("blizzard-impact-reference") : VfxFlipbook{};
-    const VfxFlipbook wind = engine2 ? flipbook("blizzard-wind-reference") : VfxFlipbook{};
+    // Ember's two sheets, only when a storm of version 01 is on the board.
+    const bool ember = std::any_of(storms_.begin(), storms_.end(), [](const IceStorm& s) { return s.version() == 1; });
+    const VfxFlipbook ice = ember ? flipbook("blizzard-impact-reference") : VfxFlipbook{};
+    const VfxFlipbook wind = ember ? flipbook("blizzard-wind-reference") : VfxFlipbook{};
     for (IceStorm& s : storms_) s.build(now, camera, ice, wind, vfx_, vfxLights);
   }
   combat_.build(now, camera, vfx_, vfxLights);

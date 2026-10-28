@@ -1,11 +1,11 @@
 #pragma once
 
-// The Map Editor's Locais and R-Encounter tables (Engine2 src/campaign/mapstore.ts: map-order.json, map-slots.json,
+// The Map Editor's Locais and R-Encounter tables (Ember src/campaign/mapstore.ts: map-order.json, map-slots.json,
 // location-order.json, location-submaps.json, random-encounters.json and the browser's "ember-locais-local" copy that
-// wins over them). Engine2's shipped tables come through content/engine2/editor-catalog.json; EmberEngine's own edits
-// are written to content/maps/locais.json and content/maps/random-encounters.json (Engine2's folder is never
+// wins over them). Ember's shipped tables come through content/data/editor-catalog.json; EmberEngine's own edits
+// are written to content/maps/locais.json and content/maps/random-encounters.json (Ember's folder is never
 // written). When the editor has saved Locais, the campaign and the world map play that order (locationsForOrder), as
-// Engine2's game does once its Locais were saved.
+// Ember's game does once its Locais were saved.
 
 #include <filesystem>
 #include <map>
@@ -15,7 +15,7 @@
 
 #include "world/Campaign.h"  // Json
 
-namespace ember::e2 {
+namespace ember {
 
 struct LocaisFloor {
   std::string missionId;
@@ -28,7 +28,7 @@ struct EncounterRegion {
 };
 
 struct Locais {
-  // Engine2's ALL_LOCATIONS (each location's missions as Engine2 ships them) and DEFAULT_LOCATION_SUBMAPS.
+  // Ember's ALL_LOCATIONS (each location's missions as Ember ships them) and DEFAULT_LOCATION_SUBMAPS.
   struct Base {
     std::string id, name;
     std::vector<std::string> missionIds;
@@ -50,9 +50,9 @@ struct Locais {
   static std::filesystem::path file() { return "content/maps/locais.json"; }
   static std::filesystem::path regionsFile() { return "content/maps/random-encounters.json"; }
 
-  // Engine2's tables from the editor catalog, then EmberEngine's own files over them.
+  // Ember's tables from the editor catalog, then EmberEngine's own files over them.
   static Locais load(const std::filesystem::path& catalogFile);
-  // saveLocaisLocal (stamps knownMissionIds with every mission Engine2's base names). False when the write failed.
+  // saveLocaisLocal (stamps knownMissionIds with every mission Ember's base names). False when the write failed.
   bool save();
   bool saveRegions();
 
@@ -68,4 +68,4 @@ struct Locais {
 // in the editor) are added from their newest saved file in `savedMaps`.
 void applyLocais(CampaignData& data, const Locais& locais, const std::filesystem::path& savedMaps);
 
-}  // namespace ember::e2
+}  // namespace ember

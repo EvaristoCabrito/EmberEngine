@@ -1,11 +1,11 @@
-"""Render the additive O Vau map version from Engine2 scene-export coordinates."""
+"""Render the additive O Vau map version from Ember scene-export coordinates."""
 import json, math
 from pathlib import Path
 import bpy
 from mathutils import Vector
 
 ROOT = Path('C:/EmberEngine')
-PUBLIC = ROOT / 'content/game/public'
+PUBLIC = ROOT / 'content/assets'
 MAP = ROOT / 'content/maps/ember/vau030.json'
 SCENE_EXPORT = Path(r'C:/Users/evari/.codex/visualizations/2026/10/24/01a16c18-9fe6-7212-a2e8-e2e0c6a23af1/vau030-scene.json')
 OUT = Path(r'C:/Users/evari/.codex/visualizations/2026/10/24/01a16c18-9fe6-7212-a2e8-e2e0c6a23af1/vau030-map.png')

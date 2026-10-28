@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[3]
 SOURCE = ROOT / 'content/models/wisp-forest-revisited'
 KIT = ROOT / 'content/models/bosque-morto-v01'
 MODELS = ROOT / 'content/models/models.json'
-CATALOG = ROOT / 'content/engine2/editor-catalog.json'
+CATALOG = ROOT / 'content/data/editor-catalog.json'
 ASSETS = [
     ('giant-dead-oak', 'Carvalho morto gigante · Bosque Morto', 'giant-dead-oak-v02.glb'),
     ('hollow-snag', 'Árvore morta oca · Bosque Morto', 'hollow-snag-v02.glb'),

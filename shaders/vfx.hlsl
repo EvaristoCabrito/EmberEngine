@@ -1,9 +1,9 @@
-// Engine2's spell effects (its three.js VFX classes, ported in render/vfx/*): every draw is a mesh the CPU built
-// (render/VfxDraw.h, VfxGeometry.h) with one of Engine2's materials, its GLSL translated line for line below. Drawn
+// Ember's spell effects (its three.js VFX classes, ported in render/vfx/*): every draw is a mesh the CPU built
+// (render/VfxDraw.h, VfxGeometry.h) with one of Ember's materials, its GLSL translated line for line below. Drawn
 // over the finished scene in the effects pass, never writing depth. Each material computes what its GLSL writes to
 // gl_FragColor (c = rgb, a = alpha); three's blending is then reproduced in one premultiplied pipeline (ONE,
 // ONE_MINUS_SRC_ALPHA): NormalBlending (src x srcAlpha + dst x (1 - srcAlpha)) as (c x a, a), AdditiveBlending
-// (src x srcAlpha + dst) as (c x a, 0). Brightness is display-relative like the flipbook effects (Engine2's materials
+// (src x srcAlpha + dst) as (c x a, 0). Brightness is display-relative like the flipbook effects (Ember's materials
 // are toneMapped: false); the CPU's `brightness` is the light mode's glow rule.
 #include "lighting.hlsli"
 
@@ -122,11 +122,11 @@ float noise2(float2 p) {
   return lerp(lerp(hash2(i), hash2(i + float2(1, 0)), f.x), lerp(hash2(i + float2(0, 1)), hash2(i + float2(1, 1)), f.x), f.y);
 }
 
-// A 4x4 fx sheet's cell (Engine2: frame 0 top left, uv v up) inside its cooked clip (VfxFlipbook): params1 = the cell's
+// A 4x4 fx sheet's cell (Ember: frame 0 top left, uv v up) inside its cooked clip (VfxFlipbook): params1 = the cell's
 // size and the crop in pixels, color.xy = 1 / the texture's size.
 float2 cellToTexture(VfxDraw d, float2 uv) { return (float2(uv.x, 1.0 - uv.y) * d.params1.xy - d.params1.zw) * d.color.xy; }
 
-// Blizzard2D's sheets, cooked whole as one picture: Engine2's uv (v down) over the whole sheet.
+// Blizzard2D's sheets, cooked whole as one picture: Ember's uv (v down) over the whole sheet.
 float4 iceSheet(VfxDraw d, float2 e2uv) {
   const float2 tex = saturate(cellToTexture(d, float2(e2uv.x, 1.0 - e2uv.y)));
   return gTextureArrays[NonUniformResourceIndex(d.texture)].SampleLevel(gSamplers[push.samplerIndex], float3(tex, 0.0), 0.0);
@@ -414,7 +414,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
     const float frameValue = i.particleB.y, alpha = i.particleB.z, intensity = i.particleB.w, kind = i.particleC.w;
     float3 color = i.particleC.rgb;
     if (kind < 0.5) {
-      // The atlas cell (Engine2: frame 0 top left) is a layer of the cooked clip: params1 maps the cell's uv (v down)
+      // The atlas cell (Ember: frame 0 top left) is a layer of the cooked clip: params1 maps the cell's uv (v down)
       // into the trimmed texture (xy: cell size in pixels, zw: the crop), color.xy = 1 / texture size.
       const float frame = floor(fmod(frameValue, 16.0));
       const float2 tex = cellToTexture(d, clamp(uv, 0.015, 0.985));
@@ -704,7 +704,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
       a = saturate(0.12 + 0.5 * rim + glint * 0.8) * i.particleC.x * opacity;
       c = (lerp(float3(0.32, 0.58, 0.86), float3(0.85, 0.95, 1.0), rim) + glint) * intensity;
     } else if (mode < 4.5) {
-      // Blizzard2D's floor: the wind sheet's cell (1, 2) laid over the field (Engine2 tiled it over the screen, here over the
+      // Blizzard2D's floor: the wind sheet's cell (1, 2) laid over the field (Ember tiled it over the screen, here over the
       // ground), mixed toward ice blue, 0.32 strong.
       const float2 tile = frac(i.world.xz * float2(0.26, 0.3));
       const float4 ice = iceSheet(d, (float2(1.0, 2.0) + tile) / 4.0);
@@ -754,7 +754,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
       c = float3(0.82, 0.95, 1.0) * intensity;
     }
   } else if (d.material == kMaterialStandard) {
-    // MeshStandardMaterial: lit by the scene like any surface, plus its emissive (display-relative, as Engine2's glow);
+    // MeshStandardMaterial: lit by the scene like any surface, plus its emissive (display-relative, as Ember's glow);
     // color.a = its opacity (a transparent material: NormalBlending).
     const MeshFrame f = loadFrame(push.frame);
     float3 n = normalize(i.normal);

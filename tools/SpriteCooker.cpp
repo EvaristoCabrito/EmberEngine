@@ -53,7 +53,7 @@ uint64_t fnv(uint64_t hash, const void* data, size_t size) {
 }
 
 // A frame as the manifest names it (SpriteSource.h): a file, optionally one cell of a grid sheet ("#CxR:i", cells
-// row by row) and optionally lit from black ("!black": art on a black background, Engine2 deriveAlphaFromBlack).
+// row by row) and optionally lit from black ("!black": art on a black background, Ember deriveAlphaFromBlack).
 struct FrameSpec {
   std::string file;
   uint32_t cols = 1, rows = 1, cell = 0;
@@ -105,7 +105,7 @@ bool loadFrame(const std::filesystem::path& root, const std::string& frame, Rgba
     std::memcpy(&out.pixels[size_t{y} * out.width * 4], &data[(size_t{y + y0} * uint32_t(w) + x0) * 4], size_t{out.width} * 4);
   stbi_image_free(data);
   if (spec.alphaFromBlack) {
-    // Alpha = the brightest channel x 4 (Engine2 used x 1, which left a dark arrow see-through over light ground);
+    // Alpha = the brightest channel x 4 (Ember used x 1, which left a dark arrow see-through over light ground);
     // colour divided by it, so drawn premultiplied it gives back exactly the art over black (and adds exactly the
     // art when drawn additively, as glows are).
     for (size_t i = 0; i < out.pixels.size(); i += 4) {

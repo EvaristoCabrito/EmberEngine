@@ -2,7 +2,7 @@
 de desfazer essa única regra fixa de todos os mapas").
 
 Run by build.bat before every build (and by hand: python -I tools/scripts/check_panorama_lock.py). The build FAILS when:
-  1. content/engine2/backdrop-fit.json lost a map listed in content/engine2/backdrop-fit.locked.json, lost one of that map's
+  1. content/data/backdrop-fit.json lost a map listed in content/data/backdrop-fit.locked.json, lost one of that map's
      panoramas, or changed a locked painting entry's values;
   2. shaders/resolve.hlsl lost the panorama path (its modes 2-4 and 5, the mirrored repeat, the room's flat ceiling);
   3. apps/sandbox/MapStage.h no longer opens a map on its newest panorama by default.
@@ -14,8 +14,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-FIT = ROOT / "content/engine2/backdrop-fit.json"
-LOCK = ROOT / "content/engine2/backdrop-fit.locked.json"
+FIT = ROOT / "content/data/backdrop-fit.json"
+LOCK = ROOT / "content/data/backdrop-fit.locked.json"
 RESOLVE = ROOT / "shaders/resolve.hlsl"
 MAPSTAGE = ROOT / "apps/sandbox/MapStage.h"
 

@@ -1,11 +1,11 @@
 #pragma once
 
-// Spell and strike visuals on the battle board, built from Engine2's effect art (the fx clips: flipbook sheets of
+// Spell and strike visuals on the battle board, built from Ember's effect art (the fx clips: flipbook sheets of
 // arcane / lightning / frost / holy / fire / ... in three versions, bolts, an arrow, impact sparks; cooked into the
 // battle pack, set "fx", by tools/scripts/fx_sprites.py). Each cast becomes a few timed elements (a charge at the
 // caster, a projectile or a strike from the sky, an eruption and a burst at the target), each a flipbook played on
 // a quad (render/EffectDraw.h) with a light of its own (the clustered local lights: spells light the board and the
-// units around them). The look is ours: Engine2 drew these spells with canvas strokes; only its art and its
+// units around them). The look is ours: Ember drew these spells with canvas strokes; only its art and its
 // timings (SPELL_TRAVEL, LIGHTNING_*_DUR, holyDuration, FROST_FLASH) are used.
 //
 // Times are on the stage's clock. The rules decide when a hit lands (the step's impact); a cast is laid out so its
@@ -63,7 +63,7 @@ class SpellEffects {
     glm::vec3 body{0.0f};
     float cardHeight = 0.0f;  // the unit's card as drawn (0 = a hex, or not known)
   };
-  // A light an effect gives off this frame, in Engine2's terms (the stage turns it into a LocalLight).
+  // A light an effect gives off this frame, in Ember's terms (the stage turns it into a LocalLight).
   struct Light {
     glm::vec3 at{0.0f};
     std::array<float, 3> color{1.0f, 1.0f, 1.0f};
@@ -74,10 +74,10 @@ class SpellEffects {
   // shows them as "Míssil Mágico 01", ...; content/fx/README.md lists what each one is). 0 = OFF. Version 01 of every
   // spell that has one is this file's flipbook-card set (2026-10-16).
   static int looks(const std::string& kind);
-  // The heroes' default version (user, 2026-10-16): Engine2's own effect, ported (render/vfx/*); for the cures, the meal
-  // and the potion, whose Engine2 art was 2D only, our 3D light (HolyLight); 0 = none (the first version).
-  static int engine2Look(const std::string& kind);
-  // A spell or weapon skill (Engine2 kinds) in version `look`: the caster's pose starts at `start`, its first hit
+  // The heroes' default version (user, 2026-10-16): Ember's own effect, ported (render/vfx/*); for the cures, the meal
+  // and the potion, whose Ember art was 2D only, our 3D light (HolyLight); 0 = none (the first version).
+  static int classicLook(const std::string& kind);
+  // A spell or weapon skill (Ember kinds) in version `look`: the caster's pose starts at `start`, its first hit
   // lands at `impact`. `targets` are the hexes / units it reaches in the rules' order (Frost: its whole area). False =
   // nothing drawn (OFF, or no such version).
   // `owner`: who casts it (the stage's unit index, -1 = nobody): castEnd(owner) says when what it cast is over (the
@@ -91,7 +91,7 @@ class SpellEffects {
   void play(const std::string& clipName, const Spot& at, float start);
   // Preview an existing complete elemental effect, without changing any spell's selected look.
   void previewElement(VfxElement element, int version, const Spot& at, float start);
-  // A potion handed over or drunk (kind "potion", version `look`): its colour by what it does (Engine2 POTIONS effect:
+  // A potion handed over or drunk (kind "potion", version `look`): its colour by what it does (Ember POTIONS effect:
   // "heal", "disease", "mana").
   bool potion(const std::string& effect, int look, const Spot& target, float start, float impact, int owner = -1);
   // A weapon blow that landed (a plain attack, a counter, a blade skill's strike): sparks on the body. The flipbook
@@ -151,7 +151,7 @@ class SpellEffects {
 
   // This frame's quads (sorted far to near) and lights. `flatTop`: in the 2D view (Tática) every quad lies face up
   // at this height instead of standing.
-  // Engine2's ported effects (render/vfx/*) are drawn from vfx() (Renderer::setVfx), filled by the same call.
+  // Ember's ported effects (render/vfx/*) are drawn from vfx() (Renderer::setVfx), filled by the same call.
   void build(float now, const Camera& camera, bool flat, float flatTop, std::vector<EffectInstance>& out, std::vector<Light>& lights);
   const VfxFrame& vfx() const { return vfx_; }
   bool active(float now) const;
@@ -173,12 +173,12 @@ class SpellEffects {
   // Selene's Lâmina Arcana (vfx/SeleneFx, ours, 3D): cast() plays the blade's glow and the mark's burst; the stage times the mark laid on
   // a landed blow and keeps the standing mark (MapStage syncArcaneMarks).
   SeleneFx& selene() { return selene_; }
-  // A version that keeps Engine2's own timeline decides when the hit lands: seconds from the cast (Míssil Mágico 02:
-  // Engine2's charge, then the flight). Below 0: the version lands on the caller's impact (the pose's).
+  // A version that keeps Ember's own timeline decides when the hit lands: seconds from the cast (Míssil Mágico 02:
+  // Ember's charge, then the flight). Below 0: the version lands on the caller's impact (the pose's).
   float impactDelay(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const;
   // A spell cast after its caster's whole pose (the user, 2026-10-17: the effect only appears once the cast animation is
   // over): seconds from the effect's start to its first hit. impactDelay's timeline when the version has one; the cures'
-  // light gathers for HolyLight::leadIn; every other version kKindLead (Engine2's SPELL_TRAVEL at most).
+  // light gathers for HolyLight::leadIn; every other version kKindLead (Ember's SPELL_TRAVEL at most).
   float leadIn(const std::string& kind, int look, const Spot& caster, const std::vector<Spot>& targets) const;
   static constexpr float kKindLead = 0.6f;
 
@@ -259,7 +259,7 @@ class SpellEffects {
     float end;
   };
   std::vector<Cast> casts_;  // who is casting, until when
-  // Engine2's ported effects in play (Míssil Mágico 02 = MagicMissileV2VFX) and this frame's draws.
+  // Ember's ported effects in play (Míssil Mágico 02 = MagicMissileV2VFX) and this frame's draws.
   std::vector<MagicMissileV2> missiles_;
   std::vector<Fireball> fireballs_;  // Bola de Fogo 01 = FireballVFX
   std::vector<Bless> blesses_;       // Bênção 01 = BlessVFX
@@ -273,7 +273,7 @@ class SpellEffects {
   std::vector<CleaveSweep> cleaves_;  // Cleave 01 = CleaveSweepVFX
   std::vector<Varredura> sweeps_;     // Varredura 01 = VarreduraVFX
   std::vector<HolyLight> holies_;     // the cures', the meal's and the potions' light (ours, 3D)
-  std::vector<IceStorm> storms_;      // Tempestade de Gelo 01 (Engine2's Blizzard2D) / 02 (ours, 3D)
+  std::vector<IceStorm> storms_;      // Tempestade de Gelo 01 (Ember's Blizzard2D) / 02 (ours, 3D)
   std::vector<SpellBolt> bolts_;      // Míssil Mágico 03, Raio Divino 01 (ours, 3D)
   std::vector<Lightning> lightnings_; // Relâmpago / Relâmpago Maior / Choque 02 (ours, 3D)
   std::vector<FrostLine> frosts_;     // Frost 02 (ours, 3D)
@@ -327,12 +327,12 @@ class SpellEffects {
   // Bless's allies as BlessVFX takes them: anchor + 0.9, hex distance from the caster.
   static std::vector<Bless::Ally> blessAllies(const Spot& caster, const std::vector<Spot>& targets);
   // Fireball's flight goes to the target hex's ground (BattleSpells3D at(): 0.04 up); its area's radius (the farthest
-  // struck cell + 1; one target alone = Engine2's FIREBALL.size, 2 hexes around it).
+  // struck cell + 1; one target alone = Ember's FIREBALL.size, 2 hexes around it).
   static glm::vec3 fireballTarget(const std::vector<Spot>& targets) { return targets.front().feet + glm::vec3(0.0f, 0.04f, 0.0f); }
   static float fireballArea(const std::vector<Spot>& targets);
   VfxFrame vfx_;
-  // Engine2's caster point (battleSpells3d unit(): the anchor, 0.9 above the ground).
-  static glm::vec3 engine2Origin(const Spot& caster) { return caster.feet + glm::vec3(0.0f, 0.9f, 0.0f); }
+  // Ember's caster point (battleSpells3d unit(): the anchor, 0.9 above the ground).
+  static glm::vec3 classicOrigin(const Spot& caster) { return caster.feet + glm::vec3(0.0f, 0.9f, 0.0f); }
   uint32_t seed_ = 0x9e3779b9u;
   float random();  // 0..1, the visuals' own sequence (never the rules')
   // build()'s tally since the last report (logged once a second while something is not drawn)

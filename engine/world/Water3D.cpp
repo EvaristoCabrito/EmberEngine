@@ -8,7 +8,7 @@
 
 #include "core/Log.h"
 
-namespace ember::e2 {
+namespace ember {
 namespace {
 
 constexpr double kSqrt3 = 1.7320508075688772;
@@ -53,7 +53,7 @@ Water3DMap Water3DMap::fromDraft(const nlohmann::json& d) {
       if (!v.is_object()) continue;
       auto num = [&](const char* k) { return v.contains(k) && v[k].is_number() ? v[k].get<double>() : std::numeric_limits<double>::quiet_NaN(); };
       WaterPatch p{num("x"), num("y"), num("level"), num("size"), v.contains("shape") && v["shape"].is_string() && v["shape"].get<std::string>() == "square"};
-      if (!std::isfinite(p.x) || !std::isfinite(p.y) || !std::isfinite(p.level) || !std::isfinite(p.size)) continue;  // Engine2 skips them
+      if (!std::isfinite(p.x) || !std::isfinite(p.y) || !std::isfinite(p.level) || !std::isfinite(p.size)) continue;  // Ember skips them
       m.patches.push_back(p);
     }
   if (d.contains("squareTiles") && d["squareTiles"].is_boolean()) m.squareTiles = d["squareTiles"].get<bool>();
@@ -135,7 +135,7 @@ Water3DSheet buildWater3D(int cols, int rows, double tile, const std::vector<std
       minX = std::min(minX, x - reach), maxX = std::max(maxX, x + reach);
       minY = std::min(minY, y - reach), maxY = std::max(maxY, y + reach);
     }
-  std::map<std::pair<int, int>, std::vector<const WaterPatch*>> buckets;  // keyed like Engine2's "bx:by" map
+  std::map<std::pair<int, int>, std::vector<const WaterPatch*>> buckets;  // keyed like Ember's "bx:by" map
   for (const WaterPatch& p : patches) {
     if (!std::isfinite(p.x) || !std::isfinite(p.y) || !std::isfinite(p.level) || !std::isfinite(p.size)) continue;
     minX = std::min(minX, p.x - 1.4), maxX = std::max(maxX, p.x + 1.4);
@@ -158,7 +158,7 @@ Water3DSheet buildWater3D(int cols, int rows, double tile, const std::vector<std
       WaterSample sample = sampleWater(x, y, cols, rows, levels, footprints, board.has_value());
       nearby.clear();
       const int bx = floorDiv2(x), by = floorDiv2(y);
-      // Engine2 visits the nine buckets row by row (dy outer), each in insertion order: the sum's order matters
+      // Ember visits the nine buckets row by row (dy outer), each in insertion order: the sum's order matters
       for (int dy = -1; dy <= 1; dy++)
         for (int dx = -1; dx <= 1; dx++) {
           const auto it = buckets.find({bx + dx, by + dy});
@@ -226,12 +226,12 @@ int checkWater3D(const std::string& refsPath) {
     const std::string name = c["map"].get<std::string>() + " " + c["variant"].get<std::string>() + " square=" + (c["square"].get<bool>() ? "1" : "0");
     auto compare = [&](const char* what, const std::vector<float>& mine, const nlohmann::json& theirs) {
       if (mine.size() != theirs.size()) {
-        logError("{}: {} has {} values, Engine2 {}", name, what, mine.size(), theirs.size());
+        logError("{}: {} has {} values, Ember {}", name, what, mine.size(), theirs.size());
         return false;
       }
       for (size_t k = 0; k < mine.size(); ++k)
         if (mine[k] != theirs[k].get<float>()) {
-          logError("{}: {}[{}] = {} vs Engine2 {}", name, what, k, mine[k], theirs[k].get<float>());
+          logError("{}: {}[{}] = {} vs Ember {}", name, what, k, mine[k], theirs[k].get<float>());
           return false;
         }
       return true;
@@ -241,7 +241,7 @@ int checkWater3D(const std::string& refsPath) {
     if (ok) {
       const std::vector<uint32_t> theirs = c["index"].get<std::vector<uint32_t>>();
       if (theirs != s.indices) {
-        logError("{}: triangles differ ({} vs Engine2 {} indices)", name, s.indices.size(), theirs.size());
+        logError("{}: triangles differ ({} vs Ember {} indices)", name, s.indices.size(), theirs.size());
         ok = false;
       }
     }
@@ -249,8 +249,8 @@ int checkWater3D(const std::string& refsPath) {
     vertices += s.coverage.size(), triangles += s.indices.size() / 3;
   }
   if (failures) logError("check-water3d: {} of {} cases differ", failures, refs["cases"].size());
-  else logInfo("check-water3d: {} cases, {} vertices, {} triangles: water matches Engine2", refs["cases"].size(), vertices, triangles);
+  else logInfo("check-water3d: {} cases, {} vertices, {} triangles: water matches Ember", refs["cases"].size(), vertices, triangles);
   return failures;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

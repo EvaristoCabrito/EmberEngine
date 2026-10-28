@@ -12,7 +12,7 @@
 
 #include "core/Log.h"
 
-namespace ember::e2 {
+namespace ember {
 
 namespace {
 
@@ -28,7 +28,7 @@ bool readJson(const std::filesystem::path& file, Json& out) {
   return !out.is_discarded();
 }
 
-// JS truthiness of a JSON value as Engine2 reads it (`!!s.pendingMission`).
+// JS truthiness of a JSON value as Ember reads it (`!!s.pendingMission`).
 bool truthy(const Json& j) {
   if (j.is_null()) return false;
   if (j.is_boolean()) return j.get<bool>();
@@ -264,11 +264,11 @@ int checkSlotProgress(const Campaign& campaign) {
     const std::string title = c.value("title", ""), detail = c.value("detail", "");
     if (p.title != title || p.detail != detail) {
       ++differences;
-      logError("slotProgress differs: Engine2 '{}' / '{}', C++ '{}' / '{}'", title, detail, p.title, p.detail);
+      logError("slotProgress differs: Ember '{}' / '{}', C++ '{}' / '{}'", title, detail, p.title, p.detail);
     }
   }
-  if (!differences) logInfo("campaign: slotProgress matches Engine2 ({} saves)", cases);
+  if (!differences) logInfo("campaign: slotProgress matches Ember ({} saves)", cases);
   return differences;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

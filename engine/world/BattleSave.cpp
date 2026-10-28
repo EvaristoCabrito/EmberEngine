@@ -1,5 +1,5 @@
-// A fight in progress, saved and resumed (Engine2 BattleEngine captureSnapshot / applySnapshot): the units' live
-// state, the round, its initiative order and every enemy's enmity table, in Engine2's BattleSnapshot field names.
+// A fight in progress, saved and resumed (Ember BattleEngine captureSnapshot / applySnapshot): the units' live
+// state, the round, its initiative order and every enemy's enmity table, in Ember's BattleSnapshot field names.
 
 #include "world/Battle.h"
 #include "world/Spells.h"
@@ -9,7 +9,7 @@
 #include <format>
 #include <string>
 
-namespace ember::e2 {
+namespace ember {
 
 namespace {
 
@@ -34,12 +34,12 @@ nlohmann::json Battle::snapshot() const {
         {"frostCharges", u.frostCharges},           {"fantomForceCharges", u.fantomForceCharges}, {"spectralCharges", u.spectralCharges},
         {"initiative", u.initiative},               {"summoned", u.summoned},  {"guaranteedDrop", u.guaranteedDrop},
         {"moveBudgetUsed", u.moveUsed},             {"healingSkill", u.healingSkill},
-        // EmberEngine's own: the trained weapon's value and every trained skill (Engine2 kept them in heroSkills)
+        // EmberEngine's own: the trained weapon's value and every trained skill (Ember kept them in heroSkills)
         {"weaponSkill", u.weaponSkill},             {"skills", skills},
         // levelUpUnit's growth also moves these
         {"gear", {{"hp", u.gearHp}, {"atk", u.gearAtk}, {"mag", u.gearMag}, {"def", u.gearDef}, {"dex", u.gearDex}, {"mov", u.gearMov}}},
         {"points", {{"hp", u.pointHp}, {"atk", u.pointAtk}, {"mag", u.pointMag}, {"def", u.pointDef}, {"dex", u.pointDex}}}};
-    // What it carries and its conditions (Engine2 Unit.bag / diseased / diseaseBase / poisoned / poisonTier / fullness /
+    // What it carries and its conditions (Ember Unit.bag / diseased / diseaseBase / poisoned / poisonTier / fullness /
     // hungerPenaltyPct); the off-hand weapon's trained value (ours, as weaponSkill).
     nlohmann::json bag = nlohmann::json::object();
     for (int k = 0; k < 7; ++k) bag[kPotionIds[k]] = u.bag[k];
@@ -54,7 +54,7 @@ nlohmann::json Battle::snapshot() const {
     s["fullness"] = u.fullness ? nlohmann::json(*u.fullness) : nlohmann::json();
     s["hungerPenaltyPct"] = u.hungerPenaltyPct;
     s["offWeaponSkill"] = u.offWeaponSkill;
-    // Engine2's status conditions (BattleUnitSnap names)
+    // Ember's status conditions (BattleUnitSnap names)
     s["stunned"] = u.stunned, s["stunTurns"] = u.stunTurns, s["asleep"] = u.asleep, s["sleepTurns"] = u.sleepTurns;
     s["bleeding"] = u.bleeding, s["crippled"] = u.crippled, s["fearTurns"] = u.fearTurns;
     if (u.bleedRoundsLeft) s["bleedRoundsLeft"] = *u.bleedRoundsLeft;
@@ -110,7 +110,7 @@ nlohmann::json Battle::snapshot() const {
     for (const BattleHex& c : zones_[i].cells) cells.push_back({c.x, c.y});
     zones[i]["cells"] = std::move(cells);
   }
-  // Engine2's zones, in captureSnapshot's shapes
+  // Ember's zones, in captureSnapshot's shapes
   auto cellsJson = [](const std::vector<BattleHex>& cells) {
     nlohmann::json a = nlohmann::json::array();
     for (const BattleHex& c : cells) a.push_back(std::format("{},{}", c.x, c.y));
@@ -138,7 +138,7 @@ nlohmann::json Battle::snapshot() const {
   // enmity.ts EnmitySnapshot: { enemyId: { heroId: [ce, ve] } }
   nlohmann::json enmity = nlohmann::json::object();
   for (const Enmity& e : enmity_) enmity[units_[e.enemy].id][units_[e.hero].id] = nlohmann::json::array({e.ce, e.ve});
-  // the locks opened so far and what the fight has found (Engine2 snapshots the decorations and the loot lists)
+  // the locks opened so far and what the fight has found (Ember snapshots the decorations and the loot lists)
   nlohmann::json opened = nlohmann::json::array();
   for (size_t i = 0; i < locks_.size(); ++i)
     if (locks_[i].open) opened.push_back(i);
@@ -313,7 +313,7 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
       zoneSerial_ = std::max(zoneSerial_, z.id);
       zones_.push_back(std::move(z));
     }
-  // Engine2's zones
+  // Ember's zones
   auto readCells = [](const nlohmann::json& a) {
     std::vector<BattleHex> cells;
     if (a.is_array())
@@ -418,4 +418,4 @@ bool Battle::applySnapshot(const nlohmann::json& snap) {
   return true;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

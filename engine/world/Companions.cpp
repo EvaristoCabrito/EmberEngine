@@ -6,7 +6,7 @@
 
 #include "world/Noise.h"
 
-namespace ember::e2 {
+namespace ember {
 
 namespace {
 
@@ -145,4 +145,4 @@ bool Companions::resolveReply(Json& save, const Json& reply, const std::string& 
   return true;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

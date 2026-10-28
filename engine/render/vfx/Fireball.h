@@ -1,16 +1,16 @@
 #pragma once
 
-// Engine2's FireballVFX (src/vfx/legacy/three/FireballVFX.ts) as BattleSpells3D plays it, ported to the effect runtime:
+// Ember's FireballVFX (src/vfx/legacy/three/FireballVFX.ts) as BattleSpells3D plays it, ported to the effect runtime:
 // Bola de Fogo 01. The projectile is OldFireBall (OldFireBall.ts): a boiling icosphere of fire (fbm noise pushes its
 // surface in and out, heat colours from white core to red edge) inside a softer flaring shell, carrying a fire light,
 // arcing from the caster to the target hex over 1.25-2.5 s. On arrival, FireballImpactVFX (FireballImpactVFX.ts, its
 // default "Etapa 02" settings): a camera-facing flash, then 308 seeded particles (procedural flames, rising
 // secondary flames, a ring of fire-flipbook flames on the ground, sparks, embers, smoke) held inside the spell's area,
-// with a light that flares and flickers out. Its math runs in Ember's frame (z up) as Engine2's does, including where
-// Engine2's impact used its own y as up (inside the Ember frame that y lies along the board: kept as it is).
+// with a light that flares and flickers out. Its math runs in Ember's frame (z up) as Ember's does, including where
+// Ember's impact used its own y as up (inside the Ember frame that y lies along the board: kept as it is).
 //
-// Not carried over: the lights' shadows (Engine2: 512 px shadow maps; our local lights have none yet); soft particles
-// (Engine2 passes no depth texture in battle, so they are off there too).
+// Not carried over: the lights' shadows (Ember: 512 px shadow maps; our local lights have none yet); soft particles
+// (Ember passes no depth texture in battle, so they are off there too).
 
 #include <vector>
 
@@ -22,7 +22,7 @@ namespace ember {
 
 class Fireball {
  public:
-  // origin: Engine2's caster point (anchor + 0.9 up); target: the target hex's ground + 0.04; aoeRadius: the area's
+  // origin: Ember's caster point (anchor + 0.9 up); target: the target hex's ground + 0.04; aoeRadius: the area's
   // radius (the farthest struck cell's distance + 1, BattleSpells3D). World space / world units.
   Fireball(glm::vec3 origin, glm::vec3 target, float aoeRadius, float start);
 

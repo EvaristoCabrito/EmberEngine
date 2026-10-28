@@ -164,7 +164,7 @@ void CausticVenom::build(float now, const Camera& camera, const ElementSpritesV2
       const float seed = static_cast<float>(index) * 7.31f + p * 2.17f;
       const float angle = p * kPi * 2.0f / 6.0f + static_cast<float>(index) * 0.7f;
       const float radius = 0.045f + (p % 2) * 0.055f;
-      // x drifts by sin(e x 0.7 + seed) x 0.0007 every frame (Engine2: 60 per second), integrated.
+      // x drifts by sin(e x 0.7 + seed) x 0.0007 every frame (Ember: 60 per second), integrated.
       const float x = c.x + std::cos(angle) * radius + 0.0007f * 60.0f / 0.7f * (std::cos(seed) - std::cos(e * 0.7f + seed));
       const float y = c.y + p * 0.13f + std::sin(seed) * 0.045f + it * (0.12f + p * 0.018f);
       const float z = c.z + (0.18f + p * 0.085f);

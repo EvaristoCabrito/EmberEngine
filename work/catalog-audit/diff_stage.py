@@ -1,6 +1,6 @@
 import pathlib,difflib,json
 base=pathlib.Path(r'C:\EmberEngine')
-for src in ['content/engine2/editor-catalog.json','content/models/models.json','content/maps/ember/cemiterio-esquecidos008.json']:
+for src in ['content/data/editor-catalog.json','content/models/models.json','content/maps/ember/cemiterio-esquecidos008.json']:
  old=(base/src).read_text(encoding='utf-8'); staged=(base/'work/catalog-audit/stage'/pathlib.Path(src).name).read_text(encoding='utf-8')
  print(src,'lengths',len(old),len(staged),'diff',sum(1 for x in difflib.ndiff(old,staged) if x[0]!=' '))
  sm=difflib.SequenceMatcher(a=old,b=staged,autojunk=False)

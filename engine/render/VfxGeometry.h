@@ -1,6 +1,6 @@
 #pragma once
 
-// three.js geometries rebuilt exactly (r16x src/geometries): the shapes Engine2's effects are made of, as triangle lists
+// three.js geometries rebuilt exactly (r16x src/geometries): the shapes Ember's effects are made of, as triangle lists
 // (indices expanded) of VfxVertex. Built once and kept (each call returns the same vector).
 
 #include <cmath>

@@ -9,7 +9,7 @@
 
 #include "core/Log.h"
 
-namespace ember::e2 {
+namespace ember {
 
 namespace {
 
@@ -20,7 +20,7 @@ struct Cell {
 };
 std::string key(int x, int y) { return std::format("{},{}", x, y); }
 
-// data.ts hexAdj: the six odd-r neighbours, in Engine2's order (it matters to nothing but is kept).
+// data.ts hexAdj: the six odd-r neighbours, in Ember's order (it matters to nothing but is kept).
 std::vector<Cell> hexAdj(int x, int y) {
   static const int even[6][2] = {{1, 0}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1}, {0, 1}};
   static const int odd[6][2] = {{1, 0}, {1, -1}, {0, -1}, {-1, 0}, {0, 1}, {1, 1}};
@@ -34,12 +34,12 @@ int oddrDist(int ax, int ay, int bx, int by) {
   return (std::abs(aq - bq) + std::abs(ay - by) + std::abs(-aq - ay - (-bq - by))) / 2;
 }
 
-// The draft as the passes see it (Engine2's Mission: the layout, spawns, decorations).
+// The draft as the passes see it (Ember's Mission: the layout, spawns, decorations).
 struct Mission {
   std::string id;
   int index = 0, cols = 0, rows = 0;
   bool hub = false;
-  std::vector<std::string> layout;  // one string per row, Engine2's terrain letters
+  std::vector<std::string> layout;  // one string per row, Ember's terrain letters
   std::vector<Cell> player, enemy, neutral;
   ojson decorations = ojson::array();
 };
@@ -242,7 +242,7 @@ class Dresser {
     m.decorations = closeWatchtowerWalls(m.id, tiles, m.cols, m.rows, ojson::array());
     tiles = clearRockColumnTiles(clearRockColumnTiles(tiles, m.cols, m.rows, m.decorations, base), m.cols, m.rows, m.decorations, base);
     // draftToMission writes TILE_CHAR[tile] with no fallback: a retired terrain id becomes the text "undefined", which
-    // the passes then read as nine letters (scatterTactics re-squares the rows afterwards). Kept, as Engine2 does it.
+    // the passes then read as nine letters (scatterTactics re-squares the rows afterwards). Kept, as Ember does it.
     for (int r = 0; r < m.rows; ++r) {
       std::string row;
       for (int c = 0; c < m.cols; ++c) {
@@ -670,7 +670,7 @@ int checkDress(const std::filesystem::path& refs, const DressTables& tables, con
     if (nlohmann::json(r.tileVariants) != nlohmann::json::parse(c["tileVariants"].dump())) ++bad, logError("check-dress: {}: tile variants differ", name);
     if (nlohmann::json::parse(r.decorations.dump()) != nlohmann::json::parse(c["decorations"].dump())) {
       ++bad;
-      logError("check-dress: {}: decorations differ ({} here, {} in Engine2)", name, r.decorations.size(), c["decorations"].size());
+      logError("check-dress: {}: decorations differ ({} here, {} in Ember)", name, r.decorations.size(), c["decorations"].size());
     }
     if (c.contains("normalized")) {
       const ojson& d = c["draft"];
@@ -691,8 +691,8 @@ int checkDress(const std::filesystem::path& refs, const DressTables& tables, con
           << ojson{{"tiles", r.tiles}, {"decorations", r.decorations}, {"refTiles", c["tiles"]}, {"refDecorations", c["decorations"]}}.dump();
     }
   }
-  if (bad == 0) logInfo("check-dress: {} cases, Gerar terreno matches Engine2", cases);
+  if (bad == 0) logInfo("check-dress: {} cases, Gerar terreno matches Ember", cases);
   return bad;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

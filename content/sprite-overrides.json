@@ -1,6 +1,6 @@
 {
  "version": 1,
- "about": "Clips whose art EmberEngine replaces (Engine2's file stays untouched in C:/Engine2). Applied to the battle pack's manifest and the heroes file by tools/scripts/sprites/apply_sprite_overrides.py. Paths are relative to the repo root.",
+ "about": "Clips whose art EmberEngine replaces (Ember's file stays untouched in ). Applied to the battle pack's manifest and the heroes file by tools/scripts/sprites/apply_sprite_overrides.py. Paths are relative to the repo root.",
  "feet": ["aldric"],
  "speed": [
   {"hero": "malrec", "poses": ["attack", "cast"], "factor": 2.0, "why": "the user, 2026-10-17: Malrec's casting and ATT are far too slow (his clips run 3.33 s at 10.8 fps, then the fight plays them at its pace: more than 5 s a cast)"}
@@ -351,7 +351,7 @@
      "nat": [535, 792],
      "crop": [29, 4, 480, 784],
      "box": {"w": 1.8916, "h": 2.80028, "foot": 0.01335},
-     "boxNote": "tools/scripts/sprites/prepare_still_pose.py source-VossBack.png against Engine2's idle frame 1 (box h 4.36196): head to feet 2.687 units as in the idle, 760 px (1.5x the idle's 507)"
+     "boxNote": "tools/scripts/sprites/prepare_still_pose.py source-VossBack.png against Ember's idle frame 1 (box h 4.36196): head to feet 2.687 units as in the idle, 760 px (1.5x the idle's 507)"
     }
    ]
   }

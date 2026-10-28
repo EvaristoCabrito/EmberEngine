@@ -1,10 +1,10 @@
 #pragma once
 
-// The Inn's rules, ported from Engine2's GameApp Inn handlers (src/game/GameApp.tsx InnScreen props), hunger.ts
+// The Inn's rules, ported from Ember's GameApp Inn handlers (src/game/GameApp.tsx InnScreen props), hunger.ts
 // buyInnMeal and inventory.ts equipSharedWeapon / unequipSharedWeapon: meals, the Adega's potions and lockpicks,
 // rations, a night's rest, the healer's Cura Média and cures, Vargan's weapons and gear (buy, enhance, sell, equip),
-// the NPCs' quests (talk, accept, hand in). Each action takes the save and returns the new save, or nothing when Engine2
-// would refuse. Prices and item tables come from tools/scripts/engine2/export_inn.ts (content/engine2/inn.json).
+// the NPCs' quests (talk, accept, hand in). Each action takes the save and returns the new save, or nothing when Ember
+// would refuse. Prices and item tables come from tools/scripts/data/export_inn.ts (content/data/inn.json).
 
 #include <filesystem>
 #include <functional>
@@ -16,7 +16,7 @@
 #include "world/Campaign.h"
 #include "world/Overworld.h"
 
-namespace ember::e2 {
+namespace ember {
 
 struct InnPotion {
   std::string id, label, tooltip, effect;  // effect: heal / mana / disease
@@ -32,7 +32,7 @@ struct InnWeapon {
   int magBonus = 0, dexBonus = 0;              // a staff's MAG / DEX while its class wields it (weapon.magic)
   std::vector<std::string> usableBy, tooltip;  // tooltip per enhancement 0..max
   std::vector<int> sell;                       // sell value per enhancement 0..max
-  std::string weaponType;                      // ours: "sword", "bow", ... (content/engine2/weapons.json), the unknown item's only word
+  std::string weaponType;                      // ours: "sword", "bow", ... (content/data/weapons.json), the unknown item's only word
 };
 struct InnGear {
   std::string id, name, slot, typeSlot, tooltip, icon, kind, summary;  // kind: "", "weapon" or "shield" (off-hand)
@@ -40,7 +40,7 @@ struct InnGear {
   double dmgMul = 0.75;
   bool pouch = false;
   std::optional<std::vector<std::string>> usableBy;
-  std::string weaponType;  // ours: an off-hand weapon's type ("dagger"; content/engine2/weapons.json offHand)
+  std::string weaponType;  // ours: an off-hand weapon's type ("dagger"; content/data/weapons.json offHand)
 };
 
 struct InnData {
@@ -146,4 +146,4 @@ class InnRules {
   const Overworld& world_;
 };
 
-}  // namespace ember::e2
+}  // namespace ember

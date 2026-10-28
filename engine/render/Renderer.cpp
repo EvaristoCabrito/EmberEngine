@@ -143,7 +143,7 @@ struct WaterPush {
   VkDeviceAddress frame;
   VkDeviceAddress vertices;
   VkDeviceAddress indices;
-  uint32_t look;  // shaders/water.hlsl: 0 Engine2, 1 look 001 "ember", 2 look 002, 3 look 003 "decente"
+  uint32_t look;  // shaders/water.hlsl: 0 Ember, 1 look 001 "ember", 2 look 002, 3 look 003 "decente"
   uint32_t backdrop, depth, sampler;  // look 003: the scene under the water, the depth, a linear clamp sampler (bindless)
 };
 
@@ -340,7 +340,7 @@ struct ResolvePush {
 static_assert(sizeof(ResolvePush) <= Bindless::kPushConstantBytes);
 
 constexpr glm::vec4 kClearColor{0.012f, 0.014f, 0.02f, 1.0f};
-// Under the fog of war, off the board is never seen (Engine2: the black must not trace the map's outline).
+// Under the fog of war, off the board is never seen (Ember: the black must not trace the map's outline).
 constexpr glm::vec4 kNeverSeenColor{0.0f, 0.0f, 0.0f, 1.0f};
 
 void memoryBarrier(VkCommandBuffer cmd, VkPipelineStageFlags2 srcStage, VkAccessFlags2 srcAccess, VkPipelineStageFlags2 dstStage,
@@ -620,7 +620,7 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   effects.alphaBlend = true;
   effects.premultipliedAlpha = true;
   effectPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), effects);
-  // Engine2's ported effects (shaders/vfx.hlsl): the same blend; depth-tested or drawn over everything (Engine2 draws
+  // Ember's ported effects (shaders/vfx.hlsl): the same blend; depth-tested or drawn over everything (Ember draws
   // Magic Missile V2 in the foreground: depthTest false).
   for (int depthTested = 0; depthTested < 2; ++depthTested) {
     GraphicsPipelineDesc vfx = effects;
@@ -698,7 +698,7 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   spriteShadowPipeline_ = createGraphicsPipeline(context, layout, spriteShadow);
 }
 
-void Renderer::setFogOfWar(const e2::FogMask* mask, uint64_t version, const std::vector<uint16_t>* texels) {
+void Renderer::setFogOfWar(const ember::FogMask* mask, uint64_t version, const std::vector<uint16_t>* texels) {
   fogOn_ = mask && mask->width > 0 && mask->height > 0;
   if (!fogOn_ || version == fogVersion_) return;
   fog_ = *mask;
@@ -708,7 +708,7 @@ void Renderer::setFogOfWar(const e2::FogMask* mask, uint64_t version, const std:
   fogUploadPending_ = true;
 }
 
-void Renderer::fogTexels(const e2::FogMask& mask, std::vector<uint16_t>& out) {
+void Renderer::fogTexels(const ember::FogMask& mask, std::vector<uint16_t>& out) {
   const size_t texels = mask.alpha.size();
   out.resize(texels * 4);
   for (size_t i = 0; i < texels; ++i) {
@@ -729,7 +729,7 @@ float Renderer::fogSight(glm::vec3 position) const {
   const float fx = x - x0, fy = y - y0;
   const auto at = [&](int tx, int ty) { return fog_.alpha[static_cast<size_t>(ty) * fog_.width + tx] / 255.0f; };
   const float a = glm::mix(glm::mix(at(x0, y0), at(x1, y0), fx), glm::mix(at(x0, y1), at(x1, y1), fx), fy);
-  return std::clamp(1.0f - a / e2::kExploredAlpha, 0.0f, 1.0f);
+  return std::clamp(1.0f - a / ember::kExploredAlpha, 0.0f, 1.0f);
 }
 
 void Renderer::setScene(const Camera& camera, std::span<const SpriteInstance> sprites) {
@@ -1639,7 +1639,7 @@ void Renderer::recordDepthPyramid(VkCommandBuffer cmd) {
   }
 }
 
-// Engine2's bloom as a mip pyramid (shaders/bloom.hlsl): the part of the scene above the threshold comes down five levels,
+// Ember's bloom as a mip pyramid (shaders/bloom.hlsl): the part of the scene above the threshold comes down five levels,
 // then goes back up with a tent filter, each level adding its own share; level 0 is the finished bloom the tonemap adds.
 void Renderer::recordBloom(VkCommandBuffer cmd) {
   // Last frame's tonemap sampled the pyramid; it is rebuilt from scratch.
@@ -2178,7 +2178,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   if (hasScene_) {
     const glm::mat4 viewProjection = camera_.viewProjection();
     if (terrain_) {
-      // The board's ground (Engine2's terrain), depth-tested against the 3D meshes.
+      // The board's ground (Ember's terrain), depth-tested against the 3D meshes.
       const uint32_t terrainScope = gpuTimer_.begin(cmd, "terrain");
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, terrainPipeline_);
       const bool marks = markCols_ > 0 && markRows_ > 0 && static_cast<uint32_t>(markCols_ * markRows_) <= kMaxMarkCells;
@@ -2392,7 +2392,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(effectPush), &effectPush);
       vkCmdDraw(cmd, 6, static_cast<uint32_t>(effects_.size()), 0, 0);
     }
-    // Engine2's ported effects, in the order the effects gave them (three's render order).
+    // Ember's ported effects, in the order the effects gave them (three's render order).
     VkPipeline bound = VK_NULL_HANDLE;
     for (uint32_t i = 0; i < vfxDraws_.size(); ++i) {
       const VfxDraw& d = vfxDraws_[i];

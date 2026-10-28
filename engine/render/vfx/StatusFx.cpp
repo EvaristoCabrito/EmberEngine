@@ -93,7 +93,7 @@ VfxInstance puff(glm::vec3 centre, float size, float rotation, float seed, float
   return {glm::mat4(1.0f), glm::vec4(centre, size), glm::vec4(rotation, seed, alpha, 0.0f), glm::vec4(albedo, 0.0f)};
 }
 
-// Engine2's two colours of each (drawStatusFx core / dark), a hot white-tinted heart for the motes, the vapour's own albedo.
+// Ember's two colours of each (drawStatusFx core / dark), a hot white-tinted heart for the motes, the vapour's own albedo.
 struct Palette {
   glm::vec3 core, dark, hot, vapour;
 };
@@ -135,7 +135,7 @@ void StatusFx::buildOne(const Effect& e, float now, const Camera& camera, VfxFra
   const float env = ease(0.0f, 0.6f, age) * (e.finish < 0.0f ? 1.0f : 1.0f - ease(e.finish, e.finish + 0.7f, now));
   if (env <= 0.0f) return;
   const float phase0 = hash01(e.seed, 0, 9) * kTau;
-  const float pulse = 0.5f + 0.5f * std::sin(age * (poison ? 3.8f : 2.5f) + phase0);  // Engine2's beat: acid quick, sickness slow
+  const float pulse = 0.5f + 0.5f * std::sin(age * (poison ? 3.8f : 2.5f) + phase0);  // Ember's beat: acid quick, sickness slow
   const float speed = poison ? 0.72f : 0.48f;
   const Draw draw{frame};
 
@@ -177,7 +177,7 @@ void StatusFx::buildOne(const Effect& e, float now, const Camera& camera, VfxFra
     draw(discFirst_, discCount_, m, kModeRing, age, 0.35f, 0.14f * env, pal.dark, 0.0f, glm::vec4(pal.core, 0.9f), e.feet, VfxBlend::Additive);
   }
 
-  // --- The wisps: thin tubes of vapour climbing the sides in a slow spiral, wavering (Engine2's two vapour lines, three here,
+  // --- The wisps: thin tubes of vapour climbing the sides in a slow spiral, wavering (Ember's two vapour lines, three here,
   // round the body). The tube's bright head is its foot; its current is run backwards so it climbs. ---
   for (int w = 0; w < 3; ++w) {
     const float base = phase0 + static_cast<float>(w) * kTau / 3.0f + age * (poison ? 0.35f : 0.22f);

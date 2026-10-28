@@ -1,11 +1,11 @@
-"""Offline Blender layout preview using Engine2's exported map coordinates and registered GLBs."""
+"""Offline Blender layout preview using Ember's exported map coordinates and registered GLBs."""
 import json, math
 from pathlib import Path
 import bpy, bmesh
 from mathutils import Vector
 
 ROOT=Path('C:/EmberEngine')
-PUBLIC=ROOT/'content/game/public'
+PUBLIC=ROOT/'content/assets'
 KIT=ROOT/'content/models/wisp-forest-revisited'
 MAP=ROOT/'content/maps/ember/wisp-forest010.json'
 OUT=Path(r'C:/Users/evari/.codex/visualizations/2026/10/24/01a16c18-9fe6-7212-a2e8-e2e0c6a23af1/wisp-forest-revisited-map.png')

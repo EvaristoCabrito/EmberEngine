@@ -10,7 +10,7 @@ add_library(EmberTools STATIC
   GroundCheck.cpp
   BattleCheck.cpp
   GroundCooker.cpp
-  Engine2Textures.cpp
+  ProceduralTextures.cpp
 )
 
 target_include_directories(EmberTools PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

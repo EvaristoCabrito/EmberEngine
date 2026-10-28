@@ -4,7 +4,7 @@
 #include <format>
 #include <fstream>
 
-namespace ember::e2 {
+namespace ember {
 
 std::optional<CutsceneScript> CutsceneScript::load(const std::string& file, std::string* why) {
   std::ifstream in(file, std::ios::binary);
@@ -96,4 +96,4 @@ std::optional<CutsceneScript> CutsceneScript::parse(const Json& j, std::string* 
   return s;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

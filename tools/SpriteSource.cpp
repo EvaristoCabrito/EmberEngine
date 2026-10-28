@@ -48,7 +48,7 @@ bool readJson(const std::filesystem::path& path, json& out) {
   return true;
 }
 
-// --- Engine2 pacing (src/units/visual.ts framePace), as fps + play mode ---------------------------
+// --- Ember pacing (src/units/visual.ts framePace), as fps + play mode ---------------------------
 
 enum class Kind { Idle, Walk, OneShot };
 
@@ -189,12 +189,12 @@ bool saveSpriteManifest(const std::filesystem::path& path, const SpriteManifest&
   return static_cast<bool>(file);
 }
 
-bool importEngine2Sprites(const std::filesystem::path& engine2Root, SpriteManifest& out) {
+bool importSourceSprites(const std::filesystem::path& sourceRoot, SpriteManifest& out) {
   json manifest, cleanup;
-  if (!readJson(engine2Root / "src/units/manifest.json", manifest)) return false;
-  if (!readJson(engine2Root / "tools/sprite-cleanup.json", cleanup)) return false;
+  if (!readJson(sourceRoot / "src/units/manifest.json", manifest)) return false;
+  if (!readJson(sourceRoot / "tools/sprite-cleanup.json", cleanup)) return false;
   const std::set<std::string> cleaned = cleanup.at("decontaminate").get<std::set<std::string>>();
-  const std::filesystem::path game = engine2Root / "public/game";
+  const std::filesystem::path game = sourceRoot / "public/game";
 
   // Single stills Ember shows while walking (tools/prepare-sprites.mjs STILLS).
   const std::map<std::string, std::vector<std::string>> stills = {
@@ -218,7 +218,7 @@ bool importEngine2Sprites(const std::filesystem::path& engine2Root, SpriteManife
         if (!std::filesystem::exists(game / clip.frames.back())) complete = false;
       }
       if (!complete) {
-        logWarn("engine2 {}{}: frames missing on disk, clip skipped", base, prefix);
+        logWarn("ember {}{}: frames missing on disk, clip skipped", base, prefix);
         ++missing;
         continue;
       }
@@ -239,7 +239,7 @@ bool importEngine2Sprites(const std::filesystem::path& engine2Root, SpriteManife
     clips += set.clips.size();
     for (const auto& clip : set.clips) frames += clip.frames.size();
   }
-  logInfo("engine2: {} sprite sets, {} clips, {} frames ({} clips skipped for missing frames)", out.sets.size(), clips,
+  logInfo("ember: {} sprite sets, {} clips, {} frames ({} clips skipped for missing frames)", out.sets.size(), clips,
           frames, missing);
   return true;
 }

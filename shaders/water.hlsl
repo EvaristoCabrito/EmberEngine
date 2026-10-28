@@ -1,9 +1,9 @@
-// The board's water: Engine2's water sheet (engine/world/GroundMesh.h buildWater) and its material
+// The board's water: Ember's water sheet (engine/world/GroundMesh.h buildWater) and its material
 // (src/editor/ember/dioramaView.ts): colour #2f86a8, roughness 0.5, metalness 0.05, 74% opaque, a ripple
-// normal map (normal scale 0.6) scrolling by (0.02, 0.013) per second, uv = world xz / 4. Engine2 bakes the
+// normal map (normal scale 0.6) scrolling by (0.02, 0.013) per second, uv = world xz / 4. Ember bakes the
 // ripple into a 128 px texture from a sum of sines (src/render/textures.ts); the same sines are evaluated
 // here directly. Lit through the lighting contract; blended premultiplied, depth-tested, no depth write.
-// Looks (panel "Água"): 0 Engine2 (above), 1 ember = water_look001.hlsli (EmberEngine's own water: waves, the sky's
+// Looks (panel "Água"): 0 Ember (above), 1 ember = water_look001.hlsli (EmberEngine's own water: waves, the sky's
 // reflection, the body's depth colour; looks/water/README.md), 2 correnteza = water_look002.hlsli (seamless moving water),
 // 3 decente = water_look003.hlsli (the water between the eye and the bed: reads the scene under it).
 #include "water_look001.hlsli"
@@ -14,7 +14,7 @@ struct Push {
   uint64_t frame;     // MeshFrame
   uint64_t vertices;  // WaterVertex[] (16 bytes: position, octahedral normal)
   uint64_t indices;   // uint[]
-  uint look;          // 0 Engine2, 1 ember (look 001), 2 correnteza (look 002), 3 decente (look 003)
+  uint look;          // 0 Ember, 1 ember (look 001), 2 correnteza (look 002), 3 decente (look 003)
   uint backdrop, depthTexture, linearSampler;  // look 003: the scene under the water, its depth, a linear clamp sampler
 };
 [[vk::push_constant]] Push push;
@@ -36,7 +36,7 @@ VSOut VSMain(uint id : SV_VertexID) {
   return o;
 }
 
-// Engine2's ripple height field, in texels of its 128 px tile.
+// Ember's ripple height field, in texels of its 128 px tile.
 float rippleHeight(float2 p) {
   return sin(p.x * 0.19 + sin(p.y * 0.11) * 2.0) * 0.5 + sin(p.y * 0.23 + p.x * 0.07) * 0.5 + sin((p.x + p.y) * 0.31) * 0.25;
 }
@@ -49,7 +49,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
   if (push.look == 3) return emberWater003(f, i.world, i.position, push.backdrop, push.depthTexture, push.linearSampler, 1.0);
   const float2 uv = i.world.xz / 4.0 + float2(0.02, 0.013) * f.time;
   const float2 p = frac(uv) * 128.0;
-  // Engine2's texel normal: (-(dH/dx), -(dH/dy), 2), central differences one texel apart.
+  // Ember's texel normal: (-(dH/dx), -(dH/dy), 2), central differences one texel apart.
   const float3 tn = normalize(float3(-(rippleHeight(p + float2(1, 0)) - rippleHeight(p - float2(1, 0))),
                                      -(rippleHeight(p + float2(0, 1)) - rippleHeight(p - float2(0, 1))), 2.0));
   // On the flat sheet the texture's x runs along world x and its y along world z (uv = xz / 4).

@@ -41,7 +41,7 @@ bool writeFile(const std::filesystem::path& path, const void* data, size_t size)
 }  // namespace
 
 bool cookArchitecture(JobSystem& jobs, const ArchitectureCookOptions& options, std::vector<PakSource>& out) {
-  e2::ArchitectureDefs defs;
+  ember::ArchitectureDefs defs;
   if (!defs.load(options.catalog)) {
     logError("architecture: {} has no architectureDefs (export_editor_catalog.ts)", options.catalog.string());
     return false;
@@ -52,9 +52,9 @@ bool cookArchitecture(JobSystem& jobs, const ArchitectureCookOptions& options, s
   for (const auto& [name, url] : defs.materials) textures.insert(url);  // EmberEngine's kit materials (oak, iron, the steps, fire, ...)
   bool ok = true;
   for (const std::string& url : textures) {
-    const std::string asset = e2::architectureTextureAsset(url);
-    // "/ember/..." = EmberEngine's own texture under content/ (world/Architecture.h architectureTextureAsset); else Engine2's public folder.
-    const std::filesystem::path file = url.starts_with("/ember/") ? std::filesystem::path("content") / url.substr(7) : options.engine2Public / url.substr(1);
+    const std::string asset = ember::architectureTextureAsset(url);
+    // "/ember/..." = EmberEngine's own texture under content/ (world/Architecture.h architectureTextureAsset); else Ember's public folder.
+    const std::filesystem::path file = url.starts_with("/ember/") ? std::filesystem::path("content") / url.substr(7) : options.artRoot / url.substr(1);
     std::vector<uint8_t> source;
     if (!readFile(file, source)) {
       logError("architecture: cannot read {}", file.string());

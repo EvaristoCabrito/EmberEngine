@@ -6,7 +6,7 @@
 #include <limits>
 #include <numbers>
 
-namespace ember::e2::three {
+namespace ember::three {
 
 namespace {
 
@@ -857,4 +857,4 @@ std::vector<uint32_t> earcut(const std::vector<double>& data, const std::vector<
   return e.triangles;
 }
 
-}  // namespace ember::e2::three
+}  // namespace ember::three

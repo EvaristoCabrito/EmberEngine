@@ -18,7 +18,7 @@ namespace ember {
 //
 // Frame paths are relative to a source root given to the cooker, so art can live anywhere. A frame may name one
 // cell of a grid sheet, "fx/fire-flipbook-4x4.png#4x4:5" (columns x rows : cell, row by row), and may end in
-// "!black" for art painted on black (alpha from its brightest channel, like Engine2's deriveAlphaFromBlack but
+// "!black" for art painted on black (alpha from its brightest channel, like Ember's deriveAlphaFromBlack but
 // reaching full at a quarter of white, so solid art such as an arrow is opaque).
 
 struct SpriteClipSource {
@@ -41,9 +41,9 @@ struct SpriteManifest {
 bool loadSpriteManifest(const std::filesystem::path& path, SpriteManifest& out);
 bool saveSpriteManifest(const std::filesystem::path& path, const SpriteManifest& manifest);
 
-// Builds a manifest from Engine2's sprite tables (src/units/manifest.json, tools/sprite-cleanup.json),
-// with Engine2's pacing rules (src/units/visual.ts framePace) turned into fps and play modes.
-// Frame paths are relative to <engine2>/public/game. Engine2 is only read.
-bool importEngine2Sprites(const std::filesystem::path& engine2Root, SpriteManifest& out);
+// Builds a manifest from Ember's sprite tables (src/units/manifest.json, tools/sprite-cleanup.json),
+// with Ember's pacing rules (src/units/visual.ts framePace) turned into fps and play modes.
+// Frame paths are relative to <ember>/public/game. Ember is only read.
+bool importSourceSprites(const std::filesystem::path& sourceRoot, SpriteManifest& out);
 
 }  // namespace ember

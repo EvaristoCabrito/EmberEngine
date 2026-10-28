@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 MODELS = ROOT / 'content/models/models.json'
-CATALOG = ROOT / 'content/engine2/editor-catalog.json'
+CATALOG = ROOT / 'content/data/editor-catalog.json'
 
 ENTRIES = [
     {'id': 'ember-farmlands-tall-grass', 'name': 'Capim alto de pasto 3D', 'kit': 'farmlands',

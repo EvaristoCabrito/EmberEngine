@@ -26,7 +26,7 @@ namespace ember {
 
 namespace {
 
-// EmberEngine's own tracks (the user's, not Engine2's): a name found here plays from here, else from Engine2's game/MUSIC.
+// EmberEngine's own tracks (the user's, not Ember's): a name found here plays from here, else from Ember's game/MUSIC.
 const std::filesystem::path kOwnMusic = "content/music";
 
 template <typename T>
@@ -144,7 +144,7 @@ struct AudioMixer::Track {
           block.clear();
           const bool more = r.read(block);
           if (!block.empty()) SDL_PutAudioStreamData(stream, block.data(), static_cast<int>(block.size() * sizeof(float)));
-          if (!more) r.rewind();  // loop (Engine2: el.loop = true)
+          if (!more) r.rewind();  // loop (Ember: el.loop = true)
         }
       }
     });
@@ -171,7 +171,7 @@ void AudioMixer::shutdown() {
   current_.clear();
 }
 
-void AudioMixer::setRoot(const std::filesystem::path& engine2Public) { root_ = engine2Public; }
+void AudioMixer::setRoot(const std::filesystem::path& artRoot) { root_ = artRoot; }
 
 bool AudioMixer::open() {
   if (opened_) return true;
@@ -343,13 +343,13 @@ void AudioMixer::update(float dt) {
   }
 }
 
-int AudioMixer::check(const std::filesystem::path& engine2Public) {
+int AudioMixer::check(const std::filesystem::path& artRoot) {
   mfThread();
   int failed = 0, files = 0;
   double seconds = 0.0;
   for (const char* dir : {"SoundFX", "MUSIC", "own MUSIC"}) {
     std::error_code ec;
-    const std::filesystem::path folder = std::string(dir) == "own MUSIC" ? kOwnMusic : engine2Public / "game" / dir;
+    const std::filesystem::path folder = std::string(dir) == "own MUSIC" ? kOwnMusic : artRoot / "game" / dir;
     for (const auto& entry : std::filesystem::directory_iterator(folder, ec)) {
       if (entry.path().extension() != ".mp3") continue;
       ++files;

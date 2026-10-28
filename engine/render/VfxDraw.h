@@ -1,13 +1,13 @@
 #pragma once
 
-// The effect runtime for Engine2's spell effects (its three.js VFX classes, ported one by one: render/vfx/*). Each
+// The effect runtime for Ember's spell effects (its three.js VFX classes, ported one by one: render/vfx/*). Each
 // frame the effects fill a VfxFrame: object-space vertices (three.js geometries rebuilt in C++: VfxGeometry.h), per-
-// instance matrices, and draws (a model matrix, a material = one of Engine2's shaders ported to shaders/vfx.hlsl,
+// instance matrices, and draws (a model matrix, a material = one of Ember's shaders ported to shaders/vfx.hlsl,
 // its uniforms, blending and depth test). The renderer draws them over the finished scene with the flipbook effects
 // (render/EffectDraw.h), every draw read by device address (vertex pulling, no vertex input state).
 //
-// Coordinates: world space (y up). Engine2's effects work in Ember's frame (z up, one hex radius per unit; vfx/
-// adapter.ts); vfxFromEmber() turns that frame into ours, so the ported code keeps Engine2's own vectors.
+// Coordinates: world space (y up). Ember's effects work in Ember's frame (z up, one hex radius per unit; vfx/
+// adapter.ts); vfxFromEmber() turns that frame into ours, so the ported code keeps Ember's own vectors.
 
 #include <cstdint>
 #include <vector>
@@ -25,7 +25,7 @@ struct VfxVertex {
 };
 static_assert(sizeof(VfxVertex) == 32);
 
-// The shaders an effect can draw with (shaders/vfx.hlsl kMaterial*), each one of Engine2's materials.
+// The shaders an effect can draw with (shaders/vfx.hlsl kMaterial*), each one of Ember's materials.
 enum class VfxMaterial : uint32_t {
   Basic = 0,           // three MeshBasicMaterial / LineBasicMaterial: colour x opacity
   MissileCore = 1,     // MagicMissileV2VFX BOLT_VERTEX + CORE_FRAGMENT
@@ -49,7 +49,7 @@ enum class VfxMaterial : uint32_t {
                           // 3 ground ring, 4 trail tube, 5 a blade's cut (sheet)
   IceStorm = 18,          // vfx/IceStorm: params0 = time, mode, intensity, opacity. Ours (02): 0 frosted floor (params1.x = cover),
                           // 1 snow, 6 ice dust (billboards), 2 wind bands, 3 crystals, 7 frost rings (instanced meshes, c = alpha,
-                          // seed). Engine2's Blizzard2D (01): 4 its floor, 5 its sprites (billboards, b.w = kind), over a sheet
+                          // seed). Ember's Blizzard2D (01): 4 its floor, 5 its sprites (billboards, b.w = kind), over a sheet
 };
 
 // Per-instance data (three InstancedMesh matrices, or a particle's attributes). Matches VfxInstance in vfx.hlsl. For
@@ -118,7 +118,7 @@ struct VfxFlipbook {
   explicit operator bool() const { return texture != 0xFFFFFFFFu; }
 };
 
-// A light an effect gives off this frame: Engine2's three.js PointLight (colour, intensity, distance), world space.
+// A light an effect gives off this frame: Ember's three.js PointLight (colour, intensity, distance), world space.
 struct VfxLight {
   glm::vec3 at{0.0f};
   glm::vec3 color{1.0f};

@@ -27,9 +27,9 @@
 #include <string>
 #include <vector>
 
-#include "world/Campaign.h"  // e2::Json
+#include "world/Campaign.h"  // ember::Json
 
-namespace ember::e2 {
+namespace ember {
 
 struct CutsceneStep {
   enum class Kind { Move, Face, Say, Wait };
@@ -58,4 +58,4 @@ struct CutsceneScript {
   static std::optional<CutsceneScript> parse(const Json& j, std::string* why);
 };
 
-}  // namespace ember::e2
+}  // namespace ember

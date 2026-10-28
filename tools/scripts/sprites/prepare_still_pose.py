@@ -1,12 +1,12 @@
-"""A still pose from one picture of the user's (e.g. a hero seen from the back), sized like the hero's Engine2 art.
+"""A still pose from one picture of the user's (e.g. a hero seen from the back), sized like the hero's Ember art.
 
 The picture is cut to the figure (full width, the figure's top to its feet plus a small margin), scaled so the figure is
-`--scale` times as many pixels tall as in the hero's Engine2 idle frame (sharper than the clips, same size in the world),
-and written as frame 1 of a one-frame clip. It prints the pose's box (world units: Engine2's own units a pixel for that
+`--scale` times as many pixels tall as in the hero's Ember idle frame (sharper than the clips, same size in the world),
+and written as frame 1 of a one-frame clip. It prints the pose's box (world units: Ember's own units a pixel for that
 hero, so the figure stands as tall as in its idle, feet on the same line), the frame's size and its crop, for
 content/sprite-overrides.json.
 
-    python -I tools/scripts/sprites/prepare_still_pose.py <picture.png> <engine2 idle frame.png> <engine2 box h> <out.png>
+    python -I tools/scripts/sprites/prepare_still_pose.py <picture.png> <ember idle frame.png> <ember box h> <out.png>
         [--scale 1.5]
 
 Heights are measured head to feet: the topmost opaque pixel over the middle fifth of the picture's width (the head, not a
@@ -41,7 +41,7 @@ def main():
     a = ap.parse_args()
 
     idle = Image.open(a.idle).convert("RGBA")
-    units_per_px = a.idle_box_h / idle.height  # Engine2's k for this hero
+    units_per_px = a.idle_box_h / idle.height  # Ember's k for this hero
     i_head, i_feet, _ = head_and_feet(idle.getchannel("A"))
     world_figure = (i_feet - i_head) * units_per_px
 

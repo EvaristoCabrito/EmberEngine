@@ -16,7 +16,7 @@ live. A change is a new look, never an edit of a saved one.
   Map Editor's sheet, which also knows its depth), captures here (`NNN/*.png`, local, git-ignored), git tag `water-look-NNN`.
 - "Engine2" = Engine2's diorama water (water.hlsl: #2f86a8, roughness 0.5, the 128 px ripple tile scrolling).
 - Captures: `Sandbox --map C:/Engine2/maps/ember/random-rimewater-shrine001.json --ground build/ground/ground-v3.pak --scene
-  build/engine2-scenes/random-rimewater-shrine001.scene.json --sprites build/sprites/battle.pak --meshes build/meshes/props-v2.pak
+  build/scenes/random-rimewater-shrine001.scene.json --sprites build/sprites/battle.pak --meshes build/meshes/props-v2.pak
   --background 1 --zoom 3 --offset -0.18 -0.29 --capture x.png` (the pond; `--tilt -15` puts the sky in the frame).
 
 | Look | What | Verdict |

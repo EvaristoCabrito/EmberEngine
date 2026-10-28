@@ -1,6 +1,6 @@
 #pragma once
 
-// The game's own map preparation, in C++: what tools/scripts/engine2/{make_test_map,export_scene,export_battle}.ts +
+// The game's own map preparation, in C++: what tools/scripts/data/{make_test_map,export_scene,export_battle}.ts +
 // measure_art.py did through node, now done by the game itself when a mission opens (apps/sandbox/MapExport.h).
 //
 //   prepareCampaignMap  make_test_map.ts: the campaign's six heroes added to a battle map as entry positions (free-roam
@@ -13,8 +13,8 @@
 //   sceneJson           export_scene.ts + measure_art.py: a scene built by SceneBuilder, written as the scene file
 //                       SceneData::load reads.
 //
-// The rule tables (classes, terrain, decorations, weapons, sound cues ...) come from content/engine2/battle-rules.json,
-// written once by tools/scripts/engine2/export_battle_rules.ts from the rule source; nothing here runs node.
+// The rule tables (classes, terrain, decorations, weapons, sound cues ...) come from content/data/battle-rules.json,
+// written once by tools/scripts/data/export_battle_rules.ts from the rule source; nothing here runs node.
 //
 // Cooker check-battle-export compares exportBattle's file with the TypeScript exporter's for the proof maps.
 
@@ -28,7 +28,7 @@
 
 #include "world/SceneData.h"
 
-namespace ember::e2 {
+namespace ember {
 
 struct MapDraft;
 
@@ -37,7 +37,7 @@ bool prepareCampaignMap(const std::filesystem::path& mapFile, const std::filesys
 
 // export_battle.ts on a map file's JSON ({serial, savedAt, draft} or a bare draft). Empty with `error` set when a spawn
 // names a class the rules do not know, or the rules file cannot be read. `playerLevel`: the fresh party's level (1 in play;
-// the test battles in build/engine2-test were made at 15).
+// the test battles in build/test-maps were made at 15).
 std::optional<nlohmann::json> exportBattle(const nlohmann::json& mapFile, std::string* error, int playerLevel = 1);
 
 // The class's spell list at `level` (battle-rules.json classes.<id>.spells; Salazar's own row, spellsSalazar, for `name`
@@ -51,4 +51,4 @@ nlohmann::json sceneJson(const SceneData& scene, const MapDraft& draft, const st
 // ".battle"), the fields the game reads. Returns the number of files that differ.
 int checkBattleExport(const std::filesystem::path& maps, const std::vector<std::filesystem::path>& references, int playerLevel = 1);
 
-}  // namespace ember::e2
+}  // namespace ember

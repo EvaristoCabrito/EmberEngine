@@ -6,7 +6,7 @@
 
 #include "core/Log.h"
 
-namespace ember::e2 {
+namespace ember {
 
 namespace {
 
@@ -217,4 +217,4 @@ void applyLocais(CampaignData& data, const Locais& locais, const std::filesystem
     }
 }
 
-}  // namespace ember::e2
+}  // namespace ember

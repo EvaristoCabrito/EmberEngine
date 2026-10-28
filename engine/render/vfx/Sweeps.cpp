@@ -96,7 +96,7 @@ CleaveSweep::CleaveSweep(glm::vec3 origin, const std::vector<glm::vec3>& targets
   }
   if (glm::dot(average, average) < 0.001f) average = {1, 0};
   direction_ = glm::normalize(average);
-  // The three crescents, in Engine2's order (the seed's numbers run through them).
+  // The three crescents, in Ember's order (the seed's numbers run through them).
   Xorshift rng{kSeed};
   blade_ = crescent(rng, 0.54f, 1.18f, 1.0f);
   edge_ = crescent(rng, 0.94f, 1.03f, std::max(0.08f, kLeadingEdge / kThickness));
@@ -163,7 +163,7 @@ void CleaveSweep::build(float now, const Camera& camera, VfxFrame& frame, std::v
          glm::vec4(three::hex(0xf2fbff), 0.95f), VfxBlend::Alpha);
   }
 
-  // --- The trail: the spearhead's last 30 places (one per 60 Hz frame, as Engine2's per-frame history) ---
+  // --- The trail: the spearhead's last 30 places (one per 60 Hz frame, as Ember's per-frame history) ---
   if (t > kWaveStart && t < kWaveEnd + 0.22f) {
     std::vector<glm::vec3> points;
     for (int k = 29; k >= 0; --k) {

@@ -1,10 +1,10 @@
 """EmberEngine's own 3D props (content/models/models.json) merged into the Map Editor's catalog
-(content/engine2/editor-catalog.json), as decorations of the kind export_scene.ts calls a model: the scene builder
+(content/data/editor-catalog.json), as decorations of the kind export_scene.ts calls a model: the scene builder
 places them (SceneBuilder: `model`, centroid of the footprint, uniform fit to `height`) and the editor's 3D palette
 lists them (decoMeta.props3d, architectureOrder). Idempotent: every `ember-*` entry is rebuilt from models.json;
-Engine2's own entries are untouched. Run it again after export_editor_catalog.ts regenerates the catalog.
+Ember's own entries are untouched. Run it again after export_editor_catalog.ts regenerates the catalog.
 
-  python -I tools/scripts/models/catalog_models.py [content/models/models.json] [content/engine2/editor-catalog.json]
+  python -I tools/scripts/models/catalog_models.py [content/models/models.json] [content/data/editor-catalog.json]
 """
 import json
 import sys
@@ -17,7 +17,7 @@ FOOTPRINTS = {
 }
 
 
-def main(models_path='content/models/models.json', catalog_path='content/engine2/editor-catalog.json',
+def main(models_path='content/models/models.json', catalog_path='content/data/editor-catalog.json',
          architecture_path='content/models/architecture.json'):
     with open(models_path, encoding='utf-8') as f:
         models = json.load(f)
@@ -33,7 +33,7 @@ def main(models_path='content/models/models.json', catalog_path='content/engine2
             del table[k]
     editor['architectureOrder'] = [k for k in editor['architectureOrder'] if not k.startswith('ember-')]
     # EmberEngine's own architecture (content/models/architecture.json): walls, windows, doorways built by world/Architecture.cpp,
-    # placed like Engine2's wall pieces (architecture: true), listed first in the editor's 3D Walls palette.
+    # placed like Ember's wall pieces (architecture: true), listed first in the editor's 3D Walls palette.
     with open(architecture_path, encoding='utf-8') as f:
         architecture = json.load(f)
     for p in architecture['pieces']:

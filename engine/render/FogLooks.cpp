@@ -203,7 +203,7 @@ void writeLook010(const FogLookInputs& in, void* out) {
   std::memcpy(out, &f, sizeof(f));
 }
 
-// --- Looks 004 and 005 (240-byte frame): Engine2's mist model, 005 with the swirl ------------------------------
+// --- Looks 004 and 005 (240-byte frame): Ember's mist model, 005 with the swirl ------------------------------
 
 struct Look004Frame {
   glm::mat4 inverseViewProjection;
@@ -224,8 +224,8 @@ struct Look004Frame {
 };
 static_assert(sizeof(Look004Frame) == 240);
 
-// 004: Engine2's "fog1" mist at full intensity (src/game/mist3d.ts, src/render/volumetricFog.ts).
-Look004Frame engine2Mist(const FogLookInputs& in) {
+// 004: Ember's "fog1" mist at full intensity (src/game/mist3d.ts, src/render/volumetricFog.ts).
+Look004Frame classicMist(const FogLookInputs& in) {
   Look004Frame f{};
   common(in, f);
   f.board = in.scene.board;
@@ -251,7 +251,7 @@ Look004Frame engine2Mist(const FogLookInputs& in) {
   return f;
 }
 void writeLook004(const FogLookInputs& in, void* out) {
-  const Look004Frame f = engine2Mist(in);
+  const Look004Frame f = classicMist(in);
   std::memcpy(out, &f, sizeof(f));
 }
 
@@ -268,7 +268,7 @@ struct Look005Frame {
 static_assert(sizeof(Look005Frame) == 272);
 void writeLook005(const FogLookInputs& in, void* out) {
   Look005Frame f{};
-  f.mist = engine2Mist(in);
+  f.mist = classicMist(in);
   f.swirlCenter = in.scene.partyCenter;
   f.swirlRate = 0.12f;
   f.swirlFalloff = 0.08f;
@@ -277,11 +277,11 @@ void writeLook005(const FogLookInputs& in, void* out) {
   std::memcpy(out, &f, sizeof(f));
 }
 
-// Engine2's mist4 values as on its fog-of-war maps (cemiterio-esquecidos003: intensity 0.3, speed 0.6).
-Look004Frame engine2Mist4(const FogLookInputs& in) {
-  Look004Frame f = engine2Mist(in);
+// Ember's mist4 values as on its fog-of-war maps (cemiterio-esquecidos003: intensity 0.3, speed 0.6).
+Look004Frame classicMist4(const FogLookInputs& in) {
+  Look004Frame f = classicMist(in);
   f.speed = 0.6f;
-  f.density = 0.9f * std::pow(0.3f, 1.5f);  // Engine2: preset density x intensity^1.5
+  f.density = 0.9f * std::pow(0.3f, 1.5f);  // Ember: preset density x intensity^1.5
   f.thickness = 3.5f;
   f.top = in.scene.groundHigh + f.thickness;
   f.scale = {0.18f, 0.35f, 0.18f};
@@ -293,7 +293,7 @@ Look004Frame engine2Mist4(const FogLookInputs& in) {
   return f;
 }
 
-// 006: Engine2's mist4 as in the user's reference.
+// 006: Ember's mist4 as in the user's reference.
 struct Look006Frame {
   Look004Frame mist;
   glm::vec2 center;
@@ -303,7 +303,7 @@ struct Look006Frame {
 static_assert(sizeof(Look006Frame) == 272);
 void writeLook006(const FogLookInputs& in, void* out) {
   Look006Frame f{};
-  f.mist = engine2Mist4(in);
+  f.mist = classicMist4(in);
   f.center = in.scene.boardCenter;
   const float half = std::min(in.scene.board.z - in.scene.board.x, in.scene.board.w - in.scene.board.y) * 0.5f;
   f.swirl = 0.12f;
@@ -315,7 +315,7 @@ void writeLook006(const FogLookInputs& in, void* out) {
 // 007: look 005's swirl on mist4's real values, over the fog-of-war coverage.
 void writeLook007(const FogLookInputs& in, void* out) {
   Look005Frame f{};
-  f.mist = engine2Mist4(in);
+  f.mist = classicMist4(in);
   f.swirlCenter = in.scene.partyCenter;
   f.swirlRate = 0.12f;
   f.swirlFalloff = 0.08f;
@@ -330,7 +330,7 @@ std::vector<uint8_t> makeFogNoise(FogNoise kind) {
   constexpr int n = static_cast<int>(kFogNoiseSize);
   std::vector<uint8_t> out(static_cast<size_t>(n) * n * n);
   if (kind == FogNoise::WhiteLattice) {
-    // Engine2's baked lattice (volumetricFog.ts buildNoiseVolume): xorshift values, filtered smoothly in the shader.
+    // Ember's baked lattice (volumetricFog.ts buildNoiseVolume): xorshift values, filtered smoothly in the shader.
     uint32_t s = 0x9e3779b9u;
     for (uint8_t& v : out) {
       s ^= s << 13;
@@ -404,9 +404,9 @@ std::span<const FogLook> fogLooks() {
       {"001", "fog_look001", "thick puffy billows, self-shadowed (user: too puffy, cartoony)", FogNoise::CellularBillows, sizeof(Look001Frame), writeLook001},
       {"002", "fog_look002", "soft even grey sheet (user: looks fake)", FogNoise::SoftFbm, sizeof(Look003Frame), writeLook002},
       {"003", "fog_look003", "soft banks and gaps (user: kept)", FogNoise::SoftFbm, sizeof(Look003Frame), writeLook003},
-      {"004", "fog_look004", "Engine2's mist model (fog1) - not yet seen", FogNoise::WhiteLattice, sizeof(Look004Frame), writeLook004},
+      {"004", "fog_look004", "Ember's mist model (fog1) - not yet seen", FogNoise::WhiteLattice, sizeof(Look004Frame), writeLook004},
       {"005", "fog_look005", "swirl round the party (Claude's take) - not yet seen", FogNoise::WhiteLattice, sizeof(Look005Frame), writeLook005},
-      {"006", "fog_look006", "Engine2's mist4 as in the user's reference (vortex, clear centre) - not yet seen", FogNoise::WhiteLattice, sizeof(Look006Frame), writeLook006},
+      {"006", "fog_look006", "Ember's mist4 as in the user's reference (vortex, clear centre) - not yet seen", FogNoise::WhiteLattice, sizeof(Look006Frame), writeLook006},
       {"007", "fog_look007", "swirl round the party on mist4's real values, fog-of-war coverage - not yet seen", FogNoise::WhiteLattice, sizeof(Look005Frame), writeLook007},
       {"008", "fog_look008", "003 thinning away near the camera (no veil when the camera comes close)", FogNoise::SoftFbm, sizeof(Look008Frame), writeLook008},
       {"009", "fog_look009", "008 with the background left clear: no mist over the sky or the painting (the user: the sky on every outdoor map)", FogNoise::SoftFbm, sizeof(Look008Frame), writeLook008},

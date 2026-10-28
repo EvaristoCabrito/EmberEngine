@@ -22,7 +22,7 @@
 
 #include "world/Campaign.h"
 
-namespace ember::e2 {
+namespace ember {
 
 class Overworld;
 
@@ -82,4 +82,4 @@ const std::vector<std::string>& interludePartyKeys();
 // begin / fight / complete / recruit, an old save). Returns the number of failed checks, each logged.
 int checkInterlude(const InterludeData& data, const Overworld& world, const Json& emptySave);
 
-}  // namespace ember::e2
+}  // namespace ember

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace ember::e2 {
+namespace ember {
 
 namespace {
 
@@ -16,7 +16,7 @@ Cube oddrToCube(HexPoint p) {
   return {q, static_cast<double>(p.r), -q - p.r};
 }
 
-// Engine2's cubeRound (JavaScript Math.round).
+// Ember's cubeRound (JavaScript Math.round).
 Cube cubeRound(double q, double r, double s) {
   double rq = jsRound(q), rr = jsRound(r), rs = jsRound(s);
   const double dq = std::abs(rq - q), dr = std::abs(rr - r), ds = std::abs(rs - s);
@@ -26,7 +26,7 @@ Cube cubeRound(double q, double r, double s) {
   return {rq, rr, rs};
 }
 
-// Engine2's boxBlur (src/game/gfx/three/ThreeGroundAO.ts): one pass along rows or columns, edges clamped.
+// Ember's boxBlur (src/game/gfx/three/ThreeGroundAO.ts): one pass along rows or columns, edges clamped.
 void boxBlur(const std::vector<float>& src, std::vector<float>& dst, int w, int h, int r, bool horizontal) {
   const int len = horizontal ? w : h, lines = horizontal ? h : w, step = horizontal ? 1 : w;
   const float norm = 1.0f / static_cast<float>(2 * r + 1);
@@ -183,7 +183,7 @@ bool FogOfWar::lingerEnded(double since) const {
 }
 
 std::vector<uint8_t> FogOfWar::displayStates(std::span<const HexPoint> party) const {
-  // No fog within one hex of a living party unit, ever (Engine2 syncFog's clear set).
+  // No fog within one hex of a living party unit, ever (Ember syncFog's clear set).
   std::vector<uint8_t> state = cells_;
   for (size_t i = 0; i < state.size(); ++i)
     if (state[i] == kFogExplored && clock_ - seenAt_[i] < kLingerSeconds) state[i] = kFogVisible;  // left, still lit
@@ -196,7 +196,7 @@ std::vector<uint8_t> FogOfWar::displayStates(std::span<const HexPoint> party) co
 }
 
 FogMask FogOfWar::paint(const Board& board, std::span<const HexPoint> party) const {
-  constexpr float kMargin = 1.5f;  // off-board margin (Engine2 MARGIN)
+  constexpr float kMargin = 1.5f;  // off-board margin (Ember MARGIN)
   constexpr int kBlurRadius = 2, kBlurPasses = 2;
   std::vector<uint8_t> state = displayStates(party);
   const Board::Bounds b = board.bounds();
@@ -208,7 +208,7 @@ FogMask FogOfWar::paint(const Board& board, std::span<const HexPoint> party) con
   m.width = static_cast<int>(std::ceil(m.worldWidth * FogMask::kRes));
   m.height = static_cast<int>(std::ceil(m.worldDepth * FogMask::kRes));
   const size_t n = static_cast<size_t>(m.width) * static_cast<size_t>(m.height);
-  // Each texel's hex state (Engine2's hexAt clamps to the board, so the margin takes the edge hex's state).
+  // Each texel's hex state (Ember's hexAt clamps to the board, so the margin takes the edge hex's state).
   std::vector<uint8_t> texelState(n);
   for (int y = 0; y < m.height; y++)
     for (int x = 0; x < m.width; x++) {
@@ -269,4 +269,4 @@ FogMask FogOfWar::paint(const Board& board, std::span<const HexPoint> party) con
   return m;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

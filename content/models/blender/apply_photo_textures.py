@@ -45,12 +45,12 @@ FUNGUS_MAPS = {
 }
 
 PUBLIC_MODELS = [
-    ROOT / "content/game/public/game/models/rocks/grey-outcrop.glb",
-    ROOT / "content/game/public/game/models/trees/broadleaf.glb",
-    ROOT / "content/game/public/game/models/trees/dead-oak.glb",
-    ROOT / "content/game/public/game/models/trees/dead-snag.glb",
-    ROOT / "content/game/public/game/models/trees/snowy-pine.glb",
-    ROOT / "content/game/public/game/models/trees/twisted-stump.glb",
+    ROOT / "content/assets/game/models/rocks/grey-outcrop.glb",
+    ROOT / "content/assets/game/models/trees/broadleaf.glb",
+    ROOT / "content/assets/game/models/trees/dead-oak.glb",
+    ROOT / "content/assets/game/models/trees/dead-snag.glb",
+    ROOT / "content/assets/game/models/trees/snowy-pine.glb",
+    ROOT / "content/assets/game/models/trees/twisted-stump.glb",
 ]
 
 

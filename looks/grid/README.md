@@ -9,7 +9,7 @@ seeing it live. A change is a new look, never an edit of a saved one.
   trees and houses in front cover it and it never shows on ground not yet seen), its capture here
   (`NNN/*.png`: aldeia015, Kael picked, a foe beside him, cursor on 14,19), git tag `grid-look-NNN`.
 - "antiga" = the first C++ grid (Renderer::setGroundMarks: flat fills and rings per hex, Engine2's Battle3D colours).
-- Captures: `Sandbox ... --battle-rules content/engine2/battles/aldeia015.battle.json
+- Captures: `Sandbox ... --battle-rules content/data/battles/aldeia015.battle.json
   --battle-script "near:Piqueiro:Kael; pick:Kael; aim:14:19" --zoom 2.2 --offset 0 0.25 --capture x.png`
   (`near` puts a unit beside another, `pick` hands the turn to a unit, `aim` holds the cursor on a hex,
   `spell:<unit>:<kind>` opens a spell's aim, `attack:<unit>` the weapon's). With the user's game open, add

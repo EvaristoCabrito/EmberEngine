@@ -5,7 +5,7 @@ A spell is learned on its tier's first level for the class; the 14 levels after 
 scaling with the learning one), never two on one level. A spell learned at 25 keeps scaling to 39: those levels open in Ember Ashes II.
 
 Writes kSpellTracks into engine/world/Spells.cpp (between TRACKS-BEGIN / TRACKS-END), the scaling sentences into Como jogar
-(content/engine2/help.json) and docs/SPELLS_SCALING.md. Run from the repository root: python -I tools/scripts/spells/tracks.py"""
+(content/data/help.json) and docs/SPELLS_SCALING.md. Run from the repository root: python -I tools/scripts/spells/tracks.py"""
 import io, json, re, sys
 
 sys.stdout.reconfigure(encoding="utf-8")
@@ -353,7 +353,7 @@ def per_level(kind, pt):
 # Como jogar: the skills table (Tier 1-6 tab), one row a spell or skill in the same order in both languages; every row of a kind
 # with a track is written whole from it: the formula at the learning level, 7 levels on and at the track's end, and what it
 # does (spellExplain in Spells.cpp, read from there) followed by its scaling sentence.
-HELP = "content/engine2/help.json"
+HELP = "content/data/help.json"
 RAW = io.open(HELP, encoding="utf-8", newline="").read()
 d = json.loads(RAW)
 LAYOUT = next(((ind, end) for ind in (None, 1, 2, 4) for end in ("", "\n") if json.dumps(d, ensure_ascii=False, indent=ind) + end == RAW))

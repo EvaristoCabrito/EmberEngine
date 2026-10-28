@@ -1,5 +1,5 @@
 {
-  "source": "EmberEngine's own 3D props: content/models/blender kits (headless Blender 5.2) + the Meshy hearth. tools/scripts/models/catalog_models.py merges them into content/engine2/editor-catalog.json.",
+  "source": "EmberEngine's own 3D props: content/models/blender kits (headless Blender 5.2) + the Meshy hearth. tools/scripts/models/catalog_models.py merges them into content/data/editor-catalog.json.",
   "units": "1 unit = one hex radius (a human is 2.65 units, ~0.68 m). height/width = the authored size, so the engine's uniform fit is 1:1. file = the cooked asset's source path under the mesh pack's staging root (build/meshes/src-v2/ember/...).",
   "models": [
     {

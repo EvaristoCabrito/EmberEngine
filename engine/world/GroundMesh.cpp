@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace ember::e2 {
+namespace ember {
 
 namespace {
 
@@ -35,7 +35,7 @@ std::vector<float> toFloat(const std::vector<double>& v) {
 uint32_t strideOf(const Board& b) { return static_cast<uint32_t>(kSurfaces + b.data().groundLayerCount); }
 
 // Surface and layer weights around a point, blended over real ground only; with no ground in reach
-// the fallback cell's. Written as float, like Engine2's Float32Array scratch.
+// the fallback cell's. Written as float, like Ember's Float32Array scratch.
 void splat(const Board& b, double sx, double sz, double rad, float* out, const Cell* fallback) {
   const uint32_t stride = strideOf(b);
   std::vector<double> w(stride, 0.0);
@@ -462,4 +462,4 @@ WaterGeometry buildWater(const Board& b, EdgeStyle style) {
   return g;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

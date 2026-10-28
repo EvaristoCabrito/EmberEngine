@@ -1,13 +1,13 @@
 #pragma once
-// EmberEngine's own initiative bonuses (the user, 2026-10-18), replacing Engine2's class `init` in play: the battle-opening
+// EmberEngine's own initiative bonuses (the user, 2026-10-18), replacing Ember's class `init` in play: the battle-opening
 // roll stays 1d20 + bonus (Battle::rollInitiative). Rogues are the fastest, warriors sit in the middle, mages are the slowest.
 // The heroes go by name (a promotion keeps them); the enemies by class; a class not listed keeps the battle file's own bonus.
-// Only the game applies it (MapStage::setUpBattle): the battle files and the checks against Engine2 keep Engine2's numbers.
+// Only the game applies it (MapStage::setUpBattle): the battle files and the checks against Ember keep Ember's numbers.
 #include "world/Battle.h"
 
 #include <string_view>
 
-namespace ember::e2 {
+namespace ember {
 
 inline void applyEmberInitiative(BattleUnit& u) {
   struct Entry {
@@ -42,4 +42,4 @@ inline void applyEmberInitiative(BattleUnit& u) {
   }
 }
 
-}  // namespace ember::e2
+}  // namespace ember

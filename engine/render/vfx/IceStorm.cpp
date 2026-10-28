@@ -96,7 +96,7 @@ void IceStorm::build(float now, const Camera& camera, const VfxFlipbook& ice, co
   float fade = standing_ ? 1.0f : std::min(1.0f, (kDuration - age) / kFade);
   if (stopped_) fade = std::min(fade, std::max(0.0f, (end_ - now) / kStopFade));
   const float env = gather * fade;
-  glm::vec3 right{camera.right.x, 0.0f, camera.right.z};  // Engine2's gusts blow across the screen
+  glm::vec3 right{camera.right.x, 0.0f, camera.right.z};  // Ember's gusts blow across the screen
   right = glm::dot(right, right) > 1e-8f ? glm::normalize(right) : glm::vec3(1, 0, 0);
 
   // A spike lands at the end of each of its cycles: the oldest of the three lights moves there (pulseBlizzardLight).
@@ -115,13 +115,13 @@ void IceStorm::build(float now, const Camera& camera, const VfxFlipbook& ice, co
     if (since >= 0.0f && since < 1.0f) lights.push_back({p.at, three::hex(0xb6e7ff), kPulseLight * p.strength * std::exp(-since * 6.0f), kPulseReach});
   }
 
-  if (version_ == 1) buildEngine2(age, env, right, ice, wind, frame);
+  if (version_ == 1) buildClassic(age, env, right, ice, wind, frame);
   else buildOurs(now, age, env, right, frame);
 }
 
 // --- 01: Blizzard2D's sprites, placed in the board where its canvas drew them (a tile = one hex radius = 1 unit; its
 // screen heights become heights above the ground, its ground offsets lie on the board, its gusts blow across the screen).
-void IceStorm::buildEngine2(float age, float env, glm::vec3 right, const VfxFlipbook& ice, const VfxFlipbook& wind, VfxFrame& frame) {
+void IceStorm::buildClassic(float age, float env, glm::vec3 right, const VfxFlipbook& ice, const VfxFlipbook& wind, VfxFrame& frame) {
   if (!ice || !wind) return;
   const uint32_t quadFirst = frame.addVertices(quadGeometry());
   const uint32_t hexFirst = frame.addVertices(hexGeometry());

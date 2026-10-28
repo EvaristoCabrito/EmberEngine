@@ -1,4 +1,4 @@
-// The board's ground: Engine2's terrain material (C:/Engine2/src/render/terrainMaterial.ts), ported.
+// The board's ground: Ember's terrain material (src/render/terrainMaterial.ts), ported.
 // Each vertex carries surface weights (grass, forest, pavers, snow, rock, gravel, ash, plains049) and
 // weights for the baked ground layers the map uses (a per-map palette, engine/render/BoardGround.h).
 // Flat ground blends the surface textures in world space (4 units per repeat; grass without a visible
@@ -236,7 +236,7 @@ float3 applyGroundMarks(float3 hdr, float3 wp, float flatness) {
     }
   }
   if (grid) {
-    // The grid stays under Engine2's bloom threshold (tonemap.hlsl bright: 0.75 of display luminance), so its bright
+    // The grid stays under Ember's bloom threshold (tonemap.hlsl bright: 0.75 of display luminance), so its bright
     // lines never bloom over the cards standing in front of them (the user saw "sparks" on other characters' faces).
     const float3 lin0 = fromSrgb(display);
     const float before = dot(lin0, float3(0.2126, 0.7152, 0.0722));
@@ -281,7 +281,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
   if (inGroundHole(wp.xz)) discard;
   const float4 sA = i.surfacesA, sB = i.surfacesB;
   const float total = dot(sA, 1.0) + dot(sB, 1.0);
-  // Engine2 samples every surface everywhere; a surface with no weight adds nothing, so it is skipped.
+  // Ember samples every surface everywhere; a surface with no weight adds nothing, so it is skipped.
   float3 topC = 0.0;
   if (sA.x > 0.0) topC += grassNoTile(tuv, g, s) * sA.x;
   if (sA.y > 0.0) topC += proto(1, tuv, g, s) * sA.y;
@@ -311,7 +311,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
     const float2 luv = tuv * scale, ldx = g.dx * scale, ldy = g.dy * scale;
     setColor += gTextures[NonUniformResourceIndex(recordWord(kLayerColor + k))].SampleGrad(s, luv, ldx, ldy).rgb * w;
     const uint normalTex = recordWord(kLayerNormal + k), roughTex = recordWord(kLayerRough + k);
-    float3 tn = float3(0.5, 0.5, 1.0);  // a layer without maps: flat normal, matte (Engine2's fallbacks)
+    float3 tn = float3(0.5, 0.5, 1.0);  // a layer without maps: flat normal, matte (Ember's fallbacks)
     if (normalTex != kNoTexture) {
       const float2 xy = gTextures[NonUniformResourceIndex(normalTex)].SampleGrad(s, luv, ldx, ldy).rg * 2.0 - 1.0;
       tn = float3(xy, sqrt(saturate(1.0 - dot(xy, xy)))) * 0.5 + 0.5;

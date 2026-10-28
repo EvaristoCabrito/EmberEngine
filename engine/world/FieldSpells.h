@@ -1,11 +1,11 @@
 #pragma once
 
-// The world map's field spells, ported from Engine2 (GameApp castCreateFoodAndWater / castWarpOverworld, data.ts
+// The world map's field spells, ported from Ember (GameApp castCreateFoodAndWater / castWarpOverworld, data.ts
 // createFoodAndWaterPower / createFoodAndWaterFormula / WARP / tierUses, OverworldMapScreen's field-spells menu):
 //   Criar Comida e Água (a healer's tier 4): the hero's own hunger bar full (120% from level 10) and 0-2D4+2 rations;
 //   Warp (a mage's tier 3 from level 7): the party steps to an explored location, spending one use.
 // Both draw on the same save.spellUses pool a battle cast uses. Each cast takes the save and returns the new save, or
-// nothing when Engine2 would refuse.
+// nothing when Ember would refuse.
 
 #include <functional>
 #include <optional>
@@ -16,7 +16,7 @@
 #include "world/Inn.h"
 #include "world/Overworld.h"
 
-namespace ember::e2 {
+namespace ember {
 
 struct FoodPower {
   int dice = 0, faces = 0, bonus = 0, fullness = 100;
@@ -119,4 +119,4 @@ class FieldSpells {
   const Overworld& world_;
 };
 
-}  // namespace ember::e2
+}  // namespace ember

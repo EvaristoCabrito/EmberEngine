@@ -100,7 +100,7 @@ void MagicMissileV2::build(float now, const Camera& camera, VfxFrame& frame, std
     d.gpu.sightAt = sight;
     d.instances = instances;
     d.blend = blend;
-    d.depthTest = false;  // Engine2: a foreground effect (depthTest false on every part)
+    d.depthTest = false;  // Ember: a foreground effect (depthTest false on every part)
     frame.draws.push_back(d);
   };
 
@@ -113,7 +113,7 @@ void MagicMissileV2::build(float now, const Camera& camera, VfxFrame& frame, std
   const glm::mat4 bolt = toWorld * glm::translate(glm::mat4(1.0f), pos) * glm::mat4_cast(q);
   const float approach = progress > 0.74f ? 1.0f + (progress - 0.74f) * 1.6f : 1.0f;
 
-  // --- The trail (createTrail / updateTrail): the last 34 places of the bolt (one per 60 Hz frame, as Engine2's
+  // --- The trail (createTrail / updateTrail): the last 34 places of the bolt (one per 60 Hz frame, as Ember's
   // history), the tip on the bolt, widening toward it ---
   const float trailFade = hit ? std::max(0.0f, 1.0f - impactT / 0.68f) : 1.0f;
   if (launched && trailFade > 0.01f) {

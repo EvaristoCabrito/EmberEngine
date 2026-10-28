@@ -1,6 +1,6 @@
 #pragma once
 
-// Engine2's hex layout (C:/Engine2/src/core/hex.ts), which is Ember's: pointy-top hexes, odd rows shifted
+// Ember's hex layout (src/core/hex.ts), which is Ember's: pointy-top hexes, odd rows shifted
 // half a hex right; columns along +x, rows along +z, the board centred on the origin. One world unit = one
 // hex radius. Ported exactly (doubles, JavaScript rounding).
 
@@ -11,7 +11,7 @@
 
 #include "world/Noise.h"
 
-namespace ember::e2 {
+namespace ember {
 
 inline constexpr double kHexRadius = 1.0;
 inline const double kSqrt3 = std::sqrt(3.0);
@@ -62,4 +62,4 @@ inline std::pair<double, double> corner(double cx, double cz, int k, double rr =
   return {cx + rr * std::sin(a), cz + rr * std::cos(a)};
 }
 
-}  // namespace ember::e2
+}  // namespace ember

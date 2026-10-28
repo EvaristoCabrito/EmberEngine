@@ -1,22 +1,22 @@
-// Ember's 3D water (the Map Editor's Água 3D brush): Engine2's ThreeWater material
-// (C:/Engine2/src/game/gfx/three/ThreeWater.ts), in the board's 3D view (ThreeBattleRenderer's relief branch:
-// waterFlat 0). The sheet comes from engine/world/Water3D (Engine2's rebuild, checked exact); here, per Engine2:
+// Ember's 3D water (the Map Editor's Água 3D brush): Ember's ThreeWater material
+// (src/game/gfx/three/ThreeWater.ts), in the board's 3D view (ThreeBattleRenderer's relief branch:
+// waterFlat 0). The sheet comes from engine/world/Water3D (Ember's rebuild, checked exact); here, per Ember:
 //   vertex   two crossing sine swells lift the surface (0.014 / 0.009 tile) and set its normal (with a finer third
-//            slope term), in Engine2's tile frame p = (x, -y)
+//            slope term), in Ember's tile frame p = (x, -y)
 //   colour   MeshStandardMaterial(colour, map) of the map's water version (v1..v4) with the colour flowing,
 //            a two-layer (three in v4) crossing ripple normal map, a procedural cloud / crest / cross-wave tint,
 //            shore foam from the depth above the ground, edges faded by the brush coverage
 //   light    diffuse + specular x (0.035, 0.055, 0.065) (the tactical highlight suppression), a sky tint by
-//            Fresnel, then Engine2's soft knee (0.7) so water stays in the muted palette
-// Departures, both forced: Engine2's water textures (public/game/textures/water*/water-*.png) are not in its
-// repository, so the ground pack's own water layer (ground-claude/water) stands in; and the sky tint is Engine2's
+//            Fresnel, then Ember's soft knee (0.7) so water stays in the muted palette
+// Departures, both forced: Ember's water textures (public/game/textures/water*/water-*.png) are not in its
+// repository, so the ground pack's own water layer (ground-claude/water) stands in; and the sky tint is Ember's
 // colour scaled by this frame's real sky light (the lighting contract) instead of a fixed number, so water darkens
-// at night like everything else. Heights: Engine2's battle board rises 1.5 tile per level, this board 1, so
+// at night like everything else. Heights: Ember's battle board rises 1.5 tile per level, this board 1, so
 // the sheet's heights are divided by 1.5 (BoardGround); the swell too.
 // Two looks (Escolhas "Agua 3D"; the user, 2026-10-16: "azul como a agua do rio do mapa"):
-//   0 rio    the board's own water material (water.hlsl: Engine2's diorama water, #2f86a8), so painted water and the
+//   0 rio    the board's own water material (water.hlsl: Ember's diorama water, #2f86a8), so painted water and the
 //            map's river look the same; edges still fade with the brush coverage
-//   1 leito  Engine2's ThreeWater material above, with the river-bed stand-in texture (dark slate)
+//   1 leito  Ember's ThreeWater material above, with the river-bed stand-in texture (dark slate)
 //   2 rio, ember  the board's water in look 001 (water_look001.hlsli), with this sheet's depth (body colour, shore foam)
 //   3 rio, correnteza  the board's water in look 002 (water_look002.hlsli), with this sheet's depth
 //   4 rio, decente  the board's water in look 003 (water_look003.hlsli: reads the scene under it), edges by the brush coverage
@@ -26,7 +26,7 @@
 
 struct Push {
   uint64_t frame;     // MeshFrame
-  uint64_t vertices;  // Water3DVertex[] (32 bytes: position, coverage, depth, Engine2 point)
+  uint64_t vertices;  // Water3DVertex[] (32 bytes: position, coverage, depth, Ember point)
   uint64_t indices;   // uint[]
   uint colorMap, normalMap, roughMap;  // bindless (kNoTexture: none)
   float colorR, colorG, colorB;        // material colour (linear)
@@ -36,7 +36,7 @@ struct Push {
 };
 [[vk::push_constant]] Push push;
 
-// water.hlsl's ripple height field, in texels of Engine2's 128 px tile
+// water.hlsl's ripple height field, in texels of Ember's 128 px tile
 float riverRipple(float2 p) {
   return sin(p.x * 0.19 + sin(p.y * 0.11) * 2.0) * 0.5 + sin(p.y * 0.23 + p.x * 0.07) * 0.5 + sin((p.x + p.y) * 0.31) * 0.25;
 }
@@ -45,7 +45,7 @@ struct VSOut {
   float4 position : SV_Position;
   float3 world : TEXCOORD0;
   float3 normal : TEXCOORD1;
-  float2 boardPoint : TEXCOORD2;  // Engine2's tile frame (x, -y): vWaterPoint
+  float2 boardPoint : TEXCOORD2;  // Ember's tile frame (x, -y): vWaterPoint
   float coverage : TEXCOORD3;
   float depth : TEXCOORD4;
 };
@@ -178,7 +178,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
   const float fresnel = lerp(0.02 + 0.30 * pow(1.0 - facing, 4.0), 0.03 + 0.40 * pow(1.0 - facing, 3.0), v4);
   const float viewUp = mul(float4(shading, 0.0), f.view).y;
   const float3 tint = lerp(float3(0.035, 0.065, 0.08), lerp(float3(0.22, 0.29, 0.33), float3(0.30, 0.38, 0.43), v4), smoothstep(-0.3, 0.8, viewUp));
-  // Engine2's tint is a fixed radiance for its up-facing sky (0.22, 0.29, 0.33: luminance 0.276); here it is
+  // Ember's tint is a fixed radiance for its up-facing sky (0.22, 0.29, 0.33: luminance 0.276); here it is
   // scaled by the sky radiance this frame actually has above the water (E / pi).
   float sky = 0.0;
   if (f.lightingLayers & kLayerIndirect) sky = dot(indirectDiffuse(f, surf), float3(0.2126, 0.7152, 0.0722)) / kPi / 0.276;

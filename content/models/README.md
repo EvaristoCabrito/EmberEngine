@@ -24,7 +24,7 @@ and stands it with its base centred on the anchor hex (MapStage::placeModels, En
    the pack once.
 3. **Catalog**: `models.json` (this folder) lists EmberEngine's models (id `ember-*`, Portuguese name, file, authored
    height/width, footprint one/pair/triple, editor section, blocks movement). `python -I
-   tools/scripts/models/catalog_models.py` merges them into `content/engine2/editor-catalog.json` (decorations of the
+   tools/scripts/models/catalog_models.py` merges them into `content/data/editor-catalog.json` (decorations of the
    model kind + the editor's 3D palette); run it again whenever `export_editor_catalog.ts` regenerates that file.
    Engine2's own 3D decorations (`tree-3d-*`, `prop-3d-tavern-*`, `rocks-3d-grey-outcrop`) are already there.
 4. **In the game**: `--meshes build/meshes/props-v2.pak` (JOGAR.bat). The Map Editor's 3D palette places any
@@ -38,7 +38,7 @@ Use this workflow for new tree props and their leafy variants. Keep each approve
 2. **Build the bare tree in Blender 5.2.** Use real tapered trunk, limb, fork, and twig geometry with the existing photographic bark texture. Fuse limb junctions into the trunk, keep the ground contact level, and save both `.blend` and textured `.glb` with a new `-vNN` filename. For a leafy version, start from that exact approved bare model and keep it as a separate asset.
 3. **Reuse the approved leaf source.** Individual photo-textured leaf geometry comes from `content/models/forest/mature-tree-v04-photo.glb`, using `content/models/textures/foliage-leaves-photo-v01.png`. Place leaves along the tree's branch network, preserving their natural scale, varied rotation, and visible branch structure; tune canopy density to the silhouette.
 4. **Render the review asset offline.** Show separate three-quarter, front, branch-junction, and base views. Keep previews in the review folder. Present each proposed tree version individually and wait for explicit approval before copying it into game or editor assets. Do not open the game or browser for visual checks.
-5. **Register only approved versions.** Copy the `.blend` and `.glb` into `content/models/nature/`; mirror the `.glb` into `content/game/public/game/models/nature/` and `content/game/public/game/ember/nature/`. Add the matching IDs, dimensions, footprint, and triangle count to `content/models/models.json`; register the same model in `content/engine2/editor-catalog.json`, `content/game/src/world/models.ts`, and `content/game/src/ember/data.ts`.
+5. **Register only approved versions.** Copy the `.blend` and `.glb` into `content/models/nature/`; mirror the `.glb` into `content/assets/game/models/nature/` and `content/assets/game/ember/nature/`. Add the matching IDs, dimensions, footprint, and triangle count to `content/models/models.json`; register the same model in `content/data/editor-catalog.json`, `content/game/src/world/models.ts`, and `content/game/src/ember/data.ts`.
 6. **Place only when requested.** A registered prop is available in the editor palette and game runtime. Add it to a map only when the user names or approves the map and placement. Preserve all existing model files and map placements.
 
 Current example: `colossal-dead-oak-v01` is the approved bare tree with a broad, near-cylindrical stump-like base and no exposed roots; `colossal-dead-oak-leafy-v01` is its separate leafy version.
@@ -359,7 +359,7 @@ solid parts repeat every 1.59 units, world-aligned). Pack: `build/meshes/archite
 `architecture-20261021-before-gothic.pak`). Map Editor: 3D Walls → "MURALHA GÓTICA" (Parede gótica / Nicho com guardião /
 Pilastra), with Traçar parede / Fechar sala. Test draft: `tools/scripts/maps/make_gothic_bridge_test.py` (thebridge023 with the
 parapet cards swapped for the kit on both rows, pier / window / guardian / window every four hexes, plus an L inside the deck) →
-`build/engine2-test/*/thebridge-gothic.*`; captures in `captures/gothic/` (local). **In the campaign: `thebridge024.json`**
+`build/test-maps/*/thebridge-gothic.*`; captures in `captures/gothic/` (local). **In the campaign: `thebridge024.json`**
 (`tools/scripts/maps/make_bridge_gothic.py`: 023 with its 16 parapet cards replaced by 80 kit pieces over both outer rows, pier / wall /
 niche / wall every four hexes; the deck ends at the walls' outer faces, MapStage `deckClip` + `ArchPiece::deckHalf`). 023 keeps its cards.
 

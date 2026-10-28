@@ -13,14 +13,14 @@
 #include "core/Log.h"
 #include "world/Progression.h"
 
-namespace ember::e2 {
+namespace ember {
 
 namespace {
 
 constexpr double kSqrt3 = 1.7320508075688772;  // Math.sqrt(3)
 double jsRound(double v) { return std::floor(v + 0.5); }
 
-// --- Engine2 data.ts numbers --------------------------------------------------------------------------------------
+// --- Ember data.ts numbers --------------------------------------------------------------------------------------
 
 struct SpellData {
   const char* kind;
@@ -41,7 +41,7 @@ constexpr SpellData kSpells[] = {
     {"shock", "Choque", 0, "lightning", false},
     {"cureMinor", "Cura Menor", 1, "", false},
     {"cureWounds", "Cura Média", 2, "", false},
-    {"cureLight", "Mãos Curativas", 4, "", false},  // Engine2 CURES.cureLight "Healing Hands"
+    {"cureLight", "Mãos Curativas", 4, "", false},  // Ember CURES.cureLight "Healing Hands"
     {"cureDisease", "Curar Doença", 3, "", false},
     {"createFoodAndWater", "Criar Comida e Água", 4, "", false},
     {"fantomForce", "Força Fantasma", 0, "arcane", false},
@@ -238,7 +238,7 @@ int spellTierOf(const std::string& kind) {
   return s ? s->tier : 0;
 }
 // Ours (the user, 2026-10-18: "faça a investida de touro ficar como T3 e dê um boost no dano"): a hero's Investida Touro is a
-// tier-3 skill (Engine2: tier 1); an enemy's (the Ox's three charges) keeps Engine2's tier 1. Off in the Cooker's checks.
+// tier-3 skill (Ember: tier 1); an enemy's (the Ox's three charges) keeps Ember's tier 1. Off in the Cooker's checks.
 bool bullRushTier3() { return progressionEnabled(); }
 int unitTierOf(const BattleUnit& u, const std::string& kind) {
   if (kind == "bullRush" && u.side == "player" && bullRushTier3()) return 3;
@@ -366,7 +366,7 @@ const PotionData* potionData(const std::string& id) {
     if (id == p.id) return &p;
   return nullptr;
 }
-// Engine2 poisonTiers (overworld.json tables.poisonTiers): the tick's dice and the resistance penalty, by tier.
+// Ember poisonTiers (overworld.json tables.poisonTiers): the tick's dice and the resistance penalty, by tier.
 struct PoisonTier {
   const char* id;
   const char* name;
@@ -604,7 +604,7 @@ const char* poisonTierUp(const char* base, int steps) {
   return kOrder[std::clamp(at + steps, 0, 4)];
 }
 bool emberAreaGrows(const std::string& kind);
-// --- The first spells on their tracks (with the progression off, the Cooker's checks: Engine2's own numbers) ---
+// --- The first spells on their tracks (with the progression off, the Cooker's checks: Ember's own numbers) ---
 int magicMissileCount(int level) {
   if (!progressionEnabled()) return level >= 6 ? 3 : level >= 3 ? 2 : 1;
   return std::min(4, 1 + spellGains("magicMissile", level).n('c'));  // at most 4 (the user, 2026-10-20)
@@ -1103,7 +1103,7 @@ double* skillSlot(BattleUnit& u, const std::string& id) {
   return &u.skills.back().second;
 }
 // The combat log's notes made while a step resolves (skill points gained, levels reached); the wrappers around
-// resolveStrike / resolveStep / startOfTurnEffects hand them to the battle's log (Engine2 logSkillGain, the level-up tip).
+// resolveStrike / resolveStep / startOfTurnEffects hand them to the battle's log (Ember logSkillGain, the level-up tip).
 std::vector<std::string> gNotes;
 bool gLogEnglish = false;  // the combat log's language, set by the window (setCombatLogEnglish)
 const char* pick(const char* pt, const char* en) { return gLogEnglish ? en : pt; }
@@ -1184,7 +1184,7 @@ void trainWeapon(BattleUnit& u, int enemyLevel, Mulberry32& rng, bool offHand = 
 }
 
 // Esquiva (ours, the user, 2026-10-18): a hero an enemy strikes at may gain a point, by trainWeapon's rule (the foe's level,
-// the chance falling as the skill rises). Off in the Cooker's checks (no extra draw from Engine2's random numbers).
+// the chance falling as the skill rises). Off in the Cooker's checks (no extra draw from Ember's random numbers).
 void trainDodge(BattleUnit& u, int enemyLevel, Mulberry32& rng) {
   if (u.side != "player" || u.summoned || !u.alive || !progressionEnabled()) return;
   bool skip = false;
@@ -1577,7 +1577,7 @@ void afterDeath(Battle& b, size_t dead, std::vector<BattleEffect>& out) {
   }
 }
 // What eats at a unit at the start of its turn (and again, at once, under Colheita de Almas: countDown = false): its
-// poison (Engine2's rule: the tier's dice, its resistance less the tier's penalty, the poisoner's MAG / 2 penetrating),
+// poison (Ember's rule: the tier's dice, its resistance less the tier's penalty, the poisoner's MAG / 2 penetrating),
 // its bleeding, its curse's tick and the curse's next step.
 void tickConditions(Battle& b, size_t id, Mulberry32& rng, std::vector<BattleEffect>& out, bool countDown, bool withPoison = true) {
   BattleUnit& u = b.units()[id];
@@ -2119,7 +2119,7 @@ std::optional<std::vector<BattleStep>> castEmber(Battle& b, size_t caster, const
       if (kind == "judgment")  // the undead take the heavier weight
         for (size_t id : s.ids) s.perTargetMul.push_back(b.units()[id].undead ? n.tickMul : 1.0);
       if (kind == "nightmare") {  // a sleeper takes double (the hit's own +25 % on a sleeper folded in), and each struck foe may be afraid
-        for (size_t id : s.ids) s.perTargetMul.push_back(b.units()[id].asleep ? n.tickMul / 1.25 : 1.0);  // 1.25 = kWebSleepBonusDamage (SpellsE2.inc)
+        for (size_t id : s.ids) s.perTargetMul.push_back(b.units()[id].asleep ? n.tickMul / 1.25 : 1.0);  // 1.25 = kWebSleepBonusDamage (SpellsCore.inc)
         s.fearPct = n.pct, s.fearTurns = n.turns;
       }
       if (kind == "profaneSilence") s.silenceTurns = n.turns;
@@ -2461,7 +2461,7 @@ bool leavesZone(const std::string& kind) {
   return kind == "pillarOfFlame" || kind == "primordialEmber" || kind == "eruption" || kind == "shroudOfShadows" || kind == "meteor";
 }
 
-#include "SpellsE2.inc"
+#include "SpellsCore.inc"
 
 }  // namespace
 
@@ -2698,7 +2698,7 @@ std::string conditionsText(const BattleUnit& u) {
   if (u.cond.empowerPct > 0) add(std::format("{} +{}% ({})", pick("Fortalecido", "Empowered"), u.cond.empowerPct, u.cond.empowerRounds));
   if (u.cond.daggers > 0) add(std::format("{} ×{}", pick("Adagas", "Daggers"), u.cond.daggers));
   if (u.diseased) add("Doente");
-  // Engine2's statuses
+  // Ember's statuses
   if (u.stunned) add(std::string(pick("Atordoado", "Stunned")) + std::format(" ({})", u.stunTurns));
   if (u.asleep) add(std::string(pick("Adormecido", "Asleep")) + std::format(" ({})", u.sleepTurns));
   if (u.bleeding) add(u.bleedRoundsLeft ? std::string(pick("Sangrando 1D8 por ação", "Bleeding 1D8 per action")) + std::format(" ({})", *u.bleedRoundsLeft)
@@ -3111,7 +3111,7 @@ std::string spellName(const std::string& kind) {
 }
 
 namespace {
-// The English names, for the combat log in English (Engine2's own names for its spells, ours for the promotions).
+// The English names, for the combat log in English (Ember's own names for its spells, ours for the promotions).
 constexpr std::pair<const char*, const char*> kSpellNamesEnglish[] = {
     {"magicMissile", "Magic Missile"}, {"magicMissileV2", "Magic Missile"}, {"longShot", "Long Shot"}, {"piercing", "Piercing Shot"},
     {"piercingThrust", "Piercing Thrust"}, {"doubleStrike", "Double Strike"}, {"lightning", "Lightning"}, {"frost", "Frost"},
@@ -3804,7 +3804,7 @@ bool strikesBack(const Battle& b, const BattleStep& step) {
 
 namespace {
 
-// The combat log's lines for the effects a step just produced (Engine2 engine.ts pushLog): `actor` is who acted (-1 for
+// The combat log's lines for the effects a step just produced (Ember engine.ts pushLog): `actor` is who acted (-1 for
 // what befalls a unit at the start of its turn, which carries its own verb in `cause`).
 void logEffects(Battle& b, const std::vector<BattleEffect>& out, size_t from, int actor, const BattleStep* step) {
   const auto nameOf = [&](size_t i) { return b.units()[i].name; };
@@ -4257,13 +4257,13 @@ void resolveStrike(Battle& b, const BattleStep& step, bool counter, Mulberry32& 
 
 void playSteps(Battle& b, const std::vector<BattleStep>& steps, Mulberry32& rng, std::vector<BattleEffect>& out) {
   std::vector<BattleStep> queue = steps;
-  bool finished = false;  // Engine2's first finishCombat -> finishAction: the action is done (acted) and builds +0.1 with its neighbours
+  bool finished = false;  // Ember's first finishCombat -> finishAction: the action is done (acted) and builds +0.1 with its neighbours
   for (size_t i = 0; i < queue.size(); ++i) {
     const size_t before = out.size();
     resolveStep(b, queue[i], rng, out);
     if (!finished && queue[i].type != BattleStep::Type::Move) {
       finished = true;
-      // Engine2's auras are a banner, not a finishCombat: they build no affinity with the neighbours.
+      // Ember's auras are a banner, not a finishCombat: they build no affinity with the neighbours.
       if (queue[i].kind != "auraOfProtection" && queue[i].kind != "intimidatingPresence") gainAdjacentAffinity(b, queue[i].att);
     }
     bool abort = false;
@@ -5104,7 +5104,7 @@ static void startOfTurnEffectsImpl(Battle& b, size_t unit, Mulberry32& rng, std:
     out.push_back(e);
     if (!u.alive) afterDeath(b, unit, out);
   }
-  // Its poison (Engine2: the tier's dice, its Poison Resistance less the tier's penalty and the poisoner's MAG / 2)
+  // Its poison (Ember: the tier's dice, its Poison Resistance less the tier's penalty and the poisoner's MAG / 2)
   if (u.alive) tickConditions(b, unit, rng, out, false, true);
   // Tempestade de Gelo: whoever starts its turn inside the field is hurt (once a round: not again if it walked in this round)
   if (u.alive) iceStormsStrike(b, unit, rng, out);
@@ -5818,7 +5818,7 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
       if (std::optional<AiCast> cc = cloudCast(1)) return cc;
   }
   const bool birolho = c == "birolho" || c == "birolho2" || c == "birolho3" || c == "birolhoLegs" || c == "birolhoLegs2";
-  // Birolho: Relampago outranks Veneno Caustico outranks Choque outranks Missil Magico. (Engine2 tests its tier-4 uses and spends
+  // Birolho: Relampago outranks Veneno Caustico outranks Choque outranks Missil Magico. (Ember tests its tier-4 uses and spends
   // the venom's own tier 5: kept as it is.)
   if (birolho && (u.spells[0] > 0 || u.spells[1] > 0 || u.spells[3] > 0 || u.shockCharges > 0 || tierRemaining(u, "acidCloud") > 0)) {
     if (u.spells[1] > 0)
@@ -6090,4 +6090,4 @@ static std::optional<AiCast> planEnemyCastRaw(Battle& b, size_t unit) {
   return std::nullopt;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

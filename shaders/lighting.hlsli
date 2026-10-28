@@ -130,7 +130,7 @@ float localShadow(float4x4 lightMatrix, uint mapIndex, uint samplerIndex, float 
   return lit / 16.0;
 }
 
-// Local lights through the cluster this point falls in. Engine2's falloff (three.js punctual lights):
+// Local lights through the cluster this point falls in. Ember's falloff (three.js punctual lights):
 // 1 / max(d^decay, 0.01), windowed to zero at the range by (1 - (d / range)^4)^2.
 static const float kLightSourceRadius = 0.5;  // world units (~35 cm: a flame with its glow and bracket)
 float3 localLights(MeshFrame f, Surface s, float3 view, float3 diffuseColor, float3 f0, float a, float nv) {
@@ -431,7 +431,7 @@ float3 volumeOverBackground(MeshFrame f, float3 color, uint2 pixel) {
 
 // Debug view 3 (fog of war): mask darkness in red, local-light sight in green, blue = a surface was drawn.
 static const uint kDebugFog = 3u;
-// Dev Controls "Fog of war — debug" (Engine2 fogDebug): the fog's states as flat colours instead of the feathered
+// Dev Controls "Fog of war — debug" (Ember fogDebug): the fog's states as flat colours instead of the feathered
 // mask: green = in sight, amber = explored, red = never seen (FogOfWar.h alphas 0 / 0.6 / 1).
 static const uint kDebugFogStates = 4u;
 float3 fogStateColor(float alpha) {

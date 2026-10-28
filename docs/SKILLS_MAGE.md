@@ -59,7 +59,7 @@ Where: `UnknownItemRules::shared()` (Battle.h / Battle.cpp) reads the file; `use
 `lootUnknownPotions`, in the snapshot; the chest popup names them "Arma desconhecida" / "Poção desconhecida" with a "?"; off while the
 Cooker checks against Engine2: `progressionEnabled()`); `finishCampaignFight` (main.cpp) writes the marks into the save; `InnRules`
 (`unknownItems / weaponUnknown / gearUnknown / potionsUnknown / sellUnknown / identify / discardUnknown`, `InnWeapon::weaponType` from
-`content/engine2/weapons.json`); `FieldSpells::identifiers / canIdentify / castIdentify`; `InventoryScreen.h` (the entries, the "?", the
+`content/data/weapons.json`); `FieldSpells::identifiers / canIdentify / castIdentify`; `InventoryScreen.h` (the entries, the "?", the
 picker), `InnScreen.h` (the forge's list), `OverworldStage.h` (the row and `drawIdentifyMenu`; `--map-ui identify:<hero>`). Kill drops are not
 kept by the game yet, so only chests make unknown items.
 

@@ -8,7 +8,7 @@
 #include "world/Loadout.h"  // heroArms (Selene's dagger)
 #include "world/Overworld.h"
 
-namespace ember::e2 {
+namespace ember {
 
 namespace {
 
@@ -352,4 +352,4 @@ int checkInterlude(const InterludeData& data, const Overworld& world, const Json
   return fails;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

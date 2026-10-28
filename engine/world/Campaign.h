@@ -1,11 +1,11 @@
 #pragma once
 
-// The campaign's save files, ported from Engine2 (src/campaign/save.ts): a bank of six slots, each one SaveData in
-// Engine2's own JSON shape (version 19), kept whole so every campaign screen reads the same fields Engine2 does.
+// The campaign's save files, ported from Ember (src/campaign/save.ts): a bank of six slots, each one SaveData in
+// Ember's own JSON shape (version 19), kept whole so every campaign screen reads the same fields Ember does.
 // The empty save, the missions in campaign order (with each one's map file) and the world-map locations come from
-// Engine2's modules through tools/scripts/engine2/export_campaign.ts (content/engine2/campaign.json).
+// Ember's modules through tools/scripts/data/export_campaign.ts (content/data/campaign.json).
 //
-// Engine2 kept the bank in the browser's localStorage ("ember-save-bank"); EmberEngine keeps the same JSON in a file,
+// Ember kept the bank in the browser's localStorage ("ember-save-bank"); EmberEngine keeps the same JSON in a file,
 // written whole through a temporary file and a rename so a crash or a power cut never leaves half a save.
 
 #include <filesystem>
@@ -15,9 +15,9 @@
 
 #include <nlohmann/json.hpp>
 
-namespace ember::e2 {
+namespace ember {
 
-// A save as Engine2 holds it: JSON that keeps its keys in insertion order (JS objects do, and Engine2's rules read
+// A save as Ember holds it: JSON that keeps its keys in insertion order (JS objects do, and Ember's rules read
 // some of them in that order, e.g. which hero's bag loses a potion on the road).
 using Json = nlohmann::ordered_json;
 
@@ -33,7 +33,7 @@ struct WorldLocation {
   std::vector<std::string> missionIds;
 };
 
-// Engine2's campaign tables.
+// Ember's campaign tables.
 struct CampaignData {
   int saveVersion = 19, slotCount = 6;
   Json emptySave;  // emptySave() with updatedAt 0
@@ -63,7 +63,7 @@ struct SlotProgress {
 
 class Campaign {
  public:
-  // `data`: content/engine2/campaign.json; `bankFile`: where the bank lives (default: savePath()).
+  // `data`: content/data/campaign.json; `bankFile`: where the bank lives (default: savePath()).
   bool open(const std::filesystem::path& data, const std::filesystem::path& bankFile);
   // %LOCALAPPDATA%\Ember\ember-save-bank.json (the folder is made when the bank is first written).
   static std::filesystem::path savePath();
@@ -88,7 +88,7 @@ class Campaign {
   // The active slot rewritten with `save` (writeSlot on lastSlot).
   bool saveActive(Json save) { return writeSlot(bank_.lastSlot, std::move(save)); }
 
-  // Engine2 formatSaveDate (pt-BR, dateStyle medium + timeStyle short): "15 de out. de 2026, 21:40".
+  // Ember formatSaveDate (pt-BR, dateStyle medium + timeStyle short): "15 de out. de 2026, 21:40".
   static std::string formatSaveDate(double updatedAtMs);
   static double nowMs();
 
@@ -99,7 +99,7 @@ class Campaign {
   std::filesystem::path bankFile_;
 };
 
-// The C++ slotProgress against Engine2's answers (Cooker check-campaign). Returns the number of differences.
+// The C++ slotProgress against Ember's answers (Cooker check-campaign). Returns the number of differences.
 int checkSlotProgress(const Campaign& campaign);
 
-}  // namespace ember::e2
+}  // namespace ember

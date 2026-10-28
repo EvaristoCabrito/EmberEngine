@@ -1,12 +1,12 @@
 #pragma once
 
-// Engine2's BurningHandsV2VFX (src/vfx/legacy/three/BurningHandsV2VFX.ts) with DEFAULT_BURNING_HANDS_V2_SETTINGS, as
+// Ember's BurningHandsV2VFX (src/vfx/legacy/three/BurningHandsV2VFX.ts) with DEFAULT_BURNING_HANDS_V2_SETTINGS, as
 // BattleSpells3D plays it, ported to the effect runtime: Mãos Flamejantes 01, and Sopro Venenoso 01 (the same with
-// Engine2's poison: the poison-v2-main sheet, green curves, NormalBlending). One ParticleEmitter (80 flipbook flames)
+// Ember's poison: the poison-v2-main sheet, green curves, NormalBlending). One ParticleEmitter (80 flipbook flames)
 // sprays from the caster toward the struck cells as a steady jet for 0.72 s, then its last flames burn out by 2.35 s;
 // five lights (two at the hands, three riding the flame front) flicker and fade with it. The rules release at 0.56 s.
-// Its math runs in Ember's frame (z up) as Engine2's does.
-// Version 2 (ours, user 2026-10-16: "the cone is reversed"): Engine2's flames shrink and fade as they age and its jet
+// Its math runs in Ember's frame (z up) as Ember's does.
+// Version 2 (ours, user 2026-10-16: "the cone is reversed"): Ember's flames shrink and fade as they age and its jet
 // barely opens (about +-5 degrees), so the spray read thick at the hands and thin at the target. Version 2 opens a real
 // cone (+-26 degrees), the flames grow as they travel and stay visible longer, and they rise up (world y) instead of
 // drifting along the board.

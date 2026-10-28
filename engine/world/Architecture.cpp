@@ -10,7 +10,7 @@
 
 #include "core/Log.h"
 
-namespace ember::e2 {
+namespace ember {
 
 using three::Geometry;
 using three::Shape;
@@ -1495,7 +1495,7 @@ int checkArchitecture(const std::filesystem::path& refs, const ArchitectureDefs&
     auto compare = [&](const char* what, const std::vector<float>& mine, double tolerance) {
       const nlohmann::json& ref = c[what];
       if (ref.size() != mine.size()) {
-        ++bad, logError("check-architecture: {}: {} has {} values here, {} in Engine2", name, what, mine.size(), ref.size());
+        ++bad, logError("check-architecture: {}: {} has {} values here, {} in Ember", name, what, mine.size(), ref.size());
         return;
       }
       double d = 0;
@@ -1507,7 +1507,7 @@ int checkArchitecture(const std::filesystem::path& refs, const ArchitectureDefs&
     compare("normal", g.normal, 1e-3);
     compare("uv", g.uv, 1e-4);
   }
-  if (bad == 0) logInfo("check-architecture: {} cases, every piece matches Engine2 (largest difference {:.2e})", cases, worst);
+  if (bad == 0) logInfo("check-architecture: {} cases, every piece matches Ember (largest difference {:.2e})", cases, worst);
   return bad;
 }
 
@@ -1541,4 +1541,4 @@ const ArchitectureDef* ArchitectureDefs::find(const std::string& id) const {
   return it == defs.end() ? nullptr : &it->second;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

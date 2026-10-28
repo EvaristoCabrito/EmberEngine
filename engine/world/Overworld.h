@@ -1,9 +1,9 @@
 #pragma once
 
-// The campaign's world map (Engine2's RPG overworld), ported from src/campaign/overworld.ts with the rules it reads
+// The campaign's world map (Ember's RPG overworld), ported from src/campaign/overworld.ts with the rules it reads
 // (access.ts, progression.ts, quests.ts, hunger.ts, poison.ts, skills.ts and the loot / bag helpers of ember/data.ts).
-// The board, the locations, the missions and every table come from tools/scripts/engine2/export_overworld.ts
-// (content/engine2/overworld.json); Cooker check-overworld compares this port with Engine2's own answers, step for
+// The board, the locations, the missions and every table come from tools/scripts/data/export_overworld.ts
+// (content/data/overworld.json); Cooker check-overworld compares this port with Ember's own answers, step for
 // step and random number for random number.
 
 #include <cstdint>
@@ -15,7 +15,7 @@
 
 #include "world/Campaign.h"
 
-namespace ember::e2 {
+namespace ember {
 
 class Mulberry32;
 
@@ -82,7 +82,7 @@ class Overworld {
   int maxHp(const Json& save, const std::string& hero) const;  // statsFor(class, level).hp, 0 without a class
   int classHp(const std::string& classId, int level) const;    // statsFor(classId, level).hp
   bool wispForestUncleared(const Json& save) const;
-  // `test` everywhere below: Engine2's Modo teste (GameApp testMode): every hex walkable, every hero counts as in the
+  // `test` everywhere below: Ember's Modo teste (GameApp testMode): every hex walkable, every hero counts as in the
   // party, every mission and location open.
   bool canStep(const Json& save, OverworldHex from, OverworldHex to, bool test = false) const;  // canStepOverworld
   // stepOverworld: the save after one hex step and what happened on the way; the save unchanged (and no event, no
@@ -139,15 +139,15 @@ class Overworld {
   std::optional<OverworldHex> wisp_;
   int westEdgeCol_ = 0;
   std::vector<std::string> stoneBridgeMissionIds_;
-  std::vector<LootEntry> loot_;  // weapons then equipment, in Engine2's table order
+  std::vector<LootEntry> loot_;  // weapons then equipment, in Ember's table order
   Json tables_;
-  // The road encounters that field undead (content/engine2/undead-encounters.json, beside the world data; tools/scripts/engine2/
+  // The road encounters that field undead (content/data/undead-encounters.json, beside the world data; tools/scripts/data/
   // undead_encounters.py): never rolled while the Prece do Caminho holds (world/FieldSpells, docs/SKILLS_HEALER.md).
   std::set<std::string> undeadEncounters_;
 };
 
-// Cooker check-overworld: location / mission status, allowed steps and seeded steps against Engine2's answers.
+// Cooker check-overworld: location / mission status, allowed steps and seeded steps against Ember's answers.
 // Returns the number of differences.
 int checkOverworld(const Overworld& world, const std::filesystem::path& references);
 
-}  // namespace ember::e2
+}  // namespace ember

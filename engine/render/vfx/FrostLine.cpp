@@ -16,7 +16,7 @@ namespace {
 
 constexpr float kTau = 2.0f * std::numbers::pi_v<float>;
 constexpr glm::vec3 kUp{0.0f, 1.0f, 0.0f};
-constexpr glm::vec3 kFrostLight{0.71f, 0.91f, 1.0f};  // Engine2's frost colour for the light (battleSpellOverlay3d)
+constexpr glm::vec3 kFrostLight{0.71f, 0.91f, 1.0f};  // Ember's frost colour for the light (battleSpellOverlay3d)
 // The IceStorm material's modes used here (shaders/vfx.hlsl).
 constexpr float kFloor = 0.0f, kSnow = 1.0f, kCrystal = 3.0f, kDust = 6.0f, kRing = 7.0f;
 constexpr int kSpikes = 6;  // crystals in a hex's cluster
@@ -279,7 +279,7 @@ void FrostLine::buildHex(size_t index, float age, VfxFrame& frame, std::vector<V
   draw(frame, t, kDust, quadFirst, quadGeometry().size(), glm::mat4(1.0f), 1.0f, {}, hex, &dust);
   draw(frame, t, kSnow, quadFirst, quadGeometry().size(), glm::mat4(1.0f), 1.0f, {}, hex, &flakes);
 
-  // The cold light: a strong flash at the eruption (Engine2 FROST_FLASH) settling into a glow that goes as the ice does.
+  // The cold light: a strong flash at the eruption (Ember FROST_FLASH) settling into a glow that goes as the ice does.
   const float flash = 9.0f * std::exp(-t * 7.0f), glow = 1.6f * ease(0.0f, 0.3f, t) * (1.0f - ease(0.4f, 1.0f, shatter));
   const float burst = t > kShatterBurst ? 3.0f * std::exp(-(t - kShatterBurst) * 8.0f) : 0.0f;
   lights.push_back({hex + glm::vec3(0, 0.9f, 0), kFrostLight, flash + glow + burst, 3.2f});

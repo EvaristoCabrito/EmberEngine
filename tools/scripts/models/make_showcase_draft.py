@@ -1,5 +1,5 @@
 """A Map Editor draft that shows every EmberEngine 3D prop on a real map (the capture in captures/models): the given
-Engine2 map with its decorations replaced by one of each model, laid in rows around the board's centre.
+Ember map with its decorations replaced by one of each model, laid in rows around the board's centre.
 
   python -I tools/scripts/models/make_showcase_draft.py <map.json> <out.json> [kit,kit,...] [content/models/models.json]
 """

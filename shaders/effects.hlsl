@@ -1,4 +1,4 @@
-// Spell effects: flipbook frames of the fx clips (Engine2's effect art, sprite clips in set "fx") on quads the CPU
+// Spell effects: flipbook frames of the fx clips (Ember's effect art, sprite clips in set "fx") on quads the CPU
 // places (render/EffectDraw.h; the recipes in render/SpellEffects.cpp). Drawn after every surface, depth-tested
 // against them without writing depth, blended premultiplied: opacity 1 covers what is behind by the art's alpha,
 // 0 only adds light. Two frames are blended for smooth motion; each quad fades where it meets the surface behind it

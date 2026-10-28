@@ -1,6 +1,6 @@
 """The Meshy stone hearth (E05): the user's generated mesh (Downloads/Meshy_AI_Stone_Hearth_Glow_*.blend: one mesh,
 391k triangles, no UVs, no material) catalogued as content/models/meshy/stone-hearth-v01: scaled from metres to
-world units (1 unit = 0.68 m), stood on z = 0, a triplanar unwrap, Engine2's grey masonry with soot inside the
+world units (1 unit = 0.68 m), stood on z = 0, a triplanar unwrap, Ember's grey masonry with soot inside the
 firebox. The original file is read only.
 
   blender -b <the Meshy .blend> --python content/models/blender/export_hearth.py

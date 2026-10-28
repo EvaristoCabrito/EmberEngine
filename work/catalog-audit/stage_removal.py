@@ -46,7 +46,7 @@ for rel in ['content/maps/ember/cemiterio-esquecidos007.json','content/maps/embe
 rel='content/models/models.json'; s=(ROOT/rel).read_bytes().decode('utf-8'); a=path_span(s,['models']); s,n=remove_array(s,a,lambda x:isinstance(x,dict) and x.get('id')==TARGET)
 if n!=1:raise RuntimeError(f'model registry expected 1, removed {n}')
 json.loads(s); changes[rel]=s; print(rel,'registry entries removed=',n)
-rel='content/engine2/editor-catalog.json'; s=(ROOT/rel).read_bytes().decode('utf-8')
+rel='content/data/editor-catalog.json'; s=(ROOT/rel).read_bytes().decode('utf-8')
 for path in [['decorations'],['editor','decorationInfo'],['editor','decoMeta']]:
  a=path_span(s,path); s,n=remove_obj_member(s,(a[0],a[1]),TARGET)
  if n!=1:raise RuntimeError(f'catalog key missing: {path}')

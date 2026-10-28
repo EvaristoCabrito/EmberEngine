@@ -1,10 +1,10 @@
-// FOG LOOK 004 (2026-10-14): Engine2's volumetric mist model, new candidate, not yet seen by the user. Frozen
+// FOG LOOK 004 (2026-10-14): Ember's volumetric mist model, new candidate, not yet seen by the user. Frozen
 // once seen: never edit a saved look; new looks go in new files (shaders/fog_lookNNN.hlsl). Only the user
 // deletes looks.
 //
 // The fog of war's mist (R7, the user, 2026-10-14): believable volumetric ground mist, densest over never-seen
 // (black) ground, thinner over remembered ground, none in sight; soft everywhere, no edges, and the black may
-// show through. Its model is Engine2's volumetric mist (C:/Engine2/src/render/volumetricFog.ts, the "fog1"
+// show through. Its model is Ember's volumetric mist (src/render/volumetricFog.ts, the "fog1"
 // preset in src/game/mist3d.ts); the code is ours:
 //   - a layer `thickness` deep over the local ground, densest at the ground, thicker in the low places (it
 //     pools), thinning with height (heightPow);

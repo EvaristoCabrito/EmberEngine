@@ -283,12 +283,12 @@ float3 atmoMoonLight(uint64_t atmosphere) { return vk::RawBufferLoad<float3>(atm
 float3 atmoMoonDirection(uint64_t atmosphere) { return vk::RawBufferLoad<float3>(atmosphere + 240u); }
 
 
-// One local light (Engine2's CarriedLight: a three.js point light). 48 bytes.
+// One local light (Ember's CarriedLight: a three.js point light). 48 bytes.
 struct LocalLight {
   float3 position;
   float range;     // influence ends here (three.js cutoff distance)
   float3 color;    // linear radiometric colour x intensity (before exposure)
-  float decay;     // distance falloff exponent (Engine2: 1.25)
+  float decay;     // distance falloff exponent (Ember: 1.25)
   float3 facing;   // zero: every way; else only the half-space it faces is lit (an opening's light stays in the room)
   float behind;    // ... fully lit down to this far behind the light along -facing, gone 0.15 further
 };

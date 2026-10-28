@@ -13,7 +13,7 @@
 #include "core/Log.h"
 #include "world/Battle.h"
 
-namespace ember::e2 {
+namespace ember {
 
 namespace {
 
@@ -23,7 +23,7 @@ using Row = std::array<int, 5>;  // hp atk mag def dex
 bool gEnabled = true;
 
 struct Tables {
-  std::map<std::string, std::vector<Row>> classes;  // Engine2 statsFor per level 1..30
+  std::map<std::string, std::vector<Row>> classes;  // Ember statsFor per level 1..30
   std::map<std::string, Row> heroGain;              // by hero name
   std::map<std::string, Row> heroBase;              // a hero's own level-1 extra over her class's row (Selene: +3 ATK)
   std::map<std::string, std::string> heroOfClass;   // a hero's classes -> the hero
@@ -43,7 +43,7 @@ json readJson(const char* path) {
 const Tables& tables() {
   static const Tables t = [] {
     Tables t;
-    const json cs = readJson("content/engine2/class-stats.json");
+    const json cs = readJson("content/data/class-stats.json");
     if (cs.contains("classes"))
       for (const auto& [id, rows] : cs["classes"].items()) {
         std::vector<Row>& v = t.classes[id];
@@ -65,7 +65,7 @@ const Tables& tables() {
         if (!h.value("sharesClass", false))
           for (const json& c : classes) t.heroOfClass[c.get<std::string>()] = hero;
         if (classes.empty() || !t.classes.count(classes[0].get<std::string>()))
-          logError("progression: {}'s class is not in content/engine2/class-stats.json", hero);
+          logError("progression: {}'s class is not in content/data/class-stats.json", hero);
         else
           t.heroClass[hero] = classes[0].get<std::string>();
       }
@@ -218,7 +218,7 @@ void applyProgression(BattleUnit& u) {
     // ... plus the hero's own level-1 extra (content/progression.json baseBonus; Selene's +3 ATK)
     if (const auto extra = t.heroBase.find(u.name); extra != t.heroBase.end())
       for (size_t k = 0; k < 5; ++k) base[k] += extra->second[k];
-    // Engine2's stats at the unit's level (its growth rows, else its class), then the hero's own rows.
+    // Ember's stats at the unit's level (its growth rows, else its class), then the hero's own rows.
     const int level = std::max(1, u.level);
     if (!u.growth.empty() && static_cast<size_t>(level) <= u.growth.size()) {
       for (size_t k = 0; k < 5; ++k) from[k] = u.growth[static_cast<size_t>(level - 1)][k];
@@ -233,9 +233,9 @@ void applyProgression(BattleUnit& u) {
       for (size_t k = 0; k < 5; ++k) u.growth[i][k] = r[k];
     }
   } else {
-    applyRank(u);  // every class, also one without Engine2 growth rows
+    applyRank(u);  // every class, also one without Ember growth rows
     to = enemyPoints(u);  // the class's own stats + the level's points (from stays 0)
-    // The MAG column is ours (the battle file carries Engine2's): the class table's MAG at the unit's level.
+    // The MAG column is ours (the battle file carries Ember's): the class table's MAG at the unit's level.
     if (const std::vector<Row>* rows = classRows(u.classId)) to[2] += (*rows)[static_cast<size_t>(clampLevel(*rows, u.level) - 1)][2] - u.mag;
   }
   const int dHp = to[0] - from[0], dAtk = to[1] - from[1], dMag = to[2] - from[2], dDef = to[3] - from[3], dDex = to[4] - from[4];
@@ -247,13 +247,13 @@ void applyProgression(BattleUnit& u) {
   if (u.diseaseBase) u.diseaseBase->atk += dAtk, u.diseaseBase->mag += dMag, u.diseaseBase->def += dDef, u.diseaseBase->dex += dDex;
 }
 
-int progressionClassHp(const std::string& classId, int level, int engine2Hp) {
-  if (!gEnabled) return engine2Hp;
+int progressionClassHp(const std::string& classId, int level, int classicHp) {
+  if (!gEnabled) return classicHp;
   const Tables& t = tables();
   const auto hero = t.heroOfClass.find(classId);
   const std::vector<Row>* rows = classRows(classId);
-  if (hero == t.heroOfClass.end() || !rows) return engine2Hp;
+  if (hero == t.heroOfClass.end() || !rows) return classicHp;
   return heroAt((*rows)[0], t.heroGain.at(hero->second), clampLevel(*rows, level))[0];
 }
 
-}  // namespace ember::e2
+}  // namespace ember

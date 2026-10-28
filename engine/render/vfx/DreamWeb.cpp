@@ -15,14 +15,14 @@ namespace {
 
 constexpr float kPi = std::numbers::pi_v<float>;
 constexpr float kTau = 2.0f * kPi;
-// DEFAULT_WEB_OF_DREAMS_VFX_SETTINGS (Engine2's), the thread a third thicker: the board is seen from further than Engine2's tile view.
+// DEFAULT_WEB_OF_DREAMS_VFX_SETTINGS (Ember's), the thread a third thicker: the board is seen from further than Ember's tile view.
 constexpr float kRadius = 1, kFilamentThickness = 0.027f * 1.35f, kCurvature = 0.42f, kVerticalSpread = 1.05f, kDisplacement = 0.055f;
 constexpr int kTargetFilamentCount = 7, kNodeCount = 12, kSecondaryLightCount = 2;
 constexpr float kPulseSpeed = 1.25f, kPulseBrightness = 2.8f, kNodeSize = 0.075f, kTightening = 0.3f;
 constexpr float kCentralLight = 12, kCentralLightRadius = 5.5f, kSecondaryLight = 6, kSecondaryLightRadius = 4.2f, kBindingFlash = 20, kSustained = 2.2f;
 constexpr uint32_t kSeed = 50827;
 constexpr int kTubeSides = 5, kTubeSegments = 18;
-// Ours: the net hangs as a canopy at body height (Engine2's z 0 was its flat card plane; half a net under our floor is gone).
+// Ours: the net hangs as a canopy at body height (Ember's z 0 was its flat card plane; half a net under our floor is gone).
 constexpr float kLift = 0.85f;
 
 // JavaScript's Math.round (halves round up).
@@ -126,7 +126,7 @@ std::vector<VfxVertex> orbWeb(uint32_t seed) {
 }
 
 // A unit's own strands (updateTargets), in a frame where x, y are across and z is up: three coils wound round the body and
-// loose threads over it. Engine2's vertical was its y (a flat card's up); here it is the body's own up, and the winding is round
+// loose threads over it. Ember's vertical was its y (a flat card's up); here it is the body's own up, and the winding is round
 // (circular) so it reads the same from every side of the orbiting camera. Body height 1.5 = 1.28 of strand length.
 std::vector<VfxVertex> wrapStrands(int key) {
   uint32_t sum = static_cast<uint32_t>(key) * 131u + 7u;
@@ -326,7 +326,7 @@ void DreamWeb::build(float now, const Camera&, VfxFrame& frame, std::vector<VfxL
   if (now < start_ || done(now)) return;
   buildShot(now, frame, lights);
   if (now < landed()) return;
-  // The field's own clock stops while it releases (Engine2: elapsed frozen, releaseElapsed runs).
+  // The field's own clock stops while it releases (Ember: elapsed frozen, releaseElapsed runs).
   const bool releasing = now >= releaseAt_;
   const float e = std::min(now, releaseAt_) - landed();
   const float release = releasing ? three::smoothstep(now - releaseAt_, 0.0f, kRelease) : 0.0f;

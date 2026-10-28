@@ -50,7 +50,7 @@ std::map<std::string, LoadedImage>& images() {
 // One key per file however its path was written ("a/b\c.png" and "a/b/c.png" are the same picture).
 std::string keyOf(const std::filesystem::path& file) { return file.lexically_normal().generic_string(); }
 
-// The file actually read for a picture: the user's own replacements of Engine2 art (content/ui/replacements.json:
+// The file actually read for a picture: the user's own replacements of Ember art (content/ui/replacements.json:
 // "<folder>/<file>" -> a file of ours), so every screen that asks for the old picture gets the new one; else the file.
 std::filesystem::path sourceOf(const std::filesystem::path& file) {
   static const std::map<std::string, std::filesystem::path> table = [] {
@@ -380,7 +380,7 @@ void loadUiFonts() {
     std::error_code error;
     if (std::filesystem::exists(files[i], error)) gFonts[i] = io.Fonts->AddFontFromFileTTF(files[i], 18.0f);
     else logError("UI font not found: {}", files[i]);
-    // Figtree has no ⌊ ⌋ (the status sheet's damage formulas, Engine2 StatusPanel): Segoe UI Symbol fills in the glyphs it lacks.
+    // Figtree has no ⌊ ⌋ (the status sheet's damage formulas, Ember StatusPanel): Segoe UI Symbol fills in the glyphs it lacks.
     if (i == 0 && gFonts[0]) {
       char windows[MAX_PATH] = {};
       const UINT length = GetWindowsDirectoryA(windows, MAX_PATH);

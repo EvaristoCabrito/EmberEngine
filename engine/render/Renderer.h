@@ -28,12 +28,12 @@ namespace ember {
 
 class VulkanContext;
 
-// One local light (Engine2's CarriedLight: a three.js point light). Matches LocalLight in shaders/scene.hlsli.
+// One local light (Ember's CarriedLight: a three.js point light). Matches LocalLight in shaders/scene.hlsli.
 struct LocalLight {
   glm::vec3 position;
   float range;     // influence ends here
   glm::vec3 color; // linear colour x intensity
-  float decay;     // distance falloff exponent (Engine2: 1.25)
+  float decay;     // distance falloff exponent (Ember: 1.25)
   glm::vec3 facing{0.0f};  // zero: every way; else only the half-space it faces is lit (Luz das janelas: an opening's light stays in the room)
   float behind = 0.0f;     // ... fully lit down to this far behind the light along -facing, gone 0.15 further; < 0: a flat emitter in the
                            // plane through the light, a cosine lobe pow(cos, -behind) about `facing` (a window's light: scene.hlsli lightFacing)
@@ -79,7 +79,7 @@ class Renderer {
     effectBrightness_ = brightness;
   }
   static constexpr uint32_t kMaxEffects = 1u << 13;
-  // Engine2's ported spell effects for the next frame (render/VfxDraw.h): drawn after the flipbook effects. Draws
+  // Ember's ported spell effects for the next frame (render/VfxDraw.h): drawn after the flipbook effects. Draws
   // past the buffers' room are dropped.
   void setVfx(const VfxFrame& frame) {
     vfxVertices_.assign(frame.vertices.begin(), frame.vertices.begin() + std::min<size_t>(frame.vertices.size(), kMaxVfxVertices));
@@ -95,7 +95,7 @@ class Renderer {
   // 3D meshes for the next frame (drawn GPU-driven: culling, cluster LOD, visibility buffer). An empty
   // view draws none.
   // One sun and a sky/ground hemisphere until the sky exists (ARCHITECTURE.md §7.1b). Defaults are the
-  // floor: Engine2's diorama prototype (sun #fff0d4 x3 from (-30, 42, 20), hemisphere #d4e6ff / #5d4b33 x1).
+  // floor: Ember's diorama prototype (sun #fff0d4 x3 from (-30, 42, 20), hemisphere #d4e6ff / #5d4b33 x1).
   // Colours are linear; srgb() converts authored hex colours.
   static glm::vec3 srgb(uint32_t hex) {
     const auto c = [](uint32_t v) {
@@ -138,7 +138,7 @@ class Renderer {
     // corona and the air's aureole (and a halo round the moon at night). Panel "Sol".
     uint32_t sunLook = 0;
     float ambientMul = 1.0f;
-    // Lit cards stop at kMaxLit x their colour x this x exposure (Engine2 MAX_LIT, written for lights near 1;
+    // Lit cards stop at kMaxLit x their colour x this x exposure (Ember MAX_LIT, written for lights near 1;
     // the physical mode sets it to the metered light so exposure x litScale stays near 1 by day).
     float litScale = 1.0f;
   };
@@ -279,7 +279,7 @@ class Renderer {
   // kBlackBackground = black, else a bindless sRGB image (a painted backdrop), fitted to cover the screen.
   static constexpr uint32_t kBlackBackground = 0xFFFFFFFEu;
   // `mode` with a backdrop (resolve.hlsl backgroundAt; both need the atmosphere, else the painting covers the screen as before):
-  // 0 cover-fit; 1 the painting up to the world's horizon, the sky above; 2 the painting aligned to the sky (content/engine2/
+  // 0 cover-fit; 1 the painting up to the world's horizon, the sky above; 2 the painting aligned to the sky (content/data/
   // backdrop-fit.json): `fitA` = horizon row, bottom row kept, degrees its height spans above the horizon, degrees below the
   // horizon where the bottom row lands; `fitB` = centre azimuth (radians), sky-top row, degrees its width spans, 0.
   // Mode 2's ground around the board: a flat plane at `y` carrying the map's top-down ground image (`texture`, `tile` world
@@ -307,7 +307,7 @@ class Renderer {
     backdropFitB_ = fitB;
     backdropPlane_ = plane;
   }
-  // Full-scene bloom strength (Engine2: the map's bloomIntensity, default 0.16); 0 = none.
+  // Full-scene bloom strength (Ember: the map's bloomIntensity, default 0.16); 0 = none.
   void setBloom(float strength) { bloom_ = strength; }
   // Cards lean back with the camera's tilt so they project upright anywhere on screen (sprites.hlsl VSMain); off =
   // vertical cards, which converge under a tilted camera. Panel "Cards".
@@ -320,15 +320,15 @@ class Renderer {
   static constexpr uint32_t kLocalShadowSize = 2048;
   bool cardLean() const { return cardLean_; }
   uint32_t lightingLayers() const { return lightingLayers_; }
-  // Tactical visibility (fog of war, ARCHITECTURE §7.0 R7): Engine2's darkness mask over the board
+  // Tactical visibility (fog of war, ARCHITECTURE §7.0 R7): Ember's darkness mask over the board
   // (world/FogOfWar.h). Every lit surface, card, water, shadow caster and local light reads it, none
   // bypasses it: never seen = black and casts nothing, remembered = darkened without local light, in
   // sight = full lighting. Uploaded when `version` changes; null = no fog of war. `texels`, when given, is
   // fogTexels(*mask) packed ahead of time (on a worker), so the upload is a copy.
-  void setFogOfWar(const e2::FogMask* mask, uint64_t version, const std::vector<uint16_t>* texels = nullptr);
+  void setFogOfWar(const ember::FogMask* mask, uint64_t version, const std::vector<uint16_t>* texels = nullptr);
   // The mask as the GPU stores it, four half floats per texel: darkness, then the volumetric fog's
   // boundary, ground, valley. Thread-safe (reads only the mask).
-  static void fogTexels(const e2::FogMask& mask, std::vector<uint16_t>& out);
+  static void fogTexels(const ember::FogMask& mask, std::vector<uint16_t>& out);
   // Volumetric fog (R7's literal fog: how the visible air looks, never what may be seen; shaders/volume.hlsl).
   // Defaults are a first look, to be tuned against the vision.
   struct VolumetricFog {
@@ -582,7 +582,7 @@ class Renderer {
   uint32_t bankFrameIndex_ = 0;
   // Fog of war: the CPU copy of the mask (also used to dim local lights by their source's sight), its image.
   bool fogOn_ = false, fogUploadPending_ = false;
-  e2::FogMask fog_;
+  ember::FogMask fog_;
   std::vector<uint16_t> fogTexels_;  // fog_ packed for the GPU (fogTexels)
   uint64_t fogVersion_ = 0, shadowFogVersion_ = 0;
   Image fogMask_;

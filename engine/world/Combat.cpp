@@ -4,7 +4,7 @@
 #include <cmath>
 #include <vector>
 
-namespace ember::e2 {
+namespace ember {
 
 namespace {
 
@@ -317,7 +317,7 @@ bool canCounter(const Battle& b, const Fighter& attacker, BattleHex from, const 
   if (!d.alive) return false;
   const BattleUnit& a = b.units()[attacker.unit];
   const BattleHex at{defender.x, defender.y};
-  // Counters are judged on the bare tiles (Engine2 passes no decoration overlay here) and from the whole body.
+  // Counters are judged on the bare tiles (Ember passes no decoration overlay here) and from the whole body.
   const double magic = defender.magicBlows() ? defender.mag : 0;
   if (hitFrom(b, d, d.minRange, d.maxRange, magic, at, a, from, false, true)) return true;
   if (!d.combat.offHandWeapon) return false;
@@ -392,4 +392,4 @@ Hit rollHit(const Battle& b, const Fighter& a, const Fighter& d, Mulberry32& rng
   return h;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

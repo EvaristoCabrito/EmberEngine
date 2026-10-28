@@ -19,7 +19,7 @@ struct Push {
   uint background;       // kNoTexture: sky / clearColor; kBlackBackground: black; else a painted backdrop
   uint backgroundMode;   // with a backdrop: 0 cover-fit over the whole screen, 1 the painting up to the world's horizon,
                          // the real sky above it (the user, 2026-10-19: "a imagem de fundo pode terminar no horizonte"),
-                         // 2 the painting aligned to the sky (content/engine2/backdrop-fit.json; fitA / fitB)
+                         // 2 the painting aligned to the sky (content/data/backdrop-fit.json; fitA / fitB)
   float planeY;          // mode 2: height of the flat ground plane under the board
   float4 fitA;           // mode 2: horizon row, bottom row kept (1 = the whole painting), degrees the painting's height spans above
                          // the horizon, degrees below the horizon where the bottom row lands

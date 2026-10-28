@@ -16,7 +16,7 @@ import numpy as np
 from PIL import Image, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[3]
-OVERWORLD = ROOT / "content/game/public/game/assets/world-map.jpg"
+OVERWORLD = ROOT / "content/assets/game/assets/world-map.jpg"
 UNDERWORLD = ROOT / "content/ui/underworld-atlas-v01.png"
 
 
@@ -41,7 +41,7 @@ def disc(shape, x, y, r, soft=0.5):
     return np.clip((1.0 - d) / soft + 1.0, 0, 1) if soft > 0 else (d <= 1).astype(np.float32)
 
 
-# Mapa-múndi (content/engine2/overworld.json: x, y em % da pintura): onde a névoa baixa se junta (pântano, ravinas, bosques) e
+# Mapa-múndi (content/data/overworld.json: x, y em % da pintura): onde a névoa baixa se junta (pântano, ravinas, bosques) e
 # as construções, que não são parte baixa (o escuro delas enganava o corte automático).
 LOW_PLACES = [(51.96, 75, 13), (82.27, 82.5, 16), (12.99, 82.5, 13), (34.64, 60, 9), (8.66, 30, 9), (73.61, 52.5, 8), (51.96, 45, 7), (30, 78, 12), (60, 88, 12)]
 BUILT_PLACES = [(22, 25, 10), (14, 38, 7), (24, 50, 6), (51.96, 57, 9), (77.94, 30, 9), (51.96, 15, 13), (86, 52, 8), (14, 62, 4)]

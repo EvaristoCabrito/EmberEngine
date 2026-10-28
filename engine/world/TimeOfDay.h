@@ -1,20 +1,20 @@
 #pragma once
 
-// Ember's time of day (Engine2 Mission.timeOfDay), as Engine2 defines it: game design data, ported as is.
-//   battleLight  C:/Engine2/src/ember/battleLight.ts TIME_OF_DAY_LIGHT: the user's tuned key and ambient strengths,
+// Ember's time of day (Ember Mission.timeOfDay), as Ember defines it: game design data, ported as is.
+//   battleLight  src/ember/battleLight.ts TIME_OF_DAY_LIGHT: the user's tuned key and ambient strengths,
 //                colours, and the low sun of dawn (20 deg) and dusk (15 deg); a map's own sunIntensity /
 //                ambientIntensity override the strengths.
-//   stage        C:/Engine2/src/render/stage.ts TIME_PRESETS: what Engine2's 3D stage actually drew (key light
+//   stage        src/render/stage.ts TIME_PRESETS: what Ember's 3D stage actually drew (key light
 //                direction and colour, hemisphere sky/ground; it ignored the map's sliders). EmberEngine keeps it
-//                as the "Engine2" lighting mode, the floor to compare against.
-//   moon         C:/Engine2/src/render/moon.ts: at night the key light is the moon, at its pose in the night;
-//                C:/Engine2/src/game/moonPhase.ts: tonight's phase (its art on the disc, its light's strength).
+//                as the "Ember" lighting mode, the floor to compare against.
+//   moon         src/render/moon.ts: at night the key light is the moon, at its pose in the night;
+//                src/game/moonPhase.ts: tonight's phase (its art on the disc, its light's strength).
 
 #include <cmath>
 #include <string>
 #include <string_view>
 
-namespace ember::e2 {
+namespace ember {
 
 struct TimeOfDayLight {
   const char* name;
@@ -22,7 +22,7 @@ struct TimeOfDayLight {
   float key, ambient;          // battleLight: default strengths (a map's sliders override them)
   unsigned keyColor, skyColor; // battleLight colours (sRGB hex)
   float elevationDeg;          // battleLight's low sun (dawn, dusk); < 0 = the stage preset's
-  // stage.ts (Engine2's 3D): key light colour, strength, direction (radians), hemisphere sky/ground and strength
+  // stage.ts (Ember's 3D): key light colour, strength, direction (radians), hemisphere sky/ground and strength
   unsigned stageSun;
   float stageSunIntensity, stageAzimuth, stageElevation;
   unsigned stageSky, stageGround;
@@ -38,7 +38,7 @@ inline constexpr TimeOfDayLight kTimesOfDay[] = {
     {"darkNight", true, 0.9f, 0.24f, 0x9fb4ff, 0xb4c0e4, -1.0f, 0xb0c0f4, 1.7f, -0.7f, 0.9f, 0x62759e, 0x2e2e3a, 0.0f},
 };
 
-// The map's time of day ("" or unknown = day, as Engine2).
+// The map's time of day ("" or unknown = day, as Ember).
 inline const TimeOfDayLight& timeOfDay(std::string_view name) {
   for (const TimeOfDayLight& t : kTimesOfDay)
     if (name == t.name) return t;
@@ -58,7 +58,7 @@ inline float mapHour(std::string_view name) {
   return 10.1f;  // "day", "" or unknown
 }
 
-// Engine2's moon pose (moon.ts Moon.pose): azimuth and elevation (radians) `progress` through the night
+// Ember's moon pose (moon.ts Moon.pose): azimuth and elevation (radians) `progress` through the night
 // (0 rising, 0.5 highest, 1 setting); the stage keeps it at 0.35 by default.
 struct MoonPose {
   float azimuth, elevation;
@@ -71,7 +71,7 @@ inline MoonPose moonPose(float progress) {
   return {ahead + 0.5f * (1.0f - 2.0f * p), 0.45f + (0.75f - 0.45f) * height};
 }
 
-// Engine2's moon phases (moonPhase.ts): an 8-day cycle, and the blood moon in place of every third full moon.
+// Ember's moon phases (moonPhase.ts): an 8-day cycle, and the blood moon in place of every third full moon.
 inline constexpr const char* kMoonPhases[] = {"new",  "waxingCrescent", "firstQuarter", "waxingGibbous", "full",
                                               "waningGibbous", "lastQuarter", "waningCrescent", "blood"};
 // The campaign's moon on its day (save.gameClock; the world map's moon plate, OverworldStage.h): an 8-day cycle from the new moon on
@@ -81,7 +81,7 @@ inline const char* campaignMoonPhase(int day) {
   if (d % 8 == 4 && (d / 8) % 3 == 2) return "blood";
   return kMoonPhases[d % 8];
 }
-// The phase's art in Engine2's public folder (moonPhaseIcon).
+// The phase's art in Ember's public folder (moonPhaseIcon).
 inline std::string moonPhaseIcon(std::string_view phase) {
   return phase == "full" ? std::string("game/ui/moon/moon-full-v2.png") : "game/ui/moon/moon-" + std::string(phase) + ".png";
 }
@@ -99,11 +99,11 @@ inline Moonlight moonlightFor(std::string_view phase) {
   return {0.5f + 0.9f * lit};
 }
 
-// Towards the light, for an Engine2 azimuth / elevation (stage.ts placeLight: x = sin az cos el, z = cos az cos el).
+// Towards the light, for an Ember azimuth / elevation (stage.ts placeLight: x = sin az cos el, z = cos az cos el).
 inline void lightDirection(float azimuth, float elevation, float out[3]) {
   out[0] = std::sin(azimuth) * std::cos(elevation);
   out[1] = std::sin(elevation);
   out[2] = std::cos(azimuth) * std::cos(elevation);
 }
 
-}  // namespace ember::e2
+}  // namespace ember

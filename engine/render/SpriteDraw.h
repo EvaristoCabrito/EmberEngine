@@ -17,14 +17,14 @@ struct SpriteInstance {
   glm::vec2 uvScale;
   glm::vec2 right{0.0f};      // the card's horizontal axis (x, z); zero = face the camera
   glm::vec3 emitColor{0.0f};  // painted light (a flame): the colour its pixels are close to, linear
-  float emitLevel = 0.0f;     // 0 = nothing glows; Engine2 FLAME_EMIT = 2.5 at full flicker
+  float emitLevel = 0.0f;     // 0 = nothing glows; Ember FLAME_EMIT = 2.5 at full flicker
   glm::vec3 emitAt{0.0f};     // where the light sits on the card (texture u, v); z: texture u -> card heights
   float emitScaleV = 0.0f;    // texture v -> card heights (the glow's radius is 0.1 card heights)
 };
 static_assert(sizeof(SpriteInstance) == 80);
 
 inline constexpr uint32_t kSpriteMirrored = 1;
-inline constexpr uint32_t kSpriteLit = 2;    // lit by the scene (lighting.hlsli; Engine2's card model)
+inline constexpr uint32_t kSpriteLit = 2;    // lit by the scene (lighting.hlsli; Ember's card model)
 inline constexpr uint32_t kSpriteFront = 4;  // a unit: drawn 1.2 units nearer the camera in depth only
 inline constexpr uint32_t kSpriteCastsShadow = 8;  // drawn into the sun's card shadow map
 inline constexpr uint32_t kSpriteFlat = 16;  // lies flat facing up, its top toward -z (the 2D view, Tática)

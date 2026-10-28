@@ -8,7 +8,7 @@
 #include "world/Battle.h"  // UnknownItemRules (content/unknown-items.json)
 #include "world/Loadout.h"  // heroArms (content/hero-arms.json)
 
-namespace ember::e2 {
+namespace ember {
 
 namespace {
 
@@ -860,4 +860,4 @@ std::optional<Json> InnRules::turnInQuest(const Json& save, const std::string& q
   return next;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

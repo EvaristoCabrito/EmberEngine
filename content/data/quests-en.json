@@ -1,0 +1,34 @@
+{
+  "source": "EmberEngine's own English for Ember's Inn quests (src/game/quests.ts has Portuguese only); read by engine/world/Quests.cpp",
+  "quests": {
+    "mudo-medalhoes": {
+      "title": "The Old Family's Medallions",
+      "place": "Mausoleum of the Old Families, in the Cemetery of the Forgotten",
+      "pickup": "Family Medallion"
+    },
+    "suspeito-watchtower-captive": {
+      "title": "The Captive Officer",
+      "place": "The Watchtower, in the cells of the lowest level",
+      "target": "Aldric"
+    },
+    "porao-caliches": {
+      "title": "Drowned Chalices",
+      "place": "Sunken Ruins beneath the chapel, in the Cemetery of the Forgotten",
+      "pickup": "Drowned Chalice"
+    },
+    "brue-birolho": {
+      "title": "O Birolho",
+      "place": "Grounds of the Cemetery of the Forgotten, far from the entrance",
+      "target": "O Birolho"
+    }
+  },
+  "potions": {
+    "weak": "Weak Potion",
+    "mid": "Medium Potion",
+    "potent": "Potent Healing Potion",
+    "disease": "Cure Disease Potion",
+    "manaSmall": "Small Mana Potion",
+    "manaMid": "Medium Mana Potion",
+    "manaLarge": "Large Mana Potion"
+  }
+}

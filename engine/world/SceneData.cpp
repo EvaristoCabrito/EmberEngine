@@ -6,7 +6,7 @@
 
 #include "core/Log.h"
 
-namespace ember::e2 {
+namespace ember {
 
 namespace {
 
@@ -58,7 +58,7 @@ std::optional<SceneData> SceneData::load(const std::filesystem::path& sceneJson)
   std::ifstream in(sceneJson, std::ios::binary);
   const json j = in ? json::parse(in, nullptr, false) : json();
   if (!in || j.is_discarded() || !j.contains("decor")) {
-    logError("scene: cannot read {} (import it with tools/scripts/engine2/export_scene.ts + measure_art.py)", sceneJson.string());
+    logError("scene: cannot read {} (import it with tools/scripts/data/export_scene.ts + measure_art.py)", sceneJson.string());
     return std::nullopt;
   }
   SceneData s;
@@ -164,7 +164,7 @@ std::optional<std::vector<Hero>> loadHeroes(const std::filesystem::path& heroesJ
   std::ifstream in(heroesJson, std::ios::binary);
   const json j = in ? json::parse(in, nullptr, false) : json();
   if (!in || j.is_discarded() || !j.contains("heroes")) {
-    logError("heroes: cannot read {} (export it with tools/scripts/engine2/export_heroes.ts)", heroesJson.string());
+    logError("heroes: cannot read {} (export it with tools/scripts/data/export_heroes.ts)", heroesJson.string());
     return std::nullopt;
   }
   // The strides each walk clip holds, beside the roster ("set/clip": number); anything missing keeps the default.
@@ -206,4 +206,4 @@ std::optional<std::vector<Hero>> loadHeroes(const std::filesystem::path& heroesJ
   return heroes;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

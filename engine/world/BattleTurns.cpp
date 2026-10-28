@@ -1,6 +1,6 @@
-// Turns, enmity and the enemies' decisions (Engine2 src/game/engine.ts: sortByInitiative, activeTurnUnit,
+// Turns, enmity and the enemies' decisions (Ember src/game/engine.ts: sortByInitiative, activeTurnUnit,
 // startNewRound, beginUnitTurn, noteDamageEnmity / enmityTarget, runAiFor's plain branch; pathfinding.ts
-// terrainDistanceField). Cooker check-battle compares every enemy's decision with Engine2's own runAiFor.
+// terrainDistanceField). Cooker check-battle compares every enemy's decision with Ember's own runAiFor.
 
 #include <algorithm>
 #include <limits>
@@ -8,7 +8,7 @@
 #include "world/Battle.h"
 #include "world/Combat.h"
 
-namespace ember::e2 {
+namespace ember {
 
 namespace {
 constexpr double kEnmityCap = 10000;            // enmity.ts ENMITY.cap
@@ -59,7 +59,7 @@ void Battle::startNewRound() {
       u.cond.empowerPct = 0;
     }
   }
-  // Engine2's zones and gates last their rounds
+  // Ember's zones and gates last their rounds
   for (WebZone& z : webZones_) --z.roundsLeft;
   std::erase_if(webZones_, [](const WebZone& z) { return z.roundsLeft <= 0; });
   for (IceZone& z : iceZones_) --z.roundsLeft;
@@ -109,7 +109,7 @@ void Battle::beginTurn(size_t unit) {
 
 std::string Battle::result() const {
   if (finished_) return "victory";
-  if (roaming_) return {};  // free roam has no defeat (Engine2 explore missions: only the waypoints)
+  if (roaming_) return {};  // free roam has no defeat (Ember explore missions: only the waypoints)
   const bool party = std::any_of(units_.begin(), units_.end(), [](const BattleUnit& u) { return u.alive && u.side == "player" && !u.summoned; });
   return party ? std::string() : std::string("defeat");
 }
@@ -131,7 +131,7 @@ const Battle::Exit* Battle::activeExit(size_t* hero) const {
 bool Battle::winAvailable() const {
   if (finished_) return false;
   if (activeExit()) return true;
-  // Engine2 evaluateEnd: an explore mission ends only at its waypoints. So does every map with fog of war (the user,
+  // Ember evaluateEnd: an explore mission ends only at its waypoints. So does every map with fog of war (the user,
   // 2026-10-17: "essas missões são de passar do outro lado", "não existe terminar a missão em mapas com névoa"): every foe
   // down is free movement again, never the end.
   if (explore_ || waypointsOnly_) return false;
@@ -316,4 +316,4 @@ AiPlan Battle::planEnemy(size_t unit) const {
   return plan;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

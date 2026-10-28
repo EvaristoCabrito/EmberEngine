@@ -1,10 +1,10 @@
 #pragma once
 
-// A hero's weapons as the save has them, into a fight (Engine2 GameApp startBattle's roster -> BattleEngine spawnUnit): the main
+// A hero's weapons as the save has them, into a fight (Ember GameApp startBattle's roster -> BattleEngine spawnUnit): the main
 // hand (save.equipped, its enhancement save.weapons[id]; the class's starter when none or one the class cannot wield), the off
 // hand (save.equipment[hero].offHand; none beside a two-handed weapon), the reach the weapon gives, its staff magic, and the
-// mastery the save's weapon skills give (save.heroSkills[hero]["<type>Weapon"]). Data: content/engine2/weapons.json
-// (tools/scripts/engine2/export_weapons.ts).
+// mastery the save's weapon skills give (save.heroSkills[hero]["<type>Weapon"]). Data: content/data/weapons.json
+// (tools/scripts/data/export_weapons.ts).
 
 #include <filesystem>
 #include <map>
@@ -15,7 +15,7 @@
 #include "world/Battle.h"
 #include "world/Campaign.h"
 
-namespace ember::e2 {
+namespace ember {
 
 struct WeaponDef {
   std::string id, weaponType, bonusClass;
@@ -66,4 +66,4 @@ const HeroArms* heroArms(const std::string& hero);
 // attack, and both hands' mastery. Returns false (the unit untouched) when the class is unknown.
 bool equipFromSave(BattleUnit& u, const Loadouts& arms, const Json& save);
 
-}  // namespace ember::e2
+}  // namespace ember

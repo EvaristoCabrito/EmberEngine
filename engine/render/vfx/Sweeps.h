@@ -1,13 +1,13 @@
 #pragma once
 
-// Engine2's two melee sweeps (src/vfx/legacy/three/VarreduraVFX.ts) as BattleSpells3D plays them, ported to the effect
+// Ember's two melee sweeps (src/vfx/legacy/three/VarreduraVFX.ts) as BattleSpells3D plays them, ported to the effect
 // runtime. Both start 0.18 s into the swing (stepSpell queues them then).
 //   CleaveSweepVFX = Cleave 01: a steel-blue crescent blade with a bright leading edge and a dim wake grows across the
 //     struck arc (DEFAULT_VARREDURA_SETTINGS: 2.25 rad, radius 3.1) at weapon height while a spearhead runs the arc with
 //     a trail and a light; stone debris kicks off each target and a light flashes on it as the arc reaches it.
 //   VarreduraVFX = Varredura 01: a full circular pressure wave on the ground (radius 3.2): a bright outer ring, an inner
 //     glowing ring, 42 shards riding it, a light orbiting its edge and a flash on each target as it arrives.
-// Their math runs in Ember's frame (z up) as Engine2's does.
+// Their math runs in Ember's frame (z up) as Ember's does.
 
 #include <vector>
 

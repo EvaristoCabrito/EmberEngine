@@ -240,7 +240,7 @@ float3 moonAureole(AtmosphereFrame a, float3 dir, float3 moonDirection, float3 m
   return glow;
 }
 
-// The moon's disc over `radiance`: tonight's phase art (Engine2's icons: the disc fills 80% of the image), upright
+// The moon's disc over `radiance`: tonight's phase art (Ember's icons: the disc fills 80% of the image), upright
 // in the sky, its brightness the art x glow, seen through the air (`air`: transmittance towards it). `pixelAngle`:
 // one pixel's width (radians). Takes the moon's fields one by one: with the AtmosphereFrame passed by value, DXC
 // (Vulkan SDK 1.4.363.0) read moonTexture wrong inside the function (2026-10-15, found with raw buffer probes).

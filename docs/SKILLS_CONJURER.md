@@ -120,7 +120,7 @@ and the bond over many blows (the code path, not a statistic).
 - **Numen** (`summonFamiliar3`, the old Familiar Titã, same creature and numbers): a T6 the Arcanista (`sorcerer`) and the Necromante share,
   learned at 15 (T6 opens); a plain Conjurador no longer has it (`grantClassSpells`).
 - **Cão Zumbi** (`summonZombieDog`): the Necromante's T8, learned at 20 (T8 opens at 18; the user: "espaçar mais o ganho de familiares"); stats x1.25 of the caster (a first value, `kT8SummonScale`).
-- **Cervo Azul do Pântano** (`summonSwampDeer`, class `swampBlueDeer`, content/engine2/summons.json): the Arcanista's T8, learned at 20,
+- **Cervo Azul do Pântano** (`summonSwampDeer`, class `swampBlueDeer`, content/data/summons.json): the Arcanista's T8, learned at 20,
   x1.25 of the caster, no spell of its own; comes in the Familiar Radiante's blue summon light (ArmsFx Radiant).
 - Coming (the user): **Telesm**, a new defender familiar (T2 for Selene, T3 for the others; art to be scanned), and **Hipóstase**
   (Summon Hypostasis), the ultimate summon of Ember I. Neither is built.

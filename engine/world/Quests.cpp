@@ -6,13 +6,13 @@
 
 #include "world/Spells.h"  // combatLogEnglish
 
-namespace ember::e2 {
+namespace ember {
 
 namespace {
 
 const Json& english() {
   static const Json table = [] {
-    std::ifstream in("content/engine2/quests-en.json", std::ios::binary);
+    std::ifstream in("content/data/quests-en.json", std::ios::binary);
     Json j = Json::parse(in, nullptr, false);
     return j.is_object() ? j : Json::object();
   }();
@@ -120,4 +120,4 @@ std::vector<QuestPickup> Battle::collectQuestPickups(const std::function<bool(si
   return found;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

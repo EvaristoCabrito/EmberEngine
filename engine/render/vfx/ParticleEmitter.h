@@ -1,10 +1,10 @@
 #pragma once
 
-// Engine2's ParticleEmitter (src/vfx/legacy/three/ThreeVfxSystem.ts): a pool of up to 96 flipbook flame particles
+// Ember's ParticleEmitter (src/vfx/legacy/three/ThreeVfxSystem.ts): a pool of up to 96 flipbook flame particles
 // simulated on the CPU (spawn, drag, rise, wiggle, gravity, an optional steady jet flow) and drawn as camera-facing
 // quads sampling a 4x4 sheet with a little uv turbulence (material FlipbookParticle, NormalBlending, no depth test).
-// Its curves (size, opacity, emissive, velocity, colour over a particle's life) can be swapped, as Engine2's element
-// emitters and Poison Breath do. Engine2 stepped it by each frame's time; its owners here step it in fixed kStep (1/60 s)
+// Its curves (size, opacity, emissive, velocity, colour over a particle's life) can be swapped, as Ember's element
+// emitters and Poison Breath do. Ember stepped it by each frame's time; its owners here step it in fixed kStep (1/60 s)
 // from its start, so a capture at any moment and a live run see the same flames.
 
 #include <algorithm>
@@ -26,7 +26,7 @@ struct FireEmitterSettings {
   glm::vec3 flowDirection{0.0f};
   float flowSpeed = 0.0f, flowSpread = 0.0f;
   // Ours (Mãos Flamejantes 02): the jet runs in the x-z plane with y up (flowDirection.x / .y = world x / z), so flames
-  // rise up instead of drifting along the board as Engine2's did (its emitter's y was the board's y in Ember's frame).
+  // rise up instead of drifting along the board as Ember's did (its emitter's y was the board's y in Ember's frame).
   bool groundFlow = false;
 };
 
@@ -57,7 +57,7 @@ class ParticleEmitter {
     float age = 0, life = 1, phase = 0, spin = 0, rotation = 0, size = 0, riseSpeed = 0;
     glm::vec3 position{0.0f}, velocity{0.0f};
   };
-  float random();  // setSeed's xorshift (Engine2 uses Math.random when unseeded: seeded here always)
+  float random();  // setSeed's xorshift (Ember uses Math.random when unseeded: seeded here always)
   void spawn(Particle& p, const FireEmitterSettings& s, float initialAge);
 
   std::array<Particle, kMaxParticles> particles_{};

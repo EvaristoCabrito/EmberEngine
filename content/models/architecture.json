@@ -1,5 +1,5 @@
 {
-  "source": "EmberEngine's own 3D architecture (walls, windows, doorways), built in C++ by world/Architecture.cpp emberGeometry from these definitions, like Ember's own walls (joined to their neighbours, stood on the ground). tools/scripts/models/catalog_models.py merges them into content/engine2/editor-catalog.json (decorations + editor.architectureDefs); Cooker architecture cooks their textures (/ember/<path under content/>) into build/meshes/architecture.pak.",
+  "source": "EmberEngine's own 3D architecture (walls, windows, doorways), built in C++ by world/Architecture.cpp emberGeometry from these definitions, like Ember's own walls (joined to their neighbours, stood on the ground). tools/scripts/models/catalog_models.py merges them into content/data/editor-catalog.json (decorations + editor.architectureDefs); Cooker architecture cooks their textures (/ember/<path under content/>) into build/meshes/architecture.pak.",
   "textures": {
     "watchtower-v01": "/ember/textures/walls/watchtower-v01.jpg",
     "gothic-stone-v01": "/ember/textures/walls/gothic-stone-v01.jpg"

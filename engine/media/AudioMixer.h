@@ -1,10 +1,10 @@
 #pragma once
 
-// The game's sound, ported from Engine2's src/game/audio.ts: one music track at a time (the screen's theme or a
-// mission's own file, looping, each track keeping its place when another one plays, as Engine2's <audio> elements did)
-// and one-shot effects over it (SoundFX). Engine2's two effect players are kept: "layered" (a fresh copy per play, left
+// The game's sound, ported from Ember's src/game/audio.ts: one music track at a time (the screen's theme or a
+// mission's own file, looping, each track keeping its place when another one plays, as Ember's <audio> elements did)
+// and one-shot effects over it (SoundFX). Ember's two effect players are kept: "layered" (a fresh copy per play, left
 // to finish: playSfxFile) and "exclusive" (one voice per file, a retrigger restarts it: playSfxFileExclusive, with an
-// optional start offset and a short fade-out stop). Volumes as Engine2's: a track plays at base x music volume, an
+// optional start offset and a short fade-out stop). Volumes as Ember's: a track plays at base x music volume, an
 // effect at its own volume x the effects volume; Silenciar silences both and stops the music.
 //
 // MP3s are decoded by Windows Media Foundation (as the films are): effects whole on first use and kept, music streamed
@@ -29,9 +29,9 @@ class AudioMixer {
   static AudioMixer& get();
   ~AudioMixer();
 
-  // Engine2's public folder: music in game/MUSIC, effects in game/SoundFX. Without one nothing plays (captures).
+  // Ember's public folder: music in game/MUSIC, effects in game/SoundFX. Without one nothing plays (captures).
   // EmberEngine's own tracks live in content/music and are found there first, by the same file name.
-  void setRoot(const std::filesystem::path& engine2Public);
+  void setRoot(const std::filesystem::path& artRoot);
   // Stops everything and closes the device; called before SDL shuts down.
   void shutdown();
 
@@ -57,7 +57,7 @@ class AudioMixer {
 
   // Sandbox --audio-check: every effect in game/SoundFX decoded whole and the first seconds of every track in
   // game/MUSIC, as the game decodes them; logs each and returns how many failed.
-  static int check(const std::filesystem::path& engine2Public);
+  static int check(const std::filesystem::path& artRoot);
 
  private:
   AudioMixer() = default;

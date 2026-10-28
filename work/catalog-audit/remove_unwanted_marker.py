@@ -66,7 +66,7 @@ rel=r'content/models/models.json'; p=ROOT/rel; s=p.read_bytes().decode('utf-8');
 if n!=1:raise RuntimeError(f'Expected one model entry, removed {n}')
 json.loads(s); changes[rel]=(s,n)
 # Remove this key from the editor catalog's three indexes and the ordering list.
-rel=r'content/engine2/editor-catalog.json'; p=ROOT/rel; s=p.read_bytes().decode('utf-8'); removed={}
+rel=r'content/data/editor-catalog.json'; p=ROOT/rel; s=p.read_bytes().decode('utf-8'); removed={}
 for path in [['decorations'],['editor','decorationInfo'],['editor','decoMeta']]:
  a,b=path_span(s,path); s,n=remove_obj_member(s,(a,b),TARGET); removed['.'.join(path)]=n
 arr=path_span(s,['editor','architectureOrder']); s,n=remove_array(s,arr,lambda x:x==TARGET); removed['editor.architectureOrder']=n

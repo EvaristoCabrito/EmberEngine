@@ -29,10 +29,10 @@
 - Blender: `content/models/blender/kit_wisp_revisited.py`
 - Modelos e fontes: `content/models/wisp-forest-revisited/`
 - Texturas de materiais: `content/models/textures/wisp-*-v01.*`
-- Texturas de tiles: `content/game/public/game/ground-variant-tiles/wisp-forest-*-v01.png`
+- Texturas de tiles: `content/assets/game/ground-variant-tiles/wisp-forest-*-v01.png`
 - Mapas: `content/maps/ember/wisp-forest008.json`, `009.json`, `010.json`
 - Definições das variantes: `content/game/src/ember/tileVariants.ts`
-- Catálogo dos modelos: `content/models/models.json` e `content/engine2/editor-catalog.json`
+- Catálogo dos modelos: `content/models/models.json` e `content/data/editor-catalog.json`
 - Pacotes cozidos: `build/meshes/wisp-forest-revisited-v01.pak`, `build/meshes/wisp-forest-revisited-v02.pak`, `build/ground/wisp-forest-revisited-ground-v01.pak`
 
 ## Validação pendente

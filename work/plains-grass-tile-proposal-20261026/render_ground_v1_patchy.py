@@ -3,7 +3,7 @@ import math
 import random
 
 OUT = r"C:\EmberEngine\work\plains-grass-tile-proposal-20261026\plains-grass-ground-v1-patchy-preview.png"
-SOURCE = r"C:\EmberEngine\content\game\public\game\ground-engine2-v4\plains\color.png"
+SOURCE = r"C:\EmberEngine\content\assets\game\ground-engine2-v4\plains\color.png"
 random.seed(2601026)
 bpy.ops.object.select_all(action="SELECT")
 bpy.ops.object.delete(use_global=False)

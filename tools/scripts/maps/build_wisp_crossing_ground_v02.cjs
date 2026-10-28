@@ -1,8 +1,8 @@
 const fs=require('fs'), path=require('path'), sharp=require('sharp');
 const root=process.cwd(); const src='C:/Users/evari/.codex/generated_images/01a16c18-9fe6-7212-a2e8-e2e0c6a23af1/exec-f3b5ee50-46d3-457b-8ba5-a17043a722ac.png';
-const albedo=path.join(root,'content/game/public/game/ground-variant-tiles/wisp-crossing-ground-v02.png');
+const albedo=path.join(root,'content/assets/game/ground-variant-tiles/wisp-crossing-ground-v02.png');
 if(fs.existsSync(albedo)) throw Error('Refusing overwrite: '+albedo);
-const targets=['plains','woods'].map(k=>path.join(root,'content/game/public/game/ground-variants-3d','variant-wisp-crossing-ground-'+k+'-v02'));
+const targets=['plains','woods'].map(k=>path.join(root,'content/assets/game/ground-variants-3d','variant-wisp-crossing-ground-'+k+'-v02'));
 for(const d of targets) if(fs.existsSync(d)) throw Error('Refusing overwrite directory: '+d);
 fs.copyFileSync(src,albedo);
 (async()=>{

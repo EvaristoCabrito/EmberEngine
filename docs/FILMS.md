@@ -88,7 +88,7 @@ ffmpeg -i master.mp4 -map 0:v:0 -map 0:a:0? -c:v libsvtav1 -preset 4 -crf 30 -pi
 
 ## Measured (2026-10-25, this PC: 32 CPU threads)
 
-`Sandbox --film-check content/game/public/game/<name>.mp4 [still.png [picture]]` decodes the MP4 and its WebM twin flat out (no
+`Sandbox --film-check content/assets/game/<name>.mp4 [still.png [picture]]` decodes the MP4 and its WebM twin flat out (no
 window) and logs each one's size and cost; with a still it writes that picture from both, to compare colours.
 
 | film | MP4 (H.264) | WebM (AV1 + Opus) | AV1 decode |

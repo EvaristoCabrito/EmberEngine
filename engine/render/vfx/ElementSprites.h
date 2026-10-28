@@ -1,6 +1,6 @@
 #pragma once
 
-// Engine2's ProceduralElementEmitter, version 2 presets (src/vfx/legacy/three/ProceduralElementEmitter.ts
+// Ember's ProceduralElementEmitter, version 2 presets (src/vfx/legacy/three/ProceduralElementEmitter.ts
 // createElementV2Sprites + update): an element's three authored 4x4 sheets (fx/<element>-v2-main / -secondary /
 // -particles-flipbook-4x4) composed as one effect standing on a point: the main sheet's frames stand on the floor,
 // the secondary sheet lies as a ground halo / seal / puddle / ring, four motes from the particle sheet float around

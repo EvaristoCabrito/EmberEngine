@@ -1,16 +1,16 @@
 #pragma once
 
-// Tempestade de Gelo (Engine2's iceStorm) on the effect runtime, two versions on one timeline: Engine2's Blizzard2D's (9 s,
+// Tempestade de Gelo (Ember's iceStorm) on the effect runtime, two versions on one timeline: Ember's Blizzard2D's (9 s,
 // gathering over 1.2 s, fading over its last 1.6 s; 95 motes per hex x the battle's density 1.3, a fixed seed so every
 // storm looks the same; a spike lands, shatters and pulses one of three cold lights, ThreeBattleRenderer
 // pulseBlizzardLight). Drawn with the IceStorm material (shaders/vfx.hlsl); world space, one hex radius = 1.
-//   01  Engine2's own Blizzard2D (src/game/gfx/Blizzard2D.ts), its sprites stood in the board where its canvas drew them:
+//   01  Ember's own Blizzard2D (src/game/gfx/Blizzard2D.ts), its sprites stood in the board where its canvas drew them:
 //       wind wisps (blizzard-wind-reference), falling ice spikes and their shattering (blizzard-impact-reference), snow
 //       dots, the frosted floor. The enemies' (the user, 2026-10-18: "deixa o 2D para os inimigos").
 //   02  ours, in 3D (the heroes'): the floor frosts over from each hex's middle, bands of wind turn round the field, snow
 //       swirls down through them, ice crystals (meshes) fall slanted by the gusts and shatter into splinters, a frost
 //       ring and a puff of ice dust, under the same pulsing light.
-// The rules keep the field for rounds; the storm plays its 9 s (Engine2) and fades early when the rules drop it (stop()). In a
+// The rules keep the field for rounds; the storm plays its 9 s (Ember) and fades early when the rules drop it (stop()). In a
 // battle it stands (stand()) for as long as the rules keep the field (the user, 2026-10-21: it vanished while still active), and
 // fades only when they drop it.
 
@@ -43,7 +43,7 @@ class IceStorm {
   void stand() { standing_ = true, end_ = std::numeric_limits<float>::max(); }
   int id = 0;
 
-  // ice / wind: Engine2's two sheets (version 01 only; nothing is drawn by it until they are resident).
+  // ice / wind: Ember's two sheets (version 01 only; nothing is drawn by it until they are resident).
   void build(float now, const Camera& camera, const VfxFlipbook& ice, const VfxFlipbook& wind, VfxFrame& frame, std::vector<VfxLight>& lights);
 
  private:
@@ -58,7 +58,7 @@ class IceStorm {
     glm::vec3 at{0.0f};
     float time = -100.0f, strength = 0.0f;
   };
-  void buildEngine2(float age, float env, glm::vec3 right, const VfxFlipbook& ice, const VfxFlipbook& wind, VfxFrame& frame);
+  void buildClassic(float age, float env, glm::vec3 right, const VfxFlipbook& ice, const VfxFlipbook& wind, VfxFrame& frame);
   void buildOurs(float now, float age, float env, glm::vec3 right, VfxFrame& frame);
 
   int version_ = 2;

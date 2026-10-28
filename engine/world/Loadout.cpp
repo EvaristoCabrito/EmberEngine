@@ -6,7 +6,7 @@
 
 #include "core/Log.h"
 
-namespace ember::e2 {
+namespace ember {
 namespace {
 
 std::string text(const Json& j, const char* key) { return j.contains(key) && j[key].is_string() ? j[key].get<std::string>() : std::string(); }
@@ -209,4 +209,4 @@ bool equipFromSave(BattleUnit& u, const Loadouts& arms, const Json& save) {
   return true;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

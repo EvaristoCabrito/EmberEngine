@@ -63,9 +63,9 @@ events (a waypoint reached, a victory) are not wired yet: add them here when a s
 ## Testing
 
 ```
-Sandbox --map build/engine2-test/maps/aldeia015.json --ground build/ground/ground-v42.pak --scene build/engine2-test/scenes/aldeia015.scene.json
-  --sprites build/sprites/battle.pak --meshes build/meshes/props-v8.pak --heroes build/engine2-scenes/roster.json
-  --battle-rules build/engine2-test/battles/aldeia015.battle.json --game-assets content/game/public
+Sandbox --map build/test-maps/maps/aldeia015.json --ground build/ground/ground-v42.pak --scene build/test-maps/scenes/aldeia015.scene.json
+  --sprites build/sprites/battle.pak --meshes build/meshes/props-v8.pak --heroes build/scenes/roster.json
+  --battle-rules build/test-maps/battles/aldeia015.battle.json --game-assets content/assets
   --cutscene test-aldeia,!test-bad-actor,!test-bad-command,!test-unreachable,test-aldeia --cutscene-auto 1.5 --capture out.png
 ```
 

@@ -7,12 +7,12 @@
 // in float32 like three's Float32BufferAttribute; the arithmetic between them is double, as in JavaScript.
 //
 // world/Architecture.cpp builds the walls, doors and gates from these; Cooker check-architecture compares the result
-// with Engine2's own geometry (tools/scripts/engine2/export_architecture_refs.ts).
+// with Ember's own geometry (tools/scripts/data/export_architecture_refs.ts).
 
 #include <cstdint>
 #include <vector>
 
-namespace ember::e2::three {
+namespace ember::three {
 
 struct Box3 {
   double min[3] = {0, 0, 0}, max[3] = {0, 0, 0};
@@ -86,4 +86,4 @@ Geometry merge(const std::vector<Geometry>& parts);
 // earcut 3.0.2 (mapbox/earcut, as copied into three.js): triangles of a polygon with holes (flat x, y pairs).
 std::vector<uint32_t> earcut(const std::vector<double>& data, const std::vector<uint32_t>& holeIndices);
 
-}  // namespace ember::e2::three
+}  // namespace ember::three

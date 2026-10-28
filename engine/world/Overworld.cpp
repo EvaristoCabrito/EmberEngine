@@ -13,7 +13,7 @@
 #include "world/Combat.h"
 #include "world/Progression.h"
 
-namespace ember::e2 {
+namespace ember {
 
 namespace {
 
@@ -130,7 +130,8 @@ bool Overworld::load(const std::filesystem::path& file) {
   for (const Json& id : board.value("stoneBridgeMissionIds", Json::array())) stoneBridgeMissionIds_.push_back(id.get<std::string>());
   for (const Json& c : board["cells"]) {
     OverworldCell cell;
-    cell.col = c.value("col", 0), cell.row = c.value("row", 0), cell.hours = c.value("hours", 6);
+    // Regra do jogo (o usuário, 2026-10-28): todo passo no mapa-múndi leva 6 horas; as horas do arquivo não são lidas.
+    cell.col = c.value("col", 0), cell.row = c.value("row", 0), cell.hours = 6;
     cell.region = c.value("region", ""), cell.x = c.value("x", 0.0), cell.y = c.value("y", 0.0);
     for (const Json& e : c.value("encounters", Json::array())) cell.encounters.push_back(e.get<std::string>());
     cells_.push_back(std::move(cell));
@@ -865,7 +866,7 @@ std::string Overworld::locationStatus(const MapLocation& location, const Json& s
   return "locked";
 }
 
-// --- the check against Engine2 -------------------------------------------------------------------------------------
+// --- the check against Ember -------------------------------------------------------------------------------------
 
 namespace {
 
@@ -895,9 +896,9 @@ std::string firstDifference(const Json& a, const Json& b, const std::string& pat
       if (!same(v, b[k])) return firstDifference(v, b[k], path + "." + k);
     }
     for (const auto& [k, v] : b.items())
-      if (!a.contains(k)) return path + "." + k + " (only in Engine2)";
+      if (!a.contains(k)) return path + "." + k + " (only in Ember)";
   }
-  return path + ": C++ " + a.dump() + " vs Engine2 " + b.dump();
+  return path + ": C++ " + a.dump() + " vs Ember " + b.dump();
 }
 
 }  // namespace
@@ -931,7 +932,7 @@ int checkOverworld(const Overworld& world, const std::filesystem::path& referenc
       }
       ++statusChecks;
       if (world.locationStatus(*loc, save, test) != l["status"].get<std::string>())
-        report(std::format("{}location {} status: C++ {} vs Engine2 {}", tag, loc->id, world.locationStatus(*loc, save, test), l["status"].get<std::string>()));
+        report(std::format("{}location {} status: C++ {} vs Ember {}", tag, loc->id, world.locationStatus(*loc, save, test), l["status"].get<std::string>()));
       if (l.contains("visible") && world.locationVisible(*loc, save, test) != l["visible"].get<bool>()) report(tag + "location " + loc->id + " visibility");
       std::vector<std::string> order;
       for (const MapMission* m : world.missionsOf(*loc)) order.push_back(m->id);
@@ -969,15 +970,15 @@ int checkOverworld(const Overworld& world, const std::filesystem::path& referenc
       for (calls = 0; calls < 64 && base() != next; ++calls) {
       }
     }
-    if (calls != r["calls"].get<int>()) report(std::format("{}step {}: {} random numbers vs Engine2 {}", tag, steps, calls, r["calls"].get<int>()));
+    if (calls != r["calls"].get<int>()) report(std::format("{}step {}: {} random numbers vs Ember {}", tag, steps, calls, r["calls"].get<int>()));
     if (!same(after, r["after"])) report(std::format("{}step {}: save {}", tag, steps, firstDifference(after, r["after"])));
     const Json& e = r["event"];
     if (e.is_null() != !event.has_value()) {
-      report(std::format("{}step {}: event {} vs Engine2 {}", tag, steps, event ? event->text : "none", e.dump()));
+      report(std::format("{}step {}: event {} vs Ember {}", tag, steps, event ? event->text : "none", e.dump()));
     } else if (event) {
       ++events;
       if (event->kind != e.value("kind", "") || event->text != e.value("text", "") || event->missionId != e.value("missionId", ""))
-        report(std::format("{}step {}: event '{}' vs Engine2 '{}'", tag, steps, event->text, e.value("text", "")));
+        report(std::format("{}step {}: event '{}' vs Ember '{}'", tag, steps, event->text, e.value("text", "")));
     }
   }
   };
@@ -986,11 +987,11 @@ int checkOverworld(const Overworld& world, const std::filesystem::path& referenc
   if (refs.contains("test")) checkBlock(refs["test"], true);
   else report("no Modo teste answers in the references (re-run export_overworld.ts)");
   if (!differences)
-    logInfo("overworld matches Engine2 ({} location checks, {} step pairs, {} seeded steps ({} in Modo teste) with {} events)", statusChecks,
+    logInfo("overworld matches Ember ({} location checks, {} step pairs, {} seeded steps ({} in Modo teste) with {} events)", statusChecks,
             stepPairs, steps, steps - campaignSteps, events);
   else
     logError("overworld: {} differences", differences);
   return differences;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

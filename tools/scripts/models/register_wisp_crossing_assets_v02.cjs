@@ -18,7 +18,7 @@ function glbInfo(p) {
 }
 function readJson(p){return JSON.parse(fs.readFileSync(p,'utf8'));}
 function writeJson(p,v,compact=false){fs.writeFileSync(p,JSON.stringify(v,null,compact?0:2)+'\n','utf8');}
-const modelDb=readJson('content/models/models.json'), catalog=readJson('content/engine2/editor-catalog.json');
+const modelDb=readJson('content/models/models.json'), catalog=readJson('content/data/editor-catalog.json');
 catalog.editor.decoMeta??={}; catalog.editor.decorationInfo??={}; catalog.editor.architectureOrder??=[];
 for(const [asset,name] of assets){
   const file=`${asset}-v02.glb`, glb=path.join(kit,file); if(!fs.existsSync(glb)) throw Error(`missing ${glb}`);
@@ -31,7 +31,7 @@ for(const [asset,name] of assets){
   const info={section:'Natureza · Wisp Forest',tile:null,thumb:'',blocksByDefault:true};
   for(const [key0,val] of [['decoMeta',meta],['decorationInfo',info]]) { const ex=catalog.editor[key0][id]; if(ex&&JSON.stringify(ex)!==JSON.stringify(val)) throw Error(`catalog ${key0} conflict: ${id}`); if(!ex) catalog.editor[key0][id]=val; }
   if(!catalog.editor.architectureOrder.includes(id)) catalog.editor.architectureOrder.push(id);
-  for(const dst of ['content/game/public/game/models/wisp-crossing-trees','content/game/public/game/ember/wisp-crossing-trees']){
+  for(const dst of ['content/assets/game/models/wisp-crossing-trees','content/assets/game/ember/wisp-crossing-trees']){
     fs.mkdirSync(dst,{recursive:true}); const out=path.join(dst,file); if(fs.existsSync(out)){if(!fs.readFileSync(out).equals(fs.readFileSync(glb))) throw Error(`preserving conflicting file: ${out}`);} else fs.copyFileSync(glb,out);
   }
   const modelEntry=`  '${key}': { file: 'wisp-crossing-trees/${file}', height: ${size.height} },`;
@@ -44,7 +44,7 @@ for(const [asset,name] of assets){
   }
 }
 writeJson('content/models/models.json',modelDb);
-writeJson('content/engine2/editor-catalog.json',catalog,true);
+writeJson('content/data/editor-catalog.json',catalog,true);
 for(const f of ['content/game/src/ember/types.ts','content/game/src/game/types.ts']){
  let s=fs.readFileSync(f,'utf8');
  for(const [asset] of assets){const key=`wisp-crossing-${asset}-v02`; if(s.includes(`| "${key}"`)) continue; const marker='| "wisp-revisited-root-arch-v02"'; if(!s.includes(marker)) throw Error(`type marker missing ${f}`); s=s.replace(marker,marker+` | "${key}"`);}

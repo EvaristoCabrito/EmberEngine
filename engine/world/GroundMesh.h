@@ -1,12 +1,12 @@
 #pragma once
 
-// The board's ground in Engine2's two player-selectable looks (C:/Engine2/src/render/terrainMesh.ts),
+// The board's ground in Ember's two player-selectable looks (src/render/terrainMesh.ts),
 // ported to C++ with the same shapes, constants and blend weights:
 //   smooth  one continuous heightfield; every point reads the hex under a gently warped position, so
 //           terraces and shores wander naturally around the hex layout
 //   hard    a crisp hex cliff at every height step; same-level ground flows seamlessly
 //   tabletop every hex its own beveled column down to the board's base, a hairline gap between hexes and a
-//            seam at every height step: stacked tabletop pieces (R8; Engine2's diorama.html look 3,
+//            seam at every height step: stacked tabletop pieces (R8; Ember's diorama.html look 3,
 //            buildHexTerrain(true): top at 0.93 of the radius, 0.07 bevel, walls at 0.985)
 // Both read the same cells: gameplay is identical. Also the water sheet and ground heights for
 // placing things.
@@ -16,7 +16,7 @@
 
 #include "world/Board.h"
 
-namespace ember::e2 {
+namespace ember {
 
 enum class EdgeStyle { Smooth, Hard, Tabletop };
 
@@ -49,4 +49,4 @@ double groundHeightAt(const Board& board, EdgeStyle style, double x, double z);
 // The smooth look's domain warp.
 std::pair<double, double> warp(double x, double z);
 
-}  // namespace ember::e2
+}  // namespace ember

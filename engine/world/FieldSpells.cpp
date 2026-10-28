@@ -7,7 +7,7 @@
 #include "world/Battle.h"
 #include "world/Noise.h"
 
-namespace ember::e2 {
+namespace ember {
 
 namespace {
 
@@ -430,4 +430,4 @@ std::optional<Json> FieldSpells::castWarp(const Json& save, const std::string& h
   return next;
 }
 
-}  // namespace ember::e2
+}  // namespace ember

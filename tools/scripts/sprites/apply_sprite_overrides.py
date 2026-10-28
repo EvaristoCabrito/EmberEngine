@@ -1,11 +1,11 @@
 """Clips whose art EmberEngine replaces or adds (content/sprite-overrides.json; an entry with "add" is a clip and poses
-Engine2 does not have, appended once), applied to the files built from Engine2's:
+Ember does not have, appended once), applied to the files built from Ember's:
 
-- build/sprites/battle.sprites.json: the clip's frames point at the new art (absolute paths, so the Cooker's Engine2 root
+- build/sprites/battle.sprites.json: the clip's frames point at the new art (absolute paths, so the Cooker's Ember root
   does not apply), its fps from the art's frame time;
-- build/engine2-scenes/roster.json: each listed pose gets the art's size, crop, box, frame count and a pace at the art's
+- build/scenes/roster.json: each listed pose gets the art's size, crop, box, frame count and a pace at the art's
   own frame time (240 Hz samples, like export_heroes.ts);
-- content/engine2/walk-strides.json and its copy beside the roster: the strides the new clip holds.
+- content/data/walk-strides.json and its copy beside the roster: the strides the new clip holds.
 
 Run it after fx_sprites.py (which rewrites the manifest) and export_heroes.ts (which rewrites the heroes file), then cook
 battle.pak again. Idempotent.
@@ -35,11 +35,11 @@ def save(path, data, indent):
 def main():
     over = load(os.path.join(ROOT, "content", "sprite-overrides.json"))
     manifest_path = os.path.join(ROOT, "build", "sprites", "battle.sprites.json")
-    roster_path = os.path.join(ROOT, "build", "engine2-scenes", "roster.json")
+    roster_path = os.path.join(ROOT, "build", "ember-scenes", "roster.json")
     manifest = load(manifest_path)
     roster = load(roster_path)
-    strides_paths = [os.path.join(ROOT, "content", "engine2", "walk-strides.json"),
-                     os.path.join(ROOT, "build", "engine2-scenes", "walk-strides.json")]
+    strides_paths = [os.path.join(ROOT, "content", "ember", "walk-strides.json"),
+                     os.path.join(ROOT, "build", "ember-scenes", "walk-strides.json")]
     strides = [load(p) if os.path.exists(p) else None for p in strides_paths]
 
     # poses a whole set below takes over (salazar-v3's walk over salazar-final's move, 2026-10-25): on a roster this script has
@@ -61,7 +61,7 @@ def main():
                     clip["frames"] = {"count": count, "pattern": pattern}
                     clip["fps"] = fps
                     hit += 1
-            if not hit and "add" in c:  # a clip Engine2 does not have (EmberEngine's own art)
+            if not hit and "add" in c:  # a clip Ember does not have (EmberEngine's own art)
                 s["clips"].append({"fps": fps, "frames": {"count": count, "pattern": pattern}, "mode": c["add"]["mode"],
                                    "name": c["clip"], "pack": c["add"]["pack"]})
                 hit += 1
@@ -79,7 +79,7 @@ def main():
                     if p["pose"] == want["pose"] and p["set"] == c["set"] and p["clip"] == c["clip"]:
                         p.update(box=want["box"], nat=want["nat"], crop=want["crop"], frames=count, pace=pace, doneAt=-1)
                         done += 1
-                if not done and "add" in c:  # a pose Engine2 does not have
+                if not done and "add" in c:  # a pose Ember does not have
                     h["poses"].append({"pose": want["pose"], "label": want.get("label", want["pose"]), "set": c["set"],
                                        "clip": c["clip"], "box": want["box"], "nat": want["nat"], "crop": want["crop"],
                                        "frames": count, "pace": pace, "doneAt": -1})
@@ -165,7 +165,7 @@ def main():
             if p is None:
                 p = {"pose": pose, "label": st.get("labels", {}).get(pose, pose)}
                 hero["poses"].append(p)
-            p.pop("bodyShift", None)  # Engine2's per-frame shift belonged to its own art
+            p.pop("bodyShift", None)  # Ember's per-frame shift belonged to its own art
             p.pop("impact", None)
             # the copies' marks are made again by their own entries, listed after this set (a copy no longer in use leaves none)
             p.pop("medium", None)
