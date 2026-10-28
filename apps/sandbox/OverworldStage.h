@@ -944,8 +944,11 @@ class OverworldStage : public Stage {
       // hexes ((4,7): 38.97114317 vs 38.97114182), which restarted the walk every frame and left the leader drawn on the hex before
       // while the party (and its step hexes) stood on the new one (the user, 2026-10-28: "o grid saiu do lugar").
       if (std::abs(targetX_ - static_cast<float>(tx)) > 1e-3f || std::abs(targetY_ - static_cast<float>(ty)) > 1e-3f) {
+        // Turned by where the hex lies on the painting, never by its column: rows are offset (odd-r), so a step down to the right
+        // from an even row keeps its column and left the leader facing the old way, walking backwards (the user, 2026-10-28:
+        // "as vezes eles andam de costas quando estou descendo ... é randomico"). Every hex step moves sideways by half a hex.
+        if (std::abs(static_cast<float>(tx) - targetX_) > 1e-3f) facingLeft_ = static_cast<float>(tx) < targetX_;
         fromX_ = partyX_, fromY_ = partyY_, targetX_ = static_cast<float>(tx), targetY_ = static_cast<float>(ty), moveAt_ = now_;
-        if (col != prevCol_) facingLeft_ = col < prevCol_;
         prevCol_ = col;
       }
       // Walked, not slid (the user, 2026-10-21: "walk instead of jumping to a new hex"): a steady pace over kWalkSeconds with the
@@ -1093,10 +1096,27 @@ class OverworldStage : public Stage {
     fx_->draw(dl, d);
   }
 
-  // O revelado (R8, 256 x 256 sobre a pintura inteira): drawFog's own rule, a soft circle (radius 9 % of the image, solid to 65 %)
-  // around every hex the party has stood on, compositing over each other; 1 = sem névoa. Refeito só quando a lista muda.
+  // What one explored hex clears: a soft circle (radius 9 % of the image, solid to 65 %) around it; a hex within two hex steps
+  // of an edge of the painting (2 columns from left / right, 2 rows from top / bottom) clears all the way to that edge (the
+  // user, 2026-10-28: "as bordas do mapa se revelarem por completo quando explorar as regiões"): the distance is taken to the
+  // box from the hex to the edges it is near, so the band beyond it opens with the same soft sides (both edges at a corner).
+  struct RevealSpot {
+    double x0, x1, y0, y1;
+  };
+  static RevealSpot revealSpot(double cx, double cy) {
+    constexpr double kEdgeX = 2.0 * 5.0 * 1.7320508075688772, kEdgeY = 2.0 * 7.5;  // two hex steps (hexToWorld)
+    return {cx <= kEdgeX ? 0.0 : cx, cx >= 100.0 - kEdgeX ? 100.0 : cx, cy <= kEdgeY ? 0.0 : cy, cy >= 100.0 - kEdgeY ? 100.0 : cy};
+  }
+  static double revealAlpha(double x, double y, const RevealSpot& s) {
+    const double dx = x < s.x0 ? s.x0 - x : x > s.x1 ? x - s.x1 : 0.0, dy = y < s.y0 ? s.y0 - y : y > s.y1 ? y - s.y1 : 0.0;
+    const double d = std::hypot(dx, dy) / 9.0;
+    return d <= 0.65 ? 1.0 : d >= 1.0 ? 0.0 : 1.0 - (d - 0.65) / 0.35;
+  }
+
+  // O revelado (R8, 256 x 256 sobre a pintura inteira): drawFog's own rule (revealSpot / revealAlpha) around every hex the party
+  // has stood on, compositing over each other; 1 = sem névoa. Refeito só quando a lista muda.
   void updateReveal() {
-    std::vector<std::pair<double, double>> centres;
+    std::vector<RevealSpot> spots;
     size_t key = 1469598103u;
     for (const ember::Json& k : save_.value("exploredHexes", ember::Json::array())) {
       if (!k.is_string()) continue;
@@ -1104,10 +1124,10 @@ class OverworldStage : public Stage {
       if (std::sscanf(k.get<std::string>().c_str(), "%d,%d", &c, &r) != 2) continue;
       double x = 0, y = 0;
       ember::Overworld::hexToWorld(c, r, x, y);
-      centres.push_back({x, y});
+      spots.push_back(revealSpot(x, y));
       key = (key ^ static_cast<size_t>(c * 73856093 + r * 19349663)) * 1099511628211u;
     }
-    key ^= centres.size();
+    key ^= spots.size();
     if (key == revealKey_) return;
     revealKey_ = key;
     constexpr uint32_t N = 256;
@@ -1116,10 +1136,8 @@ class OverworldStage : public Stage {
       for (uint32_t i = 0; i < N; ++i) {
         const double x = 100.0 * (i + 0.5) / N, y = 100.0 * (j + 0.5) / N;
         double keep = 1.0;
-        for (const auto& [cx, cy] : centres) {
-          const double d = std::hypot(x - cx, y - cy) / 9.0;
-          const double a = d <= 0.65 ? 1.0 : d >= 1.0 ? 0.0 : 1.0 - (d - 0.65) / 0.35;
-          keep *= 1.0 - a;
+        for (const RevealSpot& s : spots) {
+          keep *= 1.0 - revealAlpha(x, y, s);
           if (keep <= 0.0) break;
         }
         texels[static_cast<size_t>(j * N + i)] = static_cast<uint8_t>(std::lround((1.0 - keep) * 255.0));
@@ -1127,30 +1145,26 @@ class OverworldStage : public Stage {
     fx_->setReveal(texels, N, N);
   }
 
-  // The fog: dark (rgba 6,6,6,.78) except a soft circle (radius 9 % of the image, solid to 65 %) around every hex the
-  // party has stood on, drawn as a grid of shaded cells (Ember's SVG mask, circles compositing over each other).
+  // The fog: dark (rgba 6,6,6,.78) except what every hex the party has stood on clears (revealSpot / revealAlpha), drawn as
+  // a grid of shaded cells (Ember's SVG mask, circles compositing over each other).
   // Kept for "enabled": false in content/worldmap/overworld-light-fog.json (and the measurement's baseline).
   void drawFog(ImDrawList* dl, ImVec2 o, float w, float h) {
     constexpr int N = 96;
-    std::vector<std::pair<double, double>> centres;
+    std::vector<RevealSpot> spots;
     for (const ember::Json& k : save_.value("exploredHexes", ember::Json::array())) {
       if (!k.is_string()) continue;
       int c = 0, r = 0;
       if (std::sscanf(k.get<std::string>().c_str(), "%d,%d", &c, &r) != 2) continue;
       double x = 0, y = 0;
       ember::Overworld::hexToWorld(c, r, x, y);
-      centres.push_back({x, y});
+      spots.push_back(revealSpot(x, y));
     }
     std::vector<float> alpha((N + 1) * (N + 1));
     for (int j = 0; j <= N; ++j)
       for (int i = 0; i <= N; ++i) {
         const double x = 100.0 * i / N, y = 100.0 * j / N;
         double keep = 1.0;
-        for (const auto& [cx, cy] : centres) {
-          const double d = std::hypot(x - cx, y - cy) / 9.0;
-          const double a = d <= 0.65 ? 1.0 : d >= 1.0 ? 0.0 : 1.0 - (d - 0.65) / 0.35;
-          keep *= 1.0 - a;
-        }
+        for (const RevealSpot& s : spots) keep *= 1.0 - revealAlpha(x, y, s);
         alpha[static_cast<size_t>(j * (N + 1) + i)] = static_cast<float>(0.78 * keep);
       }
     auto col = [&](int i, int j) { return IM_COL32(6, 6, 6, static_cast<int>(255 * alpha[static_cast<size_t>(j * (N + 1) + i)])); };
