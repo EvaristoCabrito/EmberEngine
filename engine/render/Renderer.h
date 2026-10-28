@@ -402,6 +402,7 @@ class Renderer {
   void setGroundExtent(float halfExtent) { groundHalfExtent_ = halfExtent; }
 
   Bindless& bindless() { return bindless_; }
+  VulkanContext& context() { return context_; }  // a screen's own pass on the renderer's device (render/WorldMapFx.h)
   static constexpr uint32_t kMaxSprites = 1u << 16;
 
   const GpuTimer& gpuTimer() const { return gpuTimer_; }

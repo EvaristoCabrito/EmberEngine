@@ -43,6 +43,7 @@
 #include "render/MeshScene.h"
 #include "render/Renderer.h"
 #include "render/UiArt.h"
+#include "render/WorldMapFx.h"
 #include "world/Campaign.h"
 #include "world/Combat.h"
 #include "world/Companions.h"
@@ -117,6 +118,10 @@ class OverworldStage : public Stage {
     save_["seenOverworldIntro"] = true;  // a capture of a panel is not covered by the first-visit explainer
     if (what == "party") party_ = true;
     if (what == "underworld") toggleWorld();
+    if (what == "measure" || what == "measure:underworld") {  // a luz e a névoa medidas (WorldMapFx): três segundos, a média no log
+      measure_ = true;
+      if (what.size() > 7) toggleWorld();
+    }
     if (what == "party:end") party_ = true, partyScrollEnd_ = true;
     if (what == "skills") party_ = true, partyTab_ = 1;
     if (what == "talk" || what.starts_with("talk:")) {  // "talk:<tier>": that tier's conversation of the first companion opens
@@ -173,11 +178,44 @@ class OverworldStage : public Stage {
       playFilm(film.c_str(), [] {});
     }
   }
-  // Captures end after a second of frames (time for Engine2's art to load), or once a previewed film got that far.
-  bool done() const override { return frames_ > 60 && (!film_ || film_->time() >= previewFilmAt_); }
+  // Captures end after a second of frames (time for Engine2's art to load), or once a previewed film got that far; a measured
+  // capture (--map-ui measure[:underworld]) runs three seconds for the mean.
+  bool done() const override { return frames_ > (measure_ ? 180 : 60) && (!film_ || film_->time() >= previewFilmAt_); }
+  void endFrame(double busyMs) override {
+    if (frames_ > 60 && frames_ <= 180) measureCpuMs_ += busyMs, ++measureCpuFrames_;
+  }
+  // Qualidade gráfica (Opções > Gráficos; DevGfxSettings.h): 0 baixa, 1 média, 2 alta.
+  int gfxQuality() const {
+    const std::string q = callbacks_.gfx ? callbacks_.gfx->quality : std::string("high");
+    return q == "low" ? 0 : q == "medium" ? 1 : 2;
+  }
 
   void frame(Renderer& renderer, VkExtent2D) override {
     ++frames_;
+    if (!fx_) {  // a luz e a névoa das duas telas (render/WorldMapFx.h): o passe, as configurações e as pinturas, uma vez
+      fx_.emplace(renderer.context(), renderer.bindless());
+      fxConfig_[0] = WorldMapConfig::load("content/worldmap/overworld-light-fog.json", false);
+      fxConfig_[1] = WorldMapConfig::load("content/worldmap/underworld-light-fog.json", true);
+      if (fxConfig_[0].enabled) {
+        fxMap_[0] = fx_->loadTexture(paths_.engine2Public / "game/assets/world-map.jpg");
+        if (!fxConfig_[0].mask.empty()) fxMask_[0] = fx_->loadTexture(fxConfig_[0].mask);
+      }
+      if (fxConfig_[1].enabled) {
+        fxMap_[1] = fx_->loadTexture(kUnderworldAtlas);
+        if (!fxConfig_[1].mask.empty()) fxMask_[1] = fx_->loadTexture(fxConfig_[1].mask);
+      }
+      logInfo("worldmap: light + fog {} / {} ({:.1f} MB of textures)", fxConfig_[0].enabled ? "on" : "off", fxConfig_[1].enabled ? "on" : "off",
+              double(fx_->textureBytes()) / 1048576.0);
+    }
+    // A medida (capturas: --title-screen map [--map-ui underworld]): o escopo "ui" do GpuTimer, a média sobre os quadros
+    // depois do primeiro segundo, com a CPU da thread principal (endFrame), ditas no log quando a captura termina.
+    if (frames_ > 60 && frames_ <= 180)
+      for (const auto& r : renderer.gpuTimer().results())
+        if (std::string(r.name) == "ui") measureUiMs_ += r.milliseconds, ++measureFrames_;
+    if (frames_ == 180)
+      logInfo("worldmap measure ({}, quality {}): gpu ui {:.3f} ms, main thread {:.3f} ms over {} frames; {:.1f} MB of textures",
+              underworld_ ? "underworld" : "overworld", gfxQuality(), measureUiMs_ / std::max(1, measureFrames_),
+              measureCpuMs_ / std::max(1, measureCpuFrames_), measureFrames_, double(fx_->textureBytes()) / 1048576.0);
     renderer.setScene(Camera{}, {});
     renderer.setMeshes(MeshSceneView{});
     renderer.setTerrain({});
@@ -763,14 +801,19 @@ class OverworldStage : public Stage {
     const ImVec2 o{a.x + 8.0f - scrollX_, a.y + 8.0f - scrollY_};  // the image's corner
     auto at = [&](double xPct, double yPct) { return ImVec2{o.x + static_cast<float>(xPct) / 100.0f * imgW, o.y + static_cast<float>(yPct) / 100.0f * imgH}; };
     dl->PushClipRect(a, b, true);
-    if (map) dl->AddImageRounded(map->texture, o, {o.x + imgW, o.y + imgH}, {0, 0}, {1, 1}, IM_COL32_WHITE, 8.0f);
-    if (underworld_) {  // the Atlas alone: no fog, no sky (it is underground), no pins, no steps, no leader there yet
+    // A luz e a névoa (render/WorldMapFx.h): a pintura desenhada pelo passe próprio com a luz da hora / dos seres, a névoa de
+    // guerra viva, a névoa baixa / de caverna e o acabamento de cor; com o arquivo em "enabled": false, o desenho de antes.
+    const int fxWorld = underworld_ ? 1 : 0;
+    const bool fxOn = fx_ && fxConfig_[fxWorld].enabled && fxMap_[fxWorld] != WorldMapFx::kNoTexture;
+    if (fxOn) drawLitMap(dl, o, imgW, imgH, a, b);
+    else if (map) dl->AddImageRounded(map->texture, o, {o.x + imgW, o.y + imgH}, {0, 0}, {1, 1}, IM_COL32_WHITE, 8.0f);
+    if (underworld_) {  // the Atlas alone: no fog of war, no sky (it is underground), no pins, no steps, no leader there yet
       dl->PopClipRect();
       return;
     }
-    drawFog(dl, o, imgW, imgH);
-    // Sky tint by the hour.
-    {
+    if (!fxOn) {
+      drawFog(dl, o, imgW, imgH);
+      // Sky tint by the hour.
       const std::string t = e2::Overworld::timeOfDay(e2::Overworld::campaignHour(save_));
       const ImU32 tint = t == "darkNight" ? IM_COL32(5, 12, 43, 173) : t == "brightNight" ? IM_COL32(34, 62, 132, 122) : t == "dusk" ? IM_COL32(166, 67, 39, 82)
                          : t == "dawn" ? IM_COL32(230, 137, 112, 64) : t == "noon" ? IM_COL32(255, 197, 108, 31) : 0;
@@ -949,8 +992,74 @@ class OverworldStage : public Stage {
     }
   }
 
+  // A pintura com a luz e a névoa (WorldMapFx): o revelado de hoje (os mesmos círculos de drawFog, numa textura refeita só
+  // quando os hexágonos explorados mudam), a hora do relógio suavizada na tela, o ciclo dos seres no Submundo.
+  void drawLitMap(ImDrawList* dl, ImVec2 o, float w, float h, ImVec2 viewA, ImVec2 viewB) {
+    const WorldMapConfig& c = fxConfig_[underworld_ ? 1 : 0];
+    WorldMapFx::Draw d;
+    d.rectMin = o, d.rectMax = {o.x + w, o.y + h}, d.viewMin = viewA, d.viewMax = viewB;
+    d.map = fxMap_[underworld_ ? 1 : 0], d.mask = fxMask_[underworld_ ? 1 : 0];
+    d.underworld = underworld_;
+    d.quality = gfxQuality();
+    d.time = now_;
+    const double days = num(save_, "gameClock", 0), hour = e2::Overworld::campaignHour(save_);
+    if (underworld_) {
+      // O relógio da campanha nunca para: o ciclo corre junto com ele e o Submundo abre no ponto da hora atual.
+      d.glow = WorldMapFx::underworldGlow(c, days * 24.0 + hour);
+      d.params = WorldMapFx::underworldParams(c, d.glow);
+    } else {
+      // Sem saltos: a luz anda até a hora do relógio em hourEaseSeconds (o relógio anda em horas inteiras a cada passo).
+      const float target = static_cast<float>(hour);
+      if (shownHour_ < 0) shownHour_ = target;
+      const float dt = std::clamp(now_ - lastHourAt_, 0.0f, 0.1f);
+      lastHourAt_ = now_;
+      float diff = std::fmod(target - shownHour_ + 36.0f, 24.0f) - 12.0f;  // o caminho mais curto no ciclo
+      const float step = c.hourEase > 0.0f ? dt / c.hourEase * 12.0f : 24.0f;
+      if (std::abs(diff) <= step) shownHour_ = target;
+      else shownHour_ = std::fmod(shownHour_ + (diff > 0 ? step : -step) + 24.0f, 24.0f);
+      d.params = WorldMapFx::overworldParams(c, shownHour_);
+      updateReveal();
+    }
+    fx_->draw(dl, d);
+  }
+
+  // O revelado (R8, 256 x 256 sobre a pintura inteira): drawFog's own rule, a soft circle (radius 9 % of the image, solid to 65 %)
+  // around every hex the party has stood on, compositing over each other; 1 = sem névoa. Refeito só quando a lista muda.
+  void updateReveal() {
+    std::vector<std::pair<double, double>> centres;
+    size_t key = 1469598103u;
+    for (const e2::Json& k : save_.value("exploredHexes", e2::Json::array())) {
+      if (!k.is_string()) continue;
+      int c = 0, r = 0;
+      if (std::sscanf(k.get<std::string>().c_str(), "%d,%d", &c, &r) != 2) continue;
+      double x = 0, y = 0;
+      e2::Overworld::hexToWorld(c, r, x, y);
+      centres.push_back({x, y});
+      key = (key ^ static_cast<size_t>(c * 73856093 + r * 19349663)) * 1099511628211u;
+    }
+    key ^= centres.size();
+    if (key == revealKey_) return;
+    revealKey_ = key;
+    constexpr uint32_t N = 256;
+    std::vector<uint8_t> texels(N * N);
+    for (uint32_t j = 0; j < N; ++j)
+      for (uint32_t i = 0; i < N; ++i) {
+        const double x = 100.0 * (i + 0.5) / N, y = 100.0 * (j + 0.5) / N;
+        double keep = 1.0;
+        for (const auto& [cx, cy] : centres) {
+          const double d = std::hypot(x - cx, y - cy) / 9.0;
+          const double a = d <= 0.65 ? 1.0 : d >= 1.0 ? 0.0 : 1.0 - (d - 0.65) / 0.35;
+          keep *= 1.0 - a;
+          if (keep <= 0.0) break;
+        }
+        texels[static_cast<size_t>(j * N + i)] = static_cast<uint8_t>(std::lround((1.0 - keep) * 255.0));
+      }
+    fx_->setReveal(texels, N, N);
+  }
+
   // The fog: dark (rgba 6,6,6,.78) except a soft circle (radius 9 % of the image, solid to 65 %) around every hex the
   // party has stood on, drawn as a grid of shaded cells (Engine2's SVG mask, circles compositing over each other).
+  // Kept for "enabled": false in content/worldmap/overworld-light-fog.json (and the measurement's baseline).
   void drawFog(ImDrawList* dl, ImVec2 o, float w, float h) {
     constexpr int N = 96;
     std::vector<std::pair<double, double>> centres;
@@ -2317,6 +2426,18 @@ class OverworldStage : public Stage {
   int prevCol_ = 0;
   bool facingLeft_ = false;
   int frames_ = 0;
+  // A luz e a névoa das duas telas (render/WorldMapFx.h, shaders/worldmap.hlsl): o passe, os dois arquivos de configuração
+  // ([0] mapa-múndi, [1] Submundo), as pinturas e máscaras na GPU, o revelado subido quando os hexágonos explorados mudam,
+  // a hora suavizada na tela (sem saltos quando o relógio anda horas inteiras num passo).
+  std::optional<WorldMapFx> fx_;
+  WorldMapConfig fxConfig_[2];
+  uint32_t fxMap_[2] = {WorldMapFx::kNoTexture, WorldMapFx::kNoTexture}, fxMask_[2] = {WorldMapFx::kNoTexture, WorldMapFx::kNoTexture};
+  size_t revealKey_ = 0;  // o que o revelado subido representa (um hash dos hexágonos explorados)
+  float shownHour_ = -1;  // a hora da luz na tela (segue o relógio em hourEaseSeconds)
+  float lastHourAt_ = 0;
+  bool measure_ = false;  // --map-ui measure
+  double measureUiMs_ = 0, measureCpuMs_ = 0;
+  int measureFrames_ = 0, measureCpuFrames_ = 0;
 };
 
 }  // namespace ember

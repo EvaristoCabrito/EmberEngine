@@ -18,6 +18,7 @@ add_library(EmberEngine STATIC
   render/Renderer.cpp
   render/DebugUi.cpp
   render/UiArt.cpp
+  render/WorldMapFx.cpp
   render/SpriteSystem.cpp
   render/SpellEffects.cpp
   render/SpellEffectsEmber.cpp

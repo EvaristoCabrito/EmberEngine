@@ -6,6 +6,7 @@ endif()
 
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/triangle.hlsl STAGES vs:VSMain ps:PSMain)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/tonemap.hlsl STAGES vs:VSMain ps:PSMain)
+ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/worldmap.hlsl STAGES vs:VSMain ps:PSMain)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/ground.hlsl STAGES vs:VSMain ps:PSMain)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/sprites.hlsl STAGES vs:VSMain ps:PSMain ps:PSDepth vs:VSShadow ps:PSShadow)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/effects.hlsl STAGES vs:VSMain ps:PSMain)
