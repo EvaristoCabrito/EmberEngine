@@ -1736,6 +1736,12 @@ open area with large tables ... some separate rooms for NPCs and services, use t
   "Can we get Neera's Dagger animation back to the previous version?": `attackShort` is neera-v2-001's `atk-short` again
   (sprite-overrides.json, roster.json's entry from a fresh export_heroes.ts; previous roster kept as
   `build/scenes/roster-20261027-before-neera-dagger.json`). The Hydra clip stays in battle.pak, drawn by nobody.
+  Then (2026-10-28, the user: "fix the frames for this dagger animation because they are off set"): frames 11-29 of that clip slid up
+  to 81 px left while the thrust goes right; `tools/scripts/sprites/register_clip_feet.py` wrote `content/sprites/neera-v2-001/
+  atk-short-v02/` (each frame shifted so its legs sit on frame 1's; art and timing untouched). Patched by hand, NOT through
+  apply_sprite_overrides.py (it still names the old build/ember-scenes folder, and its uniform pace would change the clip's timing):
+  build/sprites/battle.sprites.json's atk-short pattern -> v02, build/scenes/roster.json's attackShort crop -> [73, 1, 487, 679] (both
+  set aside first as `*-20261028-before-neera-dagger-v02.json`). The original frames stay in content/assets.
 
 - Sprite set `voss-veo-36-media` (2026-10-27): Voss's old Leve (36 frames picked evenly from loops cut on 2026-10-22, played on the
   full clip's timing: uneven steps). Replaced by `voss-veo-leve-passo` (cut.json's clips, every Nth frame, `frameStepNear` 36, roster
