@@ -745,7 +745,7 @@ void setUpExplore(MapStageOptions& options, const ember::Json& save, const ember
   if (!battle.is_object() || !battle.value("explore", false)) return;
   for (const char* hero : {"Neera", "Voss", "Salazar", "Aldric", "Malrec"})
     if (!test && !world.heroRecruited(hero, save)) options.absentNeutrals.insert(hero);
-  if (options.leader.empty() && !test && interlude && ember::interludeState(save) == ember::InterludeState::Active) options.leader = interlude->leader;
+  if (options.leader.empty() && interlude && ember::interludeState(save) == ember::InterludeState::Active) options.leader = interlude->leader;
   if (options.leader.empty())
     if (const auto l = save.find("partyLeader"); l != save.end() && l->is_string() && (test || world.heroRecruited(l->get<std::string>(), save)))
       options.leader = l->get<std::string>();
@@ -759,9 +759,10 @@ void setUpParty(MapStageOptions& options, const ember::Json& save, const ember::
   std::ifstream in(options.battle, std::ios::binary);
   const ember::Json battle = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
   if (!battle.is_object() || battle.value("explore", false)) return;
-  if (campaign) {
+  const bool interludeOn = interlude && ember::interludeState(save) == ember::InterludeState::Active;
+  if (campaign || interludeOn) {
     std::set<std::string> roster;
-    if (interlude && ember::interludeState(save) == ember::InterludeState::Active) {
+    if (interludeOn) {
       for (const ember::InterludeHero& h : interlude->party) roster.insert(h.name);
     } else {
       for (const char* hero : {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec"})
@@ -929,7 +930,8 @@ int runCapture(const Options& o) {
         stage = std::move(editor);
       } else if (o.titleScreen == "test-rpg") {
         testSession->mapMode = "rpg";
-        auto map = std::make_unique<OverworldStage>(campaignPaths, campaign, world, OverworldStage::Callbacks{}, std::string{}, &testSession->save);
+        auto map = std::make_unique<OverworldStage>(campaignPaths, campaign, world, OverworldStage::Callbacks{}, std::string{}, &testSession->save,
+                                                    hasInterludeData ? &interludeData : nullptr);
         if (!o.mapUi.empty()) map->preview(o.mapUi);
         stage = std::move(map);
       } else {
@@ -1381,6 +1383,15 @@ int runWindow(const Options& o) {
     }
     if (!campaign.saveActive(std::move(save))) logWarn("{}: the visit could not be written", id);
   };
+  // Modo teste: the chapter moves on in the session's own save, as finishCampaignFight / markVisited move the campaign's (a fight won,
+  // or a free-roam map left).
+  auto advanceTestInterlude = [&](const MapStage& map) {
+    if (!testSession || !hasInterlude || (!map.explores() && map.battleResult() != "victory")) return;
+    if (!ember::interludeAdvance(interlude, testSession->save, map.draftId())) return;
+    const bool over = ember::interludeState(testSession->save) == ember::InterludeState::Completed;
+    logInfo("interlude: {} done: {}", map.draftId(), over ? "the chapter is complete, the present party is back" : "next map " + testSession->save.value("pendingMission", std::string()));
+    if (over) campaignNote = tr("Interlúdio concluído: o grupo voltou ao presente.", "Interlude complete: the party is back in the present.");
+  };
   // Ember's loading curtain (LoadingScreens.h): up before a battle is built, over the world map as it opens.
   loading::Curtain curtain;
   services.curtain = [&] { curtain.draw(paths.artRoot); };
@@ -1474,6 +1485,7 @@ int runWindow(const Options& o) {
           if (testSession && !map->explores() && map->battleResult() == "victory") foldFight(testSession->save, *map, map->draftId());
           // An Interlude exploration map left by its passage: done for the chapter, the next map pending (markVisited advances it)
           if (!test && map->explores() && hasInterlude && interlude.hasMission(playing)) markVisited(playing, map);
+          advanceTestInterlude(*map);
           arriveFrom = map->draftId();
           preserveKnockouts = true;
           pending = std::move(next);
@@ -1493,6 +1505,7 @@ int runWindow(const Options& o) {
           // A test fight that ended is folded into the session's save as the campaign folds its own (levels, XP, HP, skills,
           // loot, completed); back to the test map.
           if (!map->explores() && !map->battleResult().empty()) foldFight(testSession->save, *map, map->draftId());
+          advanceTestInterlude(*map);
           if (testSession->mapMode == "rpg") openTestRpg = true;
           else openTest = TestModeStage::Screen::WorldMap;
         } else if (!playing.empty() && !map->battleResult().empty()) {
