@@ -214,7 +214,7 @@ class OverworldStage : public Stage {
       fxConfig_[0] = WorldMapConfig::load("content/worldmap/overworld-light-fog.json", false);
       fxConfig_[1] = WorldMapConfig::load("content/worldmap/underworld-light-fog.json", true);
       if (fxConfig_[0].enabled) {
-        fxMap_[0] = fx_->loadTexture(paths_.engine2Public / "game/assets/world-map.jpg");
+        fxMap_[0] = fx_->loadTexture(kWorldMap);
         if (!fxConfig_[0].mask.empty()) fxMask_[0] = fx_->loadTexture(fxConfig_[0].mask);
       }
       if (fxConfig_[1].enabled) {
@@ -251,7 +251,7 @@ class OverworldStage : public Stage {
   // The world map opening under Engine2's loading curtain (MapLoadingOverlay "Carregando o mapa"): ready once the screen
   // has drawn what it shows, the map with its picture in (a briefing, a film or the Inn shown first need no picture).
   Loading loading() const override {
-    const bool ready = drawn_ > 0 && (!mapDrawn_ || uiImageLoaded(paths_.engine2Public / "game/assets/world-map.jpg"));
+    const bool ready = drawn_ > 0 && (!mapDrawn_ || uiImageLoaded(kWorldMap));
     return {0, 0, 0, ready};
   }
 
@@ -763,7 +763,11 @@ class OverworldStage : public Stage {
   // time-of-day tint, the pins, the step hexes and the leader.
   // The Underworld's map: the user's Atlas do Submundo de Mordávia (content/ui/underworld-atlas-v01.png), only the picture for now
   // (no locations, steps or fog there yet: it has no overworld board).
-  static constexpr const char* kUnderworldAtlas = "content/ui/underworld-atlas-v01.png";
+  // The user's new maps (2026-10-28: "UnderworldA" for the Underworld, "recraft-v4_Map" for the Overworld, Attachments), the
+  // locations' pins at the same percent coordinates as before; the old pictures (content/ui/underworld-atlas-v01.png,
+  // game/assets/world-map.jpg) stay where they are.
+  static constexpr const char* kUnderworldAtlas = "content/worldmap/underworld-atlas-v02.png";
+  static constexpr const char* kWorldMap = "content/worldmap/world-map-v02.png";
   // Whether the word at the upper left switches worlds: Modo teste always, the campaign once the party has reached the Underworld.
   bool underworldOpen() const { return test() || save_.value("underworldReached", false); }
   void toggleWorld() {
@@ -775,7 +779,7 @@ class OverworldStage : public Stage {
 
   void drawViewport(ImVec2 a, ImVec2 b) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
-    const UiImage* map = uiImage(underworld_ ? std::filesystem::path(kUnderworldAtlas) : paths_.engine2Public / "game/assets/world-map.jpg");
+    const UiImage* map = uiImage(std::filesystem::path(underworld_ ? kUnderworldAtlas : kWorldMap));
     mapDrawn_ = true;
     const float vw = b.x - a.x, vh = b.y - a.y;
     const float zoomPercent = underworld_ ? kUnderworldZoomStops[underworldZoom_] : kOverworldZoomStops[zoom_];
