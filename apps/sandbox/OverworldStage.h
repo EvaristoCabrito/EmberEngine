@@ -150,6 +150,10 @@ class OverworldStage : public Stage {
         const size_t end = std::min(what.find(';', at), what.size());
         const std::string s = what.substr(at, end - at);
         at = end + 1;
+        if (s == "move") {  // "...;move": the step hexes shown at the end, as a click on the leader shows them
+          movementOpen_ = true;
+          continue;
+        }
         const size_t comma = s.find(',');
         if (comma == std::string::npos) continue;
         const int c = std::stoi(s.substr(0, comma)), r = std::stoi(s.substr(comma + 1));
