@@ -21,8 +21,6 @@ struct Push {
   uint paramsLo, paramsHi;  // WorldMapParams (float4 x 16), endereço de dispositivo
   uint noise;       // a textura de ruído repetível
   uint repeatSampler;
-  uint lightsLo, lightsHi;  // MapLight x lightCount (32 bytes cada): as fontes de luz do mapa-múndi, endereço de dispositivo
-  uint lightCount, pad0;
 };
 [[vk::push_constant]] Push push;
 
@@ -42,8 +40,6 @@ struct Push {
 // 10 caveColor  Submundo: rgb cor da névoa de caverna apagada, w densidade
 // 11 caveShape  x escala, y velocidade, z quanto a névoa pega a cor dos seres, w limiar da heurística
 // 12 extra0     Submundo: x luz ambiente no auge (quanto os seres clareiam a caverna inteira)
-// 13 shadow     mapa-múndi: rgb a cor do céu nas sombras da pintura (tint é a cor da luz nas partes claras), w quanto (0 = só tint)
-// 14 lights     mapa-múndi: x quanto as fontes de luz estão acesas (0 de dia .. 1 à noite), y tremor da chama, z força do halo
 float4 param(uint i) { return vk::RawBufferLoad<float4>((uint64_t(push.paramsHi) << 32 | uint64_t(push.paramsLo)) + uint64_t(i) * 16); }
 
 uint quality() { return (push.flags >> 1) & 3u; }
@@ -122,36 +118,11 @@ float4 overworld(float2 uv, float2 pixel, float2 texel) {
   const float4 tint = param(0);
   const float4 light = param(2);
   const float4 fogColor = param(4), fogShape = param(5), lowColor = param(6), lowShape = param(7);
-  const float4 shadow = param(13);
   const float4 src = mapAt(uv);
   float3 c = srgbToLinear(src.rgb);
-  // Luz por hora do dia, em duas cores (o usuário, 2026-10-27: "cores que de fato lembrem horários"): a cor da luz nas partes
-  // claras da pintura, a cor do céu nas sombras (o amanhecer é rosa no claro e violeta na sombra; a noite, prata no claro e azul
-  // fundo na sombra), a exposição da hora, o relevo respondendo à direção da luz. Realça a pintura em vez de cobri-la.
+  // Luz por hora do dia: a cor da luz multiplica a pintura (realça em vez de cobrir), o relevo responde à direção da luz.
   const float r = relief(uv, texel, light.xy) * light.z;
-  const float lit = smoothstep(0.02, 0.45, luma(c));                     // 0 nas sombras da pintura, 1 nas partes claras
-  const float3 hourLight = lerp(shadow.rgb, tint.rgb, lerp(1.0, lit, shadow.w));
-  const float3 base = c;  // a cor própria da pintura (o que as fontes de luz iluminam)
-  c *= hourLight * tint.w * (1.0 + r);
-  // As fontes de luz quentes (a referência: Axie Terrariums à noite: a cena azul e cada casa / caldeirão com o seu halo laranja
-  // no chão em volta): cada uma ilumina a pintura à sua volta com queda suave e põe um halo leve por cima; acesas pela hora
-  // (lights.x), a chama tremendo de leve (lights.y, cada luz no seu ritmo).
-  const float4 lights = param(14);
-  if (lights.x > 0.001 && push.lightCount > 0u) {
-    const uint64_t at = (uint64_t(push.lightsHi) << 32) | uint64_t(push.lightsLo);
-    [loop] for (uint i = 0; i < push.lightCount; ++i) {
-      const float4 pos = vk::RawBufferLoad<float4>(at + uint64_t(i) * 32);
-      const float4 col = vk::RawBufferLoad<float4>(at + uint64_t(i) * 32 + 16);
-      const float d = length(uv - pos.xy) / max(pos.z, 1e-4);
-      if (d >= 1.0) continue;
-      const float fall = 1.0 - d;
-      const float pool = fall * fall * (3.0 - 2.0 * fall);  // suave na borda
-      const float flick = 1.0 + lights.y * (sin(push.time * 7.3 + col.w * 5.1) * 0.6 + sin(push.time * 11.9 + col.w * 2.3) * 0.4);
-      const float k = lights.x * pos.w * flick;
-      c += base * col.rgb * pool * pool * k * 1.6;          // a pintura iluminada
-      c += col.rgb * exp(-d * d * 5.0) * lights.z * k * 0.5;  // o halo
-    }
-  }
+  c *= tint.rgb * tint.w * (1.0 + r);
   // Névoa baixa: rasteira e fina, nas partes baixas (a máscara pintada; sem ela a heurística: o escuro frio da pintura).
   if (lowColor.w > 0.0) {
     float m;

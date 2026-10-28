@@ -28,15 +28,8 @@ struct Push {
   float time, rounding, glow;
   uint32_t paramsLo, paramsHi;
   uint32_t noise, repeatSampler;
-  uint32_t lightsLo, lightsHi, lightCount, pad0;
 };
 static_assert(sizeof(Push) <= Bindless::kPushConstantBytes);
-
-struct LightGpu {  // worldmap.hlsl MapLight: 32 bytes
-  glm::vec4 pos;    // uv, raio, força
-  glm::vec4 color;  // rgb, semente do tremor
-};
-static_assert(sizeof(LightGpu) == 32);
 
 // Ruído de valor repetível numa grade de `period` células (uma volta da textura), suavizado.
 float periodicNoise(float x, float y, int period, uint32_t seed) {
@@ -88,7 +81,6 @@ WorldMapConfig WorldMapConfig::load(const std::filesystem::path& file, bool unde
         {18, {1.0f, 0.62f, 0.38f}, 0.85f, 1.15f, 1.05f, 0.02f, 1.0f, {0.95f, -0.3f}, 0.80f, 0.8f, {0.22f, 0.12f, 0.07f}, {0.85f, 0.55f, 0.35f}, 0.55f},
         {21, {0.36f, 0.45f, 0.78f}, 0.60f, 1.15f, 0.80f, 0.08f, 1.05f, {0.4f, -0.9f}, 0.50f, 0.1f, {0.04f, 0.06f, 0.12f}, {0.32f, 0.40f, 0.58f}, 0.55f},
     };
-    for (HourKey& k : c.keys) k.shadow = k.tint;  // os padrões não têm cor de sombra própria (o arquivo tem)
   }
   std::ifstream in(file, std::ios::binary);
   if (!in) {
@@ -126,9 +118,6 @@ WorldMapConfig WorldMapConfig::load(const std::filesystem::path& file, bool unde
       h.hour = k.value("hour", 12.0f);
       h.tint = vec3Of(k.value("tint", nlohmann::json()), h.tint);
       h.exposure = k.value("exposure", h.exposure);
-      h.shadow = vec3Of(k.value("shadow", nlohmann::json()), h.tint);  // sem "shadow": a tint também nas sombras (como antes)
-      h.shadowMix = k.value("shadowMix", h.shadowMix);
-      h.lightsOn = k.value("lightsOn", h.lightsOn);
       h.contrast = k.value("contrast", h.contrast);
       h.saturation = k.value("saturation", h.saturation);
       h.lift = k.value("lift", h.lift);
@@ -142,33 +131,6 @@ WorldMapConfig WorldMapConfig::load(const std::filesystem::path& file, bool unde
       c.keys.push_back(h);
     }
     std::sort(c.keys.begin(), c.keys.end(), [](const HourKey& a, const HourKey& b) { return a.hour < b.hour; });
-  }
-  // As fontes de luz (mapa-múndi): o estilo dos locais, o do grupo, os ajustes por id, as luzes extra.
-  auto styleOf = [](const nlohmann::json& s, LightStyle d) {
-    if (!s.is_object()) return d;
-    d.color = vec3Of(s.value("color", nlohmann::json()), d.color);
-    d.radius = s.value("radius", d.radius);
-    d.strength = s.value("strength", d.strength);
-    return d;
-  };
-  if (const nlohmann::json lights = j.value("lights", nlohmann::json::object()); lights.is_object()) {
-    c.locationLight = styleOf(lights.value("locations", nlohmann::json()), c.locationLight);
-    c.partyLight = styleOf(lights.value("party", nlohmann::json()), c.partyLight);
-    c.lightFlicker = lights.value("flicker", c.lightFlicker);
-    c.lightHalo = lights.value("halo", c.lightHalo);
-    const nlohmann::json overrides = lights.value("overrides", nlohmann::json::object());
-    if (overrides.is_object())
-      for (auto it = overrides.begin(); it != overrides.end(); ++it) c.lightOverrides[it.key()] = styleOf(it.value(), c.locationLight);
-    const nlohmann::json extra = lights.value("extra", nlohmann::json::array());
-    if (extra.is_array())
-      for (const nlohmann::json& e : extra) {
-        const LightStyle s = styleOf(e, c.locationLight);
-        MapLight l;
-        l.uv = vec2Of(e.value("uv", nlohmann::json()), l.uv);
-        l.radius = s.radius, l.strength = s.strength, l.color = s.color;
-        l.seed = static_cast<float>(c.extraLights.size()) * 1.7f;
-        c.extraLights.push_back(l);
-      }
   }
   const nlohmann::json cycle = j.value("cycle", nlohmann::json::object());
   c.wakeHour = cycle.value("wakeHour", c.wakeHour);
@@ -215,7 +177,6 @@ WorldMapFx::WorldMapFx(VulkanContext& context, Bindless& bindless) : context_(co
   VK_CHECK(vkCreateSampler(context.device, &s, nullptr, &repeatSampler_));
   repeatSamplerIndex_ = bindless.addSampler(repeatSampler_);
   for (Buffer& b : params_) b = createHostBuffer(context, sizeof(WorldMapParams), VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT);
-  for (Buffer& b : lights_) b = createHostBuffer(context, sizeof(LightGpu) * kMaxLights, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT);
   // A textura de ruído: 256 x 256, uma volta = 8 células; R fbm 5 oitavas, G 3, B 2 (outras sementes), A o ruído fino.
   constexpr uint32_t N = 256;
   std::vector<unsigned char> texels(size_t(N) * N * 4);
@@ -235,7 +196,6 @@ WorldMapFx::WorldMapFx(VulkanContext& context, Bindless& bindless) : context_(co
 WorldMapFx::~WorldMapFx() {
   vkDeviceWaitIdle(context_.device);
   for (Buffer& b : params_) destroyBuffer(context_, b);
-  for (Buffer& b : lights_) destroyBuffer(context_, b);
   for (size_t i = 0; i < images_.size(); ++i) {
     bindless_.removeSampledImage(indices_[i]);
     destroyImage(context_, images_[i]);
@@ -313,14 +273,6 @@ void WorldMapFx::draw(ImDrawList* dl, const Draw& d) {
   slot.paramsSlot = next_ % kParamSlots;
   ++next_;
   std::memcpy(params_[slot.paramsSlot].mapped, &d.params, sizeof(WorldMapParams));
-  const uint32_t count = static_cast<uint32_t>(std::min<size_t>(d.lights.size(), kMaxLights));
-  auto* gpu = static_cast<LightGpu*>(lights_[slot.paramsSlot].mapped);
-  for (uint32_t i = 0; i < count; ++i) {
-    const WorldMapConfig::MapLight& l = d.lights[i];
-    gpu[i].pos = {l.uv.x, l.uv.y, l.radius, l.strength};
-    gpu[i].color = {l.color, l.seed};
-  }
-  slot.draw.lights.resize(count);
   dl->AddCallback(&WorldMapFx::callback, &slot);
   dl->AddCallback(ImGui::GetPlatformIO().DrawCallback_ResetRenderState, nullptr);  // the backend's own state back for the UI after it
 }
@@ -369,10 +321,6 @@ void WorldMapFx::callback(const ImDrawList*, const ImDrawCmd* cmd) {
   push.paramsHi = uint32_t(address >> 32);
   push.noise = self.noiseIndex_;
   push.repeatSampler = self.repeatSamplerIndex_;
-  const VkDeviceAddress lights = bufferAddress(self.context_, self.lights_[slot->paramsSlot]);
-  push.lightsLo = uint32_t(lights & 0xFFFFFFFFu);
-  push.lightsHi = uint32_t(lights >> 32);
-  push.lightCount = d.underworld ? 0u : static_cast<uint32_t>(d.lights.size());
   vkCmdPushConstants(cb, self.bindless_.pipelineLayout(), Bindless::kStages, 0, sizeof(push), &push);
   vkCmdDraw(cb, 3, 1, 0, 0);
 }
@@ -404,8 +352,6 @@ WorldMapParams WorldMapFx::overworldParams(const WorldMapConfig& c, float hour) 
   p.fogShape = {c.fogScale, c.fogWind, c.fogEdge, c.fogShade};
   p.lowColor = {mix3(a->lowColor, b->lowColor), mix(a->lowStrength, b->lowStrength)};
   p.lowShape = {c.lowScale, c.lowSpeed, c.lowHeight, c.lowThreshold};
-  p.extra[1] = {mix3(a->shadow, b->shadow), mix(a->shadowMix, b->shadowMix)};
-  p.extra[2] = {mix(a->lightsOn, b->lightsOn), c.lightFlicker, c.lightHalo, 0.0f};
   return p;
 }
 
