@@ -782,7 +782,9 @@ class OverworldStage : public Stage {
     const UiImage* map = uiImage(std::filesystem::path(underworld_ ? kUnderworldAtlas : kWorldMap));
     mapDrawn_ = true;
     const float vw = b.x - a.x, vh = b.y - a.y;
-    const float zoomPercent = underworld_ ? kUnderworldZoomStops[underworldZoom_] : kOverworldZoomStops[zoom_];
+    // The Underworld zooms exactly as the Overworld (the user, 2026-10-28: "o sistema de zoom do underworld precisa ser IGUAL
+    // ao overworld"): the same stops and the same box; each world keeps its own stop.
+    const float zoomPercent = kOverworldZoomStops[underworld_ ? underworldZoom_ : zoom_];
     const float imgW = vw * zoomPercent / 100.0f;
     const float imgH = map ? imgW * static_cast<float>(map->height) / static_cast<float>(map->width) : vh * 0.7f;
     const float contentW = imgW + 16.0f, contentH = imgH + 16.0f;
@@ -1337,8 +1339,7 @@ class OverworldStage : public Stage {
 
   void drawZoom(ImVec2 size) {
     const bool inert = event_ || open_ || questLog_ || party_ || options_ || !save_.value("seenOverworldIntro", false);
-    const bool changed = underworld_ ? worldMapZoomBox(size, underworldZoom_, inert)
-                                     : worldMapZoomBox(size, zoom_, inert, 4, 1, 4);
+    const bool changed = worldMapZoomBox(size, underworld_ ? underworldZoom_ : zoom_, inert, 4, 1, 4);
     if (changed) recentre_ = true;
   }
 
@@ -2480,7 +2481,7 @@ class OverworldStage : public Stage {
   std::string flashId_;
   float flashAt_ = -10;
   int zoom_ = 0;
-  int underworldZoom_ = 3;
+  int underworldZoom_ = 0;  // the Overworld's first stop, as zoom_
   float scrollX_ = 0, scrollY_ = 0, centreX_ = 0.5f, centreY_ = 0.5f;
   bool centred_ = false, recentre_ = false;
   bool underworld_ = false;                          // the Underworld's Atlas on show instead of the overworld (toggleWorld)
