@@ -1,14 +1,14 @@
 #pragma once
 
-// Engine2's loading screens, ported as they were (the user, 2026-10-16: "porte exatamente como era antes"):
+// Ember's loading screens, ported as they were (the user, 2026-10-16: "porte exatamente como era antes"):
 //  - The loading curtain (src/game/MapLoadingOverlay.tsx LoadingArt): game/ui/LoadingSCreen.jpg (2128 x 912) covering the
 //    screen over #131313, the progress bar inside the art's own bar frame and the status in its plaque, at fixed fractions
 //    of the picture. Up from the moment a battle is asked for until it is ready, at least 380 ms (useLoadingCurtain
 //    MIN_VISIBLE_MS), 20 s at most (GameApp's safety timer); on the world map "Carregando o mapa" (MapLoadingOverlay:
-//    100%, then gone 280 ms later). Engine2's rule (LOCKED 2026-10-06): real numbers only; no number, no fill, never a
+//    100%, then gone 280 ms later). Ember's rule (LOCKED 2026-10-06): real numbers only; no number, no fill, never a
 //    fake sweep.
 //  - The battle's real steps (GameApp battleLoadCaption + loadStages.ts): each step's share of the bar is the time it took
-//    last time (%LOCALAPPDATA%\Ember\loading-steps.json; Engine2 kept them in localStorage), inside a step its own count.
+//    last time (%LOCALAPPDATA%\Ember\loading-steps.json; Ember kept them in localStorage), inside a step its own count.
 //  - The title page's bar (index.html #title-loader, title.css .title-loader, title/main.ts setProgress): "Despertando as
 //    cinzas", a gothic-framed trough filled with molten ember, a sheen, a flickering spark at the leading edge and embers
 //    drifting off it; real progress kept monotonic and under 97% until loading has truly finished, then it brightens,
@@ -134,7 +134,7 @@ inline ImU32 withAlpha(ImU32 c, float k) {
 
 // The curtain over the whole screen: the art covering it, the bar in the art's frame (bar interior x 752-1362 / y 787-811
 // of 2128 x 912), the status in the plaque (x 903-1203 / y 842-881). `progress` empty = no number, so no fill.
-inline void drawLoadingArt(const std::filesystem::path& engine2Public, std::optional<float> progress, const std::string& label) {
+inline void drawLoadingArt(const std::filesystem::path& artRoot, std::optional<float> progress, const std::string& label) {
   const ImGuiIO& io = ImGui::GetIO();
   ImGui::SetNextWindowPos({0, 0});
   ImGui::SetNextWindowSize(io.DisplaySize);
@@ -150,7 +150,7 @@ inline void drawLoadingArt(const std::filesystem::path& engine2Public, std::opti
   // width max(100vw, 100vh * 2128 / 912), centred: no black border, the far left / right trimmed on narrow screens
   const float w = std::max(size.x, size.y * 2128.0f / 912.0f), h = w * 912.0f / 2128.0f;
   const ImVec2 o{(size.x - w) * 0.5f, (size.y - h) * 0.5f};
-  if (const UiImage* art = uiImage(engine2Public / "game/ui/LoadingSCreen.jpg")) dl->AddImage(art->texture, o, {o.x + w, o.y + h});
+  if (const UiImage* art = uiImage(artRoot / "game/ui/LoadingSCreen.jpg")) dl->AddImage(art->texture, o, {o.x + w, o.y + h});
   const ImVec2 barA{o.x + 0.3534f * w, o.y + 0.8629f * h}, barB{barA.x + 0.2867f * w, barA.y + 0.0263f * h};
   if (progress) {
     const float fill = barA.x + (barB.x - barA.x) * std::clamp(*progress, 0.0f, 100.0f) / 100.0f;
@@ -249,9 +249,9 @@ class Curtain {
     return std::format("{} · {}%", status, static_cast<int>(std::round(target_)));
   }
 
-  void draw(const std::filesystem::path& engine2Public) const {
+  void draw(const std::filesystem::path& artRoot) const {
     if (kind_ == Kind::None) return;
-    drawLoadingArt(engine2Public, hasNumber_ ? std::optional<float>(shown_) : std::nullopt, label());
+    drawLoadingArt(artRoot, hasNumber_ ? std::optional<float>(shown_) : std::nullopt, label());
   }
 
  private:
@@ -279,7 +279,7 @@ class TitleLoader {
   bool gone(double now) const { return readyAt_ >= 0.0 && now - readyAt_ >= 1.9; }
 
   // Under the menu column: its left edge `x`, `width` wide (min(25rem, 100% - 2.5rem)), 1.75rem above the screen's
-  // bottom. Text 1.4x Engine2's, as every title text (user 2026-10-16).
+  // bottom. Text 1.4x Ember's, as every title text (user 2026-10-16).
   void draw(ImDrawList* dl, ImVec2 screen, float x, float width, float rem, double now, float dt) {
     if (gone(now)) return;
     const int pct = static_cast<int>(std::round(peak_ * 100.0f));

@@ -1,8 +1,8 @@
 #pragma once
 
-// Pieces of Engine2's campaign screens shared by the title and the world map: the save-slot screen (src/title/main.ts
-// renderSaveSlots + GameApp's in-game saveSlots), the iron plate button (.ember-plate), the lucide icons (Engine2's own
-// SVGs, rasterised at their size on screen: render/UiArt.h uiIcon), and a campaign mission's map / scene / battle files (Engine2's newest, or the Map Editor's newer save).
+// Pieces of Ember's campaign screens shared by the title and the world map: the save-slot screen (src/title/main.ts
+// renderSaveSlots + GameApp's in-game saveSlots), the iron plate button (.ember-plate), the lucide icons (Ember's own
+// SVGs, rasterised at their size on screen: render/UiArt.h uiIcon), and a campaign mission's map / scene / battle files (Ember's newest, or the Map Editor's newer save).
 
 #include <imgui.h>
 
@@ -27,7 +27,7 @@ namespace ember {
 // What a screen knows how to start: a map with its imported scene and (when exported) its battle.
 struct MissionEntry {
   std::string id, title, place;
-  std::string draftId, briefing, objective;  // the map's own mission text (Engine2 Mission)
+  std::string draftId, briefing, objective;  // the map's own mission text (Ember Mission)
   std::filesystem::path map, scene, battle;
   std::string campaignId;  // a campaign mission (its result goes into the active save slot); empty in test mode
   // A campaign mission whose game files are not made yet (or older than its map): made from `source` as the mission opens
@@ -37,11 +37,11 @@ struct MissionEntry {
 };
 
 struct CampaignPaths {
-  std::filesystem::path engine2Public = "content/game/public";
+  std::filesystem::path artRoot = "content/assets";
   std::filesystem::path maps = "content/maps/ember";
-  std::filesystem::path scenes = "build/engine2-scenes";
-  std::filesystem::path battles = "content/engine2/battles";
-  std::filesystem::path campaign = "build/engine2-campaign";
+  std::filesystem::path scenes = "build/scenes";
+  std::filesystem::path battles = "content/data/battles";
+  std::filesystem::path campaign = "build/campaign";
 };
 
 // CSS text-transform: uppercase, for ASCII and the accented Latin letters (UTF-8 C3 A0-BE).
@@ -61,10 +61,10 @@ inline std::string upperUtf8(std::string s) {
 
 // --- the maps the Map Editor saves (MapEditorStage.h Salvar) ----------------------------------------------------------
 
-// Where they go: Engine2's own file format and names (<id><serial>.json), never in Engine2's folder.
+// Where they go: Ember's own file format and names (<id><serial>.json), never in Ember's folder.
 inline std::filesystem::path savedMapsDir() { return "content/maps/ember"; }
 
-// The highest serial of `<id>NNN.json` in a folder (Engine2 map-save-plugin nextSerial); 0 when there is none.
+// The highest serial of `<id>NNN.json` in a folder (Ember map-save-plugin nextSerial); 0 when there is none.
 inline int highestMapSerial(const std::filesystem::path& dir, const std::string& id) {
   int best = 0;
   std::error_code ec;
@@ -78,15 +78,15 @@ inline int highestMapSerial(const std::filesystem::path& dir, const std::string&
   return best;
 }
 
-// A mission's map as the game plays it: the newest saved file of its id (Engine2 mapstore latestSavedDraft), the Map
-// Editor's own save when its serial is above the one campaign.json names (Engine2's newest), else Engine2's. `own` says
+// A mission's map as the game plays it: the newest saved file of its id (Ember mapstore latestSavedDraft), the Map
+// Editor's own save when its serial is above the one campaign.json names (Ember's newest), else Ember's. `own` says
 // which; the draft's own texts replace campaign.json's when it is ours (an edit may have changed them).
 struct MissionMap {
   std::filesystem::path file;
   std::string stem;
   bool own = false;
 };
-// The Map Editor's "Ativar" (Engine2 activeVersions): the serial of an id the campaign plays instead of the newest, in
+// The Map Editor's "Ativar" (Ember activeVersions): the serial of an id the campaign plays instead of the newest, in
 // content/maps/active.json ({id: serial}); none when absent.
 inline std::filesystem::path activeMapsFile() { return "content/maps/active.json"; }
 inline std::optional<int> activeMapSerial(const std::string& id) {
@@ -95,7 +95,7 @@ inline std::optional<int> activeMapSerial(const std::string& id) {
   if (!j.is_object() || !j.contains(id) || !j[id].is_number_integer()) return std::nullopt;
   return j[id].get<int>();
 }
-inline MissionMap missionMap(const CampaignPaths& paths, const e2::CampaignMission& m) {
+inline MissionMap missionMap(const CampaignPaths& paths, const ember::CampaignMission& m) {
   if (const std::optional<int> active = activeMapSerial(m.id)) {
     const std::string stem = std::format("{}{:03}", m.id, *active);
     std::error_code ec;
@@ -129,8 +129,8 @@ inline void missionTextsFromDraft(MissionEntry& e, const std::filesystem::path& 
 
 // A campaign mission's files: its newest saved map (missionMap), the scene and battle exported from it.
 // Empty with `error` saying why when the mission cannot be played here yet.
-inline std::optional<MissionEntry> campaignMission(const e2::Campaign& campaign, const CampaignPaths& paths, const std::string& id, std::string& error) {
-  const e2::CampaignMission* m = campaign.data().mission(id);
+inline std::optional<MissionEntry> campaignMission(const ember::Campaign& campaign, const CampaignPaths& paths, const std::string& id, std::string& error) {
+  const ember::CampaignMission* m = campaign.data().mission(id);
   if (!m || (m->mapFile.empty() && !m->own)) {
     error = "A missão " + id + " não tem mapa local no projeto.";
     return std::nullopt;
@@ -153,8 +153,8 @@ inline std::optional<MissionEntry> campaignMission(const e2::Campaign& campaign,
   const auto stamp = [&](const std::filesystem::path& p) { return std::filesystem::exists(p, ec) ? std::filesystem::last_write_time(p, ec) : std::filesystem::file_time_type::min(); };
   const auto made = std::min({stamp(e.map), stamp(e.scene), stamp(e.battle)});
   // ... or older than the data they are made with: the rules (a hero added to the party, 2026-10-25: Isolde) and the catalog
-  const auto source = std::max({stamp(map.file), stamp("content/ember-classes.json"), stamp("content/engine2/battle-rules.json"),
-                                stamp("content/engine2/editor-catalog.json")});
+  const auto source = std::max({stamp(map.file), stamp("content/ember-classes.json"), stamp("content/data/battle-rules.json"),
+                                stamp("content/data/editor-catalog.json")});
   e.prepare = made == std::filesystem::file_time_type::min() || made < source;
   e.campaignId = m->id;
   return e;
@@ -181,7 +181,7 @@ inline std::optional<MissionEntry> interludeMission(const CampaignPaths& paths, 
   std::error_code ec;
   const auto stamp = [&](const std::filesystem::path& p) { return std::filesystem::exists(p, ec) ? std::filesystem::last_write_time(p, ec) : std::filesystem::file_time_type::min(); };
   const auto made = std::min({stamp(e.map), stamp(e.scene), stamp(e.battle)});
-  const auto source = std::max({stamp(file), stamp("content/ember-classes.json"), stamp("content/engine2/battle-rules.json"), stamp("content/engine2/editor-catalog.json")});
+  const auto source = std::max({stamp(file), stamp("content/ember-classes.json"), stamp("content/data/battle-rules.json"), stamp("content/data/editor-catalog.json")});
   e.prepare = made == std::filesystem::file_time_type::min() || made < source;
   e.campaignId = test ? std::string() : id;
   return e;
@@ -189,14 +189,14 @@ inline std::optional<MissionEntry> interludeMission(const CampaignPaths& paths, 
 
 // Test mode opens the campaign's exact prepared map, scene and battle. Its only gameplay differences come from the
 // fresh test save (full party at level 30) and the unlocked map picker; it never uses a second export or combat pipeline.
-inline std::optional<MissionEntry> campaignMission(const e2::Campaign& campaign, const CampaignPaths& paths, const std::string& id, std::string& error);
-inline std::optional<MissionEntry> testMission(const e2::Campaign& campaign, const CampaignPaths& paths, const std::string& id, std::string& error) {
+inline std::optional<MissionEntry> campaignMission(const ember::Campaign& campaign, const CampaignPaths& paths, const std::string& id, std::string& error);
+inline std::optional<MissionEntry> testMission(const ember::Campaign& campaign, const CampaignPaths& paths, const std::string& id, std::string& error) {
   std::optional<MissionEntry> entry = campaignMission(campaign, paths, id, error);
   if (entry) entry->campaignId.clear();
   return entry;
 }
 
-// Engine2's ember-plate face (shadow, hover glow, bevel, border) over [a, b]: paint only, no ImGui item.
+// Ember's ember-plate face (shadow, hover glow, bevel, border) over [a, b]: paint only, no ImGui item.
 inline void emberPlateFace(ImDrawList* dl, ImVec2 a, ImVec2 b, bool hover) {
   for (int i = 6; i >= 1; --i) {
     const float spread = 1.5f * static_cast<float>(i);
@@ -216,7 +216,7 @@ inline void emberPlateFace(ImDrawList* dl, ImVec2 a, ImVec2 b, bool hover) {
   }
   dl->AddRect(a, b, hover ? IM_COL32(226, 170, 100, 217) : IM_COL32(190, 150, 95, 115), 2.0f);
 }
-// Engine2's ember-plate as a button with its own face painted by `paint(drawList, min, max, ink)`.
+// Ember's ember-plate as a button with its own face painted by `paint(drawList, min, max, ink)`.
 template <typename Paint>
 bool emberPlate(const char* id, ImVec2 size, Paint paint, bool disabled = false) {
   ImGui::BeginDisabled(disabled);
@@ -241,7 +241,7 @@ inline bool emberTextPlate(const char* id, ImVec2 size, const char* label, float
       disabled);
 }
 
-// lucide icons: `size` = the icon's 24-unit box (Engine2's size-4 = 16), centred on `c`.
+// lucide icons: `size` = the icon's 24-unit box (Ember's size-4 = 16), centred on `c`.
 inline void iconX(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "x", c, s, ink); }
 inline void iconCheck(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "check", c, s, ink); }
 inline void iconLock(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "lock", c, s, ink); }
@@ -275,11 +275,11 @@ inline bool worldMapZoomBox(ImVec2 size, int& zoom, bool inert = false, int stop
 }
 inline void iconChevronLeft(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "chevron-left", c, s, ink); }
 inline void iconChevronRight(ImDrawList* dl, ImVec2 c, float s, ImU32 ink) { uiIcon(dl, "chevron-right", c, s, ink); }
-// lucide Volume2 / VolumeX (Engine2's sound buttons).
+// lucide Volume2 / VolumeX (Ember's sound buttons).
 inline void iconSound(ImDrawList* dl, ImVec2 c, float s, ImU32 ink, bool on) { uiIcon(dl, on ? "volume-2" : "volume-x", c, s, ink); }
 
-// Engine2's sound button (onMute: Volume2 / VolumeX on a plate): flips audio.ts muted, the same switch as Opções'
-// Silenciar, saved with the player's choices. `size` = the plate, `icon` = the icon (Engine2 size-10 + size-4: 40, 16);
+// Ember's sound button (onMute: Volume2 / VolumeX on a plate): flips audio.ts muted, the same switch as Opções'
+// Silenciar, saved with the player's choices. `size` = the plate, `icon` = the icon (Ember size-10 + size-4: 40, 16);
 // gold: .ember-icon-btn's gold icon (title, briefing) instead of the plate's light one.
 // It shows what is heard: off while muted or with Opções' Música at 0; a touch on "off" brings the music back (unmuted, and
 // Música back to full when it was at 0: the user, 2026-10-20, the icon "not working" with Música at 0), on "on" mutes.
@@ -301,7 +301,7 @@ inline bool soundButton(const char* id, ImVec2 size, float icon, bool gold = fal
   return true;
 }
 
-// The six save slots (Engine2 title.css .save-slot*): "Nova campanha" (writes a fresh campaign, an occupied slot asks for
+// The six save slots (Ember title.css .save-slot*): "Nova campanha" (writes a fresh campaign, an occupied slot asks for
 // a second touch), "Carregar campanha" (selects a slot) or "Salvar campanha" (writes the running campaign into a slot,
 // same overwrite touch). draw() returns the slot chosen once the action is done, or -1.
 class SlotScreen {
@@ -316,13 +316,13 @@ class SlotScreen {
   Mode mode() const { return mode_; }
 
   // `back` true when Voltar was pressed. `current` is the running campaign for Save.
-  int draw(ImVec2 size, float rem, e2::Campaign& campaign, const std::filesystem::path& engine2Public, bool& back, const e2::Json* current = nullptr) {
+  int draw(ImVec2 size, float rem, ember::Campaign& campaign, const std::filesystem::path& artRoot, bool& back, const ember::Json* current = nullptr) {
     back = false;
     int chosen = -1;
     ImDrawList* dl = ImGui::GetWindowDrawList();
     const ImVec2 a{0, 0}, b = size;
     dl->AddRectFilled(a, b, IM_COL32(8, 10, 13, 255));
-    if (const UiImage* board = uiImage(engine2Public / "game/ui/old-ember-save-board.png")) imageCover(dl, *board, a, b, 0.5f, 0.5f);
+    if (const UiImage* board = uiImage(artRoot / "game/ui/old-ember-save-board.png")) imageCover(dl, *board, a, b, 0.5f, 0.5f);
     dl->AddRectFilled(a, b, IM_COL32(0, 0, 0, 51));
     const float title = std::clamp(size.x * 0.04f, 1.45f * rem, 1.9f * rem);
     const float headerH = 0.75f * rem + 0.65f * rem * 1.2f + 0.25f * rem + title + 0.3f * rem + 0.78f * rem * 1.35f + 0.75f * rem;
@@ -343,7 +343,7 @@ class SlotScreen {
     dl->AddText(uiFont(UiFont::Ui), 0.78f * rem, {hx, hy}, IM_COL32(196, 183, 164, 255),
                 (mode_ == Mode::Load ? tr("O último usado vem marcado. Escolha uma campanha para continuar.", "The last used slot is marked. Choose a campaign to continue.")
                                      : tr("Escolha um espaço. Um espaço ocupado será substituído.", "Choose a slot. An occupied slot will be overwritten.")).c_str());
-    const e2::SaveBank& bank = campaign.bank();
+    const ember::SaveBank& bank = campaign.bank();
     const int cols = size.x >= 640.0f ? 3 : 2;
     const float gapC = (cols == 3 ? 0.75f : 0.5f) * rem;
     const float listW = std::min(64.0f * rem, size.x - 1.5f * rem);
@@ -354,8 +354,8 @@ class SlotScreen {
     const float top = headerH + std::max(0.75f * rem, (size.y - headerH - listH) * 0.5f);
     const bool any = campaign.hasAnySave();
     for (size_t i = 0; i < bank.slots.size(); ++i) {
-      const std::optional<e2::Json>& slot = bank.slots[i];
-      const bool empty = !e2::Campaign::occupied(slot);
+      const std::optional<ember::Json>& slot = bank.slots[i];
+      const bool empty = !ember::Campaign::occupied(slot);
       const bool last = static_cast<int>(i) == bank.lastSlot && any && !empty;
       const bool confirming = overwrite_ == static_cast<int>(i);
       const bool disabled = mode_ == Mode::Load && empty;
@@ -378,10 +378,10 @@ class SlotScreen {
       if (last) dl->AddRectFilled(p, {p.x + 3.0f, q.y}, IM_COL32(217, 98, 28, 255));
       const int fade = disabled ? 128 : 255;
       auto ink = [&](int rr, int gg, int bb) { return IM_COL32(rr, gg, bb, fade); };
-      const e2::SlotProgress progress = campaign.progress(slot);
+      const ember::SlotProgress progress = campaign.progress(slot);
       const std::string name = empty ? tr("Vazio", "Empty") : progress.title;
       const std::string detail = empty ? tr("Nenhuma campanha salva", "No saved campaign") : progress.detail;
-      const std::string date = empty ? std::string() : e2::Campaign::formatSaveDate(slot->value("updatedAt", 0.0));
+      const std::string date = empty ? std::string() : ember::Campaign::formatSaveDate(slot->value("updatedAt", 0.0));
       const float inner = cardW - 2.0f * rem;
       ImFont* ui = uiFont(UiFont::Ui);
       const ImVec2 detailSize = ui->CalcTextSizeA(0.76f * rem, FLT_MAX, inner, detail.c_str());
@@ -430,15 +430,15 @@ class SlotScreen {
   }
 
   // main.ts chooseSaveSlot (New / Load) and GameApp's save-mode pick (Save). True when the bank was written.
-  bool choose(int index, e2::Campaign& campaign, const e2::Json* current = nullptr) {
+  bool choose(int index, ember::Campaign& campaign, const ember::Json* current = nullptr) {
     const int number = index + 1;
     overwrite_ = -1;
     if (mode_ == Mode::New) {
-      e2::Json save = campaign.emptySave();
+      ember::Json save = campaign.emptySave();
       save["pendingMission"] = "vau";
       save["mapMode"] = "rpg";
       if (!campaign.writeSlot(index, std::move(save))) {
-        status_ = tr("Não foi possível gravar o espaço", "The slot could not be saved") + " (" + e2::Campaign::savePath().string() + ").";
+        status_ = tr("Não foi possível gravar o espaço", "The slot could not be saved") + " (" + ember::Campaign::savePath().string() + ").";
         return false;
       }
       status_ = uiEnglish() ? std::format("Campaign created and saved in slot {}.", number) : std::format("Campanha criada e salva no espaço {}.", number);
@@ -453,12 +453,12 @@ class SlotScreen {
       status_ = uiEnglish() ? std::format("Campaign saved in slot {}.", number) : std::format("Campanha salva no espaço {}.", number);
       return true;
     }
-    if (!e2::Campaign::occupied(campaign.bank().slots[static_cast<size_t>(index)])) return false;
+    if (!ember::Campaign::occupied(campaign.bank().slots[static_cast<size_t>(index)])) return false;
     if (!campaign.selectSlot(index)) {
       status_ = tr("Não foi possível selecionar o espaço.", "The slot could not be selected.");
       return false;
     }
-    const e2::SlotProgress p = campaign.progress(campaign.activeSave());
+    const ember::SlotProgress p = campaign.progress(campaign.activeSave());
     status_ = uiEnglish() ? std::format("Slot {} loaded: {} · {}.", number, p.title, p.detail) : std::format("Espaço {} carregado: {} · {}.", number, p.title, p.detail);
     return true;
   }
@@ -472,12 +472,12 @@ class SlotScreen {
 
 // GameApp BriefingScreen: the mission's art, its place and title, the briefing and objective, "Entrar em combate".
 // Returns 1 for Entrar, -1 for back, 0 otherwise.
-inline int drawBriefing(ImVec2 size, float rem, const MissionEntry& m, const std::filesystem::path& engine2Public) {
+inline int drawBriefing(ImVec2 size, float rem, const MissionEntry& m, const std::filesystem::path& artRoot) {
   int result = 0;
   ImDrawList* dl = ImGui::GetWindowDrawList();
   const ImVec2 a{0, 0}, b = size;
   dl->AddRectFilled(a, b, IM_COL32(28, 28, 28, 255));
-  if (const std::filesystem::path art = briefArtFile(m.draftId, engine2Public); !art.empty())
+  if (const std::filesystem::path art = briefArtFile(m.draftId, artRoot); !art.empty())
     if (const UiImage* image = uiImage(art)) {
       imageCover(dl, *image, a, b, 0.5f, 0.5f);
       verticalGradient(dl, a, b, {{0.0f, IM_COL32(17, 17, 17, 0)}, {0.5f, IM_COL32(17, 17, 17, 115)}, {1.0f, IM_COL32(17, 17, 17, 230)}});

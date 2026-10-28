@@ -1,32 +1,32 @@
 #pragma once
 
 // A real Ember map from the project's local game-data snapshot: its board and ground in both looks, its water, and its
-// scene as Engine2 places it (decoration cards, 3D models, units from the spawns; imported by
-// tools/scripts/engine2/export_scene.ts + measure_art.py), with Engine2's camera. D1 port, step by step
-// (docs/ENGINE2_AUDIT.md). Engine2 stays read-only: maps and relief grids are read from it; textures,
+// scene as Ember places it (decoration cards, 3D models, units from the spawns; imported by
+// tools/scripts/data/export_scene.ts + measure_art.py), with Ember's camera. D1 port, step by step
+// (docs/EMBER_AUDIT.md). Ember stays read-only: maps and relief grids are read from it; textures,
 // sprites and meshes come from the cooked packs (Cooker ground / sprites / meshes).
 //
-// Left button (Engine2's protected rule): hold 0.5 s, then drag to pan the board; a short click acts in the game.
+// Left button (Ember's protected rule): hold 0.5 s, then drag to pan the board; a short click acts in the game.
 // Camera (Ember's own orbit camera, 2026-10-15): opens turned -30 deg, tilted 20 deg, 30 deg lens, framing the
 // whole board. It always turns around a pivot on the ground and glides to every input. Right-drag turns and
 // tilts (5 to 89.5 deg), middle-drag grabs the ground, the wheel zooms toward the cursor, WASD/arrows slide the
 // board (the pivot stays on the board, kept in from its edges by 60% of the view: clampGoal); the eye never goes into the
-// ground or a 3D piece. The camera bar (top right, Engine2's battle HUD copied 1:1 at the user's request): Normal /
+// ground or a 3D piece. The camera bar (top right, Ember's battle HUD copied 1:1 at the user's request): Normal /
 // Tática, tilt 5 deg down / up, turn 15 deg left / right, back to the normal angle. Tática is the old-school 2D view
-// (Engine2 CameraRig.flat): straight overhead through a 1 deg lens from far away (no visible perspective), no
+// (Ember CameraRig.flat): straight overhead through a 1 deg lens from far away (no visible perspective), no
 // turning; cards and units lie flat facing up just over the highest ground, nearer rows drawn over farther ones.
 //
-// Combat (world/Battle.h, --battle-rules <map.battle.json> from tools/scripts/engine2/export_battle.ts): the left button
-// picks a unit (its card or its hex) and shows its movement reach as Engine2's battle grid does; hovering a reachable hex
-// shows the route, clicking it walks the unit there one hex per 0.22 s with Engine2's walk poses (UnitActor); "Fim do
+// Combat (world/Battle.h, --battle-rules <map.battle.json> from tools/scripts/data/export_battle.ts): the left button
+// picks a unit (its card or its hex) and shows its movement reach as Ember's battle grid does; hovering a reachable hex
+// shows the route, clicking it walks the unit there one hex per 0.22 s with Ember's walk poses (UnitActor); "Fim do
 // turno" gives every unit its movement back. Esc lets go of the unit. Foes the picked party unit can hit from where it
-// stands are marked (Engine2's target red); hovering one shows Engine2's forecast, clicking attacks: both turn to face,
+// stands are marked (Ember's target red); hovering one shows Ember's forecast, clicking attacks: both turn to face,
 // the attack pose plays, at its impact Ember's roll lands (world/Combat.h: damage, hit chance, crit, the arcane / staff
 // element), the target shows its hit or death pose and the number, then it strikes back when it can.
-// Turns are Engine2's: one battle-opening initiative roll per unit (1d20 + class bonus), a round in that order, each
+// Turns are Ember's: one battle-opening initiative roll per unit (1d20 + class bonus), a round in that order, each
 // unit once. The party's unit whose turn it is gets picked; it walks (its movement pool can be split) and strikes once;
 // a foe it can reach from any hex of its walk is marked too, and clicking it walks there and strikes. "Fim do turno"
-// ends its turn (so does striking with no movement left). Enemies take their turns on their own (Engine2 runAiFor's
+// ends its turn (so does striking with no movement left). Enemies take their turns on their own (Ember runAiFor's
 // plain branch: strike the best foe they can reach, else close in on the nearest hero; enmity picks their focus).
 // Other units can be inspected (their reach) at any time. Vitória / Derrota when one side has nobody standing.
 //
@@ -104,10 +104,10 @@ struct MapStageOptions {
   std::filesystem::path map;
   std::filesystem::path scene;  // imported scene (optional): decorations, models, units
   uint64_t spriteBudgetMb = 1024;
-  std::filesystem::path boardData = "content/engine2/board.json";
-  std::filesystem::path engine2Public = "content/game/public";
-  e2::EdgeStyle look = e2::EdgeStyle::Smooth;
-  // Captures: camera relative to Engine2's normal view, and lighting layers switched on.
+  std::filesystem::path boardData = "content/data/board.json";
+  std::filesystem::path artRoot = "content/assets";
+  ember::EdgeStyle look = ember::EdgeStyle::Smooth;
+  // Captures: camera relative to Ember's normal view, and lighting layers switched on.
   float zoom = 1.0f;          // distance divided by this
   float turnDegrees = 0.0f;   // added to the normal view's turn
   float tiltDegrees = 0.0f;   // added to its tilt
@@ -118,7 +118,7 @@ struct MapStageOptions {
   // Test lights for the proof scene: a torch carried around the party, a spell's light flying from the
   // party's caster to the nearest enemy and flashing on impact.
   bool movingLight = false, spellLight = false;
-  // Spell effects test: the hero casts this spell's visual (Engine2 kind, or "all" for each ported one in turn) at the
+  // Spell effects test: the hero casts this spell's visual (Ember kind, or "all" for each ported one in turn) at the
   // nearest enemy every kFxTestCycle seconds, visuals only (no rules); for captures with --scene-time.
   std::string fxTest;
   // Battle test (runScript): steps run through the battle bar's own calls, each checked when it has played; the
@@ -160,7 +160,7 @@ struct MapStageOptions {
   // The panel's "Fundo" at the start (-1 as the map says: its painting, or the sky without one; 0 the painting, 1 the
   // sky, 2 OFF = black; --background N): captures that must keep never-seen ground exactly black (check_fog.py) use 2.
   int background = -1;
-  // Water (2026-10-19): the panel's "Água" (0 the original = Engine2's diorama water, the default; 1 look 001 "ember";
+  // Water (2026-10-19): the panel's "Água" (0 the original = Ember's diorama water, the default; 1 look 001 "ember";
   // --water N), "Reflexo do céu" (0 OFF, 1 the sky's reflection map; --sky-reflect N) and "Nuvens" (0 OFF, 1 básica; --clouds N).
   int waterLook = 0;
   int skyReflect = 1;
@@ -170,7 +170,7 @@ struct MapStageOptions {
   // The game's own clock (the campaign's / the test world map's gameHour, 0..23): ALL the light from outside follows it, on every map but
   // the underground ones (the user, 2026-10-21: "TODA a luz externa do jogo segue o relógio de 24 horas", "SOL REAL LUA REAL LUZ REAL HORA
   // REAL NÃO EXISTE OUTRA OPÇÃO"; the map's time of day and its sun / ambient sliders only decorate and test). The panel's Hora is a test.
-  // -1: no clock given (Modo teste, the Map Editor, captures): the map's own Hora do dia (e2::mapHour, the user, 2026-10-23: "no debug
+  // -1: no clock given (Modo teste, the Map Editor, captures): the map's own Hora do dia (ember::mapHour, the user, 2026-10-23: "no debug
   // o horário que estiver no mapa"), read live, so the editor's preview follows its dropdown.
   float gameHour = -1.0f;
   int sunDisc = 1;    // the panel's "Sol": 0 real, 1 cinema (the disc the user had; default), 2 look 001 (--sun-disc N)
@@ -179,20 +179,20 @@ struct MapStageOptions {
   // The fog of war's mist bank (the numbered looks) on at the start; --mist 0 leaves only the fog of war's mask (check_fog.py
   // needs never-seen ground exactly black) while the volumetric atmosphere may stay on.
   bool mist = true;
-  // Lighting (also in the panel): 0 the old prototype day (every capture before 2026-10-15), 1 Engine2's 3D presets for
-  // the map's time of day (the floor), 2 physical sky with Engine2's strengths, 3 real (default): lux, physical camera.
+  // Lighting (also in the panel): 0 the old prototype day (every capture before 2026-10-15), 1 Ember's 3D presets for
+  // the map's time of day (the floor), 2 physical sky with Ember's strengths, 3 real (default): lux, physical camera.
   int lighting = 3;
   // Scene clock pinned to this many seconds (< 0 = real time): identical frames for paired captures.
   float sceneTime = -1.0f;
-  // Night: tonight's moon phase (Engine2's moonPhase.ts names; the campaign's: its day's, e2::campaignMoonPhase; "" = the map's own
+  // Night: tonight's moon phase (Ember's moonPhase.ts names; the campaign's: its day's, ember::campaignMoonPhase; "" = the map's own
   // Lua, else the full moon's art at the night's own strength) and where the moon's disc and light stand (see moonPlacement()); also in the panel.
   std::string moonPhase;
   int moonPath = 0;
-  // Every unit's poses (tools/scripts/engine2/export_heroes.ts output; empty = idle only): the map's own units
+  // Every unit's poses (tools/scripts/data/export_heroes.ts output; empty = idle only): the map's own units
   // play the pose chosen in the panel, each from its own catalog entry (found by the scene unit's key).
   std::filesystem::path heroes;
   int starLook = 3;  // the star field's saved look (looks/stars/README.md; also in the panel)
-  // The battle's rules and units (tools/scripts/engine2/export_battle.ts output; empty = no combat).
+  // The battle's rules and units (tools/scripts/data/export_battle.ts output; empty = no combat).
   std::filesystem::path battle;
   // A free-roam map (an explore mission: the walkable Inn) set up from the save as GameApp startBattle does: companions not
   // recruited yet are not seated there (`absentNeutrals`, by name), a party leader other than the authored walker walks in
@@ -218,16 +218,16 @@ struct MapStageOptions {
   // A campaign fight: each hero's level and XP from the save (save.ts levels / xp), by name.
   std::map<std::string, std::pair<int, int>> heroProgress;
   // ... and each hero's promotion (save.ts promotions: "warlock" / "elementalist"), by name: its class, class name and
-  // spell list in the fight (e2::setPromotion). Also --promote Name=class for tests.
+  // spell list in the fight (ember::setPromotion). Also --promote Name=class for tests.
   std::map<std::string, std::string> heroClass;
   // Modo teste's Debug: heroes who know every spell of their class at their level (the class table's row; a hero raised from 1
   // by heroProgress otherwise keeps the level-1 list), by name.
   std::set<std::string> fullSpells;
-  // ... and what each hero brings in from the save (Engine2 startBattle's roster: unitHp, bags, heroDiseases,
+  // ... and what each hero brings in from the save (Ember startBattle's roster: unitHp, bags, heroDiseases,
   // heroPoisons, heroHunger and the starving penalty).
   struct HeroState {
     std::optional<int> hp;
-    std::optional<std::array<int, 7>> bag;  // in e2::kPotionIds order
+    std::optional<std::array<int, 7>> bag;  // in ember::kPotionIds order
     bool starterBag = false;                // the save has bags but none for it: its class's starting bag
     bool diseased = false;
     std::string poison;                     // heroPoisons' tier, empty = not poisoned
@@ -239,13 +239,13 @@ struct MapStageOptions {
   std::map<std::string, HeroState> heroState;
   std::map<std::string, double> affinityScores;  // the save's party affinities (pair "A|B" -> 0..100), when a campaign fight starts
   // The world's tables, for the status sheet's Mochila / Equipar (the party's inventory over a fight).
-  const e2::Overworld* world = nullptr;
+  const ember::Overworld* world = nullptr;
   // The map editor's preview (MapEditorStage.h): the draft and its scene given in memory instead of `map` / `scene`,
   // and a left click on a hex handed to editorClick instead of played; only the camera bar is drawn.
-  std::optional<e2::MapDraft> draftData;
-  std::optional<e2::SceneData> sceneData;
+  std::optional<ember::MapDraft> draftData;
+  std::optional<ember::SceneData> sceneData;
   std::function<void(int x, int y)> editorClick;
-  // Engine2's MapPreviewCanvas gestures: a press on a unit or a decoration (the right button, or the left one when
+  // Ember's MapPreviewCanvas gestures: a press on a unit or a decoration (the right button, or the left one when
   // editorGrab says so) picks it up instead of turning the camera or painting; on release, editorRelease gets the hex
   // under the cursor and whether the pointer travelled 6 px (a drag) or not (a plain pick-up).
   std::function<bool(int x, int y, bool left)> editorGrab;
@@ -258,7 +258,7 @@ struct HeroOutcome {
   std::string name;
   int level = 1, xp = 0, hp = 0;
   int campHp = 0;            // after a victory: the HP it keeps (persistVictory: half the missing healed, or carried past a floor connector)
-  std::array<int, 7> bag{};  // in e2::kPotionIds order
+  std::array<int, 7> bag{};  // in ember::kPotionIds order
   bool diseased = false;
   std::string poison;        // empty = not poisoned
   std::optional<double> fullness;
@@ -283,8 +283,8 @@ class MapStage final : public Stage {
     lightingMode_ = std::clamp(options.lighting, 0, 3);
     moonPath_ = std::clamp(options.moonPath, 0, 2);
     starLook_ = std::clamp(options.starLook, 1, kStarLooks);
-    for (int i = 0; i < static_cast<int>(std::size(e2::kMoonPhases)); ++i)
-      if (options.moonPhase == e2::kMoonPhases[i]) moonPhase_ = i;
+    for (int i = 0; i < static_cast<int>(std::size(ember::kMoonPhases)); ++i)
+      if (options.moonPhase == ember::kMoonPhases[i]) moonPhase_ = i;
     for (uint32_t i = 0; i < fogLooks().size(); ++i)
       if (fogLooks()[i].fogOfWar && options.fogLook == std::atoi(fogLooks()[i].number)) fogLook_ = i;
     pitch_ += glm::radians(options.tiltDegrees);
@@ -308,14 +308,14 @@ class MapStage final : public Stage {
     spellsMenu_.load("content/fx/spell-looks.json", "content/fx.sprites.json");
     if (!starSky_.load("content/sky/stars.json")) logWarn("stars: content/sky/stars.json missing: the star look 'real' has no stars");
     layers_ = options.layers;
-    data_ = e2::BoardData::load(options.boardData);
-    std::optional<e2::MapDraft> draft = options.draftData ? options.draftData : e2::MapDraft::load(options.map);
+    data_ = ember::BoardData::load(options.boardData);
+    std::optional<ember::MapDraft> draft = options.draftData ? options.draftData : ember::MapDraft::load(options.map);
     if (!data_ || !draft) {
       failed_ = true;
       return;
     }
-    board_ = std::make_unique<e2::Board>(*data_, std::move(*draft));
-    if (!board_->loadRelief(options.engine2Public) || !ground_.build(*board_)) {
+    board_ = std::make_unique<ember::Board>(*data_, std::move(*draft));
+    if (!board_->loadRelief(options.artRoot) || !ground_.build(*board_)) {
       failed_ = true;
       return;
     }
@@ -323,10 +323,10 @@ class MapStage final : public Stage {
     logInfo("map {} '{}': {}x{} hexes, smooth {} triangles, hard {} triangles, {} baked layers, {} textures, {:.1f} MB geometry",
             board_->draft().id, board_->draft().title, board_->layout().cols, board_->layout().rows, s.triangles[0], s.triangles[1],
             s.layers, s.textures, s.geometryBytes / 1048576.0);
-    // Engine2's CameraRig.frame: centre on the board, far enough back to see it whole.
-    const e2::Board::Bounds b = board_->bounds();
+    // Ember's CameraRig.frame: centre on the board, far enough back to see it whole.
+    const ember::Board::Bounds b = board_->bounds();
     double avgY = 0;
-    for (const e2::Cell& c : board_->cells()) avgY += c.groundY;
+    for (const ember::Cell& c : board_->cells()) avgY += c.groundY;
     avgY /= static_cast<double>(board_->cells().size());
     target_ = {static_cast<float>((b.x0 + b.x1) / 2), static_cast<float>(avgY), static_cast<float>((b.z0 + b.z1) / 2)};
     meanGround_ = static_cast<float>(avgY);
@@ -350,7 +350,7 @@ class MapStage final : public Stage {
     boardDepth_ = static_cast<float>(b.z1 - b.z0);
     // The sun's shadow covers the board's bounding sphere (ground from y = 0 to its highest cell).
     double top = 0, low = 1e9;
-    for (const e2::Cell& c : board_->cells()) top = std::max(top, c.groundY), low = std::min(low, c.groundY);
+    for (const ember::Cell& c : board_->cells()) top = std::max(top, c.groundY), low = std::min(low, c.groundY);
     boardTop_ = static_cast<float>(top);
     groundLow_ = static_cast<float>(low);
     boardCenter_ = {target_.x, static_cast<float>(top * 0.5), target_.z};
@@ -360,22 +360,22 @@ class MapStage final : public Stage {
     if (options.fog == 1 || (options.fog < 0 && board_->draft().fog)) fog_.emplace(*board_);
 
     if (!options.scene.empty() || options.sceneData) {
-      scene_ = options.sceneData ? options.sceneData : e2::SceneData::load(options.scene);
+      scene_ = options.sceneData ? options.sceneData : ember::SceneData::load(options.scene);
       if (!scene_) {
         failed_ = true;
         return;
       }
-      // A map placing EmberEngine's own 3D props (content/models, ids "ember-*"): export_scene.ts knows only Engine2's ids and
-      // leaves them out, so its scene is built here by SceneBuilder (the same as export_scene.ts's on Engine2's maps: Cooker
+      // A map placing EmberEngine's own 3D props (content/models, ids "ember-*"): export_scene.ts knows only Ember's ids and
+      // leaves them out, so its scene is built here by SceneBuilder (the same as export_scene.ts's on Ember's maps: Cooker
       // check-scene-builder). Every other map keeps its exported scene.
       if (!options.sceneData && hasEmberProps()) {
         std::map<std::string, int> skipped;
-        scene_ = e2::buildScene(*board_, architectureCatalog(), &skipped);
+        scene_ = ember::buildScene(*board_, architectureCatalog(), &skipped);
         logInfo("scene {}: built by SceneBuilder (EmberEngine props); {} kinds left out", options.scene.generic_string(), skipped.size());
       }
       sprites_.start();
-      // 3D models: Engine2's GLBs, cooked by Cooker meshes ("/game/models/x.glb" -> "meshes/models/x.mesh").
-      for (const e2::SceneModel& m : scene_->models) {
+      // 3D models: Ember's GLBs, cooked by Cooker meshes ("/game/models/x.glb" -> "meshes/models/x.mesh").
+      for (const ember::SceneModel& m : scene_->models) {
         std::string asset = m.file.substr(std::string("/game/").size());
         asset = "meshes/" + asset.substr(0, asset.size() - 4) + ".mesh";
         if (!modelMeshes_.contains(asset)) modelMeshes_[asset] = meshes_.add(assetId(asset));
@@ -385,7 +385,7 @@ class MapStage final : public Stage {
               scene_->models.size(), scene_->units.size(), scene_->architecture, arch_.size());
       arrangeScene();
       if (options_.partyRoster)  // the campaign's party: the heroes not recruited leave, a freed hero is no longer seated as a neutral
-        std::erase_if(scene_->units, [&](const e2::SceneUnit& u) {
+        std::erase_if(scene_->units, [&](const ember::SceneUnit& u) {
           return (u.side == "player" && !options_.partyRoster->contains(u.name)) || (u.side == "neutral" && options_.partyRoster->contains(u.name));
         });
       initUnits();
@@ -394,8 +394,8 @@ class MapStage final : public Stage {
       if (!options.battle.empty()) setUpBattle(options.battle);
       pinUnitArt();
       preloadHud();
-      if (std::string own = e2::emberBackdrop(board_->draft().id); !own.empty()) scene_->backdrop = std::move(own);  // the user's art
-      if (!scene_->backdrop.empty()) ground_.requestTexture(e2::backdropAsset(scene_->backdrop));
+      if (std::string own = ember::emberBackdrop(board_->draft().id); !own.empty()) scene_->backdrop = std::move(own);  // the user's art
+      if (!scene_->backdrop.empty()) ground_.requestTexture(ember::backdropAsset(scene_->backdrop));
       // A map with a painting opens with it aligned to the sky (4; the user's "si por favor", 2026-10-19); "imagem até o horizonte"
       // (3) stays an experiment in the panel ("you will need some smarter edition for this to work"); without a painting, the sky.
       // Every other map opens on the real sky (the user, 2026-10-19: "joga o ceu em todos eu vou ir resolvendo um por um em termos de
@@ -416,8 +416,8 @@ class MapStage final : public Stage {
                                                                                                   : 1;
       if (!scene_->backdrop.empty()) backdropFit_ = loadBackdropFit(scene_->backdrop);
       if (board_->draft().groundImage) backdropFit_.ground = *board_->draft().groundImage;
-      if (!backdropFit_.ground.empty()) ground_.requestTexture(e2::backdropAsset(backdropFit_.ground));
-      if (!board_->draft().emberFloor.empty()) ground_.requestTexture(e2::backdropAsset(board_->draft().emberFloor));
+      if (!backdropFit_.ground.empty()) ground_.requestTexture(ember::backdropAsset(backdropFit_.ground));
+      if (!board_->draft().emberFloor.empty()) ground_.requestTexture(ember::backdropAsset(board_->draft().emberFloor));
       // The map's own panoramas (backdrop-fit.json "panoramas" by map id; the panel's Fundo after its five entries).
       loadMapPanoramas();
       // The newest panorama opens first on its map (aldeia: the user's fire panorama, 2026-10-19 "TERMINA").
@@ -430,7 +430,7 @@ class MapStage final : public Stage {
       // The moon's art on every map but Subterrâneo (one sky for the whole game): the watchtower draws the sky since 2026-10-22, and
       // with the art loaded only outdoors its night showed the moon's glow with no disc, a brown smudge (the user, 2026-10-23).
       if (!underground())  // the map's night, or any night of the 24 h cycle
-        for (const char* phase : e2::kMoonPhases) ground_.requestTexture(e2::skyMoonAsset(phase));  // 0.1 MB each
+        for (const char* phase : ember::kMoonPhases) ground_.requestTexture(ember::skyMoonAsset(phase));  // 0.1 MB each
     }
     if (!scene_) {
       // Random encounters can be board-only maps with no scene file. Load their map-specific panoramas anyway.
@@ -582,7 +582,7 @@ class MapStage final : public Stage {
               roomDrop());
     }
     // Tática: straight down from far away through the long lens, framing what the normal lens frames at this distance;
-    // the top of the screen is the board's far side (-z). Its near plane hugs the board (Engine2: distance - 200).
+    // the top of the screen is the board's far side (-z). Its near plane hugs the board (Ember: distance - 200).
     // The action camera's lift raises the eye and the look point together (the figures' chests at the centre of a close shot).
     const float flatDistance = cam_.distance * std::tan(glm::radians(kFov * 0.5f)) / std::tan(glm::radians(kFlatFov * 0.5f));
     const Camera camera = flat_ ? Camera::lookAt(cam_.target + glm::vec3(0.0f, flatDistance, 0.0f), cam_.target, glm::radians(kFlatFov), aspect,
@@ -631,11 +631,11 @@ class MapStage final : public Stage {
     }
     const size_t spellLightsFrom = lights_.size();  // the effects' and the casters' lights: the brightest casts the spell shadow
     for (const SpellEffects::Light& l : fxLights_)
-      lights_.push_back(engine2Light(offCard(l.at, camera.forward), l.color, l.intensity * kE2Strength, std::hypot(l.radius, l.height) * 2.5f, 1.25f));
-    // Engine2 Battle3D syncCastLight: a point of light at a caster's hands while it casts (Malrec: blue on every spell, yellow on
+      lights_.push_back(classicLight(offCard(l.at, camera.forward), l.color, l.intensity * kE2Strength, std::hypot(l.radius, l.height) * 2.5f, 1.25f));
+    // Ember Battle3D syncCastLight: a point of light at a caster's hands while it casts (Malrec: blue on every spell, yellow on
     // his attacks and counters). It stands 0.6 of the card up and 0.45 in front of the card, toward the camera, so it lights the
     // caster himself (the user, 2026-10-18: "a luz tem que ser em MALREC não no chão"; inside the card's own plane it lit only the
-    // ground). In at 5 / s, out at 2.5 / s, Engine2's flicker.
+    // ground). In at 5 / s, out at 2.5 / s, Ember's flicker.
     for (size_t i = 0; i < glows_.size();) {
       const UnitGlow& g = glows_[i];
       if (time > g.end + 0.4f || g.ui >= unitCard_.size()) {
@@ -647,7 +647,7 @@ class MapStage final : public Stage {
         const float glow = std::clamp((time - g.start) * 5.0f, 0.0f, 1.0f) * std::clamp(1.0f - (time - g.end) * 2.5f, 0.0f, 1.0f);
         const glm::vec3 hands = c.origin + cardUp(c) * (0.6f * c.height) - camera.forward * 0.45f;
         const float flick = 0.92f + std::sin(time * 1000.0f / 70.0f) * 0.08f;
-        lights_.push_back(engine2Light(hands, g.color, kCastLight * glow * flick, kCastLightReach, kCastLightDecay));
+        lights_.push_back(classicLight(hands, g.color, kCastLight * glow * flick, kCastLightReach, kCastLightDecay));
       }
       ++i;
     }
@@ -663,12 +663,12 @@ class MapStage final : public Stage {
       }
       if (best < lights_.size() && board_ && !flat_) {
         const glm::vec3 at = lights_[best].position;
-        renderer.setLocalShadow(at, lights_[best].range, static_cast<float>(e2::groundHeightAt(*board_, look_, at.x, at.z)));
+        renderer.setLocalShadow(at, lights_[best].range, static_cast<float>(ember::groundHeightAt(*board_, look_, at.x, at.z)));
       } else {
         renderer.setLocalShadow(std::nullopt, 0.0f, 0.0f);
       }
     }
-    // Engine2 UNIT_LIGHT_DEFS: units that carry their own light (the familiars, the swamp calf), on the body, walking with it.
+    // Ember UNIT_LIGHT_DEFS: units that carry their own light (the familiars, the swamp calf), on the body, walking with it.
     for (size_t i = 0; scene_ && i < scene_->units.size() && i < unitCard_.size(); ++i) {
       const auto def = kUnitLights.find(scene_->units[i].classId);
       if (def == kUnitLights.end() || !unitCard_[i].drawn) continue;  // (not fire: the familiars' / the calf's glow)
@@ -676,9 +676,9 @@ class MapStage final : public Stage {
       const UnitLightDef& d = def->second;
       const glm::vec3 feet = unitWorld(i);
       const float flick = flicker(time, static_cast<float>(i) * 1.7f, d.flicker);
-      // Engine2 CarriedLight: strength x 3.2, decay 1.25, cut off at hypot(radius, 1) x 2.5, one unit above the feet.
+      // Ember CarriedLight: strength x 3.2, decay 1.25, cut off at hypot(radius, 1) x 2.5, one unit above the feet.
       for (const glm::vec3& o : unitLightSpots(i, d))  // (x, z, radius) around the feet
-        lights_.push_back(engine2Light(feet + glm::vec3(o.x, 1.0f, o.y), d.color, d.intensity * kE2Strength * flick, std::hypot(o.z, 1.0f) * 2.5f, 1.25f));
+        lights_.push_back(classicLight(feet + glm::vec3(o.x, 1.0f, o.y), d.color, d.intensity * kE2Strength * flick, std::hypot(o.z, 1.0f) * 2.5f, 1.25f));
     }
     laps.lap("effects");
     renderer.setEffects(effectList_);
@@ -705,7 +705,7 @@ class MapStage final : public Stage {
       float openness = 1.0f;
       if (!doors_.empty()) {
         openness = 0.0f;
-        for (const auto& [index, d] : doors_) openness += d.angle / static_cast<float>(e2::kEmberDoorOpenRadians);
+        for (const auto& [index, d] : doors_) openness += d.angle / static_cast<float>(ember::kEmberDoorOpenRadians);
         openness /= static_cast<float>(doors_.size());
       }
       renderer.setProbeOpenness(openness);
@@ -764,7 +764,7 @@ class MapStage final : public Stage {
         const int phase = moonPhaseIndex();
         logInfo("sky: hour {:.2f}, moon {} (disc texture {}, radius {:.2f} deg, glow {:.2f}) at elevation {:.1f} deg, azimuth {:.1f} deg (the camera looks at "
                 "azimuth {:.1f}, elevation {:.1f}), {}",
-                cycleHour(now_), phase < 0 ? "full (default)" : e2::kMoonPhases[phase], lighting.moonTexture, glm::degrees(lighting.moonRadius),
+                cycleHour(now_), phase < 0 ? "full (default)" : ember::kMoonPhases[phase], lighting.moonTexture, glm::degrees(lighting.moonRadius),
                 lighting.moonGlow, glm::degrees(std::asin(std::clamp(m.y, -1.0f, 1.0f))),
                 glm::degrees(std::atan2(m.x, m.z)), glm::degrees(std::atan2(lastCamera_.forward.x, lastCamera_.forward.z)),
                 glm::degrees(std::asin(std::clamp(lastCamera_.forward.y, -1.0f, 1.0f))),
@@ -847,7 +847,7 @@ class MapStage final : public Stage {
     // the look adds a halo round the moon.
     if (lighting.sunDisc) lighting.sunRadius = sunSize_ >= 1 ? glm::radians(kMoonSizes[0]) : 0.0f;
     lighting.sunLook = sunSize_ == 2 ? 1u : 0u;
-    // Tática looks from far above: no air between the eye and the board (Engine2 drops its distance fog there).
+    // Tática looks from far above: no air between the eye and the board (Ember drops its distance fog there).
     if (flat_) lighting.kmPerUnit = 0.0f;
     renderer.setMeshes(scene_ ? meshes_.view() : MeshSceneView{}, lighting);
     renderer.setTerrain(ground_.view(look_));
@@ -899,7 +899,7 @@ class MapStage final : public Stage {
       // The real night sky (render/StarSky.h): the catalogue turned to this hour's sidereal time (the cycle's hour, or 22 h on a
       // map whose own time is night, 12 h by day: the stars then hide behind the daylight anyway).
       if (starSky_.loaded() && starLook_ == 4 && !starsOff_) {
-        const bool mapNight = scene_ && e2::timeOfDay(scene_->timeOfDay).moon;
+        const bool mapNight = scene_ && ember::timeOfDay(scene_->timeOfDay).moon;
         const float hour = clockOn() ? cycleHour(now_) : mapNight ? 22.0f + std::fmod(now_ / 600.0f, 2.0f) : 12.0f;
         const float lst = starSky_.siderealHours(hour);
         const std::vector<GpuStar> stars = starSky_.gpuStars(lst);
@@ -930,12 +930,12 @@ class MapStage final : public Stage {
       // desenhada de fora"): nothing outside is drawn, only the light comes in through the openings. Beyond the walls: the map's own
       // ground image (MapDraft::emberFloor; the watchtower's background, the user: "usar ele de imagem de GROUND"; the panel's "Chão do
       // vão") flat at the board's base with black above the horizon (mode 7), or black alone.
-      const e2::MapDraft& draft = board_->draft();
+      const ember::MapDraft& draft = board_->draft();
       Renderer::BackdropPlane plane;
-      if (!draft.emberFloor.empty() && floorChoice_ == 1) plane.texture = ground_.textureIndex(e2::backdropAsset(draft.emberFloor));
+      if (!draft.emberFloor.empty() && floorChoice_ == 1) plane.texture = ground_.textureIndex(ember::backdropAsset(draft.emberFloor));
       if (plane.texture != kNoTextureIndex) {
         // at the board's own base (as the outdoor ground plane above), emberFloorDepth further down
-        plane.y = (look_ == e2::EdgeStyle::Smooth ? groundLow_ - 0.35f : std::min(0.0f, groundLow_)) - draft.emberFloorDepth;
+        plane.y = (look_ == ember::EdgeStyle::Smooth ? groundLow_ - 0.35f : std::min(0.0f, groundLow_)) - draft.emberFloorDepth;
         plane.tile = draft.emberFloorTile;
         // Mode 7: the floor image flat at the base; above the horizon resolve_panorama.hlsl draws the one sky (seen through the windows
         // and the doors: the user, 2026-10-23, "there is no sky or lights on the windows"); the Inn's resolve.hlsl keeps black there.
@@ -950,8 +950,8 @@ class MapStage final : public Stage {
       const int panorama = background_ - 5;  // 5.. = the map's own panoramas, aligned to the sky like 4, keeping their own sky
       const bool isPanorama = panorama >= 0 && panorama < static_cast<int>(panoramas_.size());
       const bool painting = isPanorama || (background_ != 1 && background_ != 2 && scene_ && !scene_->backdrop.empty());
-      if (painting && !isPanorama) bg = ground_.textureIndex(e2::backdropAsset(scene_->backdrop));
-      if (isPanorama) bg = ground_.textureIndex(e2::backdropAsset(panoramaFile(panoramas_[static_cast<size_t>(panorama)])));
+      if (painting && !isPanorama) bg = ground_.textureIndex(ember::backdropAsset(scene_->backdrop));
+      if (isPanorama) bg = ground_.textureIndex(ember::backdropAsset(panoramaFile(panoramas_[static_cast<size_t>(panorama)])));
       if (painting && background_ >= 4) {
         // The painting aligned to the sky (backdrop-fit.json): its own sun glow turned under the real key light.
         const BackdropFit& fit = isPanorama ? panoramaFits_[static_cast<size_t>(panorama)] : backdropFit_;
@@ -971,20 +971,20 @@ class MapStage final : public Stage {
         // At the board's own base, so the board stands on it (the user, 2026-10-19: "o tabuleiro tem que encostar na imagem do chão,
         // no momento parece que ele flutua"; it was 1.5 under the lowest ground): the hard / tabletop walls end at min(0, lowest
         // ground) (GroundMesh), the smooth look's cut edge drops kEdgeLip (0.35) under its ground.
-        const float boardBase = look_ == e2::EdgeStyle::Smooth ? groundLow_ - 0.35f : std::min(0.0f, groundLow_);
+        const float boardBase = look_ == ember::EdgeStyle::Smooth ? groundLow_ - 0.35f : std::min(0.0f, groundLow_);
         plane.y = boardBase - fit.groundDepth;
         // ... and with the floor image laid further under the base (`groundDepth`, the user, 2026-10-22: "o chão mais baixo"), the
         // board's sides go down to it (the user, 2026-10-23: "o tabuleiro precisa sempre encostar no ground em todos os mapas, não
         // existe exceção"; terrain.hlsl boardDropAt). Only the fit's own depth: a draft's emberFloor (a bridge's gorge) is not a floor.
         renderer.setBoardDrop(boardBase, fit.ground.empty() ? 0.0f : fit.groundDepth);
-        if (!fit.ground.empty()) plane.texture = ground_.textureIndex(e2::backdropAsset(fit.ground));
+        if (!fit.ground.empty()) plane.texture = ground_.textureIndex(ember::backdropAsset(fit.ground));
         plane.tile = fit.groundTile;
         plane.from = fit.groundFromDegrees;
         // Tática looks straight down from far away: the ground image is the whole view ("desse ângulo é essa imagem e nada mais").
         plane.far = flat_ ? 1.0e9f : fit.groundFar;
         // A room's drawn ceiling where the sky would show (the tavern's floors, the user, 2026-10-22).
         if (!fit.ceilingImage.empty()) {
-          plane.ceilingTexture = ground_.textureIndex(e2::backdropAsset(fit.ceilingImage));
+          plane.ceilingTexture = ground_.textureIndex(ember::backdropAsset(fit.ceilingImage));
           plane.ceilingHeight = fit.ceilingHeight;
           plane.ceilingTile = fit.ceilingTile;
           // the painting projected onto a real room around the board: its round wall just outside the board, the painting's eye at a
@@ -1002,7 +1002,7 @@ class MapStage final : public Stage {
         const bool whole = fit.whole || (!aldeia() && !isPanorama);
         // A map whose draft lays its painting flat far under the board (MapDraft::emberFloor, A Ponte de Pedra 023): mode 6, the panel's
         // "Chão do vão" (OFF = mode 5 as every other map).
-        const e2::MapDraft& draft = board_->draft();
+        const ember::MapDraft& draft = board_->draft();
         const bool floor = !draft.emberFloor.empty() && floorChoice_ == 1 && !isPanorama;
         // A room's panorama with a drawn ceiling (the tavern's floors, the user, 2026-10-22): mode 8 (resolve.hlsl roomBackground), the
         // painting from its horizon row down, its ground image around the board, the ceiling above the horizon (the game's camera never
@@ -1012,7 +1012,7 @@ class MapStage final : public Stage {
         if (roomCeiling) plane.far = flat_ ? 1.0e9f : fit.groundFar;
         if (floor) {
           plane.y = groundLow_ - draft.emberFloorDepth;
-          plane.texture = ground_.textureIndex(e2::backdropAsset(draft.emberFloor));
+          plane.texture = ground_.textureIndex(ember::backdropAsset(draft.emberFloor));
           plane.tile = draft.emberFloorTile;
           plane.far = flat_ ? 1.0e9f : 900.0f;
         }
@@ -1060,7 +1060,7 @@ class MapStage final : public Stage {
     bank.scene.meanGround = meanGround_;
     bank.scene.groundLow = groundLow_;
     bank.scene.groundHigh = boardTop_;
-    const e2::Board::Bounds bb = board_->bounds();
+    const ember::Board::Bounds bb = board_->bounds();
     bank.scene.board = {bb.x0, bb.z0, bb.x1, bb.z1};
     bank.scene.partyCenter = partyCenter();
     renderer.setFogBank(bank);
@@ -1108,7 +1108,7 @@ class MapStage final : public Stage {
     if (options_.editorGrab && e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && (e.button.button == SDL_BUTTON_RIGHT || e.button.button == SDL_BUTTON_LEFT) &&
         !(ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureMouse)) {
       const bool left = e.button.button == SDL_BUTTON_LEFT;
-      if (const std::optional<e2::BattleHex> hex = pick(e.button.windowID, e.button.x, e.button.y); hex && options_.editorGrab(hex->x, hex->y, left)) {
+      if (const std::optional<ember::BattleHex> hex = pick(e.button.windowID, e.button.x, e.button.y); hex && options_.editorGrab(hex->x, hex->y, left)) {
         editorHold_ = EditorHold{e.button.button, e.button.x, e.button.y, false};
         return;
       }
@@ -1119,14 +1119,14 @@ class MapStage final : public Stage {
         return;
       }
       if (e.type == SDL_EVENT_MOUSE_BUTTON_UP && e.button.button == editorHold_->button) {
-        const std::optional<e2::BattleHex> hex = pick(e.button.windowID, e.button.x, e.button.y);
+        const std::optional<ember::BattleHex> hex = pick(e.button.windowID, e.button.x, e.button.y);
         const bool moved = editorHold_->moved;
         editorHold_.reset();
         if (options_.editorRelease) options_.editorRelease(hex ? std::optional<std::pair<int, int>>({hex->x, hex->y}) : std::nullopt, moved);
         return;
       }
     }
-    // Left button, Engine2's protected rule (cameraRig): held still for 0.5 s it arms panning (the grabbing hand) and
+    // Left button, Ember's protected rule (cameraRig): held still for 0.5 s it arms panning (the grabbing hand) and
     // the board then follows the drag; a short click (released before, within 5 px) is a game click.
     if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && e.button.button == SDL_BUTTON_LEFT)
       leftDown_ = LeftPress{e.button.x, e.button.y, std::chrono::steady_clock::now()};
@@ -1184,7 +1184,7 @@ class MapStage final : public Stage {
     }
   }
 
-  // The left button held still long enough arms the pan (called every frame). Engine2's gauntlet shows while the
+  // The left button held still long enough arms the pan (called every frame). Ember's gauntlet shows while the
   // board is held: the armed left button, or the middle button's grab.
   void updatePanHold() {
     if (leftDown_ && !panning_ && std::chrono::steady_clock::now() - leftDown_->at >= std::chrono::milliseconds(kHoldMs)) panning_ = true;
@@ -1240,7 +1240,7 @@ class MapStage final : public Stage {
   float solidGroundDistance() const {
     const auto* fit = groundFit();
     const float fromDegrees = fit ? fit->groundFromDegrees : 3.0f, far = fit ? fit->groundFar : 300.0f, depth = fit ? fit->groundDepth : 0.0f;
-    const float planeY = (look_ == e2::EdgeStyle::Smooth ? groundLow_ - 0.35f : std::min(0.0f, groundLow_)) - depth;
+    const float planeY = (look_ == ember::EdgeStyle::Smooth ? groundLow_ - 0.35f : std::min(0.0f, groundLow_)) - depth;
     const float minDepression = glm::radians(fromDegrees * 2.5f), maxRay = far * 0.55f;
     // The board's near edge: from the pivot toward the eye, to the board's rectangle (0 when the pivot is already off the board).
     const glm::vec2 toEye{std::sin(yaw_), std::cos(yaw_)};
@@ -1307,7 +1307,7 @@ class MapStage final : public Stage {
   // The ground at (x, z) the eye keeps above: the board's ground, or the floor round it. Only the ground (the user, 2026-10-25: a 3D
   // piece under the eye lifted and stopped the camera, a rule nobody asked for; pieceBoxes_ are kept, unused here).
   float clearanceAt(float x, float z) const {
-    const e2::Board::Bounds b = board_->bounds();
+    const ember::Board::Bounds b = board_->bounds();
     return x < b.x0 || x > b.x1 || z < b.z0 || z > b.z1 ? groundLow_ : groundAt(x, z);
   }
   // The ground point under a window position (window coordinates), on the pivot's level; none above the horizon.
@@ -1342,7 +1342,7 @@ class MapStage final : public Stage {
   // The window shows only the choices, in plain Portuguese words, large (user, 2026-10-15: "the only information I
   // want on that screen are the CHOICES, very visible"; no numbers, no statistics). Look numbers stay in the code
   // and the looks/ READMEs.
-  // Engine2's ember-plate (src/ember-ui/styles.css): a near-black gradient (rgba 28,28,28,.94 to 10,10,10,.95), a 1 px
+  // Ember's ember-plate (src/ember-ui/styles.css): a near-black gradient (rgba 28,28,28,.94 to 10,10,10,.95), a 1 px
   // gold border (190,150,95,.45) inside a 1 px black ring, an 8 px inner shadow, a soft drop shadow 6 px down, 2 px
   // corners; on hover the text turns #ffe0b4, the border (226,170,100,.85) and an orange glow (255,110,40,.3) come on.
   // paint(drawList, min, max, ink) draws the face. True when clicked.
@@ -1374,11 +1374,11 @@ class MapStage final : public Stage {
     return clicked;
   }
 
-  // A lucide icon at 14 px (Engine2: size-3.5), centred on the button.
+  // A lucide icon at 14 px (Ember: size-3.5), centred on the button.
   static auto barIcon(const char* name) {
     return [name](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32 ink) { uiIcon(dl, name, {(a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f}, 14.0f, ink); };
   }
-  // Text with Engine2's 0.14 em letter spacing (tracking-[0.14em]), one glyph at a time.
+  // Text with Ember's 0.14 em letter spacing (tracking-[0.14em]), one glyph at a time.
   static float spacedWidth(const char* text) {
     float w = 0.0f;
     int glyphs = 0;
@@ -1401,9 +1401,9 @@ class MapStage final : public Stage {
     }
   }
 
-  // The camera bar, top right: Engine2's battle HUD (GameApp.tsx), copied 1:1 at the user's request (2026-10-15).
+  // The camera bar, top right: Ember's battle HUD (GameApp.tsx), copied 1:1 at the user's request (2026-10-15).
   // Normal / Tática (the 2D view), tilt down / up 5 deg, turn left / right 15 deg, back to the normal angle (leaves
-  // Tática; zoom and pan stay, like Engine2's resetAngle). Each click glides.
+  // Tática; zoom and pan stay, like Ember's resetAngle). Each click glides.
   void drawCameraBar() {
     const ImGuiIO& io = ImGui::GetIO();
     // The window's padding (room for the shadow) sits outside the 8 px inset.
@@ -1415,7 +1415,7 @@ class MapStage final : public Stage {
                  ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground |
                      ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoSavedSettings);
     ImGui::PushFont(nullptr, kPlateText);
-    // Engine2: h-7 px-2, 10 px uppercase, letter spacing 0.14 em.
+    // Ember: h-7 px-2, 10 px uppercase, letter spacing 0.14 em.
     const char* label = flat_ ? "TÁTICA" : "NORMAL";
     if (plate("##view", {spacedWidth(label) + 16.0f, kPlate}, [&](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32 ink) {
           const float w = spacedWidth(label);
@@ -1438,7 +1438,7 @@ class MapStage final : public Stage {
       yaw_ = homeYaw_ + twoPi * std::round((yaw_ - homeYaw_) / twoPi);
       pitch_ = homePitch_;
     }
-    if (!options_.editorClick) {  // a battle: Engine2's Som and Opções (onPause: the battle's Esc menu) end the bar
+    if (!options_.editorClick) {  // a battle: Ember's Som and Opções (onPause: the battle's Esc menu) end the bar
       ImGui::SameLine();
       GamePrefs& prefs = gamePrefs();
       if (plate("##sound", {kPlate, kPlate}, barIcon(prefs.muted ? "volume-x" : "volume-2"))) prefs.muted = !prefs.muted, prefs.save();
@@ -1456,7 +1456,7 @@ class MapStage final : public Stage {
     ImGui::PopStyleVar(3);
   }
 
-  // Tática on / off (Engine2 DioramaView.setFlat + Battle3D): leaving it lands on the normal view's angle at once;
+  // Tática on / off (Ember DioramaView.setFlat + Battle3D): leaving it lands on the normal view's angle at once;
   // zoom and pan stay where they are.
   void setFlat(bool on) {
     if (on == flat_) return;
@@ -1518,7 +1518,7 @@ class MapStage final : public Stage {
     {
       int look = static_cast<int>(look_);
       static const char* kLooks[3] = {"suave", "hexágonos", "mesa"};
-      if (dropdown("Chão", look, 3, [](int i) { return std::string(kLooks[i]); })) look_ = static_cast<e2::EdgeStyle>(look);
+      if (dropdown("Chão", look, 3, [](int i) { return std::string(kLooks[i]); })) look_ = static_cast<ember::EdgeStyle>(look);
     }
     {
       // 3 = the painting up to the world's horizon, the real sky above it (the user, 2026-10-19: "a imagem de fundo pode
@@ -1565,12 +1565,12 @@ class MapStage final : public Stage {
     if (battle_) {
       // The Mago Negro's path (test mode): the party's black mages as Mago Negro, Elementalista or Bruxo, live (the
       // campaign chooses it on the world map's Party screen and brings it in the save).
-      for (e2::BattleUnit& u : battle_->units()) {
+      for (ember::BattleUnit& u : battle_->units()) {
         if (u.side != "player" || !(u.classId == "mage" || u.classId == "voss" || u.classId == "elementalist" || u.classId == "warlock")) continue;
         static const char* kPaths[3] = {"Mago Negro", "Elementalista", "Bruxo"};
         static const char* kIds[3] = {"mage", "elementalist", "warlock"};
         int path = u.classId == "elementalist" ? 1 : u.classId == "warlock" ? 2 : 0;
-        if (dropdown(u.name.c_str(), path, 3, [](int i) { return std::string(kPaths[i]); })) e2::setPromotion(u, kIds[path]);
+        if (dropdown(u.name.c_str(), path, 3, [](int i) { return std::string(kPaths[i]); })) ember::setPromotion(u, kIds[path]);
       }
       // Health bars and numbers of the units near the camera: shown always, or fading away as their card fills the
       // screen (drawHealthBars).
@@ -1600,12 +1600,12 @@ class MapStage final : public Stage {
       dropdown("Raios de luz", shafts_, 2, [](int i) { return std::string(kLook[i]); });
     }
     {
-      static const char* kModes[4] = {"protótipo", "Engine2", "física", "real"};
+      static const char* kModes[4] = {"protótipo", "Ember", "física", "real"};
       dropdown("Luz", lightingMode_, 4, [](int i) { return std::string(kModes[i]); });
     }
     {
       int bloom = bloomOn_ ? 1 : 0;
-      if (dropdown("Brilho", bloom, 2, [](int i) { return std::string(i == 0 ? "OFF" : "Engine2"); })) bloomOn_ = bloom == 1;
+      if (dropdown("Brilho", bloom, 2, [](int i) { return std::string(i == 0 ? "OFF" : "Ember"); })) bloomOn_ = bloom == 1;
     }
     if (options_.volume) {
       // Atmosfera volumétrica v1 (docs/ATMOSPHERE.md): OFF, or its quality; then the region's profile.
@@ -1622,12 +1622,12 @@ class MapStage final : public Stage {
         if (ImGui::Checkbox(kLayers[i], &on)) layers_ ^= 1u << i;
       }
     }
-    if (scene_ && (!e2::timeOfDay(scene_->timeOfDay).moon || clockOn()) && scene_->environment != "indoor") {
+    if (scene_ && (!ember::timeOfDay(scene_->timeOfDay).moon || clockOn()) && scene_->environment != "indoor") {
       static const char* kSun[3] = {"real", "cinema", "001"};
       dropdown("Sol", sunSize_, 3, [](int i) { return std::string(kSun[i]); });
     }
-    if (scene_ && (e2::timeOfDay(scene_->timeOfDay).moon || clockOn())) {
-      static const char* kPaths[3] = {"Engine2", "atrás", "na frente"};
+    if (scene_ && (ember::timeOfDay(scene_->timeOfDay).moon || clockOn())) {
+      static const char* kPaths[3] = {"Ember", "atrás", "na frente"};
       int moon = moonOff_ ? 0 : moonPath_ + 1;
       if (dropdown("Lua", moon, 4, [](int i) { return i == 0 ? std::string("OFF") : std::string(kPaths[i - 1]); })) {
         moonOff_ = moon == 0;
@@ -1683,14 +1683,14 @@ class MapStage final : public Stage {
   // decoration is held by the mouse right now.
   std::optional<std::pair<int, int>> hexUnderMouse() const {
     if (mouse_.x < 0.0f || (ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureMouse)) return std::nullopt;
-    const std::optional<e2::BattleHex> hex = pick(mouseWindow_, mouse_.x, mouse_.y);
+    const std::optional<ember::BattleHex> hex = pick(mouseWindow_, mouse_.x, mouse_.y);
     return hex ? std::optional<std::pair<int, int>>({hex->x, hex->y}) : std::nullopt;
   }
   void setEditorMarks(std::vector<Renderer::GroundMark> marks) { editorMarks_ = std::move(marks); }
   bool editorHolding() const { return editorHold_.has_value(); }
   std::optional<glm::vec3> lastPickPoint() const { return lastPickPoint_; }
   void editorDropHold() { editorHold_.reset(); }
-  // The camera bar's turn (Engine2's preview buttons ↶ ↷ ↓ ↑ and Reset).
+  // The camera bar's turn (Ember's preview buttons ↶ ↷ ↓ ↑ and Reset).
   void editorTurn(float degrees) { yaw_ += glm::radians(degrees); }
   void editorTilt(float degrees) { pitch_ = std::clamp(pitch_ + glm::radians(degrees), minPitch(), kMaxPitch); }
   void setView(const View& v) {
@@ -1717,10 +1717,10 @@ class MapStage final : public Stage {
   bool inputHeld = false, hudHidden = false;
   // The track while this map is on screen, replacing the battle file's (the walkable Inn's floors keep the Inn's theme).
   void setMusic(Music m) { music_ = std::move(m); }
-  // An NPC's conversation asked for (Engine2 handleCell's dialog branch: a click on a neutral who has one; in free roam the
+  // An NPC's conversation asked for (Ember handleCell's dialog branch: a click on a neutral who has one; in free roam the
   // leader walks up beside it first): its tree and who speaks, taken once.
   struct Talk {
-    e2::Json tree;
+    ember::Json tree;
     std::string name;
   };
   std::optional<Talk> takeTalk() {
@@ -1735,7 +1735,7 @@ class MapStage final : public Stage {
   std::vector<std::pair<std::string, std::string>> characters() const {
     std::vector<std::pair<std::string, std::string>> out;
     if (battle_)
-      for (const e2::BattleUnit& u : battle_->units()) out.emplace_back(u.name, u.sprite);
+      for (const ember::BattleUnit& u : battle_->units()) out.emplace_back(u.name, u.sprite);
     return out;
   }
   // A floor connector taken (the finish prompt's "Sim" on a connector to another map): that map's mission id, else empty.
@@ -1747,37 +1747,37 @@ class MapStage final : public Stage {
   // The Map Editor's Testar battle: its menu says "Encerrar teste" (GameApp playtest).
   void setPlaytest(bool on) { playtest_ = on; }
   // Opções (EmberMenus.h): Tela cheia and the game's graphics switches (DevGfxSettings.h), applied here at once when
-  // changed, the way Engine2's renderer read them every frame.
+  // changed, the way Ember's renderer read them every frame.
   void setMenus(std::function<void()> fullscreen, DevGfx* gfx) { fullscreen_ = std::move(fullscreen), gfx_ = gfx; }
   void applyGfx(const DevGfx& g) {
     layers_ = g.realShadows ? layers_ | 2u : layers_ & ~2u;
     layers_ = g.localLights ? layers_ | 8u : layers_ & ~8u;
     options_.volume = g.atmosphericFx, options_.airParticles = g.atmosphericFx;
   }
-  // --- Save / Load in battle (GameApp's battle menu Save and Load, Engine2's BattleSnapshot) ---
+  // --- Save / Load in battle (GameApp's battle menu Save and Load, Ember's BattleSnapshot) ---
   // The campaign this fight belongs to: its slots, the campaign mission id and the map's key (a fight saved on another
   // map file is not resumed). `testMode`: Modo teste's menu has no Save. `testSave`: Modo teste's session save, which its heroes
   // wear and train from as a campaign fight does from the slot (Debug = the campaign; the fight is folded back by main.cpp).
-  void setCampaign(e2::Campaign* campaign, std::string missionId, std::string mapKey, bool testMode, const e2::Json* testSave = nullptr) {
+  void setCampaign(ember::Campaign* campaign, std::string missionId, std::string mapKey, bool testMode, const ember::Json* testSave = nullptr) {
     campaign_ = campaign, missionId_ = std::move(missionId), mapKey_ = std::move(mapKey), testMode_ = testMode;
     // The Inn quests' pickups lying on this mission's map (GameApp startBattle: quests.ts activePickupsFor; never in Modo teste).
     if (battle_ && campaign_ && !testMode_ && !playtest_ && options_.world)
-      battle_->setQuestPickups(e2::activeQuestPickups(questTable("quests"), campaign_->activeSave(), missionId_));
-    // A campaign fight: each hero wears what the save has it wearing (Engine2 spawnUnit's gearStatBonus on HP / ATK / MAG / DEF /
+      battle_->setQuestPickups(ember::activeQuestPickups(questTable("quests"), campaign_->activeSave(), missionId_));
+    // A campaign fight: each hero wears what the save has it wearing (Ember spawnUnit's gearStatBonus on HP / ATK / MAG / DEF /
     // DEX / movement), its HP as the save carries it (full when it carries none).
     if (!campaign_ || (testMode_ && !testSave) || playtest_ || !battle_ || !ensureInnRules()) return;
-    const e2::Json save = testMode_ ? *testSave : campaign_->activeSave();
-    static const e2::Loadouts arms = [] {
-      e2::Loadouts l;
-      l.load("content/engine2/weapons.json");
+    const ember::Json save = testMode_ ? *testSave : campaign_->activeSave();
+    static const ember::Loadouts arms = [] {
+      ember::Loadouts l;
+      l.load("content/data/weapons.json");
       return l;
     }();
-    for (e2::BattleUnit& u : battle_->units()) {
+    for (ember::BattleUnit& u : battle_->units()) {
       if (u.side != "player" || u.summoned || !u.alive) continue;
-      // ... and wields what it has equipped: main hand, off hand, their reach, staff magic and mastery (e2::equipFromSave)
-      if (!e2::equipFromSave(u, arms, save)) logWarn("{}: class {} has no weapon data: it keeps the battle file's weapon", u.name, u.classId);
+      // ... and wields what it has equipped: main hand, off hand, their reach, staff magic and mastery (ember::equipFromSave)
+      if (!ember::equipFromSave(u, arms, save)) logWarn("{}: class {} has no weapon data: it keeps the battle file's weapon", u.name, u.classId);
       // ... and its Esquiva (ours: save.heroSkills[hero].dodging)
-      if (const e2::Json skills = save.value("heroSkills", e2::Json::object()); skills.is_object() && skills.contains(u.name) &&
+      if (const ember::Json skills = save.value("heroSkills", ember::Json::object()); skills.is_object() && skills.contains(u.name) &&
                                                                              skills[u.name].is_object() && skills[u.name].contains("dodging") &&
                                                                              skills[u.name]["dodging"].is_number()) {
         const double v = skills[u.name]["dodging"].get<double>();
@@ -1787,24 +1787,24 @@ class MapStage final : public Stage {
         if (!set) u.skills.emplace_back("dodging", v);
       }
       const bool full = u.hp >= u.maxHp;
-      const e2::InnRules::GearBonus g = innRules_->gearBonus(save, u.name, u.classId);
+      const ember::InnRules::GearBonus g = innRules_->gearBonus(save, u.name, u.classId);
       u.gearHp = g.hp, u.gearAtk = g.atk, u.gearMag = g.mag, u.gearDef = g.def, u.gearDex = g.dex, u.gearMov = g.mov;
-      e2::reapplyGear(u);
+      ember::reapplyGear(u);
       u.hp = full ? u.maxHp : std::min(u.maxHp, u.hp);
       skillsAtStart_[u.name] = trainedSkills(u);  // what it knew as the fight opened: the end adds only what it trained here
     }
   }
-  // The fight as Engine2's BattleSnapshot (captureSnapshot): an action in flight spends the acting unit's action (and,
+  // The fight as Ember's BattleSnapshot (captureSnapshot): an action in flight spends the acting unit's action (and,
   // an enemy's or one with no movement left, its turn), so it is neither replayed nor lost on load.
-  e2::Json captureSnapshot() const {
-    if (!battle_) return e2::Json();
-    e2::Json snap = battle_->snapshot();
+  ember::Json captureSnapshot() const {
+    if (!battle_) return ember::Json();
+    ember::Json snap = battle_->snapshot();
     const int active = battle_->activeUnit();
     const bool inFlight = exchange_ || enemyTurn_ || pendingStrike_ >= 0 ||
                           std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
     if (active >= 0 && inFlight) {
-      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(active)];
-      for (e2::Json& su : snap["units"])
+      const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(active)];
+      for (ember::Json& su : snap["units"])
         if (su.value("id", std::string()) == u.id) {
           su["acted"] = true;
           if (u.side == "enemy" || u.mov - u.moveUsed <= 0) su["moved"] = true;
@@ -1814,16 +1814,16 @@ class MapStage final : public Stage {
     snap["mapKey"] = mapKey_;
     snap["introDialogDone"] = true;
     snap["phase"] = active >= 0 && battle_->units()[static_cast<size_t>(active)].side == "enemy" ? "enemy" : "player";
-    snap["activeUnitId"] = active >= 0 ? e2::Json(battle_->units()[static_cast<size_t>(active)].id) : e2::Json();
+    snap["activeUnitId"] = active >= 0 ? ember::Json(battle_->units()[static_cast<size_t>(active)].id) : ember::Json();
     snap["turnBegan"] = active >= 0 && active == turnUnit_;
     if (fog_) {  // the explored hexes, one bit each, row-major, base64 (snapshotExplored)
-      const e2::HexLayout& L = board_->layout();
+      const ember::HexLayout& L = board_->layout();
       std::vector<uint8_t> bits(static_cast<size_t>((L.cols * L.rows + 7) / 8), 0);
       for (int r = 0; r < L.rows; ++r)
         for (int c = 0; c < L.cols; ++c)
-          if (fog_->state(c, r) != e2::kFogUnseen) bits[static_cast<size_t>((r * L.cols + c) / 8)] |= static_cast<uint8_t>(1u << ((r * L.cols + c) % 8));
+          if (fog_->state(c, r) != ember::kFogUnseen) bits[static_cast<size_t>((r * L.cols + c) / 8)] |= static_cast<uint8_t>(1u << ((r * L.cols + c) % 8));
       snap["explored"] = base64(bits);
-      e2::Json awake = e2::Json::array();
+      ember::Json awake = ember::Json::array();
       for (const int b : awake_) awake.push_back(battle_->units()[static_cast<size_t>(b)].id);
       snap["awake"] = awake;
     }
@@ -1831,14 +1831,14 @@ class MapStage final : public Stage {
   }
   // A saved fight resumed on this battle, before its first frame (applySnapshot); false (nothing changed) when it is
   // another mission's, was saved on another map file, or its units are not this battle's.
-  bool resume(const e2::Json& snap) {
+  bool resume(const ember::Json& snap) {
     if (!battle_ || !snap.is_object()) return false;
     if (snap.value("missionId", std::string()) != missionId_ || (!mapKey_.empty() && snap.value("mapKey", mapKey_) != mapKey_)) return false;
     if (!battle_->applySnapshot(snap)) return false;
     syncSummons();  // the familiars summoned before the save get their cards back
     for (size_t i = 0; i < unitBattle_.size(); ++i) {
       if (unitBattle_[i] < 0) continue;
-      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[i])];
+      const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[i])];
       unitPos_[i] = anchorWorld(u, {u.x, u.y});
       unitMoved_[i] = 1;
       unitFacing_[i] = u.facing < 0 ? -1 : 1;
@@ -1848,20 +1848,20 @@ class MapStage final : public Stage {
     for (size_t b = 0; b < battle_->units().size(); ++b) byId[battle_->units()[b].id] = static_cast<int>(b);
     awake_.clear();
     if (snap.contains("awake") && snap["awake"].is_array())
-      for (const e2::Json& id : snap["awake"])
+      for (const ember::Json& id : snap["awake"])
         if (id.is_string())
           if (const auto it = byId.find(id.get<std::string>()); it != byId.end()) awake_.insert(it->second);
     if (fog_ && snap.contains("explored") && snap["explored"].is_string()) {
       const std::vector<uint8_t> bits = unbase64(snap["explored"].get<std::string>());
-      const e2::HexLayout& L = board_->layout();
+      const ember::HexLayout& L = board_->layout();
       pendingExplored_.assign(static_cast<size_t>(L.cols * L.rows), 0);
       for (int r = 0; r < L.rows; ++r)
         for (int c = 0; c < L.cols; ++c) {
           const size_t bit = static_cast<size_t>(r * L.cols + c);
-          if (bit / 8 < bits.size() && (bits[bit / 8] >> (bit % 8) & 1u)) pendingExplored_[static_cast<size_t>(e2::indexOf(L, c, r))] = 1;
+          if (bit / 8 < bits.size() && (bits[bit / 8] >> (bit % 8) & 1u)) pendingExplored_[static_cast<size_t>(ember::indexOf(L, c, r))] = 1;
         }
     }
-    // A turn that had begun is not begun again (Engine2 skipStartOfTurn: no second echo or burn).
+    // A turn that had begun is not begun again (Ember skipStartOfTurn: no second echo or burn).
     turnUnit_ = snap.value("turnBegan", false) ? battle_->activeUnit() : -1;
     pickActiveOnResume_ = turnUnit_ >= 0;  // the turn is not begun again, but its hero must be picked again
     levelSeen_.clear();  // the saved levels are not level-ups
@@ -1916,9 +1916,9 @@ class MapStage final : public Stage {
   std::vector<std::string> questKills() const {
     std::vector<std::string> out;
     if (!battle_ || missionId_.empty()) return out;
-    for (const std::string& target : e2::questKillTargets(questTable("quests"), missionId_))
+    for (const std::string& target : ember::questKillTargets(questTable("quests"), missionId_))
       if (std::any_of(battle_->units().begin(), battle_->units().end(),
-                      [&](const e2::BattleUnit& u) { return u.side == "enemy" && !u.alive && !u.summoned && u.name == target; }))
+                      [&](const ember::BattleUnit& u) { return u.side == "enemy" && !u.alive && !u.summoned && u.name == target; }))
         out.push_back(target);
     return out;
   }
@@ -1934,7 +1934,7 @@ class MapStage final : public Stage {
   std::vector<std::string> fallenSpawns() const {
     std::vector<std::string> out;
     if (battle_)
-      for (const e2::BattleUnit& u : battle_->units())
+      for (const ember::BattleUnit& u : battle_->units())
         if ((u.side == "enemy" || u.side == "neutral") && !u.alive && !u.summoned && !absent_.contains(u.id)) out.push_back(u.id);
     return out;
   }
@@ -1945,13 +1945,13 @@ class MapStage final : public Stage {
   // GameApp persistVictory's HP for a hero after a victory: past a floor connector the battle's HP carries on (fallen: 0, out of
   // the next floor); after any other victory the camp heals half of what is missing up to the class's HP at its level now
   // (statsFor(class, level).hp), and the fallen come back at half of it.
-  int maxHpAt(const e2::BattleUnit& u, int level) const {
+  int maxHpAt(const ember::BattleUnit& u, int level) const {
     const int hp = options_.world ? options_.world->classHp(u.classId, level) : 0;
     return hp > 0 ? hp : u.maxHp;
   }
   // A hero's trainable skills as the fight holds them, by save.heroSkills id: every trained skill it carries, its weapons'
   // mastery ("<type>Weapon", both hands) and Cura ("healing").
-  static std::map<std::string, double> trainedSkills(const e2::BattleUnit& u) {
+  static std::map<std::string, double> trainedSkills(const ember::BattleUnit& u) {
     std::map<std::string, double> out;
     auto keep = [&](const std::string& id, double v) {
       if (const auto it = out.find(id); it == out.end() || it->second < v) out[id] = v;
@@ -1962,7 +1962,7 @@ class MapStage final : public Stage {
     keep("healing", u.healingSkill);
     return out;
   }
-  int campHp(const e2::BattleUnit& u) const {
+  int campHp(const ember::BattleUnit& u) const {
     const int battle = u.alive ? u.hp : 0;
     if (floorTaken()) return battle;
     const int max = maxHpAt(u, u.level);
@@ -1971,7 +1971,7 @@ class MapStage final : public Stage {
   std::vector<HeroOutcome> heroOutcomes() const {
     std::vector<HeroOutcome> out;
     if (!battle_) return out;
-    for (const e2::BattleUnit& u : battle_->units())
+    for (const ember::BattleUnit& u : battle_->units())
       if (u.side == "player" && !u.summoned && !absent_.contains(u.id)) {
         HeroOutcome h{u.name, u.level, u.xp, u.alive ? u.hp : 0};
         h.campHp = campHp(u);
@@ -1989,9 +1989,9 @@ class MapStage final : public Stage {
       }
     return out;
   }
-  // A hero as the save brings it (Engine2 spawnUnit): its bag, disease, poison, hunger; disease and the starving
+  // A hero as the save brings it (Ember spawnUnit): its bag, disease, poison, hunger; disease and the starving
   // penalty taken off its stats (reapplyGear's sums); its HP capped by the save's.
-  static void applyHeroState(e2::BattleUnit& u, const MapStageOptions::HeroState& s) {
+  static void applyHeroState(ember::BattleUnit& u, const MapStageOptions::HeroState& s) {
     if (s.bag) std::copy(s.bag->begin(), s.bag->end(), u.bag);
     // spawnUnit: roster.bags[name] ?? (a healer: EMPTY_BAG, else STARTING_BAG)
     static constexpr int kStartingBag[7] = {2, 2, 1, 1, 1, 0, 0};  // weak mid potent disease manaSmall manaMid manaLarge
@@ -2003,12 +2003,12 @@ class MapStage final : public Stage {
     u.poisoned = !s.poison.empty(), u.poisonTier = s.poison;
     u.fullness = s.fullness;
     u.hungerPenaltyPct = s.hungerPenalty;
-    e2::spawnConditions(u);
+    ember::spawnConditions(u);
     u.hp = s.hp && *s.hp > 0 ? std::min(u.maxHp, *s.hp) : u.maxHp;
   }
-  // Rations Criar Comida e Água conjured in this fight (Engine2 lootRations).
+  // Rations Criar Comida e Água conjured in this fight (Ember lootRations).
   int lootRations() const { return battle_ ? battle_->lootRations() : 0; }
-  // What the chests opened in this fight gave (Engine2 lootEmber / lootWeapons / lootEquipment), folded into the save on a victory.
+  // What the chests opened in this fight gave (Ember lootEmber / lootWeapons / lootEquipment), folded into the save on a victory.
   int lootEmber() const { return battle_ ? battle_->lootEmber() : 0; }
   const std::vector<std::string>& lootWeapons() const {
     static const std::vector<std::string> none;
@@ -2039,13 +2039,13 @@ class MapStage final : public Stage {
   bool passed() const override { return !failed_ && ground_.ready() && measurePassed_ && !scriptFailed_ && !cutsceneTestFailed_; }
 
  private:
-  static constexpr float kFov = 30.0f, kNear = 0.5f;  // Engine2's normal lens
-  static constexpr float kFlatFov = 1.0f;             // Engine2 FLAT_FOV: Tática's long lens
-  static constexpr float kFlatRowStep = 0.002f;       // Engine2 FLAT_ROW_STEP: Tática's height step per unit of depth
-  // The camera bar (Engine2 GameApp.tsx + ember-plate): 28 px plates (size-7), 4 px apart (gap-1), 8 px from the
+  static constexpr float kFov = 30.0f, kNear = 0.5f;  // Ember's normal lens
+  static constexpr float kFlatFov = 1.0f;             // Ember FLAT_FOV: Tática's long lens
+  static constexpr float kFlatRowStep = 0.002f;       // Ember FLAT_ROW_STEP: Tática's height step per unit of depth
+  // The camera bar (Ember GameApp.tsx + ember-plate): 28 px plates (size-7), 4 px apart (gap-1), 8 px from the
   // corner (inset-x-2, top 0.5rem), 10 px text; the window's padding leaves room for the shadow and glow.
   static constexpr float kPlate = 28.0f, kBarGap = 4.0f, kBarInset = 8.0f, kPlateText = 12.0f, kPlateGlow = 10.0f;
-  static constexpr float kFlameEmit = 2.5f;           // Engine2 FLAME_EMIT
+  static constexpr float kFlameEmit = 2.5f;           // Ember FLAME_EMIT
   // Light mode "real" (ARCHITECTURE 7.6 step A).
   static constexpr float kSunLux = 128000.0f;       // the sun above the atmosphere
   static constexpr float kFullMoonLux = 0.5f;       // a full moon (real 0.25, lifted so moonlit ground reads)
@@ -2054,7 +2054,7 @@ class MapStage final : public Stage {
   // film's, ~60x the real one; the meter and the night stops still keep night darker than day.
   static constexpr float kCinemaMoonLux = 16.0f;
   static constexpr float kIndoorFillLux = 3.0f, kIndoorAmbientLux = 1.5f;
-  static constexpr float kLumensPerUnit = 12.0f;    // Engine2 intensity x reach^2 -> lumens
+  static constexpr float kLumensPerUnit = 12.0f;    // Ember intensity x reach^2 -> lumens
   static constexpr float kTorchPower = 2.0f;        // every torch's light x this (the user, 2026-10-21: "2X do que estava antes"; 8x was too much)
   static constexpr float kFireExposure = 0.05f;     // every fire's light is shown at exactly this exposure, on every map (universal: the user, 2026-10-23)
   size_t fireLightsFrom_ = 0, fireLightsTo_ = 0;    // this frame's fire lights in lights_ (buildLights)
@@ -2123,7 +2123,7 @@ class MapStage final : public Stage {
     logInfo("  {}", measurePassed_ ? "PASS: every frame within 16.7 ms" : "FAIL: frames over the 16.7 ms budget");
   }
 
-  // Engine2's battle loading steps (GameApp battleLoadCaption, LoadingScreens.h): 0 the characters (every sprite clip's
+  // Ember's battle loading steps (GameApp battleLoadCaption, LoadingScreens.h): 0 the characters (every sprite clip's
   // header and small version on the GPU: what the cards draw from), 1 the field (ground, the 3D pieces and their
   // textures, models placed, the first fog-of-war mask, a first frame with full-quality cards).
   Loading loading() const override {
@@ -2151,9 +2151,9 @@ class MapStage final : public Stage {
     return sprites_.ready() && pinsDone >= pins && !hudPreload_ && modelsPlaced_ && fullFrames_ > 0;
   }
 
-  float groundOf(float smooth, float hard) const { return look_ == e2::EdgeStyle::Smooth ? smooth : hard; }
+  float groundOf(float smooth, float hard) const { return look_ == ember::EdgeStyle::Smooth ? smooth : hard; }
 
-  // Engine2's flickerAt (src/ember/lighting.ts).
+  // Ember's flickerAt (src/ember/lighting.ts).
   static float flicker(float time, float seed, float amount) {
     if (amount <= 0.0f) return 1.0f;
     const float v = 0.06f * std::sin(time * 5.3f + seed) + 0.045f * std::sin(time * 8.9f + seed * 1.7f) +
@@ -2161,7 +2161,7 @@ class MapStage final : public Stage {
     return 1.0f + v * amount;
   }
 
-  // Ember's 3D architecture (world/Architecture.h = Engine2 decor.ts addArchitecture over Ember's createWallGeometry):
+  // Ember's 3D architecture (world/Architecture.h = Ember decor.ts addArchitecture over Ember's createWallGeometry):
   // one mesh per piece, built here in the cooked format (render/MeshBuild) so it is culled, lit and shadowed like the
   // models; its wall texture from build/meshes/architecture.pak (Cooker architecture). Walls, closed doors and secret
   // doors block sight; open doorways do not.
@@ -2170,7 +2170,7 @@ class MapStage final : public Stage {
     float x = 0, z = 0, groundSmooth = 0, groundHard = 0, half = 0, top = 0;
     bool blocks = false;
     std::vector<std::pair<float, float>> footprint;  // sight samples (world x, z) under its top faces
-    std::optional<e2::SceneLight> light;             // a torch bracket's fire (EmberEngine's wall-torch piece)
+    std::optional<ember::SceneLight> light;             // a torch bracket's fire (EmberEngine's wall-torch piece)
     glm::vec3 lightAt{0.0f};                         // ... relative to the piece's anchor on its ground
     float lightBehind = 0.0f;                        // a wall's torch: how far its light sits in front of the wall (it lights that side only)
     // An opening (window, slit, door, portal, gate): the daylight it lets in as a light of its own on the room's side (buildLights,
@@ -2197,18 +2197,18 @@ class MapStage final : public Stage {
     bool passable = false;   // its cells walked and seen through
     std::vector<std::pair<int, int>> cells;
   };
-  static const e2::EditorCatalog& architectureCatalog() {
-    static const e2::EditorCatalog catalog = [] {
-      e2::EditorCatalog c;
-      c.load("content/engine2/editor-catalog.json");
+  static const ember::EditorCatalog& architectureCatalog() {
+    static const ember::EditorCatalog catalog = [] {
+      ember::EditorCatalog c;
+      c.load("content/data/editor-catalog.json");
       return c;
     }();
     return catalog;
   }
-  static const e2::ArchitectureDefs& architectureDefs() {
-    static const e2::ArchitectureDefs defs = [] {
-      e2::ArchitectureDefs d;
-      if (!d.load("content/engine2/editor-catalog.json")) logError("architecture: content/engine2/editor-catalog.json has no architectureDefs");
+  static const ember::ArchitectureDefs& architectureDefs() {
+    static const ember::ArchitectureDefs defs = [] {
+      ember::ArchitectureDefs d;
+      if (!d.load("content/data/editor-catalog.json")) logError("architecture: content/data/editor-catalog.json has no architectureDefs");
       return d;
     }();
     return defs;
@@ -2228,36 +2228,36 @@ class MapStage final : public Stage {
       probeBakePending_ = true;  // a cave's fires bounce off its ground (startProbeBake: interior maps only)
       return;
     }
-    const e2::EditorCatalog& catalog = architectureCatalog();
-    const e2::ArchitectureDefs& defs = architectureDefs();
-    const e2::HexLayout& L = board_->layout();
+    const ember::EditorCatalog& catalog = architectureCatalog();
+    const ember::ArchitectureDefs& defs = architectureDefs();
+    const ember::HexLayout& L = board_->layout();
     const double sq3 = std::sqrt(3.0);
     auto inBoard = [&](int c, int r) { return c >= 0 && r >= 0 && c < L.cols && r < L.rows; };
     // architectureWorld: every row at the same x, no odd-row half-hex shift, so walls run straight
     auto archAt = [&](int c, int r) { return std::pair<double, double>{sq3 * c - L.ox, board_->cell(c, r).z}; };
     std::set<std::pair<int, int>> joins;  // the cells a wall joins (architecture, not rocks): anchors, an entrance's two cells
-    for (const e2::SceneArchitecture& p : scene_->pieces) {
-      const e2::ArchitectureDef* def = defs.find(p.id);
-      const e2::CatalogDecoration* cd = catalog.decoration(p.id);
+    for (const ember::SceneArchitecture& p : scene_->pieces) {
+      const ember::ArchitectureDef* def = defs.find(p.id);
+      const ember::CatalogDecoration* cd = catalog.decoration(p.id);
       if (!def || !cd || !def->connects) continue;
       if (p.id == "watchtower-stone-open-door-2hex" || (!def->emberStyle.empty() && cd->architectureSpan))
-        for (const e2::FootOffset& f : e2::placedFootprint(*cd, p.x, p.y, p.rot)) joins.insert({p.x + f.dx, p.y + f.dy});
+        for (const ember::FootOffset& f : ember::placedFootprint(*cd, p.x, p.y, p.rot)) joins.insert({p.x + f.dx, p.y + f.dy});
       else
         joins.insert({p.x, p.y});
     }
     // The room's centre (the board's), for the windows' splay.
     const double centreX = 0.5 * (archAt(0, 0).first + archAt(L.cols - 1, 0).first), centreZ = 0.5 * (archAt(0, 0).second + archAt(0, L.rows - 1).second);
     size_t missing = 0;
-    for (const e2::SceneArchitecture& p : scene_->pieces) {
-      const e2::ArchitectureDef* def = defs.find(p.id);
-      const e2::CatalogDecoration* cd = catalog.decoration(p.id);
+    for (const ember::SceneArchitecture& p : scene_->pieces) {
+      const ember::ArchitectureDef* def = defs.find(p.id);
+      const ember::CatalogDecoration* cd = catalog.decoration(p.id);
       if (!def || !cd) {
         ++missing;
         continue;
       }
       double x = 0, z = 0;
       int n = 0;
-      for (const e2::FootOffset& f : e2::placedFootprint(*cd, p.x, p.y, p.rot))
+      for (const ember::FootOffset& f : ember::placedFootprint(*cd, p.x, p.y, p.rot))
         if (inBoard(p.x + f.dx, p.y + f.dy)) {
           const auto [ax, az] = archAt(p.x + f.dx, p.y + f.dy);
           x += ax, z += az, ++n;
@@ -2284,10 +2284,10 @@ class MapStage final : public Stage {
       if (stairs) {
         // The flight climbs (or the well descends) towards the wall beyond one of its ends: the end with a wall piece within two
         // cells beyond it is the far end (the half turn flips it); with walls at both ends or neither, as placed.
-        const std::array<double, 3> run = e2::emberDirPiece(rot);
+        const std::array<double, 3> run = ember::emberDirPiece(rot);
         const int sx = std::abs(run[0]) > std::abs(run[2]) ? (run[0] > 0 ? 1 : -1) : 0, sy = sx ? 0 : (run[2] > 0 ? 1 : -1);
         int farX = p.x, farY = p.y, nearX = p.x, nearY = p.y;
-        for (const e2::FootOffset& f : e2::placedFootprint(*cd, p.x, p.y, p.rot)) {
+        for (const ember::FootOffset& f : ember::placedFootprint(*cd, p.x, p.y, p.rot)) {
           const int cx = p.x + f.dx, cy = p.y + f.dy;
           if (cx * sx + cy * sy > farX * sx + farY * sy) farX = cx, farY = cy;
           if (cx * sx + cy * sy < nearX * sx + nearY * sy) nearX = cx, nearY = cy;
@@ -2299,23 +2299,23 @@ class MapStage final : public Stage {
         };
         if (!wallBeyond(farX, farY, sx, sy) && wallBeyond(nearX, nearY, -sx, -sy)) rot ^= 2;
       }
-      const bool faced = e2::emberFacesRoom(def->emberStyle);
+      const bool faced = ember::emberFacesRoom(def->emberStyle);
       if (faced) {
         // The splay / the torch faces the room: the piece's inner side (Architecture.h emberAxisAngle: (sin a, cos a) on the
         // board, the half turn flipping it) must point towards the board's centre.
-        const double a = e2::emberAxisAngle(rot, connections);
+        const double a = ember::emberAxisAngle(rot, connections);
         if (std::sin(a) * (centreX - x) + std::cos(a) * (centreZ - z) < 0.0) rot ^= 2;
       }
-      const e2::three::Geometry g = e2::pieceGeometry(*def, rot, connections, {x, -z});
+      const ember::three::Geometry g = ember::pieceGeometry(*def, rot, connections, {x, -z});
       ArchPiece piece;
       float minY = std::numeric_limits<float>::max(), maxY = -minY, minX = minY, maxX = maxY, minZ = minY, maxZ = maxY;
-      // One mesh from a geometry in the piece's space: flat shading (Engine2's material: each triangle's own normal, equal corners
+      // One mesh from a geometry in the piece's space: flat shading (Ember's material: each triangle's own normal, equal corners
       // welded); EmberEngine's pieces carry extra materials tagged in their UVs (Architecture.h emberMaterialTag): one part per
       // material. `footprint`: the top faces become the piece's sight samples and the bounds are kept.
       // (std::optional: a MeshId is the mesh's index and the map's first mesh is 0, so 0 is a real mesh here: on a map with no
       // 3D models the first wall piece used to be dropped as "no mesh", found 2026-10-21 on the gothic bridge test.)
-      auto meshOf = [&](const e2::three::Geometry& g, bool footprint) -> std::optional<MeshId> {
-      static constexpr int kParts = e2::kEmberMaterialTags;  // 0 the masonry, 1 oak, 2 iron, 3 flame, 4 dark oak, 5 a dark void, 6 the steps, 7 the gothic atlas, 8 glass, 9 the Inn's timber, 10 the Inn's door planks
+      auto meshOf = [&](const ember::three::Geometry& g, bool footprint) -> std::optional<MeshId> {
+      static constexpr int kParts = ember::kEmberMaterialTags;  // 0 the masonry, 1 oak, 2 iron, 3 flame, 4 dark oak, 5 a dark void, 6 the steps, 7 the gothic atlas, 8 glass, 9 the Inn's timber, 10 the Inn's door planks
       MeshBuildPart parts[kParts];
       std::map<std::array<float, 8>, uint32_t> weld[kParts];
       size_t triangles = 0;
@@ -2325,7 +2325,7 @@ class MapStage final : public Stage {
         const glm::vec3 cross = glm::cross(b - a, c - a);
         if (glm::length(cross) <= 0.0f) continue;
         const glm::vec3 normal = glm::normalize(cross);
-        const int tag = std::clamp(e2::emberMaterialTag(g.uv[t * 2]), 0, kParts - 1);
+        const int tag = std::clamp(ember::emberMaterialTag(g.uv[t * 2]), 0, kParts - 1);
         if (footprint && normal.y > 0.5f && tag == 0) {  // a top face: sight is blocked under it
           const float x0 = std::min({a.x, b.x, c.x}), x1 = std::max({a.x, b.x, c.x}), z0 = std::min({a.z, b.z, c.z}), z1 = std::max({a.z, b.z, c.z});
           for (float sx = x0; sx <= x1 + 1e-4f; sx += 0.25f)
@@ -2336,7 +2336,7 @@ class MapStage final : public Stage {
           const size_t v = t + k;
           // three's TextureLoader flips the image (v up from its bottom row); cooked textures start at the top
           const std::array<float, 8> key{g.position[v * 3], g.position[v * 3 + 1], g.position[v * 3 + 2], normal.x, normal.y, normal.z,
-                                         static_cast<float>(e2::emberMaterialU(g.uv[v * 2])), 1.0f - g.uv[v * 2 + 1]};
+                                         static_cast<float>(ember::emberMaterialU(g.uv[v * 2])), 1.0f - g.uv[v * 2 + 1]};
           auto [it, fresh] = weld[tag].try_emplace(key, static_cast<uint32_t>(part.positions.size() / 3));
           if (fresh) {
             part.positions.insert(part.positions.end(), {key[0], key[1], key[2]});
@@ -2375,7 +2375,7 @@ class MapStage final : public Stage {
       m.metallic = metal ? 0.5f : 0.0f;
       m.roughness = metal ? 0.52f : 0.94f;
       m.normalScale = 1.0f, m.occlusionStrength = 1.0f, m.alphaCutoff = 0.5f;
-      if (textured) m.baseColorTexture = assetId(e2::architectureTextureAsset(def->wallTexture));
+      if (textured) m.baseColorTexture = assetId(ember::architectureTextureAsset(def->wallTexture));
       // The torch's flame: emissive, so it reads as fire by night (the bloom takes it) and stays a dim ember by day, as fire does.
       // (At 40 / 16 / 4 the night's exposure (0.05) took it to white: a lamp bulb, not fire; capture 098 of 2026-10-21.)
       MeshMaterial flame = flat(0x3a1a08u, 0.9f, 0.0f);
@@ -2389,9 +2389,9 @@ class MapStage final : public Stage {
       // photograph instead of the flat colour; the flame's photograph is its glow (emissive x the fire, so its own oranges show).
       bool taggedTexture[kParts] = {};
       for (int k = 1; k < kParts; ++k) {
-        const auto it = defs.materials.find(e2::emberMaterialName(k));
+        const auto it = defs.materials.find(ember::emberMaterialName(k));
         if (it == defs.materials.end()) continue;
-        const AssetId tex = assetId(e2::architectureTextureAsset(it->second));
+        const AssetId tex = assetId(ember::architectureTextureAsset(it->second));
         if (k == 3) {
           materials[k].emissiveTexture = tex;
           materials[k].emissive[0] = materials[k].emissive[1] = materials[k].emissive[2] = 14.0f;
@@ -2433,42 +2433,42 @@ class MapStage final : public Stage {
           def->emberStyle == "gate" || def->emberStyle == "inn-window" || def->emberStyle == "inn-door" || def->emberStyle == "inn-doorway") {
         // The opening's own light: at the inner face of the wall, mid-height, facing the room (the sky's and the sun's light coming in,
         // scaled by the hour's outdoor light each frame: frame()). Never the outside: facing / behind like a wall torch's.
-        const double a = e2::emberAxisAngle(rot, connections);
+        const double a = ember::emberAxisAngle(rot, connections);
         // (In the wall's inner face itself, a hair in: a flat emitter there lights nothing of its own wall: scene.hlsli lightFacing.)
         const float out = static_cast<float>(0.32 * def->wallThicknessScale * 0.5 + 0.03);
         piece.openingAt = glm::vec3{static_cast<float>(std::sin(a)) * out, def->emberStyle == "slit" ? 2.6f : 2.0f, static_cast<float>(std::cos(a)) * out};
         piece.openingBehind = out - static_cast<float>(0.32 * def->wallThicknessScale * 0.5);
       }
       if (def->emberStyle == "wall-torch") {
-        // The torch's light (Engine2's wall torch: colour (1, 0.58, 0.26), intensity 11, reach 4.68, full flicker) at its flame, on
+        // The torch's light (Ember's wall torch: colour (1, 0.58, 0.26), intensity 11, reach 4.68, full flicker) at its flame, on
         // the piece's inner side (emberAxisAngle), with the flame's own phase.
-        const double a = e2::emberAxisAngle(rot, connections);
+        const double a = ember::emberAxisAngle(rot, connections);
         const float out = static_cast<float>(0.32 * def->wallThicknessScale * 0.5 + 0.62);
-        piece.light = e2::SceneLight{{1.0f, 0.58f, 0.26f}, 11.0f, 4.68f, 1.0f, 1.0f, static_cast<float>(std::fmod(p.x * 7.31 + p.y * 3.17, 6.28))};
+        piece.light = ember::SceneLight{{1.0f, 0.58f, 0.26f}, 11.0f, 4.68f, 1.0f, 1.0f, static_cast<float>(std::fmod(p.x * 7.31 + p.y * 3.17, 6.28))};
         piece.lightAt = {static_cast<float>(std::sin(a)) * out, 4.2f * 0.62f + 1.3f, static_cast<float>(std::cos(a)) * out};
         piece.lightBehind = out - static_cast<float>(0.32 * def->wallThicknessScale * 0.5);  // back to the wall's face
       }
       if (def->emberStyle == "inn-sconce") {
         // The Inn's candle lantern (2026-10-22): a candle's light at its flame (the wall torch's colour, a little over half its
         // strength and reach), on the room's side of the wall.
-        const double a = e2::emberAxisAngle(rot, connections);
-        const std::array<double, 2> at = e2::innSconceLight(*def);
+        const double a = ember::emberAxisAngle(rot, connections);
+        const std::array<double, 2> at = ember::innSconceLight(*def);
         const float out = static_cast<float>(at[0]);
-        piece.light = e2::SceneLight{{1.0f, 0.58f, 0.26f}, 6.5f, 3.6f, 1.0f, 1.0f, static_cast<float>(std::fmod(p.x * 7.31 + p.y * 3.17, 6.28))};
+        piece.light = ember::SceneLight{{1.0f, 0.58f, 0.26f}, 6.5f, 3.6f, 1.0f, 1.0f, static_cast<float>(std::fmod(p.x * 7.31 + p.y * 3.17, 6.28))};
         piece.lightAt = {static_cast<float>(std::sin(a)) * out, static_cast<float>(at[1]), static_cast<float>(std::cos(a)) * out};
         piece.lightBehind = out - static_cast<float>(0.32 * def->wallThicknessScale * 0.5);
       }
-      if (const auto flame = e2::emberStairFlame(*def, rot)) {
-        // The stairs' torch: Engine2's wall torch numbers, at its flame.
-        piece.light = e2::SceneLight{{1.0f, 0.58f, 0.26f}, 11.0f, 4.68f, 1.0f, 1.0f, static_cast<float>(std::fmod(p.x * 5.17 + p.y * 2.31, 6.28))};
+      if (const auto flame = ember::emberStairFlame(*def, rot)) {
+        // The stairs' torch: Ember's wall torch numbers, at its flame.
+        piece.light = ember::SceneLight{{1.0f, 0.58f, 0.26f}, 11.0f, 4.68f, 1.0f, 1.0f, static_cast<float>(std::fmod(p.x * 5.17 + p.y * 2.31, 6.28))};
         piece.lightAt = {static_cast<float>((*flame)[0]), static_cast<float>((*flame)[1]) + 0.15f, static_cast<float>((*flame)[2])};
       }
       if (stairs) stairPieces_.push_back({static_cast<float>(x), static_cast<float>(z)});
       // Luz das janelas, 100% interior (the user, 2026-10-21: "a única coisa que vem de fora é a luz em si ... nas superfícies
       // internas"): every piece of the outer ring gets a shadow skirt, a copy of itself kSkirtOffset outside that only casts shadow,
       // so the sun reaches no outer face and comes in only through the openings (the copy keeps their holes).
-      if (!def->emberStyle.empty() && !stairs && !e2::emberAnimatedDoor(def->emberStyle)) {
-        const double a = e2::emberAxisAngle(rot, connections);
+      if (!def->emberStyle.empty() && !stairs && !ember::emberAnimatedDoor(def->emberStyle)) {
+        const double a = ember::emberAxisAngle(rot, connections);
         double nx = std::sin(a), nz = std::cos(a);
         if (nx * (x - centreX) + nz * (z - centreZ) < 0.0) nx = -nx, nz = -nz;  // pointing away from the room
         const int sx = std::abs(nx) > std::abs(nz) ? (nx > 0.0 ? 1 : -1) : 0, sy = sx ? 0 : (nz > 0.0 ? 1 : -1);
@@ -2480,15 +2480,15 @@ class MapStage final : public Stage {
         }
         if (outer) piece.skirt = glm::vec2(static_cast<float>(nx), static_cast<float>(nz)) * kSkirtOffset, piece.hasSkirt = true;
       }
-      if (const auto hole = e2::emberStairHole(*def, rot))
+      if (const auto hole = ember::emberStairHole(*def, rot))
         groundHoles_.push_back({static_cast<float>(x + (*hole)[0]), static_cast<float>(z + (*hole)[1]), static_cast<float>(x + (*hole)[2]),
                                 static_cast<float>(z + (*hole)[3])});
       piece.x = static_cast<float>(x), piece.z = static_cast<float>(z);
       // EmberEngine's pieces stand on their own hex's ground: the arch position (no odd-row half-hex shift) samples the neighbouring
-      // cell on odd rows, and a rim piece beside the void read 0 there, two units under the floor (2026-10-21). Engine2's pieces as before.
+      // cell on odd rows, and a rim piece beside the void read 0 there, two units under the floor (2026-10-21). Ember's pieces as before.
       double gx = x, gz = z;
       if (!def->emberStyle.empty() && inBoard(p.x, p.y)) {
-        const e2::Cell* cell = &board_->cell(p.x, p.y);
+        const ember::Cell* cell = &board_->cell(p.x, p.y);
         // A piece standing ON a void cell (the Inn's outer ring on the board's rim, 2026-10-22: the void's ground is 0, two units
         // under the floor it closes) stands on its nearest floor cell's ground instead (orthogonal neighbours first, then diagonal).
         if (cell->surface < 0)
@@ -2500,19 +2500,19 @@ class MapStage final : public Stage {
             }
         gx = cell->x, gz = cell->z;
       }
-      piece.groundSmooth = static_cast<float>(e2::groundHeightAt(*board_, e2::EdgeStyle::Smooth, gx, gz));
-      piece.groundHard = static_cast<float>(e2::groundHeightAt(*board_, e2::EdgeStyle::Hard, gx, gz));
+      piece.groundSmooth = static_cast<float>(ember::groundHeightAt(*board_, ember::EdgeStyle::Smooth, gx, gz));
+      piece.groundHard = static_cast<float>(ember::groundHeightAt(*board_, ember::EdgeStyle::Hard, gx, gz));
       piece.half = std::max({std::abs(minX), std::abs(maxX), std::abs(minZ), std::abs(maxZ)});
       piece.top = maxY;
       if (def->emberStyle.starts_with("inn-")) {
         // The cut piece: the same run as a plain wall kCutHeight tall (the stone footing and the sill beam on it), windows and lanterns
         // included; a door or a doorway is left out while cut.
         piece.cuttable = true;
-        if (!e2::emberAnimatedDoor(def->emberStyle) && def->emberStyle != "inn-doorway") {
-          e2::ArchitectureDef low = *def;
+        if (!ember::emberAnimatedDoor(def->emberStyle) && def->emberStyle != "inn-doorway") {
+          ember::ArchitectureDef low = *def;
           low.emberStyle = "inn-wall";
           low.heightScale = def->heightScale * kCutHeight / std::max(maxY, 0.1f);
-          piece.cutMesh = meshOf(e2::pieceGeometry(low, rot, connections, {x, -z}), false);
+          piece.cutMesh = meshOf(ember::pieceGeometry(low, rot, connections, {x, -z}), false);
         }
       }
       if (def->emberStyle.starts_with("gothic-")) piece.deckHalf = static_cast<float>(0.32 * def->wallThicknessScale * 0.5);
@@ -2527,13 +2527,13 @@ class MapStage final : public Stage {
                                   g.position[(v + k) * 3 + 2] + static_cast<float>(z)});
       }
       arch_.push_back(std::move(piece));
-      if (e2::emberAnimatedDoor(def->emberStyle)) {
+      if (ember::emberAnimatedDoor(def->emberStyle)) {
         // The animated door: its two leaves as their own meshes, swung about the jambs by updateDoors / placeModels.
         const size_t index = arch_.size() - 1;
         DoorState& state = doors_[index];
-        for (const e2::FootOffset& f : e2::placedFootprint(*cd, p.x, p.y, p.rot)) state.cells.push_back({p.x + f.dx, p.y + f.dy});
+        for (const ember::FootOffset& f : ember::placedFootprint(*cd, p.x, p.y, p.rot)) state.cells.push_back({p.x + f.dx, p.y + f.dy});
         for (int side : {-1, 1}) {
-          const e2::three::Geometry leafGeometry = e2::emberDoorLeafPiece(*def, rot, side);
+          const ember::three::Geometry leafGeometry = ember::emberDoorLeafPiece(*def, rot, side);
           // The leaf closed, for the doors-closed probe bake (startProbeBake: the room's light with the door shut, blended at run
           // time with the doors-open bake by the leaf's angle).
           {
@@ -2545,7 +2545,7 @@ class MapStage final : public Stage {
           }
           const std::optional<MeshId> leaf = meshOf(leafGeometry, false);
           if (!leaf) continue;
-          const std::array<double, 3> h = e2::emberDoorHingePiece(*def, rot, side);
+          const std::array<double, 3> h = ember::emberDoorHingePiece(*def, rot, side);
           doorLeaves_.push_back({index, side, *leaf, {static_cast<float>(h[0]), static_cast<float>(h[1]), static_cast<float>(h[2])}});
         }
       }
@@ -2606,17 +2606,17 @@ class MapStage final : public Stage {
     for (auto& [index, d] : doors_) {
       bool near = false;
       if (battle_)
-        for (const e2::BattleUnit& u : battle_->units()) {
+        for (const ember::BattleUnit& u : battle_->units()) {
           if (!u.alive) continue;
           for (const auto& [cx, cy] : d.cells)
             if (std::abs(u.x - cx) <= 1 && std::abs(u.y - cy) <= 1) near = true;
         }
-      const float target = near ? static_cast<float>(e2::kEmberDoorOpenRadians) : 0.0f;
+      const float target = near ? static_cast<float>(ember::kEmberDoorOpenRadians) : 0.0f;
       if (d.angle != target) {
         d.angle += std::clamp(target - d.angle, -kDoorSpeed * dt, kDoorSpeed * dt);
         moved = true;
       }
-      const bool open = d.angle > static_cast<float>(e2::kEmberDoorOpenRadians) * 0.45f;
+      const bool open = d.angle > static_cast<float>(ember::kEmberDoorOpenRadians) * 0.45f;
       if (open != d.passable) setDoorPassable(index, d, open);
     }
     if (moved) placeModels();
@@ -2625,13 +2625,13 @@ class MapStage final : public Stage {
     d.passable = open;
     if (index < arch_.size()) arch_[index].blocks = !open;
     if (!battle_ || !board_) return;
-    const e2::HexLayout& L = board_->layout();
+    const ember::HexLayout& L = board_->layout();
     for (const auto& [x, y] : d.cells) {
-      if (!e2::inBoard(L, x, y)) continue;
+      if (!ember::inBoard(L, x, y)) continue;
       if (open) {
         if (const auto it = doorCellsBefore_.find({x, y}); it != doorCellsBefore_.end()) battle_->setCell(y * L.cols + x, it->second);
       } else {
-        e2::BattleCell c = battle_->cell(x, y);
+        ember::BattleCell c = battle_->cell(x, y);
         c.passable = false, c.moveCost = 99, c.blocked = true, c.shot.blocksShot = true;
         battle_->setCell(y * L.cols + x, c);
       }
@@ -2711,8 +2711,8 @@ class MapStage final : public Stage {
     if (roomCells_.empty())  // a cave, a room open to the board's edge: the whole board is the room
       for (int r = 0; r < board_->layout().rows; ++r)
         for (int c = 0; c < board_->layout().cols; ++c) roomCells_.insert({c, r});
-    const e2::HexLayout& L = board_->layout();
-    auto groundAt = [&](float x, float z) { return static_cast<float>(e2::groundHeightAt(*board_, look_, x, z)); };
+    const ember::HexLayout& L = board_->layout();
+    auto groundAt = [&](float x, float z) { return static_cast<float>(ember::groundHeightAt(*board_, look_, x, z)); };
     ProbeBakeInput in;
     float lowFloor = std::numeric_limits<float>::max();
     for (const auto& [c, r] : roomCells_) lowFloor = std::min(lowFloor, groundAt(static_cast<float>(board_->cell(c, r).x), static_cast<float>(board_->cell(c, r).z)));
@@ -2726,7 +2726,7 @@ class MapStage final : public Stage {
     for (size_t i = 0; i < count; ++i) {
       const int x = static_cast<int>(i % in.dims.x), z = static_cast<int>((i / in.dims.x) % in.dims.z), y = static_cast<int>(i / (in.dims.x * in.dims.z));
       const glm::vec3 p = in.origin + glm::vec3(x, y, z) * in.spacing;
-      const auto [c, r] = e2::hexAt(L, p.x, p.z);
+      const auto [c, r] = ember::hexAt(L, p.x, p.z);
       in.candidate[i] = roomCells_.contains({c, r}) && p.y > groundAt(p.x, p.z) + 0.15f && p.y < roofBottom_ - 0.1f;
     }
     // The surfaces: the pieces and the roof (probeTris_), the ground under the roof, two triangles per half unit, facing up.
@@ -2758,7 +2758,7 @@ class MapStage final : public Stage {
     for (int mz = 0; mz < probeMaskDims_.y; ++mz)
       for (int mx = 0; mx < probeMaskDims_.x; ++mx) {
         const float x = roofRect_.x + (mx + 0.5f) * kProbeMaskSpacing, z = roofRect_.y + (mz + 0.5f) * kProbeMaskSpacing;
-        const auto [c, r] = e2::hexAt(L, x, z);
+        const auto [c, r] = ember::hexAt(L, x, z);
         bool inside = roomCells_.contains({c, r});
         if (!inside && wallCells_.contains({c, r})) {
           // The wall hex's half nearer a room hex is inside; the half nearer any other hex, ON THE BOARD OR OFF IT, is outside (a wall
@@ -2769,8 +2769,8 @@ class MapStage final : public Stage {
             for (int dc = -2; dc <= 2; ++dc) {
               const int nc = c + dc, nr = r + dr;
               if ((dc == 0 && dr == 0) || wallCells_.contains({nc, nr})) continue;
-              const float d = std::hypot(static_cast<float>(e2::hexX(L, nc, nr)) - x, static_cast<float>(e2::hexZ(L, nr)) - z);
-              if (d < nearest) nearest = d, inside = e2::inBoard(L, nc, nr) && roomCells_.contains({nc, nr});
+              const float d = std::hypot(static_cast<float>(ember::hexX(L, nc, nr)) - x, static_cast<float>(ember::hexZ(L, nr)) - z);
+              if (d < nearest) nearest = d, inside = ember::inBoard(L, nc, nr) && roomCells_.contains({nc, nr});
             }
         }
         probeMask_[size_t(mz) * size_t(probeMaskDims_.x) + size_t(mx)] = inside ? 255 : 0;
@@ -2938,13 +2938,13 @@ class MapStage final : public Stage {
     return meshes_.addBuilt(std::move(bytes));
   }
 
-  // Engine2's models.ts: scaled uniformly to their height, base centred on the anchor, turned by rotY.
+  // Ember's models.ts: scaled uniformly to their height, base centred on the anchor, turned by rotY.
   void placeModels() {
     modelsPlaced_ = true;
     std::vector<InstanceGpu> instances;
     hearthFireInstances_.clear();
     pieceBoxes_.clear();
-    for (const e2::SceneModel& m : scene_->models) {
+    for (const ember::SceneModel& m : scene_->models) {
       if (lockOpened(m.id, "doorDecor", m.x, m.z)) continue;  // the door was picked open: its closed model is gone
       std::string asset = m.file.substr(std::string("/game/").size());
       asset = "meshes/" + asset.substr(0, asset.size() - 4) + ".mesh";
@@ -3096,23 +3096,23 @@ class MapStage final : public Stage {
   bool lockOpened(const std::string& id, const char* kind, float x, float z) const {
     if (!battle_ || !board_) return false;
     bool any = false;
-    for (const e2::Battle::Lock& l : battle_->locks()) any = any || l.open;
+    for (const ember::Battle::Lock& l : battle_->locks()) any = any || l.open;
     if (!any) return false;
-    const auto [c, r] = e2::hexAt(board_->layout(), x, z);
-    for (const e2::Battle::Lock& l : battle_->locks())
+    const auto [c, r] = ember::hexAt(board_->layout(), x, z);
+    for (const ember::Battle::Lock& l : battle_->locks())
       if (l.open && l.kind == kind && l.id == id && l.x == c && l.y == r) return true;
     return false;
   }
 
-  // "Arrombar" (Engine2 useLockpick): the picked hero spends a Gazua on the chest or door beside it.
+  // "Arrombar" (Ember useLockpick): the picked hero spends a Gazua on the chest or door beside it.
   void openLock() {
     if (!battle_ || selected_ < 0 || !myTurn() || busy()) return;
     const size_t ui = static_cast<size_t>(selected_), ab = static_cast<size_t>(unitBattle_[ui]);
     if (battle_->units()[ab].acted) return;
-    std::vector<e2::BattleEffect> fx;
-    if (!e2::useLockpick(*battle_, ab, rng_, fx)) return;
+    std::vector<ember::BattleEffect> fx;
+    if (!ember::useLockpick(*battle_, ab, rng_, fx)) return;
     showEffects(fx);
-    e2::BattleUnit& au = battle_->units()[ab];
+    ember::BattleUnit& au = battle_->units()[ab];
     if (!au.summoned) au.fullness = std::max(0.0, std::min(120.0, au.fullness.value_or(100.0)) - 2.0);  // finishAction: every action costs 2 of fullness
     tip_ = battle_->log().empty() ? std::string() : battle_->log().back(), tipAt_ = now_;
     if (modelsPlaced_) placeModels();  // an opened door's closed model leaves
@@ -3123,10 +3123,10 @@ class MapStage final : public Stage {
     refreshReach();
   }
 
-  // Engine2's chest-loot popup: who opened it, the Ember and what else it held; stays until the player says Ok.
+  // Ember's chest-loot popup: who opened it, the Ember and what else it held; stays until the player says Ok.
   void drawChestLoot() {
     if (!battle_ || !battle_->chestLoot()) return;
-    const e2::Battle::ChestLoot& loot = *battle_->chestLoot();
+    const ember::Battle::ChestLoot& loot = *battle_->chestLoot();
     const ImGuiIO& io = ImGui::GetIO();
     ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.42f}, ImGuiCond_Always, {0.5f, 0.5f});
     ImGui::SetNextWindowSize({380.0f, 0.0f});
@@ -3140,24 +3140,24 @@ class MapStage final : public Stage {
     ImGui::TextUnformatted((loot.unit + tr(" arrombou o baú", " picked the chest's lock")).c_str());
     ImGui::PopFont();
     ImGui::PushFont(uiFont(UiFont::Ui), 15.0f);
-    {  // Engine2's GoldAmount: the pile of coins, then "+N Gold"
+    {  // Ember's GoldAmount: the pile of coins, then "+N Gold"
       const ImVec2 at = ImGui::GetCursorScreenPos();
       const float coin = 26.0f;
-      if (const UiImage* gold = uiImage(options_.engine2Public / "game/icons/gold-coins-pile.png")) imageContain(ImGui::GetWindowDrawList(), *gold, {at.x, at.y}, {at.x + coin, at.y + coin});
+      if (const UiImage* gold = uiImage(options_.artRoot / "game/icons/gold-coins-pile.png")) imageContain(ImGui::GetWindowDrawList(), *gold, {at.x, at.y}, {at.x + coin, at.y + coin});
       ImGui::SetCursorScreenPos({at.x + coin + 8.0f, at.y + (coin - ImGui::GetTextLineHeight()) * 0.5f});
       ImGui::TextUnformatted(("+" + std::to_string(loot.ember) + " Gold").c_str());
       ImGui::SetCursorScreenPos({at.x, at.y + coin + 4.0f});
     }
     ensureInnData();
-    for (const e2::Battle::ChestLoot::Item& item : loot.items) {  // each find with its own icon, as Engine2's popup draws them
+    for (const ember::Battle::ChestLoot::Item& item : loot.items) {  // each find with its own icon, as Ember's popup draws them
       std::string icon;
       if (item.kind == "potion") icon = "game/icons/potion-" + item.id + ".png";
       else if (item.kind == "rations") icon = "game/icons/rations.png";
       else if (item.kind == "weapon") icon = innData_.weapon(item.id) ? innData_.weapon(item.id)->icon : "";
-      else if (const e2::InnGear* gear = innData_.gear(item.id)) icon = gear->icon;
+      else if (const ember::InnGear* gear = innData_.gear(item.id)) icon = gear->icon;
       if (const size_t q = icon.find('?'); q != std::string::npos) icon.resize(q);
       if (!icon.empty() && icon[0] == '/') icon.erase(0, 1);
-      const UiImage* img = icon.empty() ? nullptr : uiImage(options_.engine2Public / std::filesystem::path(reinterpret_cast<const char8_t*>(icon.c_str())));
+      const UiImage* img = icon.empty() ? nullptr : uiImage(options_.artRoot / std::filesystem::path(reinterpret_cast<const char8_t*>(icon.c_str())));
       const ImVec2 at = ImGui::GetCursorScreenPos();
       const float row = 40.0f;
       if (img) ImGui::GetWindowDrawList()->AddImage(img->texture, {at.x, at.y}, {at.x + row, at.y + row});
@@ -3181,10 +3181,10 @@ class MapStage final : public Stage {
     missing_ = 0;
     fullFrames_ = 0;
     if ((placedLook_ != look_ || placedWindowLight_ != windowLight()) && modelsPlaced_) placeModels();
-    // Decorations: Engine2's DecorLayer. Cards stand square to the hex rows (LOCK_PROPS) or along their own
+    // Decorations: Ember's DecorLayer. Cards stand square to the hex rows (LOCK_PROPS) or along their own
     // turn (barricades); the art's opaque base sits on the anchor; Ember's layer step moves them along their facing.
-    for (const e2::SceneCard& d : scene_->cards) {
-      if (lockOpened(d.id, "chest", d.x, d.z)) continue;  // a chest opened with a Gazua is gone (Engine2 drops its decoration)
+    for (const ember::SceneCard& d : scene_->cards) {
+      if (lockOpened(d.id, "chest", d.x, d.z)) continue;  // a chest opened with a Gazua is gone (Ember drops its decoration)
       // EmberEngine's own door card standing on a door tile (the Misty Cave's sealed doors, 2026-10-23): gone once that door is open
       if (d.id.starts_with("ember-") && d.id.find("door") != std::string::npos && lockOpened("door", "doorTile", d.x, d.z)) continue;
       const std::string name = std::filesystem::path(d.image).stem().string();
@@ -3203,7 +3203,7 @@ class MapStage final : public Stage {
         addCard(clip, {d.x, y, d.z}, {1.0f, 0.0f, 0.0f}, d.w, d.h, {0.0f, -0.5f * d.h, 0.0f}, d.mirror, 0, kSpriteLit | kSpriteFlat, nullptr);
         continue;
       }
-      // Tática (Engine2 DecorLayer.face with flatTop): every card lies flat square to the screen, just over the highest
+      // Tática (Ember DecorLayer.face with flatTop): every card lies flat square to the screen, just over the highest
       // ground, each row of depth a step higher so nearer rows cover farther ones; no layer step, no shadow.
       const float yaw = flat_ ? 0.0f : d.lockedYaw.value_or(0.0f);
       const glm::vec3 right{std::cos(yaw), 0.0f, -std::sin(yaw)};
@@ -3220,7 +3220,7 @@ class MapStage final : public Stage {
       addCard(clip, anchor, right, d.w, d.h, local, d.mirror, 0, flags, d.light ? &emit : nullptr);
     }
     // Units: the pose chosen in the panel from each unit's own catalog entry (its idle when it has none). They turn
-    // to face the camera; Engine2's box for the pose, its foot line on the ground, the frame paced by Engine2's
+    // to face the camera; Ember's box for the pose, its foot line on the ground, the frame paced by Ember's
     // framePace. One-shot poses (attacks, casts) play through, hold half a second, and start again.
     const std::string& chosen = poseChoices_.empty() ? kIdle : poseChoices_[static_cast<size_t>(poseChoice_)].first;
     glm::vec3 right = camera.right;
@@ -3229,12 +3229,12 @@ class MapStage final : public Stage {
     hiddenUnits_ = 0;
     for (CardRect& c : unitCard_) c.drawn = false;
     for (size_t ui = 0; ui < scene_->units.size(); ++ui) {
-      const e2::SceneUnit& u = scene_->units[ui];
+      const ember::SceneUnit& u = scene_->units[ui];
       // Fog of war: a unit not in the party's sight is not drawn at all (and casts no shadow).
       if (fog_ && !noFog_ && u.side != "player") {
-        const auto [c, r] = e2::hexAt(board_->layout(), unitPos_[ui].x, unitPos_[ui].y);
+        const auto [c, r] = ember::hexAt(board_->layout(), unitPos_[ui].x, unitPos_[ui].y);
         // The states the shown mask was painted from (all hidden until the first mask arrives).
-        const size_t i = static_cast<size_t>(e2::indexOf(board_->layout(), c, r));
+        const size_t i = static_cast<size_t>(ember::indexOf(board_->layout(), c, r));
         if (!litHex(i)) {
           ++hiddenUnits_;
           noteShown(ui, false, c, r, i);
@@ -3244,11 +3244,11 @@ class MapStage final : public Stage {
       }
       // The scene's own idle unless the unit's catalog entry has the chosen pose. The mirror stays the scene's:
       // its side's facing against the unit's drawn direction, which is the same for every pose.
-      // A walking unit shows Engine2's walk for its direction (UnitActor.walkShown), timed from the walk's start.
-      const e2::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
+      // A walking unit shows Ember's walk for its direction (UnitActor.walkShown), timed from the walk's start.
+      const ember::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
       const bool walking = !unitWalk_[ui].points.empty();
       std::string shown = kIdle;
-      const e2::HeroPose* p = nullptr;
+      const ember::HeroPose* p = nullptr;
       // The fallen: their death plays out, holds, then they are gone. -1000 = gone already (fallen in a loaded save, absent,
       // a summon dismissed): never drawn (the loaded dead stood on the board as ghosts, the user 2026-10-20).
       if (ui < unitDiedAt_.size() && (unitDiedAt_[ui] <= -999.0f ||
@@ -3258,9 +3258,9 @@ class MapStage final : public Stage {
       const OneShot* shot = nullptr;
       if (ui < unitShot_.size() && !unitShot_[ui].pose.empty()) shotNow = unitShot_[ui], shot = &shotNow;
       if (shot && entry) {
-        // Engine2 UnitActor.play: the left-facing cut when it faces left and has one.
+        // Ember UnitActor.play: the left-facing cut when it faces left and has one.
         const std::string left = shot->pose + "Left";
-        const e2::HeroPose* l = unitFacing_[ui] == -1 ? entry->find(left) : nullptr;
+        const ember::HeroPose* l = unitFacing_[ui] == -1 ? entry->find(left) : nullptr;
         p = l && !l->pace.empty() ? l : entry->find(shot->pose);
         if (p && p->pace.empty()) p = nullptr;
         if (p) shown = p == l ? left : shot->pose;
@@ -3323,14 +3323,14 @@ class MapStage final : public Stage {
       float squash = 1.0f;
       anchor += recoilOffset(ui, time, boxH, squash) + leapOffset(ui, time);
       boxW *= 1.0f + (1.0f - squash) * 0.6f, boxH *= squash;
-      // Engine2's mirroring: the art's facing against the unit's, except cuts drawn for the left (and directional
+      // Ember's mirroring: the art's facing against the unit's, except cuts drawn for the left (and directional
       // walks while moving), which are never mirrored.
       // A unit with a walk of its own for each side (a "walkLeft" pose beside "walk": Isolde's and Voss's videos, 2026-10-25, the
       // user: "só tem o walk de um lado, eu fiz dois videos um para cada") is never mirrored while walking, whatever its sprite.
       const bool ownSides = walking && entry && entry->find("walkLeft") && !entry->find("walkLeft")->pace.empty();
       const bool leftCut = shown == "walkLeft" || shown == "attackLeft" || shown == "attack2Left" || shown == "castLeft" ||
                            (walking && kDirectionalWalk.contains(u.sprite)) || ownSides;
-      // Engine2 UnitActor.drawnReversed: Kael Final's idle is drawn turned left, but his walk and attacks face right
+      // Ember UnitActor.drawnReversed: Kael Final's idle is drawn turned left, but his walk and attacks face right
       // (and the old Kael's attacks), so those poses are not reversed: reading his idle for them walked him backwards.
       static const std::unordered_set<std::string> kAttackPoses = {"attack", "attackLeft", "attack2", "attack2Left", "attackShort",
                                                                    "cast", "castLeft", "heal", "counter"};
@@ -3338,15 +3338,15 @@ class MapStage final : public Stage {
       const bool drawnRight = (u.sprite == "kaelFinal" && (walking || attackPose)) || (u.sprite == "defaultWarrior" && attackPose);
       const bool reversed = unitReversed_[ui] != 0 && !drawnRight;
       const bool mirror = !leftCut && ((unitFacing_[ui] == -1) != reversed);
-      // Tática (Engine2 UnitActor.update with flatTop): flat over its own row's cards by half a row step, no shadow.
+      // Tática (Ember UnitActor.update with flatTop): flat over its own row's cards by half a row step, no shadow.
       if (flat_) anchor.y = boardTop_ + anchor.z * kFlatRowStep + kFlatRowStep * 0.5f;
       const uint32_t flags = flat_ ? kSpriteLit | kSpriteFlat : kSpriteLit | kSpriteFront | kSpriteCastsShadow;
       const size_t cardsBefore = drawList_.size();
-      // Engine2 centerBody: a sheet that drifts sideways mid-swing (Neera's off-hand dagger) is held on its hex.
+      // Ember centerBody: a sheet that drifts sideways mid-swing (Neera's off-hand dagger) is held on its hex.
       const float drift = p && frame < p->bodyShift.size() ? p->bodyShift[frame] * boxW : 0.0f;
-      // Engine2 UNIT_GLOW: art painted as glowing lights itself (the Cobalt Blue Deer's crystal antlers: colour, level 0.85, its
+      // Ember UNIT_GLOW: art painted as glowing lights itself (the Cobalt Blue Deer's crystal antlers: colour, level 0.85, its
       // own mask in sprites.hlsl, flagged by a negative emitAt.z).
-      // The familiars glow the same way (the user, 2026-10-18, Engine2's screenshot: the familiar bright, lit, among dark stone).
+      // The familiars glow the same way (the user, 2026-10-18, Ember's screenshot: the familiar bright, lit, among dark stone).
       SpriteInstance glow{};
       const bool glows = u.sprite == "cobalt-blue-deer" || u.classId == "familiar" || u.classId == "familiar2" ||
                          u.classId == "familiar3" || u.classId == "familiar4";
@@ -3384,16 +3384,16 @@ class MapStage final : public Stage {
   // is 4x as strong too.
   static constexpr float kFireRadiusMul = 2.0f;
   float fireRadiusMul() const { return kFireRadiusMul; }
-  // Engine2's CarriedLight: three.js point light, decay 1.25, cut off at hypot(radius, height) x 2.5, colour x
+  // Ember's CarriedLight: three.js point light, decay 1.25, cut off at hypot(radius, height) x 2.5, colour x
   // intensity x 3.2 x flicker.
   LocalLight carried(glm::vec3 at, const std::array<float, 3>& color, float intensity, float radius, float height, float flick) const {
     LocalLight l;
     l.position = at;
     if (lightingMode_ == 3) {
-      // Real light: Engine2's intensity and reach read as a luminous flux (lantern ~900 lm, fire ~1200 lm, forge
+      // Real light: Ember's intensity and reach read as a luminous flux (lantern ~900 lm, fire ~1200 lm, forge
       // ~1700 lm, candle ~200 lm), an isotropic source of flux / 4pi candela falling off as 1 / d^2 (lux), its
       // range where it drops under 0.03 lux.
-      const float reach = radius / 1.3f;  // Engine2 LIGHT_RADIUS_MUL is already in the scene's radius
+      const float reach = radius / 1.3f;  // Ember LIGHT_RADIUS_MUL is already in the scene's radius
       const float lumens = intensity * reach * reach * kLumensPerUnit;
       const float candela = lumens / (4.0f * std::numbers::pi_v<float>);
       l.color = glm::vec3(color[0], color[1], color[2]) * candela * flick;
@@ -3413,14 +3413,14 @@ class MapStage final : public Stage {
     fireUpright_.clear();
     // A map light sits on its flame as the card draws it (the user, 2026-10-18: the lights were "completely off set"):
     // the card's axis and layer step (addCard), its picture's bottom edge, then up the card along the same lean as
-    // sprites.hlsl VSMain when the cards lean to the camera; Engine2's floor of minHeight over the ground kept.
+    // sprites.hlsl VSMain when the cards lean to the camera; Ember's floor of minHeight over the ground kept.
     glm::vec3 lean{0.0f, 1.0f, 0.0f};
     if (cardStance_ == 1) {
       const glm::vec3 f = lastCamera_.forward;
       const glm::vec3 v = glm::vec3(0.0f, 1.0f, 0.0f) - f * f.y;
       if (glm::dot(v, v) > 1e-6f) lean = glm::normalize(v);
     }
-    for (const e2::SceneCard& d : scene_->cards) {
+    for (const ember::SceneCard& d : scene_->cards) {
       if (!d.light) continue;
       const float yaw = d.lockedYaw.value_or(0.0f);
       const glm::vec3 right{std::cos(yaw), 0.0f, -std::sin(yaw)};
@@ -3449,7 +3449,7 @@ class MapStage final : public Stage {
                                 fireFlicker_.back()));
     }
     // A 3D piece with its own fire (the Meshy hearth; models.json "light"): lit as every other light-giving decoration.
-    for (const e2::SceneModel& m : scene_->models) {
+    for (const ember::SceneModel& m : scene_->models) {
       if (!m.light) continue;
       // the flame's offset turns with the piece as placeModels turns it (x' = x cos + z sin, z' = -x sin + z cos)
       const float c = std::cos(m.rotY), sn = std::sin(m.rotY), ox = m.light->offsetX, oz = m.light->offsetZ;
@@ -3492,10 +3492,10 @@ class MapStage final : public Stage {
     openingLightsTo_ = lights_.size();
     // (The daylight that comes in through the openings, the sky's and the bounced sun's, is the room's light probes': startProbeBake.)
     if (hero_ < 0) return;
-    const e2::SceneUnit* hero = &scene_->units[static_cast<size_t>(hero_)];
+    const ember::SceneUnit* hero = &scene_->units[static_cast<size_t>(hero_)];
     const glm::vec3 base = heroAt_;
     if (options_.movingLight) {
-      // A torch (Engine2's NORMAL_FIRE: colour (1, 0.58, 0.26), intensity 8, radius 3.6, full flicker) carried
+      // A torch (Ember's NORMAL_FIRE: colour (1, 0.58, 0.26), intensity 8, radius 3.6, full flicker) carried
       // around the hero at hand height.
       const float a = time * 0.6f;
       const glm::vec3 at = base + glm::vec3(std::cos(a) * 2.5f, 1.6f, std::sin(a) * 2.5f);
@@ -3503,9 +3503,9 @@ class MapStage final : public Stage {
     }
     if (options_.spellLight) {
       // A violet arcane bolt from the hero to the nearest enemy: 1.2 s of flight, 0.5 s of impact flash.
-      const e2::SceneUnit* target = nullptr;
+      const ember::SceneUnit* target = nullptr;
       float best = 1e30f;
-      for (const e2::SceneUnit& u : scene_->units) {
+      for (const ember::SceneUnit& u : scene_->units) {
         if (u.side != "enemy") continue;
         const float d = glm::length(glm::vec2(u.x - base.x, u.z - base.z));
         if (d < best) best = d, target = &u;
@@ -3526,12 +3526,12 @@ class MapStage final : public Stage {
     }
   }
 
-  // The moon tonight (ARCHITECTURE 7.5): it crosses the sky in Engine2's 600 s (moon.ts, stage.ts
-  // MOON_CROSSING_SECONDS), starting at Engine2's 0.35 of the way. Engine2 drew the disc ahead of the normal view
+  // The moon tonight (ARCHITECTURE 7.5): it crosses the sky in Ember's 600 s (moon.ts, stage.ts
+  // MOON_CROSSING_SECONDS), starting at Ember's 0.35 of the way. Ember drew the disc ahead of the normal view
   // but lit the board from the mirrored side (stage.ts moveMoon: light from ahead lit only the backs of units);
   // with a real sky the two cannot both hold, so three placements are kept, chosen in the panel until the user picks:
-  //   0 Engine2's: disc ahead, low enough to show above the board; light from Engine2's side (26-43 deg up)
-  //   1 high: disc and light together on Engine2's light (behind the normal view; the orbit camera never sees it)
+  //   0 Ember's: disc ahead, low enough to show above the board; light from Ember's side (26-43 deg up)
+  //   1 high: disc and light together on Ember's light (behind the normal view; the orbit camera never sees it)
   //   2 low ahead: disc and light together ahead and low (in view when the camera tilts low; units lit from behind)
   struct MoonPlacement {
     glm::vec3 light{0.0f, 1.0f, 0.0f}, disc{0.0f, 1.0f, 0.0f};  // towards each
@@ -3543,12 +3543,12 @@ class MapStage final : public Stage {
     const float radius = glm::radians(kMoonSizes[moonSize_]);
     const float lowRise = radius + glm::radians(2.0f), lowHigh = radius + glm::radians(8.0f);
     const float progress = std::fmod(kStart + time / kCrossingSeconds, 1.0f);
-    const e2::MoonPose pose = e2::moonPose(progress);
+    const ember::MoonPose pose = ember::moonPose(progress);
     const float height = std::sin(std::numbers::pi_v<float> * progress);
     float d[3];
-    e2::lightDirection(pose.azimuth + std::numbers::pi_v<float>, pose.elevation, d);
+    ember::lightDirection(pose.azimuth + std::numbers::pi_v<float>, pose.elevation, d);
     const glm::vec3 behind{d[0], d[1], d[2]};
-    e2::lightDirection(pose.azimuth, lowRise + (lowHigh - lowRise) * height, d);
+    ember::lightDirection(pose.azimuth, lowRise + (lowHigh - lowRise) * height, d);
     const glm::vec3 lowAhead{d[0], d[1], d[2]};
     switch (moonPath_) {
       case 1: return {behind, behind};
@@ -3558,32 +3558,32 @@ class MapStage final : public Stage {
   }
 
   // The map's light (ARCHITECTURE 7.5) in the chosen mode. Time of day picks sun or moon and where it stands;
-  // the map's own sliders set the strengths (Engine2's 3D ignored them); the atmosphere colours the light.
+  // the map's own sliders set the strengths (Ember's 3D ignored them); the atmosphere colours the light.
   Renderer::Lighting mapLighting(float time) const {
-    using e2::TimeOfDayLight;
+    using ember::TimeOfDayLight;
     Renderer::Lighting l;
     if (lightingMode_ == 0) return l;  // the old prototype day
-    const TimeOfDayLight& t = e2::timeOfDay(scene_ ? scene_->timeOfDay : std::string());
+    const TimeOfDayLight& t = ember::timeOfDay(scene_ ? scene_->timeOfDay : std::string());
     // (the one line not of 2026-10-19: tonight's moon by the panel / the campaign's day, else the map's own Lua, moonPhaseIndex();
     // the user, 2026-10-23: "espero que tenha todas as luas", "cadê a lua vermelha?")
     const int phaseIndex = moonPhaseIndex();
-    const char* phase = phaseIndex < 0 ? "full" : e2::kMoonPhases[phaseIndex];
-    const e2::Moonlight moon = phaseIndex < 0 ? e2::Moonlight{} : e2::moonlightFor(phase);
+    const char* phase = phaseIndex < 0 ? "full" : ember::kMoonPhases[phaseIndex];
+    const ember::Moonlight moon = phaseIndex < 0 ? ember::Moonlight{} : ember::moonlightFor(phase);
     MoonPlacement placed;
     if (t.moon) {
       placed = moonPlacement(time);
       // The light comes from the disc (the user, 2026-10-19: "a lua não aparenta emanar a luz ... as sombras na direção oposta
-      // da lua": Engine2's preset lit from one side while the disc hung on another); with no disc, Engine2's side.
+      // da lua": Ember's preset lit from one side while the disc hung on another); with no disc, Ember's side.
       if (!moonOff_) placed.light = placed.disc;
       l.sunDirection = placed.light;
     } else {
       float dir[3];
-      e2::lightDirection(t.stageAzimuth, t.elevationDeg >= 0.0f ? glm::radians(t.elevationDeg) : t.stageElevation, dir);
+      ember::lightDirection(t.stageAzimuth, t.elevationDeg >= 0.0f ? glm::radians(t.elevationDeg) : t.stageElevation, dir);
       l.sunDirection = glm::normalize(glm::vec3(dir[0], dir[1], dir[2]));
     }
     if (lightingMode_ == 3 && clockOn() && !darkIndoor()) return cycleLighting(time, moon, phase);
     if (lightingMode_ == 3) return realLighting(t, moon, phase, placed, time);
-    if (lightingMode_ == 1) {  // Engine2's 3D stage, as it drew (at night: the moon's light from Engine2's side)
+    if (lightingMode_ == 1) {  // Ember's 3D stage, as it drew (at night: the moon's light from Ember's side)
       if (t.moon) l.sunDirection = glm::normalize(moonPlacement(time).light);
       l.sunColor = Renderer::srgb(t.moon && moon.color ? moon.color : t.stageSun);
       l.sunIntensity = t.stageSunIntensity * (t.moon ? 1.5f * moon.strength : 1.0f);  // MOON_BRIGHTNESS x tonight's phase
@@ -3611,14 +3611,14 @@ class MapStage final : public Stage {
     l.skyIlluminance = keyColor * key;
     l.skyScale = t.moon ? 0.04f : 1.0f;  // a moonlit sky is dark
     if (t.moon) {
-      // Night: stars, no sun disc, and the moon's disc with tonight's art. Its size is Engine2's disc as seen from
+      // Night: stars, no sun disc, and the moon's disc with tonight's art. Its size is Ember's disc as seen from
       // its normal view (moon.ts RADIUS 0.14 board half-sizes, ~3 half-sizes from the camera: ~2.7 deg radius; the
-      // real moon's 0.26 would leave the phase unreadable); its brightness Engine2's GLOW (2.3 x the art).
+      // real moon's 0.26 would leave the phase unreadable); its brightness Ember's GLOW (2.3 x the art).
       l.sunDisc = false;
       l.stars = starsOff_ ? 0.0f : 1.0f;
       l.starLook = static_cast<uint32_t>(starLook_);
       l.moonDirection = placed.disc;
-      l.moonTexture = ground_.textureIndex(e2::skyMoonAsset(phase));
+      l.moonTexture = ground_.textureIndex(ember::skyMoonAsset(phase));
       l.moonRadius = moonOff_ ? 0.0f : glm::radians(kMoonSizes[moonSize_]);  // off: no disc (its light stays: "sol / lua")
       l.moonGlow = 2.3f;
     }
@@ -3631,7 +3631,7 @@ class MapStage final : public Stage {
   // gives 0.5 lux (twice the real 0.25, the usual art lift so moonlit ground still reads), times tonight's phase.
   // Dawn and dusk put the sun low (6 and 4 degrees) so they look like dawn and dusk. Indoors: a dim fill (3 lux) and
   // ambient (1.5 lux), so the torches carry the room. The camera meters what lands on the board (meterLux_).
-  Renderer::Lighting realLighting(const e2::TimeOfDayLight& t, const e2::Moonlight& moon, const char* phase, const MoonPlacement& placed,
+  Renderer::Lighting realLighting(const ember::TimeOfDayLight& t, const ember::Moonlight& moon, const char* phase, const MoonPlacement& placed,
                                  float /*time*/) const {
     Renderer::Lighting l;
     const float keyMul = scene_ && scene_->sunIntensity ? *scene_->sunIntensity / t.key : 1.0f;
@@ -3648,7 +3648,7 @@ class MapStage final : public Stage {
       const float duskDegrees = aldeia() ? 2.5f : 4.0f;
       const float elevation = name == "dawn" ? glm::radians(6.0f) : name == "dusk" ? glm::radians(duskDegrees) : t.stageElevation;
       float dir[3];
-      e2::lightDirection(t.stageAzimuth, elevation, dir);
+      ember::lightDirection(t.stageAzimuth, elevation, dir);
       l.sunDirection = glm::normalize(glm::vec3(dir[0], dir[1], dir[2]));
     }
     if (options_.sunElevation >= 0.0f) {
@@ -3692,10 +3692,10 @@ class MapStage final : public Stage {
       l.stars = starsOff_ ? 0.0f : 1.0f;
       l.starLook = static_cast<uint32_t>(starLook_);
       l.moonDirection = placed.disc;
-      l.moonTexture = ground_.textureIndex(e2::skyMoonAsset(phase));
+      l.moonTexture = ground_.textureIndex(ember::skyMoonAsset(phase));
       l.moonRadius = moonOff_ ? 0.0f : glm::radians(kMoonSizes[moonSize_]);
       // The disc's radiance follows the moon's light (the physical sky's exposure is set by that light), never below
-      // Engine2's glow: a bright disc under either "Luar" whose phase art still reads (at 0.9 x it burned to a white
+      // Ember's glow: a bright disc under either "Luar" whose phase art still reads (at 0.9 x it burned to a white
       // "super moon": the user, 2026-10-19).
       l.moonGlow = std::max(2.3f, outside * 0.35f);
     }
@@ -3708,12 +3708,12 @@ class MapStage final : public Stage {
   // the moon rises and the stars come in with the dark (atmosphere.hlsli). The board's key light is the sun while it is up, the moon
   // after: the swap falls when both sit on the horizon and light almost nothing. The meter follows twilight (a tenth for every 2.4 deg
   // the sun sinks), so the camera opens up through dusk.
-  // Tonight's moon (index in e2::kMoonPhases, -1 = full at the night's own strength): the panel's / the campaign day's (moonPhase_),
+  // Tonight's moon (index in ember::kMoonPhases, -1 = full at the night's own strength): the panel's / the campaign day's (moonPhase_),
   // else the map's own Lua (the Map Editor, Modo teste).
   int moonPhaseIndex() const {
     int phase = moonPhase_;
     for (int i = 0; phase < 0 && scene_ && i < 9; ++i)
-      if (scene_->moonPhase == e2::kMoonPhases[i]) phase = i;
+      if (scene_->moonPhase == ember::kMoonPhases[i]) phase = i;
     // A map that chose no Lua: Noite escura takes the new moon (no moon, the whole starry sky), Noite clara the full moon (-1, as
     // before); the user, 2026-10-23: "Noite escura com lua nova quando o mapa não escolhe a fase; Noite clara com lua cheia".
     if (phase < 0 && scene_ && scene_->moonPhase.empty() && scene_->timeOfDay == "darkNight") phase = 0;
@@ -3733,16 +3733,16 @@ class MapStage final : public Stage {
     if (dayCycle_ == 2) return std::fmod(6.0f + time * 24.0f / 1440.0f, 24.0f);   // ciclo lento: a day in 24 minutes
     return kFixed[std::clamp(dayCycle_ - 3, 0, 7)];
   }
-  Renderer::Lighting cycleLighting(float time, const e2::Moonlight& moon, const char* phase) const {
+  Renderer::Lighting cycleLighting(float time, const ember::Moonlight& moon, const char* phase) const {
     Renderer::Lighting l;
     const float pi = std::numbers::pi_v<float>;
     const float hour = cycleHour(time);
     const float elevation = glm::radians(62.0f) * std::sin(2.0f * pi * (hour - 6.0f) / 24.0f);
     const float azimuth = -0.95f + pi * (hour - 12.0f) / 12.0f;
     float d[3];
-    e2::lightDirection(azimuth, elevation, d);
+    ember::lightDirection(azimuth, elevation, d);
     const glm::vec3 sun = glm::normalize(glm::vec3(d[0], d[1], d[2]));
-    e2::lightDirection(azimuth + pi, -elevation * 0.9f, d);
+    ember::lightDirection(azimuth + pi, -elevation * 0.9f, d);
     const glm::vec3 moonDir = glm::normalize(glm::vec3(d[0], d[1], d[2]));
     const glm::vec3 moonColor = Renderer::srgb(moon.color ? moon.color : 0x9fb4ffu);
     const float moonLux = (moonLight_ == 1 ? kCinemaMoonLux : kFullMoonLux) * moon.strength;
@@ -3788,7 +3788,7 @@ class MapStage final : public Stage {
     }
     if (moonDir.y > -0.05f) {
       l.moonDirection = moonDir;
-      l.moonTexture = ground_.textureIndex(e2::skyMoonAsset(phase));
+      l.moonTexture = ground_.textureIndex(ember::skyMoonAsset(phase));
       l.moonRadius = moonOff_ ? 0.0f : glm::radians(kMoonSizes[moonSize_]);
       l.moonGlow = std::max(2.3f, moonLux * 0.35f);
     }
@@ -3819,7 +3819,7 @@ class MapStage final : public Stage {
     glm::vec2 sum{0.0f};
     int n = 0;
     for (size_t i = 0; i < scene_->units.size(); ++i) {
-      const e2::SceneUnit& u = scene_->units[i];
+      const ember::SceneUnit& u = scene_->units[i];
       if (u.side != "player") continue;
       sum += static_cast<int>(i) == hero_ ? glm::vec2(heroAt_.x, heroAt_.z) : unitPos_[i];
       ++n;
@@ -3830,11 +3830,11 @@ class MapStage final : public Stage {
   // The map's units find their own catalog entry by key. The panel's poses: those at least one of the map's units
   // has, in the catalog's order of first appearance with its label, the idle ("Parado") first.
   void setUpPoses(const std::filesystem::path& path) {
-    std::optional<std::vector<e2::Hero>> catalog = e2::loadHeroes(path);
+    std::optional<std::vector<ember::Hero>> catalog = ember::loadHeroes(path);
     if (!catalog) return;
     catalog_ = std::move(*catalog);
-    std::unordered_map<std::string, const e2::Hero*> byKey;
-    for (const e2::Hero& h : catalog_)
+    std::unordered_map<std::string, const ember::Hero*> byKey;
+    for (const ember::Hero& h : catalog_)
       if (!h.key.empty()) byKey.emplace(h.key, &h);
     unitCatalog_.assign(scene_->units.size(), nullptr);
     std::vector<std::string> unknown;
@@ -3845,16 +3845,16 @@ class MapStage final : public Stage {
       // One source for a unit's art on every map and in every mode (the user, 2026-10-25: "same art, same rules"): the catalog's
       // idle, always; the scene file's copy of it (its frames, pace, box) is never used, even when it names the same set (Isolde's
       // kept a stale forward-only pace that way while Voss's, a different set name, was replaced).
-      const e2::HeroPose* idle = unitCatalog_[i] ? unitCatalog_[i]->find(kIdle) : nullptr;
-      e2::SceneUnit& su = scene_->units[i];
+      const ember::HeroPose* idle = unitCatalog_[i] ? unitCatalog_[i]->find(kIdle) : nullptr;
+      ember::SceneUnit& su = scene_->units[i];
       if (idle && !idle->pace.empty()) {
         su.set = idle->set, su.clip = idle->clip, su.boxW = idle->boxW, su.boxH = idle->boxH, su.foot = idle->foot;
         su.frames = idle->frames, su.pace = idle->pace, su.natW = su.natH = 0;
       }
     }
-    for (const e2::Hero& h : catalog_) {
+    for (const ember::Hero& h : catalog_) {
       if (std::find(unitCatalog_.begin(), unitCatalog_.end(), &h) == unitCatalog_.end()) continue;
-      for (const e2::HeroPose& p : h.poses)
+      for (const ember::HeroPose& p : h.poses)
         if (std::none_of(poseChoices_.begin(), poseChoices_.end(), [&](const auto& q) { return q.first == p.pose; }))
           poseChoices_.emplace_back(p.pose, p.label.empty() ? p.pose : p.label);
     }
@@ -3883,35 +3883,35 @@ class MapStage final : public Stage {
   // A pose drawn from its own Média / Leve copy is never halved on top of it, not even by Alta's fallback when the GPU is short
   // (the user, 2026-10-25: "tem como fazer a leve 36 quadros sem pixelar as imagens? fica bem feio mesmo": 36 frames halved came
   // out ~305 px of figure).
-  void pinArt(const e2::SceneUnit& u, const e2::Hero* entry) {
+  void pinArt(const ember::SceneUnit& u, const ember::Hero* entry) {
     const std::string& own = sceneArtSet(u, entry);
     sprites_.pin(own, u.clip, own == u.set);
     if (entry)
-      for (const e2::HeroPose& p : entry->poses) {
+      for (const ember::HeroPose& p : entry->poses) {
         const std::string& set = artSet(p);
         sprites_.pin(set, p.clip, set == p.set);
       }
   }
-  const std::string& artSet(const e2::HeroPose& p) const {
+  const std::string& artSet(const ember::HeroPose& p) const {
     if (lightArt_ && !p.light.empty()) return p.light;
     return mediumArt_ && !p.medium.empty() ? p.medium : p.set;
   }
   // A scene unit's own clip (its idle) is one of its catalog poses: the same copy as that pose.
-  const std::string& sceneArtSet(const e2::SceneUnit& u, const e2::Hero* entry) const {
+  const std::string& sceneArtSet(const ember::SceneUnit& u, const ember::Hero* entry) const {
     if (mediumArt_ && entry)
-      for (const e2::HeroPose& p : entry->poses)
+      for (const ember::HeroPose& p : entry->poses)
         if (p.set == u.set && p.clip == u.clip && (!p.medium.empty() || (lightArt_ && !p.light.empty()))) return artSet(p);
     return u.set;
   }
   // The catalog pose a scene unit's own clip (its idle) is, if any.
-  const e2::HeroPose* scenePose(const e2::SceneUnit& u, const e2::Hero* entry) const {
+  const ember::HeroPose* scenePose(const ember::SceneUnit& u, const ember::Hero* entry) const {
     if (entry)
-      for (const e2::HeroPose& p : entry->poses)
+      for (const ember::HeroPose& p : entry->poses)
         if (p.set == u.set && p.clip == u.clip) return &p;
     return nullptr;
   }
   // The step of the pose's Leve copy (every Nth frame) when that copy is the one drawn; 0 = none.
-  uint32_t lightStepOf(const e2::HeroPose* p) const {
+  uint32_t lightStepOf(const ember::HeroPose* p) const {
     return p && lightArt_ && !p->light.empty() && p->lightStep > 0 ? static_cast<uint32_t>(p->lightStep) : 0;
   }
   bool mediumArt_ = false;  // Personagens: Média or Leve, taken when the fight loads (pinUnitArt)
@@ -3926,7 +3926,7 @@ class MapStage final : public Stage {
       if (!f.empty() && !uiImageLoaded(f) && std::find(files.begin(), files.end(), f) == files.end()) files.push_back(f);
     };
     for (size_t b = 0; b < battle_->units().size(); ++b) {
-      const e2::BattleUnit& u = battle_->units()[b];
+      const ember::BattleUnit& u = battle_->units()[b];
       add(portraitFileOf(u));
       if (u.side == "player")
         for (const std::string& kind : hotbarOf(b))
@@ -3960,30 +3960,30 @@ class MapStage final : public Stage {
     unitShot_.assign(n, {}), unitDiedAt_.assign(n, -1.0f), unitRecoil_.assign(n, {}), unitLeap_.assign(n, {});
     unitHitAction_.assign(n, -1);
     for (size_t i = 0; i < n; ++i) {
-      const e2::SceneUnit& u = scene_->units[i];
+      const ember::SceneUnit& u = scene_->units[i];
       unitPos_[i] = {u.x, u.z};
       unitFacing_[i] = u.facing < 0 ? -1 : 1;
       unitReversed_[i] = u.mirror != (u.facing == -1) ? 1 : 0;
     }
   }
 
-  // A familiar that stepped out of a summoning (Engine2 castSummonFamiliar pushes it into the units): it gets a scene unit with its
+  // A familiar that stepped out of a summoning (Ember castSummonFamiliar pushes it into the units): it gets a scene unit with its
   // class's own art (the catalog entry keyed by its class id) and every per-unit array grows by one.
   void syncSummons() {
     if (!battle_ || !scene_) return;
     for (size_t b = 0; b < battle_->units().size(); ++b) {
       if (std::find(unitBattle_.begin(), unitBattle_.end(), static_cast<int>(b)) != unitBattle_.end()) continue;
-      const e2::BattleUnit& bu = battle_->units()[b];
+      const ember::BattleUnit& bu = battle_->units()[b];
       if (!bu.summoned || !bu.alive || bu.side != "player") continue;
-      const e2::Hero* entry = nullptr;
-      for (const e2::Hero& h : catalog_)
+      const ember::Hero* entry = nullptr;
+      for (const ember::Hero& h : catalog_)
         if (h.key == bu.classId) entry = &h;
-      const e2::HeroPose* idle = entry ? entry->find("idle") : nullptr;
+      const ember::HeroPose* idle = entry ? entry->find("idle") : nullptr;
       if (!idle) {
         logWarn("summon: {} has no art in the catalog ({})", bu.name, bu.classId);
         continue;
       }
-      e2::SceneUnit su;
+      ember::SceneUnit su;
       su.side = bu.side, su.name = bu.name, su.classId = bu.classId, su.key = bu.classId, su.sprite = bu.sprite;
       su.set = idle->set, su.clip = idle->clip, su.boxW = idle->boxW, su.boxH = idle->boxH, su.foot = idle->foot;
       su.frames = idle->frames, su.pace = idle->pace, su.facing = 1, su.mirror = entry->reversed;
@@ -4003,7 +4003,7 @@ class MapStage final : public Stage {
       unitHitAction_.push_back(-1);
       unitDiedAt_.push_back(-1.0f);
       unitRecoil_.push_back({});
-      while (unitSounds_.size() <= b) unitSounds_.push_back(e2::Json::object());
+      while (unitSounds_.size() <= b) unitSounds_.push_back(ember::Json::object());
     }
   }
 
@@ -4017,32 +4017,32 @@ class MapStage final : public Stage {
         for (const auto& [k, v] : j["classes"].items()) out.insert(k);
       return out;
     }();
-    const e2::MapDraft& d = board_->draft();
-    const auto ours = [&](const std::vector<e2::MapSpawn>& list) {
-      return std::any_of(list.begin(), list.end(), [&](const e2::MapSpawn& s) { return emberClasses.contains(s.classId); });
+    const ember::MapDraft& d = board_->draft();
+    const auto ours = [&](const std::vector<ember::MapSpawn>& list) {
+      return std::any_of(list.begin(), list.end(), [&](const ember::MapSpawn& s) { return emberClasses.contains(s.classId); });
     };
-    return std::any_of(d.decorations.begin(), d.decorations.end(), [](const e2::MapDecoration& m) { return m.id.starts_with("ember-"); }) ||
+    return std::any_of(d.decorations.begin(), d.decorations.end(), [](const ember::MapDecoration& m) { return m.id.starts_with("ember-"); }) ||
            ours(d.enemySpawns) || ours(d.neutralSpawns);
   }
-  // EmberEngine's own props set to "Bloquear caminho": export_battle.ts (Engine2's data.ts) has no footprint for them, so
-  // their cells are made solid here as Engine2's hexprops makes a solid decoration's (impassable, cost 99, stops shots).
+  // EmberEngine's own props set to "Bloquear caminho": export_battle.ts (Ember's data.ts) has no footprint for them, so
+  // their cells are made solid here as Ember's hexprops makes a solid decoration's (impassable, cost 99, stops shots).
   void blockEmberProps() {
-    const e2::EditorCatalog& catalog = architectureCatalog();
-    const e2::HexLayout& L = board_->layout();
+    const ember::EditorCatalog& catalog = architectureCatalog();
+    const ember::HexLayout& L = board_->layout();
     size_t cells = 0;
-    for (const e2::MapDecoration& d : board_->draft().decorations) {
+    for (const ember::MapDecoration& d : board_->draft().decorations) {
       if (!d.id.starts_with("ember-")) continue;
-      const e2::CatalogDecoration* cd = catalog.decoration(d.id);
+      const ember::CatalogDecoration* cd = catalog.decoration(d.id);
       if (!cd) continue;
-      // EmberEngine's walls and doors are solid like Engine2's own (hexprops solidArchitecture); an open portal is walked through.
+      // EmberEngine's walls and doors are solid like Ember's own (hexprops solidArchitecture); an open portal is walked through.
       // Of the other props only a barricade blocks (the user, 2026-10-25: "a única coisa que bloqueia é barricada"); the editor's blocksPath
       // mark is ignored.
       const bool solidWall = cd->architecture && (cd->model3d == "wall" || cd->model3d == "door" || cd->model3d == "secretDoor");
       if (!solidWall && d.id.find("barricade") == std::string::npos) continue;
-      for (const e2::FootOffset& f : e2::placedFootprint(*cd, d.x, d.y, d.rot)) {
+      for (const ember::FootOffset& f : ember::placedFootprint(*cd, d.x, d.y, d.rot)) {
         const int x = d.x + f.dx, y = d.y + f.dy;
-        if (!e2::inBoard(L, x, y)) continue;
-        e2::BattleCell c = battle_->cell(x, y);
+        if (!ember::inBoard(L, x, y)) continue;
+        ember::BattleCell c = battle_->cell(x, y);
         if (cd->model3d == "door") doorCellsBefore_.try_emplace({x, y}, c);  // the animated door gives them back while open
         c.passable = false, c.moveCost = 99, c.blocked = true, c.shot.blocksShot = true;
         battle_->setCell(y * L.cols + x, c);
@@ -4053,15 +4053,15 @@ class MapStage final : public Stage {
   }
   // The battle: each scene unit finds its battle unit by side and name, in spawn order.
   void setUpBattle(const std::filesystem::path& path) {
-    battle_ = e2::Battle::load(path);
+    battle_ = ember::Battle::load(path);
     loadSounds(path);
     if (!battle_) return;
     // Each cell's real elevation, for the archers' high ground (Battle.h kHighGroundHit; clearShot); before blockEmberProps,
     // which keeps copies of door cells.
     for (int y = 0; y < battle_->rows(); ++y)
       for (int x = 0; x < battle_->cols(); ++x)
-        if (e2::inBoard(board_->layout(), x, y)) {
-          e2::BattleCell c = battle_->cell(x, y);
+        if (ember::inBoard(board_->layout(), x, y)) {
+          ember::BattleCell c = battle_->cell(x, y);
           c.level = board_->cell(x, y).level;
           battle_->setCell(y * battle_->cols() + x, c);
         }
@@ -4073,11 +4073,11 @@ class MapStage final : public Stage {
     battle_->setWaypointsOnly(roams_);  // and it ends only at a waypoint: no "Encerrar missão" when every foe is down
     arrangeBattle();
     if (options_.partyRoster) {  // the same on the battle's units (their sounds follow them), each hero once
-      std::vector<e2::BattleUnit>& units = battle_->units();
-      while (unitSounds_.size() < units.size()) unitSounds_.push_back(e2::Json::object());
+      std::vector<ember::BattleUnit>& units = battle_->units();
+      while (unitSounds_.size() < units.size()) unitSounds_.push_back(ember::Json::object());
       std::set<std::string> seen;
       for (size_t b = 0; b < units.size();) {
-        const e2::BattleUnit& u = units[b];
+        const ember::BattleUnit& u = units[b];
         const bool leaves = (u.side == "player" && !u.summoned && (!options_.partyRoster->contains(u.name) || !seen.insert(u.name).second)) ||
                             (u.side == "neutral" && options_.partyRoster->contains(u.name));
         if (!leaves) {
@@ -4089,20 +4089,20 @@ class MapStage final : public Stage {
       }
     }
     routeWispCrossing();
-    for (e2::BattleUnit& u : battle_->units())
+    for (ember::BattleUnit& u : battle_->units())
       if (const auto it = options_.heroProgress.find(u.name); it != options_.heroProgress.end() && u.side == "player")
-        e2::raiseToLevel(u, it->second.first, it->second.second);
+        ember::raiseToLevel(u, it->second.first, it->second.second);
     // Promotions (the save's, or --promote): the hero's class, class name and spell list; every unit of a promoted class
-    // (Engine2's own Bruxo enemies too) knows our spells of its level.
-    for (e2::BattleUnit& u : battle_->units()) {
-      if (const auto it = options_.heroClass.find(u.name); it != options_.heroClass.end() && u.side == "player") e2::setPromotion(u, it->second);
+    // (Ember's own Bruxo enemies too) knows our spells of its level.
+    for (ember::BattleUnit& u : battle_->units()) {
+      if (const auto it = options_.heroClass.find(u.name); it != options_.heroClass.end() && u.side == "player") ember::setPromotion(u, it->second);
       if (u.side == "player" && options_.fullSpells.contains(u.name)) {  // the class's row first, in its order, then what it already knew
-        std::vector<std::string> all = e2::classSpellsAt(u.classId, u.level, u.name);
+        std::vector<std::string> all = ember::classSpellsAt(u.classId, u.level, u.name);
         for (const std::string& k : u.spellList)
           if (std::find(all.begin(), all.end(), k) == all.end()) all.push_back(k);
         u.spellList = std::move(all);
       }
-      e2::grantClassSpells(u);
+      ember::grantClassSpells(u);
       if (u.side == "player" && options_.fullSpells.contains(u.name)) {
         std::string list;
         for (const std::string& k : u.spellList) list += (list.empty() ? "" : ", ") + k;
@@ -4110,8 +4110,8 @@ class MapStage final : public Stage {
       }
     }
     battle_->setAffinityScores(options_.affinityScores);  // the save's party affinities (none: no bonus yet)
-    // The save's condition of each hero (Engine2 spawnUnit: hunger and disease off its stats, HP capped, its bag).
-    for (e2::BattleUnit& u : battle_->units()) {
+    // The save's condition of each hero (Ember spawnUnit: hunger and disease off its stats, HP capped, its bag).
+    for (ember::BattleUnit& u : battle_->units()) {
       const auto it = options_.heroState.find(u.name);
       if (it == options_.heroState.end() || u.side != "player") continue;
       applyHeroState(u, it->second);
@@ -4119,7 +4119,7 @@ class MapStage final : public Stage {
     // A dungeon (GameApp startBattle + the BattleEngine constructor): the enemies and neutrals killed on an earlier visit stay dead
     // (save.crossingDefeatedSpawns, by spawn id), and after a floor connector the heroes who fell on the floor before stay out of
     // this one (preserveKnockouts: their carried HP is 0). Both are gone from the start: not drawn, no turn, no body.
-    for (e2::BattleUnit& u : battle_->units()) {
+    for (ember::BattleUnit& u : battle_->units()) {
       bool gone = u.side != "player" && options_.defeatedSpawns.contains(u.id);
       if (u.side == "player" && options_.preserveKnockouts)
         if (const auto it = options_.heroState.find(u.name); it != options_.heroState.end() && it->second.hp && *it->second.hp == 0) gone = true;
@@ -4148,10 +4148,10 @@ class MapStage final : public Stage {
     findConversations();
     if (!options_.arrivedFrom.empty()) arriveAtConnector();
     else if (options_.formation && !explores_) placeFormation();
-    for (e2::BattleUnit& u : battle_->units()) e2::applyEmberInitiative(u);  // our bonuses, not Engine2's (world/Initiative.h)
-    rng_ = e2::Mulberry32(static_cast<uint32_t>(std::chrono::steady_clock::now().time_since_epoch().count()));
+    for (ember::BattleUnit& u : battle_->units()) ember::applyEmberInitiative(u);  // our bonuses, not Ember's (world/Initiative.h)
+    rng_ = ember::Mulberry32(static_cast<uint32_t>(std::chrono::steady_clock::now().time_since_epoch().count()));
     battle_->rollInitiative(rng_);
-    for (const e2::BattleUnit& u : battle_->units()) startLevel_.emplace_back(u.level, u.xp);
+    for (const ember::BattleUnit& u : battle_->units()) startLevel_.emplace_back(u.level, u.xp);
     if (!options_.battleScript.empty()) holdTurns = true;  // --battle-script plays every action itself
   }
 
@@ -4163,31 +4163,31 @@ class MapStage final : public Stage {
 
   // Where a unit's feet are now: its spawn's measured ground until it moves, then the ground under it.
   glm::vec3 unitWorld(size_t i) const {
-    const e2::SceneUnit& u = scene_->units[i];
+    const ember::SceneUnit& u = scene_->units[i];
     const glm::vec2 p = unitPos_[i];
-    const float y = unitMoved_[i] ? static_cast<float>(e2::groundHeightAt(*board_, look_, p.x, p.y)) : groundOf(u.groundSmooth, u.groundHard);
+    const float y = unitMoved_[i] ? static_cast<float>(ember::groundHeightAt(*board_, look_, p.x, p.y)) : groundOf(u.groundSmooth, u.groundHard);
     return {p.x, y, p.y};
   }
 
   // Where a battle unit's feet stand with its anchor on a hex: the middle of its body's front row (Ember's footprint
   // centroid, as the map importer places the spawns).
-  glm::vec2 anchorWorld(const e2::BattleUnit& u, e2::BattleHex at) const {
+  glm::vec2 anchorWorld(const ember::BattleUnit& u, ember::BattleHex at) const {
     glm::vec2 sum{0.0f};
     int n = 0;
-    for (const e2::BattleHex& p : e2::Battle::footprint(u, at.x, at.y)) {
+    for (const ember::BattleHex& p : ember::Battle::footprint(u, at.x, at.y)) {
       if (p.y != at.y || !battle_->inBounds(p.x, p.y)) continue;
-      const e2::Cell& c = board_->cell(p.x, p.y);
+      const ember::Cell& c = board_->cell(p.x, p.y);
       sum += glm::vec2(static_cast<float>(c.x), static_cast<float>(c.z));
       ++n;
     }
     if (!n) {
-      const e2::Cell& c = board_->cell(at.x, at.y);
+      const ember::Cell& c = board_->cell(at.x, at.y);
       return {static_cast<float>(c.x), static_cast<float>(c.z)};
     }
     return sum / static_cast<float>(n);
   }
 
-  // Engine2 UnitActor.update for walking units: one hex every 0.22 s; facing and walk direction relative to the camera.
+  // Ember UnitActor.update for walking units: one hex every 0.22 s; facing and walk direction relative to the camera.
   void updateUnits(float dt) {
     if (!scene_) return;
     const float yaw = flat_ ? 0.0f : cam_.yaw;
@@ -4213,7 +4213,7 @@ class MapStage final : public Stage {
     }
     // A hero's level-up (levelUp: its cue once per level gained).
     if (battle_) {
-      std::vector<e2::BattleUnit>& all = battle_->units();
+      std::vector<ember::BattleUnit>& all = battle_->units();
       levelSeen_.resize(all.size(), -1);
       for (size_t b = 0; b < all.size(); ++b) {
         if (levelSeen_[b] >= 0 && all[b].level > levelSeen_[b] && all[b].side == "player") {
@@ -4230,25 +4230,25 @@ class MapStage final : public Stage {
     if (hero_ >= 0 && path_.size() <= 1) heroAt_ = unitWorld(static_cast<size_t>(hero_));  // the test lights follow it
   }
 
-  // Engine2 UnitActor.walkShown: a still for the direction, else the up / down cycle, else the side walk (its own left
+  // Ember UnitActor.walkShown: a still for the direction, else the up / down cycle, else the side walk (its own left
   // cut when facing left; the Lancer's cuts are swapped).
-  static const e2::HeroPose* walkPose(const e2::Hero& h, int dir, int facing, const std::string& sprite, std::string& shown) {
-    auto has = [&](const char* pose) -> const e2::HeroPose* {
-      const e2::HeroPose* p = h.find(pose);
+  static const ember::HeroPose* walkPose(const ember::Hero& h, int dir, int facing, const std::string& sprite, std::string& shown) {
+    auto has = [&](const char* pose) -> const ember::HeroPose* {
+      const ember::HeroPose* p = h.find(pose);
       if (!p || p->pace.empty()) return nullptr;
       shown = pose;
       return p;
     };
     static const char* kStill[3] = {"walkBack", "walkFront", "walkSide"};
-    if (const e2::HeroPose* p = has(kStill[dir])) return p;
+    if (const ember::HeroPose* p = has(kStill[dir])) return p;
     if (dir == kWalkBack)
-      if (const e2::HeroPose* p = has("walkUp")) return p;
+      if (const ember::HeroPose* p = has("walkUp")) return p;
     if (dir == kWalkFront)
-      if (const e2::HeroPose* p = has("walkDown")) return p;
+      if (const ember::HeroPose* p = has("walkDown")) return p;
     const bool wantLeft = sprite == "lancer" ? facing == 1 : facing == -1;
     if (wantLeft)
-      if (const e2::HeroPose* p = has("walkLeft")) return p;
-    if (const e2::HeroPose* p = has("walk")) return p;
+      if (const ember::HeroPose* p = has("walkLeft")) return p;
+    if (const ember::HeroPose* p = has("walk")) return p;
     shown = kIdle;
     return nullptr;
   }
@@ -4268,17 +4268,17 @@ class MapStage final : public Stage {
   }
 
   // `cards` false: the ground under the cursor only (a transparent corner of a tall card must not steal a walk click).
-  std::optional<e2::BattleHex> pick(SDL_WindowID id, float mx, float my, bool cards = true) const {
+  std::optional<ember::BattleHex> pick(SDL_WindowID id, float mx, float my, bool cards = true) const {
     int w = 0, h = 0;
     SDL_Window* window = SDL_GetWindowFromID(id);
     if (!window || !SDL_GetWindowSize(window, &w, &h) || w <= 0 || h <= 0) return std::nullopt;
     return pickAt(w, h, mx, my, cards);
   }
-  std::optional<e2::BattleHex> pickAt(int w, int h, float mx, float my, bool cards = true) const {
+  std::optional<ember::BattleHex> pickAt(int w, int h, float mx, float my, bool cards = true) const {
     const ImVec2 cursor{mx, my};
     lastPickPoint_.reset();
     float best = 1e30f;
-    std::optional<e2::BattleHex> hit;
+    std::optional<ember::BattleHex> hit;
     const glm::vec3 right = glm::length(glm::vec3(lastCamera_.right.x, 0.0f, lastCamera_.right.z)) > 0.0f && !flat_
                                 ? glm::normalize(glm::vec3(lastCamera_.right.x, 0.0f, lastCamera_.right.z))
                                 : glm::vec3(1.0f, 0.0f, 0.0f);
@@ -4300,10 +4300,10 @@ class MapStage final : public Stage {
       if (d >= best) continue;
       best = d;
       if (unitBattle_[i] >= 0) {
-        hit = e2::BattleHex{battle_->units()[static_cast<size_t>(unitBattle_[i])].x, battle_->units()[static_cast<size_t>(unitBattle_[i])].y};
+        hit = ember::BattleHex{battle_->units()[static_cast<size_t>(unitBattle_[i])].x, battle_->units()[static_cast<size_t>(unitBattle_[i])].y};
       } else {  // the map editor's preview (no battle): the hex the unit stands on
-        const auto [col, row] = e2::hexAt(board_->layout(), scene_->units[i].x, scene_->units[i].z);
-        hit = e2::BattleHex{col, row};
+        const auto [col, row] = ember::hexAt(board_->layout(), scene_->units[i].x, scene_->units[i].z);
+        hit = ember::BattleHex{col, row};
       }
     }
     if (hit) return hit;
@@ -4317,8 +4317,8 @@ class MapStage final : public Stage {
     // Board::bounds() is the rectangle of the hex CENTRES: the outer half of every edge hex lies beyond it, so a click on
     // the board's rim (and a centre on the bound itself) found no ground and could not send a unit there. The whole edge
     // hexes count: half a hex's width on the sides, a radius above and below.
-    const e2::Board::Bounds b = board_->bounds();
-    const double padX = e2::kSqrt3 * e2::kHexRadius * 0.5 + 0.02, padZ = e2::kHexRadius - 0.6 + 0.02;
+    const ember::Board::Bounds b = board_->bounds();
+    const double padX = ember::kSqrt3 * ember::kHexRadius * 0.5 + 0.02, padZ = ember::kHexRadius - 0.6 + 0.02;
     auto under = [&](float t) {
       const glm::vec3 p = o + dir * t;
       if (p.x < b.x0 - padX || p.x > b.x1 + padX || p.z < b.z0 - padZ || p.z > b.z1 + padZ) return false;
@@ -4332,9 +4332,9 @@ class MapStage final : public Stage {
         for (int k = 0; k < 12; ++k) (under((lo + hi) * 0.5f) ? hi : lo) = (lo + hi) * 0.5f;
         const glm::vec3 p = o + dir * hi;
         lastPickPoint_ = p;  // the map editor's water brush: the exact ground point clicked
-        const auto [c, r] = e2::hexAt(board_->layout(), p.x, p.z);
+        const auto [c, r] = ember::hexAt(board_->layout(), p.x, p.z);
         if (c < 0 || r < 0 || c >= board_->layout().cols || r >= board_->layout().rows) return std::nullopt;
-        return e2::BattleHex{c, r};
+        return ember::BattleHex{c, r};
       }
     return std::nullopt;
   }
@@ -4369,29 +4369,29 @@ class MapStage final : public Stage {
     hover_ = spellMode_.empty() ? pickWalk(w, h, mouse_.x, mouse_.y) : aimPickAt(w, h, mouse_.x, mouse_.y);
   }
   // A hex of the picked unit's reach: walking there is what a click / hover means.
-  bool inReach(e2::BattleHex h) const {
-    return std::any_of(reach_.begin(), reach_.end(), [&](const e2::ReachCell& c) { return c.x == h.x && c.y == h.y; });
+  bool inReach(ember::BattleHex h) const {
+    return std::any_of(reach_.begin(), reach_.end(), [&](const ember::ReachCell& c) { return c.x == h.x && c.y == h.y; });
   }
   // Walking (no spell open): the ground under the cursor wins over every card whenever the picked unit can walk there
   // (the user, 2026-10-18: the route never formed behind other units); else a body under the cursor, else the ground.
-  std::optional<e2::BattleHex> pickWalk(int w, int h, float mx, float my) const {
+  std::optional<ember::BattleHex> pickWalk(int w, int h, float mx, float my) const {
     if (selected_ >= 0 && myTurn()) {
-      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
-      if (const std::optional<e2::BattleHex> ground = pickAt(w, h, mx, my, false); ground && !(ground->x == u.x && ground->y == u.y) && inReach(*ground))
+      const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
+      if (const std::optional<ember::BattleHex> ground = pickAt(w, h, mx, my, false); ground && !(ground->x == u.x && ground->y == u.y) && inReach(*ground))
         return ground;
     }
     return pickAt(w, h, mx, my);
   }
   // A spell being aimed: a foe's card under the cursor aims at its hex; a friend's card (the caster's own too) never hides
   // the ground behind it (a click on a foe standing behind a friend picked the friend: Mãos Flamejantes burnt the party).
-  std::optional<e2::BattleHex> aimPickAt(int w, int h, float mx, float my) const {
-    const std::optional<e2::BattleHex> card = pickAt(w, h, mx, my);
+  std::optional<ember::BattleHex> aimPickAt(int w, int h, float mx, float my) const {
+    const std::optional<ember::BattleHex> card = pickAt(w, h, mx, my);
     if (card && selected_ >= 0) {
       const int who = battle_->unitAt(card->x, card->y);
-      const e2::BattleUnit& me = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
+      const ember::BattleUnit& me = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
       if (who >= 0 && battle_->units()[static_cast<size_t>(who)].side != me.side) return card;
     }
-    const std::optional<e2::BattleHex> ground = pickAt(w, h, mx, my, false);
+    const std::optional<ember::BattleHex> ground = pickAt(w, h, mx, my, false);
     return ground ? ground : card;
   }
 
@@ -4405,35 +4405,35 @@ class MapStage final : public Stage {
   // The click on a screen of w x h (the battle script's "click" step comes through here too).
   void clickAt(int w, int h, float mx, float my) {
     if (options_.editorClick) {
-      if (const std::optional<e2::BattleHex> hex = pickAt(w, h, mx, my)) options_.editorClick(hex->x, hex->y);
+      if (const std::optional<ember::BattleHex> hex = pickAt(w, h, mx, my)) options_.editorClick(hex->x, hex->y);
       return;
     }
     if (!battle_ || !scene_) return;
-    const std::optional<e2::BattleHex> hex = spellMode_.empty() ? pickWalk(w, h, mx, my) : pickAt(w, h, mx, my);
+    const std::optional<ember::BattleHex> hex = spellMode_.empty() ? pickWalk(w, h, mx, my) : pickAt(w, h, mx, my);
     if (busy()) return;  // a walk, a strike or an enemy's turn is playing
     // The left click is also Cancelar (the user, 2026-10-22: "I will just left click"): while a spell / potion is aimed, a strike
     // is staged or Atacar / Mão Secundária is open, a click on anything that is not a valid aim / target puts the action away,
     // exactly as the bar's Cancelar does, and does nothing else (no walk, no other unit picked). A walk is never taken back here.
     if (!spellMode_.empty()) {
       if (!myTurn()) return;
-      const std::optional<e2::BattleHex> aim = aimPickAt(w, h, mx, my);
+      const std::optional<ember::BattleHex> aim = aimPickAt(w, h, mx, my);
       if (!aim || !aimValid(static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), *aim)) return cancelAction();
       aimSpell(*aim);
       return;
     }
     if (myTurn() && (pendingFoe_ >= 0 || attackMode_ || offHandMode_)) {
-      const std::optional<e2::BattleHex> at = pickAt(w, h, mx, my);  // bodies first: a foe's card wins over the ground
+      const std::optional<ember::BattleHex> at = pickAt(w, h, mx, my);  // bodies first: a foe's card wins over the ground
       const int foe = at ? sceneUnitOf(battle_->unitAt(at->x, at->y)) : -1;
       if (foe < 0 || std::none_of(targets_.begin(), targets_.end(), [&](const auto& t) { return t.first == foe; })) return cancelAction();
       pendingFoe_ = foe;  // a marked foe: the strike is staged (or moved onto it), the panel asks
       tip_.clear();
       return;
     }
-    pendingFoe_ = -1;  // a staged strike is dropped by a click anywhere but on a foe (Engine2 handleCell)
+    pendingFoe_ = -1;  // a staged strike is dropped by a click anywhere but on a foe (Ember handleCell)
     // Nothing clicked lets go of a unit, but never of the hero whose turn it is: it stays picked, its modes closed.
     auto letGo = [&] { select(myTurn() ? selected_ : -1); };
     if (!hex) return letGo();
-    // A marked foe: the click only stages the strike (Engine2 stageAttack); the panel shows its hit chance and asks.
+    // A marked foe: the click only stages the strike (Ember stageAttack); the panel shows its hit chance and asks.
     if (const int foe = sceneUnitOf(battle_->unitAt(hex->x, hex->y)); foe >= 0 && myTurn())
       for (const auto& [t, from] : targets_)
         if (t == foe) {
@@ -4441,21 +4441,21 @@ class MapStage final : public Stage {
           tip_.clear();
           return;
         }
-    // An NPC with a conversation (Engine2 handleCell's dialog branch): in free roam the leader walks up beside it first.
+    // An NPC with a conversation (Ember handleCell's dialog branch): in free roam the leader walks up beside it first.
     if (const int npc = battle_->unitAt(hex->x, hex->y); npc >= 0 && npcDialog_.contains(static_cast<size_t>(npc)) &&
                                                           battle_->units()[static_cast<size_t>(npc)].alive)
       return talkTo(static_cast<size_t>(npc));
     if (myTurn()) {
-      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
+      const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
       const bool own = hex->x == u.x && hex->y == u.y;
-      auto reachable = [&](e2::BattleHex h) {
-        return std::any_of(reach_.begin(), reach_.end(), [&](const e2::ReachCell& c) { return c.x == h.x && c.y == h.y; });
+      auto reachable = [&](ember::BattleHex h) {
+        return std::any_of(reach_.begin(), reach_.end(), [&](const ember::ReachCell& c) { return c.x == h.x && c.y == h.y; });
       };
       if (!own && reachable(*hex)) return walkTo(static_cast<size_t>(selected_), *hex);
       // A card's rectangle is taller than the body: a click on the ground behind a friend's card is still a walk, not
       // a jump of the selection to that friend.
       if (!own)
-        if (const std::optional<e2::BattleHex> ground = pickAt(w, h, mx, my, false); ground && !(ground->x == u.x && ground->y == u.y) && reachable(*ground))
+        if (const std::optional<ember::BattleHex> ground = pickAt(w, h, mx, my, false); ground && !(ground->x == u.x && ground->y == u.y) && reachable(*ground))
           return walkTo(static_cast<size_t>(selected_), *ground);
       // Two left clicks on the unit being played end its turn (a single one keeps it picked).
       if (own && !battle_->roaming()) {
@@ -4503,40 +4503,40 @@ class MapStage final : public Stage {
     spellZone_.clear();
     spellArmed_.reset(), pendingFoe_ = -1;
     const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
-    const e2::BattleUnit& u = battle_->units()[b];
+    const ember::BattleUnit& u = battle_->units()[b];
     // Criar Comida e Água has no aim: it is cast at once, around the caster.
-    if (e2::spellInstant(kind)) return commitSpell({u.x, u.y});
-    // Varredura, Expulsar Mortos-Vivos: its area around the caster is shown at once and waits for Confirmar (Engine2
+    if (ember::spellInstant(kind)) return commitSpell({u.x, u.y});
+    // Varredura, Expulsar Mortos-Vivos: its area around the caster is shown at once and waits for Confirmar (Ember
     // startSweep / startTurnUndead arm the spell on the caster's own hex).
-    if (e2::spellSelfArea(kind)) {
+    if (ember::spellSelfArea(kind)) {
       spellAim_.push_back({u.x, u.y});
-      spellZone_ = e2::spellArea(*battle_, b, kind, {u.x, u.y});
-      spellArmed_ = e2::BattleHex{u.x, u.y};
+      spellZone_ = ember::spellArea(*battle_, b, kind, {u.x, u.y});
+      spellArmed_ = ember::BattleHex{u.x, u.y};
       return;
     }
     spellPreviewAim_.reset(), hitsKey_.clear();
-    std::vector<e2::BattleHex> valid;
+    std::vector<ember::BattleHex> valid;
     for (int y = 0; y < battle_->rows(); ++y)
       for (int x = 0; x < battle_->cols(); ++x)
-        if (e2::Battle::distance({u.x, u.y}, {x, y}) <= 9 && aimValid(b, {x, y})) valid.push_back({x, y});
+        if (ember::Battle::distance({u.x, u.y}, {x, y}) <= 9 && aimValid(b, {x, y})) valid.push_back({x, y});
     // The locks go on units only: a hex of bare ground is shown by the zone, never as a target (the user, 2026-10-17, Tiro
     // Perfurante: every hex locked, the board one violet sheet, "como eu vou mirar com essa bosta").
     std::vector<int> standing(static_cast<size_t>(battle_->cols()) * static_cast<size_t>(battle_->rows()), -1);
     for (size_t i = 0; i < battle_->units().size(); ++i) {
-      const e2::BattleUnit& t = battle_->units()[i];
+      const ember::BattleUnit& t = battle_->units()[i];
       if (i == b || !t.alive || t.hidden || !unitOnShow(t)) continue;
-      for (const e2::BattleHex& p : e2::Battle::footprint(t, t.x, t.y))
+      for (const ember::BattleHex& p : ember::Battle::footprint(t, t.x, t.y))
         if (battle_->inBounds(p.x, p.y)) standing[static_cast<size_t>(p.y) * static_cast<size_t>(battle_->cols()) + static_cast<size_t>(p.x)] = static_cast<int>(i);
     }
-    auto unitOn = [&](e2::BattleHex c) {
+    auto unitOn = [&](ember::BattleHex c) {
       return battle_->inBounds(c.x, c.y) ? standing[static_cast<size_t>(c.y) * static_cast<size_t>(battle_->cols()) + static_cast<size_t>(c.x)] : -1;
     };
-    if (e2::spellAimsDirection(kind)) {
+    if (ember::spellAimsDirection(kind)) {
       // A line or a cone through any hex: no zone. The locks = the foes some aim reaches; the grid draws the line under the
       // cursor, and toward the nearest of those foes while the cursor is off the board.
-      std::vector<std::pair<int, e2::BattleHex>> foes;  // unit, the aim that reaches it (its own hex when that does)
-      for (const e2::BattleHex& aim : valid)
-        for (const e2::BattleHex& c : aimArea(b, aim)) {
+      std::vector<std::pair<int, ember::BattleHex>> foes;  // unit, the aim that reaches it (its own hex when that does)
+      for (const ember::BattleHex& aim : valid)
+        for (const ember::BattleHex& c : aimArea(b, aim)) {
           const int who = unitOn(c);
           if (who < 0 || battle_->units()[static_cast<size_t>(who)].side == u.side) continue;
           auto it = std::find_if(foes.begin(), foes.end(), [&](const auto& f) { return f.first == who; });
@@ -4545,50 +4545,50 @@ class MapStage final : public Stage {
         }
       int nearest = -1;
       for (size_t i = 0; i < foes.size(); ++i) {
-        const e2::BattleUnit& f = battle_->units()[static_cast<size_t>(foes[i].first)];
+        const ember::BattleUnit& f = battle_->units()[static_cast<size_t>(foes[i].first)];
         spellAim_.push_back({f.x, f.y});
-        const e2::BattleUnit* n = nearest < 0 ? nullptr : &battle_->units()[static_cast<size_t>(foes[static_cast<size_t>(nearest)].first)];
-        if (!n || e2::Battle::distance({u.x, u.y}, {f.x, f.y}) < e2::Battle::distance({u.x, u.y}, {n->x, n->y})) nearest = static_cast<int>(i);
+        const ember::BattleUnit* n = nearest < 0 ? nullptr : &battle_->units()[static_cast<size_t>(foes[static_cast<size_t>(nearest)].first)];
+        if (!n || ember::Battle::distance({u.x, u.y}, {f.x, f.y}) < ember::Battle::distance({u.x, u.y}, {n->x, n->y})) nearest = static_cast<int>(i);
       }
       if (nearest >= 0) spellPreviewAim_ = foes[static_cast<size_t>(nearest)].second;
       return;
     }
-    for (const e2::BattleHex& c : valid)
+    for (const ember::BattleHex& c : valid)
       if (unitOn(c) >= 0) spellAim_.push_back(c);
     // The zone the grid shows: where the spell reaches (a potion: the caster and the hexes around it), whether or not
     // something stands there (the user: "how do I even know where to target?").
     if (potionOf(kind)) {
       spellZone_.push_back({u.x, u.y});
-      for (const e2::BattleHex& h : e2::Battle::neighbors(u.x, u.y))
+      for (const ember::BattleHex& h : ember::Battle::neighbors(u.x, u.y))
         if (battle_->inBounds(h.x, h.y)) spellZone_.push_back(h);
     } else {
-      spellZone_ = e2::spellZone(*battle_, b, kind);
+      spellZone_ = ember::spellZone(*battle_, b, kind);
     }
   }
 
-  // A potion being aimed is spellMode_ "potion:<id>" (Engine2 usePotion: the actor itself or an adjacent ally).
+  // A potion being aimed is spellMode_ "potion:<id>" (Ember usePotion: the actor itself or an adjacent ally).
   static std::optional<std::string> potionOf(const std::string& mode) {
     return mode.rfind("potion:", 0) == 0 ? std::optional<std::string>(mode.substr(7)) : std::nullopt;
   }
-  bool aimValid(size_t b, e2::BattleHex hex, std::string* why = nullptr) const {
-    if (potionOf(spellMode_)) return e2::potionTargetValid(*battle_, b, hex, why);
-    return e2::spellAimValid(*battle_, b, spellMode_, hex, why);
+  bool aimValid(size_t b, ember::BattleHex hex, std::string* why = nullptr) const {
+    if (potionOf(spellMode_)) return ember::potionTargetValid(*battle_, b, hex, why);
+    return ember::spellAimValid(*battle_, b, spellMode_, hex, why);
   }
-  std::vector<e2::BattleHex> aimArea(size_t b, e2::BattleHex hex) const {
-    return potionOf(spellMode_) ? std::vector<e2::BattleHex>{hex} : e2::spellArea(*battle_, b, spellMode_, hex);
+  std::vector<ember::BattleHex> aimArea(size_t b, ember::BattleHex hex) const {
+    return potionOf(spellMode_) ? std::vector<ember::BattleHex>{hex} : ember::spellArea(*battle_, b, spellMode_, hex);
   }
   // Who the spell aimed at `hex` would hit, friends included (the cast itself run on a copy of the battle, so its own
   // rules decide; the Tiro Perfurante's line hits the party too). Kept while the aim stays on the same hex.
-  const std::vector<size_t>& aimHits(size_t b, e2::BattleHex hex) const {
+  const std::vector<size_t>& aimHits(size_t b, ember::BattleHex hex) const {
     const std::string key = std::format("{}:{}:{}:{}", spellMode_, b, hex.x, hex.y);
     if (key == hitsKey_) return hits_;
     hitsKey_ = key, hits_.clear();
-    if (potionOf(spellMode_) || e2::spellTargetCount(*battle_, b, spellMode_) != 1) return hits_;
-    e2::Battle copy = *battle_;
-    if (const std::optional<std::vector<e2::BattleStep>> steps = e2::castSpell(copy, b, spellMode_, {hex}, nullptr, false))
-      for (const e2::BattleStep& s : *steps) {
+    if (potionOf(spellMode_) || ember::spellTargetCount(*battle_, b, spellMode_) != 1) return hits_;
+    ember::Battle copy = *battle_;
+    if (const std::optional<std::vector<ember::BattleStep>> steps = ember::castSpell(copy, b, spellMode_, {hex}, nullptr, false))
+      for (const ember::BattleStep& s : *steps) {
         std::vector<size_t> ids = s.ids;
-        if (s.type == e2::BattleStep::Type::Combat) ids.push_back(s.def);
+        if (s.type == ember::BattleStep::Type::Combat) ids.push_back(s.def);
         for (size_t id : ids)
           if (id != b && id < battle_->units().size() && std::find(hits_.begin(), hits_.end(), id) == hits_.end()) hits_.push_back(id);
       }
@@ -4596,7 +4596,7 @@ class MapStage final : public Stage {
   }
 
   // A hex clicked while a spell is aimed: one more target (Míssil Mágico takes one per missile), then the cast.
-  void aimSpell(e2::BattleHex hex) {
+  void aimSpell(ember::BattleHex hex) {
     const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
     std::string why;
     if (!aimValid(b, hex, &why)) {
@@ -4604,18 +4604,18 @@ class MapStage final : public Stage {
       return;
     }
     if (const std::optional<std::string> potion = potionOf(spellMode_)) {
-      std::optional<e2::BattleStep> step = e2::usePotion(*battle_, b, *potion, hex, &why);
+      std::optional<ember::BattleStep> step = ember::usePotion(*battle_, b, *potion, hex, &why);
       spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
       if (!step) {
         tip_ = why, tipAt_ = now_;
         return;
       }
-      tip_ = e2::potionName(*potion), tipAt_ = now_;
+      tip_ = ember::potionName(*potion), tipAt_ = now_;
       return play({*step}, static_cast<size_t>(selected_));
     }
-    // Engine2 handleCell: every click first aims the spell (the panel then asks Confirmar / Cancelar); clicking the same
+    // Ember handleCell: every click first aims the spell (the panel then asks Confirmar / Cancelar); clicking the same
     // aimed hex again casts, as a tap always did. Only the pick that completes the cast asks; the others just count.
-    if (static_cast<int>(spellCells_.size()) + 1 >= e2::spellTargetCount(*battle_, b, spellMode_) &&
+    if (static_cast<int>(spellCells_.size()) + 1 >= ember::spellTargetCount(*battle_, b, spellMode_) &&
         !(spellArmed_ && spellArmed_->x == hex.x && spellArmed_->y == hex.y)) {
       spellArmed_ = hex;
       return;
@@ -4623,14 +4623,14 @@ class MapStage final : public Stage {
     commitSpell(hex);
   }
 
-  // The aimed hex is confirmed: the spell is cast (Engine2 confirmSpell).
-  void commitSpell(e2::BattleHex hex) {
+  // The aimed hex is confirmed: the spell is cast (Ember confirmSpell).
+  void commitSpell(ember::BattleHex hex) {
     const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
     std::string why;
     spellArmed_.reset();
     spellCells_.push_back(hex);
-    if (static_cast<int>(spellCells_.size()) < e2::spellTargetCount(*battle_, b, spellMode_)) return;
-    std::optional<std::vector<e2::BattleStep>> steps = e2::castSpell(*battle_, b, spellMode_, spellCells_, &why);
+    if (static_cast<int>(spellCells_.size()) < ember::spellTargetCount(*battle_, b, spellMode_)) return;
+    std::optional<std::vector<ember::BattleStep>> steps = ember::castSpell(*battle_, b, spellMode_, spellCells_, &why);
     const std::string kind = spellMode_;
     spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
     if (!steps) {
@@ -4648,7 +4648,7 @@ class MapStage final : public Stage {
     if (foe < 0 || selected_ < 0 || !myTurn() || busy()) return;
     for (const auto& [t, from] : targets_)
       if (t == foe) {
-        const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
+        const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
         if (from.x == u.x && from.y == u.y)
           return attack(static_cast<size_t>(selected_), static_cast<size_t>(foe),
                         offHandWanted(static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), static_cast<size_t>(unitBattle_[static_cast<size_t>(foe)])));
@@ -4657,15 +4657,15 @@ class MapStage final : public Stage {
       }
   }
 
-  // The mission's end (Engine2 evaluateEnd / confirmFinish): winning only makes ending it an option. A hero on a waypoint offers it
+  // The mission's end (Ember evaluateEnd / confirmFinish): winning only makes ending it an option. A hero on a waypoint offers it
   // (an escape marker with its DEX chance), and so does a won rout / boss mission.
   void confirmFinishNow() {
-    const e2::Battle::Exit* exit = battle_->activeExit();
-    const std::optional<e2::Battle::Exit> on = exit ? std::optional<e2::Battle::Exit>(*exit) : std::nullopt;
-    const e2::FinishOutcome o = e2::confirmFinish(*battle_, rng_);
+    const ember::Battle::Exit* exit = battle_->activeExit();
+    const std::optional<ember::Battle::Exit> on = exit ? std::optional<ember::Battle::Exit>(*exit) : std::nullopt;
+    const ember::FinishOutcome o = ember::confirmFinish(*battle_, rng_);
     if (o.ended) finishExit_ = on;  // the waypoint taken (hud.activeExit at the result screen)
     if (o.escapeFailed) {
-      const e2::BattleUnit& u = battle_->units()[o.hero];
+      const ember::BattleUnit& u = battle_->units()[o.hero];
       tip_ = u.name + tr(" não conseguiu fugir — o combate continua.", " could not get away: the fight goes on."), tipAt_ = now_;
       battle_->pushLog(tip_);
       winDismissed_ = true;
@@ -4677,7 +4677,7 @@ class MapStage final : public Stage {
   void drawFinishPrompt() {
     if (!battle_ || !result_.empty() || winDismissed_ || !battle_->winAvailable() || busy()) return;
     size_t hero = 0;
-    const e2::Battle::Exit* exit = battle_->activeExit(&hero);
+    const ember::Battle::Exit* exit = battle_->activeExit(&hero);
     std::string text, yes, no, floorExit;
     if (exit && exit->kind == "escape") {
       const std::string chance = std::format("{:g}", std::round(battle_->fleeChance(hero) * 100.0) / 100.0);
@@ -4715,7 +4715,7 @@ class MapStage final : public Stage {
     ImGui::PopFont();
     if (emberButton("##finishyes", yes.c_str(), true, true)) {
       // On a free-roam map (the walkable Inn) a floor connector leads straight onto the linked floor. In a fight it ends the
-      // mission as Engine2's confirmFinish does: victory, then the result screen's "Subir" / "Descer" / "Avançar" / "Voltar"
+      // mission as Ember's confirmFinish does: victory, then the result screen's "Subir" / "Descer" / "Avançar" / "Voltar"
       // (GameApp startBattle(target, ..., preserveKnockouts, arrivedFrom)).
       if (!floorExit.empty() && explores_) floorRequest_ = floorExit, winDismissed_ = true;
       else confirmFinishNow();
@@ -4727,7 +4727,7 @@ class MapStage final : public Stage {
     ImGui::PopStyleVar(3);
   }
 
-  // Engine2's confirm panel (GameApp data-attack-confirm / data-skill-confirm): what is about to happen and its hit chance,
+  // Ember's confirm panel (GameApp data-attack-confirm / data-skill-confirm): what is about to happen and its hit chance,
   // with Confirmar and Cancelar, above the battle bar. A click on a foe stages the strike; an aimed spell waits here.
   void drawConfirm() {
     if (!battle_ || selected_ < 0 || !myTurn() || busy() || !result_.empty()) return;
@@ -4742,22 +4742,22 @@ class MapStage final : public Stage {
       title = tr("Atacar ", "Attack ") + battle_->units()[db].name;
       hit = forecastFor(ab, db, t->second).hitOut;
     } else if (!spellMode_.empty() && spellArmed_) {
-      title = potionOf(spellMode_) ? e2::potionName(*potionOf(spellMode_)) : e2::spellName(spellMode_);
+      title = potionOf(spellMode_) ? ember::potionName(*potionOf(spellMode_)) : ember::spellName(spellMode_);
       ready = aimValid(ab, *spellArmed_);
-      // Weapon skills roll the weapon's own hit chance on a foe (Engine2 spellHitChance); no damage is predicted.
-      if (e2::spellWeaponAbility(spellMode_))
+      // Weapon skills roll the weapon's own hit chance on a foe (Ember spellHitChance); no damage is predicted.
+      if (ember::spellWeaponAbility(spellMode_))
         if (const int fb = battle_->unitAt(spellArmed_->x, spellArmed_->y);
             fb >= 0 && battle_->units()[static_cast<size_t>(fb)].side != battle_->units()[ab].side && battle_->units()[static_cast<size_t>(fb)].alive) {
-          const e2::BattleUnit& u = battle_->units()[ab];
-          hit = e2::forecast(*battle_, ab, {u.x, u.y}, static_cast<size_t>(fb)).hitOut;
+          const ember::BattleUnit& u = battle_->units()[ab];
+          hit = ember::forecast(*battle_, ab, {u.x, u.y}, static_cast<size_t>(fb)).hitOut;
         }
       // The Lanceiro's aimed at a hex (a throw, a drag) or an ally (the swap): the foe the cast would strike; the vault's blow
       // always comes from behind (+10, as a rear attack).
-      if (!hit && ready && e2::spellWeaponAbility(spellMode_))
+      if (!hit && ready && ember::spellWeaponAbility(spellMode_))
         for (size_t id : aimHits(ab, *spellArmed_))
           if (battle_->units()[id].side != battle_->units()[ab].side) {
-            const e2::BattleUnit& u = battle_->units()[ab];
-            hit = e2::forecast(*battle_, ab, spellMode_ == "swapPost" ? *spellArmed_ : e2::BattleHex{u.x, u.y}, id).hitOut;
+            const ember::BattleUnit& u = battle_->units()[ab];
+            hit = ember::forecast(*battle_, ab, spellMode_ == "swapPost" ? *spellArmed_ : ember::BattleHex{u.x, u.y}, id).hitOut;
             break;
           }
       if (hit && spellMode_ == "poleVault") hit = std::min(100.0, *hit + 10.0);
@@ -4821,24 +4821,24 @@ class MapStage final : public Stage {
     reach_.clear(), reachPaths_.clear(), targets_.clear();
     if (!battle_ || selected_ < 0 || unitBattle_[static_cast<size_t>(selected_)] < 0) return;
     const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
-    const e2::BattleUnit& u = battle_->units()[b];
+    const ember::BattleUnit& u = battle_->units()[b];
     if (!u.alive) return;
     // Its reach: the movement left for the unit whose turn it is, a whole pool for one being inspected.
-    e2::Battle look = *battle_;
+    ember::Battle look = *battle_;
     if (!myTurn()) look.units()[b].moveUsed = 0;
     reach_ = look.reachable(b, true);
-    reachPaths_ = look.reachable(b, false);  // routes may pass a friend's hex (Engine2: walk reach unpruned)
-    // The foes it can strike from some hex of its reach, each from the first such hex (Engine2 attackableEnemies),
+    reachPaths_ = look.reachable(b, false);  // routes may pass a friend's hex (Ember: walk reach unpruned)
+    // The foes it can strike from some hex of its reach, each from the first such hex (Ember attackableEnemies),
     // and that the party can see; only for the party's unit whose turn it is and that has not struck yet.
     if (!myTurn() || u.acted || battle_->roaming()) return;
-    for (const e2::ReachCell& c : reach_)
+    for (const ember::ReachCell& c : reach_)
       for (size_t i = 0; i < scene_->units.size(); ++i) {
         const int fb = unitBattle_[i];
         if (fb < 0 || !unitCard_[i].drawn) continue;
-        const e2::BattleUnit& f = battle_->units()[static_cast<size_t>(fb)];
+        const ember::BattleUnit& f = battle_->units()[static_cast<size_t>(fb)];
         if (!f.alive || f.side == u.side) continue;
         if (std::any_of(targets_.begin(), targets_.end(), [&](const auto& t) { return t.first == static_cast<int>(i); })) continue;
-        if (e2::canHitFrom(*battle_, b, {c.x, c.y}, static_cast<size_t>(fb))) targets_.push_back({static_cast<int>(i), e2::BattleHex{c.x, c.y}});
+        if (ember::canHitFrom(*battle_, b, {c.x, c.y}, static_cast<size_t>(fb))) targets_.push_back({static_cast<int>(i), ember::BattleHex{c.x, c.y}});
       }
     // The off-hand weapon (a dagger beside a bow) reaches what the bow cannot, standing where it is; with "Mão Secundária"
     // armed those are the only targets.
@@ -4846,16 +4846,16 @@ class MapStage final : public Stage {
       for (size_t i = 0; i < scene_->units.size(); ++i) {
         const int fb = unitBattle_[i];
         if (fb < 0 || !unitCard_[i].drawn) continue;
-        const e2::BattleUnit& f = battle_->units()[static_cast<size_t>(fb)];
-        if (!f.alive || f.side == u.side || !e2::canOffHandHit(*battle_, b, {u.x, u.y}, static_cast<size_t>(fb))) continue;
+        const ember::BattleUnit& f = battle_->units()[static_cast<size_t>(fb)];
+        if (!f.alive || f.side == u.side || !ember::canOffHandHit(*battle_, b, {u.x, u.y}, static_cast<size_t>(fb))) continue;
         const auto have = std::find_if(targets_.begin(), targets_.end(), [&](const auto& t) { return t.first == static_cast<int>(i); });
-        if (have == targets_.end()) targets_.push_back({static_cast<int>(i), e2::BattleHex{u.x, u.y}});
-        else if (u.combat.arrow) have->second = e2::BattleHex{u.x, u.y};  // in the dagger's reach it strikes from here
+        if (have == targets_.end()) targets_.push_back({static_cast<int>(i), ember::BattleHex{u.x, u.y}});
+        else if (u.combat.arrow) have->second = ember::BattleHex{u.x, u.y};  // in the dagger's reach it strikes from here
       }
     }
     if (offHandMode_)
       targets_.erase(std::remove_if(targets_.begin(), targets_.end(),
-                                    [&](const auto& t) { return !e2::canOffHandAct(*battle_, b, {u.x, u.y}, static_cast<size_t>(unitBattle_[static_cast<size_t>(t.first)])); }),
+                                    [&](const auto& t) { return !ember::canOffHandAct(*battle_, b, {u.x, u.y}, static_cast<size_t>(unitBattle_[static_cast<size_t>(t.first)])); }),
                      targets_.end());
   }
 
@@ -4863,7 +4863,7 @@ class MapStage final : public Stage {
   bool myTurn() const {
     if (!battle_ || selected_ < 0 || unitBattle_[static_cast<size_t>(selected_)] < 0) return false;
     if (battle_->roaming()) {  // free roam: no turns, the party's picked unit leads
-      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
+      const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
       return u.side == "player" && u.alive && result_.empty();
     }
     const int active = battle_->activeUnit();
@@ -4876,7 +4876,7 @@ class MapStage final : public Stage {
     return std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
   }
 
-  // Engine2's turn loop (tick / beginUnitTurn / startNewRound): whoever is next in the round acts; when everyone has
+  // Ember's turn loop (tick / beginUnitTurn / startNewRound): whoever is next in the round acts; when everyone has
   // gone a new round starts. The party's unit is picked and waits for the player; an enemy plays its own turn.
   void updateTurns() {
     if (!battle_ || !scene_ || !result_.empty() || holdTurns || battle_->roaming()) return;
@@ -4904,10 +4904,10 @@ class MapStage final : public Stage {
           targets.push_back(static_cast<size_t>(unitBattle_[static_cast<size_t>(t.target)]));
           melee.push_back(targets.back());
         }
-        for (const e2::BattleStep& st : t.steps) {
+        for (const ember::BattleStep& st : t.steps) {
           targets.insert(targets.end(), st.ids.begin(), st.ids.end());
-          if (st.type == e2::BattleStep::Type::Combat) targets.push_back(st.def), melee.push_back(st.def);
-          else if (st.type == e2::BattleStep::Type::Spell && e2::spellWeaponAbility(st.kind)) melee.insert(melee.end(), st.ids.begin(), st.ids.end());
+          if (st.type == ember::BattleStep::Type::Combat) targets.push_back(st.def), melee.push_back(st.def);
+          else if (st.type == ember::BattleStep::Type::Spell && ember::spellWeaponAbility(st.kind)) melee.insert(melee.end(), st.ids.begin(), st.ids.end());
         }
         if (playInterrupts(static_cast<size_t>(unitBattle_[t.unit]), targets, melee, t.walked)) {
           enemyTurn_ = t;
@@ -4916,7 +4916,7 @@ class MapStage final : public Stage {
       }
       if (!t.steps.empty() && !t.struck && battle_->units()[static_cast<size_t>(unitBattle_[t.unit])].alive) {
         t.struck = true;
-        std::vector<e2::BattleStep> steps = t.steps;
+        std::vector<ember::BattleStep> steps = t.steps;
         enemyTurn_ = t;
         play(std::move(steps), t.unit);
         return;
@@ -4959,29 +4959,29 @@ class MapStage final : public Stage {
     battle_->beginTurn(static_cast<size_t>(active));
     {
       // The start of its own turn: a lightning echo, the ground's flames, our zones and conditions, a Meteoro it called.
-      std::vector<e2::BattleEffect> fx;
+      std::vector<ember::BattleEffect> fx;
       const bool echo = battle_->units()[static_cast<size_t>(active)].shock.has_value();
-      // Engine2 beginUnitTurn: those effects, then stun, the web's sleep roll, sleep and a flight in fear
-      const e2::TurnStart turn = e2::beginUnitTurn(*battle_, static_cast<size_t>(active), rng_, fx);
+      // Ember beginUnitTurn: those effects, then stun, the web's sleep roll, sleep and a flight in fear
+      const ember::TurnStart turn = ember::beginUnitTurn(*battle_, static_cast<size_t>(active), rng_, fx);
       if (const int ui = sceneUnitOf(active); echo && ui >= 0 && !fx.empty()) spellFx_.echo(unitSpot(static_cast<size_t>(ui)), now_);
       // A Meteoro that fell: the rock takes 0.9 s to land; the numbers wait for it.
-      const std::vector<e2::Battle::Zone> fallen = battle_->takeLanded();
-      for (const e2::Battle::Zone& z : fallen) spellFx_.meteorFall(zoneSpots(z), now_, now_ + 0.9f);
+      const std::vector<ember::Battle::Zone> fallen = battle_->takeLanded();
+      for (const ember::Battle::Zone& z : fallen) spellFx_.meteorFall(zoneSpots(z), now_, now_ + 0.9f);
       if (fallen.empty()) showEffects(fx);
       else pendingFx_.push_back({now_ + 0.9f, fx});
       if (!battle_->units()[static_cast<size_t>(active)].alive) {
         battle_->units()[static_cast<size_t>(active)].moved = true;
         return;
       }
-      if (turn.kind != e2::TurnStart::Kind::Normal) {  // it loses the turn (stunned, asleep) or runs from what it fears
+      if (turn.kind != ember::TurnStart::Kind::Normal) {  // it loses the turn (stunned, asleep) or runs from what it fears
         const int ui = sceneUnitOf(active);
         if (ui >= 0 && !turn.tip.empty()) tip_ = battle_->units()[static_cast<size_t>(active)].name + turn.tip, tipAt_ = now_;
-        if (ui >= 0 && turn.kind == e2::TurnStart::Kind::Fled && turn.fleePath.size() > 1) fleeAlong(static_cast<size_t>(ui), turn.fleePath);
+        if (ui >= 0 && turn.kind == ember::TurnStart::Kind::Fled && turn.fleePath.size() > 1) fleeAlong(static_cast<size_t>(ui), turn.fleePath);
         return;
       }
     }
     const int ui = sceneUnitOf(active);
-    const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(active)];
+    const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(active)];
     if (ui < 0) {  // a unit with no card in this scene sits its turns out
       battle_->units()[static_cast<size_t>(active)].moved = true;
       return;
@@ -4991,10 +4991,10 @@ class MapStage final : public Stage {
       turnFocus(static_cast<size_t>(ui));  // Câmera de ação: its turn, the camera on it
       return select(ui);
     }
-    // Under fog an enemy that has not seen the party yet holds its ground (Engine2 wakeIfSeesParty; here: once the
+    // Under fog an enemy that has not seen the party yet holds its ground (Ember wakeIfSeesParty; here: once the
     // party sees its hex).
     if (fog_ && !noFog_ && !awake_.contains(active)) {
-      const size_t i = static_cast<size_t>(e2::indexOf(board_->layout(), u.x, u.y));
+      const size_t i = static_cast<size_t>(ember::indexOf(board_->layout(), u.x, u.y));
       if (!litHex(i)) {
         battle_->units()[static_cast<size_t>(active)].moved = true;
         return;
@@ -5003,7 +5003,7 @@ class MapStage final : public Stage {
     }
     select(-1);
     turnFocus(static_cast<size_t>(ui));  // Câmera de ação: its turn, the camera on it (turnFocus skips a hex the fog hides)
-    if (std::optional<e2::AiCast> cast = e2::planEnemyCast(*battle_, static_cast<size_t>(active))) {
+    if (std::optional<ember::AiCast> cast = ember::planEnemyCast(*battle_, static_cast<size_t>(active))) {
       EnemyTurn t;
       t.unit = static_cast<size_t>(ui);
       t.steps = cast->steps;
@@ -5012,7 +5012,7 @@ class MapStage final : public Stage {
       if (cast->path.size() > 1) walkAlong(static_cast<size_t>(ui), cast->path);
       return;
     }
-    const e2::AiPlan plan = battle_->planEnemy(static_cast<size_t>(active));
+    const ember::AiPlan plan = battle_->planEnemy(static_cast<size_t>(active));
     EnemyTurn t;
     t.unit = static_cast<size_t>(ui);
     t.target = plan.target >= 0 ? sceneUnitOf(plan.target) : -1;
@@ -5021,37 +5021,37 @@ class MapStage final : public Stage {
     if (plan.path.size() > 1) walkAlong(static_cast<size_t>(ui), plan.path);
   }
 
-  // --- Free roam (an explore mission, Engine2 mission.explore, and any map with fog of war: the user, 2026-10-17): no turns
+  // --- Free roam (an explore mission, Ember mission.explore, and any map with fog of war: the user, 2026-10-17): no turns
   // until the party meets an enemy ------------------------------------------------------------------------------------------
   // The user's rule (2026-10-16): the party walks freely, its picked unit leading and the others following in
   // a line; an enemy coming into the party's sight starts the fight, in initiative order, with every unit's own
   // movement; once no enemy is in sight (fallen or out of view) the party roams again (the user, 2026-10-17: "free
-  // movement switch back and forth"). Engine2 roamed the whole mission; its free reach stays (Battle::reachable while
-  // roaming), and like Engine2 the reach is not washed over the board (a box says it is free movement).
-  static constexpr int kRoamSight = e2::kSightRadius;  // without fog of war: an enemy this many hexes from the party is met (the same 12 as the fog's sight; was 6)
+  // movement switch back and forth"). Ember roamed the whole mission; its free reach stays (Battle::reachable while
+  // roaming), and like Ember the reach is not washed over the board (a box says it is free movement).
+  static constexpr int kRoamSight = ember::kSightRadius;  // without fog of war: an enemy this many hexes from the party is met (the same 12 as the fog's sight; was 6)
 
   // The living enemies the party sees right now (fog: on a hex in sight; without fog: within kRoamSight of a hero).
   std::vector<int> enemiesInSight() const {
-    const e2::HexLayout& L = board_->layout();
+    const ember::HexLayout& L = board_->layout();
     // The party's eyes where its feet are now (mid-walk too).
-    std::vector<e2::BattleHex> eyes;
+    std::vector<ember::BattleHex> eyes;
     for (size_t i = 0; i < scene_->units.size(); ++i) {
       const int b = unitBattle_[i];
       if (b < 0 || battle_->units()[static_cast<size_t>(b)].side != "player" || !battle_->units()[static_cast<size_t>(b)].alive) continue;
-      const auto [c, r] = e2::hexAt(L, unitPos_[i].x, unitPos_[i].y);
+      const auto [c, r] = ember::hexAt(L, unitPos_[i].x, unitPos_[i].y);
       eyes.push_back({c, r});
     }
     const bool fogged = fog_ && !noFog_;
     std::vector<int> met;
     for (size_t b = 0; b < battle_->units().size(); ++b) {
-      const e2::BattleUnit& e = battle_->units()[b];
+      const ember::BattleUnit& e = battle_->units()[b];
       if (!e.alive || e.side != "enemy") continue;
       bool seen = false;
       if (fogged) {
-        const size_t i = static_cast<size_t>(e2::indexOf(L, e.x, e.y));
+        const size_t i = static_cast<size_t>(ember::indexOf(L, e.x, e.y));
         seen = litHex(i);  // what is drawn is in sight: an enemy on lit ground starts the fight, as the player sees it
       } else {
-        seen = std::any_of(eyes.begin(), eyes.end(), [&](e2::BattleHex h) { return e2::Battle::distance(h, {e.x, e.y}) <= kRoamSight; });
+        seen = std::any_of(eyes.begin(), eyes.end(), [&](ember::BattleHex h) { return ember::Battle::distance(h, {e.x, e.y}) <= kRoamSight; });
       }
       if (seen) met.push_back(static_cast<int>(b));
     }
@@ -5076,7 +5076,7 @@ class MapStage final : public Stage {
     if (cutscene_) return logError("cutscene {}: refused, {} is still playing", id, cutscene_->script.id), false;
     if (!battle_ || !scene_) return logError("cutscene {}: refused, the map is not ready", id), false;
     std::string why;
-    std::optional<e2::CutsceneScript> script = e2::CutsceneScript::load("content/cutscenes/" + id + ".json", &why);
+    std::optional<ember::CutsceneScript> script = ember::CutsceneScript::load("content/cutscenes/" + id + ".json", &why);
     if (!script) return logError("cutscene {}: refused ({})", id, why), false;
     Cutscene c;
     c.script = std::move(*script);
@@ -5112,7 +5112,7 @@ class MapStage final : public Stage {
     for (const auto& [actor, ui] : cutscene_->units) {
       Walk& w = unitWalk_[ui];
       if (w.points.empty() || w.hexes.empty() || unitBattle_[ui] < 0) continue;
-      e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[ui])];
+      ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[ui])];
       const int there = battle_->unitAt(w.hexes.front().x, w.hexes.front().y);
       if (there < 0 || there == unitBattle_[ui]) u.x = w.hexes.front().x, u.y = w.hexes.front().y;
       w.points.resize(1), w.hexes.resize(1);
@@ -5136,28 +5136,28 @@ class MapStage final : public Stage {
     // The step in play: over?
     if (c.waiting) {
       switch (c.script.steps[c.step].kind) {
-        case e2::CutsceneStep::Kind::Move: {
+        case ember::CutsceneStep::Kind::Move: {
           const size_t ui = c.units[c.script.steps[c.step].actor];
           if (!unitWalk_[ui].points.empty()) return;
           break;
         }
-        case e2::CutsceneStep::Kind::Say:
+        case ember::CutsceneStep::Kind::Say:
           if (cutsceneDialog_) {
             if (options_.cutsceneAuto > 0.0f && now_ - c.stepStart >= options_.cutsceneAuto) cutsceneDialog_.reset();  // a capture: dismissed by itself
             else return;
           }
           break;
-        case e2::CutsceneStep::Kind::Wait:
+        case ember::CutsceneStep::Kind::Wait:
           if (now_ - c.stepStart < c.script.steps[c.step].seconds) return;
           break;
-        case e2::CutsceneStep::Kind::Face: break;
+        case ember::CutsceneStep::Kind::Face: break;
       }
       c.waiting = false;
       ++c.step;
     }
     if (c.step >= c.script.steps.size()) return stopCutscene("");
     // The next step begins.
-    const e2::CutsceneStep& st = c.script.steps[c.step];
+    const ember::CutsceneStep& st = c.script.steps[c.step];
     c.stepStart = now_;
     c.waiting = true;
     auto fail = [&](const std::string& why) { stopCutscene(why); };
@@ -5168,33 +5168,33 @@ class MapStage final : public Stage {
       return it->second;
     };
     switch (st.kind) {
-      case e2::CutsceneStep::Kind::Move: {
+      case ember::CutsceneStep::Kind::Move: {
         const std::optional<size_t> ui = unitOf(st.actor);
         if (!ui) return fail("actor \"" + st.actor + "\" is not standing on the map");
         const size_t b = static_cast<size_t>(unitBattle_[*ui]);
-        e2::BattleUnit& u = battle_->units()[b];
+        ember::BattleUnit& u = battle_->units()[b];
         if (!battle_->inBounds(st.x, st.y)) return fail(std::format("({}, {}) is off the board", st.x, st.y));
         if (u.x == st.x && u.y == st.y) return logInfo("cutscene {}: step {} move {}: already there", c.script.id, c.step, st.actor);
         if (!battle_->cell(st.x, st.y).passable) return fail(std::format("({}, {}) is not walkable", st.x, st.y));
         if (const int there = battle_->unitAt(st.x, st.y); there >= 0 && there != static_cast<int>(b))
           return fail(std::format("({}, {}) is occupied by {}", st.x, st.y, battle_->units()[static_cast<size_t>(there)].name));
         // Its route with the whole floor in reach (free roam's reach), whatever its movement this turn.
-        e2::Battle look = *battle_;
+        ember::Battle look = *battle_;
         look.units()[b].mov = look.cols() * look.rows(), look.units()[b].moveUsed = 0;
-        const std::vector<e2::ReachCell> reach = look.reachable(b, false);
-        std::vector<e2::BattleHex> route = e2::Battle::path(reach, st.x, st.y);
+        const std::vector<ember::ReachCell> reach = look.reachable(b, false);
+        std::vector<ember::BattleHex> route = ember::Battle::path(reach, st.x, st.y);
         if (route.size() < 2) return fail(std::format("({}, {}) is unreachable for {}", st.x, st.y, u.name));
-        std::vector<e2::BattleEffect> fx;
+        std::vector<ember::BattleEffect> fx;
         walkHexes(b, route, fx);  // the rules of the ground underfoot (a hazard, a gate) as in any walk
         if (route.size() < 2) return fail("the walk could not start");
         animateAlong(*ui, route, stepSeconds());
-        const auto [hx, hy] = e2::heading(route[route.size() - 2], route.back());
+        const auto [hx, hy] = ember::heading(route[route.size() - 2], route.back());
         u.faceDx = hx, u.faceDy = hy;
         playCues(sounds(b, route[1].x < route[0].x ? "walkLeft" : "walk"));
         logInfo("cutscene {}: step {} move {} ({}, {}) -> ({}, {}), {} hexes", c.script.id, c.step, st.actor, route.front().x, route.front().y, u.x, u.y, route.size() - 1);
         return;
       }
-      case e2::CutsceneStep::Kind::Face: {
+      case ember::CutsceneStep::Kind::Face: {
         const std::optional<size_t> ui = unitOf(st.actor);
         if (!ui) return fail("actor \"" + st.actor + "\" is not standing on the map");
         if (!st.toward.empty()) {
@@ -5205,23 +5205,23 @@ class MapStage final : public Stage {
           faceDirection(*ui, st.direction);
         }
         logInfo("cutscene {}: step {} face {} {}", c.script.id, c.step, st.actor,
-                st.toward.empty() ? std::string(e2::CutsceneScript::kDirections[static_cast<size_t>(st.direction)]) : "toward " + st.toward);
+                st.toward.empty() ? std::string(ember::CutsceneScript::kDirections[static_cast<size_t>(st.direction)]) : "toward " + st.toward);
         return;
       }
-      case e2::CutsceneStep::Kind::Say: {
+      case ember::CutsceneStep::Kind::Say: {
         const std::optional<size_t> ui = unitOf(st.actor);
         if (!ui) return fail("actor \"" + st.actor + "\" is not standing on the map");
-        const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[*ui])];
+        const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[*ui])];
         // One line as a dialogue tree (DialogScreen's input): the speaker's name, the text and its translations as any line's.
-        e2::Json line = {{"id", "l"}, {"speaker", u.name}, {"text", st.text}};
+        ember::Json line = {{"id", "l"}, {"speaker", u.name}, {"text", st.text}};
         if (st.translations.is_object()) line["translations"] = st.translations;
         if (!st.portrait.empty()) line["portrait"] = st.portrait;
-        e2::Json tree = {{"id", std::format("cutscene:{}:{}", c.script.id, c.step)}, {"startId", "l"}, {"lines", e2::Json::array({line})}};
-        cutsceneDialog_.emplace(tree, npcPortraits(tree, characters()), options_.engine2Public);
+        ember::Json tree = {{"id", std::format("cutscene:{}:{}", c.script.id, c.step)}, {"startId", "l"}, {"lines", ember::Json::array({line})}};
+        cutsceneDialog_.emplace(tree, npcPortraits(tree, characters()), options_.artRoot);
         logInfo("cutscene {}: step {} say {}: \"{}\"", c.script.id, c.step, st.actor, st.text);
         return;
       }
-      case e2::CutsceneStep::Kind::Wait:
+      case ember::CutsceneStep::Kind::Wait:
         logInfo("cutscene {}: step {} wait {:.2f} s", c.script.id, c.step, st.seconds);
         return;
     }
@@ -5231,10 +5231,10 @@ class MapStage final : public Stage {
   // board heading towards that neighbour and the card's side from where the camera stands (faceToward's rule).
   void faceDirection(size_t ui, int direction) {
     const size_t b = static_cast<size_t>(unitBattle_[ui]);
-    e2::BattleUnit& u = battle_->units()[b];
-    const std::vector<e2::BattleHex> around = e2::Battle::neighbors(u.x, u.y);
-    const e2::BattleHex to = around[static_cast<size_t>(std::clamp(direction, 0, 5))];
-    const auto [hx, hy] = e2::heading({u.x, u.y}, to);
+    ember::BattleUnit& u = battle_->units()[b];
+    const std::vector<ember::BattleHex> around = ember::Battle::neighbors(u.x, u.y);
+    const ember::BattleHex to = around[static_cast<size_t>(std::clamp(direction, 0, 5))];
+    const auto [hx, hy] = ember::heading({u.x, u.y}, to);
     u.faceDx = hx, u.faceDy = hy;
     // The card's side: the neighbour's place in the world against the unit's, seen from the camera (updateUnits' rule).
     const glm::vec2 d = anchorWorld(u, to) - anchorWorld(u, {u.x, u.y});
@@ -5256,12 +5256,12 @@ class MapStage final : public Stage {
     if (openingDone_ || !battle_ || !scene_ || readyFrames_ < 30 || !loading().ready) return;
     openingDone_ = true;  // (a battle script waits for this moment, so its steps never run before the map's opening scene)
     if (options_.editorClick || !options_.cutscene.empty()) return;
-    static const e2::Json table = [] {
+    static const ember::Json table = [] {
       std::ifstream in("content/cutscenes/triggers.json", std::ios::binary);
-      e2::Json j = in ? e2::Json::parse(in, nullptr, false) : e2::Json();
-      return j.is_object() ? j : e2::Json::object();
+      ember::Json j = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
+      return j.is_object() ? j : ember::Json::object();
     }();
-    const e2::Json onOpen = table.value("onOpen", e2::Json::object());
+    const ember::Json onOpen = table.value("onOpen", ember::Json::object());
     const std::string id = onOpen.is_object() ? onOpen.value(draftId(), std::string()) : std::string();
     if (id.empty()) return;
     logInfo("cutscene trigger: {} opens with {}", draftId(), id);
@@ -5311,7 +5311,7 @@ class MapStage final : public Stage {
       if (busy() || pendingStrike_ >= 0) return;
       if (!enemiesInSight().empty()) return;
       battle_->resumeRoaming();
-      for (e2::BattleUnit& u : battle_->units()) u.moveUsed = 0, u.acted = false, u.moved = false;
+      for (ember::BattleUnit& u : battle_->units()) u.moveUsed = 0, u.acted = false, u.moved = false;
       undo_.clear();
       turnUnit_ = -1;
       select(-1);  // the leader is picked again below, next frame
@@ -5327,7 +5327,7 @@ class MapStage final : public Stage {
         int pick = roamLeader_;
         auto fit = [&](int ui) {
           if (ui < 0 || ui >= static_cast<int>(scene_->units.size()) || unitBattle_[static_cast<size_t>(ui)] < 0) return false;
-          const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(ui)])];
+          const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(ui)])];
           return u.side == "player" && u.alive;
         };
         for (int ui = 0; !fit(pick) && ui < static_cast<int>(scene_->units.size()); ++ui) pick = ui;
@@ -5342,14 +5342,14 @@ class MapStage final : public Stage {
     for (size_t i = 0; i < unitWalk_.size(); ++i) {
       Walk& w = unitWalk_[i];
       if (w.points.empty() || w.hexes.empty() || unitBattle_[i] < 0) continue;
-      e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[i])];
-      const e2::BattleHex next = w.hexes.front();
+      ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[i])];
+      const ember::BattleHex next = w.hexes.front();
       const int there = battle_->unitAt(next.x, next.y);
       if (there >= 0 && there != unitBattle_[i]) continue;  // a friend stands there: it walks on to its own hex
       u.x = next.x, u.y = next.y;
       w.points.resize(1), w.hexes.resize(1);
     }
-    for (e2::BattleUnit& u : battle_->units()) u.moveUsed = 0, u.acted = false, u.moved = false;
+    for (ember::BattleUnit& u : battle_->units()) u.moveUsed = 0, u.acted = false, u.moved = false;
     for (const int b : met) awake_.insert(b);
     undo_.clear();
     turnUnit_ = -1;
@@ -5365,12 +5365,12 @@ class MapStage final : public Stage {
   // shortest and walks them. A route shorter than the party leaves the rest on the free hexes nearest where the leader set
   // off. Never on the Inn's floors: there everyone goes their own way. `route` is the leader's walk (start first),
   // `leaderReach` the reach it was planned on (the cost of each of its hexes).
-  void followLeader(size_t leader, const std::vector<e2::BattleHex>& route, const std::vector<e2::ReachCell>& leaderReach) {
+  void followLeader(size_t leader, const std::vector<ember::BattleHex>& route, const std::vector<ember::ReachCell>& leaderReach) {
     if (innFloor() || route.size() < 2 || unitBattle_[leader] < 0) return;
-    const e2::BattleUnit& lu = battle_->units()[static_cast<size_t>(unitBattle_[leader])];
+    const ember::BattleUnit& lu = battle_->units()[static_cast<size_t>(unitBattle_[leader])];
     if (lu.x != route.back().x || lu.y != route.back().y) return;  // its walk was cut short (a wound, a warp gate): nobody follows
-    auto costIn = [](const std::vector<e2::ReachCell>& reach, e2::BattleHex h) -> std::optional<int> {
-      for (const e2::ReachCell& c : reach)
+    auto costIn = [](const std::vector<ember::ReachCell>& reach, ember::BattleHex h) -> std::optional<int> {
+      for (const ember::ReachCell& c : reach)
         if (c.x == h.x && c.y == h.y) return c.cost;
       return std::nullopt;
     };
@@ -5382,7 +5382,7 @@ class MapStage final : public Stage {
     for (size_t i = 0; i < scene_->units.size(); ++i) {
       if (i == leader || unitBattle_[i] < 0) continue;
       const size_t b = static_cast<size_t>(unitBattle_[i]);
-      e2::BattleUnit& f = battle_->units()[b];
+      ember::BattleUnit& f = battle_->units()[b];
       if (!f.alive || f.side != "player") continue;
       // Still on its way from the last click: it sets off again from the hex its card is stepping onto.
       if (Walk& w = unitWalk_[i]; !w.points.empty() && !w.hexes.empty()) {
@@ -5392,41 +5392,41 @@ class MapStage final : public Stage {
           w.points.resize(1), w.hexes.resize(1);
         }
       }
-      party.push_back({i, b, e2::Battle::distance({f.x, f.y}, route.front())});
+      party.push_back({i, b, ember::Battle::distance({f.x, f.y}, route.front())});
     }
     std::stable_sort(party.begin(), party.end(), [](const Follower& a, const Follower& c) { return a.distance < c.distance; });
     // Planned on a copy of the battle: the leader already at the end of its route, followers off the board until placed.
-    e2::Battle look = *battle_;
+    ember::Battle look = *battle_;
     for (const Follower& f : party) look.units()[f.b].alive = false;
     std::set<std::pair<int, int>> taken{{route.back().x, route.back().y}};
     size_t slot = route.size() - 1;  // the next hex behind the leader on its route
     for (const Follower& f : party) {
-      e2::BattleUnit& fu = look.units()[f.b];
+      ember::BattleUnit& fu = look.units()[f.b];
       fu.alive = true;
-      const std::vector<e2::ReachCell> walk = look.reachable(f.b, false);
-      const std::vector<e2::ReachCell> stops = look.reachable(f.b, true);
-      auto open = [&](e2::BattleHex h) { return !taken.contains({h.x, h.y}) && costIn(stops, h).has_value(); };
+      const std::vector<ember::ReachCell> walk = look.reachable(f.b, false);
+      const std::vector<ember::ReachCell> stops = look.reachable(f.b, true);
+      auto open = [&](ember::BattleHex h) { return !taken.contains({h.x, h.y}) && costIn(stops, h).has_value(); };
       std::optional<size_t> onRoute;
       while (slot > 0 && !onRoute) {
         --slot;
         if (open(route[slot])) onRoute = slot;
       }
-      std::optional<e2::BattleHex> target;
+      std::optional<ember::BattleHex> target;
       if (onRoute) {
         target = route[*onRoute];
       } else {  // the route is used up: the free hex nearest where the leader set off
         int best = 0;
-        for (const e2::ReachCell& c : stops) {
-          const e2::BattleHex h{c.x, c.y};
+        for (const ember::ReachCell& c : stops) {
+          const ember::BattleHex h{c.x, c.y};
           if (!open(h)) continue;
-          const int score = 64 * e2::Battle::distance(h, route.front()) + e2::Battle::distance(h, route.back());
+          const int score = 64 * ember::Battle::distance(h, route.front()) + ember::Battle::distance(h, route.back());
           if (!target || score < best) target = h, best = score;
         }
       }
       if (!target) continue;
       taken.insert({target->x, target->y});
       fu.x = target->x, fu.y = target->y;
-      std::vector<e2::BattleHex> path;
+      std::vector<ember::BattleHex> path;
       if (onRoute) {
         // Where it joins the leader's footsteps: the cheapest way to some hex j of the route plus the route from j on.
         const std::optional<int> end = costIn(leaderReach, route[*onRoute]);
@@ -5440,70 +5440,70 @@ class MapStage final : public Stage {
           if (!join || cost < bestCost) join = j, bestCost = cost;
         }
         if (join) {
-          path = e2::Battle::path(walk, route[*join].x, route[*join].y);
+          path = ember::Battle::path(walk, route[*join].x, route[*join].y);
           if (!path.empty()) path.insert(path.end(), route.begin() + static_cast<std::ptrdiff_t>(*join) + 1, route.begin() + static_cast<std::ptrdiff_t>(*onRoute) + 1);
         }
       }
-      if (path.empty()) path = e2::Battle::path(walk, target->x, target->y);
+      if (path.empty()) path = ember::Battle::path(walk, target->x, target->y);
       if (path.size() >= 2) walkAlong(f.ui, path);
     }
   }
 
   // Walk a unit along a route (start first): the battle's state moves at once, the walk then plays it.
-  void walkAlong(size_t ui, const std::vector<e2::BattleHex>& planned) {
+  void walkAlong(size_t ui, const std::vector<ember::BattleHex>& planned) {
     const size_t b = static_cast<size_t>(unitBattle_[ui]);
-    e2::BattleUnit& u = battle_->units()[b];
-    std::vector<e2::BattleEffect> fx;
+    ember::BattleUnit& u = battle_->units()[b];
+    std::vector<ember::BattleEffect> fx;
     // A bleeding unit opens its wound once per own turn when it walks (applyBleedingActionDamage)
-    if (!e2::bleedOnAction(*battle_, b, true, rng_, fx)) {
+    if (!ember::bleedOnAction(*battle_, b, true, rng_, fx)) {
       showEffects(fx);
       u.moved = true;
       return;
     }
     // Its cost along the route (the step costs of the reach it was planned on).
-    for (const e2::ReachCell& c : battle_->reachable(b, false))
+    for (const ember::ReachCell& c : battle_->reachable(b, false))
       if (c.x == planned.back().x && c.y == planned.back().y) u.moveUsed += c.cost;
     // Hex by hex: a flame underfoot burns, a warp gate carries it across (the route is cut / extended to what it walked)
-    std::vector<e2::BattleHex> route = planned;
+    std::vector<ember::BattleHex> route = planned;
     walkHexes(b, route, fx);
     pendingFx_.push_back({now_ + stepSeconds() * static_cast<float>(route.size()), fx});
     Walk w;
     for (size_t k = 1; k < route.size(); ++k) w.points.push_back(anchorWorld(u, route[k])), w.hexes.push_back(route[k]);
-    const auto [hx, hy] = e2::heading(route[route.size() - 2], route.back());
+    const auto [hx, hy] = ember::heading(route[route.size() - 2], route.back());
     u.faceDx = hx, u.faceDy = hy;
     w.start = now_;
     // startSeq's walk cue (Cultist V2 by its first step's side), faded when the walk ends if it is a monster's own.
-    const e2::Json& walk = sounds(b, route.size() > 1 && route[1].x < route[0].x ? "walkLeft" : "walk");
+    const ember::Json& walk = sounds(b, route.size() > 1 && route[1].x < route[0].x ? "walkLeft" : "walk");
     playCues(walk);
-    w.fadeSound = sounds(b, "walkFade") == e2::Json(true) && walk.is_array() && !walk.empty() ? walk[0].value("file", "") : "";
+    w.fadeSound = sounds(b, "walkFade") == ember::Json(true) && walk.is_array() && !walk.empty() ? walk[0].value("file", "") : "";
     unitWalk_[ui] = std::move(w);
   }
 
   // A unit running from what it fears: its state moves at once (a flame underfoot burns it on the way), the card follows.
-  void fleeAlong(size_t ui, std::vector<e2::BattleHex> route) {
+  void fleeAlong(size_t ui, std::vector<ember::BattleHex> route) {
     const size_t b = static_cast<size_t>(unitBattle_[ui]);
-    std::vector<e2::BattleEffect> fx;
+    std::vector<ember::BattleEffect> fx;
     walkHexes(b, route, fx);
     if (route.size() > 1) animateAlong(ui, route, stepSeconds());
     pendingFx_.push_back({now_ + stepSeconds() * static_cast<float>(route.size()), fx});
   }
 
-  // The rules of a walk, hex by hex (Engine2 stepActive "move"): the unit stands on each hex in turn, a hazard there hurts
+  // The rules of a walk, hex by hex (Ember stepActive "move"): the unit stands on each hex in turn, a hazard there hurts
   // it (and may kill it: the walk stops there), a warp gate carries it across (it comes out beside the other). `route` is
   // cut to what it really walked; the unit is left on its last hex.
-  void walkHexes(size_t b, std::vector<e2::BattleHex>& route, std::vector<e2::BattleEffect>& fx) {
-    e2::BattleUnit& u = battle_->units()[b];
+  void walkHexes(size_t b, std::vector<ember::BattleHex>& route, std::vector<ember::BattleEffect>& fx) {
+    ember::BattleUnit& u = battle_->units()[b];
     for (size_t k = 1; k < route.size(); ++k) {
       u.x = route[k].x, u.y = route[k].y;
-      e2::stepOnHex(*battle_, b, rng_, fx);
+      ember::stepOnHex(*battle_, b, rng_, fx);
       if (!u.alive) {
         route.resize(k + 1);
         return;
       }
-      if (const std::optional<e2::BattleHex> across = e2::warpCrossing(*battle_, b)) {
+      if (const std::optional<ember::BattleHex> across = ember::warpCrossing(*battle_, b)) {
         route.resize(k + 1);  // the card walks to the gate; the unit is on the far side at once (the card follows when it arrives)
         u.x = across->x, u.y = across->y;
-        e2::BattleEffect moved;
+        ember::BattleEffect moved;
         moved.unit = b, moved.moved = true, moved.pushed = true;
         fx.push_back(moved);
         return;
@@ -5512,10 +5512,10 @@ class MapStage final : public Stage {
   }
 
   // A unit's card walked along a route the rules already played (a charge, a flight in fear): no state changes here.
-  float animateAlong(size_t ui, const std::vector<e2::BattleHex>& route, float secondsPerHex) {
+  float animateAlong(size_t ui, const std::vector<ember::BattleHex>& route, float secondsPerHex) {
     if (route.size() < 2) return 0.0f;
     const size_t b = static_cast<size_t>(unitBattle_[ui]);
-    const e2::BattleUnit& u = battle_->units()[b];
+    const ember::BattleUnit& u = battle_->units()[b];
     Walk w;
     for (size_t k = 1; k < route.size(); ++k) w.points.push_back(anchorWorld(u, route[k])), w.hexes.push_back(route[k]);
     w.start = now_;
@@ -5523,7 +5523,7 @@ class MapStage final : public Stage {
     return secondsPerHex * static_cast<float>(route.size() - 1);
   }
 
-  // --- The exchange: an attack and, when it can, the counter (Engine2 BattleEngine's combat queue for a plain attack). ---
+  // --- The exchange: an attack and, when it can, the counter (Ember BattleEngine's combat queue for a plain attack). ---
 
   // A pose played once over the unit's own (attack, hit, death), from `start` on the scene clock.
   struct OneShot {
@@ -5535,10 +5535,10 @@ class MapStage final : public Stage {
     std::string then;    // played next, as this one ends, until `thenUntil` (the cast pose, then its back still)
     float thenUntil = -1.0f;
   };
-  // An action in play (Engine2's queue): its steps one after another (a strike and its counter, a spell's hits, a
+  // An action in play (Ember's queue): its steps one after another (a strike and its counter, a spell's hits, a
   // heal), each a pose with the rules applied at its impact.
   struct Exchange {
-    std::vector<e2::BattleStep> steps;
+    std::vector<ember::BattleStep> steps;
     size_t step = 0;
     bool counter = false;  // the defender's strike back is playing
     float impact = 0.0f, end = 0.0f;
@@ -5554,11 +5554,11 @@ class MapStage final : public Stage {
     bool interrupt = false;  // a sentinel's thrust out of its turn (Vigília da Sentinela): nothing of the owner's turn is spent
   };
 
-  // What a unit's blows look like (CombatFx): its weapon's type (the heroes'), else its class (Engine2 exports no weapon
+  // What a unit's blows look like (CombatFx): its weapon's type (the heroes'), else its class (Ember exports no weapon
   // for enemies: milícia, the Butcher, captains, brigands, rogues and assassins carry blades; pikemen and lancers spears;
   // beasts, trolls, the dead and the rest strike blunt).
   enum class WeaponStyle { Blunt, Blade, Thrust };
-  static WeaponStyle weaponStyle(const e2::BattleUnit& u) {
+  static WeaponStyle weaponStyle(const ember::BattleUnit& u) {
     const std::string& w = u.weaponType;
     if (w == "sword" || w == "dagger" || w == "axe" || w == "blade" || w == "scimitar" || w == "katana") return WeaponStyle::Blade;
     if (w == "spear" || w == "lance" || w == "pike" || w == "polearm" || w == "halberd") return WeaponStyle::Thrust;
@@ -5572,21 +5572,21 @@ class MapStage final : public Stage {
     return WeaponStyle::Blunt;
   }
   // When the arrow leaves the bow in a unit's attack pose (seconds of the pose's own clock, before its pace), from the
-  // first art frame without the arrow on the string (looked up frame by frame in Engine2's art, 2026-10-17): Neera's
+  // first art frame without the arrow on the string (looked up frame by frame in Ember's art, 2026-10-17): Neera's
   // atk / atk-left 27 of 36, the crossbowman's atk 21 (the bolt's streak is drawn in 21-22), the bandit crossbowman's 18,
-  // the recruit archer's 3 of 4 (Engine2's short-cut hit frame). Unknown art: none (the pose's impact share stays).
+  // the recruit archer's 3 of 4 (Ember's short-cut hit frame). Unknown art: none (the pose's impact share stays).
   // Neera shooting with her new attack art (neera-hydra): her bow sound is Bow2-Balanced-High, played at the release.
   bool neeraBow(size_t ui) const {
-    const e2::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
+    const ember::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
     if (!entry || entry->key != "neera") return false;
-    const e2::HeroPose* p = entry->find("attack");
+    const ember::HeroPose* p = entry->find("attack");
     return p && p->set == "neera-hydra";
   }
   std::optional<float> arrowRelease(size_t ui, const std::string& pose) const {
-    const e2::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
+    const ember::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
     if (!entry) return std::nullopt;
-    const e2::HeroPose* left = unitFacing_[ui] == -1 ? entry->find(pose + "Left") : nullptr;
-    const e2::HeroPose* p = left && !left->pace.empty() ? left : entry->find(pose);
+    const ember::HeroPose* left = unitFacing_[ui] == -1 ? entry->find(pose + "Left") : nullptr;
+    const ember::HeroPose* p = left && !left->pace.empty() ? left : entry->find(pose);
     if (!p || p->pace.empty()) return std::nullopt;
     // Neera's Hydra+ attack (neera-hydra atk, the user 2026-10-22): the arrow on the string in 17-26, gone from 27.
     static const std::pair<const char*, int> kRelease[] = {{"neera/neera-v2-001:atk", 27}, {"neera/neera-v2-001:atk-left", 27}, {"neera-hydra:atk", 27},
@@ -5600,28 +5600,28 @@ class MapStage final : public Stage {
     }
     return std::nullopt;
   }
-  // A strike is made with the off-hand weapon (Engine2 offHandStrike): the unit's own off-hand attack (its step carries the
+  // A strike is made with the off-hand weapon (Ember offHandStrike): the unit's own off-hand attack (its step carries the
   // weapon's dice), or a counter by a defender whose off-hand weapon reaches the attacker.
-  bool strikeIsOffHand(const e2::BattleStep& s, bool counter) const {
-    if (s.type != e2::BattleStep::Type::Combat) return false;
+  bool strikeIsOffHand(const ember::BattleStep& s, bool counter) const {
+    if (s.type != ember::BattleStep::Type::Combat) return false;
     if (!counter) return s.customDice;
-    const e2::BattleUnit& actor = battle_->units()[s.def];
-    const e2::BattleUnit& target = battle_->units()[s.att];
-    return actor.combat.offHandWeapon && e2::Battle::distance({actor.x, actor.y}, {target.x, target.y}) <= actor.combat.offMaxRange;
+    const ember::BattleUnit& actor = battle_->units()[s.def];
+    const ember::BattleUnit& target = battle_->units()[s.att];
+    return actor.combat.offHandWeapon && ember::Battle::distance({actor.x, actor.y}, {target.x, target.y}) <= actor.combat.offMaxRange;
   }
 
   // A strike is a bow shot (Combat.cpp resolveStrike arrowShot: an archer's plain attack or counter, never off-hand).
-  bool strikeIsArrow(const e2::BattleStep& s, bool counter) const {
-    if (s.type != e2::BattleStep::Type::Combat || (!counter && !s.kind.empty())) return false;
-    const e2::BattleUnit& actor = battle_->units()[counter ? s.def : s.att];
+  bool strikeIsArrow(const ember::BattleStep& s, bool counter) const {
+    if (s.type != ember::BattleStep::Type::Combat || (!counter && !s.kind.empty())) return false;
+    const ember::BattleUnit& actor = battle_->units()[counter ? s.def : s.att];
     return actor.combat.arrow && !strikeIsOffHand(s, counter);
   }
 
   // A strike's blow is an arcane bolt (Combat.cpp resolveStrike: an arcane caster's plain attack or counter, never an
   // arrow, never an off-hand counter); its element (the staff's, else arcane).
-  bool strikeIsBolt(const e2::BattleStep& s, bool counter, std::string& element) const {
-    if (s.type != e2::BattleStep::Type::Combat || (!counter && !s.kind.empty())) return false;
-    const e2::BattleUnit& actor = battle_->units()[counter ? s.def : s.att];
+  bool strikeIsBolt(const ember::BattleStep& s, bool counter, std::string& element) const {
+    if (s.type != ember::BattleStep::Type::Combat || (!counter && !s.kind.empty())) return false;
+    const ember::BattleUnit& actor = battle_->units()[counter ? s.def : s.att];
     if (strikeIsOffHand(s, counter) || actor.combat.arrow || !(actor.combat.arcane || actor.combat.staff)) return false;
     element = actor.combat.staff ? actor.combat.staffElement : "arcane";
     return true;
@@ -5629,45 +5629,45 @@ class MapStage final : public Stage {
 
   // How long a unit's pose plays (its one-shot end, else its loop), seconds; 0.8 s when it has none.
   float poseSeconds(size_t ui, const std::string& pose) const {
-    const e2::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
-    const e2::HeroPose* p = entry ? entry->find(pose) : nullptr;
+    const ember::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
+    const ember::HeroPose* p = entry ? entry->find(pose) : nullptr;
     if (!p || p->pace.empty()) return 0.8f;
     return static_cast<float>(p->doneAt >= 0 ? p->doneAt : static_cast<int>(p->pace.size())) / 240.0f;
   }
   // How far into a unit's strike pose the blow lands: the pose's own moment (art cut from video), else kImpactShare.
   float poseImpact(size_t ui, const std::string& pose) const {
-    const e2::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
-    const e2::HeroPose* p = entry ? entry->find(pose) : nullptr;
+    const ember::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
+    const ember::HeroPose* p = entry ? entry->find(pose) : nullptr;
     return p && p->impact >= 0 ? p->impact : kImpactShare;
   }
   // A step aimed only at foes of its caster that are already dead (a weapon blow at its defender, a spell at the units it
   // lists): nothing left for it to strike. Steps for allies (heals, Ressurreição), areas with nobody listed and moves never are.
-  bool hitsOnlyTheDead(const e2::BattleStep& s) const {
+  bool hitsOnlyTheDead(const ember::BattleStep& s) const {
     const auto& all = battle_->units();
     if (s.att >= all.size()) return false;
     const std::string& side = all[s.att].side;
     auto deadFoe = [&](size_t id) { return id < all.size() && !all[id].alive && all[id].side != side; };
-    if (s.type == e2::BattleStep::Type::Combat) return deadFoe(s.def);
-    if (s.type != e2::BattleStep::Type::Spell || s.ids.empty()) return false;
+    if (s.type == ember::BattleStep::Type::Combat) return deadFoe(s.def);
+    if (s.type != ember::BattleStep::Type::Spell || s.ids.empty()) return false;
     return std::all_of(s.ids.begin(), s.ids.end(), [&](size_t id) { return deadFoe(id); });
   }
   // A blow between two units side by side (the struck one's nearest hex, for bodies bigger than one hex).
-  bool strikeBeside(const e2::BattleStep& s) const {
-    const e2::BattleUnit& a = battle_->units()[s.att];
-    const e2::BattleUnit& d = battle_->units()[s.def];
+  bool strikeBeside(const ember::BattleStep& s) const {
+    const ember::BattleUnit& a = battle_->units()[s.att];
+    const ember::BattleUnit& d = battle_->units()[s.def];
     int nearest = 1 << 20;
-    for (const e2::BattleHex& h : e2::Battle::footprint(d, d.x, d.y))
-      for (const e2::BattleHex& g : e2::Battle::footprint(a, a.x, a.y)) nearest = std::min(nearest, e2::Battle::distance(g, h));
+    for (const ember::BattleHex& h : ember::Battle::footprint(d, d.x, d.y))
+      for (const ember::BattleHex& g : ember::Battle::footprint(a, a.x, a.y)) nearest = std::min(nearest, ember::Battle::distance(g, h));
     return nearest <= 1;
   }
 
-  // Turn a unit to face a hex: on screen (its card) and on the board (Engine2 faceSpriteToward).
+  // Turn a unit to face a hex: on screen (its card) and on the board (Ember faceSpriteToward).
   void faceToward(size_t ui, size_t otherUi) {
     const size_t b = static_cast<size_t>(unitBattle_[ui]), o = static_cast<size_t>(unitBattle_[otherUi]);
-    e2::BattleUnit& u = battle_->units()[b];
-    const e2::BattleUnit& v = battle_->units()[o];
+    ember::BattleUnit& u = battle_->units()[b];
+    const ember::BattleUnit& v = battle_->units()[o];
     if (u.x == v.x && u.y == v.y) return;
-    const auto [hx, hy] = e2::heading({u.x, u.y}, {v.x, v.y});
+    const auto [hx, hy] = ember::heading({u.x, u.y}, {v.x, v.y});
     u.faceDx = hx, u.faceDy = hy;
     const glm::vec2 d = unitPos_[otherUi] - unitPos_[ui];
     const float yaw = flat_ ? 0.0f : cam_.yaw;
@@ -5675,44 +5675,44 @@ class MapStage final : public Stage {
     if (std::abs(screenX) > 0.05f) unitFacing_[ui] = screenX > 0.0f ? 1 : -1;
   }
 
-  // `offHand`: the blow is the off-hand weapon's (Engine2 commitOffHandAction: its own dice, its own sheet).
+  // `offHand`: the blow is the off-hand weapon's (Ember commitOffHandAction: its own dice, its own sheet).
   void attack(size_t attackerUi, size_t defenderUi, bool offHand = false) {
-    e2::BattleStep strike;
-    strike.type = e2::BattleStep::Type::Combat;
+    ember::BattleStep strike;
+    strike.type = ember::BattleStep::Type::Combat;
     strike.att = static_cast<size_t>(unitBattle_[attackerUi]);
     strike.def = static_cast<size_t>(unitBattle_[defenderUi]);
     if (offHand) {  // the dagger's own dice, or the shield's bash (a 70% chance to stun)
-      if (const std::optional<e2::BattleStep> off = e2::offHandStep(*battle_, strike.att, strike.def)) strike = *off;
+      if (const std::optional<ember::BattleStep> off = ember::offHandStep(*battle_, strike.att, strike.def)) strike = *off;
     }
     offHandMode_ = false;
     play({strike}, attackerUi);
   }
 
   // Whether the plain attack of the picked unit on this foe, from where it stands, is made with the off-hand weapon: the
-  // foe is within that weapon's reach and the player armed "Mão Secundária", or the unit wields a bow (Engine2: a bow user
+  // foe is within that weapon's reach and the player armed "Mão Secundária", or the unit wields a bow (Ember: a bow user
   // with a dagger strikes with it by default whenever the foe is in its reach, it always outhits the arrow).
   bool offHandWanted(size_t unitBattle, size_t foeBattle) const {
-    const e2::BattleUnit& u = battle_->units()[unitBattle];
+    const ember::BattleUnit& u = battle_->units()[unitBattle];
     if (!u.combat.offHandWeapon && !u.combat.offHandShield) return false;
-    if (!e2::canOffHandAct(*battle_, unitBattle, {u.x, u.y}, foeBattle)) return false;
+    if (!ember::canOffHandAct(*battle_, unitBattle, {u.x, u.y}, foeBattle)) return false;
     return offHandMode_ || (u.combat.arrow && u.combat.offHandWeapon);
   }
   // The forecast of a plain attack (or of the off-hand action when it is the one wanted): a shield's bash is the main weapon's blow
-  // without its mastery (Engine2 makeForecast useWeaponSkill false).
-  e2::Forecast forecastFor(size_t unitBattle, size_t foeBattle, e2::BattleHex from) const {
+  // without its mastery (Ember makeForecast useWeaponSkill false).
+  ember::Forecast forecastFor(size_t unitBattle, size_t foeBattle, ember::BattleHex from) const {
     const bool off = offHandFrom(unitBattle, foeBattle, from);
     const bool shield = off && battle_->units()[unitBattle].combat.offHandShield;
-    return e2::forecast(*battle_, unitBattle, from, foeBattle, off && !shield, !shield);
+    return ember::forecast(*battle_, unitBattle, from, foeBattle, off && !shield, !shield);
   }
   // The forecast's off-hand flag for a strike from `from`: only the hex the unit stands on can be struck with the off hand.
-  bool offHandFrom(size_t unitBattle, size_t foeBattle, e2::BattleHex from) const {
-    const e2::BattleUnit& u = battle_->units()[unitBattle];
+  bool offHandFrom(size_t unitBattle, size_t foeBattle, ember::BattleHex from) const {
+    const ember::BattleUnit& u = battle_->units()[unitBattle];
     return from.x == u.x && from.y == u.y && offHandWanted(unitBattle, foeBattle);
   }
 
   // `interrupt`: a sentinel's thrust before an enemy's blow (Vigília da Sentinela): it is nobody's action (no bleed roll, no
   // hunger, the owner's turn untouched).
-  void play(std::vector<e2::BattleStep> steps, size_t ownerUi, bool interrupt = false) {
+  void play(std::vector<ember::BattleStep> steps, size_t ownerUi, bool interrupt = false) {
     if (steps.empty()) return;
     Exchange x;
     x.steps = std::move(steps);
@@ -5723,11 +5723,11 @@ class MapStage final : public Stage {
     reach_.clear(), reachPaths_.clear(), targets_.clear();
     spellMode_.clear(), spellCells_.clear(), spellAim_.clear();
     spellArmed_.reset(), pendingFoe_ = -1;
-    // A bleeding unit takes 1D8 whenever it acts (Engine2 applyBleedingActionDamage): once for the whole action.
+    // A bleeding unit takes 1D8 whenever it acts (Ember applyBleedingActionDamage): once for the whole action.
     if (!interrupt) {
       const size_t ob = static_cast<size_t>(unitBattle_[ownerUi]);
-      std::vector<e2::BattleEffect> fx;
-      const bool alive = e2::bleedOnAction(*battle_, ob, false, rng_, fx);
+      std::vector<ember::BattleEffect> fx;
+      const bool alive = ember::bleedOnAction(*battle_, ob, false, rng_, fx);
       showEffects(fx);
       if (!alive) {  // bled out before the blow: the action is dropped
         exchange_.reset();
@@ -5742,9 +5742,9 @@ class MapStage final : public Stage {
 
   // The step's pose starts: the striker turns to its target (and a struck foe to the striker).
   void startStep(Exchange& x) {
-    const e2::BattleStep& s = x.steps[x.step];
+    const ember::BattleStep& s = x.steps[x.step];
     const int striker = sceneUnitOf(static_cast<int>(x.counter ? s.def : s.att));
-    using StepType = e2::BattleStep::Type;
+    using StepType = ember::BattleStep::Type;
     const bool support = s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food || s.type == StepType::Potion;
     int target = -1;
     if (s.type == StepType::Food || s.type == StepType::Move || s.type == StepType::Effect) target = -1;  // around the caster / a walk: nobody to turn to
@@ -5754,12 +5754,12 @@ class MapStage final : public Stage {
       faceToward(static_cast<size_t>(striker), static_cast<size_t>(target));
       if (!support && !s.rearSure) faceToward(static_cast<size_t>(target), static_cast<size_t>(striker));  // Salto de Vara: struck from behind, unseen
     }
-    // A potion is drunk or handed over with no pose of its own (Engine2 applyPotion); the cures and the food play the
+    // A potion is drunk or handed over with no pose of its own (Ember applyPotion); the cures and the food play the
     // healing pose.
-    std::string pose = s.type == StepType::Combat ? (strikeIsOffHand(s, x.counter) ? "attackShort" : "attack") : s.type == StepType::Potion ? "" : e2::spellPose(s.kind);
+    std::string pose = s.type == StepType::Combat ? (strikeIsOffHand(s, x.counter) ? "attackShort" : "attack") : s.type == StepType::Potion ? "" : ember::spellPose(s.kind);
     if (pose == "attackShort" && striker >= 0 && !hasPose(static_cast<size_t>(striker), pose)) pose = "attack";  // no off-hand sheet: the main one
-    if (e2::daggerStrikeKind(s.kind)) pose.clear();  // a Nuvem de Adagas dagger flies on its own: its caster plays no pose
-    if (e2::arcaneMarkBurstKind(s.kind)) pose.clear();  // a Marca Arcana goes off on its own: Selene plays no pose
+    if (ember::daggerStrikeKind(s.kind)) pose.clear();  // a Nuvem de Adagas dagger flies on its own: its caster plays no pose
+    if (ember::arcaneMarkBurstKind(s.kind)) pose.clear();  // a Marca Arcana goes off on its own: Selene plays no pose
     if (striker >= 0 && !pose.empty() && !hasPose(static_cast<size_t>(striker), pose)) pose = hasPose(static_cast<size_t>(striker), "cast") ? "cast" : "attack";
     // Neera's skill animation plays on every skill she uses, the bow skills too (the user, 2026-10-19); her plain attacks and
     // counters keep the shot. A skill is any step with a kind that is not a counter, a potion or a walk. Neera v2 plays her own
@@ -5797,10 +5797,10 @@ class MapStage final : public Stage {
       // Lanceiro's): the same flight, higher, over the foe the next step strikes, the lance planted beside it (vaultFlight).
       const bool vault = s.kind == "poleVault";
       const size_t ui = static_cast<size_t>(striker);
-      const e2::BattleUnit& bu = battle_->units()[s.att];
+      const ember::BattleUnit& bu = battle_->units()[s.att];
       const SpellEffects::Spot takeOff = unitSpot(ui);
       const glm::vec2 from = unitPos_[ui], to = anchorWorld(bu, s.path.back());
-      const float hexes = static_cast<float>(e2::Battle::distance(s.path.front(), s.path.back()));
+      const float hexes = static_cast<float>(ember::Battle::distance(s.path.front(), s.path.back()));
       const float flight = (vault ? 0.5f : 0.34f + 0.05f * hexes) / actionRate();
       unitLeap_[ui] = {now_, now_ + flight, from, to, vault ? 2.0f : 1.2f + 0.25f * hexes};
       unitPos_[ui] = to, unitWalk_[ui] = Walk{}, unitMoved_[ui] = 1;
@@ -5829,7 +5829,7 @@ class MapStage final : public Stage {
       return;
     }
     if (striker >= 0 && !pose.empty()) unitShot_[static_cast<size_t>(striker)] = {pose, now_, false, actionRate()};
-    // The casting light (Engine2 Battle3D syncCastLight): every caster while its cast pose plays, in its spell's colour (Malrec,
+    // The casting light (Ember Battle3D syncCastLight): every caster while its cast pose plays, in its spell's colour (Malrec,
     // Salazar and Voss in their own); swings, shoves and arrow shots are not casts (NOT_CASTS). Malrec alone also lights his attacks
     // and counters, in yellow.
     if (striker >= 0 && !pose.empty()) {
@@ -5840,7 +5840,7 @@ class MapStage final : public Stage {
       const std::string hero = su < unitCatalog_.size() && unitCatalog_[su] ? unitCatalog_[su]->key : std::string();
       const bool malrec = hero == "malrec";
       const bool attack = s.type == StepType::Combat || x.counter || pose.rfind("attack", 0) == 0 || pose.rfind("counter", 0) == 0 ||
-                          (!s.kind.empty() && e2::spellPose(s.kind) == "attack");  // a weapon skill played in the cast pose (Neera's) is no spell light
+                          (!s.kind.empty() && ember::spellPose(s.kind) == "attack");  // a weapon skill played in the cast pose (Neera's) is no spell light
       const bool cast = !attack && s.type != StepType::Potion && s.type != StepType::Move && !kNotCasts.contains(s.kind);
       const bool heal = s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food;
       if (cast || (attack && malrec) || x.magicStaff) glows_.push_back({su, now_, now_ + length, castTint(s.kind, heal, hero, attack)});
@@ -5849,12 +5849,12 @@ class MapStage final : public Stage {
     // casting antes de aparecerem em todos os casos"): its effect, its sound and its hit come after the pose. Weapon skills,
     // plain blows and potions keep the blow inside the pose.
     const bool magic = striker >= 0 && !x.counter && !s.kind.empty() && !pose.empty() && s.type != StepType::Combat &&
-                       s.type != StepType::Potion && e2::spellPose(s.kind) != "attack";
+                       s.type != StepType::Potion && ember::spellPose(s.kind) != "attack";
     const float fxStart = magic ? now_ + length : now_;
     x.release = magic ? fxStart : 0.0f;  // Câmera de ação: on the caster until then, then on the target / area
-    auto afterPose = [&](e2::Json cues) {
+    auto afterPose = [&](ember::Json cues) {
       if (magic && cues.is_array())
-        for (e2::Json& c : cues) c["delay"] = c.value("delay", 0.0f) + length;
+        for (ember::Json& c : cues) c["delay"] = c.value("delay", 0.0f) + length;
       return cues;
     };
     // The Arcano attack: energy gathers at the hand while the pose winds up, the bolt leaves at the pose's release and
@@ -5886,11 +5886,11 @@ class MapStage final : public Stage {
         x.impact = now_ + *release / actionRate() + flight;
         x.end = std::max(x.end, x.impact + 0.5f + kExchangeGap / actionRate());
         // Neera's bow (the user, 2026-10-22, with her new attack): Bow2-Balanced-High at the release, in place of her old cue
-        e2::Json cues = neeraBow(static_cast<size_t>(striker))
-                            ? e2::Json::array({{{"file", "Bow2-Balanced-High.mp3"}, {"volume", 0.55}, {"offset", 0}, {"delay", 0}, {"exclusive", true}}})
+        ember::Json cues = neeraBow(static_cast<size_t>(striker))
+                            ? ember::Json::array({{{"file", "Bow2-Balanced-High.mp3"}, {"volume", 0.55}, {"offset", 0}, {"delay", 0}, {"exclusive", true}}})
                             : sounds(x.counter ? s.def : s.att, "release");
         if (cues.is_array())
-          for (e2::Json& c : cues) c["delay"] = c.value("delay", 0.0f) + *release / actionRate();
+          for (ember::Json& c : cues) c["delay"] = c.value("delay", 0.0f) + *release / actionRate();
         playCues(cues);
       }
       spellFx_.cast("longShot", std::max(spellLook("longShot", static_cast<size_t>(striker)), 1), unitSpot(static_cast<size_t>(striker)),
@@ -5903,7 +5903,7 @@ class MapStage final : public Stage {
       const std::string key = static_cast<size_t>(striker) < unitCatalog_.size() && unitCatalog_[static_cast<size_t>(striker)]
                                   ? unitCatalog_[static_cast<size_t>(striker)]->key : std::string();
       auto cue = [](const char* file) {
-        return e2::Json::array({{{"file", file}, {"volume", 0.55}, {"offset", 0}, {"delay", 0}, {"exclusive", true}}});
+        return ember::Json::array({{{"file", file}, {"volume", 0.55}, {"offset", 0}, {"delay", 0}, {"exclusive", true}}});
       };
       const bool neeraDagger = s.type == StepType::Combat && strikeIsOffHand(s, x.counter) && key == "neera";
       // The crossbowmen's bolt (the user, 2026-10-20: Arrow1 on every attack and skill), besides their own cues.
@@ -5915,15 +5915,15 @@ class MapStage final : public Stage {
       if (selene && magic) playCues(cue("CastingSeleneBalanced-Medium.mp3"));
       if (selene && s.type == StepType::Combat) playCues(cue(x.counter ? "SelenesDagger.mp3" : "DaggerMasteredSelene.mp3"));
       else if (staffCounter) playCues(cue("ATT01Blunt.mp3"));  // the staff's blow, not his cast (the user, 2026-10-20: Blunt01)
-      else if (neeraDagger || e2::daggerStrikeKind(s.kind)) playCues(cue("BladeSlash1Dagger.mp3"));  // her off-hand dagger (the user, 2026-10-20: Dagger1); a Nuvem's dagger
+      else if (neeraDagger || ember::daggerStrikeKind(s.kind)) playCues(cue("BladeSlash1Dagger.mp3"));  // her off-hand dagger (the user, 2026-10-20: Dagger1); a Nuvem's dagger
       else if (s.type == StepType::Potion) playCues(cue("Healing01-Balanced-High.mp3"));  // every potion (the user, 2026-10-20)
       else if (key == "voss" && (s.kind == "magicMissile" || s.kind == "magicMissileV2")) playCues(afterPose(cue("Spellcast01.mp3")));  // the default cast
       else if (s.type == StepType::Combat) {
         if (!(x.arrow && neeraBow(static_cast<size_t>(striker)))) playCues(sounds(sb, x.counter ? "counter" : "attack"));  // hers plays at the release
       }
       else if (s.type == StepType::Heal || s.type == StepType::CureDisease || s.type == StepType::Food) playCues(afterPose(sounds(sb, "heal")));
-      else if (const e2::Json& spells = sounds(sb, "spells"); spells.is_object() && spells.contains(s.kind)) playCues(afterPose(spells[s.kind]));
-      else if (s.kind == "iceStorm" && spells.is_object()) {  // a cultist's Tempestade de Gelo (ours: Engine2 records none for it): its own cast
+      else if (const ember::Json& spells = sounds(sb, "spells"); spells.is_object() && spells.contains(s.kind)) playCues(afterPose(spells[s.kind]));
+      else if (s.kind == "iceStorm" && spells.is_object()) {  // a cultist's Tempestade de Gelo (ours: Ember records none for it): its own cast
         for (const char* other : {"lightning", "magicMissile", "frost"})
           if (spells.contains(other)) {
             playCues(afterPose(spells[other]));
@@ -5935,28 +5935,28 @@ class MapStage final : public Stage {
     // come when it lands).
     if (striker >= 0 && !x.counter && !s.kind.empty()) {
       std::vector<SpellEffects::Spot> spots;
-      const e2::Battle::IceZone* storm = s.kind == "iceStorm" && !s.tiles.empty() ? iceZoneOf(s.tiles.front(), battle_->units()[s.att].id) : nullptr;
+      const ember::Battle::IceZone* storm = s.kind == "iceStorm" && !s.tiles.empty() ? iceZoneOf(s.tiles.front(), battle_->units()[s.att].id) : nullptr;
       if (storm) {  // Tempestade de Gelo: the storm covers the field the rules just laid (the step aims its centre only)
-        for (const e2::BattleHex& h : storm->cells) spots.push_back(hexSpot(h));
+        for (const ember::BattleHex& h : storm->cells) spots.push_back(hexSpot(h));
       } else if (s.kind == "warCry" || s.kind == "steelWhirlwind" || s.kind == "empowerSummons" || s.kind == "sacrificeBond" || s.kind == "provoke" ||
-                 s.kind == "crusaderMantle" || e2::daggerStrikeKind(s.kind) ||
-                 e2::arcaneMarkBurstKind(s.kind)) {  // Grito de Guerra: the allies it rallies (the caster among them); Redemoinho: the foes it reaches; the Conjurador's: its summons; a Nuvem's dagger: the body it flies at; a Marca Arcana: the marked body
+                 s.kind == "crusaderMantle" || ember::daggerStrikeKind(s.kind) ||
+                 ember::arcaneMarkBurstKind(s.kind)) {  // Grito de Guerra: the allies it rallies (the caster among them); Redemoinho: the foes it reaches; the Conjurador's: its summons; a Nuvem's dagger: the body it flies at; a Marca Arcana: the marked body
         for (size_t id : s.ids)
           if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0) spots.push_back(unitSpot(static_cast<size_t>(ui)));
       } else if (s.kind == "turnUndead") {  // Expulsar Mortos-Vivos: the area's hexes; only the undead standing in it keep their card height (they are struck)
-        for (const e2::BattleHex& h : s.tiles) {
+        for (const ember::BattleHex& h : s.tiles) {
           SpellEffects::Spot spot = hexSpot(h);
           const bool undead = std::any_of(battle_->units().begin(), battle_->units().end(),
-                                          [&](const e2::BattleUnit& u) { return u.alive && u.undead && u.x == h.x && u.y == h.y; });
+                                          [&](const ember::BattleUnit& u) { return u.alive && u.undead && u.x == h.x && u.y == h.y; });
           if (!undead) spot.cardHeight = 0.0f;
           spots.push_back(spot);
         }
       } else if ((s.kind == "auraOfProtection" || s.kind == "intimidatingPresence") && !battle_->auraZones().empty()) {
         // the auras: the zone the rules just laid; only the bodies it reaches (allies for the protection, foes for the presence) keep their card height
-        const e2::Battle::AuraZone& z = battle_->auraZones().back();
-        for (const e2::BattleHex& h : z.cells) {
+        const ember::Battle::AuraZone& z = battle_->auraZones().back();
+        for (const ember::BattleHex& h : z.cells) {
           SpellEffects::Spot spot = hexSpot(h);
-          const bool reached = std::any_of(battle_->units().begin(), battle_->units().end(), [&](const e2::BattleUnit& u) {
+          const bool reached = std::any_of(battle_->units().begin(), battle_->units().end(), [&](const ember::BattleUnit& u) {
             return u.alive && u.x == h.x && u.y == h.y && (z.kind == "protection" ? u.side == z.side : u.side != z.side && u.side != "neutral");
           });
           if (!reached) spot.cardHeight = 0.0f;
@@ -5966,10 +5966,10 @@ class MapStage final : public Stage {
                  s.kind == "shoulderSmash" || s.kind == "stampede" || s.kind == "divineWrath" || s.kind == "spectralBolt" || s.kind == "piercingThrust" ||
                  s.kind == "dispelMagic") {
         // the Curandeiro's and the Conjurador's areas: the hexes; only the units it reaches (`ids`, and the summon that blows up) keep their card height
-        for (const e2::BattleHex& h : s.tiles) {
+        for (const ember::BattleHex& h : s.tiles) {
           SpellEffects::Spot spot = hexSpot(h);
           auto standsHere = [&](size_t id) {
-            const e2::BattleUnit& u = battle_->units()[id];
+            const ember::BattleUnit& u = battle_->units()[id];
             return u.alive && u.x == h.x && u.y == h.y;
           };
           const bool reached = std::any_of(s.ids.begin(), s.ids.end(), standsHere) || (s.sacrifice && standsHere(*s.sacrifice));
@@ -5977,14 +5977,14 @@ class MapStage final : public Stage {
           spots.push_back(spot);
         }
       } else if (s.type == StepType::Spell || s.type == StepType::Effect) {
-        for (const e2::BattleHex& h : s.tiles) spots.push_back(hexSpot(h));
+        for (const ember::BattleHex& h : s.tiles) spots.push_back(hexSpot(h));
       } else if (s.type == StepType::Food) {
         for (size_t id : s.ids)  // everyone it feeds
           if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0) spots.push_back(unitSpot(static_cast<size_t>(ui)));
       } else if (target >= 0) {
         spots.push_back(unitSpot(static_cast<size_t>(target)));
       }
-      // A version with Engine2's own timeline (Míssil Mágico 02) lands when it hits, as Engine2's rules wait for it.
+      // A version with Ember's own timeline (Míssil Mágico 02) lands when it hits, as Ember's rules wait for it.
       const SpellEffects::Spot casterSpot = unitSpot(static_cast<size_t>(striker));
       const int look = spellLook(s.kind, static_cast<size_t>(striker));
       if (magic) {  // the effect starts as the pose ends and runs its own lead to the hit
@@ -5995,11 +5995,11 @@ class MapStage final : public Stage {
         x.end = std::max(x.end, x.impact + 0.8f + kExchangeGap);
       }
       // Teia dos Sonhos 02: the units standing in the zone are wrapped; the web stands for as long as the rules keep the zone (syncWebs).
-      const e2::Battle::WebZone* webZone = s.kind == "webOfDreams" && look == 2 ? webZoneOf(s.tiles) : nullptr;
+      const ember::Battle::WebZone* webZone = s.kind == "webOfDreams" && look == 2 ? webZoneOf(s.tiles) : nullptr;
       const int webBefore = spellFx_.newestWeb();
       if (webZone) spellFx_.webUnits(webUnitsIn(*webZone));
       if (s.type == StepType::Potion && !spots.empty()) {
-        // its colour by what it does (Engine2 POTIONS effect)
+        // its colour by what it does (Ember POTIONS effect)
         const std::string effect = s.potion == "disease" ? "disease" : s.potion.starts_with("mana") ? "mana" : "heal";
         spellFx_.potion(effect, look, spots.front(), now_, x.impact, striker);
       } else if (spellFx_.cast(s.kind, look, casterSpot, spots, fxStart, x.impact, striker) && storm) {
@@ -6047,11 +6047,11 @@ class MapStage final : public Stage {
   void syncZones() {
     if (!battle_) return;
     syncIceStorms();
-    for (const e2::Battle::Zone& z : battle_->zones())
+    for (const ember::Battle::Zone& z : battle_->zones())
       if (!zoneFx_.contains(z.id)) zoneFx_[z.id] = spellFx_.zoneStart(z.kind, z.element, zoneSpots(z), now_);
     for (auto it = zoneFx_.begin(); it != zoneFx_.end();) {
       const int id = it->first;
-      const bool alive = std::any_of(battle_->zones().begin(), battle_->zones().end(), [&](const e2::Battle::Zone& z) { return z.id == id; });
+      const bool alive = std::any_of(battle_->zones().begin(), battle_->zones().end(), [&](const ember::Battle::Zone& z) { return z.id == id; });
       if (alive) {
         ++it;
       } else {
@@ -6060,20 +6060,20 @@ class MapStage final : public Stage {
       }
     }
   }
-  // Teia dos Sonhos 02 (vfx/DreamWeb): the web stays over its zone for as long as the rules keep it (Engine2 draws the net and the
+  // Teia dos Sonhos 02 (vfx/DreamWeb): the web stays over its zone for as long as the rules keep it (Ember draws the net and the
   // floor for every live webZone), its occupants following who stands in it now; a fight resumed with webs on the board gets
   // them already formed.
-  const e2::Battle::WebZone* webZoneOf(const std::vector<e2::BattleHex>& cells) const {
-    const e2::Battle::WebZone* found = nullptr;
-    for (const e2::Battle::WebZone& z : battle_->webZones())
+  const ember::Battle::WebZone* webZoneOf(const std::vector<ember::BattleHex>& cells) const {
+    const ember::Battle::WebZone* found = nullptr;
+    for (const ember::Battle::WebZone& z : battle_->webZones())
       if (z.cells.size() == cells.size() && std::equal(z.cells.begin(), z.cells.end(), cells.begin())) found = &z;  // the newest
     return found;
   }
-  std::vector<SpellEffects::WebUnit> webUnitsIn(const e2::Battle::WebZone& z) const {
+  std::vector<SpellEffects::WebUnit> webUnitsIn(const ember::Battle::WebZone& z) const {
     std::vector<SpellEffects::WebUnit> in;
     for (size_t i = 0; i < battle_->units().size(); ++i) {
-      const e2::BattleUnit& u = battle_->units()[i];
-      if (!u.alive || std::none_of(z.cells.begin(), z.cells.end(), [&](const e2::BattleHex& c) { return c.x == u.x && c.y == u.y; })) continue;
+      const ember::BattleUnit& u = battle_->units()[i];
+      if (!u.alive || std::none_of(z.cells.begin(), z.cells.end(), [&](const ember::BattleHex& c) { return c.x == u.x && c.y == u.y; })) continue;
       if (const int ui = sceneUnitOf(static_cast<int>(i)); ui >= 0) in.push_back({static_cast<int>(i), unitSpot(static_cast<size_t>(ui))});
     }
     return in;
@@ -6081,11 +6081,11 @@ class MapStage final : public Stage {
   void syncWebs() {
     if (!battle_) return;
     const auto& zones = battle_->webZones();
-    auto same = [](const WebFx& f, const e2::Battle::WebZone& z) { return f.center == z.center && f.radius == z.radius; };
+    auto same = [](const WebFx& f, const ember::Battle::WebZone& z) { return f.center == z.center && f.radius == z.radius; };
     std::vector<bool> taken(webFx_.size(), false);
     const bool resumed = !webSynced_;
     webSynced_ = true;
-    for (const e2::Battle::WebZone& z : zones) {
+    for (const ember::Battle::WebZone& z : zones) {
       size_t at = webFx_.size();
       for (size_t i = 0; i < webFx_.size(); ++i)
         if (!taken[i] && same(webFx_[i], z)) {
@@ -6095,7 +6095,7 @@ class MapStage final : public Stage {
       if (at == webFx_.size()) {
         if (!resumed || spellsMenu_.look("webOfDreams", false) != 2 || !battle_->inBounds(z.center.x, z.center.y)) continue;
         std::vector<SpellEffects::Spot> spots;
-        for (const e2::BattleHex& h : z.cells)
+        for (const ember::BattleHex& h : z.cells)
           if (battle_->cell(h.x, h.y).terrain != "void") spots.push_back(hexSpot(h));
         if (spots.empty()) continue;
         const int before = spellFx_.newestWeb();
@@ -6120,7 +6120,7 @@ class MapStage final : public Stage {
   void syncVigils() {
     if (!battle_) return;
     for (size_t i = 0; i < battle_->units().size(); ++i) {
-      const e2::BattleUnit& u = battle_->units()[i];
+      const ember::BattleUnit& u = battle_->units()[i];
       const int ui = sceneUnitOf(static_cast<int>(i));
       const bool on = u.alive && u.cond.vigilPct > 0 && ui >= 0;
       const auto it = vigilFx_.find(static_cast<int>(i));
@@ -6139,7 +6139,7 @@ class MapStage final : public Stage {
   void syncStatus() {
     if (!battle_) return;
     for (size_t i = 0; i < battle_->units().size(); ++i) {
-      const e2::BattleUnit& u = battle_->units()[i];
+      const ember::BattleUnit& u = battle_->units()[i];
       const int ui = sceneUnitOf(static_cast<int>(i));
       const bool shown = u.alive && ui >= 0 && static_cast<size_t>(ui) < unitCard_.size() && unitCard_[static_cast<size_t>(ui)].drawn;
       for (int c = 0; c < 2; ++c) {
@@ -6163,11 +6163,11 @@ class MapStage final : public Stage {
   void syncCrusader() {
     if (!battle_) return;
     for (size_t i = 0; i < battle_->units().size(); ++i) {
-      const e2::BattleUnit& u = battle_->units()[i];
+      const ember::BattleUnit& u = battle_->units()[i];
       const int ui = sceneUnitOf(static_cast<int>(i));
       const bool shown = u.alive && ui >= 0 && static_cast<size_t>(ui) < unitCard_.size() && unitCard_[static_cast<size_t>(ui)].drawn;
       for (int c = 0; c < 2; ++c) {
-        const bool on = shown && (c == 0 ? e2::oathActive(u) : u.cond.mantleDice > 0);
+        const bool on = shown && (c == 0 ? ember::oathActive(u) : u.cond.mantleDice > 0);
         const int key = static_cast<int>(i) * 2 + c;
         const auto it = crusaderFx_.find(key);
         if (on) {
@@ -6187,7 +6187,7 @@ class MapStage final : public Stage {
   void syncArcaneMarks() {
     if (!battle_) return;
     for (size_t i = 0; i < battle_->units().size(); ++i) {
-      const e2::BattleUnit& u = battle_->units()[i];
+      const ember::BattleUnit& u = battle_->units()[i];
       const int ui = sceneUnitOf(static_cast<int>(i));
       const bool on = u.alive && u.cond.arcaneMarkDice > 0 && ui >= 0 && static_cast<size_t>(ui) < unitCard_.size() && unitCard_[static_cast<size_t>(ui)].drawn;
       const auto it = arcaneMarkFx_.find(i);
@@ -6208,7 +6208,7 @@ class MapStage final : public Stage {
   void syncWards() {
     if (!battle_) return;
     for (size_t i = 0; i < battle_->units().size(); ++i) {
-      const e2::BattleUnit& u = battle_->units()[i];
+      const ember::BattleUnit& u = battle_->units()[i];
       const int ui = sceneUnitOf(static_cast<int>(i));
       if (ui < 0 || !u.alive || u.cond.reflectTurns <= 0) continue;
       const size_t su = static_cast<size_t>(ui);
@@ -6222,7 +6222,7 @@ class MapStage final : public Stage {
   void syncMirrors() {
     if (!battle_) return;
     for (size_t i = 0; i < battle_->units().size(); ++i) {
-      const e2::BattleUnit& u = battle_->units()[i];
+      const ember::BattleUnit& u = battle_->units()[i];
       const int ui = sceneUnitOf(static_cast<int>(i));
       const bool on = u.alive && u.cond.mirrorCopies > 0 && ui >= 0;
       const auto it = mirrorFx_.find(static_cast<int>(i));
@@ -6243,7 +6243,7 @@ class MapStage final : public Stage {
   void syncDaggers() {
     if (!battle_) return;
     for (size_t i = 0; i < battle_->units().size(); ++i) {
-      const e2::BattleUnit& u = battle_->units()[i];
+      const ember::BattleUnit& u = battle_->units()[i];
       const int ui = sceneUnitOf(static_cast<int>(i));
       const bool on = u.alive && u.cond.daggers > 0 && ui >= 0;
       const auto it = daggerFx_.find(static_cast<int>(i));
@@ -6263,11 +6263,11 @@ class MapStage final : public Stage {
   // The Globos de Invulnerabilidade the rules keep (MageFx): each bubble rises when the rules lay it and fades when they drop it.
   void syncGlobes() {
     if (!battle_) return;
-    for (const e2::Battle::Globe& g : battle_->globes())
+    for (const ember::Battle::Globe& g : battle_->globes())
       if (!globeFx_.contains(g.id) && battle_->inBounds(g.centre.x, g.centre.y)) {
         const SpellEffects::Spot centre = hexSpot(g.centre);
         float radius = 0.0f;
-        for (const e2::BattleHex& h : g.cells) {
+        for (const ember::BattleHex& h : g.cells) {
           const SpellEffects::Spot s = hexSpot(h);
           radius = std::max(radius, glm::length(glm::vec2(s.feet.x - centre.feet.x, s.feet.z - centre.feet.z)));
         }
@@ -6275,7 +6275,7 @@ class MapStage final : public Stage {
       }
     for (auto it = globeFx_.begin(); it != globeFx_.end();) {
       const int id = it->first;
-      if (std::any_of(battle_->globes().begin(), battle_->globes().end(), [&](const e2::Battle::Globe& g) { return g.id == id; })) {
+      if (std::any_of(battle_->globes().begin(), battle_->globes().end(), [&](const ember::Battle::Globe& g) { return g.id == id; })) {
         ++it;
       } else {
         spellFx_.mage().globeEnd(it->second, now_);
@@ -6283,22 +6283,22 @@ class MapStage final : public Stage {
       }
     }
   }
-  // The sentinels' thrusts before `attacker`'s blow on `targets` (e2::vigilInterrupts) and the daggers of a Nuvem de Adagas beside it
-  // (e2::daggerInterrupts: `melee` = whom its blow or weapon skill strikes, `arrived` = it walked here), played as one exchange of
+  // The sentinels' thrusts before `attacker`'s blow on `targets` (ember::vigilInterrupts) and the daggers of a Nuvem de Adagas beside it
+  // (ember::daggerInterrupts: `melee` = whom its blow or weapon skill strikes, `arrived` = it walked here), played as one exchange of
   // their own.
   bool playInterrupts(size_t attacker, const std::vector<size_t>& targets, const std::vector<size_t>& melee = {}, bool arrived = false) {
-    // Selene's Marca Arcana goes off first (e2::arcaneMarkInterrupts: the marked attacker walked).
-    std::vector<e2::BattleStep> steps = e2::arcaneMarkInterrupts(*battle_, attacker, arrived);
-    const std::vector<e2::BattleStep> vigils = e2::vigilInterrupts(*battle_, attacker, targets);
-    const std::vector<e2::BattleStep> daggers = e2::daggerInterrupts(*battle_, attacker, melee, arrived);
+    // Selene's Marca Arcana goes off first (ember::arcaneMarkInterrupts: the marked attacker walked).
+    std::vector<ember::BattleStep> steps = ember::arcaneMarkInterrupts(*battle_, attacker, arrived);
+    const std::vector<ember::BattleStep> vigils = ember::vigilInterrupts(*battle_, attacker, targets);
+    const std::vector<ember::BattleStep> daggers = ember::daggerInterrupts(*battle_, attacker, melee, arrived);
     steps.insert(steps.end(), vigils.begin(), vigils.end());
     steps.insert(steps.end(), daggers.begin(), daggers.end());
     if (steps.empty()) return false;
     const int owner = sceneUnitOf(static_cast<int>(steps.front().att));
     if (owner < 0) return false;
     const std::string& who = battle_->units()[steps.front().att].name;
-    tip_ = e2::arcaneMarkBurstKind(steps.front().kind) ? battle_->units()[attacker].name + tr(": a Marca Arcana explode!", ": the Arcane Mark bursts!")
-           : e2::daggerStrikeKind(steps.front().kind)  ? who + tr(": uma adaga voa!", ": a dagger flies!")
+    tip_ = ember::arcaneMarkBurstKind(steps.front().kind) ? battle_->units()[attacker].name + tr(": a Marca Arcana explode!", ": the Arcane Mark bursts!")
+           : ember::daggerStrikeKind(steps.front().kind)  ? who + tr(": uma adaga voa!", ": a dagger flies!")
                                                       : who + tr(" interrompe o ataque!", " interrupts the attack!");
     tipAt_ = now_;
     play(steps, static_cast<size_t>(owner), true);
@@ -6308,7 +6308,7 @@ class MapStage final : public Stage {
   // The Lanceiro's board moves (docs/SKILLS_LANCER.md): a body thrown, pulled, dragged or swapped stands on its new hex at
   // once in the rules; its card flies there on an arc (unitLeap_, the effect's `arc`) and the lance's effect follows it
   // (SpellEffects::lancerFlight / swapFlight). Returns when the last flight ends (now_ when nothing flies).
-  float animateFlights(const std::vector<e2::BattleEffect>& fx, const e2::BattleStep& s) {
+  float animateFlights(const std::vector<ember::BattleEffect>& fx, const ember::BattleStep& s) {
     float latest = now_;
     struct Mover {
       size_t ui;
@@ -6316,12 +6316,12 @@ class MapStage final : public Stage {
       float arc, finish;
     };
     std::vector<Mover> movers;
-    for (const e2::BattleEffect& e : fx) {
+    for (const ember::BattleEffect& e : fx) {
       if (!e.pushed || e.arc < 0.0f) continue;
       const int ui = sceneUnitOf(static_cast<int>(e.unit));
       if (ui < 0) continue;
       const size_t u = static_cast<size_t>(ui);
-      const e2::BattleUnit& bu = battle_->units()[e.unit];
+      const ember::BattleUnit& bu = battle_->units()[e.unit];
       const glm::vec2 from = unitPos_[u], to = anchorWorld(bu, {bu.x, bu.y});
       const float hexes = glm::length(to - from) / 1.7320508f;
       const bool swap = s.kind == "swapPost" || s.kind == "placeSwap";
@@ -6356,32 +6356,32 @@ class MapStage final : public Stage {
                               lancer ? spotAt(lancer->ui, lancer->from) : unitSpot(static_cast<size_t>(striker)),
                               lancer ? spotAt(lancer->ui, lancer->to) : unitSpot(static_cast<size_t>(striker)), false);
     } else {
-      const bool collided = std::any_of(fx.begin(), fx.end(), [](const e2::BattleEffect& e) { return e.delay > 0.0f; });
+      const bool collided = std::any_of(fx.begin(), fx.end(), [](const ember::BattleEffect& e) { return e.delay > 0.0f; });
       for (const Mover& m : movers)
         spellFx_.lancerFlight(s.kind, spotAt(m.ui, m.from), spotAt(m.ui, m.to), m.arc, now_, m.finish,
                               striker >= 0 ? unitSpot(static_cast<size_t>(striker)) : spotAt(m.ui, m.from), SpellEffects::Spot{}, collided);
     }
     return latest;
   }
-  // The Tempestade de Gelo fields (Battle::iceZones, Engine2's iceStormZones). A storm starts with its cast (startStep); it
+  // The Tempestade de Gelo fields (Battle::iceZones, Ember's iceStormZones). A storm starts with its cast (startStep); it
   // fades when the rules drop its field (battleSpellOverlay3d removeBlizzard). The fields already on the board at the first
-  // frame (a resumed fight) get theirs then, as Engine2 spawns one for every live field.
-  const e2::Battle::IceZone* iceZoneOf(e2::BattleHex centre, const std::string& caster) const {
-    const e2::Battle::IceZone* found = nullptr;
-    for (const e2::Battle::IceZone& z : battle_->iceZones())
+  // frame (a resumed fight) get theirs then, as Ember spawns one for every live field.
+  const ember::Battle::IceZone* iceZoneOf(ember::BattleHex centre, const std::string& caster) const {
+    const ember::Battle::IceZone* found = nullptr;
+    for (const ember::Battle::IceZone& z : battle_->iceZones())
       if (z.center == centre && z.casterId == caster) found = &z;  // the newest
     return found;
   }
   void syncIceStorms() {
     if (!iceSynced_) {
       iceSynced_ = true;
-      for (const e2::Battle::IceZone& z : battle_->iceZones()) {
+      for (const ember::Battle::IceZone& z : battle_->iceZones()) {
         int caster = -1;
         for (size_t i = 0; i < battle_->units().size(); ++i)
           if (battle_->units()[i].id == z.casterId) caster = sceneUnitOf(static_cast<int>(i));
         std::vector<SpellEffects::Spot> spots;
-        for (const e2::BattleHex& h : z.cells) spots.push_back(hexSpot(h));
-        const int look = caster >= 0 ? spellLook("iceStorm", static_cast<size_t>(caster)) : SpellEffects::engine2Look("iceStorm");
+        for (const ember::BattleHex& h : z.cells) spots.push_back(hexSpot(h));
+        const int look = caster >= 0 ? spellLook("iceStorm", static_cast<size_t>(caster)) : SpellEffects::classicLook("iceStorm");
         if (!spots.empty() && spellFx_.cast("iceStorm", look, spots.front(), spots, now_, now_ + 0.05f)) {
           iceFx_.push_back({z.center, z.casterId, spellFx_.newestStorm()});
           spellFx_.stormStand(spellFx_.newestStorm());
@@ -6395,19 +6395,19 @@ class MapStage final : public Stage {
     });
   }
   // A zone's hexes as spots, the centre first.
-  std::vector<SpellEffects::Spot> zoneSpots(const e2::Battle::Zone& z) const {
+  std::vector<SpellEffects::Spot> zoneSpots(const ember::Battle::Zone& z) const {
     std::vector<SpellEffects::Spot> spots;
     if (battle_->inBounds(z.centre.x, z.centre.y)) spots.push_back(hexSpot(z.centre));
     for (int y = 0; y < battle_->rows(); ++y)
       for (int x = 0; x < battle_->cols(); ++x) {
-        const e2::BattleHex h{x, y};
+        const ember::BattleHex h{x, y};
         if (h == z.centre || !z.covers(h) || battle_->cell(x, y).terrain == "void") continue;
         spots.push_back(hexSpot(h));
       }
     return spots;
   }
 
-  // Where an effect meets a scene unit: its feet and the middle of its body (its card as drawn, else Engine2's chest
+  // Where an effect meets a scene unit: its feet and the middle of its body (its card as drawn, else Ember's chest
   // height 0.9).
   SpellEffects::Spot unitSpot(size_t ui) const {
     const glm::vec3 feet = unitWorld(ui);
@@ -6432,15 +6432,15 @@ class MapStage final : public Stage {
   }
   static float cardHeightOf(const SpellEffects::Spot& s) { return s.cardHeight > 0.0f ? s.cardHeight : std::max(1.2f, (s.body.y - s.feet.y) / 0.45f); }
   // ... and a hex: the unit standing on it, else its ground.
-  SpellEffects::Spot hexSpot(e2::BattleHex h) const {
+  SpellEffects::Spot hexSpot(ember::BattleHex h) const {
     for (size_t i = 0; i < unitBattle_.size(); ++i) {
       if (unitBattle_[i] < 0) continue;
-      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[i])];
+      const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[i])];
       if (u.alive && u.x == h.x && u.y == h.y) return unitSpot(i);
     }
-    const e2::Cell& c = board_->cell(h.x, h.y);
+    const ember::Cell& c = board_->cell(h.x, h.y);
     const float x = static_cast<float>(c.x), z = static_cast<float>(c.z);
-    const glm::vec3 feet{x, static_cast<float>(e2::groundHeightAt(*board_, look_, x, z)), z};
+    const glm::vec3 feet{x, static_cast<float>(ember::groundHeightAt(*board_, look_, x, z)), z};
     return {feet, feet + glm::vec3(0.0f, 0.9f, 0.0f)};
   }
 
@@ -6476,7 +6476,7 @@ class MapStage final : public Stage {
 
   // --battle-script: each step played through the battle bar's own calls (select, startSpell, aimSpell; the turn loop
   // held), then checked once its action has played. Steps (names are the units' own):
-  //   hurt                      e2::hurtScene: every unit at half HP, some sick / poisoned, all hungry, uses halved
+  //   hurt                      ember::hurtScene: every unit at half HP, some sick / poisoned, all hungry, uses halved
   //   cast:CASTER:KIND:TARGET   the target is first stood beside the caster
   //   food:CASTER               Criar Comida e Água (its allies within 2 hexes fed)
   //   potion:ACTOR:ID:TARGET    the target is first stood beside the actor (or the actor itself)
@@ -6489,13 +6489,13 @@ class MapStage final : public Stage {
     return -1;
   }
   bool placeBeside(size_t ui, size_t other) {
-    e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[ui])];
-    const e2::BattleUnit& o = battle_->units()[static_cast<size_t>(unitBattle_[other])];
-    if (e2::Battle::distance({u.x, u.y}, {o.x, o.y}) == 1) return true;
-    for (const e2::BattleHex& h : e2::Battle::neighbors(o.x, o.y)) {
+    ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[ui])];
+    const ember::BattleUnit& o = battle_->units()[static_cast<size_t>(unitBattle_[other])];
+    if (ember::Battle::distance({u.x, u.y}, {o.x, o.y}) == 1) return true;
+    for (const ember::BattleHex& h : ember::Battle::neighbors(o.x, o.y)) {
       if (!battle_->inBounds(h.x, h.y) || !battle_->cell(h.x, h.y).passable || battle_->unitAt(h.x, h.y) >= 0) continue;
       u.x = h.x, u.y = h.y;
-      const e2::Cell& c = board_->cell(h.x, h.y);
+      const ember::Cell& c = board_->cell(h.x, h.y);
       unitPos_[ui] = {static_cast<float>(c.x), static_cast<float>(c.z)};
       unitWalk_[ui] = Walk{};
       return true;
@@ -6549,13 +6549,13 @@ class MapStage final : public Stage {
     if (p[0] == "hurt") {
       // the scene's wounds, sickness and hunger; the spell uses it halves are given back (the steps cast them)
       std::vector<std::array<int, 10>> uses;
-      for (const e2::BattleUnit& v : battle_->units()) uses.push_back(std::to_array(v.spells));
-      e2::hurtScene(*battle_);
+      for (const ember::BattleUnit& v : battle_->units()) uses.push_back(std::to_array(v.spells));
+      ember::hurtScene(*battle_);
       for (size_t i = 0; i < uses.size(); ++i) std::copy(uses[i].begin(), uses[i].end(), battle_->units()[i].spells);
       return logInfo("battle script: hurt: every unit at half HP, some sick / poisoned, everyone hungry");
     }
-    if (p[0] == "wipe") {  // every enemy fallen: the end is on offer (Engine2 winAvailable)
-      for (e2::BattleUnit& v : battle_->units())
+    if (p[0] == "wipe") {  // every enemy fallen: the end is on offer (Ember winAvailable)
+      for (ember::BattleUnit& v : battle_->units())
         if (v.side == "enemy") v.alive = false, v.hp = 0;
       return logInfo("battle script: wipe: win rule {}, end on offer {}", battle_->win(), battle_->winAvailable());
     }
@@ -6563,23 +6563,23 @@ class MapStage final : public Stage {
       const int gi = sceneUnitNamed(p[1]);
       if (gi < 0) return fail("no such unit");
       const size_t ab = static_cast<size_t>(unitBattle_[static_cast<size_t>(gi)]);
-      const e2::BattleUnit& v = battle_->units()[ab];
-      std::optional<e2::BattleHex> free;
-      for (const e2::BattleHex& h : e2::Battle::neighbors(v.x, v.y))
-        if (battle_->inBounds(h.x, h.y) && battle_->cell(h.x, h.y).passable && battle_->unitAt(h.x, h.y) < 0 && e2::spellAimValid(*battle_, ab, p[2], h)) free = h;
+      const ember::BattleUnit& v = battle_->units()[ab];
+      std::optional<ember::BattleHex> free;
+      for (const ember::BattleHex& h : ember::Battle::neighbors(v.x, v.y))
+        if (battle_->inBounds(h.x, h.y) && battle_->cell(h.x, h.y).passable && battle_->unitAt(h.x, h.y) < 0 && ember::spellAimValid(*battle_, ab, p[2], h)) free = h;
       if (!free) return fail("no free hex beside the summoner");
       std::string why;
-      const std::optional<std::vector<e2::BattleStep>> steps = e2::castSpell(*battle_, ab, p[2], {*free}, &why, false);
+      const std::optional<std::vector<ember::BattleStep>> steps = ember::castSpell(*battle_, ab, p[2], {*free}, &why, false);
       if (!steps) return fail("the summon was refused: " + why);
-      std::vector<e2::BattleEffect> fx;
-      e2::playSteps(*battle_, *steps, rng_, fx);
+      std::vector<ember::BattleEffect> fx;
+      ember::playSteps(*battle_, *steps, rng_, fx);
       syncSummons();
       return logInfo("battle script: summon {} {}: {} units now", p[1], p[2], battle_->units().size());
     }
     if (p[0] == "kill" && p.size() > 1) {  // "kill:<unit>": the unit falls where it stands (its card gone), for a Ressurreição
       const int gi = sceneUnitNamed(p[1]);
       if (gi < 0) return fail("no such unit");
-      e2::BattleUnit& v = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(gi)])];
+      ember::BattleUnit& v = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(gi)])];
       v.alive = false, v.hp = 0;
       unitDiedAt_[static_cast<size_t>(gi)] = -1000.0f;
       unitShot_[static_cast<size_t>(gi)] = {};
@@ -6588,7 +6588,7 @@ class MapStage final : public Stage {
     if (p[0] == "hp" && p.size() > 2) {  // "hp:<unit>:<n>": the unit's HP (and its maximum, if lower) set to n, for a test that must not kill it
       const int gi = sceneUnitNamed(p[1]);
       if (gi < 0) return fail("no such unit");
-      e2::BattleUnit& v = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(gi)])];
+      ember::BattleUnit& v = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(gi)])];
       v.hp = std::atoi(p[2].c_str());
       v.maxHp = std::max(v.maxHp, v.hp);
       return logInfo("battle script: hp {}: {} of {}", p[1], v.hp, v.maxHp);
@@ -6597,7 +6597,7 @@ class MapStage final : public Stage {
       // "afflict:<unit>:bless|rally|vigil|sleep|fear|silence|mark|decay": a condition set on the unit, to test Dissipar Magia
       const int gi = sceneUnitNamed(p[1]);
       if (gi < 0) return fail("no such unit");
-      e2::BattleUnit& v = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(gi)])];
+      ember::BattleUnit& v = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(gi)])];
       if (p[2] == "bless") v.blessedHitBonusPct = 0.1, v.blessedRoundsLeft = 3;
       else if (p[2] == "rally") v.cond.rallyPct = 20, v.cond.rallyTurns = 2;
       else if (p[2] == "vigil") v.cond.vigilPct = 100, v.cond.vigilRadius = 1;
@@ -6607,12 +6607,12 @@ class MapStage final : public Stage {
       else if (p[2] == "mark") v.cond.markPct = 20, v.cond.markTurns = 3;
       else if (p[2] == "decay") v.cond.decayTurns = 3, v.cond.decayPct = 10, v.cond.decayCap = 30, v.cond.decayStep = 10, v.cond.decayDice = 1, v.cond.decayFaces = 6, v.cond.decayMul = 0.5, v.cond.decayMag = 30;
       else return fail("unknown affliction");
-      return logInfo("battle script: afflict {} {}: {}", p[1], p[2], e2::conditionsText(v));
+      return logInfo("battle script: afflict {} {}: {}", p[1], p[2], ember::conditionsText(v));
     }
     if (p[0] == "sick" && p.size() > 2) {  // "sick:<unit>:poison|disease": the unit poisoned (Veneno Menor) or diseased, to see the effect
       const int gi = sceneUnitNamed(p[1]);
       if (gi < 0) return fail("no such unit");
-      e2::BattleUnit& v = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(gi)])];
+      ember::BattleUnit& v = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(gi)])];
       if (p[2] == "disease") v.diseased = true;
       else v.poisoned = true, v.poisonTier = v.poisonTier.empty() ? "lesser" : v.poisonTier;
       return logInfo("battle script: sick {} {}: poisoned {} diseased {}", p[1], p[2], v.poisoned, v.diseased);
@@ -6620,7 +6620,7 @@ class MapStage final : public Stage {
     if (p[0] == "goto" && p.size() > 3) {  // "goto:<unit>:<x>:<y>": the unit set down on a hex (a waypoint, for captures)
       const int gi = sceneUnitNamed(p[1]);
       if (gi < 0) return fail("no such unit");
-      e2::BattleUnit& v = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(gi)])];
+      ember::BattleUnit& v = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(gi)])];
       v.x = std::atoi(p[2].c_str()), v.y = std::atoi(p[3].c_str());
       unitPos_[static_cast<size_t>(gi)] = anchorWorld(v, {v.x, v.y});
       unitWalk_[static_cast<size_t>(gi)] = Walk{};
@@ -6630,11 +6630,11 @@ class MapStage final : public Stage {
       const int gi = sceneUnitNamed(p[1]);
       const size_t li = static_cast<size_t>(std::atoi(p[2].c_str()));
       if (gi < 0 || li >= battle_->locks().size()) return fail("no such unit or lock");
-      const e2::Battle::Lock& lock = battle_->locks()[li];
+      const ember::Battle::Lock& lock = battle_->locks()[li];
       const size_t ab = static_cast<size_t>(unitBattle_[static_cast<size_t>(gi)]);
-      e2::BattleUnit& v = battle_->units()[ab];
+      ember::BattleUnit& v = battle_->units()[ab];
       bool placed = false;
-      for (const e2::BattleHex& h : e2::Battle::neighbors(lock.x, lock.y)) {
+      for (const ember::BattleHex& h : ember::Battle::neighbors(lock.x, lock.y)) {
         if (!battle_->inBounds(h.x, h.y) || !battle_->cell(h.x, h.y).passable || (battle_->unitAt(h.x, h.y) >= 0 && battle_->unitAt(h.x, h.y) != static_cast<int>(ab))) continue;
         v.x = h.x, v.y = h.y;
         unitPos_[static_cast<size_t>(gi)] = anchorWorld(v, {v.x, v.y});
@@ -6659,7 +6659,7 @@ class MapStage final : public Stage {
     }
     if (p[0] == "finish") {
       // the finish prompt's yes (drawFinishPrompt), then what the result screen says: its line, its way on, each hero's HP after it
-      const e2::Battle::Exit* on = battle_->activeExit();
+      const ember::Battle::Exit* on = battle_->activeExit();
       if (!battle_->winAvailable()) return fail("the end is not on offer");
       if (on && on->kind == "connector" && !on->targetMapId.empty() && explores_) floorRequest_ = on->targetMapId;
       else confirmFinishNow();
@@ -6671,7 +6671,7 @@ class MapStage final : public Stage {
     }
     if (p[0] == "aim" && p.size() > 2) {
       // the cursor held on a hex from now on (the grid's route / target under it, for captures)
-      scriptHover_ = e2::BattleHex{std::atoi(p[1].c_str()), std::atoi(p[2].c_str())};
+      scriptHover_ = ember::BattleHex{std::atoi(p[1].c_str()), std::atoi(p[2].c_str())};
       return logInfo("battle script: aim {} {}", scriptHover_->x, scriptHover_->y);
     }
     if (p[0] == "skills" && p.size() > 1) {  // "skills:<unit>": its status sheet with the Skills window opened over it
@@ -6702,25 +6702,25 @@ class MapStage final : public Stage {
     }
     if (p[0] == "sheet") {  // "sheet": what the status sheet shows now (open, unit, the unit's points)
       if (!statusSheet_.isOpen()) return logInfo("battle script: sheet closed");
-      const e2::BattleUnit& v = battle_->units()[statusSheet_.unit()];
+      const ember::BattleUnit& v = battle_->units()[statusSheet_.unit()];
       return logInfo("battle script: sheet open on {}: points hp {} atk {} mag {} def {} dex {}, inventory {}", v.name, v.pointHp, v.pointAtk, v.pointMag,
                      v.pointDef, v.pointDex, battleInventory_ ? "open" : "closed");
     }
     if (p[0] == "click" && p.size() > 1) {
       // "click:<x>:<y>" or "click:<unit>": a left click on the hex's centre on screen, through the window's own click
       // (pick, cards first)
-      e2::BattleHex at{-1, -1};
+      ember::BattleHex at{-1, -1};
       if (p.size() > 2) at = {std::atoi(p[1].c_str()), std::atoi(p[2].c_str())};
       else if (const int who = sceneUnitNamed(p[1]); who >= 0 && unitBattle_[static_cast<size_t>(who)] >= 0)
         at = {battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(who)])].x, battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(who)])].y};
       if (!battle_->inBounds(at.x, at.y)) return fail("off the board");
       const int w = 1920, h = std::max(1, static_cast<int>(std::lround(1920.0f / std::max(aspect_, 0.1f))));
-      const e2::Cell& c = board_->cell(at.x, at.y);
-      const glm::vec3 centre{static_cast<float>(c.x), static_cast<float>(e2::groundHeightAt(*board_, look_, static_cast<float>(c.x), static_cast<float>(c.z))),
+      const ember::Cell& c = board_->cell(at.x, at.y);
+      const glm::vec3 centre{static_cast<float>(c.x), static_cast<float>(ember::groundHeightAt(*board_, look_, static_cast<float>(c.x), static_cast<float>(c.z))),
                              static_cast<float>(c.z)};
       const std::optional<ImVec2> s = screenOf(centre, static_cast<float>(w), static_cast<float>(h));
       if (!s || s->x < 0 || s->y < 0 || s->x >= w || s->y >= h) return fail("off screen");
-      const std::optional<e2::BattleHex> picked = spellMode_.empty() ? pickAt(w, h, s->x, s->y) : aimPickAt(w, h, s->x, s->y);
+      const std::optional<ember::BattleHex> picked = spellMode_.empty() ? pickAt(w, h, s->x, s->y) : aimPickAt(w, h, s->x, s->y);
       tip_.clear();
       clickAt(w, h, s->x, s->y);
       return logInfo("battle script: click {} {}: picked {}, attack {}, strike staged {}, spell '{}' armed {}{}, playing {}{}", at.x, at.y,
@@ -6737,7 +6737,7 @@ class MapStage final : public Stage {
       talkTo(static_cast<size_t>(unitBattle_[static_cast<size_t>(who)]));
       scriptCheck_ = [this, name = p[1]]() -> std::string {
         if (!talked_ && !talkRequest_) return name + "'s conversation never opened";
-        for (const e2::BattleUnit& u : battle_->units())
+        for (const ember::BattleUnit& u : battle_->units())
           if (u.side == "player" && !u.summoned) return logInfo("battle script: talked to {}, {} at ({}, {})", name, u.name, u.x, u.y), std::string();
         return "";
       };
@@ -6749,7 +6749,7 @@ class MapStage final : public Stage {
       return logInfo("battle script: cutscene {}", p[1]);
     }
     if (p[0] == "stairs") {  // "stairs": the finish prompt's "Sim" on the floor connector a hero stands on
-      const e2::Battle::Exit* x = battle_->activeExit();
+      const ember::Battle::Exit* x = battle_->activeExit();
       if (!x || x->kind != "connector" || x->targetMapId.empty()) return fail("no hero on a floor connector");
       floorRequest_ = x->targetMapId;
       return logInfo("battle script: stairs: {} to {}", connectorUp(*x) ? "up" : "down", floorRequest_);
@@ -6758,10 +6758,10 @@ class MapStage final : public Stage {
       // the confirm panel's Confirmar (drawConfirm), then, once it has played, who lost HP
       if (!spellArmed_ && pendingFoe_ < 0) return fail("nothing waiting for Confirmar");
       std::vector<int> hpBefore;
-      for (const e2::BattleUnit& v : battle_->units()) hpBefore.push_back(v.hp);
+      for (const ember::BattleUnit& v : battle_->units()) hpBefore.push_back(v.hp);
       const std::string kind = spellMode_;
       const int caster = selected_ >= 0 ? unitBattle_[static_cast<size_t>(selected_)] : -1;
-      const int usesBefore = caster >= 0 && !kind.empty() ? e2::spellUsesLeft(*battle_, static_cast<size_t>(caster), kind) : 0;
+      const int usesBefore = caster >= 0 && !kind.empty() ? ember::spellUsesLeft(*battle_, static_cast<size_t>(caster), kind) : 0;
       tip_.clear();
       if (pendingFoe_ >= 0) confirmStrike();
       else commitSpell(*spellArmed_);
@@ -6770,12 +6770,12 @@ class MapStage final : public Stage {
         std::string hurt;
         bool foe = false;
         for (size_t i = 0; i < battle_->units().size() && i < hpBefore.size(); ++i) {
-          const e2::BattleUnit& v = battle_->units()[i];
+          const ember::BattleUnit& v = battle_->units()[i];
           if (v.hp == hpBefore[i]) continue;
           hurt += std::format(" {} ({}) {} -> {}", v.name, v.side, hpBefore[i], v.hp);
           if (caster >= 0 && v.side != battle_->units()[static_cast<size_t>(caster)].side && v.hp < hpBefore[i]) foe = true;
         }
-        const int uses = caster >= 0 && !kind.empty() ? e2::spellUsesLeft(*battle_, static_cast<size_t>(caster), kind) : 0;
+        const int uses = caster >= 0 && !kind.empty() ? ember::spellUsesLeft(*battle_, static_cast<size_t>(caster), kind) : 0;
         logInfo("battle script: confirm {}: uses {} -> {}; HP changed:{}", kind, usesBefore, uses, hurt.empty() ? " nobody" : hurt);
         if (!kind.empty() && uses != usesBefore - 1) return std::format("uses {} -> {}", usesBefore, uses);
         return foe ? "" : "no foe hurt";
@@ -6787,7 +6787,7 @@ class MapStage final : public Stage {
       std::string list;
       for (size_t i = 0; i < scene_->units.size(); ++i)
         if (unitBattle_[i] >= 0) {
-          const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[i])];
+          const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[i])];
           list += std::format(" {} ({}, {}) mov {} hp {}{}", u.name, u.x, u.y, u.mov, u.hp, u.alive ? "" : " dead");
         }
       return logInfo("battle script: where: {} round {}:{}", battle_->roaming() ? "roaming" : "turns", battle_->round(), list);
@@ -6813,8 +6813,8 @@ class MapStage final : public Stage {
       std::string worst;
       for (int y = 0; y < battle_->rows(); ++y)
         for (int x = 0; x < battle_->cols(); ++x) {
-          const e2::Cell& c = board_->cell(x, y);
-          const glm::vec3 centre{static_cast<float>(c.x), static_cast<float>(e2::groundHeightAt(*board_, look_, static_cast<float>(c.x), static_cast<float>(c.z))),
+          const ember::Cell& c = board_->cell(x, y);
+          const glm::vec3 centre{static_cast<float>(c.x), static_cast<float>(ember::groundHeightAt(*board_, look_, static_cast<float>(c.x), static_cast<float>(c.z))),
                                  static_cast<float>(c.z)};
           const std::optional<ImVec2> at = screenOf(centre, static_cast<float>(w), static_cast<float>(h));
           if (!at || at->x < 0 || at->y < 0 || at->x >= w || at->y >= h) {
@@ -6822,7 +6822,7 @@ class MapStage final : public Stage {
             continue;
           }
           ++total;
-          const std::optional<e2::BattleHex> got = pickAt(w, h, at->x, at->y, false);
+          const std::optional<ember::BattleHex> got = pickAt(w, h, at->x, at->y, false);
           if (got && got->x == x && got->y == y) continue;
           ++wrong;
           if (shown++ < 12)
@@ -6835,8 +6835,8 @@ class MapStage final : public Stage {
     if (p[0] == "walk" && p.size() > 3) {
       // the unit picked and walked to a hex (while roaming the party follows it)
       select(ci);
-      const e2::BattleHex to{std::atoi(p[2].c_str()), std::atoi(p[3].c_str())};
-      if (!std::any_of(reach_.begin(), reach_.end(), [&](const e2::ReachCell& c) { return c.x == to.x && c.y == to.y; })) return fail("not in its reach");
+      const ember::BattleHex to{std::atoi(p[2].c_str()), std::atoi(p[3].c_str())};
+      if (!std::any_of(reach_.begin(), reach_.end(), [&](const ember::ReachCell& c) { return c.x == to.x && c.y == to.y; })) return fail("not in its reach");
       walkTo(static_cast<size_t>(ci), to);
       const auto walking = std::count_if(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
       return logInfo("battle script: walk {} to {} {}: {} walking", p[1], to.x, to.y, walking);
@@ -6844,11 +6844,11 @@ class MapStage final : public Stage {
     const size_t cb = static_cast<size_t>(unitBattle_[static_cast<size_t>(ci)]);
     if (p[0] == "ai") {
       // "ai:<enemy>": its AI plays a turn now (planEnemyCast, as an enemy's turn does); passes when it cast a spell.
-      e2::BattleUnit& v = battle_->units()[cb];
+      ember::BattleUnit& v = battle_->units()[cb];
       v.moved = false, v.acted = false, v.moveUsed = 0;
       select(-1);
       const int tier4 = v.spells[3];
-      std::optional<e2::AiCast> cast = e2::planEnemyCast(*battle_, cb);
+      std::optional<ember::AiCast> cast = ember::planEnemyCast(*battle_, cb);
       if (!cast) return fail("its AI cast nothing");
       if (cast->path.size() > 1) {  // set down where its walk ends (the script holds the turn loop that plays a walk then a cast)
         v.x = cast->path.back().x, v.y = cast->path.back().y;
@@ -6871,21 +6871,21 @@ class MapStage final : public Stage {
       const int through = p.size() > 4 ? sceneUnitNamed(p[4]) : -1;
       const int n = std::atoi(p[3].c_str());
       if (other < 0 || n < 1 || (p.size() > 4 && through < 0)) return fail("no such unit");
-      const e2::BattleUnit& o = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(other)])];
-      auto cube = [](e2::BattleHex h) { const int q = h.x - (h.y - (h.y & 1)) / 2; return std::pair<int, int>{q, h.y}; };
-      auto oddr = [](int q, int r) { return e2::BattleHex{q + (r - (r & 1)) / 2, r}; };
+      const ember::BattleUnit& o = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(other)])];
+      auto cube = [](ember::BattleHex h) { const int q = h.x - (h.y - (h.y & 1)) / 2; return std::pair<int, int>{q, h.y}; };
+      auto oddr = [](int q, int r) { return ember::BattleHex{q + (r - (r & 1)) / 2, r}; };
       const auto [oq, orr] = cube({o.x, o.y});
-      std::vector<e2::BattleHex> dirs;
+      std::vector<ember::BattleHex> dirs;
       if (through >= 0) {
-        const e2::BattleUnit& t = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(through)])];
+        const ember::BattleUnit& t = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(through)])];
         dirs.push_back({t.x, t.y});
       } else {
-        for (const e2::BattleHex& h : e2::Battle::neighbors(o.x, o.y)) dirs.push_back(h);
+        for (const ember::BattleHex& h : ember::Battle::neighbors(o.x, o.y)) dirs.push_back(h);
       }
-      for (const e2::BattleHex& d : dirs) {
+      for (const ember::BattleHex& d : dirs) {
         const auto [dq, dr] = cube(d);
         bool clear = true;
-        e2::BattleHex at{o.x, o.y};
+        ember::BattleHex at{o.x, o.y};
         for (int k = 1; k <= n && clear; ++k) {
           at = oddr(oq + (dq - oq) * k, orr + (dr - orr) * k);
           const bool occupied = battle_->inBounds(at.x, at.y) && battle_->unitAt(at.x, at.y) >= 0;
@@ -6893,7 +6893,7 @@ class MapStage final : public Stage {
           if (!battle_->inBounds(at.x, at.y) || !battle_->cell(at.x, at.y).passable || (occupied && !own)) clear = false;
         }
         if (!clear) continue;
-        e2::BattleUnit& v = battle_->units()[cb];
+        ember::BattleUnit& v = battle_->units()[cb];
         v.x = at.x, v.y = at.y;
         unitPos_[static_cast<size_t>(ci)] = anchorWorld(v, {v.x, v.y});
         unitWalk_[static_cast<size_t>(ci)] = Walk{};
@@ -6911,7 +6911,7 @@ class MapStage final : public Stage {
       const int hpBefore = battle_->units()[cb].hp;
       if (!playInterrupts(cb, {tb})) return fail("no sentinel interrupted");
       scriptCheck_ = [this, cb, hpBefore]() -> std::string {
-        const e2::BattleUnit& a = battle_->units()[cb];
+        const ember::BattleUnit& a = battle_->units()[cb];
         logInfo("battle script: vigil: the attacker {} hp {} -> {}{}", a.name, hpBefore, a.hp, a.alive ? "" : " (dead)");
         if (a.hp < hpBefore || !a.alive) return "";
         logInfo("battle script: the sentinel's thrust missed");
@@ -6929,8 +6929,8 @@ class MapStage final : public Stage {
       const int hpBefore = battle_->units()[cb].hp, daggersBefore = battle_->units()[tb].cond.daggers;
       if (!playInterrupts(cb, {tb}, {tb}, true)) return fail("no dagger thrown");
       scriptCheck_ = [this, cb, tb, hpBefore, daggersBefore]() -> std::string {
-        const e2::BattleUnit& a = battle_->units()[cb];
-        const e2::BattleUnit& h = battle_->units()[tb];
+        const ember::BattleUnit& a = battle_->units()[cb];
+        const ember::BattleUnit& h = battle_->units()[tb];
         logInfo("battle script: dagger: the attacker {} hp {} -> {}{}; {} daggers {} -> {}", a.name, hpBefore, a.hp, a.alive ? "" : " (dead)", h.name, daggersBefore,
                 h.cond.daggers);
         for (size_t k = battle_->log().size() > 6 ? battle_->log().size() - 6 : 0; k < battle_->log().size(); ++k) logInfo("battle script: log | {}", battle_->log()[k]);
@@ -6943,12 +6943,12 @@ class MapStage final : public Stage {
     }
     if (p[0] == "markwalk") {
       // "markwalk:<unit>": the unit has just walked: Selene's Marca Arcana on it must go off (1D8 arcane, the mark spent)
-      const e2::BattleUnit& w = battle_->units()[cb];
+      const ember::BattleUnit& w = battle_->units()[cb];
       const int hpBefore = w.hp, turnsBefore = w.cond.arcaneMarkTurns;
       if (w.cond.arcaneMarkDice <= 0) return fail("the unit carries no Marca Arcana");
       if (!playInterrupts(cb, {}, {}, true)) return fail("the mark did not go off");
       scriptCheck_ = [this, cb, hpBefore, turnsBefore]() -> std::string {
-        const e2::BattleUnit& u = battle_->units()[cb];
+        const ember::BattleUnit& u = battle_->units()[cb];
         logInfo("battle script: markwalk: {} hp {} -> {}{} (the mark held {} more turns)", u.name, hpBefore, u.hp, u.alive ? "" : " (dead)", turnsBefore);
         for (size_t k = battle_->log().size() > 4 ? battle_->log().size() - 4 : 0; k < battle_->log().size(); ++k) logInfo("battle script: log | {}", battle_->log()[k]);
         if (u.cond.arcaneMarkDice > 0) return "the mark is still on";
@@ -6962,17 +6962,17 @@ class MapStage final : public Stage {
       const int fi = sceneUnitNamed(p[2]);
       if (fi < 0) return fail("no such target");
       const size_t tb = static_cast<size_t>(unitBattle_[static_cast<size_t>(fi)]);
-      const e2::BattleUnit &a = battle_->units()[cb], &t = battle_->units()[tb];
-      e2::Battle flat = *battle_;
+      const ember::BattleUnit &a = battle_->units()[cb], &t = battle_->units()[tb];
+      ember::Battle flat = *battle_;
       for (int i = 0; i < flat.cols() * flat.rows(); ++i) {
-        e2::BattleCell c = flat.cell(i % flat.cols(), i / flat.cols());
+        ember::BattleCell c = flat.cell(i % flat.cols(), i / flat.cols());
         c.level = 0;
         flat.setCell(i, c);
       }
-      const e2::Forecast real = e2::forecast(*battle_, cb, {a.x, a.y}, tb), bare = e2::forecast(flat, cb, {a.x, a.y}, tb);
+      const ember::Forecast real = ember::forecast(*battle_, cb, {a.x, a.y}, tb), bare = ember::forecast(flat, cb, {a.x, a.y}, tb);
       return logInfo("battle script: highshot {} ({},{} level {}) -> {} ({},{} level {}): clear {} (flat {}), hit {:.2f} (flat {:.2f}), dmg {} (flat {})",
                      a.name, a.x, a.y, battle_->cell(a.x, a.y).level, t.name, t.x, t.y, battle_->cell(t.x, t.y).level,
-                     e2::clearShot(*battle_, {a.x, a.y}, {t.x, t.y}, true), e2::clearShot(flat, {a.x, a.y}, {t.x, t.y}, true), real.hitOut,
+                     ember::clearShot(*battle_, {a.x, a.y}, {t.x, t.y}, true), ember::clearShot(flat, {a.x, a.y}, {t.x, t.y}, true), real.hitOut,
                      bare.hitOut, real.dmgOut, bare.dmgOut);
     }
     if (p[0] == "shoot" && p.size() > 2) {
@@ -6985,8 +6985,8 @@ class MapStage final : public Stage {
       attack(static_cast<size_t>(ci), static_cast<size_t>(fi));
       if (!exchange_) return fail("the shot was not played: " + tip_);
       scriptCheck_ = [this, cb, tb, hpBefore, daggersBefore]() -> std::string {
-        const e2::BattleUnit& a = battle_->units()[cb];
-        const e2::BattleUnit& h = battle_->units()[tb];
+        const ember::BattleUnit& a = battle_->units()[cb];
+        const ember::BattleUnit& h = battle_->units()[tb];
         logInfo("battle script: shoot: {} shot {}: hp {} -> {}, daggers {} -> {}", a.name, h.name, hpBefore, h.hp, daggersBefore, h.cond.daggers);
         for (size_t k = battle_->log().size() > 6 ? battle_->log().size() - 6 : 0; k < battle_->log().size(); ++k) logInfo("battle script: log | {}", battle_->log()[k]);
         if (h.cond.daggers >= daggersBefore) return "no dagger spent on the arrow";
@@ -7004,15 +7004,15 @@ class MapStage final : public Stage {
     }
     if (p[0] == "learn" && p.size() > 2) {
       // "learn:<unit>:<kind>": a spell its class does not have, for a test (two uses of its tier when it has none)
-      e2::BattleUnit& v = battle_->units()[cb];
+      ember::BattleUnit& v = battle_->units()[cb];
       if (std::find(v.spellList.begin(), v.spellList.end(), p[2]) == v.spellList.end()) v.spellList.push_back(p[2]);
-      if (const int tier = e2::spellTierNumber(p[2]); tier > 0 && v.spells[tier - 1] < 1) v.spells[tier - 1] = 2;
+      if (const int tier = ember::spellTierNumber(p[2]); tier > 0 && v.spells[tier - 1] < 1) v.spells[tier - 1] = 2;
       if (p[2] == "spectralBolt" && v.spectralCharges < 1) v.spectralCharges = 2;  // the enemies' own: its charges
-      return logInfo("battle script: learn {} {}: {} uses", p[1], p[2], e2::spellUsesLeft(*battle_, cb, p[2]));
+      return logInfo("battle script: learn {} {}: {} uses", p[1], p[2], ember::spellUsesLeft(*battle_, cb, p[2]));
     }
     if (p[0] == "flee") {  // "flee:<unit>": the unit picked and Fugir combate tried (logs why not, its chance, the roll's outcome)
       select(ci);
-      const e2::BattleUnit& me = battle_->units()[cb];
+      const ember::BattleUnit& me = battle_->units()[cb];
       const bool can = canFlee(me);
       if (!can) return logInfo("battle script: flee {}: not offered (fleeable {}, hex {},{} of {}x{}, moved {})", p[1], fleeable(), me.x, me.y, battle_->cols(), battle_->rows(), me.moved);
       const double chance = fleeChance(me);
@@ -7026,12 +7026,12 @@ class MapStage final : public Stage {
         if (i == cu) break;
         battle_->units()[i].moved = true;
       }
-      e2::BattleUnit& me = battle_->units()[cu];
+      ember::BattleUnit& me = battle_->units()[cu];
       me.moved = false, me.acted = false, me.moveUsed = 0;
       select(ci);
       startSpell(p[2]);
-      std::optional<e2::BattleHex> free;
-      for (const e2::BattleHex& n : e2::Battle::neighbors(me.x, me.y))
+      std::optional<ember::BattleHex> free;
+      for (const ember::BattleHex& n : ember::Battle::neighbors(me.x, me.y))
         if (!free && aimValid(cu, n)) free = n;
       if (!free) return fail("no free hex beside it");
       aimSpell(*free);
@@ -7039,7 +7039,7 @@ class MapStage final : public Stage {
       return logInfo("battle script: summon {} {}: {}", p[1], p[2], exchange_ ? "playing" : "not cast: " + tip_);
     }
     if ((p[0] == "stage" || p[0] == "arm") && p.size() > 2) {
-      // Engine2's confirm panel for captures: "stage:<unit>:<foe>" = the unit picked as its turn with a strike staged on
+      // Ember's confirm panel for captures: "stage:<unit>:<foe>" = the unit picked as its turn with a strike staged on
       // the foe (stood beside it); "arm:<unit>:<kind>:<target>" = the spell aimed at the target (stood beside), waiting
       // for Confirmar.
       const int other = sceneUnitNamed(p[p[0] == "arm" && p.size() > 3 ? 3 : 2]);
@@ -7049,7 +7049,7 @@ class MapStage final : public Stage {
         if (i == static_cast<size_t>(unitBattle_[static_cast<size_t>(ci)])) break;
         battle_->units()[i].moved = true;
       }
-      e2::BattleUnit& me = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(ci)])];
+      ember::BattleUnit& me = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(ci)])];
       me.moved = false, me.acted = false, me.moveUsed = 0;
       select(ci);
       if (p[0] == "stage") {
@@ -7058,7 +7058,7 @@ class MapStage final : public Stage {
         return logInfo("battle script: stage {} -> {}: strike staged, waiting for Confirmar", p[1], p[2]);
       }
       startSpell(p[2]);
-      const e2::BattleUnit& t = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(other)])];
+      const ember::BattleUnit& t = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(other)])];
       aimSpell({t.x, t.y});
       return logInfo("battle script: arm {} {}: {}", p[1], p[2], spellArmed_ ? "armed, waiting for Confirmar" : "not armed: " + tip_);
     }
@@ -7076,7 +7076,7 @@ class MapStage final : public Stage {
       return logInfo("battle script: {} {}: {} hexes in reach, {} targets, aim {} of zone {}", p[0], p[1], reach_.size(), targets_.size(),
                      spellAim_.size(), spellZone_.size());
     }
-    e2::BattleUnit& caster = battle_->units()[cb];
+    ember::BattleUnit& caster = battle_->units()[cb];
     caster.acted = false, caster.moved = false;
     if (p[0] == "strike" && p.size() > 2) {
       // the unit's plain attack on a foe stood beside it (the Arcano bolt for a mage, a weapon blow otherwise)
@@ -7096,18 +7096,18 @@ class MapStage final : public Stage {
       if (ti < 0) return fail("no such target");
       // the Gancho takes a foe 2+ hexes away: one stood that far by a "far" step before is left where it is; a target inside a Globo
       // de Invulnerabilidade stays in it (the test of what the bubble stops)
-      const e2::BattleUnit& tu = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(ti)])];
-      const bool keep = (p[2] == "hookPull" && e2::Battle::distance({caster.x, caster.y}, {tu.x, tu.y}) >= 2) || battle_->shielded(tu);
+      const ember::BattleUnit& tu = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(ti)])];
+      const bool keep = (p[2] == "hookPull" && ember::Battle::distance({caster.x, caster.y}, {tu.x, tu.y}) >= 2) || battle_->shielded(tu);
       if (ti != ci && !keep && !placeBeside(static_cast<size_t>(ti), static_cast<size_t>(ci))) return fail("no free hex beside the caster");
     }
     const size_t tb = static_cast<size_t>(unitBattle_[static_cast<size_t>(ti)]);
-    const e2::BattleUnit before = battle_->units()[tb];
-    const e2::BattleUnit casterBefore = caster;
+    const ember::BattleUnit before = battle_->units()[tb];
+    const ember::BattleUnit casterBefore = caster;
     const int rationsBefore = battle_->lootRations();
     std::vector<std::pair<size_t, double>> fedBefore;  // allies within 2 hexes and their hunger
     for (size_t i = 0; i < battle_->units().size(); ++i) {
-      const e2::BattleUnit& v = battle_->units()[i];
-      if (v.alive && v.side == caster.side && e2::Battle::distance({v.x, v.y}, {caster.x, caster.y}) <= 2) fedBefore.push_back({i, v.fullness.value_or(100)});
+      const ember::BattleUnit& v = battle_->units()[i];
+      if (v.alive && v.side == caster.side && ember::Battle::distance({v.x, v.y}, {caster.x, caster.y}) <= 2) fedBefore.push_back({i, v.fullness.value_or(100)});
     }
     select(ci);
     std::string kind;
@@ -7115,29 +7115,29 @@ class MapStage final : public Stage {
     else if (p[0] == "food") kind = "createFoodAndWater";
     else if (p[0] == "potion" && p.size() > 3) kind = "potion:" + p[2];
     else return fail("unknown step");
-    const int usesBefore = p[0] == "potion" ? 0 : e2::spellUsesLeft(*battle_, cb, kind);
+    const int usesBefore = p[0] == "potion" ? 0 : ember::spellUsesLeft(*battle_, cb, kind);
     startSpell(kind);
     // The Lanceiro's throw and drag are aimed at a hex past the target: the farthest valid one on the line through it.
-    e2::BattleHex aimHex{battle_->units()[tb].x, battle_->units()[tb].y};
+    ember::BattleHex aimHex{battle_->units()[tb].x, battle_->units()[tb].y};
     if (kind == "spearToss" || kind == "impaleDrag") {
-      const e2::BattleHex from{caster.x, caster.y};
+      const ember::BattleHex from{caster.x, caster.y};
       // first the hexes exactly on the ray from the caster through the target (cube steps), then any whose line passes it
-      auto cube = [](e2::BattleHex h) { return std::pair<int, int>{h.x - (h.y - (h.y & 1)) / 2, h.y}; };
+      auto cube = [](ember::BattleHex h) { return std::pair<int, int>{h.x - (h.y - (h.y & 1)) / 2, h.y}; };
       const auto [fq, fr] = cube(from);
       const auto [tq, tr] = cube(aimHex);
       const int dq = tq - fq, dr = tr - fr;
       int best = -1;
-      e2::BattleHex found = aimHex;
-      for (const e2::BattleHex& h : spellZone_) {
+      ember::BattleHex found = aimHex;
+      for (const ember::BattleHex& h : spellZone_) {
         const auto [hq, hr] = cube(h);
-        const int k = e2::Battle::distance(from, h);
+        const int k = ember::Battle::distance(from, h);
         if (k > 0 && hq - fq == dq * k && hr - fr == dr * k && k > best) best = k, found = h;
       }
       if (best < 0)
-        for (const e2::BattleHex& h : spellZone_) {
-          const std::vector<e2::BattleHex> line = e2::hexLine(from, h);
-          if (!std::any_of(line.begin(), line.end(), [&](const e2::BattleHex& c) { return c == aimHex; })) continue;
-          if (const int dist = e2::Battle::distance(from, h); dist > best) best = dist, found = h;
+        for (const ember::BattleHex& h : spellZone_) {
+          const std::vector<ember::BattleHex> line = ember::hexLine(from, h);
+          if (!std::any_of(line.begin(), line.end(), [&](const ember::BattleHex& c) { return c == aimHex; })) continue;
+          if (const int dist = ember::Battle::distance(from, h); dist > best) best = dist, found = h;
         }
       if (best < 0 && !spellZone_.empty()) found = spellZone_.front();
       aimHex = found;
@@ -7147,7 +7147,7 @@ class MapStage final : public Stage {
       aimSpell(spellArmed_ ? *spellArmed_ : aimHex);
     if (refuse) {
       if (exchange_) return fail("played, should have been refused");
-      const e2::BattleUnit& c = battle_->units()[cb];
+      const ember::BattleUnit& c = battle_->units()[cb];
       if (std::equal(std::begin(c.bag), std::end(c.bag), std::begin(casterBefore.bag)) && std::equal(std::begin(c.spells), std::end(c.spells), std::begin(casterBefore.spells)) &&
           !c.acted)
         return logInfo("battle script: {}: PASS (refused: {})", scriptLabel_, tip_);
@@ -7156,12 +7156,12 @@ class MapStage final : public Stage {
     if (!exchange_) return fail("nothing played: " + tip_);
     if (!spellFx_.active(now_ + 0.5f)) return fail("no effect playing");
     scriptCheck_ = [this, kind, cb, tb, before, casterBefore, usesBefore, rationsBefore, fedBefore]() -> std::string {
-      const e2::BattleUnit& t = battle_->units()[tb];
-      const e2::BattleUnit& c = battle_->units()[cb];
+      const ember::BattleUnit& t = battle_->units()[tb];
+      const ember::BattleUnit& c = battle_->units()[cb];
       logInfo("battle script: {}: {} at ({}, {}) -> {} at ({}, {}), hp {} -> {}; globes {}", kind, c.name, c.x, c.y, t.name, t.x, t.y, before.hp, t.hp, battle_->globes().size());
       if (!c.acted) return "the action did not spend the turn";
       if (const std::optional<std::string> potion = potionOf(kind)) {
-        const int slot = e2::potionIndex(*potion);
+        const int slot = ember::potionIndex(*potion);
         if (c.bag[slot] != casterBefore.bag[slot] - 1) return std::format("bag {} -> {}", casterBefore.bag[slot], c.bag[slot]);
         if (*potion == "disease") return t.diseased || t.poisoned ? "still sick" : "";
         if (potion->starts_with("mana")) {
@@ -7171,7 +7171,7 @@ class MapStage final : public Stage {
         }
         return t.hp > before.hp ? "" : std::format("hp {} -> {}", before.hp, t.hp);
       }
-      if (e2::spellUsesLeft(*battle_, cb, kind) != usesBefore - 1) return std::format("uses {} -> {}", usesBefore, e2::spellUsesLeft(*battle_, cb, kind));
+      if (ember::spellUsesLeft(*battle_, cb, kind) != usesBefore - 1) return std::format("uses {} -> {}", usesBefore, ember::spellUsesLeft(*battle_, cb, kind));
       if (kind == "cureDisease") return t.diseased || t.poisoned ? "still sick" : "";
       // Ours: a zone laid (the Mortalha, a Meteoro waiting), a condition left, or the hit itself.
       if (kind == "shroudOfShadows" || kind == "meteor") return battle_->zones().empty() ? "no zone laid" : "";
@@ -7236,7 +7236,7 @@ class MapStage final : public Stage {
         return c.cond.daggers > 0 ? "" : "no daggers on the caster";
       }
       if (kind == "dispelMagic") {  // the target's magic gone (the test afflicts it first), the foes' zones in the area erased
-        logInfo("battle script: dispelMagic: {} before [{}] after [{}]; zones web {} ice {} aura {} ours {}", t.name, e2::conditionsText(before), e2::conditionsText(t),
+        logInfo("battle script: dispelMagic: {} before [{}] after [{}]; zones web {} ice {} aura {} ours {}", t.name, ember::conditionsText(before), ember::conditionsText(t),
                 battle_->webZones().size(), battle_->iceZones().size(), battle_->auraZones().size(), battle_->zones().size());
         const bool hadMagic = before.blessedRoundsLeft > 0 || before.cond.rallyPct > 0 || before.cond.vigilPct > 0 || before.asleep || before.fearTurns > 0 ||
                               before.cond.silenceTurns > 0 || before.cond.markTurns > 0 || before.cond.decayTurns > 0;
@@ -7248,7 +7248,7 @@ class MapStage final : public Stage {
         logInfo("battle script: globeOfInvulnerability: {} globes on the board", battle_->globes().size());
         return battle_->globes().empty() ? "no globe laid" : "";
       }
-      if (e2::globeBlocks(*battle_, cb, kind, tb)) {  // the target stands in a Globo the caster is outside of: nothing lands
+      if (ember::globeBlocks(*battle_, cb, kind, tb)) {  // the target stands in a Globo the caster is outside of: nothing lands
         logInfo("battle script: {}: the Globo should block it: {} hp {} -> {}", kind, t.name, before.hp, t.hp);
         return t.hp == before.hp ? "" : "the globe did not block the spell";
       }
@@ -7261,7 +7261,7 @@ class MapStage final : public Stage {
       if (kind == "detonateSummon") return !t.alive ? "" : "the summon still stands";
       if (kind == "sacrificeBond") return c.cond.bondPct > 0 ? "" : "no bond on the caster";
       if (kind == "empowerSummons") {
-        for (const e2::BattleUnit& v : battle_->units())
+        for (const ember::BattleUnit& v : battle_->units())
           if (v.alive && v.summoned && v.summonerId == c.id && v.cond.empowerPct > 0) return "";
         return "no summon empowered";
       }
@@ -7272,7 +7272,7 @@ class MapStage final : public Stage {
       }
       if (kind == "createFoodAndWater") {
         for (const auto& [i, full] : fedBefore) {
-          const e2::BattleUnit& v = battle_->units()[i];
+          const ember::BattleUnit& v = battle_->units()[i];
           if (v.fullness.value_or(100) <= full || v.hungerPenaltyPct != 0.0) return v.name + " not fed";
         }
         // rations from level 3 on (createFoodAndWaterPower)
@@ -7362,7 +7362,7 @@ class MapStage final : public Stage {
     }
   }
   void testCast(size_t caster, const std::string& kind, int look, float start) {
-    if (e2::emberSpellClass(kind) == "aldric" || kind == "sentinelStrike") return testLancer(caster, kind, start);
+    if (ember::emberSpellClass(kind) == "aldric" || kind == "sentinelStrike") return testLancer(caster, kind, start);
     if (kind == "arcaneReflectionHit") {  // Reflexo Arcano's bounce alone: from the hero back to the nearest foe
       const SpellEffects::Spot a = unitSpot(caster), b = unitSpot(nearestTarget(caster, false));
       spellFx_.arms().reflectHit(a.feet, a.cardHeight, b.feet, b.cardHeight, start, start + 0.4f);
@@ -7372,12 +7372,12 @@ class MapStage final : public Stage {
     const size_t target = nearestTarget(caster, spellOnFriend(kind));
     std::vector<SpellEffects::Spot> spots{unitSpot(target)};
     // Ours: the spell's own shape on the board (its area round the target, its line, its cone), when a battle is on.
-    if (battle_ && !e2::emberSpellClass(kind).empty() && unitBattle_[hero] >= 0 && unitBattle_[target] >= 0) {
-      const e2::BattleUnit& t = battle_->units()[static_cast<size_t>(unitBattle_[target])];
-      const e2::BattleHex aim = kind == "eruption" ? e2::BattleHex{battle_->units()[static_cast<size_t>(unitBattle_[hero])].x,
+    if (battle_ && !ember::emberSpellClass(kind).empty() && unitBattle_[hero] >= 0 && unitBattle_[target] >= 0) {
+      const ember::BattleUnit& t = battle_->units()[static_cast<size_t>(unitBattle_[target])];
+      const ember::BattleHex aim = kind == "eruption" ? ember::BattleHex{battle_->units()[static_cast<size_t>(unitBattle_[hero])].x,
                                                                    battle_->units()[static_cast<size_t>(unitBattle_[hero])].y}
-                                                   : e2::BattleHex{t.x, t.y};
-      std::vector<e2::BattleHex> area = e2::spellArea(*battle_, static_cast<size_t>(unitBattle_[hero]), kind, aim);
+                                                   : ember::BattleHex{t.x, t.y};
+      std::vector<ember::BattleHex> area = ember::spellArea(*battle_, static_cast<size_t>(unitBattle_[hero]), kind, aim);
       if (kind == "chainLightning" || kind == "wrathOfTheSkies")  // a few more bodies for the chain / the bolts
         for (size_t i = 0; i < scene_->units.size() && area.size() < 4; ++i)
           if (i != hero && i != target && unitBattle_[i] >= 0 && scene_->units[i].side != scene_->units[hero].side &&
@@ -7385,7 +7385,7 @@ class MapStage final : public Stage {
             area.push_back({battle_->units()[static_cast<size_t>(unitBattle_[i])].x, battle_->units()[static_cast<size_t>(unitBattle_[i])].y});
       if (!area.empty()) {
         spots.clear();
-        for (const e2::BattleHex& h : area) spots.push_back(hexSpot(h));
+        for (const ember::BattleHex& h : area) spots.push_back(hexSpot(h));
       }
       if (kind == "meteor") {  // Testar shows the fall itself, not only the mark
         spellFx_.meteorFall(spots, start + 0.6f, start + 1.5f);
@@ -7394,15 +7394,15 @@ class MapStage final : public Stage {
         spots.clear();
         for (size_t i = 0; i < scene_->units.size(); ++i) {
           if (unitBattle_[i] < 0 || scene_->units[i].side != scene_->units[hero].side) continue;
-          const e2::BattleUnit& v = battle_->units()[static_cast<size_t>(unitBattle_[i])];
-          if (v.alive && std::any_of(area.begin(), area.end(), [&](const e2::BattleHex& h) { return h.x == v.x && h.y == v.y; })) spots.push_back(unitSpot(i));
+          const ember::BattleUnit& v = battle_->units()[static_cast<size_t>(unitBattle_[i])];
+          if (v.alive && std::any_of(area.begin(), area.end(), [&](const ember::BattleHex& h) { return h.x == v.x && h.y == v.y; })) spots.push_back(unitSpot(i));
         }
       }
       if (kind == "leapingStrike") {  // the flight to the landing first (a foe out of range: four hexes along the line to it), the blow as it lands
-        const e2::BattleUnit& hb = battle_->units()[static_cast<size_t>(unitBattle_[hero])];
-        std::optional<e2::BattleHex> landing;
+        const ember::BattleUnit& hb = battle_->units()[static_cast<size_t>(unitBattle_[hero])];
+        std::optional<ember::BattleHex> landing;
         if (area.size() > 1) landing = area[1];
-        else if (const std::vector<e2::BattleHex> line = e2::hexLine({hb.x, hb.y}, aim); line.size() > 5) landing = line[4];
+        else if (const std::vector<ember::BattleHex> line = ember::hexLine({hb.x, hb.y}, aim); line.size() > 5) landing = line[4];
         if (landing) {
           spellFx_.leapFlight(unitSpot(hero), hexSpot(*landing), start, start + 0.45f, static_cast<int>(hero));
           spots = {hexSpot(area[0])};
@@ -7458,13 +7458,13 @@ class MapStage final : public Stage {
   int spellLook(const std::string& kind, size_t ui) const { return spellsMenu_.look(kind, scene_->units[ui].side != "player"); }
 
   bool hasPose(size_t ui, const std::string& pose) const {
-    const e2::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
+    const ember::Hero* entry = ui < unitCatalog_.size() ? unitCatalog_[ui] : nullptr;
     return entry && entry->find(pose);
   }
 
   // What a step did, on screen: numbers, misses, heals, the struck unit's hit or death pose.
-  void showEffects(const std::vector<e2::BattleEffect>& fx) {
-    for (const e2::BattleEffect& e : fx) {
+  void showEffects(const std::vector<ember::BattleEffect>& fx) {
+    for (const ember::BattleEffect& e : fx) {
       const int ui = sceneUnitOf(static_cast<int>(e.unit));
       if (ui < 0) continue;
       const size_t u = static_cast<size_t>(ui);
@@ -7476,7 +7476,7 @@ class MapStage final : public Stage {
       if (e.revived) {  // Ressurreição: the card stands again where it fell, in its idle
         unitDiedAt_[u] = -1.0f;
         unitShot_[u] = {};
-        const e2::BattleUnit& bu = battle_->units()[e.unit];
+        const ember::BattleUnit& bu = battle_->units()[e.unit];
         unitPos_[u] = anchorWorld(bu, {bu.x, bu.y});
         unitWalk_[u] = Walk{};
       }
@@ -7486,7 +7486,7 @@ class MapStage final : public Stage {
         continue;
       }
       if (e.pushed) {  // Vendaval Glacial: the card goes to its new hex at once
-        const e2::BattleUnit& bu = battle_->units()[e.unit];
+        const ember::BattleUnit& bu = battle_->units()[e.unit];
         unitPos_[u] = anchorWorld(bu, {bu.x, bu.y});
         unitWalk_[u] = Walk{};
         unitMoved_[u] = 1;
@@ -7499,7 +7499,7 @@ class MapStage final : public Stage {
       popups_.push_back({u, e.text.empty() ? std::to_string(e.amount) : e.text, e.crit || !e.text.empty() ? IM_COL32(255, 214, 102, 255) : IM_COL32(255, 255, 255, 255), now_,
                          e.crit || !e.text.empty()});
       // The struck unit's own hit / death cues (the engine's per-frame watch of hitAt / diedAt).
-      if (!e.died || sounds(e.unit, "hitOnDeath") != e2::Json(false)) playCues(sounds(e.unit, "hit"));
+      if (!e.died || sounds(e.unit, "hitOnDeath") != ember::Json(false)) playCues(sounds(e.unit, "hit"));
       if (e.died) playCues(sounds(e.unit, "death"));
       if (e.died) {
         unitShot_[u] = {"death", now_, true, actionRate()};
@@ -7527,35 +7527,35 @@ class MapStage final : public Stage {
   }
 
   // Every frame: each step's impact lands, a strike's counter follows, then the next step; at the end the action is
-  // over (Engine2 finishAction).
+  // over (Ember finishAction).
   void updateExchange() {
     if (!exchange_) return;
     Exchange& x = *exchange_;
-    const e2::BattleStep& s = x.steps[x.step];
+    const ember::BattleStep& s = x.steps[x.step];
     if (!x.landed && now_ >= x.impact) {
       x.landed = true;
       // stepCombat's strike cue (Kael's long swing) and emitMissileFx's arrow release (Tiro Longo).
-      if (s.type == e2::BattleStep::Type::Combat) playCues(sounds(x.counter ? s.def : s.att, "strike"));
+      if (s.type == ember::BattleStep::Type::Combat) playCues(sounds(x.counter ? s.def : s.att, "strike"));
       else if (s.kind == "longShot") playCues(sounds(s.att, "release"));
-      std::vector<e2::BattleEffect> fx;
-      if (s.type == e2::BattleStep::Type::Combat) {
-        if (battle_->units()[s.att].alive && battle_->units()[s.def].alive) e2::resolveStrike(*battle_, s, x.counter, rng_, fx);
+      std::vector<ember::BattleEffect> fx;
+      if (s.type == ember::BattleStep::Type::Combat) {
+        if (battle_->units()[s.att].alive && battle_->units()[s.def].alive) ember::resolveStrike(*battle_, s, x.counter, rng_, fx);
       } else {
-        e2::resolveStep(*battle_, s, rng_, fx);
+        ember::resolveStep(*battle_, s, rng_, fx);
       }
       syncSummons();  // a familiar that appeared with this step gets its card
       // The Lanceiro's board moves: bodies flying to their new hexes, and what lands only once a flight is over (a collision's
       // numbers, `delay`).
       const float flightEnd = animateFlights(fx, s);
       // Reflexo Arcano: a spell sent back flies from the warded unit to its caster and lands as its number shows (`delay`).
-      for (const e2::BattleEffect& e : fx)
+      for (const ember::BattleEffect& e : fx)
         if (e.reflectFrom >= 0)
           if (const int from = sceneUnitOf(e.reflectFrom), to = sceneUnitOf(static_cast<int>(e.unit)); from >= 0 && to >= 0) {
             const SpellEffects::Spot a = unitSpot(static_cast<size_t>(from)), b = unitSpot(static_cast<size_t>(to));
             spellFx_.arms().reflectHit(a.feet, a.cardHeight, b.feet, b.cardHeight, now_, now_ + e.delay / actionRate());
           }
       {
-        std::vector<e2::BattleEffect> later;
+        std::vector<ember::BattleEffect> later;
         for (size_t i = 0; i < fx.size();) {
           if (fx[i].delay > 0.0f) later.push_back(fx[i]), fx.erase(fx.begin() + static_cast<std::ptrdiff_t>(i));
           else ++i;
@@ -7564,35 +7564,35 @@ class MapStage final : public Stage {
       }
       showEffects(fx);
       // Câmera de ação: a body that fell keeps the camera on it a while after the action
-      for (const e2::BattleEffect& e : fx)
+      for (const ember::BattleEffect& e : fx)
         if (e.died)
           if (const int du = sceneUnitOf(static_cast<int>(e.unit)); du >= 0) deathShot(static_cast<size_t>(du), x.end);
       if (s.disarmPct > 0)  // Desarmar landed: the weapon knocked out of its hands flies off
-        for (const e2::BattleEffect& e : fx)
+        for (const ember::BattleEffect& e : fx)
           if (e.status && (e.text.starts_with("Desarmado") || e.text.starts_with("Disarmed")))
             if (const int fu = sceneUnitOf(static_cast<int>(e.unit)), su = sceneUnitOf(static_cast<int>(s.att)); fu >= 0 && su >= 0)
               spellFx_.disarmed(unitSpot(static_cast<size_t>(fu)), unitSpot(static_cast<size_t>(su)), now_);
       // Globo de Invulnerabilidade: a spell it stopped ("Bloqueado") flashes on the bubble over the one it was aimed at
-      for (const e2::BattleEffect& e : fx)
+      for (const ember::BattleEffect& e : fx)
         if (e.miss && (e.text == "Bloqueado" || e.text == "Blocked"))
           if (const int bu = sceneUnitOf(static_cast<int>(e.unit)); bu >= 0) {
             const SpellEffects::Spot at = unitSpot(static_cast<size_t>(bu));
             spellFx_.mage().globeRipple(at.feet + glm::vec3(0.0f, std::max(at.cardHeight, 1.2f) * 0.6f, 0.0f), now_);
           }
       // Nuvem de Adagas: an arrow at its caster was knocked down ("Interceptado"): a dagger of the cloud darts out to meet it
-      for (const e2::BattleEffect& e : fx)
+      for (const ember::BattleEffect& e : fx)
         if (e.miss && (e.text == "Interceptado" || e.text == "Intercepted"))
           if (const int hu = sceneUnitOf(static_cast<int>(e.unit)), su = sceneUnitOf(static_cast<int>(x.counter ? s.def : s.att)); hu >= 0 && su >= 0 && hu != su) {
             const SpellEffects::Spot holder = unitSpot(static_cast<size_t>(hu)), shooter = unitSpot(static_cast<size_t>(su));
             spellFx_.daggers().intercept(holder.feet, {shooter.feet, shooter.cardHeight}, now_ - 0.12f, now_);
           }
       // A missed Investida Touro shoves nobody aside: the rest of the charge is dropped (its walk and its other blows).
-      if (std::any_of(fx.begin(), fx.end(), [](const e2::BattleEffect& e) { return e.abortRush; })) {
+      if (std::any_of(fx.begin(), fx.end(), [](const ember::BattleEffect& e) { return e.abortRush; })) {
         const size_t actor = s.att;
         // erased in place after this step, so `s` stays valid
         x.steps.erase(std::remove_if(x.steps.begin() + static_cast<long>(x.step) + 1, x.steps.end(),
-                                     [&](const e2::BattleStep& q) {
-                                       return q.att == actor && (q.type == e2::BattleStep::Type::Move || (q.type == e2::BattleStep::Type::Combat && q.kind == "bullRush"));
+                                     [&](const ember::BattleStep& q) {
+                                       return q.att == actor && (q.type == ember::BattleStep::Type::Move || (q.type == ember::BattleStep::Type::Combat && q.kind == "bullRush"));
                                      }),
                       x.steps.end());
       }
@@ -7601,15 +7601,15 @@ class MapStage final : public Stage {
       // the magical one (its energy comes apart on a miss). Spells bring their own burst; every blow that hurts knocks
       // the card back.
       const bool bowSkill = archerKind(s.kind);  // the Arqueiro's (ours): arrows, so the arrow's hit lands on each struck body
-      const bool magic = s.type == e2::BattleStep::Type::Spell && s.kind != "longShot" && s.kind != "piercing" && s.kind != "piercingThrust" && !bowSkill;
+      const bool magic = s.type == ember::BattleStep::Type::Spell && s.kind != "longShot" && s.kind != "piercing" && s.kind != "piercingThrust" && !bowSkill;
       const int striker = sceneUnitOf(static_cast<int>(x.counter ? s.def : s.att));
-      for (const e2::BattleEffect& e : fx) {
+      for (const ember::BattleEffect& e : fx) {
         const int ui = sceneUnitOf(static_cast<int>(e.unit));
         if (ui < 0 || e.heal || e.status) continue;
         const size_t u = static_cast<size_t>(ui);
         const SpellEffects::Spot struck = unitSpot(u);
         const glm::vec3 from = striker >= 0 && striker != ui ? unitWorld(static_cast<size_t>(striker)) : struck.feet - glm::vec3(0.0f, 0.0f, 1.0f);
-        const e2::BattleUnit& bu = battle_->units()[e.unit];
+        const ember::BattleUnit& bu = battle_->units()[e.unit];
         const bool heavy = e.crit || e.died || (bu.maxHp > 0 && e.amount * 10 >= bu.maxHp * 3);
         if (x.bolt || x.magicStaff) {  // a bolt's arrival, or Isolde's / Voss's magical staff hit
           spellFx_.combat().impact(e.miss ? CombatFx::Kind::MagicalMiss : CombatFx::Kind::Magical, struck.feet, cardHeightOf(struck), from, now_,
@@ -7626,8 +7626,8 @@ class MapStage final : public Stage {
           spellFx_.combat().impact(kind, struck.feet, cardHeightOf(struck), from, now_);
         }
         // The Cruzado's holy on a blow that landed: Golpe Consagrado's flash, the Manto's spark on any blow of its bearer
-        if (!e.miss && s.type == e2::BattleStep::Type::Combat && striker >= 0 && striker != ui) {
-          const e2::BattleUnit& by = battle_->units()[x.counter ? s.def : s.att];
+        if (!e.miss && s.type == ember::BattleStep::Type::Combat && striker >= 0 && striker != ui) {
+          const ember::BattleUnit& by = battle_->units()[x.counter ? s.def : s.att];
           if (!x.counter && s.kind == "holyStrike") spellFx_.crusader().holyImpact({struck.feet, cardHeightOf(struck)}, from, now_);
           else if (!x.counter && s.kind == "arcaneBlade") spellFx_.selene().markImpact({struck.feet, cardHeightOf(struck)}, from, now_);  // Selene's mark laid
           else if (by.cond.mantleDice > 0) spellFx_.crusader().spark({struck.feet, cardHeightOf(struck)}, from, now_);
@@ -7640,16 +7640,16 @@ class MapStage final : public Stage {
       }
     }
     if (now_ < x.end) return;
-    if (s.type == e2::BattleStep::Type::Combat && !x.counter && e2::strikesBack(*battle_, s)) {
+    if (s.type == ember::BattleStep::Type::Combat && !x.counter && ember::strikesBack(*battle_, s)) {
       x.counter = true;
       startStep(x);
       planShot(x);
       return;
     }
-    // The step is over (Engine2 finishCombat -> finishAction): the action is done, and fighting side by side builds affinity (+0.1)
-    if (!x.affinityDone && !x.interrupt && s.type != e2::BattleStep::Type::Move) {
+    // The step is over (Ember finishCombat -> finishAction): the action is done, and fighting side by side builds affinity (+0.1)
+    if (!x.affinityDone && !x.interrupt && s.type != ember::BattleStep::Type::Move) {
       x.affinityDone = true;
-      e2::gainAdjacentAffinity(*battle_, static_cast<size_t>(unitBattle_[x.owner]));
+      ember::gainAdjacentAffinity(*battle_, static_cast<size_t>(unitBattle_[x.owner]));
     }
     // The next step, past every blow left for foes already dead: the second missile, arrow or swing at a body that fell is not
     // cast (the user, 2026-10-20: every multi-hit skill and spell)
@@ -7666,9 +7666,9 @@ class MapStage final : public Stage {
       exchange_.reset();
       return;
     }
-    // Engine2 finishAction: it has acted; its turn ends unless it is a hero with movement left (it stays picked).
-    e2::BattleUnit& au = battle_->units()[static_cast<size_t>(unitBattle_[x.owner])];
-    // Every action costs a hero 2 points of fullness (Engine2 finishAction: drainHunger, ACTION_HUNGER_COST)
+    // Ember finishAction: it has acted; its turn ends unless it is a hero with movement left (it stays picked).
+    ember::BattleUnit& au = battle_->units()[static_cast<size_t>(unitBattle_[x.owner])];
+    // Every action costs a hero 2 points of fullness (Ember finishAction: drainHunger, ACTION_HUNGER_COST)
     if (au.side == "player" && !au.summoned) au.fullness = std::max(0.0, std::min(120.0, au.fullness.value_or(100.0)) - 2.0);
     au.acted = true;
     exchange_.reset();
@@ -7723,8 +7723,8 @@ class MapStage final : public Stage {
   // A unit standing on a hex the player sees (without fog of war: everyone).
   bool unitOnLitHex(size_t ui) const {
     if (!fog_ || noFog_) return true;
-    const auto [c, r] = e2::hexAt(board_->layout(), unitPos_[ui].x, unitPos_[ui].y);
-    return litHex(static_cast<size_t>(e2::indexOf(board_->layout(), c, r)));
+    const auto [c, r] = ember::hexAt(board_->layout(), unitPos_[ui].x, unitPos_[ui].y);
+    return litHex(static_cast<size_t>(ember::indexOf(board_->layout(), c, r)));
   }
   // The shot of the action now playing: the player's view is saved the first time (while a shot runs the goals are the shot's).
   ActionShot& openShot() {
@@ -7804,11 +7804,11 @@ class MapStage final : public Stage {
   }
   // Two battle units side by side (a weapon skill at the neighbour is a melee blow, not a shot down a line).
   bool besideEachOther(size_t ab, size_t db) const {
-    const e2::BattleUnit& a = battle_->units()[ab];
-    const e2::BattleUnit& d = battle_->units()[db];
+    const ember::BattleUnit& a = battle_->units()[ab];
+    const ember::BattleUnit& d = battle_->units()[db];
     int nearest = 1 << 20;
-    for (const e2::BattleHex& h : e2::Battle::footprint(d, d.x, d.y))
-      for (const e2::BattleHex& g : e2::Battle::footprint(a, a.x, a.y)) nearest = std::min(nearest, e2::Battle::distance(g, h));
+    for (const ember::BattleHex& h : ember::Battle::footprint(d, d.x, d.y))
+      for (const ember::BattleHex& g : ember::Battle::footprint(a, a.x, a.y)) nearest = std::min(nearest, ember::Battle::distance(g, h));
     return nearest <= 1;
   }
   // The shot of the step that just began (startStep has set its impact, end and release).
@@ -7817,7 +7817,7 @@ class MapStage final : public Stage {
   // spell leaves its hands (x.release).
   void planShot(const Exchange& x) {
     if (!actionCameraOn()) return;
-    const e2::BattleStep& s = x.steps[x.step];
+    const ember::BattleStep& s = x.steps[x.step];
     const int striker = sceneUnitOf(static_cast<int>(x.counter ? s.def : s.att));
     if (striker < 0 || !unitOnLitHex(static_cast<size_t>(striker))) return;
     const size_t su = static_cast<size_t>(striker);
@@ -7831,8 +7831,8 @@ class MapStage final : public Stage {
     }
   }
   void frameStep(ActionShot& shot, const Exchange& x, size_t su) {
-    const e2::BattleStep& s = x.steps[x.step];
-    using StepType = e2::BattleStep::Type;
+    const ember::BattleStep& s = x.steps[x.step];
+    using StepType = ember::BattleStep::Type;
     const int striker = static_cast<int>(su);
     const float impact = std::max(now_, x.impact);
     // A summon (the user, 2026-10-26: "se for um familiar também e tem que dar tempo de ver a animação de summon"): the hex where
@@ -7870,7 +7870,7 @@ class MapStage final : public Stage {
       }
     }
     std::vector<glm::vec3> pts;
-    for (const e2::BattleHex& h : s.tiles) pts.push_back(hexSpot(h).feet);
+    for (const ember::BattleHex& h : s.tiles) pts.push_back(hexSpot(h).feet);
     for (size_t id : s.ids)
       if (const int ui = sceneUnitOf(static_cast<int>(id)); ui >= 0) pts.push_back(unitWorld(static_cast<size_t>(ui)));
     areaShot(shot, casterAt, std::move(pts), impact);
@@ -7947,16 +7947,16 @@ class MapStage final : public Stage {
   }
 
   // The move is decided at once (the battle's state), the walk then plays it hex by hex.
-  void walkTo(size_t ui, e2::BattleHex to) {
+  void walkTo(size_t ui, ember::BattleHex to) {
     const size_t b = static_cast<size_t>(unitBattle_[ui]);
-    const std::vector<e2::BattleHex> route = e2::Battle::path(reachPaths_, to.x, to.y);
+    const std::vector<ember::BattleHex> route = ember::Battle::path(reachPaths_, to.x, to.y);
     if (route.size() < 2) return;
-    if (!std::any_of(reach_.begin(), reach_.end(), [&](const e2::ReachCell& c) { return c.x == to.x && c.y == to.y; })) return;
-    const e2::BattleUnit& u = battle_->units()[b];
+    if (!std::any_of(reach_.begin(), reach_.end(), [&](const ember::ReachCell& c) { return c.x == to.x && c.y == to.y; })) return;
+    const ember::BattleUnit& u = battle_->units()[b];
     const bool leads = battle_->roaming() && myTurn() && static_cast<int>(ui) == selected_;
     if (myTurn() && static_cast<int>(ui) == selected_ && !leads)  // Cancelar takes this walk back
       undo_.push_back(BeforeWalk{ui, u.x, u.y, u.moveUsed, u.acted, u.faceDx, u.faceDy, unitPos_[ui], unitFacing_[ui], unitMoved_[ui]});
-    walkAlong(ui, route);  // the battle's heading becomes the last step's (Engine2 stepMove), for attacks from behind
+    walkAlong(ui, route);  // the battle's heading becomes the last step's (Ember stepMove), for attacks from behind
     if (leads) followLeader(ui, route, reachPaths_);
     refreshReach();        // what is left of its movement, shown once it arrives
   }
@@ -7966,31 +7966,31 @@ class MapStage final : public Stage {
   // (Renderer::setGroundMarks), so units, trees and houses in front cover them; never on ground not yet seen.
   void collectMarks(std::vector<Renderer::GroundMark>& marks) const {
     if (!battle_ || !scene_ || !board_) return;
-    const e2::HexLayout& layout = board_->layout();
-    auto add = [&](e2::BattleHex at, ImU32 color, float rOut, float rIn = 0.0f) {
-      if (!e2::inBoard(layout, at.x, at.y)) return;
-      marks.push_back({static_cast<uint32_t>(e2::indexOf(layout, at.x, at.y)), color, rOut, rIn});
+    const ember::HexLayout& layout = board_->layout();
+    auto add = [&](ember::BattleHex at, ImU32 color, float rOut, float rIn = 0.0f) {
+      if (!ember::inBoard(layout, at.x, at.y)) return;
+      marks.push_back({static_cast<uint32_t>(ember::indexOf(layout, at.x, at.y)), color, rOut, rIn});
     };
     auto border = [](float r) { return r * kBorderInner; };
     const bool walking = selected_ >= 0 && !unitWalk_[static_cast<size_t>(selected_)].points.empty();
     if (selected_ >= 0 && !walking && !spellMode_.empty()) {
-      // Engine2's spell aim: every hex it may be aimed at washed, the hovered aim's area bright, chosen targets ringed.
+      // Ember's spell aim: every hex it may be aimed at washed, the hovered aim's area bright, chosen targets ringed.
       const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
-      for (const e2::BattleHex& c : spellAim_) add(c, IM_COL32(176, 124, 232, 34), 1.0f), add(c, IM_COL32(176, 124, 232, 110), 0.94f, border(0.94f));
+      for (const ember::BattleHex& c : spellAim_) add(c, IM_COL32(176, 124, 232, 34), 1.0f), add(c, IM_COL32(176, 124, 232, 110), 0.94f, border(0.94f));
       if (hover_) {
         if (aimValid(b, *hover_))
-          for (const e2::BattleHex& c : aimArea(b, *hover_)) add(c, IM_COL32(214, 168, 255, 96), 1.0f);
+          for (const ember::BattleHex& c : aimArea(b, *hover_)) add(c, IM_COL32(214, 168, 255, 96), 1.0f);
         add(*hover_, IM_COL32(8, 12, 16, 242), 0.985f, border(0.985f));
         add(*hover_, aimValid(b, *hover_) ? IM_COL32(236, 214, 255, 255) : IM_COL32(231, 133, 115, 242), 0.94f, border(0.94f));
       }
-      for (const e2::BattleHex& c : spellCells_) add(c, IM_COL32(255, 214, 102, 255), 0.7f, border(0.7f));
-      const e2::BattleUnit& u = battle_->units()[b];
+      for (const ember::BattleHex& c : spellCells_) add(c, IM_COL32(255, 214, 102, 255), 0.7f, border(0.7f));
+      const ember::BattleUnit& u = battle_->units()[b];
       add({u.x, u.y}, IM_COL32(220, 226, 235, 71), 0.94f, border(0.94f));
     } else if (selected_ >= 0 && !walking) {
       const bool player = scene_->units[static_cast<size_t>(selected_)].side == "player";
-      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
+      const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
       // The reach (tacticalGridStyle): the movement wash with its edges for the party, the enemy's wash for a foe.
-      for (const e2::ReachCell& c : reach_) {
+      for (const ember::ReachCell& c : reach_) {
         if (c.x == u.x && c.y == u.y) continue;
         if (attackMode_ || (player && battle_->roaming())) break;  // "Atacar": only the foes it can strike; free roam: no wash
         add({c.x, c.y}, player ? IM_COL32(112, 174, 220, 20) : IM_COL32(231, 133, 115, 31), 1.0f);
@@ -7998,8 +7998,8 @@ class MapStage final : public Stage {
       }
       // The route to the hovered hex.
       if (player && hover_ && !(hover_->x == u.x && hover_->y == u.y) &&
-          std::any_of(reach_.begin(), reach_.end(), [&](const e2::ReachCell& c) { return c.x == hover_->x && c.y == hover_->y; })) {
-        const std::vector<e2::BattleHex> route = e2::Battle::path(reachPaths_, hover_->x, hover_->y);
+          std::any_of(reach_.begin(), reach_.end(), [&](const ember::ReachCell& c) { return c.x == hover_->x && c.y == hover_->y; })) {
+        const std::vector<ember::BattleHex> route = ember::Battle::path(reachPaths_, hover_->x, hover_->y);
         for (size_t i = 1; i < route.size(); ++i) {
           const bool last = i + 1 == route.size();
           if (last) {
@@ -8012,8 +8012,8 @@ class MapStage final : public Stage {
           }
         }
       }
-      // The picked unit's marker (Engine2's active-turn highlight).
-      const e2::BattleHex at{u.x, u.y};
+      // The picked unit's marker (Ember's active-turn highlight).
+      const ember::BattleHex at{u.x, u.y};
       if (player) {
         add(at, IM_COL32(220, 226, 235, 3), 1.035f, border(1.035f));
         add(at, IM_COL32(220, 226, 235, 6), 1.01f, border(1.01f));
@@ -8022,10 +8022,10 @@ class MapStage final : public Stage {
       add(at, IM_COL32(12, 20, 25, 217), 0.98f, border(0.98f));
       add(at, player ? IM_COL32(220, 226, 235, 71) : IM_COL32(231, 133, 115, 255), 0.94f, border(0.94f));
     }
-    // The foes in reach of a strike (Engine2 GRID_ENEMY_TARGET: its fill and border).
+    // The foes in reach of a strike (Ember GRID_ENEMY_TARGET: its fill and border).
     for (const auto& [t, from] : targets_) {
-      const e2::BattleUnit& f = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(t)])];
-      for (const e2::BattleHex& p : e2::Battle::footprint(f, f.x, f.y)) {
+      const ember::BattleUnit& f = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(t)])];
+      for (const ember::BattleHex& p : ember::Battle::footprint(f, f.x, f.y)) {
         add(p, IM_COL32(110, 0, 8, 217), 1.0f);
         add(p, IM_COL32(110, 0, 8, 255), 0.94f, border(0.94f));
       }
@@ -8037,69 +8037,69 @@ class MapStage final : public Stage {
       add(*hover_, blocked ? IM_COL32(231, 133, 115, 242) : IM_COL32(220, 226, 235, 255), 0.94f, border(0.94f));
     }
     if (fog_ && !noFog_ && fogReady_)
-      std::erase_if(marks, [&](const Renderer::GroundMark& m) { return m.cell < fogStates_.size() && fogStates_[m.cell] == e2::kFogUnseen; });
+      std::erase_if(marks, [&](const Renderer::GroundMark& m) { return m.cell < fogStates_.size() && fogStates_[m.cell] == ember::kFogUnseen; });
   }
 
   // The battle grid for the numbered looks (Renderer::GridCell per hex, looks/grid/README.md): the same states as
   // collectMarks, as flags; the terrain pass draws the look itself. Never on ground not yet seen.
   void collectGrid(std::vector<Renderer::GridCell>& cells) const {
     if (!battle_ || !scene_ || !board_) return;
-    const e2::HexLayout& layout = board_->layout();
+    const ember::HexLayout& layout = board_->layout();
     cells.assign(static_cast<size_t>(layout.cols) * static_cast<size_t>(layout.rows), Renderer::GridCell{});
-    auto at = [&](e2::BattleHex h) -> Renderer::GridCell* {
-      if (!e2::inBoard(layout, h.x, h.y)) return nullptr;
-      return &cells[static_cast<size_t>(e2::indexOf(layout, h.x, h.y))];
+    auto at = [&](ember::BattleHex h) -> Renderer::GridCell* {
+      if (!ember::inBoard(layout, h.x, h.y)) return nullptr;
+      return &cells[static_cast<size_t>(ember::indexOf(layout, h.x, h.y))];
     };
-    auto flag = [&](e2::BattleHex h, uint32_t f) {
+    auto flag = [&](ember::BattleHex h, uint32_t f) {
       if (Renderer::GridCell* c = at(h)) c->flags |= f;
     };
-    // A foe in reach of a strike is marked on every hex of its body (Engine2 boardOverlayLayers: atkTiles.push(...footprint(foe))).
-    auto flagBody = [&](const e2::BattleUnit& u, uint32_t f) {
-      for (const e2::BattleHex& p : e2::Battle::footprint(u, u.x, u.y)) flag(p, f);
+    // A foe in reach of a strike is marked on every hex of its body (Ember boardOverlayLayers: atkTiles.push(...footprint(foe))).
+    auto flagBody = [&](const ember::BattleUnit& u, uint32_t f) {
+      for (const ember::BattleHex& p : ember::Battle::footprint(u, u.x, u.y)) flag(p, f);
     };
     const bool walking = selected_ >= 0 && !unitWalk_[static_cast<size_t>(selected_)].points.empty();
     if (selected_ >= 0 && !walking && !spellMode_.empty()) {
       // The spell's zone (where it reaches), the hexes it may be aimed at right now, the hovered aim's area.
       const size_t b = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
-      for (const e2::BattleHex& c : spellZone_) flag(c, Renderer::kGridSpellAim);
-      const bool direction = e2::spellAimsDirection(spellMode_);
-      for (const e2::BattleHex& c : spellAim_) flag(c, (direction ? 0u : Renderer::kGridSpellAim) | Renderer::kGridSpellTarget);
+      for (const ember::BattleHex& c : spellZone_) flag(c, Renderer::kGridSpellAim);
+      const bool direction = ember::spellAimsDirection(spellMode_);
+      for (const ember::BattleHex& c : spellAim_) flag(c, (direction ? 0u : Renderer::kGridSpellAim) | Renderer::kGridSpellTarget);
       // The line / cone: under the cursor; else the one aimed and waiting for Confirmar (the cursor went to the button);
       // else toward the nearest foe it reaches while the cursor is off the board. Everyone it would hit is locked: foes in
       // violet, friends in red (a line or a cone that crosses the party hurts it).
-      std::optional<e2::BattleHex> aimed;
+      std::optional<ember::BattleHex> aimed;
       if (hover_ && aimValid(b, *hover_)) aimed = hover_;
       else if (spellArmed_ && aimValid(b, *spellArmed_)) aimed = spellArmed_;
       else if (direction && !hover_ && spellPreviewAim_) aimed = spellPreviewAim_;
       if (aimed) {
-        for (const e2::BattleHex& c : aimArea(b, *aimed)) flag(c, Renderer::kGridSpellArea);
+        for (const ember::BattleHex& c : aimArea(b, *aimed)) flag(c, Renderer::kGridSpellArea);
         for (size_t id : aimHits(b, *aimed)) {
-          const e2::BattleUnit& t = battle_->units()[id];
+          const ember::BattleUnit& t = battle_->units()[id];
           if (t.alive && !t.hidden && unitOnShow(t)) flag({t.x, t.y}, t.side == battle_->units()[b].side ? Renderer::kGridTarget : Renderer::kGridSpellTarget);
         }
       }
       if (hover_) flag(*hover_, Renderer::kGridHover | (aimValid(b, *hover_) ? 0u : Renderer::kGridHoverBlocked));
-      for (const e2::BattleHex& c : spellCells_) flag(c, Renderer::kGridSpellChosen);
-      const e2::BattleUnit& u = battle_->units()[b];
+      for (const ember::BattleHex& c : spellCells_) flag(c, Renderer::kGridSpellChosen);
+      const ember::BattleUnit& u = battle_->units()[b];
       flag({u.x, u.y}, Renderer::kGridActive);
     } else if (selected_ >= 0 && !walking) {
       const bool player = scene_->units[static_cast<size_t>(selected_)].side == "player";
-      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
+      const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
       // The reach: the party's movement, or a foe's threat zone; each hex fainter towards the limit of the movement.
       // "Atacar": instead, the hexes its weapon reaches from where it stands, and the foes it can strike.
       if (attackMode_) {
         const bool arrow = u.maxRange > 1;
         for (int y = 0; y < battle_->rows(); ++y)
           for (int x = 0; x < battle_->cols(); ++x) {
-            const int d = e2::Battle::distance({u.x, u.y}, {x, y});
+            const int d = ember::Battle::distance({u.x, u.y}, {x, y});
             if (d < u.minRange || d > u.maxRange) continue;
-            if (d > 1 && !e2::clearShot(*battle_, {u.x, u.y}, {x, y}, arrow)) continue;
+            if (d > 1 && !ember::clearShot(*battle_, {u.x, u.y}, {x, y}, arrow)) continue;
             flag({x, y}, Renderer::kGridStrikeZone);
           }
       } else if (!(player && battle_->roaming())) {  // free roam reaches the whole floor: no wash (the plate says so instead)
         int maxCost = 1;
-        for (const e2::ReachCell& c : reach_) maxCost = std::max(maxCost, c.cost);
-        for (const e2::ReachCell& c : reach_) {
+        for (const ember::ReachCell& c : reach_) maxCost = std::max(maxCost, c.cost);
+        for (const ember::ReachCell& c : reach_) {
           Renderer::GridCell* cell = at({c.x, c.y});
           if (!cell) continue;
           cell->flags |= player ? Renderer::kGridReach : Renderer::kGridReachFoe;
@@ -8108,8 +8108,8 @@ class MapStage final : public Stage {
       }
       // The route to the hovered hex: steps numbered from the unit's own hex (1).
       if (player && hover_ && !(hover_->x == u.x && hover_->y == u.y) &&
-          std::any_of(reach_.begin(), reach_.end(), [&](const e2::ReachCell& c) { return c.x == hover_->x && c.y == hover_->y; })) {
-        const std::vector<e2::BattleHex> route = e2::Battle::path(reachPaths_, hover_->x, hover_->y);
+          std::any_of(reach_.begin(), reach_.end(), [&](const ember::ReachCell& c) { return c.x == hover_->x && c.y == hover_->y; })) {
+        const std::vector<ember::BattleHex> route = ember::Battle::path(reachPaths_, hover_->x, hover_->y);
         for (size_t i = 0; i < route.size() && i < 255; ++i)
           if (Renderer::GridCell* cell = at(route[i])) {
             cell->extra = (cell->extra & ~0xFFu) | static_cast<uint32_t>(i + 1);
@@ -8120,7 +8120,7 @@ class MapStage final : public Stage {
     }
     // The foes in reach of a strike.
     for (const auto& [t, from] : targets_) {
-      const e2::BattleUnit& f = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(t)])];
+      const ember::BattleUnit& f = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(t)])];
       flagBody(f, Renderer::kGridTarget);
     }
     // The cursor: marked where nothing can stand.
@@ -8130,7 +8130,7 @@ class MapStage final : public Stage {
     }
     if (fog_ && !noFog_ && fogReady_)
       for (size_t i = 0; i < cells.size() && i < fogStates_.size(); ++i)
-        if (fogStates_[i] == e2::kFogUnseen) cells[i] = Renderer::GridCell{};
+        if (fogStates_[i] == ember::kFogUnseen) cells[i] = Renderer::GridCell{};
   }
 
   // Over the scene: the numbers popping off struck units and the strike forecast.
@@ -8160,15 +8160,15 @@ class MapStage final : public Stage {
     }
   }
 
-  // Engine2's forecast for the hovered target: the strike and the counter, as an ember plate by the cursor.
+  // Ember's forecast for the hovered target: the strike and the counter, as an ember plate by the cursor.
   void drawForecast() {
     if (!hover_ || selected_ < 0 || exchange_) return;
     const int foe = sceneUnitOf(battle_->unitAt(hover_->x, hover_->y));
     const auto target = std::find_if(targets_.begin(), targets_.end(), [&](const auto& t) { return t.first == foe; });
     if (foe < 0 || target == targets_.end()) return;
     const size_t ab = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), db = static_cast<size_t>(unitBattle_[static_cast<size_t>(foe)]);
-    const e2::BattleUnit &a = battle_->units()[ab], &d = battle_->units()[db];
-    const e2::Forecast f = forecastFor(ab, db, target->second);  // from the hex it would strike from
+    const ember::BattleUnit &a = battle_->units()[ab], &d = battle_->units()[db];
+    const ember::Forecast f = forecastFor(ab, db, target->second);  // from the hex it would strike from
     const ImVec2 cursor = ImGui::GetIO().MousePos;  // canvas units (mouse_ is in window pixels)
     ImGui::SetNextWindowPos({cursor.x + 18.0f, cursor.y + 18.0f}, ImGuiCond_Always);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {12.0f, 10.0f});
@@ -8188,23 +8188,23 @@ class MapStage final : public Stage {
     ImGui::PopStyleVar();
   }
 
-  // --- Engine2's battle HUD (GameApp.tsx footer .ember-hud-bar, battleHud3d.ts health bars, the turn order) -----------
+  // --- Ember's battle HUD (GameApp.tsx footer .ember-hud-bar, battleHud3d.ts health bars, the turn order) -----------
 
-  // Engine2 ThreeAtmosphereV2: the map's rising wisps (wispIntensity x 2000, wispSpeed, wispColor) and the dust
+  // Ember ThreeAtmosphereV2: the map's rising wisps (wispIntensity x 2000, wispSpeed, wispColor) and the dust
   // motes always in the air (brighter in sunlight); additive and over everything, as there (no depth test).
   void drawAirParticles() {
     if (!scene_ || flat_ || !options_.airParticles) return;
-    const e2::MapDraft& d = board_->draft();
+    const ember::MapDraft& d = board_->draft();
     static std::vector<float> wispSeeds, dustSeeds;
     if (wispSeeds.empty()) {
-      e2::Mulberry32 a(0x5eed2), b(0x5eed1);
+      ember::Mulberry32 a(0x5eed2), b(0x5eed1);
       for (int i = 0; i < 2000 * 4; ++i) wispSeeds.push_back(static_cast<float>(a()));
       for (int i = 0; i < 280 * 4; ++i) dustSeeds.push_back(static_cast<float>(b()));
     }
     const ImGuiIO& io = ImGui::GetIO();
     ImDrawList* dl = ImGui::GetBackgroundDrawList();
     const float w = io.DisplaySize.x, h = io.DisplaySize.y;
-    const e2::Board::Bounds bb = board_->bounds();
+    const ember::Board::Bounds bb = board_->bounds();
     auto disc = [&](glm::vec3 p, float size, ImU32 rgb, float alpha) {
       const std::optional<ImVec2> at = screenOf(p, w, h);
       const std::optional<ImVec2> side = screenOf(p + glm::vec3(size, 0.0f, 0.0f), w, h);
@@ -8266,15 +8266,15 @@ class MapStage final : public Stage {
   }
 
   // GameApp portraitFor: a hero's own portrait, an enemy's head-and-shoulders cut, else its sprite's first frame.
-  const UiImage* portraitOf(const e2::BattleUnit& u) const {
+  const UiImage* portraitOf(const ember::BattleUnit& u) const {
     const std::filesystem::path file = portraitFileOf(u);
     return file.empty() ? nullptr : uiImage(file);
   }
-  std::filesystem::path portraitFileOf(const e2::BattleUnit& u) const {
+  std::filesystem::path portraitFileOf(const ember::BattleUnit& u) const {
     // A hero of the party: THE one portrait, by name (content/hero-portraits.json, Portraits.h; the user, 2026-10-25: "consolida
     // tudo em um só retrato"). The name decides before the sprite does (Salazar Jovem and Selene share sprites with other units).
     if (u.side == "player")
-      if (const HeroPortrait* hero = heroPortrait(u.name)) return options_.engine2Public / hero->file;
+      if (const HeroPortrait* hero = heroPortrait(u.name)) return options_.artRoot / hero->file;
     static const std::pair<const char*, const char*> kHero[] = {
         {"defaultWarrior", "game/portraits/kael.png"}, {"kaelFinal", "game/portraits/kael-final-face-001.jpg"},
         {"neera", "game/portraits/NeeraProperSide-profile.jpg"}, {"voss", "game/portraits/voss.png"},
@@ -8283,7 +8283,7 @@ class MapStage final : public Stage {
         {"conjurer", "game/portraits/conjurer-002.png"}, {"malrec", "game/portraits/conjurer-002.png"},
         {"theButcher", "game/portraits/the-butcher-portrait-001.jpg"}, {"familiar3", "game/portraits/familiar3-profile.jpeg"},
         {"familiar", "game/portraits/familiar1-profile.png"}};
-    const std::filesystem::path root = options_.engine2Public;
+    const std::filesystem::path root = options_.artRoot;
     for (const auto& [sprite, file] : kHero)
       if (u.sprite == sprite) return root / file;
     std::error_code error;
@@ -8295,19 +8295,19 @@ class MapStage final : public Stage {
   }
 
   // GameApp slotIcon / data.ts spellIcon. EmberEngine's own spells (the Mago Negro's promotions) take the user's art,
-  // content/ui/spells/<kind>.jpg (portrait, drawn centre-cropped), before any Engine2 icon of the same kind.
+  // content/ui/spells/<kind>.jpg (portrait, drawn centre-cropped), before any Ember icon of the same kind.
   const UiImage* spellIconOf(const std::string& kind) const {
     const std::filesystem::path file = spellIconFileOf(kind);
     return file.empty() ? nullptr : uiImage(file);
   }
   // The file spellIconOf draws for `kind`, or none.
   std::filesystem::path spellIconFileOf(const std::string& kind) const {
-    if (!e2::emberSpellClass(kind).empty()) {  // ours: the user's art when there is one (none yet for some: the initials)
+    if (!ember::emberSpellClass(kind).empty()) {  // ours: the user's art when there is one (none yet for some: the initials)
       const std::filesystem::path own = std::filesystem::path("content/ui/spells") / (kind + ".jpg");
       std::error_code ec;
       if (std::filesystem::exists(own, ec)) return own;
     }
-    if (const std::optional<std::string> potion = potionOf(kind)) return options_.engine2Public / "game/icons" / ("potion-" + *potion + ".png");
+    if (const std::optional<std::string> potion = potionOf(kind)) return options_.artRoot / "game/icons" / ("potion-" + *potion + ".png");
     static const std::pair<const char*, const char*> kIcons[] = {
         {"doubleStrike", "refresh-001/spells/cleave-crossed-blades.png"}, {"cleave", "refresh-001/spells/cleave.png"},
         {"fireball", "refresh-001/spells/fireball.png"}, {"frost", "frost.jpg"}, {"iceStorm", "ice-storm.jpg"},
@@ -8326,16 +8326,16 @@ class MapStage final : public Stage {
         {"burningHands", "burning-hands.png"}, {"poisonBreath", "poison-breath.png"}, {"createFoodAndWater", "create-food-and-water.png"},
         {"turnUndead", "turn-undead.jpg"}};
     for (const auto& [k, file] : kIcons)
-      if (kind == k) return options_.engine2Public / "game/icons" / file;
+      if (kind == k) return options_.artRoot / "game/icons" / file;
     return {};
   }
 
   // .ember-btn.ember-btn-sm: Pirata One, primary (the ember gradient) or ghost (dark iron, an ember underline on hover).
-  // `icon` (a file under Engine2's game/icons, e.g. "lockpick.png") is drawn before the label.
+  // `icon` (a file under Ember's game/icons, e.g. "lockpick.png") is drawn before the label.
   bool emberButton(const char* id, const char* label, bool primary, bool enabled, float height = 32.0f, const char* icon = nullptr) {
     ImFont* font = uiFont(UiFont::Mark);
     const float size = 16.0f;
-    const UiImage* iconImage = icon ? uiImage(options_.engine2Public / "game/icons" / icon) : nullptr;
+    const UiImage* iconImage = icon ? uiImage(options_.artRoot / "game/icons" / icon) : nullptr;
     const float iconSide = iconImage ? std::round(height * 0.66f) : 0.0f, iconGap = iconImage ? 6.0f : 0.0f;
     const float w = spacedTextWidth(font, size, label, 0.06f) + 28.0f + iconSide + iconGap;
     ImGui::BeginDisabled(!enabled);
@@ -8431,15 +8431,15 @@ class MapStage final : public Stage {
     const float inset = std::round(side * 6.0f / 36.0f);
     if (const UiImage* icon = spellIconOf(kind)) {
       imageCover(dl, *icon, {a.x + inset, a.y + inset}, {b.x - inset, b.y - inset}, 0.5f, 0.5f, IM_COL32(255, 255, 255, fade));  // object-cover
-    } else if (!e2::emberSpellClass(kind).empty()) {
-      // Ours have no Engine2 icon yet: the element's colour behind the spell's initials.
+    } else if (!ember::emberSpellClass(kind).empty()) {
+      // Ours have no Ember icon yet: the element's colour behind the spell's initials.
       static const std::pair<const char*, ImU32> kElementColors[] = {{"darkness", IM_COL32(92, 48, 150, 255)}, {"poison", IM_COL32(60, 130, 40, 255)},
                                                                      {"fire", IM_COL32(170, 70, 20, 255)},     {"ice", IM_COL32(60, 120, 170, 255)},
                                                                      {"lightning", IM_COL32(90, 110, 180, 255)}, {"ember", IM_COL32(190, 90, 25, 255)},
                                                                      {"steel", IM_COL32(95, 105, 120, 255)},    {"wood", IM_COL32(110, 85, 50, 255)},
                                                                      {"arcane", IM_COL32(110, 70, 180, 255)}};
       ImU32 back = IM_COL32(60, 60, 60, 255);
-      const std::string name = e2::spellName(kind);
+      const std::string name = ember::spellName(kind);
       static const std::map<std::string, const char*> kElementOf = {
           {"markOfRuin", "darkness"},  {"creepingPlague", "poison"}, {"lifeDrain", "darkness"}, {"shroudOfShadows", "darkness"}, {"hemorrhage", "darkness"},
           {"profaneSilence", "darkness"}, {"blackPestilence", "poison"}, {"curseOfDecay", "darkness"}, {"soulHarvest", "darkness"}, {"devouringVoid", "darkness"},
@@ -8480,8 +8480,8 @@ class MapStage final : public Stage {
       ImGui::BeginTooltip();
       ImGui::PushFont(uiFont(UiFont::Ui), 15.0f);
       // the name only (the user, 2026-10-20): what it does is in the sheet's Skills
-      if (const std::optional<std::string> potion = potionOf(kind)) ImGui::TextUnformatted(e2::potionName(*potion).c_str());
-      else ImGui::TextUnformatted(tr(e2::spellName(kind)).c_str());
+      if (const std::optional<std::string> potion = potionOf(kind)) ImGui::TextUnformatted(ember::potionName(*potion).c_str());
+      else ImGui::TextUnformatted(tr(ember::spellName(kind)).c_str());
       ImGui::PopFont();
       ImGui::EndTooltip();
     }
@@ -8499,7 +8499,7 @@ class MapStage final : public Stage {
     return battle_->activeUnit();
   }
 
-  static std::string sheetLine(const e2::BattleUnit& u) {
+  static std::string sheetLine(const ember::BattleUnit& u) {
     const std::string range = u.minRange == u.maxRange ? std::to_string(u.maxRange) : std::format("{}-{}", u.minRange, u.maxRange);
     return std::format("AT {} · MAG {} · DF {} · DEX {} · Mov {} · Alc {}", u.atk, u.mag, u.def, u.dex, u.mov, range);
   }
@@ -8554,13 +8554,13 @@ class MapStage final : public Stage {
     ImGui::PopStyleColor();
   }
 
-  // --- Engine2's Inn quests in a fight (world/Quests.h): the pickups on the ground, collected by walking onto them, and the
+  // --- Ember's Inn quests in a fight (world/Quests.h): the pickups on the ground, collected by walking onto them, and the
   // quest log (QuestLog.h) following the fight's finds and kills live. Nothing is announced on screen: the combat log and the
   // quest log say it (the user, 2026-10-17).
-  e2::Json questTable(const char* key) const {
-    if (!options_.world) return e2::Json::array();
-    const e2::Json& t = options_.world->tables();
-    return t.contains(key) && t[key].is_array() ? t[key] : e2::Json::array();
+  ember::Json questTable(const char* key) const {
+    if (!options_.world) return ember::Json::array();
+    const ember::Json& t = options_.world->tables();
+    return t.contains(key) && t[key].is_array() ? t[key] : ember::Json::array();
   }
   // engine.ts collectQuestPickups (after every walk): a hero whose walk is over on a pickup's hex picks it up.
   void updateQuestPickups() {
@@ -8569,24 +8569,24 @@ class MapStage final : public Stage {
       const int s = sceneUnitOf(static_cast<int>(b));
       return s < 0 || static_cast<size_t>(s) >= unitWalk_.size() || unitWalk_[static_cast<size_t>(s)].points.empty();
     };
-    for (const e2::QuestPickup& p : battle_->collectQuestPickups(settled)) logInfo("quest pickup {} found at ({}, {})", p.key, p.x, p.y);
+    for (const ember::QuestPickup& p : battle_->collectQuestPickups(settled)) logInfo("quest pickup {} found at ({}, {})", p.key, p.x, p.y);
   }
-  // Engine2 drawQuestPickups: a small pulsing gold glint lying on each pickup's hex (not a hex outline), hidden under the fog of
+  // Ember drawQuestPickups: a small pulsing gold glint lying on each pickup's hex (not a hex outline), hidden under the fog of
   // war until the hex has been seen.
   void drawQuestPickups() {
     if (!battle_ || !board_ || battle_->questPickups().empty()) return;
     const ImGuiIO& io = ImGui::GetIO();
     ImDrawList* dl = ImGui::GetBackgroundDrawList();
     const float w = io.DisplaySize.x, h = io.DisplaySize.y;
-    const e2::HexLayout& L = board_->layout();
+    const ember::HexLayout& L = board_->layout();
     const float pulse = 0.75f + std::sin(now_ * 3.4f) * 0.25f;
-    for (const e2::QuestPickup& p : battle_->questPickups()) {
-      if (!e2::inBoard(L, p.x, p.y)) continue;
-      const size_t i = static_cast<size_t>(e2::indexOf(L, p.x, p.y));
-      if (fog_ && !noFog_ && (i >= fogStates_.size() || fogStates_[i] == e2::kFogUnseen)) continue;
-      const float cx = static_cast<float>(e2::hexX(L, p.x, p.y)), cz = static_cast<float>(e2::hexZ(L, p.y));
-      const float y = static_cast<float>(e2::groundHeightAt(*board_, look_, cx, cz)) + 0.02f;
-      auto diamond = [&](float r, ImU32 color) {  // lying on the ground: its long axis along the board's depth, as Engine2's
+    for (const ember::QuestPickup& p : battle_->questPickups()) {
+      if (!ember::inBoard(L, p.x, p.y)) continue;
+      const size_t i = static_cast<size_t>(ember::indexOf(L, p.x, p.y));
+      if (fog_ && !noFog_ && (i >= fogStates_.size() || fogStates_[i] == ember::kFogUnseen)) continue;
+      const float cx = static_cast<float>(ember::hexX(L, p.x, p.y)), cz = static_cast<float>(ember::hexZ(L, p.y));
+      const float y = static_cast<float>(ember::groundHeightAt(*board_, look_, cx, cz)) + 0.02f;
+      auto diamond = [&](float r, ImU32 color) {  // lying on the ground: its long axis along the board's depth, as Ember's
         const std::optional<ImVec2> a = screenOf({cx, y, cz - r}, w, h), b = screenOf({cx + 0.7f * r, y, cz}, w, h);
         const std::optional<ImVec2> c = screenOf({cx, y, cz + r}, w, h), d = screenOf({cx - 0.7f * r, y, cz}, w, h);
         if (a && b && c && d) dl->AddQuadFilled(*a, *b, *c, *d, color);
@@ -8599,18 +8599,18 @@ class MapStage final : public Stage {
   void drawQuestLog() {
     if (!questLog_) return;
     if (!options_.world) return void(questLog_ = false);
-    e2::Json save = gearSave();  // the campaign's save (Modo teste: a new one), with this fight's finds and kills folded in
-    e2::foldQuestProgress(save, questFound(), questKills());
+    ember::Json save = gearSave();  // the campaign's save (Modo teste: a new one), with this fight's finds and kills folded in
+    ember::foldQuestProgress(save, questFound(), questKills());
     if (!drawQuestLogPanel(questTable("quests"), questTable("potions"), save)) questLog_ = false;
   }
 
-  // --- Engine2's character status sheet (BattleStatus.h), opened by "Status" for the unit the bar describes ----------------
+  // --- Ember's character status sheet (BattleStatus.h), opened by "Status" for the unit the bar describes ----------------
 
   void openStatus(int battleUnit) {
     if (battleUnit >= 0 && battle_) statusSheet_.open(static_cast<size_t>(battleUnit));
   }
 
-  // The party's inventory over the fight (Engine2: the status sheet's Mochila / Equipar open the backpack / paper doll with the
+  // The party's inventory over the fight (Ember: the status sheet's Mochila / Equipar open the backpack / paper doll with the
   // live battle patched into the save: the heroes' potions, HP, conditions). A Modo teste fight shows a brand-new save's gear.
   bool ensureInnRules() {
     if (!options_.world) return false;
@@ -8620,21 +8620,21 @@ class MapStage final : public Stage {
     }
     return true;
   }
-  // The weapons' and gear's names and icons (content/engine2/inn.json), loaded once: the Mochila and the chest-loot popup read them.
+  // The weapons' and gear's names and icons (content/data/inn.json), loaded once: the Mochila and the chest-loot popup read them.
   bool ensureInnData() {
-    if (!innDataLoaded_) innDataLoaded_ = innData_.load("content/engine2/inn.json");
+    if (!innDataLoaded_) innDataLoaded_ = innData_.load("content/data/inn.json");
     return innDataLoaded_;
   }
-  e2::Json gearSave() const { return campaign_ ? (testMode_ || playtest_ ? campaign_->emptySave() : campaign_->activeSave()) : e2::Json::object(); }
+  ember::Json gearSave() const { return campaign_ ? (testMode_ || playtest_ ? campaign_->emptySave() : campaign_->activeSave()) : ember::Json::object(); }
 
   void openInventory(size_t unit, bool backpack) {
     if (!campaign_ || !ensureInnRules() || !battle_ || unit >= battle_->units().size()) return;
     inventorySave_ = gearSave();
-    for (const e2::BattleUnit& u : battle_->units()) {
+    for (const ember::BattleUnit& u : battle_->units()) {
       if (u.side != "player") continue;
-      e2::Json& bag = inventorySave_["bags"][u.name];
-      if (!bag.is_object()) bag = e2::Json::object();
-      for (int k = 0; k < 7; ++k) bag[e2::kPotionIds[k]] = u.bag[k];
+      ember::Json& bag = inventorySave_["bags"][u.name];
+      if (!bag.is_object()) bag = ember::Json::object();
+      for (int k = 0; k < 7; ++k) bag[ember::kPotionIds[k]] = u.bag[k];
       bag["lockpick"] = u.lockpick;
       inventorySave_["unitHp"][u.name] = u.hp;
       if (u.fullness) inventorySave_["heroHunger"][u.name] = *u.fullness;
@@ -8648,22 +8648,22 @@ class MapStage final : public Stage {
   void syncInventory() {
     if (!battle_ || !innRules_) return;
     if (campaign_ && !testMode_ && !playtest_) campaign_->saveActive(inventorySave_);
-    for (e2::BattleUnit& u : battle_->units()) {
+    for (ember::BattleUnit& u : battle_->units()) {
       if (u.side != "player") continue;
-      const e2::InnRules::GearBonus g = innRules_->gearBonus(inventorySave_, u.name, u.classId);
+      const ember::InnRules::GearBonus g = innRules_->gearBonus(inventorySave_, u.name, u.classId);
       u.gearHp = g.hp, u.gearAtk = g.atk, u.gearMag = g.mag, u.gearDef = g.def, u.gearDex = g.dex, u.gearMov = g.mov;
-      const e2::Json& bag = inventorySave_["bags"][u.name];
+      const ember::Json& bag = inventorySave_["bags"][u.name];
       if (bag.is_object()) {
-        for (int k = 0; k < 7; ++k) u.bag[k] = bag.value(e2::kPotionIds[k], u.bag[k]);
+        for (int k = 0; k < 7; ++k) u.bag[k] = bag.value(ember::kPotionIds[k], u.bag[k]);
         u.lockpick = bag.value("lockpick", u.lockpick);
       }
-      const e2::Json& diseases = inventorySave_["heroDiseases"];
+      const ember::Json& diseases = inventorySave_["heroDiseases"];
       u.diseased = diseases.is_object() && diseases.contains(u.name) && diseases[u.name] == true;
-      const e2::Json& poisons = inventorySave_["heroPoisons"];
+      const ember::Json& poisons = inventorySave_["heroPoisons"];
       const bool poisoned = poisons.is_object() && poisons.contains(u.name) && poisons[u.name].is_string();
       u.poisoned = poisoned, u.poisonTier = poisoned ? poisons[u.name].get<std::string>() : std::string();
       const int hp = inventorySave_["unitHp"].is_object() && inventorySave_["unitHp"].contains(u.name) ? inventorySave_["unitHp"][u.name].get<int>() : u.hp;
-      e2::reapplyGear(u);
+      ember::reapplyGear(u);
       u.hp = std::min(u.maxHp, hp);
     }
   }
@@ -8678,7 +8678,7 @@ class MapStage final : public Stage {
     ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 0));
     ImGui::Begin("##battleinventory", nullptr,
                  ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse);
-    InventoryScreen::Context context{inventorySave_, [this] { syncInventory(); }, *innRules_, innData_, *options_.world, options_.engine2Public};
+    InventoryScreen::Context context{inventorySave_, [this] { syncInventory(); }, *innRules_, innData_, *options_.world, options_.artRoot};
     context.allHeroes = testMode_ || playtest_;
     const bool closed = battleInventory_->draw(io.DisplaySize, context);
     ImGui::End();
@@ -8691,8 +8691,8 @@ class MapStage final : public Stage {
     if (!statusSheet_.isOpen() || !battle_) return;
     BattleStatusSheet::Hooks hooks;
     // The close-up photos only on the status sheet (the user, 2026-10-18: "zoom só no status"); every other screen keeps the originals.
-    hooks.portraitWhole = [](const e2::BattleUnit& u) { return u.side == "player"; };  // the party's 2:3 box (the user, 2026-10-18)
-    hooks.portrait = [this](const e2::BattleUnit& u) -> const UiImage* {
+    hooks.portraitWhole = [](const ember::BattleUnit& u) { return u.side == "player"; };  // the party's 2:3 box (the user, 2026-10-18)
+    hooks.portrait = [this](const ember::BattleUnit& u) -> const UiImage* {
       // a hero of the party: THE one portrait, as on every screen (the user, 2026-10-25: "consolida tudo em um só retrato"); the
       // close-ups below stay for no hero now (kept, not drawn)
       if (u.side == "player" && heroPortrait(u.name)) return portraitOf(u);
@@ -8714,19 +8714,19 @@ class MapStage final : public Stage {
     };
     hooks.spellIcon = [this](const std::string& kind) { return spellIconOf(kind); };
     hooks.xpToLevel = [](int level) { return xpToLevel(level); };
-    hooks.allocation = [](const e2::BattleUnit& u) { return std::array<int, 5>{u.pointHp, u.pointAtk, u.pointMag, u.pointDef, u.pointDex}; };
+    hooks.allocation = [](const ember::BattleUnit& u) { return std::array<int, 5>{u.pointHp, u.pointAtk, u.pointMag, u.pointDef, u.pointDex}; };
     hooks.adjust = [this](size_t unit, int stat, int delta) { return adjustStatPoint(unit, stat, delta); };
     if (campaign_ && options_.world && ensureInnRules()) {
       hooks.openPack = [this](size_t unit) { openInventory(unit, true); };
       hooks.openEquip = [this](size_t unit) { openInventory(unit, false); };
     }
-    hooks.gearLines = [this](const e2::BattleUnit& u, const char* stat) {
+    hooks.gearLines = [this](const ember::BattleUnit& u, const char* stat) {
       if (!campaign_ || !ensureInnRules()) return std::vector<std::string>{};
       return innRules_->gearLines(gearSave(), u.name, stat);
     };
     hooks.potionTip = [this](const std::string& id) -> std::string {
       if (!ensureInnRules()) return {};
-      const e2::InnPotion* p = innData_.potion(id);
+      const ember::InnPotion* p = innData_.potion(id);
       return p ? p->tooltip : std::string();
     };
     hooks.lockpickTip = [this]() { return ensureInnRules() ? innData_.lockpickTooltip : std::string(); };
@@ -8736,7 +8736,7 @@ class MapStage final : public Stage {
       std::vector<size_t> order;
       const std::string side = battle_->units()[statusSheet_.unit()].side;
       for (size_t i : battle_->turnOrder()) {
-        const e2::BattleUnit& v = battle_->units()[i];
+        const ember::BattleUnit& v = battle_->units()[i];
         if (!v.alive || v.side != side) continue;
         if (side != "player") {
           const int ui = sceneUnitOf(static_cast<int>(i));
@@ -8746,33 +8746,33 @@ class MapStage final : public Stage {
       }
       return order;
     };
-    statusSheet_.draw(*battle_, options_.engine2Public, hooks);
+    statusSheet_.draw(*battle_, options_.artRoot, hooks);
   }
 
-  // Engine2 adjustStatPoint (+ GameApp onAdjustStatPoint): one permanent level-up point put on, or taken off, VIT / ATK /
+  // Ember adjustStatPoint (+ GameApp onAdjustStatPoint): one permanent level-up point put on, or taken off, VIT / ATK /
   // MAG / DEF / DEX of a hero (three per level of the hero's level in the fight); the stats follow at once (a point on
   // vitality heals as much), and a campaign fight writes the allocation into the save. Modo teste keeps it in the fight.
   bool adjustStatPoint(size_t b, int stat, int delta) {
     if (!battle_ || b >= battle_->units().size() || stat < 0 || stat > 4 || !result_.empty()) return false;
-    e2::BattleUnit& u = battle_->units()[b];
+    ember::BattleUnit& u = battle_->units()[b];
     if (u.side != "player" || !u.alive) return false;
     int* slot[5] = {&u.pointHp, &u.pointAtk, &u.pointMag, &u.pointDef, &u.pointDex};
     const int spent = u.pointHp + u.pointAtk + u.pointMag + u.pointDef + u.pointDex, budget = std::max(0, (u.level - 1) * 3);
     if ((delta > 0 && spent >= budget) || (delta < 0 && *slot[stat] <= 0)) return false;
     const int previousMax = u.maxHp;
     *slot[stat] += delta;
-    e2::reapplyGear(u);
+    ember::reapplyGear(u);
     if (stat == 0 && delta > 0) u.hp = std::min(u.maxHp, u.hp + (u.maxHp - previousMax));
     static const char* kNames[5] = {"hp", "atk", "mag", "def", "dex"};
     std::string label = kNames[stat];
     for (char& c : label) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
     battle_->pushLog(std::format("{}: {} {}.", u.name, label, delta > 0 ? "+1" : "−1"));
     if (campaign_ && !testMode_) {
-      e2::Json save = campaign_->activeSave();
-      e2::Json& all = save["statPointAllocations"];
-      if (!all.is_object()) all = e2::Json::object();
-      e2::Json& mine = all[u.name];
-      if (!mine.is_object()) mine = e2::Json::object();
+      ember::Json save = campaign_->activeSave();
+      ember::Json& all = save["statPointAllocations"];
+      if (!all.is_object()) all = ember::Json::object();
+      ember::Json& mine = all[u.name];
+      if (!mine.is_object()) mine = ember::Json::object();
       if (*slot[stat] > 0) mine[kNames[stat]] = *slot[stat];
       else mine.erase(kNames[stat]);
       campaign_->saveActive(std::move(save));
@@ -8796,24 +8796,24 @@ class MapStage final : public Stage {
   std::vector<std::string> hotbarChoices(size_t b) const {
     std::vector<std::string> out = hotbarSpells(b);
     if (battle_->units()[b].side == "player")
-      for (int k = 0; k < 7; ++k) out.push_back(std::string("potion:") + e2::kPotionIds[k]);
+      for (int k = 0; k < 7; ++k) out.push_back(std::string("potion:") + ember::kPotionIds[k]);
     return out;
   }
   std::vector<std::string> hotbarSpells(size_t b) const {
     std::vector<std::string> out;
     for (const std::string& k : battle_->units()[b].spellList)
-      if (!e2::spellPassive(k)) out.push_back(k);  // a passive (the Cruzado's Juramento) works by itself: no socket
+      if (!ember::spellPassive(k)) out.push_back(k);  // a passive (the Cruzado's Juramento) works by itself: no socket
     return out;
   }
   // A hero with no layout yet: the potions it carries on the last sockets (F12 the last of them), its spells from F1 in
   // the sockets left before them; the spells that do not fit are placed by the player in Atalhos (the user, 2026-10-25).
   Hotbar defaultHotbar(size_t b) const {
-    const e2::BattleUnit& u = battle_->units()[b];
+    const ember::BattleUnit& u = battle_->units()[b];
     Hotbar bar{};
     std::vector<std::string> potions;
     if (u.side == "player")
       for (int k = 0; k < 7; ++k)
-        if (u.bag[k] > 0) potions.push_back(std::string("potion:") + e2::kPotionIds[k]);
+        if (u.bag[k] > 0) potions.push_back(std::string("potion:") + ember::kPotionIds[k]);
     const size_t first = bar.size() - std::min(potions.size(), bar.size());
     for (size_t i = 0; i < potions.size() && first + i < bar.size(); ++i) bar[first + i] = potions[i];
     const std::vector<std::string> spells = hotbarSpells(b);
@@ -8821,14 +8821,14 @@ class MapStage final : public Stage {
     return bar;
   }
   Hotbar& hotbarOf(size_t b) {
-    const e2::BattleUnit& u = battle_->units()[b];
+    const ember::BattleUnit& u = battle_->units()[b];
     if (const auto it = hotbars_.find(u.name); it != hotbars_.end()) return it->second;
     Hotbar bar{};
     bool stored = false;
     if (hotbarInSave()) {
-      const e2::Json save = campaign_->activeSave();
+      const ember::Json save = campaign_->activeSave();
       if (const auto all = save.find("hotbars"); all != save.end() && all->is_object() && all->contains(u.name) && (*all)[u.name].is_array()) {
-        const e2::Json& list = (*all)[u.name];
+        const ember::Json& list = (*all)[u.name];
         for (size_t i = 0; i < bar.size() && i < list.size(); ++i)
           if (list[i].is_string()) bar[i] = list[i].get<std::string>();
         stored = true;
@@ -8840,13 +8840,13 @@ class MapStage final : public Stage {
     return hotbars_[u.name] = bar;
   }
   void storeHotbar(size_t b) {
-    const e2::BattleUnit& u = battle_->units()[b];
+    const ember::BattleUnit& u = battle_->units()[b];
     const Hotbar& bar = hotbarOf(b);
     if (!hotbarInSave()) return void(sessionHotbars()[u.name] = bar);
-    e2::Json save = campaign_->activeSave();
-    e2::Json& all = save["hotbars"];
-    if (!all.is_object()) all = e2::Json::object();
-    all[u.name] = e2::Json(std::vector<std::string>(bar.begin(), bar.end()));
+    ember::Json save = campaign_->activeSave();
+    ember::Json& all = save["hotbars"];
+    if (!all.is_object()) all = ember::Json::object();
+    all[u.name] = ember::Json(std::vector<std::string>(bar.begin(), bar.end()));
     campaign_->saveActive(std::move(save));
   }
   // A socket's entry as the hero has it now: its uses left and whether it can be used (nullopt: the hero no longer has it).
@@ -8856,21 +8856,21 @@ class MapStage final : public Stage {
   };
   std::optional<SocketState> socketState(size_t b, const std::string& kind, bool canAct) const {
     if (kind.empty()) return std::nullopt;
-    const e2::BattleUnit& u = battle_->units()[b];
+    const ember::BattleUnit& u = battle_->units()[b];
     if (const std::optional<std::string> potion = potionOf(kind)) {
       for (int k = 0; k < 7; ++k)
-        if (*potion == e2::kPotionIds[k]) return SocketState{u.bag[k], canAct && u.bag[k] > 0};
+        if (*potion == ember::kPotionIds[k]) return SocketState{u.bag[k], canAct && u.bag[k] > 0};
       return std::nullopt;
     }
-    if (std::find(u.spellList.begin(), u.spellList.end(), kind) == u.spellList.end() || e2::spellPassive(kind)) return std::nullopt;
-    const int uses = e2::spellUsesLeft(*battle_, b, kind);
-    return SocketState{uses, canAct && e2::spellPorted(kind) && uses > 0};
+    if (std::find(u.spellList.begin(), u.spellList.end(), kind) == u.spellList.end() || ember::spellPassive(kind)) return std::nullopt;
+    const int uses = ember::spellUsesLeft(*battle_, b, kind);
+    return SocketState{uses, canAct && ember::spellPorted(kind) && uses > 0};
   }
   // F1..F12: the socket's spell / potion, as a click on it.
   void pressHotbar(int slot) {
     if (hotbarEdit_ || pauseOpen_ || battleInventory_ || statusSheet_.isOpen() || !battle_ || battle_->roaming() || !myTurn() || busy()) return;
     const size_t me = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]);
-    const e2::BattleUnit& u = battle_->units()[me];
+    const ember::BattleUnit& u = battle_->units()[me];
     const std::string kind = hotbarOf(me)[static_cast<size_t>(slot)];
     if (const std::optional<SocketState> s = socketState(me, kind, !u.acted); s && s->usable) startSpell(kind);
   }
@@ -8882,7 +8882,7 @@ class MapStage final : public Stage {
     const int ub = hotbarHero_;  // the hero whose bar was open (the cursor over another unit does not switch it)
     if (ub < 0 || ub >= static_cast<int>(battle_->units().size()) || battle_->units()[static_cast<size_t>(ub)].side != "player") return void(hotbarEdit_ = false);
     const size_t b = static_cast<size_t>(ub);
-    const e2::BattleUnit& u = battle_->units()[b];
+    const ember::BattleUnit& u = battle_->units()[b];
     Hotbar& bar = hotbarOf(b);
     const ImGuiIO& io = ImGui::GetIO();
     const float side = 40.0f, gap = 8.0f;
@@ -8956,13 +8956,13 @@ class MapStage final : public Stage {
     if (changed) storeHotbar(b);
   }
   std::string socketName(const std::string& kind) const {
-    if (const std::optional<std::string> potion = potionOf(kind)) return e2::potionName(*potion);
-    return e2::spellName(kind);
+    if (const std::optional<std::string> potion = potionOf(kind)) return ember::potionName(*potion);
+    return ember::spellName(kind);
   }
 
   void drawTurnBar() {
     if (!battle_) return;
-    e2::setCombatLogEnglish(uiEnglish());  // the lines made from now on follow the interface language
+    ember::setCombatLogEnglish(uiEnglish());  // the lines made from now on follow the interface language
     drawTurnPlate();
     drawQuestPickups();
     drawHealthBars();
@@ -9008,7 +9008,7 @@ class MapStage final : public Stage {
     if (const int act = battle_->activeUnit(); act != hudActive_) showLog_ = showLog_ && (hudActive_ == -2 || logKeep_), hudActive_ = act;  // a new turn: back to the sheet
     const float rowY = a.y + 8.0f;
     if (ub >= 0) {
-      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(ub)];
+      const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(ub)];
       float x = a.x + 10.0f;
       if (const UiImage* face = portraitOf(u)) {
         const ImVec2 p{x, rowY}, q{x + 56.0f, rowY + 80.0f};
@@ -9060,14 +9060,14 @@ class MapStage final : public Stage {
         const auto t = std::find_if(targets_.begin(), targets_.end(), [&](const auto& q) { return q.first == foe; });
         if (foe >= 0 && t != targets_.end()) {
           const size_t ab = static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]), db = static_cast<size_t>(unitBattle_[static_cast<size_t>(foe)]);
-          const e2::Forecast fc = forecastFor(ab, db, t->second);
+          const ember::Forecast fc = forecastFor(ab, db, t->second);
           line = fc.canCounter ? std::format("{:.0f}% em {} · contra {:.0f}%", fc.hitOut, battle_->units()[db].name, fc.hitBack)
                                : std::format("{:.0f}% em {} · sem contra", fc.hitOut, battle_->units()[db].name);
         }
       }
       dl->AddText(text, 13.0f, {x, barY + 12.0f}, IM_COL32(180, 180, 180, 255), line.c_str());
       if (!tip_.empty() && now_ - tipAt_ < 3.0f) dl->AddText(text, 12.0f, {x, barY + 30.0f}, IM_COL32(224, 189, 128, 255), tip_.c_str());
-      else if (const std::string cond = e2::conditionsText(u); !cond.empty())  // what ails it (our spells' conditions)
+      else if (const std::string cond = ember::conditionsText(u); !cond.empty())  // what ails it (our spells' conditions)
         dl->AddText(text, 12.0f, {x, barY + 30.0f}, IM_COL32(196, 150, 232, 255), cond.c_str());
       }
       ImGui::PopFont();
@@ -9077,7 +9077,7 @@ class MapStage final : public Stage {
                       ? "O inimigo age…"
                       : "Clique num aliado ou num inimigo para ver o status.");
     }
-    // the actions row; free roam (Engine2's explore missions) shows how to play it instead
+    // the actions row; free roam (Ember's explore missions) shows how to play it instead
     if (battle_->roaming()) drawExploreRow(a, b);
     else drawActionsRow(a, b);
     const bool mine = myTurn() && !busy();
@@ -9090,7 +9090,7 @@ class MapStage final : public Stage {
       const std::string openLabel = tr("Abrir log", "Open log");
       const char* logLabel = showLog_ ? "Resumo" : "Log";
       // (no "Status" here: the portrait opens the sheet; the user, 2026-10-18)
-      // the quest log (Engine2's world-map "Missões", here in the fight too)
+      // the quest log (Ember's world-map "Missões", here in the fight too)
       const std::string questLabel = tr("Missões", "Quests");
       const bool finishing = battle_->winAvailable() && result_.empty();
       const std::string finishLabel = battle_->activeExit() ? tr("Usar waypoint", "Use waypoint") : tr("Encerrar missão", "End mission");
@@ -9102,7 +9102,7 @@ class MapStage final : public Stage {
       if (turns) trailing += labelW("Fim do turno") + gap;
       else if (explores_) trailing += labelW(tr("Sair", "Leave")) + gap;
       hudRightEdge_ = io.DisplaySize.x - 20.0f - trailing;
-      // Engine2's footer: "Encerrar missão" / "Usar waypoint" once the end is on offer
+      // Ember's footer: "Encerrar missão" / "Usar waypoint" once the end is on offer
       if (finishing) {
         ImGui::SameLine();
         if (emberButton("##finishbtn", finishLabel.c_str(), true, !busy())) {
@@ -9121,7 +9121,7 @@ class MapStage final : public Stage {
         if (emberButton("##openlog", openLabel.c_str(), false, true)) logFull_ = true, logFullJustOpened_ = true;
       }
     }
-    if (!turns) {  // free roam: an explore mission's "Sair" (Engine2 onQuit) in place of Fim do turno; nothing on a fight's map
+    if (!turns) {  // free roam: an explore mission's "Sair" (Ember onQuit) in place of Fim do turno; nothing on a fight's map
       if (explores_) {
         ImGui::SameLine();
         if (emberButton("##leave", tr("Sair", "Leave").c_str(), true, !busy())) titleRequested_ = true;
@@ -9148,7 +9148,7 @@ class MapStage final : public Stage {
     // The actor's battle index, read once: Esperar and a failed Fugir combate let go of the unit (select(-1)) mid-row, and the
     // rest of the row is still drawn this frame (reading unitBattle_[selected_] after that indexed -1: the crash of 2026-10-17).
     const size_t me = mine ? static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)]) : 0;
-    const e2::BattleUnit* actor = mine ? &battle_->units()[me] : nullptr;
+    const ember::BattleUnit* actor = mine ? &battle_->units()[me] : nullptr;
     const bool canAct = actor && !actor->acted;
     if (actor) {  // a party unit (myTurn)
       // The 12 sockets (F1..F12) and "Atalhos"; they shrink when the commands on the right leave less room.
@@ -9171,7 +9171,7 @@ class MapStage final : public Stage {
     ImGui::SetCursorScreenPos({barRowX_, rowY});
     // Atacar always opens (the grid shows the weapon's zone even with nobody in it), so the player sees its reach.
     if (emberButton("##attack", "Atacar", true, canAct && spellMode_.empty())) attackMode_ = !attackMode_, offHandMode_ = false, refreshReach();
-    if (actor && (actor->combat.offHandWeapon || actor->combat.offHandShield)) {  // Engine2's "Mão Secundária": the dagger or katar strikes, or the shield bashes
+    if (actor && (actor->combat.offHandWeapon || actor->combat.offHandShield)) {  // Ember's "Mão Secundária": the dagger or katar strikes, or the shield bashes
       ImGui::SameLine();
       if (emberButton("##offhand", tr("Mão Secundária", "Off-hand").c_str(), offHandMode_, canAct && spellMode_.empty())) {
         offHandMode_ = !offHandMode_;
@@ -9180,7 +9180,7 @@ class MapStage final : public Stage {
       }
     }
     if (actor && canAct && actor->lockpick > 0 && battle_->adjacentLock(me) >= 0) {
-      ImGui::SameLine();  // Engine2's "Arrombar": a Gazua opens the chest or door beside the hero
+      ImGui::SameLine();  // Ember's "Arrombar": a Gazua opens the chest or door beside the hero
       if (emberButton("##lockpick", tr("Arrombar", "Pick lock").c_str(), false, spellMode_.empty(), 32.0f, "lockpick.png")) openLock();
     }
     ImGui::SameLine();
@@ -9196,7 +9196,7 @@ class MapStage final : public Stage {
       if (aiming) cancelAction();
       else undoMove();
     }
-    // Fugir combate (Engine2 GameApp "fleeable" + engine canAttemptFlee / attemptFlee): a random encounter only, by the hero whose turn it
+    // Fugir combate (Ember GameApp "fleeable" + engine canAttemptFlee / attemptFlee): a random encounter only, by the hero whose turn it
     // is once any hex of its body is on the battlefield's edge; the roll is 60 + DEX / 3 % (DEX with the affinity bonus).
     if (actor && canFlee(*actor)) {
       ImGui::SameLine();
@@ -9234,7 +9234,7 @@ class MapStage final : public Stage {
     if (undo_.empty() || selected_ < 0) return;
     const BeforeWalk t = undo_.back();
     undo_.pop_back();
-    e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[t.unit])];
+    ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[t.unit])];
     u.x = t.x, u.y = t.y, u.moveUsed = t.moveUsed, u.faceDx = t.faceDx, u.faceDy = t.faceDy;
     unitWalk_[t.unit] = Walk{};
     unitPos_[t.unit] = t.pos, unitFacing_[t.unit] = t.facing, unitMoved_[t.unit] = t.leftSpawn;
@@ -9245,24 +9245,24 @@ class MapStage final : public Stage {
   bool fleeable() const {
     return missionId_.rfind("random", 0) == 0 || mapKey_.rfind("random", 0) == 0 || std::filesystem::path(options_.map).stem().string().rfind("random", 0) == 0;
   }
-  bool canFlee(const e2::BattleUnit& u) const {
+  bool canFlee(const ember::BattleUnit& u) const {
     if (!fleeable() || !battle_ || !result_.empty() || u.side != "player" || !u.alive || u.moved || u.summoned) return false;
-    for (const e2::BattleHex& c : e2::Battle::footprint(u, u.x, u.y))
+    for (const ember::BattleHex& c : ember::Battle::footprint(u, u.x, u.y))
       if (c.x <= 0 || c.y <= 0 || c.x >= battle_->cols() - 1 || c.y >= battle_->rows() - 1) return true;
     return false;
   }
-  double fleeChance(const e2::BattleUnit& u) const {
+  double fleeChance(const ember::BattleUnit& u) const {
     const size_t b = static_cast<size_t>(&u - battle_->units().data());
-    return std::min(100.0, 60.0 + e2::fighterAt(*battle_, b, u.x, u.y).dex / e2::kDexDivisor);  // dexterity.ts dexEscapeChance
+    return std::min(100.0, 60.0 + ember::fighterAt(*battle_, b, u.x, u.y).dex / ember::kDexDivisor);  // dexterity.ts dexEscapeChance
   }
   // Rolls the escape for the picked hero: a hit takes the party back where the fight came from (no victory, nothing completed); a
   // miss spends the hero's turn and the foes carry on.
   bool attemptFlee() {
     if (selected_ < 0 || !battle_) return false;
-    e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
+    ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
     if (!canFlee(u)) return false;
     std::random_device device;
-    e2::Mulberry32 rng(device());
+    ember::Mulberry32 rng(device());
     const bool out = !std::exchange(scriptFleeMiss_, false) && rng() * 100.0 < fleeChance(u);
     const std::string line = out ? tr(u.name + " encontrou uma saída! O grupo foge do combate.", u.name + " found a way out! The party flees the battle.")
                                  : tr(u.name + " não conseguiu fugir — o combate continua.", u.name + " failed to flee: the battle goes on.");
@@ -9291,7 +9291,7 @@ class MapStage final : public Stage {
     for (size_t i = 0; i < scene_->units.size(); ++i) {
       const int b = unitBattle_[i];
       if (b < 0 || !unitCard_[i].drawn) continue;
-      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(b)];
+      const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(b)];
       if (!u.alive) continue;
       const CardRect& c = unitCard_[i];
       const glm::vec3 up = cardUp(c);
@@ -9378,7 +9378,7 @@ class MapStage final : public Stage {
       int n = 1;
       bool first = true;
       for (size_t b : battle_->turnOrder()) {
-        const e2::BattleUnit& u = battle_->units()[b];
+        const ember::BattleUnit& u = battle_->units()[b];
         if (!u.alive) continue;
         if (!first) ImGui::SameLine();
         first = false;
@@ -9403,7 +9403,7 @@ class MapStage final : public Stage {
       ImGui::Begin("##battleslots", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground |
                                                  ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse);
       bool back = false;
-      const int chosen = battleSlots_->draw(screen, 16.0f, *campaign_, options_.engine2Public, back, &slotSave_);
+      const int chosen = battleSlots_->draw(screen, 16.0f, *campaign_, options_.artRoot, back, &slotSave_);
       ImGui::End();
       ImGui::PopStyleVar(2);
       if (back) battleSlots_.reset();
@@ -9415,7 +9415,7 @@ class MapStage final : public Stage {
       return;
     }
     if (pauseOpen_ && result_.empty() && !menuOptions_.isOpen()) {
-      switch (battleMenu_.draw(screen, options_.engine2Public, speed_, playtest_, campaign_ && !testMode_ && !missionId_.empty(), campaign_ != nullptr)) {
+      switch (battleMenu_.draw(screen, options_.artRoot, speed_, playtest_, campaign_ && !testMode_ && !missionId_.empty(), campaign_ != nullptr)) {
         case menu::BattleMenu::Action::Save:
           // The campaign as it stands with this fight in it (GameApp's save-slot write from the battle).
           slotSave_ = campaign_->activeSave();
@@ -9484,7 +9484,7 @@ class MapStage final : public Stage {
     const bool win = result_ == "victory";
     const float k = std::clamp((now_ - resultAt_ - kResultDelay) / 0.5f, 0.0f, 1.0f);  // fades in
     dl->AddRectFilled({0, 0}, size, IM_COL32(17, 17, 17, static_cast<int>(255 * k)));
-    if (const std::filesystem::path art = briefArtFile(board_->draft().id, options_.engine2Public); !art.empty())
+    if (const std::filesystem::path art = briefArtFile(board_->draft().id, options_.artRoot); !art.empty())
       if (const UiImage* image = uiImage(art)) {
         imageCover(dl, *image, {0, 0}, size, 0.5f, 0.5f, IM_COL32(255, 255, 255, static_cast<int>(255 * k)));
         verticalGradient(dl, {0, 0}, size, {{0.0f, IM_COL32(17, 17, 17, 51)}, {0.5f, IM_COL32(17, 17, 17, 102)}, {1.0f, IM_COL32(17, 17, 17, 230)}});
@@ -9504,7 +9504,7 @@ class MapStage final : public Stage {
     const float rowW = std::min(34.0f * rem, size.x - 2.0f * rem);
     int row = 0;
     for (size_t i = 0; i < battle_->units().size(); ++i) {
-      const e2::BattleUnit& u = battle_->units()[i];
+      const ember::BattleUnit& u = battle_->units()[i];
       if (u.side != "player" || u.summoned || i >= startLevel_.size() || absent_.contains(u.id)) continue;
       const auto [fromLevel, fromXp] = startLevel_[i];
       const float rowH = 4.6f * rem;
@@ -9700,39 +9700,39 @@ class MapStage final : public Stage {
   // GameApp startBattle's `seated` and `led` on the scene: companions not in the party leave; a leader other than the
   // authored walker takes its place with its own art (the leader seated on this map, else its catalog entry, idle).
   void arrangeScene() {
-    std::vector<e2::SceneUnit>& units = scene_->units;
-    std::erase_if(units, [&](const e2::SceneUnit& u) { return u.side == "neutral" && options_.absentNeutrals.contains(u.name); });
+    std::vector<ember::SceneUnit>& units = scene_->units;
+    std::erase_if(units, [&](const ember::SceneUnit& u) { return u.side == "neutral" && options_.absentNeutrals.contains(u.name); });
     if (options_.leader.empty()) return;
-    const auto walker = std::find_if(units.begin(), units.end(), [](const e2::SceneUnit& u) { return u.side == "player"; });
+    const auto walker = std::find_if(units.begin(), units.end(), [](const ember::SceneUnit& u) { return u.side == "player"; });
     if (walker == units.end() || walker->name == options_.leader) return;
     const size_t w = static_cast<size_t>(walker - units.begin());
-    const auto seated = std::find_if(units.begin(), units.end(), [&](const e2::SceneUnit& u) { return u.side == "neutral" && u.name == options_.leader; });
-    e2::SceneUnit led = units[w];
+    const auto seated = std::find_if(units.begin(), units.end(), [&](const ember::SceneUnit& u) { return u.side == "neutral" && u.name == options_.leader; });
+    ember::SceneUnit led = units[w];
     if (seated != units.end() && kaelTakesSeat(units[w].name)) {
       // The Inn (the user, 2026-10-24, with the Inn's secret word): the leader walks with its seated art, and the authored walker
       // (Kael) sits in the leader's seat with his own art, to be talked to (findConversations, content/inn-kael-dialog.json).
-      auto copyArt = [](e2::SceneUnit& to, const e2::SceneUnit& from) {
+      auto copyArt = [](ember::SceneUnit& to, const ember::SceneUnit& from) {
         to.classId = from.classId, to.key = from.key, to.sprite = from.sprite, to.set = from.set, to.clip = from.clip, to.facing = from.facing;
         to.mirror = from.mirror, to.boxW = from.boxW, to.boxH = from.boxH, to.foot = from.foot, to.natW = from.natW, to.natH = from.natH;
         to.frames = from.frames, to.pace = from.pace;
       };
-      const e2::SceneUnit walker0 = units[w], seat0 = *seated;
+      const ember::SceneUnit walker0 = units[w], seat0 = *seated;
       copyArt(units[w], seat0), units[w].name = options_.leader;
       copyArt(*seated, walker0), seated->name = walker0.name;
       logInfo("party: {} leads (walks in {}'s place), {} sits in {}'s seat", options_.leader, walker0.name, walker0.name, options_.leader);
       return;
     }
     if (seated != units.end()) {
-      const e2::SceneUnit& s = *seated;
+      const ember::SceneUnit& s = *seated;
       led.classId = s.classId, led.key = s.key, led.sprite = s.sprite, led.set = s.set, led.clip = s.clip, led.facing = s.facing, led.mirror = s.mirror;
       led.boxW = s.boxW, led.boxH = s.boxH, led.foot = s.foot, led.natW = s.natW, led.natH = s.natH, led.frames = s.frames, led.pace = s.pace;
     } else {
-      const std::optional<std::vector<e2::Hero>> catalog = options_.heroes.empty() ? std::nullopt : e2::loadHeroes(options_.heroes);
-      const e2::Hero* entry = nullptr;
+      const std::optional<std::vector<ember::Hero>> catalog = options_.heroes.empty() ? std::nullopt : ember::loadHeroes(options_.heroes);
+      const ember::Hero* entry = nullptr;
       if (catalog)
-        for (const e2::Hero& h : *catalog)
+        for (const ember::Hero& h : *catalog)
           if (h.key == lowerAscii(options_.leader)) entry = &h;
-      const e2::HeroPose* idle = entry ? entry->find(kIdle) : nullptr;
+      const ember::HeroPose* idle = entry ? entry->find(kIdle) : nullptr;
       if (!idle) {
         logWarn("party: leader {} has no art here (not seated, not in the catalog): {} walks", options_.leader, led.name);
         return;
@@ -9742,13 +9742,13 @@ class MapStage final : public Stage {
     }
     led.name = options_.leader;
     units[w] = std::move(led);
-    std::erase_if(units, [&](const e2::SceneUnit& u) { return u.side == "neutral" && u.name == options_.leader; });
+    std::erase_if(units, [&](const ember::SceneUnit& u) { return u.side == "neutral" && u.name == options_.leader; });
     logInfo("party: {} leads (walks in the authored walker's place)", options_.leader);
   }
   // The same on the battle's own units (their sounds follow them).
   void arrangeBattle() {
-    std::vector<e2::BattleUnit>& units = battle_->units();
-    while (unitSounds_.size() < units.size()) unitSounds_.push_back(e2::Json::object());
+    std::vector<ember::BattleUnit>& units = battle_->units();
+    while (unitSounds_.size() < units.size()) unitSounds_.push_back(ember::Json::object());
     auto drop = [&](size_t b) {
       units.erase(units.begin() + static_cast<std::ptrdiff_t>(b));
       unitSounds_.erase(unitSounds_.begin() + static_cast<std::ptrdiff_t>(b));
@@ -9756,17 +9756,17 @@ class MapStage final : public Stage {
     for (size_t b = units.size(); b-- > 0;)
       if (units[b].side == "neutral" && options_.absentNeutrals.contains(units[b].name)) drop(b);
     if (options_.leader.empty()) return;
-    const auto walker = std::find_if(units.begin(), units.end(), [](const e2::BattleUnit& u) { return u.side == "player" && !u.summoned; });
+    const auto walker = std::find_if(units.begin(), units.end(), [](const ember::BattleUnit& u) { return u.side == "player" && !u.summoned; });
     if (walker == units.end() || walker->name == options_.leader) return;
     const size_t w = static_cast<size_t>(walker - units.begin());
-    const auto seated = std::find_if(units.begin(), units.end(), [&](const e2::BattleUnit& u) { return u.side == "neutral" && u.name == options_.leader; });
+    const auto seated = std::find_if(units.begin(), units.end(), [&](const ember::BattleUnit& u) { return u.side == "neutral" && u.name == options_.leader; });
     if (seated == units.end()) {
       // Not seated on this map: the walker carries the leader's name (its art from the catalog, arrangeScene).
-      if (std::any_of(scene_->units.begin(), scene_->units.end(), [&](const e2::SceneUnit& u) { return u.side == "player" && u.name == options_.leader; }))
+      if (std::any_of(scene_->units.begin(), scene_->units.end(), [&](const ember::SceneUnit& u) { return u.side == "player" && u.name == options_.leader; }))
         units[w].name = options_.leader;
       return;
     }
-    e2::BattleUnit& s = *seated;
+    ember::BattleUnit& s = *seated;
     const int seatX = s.x, seatY = s.y;
     const bool kaelSits = kaelTakesSeat(units[w].name);
     s.side = "player", s.x = units[w].x, s.y = units[w].y;
@@ -9779,20 +9779,20 @@ class MapStage final : public Stage {
     }
     drop(from);
   }
-  // Each NPC's conversation: the map's neutral spawn of that name on that hex (Engine2 handleCell reads the unit's own).
+  // Each NPC's conversation: the map's neutral spawn of that name on that hex (Ember handleCell reads the unit's own).
   void findConversations() {
     npcDialog_.clear();
     for (size_t b = 0; b < battle_->units().size(); ++b) {
-      const e2::BattleUnit& u = battle_->units()[b];
+      const ember::BattleUnit& u = battle_->units()[b];
       if (u.side != "neutral") continue;
-      for (const e2::MapSpawn& s : board_->draft().neutralSpawns)
+      for (const ember::MapSpawn& s : board_->draft().neutralSpawns)
         if (s.name == u.name && s.x == u.x && s.y == u.y && s.dialog.is_object()) {
           npcDialog_[b] = s.dialog;
           break;
         }
       if (!npcDialog_.contains(b) && u.name == "Kael" && kaelTakesSeat(u.name)) {  // Kael seated in the Inn: his own tree
         std::ifstream in("content/inn-kael-dialog.json", std::ios::binary);
-        if (e2::Json tree = in ? e2::Json::parse(in, nullptr, false) : e2::Json(); tree.is_object() && tree.contains("lines")) npcDialog_[b] = tree;
+        if (ember::Json tree = in ? ember::Json::parse(in, nullptr, false) : ember::Json(); tree.is_object() && tree.contains("lines")) npcDialog_[b] = tree;
       }
     }
     if (!npcDialog_.empty()) logInfo("conversations: {} NPCs talk", npcDialog_.size());
@@ -9803,32 +9803,32 @@ class MapStage final : public Stage {
   // not room enough.
   void arriveAtConnector() {
     const auto& exits = battle_->exits();
-    const auto back = std::find_if(exits.begin(), exits.end(), [&](const e2::Battle::Exit& x) {
+    const auto back = std::find_if(exits.begin(), exits.end(), [&](const ember::Battle::Exit& x) {
       return x.kind == "connector" && x.targetMapId == options_.arrivedFrom && !x.cells.empty();
     });
     if (back == exits.end()) return logWarn("arrival: no connector back to {} on this map", options_.arrivedFrom);
     std::vector<size_t> party;
     std::set<std::pair<int, int>> waypoints, bodies;
     for (size_t b = 0; b < battle_->units().size(); ++b) {
-      const e2::BattleUnit& u = battle_->units()[b];
+      const ember::BattleUnit& u = battle_->units()[b];
       if (u.side == "player") {
         if (!u.summoned && !absent_.contains(u.id)) party.push_back(b);
       } else {
-        for (const e2::BattleHex& h : e2::Battle::footprint(u, u.x, u.y)) bodies.insert({h.x, h.y});
+        for (const ember::BattleHex& h : ember::Battle::footprint(u, u.x, u.y)) bodies.insert({h.x, h.y});
       }
     }
-    for (const e2::Battle::Exit& x : exits)
-      for (const e2::BattleHex& c : x.cells) waypoints.insert({c.x, c.y});
+    for (const ember::Battle::Exit& x : exits)
+      for (const ember::BattleHex& c : x.cells) waypoints.insert({c.x, c.y});
     auto walkable = [&](int x, int y) {
       if (x < 0 || y < 0 || x >= battle_->cols() || y >= battle_->rows()) return false;
-      const e2::BattleCell& c = battle_->cell(x, y);
+      const ember::BattleCell& c = battle_->cell(x, y);
       const auto t = board_->data().terrain.find(c.terrain);  // TERRAIN[terrain].passable: the tile itself, decorations aside
       return t != board_->data().terrain.end() && t->second.passable && !c.blocked;
     };
-    std::vector<e2::BattleHex> cells, queue{{back->x, back->y}};
+    std::vector<ember::BattleHex> cells, queue{{back->x, back->y}};
     std::set<std::pair<int, int>> seen{{back->x, back->y}};
     for (size_t q = 0; q < queue.size() && cells.size() < party.size(); ++q)
-      for (const e2::BattleHex& n : e2::Battle::neighbors(queue[q].x, queue[q].y)) {
+      for (const ember::BattleHex& n : ember::Battle::neighbors(queue[q].x, queue[q].y)) {
         if (seen.contains({n.x, n.y}) || !walkable(n.x, n.y)) continue;
         seen.insert({n.x, n.y});
         queue.push_back(n);
@@ -9838,10 +9838,10 @@ class MapStage final : public Stage {
     // applyPartyFormation on those cells: the hero first in the formation takes the cell nearest an enemy, the last the farthest
     if (options_.formation) {
       std::stable_sort(party.begin(), party.end(), [&](size_t a, size_t b) { return formationRank(battle_->units()[a].name) < formationRank(battle_->units()[b].name); });
-      std::stable_sort(cells.begin(), cells.end(), [&](const e2::BattleHex& a, const e2::BattleHex& b) { return enemyDistance(a) < enemyDistance(b); });
+      std::stable_sort(cells.begin(), cells.end(), [&](const ember::BattleHex& a, const ember::BattleHex& b) { return enemyDistance(a) < enemyDistance(b); });
     }
     for (size_t k = 0; k < party.size(); ++k) {
-      e2::BattleUnit& u = battle_->units()[party[k]];
+      ember::BattleUnit& u = battle_->units()[party[k]];
       u.x = cells[k].x, u.y = cells[k].y;
       if (const int ui = sceneUnitOf(static_cast<int>(party[k])); ui >= 0) unitPos_[static_cast<size_t>(ui)] = anchorWorld(u, cells[k]), unitMoved_[static_cast<size_t>(ui)] = 1;
     }
@@ -9850,15 +9850,15 @@ class MapStage final : public Stage {
   // A click on an NPC who talks: in free roam the leader walks to the free hex beside it its reach gets to cheapest, then they
   // talk; already beside it (or nowhere free to stand) they talk from where the leader is.
   void talkTo(size_t npc) {
-    const e2::BattleUnit& n = battle_->units()[npc];
+    const ember::BattleUnit& n = battle_->units()[npc];
     if (battle_->roaming() && myTurn()) {
-      const e2::BattleUnit& me = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
-      const std::vector<e2::BattleHex> around = e2::Battle::neighbors(n.x, n.y);
-      if (std::none_of(around.begin(), around.end(), [&](const e2::BattleHex& h) { return h.x == me.x && h.y == me.y; })) {
-        std::optional<e2::BattleHex> best;
+      const ember::BattleUnit& me = battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(selected_)])];
+      const std::vector<ember::BattleHex> around = ember::Battle::neighbors(n.x, n.y);
+      if (std::none_of(around.begin(), around.end(), [&](const ember::BattleHex& h) { return h.x == me.x && h.y == me.y; })) {
+        std::optional<ember::BattleHex> best;
         double bestCost = 1e18;
-        for (const e2::BattleHex& h : around)
-          for (const e2::ReachCell& c : reach_)
+        for (const ember::BattleHex& h : around)
+          for (const ember::ReachCell& c : reach_)
             if (c.x == h.x && c.y == h.y && c.cost < bestCost && battle_->unitAt(h.x, h.y) < 0) best = h, bestCost = c.cost;
         if (best) {
           walkTo(static_cast<size_t>(selected_), *best);
@@ -9886,7 +9886,7 @@ class MapStage final : public Stage {
     // Every other hero of the party (Isolde, any later one) gets a cell too: left out, it kept the file's hex while the formation
     // set another hero down on it (the user, 2026-10-25: "dois personagens iniciam no mesmo hex").
     if (battle_)
-      for (const e2::BattleUnit& u : battle_->units())
+      for (const ember::BattleUnit& u : battle_->units())
         if (u.side == "player" && !u.summoned) seat(u.name);
     return cells;
   }
@@ -9895,10 +9895,10 @@ class MapStage final : public Stage {
     return static_cast<size_t>(std::find(cells.begin(), cells.end(), hero) - cells.begin());
   }
   // Hexes to the nearest enemy still standing (a board-wide number without one).
-  int enemyDistance(e2::BattleHex at) const {
+  int enemyDistance(ember::BattleHex at) const {
     int best = 1 << 20;
-    for (const e2::BattleUnit& u : battle_->units())
-      if (u.side == "enemy" && u.alive) best = std::min(best, e2::Battle::distance(at, {u.x, u.y}));
+    for (const ember::BattleUnit& u : battle_->units())
+      if (u.side == "enemy" && u.alive) best = std::min(best, ember::Battle::distance(at, {u.x, u.y}));
     return best;
   }
   // The party set down by its Formação inicial at the map's entry (the first party spawn the editor placed: the map only gives
@@ -9906,14 +9906,14 @@ class MapStage final : public Stage {
   // board, a wall, water, a decoration, a body, a waypoint, or cut off from the entry) gives way to the free cell nearest to it and
   // to the entry, so a map too tight for the whole board keeps the group together.
   void placeFormation() {
-    std::vector<e2::BattleUnit>& units = battle_->units();
+    std::vector<ember::BattleUnit>& units = battle_->units();
     std::map<std::string, size_t> heroes;
     for (size_t b = 0; b < units.size(); ++b)
       if (units[b].side == "player" && !units[b].summoned && units[b].alive) heroes[units[b].name] = b;
     if (heroes.empty()) return;
-    const std::vector<e2::MapSpawn>& spawns = board_->draft().playerSpawns;
+    const std::vector<ember::MapSpawn>& spawns = board_->draft().playerSpawns;
     // A party the map splits on purpose (a scenario: its spawns fall into separate groups, none within 4 hexes of another group,
-    // Engine2's own "spread out" distance) stays split: every hero where the map puts it.
+    // Ember's own "spread out" distance) stays split: every hero where the map puts it.
     {
       std::vector<int> group(spawns.size(), -1);
       int groups = 0;
@@ -9925,28 +9925,28 @@ class MapStage final : public Stage {
           const size_t a = stack.back();
           stack.pop_back();
           for (size_t b = 0; b < spawns.size(); ++b)
-            if (group[b] < 0 && e2::Battle::distance({spawns[a].x, spawns[a].y}, {spawns[b].x, spawns[b].y}) <= 4) group[b] = groups, stack.push_back(b);
+            if (group[b] < 0 && ember::Battle::distance({spawns[a].x, spawns[a].y}, {spawns[b].x, spawns[b].y}) <= 4) group[b] = groups, stack.push_back(b);
         }
         ++groups;
       }
       if (groups > 1) return logInfo("formation: the map splits the party into {} groups: every hero keeps the map's place", groups);
     }
-    e2::BattleHex entry = spawns.empty() ? e2::BattleHex{units[heroes.begin()->second].x, units[heroes.begin()->second].y} : e2::BattleHex{spawns.front().x, spawns.front().y};
+    ember::BattleHex entry = spawns.empty() ? ember::BattleHex{units[heroes.begin()->second].x, units[heroes.begin()->second].y} : ember::BattleHex{spawns.front().x, spawns.front().y};
     // free ground, and what stands on it
     std::set<std::pair<int, int>> blocked;
-    for (const e2::BattleUnit& u : units)
+    for (const ember::BattleUnit& u : units)
       if (u.side != "player" && u.alive)
-        for (const e2::BattleHex& h : e2::Battle::footprint(u, u.x, u.y)) blocked.insert({h.x, h.y});
-    for (const e2::Battle::Exit& x : battle_->exits())
-      for (const e2::BattleHex& c : x.cells) blocked.insert({c.x, c.y});
+        for (const ember::BattleHex& h : ember::Battle::footprint(u, u.x, u.y)) blocked.insert({h.x, h.y});
+    for (const ember::Battle::Exit& x : battle_->exits())
+      for (const ember::BattleHex& c : x.cells) blocked.insert({c.x, c.y});
     auto ground = [&](int x, int y) { return battle_->inBounds(x, y) && battle_->cell(x, y).passable && !battle_->cell(x, y).blocked; };
     // the ground the entry reaches, with its walking distance from the entry (from the nearest ground when the entry is not)
     std::map<std::pair<int, int>, int> reach;
     {
-      std::vector<e2::BattleHex> queue{entry};
+      std::vector<ember::BattleHex> queue{entry};
       std::set<std::pair<int, int>> seen{{entry.x, entry.y}};
       for (size_t q = 0; q < queue.size() && !ground(entry.x, entry.y); ++q)
-        for (const e2::BattleHex& n : e2::Battle::neighbors(queue[q].x, queue[q].y)) {
+        for (const ember::BattleHex& n : ember::Battle::neighbors(queue[q].x, queue[q].y)) {
           if (!battle_->inBounds(n.x, n.y) || !seen.insert({n.x, n.y}).second) continue;
           if (ground(n.x, n.y)) {
             entry = n;
@@ -9958,7 +9958,7 @@ class MapStage final : public Stage {
       queue = {entry};
       reach[{entry.x, entry.y}] = 0;
       for (size_t q = 0; q < queue.size(); ++q)
-        for (const e2::BattleHex& n : e2::Battle::neighbors(queue[q].x, queue[q].y))
+        for (const ember::BattleHex& n : ember::Battle::neighbors(queue[q].x, queue[q].y))
           if (ground(n.x, n.y) && !reach.contains({n.x, n.y})) reach[{n.x, n.y}] = reach[{queue[q].x, queue[q].y}] + 1, queue.push_back(n);
     }
     // the board's cells as axial offsets (pointy-top rows, front = up), turned by k sixths to face the nearest enemy
@@ -9976,11 +9976,11 @@ class MapStage final : public Stage {
       return a;
     };
     auto pixel = [](double q, double r) { return glm::dvec2(q + r * 0.5, r * std::sqrt(3.0) * 0.5); };
-    auto offsetPixel = [](e2::BattleHex h) { return glm::dvec2(h.x + (h.y & 1) * 0.5, h.y * std::sqrt(3.0) * 0.5); };
+    auto offsetPixel = [](ember::BattleHex h) { return glm::dvec2(h.x + (h.y & 1) * 0.5, h.y * std::sqrt(3.0) * 0.5); };
     int facing = 0;
-    std::optional<e2::BattleHex> foe;
-    for (const e2::BattleUnit& u : units)
-      if (u.side == "enemy" && u.alive && (!foe || e2::Battle::distance(entry, {u.x, u.y}) < e2::Battle::distance(entry, *foe))) foe = e2::BattleHex{u.x, u.y};
+    std::optional<ember::BattleHex> foe;
+    for (const ember::BattleUnit& u : units)
+      if (u.side == "enemy" && u.alive && (!foe || ember::Battle::distance(entry, {u.x, u.y}) < ember::Battle::distance(entry, *foe))) foe = ember::BattleHex{u.x, u.y};
     if (foe) {
       const glm::dvec2 want = offsetPixel(*foe) - offsetPixel(entry);
       double best = -1e18;
@@ -9999,7 +9999,7 @@ class MapStage final : public Stage {
       if (it == heroes.end()) continue;
       const auto [dq, dr] = turn(slotAxial(i), facing);
       const int r = r0 + dr, q = q0 + dq;
-      const e2::BattleHex want{q + (r - (r & 1)) / 2, r};
+      const ember::BattleHex want{q + (r - (r & 1)) / 2, r};
       auto free = [&](const std::pair<int, int>& c) { return reach.contains(c) && !blocked.contains(c) && !taken.contains(c); };
       std::pair<int, int> at{want.x, want.y};
       if (!free(at)) {
@@ -10007,13 +10007,13 @@ class MapStage final : public Stage {
         int bestCost = 1 << 30;
         for (const auto& [c, d] : reach)
           if (free(c)) {
-            const int cost = e2::Battle::distance({c.first, c.second}, want) + d;
+            const int cost = ember::Battle::distance({c.first, c.second}, want) + d;
             if (cost < bestCost) bestCost = cost, at = c;
           }
         if (bestCost == (1 << 30)) continue;  // nowhere left: the file's place
       }
       taken.insert(at);
-      e2::BattleUnit& u = units[it->second];
+      ember::BattleUnit& u = units[it->second];
       u.x = at.first, u.y = at.second;
       if (const int ui = sceneUnitOf(static_cast<int>(it->second)); ui >= 0)
         unitPos_[static_cast<size_t>(ui)] = anchorWorld(u, {u.x, u.y}), unitMoved_[static_cast<size_t>(ui)] = 1;
@@ -10023,12 +10023,12 @@ class MapStage final : public Stage {
   }
   // wispCrossing.ts routeWispCrossing: on the Wisp Forest crossing every dungeon exit and every connector to the lair leads to the
   // carnivorous plant's lair (a floor connector up) until the crossing is finished, then outside (a dungeon exit, two hexes wide
-  // as Engine2's dungeon-exit decoration is).
+  // as Ember's dungeon-exit decoration is).
   static constexpr const char* kWispCrossing = "wisp-forest-crossing";
   static constexpr const char* kWispBoss = "wisp-forest-crossing-boss";
   void routeWispCrossing() {
     if (!board_ || board_->draft().id != kWispCrossing) return;
-    for (e2::Battle::Exit& x : battle_->exits()) {
+    for (ember::Battle::Exit& x : battle_->exits()) {
       if (x.kind != "dungeon" && x.targetMapId != kWispBoss) continue;
       x.returnConnector = false;
       if (options_.wispCrossingDone) {
@@ -10040,10 +10040,10 @@ class MapStage final : public Stage {
       }
     }
   }
-  // The walkable Inn's two floors (Engine2's result screen names their stairs "Subir para o Segundo andar" / "Descer para o
+  // The walkable Inn's two floors (Ember's result screen names their stairs "Subir para o Segundo andar" / "Descer para o
   // Primeiro andar"); any other connector goes the way floorConnectorDirection says.
   bool innFloor() const { return board_ && board_->draft().id.rfind("estalagem", 0) == 0; }
-  bool connectorUp(const e2::Battle::Exit& x) const {
+  bool connectorUp(const ember::Battle::Exit& x) const {
     if (innFloor() && x.connectorDirection.empty()) return !x.returnConnector;
     if (!x.connectorDirection.empty()) return x.connectorDirection == "up";
     if (x.id == "stone-stairs-up-001") return true;
@@ -10058,19 +10058,19 @@ class MapStage final : public Stage {
         break;
       }
     if (hero_ < 0) return;
-    const e2::SceneUnit& h = scene_->units[static_cast<size_t>(hero_)];
+    const ember::SceneUnit& h = scene_->units[static_cast<size_t>(hero_)];
     heroAt_ = {h.x, groundOf(h.groundSmooth, h.groundHard), h.z};
     if (!options_.scout) return;
-    const auto [hc, hr] = e2::hexAt(board_->layout(), h.x, h.z);
-    e2::HexPoint goal{hc, hr};
+    const auto [hc, hr] = ember::hexAt(board_->layout(), h.x, h.z);
+    ember::HexPoint goal{hc, hr};
     int best = -1;
-    for (const e2::SceneUnit& u : scene_->units) {
+    for (const ember::SceneUnit& u : scene_->units) {
       if (u.side != "enemy") continue;
-      const auto [c, r] = e2::hexAt(board_->layout(), u.x, u.z);
-      const int d = e2::hexDistance({hc, hr}, {c, r});
+      const auto [c, r] = ember::hexAt(board_->layout(), u.x, u.z);
+      const int d = ember::hexDistance({hc, hr}, {c, r});
       if (d > best) best = d, goal = {c, r};
     }
-    path_ = e2::hexLine({hc, hr}, goal);
+    path_ = ember::hexLine({hc, hr}, goal);
     logInfo("scout: {} walks {} hexes from ({}, {}) to ({}, {}) and back", h.name, path_.size() - 1, hc, hr, goal.c, goal.r);
   }
 
@@ -10078,16 +10078,16 @@ class MapStage final : public Stage {
   // kBlockHeight tall and kBlockWidth wide along their width; 3D models at least kBlockWidth across. (Walls and doors are not imported yet: they block nothing.)
   // A card's width is its drawn art, not its image box (the user, 2026-10-18: trees left holes everywhere): the box is
   // 1.86 wide for a tree whose trunk fills a third of it, so every tree, stump and bush walled off three hexes.
-  // content/engine2/card-sight.json (tools/scripts/engine2/card_sight.py) = the opaque share of each image's width.
+  // content/data/card-sight.json (tools/scripts/data/card_sight.py) = the opaque share of each image's width.
   static float cardArtShare(const std::string& image) {
     static const std::unordered_map<std::string, float> shares = [] {
       std::unordered_map<std::string, float> out;
-      std::ifstream in("content/engine2/card-sight.json");
+      std::ifstream in("content/data/card-sight.json");
       const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
       if (j.is_object())
         for (const auto& [key, value] : j.items())
           if (value.is_number()) out[key] = value.get<float>();
-      if (out.empty()) logError("fog of war: content/engine2/card-sight.json missing: cards block by their whole image box");
+      if (out.empty()) logError("fog of war: content/data/card-sight.json missing: cards block by their whole image box");
       return out;
     }();
     const auto it = shares.find(image);
@@ -10098,23 +10098,23 @@ class MapStage final : public Stage {
     for (const ArchPiece& a : arch_)
       if (a.blocks)
         for (const auto& [x, z] : a.footprint) fog_->block(x, z, a.top);
-    for (const e2::SceneModel& m : scene_->models) {
+    for (const ember::SceneModel& m : scene_->models) {
       std::string asset = m.file.substr(std::string("/game/").size());
       asset = "meshes/" + asset.substr(0, asset.size() - 4) + ".mesh";
       const MeshHeader* h = meshes_.header(modelMeshes_.at(asset));
       if (!h) continue;
       const float k = m.height / std::max(h->boundsMax[1] - h->boundsMin[1], 1e-4f);
       const float hx = (h->boundsMax[0] - h->boundsMin[0]) * 0.5f * k, hz = (h->boundsMax[2] - h->boundsMin[2]) * 0.5f * k;
-      if (2.0f * std::max(hx, hz) < e2::kBlockWidth) continue;  // a thin model (a post) does not block
+      if (2.0f * std::max(hx, hz) < ember::kBlockWidth) continue;  // a thin model (a post) does not block
       const float c = std::cos(m.rotY), sn = std::sin(m.rotY);
       // The footprint (rotated box, centred on the anchor as placeModels centres it), sampled every 0.25.
       for (float a = -hx; a <= hx; a += 0.25f)
         for (float b = -hz; b <= hz; b += 0.25f) fog_->block(m.x + c * a + sn * b, m.z - sn * a + c * b, m.height);
       fog_->block(m.x, m.z, m.height);
     }
-    for (const e2::SceneCard& d : scene_->cards) {
+    for (const ember::SceneCard& d : scene_->cards) {
       const float drawn = d.w * cardArtShare(d.image);
-      if (d.onFloor || d.h < e2::kBlockHeight || drawn < e2::kBlockWidth) continue;  // thin props do not block
+      if (d.onFloor || d.h < ember::kBlockHeight || drawn < ember::kBlockWidth) continue;  // thin props do not block
       const float yaw = d.lockedYaw.value_or(0.0f);
       const glm::vec2 right{std::cos(yaw), -std::sin(yaw)};
       const float half = drawn * 0.5f;
@@ -10134,14 +10134,14 @@ class MapStage final : public Stage {
       const float stepTime = 0.6f, s = time / stepTime;
       const int step = static_cast<int>(s);
       const int at = walkAt(step), next = walkAt(step + 1);
-      const e2::HexLayout& L = board_->layout();
+      const ember::HexLayout& L = board_->layout();
       const float f = s - static_cast<float>(step);
-      const glm::vec2 a{static_cast<float>(e2::hexX(L, path_[at].c, path_[at].r)), static_cast<float>(e2::hexZ(L, path_[at].r))};
-      const glm::vec2 b{static_cast<float>(e2::hexX(L, path_[next].c, path_[next].r)), static_cast<float>(e2::hexZ(L, path_[next].r))};
+      const glm::vec2 a{static_cast<float>(ember::hexX(L, path_[at].c, path_[at].r)), static_cast<float>(ember::hexZ(L, path_[at].r))};
+      const glm::vec2 b{static_cast<float>(ember::hexX(L, path_[next].c, path_[next].r)), static_cast<float>(ember::hexZ(L, path_[next].r))};
       const glm::vec2 p = glm::mix(a, b, f);
-      heroAt_ = {p.x, static_cast<float>(e2::groundHeightAt(*board_, look_, p.x, p.y)), p.y};
+      heroAt_ = {p.x, static_cast<float>(ember::groundHeightAt(*board_, look_, p.x, p.y)), p.y};
       // The scout stands on the hex its feet are over.
-      const auto [hc, hr] = e2::hexAt(L, p.x, p.y);
+      const auto [hc, hr] = ember::hexAt(L, p.x, p.y);
       heroHex_ = {hc, hr};
     }
     if (!fog_ || !scene_ || !modelsPlaced_) return;
@@ -10152,16 +10152,16 @@ class MapStage final : public Stage {
       changed = true;
     }
     // The party's eyes: each living player unit's hex (the scout's where it is now).
-    std::vector<e2::HexPoint> party;
+    std::vector<ember::HexPoint> party;
     for (size_t i = 0; i < scene_->units.size(); ++i) {
-      const e2::SceneUnit& u = scene_->units[i];
+      const ember::SceneUnit& u = scene_->units[i];
       if (u.side != "player") continue;
       if (static_cast<int>(i) == hero_ && path_.size() > 1) {
         party.push_back(heroHex_);
         continue;
       }
       if (battle_ && unitBattle_[i] >= 0 && !battle_->units()[static_cast<size_t>(unitBattle_[i])].alive) continue;
-      const auto [c, r] = e2::hexAt(board_->layout(), unitPos_[i].x, unitPos_[i].y);
+      const auto [c, r] = ember::hexAt(board_->layout(), unitPos_[i].x, unitPos_[i].y);
       party.push_back({c, r});
     }
     if (changed || party != lastParty_) {
@@ -10170,7 +10170,7 @@ class MapStage final : public Stage {
         replayed_ = true;
         const int steps = static_cast<int>(time / 0.6f);
         for (int s = 0; s < steps; ++s) {
-          std::vector<e2::HexPoint> eyes = party;
+          std::vector<ember::HexPoint> eyes = party;
           eyes[0] = path_[walkAt(s)];  // the hero is the first player unit
           fogQueue_.push_back(std::move(eyes));
         }
@@ -10187,13 +10187,13 @@ class MapStage final : public Stage {
       fogTexels_.swap(fogNextTexels_);
       ++maskVersion_;
       fogReady_ = true;
-      const e2::HexLayout& L = board_->layout();
+      const ember::HexLayout& L = board_->layout();
       fogStates_.resize(static_cast<size_t>(L.cols * L.rows));
       fogCounts_ = {0, 0, 0};
       for (int r = 0; r < L.rows; ++r)
         for (int c = 0; c < L.cols; ++c) {
           const uint8_t s = fog_->state(c, r);
-          fogStates_[static_cast<size_t>(e2::indexOf(L, c, r))] = s;
+          fogStates_[static_cast<size_t>(ember::indexOf(L, c, r))] = s;
           ++fogCounts_[s];
         }
       fogLit_ = fog_->displayStates(fogJobEyes_.back());  // what the mask paints lit: what stands there is drawn
@@ -10227,19 +10227,19 @@ class MapStage final : public Stage {
     if (!sightLogged_) {
       sightLogged_ = true;
       // How much the line of sight hides from each party unit where it starts.
-      const e2::HexLayout& L = board_->layout();
-      for (const e2::SceneUnit& u : scene_->units) {
+      const ember::HexLayout& L = board_->layout();
+      for (const ember::SceneUnit& u : scene_->units) {
         if (u.side != "player") continue;
-        const auto [c, r] = e2::hexAt(L, u.x, u.z);
+        const auto [c, r] = ember::hexAt(L, u.x, u.z);
         int inRange = 0, seen = 0;
         for (int y = 0; y < L.rows; ++y)
           for (int x = 0; x < L.cols; ++x)
-            if (e2::hexDistance({c, r}, {x, y}) <= e2::kSightRadius) ++inRange, seen += fog_->sightReaches({c, r}, {x, y}) ? 1 : 0;
+            if (ember::hexDistance({c, r}, {x, y}) <= ember::kSightRadius) ++inRange, seen += fog_->sightReaches({c, r}, {x, y}) ? 1 : 0;
         logInfo("sight: {} at ({}, {}) sees {} of the {} hexes in range ({} hidden by ground or what stands on it)", u.name, c, r, seen,
                 inRange, inRange - seen);
       }
     }
-    for (const std::vector<e2::HexPoint>& eyes : fogJobEyes_) relight(eyes);
+    for (const std::vector<ember::HexPoint>& eyes : fogJobEyes_) relight(eyes);
     fogNext_ = fog_->paint(*board_, fogJobEyes_.back());
     Renderer::fogTexels(fogNext_, fogNextTexels_);  // the GPU's half floats, so the main thread only copies
     fogJobMs_ = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count();
@@ -10248,25 +10248,25 @@ class MapStage final : public Stage {
   // Holes: groups of never-seen hexes enclosed by explored ground (touching neither the board's edge nor the
   // big never-seen area). Each shows as a black pit in the middle of the map.
   void countHoles(float time) {
-    const e2::HexLayout& L = board_->layout();
+    const ember::HexLayout& L = board_->layout();
     std::vector<int> group(static_cast<size_t>(L.cols * L.rows), -1);
     std::vector<std::pair<int, int>> holeList;
     holes_ = 0;
     holeHexes_ = 0;
     for (int r = 0; r < L.rows; ++r)
       for (int c = 0; c < L.cols; ++c) {
-        if (fog_->state(c, r) != e2::kFogUnseen || group[static_cast<size_t>(e2::indexOf(L, c, r))] >= 0) continue;
+        if (fog_->state(c, r) != ember::kFogUnseen || group[static_cast<size_t>(ember::indexOf(L, c, r))] >= 0) continue;
         std::vector<std::pair<int, int>> stack{{c, r}}, members;
-        group[static_cast<size_t>(e2::indexOf(L, c, r))] = 1;
+        group[static_cast<size_t>(ember::indexOf(L, c, r))] = 1;
         bool edge = false;
         while (!stack.empty()) {
           const auto [x, y] = stack.back();
           stack.pop_back();
           members.push_back({x, y});
           if (x == 0 || y == 0 || x == L.cols - 1 || y == L.rows - 1) edge = true;
-          for (const auto& [nx, ny] : e2::neighbors(L, x, y)) {
-            int& g = group[static_cast<size_t>(e2::indexOf(L, nx, ny))];
-            if (g < 0 && fog_->state(nx, ny) == e2::kFogUnseen) g = 1, stack.push_back({nx, ny});
+          for (const auto& [nx, ny] : ember::neighbors(L, x, y)) {
+            int& g = group[static_cast<size_t>(ember::indexOf(L, nx, ny))];
+            if (g < 0 && fog_->state(nx, ny) == ember::kFogUnseen) g = 1, stack.push_back({nx, ny});
           }
         }
         if (!edge && members.size() <= 12) {
@@ -10296,13 +10296,13 @@ class MapStage final : public Stage {
     std::fclose(file);
   }
 
-  void relight(const std::vector<e2::HexPoint>& party) {
-    std::vector<e2::Eye> eyes;
-    for (const e2::HexPoint& p : party) eyes.push_back({p, e2::kSightRadius});
+  void relight(const std::vector<ember::HexPoint>& party) {
+    std::vector<ember::Eye> eyes;
+    for (const ember::HexPoint& p : party) eyes.push_back({p, ember::kSightRadius});
     fog_->relight(eyes);
   }
 
-  // How a looping pose repeats, read off Engine2's 6 s sample of its frame pacing (ticks of 1/240 s). The cycle is
+  // How a looping pose repeats, read off Ember's 6 s sample of its frame pacing (ticks of 1/240 s). The cycle is
   // rarely a whole number of ticks (Neera's idle: 36 frames at 10.204 fps = 846.7) and can be longer than the sample
   // (Malrec's idle bounces over 6.5 s), so it is measured from the runs of frames; wrapping at the sample's end cut
   // those loops short every 6 s (Neera jumped from frame 25 back to 0).
@@ -10368,20 +10368,20 @@ class MapStage final : public Stage {
   SpellEffects spellFx_{sprites_};  // spell and strike visuals (the fx clips)
   std::map<int, int> zoneFx_;       // the rules' zone id -> its standing effect (SpellEffects::zoneStart)
   struct IceFx {
-    e2::BattleHex center;
+    ember::BattleHex center;
     std::string caster;
     int fx;
   };
   std::vector<IceFx> iceFx_;        // the Tempestade de Gelo fields drawn, by their centre and caster (syncIceStorms)
   struct WebFx {
-    e2::BattleHex center;
+    ember::BattleHex center;
     int radius;
     int fx;
   };
   std::vector<WebFx> webFx_;        // the Teia dos Sonhos 02 webs drawn, by their zone (syncWebs)
   bool webSynced_ = false;
   bool iceSynced_ = false;
-  std::vector<std::pair<float, std::vector<e2::BattleEffect>>> pendingFx_;  // numbers waiting for an effect to land
+  std::vector<std::pair<float, std::vector<ember::BattleEffect>>> pendingFx_;  // numbers waiting for an effect to land
   SpellsMenu spellsMenu_;           // the Magias window: each spell's effect version, loose effects
   std::vector<EffectInstance> effectList_;
   std::vector<SpellEffects::Light> fxLights_;
@@ -10389,17 +10389,17 @@ class MapStage final : public Stage {
   // runScript
   size_t scriptStep_ = 0;
   bool scriptDone_ = false, scriptFailed_ = false, scriptStarted_ = false;
-  std::optional<e2::BattleHex> scriptHover_;  // "aim:x:y": the cursor held on a hex
+  std::optional<ember::BattleHex> scriptHover_;  // "aim:x:y": the cursor held on a hex
   std::function<std::string()> scriptCheck_;  // the playing step's check (empty = passed)
   std::string scriptPress_;                   // "press:<button>": the HUD button the next drawHudBar presses
   bool scriptFleeMiss_ = false;               // "press:flee:miss": that escape roll fails
   std::string scriptLabel_;
   MeshScene meshes_;
   AssetManager& assets_;
-  std::optional<e2::SceneData> scene_;
+  std::optional<ember::SceneData> scene_;
   inline static const std::string kIdle = "idle";
-  std::vector<e2::Hero> catalog_;                  // every unit's poses (setUpPoses)
-  std::vector<const e2::Hero*> unitCatalog_;       // per scene unit: its catalog entry (null = idle only)
+  std::vector<ember::Hero> catalog_;                  // every unit's poses (setUpPoses)
+  std::vector<const ember::Hero*> unitCatalog_;       // per scene unit: its catalog entry (null = idle only)
   std::vector<std::pair<std::string, std::string>> poseChoices_;  // the panel's "Animação": pose id, label
   int poseChoice_ = 0;
   // THE ONE FIXED RULE OF EVERY MAP, enforced by the engine itself (the user, 2026-10-23: "todos os mapas do jogo precisam ser assim,
@@ -10407,7 +10407,7 @@ class MapStage final : public Stage {
   // defesa contra sabotagem"): a map with panoramas never draws anything else behind the board. Any other Fundo (the cover-fit
   // picture, the sky, black, the painting to the horizon, the sun-aligned painting) is rejected on the spot, logged as an error, and
   // the map's newest panorama stays ("não erra o log, ele recusa alteração": the change is refused, nothing else). The panel's Fundo
-  // lists only the map's panoramas. A map with no panorama entry at all (content/engine2/backdrop-fit.json "panoramas") is the
+  // lists only the map's panoramas. A map with no panorama entry at all (content/data/backdrop-fit.json "panoramas") is the
   // one case the engine cannot refuse: it says so once in the log.
   void enforcePanorama(const char* where) {
     if (!board_) return;
@@ -10433,7 +10433,7 @@ class MapStage final : public Stage {
   }
   int background_ = 0;  // the panel's "Fundo": 0 the map's painted backdrop, 1 the sky, 2 black, 3 the painting up to the horizon + the sky,
                         // 4 the painting aligned to the sky
-  // How the map's painting sits against the sky (content/engine2/backdrop-fit.json; resolve.hlsl backgroundAt mode 2).
+  // How the map's painting sits against the sky (content/data/backdrop-fit.json; resolve.hlsl backgroundAt mode 2).
   struct BackdropFit {
     float horizon = 0.4f, bottom = 1.0f, skyTop = 0.08f, degreesPerHeight = 30.0f, bottomDegrees = 40.0f, spanDegrees = 150.0f, glowColumn = 0.5f;
     float horizonDegrees = -6.0f;  // where the painting's horizon row sits: degrees of elevation (negative = below the real horizon)
@@ -10487,14 +10487,14 @@ class MapStage final : public Stage {
   std::vector<uint32_t> probeFloor_;          // per column of the grid, its lowest probe in the room (the camera's meter reads them)
   float roofBottom_ = 0.0f, roofCentreY_ = 0.0f;  // ... its underside and centre (world y)
   glm::vec3 roofCentre_{0.0f};                     // ... its centre on the board (x, z)
-  std::map<std::pair<int, int>, e2::BattleCell> doorCellsBefore_;  // the battle cells under the animated doors before they were made solid
+  std::map<std::pair<int, int>, ember::BattleCell> doorCellsBefore_;  // the battle cells under the animated doors before they were made solid
   float lastDoorTime_ = -1.0f;
   bool placedWindowLight_ = false;  // placeModels: whether the roof was placed
   // The map's own panoramas (backdrop-fit.json "panoramas" by map id). An entry is a painting's file, or "file#name" for another fit
   // of the same painting (its own entry in "paintings": the tavern's panorama over the user's Tavernground, 2026-10-22). One whose
   // painting or ground image is not in the ground pack yet is left out (it joins the panel once a pack carrying it is cooked).
   void loadMapPanoramas() {
-    const auto packed = [&](const std::string& file) { return !assets_.name(assetId(e2::backdropAsset(file))).empty(); };
+    const auto packed = [&](const std::string& file) { return !assets_.name(assetId(ember::backdropAsset(file))).empty(); };
     for (const std::string& entry : loadPanoramas(board_->draft().id)) {
       BackdropFit fit = loadBackdropFit(entry);
       if (board_->draft().groundImage) fit.ground = *board_->draft().groundImage;
@@ -10504,9 +10504,9 @@ class MapStage final : public Stage {
       }
       panoramas_.push_back(entry);
       panoramaFits_.push_back(fit);
-      ground_.requestTexture(e2::backdropAsset(panoramaFile(entry)));
-      if (!fit.ground.empty()) ground_.requestTexture(e2::backdropAsset(fit.ground));
-      if (!fit.ceilingImage.empty()) ground_.requestTexture(e2::backdropAsset(fit.ceilingImage));
+      ground_.requestTexture(ember::backdropAsset(panoramaFile(entry)));
+      if (!fit.ground.empty()) ground_.requestTexture(ember::backdropAsset(fit.ground));
+      if (!fit.ceilingImage.empty()) ground_.requestTexture(ember::backdropAsset(fit.ceilingImage));
     }
     // Every map is a panorama, no exception (the user, 2026-10-23: "não existe forma de alterar em nenhum mapa"): a map with no
     // entry of its own takes its painting (the scene's backdrop) as its panorama with backdrop-fit.json's `default` fit (the
@@ -10515,8 +10515,8 @@ class MapStage final : public Stage {
       panoramas_.push_back(scene_->backdrop);
       panoramaFits_.push_back(loadBackdropFit(scene_->backdrop));
       if (board_->draft().groundImage) panoramaFits_.back().ground = *board_->draft().groundImage;
-      ground_.requestTexture(e2::backdropAsset(scene_->backdrop));
-      if (!panoramaFits_.back().ground.empty()) ground_.requestTexture(e2::backdropAsset(panoramaFits_.back().ground));
+      ground_.requestTexture(ember::backdropAsset(scene_->backdrop));
+      if (!panoramaFits_.back().ground.empty()) ground_.requestTexture(ember::backdropAsset(panoramaFits_.back().ground));
       logInfo("panoramas {}: none listed, its painting {} is its panorama", board_->draft().id, scene_->backdrop);
     }
     if (!panoramas_.empty()) logInfo("panoramas {}: {} (the newest opens: {})", board_->draft().id, panoramas_.size(), panoramas_.back());
@@ -10524,7 +10524,7 @@ class MapStage final : public Stage {
   static std::string panoramaFile(const std::string& entry) { return entry.substr(0, entry.find('#')); }
   static std::vector<std::string> loadPanoramas(const std::string& mapId) {
     std::vector<std::string> out;
-    std::ifstream in("content/engine2/backdrop-fit.json");
+    std::ifstream in("content/data/backdrop-fit.json");
     const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
     if (j.is_object() && j.contains("panoramas") && j["panoramas"].is_object() && j["panoramas"].contains(mapId) && j["panoramas"][mapId].is_array())
       for (const nlohmann::json& f : j["panoramas"][mapId])
@@ -10533,7 +10533,7 @@ class MapStage final : public Stage {
   }
   static BackdropFit loadBackdropFit(const std::string& painting) {
     BackdropFit fit;
-    std::ifstream in("content/engine2/backdrop-fit.json");
+    std::ifstream in("content/data/backdrop-fit.json");
     const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
     const auto read = [&](const nlohmann::json& e) {
       if (!e.is_object()) return;
@@ -10589,7 +10589,7 @@ class MapStage final : public Stage {
   std::vector<SpriteInstance> frontCards_;  // casters drawn again over their own spell (Renderer::setFrontCards)
   std::vector<LocalLight> lights_;
   bool modelsPlaced_ = false;
-  e2::EdgeStyle placedLook_ = e2::EdgeStyle::Smooth;
+  ember::EdgeStyle placedLook_ = ember::EdgeStyle::Smooth;
   uint32_t modelCount_ = 0, missing_ = 0, fullFrames_ = 0;
   std::chrono::steady_clock::time_point start_ = std::chrono::steady_clock::now();
   bool measuring_ = false, measured_ = false, measurePassed_ = true;
@@ -10597,9 +10597,9 @@ class MapStage final : public Stage {
   uint32_t measureFrames_ = 0;
   std::vector<double> busy_, gpu_;
   std::vector<std::pair<std::string, double>> passes_;
-  std::optional<e2::BoardData> data_;
-  std::unique_ptr<e2::Board> board_;
-  e2::EdgeStyle look_;
+  std::optional<ember::BoardData> data_;
+  std::unique_ptr<ember::Board> board_;
+  ember::EdgeStyle look_;
   MapStageOptions options_;
   bool failed_ = false;
   int readyFrames_ = 0;
@@ -10672,10 +10672,10 @@ class MapStage final : public Stage {
   glm::vec4 deckClip() const {
     const glm::vec4 all{-1.0e9f, -1.0e9f, 1.0e9f, 1.0e9f};
     if (!board_ || !scene_ || !board_->draft().emberDeckClip) return all;
-    const e2::HexLayout L = e2::makeLayout(board_->draft().cols, board_->draft().rows);
-    const float north = static_cast<float>(e2::hexZ(L, 0)), south = static_cast<float>(e2::hexZ(L, board_->draft().rows - 1));
+    const ember::HexLayout L = ember::makeLayout(board_->draft().cols, board_->draft().rows);
+    const float north = static_cast<float>(ember::hexZ(L, 0)), south = static_cast<float>(ember::hexZ(L, board_->draft().rows - 1));
     glm::vec4 clip{1.0e9f, all.y, -1.0e9f, all.w};
-    for (const e2::SceneCard& c : scene_->cards) {
+    for (const ember::SceneCard& c : scene_->cards) {
       const bool onNorth = std::abs(c.z - north) < 0.01f, onSouth = std::abs(c.z - south) < 0.01f;
       if ((!onNorth && !onSouth) || c.w < 4.0f) continue;  // the walls: wide cards on the outer rows
       if (onNorth) clip.y = std::max(clip.y, c.z + c.nudge);
@@ -10702,7 +10702,7 @@ class MapStage final : public Stage {
   static constexpr float kSkyMinPitch = -1.3963f;
   float gameHour_ = -1.0f;  // MapStageOptions::gameHour
   int dayCycle_ = 0;  // the panel's "Hora": 0 do mapa, 1 ciclo rápido, 2 ciclo lento, 3.. a fixed hour (cycleHour; --hour N)
-  static constexpr float kTiltStep = 0.0873f, kTurnStep = 0.2618f;  // Engine2's bar: 5 deg; 15 deg
+  static constexpr float kTiltStep = 0.0873f, kTurnStep = 0.2618f;  // Ember's bar: 5 deg; 15 deg
   static constexpr float kTurnPerPixel = 0.005f, kZoomStep = 0.85f, kPanPerSecond = 0.9f;
   static constexpr float kMinDistance = 3.0f, kEyeClearance = 0.8f;
   static constexpr float kMaxDistance = 112.42f;  // sqrt(3) x 29.5 (aldeia's board width) x 2.2
@@ -10719,7 +10719,7 @@ class MapStage final : public Stage {
       if (battle_) {
         const int b = unitBattle_[i];
         if (b < 0) continue;
-        const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(b)];
+        const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(b)];
         if (!u.alive || absent_.contains(u.id)) continue;
       }
       at.push_back(unitWorld(i));
@@ -10743,7 +10743,7 @@ class MapStage final : public Stage {
   }
   bool captured_ = false;  // the first view is remembered: the bar's reset goes back to its angle
   bool flat_ = false;      // Tática: the old-school 2D view (the bar's Normal / Tática)
-  // Left-button pan (Engine2 cameraRig: HOLD_MS 500, CLICK_SLOP 5).
+  // Left-button pan (Ember cameraRig: HOLD_MS 500, CLICK_SLOP 5).
   struct LeftPress {
     float x = 0.0f, y = 0.0f;
     std::chrono::steady_clock::time_point at;
@@ -10765,7 +10765,7 @@ class MapStage final : public Stage {
   float lastOwnClick_ = -1.0f;                 // scene clock of the last click on the unit being played
   int lastOwnClickUnit_ = -1;
   // Combat (world/Battle.h): the battle, each scene unit's battle unit and live state, the picked unit and its reach.
-  std::optional<e2::Battle> battle_;
+  std::optional<ember::Battle> battle_;
   std::vector<int> unitBattle_;        // per scene unit: its battle unit, -1 = none
   std::vector<glm::vec2> unitPos_;     // per scene unit: where its feet are now (x, z)
   // The party's unit before each walk this turn, latest last (Cancelar takes them back one at a time).
@@ -10781,11 +10781,11 @@ class MapStage final : public Stage {
   std::vector<BeforeWalk> undo_;
   std::vector<uint8_t> unitMoved_;     // it has left its spawn: its height is the ground under it
   std::vector<int> unitFacing_;        // 1 right, -1 left, on screen
-  std::vector<uint8_t> unitReversed_;  // its art faces left (Engine2 drawnReversed)
-  static constexpr int kWalkBack = 0, kWalkFront = 1, kWalkSide = 2;  // Engine2 WalkDir: up the map, down it, along a row
+  std::vector<uint8_t> unitReversed_;  // its art faces left (Ember drawnReversed)
+  static constexpr int kWalkBack = 0, kWalkFront = 1, kWalkSide = 2;  // Ember WalkDir: up the map, down it, along a row
   // A light born on a unit's body (an effect's glow at a caster's or a target's chest) sits in the plane of its camera-facing card,
   // where the card takes none of it and only the ground lights up (the user, 2026-10-18: the same fix as Malrec's casting light, for
-  // every light on a unit): it moves 0.45 in front of that card, toward the camera, as Engine2's casting light stands.
+  // every light on a unit): it moves 0.45 in front of that card, toward the camera, as Ember's casting light stands.
   glm::vec3 offCard(const glm::vec3& p, const glm::vec3& forward) const {
     for (size_t i = 0; i < unitCard_.size(); ++i) {
       const CardRect& c = unitCard_[i];
@@ -10800,15 +10800,15 @@ class MapStage final : public Stage {
     }
     return p;
   }
-  // Engine2 Battle3D: CAST_LIGHT 9, its PointLight reaching 6 at decay 1.8.
+  // Ember Battle3D: CAST_LIGHT 9, its PointLight reaching 6 at decay 1.8.
   static constexpr float kCastLight = 9.0f, kCastLightReach = 6.0f, kCastLightDecay = 1.8f;
-  // Engine2 CarriedLight STRENGTH: a light of strength 1 (LightDef) is 3.2 in three's units, "as much light again as the scene
+  // Ember CarriedLight STRENGTH: a light of strength 1 (LightDef) is 3.2 in three's units, "as much light again as the scene
   // already has there" one hex out.
   static constexpr float kE2Strength = 3.2f;
-  // An Engine2 point light (three's intensity, distance, decay) as Engine2 meant it: relative to the light already on the board.
+  // An Ember point light (three's intensity, distance, decay) as Ember meant it: relative to the light already on the board.
   // Under real light (lux, the camera's exposure) the casters', familiars' and spells' lights scale with the metered scene light
-  // (meterLux_ = Engine2's 3.2): as lux they vanished on a day map, a lantern at noon (the user, 2026-10-18: "não mudou nada").
-  LocalLight engine2Light(glm::vec3 at, const std::array<float, 3>& color, float intensity, float distance, float decay) const {
+  // (meterLux_ = Ember's 3.2): as lux they vanished on a day map, a lantern at noon (the user, 2026-10-18: "não mudou nada").
+  LocalLight classicLight(glm::vec3 at, const std::array<float, 3>& color, float intensity, float distance, float decay) const {
     LocalLight l;
     l.position = at;
     l.range = distance;
@@ -10817,7 +10817,7 @@ class MapStage final : public Stage {
     l.color = glm::vec3(color[0], color[1], color[2]) * intensity * scale;
     return l;
   }
-  struct UnitLightDef {  // Engine2 lighting.ts LightDef: linear colour, strength, reach in hex radii, flicker
+  struct UnitLightDef {  // Ember lighting.ts LightDef: linear colour, strength, reach in hex radii, flicker
     std::array<float, 3> color;
     float intensity, radius, flicker;
   };
@@ -10826,21 +10826,21 @@ class MapStage final : public Stage {
       {"familiar4", {{0.68f, 0.82f, 1.0f}, 1.8f, 2.0f, 0.08f}}, {"familiar3", {{1.0f, 0.08f, 0.1f}, 0.7f, 2.0f, 0.04f}},
       {"swampBlueCalf", {{0.55f, 0.75f, 1.0f}, 1.8f, 3.0f, 0.3f}},
   };
-  // Engine2 UnitActor's carried lights, as (x, z, radius) from the feet: Familiar Titã one per body hex (centred on its front
+  // Ember UnitActor's carried lights, as (x, z, radius) from the feet: Familiar Titã one per body hex (centred on its front
   // row), Familiar Maior three (its body and the two hexes behind it), everyone else one.
   std::vector<glm::vec3> unitLightSpots(size_t ui, const UnitLightDef& d) const {
     const std::string& cls = scene_->units[ui].classId;
     if (cls == "familiar4")
       return {{0.0f, 0.0f, 3.0f}, {-std::sqrt(3.0f) / 2.0f, -1.5f, 2.0f}, {std::sqrt(3.0f) / 2.0f, -1.5f, 2.0f}};
     if (cls == "familiar3" && unitBattle_[ui] >= 0) {
-      const e2::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[ui])];
+      const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(unitBattle_[ui])];
       std::vector<glm::vec3> spots;
       float front = 0.0f;
       int n = 0;
-      const e2::Cell& at = board_->cell(u.x, u.y);
-      for (const e2::BattleHex& p : e2::Battle::footprint(u, u.x, u.y)) {
+      const ember::Cell& at = board_->cell(u.x, u.y);
+      for (const ember::BattleHex& p : ember::Battle::footprint(u, u.x, u.y)) {
         if (!battle_->inBounds(p.x, p.y)) continue;
-        const e2::Cell& c = board_->cell(p.x, p.y);
+        const ember::Cell& c = board_->cell(p.x, p.y);
         const float x = static_cast<float>(c.x - at.x), z = static_cast<float>(c.z - at.z);
         spots.push_back({x, z, d.radius});
         if (p.y == u.y) front += x, ++n;
@@ -10850,7 +10850,7 @@ class MapStage final : public Stage {
     }
     return {{0.0f, 0.0f, d.radius}};
   }
-  // Engine2 Battle3D CAST_TINT / MALREC_*: the casting light's colour (sRGB hex, three's linear colour). The heroes cast in their
+  // Ember Battle3D CAST_TINT / MALREC_*: the casting light's colour (sRGB hex, three's linear colour). The heroes cast in their
   // own colour whatever the spell (the user, 2026-10-18): Malrec blue, Salazar yellow, Voss purple.
   static std::array<float, 3> castTint(const std::string& kind, bool heal, const std::string& hero, bool attack) {
     static const std::unordered_map<std::string, uint32_t> kTint = {
@@ -10879,7 +10879,7 @@ class MapStage final : public Stage {
   std::vector<UnitGlow> glows_;
   struct Walk {
     std::vector<glm::vec2> points;  // the hexes still ahead (feet positions)
-    std::vector<e2::BattleHex> hexes;  // the same hexes on the board (a roaming walk stops on the next one)
+    std::vector<ember::BattleHex> hexes;  // the same hexes on the board (a roaming walk stops on the next one)
     float start = 0.0f;            // scene clock when it set off
     float travelled = 0.0f;        // ground covered since (world units): the walk cycle's phase
     int dir = kWalkSide;
@@ -10888,7 +10888,7 @@ class MapStage final : public Stage {
   std::vector<Walk> unitWalk_;
   // On-map cutscene in play (playCutscene / updateCutscene).
   struct Cutscene {
-    e2::CutsceneScript script;
+    ember::CutsceneScript script;
     std::map<std::string, size_t> units;  // actor -> scene unit
     size_t step = 0;
     bool waiting = false;                 // the step at `step` is playing
@@ -10915,23 +10915,23 @@ class MapStage final : public Stage {
   };
   std::vector<CardRect> unitCard_;
   bool offHandMode_ = false;         // "Mão Secundária" armed: the off-hand weapon is the one that strikes
-  std::map<size_t, e2::Json> npcDialog_;      // battle unit -> its conversation (findConversations)
+  std::map<size_t, ember::Json> npcDialog_;      // battle unit -> its conversation (findConversations)
   int talkAfterWalk_ = -1;                     // the NPC the leader is walking up to, to talk once there
   std::optional<size_t> talkRequest_;          // a conversation asked for (takeTalk)
   std::string floorRequest_;                   // a floor connector taken: the linked map's mission id (wantsFloor)
   std::set<std::string> absent_;               // battle unit ids gone from the start (dead on an earlier visit, fallen on the floor before)
-  std::optional<e2::Battle::Exit> finishExit_; // the waypoint the mission was ended on (the result screen's text and its way on)
+  std::optional<ember::Battle::Exit> finishExit_; // the waypoint the mission was ended on (the result screen's text and its way on)
   bool talked_ = false;                        // a conversation was taken (the battle script's "talk" check)
   bool explores_ = false;                      // an explore mission (it roamed when it opened)
   bool roams_ = false;                         // free roam until an enemy is in sight: an explore mission or any map with fog of war
   bool winDismissed_ = false;        // the end was on offer and the player kept playing (the footer button brings it back)
   bool pickActiveOnResume_ = false;  // set by resume(): pick the active hero once the turn loop first runs
   BattleStatusSheet statusSheet_;                                    // the character status sheet
-  e2::InnData innData_;                                              // the Mochila / Equipar over the fight
+  ember::InnData innData_;                                              // the Mochila / Equipar over the fight
   bool innDataLoaded_ = false;
-  std::optional<e2::InnRules> innRules_;
+  std::optional<ember::InnRules> innRules_;
   std::optional<InventoryScreen> battleInventory_;
-  e2::Json inventorySave_;
+  ember::Json inventorySave_;
   bool showLog_ = false, logPinned_ = true, logJustOpened_ = false;  // the combat log in the HUD bar
   bool logFull_ = false, logFullJustOpened_ = false;                 // ... and full screen
   bool logKeep_ = false;
@@ -10942,10 +10942,10 @@ class MapStage final : public Stage {
   float barRowX_ = 0.0f, barRowW_ = 0.0f;                         // the battle bar's row: where it starts, its width (last frame)
   float hudRightEdge_ = 1.0e9f;                                    // where the bar's right-hand buttons begin (last frame)
   int selected_ = -1;                     // the picked scene unit
-  std::vector<e2::ReachCell> reach_;      // where it can stop
-  std::vector<e2::ReachCell> reachPaths_; // every hex it can pass (its routes)
-  std::optional<e2::BattleHex> hover_;    // the hex under the cursor
-  std::vector<std::pair<int, e2::BattleHex>> targets_;  // scene units the unit whose turn it is can strike, and from where
+  std::vector<ember::ReachCell> reach_;      // where it can stop
+  std::vector<ember::ReachCell> reachPaths_; // every hex it can pass (its routes)
+  std::optional<ember::BattleHex> hover_;    // the hex under the cursor
+  std::vector<std::pair<int, ember::BattleHex>> targets_;  // scene units the unit whose turn it is can strike, and from where
   int pendingStrike_ = -1;                // the foe to strike once the walk to its hex is over
   int turnUnit_ = -1;                     // the battle unit whose turn has begun
   struct EnemyTurn {
@@ -10954,7 +10954,7 @@ class MapStage final : public Stage {
     bool struck = false;
     bool interrupted = false;           // the sentinels' thrusts (Vigília) and the daggers (Nuvem de Adagas) were played before its blow
     bool walked = false;                // it walked this turn (a Nuvem de Adagas beside where it stopped throws at it)
-    std::vector<e2::BattleStep> steps;  // or the spell it casts after its walk
+    std::vector<ember::BattleStep> steps;  // or the spell it casts after its walk
   };
   std::optional<EnemyTurn> enemyTurn_;
   std::map<int, int> vigilFx_;  // battle unit in its Vigília da Sentinela -> its standing effect (LancerFx::vigilStart)
@@ -10973,15 +10973,15 @@ class MapStage final : public Stage {
   float modeSwitchAt_ = -100.0f;          // free roam's last turn into a fight (the banner)
   std::string result_;                    // "victory" / "defeat" once the battle is over
   bool pauseOpen_ = false, titleRequested_ = false, retryRequested_ = false;
-  // Engine2's menus over the battle (EmberMenus.h) and what they act on.
+  // Ember's menus over the battle (EmberMenus.h) and what they act on.
   bool homeRequested_ = false, playtest_ = false;
   // Save / Load in battle: the campaign, this fight's mission and map key, the slot screen and the save it writes.
-  e2::Campaign* campaign_ = nullptr;
+  ember::Campaign* campaign_ = nullptr;
   std::string missionId_, mapKey_;
   bool questLog_ = false;  // the quest log open over the fight
   bool testMode_ = false, loadRequested_ = false;
   std::optional<SlotScreen> battleSlots_;
-  e2::Json slotSave_;
+  ember::Json slotSave_;
   std::vector<uint8_t> pendingExplored_;  // a resumed fight's explored hexes, for the fog's next relight
   static std::string base64(const std::vector<uint8_t>& bytes) {
     static const char* const k = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -11012,51 +11012,51 @@ class MapStage final : public Stage {
   menu::BattleMenu::Speed speed_ = menu::BattleMenu::Speed::Normal;  // engine.ts speedMode, "normal" each battle
   std::function<void()> fullscreen_;
   DevGfx* gfx_ = nullptr;
-  // Engine2's sound for this battle (export_battle.ts: each unit's cues as Engine2 picks them, the level-up cue, the
+  // Ember's sound for this battle (export_battle.ts: each unit's cues as Ember picks them, the level-up cue, the
   // mission's music); a battle file from before them stays silent.
-  std::vector<e2::Json> unitSounds_;  // per battle unit (summoned units have none)
-  e2::Json levelUpSound_ = e2::Json::array();
+  std::vector<ember::Json> unitSounds_;  // per battle unit (summoned units have none)
+  ember::Json levelUpSound_ = ember::Json::array();
   Music music_;
   std::vector<int> levelSeen_;
   void loadSounds(const std::filesystem::path& file) {
     std::ifstream in(file, std::ios::binary);
-    const e2::Json j = in ? e2::Json::parse(in, nullptr, false) : e2::Json();
+    const ember::Json j = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
     if (!j.is_object()) return;
     if (const auto units = j.find("units"); units != j.end() && units->is_array())
-      for (const e2::Json& u : *units) unitSounds_.push_back(u.value("sounds", e2::Json::object()));
-    if (const auto sounds = j.find("sounds"); sounds != j.end() && sounds->is_object()) levelUpSound_ = sounds->value("levelUp", e2::Json::array());
+      for (const ember::Json& u : *units) unitSounds_.push_back(u.value("sounds", ember::Json::object()));
+    if (const auto sounds = j.find("sounds"); sounds != j.end() && sounds->is_object()) levelUpSound_ = sounds->value("levelUp", ember::Json::array());
     music_ = music::fromBattle(j, music_);
   }
-  const e2::Json& sounds(size_t battleUnit, const char* key) const {
-    static const e2::Json none;
+  const ember::Json& sounds(size_t battleUnit, const char* key) const {
+    static const ember::Json none;
     if (battleUnit >= unitSounds_.size()) return none;
     const auto it = unitSounds_[battleUnit].find(key);
     return it == unitSounds_[battleUnit].end() ? none : *it;
   }
   // audio.ts's players for a list of cues (file, volume, start offset, delay, exclusive or layered).
-  static void playCues(const e2::Json& list) {
+  static void playCues(const ember::Json& list) {
     if (!list.is_array()) return;
-    for (const e2::Json& c : list)
+    for (const ember::Json& c : list)
       AudioMixer::get().playSfx(c.value("file", std::string()), c.value("volume", 0.55f), c.value("exclusive", true), c.value("offset", 0.0f), c.value("delay", 0.0f));
   }
   float stepSeconds() const { return speed_ == menu::BattleMenu::Speed::Slow ? 0.36f : speed_ == menu::BattleMenu::Speed::Fast ? 0.12f : kStepSeconds; }
   float actionRate() const { return speed_ == menu::BattleMenu::Speed::Slow ? 0.4f : speed_ == menu::BattleMenu::Speed::Fast ? 1.0f : 0.65f; }
-  bool bloomOn_ = true;  // panel "Brilho" (Engine2's full-scene bloom)
+  bool bloomOn_ = true;  // panel "Brilho" (Ember's full-scene bloom)
   float resultAt_ = 0.0f;                  // when the battle ended (the result screen follows after a breath)
   static constexpr float kResultDelay = 1.8f;
   std::vector<std::pair<int, int>> startLevel_;  // per battle unit: level and XP when the battle began
   std::string spellMode_;                 // the spell being aimed (battle bar), empty = none
-  std::vector<e2::BattleHex> spellCells_; // its targets chosen so far
-  std::optional<e2::BattleHex> spellArmed_;  // the hex aimed, waiting for Confirmar / Cancelar (Engine2 spellArmed)
+  std::vector<ember::BattleHex> spellCells_; // its targets chosen so far
+  std::optional<ember::BattleHex> spellArmed_;  // the hex aimed, waiting for Confirmar / Cancelar (Ember spellArmed)
   int pendingFoe_ = -1;                      // the foe a strike is staged on, waiting for Confirmar / Cancelar (stageAttack)
-  std::vector<e2::BattleHex> spellAim_;   // every hex it may be aimed at
-  std::vector<e2::BattleHex> spellZone_;  // where it reaches, target or not (the grid's zone; e2::spellZone)
-  std::optional<e2::BattleHex> spellPreviewAim_;  // a line / cone spell: the aim at the nearest foe it reaches (cursor off the board)
+  std::vector<ember::BattleHex> spellAim_;   // every hex it may be aimed at
+  std::vector<ember::BattleHex> spellZone_;  // where it reaches, target or not (the grid's zone; ember::spellZone)
+  std::optional<ember::BattleHex> spellPreviewAim_;  // a line / cone spell: the aim at the nearest foe it reaches (cursor off the board)
   mutable std::string hitsKey_;              // aimHits' cache: the spell, caster and hex it was worked out for
   mutable std::vector<size_t> hits_;
   bool attackMode_ = false;               // "Atacar": only the foes it can strike are marked
   bool showTurnOrder_ = false;
-  std::string tip_;                       // why a click did nothing (Engine2's tip line)
+  std::string tip_;                       // why a click did nothing (Ember's tip line)
   float tipAt_ = -10.0f;
   std::vector<OneShot> unitShot_;         // per scene unit: a one-shot pose over its own
   std::vector<int> unitHitAction_;        // per scene unit: the action (actionSerial_) whose blow it last reacted to (-1 = none)
@@ -11114,7 +11114,7 @@ class MapStage final : public Stage {
     bool big = false;
   };
   std::vector<Popup> popups_;
-  e2::Mulberry32 rng_{1};
+  ember::Mulberry32 rng_{1};
   static constexpr float kImpactShare = 0.55f;   // a strike lands this far into the attack pose
   static constexpr float kExchangeGap = 0.15f;   // a breath between the strike and the counter
   static constexpr float kCorpseSeconds = 1.5f;  // the fallen lie this long after their death pose
@@ -11122,9 +11122,9 @@ class MapStage final : public Stage {
   glm::vec2 mouse_{-1.0f};
   SDL_WindowID mouseWindow_ = 0;
   float now_ = 0.0f;  // this frame's scene clock
-  static constexpr float kStepSeconds = 0.22f;      // Engine2 STEP_SECONDS: one hex of walking
+  static constexpr float kStepSeconds = 0.22f;      // Ember STEP_SECONDS: one hex of walking
   static constexpr float kWalkStride = 3.5f;        // ground one full stride covers, world units, every unit alike (0.44 s at 0.22 s a hex)
-  static constexpr float kBorderInner = 0.47f / 0.5f;  // Engine2 BORDER_INNER: a hex border's inner edge
+  static constexpr float kBorderInner = 0.47f / 0.5f;  // Ember BORDER_INNER: a hex border's inner edge
   std::vector<Renderer::GroundMark> groundMarks_;  // this frame's battle grid (collectMarks)
   std::vector<Renderer::GridCell> gridCells_;      // ... for the numbered looks (collectGrid)
   int gridLook_ = 2;  // Tactical overlays only; the terrain's permanent hex outlines stay hidden.
@@ -11133,7 +11133,7 @@ class MapStage final : public Stage {
   int actionCamera_ = 1;  // panel "Câmera de ação": 0 OFF, 1 cinema (the shots of every action: applyActionShot)
   static constexpr float kBarsFadeFrom = 0.30f, kBarsFadeTo = 0.45f;  // the card's share of the screen's height
   static constexpr float kAirCardHeight = 2.0f;                         // world units: a unit's card, the yardstick of the particles' fade
-  // Engine2 DIR_ACTION_WALK: sprites whose walks are drawn for each side, never mirrored while moving.
+  // Ember DIR_ACTION_WALK: sprites whose walks are drawn for each side, never mirrored while moving.
   inline static const std::unordered_set<std::string> kDirectionalWalk = {"aldric", "defaultLancer", "lancer", "sandoval", "theButcher",
       "familiar2", "familiar3", "cultist-v2", "militia-v2", "salazar", "cobalt-blue-deer", "neera"};
   float homeYaw_ = 0.0f, homePitch_ = 0.0f, homeDistance_ = 0.0f;
@@ -11143,8 +11143,8 @@ class MapStage final : public Stage {
   float boardRadius_ = 0.0f;
   uint32_t layers_ = 0xFFFFFFFFu;
   // Fog of war and the party.
-  std::optional<e2::FogOfWar> fog_;
-  e2::FogMask fogMask_;
+  std::optional<ember::FogOfWar> fog_;
+  ember::FogMask fogMask_;
   bool fogReady_ = false, replayed_ = false, fogUpdatedThisFrame_ = false, occludersAdded_ = false;
   std::vector<uint8_t> fogStates_;  // per hex, as of the mask on show (main thread)
   // The hunt for the vanishing wolf (the user, 2026-10-19): an enemy going hidden or back on show is logged once with what decided it.
@@ -11160,11 +11160,11 @@ class MapStage final : public Stage {
   }
   std::vector<uint8_t> fogLit_;     // per hex: kFogVisible where the mask on show is lit (in sight, still lingering, beside the party)
   // Whether a hex (its index) is drawn lit on the mask on show: an enemy standing on it is drawn, with its bar and locks.
-  bool litHex(size_t i) const { return i < fogLit_.size() && fogLit_[i] == e2::kFogVisible; }
+  bool litHex(size_t i) const { return i < fogLit_.size() && fogLit_[i] == ember::kFogVisible; }
   // Whether a battle unit is on show: always without fog and for the party's own, else its hex lit.
-  bool unitOnShow(const e2::BattleUnit& t) const {
+  bool unitOnShow(const ember::BattleUnit& t) const {
     if (!fog_ || noFog_ || t.side == "player") return true;
-    return litHex(static_cast<size_t>(e2::indexOf(board_->layout(), t.x, t.y)));
+    return litHex(static_cast<size_t>(ember::indexOf(board_->layout(), t.x, t.y)));
   }
   // The sight job (runFogJob): while fogBusy_, only the worker touches fog_, fogJobEyes_, fogNext_, fogJobMs_.
   JobSystem& jobs_;
@@ -11172,19 +11172,19 @@ class MapStage final : public Stage {
   bool fogBusy_ = false, sightLogged_ = false;
   std::chrono::steady_clock::time_point fogClockStart_ = std::chrono::steady_clock::now();  // the fog's linger clock
   double fogLingerCheck_ = 0.0;
-  std::vector<std::vector<e2::HexPoint>> fogQueue_, fogJobEyes_;  // party positions waiting / being relit, in order
-  e2::FogMask fogNext_;
+  std::vector<std::vector<ember::HexPoint>> fogQueue_, fogJobEyes_;  // party positions waiting / being relit, in order
+  ember::FogMask fogNext_;
   std::vector<uint16_t> fogTexels_, fogNextTexels_;  // fogMask_ / fogNext_ packed for the GPU (Renderer::fogTexels)
   double fogJobMs_ = 0.0;
   std::vector<double> fogDeliverMs_;  // main-thread cost of taking a finished job's result
   uint64_t maskVersion_ = 0;
-  std::vector<e2::HexPoint> path_, lastParty_;
+  std::vector<ember::HexPoint> path_, lastParty_;
   int hero_ = -1;
   glm::vec3 heroAt_{0.0f};
-  e2::HexPoint heroHex_;
+  ember::HexPoint heroHex_;
   float meanGround_ = 0.0f, boardTop_ = 0.0f, groundLow_ = 0.0f;
   uint32_t fogLook_ = 8;  // index into fogLooks(): look 009 (008 with the sky and painting left clear) unless --fog-look says otherwise
-  int lightingMode_ = 3;   // 0 old prototype day, 1 Engine2 presets, 2 physical sky (Engine2 strengths), 3 real (lux + camera)
+  int lightingMode_ = 3;   // 0 old prototype day, 1 Ember presets, 2 physical sky (Ember strengths), 3 real (lux + camera)
   // Light mode "real": the camera's exposure, adapted towards the scene's (EV100), and what was metered.
   float adaptedEv_ = std::numeric_limits<float>::quiet_NaN();
   mutable float meterLux_ = 1.0f;
@@ -11195,8 +11195,8 @@ class MapStage final : public Stage {
   static constexpr int kStarLooks = 4;  // saved star looks (looks/stars/README.md); 4 = the real sky (render/StarSky.h)
   int starLook_ = 4;
   StarSky starSky_;  // content/sky/stars.json: the real stars, turned to the hour
-  int moonPhase_ = -1;  // index in e2::kMoonPhases; -1 = Engine2's default (the full moon's art, the night's strength)
-  // The disc's angular radius (degrees), chosen in the panel. 2.7 = Engine2's disc as seen from its normal view; the
+  int moonPhase_ = -1;  // index in ember::kMoonPhases; -1 = Ember's default (the full moon's art, the night's strength)
+  // The disc's angular radius (degrees), chosen in the panel. 2.7 = Ember's disc as seen from its normal view; the
   // user found it "millions of km away" (2026-10-15), so the panel starts at the large one.
   static constexpr float kMoonSizes[4] = {2.7f, 6.0f, 10.0f, 15.0f};
   int moonSize_ = 0;  // panel "Tamanho da lua": pequena (2.7 deg radius, 10 x the real) by default: média and grande read as a

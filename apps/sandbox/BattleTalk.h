@@ -1,6 +1,6 @@
 #pragma once
 
-// A campaign battle's conversations and films, copied from Engine2 (GameApp BattleScreen introDialogOpen, the outro
+// A campaign battle's conversations and films, copied from Ember (GameApp BattleScreen introDialogOpen, the outro
 // effect on hud.result, the "epilogue" screen): the mission's intro conversation as the battle opens, its outro the
 // moment the fight is won, then on Templo and Portão the epilogue film, all over the battle (which waits: holdTurns).
 // Each conversation is recorded in the save's dialogsSeen the moment it opens (save.ts dialogSeenKey) and never opens
@@ -25,11 +25,11 @@
 
 namespace ember {
 
-inline e2::Json loadDialogs(const std::filesystem::path& file) {
+inline ember::Json loadDialogs(const std::filesystem::path& file) {
   std::ifstream in(file, std::ios::binary);
-  if (!in) return e2::Json();
-  e2::Json j = e2::Json::parse(in, nullptr, false);
-  return j.is_discarded() ? e2::Json() : j;
+  if (!in) return ember::Json();
+  ember::Json j = ember::Json::parse(in, nullptr, false);
+  return j.is_discarded() ? ember::Json() : j;
 }
 
 // affinity.ts AFFINITY_HEROES.
@@ -41,14 +41,14 @@ inline bool affinityHero(const std::string& name) {
 // BattleEngine.adjustHeroAffinity(from, to, delta, dialogue = true) on a save: the party leader's positive changes
 // catch up faster, then changeAffinity (sorted pair key, one decimal, -100..100). JS Math.round = floor(x + 0.5).
 // Returns the combat log's line for it ("Afinidade Kael + Voss: +2,5"), empty when nothing changed.
-inline std::string applyReplyAffinity(e2::Json& save, const e2::Overworld& world, const e2::Json& affinity) {
+inline std::string applyReplyAffinity(ember::Json& save, const ember::Overworld& world, const ember::Json& affinity) {
   if (!affinity.is_object()) return {};
   const std::string a = affinity.value("from", ""), b = affinity.value("to", "");
   double delta = affinity.value("delta", 0.0);
   if (a == b || delta == 0 || !std::isfinite(delta) || !affinityHero(a) || !affinityHero(b)) return {};
   const std::string pair = a < b ? a + "|" + b : b + "|" + a;
-  e2::Json& scores = save["affinityScores"];
-  if (!scores.is_object()) scores = e2::Json::object();
+  ember::Json& scores = save["affinityScores"];
+  if (!scores.is_object()) scores = ember::Json::object();
   const double score = scores.contains(pair) && scores[pair].is_number() ? scores[pair].get<double>() : 0.0;
   // partyLeaderOf: the saved leader while recruited, else Kael.
   std::string leader = "Kael";
@@ -71,28 +71,28 @@ inline std::string applyReplyAffinity(e2::Json& save, const e2::Overworld& world
 
 struct BattleTalk {
   std::string mission;
-  e2::Json entry;  // dialogs.json's entry for the mission
-  std::filesystem::path engine2Public;
-  e2::Campaign* record = nullptr;  // the campaign to write into; null in Modo teste
-  const e2::Overworld* world = nullptr;
+  ember::Json entry;  // dialogs.json's entry for the mission
+  std::filesystem::path artRoot;
+  ember::Campaign* record = nullptr;  // the campaign to write into; null in Modo teste
+  const ember::Overworld* world = nullptr;
   bool introDone = false, outroDone = false, epilogueDone = false;
   std::optional<DialogScreen> dialog;
   std::optional<CutsceneScreen> film;
 
   // A conversation opens unless this campaign already had it; it is recorded the moment it opens (markDialogSeen).
   void open(const char* kind, const char* enabledKey) {
-    const e2::Json tree = entry.value(kind, e2::Json());
+    const ember::Json tree = entry.value(kind, ember::Json());
     if (!tree.is_object() || !entry.value(enabledKey, true)) return;
     const std::string key = std::string(kind) + ":" + mission + ":" + tree.value("id", "");
     if (record) {
-      e2::Json save = record->activeSave();
-      e2::Json& seen = save["dialogsSeen"];
-      if (!seen.is_array()) seen = e2::Json::array();
+      ember::Json save = record->activeSave();
+      ember::Json& seen = save["dialogsSeen"];
+      if (!seen.is_array()) seen = ember::Json::array();
       if (std::find(seen.begin(), seen.end(), key) != seen.end()) return;
       seen.push_back(key);
       record->saveActive(std::move(save));
     }
-    dialog.emplace(tree, entry.value("portraits", e2::Json::object()), engine2Public);
+    dialog.emplace(tree, entry.value("portraits", ember::Json::object()), artRoot);
   }
 
   void draw(MapStage& map) {
@@ -107,9 +107,9 @@ struct BattleTalk {
       open("outro", "outroEnabled");
     }
     if (dialog) {
-      const bool closed = dialog->draw(size, [this, &map](const e2::Json& reply) {
+      const bool closed = dialog->draw(size, [this, &map](const ember::Json& reply) {
         if (!reply.contains("affinity")) return;
-        e2::Json save = record ? record->activeSave() : e2::Json::object();  // Modo teste records nothing, but the log tells
+        ember::Json save = record ? record->activeSave() : ember::Json::object();  // Modo teste records nothing, but the log tells
         const std::string line = applyReplyAffinity(save, *world, reply["affinity"]);
         if (!line.empty()) map.battleLog(line);
         if (record) record->saveActive(std::move(save));
@@ -118,7 +118,7 @@ struct BattleTalk {
     } else if (won && !epilogueDone) {
       epilogueDone = true;
       if (mission == "templo" || mission == "portao")
-        film.emplace(engine2Public, mission == "portao" ? "game/portao-end.mp4" : "game/temple-aftermath.mp4");
+        film.emplace(artRoot, mission == "portao" ? "game/portao-end.mp4" : "game/temple-aftermath.mp4");
     }
     if (film) {
       ImGui::SetNextWindowPos({0, 0});
@@ -135,14 +135,14 @@ struct BattleTalk {
 };
 
 // Hooks the conversations onto a campaign battle (Stage::overlay, drawn after the battle's own panels).
-inline std::shared_ptr<BattleTalk> attachBattleTalk(MapStage& map, const std::string& mission, const e2::Json& dialogs, const std::filesystem::path& engine2Public,
-                             const e2::Overworld& world, e2::Campaign* record) {
+inline std::shared_ptr<BattleTalk> attachBattleTalk(MapStage& map, const std::string& mission, const ember::Json& dialogs, const std::filesystem::path& artRoot,
+                             const ember::Overworld& world, ember::Campaign* record) {
   const auto found = dialogs.find(mission);
   if (found == dialogs.end() && mission != "templo" && mission != "portao") return nullptr;
   auto talk = std::make_shared<BattleTalk>();
   talk->mission = mission;
-  talk->entry = found != dialogs.end() ? *found : e2::Json::object();
-  talk->engine2Public = engine2Public;
+  talk->entry = found != dialogs.end() ? *found : ember::Json::object();
+  talk->artRoot = artRoot;
   talk->record = record;
   talk->world = &world;
   MapStage* stage = &map;

@@ -44,7 +44,7 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
 - **The 23:10 Inn (2026-10-22) has NO source in git** (no commit between 97a980d 23:03 and the 23:10 exe; the user, 2026-10-23: "não
   existe 23:03, estava errado, é só 23:10"): the exe is the only copy, kept read-only in `build/release/jogar-2310/` (exe + shaders;
   JOGAR.bat still runs `build/release/bin`: the user said "não quero nada" to a frozen JOGAR). Every later build by any session
-  replaces `bin` ("na próxima mudança ele some"): the Inn's entries in `content/engine2/backdrop-fit.json` stay as in 97a980d and
+  replaces `bin` ("na próxima mudança ele some"): the Inn's entries in `content/data/backdrop-fit.json` stay as in 97a980d and
   resolve.hlsl's panorama code stays 97a980d's text, so a build draws the Inn as close to 23:10 as the tree allows.
 - **The Inn's saved parameters (the user, 2026-10-23 ~05:00: "alinhar da mesma maneira e salvar esses parâmetros", "pode manter a
   variação de teto"), backdrop-fit.json "#piso" entries, both floors:** roomDrop 10 (board and floor 10 below the painting and the
@@ -56,7 +56,7 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   permanentemente qualquer tentativa de desfazer essa única regra fixa de todos os mapas"; "nenhum mapa pode fugir da regra do
   panorama"): every map's background is its panorama (backdrop-fit.json `maps` + `paintings`, resolve.hlsl modes 2-5, MapStage opening
   a map on its newest panorama). `tools/scripts/check_panorama_lock.py` runs at the start of every build.bat and FAILS the build if
-  resolve.hlsl loses the panorama path, if a map in `content/engine2/backdrop-fit.locked.json` loses a panorama, or if a locked painting
+  resolve.hlsl loses the panorama path, if a map in `content/data/backdrop-fit.locked.json` loses a panorama, or if a locked painting
   entry changes without the lock being updated. A locked value changes only on the user's explicit order, with `--relock` in the same
   commit, said in the message. Never delete the lock file, never weaken the check, never bypass build.bat to skip it.
   **The engine itself refuses (MapStage `enforcePanorama`, the user: "não erra o log, ele recusa alteração", "não existe forma de
@@ -197,7 +197,7 @@ Predecessor `C:\Engine2` (three.js) was dropped: it stuttered on bare maps.
   limits, ground image, look) is enabled per map by its id, one map at a time; every other map keeps exactly its old look.
   Before a release, capture another map and the Tática view to prove they did not change.
   **aldeia (map id "aldeia", aldeia015) is the first:** Fundo "imagem alinhada ao céu" by default (resolve.hlsl backgroundAt
-  mode 2, `content/engine2/backdrop-fit.json` entry aldeia-bg.jpg: painting under the real sky, ruins on the horizon, the user's
+  mode 2, `content/data/backdrop-fit.json` entry aldeia-bg.jpg: painting under the real sky, ruins on the horizon, the user's
   AldeiaGround as `content/backdrops/aldeia-ground-v01.jpg` flat under the board, the only image in Tática), camera tilt down to
   -8 deg (MapStage `minPitch()`); the user approved the two lowest-tilt views. Every other map: unchanged (cover-fit painting, 5 deg).
   JOGAR uses `build/ground/ground-v7.pak` (v6 + the user's "Paisagem Devastada" as aldeia's "panorama 03", the default there: its sky
@@ -220,8 +220,8 @@ Build with `build.bat` / MSVC here. **The user still double-clicks `JOGAR.bat`; 
 `build\release\bin\Sandbox.exe`, so every release build reaches them by itself** ("tem que atualizar sozinho"):
 always finish a change with a release build. `jogo/` (the cloud zig build) is no longer used.
 The game opens Engine2's **title screen** with `--title --ground build/ground/ground-v2.pak --sprites
-build/sprites/battle.pak --meshes build/meshes/props.pak --scenes build/engine2-scenes --maps C:/Engine2/maps/ember
---heroes build/engine2-scenes/roster.json`.
+build/sprites/battle.pak --meshes build/meshes/props.pak --scenes build/scenes --maps C:/Engine2/maps/ember
+--heroes build/scenes/roster.json`.
 
 ```
 build.bat release          # or debug; output in build/<config>/bin
@@ -233,24 +233,24 @@ build.bat release          # or debug; output in build/<config>/bin
 - M3 bring-up: `Sandbox --meshes build/meshes/props.pak --grid N`.
 - **D1 port (current): a real Engine2 map in EmberEngine.**
   1. Engine2 data (runs Engine2's TypeScript read-only with its own vite-node; cache in the scratchpad):
-     `node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch> tools/scripts/engine2/export_board.ts
-     -- <map.json> content/engine2 build/engine2-ref` (board tables + reference geometry);
-     `... export_scene.ts -- <map.json> build/engine2-scenes/<map>.scene.json` then
-     `python -I tools/scripts/engine2/measure_art.py <scene.json> C:/Engine2/public` (the map importer);
-     `... export_textures.ts -- build/engine2-ref/textures` (procedural ground reference).
-  2. `Cooker check-ground content/engine2/board.json <map.json> C:/Engine2/public build/engine2-ref` (C++ board /
-     ground vs Engine2: must print "ground matches Engine2"); `Cooker ground content/engine2/board.json
-     C:/Engine2/public build/ground/ground.pak [--check build/engine2-ref/textures]`.
+     `node C:/Engine2/node_modules/vite-node/vite-node.mjs --root <scratch> tools/scripts/data/export_board.ts
+     -- <map.json> content/engine2 build/ref` (board tables + reference geometry);
+     `... export_scene.ts -- <map.json> build/scenes/<map>.scene.json` then
+     `python -I tools/scripts/data/measure_art.py <scene.json> C:/Engine2/public` (the map importer);
+     `... export_textures.ts -- build/ref/textures` (procedural ground reference).
+  2. `Cooker check-ground content/data/board.json <map.json> C:/Engine2/public build/ref` (C++ board /
+     ground vs Engine2: must print "ground matches Engine2"); `Cooker ground content/data/board.json
+     C:/Engine2/public build/ground/ground.pak [--check build/ref/textures]`.
   3. `Sandbox --map C:/Engine2/maps/ember/aldeia015.json --ground build/ground/ground.pak --scene
-     build/engine2-scenes/aldeia015.scene.json --sprites build/sprites/battle.pak --meshes build/meshes/props.pak
+     build/scenes/aldeia015.scene.json --sprites build/sprites/battle.pak --meshes build/meshes/props.pak
      [--look smooth|hard] [--moving-light] [--spell-light] [--measure 20] [--zoom F --turn D --tilt D --offset X Z]
      [--sun AZ EL] [--layers MASK: 1 sun 2 shadows 4 indirect 8 local]`. Window: right-drag turn/tilt, middle-drag
      grab, wheel zoom to cursor, WASD/arrows slide, camera bar at the bottom (MapStage.h top comment). Proof maps: aldeia015
      (lights, houses, photo ground), random-rimewater-shrine001 (water, 3D trees); stress: wisp-forest-2004.
-  4. Combat: `... export_battle.ts -- <map.json> content/engine2/battles/<map>.battle.json` (Engine2's BattleEngine
+  4. Combat: `... export_battle.ts -- <map.json> content/data/battles/<map>.battle.json` (Engine2's BattleEngine
      run headless: cells as movement sees them, units, Engine2's reach per unit; ENGINE2=<dir> for another checkout);
-     `Cooker check-battle content/engine2/battles/*.battle.json` (must print "reach matches Engine2" per map); then
-     Sandbox ... `--heroes build/engine2-scenes/roster.json --battle-rules content/engine2/battles/aldeia015.battle.json`.
+     `Cooker check-battle content/data/battles/*.battle.json` (must print "reach matches Engine2" per map); then
+     Sandbox ... `--heroes build/scenes/roster.json --battle-rules content/data/battles/aldeia015.battle.json`.
 - **M3 exit test:** `Sandbox --battle --meshes <pak> --sprites build/sprites/battle.pak --capture x.png
   [--content all|3d|cards] [--unpaced] [--cost-split 0|1|2]`. Reports per phase: GPU median / 99th / worst,
   per-pass averages, frames over budget; per-frame CSV in `build/battle-<phase>.csv`. **`--unpaced` = cost at
@@ -259,7 +259,7 @@ build.bat release          # or debug; output in build/<config>/bin
   build/meshes/proxy128.pak meshes/gothic-cottage/v01/gothic-cottage-v01.mesh build/compare` then
   `python tools/scripts/compare_meshes.py build/compare` (silhouette IoU + normal angle error by width).
 - Cooker (see top of `apps/cooker/main.cpp`):
-  - sprites: `Cooker sprites content/engine2.sprites.json C:/Engine2/public/game build/sprites/roster.pak`;
+  - sprites: `Cooker sprites content/units.sprites.json C:/Engine2/public/game build/sprites/roster.pak`;
     battle pack = engine2 + `content/decor.sprites.json` merged into
     `build/sprites/battle.sprites.json` → `battle.pak` (one pack: two packs both define `sprites/roster`).
   - **2D decorations = the PNGs in `decoracoes-2d/` (the user's folder, 2026-10-21: they edit, delete and add there by hand).**
@@ -271,7 +271,7 @@ build.bat release          # or debug; output in build/<config>/bin
     + `content/sprites/<set>/<clip>-vNN/`; run `python -I tools/scripts/sprites/apply_sprite_overrides.py` after
     fx_sprites.py / export_heroes.ts (patches the manifest, the roster's pose box / pace, walk-strides), then cook again.
   - walk cadence: one stride = `kWalkStride` world units for every unit (MapStage.h), clip strides in
-    `content/engine2/walk-strides.json` (also copied beside the roster); never scale it by the card's height again.
+    `content/data/walk-strides.json` (also copied beside the roster); never scale it by the card's height again.
   - meshes: `Cooker meshes C:/Engine2/public/game build/meshes/props.pak` (15 GLBs);
     proxy experiment: `Cooker meshes C:/Engine2/public/game/props build/meshes/proxy128.pak --remesh 128
     --cache build/meshes/cook-cache-proxy` (cottages only, separate pack; originals untouched).
@@ -295,9 +295,9 @@ build.bat release          # or debug; output in build/<config>/bin
   **GroundAssets** (ground texture names), **SceneData** (imported scene: cards, models, units, lights, the map's
   lighting sliders + mist type), **FogOfWar** (sight, mask; R7), **TimeOfDay.h** (Engine2's time-of-day data:
   battleLight + stage presets + moon pose).
-- `tools`: PakWriter, SpriteSource, SpriteCooker, TextureCooker, MeshCooker, **GroundCooker** + **Engine2Textures**
+- `tools`: PakWriter, SpriteSource, SpriteCooker, TextureCooker, MeshCooker, **GroundCooker** + **ProceduralTextures**
   (Engine2's procedural ground, byte-identical), **GroundCheck**, `tools/scripts/compare_meshes.py`,
-  `tools/scripts/engine2/*` (exporters + importer above).
+  `tools/scripts/data/*` (exporters + importer above).
 - `apps/sandbox`: Stage.h (test-scene interface + window events), SpriteParade.h, MeshStage.h, BattleStage.h (M3 exit
   test), MeshCompare.h, **MapStage.h** (D1: a real Engine2 map, its scene, lights, `--measure`), StreamTest in main.cpp. `apps/cooker`: the Cooker CLI.
 - `shaders`: HLSL via DXC (`-Zpr`: `mul(v, M)` with glm). `scene.hlsli` = GPU layouts shared with MeshGpu.h /
@@ -385,8 +385,8 @@ build.bat release          # or debug; output in build/<config>/bin
       bevel 0.07, walls 0.985 to the base, seam every height step in terrain.hlsl). The user then specified real
       pieces (NOT built, not authorized yet): each hex one pure piece of its own terrain, texture fitted per piece
       with per-piece rotation/offset, sides of that terrain's material, stacked levels.
-    - Unit viewer: `tools/scripts/engine2/export_heroes.ts` exports every Engine2 unit (97, 293 poses, all in
-      battle.pak) with Engine2's boxes and pacing → `build/engine2-scenes/roster.json` (`--heroes <file>`); panel
+    - Unit viewer: `tools/scripts/data/export_heroes.ts` exports every Engine2 unit (97, 293 poses, all in
+      battle.pak) with Engine2's boxes and pacing → `build/scenes/roster.json` (`--heroes <file>`); panel
       "Animação" (Parado, Andar, Atacar, Conjurar, Curar, ...): one-shot poses replay every 3.5 s. Units are laid in
       rows of 12 at the board centre. The user then said: **just repopulate the map as it is** (the map's own units,
       each playing the chosen pose from its own catalog entry: look it up by the scene unit's `key`) - written in the
@@ -413,7 +413,7 @@ build.bat release          # or debug; output in build/<config>/bin
 
 - **Title** (`apps/sandbox/TitleStage.h`, Engine2 index.html + title.css): title-bg.jpg under the veil, EMBER ASHES, Ember,
   ember menu buttons (Nova campanha / Como jogar / Opções / Sair); mission list on the save-board art (every scene in
-  `build/engine2-scenes` whose map exists; battles first); **briefing** (BRIEF_ART, briefing + objective, Entrar em combate).
+  `build/scenes` whose map exists; battles first); **briefing** (BRIEF_ART, briefing + objective, Entrar em combate).
   Fonts bundled (`content/fonts`: Pirata One, Newsreader, Figtree, OFL); Engine2 art read at run time via ImGui user
   textures (`render/UiArt`: images, ember-panel / rule / slot / kicker / title / big ember button).
 - **Screens switch in `main.cpp`** (title -> map -> back); Esc pause menu (Continuar / Menu principal); **result screen**
@@ -452,8 +452,8 @@ inventory / equipment, dialogs / intros)
   Title: Nova campanha / Continuar / Como jogar / Opções / Sair + "Modo teste" (old map list). `CampaignUi.h` SlotScreen
   (new / load / in-game save), briefing, ember plates, lucide icons.
 - **World map (rules `861ea11`, screen after):** `engine/world/Overworld` = overworld.ts + access / progression /
-  quests / hunger / poison / skills / loot helpers, `Cooker check-overworld content/engine2/overworld.json
-  build/engine2-ref/overworld-refs.json` (matches Engine2: 1155 seeded steps, 349 events, 4746 step pairs, 105 status
+  quests / hunger / poison / skills / loot helpers, `Cooker check-overworld content/data/overworld.json
+  build/ref/overworld-refs.json` (matches Engine2: 1155 seeded steps, 349 events, 4746 step pairs, 105 status
   checks). `export_overworld.ts` writes both. `apps/sandbox/OverworldStage.h` = OverworldMapScreen: header plates,
   world-map.jpg at 4 zooms + drag, fog, time tint, pins, leader idle sprite, step hexes, party panel, events, location
   list, quest log, Party (leader, formation, affinities, Skills training), first-visit explainer, Opções (Salvar /
@@ -461,7 +461,7 @@ inventory / equipment, dialogs / intros)
   completed). Captures: `--title-screen map --save-bank F [--map-ui party|skills|quests|options|move|location:<id>|save]`.
   Campaign maps exported so far: vau029, bosque005, aldeia015, thebridge022, wisp-forest-crossing012 (scene + battle).
 - **The Inn (done):** `engine/world/Inn` (GameApp's Inn handlers: meals, Adega potions / lockpicks, rations, night's rest,
-  healer Cura Média + cures, Vargan buy / enhance / sell / equip, NPC talk / quests) on `content/engine2/inn.json`
+  healer Cura Média + cures, Vargan buy / enhance / sell / equip, NPC talk / quests) on `content/data/inn.json`
   (`export_inn.ts`); `apps/sandbox/InnScreen.h` (salão with Brue / O Mudo / Cliente Suspeito / A Hóspede, rest, quests,
   Adega, Ferreiro, Curandeiro). The Inn pin opens it. Engine2 reaches Vargan and the healer by walking the Inn's own map
   (not ported): both are header buttons here. Captures `--map-ui inn|inn:smith|inn:healer|inn:scrollN`. UI image pool
@@ -478,7 +478,7 @@ inventory / equipment, dialogs / intros)
   briefings, victory on templo / portao (epilogues). `DialogScreen.h` + `BattleTalk.h` (DialogOverlay): the mission's
   intro as the battle opens, outro on victory, battle held (`MapStage::holdTurns`), recorded in dialogsSeen
   (`intro:<mission>:<tree>`), reply affinity into the save (adjustHeroAffinity + changeAffinity); Modo teste records
-  nothing. Data: `export_dialogs.ts` → `content/engine2/dialogs.json` (38 missions, portraits per line). Captures:
+  nothing. Data: `export_dialogs.ts` → `content/data/dialogs.json` (38 missions, portraits per line). Captures:
   `--map-ui film:game/<f>.mp4@<s>` on the world map, `--map-ui talk:<mission>[:outro]` on a battle. Debug + validation
   0 errors. Not ported: battle NPC dialogs (hud.pendingDialog), companion conversations, Engine2's English tracks.
 - **Another session worked in this checkout on 2026-10-16** (spell effects, Modo teste; it touched OverworldStage.h,
@@ -490,12 +490,12 @@ inventory / equipment, dialogs / intros)
   incl. the Map Editor):** the title's "MODO TESTE" opens `TestModeStage.h` (O que abrir?: Debug, Map Editor, Dev
   Controls, Teste de Magias). Debug = MapChoice (Classic / RPG, once per session), the classic WorldMapScreen +
   Cenários, or OverworldStage on the session's own save (`TestSession`, never the bank; Overworld `test` flag, checked
-  by `Cooker check-overworld` incl. 335 test steps). Test battles: `build/engine2-test` for all 148 campaign maps
-  (`tools/scripts/engine2/export_test_missions.sh`: make_test_map.ts adds the missing heroes, level 15, new save's
+  by `Cooker check-overworld` incl. 335 test steps). Test battles: `build/test-maps` for all 148 campaign maps
+  (`tools/scripts/data/export_test_missions.sh`: make_test_map.ts adds the missing heroes, level 15, new save's
   gear, debugFreeCast). Dev Controls = `DevGfx.h` (quality presets, shadows / resolution / soft, map lights, fog, fog
   debug view 4, sun sliders; `%LOCALAPPDATA%\Ember\dev-gfx.json`). **Map Editor** = `MapEditorStage.h`: Engine2's
   panel + a live MapStage preview of the draft in memory (`engine/world/SceneBuilder`: scenes built in C++ from
-  `content/engine2/editor-catalog.json`, identical to export_scene.ts on 148 maps: `Cooker check-scene-builder`);
+  `content/data/editor-catalog.json`, identical to export_scene.ts on 148 maps: `Cooker check-scene-builder`);
   brushes, undo, Salvar to `content/maps/ember/<id><serial>.json` (Engine2's format; Engine2's folder untouched),
   Testar (Engine2's exporters on the draft, ~6 s, then the battle; back to the editor after). Captures:
   `--title-screen test|test-choice|test-classic|test-scenarios|test-rpg|test-dev|test-editor`, `--editor-script`,
@@ -505,19 +505,19 @@ inventory / equipment, dialogs / intros)
   alone in a scratch folder, then commit); never `git add` a file another session is editing.
 - **Como jogar, Opções, battle Esc menu = Engine2's own, PT-BR + EN (2026-10-16; user: "both languages ported with
   the options").** `apps/sandbox/EmberMenus.h`: HelpModal (GameApp HelpModal: Básicos / Usos / Dano / Fórmulas / Loot,
-  from `content/engine2/help.json`), OptionsDialog (OptionsMenu.tsx: Jogo, Gráficos, Áudio, Idiomas, Acessibilidade;
+  from `content/data/help.json`), OptionsDialog (OptionsMenu.tsx: Jogo, Gráficos, Áudio, Idiomas, Acessibilidade;
   title, world maps, Modo teste, battle), BattleMenu (Velocidade 0.36/0.22/0.12 s per hex, poses at 0.4/0.65/1 pace;
   Áudio; Opções; Continuar; Desistir = back to the world map / Encerrar teste; Tela inicial). `GamePrefs.h`: the
   player's choices in `%LOCALAPPDATA%\Ember\game-preferences.json` + `tr()` (Engine2's uiText: its dictionary
-  `content/engine2/ui-text.json`, or inline English). `DevGfxSettings.h` = DevGfx without MapStage (Gráficos acts live
-  in a battle, MapStage::applyGfx). Data: `export_help.ts -- content/engine2/help.json content/engine2/ui-text.json`.
+  `content/data/ui-text.json`, or inline English). `DevGfxSettings.h` = DevGfx without MapStage (Gráficos acts live
+  in a battle, MapStage::applyGfx). Data: `export_help.ts -- content/data/help.json content/data/ui-text.json`.
   In English: title, save slots, these windows, film subtitles (`.en-v2.vtt`); dialogues use a line's translation
   when Engine2 has one (it has none yet: they stay Portuguese, Engine2's rule); other screens are still Portuguese.
   Left out: battle Zoom (user: later; the battle already zooms with the wheel) and GameApp's "Regras" button (user:
   not wanted). Captures: `--lang pt|en`, `--title-screen help:T[:scroll] | options`, `--map-ui menu|options` on a battle.
 - **Sound + Save / Load in battle (2026-10-16/17), committed. Verified:** `--audio-check` 101/101 decoded;
-  `--battle-save-check` PASS on the 7 battles in content/engine2/battles; debug + validation captures exit 0 (battle,
-  resumed battle, Esc menu, Opções); battles re-exported with sounds (7 in content, 148 in build/engine2-test, only the
+  `--battle-save-check` PASS on the 7 battles in content/data/battles; debug + validation captures exit 0 (battle,
+  resumed battle, Esc menu, Opções); battles re-exported with sounds (7 in content, 148 in build/test-maps, only the
   sound fields added). **Not verified:** hearing it in the window, clicking Save / Load through the slot screens.
 - **Sound = Engine2's audio.ts (2026-10-16, user: "important").** `engine/media/AudioMixer`: SDL3 device, MP3 by Media
   Foundation (effects whole and cached, music streamed on a worker, looping, each track keeping its place), Engine2's
@@ -527,7 +527,7 @@ inventory / equipment, dialogs / intros)
   every frame by main.cpp. Battle cues are Engine2's own choice: `export_battle.ts` records, per unit, what audio.ts
   plays (stand-in Audio element) for attack, Kael's strike, counter, every spell, heal, walk (+ fade), hit, death, and
   the level-up cue and the mission's `music`; MapStage plays them (`sounds`, `playCues`). Battle files without them
-  are silent: re-export (content/engine2/battles and build/engine2-test were). Check: `Sandbox --audio-check`
+  are silent: re-export (content/data/battles and build/test-maps were). Check: `Sandbox --audio-check`
   (decodes all 101 files).
 - **Save / Load in battle = Engine2's BattleSnapshot (2026-10-16).** `e2::Battle::snapshot / applySnapshot`
   (world/BattleSave.cpp: units' live state, round, initiative order, enmity, Engine2's field names) + MapStage
@@ -650,7 +650,7 @@ mesh, 391k tris, no UVs / material) was in no catalogue.
   exported (`blender/export_hearth.py`, metres → units, masonry + soot). Every asset = `<kit>/<name>-v01.glb` + `.blend`
   (versioned, never overwritten; a change is v02). `models.json` = the catalogue (ids `ember-<kit>-<name>`, PT names,
   authored height / width, footprint, editor section); `tools/scripts/models/catalog_models.py` merges it into
-  `content/engine2/editor-catalog.json` (idempotent; re-run after export_editor_catalog.ts). New mesh pack
+  `content/data/editor-catalog.json` (idempotent; re-run after export_editor_catalog.ts). New mesh pack
   `build/meshes/props-v2.pak` cooked from the staging root `build/meshes/src-v2` (Engine2's 15 GLBs from the cache + 35
   new); **JOGAR.bat now uses props-v2.pak** (falls back to props.pak). `props.pak` and Engine2's files untouched. No C++
   changed (no rebuild needed).
@@ -750,7 +750,7 @@ proper scaling", the formulas written like Salazar's own; icons in `Attachments/
   every hurt ally heals its own MAG/2 × 1.2 + 1D8), Ressurreição (T5, 12: the fallen ally on a hex within 1 stands again with MAG/2 × 1.5 + 2D8 HP,
   conditions wiped, acts next round), Julgamento (T5, 14: holy, range 6, radius 2, MAG/2 × 1.8 + 2D8 on every foe, undead × 1.5). Field:
   Consagrar Acampamento (T2 from 5: the party to full HP, tier uses untouched), Prece do Caminho (T3 from 9: `save.roadPrayer` hexes with no
-  undead encounter and battles half as likely; `content/engine2/undead-encounters.json` from `tools/scripts/engine2/undead_encounters.py`).
+  undead encounter and battles half as likely; `content/data/undead-encounters.json` from `tools/scripts/data/undead_encounters.py`).
   "healer" family = `salazar` / `cleric` / `bishop` (`emberClassFamily`).
 - Code: `Spells.cpp` (`healerKind`, `fallenAllyAt`, the Heal branch heals every id of `ids`, the `resurrection` branch), `Spells.h`
   (`BattleEffect::revived`), `FieldSpells.*`, `Overworld.cpp step` (the Prece), `render/vfx/HealerFx.*` (3 effects, 3D), `MapStage.h` (the areas'
@@ -824,7 +824,7 @@ than healer, a bit hibrid, only goes to level 10", then "never uses a shield")
   "Equipamento desconhecido (Cabeça)" / "Poção desconhecida (Voss)" with a "?" and only Jogar Fora; the pickers and `equipWeapon / equipItem`
   skip them; Vargan's forge sells them ("Itens desconhecidos", `sellShare` of the price); the world map's field spells list "Identificar"
   per mage (button Itens → the list, a click reveals one for good: `--map-ui identify:<hero>`). `InnWeapon::weaponType` now comes from
-  `content/engine2/weapons.json` (the unknown weapon's only word).
+  `content/data/weapons.json` (the unknown weapon's only word).
 
 ## Promoções do Mago Negro: Bruxo e Elementalista, magias T6–T10 (2026-10-17; the user: "pode criar todas elas os
 efeitos e wire into the game")
@@ -857,7 +857,7 @@ efeitos e wire into the game")
 - **Shader bug found and fixed on the way (affects every spell effect, not only ours):** with the Atmosfera on (the
   default), `volumeTransmittance` read 0 and every flipbook / vfx effect was invisible since 2026-10-16 afternoon. See
   the DXC gotcha above. If the user says "the spells show nothing", this was why.
-- Test lines: `tools: run_promo.ps1` pattern = `Sandbox ... --battle-rules build/engine2-test/battles/aldeia015.battle.json
+- Test lines: `tools: run_promo.ps1` pattern = `Sandbox ... --battle-rules build/test-maps/battles/aldeia015.battle.json
   --promote Voss=warlock:25 --battle-script "cast:Voss:markOfRuin:Kael; ..."`; `--fx-test <kind>` for the visuals alone.
 
 ## Session 2026-10-17 (night): fixes + the second Engine2 import wave (user: "continue importando tudo do engine 2"; both languages)
@@ -872,7 +872,7 @@ efeitos e wire into the game")
   (full screen); picking a unit or a new turn closes it (`select()`); the switch is the name row only. Not logged: Engine2's `Loot:` lines (loot is
   not kept here yet) and its tip lines. `--map-ui log|fulllog` for captures.
 - **Companion conversations (`2bc0e3b`):** `world/Companions` + `export_companions.ts` (Engine2's own `buildCompanionDialogue`, 130 trees) ->
-  `content/engine2/companions.json`; **the Portuguese is our own translation** (`companions-pt.json`, 223 strings, Neera is the only woman) because
+  `content/data/companions.json`; **the Portuguese is our own translation** (`companions-pt.json`, 223 strings, Neera is the only woman) because
   Engine2 has none. Party > Conversas tab + "Conversas" plate. Not checked against Engine2's `resolveCompanionReply` numbers yet (no Cooker check).
 - **Field spells (`a23529c`):** `world/FieldSpells`: Criar Comida e Água (healers) and Warp (mages 7+, wheel of explored locations, gate picture) behind the
   field-spells icon of the world-map header. Engine2's Warp sound (summonFamiliar) is not played. No check against Engine2 yet.
@@ -881,16 +881,16 @@ efeitos e wire into the game")
   with 0xC0000409 (guard sizes); a battle's `Sandbox.exe` is locked while the user plays: rename it aside and rebuild; another session shares the checkout
   (3D spell effects, Malrec's spells, world-map zoom): stage only your own hunks (`git diff -U0 | filter | git apply --cached --unidiff-zero`).
 - **Open, asked of the user:** the "flame effect" on braziers / lights ("precisa arrumar esse efeito em todos os pontos de luz"): which effect;
-  the world map's blocked paths (re-exported 2026-10-17: `content/engine2/overworld.json` is identical to Engine2's current output, so a path blocked here is blocked in Engine2 too, unless it is a UI / click problem: ask for the hex).
+  the world map's blocked paths (re-exported 2026-10-17: `content/data/overworld.json` is identical to Engine2's current output, so a path blocked here is blocked in Engine2 too, unless it is a UI / click problem: ask for the hex).
 
 ## The walkable Inn, both floors (2026-10-17; user: the Inn opens in every mode as its map with free movement, the Adega only by talking to Brue, import the second floor, hook it in the editor)
 
 - Every mode opens the Inn's own map (estalagem006, explore = free roam): the RPG world map's pin (OverworldStage::enterInn, after the
-  arrival film), Modo teste's classic map (briefing "Entrar") and RPG map. Data: `content/engine2/battles/estalagem006` /
+  arrival film), Modo teste's classic map (briefing "Entrar") and RPG map. Data: `content/data/battles/estalagem006` /
   `estalagem-andar-2003.battle.json` (export_battle.ts now writes exits' `returnConnector` / `connectorDirection`), scenes in
-  build/engine2-scenes and build/engine2-test.
+  build/scenes and build/test-maps.
 - `apps/sandbox/NpcTalk.h` (on every mission's MapStage): a click on an NPC with a `dialog` (MapSpawn::dialog, read from the map) walks the
-  leader beside it, then the conversation (DialogScreen, portraits from `content/engine2/portraits.json` = export_portraits.ts); a reply's
+  leader beside it, then the conversation (DialogScreen, portraits from `content/data/portraits.json` = export_portraits.ts); a reply's
   action after it closes: tavern (InnScreen main = the Adega), smith (forge, Vargan's film the first time), healer, the hostage quest,
   recruitAldric. InnScreen::Entry; leaving a menu returns to the room. The InnScreen header lost "Curandeiro" (Engine2 keeps Ferreiro).
 - MapStage: `absentNeutrals` (companions not recruited, campaign only), `leader` (save.partyLeader walks in Kael's place: the seated
@@ -904,14 +904,14 @@ efeitos e wire into the game")
   tall, corridor 3, room widths 7/6/6/9 above and 10/7/6/5 below (x1.96-2.33 area, corridor x2.11), walls re-laid, the stairs room's
   `door-3d-closed` now an open `door-3d-frame` (the user: no lock there). Made by a script (scratchpad make_upstairs.py: items
   touching a wall keep that distance, the rest scaled; NPCs with their dialogs, all 58 cards, stairs + connector at (29,18)).
-  The campaign builds its game files from it itself (build/engine2-campaign); test files in build/engine2-test. Every walkable
+  The campaign builds its game files from it itself (build/campaign); test files in build/test-maps. Every walkable
   cell (493) reachable from Kael's spawn; the same 17 lights now light a larger floor (darker rooms: the user judges).
 
 ## Status sheet in battle (2026-10-17; user: "importa direito a ficha": images, details, point system, Mochila / Equipar, the same scroller)
 
 - `apps/sandbox/BattleStatus.h` = Engine2's StatusPanel (portrait + hunger, name / class / level / XP, condition badge + detail, HP, "Pontos de atributo"
   (3 per level, +1 to VIT / ATK / MAG / DEF / DEX per point, `BattleUnit::point*`, saved in `statPointAllocations`, in the fight's snapshot), 8 attribute
-  cells with gear tooltips, spells / skills from `content/engine2/status-rows.json` (`export_status_rows.ts`: Engine2's own row text per class × level),
+  cells with gear tooltips, spells / skills from `content/data/status-rows.json` (`export_status_rows.ts`: Engine2's own row text per class × level),
   potions + lockpicks), with Engine2's ember scrollbar drawn by hand (14 px track, bronze pill thumb). The ⌊ ⌋ of the formulas come from Segoe UI
   Symbol merged into the Figtree font (UiArt.cpp loadUiFonts).
 - **Mochila / Equipar** inside the sheet open `InventoryScreen` over the fight (MapStage `openInventory` / `syncInventory`; `MapStageOptions::world`;
@@ -937,19 +937,19 @@ efeitos e wire into the game")
   algorithm already matched Engine2; the bug was rim hexes that could not be clicked (`pickAt` edge padding, fixed). A hand-bent route would
   be NEW behaviour: ask the user first.
 - **Ported and checked against Engine2 (`Cooker check-battle` on the 3 proof maps, all pass: reach, turn starts under 8 conditions, ~65k aims /
-  ~19k casts incl. affinity scores, enemy decisions, forecasts + seeded rolls):** every skill and spell in `engine/world/SpellsE2.inc`
+  ~19k casts incl. affinity scores, enemy decisions, forecasts + seeded rolls):** every skill and spell in `engine/world/SpellsCore.inc`
   (summons, zones, cleave, cones, bull rush ...), the status machine (stun / sleep / bleed / crippled / fear / bless), web / ice / aura / warp
   zones, `beginUnitTurn`, enemy-cast AI branches, dynamic affinity (friendly fire -1, support +0.2, neighbours +0.1; auras build none).
-  Refs: `TEST_LEVEL=15 SPELL_REFS=1 node .../vite-node.mjs ... export_battle.ts -- build/engine2-test/maps/<map>.json build/engine2-ref/battles/<map>.refs.json` (~2 min a map).
+  Refs: `TEST_LEVEL=15 SPELL_REFS=1 node .../vite-node.mjs ... export_battle.ts -- build/test-maps/maps/<map>.json build/ref/battles/<map>.refs.json` (~2 min a map).
 - **Also checked against Engine2 on the 3 proof maps (2026-10-17 night, all pass):** the staff's regeneration (turn start under 10 conditions), the off-hand
   action "Mão Secundária" (a dagger's own blow, a shield's bash: 75% damage, 70% to stun; `offHandStep`, `canOffHandAct`, forecast without mastery for a
   shield), the Warp pursuit (human-sized hostiles walk to the nearer gate mouth), the plants' AI (tendril swipe, Veneno Cáustico from tier 3, Sopro
   Venenoso, Veneno Menor; proven on `aldeia015` with its enemies swapped for plants: `PLANT_TEST=1`, `aldeia015.plants.refs.json`), and the locks:
   `useLockpick` (chests in 3 tiers, door decorations, door tiles; Ember, potion for whoever has room, gear, rations; ~90 openings compared: bags, loot,
   draws, affinity). Data: battle JSONs now carry `locks` (+ the cells each opening changes) and `ownedWeapons`: **re-export a battle file to get chests**
-  (every campaign battle in `content/engine2/battles`; on 2026-10-17, on the user's order "todos os mapas com baús precisam funcionar", every
-  `build/engine2-test` battle whose map has a chest, door tile or door decoration: 116 maps, battle file only, TEST_LEVEL=15 NO_REFS=1 from its own
-  build/engine2-test/maps file, ~3 s each; maps without locks were left alone). Loot tables are read from `content/engine2/overworld.json`. In the game: "Arrombar" beside a lock, the loot popup with icons,
+  (every campaign battle in `content/data/battles`; on 2026-10-17, on the user's order "todos os mapas com baús precisam funcionar", every
+  `build/test-maps` battle whose map has a chest, door tile or door decoration: 116 maps, battle file only, TEST_LEVEL=15 NO_REFS=1 from its own
+  build/test-maps/maps file, ~3 s each; maps without locks were left alone). Loot tables are read from `content/data/overworld.json`. In the game: "Arrombar" beside a lock, the loot popup with icons,
   the opened chest's card and an opened door's model leave the board, Ember / weapons / gear are folded into the save on a victory
   (`finishCampaignFight`), saved with the fight's snapshot. Capture step `lockpick:<unit>:<lock>`.
 - **Ported, NOT checked against Engine2:** win rules (rout / boss / escape waypoints, `Battle::winAvailable`, `confirmFinish`, the finish prompt and
@@ -1063,7 +1063,7 @@ recursos, elevações variadas, monstros, e deixe o birolho bem mais escondido",
   ~250 grey graves. **Then (the user, same night):** "no jogo ficou bem realista" (the tiles), zombie dogs out (they are summons), an
   Aparição and a Boi Zumbi loose in two corners, 2D tombs out (3D only, fewer), every other decoration as it was, "termina o cenário com mais
   elevações". The untextured "Mureta de pedra 3D" (`wall-3d-low`, no wall texture) was deleted from the catalog on the user's order
-  (`tools/scripts/engine2/removed_decorations.py`; the exporters skip it). `wall-3d-stone` has no texture either: never use it.
+  (`tools/scripts/data/removed_decorations.py`; the exporters skip it). `wall-3d-stone` has no texture either: never use it.
 - `content/maps/ember/cemiterio-esquecidos006.json`, made by `tools/scripts/maps/make_cemetery_v2.py` (reads its own mission settings from
   the same file; serial 6, the campaign plays it). Relief in whole levels: rims north / west / east to 7, the barrow over the crypt with a flat
   crown at 5, the chapel plateau at 3 stepping down, the mausoleum terrace at 2, open graves and the pond at -1, the south strip level so the
@@ -1078,7 +1078,7 @@ recursos, elevações variadas, monstros, e deixe o birolho bem mais escondido",
 - **EmberEngine 3D props in a campaign map:** the map exporters know only the old ids, so MapStage builds the scene with SceneBuilder when the
   draft has any `ember-*` decoration (`hasEmberProps`), and `blockEmberProps` makes the cells of `ember-*` props with blocksPath solid in the
   battle (impassable, stops shots). Maps without ember props: unchanged.
-- Captures: scratchpad `cap_cem.ps1` pattern (test battle from `build/engine2-test`, `--fog 0 --zoom 0.7` overview, `--zoom 2.2 --offset -0.07
+- Captures: scratchpad `cap_cem.ps1` pattern (test battle from `build/test-maps`, `--fog 0 --zoom 0.7` overview, `--zoom 2.2 --offset -0.07
   0.06` the crypt).
 - **008 (2026-10-21, the live version; the user: "fica o 008"; old versions are the user's to delete by hand, never ask):** 007 (the
   photographed v02 / v03 tombs) with the crypt cut three hexes wide ("that narrow passage right in the entrance felt clunky and too
@@ -1090,7 +1090,7 @@ a strong volumetric fog with strong gusts of wind flowing outside of the bridge 
 
 - `content/maps/ember/thebridge023.json` by `tools/scripts/maps/make_bridge_v2.py <thebridge022.json>`: 40x21 (was 15 rows; every shift even,
   things keep their place against their own wall), both parapets at columns 1, 6, ..., 31, 35 (a parapet card is drawn 2 columns east of its
-  anchor hex). 022 untouched. Test files made by hand in build/engine2-test (make_test_map / export_scene / measure_art / export_battle on 023).
+  anchor hex). 022 untouched. Test files made by hand in build/test-maps (make_test_map / export_scene / measure_art / export_battle on 023).
 - Draft extras (MapDraft, Board.cpp): `emberTiles` "ponte-v01" (the user's BridgeTiles photo, `content/ground/ponte-calcamento-v01.png`, tile
   3.2, `overBaked`: also over the "ruins" baked art), `emberFloor` + `emberFloorDepth` 40 + `emberFloorTile` 240 (resolve.hlsl backgroundAt
   mode 6: the map's painting flat under the bridge, mode 5's painting on the far band; panel "Chão do vão", `--floor N`), `emberWindFog` 10
@@ -1165,12 +1165,12 @@ design with the textures at watchtowerwalls", then "update the editor to make it
 - **The map:** `content/maps/ember/watchtower-gate-floor008.json` = 007 through `tools/scripts/maps/watchtower_walls.py --windows --torches
   --gate --stairs` (the 3D stairs over both waypoints, up (29,5) and down (10,29); 154 walls, the 4-hex gate at the entrance (2 wall pieces removed for it), 25 openings on the outer ring, 19 wall-torch cards moved
   onto the walls as torch pieces). No animated door is placed on it yet (the kit's "Porta" in the editor, or `--door` instead of `--gate`). **The user was finishing their own improved version of this map while this was built:** if they
-  save over 008 from a draft of 007, run the script on their file again. Test files: `build/engine2-test/{maps,scenes,battles}/watchtower-gate-floor008.*`
+  save over 008 from a draft of 007, run the script on their file again. Test files: `build/test-maps/{maps,scenes,battles}/watchtower-gate-floor008.*`
   (Engine2's exporters skip the `ember-arch-*` ids: MapStage rebuilds the scene with SceneBuilder, as for any `ember-*` prop).
-- Captures: `Sandbox --map build/engine2-test/maps/watchtower-gate-floor008.json --ground build/ground/ground-v16.pak --scene ... --sprites
-  build/sprites/battle.pak --meshes build/meshes/props-v3.pak --heroes build/engine2-scenes/roster.json --battle-rules
-  build/engine2-test/battles/watchtower-gate-floor008.battle.json --hour 4 --zoom 0.7 --capture captures/watchtower/NNN.png` (local, git-ignored).
-  The door's opening: a draft with `--door` exported under another name (`build/engine2-test/*/watchtower-gate-floor-doortest.*`) and
+- Captures: `Sandbox --map build/test-maps/maps/watchtower-gate-floor008.json --ground build/ground/ground-v16.pak --scene ... --sprites
+  build/sprites/battle.pak --meshes build/meshes/props-v3.pak --heroes build/scenes/roster.json --battle-rules
+  build/test-maps/battles/watchtower-gate-floor008.battle.json --hour 4 --zoom 0.7 --capture captures/watchtower/NNN.png` (local, git-ignored).
+  The door's opening: a draft with `--door` exported under another name (`build/test-maps/*/watchtower-gate-floor-doortest.*`) and
   `--battle-script "goto:Kael:19:31"` (Kael beside the door: it stands open in the capture).
 - **Verified (2026-10-21):** debug + validation exit 0, 0 validation lines (the gate floor by morning; the door test with Kael beside the open
   door); release captures: the room dark under the roof with the sun up (no wall / pillar top lit, no strip along any wall), the low western
@@ -1254,7 +1254,7 @@ them as base and texture ... carefully designed detailed gothic walls to be used
   `content/maps/ember/thebridge024.json` by `tools/scripts/maps/make_bridge_gothic.py` (= 023, the 16 parapet cards replaced by 80 kit pieces
   over both outer rows: pier / wall / niche / wall every four hexes; the campaign plays the highest serial, so 024 is live; 023 untouched).
   `deckClip` now also ends the deck at a 3D parapet's outer face (`ArchPiece::deckHalf`, the ground runs under the wall), so "the tiles
-  finish right at the walls" still holds without the cards. Test files `build/engine2-test/*/thebridge024.*`; captures `captures/gothic/020-024`.
+  finish right at the walls" still holds without the cards. Test files `build/test-maps/*/thebridge024.*`; captures `captures/gothic/020-024`.
 
 ## Next
 
@@ -1283,7 +1283,7 @@ only on the user's explicit "faz", shown live in the window:
 2. **Measure and fix the stutter** (asked, not started; confirm first): frame times with every unit on screen, sprite
    residency vs the 1 GB budget; fix the real cause (budget sized for the real workload, not fewer units).
 3. **Repopulate the map as it is** with the Animação choice driving the map's own units. Written in the cloud
-   session, NOT BUILT: `--heroes build/engine2-scenes/roster.json` is now the pose catalog (`Hero::key`, read
+   session, NOT BUILT: `--heroes build/scenes/roster.json` is now the pose catalog (`Hero::key`, read
    from export_heroes.ts's `key`); each scene unit finds its entry by `key` and plays the chosen pose with that
    pose's box / foot / pacing (one-shots: doneAt + 0.5 s, then again), keeping its own mirror; units without the
    pose stay idle; unknown keys logged. The panel lists only poses some map unit has, Parado first. The rows of
@@ -1294,8 +1294,8 @@ only on the user's explicit "faz", shown live in the window:
    identical to Engine2's (hexes, costs, parents) for every unit of aldeia015, random-rimewater-shrine001,
    wisp-forest-2004 (56 units, 2487 hexes) and on all 242 maps in Engine2's maps/ember (2682 units, 246304
    hexes, 0 differences); paths and spent movement checked.
-   Data: `tools/scripts/engine2/export_battle.ts` (runs Engine2's own BattleEngine headless with vite-node; the three
-   proof maps' output is committed in `content/engine2/battles/`, from Engine2's GitHub HEAD, Oct 14: re-export from
+   Data: `tools/scripts/data/export_battle.ts` (runs Engine2's own BattleEngine headless with vite-node; the three
+   proof maps' output is committed in `content/data/battles/`, from Engine2's GitHub HEAD, Oct 14: re-export from
    C:/Engine2 if its maps changed). MapStage (`--battle-rules`), **NOT BUILT / NOT RUN**: left click picks a unit (its
    card, or its hex) and shows its reach in Engine2's battle-grid colours (Battle3D gridMarks: movement wash + edges,
    enemy wash, route, active marker, cursor; drawn as an ImGui background overlay, so it lies over unit feet: a ground
@@ -1486,7 +1486,7 @@ titles", then "Faz a câmera de ação como proposta")
 - **Neera Hydra+ (2026-10-22):** her idle, off-hand strike (attackShort), walk right and bow attack from the user's sheets
   (`Attachments/NeeraHydra`, 36 frames each, timing as drawn), set `neera-hydra`; walkLeft / attackLeft / attack2 / cast keep the old art.
   These are "max-px" sheets (each scaled to fill its frame): every clip has its own `figurePx` (her upright height in that sheet) so she
-  stands 2.66 units like before. Her bow sound is `Bow2-Balanced-High.mp3` (content/game/public/game/SoundFX), played at the release
+  stands 2.66 units like before. Her bow sound is `Bow2-Balanced-High.mp3` (content/assets/game/SoundFX), played at the release
   (MapStage `neeraBow`, `arrowRelease` "neera-hydra:atk" = frame 27). `content/unit-size.json` scales a unit's card (MapStage
   `unitSize`): empty; the user is deciding on the Cultista Ancestral at 0.9.
 - **Giant Spider** (`giantSpider`, 3 hexes, rank D, mov 4, bite 2D6, poison 50 %, no spells; working stats, the user sets the real ones later):
@@ -1503,7 +1503,7 @@ titles", then "Faz a câmera de ação como proposta")
   (new in enemy-ranks.json: 1.75 a level), a warrior a little stronger than The Butcher (its stats x1.10), 50 % against arcane, darkness,
   ember, fire, holy, ice, lightning; first values. Its own sounds (the user's HeavyCleave / HeavySteps, copied to SoundFX) come from
   `ember-classes.json` "sounds", which BattleExport now lays over the stand-in's cues (any ember class may carry them).
-- Test battle: `content/maps/ember/beasttest001.json` (Map Editor: open, Testar) = `build/engine2-test/{maps,battles}/beasttest.*` (aldeia015 +
+- Test battle: `content/maps/ember/beasttest001.json` (Map Editor: open, Testar) = `build/test-maps/{maps,battles}/beasttest.*` (aldeia015 +
   Small, Large, Slime36, Slime64, spider). Verified: release capture exit 0, all five drawn, their Média sets pinned. **Not verified:** the AI
   casting both acid spells in play, debug + validation, the spider's look and size in the window (the user judges).
 
@@ -1518,22 +1518,22 @@ export_scene, measure_art, export_battle) para C++, sem node em tempo de execuç
   changes, every unit's sound cues, the mission's music). The reference answers `Cooker check-battle` compares against (forecasts, rolls, casts,
   turn starts, AI) are NOT written: they remain the TypeScript exporter's (`SPELL_REFS=1`). `apps/sandbox/MapExport.h` runs the three steps
   (the campaign's missions and the editor's Testar); its `MapExportKind` overload stays for the committed callers.
-- **The rule tables as data: `content/engine2/battle-rules.json`**, written by `tools/scripts/engine2/export_battle_rules.ts` (classes with
+- **The rule tables as data: `content/data/battle-rules.json`**, written by `tools/scripts/data/export_battle_rules.ts` (classes with
   stats / spell tiers / spell lists at every level, charges, starter weapons; the enemy spell pools; terrain; decorations with footprints,
   solidity sets, doors and exits; weapons and gear; the sound cues recorded through audio.ts per cue and per sprite; the music themes).
   Re-run it after a rule change: `node content/game/node_modules/vite-node/vite-node.mjs --root <scratch> --config
-  content/game/vite.export.config.mjs tools/scripts/engine2/export_battle_rules.ts -- content/engine2/battle-rules.json` (a build-time tool;
+  content/game/vite.export.config.mjs tools/scripts/data/export_battle_rules.ts -- content/data/battle-rules.json` (a build-time tool;
   the game never runs node).
 - **Cooker:** `check-battle-export <maps dir> [--player-level N] <battle.json...>` (the C++ file against the exporter's, the fields the game
   reads), `prepare-map <map> <out>`, `export-battle <map> <out> [--player-level N]`, `export-scene <board.json> <catalog> <public> <map> <out>`.
-- **Verified (2026-10-22):** the 9 proof battles in `content/engine2/battles` match field by field (units with sounds, cells, locks, exits,
+- **Verified (2026-10-22):** the 9 proof battles in `content/data/battles` match field by field (units with sounds, cells, locks, exits,
   music; the two wisp-forest files predate the exits' `returnConnector` / `connectorDirection` keys, compared on the keys they have); the 17
-  campaign battles the TypeScript pipeline had made in `build/engine2-campaign` match (except the 2 cemetery maps whose files predate the
+  campaign battles the TypeScript pipeline had made in `build/campaign` match (except the 2 cemetery maps whose files predate the
   cemetery theme); `prepare-map` identical to the TypeScript's prepared maps on 5 maps (watchtower and cemetery included); the scene writer
   round-trips (`check-scene-builder` 0 differences on 5 maps); a release capture `--title --title-screen mission-test:aldeia` prepared
   aldeia017 inside the game (map, scene, battle, 13 units in play) and its battle file equals the TypeScript one; the same capture in
   debug with validation: exit 0, 0 validation lines (once `build/debug` was rebuilt afresh: debug-stale-deps gotcha above). The 164 battles in
-  `build/engine2-test` are NOT a reference (an older exporter: the test roster at 15 with a save's gear, `debugFreeCast`, no locks).
+  `build/test-maps` are NOT a reference (an older exporter: the test roster at 15 with a save's gear, `debugFreeCast`, no locks).
 - **Bug found in the TypeScript exporter, gone here by design:** a map whose tiles use the board's own terrains `highwood` / `highruin` /
   `deadtree` (9 of 261 in content/maps/ember: colina004, cripta002, fortaleza004, muralha001, passagem001, profundezas002,
   random-encounter-1-001, random-encounter-2-001, templo002) got misaligned combat cells (TILE_CHAR had no char for them, so "undefined" became
@@ -1735,13 +1735,13 @@ open area with large tables ... some separate rooms for NPCs and services, use t
 - Sprite clip `neera-hydra/atk-short-v01` (2026-10-27): Neera's Hydra+ off-hand (dagger) strike, in use 2026-10-22..27. The user:
   "Can we get Neera's Dagger animation back to the previous version?": `attackShort` is neera-v2-001's `atk-short` again
   (sprite-overrides.json, roster.json's entry from a fresh export_heroes.ts; previous roster kept as
-  `build/engine2-scenes/roster-20261027-before-neera-dagger.json`). The Hydra clip stays in battle.pak, drawn by nobody.
+  `build/scenes/roster-20261027-before-neera-dagger.json`). The Hydra clip stays in battle.pak, drawn by nobody.
 
 - Sprite set `voss-veo-36-media` (2026-10-27): Voss's old Leve (36 frames picked evenly from loops cut on 2026-10-22, played on the
   full clip's timing: uneven steps). Replaced by `voss-veo-leve-passo` (cut.json's clips, every Nth frame, `frameStepNear` 36, roster
   `lightStep`, MapStage `lightStepOf`); still in the pack, drawn by nobody, its frames in `content/sprites/voss-veo/*-media36-v01/`.
 
-- `content/game/public/game/subtitles/kept/aldeia-intro-640x350/` (2026-10-26): the four aldeia-intro subtitle files with the old
+- `content/assets/game/subtitles/kept/aldeia-intro-640x350/` (2026-10-26): the four aldeia-intro subtitle files with the old
   640x350 film's timings, kept when they were resynced to the user's 1080p cut (`aldeia-intro.webm`; docs/FILMS.md).
   Likewise `subtitles/kept/smith-intro-752x416/` (smith-intro's four files before their -2.0 s shift to `smith-intro.webm`).
 
@@ -1752,11 +1752,11 @@ open area with large tables ... some separate rooms for NPCs and services, use t
   the campaign keeps playing 026.
 
 - Salazar (salazar-v3 v02 = every clip at 587 px from the user's sheets, `Attachments/SalazarOG`): nothing of his old art is kept. The old
-  shrunk frames (`content/game/public/game/sprites/salazar-final/*.png`, 216) were deleted on 2026-10-25 ("delete current version"); salazar-v3
+  shrunk frames (`content/assets/game/sprites/salazar-final/*.png`, 216) were deleted on 2026-10-25 ("delete current version"); salazar-v3
   v01, its 610 px Leve copy and `content/sprites/salazar-final` (move v02 / v03, cast-back v01) on 2026-10-26 ("you can clear all these junk
   files"; they are in git history before that commit).
 
-- `content/engine2/backdrop-fit.json` painting entry `inn-second-floor-v01.jpg#teto-salao` (2026-10-23): made as an extra panorama when
+- `content/data/backdrop-fit.json` painting entry `inn-second-floor-v01.jpg#teto-salao` (2026-10-23): made as an extra panorama when
   the user asked only for the Andar II's CEILING to change ("não é panorama, é CEILING"); taken out of the map's list, kept unused. The
   Andar II's `#piso` now carries the salão's ceiling (`tavern-ceiling-v01.jpg`); its previous ceiling was `inn-ceiling-v01.jpg`.
 
@@ -1810,7 +1810,7 @@ open area with large tables ... some separate rooms for NPCs and services, use t
   stay stuck with 0 handles until a reboot.
 - Voss's first hit cut (`content/sprites/voss-veo/hit-v01` before the wall key) was rewritten in place on 2026-10-21 before any commit;
   its video frames stay in `build/video-cut/voss-veo/hit`, so it can be cut again with `video_sprite.py`.
-- **Milf's Acid Arrow (`acidArrow`, Spells.cpp / SpellsE2.inc, 2026-10-22):** built when the user's "Milf's acid arrow" was read as
+- **Milf's Acid Arrow (`acidArrow`, Spells.cpp / SpellsCore.inc, 2026-10-22):** built when the user's "Milf's acid arrow" was read as
   AD&D's spell; the user's name belongs to Neera's `venomArrow`. Kept and in use: the Corrosive Slimes cast it.
 
 ## Later milestones

@@ -3,26 +3,26 @@
 //   Cooker list <file.pak>                                           print an archive's contents
 //   Cooker synth <out dir> [--count N] [--min BYTES] [--max BYTES] [--seed S]
 //                                                                    write synthetic test files
-//   Cooker import-engine2 <engine2 root> <out.sprites.json>         sprite manifest from Engine2's tables
+//   Cooker import-ember <ember root> <out.sprites.json>         sprite manifest from Ember's tables
 //   Cooker sprites <manifest.sprites.json> <source root> <out.pak>  cook sprite clips (BC7) into an archive
 //          [--only <set prefix>]... [--quality fast|basic|slow] [--copies N] [--cache <dir>]
 //   Cooker meshes <source root> <out.pak> [--quality fast|basic|slow] [--cache <dir>] [--remesh N]
 //          (--remesh: proxy-LOD experiment, every mesh replaced by its voxel remesh; separate archive)
 //                                                                    cook every GLB under a folder (cluster LOD + textures)
-//   Cooker ground <board.json> <engine2 public> <out.pak> [--cache <dir>] [--check <dir>] [--quality fast|basic|slow]
-//                                                                    Engine2's ground textures (procedural + photo layers)
-//   Cooker check-ground <board.json> <map.json> <engine2 public> <reference dir>
-//                                                                    compare the C++ board/ground with Engine2's export
-//   Cooker check-battle <map.battle.json>                            compare the C++ movement reach with Engine2's export
+//   Cooker ground <board.json> <ember public> <out.pak> [--cache <dir>] [--check <dir>] [--quality fast|basic|slow]
+//                                                                    Ember's ground textures (procedural + photo layers)
+//   Cooker check-ground <board.json> <map.json> <ember public> <reference dir>
+//                                                                    compare the C++ board/ground with Ember's export
+//   Cooker check-battle <map.battle.json>                            compare the C++ movement reach with Ember's export
 //   Cooker check-battle-export <maps dir> <map.battle.json...>       the game's own battle export against the exporter's files
 //   Cooker prepare-map <map.json> <out map.json>                     the campaign's party on a map (what the game does on opening it)
 //   Cooker export-battle <map.json> <out.battle.json>                the game's own battle file of a prepared map
 //   Cooker export-scene <board.json> <catalog.json> <public> <map.json> <out.scene.json>   its scene (SceneBuilder)
 //   Cooker check-spell-tracks                                       every spell's numbers level by level: one change a level
-//   Cooker check-campaign <campaign.json>                            compare the C++ save slots (slotProgress) with Engine2's
-//   Cooker check-overworld <overworld.json> <references.json>        compare the C++ world-map rules with Engine2's answers
+//   Cooker check-campaign <campaign.json>                            compare the C++ save slots (slotProgress) with Ember's
+//   Cooker check-overworld <overworld.json> <references.json>        compare the C++ world-map rules with Ember's answers
 //   Cooker check-interlude <interlude.json> <overworld.json> <campaign.json>   the Interlude's gate / party switch / return on synthetic saves
-//   Cooker check-scene-builder <board.json> <editor-catalog.json> <engine2 public> <scenes dir> <map.json...>
+//   Cooker check-scene-builder <board.json> <editor-catalog.json> <ember public> <scenes dir> <map.json...>
 //                                                                    compare the C++ scene builder with export_scene.ts
 //   Cooker sprite-preview <manifest> <source root> <cache dir> <set> <clip> <frame> <out.png>
 //                                                                    source vs. GPU-decoded frame, side by side
@@ -158,10 +158,10 @@ int synth(const std::vector<std::string_view>& args) {
   return 0;
 }
 
-int importEngine2(const std::vector<std::string_view>& args) {
-  if (args.size() != 2) fatal("usage: Cooker import-engine2 <engine2 root> <out.sprites.json>");
+int importSource(const std::vector<std::string_view>& args) {
+  if (args.size() != 2) fatal("usage: Cooker import-ember <ember root> <out.sprites.json>");
   SpriteManifest manifest;
-  if (!importEngine2Sprites(std::filesystem::path(args[0]), manifest)) return 1;
+  if (!importSourceSprites(std::filesystem::path(args[0]), manifest)) return 1;
   if (!saveSpriteManifest(std::filesystem::path(args[1]), manifest)) return 1;
   logInfo("wrote {}", args[1]);
   return 0;
@@ -278,10 +278,10 @@ int spritePreview(const std::vector<std::string_view>& args) {
 }
 
 int ground(const std::vector<std::string_view>& args) {
-  if (args.size() < 3) fatal("usage: Cooker ground <board.json> <engine2 public> <out.pak> [--cache <dir>] [--check <dir>] [--quality fast|basic|slow]");
+  if (args.size() < 3) fatal("usage: Cooker ground <board.json> <ember public> <out.pak> [--cache <dir>] [--check <dir>] [--quality fast|basic|slow]");
   GroundCookOptions options;
   options.boardJson = std::filesystem::path(args[0]);
-  options.engine2Public = std::filesystem::path(args[1]);
+  options.artRoot = std::filesystem::path(args[1]);
   const std::filesystem::path out(args[2]);
   options.cacheDir = (out.parent_path().empty() ? std::filesystem::path(".") : out.parent_path()) / "cook-cache";
   for (size_t i = 3; i < args.size(); ++i) {
@@ -313,7 +313,7 @@ int ground(const std::vector<std::string_view>& args) {
 }
 
 int checkGroundCommand(const std::vector<std::string_view>& args) {
-  if (args.size() != 4) fatal("usage: Cooker check-ground <board.json> <map.json> <engine2 public> <reference dir>");
+  if (args.size() != 4) fatal("usage: Cooker check-ground <board.json> <map.json> <ember public> <reference dir>");
   return checkGround(std::filesystem::path(args[0]), std::filesystem::path(args[1]), std::filesystem::path(args[2]),
                      std::filesystem::path(args[3]))
              ? 0
@@ -329,7 +329,7 @@ int checkBattleCommand(const std::vector<std::string_view>& args) {
 
 int checkSpellTracksCommand(const std::vector<std::string_view>& args) {
   std::vector<std::string> report;
-  const std::vector<std::string> fails = ember::e2::checkSpellTracks(args.empty() ? nullptr : &report);
+  const std::vector<std::string> fails = ember::checkSpellTracks(args.empty() ? nullptr : &report);
   for (const std::string& line : report) ember::logInfo("{}", line);
   for (const std::string& f : fails) ember::logError("{}", f);
   ember::logInfo("spell tracks: {}", fails.empty() ? "one small improvement a level on every spell" : std::format("{} failures", fails.size()));
@@ -338,42 +338,42 @@ int checkSpellTracksCommand(const std::vector<std::string_view>& args) {
 
 int checkCampaignCommand(const std::vector<std::string_view>& args) {
   if (args.size() != 1) fatal("usage: Cooker check-campaign <campaign.json>");
-  ember::e2::Campaign campaign;
+  ember::Campaign campaign;
   const std::filesystem::path scratch = std::filesystem::temp_directory_path() / "ember-check-campaign.json";
   if (!campaign.open(std::filesystem::path(args[0]), scratch)) return 1;
-  return ember::e2::checkSlotProgress(campaign) == 0 ? 0 : 1;
+  return ember::checkSlotProgress(campaign) == 0 ? 0 : 1;
 }
 
 int checkOverworldCommand(const std::vector<std::string_view>& args) {
   if (args.size() != 2) fatal("usage: Cooker check-overworld <overworld.json> <references.json>");
-  ember::e2::Overworld world;
+  ember::Overworld world;
   if (!world.load(std::filesystem::path(args[0]))) return 1;
-  return ember::e2::checkOverworld(world, std::filesystem::path(args[1])) == 0 ? 0 : 1;
+  return ember::checkOverworld(world, std::filesystem::path(args[1])) == 0 ? 0 : 1;
 }
 
 // The Interlude's campaign rules on synthetic saves (world/Interlude.h: the Ruins' gate, begin / advance / complete, Isolde's
 // recruitment, an old save).
 int checkInterludeCommand(const std::vector<std::string_view>& args) {
   if (args.size() != 3) fatal("usage: Cooker check-interlude <interlude.json> <overworld.json> <campaign.json>");
-  ember::e2::InterludeData data;
+  ember::InterludeData data;
   std::string why;
   if (!data.load(std::string(args[0]), &why)) {
     ember::logError("check-interlude: {}", why);
     return 1;
   }
-  ember::e2::Overworld world;
+  ember::Overworld world;
   if (!world.load(std::filesystem::path(args[1]))) return 1;
-  ember::e2::Campaign campaign;
+  ember::Campaign campaign;
   const std::filesystem::path scratch = std::filesystem::temp_directory_path() / "ember-check-interlude.json";
   if (!campaign.open(std::filesystem::path(args[2]), scratch)) return 1;
-  return ember::e2::checkInterlude(data, world, campaign.emptySave()) == 0 ? 0 : 1;
+  return ember::checkInterlude(data, world, campaign.emptySave()) == 0 ? 0 : 1;
 }
 
 // The game's own map preparation by hand (what the game does when a mission opens: apps/sandbox/MapExport.h).
 int prepareMapCommand(const std::vector<std::string_view>& args) {
   if (args.size() < 2) fatal("usage: Cooker prepare-map <map.json> <out map.json>");
   std::string note;
-  if (!ember::e2::prepareCampaignMap(std::filesystem::path(args[0]), std::filesystem::path(args[1]), &note)) return 1;
+  if (!ember::prepareCampaignMap(std::filesystem::path(args[0]), std::filesystem::path(args[1]), &note)) return 1;
   logInfo("{}", note);
   return 0;
 }
@@ -387,7 +387,7 @@ int exportBattleCommand(const std::vector<std::string_view>& args) {
   const nlohmann::json map = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
   if (!in || map.is_discarded()) fatal(std::format("cannot read {}", args[0]));
   std::string error;
-  const std::optional<nlohmann::json> battle = ember::e2::exportBattle(map, &error, playerLevel);
+  const std::optional<nlohmann::json> battle = ember::exportBattle(map, &error, playerLevel);
   if (!battle) fatal(std::format("{}: {}", args[0], error));
   std::error_code ec;
   std::filesystem::create_directories(std::filesystem::path(args[1]).parent_path(), ec);
@@ -400,22 +400,22 @@ int exportBattleCommand(const std::vector<std::string_view>& args) {
 }
 
 int exportSceneCommand(const std::vector<std::string_view>& args) {
-  if (args.size() < 5) fatal("usage: Cooker export-scene <board.json> <editor-catalog.json> <engine2 public> <map.json> <out.scene.json>");
-  const std::optional<ember::e2::BoardData> data = ember::e2::BoardData::load(std::filesystem::path(args[0]));
-  ember::e2::EditorCatalog catalog;
+  if (args.size() < 5) fatal("usage: Cooker export-scene <board.json> <editor-catalog.json> <ember public> <map.json> <out.scene.json>");
+  const std::optional<ember::BoardData> data = ember::BoardData::load(std::filesystem::path(args[0]));
+  ember::EditorCatalog catalog;
   if (!data || !catalog.load(std::filesystem::path(args[1]))) return 1;
-  std::optional<ember::e2::MapDraft> draft = ember::e2::MapDraft::load(std::filesystem::path(args[3]));
+  std::optional<ember::MapDraft> draft = ember::MapDraft::load(std::filesystem::path(args[3]));
   if (!draft) return 1;
-  const ember::e2::MapDraft copy = *draft;
-  ember::e2::Board board(*data, std::move(*draft));
+  const ember::MapDraft copy = *draft;
+  ember::Board board(*data, std::move(*draft));
   if (!board.loadRelief(std::filesystem::path(args[2]))) logWarn("{}: relief not read from {}", args[3], args[2]);
   std::map<std::string, int> skipped;
-  const ember::e2::SceneData scene = ember::e2::buildScene(board, catalog, &skipped);
+  const ember::SceneData scene = ember::buildScene(board, catalog, &skipped);
   std::error_code ec;
   std::filesystem::create_directories(std::filesystem::path(args[4]).parent_path(), ec);
   std::ofstream out(std::filesystem::path(args[4]), std::ios::binary);
   if (!out) fatal(std::format("cannot write {}", args[4]));
-  out << ember::e2::sceneJson(scene, copy, skipped).dump(1);
+  out << ember::sceneJson(scene, copy, skipped).dump(1);
   logInfo("{}: {} cards, {} models, {} architecture, {} units; skipped {}", scene.map, scene.cards.size(), scene.models.size(), scene.architecture, scene.units.size(), nlohmann::json(skipped).dump());
   return 0;
 }
@@ -430,24 +430,24 @@ int checkBattleExportCommand(const std::vector<std::string_view>& args) {
     if (args[i] == "--player-level" && i + 1 < args.size()) playerLevel = static_cast<int>(parseNumber(args[++i]));
     else references.emplace_back(args[i]);
   }
-  return ember::e2::checkBattleExport(std::filesystem::path(args[0]), references, playerLevel) == 0 ? 0 : 1;
+  return ember::checkBattleExport(std::filesystem::path(args[0]), references, playerLevel) == 0 ? 0 : 1;
 }
 
 int checkSceneBuilderCommand(const std::vector<std::string_view>& args) {
-  if (args.size() < 5) fatal("usage: Cooker check-scene-builder <board.json> <editor-catalog.json> <engine2 public> <scenes dir> <map.json...>");
-  const std::optional<ember::e2::BoardData> data = ember::e2::BoardData::load(std::filesystem::path(args[0]));
-  ember::e2::EditorCatalog catalog;
+  if (args.size() < 5) fatal("usage: Cooker check-scene-builder <board.json> <editor-catalog.json> <ember public> <scenes dir> <map.json...>");
+  const std::optional<ember::BoardData> data = ember::BoardData::load(std::filesystem::path(args[0]));
+  ember::EditorCatalog catalog;
   if (!data || !catalog.load(std::filesystem::path(args[1]))) return 1;
   std::vector<std::filesystem::path> maps;
   for (size_t i = 4; i < args.size(); ++i) maps.emplace_back(args[i]);
-  return ember::e2::checkSceneBuilder(*data, catalog, maps, std::filesystem::path(args[3]), std::filesystem::path(args[2])) == 0 ? 0 : 1;
+  return ember::checkSceneBuilder(*data, catalog, maps, std::filesystem::path(args[3]), std::filesystem::path(args[2])) == 0 ? 0 : 1;
 }
 
 int architecture(const std::vector<std::string_view>& args) {
-  if (args.size() < 3) fatal("usage: Cooker architecture <editor-catalog.json> <engine2 public> <out.pak> [--cache <dir>] [--quality fast|basic|slow]");
+  if (args.size() < 3) fatal("usage: Cooker architecture <editor-catalog.json> <ember public> <out.pak> [--cache <dir>] [--quality fast|basic|slow]");
   ArchitectureCookOptions options;
   options.catalog = std::filesystem::path(args[0]);
-  options.engine2Public = std::filesystem::path(args[1]);
+  options.artRoot = std::filesystem::path(args[1]);
   const std::filesystem::path out(args[2]);
   options.cacheDir = (out.parent_path().empty() ? std::filesystem::path(".") : out.parent_path()) / "cook-cache";
   for (size_t i = 3; i < args.size(); ++i) {
@@ -468,22 +468,22 @@ int architecture(const std::vector<std::string_view>& args) {
 
 int checkArchitectureCommand(const std::vector<std::string_view>& args) {
   if (args.size() != 2) fatal("usage: Cooker check-architecture <editor-catalog.json> <architecture-refs.json (export_architecture_refs.ts)>");
-  ember::e2::ArchitectureDefs defs;
+  ember::ArchitectureDefs defs;
   if (!defs.load(std::filesystem::path(args[0]))) return 1;
-  return ember::e2::checkArchitecture(std::filesystem::path(args[1]), defs) == 0 ? 0 : 1;
+  return ember::checkArchitecture(std::filesystem::path(args[1]), defs) == 0 ? 0 : 1;
 }
 
 int checkWater3DCommand(const std::vector<std::string_view>& args) {
   if (args.size() != 1) fatal("usage: Cooker check-water3d <water3d-refs.json (export_water3d_refs.ts)>");
-  return ember::e2::checkWater3D(std::string(args[0])) == 0 ? 0 : 1;
+  return ember::checkWater3D(std::string(args[0])) == 0 ? 0 : 1;
 }
 
 int checkDressCommand(const std::vector<std::string_view>& args) {
   if (args.size() != 2) fatal("usage: Cooker check-dress <editor-catalog.json> <dress-refs.json (export_dress_refs.ts)>");
-  ember::e2::EditorCatalog catalog;
-  ember::e2::DressTables tables;
+  ember::EditorCatalog catalog;
+  ember::DressTables tables;
   if (!catalog.load(std::filesystem::path(args[0])) || !tables.load(std::filesystem::path(args[0]))) return 1;
-  return ember::e2::checkDress(std::filesystem::path(args[1]), tables, catalog) == 0 ? 0 : 1;
+  return ember::checkDress(std::filesystem::path(args[1]), tables, catalog) == 0 ? 0 : 1;
 }
 
 }  // namespace
@@ -495,11 +495,11 @@ int main(int argc, char** argv) {
   }
   const std::string_view command = argv[1];
   const std::vector<std::string_view> args(argv + 2, argv + argc);
-  ember::e2::setProgressionEnabled(false);  // the checks compare Engine2's own numbers, not EmberEngine's growth
+  ember::setProgressionEnabled(false);  // the checks compare Ember's own numbers, not EmberEngine's growth
   if (command == "pack") return pack(args);
   if (command == "list") return list(args);
   if (command == "synth") return synth(args);
-  if (command == "import-engine2") return importEngine2(args);
+  if (command == "import-ember") return importSource(args);
   if (command == "sprites") return sprites(args);
   if (command == "sprite-preview") return spritePreview(args);
   if (command == "meshes") return meshes(args);

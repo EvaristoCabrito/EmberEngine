@@ -1,10 +1,10 @@
 #pragma once
 
-// The character status sheet of a fight, copied from Engine2 (src/game/GameApp.tsx StatusPanel, characterCondition,
+// The character status sheet of a fight, copied from Ember (src/game/GameApp.tsx StatusPanel, characterCondition,
 // ember-ui/styles.css .status-panel / .status-condition): the portrait with the hunger bar under it, name, class, level,
 // XP; the condition badge (and its detail window); the Mochila / Equipar shortcuts; the HP bar; the level-up points
 // (three per level, spent on VIT / ATK / MAG / DEF / DEX); the attribute cells; the spells and skills of the unit's class
-// with their formulas and uses (content/engine2/status-rows.json, built by export_status_rows.ts with Engine2's own
+// with their formulas and uses (content/data/status-rows.json, built by export_status_rows.ts with Ember's own
 // functions); the potions carried. The arrows beside the close button browse the units of the fight.
 
 #include <imgui.h>
@@ -36,17 +36,17 @@ class BattleStatusSheet {
  public:
   // What the sheet asks of the window around it (null = the control is not shown).
   struct Hooks {
-    std::function<const UiImage*(const e2::BattleUnit&)> portrait;
-    std::function<bool(const e2::BattleUnit&)> portraitWhole;  // the photo in the tall 2:3 box (108 x 162), the party's format
+    std::function<const UiImage*(const ember::BattleUnit&)> portrait;
+    std::function<bool(const ember::BattleUnit&)> portraitWhole;  // the photo in the tall 2:3 box (108 x 162), the party's format
     std::function<const UiImage*(const std::string& kind)> spellIcon;
     std::function<int(int level)> xpToLevel;
-    std::function<std::array<int, 5>(const e2::BattleUnit&)> allocation;  // the points spent: hp, atk, mag, def, dex
+    std::function<std::array<int, 5>(const ember::BattleUnit&)> allocation;  // the points spent: hp, atk, mag, def, dex
     std::function<bool(size_t unit, int stat, int delta)> adjust;         // true when the point was moved
     std::function<void(size_t unit)> openPack, openEquip;                  // Mochila / Equipar
     std::function<std::vector<size_t>()> order;                            // the units the arrows browse
     std::function<std::string(const std::string& potionId)> potionTip;     // a potion's tooltip, empty = none
     std::function<std::string()> lockpickTip;
-    std::function<std::vector<std::string>(const e2::BattleUnit&, const char* stat)> gearLines;  // the worn pieces behind a stat
+    std::function<std::vector<std::string>(const ember::BattleUnit&, const char* stat)> gearLines;  // the worn pieces behind a stat
   };
 
   void open(size_t unit) { open_ = true, unit_ = unit, conditionOpen_ = false, skillsOpen_ = false, scrollTarget_ = 0.0f, scrollReset_ = true; }
@@ -60,10 +60,10 @@ class BattleStatusSheet {
     else open_ = false;
   }
 
-  void draw(const e2::Battle& battle, const std::filesystem::path& publicDir, const Hooks& hooks) {
+  void draw(const ember::Battle& battle, const std::filesystem::path& publicDir, const Hooks& hooks) {
     if (!open_ || unit_ >= battle.units().size()) return void(open_ = false);
     const bool en = uiEnglish();
-    const e2::BattleUnit& u = battle.units()[unit_];
+    const ember::BattleUnit& u = battle.units()[unit_];
     const ImGuiIO& io = ImGui::GetIO();
     // the veil: a click outside the sheet closes it
     ImGui::SetNextWindowPos({0, 0});
@@ -132,7 +132,7 @@ class BattleStatusSheet {
   };
 
   // characterCondition: the one condition the sheet names (title, what it does, its picture, its colour).
-  static Condition statusCondition(const e2::BattleUnit& u, bool en) {
+  static Condition statusCondition(const ember::BattleUnit& u, bool en) {
     auto L = [&](const char* pt, const char* english) { return std::string(en ? english : pt); };
     if (u.stunned) return {L("Atordoado", "Stunned"), L("Atordoamento · perde o próximo turno.", "Stun · loses the next turn."), "stunned", kDanger};
     if (u.asleep) return {L("Dormindo", "Asleep"), L("Sono mágico · perde turnos até acordar ou sofrer dano.", "Magic sleep · loses turns until it wakes or is hurt."), "asleep", kDanger};
@@ -143,7 +143,7 @@ class BattleStatusSheet {
     if (u.shock)
       return {L("Eletrificado", "Shocked"), L("Choque elétrico · o eco do relâmpago atinge este personagem no início do próximo turno.", "Electric shock · the lightning's echo strikes at the start of the next turn."), "shocked", kDanger};
     if (u.poisoned) {
-      const std::string tag = e2::conditionsText(u);
+      const std::string tag = ember::conditionsText(u);
       return {L("Envenenado", "Poisoned"), L("Veneno · sofre dano no início de cada turno. Use Curar Doença ou uma Poção de Curar Doenças para remover. ", "Poison · hurts at the start of every turn. A Cure Disease or a Disease potion removes it. ") + tag, "poisoned", kDanger};
     }
     if (u.diseased) return {L("Doente", "Sick"), L("Doença · todos os atributos ficam 10% menores até receber Curar Doença ou uma Poção de Curar Doenças.", "Disease · every attribute is 10% lower until cured."), "diseased", kDanger};
@@ -152,7 +152,7 @@ class BattleStatusSheet {
       if (pct >= 90) return {L("Inconsciente", "Unconscious"), std::format("{} (−{}%)", L("Fome extrema · desmaiado, praticamente inútil em combate. Só volta ao normal numa estalagem.", "Extreme hunger · fainted, nearly useless in a fight. Only an inn restores it."), pct), "hungry", kDanger};
       return {L("Com fome", "Hungry"), std::format("{} (−{}%)", L("Fome · vários dias sem comer. Volta ao normal comendo ou numa estalagem.", "Hunger · days without eating. Eating or an inn restores it."), pct), "hungry", kWarn};
     }
-    if (const std::string ours = e2::conditionsText(u); !ours.empty()) return {ours, ours, "", IM_COL32(196, 150, 232, 255)};
+    if (const std::string ours = ember::conditionsText(u); !ours.empty()) return {ours, ours, "", IM_COL32(196, 150, 232, 255)};
     return {L("Saudável", "Healthy"), L("Saudável · não há veneno, doença ou fome afetando este personagem.", "Healthy · no poison, disease or hunger affects this character."), "healthy", kOk};
   }
 
@@ -183,7 +183,7 @@ class BattleStatusSheet {
     return hit;
   }
 
-  float drawHeader(ImDrawList* dl, const e2::Battle& battle, const e2::BattleUnit& u, ImVec2 top, float inner, const std::filesystem::path& publicDir, const Hooks& hooks, bool en) {
+  float drawHeader(ImDrawList* dl, const ember::Battle& battle, const ember::BattleUnit& u, ImVec2 top, float inner, const std::filesystem::path& publicDir, const Hooks& hooks, bool en) {
     ImFont* ui = uiFont(UiFont::Ui);
     const bool player = u.side == "player";
     // Portrait (108 x 130, rounded-lg, bordered, black), the hunger bar under it. The party's photos (the user, 2026-10-18) sit in
@@ -290,7 +290,7 @@ class BattleStatusSheet {
 
   static void drawConditionIcon(ImDrawList* dl, const Condition& c, ImVec2 at, float size, const std::filesystem::path& publicDir) {
     if (c.icon.empty()) return;
-    if (c.icon == "hungry") {  // the one drawn as a vector in Engine2
+    if (c.icon == "hungry") {  // the one drawn as a vector in Ember
       static std::string svg;
       if (svg.empty()) {
         std::ifstream in(publicDir / "game/icons/status/condition-hungry-001.svg", std::ios::binary);
@@ -352,7 +352,7 @@ class BattleStatusSheet {
     ImGui::PopStyleVar();
   }
 
-  float drawHp(ImDrawList* dl, const e2::BattleUnit& u, float x, float y, float inner) {
+  float drawHp(ImDrawList* dl, const ember::BattleUnit& u, float x, float y, float inner) {
     ImFont* ui = uiFont(UiFont::Ui);
     const std::string hp = std::format("{}/{}", u.hp, u.maxHp);
     const float hw = ui->CalcTextSizeA(14.0f, FLT_MAX, 0.0f, hp.c_str()).x;
@@ -365,7 +365,7 @@ class BattleStatusSheet {
   }
 
   // "Pontos de atributo": the unspent points of the level-ups (3 per level), icon, rule line.
-  float drawPointsBox(ImDrawList* dl, const e2::BattleUnit& u, float x, float y, float inner, const std::filesystem::path& publicDir, const Hooks& hooks, bool en) {
+  float drawPointsBox(ImDrawList* dl, const ember::BattleUnit& u, float x, float y, float inner, const std::filesystem::path& publicDir, const Hooks& hooks, bool en) {
     ImFont* ui = uiFont(UiFont::Ui);
     const std::array<int, 5> spent = hooks.allocation ? hooks.allocation(u) : std::array<int, 5>{};
     const int budget = std::max(0, (u.level - 1) * 3), used = spent[0] + spent[1] + spent[2] + spent[3] + spent[4], left = std::max(0, budget - used);
@@ -379,7 +379,7 @@ class BattleStatusSheet {
     return b.y + 14.0f;
   }
 
-  float drawAttributes(ImDrawList* dl, const e2::BattleUnit& u, float x, float y, float inner, const Hooks& hooks, bool en) {
+  float drawAttributes(ImDrawList* dl, const ember::BattleUnit& u, float x, float y, float inner, const Hooks& hooks, bool en) {
     ImFont* ui = uiFont(UiFont::Ui);
     sectionTitle(dl, {x, y}, en ? "Attributes" : "Atributos");
     y += 26.0f;
@@ -451,12 +451,12 @@ class BattleStatusSheet {
     return y + 2 * (ch + gap) + 6.0f;
   }
 
-  // content/engine2/status-rows.json: the rows per rules class and level.
-  static const e2::Json& rowsTable() {
-    static const e2::Json table = [] {
-      std::ifstream in("content/engine2/status-rows.json", std::ios::binary);
-      e2::Json j = in ? e2::Json::parse(in, nullptr, false) : e2::Json();
-      return j.is_object() ? j : e2::Json::object();
+  // content/data/status-rows.json: the rows per rules class and level.
+  static const ember::Json& rowsTable() {
+    static const ember::Json table = [] {
+      std::ifstream in("content/data/status-rows.json", std::ios::binary);
+      ember::Json j = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
+      return j.is_object() ? j : ember::Json::object();
     }();
     return table;
   }
@@ -474,18 +474,18 @@ class BattleStatusSheet {
 
   // The class's rows of spells and skills for the unit's level (status-rows.json), then the ones this port has that the sheet of the
   // class does not list, by tier.
-  static std::vector<SpellRow> spellRows(const e2::BattleUnit& u, bool en) {
-    std::string key = e2::FieldSpells::rulesClass(u.classId);
+  static std::vector<SpellRow> spellRows(const ember::BattleUnit& u, bool en) {
+    std::string key = ember::FieldSpells::rulesClass(u.classId);
     if (key == "aldric") key = "lancer";
     if (key == "healer" && u.name == "Salazar") key = "healer:Salazar";
     std::vector<SpellRow> rows;
-    const e2::Json& table = rowsTable();
+    const ember::Json& table = rowsTable();
     if (table.contains("rows") && table["rows"].contains(key) && table["rows"][key].contains(std::to_string(std::clamp(u.level, 1, 30)))) {
-      for (const e2::Json& r : table["rows"][key][std::to_string(std::clamp(u.level, 1, 30))]) {
+      for (const ember::Json& r : table["rows"][key][std::to_string(std::clamp(u.level, 1, 30))]) {
         SpellRow row;
         row.kind = r.value("kind", "");
         row.tier = r.contains("tier") && r["tier"].is_number() ? r["tier"].get<int>() : 0;
-        if (const int ours = e2::spellTierNumber(row.kind); ours > 0) row.tier = ours;  // ours (Spells.cpp unitTierOf): Investida T3, Numen T6, Cão Zumbi T8
+        if (const int ours = ember::spellTierNumber(row.kind); ours > 0) row.tier = ours;  // ours (Spells.cpp unitTierOf): Investida T3, Numen T6, Cão Zumbi T8
         // the Numen (the Arcanista's and the Necromante's) and the Cão Zumbi (the Necromante's) are granted by grantClassSpells:
         // a hero without one has no line for it
         if ((row.kind == "summonZombieDog" || row.kind == "summonFamiliar3") && u.side == "player" &&
@@ -495,10 +495,10 @@ class BattleStatusSheet {
         if (r.value("uses", false) && row.uses <= 0) continue;
         std::string text = tr(r.value("text", ""));
         // a first spell's line from its own numbers at this level (its track), else the sheet's own line
-        const std::string scaled = e2::spellScaleText(u, row.kind, en);
+        const std::string scaled = ember::spellScaleText(u, row.kind, en);
         if (!scaled.empty()) text = scaled;
         if (scaled.empty() && r.contains("mag") && r["mag"].is_object()) {
-          const e2::Json& m = r["mag"];
+          const ember::Json& m = r["mag"];
           const double mul = m.value("mul", 1.0);
           const int dice = m.value("dice", 0), faces = m.value("faces", 0), bonus = m.value("bonus", 0);
           const long long total = static_cast<long long>(std::floor(std::floor(u.mag / 2.0) * mul));
@@ -520,15 +520,15 @@ class BattleStatusSheet {
     }
     for (const std::string& kind : u.spellList) {
       if (std::any_of(rows.begin(), rows.end(), [&](const SpellRow& r) { return r.kind == kind; })) continue;
-      const int tier = e2::spellTierNumber(kind);
+      const int tier = ember::spellTierNumber(kind);
       // ours: their numbers and what they do (spellTooltip, after its tier · element line)
-      std::string about = e2::spellTooltip(u, kind);
+      std::string about = ember::spellTooltip(u, kind);
       rows.push_back({kind, about, tier, tier >= 1 && tier <= 10 ? u.spells[tier - 1] : 0});
     }
     for (SpellRow& r : rows) {
-      r.title = tr(e2::spellName(r.kind));
-      r.about = e2::spellExplain(r.kind, en);
-      r.note = e2::spellTrackNote(r.kind, u.level, en);
+      r.title = tr(ember::spellName(r.kind));
+      r.about = ember::spellExplain(r.kind, en);
+      r.note = ember::spellTrackNote(r.kind, u.level, en);
       if (r.text.empty() || r.text == r.title) r.text.clear();
     }
     std::stable_sort(rows.begin(), rows.end(), [](const SpellRow& a, const SpellRow& b) { return (a.tier ? a.tier : 99) < (b.tier ? b.tier : 99); });
@@ -576,7 +576,7 @@ class BattleStatusSheet {
 
   // The Skills window (the world map's Skills in the same plates): the spells and skills as cards, then the trained perícias with
   // their bars. A veil behind it; a click outside, ✕ or Esc closes it.
-  void drawSkillsWindow(const e2::Battle& battle, const e2::BattleUnit& u, const std::filesystem::path& publicDir, const Hooks& hooks, bool en) {
+  void drawSkillsWindow(const ember::Battle& battle, const ember::BattleUnit& u, const std::filesystem::path& publicDir, const Hooks& hooks, bool en) {
     const ImGuiIO& io = ImGui::GetIO();
     ImGui::SetNextWindowPos({0, 0});
     ImGui::SetNextWindowSize(io.DisplaySize);
@@ -705,10 +705,10 @@ class BattleStatusSheet {
       }
       y += panelH + 12.0f;
       // --- Afinidades: this character's score with every other member of the party in the fight (as the world map's Party shows them) ---
-      std::vector<const e2::BattleUnit*> mates;
-      for (const e2::BattleUnit& o : battle.units())
+      std::vector<const ember::BattleUnit*> mates;
+      for (const ember::BattleUnit& o : battle.units())
         if (o.side == "player" && !o.summoned && o.name != u.name &&
-            std::none_of(mates.begin(), mates.end(), [&](const e2::BattleUnit* m) { return m->name == o.name; }))
+            std::none_of(mates.begin(), mates.end(), [&](const ember::BattleUnit* m) { return m->name == o.name; }))
           mates.push_back(&o);
       if (!mates.empty()) {
         y += 10.0f;
@@ -718,7 +718,7 @@ class BattleStatusSheet {
         bd->AddRectFilled({x0, y}, {x0 + bw, y + affH}, kBg, 8.0f);
         bd->AddRect({x0, y}, {x0 + bw, y + affH}, kBorder, 8.0f);
         float ay = y + 10.0f;
-        for (const e2::BattleUnit* o : mates) {
+        for (const ember::BattleUnit* o : mates) {
           const std::string pair = u.name < o->name ? u.name + "|" + o->name : o->name + "|" + u.name;
           const auto it = battle.affinityScores().find(pair);
           const double score = it == battle.affinityScores().end() ? 0.0 : it->second;
@@ -755,11 +755,11 @@ class BattleStatusSheet {
     ImGui::PopStyleVar();
   }
 
-  float drawPotions(ImDrawList* dl, const e2::BattleUnit& u, float x, float y, float inner, const std::filesystem::path& publicDir, const Hooks& hooks, bool en) {
+  float drawPotions(ImDrawList* dl, const ember::BattleUnit& u, float x, float y, float inner, const std::filesystem::path& publicDir, const Hooks& hooks, bool en) {
     ImFont* ui = uiFont(UiFont::Ui);
     sectionTitle(dl, {x, y}, en ? "Potions" : "Poções");
     y += 26.0f;
-    static constexpr int kCarryMax[7] = {5, 5, 5, 5, 5, 5, 5};  // POTION_CARRY_MAX (a pouch raises it; the bag's cap is Engine2's)
+    static constexpr int kCarryMax[7] = {5, 5, 5, 5, 5, 5, 5};  // POTION_CARRY_MAX (a pouch raises it; the bag's cap is Ember's)
     // two per row: the name on top (one line, cut with … if it must), "count · dice" under it
     constexpr int kCols = 2;
     const float gap = 6.0f, cw = (inner - (kCols - 1) * gap) / kCols, ch = 40.0f, textW = cw - 44.0f;
@@ -780,13 +780,13 @@ class BattleStatusSheet {
       ImGui::InvisibleButton("##potion", {cw, ch});
       ImGui::PopID();
       if (ImGui::IsItemHovered() && hooks.potionTip)
-        if (const std::string tip = hooks.potionTip(e2::kPotionIds[k]); !tip.empty()) ImGui::SetTooltip("%s", tip.c_str());
+        if (const std::string tip = hooks.potionTip(ember::kPotionIds[k]); !tip.empty()) ImGui::SetTooltip("%s", tip.c_str());
       dl->AddRectFilled(a, {a.x + cw, a.y + ch}, kBg, 6.0f);
       dl->AddRect(a, {a.x + cw, a.y + ch}, kBorder, 6.0f);
-      const std::string file = std::format("game/icons/potion-{}.png", e2::kPotionIds[k]);
+      const std::string file = std::format("game/icons/potion-{}.png", ember::kPotionIds[k]);
       if (const UiImage* icon = uiImage(publicDir / file)) imageContain(dl, *icon, {a.x + 8, a.y + 8}, {a.x + 32, a.y + 32});
       // potionLabel = "name dice": the dice go to the second line
-      std::string name = e2::potionName(e2::kPotionIds[k]), dice;
+      std::string name = ember::potionName(ember::kPotionIds[k]), dice;
       if (const size_t sp = name.rfind(' '); sp != std::string::npos && name.find('D', sp) != std::string::npos &&
                                              std::isdigit(static_cast<unsigned char>(name[sp + 1])))
         dice = name.substr(sp + 1), name.resize(sp);

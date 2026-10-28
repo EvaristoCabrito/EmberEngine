@@ -17,8 +17,8 @@
 //   Sandbox.exe --compare <pakA> <meshA asset> <pakB> <meshB asset> <out dir>
 //        Proxy-quality images: mesh A (reference = full detail, original = engine LOD) vs mesh B (proxy), at
 //        several widths; tools/compare_meshes.py measures silhouette and normal error.
-//   Sandbox.exe --map <Engine2 map.json> --ground <ground.pak> [--look smooth|hard|tabletop] [--board <board.json>] [--engine2 <public dir>]
-//        D1 port: a real Ember map from Engine2, its board and ground (docs/ENGINE2_AUDIT.md).
+//   Sandbox.exe --map <Ember map.json> --ground <ground.pak> [--look smooth|hard|tabletop] [--board <board.json>] [--ember <public dir>]
+//        D1 port: a real Ember map from Ember, its board and ground (docs/EMBER_AUDIT.md).
 //        [--scene <scene.json> --sprites <battle.pak> --meshes <props.pak>]: its decorations, 3D models and units.
 //        Captures: [--zoom F] [--turn DEG] [--tilt DEG] [--offset X Z] (board widths/depths) [--layers MASK]
 //        (lighting layers on: 1 sun, 2 shadows, 4 indirect; shaders/lighting.hlsli) [--sun AZIMUTH ELEVATION] (degrees)
@@ -32,20 +32,20 @@
 //        (the fog mask each surface read), then tools/scripts/check_fog.py. [--volume 0]: no volumetric fog;
 //        [--fog-look N]: which saved fog look (render/FogLooks.h; in a window, the Map panel's dropdown).
 //        [--cards N]: 0 vertical cards, 1 (default) cards leaning back with the camera's tilt, upright on screen (panel "Cards").
-//        [--water N]: the board's water (panel "Água"): 0 Engine2's, 1 (default) look 001 "ember" (looks/water/README.md).
+//        [--water N]: the board's water (panel "Água"): 0 Ember's, 1 (default) look 001 "ember" (looks/water/README.md).
 //        [--sky-reflect N]: 0 OFF, 1 (default) the sky's reflection map on water and specular surfaces (panel "Reflexo do céu").
 //        [--clouds N]: 0 OFF, 1 the basic cloud sheet, 2 (default) the volumetric clouds, look 001: sky, reflections, shadows (panel "Nuvens").
 //        [--glare N] [--shafts N]: 0 (default) OFF, 1 the sun's lens glare / its crepuscular rays, look 001 (panels "Clarão", "Raios de luz").
 //        [--moonlight N]: light mode real, at night: 0 the physical moon (0.5 lux), 1 (default) the cinema moon (panel "Luar").
 //        [--sun-disc N]: the sun's disc in the sky: 0 the real 0.26 deg radius, 1 (default) the moon's small disc with a corona (panel "Sol").
 //        [--bars-fade N]: 0 health bars always shown, 1 (default) the bars and numbers of units near the camera fade (panel "Vida perto").
-//        [--lighting 0|1|2|3]: old prototype day / Engine2's presets / physical sky with Engine2's strengths / real
+//        [--lighting 0|1|2|3]: old prototype day / Ember's presets / physical sky with Ember's strengths / real
 //        (default: lux, physical camera, eye adaptation, inverse-square lamps; also in the panel as "Luz").
-//        Night maps: [--moon-phase NAME] (Engine2's moonPhase.ts: new .. waningCrescent, blood) [--moon-path 0|1|2]
+//        Night maps: [--moon-phase NAME] (Ember's moonPhase.ts: new .. waningCrescent, blood) [--moon-path 0|1|2]
 //        (where the disc and its light stand: MapStage.h moonPlacement) [--star-look N] (looks/stars).
-//        [--heroes <roster.json>]: every unit's poses (tools/scripts/engine2/export_heroes.ts); the map's own units
+//        [--heroes <roster.json>]: every unit's poses (tools/scripts/data/export_heroes.ts); the map's own units
 //        play the pose chosen in the panel ("Animação"). [--battle-rules <map.battle.json>]: combat (tools/scripts/
-//        engine2/export_battle.ts): pick a unit, its reach, walk it (MapStage.h). In a window
+//        ember/export_battle.ts): pick a unit, its reach, walk it (MapStage.h). In a window
 //        every setting is a dropdown / checkbox in the Map panel (no keyboard shortcuts).
 //   Sandbox.exe --meshes meshes.pak [--grid N]
 //        Mesh scene (M3 bring-up): every cooked mesh in the archive on an N x N grid, drawn GPU-driven.
@@ -188,8 +188,8 @@ struct Options {
   std::string battleRules;
   std::string devGfx;  // captures: Dev Controls' switches from this file (DevGfx.h) applied to the map
   std::string editorScript;  // captures: clicks on the Map Editor's board (MapEditorStage::previewEdits)
-  // The title screen (Engine2's, TitleStage.h): its mission list is every imported scene in `scenes` whose map is in
-  // `maps` (default: Engine2's maps/ember beside its public folder).
+  // The title screen (Ember's, TitleStage.h): its mission list is every imported scene in `scenes` whose map is in
+  // `maps` (default: Ember's maps/ember beside its public folder).
   bool title = false;
   std::string saveBank;     // the campaign bank file (default: %LOCALAPPDATA%\Ember\ember-save-bank.json)
   std::string mapUi;        // captures on the world map: a panel opened (OverworldStage::preview)
@@ -198,11 +198,11 @@ struct Options {
                             // "options": Como jogar / Opções over the title
   std::string lang;         // captures: the interface, dialogues and subtitles in "pt" / "en" (Opções' languages, not saved)
   std::string resume;       // captures: a saved fight (BattleSnapshot JSON) resumed on the battle (MapStage::resume)
-  bool curtain = false;     // captures: Engine2's loading curtain over the battle / world map as it loads (LoadingScreens.h)
-  std::string scenes = "build/engine2-scenes", maps;
+  bool curtain = false;     // captures: Ember's loading curtain over the battle / world map as it loads (LoadingScreens.h)
+  std::string scenes = "build/scenes", maps;
   uint32_t debugView = 0;
   std::string scene;
-  std::string map, ground, look = "smooth", boardData = "content/engine2/board.json", gameAssets = "content/game/public";
+  std::string map, ground, look = "smooth", boardData = "content/data/board.json", gameAssets = "content/assets";
   std::vector<std::string> compare;  // pakA assetA pakB assetB outDir  // measurement: frames back to back, so the GPU never idles and keeps its full clock
   bool budgetSet = false;
   uint32_t width = 1600, height = 900;
@@ -505,7 +505,7 @@ struct Services {
   AssetManager assets;
   std::unique_ptr<StreamTest> streamTest;
   PerfOverlay perf;
-  std::function<void()> curtain;  // Engine2's loading curtain, over everything (LoadingScreens.h)
+  std::function<void()> curtain;  // Ember's loading curtain, over everything (LoadingScreens.h)
 
   explicit Services(const Options& o) : io(jobs, o.ioDepth), assets(jobs, io, {}) {
     if (!o.sprites.empty() && !assets.mount(o.sprites)) fatal(std::format("Cannot mount {}", o.sprites));
@@ -617,11 +617,11 @@ struct BootStage final : Stage {
 MapStageOptions mapOptions(const Options& o);
 // Modo teste: the session's heroes at its level (30) and the class path each chose on the Party screen; every hero knows every
 // spell of its class at that level (the user, 2026-10-23: "todas as magias para todos os personagens no debug").
-void applyTestHeroes(MapStageOptions& options, const e2::Json& tsave) {
-  const e2::Json levels = tsave.value("levels", e2::Json::object());
+void applyTestHeroes(MapStageOptions& options, const ember::Json& tsave) {
+  const ember::Json levels = tsave.value("levels", ember::Json::object());
   for (const auto& [name, level] : levels.items())
     if (level.is_number_integer()) options.heroProgress[name] = {level.get<int>(), 0}, options.fullSpells.insert(name);
-  const e2::Json promotions = tsave.value("promotions", e2::Json::object());
+  const ember::Json promotions = tsave.value("promotions", ember::Json::object());
   if (promotions.is_object())
     for (const auto& [name, cls] : promotions.items())
       if (cls.is_string()) options.heroClass[name] = cls.get<std::string>();
@@ -652,8 +652,8 @@ MapStageOptions mapOptions(const Options& o) {
     m.scene = o.scene;
     m.spriteBudgetMb = o.spriteBudgetMb;
     m.boardData = o.boardData;
-    m.engine2Public = o.gameAssets;
-    m.look = o.look == "hard" ? e2::EdgeStyle::Hard : o.look == "tabletop" ? e2::EdgeStyle::Tabletop : e2::EdgeStyle::Smooth;
+    m.artRoot = o.gameAssets;
+    m.look = o.look == "hard" ? ember::EdgeStyle::Hard : o.look == "tabletop" ? ember::EdgeStyle::Tabletop : ember::EdgeStyle::Smooth;
     m.zoom = o.mapZoom;
     m.turnDegrees = o.mapTurn;
     m.tiltDegrees = o.mapTilt;
@@ -721,16 +721,16 @@ MapStageOptions mapOptions(const Options& o) {
 // A campaign fight's heroes as the save has them: levels and XP, promotions (save.ts promotions: the Mago Negro's path chosen on the
 // Party screen), their condition (GameApp startBattle's roster; HeroHandoff.h) and the party's affinities (save.affinityScores: the
 // bonus between neighbours follows them, and the fight moves them). The game's loop and the mission captures alike.
-void applySaveHeroes(MapStageOptions& options, const e2::Json& save) {
-  const e2::Json levels = save.value("levels", e2::Json::object()), xp = save.value("xp", e2::Json::object());
+void applySaveHeroes(MapStageOptions& options, const ember::Json& save) {
+  const ember::Json levels = save.value("levels", ember::Json::object()), xp = save.value("xp", ember::Json::object());
   for (const auto& [name, level] : levels.items())
     if (level.is_number_integer()) options.heroProgress[name] = {level.get<int>(), xp.value(name, 0)};
-  const e2::Json promotions = save.value("promotions", e2::Json::object());
+  const ember::Json promotions = save.value("promotions", ember::Json::object());
   if (promotions.is_object())
     for (const auto& [name, cls] : promotions.items())
       if (cls.is_string()) options.heroClass[name] = cls.get<std::string>();
   options.heroState = heroStatesFromSave(save);
-  if (const e2::Json scores = save.value("affinityScores", e2::Json::object()); scores.is_object())
+  if (const ember::Json scores = save.value("affinityScores", ember::Json::object()); scores.is_object())
     for (const auto& [pair, v] : scores.items())
       if (v.is_number()) options.affinityScores[pair] = v.get<double>();
 }
@@ -739,13 +739,13 @@ void applySaveHeroes(MapStageOptions& options, const e2::Json& save) {
 // there (a campaign only: Modo teste seats everyone), and the save's party leader walks (partyLeaderOf: the saved leader
 // while recruited, else Kael).
 // `interlude` (docs/INTERLUDE.md): while the historical chapter is on, its own leader walks.
-void setUpExplore(MapStageOptions& options, const e2::Json& save, const e2::Overworld& world, bool test, const e2::InterludeData* interlude = nullptr) {
+void setUpExplore(MapStageOptions& options, const ember::Json& save, const ember::Overworld& world, bool test, const ember::InterludeData* interlude = nullptr) {
   std::ifstream in(options.battle, std::ios::binary);
-  const e2::Json battle = in ? e2::Json::parse(in, nullptr, false) : e2::Json();
+  const ember::Json battle = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
   if (!battle.is_object() || !battle.value("explore", false)) return;
   for (const char* hero : {"Neera", "Voss", "Salazar", "Aldric", "Malrec"})
     if (!test && !world.heroRecruited(hero, save)) options.absentNeutrals.insert(hero);
-  if (options.leader.empty() && !test && interlude && e2::interludeState(save) == e2::InterludeState::Active) options.leader = interlude->leader;
+  if (options.leader.empty() && !test && interlude && ember::interludeState(save) == ember::InterludeState::Active) options.leader = interlude->leader;
   if (options.leader.empty())
     if (const auto l = save.find("partyLeader"); l != save.end() && l->is_string() && (test || world.heroRecruited(l->get<std::string>(), save)))
       options.leader = l->get<std::string>();
@@ -755,14 +755,14 @@ void setUpExplore(MapStageOptions& options, const e2::Json& save, const e2::Over
 // in the campaign the heroes the save has recruited (`campaign`), in Modo teste every hero of the battle file; laid out by the
 // save's Formação inicial at the map's entry (MapStage::placeFormation). Free-roam maps are setUpExplore's.
 // `interlude` (docs/INTERLUDE.md): while the historical chapter is on, the party is exactly its three heroes, nobody of the present.
-void setUpParty(MapStageOptions& options, const e2::Json& save, const e2::Overworld& world, bool campaign, const e2::InterludeData* interlude = nullptr) {
+void setUpParty(MapStageOptions& options, const ember::Json& save, const ember::Overworld& world, bool campaign, const ember::InterludeData* interlude = nullptr) {
   std::ifstream in(options.battle, std::ios::binary);
-  const e2::Json battle = in ? e2::Json::parse(in, nullptr, false) : e2::Json();
+  const ember::Json battle = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
   if (!battle.is_object() || battle.value("explore", false)) return;
   if (campaign) {
     std::set<std::string> roster;
-    if (interlude && e2::interludeState(save) == e2::InterludeState::Active) {
-      for (const e2::InterludeHero& h : interlude->party) roster.insert(h.name);
+    if (interlude && ember::interludeState(save) == ember::InterludeState::Active) {
+      for (const ember::InterludeHero& h : interlude->party) roster.insert(h.name);
     } else {
       for (const char* hero : {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec"})
         if (world.heroRecruited(hero, save)) roster.insert(hero);
@@ -770,7 +770,7 @@ void setUpParty(MapStageOptions& options, const e2::Json& save, const e2::Overwo
     options.partyRoster = std::move(roster);
   }
   if (const auto f = save.find("partyFormation"); f != save.end() && f->is_array())
-    for (const e2::Json& cell : *f) options.partyFormation.push_back(cell.is_string() ? cell.get<std::string>() : std::string());
+    for (const ember::Json& cell : *f) options.partyFormation.push_back(cell.is_string() ? cell.get<std::string>() : std::string());
   options.formation = true;
 }
 
@@ -839,19 +839,19 @@ int runCapture(const Options& o) {
     if (!o.noUi) renderer.setUi(&ui);  // --no-ui: the scene alone (pixel checks)
     // --title: the title screen off-screen (--title-screen new / load: its save slots, read from the real bank, nothing
     // written), to check its layout.
-    e2::Campaign campaign;
-    const bool hasCampaign = o.title && campaign.open("content/engine2/campaign.json", o.saveBank.empty() ? e2::Campaign::savePath() : std::filesystem::path(o.saveBank));
+    ember::Campaign campaign;
+    const bool hasCampaign = o.title && campaign.open("content/data/campaign.json", o.saveBank.empty() ? ember::Campaign::savePath() : std::filesystem::path(o.saveBank));
     std::unique_ptr<Stage> stage;
-    e2::Overworld world;
+    ember::Overworld world;
     std::optional<TestSession> testSession;
-    DevGfx devGfx;  // captures: Engine2's defaults, never the PC's saved switches
+    DevGfx devGfx;  // captures: Ember's defaults, never the PC's saved switches
     CampaignPaths campaignPaths;
-    campaignPaths.engine2Public = o.gameAssets;
+    campaignPaths.artRoot = o.gameAssets;
     campaignPaths.maps = !o.maps.empty() ? std::filesystem::path(o.maps) : std::filesystem::path("content/maps/ember");
     campaignPaths.scenes = o.scenes;
-    e2::InterludeData interludeData;  // the Interlude's gate and start on the world map (docs/INTERLUDE.md), as in the game
+    ember::InterludeData interludeData;  // the Interlude's gate and start on the world map (docs/INTERLUDE.md), as in the game
     const bool hasInterludeData = interludeData.load("content/interlude.json");
-    if (o.title && o.titleScreen == "map" && hasCampaign && world.load("content/engine2/overworld.json")) {
+    if (o.title && o.titleScreen == "map" && hasCampaign && world.load("content/data/overworld.json")) {
       // --title-screen map: the active slot's world map (--map-ui: party / quests / options / event / location opened; enter:<id>).
       auto map = std::make_unique<OverworldStage>(campaignPaths, campaign, world, OverworldStage::Callbacks{}, std::string(), nullptr,
                                                   hasInterludeData ? &interludeData : nullptr);
@@ -859,7 +859,7 @@ int runCapture(const Options& o) {
       stage = std::move(map);
     } else if (o.title && o.titleScreen.starts_with("mission") && hasCampaign) {
       // --title-screen mission:<id> / mission-test:<id>: a campaign mission's battle, its files resolved as the campaign
-      // (or Modo teste) resolves them (CampaignUi.h: the Map Editor's newer save, else Engine2's newest).
+      // (or Modo teste) resolves them (CampaignUi.h: the Map Editor's newer save, else Ember's newest).
       const bool test = o.titleScreen.starts_with("mission-test:");
       const std::string id = o.titleScreen.substr(o.titleScreen.find(':') + 1);
       std::string error;
@@ -878,20 +878,20 @@ int runCapture(const Options& o) {
       mission.map = m->map.string(), mission.scene = m->scene.string(), mission.battleRules = m->battle.string();
       MapStageOptions options = mapOptions(mission);
       options.spellsMenu = options.choicesPanel = test;  // Modo teste's tools, as in the game
-      if (world.load("content/engine2/overworld.json")) options.world = &world;  // the status sheet's Mochila / Equipar
+      if (world.load("content/data/overworld.json")) options.world = &world;  // the status sheet's Mochila / Equipar
       if (test) testSession = freshTestSession(campaign);
       if (test) applyTestHeroes(options, testSession->save);
       else applySaveHeroes(options, campaign.activeSave());  // the campaign's heroes as the save has them (levels, promotions, condition)
       // The sky: a campaign mission at the save's hour; Modo teste at the map's own (gameHour -1).
       if (!test) {
-        options.gameHour = static_cast<float>(e2::Overworld::campaignHour(campaign.activeSave()));
-        if (options.moonPhase.empty()) options.moonPhase = e2::campaignMoonPhase(campaign.activeSave().value("gameClock", 0));
+        options.gameHour = static_cast<float>(ember::Overworld::campaignHour(campaign.activeSave()));
+        if (options.moonPhase.empty()) options.moonPhase = ember::campaignMoonPhase(campaign.activeSave().value("gameClock", 0));
       }
       if (options.world) setUpExplore(options, test ? testSession->save : campaign.activeSave(), world, test, hasInterludeData ? &interludeData : nullptr);
       if (options.world) {  // the party and its formation (--formation "Kael,,Neera,...": the board's cells instead of the save's)
-        e2::Json save = test ? testSession->save : campaign.activeSave();
+        ember::Json save = test ? testSession->save : campaign.activeSave();
         if (!o.formation.empty()) {
-          save["partyFormation"] = e2::Json::array();
+          save["partyFormation"] = ember::Json::array();
           for (size_t at = 0; at <= o.formation.size();) {
             const size_t end = std::min(o.formation.find(',', at), o.formation.size());
             save["partyFormation"].push_back(o.formation.substr(at, end - at));
@@ -909,7 +909,7 @@ int runCapture(const Options& o) {
       if (o.mapUi.starts_with("npc:")) talk->preview(o.mapUi.substr(4));
       if (o.mapUi == "menu" || o.mapUi == "options" || o.mapUi == "log" || o.mapUi == "fulllog" || o.mapUi == "quests" || o.mapUi == "hotbar" || o.mapUi.starts_with("status") || o.mapUi.starts_with("inventory:") || o.mapUi.starts_with("synced:")) missionStage->previewMenu(o.mapUi);
       stage = std::move(missionStage);
-    } else if (o.title && o.titleScreen.starts_with("test") && hasCampaign && world.load("content/engine2/overworld.json")) {
+    } else if (o.title && o.titleScreen.starts_with("test") && hasCampaign && world.load("content/data/overworld.json")) {
       // --title-screen test / test-choice / test-classic / test-scenarios / test-rpg / test-dev / test-editor: Modo teste's screens (--map-ui
       // location:<id> opens a place's panel on the classic map; on the RPG map the usual --map-ui panels).
       testSession = freshTestSession(campaign);
@@ -917,10 +917,10 @@ int runCapture(const Options& o) {
       if (o.titleScreen == "test-editor") {
         // the Map Editor (--map-ui <map.json>: that map opened in it; --editor-script: clicks on its board)
         MapStageOptions base = mapOptions(o);
-        std::optional<e2::Json> draft;
+        std::optional<ember::Json> draft;
         if (!o.mapUi.empty()) {
           std::ifstream in(o.mapUi, std::ios::binary);
-          const e2::Json j = e2::Json::parse(in, nullptr, false);
+          const ember::Json j = ember::Json::parse(in, nullptr, false);
           if (!j.is_discarded()) draft = j.contains("draft") ? j["draft"] : j;
         }
         auto editor = std::make_unique<MapEditorStage>(MapEditorStage::Services{context, renderer, services.assets, services.jobs}, base, campaignPaths,
@@ -940,10 +940,10 @@ int runCapture(const Options& o) {
       }
     } else if (o.title) {
       TitleStage::Paths paths;
-      paths.engine2Public = o.gameAssets, paths.maps = campaignPaths.maps, paths.scenes = o.scenes;
+      paths.artRoot = o.gameAssets, paths.maps = campaignPaths.maps, paths.scenes = o.scenes;
       auto title = std::make_unique<TitleStage>(paths, hasCampaign ? &campaign : nullptr, [](const MissionEntry&) {}, [] {}, [] {});
       if (o.titleScreen == "new" || o.titleScreen == "load") title->previewSlots(o.titleScreen == "load");
-      title->onOptions({}, &devGfx);  // Engine2's defaults (captures never write the PC's switches: nothing is clicked)
+      title->onOptions({}, &devGfx);  // Ember's defaults (captures never write the PC's switches: nothing is clicked)
       if (o.titleScreen == "options") title->previewOptions();
       if (o.titleScreen.starts_with("help")) {  // help[:tab[:scroll]]
         int tab = 0;
@@ -961,7 +961,7 @@ int runCapture(const Options& o) {
       // --resume <snapshot.json>: the battle as that saved fight left it.
       if (auto* map = dynamic_cast<MapStage*>(stage.get()); map && !o.resume.empty()) {
         std::ifstream in(o.resume, std::ios::binary);
-        const e2::Json snap = e2::Json::parse(in, nullptr, false);
+        const ember::Json snap = ember::Json::parse(in, nullptr, false);
         map->setCampaign(nullptr, snap.is_object() ? snap.value("missionId", std::string()) : std::string(), std::string(), false);
         if (!map->resume(snap)) fatal("--resume: the snapshot does not fit this battle");
       }
@@ -970,15 +970,15 @@ int runCapture(const Options& o) {
         std::string mission = o.mapUi.substr(5);
         const bool outro = mission.ends_with(":outro");
         if (outro) mission.resize(mission.size() - 6);
-        world.load("content/engine2/overworld.json");
-        if (auto talk = attachBattleTalk(*map, mission, loadDialogs("content/engine2/dialogs.json"), o.gameAssets, world, nullptr); talk && outro) {
+        world.load("content/data/overworld.json");
+        if (auto talk = attachBattleTalk(*map, mission, loadDialogs("content/data/dialogs.json"), o.gameAssets, world, nullptr); talk && outro) {
           talk->introDone = true;
           talk->open("outro", "outroEnabled");
         }
       }
     }
     const VkExtent2D size{o.width, o.height};
-    // --curtain: Engine2's loading curtain over the battle (its real steps) or the world map, as in the game; every change
+    // --curtain: Ember's loading curtain over the battle (its real steps) or the world map, as in the game; every change
     // of its status is logged with the time.
     loading::Curtain curtain;
     const auto runStart = Clock::now();
@@ -1048,23 +1048,23 @@ int runWindow(const Options& o) {
   const auto bootStart = Clock::now();
   const auto bootMs = [&] { return std::chrono::duration<double, std::milli>(Clock::now() - bootStart).count(); };
   const bool titleMode = o.title || (o.map.empty() && !o.battle && o.sprites.empty() && o.meshes.empty() && o.stream.empty());
-  // The campaign's save bank (save.ts) and the world map's rules (overworld.ts), Engine2's tables.
-  e2::Campaign campaign;
+  // The campaign's save bank (save.ts) and the world map's rules (overworld.ts), Ember's tables.
+  ember::Campaign campaign;
   bool hasCampaign = false;
-  e2::Overworld world;
+  ember::Overworld world;
   bool hasWorld = false;
   // The Interlude (docs/INTERLUDE.md): the Ruins' quest gate, the historical chapter's party and maps (content/interlude.json).
-  e2::InterludeData interlude;
+  ember::InterludeData interlude;
   bool hasInterlude = false;
   // The Map Editor's saved Locais and R-Encounter (content/maps): the campaign and the world map play them, again
   // whenever the editor saves them.
   auto applyLocais = [&] {
-    const e2::Locais locais = e2::Locais::load("content/engine2/editor-catalog.json");
-    if (hasCampaign) e2::applyLocais(campaign.data(), locais, savedMapsDir());
+    const ember::Locais locais = ember::Locais::load("content/data/editor-catalog.json");
+    if (hasCampaign) ember::applyLocais(campaign.data(), locais, savedMapsDir());
     if (hasWorld) world.applyLocais(locais, campaign.data());
   };
   // Every mission's intro / outro conversation (export_dialogs.ts).
-  e2::Json dialogs;
+  ember::Json dialogs;
   // Dev Controls' switches (Modo teste), applied to every map opened here.
   DevGfx devGfx;
   // All of it needs no GPU: it loads on a worker while the window and the GPU come up (BootStage shows the bar meanwhile),
@@ -1072,9 +1072,9 @@ int runWindow(const Options& o) {
   constexpr int kBootSteps = 4;
   std::atomic<int> bootSteps{0};
   std::future<void> boot = std::async(std::launch::async, [&] {
-    hasCampaign = campaign.open("content/engine2/campaign.json", o.saveBank.empty() ? e2::Campaign::savePath() : std::filesystem::path(o.saveBank));
+    hasCampaign = campaign.open("content/data/campaign.json", o.saveBank.empty() ? ember::Campaign::savePath() : std::filesystem::path(o.saveBank));
     ++bootSteps;
-    hasWorld = world.load("content/engine2/overworld.json");
+    hasWorld = world.load("content/data/overworld.json");
     {
       std::string why;
       hasInterlude = interlude.load("content/interlude.json", &why);
@@ -1083,7 +1083,7 @@ int runWindow(const Options& o) {
     ++bootSteps;
     applyLocais();
     ++bootSteps;
-    dialogs = loadDialogs("content/engine2/dialogs.json");
+    dialogs = loadDialogs("content/data/dialogs.json");
     devGfx = DevGfx::load();
     ++bootSteps;
     logInfo("startup: data loaded at {:.0f} ms", bootMs());
@@ -1142,10 +1142,10 @@ int runWindow(const Options& o) {
   std::string playing;       // the campaign mission being fought (its result goes into the active slot)
   std::string campaignNote;   // what the world map says when the fight is left
   CampaignPaths paths;
-  paths.engine2Public = o.gameAssets;
+  paths.artRoot = o.gameAssets;
   paths.maps = !o.maps.empty() ? std::filesystem::path(o.maps) : std::filesystem::path("content/maps/ember");
   paths.scenes = o.scenes;
-  // Engine2's Modo teste (TestModeStage.h): the session (its own save, the travel style) from the title's "Modo teste"
+  // Ember's Modo teste (TestModeStage.h): the session (its own save, the travel style) from the title's "Modo teste"
   // until the player goes back to the title; nothing of it is written to the bank.
   std::optional<TestSession> testSession;
   std::optional<TestModeStage::Screen> openTest;  // a test-mode screen to open
@@ -1157,7 +1157,7 @@ int runWindow(const Options& o) {
   // Map Editor: open it / a Testar battle from it is open; the draft it was editing (kept while the game runs, as
   // GameApp's editorDraft).
   bool openEditor = false, inEditorTest = false;
-  std::optional<e2::Json> editorDraft;
+  std::optional<ember::Json> editorDraft;
   // GameApp enterFromSave: the world map opened from Continuar / a load resumes a fight saved mid-way (resumeOnMap);
   // the battle then opened takes the save's snapshot (resumeNext).
   bool resumeOnMap = false, resumeNext = false;
@@ -1171,7 +1171,7 @@ int runWindow(const Options& o) {
   };
   auto makeTitle = [&] {
     TitleStage::Paths titlePaths;
-    titlePaths.engine2Public = paths.engine2Public, titlePaths.maps = paths.maps, titlePaths.scenes = paths.scenes;
+    titlePaths.artRoot = paths.artRoot, titlePaths.maps = paths.maps, titlePaths.scenes = paths.scenes;
     auto title = std::make_unique<TitleStage>(
         titlePaths, hasCampaign ? &campaign : nullptr, [&](const MissionEntry& m) { pending = m; }, [&] { openMap = true, resumeOnMap = true; },
         [] {
@@ -1206,11 +1206,11 @@ int runWindow(const Options& o) {
   };
   auto makeEditor = [&]() -> std::unique_ptr<Stage> {
     MapEditorStage::Callbacks callbacks;
-    callbacks.back = [&](const e2::Json& draft) {
+    callbacks.back = [&](const ember::Json& draft) {
       editorDraft = draft;
       openTest = TestModeStage::Screen::Menu;
     };
-    callbacks.play = [&](const MissionEntry& m, const e2::Json& draft) {
+    callbacks.play = [&](const MissionEntry& m, const ember::Json& draft) {
       editorDraft = draft;
       pending = m;
       inEditorTest = true;
@@ -1232,7 +1232,7 @@ int runWindow(const Options& o) {
   };
   auto makeMap = [&]() -> std::unique_ptr<Stage> {
     if (!hasWorld) {
-      campaignNote = "Sem dados do mapa do mundo (content/engine2/overworld.json).";
+      campaignNote = "Sem dados do mapa do mundo (content/data/overworld.json).";
       return makeTitle();
     }
     OverworldStage::Callbacks callbacks;
@@ -1255,9 +1255,9 @@ int runWindow(const Options& o) {
   // The fight's outcome folded into `save` (the part of finishCampaignFight below that writes the save). Modo teste folds its
   // fights into the session's save through it too (the user, 2026-10-27: "still no changes in debug mode after clearing a map";
   // Debug = the campaign but for the test save's three differences). Returns true on a victory.
-  auto foldFight = [&](e2::Json& save, const MapStage& map, const std::string& missionId) {
+  auto foldFight = [&](ember::Json& save, const MapStage& map, const std::string& missionId) {
     const bool victory = map.battleResult() == "victory";
-    if (victory) save["unitHp"] = e2::Json::object();  // persistVictory: unitHp is this fight's heroes, after the camp (campHp)
+    if (victory) save["unitHp"] = ember::Json::object();  // persistVictory: unitHp is this fight's heroes, after the camp (campHp)
     for (const HeroOutcome& h : map.heroOutcomes()) {
       if (!victory || h.hp > 0) {  // persistVictory keeps the levels and XP of the heroes still standing
         save["levels"][h.name] = h.level;
@@ -1267,17 +1267,17 @@ int runWindow(const Options& o) {
       // What the fight trained (weapons, Cura, resistances, Esquiva), added to the save's, capped at 100 (the user, 2026-10-20:
       // only Esquiva ever rose, the rest was dropped here)
       for (const auto& [id, gain] : h.skillGains) {
-        e2::Json& skills = save["heroSkills"][h.name];
+        ember::Json& skills = save["heroSkills"][h.name];
         const double before = skills.contains(id) && skills[id].is_number() ? skills[id].get<double>() : 0.0;
         skills[id] = std::min(100.0, std::round((before + gain) * 100.0) / 100.0);
       }
     }
     // mapstore keepsDefeatedSpawns: a dungeon keeps the enemies and neutrals killed here dead on every later visit
-    if (const e2::MapMission* mm = hasWorld ? world.mission(missionId) : nullptr; victory && mm && mm->keepsSpawns) {
-      e2::Json& dead = save["crossingDefeatedSpawns"];
-      if (!dead.is_object()) dead = e2::Json::object();
-      e2::Json& list = dead[missionId];
-      if (!list.is_array()) list = e2::Json::array();
+    if (const ember::MapMission* mm = hasWorld ? world.mission(missionId) : nullptr; victory && mm && mm->keepsSpawns) {
+      ember::Json& dead = save["crossingDefeatedSpawns"];
+      if (!dead.is_object()) dead = ember::Json::object();
+      ember::Json& list = dead[missionId];
+      if (!list.is_array()) list = ember::Json::array();
       for (const std::string& id : map.fallenSpawns())
         if (std::find(list.begin(), list.end(), id) == list.end()) list.push_back(id);
     }
@@ -1294,35 +1294,35 @@ int runWindow(const Options& o) {
       // unknownPotions) until Identificar reveals it
       for (const std::string& id : map.lootWeapons()) {
         if (save["weapons"].is_object() && save["weapons"].contains(id)) continue;
-        e2::Json probe = save;
+        ember::Json probe = save;
         probe["weapons"][id] = 0;
         if (!world.bagHasRoom(probe, 1)) continue;
         save["weapons"][id] = 0;
         if (map.lootUnknown().contains(id)) {
-          if (!save["unknownWeapons"].is_array()) save["unknownWeapons"] = e2::Json::array();
+          if (!save["unknownWeapons"].is_array()) save["unknownWeapons"] = ember::Json::array();
           save["unknownWeapons"].push_back(id);
         }
       }
       for (const std::string& id : map.lootEquipment()) {
-        const e2::Json& stash = save["looseEquipment"];
+        const ember::Json& stash = save["looseEquipment"];
         const int have = stash.is_object() ? stash.value(id, 0) : 0;
-        e2::Json probe = save;
+        ember::Json probe = save;
         probe["looseEquipment"][id] = have + 1;
         if (!world.bagHasRoom(probe, 1)) continue;
         save["looseEquipment"][id] = have + 1;
         if (map.lootUnknown().contains(id)) {
-          if (!save["unknownEquipment"].is_object()) save["unknownEquipment"] = e2::Json::object();
+          if (!save["unknownEquipment"].is_object()) save["unknownEquipment"] = ember::Json::object();
           save["unknownEquipment"][id] = save["unknownEquipment"].value(id, 0) + 1;
         }
       }
       for (const auto& [kind, holder] : map.lootUnknownPotions()) {
-        if (!save["unknownPotions"].is_object()) save["unknownPotions"] = e2::Json::object();
-        if (!save["unknownPotions"][holder].is_object()) save["unknownPotions"][holder] = e2::Json::object();
+        if (!save["unknownPotions"].is_object()) save["unknownPotions"] = ember::Json::object();
+        if (!save["unknownPotions"][holder].is_object()) save["unknownPotions"][holder] = ember::Json::object();
         save["unknownPotions"][holder][kind] = save["unknownPotions"][holder].value(kind, 0) + 1;
       }
       // wispCrossing.ts completedAfterWispVictory: the crossing counts only once its lair's plant falls (then both do)
-      e2::Json& done = save["completed"];
-      if (!done.is_array()) done = e2::Json::array();
+      ember::Json& done = save["completed"];
+      if (!done.is_array()) done = ember::Json::array();
       const bool wispDone = std::find(done.begin(), done.end(), "wisp-forest-crossing") != done.end() ||
                             std::find(done.begin(), done.end(), "wisp-forest-crossing-boss") != done.end();
       std::vector<std::string> ids{missionId};
@@ -1331,7 +1331,7 @@ int runWindow(const Options& o) {
       for (const std::string& id : ids)
         if (std::find(done.begin(), done.end(), id) == done.end()) done.push_back(id);
       // Inn quests (persistVictory): the pickups found here, and this mission's quest targets that fell, accepted or not
-      e2::foldQuestProgress(save, map.questFound(), map.questKills());
+      ember::foldQuestProgress(save, map.questFound(), map.questKills());
     } else {
       save["pendingMission"] = missionId;  // a lost fight is played again from its briefing
     }
@@ -1339,13 +1339,13 @@ int runWindow(const Options& o) {
   };
   auto finishCampaignFight = [&](const MapStage& map, bool advancing = false) {
     if (playing.empty() || map.battleResult().empty()) return;
-    e2::Json save = campaign.activeSave();
+    ember::Json save = campaign.activeSave();
     const bool won = foldFight(save, map, playing);
     // The Interlude (docs/INTERLUDE.md): a chapter mission won moves the chapter on (the next map pending), the last one ends it (the
     // present party back, Isolde's progression kept, the Ruins open as the present-day location), in the same write as the victory.
     bool interludeOver = false;
-    if (won && hasInterlude && e2::interludeAdvance(interlude, save, playing)) {
-      interludeOver = e2::interludeState(save) == e2::InterludeState::Completed;
+    if (won && hasInterlude && ember::interludeAdvance(interlude, save, playing)) {
+      interludeOver = ember::interludeState(save) == ember::InterludeState::Completed;
       logInfo("interlude: {} done: {}", playing, interludeOver ? "the chapter is complete, the present party is back" : "next map " + save.value("pendingMission", std::string()));
     }
     const bool ok = campaign.saveActive(std::move(save));
@@ -1353,9 +1353,9 @@ int runWindow(const Options& o) {
       if (!ok) logWarn("{}: the victory could not be written before the next floor", playing);
       return;
     }
-    const e2::CampaignMission* m = campaign.data().mission(playing);
+    const ember::CampaignMission* m = campaign.data().mission(playing);
     const std::string name = m ? m->title : playing;
-    campaignNote = !ok ? "Não foi possível gravar o progresso (" + e2::Campaign::savePath().string() + ")."
+    campaignNote = !ok ? "Não foi possível gravar o progresso (" + ember::Campaign::savePath().string() + ")."
                    : won ? name + ": vitória gravada no espaço " + std::to_string(campaign.bank().lastSlot + 1) + "."
                          : name + ": derrota. O combate fica pendente no espaço " + std::to_string(campaign.bank().lastSlot + 1) + ".";
     if (ok && interludeOver) {
@@ -1367,23 +1367,23 @@ int runWindow(const Options& o) {
   };
   // GameApp onQuit on an explore map: the map's mission completed, no pending mission or resumable fight left in the slot.
   auto markVisited = [&](const std::string& id, const MapStage* map = nullptr) {
-    e2::Json save = campaign.activeSave();
-    if (map) e2::foldQuestProgress(save, map->questFound(), map->questKills());  // what the walk found stays found
-    e2::Json& done = save["completed"];
-    if (!done.is_array()) done = e2::Json::array();
+    ember::Json save = campaign.activeSave();
+    if (map) ember::foldQuestProgress(save, map->questFound(), map->questKills());  // what the walk found stays found
+    ember::Json& done = save["completed"];
+    if (!done.is_array()) done = ember::Json::array();
     if (std::find(done.begin(), done.end(), id) == done.end()) done.push_back(id);
     save["pendingMission"] = nullptr;
     save["battle"] = nullptr;
     // An Interlude free-roam map left by its waypoint counts as done for the chapter (docs/INTERLUDE.md)
-    if (hasInterlude && e2::interludeAdvance(interlude, save, id) && e2::interludeState(save) == e2::InterludeState::Completed) {
+    if (hasInterlude && ember::interludeAdvance(interlude, save, id) && ember::interludeState(save) == ember::InterludeState::Completed) {
       campaignNote = tr("Interlúdio concluído: o grupo voltou ao presente.", "Interlude complete: the party is back in the present.");
       openLocation = interlude.ruinsLocation;
     }
     if (!campaign.saveActive(std::move(save))) logWarn("{}: the visit could not be written", id);
   };
-  // Engine2's loading curtain (LoadingScreens.h): up before a battle is built, over the world map as it opens.
+  // Ember's loading curtain (LoadingScreens.h): up before a battle is built, over the world map as it opens.
   loading::Curtain curtain;
-  services.curtain = [&] { curtain.draw(paths.engine2Public); };
+  services.curtain = [&] { curtain.draw(paths.artRoot); };
   const auto loopStart = Clock::now();
   const auto clockNow = [&] { return std::chrono::duration<double>(Clock::now() - loopStart).count(); };
   // A battle: the curtain shown for one frame over a blank screen before the battle is built (building it blocks).
@@ -1443,7 +1443,7 @@ int runWindow(const Options& o) {
         } else if (!playing.empty()) {
           if (!map->explores() && map->battleResult() == "victory") finishCampaignFight(*map, true);
           else markVisited(playing, map);
-          e2::Json save = campaign.activeSave();
+          ember::Json save = campaign.activeSave();
           save["underworldReached"] = true;
           if (!campaign.saveActive(std::move(save))) logWarn("{}: the way to the Underworld could not be written", playing);
           playing.clear();
@@ -1461,14 +1461,14 @@ int runWindow(const Options& o) {
         std::optional<MissionEntry> next = hasInterlude && interlude.hasMission(floor) ? interludeMission(paths, floor, error, test)  // a chapter map (docs/INTERLUDE.md)
                                            : test                                      ? testMission(campaign, paths, floor, error)
                                                                                        : campaignMission(campaign, paths, floor, error);
-        const e2::Json completed = test ? e2::Json::array() : campaign.activeSave().value("completed", e2::Json::array());
+        const ember::Json completed = test ? ember::Json::array() : campaign.activeSave().value("completed", ember::Json::array());
         const bool lairDone = std::find(completed.begin(), completed.end(), "wisp-forest-crossing-boss") != completed.end();
         if (!next) {
           logWarn("floor connector to {}: {}", floor, error);
         } else if (!test && floor == "wisp-forest-crossing-boss" && lairDone) {
           logWarn("floor connector to {}: the lair is done (GameApp startBattle refuses it)", floor);
         } else {
-          // A fight won on its stairs: the victory is written first (persistVictory: HP carried, the dead stay dead), as Engine2
+          // A fight won on its stairs: the victory is written first (persistVictory: HP carried, the dead stay dead), as Ember
           // writes it when the result screen shows; a free-roam floor (the walkable Inn) writes nothing here.
           if (!test && !map->explores() && map->battleResult() == "victory") finishCampaignFight(*map, true);
           if (testSession && !map->explores() && map->battleResult() == "victory") foldFight(testSession->save, *map, map->draftId());
@@ -1524,13 +1524,13 @@ int runWindow(const Options& o) {
                          testSession ? &testSession->save : nullptr);
       again->setPlaytest(inEditorTest);
       if (!playing.empty() && dialogs.is_object())
-        attachBattleTalk(*again, playing, dialogs, paths.engine2Public, world, testSession ? nullptr : &campaign);
-      attachNpcTalk(*again, paths.engine2Public, &world, !testSession && !playing.empty() ? &campaign : nullptr, testSession ? &testSession->save : nullptr,
+        attachBattleTalk(*again, playing, dialogs, paths.artRoot, world, testSession ? nullptr : &campaign);
+      attachNpcTalk(*again, paths.artRoot, &world, !testSession && !playing.empty() ? &campaign : nullptr, testSession ? &testSession->save : nullptr,
                     campaign.emptySave());
       stage = std::move(again);
     }
     // A campaign mission whose game files are not made yet (MissionEntry::prepare): the loading curtain goes up and they are made
-    // off the main thread (MapExport.h Campaign: Engine2's exporters, a few seconds); then the mission opens as usual.
+    // off the main thread (MapExport.h Campaign: Ember's exporters, a few seconds); then the mission opens as usual.
     if (pending && pending->prepare && !preparing.valid()) {
       vkDeviceWaitIdle(context.device);
       stage.reset();
@@ -1541,8 +1541,8 @@ int runWindow(const Options& o) {
       preparingEntry = std::move(pending);
       pending.reset();
       logInfo("{}: making its game files from {}", preparingEntry->draftId, preparingEntry->source.generic_string());
-      preparing = std::async(std::launch::async, [entry = *preparingEntry, paths, engine2 = std::filesystem::path(paths.engine2Public).parent_path()] {
-        return exportMap(entry.source, entry.id, paths, engine2, paths.campaign / "logs" / (entry.id + ".log"));
+      preparing = std::async(std::launch::async, [entry = *preparingEntry, paths, ember = std::filesystem::path(paths.artRoot).parent_path()] {
+        return exportMap(entry.source, entry.id, paths, ember, paths.campaign / "logs" / (entry.id + ".log"));
       });
     }
     if (preparing.valid() && preparing.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
@@ -1575,7 +1575,7 @@ int runWindow(const Options& o) {
         Options spells = o;
         spells.map = (paths.maps / "aldeia015.json").string();
         spells.scene = (std::filesystem::path(o.scenes) / "aldeia015.scene.json").string();
-        spells.battleRules = "content/engine2/battles/aldeia015.battle.json";
+        spells.battleRules = "content/data/battles/aldeia015.battle.json";
         renderer.setDebugView(o.debugView);
         MapStageOptions options = mapOptions(spells);
         options.spellsMenuOpen = true;
@@ -1620,10 +1620,10 @@ int runWindow(const Options& o) {
         // The sky follows the campaign's clock (the save's hour) on every campaign map; Modo teste (classic and RPG maps alike) and the
         // editor's Testar take the map's own Hora do dia (gameHour -1; the user, 2026-10-23: "no debug o horário que estiver no mapa").
         if (!playing.empty() && !testSession) {
-          const e2::Json save = campaign.activeSave();
-          options.gameHour = static_cast<float>(e2::Overworld::campaignHour(save));
+          const ember::Json save = campaign.activeSave();
+          options.gameHour = static_cast<float>(ember::Overworld::campaignHour(save));
           // ... and its moon: the phase of the save's day (the world map's moon plate); Modo teste: the map's own Lua.
-          if (options.moonPhase.empty()) options.moonPhase = e2::campaignMoonPhase(save.value("gameClock", 0));
+          if (options.moonPhase.empty()) options.moonPhase = ember::campaignMoonPhase(save.value("gameClock", 0));
         }
         // A free-roam map: who sits there and who walks (the campaign's save, or Modo teste's); where the party comes in.
         if (hasWorld) setUpExplore(options, testSession ? testSession->save : campaign.activeSave(), world, testSession.has_value() || playing.empty(), hasInterlude ? &interlude : nullptr);
@@ -1635,12 +1635,12 @@ int runWindow(const Options& o) {
         // A dungeon's dead stay dead (crossingDefeatedSpawns; a campaign only), and the Wisp crossing's exits lead to the lair until
         // it is done (routeWispCrossing; Modo teste: always to the lair).
         if (!playing.empty() && !testSession) {
-          const e2::Json save = campaign.activeSave();
-          if (const e2::MapMission* mm = hasWorld ? world.mission(playing) : nullptr; mm && mm->keepsSpawns)
-            if (const e2::Json dead = save.value("crossingDefeatedSpawns", e2::Json::object()); dead.is_object() && dead.contains(playing) && dead[playing].is_array())
-              for (const e2::Json& id : dead[playing])
+          const ember::Json save = campaign.activeSave();
+          if (const ember::MapMission* mm = hasWorld ? world.mission(playing) : nullptr; mm && mm->keepsSpawns)
+            if (const ember::Json dead = save.value("crossingDefeatedSpawns", ember::Json::object()); dead.is_object() && dead.contains(playing) && dead[playing].is_array())
+              for (const ember::Json& id : dead[playing])
                 if (id.is_string()) options.defeatedSpawns.insert(id.get<std::string>());
-          const e2::Json done = save.value("completed", e2::Json::array());
+          const ember::Json done = save.value("completed", ember::Json::array());
           options.wispCrossingDone = std::find(done.begin(), done.end(), "wisp-forest-crossing") != done.end() ||
                                      std::find(done.begin(), done.end(), "wisp-forest-crossing-boss") != done.end();
         }
@@ -1653,16 +1653,16 @@ int runWindow(const Options& o) {
         // A fight saved mid-way, resumed (GameApp startBattle with resume: applySnapshot); its intro already played.
         bool resumed = false;
         if (std::exchange(resumeNext, false) && !playing.empty()) {
-          const e2::Json save = campaign.activeSave();
+          const ember::Json save = campaign.activeSave();
           resumed = save.contains("battle") && map->resume(save["battle"]);
           if (!resumed) logWarn("{}: the saved fight does not fit this map; it starts afresh", playing);
         }
         // The mission's intro conversation, its outro on a victory, and the campaign's epilogue films.
         if (!playing.empty() && dialogs.is_object())
-          if (auto talk = attachBattleTalk(*map, playing, dialogs, paths.engine2Public, world, testSession ? nullptr : &campaign); talk && resumed)
+          if (auto talk = attachBattleTalk(*map, playing, dialogs, paths.artRoot, world, testSession ? nullptr : &campaign); talk && resumed)
             talk->introDone = true;
         // The people who talk on it (Brue's tavern, Vargan's forge, the old healer in the walkable Inn: NpcTalk.h).
-        attachNpcTalk(*map, paths.engine2Public, hasWorld ? &world : nullptr, !testSession && !playing.empty() ? &campaign : nullptr,
+        attachNpcTalk(*map, paths.artRoot, hasWorld ? &world : nullptr, !testSession && !playing.empty() ? &campaign : nullptr,
                       testSession ? &testSession->save : nullptr, campaign.emptySave());
         // Both of the walkable Inn's floors keep the Inn's theme (GameApp: walking in and out of its menus never switches tracks).
         if (map->draftId().rfind("estalagem", 0) == 0) map->setMusic(music::theme("inn"));
@@ -1686,25 +1686,25 @@ int runWindow(const Options& o) {
 
 namespace {
 // --loadout-check <battle.json> <reference battle.json> <save.json>: every hero of the first battle equipped from the save
-// (e2::equipFromSave) must carry what Engine2 gave it in the reference (export_battle.ts with GEAR_SAVE=<save.json> on the same
+// (ember::equipFromSave) must carry what Ember gave it in the reference (export_battle.ts with GEAR_SAVE=<save.json> on the same
 // map): weapon dice, enhancement, reach, off hand, staff magic, the arrow, both hands' mastery. Exit 3 on any difference.
 int loadoutCheck(const char* battleFile, const char* referenceFile, const char* saveFile) {
-  std::optional<e2::Battle> battle = e2::Battle::load(battleFile), reference = e2::Battle::load(referenceFile);
-  e2::Loadouts arms;
+  std::optional<ember::Battle> battle = ember::Battle::load(battleFile), reference = ember::Battle::load(referenceFile);
+  ember::Loadouts arms;
   std::ifstream in(saveFile, std::ios::binary);
-  const e2::Json save = in ? e2::Json::parse(in, nullptr, false) : e2::Json();
-  if (!battle || !reference || !arms.load("content/engine2/weapons.json") || !save.is_object()) return 1;
+  const ember::Json save = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
+  if (!battle || !reference || !arms.load("content/data/weapons.json") || !save.is_object()) return 1;
   int heroes = 0, differences = 0;
-  for (e2::BattleUnit& u : battle->units()) {
+  for (ember::BattleUnit& u : battle->units()) {
     if (u.side != "player" || u.summoned) continue;
-    const auto ref = std::find_if(reference->units().begin(), reference->units().end(), [&](const e2::BattleUnit& r) { return r.id == u.id; });
+    const auto ref = std::find_if(reference->units().begin(), reference->units().end(), [&](const ember::BattleUnit& r) { return r.id == u.id; });
     if (ref == reference->units().end()) continue;
-    e2::equipFromSave(u, arms, save);
+    ember::equipFromSave(u, arms, save);
     ++heroes;
-    const e2::CombatProfile &a = u.combat, &b = ref->combat;
+    const ember::CombatProfile &a = u.combat, &b = ref->combat;
     std::string diff;
     auto check = [&](const char* what, auto mine, auto theirs) {
-      if (mine != theirs) diff += std::format(" {} {} vs Engine2 {};", what, mine, theirs);
+      if (mine != theirs) diff += std::format(" {} {} vs Ember {};", what, mine, theirs);
     };
     check("weapon", a.hasWeapon, b.hasWeapon), check("dice", a.dice, b.dice), check("faces", a.faces, b.faces), check("bonus", a.bonus, b.bonus);
     check("enh", a.enh, b.enh), check("ranged", a.ranged, b.ranged), check("classBonus", a.classBonus, b.classBonus);
@@ -1721,9 +1721,9 @@ int loadoutCheck(const char* battleFile, const char* referenceFile, const char* 
     if (!diff.empty()) ++differences;
     logInfo("loadout {} ({}): {}d{}+{} enh {}, reach {}-{}, accuracy {} x{}, off {}{}, staff {} -> {}", u.name, u.classId, a.dice, a.faces, a.bonus, a.enh,
             u.minRange, u.maxRange, a.accuracy, a.damageMul, a.offHandWeapon ? "weapon" : a.offHandShield ? "shield" : "none",
-            a.offHandWeapon ? std::format(" {}d{}", a.offDice, a.offFaces) : std::string(), a.staff ? a.staffElement : "no", diff.empty() ? "matches Engine2" : "DIFFERS:" + diff);
+            a.offHandWeapon ? std::format(" {}d{}", a.offDice, a.offFaces) : std::string(), a.staff ? a.staffElement : "no", diff.empty() ? "matches Ember" : "DIFFERS:" + diff);
   }
-  logInfo("loadout check: {} heroes, {} differ from Engine2", heroes, differences);
+  logInfo("loadout check: {} heroes, {} differ from Ember", heroes, differences);
   return heroes && !differences ? 0 : 3;
 }
 
@@ -1732,11 +1732,11 @@ int loadoutCheck(const char* battleFile, const char* referenceFile, const char* 
 // the first hero walked to the far end of its reach, hurt, its XP and a tier-1 use spent), an enemy fallen, enmity
 // noted, a second round started.
 int battleSaveCheck(const char* file, const char* out) {
-  std::optional<e2::Battle> a = e2::Battle::load(file);
+  std::optional<ember::Battle> a = ember::Battle::load(file);
   if (!a) return 1;
-  e2::Mulberry32 rng(7);
+  ember::Mulberry32 rng(7);
   a->rollInitiative(rng);
-  std::vector<e2::BattleUnit>& u = a->units();
+  std::vector<ember::BattleUnit>& u = a->units();
   u.reserve(u.size() + 4);  // a familiar is added below: `h` must not move
   int hero = -1, foe = -1, foe2 = -1;
   for (size_t i = 0; i < u.size(); ++i) {
@@ -1745,17 +1745,17 @@ int battleSaveCheck(const char* file, const char* out) {
     else if (u[i].side == "enemy" && foe2 < 0) foe2 = static_cast<int>(i);
   }
   if (hero < 0 || foe < 0 || foe2 < 0) return 1;
-  const std::vector<e2::ReachCell> reach = a->reachable(static_cast<size_t>(hero));
+  const std::vector<ember::ReachCell> reach = a->reachable(static_cast<size_t>(hero));
   if (!reach.empty()) a->move(static_cast<size_t>(hero), reach.back().x, reach.back().y);
-  e2::BattleUnit& h = u[static_cast<size_t>(hero)];
+  ember::BattleUnit& h = u[static_cast<size_t>(hero)];
   h.hp -= 7, h.xp += 30, h.acted = true;
   if (h.spells[0] > 0) --h.spells[0];
   // a potion drunk, sick, poisoned, hungry, rations conjured
   h.bag[1] = 1, h.bag[4] = 2;
-  h.diseased = true, h.diseaseBase = e2::BattleUnit::Stats{h.atk + 1, h.mag + 1, h.def + 1, h.dex + 1, h.mov + 1};
+  h.diseased = true, h.diseaseBase = ember::BattleUnit::Stats{h.atk + 1, h.mag + 1, h.def + 1, h.dex + 1, h.mov + 1};
   h.poisoned = true, h.poisonTier = "lesser", h.fullness = 40.0, h.hungerPenaltyPct = 0.2, h.offWeaponSkill = 3.5;
   a->addLootRations(3);
-  // Engine2's statuses, zones, a warp gate and a summoned familiar must come back too
+  // Ember's statuses, zones, a warp gate and a summoned familiar must come back too
   h.stunned = true, h.stunTurns = 2, h.bleeding = true, h.bleedRoundsLeft = 3, h.bleedRoundMarker = 1, h.crippled = true;
   h.blessedHitBonusPct = 0.07, h.blessedRoundsLeft = 4, h.fearTurns = 1, h.fearSourceId = u[static_cast<size_t>(foe)].id;
   u[static_cast<size_t>(foe2)].asleep = true, u[static_cast<size_t>(foe2)].sleepTurns = 3;
@@ -1764,7 +1764,7 @@ int battleSaveCheck(const char* file, const char* out) {
   a->auraZones().push_back({{{h.x, h.y}, {h.x, h.y + 1}}, 3, "protection", "player", 0.2});
   a->warpGates().push_back({{h.x + 2, h.y}, {h.x + 3, h.y}, 3, 9});
   a->setTurnRestrained(true);
-  if (std::optional<e2::BattleUnit> fam = e2::summonSkeleton("player-familiar-" + std::to_string(u.size()), "familiar2")) {
+  if (std::optional<ember::BattleUnit> fam = ember::summonSkeleton("player-familiar-" + std::to_string(u.size()), "familiar2")) {
     fam->name = "Familiar Maior de " + h.name, fam->summonerId = h.id, fam->x = h.x, fam->y = h.y + 2, fam->hp = 11, fam->maxHp = 23, fam->level = h.level;
     fam->atk = 7, fam->spellCharges = 2, fam->lifeDrainCharges = 1;
     u.push_back(std::move(*fam));
@@ -1773,8 +1773,8 @@ int battleSaveCheck(const char* file, const char* out) {
   a->noteWeaponDamage(static_cast<size_t>(hero), static_cast<size_t>(foe2), 5);
   a->startNewRound();
   const nlohmann::json s1 = a->snapshot();
-  std::optional<e2::Battle> b = e2::Battle::load(file);
-  e2::Mulberry32 other(99);
+  std::optional<ember::Battle> b = ember::Battle::load(file);
+  ember::Mulberry32 other(99);
   b->rollInitiative(other);
   const bool applied = b->applySnapshot(s1);
   const nlohmann::json s2 = b->snapshot();
@@ -1792,20 +1792,20 @@ int battleSaveCheck(const char* file, const char* out) {
 }  // namespace
 
 namespace {
-// --roster-check <battle.json> <engine2 battle.json> <save.json>: the heroes as a campaign save brings them
-// (heroStatesFromSave + MapStage::applyHeroState on the plain export) must be Engine2's own (the same map exported with
+// --roster-check <battle.json> <ember battle.json> <save.json>: the heroes as a campaign save brings them
+// (heroStatesFromSave + MapStage::applyHeroState on the plain export) must be Ember's own (the same map exported with
 // export_battle.ts SAVE=<the save>): HP, stats, disease, poison, hunger, potions. Then a fight's end written back
-// (writeHeroConditions) must leave the save as Engine2's finishBattle merges would.
-int rosterCheck(const char* plainFile, const char* engine2File, const char* saveFile) {
-  std::optional<e2::Battle> plain = e2::Battle::load(plainFile), ref = e2::Battle::load(engine2File);
+// (writeHeroConditions) must leave the save as Ember's finishBattle merges would.
+int rosterCheck(const char* plainFile, const char* classicFile, const char* saveFile) {
+  std::optional<ember::Battle> plain = ember::Battle::load(plainFile), ref = ember::Battle::load(classicFile);
   std::ifstream in(saveFile, std::ios::binary);
   if (!plain || !ref || !in || plain->units().size() != ref->units().size()) return 1;
-  const e2::Json save = e2::Json::parse(in);
+  const ember::Json save = ember::Json::parse(in);
   const auto states = heroStatesFromSave(save);
   int diffs = 0, heroes = 0;
   for (size_t i = 0; i < plain->units().size(); ++i) {
-    e2::BattleUnit& u = plain->units()[i];
-    const e2::BattleUnit& r = ref->units()[i];
+    ember::BattleUnit& u = plain->units()[i];
+    const ember::BattleUnit& r = ref->units()[i];
     if (u.side != "player") continue;
     if (const auto it = states.find(u.name); it != states.end()) MapStage::applyHeroState(u, it->second);
     ++heroes;
@@ -1816,7 +1816,7 @@ int rosterCheck(const char* plainFile, const char* engine2File, const char* save
     same("hp", u.hp, r.hp), same("maxHp", u.maxHp, r.maxHp), same("atk", u.atk, r.atk), same("mag", u.mag, r.mag), same("def", u.def, r.def);
     same("dex", u.dex, r.dex), same("mov", u.mov, r.mov), same("diseased", u.diseased, r.diseased), same("poisoned", u.poisoned, r.poisoned);
     same("fullness", u.fullness.value_or(100), r.fullness.value_or(100)), same("hungerPenalty", u.hungerPenaltyPct, r.hungerPenaltyPct);
-    for (int k = 0; k < 7; ++k) same(e2::kPotionIds[k], u.bag[k], r.bag[k]);
+    for (int k = 0; k < 7; ++k) same(ember::kPotionIds[k], u.bag[k], r.bag[k]);
     same("diseaseBase", u.diseaseBase.has_value(), r.diseaseBase.has_value());
     if (u.diseaseBase && r.diseaseBase)
       same("baseAtk", u.diseaseBase->atk, r.diseaseBase->atk), same("baseMov", u.diseaseBase->mov, r.diseaseBase->mov);
@@ -1825,7 +1825,7 @@ int rosterCheck(const char* plainFile, const char* engine2File, const char* save
   }
   // The fight's end: the first hero drank a mid potion and was cured, the second fed to 120 and poisoned, 4 rations.
   std::vector<HeroOutcome> out;
-  for (const e2::BattleUnit& u : plain->units())
+  for (const ember::BattleUnit& u : plain->units())
     if (u.side == "player" && !u.summoned) {
       HeroOutcome h{u.name, u.level, u.xp, u.hp};
       std::copy(std::begin(u.bag), std::end(u.bag), h.bag.begin());
@@ -1836,7 +1836,7 @@ int rosterCheck(const char* plainFile, const char* engine2File, const char* save
   if (out.size() >= 2) {
     out[0].bag[1] -= 1, out[0].diseased = false, out[0].poison.clear();
     out[1].fullness = 120.0, out[1].poison = "lesser";
-    e2::Json after = save;
+    ember::Json after = save;
     writeHeroConditions(after, out, 4);
     auto expect = [&](bool ok, const std::string& what) {
       if (!ok) ++writeDiffs, std::printf("  write-back: %s\n", what.c_str());
@@ -1851,7 +1851,7 @@ int rosterCheck(const char* plainFile, const char* engine2File, const char* save
       expect(after["bags"][out[0].name]["lockpick"] == save["bags"][out[0].name]["lockpick"], "lockpicks kept");
   }
   const bool pass = diffs == 0 && writeDiffs == 0 && heroes > 0;
-  std::printf("roster check %s: %s (%d heroes, %d differ from Engine2, %d write-back errors)\n", plainFile, pass ? "PASS" : "FAIL", heroes, diffs,
+  std::printf("roster check %s: %s (%d heroes, %d differ from Ember, %d write-back errors)\n", plainFile, pass ? "PASS" : "FAIL", heroes, diffs,
               writeDiffs);
   return pass ? 0 : 1;
 }
@@ -1861,9 +1861,9 @@ int main(int argc, char** argv) {
   if (argc >= 3 && std::string_view(argv[1]) == "--battle-save-check") return battleSaveCheck(argv[2], argc >= 4 ? argv[3] : nullptr);
   if (argc >= 5 && std::string_view(argv[1]) == "--loadout-check") return loadoutCheck(argv[2], argv[3], argv[4]);
   if (argc >= 5 && std::string_view(argv[1]) == "--roster-check") return rosterCheck(argv[2], argv[3], argv[4]);
-  // --audio-check [engine2 public folder]: decode every effect and the start of every track (exit 1 if any fails).
+  // --audio-check [ember public folder]: decode every effect and the start of every track (exit 1 if any fails).
   if (argc >= 2 && std::string_view(argv[1]) == "--audio-check")
-    return ember::AudioMixer::check(argc >= 3 ? argv[2] : "content/game/public") == 0 ? 0 : 1;
+    return ember::AudioMixer::check(argc >= 3 ? argv[2] : "content/assets") == 0 ? 0 : 1;
   // --film-check <film> [still.png [picture]]: decode it (and its .webm twin, for an .mp4) flat out; logs each decoder's cost
   // (exit 1 if any fails); with a still, that picture of each is written as <still>-h264.png / -av1.png.
   if (argc >= 3 && std::string_view(argv[1]) == "--film-check")

@@ -1,24 +1,24 @@
 #pragma once
 
-// Engine2's menu windows, copied with their own design (src/ember-ui/styles.css .game-options / .ember-btn / .ember-veil
+// Ember's menu windows, copied with their own design (src/ember-ui/styles.css .game-options / .ember-btn / .ember-veil
 // / .status-panel, Tailwind sizes in CSS px = UI canvas units):
 //   HelpModal       "Como jogar" (GameApp.tsx HelpModal): Básicos, Usos, Dano, Fórmulas, Loot. Opened by the title's
-//                   Como jogar (GameApp's battle Regras button is left out, user 2026-10-16). Its texts and tables come from content/engine2/help.json
-//                   (tools/scripts/engine2/export_help.ts: every number computed by Engine2's own rules).
+//                   Como jogar (GameApp's battle Regras button is left out, user 2026-10-16). Its texts and tables come from content/data/help.json
+//                   (tools/scripts/data/export_help.ts: every number computed by Ember's own rules).
 //   OptionsDialog   "Opções" (OptionsMenu.tsx OptionsDialog): Jogo (Salvar / Carregar / Voltar à tela inicial, when the
 //                   screen has them), Gráficos, Áudio, Idiomas, Acessibilidade, "Alterações salvas automaticamente."
 //                   Opened by the title, the world maps, Modo teste and the battle's Esc menu.
 //   BattleMenu      the battle's Esc menu (GameApp.tsx BattleScreen `paused`): Velocidade, Áudio, Opções, Continuar,
 //                   Save, Load, Desistir / Encerrar teste, Tela inicial.
-// The player's choices (Engine2 gamePreferences.ts + audio.ts) live in %LOCALAPPDATA%\Ember\game-preferences.json; the
+// The player's choices (Ember gamePreferences.ts + audio.ts) live in %LOCALAPPDATA%\Ember\game-preferences.json; the
 // graphics switches are Dev Controls' own (DevGfxSettings.h, dev-gfx.json).
 //
 // What each choice does here: Sombras / Luzes locais / FX atmosféricos act on the map (live in a battle); Tela cheia;
 // Som das cutscenes, Volume da cutscene, Exibir legendas and Idioma das legendas act on the films (CutsceneScreen);
-// Tamanho do diálogo and Diálogos on the conversations (DialogScreen: a line's own English when Engine2 has one, else
-// its Portuguese, Engine2's translatedText); Interface e nomes switches these windows, the title and the save slots
-// between Portuguese and English (tr(): Engine2's dictionary and the English its screens give inline; anything without
-// an English text stays Portuguese, Engine2's rule). Silenciar, Música and Efeitos sonoros act on the game's sound
+// Tamanho do diálogo and Diálogos on the conversations (DialogScreen: a line's own English when Ember has one, else
+// its Portuguese, Ember's translatedText); Interface e nomes switches these windows, the title and the save slots
+// between Portuguese and English (tr(): Ember's dictionary and the English its screens give inline; anything without
+// an English text stays Portuguese, Ember's rule). Silenciar, Música and Efeitos sonoros act on the game's sound
 // (engine/media/AudioMixer, read every frame by the game loop).
 // Not ported: the battle menu's Zoom (left for later, user 2026-10-16).
 
@@ -114,7 +114,7 @@ inline float fitSize(ImFont* f, float size, const std::string& s, float room) {
   const float w = textWidth(f, size, s);
   return w > room && w > 0.0f ? size * room / w : size;
 }
-// The Opções window's text, 1.4x Engine2's (user 2026-10-16: "all fonts too small"; boxes unchanged).
+// The Opções window's text, 1.4x Ember's (user 2026-10-16: "all fonts too small"; boxes unchanged).
 inline constexpr float kOptScale = 1.4f;
 // Text with letter spacing (em), as spacedText but without its shadow.
 inline void tracked(ImDrawList* dl, ImFont* f, float size, ImVec2 at, ImU32 ink, const std::string& s, float em) {
@@ -221,7 +221,7 @@ inline bool emberCheckbox(const char* id, bool& value, bool disabled = false) {
     verticalGradient(dl, a, b, {{0.0f, IM_COL32(0xd9, 0x62, 0x1c, al)}, {0.55f, IM_COL32(0x9c, 0x2f, 0x10, al)}, {1.0f, IM_COL32(0x56, 0x17, 0x08, al)}});
     dl->AddLine({a.x + 1, a.y + 1}, {b.x - 1, a.y + 1}, IM_COL32(255, 225, 160, disabled ? 45 : 115));
     dl->AddRect(a, b, IM_COL32(255, 200, 130, disabled ? 60 : 153), 2.0f);
-    // Engine2's tick (styles.css .game-options input:checked): its own SVG at 0.8 rem.
+    // Ember's tick (styles.css .game-options input:checked): its own SVG at 0.8 rem.
     uiIconSvg(dl, "options-tick",
         "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='#ffffff' stroke-width='3.2' "
         "stroke-linecap='round' stroke-linejoin='round'><path d='m5 12 4 4L19 6'/></svg>",
@@ -331,10 +331,10 @@ inline bool emberSelect(const char* id, int& value, const std::vector<std::pair<
 
 class HelpModal {
  public:
-  // content/engine2/help.json (export_help.ts), read once.
+  // content/data/help.json (export_help.ts), read once.
   static const nlohmann::json& data() {
     static const nlohmann::json j = [] {
-      std::ifstream in("content/engine2/help.json", std::ios::binary);
+      std::ifstream in("content/data/help.json", std::ios::binary);
       nlohmann::json v = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
       return v.is_object() ? v : nlohmann::json::object();
     }();
@@ -463,7 +463,7 @@ class HelpModal {
     return out;
   }
 
-  // The instructions' text, 2 px over Engine2's sizes (user 2026-10-16).
+  // The instructions' text, 2 px over Ember's sizes (user 2026-10-16).
   static constexpr float kPlus = 2.0f;
 
   // One tab's blocks top to bottom (draws when `dl` is given); returns the height.
@@ -899,7 +899,7 @@ class BattleMenu {
 
   // `playtest`: the Map Editor's Testar battle ("Encerrar teste" instead of "Desistir"). `canSave` / `canLoad`: the
   // campaign's slots are there (Modo teste writes nothing: no Save).
-  Action draw(ImVec2 screen, const std::filesystem::path& engine2Public, Speed& speed, bool playtest, bool canSave = false, bool canLoad = false) {
+  Action draw(ImVec2 screen, const std::filesystem::path& artRoot, Speed& speed, bool playtest, bool canSave = false, bool canLoad = false) {
     Action act = Action::None;
     // bg-bg/80 over the battle; a click outside the panel resumes
     ImGui::SetNextWindowPos({0, 0});
@@ -925,7 +925,7 @@ class BattleMenu {
     if (ImGui::InvisibleButton("##battleveil", screen) && !ImGui::IsMouseHoveringRect(a, b)) act = Action::Resume;
     for (int i = 8; i >= 1; --i) dl->AddRectFilled({a.x - i * 1.5f, a.y + i * 2.0f}, {b.x + i * 1.5f, b.y + i * 2.6f}, IM_COL32(0, 0, 0, 16), 12.0f + i);
     dl->AddRectFilled(a, b, IM_COL32(28, 28, 28, 235), 12.0f);
-    if (const UiImage* art = uiImage(engine2Public / "game/ui/status-background.jpg")) {
+    if (const UiImage* art = uiImage(artRoot / "game/ui/status-background.jpg")) {
       dl->PushClipRect(a, b, true);
       imageCover(dl, *art, a, b);
       dl->PopClipRect();

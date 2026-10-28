@@ -2,20 +2,20 @@
 
 // The Spells menu (user, 2026-10-16: "a Spells Menu in test mode with all spells and skills with a drop down menu so
 // I can pick and choose; Magic Missile 01, make it serial, for reference sake"). Four lists:
-//   Magias / Habilidades  every Engine2 spell and weapon skill (src/vfx/spell-catalog.ts SPELL_ICON_ID: the heroes'
+//   Magias / Habilidades  every Ember spell and weapon skill (src/vfx/spell-catalog.ts SPELL_ICON_ID: the heroes'
 //                         and the enemy-only ones), each with a dropdown of its saved effect versions, OFF first, then
 //                         "<name> 01", "<name> 02", ... (render/SpellEffects.h looks(); never renumbered), and Testar
 //                         (the picked unit, else the party's first, casts it at the nearest foe; heals at the nearest
 //                         friend). A spell with no version yet shows only OFF.
 //   Itens                 what a hero uses from the bag (Poção), with its versions the same way.
-//   Efeitos soltos        every effect image of Engine2 (public/game/fx and effects: the elemental flipbooks only its
+//   Efeitos soltos        every effect image of Ember (public/game/fx and effects: the elemental flipbooks only its
 //                         dev controls reached, bolts, the arrow, sparks, portals, references), grouped by element and
 //                         numbered the same way ("Arcano 01"), each playable alone with Testar. The numbers follow
 //                         content/fx.sprites.json; content/fx/effects-list.md maps every number to its file.
 // The versions chosen are saved in content/fx/spell-looks.json and used by every cast in battle, one choice for the
-// heroes and one for the enemies ("Para": Heróis / Inimigos). Heroes default to Engine2's own effect where one is
+// heroes and one for the enemies ("Para": Heróis / Inimigos). Heroes default to Ember's own effect where one is
 // ported (user, 2026-10-16: "set these imported 3D with sprites effects like fireball as default for the player
-// characters": SpellEffects::engine2Look); enemies to the spell's first version.
+// characters": SpellEffects::classicLook); enemies to the spell's first version.
 
 #include <imgui.h>
 
@@ -36,12 +36,12 @@
 namespace ember {
 
 struct SpellEntry {
-  const char* kind;  // Engine2's SpellKind
-  const char* name;  // Engine2's Portuguese name (data.ts); [ours] where Engine2 has none in Portuguese
+  const char* kind;  // Ember's SpellKind
+  const char* name;  // Ember's Portuguese name (data.ts); [ours] where Ember has none in Portuguese
   bool skill;        // a weapon skill (Habilidades), else a spell (Magias)
 };
 
-// Every SpellKind of Engine2 (spell-catalog.ts), in its order.
+// Every SpellKind of Ember (spell-catalog.ts), in its order.
 inline const std::vector<SpellEntry>& allSpells() {
   static const std::vector<SpellEntry> kAll = {
       {"fireball", "Bola de Fogo", false},
@@ -50,7 +50,7 @@ inline const std::vector<SpellEntry>& allSpells() {
       {"bless", "Bênção", false},
       {"cureMinor", "Cura Menor", false},
       {"cureWounds", "Cura Média", false},
-      {"cureLight", "Mãos Curativas", false},  // [ours] Engine2: "Healing Hands"
+      {"cureLight", "Mãos Curativas", false},  // [ours] Ember: "Healing Hands"
       {"cureDisease", "Curar Doença", false},
       {"longShot", "Tiro Longo", true},
       {"bloodyShot", "Tiro Sangrento", true},
@@ -59,7 +59,7 @@ inline const std::vector<SpellEntry>& allSpells() {
       {"lightning", "Relâmpago", false},
       {"lightningTier3", "Relâmpago Maior", false},  // [ours]
       {"magicMissile", "Míssil Mágico", false},
-      {"magicMissileV2", "Míssil Mágico V2", false},  // [ours] the same spell's second Engine2 version
+      {"magicMissileV2", "Míssil Mágico V2", false},  // [ours] the same spell's second Ember version
       {"causticVenom", "Veneno Cáustico", false},
       {"divineBolt", "Raio Divino", false},
       {"minorVenom", "Veneno Menor", false},
@@ -119,7 +119,7 @@ inline const std::vector<SpellEntry>& allSpells() {
   return kAll;
 }
 
-// What a hero uses from the bag in battle (Engine2 usePotion): kind, name.
+// What a hero uses from the bag in battle (Ember usePotion): kind, name.
 inline const std::vector<SpellEntry>& allItems() {
   static const std::vector<SpellEntry> kAll = {{"potion", "Poção", false}};
   return kAll;
@@ -169,14 +169,14 @@ class SpellsMenu {
     }
   }
 
-  // The version a spell plays for a hero or an enemy: the saved choice, else the default (heroes: Engine2's own effect
+  // The version a spell plays for a hero or an enemy: the saved choice, else the default (heroes: Ember's own effect
   // where one is ported, else the first version; enemies: the first version; 0 when it has none).
   int look(const std::string& kind, bool enemy) const {
     const int side = enemy ? 1 : 0;
     const auto it = looks_[side].find(kind);
     const int available = SpellEffects::looks(kind);
     if (it != looks_[side].end()) return std::min(it->second, available);
-    if (!enemy && SpellEffects::engine2Look(kind) > 0) return SpellEffects::engine2Look(kind);
+    if (!enemy && SpellEffects::classicLook(kind) > 0) return SpellEffects::classicLook(kind);
     return available > 0 ? 1 : 0;
   }
 
@@ -250,7 +250,7 @@ class SpellsMenu {
   const std::vector<Group>& groups() const { return groups_; }
 
  private:
-  // Engine2's effect images by element (file name prefixes), in this order.
+  // Ember's effect images by element (file name prefixes), in this order.
   void addLoose(const std::string& clip) {
     static const std::pair<const char*, const char*> kGroups[] = {
         {"arcane", "Arcano"}, {"ember", "Brasa"},     {"fireball", "Bola de Fogo"}, {"fire", "Fogo"},     {"frost", "Gelo"},

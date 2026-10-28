@@ -1,6 +1,6 @@
 #pragma once
 
-// The party's inventory, copied from Engine2 (src/game/InventoryScreens.tsx): the overlay with its two views.
+// The party's inventory, copied from Ember (src/game/InventoryScreens.tsx): the overlay with its two views.
 // Equipar (PaperDollScreen): the hero's paper doll (game/ui/equipment-male.jpg, -female for Neera) with its twelve
 // sockets; a socket opens the picker of owned pieces that fit (weapons of the hero's class for the main hand; the
 // shared stash's gear for the rest, or a piece another hero wears); Desequipar. Mochila (BackpackScreen): the party's
@@ -32,12 +32,12 @@ namespace ember {
 class InventoryScreen {
  public:
   struct Context {
-    e2::Json& save;
+    ember::Json& save;
     std::function<void()> write;
-    const e2::InnRules& rules;
-    const e2::InnData& data;
-    const e2::Overworld& world;
-    std::filesystem::path engine2Public;
+    const ember::InnRules& rules;
+    const ember::InnData& data;
+    const ember::Overworld& world;
+    std::filesystem::path artRoot;
     bool allHeroes = false;  // Modo teste: every hero, recruited or not
   };
 
@@ -63,7 +63,7 @@ class InventoryScreen {
   static constexpr ImU32 kMuted = IM_COL32(180, 180, 180, 255), kFg = IM_COL32(240, 240, 240, 255), kAccent = IM_COL32(216, 216, 216, 255),
                          kDanger = IM_COL32(181, 74, 50, 255), kBorder = IM_COL32(74, 74, 74, 255);
   static constexpr const char* kPotions[7] = {"weak", "mid", "potent", "disease", "manaSmall", "manaMid", "manaLarge"};
-  static constexpr const char* kBagIcon = "game/icons/refresh-001/packs/small-pouch.png";  // Engine2's, no longer drawn
+  static constexpr const char* kBagIcon = "game/icons/refresh-001/packs/small-pouch.png";  // Ember's, no longer drawn
   static constexpr const char* kBagArt = "content/ui/status/mochila-brasa-v02.png";           // the user's true-alpha Mochila icon
   static const std::string& unknownItemArt() {
     static const std::string path = std::filesystem::absolute("content/ui/inventory/unidentified-item-v01.png").string();
@@ -102,9 +102,9 @@ class InventoryScreen {
     if (path.empty()) return nullptr;  // an unknown item has no art to show
     if (const size_t q = path.find('?'); q != std::string::npos) path.resize(q);
     if (!path.empty() && path[0] == '/') path.erase(0, 1);
-    return uiImage(c.engine2Public / std::filesystem::path(reinterpret_cast<const char8_t*>(path.c_str())));
+    return uiImage(c.artRoot / std::filesystem::path(reinterpret_cast<const char8_t*>(path.c_str())));
   }
-  void apply(Context& c, std::optional<e2::Json> next) {
+  void apply(Context& c, std::optional<ember::Json> next) {
     if (!next) return;
     c.save = std::move(*next);
     c.write();
@@ -129,7 +129,7 @@ class InventoryScreen {
     });
   }
   void hungerBar(const Context& c, ImDrawList* dl, ImVec2 a, float w) {
-    const double full = e2::Overworld::fullness(c.save.value("heroHunger", e2::Json::object()).value(hero_, e2::Json()));
+    const double full = ember::Overworld::fullness(c.save.value("heroHunger", ember::Json::object()).value(hero_, ember::Json()));
     dl->AddRectFilled({a.x, a.y}, {a.x + w, a.y + 4}, kBorder, 2);
     dl->AddRectFilled({a.x, a.y}, {a.x + w * static_cast<float>(std::min(100.0, full) / 120), a.y + 4}, full <= 25 ? kDanger : kAccent, 2);
     if (full > 100) dl->AddRectFilled({a.x + w * 100 / 120, a.y}, {a.x + w * static_cast<float>(full / 120), a.y + 4}, IM_COL32(201, 162, 39, 255));
@@ -169,7 +169,7 @@ class InventoryScreen {
   bool drawDoll(ImVec2 size, Context& c, const std::vector<std::string>& heroes) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     const ImVec2 a{8, 8}, b{size.x - 8, size.y - 8};
-    if (const UiImage* bg = uiImage(c.engine2Public / "game/ui/equipment-background.jpg")) imageCover(dl, *bg, {0, 0}, size);
+    if (const UiImage* bg = uiImage(c.artRoot / "game/ui/equipment-background.jpg")) imageCover(dl, *bg, {0, 0}, size);
     // ember-window
     dl->AddRect(a, b, kBorder);
     bool close = false;
@@ -202,17 +202,17 @@ class InventoryScreen {
     if (h > bottom - top) h = bottom - top, w = h * ratio;
     const ImVec2 o{(left + right - w) / 2, (top + bottom - h) / 2};
     const char* doll = hero_ == "Neera" ? "game/ui/equipment-female.jpg" : "game/ui/equipment-male.jpg";
-    if (const UiImage* img = uiImage(c.engine2Public / doll)) dl->AddImage(img->texture, o, {o.x + w, o.y + h});
-    const e2::Json& worn = c.save.value("equipment", e2::Json::object()).value(hero_, e2::Json::object());
-    const std::string weaponId = c.save.value("equipped", e2::Json::object()).value(hero_, "");
-    const e2::InnWeapon* weapon = c.data.weapon(weaponId);
-    const int enh = c.save.value("weapons", e2::Json::object()).value(weaponId, 0);
-    const bool ownArms = e2::heroArms(hero_) != nullptr;  // Selene: her main hand holds a piece of gear (her dagger), worn like any
+    if (const UiImage* img = uiImage(c.artRoot / doll)) dl->AddImage(img->texture, o, {o.x + w, o.y + h});
+    const ember::Json& worn = c.save.value("equipment", ember::Json::object()).value(hero_, ember::Json::object());
+    const std::string weaponId = c.save.value("equipped", ember::Json::object()).value(hero_, "");
+    const ember::InnWeapon* weapon = c.data.weapon(weaponId);
+    const int enh = c.save.value("weapons", ember::Json::object()).value(weaponId, 0);
+    const bool ownArms = ember::heroArms(hero_) != nullptr;  // Selene: her main hand holds a piece of gear (her dagger), worn like any
     for (const DollSlot& s : kDollSlots) {
       const ImVec2 p{o.x + w * s.left / 100, o.y + h * s.top / 100}, q{p.x + w * s.width / 100, p.y + h * s.height / 100};
       const bool isWeapon = std::string(s.id) == "mainHand" && !ownArms;
       const std::string itemId = isWeapon ? weaponId : worn.value(s.id, "");
-      const e2::InnGear* item = isWeapon ? nullptr : c.data.gear(itemId);
+      const ember::InnGear* item = isWeapon ? nullptr : c.data.gear(itemId);
       const std::string icon = isWeapon ? (weapon ? weapon->icon : "") : item ? item->icon : "";
       ImGui::SetCursorScreenPos(p);
       ImGui::PushID(s.id);
@@ -310,22 +310,22 @@ class InventoryScreen {
       ImGui::SetCursorScreenPos({p.x, p.y + 36});
       return clicked;
     };
-    const e2::Json& worn = c.save.value("equipment", e2::Json::object()).value(hero_, e2::Json::object());
-    const e2::Json& loose = c.save.value("looseEquipment", e2::Json::object());
-    if (slot == "mainHand" && !e2::heroArms(hero_)) {
-      const std::string weaponId = c.save.value("equipped", e2::Json::object()).value(hero_, "");
+    const ember::Json& worn = c.save.value("equipment", ember::Json::object()).value(hero_, ember::Json::object());
+    const ember::Json& loose = c.save.value("looseEquipment", ember::Json::object());
+    if (slot == "mainHand" && !ember::heroArms(hero_)) {
+      const std::string weaponId = c.save.value("equipped", ember::Json::object()).value(hero_, "");
       if (c.data.weapon(weaponId) && plain("##unequip", "Desequipar")) {
         apply(c, c.rules.equipWeapon(c.save, hero_, ""));
         picker_.reset();
       }
-      std::vector<const e2::InnWeapon*> owned;
-      for (const e2::InnWeapon& w : c.data.weapons)
-        if (std::find(w.usableBy.begin(), w.usableBy.end(), cls) != w.usableBy.end() && c.save.value("weapons", e2::Json::object()).contains(w.id) &&
+      std::vector<const ember::InnWeapon*> owned;
+      for (const ember::InnWeapon& w : c.data.weapons)
+        if (std::find(w.usableBy.begin(), w.usableBy.end(), cls) != w.usableBy.end() && c.save.value("weapons", ember::Json::object()).contains(w.id) &&
             !c.rules.weaponUnknown(c.save, w.id))  // an unknown weapon is not wielded (Identificar first)
           owned.push_back(&w);
       std::stable_sort(owned.begin(), owned.end(), [](const auto* a, const auto* b) { return a->power < b->power; });
       if (owned.empty()) ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + inner), ImGui::TextColored(ImColor(kMuted), "Nenhuma arma no saco ainda. Compre uma com o Ferreiro."), ImGui::PopTextWrapPos();
-      for (const e2::InnWeapon* w : owned) {
+      for (const ember::InnWeapon* w : owned) {
         const int e = c.save["weapons"].value(w->id, 0);
         std::vector<std::pair<std::string, ImU32>> lines{{w->dice + " · " + w->range, kMuted}};
         if (!w->bonusClass.empty()) lines.push_back({"+10% dano · " + w->bonusClassName, w->bonusClass == cls ? kAccent : kMuted});
@@ -339,7 +339,7 @@ class InventoryScreen {
       ImGui::TextColored(ImColor(kMuted), "Arma principal de duas mãos — sem mão livre para a secundária.");
     } else {
       auto wearerOf = [&](const std::string& id) -> std::string {
-        const e2::Json allWorn = c.save.value("equipment", e2::Json::object());  // a named copy: items() of a temporary dangles
+        const ember::Json allWorn = c.save.value("equipment", ember::Json::object());  // a named copy: items() of a temporary dangles
         for (const auto& [owner, slots] : allWorn.items())
           for (const auto& [s, v] : slots.items())
             if (v == id) return owner;
@@ -352,8 +352,8 @@ class InventoryScreen {
         picker_.reset();
       }
       int shown = 0;
-      for (const e2::InnGear& it : c.data.equipment) {
-        if (!e2::InnRules::fitsHeroSlot(it, hero_, slot)) continue;  // Selene's main hand: her daggers
+      for (const ember::InnGear& it : c.data.equipment) {
+        if (!ember::InnRules::fitsHeroSlot(it, hero_, slot)) continue;  // Selene's main hand: her daggers
         const int owned = loose.value(it.id, 0) - c.rules.gearUnknown(c.save, it.id);  // the known copies (an unknown piece is not worn)
         if (owned <= 0 && wearerOf(it.id).empty()) continue;
         if (slot != "mainHand" && it.usableBy && std::find(it.usableBy->begin(), it.usableBy->end(), cls) == it.usableBy->end()) continue;
@@ -389,7 +389,7 @@ class InventoryScreen {
   bool drawBackpack(ImVec2 size, Context& c, const std::vector<std::string>& heroes) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     const ImVec2 a{8, 8}, b{size.x - 8, size.y - 8};
-    if (const UiImage* bg = uiImage(c.engine2Public / "game/ui/backpack-background.jpg")) imageCover(dl, *bg, a, b);
+    if (const UiImage* bg = uiImage(c.artRoot / "game/ui/backpack-background.jpg")) imageCover(dl, *bg, a, b);
     verticalGradient(dl, a, b, {{0.0f, IM_COL32(6, 6, 6, 18)}, {1.0f, IM_COL32(6, 6, 6, 31)}});
     dl->AddRect(a, b, kBorder);
     bool close = false;
@@ -425,7 +425,7 @@ class InventoryScreen {
       if (plate("##feedall", "Alimentar todos", 128, 36)) {
         int fed = 0;
         for (const std::string& h : heroes)
-          if (std::optional<e2::Json> next = c.rules.useRation(c.save, h)) c.save = std::move(*next), ++fed;
+          if (std::optional<ember::Json> next = c.rules.useRation(c.save, h)) c.save = std::move(*next), ++fed;
         if (fed) c.write();
         note_ = fed == 0 ? "Ninguém comeu — sem rações ou já saciados." : fed == static_cast<int>(heroes.size()) ? "Todos comeram." : std::format("{} comeram — rações não deram pros demais.", fed);
         noteAt_ = now_;
@@ -483,13 +483,13 @@ class InventoryScreen {
     float y = gy + rows * (cell + 8) + 12;
     emberKicker(cl, {o.x, y}, 12.0f, upperUtf8("Poções e gazua de " + hero_).c_str());
     y += 24;
-    const e2::Json& bag = c.save.value("bags", e2::Json::object()).value(hero_, e2::Json::object());
+    const ember::Json& bag = c.save.value("bags", ember::Json::object()).value(hero_, ember::Json::object());
     const int pcols = inner >= 640 ? 4 : 2;
     const float pw = (inner - 8.0f * (pcols - 1)) / pcols;
     for (int i = 0; i < 8; ++i) {
       const bool lock = i == 7;
       const std::string kind = lock ? "lockpick" : kPotions[i];
-      const e2::InnPotion* p = lock ? nullptr : c.data.potion(kind);
+      const ember::InnPotion* p = lock ? nullptr : c.data.potion(kind);
       const int n = bag.value(kind, 0);
       const int max = lock ? c.data.bagMax : p ? p->carryMax : 5;
       const ImVec2 pa{o.x + (i % pcols) * (pw + 8), y + (i / pcols) * 52.0f}, pb{pa.x + pw, pa.y + 44};
@@ -532,7 +532,7 @@ class InventoryScreen {
     std::vector<Entry> out;
     const int rations = c.save.value("rations", 0);
     const int stack = c.data.rationStackMax;
-    const double full = e2::Overworld::fullness(c.save.value("heroHunger", e2::Json::object()).value(hero_, e2::Json()));
+    const double full = ember::Overworld::fullness(c.save.value("heroHunger", ember::Json::object()).value(hero_, ember::Json()));
     for (int i = 0; i < (rations + stack - 1) / stack; ++i) {
       Entry e;
       e.name = "Rações", e.icon = c.data.rationsIcon, e.count = std::min(stack, rations - i * stack);
@@ -542,11 +542,11 @@ class InventoryScreen {
       e.discard = [this](Context& c) { apply(c, c.rules.discardRation(c.save)); };
       out.push_back(std::move(e));
     }
-    const e2::Json& equipped = c.save.value("equipped", e2::Json::object());
-    const e2::Json weapons = c.save.value("weapons", e2::Json::object());  // a named copy: items() of a temporary dangles
+    const ember::Json& equipped = c.save.value("equipped", ember::Json::object());
+    const ember::Json weapons = c.save.value("weapons", ember::Json::object());  // a named copy: items() of a temporary dangles
     // Itens desconhecidos (docs/SKILLS_MAGE.md): only their type shows; thrown away from the sheet, revealed by Identificar on the world map
-    const std::vector<e2::InnRules::UnknownItem> unknowns = c.rules.unknownItems(c.save);
-    auto unknownEntry = [&](const e2::InnRules::UnknownItem& u) {
+    const std::vector<ember::InnRules::UnknownItem> unknowns = c.rules.unknownItems(c.save);
+    auto unknownEntry = [&](const ember::InnRules::UnknownItem& u) {
       Entry e;
       e.name = u.label, e.icon = unknownItemArt();
       e.tip = u.label + "\nIdentifique com um Mago Negro (feitiço de campo) para ver o nome e os atributos.\nNão pode ser equipado nem usado; o Ferreiro compra por " +
@@ -558,12 +558,12 @@ class InventoryScreen {
       return e;
     };
     for (const auto& [id, enhJ] : weapons.items()) {
-      const e2::InnWeapon* w = c.data.weapon(id);
+      const ember::InnWeapon* w = c.data.weapon(id);
       bool worn = false;
       for (const auto& [h, v] : equipped.items()) worn = worn || v == id;
       if (!w || worn) continue;
       if (c.rules.weaponUnknown(c.save, id)) {
-        for (const e2::InnRules::UnknownItem& u : unknowns)
+        for (const ember::InnRules::UnknownItem& u : unknowns)
           if (u.kind == "weapon" && u.id == id) out.push_back(unknownEntry(u));
         continue;
       }
@@ -573,7 +573,7 @@ class InventoryScreen {
       e.tip = w->tooltip[static_cast<size_t>(std::clamp(enh, 0, static_cast<int>(w->tooltip.size()) - 1))];
       const std::string wid = id;
       for (const std::string& h : heroes)
-        if (!e2::heroArms(h) && std::find(w->usableBy.begin(), w->usableBy.end(), c.rules.heroClass(c.save, h)) != w->usableBy.end())
+        if (!ember::heroArms(h) && std::find(w->usableBy.begin(), w->usableBy.end(), c.rules.heroClass(c.save, h)) != w->usableBy.end())
           e.equipChoices.push_back({h, [this, h, wid](Context& c) {
                                       apply(c, c.rules.equipWeapon(c.save, h, wid));
                                       hero_ = h, glow("mainHand");
@@ -581,9 +581,9 @@ class InventoryScreen {
       e.discard = [this, wid](Context& c) { apply(c, c.rules.discardWeapon(c.save, wid)); };
       out.push_back(std::move(e));
     }
-    const e2::Json loose = c.save.value("looseEquipment", e2::Json::object());
+    const ember::Json loose = c.save.value("looseEquipment", ember::Json::object());
     for (const auto& [id, qtyJ] : loose.items()) {
-      const e2::InnGear* item = c.data.gear(id);
+      const ember::InnGear* item = c.data.gear(id);
       const int count = qtyJ.is_number() ? qtyJ.get<int>() : 0;
       if (!item || count <= 0) continue;
       Entry e;
@@ -593,11 +593,11 @@ class InventoryScreen {
         const std::string cls = c.rules.heroClass(c.save, h);
         // targetSlotFor: a ring takes the free finger (ring1 first); no off-hand under a two-handed weapon (a bow is not one).
         std::string slot = item->slot;
-        const e2::Json& worn = c.save.value("equipment", e2::Json::object()).value(h, e2::Json::object());
+        const ember::Json& worn = c.save.value("equipment", ember::Json::object()).value(h, ember::Json::object());
         if (item->slot == "ring1" || item->slot == "ring2") slot = worn.contains("ring1") && worn["ring1"].is_string() ? "ring2" : "ring1";
-        if (e2::InnRules::fitsHeroSlot(*item, h, "mainHand")) slot = "mainHand";  // Selene's dagger goes in her main hand
+        if (ember::InnRules::fitsHeroSlot(*item, h, "mainHand")) slot = "mainHand";  // Selene's dagger goes in her main hand
         if (slot == "offHand" && c.rules.offHandBlocked(c.save, h)) continue;
-        if (!e2::InnRules::fitsHeroSlot(*item, h, slot)) continue;
+        if (!ember::InnRules::fitsHeroSlot(*item, h, slot)) continue;
         if (slot != "mainHand" && item->usableBy && std::find(item->usableBy->begin(), item->usableBy->end(), cls) == item->usableBy->end()) continue;
         e.equipChoices.push_back({h, [this, h, slot, iid](Context& c) {
                                     apply(c, c.rules.equipItem(c.save, h, slot, iid));
@@ -607,21 +607,21 @@ class InventoryScreen {
       e.discard = [this, iid](Context& c) { apply(c, c.rules.discardEquipment(c.save, iid)); };
       const int unknown = c.rules.gearUnknown(c.save, id);
       for (int k = 0; k < count - unknown; ++k) out.push_back(e);
-      for (const e2::InnRules::UnknownItem& u : unknowns)
+      for (const ember::InnRules::UnknownItem& u : unknowns)
         if (u.kind == "gear" && u.id == id) out.push_back(unknownEntry(u));
     }
-    for (const e2::InnRules::UnknownItem& u : unknowns)  // the unknown potions, held apart from the heroes' bags
+    for (const ember::InnRules::UnknownItem& u : unknowns)  // the unknown potions, held apart from the heroes' bags
       if (u.kind == "potion") out.push_back(unknownEntry(u));
     // The Conjurador's runes (Marcar Runa, docs/SKILLS_CONJURER.md): each one a slot; its sheet shows where it points and holds the note.
     static const std::string runeIcon = std::filesystem::absolute("content/ui/spells/rune.png").string();  // an absolute path: art() keeps it
-    for (const e2::FieldSpells::Rune& r : e2::FieldSpells::runes(c.save)) {
+    for (const ember::FieldSpells::Rune& r : ember::FieldSpells::runes(c.save)) {
       Entry e;
       e.name = "Runa: " + r.place, e.icon = runeIcon, e.rune = r.id;
       e.tip = std::format("{} · hex ({}, {}) · Dia {}{}", r.region.empty() ? "estrada" : r.region, r.col, r.row, r.day, r.note.empty() ? "" : " · " + r.note);
       const std::string rid = r.id;
       e.discard = [](Context&) {};  // replaced below (the rune's own removal)
       e.discard = [rid](Context& c) {
-        c.save = e2::FieldSpells::discardRune(c.save, rid);
+        c.save = ember::FieldSpells::discardRune(c.save, rid);
         c.write();
       };
       out.push_back(std::move(e));
@@ -716,7 +716,7 @@ class InventoryScreen {
         if (runeNoteFor_ != sheet_->rune) {
           runeNoteFor_ = sheet_->rune;
           std::string note;
-          for (const e2::FieldSpells::Rune& r : e2::FieldSpells::runes(c.save))
+          for (const ember::FieldSpells::Rune& r : ember::FieldSpells::runes(c.save))
             if (r.id == sheet_->rune) note = r.note;
           std::snprintf(runeNote_, sizeof(runeNote_), "%s", note.c_str());
         }
@@ -726,7 +726,7 @@ class InventoryScreen {
         ImGui::InputTextWithHint("##runenote", "Nota da runa (ex.: entrada da cripta)", runeNote_, sizeof(runeNote_));
         ImGui::PopFont();
         if (ImGui::IsItemDeactivatedAfterEdit()) {
-          c.save = e2::FieldSpells::setRuneNote(c.save, sheet_->rune, runeNote_);
+          c.save = ember::FieldSpells::setRuneNote(c.save, sheet_->rune, runeNote_);
           c.write();
         }
       } else {

@@ -50,23 +50,23 @@ inline MapExportResult exportMapTo(const std::filesystem::path& mapFile, const s
   };
   // 1. the map with the campaign's party on it
   std::string note;
-  if (!e2::prepareCampaignMap(mapFile, r.map, &note)) return fail("o mapa " + mapFile.generic_string() + " não pôde ser preparado");
+  if (!ember::prepareCampaignMap(mapFile, r.map, &note)) return fail("o mapa " + mapFile.generic_string() + " não pôde ser preparado");
   out << note << "\n";
   // 2. its scene
-  const std::optional<e2::BoardData> data = e2::BoardData::load("content/engine2/board.json");
-  e2::EditorCatalog catalog;
-  if (!data || !catalog.load("content/engine2/editor-catalog.json")) return fail("content/engine2/board.json ou editor-catalog.json não puderam ser lidos");
-  std::optional<e2::MapDraft> draft = e2::MapDraft::load(r.map);
+  const std::optional<ember::BoardData> data = ember::BoardData::load("content/data/board.json");
+  ember::EditorCatalog catalog;
+  if (!data || !catalog.load("content/data/editor-catalog.json")) return fail("content/data/board.json ou editor-catalog.json não puderam ser lidos");
+  std::optional<ember::MapDraft> draft = ember::MapDraft::load(r.map);
   if (!draft) return fail("o mapa preparado " + r.map.generic_string() + " não tem tabuleiro");
-  const e2::MapDraft draftCopy = *draft;
-  e2::Board board(*data, std::move(*draft));
+  const ember::MapDraft draftCopy = *draft;
+  ember::Board board(*data, std::move(*draft));
   if (!board.loadRelief(enginePublic)) out << "aviso: relevo de " + stem + " não lido de " + enginePublic.generic_string() + "\n";
   std::map<std::string, int> skipped;
-  const e2::SceneData scene = e2::buildScene(board, catalog, &skipped);
+  const ember::SceneData scene = ember::buildScene(board, catalog, &skipped);
   {
     std::ofstream file(r.scene, std::ios::binary);
     if (!file) return fail("não foi possível escrever " + r.scene.generic_string());
-    file << e2::sceneJson(scene, draftCopy, skipped).dump(1);
+    file << ember::sceneJson(scene, draftCopy, skipped).dump(1);
     out << stem << ": " << scene.cards.size() << " cards, " << scene.models.size() << " models, " << scene.architecture << " architecture, " << scene.units.size() << " units; skipped " << nlohmann::json(skipped).dump() << "\n";
   }
   // 3. its battle
@@ -75,7 +75,7 @@ inline MapExportResult exportMapTo(const std::filesystem::path& mapFile, const s
     nlohmann::json mapJson = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
     if (!in || mapJson.is_discarded()) return fail("não foi possível reler " + r.map.generic_string());
     std::string error;
-    const std::optional<nlohmann::json> battle = e2::exportBattle(mapJson, &error, target.playerLevel);
+    const std::optional<nlohmann::json> battle = ember::exportBattle(mapJson, &error, target.playerLevel);
     if (!battle) return fail("as regras da batalha não puderam ser feitas: " + error);
     std::ofstream file(r.battle, std::ios::binary);
     if (!file) return fail("não foi possível escrever " + r.battle.generic_string());
@@ -94,10 +94,10 @@ inline MapExportResult exportMap(const std::filesystem::path& mapFile, const std
   t.map = paths.campaign / "maps" / (stem + ".json");
   t.scene = paths.campaign / "scenes" / (stem + ".scene.json");
   t.battle = paths.campaign / "battles" / (stem + ".battle.json");
-  return exportMapTo(mapFile, stem, t, paths.engine2Public, log);
+  return exportMapTo(mapFile, stem, t, paths.artRoot, log);
 }
 
-// The three kinds the editor's Testar and the campaign used to name: Campaign (above), Test (build/engine2-test, the party at
+// The three kinds the editor's Testar and the campaign used to name: Campaign (above), Test (build/test-maps, the party at
 // 15) and Playtest (a flat folder, the party at 15).
 enum class MapExportKind { Campaign, Test, Playtest };
 inline MapExportResult exportMap(const std::filesystem::path& mapFile, const std::string& stem, MapExportKind kind, const CampaignPaths& paths,
@@ -106,12 +106,12 @@ inline MapExportResult exportMap(const std::filesystem::path& mapFile, const std
   if (kind == MapExportKind::Campaign) return exportMap(mapFile, stem, paths, engineRoot, log);
   MapExportTarget t;
   const bool test = kind == MapExportKind::Test;
-  const std::filesystem::path base = test ? std::filesystem::path("build/engine2-test") : playtestDir;
+  const std::filesystem::path base = test ? std::filesystem::path("build/test-maps") : playtestDir;
   t.map = test ? base / "maps" / (stem + ".json") : base / (stem + ".json");
   t.scene = test ? base / "scenes" / (stem + ".scene.json") : base / (stem + ".scene.json");
   t.battle = test ? base / "battles" / (stem + ".battle.json") : base / (stem + ".battle.json");
   t.playerLevel = 15;
-  return exportMapTo(mapFile, stem, t, paths.engine2Public, log);
+  return exportMapTo(mapFile, stem, t, paths.artRoot, log);
 }
 
 }  // namespace ember

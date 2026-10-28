@@ -1,10 +1,10 @@
 #pragma once
 
-// The quest log, copied from Engine2 (src/game/OverworldMapScreen.tsx QuestLogPanel): the Inn's quests (quests.ts), accepted
+// The quest log, copied from Ember (src/game/OverworldMapScreen.tsx QuestLogPanel): the Inn's quests (quests.ts), accepted
 // ones under "Missões ativas" (in progress, or every objective met: to hand in), handed-in ones under "Missões concluídas"; a
 // quest not accepted yet is not listed. One panel for the world map (OverworldStage) and the fight (MapStage: the save with the
 // fight's own finds and kills folded in, so it follows them live). Both languages: tr() for the panel's words, Quests.h's
-// questEnglish / potionEnglish for the quests' own (EmberEngine's translation; Engine2 has none).
+// questEnglish / potionEnglish for the quests' own (EmberEngine's translation; Ember has none).
 
 #include <imgui.h>
 #include <imgui_internal.h>  // BringWindowToDisplayFront
@@ -24,7 +24,7 @@ namespace ember {
 
 // Draws the log over the screen (a veil under a centred ember panel). False once the veil or the close button was clicked.
 // `quests` = the world's quests table, `potions` = its potions table (the rewards' names), `save` = the quest lists to read.
-inline bool drawQuestLogPanel(const e2::Json& quests, const e2::Json& potions, const e2::Json& save) {
+inline bool drawQuestLogPanel(const ember::Json& quests, const ember::Json& potions, const ember::Json& save) {
   constexpr ImU32 kAccent = IM_COL32(216, 216, 216, 255), kMuted = IM_COL32(180, 180, 180, 255);
   const ImGuiIO& io = ImGui::GetIO();
   const ImVec2 size = io.DisplaySize;
@@ -44,17 +44,17 @@ inline bool drawQuestLogPanel(const e2::Json& quests, const e2::Json& potions, c
   if (veilClicked) return false;
 
   struct Entry {
-    const e2::Json* q;
+    const ember::Json* q;
     std::string status;
     int have, total;
   };
   std::vector<Entry> active, done;
   const size_t count = quests.is_array() ? quests.size() : 0;
   if (quests.is_array())
-    for (const e2::Json& q : quests) {
+    for (const ember::Json& q : quests) {
       int have = 0, total = 0;
-      e2::questProgress(q, save, have, total);
-      const std::string status = e2::questStatus(q, save);
+      ember::questProgress(q, save, have, total);
+      const std::string status = ember::questStatus(q, save);
       if (status == "done") done.push_back({&q, status, have, total});
       else if (status == "active" || status == "ready") active.push_back({&q, status, have, total});
     }
@@ -104,20 +104,20 @@ inline bool drawQuestLogPanel(const e2::Json& quests, const e2::Json& potions, c
       ImGui::Dummy({inner, 52});
     }
     for (const Entry& e : *lists[s]) {
-      const e2::Json& q = *e.q;
+      const ember::Json& q = *e.q;
       const std::string id = q.value("id", ""), kind = q.value("kind", "");
       const ImVec2 a = ImGui::GetCursorScreenPos();
       const float h = e.status == "done" ? 64 : 84;
       emberSlot(dl, a, {a.x + inner, a.y + h});
       if (e.status == "done") iconCheck(dl, {a.x + 20, a.y + 22}, 16, kAccent);
       else dl->AddCircleFilled({a.x + 20, a.y + 22}, 4, kAccent);
-      const std::string title = en ? e2::questEnglish(id, "title", q.value("title", "")) : q.value("title", "");
+      const std::string title = en ? ember::questEnglish(id, "title", q.value("title", "")) : q.value("title", "");
       emberTitle(dl, {a.x + 36, a.y + 10}, 18.0f, title.c_str());
       const std::string state = e.status == "done" ? tr("Concluída", "Completed") : e.status == "ready" ? tr("Entregar", "Hand in") : tr("Em andamento", "In progress");
       const float sw = ui->CalcTextSizeA(12.0f, FLT_MAX, 0, state.c_str()).x;
       dl->AddText(ui, 12.0f, {a.x + inner - 12 - sw, a.y + 14}, kMuted, state.c_str());
-      const std::string target = en ? e2::questEnglish(id, "target", q.value("targetName", "")) : q.value("targetName", "");
-      const std::string place = en ? e2::questEnglish(id, "place", q.value("place", "")) : q.value("place", "");
+      const std::string target = en ? ember::questEnglish(id, "target", q.value("targetName", "")) : q.value("targetName", "");
+      const std::string place = en ? ember::questEnglish(id, "place", q.value("place", "")) : q.value("place", "");
       const std::string what = (kind == "kill" ? tr("Abater ", "Slay ") + target : tr(std::format("Recolher {} itens", e.total), std::format("Collect {} items", e.total))) + " · " + place;
       dl->AddText(ui, 14.0f, {a.x + 36, a.y + 36}, kMuted, what.c_str(), nullptr, inner - 48);
       if (e.status != "done") {
@@ -125,9 +125,9 @@ inline bool drawQuestLogPanel(const e2::Json& quests, const e2::Json& potions, c
                                           : tr(std::format("Encontrados {} / {}", e.have, e.total), std::format("Found {} / {}", e.have, e.total));
         line += tr(std::format(" · Recompensa {} Gold", q.value("reward", 0)), std::format(" · Reward {} Gold", q.value("reward", 0)));
         if (q.contains("rewardPotions") && q["rewardPotions"].is_array() && potions.is_array())
-          for (const e2::Json& p : q["rewardPotions"])
-            for (const e2::Json& pd : potions)
-              if (p.is_string() && pd.value("id", "") == p.get<std::string>()) line += " + " + (en ? e2::potionEnglish(pd.value("id", ""), pd.value("name", "")) : pd.value("name", ""));
+          for (const ember::Json& p : q["rewardPotions"])
+            for (const ember::Json& pd : potions)
+              if (p.is_string() && pd.value("id", "") == p.get<std::string>()) line += " + " + (en ? ember::potionEnglish(pd.value("id", ""), pd.value("name", "")) : pd.value("name", ""));
         dl->AddText(ui, 12.0f, {a.x + 36, a.y + 58}, kMuted, line.c_str());
       }
       ImGui::Dummy({inner, h + 8});

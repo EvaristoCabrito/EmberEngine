@@ -1,8 +1,8 @@
 #pragma once
 
-// The player's choices (Engine2 src/game/gamePreferences.ts + audio.ts), kept in %LOCALAPPDATA%\Ember\game-preferences.json,
-// and the interface's language: tr() is Engine2's uiText (its English dictionary, content/engine2/ui-text.json from
-// tools/scripts/engine2/export_help.ts, or the English a screen gives inline); translated() is its translatedText for
+// The player's choices (Ember src/game/gamePreferences.ts + audio.ts), kept in %LOCALAPPDATA%\Ember\game-preferences.json,
+// and the interface's language: tr() is Ember's uiText (its English dictionary, content/data/ui-text.json from
+// tools/scripts/data/export_help.ts, or the English a screen gives inline); translated() is its translatedText for
 // dialogue lines. The Opções window (EmberMenus.h) changes them.
 
 #include <algorithm>
@@ -89,10 +89,10 @@ inline GamePrefs& gamePrefs() {
 // --- the interface's language (gamePreferences.ts uiText / translatedText) ----------------------------------------------
 
 inline bool uiEnglish() { return gamePrefs().uiLanguage == "en"; }
-// Engine2's dictionary (content/engine2/ui-text.json, export_help.ts): Portuguese -> English.
+// Ember's dictionary (content/data/ui-text.json, export_help.ts): Portuguese -> English.
 inline const nlohmann::json& uiDictionary() {
   static const nlohmann::json dict = [] {
-    std::ifstream in("content/engine2/ui-text.json", std::ios::binary);
+    std::ifstream in("content/data/ui-text.json", std::ios::binary);
     const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
     return j.is_object() && j.contains("english") && j["english"].is_object() ? j["english"] : nlohmann::json::object();
   }();

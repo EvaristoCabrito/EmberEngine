@@ -1,15 +1,15 @@
 #pragma once
 
-// The Inn, copied from Engine2 (src/game/InnScreen.tsx): "A Estalagem do Osso Seco" over its painted room, the people
+// The Inn, copied from Ember (src/game/InnScreen.tsx): "A Estalagem do Osso Seco" over its painted room, the people
 // you can talk to (Brue, O Mudo, Cliente Suspeito, A Hóspede), what each says, Brue's night's rest, every quest each
 // one gives (accept, hand in), the Adega (a meal per hero or for everyone, potions and lockpicks into the chosen hero's
 // bag, rations for the party), Vargan's forge (weapons for the chosen hero's class: equip, unequip, enhance +1, sell,
 // buy; rings; armour and accessories) and the old healer (Cura Média per cast, up to four per person, and the cure for
 // disease and poison). Rules: engine/world/Inn.
 //
-// As in Engine2 it opens from the walkable Inn (NpcTalk.h): talking to Brue opens the tavern (the Adega), to Vargan the
+// As in Ember it opens from the walkable Inn (NpcTalk.h): talking to Brue opens the tavern (the Adega), to Vargan the
 // forge, to the old healer his service (GameApp innEntry: "tavern" / "smith" / "healer"); leaving goes back to the Inn's room.
-// The tavern keeps Engine2's Ferreiro button. Mochila / Equipar open the party's inventory (InventoryScreen.h) on the hero
+// The tavern keeps Ember's Ferreiro button. Mochila / Equipar open the party's inventory (InventoryScreen.h) on the hero
 // chosen in the Adega or at the forge; the forge's first opening plays Vargan's film. Not ported: typing a ration count.
 
 #include <imgui.h>
@@ -32,18 +32,18 @@ namespace ember {
 
 class InnScreen {
  public:
-  // Who opened it in the walkable Inn (GameApp innEntry); Engine2's InnScreen startInSmith / startInHealer.
+  // Who opened it in the walkable Inn (GameApp innEntry); Ember's InnScreen startInSmith / startInHealer.
   enum class Entry { Tavern, Smith, Healer };
   explicit InnScreen(Entry entry = Entry::Tavern) : entry_(entry) {}
   // Vargan's first-visit film is on (GameApp: the Inn's music waits for it).
   bool filmPlaying() const { return film_.has_value(); }
   struct Context {
-    e2::Json& save;
+    ember::Json& save;
     std::function<void()> write;  // persists `save`
-    const e2::InnRules& rules;
-    const e2::InnData& data;
-    const e2::Overworld& world;
-    std::filesystem::path engine2Public;
+    const ember::InnRules& rules;
+    const ember::InnData& data;
+    const ember::Overworld& world;
+    std::filesystem::path artRoot;
   };
 
   // True when the player left the Inn.
@@ -53,7 +53,7 @@ class InnScreen {
       // InnScreen's first view: the healer's service, or the forge (Vargan's film first, the first time), or the tavern.
       started_ = true;
       if (entry_ == Entry::Healer) view_ = View::Healer;
-      else if (entry_ == Entry::Smith && !c.save.value("seenSmithIntro", false)) film_.emplace(c.engine2Public, "game/smith-intro.webm");
+      else if (entry_ == Entry::Smith && !c.save.value("seenSmithIntro", false)) film_.emplace(c.artRoot, "game/smith-intro.webm");
       else if (entry_ == Entry::Smith) view_ = View::Smith;
     }
     if (std::exchange(leaveNow_, false)) return true;
@@ -70,7 +70,7 @@ class InnScreen {
       return false;
     }
     if (inventory_) {
-      InventoryScreen::Context ic{c.save, c.write, c.rules, c.data, c.world, c.engine2Public};
+      InventoryScreen::Context ic{c.save, c.write, c.rules, c.data, c.world, c.artRoot};
       if (inventory_->draw(size, ic)) inventory_.reset();
       return false;
     }
@@ -120,7 +120,7 @@ class InnScreen {
     return out;
   }
   int ember(const Context& c) const { return c.save.value("ember", 0); }
-  void apply(Context& c, std::optional<e2::Json> next) {
+  void apply(Context& c, std::optional<ember::Json> next) {
     if (!next) return;
     c.save = std::move(*next);
     c.write();
@@ -129,7 +129,7 @@ class InnScreen {
   const UiImage* art(const Context& c, std::string path) const {
     if (const size_t q = path.find('?'); q != std::string::npos) path.resize(q);
     if (!path.empty() && path[0] == '/') path.erase(0, 1);
-    return uiImage(c.engine2Public / std::filesystem::path(reinterpret_cast<const char8_t*>(path.c_str())));
+    return uiImage(c.artRoot / std::filesystem::path(reinterpret_cast<const char8_t*>(path.c_str())));
   }
 
   // --- layout helpers ----------------------------------------------------------------------------------------------
@@ -222,7 +222,7 @@ class InnScreen {
     x -= gw;
     ImGui::SetCursorScreenPos({x, 18});
     emberPlate("##gold", {gw, 36}, [&](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32) {
-      if (const UiImage* icon = uiImage(c.engine2Public / "game/icons/gold-coins-pile.png")) imageContain(d, *icon, {a.x + 8, a.y + 6}, {a.x + 32, a.y + 30});
+      if (const UiImage* icon = uiImage(c.artRoot / "game/icons/gold-coins-pile.png")) imageContain(d, *icon, {a.x + 8, a.y + 6}, {a.x + 32, a.y + 30});
       d->AddText(uiFont(UiFont::Ui), 14.0f, {a.x + 38, (a.y + b.y) / 2 - 8}, kMuted, gold.c_str());
     });
     // Mochila / Equipar, on the hero chosen here (the forge's or the Adega's); the healer has neither.
@@ -243,7 +243,7 @@ class InnScreen {
       x -= 12 + 100;
       ImGui::SetCursorScreenPos({x, 16});
       if (emberTextPlate("##smith", {100, 40}, "FERREIRO", 12.0f)) {
-        if (!c.save.value("seenSmithIntro", false)) film_.emplace(c.engine2Public, "game/smith-intro.webm");  // enterSmith
+        if (!c.save.value("seenSmithIntro", false)) film_.emplace(c.artRoot, "game/smith-intro.webm");  // enterSmith
         else view_ = View::Smith, smithNote_.clear();
       }
     }
@@ -321,7 +321,7 @@ class InnScreen {
       if (!restNote_.empty() && now_ - restAt_ < 3.5f) text(restNote_, 14.0f, kAccent, w);
       if (button("##rest", std::format("Passar a Noite · {} Gold", cost), w, 40, true, party.empty() || ember(c) < cost)) {
         int healed = 0;
-        if (std::optional<e2::Json> next = c.rules.passNight(c.save, party, healed)) {
+        if (std::optional<ember::Json> next = c.rules.passNight(c.save, party, healed)) {
           apply(c, std::move(next));
           restNote_ = std::format("Dia {}. O grupo recuperou {} HP e todos os feitiços foram restaurados.", c.save.value("gameClock", 0), healed);
         } else {
@@ -333,7 +333,7 @@ class InnScreen {
   }
 
   void drawQuests(float colW, Context& c, const std::string& npc) {
-    for (const e2::Json* q : c.rules.questsFor(npc)) {
+    for (const ember::Json* q : c.rules.questsFor(npc)) {
       const std::string status = c.rules.questStatus(c.save, *q);
       const std::string id = q->value("id", "");
       if (status == "available" && !c.rules.questOffered(c.save, id)) continue;
@@ -351,17 +351,17 @@ class InnScreen {
                12.0f, kMuted, w);
         if (status != "done") {
           std::string reward = std::format("Recompensa: {} Gold", q->value("reward", 0));
-          for (const e2::Json& p : q->value("rewardPotions", e2::Json::array()))
-            if (const e2::InnPotion* pp = c.data.potion(p.get<std::string>())) reward += " + " + pp->label;
-          for (const e2::Json& id : q->value("rewardWeapons", e2::Json::array()))
-            if (id.is_string()) if (const e2::InnWeapon* weapon = c.data.weapon(id.get<std::string>())) reward += " + " + weapon->name;
+          for (const ember::Json& p : q->value("rewardPotions", ember::Json::array()))
+            if (const ember::InnPotion* pp = c.data.potion(p.get<std::string>())) reward += " + " + pp->label;
+          for (const ember::Json& id : q->value("rewardWeapons", ember::Json::array()))
+            if (id.is_string()) if (const ember::InnWeapon* weapon = c.data.weapon(id.get<std::string>())) reward += " + " + weapon->name;
           text(reward, 12.0f, kMuted, w);
         }
         ImGui::PushID(id.c_str());
         if (status == "available" && button("##accept", "Aceitar missão", w, 40, true)) apply(c, c.rules.acceptQuest(c.save, id));
-        const e2::Json rewardWeapons = q->value("rewardWeapons", e2::Json::array());
-        const e2::Json ownedWeapons = c.save.value("weapons", e2::Json::object());
-        const bool hasUnownedWeaponReward = std::any_of(rewardWeapons.begin(), rewardWeapons.end(), [&](const e2::Json& weapon) { return weapon.is_string() && !ownedWeapons.contains(weapon.get<std::string>()); });
+        const ember::Json rewardWeapons = q->value("rewardWeapons", ember::Json::array());
+        const ember::Json ownedWeapons = c.save.value("weapons", ember::Json::object());
+        const bool hasUnownedWeaponReward = std::any_of(rewardWeapons.begin(), rewardWeapons.end(), [&](const ember::Json& weapon) { return weapon.is_string() && !ownedWeapons.contains(weapon.get<std::string>()); });
         const bool rewardBagFull = hasUnownedWeaponReward && !c.world.bagHasRoom(c.save, 1);
         if (status == "ready" && rewardBagFull) text("Libere espaço na mochila para receber a arma.", 12.0f, kMuted, w);
         if (status == "ready" && button("##turnin", std::format("Entregar · {} Gold", q->value("reward", 0)), w, 40, true, rewardBagFull)) apply(c, c.rules.turnInQuest(c.save, id));
@@ -373,11 +373,11 @@ class InnScreen {
   void drawShop(float colW, Context& c) {
     const std::vector<std::string> party = roster(c);
     if (std::find(party.begin(), party.end(), hero_) == party.end() && !party.empty()) hero_ = party[0];
-    const e2::Json& bag = c.save.contains("bags") && c.save["bags"].contains(hero_) ? c.save["bags"][hero_] : e2::Json::object();
+    const ember::Json& bag = c.save.contains("bags") && c.save["bags"].contains(hero_) ? c.save["bags"][hero_] : ember::Json::object();
     auto have = [&](const std::string& k) { return bag.is_object() ? bag.value(k, 0) : 0; };
     int total = lockpicks_ * c.data.lockpickPrice, items = lockpicks_;
     for (const char* k : kPotionOrder)
-      if (const e2::InnPotion* p = c.data.potion(k)) total += cart_[k] * p->price, items += cart_[k];
+      if (const ember::InnPotion* p = c.data.potion(k)) total += cart_[k] * p->price, items += cart_[k];
     const int remain = ember(c) - total;
     panel(colW, 12, [&](float w) {
       kicker("Adega · quem leva");
@@ -385,8 +385,8 @@ class InnScreen {
       // A meal.
       std::vector<std::string> mealTargets;
       for (const std::string& h : party)
-        if (e2::Overworld::fullness(c.save.value("heroHunger", e2::Json::object()).value(h, e2::Json())) < 120 &&
-            c.save.value("unitHp", e2::Json::object()).value(h, 1) > 0)
+        if (ember::Overworld::fullness(c.save.value("heroHunger", ember::Json::object()).value(h, ember::Json())) < 120 &&
+            c.save.value("unitHp", ember::Json::object()).value(h, 1) > 0)
           mealTargets.push_back(h);
       const int mealAll = static_cast<int>(mealTargets.size()) * c.data.mealPrice;
       panel(w, 12,
@@ -394,10 +394,10 @@ class InnScreen {
               text(std::format("Refeição para {} · {} Gold", hero_, c.data.mealPrice), 14.0f, kFg, iw);
               text("Enche a saciedade até 120% · bônus de 20%", 12.0f, kMuted, iw);
               hungerBar(c, hero_, iw);
-              const double full = e2::Overworld::fullness(c.save.value("heroHunger", e2::Json::object()).value(hero_, e2::Json()));
-              const bool cannot = ember(c) < c.data.mealPrice || full >= 120 || c.save.value("unitHp", e2::Json::object()).value(hero_, 1) <= 0;
+              const double full = ember::Overworld::fullness(c.save.value("heroHunger", ember::Json::object()).value(hero_, ember::Json()));
+              const bool cannot = ember(c) < c.data.mealPrice || full >= 120 || c.save.value("unitHp", ember::Json::object()).value(hero_, 1) <= 0;
               if (button("##meal", std::format("Comer · {} Gold", c.data.mealPrice), (iw - 8) / 2, 32, true, cannot)) {
-                std::optional<e2::Json> next = c.rules.buyMeal(c.save, hero_);
+                std::optional<ember::Json> next = c.rules.buyMeal(c.save, hero_);
                 note_ = next ? hero_ + " comeu. Saciedade: 120%." : "Falta Gold ou o personagem já está satisfeito.";
                 noteAt_ = now_;
                 apply(c, std::move(next));
@@ -406,7 +406,7 @@ class InnScreen {
               if (button("##mealall", std::format("Todos · {} Gold", mealAll), (iw - 8) / 2, 32, false, mealTargets.empty() || ember(c) < c.data.mealPrice)) {
                 int fed = 0;
                 for (const std::string& h : party)
-                  if (std::optional<e2::Json> next = c.rules.buyMeal(c.save, h)) c.save = std::move(*next), ++fed;
+                  if (std::optional<ember::Json> next = c.rules.buyMeal(c.save, h)) c.save = std::move(*next), ++fed;
                 if (fed) c.write();
                 note_ = fed == 0 ? "Ninguém comeu. Falta Gold ou já estão satisfeitos."
                         : fed == static_cast<int>(mealTargets.size()) ? "Todos comeram. Saciedade: 120%."
@@ -419,7 +419,7 @@ class InnScreen {
             true);
       // Potions and the lockpick.
       for (int i = 0; i < 7; ++i) {
-        const e2::InnPotion* p = c.data.potion(kPotionOrder[i]);
+        const ember::InnPotion* p = c.data.potion(kPotionOrder[i]);
         if (!p) continue;
         itemRow(c, kPotionIcons[i], p->label, std::format("comprar {} · tem {} / {} · {} Gold", cart_[p->id], have(p->id), p->carryMax, p->price), p->tooltip,
                 cart_[p->id], have(p->id) + cart_[p->id] >= p->carryMax, w, p->id.c_str(), [&](int d) {
@@ -436,7 +436,7 @@ class InnScreen {
       if (!note_.empty() && now_ - noteAt_ < 2.2f) text(note_, 14.0f, kAccent, w);
       if (button("##pay", "Pagar", w - 120, 32, true, items <= 0)) {
         if (remain < 0) note_ = std::format("Faltam {} Gold.", -remain);
-        else if (std::optional<e2::Json> next = c.rules.pay(c.save, hero_, cart_, lockpicks_)) {
+        else if (std::optional<ember::Json> next = c.rules.pay(c.save, hero_, cart_, lockpicks_)) {
           apply(c, std::move(next));
           cart_.clear(), lockpicks_ = 0;
           note_ = "Pago. Os frascos foram para o saco.";
@@ -459,7 +459,7 @@ class InnScreen {
       if (!rationsNote_.empty() && now_ - rationsAt_ < 2.2f) text(rationsNote_, 14.0f, kAccent, w);
       if (button("##buyrations", rationsQty_ > 0 ? std::format("Comprar ({} Gold)", rationsQty_ * c.data.rationsPrice) : std::string("Comprar"), w, 40, true,
                  rationsQty_ <= 0 || ember(c) < rationsQty_ * c.data.rationsPrice)) {
-        if (std::optional<e2::Json> next = c.rules.buyRations(c.save, rationsQty_)) {
+        if (std::optional<ember::Json> next = c.rules.buyRations(c.save, rationsQty_)) {
           apply(c, std::move(next));
           rationsQty_ = 0;
           rationsNote_ = "Pago. As rações foram para a mochila.";
@@ -472,7 +472,7 @@ class InnScreen {
   }
 
   void hungerBar(const Context& c, const std::string& hero, float w) {
-    const double full = e2::Overworld::fullness(c.save.value("heroHunger", e2::Json::object()).value(hero, e2::Json()));
+    const double full = ember::Overworld::fullness(c.save.value("heroHunger", ember::Json::object()).value(hero, ember::Json()));
     const ImVec2 a = ImGui::GetCursorScreenPos();
     ImDrawList* dl = ImGui::GetWindowDrawList();
     dl->AddRectFilled({a.x, a.y + 4}, {a.x + w, a.y + 8}, IM_COL32(74, 74, 74, 255), 2);
@@ -512,7 +512,7 @@ class InnScreen {
   void drawSmith(ImVec2 size, Context& c) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     dl->AddRectFilled({0, 0}, size, IM_COL32(17, 17, 17, 255));
-    if (const UiImage* bg = uiImage(c.engine2Public / "game/ui/smith-background.jpg")) imageCover(dl, *bg, {0, 0}, size, 0.0f, 0.5f);
+    if (const UiImage* bg = uiImage(c.artRoot / "game/ui/smith-background.jpg")) imageCover(dl, *bg, {0, 0}, size, 0.0f, 0.5f);
     bool back = false;
     header(size, c, "‹ VOLTAR", "A forja no porão", "Vargan, o Ferreiro", back, false);
     if (back) {
@@ -534,13 +534,13 @@ class InnScreen {
       kicker("Equipamento exibido");
       heroRow(c, smithHero_, "##smithhero", [&] { smithNote_.clear(); });
       // The pool: weapons this hero's class can wield, weakest first.
-      std::vector<const e2::InnWeapon*> pool;
-      for (const e2::InnWeapon& wpn : c.data.weapons)
+      std::vector<const ember::InnWeapon*> pool;
+      for (const ember::InnWeapon& wpn : c.data.weapons)
         if (!wpn.questOnly && wpn.price > 0 && std::find(wpn.usableBy.begin(), wpn.usableBy.end(), cls) != wpn.usableBy.end()) pool.push_back(&wpn);
       std::stable_sort(pool.begin(), pool.end(), [](const auto* a, const auto* b) { return a->power < b->power; });
-      const e2::Json& owned = c.save.value("weapons", e2::Json::object());
-      const std::string equippedId = c.save.value("equipped", e2::Json::object()).value(smithHero_, "");
-      const e2::InnWeapon* equipped = c.data.weapon(equippedId);
+      const ember::Json& owned = c.save.value("weapons", ember::Json::object());
+      const std::string equippedId = c.save.value("equipped", ember::Json::object()).value(smithHero_, "");
+      const ember::InnWeapon* equipped = c.data.weapon(equippedId);
       const int enh = equipped ? owned.value(equippedId, 0) : 0;
       const bool bagFull = !c.world.bagHasRoom(c.save, 1);
       ImGui::Dummy({1, 4});
@@ -550,7 +550,7 @@ class InnScreen {
           const std::optional<int> next = enh < c.data.weaponMaxEnh ? std::optional<int>(c.data.enhCost[static_cast<size_t>(enh)]) : std::nullopt;
           ImGui::SetCursorScreenPos({bx, by});
           if (button("##upgrade", next ? std::format("+1 · {} Gold", *next) : std::string("Máx."), 132, 26, true, !next || ember(c) < *next, 10.0f)) {
-            std::optional<e2::Json> s = c.rules.upgradeWeapon(c.save, equippedId);
+            std::optional<ember::Json> s = c.rules.upgradeWeapon(c.save, equippedId);
             smithNote_ = s ? equipped->name + " aprimorada." : "Vargan recusou. Falta Gold ou já está no máximo.";
             apply(c, std::move(s));
           }
@@ -560,7 +560,7 @@ class InnScreen {
           if (button("##sellequipped", std::format("Vender · {} Gold", equipped->sell[static_cast<size_t>(std::min<int>(enh, static_cast<int>(equipped->sell.size()) - 1))]), 132, 26,
                      false, false, 10.0f)) {
             int value = 0;
-            std::optional<e2::Json> s = c.rules.sellWeapon(c.save, equippedId, value);
+            std::optional<ember::Json> s = c.rules.sellWeapon(c.save, equippedId, value);
             if (s) smithNote_ = std::format("{} vendida por {} Gold.", equipped->name, value);
             apply(c, std::move(s));
           }
@@ -568,18 +568,18 @@ class InnScreen {
       } else {
         text("Nenhuma arma equipada ainda.", 14.0f, kMuted, w);
       }
-      std::vector<const e2::InnWeapon*> inBag, onBench;
-      for (const e2::InnWeapon* wpn : pool) {
+      std::vector<const ember::InnWeapon*> inBag, onBench;
+      for (const ember::InnWeapon* wpn : pool) {
         if (owned.contains(wpn->id) && wpn->id != equippedId && !c.rules.weaponUnknown(c.save, wpn->id)) inBag.push_back(wpn);  // an unknown one: below, unnamed
         if (!owned.contains(wpn->id)) onBench.push_back(wpn);
       }
       // Itens desconhecidos (docs/SKILLS_MAGE.md): Vargan buys them unseen, for little; Identificar (the Mago Negro's field spell) reveals them
-      if (const std::vector<e2::InnRules::UnknownItem> unknowns = c.rules.unknownItems(c.save); !unknowns.empty()) {
+      if (const std::vector<ember::InnRules::UnknownItem> unknowns = c.rules.unknownItems(c.save); !unknowns.empty()) {
         ImGui::Dummy({1, 4});
         kicker("Itens desconhecidos");
         text("Vargan nem olha: paga pouco por coisa sem nome. Um Mago Negro identifica no mapa do mundo.", 11.0f, kMuted, w);
         for (size_t i = 0; i < unknowns.size(); ++i) {
-          const e2::InnRules::UnknownItem& u = unknowns[i];
+          const ember::InnRules::UnknownItem& u = unknowns[i];
           const ImVec2 a = ImGui::GetCursorScreenPos();
           ImGui::PushID(static_cast<int>(i));
           emberSlot(ImGui::GetWindowDrawList(), a, {a.x + w, a.y + 40}, false);
@@ -589,7 +589,7 @@ class InnScreen {
           ImGui::SetCursorScreenPos({a.x + w - 140, a.y + 7});
           if (button("##sellunknown", std::format("Vender · {} Gold", u.sell), 132, 26, false, false, 10.0f)) {
             int value = 0;
-            std::optional<e2::Json> s = c.rules.sellUnknown(c.save, u, value);
+            std::optional<ember::Json> s = c.rules.sellUnknown(c.save, u, value);
             if (s) smithNote_ = std::format("{} vendido por {} Gold.", u.label, value);
             apply(c, std::move(s));
           }
@@ -600,7 +600,7 @@ class InnScreen {
       if (!inBag.empty()) {
         ImGui::Dummy({1, 4});
         kicker("No saco");
-        for (const e2::InnWeapon* wpn : inBag) {
+        for (const ember::InnWeapon* wpn : inBag) {
           const int e = owned.value(wpn->id, 0);
           ImGui::PushID(wpn->id.c_str());
           weaponRow(c, *wpn, e, w, 64, false, [&](float bx, float by) {
@@ -610,7 +610,7 @@ class InnScreen {
             if (button("##sell", std::format("Vender · {} Gold", wpn->sell[static_cast<size_t>(std::min<int>(e, static_cast<int>(wpn->sell.size()) - 1))]), 132, 26, false,
                        false, 10.0f)) {
               int value = 0;
-              std::optional<e2::Json> s = c.rules.sellWeapon(c.save, wpn->id, value);
+              std::optional<ember::Json> s = c.rules.sellWeapon(c.save, wpn->id, value);
               if (s) smithNote_ = std::format("{} vendida por {} Gold.", wpn->name, value);
               apply(c, std::move(s));
             }
@@ -621,13 +621,13 @@ class InnScreen {
       if (!onBench.empty()) {
         ImGui::Dummy({1, 4});
         kicker("Na bancada");
-        for (const e2::InnWeapon* wpn : onBench) {
+        for (const ember::InnWeapon* wpn : onBench) {
           ImGui::PushID(wpn->id.c_str());
           weaponRow(c, *wpn, -1, w, 64, false, [&](float bx, float by) {
             ImGui::SetCursorScreenPos({bx, by});
             if (button("##buy", "Comprar", 132, 26, true, bagFull || ember(c) < wpn->price, 10.0f)) {
               if (!c.world.bagHasRoom(c.save, 1)) smithNote_ = "Mochila cheia.";
-              else if (std::optional<e2::Json> s = c.rules.buyWeapon(c.save, wpn->id)) {
+              else if (std::optional<ember::Json> s = c.rules.buyWeapon(c.save, wpn->id)) {
                 apply(c, std::move(s));
                 smithNote_ = wpn->name + " comprada. Equipe no saco quando quiser.";
               } else {
@@ -639,13 +639,13 @@ class InnScreen {
         }
       }
       // Rings, then the inn's basic armour and accessories (the cheaper half of each slot).
-      auto fits = [&](const e2::InnGear& g) {
+      auto fits = [&](const ember::InnGear& g) {
         return !g.usableBy || std::find(g.usableBy->begin(), g.usableBy->end(), cls) != g.usableBy->end();
       };
-      std::vector<const e2::InnGear*> rings, gear;
-      std::map<std::string, std::vector<const e2::InnGear*>> bySlot;
+      std::vector<const ember::InnGear*> rings, gear;
+      std::map<std::string, std::vector<const ember::InnGear*>> bySlot;
       std::vector<std::string> slotOrder;
-      for (const e2::InnGear& g : c.data.equipment) {
+      for (const ember::InnGear& g : c.data.equipment) {
         if (!fits(g)) continue;
         if (g.slot == "ring1" || g.slot == "ring2") {
           if (g.price > 0) rings.push_back(&g);
@@ -655,7 +655,7 @@ class InnScreen {
         if (!bySlot.contains(g.slot)) slotOrder.push_back(g.slot);
         bySlot[g.slot].push_back(&g);
       }
-      auto byPrice = [](const e2::InnGear* a, const e2::InnGear* b) { return a->price < b->price; };
+      auto byPrice = [](const ember::InnGear* a, const ember::InnGear* b) { return a->price < b->price; };
       std::stable_sort(rings.begin(), rings.end(), byPrice);
       for (const std::string& s : slotOrder) {
         auto& items = bySlot[s];
@@ -686,7 +686,7 @@ class InnScreen {
   }
 
   // A weapon line: icon, name (+enhancement), dice / range / price, "Mão principal", the class bonus; buttons on the right.
-  void weaponRow(const Context& c, const e2::InnWeapon& wpn, int enh, float w, float iconSize, bool accent, const std::function<void(float, float)>& buttons,
+  void weaponRow(const Context& c, const ember::InnWeapon& wpn, int enh, float w, float iconSize, bool accent, const std::function<void(float, float)>& buttons,
                  const std::string& cls = "") {
     const ImVec2 a = ImGui::GetCursorScreenPos();
     const float h = std::max(iconSize + 12, 96.0f);
@@ -714,11 +714,11 @@ class InnScreen {
     ImGui::Dummy({w, 1});
   }
 
-  void gearGrid(Context& c, const std::vector<const e2::InnGear*>& items, float w, bool bagFull) {
+  void gearGrid(Context& c, const std::vector<const ember::InnGear*>& items, float w, bool bagFull) {
     const float cw = (w - 6) / 2;
     const ImVec2 o = ImGui::GetCursorScreenPos();
     int i = 0;
-    for (const e2::InnGear* g : items) {
+    for (const ember::InnGear* g : items) {
       const ImVec2 a{o.x + (i % 2) * (cw + 6), o.y + (i / 2) * 82.0f};
       ImDrawList* dl = ImGui::GetWindowDrawList();
       dl->AddRect(a, {a.x + cw, a.y + 76}, IM_COL32(74, 74, 74, 255), 4);
@@ -736,7 +736,7 @@ class InnScreen {
       ImGui::SetCursorScreenPos({a.x + 78, a.y + 42});
       if (button("##buygear", "Comprar", cw - 86, 26, true, bagFull || ember(c) < g->price, 10.0f)) {
         if (!c.world.bagHasRoom(c.save, 1)) smithNote_ = "Mochila cheia.";
-        else if (std::optional<e2::Json> s = c.rules.buyEquipment(c.save, g->id)) {
+        else if (std::optional<ember::Json> s = c.rules.buyEquipment(c.save, g->id)) {
           apply(c, std::move(s));
           smithNote_ = g->name + " foi colocada na Mochila.";
         } else {
@@ -765,7 +765,7 @@ class InnScreen {
     const std::string hero = queue_.front();
     queue_.erase(queue_.begin());
     int amount = 0;
-    std::optional<e2::Json> next = c.rules.healerCast(c.save, hero, amount);
+    std::optional<ember::Json> next = c.rules.healerCast(c.save, hero, amount);
     if (!next || amount <= 0) {
       healerNote_ = "O Curandeiro não conseguiu completar a cura.";
       queue_.clear(), healing_.clear();
@@ -813,7 +813,7 @@ class InnScreen {
       text(std::format("Prévia do custo · {} Gold · após o tratamento: {} Gold", ailCost, std::max(0, ember(c) - ailCost)), 14.0f, kFg, w);
       if (button("##cure", std::format("Tratar doenças e venenos · {} Gold", ailCost), w, 36, false, busy || ailing.empty() || ailCost > ember(c))) {
         int count = 0;
-        std::optional<e2::Json> next = c.rules.cureAilments(c.save, ailing, count);
+        std::optional<ember::Json> next = c.rules.cureAilments(c.save, ailing, count);
         healerNote_ = !next ? "O Curandeiro não conseguiu tratar o grupo." : count == 0 ? "Ninguém precisava de tratamento."
                                                                                        : std::format("{} {}.", count, count == 1 ? "pessoa foi tratada" : "pessoas foram tratadas");
         if (next && count) apply(c, std::move(next));
@@ -832,7 +832,7 @@ class InnScreen {
         const bool glow = healing_ == h;
         if (glow)
           for (int k = 4; k >= 1; --k) d->AddCircleFilled({a.x + 32, a.y + 32}, 32 + k * 4.0f, IM_COL32(255, 211, 105, 30), 32);
-        const e2::Json& portrait = c.world.tables()["portraits"].value(h, e2::Json::object());
+        const ember::Json& portrait = c.world.tables()["portraits"].value(h, ember::Json::object());
         if (const UiImage* img = art(c, portrait.value("src", ""))) {
           d->AddImageRounded(img->texture, a, {a.x + 64, a.y + 64}, {0, 0}, {1, 1}, IM_COL32_WHITE, 32);
         }

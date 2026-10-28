@@ -25,14 +25,14 @@ struct Stage {
   // Off-screen runs stop once the stage is done; passed() is the exit code's verdict.
   virtual bool done() const { return false; }
   virtual bool passed() const { return true; }
-  // The music this screen plays (Engine2 GameApp's music chain, audio.ts): a file under Engine2's game/MUSIC and its base
+  // The music this screen plays (Ember GameApp's music chain, audio.ts): a file under Ember's game/MUSIC and its base
   // volume; an empty file is silence. The game loop hands it to AudioMixer every frame.
   struct Music {
     std::string file;
     float base = 0.0f;
   };
   virtual Music music() const { return {}; }
-  // What the screen still loads, for Engine2's loading curtain over it (LoadingScreens.h): the step it is on (each with
+  // What the screen still loads, for Ember's loading curtain over it (LoadingScreens.h): the step it is on (each with
   // its own count of real units, `done` of `total`; 0 / 0 when there is nothing to count) and whether it is ready.
   struct Loading {
     int step = 0;

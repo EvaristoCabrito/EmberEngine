@@ -1,9 +1,9 @@
 #pragma once
 
-// A conversation, copied from Engine2 (src/game/DialogOverlay.tsx): the veil, an ember panel with the speaker's
+// A conversation, copied from Ember (src/game/DialogOverlay.tsx): the veil, an ember panel with the speaker's
 // portrait, their name as a kicker, the line, and either "Próximo" / "Ok" or one button per reply. It starts at the
 // tree's startId, follows each line's or reply's `next`, and closes when there is none (or a line is missing). The
-// portraits are Engine2's own choice per line (export_dialogs.ts). A reply's affinity change is handed to the owner.
+// portraits are Ember's own choice per line (export_dialogs.ts). A reply's affinity change is handed to the owner.
 // Opções: each speaker, line and reply in the Diálogos language when the line has that translation (translatedText,
 // else the original), the line's text at Tamanho do diálogo (1 / 1.15 / 1.3 em).
 
@@ -24,15 +24,15 @@ namespace ember {
 
 class DialogScreen {
  public:
-  // `tree`: Engine2's DialogTree JSON; `portraits`: "<treeId>:<lineId>" -> {src, framed} (or null).
-  DialogScreen(e2::Json tree, e2::Json portraits, std::filesystem::path engine2Public)
-      : tree_(std::move(tree)), portraits_(std::move(portraits)), public_(std::move(engine2Public)) {
+  // `tree`: Ember's DialogTree JSON; `portraits`: "<treeId>:<lineId>" -> {src, framed} (or null).
+  DialogScreen(ember::Json tree, ember::Json portraits, std::filesystem::path artRoot)
+      : tree_(std::move(tree)), portraits_(std::move(portraits)), public_(std::move(artRoot)) {
     line_ = tree_.value("startId", "");
   }
 
   // Draws it over everything; true once it closed. `onReply` gets each chosen reply (its affinity, if any).
-  bool draw(ImVec2 size, const std::function<void(const e2::Json&)>& onReply = {}) {
-    const e2::Json* line = find(line_);
+  bool draw(ImVec2 size, const std::function<void(const ember::Json&)>& onReply = {}) {
+    const ember::Json* line = find(line_);
     if (!line) return true;  // a missing line closes rather than soft-locks
     ImDrawList* bg = ImGui::GetForegroundDrawList();
     (void)bg;
@@ -62,8 +62,8 @@ class DialogScreen {
     float textX = at.x;
     // a hero speaks with THE one portrait (Portraits.h heroPortrait), whatever conversation this is; anyone else as the tree says
     const HeroPortrait* hero = heroPortrait(line->value("speaker", ""));
-    const e2::Json portrait = hero ? e2::Json{{"src", "/" + hero->file}, {"framed", true}}
-                                   : portraits_.value(tree_.value("id", "") + ":" + line->value("id", ""), e2::Json());
+    const ember::Json portrait = hero ? ember::Json{{"src", "/" + hero->file}, {"framed", true}}
+                                   : portraits_.value(tree_.value("id", "") + ":" + line->value("id", ""), ember::Json());
     if (portrait.is_object()) {
       std::string src = portrait.value("src", "");
       if (const size_t q = src.find('?'); q != std::string::npos) src.resize(q);
@@ -87,13 +87,13 @@ class DialogScreen {
     ImGui::SetCursorScreenPos({textX, at.y});
     ImGui::BeginGroup();
     const std::string lang = gamePrefs().dialogueLanguage;
-    const std::string speaker = translated(line->value("speaker", ""), line->value("speakerTranslations", e2::Json()), lang);
+    const std::string speaker = translated(line->value("speaker", ""), line->value("speakerTranslations", ember::Json()), lang);
     emberKicker(dl, ImGui::GetCursorScreenPos(), 15.0f, upperUtf8(speaker).c_str());
     ImGui::Dummy({1, 22});
     ImGui::PushFont(uiFont(UiFont::Ui), 16.0f * gamePrefs().dialogueScale);
     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(240, 240, 240, 255));
     ImGui::PushTextWrapPos(textX + textW - ImGui::GetWindowPos().x);  // window-local (the panel is centred: screen x clipped the line)
-    ImGui::TextUnformatted(translated(line->value("text", ""), line->value("translations", e2::Json()), lang).c_str());
+    ImGui::TextUnformatted(translated(line->value("text", ""), line->value("translations", ember::Json()), lang).c_str());
     ImGui::PopTextWrapPos();
     ImGui::PopStyleColor();
     ImGui::PopFont();
@@ -101,11 +101,11 @@ class DialogScreen {
     bool close = false;
     std::string next;
     bool advance = false;
-    const e2::Json replies = line->value("replies", e2::Json::array());
+    const ember::Json replies = line->value("replies", ember::Json::array());
     if (!replies.empty()) {
       int i = 0;
-      for (const e2::Json& reply : replies) {
-        const std::string text = translated(reply.value("text", ""), reply.value("translations", e2::Json()), lang);
+      for (const ember::Json& reply : replies) {
+        const std::string text = translated(reply.value("text", ""), reply.value("translations", ember::Json()), lang);
         ImFont* ui = uiFont(UiFont::Ui);
         const float th = ui->CalcTextSizeA(14.0f, FLT_MAX, textW - 24, text.c_str()).y;
         const float h = std::max(44.0f, th + 16);
@@ -120,12 +120,12 @@ class DialogScreen {
         ImGui::Dummy({1, 4});
         if (clicked) {
           if (onReply) onReply(reply);
-          next = reply.value("next", e2::Json()).is_string() ? reply["next"].get<std::string>() : "";
+          next = reply.value("next", ember::Json()).is_string() ? reply["next"].get<std::string>() : "";
           advance = true;
         }
       }
     } else {
-      const bool hasNext = line->value("next", e2::Json()).is_string() && !line->value("next", "").empty();
+      const bool hasNext = line->value("next", ember::Json()).is_string() && !line->value("next", "").empty();
       const ImVec2 p = ImGui::GetCursorScreenPos();
       if (emberBigButton("##next", upperUtf8(hasNext ? tr("Próximo") : tr("Ok")).c_str(), p, {textW, 44}, true, 15.0f)) {
         next = hasNext ? line->value("next", "") : "";
@@ -148,15 +148,15 @@ class DialogScreen {
   }
 
  private:
-  const e2::Json* find(const std::string& id) const {
+  const ember::Json* find(const std::string& id) const {
     // Pointers into tree_ itself (value() would hand back a copy).
     const auto lines = tree_.find("lines");
     if (lines == tree_.end() || !lines->is_array()) return nullptr;
-    for (const e2::Json& l : *lines)
+    for (const ember::Json& l : *lines)
       if (l.value("id", "") == id) return &l;
     return nullptr;
   }
-  e2::Json tree_, portraits_;
+  ember::Json tree_, portraits_;
   std::filesystem::path public_;
   std::string line_;
 };

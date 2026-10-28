@@ -1,6 +1,6 @@
 #pragma once
 
-// Engine2's Modo teste (the title's "Modo teste" link: game.html?start=test), copied from src/game/GameApp.tsx
+// Ember's Modo teste (the title's "Modo teste" link: game.html?start=test), copied from src/game/GameApp.tsx
 // (TestMenuScreen, MapChoiceScreen, CampaignScreen, the test branches of goToMap / openMission / startBattle) and
 // src/game/WorldMapScreen.tsx (the classic map and its LocationPanel).
 //
@@ -53,19 +53,19 @@ inline constexpr int kDefaultTestLevel = 30;  // was 15 (the user, 2026-10-19: "
 inline constexpr long long kTestEmber = 900000;
 
 struct TestSession {
-  e2::Json save;        // GameApp testOverworld (freshTestOverworld on entry)
+  ember::Json save;        // GameApp testOverworld (freshTestOverworld on entry)
   std::string mapMode;  // "" until Debug asks: "classic" or "rpg" (session-only, never persisted)
 };
 
 // GameApp freshTestOverworld: a brand-new save with every hero at DEFAULT_TEST_LEVEL; testEmber (900000) is the
 // session's Gold.
-inline TestSession freshTestSession(const e2::Campaign& campaign) {
+inline TestSession freshTestSession(const ember::Campaign& campaign) {
   TestSession s;
   s.save = campaign.emptySave();
-  e2::Json levels = e2::Json::object();
+  ember::Json levels = ember::Json::object();
   // the six and EmberEngine's own heroes (content/ember-classes.json heroes: Isolde), every one at the test level with its spells
   for (const char* h : {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec", "Isolde"}) levels[h] = kDefaultTestLevel;
-  levels["Selene"] = std::min(kDefaultTestLevel, e2::heroLevelCap("Selene", "conjurer"));  // her cap: 10 (the user, 2026-10-25)
+  levels["Selene"] = std::min(kDefaultTestLevel, ember::heroLevelCap("Selene", "conjurer"));  // her cap: 10 (the user, 2026-10-25)
   s.save["levels"] = levels;
   s.save["ember"] = kTestEmber;
   return s;
@@ -85,7 +85,7 @@ class TestModeStage : public Stage {
   };
 
   // `devGfx`: Dev Controls' switches (DevGfx.h), held by the caller for every map it opens; saved on every change.
-  TestModeStage(CampaignPaths paths, e2::Campaign& campaign, const e2::Overworld& world, TestSession& session, DevGfx& devGfx,
+  TestModeStage(CampaignPaths paths, ember::Campaign& campaign, const ember::Overworld& world, TestSession& session, DevGfx& devGfx,
                 Callbacks callbacks, Screen screen = Screen::Menu, std::string notice = {})
       : paths_(std::move(paths)), campaign_(campaign), world_(world), session_(session), devGfx_(devGfx), callbacks_(std::move(callbacks)),
         screen_(screen), notice_(std::move(notice)) {}
@@ -142,7 +142,7 @@ class TestModeStage : public Stage {
       case Screen::DevControls: drawDevControls(io.DisplaySize); break;
       case Screen::Briefing:
         if (briefing_) {
-          const int r = drawBriefing(io.DisplaySize, kRem, *briefing_, paths_.engine2Public);
+          const int r = drawBriefing(io.DisplaySize, kRem, *briefing_, paths_.artRoot);
           if (r < 0) screen_ = briefingFrom_;
           else if (r > 0 && callbacks_.play) callbacks_.play(*briefing_);
         }
@@ -227,7 +227,7 @@ class TestModeStage : public Stage {
     if (backButton("##menuback", {16, 16}) && callbacks_.title) callbacks_.title();
     caps(dl, {16 + 40 + 12, 17}, 14.0f, kMuted, "Modo teste", 0.18f);
     dl->AddText(display(), 30.0f, {16 + 40 + 12, 17 + 20}, kFg, "O que abrir?");
-    // the choices: max-w-md, centred, gap-3, p-5 (Engine2's three, then ours: Teste de Magias)
+    // the choices: max-w-md, centred, gap-3, p-5 (Ember's three, then ours: Teste de Magias)
     struct Choice {
       const char* title;
       const char* text;
@@ -265,7 +265,7 @@ class TestModeStage : public Stage {
   void drawMapChoice(ImVec2 size) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     dl->AddRectFilled({0, 0}, size, IM_COL32(8, 10, 13, 255));
-    if (const UiImage* board = uiImage(paths_.engine2Public / "game/ui/travel-board.png")) imageCover(dl, *board, {0, 0}, size, 0.5f, 0.5f);
+    if (const UiImage* board = uiImage(paths_.artRoot / "game/ui/travel-board.png")) imageCover(dl, *board, {0, 0}, size, 0.5f, 0.5f);
     verticalGradient(dl, {0, 0}, size, {{0.0f, IM_COL32(0, 0, 0, 77)}, {0.5f, IM_COL32(0, 0, 0, 13)}, {1.0f, IM_COL32(0, 0, 0, 89)}});
     const float headerH = 16 + 40 + 16;
     dl->AddRectFilled({0, 0}, {size.x, headerH}, IM_COL32(0, 0, 0, 26));
@@ -304,11 +304,11 @@ class TestModeStage : public Stage {
 
   // The places on the map (GameApp mapVisibleLocations: test mode shows every one) and what the classic map knows of
   // them: status and missions with test = true, against the real active slot's completed list (GameApp `save`).
-  const e2::Json& realSave() {
+  const ember::Json& realSave() {
     if (!realSaveRead_) realSave_ = campaign_.activeSave(), realSaveRead_ = true;
     return realSave_;
   }
-  const e2::CampaignMission* missionData(const std::string& id) const { return campaign_.data().mission(id); }
+  const ember::CampaignMission* missionData(const std::string& id) const { return campaign_.data().mission(id); }
 
   void openMission(const std::string& id) {
     // GameApp openMission / beginMission in test mode: nothing gated, finished missions open again; the Inn's briefing says
@@ -360,7 +360,7 @@ class TestModeStage : public Stage {
     const float goldW = 8.0f + 24.0f + 6.0f + ui->CalcTextSizeA(14.0f, FLT_MAX, 0.0f, gold.c_str()).x + 8.0f;
     place(goldW);
     emberPlate("##gold", {goldW, h}, [&](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32) {
-      if (const UiImage* icon = uiImage(paths_.engine2Public / "game/icons/gold-coins-pile.png"))
+      if (const UiImage* icon = uiImage(paths_.artRoot / "game/icons/gold-coins-pile.png"))
         imageContain(d, *icon, {a.x + 8, (a.y + b.y) * 0.5f - 12}, {a.x + 32, (a.y + b.y) * 0.5f + 12});  // object-contain
       d->AddText(ui, 14.0f, {a.x + 38, (a.y + b.y) * 0.5f - 8}, kMuted, gold.c_str());
     });
@@ -383,7 +383,7 @@ class TestModeStage : public Stage {
 
   void drawMapViewport(ImVec2 a, ImVec2 b) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
-    const UiImage* map = uiImage(paths_.engine2Public / "game/assets/world-map.jpg");
+    const UiImage* map = uiImage(paths_.artRoot / "game/assets/world-map.jpg");
     const float vw = b.x - a.x, vh = b.y - a.y;
     const float imgW = map ? vw * kZoomStops[zoom_] / 100.0f : std::min(vw * 0.7f, 448.0f);
     const float imgH = map ? imgW * static_cast<float>(map->height) / static_cast<float>(map->width) : vh * 0.7f;
@@ -391,7 +391,7 @@ class TestModeStage : public Stage {
     // Opens centred on the first place with a mission the real save has not finished (centerLocationId).
     if (!centred_) {
       centreX_ = centreY_ = 0.5f;
-      for (const e2::MapLocation& loc : world_.locations()) {
+      for (const ember::MapLocation& loc : world_.locations()) {
         bool pending = false;
         for (const std::string& id : loc.missionIds) pending = pending || !done(id);
         if (pending) {
@@ -409,7 +409,7 @@ class TestModeStage : public Stage {
     const ImGuiIO& io = ImGui::GetIO();
     if (ImGui::IsItemActivated()) drag_ = {io.MousePos.x, io.MousePos.y, scrollX_, scrollY_}, dragMoved_ = false;
     if (ImGui::IsItemActive() && drag_) {
-      requestGrabCursor();  // Engine2 world-map-pan-grab: the gauntlet from the press on
+      requestGrabCursor();  // Ember world-map-pan-grab: the gauntlet from the press on
       const float dx = io.MousePos.x - drag_->x, dy = io.MousePos.y - drag_->y;
       if (!dragMoved_ && (std::abs(dx) > 4 || std::abs(dy) > 4)) dragMoved_ = true;
       if (dragMoved_) scrollX_ = drag_->sx - dx, scrollY_ = drag_->sy - dy;
@@ -428,19 +428,19 @@ class TestModeStage : public Stage {
     dl->PushClipRect(a, b, true);
     if (map) dl->AddImageRounded(map->texture, o, {o.x + imgW, o.y + imgH}, {0, 0}, {1, 1}, IM_COL32_WHITE, 8.0f);
     std::string clickedId;
-    for (const e2::MapLocation& loc : world_.locations()) {
+    for (const ember::MapLocation& loc : world_.locations()) {
       const std::string st = world_.locationStatus(loc, realSave(), true);
       const auto missions = world_.visibleMissionsOf(loc, realSave(), true);
       const ImVec2 c{o.x + static_cast<float>(loc.x) / 100.0f * imgW, o.y + static_cast<float>(loc.y) / 100.0f * imgH};
       const float r = 20.0f;
       const bool hover = over && std::hypot(io.MousePos.x - c.x, io.MousePos.y - c.y) <= r;
-      drawPin(dl, c, r * (hover ? 1.1f : 1.0f), st, std::any_of(missions.begin(), missions.end(), [](const e2::MapMission* m) { return m->hub; }),
+      drawPin(dl, c, r * (hover ? 1.1f : 1.0f), st, std::any_of(missions.begin(), missions.end(), [](const ember::MapMission* m) { return m->hub; }),
               static_cast<int>(missions.size()), flashId_ == loc.id ? now_ - flashAt_ : -1.0f);
       if (hover && clicked) clickedId = loc.id;
     }
     dl->PopClipRect();
     if (!clickedId.empty())
-      for (const e2::MapLocation& loc : world_.locations())
+      for (const ember::MapLocation& loc : world_.locations())
         if (loc.id == clickedId) {
           const std::string st = world_.locationStatus(loc, realSave(), true);
           const auto missions = world_.visibleMissionsOf(loc, realSave(), true);
@@ -483,12 +483,12 @@ class TestModeStage : public Stage {
 
   // Bottom right: ember-plate p-1 with Aproximar, "n/4" (counted from the wide end) and Afastar.
   void drawZoom(ImVec2 size) {
-    if (!uiImage(paths_.engine2Public / "game/assets/world-map.jpg")) return;
+    if (!uiImage(paths_.artRoot / "game/assets/world-map.jpg")) return;
     if (worldMapZoomBox(size, zoom_)) recentre_ = true;
   }
 
   bool done(const std::string& id) {
-    for (const e2::Json& c : realSave().value("completed", e2::Json::array()))
+    for (const ember::Json& c : realSave().value("completed", ember::Json::array()))
       if (c.is_string() && c.get<std::string>() == id) return true;
     return false;
   }
@@ -507,8 +507,8 @@ class TestModeStage : public Stage {
 
   // LocationPanel: the place's missions as ember-slot rows (kicker "01 · place · feito", title, objective).
   void drawLocationPanel(ImVec2 size) {
-    const e2::MapLocation* loc = nullptr;
-    for (const e2::MapLocation& l : world_.locations())
+    const ember::MapLocation* loc = nullptr;
+    for (const ember::MapLocation& l : world_.locations())
       if (l.id == *open_) loc = &l;
     if (!loc || veil(size, "##locveil")) {
       open_.reset();
@@ -516,7 +516,7 @@ class TestModeStage : public Stage {
     }
     const auto missions = world_.visibleMissionsOf(*loc, realSave(), true);
     std::vector<std::string> order;
-    for (const e2::MapMission* m : world_.missionsOf(*loc)) order.push_back(m->id);
+    for (const ember::MapMission* m : world_.missionsOf(*loc)) order.push_back(m->id);
     const float w = std::min(448.0f, size.x - 32.0f), inner = w - 40.0f;
     ImGui::SetNextWindowPos({size.x * 0.5f, size.y * 0.5f}, ImGuiCond_Always, {0.5f, 0.5f});
     ImGui::SetNextWindowSizeConstraints({w, 0}, {w, size.y * 0.8f});
@@ -536,9 +536,9 @@ class TestModeStage : public Stage {
     ImGui::SetCursorScreenPos({head.x, head.y + 32 + 16});
     std::string pick;
     for (size_t i = 0; i < missions.size(); ++i) {
-      const e2::MapMission* m = missions[i];
+      const ember::MapMission* m = missions[i];
       const std::string st = world_.missionStatus(m->id, realSave(), order, true);
-      const e2::CampaignMission* cm = missionData(m->id);
+      const ember::CampaignMission* cm = missionData(m->id);
       const std::string place = cm ? cm->place : "", objective = cm ? cm->objective : "";
       const float objH = sans()->CalcTextSizeA(16.0f, FLT_MAX, inner - 32, objective.c_str()).y;
       const float rowH = 12 + 18 + 4 + 32 + objH + 12;
@@ -733,7 +733,7 @@ class TestModeStage : public Stage {
       const ImVec2 ts = sans()->CalcTextSizeA(14.0f, FLT_MAX, 0, gold.c_str());
       const ImVec2 p{size.x - 16 - ts.x - 16 - 24, 16 + 8};
       dl->AddRect(p, {size.x - 16, p.y + 26}, kBorder);
-      if (const UiImage* icon = uiImage(paths_.engine2Public / "game/icons/gold-coins-pile.png")) imageContain(dl, *icon, {p.x + 6, p.y + 3}, {p.x + 26, p.y + 23});
+      if (const UiImage* icon = uiImage(paths_.artRoot / "game/icons/gold-coins-pile.png")) imageContain(dl, *icon, {p.x + 6, p.y + 3}, {p.x + 26, p.y + 23});
       dl->AddText(sans(), 14.0f, {p.x + 30, p.y + 5}, kMuted, gold.c_str());
     }
     ImGui::SetCursorScreenPos({0, headerH + 1});
@@ -744,8 +744,8 @@ class TestModeStage : public Stage {
     std::string pick;
     const auto& missions = campaign_.data().missions;
     for (size_t i = 0; i < missions.size(); ++i) {
-      const e2::CampaignMission& m = missions[i];
-      const e2::MapMission* mm = world_.mission(m.id);
+      const ember::CampaignMission& m = missions[i];
+      const ember::MapMission* mm = world_.mission(m.id);
       const bool hub = mm && mm->hub, finished = done(m.id);
       const float objH = sans()->CalcTextSizeA(16.0f, FLT_MAX, w - 32, m.objective.c_str()).y;
       const float h = 12 + 20 + 32 + objH + 12;
@@ -770,8 +770,8 @@ class TestModeStage : public Stage {
   }
 
   CampaignPaths paths_;
-  e2::Campaign& campaign_;
-  const e2::Overworld& world_;
+  ember::Campaign& campaign_;
+  const ember::Overworld& world_;
   TestSession& session_;
   DevGfx& devGfx_;
   std::array<int, 8> elementVersions_{2, 2, 2, 2, 2, 2, 2, 2};
@@ -779,7 +779,7 @@ class TestModeStage : public Stage {
   Screen screen_ = Screen::Menu, briefingFrom_ = Screen::WorldMap;
   std::string notice_;
   std::optional<MissionEntry> briefing_;
-  e2::Json realSave_;
+  ember::Json realSave_;
   bool realSaveRead_ = false;
   std::optional<std::string> open_;
   bool options_ = false;

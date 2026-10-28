@@ -1,13 +1,13 @@
 #pragma once
 
-// The title screen, copied from Engine2 (index.html + src/title/title.css + main.ts): its background art
+// The title screen, copied from Ember (index.html + src/title/title.css + main.ts): its background art
 // (public/game/title/title-bg.jpg, centre 42%, under the dark veil), the "EMBER ASHES" mark, the eyebrow, the big
-// "Ember", the tagline and the ember menu buttons. "Nova campanha" and "Continuar" open the six save slots on Engine2's
+// "Ember", the tagline and the ember menu buttons. "Nova campanha" and "Continuar" open the six save slots on Ember's
 // save-board art (public/game/ui/old-ember-save-board.png, CampaignUi.h SlotScreen); a chosen slot starts its campaign
-// on the world map (OverworldStage). "Modo teste" (bottom left) is Engine2's test entry (TestModeStage.h).
-// "Como jogar" and "Opções" open Engine2's own windows (EmberMenus.h HelpModal / OptionsDialog). Every text in Portuguese
+// on the world map (OverworldStage). "Modo teste" (bottom left) is Ember's test entry (TestModeStage.h).
+// "Como jogar" and "Opções" open Ember's own windows (EmberMenus.h HelpModal / OptionsDialog). Every text in Portuguese
 // or English (index.html data-pt / data-en), as Opções sets the interface.
-// Engine2's art is read at run time from its public folder; the fonts are bundled (content/fonts).
+// Ember's art is read at run time from its public folder; the fonts are bundled (content/fonts).
 
 #include <SDL3/SDL.h>
 #include <imgui.h>
@@ -41,14 +41,14 @@ namespace ember {
 class TitleStage : public Stage {
  public:
   struct Paths {
-    std::filesystem::path engine2Public = "content/game/public";
-    std::filesystem::path maps;                                 // Engine2's maps/ember
-    std::filesystem::path scenes;                               // build/engine2-scenes (export_scene.ts)
-    std::filesystem::path battles = "content/engine2/battles";  // export_battle.ts
+    std::filesystem::path artRoot = "content/assets";
+    std::filesystem::path maps;                                 // Ember's maps/ember
+    std::filesystem::path scenes;                               // build/scenes (export_scene.ts)
+    std::filesystem::path battles = "content/data/battles";  // export_battle.ts
   };
   // play: a test-mode map; campaign: the chosen slot's campaign (the world map); quit: Sair. `preload`: the title's art
   // already decoding (main.cpp starts it with the window, artFiles), else the title starts it.
-  TitleStage(Paths paths, e2::Campaign* campaign, std::function<void(const MissionEntry&)> play, std::function<void()> startCampaign,
+  TitleStage(Paths paths, ember::Campaign* campaign, std::function<void(const MissionEntry&)> play, std::function<void()> startCampaign,
              std::function<void()> quit, std::unique_ptr<UiPreload> preload = nullptr)
       : paths_(std::move(paths)), campaign_(campaign), play_(std::move(play)), startCampaign_(std::move(startCampaign)), quit_(std::move(quit)) {
     findMissions();
@@ -69,14 +69,14 @@ class TitleStage : public Stage {
     const float width = std::min(32.0f * rem, size.x - 2.5f * rem);
     return {(size.x - width) * 0.5f, std::min(25.0f * rem, size.x - 2.5f * rem)};
   }
-  // "Modo teste" opens Engine2's test menu through this (without it: the old list of every exported map).
+  // "Modo teste" opens Ember's test menu through this (without it: the old list of every exported map).
   void onTestMode(std::function<void()> open) { testMode_ = std::move(open); }
   // Opções: Tela cheia and Dev Controls' switches (Gráficos), as the game holds them.
   void onOptions(std::function<void()> fullscreen, DevGfx* gfx) { fullscreen_ = std::move(fullscreen), gfx_ = gfx; }
   // Captures: Como jogar (tab, scroll) or Opções opened.
   void previewHelp(int tab, float scroll) { help_.preview(tab, scroll); }
   void previewOptions() { options_.open(); }
-  // Captures end after a second of frames (time for Engine2's art to load).
+  // Captures end after a second of frames (time for Ember's art to load).
   bool done() const override { return frames_ > 60; }
   // Captures: the slot screen as "Nova campanha" (false) or "Continuar" (true) opens it.
   void previewSlots(bool load) { openSlots(load); }
@@ -142,7 +142,7 @@ class TitleStage : public Stage {
     else if (screen_ == Screen::Slots) drawSlots(io.DisplaySize);
     else if (screen_ == Screen::Missions) drawMissions(io.DisplaySize);
     else if (chosen_ < missions_.size()) {
-      const int r = drawBriefing(io.DisplaySize, rem_, missions_[chosen_], paths_.engine2Public);
+      const int r = drawBriefing(io.DisplaySize, rem_, missions_[chosen_], paths_.artRoot);
       if (r < 0) screen_ = Screen::Missions;
       else if (r > 0 && play_) play_(missions_[chosen_]);
     }
@@ -172,10 +172,10 @@ class TitleStage : public Stage {
     // .title-content: min(32rem, 100% - 2.5rem) wide, centred, its bottom 6.6rem above the screen's.
     const float width = std::min(32.0f * rem_, size.x - 2.5f * rem_);
     const float x = (size.x - width) * 0.5f;
-    // every text 1.4x Engine2's but the heading (user 2026-10-16: "all fonts too small"; boxes unchanged)
+    // every text 1.4x Ember's but the heading (user 2026-10-16: "all fonts too small"; boxes unchanged)
     const float h1 = std::clamp(size.x * 0.0825f, 3.3f * rem_, 5.25f * rem_), version = 1.1f * rem_;
     const float button = 3.15f * rem_, gap = 0.72f * rem_;
-    // Engine2's menu: Nova campanha, Continuar (only with a save), Como jogar, Opções; Sair closes the game (a browser
+    // Ember's menu: Nova campanha, Continuar (only with a save), Como jogar, Opções; Sair closes the game (a browser
     // tab had no need of it).
     enum Action { New, Continue, Help, Options, Quit };
     std::vector<std::pair<std::string, Action>> menu = {{upperUtf8(tr("Nova campanha", "New campaign")), New}};
@@ -221,7 +221,7 @@ class TitleStage : public Stage {
     {
       const std::string labelText = upperUtf8(tr("Modo teste", "Test mode"));
       const char* label = labelText.c_str();
-      const float text = 0.62f * rem_;  // Engine2's size (user 2026-10-16: keep this one as it was)
+      const float text = 0.62f * rem_;  // Ember's size (user 2026-10-16: keep this one as it was)
       const float tw = spacedTextWidth(uiFont(UiFont::Ui), text, label, 0.14f);
       const ImVec2 at{0.55f * rem_, size.y - 0.55f * rem_ - text - 0.6f * rem_};
       ImGui::SetCursorScreenPos(at);
@@ -230,7 +230,7 @@ class TitleStage : public Stage {
       spacedText(dl, uiFont(UiFont::Ui), text, {at.x + 0.45f * rem_, at.y + 0.3f * rem_},
                  hover ? IM_COL32(239, 212, 165, 255) : IM_COL32(220, 203, 177, 117), label, 0.14f, false);
       if (clicked) {
-        if (testMode_) testMode_();  // Engine2's test menu (TestModeStage.h)
+        if (testMode_) testMode_();  // Ember's test menu (TestModeStage.h)
         else screen_ = Screen::Missions;
       }
     }
@@ -246,11 +246,11 @@ class TitleStage : public Stage {
   void drawSlots(ImVec2 size) {
     if (!campaign_) {
       ImGui::GetWindowDrawList()->AddText(uiFont(UiFont::Ui), rem_, {rem_, rem_}, IM_COL32(224, 189, 128, 255),
-                                         "Sem dados de campanha (content/engine2/campaign.json).");
+                                         "Sem dados de campanha (content/data/campaign.json).");
       return;
     }
     bool back = false;
-    const int chosen = slots_.draw(size, rem_, *campaign_, paths_.engine2Public, back);
+    const int chosen = slots_.draw(size, rem_, *campaign_, paths_.artRoot, back);
     if (back) screen_ = Screen::Title;
     else if (chosen >= 0 && startCampaign_) startCampaign_();
   }
@@ -298,21 +298,21 @@ class TitleStage : public Stage {
     return clicked;
   }
 
-  // What the title loads before the game opens (Engine2 loadTitleResources: the title art, the loading screen's art, the
+  // What the title loads before the game opens (Ember loadTitleResources: the title art, the loading screen's art, the
   // game's art): every menu picture of game/ui and game/title, the world map and the mission briefings, so the screens
   // after the title open at once.
-  std::vector<std::filesystem::path> titleArt() const { return artFiles(paths_.engine2Public); }
+  std::vector<std::filesystem::path> titleArt() const { return artFiles(paths_.artRoot); }
 
  public:
   static std::filesystem::path backdropFile() { return "content/backdrops/title-bg.jpg"; }
   // The title's background first (the screen shows it as soon as it is in), then the rest.
-  static std::vector<std::filesystem::path> artFiles(const std::filesystem::path& engine2Public) {
+  static std::vector<std::filesystem::path> artFiles(const std::filesystem::path& artRoot) {
     std::vector<std::filesystem::path> files;
     auto add = [&](const std::filesystem::path& dir, const char* prefix) {
       std::error_code ec;
-      for (const auto& e : std::filesystem::directory_iterator(engine2Public / dir, ec)) {
+      for (const auto& e : std::filesystem::directory_iterator(artRoot / dir, ec)) {
         if (!e.is_regular_file()) continue;
-        // wide names: Engine2's art has names no narrow conversion survives ("✕", "—"), which are skipped
+        // wide names: Ember's art has names no narrow conversion survives ("✕", "—"), which are skipped
         std::wstring ext = e.path().extension().wstring();
         std::transform(ext.begin(), ext.end(), ext.begin(), [](wchar_t c) { return static_cast<wchar_t>(std::towlower(c)); });
         if (ext != L".png" && ext != L".jpg" && ext != L".jpeg") continue;
@@ -324,14 +324,14 @@ class TitleStage : public Stage {
     };
     add("game/title", nullptr);
     add("game/ui", nullptr);
-    {  // the briefings live in content/briefings (nothing of them is read from Engine2's folders)
+    {  // the briefings live in content/briefings (nothing of them is read from Ember's folders)
       std::error_code ec;
       for (const auto& e : std::filesystem::directory_iterator("content/briefings", ec)) {
         const std::string name = e.path().filename().string();
         if (e.is_regular_file() && name.rfind("brief-", 0) == 0 && !uiImageLoaded(e.path())) files.push_back(e.path());
       }
     }
-    if (const auto map = engine2Public / "game/assets/world-map.jpg"; !uiImageLoaded(map)) files.push_back(map);
+    if (const auto map = artRoot / "game/assets/world-map.jpg"; !uiImageLoaded(map)) files.push_back(map);
     std::sort(files.begin(), files.end());
     if (!uiImageLoaded(backdropFile())) files.insert(files.begin(), backdropFile());
     return files;
@@ -345,7 +345,7 @@ class TitleStage : public Stage {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     const ImVec2 a{0, 0}, b = size;
     dl->AddRectFilled(a, b, IM_COL32(8, 10, 13, 255));
-    if (const UiImage* board = uiImage(paths_.engine2Public / "game/ui/old-ember-save-board.png")) imageCover(dl, *board, a, b, 0.5f, 0.5f);
+    if (const UiImage* board = uiImage(paths_.artRoot / "game/ui/old-ember-save-board.png")) imageCover(dl, *board, a, b, 0.5f, 0.5f);
     dl->AddRectFilled(a, b, IM_COL32(0, 0, 0, 51));  // .save-slots-wash
     // header
     const float headerH = 4.4f * rem_;
@@ -400,7 +400,7 @@ class TitleStage : public Stage {
     ImGui::EndChild();
   }
 
-  // .ember-plate as a button (Engine2's small iron plates: back buttons, the battle bar).
+  // .ember-plate as a button (Ember's small iron plates: back buttons, the battle bar).
   bool plateButton(const char* id, ImVec2 size, const char* label) {
     const ImVec2 at = ImGui::GetCursorScreenPos();
     const bool clicked = ImGui::InvisibleButton(id, size);
@@ -471,7 +471,7 @@ class TitleStage : public Stage {
   }
 
   Paths paths_;
-  e2::Campaign* campaign_ = nullptr;
+  ember::Campaign* campaign_ = nullptr;
   SlotScreen slots_;
   bool picked_ = false;
   std::function<void(const MissionEntry&)> play_;
@@ -486,7 +486,7 @@ class TitleStage : public Stage {
   std::function<void()> fullscreen_;
   DevGfx* gfx_ = nullptr;
   float rem_ = 16.0f;
-  static constexpr float kTitleText = 1.4f;  // the title page's text over Engine2's sizes
+  static constexpr float kTitleText = 1.4f;  // the title page's text over Ember's sizes
   int frames_ = 0;
   std::unique_ptr<UiPreload> preload_;
   loading::TitleLoader loader_;

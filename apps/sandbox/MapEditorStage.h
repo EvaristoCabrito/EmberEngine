@@ -1,8 +1,8 @@
 #pragma once
 
-// Engine2's Map Editor (Modo teste > Map Editor), copied from src/editor/ember/MapEditorScreen.tsx (+ MapPreview3D.tsx,
+// Ember's Map Editor (Modo teste > Map Editor), copied from src/editor/ember/MapEditorScreen.tsx (+ MapPreview3D.tsx,
 // DialogEditor.tsx): the map's settings, lighting and size on the left, the board in the game's own renderer on the
-// right (MapStage with the draft in memory), rebuilt a moment after every edit. The draft is Engine2's MapDraft JSON,
+// right (MapStage with the draft in memory), rebuilt a moment after every edit. The draft is Ember's MapDraft JSON,
 // kept whole (every field it carries survives a save).
 //
 //   Novo / Locais / R-Encounter / Gerar terreno / Carregar mapa da campanha / Abrir mapa salvo / CityHubs
@@ -20,9 +20,9 @@
 //               technical grid (hex or square) turns hexes and props
 //   Desfazer / Refazer (10 steps), Substituir base, the saved files (Carregar / Ativar / apagar), Testar, Salvar.
 //
-// Saves go to content/maps/ember/<id><serial>.json (Engine2's format and serials; Engine2's folder untouched); Locais /
+// Saves go to content/maps/ember/<id><serial>.json (Ember's format and serials; Ember's folder untouched); Locais /
 // R-Encounter to content/maps/locais.json and random-encounters.json (world/Locais.h); Ativar to content/maps/active.json.
-// Not here (Engine2's own left them out or they have no meaning here): the elemental 2D FX, Exportar, the browser-local
+// Not here (Ember's own left them out or they have no meaning here): the elemental 2D FX, Exportar, the browser-local
 // versions.
 
 #include <SDL3/SDL.h>
@@ -74,9 +74,9 @@ class MapEditorStage : public Stage {
   struct Callbacks {
     // Voltar: the test menu; Testar: the prepared test battle. Both hand over the draft as it stands (main.cpp reopens
     // the editor on it, as GameApp keeps editorDraft across a playtest).
-    std::function<void(const e2::Json& draft)> back;
-    std::function<void(const MissionEntry&, const e2::Json& draft)> play;
-    // Locais / R-Encounter were written: the campaign and the world map take them at once (Engine2: "aplicada à campanha").
+    std::function<void(const ember::Json& draft)> back;
+    std::function<void(const MissionEntry&, const ember::Json& draft)> play;
+    // Locais / R-Encounter were written: the campaign and the world map take them at once (Ember: "aplicada à campanha").
     std::function<void()> locaisSaved;
   };
   struct Services {
@@ -86,16 +86,16 @@ class MapEditorStage : public Stage {
     JobSystem& jobs;
   };
 
-  // `base`: the map options every preview starts from (sprite budget, Engine2's folder, heroes); `draft`: the map to
+  // `base`: the map options every preview starts from (sprite budget, Ember's folder, heroes); `draft`: the map to
   // reopen (the one being edited before a test took the screen), else a new blank map.
-  MapEditorStage(Services services, MapStageOptions base, CampaignPaths paths, const e2::Campaign& campaign, Callbacks callbacks,
-                 std::optional<e2::Json> draft = std::nullopt)
+  MapEditorStage(Services services, MapStageOptions base, CampaignPaths paths, const ember::Campaign& campaign, Callbacks callbacks,
+                 std::optional<ember::Json> draft = std::nullopt)
       : services_(services), base_(std::move(base)), paths_(std::move(paths)), campaign_(campaign), callbacks_(std::move(callbacks)) {
-    data_ = e2::BoardData::load(base_.boardData);
-    if (!catalog_.load(kCatalog)) note("Sem o catálogo do editor (content/engine2/editor-catalog.json).");
+    data_ = ember::BoardData::load(base_.boardData);
+    if (!catalog_.load(kCatalog)) note("Sem o catálogo do editor (content/data/editor-catalog.json).");
     editor_ = loadEditorTables(kCatalog);
     if (!dress_.load(kCatalog)) note("O catálogo do editor não tem as tabelas de Gerar terreno (export_editor_catalog.ts).");
-    locais_ = e2::Locais::load(kCatalog);
+    locais_ = ember::Locais::load(kCatalog);
     order_ = locais_.editorOrder();
     shuffleExclude_ = loadShuffleExclude();
     draft_ = draft ? *draft : blankDraft();
@@ -103,7 +103,7 @@ class MapEditorStage : public Stage {
     // watchtower entrance go.
     moveMisplacedEnemies();
     if (draft_.contains("decorations") && draft_["decorations"].is_array())
-      draft_["decorations"] = e2::removeWallsUnderWatchtowerEntrances(draft_["decorations"], dress_, catalog_);
+      draft_["decorations"] = ember::removeWallsUnderWatchtowerEntrances(draft_["decorations"], dress_, catalog_);
     dirty_ = true;
     scan_ = std::async(std::launch::async, [maps = paths_.maps] { return scanSaved(maps); });
   }
@@ -115,7 +115,7 @@ class MapEditorStage : public Stage {
   }
 
   // The draft as it stands (main.cpp keeps it across a test battle).
-  const e2::Json& draft() const { return draft_; }
+  const ember::Json& draft() const { return draft_; }
   // Captures: clicks as the board would get them, "mode:arg:x,y;..." (paint:<terrain>, raise, lower, deco:<id>,
   // arch:<id>, water:<level>, turn, hero, enemy, npc, summon), "gen" (Gerar terreno), "tech" (the technical grid),
   // "locais" / "encounters" / "dialog:intro" (those windows), "save"; then the preview as it stands.
@@ -222,7 +222,7 @@ class MapEditorStage : public Stage {
       for (const MapRef& m : cityHubs()) hubs += (hubs.empty() ? "" : ", ") + m.id;
       logInfo("map editor: {} saved maps; CityHubs: {}", saved_.size(), hubs);
     }
-    // The preview follows the draft a moment after the last edit (Engine2 setPreviewMission).
+    // The preview follows the draft a moment after the last edit (Ember setPreviewMission).
     const auto now = std::chrono::steady_clock::now();
     if (dirty_ && showPreview_ && now - lastEdit_ > std::chrono::milliseconds(120)) rebuildPreview();
     // Testar finished preparing: the battle opens.
@@ -275,7 +275,7 @@ class MapEditorStage : public Stage {
   }
 
  private:
-  static constexpr const char* kCatalog = "content/engine2/editor-catalog.json";
+  static constexpr const char* kCatalog = "content/data/editor-catalog.json";
   struct HeldUnit {
     std::string key;  // playerSpawns / enemySpawns / neutralSpawns
     size_t index = 0;
@@ -287,7 +287,7 @@ class MapEditorStage : public Stage {
   };
   static constexpr const char* kEntrance = "watchtower-stone-open-door-2hex";
 
-  // --- Engine2 tables (editor-catalog.json "editor") ------------------------------------------------------------------
+  // --- Ember tables (editor-catalog.json "editor") ------------------------------------------------------------------
 
   struct Version {
     int variant = 0;
@@ -330,7 +330,7 @@ class MapEditorStage : public Stage {
     std::vector<std::pair<std::string, std::string>> heroes;  // name, classId
     std::vector<std::pair<std::string, std::string>> namedNonHeroes;
     std::vector<std::pair<std::string, std::string>> npcs;  // id, name
-    std::map<std::string, e2::Json> npcSpawn;               // id: encounterNpcSpawn (name, classId, dialog, ...)
+    std::map<std::string, ember::Json> npcSpawn;               // id: encounterNpcSpawn (name, classId, dialog, ...)
     std::vector<std::string> affinityHeroes;
     std::vector<MissionInfo> missions;
     std::map<std::string, int> watchtowerFloors;
@@ -348,18 +348,18 @@ class MapEditorStage : public Stage {
   static EditorTables loadEditorTables(const std::filesystem::path& file) {
     EditorTables t;
     std::ifstream in(file, std::ios::binary);
-    const e2::Json j = in ? e2::Json::parse(in, nullptr, false) : e2::Json();
+    const ember::Json j = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
     if (!j.is_object() || !j.contains("editor")) return t;
-    const e2::Json& e = j["editor"];
-    auto s = [](const e2::Json& o, const char* k) { return o.contains(k) && o[k].is_string() ? o[k].get<std::string>() : std::string(); };
+    const ember::Json& e = j["editor"];
+    auto s = [](const ember::Json& o, const char* k) { return o.contains(k) && o[k].is_string() ? o[k].get<std::string>() : std::string(); };
     t.minGrid = e.value("minGrid", 3), t.maxGrid = e.value("maxGrid", 160), t.testLevel = e.value("defaultTestLevel", 15), t.enemyLevel0 = e.value("enemyLevel0", 1);
     t.maxLevel = e.value("maxLevel", 30);
-    for (const e2::Json& l : e.value("enemyLevels", e2::Json::array())) t.enemyLevels.push_back(l.get<int>());
-    for (const e2::Json& tr : e["terrains"]) {
+    for (const ember::Json& l : e.value("enemyLevels", ember::Json::array())) t.enemyLevels.push_back(l.get<int>());
+    for (const ember::Json& tr : e["terrains"]) {
       TerrainEntry te{s(tr, "id"), s(tr, "name"), s(tr, "swatch"), s(tr, "hint"), {}, tr.value("variantCount", 1), tr.value("height", 0.0), true, {}};
       std::set<int> hidden;
-      for (const e2::Json& h : tr["hidden"]) hidden.insert(h.get<int>());
-      for (const e2::Json& v : tr["versions"])
+      for (const ember::Json& h : tr["hidden"]) hidden.insert(h.get<int>());
+      for (const ember::Json& v : tr["versions"])
         if (!hidden.contains(v.value("variant", 0))) te.versions.push_back({v.value("variant", 0), s(v, "label"), s(v, "thumb")});
       if (te.id == "plains") {
         te.versions.erase(std::remove_if(te.versions.begin(), te.versions.end(), [](const Version& v) { return v.variant == 56; }), te.versions.end());
@@ -394,9 +394,9 @@ class MapEditorStage : public Stage {
     for (const auto& [id, ti] : e["terrainInfo"].items())
       t.terrainInfo[id] = TerrainEntry{id, s(ti, "name"), {}, {}, {}, ti.value("variantCount", 1), ti.value("height", 0.0), ti.value("passable", true), {}};
     if (auto plains = t.terrainInfo.find("plains"); plains != t.terrainInfo.end()) plains->second.variantCount = std::max(plains->second.variantCount, 75);
-    const e2::Json tileVariantNamesTable = e.value("tileVariantNames", e2::Json::object());  // a copy: items() of a temporary dangles
+    const ember::Json tileVariantNamesTable = e.value("tileVariantNames", ember::Json::object());  // a copy: items() of a temporary dangles
     for (const auto& [id, names] : tileVariantNamesTable.items())
-      for (const e2::Json& n : names) t.variantNames[id].push_back(n.is_string() ? n.get<std::string>() : std::string());
+      for (const ember::Json& n : names) t.variantNames[id].push_back(n.is_string() ? n.get<std::string>() : std::string());
     std::vector<std::string>& plainsNames = t.variantNames["plains"];
     plainsNames.resize(std::max<size_t>(plainsNames.size(), 75));
     plainsNames[56].clear();
@@ -417,42 +417,42 @@ class MapEditorStage : public Stage {
     waterNames.resize(std::max<size_t>(waterNames.size(), kWaterOriginalVariant + 1));
     for (int k = 0; k < 3; ++k) waterNames[kWaterLookFirstVariant + k] = std::format("Água 0{}", k + 1);
     waterNames[kWaterOriginalVariant] = "Água original";
-    for (const e2::Json& v : e["city"]) t.city.push_back({v.value("variant", 0), s(v, "label"), s(v, "thumb")});
-    for (const e2::Json& id : e["decorationOrder"]) t.decorationOrder.push_back(id.get<std::string>());
-    for (const e2::Json& id : e["decorationSections"]) t.decorationSections.push_back(id.get<std::string>());
-    for (const e2::Json& id : e.value("architectureOrder", e2::Json::array())) t.architectureOrder.push_back(id.get<std::string>());
+    for (const ember::Json& v : e["city"]) t.city.push_back({v.value("variant", 0), s(v, "label"), s(v, "thumb")});
+    for (const ember::Json& id : e["decorationOrder"]) t.decorationOrder.push_back(id.get<std::string>());
+    for (const ember::Json& id : e["decorationSections"]) t.decorationSections.push_back(id.get<std::string>());
+    for (const ember::Json& id : e.value("architectureOrder", ember::Json::array())) t.architectureOrder.push_back(id.get<std::string>());
     for (const auto& [id, d] : e["decorationInfo"].items()) {
       t.decoSection[id] = s(d, "section");
       if (d["tile"].is_string()) t.decoTile[id] = d["tile"].get<std::string>();
       t.decoThumb[id] = s(d, "thumb");
       if (d.value("blocksByDefault", false)) t.decoBlocks.insert(id);
     }
-    const e2::Json decoMetaTable = e.value("decoMeta", e2::Json::object());  // a copy: items() of a temporary dangles
+    const ember::Json decoMetaTable = e.value("decoMeta", ember::Json::object());  // a copy: items() of a temporary dangles
     for (const auto& [id, d] : decoMetaTable.items())
       t.decoMeta[id] = DecoMeta{s(d, "model3d"),          s(d, "exitKind"),          s(d, "doorStyle"),         s(d, "wallTexture"), s(d, "art"),
                                 d.value("props3d", false), d.value("thickWall", false), d.value("solidHouse", false), d.value("solidCart", false),
                                 d.value("chest", false)};
-    const e2::Json doorVariantsTable = e.value("doorVariants", e2::Json::object());  // a copy: items() of a temporary dangles
+    const ember::Json doorVariantsTable = e.value("doorVariants", ember::Json::object());  // a copy: items() of a temporary dangles
     for (const auto& [style, v] : doorVariantsTable.items()) t.doorVariants[style] = {s(v, "open"), s(v, "closed")};
     for (const auto& [id, c] : e["classes"].items()) t.classes[id] = {s(c, "name"), s(c, "role"), {}, c.value("summon", false)};
-    const e2::Json classSpriteTable = e.value("classSprite", e2::Json::object());  // a copy: items() of a temporary dangles
+    const ember::Json classSpriteTable = e.value("classSprite", ember::Json::object());  // a copy: items() of a temporary dangles
     for (const auto& [id, sprite] : classSpriteTable.items())
       if (sprite.is_string()) t.classes[id].sprite = sprite.get<std::string>();
-    for (const e2::Json& id : e["classOrder"]) t.classOrder.push_back(id.get<std::string>());
-    for (const e2::Json& h : e["editorHeroes"]) t.heroes.push_back({s(h, "name"), s(h, "classId")});
-    for (const e2::Json& h : e.value("namedNonHeroes", e2::Json::array())) t.namedNonHeroes.push_back({s(h, "name"), s(h, "classId")});
-    for (const e2::Json& n : e["npcs"]) {
+    for (const ember::Json& id : e["classOrder"]) t.classOrder.push_back(id.get<std::string>());
+    for (const ember::Json& h : e["editorHeroes"]) t.heroes.push_back({s(h, "name"), s(h, "classId")});
+    for (const ember::Json& h : e.value("namedNonHeroes", ember::Json::array())) t.namedNonHeroes.push_back({s(h, "name"), s(h, "classId")});
+    for (const ember::Json& n : e["npcs"]) {
       t.npcs.push_back({s(n, "id"), s(n, "name")});
       if (n.contains("spawn") && n["spawn"].is_object()) t.npcSpawn[s(n, "id")] = n["spawn"];
     }
-    for (const e2::Json& h : e.value("affinityHeroes", e2::Json::array())) t.affinityHeroes.push_back(h.get<std::string>());
-    for (const e2::Json& m : e.value("missions", e2::Json::array())) t.missions.push_back({s(m, "id"), s(m, "title"), m.value("index", 0), m.value("hub", false)});
-    const e2::Json watchtowerFloorsTable = e.value("watchtowerFloors", e2::Json::object());  // a copy: items() of a temporary dangles
+    for (const ember::Json& h : e.value("affinityHeroes", ember::Json::array())) t.affinityHeroes.push_back(h.get<std::string>());
+    for (const ember::Json& m : e.value("missions", ember::Json::array())) t.missions.push_back({s(m, "id"), s(m, "title"), m.value("index", 0), m.value("hub", false)});
+    const ember::Json watchtowerFloorsTable = e.value("watchtowerFloors", ember::Json::object());  // a copy: items() of a temporary dangles
     for (const auto& [id, f] : watchtowerFloorsTable.items()) t.watchtowerFloors[id] = f.get<int>();
     for (const auto& [id, v] : e["timeOfDay"].items()) t.timeOfDay.push_back({id, s(v, "label"), v.value("moon", false), v.value("key", 0.0), v.value("ambient", 0.0)});
     t.defaultSun = e["defaults"].value("sun", 3.5), t.defaultAmbient = e["defaults"].value("ambient", 1.4), t.defaultBloom = e["defaults"].value("bloom", 0.9);
-    for (const e2::Json& b : e["backgrounds"]) t.backgrounds.emplace_back(s(b, "id"), s(b, "label"), s(b, "file"));
-    for (const e2::Json& m : e["music"]) t.music.push_back(m.get<std::string>());
+    for (const ember::Json& b : e["backgrounds"]) t.backgrounds.emplace_back(s(b, "id"), s(b, "label"), s(b, "file"));
+    for (const ember::Json& m : e["music"]) t.music.push_back(m.get<std::string>());
     return t;
   }
 
@@ -462,7 +462,7 @@ class MapEditorStage : public Stage {
     return it == editor_.decoMeta.end() ? none : it->second;
   }
   std::string decoName(const std::string& id) const {
-    const e2::CatalogDecoration* d = catalog_.decoration(id);
+    const ember::CatalogDecoration* d = catalog_.decoration(id);
     return d ? d->name : id;
   }
   int enemyLevelFor(int index) const {
@@ -474,14 +474,14 @@ class MapEditorStage : public Stage {
 
   static std::string base36Now() {
     std::string out;
-    for (long long v = static_cast<long long>(e2::Campaign::nowMs()); v > 0; v /= 36) out.insert(out.begin(), "0123456789abcdefghijklmnopqrstuvwxyz"[v % 36]);
+    for (long long v = static_cast<long long>(ember::Campaign::nowMs()); v > 0; v /= 36) out.insert(out.begin(), "0123456789abcdefghijklmnopqrstuvwxyz"[v % 36]);
     return out;
   }
 
   // MapEditorScreen blankDraft: 20 x 20 plains, the day's light.
-  e2::Json blankDraft() const {
+  ember::Json blankDraft() const {
     const int cols = 20, rows = 20, n = cols * rows;
-    e2::Json d;
+    ember::Json d;
     d["id"] = "custom-" + base36Now();
     d["index"] = 0;
     d["title"] = "Mapa sem nome";
@@ -506,33 +506,33 @@ class MapEditorStage : public Stage {
     d["locationId"] = "";
     d["cols"] = cols;
     d["rows"] = rows;
-    d["tiles"] = e2::Json(std::vector<std::string>(n, "plains"));
-    d["tileVariants"] = e2::Json(std::vector<int>(n, 0));
+    d["tiles"] = ember::Json(std::vector<std::string>(n, "plains"));
+    d["tileVariants"] = ember::Json(std::vector<int>(n, 0));
     d["baseTile"] = "plains";
     d["baseVariant"] = 0;
-    d["tileRots"] = e2::Json(std::vector<int>(n, 0));
+    d["tileRots"] = ember::Json(std::vector<int>(n, 0));
     d["music"] = "";
-    d["decorations"] = e2::Json::array();
-    d["elementalFx"] = e2::Json::array();
-    d["playerSpawns"] = e2::Json::array();
-    d["enemySpawns"] = e2::Json::array();
-    d["neutralSpawns"] = e2::Json::array();
+    d["decorations"] = ember::Json::array();
+    d["elementalFx"] = ember::Json::array();
+    d["playerSpawns"] = ember::Json::array();
+    d["enemySpawns"] = ember::Json::array();
+    d["neutralSpawns"] = ember::Json::array();
     return d;
   }
 
   void moveMisplacedEnemies() {
-    e2::Json& enemies = arr("enemySpawns");
-    e2::Json kept = e2::Json::array(), moved = e2::Json::array();
-    for (const e2::Json& s : enemies) (isSummon(s.value("classId", "")) || isCivil(s.value("classId", "")) ? moved : kept).push_back(s);
+    ember::Json& enemies = arr("enemySpawns");
+    ember::Json kept = ember::Json::array(), moved = ember::Json::array();
+    for (const ember::Json& s : enemies) (isSummon(s.value("classId", "")) || isCivil(s.value("classId", "")) ? moved : kept).push_back(s);
     if (moved.empty()) return;
     draft_["enemySpawns"] = kept;
-    for (const e2::Json& s : moved) arr("neutralSpawns").push_back(s);
+    for (const ember::Json& s : moved) arr("neutralSpawns").push_back(s);
   }
 
   int cols() const { return draft_.value("cols", 0); }
   int rows() const { return draft_.value("rows", 0); }
-  e2::Json& arr(const char* key) {
-    if (!draft_.contains(key) || !draft_[key].is_array()) draft_[key] = e2::Json::array();
+  ember::Json& arr(const char* key) {
+    if (!draft_.contains(key) || !draft_[key].is_array()) draft_[key] = ember::Json::array();
     return draft_[key];
   }
   std::string tileAt(int i) const {
@@ -545,13 +545,13 @@ class MapEditorStage : public Stage {
                : fallback;
   }
   // An array of the board's size, filled with `fill` where missing (JS Array.from({length}, (_, i) => a?.[i] ?? fill)).
-  e2::Json& boardArray(const char* key, const e2::Json& fill) {
-    e2::Json& a = arr(key);
+  ember::Json& boardArray(const char* key, const ember::Json& fill) {
+    ember::Json& a = arr(key);
     while (static_cast<int>(a.size()) < cols() * rows()) a.push_back(fill);
     return a;
   }
 
-  // Every edit goes through here: history (a burst within 600 ms is one step, Engine2's coalescing), then the preview.
+  // Every edit goes through here: history (a burst within 600 ms is one step, Ember's coalescing), then the preview.
   void beginEdit() {
     const auto now = std::chrono::steady_clock::now();
     if (now - lastEdit_ > std::chrono::milliseconds(600) || past_.empty()) {
@@ -577,7 +577,7 @@ class MapEditorStage : public Stage {
     future_.pop_front();
     dirty_ = true, lastEdit_ = {};
   }
-  void setDraft(e2::Json d) {
+  void setDraft(ember::Json d) {
     beginEdit();
     draft_ = std::move(d);
     selected_.reset(), heldUnit_.reset();
@@ -586,42 +586,42 @@ class MapEditorStage : public Stage {
   void note(std::string text) { note_ = std::move(text); }
 
   // data.ts placedFootprint for a draft placement.
-  std::vector<e2::FootOffset> footprintOf(const e2::Json& p) const {
-    const e2::CatalogDecoration* def = catalog_.decoration(p.value("id", ""));
+  std::vector<ember::FootOffset> footprintOf(const ember::Json& p) const {
+    const ember::CatalogDecoration* def = catalog_.decoration(p.value("id", ""));
     if (!def) return {};
     const double rot = p.contains("rot") && p["rot"].is_number() ? p["rot"].get<double>() : 0.0;
-    return e2::placedFootprint(*def, p.value("x", 0), p.value("y", 0), rot);
+    return ember::placedFootprint(*def, p.value("x", 0), p.value("y", 0), rot);
   }
-  bool covers(const e2::Json& p, int x, int y) const {
-    for (const e2::FootOffset& f : footprintOf(p))
+  bool covers(const ember::Json& p, int x, int y) const {
+    for (const ember::FootOffset& f : footprintOf(p))
       if (p.value("x", 0) + f.dx == x && p.value("y", 0) + f.dy == y) return true;
     return false;
   }
-  static bool samePlacement(const e2::Json& a, const e2::Json& b) {
+  static bool samePlacement(const ember::Json& a, const ember::Json& b) {
     return a.value("id", "") == b.value("id", "") && a.value("x", 0) == b.value("x", 0) && a.value("y", 0) == b.value("y", 0) && a.value("rot", 0) == b.value("rot", 0);
   }
   // previewDecorationCells: the hexes the other props cover; an entrance replaces walls and waypoints under it.
-  std::set<std::pair<int, int>> otherCells(const e2::Json& placements, const e2::Json& candidate) const {
+  std::set<std::pair<int, int>> otherCells(const ember::Json& placements, const ember::Json& candidate) const {
     std::set<std::pair<int, int>> mine;
-    for (const e2::FootOffset& f : footprintOf(candidate)) mine.insert({candidate.value("x", 0) + f.dx, candidate.value("y", 0) + f.dy});
+    for (const ember::FootOffset& f : footprintOf(candidate)) mine.insert({candidate.value("x", 0) + f.dx, candidate.value("y", 0) + f.dy});
     const bool waypoint = !meta(candidate.value("id", "")).exitKind.empty();
     std::set<std::pair<int, int>> out;
-    for (const e2::Json& p : placements) {
+    for (const ember::Json& p : placements) {
       bool overlaps = false;
-      for (const e2::FootOffset& f : footprintOf(p)) overlaps = overlaps || mine.contains({p.value("x", 0) + f.dx, p.value("y", 0) + f.dy});
+      for (const ember::FootOffset& f : footprintOf(p)) overlaps = overlaps || mine.contains({p.value("x", 0) + f.dx, p.value("y", 0) + f.dy});
       if (overlaps) {
         const DecoMeta& m = meta(p.value("id", ""));
         if (candidate.value("id", "") == kEntrance && (m.model3d == "wall" || !m.exitKind.empty())) continue;
         if (waypoint && p.value("id", "") == kEntrance) continue;
       }
-      for (const e2::FootOffset& f : footprintOf(p)) out.insert({p.value("x", 0) + f.dx, p.value("y", 0) + f.dy});
+      for (const ember::FootOffset& f : footprintOf(p)) out.insert({p.value("x", 0) + f.dx, p.value("y", 0) + f.dy});
     }
     return out;
   }
   // findPreviewDecoration: the exact placement, else (a connector) whatever connector stands on that hex.
-  std::optional<size_t> findDecoration(const e2::Json& sel) const {
+  std::optional<size_t> findDecoration(const ember::Json& sel) const {
     if (!draft_.contains("decorations")) return std::nullopt;
-    const e2::Json& decos = draft_["decorations"];
+    const ember::Json& decos = draft_["decorations"];
     for (size_t i = 0; i < decos.size(); ++i)
       if (samePlacement(decos[i], sel)) return i;
     const std::string kind = meta(sel.value("id", "")).exitKind;
@@ -636,7 +636,7 @@ class MapEditorStage : public Stage {
       if (decos[i].value("x", 0) == sel.value("x", 0) && decos[i].value("y", 0) == sel.value("y", 0) && meta(decos[i].value("id", "")).exitKind == "connector") return i;
     return std::nullopt;
   }
-  void cleanEntrances() { draft_["decorations"] = e2::removeWallsUnderWatchtowerEntrances(arr("decorations"), dress_, catalog_); }
+  void cleanEntrances() { draft_["decorations"] = ember::removeWallsUnderWatchtowerEntrances(arr("decorations"), dress_, catalog_); }
   // baseForDraft: the ground a stamped terrain falls back to.
   std::pair<std::string, int> baseOf() const {
     std::string tile = draft_.contains("baseTile") && draft_["baseTile"].is_string() ? draft_["baseTile"].get<std::string>() : tileAt(0);
@@ -689,7 +689,7 @@ class MapEditorStage : public Stage {
     if (mode_ == Mode::Paint) {
       if (turning_) {
         beginEdit();
-        e2::Json& rots = boardArray("tileRots", 0);
+        ember::Json& rots = boardArray("tileRots", 0);
         rots[i] = (rots[i].is_number() ? rots[i].get<int>() + 1 : 1) % 6;
         const int now = rots[i].get<int>() * 60;
         return note(std::format("{} em {},{}: girado para {}°{}.", terrainName(tileAt(i)), x, y, now, now == 0 ? " (de volta ao original)" : ""));
@@ -698,8 +698,8 @@ class MapEditorStage : public Stage {
     }
     if (mode_ == Mode::Decoration || mode_ == Mode::Architecture) {
       if (turningDeco_) return turnDecoration(x, y);
-      const e2::Json& decos = arr("decorations");
-      const bool existing = std::any_of(decos.begin(), decos.end(), [&](const e2::Json& p) { return covers(p, x, y); });
+      const ember::Json& decos = arr("decorations");
+      const bool existing = std::any_of(decos.begin(), decos.end(), [&](const ember::Json& p) { return covers(p, x, y); });
       if (const auto t = editor_.decoTile.find(decoBrush_); !existing && t != editor_.decoTile.end())
         note(std::format("{} sobre {} — {}.", decoName(decoBrush_), lower(terrainName(t->second)), passable(t->second) ? "dá pra subir em cima" : "não se atravessa"));
       return toggleDecoration(x, y);
@@ -710,7 +710,7 @@ class MapEditorStage : public Stage {
   void setTile(int i, const std::string& t) {
     const int x = i % cols(), y = i / cols();
     // Painting under a prop is allowed, but said out loud: the terrain decides whether that house can be climbed.
-    for (const e2::Json& p : arr("decorations")) {
+    for (const ember::Json& p : arr("decorations")) {
       const auto tile = editor_.decoTile.find(p.value("id", ""));
       if (tile == editor_.decoTile.end() || !covers(p, x, y)) continue;
       if (t != tile->second)
@@ -727,7 +727,7 @@ class MapEditorStage : public Stage {
   void elevate(int x, int y) {
     beginEdit();
     const int n = cols() * rows();
-    e2::Json& elev = arr("terrainElevations");
+    ember::Json& elev = arr("terrainElevations");
     for (int k = 0; k < n; ++k) {
       const auto it = editor_.terrainInfo.find(tileAt(k));
       const double h = it == editor_.terrainInfo.end() ? 0.0 : it->second.height;
@@ -744,7 +744,7 @@ class MapEditorStage : public Stage {
         if (!visited.insert(k).second) continue;
         if (tileAt(k) != "void")
           elev[k] = elevationTool_ == 2 ? static_cast<double>(elevationLevel_) : std::clamp(elev[k].get<double>() + (elevationTool_ == 0 ? 1.0 : -1.0), 0.0, 12.0);
-        for (const e2::OverworldHex& nb : e2::Overworld::neighbors(cx, cy)) next.push_back({nb.col, nb.row});
+        for (const ember::OverworldHex& nb : ember::Overworld::neighbors(cx, cy)) next.push_back({nb.col, nb.row});
       }
       frontier = std::move(next);
     }
@@ -755,16 +755,16 @@ class MapEditorStage : public Stage {
   void paintWater(int x, int y, std::optional<glm::vec3> point) {
     beginEdit();
     const int n = cols() * rows();
-    e2::Json& levels = boardArray("waterLevels", nullptr);
-    e2::Json& footprints = boardArray("waterFootprints", nullptr);
-    e2::Json patches = arr("waterPatches");
+    ember::Json& levels = boardArray("waterLevels", nullptr);
+    ember::Json& footprints = boardArray("waterFootprints", nullptr);
+    ember::Json patches = arr("waterPatches");
     const double sq3 = std::sqrt(3.0);
     std::optional<std::pair<double, double>> at;
     if (point) {
-      const e2::HexLayout L = e2::makeLayout(cols(), rows());
+      const ember::HexLayout L = ember::makeLayout(cols(), rows());
       at = std::pair{point->x + L.ox + sq3 / 2, point->z + L.oz + 3.4};
     }
-    auto dist = [&](const e2::Json& p, double px, double py, bool square) {
+    auto dist = [&](const ember::Json& p, double px, double py, bool square) {
       const double dx = p.value("x", 0.0) - px, dy = p.value("y", 0.0) - py;
       return square ? std::max(std::abs(dx), std::abs(dy)) : std::hypot(dx, dy);
     };
@@ -781,8 +781,8 @@ class MapEditorStage : public Stage {
           double px, py;
           if (at) px = at->first + sq3 * (cx - x + 0.5 * ((cy & 1) - (y & 1))), py = at->second + 1.5 * (cy - y);
           else px = sq3 * (cx + 0.5 * (cy & 1) + 0.5), py = 2.4 + 1.5 * cy + 1;
-          e2::Json kept = e2::Json::array();
-          for (const e2::Json& p : patches) {
+          ember::Json kept = ember::Json::array();
+          for (const ember::Json& p : patches) {
             if (waterErase_) {
               if (dist(p, px, py, at && waterSquare_) > (waterSize_ + p.value("size", 0.0)) * 1.25) kept.push_back(p);
             } else if (!(std::hypot(p.value("x", 0.0) - px, p.value("y", 0.0) - py) < 0.001 && p.value("size", 0.0) == waterSize_ &&
@@ -792,9 +792,9 @@ class MapEditorStage : public Stage {
           }
           patches = std::move(kept);
           if (waterErase_) levels[index] = nullptr, footprints[index] = nullptr;
-          else patches.push_back(e2::Json{{"x", px}, {"y", py}, {"level", waterLevel_}, {"size", waterSize_}, {"shape", shape}});
+          else patches.push_back(ember::Json{{"x", px}, {"y", py}, {"level", waterLevel_}, {"size", waterSize_}, {"shape", shape}});
         }
-        for (const e2::OverworldHex& nb : e2::Overworld::neighbors(cx, cy)) next.push_back({nb.col, nb.row});
+        for (const ember::OverworldHex& nb : ember::Overworld::neighbors(cx, cy)) next.push_back({nb.col, nb.row});
       }
       frontier = std::move(next);
     }
@@ -805,7 +805,7 @@ class MapEditorStage : public Stage {
   // toggleDecoration: a click on a placed prop selects it (another 3D piece over a 3D piece replaces it); elsewhere the
   // brush is placed on the anchor hex (refused when its footprint would land on another prop); a Waypoint shares hexes.
   void toggleDecoration(int x, int y) {
-    e2::Json& decos = arr("decorations");
+    ember::Json& decos = arr("decorations");
     std::optional<size_t> clicked;
     for (size_t k = 0; k < decos.size() && !clicked; ++k)
       if (covers(decos[k], x, y)) clicked = k;
@@ -813,19 +813,19 @@ class MapEditorStage : public Stage {
     // The kit's 3D stairs over a stairs waypoint (the floor connector stays for the rules; the game draws the 3D piece in place of
     // its card): a click on the waypoint lays the stairs on exactly its hexes.
     if (clicked && decoBrush_.starts_with("ember-arch-watchtower-stairs-") && !meta(decos[*clicked].value("id", "")).exitKind.empty()) {
-      const e2::Json c = decos[*clicked];
+      const ember::Json c = decos[*clicked];
       std::set<std::pair<int, int>> want;
       for (const auto& cell : cellsOf(c)) want.insert(cell);
       for (int rot = 0; rot < 4; ++rot) {
-        const e2::Json candidate = {{"id", decoBrush_}, {"x", c.value("x", 0)}, {"y", c.value("y", 0)}, {"rot", rot}};
+        const ember::Json candidate = {{"id", decoBrush_}, {"x", c.value("x", 0)}, {"y", c.value("y", 0)}, {"rot", rot}};
         std::set<std::pair<int, int>> got;
         for (const auto& cell : cellsOf(candidate)) got.insert(cell);
         if (got != want) continue;
-        for (const e2::Json& o : decos)
+        for (const ember::Json& o : decos)
           if (o.value("id", "").starts_with("ember-arch-watchtower-stairs-") && o.value("x", -1) == c.value("x", 0) && o.value("y", -1) == c.value("y", 0))
             return note("Essa escada já tem a sua peça 3D.");
         beginEdit();
-        e2::Json placed = candidate;
+        ember::Json placed = candidate;
         placed["wallOrientation"] = rot % 2 ? "vertical" : "horizontal";
         arr("decorations").push_back(std::move(placed));
         selected_.reset();
@@ -835,11 +835,11 @@ class MapEditorStage : public Stage {
       return note("A peça de escada não cabe nas casas dessa passagem.");
     }
     if (clicked) {
-      const e2::Json c = decos[*clicked];
+      const ember::Json c = decos[*clicked];
       const DecoMeta& cm = meta(c.value("id", ""));
       if (!cm.model3d.empty() && !brush.model3d.empty() && c.value("id", "") != decoBrush_) {
         beginEdit();
-        e2::Json replacement = c;
+        ember::Json replacement = c;
         replacement["id"] = decoBrush_, replacement["rot"] = wallVertical_ ? 1 : 0, replacement["wallOrientation"] = wallVertical_ ? "vertical" : "horizontal";
         replacement.erase("blocksPath"), replacement.erase("yieldsHighGround");
         decos[*clicked] = replacement;
@@ -854,17 +854,17 @@ class MapEditorStage : public Stage {
         return note(std::format("{} selecionada. Pressione Delete para remover.", decoName(c.value("id", ""))));
       }
     }
-    const e2::CatalogDecoration* def = catalog_.decoration(decoBrush_);
+    const ember::CatalogDecoration* def = catalog_.decoration(decoBrush_);
     if (!def) return;
-    e2::Json placed = {{"id", decoBrush_}, {"x", x}, {"y", y}};
+    ember::Json placed = {{"id", decoBrush_}, {"x", x}, {"y", y}};
     if (!brush.model3d.empty()) placed["rot"] = wallVertical_ ? 1 : 0, placed["wallOrientation"] = wallVertical_ ? "vertical" : "horizontal";
     else if (editor_.decoBlocks.contains(decoBrush_)) placed["blocksPath"] = true;
     const std::set<std::pair<int, int>> covered = otherCells(decos, placed);
-    for (const e2::FootOffset& f : footprintOf(placed))
+    for (const ember::FootOffset& f : footprintOf(placed))
       if (brush.exitKind.empty() && covered.contains({x + f.dx, y + f.dy})) return;
     beginEdit();
     if (const auto t = editor_.decoTile.find(decoBrush_); t != editor_.decoTile.end())
-      for (const e2::FootOffset& f : def->footprint) {
+      for (const ember::FootOffset& f : def->footprint) {
         const int cx = x + f.dx, cy = y + f.dy;
         if (cx >= 0 && cy >= 0 && cx < cols() && cy < rows()) draft_["tiles"][cy * cols() + cx] = t->second;
       }
@@ -873,8 +873,8 @@ class MapEditorStage : public Stage {
   }
 
   // A placed prop picked (a click, the preview's press): it opens its palette section with its brush armed.
-  void select(const e2::Json& p) {
-    selected_ = e2::Json{{"id", p.value("id", "")}, {"x", p.value("x", 0)}, {"y", p.value("y", 0)}, {"rot", p.value("rot", 0)}};
+  void select(const ember::Json& p) {
+    selected_ = ember::Json{{"id", p.value("id", "")}, {"x", p.value("x", 0)}, {"y", p.value("y", 0)}, {"rot", p.value("rot", 0)}};
     const std::string id = p.value("id", "");
     if (!catalog_.decoration(id)) return;
     const bool model = !meta(id).model3d.empty();
@@ -904,28 +904,28 @@ class MapEditorStage : public Stage {
     for (const auto& [cx, cy] : cells)
       if (cx >= 0 && cy >= 0 && cx < cols() && cy < rows()) draft_["tiles"][cy * cols() + cx] = t->second;
   }
-  std::vector<std::pair<int, int>> cellsOf(const e2::Json& p) const {
+  std::vector<std::pair<int, int>> cellsOf(const ember::Json& p) const {
     std::vector<std::pair<int, int>> out;
-    for (const e2::FootOffset& f : footprintOf(p)) out.push_back({p.value("x", 0) + f.dx, p.value("y", 0) + f.dy});
+    for (const ember::FootOffset& f : footprintOf(p)) out.push_back({p.value("x", 0) + f.dx, p.value("y", 0) + f.dy});
     return out;
   }
 
   // turnDecoration: the prop under the hex a sixth of a turn (a 3D piece a quarter), footprint and stamped terrain
   // with it; refused when it would land on another prop.
   void turnDecoration(int x, int y) {
-    e2::Json& decos = arr("decorations");
+    ember::Json& decos = arr("decorations");
     for (size_t k = 0; k < decos.size(); ++k) {
-      const e2::Json hit = decos[k];
+      const ember::Json hit = decos[k];
       if (!covers(hit, x, y)) continue;
       const DecoMeta& m = meta(hit.value("id", ""));
       if (!catalog_.decoration(hit.value("id", ""))) return;
       const bool model = !m.model3d.empty();
-      e2::Json turned = hit;
+      ember::Json turned = hit;
       const int rot = (hit.value("rot", 0) + 1) % (model ? 4 : 6);
       turned["rot"] = rot;
       if (model) turned["wallOrientation"] = rot % 2 ? "vertical" : "horizontal";
       if (m.exitKind.empty()) {
-        e2::Json others = e2::Json::array();
+        ember::Json others = ember::Json::array();
         for (size_t o = 0; o < decos.size(); ++o)
           if (o != k) others.push_back(decos[o]);
         const std::set<std::pair<int, int>> taken = otherCells(others, turned);
@@ -938,7 +938,7 @@ class MapEditorStage : public Stage {
       note(std::format("{} em {},{}: girada para {}°{}.", decoName(hit.value("id", "")), hit.value("x", 0), hit.value("y", 0), rot * (model ? 90 : 60),
                        rot == 0 ? " (de volta ao original)" : ""));
       decos[k] = turned;
-      if (model) selected_ = e2::Json{{"id", turned["id"]}, {"x", turned["x"]}, {"y", turned["y"]}, {"rot", rot}};
+      if (model) selected_ = ember::Json{{"id", turned["id"]}, {"x", turned["x"]}, {"y", turned["y"]}, {"rot", rot}};
       cleanEntrances();
       return;
     }
@@ -951,25 +951,25 @@ class MapEditorStage : public Stage {
     selected_.reset();
     if (!k) return note("Essa decoração já não está no mapa.");
     beginEdit();
-    const e2::Json hit = arr("decorations")[*k];
+    const ember::Json hit = arr("decorations")[*k];
     unstamp(hit.value("id", ""), cellsOf(hit));
     note(std::format("{} removida.", decoName(hit.value("id", ""))));
     arr("decorations").erase(*k);
   }
 
-  // The selected placement's rule switches (off = the key absent, as Engine2 writes it).
+  // The selected placement's rule switches (off = the key absent, as Ember writes it).
   void toggleDecorationRule(const char* flag) {
     if (!selected_) return note("Clique em qualquer hex de uma decoração no mapa antes de mudar as regras dela.");
     const std::optional<size_t> k = findDecoration(*selected_);
     if (!k) return note("Essa decoração já não está no mapa.");
     beginEdit();
-    e2::Json& p = arr("decorations")[*k];
+    ember::Json& p = arr("decorations")[*k];
     const bool on = !(p.contains(flag) && p[flag].is_boolean() && p[flag].get<bool>());
     if (on) p[flag] = true;
     else p.erase(flag);
     note(std::format("{}: {} {}.", decoName(p.value("id", "")), std::string(flag) == "blocksPath" ? "Bloquear caminho" : "Alto terreno", on ? "ligado" : "desligado"));
   }
-  e2::Json* selectedPlacement() {
+  ember::Json* selectedPlacement() {
     if (!selected_) return nullptr;
     const std::optional<size_t> k = findDecoration(*selected_);
     return k ? &arr("decorations")[*k] : nullptr;
@@ -981,7 +981,7 @@ class MapEditorStage : public Stage {
                       : mode_ == Mode::Npc  ? "neutralSpawns"
                       : mode_ == Mode::Summon ? (summonNeutral_ ? "neutralSpawns" : "playerSpawns")
                                               : "playerSpawns";
-    e2::Json& list = arr(key);
+    ember::Json& list = arr(key);
     beginEdit();
     for (size_t k = 0; k < list.size(); ++k)
       if (list[k].value("x", -1) == x && list[k].value("y", -1) == y) {
@@ -989,10 +989,10 @@ class MapEditorStage : public Stage {
         return;
       }
     int summons = 0;
-    for (const e2::Json& s : list)
+    for (const ember::Json& s : list)
       if (isSummon(s.value("classId", ""))) ++summons;
     const int plain = static_cast<int>(list.size()) - summons;
-    e2::Json spawn;
+    ember::Json spawn;
     if (mode_ == Mode::Summon) {
       spawn = {{"name", std::format("{} {}", className(summonBrush_), summons + 1)}, {"classId", summonBrush_}, {"x", x}, {"y", y},
                {"level", std::string(key) == "playerSpawns" ? editor_.testLevel : editor_.enemyLevel0}};
@@ -1077,11 +1077,11 @@ class MapEditorStage : public Stage {
   void addHeroes(const std::vector<std::pair<std::string, std::string>>& heroes) {
     std::set<std::pair<int, int>> occupied;
     for (const char* key : {"playerSpawns", "enemySpawns", "neutralSpawns"})
-      for (const e2::Json& s : arr(key)) occupied.insert({s.value("x", 0), s.value("y", 0)});
+      for (const ember::Json& s : arr(key)) occupied.insert({s.value("x", 0), s.value("y", 0)});
     std::set<std::string> already;
-    for (const e2::Json& s : arr("playerSpawns")) already.insert(s.value("name", ""));
+    for (const ember::Json& s : arr("playerSpawns")) already.insert(s.value("name", ""));
     std::vector<std::string> added, skipped;
-    e2::Json put = e2::Json::array();
+    ember::Json put = ember::Json::array();
     int x = 0;
     const int y = rows() - 1;
     for (const auto& [name, classId] : heroes) {
@@ -1103,7 +1103,7 @@ class MapEditorStage : public Stage {
     };
     if (!added.empty()) {
       beginEdit();
-      for (const e2::Json& s : put) arr("playerSpawns").push_back(s);
+      for (const ember::Json& s : put) arr("playerSpawns").push_back(s);
       note(skipped.empty() ? std::format("{} na linha de baixo.", join(added))
                            : std::format("{} na linha de baixo ({} já estava lá).", join(added), join(skipped)));
     } else {
@@ -1121,24 +1121,24 @@ class MapEditorStage : public Stage {
     beginEdit();
     const auto [baseTile, baseVariant] = baseOf();
     const int oc = cols(), orows = rows();
-    auto get = [&](const char* key, int i) -> e2::Json { return draft_.contains(key) && draft_[key].is_array() && i < static_cast<int>(draft_[key].size()) ? draft_[key][i] : e2::Json(); };
+    auto get = [&](const char* key, int i) -> ember::Json { return draft_.contains(key) && draft_[key].is_array() && i < static_cast<int>(draft_[key].size()) ? draft_[key][i] : ember::Json(); };
     const bool hadElev = draft_.contains("terrainElevations") && draft_["terrainElevations"].is_array();
     const bool hadLevels = draft_.contains("waterLevels") && draft_["waterLevels"].is_array();
     const bool hadFoot = draft_.contains("waterFootprints") && draft_["waterFootprints"].is_array();
-    e2::Json tiles = e2::Json::array(), variants = e2::Json::array(), rots = e2::Json::array(), elev = e2::Json::array(), levels = e2::Json::array(),
-             foot = e2::Json::array();
+    ember::Json tiles = ember::Json::array(), variants = ember::Json::array(), rots = ember::Json::array(), elev = ember::Json::array(), levels = ember::Json::array(),
+             foot = ember::Json::array();
     for (int y = 0; y < r; ++y)
       for (int x = 0; x < c; ++x) {
         const bool in = y < orows && x < oc;
         const int i = y * oc + x;
-        foot.push_back(in && !get("waterFootprints", i).is_null() ? get("waterFootprints", i) : e2::Json());
-        levels.push_back(in && !get("waterLevels", i).is_null() ? get("waterLevels", i) : e2::Json());
-        tiles.push_back(in && get("tiles", i).is_string() ? get("tiles", i) : e2::Json(baseTile));
-        variants.push_back(in && get("tileVariants", i).is_number() ? get("tileVariants", i) : e2::Json(baseVariant));
-        rots.push_back(in && get("tileRots", i).is_number() ? get("tileRots", i) : e2::Json(0));
+        foot.push_back(in && !get("waterFootprints", i).is_null() ? get("waterFootprints", i) : ember::Json());
+        levels.push_back(in && !get("waterLevels", i).is_null() ? get("waterLevels", i) : ember::Json());
+        tiles.push_back(in && get("tiles", i).is_string() ? get("tiles", i) : ember::Json(baseTile));
+        variants.push_back(in && get("tileVariants", i).is_number() ? get("tileVariants", i) : ember::Json(baseVariant));
+        rots.push_back(in && get("tileRots", i).is_number() ? get("tileRots", i) : ember::Json(0));
         const auto info = editor_.terrainInfo.find(in && get("tiles", i).is_string() ? get("tiles", i).get<std::string>() : baseTile);
-        elev.push_back(in ? (get("terrainElevations", i).is_number() ? get("terrainElevations", i) : e2::Json(info != editor_.terrainInfo.end() ? info->second.height : 0.0))
-                          : e2::Json(0));
+        elev.push_back(in ? (get("terrainElevations", i).is_number() ? get("terrainElevations", i) : ember::Json(info != editor_.terrainInfo.end() ? info->second.height : 0.0))
+                          : ember::Json(0));
       }
     draft_["cols"] = c, draft_["rows"] = r;
     draft_["tiles"] = tiles, draft_["tileVariants"] = variants, draft_["tileRots"] = rots;
@@ -1146,46 +1146,46 @@ class MapEditorStage : public Stage {
     if (hadLevels) draft_["waterLevels"] = levels;
     if (hadFoot) draft_["waterFootprints"] = foot;
     if (draft_.contains("waterPatches") && draft_["waterPatches"].is_array()) {
-      e2::Json kept = e2::Json::array();
-      for (const e2::Json& p : draft_["waterPatches"]) {
+      ember::Json kept = ember::Json::array();
+      for (const ember::Json& p : draft_["waterPatches"]) {
         const double px = p.value("x", 0.0), py = p.value("y", 0.0);
         if (px >= 0 && px < (c + 0.5) * std::sqrt(3.0) && py >= 2.4 && py < 2.4 + r * 1.5 + 0.5) kept.push_back(p);
       }
       draft_["waterPatches"] = kept;
     }
-    e2::Json decos = e2::Json::array();
-    for (const e2::Json& p : arr("decorations")) {
-      const e2::CatalogDecoration* def = catalog_.decoration(p.value("id", ""));
+    ember::Json decos = ember::Json::array();
+    for (const ember::Json& p : arr("decorations")) {
+      const ember::CatalogDecoration* def = catalog_.decoration(p.value("id", ""));
       if (!def) continue;
       bool inside = true;
-      for (const e2::FootOffset& f : def->footprint) {
+      for (const ember::FootOffset& f : def->footprint) {
         const int x = p.value("x", 0) + f.dx, y = p.value("y", 0) + f.dy;
         if (x < 0 || y < 0 || x >= c || y >= r) inside = false;
       }
       if (inside) decos.push_back(p);
     }
     draft_["decorations"] = decos;
-    e2::Json fx = e2::Json::array();
-    for (const e2::Json& p : arr("elementalFx"))
+    ember::Json fx = ember::Json::array();
+    for (const ember::Json& p : arr("elementalFx"))
       if (p.value("x", -1) >= 0 && p.value("y", -1) >= 0 && p.value("x", 0) < c && p.value("y", 0) < r) fx.push_back(p);
     draft_["elementalFx"] = fx;
     for (const char* key : {"playerSpawns", "enemySpawns", "neutralSpawns"}) {
-      e2::Json kept = e2::Json::array();
-      for (const e2::Json& s : arr(key))
+      ember::Json kept = ember::Json::array();
+      for (const ember::Json& s : arr(key))
         if (s.value("x", 0) < c && s.value("y", 0) < r) kept.push_back(s);
       draft_[key] = kept;
     }
   }
 
-  // Gerar terreno (world/MapDressing.h, checked against Engine2's dressMap): replaces the props, keeps the units.
+  // Gerar terreno (world/MapDressing.h, checked against Ember's dressMap): replaces the props, keeps the units.
   void generateTerrain(uint32_t seed = 0) {
     std::mt19937 rng(seed ? seed : std::random_device{}());
     std::uniform_real_distribution<double> uniform(0.0, 1.0);
-    const e2::DressResult r = e2::dressDraft(draft_, dress_, catalog_, shuffleExclude_, [&] { return uniform(rng); });
+    const ember::DressResult r = ember::dressDraft(draft_, dress_, catalog_, shuffleExclude_, [&] { return uniform(rng); });
     beginEdit();
     draft_["tiles"] = r.tiles;
     draft_["tileVariants"] = r.tileVariants;
-    e2::Json rots = e2::Json::array();
+    ember::Json rots = ember::Json::array();
     for (size_t i = 0; i < r.tiles.size(); ++i) rots.push_back(intAt("tileRots", static_cast<int>(i)));
     draft_["tileRots"] = rots;
     draft_["decorations"] = r.decorations;
@@ -1209,12 +1209,12 @@ class MapEditorStage : public Stage {
   void rebuildPreview() {
     dirty_ = false;
     if (!data_) return;
-    std::optional<e2::MapDraft> draft = e2::MapDraft::fromJson(nlohmann::json::parse(draft_.dump()));
+    std::optional<ember::MapDraft> draft = ember::MapDraft::fromJson(nlohmann::json::parse(draft_.dump()));
     if (!draft) return note("O mapa não tem tabuleiro.");
-    e2::Board board(*data_, *draft);
-    board.loadRelief(base_.engine2Public);
+    ember::Board board(*data_, *draft);
+    board.loadRelief(base_.artRoot);
     std::map<std::string, int> skipped;
-    e2::SceneData scene = e2::buildScene(board, catalog_, &skipped);
+    ember::SceneData scene = ember::buildScene(board, catalog_, &skipped);
     MapStageOptions options = base_;
     options.map.clear(), options.scene.clear(), options.battle.clear();
     options.draftData = std::move(*draft);
@@ -1250,7 +1250,7 @@ class MapEditorStage : public Stage {
       return true;
     }
     for (const char* key : {"playerSpawns", "enemySpawns", "neutralSpawns"}) {
-      const e2::Json& list = arr(key);
+      const ember::Json& list = arr(key);
       for (size_t k = 0; k < list.size(); ++k)
         if (list[k].value("x", -1) == x && list[k].value("y", -1) == y) {
           heldUnit_ = HeldUnit{key, k};
@@ -1260,14 +1260,14 @@ class MapEditorStage : public Stage {
           return true;
         }
     }
-    const e2::Json& decos = arr("decorations");
+    const ember::Json& decos = arr("decorations");
     std::optional<size_t> hit;
     for (size_t k = 0; k < decos.size(); ++k)
       if (covers(decos[k], x, y) && (!hit || (!meta(decos[k].value("id", "")).exitKind.empty() && meta(decos[*hit].value("id", "")).exitKind.empty()))) hit = k;
     if (!hit) return false;
     heldUnit_.reset();
-    const e2::Json& p = decos[*hit];
-    heldDeco_ = e2::Json{{"id", p.value("id", "")}, {"x", p.value("x", 0)}, {"y", p.value("y", 0)}, {"rot", p.value("rot", 0)}};
+    const ember::Json& p = decos[*hit];
+    heldDeco_ = ember::Json{{"id", p.value("id", "")}, {"x", p.value("x", 0)}, {"y", p.value("y", 0)}, {"rot", p.value("rot", 0)}};
     select(p);
     note(std::format("{} selecionada. Arraste até um hex vazio da prévia para movê-la.", decoName(p.value("id", ""))));
     return true;
@@ -1290,7 +1290,7 @@ class MapEditorStage : public Stage {
       return;
     }
     if (heldDeco_) {
-      const e2::Json held = *heldDeco_;
+      const ember::Json held = *heldDeco_;
       heldDeco_.reset();
       if (moved && hex) placeDecoration(held, hex->first, hex->second);
     }
@@ -1298,12 +1298,12 @@ class MapEditorStage : public Stage {
   // placePreviewUnit: refused onto a hex another unit holds.
   void placeUnit(const HeldUnit& held, int x, int y) {
     for (const char* key : {"playerSpawns", "enemySpawns", "neutralSpawns"}) {
-      const e2::Json& list = arr(key);
+      const ember::Json& list = arr(key);
       for (size_t k = 0; k < list.size(); ++k)
         if (!(held.key == key && held.index == k) && list[k].value("x", -1) == x && list[k].value("y", -1) == y)
           return note("Esse hex já tem uma unidade. Escolha um hex vazio.");
     }
-    e2::Json& list = arr(held.key.c_str());
+    ember::Json& list = arr(held.key.c_str());
     if (held.index >= list.size()) return note("Essa unidade não existe mais. Arraste outra na prévia.");
     beginEdit();
     list[held.index]["x"] = x, list[held.index]["y"] = y;
@@ -1312,25 +1312,25 @@ class MapEditorStage : public Stage {
   void deleteHeldUnit() {
     const HeldUnit held = *heldUnit_;
     heldUnit_.reset();
-    e2::Json& list = arr(held.key.c_str());
+    ember::Json& list = arr(held.key.c_str());
     if (held.index >= list.size()) return;
     beginEdit();
     note(std::format("{} removido do mapa.", list[held.index].value("name", "")));
     list.erase(held.index);
   }
   // placePreviewDecoration: refused off the board or onto another prop; the stamped terrain moves with it.
-  void placeDecoration(const e2::Json& sel, int x, int y) {
+  void placeDecoration(const ember::Json& sel, int x, int y) {
     const std::optional<size_t> k = findDecoration(sel);
     if (!k) return note("Essa decoração já não está no mapa.");
-    e2::Json& decos = arr("decorations");
-    const e2::Json hit = decos[*k];
+    ember::Json& decos = arr("decorations");
+    const ember::Json hit = decos[*k];
     if (hit.value("x", 0) == x && hit.value("y", 0) == y) return;
-    e2::Json moved = hit;
+    ember::Json moved = hit;
     moved["x"] = x, moved["y"] = y;
     const std::string name = decoName(hit.value("id", ""));
     for (const auto& [cx, cy] : cellsOf(moved))
       if (cx < 0 || cy < 0 || cx >= cols() || cy >= rows()) return note(std::format("{} não cabe aí — sairia do mapa.", name));
-    e2::Json others = e2::Json::array();
+    ember::Json others = ember::Json::array();
     for (size_t o = 0; o < decos.size(); ++o)
       if (o != *k) others.push_back(decos[o]);
     const std::set<std::pair<int, int>> taken = otherCells(others, moved);
@@ -1340,7 +1340,7 @@ class MapEditorStage : public Stage {
     unstamp(hit.value("id", ""), cellsOf(hit));
     stamp(hit.value("id", ""), cellsOf(moved));
     decos[*k] = moved;
-    selected_ = e2::Json{{"id", moved["id"]}, {"x", x}, {"y", y}, {"rot", moved.value("rot", 0)}};
+    selected_ = ember::Json{{"id", moved["id"]}, {"x", x}, {"y", y}, {"rot", moved.value("rot", 0)}};
     note(std::format("{} movida para {},{}.", name, x, y));
     cleanEntrances();
   }
@@ -1381,7 +1381,7 @@ class MapEditorStage : public Stage {
   void layWalls(const std::vector<WallCell>& cells) {
     const DecoMeta& brush = meta(decoBrush_);
     if (brush.model3d.empty() || !catalog_.decoration(decoBrush_)) return note("Arme uma peça 3D de parede antes de traçar.");
-    e2::Json& decos = arr("decorations");
+    ember::Json& decos = arr("decorations");
     int placed = 0, replaced = 0, kept = 0;
     bool editing = false;
     auto edit = [&] {
@@ -1393,7 +1393,7 @@ class MapEditorStage : public Stage {
       for (size_t k = 0; k < decos.size() && !hit; ++k)
         if (covers(decos[k], c.x, c.y)) hit = k;
       if (hit) {
-        const e2::Json old = decos[*hit];
+        const ember::Json old = decos[*hit];
         const DecoMeta& om = meta(old.value("id", ""));
         const bool wallPiece = !om.model3d.empty() && !om.props3d && om.exitKind.empty() && old.value("id", "") != kEntrance && catalog_.decoration(old.value("id", "")) &&
                                catalog_.decoration(old.value("id", ""))->footprint.size() == 1;
@@ -1402,7 +1402,7 @@ class MapEditorStage : public Stage {
           continue;
         }
         edit();
-        e2::Json replacement = old;
+        ember::Json replacement = old;
         replacement["id"] = decoBrush_, replacement["rot"] = c.vertical ? 1 : 0, replacement["wallOrientation"] = c.vertical ? "vertical" : "horizontal";
         replacement.erase("blocksPath"), replacement.erase("yieldsHighGround");
         decos[*hit] = replacement;
@@ -1410,7 +1410,7 @@ class MapEditorStage : public Stage {
         continue;
       }
       edit();
-      decos.push_back(e2::Json{{"id", decoBrush_}, {"x", c.x}, {"y", c.y}, {"rot", c.vertical ? 1 : 0}, {"wallOrientation", c.vertical ? "vertical" : "horizontal"}});
+      decos.push_back(ember::Json{{"id", decoBrush_}, {"x", c.x}, {"y", c.y}, {"rot", c.vertical ? 1 : 0}, {"wallOrientation", c.vertical ? "vertical" : "horizontal"}});
       ++placed;
     }
     if (editing) cleanEntrances();
@@ -1450,7 +1450,7 @@ class MapEditorStage : public Stage {
   struct SavedFile {
     int serial = 0;
     std::filesystem::path file;
-    bool own = false;  // content/maps/ember (else Engine2's folder, read-only)
+    bool own = false;  // content/maps/ember (else Ember's folder, read-only)
     long long savedAt = 0;
   };
   struct Scenario {
@@ -1460,20 +1460,20 @@ class MapEditorStage : public Stage {
     std::vector<SavedFile> files;      // by serial
     std::vector<std::string> floors;   // the maps its floor connectors lead to (newest draft's targetMapId)
   };
-  // Every map id saved in Engine2's folder and in ours, with its newest draft's title / index / hub.
-  static std::map<std::string, Scenario> scanSaved(const std::filesystem::path& engine2Maps) {
+  // Every map id saved in Ember's folder and in ours, with its newest draft's title / index / hub.
+  static std::map<std::string, Scenario> scanSaved(const std::filesystem::path& classicMaps) {
     std::map<std::string, Scenario> out;
     std::map<std::string, std::pair<int, std::filesystem::path>> newest;
-    for (const auto& [dir, own] : {std::pair{engine2Maps, false}, std::pair{savedMapsDir(), true}}) {
+    for (const auto& [dir, own] : {std::pair{classicMaps, false}, std::pair{savedMapsDir(), true}}) {
       std::error_code ec;
       if (!std::filesystem::is_directory(dir, ec)) continue;
       for (const auto& e : std::filesystem::directory_iterator(dir, ec)) {
         if (e.path().extension() != ".json") continue;
         const std::string stem = e.path().stem().string();
         std::ifstream in(e.path(), std::ios::binary);
-        const e2::Json j = in ? e2::Json::parse(in, nullptr, false) : e2::Json();
+        const ember::Json j = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
         if (!j.is_object()) continue;
-        const e2::Json& d = j.contains("draft") ? j["draft"] : j;
+        const ember::Json& d = j.contains("draft") ? j["draft"] : j;
         if (!d.is_object() || !d.contains("id") || !d["id"].is_string()) continue;
         const std::string id = d["id"].get<std::string>();
         const int serial = j.contains("serial") && j["serial"].is_number() ? j["serial"].get<int>() : 0;
@@ -1487,7 +1487,7 @@ class MapEditorStage : public Stage {
           s.hub = d.contains("hub") && d["hub"].is_boolean() && d["hub"].get<bool>();
           s.floors.clear();
           if (d.contains("decorations") && d["decorations"].is_array())
-            for (const e2::Json& deco : d["decorations"])
+            for (const ember::Json& deco : d["decorations"])
               if (deco.is_object() && deco.contains("targetMapId") && deco["targetMapId"].is_string() && !deco["targetMapId"].get<std::string>().empty())
                 s.floors.push_back(deco["targetMapId"].get<std::string>());
         }
@@ -1505,16 +1505,16 @@ class MapEditorStage : public Stage {
     const auto it = saved_.find(draft_.value("id", ""));
     if (it != saved_.end()) files_ = it->second.files;
   }
-  // The newest file of an id (the highest serial; ours over Engine2's on a tie).
+  // The newest file of an id (the highest serial; ours over Ember's on a tie).
   std::optional<std::filesystem::path> newestFile(const std::string& id) const {
     const auto it = saved_.find(id);
     if (it == saved_.end() || it->second.files.empty()) return std::nullopt;
     return it->second.files.back().file;
   }
-  static e2::Json readDraft(const std::filesystem::path& file) {
+  static ember::Json readDraft(const std::filesystem::path& file) {
     std::ifstream in(file, std::ios::binary);
-    const e2::Json j = in ? e2::Json::parse(in, nullptr, false) : e2::Json();
-    if (!j.is_object()) return e2::Json();
+    const ember::Json j = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
+    if (!j.is_object()) return ember::Json();
     return j.contains("draft") ? j["draft"] : j;
   }
   std::map<std::string, int> activeMaps() const {
@@ -1561,11 +1561,11 @@ class MapEditorStage : public Stage {
     return out.empty() ? "scenario" : out;
   }
 
-  // Salvar (doSave): Engine2's map file ({serial, savedAt, draft}, 2-space JSON) as the next serial of the id, counted
-  // over Engine2's maps and ours; it becomes the id's active version. The game's scene and rules for it are prepared in
-  // the background (Engine2's exporters, a few seconds). Engine2's folder is never written.
-  bool save(std::optional<e2::Json> toSave = std::nullopt) {
-    e2::Json d = toSave ? *toSave : draft_;
+  // Salvar (doSave): Ember's map file ({serial, savedAt, draft}, 2-space JSON) as the next serial of the id, counted
+  // over Ember's maps and ours; it becomes the id's active version. The game's scene and rules for it are prepared in
+  // the background (Ember's exporters, a few seconds). Ember's folder is never written.
+  bool save(std::optional<ember::Json> toSave = std::nullopt) {
+    ember::Json d = toSave ? *toSave : draft_;
     d["id"] = scenarioId(d.value("id", "scenario"));
     if (d["id"] == "thebridge") d["title"] = "A Ponte de Pedra";
     if (d != draft_) draft_ = d, dirty_ = true;
@@ -1574,11 +1574,11 @@ class MapEditorStage : public Stage {
     const std::filesystem::path file = savedMapsDir() / std::format("{}{:03}.json", id, serial);
     std::error_code ec;
     std::filesystem::create_directories(savedMapsDir(), ec);
-    e2::Json out;
+    ember::Json out;
     out["serial"] = serial;
-    out["savedAt"] = static_cast<long long>(e2::Campaign::nowMs());
+    out["savedAt"] = static_cast<long long>(ember::Campaign::nowMs());
     out["draft"] = d;
-    out["draft"]["decorations"] = e2::removeWallsUnderWatchtowerEntrances(d.value("decorations", e2::Json::array()), dress_, catalog_);
+    out["draft"]["decorations"] = ember::removeWallsUnderWatchtowerEntrances(d.value("decorations", ember::Json::array()), dress_, catalog_);
     const std::filesystem::path tmp = file.string() + ".tmp";
     {
       std::ofstream f(tmp, std::ios::binary | std::ios::trunc);
@@ -1590,7 +1590,7 @@ class MapEditorStage : public Stage {
     }
     std::filesystem::rename(tmp, file, ec);
     std::ifstream back(file, std::ios::binary);
-    const e2::Json saved = ec ? e2::Json() : e2::Json::parse(back, nullptr, false);
+    const ember::Json saved = ec ? ember::Json() : ember::Json::parse(back, nullptr, false);
     if (saved.is_discarded() || !saved.is_object() || saved.value("serial", 0) != serial || saved["draft"] != out["draft"]) {
       note("NÃO SALVO: o arquivo gravado não confere (" + file.generic_string() + "). O rascunho continua aberto.");
       return false;
@@ -1604,10 +1604,10 @@ class MapEditorStage : public Stage {
   // One prepared map is shared by campaign and Modo teste.
   void prepare(const std::filesystem::path& file) {
     const std::string stem = file.stem().string();
-    const std::filesystem::path engine2 = base_.engine2Public.parent_path();
-    exports_.push_back(std::async(std::launch::async, [paths = paths_, file, stem, engine2]() -> std::string {
+    const std::filesystem::path ember = base_.artRoot.parent_path();
+    exports_.push_back(std::async(std::launch::async, [paths = paths_, file, stem, ember]() -> std::string {
       const std::filesystem::path log = std::filesystem::path("build/editor") / (stem + ".log");
-      const MapExportResult c = exportMap(file, stem, paths, engine2, log);
+      const MapExportResult c = exportMap(file, stem, paths, ember, log);
       if (!c.ok) return "Salvo, mas a preparação para a campanha falhou (" + c.error + ").";
       return "Salvo " + stem + ": campanha e Modo Teste usam esta mesma versão.";
     }));
@@ -1615,10 +1615,10 @@ class MapEditorStage : public Stage {
 
   // mapstore draftToMission then missionToDraft (Carregar mapa da campanha): the board repaired (watchtower walls, rock
   // columns), test levels (heroes 15, foes by the mission's index), the location it is placed in.
-  e2::Json missionToDraft(e2::Json d) const {
+  ember::Json missionToDraft(ember::Json d) const {
     const int n = d.value("cols", 0) * d.value("rows", 0);
     std::vector<std::string> tiles;
-    for (const e2::Json& t : d.value("tiles", e2::Json::array())) tiles.push_back(t.is_string() ? t.get<std::string>() : "plains");
+    for (const ember::Json& t : d.value("tiles", ember::Json::array())) tiles.push_back(t.is_string() ? t.get<std::string>() : "plains");
     tiles.resize(static_cast<size_t>(n), "plains");
     const std::string id = d.value("id", "");
     const std::optional<std::string> base = d.contains("baseTile") && d["baseTile"].is_string() ? std::optional(d["baseTile"].get<std::string>()) : std::nullopt;
@@ -1626,22 +1626,22 @@ class MapEditorStage : public Stage {
       d["title"] = std::regex_replace(d.value("title", ""), std::regex("^(?:Andar|Subsolo)\\s+[IVX\\d-]+"), std::format("Andar {}", f->second),
                                       std::regex_constants::format_first_only);
     if (id == "thebridge") d["title"] = "A Ponte de Pedra";
-    const e2::Json decos = e2::closeWatchtowerWalls(id, tiles, d.value("cols", 0), d.value("rows", 0), d.value("decorations", e2::Json::array()), dress_, catalog_);
-    tiles = e2::clearRockColumnTiles(tiles, d.value("cols", 0), d.value("rows", 0), decos, base, dress_, catalog_);
-    tiles = e2::clearRockColumnTiles(tiles, d.value("cols", 0), d.value("rows", 0), decos, base, dress_, catalog_);
+    const ember::Json decos = ember::closeWatchtowerWalls(id, tiles, d.value("cols", 0), d.value("rows", 0), d.value("decorations", ember::Json::array()), dress_, catalog_);
+    tiles = ember::clearRockColumnTiles(tiles, d.value("cols", 0), d.value("rows", 0), decos, base, dress_, catalog_);
+    tiles = ember::clearRockColumnTiles(tiles, d.value("cols", 0), d.value("rows", 0), decos, base, dress_, catalog_);
     d["tiles"] = tiles;
     d["decorations"] = decos;
     const int index = d.value("index", 0);
-    e2::Json variants = e2::Json::array(), rots = e2::Json::array();
+    ember::Json variants = ember::Json::array(), rots = ember::Json::array();
     for (int i = 0; i < n; ++i) {
-      const e2::Json& v = d.contains("tileVariants") && d["tileVariants"].is_array() && i < static_cast<int>(d["tileVariants"].size()) ? d["tileVariants"][i] : e2::Json();
-      const e2::Json& r = d.contains("tileRots") && d["tileRots"].is_array() && i < static_cast<int>(d["tileRots"].size()) ? d["tileRots"][i] : e2::Json();
-      variants.push_back(v.is_number() ? v : e2::Json(0)), rots.push_back(r.is_number() ? r : e2::Json(0));
+      const ember::Json& v = d.contains("tileVariants") && d["tileVariants"].is_array() && i < static_cast<int>(d["tileVariants"].size()) ? d["tileVariants"][i] : ember::Json();
+      const ember::Json& r = d.contains("tileRots") && d["tileRots"].is_array() && i < static_cast<int>(d["tileRots"].size()) ? d["tileRots"][i] : ember::Json();
+      variants.push_back(v.is_number() ? v : ember::Json(0)), rots.push_back(r.is_number() ? r : ember::Json(0));
     }
     d["tileVariants"] = variants, d["tileRots"] = rots;
     auto levels = [&](const char* key, int level) {
       if (!d.contains(key) || !d[key].is_array()) return;
-      for (e2::Json& s : d[key]) {
+      for (ember::Json& s : d[key]) {
         if (s.value("classId", "") == "butcher") s["classId"] = "punisher";
         s["level"] = level;
       }
@@ -1662,26 +1662,26 @@ class MapEditorStage : public Stage {
     number("mistIntensity", 0.2), number("mistSpeed", 1), number("wispIntensity", 0.02), number("wispSpeed", 1), number("wispColor", 0xffa552);
     if (!d.contains("mistType") || !d["mistType"].is_string()) d["mistType"] = "none";
     if (!d.contains("music") || !d["music"].is_string()) d["music"] = "";
-    if (!d.contains("elementalFx") || !d["elementalFx"].is_array()) d["elementalFx"] = e2::Json::array();
-    if (!d.contains("neutralSpawns") || !d["neutralSpawns"].is_array()) d["neutralSpawns"] = e2::Json::array();
+    if (!d.contains("elementalFx") || !d["elementalFx"].is_array()) d["elementalFx"] = ember::Json::array();
+    if (!d.contains("neutralSpawns") || !d["neutralSpawns"].is_array()) d["neutralSpawns"] = ember::Json::array();
     d["locationId"] = locationOf(id);
     return d;
   }
   std::string locationOf(const std::string& missionId) const {
-    for (const e2::Locais::Base& l : locais_.locations())
+    for (const ember::Locais::Base& l : locais_.locations())
       if (std::find(l.missionIds.begin(), l.missionIds.end(), missionId) != l.missionIds.end()) return l.id;
     return "";
   }
   void loadCampaignMap(const std::string& id) {
     const std::optional<std::filesystem::path> file = newestFile(id);
     if (!file) return note("Esse mapa não tem arquivo salvo.");
-    e2::Json d = missionToDraft(readDraft(*file));
+    ember::Json d = missionToDraft(readDraft(*file));
     if (d.is_null()) return note("Não consegui ler " + file->generic_string() + ".");
     setDraft(d);
     note(std::format("Carregado \"{}\" ({}) no editor — {}x{}.", d.value("title", ""), id, cols(), rows()));
   }
   void openFile(const std::filesystem::path& file, const std::string& what) {
-    const e2::Json d = readDraft(file);
+    const ember::Json d = readDraft(file);
     if (!d.is_object()) return note("Não consegui ler " + file.generic_string() + ".");
     setDraft(d);
     note(what);
@@ -1693,18 +1693,18 @@ class MapEditorStage : public Stage {
     if (playtest_.valid()) return;
     const std::string id = scenarioId(draft_.value("id", "scenario"));
     const std::filesystem::path dir = std::filesystem::path("build/editor/playtest");
-    e2::Json file;
+    ember::Json file;
     file["serial"] = 0;
-    file["savedAt"] = static_cast<long long>(e2::Campaign::nowMs());
+    file["savedAt"] = static_cast<long long>(ember::Campaign::nowMs());
     file["draft"] = draft_;
     file["draft"]["id"] = id;
-    const std::filesystem::path engine2 = base_.engine2Public.parent_path();
+    const std::filesystem::path ember = base_.artRoot.parent_path();
     const std::string title = draft_.value("title", id), place = draft_.value("place", ""), briefing = draft_.value("briefing", ""),
                       objective = draft_.value("objective", "");
     CampaignPaths previewPaths = paths_;
     previewPaths.campaign = dir;
     note("Testando — Encerrar teste nas Opções traz o mapa de volta como está.");
-    playtest_ = std::async(std::launch::async, [this, dir, id, file, engine2, paths = std::move(previewPaths), title, place, briefing, objective]() -> std::optional<MissionEntry> {
+    playtest_ = std::async(std::launch::async, [this, dir, id, file, ember, paths = std::move(previewPaths), title, place, briefing, objective]() -> std::optional<MissionEntry> {
       std::error_code ec;
       std::filesystem::create_directories(dir, ec);
       const std::filesystem::path source = dir / (id + ".draft.json");
@@ -1712,7 +1712,7 @@ class MapEditorStage : public Stage {
         std::ofstream f(source, std::ios::binary | std::ios::trunc);
         f << file.dump(2) << "\n";
       }
-      const MapExportResult r = exportMap(source, id, paths, engine2, dir / (id + ".log"));
+      const MapExportResult r = exportMap(source, id, paths, ember, dir / (id + ".log"));
       if (!r.ok) {
         playtestError_ = "O teste não pôde ser preparado (" + r.error + ").";
         return std::nullopt;
@@ -1724,13 +1724,13 @@ class MapEditorStage : public Stage {
     });
   }
 
-  // --- the lists Engine2's pickers show ---------------------------------------------------------------------------------
+  // --- the lists Ember's pickers show ---------------------------------------------------------------------------------
 
   struct MapRef {
     std::string id, title;
     int index = 0;
   };
-  // missionById: Engine2's mission table, else the newest saved draft.
+  // missionById: Ember's mission table, else the newest saved draft.
   std::optional<MissionInfo> missionInfo(const std::string& id) const {
     if (id == draft_.value("id", "")) return MissionInfo{id, draft_.value("title", id), draft_.value("index", 0), draft_.value("hub", false)};
     for (const MissionInfo& m : editor_.missions)
@@ -1770,7 +1770,7 @@ class MapEditorStage : public Stage {
       const auto it = order_.find(loc);
       if (it != order_.end()) ids.insert(it->second.begin(), it->second.end());
       else
-        for (const e2::Locais::Base& b : locais_.base)
+        for (const ember::Locais::Base& b : locais_.base)
           if (b.id == loc) ids.insert(b.missionIds.begin(), b.missionIds.end());
     }
     return ids;
@@ -1783,7 +1783,7 @@ class MapEditorStage : public Stage {
     sortRefs(out);
     return out;
   }
-  // Reserve maps: saved but in no Local, and Engine2's missions given to none (Locais "Adicionar mapa", R-Encounter).
+  // Reserve maps: saved but in no Local, and Ember's missions given to none (Locais "Adicionar mapa", R-Encounter).
   std::vector<MapRef> reserveRefs() const {
     const std::set<std::string> campaign = campaignIds();
     std::map<std::string, MapRef> known;
@@ -1852,14 +1852,14 @@ class MapEditorStage : public Stage {
   // Opens the dialogue editor on the mission's intro / outro or a neutral unit's conversation ("spawn:<index>").
   void openDialogEditor(const std::string& target) {
     std::string title;
-    e2::Json tree;
-    std::function<bool(const e2::Json&)> commit;
+    ember::Json tree;
+    std::function<bool(const ember::Json&)> commit;
     if (target == "intro" || target == "outro") {
       const std::string key = target == "intro" ? "introDialog" : "outroDialog";
       title = target == "intro" ? "Diálogo de abertura" : "Diálogo de encerramento";
-      tree = draft_.contains(key) ? draft_[key] : e2::Json();
-      commit = [this, key](const e2::Json& t) {
-        e2::Json next = draft_;
+      tree = draft_.contains(key) ? draft_[key] : ember::Json();
+      commit = [this, key](const ember::Json& t) {
+        ember::Json next = draft_;
         if (t.is_null()) next.erase(key);
         else next[key] = t;
         beginEdit();
@@ -1868,12 +1868,12 @@ class MapEditorStage : public Stage {
       };
     } else if (target.starts_with("spawn:")) {
       const size_t index = static_cast<size_t>(std::atoi(target.c_str() + 6));
-      const e2::Json& list = arr("neutralSpawns");
+      const ember::Json& list = arr("neutralSpawns");
       if (index >= list.size()) return;
       title = "Diálogo — " + list[index].value("name", "unidade");
-      tree = list[index].contains("dialog") ? list[index]["dialog"] : e2::Json();
-      commit = [this, index](const e2::Json& t) {
-        e2::Json next = draft_;
+      tree = list[index].contains("dialog") ? list[index]["dialog"] : ember::Json();
+      commit = [this, index](const ember::Json& t) {
+        ember::Json next = draft_;
         if (index >= next["neutralSpawns"].size()) return false;
         if (t.is_null()) next["neutralSpawns"][index].erase("dialog");
         else next["neutralSpawns"][index]["dialog"] = t;
@@ -1887,7 +1887,7 @@ class MapEditorStage : public Stage {
     dialogUi_.open(title, tree, std::move(commit));
   }
 
-  // The dice: props Gerar terreno leaves out (Engine2 localStorage "ember-deco-shuffle-exclude").
+  // The dice: props Gerar terreno leaves out (Ember localStorage "ember-deco-shuffle-exclude").
   static std::filesystem::path shuffleExcludeFile() {
     const char* local = std::getenv("LOCALAPPDATA");
     return (local && *local ? std::filesystem::path(local) : std::filesystem::current_path()) / "Ember" / "editor-deco-shuffle-exclude.json";
@@ -1912,7 +1912,7 @@ class MapEditorStage : public Stage {
 
   enum class Mode { Paint, Elevation, Water, Decoration, Architecture, Player, Enemy, Npc, Summon };
 
-  // Engine2's muted help lines (text-muted), wrapped at the panel's edge.
+  // Ember's muted help lines (text-muted), wrapped at the panel's edge.
   static void hint(const char* fmt, ...) IM_FMTARGS(1) {
     va_list args;
     va_start(args, fmt);
@@ -2109,7 +2109,7 @@ class MapEditorStage : public Stage {
     textField("Briefing", "briefing", true);
     // Recompensa
     {
-      const e2::Json reward = draft_.value("victoryReward", e2::Json::object());
+      const ember::Json reward = draft_.value("victoryReward", ember::Json::object());
       int ember = reward.value("ember", 0), rations = reward.value("rations", 0);
       ImGui::TextColored(ImColor(180, 180, 180), "RECOMPENSA · GOLD");
       ImGui::SameLine(panelWidth_ * 0.5f);
@@ -2121,24 +2121,24 @@ class MapEditorStage : public Stage {
       changed = ImGui::InputInt("##rations", &rations, 1, 5) || changed;
       if (changed) {
         beginEdit();
-        e2::Json r = draft_.value("victoryReward", e2::Json::object());
+        ember::Json r = draft_.value("victoryReward", ember::Json::object());
         r["ember"] = std::max(0, ember), r["rations"] = std::max(0, rations);
         draft_["victoryReward"] = r;
       }
       ImGui::TextColored(ImColor(180, 180, 180), "NPCS NECESSÁRIOS PARA A RECOMPENSA");
       std::vector<std::string> names;
-      for (const e2::Json& s : arr("neutralSpawns"))
+      for (const ember::Json& s : arr("neutralSpawns"))
         if (s.contains("dialog") && !s["dialog"].is_null() && std::find(names.begin(), names.end(), s.value("name", "")) == names.end()) names.push_back(s.value("name", ""));
       std::vector<std::string> required;
       if (reward.contains("requiredNpcNames") && reward["requiredNpcNames"].is_array())
-        for (const e2::Json& n : reward["requiredNpcNames"]) required.push_back(n.get<std::string>());
+        for (const ember::Json& n : reward["requiredNpcNames"]) required.push_back(n.get<std::string>());
       for (const std::string& n : required)
         if (std::find(names.begin(), names.end(), n) == names.end()) names.push_back(n);
       for (const std::string& n : names) {
         bool on = std::find(required.begin(), required.end(), n) != required.end();
         if (ImGui::Checkbox((n + "##npcreq").c_str(), &on)) {
           beginEdit();
-          e2::Json r = draft_.value("victoryReward", e2::Json::object());
+          ember::Json r = draft_.value("victoryReward", ember::Json::object());
           std::vector<std::string> next;
           for (const std::string& x : required)
             if (x != n) next.push_back(x);
@@ -2177,25 +2177,25 @@ class MapEditorStage : public Stage {
     // Local no mapa-múndi (+ its planned slots)
     {
       const std::string loc = draft_.value("locationId", "");
-      auto label = [&](const e2::Locais::Base& l) {
+      auto label = [&](const ember::Locais::Base& l) {
         const int planned = locais_.slotsFor(l.id);
         const size_t n = order_.contains(l.id) ? order_.at(l.id).size() : l.missionIds.size();
         return l.name + (planned > 0 ? std::format(" ({}/{})", n, planned) : n == 0 ? std::string(" (vazio)") : std::format(" ({})", n));
       };
       std::string shown = "Nenhum — não aparece no mapa";
-      for (const e2::Locais::Base& l : locais_.base)
+      for (const ember::Locais::Base& l : locais_.base)
         if (l.id == loc) shown = label(l);
       ImGui::TextColored(ImColor(180, 180, 180), "LOCAL NO MAPA-MÚNDI");
       ImGui::SetNextItemWidth(-1);
       if (ImGui::BeginCombo("##location", shown.c_str())) {
         if (ImGui::Selectable("Nenhum — não aparece no mapa", loc.empty())) beginEdit(), draft_["locationId"] = "";
-        for (const e2::Locais::Base& l : locais_.base)
+        for (const ember::Locais::Base& l : locais_.base)
           if (ImGui::Selectable((label(l) + "##" + l.id).c_str(), l.id == loc)) beginEdit(), draft_["locationId"] = l.id;
         ImGui::EndCombo();
       }
       if (!loc.empty()) {
-        const e2::Locais::Base* l = nullptr;
-        for (const e2::Locais::Base& b : locais_.base)
+        const ember::Locais::Base* l = nullptr;
+        for (const ember::Locais::Base& b : locais_.base)
           if (b.id == loc) l = &b;
         ImGui::TextColored(ImColor(180, 180, 180), "TELAS EM %s", upperUtf8(l ? l->name : loc).c_str());
         const int declared = locais_.slotsFor(loc);
@@ -2295,8 +2295,8 @@ class MapEditorStage : public Stage {
   static const std::vector<std::string>& groundImageChoices() {
     static const std::vector<std::string> files = [] {
       std::set<std::string> found;
-      std::ifstream in("content/engine2/backdrop-fit.json");
-      const e2::Json fit = in ? e2::Json::parse(in, nullptr, false) : e2::Json();
+      std::ifstream in("content/data/backdrop-fit.json");
+      const ember::Json fit = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
       if (fit.is_object() && fit.contains("paintings") && fit["paintings"].is_object())
         for (const auto& [_, entry] : fit["paintings"].items())
           if (entry.is_object() && entry.contains("ground") && entry["ground"].is_string())
@@ -2356,11 +2356,11 @@ class MapEditorStage : public Stage {
       const std::string phase = draft_.value("moonPhase", std::string());
       int shownPhase = tod == "darkNight" ? 0 : 4;
       for (int i = 0; i < 9; ++i)
-        if (phase == e2::kMoonPhases[i]) shownPhase = i;
+        if (phase == ember::kMoonPhases[i]) shownPhase = i;
       ImGui::SetNextItemWidth(-110);
       if (ImGui::BeginCombo("Lua", kPhaseLabels[shownPhase])) {
         for (int i = 0; i < 9; ++i)
-          if (ImGui::Selectable(kPhaseLabels[i], i == shownPhase)) beginEdit(), draft_["moonPhase"] = e2::kMoonPhases[i];
+          if (ImGui::Selectable(kPhaseLabels[i], i == shownPhase)) beginEdit(), draft_["moonPhase"] = ember::kMoonPhases[i];
         ImGui::EndCombo();
       }
     }
@@ -2476,7 +2476,7 @@ class MapEditorStage : public Stage {
     return m[std::clamp(k, 0, 9)];
   }
 
-  // A small image button for a thumbnail (an Engine2 public file; a decoration's from decoracoes-2d, the art the game cooks);
+  // A small image button for a thumbnail (an Ember public file; a decoration's from decoracoes-2d, the art the game cooks);
   // the swatch when there is none.
   bool thumbButton(const char* id, const std::string& thumb, const std::string& swatch, float size, bool selected, const std::string& tip, const char* text = nullptr) {
     const ImVec2 at = ImGui::GetCursorScreenPos();
@@ -2484,11 +2484,11 @@ class MapEditorStage : public Stage {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     constexpr std::string_view decor = "/game/decorations/";
     constexpr std::string_view ownGround = "content/ground/";
-    const std::filesystem::path projectRoot = base_.engine2Public.parent_path().parent_path().parent_path();
+    const std::filesystem::path projectRoot = base_.artRoot.parent_path().parent_path().parent_path();
     const std::filesystem::path own = thumb.starts_with(decor) ? std::filesystem::path("decoracoes-2d") / thumb.substr(decor.size())
                                         : thumb.starts_with(ownGround) ? projectRoot / thumb : std::filesystem::path();
     const UiImage* image = thumb.empty() ? nullptr
-                           : uiImage(!own.empty() && std::filesystem::exists(own) ? own : base_.engine2Public / thumb.substr(thumb.starts_with('/') ? 1 : 0));
+                           : uiImage(!own.empty() && std::filesystem::exists(own) ? own : base_.artRoot / thumb.substr(thumb.starts_with('/') ? 1 : 0));
     if (image) {
       const float aspect = static_cast<float>(image->width) / std::max(1.0f, static_cast<float>(image->height));
       const float w = aspect >= 1 ? size : size * aspect, h = aspect >= 1 ? size / aspect : size;
@@ -2780,7 +2780,7 @@ class MapEditorStage : public Stage {
       ImGui::SetNextItemWidth(-1);
       ImGui::InputTextWithHint("##decosearch", "Procurar…", search_, sizeof(search_));
     }
-    if (const e2::CatalogDecoration* d = catalog_.decoration(decoBrush_)) ImGui::Text("Pincel: %s", d->name.c_str());
+    if (const ember::CatalogDecoration* d = catalog_.decoration(decoBrush_)) ImGui::Text("Pincel: %s", d->name.c_str());
     // the palette
     std::vector<std::string> visible;
     if (arch) {
@@ -2830,7 +2830,7 @@ class MapEditorStage : public Stage {
 
   // Regras da decoração / da peça 3D, and a floor connector's Passagem de andar.
   void drawRules(bool arch) {
-    e2::Json* p = selectedPlacement();
+    ember::Json* p = selectedPlacement();
     ImGui::BeginChild("##rules", {0, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
     ImGui::TextColored(ImColor(180, 180, 180), "%s", arch ? "REGRAS DA PEÇA 3D" : "REGRAS DA DECORAÇÃO");
     ImGui::SameLine();
@@ -2846,7 +2846,7 @@ class MapEditorStage : public Stage {
         if (p && !model.empty()) {
           beginEdit();
           (*p)["rot"] = wallVertical_ ? 1 : 0, (*p)["wallOrientation"] = wallVertical_ ? "vertical" : "horizontal";
-          selected_ = e2::Json{{"id", (*p)["id"]}, {"x", (*p)["x"]}, {"y", (*p)["y"]}, {"rot", (*p)["rot"]}};
+          selected_ = ember::Json{{"id", (*p)["id"]}, {"x", (*p)["x"]}, {"y", (*p)["y"]}, {"rot", (*p)["rot"]}};
           cleanEntrances();
           p = selectedPlacement();
         }
@@ -2921,9 +2921,9 @@ class MapEditorStage : public Stage {
       beginEdit();
       const int n = cols() * rows();
       draft_["baseTile"] = brush_, draft_["baseVariant"] = v;
-      draft_["tiles"] = e2::Json(std::vector<std::string>(n, brush_));
-      draft_["tileVariants"] = e2::Json(std::vector<int>(n, v));
-      draft_["tileRots"] = e2::Json(std::vector<int>(n, 0));
+      draft_["tiles"] = ember::Json(std::vector<std::string>(n, brush_));
+      draft_["tileVariants"] = ember::Json(std::vector<int>(n, v));
+      draft_["tileRots"] = ember::Json(std::vector<int>(n, 0));
       note(std::format("Base inteira substituída por {}.", baseVersionLabel(brush_, v)));
     }
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("Preenche todos os hexes com %s", baseVersionLabel(brush_, v).c_str());
@@ -2965,14 +2965,14 @@ class MapEditorStage : public Stage {
     }
     std::map<std::pair<int, int>, std::pair<char, ImU32>> units;
     for (const auto& [key, side] : {std::pair{"playerSpawns", 'p'}, std::pair{"enemySpawns", 'e'}, std::pair{"neutralSpawns", 'n'}})
-      for (const e2::Json& s : arr(key)) {
+      for (const ember::Json& s : arr(key)) {
         const std::pair<int, int> at{s.value("x", 0), s.value("y", 0)};
         if (units.contains(at)) continue;
         const ImU32 ink = side == 'p' ? IM_COL32(125, 211, 252, 255) : side == 'n' ? IM_COL32(52, 211, 153, 255) : IM_COL32(248, 113, 113, 255);
         units[at] = {isSummon(s.value("classId", "")) ? 'S' : side == 'p' ? 'P' : side == 'n' ? 'N' : 'E', ink};
       }
     std::map<std::pair<int, int>, std::string> decoAt;
-    for (const e2::Json& p : arr("decorations"))
+    for (const ember::Json& p : arr("decorations"))
       for (const auto& c : cellsOf(p)) decoAt[c] = decoName(p.value("id", ""));
     ImDrawList* dl = ImGui::GetWindowDrawList();
     const ImVec2 origin = ImGui::GetCursorScreenPos();
@@ -3046,12 +3046,12 @@ class MapEditorStage : public Stage {
 
   // Decorações (N): every placed prop, its thumbnail, hex and a remove button.
   void drawDecorationList() {
-    e2::Json& decos = arr("decorations");
+    ember::Json& decos = arr("decorations");
     if (decos.empty()) return;
     if (!ImGui::CollapsingHeader(std::format("Decorações ({})###decolist", decos.size()).c_str())) return;
     std::optional<size_t> remove;
     for (size_t k = 0; k < decos.size(); ++k) {
-      const e2::Json& p = decos[k];
+      const ember::Json& p = decos[k];
       const std::string id = p.value("id", "");
       ImGui::PushID(static_cast<int>(k));
       const DecoMeta& m = meta(id);
@@ -3068,14 +3068,14 @@ class MapEditorStage : public Stage {
     if (remove) beginEdit(), decos.erase(*remove), selected_.reset();
   }
 
-  // The spawn lists in Engine2's groups (heroes, allied summons, enemies, neutral beasts, neutral summons): name, class,
+  // The spawn lists in Ember's groups (heroes, allied summons, enemies, neutral beasts, neutral summons): name, class,
   // level; Sortear classe for enemies, a neutral's dialogue, remove.
   void drawUnits() {
     static const std::tuple<const char*, bool, const char*> kGroups[] = {{"playerSpawns", false, "Heróis"},           {"playerSpawns", true, "Invocações aliadas"},
                                                                          {"enemySpawns", false, "Inimigos"},          {"neutralSpawns", false, "Feras neutras"},
                                                                          {"neutralSpawns", true, "Invocações neutras"}};
     for (const auto& [key, summons, label] : kGroups) {
-      e2::Json& list = arr(key);
+      ember::Json& list = arr(key);
       std::vector<size_t> rowsOf;
       for (size_t k = 0; k < list.size(); ++k)
         if (isSummon(list[k].value("classId", "")) == summons) rowsOf.push_back(k);
@@ -3083,7 +3083,7 @@ class MapEditorStage : public Stage {
       ImGui::TextColored(ImColor(180, 180, 180), "%s (%d)", upperUtf8(label).c_str(), static_cast<int>(rowsOf.size()));
       const bool enemy = std::string(key) == "enemySpawns", neutral = std::string(key) == "neutralSpawns";
       for (size_t k : rowsOf) {
-        e2::Json& s = list[k];
+        ember::Json& s = list[k];
         ImGui::PushID(std::format("{}{}", key, k).c_str());
         hint("%d,%d", s.value("x", 0), s.value("y", 0));
         ImGui::SameLine(48);
@@ -3155,7 +3155,7 @@ class MapEditorStage : public Stage {
     }
   }
 
-  // Arquivos de "<id>": every saved serial (ours and Engine2's), Carregar / Ativar / apagar (ours only, two clicks).
+  // Arquivos de "<id>": every saved serial (ours and Ember's), Carregar / Ativar / apagar (ours only, two clicks).
   void drawFiles() {
     const std::string id = draft_.value("id", "");
     ImGui::Separator();
@@ -3171,7 +3171,7 @@ class MapEditorStage : public Stage {
         ImGui::PushID(f.file.string().c_str());
         ImGui::TextColored(f.serial == latest ? ImColor(252, 211, 77) : ImColor(240, 240, 240), "%03d", f.serial);
         ImGui::SameLine();
-        hint("%s%s%s", f.file.filename().string().c_str(), f.own ? "" : " (Engine2)",
+        hint("%s%s%s", f.file.filename().string().c_str(), f.own ? "" : " (Ember)",
                             activeSerial && *activeSerial == f.serial ? " · ativa na campanha" : f.serial == latest ? " · arquivo mais novo" : "");
         ImGui::SameLine();
         if (ImGui::SmallButton("Carregar")) openFile(f.file, std::format("Aberto {}.", f.file.filename().string()));
@@ -3245,7 +3245,7 @@ class MapEditorStage : public Stage {
   // --- Locais (the campaign's locations, their missions, slots and floors) ------------------------------------------------
 
   void openLocais() {
-    locais_ = e2::Locais::load(kCatalog);  // refreshLocaisState: what is on disk now
+    locais_ = ember::Locais::load(kCatalog);  // refreshLocaisState: what is on disk now
     order_ = locais_.editorOrder();
     showLocations_ = true;
     rescan();
@@ -3254,7 +3254,7 @@ class MapEditorStage : public Stage {
   bool saveLocais(const std::string& said) {
     for (const auto& [loc, ids] : order_) locais_.order[loc] = ids;
     if (!locais_.save()) {
-      note("NÃO SALVOU: não foi possível gravar " + e2::Locais::file().generic_string() + ".");
+      note("NÃO SALVOU: não foi possível gravar " + ember::Locais::file().generic_string() + ".");
       return false;
     }
     if (callbacks_.locaisSaved) callbacks_.locaisSaved();
@@ -3269,14 +3269,14 @@ class MapEditorStage : public Stage {
   // setLocationSubmap: the mission becomes this location's floor (leaving every other floor list and every order).
   void setSubmap(const std::string& loc, const std::string& missionId, int floor) {
     std::optional<int> oldFloor;
-    for (const e2::LocaisFloor& f : locais_.submaps[loc])
+    for (const ember::LocaisFloor& f : locais_.submaps[loc])
       if (f.missionId == missionId) oldFloor = f.floor;
-    for (auto& [l, list] : locais_.submaps) list.erase(std::remove_if(list.begin(), list.end(), [&](const e2::LocaisFloor& f) { return f.missionId == missionId; }), list.end());
-    std::vector<e2::LocaisFloor>& list = locais_.submaps[loc];
-    for (e2::LocaisFloor& f : list)
+    for (auto& [l, list] : locais_.submaps) list.erase(std::remove_if(list.begin(), list.end(), [&](const ember::LocaisFloor& f) { return f.missionId == missionId; }), list.end());
+    std::vector<ember::LocaisFloor>& list = locais_.submaps[loc];
+    for (ember::LocaisFloor& f : list)
       if (oldFloor && f.floor == floor) f.floor = *oldFloor;
     list.push_back({missionId, floor});
-    std::stable_sort(list.begin(), list.end(), [](const e2::LocaisFloor& a, const e2::LocaisFloor& b) { return a.floor > b.floor; });
+    std::stable_sort(list.begin(), list.end(), [](const ember::LocaisFloor& a, const ember::LocaisFloor& b) { return a.floor > b.floor; });
     for (auto& [l, ids] : order_) ids.erase(std::remove(ids.begin(), ids.end(), missionId), ids.end());
     saveLocais("Andares atualizados.");
   }
@@ -3290,10 +3290,10 @@ class MapEditorStage : public Stage {
     if (ImGui::Button("Salvar")) {
       if (saveLocais("Ordem das missões e dos Locais salva.")) {
         bigNote_ = BigNote{true, "ESTÁ SALVO",
-                           {"Salvo em " + e2::Locais::file().generic_string() + " — vale já: a campanha e o mapa-múndi jogam esta ordem.",
+                           {"Salvo em " + ember::Locais::file().generic_string() + " — vale já: a campanha e o mapa-múndi jogam esta ordem.",
                             std::format("{} locais com ordem definida; {} com vagas definidas; submaps e andares confirmados.", order_.size(), locais_.slots.size())}};
       } else {
-        bigNote_ = BigNote{false, "NÃO SALVOU", {"Não foi possível gravar " + e2::Locais::file().generic_string() + "."}};
+        bigNote_ = BigNote{false, "NÃO SALVOU", {"Não foi possível gravar " + ember::Locais::file().generic_string() + "."}};
       }
     }
     const std::vector<MapRef> reserve = reserveRefs(), campaign = campaignRefs(), targets = connectorTargets();
@@ -3301,8 +3301,8 @@ class MapEditorStage : public Stage {
     std::optional<std::pair<std::string, int>> moveLocation;
     for (size_t li = 0; li < locais_.locationOrder.size(); ++li) {
       const std::string locId = locais_.locationOrder[li];
-      const e2::Locais::Base* loc = nullptr;
-      for (const e2::Locais::Base& b : locais_.base)
+      const ember::Locais::Base* loc = nullptr;
+      for (const ember::Locais::Base& b : locais_.base)
         if (b.id == locId) loc = &b;
       if (!loc) continue;
       ImGui::PushID(locId.c_str());
@@ -3323,7 +3323,7 @@ class MapEditorStage : public Stage {
       if (ImGui::SmallButton("↓##loc")) moveLocation = {locId, 1};
       ImGui::EndDisabled();
       if (ImGui::SmallButton("Novo mapa aqui")) {
-        e2::Json fresh = blankDraft();
+        ember::Json fresh = blankDraft();
         const std::string mapId = scenarioId(locId + "-" + base36Now());
         int next = -1;
         for (const std::string& id : ids) next = std::max(next, id == draft_.value("id", "") ? draft_.value("index", 0) : missionInfo(id) ? missionInfo(id)->index : -1);
@@ -3369,7 +3369,7 @@ class MapEditorStage : public Stage {
       };
       std::vector<Row> rowsOf;
       for (size_t i = 0; i < ids.size(); ++i) rowsOf.push_back({ids[i], 0, static_cast<int>(i)});
-      for (const e2::LocaisFloor& f : locais_.submaps[locId]) rowsOf.push_back({f.missionId, f.floor, -1});
+      for (const ember::LocaisFloor& f : locais_.submaps[locId]) rowsOf.push_back({f.missionId, f.floor, -1});
       std::stable_sort(rowsOf.begin(), rowsOf.end(), [](const Row& a, const Row& b) { return a.floor > b.floor; });
       std::optional<std::function<void()>> act;
       const bool table = !rowsOf.empty() && ImGui::BeginTable("##rows", 3, ImGuiTableFlags_SizingFixedFit);
@@ -3435,7 +3435,7 @@ class MapEditorStage : public Stage {
           } else {
             act = [this, locId, id = r.id] {
               auto& list = locais_.submaps[locId];
-              list.erase(std::remove_if(list.begin(), list.end(), [&](const e2::LocaisFloor& f) { return f.missionId == id; }), list.end());
+              list.erase(std::remove_if(list.begin(), list.end(), [&](const ember::LocaisFloor& f) { return f.missionId == id; }), list.end());
               saveLocais("Submap removido.");
             };
           }
@@ -3452,10 +3452,10 @@ class MapEditorStage : public Stage {
         for (const MapRef& m : targets) {
           if (std::find(ids.begin(), ids.end(), m.id) != ids.end()) continue;
           const auto& subs = locais_.submaps[locId];
-          if (std::any_of(subs.begin(), subs.end(), [&](const e2::LocaisFloor& f) { return f.missionId == m.id; })) continue;
+          if (std::any_of(subs.begin(), subs.end(), [&](const ember::LocaisFloor& f) { return f.missionId == m.id; })) continue;
           if (ImGui::Selectable(std::format("{} · {}##{}", m.title, m.id, m.id).c_str())) {
             int top = 0;
-            for (const e2::LocaisFloor& f : subs) top = std::max(top, f.floor);
+            for (const ember::LocaisFloor& f : subs) top = std::max(top, f.floor);
             act = [this, locId, id = m.id, top] { setSubmap(locId, id, top + 1); };
           }
           jump.item(m.title);
@@ -3482,7 +3482,7 @@ class MapEditorStage : public Stage {
   // --- R-Encounter (random encounters by region) --------------------------------------------------------------------------
 
   void saveRegions() {
-    if (!locais_.saveRegions()) return note("Não foi possível gravar " + e2::Locais::regionsFile().generic_string() + ".");
+    if (!locais_.saveRegions()) return note("Não foi possível gravar " + ember::Locais::regionsFile().generic_string() + ".");
     if (callbacks_.locaisSaved) callbacks_.locaisSaved();
     note("Regiões de R-Encounter atualizadas.");
   }
@@ -3497,7 +3497,7 @@ class MapEditorStage : public Stage {
     ImGui::SameLine();
     if (ImGui::Button("Nova região") && regionName_[0]) {
       const std::string id = scenarioId(regionName_);
-      if (std::any_of(locais_.regions.begin(), locais_.regions.end(), [&](const e2::EncounterRegion& r) { return r.id == id; })) {
+      if (std::any_of(locais_.regions.begin(), locais_.regions.end(), [&](const ember::EncounterRegion& r) { return r.id == id; })) {
         note("Já existe uma região com esse nome.");
       } else {
         std::string name = regionName_;
@@ -3508,11 +3508,11 @@ class MapEditorStage : public Stage {
       }
     }
     std::set<std::string> assigned;
-    for (const e2::EncounterRegion& r : locais_.regions) assigned.insert(r.encounterIds.begin(), r.encounterIds.end());
+    for (const ember::EncounterRegion& r : locais_.regions) assigned.insert(r.encounterIds.begin(), r.encounterIds.end());
     const std::vector<MapRef> reserve = reserveRefs();
     std::optional<std::function<void()>> act;
     for (size_t ri = 0; ri < locais_.regions.size() && !act; ++ri) {
-      e2::EncounterRegion& region = locais_.regions[ri];
+      ember::EncounterRegion& region = locais_.regions[ri];
       ImGui::PushID(region.id.c_str());
       ImGui::BeginChild("##region", {0, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
       ImGui::TextColored(ImColor(180, 180, 180), "%s · %d encontro%s", upperUtf8(region.name).c_str(), static_cast<int>(region.encounterIds.size()),
@@ -3532,11 +3532,11 @@ class MapEditorStage : public Stage {
         }
       }
       if (ImGui::SmallButton("Novo encontro")) act = [this, ri] {
-          e2::EncounterRegion& r = locais_.regions[ri];
+          ember::EncounterRegion& r = locais_.regions[ri];
           const std::string id = scenarioId("random-" + r.id + "-" + base36Now());
           r.encounterIds.push_back(id);
           saveRegions();
-          e2::Json fresh = blankDraft();
+          ember::Json fresh = blankDraft();
           const std::string suffix = id.substr(std::min(id.size(), std::string("random-" + r.id + "-").size()));
           fresh["id"] = id, fresh["index"] = 0, fresh["title"] = std::format("Encontro em {} · {}", r.name, suffix), fresh["place"] = r.name, fresh["locationId"] = "";
           setDraft(fresh);
@@ -3605,17 +3605,17 @@ class MapEditorStage : public Stage {
   Services services_;
   MapStageOptions base_;
   CampaignPaths paths_;
-  const e2::Campaign& campaign_;
+  const ember::Campaign& campaign_;
   Callbacks callbacks_;
-  std::optional<e2::BoardData> data_;
-  e2::EditorCatalog catalog_;
+  std::optional<ember::BoardData> data_;
+  ember::EditorCatalog catalog_;
   EditorTables editor_;
-  e2::DressTables dress_;
-  e2::Locais locais_;
+  ember::DressTables dress_;
+  ember::Locais locais_;
   std::map<std::string, std::vector<std::string>> order_;  // Locais: each location's missions as edited
-  e2::Json draft_;
+  ember::Json draft_;
   static constexpr size_t kHistory = 20;  // Desfazer / Refazer reach this many steps back
-  std::deque<e2::Json> past_, future_;
+  std::deque<ember::Json> past_, future_;
   std::chrono::steady_clock::time_point lastEdit_{};
   bool dirty_ = false;
   std::unique_ptr<MapStage> preview_;
@@ -3623,7 +3623,7 @@ class MapEditorStage : public Stage {
   std::optional<glm::vec3> pendingPoint_;
   std::optional<std::pair<std::optional<std::pair<int, int>>, bool>> pendingRelease_;
   std::optional<HeldUnit> heldUnit_;
-  std::optional<e2::Json> heldDeco_;
+  std::optional<ember::Json> heldDeco_;
   std::future<std::optional<MissionEntry>> playtest_;
   std::vector<std::future<std::string>> exports_;  // Salvar / Ativar: the game's files for a map (their notes when done)
   std::future<std::map<std::string, Scenario>> scan_;
@@ -3654,7 +3654,7 @@ class MapEditorStage : public Stage {
   std::optional<std::pair<int, int>> wallDragFrom_;  // the run's first hex while the left button is held on the preview
   std::string decoBrush_ = "dead-tree", decoSection_ = "Todas";
   char search_[64] = {};
-  std::optional<e2::Json> selected_;
+  std::optional<ember::Json> selected_;
   std::string summonBrush_ = "familiar", npcBrush_ = "breadLady";
   bool summonNeutral_ = false;
 };

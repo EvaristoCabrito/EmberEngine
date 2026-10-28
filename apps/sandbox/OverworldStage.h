@@ -1,8 +1,8 @@
 #pragma once
 
-// The campaign's world map, copied from Engine2 (src/game/OverworldMapScreen.tsx, GameApp's overworld handlers and
+// The campaign's world map, copied from Ember (src/game/OverworldMapScreen.tsx, GameApp's overworld handlers and
 // src/ember-ui/styles.css; user, 2026-10-15: "importar todos os menus corretamente"). Its rules are the C++ port in
-// engine/world/Overworld (checked against Engine2 step for step).
+// engine/world/Overworld (checked against Ember step for step).
 //
 // On screen: the header (Campanha · RPG / Mapa, Party, Missões, the day clock, the moon, rations, hunger, Alimentar
 // todos, Opções, Gold); the painted world map (game/assets/world-map.jpg) at four zoom stops, dragged with the mouse;
@@ -68,25 +68,25 @@ class OverworldStage : public Stage {
     bool resumeSaved = false;
   };
 
-  // `testSave`: Engine2's Modo teste (GameApp testMode): the map runs on that save (held by the caller for the whole
+  // `testSave`: Ember's Modo teste (GameApp testMode): the map runs on that save (held by the caller for the whole
   // test session, never the real bank) and every travel / party / mission restriction is lifted (Overworld `test`).
   // `interlude`: the historical chapter's data (content/interlude.json; docs/INTERLUDE.md), when loaded: the Ruins' quest gate and
   // the chapter's start on the first entry there.
-  OverworldStage(CampaignPaths paths, e2::Campaign& campaign, const e2::Overworld& world, Callbacks callbacks, std::string notice = {},
-                 e2::Json* testSave = nullptr, const e2::InterludeData* interlude = nullptr)
+  OverworldStage(CampaignPaths paths, ember::Campaign& campaign, const ember::Overworld& world, Callbacks callbacks, std::string notice = {},
+                 ember::Json* testSave = nullptr, const ember::InterludeData* interlude = nullptr)
       : paths_(std::move(paths)), campaign_(campaign), world_(world), callbacks_(std::move(callbacks)), notice_(std::move(notice)), testSave_(testSave),
         interlude_(interlude) {
-    hasInn_ = innData_.load("content/engine2/inn.json");
-    hasCompanions_ = companions_.load("content/engine2/companions.json", "content/engine2/companions-pt.json");
+    hasInn_ = innData_.load("content/data/inn.json");
+    hasCompanions_ = companions_.load("content/data/companions.json", "content/data/companions-pt.json");
     save_ = testSave_ ? *testSave_ : campaign_.activeSave();
-    const e2::Json& pos = save_["overworldPos"];
+    const ember::Json& pos = save_["overworldPos"];
     prevCol_ = pos.value("col", 0);
     partyX_ = -1;  // placed on the first frame
     // GameApp start: a fight saved mid-way, else a pending mission, opens its briefing first.
     std::string id;
     if (save_.contains("battle") && save_["battle"].is_object()) id = save_["battle"].value("missionId", "");
     if (id.empty() && save_.contains("pendingMission") && save_["pendingMission"].is_string()) id = save_["pendingMission"].get<std::string>();
-    // A new campaign opens with Engine2's films: the boot vignette, then O Vau's intro (GameApp boot -> vauIntro).
+    // A new campaign opens with Ember's films: the boot vignette, then O Vau's intro (GameApp boot -> vauIntro).
     if (!testSave_ && campaign_.freshCampaign && id == "vau") {
       campaign_.freshCampaign = false;
       playFilm("game/title-open.mp4", [this] { playFilm("game/vau-intro.webm", [this] { openMission("vau", true); }); });
@@ -99,7 +99,7 @@ class OverworldStage : public Stage {
   // The Underdark of Mordávia's exit (the Misty Cave's map 4, mordavia-underdark): a floor connector whose target is this id opens
   // the world map on the Atlas do Submundo (main.cpp), the campaign recording "underworldReached".
   static constexpr const char* kUnderworldExit = "underworld-atlas";
-  // The Graveyard's film (CutsceneScreen opens an absolute path as it is: engine2Public / absolute = the absolute path).
+  // The Graveyard's film (CutsceneScreen opens an absolute path as it is: artRoot / absolute = the absolute path).
   static constexpr const char* kGraveyardFilm = "content/films/graves-intro-v01.webm";
   void showUnderworld() {
     if (!underworld_) toggleWorld();
@@ -107,9 +107,9 @@ class OverworldStage : public Stage {
   // The location's mission list opened as a click on its pin would (main.cpp: back from the Interlude, the present-day Ruins).
   void openLocationPanel(const std::string& id) { open_ = id; }
   // A location's status as the pins show it: the world's rules, and the Ruins shut by the Interlude's quest gate (never in Modo teste).
-  std::string locationStatus(const e2::MapLocation& loc) const {
+  std::string locationStatus(const ember::MapLocation& loc) const {
     std::string st = world_.locationStatus(loc, save_, test());
-    if (interlude_ && !test() && loc.id == interlude_->ruinsLocation && st != "locked" && !e2::ruinsOpen(*interlude_, world_, save_)) st = "locked";
+    if (interlude_ && !test() && loc.id == interlude_->ruinsLocation && st != "locked" && !ember::ruinsOpen(*interlude_, world_, save_)) st = "locked";
     return st;
   }
 
@@ -134,8 +134,8 @@ class OverworldStage : public Stage {
             break;
           }
         const int tier = std::atoi(what.c_str() + 5);
-        const e2::Json tree = companions_.build(lead, convCompanion_, tier, save_, uiEnglish());
-        if (tree.is_object()) convLeader_ = lead, convDialog_.emplace(tree, companions_.portraits(), paths_.engine2Public);
+        const ember::Json tree = companions_.build(lead, convCompanion_, tier, save_, uiEnglish());
+        if (tree.is_object()) convLeader_ = lead, convDialog_.emplace(tree, companions_.portraits(), paths_.artRoot);
       }
     }
     if (what == "fieldspells") fieldSpells_ = true;
@@ -157,14 +157,14 @@ class OverworldStage : public Stage {
         const size_t comma = s.find(',');
         if (comma == std::string::npos) continue;
         const int c = std::stoi(s.substr(0, comma)), r = std::stoi(s.substr(comma + 1));
-        const e2::Json& pos = save_["overworldPos"];
+        const ember::Json& pos = save_["overworldPos"];
         const int fc = pos.value("col", 0), fr = pos.value("row", 0);
         const bool allowed = world_.canStep(save_, {fc, fr}, {c, r}, test());
         movementOpen_ = true;
         walkTo(c, r);
         logInfo("walk: ({},{}) -> ({},{}): canStep {}, now at ({},{}), day {} {}:00, event {}, briefing {}", fc, fr, c, r, allowed,
                 save_["overworldPos"].value("col", 0), save_["overworldPos"].value("row", 0), static_cast<long long>(num(save_, "gameClock", 0)),
-                e2::Overworld::campaignHour(save_), event_ ? event_->kind : std::string("-"), briefing_ ? briefing_->id : std::string("-"));
+                ember::Overworld::campaignHour(save_), event_ ? event_->kind : std::string("-"), briefing_ ? briefing_->id : std::string("-"));
         if (briefing_) briefing_.reset();  // a road battle's briefing: closed as Voltar would, the walk goes on
         event_.reset();
       }
@@ -178,7 +178,7 @@ class OverworldStage : public Stage {
       }
     if (what.starts_with("location:")) open_ = what.substr(9);
     if (what.starts_with("enter:"))  // "enter:<id>": the location entered as a click on its pin would (the Ruins: the Interlude's gate and start)
-      for (const e2::MapLocation& loc : world_.locations())
+      for (const ember::MapLocation& loc : world_.locations())
         if (loc.id == what.substr(6)) enterLocation(loc, locationStatus(loc));
     if (what == "save") slots_.emplace(), slots_->open(SlotScreen::Mode::Save, true);
     if ((what == "pack" || what == "doll") && hasInn_) inventory_.emplace("Kael", what == "pack");
@@ -193,7 +193,7 @@ class OverworldStage : public Stage {
       playFilm(film.c_str(), [] {});
     }
   }
-  // Captures end after a second of frames (time for Engine2's art to load), or once a previewed film got that far; a measured
+  // Captures end after a second of frames (time for Ember's art to load), or once a previewed film got that far; a measured
   // capture (--map-ui measure[:underworld]) runs three seconds for the mean.
   bool done() const override {
     return frames_ > (measure_ ? 180 : 60) && slowNext_ >= slowSteps_.size() && frames_ > slowLast_ + 60 && (!film_ || film_->time() >= previewFilmAt_);
@@ -248,7 +248,7 @@ class OverworldStage : public Stage {
 
   // GameApp's music chain: films are silent, the in-game save slots too; the Inn plays its theme (not over Vargan's
   // first film), a briefing its mission's track, the map its own piece.
-  // The world map opening under Engine2's loading curtain (MapLoadingOverlay "Carregando o mapa"): ready once the screen
+  // The world map opening under Ember's loading curtain (MapLoadingOverlay "Carregando o mapa"): ready once the screen
   // has drawn what it shows, the map with its picture in (a briefing, a film or the Inn shown first need no picture).
   Loading loading() const override {
     const bool ready = drawn_ > 0 && (!mapDrawn_ || uiImageLoaded(kWorldMap));
@@ -298,13 +298,13 @@ class OverworldStage : public Stage {
         if (auto then = std::exchange(afterFilm_, {})) then();
       }
     } else if (inventory_) {
-      InventoryScreen::Context context{save_, [this] { write(); }, innRules_, innData_, world_, paths_.engine2Public};
+      InventoryScreen::Context context{save_, [this] { write(); }, innRules_, innData_, world_, paths_.artRoot};
       if (inventory_->draw(io.DisplaySize, context)) inventory_.reset();
     } else if (inn_) {
-      InnScreen::Context context{save_, [this] { write(); }, innRules_, innData_, world_, paths_.engine2Public};
+      InnScreen::Context context{save_, [this] { write(); }, innRules_, innData_, world_, paths_.artRoot};
       if (inn_->draw(io.DisplaySize, context)) inn_.reset();  // GameApp returnToCurrentMap
     } else if (briefing_) {
-      const int r = drawBriefing(io.DisplaySize, kRem, *briefing_, paths_.engine2Public);
+      const int r = drawBriefing(io.DisplaySize, kRem, *briefing_, paths_.artRoot);
       if (r < 0) briefing_.reset();
       else if (r > 0 && callbacks_.play) {
         // GameApp beginMission: some missions open with their film (bound to the mission id, not its position).
@@ -332,7 +332,7 @@ class OverworldStage : public Stage {
       }
     } else if (slots_) {
       bool back = false;
-      const int chosen = slots_->draw(io.DisplaySize, kRem, campaign_, paths_.engine2Public, back, &save_);
+      const int chosen = slots_->draw(io.DisplaySize, kRem, campaign_, paths_.artRoot, back, &save_);
       if (back) slots_.reset();
       else if (chosen >= 0) {
         if (slots_->mode() == SlotScreen::Mode::Load) {
@@ -340,7 +340,7 @@ class OverworldStage : public Stage {
           if (!test()) save_ = campaign_.activeSave();
           notice_ = slots_->status();
           slots_.reset();
-          const e2::Json& pos = save_["overworldPos"];
+          const ember::Json& pos = save_["overworldPos"];
           prevCol_ = pos.value("col", 0), partyX_ = -1, centred_ = false;
           std::string id;
           if (save_.contains("battle") && save_["battle"].is_object()) id = save_["battle"].value("missionId", "");
@@ -373,9 +373,9 @@ class OverworldStage : public Stage {
   int baseMaxHp(const std::string& hero) const {
     if (const int hp = world_.maxHp(save_, hero); hp > 0) return hp;
     const char* cls = ownHeroClass(hero);
-    const e2::Json& promo = save_.contains("promotions") ? save_["promotions"].value(hero, e2::Json()) : e2::Json();
+    const ember::Json& promo = save_.contains("promotions") ? save_["promotions"].value(hero, ember::Json()) : ember::Json();
     const std::string classId = promo.is_string() ? promo.get<std::string>() : cls ? cls : "";
-    return classId.empty() ? 0 : world_.classHp(classId, static_cast<int>(num(save_.value("levels", e2::Json::object()), hero, 1)));
+    return classId.empty() ? 0 : world_.classHp(classId, static_cast<int>(num(save_.value("levels", ember::Json::object()), hero, 1)));
   }
   static constexpr ImU32 kAccent = IM_COL32(216, 216, 216, 255), kMuted = IM_COL32(180, 180, 180, 255), kFg = IM_COL32(240, 240, 240, 255),
                          kDanger = IM_COL32(181, 74, 50, 255), kBorder = IM_COL32(74, 74, 74, 255);
@@ -392,7 +392,7 @@ class OverworldStage : public Stage {
   }
   // partyLeaderOf: the saved leader while in the party, else Kael.
   std::string leader() const {
-    const e2::Json& l = save_.contains("partyLeader") ? save_["partyLeader"] : e2::Json();
+    const ember::Json& l = save_.contains("partyLeader") ? save_["partyLeader"] : ember::Json();
     if (l.is_string() && recruited(l.get<std::string>())) return l.get<std::string>();
     return "Kael";
   }
@@ -401,15 +401,15 @@ class OverworldStage : public Stage {
       *testSave_ = save_;
       return;
     }
-    if (!campaign_.saveActive(save_)) notice_ = "Não foi possível gravar o progresso (" + e2::Campaign::savePath().string() + ").";
+    if (!campaign_.saveActive(save_)) notice_ = "Não foi possível gravar o progresso (" + ember::Campaign::savePath().string() + ").";
   }
-  double num(const e2::Json& obj, const std::string& key, double fallback) const {
+  double num(const ember::Json& obj, const std::string& key, double fallback) const {
     if (!obj.is_object()) return fallback;
     const auto it = obj.find(key);
     return it != obj.end() && it->is_number() ? it->get<double>() : fallback;
   }
   bool completed(const std::string& id) const {
-    for (const e2::Json& c : save_.value("completed", e2::Json::array()))
+    for (const ember::Json& c : save_.value("completed", ember::Json::array()))
       if (c.is_string() && c.get<std::string>() == id) return true;
     return false;
   }
@@ -419,7 +419,7 @@ class OverworldStage : public Stage {
     if (save_.contains("equipment") && save_["equipment"].contains(hero))
       for (const auto& [slot, id] : save_["equipment"][hero].items())
         if (id.is_string())
-          for (const e2::Json& e : world_.tables()["equipment"])
+          for (const ember::Json& e : world_.tables()["equipment"])
             if (e["id"] == id) gear += e.value("hp", 0.0);
     const double streak = num(save_, "hungerStreak", 0);
     const double penalty = std::min(0.9, std::max(0.0, streak - 3) * 0.1);
@@ -440,9 +440,9 @@ class OverworldStage : public Stage {
 
   void openMission(const std::string& id, bool fromSave = false) {
     if (!fromSave) {
-      if (const e2::MapMission* m = world_.mission(id); !test() && m && m->gated && world_.missionAccess(id, save_) != "available") return;
+      if (const ember::MapMission* m = world_.mission(id); !test() && m && m->gated && world_.missionAccess(id, save_) != "available") return;
       if (!test() && completed(id)) {
-        const e2::MapMission* done = world_.mission(id);
+        const ember::MapMission* done = world_.mission(id);
         if (!done || !done->keepsSpawns) {
           notice_ = "Você não pode repetir missões já completadas.";
           return;
@@ -451,7 +451,7 @@ class OverworldStage : public Stage {
       if (id == "estalagem") return enterInn();
       // Wisp Forest's entrance film, the first time the party goes into any of its missions (GameApp openMission).
       if (!save_.value("seenWispForestIntro", false)) {  // Modo teste too (its session save keeps "seen"; nothing is written)
-        for (const e2::MapLocation& l : world_.locations()) {
+        for (const ember::MapLocation& l : world_.locations()) {
           if (l.id != "wisp-forest" || std::find(l.missionIds.begin(), l.missionIds.end(), id) == l.missionIds.end()) continue;
           bool any = false;
           for (const std::string& m : l.missionIds) any = any || completed(m);
@@ -480,7 +480,7 @@ class OverworldStage : public Stage {
   // startBattle on an explore mission); talking to Brue, Vargan or the old healer there opens their menus (NpcTalk.h).
   void enterInn() {
     if (!hasInn_) {
-      notice_ = "Sem dados da Estalagem (content/engine2/inn.json).";
+      notice_ = "Sem dados da Estalagem (content/data/inn.json).";
       return;
     }
     if (!save_.value("seenInnArrivalIntro", false)) {  // Modo teste too (its session save keeps "seen"; nothing is written)
@@ -491,11 +491,11 @@ class OverworldStage : public Stage {
       return;
     }
     if (!completed("estalagem")) save_["completed"].push_back("estalagem");
-    for (const e2::MapLocation& l : world_.locations())
+    for (const ember::MapLocation& l : world_.locations())
       if (l.id == "estalagem") {
         const std::string k = std::format("{},{}", l.col, l.row);
         bool seen = false;
-        for (const e2::Json& h : save_.value("exploredHexes", e2::Json::array())) seen = seen || h == k;
+        for (const ember::Json& h : save_.value("exploredHexes", ember::Json::array())) seen = seen || h == k;
         if (!seen) save_["exploredHexes"].push_back(k);
       }
     save_["pendingMission"] = nullptr;
@@ -512,26 +512,26 @@ class OverworldStage : public Stage {
   // score (sorted key, one decimal, -100..100).
   void addAffinity(const std::string& a, const std::string& b, double delta) {
     const std::string pair = a < b ? a + "|" + b : b + "|" + a;
-    e2::Json& scores = save_["affinityScores"];
-    if (!scores.is_object()) scores = e2::Json::object();
+    ember::Json& scores = save_["affinityScores"];
+    if (!scores.is_object()) scores = ember::Json::object();
     const double score = scores.contains(pair) && scores[pair].is_number() ? scores[pair].get<double>() : 0.0;
     scores[pair] = std::clamp(std::floor((score + delta) * 10 + 0.5) / 10, -100.0, 100.0);
   }
 
   void playFilm(const char* film, std::function<void()> then) {
-    film_.emplace(paths_.engine2Public, film);
+    film_.emplace(paths_.artRoot, film);
     afterFilm_ = std::move(then);
   }
 
   // GameApp onOverworldStep: stepOverworld, written at once; a road battle opens its mission, anything else its notice.
   void step(int col, int row) {
     std::random_device device;
-    e2::Mulberry32 rng(device());
-    std::optional<e2::OverworldEvent> ev;
-    e2::Json next = world_.step(save_, {col, row}, rng, ev, test());
+    ember::Mulberry32 rng(device());
+    std::optional<ember::OverworldEvent> ev;
+    ember::Json next = world_.step(save_, {col, row}, rng, ev, test());
     logInfo("map step: ({},{}) -> ({},{}): {}, day {} {}:00 -> day {} {}:00, event {}", save_["overworldPos"].value("col", 0),
             save_["overworldPos"].value("row", 0), col, row, next == save_ ? "REFUSED" : "taken", static_cast<long long>(num(save_, "gameClock", 0)),
-            e2::Overworld::campaignHour(save_), static_cast<long long>(num(next, "gameClock", 0)), e2::Overworld::campaignHour(next),
+            ember::Overworld::campaignHour(save_), static_cast<long long>(num(next, "gameClock", 0)), ember::Overworld::campaignHour(next),
             ev ? ev->kind + (ev->missionId.empty() ? std::string() : " " + ev->missionId) : std::string("-"));
     if (next == save_) return;
     save_ = std::move(next);
@@ -548,8 +548,8 @@ class OverworldStage : public Stage {
     int fed = 0;
     for (const std::string& hero : partyHeroes()) {
       const double rations = num(save_, "rations", 0);
-      const double hp = num(save_.value("unitHp", e2::Json::object()), hero, 1);
-      const double full = e2::Overworld::fullness(save_.value("heroHunger", e2::Json::object()).value(hero, e2::Json()));
+      const double hp = num(save_.value("unitHp", ember::Json::object()), hero, 1);
+      const double full = ember::Overworld::fullness(save_.value("heroHunger", ember::Json::object()).value(hero, ember::Json()));
       if (rations < 1 || hp <= 0 || full >= 100) continue;
       save_["rations"] = static_cast<long long>(rations - 1);
       save_["heroHunger"][hero] = 100;
@@ -558,8 +558,8 @@ class OverworldStage : public Stage {
     if (fed && (num(save_, "hungerStreak", 0) > 0 || num(save_, "hungerHours", 0) > 0)) {
       bool all = true;
       for (const std::string& hero : partyHeroes()) {
-        const double hp = num(save_.value("unitHp", e2::Json::object()), hero, baseMaxHp(hero));
-        if (hp > 0 && !(num(save_.value("heroHunger", e2::Json::object()), hero, 100) > 0)) all = false;
+        const double hp = num(save_.value("unitHp", ember::Json::object()), hero, baseMaxHp(hero));
+        if (hp > 0 && !(num(save_.value("heroHunger", ember::Json::object()), hero, 100) > 0)) all = false;
       }
       if (all) save_["hungerStreak"] = 0, save_["hungerHours"] = 0;
     }
@@ -601,7 +601,7 @@ class OverworldStage : public Stage {
     if (!identifyHero_.empty()) drawIdentifyMenu(size);
     drawWarpVisual(size);
     if (convDialog_) {  // a companion conversation, over everything: its replies change the affinity once
-      const bool closed = convDialog_->draw(size, [this](const e2::Json& reply) {
+      const bool closed = convDialog_->draw(size, [this](const ember::Json& reply) {
         if (companions_.resolveReply(save_, reply, convLeader_)) write();
       });
       if (closed) convDialog_.reset();
@@ -620,7 +620,7 @@ class OverworldStage : public Stage {
     return button && clicked;
   }
 
-  // The header: kicker and title on the left, the plates on the right (wrapping like Engine2's flex-wrap row).
+  // The header: kicker and title on the left, the plates on the right (wrapping like Ember's flex-wrap row).
   float drawHeader(ImVec2 size) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     const float top = 16.0f;
@@ -665,7 +665,7 @@ class OverworldStage : public Stage {
     const float goldW = 8.0f + 24.0f + 6.0f + ui->CalcTextSizeA(14.0f, FLT_MAX, 0.0f, gold.c_str()).x + 8.0f;
     place(goldW);
     emberPlate("##gold", {goldW, h}, [&](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32) {
-      if (const UiImage* icon = uiImage(paths_.engine2Public / "game/icons/gold-coins-pile.png"))
+      if (const UiImage* icon = uiImage(paths_.artRoot / "game/icons/gold-coins-pile.png"))
         imageContain(d, *icon, {a.x + 8, (a.y + b.y) * 0.5f - 12}, {a.x + 32, (a.y + b.y) * 0.5f + 12});  // object-contain
       d->AddText(ui, 14.0f, {a.x + 38, (a.y + b.y) * 0.5f - 8}, kMuted, gold.c_str());
     });
@@ -673,14 +673,14 @@ class OverworldStage : public Stage {
     place(h);
     if (emberPlate("##options", {h, h}, [&](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32 ink) { iconGear(d, {(a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f}, 16, ink); }))
       options_ = true;
-    // Som (the user, 2026-10-16: sound and options in the corner, as in Engine2's other screens)
+    // Som (the user, 2026-10-16: sound and options in the corner, as in Ember's other screens)
     place(h);
     soundButton("##sound", {h, h}, 16);
-    // Feitiços de campo (Engine2: the field-spells icon beside Opções)
+    // Feitiços de campo (Ember: the field-spells icon beside Opções)
     {
       place(h);
       const bool clicked = emberPlate("##fieldspellsbtn", {h, h}, [&](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32) {
-        if (const UiImage* icon = uiImage(paths_.engine2Public / "game/icons/field-spells.png")) imageCover(d, *icon, {a.x + 3, a.y + 3}, {b.x - 3, b.y - 3});
+        if (const UiImage* icon = uiImage(paths_.artRoot / "game/icons/field-spells.png")) imageCover(d, *icon, {a.x + 3, a.y + 3}, {b.x - 3, b.y - 3});
       });
       if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tr("Feitiços de campo", "Field spells").c_str());
       if (clicked) fieldSpells_ = !fieldSpells_;
@@ -720,12 +720,12 @@ class OverworldStage : public Stage {
       if (phase == "full" && (d / 8) % 3 == 2) phase = "blood";
       const std::string icon = phase == "full" ? "game/ui/moon/moon-full-v2.png" : "game/ui/moon/moon-" + phase + ".png";
       emberPlate("##moon", {h, h}, [&](ImDrawList* dd, ImVec2 a, ImVec2 b, ImU32) {
-        if (const UiImage* img = uiImage(paths_.engine2Public / icon)) dd->AddImage(img->texture, {a.x + 4, a.y + 4}, {b.x - 4, b.y - 4});
+        if (const UiImage* img = uiImage(paths_.artRoot / icon)) dd->AddImage(img->texture, {a.x + 4, a.y + 4}, {b.x - 4, b.y - 4});
       });
     }
     // Clock
     {
-      const std::string text = std::format("Dia {} · {:02}:00", static_cast<long long>(num(save_, "gameClock", 0)), e2::Overworld::campaignHour(save_));
+      const std::string text = std::format("Dia {} · {:02}:00", static_cast<long long>(num(save_, "gameClock", 0)), ember::Overworld::campaignHour(save_));
       const float w = 8 + 16 + 8 + ui->CalcTextSizeA(14.0f, FLT_MAX, 0.0f, text.c_str()).x + 8;
       place(w);
       emberPlate("##clock", {w, h}, [&](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32) {
@@ -743,7 +743,7 @@ class OverworldStage : public Stage {
           }))
         questLog_ = true;
     }
-    // Conversas (Engine2: the "Conversations" button of the map screens)
+    // Conversas (Ember: the "Conversations" button of the map screens)
     if (hasCompanions_) {
       const std::string label = tr("Conversas", "Conversations");
       const float w = ui->CalcTextSizeA(14.0f, FLT_MAX, 0.0f, label.c_str()).x + 24;
@@ -788,10 +788,10 @@ class OverworldStage : public Stage {
     const float imgW = vw * zoomPercent / 100.0f;
     const float imgH = map ? imgW * static_cast<float>(map->height) / static_cast<float>(map->width) : vh * 0.7f;
     const float contentW = imgW + 16.0f, contentH = imgH + 16.0f;
-    const e2::Json& pos = save_["overworldPos"];
+    const ember::Json& pos = save_["overworldPos"];
     const int col = pos.value("col", 0), row = pos.value("row", 0);
     double px = 0, py = 0;
-    e2::Overworld::hexToWorld(col, row, px, py);
+    ember::Overworld::hexToWorld(col, row, px, py);
     // Opens centred on the party (mount), keeps the centre when zooming.
     if (!centred_) {
       centreX_ = static_cast<float>(px / 100.0), centreY_ = static_cast<float>(py / 100.0), centred_ = true, recentre_ = true;
@@ -810,7 +810,7 @@ class OverworldStage : public Stage {
     const ImGuiIO& io = ImGui::GetIO();
     if (ImGui::IsItemActivated()) drag_ = {io.MousePos.x, io.MousePos.y, scrollX_, scrollY_}, dragMoved_ = false;
     if (ImGui::IsItemActive() && drag_) {
-      requestGrabCursor();  // Engine2 world-map-pan-grab: the gauntlet from the press on
+      requestGrabCursor();  // Ember world-map-pan-grab: the gauntlet from the press on
       const float dx = io.MousePos.x - drag_->x, dy = io.MousePos.y - drag_->y;
       if (!dragMoved_ && (std::abs(dx) > 4 || std::abs(dy) > 4)) dragMoved_ = true;
       if (dragMoved_) scrollX_ = drag_->sx - dx, scrollY_ = drag_->sy - dy;
@@ -849,31 +849,31 @@ class OverworldStage : public Stage {
     if (!fxOn) {
       drawFog(dl, o, imgW, imgH);
       // Sky tint by the hour.
-      const std::string t = e2::Overworld::timeOfDay(e2::Overworld::campaignHour(save_));
+      const std::string t = ember::Overworld::timeOfDay(ember::Overworld::campaignHour(save_));
       const ImU32 tint = t == "darkNight" ? IM_COL32(5, 12, 43, 173) : t == "brightNight" ? IM_COL32(34, 62, 132, 122) : t == "dusk" ? IM_COL32(166, 67, 39, 82)
                          : t == "dawn" ? IM_COL32(230, 137, 112, 64) : t == "noon" ? IM_COL32(255, 197, 108, 31) : 0;
       if (tint) dl->AddRectFilled(o, {o.x + imgW, o.y + imgH}, tint, 8.0f);
     }
     // Reachable: the party's hex and every neighbour it may step to.
-    std::vector<e2::OverworldHex> dots;
-    for (const e2::OverworldHex& n : e2::Overworld::neighbors(col, row))
+    std::vector<ember::OverworldHex> dots;
+    for (const ember::OverworldHex& n : ember::Overworld::neighbors(col, row))
       if (world_.isCell(n.col, n.row) && world_.canStep(save_, {col, row}, n, test())) dots.push_back(n);
     auto walkable = [&](int c, int r) {
       if (c == col && r == row) return true;
-      return std::any_of(dots.begin(), dots.end(), [&](const e2::OverworldHex& d) { return d.col == c && d.row == r; });
+      return std::any_of(dots.begin(), dots.end(), [&](const ember::OverworldHex& d) { return d.col == c && d.row == r; });
     };
-    const e2::MapLocation* standing = world_.locationAt(col, row);
+    const ember::MapLocation* standing = world_.locationAt(col, row);
     std::string clickedLocation;
-    std::optional<e2::OverworldHex> clickedDot;
+    std::optional<ember::OverworldHex> clickedDot;
     bool clickedLeader = false;
     const ImVec2 mouse = io.MousePos;
     // Pins.
-    std::vector<std::pair<const e2::MapLocation*, std::string>> pins;
-    for (const e2::MapLocation& loc : world_.locations()) {
+    std::vector<std::pair<const ember::MapLocation*, std::string>> pins;
+    for (const ember::MapLocation& loc : world_.locations()) {
       if (!test() && !world_.locationVisible(loc, save_)) continue;  // GameApp mapVisibleLocations: test mode shows all
       // isExplored: Stone Bridge before O Vau, the Inn, where the party stands, or a hex it has stood on (test: all).
       bool explored = test() || (!completed("vau") && loc.id == "stonebridge") || loc.id == "estalagem" || (standing && standing->id == loc.id);
-      for (const e2::Json& h : save_.value("exploredHexes", e2::Json::array()))
+      for (const ember::Json& h : save_.value("exploredHexes", ember::Json::array()))
         if (h.is_string() && h.get<std::string>() == std::format("{},{}", loc.col, loc.row)) explored = true;
       if (!explored) continue;
       pins.push_back({&loc, locationStatus(loc)});
@@ -886,7 +886,7 @@ class OverworldStage : public Stage {
       const float s = hover ? 1.1f : 1.0f;
       const int alpha = reachable ? 255 : 178;
       const auto missions = world_.visibleMissionsOf(*loc, save_, test());
-      const bool hub = std::any_of(missions.begin(), missions.end(), [](const e2::MapMission* m) { return m->hub; });
+      const bool hub = std::any_of(missions.begin(), missions.end(), [](const ember::MapMission* m) { return m->hub; });
       ImU32 border = kAccent;
       if (st == "locked") border = IM_COL32(74, 74, 74, 128);
       else if (st != "done" && hub) {
@@ -917,20 +917,20 @@ class OverworldStage : public Stage {
     }
     // Step hexes (movement open): the hex shape, the accent wash, the travel time.
     if (movementOpen_)
-      for (const e2::OverworldHex& d : dots) {
-        const e2::OverworldCell* cell = world_.cell(d.col, d.row);
+      for (const ember::OverworldHex& d : dots) {
+        const ember::OverworldCell* cell = world_.cell(d.col, d.row);
         const ImVec2 c = at(cell->x, cell->y);
         const float w = std::max(44.0f, std::sqrt(3.0f) * 5.0f / 100.0f * imgW), h = std::max(44.0f, 10.0f / 100.0f * imgH);
         const ImVec2 p[6] = {{c.x, c.y - h / 2}, {c.x + w / 2, c.y - h / 4}, {c.x + w / 2, c.y + h / 4}, {c.x, c.y + h / 2}, {c.x - w / 2, c.y + h / 4}, {c.x - w / 2, c.y - h / 4}};
         const bool hover = overViewport && std::abs(mouse.x - c.x) < w / 2 && std::abs(mouse.y - c.y) < h / 2 - std::abs(mouse.x - c.x) / (w / 2) * h / 4;
         dl->AddConvexPolyFilled(p, 6, hover ? IM_COL32(216, 216, 216, 204) : IM_COL32(216, 216, 216, 122));
         if (hover) dl->AddPolyline(p, 6, kFg, 2.0f, ImDrawFlags_Closed);
-        const std::string label = e2::Overworld::travelTimeLabel(cell->hours);
+        const std::string label = ember::Overworld::travelTimeLabel(cell->hours);
         const ImVec2 ts = uiFont(UiFont::Ui)->CalcTextSizeA(12.0f, FLT_MAX, 0, label.c_str());
         dl->AddText(uiFont(UiFont::Ui), 12.0f, {c.x - ts.x / 2 + 1, c.y - ts.y / 2 + 1}, IM_COL32(17, 17, 17, 255), label.c_str());
         dl->AddText(uiFont(UiFont::Ui), 12.0f, {c.x - ts.x / 2, c.y - ts.y / 2}, kFg, label.c_str());
         if (hover && clicked) clickedDot = d;
-        if (hover) ImGui::SetTooltip("Saciedade: −%s", std::format("{}", e2::Overworld::travelHungerCost(cell->hours)).c_str());
+        if (hover) ImGui::SetTooltip("Saciedade: −%s", std::format("{}", ember::Overworld::travelHungerCost(cell->hours)).c_str());
       }
     // The leader: idle frames of their own sprite, sliding hex to hex (0.5 s), turned the way they last walked.
     {
@@ -986,7 +986,7 @@ class OverworldStage : public Stage {
       const int hr = static_cast<int>(rr), hc = static_cast<int>(rq) + (hr - (hr & 1)) / 2;
       logInfo("map click: mouse on the map at {:.1f} %, {:.1f} % = hex ({},{}) {}, a neighbour of the party: {}", mx, my, hc, hr,
               world_.isCell(hc, hr) ? "on the board" : "OFF the board",
-              std::ranges::any_of(e2::Overworld::neighbors(c0, r0), [&](const e2::OverworldHex& n) { return n.col == hc && n.row == hr; }) ? "yes" : "no");
+              std::ranges::any_of(ember::Overworld::neighbors(c0, r0), [&](const ember::OverworldHex& n) { return n.col == hc && n.row == hr; }) ? "yes" : "no");
       logInfo("map click: at ({},{}) movement {} -> {}", c0, r0, movementOpen_ ? "open" : "closed",
               clickedDot ? std::format("step hex ({},{})", clickedDot->col, clickedDot->row)
               : clickedLeader ? std::string("leader")
@@ -1003,44 +1003,44 @@ class OverworldStage : public Stage {
 
   void walkTo(int col, int row) {
     if (!movementOpen_) return;
-    const e2::Json& pos = save_["overworldPos"];
+    const ember::Json& pos = save_["overworldPos"];
     if (!world_.canStep(save_, {pos.value("col", 0), pos.value("row", 0)}, {col, row}, test())) return;
     movementOpen_ = false;
     step(col, row);
   }
 
-  void pinClicked(const e2::MapLocation& loc, const std::string& st, bool walkable, const e2::MapLocation* standing) {
+  void pinClicked(const ember::MapLocation& loc, const std::string& st, bool walkable, const ember::MapLocation* standing) {
     if (!test() && !completed("vau") && loc.id == "stonebridge") return openMission("vau");
     if (standing && standing->id == loc.id) return enterLocation(loc, st);
     if (walkable) return walkTo(loc.col, loc.row);
     if (!test()) return showHint("Ande até lá primeiro.");
     // Modo teste: a distant pin is a free jump (teleportOverworld), then the place opens.
-    save_ = e2::Overworld::teleport(save_, {loc.col, loc.row});
+    save_ = ember::Overworld::teleport(save_, {loc.col, loc.row});
     write();
     enterLocation(loc, st);
   }
 
-  void enterLocation(const e2::MapLocation& loc, const std::string& st) {
+  void enterLocation(const ember::MapLocation& loc, const std::string& st) {
     if (loc.deadlineDay && num(save_, "gameClock", 0) > *loc.deadlineDay) return showHint("Prazo esgotado por aqui.");
     // The Ruins (docs/INTERLUDE.md): shut until Salazar's quests are done; the first legitimate entry starts the Interlude (the present
     // party put aside, the historical one in, its first map pending), a chapter left half-way goes on at its pending map, and once the
     // chapter is completed the Ruins open as any present-day location. Never in Modo teste (every location open, no chapter).
     if (interlude_ && !test() && loc.id == interlude_->ruinsLocation) {
-      if (!e2::ruinsOpen(*interlude_, world_, save_)) {
+      if (!ember::ruinsOpen(*interlude_, world_, save_)) {
         flashId_ = loc.id, flashAt_ = now_;
-        logInfo("ruins: shut ({})", e2::ruinsLockedReason(*interlude_, world_, save_));
+        logInfo("ruins: shut ({})", ember::ruinsLockedReason(*interlude_, world_, save_));
         return showHint(tr("As Ruínas estão fechadas: termine antes as missões de Salazar.", "The Ruins are shut: finish Salazar's quests first."));
       }
-      const e2::InterludeState state = e2::interludeState(save_);
-      if (state == e2::InterludeState::NotStarted) {
+      const ember::InterludeState state = ember::interludeState(save_);
+      if (state == ember::InterludeState::NotStarted) {
         std::string why;
-        if (!e2::interludeBegin(*interlude_, save_, &why)) return showHint("Interlúdio: " + why);
+        if (!ember::interludeBegin(*interlude_, save_, &why)) return showHint("Interlúdio: " + why);
         write();
         logInfo("interlude: begun; the historical party is in, {} pending", interlude_->missions.front());
         return openMission(interlude_->missions.front(), true);
       }
-      if (state == e2::InterludeState::Active) {
-        const std::string id = e2::interludeMission(*interlude_, save_);
+      if (state == ember::InterludeState::Active) {
+        const std::string id = ember::interludeMission(*interlude_, save_);
         if (!id.empty()) return openMission(id, true);
       }
     }
@@ -1054,9 +1054,9 @@ class OverworldStage : public Stage {
       return;
     }
     if (!missions.empty()) {
-      const e2::MapMission* m = missions[0];
+      const ember::MapMission* m = missions[0];
       std::vector<std::string> order;
-      for (const e2::MapMission* x : world_.missionsOf(loc)) order.push_back(x->id);
+      for (const ember::MapMission* x : world_.missionsOf(loc)) order.push_back(x->id);
       if (m->crossing && world_.missionStatus(m->id, save_, order, test()) == "done") open_ = loc.id;
       else openMission(m->id);
     }
@@ -1072,7 +1072,7 @@ class OverworldStage : public Stage {
     d.underworld = underworld_;
     d.quality = gfxQuality();
     d.time = now_;
-    const double days = num(save_, "gameClock", 0), hour = e2::Overworld::campaignHour(save_);
+    const double days = num(save_, "gameClock", 0), hour = ember::Overworld::campaignHour(save_);
     if (underworld_) {
       // O relógio da campanha nunca para: o ciclo corre junto com ele e o Submundo abre no ponto da hora atual.
       d.glow = WorldMapFx::underworldGlow(c, days * 24.0 + hour);
@@ -1098,12 +1098,12 @@ class OverworldStage : public Stage {
   void updateReveal() {
     std::vector<std::pair<double, double>> centres;
     size_t key = 1469598103u;
-    for (const e2::Json& k : save_.value("exploredHexes", e2::Json::array())) {
+    for (const ember::Json& k : save_.value("exploredHexes", ember::Json::array())) {
       if (!k.is_string()) continue;
       int c = 0, r = 0;
       if (std::sscanf(k.get<std::string>().c_str(), "%d,%d", &c, &r) != 2) continue;
       double x = 0, y = 0;
-      e2::Overworld::hexToWorld(c, r, x, y);
+      ember::Overworld::hexToWorld(c, r, x, y);
       centres.push_back({x, y});
       key = (key ^ static_cast<size_t>(c * 73856093 + r * 19349663)) * 1099511628211u;
     }
@@ -1128,17 +1128,17 @@ class OverworldStage : public Stage {
   }
 
   // The fog: dark (rgba 6,6,6,.78) except a soft circle (radius 9 % of the image, solid to 65 %) around every hex the
-  // party has stood on, drawn as a grid of shaded cells (Engine2's SVG mask, circles compositing over each other).
+  // party has stood on, drawn as a grid of shaded cells (Ember's SVG mask, circles compositing over each other).
   // Kept for "enabled": false in content/worldmap/overworld-light-fog.json (and the measurement's baseline).
   void drawFog(ImDrawList* dl, ImVec2 o, float w, float h) {
     constexpr int N = 96;
     std::vector<std::pair<double, double>> centres;
-    for (const e2::Json& k : save_.value("exploredHexes", e2::Json::array())) {
+    for (const ember::Json& k : save_.value("exploredHexes", ember::Json::array())) {
       if (!k.is_string()) continue;
       int c = 0, r = 0;
       if (std::sscanf(k.get<std::string>().c_str(), "%d,%d", &c, &r) != 2) continue;
       double x = 0, y = 0;
-      e2::Overworld::hexToWorld(c, r, x, y);
+      ember::Overworld::hexToWorld(c, r, x, y);
       centres.push_back({x, y});
     }
     std::vector<float> alpha((N + 1) * (N + 1));
@@ -1215,7 +1215,7 @@ class OverworldStage : public Stage {
       left = c.x, top = c.y, width = c.w, height = c.h, cw = c.natW, ch = c.natH;
       std::string name = c.pattern;
       name.replace(name.find("{}"), 2, std::to_string(frame));
-      framePath = name.starts_with("content/") ? std::filesystem::path(name) : paths_.engine2Public / "game" / name;
+      framePath = name.starts_with("content/") ? std::filesystem::path(name) : paths_.artRoot / "game" / name;
     } else if (hero == "Voss") {
       // His own idle (voss-veo, cut from the user's video; the user, 2026-10-21: the map still showed the old black mage): every
       // 4th of its 96 frames at 6 a second (its 24 fps / 4), a forward loop with a hard cut; the clip's crop box, 654 x 1154.
@@ -1242,19 +1242,19 @@ class OverworldStage : public Stage {
       const int count = sheet->idle == 36 ? 12 : sheet->idle;
       const int frameIndex = (sheet->idle == 36 ? source / 3 : source) % count;
       const int file = sheet->idle == 36 ? 1 + frameIndex * 3 : 1 + frameIndex;
-      const e2::Json& bounds = world_.tables()["leaderFrameBounds"][hero];
+      const ember::Json& bounds = world_.tables()["leaderFrameBounds"][hero];
       if (hero == "Neera" || hero == "Salazar") {
         float l = 1e9f, t = 1e9f, r = -1e9f, bt = -1e9f;
-        for (const e2::Json& b : bounds) {
+        for (const ember::Json& b : bounds) {
           l = std::min(l, b[0].get<float>()), t = std::min(t, b[1].get<float>());
           r = std::max(r, b[0].get<float>() + b[2].get<float>()), bt = std::max(bt, b[1].get<float>() + b[3].get<float>());
         }
         left = l, top = t, width = r - l, height = bt - t, cw = bounds[0][4].get<float>(), ch = bounds[0][5].get<float>();
       } else {
-        const e2::Json& b = bounds[static_cast<size_t>(frameIndex) % bounds.size()];
+        const ember::Json& b = bounds[static_cast<size_t>(frameIndex) % bounds.size()];
         left = b[0].get<float>(), top = b[1].get<float>(), width = b[2].get<float>(), height = b[3].get<float>(), cw = b[4].get<float>(), ch = b[5].get<float>();
       }
-      framePath = paths_.engine2Public / (std::string("game/sprites/") + sheet->dir + (hero == "Neera" ? "" : "/") + std::to_string(file) + ".png");
+      framePath = paths_.artRoot / (std::string("game/sprites/") + sheet->dir + (hero == "Neera" ? "" : "/") + std::to_string(file) + ".png");
     }
     const float zoomScale = kOverworldZoomStops[zoom_] / kOverworldZoomStops[0];
     const float markerHeight = 48.0f * zoomScale;
@@ -1281,8 +1281,8 @@ class OverworldStage : public Stage {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     ImFont* ui = uiFont(UiFont::Ui);
     const std::vector<std::string> heroes = partyHeroes();
-    const e2::Json& pos = save_["overworldPos"];
-    const e2::MapLocation* standing = world_.locationAt(pos.value("col", 0), pos.value("row", 0));
+    const ember::Json& pos = save_["overworldPos"];
+    const ember::MapLocation* standing = world_.locationAt(pos.value("col", 0), pos.value("row", 0));
     std::string line;
     const auto wisp = world_.wispHex();
     if (wisp && !test() && world_.wispForestUncleared(save_) && pos.value("col", 0) == wisp->col && pos.value("row", 0) == wisp->row)
@@ -1295,7 +1295,7 @@ class OverworldStage : public Stage {
     const float w = std::min(size.x - 96.0f, std::max(rowW, textW) + 2 * pad);
     const float h = pad + 12.0f * 1.4f + 8.0f + 48.0f + 8.0f + 8.0f + (standing ? 44.0f : 0.0f) + pad;
     const ImVec2 a{16.0f, size.y - 16.0f - h}, b{a.x + w, size.y - 16.0f};
-    if (const UiImage* bg = uiImage(paths_.engine2Public / "game/ui/map-status-background.jpg")) imageCover(dl, *bg, a, b);
+    if (const UiImage* bg = uiImage(paths_.artRoot / "game/ui/map-status-background.jpg")) imageCover(dl, *bg, a, b);
     dl->AddRectFilled(a, b, IM_COL32(17, 17, 17, 64), 0);
     dl->AddRect(a, b, kBorder, 0);
     // Block input under the panel.
@@ -1312,14 +1312,14 @@ class OverworldStage : public Stage {
       if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", hero.c_str());
       ImGui::PopID();
       // HungerBar: 4 px, the first 100 of 120 in the accent (red at 25 or less), the overfed part gold.
-      const double full = e2::Overworld::fullness(save_.value("heroHunger", e2::Json::object()).value(hero, e2::Json()));
+      const double full = ember::Overworld::fullness(save_.value("heroHunger", ember::Json::object()).value(hero, ember::Json()));
       const float by = y + 48 + 4;
       dl->AddRectFilled({x, by}, {x + 40, by + 4}, IM_COL32(74, 74, 74, 255), 2.0f);
       dl->AddRectFilled({x, by}, {x + 40 * static_cast<float>(std::min(100.0, full) / 120.0), by + 4}, full <= 25 ? kDanger : kAccent, 2.0f);
       if (full > 100) dl->AddRectFilled({x + 40 * 100.0f / 120.0f, by}, {x + 40 * static_cast<float>(full / 120.0), by + 4}, IM_COL32(201, 162, 39, 255));
       // LifeBar: red, green when poisoned, purple when ill.
       const int maxHp = std::max(1, heroMaxHp(hero));
-      const double hp = std::clamp(num(save_.value("unitHp", e2::Json::object()), hero, maxHp), 0.0, static_cast<double>(maxHp));
+      const double hp = std::clamp(num(save_.value("unitHp", ember::Json::object()), hero, maxHp), 0.0, static_cast<double>(maxHp));
       const bool poisoned = save_.contains("heroPoisons") && save_["heroPoisons"].contains(hero) && !save_["heroPoisons"][hero].is_null() && save_["heroPoisons"][hero] != false;
       const bool diseased = save_.contains("heroDiseases") && save_["heroDiseases"].value(hero, false);
       const float ly = by + 8;
@@ -1412,8 +1412,8 @@ class OverworldStage : public Stage {
   }
 
   void drawLocationPanel(ImVec2 size) {
-    const e2::MapLocation* loc = nullptr;
-    for (const e2::MapLocation& l : world_.locations())
+    const ember::MapLocation* loc = nullptr;
+    for (const ember::MapLocation& l : world_.locations())
       if (l.id == *open_) loc = &l;
     if (!loc) return open_.reset();
     if (veil(size, "##locveil")) return open_.reset();
@@ -1426,14 +1426,14 @@ class OverworldStage : public Stage {
       open_.reset();
     ImGui::SetCursorScreenPos({head.x, head.y + 40});
     std::vector<std::string> order;
-    for (const e2::MapMission* m : world_.missionsOf(*loc)) order.push_back(m->id);
+    for (const ember::MapMission* m : world_.missionsOf(*loc)) order.push_back(m->id);
     int i = 0;
     std::string pick;
-    for (const e2::MapMission* m : world_.visibleMissionsOf(*loc, save_, test())) {
+    for (const ember::MapMission* m : world_.visibleMissionsOf(*loc, save_, test())) {
       ++i;
       const std::string st = world_.missionStatus(m->id, save_, order, test());
       const bool optionalCrossing = st == "done" && m->crossing;
-      const e2::CampaignMission* cm = campaign_.data().mission(m->id);
+      const ember::CampaignMission* cm = campaign_.data().mission(m->id);
       const std::string place = cm ? cm->place : std::string();
       const std::string objective = cm ? cm->objective : std::string();
       const ImVec2 a = ImGui::GetCursorScreenPos();
@@ -1477,7 +1477,7 @@ class OverworldStage : public Stage {
     }
   }
 
-  // Engine2's QuestLogPanel (QuestLog.h, shared with the fight's quest log).
+  // Ember's QuestLogPanel (QuestLog.h, shared with the fight's quest log).
   void drawQuestLog(ImVec2) {
     if (!drawQuestLogPanel(world_.tables()["quests"], world_.tables()["potions"], save_)) questLog_ = false;
   }
@@ -1548,14 +1548,14 @@ class OverworldStage : public Stage {
     float y = a.y + 10;
     for (const Row& row : rows) {
       const std::string& hero = row.hero;
-      const int level = static_cast<int>(num(save_.value("levels", e2::Json::object()), hero, 1));
+      const int level = static_cast<int>(num(save_.value("levels", ember::Json::object()), hero, 1));
       std::string promo;
       if (save_.contains("promotions") && save_["promotions"].contains(hero) && save_["promotions"][hero].is_string()) promo = save_["promotions"][hero].get<std::string>();
       portrait(dl, hero, {a.x + 12, y}, {a.x + 52, y + 48});
-      const std::string cls = promo.empty() ? e2::promotionName(row.path->base) : e2::promotionName(promo);
+      const std::string cls = promo.empty() ? ember::promotionName(row.path->base) : ember::promotionName(promo);
       const std::string head = std::format("{} · {} {} · {}", hero, tr("Nv", "Lv"), level, cls);
       dl->AddText(ui, 14.0f, {a.x + 62, y + 2}, kFg, head.c_str());
-      const std::string firstName = e2::promotionName(row.path->first), secondName = e2::promotionName(row.path->second);
+      const std::string firstName = ember::promotionName(row.path->first), secondName = ember::promotionName(row.path->second);
       if (!promo.empty()) {
         dl->AddText(ui, 12.0f, {a.x + 62, y + 24}, kMuted, tr("Classe de prestígio escolhida: fica para o resto da campanha.", "Prestige class chosen: it stays for the rest of the campaign.").c_str());
       } else if (level < 15) {
@@ -1579,7 +1579,7 @@ class OverworldStage : public Stage {
     ImGui::SetCursorScreenPos({a.x, a.y + 24 + rowH * static_cast<float>(rows.size())});
   }
 
-  // Conversas de companheiros (Engine2 CompanionConversations.tsx): the leader, a companion, and that pair's topics (one per
+  // Conversas de companheiros (Ember CompanionConversations.tsx): the leader, a companion, and that pair's topics (one per
   // affinity tier); a topic opens the conversation, whose first reply changes the affinity for good.
   void drawConversationsTab(const std::vector<std::string>& heroes, float inner) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
@@ -1633,15 +1633,15 @@ class OverworldStage : public Stage {
       portrait(dl, convCompanion_, {a.x, a.y}, {a.x + 56, a.y + 64});
       dl->AddRect({a.x, a.y}, {a.x + 56, a.y + 64}, kBorder, 4.0f);
       dl->AddText(uiFont(UiFont::Display), 20.0f, {a.x + 70, a.y + 4}, kFg, (lead + " & " + convCompanion_).c_str());
-      const double points = e2::Companions::affinityScore(save_, lead, convCompanion_);
+      const double points = ember::Companions::affinityScore(save_, lead, convCompanion_);
       std::string shown = std::format("{:.1f}", points);
       if (shown.size() > 2 && shown.substr(shown.size() - 2) == ".0") shown.resize(shown.size() - 2);
       if (!en) std::replace(shown.begin(), shown.end(), '.', ',');
       dl->AddText(ui, 14.0f, {a.x + 70, a.y + 34}, kMuted, std::format("{}: {}/100", en ? "Affinity" : "Afinidade", shown).c_str());
       ImGui::SetCursorScreenPos({a.x, a.y + 80});
     }
-    const std::vector<e2::Companions::Topic> topics = companions_.topics(lead, convCompanion_, save_, en);
-    for (const e2::Companions::Topic& t : topics) {
+    const std::vector<ember::Companions::Topic> topics = companions_.topics(lead, convCompanion_, save_, en);
+    for (const ember::Companions::Topic& t : topics) {
       const ImVec2 a = ImGui::GetCursorScreenPos();
       const float h = 66.0f;
       ImGui::PushID(t.tier);
@@ -1659,10 +1659,10 @@ class OverworldStage : public Stage {
                                              : tr("Nova conversa", "New conversation");
       dl->AddText(ui, 12.0f, {a.x + 14, a.y + 46}, muted, state.c_str());
       if (clicked) {
-        const e2::Json tree = companions_.build(lead, convCompanion_, t.tier, save_, en);
+        const ember::Json tree = companions_.build(lead, convCompanion_, t.tier, save_, en);
         if (tree.is_object()) {
           convLeader_ = lead;
-          convDialog_.emplace(tree, companions_.portraits(), paths_.engine2Public);
+          convDialog_.emplace(tree, companions_.portraits(), paths_.artRoot);
         }
       }
       ImGui::SetCursorScreenPos({a.x, a.y + h + 8});
@@ -1680,11 +1680,11 @@ class OverworldStage : public Stage {
       return;
     }
     const bool en = uiEnglish();
-    const e2::FieldSpells spells(innData_, world_);
+    const ember::FieldSpells spells(innData_, world_);
     const std::vector<std::string> healers = spells.healers(save_, test()), mages = spells.mages(save_, test()), hunters = spells.hunters(save_, test());
     const std::vector<std::string> campers = spells.campers(save_, test()), prayers = spells.prayers(save_, test());
     const std::vector<std::string> markers = spells.runeMarkers(save_, test()), recallers = spells.recallers(save_, test());
-    const std::vector<const e2::MapLocation*> cities = spells.warpCities(save_);
+    const std::vector<const ember::MapLocation*> cities = spells.warpCities(save_);
     beginPanel("##fieldspells", size, 360, size.y * 0.8f);
     const ImVec2 head = ImGui::GetCursorScreenPos();
     kicker(tr("Feitiços de campo", "Field spells"), 14.0f);
@@ -1695,23 +1695,23 @@ class OverworldStage : public Stage {
     ImFont* ui = uiFont(UiFont::Ui);
     const float inner = 320;
     for (const std::string& hero : healers) {
-      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kFoodTier);
+      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, ember::FieldSpells::kFoodTier);
       const ImVec2 a = ImGui::GetCursorScreenPos();
       float textX = a.x;
-      if (const UiImage* icon = uiImage(paths_.engine2Public / "game/icons/create-food-and-water.png")) {  // Engine2's icon (data.ts spellIcon)
+      if (const UiImage* icon = uiImage(paths_.artRoot / "game/icons/create-food-and-water.png")) {  // Ember's icon (data.ts spellIcon)
         imageCover(dl, *icon, {a.x, a.y - 2}, {a.x + 40, a.y + 38}, 0.5f, 0.5f, IM_COL32(255, 255, 255, 255));
         textX += 48;
       }
       dl->AddText(ui, 15.0f, {textX, a.y}, kFg, tr("Criar Comida e Água", "Create Food and Water").c_str());
       dl->AddText(ui, 12.0f, {textX, a.y + 20}, kMuted,
-                  std::format("{} ({} {}) · {} · {}x", hero, en ? "Lv" : "Nv", level, e2::FieldSpells::foodFormula(level, en), left).c_str(), nullptr,
+                  std::format("{} ({} {}) · {} · {}x", hero, en ? "Lv" : "Nv", level, ember::FieldSpells::foodFormula(level, en), left).c_str(), nullptr,
                   inner - 108 - (textX - a.x));
       ImGui::PushID(hero.c_str());
       ImGui::BeginDisabled(!spells.canFeed(save_, hero));
       if (emberBigButton("##cast", upperUtf8(tr("Lançar", "Cast")).c_str(), {a.x + inner - 96, a.y + 6}, {96, 30}, false, 11.0f)) {
         static std::mt19937 rng{std::random_device{}()};
         std::uniform_real_distribution<double> unit(0.0, 1.0);
-        if (const std::optional<e2::Json> next = spells.castFood(save_, hero, [&] { return unit(rng); })) {
+        if (const std::optional<ember::Json> next = spells.castFood(save_, hero, [&] { return unit(rng); })) {
           save_ = *next;
           write();
           showHint(en ? std::format("{} restored their hunger.", hero) : std::format("{} restaurou a fome.", hero));
@@ -1726,7 +1726,7 @@ class OverworldStage : public Stage {
     }
     // Caçada (ours, docs/SKILLS_ARCHER.md): the archer hunts: rations for the party, a tier-2 use
     for (const std::string& hero : hunters) {
-      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kHuntTier);
+      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, ember::FieldSpells::kHuntTier);
       const ImVec2 a = ImGui::GetCursorScreenPos();
       float textX = a.x;
       if (const UiImage* icon = uiImage(std::filesystem::path("content/ui/spells/hunt.jpg"))) {  // the user's art, centre-cropped
@@ -1735,14 +1735,14 @@ class OverworldStage : public Stage {
       }
       dl->AddText(ui, 15.0f, {textX, a.y}, kFg, tr("Caçada", "Hunt").c_str());
       dl->AddText(ui, 12.0f, {textX, a.y + 20}, kMuted,
-                  std::format("{} ({} {}) · {} · {}x", hero, en ? "Lv" : "Nv", level, e2::FieldSpells::huntFormula(level, en), left).c_str(), nullptr, inner - 108 - (textX - a.x));
+                  std::format("{} ({} {}) · {} · {}x", hero, en ? "Lv" : "Nv", level, ember::FieldSpells::huntFormula(level, en), left).c_str(), nullptr, inner - 108 - (textX - a.x));
       ImGui::PushID(("hunt" + hero).c_str());
       ImGui::BeginDisabled(!spells.canHunt(save_, hero));
       if (emberBigButton("##hunt", upperUtf8(tr("Caçar", "Hunt")).c_str(), {a.x + inner - 96, a.y + 6}, {96, 30}, false, 11.0f)) {
         static std::mt19937 rng{std::random_device{}()};
         std::uniform_real_distribution<double> unit(0.0, 1.0);
         int rations = 0;
-        if (const std::optional<e2::Json> next = spells.castHunt(save_, hero, [&] { return unit(rng); }, &rations)) {
+        if (const std::optional<ember::Json> next = spells.castHunt(save_, hero, [&] { return unit(rng); }, &rations)) {
           save_ = *next;
           write();
           showHint(en ? std::format("{} hunted {} {}.", hero, rations, rations == 1 ? "ration" : "rations")
@@ -1777,12 +1777,12 @@ class OverworldStage : public Stage {
       ImGui::Dummy({inner, 4});
     };
     for (const std::string& hero : campers) {
-      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kCampTier);
+      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, ember::FieldSpells::kCampTier);
       healerRow(hero, "consecrateCamp.jpg", tr("Consagrar Acampamento", "Consecrate Camp"),
                 std::format("{} ({} {}) · {} · {}x", hero, en ? "Lv" : "Nv", level, tr("todo o grupo com HP cheio", "the whole party to full HP"), left),
                 tr("Acampar", "Camp"), "camp", spells.canCamp(save_, hero, test()), [&, hero] {
                   int healed = 0;
-                  if (const std::optional<e2::Json> next = spells.castCamp(save_, hero, test(), &healed)) {
+                  if (const std::optional<ember::Json> next = spells.castCamp(save_, hero, test(), &healed)) {
                     save_ = *next;
                     write();
                     showHint(en ? std::format("{} consecrated the camp: {} healed to full.", hero, healed)
@@ -1793,18 +1793,18 @@ class OverworldStage : public Stage {
                 });
     }
     for (const std::string& hero : prayers) {
-      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kPrayerTier);
-      const int hexes = e2::FieldSpells::prayerHexes(level), active = e2::FieldSpells::prayerLeft(save_);
+      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, ember::FieldSpells::kPrayerTier);
+      const int hexes = ember::FieldSpells::prayerHexes(level), active = ember::FieldSpells::prayerLeft(save_);
       const std::string state = active > 0 ? (en ? std::format(" · active: {} hexes", active) : std::format(" · ativa: {} hexes", active)) : std::string();
       healerRow(hero, "prayerOfTheRoad.jpg", tr("Prece do Caminho", "Prayer of the Road"),
                 std::format("{} ({} {}) · {} {} · {}x{}", hero, en ? "Lv" : "Nv", level, hexes, tr("hexes sem mortos-vivos, batalhas pela metade", "hexes: no undead, battles halved"),
                             left, state),
                 tr("Rezar", "Pray"), "pray", spells.canPray(save_, hero), [&, hero, hexes] {
-                  if (const std::optional<e2::Json> next = spells.castPrayer(save_, hero)) {
+                  if (const std::optional<ember::Json> next = spells.castPrayer(save_, hero)) {
                     save_ = *next;
                     write();
-                    showHint(en ? std::format("{} prayed: the next {} hexes hold no undead.", hero, e2::FieldSpells::prayerLeft(save_))
-                                : std::format("{} rezou: os próximos {} hexes sem mortos-vivos.", hero, e2::FieldSpells::prayerLeft(save_)));
+                    showHint(en ? std::format("{} prayed: the next {} hexes hold no undead.", hero, ember::FieldSpells::prayerLeft(save_))
+                                : std::format("{} rezou: os próximos {} hexes sem mortos-vivos.", hero, ember::FieldSpells::prayerLeft(save_)));
                   } else {
                     showHint(tr("Não foi possível rezar.", "Could not pray."));
                   }
@@ -1813,25 +1813,25 @@ class OverworldStage : public Stage {
     // The Conjurador's runes (ours, docs/SKILLS_CONJURER.md; Ultima Online's Mark and Recall): Marcar Runa makes a rune of this hex (an
     // item of the party's bag, a tier-2 use); Retornar opens the runes and takes the party to the chosen one (a tier-3 use; the rune stays).
     for (const std::string& hero : markers) {
-      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kRuneTier);
-      const e2::FieldSpells::Rune here = spells.runeHere(save_);
-      const bool marked = e2::FieldSpells::runeAt(save_, here.col, here.row);
+      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, ember::FieldSpells::kRuneTier);
+      const ember::FieldSpells::Rune here = spells.runeHere(save_);
+      const bool marked = ember::FieldSpells::runeAt(save_, here.col, here.row);
       healerRow(hero, "markRune.jpg", tr("Marcar Runa", "Mark Rune"),
                 std::format("{} ({} {}) · {} · {}x", hero, en ? "Lv" : "Nv", level, marked ? tr("este hex já tem runa", "this hex has a rune") : here.place, left),
                 tr("Marcar", "Mark"), "mark", spells.canMark(save_, hero, test()), [&, hero] {
-                  if (const std::optional<e2::Json> next = spells.castMarkRune(save_, hero, test())) {
+                  if (const std::optional<ember::Json> next = spells.castMarkRune(save_, hero, test())) {
                     save_ = *next;
                     write();
-                    showHint(en ? std::format("{} marked a rune here ({} runes in the bag).", hero, e2::FieldSpells::runes(save_).size())
-                                : std::format("{} marcou uma runa aqui ({} runas na mochila).", hero, e2::FieldSpells::runes(save_).size()));
+                    showHint(en ? std::format("{} marked a rune here ({} runes in the bag).", hero, ember::FieldSpells::runes(save_).size())
+                                : std::format("{} marcou uma runa aqui ({} runas na mochila).", hero, ember::FieldSpells::runes(save_).size()));
                   } else {
                     showHint(tr("Não foi possível marcar (sem uso, sem espaço na mochila ou já há runa aqui).", "Could not mark (no use, no bag room or a rune is here)."));
                   }
                 });
     }
     for (const std::string& hero : recallers) {
-      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kRecallTier);
-      const size_t count = e2::FieldSpells::runes(save_).size();
+      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, ember::FieldSpells::kRecallTier);
+      const size_t count = ember::FieldSpells::runes(save_).size();
       healerRow(hero, "recall.jpg", tr("Retornar", "Recall"),
                 std::format("{} ({} {}) · {} {} · {}x", hero, en ? "Lv" : "Nv", level, count, count == 1 ? tr("runa", "rune") : tr("runas", "runes"), left),
                 tr("Runas", "Runes"), "recall", spells.canRecall(save_, hero), [&, hero] { recallHero_ = hero, fieldSpells_ = false; });
@@ -1840,7 +1840,7 @@ class OverworldStage : public Stage {
     {
       const size_t unknownCount = spells.unknownItems(save_).size();
       for (const std::string& hero : spells.identifiers(save_, test())) {
-        const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kIdentifyTier);
+        const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, ember::FieldSpells::kIdentifyTier);
         healerRow(hero, "identify.jpg", tr("Identificar", "Identify"),
                   std::format("{} ({} {}) · {} {} · {}x", hero, en ? "Lv" : "Nv", level, unknownCount,
                               unknownCount == 1 ? tr("item desconhecido", "unknown item") : tr("itens desconhecidos", "unknown items"), left),
@@ -1848,7 +1848,7 @@ class OverworldStage : public Stage {
       }
     }
     for (const std::string& hero : mages) {
-      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, e2::FieldSpells::kWarpTier);
+      const int level = spells.levelOf(save_, hero), left = spells.usesLeft(save_, hero, ember::FieldSpells::kWarpTier);
       const ImVec2 a = ImGui::GetCursorScreenPos();
       ImGui::PushID(hero.c_str());
       ImGui::BeginDisabled(left <= 0 || cities.empty());
@@ -1856,7 +1856,7 @@ class OverworldStage : public Stage {
       ImGui::EndDisabled();
       ImGui::PopID();
       emberSlot(dl, a, {a.x + inner, a.y + 44}, ImGui::IsItemHovered());
-      if (const UiImage* icon = uiImage(paths_.engine2Public / "game/icons/warp-portal.png")) imageContain(dl, *icon, {a.x + 6, a.y + 4}, {a.x + 42, a.y + 40});
+      if (const UiImage* icon = uiImage(paths_.artRoot / "game/icons/warp-portal.png")) imageContain(dl, *icon, {a.x + 6, a.y + 4}, {a.x + 42, a.y + 40});
       dl->AddText(ui, 15.0f, {a.x + 52, a.y + 12}, kFg, "Warp");
       const std::string who = std::format("{} · {} {} · {}x", hero, en ? "Lv" : "Nv", level, left);
       const ImVec2 ws = ui->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, who.c_str());
@@ -1874,8 +1874,8 @@ class OverworldStage : public Stage {
   // Retornar's runes: a list over the map (place, region, hex, day, the note); a click takes the party there.
   void drawRecallMenu(ImVec2 size) {
     const std::string hero = recallHero_;
-    const e2::FieldSpells spells(innData_, world_);
-    const std::vector<e2::FieldSpells::Rune> runes = e2::FieldSpells::runes(save_);
+    const ember::FieldSpells spells(innData_, world_);
+    const std::vector<ember::FieldSpells::Rune> runes = ember::FieldSpells::runes(save_);
     const bool en = uiEnglish();
     if (veil(size, "##recallveil")) {
       recallHero_.clear();
@@ -1893,7 +1893,7 @@ class OverworldStage : public Stage {
     text(std::format("{} · {}", hero, tr("escolha a runa", "choose the rune")), 12.0f, kMuted);
     ImGui::Dummy({1, 4});
     for (size_t i = 0; i < runes.size(); ++i) {
-      const e2::FieldSpells::Rune& r = runes[i];
+      const ember::FieldSpells::Rune& r = runes[i];
       const ImVec2 a = ImGui::GetCursorScreenPos();
       ImGui::PushID(static_cast<int>(i));
       const bool clicked = ImGui::InvisibleButton("##rune", {inner, 54});
@@ -1907,7 +1907,7 @@ class OverworldStage : public Stage {
       dl->AddText(ui, 11.0f, {a.x + 58, a.y + 28}, kMuted, line.c_str(), nullptr, inner - 66);
       ImGui::SetCursorScreenPos({a.x, a.y + 60});
       if (clicked) {
-        if (const std::optional<e2::Json> next = spells.castRecall(save_, hero, r.id)) {
+        if (const std::optional<ember::Json> next = spells.castRecall(save_, hero, r.id)) {
           save_ = *next;
           write();
           partyX_ = -1, centred_ = false, prevCol_ = save_["overworldPos"].value("col", 0);  // the party stands there at once
@@ -1932,8 +1932,8 @@ class OverworldStage : public Stage {
   // Identificar's unknown items: a list over the map (what the player sees of each); a click reveals it for good and spends the use.
   void drawIdentifyMenu(ImVec2 size) {
     const std::string hero = identifyHero_;
-    const e2::FieldSpells spells(innData_, world_);
-    const std::vector<e2::InnRules::UnknownItem> items = spells.unknownItems(save_);
+    const ember::FieldSpells spells(innData_, world_);
+    const std::vector<ember::InnRules::UnknownItem> items = spells.unknownItems(save_);
     const bool en = uiEnglish();
     if (veil(size, "##identifyveil")) {
       identifyHero_.clear();
@@ -1948,10 +1948,10 @@ class OverworldStage : public Stage {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     ImFont* ui = uiFont(UiFont::Ui);
     const float inner = 380;
-    text(std::format("{} · {} · {}x", hero, tr("escolha o item", "choose the item"), spells.usesLeft(save_, hero, e2::FieldSpells::kIdentifyTier)), 12.0f, kMuted);
+    text(std::format("{} · {} · {}x", hero, tr("escolha o item", "choose the item"), spells.usesLeft(save_, hero, ember::FieldSpells::kIdentifyTier)), 12.0f, kMuted);
     ImGui::Dummy({1, 4});
     for (size_t i = 0; i < items.size(); ++i) {
-      const e2::InnRules::UnknownItem& u = items[i];
+      const ember::InnRules::UnknownItem& u = items[i];
       const ImVec2 a = ImGui::GetCursorScreenPos();
       ImGui::PushID(static_cast<int>(i));
       const bool clicked = ImGui::InvisibleButton("##unknown", {inner, 46});
@@ -1965,7 +1965,7 @@ class OverworldStage : public Stage {
                   (u.kind == "weapon" ? tr("arma", "weapon") : u.kind == "gear" ? tr("equipamento", "gear") : tr("poção", "potion")).c_str(), nullptr, inner - 56);
       ImGui::SetCursorScreenPos({a.x, a.y + 52});
       if (clicked) {
-        if (const std::optional<e2::Json> next = spells.castIdentify(save_, hero, u)) {
+        if (const std::optional<ember::Json> next = spells.castIdentify(save_, hero, u)) {
           save_ = *next;
           write();
           showHint(en ? std::format("{} identified: {}.", hero, u.realName) : std::format("{} identificou: {}.", hero, u.realName));
@@ -1988,8 +1988,8 @@ class OverworldStage : public Stage {
   // Warp's destination wheel: the explored locations on a ring around the spell's icon.
   void drawWarpMenu(ImVec2 size) {
     const std::string hero = warpHero_;
-    const e2::FieldSpells spells(innData_, world_);
-    const std::vector<const e2::MapLocation*> cities = spells.warpCities(save_);
+    const ember::FieldSpells spells(innData_, world_);
+    const std::vector<const ember::MapLocation*> cities = spells.warpCities(save_);
     ImGui::SetNextWindowPos({0, 0});
     ImGui::SetNextWindowSize(size);
     ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 150));
@@ -2006,7 +2006,7 @@ class OverworldStage : public Stage {
     dl->AddCircle(c, radius + 60, IM_COL32(223, 191, 142, 115), 96, 1.5f);
     dl->AddCircleFilled(c, 48, IM_COL32(28, 28, 28, 255), 48);
     dl->AddCircle(c, 48, IM_COL32(223, 191, 142, 128), 48, 1.5f);
-    if (const UiImage* icon = uiImage(paths_.engine2Public / "game/icons/warp-portal.png")) imageContain(dl, *icon, {c.x - 20, c.y - 36}, {c.x + 20, c.y + 4});
+    if (const UiImage* icon = uiImage(paths_.artRoot / "game/icons/warp-portal.png")) imageContain(dl, *icon, {c.x - 20, c.y - 36}, {c.x + 20, c.y + 4});
     const ImVec2 ts = ui->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, "Warp");
     dl->AddText(ui, 12.0f, {c.x - ts.x / 2, c.y + 6}, IM_COL32(223, 191, 142, 255), "Warp");
     const ImVec2 hs = ui->CalcTextSizeA(10.0f, FLT_MAX, 0.0f, hero.c_str());
@@ -2026,12 +2026,12 @@ class OverworldStage : public Stage {
       const ImVec2 ns = ui->CalcTextSizeA(12.0f, FLT_MAX, w - 14, cities[i]->name.c_str());
       dl->AddText(ui, 12.0f, {p.x - ns.x / 2, p.y - ns.y / 2}, IM_COL32(240, 223, 197, 255), cities[i]->name.c_str(), nullptr, w - 14);
       if (clicked) {
-        if (const std::optional<e2::Json> next = spells.castWarp(save_, hero, cities[i]->id)) {
+        if (const std::optional<ember::Json> next = spells.castWarp(save_, hero, cities[i]->id)) {
           const int level = spells.levelOf(save_, hero);
           save_ = *next;
           write();
           partyX_ = -1, centred_ = false, prevCol_ = save_["overworldPos"].value("col", 0);  // the party stands there at once
-          warpAt_ = now_, warpDuration_ = std::min(3.2f, 1.6f + std::floor(std::max(0, level - e2::FieldSpells::kWarpUnlockLevel) / 6.0f) * 0.35f), warpRune_ = false;
+          warpAt_ = now_, warpDuration_ = std::min(3.2f, 1.6f + std::floor(std::max(0, level - ember::FieldSpells::kWarpUnlockLevel) / 6.0f) * 0.35f), warpRune_ = false;
           showHint(en ? std::format("{} crossed to {}.", hero, cities[i]->name) : std::format("{} atravessou para {}.", hero, cities[i]->name));
         } else {
           showHint(tr("Não foi possível lançar Warp.", "Could not cast Warp."));
@@ -2054,7 +2054,7 @@ class OverworldStage : public Stage {
     const float alpha = (0.15f + 0.85f * form) * (1.0f - closing);
     ImDrawList* dl = ImGui::GetForegroundDrawList();
     dl->AddRectFilled({0, 0}, size, IM_COL32(0, 0, 0, static_cast<int>(89 * (1.0f - closing))));
-    if (const UiImage* icon = warpRune_ ? uiImage(std::filesystem::path("content/ui/spells/rune.png")) : uiImage(paths_.engine2Public / "game/icons/warp-portal.png")) {
+    if (const UiImage* icon = warpRune_ ? uiImage(std::filesystem::path("content/ui/spells/rune.png")) : uiImage(paths_.artRoot / "game/icons/warp-portal.png")) {
       const float h = size.y * 0.58f, w = h * static_cast<float>(icon->width) / static_cast<float>(icon->height);
       const float sx = (0.42f + 0.58f * form) * (1.0f + 0.08f * closing), sy = (0.5f + 0.5f * form) * (1.0f + 0.12f * closing);
       const ImVec2 c{size.x / 2, size.y / 2};
@@ -2096,7 +2096,7 @@ class OverworldStage : public Stage {
     {
       if (formation_.empty()) {
         std::vector<std::string> saved;
-        for (const e2::Json& v : save_.value("partyFormation", e2::Json::array())) saved.push_back(v.is_string() ? v.get<std::string>() : "");
+        for (const ember::Json& v : save_.value("partyFormation", ember::Json::array())) saved.push_back(v.is_string() ? v.get<std::string>() : "");
         formation_.assign(19, "");
         for (size_t i = 0; i < saved.size() && i < 19; ++i)
           if (std::find(heroes.begin(), heroes.end(), saved[i]) != heroes.end()) formation_[i] = saved[i];
@@ -2114,7 +2114,7 @@ class OverworldStage : public Stage {
                   nullptr, inner - 24);
       if (emberBigButton("##saveformation", "SALVAR FORMAÇÃO", {a.x + 12, a.y + 72}, {180, 44}, true, 12.0f)) {
         // cleanPartyFormation: heroes once each, empty cells kept up to the board's size, trailing empties dropped.
-        e2::Json out = e2::Json::array();
+        ember::Json out = ember::Json::array();
         std::set<std::string> seen;
         for (const std::string& v : formation_) {
           if (v.empty()) out.push_back("");
@@ -2126,7 +2126,7 @@ class OverworldStage : public Stage {
           write();
           formationSaved_ = "test";
         } else {
-          const bool ok = campaign_.saveActive(save_) && campaign_.activeSave().value("partyFormation", e2::Json::array()) == out;
+          const bool ok = campaign_.saveActive(save_) && campaign_.activeSave().value("partyFormation", ember::Json::array()) == out;
           formationSaved_ = ok ? "saved" : "failed";
         }
       }
@@ -2197,7 +2197,7 @@ class OverworldStage : public Stage {
     {
       auto score = [&](const std::string& x, const std::string& y) {
         const std::string pair = x < y ? x + "|" + y : y + "|" + x;
-        return num(save_.value("affinityScores", e2::Json::object()), pair, 0);
+        return num(save_.value("affinityScores", ember::Json::object()), pair, 0);
       };
       auto grade = [](double p) {
         if (p < 0) return p <= -90 ? tr("Ódio", "Hatred") : p <= -50 ? tr("Hostil", "Hostile") : p <= -25 ? tr("Tensa", "Strained") : tr("Fria", "Cold");
@@ -2249,16 +2249,16 @@ class OverworldStage : public Stage {
   void drawSkillsTab(const std::vector<std::string>& heroes, float inner) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     ImFont* ui = uiFont(UiFont::Ui);
-    const e2::Json& t = world_.tables();
+    const ember::Json& t = world_.tables();
     const double stepHours = t.value("travelTrainingHours", 12.0), gain = t.value("skillGain", 0.1), cap = t.value("skillCap", 100.0);
     // Party skill order: weapon skills, then Poison Resistance, then the other resistances and Healing as listed.
     std::vector<std::string> order;
-    for (const e2::Json& id : t["skillIds"])
+    for (const ember::Json& id : t["skillIds"])
       if (id.get<std::string>().ends_with("Weapon")) order.push_back(id.get<std::string>());
     order.push_back("poisonResistance");
-    for (const e2::Json& id : t["skillIds"])
+    for (const ember::Json& id : t["skillIds"])
       if (!id.get<std::string>().ends_with("Weapon") && id.get<std::string>() != "poisonResistance") order.push_back(id.get<std::string>());
-    order.push_back("dodging");  // Esquiva (ours, not in Engine2's list)
+    order.push_back("dodging");  // Esquiva (ours, not in Ember's list)
     const float cardW = (inner - 8) / 2;
     int n = 0;
     float rowTop = ImGui::GetCursorScreenPos().y, rowH = 0;
@@ -2266,7 +2266,7 @@ class OverworldStage : public Stage {
     for (const std::string& hero : heroes) {
       const float x = x0 + (n % 2) * (cardW + 8);
       if (n % 2 == 0 && n) rowTop += rowH + 8, rowH = 0;
-      const std::string training = save_.value("travelTraining", e2::Json::object()).value(hero, "");
+      const std::string training = save_.value("travelTraining", ember::Json::object()).value(hero, "");
       std::vector<std::string> shown;
       for (const std::string& id : order) {
         if (id.ends_with("Weapon") && !heroUsesWeapon(hero, id.substr(0, id.size() - 6))) continue;
@@ -2277,7 +2277,7 @@ class OverworldStage : public Stage {
       emberTitle(dl, {x + 12, rowTop + 10}, 18.0f, hero.c_str());
       std::string line = "Treino na estrada: nenhum — toque em “Treinar” numa skill.";
       if (!training.empty()) {
-        const double banked = std::fmod(num(save_.value("travelTrainingHours", e2::Json::object()), hero, 0), stepHours);
+        const double banked = std::fmod(num(save_.value("travelTrainingHours", ember::Json::object()), hero, 0), stepHours);
         const int left = std::max(1, static_cast<int>(std::ceil(stepHours - banked)));
         line = std::format("Treino na estrada: {} · próximo +0,1 em {}h de viagem",
                            training == "dodging" ? tr("Esquiva", "Dodging") : t["skillNames"].value(training, training), left);
@@ -2285,7 +2285,7 @@ class OverworldStage : public Stage {
       dl->AddText(ui, 12.0f, {x + 12, rowTop + 36}, training.empty() ? kMuted : kAccent, line.c_str(), nullptr, cardW - 24);
       float y = rowTop + 58;
       for (const std::string& id : shown) {
-        const double points = num(save_.value("heroSkills", e2::Json::object()).value(hero, e2::Json::object()), id, 0);
+        const double points = num(save_.value("heroSkills", ember::Json::object()).value(hero, ember::Json::object()), id, 0);
         const bool on = training == id;
         std::string name = id == "dodging" ? tr("Esquiva", "Dodging") : t["skillNames"].value(id, id);
         // both decimals always shown, as in the battle's Skills (the user, 2026-10-27: "display every little 0.01%")
@@ -2298,11 +2298,11 @@ class OverworldStage : public Stage {
         dl->AddText(ui, 14.0f, {x + cardW - 12 - vw, y}, kMuted, value.c_str());
         ImGui::PushID((hero + id).c_str());
         if (emberBigButton("##train", on ? "TREINANDO" : "TREINAR", {x + cardW - 12 - vw - 8 - 96, y - 4}, {96, 24}, on, 10.0f)) {
-          e2::Json& tr = save_["travelTraining"];
-          if (!tr.is_object()) tr = e2::Json::object();
+          ember::Json& tr = save_["travelTraining"];
+          if (!tr.is_object()) tr = ember::Json::object();
           if (on) tr.erase(hero);
           else tr[hero] = id;
-          if (!save_["travelTrainingHours"].is_object()) save_["travelTrainingHours"] = e2::Json::object();
+          if (!save_["travelTrainingHours"].is_object()) save_["travelTrainingHours"] = ember::Json::object();
           save_["travelTrainingHours"][hero] = 0;
           markTrainingHint();
           write();
@@ -2326,28 +2326,28 @@ class OverworldStage : public Stage {
 
   // weaponSkills.ts weaponTypesForClass: which weapon skills a hero's class trains (from the exported weapon list).
   bool heroUsesWeapon(const std::string& hero, const std::string& type) const {
-    const e2::Json& types = world_.tables().contains("classWeaponTypes") ? world_.tables()["classWeaponTypes"] : e2::Json();
+    const ember::Json& types = world_.tables().contains("classWeaponTypes") ? world_.tables()["classWeaponTypes"] : ember::Json();
     std::string cls = world_.tables()["baseClass"].value(hero, "");
     if (save_.contains("promotions") && save_["promotions"].contains(hero) && save_["promotions"][hero].is_string()) cls = save_["promotions"][hero].get<std::string>();
     if (!types.is_object() || !types.contains(cls)) return true;
-    for (const e2::Json& t : types[cls])
+    for (const ember::Json& t : types[cls])
       if (t == type) return true;
     return false;
   }
 
   void markTrainingHint() {
-    e2::Json& flags = save_["flags"];
-    if (!flags.is_array()) flags = e2::Json::array();
-    for (const e2::Json& f : flags)
+    ember::Json& flags = save_["flags"];
+    if (!flags.is_array()) flags = ember::Json::array();
+    for (const ember::Json& f : flags)
       if (f == "hint:travel-training") return;
     flags.push_back("hint:travel-training");
   }
 
   // One-time tip once A Ponte de Pedra is cleared: Party → Skills.
   void drawTrainingHint(ImVec2 size) {
-    // Under every other panel (Engine2: z-30 against their z-40 veils).
+    // Under every other panel (Ember: z-30 against their z-40 veils).
     if (!completed("thebridge") || party_ || event_ || open_ || questLog_ || options_ || !save_.value("seenOverworldIntro", false)) return;
-    for (const e2::Json& f : save_.value("flags", e2::Json::array()))
+    for (const ember::Json& f : save_.value("flags", ember::Json::array()))
       if (f == "hint:travel-training") return;
     ImGui::SetNextWindowPos({size.x / 2, 144}, ImGuiCond_Always, {0.5f, 0.0f});
     ImGui::SetNextWindowSize({std::min(480.0f, size.x - 32), 0});
@@ -2434,27 +2434,27 @@ class OverworldStage : public Stage {
   void portrait(ImDrawList* dl, const std::string& hero, ImVec2 a, ImVec2 b) {
     const HeroPortrait* p = heroPortrait(hero);
     if (!p) return;
-    if (const UiImage* img = uiImage(paths_.engine2Public / std::filesystem::path(reinterpret_cast<const char8_t*>(p->file.c_str()))))
+    if (const UiImage* img = uiImage(paths_.artRoot / std::filesystem::path(reinterpret_cast<const char8_t*>(p->file.c_str()))))
       drawHeroPortrait(dl, *img, a, b, *p);
   }
 
   CampaignPaths paths_;
   int drawn_ = 0;          // frames drawn (the loading curtain lifts once the screen is up)
   bool mapDrawn_ = false;  // the world map itself has been drawn
-  e2::Campaign& campaign_;
-  const e2::Overworld& world_;
+  ember::Campaign& campaign_;
+  const ember::Overworld& world_;
   Callbacks callbacks_;
-  e2::Json save_;
+  ember::Json save_;
   std::string notice_, hint_;
   float hintAt_ = -10, now_ = 0;
-  std::optional<e2::OverworldEvent> event_;
+  std::optional<ember::OverworldEvent> event_;
   std::optional<std::string> open_;  // the location whose mission list is open
   std::optional<MissionEntry> briefing_;
   std::optional<SlotScreen> slots_;
-  e2::InnData innData_;
-  e2::InnRules innRules_{innData_, world_};
+  ember::InnData innData_;
+  ember::InnRules innRules_{innData_, world_};
   bool hasInn_ = false;
-  e2::Companions companions_;
+  ember::Companions companions_;
   bool hasCompanions_ = false;
   bool fieldSpells_ = false;     // the field-spells menu is open
   std::string warpHero_;         // the mage choosing Warp's destination (the wheel is open)
@@ -2476,8 +2476,8 @@ class OverworldStage : public Stage {
   std::vector<std::string> formation_;
   int formationPick_ = -1;
   std::string formationSaved_;
-  e2::Json* testSave_ = nullptr;  // Modo teste: the session's save (see the constructor)
-  const e2::InterludeData* interlude_ = nullptr;  // the historical chapter's data (the Ruins' gate, its start), when loaded
+  ember::Json* testSave_ = nullptr;  // Modo teste: the session's save (see the constructor)
+  const ember::InterludeData* interlude_ = nullptr;  // the historical chapter's data (the Ruins' gate, its start), when loaded
   std::string flashId_;
   float flashAt_ = -10;
   int zoom_ = 0;
@@ -2505,7 +2505,7 @@ class OverworldStage : public Stage {
   float shownHour_ = -1;  // a hora da luz na tela (segue o relógio em hourEaseSeconds)
   float lastHourAt_ = 0;
   bool measure_ = false;  // --map-ui measure
-  std::vector<e2::OverworldHex> slowSteps_;  // --map-ui walkslow:...
+  std::vector<ember::OverworldHex> slowSteps_;  // --map-ui walkslow:...
   size_t slowNext_ = 0;
   int slowLast_ = 0;
   double measureUiMs_ = 0, measureCpuMs_ = 0;

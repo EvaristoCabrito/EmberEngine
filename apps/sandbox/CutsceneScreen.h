@@ -1,6 +1,6 @@
 #pragma once
 
-// A film between screens, copied from Engine2 (GameApp CutsceneScreen + cutsceneSubtitles.ts + styles.css
+// A film between screens, copied from Ember (GameApp CutsceneScreen + cutsceneSubtitles.ts + styles.css
 // .cutscene-stage): the picture covering the screen (object-fit: cover), its subtitles in the language Opções picks
 // (public/game/subtitles/<film>.pt-BR.vtt or .en-v2.vtt, cutsceneSubtitles.ts; drawn like a browser's caption: white on a
 // dark band, bottom centre; none when Exibir legendas is off), the cutscene sound toggle top right (Opções' Som das
@@ -26,14 +26,14 @@ namespace ember {
 
 class CutsceneScreen {
  public:
-  // `film`: a path under Engine2's public folder ("game/vau-intro.webm"); its subtitles are found by name.
-  CutsceneScreen(const std::filesystem::path& engine2Public, const std::string& film) {
+  // `film`: a path under Ember's public folder ("game/vau-intro.webm"); its subtitles are found by name.
+  CutsceneScreen(const std::filesystem::path& artRoot, const std::string& film) {
     player_ = std::make_unique<VideoPlayer>();
-    player_->open(engine2Public / film);
+    player_->open(artRoot / film);
     player_->setMuted(!soundOn() || gamePrefs().muted);  // audio.ts setMuted silences videos too
     player_->setVolume(gamePrefs().cutscene);
     const std::string name = std::filesystem::path(film).stem().string();
-    const std::filesystem::path dir = engine2Public / "game" / "subtitles";
+    const std::filesystem::path dir = artRoot / "game" / "subtitles";
     if (gamePrefs().subtitleLanguage == "en") {
       loadSubtitles(dir / (name + ".en-v2.vtt"));
       if (cues_.empty()) loadSubtitles(dir / (name + ".en.vtt"));

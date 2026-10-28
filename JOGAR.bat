@@ -87,9 +87,9 @@ move /y "%ART%\sprites\battle-new.pak" "%ART%\sprites\battle.pak" >nul
 set "SPRITES=%ART%\sprites\battle.pak"
 if not exist "%SPRITES%" set "SPRITES=%ART%\sprites\battle-v2.pak"
 set "HEROES="
-if exist "%ART%\engine2-scenes\roster.json" set "HEROES=--heroes %ART%\engine2-scenes\roster.json"
+if exist "%ART%\scenes\roster.json" set "HEROES=--heroes %ART%\scenes\roster.json"
 
-for %%P in ("%GROUND%" "%SPRITES%" "%MESHES%" "%ART%\engine2-scenes" "%HERE%\content\maps\ember" "%HERE%\content\game\public" "%HERE%\content\engine2\battle-rules.json") do (
+for %%P in ("%GROUND%" "%SPRITES%" "%MESHES%" "%ART%\scenes" "%HERE%\content\maps\ember" "%HERE%\content\assets" "%HERE%\content\data\battle-rules.json") do (
   if not exist %%P (
     echo Falta %%~P
     echo Tire uma foto desta tela e mande para o Claude.
@@ -98,7 +98,7 @@ for %%P in ("%GROUND%" "%SPRITES%" "%MESHES%" "%ART%\engine2-scenes" "%HERE%\con
 )
 
 echo Abrindo o Ember...
-"%EXE%" --title --ground "%GROUND%" --sprites "%SPRITES%" --meshes "%MESHES%" --scenes "%ART%\engine2-scenes" --maps "%HERE%\content\maps\ember" --game-assets "%HERE%\content\game\public" %HEROES% > "%HERE%\JOGAR-log.txt" 2>&1
+"%EXE%" --title --ground "%GROUND%" --sprites "%SPRITES%" --meshes "%MESHES%" --scenes "%ART%\scenes" --maps "%HERE%\content\maps\ember" --game-assets "%HERE%\content\assets" %HEROES% > "%HERE%\JOGAR-log.txt" 2>&1
 set "RUNERR=%ERRORLEVEL%"
 if not "%RUNERR%"=="0" (
   echo.
