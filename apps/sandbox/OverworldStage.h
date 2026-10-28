@@ -162,8 +162,11 @@ class OverworldStage : public Stage {
         const bool allowed = world_.canStep(save_, {fc, fr}, {c, r}, test());
         movementOpen_ = true;
         walkTo(c, r);
-        logInfo("walk: ({},{}) -> ({},{}): canStep {}, now at ({},{})", fc, fr, c, r, allowed, save_["overworldPos"].value("col", 0),
-                save_["overworldPos"].value("row", 0));
+        logInfo("walk: ({},{}) -> ({},{}): canStep {}, now at ({},{}), day {} {}:00, event {}, briefing {}", fc, fr, c, r, allowed,
+                save_["overworldPos"].value("col", 0), save_["overworldPos"].value("row", 0), static_cast<long long>(num(save_, "gameClock", 0)),
+                e2::Overworld::campaignHour(save_), event_ ? event_->kind : std::string("-"), briefing_ ? briefing_->id : std::string("-"));
+        if (briefing_) briefing_.reset();  // a road battle's briefing: closed as Voltar would, the walk goes on
+        event_.reset();
       }
     if (what.starts_with("location:")) open_ = what.substr(9);
     if (what.starts_with("enter:"))  // "enter:<id>": the location entered as a click on its pin would (the Ruins: the Interlude's gate and start)
@@ -516,6 +519,10 @@ class OverworldStage : public Stage {
     e2::Mulberry32 rng(device());
     std::optional<e2::OverworldEvent> ev;
     e2::Json next = world_.step(save_, {col, row}, rng, ev, test());
+    logInfo("map step: ({},{}) -> ({},{}): {}, day {} {}:00 -> day {} {}:00, event {}", save_["overworldPos"].value("col", 0),
+            save_["overworldPos"].value("row", 0), col, row, next == save_ ? "REFUSED" : "taken", static_cast<long long>(num(save_, "gameClock", 0)),
+            e2::Overworld::campaignHour(save_), static_cast<long long>(num(next, "gameClock", 0)), e2::Overworld::campaignHour(next),
+            ev ? ev->kind + (ev->missionId.empty() ? std::string() : " " + ev->missionId) : std::string("-"));
     if (next == save_) return;
     save_ = std::move(next);
     write();
@@ -935,6 +942,26 @@ class OverworldStage : public Stage {
 
     // Clicks: a step hex wins over the leader's button (the leader's own hex is never a step hex, so nothing is lost; a leader
     // drawn over a neighbouring hex used to swallow the click and the party could not walk there).
+    // Every click on the map written to the log (the user, 2026-10-28: the walk that "pretends and then locks"; JOGAR-log.txt says
+    // what happened: what was clicked, from where to where, whether the step was taken, where the party stands after).
+    if (clicked) {
+      const int c0 = save_["overworldPos"].value("col", 0), r0 = save_["overworldPos"].value("row", 0);
+      // The hex of the board under the mouse (pointy-top, size 5 % of the image, odd-r: overworld.ts worldToHex), and whether it is a cell.
+      const double mx = (mouse.x - o.x) / imgW * 100.0, my = (mouse.y - o.y) / imgH * 100.0;
+      const double fq = (std::sqrt(3.0) / 3.0 * mx - my / 3.0) / 5.0, fr = (2.0 / 3.0 * my) / 5.0, fs = -fq - fr;
+      double rq = std::round(fq), rr = std::round(fr), rs = std::round(fs);
+      if (std::abs(rq - fq) > std::abs(rr - fr) && std::abs(rq - fq) > std::abs(rs - fs)) rq = -rr - rs;
+      else if (std::abs(rr - fr) > std::abs(rs - fs)) rr = -rq - rs;
+      const int hr = static_cast<int>(rr), hc = static_cast<int>(rq) + (hr - (hr & 1)) / 2;
+      logInfo("map click: mouse on the map at {:.1f} %, {:.1f} % = hex ({},{}) {}, a neighbour of the party: {}", mx, my, hc, hr,
+              world_.isCell(hc, hr) ? "on the board" : "OFF the board",
+              std::ranges::any_of(e2::Overworld::neighbors(c0, r0), [&](const e2::OverworldHex& n) { return n.col == hc && n.row == hr; }) ? "yes" : "no");
+      logInfo("map click: at ({},{}) movement {} -> {}", c0, r0, movementOpen_ ? "open" : "closed",
+              clickedDot ? std::format("step hex ({},{})", clickedDot->col, clickedDot->row)
+              : clickedLeader ? std::string("leader")
+              : !clickedLocation.empty() ? "pin " + clickedLocation
+                                         : std::string("nothing (no step hex, pin or leader under the mouse)"));
+    }
     if (clickedDot) walkTo(clickedDot->col, clickedDot->row);
     else if (clickedLeader) movementOpen_ = !movementOpen_;
     else if (!clickedLocation.empty()) {
