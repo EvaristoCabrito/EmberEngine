@@ -1655,7 +1655,9 @@
    "y": 62,
    "missionIds": [
     "vau",
-    "aldeia"
+    "bosque",
+    "aldeia",
+    "thebridge"
    ],
    "warpCity": true,
    "col": 2,
@@ -1716,7 +1718,13 @@
    "missionIds": [
     "colina",
     "passagem",
-    "profundezas"
+    "profundezas",
+    "grotto-1",
+    "grotto-2",
+    "grotto-3",
+    "grotto-4",
+    "grotto-5",
+    "grotto-6"
    ],
    "col": 1,
    "row": 11
@@ -1727,7 +1735,7 @@
    "x": 24,
    "y": 50,
    "missionIds": [
-    "bosque"
+    "watchtower-gate-floor"
    ],
    "col": 2,
    "row": 7
@@ -1820,7 +1828,11 @@
    "name": "Misty Cave",
    "x": 51.96,
    "y": 45,
-   "missionIds": [],
+   "missionIds": [
+    "vertente",
+    "portao",
+    "deep-mist"
+   ],
    "col": 6,
    "row": 6
   },
@@ -1829,7 +1841,9 @@
    "name": "Cemetery",
    "x": 86,
    "y": 52,
-   "missionIds": [],
+   "missionIds": [
+    "cemiterio-esquecidos"
+   ],
    "col": 9,
    "row": 7
   },
@@ -1893,7 +1907,9 @@
    "name": "Wisp Forest",
    "x": 34.64,
    "y": 60,
-   "missionIds": [],
+   "missionIds": [
+    "wisp-forest-crossing"
+   ],
    "col": 4,
    "row": 8
   }
