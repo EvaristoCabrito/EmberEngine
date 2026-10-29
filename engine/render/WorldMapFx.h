@@ -54,6 +54,7 @@ struct WorldMapConfig {
   float reliefStrength = 0.35f, sunLean = 0.45f;  // o relevo; quanto o sol pende para o sul (y da pintura) ao meio-dia
   glm::vec3 lightColor{1.0f, 0.55f, 0.28f};
   float lightStrength = 1.0f, lightFlicker = 0.5f;
+  float wispScale = 220.0f, wispSize = 0.22f, wispSpeed = 0.02f;  // os wisps de ember da superfície (lights.wisp*)
   int lightGlowRadius = 8, lightGlowDownsample = 4;  // o borrado do halo (em pixels da cópia reduzida)
   float cloudStrength = 0.12f, cloudScale = 3.0f, cloudSpeed = 0.012f;
   float mistScale = 14.0f, mistSpeed = 0.02f, mistThreshold = 0.36f, mistStrength = 0.55f;

@@ -1787,6 +1787,17 @@ open area with large tables ... some separate rooms for NPCs and services, use t
   fungal and plant neighbourhoods. A new version = a new SUFFIX, never over the old. Dusk LUT v02 (v01 was saturated orange over
   the whole paper; v01 kept). Water noise scale 60 → 14 (60 aliased into blocky speckle at 1/4 zoom). Textures on the GPU with
   everything: 398 MB (RGBA8 masks at half the paintings' size).
+  **The window lights were REJECTED in play (the user, 2026-10-29: "isso não é janela, é um monte de ponto totalmente
+  aleatório flutuando no NADA", the castle "waaaay too much fog" with the peak-normalised halo, "isso é tudo nonsense" to the
+  openings detector too): "faz wisps pequenos aleatórios nesses lugares com mais ember", "só não faz fucking intense", and the
+  soft light near them kept ("agora que fazia sentido ter aquela luz por perto você tirou").** The surface's light path is now
+  ember WISPS: `masks.lights` = `surface-wisps-v01.png` (soft zones over the seven inhabited places, the castle densest; loaded
+  with `loadTexture`, no blurred copy), the shader (`overworld` 2.) scatters `sporePoint(…, fill 0.3, wander 1.4)` embers of
+  `lights.color` (1, 0.36, 0.10) with sizes varied, each blinking, plus a per-wisp halo at 12 % (`wisp.y * 4`); `lights.wispScale
+  / wispSize / wispSpeed` (params slot 23). `surface-lights-v01.png` (the openings detector's output) stays in the folder, drawn
+  by nobody. `sporePoint` has `fill` / `wanderAmp` now (the Underworld passes 1.0 / 0.8: unchanged). The world map is
+  `world-map-v04.jpg` since fc0ca88b (another session); the masks were cut from v03 (same geometry, mean difference 5.6 / 255).
+  `build/release/bin/Sandbox-20261029-1740-in-use.exe` = the exe the user had open while the link failed (1168), set aside.
   Captures with everything revealed: scratchpad bank copies `bank-all-<hour>.json` (every hex in `exploredHexes`):
   `captures/worldmap/all-{night,dusk,dawn,day}.png`, `uw-{night,dawn,day}.png`. Seen there: night blue with the warm window dots
   and halos, the ravine mist; dusk warm; dawn pale pink with mist; the Underworld teal bloom / ember east / charcoal day.

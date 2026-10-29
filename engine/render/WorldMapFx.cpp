@@ -169,6 +169,9 @@ WorldMapConfig WorldMapConfig::load(const std::filesystem::path& file, bool unde
   c.lightColor = vec3Of(lights.value("color", nlohmann::json()), c.lightColor);
   c.lightStrength = lights.value("strength", c.lightStrength);
   c.lightFlicker = lights.value("flicker", c.lightFlicker);
+  c.wispScale = lights.value("wispScale", c.wispScale);
+  c.wispSize = lights.value("wispSize", c.wispSize);
+  c.wispSpeed = lights.value("wispSpeed", c.wispSpeed);
   c.lightGlowRadius = lights.value("glowRadius", c.lightGlowRadius);
   c.lightGlowDownsample = std::max(1, lights.value("glowDownsample", c.lightGlowDownsample));
   const nlohmann::json relief = j.value("relief", nlohmann::json::object());
@@ -420,7 +423,7 @@ std::pair<uint32_t, uint32_t> WorldMapFx::loadLightMask(const std::filesystem::p
   for (int pass = 0; pass < 3; ++pass) boxH(small, tmp), boxV(tmp, small);
   // O ganho do halo: o de UM ponto isolado (um texel a 1.0 pelo mesmo borrado) chega a kHaloPeak; um aglomerado denso soma e
   // satura em 1, nunca é normalizado pelo seu próprio pico (o usuário, 2026-10-29: o castelo inteiro virava uma mancha laranja).
-  constexpr float kHaloPeak = 0.35f;
+  constexpr float kHaloPeak = 0.12f;  // 0.35 ainda engolia a capela inteira (o usuário, 2026-10-29: "I told its too intense")
   float unitPeak = 1.0f;
   {
     const int n = 4 * r + 9;
@@ -576,6 +579,7 @@ WorldMapParams WorldMapFx::overworldParams(const WorldMapConfig& c, float hour, 
     p.water = {c.waterShimmer, c.waterMoon, c.waterScale, c.waterSpeed};
     p.party = {partyUv.x, partyUv.y, c.partyRadius, c.partyDark};
     p.moon = {reflect, c.lutStrength};
+    p.spare = {c.wispScale, c.wispSize, c.wispSpeed, 0.0f};
   }
   if (c.keys.empty()) {
     p.tint = {1, 1, 1, 1};

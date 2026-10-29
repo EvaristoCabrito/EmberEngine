@@ -229,7 +229,7 @@ class OverworldStage : public Stage {
         const WorldMapConfig& c = fxConfig_[0];
         for (const WorldMapConfig::LutKey& k : c.luts) fxLuts_[0].push_back(k.file.empty() ? WorldMapFx::kNoTexture : fx_->loadTexture(k.file));
         uint32_t* t = fxTex_[0];
-        if (!c.lightMask.empty()) std::tie(t[0], t[1]) = fx_->loadLightMask(c.lightMask, c.lightGlowDownsample, c.lightGlowRadius);
+        if (!c.lightMask.empty()) t[0] = t[1] = fx_->loadTexture(c.lightMask);  // a zona dos wisps de ember (sem borrado)
         if (!c.heightMap.empty()) t[2] = fx_->loadTexture(c.heightMap);
         if (!c.waterMask.empty()) t[3] = fx_->loadTexture(c.waterMask);
         if (!c.mistMask.empty()) t[4] = fx_->loadTexture(c.mistMask);

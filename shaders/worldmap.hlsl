@@ -140,6 +140,29 @@ float coverAt(float2 pixel) {
   return 1.0 - saturate(sd + 0.5);
 }
 
+// --- partículas (wisps, esporos, criaturas): uma por célula da grade -------------------------------------------------------
+// `fill` = a fração das células que têm partícula (1 = todas); `wanderAmp` = quanto ela vagueia (em células; até 1.4 ainda cabe
+// nas 4 células lidas: 3 x 3 ficaria caro).
+float sporePoint(float2 p, float seed, float size, float fill, float wanderAmp) {
+  // uma partícula por célula da grade: um ponto suave que vagueia dentro da célula (as 4 células à volta do ponto: a
+  // partícula fica a menos de meia célula do seu centro, então estas bastam)
+  const float2 cell = floor(p - 0.5);
+  float v = 0.0;
+  [unroll] for (int j = 0; j <= 1; ++j)
+    [unroll] for (int i = 0; i <= 1; ++i) {
+      const float2 c = cell + float2(i, j);
+      const float h = hash21(c + seed);
+      if (h > fill) continue;
+      // o vagueio pela textura de ruído (uma leitura por célula, sem trigonometria por pixel)
+      const float2 wander = (noiseAt(c * 0.37 + seed + push.time * 0.03).gb - 0.5) * wanderAmp;
+      const float2 pos = c + 0.5 + wander;
+      const float d = length(p - pos);
+      const float sz = size * (0.6 + 0.8 * hash21(c * 3.1 + seed));  // tamanhos variados
+      v += (1.0 - smoothstep(0.0, sz, d)) * (0.6 + 0.4 * h);
+    }
+  return v;
+}
+
 // --- mapa-múndi ------------------------------------------------------------------------------------------------------------
 // A LUT de uma hora: uma faixa de 32 x 32 x 32 cores (1024 x 32: x = r + 32 b, y = g), lida em sRGB, duas fatias de azul misturadas.
 float3 lutAt(uint lut, float3 c) {
@@ -205,14 +228,20 @@ float4 overworld(float2 uv, float2 pixel, float2 texel) {
       c += w * pow(glint, 2.0) * water.y * moon.rgb;
     }
   }
-  // 2. As luzes: acendem no entardecer (mistShape.w = a rampa das luzes, 0 de dia .. 1 à noite): a máscara nítida mais a sua
-  // cópia borrada (o halo), com um tremor lento e próprio em cada ponto.
+  // 2. Wisps de ember (o usuário, 2026-10-29: "wisps pequenos aleatórios nesses lugares com mais ember", no lugar das janelas):
+  // pequenas brasas vagando sobre as zonas da máscara (tex0.r = quanto wisp cabe ali), acendem no entardecer (mistShape.w),
+  // cada uma piscando no seu ritmo. spare = x escala (células sobre a pintura), y tamanho, z velocidade.
   if (hasLight() && mistShape.w > 0.001 && lightColor.w > 0.0) {
-    const float3 sharp = texAt(push.tex0, uv).rgb;
-    const float3 glow = texAt(push.tex1, uv).rgb;
-    const float cell = hash21(floor(uv * 160.0));
-    const float flicker = 1.0 - clouds.w * (0.5 + 0.5 * sin(push.time * (5.0 + cell * 4.0) + cell * 6.2831853)) * 0.35;
-    c += (srgbToLinear(sharp) * 1.4 + srgbToLinear(glow) * 0.3) * lightColor.rgb * lightColor.w * mistShape.w * flicker;
+    const float zone = texAt(push.tex0, uv).r;
+    if (zone > 0.002) {
+      const float4 wisp = param(23);
+      const float2 p = uv * wisp.x + float2(push.time * wisp.z * 0.4, -push.time * wisp.z);
+      const float s = sporePoint(p, 5.0, wisp.y, 0.3, 1.4);
+      const float halo = sporePoint(p, 5.0, wisp.y * 4.0, 0.3, 1.4);  // a luz suave em volta de cada brasa (mesma semente)
+      const float cell = hash21(floor(p));
+      const float blink = 0.45 + 0.55 * sin(push.time * (1.5 + cell * 2.0) + cell * 6.2831853);
+      c += zone * (s + halo * 0.12) * blink * lightColor.rgb * lightColor.w * mistShape.w;
+    }
   }
   // 4b. A névoa pálida da madrugada e da noite, deslizando sobre as baixadas e a água (onde a máscara permite).
   if (hasMist() && hourMix.w > 0.001 && mistColor.w > 0.0) {
@@ -338,24 +367,6 @@ float4 underworldAt(float2 uv, float2 pixel, float2 texel) {
 //  20 waterTint rgb cor do reflexo na floração (teal / violeta), w respiração dos cogumelos de dia (0..1)
 //  21 spores    x escala (células sobre a pintura), y velocidade, z tamanho, w força; a mesma grade serve às criaturas
 //  22 creatures rgb cor das mariposas / vagalumes, w força (0 = sem)
-float sporePoint(float2 p, float seed, float size) {
-  // uma partícula por célula da grade: um ponto suave que vagueia dentro da célula (as 4 células à volta do ponto: a
-  // partícula fica a menos de meia célula do seu centro, então estas bastam)
-  const float2 cell = floor(p - 0.5);
-  float v = 0.0;
-  [unroll] for (int j = 0; j <= 1; ++j)
-    [unroll] for (int i = 0; i <= 1; ++i) {
-      const float2 c = cell + float2(i, j);
-      const float h = hash21(c + seed);
-      // o vagueio pela textura de ruído (uma leitura por célula, sem trigonometria por pixel)
-      const float2 wander = (noiseAt(c * 0.37 + seed + push.time * 0.03).gb - 0.5) * 0.8;
-      const float2 pos = c + 0.5 + wander;
-      const float d = length(p - pos);
-      v += (1.0 - smoothstep(0.0, size, d)) * (0.6 + 0.4 * h);
-    }
-  return v;
-}
-
 float4 underworldLook(float2 uv, float2 pixel, float2 texel) {
   const float4 hourMix = param(13), fungalC = param(14), plantC = param(15), winC = param(16), emberC = param(17), emberS = param(18);
   const float4 water = param(19), waterTint = param(20), spores = param(21), creatures = param(22);
@@ -423,7 +434,7 @@ float4 underworldLook(float2 uv, float2 pixel, float2 texel) {
     const float m = texAt(push.tex4, uv).r;
     if (m > 0.002) {
       const float2 p = uv * spores.x + float2(push.time * spores.y * 0.3, -push.time * spores.y);
-      const float s = sporePoint(p, 3.0, spores.z);
+      const float s = sporePoint(p, 3.0, spores.z, 1.0, 0.8);
       c += fungalC.rgb * spores.w * m * s * L;
     }
   }
@@ -435,7 +446,7 @@ float4 underworldLook(float2 uv, float2 pixel, float2 texel) {
     const float density = lerp(gather, texAt(push.tex1, uv).r * 0.3, scatter);
     if (density > 0.002) {
       const float2 p = uv * spores.x * 1.6 + float2(sin(push.time * 0.2), cos(push.time * 0.17)) * 0.5;
-      const float s = sporePoint(p, 7.0, spores.z * 0.7);
+      const float s = sporePoint(p, 7.0, spores.z * 0.7, 1.0, 0.8);
       const float blink = 0.6 + 0.4 * sin(push.time * 3.0 + cell * 6.28);
       c += creatures.rgb * creatures.w * density * s * blink * L;
     }
