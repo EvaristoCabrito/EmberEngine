@@ -1870,7 +1870,10 @@ para cada tipo de terreno")
   picked from the hex's region's texts plus the 8; consequences through the existing fields + `rationsGain` (shown "+N rações",
   ember gains shown "+N Gold"). **`Cooker check-overworld` no longer matches the old rule source's seeded steps by design**
   (the battle chance and the text pool changed). The merchants (`random-encounter-11 / -14`) still re-enter the pool every step
-  (not asked). Not verified in play.
+  (not asked). Not verified in play. Then (the user): alert days stay at 30 % (`kAlertBattleChance`, not 2 × 10); the armed toll
+  became a lost dice game ("qualquer player iria espancar os cobradores"); **the Underworld got its own 20 texts**
+  (`kUnderworldEncounters`, `Overworld::undergroundText`: the 25 % roll on an Underworld step, consequences written into the save:
+  rations, ember / gold, a potion / lockpick, a disease; no battles / alert there), called by OverworldStage's `underStep`.
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 

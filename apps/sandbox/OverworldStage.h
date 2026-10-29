@@ -901,14 +901,22 @@ class OverworldStage : public Stage {
               : clickedPin ? "pin " + clickedPin->id
                            : std::string("nothing"));
     }
+    // A step there may bring one of the Underworld's road texts (Overworld::undergroundText; the user, 2026-10-29).
+    auto underStep = [&](ember::OverworldHex to) {
+      if (!under_.step(save_, to)) return;
+      std::random_device device;
+      ember::Mulberry32 rng(device());
+      if (std::optional<ember::OverworldEvent> ev = world_.undergroundText(save_, rng, test())) event_ = ev;
+      write();
+    };
     if (clickedDot) {
       movementOpen_ = false;
-      if (under_.step(save_, *clickedDot)) write();
+      underStep(*clickedDot);
     } else if (clickedLeader) {
       movementOpen_ = !movementOpen_;
     } else if (clickedPin && movementOpen_ && std::ranges::find(dots, ember::OverworldHex{clickedPin->col, clickedPin->row}) != dots.end()) {
       movementOpen_ = false;
-      if (under_.step(save_, {clickedPin->col, clickedPin->row})) write();
+      underStep({clickedPin->col, clickedPin->row});
     }
   }
 

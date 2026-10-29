@@ -100,6 +100,9 @@ class Overworld {
   // stepOverworld: the save after one hex step and what happened on the way; the save unchanged (and no event, no
   // random number) when the step is not allowed.
   Json step(const Json& save, OverworldHex to, Mulberry32& rng, std::optional<OverworldEvent>& event, bool test = false) const;
+  // The Underworld's road text on a step there (2026-10-29): the same 25 % roll, its own 20 texts, the consequences written into
+  // `save` (rations, ember, a potion / lockpick from a bag, a disease); nullopt when nothing happens.
+  std::optional<OverworldEvent> undergroundText(Json& save, Mulberry32& rng, bool test = false) const;
   // teleportOverworld (Modo teste only): straight to any hex, no adjacency check, no day / ration / HP cost.
   static Json teleport(const Json& save, OverworldHex to);
 

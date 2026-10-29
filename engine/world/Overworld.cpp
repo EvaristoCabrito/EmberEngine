@@ -21,6 +21,7 @@ namespace {
 double gHexSize = 5.0;  // the loaded board's "hexSize" (hexToWorld is static)
 constexpr double kRecoveryPct = 0.08;
 constexpr double kBattleEncounterChance = 0.10;  // 0.15 before 2026-10-29 (the user: "reduzir batalha normal para 10%")
+constexpr double kAlertBattleChance = 0.30;      // on alert days (the user: "em alerta continua com 30%")
 constexpr double kTextEncounterChance = 0.25;
 constexpr double kTravelDiseaseChance = 0.02;
 constexpr int kHungerGraceDays = 3;
@@ -74,6 +75,31 @@ const RoadEncounter kEncounters[] = {
     {.text = "Uma clareira com o esconderijo de caçadores, abandonado há pouco.", .lootBag = true, .region = "forest"},
     {.text = "Galhos baixos arrancam a gazua do cinto de alguém; ninguém a encontra no mato.", .loseLockpick = true, .region = "forest"},
     {.text = "Uivos cercam o acampamento a noite inteira.", .alertDays = 3, .region = "forest"},
+};
+
+// The Underworld's road texts (the user, 2026-10-29: "crie mais 20 textos para encontros no underworld"): no battles, no alert
+// there; rations, ember / gold, potions, lockpicks and disease. Applied by Overworld::undergroundText on an Underworld step.
+const RoadEncounter kUnderworldEncounters[] = {
+    {.text = "Esporos luminosos no ar das Marchas: alguém respira fundo demais.", .diseaseChance = 0.5},
+    {.text = "Um bolsão de gás das fendas de ember apaga as lanternas; no escuro, rações rolam para o abismo.", .rationsDice = 5},
+    {.text = "Cogumelos comestíveis, dos que os Ferreiros exilados conhecem: provisões a mais.", .rationsGain = 4},
+    {.text = "Um veio de ember cru brilha na parede; as lascas valem bom ouro em Khar-Dûm.", .ember = 15},
+    {.text = "Um barqueiro do Mar de Vidro cobra a travessia; não há outro caminho pela água.", .goldLossDice = 8},
+    {.text = "A maré do Mar de Vidro sobe sem aviso: um frasco afunda.", .losePotion = true},
+    {.text = "A ferrugem dos esporos come a gazua de alguém durante o descanso.", .loseLockpick = true},
+    {.text = "Caçadores das Marchas Pálidas trocam carne seca de cego-das-cavernas por moedas.", .goldLossDice = 4, .rationsGain = 3},
+    {.text = "A ponte de cordas sobre o abismo balança demais: uma mochila cai.", .rationsDice = 6},
+    {.text = "Um Penitente acorrentado pede água e pão; o grupo divide as provisões.", .rationsDice = 2},
+    {.text = "Mariposas de luz guiam a coluna até um bolsão de cristais.", .ember = 6},
+    {.text = "O ar quente das forjas de Khar-Dûm apodrece a comida mais depressa.", .rationsDice = 4},
+    {.text = "Um deslizamento de lascas de vidro corta as mãos; a febre vem à noite.", .diseaseChance = 0.4},
+    {.text = "Um contrabandista das Marchas vende um mapa falso; o desvio custa rações e o preço do mapa.", .rationsDice = 3, .goldLossDice = 5},
+    {.text = "Os ossos de um explorador da superfície e o saco de moedas que ele não gastou.", .ember = 10},
+    {.text = "O calor dos respiradouros de ember racha um frasco na mochila.", .losePotion = true},
+    {.text = "Um ninho de besouros gigantes abandonado: casulos cheios de larvas comestíveis.", .rationsGain = 5},
+    {.text = "Ratos-cegos roem os sacos durante o descanso.", .rationsDice = 3},
+    {.text = "Um Ferreiro Cinzento troca uma lasca de ember por uma gazua, sem perguntar de quem é.", .ember = 6, .loseLockpick = true},
+    {.text = "A água do Mar de Vidro parece limpa. Não é.", .diseaseChance = 0.5},
 };
 
 double jsRound(double v) { return std::floor(v + 0.5); }
@@ -470,6 +496,58 @@ Json Overworld::teleport(const Json& save, OverworldHex to) {
 }
 
 // overworld.ts stepOverworld.
+std::optional<OverworldEvent> Overworld::undergroundText(Json& save, Mulberry32& rng, bool test) const {
+  if (rng() >= kTextEncounterChance) return std::nullopt;
+  constexpr size_t kCount = sizeof(kUnderworldEncounters) / sizeof(kUnderworldEncounters[0]);
+  const RoadEncounter& pick = kUnderworldEncounters[static_cast<size_t>(std::floor(rng() * static_cast<double>(kCount)))];
+  std::vector<std::string> parts{pick.text};
+  const double rationsLost = pick.rationsDice ? 1 + std::floor(rng() * pick.rationsDice) : 0;
+  const double goldLost = pick.goldLossDice ? std::min(num(save, "ember").value_or(0.0), 1 + std::floor(rng() * pick.goldLossDice)) : 0;
+  save["rations"] = number(std::max(0.0, num(save, "rations").value_or(0.0) - rationsLost + pick.rationsGain));
+  save["ember"] = number(std::max(0.0, num(save, "ember").value_or(0.0) + pick.ember - goldLost));
+  if (rationsLost > 0) parts.push_back("−" + jsNumber(rationsLost) + (rationsLost == 1 ? " ração" : " rações"));
+  if (pick.rationsGain > 0) parts.push_back("+" + std::to_string(pick.rationsGain) + " rações");
+  if (goldLost > 0) parts.push_back("−" + jsNumber(goldLost) + " Gold");
+  if (pick.ember > 0) parts.push_back("+" + std::to_string(pick.ember) + " Gold");
+  if (pick.losePotion || pick.loseLockpick) {
+    Json bags = child(save, "bags").is_object() ? child(save, "bags") : Json::object();
+    std::vector<std::pair<std::string, std::string>> carried;  // hero, kind
+    for (const auto& [hero, bag] : bags.items()) {
+      if (pick.loseLockpick) {
+        if (num(bag, "lockpick").value_or(0.0) > 0) carried.push_back({hero, "lockpick"});
+      } else {
+        for (const Json& kind : tables_["potionOrder"])
+          if (num(bag, kind.get<std::string>()).value_or(0.0) > 0) carried.push_back({hero, kind.get<std::string>()});
+      }
+    }
+    const double r = rng();
+    if (!carried.empty()) {
+      const auto& [hero, kind] = carried[static_cast<size_t>(std::floor(r * static_cast<double>(carried.size())))];
+      bags[hero][kind] = number(std::max(0.0, num(bags[hero], kind).value_or(0.0) - 1));
+      if (kind == "lockpick") parts.push_back("−1 Gazua");
+      else
+        for (const Json& p : tables_["potions"])
+          if (p["id"].get<std::string>() == kind) parts.push_back("−1 " + p["name"].get<std::string>());
+      save["bags"] = std::move(bags);
+    }
+  }
+  if (pick.diseaseChance > 0 && rng() < pick.diseaseChance) {
+    Json heroDiseases = child(save, "heroDiseases").is_object() ? child(save, "heroDiseases") : Json::object();
+    std::vector<std::string> still;
+    for (const char* hero : kHeroes)
+      if ((test || heroRecruited(hero, save)) && !truthy(heroDiseases, hero)) still.push_back(hero);
+    if (!still.empty()) {
+      const std::string hero = still[static_cast<size_t>(std::floor(rng() * static_cast<double>(still.size())))];
+      heroDiseases[hero] = true;
+      parts.push_back(hero + " adoeceu (−10% nos atributos até ser curado)");
+      save["heroDiseases"] = std::move(heroDiseases);
+    }
+  }
+  std::string text;
+  for (size_t i = 0; i < parts.size(); ++i) text += (i ? " · " : "") + parts[i];
+  return OverworldEvent{"encounter", text, ""};
+}
+
 Json Overworld::step(const Json& save, OverworldHex to, Mulberry32& rng, std::optional<OverworldEvent>& event, bool test) const {
   event.reset();
   const Json& pos = child(save, "overworldPos");
@@ -592,7 +670,7 @@ Json Overworld::step(const Json& save, OverworldHex to, Mulberry32& rng, std::op
     }
   }
   const double saveAlert = num(save, "alertStreak").value_or(std::numeric_limits<double>::quiet_NaN());
-  const double battleChance = (saveAlert > 0 ? kBattleEncounterChance * 2 : kBattleEncounterChance) * (prayer > 0 ? 0.5 : 1.0);
+  const double battleChance = (saveAlert > 0 ? kAlertBattleChance : kBattleEncounterChance) * (prayer > 0 ? 0.5 : 1.0);
   double alertStreak = std::isnan(saveAlert) ? saveAlert : std::max(0.0, saveAlert - elapsedDays);
   const Json& lastRoad = child(save, "lastRoadEncounterId");
   std::optional<Json> lastRoadEncounterId;
