@@ -1,4 +1,4 @@
-﻿{
+{
   "_": "Submundo: o look 2D no ciclo invertido (render/WorldMapFx.h underworldLookParams, shaders/worldmap.hlsl underworldLook; o usuário, 2026-10-28, a especificação colada). Sem sol, sem lua, sem céu. O mesmo relógio da superfície: de dia os cogumelos gigantes absorvem (dormente: carvão e ardósia, só o ember dos Ferreiros Cinzentos acende o leste), no entardecer acordam numa onda (os mais velhos primeiro: a máscara 'fungal', R = idade / força, claro = acende antes), na noite da superfície a floração (teal, azul-esverdeado, violeta), no amanhecer apagam das bordas para dentro. 'lut' é por hora da SUPERFÍCIE (tools/scripts/worldmap/make_luts.py: underworld-dormant / -awakening / -bloom). As máscaras ('masks', pintadas pelo usuário, PNG na proporção do atlas; um caminho vazio = aquela parte desligada): fungal (R = idade / força), plants (plantas que se alimentam do brilho), windows (janelas das casas nos cogumelos, cor permitida), ember (R = força: mais fundo, mais quente), heat (zonas de tremor de calor), water (o Mar de Vidro), spores (as Marchas Fúngicas). creatures = mariposas / vagalumes (strength 0 = sem). Sem 'lut' o passe antigo (cycle / glow / dark / caveFog) volta. enabled false = a imagem lisa.",
   "enabled": true,
   "mask": "",
@@ -9,14 +9,14 @@
     {"hour": 19.5, "file": "content/worldmap/lut/underworld-awakening-v01.png"},
     {"hour": 21.5, "file": "content/worldmap/lut/underworld-bloom-v01.png"}
   ],
-  "masks": {"fungal": "", "plants": "", "windows": "", "ember": "", "heat": "", "water": "", "spores": ""},
+  "masks": {"fungal": "content/worldmap/masks/underworld-fungal-v01.png", "plants": "content/worldmap/masks/underworld-plants-v01.png", "windows": "content/worldmap/masks/underworld-windows-v01.png", "ember": "content/worldmap/masks/underworld-ember-v01.png", "heat": "content/worldmap/masks/underworld-heat-v01.png", "water": "content/worldmap/masks/underworld-water-v01.png", "spores": "content/worldmap/masks/underworld-spores-v01.png"},
   "dayNight": {"nightFrom": 18.5, "nightFull": 21.5, "dayFrom": 5.0, "dayFull": 7.5},
   "lights": {"glowRadius": 10, "glowDownsample": 4},
   "fungal": {"color": [0.30, 0.85, 0.80], "strength": 1.0, "breathe": 0.5, "waterReflection": [0.35, 0.80, 0.85]},
   "plants": {"color": [0.55, 0.35, 0.85], "strength": 0.6},
   "windows": {"color": [1.0, 0.72, 0.40], "strength": 0.9},
   "ember": {"color": [1.0, 0.32, 0.10], "strength": 1.0, "throb": 0.35, "throbSpeed": 1.3, "heatAmplitude": 1.5, "heatSpeed": 0.6},
-  "water": {"shimmer": 0.5, "moon": 0.6, "scale": 60, "speed": 0.04},
+  "water": {"shimmer": 0.5, "moon": 0.6, "scale": 14, "speed": 0.04},
   "spores": {"scale": 90, "speed": 0.01, "size": 0.08, "strength": 0.5},
   "creatures": {"color": [0.75, 0.95, 0.60], "strength": 0.6},
   "cycle": {"wakeHour": 6, "riseHours": 2, "glowHours": 8, "fadeHours": 3, "periodHours": 20},

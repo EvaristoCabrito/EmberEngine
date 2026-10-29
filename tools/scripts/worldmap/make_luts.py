@@ -15,6 +15,7 @@ from PIL import Image
 
 SIZE = 32
 SUFFIX = "-v01"
+VERSIONS = {"dusk": "-v02"}  # looks changed after their v01 went into the tree (the old file stays)
 
 
 def luma(c):
@@ -62,11 +63,12 @@ def day(c):
 
 
 def dusk(c):
-    # entardecer avermelhado: altas luzes laranja-avermelhadas, sombras violeta, contraste um pouco maior
-    c = saturate(c, 1.04)
-    c = contrast(c, 1.08)
-    c = lift_gamma_gain(c, [0.02, 0.01, 0.03], [1.0, 0.98, 0.96], [1.0, 0.80, 0.62])
-    c = split_tone(c, [0.80, 0.72, 0.98], [1.10, 0.92, 0.80], 0.5)
+    # entardecer vermelho-acastanhado, apagado: altas luzes para o laranja queimado, sombras violeta, contraste um pouco maior
+    # (v02: o v01 saía laranja saturado demais sobre o mapa inteiro)
+    c = saturate(c, 0.92)
+    c = contrast(c, 1.06)
+    c = lift_gamma_gain(c, [0.02, 0.015, 0.03], [1.0, 0.98, 0.96], [0.94, 0.80, 0.70])
+    c = split_tone(c, [0.84, 0.78, 0.98], [1.06, 0.94, 0.86], 0.5)
     return c
 
 
@@ -126,7 +128,7 @@ def main():
         for b in range(SIZE):
             strip[:, b * SIZE:(b + 1) * SIZE, :] = c[b]  # y = g, x = r + 32 b
         img = Image.fromarray(np.round(strip * 255).astype(np.uint8), "RGB")
-        path = os.path.join(out, f"{name}{SUFFIX}.png")
+        path = os.path.join(out, f"{name}{VERSIONS.get(name, SUFFIX)}.png")
         if os.path.exists(path):
             print(f"kept {path} (exists; change SUFFIX for a new version)")
             continue

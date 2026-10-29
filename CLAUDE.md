@@ -1776,6 +1776,20 @@ open area with large tables ... some separate rooms for NPCs and services, use t
   meaning in the shader's Push comment; 124 of 128 bytes); flags bits 6..14 = tex present, bit 15 = party light. Without `lut` in
   the Underworld's JSON the old pass (cycle / glow / caveFog) still runs.
   Measured (release, "ui" scope, with the scratchpad's Underworld test masks): see the commit of 2026-10-29.
+- **THE MASKS ARE MINE (the user, 2026-10-29: "eu nunca pintaria nada ta maluco", "não sei nem o que seria pintar as 11 máscaras";
+  memory note `masks-are-mine`):** `tools/scripts/worldmap/make_masks.py` extracts all eleven from the paintings themselves
+  (colour tests + regions in % of the image, at half resolution) into `content/worldmap/masks/*-v01.png`, and both JSONs point at
+  them: surface lights = warm dots placed on the buildings (village, castle, manor, chapel, tower, tunnel gate, walled farm),
+  height = the central hill + the northern mountains + the ravine and swamp lowered + fine detail, water = the painting's blue
+  inside the lake / swamp / river regions, mist = soft lowland blobs; Underworld fungal = pale teal × cluster density (age),
+  plants = dark green in the Marches and at the mushrooms' feet, windows = warm dots in the west, ember = warm in the east × its
+  density (the parchment border excluded by a content test), heat = the ember's brightest, water = saturated blue, spores = the
+  fungal and plant neighbourhoods. A new version = a new SUFFIX, never over the old. Dusk LUT v02 (v01 was saturated orange over
+  the whole paper; v01 kept). Water noise scale 60 → 14 (60 aliased into blocky speckle at 1/4 zoom). Textures on the GPU with
+  everything: 398 MB (RGBA8 masks at half the paintings' size).
+  Captures with everything revealed: scratchpad bank copies `bank-all-<hour>.json` (every hex in `exploredHexes`):
+  `captures/worldmap/all-{night,dusk,dawn,day}.png`, `uw-{night,dawn,day}.png`. Seen there: night blue with the warm window dots
+  and halos, the ravine mist; dusk warm; dawn pale pink with mist; the Underworld teal bloom / ember east / charcoal day.
 
 ## O Mosteiro das Cinzas, três andares (2026-10-29; the user: "start working on the map for a area called the Monastery ... part
 exploration / adventure, Talk investigation, part dungeon ... Ashen Devouts and Penitents ... with some conversation and investigations

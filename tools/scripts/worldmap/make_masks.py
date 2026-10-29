@@ -1,121 +1,217 @@
-"""As máscaras pintadas das duas telas do mapa (render/WorldMapFx.h), tiradas das próprias pinturas, para o usuário aprovar
-antes de entrarem no jogo (content/worldmap/*.json "mask"):
+"""Mapa-múndi e Submundo: as máscaras do look 2D (shaders/worldmap.hlsl), extraídas das próprias pinturas.
 
-  overworld-mask-v01.png   R = onde a névoa baixa se acumula (pântano, ravinas, entre as árvores: o escuro frio da pintura)
-  underworld-mask-v01.png  R = onde a névoa de caverna se acumula (galerias, água, abismos), G = onde há seres que brilham
-                           (o saturado e frio: as florestas de fungos azul-esverdeadas)
+O usuário não pinta máscaras (2026-10-29: "eu nunca pintaria nada"): cada uma é feita aqui a partir da cor da pintura e de
+regiões conhecidas (em % da imagem), à metade da resolução da pintura. Uma versão nova nunca sobrescreve a anterior (SUFFIX).
 
-e uma prévia de cada (a pintura com a máscara por cima, em cor) para olhar:  overworld-mask-v01-preview.jpg etc.
+    python -I tools/scripts/worldmap/make_masks.py [content/worldmap/masks]
 
-  python -I tools/scripts/worldmap/make_masks.py [out dir = content/worldmap]
+Superfície (world-map-v03.jpg): lights (janelas e tochas nas construções, cor quente), height (relevo: morro central, montanhas,
+ravina), water, mist (baixadas). Submundo (underworld-atlas-v03.png): fungal (R = idade / força), plants, windows, ember (R =
+força), heat, water, spores.
 """
+import os
 import sys
-from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageFilter
 
-ROOT = Path(__file__).resolve().parents[3]
-OVERWORLD = ROOT / "content/assets/game/assets/world-map.jpg"
-UNDERWORLD = ROOT / "content/ui/underworld-atlas-v01.png"
+SUFFIX = "-v01"
 
 
-def load(path):
-    return np.asarray(Image.open(path).convert("RGB")).astype(np.float32) / 255.0
+def load(path, scale=0.5):
+    im = Image.open(path).convert("RGB")
+    w, h = im.size
+    im = im.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+    a = np.asarray(im).astype(np.float32) / 255.0
+    return a
 
 
-def luma(rgb):
-    return rgb @ np.array([0.299, 0.587, 0.114], dtype=np.float32)
+def luma(a):
+    return a[..., 0] * 0.299 + a[..., 1] * 0.587 + a[..., 2] * 0.114
 
 
-def smooth(a, radius):
-    img = Image.fromarray((np.clip(a, 0, 1) * 255).astype(np.uint8))
-    return np.asarray(img.filter(ImageFilter.GaussianBlur(radius))).astype(np.float32) / 255.0
+def blur(m, r):
+    return np.asarray(Image.fromarray((np.clip(m, 0, 1) * 255).astype(np.uint8), "L").filter(ImageFilter.GaussianBlur(r))).astype(np.float32) / 255.0
 
 
-def disc(shape, x, y, r, soft=0.5):
-    """Um disco suave em percentagem da pintura (centro x, y; raio r; borda de r*soft)."""
-    h, w = shape[:2]
-    yy, xx = np.mgrid[0:h, 0:w]
-    d = np.hypot(xx / w * 100 - x, yy / h * 100 - y) / r
-    return np.clip((1.0 - d) / soft + 1.0, 0, 1) if soft > 0 else (d <= 1).astype(np.float32)
+def save_l(m, path):
+    Image.fromarray((np.clip(m, 0, 1) * 255).astype(np.uint8), "L").save(path)
+    print("wrote", path)
 
 
-# Mapa-múndi (content/data/overworld.json: x, y em % da pintura): onde a névoa baixa se junta (pântano, ravinas, bosques) e
-# as construções, que não são parte baixa (o escuro delas enganava o corte automático).
-LOW_PLACES = [(51.96, 75, 13), (82.27, 82.5, 16), (12.99, 82.5, 13), (34.64, 60, 9), (8.66, 30, 9), (73.61, 52.5, 8), (51.96, 45, 7), (30, 78, 12), (60, 88, 12)]
-BUILT_PLACES = [(22, 25, 10), (14, 38, 7), (24, 50, 6), (51.96, 57, 9), (77.94, 30, 9), (51.96, 15, 13), (86, 52, 8), (14, 62, 4)]
+def save_rgb(m, path):
+    Image.fromarray((np.clip(m, 0, 1) * 255).astype(np.uint8), "RGB").save(path)
+    print("wrote", path)
 
 
-def low_fog(rgb):
-    """Onde a névoa baixa se junta: o escuro e frio da pintura, só nos lugares baixos, nunca sobre as construções."""
-    l = luma(rgb)
-    cold = np.clip((np.maximum(rgb[..., 1], rgb[..., 2]) - rgb[..., 0]) * 3.0, 0, 1)
-    dark = np.clip((0.38 - l) / 0.38, 0, 1)
-    m = dark * (0.5 + 0.5 * cold)
-    m = smooth(m, 6)
-    m = np.clip((m - 0.06) / 0.45, 0, 1)
-    places = np.zeros(rgb.shape[:2], dtype=np.float32)
-    for x, y, r in LOW_PLACES:
-        places = np.maximum(places, disc(rgb.shape, x, y, r))
-    built = np.zeros(rgb.shape[:2], dtype=np.float32)
-    for x, y, r in BUILT_PLACES:
-        built = np.maximum(built, disc(rgb.shape, x, y, r, 0.35))
-    m = m * (0.25 + 0.75 * places) * (1.0 - built)
-    return smooth(m, 3)
+def rect(h, w, x0, y0, x1, y1):
+    m = np.zeros((h, w), np.float32)
+    m[int(y0 * h):int(y1 * h), int(x0 * w):int(x1 * w)] = 1
+    return m
 
 
-def cave_fog(rgb):
-    """Submundo: entre as galerias, sobre a água e nos abismos: o escuro que não é a rocha vermelha, mais a água."""
-    l = luma(rgb)
-    red = np.clip((rgb[..., 0] - np.maximum(rgb[..., 1], rgb[..., 2])) * 12.0, 0, 1)  # a rocha vermelha das paredes
-    red = smooth(red, 4)
-    cold = np.clip((np.maximum(rgb[..., 1], rgb[..., 2]) - rgb[..., 0]) * 3.0, 0, 1)
-    # o escuro só conta quando é frio (abismos azul-roxos, o fundo das galerias); as paredes pardas de rocha ficam de fora
-    blueish = np.clip((rgb[..., 2] - rgb[..., 0] * 0.95 + 0.05) * 8.0, 0, 1)
-    dark = np.clip((0.36 - l) / 0.36, 0, 1) * (1.0 - red) ** 2 * blueish
-    water = cold * np.clip((rgb.max(axis=2) - rgb.min(axis=2) - 0.1) * 3.0, 0, 1) * np.clip((0.6 - l) / 0.3, 0, 1)
-    m = np.maximum(dark, water * 0.8)
-    m = smooth(m, 7)
-    m = np.clip((m - 0.08) / 0.45, 0, 1)
-    return smooth(m, 3)
+def ellipse(h, w, cx, cy, rx, ry, soft=0.35):
+    ys, xs = np.mgrid[0:h, 0:w]
+    d = np.sqrt(((xs / w - cx) / rx) ** 2 + ((ys / h - cy) / ry) ** 2)
+    return np.clip((1.0 - d) / soft, 0, 1)
 
 
-def glow_sources(rgb):
-    """Os seres que brilham: o claro e frio da pintura (os fungos azul-esverdeados pálidos), nunca o fogo laranja das minas."""
-    mx, mn = rgb.max(axis=2), rgb.min(axis=2)
-    sat = mx - mn
-    cold = np.clip((np.maximum(rgb[..., 1], rgb[..., 2]) - rgb[..., 0]) * 4.0, 0, 1)
-    bright = np.clip((luma(rgb) - 0.5) / 0.3, 0, 1)
-    g = np.clip((sat - 0.08) * 5.0, 0, 1) * cold * bright
-    g = smooth(g, 2)
-    return np.clip(g * 1.6, 0, 1)
+def paper(a, bright=0.80, satMax=0.10, grow=0):
+    """A borda de pergaminho da pintura: claro e sem cor. 1 = papel (nada acontece ali). `grow` alarga a borda (pixels)."""
+    l = luma(a)
+    sat = a.max(-1) - a.min(-1)
+    p = ((l > bright) & (sat < satMax)).astype(np.float32)
+    if grow > 0:
+        p = np.clip(blur(p, grow) * 3.0, 0, 1)
+    return np.clip(blur(p, 3) * 1.5, 0, 1)
 
 
-def preview(rgb, r, g, path):
-    out = rgb.copy() * 0.55
-    out[..., 0] += r * 0.9  # névoa em vermelho
-    out[..., 1] += g * 0.9  # seres em verde
-    Image.fromarray((np.clip(out, 0, 1) * 255).astype(np.uint8)).save(path, quality=88)
+def sparse_points(mask, min_dist, seed, count):
+    """Até `count` pontos dentro de `mask`, nunca a menos de min_dist um do outro (pixels)."""
+    rng = np.random.default_rng(seed)
+    ys, xs = np.nonzero(mask > 0.5)
+    if len(ys) == 0:
+        return []
+    order = rng.permutation(len(ys))
+    chosen = []
+    for k in order:
+        y, x = int(ys[k]), int(xs[k])
+        if all((y - cy) ** 2 + (x - cx) ** 2 >= min_dist ** 2 for cy, cx in chosen):
+            chosen.append((y, x))
+            if len(chosen) >= count:
+                break
+    return chosen
+
+
+def dot(img, y, x, r, color):
+    h, w = img.shape[:2]
+    y0, y1, x0, x1 = max(0, y - r), min(h, y + r + 1), max(0, x - r), min(w, x + r + 1)
+    ys, xs = np.mgrid[y0:y1, x0:x1]
+    d = np.sqrt((ys - y) ** 2 + (xs - x) ** 2)
+    k = np.clip(1.0 - (d - r + 1.0), 0, 1)[..., None]
+    img[y0:y1, x0:x1] = np.maximum(img[y0:y1, x0:x1], k * np.asarray(color, np.float32))
+
+
+# --- superfície -----------------------------------------------------------------------------------------------------------
+def surface(a, out):
+    h, w = a.shape[:2]
+    l = luma(a)
+    pap = paper(a)
+    land = 1.0 - pap
+    # Construções (x0, y0, x1, y1 em %, luzes por região, tamanho): aldeia NW, castelo, solar NE, capela central, torre SW, portal SW
+    buildings = [
+        (0.10, 0.20, 0.40, 0.42, 34, 4),   # a aldeia
+        (0.42, 0.01, 0.62, 0.20, 40, 5),   # o castelo
+        (0.70, 0.18, 0.90, 0.34, 18, 4),   # o solar
+        (0.48, 0.52, 0.54, 0.56, 3, 4),    # a capela do cruzamento
+        (0.22, 0.47, 0.27, 0.55, 4, 4),    # a torre sobre a ponte
+        (0.08, 0.72, 0.16, 0.82, 2, 5),    # o portal do túnel
+        (0.13, 0.34, 0.22, 0.42, 6, 4),    # a quinta murada
+    ]
+    lights = np.zeros((h, w, 3), np.float32)
+    for i, (x0, y0, x1, y1, n, r) in enumerate(buildings):
+        region = rect(h, w, x0, y0, x1, y1) * ((l > 0.12) & (l < 0.48)).astype(np.float32) * land
+        for y, x in sparse_points(region, max(6, int(w * 0.006)), 11 + i, n):
+            warm = (1.0, 0.72 + 0.1 * ((x * 7 + y) % 3) / 3.0, 0.35)
+            dot(lights, y, x, r, warm)
+    save_rgb(lights, f"{out}/surface-lights{SUFFIX}.png")
+
+    # Relevo: base plana, o morro central, as montanhas do norte com o castelo, a ravina SW baixa, a floresta SE ondulada.
+    height = np.full((h, w), 0.40, np.float32)
+    height += 0.45 * ellipse(h, w, 0.52, 0.40, 0.24, 0.15, 0.6)
+    mountains = rect(h, w, 0.0, 0.0, 1.0, 0.20) * (1.0 - l) * land
+    height += 0.5 * blur(mountains, 6)
+    height -= 0.35 * ellipse(h, w, 0.20, 0.80, 0.18, 0.20, 0.5)   # a ravina
+    height -= 0.12 * ellipse(h, w, 0.45, 0.78, 0.12, 0.06, 0.6)   # o pântano
+    fine = blur((1.0 - l) * land, 2) - blur((1.0 - l) * land, 12)
+    height += 0.10 * fine
+    height = blur(height, 3) * land + 0.4 * pap
+    save_l(height, f"{out}/surface-height{SUFFIX}.png")
+
+    # Água: o azul da pintura onde há água (os lagos NW / NE, o pântano, o rio SE, o regato da ravina); os penhascos cinza-azulados
+    # da ravina ficam de fora pelas regiões.
+    blueish = np.clip((a[..., 2] - a[..., 0] - 0.04) * 8.0, 0, 1) * np.clip((0.75 - l) / 0.3, 0, 1)
+    green = np.clip((a[..., 1] - a[..., 2] - 0.02) * 10.0, 0, 1)
+    where = rect(h, w, 0.08, 0.13, 0.26, 0.21) + rect(h, w, 0.84, 0.11, 1.0, 0.20) + rect(h, w, 0.34, 0.72, 0.52, 0.86)
+    where += rect(h, w, 0.58, 0.76, 0.80, 1.0) + rect(h, w, 0.02, 0.84, 0.34, 1.0)
+    water = blueish * (1.0 - green) * land * np.clip(where, 0, 1)
+    water = blur(water, 2)
+    save_l(np.clip(water * 1.4, 0, 1), f"{out}/surface-water{SUFFIX}.png")
+
+    # Névoa: as baixadas (o pântano, a ravina, as margens do lago) e, leve, as planícies claras; nunca sobre o papel.
+    mist = 0.9 * ellipse(h, w, 0.45, 0.78, 0.17, 0.10, 0.9)
+    mist = np.maximum(mist, 0.8 * ellipse(h, w, 0.20, 0.80, 0.21, 0.23, 0.9))
+    mist = np.maximum(mist, 0.6 * ellipse(h, w, 0.17, 0.17, 0.10, 0.06, 0.9))
+    plains = 0.35 * np.clip((l - 0.55) / 0.25, 0, 1) * (1.0 - ellipse(h, w, 0.52, 0.40, 0.26, 0.17, 0.3))
+    mist = np.maximum(mist, plains * (1.0 - paper(a, grow=20)))
+    mist = blur(mist * land, 8) * land
+    save_l(mist, f"{out}/surface-mist{SUFFIX}.png")
+
+
+# --- Submundo ---------------------------------------------------------------------------------------------------------------
+def underworld(a, out):
+    h, w = a.shape[:2]
+    l = luma(a)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    sat = a.max(-1) - a.min(-1)
+    # O pergaminho rasgado em volta do atlas é bege e meio escuro: papel = claro e pouco saturado, alargado; e a terra = onde a
+    # pintura é escura / colorida em volta (a borda do pergaminho, quente, nunca vira ember).
+    pap = paper(a, bright=0.62, satMax=0.18, grow=25)
+    content = ((l < 0.62) | (sat > 0.22)).astype(np.float32)
+    land = np.clip(blur(content, 12) * 1.6 - 0.3, 0, 1) * (1.0 - pap)
+    land *= 1.0 - rect(h, w, 0.0, 0.0, 1.0, 0.07)  # o céu da superfície no alto do atlas
+    # O brilho fúngico: teal / ciano claro (os cogumelos e as casas neles), fora do papel; a força / idade = o brilho local mais a
+    # densidade do aglomerado (os gigantes do NW acendem primeiro).
+    teal = np.clip(((g + b) * 0.5 - r - 0.06) * 6.0, 0, 1) * np.clip((l - 0.40) / 0.25, 0, 1) * land
+    density = blur(teal, 25)
+    density = density / max(float(density.max()), 1e-4)
+    fungal = np.clip(teal * (0.45 + 0.55 * density), 0, 1)
+    save_l(fungal, f"{out}/underworld-fungal{SUFFIX}.png")
+
+    # As plantas que se alimentam: a vegetação verde-escura das Marchas em volta dos cogumelos.
+    plants = np.clip((g - np.maximum(r, b) + 0.02) * 10.0, 0, 1) * np.clip((0.62 - l) / 0.25, 0, 1) * np.clip((l - 0.10) / 0.1, 0, 1)
+    marches = np.clip(blur(rect(h, w, 0.04, 0.40, 0.56, 0.66), 20) * 1.2, 0, 1)  # as Marchas Fúngicas Pálidas
+    near = np.clip(blur(teal, 18) * 4.0, 0, 1)  # e o pé dos cogumelos
+    plants = blur(plants, 2) * land * (1.0 - teal) * np.clip(marches + near, 0, 1)
+    save_l(np.clip(plants * 2.0, 0, 1), f"{out}/underworld-plants{SUFFIX}.png")
+
+    # As janelas nas casas dos cogumelos: os pontos quentes pequenos dentro das regiões fúngicas (oeste).
+    warm = np.clip((r - b - 0.12) * 6.0, 0, 1) * np.clip((l - 0.35) / 0.25, 0, 1) * land
+    west = np.clip(blur(fungal, 30) * 6.0, 0, 1)
+    windows = np.zeros((h, w, 3), np.float32)
+    windows[..., 0] = warm * west
+    windows[..., 1] = warm * west * 0.75
+    windows[..., 2] = warm * west * 0.45
+    save_rgb(windows, f"{out}/underworld-windows{SUFFIX}.png")
+
+    # O ember dos Ferreiros: o quente do leste e da torre (fora das janelas do oeste); R = força, mais fundo nos fornos mais
+    # brilhantes e densos.
+    east = 1.0 - west
+    ember_raw = warm * east
+    edens = blur(ember_raw, 20)
+    edens = edens / max(float(edens.max()), 1e-4)
+    ember = np.clip(ember_raw * (0.5 + 0.5 * edens) + 0.25 * edens * np.clip((l - 0.2) / 0.3, 0, 1) * land * east, 0, 1)
+    save_l(ember, f"{out}/underworld-ember{SUFFIX}.png")
+    heat = np.clip((blur(ember_raw, 4) - 0.35) * 3.0, 0, 1) * east
+    save_l(heat, f"{out}/underworld-heat{SUFFIX}.png")
+
+    # A água: o azul saturado (o Mar de Vidro, os rios, o porto), não o brilho pálido dos cogumelos.
+    water = np.clip((b - r - 0.06) * 6.0, 0, 1) * np.clip((sat - 0.08) * 5.0, 0, 1) * np.clip((0.78 - l) / 0.2, 0, 1) * land
+    water = water * (1.0 - np.clip(fungal * 2.0, 0, 1))
+    water = blur(water, 2)
+    save_l(np.clip(water * 1.4, 0, 1), f"{out}/underworld-water{SUFFIX}.png")
+
+    # Os esporos: sobre as Marchas e em volta dos aglomerados fúngicos.
+    spores = np.clip(blur(fungal, 40) * 5.0, 0, 1) * 0.7 + 0.6 * np.clip(blur(plants, 20) * 3.0, 0, 1)
+    spores = np.clip(spores, 0, 1) * land
+    save_l(spores, f"{out}/underworld-spores{SUFFIX}.png")
 
 
 def main():
-    out = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "content/worldmap"
-    out.mkdir(parents=True, exist_ok=True)
-    ow = load(OVERWORLD)
-    r = low_fog(ow)
-    mask = np.zeros(ow.shape, dtype=np.float32)
-    mask[..., 0] = r
-    Image.fromarray((mask * 255).astype(np.uint8)).save(out / "overworld-mask-v01.png")
-    preview(ow, r, np.zeros_like(r), out / "overworld-mask-v01-preview.jpg")
-    uw = load(UNDERWORLD)
-    r2, g2 = cave_fog(uw), glow_sources(uw)
-    mask2 = np.zeros(uw.shape, dtype=np.float32)
-    mask2[..., 0], mask2[..., 1] = r2, g2
-    Image.fromarray((mask2 * 255).astype(np.uint8)).save(out / "underworld-mask-v01.png")
-    preview(uw, r2, g2, out / "underworld-mask-v01-preview.jpg")
-    print(f"overworld: low fog covers {r.mean() * 100:.1f} % of the painting")
-    print(f"underworld: cave fog {r2.mean() * 100:.1f} %, glowing beings {g2.mean() * 100:.1f} %")
+    out = sys.argv[1] if len(sys.argv) > 1 else "content/worldmap/masks"
+    os.makedirs(out, exist_ok=True)
+    surface(load("content/worldmap/world-map-v03.jpg"), out)
+    underworld(load("content/worldmap/underworld-atlas-v03.png"), out)
 
 
 if __name__ == "__main__":
