@@ -14,6 +14,7 @@ and stands it with its base centred on the anchor hex (MapStage::placeModels, En
    blender -b --python content/models/blender/kit_forest.py            # every asset of the kit
    blender -b --python content/models/blender/kit_forest.py -- stump   # one asset
    blender -b <Meshy .blend> --python content/models/blender/export_hearth.py
+   blender -b --python content/models/blender/render_thumbs.py          # the Map Editor's 3D thumbnails (content/ui/thumbs3d), new props only
    ```
 2. **Staging + cook**: the mesh pack is cooked from one folder, so the sources are copied into
    `build/meshes/src-v2/` (`models/`, `props/` = Engine2's GLBs; `ember/<kit>/` = this folder's GLBs), then

@@ -2489,10 +2489,11 @@ class MapEditorStage : public Stage {
     const bool clicked = ImGui::InvisibleButton(id, {size, size});
     ImDrawList* dl = ImGui::GetWindowDrawList();
     constexpr std::string_view decor = "/game/decorations/";
-    constexpr std::string_view ownGround = "content/ground/";
+    constexpr std::string_view ownGround = "content/ground/", ownModel = "content/ui/thumbs3d/";
     const std::filesystem::path projectRoot = base_.artRoot.parent_path().parent_path().parent_path();
     const std::filesystem::path own = thumb.starts_with(decor) ? std::filesystem::path("decoracoes-2d") / thumb.substr(decor.size())
-                                        : thumb.starts_with(ownGround) ? projectRoot / thumb : std::filesystem::path();
+                                      : thumb.starts_with(ownGround) || thumb.starts_with(ownModel) ? projectRoot / thumb
+                                                                                                     : std::filesystem::path();
     const UiImage* image = thumb.empty() ? nullptr
                            : uiImage(!own.empty() && std::filesystem::exists(own) ? own : base_.artRoot / thumb.substr(thumb.starts_with('/') ? 1 : 0));
     if (image) {
@@ -2718,8 +2719,21 @@ class MapEditorStage : public Stage {
     return out;
   }
 
+  // A 3D decoration's thumbnail: its render (content/ui/thumbs3d/<id>.png, content/models/blender/render_thumbs.py), else the
+  // catalog's; looked up once.
+  const std::string& modelThumb(const std::string& id) {
+    auto it = modelThumbs_.find(id);
+    if (it == modelThumbs_.end()) {
+      const std::string own = "content/ui/thumbs3d/" + id + ".png";
+      const std::filesystem::path projectRoot = base_.artRoot.parent_path().parent_path().parent_path();
+      it = modelThumbs_.emplace(id, std::filesystem::exists(projectRoot / own) ? own : editor_.decoThumb[id]).first;
+    }
+    return it->second;
+  }
+
   void drawDecorationPanel() {
     const bool arch = mode_ == Mode::Architecture;
+    const bool props3d = arch && architectureDecorations_;
     if (arch && !architectureDecorations_) {
       int pick = -1;
       if (toggleRow({{"Regular Walls", !thickWalls_}, {"Thick Walls", thickWalls_}}, pick)) {
@@ -2786,11 +2800,35 @@ class MapEditorStage : public Stage {
       ImGui::SetNextItemWidth(-1);
       ImGui::InputTextWithHint("##decosearch", "Procurar…", search_, sizeof(search_));
     }
+    if (props3d) {
+      // the 3D decorations' own sections (only those some 3D piece has) and search, apart from the 2D tab's
+      std::vector<std::string> sections{"Todas"};
+      for (const std::string& id : architectureOptions())
+        if (const std::string& s = editor_.decoSection[id]; !s.empty() && std::ranges::find(sections, s) == sections.end()) sections.push_back(s);
+      std::sort(sections.begin() + 1, sections.end(), byName);
+      ImGui::SetNextItemWidth(170);
+      if (ImGui::BeginCombo("Objetos 3D", decoSection3d_.c_str())) {
+        for (const std::string& s : sections)
+          if (ImGui::Selectable(s.c_str(), s == decoSection3d_)) decoSection3d_ = s;
+        ImGui::EndCombo();
+      }
+      ImGui::SameLine();
+      ImGui::SetNextItemWidth(-1);
+      ImGui::InputTextWithHint("##props3dsearch", "Procurar…", search3d_, sizeof(search3d_));
+    }
     if (const ember::CatalogDecoration* d = catalog_.decoration(decoBrush_)) ImGui::Text("Pincel: %s", d->name.c_str());
     // the palette
     std::vector<std::string> visible;
     if (arch) {
       visible = architectureOptions();
+      if (props3d) {
+        const std::string query = lower(search3d_);
+        std::erase_if(visible, [&](const std::string& id) {
+          return (decoSection3d_ != "Todas" && editor_.decoSection[id] != decoSection3d_) ||
+                 (!query.empty() && lower(decoName(id)).find(query) == std::string::npos && id.find(query) == std::string::npos);
+        });
+        std::sort(visible.begin(), visible.end(), [&](const std::string& a, const std::string& b) { return byName(decoName(a), decoName(b)); });
+      }
     } else {
       const std::string query = lower(search_);
       for (const std::string& id : editor_.decorationOrder) {
@@ -2807,9 +2845,9 @@ class MapEditorStage : public Stage {
       if (k % static_cast<int>(per)) ImGui::SameLine();
       ImGui::BeginGroup();
       const bool model = !m.model3d.empty();
-      const std::string thumb = model ? m.wallTexture : editor_.decoThumb[id];
+      const std::string thumb = model ? (m.props3d && m.wallTexture.empty() ? modelThumb(id) : m.wallTexture) : editor_.decoThumb[id];
       if (thumbButton(("##d" + id).c_str(), thumb, "#333333", cell, decoBrush_ == id, std::format("{} · {} hexes", decoName(id), catalog_.decoration(id) ? catalog_.decoration(id)->footprint.size() : 0),
-                      model && m.wallTexture.empty() ? "3D" : nullptr))
+                      model && thumb.empty() ? "3D" : nullptr))
         decoBrush_ = id, selected_.reset(), turningDeco_ = false;
       if (!model) {
         // the dice: in Gerar terreno's draw or out of it
@@ -3660,6 +3698,9 @@ class MapEditorStage : public Stage {
   std::optional<std::pair<int, int>> wallDragFrom_;  // the run's first hex while the left button is held on the preview
   std::string decoBrush_ = "dead-tree", decoSection_ = "Todas";
   char search_[64] = {};
+  std::string decoSection3d_ = "Todas";  // the 3D Decorations tab's own section and search (2D and 3D never mixed)
+  char search3d_[64] = {};
+  std::map<std::string, std::string> modelThumbs_;  // id: its thumbnail, looked up once (modelThumb)
   std::optional<ember::Json> selected_;
   std::string summonBrush_ = "familiar", npcBrush_ = "breadLady";
   bool summonNeutral_ = false;
