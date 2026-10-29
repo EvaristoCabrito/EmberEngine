@@ -418,9 +418,10 @@ bool Overworld::canStep(const Json& save, OverworldHex from, OverworldHex to, bo
   if (wisp_ && from.col <= wisp_->col && to.col > wisp_->col && wispForestUncleared(save)) return false;
   if (has(completed, "estalagem") || from == inn_) return true;
   if (to.row != start_.row || to.col < start_.col || to.col > inn_.col) return false;
-  const bool atStart = from == start_;
+  // From the start, right up to the Stone Bridge: one hex on the 5 % grid, two on the half grid (hexSize 2.5).
+  const int bridgeCol = start_.col + static_cast<int>(std::lround(5.0 / gHexSize));
   if (to.col < from.col) return true;
-  if (atStart) return to.row == from.row && to.col == from.col + 1;
+  if (from.col < bridgeCol) return to.row == from.row && to.col == from.col + 1;
   for (const std::string& id : stoneBridgeMissionIds_)
     if (!has(completed, id)) return false;
   return to.col > from.col;
