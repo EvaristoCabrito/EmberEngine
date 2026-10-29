@@ -24,7 +24,11 @@ struct Push {
   // Mapa-múndi, o look 2D (o usuário, 2026-10-28): as LUTs de cor da hora de antes e de depois, a máscara de luzes (pintada
   // pelo usuário: preto, salvo onde algo brilha) e a sua cópia borrada (feita ao carregar), o mapa de altura (cinza: claro =
   // alto), a máscara da água e a da névoa. Sempre índices válidos (o ruído quando ausentes); a presença vem dos flags.
-  uint lutA, lutB, lightMask, lightGlow, heightMap, waterMask, mistMask;
+  // tex[]: mapa-múndi: 0 luzes, 1 luzes borradas, 2 altura, 3 água, 4 névoa. Submundo: 0 brilho fúngico (R = idade / força),
+  // 1 o mesmo borrado, 2 plantas que se alimentam do brilho, 3 água, 4 zonas de esporos, 5 janelas, 6 ember (R = força), 7 ember
+  // borrado, 8 tremor de calor.
+  uint lutA, lutB;
+  uint tex0, tex1, tex2, tex3, tex4, tex5, tex6, tex7, tex8;
 };
 [[vk::push_constant]] Push push;
 
@@ -49,11 +53,11 @@ struct Push {
 // 14 sun        xyz direção do sol (x, y na pintura, z para cima; unitária), w força do relevo
 // 15 lightColor rgb cor das luzes à noite, w força
 // 16 clouds     x força das sombras de nuvem, y escala (repetições sobre a pintura), z velocidade, w tremor das luzes (0..1)
-// 17 mistShape  x escala, y velocidade, z limiar, w (livre)
+// 17 mistShape  x escala, y velocidade, z limiar, w a rampa das luzes (0 de dia .. 1 à noite; sobem no entardecer)
 // 18 mistColor  rgb cor da névoa, w força
 // 19 water      x brilho de dia, y reflexo da lua à noite, z escala, w velocidade
 // 20 party      xy posição do grupo na pintura (uv), z raio da luz (uv), w força do escuro em volta (0 = sem)
-// 21 moon       rgb cor da luz da lua, w força da LUT (0 = a pintura sem LUT, 1 = a LUT inteira)
+// 21 moon       rgb cor do reflexo na água pela luz principal da hora (sol / entardecer / lua), w força da LUT (0 = sem, 1 = inteira)
 float4 param(uint i) { return vk::RawBufferLoad<float4>((uint64_t(push.paramsHi) << 32 | uint64_t(push.paramsLo)) + uint64_t(i) * 16); }
 
 uint quality() { return (push.flags >> 1) & 3u; }
@@ -63,11 +67,14 @@ bool underworld() { return (push.flags & 1u) != 0u; }
 bool hasMask() { return (push.flags & 8u) != 0u; }
 bool hasReveal() { return (push.flags & 16u) != 0u; }
 bool hasLut() { return (push.flags & 32u) != 0u; }
-bool hasLight() { return (push.flags & 64u) != 0u; }
-bool hasHeight() { return (push.flags & 128u) != 0u; }
-bool hasWater() { return (push.flags & 256u) != 0u; }
-bool hasMist() { return (push.flags & 512u) != 0u; }
-bool partyLight() { return (push.flags & 1024u) != 0u; }
+bool hasTex(uint i) { return (push.flags & (64u << i)) != 0u; }  // bits 6..14: tex0..tex8 presentes
+bool partyLight() { return (push.flags & 32768u) != 0u; }
+// mapa-múndi
+bool hasLight() { return hasTex(0); }
+bool hasHeight() { return hasTex(2); }
+bool hasWater() { return hasTex(3); }
+bool hasMist() { return hasTex(4); }
+float4 texAt(uint t, float2 uv) { return gTextures[t].SampleLevel(gSamplers[push.samplerIndex], uv, 0); }
 
 FullscreenOut VSMain(uint id : SV_VertexID) { return fullscreenTriangle(id); }
 
@@ -149,10 +156,10 @@ float3 lutAt(uint lut, float3 c) {
 // sol clareiam e as opostas escurecem, em relação ao chão plano (que não muda). Sutil: `sun.w` manda.
 float heightRelief(float2 uv, float2 texel, float4 sun) {
   const float2 d = texel * 2.0;
-  const float l = gTextures[push.heightMap].SampleLevel(gSamplers[push.samplerIndex], uv - float2(d.x, 0), 0).r;
-  const float r = gTextures[push.heightMap].SampleLevel(gSamplers[push.samplerIndex], uv + float2(d.x, 0), 0).r;
-  const float u = gTextures[push.heightMap].SampleLevel(gSamplers[push.samplerIndex], uv - float2(0, d.y), 0).r;
-  const float b = gTextures[push.heightMap].SampleLevel(gSamplers[push.samplerIndex], uv + float2(0, d.y), 0).r;
+  const float l = texAt(push.tex2, uv - float2(d.x, 0)).r;
+  const float r = texAt(push.tex2, uv + float2(d.x, 0)).r;
+  const float u = texAt(push.tex2, uv - float2(0, d.y)).r;
+  const float b = texAt(push.tex2, uv + float2(0, d.y)).r;
   const float3 n = normalize(float3((l - r) * 6.0, (u - b) * 6.0, 1.0));
   const float flat = max(sun.z, 0.15);
   return (dot(n, sun.xyz) - sun.z) / flat * sun.w;
@@ -185,30 +192,31 @@ float4 overworld(float2 uv, float2 pixel, float2 texel) {
     const float shadow = smoothstep(0.52, 0.78, n) * clouds.x * hourMix.z;
     c *= 1.0 - shadow;
   }
-  // 5. A água: de dia um brilho fino que anda; à noite o reflexo pálido da lua, nos pontos altos do mesmo ruído.
+  // 5. A água: de dia um brilho fino que anda; o reflexo tingido pela luz principal da hora (moon.rgb: o sol de dia, o
+  // vermelho do entardecer, a lua pálida à noite), nos pontos altos do mesmo ruído.
   if (hasWater() && (water.x > 0.0 || water.y > 0.0)) {
-    const float w = gTextures[push.waterMask].SampleLevel(gSamplers[push.samplerIndex], uv, 0).r;
+    const float w = texAt(push.tex3, uv).r;
     if (w > 0.002) {
       const float2 p = uv * water.z;
       const float s1 = fine(p + float2(push.time * water.w, push.time * water.w * 0.6));
       const float s2 = fine(p * 1.7 - float2(push.time * water.w * 0.8, push.time * water.w * 0.35));
       const float glint = saturate((s1 * s2 - 0.22) * 4.0);
       c += w * glint * water.x * hourMix.z * tint.rgb * 0.25;
-      c += w * pow(glint, 2.0) * water.y * hourMix.y * moon.rgb;
+      c += w * pow(glint, 2.0) * water.y * moon.rgb;
     }
   }
-  // 2. As luzes que acendem à noite: a máscara nítida mais a sua cópia borrada (o halo), com um tremor lento e próprio em cada
-  // ponto; invisíveis de dia (hourMix.y = 0).
-  if (hasLight() && hourMix.y > 0.001 && lightColor.w > 0.0) {
-    const float3 sharp = gTextures[push.lightMask].SampleLevel(gSamplers[push.samplerIndex], uv, 0).rgb;
-    const float3 glow = gTextures[push.lightGlow].SampleLevel(gSamplers[push.samplerIndex], uv, 0).rgb;
+  // 2. As luzes: acendem no entardecer (mistShape.w = a rampa das luzes, 0 de dia .. 1 à noite): a máscara nítida mais a sua
+  // cópia borrada (o halo), com um tremor lento e próprio em cada ponto.
+  if (hasLight() && mistShape.w > 0.001 && lightColor.w > 0.0) {
+    const float3 sharp = texAt(push.tex0, uv).rgb;
+    const float3 glow = texAt(push.tex1, uv).rgb;
     const float cell = hash21(floor(uv * 160.0));
     const float flicker = 1.0 - clouds.w * (0.5 + 0.5 * sin(push.time * (5.0 + cell * 4.0) + cell * 6.2831853)) * 0.35;
-    c += (srgbToLinear(sharp) * 1.4 + srgbToLinear(glow) * 0.5) * lightColor.rgb * lightColor.w * hourMix.y * flicker;
+    c += (srgbToLinear(sharp) * 1.4 + srgbToLinear(glow) * 0.5) * lightColor.rgb * lightColor.w * mistShape.w * flicker;
   }
   // 4b. A névoa pálida da madrugada e da noite, deslizando sobre as baixadas e a água (onde a máscara permite).
   if (hasMist() && hourMix.w > 0.001 && mistColor.w > 0.0) {
-    const float m = gTextures[push.mistMask].SampleLevel(gSamplers[push.samplerIndex], uv, 0).r;
+    const float m = texAt(push.tex4, uv).r;
     if (m > 0.002) {
       const float2 drift = float2(push.time * mistShape.y, push.time * mistShape.y * 0.37);
       const float2 p = uv * mistShape.x + drift;
@@ -318,6 +326,123 @@ float4 underworldAt(float2 uv, float2 pixel, float2 texel) {
   return float4(grade(c, pixel), src.a);
 }
 
+// --- Submundo, o look 2D no ciclo invertido (2026-10-28) ------------------------------------------------------------------
+// Os parâmetros (13..21, significado próprio desta tela; WorldMapFx::underworldLookParams):
+//  13 hourMix   x mistura entre lutA e lutB, y L = floração (0 dormente de dia .. 1 auge na noite da superfície), z 1 - L, w (livre)
+//  14 fungal    rgb cor do brilho fúngico (teal), w força
+//  15 plant     rgb cor das plantas que se alimentam (violeta apagado), w força
+//  16 windows   rgb cor das janelas das casas nos cogumelos (quente), w força
+//  17 ember     rgb cor do ember dos Ferreiros Cinzentos, w força (constante, dia e noite)
+//  18 emberS    x pulsação (0..1), y velocidade da pulsação, z amplitude do tremor de calor (texels), w velocidade do tremor
+//  19 water     x brilho, y reflexo, z escala, w velocidade
+//  20 waterTint rgb cor do reflexo na floração (teal / violeta), w respiração dos cogumelos de dia (0..1)
+//  21 spores    x escala (células sobre a pintura), y velocidade, z tamanho, w força; a mesma grade serve às criaturas
+//  22 creatures rgb cor das mariposas / vagalumes, w força (0 = sem)
+float sporePoint(float2 p, float seed, float size) {
+  // uma partícula por célula da grade: um ponto suave que vagueia dentro da célula (as 4 células à volta do ponto: a
+  // partícula fica a menos de meia célula do seu centro, então estas bastam)
+  const float2 cell = floor(p - 0.5);
+  float v = 0.0;
+  [unroll] for (int j = 0; j <= 1; ++j)
+    [unroll] for (int i = 0; i <= 1; ++i) {
+      const float2 c = cell + float2(i, j);
+      const float h = hash21(c + seed);
+      // o vagueio pela textura de ruído (uma leitura por célula, sem trigonometria por pixel)
+      const float2 wander = (noiseAt(c * 0.37 + seed + push.time * 0.03).gb - 0.5) * 0.8;
+      const float2 pos = c + 0.5 + wander;
+      const float d = length(p - pos);
+      v += (1.0 - smoothstep(0.0, size, d)) * (0.6 + 0.4 * h);
+    }
+  return v;
+}
+
+float4 underworldLook(float2 uv, float2 pixel, float2 texel) {
+  const float4 hourMix = param(13), fungalC = param(14), plantC = param(15), winC = param(16), emberC = param(17), emberS = param(18);
+  const float4 water = param(19), waterTint = param(20), spores = param(21), creatures = param(22);
+  const float L = hourMix.y;
+  // Tremor de calor sobre as forjas e respiradouros: a pintura lida com um pequeno desvio ondulante, só dentro da máscara.
+  float2 suv = uv;
+  if (hasTex(8) && emberS.z > 0.0) {
+    const float h = texAt(push.tex8, uv).r;
+    if (h > 0.002) {
+      const float2 n = noiseAt(uv * 90.0 + float2(0.0, -push.time * emberS.w)).ga - 0.5;
+      suv += n * emberS.z * h * texel * 4.0;
+    }
+  }
+  const float4 src = mapAt(suv);
+  float3 graded = src.rgb;
+  if (hasLut()) graded = lerp(lutAt(push.lutA, src.rgb), lutAt(push.lutB, src.rgb), hourMix.x);
+  float3 c = srgbToLinear(graded);
+  const float cell = hash21(floor(uv * 160.0));
+  // O brilho fúngico: R = idade / força (claro = mais velho, acende antes). A onda: um ponto acende quando L passa de 1 - idade
+  // (os gigantes primeiro, os pequenos depois) e apaga na ordem inversa ao amanhecer. O halo borrado ilumina as paredes.
+  float haloLit = 0.0;
+  if (hasTex(0) && fungalC.w > 0.0) {
+    const float age = texAt(push.tex0, uv).r;
+    const float hAge = texAt(push.tex1, uv).r;
+    const float lit = smoothstep(1.0 - age - 0.18, 1.0 - age + 0.18, L);
+    haloLit = smoothstep(1.0 - hAge - 0.25, 1.0 - hAge + 0.25, L) * hAge;
+    const float breathe = (1.0 - L) * waterTint.w * (0.5 + 0.5 * sin(push.time * 0.45 + cell * 6.28));
+    c += fungalC.rgb * fungalC.w * (age * lit * 1.2 + haloLit * 0.6 + age * breathe * 0.25);
+  }
+  // As plantas que se alimentam do brilho: acendem só depois dos cogumelos perto delas, mais fracas e violeta.
+  if (hasTex(2) && plantC.w > 0.0) {
+    const float pl = texAt(push.tex2, uv).r;
+    const float feed = smoothstep(0.30, 0.70, haloLit);
+    c += plantC.rgb * plantC.w * pl * feed;
+  }
+  // As janelas das casas dentro dos cogumelos: quentes contra a luz fria, com a floração, tremor leve.
+  if (hasTex(5) && winC.w > 0.0) {
+    const float3 w = srgbToLinear(texAt(push.tex5, uv).rgb);
+    const float flicker = 1.0 - 0.12 * (0.5 + 0.5 * sin(push.time * (4.0 + cell * 3.0) + cell * 6.28));
+    c += w * winC.rgb * winC.w * L * flicker;
+  }
+  // O ember dos Ferreiros Cinzentos: constante, R = força (mais fundo, mais quente), pulsação lenta e pesada de brasa.
+  float emberHalo = 0.0;
+  if (hasTex(6) && emberC.w > 0.0) {
+    const float e = texAt(push.tex6, uv).r;
+    emberHalo = texAt(push.tex7, uv).r;
+    const float throb = 1.0 - emberS.x * (0.5 + 0.5 * sin(push.time * emberS.y + cell * 1.5));
+    c += emberC.rgb * emberC.w * throb * (e * 1.3 + emberHalo * 0.6);
+  }
+  // A água (o Mar de Vidro): o brilho fino; o reflexo teal / violeta na floração, vermelho onde o ember alcança.
+  if (hasTex(3) && (water.x > 0.0 || water.y > 0.0)) {
+    const float w = texAt(push.tex3, uv).r;
+    if (w > 0.002) {
+      const float2 p = uv * water.z;
+      const float s1 = fine(p + float2(push.time * water.w, push.time * water.w * 0.6));
+      const float s2 = fine(p * 1.7 - float2(push.time * water.w * 0.8, push.time * water.w * 0.35));
+      const float glint = saturate((s1 * s2 - 0.22) * 4.0);
+      const float3 refl = waterTint.rgb * L + emberC.rgb * emberHalo;
+      c += w * glint * water.x * 0.15 * (0.3 + L);
+      c += w * pow(glint, 2.0) * water.y * refl;
+    }
+  }
+  // Esporos à deriva sobre as Marchas (a máscara), na floração: partículas suaves, uma por célula, subindo devagar.
+  if (hasTex(4) && spores.w > 0.0 && L > 0.001) {
+    const float m = texAt(push.tex4, uv).r;
+    if (m > 0.002) {
+      const float2 p = uv * spores.x + float2(push.time * spores.y * 0.3, -push.time * spores.y);
+      const float s = sporePoint(p, 3.0, spores.z);
+      c += fungalC.rgb * spores.w * m * s * L;
+    }
+  }
+  // Mariposas e vagalumes: juntam-se nos pontos mais brilhantes à noite (o halo fúngico), dispersam-se ao amanhecer (menos e
+  // mais longe dos focos quando L cai).
+  if (hasTex(0) && creatures.w > 0.0 && L > 0.001) {
+    const float gather = smoothstep(0.15, 0.6, haloLit);
+    const float scatter = 1.0 - L;
+    const float density = lerp(gather, texAt(push.tex1, uv).r * 0.3, scatter);
+    if (density > 0.002) {
+      const float2 p = uv * spores.x * 1.6 + float2(sin(push.time * 0.2), cos(push.time * 0.17)) * 0.5;
+      const float s = sporePoint(p, 7.0, spores.z * 0.7);
+      const float blink = 0.6 + 0.4 * sin(push.time * 3.0 + cell * 6.28);
+      c += creatures.rgb * creatures.w * density * s * blink * L;
+    }
+  }
+  return float4(grade(c, pixel), src.a);
+}
+
 float4 PSMain(FullscreenOut i) : SV_Target0 {
   const float2 pixel = i.position.xy;
   const float cover = coverAt(pixel);
@@ -326,7 +451,12 @@ float4 PSMain(FullscreenOut i) : SV_Target0 {
   uint w, h;
   gTextures[push.map].GetDimensions(w, h);
   const float2 texel = 1.0 / float2(max(w, 1u), max(h, 1u));
-  const float4 c = underworld() ? underworldAt(uv, pixel, texel) : overworld(uv, pixel, texel);
+  // O Submundo com LUTs = o look 2D novo (ciclo invertido); sem elas, o passe antigo (heurística / máscara R-G).
+  float4 c;
+  if (underworld()) {
+    if (hasLut()) c = underworldLook(uv, pixel, texel);
+    else c = underworldAt(uv, pixel, texel);
+  } else c = overworld(uv, pixel, texel);
   const float a = cover * c.a;
   return float4(linearToSrgb(c.rgb) * a, a);  // pré-multiplicado, sobre a janela
 }

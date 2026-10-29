@@ -28,7 +28,8 @@ struct Push {
   float time, rounding, glow;
   uint32_t paramsLo, paramsHi;
   uint32_t noise, repeatSampler;
-  uint32_t lutA, lutB, lightMask, lightGlow, heightMap, waterMask, mistMask;
+  uint32_t lutA, lutB;
+  uint32_t tex[9];
 };
 static_assert(sizeof(Push) <= Bindless::kPushConstantBytes);
 
@@ -196,6 +197,46 @@ WorldMapConfig WorldMapConfig::load(const std::filesystem::path& file, bool unde
   const nlohmann::json party = j.value("partyLight", nlohmann::json::object());
   c.partyRadius = party.value("radius", c.partyRadius);
   c.partyDark = party.value("darkness", c.partyDark);
+  c.lightsFrom = lights.value("from", c.lightsFrom);
+  c.lightsFull = lights.value("full", c.lightsFull);
+  c.waterDayColor = vec3Of(water.value("dayColor", nlohmann::json()), c.waterDayColor);
+  c.waterDuskColor = vec3Of(water.value("duskColor", nlohmann::json()), c.waterDuskColor);
+  c.duskFrom = hours.value("duskFrom", c.duskFrom);
+  c.duskPeak = hours.value("duskPeak", c.duskPeak);
+  c.duskEnd = hours.value("duskEnd", c.duskEnd);
+  // Submundo, o look 2D no ciclo invertido.
+  c.fungalMask = masks.value("fungal", c.fungalMask);
+  c.plantMask = masks.value("plants", c.plantMask);
+  c.windowMask = masks.value("windows", c.windowMask);
+  c.emberMask = masks.value("ember", c.emberMask);
+  c.heatMask = masks.value("heat", c.heatMask);
+  c.sporeMask = masks.value("spores", c.sporeMask);
+  const nlohmann::json fungal = j.value("fungal", nlohmann::json::object());
+  c.fungalColor = vec3Of(fungal.value("color", nlohmann::json()), c.fungalColor);
+  c.fungalStrength = fungal.value("strength", c.fungalStrength);
+  c.breathe = fungal.value("breathe", c.breathe);
+  c.underWaterTint = vec3Of(fungal.value("waterReflection", nlohmann::json()), c.underWaterTint);
+  const nlohmann::json plants = j.value("plants", nlohmann::json::object());
+  c.plantColor = vec3Of(plants.value("color", nlohmann::json()), c.plantColor);
+  c.plantStrength = plants.value("strength", c.plantStrength);
+  const nlohmann::json windows = j.value("windows", nlohmann::json::object());
+  c.windowColor = vec3Of(windows.value("color", nlohmann::json()), c.windowColor);
+  c.windowStrength = windows.value("strength", c.windowStrength);
+  const nlohmann::json ember = j.value("ember", nlohmann::json::object());
+  c.emberColor = vec3Of(ember.value("color", nlohmann::json()), c.emberColor);
+  c.emberStrength = ember.value("strength", c.emberStrength);
+  c.emberThrob = ember.value("throb", c.emberThrob);
+  c.emberThrobSpeed = ember.value("throbSpeed", c.emberThrobSpeed);
+  c.heatAmplitude = ember.value("heatAmplitude", c.heatAmplitude);
+  c.heatSpeed = ember.value("heatSpeed", c.heatSpeed);
+  const nlohmann::json spores = j.value("spores", nlohmann::json::object());
+  c.sporeScale = spores.value("scale", c.sporeScale);
+  c.sporeSpeed = spores.value("speed", c.sporeSpeed);
+  c.sporeSize = spores.value("size", c.sporeSize);
+  c.sporeStrength = spores.value("strength", c.sporeStrength);
+  const nlohmann::json creatures = j.value("creatures", nlohmann::json::object());
+  c.creatureColor = vec3Of(creatures.value("color", nlohmann::json()), c.creatureColor);
+  c.creatureStrength = creatures.value("strength", c.creatureStrength);
   const nlohmann::json cycle = j.value("cycle", nlohmann::json::object());
   c.wakeHour = cycle.value("wakeHour", c.wakeHour);
   c.riseHours = cycle.value("riseHours", c.riseHours);
@@ -444,21 +485,20 @@ void WorldMapFx::callback(const ImDrawList*, const ImDrawCmd* cmd) {
   push.mask = hasMask ? d.mask : self.noiseIndex_;
   push.reveal = hasReveal ? self.revealIndex_ : self.noiseIndex_;
   push.samplerIndex = self.samplerIndex_;
-  const bool hasLut = !d.underworld && d.lutA != kNoTexture && d.lutB != kNoTexture;
-  const bool hasLight = !d.underworld && d.lightMask != kNoTexture && d.lightGlow != kNoTexture;
-  const bool hasHeight = !d.underworld && d.heightMap != kNoTexture;
-  const bool hasWater = !d.underworld && d.waterMask != kNoTexture;
-  const bool hasMist = !d.underworld && d.mistMask != kNoTexture;
+  const bool hasLut = d.lutA != kNoTexture && d.lutB != kNoTexture;
   push.lutA = hasLut ? d.lutA : self.noiseIndex_;
   push.lutB = hasLut ? d.lutB : self.noiseIndex_;
-  push.lightMask = hasLight ? d.lightMask : self.noiseIndex_;
-  push.lightGlow = hasLight ? d.lightGlow : self.noiseIndex_;
-  push.heightMap = hasHeight ? d.heightMap : self.noiseIndex_;
-  push.waterMask = hasWater ? d.waterMask : self.noiseIndex_;
-  push.mistMask = hasMist ? d.mistMask : self.noiseIndex_;
+  uint32_t texFlags = 0;
+  // tex0 / tex1 (a máscara e o seu borrado) só valem juntos; tex6 / tex7 (o ember e o seu borrado) também.
+  for (int i = 0; i < Draw::kTextures; ++i) {
+    bool has = d.tex[i] != kNoTexture;
+    if (i == 0 || i == 1) has = d.tex[0] != kNoTexture && d.tex[1] != kNoTexture;
+    if (i == 6 || i == 7) has = d.tex[6] != kNoTexture && d.tex[7] != kNoTexture;
+    push.tex[i] = has ? d.tex[i] : self.noiseIndex_;
+    if (has) texFlags |= 64u << i;
+  }
   push.flags = (d.underworld ? 1u : 0u) | (uint32_t(std::clamp(d.quality, 0, 2)) << 1) | (hasMask ? 8u : 0u) | (hasReveal ? 16u : 0u) |
-               (hasLut ? 32u : 0u) | (hasLight ? 64u : 0u) | (hasHeight ? 128u : 0u) | (hasWater ? 256u : 0u) | (hasMist ? 512u : 0u) |
-               (d.partyLight ? 1024u : 0u);
+               (hasLut ? 32u : 0u) | texFlags | (d.partyLight && !d.underworld ? 32768u : 0u);
   push.time = d.time;
   push.rounding = d.rounding * sc.y;
   push.glow = d.glow;
@@ -505,11 +545,17 @@ WorldMapParams WorldMapFx::overworldParams(const WorldMapConfig& c, float hour, 
     p.sun = {sun.x, sun.y, sun.z, c.reliefStrength * day};
     p.lightColor = {c.lightColor, c.lightStrength};
     p.clouds = {c.cloudStrength, c.cloudScale, c.cloudSpeed, std::clamp(c.lightFlicker, 0.0f, 1.0f)};
-    p.mistShape = {c.mistScale, c.mistSpeed, c.mistThreshold, 0.0f};
+    // As luzes sobem no entardecer e apagam com o dia; o reflexo da água segue a luz principal: o sol, o vermelho do
+    // entardecer, a lua.
+    const float lightsOn = hourWindow(h, c.lightsFrom, c.lightsFull, c.dayFrom, std::max(c.dayFull - c.dayFrom, 0.01f));
+    const float dusk = hourWindow(h, c.duskFrom, c.duskPeak, c.duskPeak, std::max(c.duskEnd - c.duskPeak, 0.01f));
+    glm::vec3 reflect = c.waterDayColor * day + c.moonColor * night;
+    reflect = reflect * (1.0f - dusk) + c.waterDuskColor * dusk;
+    p.mistShape = {c.mistScale, c.mistSpeed, c.mistThreshold, lightsOn};
     p.mistColor = {c.mistColor, c.mistStrength};
     p.water = {c.waterShimmer, c.waterMoon, c.waterScale, c.waterSpeed};
     p.party = {partyUv.x, partyUv.y, c.partyRadius, c.partyDark};
-    p.moon = {c.moonColor, c.lutStrength};
+    p.moon = {reflect, c.lutStrength};
   }
   if (c.keys.empty()) {
     p.tint = {1, 1, 1, 1};
@@ -540,6 +586,32 @@ WorldMapParams WorldMapFx::overworldParams(const WorldMapConfig& c, float hour, 
   p.fogShape = {c.fogScale, c.fogWind, c.fogEdge, c.fogShade};
   p.lowColor = {mix3(a->lowColor, b->lowColor), mix(a->lowStrength, b->lowStrength)};
   p.lowShape = {c.lowScale, c.lowSpeed, c.lowHeight, c.lowThreshold};
+  return p;
+}
+
+float WorldMapFx::bloomAt(const WorldMapConfig& c, float hour) {
+  const float h = std::fmod(std::fmod(hour, 24.0f) + 24.0f, 24.0f);
+  return hourWindow(h, c.nightFrom, c.nightFull, c.dayFrom, std::max(c.dayFull - c.dayFrom, 0.01f));
+}
+
+WorldMapParams WorldMapFx::underworldLookParams(const WorldMapConfig& c, float hour) {
+  WorldMapParams p{};
+  p.tint = {1, 1, 1, 1};
+  p.grade = {1, 1, 0, 1};
+  p.light = {0, -1, 0, 0};
+  p.vignette = {c.vignette, c.vignetteRadius, c.vignetteSoft, c.shoulder};
+  const float h = std::fmod(std::fmod(hour, 24.0f) + 24.0f, 24.0f);
+  const float L = bloomAt(c, h);
+  p.hourMix = {lutMix(c, h).t, L, 1.0f - L, 0.0f};
+  p.sun = {c.fungalColor, c.fungalStrength};
+  p.lightColor = {c.plantColor, c.plantStrength};
+  p.clouds = {c.windowColor, c.windowStrength};
+  p.mistShape = {c.emberColor, c.emberStrength};
+  p.mistColor = {c.emberThrob, c.emberThrobSpeed, c.heatAmplitude, c.heatSpeed};
+  p.water = {c.waterShimmer, c.waterMoon, c.waterScale, c.waterSpeed};
+  p.party = {c.underWaterTint, c.breathe};
+  p.moon = {c.sporeScale, c.sporeSpeed, c.sporeSize, c.sporeStrength};
+  p.creatures = {c.creatureColor, c.creatureStrength};
   return p;
 }
 

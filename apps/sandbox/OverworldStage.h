@@ -225,18 +225,33 @@ class OverworldStage : public Stage {
         fxMap_[0] = fx_->loadTexture(kWorldMap);
         if (!fxConfig_[0].mask.empty()) fxMask_[0] = fx_->loadTexture(fxConfig_[0].mask);
         // O look 2D (2026-10-28): as LUTs por hora e as máscaras pintadas pelo usuário; uma ausente = aquela parte desligada.
+        // tex[]: 0 luzes, 1 luzes borradas, 2 altura, 3 água, 4 névoa (worldmap.hlsl Push).
         const WorldMapConfig& c = fxConfig_[0];
-        for (const WorldMapConfig::LutKey& k : c.luts) fxLuts_.push_back(k.file.empty() ? WorldMapFx::kNoTexture : fx_->loadTexture(k.file));
-        if (!c.lightMask.empty()) std::tie(fxLight_, fxGlow_) = fx_->loadLightMask(c.lightMask, c.lightGlowDownsample, c.lightGlowRadius);
-        if (!c.heightMap.empty()) fxHeight_ = fx_->loadTexture(c.heightMap);
-        if (!c.waterMask.empty()) fxWater_ = fx_->loadTexture(c.waterMask);
-        if (!c.mistMask.empty()) fxMist_ = fx_->loadTexture(c.mistMask);
-        logInfo("worldmap look: {} LUTs, lights {}, height {}, water {}, mist {}", fxLuts_.size(), fxLight_ != WorldMapFx::kNoTexture ? "on" : "off",
-                fxHeight_ != WorldMapFx::kNoTexture ? "on" : "off", fxWater_ != WorldMapFx::kNoTexture ? "on" : "off", fxMist_ != WorldMapFx::kNoTexture ? "on" : "off");
+        for (const WorldMapConfig::LutKey& k : c.luts) fxLuts_[0].push_back(k.file.empty() ? WorldMapFx::kNoTexture : fx_->loadTexture(k.file));
+        uint32_t* t = fxTex_[0];
+        if (!c.lightMask.empty()) std::tie(t[0], t[1]) = fx_->loadLightMask(c.lightMask, c.lightGlowDownsample, c.lightGlowRadius);
+        if (!c.heightMap.empty()) t[2] = fx_->loadTexture(c.heightMap);
+        if (!c.waterMask.empty()) t[3] = fx_->loadTexture(c.waterMask);
+        if (!c.mistMask.empty()) t[4] = fx_->loadTexture(c.mistMask);
+        logInfo("worldmap look: {} LUTs, lights {}, height {}, water {}, mist {}", fxLuts_[0].size(), fxOn(0, 0), fxOn(0, 2), fxOn(0, 3), fxOn(0, 4));
       }
       if (fxConfig_[1].enabled) {
         fxMap_[1] = fx_->loadTexture(kUnderworldAtlas);
         if (!fxConfig_[1].mask.empty()) fxMask_[1] = fx_->loadTexture(fxConfig_[1].mask);
+        // Submundo, o look 2D no ciclo invertido: tex[] 0 brilho fúngico, 1 borrado, 2 plantas, 3 água, 4 esporos, 5 janelas,
+        // 6 ember, 7 ember borrado, 8 tremor de calor.
+        const WorldMapConfig& c = fxConfig_[1];
+        for (const WorldMapConfig::LutKey& k : c.luts) fxLuts_[1].push_back(k.file.empty() ? WorldMapFx::kNoTexture : fx_->loadTexture(k.file));
+        uint32_t* t = fxTex_[1];
+        if (!c.fungalMask.empty()) std::tie(t[0], t[1]) = fx_->loadLightMask(c.fungalMask, c.lightGlowDownsample, c.lightGlowRadius);
+        if (!c.plantMask.empty()) t[2] = fx_->loadTexture(c.plantMask);
+        if (!c.waterMask.empty()) t[3] = fx_->loadTexture(c.waterMask);
+        if (!c.sporeMask.empty()) t[4] = fx_->loadTexture(c.sporeMask);
+        if (!c.windowMask.empty()) t[5] = fx_->loadTexture(c.windowMask);
+        if (!c.emberMask.empty()) std::tie(t[6], t[7]) = fx_->loadLightMask(c.emberMask, c.lightGlowDownsample, c.lightGlowRadius);
+        if (!c.heatMask.empty()) t[8] = fx_->loadTexture(c.heatMask);
+        logInfo("underworld look: {} LUTs, fungal {}, plants {}, water {}, spores {}, windows {}, ember {}, heat {}", fxLuts_[1].size(), fxOn(1, 0),
+                fxOn(1, 2), fxOn(1, 3), fxOn(1, 4), fxOn(1, 5), fxOn(1, 6), fxOn(1, 8));
       }
       logInfo("worldmap: light + fog {} / {} ({:.1f} MB of textures)", fxConfig_[0].enabled ? "on" : "off", fxConfig_[1].enabled ? "on" : "off",
               double(fx_->textureBytes()) / 1048576.0);
@@ -1279,7 +1294,14 @@ class OverworldStage : public Stage {
     d.quality = gfxQuality();
     d.time = now_;
     const double days = num(save_, "gameClock", 0), hour = ember::Overworld::campaignHour(save_);
-    if (underworld_) {
+    if (underworld_ && !c.luts.empty()) {
+      // O look 2D no ciclo invertido (2026-10-28): a mesma hora do relógio, a floração na noite da superfície.
+      const WorldMapFx::LutMix lm = WorldMapFx::lutMix(c, static_cast<float>(hour));
+      if (lm.a >= 0 && lm.b >= 0 && size_t(lm.a) < fxLuts_[1].size() && size_t(lm.b) < fxLuts_[1].size()) d.lutA = fxLuts_[1][lm.a], d.lutB = fxLuts_[1][lm.b];
+      for (int i = 0; i < WorldMapFx::Draw::kTextures; ++i) d.tex[i] = fxTex_[1][i];
+      d.glow = WorldMapFx::bloomAt(c, static_cast<float>(hour));
+      d.params = WorldMapFx::underworldLookParams(c, static_cast<float>(hour));
+    } else if (underworld_) {
       // O relógio da campanha nunca para: o ciclo corre junto com ele e o Submundo abre no ponto da hora atual.
       d.glow = WorldMapFx::underworldGlow(c, days * 24.0 + hour);
       d.params = WorldMapFx::underworldParams(c, d.glow);
@@ -1295,8 +1317,8 @@ class OverworldStage : public Stage {
       else shownHour_ = std::fmod(shownHour_ + (diff > 0 ? step : -step) + 24.0f, 24.0f);
       // O look 2D: as duas LUTs da hora, as máscaras, o grupo na pintura (partyX_ / partyY_ em %) e a luz do grupo (Opções).
       const WorldMapFx::LutMix lm = WorldMapFx::lutMix(c, shownHour_);
-      if (lm.a >= 0 && lm.b >= 0 && size_t(lm.a) < fxLuts_.size() && size_t(lm.b) < fxLuts_.size()) d.lutA = fxLuts_[lm.a], d.lutB = fxLuts_[lm.b];
-      d.lightMask = fxLight_, d.lightGlow = fxGlow_, d.heightMap = fxHeight_, d.waterMask = fxWater_, d.mistMask = fxMist_;
+      if (lm.a >= 0 && lm.b >= 0 && size_t(lm.a) < fxLuts_[0].size() && size_t(lm.b) < fxLuts_[0].size()) d.lutA = fxLuts_[0][lm.a], d.lutB = fxLuts_[0][lm.b];
+      for (int i = 0; i < WorldMapFx::Draw::kTextures; ++i) d.tex[i] = fxTex_[0][i];
       d.partyLight = gamePrefs().partyLight;
       d.params = WorldMapFx::overworldParams(c, shownHour_, {partyX_ / 100.0f, partyY_ / 100.0f});
       updateReveal();
@@ -2729,9 +2751,12 @@ class OverworldStage : public Stage {
   WorldMapConfig fxConfig_[2];
   uint32_t fxMap_[2] = {WorldMapFx::kNoTexture, WorldMapFx::kNoTexture}, fxMask_[2] = {WorldMapFx::kNoTexture, WorldMapFx::kNoTexture};
   // O look 2D do mapa-múndi (2026-10-28): as LUTs por hora (na ordem de fxConfig_[0].luts) e as máscaras pintadas pelo usuário.
-  std::vector<uint32_t> fxLuts_;
-  uint32_t fxLight_ = WorldMapFx::kNoTexture, fxGlow_ = WorldMapFx::kNoTexture, fxHeight_ = WorldMapFx::kNoTexture;
-  uint32_t fxWater_ = WorldMapFx::kNoTexture, fxMist_ = WorldMapFx::kNoTexture;
+  std::vector<uint32_t> fxLuts_[2];
+  uint32_t fxTex_[2][WorldMapFx::Draw::kTextures] = {{WorldMapFx::kNoTexture, WorldMapFx::kNoTexture, WorldMapFx::kNoTexture, WorldMapFx::kNoTexture, WorldMapFx::kNoTexture,
+                                                       WorldMapFx::kNoTexture, WorldMapFx::kNoTexture, WorldMapFx::kNoTexture, WorldMapFx::kNoTexture},
+                                                      {WorldMapFx::kNoTexture, WorldMapFx::kNoTexture, WorldMapFx::kNoTexture, WorldMapFx::kNoTexture, WorldMapFx::kNoTexture,
+                                                       WorldMapFx::kNoTexture, WorldMapFx::kNoTexture, WorldMapFx::kNoTexture, WorldMapFx::kNoTexture}};
+  const char* fxOn(int world, int i) const { return fxTex_[world][i] != WorldMapFx::kNoTexture ? "on" : "off"; }
   size_t revealKey_ = 0;  // o que o revelado subido representa (um hash dos hexágonos explorados)
   float shownHour_ = -1;  // a hora da luz na tela (segue o relógio em hourEaseSeconds)
   float lastHourAt_ = 0;

@@ -1760,6 +1760,21 @@ open area with large tables ... some separate rooms for NPCs and services, use t
   into the JSON for the run and restores it). The test masks are scratchpad-only, never shipped.
 - **Not verified:** the look in the window (the user judges; today only the LUTs and cloud shadows show, the rest waits for the
   user's masks); the flicker and drift rates in play; the party light on a moving party.
+- **Second spec (the same night, "faz", "opcionais entram sim"):** surface lights now rise at dusk (`lights.from / full` 18 → 19.5) and
+  the water's reflection follows the hour's main light (`water.dayColor / duskColor / moonColor`, `dayNight.dusk*`). **The Underworld
+  on the inverted cycle** (worldmap.hlsl `underworldLook`, `WorldMapFx::underworldLookParams / bloomAt`, `content/worldmap/
+  underworld-light-fog.json`, now `enabled`): the same clock, L = the surface's night ramp (`dayNight`); LUTs `underworld-dormant /
+  -awakening / -bloom` (charcoal-slate by surface day; teal / blue-green / violet at bloom) keyed by the SURFACE hour; masks (all
+  empty today, the user paints them at the atlas's aspect; a path empty = off): `fungal` (R = glow age / strength: a spot lights when
+  L passes 1 - age, the giants first, and goes out in the reverse order at dawn; its blurred copy = the halo on the cavern walls),
+  `plants` (feed on the halo, delayed, violet, dimmer), `windows` (warm, with the bloom), `ember` (R = depth gradient; constant day and
+  night, slow heavy throb; blurred copy = its halo, red over the fungal teal where they meet), `heat` (a small uv ripple of the painting
+  inside the mask), `water` (shimmer; reflection teal/violet × L + ember red × its halo), `spores` (one soft particle per grid cell
+  drifting up, at bloom). **Creatures** (the optional, "entram sim"): moths / fireflies as the same cell particles, gathering where the
+  fungal halo is brightest at night, fewer and spread when L falls (`creatures.color / strength`). Push: `lutA, lutB, tex[9]` (per-world
+  meaning in the shader's Push comment; 124 of 128 bytes); flags bits 6..14 = tex present, bit 15 = party light. Without `lut` in
+  the Underworld's JSON the old pass (cycle / glow / caveFog) still runs.
+  Measured (release, "ui" scope, with the scratchpad's Underworld test masks): see the commit of 2026-10-29.
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 

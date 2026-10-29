@@ -28,8 +28,10 @@ struct WorldMapParams {
   glm::vec4 tint, grade, light, vignette, fogColor, fogShape, lowColor, lowShape, glowColor, dark, caveColor, caveShape;
   glm::vec4 extra0{};
   // Mapa-múndi, o look 2D (2026-10-28; worldmap.hlsl diz cada campo): 13..21
+  // (o Submundo lê 13..22 com significado próprio: worldmap.hlsl underworldLook)
   glm::vec4 hourMix{}, sun{}, lightColor{}, clouds{}, mistShape{}, mistColor{}, water{}, party{}, moon{};
-  glm::vec4 spare[2]{};
+  glm::vec4 creatures{};
+  glm::vec4 spare{};
 };
 static_assert(sizeof(WorldMapParams) == 24 * 16);
 
@@ -59,6 +61,23 @@ struct WorldMapConfig {
   float waterShimmer = 0.6f, waterMoon = 0.5f, waterScale = 60.0f, waterSpeed = 0.05f;
   glm::vec3 moonColor{0.55f, 0.65f, 0.90f};
   float partyRadius = 0.08f, partyDark = 0.45f;  // a luz do grupo à noite (Opções): o raio em uv, quanto escurece o resto
+  float lightsFrom = 18.0f, lightsFull = 19.5f;  // as luzes acendem no entardecer (apagam com dayFrom..dayFull)
+  glm::vec3 waterDayColor{1.0f, 0.97f, 0.90f}, waterDuskColor{1.0f, 0.55f, 0.35f};  // o reflexo pela luz principal da hora
+  float duskFrom = 17.0f, duskPeak = 18.5f, duskEnd = 20.0f;
+  // Submundo, o look 2D no ciclo invertido (2026-10-28): "lut" keyed by the SURFACE hour; the masks (PNG at the atlas's aspect).
+  std::string fungalMask, plantMask, windowMask, emberMask, heatMask, sporeMask;  // + waterMask above
+  glm::vec3 fungalColor{0.30f, 0.85f, 0.80f};
+  float fungalStrength = 1.0f, breathe = 0.5f;
+  glm::vec3 plantColor{0.55f, 0.35f, 0.85f};
+  float plantStrength = 0.6f;
+  glm::vec3 windowColor{1.0f, 0.72f, 0.40f};
+  float windowStrength = 0.9f;
+  glm::vec3 emberColor{1.0f, 0.32f, 0.10f};
+  float emberStrength = 1.0f, emberThrob = 0.35f, emberThrobSpeed = 1.3f, heatAmplitude = 1.5f, heatSpeed = 0.6f;
+  glm::vec3 underWaterTint{0.35f, 0.80f, 0.85f};
+  float sporeScale = 90.0f, sporeSpeed = 0.01f, sporeSize = 0.08f, sporeStrength = 0.5f;
+  glm::vec3 creatureColor{0.75f, 0.95f, 0.60f};
+  float creatureStrength = 0.6f;
   // Mapa-múndi: uma chave por hora (0..24, cíclico), interpolada suavemente.
   struct HourKey {
     float hour = 12;
@@ -113,9 +132,11 @@ class WorldMapFx {
     bool underworld = false, fogOfWar = true;
     int quality = 2;  // 0 baixa, 1 média, 2 alta (Qualidade gráfica)
     float time = 0, rounding = 8, glow = 0;
-    // Mapa-múndi, o look 2D: as texturas (kNoTexture = aquela parte desligada) e a luz do grupo (Opções).
-    uint32_t lutA = kNoTexture, lutB = kNoTexture, lightMask = kNoTexture, lightGlow = kNoTexture;
-    uint32_t heightMap = kNoTexture, waterMask = kNoTexture, mistMask = kNoTexture;
+    // O look 2D: as LUTs da hora e as texturas de cada tela (worldmap.hlsl Push diz o que é cada tex[i] em cada tela;
+    // kNoTexture = aquela parte desligada) e a luz do grupo (Opções, mapa-múndi).
+    static constexpr int kTextures = 9;
+    uint32_t lutA = kNoTexture, lutB = kNoTexture;
+    uint32_t tex[kTextures] = {kNoTexture, kNoTexture, kNoTexture, kNoTexture, kNoTexture, kNoTexture, kNoTexture, kNoTexture, kNoTexture};
     bool partyLight = false;
     WorldMapParams params;
   };
@@ -129,6 +150,10 @@ class WorldMapFx {
     float t = 0;
   };
   static LutMix lutMix(const WorldMapConfig& c, float hour);
+  // Submundo, o look 2D: os parâmetros à hora da SUPERFÍCIE (o ciclo invertido: floração na noite da superfície).
+  static WorldMapParams underworldLookParams(const WorldMapConfig& c, float hour);
+  // A floração L (0 dormente .. 1 auge) à hora da superfície (dayNight do arquivo do Submundo).
+  static float bloomAt(const WorldMapConfig& c, float hour);
   // Submundo: o ponto do ciclo (0 dormindo .. 1 auge) às `totalHours` horas do relógio da campanha, e os parâmetros nesse ponto.
   static float underworldGlow(const WorldMapConfig& c, double totalHours);
   static WorldMapParams underworldParams(const WorldMapConfig& c, float glow);

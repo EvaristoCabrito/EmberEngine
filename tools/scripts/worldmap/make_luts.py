@@ -79,7 +79,35 @@ def night(c):
     return c
 
 
-LOOKS = {"dawn": dawn, "day": day, "dusk": dusk, "night": night}
+def underworld_dormant(c):
+    # o Submundo de dia (os cogumelos absorvem): carvão e ardósia, dessaturado, escuro, as sombras com um mínimo frio
+    c = saturate(c, 0.35)
+    c = contrast(c, 1.06)
+    c = lift_gamma_gain(c, [0.03, 0.035, 0.045], [0.95, 0.97, 1.0], [0.24, 0.26, 0.30])
+    c = split_tone(c, [0.92, 0.97, 1.08], [1.0, 1.0, 1.02], 0.4)
+    return c
+
+
+def underworld_awakening(c):
+    # o despertar: a meio caminho, já esverdeando e frio
+    c = saturate(c, 0.75)
+    c = contrast(c, 1.04)
+    c = lift_gamma_gain(c, [0.03, 0.04, 0.05], [0.97, 1.0, 1.0], [0.40, 0.52, 0.55])
+    c = split_tone(c, [0.86, 0.90, 1.10], [0.92, 1.04, 1.02], 0.45)
+    return c
+
+
+def underworld_bloom(c):
+    # a floração: teal frio, azul-esverdeado pálido, sombras violeta apagadas; nunca quente (o vermelho só vem do ember)
+    c = saturate(c, 1.08)
+    c = contrast(c, 1.0)
+    c = lift_gamma_gain(c, [0.03, 0.05, 0.06], [1.0, 1.0, 1.0], [0.58, 0.86, 0.84])
+    c = split_tone(c, [0.84, 0.80, 1.10], [0.90, 1.06, 1.02], 0.5)
+    return c
+
+
+LOOKS = {"dawn": dawn, "day": day, "dusk": dusk, "night": night,
+         "underworld-dormant": underworld_dormant, "underworld-awakening": underworld_awakening, "underworld-bloom": underworld_bloom}
 
 
 def identity():
