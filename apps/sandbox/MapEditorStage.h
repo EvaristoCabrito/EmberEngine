@@ -3147,7 +3147,10 @@ class MapEditorStage : public Stage {
         if (ImGui::BeginCombo("##class", classLabel(classId).c_str())) {
           LetterJump jump;
           jump.begin();
-          for (const std::string& c : editor_.classOrder) {
+          // in alphabetical order of the names shown, whatever order the catalog lists them in (new classes are added at its end)
+          std::vector<std::string> byLabel = editor_.classOrder;
+          std::stable_sort(byLabel.begin(), byLabel.end(), [&](const std::string& a, const std::string& b) { return byName(classLabel(a), classLabel(b)); });
+          for (const std::string& c : byLabel) {
             if (enemy && (isSummon(c) || isCivil(c) || isNpc(c))) continue;
             if (ImGui::Selectable((classLabel(c) + "##" + c).c_str(), c == classId)) beginEdit(), s["classId"] = c, s["useClassSprite"] = true;
             jump.item(classLabel(c));
