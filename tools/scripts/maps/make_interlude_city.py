@@ -183,7 +183,7 @@ party_city = [{'name': 'Isolde', 'classId': 'conjurer', 'x': 29, 'y': 41, 'level
               {'name': 'Selene', 'classId': 'conjurer', 'x': 31, 'y': 41, 'level': 1}]
 # townsfolk: neutrals about the city (no conversation yet: they stand; the user's people come later)
 folk = [('Padeira', 'breadLady', 18, 15), ('Mercador', 'travelingMerchant', 24, 17), ('Aldeã', 'villagerF1', 31, 19), ('Camponês', 'peasant1', 8, 30),
-        ('Lenhador', 'woodsman', 20, 36), ('Carvoeiro', 'charcoalBurner', 6, 26), ('Bêbado', 'beberrao', 33, 24), ('Aldeã', 'villagerF1', 48, 13)]
+        ('Lenhador', 'woodsman', 20, 35), ('Carvoeiro', 'charcoalBurner', 6, 26), ('Bêbado', 'beberrao', 33, 24), ('Aldeã', 'villagerF1', 48, 13)]
 neutrals = [{'name': n, 'classId': c, 'x': x, 'y': y} for n, c, x, y in folk]
 
 # --- checks ---------------------------------------------------------------------------------------------------------------------------

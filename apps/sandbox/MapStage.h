@@ -3387,8 +3387,35 @@ class MapStage final : public Stage {
       }
     }
     const glm::vec3 eye = camera.position, fwd = camera.forward;
-    std::sort(drawList_.begin(), drawList_.end(),
-              [&](const SpriteInstance& a, const SpriteInstance& b) { return glm::dot(a.origin - eye, fwd) > glm::dot(b.origin - eye, fwd); });
+    std::vector<std::pair<float, uint32_t>> order(drawList_.size());
+    for (uint32_t i = 0; i < drawList_.size(); ++i) order[i] = {glm::dot(drawList_[i].origin - eye, fwd), i};
+    // A decoration stands on its own axis (square to the hex rows), so under a turned camera a wide one (a house) runs obliquely
+    // and its one point says nothing about a figure beside its far or near end: the woodsman behind a hut was drawn over it (the
+    // user, 2026-10-29: "make sure characters dont stay in front of the 2D decorations"). A figure within a decoration's width on
+    // screen goes behind it when it stands on the far side of the card's plane, in front of it when on the camera's side.
+    if (!flat_) {
+      const glm::vec2 across{camera.right.x, camera.right.z}, eyeAt{eye.x, eye.z};
+      for (auto& [unitKey, ui] : order) {
+        const SpriteInstance& u = drawList_[ui];
+        if ((u.flags & kSpriteFront) == 0) continue;
+        const glm::vec2 at{u.origin.x, u.origin.z};
+        const float span = glm::dot(at, across), half = 0.5f * u.width;
+        for (const auto& [cardKey, di] : order) {
+          const SpriteInstance& d = drawList_[di];
+          if ((d.flags & (kSpriteFront | kSpriteFlat)) != 0 || glm::dot(d.right, d.right) == 0.0f) continue;
+          const glm::vec2 base{d.origin.x, d.origin.z}, normal{-d.right.y, d.right.x};
+          const float a = glm::dot(base - d.right * (0.5f * d.width), across), b = glm::dot(base + d.right * (0.5f * d.width), across);
+          if (span + half <= std::min(a, b) || span - half >= std::max(a, b)) continue;
+          const bool behind = (glm::dot(at - base, normal) > 0.0f) != (glm::dot(eyeAt - base, normal) > 0.0f);
+          unitKey = behind ? std::max(unitKey, cardKey + 1e-3f) : std::min(unitKey, cardKey - 1e-3f);
+        }
+      }
+    }
+    std::sort(order.begin(), order.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
+    std::vector<SpriteInstance> sorted;
+    sorted.reserve(drawList_.size());
+    for (const auto& [key, i] : order) sorted.push_back(drawList_[i]);
+    drawList_.swap(sorted);
   }
 
   // Every fire's light radius twice its own (the user, 2026-10-25: "dobrar o radius da luz de todas as tochas, velas, lareiras braziers
