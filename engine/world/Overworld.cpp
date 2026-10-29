@@ -6,6 +6,7 @@
 #include <format>
 #include <fstream>
 #include <limits>
+#include <cstdio>
 #include <set>
 
 #include "core/Log.h"
@@ -17,6 +18,7 @@ namespace ember {
 
 namespace {
 
+double gHexSize = 5.0;  // the loaded board's "hexSize" (hexToWorld is static)
 constexpr double kRecoveryPct = 0.08;
 constexpr double kBattleEncounterChance = 0.15;
 constexpr double kTextEncounterChance = 0.25;
@@ -127,11 +129,13 @@ bool Overworld::load(const std::filesystem::path& file) {
   start_ = hexOf(board["startHex"]), inn_ = hexOf(board["innHex"]), ashenBlocked_ = hexOf(board["ashenBlocked"]);
   if (board.contains("wispHex") && board["wispHex"].is_object()) wisp_ = hexOf(board["wispHex"]);
   westEdgeCol_ = board.value("westEdgeCol", 0);
+  gHexSize = board.value("hexSize", 5.0);
   for (const Json& id : board.value("stoneBridgeMissionIds", Json::array())) stoneBridgeMissionIds_.push_back(id.get<std::string>());
   for (const Json& c : board["cells"]) {
     OverworldCell cell;
-    // Regra do jogo (o usuário, 2026-10-28): todo passo no mapa-múndi leva 6 horas; as horas do arquivo não são lidas.
-    cell.col = c.value("col", 0), cell.row = c.value("row", 0), cell.hours = 6;
+    // Regra do jogo (o usuário, 2026-10-28): todo passo no mapa-múndi leva 6 horas (3 na grade de meio tamanho: "stepHours");
+    // as horas de cada célula não são lidas.
+    cell.col = c.value("col", 0), cell.row = c.value("row", 0), cell.hours = board.value("stepHours", 6);
     cell.region = c.value("region", ""), cell.x = c.value("x", 0.0), cell.y = c.value("y", 0.0);
     for (const Json& e : c.value("encounters", Json::array())) cell.encounters.push_back(e.get<std::string>());
     cells_.push_back(std::move(cell));
@@ -215,11 +219,51 @@ std::vector<OverworldHex> Overworld::neighbors(int col, int row) {
   return out;
 }
 
-// overworld.ts hexToWorld (odd-r offset to cube, pointy-top, hex size 5 % of the image).
+// overworld.ts hexToWorld (odd-r offset to cube, pointy-top, hex size 5 % of the image; the board's own "hexSize").
 void Overworld::hexToWorld(int col, int row, double& x, double& y) {
   const double q = col - (row - (row & 1)) / 2, r = row;
-  x = 5.0 * std::sqrt(3.0) * (q + r / 2);
-  y = 5.0 * 1.5 * r;
+  x = gHexSize * std::sqrt(3.0) * (q + r / 2);
+  y = gHexSize * 1.5 * r;
+}
+
+double Overworld::hexSize() { return gHexSize; }
+
+Json Overworld::fitSave(Json save) const {
+  if (!save.is_object()) return save;
+  const double from = save.value("overworldGrid", 5.0);
+  if (from == gHexSize) return save;
+  // The cell of this board nearest to where (col, row) stood on the other grid.
+  auto moved = [&](int col, int row) {
+    const double q = col - (row - (row & 1)) / 2, x = from * std::sqrt(3.0) * (q + row / 2.0), y = from * 1.5 * row;
+    const OverworldCell* best = nullptr;
+    double bestD = 0;
+    for (const OverworldCell& c : cells_)
+      if (const double d = std::hypot(c.x - x, c.y - y); !best || d < bestD) best = &c, bestD = d;
+    return best ? OverworldHex{best->col, best->row} : OverworldHex{col, row};
+  };
+  if (save.contains("overworldPos") && save["overworldPos"].is_object()) {
+    const OverworldHex h = moved(save["overworldPos"].value("col", 0), save["overworldPos"].value("row", 0));
+    save["overworldPos"] = Json{{"col", h.col}, {"row", h.row}};
+  }
+  if (save.contains("exploredHexes") && save["exploredHexes"].is_array()) {
+    Json list = Json::array();
+    std::set<std::string> seen;
+    for (const Json& k : save["exploredHexes"]) {
+      int c = 0, r = 0;
+      if (!k.is_string() || std::sscanf(k.get<std::string>().c_str(), "%d,%d", &c, &r) != 2) continue;
+      const OverworldHex h = moved(c, r);
+      if (const std::string key = std::format("{},{}", h.col, h.row); seen.insert(key).second) list.push_back(key);
+    }
+    save["exploredHexes"] = std::move(list);
+  }
+  if (save.contains("runes") && save["runes"].is_array())
+    for (Json& r : save["runes"])
+      if (r.is_object() && r.contains("col") && r.contains("row")) {
+        const OverworldHex h = moved(r.value("col", 0), r.value("row", 0));
+        r["col"] = h.col, r["row"] = h.row;
+      }
+  save["overworldGrid"] = gHexSize;
+  return save;
 }
 
 const MapLocation* Overworld::locationAt(int col, int row) const {

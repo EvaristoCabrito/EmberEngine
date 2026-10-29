@@ -162,7 +162,9 @@ SlotProgress Campaign::progress(const std::optional<Json>& slot) const {
   }
   if (s.contains("pendingMission") && truthy(s["pendingMission"])) return {titleOf(str(s, "pendingMission")), "Início do combate"};
   if (str(s, "mapMode") == "rpg" && s.contains("overworldPos") && truthy(s["overworldPos"])) {
-    const int col = s["overworldPos"].value("col", 0), row = s["overworldPos"].value("row", 0);
+    int col = s["overworldPos"].value("col", 0), row = s["overworldPos"].value("row", 0);
+    // A save on the half-size grid (Overworld kOverworldData): back to the old hexes the campaign's locations are written on.
+    if (s.value("overworldGrid", 5.0) == 2.5) row = row / 2, col = (col - (row & 1)) / 2;
     const Json clock = s.value("gameClock", Json());
     const std::string day = clock.is_number_integer() ? std::to_string(clock.get<long long>()) : clock.is_number() ? std::format("{}", clock.get<double>()) : "0";
     if (const WorldLocation* here = data_.locationAt(col, row)) return {here->name, "Dia " + day + " · mapa"};

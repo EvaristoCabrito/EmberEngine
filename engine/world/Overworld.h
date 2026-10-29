@@ -21,6 +21,10 @@ namespace ember {
 // preload (the user, 2026-10-28: "mudar em tudo"). v04 = mordavia_mapa_completo_4096_v10 (2026-10-29; v03 = its v3, kept); the pins are in percent of it.
 inline constexpr const char* kWorldMapPicture = "content/worldmap/world-map-v04.jpg";
 
+// The Overworld's board file. Test (the user, 2026-10-29: the movement grid at half size): overworld-half.json, made from
+// overworld.json by tools/scripts/worldmap/make_half_grid.py; "content/data/overworld.json" here = the old grid again.
+inline constexpr const char* kOverworldData = "content/data/overworld-half.json";
+
 class Mulberry32;
 
 struct OverworldCell {
@@ -72,7 +76,11 @@ class Overworld {
   const OverworldCell* cell(int col, int row) const;
   bool isCell(int col, int row) const { return cell(col, row) != nullptr; }
   static std::vector<OverworldHex> neighbors(int col, int row);  // pathfinding.ts hexNeighbors (odd-r)
-  static void hexToWorld(int col, int row, double& x, double& y);
+  static void hexToWorld(int col, int row, double& x, double& y);  // on the loaded board's hex size
+  static double hexSize();                                         // percent of the image (5, or 2.5 on the half grid)
+  // A save written on another grid (its "overworldGrid", 5 when absent): the party, the explored hexes and the runes moved
+  // to the nearest cell of this board, and marked with this board's size.
+  Json fitSave(Json save) const;
   OverworldHex startHex() const { return start_; }
   std::optional<OverworldHex> wispHex() const { return wisp_; }
 

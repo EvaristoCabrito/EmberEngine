@@ -85,7 +85,7 @@ class OverworldStage : public Stage {
     hasInn_ = innData_.load("content/data/inn.json");
     hasUnder_ = under_.load("content/data/underworld.json");
     hasCompanions_ = companions_.load("content/data/companions.json", "content/data/companions-pt.json");
-    save_ = testSave_ ? *testSave_ : campaign_.activeSave();
+    save_ = world_.fitSave(testSave_ ? *testSave_ : campaign_.activeSave());
     const ember::Json& pos = save_["overworldPos"];
     prevCol_ = pos.value("col", 0);
     partyX_ = -1;  // placed on the first frame
@@ -373,7 +373,7 @@ class OverworldStage : public Stage {
       else if (chosen >= 0) {
         if (slots_->mode() == SlotScreen::Mode::Load) {
           // Modo teste keeps reading its own save (GameApp readMapSave): the slot is selected in the bank only.
-          if (!test()) save_ = campaign_.activeSave();
+          if (!test()) save_ = world_.fitSave(campaign_.activeSave());
           notice_ = slots_->status();
           slots_.reset();
           const ember::Json& pos = save_["overworldPos"];
@@ -1136,7 +1136,8 @@ class OverworldStage : public Stage {
       for (const ember::OverworldHex& d : dots) {
         const ember::OverworldCell* cell = world_.cell(d.col, d.row);
         const ImVec2 c = at(cell->x, cell->y);
-        const float w = std::max(44.0f, std::sqrt(3.0f) * 5.0f / 100.0f * imgW), h = std::max(44.0f, 10.0f / 100.0f * imgH);
+        const float hs = static_cast<float>(ember::Overworld::hexSize()), floor = 44.0f * hs / 5.0f;
+        const float w = std::max(floor, std::sqrt(3.0f) * hs / 100.0f * imgW), h = std::max(floor, 2.0f * hs / 100.0f * imgH);
         const ImVec2 p[6] = {{c.x, c.y - h / 2}, {c.x + w / 2, c.y - h / 4}, {c.x + w / 2, c.y + h / 4}, {c.x, c.y + h / 2}, {c.x - w / 2, c.y + h / 4}, {c.x - w / 2, c.y - h / 4}};
         const bool hover = overViewport && std::abs(mouse.x - c.x) < w / 2 && std::abs(mouse.y - c.y) < h / 2 - std::abs(mouse.x - c.x) / (w / 2) * h / 4;
         dl->AddConvexPolyFilled(p, 6, hover ? IM_COL32(216, 216, 216, 204) : IM_COL32(216, 216, 216, 122));
@@ -1333,7 +1334,8 @@ class OverworldStage : public Stage {
     double x0, x1, y0, y1;
   };
   static RevealSpot revealSpot(double cx, double cy) {
-    constexpr double kEdgeX = 2.0 * 5.0 * 1.7320508075688772, kEdgeY = 2.0 * 7.5;  // two hex steps (hexToWorld)
+    // two steps of the old 5 % hexes (hexToWorld), kept on the half grid so the edges reveal as before
+    constexpr double kEdgeX = 2.0 * 5.0 * 1.7320508075688772, kEdgeY = 2.0 * 7.5;
     return {cx <= kEdgeX ? 0.0 : cx, cx >= 100.0 - kEdgeX ? 100.0 : cx, cy <= kEdgeY ? 0.0 : cy, cy >= 100.0 - kEdgeY ? 100.0 : cy};
   }
   static double revealAlpha(double x, double y, const RevealSpot& s) {
@@ -1404,6 +1406,8 @@ class OverworldStage : public Stage {
       }
   }
 
+  // Test (the user, 2026-10-29: "scale down the character and the movement grid by half"): 1 = the old size.
+  static constexpr float kMapFigureScale = 0.5f;
   // LeaderMarker: the leader's idle frames (BattleEngine.idleFrame pacing), each cropped to its own box, 48 px tall,
   // its feet on the hex; mirrored when last walking left. Returns the button's box.
   struct Box {
@@ -1500,7 +1504,7 @@ class OverworldStage : public Stage {
       framePath = paths_.artRoot / (std::string("game/sprites/") + sheet->dir + (hero == "Neera" ? "" : "/") + std::to_string(file) + ".png");
     }
     const float zoomScale = kOverworldZoomStops[zoom_] / kOverworldZoomStops[0];
-    const float markerHeight = 48.0f * zoomScale;
+    const float markerHeight = 48.0f * zoomScale * (underworld_ ? 1.0f : kMapFigureScale);
     const float scale = markerHeight / height;
     const float boxW = width * scale;
     // The 64 x 48 marker grows with the map zoom, with its bottom kept on the hex.
