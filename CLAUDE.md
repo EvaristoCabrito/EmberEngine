@@ -1885,6 +1885,10 @@ para cada tipo de terreno")
 
 - `build/release/bin/Sandbox-20261029-1800-in-use.exe` (2026-10-29): the exe the user's game was running, renamed aside to build the
   half-grid world map's leader fix (its 17:55 build); likewise `Sandbox-20261029-1820-in-use.exe` (the 18:10 build).
+- `build/meshes/props-v16-first-cook-20261029.pak` (2026-10-29): props-v16's first cook, missing 64 newer GLBs never staged (the
+  cemetery's crypt v02 pieces among them); the live props-v16 was cooked again with every catalogued model staged. Build outputs
+  zero-filled by the cut-off build of 2026-10-29 evening: `build/release/**/*.damaged-20261029` (Cooker main.cpp.obj, Renderer.cpp.obj,
+  three .ddi files), set aside, not used.
 
 - `content/maps/ember/mosteiro001.json` (2026-10-29: the ground floor before the stairs up to Andar II; 002 plays) and
   `mosteiro-andar-3001.json` (the Master of Novices as a second cultistV2, dropped by the exporter; 002 plays).
