@@ -1877,6 +1877,12 @@ para cada tipo de terreno")
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
+- `content/models/blender/kit_spells.py` (2026-10-29): a dagger of our own built from scratch for the Nuvem de Adagas, written when the
+  order was to take the Poly Haven dagger's sheath off first, then try an arcane version (the user: "você está pulando estágios").
+  Never run. The order's files: `content/models/polyhaven/ornate_medieval_dagger-v01.glb` (no sheath: import_polyhaven.py with keepNode)
+  and `-v02.glb` (arcane: `make_arcane_dagger.py`, new maps in `ornate_medieval_dagger/textures-v02/`); not catalogued, not cooked,
+  not in the spell.
+
 - `build/release/bin/Sandbox-20261029-1800-in-use.exe` (2026-10-29): the exe the user's game was running, renamed aside to build the
   half-grid world map's leader fix (its 17:55 build); likewise `Sandbox-20261029-1820-in-use.exe` (the 18:10 build).
 
