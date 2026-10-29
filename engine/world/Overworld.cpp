@@ -188,9 +188,11 @@ void Overworld::applyLocais(const Locais& locais, const CampaignData& campaign) 
       next.push_back(std::move(m));
     }
     locations_ = std::move(next);
-    for (const CampaignMission& c : campaign.missions)
-      if (c.own && !mission(c.id)) missions_.push_back(MapMission{c.id, c.title, c.win, c.index});
   }
+  // Uma fonte só (o usuário, 2026-10-29: "não tem Stone Bridge em Stone Bridge"): toda missão da campanha entra no mapa-múndi,
+  // com ou sem Locais salvos, na campanha e no Modo teste; antes só as 13 da tabela antiga do overworld.json existiam aqui.
+  for (const CampaignMission& c : campaign.missions)
+    if (!mission(c.id)) missions_.push_back(MapMission{c.id, c.title, c.win, c.index});
   if (locais.ownRegions)
     for (OverworldCell& c : cells_) {
       c.encounters.clear();

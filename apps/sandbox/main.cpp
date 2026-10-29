@@ -866,6 +866,7 @@ int runCapture(const Options& o) {
     ember::InterludeData interludeData;  // the Interlude's gate and start on the world map (docs/INTERLUDE.md), as in the game
     const bool hasInterludeData = interludeData.load("content/interlude.json");
     if (o.title && o.titleScreen == "map" && hasCampaign && world.load("content/data/overworld.json")) {
+      world.applyLocais(ember::Locais::load("content/data/editor-catalog.json"), campaign.data());  // the game's own mission list
       // --title-screen map: the active slot's world map (--map-ui: party / quests / options / event / location opened; enter:<id>).
       auto map = std::make_unique<OverworldStage>(campaignPaths, campaign, world, OverworldStage::Callbacks{}, std::string(), nullptr,
                                                   hasInterludeData ? &interludeData : nullptr);
@@ -924,6 +925,7 @@ int runCapture(const Options& o) {
       if (o.mapUi == "menu" || o.mapUi == "options" || o.mapUi == "log" || o.mapUi == "fulllog" || o.mapUi == "quests" || o.mapUi == "hotbar" || o.mapUi.starts_with("status") || o.mapUi.starts_with("inventory:") || o.mapUi.starts_with("synced:")) missionStage->previewMenu(o.mapUi);
       stage = std::move(missionStage);
     } else if (o.title && o.titleScreen.starts_with("test") && hasCampaign && world.load("content/data/overworld.json")) {
+      world.applyLocais(ember::Locais::load("content/data/editor-catalog.json"), campaign.data());  // the game's own mission list
       // --title-screen test / test-choice / test-classic / test-scenarios / test-rpg / test-dev / test-editor: Modo teste's screens (--map-ui
       // location:<id> opens a place's panel on the classic map; on the RPG map the usual --map-ui panels).
       testSession = freshTestSession(campaign);
