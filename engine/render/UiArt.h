@@ -32,9 +32,9 @@ bool uiImageLoaded(const std::filesystem::path& file);
 // Called by DebugUi between ImGui::Render and the draw: every UI image drawn smaller than its file is swapped for a copy
 // resampled to its size on screen (the browser's smooth downscale), so icons and portraits stay sharp, never jagged.
 void refineUiImages(ImDrawData* drawData);
-// The loading screen before a map (the user, 2026-10-29: "loading screens should load and unload that"): every UI image (the
-// world maps' paintings, briefings, portraits and their resampled copies) leaves the GPU, its pixels kept in RAM; whatever a
-// screen draws again goes back on the GPU by itself (refineUiImages).
+// The loading screen before a map (the user, 2026-10-29: "loading screens should load and unload that"): the UI images a fight
+// never draws (the world maps' paintings, the briefings' art, and their resampled copies) leave the GPU, their pixels kept in
+// RAM; portraits, icons and frames stay. Whatever a screen draws again goes back on the GPU by itself (refineUiImages).
 void releaseUiImages();
 // One axis of a resample of premultiplied float RGBA: a tent as wide as a source pixel when enlarging and as wide as a
 // destination pixel when shrinking (every source pixel averaged). dstW is the new length along that axis.

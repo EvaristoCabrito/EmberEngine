@@ -313,7 +313,15 @@ void releaseUiImages() {
     t->WantDestroyNextFrame = true;
     ++count, bytes += static_cast<uint64_t>(t->Width) * static_cast<uint64_t>(t->Height) * 4u;
   };
+  // Only what a fight never draws (the user, 2026-10-29: "os retratos e parte da UI do mapa continuam em uso no combate"): the
+  // world maps' paintings (16 MB and more: the Overworld 64, the Atlas 96) and the briefings' art, with their resampled copies.
+  // Portraits, icons, frames and panels stay on the GPU.
+  constexpr uint64_t kPaintingBytes = 16ull << 20;
   for (auto& [key, image] : images()) {
+    const uint64_t full = static_cast<uint64_t>(image.image.width) * static_cast<uint64_t>(image.image.height) * 4u;
+    std::string lower = key;
+    std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    if (full < kPaintingBytes && lower.find("brief") == std::string::npos) continue;
     drop(image.data.get());
     for (Sized& s : image.exact) drop(s.data.get());
     for (Sized& s : image.halves) drop(s.data.get());
