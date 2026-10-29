@@ -212,7 +212,7 @@ float4 overworld(float2 uv, float2 pixel, float2 texel) {
     const float3 glow = texAt(push.tex1, uv).rgb;
     const float cell = hash21(floor(uv * 160.0));
     const float flicker = 1.0 - clouds.w * (0.5 + 0.5 * sin(push.time * (5.0 + cell * 4.0) + cell * 6.2831853)) * 0.35;
-    c += (srgbToLinear(sharp) * 1.4 + srgbToLinear(glow) * 0.5) * lightColor.rgb * lightColor.w * mistShape.w * flicker;
+    c += (srgbToLinear(sharp) * 1.4 + srgbToLinear(glow) * 0.3) * lightColor.rgb * lightColor.w * mistShape.w * flicker;
   }
   // 4b. A névoa pálida da madrugada e da noite, deslizando sobre as baixadas e a água (onde a máscara permite).
   if (hasMist() && hourMix.w > 0.001 && mistColor.w > 0.0) {

@@ -100,17 +100,19 @@ def surface(a, out):
     land = 1.0 - pap
     # Construções (x0, y0, x1, y1 em %, luzes por região, tamanho): aldeia NW, castelo, solar NE, capela central, torre SW, portal SW
     buildings = [
-        (0.10, 0.20, 0.40, 0.42, 34, 4),   # a aldeia
-        (0.42, 0.01, 0.62, 0.20, 40, 5),   # o castelo
-        (0.70, 0.18, 0.90, 0.34, 18, 4),   # o solar
-        (0.48, 0.52, 0.54, 0.56, 3, 4),    # a capela do cruzamento
-        (0.22, 0.47, 0.27, 0.55, 4, 4),    # a torre sobre a ponte
-        (0.08, 0.72, 0.16, 0.82, 2, 5),    # o portal do túnel
-        (0.13, 0.34, 0.22, 0.42, 6, 4),    # a quinta murada
+        (0.13, 0.21, 0.34, 0.33, 16, 3),   # a aldeia (só as casas)
+        (0.44, 0.02, 0.60, 0.17, 14, 3),   # o castelo
+        (0.73, 0.19, 0.88, 0.32, 8, 3),    # o solar
+        (0.49, 0.53, 0.53, 0.56, 2, 3),    # a capela do cruzamento
+        (0.23, 0.48, 0.26, 0.54, 3, 3),    # a torre sobre a ponte
+        (0.10, 0.74, 0.14, 0.80, 1, 3),    # o portal do túnel
+        (0.14, 0.35, 0.21, 0.41, 4, 3),    # a quinta murada
     ]
     lights = np.zeros((h, w, 3), np.float32)
+    # Só sobre a construção: o ponto cai onde a vizinhança (9 x 9) é escura e densa como um telhado / muro, nunca num ramo solto.
+    dense = blur(((l < 0.45) & (l > 0.05)).astype(np.float32), 4)
     for i, (x0, y0, x1, y1, n, r) in enumerate(buildings):
-        region = rect(h, w, x0, y0, x1, y1) * ((l > 0.12) & (l < 0.48)).astype(np.float32) * land
+        region = rect(h, w, x0, y0, x1, y1) * ((l > 0.10) & (l < 0.42) & (dense > 0.75)).astype(np.float32) * land
         for y, x in sparse_points(region, max(6, int(w * 0.006)), 11 + i, n):
             warm = (1.0, 0.72 + 0.1 * ((x * 7 + y) % 3) / 3.0, 0.35)
             dot(lights, y, x, r, warm)

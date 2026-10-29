@@ -14,7 +14,7 @@
   "lutStrength": 1.0,
   "masks": {"lights": "content/worldmap/masks/surface-lights-v01.png", "height": "content/worldmap/masks/surface-height-v01.png", "water": "content/worldmap/masks/surface-water-v01.png", "mist": "content/worldmap/masks/surface-mist-v01.png"},
   "dayNight": {"nightFrom": 19.5, "nightFull": 21.0, "dayFrom": 5.0, "dayFull": 7.0, "duskFrom": 17.0, "duskPeak": 18.5, "duskEnd": 20.0},
-  "lights": {"color": [1.0, 0.55, 0.28], "strength": 1.5, "flicker": 0.5, "glowRadius": 14, "glowDownsample": 4, "from": 18.0, "full": 19.5},
+  "lights": {"color": [1.0, 0.55, 0.28], "strength": 1.0, "flicker": 0.5, "glowRadius": 6, "glowDownsample": 4, "from": 18.0, "full": 19.5},
   "relief": {"strength": 0.35, "sunLean": 0.45},
   "clouds": {"strength": 0.12, "scale": 3.0, "speed": 0.012},
   "mist": {"color": [0.78, 0.82, 0.90], "strength": 0.55, "scale": 14, "speed": 0.02, "threshold": 0.36, "dawnFrom": 4.0, "dawnPeak": 6.0, "dawnEnd": 9.0, "night": 0.6},

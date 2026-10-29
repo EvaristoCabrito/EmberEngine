@@ -418,12 +418,32 @@ std::pair<uint32_t, uint32_t> WorldMapFx::loadLightMask(const std::filesystem::p
       }
   };
   for (int pass = 0; pass < 3; ++pass) boxH(small, tmp), boxV(tmp, small);
-  // O borrado perde energia (a luz espalhada por muitos pixels): normalizado ao pico para o halo ter corpo, sem estourar.
-  float peak = 1e-4f;
-  for (float v : small) peak = std::max(peak, v);
+  // O ganho do halo: o de UM ponto isolado (um texel a 1.0 pelo mesmo borrado) chega a kHaloPeak; um aglomerado denso soma e
+  // satura em 1, nunca é normalizado pelo seu próprio pico (o usuário, 2026-10-29: o castelo inteiro virava uma mancha laranja).
+  constexpr float kHaloPeak = 0.35f;
+  float unitPeak = 1.0f;
+  {
+    const int n = 4 * r + 9;
+    std::vector<float> one(size_t(n) * n, 0.0f), t2(one.size());
+    one[(size_t(n / 2) * n + n / 2)] = 1.0f;
+    auto box = [&](const std::vector<float>& in, std::vector<float>& out, bool horizontal) {
+      for (int y = 0; y < n; ++y)
+        for (int x = 0; x < n; ++x) {
+          float sum = 0;
+          for (int k = -r; k <= r; ++k) {
+            const int xx = horizontal ? std::clamp(x + k, 0, n - 1) : x, yy = horizontal ? y : std::clamp(y + k, 0, n - 1);
+            sum += in[size_t(yy) * n + xx];
+          }
+          out[size_t(y) * n + x] = sum / float(2 * r + 1);
+        }
+    };
+    for (int pass = 0; pass < 3; ++pass) box(one, t2, true), box(t2, one, false);
+    unitPeak = std::max(one[(size_t(n / 2) * n + n / 2)], 1e-6f);
+  }
+  const float gain = kHaloPeak / unitPeak;
   std::vector<unsigned char> texels(size_t(gw) * gh * 4, 255);
   for (size_t i = 0; i < size_t(gw) * gh; ++i)
-    for (int k = 0; k < 3; ++k) texels[i * 4 + k] = static_cast<unsigned char>(std::lround(std::clamp(small[i * 3 + k] / peak, 0.0f, 1.0f) * 255.0f));
+    for (int k = 0; k < 3; ++k) texels[i * 4 + k] = static_cast<unsigned char>(std::lround(std::clamp(small[i * 3 + k] * gain, 0.0f, 1.0f) * 255.0f));
   Image glowImage;
   const uint32_t glow = upload(texels.data(), static_cast<uint32_t>(gw), static_cast<uint32_t>(gh), VK_FORMAT_R8G8B8A8_UNORM, 4, glowImage, kNoTexture);
   images_.push_back(glowImage);
