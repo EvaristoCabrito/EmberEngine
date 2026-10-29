@@ -161,6 +161,20 @@ class OverworldStage : public Stage {
           movementOpen_ = true;
           continue;
         }
+        if (s.starts_with("pin:")) {  // "...;pin:<id>": a click on that location's pin, step hexes closed
+          movementOpen_ = false;
+          const ember::Json& pos = save_["overworldPos"];
+          const int pc = pos.value("col", 0), pr = pos.value("row", 0);
+          for (const ember::MapLocation& loc : world_.locations())
+            if (loc.id == s.substr(4))
+              pinClicked(loc, locationStatus(loc),
+                         world_.canStep(save_, {pc, pr}, {loc.col, loc.row}, test()) &&
+                             std::ranges::any_of(ember::Overworld::neighbors(pc, pr), [&](const ember::OverworldHex& n) { return n.col == loc.col && n.row == loc.row; }),
+                         world_.locationAt(pc, pr));
+          logInfo("walk: pin {} clicked at ({},{}): now at ({},{}), open {}, briefing {}", s.substr(4), pc, pr, save_["overworldPos"].value("col", 0),
+                  save_["overworldPos"].value("row", 0), open_ ? *open_ : std::string("-"), briefing_ ? briefing_->id : std::string("-"));
+          continue;
+        }
         const size_t comma = s.find(',');
         if (comma == std::string::npos) continue;
         const int c = std::stoi(s.substr(0, comma)), r = std::stoi(s.substr(comma + 1));
@@ -1212,12 +1226,15 @@ class OverworldStage : public Stage {
               std::ranges::any_of(ember::Overworld::neighbors(c0, r0), [&](const ember::OverworldHex& n) { return n.col == hc && n.row == hr; }) ? "yes" : "no");
       logInfo("map click: at ({},{}) movement {} -> {}", c0, r0, movementOpen_ ? "open" : "closed",
               clickedDot ? std::format("step hex ({},{})", clickedDot->col, clickedDot->row)
-              : clickedLeader ? std::string("leader")
+              : clickedLeader && !(standing && clickedLocation == standing->id) ? std::string("leader")
               : !clickedLocation.empty() ? "pin " + clickedLocation
                                          : std::string("nothing (no step hex, pin or leader under the mouse)"));
     }
+    // The pin of the place the party stands on wins over the leader drawn on it (the leader's body above the pin still opens the
+    // step hexes): on the half grid the leader stands right on the pin and swallowed every click meant to enter the place.
+    const bool ownPin = standing && clickedLocation == standing->id;
     if (clickedDot) walkTo(clickedDot->col, clickedDot->row);
-    else if (clickedLeader) movementOpen_ = !movementOpen_;
+    else if (clickedLeader && !ownPin) movementOpen_ = !movementOpen_;
     else if (!clickedLocation.empty()) {
       for (const auto& [loc, st] : pins)
         if (loc->id == clickedLocation) pinClicked(*loc, st, walkable(loc->col, loc->row), standing);
@@ -1235,7 +1252,14 @@ class OverworldStage : public Stage {
   void pinClicked(const ember::MapLocation& loc, const std::string& st, bool walkable, const ember::MapLocation* standing) {
     if (!test() && !completed("vau") && loc.id == "stonebridge") return openMission("vau");
     if (standing && standing->id == loc.id) return enterLocation(loc, st);
-    if (walkable) return walkTo(loc.col, loc.row);
+    // A pin on a neighbouring hex: the step there (its hours, its road event), then the place opens unless the road stopped it.
+    if (walkable) {
+      movementOpen_ = false;
+      step(loc.col, loc.row);
+      const ember::Json& pos = save_["overworldPos"];
+      if (pos.value("col", 0) == loc.col && pos.value("row", 0) == loc.row && !event_ && !briefing_) enterLocation(loc, st);
+      return;
+    }
     if (!test()) return showHint("Ande até lá primeiro.");
     // Modo teste: a distant pin is a free jump (teleportOverworld), then the place opens.
     save_ = ember::Overworld::teleport(save_, {loc.col, loc.row});
