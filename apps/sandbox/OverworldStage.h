@@ -805,8 +805,7 @@ class OverworldStage : public Stage {
   // game/assets/world-map.jpg) stay where they are. v03 = UnderworldA4X (the user, 2026-10-28: the same painting at four times the
   // resolution, "só mudou a resolução"): the Underworld's hexes and marks are in percent of the atlas, so they stay where they were.
   static constexpr const char* kUnderworldAtlas = "content/worldmap/underworld-atlas-v03.png";
-  // v03 = mordavia_mapa_completo_4096_v3 (the user, 2026-10-28): the same map at 4096 px, the house in the middle and the hill's
-  // cave redrawn; the pins keep their percent coordinates.
+  // The picture: ember::kWorldMapPicture (Overworld.h names its version); the pins keep their percent coordinates.
   static constexpr const char* kWorldMap = ember::kWorldMapPicture;
   // Whether the word at the upper left switches worlds: Modo teste only, its "go anywhere" (the user, 2026-10-28: "no jogo haverão
   // algumas passagens, não se pode mudar assim, é só no debug"); the campaign crosses by the game's passages (showUnderworld).
