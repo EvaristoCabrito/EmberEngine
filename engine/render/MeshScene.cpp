@@ -1,6 +1,8 @@
 #include "render/MeshScene.h"
 
 #include <algorithm>
+#include <cmath>
+#include <cstdlib>
 #include <cstring>
 
 #include "render/TextureFormat.h"
@@ -49,7 +51,12 @@ MeshScene::~MeshScene() {
   for (auto& [id, texture] : textures_) {
     if (texture->index != kNoTextureIndex) bindless_.removeSampledImage(texture->index);
     destroyImage(context_, texture->image);
+    if (texture->next.image) destroyImage(context_, texture->next);
     assets_.release(texture->handle);
+  }
+  for (Retired& r : retired_) {
+    if (r.index != kNoTextureIndex) bindless_.removeSampledImage(r.index);
+    destroyImage(context_, r.image);
   }
   for (auto& mesh : meshes_)
     if (mesh->built.empty()) assets_.release(mesh->handle);
@@ -93,13 +100,15 @@ bool MeshScene::ready() const {
     if (!mesh->failed && !mesh->uploaded) return false;
   for (const auto& [id, texture] : textures_)
     if (!texture->failed && texture->index == kNoTextureIndex) return false;
-  return true;
+  // A gated scene also waits for the first streaming pass: every texture at the size it needs, or the budget reached.
+  return !gated_ || (open_ && settled_);
 }
 
 std::pair<uint32_t, uint32_t> MeshScene::progress() const {
   uint32_t done = 0, total = 0;
   for (const auto& mesh : meshes_) ++total, done += (mesh->failed || mesh->uploaded) ? 1u : 0u;
   for (const auto& [id, texture] : textures_) ++total, done += (texture->failed || texture->index != kNoTextureIndex) ? 1u : 0u;
+  if (gated_) ++total, done += (open_ && settled_) ? 1u : 0u;
   return {done, total};
 }
 
@@ -153,7 +162,15 @@ void MeshScene::parse(Mesh& mesh, MeshId id) {
     out.flags = src.flags;
     const AssetId textures[4] = {src.baseColorTexture, src.normalTexture, src.ormTexture, src.emissiveTexture};
     uint32_t* slots[4] = {&out.baseColorTexture, &out.normalTexture, &out.ormTexture, &out.emissiveTexture};
-    for (int t = 0; t < 4; ++t) *slots[t] = textures[t] ? requestTexture(textures[t], (materialBase + m) * 4 + t) : kNoTextureIndex;
+    for (int t = 0; t < 4; ++t) {
+      if (!textures[t]) {
+        *slots[t] = kNoTextureIndex;
+        continue;
+      }
+      Texture& texture = requestTexture(textures[t], (materialBase + m) * 4 + t);
+      *slots[t] = texture.index;
+      if (std::find(mesh.textures.begin(), mesh.textures.end(), &texture) == mesh.textures.end()) mesh.textures.push_back(&texture);
+    }
   }
   materialCount_ += h.materialCount;
   materialTable_.dirty = true;
@@ -186,48 +203,116 @@ void MeshScene::parse(Mesh& mesh, MeshId id) {
   mesh.parsed = true;
 }
 
-uint32_t MeshScene::requestTexture(AssetId asset, uint32_t user) {
+// The first load's target: chosen once the header is known (the base while the scene is gated, else the quality's cap when it fits).
+constexpr uint32_t kInitialTarget = UINT32_MAX - 1;
+
+MeshScene::Texture& MeshScene::requestTexture(AssetId asset, uint32_t user) {
   auto& slot = textures_[asset];
   if (!slot) {
     slot = std::make_unique<Texture>();
+    slot->asset = asset;
     slot->handle = assets_.load(asset, kLoadPriority);
+    slot->target = kInitialTarget;
   }
   slot->users.push_back(user);
-  return slot->index;  // kNoTextureIndex until resident
+  return *slot;  // index kNoTextureIndex until resident
+}
+
+uint64_t MeshScene::bytesAt(const Texture& t, uint32_t skip) const {
+  uint64_t offset = 0;
+  for (uint32_t m = 0; m < skip && m < t.header.mipCount; ++m) offset += textureMipBytes(t.header.width, t.header.height, m);
+  return t.header.dataBytes - offset;
+}
+
+uint32_t MeshScene::capSkip(const Texture& t) const { return std::min(qualitySkip_, t.baseSkip); }
+
+uint64_t MeshScene::freeGpuBytes() const {
+  const VkPhysicalDeviceMemoryProperties* props = nullptr;
+  vmaGetMemoryProperties(context_.allocator, &props);
+  VmaBudget budgets[VK_MAX_MEMORY_HEAPS];
+  vmaGetHeapBudgets(context_.allocator, budgets);
+  uint32_t heap = 0;
+  VkDeviceSize largest = 0;
+  for (uint32_t i = 0; i < props->memoryHeapCount; ++i)
+    if ((props->memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) && props->memoryHeaps[i].size > largest)
+      largest = props->memoryHeaps[i].size, heap = i;
+  uint64_t free = budgets[heap].budget > budgets[heap].usage ? budgets[heap].budget - budgets[heap].usage : 0;
+  // Test hook: EMBER_TEXTURE_BUDGET_MB pretends the 3D textures may hold only that much (a smaller card), so the over-budget path
+  // can be measured on this one. Unset: the card's real free memory.
+  static const uint64_t testBudget = [] {
+    const char* v = std::getenv("EMBER_TEXTURE_BUDGET_MB");
+    return v ? std::strtoull(v, nullptr, 10) << 20 : 0ull;
+  }();
+  if (testBudget) free = std::min(free, testBudget + kReserve > textureBytes_ ? testBudget + kReserve - textureBytes_ : 0ull);
+  return free;
+}
+
+void MeshScene::startUpload(Texture& t, std::span<const std::byte> bytes, uint32_t skip) {
+  const TextureHeader& h = t.header;
+  const uint64_t offset = h.dataBytes - bytesAt(t, skip);
+  ImageDesc desc;
+  desc.format = vkFormat(h.format);
+  desc.extent = {std::max(1u, h.width >> skip), std::max(1u, h.height >> skip)};
+  desc.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+  desc.mipLevels = h.mipCount - skip;
+  desc.sharedWithTransfer = true;
+  t.next = createImage(context_, desc);
+  t.upload = {t.next.image, desc.extent.width, desc.extent.height, desc.mipLevels, 1, 16, bytes.subspan(sizeof(h) + offset)};
+  uploads_.enqueue(t.upload);
 }
 
 void MeshScene::updateTexture(Texture& texture) {
-  if (texture.failed || texture.index != kNoTextureIndex) return;
-  if (!texture.image.image) {
+  if (texture.failed || texture.target == UINT32_MAX) return;
+  if (!texture.next.image) {
     const AssetState state = assets_.state(texture.handle);
     if (state == AssetState::Failed) {
-      texture.failed = true;
+      assets_.release(texture.handle);
+      texture.handle = {};
+      texture.target = UINT32_MAX;
+      if (texture.skip == UINT32_MAX) texture.failed = true;  // a resize that failed keeps the resident image
       return;
     }
     if (state != AssetState::Ready) return;
     const std::span<const std::byte> bytes = assets_.data(texture.handle);
     TextureHeader h{};
     if (bytes.size() >= sizeof(h)) std::memcpy(&h, bytes.data(), sizeof(h));
-    if (h.magic != kTextureMagic || h.version != kTextureFormatVersion || bytes.size() != sizeof(h) + h.dataBytes) {
+    if (h.magic != kTextureMagic || h.version != kTextureFormatVersion || bytes.size() != sizeof(h) + h.dataBytes || h.mipCount == 0) {
       logError("meshes: damaged texture asset");
-      texture.failed = true;
+      assets_.release(texture.handle);
+      texture.handle = {};
+      texture.target = UINT32_MAX;
+      if (texture.skip == UINT32_MAX) texture.failed = true;
       return;
     }
-    ImageDesc desc;
-    desc.format = vkFormat(h.format);
-    desc.extent = {h.width, h.height};
-    desc.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    desc.mipLevels = h.mipCount;
-    desc.sharedWithTransfer = true;
-    texture.image = createImage(context_, desc);
-    texture.upload = {texture.image.image, h.width, h.height, h.mipCount, 1, 16, bytes.subspan(sizeof(h))};
-    uploads_.enqueue(texture.upload);
-    textureBytes_ += h.dataBytes;
+    if (!texture.known) {
+      texture.header = h, texture.known = true;
+      uint32_t base = 0;
+      while (base + 1 < h.mipCount && std::max(h.width >> base, h.height >> base) > kBaseSize) ++base;
+      texture.baseSkip = base;
+      texture.want = capSkip(texture);
+    }
+    if (texture.target == kInitialTarget) {
+      const uint32_t cap = capSkip(texture);
+      const bool fits = freeGpuBytes() > kReserve + bytesAt(texture, cap);
+      texture.target = (gated_ && !open_) || !fits ? texture.baseSkip : cap;
+    }
+    startUpload(texture, bytes, texture.target);
     return;
   }
   if (!uploads_.finished(texture.upload)) return;
-  texture.index = bindless_.addSampledImage(texture.image.view);
+  const uint32_t index = bindless_.addSampledImage(texture.next.view);
   uploadWaitValue_ = std::max(uploadWaitValue_, texture.upload.signalValue);
+  // the old image leaves once the material table points away from it and no frame in flight can still read it
+  // (a table upload already under way still carries the old index: the version after it is the first without it)
+  if (texture.image.image) retired_.push_back({texture.image, texture.index, materialTable_.version + (materialTable_.writing >= 0 ? 2u : 1u)});
+  textureBytes_ -= texture.residentBytes;
+  texture.residentBytes = bytesAt(texture, texture.target);
+  textureBytes_ += texture.residentBytes;
+  texture.image = texture.next;
+  texture.next = {};
+  texture.index = index;
+  texture.skip = texture.target;
+  texture.target = UINT32_MAX;
   assets_.release(texture.handle);
   texture.handle = {};
   auto* materials = tableData<MaterialGpu>(materialTable_);
@@ -237,6 +322,96 @@ void MeshScene::updateTexture(Texture& texture) {
     *slots[user % 4] = texture.index;
   }
   materialTable_.dirty = true;
+}
+
+void MeshScene::stream() {
+  // What each texture needs: the largest size any of its objects shows on screen (its bounds' diameter in pixels, with a margin),
+  // never past the quality's cap, never under the base. Without a camera every texture aims at the cap.
+  constexpr float kMargin = 1.5f;
+  for (auto& [id, t] : textures_)
+    if (t->known) t->want = viewSet_ ? t->baseSkip : capSkip(*t);
+  if (viewSet_ && focal_ > 0.0f) {
+    const auto* instances = tableData<InstanceGpu>(instanceTable_);
+    for (uint32_t i = 0; i < instanceCount_; ++i) {
+      const InstanceGpu& inst = instances[i];
+      if (inst.mesh >= meshes_.size() || (inst.flags & kInstanceShadowOnly)) continue;
+      const Mesh& mesh = *meshes_[inst.mesh];
+      if (!mesh.parsed || mesh.textures.empty()) continue;
+      const glm::vec4 c{mesh.header.boundsCenter[0], mesh.header.boundsCenter[1], mesh.header.boundsCenter[2], 1.0f};
+      const glm::vec3 centre{glm::dot(inst.rows[0], c), glm::dot(inst.rows[1], c), glm::dot(inst.rows[2], c)};
+      const float radius = mesh.header.boundsRadius * inst.scale;
+      const float distance = std::max(glm::length(centre - eye_) - radius, 0.5f);
+      const float pixels = std::max(1.0f, 2.0f * radius * focal_ / distance * kMargin);
+      for (Texture* t : mesh.textures) {
+        if (!t->known) continue;
+        const float size = static_cast<float>(std::max(t->header.width, t->header.height));
+        const int s = static_cast<int>(std::floor(std::log2(std::max(1.0f, size / pixels))));
+        const uint32_t want = std::clamp(static_cast<uint32_t>(std::max(s, 0)), capSkip(*t), t->baseSkip);
+        t->want = std::min(t->want, want);
+      }
+    }
+  }
+  // Everything fits at the quality's size (the textures held now count as free): no streaming, every texture at its cap, the
+  // camera never matters (the user, 2026-10-29: load the whole map when it fits; stream only past the budget). Before any instance
+  // is placed the same: nothing yet tells what is small on screen.
+  uint64_t free = freeGpuBytes();
+  {
+    uint64_t atCap = 0;
+    for (auto& [id, t] : textures_)
+      if (t->known) atCap += bytesAt(*t, capSkip(*t));
+    if (instanceCount_ == 0 || free + textureBytes_ >= atCap + kReserve)
+      for (auto& [id, t] : textures_)
+        if (t->known) t->want = capSkip(*t);
+  }
+  uint32_t inFlight = 0;
+  for (auto& [id, t] : textures_) inFlight += t->target != UINT32_MAX ? 1u : 0u;
+  constexpr uint32_t kMaxInFlight = 6;
+  std::vector<Texture*> pick;
+  if (free < kReserve) {
+    // Short of memory: the most over-detailed resident textures step down first (to what they need), then the farthest one size.
+    for (auto& [id, t] : textures_)
+      if (t->known && t->target == UINT32_MAX && t->skip != UINT32_MAX && t->skip < t->baseSkip) pick.push_back(t.get());
+    std::sort(pick.begin(), pick.end(), [](const Texture* a, const Texture* b) {
+      const int oa = static_cast<int>(a->want) - static_cast<int>(a->skip), ob = static_cast<int>(b->want) - static_cast<int>(b->skip);
+      return oa != ob ? oa > ob : a->want > b->want;
+    });
+    for (Texture* t : pick) {
+      if (inFlight >= 2) break;
+      t->target = t->want > t->skip ? t->want : t->skip + 1;
+      t->handle = assets_.load(t->asset, kLoadPriority);
+      ++inFlight;
+    }
+    settled_ = inFlight == 0;
+    return;
+  }
+  // Room: the textures furthest from what they need grow first, as long as the reserve stays free; one that needs less than it
+  // holds steps down only when memory runs short (above).
+  for (auto& [id, t] : textures_)
+    if (t->known && t->target == UINT32_MAX && t->skip != UINT32_MAX && t->skip > t->want) pick.push_back(t.get());
+  std::sort(pick.begin(), pick.end(), [](const Texture* a, const Texture* b) { return a->skip - a->want > b->skip - b->want; });
+  bool blocked = false;
+  for (Texture* t : pick) {
+    if (inFlight >= kMaxInFlight) break;
+    const uint64_t extra = bytesAt(*t, t->want) - t->residentBytes;
+    if (free < kReserve + extra) {
+      blocked = true;
+      continue;
+    }
+    t->target = t->want;
+    t->handle = assets_.load(t->asset, kLoadPriority);
+    free -= extra;
+    ++inFlight;
+  }
+  const bool wasSettled = settled_;
+  settled_ = inFlight == 0;
+  if (settled_ && (!wasSettled || frame_ - loggedFrame_ > 3600)) {
+    loggedFrame_ = frame_;
+    const Stats s = stats();
+    uint32_t enough = 0;
+    for (auto& [id, t] : textures_) enough += t->known && t->skip != UINT32_MAX && t->skip <= t->want ? 1u : 0u;
+    logInfo("meshes: textures {} of {} at the size the camera needs, {} at full size{} ({} MB on the GPU, {} MB free)", enough, s.textures,
+            s.texturesFull, blocked ? ", the rest held by the budget" : "", textureBytes_ >> 20, free >> 20);
+  }
 }
 
 void MeshScene::updateTable(Table& table) {
@@ -286,6 +461,14 @@ void MeshScene::update() {
     }
   }
   for (auto& [id, texture] : textures_) updateTexture(*texture);
+  if ((!gated_ || open_) && frame_ % 8 == 0) stream();
+  // Retired images leave once the active material table no longer names them and no frame in flight can read them.
+  std::erase_if(retired_, [&](Retired& r) {
+    if (materialTable_.version < r.freeAtVersion || frame_ - materialTable_.switchedFrame <= kFramesInFlight + 1) return false;
+    if (r.index != kNoTextureIndex) bindless_.removeSampledImage(r.index);
+    destroyImage(context_, r.image);
+    return true;
+  });
   // A changed table is re-sent up to its last used entry.
   meshTable_.usedBytes = meshes_.size() * sizeof(MeshGpu);
   materialTable_.usedBytes = uint64_t{materialCount_} * sizeof(MaterialGpu);
@@ -313,7 +496,11 @@ MeshScene::Stats MeshScene::stats() const {
   s.meshes = static_cast<uint32_t>(meshes_.size());
   for (const auto& mesh : meshes_) s.meshesReady += mesh->uploaded ? 1 : 0;
   s.textures = static_cast<uint32_t>(textures_.size());
-  for (const auto& [id, texture] : textures_) s.texturesReady += texture->index != kNoTextureIndex ? 1 : 0;
+  for (const auto& [id, texture] : textures_) {
+    s.texturesReady += texture->index != kNoTextureIndex ? 1 : 0;
+    s.texturesFull += texture->known && texture->skip == capSkip(*texture) ? 1 : 0;
+    s.texturesStreaming += texture->target != UINT32_MAX ? 1 : 0;
+  }
   s.instances = instanceCount_;
   s.geometryBytes = geometryUsed_;
   s.textureBytes = textureBytes_;

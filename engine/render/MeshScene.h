@@ -10,6 +10,7 @@
 #include "assets/AssetManager.h"
 #include "render/MeshFormat.h"
 #include "render/MeshGpu.h"
+#include "render/TextureFormat.h"
 #include "rhi/Image.h"
 #include "rhi/UploadQueue.h"
 
@@ -68,6 +69,19 @@ class MeshScene {
   // Replaces every instance. The list becomes visible a few frames later (one upload).
   void setInstances(std::span<const InstanceGpu> instances);
 
+  // --- Texture streaming (the user, 2026-10-29: "faz", the characters' sprites first, some blur on 3D objects accepted) ---------
+  // Every texture first lands at its small base (largest mip <= kBaseSize) and grows to the size its objects need on screen, down
+  // to the quality's cap (Opções > Gráficos > Texturas 3D: Média = the cooked size, Leve = one mip under it), as long as the
+  // GPU's free memory stays above kReserve. Short of memory, the most over-detailed textures step down first.
+  // skipTop: mips never loaded at the top (0 = Média, 1 = Leve).
+  void setQuality(uint32_t skipTop) { qualitySkip_ = skipTop; }
+  // A gated scene (MapStage) keeps every texture at its base until open(): the characters reserve their GPU memory first.
+  void setStreamGate(bool gated) { gated_ = gated; }
+  void openStreaming() { open_ = true; }
+  // The camera this frame: eye position and focal length in pixels (screen height / (2 tan(fov / 2))). Without it, every texture
+  // aims at the quality's cap.
+  void setView(const glm::vec3& eye, float focalPixels) { eye_ = eye, focal_ = focalPixels, viewSet_ = true; }
+
   // Once per frame, before rendering.
   void update();
   MeshSceneView view() const;
@@ -77,17 +91,35 @@ class MeshScene {
   struct Stats {
     uint32_t meshes = 0, meshesReady = 0, textures = 0, texturesReady = 0, instances = 0;
     uint64_t geometryBytes = 0, textureBytes = 0;
+    uint32_t texturesFull = 0, texturesStreaming = 0;  // at the quality's cap / with a load in flight
   };
   Stats stats() const;
 
+  static constexpr uint32_t kBaseSize = 256;             // the always-resident base: largest mip at most this many texels
+  static constexpr uint64_t kReserve = 448ull << 20;     // GPU memory left free for everything else (effects, the frame)
+
  private:
   struct Texture {
+    AssetId asset = 0;
     AssetHandle handle;
-    Image image;
+    Image image;          // the resident image (mips skip .. mipCount-1)
+    Image next;           // a resize being uploaded
     ImageUpload upload;
     uint32_t index = kNoTextureIndex;
     std::vector<uint32_t> users;  // material entries that reference it, per field (material * 4 + slot)
     bool failed = false;
+    TextureHeader header{};
+    bool known = false;                  // header read
+    uint32_t skip = UINT32_MAX;          // top mip resident (UINT32_MAX = none yet)
+    uint32_t target = UINT32_MAX;        // top mip being loaded (UINT32_MAX = no load)
+    uint32_t baseSkip = 0;               // the base's top mip
+    uint32_t want = 0;                   // top mip the objects need this tick
+    uint64_t residentBytes = 0;
+  };
+  struct Retired {
+    Image image;
+    uint32_t index = kNoTextureIndex;
+    uint64_t freeAtVersion = 0;  // the material table version that no longer names it (then kFramesInFlight more frames)
   };
 
   struct Mesh {
@@ -99,6 +131,7 @@ class MeshScene {
     uint64_t offset = 0;  // in the geometry buffer
     ImageUpload upload;   // geometry bytes
     bool uploaded = false;
+    std::vector<Texture*> textures;  // the textures its materials use (streaming: what each instance needs)
   };
 
   // A table the shaders read: two device copies, CPU contents, one upload at a time.
@@ -117,8 +150,13 @@ class MeshScene {
   void createTable(Table& table, uint64_t bytes);
   void updateTable(Table& table);
   void parse(Mesh& mesh, MeshId id);
-  uint32_t requestTexture(AssetId asset, uint32_t user);
+  Texture& requestTexture(AssetId asset, uint32_t user);
   void updateTexture(Texture& texture);
+  void startUpload(Texture& texture, std::span<const std::byte> bytes, uint32_t skip);
+  void stream();                   // every few frames: wants, then upgrades / downgrades within the budget
+  uint64_t freeGpuBytes() const;   // the device-local heap's budget minus its usage (VMA, VK_EXT_memory_budget)
+  uint64_t bytesAt(const Texture& texture, uint32_t skip) const;
+  uint32_t capSkip(const Texture& texture) const;  // the quality's top mip for this texture
   template <class T>
   T* tableData(Table& table) { return reinterpret_cast<T*>(table.cpu.data()); }
 
@@ -138,6 +176,14 @@ class MeshScene {
   uint64_t frame_ = 0;
   uint64_t uploadWaitValue_ = 0;
   uint64_t textureBytes_ = 0;
+  // streaming
+  std::vector<Retired> retired_;  // old images kept until no frame in flight can read them
+  uint32_t qualitySkip_ = 0;
+  bool gated_ = false, open_ = false, settled_ = false;
+  glm::vec3 eye_{0.0f};
+  float focal_ = 0.0f;
+  bool viewSet_ = false;
+  uint64_t loggedFrame_ = 0;
 };
 
 }  // namespace ember

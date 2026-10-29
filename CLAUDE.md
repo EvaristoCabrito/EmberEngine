@@ -1813,6 +1813,27 @@ e tem a diretoria macabra do monasterio")
   indoor floors with window light + probes), captures `captures/mosteiro/`. Not verified: the conversations and the locked doors in
   the window, the stairs between floors in play (code path only), the look (the user judges).
 
+## Streaming das texturas 3D + Texturas 3D Leve / Média (2026-10-29; the user: "faz, pode embutir 2K como média uma opção de leve",
+"we should prioritize sprites over 3D objects and it will be fine if we see some streaming textures")
+
+- `engine/render/MeshScene` streams the 3D models' textures by mip: each lands at its base (largest mip <= `kBaseSize` 256), a
+  gated scene (MapStage `setStreamGate`) keeps the base until `openStreaming()` (MapStage: once the characters' sprites are pinned:
+  the sprites first); then, when everything fits at the quality's size with `kReserve` (448 MB) left free, everything loads at
+  that size (no streaming); past the budget each texture aims at the size its objects show on screen (`setView`: eye + focal
+  pixels; bounds diameter x 1.5), the furthest-from-need grow first (6 loads in flight), short of memory the most over-detailed
+  step down. A resize reloads the asset, uploads the new mip range, swaps the bindless index; the old image leaves once the
+  active material table no longer names it (`Retired::freeAtVersion`) plus kFramesInFlight. The loading screen waits for the
+  first pass (`ready()` / `progress()`). Log: "meshes: textures N of M at the size the camera needs, K at full size ...".
+- Opções > Gráficos > **Texturas 3D**: Média (the cooked size: the Poly Haven models are 2K) / Leve (one mip under it);
+  `GamePrefs::textures3d`, read when a map opens. Alta (4K / 8K) not built: the user may try it later.
+- Test hook: `EMBER_TEXTURE_BUDGET_MB=<n>` pretends the 3D textures may hold only n MB (the over-budget path on this card).
+- Measured (release, Poly Haven showcase: 57 models / 81 textures on aldeia): fits = 81 at 2K, 432 MB, 804 MB free; at 40 MB
+  the closest grow first (42-63 of 81 at the needed size); camera turn + zoom 20 s at 40 MB: main thread median 0.88 / worst
+  2.96 ms, 0 frames over 16.7 ms. Not measured: the same without the budget (the window run was lost), the GPU cost.
+- **Limit found:** a map's mesh geometry is one fixed 256 MB buffer (MapStage `meshes_`, `geometryBytes`): the Poly Haven firs and
+  the small tree at full mesh (0.5 to 4 million triangles each) overflow it ("geometry or material capacity reached"). Geometry
+  streaming / a larger buffer is not built.
+
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
 - `content/maps/ember/mosteiro001.json` (2026-10-29: the ground floor before the stairs up to Andar II; 002 plays) and

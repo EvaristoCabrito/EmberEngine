@@ -280,6 +280,10 @@ class MapStage final : public Stage {
         options_(options),
         jobs_(jobs) {
     yaw_ += glm::radians(options.turnDegrees);
+    // 3D textures stream (MeshScene): Opções > Gráficos > Texturas 3D, read when the map opens (Média = the cooked size, Leve = one
+    // mip under it); gated so the characters' sprites reserve their GPU memory first (the user, 2026-10-29).
+    meshes_.setQuality(gamePrefs().textures3d == "leve" ? 1u : 0u);
+    meshes_.setStreamGate(true);
     lightingMode_ = std::clamp(options.lighting, 0, 3);
     moonPath_ = std::clamp(options.moonPath, 0, 2);
     starLook_ = std::clamp(options.starLook, 1, kStarLooks);
@@ -477,6 +481,10 @@ class MapStage final : public Stage {
     }
     ground_.update();
     laps.lap("ground");
+    if (!meshStreamOpen_) {  // the 3D textures grow past their base once the characters hold their memory
+      const auto [pinsDone, pins] = sprites_.pinProgress();
+      if (!scene_ || (sprites_.ready() && pinsDone >= pins)) meshes_.openStreaming(), meshStreamOpen_ = true;
+    }
     if (scene_) {
       sprites_.update();
       laps.lap("sprites");
@@ -598,6 +606,7 @@ class MapStage final : public Stage {
                                 : Camera::lookAt(eyeOf(eyeView(cam_)) + glm::vec3(0.0f, shotLift_, 0.0f),
                                                  lookTarget(cam_) + glm::vec3(0.0f, shotLift_, 0.0f), glm::radians(kFov), aspect, kNear);
     lastCamera_ = camera;
+    meshes_.setView(camera.position, static_cast<float>(size.height) / (2.0f * std::tan(glm::radians((flat_ ? kFlatFov : kFov) * 0.5f))));
     if (modelsPlaced_) updateCutaway(camera);
     drawList_.clear();
     frontCards_.clear();
@@ -10963,6 +10972,7 @@ class MapStage final : public Stage {
   std::vector<SpriteInstance> frontCards_;  // casters drawn again over their own spell (Renderer::setFrontCards)
   std::vector<LocalLight> lights_;
   bool modelsPlaced_ = false;
+  bool meshStreamOpen_ = false;  // MeshScene's 3D textures may grow past their base (the characters' memory is reserved)
   ember::EdgeStyle placedLook_ = ember::EdgeStyle::Smooth;
   uint32_t modelCount_ = 0, missing_ = 0, fullFrames_ = 0;
   std::chrono::steady_clock::time_point start_ = std::chrono::steady_clock::now();
