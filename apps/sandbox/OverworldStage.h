@@ -778,9 +778,12 @@ class OverworldStage : public Stage {
   // (no locations, steps or fog there yet: it has no overworld board).
   // The user's new maps (2026-10-28: "UnderworldA" for the Underworld, "recraft-v4_Map" for the Overworld, Attachments), the
   // locations' pins at the same percent coordinates as before; the old pictures (content/ui/underworld-atlas-v01.png,
-  // game/assets/world-map.jpg) stay where they are.
-  static constexpr const char* kUnderworldAtlas = "content/worldmap/underworld-atlas-v02.png";
-  static constexpr const char* kWorldMap = "content/worldmap/world-map-v02.png";
+  // game/assets/world-map.jpg) stay where they are. v03 = UnderworldA4X (the user, 2026-10-28: the same painting at four times the
+  // resolution, "só mudou a resolução"): the Underworld's hexes and marks are in percent of the atlas, so they stay where they were.
+  static constexpr const char* kUnderworldAtlas = "content/worldmap/underworld-atlas-v03.png";
+  // v03 = mordavia_mapa_completo_4096_v3 (the user, 2026-10-28): the same map at 4096 px, the house in the middle and the hill's
+  // cave redrawn; the pins keep their percent coordinates.
+  static constexpr const char* kWorldMap = "content/worldmap/world-map-v03.jpg";
   // Whether the word at the upper left switches worlds: Modo teste only, its "go anywhere" (the user, 2026-10-28: "no jogo haverão
   // algumas passagens, não se pode mudar assim, é só no debug"); the campaign crosses by the game's passages (showUnderworld).
   bool underworldOpen() const { return test(); }
