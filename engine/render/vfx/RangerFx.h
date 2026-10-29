@@ -37,7 +37,8 @@ class RangerFx {
     glm::vec3 feet{0.0f};
     float height = 1.8f;  // the card's height (0 = a hex: a body's height is assumed)
   };
-  enum class Shot { Venom, Explosive, Crippling, Death, Bloody, Swift };
+  // Bolt: a crossbow's plain shot (the enemies' crossbowmen), never a skill's.
+  enum class Shot { Venom, Explosive, Crippling, Death, Bloody, Swift, Bolt };
 
   // One arrow from the archer standing at `from` (its card `height`) to `foe`: it lets go at `release`, lands at `impact`.
   void shot(Shot style, glm::vec3 from, float height, const Target& foe, float release, float impact);

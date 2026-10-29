@@ -3345,7 +3345,10 @@ class MapStage final : public Stage {
                                                                    "cast", "castLeft", "heal", "counter"};
       const bool attackPose = kAttackPoses.contains(shown);
       const bool drawnRight = (u.sprite == "kaelFinal" && (walking || attackPose)) || (u.sprite == "defaultWarrior" && attackPose);
-      const bool reversed = unitReversed_[ui] != 0 && !drawnRight;
+      // The Besteiro Salteador's shot (BrigandCrossbowman atk) is drawn aiming left while his idle stands as drawn right: read as his
+      // idle, he shot away from his target (the user, 2026-10-28: "ele não está virando para o lado onde atira").
+      const bool drawnLeft = u.sprite == "BrigandCrossbowman" && shown == "attack";
+      const bool reversed = drawnLeft || (unitReversed_[ui] != 0 && !drawnRight);
       const bool mirror = !leftCut && ((unitFacing_[ui] == -1) != reversed);
       // Tática (Ember UnitActor.update with flatTop): flat over its own row's cards by half a row step, no shadow.
       if (flat_) anchor.y = boardTop_ + anchor.z * kFlatRowStep + kFlatRowStep * 0.5f;
@@ -5902,7 +5905,7 @@ class MapStage final : public Stage {
           for (ember::Json& c : cues) c["delay"] = c.value("delay", 0.0f) + *release / actionRate();
         playCues(cues);
       }
-      spellFx_.cast("longShot", std::max(spellLook("longShot", static_cast<size_t>(striker)), 1), unitSpot(static_cast<size_t>(striker)),
+      spellFx_.cast("plainShot", std::max(spellLook("longShot", static_cast<size_t>(striker)), 1), unitSpot(static_cast<size_t>(striker)),
                     {unitSpot(static_cast<size_t>(target))}, now_, x.impact, striker);
     }
     // Its sound as the pose begins (engine.ts startSeq; a counter's cue as the counter begins, stepCombat; the cures and
@@ -7628,11 +7631,16 @@ class MapStage final : public Stage {
         } else if (!magic && !e.miss && striker >= 0) {
           // By the striker's weapon: a blade cuts, a spear stabs, a blunt weapon (or a beast's weight) knocks.
           const WeaponStyle style = weaponStyle(battle_->units()[static_cast<size_t>(unitBattle_[static_cast<size_t>(striker)])]);
-          const CombatFx::Kind kind = style == WeaponStyle::Blade   ? (heavy ? CombatFx::Kind::HeavySlash : CombatFx::Kind::Slash)
+          // Golpe Duplo: every blow is the strong slash, read as the skill's (the user, 2026-10-28: "não tem o Slash")
+          const bool skillSlash = !x.counter && s.kind == "doubleStrike";
+          const CombatFx::Kind kind = skillSlash                    ? CombatFx::Kind::HeavySlash
+                                      : style == WeaponStyle::Blade ? (heavy ? CombatFx::Kind::HeavySlash : CombatFx::Kind::Slash)
                                       : style == WeaponStyle::Thrust ? CombatFx::Kind::Thrust
                                       : heavy                        ? CombatFx::Kind::Heavy
                                                                      : CombatFx::Kind::Physical;
-          spellFx_.combat().impact(kind, struck.feet, cardHeightOf(struck), from, now_);
+          // the skill's cut across the chest (62 % of the card), not its middle (CombatFx's contact: half the card, the hips)
+          const glm::vec3 cutAt = skillSlash ? struck.feet + glm::vec3(0.0f, std::clamp(cardHeightOf(struck), 1.0f, 4.0f) * 0.12f, 0.0f) : struck.feet;
+          spellFx_.combat().impact(kind, cutAt, cardHeightOf(struck), from, now_);
         }
         // The Cruzado's holy on a blow that landed: Golpe Consagrado's flash, the Manto's spark on any blow of its bearer
         if (!e.miss && s.type == ember::BattleStep::Type::Combat && striker >= 0 && striker != ui) {
@@ -9625,15 +9633,27 @@ class MapStage final : public Stage {
     ImGui::Begin("##modebanner", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
                                               ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoFocusOnAppearing |
                                               ImGuiWindowFlags_NoSavedSettings);
-    ImGui::PushFont(nullptr, 30.0f);
-    const ImVec2 t = ImGui::CalcTextSize(text.c_str());
-    const ImU32 ink = IM_COL32(255, 150, 120, 255);
-    plate("##modebannerbox", {t.x + 56.0f, t.y + 24.0f}, [&](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32) {
-      dl->AddText({std::round((a.x + b.x - t.x) * 0.5f), std::round((a.y + b.y - t.y) * 0.5f)}, ink, text.c_str());
+    constexpr float kSize = 40.0f;
+    const ImVec2 t = bannerTextSize(text, kSize);
+    plate("##modebannerbox", {t.x + 64.0f, t.y + 20.0f}, [&](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32) {
+      bannerText(dl, {(a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f}, text, kSize, IM_COL32(255, 168, 120, 255));
     });
-    ImGui::PopFont();
     ImGui::End();
     ImGui::PopStyleVar(2);
+  }
+  // The combat's opening and closing words (the user, 2026-10-28: "melhore a fonte que é utilizada nos começos e finais de combate onde
+  // diz Vitória, começo de Combate"): the game's display face (Pirata One, the titles' emberTitle) instead of the plain UI font, with
+  // emberTitle's soft drop shadow and a faint warm glow of the ink around the letters.
+  static ImVec2 bannerTextSize(const std::string& text, float size) { return uiFont(UiFont::Mark)->CalcTextSizeA(size, FLT_MAX, 0.0f, text.c_str()); }
+  static void bannerText(ImDrawList* dl, ImVec2 centre, const std::string& text, float size, ImU32 ink) {
+    ImFont* f = uiFont(UiFont::Mark);
+    const ImVec2 t = bannerTextSize(text, size);
+    const ImVec2 at{std::round(centre.x - t.x * 0.5f), std::round(centre.y - t.y * 0.5f)};
+    const ImU32 glow = (ink & ~IM_COL32_A_MASK) | (IM_COL32(0, 0, 0, 22) & IM_COL32_A_MASK);
+    for (const ImVec2 d : {ImVec2{-2, 0}, ImVec2{2, 0}, ImVec2{0, -2}, ImVec2{0, 2}, ImVec2{-1.5f, -1.5f}, ImVec2{1.5f, 1.5f}, ImVec2{-1.5f, 1.5f}, ImVec2{1.5f, -1.5f}})
+      dl->AddText(f, size, {at.x + d.x, at.y + d.y}, glow, text.c_str());
+    for (int k = 3; k >= 1; --k) dl->AddText(f, size, {at.x, at.y + 1.0f + k * 0.8f}, IM_COL32(0, 0, 0, 90), text.c_str());
+    dl->AddText(f, size, at, ink, text.c_str());
   }
 
   void drawTurnPlate() {
@@ -9654,13 +9674,21 @@ class MapStage final : public Stage {
     ImGui::Begin("##turnplate", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
                                              ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoFocusOnAppearing |
                                              ImGuiWindowFlags_NoSavedSettings);
-    const float size = end ? 40.0f : 18.0f;
-    ImGui::PushFont(nullptr, size);
-    const ImVec2 t = ImGui::CalcTextSize(text.c_str());
-    plate("##turnplatebox", {t.x + (end ? 64.0f : 28.0f), t.y + (end ? 28.0f : 12.0f)}, [&](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32 ink) {
-      dl->AddText({std::round((a.x + b.x - t.x) * 0.5f), std::round((a.y + b.y - t.y) * 0.5f)}, ink, text.c_str());
-    });
-    ImGui::PopFont();
+    if (end) {  // Vitória / Derrota in the display face (bannerText): gold for a victory, ember red for a defeat
+      constexpr float kSize = 64.0f;
+      const ImVec2 t = bannerTextSize(text, kSize);
+      const ImU32 ink = result_ == "victory" ? IM_COL32(244, 214, 150, 255) : IM_COL32(222, 96, 70, 255);
+      plate("##turnplatebox", {t.x + 80.0f, t.y + 24.0f}, [&](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32) {
+        bannerText(dl, {(a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f}, text, kSize, ink);
+      });
+    } else {
+      ImGui::PushFont(nullptr, 18.0f);
+      const ImVec2 t = ImGui::CalcTextSize(text.c_str());
+      plate("##turnplatebox", {t.x + 28.0f, t.y + 12.0f}, [&](ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32 ink) {
+        dl->AddText({std::round((a.x + b.x - t.x) * 0.5f), std::round((a.y + b.y - t.y) * 0.5f)}, ink, text.c_str());
+      });
+      ImGui::PopFont();
+    }
     ImGui::End();
     ImGui::PopStyleVar(2);
   }

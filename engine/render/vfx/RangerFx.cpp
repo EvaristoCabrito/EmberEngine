@@ -148,8 +148,10 @@ constexpr Palette kGrey{{0.75f, 0.78f, 0.8f}, {0.95f, 0.95f, 0.95f}, {0.6f, 0.62
 constexpr Palette kCrimson{{1.0f, 0.2f, 0.15f}, {1.0f, 0.75f, 0.65f}, {0.85f, 0.08f, 0.1f}};
 constexpr Palette kBlood{{1.0f, 0.15f, 0.1f}, {1.0f, 0.6f, 0.5f}, {0.7f, 0.03f, 0.05f}};
 constexpr Palette kSwift{{0.75f, 0.85f, 1.0f}, {0.95f, 0.98f, 1.0f}, {0.6f, 0.72f, 0.95f}};
+constexpr Palette kBolt{{1.0f, 0.78f, 0.5f}, {1.0f, 0.92f, 0.75f}, {1.0f, 0.62f, 0.28f}};
 const Palette& paletteOf(RangerFx::Shot s) {
   switch (s) {
+    case RangerFx::Shot::Bolt: return kBolt;
     case RangerFx::Shot::Venom: return kVenom;
     case RangerFx::Shot::Explosive: return kFire;
     case RangerFx::Shot::Crippling: return kGrey;
@@ -172,6 +174,7 @@ float RangerFx::Effect::end() const {
     case Shot::Death: return impact + 1.3f;
     case Shot::Bloody: return impact + 1.6f;
     case Shot::Swift: return impact + 0.6f;
+    case Shot::Bolt: return impact + 0.7f;
   }
   return impact + 1.0f;
 }
@@ -301,8 +304,20 @@ void RangerFx::buildShot(const Effect& e, float now, const Camera& camera, VfxFr
   if (now < e.impact) {
     const glm::vec3 head = e.at(s), ahead = e.at(std::min(1.0f, s + 0.02f));
     const glm::vec3 v = glm::length(ahead - head) > 1e-5f ? glm::normalize(ahead - head) : e.dir;
-    arrow(head, v, 1.0f, 1.0f, eye, flightPull);
+    arrow(head, v, e.style == Shot::Bolt ? 1.15f : 1.0f, 1.0f, eye, flightPull);  // a crossbow's quarrel, a little heavier
     streaks_.push_back(streak(pulled(head, eye, flightPull), v * 0.18f, 0.03f * k, 0.8f, pal.core, 2.2f));
+    // The crossbowmen's shots (the user, 2026-10-28: "sem nenhum efeito visual quando atiram ... não dá nem para saber a diferença"):
+    // a short trail of the shot's own colour behind the quarrel (amber for the plain shot, the skill's colour for Tiro Múltiplo / Longo).
+    if (e.style == Shot::Bolt || e.style == Shot::Swift) {
+      const float tail = std::min(s, 0.3f);
+      if (tail > 0.02f) {
+        three::CatmullRom path;
+        for (int j = 0; j <= 6; ++j) path.points.push_back(pulled(e.at(s - tail + tail * static_cast<float>(j) / 6.0f), eye, flightPull));
+        const std::vector<VfxVertex> tube = vfxgeo::tube(path, 12, 0.03f * k, 6);
+        draw(frame.addVertices(tube), static_cast<uint32_t>(tube.size()), glm::mat4(1.0f), kModeTrail, now - e.release, 1.2f, 0.7f, pal.energy, 0.0f,
+             glm::vec4(pal.core, 0.0f), e.feet, VfxBlend::Additive);
+      }
+    }
     if (e.style == Shot::Death) {  // a long crimson trail
       const float tail = std::min(s, 0.6f);
       if (tail > 0.02f) {
@@ -315,8 +330,26 @@ void RangerFx::buildShot(const Effect& e, float now, const Camera& camera, VfxFr
     }
     lights.push_back({head, pal.light, e.style == Shot::Death ? 9.0f : 5.0f, 2.4f * k});
   }
+  // The crossbow's snap as it lets go: a short flash at the stock and a little dust thrown off it.
+  if (e.style == Shot::Bolt) {
+    const float since = now - e.release;
+    if (since >= 0.0f && since < 0.09f) {
+      const float f = 1.0f - ease(0.0f, 0.09f, since);
+      streaks_.push_back(streak(pulled(e.hand, eye, flightPull), e.dir * 0.35f * k * f, 0.05f * k, f, pal.core, 2.4f));
+      lights.push_back({e.hand, pal.light, 6.0f * f, 1.6f * k});
+    }
+    for (int i = 0; i < 4; ++i) {
+      const uint32_t n = static_cast<uint32_t>(i) + 40u;
+      const float life = 0.45f * (0.8f + 0.4f * hash01(e.seed, n, 1));
+      if (since < 0.0f || since > life) continue;
+      const float u = since / life;
+      const glm::vec3 p = e.hand + (e.dir * 0.25f + side * (hash01(e.seed, n, 2) - 0.5f) * 0.4f + kUp * 0.15f * u) * k;
+      puffs_.push_back(puff(pulled(p, eye, flightPull), (0.08f + 0.18f * u) * k, hash01(e.seed, n, 3) * kTau, hash01(e.seed, n, 4) * 37.0f,
+                            0.4f * (1.0f - ease(0.2f, 1.0f, u)), kDust));
+    }
+  }
   // --- Shed along the path: venom motes, embers, grey dust, dark red motes (each born as the arrow passed). ---
-  const int shed = e.style == Shot::Crippling || e.style == Shot::Swift ? 8 : 16;
+  const int shed = e.style == Shot::Crippling || e.style == Shot::Swift || e.style == Shot::Bolt ? 8 : 16;
   for (int i = 0; i < shed; ++i) {
     const uint32_t n = static_cast<uint32_t>(i) + 70u;
     const float ub = (static_cast<float>(i) + 0.5f) / static_cast<float>(shed);
@@ -493,6 +526,33 @@ void RangerFx::buildShot(const Effect& e, float now, const Camera& camera, VfxFr
       streaks_.push_back(streak(pulled(p, eye, kPull), v0 * 0.04f, 0.025f * k, 1.0f - u * u, glm::mix(pal.core, pal.energy, u), 2.8f));
     }
     if (age < 0.15f) lights.push_back({e.body, pal.light, 5.0f * (1.0f - ease(0.0f, 0.15f, age)), 1.8f * k});
+  } else if (e.style == Shot::Bolt) {
+    // --- The crossbow's plain shot: the quarrel thuds in, an amber flash, sparks and splinters thrown the shot's way, a puff of dust. ---
+    if (age < 0.12f) {
+      const float f = 1.0f - ease(0.0f, 0.12f, age);
+      streaks_.push_back(streak(point, glm::vec3(0.0f), 0.42f * k * (0.6f + 0.4f * f), f, pal.core, 2.4f));
+    }
+    for (int i = 0; i < 12; ++i) {
+      const uint32_t n = static_cast<uint32_t>(i) + 100u;
+      const float life = 0.18f + 0.2f * hash01(e.seed, n, 1);
+      const float tau = age - hash01(e.seed, n, 2) * 0.02f;
+      if (tau < 0.0f || tau > life) continue;
+      const glm::vec3 d = glm::normalize(sphereDir(hash01(e.seed, n, 3), hash01(e.seed, n, 4)) + e.dir * 1.2f);
+      const glm::vec3 v0 = d * (2.5f + 3.0f * hash01(e.seed, n, 5)) * k;
+      const glm::vec3 p = e.body + v0 * tau + glm::vec3(0.0f, -0.5f * kGravity * tau * tau, 0.0f);
+      const float u = tau / life;
+      streaks_.push_back(streak(pulled(p, eye, kPull), v0 * 0.04f, 0.028f * k, 1.0f - u * u, glm::mix(pal.core, pal.energy, u), 2.6f));
+    }
+    for (int i = 0; i < 4; ++i) {
+      const uint32_t n = static_cast<uint32_t>(i) + 200u;
+      const float life = 0.5f * (0.8f + 0.4f * hash01(e.seed, n, 1));
+      if (age > life) continue;
+      const float u = age / life;
+      const glm::vec3 p = e.body + (e.dir * 0.3f + side * (hash01(e.seed, n, 2) - 0.5f) * 0.5f + kUp * (hash01(e.seed, n, 3) - 0.4f) * 0.3f) * (0.4f + 0.6f * u) * k;
+      puffs_.push_back(puff(pulled(p, eye, kPull), (0.1f + 0.22f * u) * k, hash01(e.seed, n, 4) * kTau, hash01(e.seed, n, 5) * 37.0f,
+                            0.45f * (1.0f - ease(0.2f, 1.0f, u)), kDust));
+    }
+    if (age < 0.2f) lights.push_back({e.body, pal.light, 7.0f * (1.0f - ease(0.0f, 0.2f, age)), 2.0f * k});
   } else {
     // --- Tiro Mortal: a pin of light driven through the body, a crimson shell, dark streaks flung out, a red ring, a red light. ---
     if (age < 0.18f) {

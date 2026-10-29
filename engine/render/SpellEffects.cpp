@@ -83,6 +83,7 @@ int SpellEffects::looks(const std::string& kind) {
       kind == "webOfDreams" || kind == "burningHands" || kind == "poisonBreath" || kind == "cleave" || kind == "sweep")
     return 1;
   if (kind == "longShot" || kind == "piercing") return 2;  // 01 the arrow card, 02 RangerFx's 3D arrow (the enemies')
+  if (kind == "plainShot") return 2;                       // the plain shot: 01 the arrow card, 02 the crossbow's quarrel (RangerFx Bolt)
   if (kind == "piercingThrust") return 2;  // 01 the flipbook burst, 02 ours in 3D (vfx/LancerFx: the thrust down the line)
   static const char* kVersion01[] = {"lightning", "lightningTier3", "shock", "cureMinor", "doubleStrike"};
   for (const char* k : kVersion01)
@@ -394,6 +395,18 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
   }
   // Tiro Longo / Tiro Perfurante 02 (the plain shot too): the real 3D arrow of RangerFx instead of the 01 card, the enemies' (the
   // crossbowmen's bolt, the user 2026-10-20: "an arrow to be drawn for his ATT and skills"). The piercing one flies to the last body.
+  // "plainShot": a bow's or crossbow's plain attack / counter (MapStage), Tiro Longo's 01 card for the heroes; 02 the crossbowmen's own
+  // quarrel (RangerFx Bolt), so their plain shot is never mistaken for Tiro Longo / Múltiplo.
+  if (kind == "plainShot") {
+    if (look != 2) {
+      arrow(caster, targets, start, impact, false);
+      return true;
+    }
+    const Spot& foe = targets.front();
+    ranger_.shot(RangerFx::Shot::Bolt, caster.feet, caster.cardHeight, {foe.feet, foe.cardHeight},
+                 std::max(start, impact - RangerFx::flightSeconds(caster.feet, foe.feet)), impact);
+    return true;
+  }
   if ((kind == "longShot" || kind == "piercing") && look == 2) {
     const Spot* foe = &targets.front();
     if (kind == "piercing")
@@ -645,7 +658,10 @@ bool SpellEffects::castEffect(const std::string& kind, int look, const Spot& cas
     for (const Spot& s : targets)
       if (s.cardHeight > 0.0f) bodies.push_back({s.feet, s.cardHeight});
     lancer_.pierce(caster.feet, caster.cardHeight, targets.empty() ? caster.feet : targets.back().feet, std::move(bodies), std::max(start, impact - 0.1f), impact);
-  } else if (kind == "piercingThrust" || kind == "doubleStrike") bladeSkill(caster, start, impact);
+  } else if (kind == "piercingThrust") bladeSkill(caster, start, impact);
+  // Golpe Duplo: nothing on the caster (the user, 2026-10-28: the burst of embers on the swing sat at the body's middle, "chega de colocar
+  // efeitos nas genitálias"); its slash is each blow's own on the struck body (MapStage: CombatFx HeavySlash).
+  else if (kind == "doubleStrike") {}
   else if (emberCast(kind, caster, targets, start, impact)) return true;
   else return false;
   return true;
