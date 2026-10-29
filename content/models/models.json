@@ -3572,6 +3572,19 @@
       "triangles": 103330
     },
     {
+      "id": "ember-polyhaven-large-castle-door",
+      "name": "Porta grande de castelo 3D",
+      "kit": "polyhaven",
+      "model": "ember-large-castle-door",
+      "file": "/game/ember/polyhaven/large_castle_door-v01.glb",
+      "height": 4.359,
+      "width": 2.958,
+      "footprint": "pair",
+      "section": "Ruínas e construções",
+      "blocks": false,
+      "triangles": 12640
+    },
+    {
       "id": "ember-polyhaven-painted-bench",
       "name": "Banco de madeira pintado 3D",
       "kit": "polyhaven",
