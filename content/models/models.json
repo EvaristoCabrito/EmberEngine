@@ -3570,6 +3570,19 @@
       "section": "Objetos",
       "blocks": false,
       "triangles": 103330
+    },
+    {
+      "id": "ember-polyhaven-painted-bench",
+      "name": "Banco de madeira pintado 3D",
+      "kit": "polyhaven",
+      "model": "ember-painted-wooden-bench",
+      "file": "/game/ember/polyhaven/painted_wooden_bench-v01.glb",
+      "height": 1.307,
+      "width": 1.713,
+      "footprint": "one",
+      "section": "Mosteiro",
+      "blocks": false,
+      "triangles": 630
     }
   ]
 }
