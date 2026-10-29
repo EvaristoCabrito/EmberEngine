@@ -210,7 +210,7 @@ def draft(id, title, explore, players, enemies, neutral, briefing, objective, se
     d = dict(base)
     d.update({'id': id, 'title': title, 'place': 'A cidade, 25 anos antes', 'briefing': briefing, 'objective': objective,
               'win': 'rout', 'hub': False, 'explore': explore, 'fog': False, 'locationId': 'ruins', 'cols': COLS, 'rows': ROWS, 'timeOfDay': 'day',
-              'tiles': list(tiles), 'tileVariants': [0] * (COLS * ROWS), 'terrainElevations': [0] * (COLS * ROWS), 'waterLevels': [0] * (COLS * ROWS), 'tileRots': [0] * (COLS * ROWS),
+              'tiles': list(tiles), 'tileVariants': [0] * (COLS * ROWS), 'terrainElevations': [0] * (COLS * ROWS), 'waterLevels': [None] * (COLS * ROWS), 'tileRots': [0] * (COLS * ROWS),
               'decorations': [dict(x) for x in decorations if explore or x['id'] != 'floor-connector'], 'elementalFx': [],
               'playerSpawns': players, 'enemySpawns': enemies, 'neutralSpawns': neutral})
     return {'serial': serial, 'savedAt': int(time.time() * 1000), 'draft': d}
