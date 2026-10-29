@@ -1197,9 +1197,10 @@ class OverworldStage : public Stage {
     // what happened: what was clicked, from where to where, whether the step was taken, where the party stands after).
     if (clicked) {
       const int c0 = save_["overworldPos"].value("col", 0), r0 = save_["overworldPos"].value("row", 0);
-      // The hex of the board under the mouse (pointy-top, size 5 % of the image, odd-r: overworld.ts worldToHex), and whether it is a cell.
-      const double mx = (mouse.x - o.x) / imgW * 100.0, my = (mouse.y - o.y) / imgH * 100.0;
-      const double fq = (std::sqrt(3.0) / 3.0 * mx - my / 3.0) / 5.0, fr = (2.0 / 3.0 * my) / 5.0, fs = -fq - fr;
+      // The hex of the board under the mouse (pointy-top, the board's hex size in % of the image, odd-r: overworld.ts worldToHex),
+      // and whether it is a cell.
+      const double mx = (mouse.x - o.x) / imgW * 100.0, my = (mouse.y - o.y) / imgH * 100.0, hs = ember::Overworld::hexSize();
+      const double fq = (std::sqrt(3.0) / 3.0 * mx - my / 3.0) / hs, fr = (2.0 / 3.0 * my) / hs, fs = -fq - fr;
       double rq = std::round(fq), rr = std::round(fr), rs = std::round(fs);
       if (std::abs(rq - fq) > std::abs(rr - fr) && std::abs(rq - fq) > std::abs(rs - fs)) rq = -rr - rs;
       else if (std::abs(rr - fr) > std::abs(rs - fs)) rr = -rq - rs;
