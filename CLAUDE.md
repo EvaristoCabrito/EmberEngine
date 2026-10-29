@@ -1712,7 +1712,8 @@ open area with large tables ... some separate rooms for NPCs and services, use t
   one scripted run (the main loop has no capture harness).
 - **ONLY BARRICADES BLOCK (the user, 2026-10-25, furious: "NÃO QUERO DECORAÇÃO BLOQUEANDO MAIS NADA ... a única coisa que bloqueia é
   barricada"):** a decoration blocks a hex only when it is a barricade (id contains "barricade", or the rules' barricadeLike set);
-  architecture walls / doors / secret doors stay solid (rooms keep their walls); houses, rocks, carts, chests, props and the editor's
+  architecture walls / doors / secret doors stay solid (rooms keep their walls); **chests block too (the user, 2026-10-29: "unidades não
+  podem andar no mesmo hex dos baús"; shots pass over, opening frees the hex)**; houses, rocks, carts, props and the editor's
   blocksPath mark never block (BattleExport.cpp refreshOverlay, MapStage blockEmberProps). `Cooker check-battle-export`'s "blocked"
   cells differ from the TypeScript exporter's by design now. Memory note `only-barricades-block`.
 - **The city (2026-10-25, the user: "eu não tenho mapas de cidade nenhuma, você vai criar"; capricho máximo is mine, their prompts

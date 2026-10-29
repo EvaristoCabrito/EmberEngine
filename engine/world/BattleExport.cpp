@@ -274,11 +274,15 @@ struct Field {
       // the editor's blocksPath mark block nothing. Architecture stays solid (walls, doors, secret doors, a closed doorway span: a
       // room keeps its walls). The other sets are read for the shot rules only.
       const bool barricadeId = id.find("barricade") != std::string::npos;
-      (void)house, (void)chest, (void)cart, (void)rock;
-      const bool lowProp = false;
-      const int bits = (solidArch || barricade || barricadeId ? kBlocked : 0) | (flag(p, "yieldsHighGround") ? kHigh : 0) | (lowProp ? kOpenShot : 0);
+      // Chests block too (the user, 2026-10-29: "unidades não podem andar no mesmo hex dos baús"): no one walks onto one, shots pass
+      // over it (low), and opening it gives the hex back (the lock's cells are rebuilt without the chest).
+      (void)house, (void)cart, (void)rock;
+      const bool lowProp = chest && !(solidArch || barricade || barricadeId);
+      const int bits = (solidArch || barricade || barricadeId || chest ? kBlocked : 0) | (flag(p, "yieldsHighGround") ? kHigh : 0) | (lowProp ? kOpenShot : 0);
       if (!bits) continue;
-      for (const Hex& c : placedBlockingFootprint(r, p)) {
+      std::vector<Hex> blockCells = placedBlockingFootprint(r, p);
+      if (blockCells.empty() && chest) blockCells.push_back(Hex{0, 0});  // a 3D chest has no footprint in the rules: its own hex
+      for (const Hex& c : blockCells) {
         const int x = integer(p, "x") + c.x, y = integer(p, "y") + c.y;
         if (!inBounds(x, y)) continue;
         overlay[static_cast<size_t>(y * cols + x)] |= static_cast<uint8_t>(bits);
