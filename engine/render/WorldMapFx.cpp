@@ -28,8 +28,22 @@ struct Push {
   float time, rounding, glow;
   uint32_t paramsLo, paramsHi;
   uint32_t noise, repeatSampler;
+  uint32_t lutA, lutB, lightMask, lightGlow, heightMap, waterMask, mistMask;
 };
 static_assert(sizeof(Push) <= Bindless::kPushConstantBytes);
+
+// Horas depois de `from`, no ciclo de 24 h (0..24).
+float hoursAfter(float hour, float from) { return std::fmod(hour - from + 48.0f, 24.0f); }
+// Uma rampa suave 0..1 que sobe de `from` a `to` (horas), fica em 1 até `holdUntil` e desce a 0 em `fallHours`.
+float hourWindow(float hour, float from, float to, float holdUntil, float fallHours) {
+  const float t = hoursAfter(hour, from);
+  const float rise = std::max(to - from, 0.01f), hold = std::max(hoursAfter(holdUntil, from), rise);
+  float x;
+  if (t < rise) x = t / rise;
+  else if (t < hold) x = 1.0f;
+  else x = 1.0f - std::clamp((t - hold) / std::max(fallHours, 0.01f), 0.0f, 1.0f);
+  return x * x * (3.0f - 2.0f * x);
+}
 
 // Ruído de valor repetível numa grade de `period` células (uma volta da textura), suavizado.
 float periodicNoise(float x, float y, int period, uint32_t seed) {
@@ -132,6 +146,56 @@ WorldMapConfig WorldMapConfig::load(const std::filesystem::path& file, bool unde
     }
     std::sort(c.keys.begin(), c.keys.end(), [](const HourKey& a, const HourKey& b) { return a.hour < b.hour; });
   }
+  // Mapa-múndi, o look 2D (2026-10-28): "lut" (as faixas por hora), as máscaras e os números de cada parte.
+  if (const nlohmann::json luts = j.value("lut", nlohmann::json::array()); luts.is_array()) {
+    c.luts.clear();
+    for (const nlohmann::json& k : luts)
+      if (k.is_object() && k.contains("file")) c.luts.push_back({k.value("hour", 12.0f), k.value("file", std::string())});
+    std::sort(c.luts.begin(), c.luts.end(), [](const LutKey& a, const LutKey& b) { return a.hour < b.hour; });
+  }
+  c.lutStrength = j.value("lutStrength", c.lutStrength);
+  const nlohmann::json masks = j.value("masks", nlohmann::json::object());
+  c.lightMask = masks.value("lights", c.lightMask);
+  c.heightMap = masks.value("height", c.heightMap);
+  c.waterMask = masks.value("water", c.waterMask);
+  c.mistMask = masks.value("mist", c.mistMask);
+  const nlohmann::json hours = j.value("dayNight", nlohmann::json::object());
+  c.nightFrom = hours.value("nightFrom", c.nightFrom);
+  c.nightFull = hours.value("nightFull", c.nightFull);
+  c.dayFrom = hours.value("dayFrom", c.dayFrom);
+  c.dayFull = hours.value("dayFull", c.dayFull);
+  const nlohmann::json lights = j.value("lights", nlohmann::json::object());
+  c.lightColor = vec3Of(lights.value("color", nlohmann::json()), c.lightColor);
+  c.lightStrength = lights.value("strength", c.lightStrength);
+  c.lightFlicker = lights.value("flicker", c.lightFlicker);
+  c.lightGlowRadius = lights.value("glowRadius", c.lightGlowRadius);
+  c.lightGlowDownsample = std::max(1, lights.value("glowDownsample", c.lightGlowDownsample));
+  const nlohmann::json relief = j.value("relief", nlohmann::json::object());
+  c.reliefStrength = relief.value("strength", c.reliefStrength);
+  c.sunLean = relief.value("sunLean", c.sunLean);
+  const nlohmann::json clouds = j.value("clouds", nlohmann::json::object());
+  c.cloudStrength = clouds.value("strength", c.cloudStrength);
+  c.cloudScale = clouds.value("scale", c.cloudScale);
+  c.cloudSpeed = clouds.value("speed", c.cloudSpeed);
+  const nlohmann::json mist = j.value("mist", nlohmann::json::object());
+  c.mistColor = vec3Of(mist.value("color", nlohmann::json()), c.mistColor);
+  c.mistStrength = mist.value("strength", c.mistStrength);
+  c.mistScale = mist.value("scale", c.mistScale);
+  c.mistSpeed = mist.value("speed", c.mistSpeed);
+  c.mistThreshold = mist.value("threshold", c.mistThreshold);
+  c.mistDawnFrom = mist.value("dawnFrom", c.mistDawnFrom);
+  c.mistDawnPeak = mist.value("dawnPeak", c.mistDawnPeak);
+  c.mistDawnEnd = mist.value("dawnEnd", c.mistDawnEnd);
+  c.mistNight = mist.value("night", c.mistNight);
+  const nlohmann::json water = j.value("water", nlohmann::json::object());
+  c.waterShimmer = water.value("shimmer", c.waterShimmer);
+  c.waterMoon = water.value("moon", c.waterMoon);
+  c.waterScale = water.value("scale", c.waterScale);
+  c.waterSpeed = water.value("speed", c.waterSpeed);
+  c.moonColor = vec3Of(water.value("moonColor", nlohmann::json()), c.moonColor);
+  const nlohmann::json party = j.value("partyLight", nlohmann::json::object());
+  c.partyRadius = party.value("radius", c.partyRadius);
+  c.partyDark = party.value("darkness", c.partyDark);
   const nlohmann::json cycle = j.value("cycle", nlohmann::json::object());
   c.wakeHour = cycle.value("wakeHour", c.wakeHour);
   c.riseHours = cycle.value("riseHours", c.riseHours);
@@ -260,6 +324,73 @@ uint32_t WorldMapFx::loadTexture(const std::filesystem::path& file) {
   return index;
 }
 
+std::pair<uint32_t, uint32_t> WorldMapFx::loadLightMask(const std::filesystem::path& file, int downsample, int radius) {
+  int w = 0, h = 0, n = 0;
+  stbi_uc* pixels = stbi_load(file.string().c_str(), &w, &h, &n, 4);
+  if (!pixels) {
+    logError("worldmap: light mask not read: {}", file.string());
+    return {kNoTexture, kNoTexture};
+  }
+  Image sharpImage;
+  const uint32_t sharp = upload(pixels, static_cast<uint32_t>(w), static_cast<uint32_t>(h), VK_FORMAT_R8G8B8A8_UNORM, 4, sharpImage, kNoTexture);
+  images_.push_back(sharpImage);
+  indices_.push_back(sharp);
+  // A cópia reduzida (média de blocos), depois três passes de caixa separáveis = um borrado quase gaussiano.
+  const int ds = std::max(1, downsample);
+  const int gw = std::max(1, w / ds), gh = std::max(1, h / ds);
+  std::vector<float> small(size_t(gw) * gh * 3, 0.0f);
+  for (int y = 0; y < gh; ++y)
+    for (int x = 0; x < gw; ++x) {
+      float acc[3] = {0, 0, 0};
+      int count = 0;
+      for (int sy = y * ds; sy < std::min(h, (y + 1) * ds); ++sy)
+        for (int sx = x * ds; sx < std::min(w, (x + 1) * ds); ++sx) {
+          const stbi_uc* p = pixels + (size_t(sy) * w + sx) * 4;
+          acc[0] += p[0], acc[1] += p[1], acc[2] += p[2], ++count;
+        }
+      float* o = &small[(size_t(y) * gw + x) * 3];
+      for (int k = 0; k < 3; ++k) o[k] = acc[k] / float(std::max(count, 1)) / 255.0f;
+    }
+  stbi_image_free(pixels);
+  const int r = std::max(1, radius);
+  std::vector<float> tmp(small.size());
+  auto boxH = [&](const std::vector<float>& in, std::vector<float>& out) {
+    for (int y = 0; y < gh; ++y)
+      for (int k = 0; k < 3; ++k) {
+        float sum = 0;
+        for (int x = -r; x <= r; ++x) sum += in[(size_t(y) * gw + std::clamp(x, 0, gw - 1)) * 3 + k];
+        for (int x = 0; x < gw; ++x) {
+          out[(size_t(y) * gw + x) * 3 + k] = sum / float(2 * r + 1);
+          sum += in[(size_t(y) * gw + std::clamp(x + r + 1, 0, gw - 1)) * 3 + k] - in[(size_t(y) * gw + std::clamp(x - r, 0, gw - 1)) * 3 + k];
+        }
+      }
+  };
+  auto boxV = [&](const std::vector<float>& in, std::vector<float>& out) {
+    for (int x = 0; x < gw; ++x)
+      for (int k = 0; k < 3; ++k) {
+        float sum = 0;
+        for (int y = -r; y <= r; ++y) sum += in[(size_t(std::clamp(y, 0, gh - 1)) * gw + x) * 3 + k];
+        for (int y = 0; y < gh; ++y) {
+          out[(size_t(y) * gw + x) * 3 + k] = sum / float(2 * r + 1);
+          sum += in[(size_t(std::clamp(y + r + 1, 0, gh - 1)) * gw + x) * 3 + k] - in[(size_t(std::clamp(y - r, 0, gh - 1)) * gw + x) * 3 + k];
+        }
+      }
+  };
+  for (int pass = 0; pass < 3; ++pass) boxH(small, tmp), boxV(tmp, small);
+  // O borrado perde energia (a luz espalhada por muitos pixels): normalizado ao pico para o halo ter corpo, sem estourar.
+  float peak = 1e-4f;
+  for (float v : small) peak = std::max(peak, v);
+  std::vector<unsigned char> texels(size_t(gw) * gh * 4, 255);
+  for (size_t i = 0; i < size_t(gw) * gh; ++i)
+    for (int k = 0; k < 3; ++k) texels[i * 4 + k] = static_cast<unsigned char>(std::lround(std::clamp(small[i * 3 + k] / peak, 0.0f, 1.0f) * 255.0f));
+  Image glowImage;
+  const uint32_t glow = upload(texels.data(), static_cast<uint32_t>(gw), static_cast<uint32_t>(gh), VK_FORMAT_R8G8B8A8_UNORM, 4, glowImage, kNoTexture);
+  images_.push_back(glowImage);
+  indices_.push_back(glow);
+  logInfo("worldmap: light mask {} {}x{} + glow {}x{} (radius {}) on the GPU", file.filename().string(), w, h, gw, gh, r);
+  return {sharp, glow};
+}
+
 void WorldMapFx::setReveal(const std::vector<uint8_t>& texels, uint32_t w, uint32_t h) {
   if (texels.size() < size_t(w) * h) return;
   revealIndex_ = upload(texels.data(), w, h, VK_FORMAT_R8_UNORM, 1, reveal_, revealIndex_);
@@ -313,7 +444,21 @@ void WorldMapFx::callback(const ImDrawList*, const ImDrawCmd* cmd) {
   push.mask = hasMask ? d.mask : self.noiseIndex_;
   push.reveal = hasReveal ? self.revealIndex_ : self.noiseIndex_;
   push.samplerIndex = self.samplerIndex_;
-  push.flags = (d.underworld ? 1u : 0u) | (uint32_t(std::clamp(d.quality, 0, 2)) << 1) | (hasMask ? 8u : 0u) | (hasReveal ? 16u : 0u);
+  const bool hasLut = !d.underworld && d.lutA != kNoTexture && d.lutB != kNoTexture;
+  const bool hasLight = !d.underworld && d.lightMask != kNoTexture && d.lightGlow != kNoTexture;
+  const bool hasHeight = !d.underworld && d.heightMap != kNoTexture;
+  const bool hasWater = !d.underworld && d.waterMask != kNoTexture;
+  const bool hasMist = !d.underworld && d.mistMask != kNoTexture;
+  push.lutA = hasLut ? d.lutA : self.noiseIndex_;
+  push.lutB = hasLut ? d.lutB : self.noiseIndex_;
+  push.lightMask = hasLight ? d.lightMask : self.noiseIndex_;
+  push.lightGlow = hasLight ? d.lightGlow : self.noiseIndex_;
+  push.heightMap = hasHeight ? d.heightMap : self.noiseIndex_;
+  push.waterMask = hasWater ? d.waterMask : self.noiseIndex_;
+  push.mistMask = hasMist ? d.mistMask : self.noiseIndex_;
+  push.flags = (d.underworld ? 1u : 0u) | (uint32_t(std::clamp(d.quality, 0, 2)) << 1) | (hasMask ? 8u : 0u) | (hasReveal ? 16u : 0u) |
+               (hasLut ? 32u : 0u) | (hasLight ? 64u : 0u) | (hasHeight ? 128u : 0u) | (hasWater ? 256u : 0u) | (hasMist ? 512u : 0u) |
+               (d.partyLight ? 1024u : 0u);
   push.time = d.time;
   push.rounding = d.rounding * sc.y;
   push.glow = d.glow;
@@ -325,9 +470,52 @@ void WorldMapFx::callback(const ImDrawList*, const ImDrawCmd* cmd) {
   vkCmdDraw(cb, 3, 1, 0, 0);
 }
 
-WorldMapParams WorldMapFx::overworldParams(const WorldMapConfig& c, float hour) {
+WorldMapFx::LutMix WorldMapFx::lutMix(const WorldMapConfig& c, float hour) {
+  LutMix m;
+  if (c.luts.empty()) return m;
+  hour = std::fmod(std::fmod(hour, 24.0f) + 24.0f, 24.0f);
+  const int n = static_cast<int>(c.luts.size());
+  m.a = n - 1, m.b = 0;
+  float ha = c.luts.back().hour - 24.0f, hb = c.luts.front().hour;
+  for (int i = 0; i < n; ++i) {
+    const float h0 = c.luts[i].hour, h1 = i + 1 < n ? c.luts[i + 1].hour : c.luts.front().hour + 24.0f;
+    if (hour >= h0 && hour < h1) m.a = i, m.b = (i + 1) % n, ha = h0, hb = h1;
+  }
+  m.t = hb > ha ? smooth(std::clamp((hour - ha) / (hb - ha), 0.0f, 1.0f)) : 0.0f;
+  return m;
+}
+
+WorldMapParams WorldMapFx::overworldParams(const WorldMapConfig& c, float hour, glm::vec2 partyUv) {
   WorldMapParams p{};
-  if (c.keys.empty()) return p;
+  // O look 2D pela hora (worldmap.hlsl 13..21): a mistura das LUTs, a noite e o dia como rampas, a névoa da madrugada (e uma
+  // parte dela a noite inteira), o sol correndo de leste (x +) a oeste pelo sul (y +: o sul é para baixo na pintura).
+  {
+    const float h = std::fmod(std::fmod(hour, 24.0f) + 24.0f, 24.0f);
+    const float night = hourWindow(h, c.nightFrom, c.nightFull, c.dayFrom, std::max(c.dayFull - c.dayFrom, 0.01f));
+    const float day = 1.0f - night;
+    const float dawn = hourWindow(h, c.mistDawnFrom, c.mistDawnPeak, c.mistDawnPeak, std::max(c.mistDawnEnd - c.mistDawnPeak, 0.01f));
+    const float mistAmount = std::max(dawn, night * c.mistNight);
+    p.hourMix = {lutMix(c, h).t, night, day, mistAmount};
+    const float dayT = std::clamp((h - 6.0f) / 12.0f, 0.0f, 1.0f);  // 6 h leste .. 18 h oeste
+    const float az = dayT * std::numbers::pi_v<float>;
+    const float sinEl = std::max(std::sin(az), 0.08f);  // a altura do sol: baixa cedo e tarde, alta ao meio-dia
+    const float cosEl = std::sqrt(std::max(1.0f - sinEl * sinEl, 0.0f));
+    glm::vec3 sun{std::cos(az) * cosEl, c.sunLean * std::sin(az) * cosEl, sinEl};
+    sun = glm::normalize(sun);
+    p.sun = {sun.x, sun.y, sun.z, c.reliefStrength * day};
+    p.lightColor = {c.lightColor, c.lightStrength};
+    p.clouds = {c.cloudStrength, c.cloudScale, c.cloudSpeed, std::clamp(c.lightFlicker, 0.0f, 1.0f)};
+    p.mistShape = {c.mistScale, c.mistSpeed, c.mistThreshold, 0.0f};
+    p.mistColor = {c.mistColor, c.mistStrength};
+    p.water = {c.waterShimmer, c.waterMoon, c.waterScale, c.waterSpeed};
+    p.party = {partyUv.x, partyUv.y, c.partyRadius, c.partyDark};
+    p.moon = {c.moonColor, c.lutStrength};
+  }
+  if (c.keys.empty()) {
+    p.tint = {1, 1, 1, 1};
+    p.grade = {1, 1, 0, 1};
+    return p;
+  }
   // A chave de antes e a de depois da hora (cíclico em 24 h), a mistura suave entre elas.
   hour = std::fmod(std::fmod(hour, 24.0f) + 24.0f, 24.0f);
   const WorldMapConfig::HourKey* a = &c.keys.back();
@@ -376,7 +564,7 @@ WorldMapParams WorldMapFx::underworldParams(const WorldMapConfig& c, float glow)
   p.dark = {c.darkColor, c.darkLevel};
   p.caveColor = {c.caveColor, c.caveDensity};
   p.caveShape = {c.caveScale, c.caveSpeed, c.caveGlow, c.caveThreshold};
-  p.extra[0] = {c.glowAmbient, 0, 0, 0};
+  p.extra0 = {c.glowAmbient, 0, 0, 0};
   return p;
 }
 

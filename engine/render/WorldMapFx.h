@@ -23,17 +23,42 @@ namespace ember {
 class VulkanContext;
 class Bindless;
 
-// Os 16 float4 lidos pelo shader (worldmap.hlsl Params), já interpolados pela hora.
+// Os 24 float4 lidos pelo shader (worldmap.hlsl Params), já interpolados pela hora.
 struct WorldMapParams {
   glm::vec4 tint, grade, light, vignette, fogColor, fogShape, lowColor, lowShape, glowColor, dark, caveColor, caveShape;
-  glm::vec4 extra[4]{};
+  glm::vec4 extra0{};
+  // Mapa-múndi, o look 2D (2026-10-28; worldmap.hlsl diz cada campo): 13..21
+  glm::vec4 hourMix{}, sun{}, lightColor{}, clouds{}, mistShape{}, mistColor{}, water{}, party{}, moon{};
+  glm::vec4 spare[2]{};
 };
-static_assert(sizeof(WorldMapParams) == 16 * 16);
+static_assert(sizeof(WorldMapParams) == 24 * 16);
 
 // O arquivo de configuração de uma tela (content/worldmap/*.json). Um valor ausente fica no padrão daqui.
 struct WorldMapConfig {
   bool enabled = true;
   std::string mask;  // a máscara pintada (PNG, R = névoa baixa / de caverna, G = seres que brilham); vazio = heurística no shader
+  // Mapa-múndi, o look 2D (o usuário, 2026-10-28: "um 2D de qualidade superior"): as LUTs por hora e as máscaras pintadas
+  // pelo usuário (PNG na proporção da pintura; vazio = aquela parte fica desligada).
+  struct LutKey {
+    float hour = 12;
+    std::string file;
+  };
+  std::vector<LutKey> luts;  // "lut": [{"hour", "file"}], cíclico em 24 h, misturadas duas a duas
+  float lutStrength = 1.0f;
+  std::string lightMask, heightMap, waterMask, mistMask;
+  // a noite (0..1) e o dia (0..1) pela hora: rampas entre estas horas
+  float nightFrom = 19.5f, nightFull = 21.0f, dayFrom = 5.0f, dayFull = 7.0f;
+  float mistDawnFrom = 4.0f, mistDawnPeak = 6.0f, mistDawnEnd = 9.0f, mistNight = 0.6f;  // a névoa da hora: pico na madrugada, parte da noite
+  float reliefStrength = 0.35f, sunLean = 0.45f;  // o relevo; quanto o sol pende para o sul (y da pintura) ao meio-dia
+  glm::vec3 lightColor{1.0f, 0.55f, 0.28f};
+  float lightStrength = 1.0f, lightFlicker = 0.5f;
+  int lightGlowRadius = 8, lightGlowDownsample = 4;  // o borrado do halo (em pixels da cópia reduzida)
+  float cloudStrength = 0.12f, cloudScale = 3.0f, cloudSpeed = 0.012f;
+  float mistScale = 14.0f, mistSpeed = 0.02f, mistThreshold = 0.36f, mistStrength = 0.55f;
+  glm::vec3 mistColor{0.78f, 0.82f, 0.90f};
+  float waterShimmer = 0.6f, waterMoon = 0.5f, waterScale = 60.0f, waterSpeed = 0.05f;
+  glm::vec3 moonColor{0.55f, 0.65f, 0.90f};
+  float partyRadius = 0.08f, partyDark = 0.45f;  // a luz do grupo à noite (Opções): o raio em uv, quanto escurece o resto
   // Mapa-múndi: uma chave por hora (0..24, cíclico), interpolada suavemente.
   struct HourKey {
     float hour = 12;
@@ -74,6 +99,9 @@ class WorldMapFx {
   // Uma textura de um arquivo (PNG / JPG, RGBA8), subida de uma vez (immediateSubmit: a tela abre sob a cortina de carregamento).
   // kNoTexture quando o arquivo não pode ser lido.
   uint32_t loadTexture(const std::filesystem::path& file);
+  // A máscara de luzes e a sua cópia borrada (o halo): a imagem reduzida `downsample` vezes e borrada `radius` pixels (caixa,
+  // três passes), subida ao lado da nítida. {kNoTexture, kNoTexture} se o arquivo não pode ser lido.
+  std::pair<uint32_t, uint32_t> loadLightMask(const std::filesystem::path& file, int downsample, int radius);
   // O revelado do mapa-múndi (R8, 1 = explorado), refeito só quando os hexágonos explorados mudam (o chamador decide).
   void setReveal(const std::vector<uint8_t>& texels, uint32_t w, uint32_t h);
   static constexpr uint32_t kNoTexture = 0xFFFFFFFFu;
@@ -85,12 +113,22 @@ class WorldMapFx {
     bool underworld = false, fogOfWar = true;
     int quality = 2;  // 0 baixa, 1 média, 2 alta (Qualidade gráfica)
     float time = 0, rounding = 8, glow = 0;
+    // Mapa-múndi, o look 2D: as texturas (kNoTexture = aquela parte desligada) e a luz do grupo (Opções).
+    uint32_t lutA = kNoTexture, lutB = kNoTexture, lightMask = kNoTexture, lightGlow = kNoTexture;
+    uint32_t heightMap = kNoTexture, waterMask = kNoTexture, mistMask = kNoTexture;
+    bool partyLight = false;
     WorldMapParams params;
   };
   void draw(ImDrawList* dl, const Draw& d);
 
-  // Mapa-múndi: os parâmetros da hora (0..24, fração), das chaves do arquivo.
-  static WorldMapParams overworldParams(const WorldMapConfig& c, float hour);
+  // Mapa-múndi: os parâmetros da hora (0..24, fração), das chaves do arquivo. `partyUv` = o grupo na pintura (0..1).
+  static WorldMapParams overworldParams(const WorldMapConfig& c, float hour, glm::vec2 partyUv = {0.5f, 0.5f});
+  // Mapa-múndi: as duas LUTs da hora (índices em c.luts; -1 sem) e a mistura entre elas.
+  struct LutMix {
+    int a = -1, b = -1;
+    float t = 0;
+  };
+  static LutMix lutMix(const WorldMapConfig& c, float hour);
   // Submundo: o ponto do ciclo (0 dormindo .. 1 auge) às `totalHours` horas do relógio da campanha, e os parâmetros nesse ponto.
   static float underworldGlow(const WorldMapConfig& c, double totalHours);
   static WorldMapParams underworldParams(const WorldMapConfig& c, float glow);

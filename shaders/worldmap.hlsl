@@ -21,6 +21,10 @@ struct Push {
   uint paramsLo, paramsHi;  // WorldMapParams (float4 x 16), endereço de dispositivo
   uint noise;       // a textura de ruído repetível
   uint repeatSampler;
+  // Mapa-múndi, o look 2D (o usuário, 2026-10-28): as LUTs de cor da hora de antes e de depois, a máscara de luzes (pintada
+  // pelo usuário: preto, salvo onde algo brilha) e a sua cópia borrada (feita ao carregar), o mapa de altura (cinza: claro =
+  // alto), a máscara da água e a da névoa. Sempre índices válidos (o ruído quando ausentes); a presença vem dos flags.
+  uint lutA, lutB, lightMask, lightGlow, heightMap, waterMask, mistMask;
 };
 [[vk::push_constant]] Push push;
 
@@ -40,6 +44,16 @@ struct Push {
 // 10 caveColor  Submundo: rgb cor da névoa de caverna apagada, w densidade
 // 11 caveShape  x escala, y velocidade, z quanto a névoa pega a cor dos seres, w limiar da heurística
 // 12 extra0     Submundo: x luz ambiente no auge (quanto os seres clareiam a caverna inteira)
+// Mapa-múndi, o look 2D (2026-10-28), já interpolados pela hora na CPU (WorldMapFx::overworldParams):
+// 13 hourMix    x mistura entre lutA e lutB (0 = A), y noite (0 dia .. 1 noite), z dia (0 noite .. 1 dia), w névoa da hora (0..1)
+// 14 sun        xyz direção do sol (x, y na pintura, z para cima; unitária), w força do relevo
+// 15 lightColor rgb cor das luzes à noite, w força
+// 16 clouds     x força das sombras de nuvem, y escala (repetições sobre a pintura), z velocidade, w tremor das luzes (0..1)
+// 17 mistShape  x escala, y velocidade, z limiar, w (livre)
+// 18 mistColor  rgb cor da névoa, w força
+// 19 water      x brilho de dia, y reflexo da lua à noite, z escala, w velocidade
+// 20 party      xy posição do grupo na pintura (uv), z raio da luz (uv), w força do escuro em volta (0 = sem)
+// 21 moon       rgb cor da luz da lua, w força da LUT (0 = a pintura sem LUT, 1 = a LUT inteira)
 float4 param(uint i) { return vk::RawBufferLoad<float4>((uint64_t(push.paramsHi) << 32 | uint64_t(push.paramsLo)) + uint64_t(i) * 16); }
 
 uint quality() { return (push.flags >> 1) & 3u; }
@@ -48,6 +62,12 @@ bool underworld() { return (push.flags & 1u) != 0u; }
 // o compilador executa a leitura de um ramo não tomado e gTextures[kNoTexture] derruba a GPU (DEVICE_LOST, 2026-10-27).
 bool hasMask() { return (push.flags & 8u) != 0u; }
 bool hasReveal() { return (push.flags & 16u) != 0u; }
+bool hasLut() { return (push.flags & 32u) != 0u; }
+bool hasLight() { return (push.flags & 64u) != 0u; }
+bool hasHeight() { return (push.flags & 128u) != 0u; }
+bool hasWater() { return (push.flags & 256u) != 0u; }
+bool hasMist() { return (push.flags & 512u) != 0u; }
+bool partyLight() { return (push.flags & 1024u) != 0u; }
 
 FullscreenOut VSMain(uint id : SV_VertexID) { return fullscreenTriangle(id); }
 
@@ -114,15 +134,99 @@ float coverAt(float2 pixel) {
 }
 
 // --- mapa-múndi ------------------------------------------------------------------------------------------------------------
+// A LUT de uma hora: uma faixa de 32 x 32 x 32 cores (1024 x 32: x = r + 32 b, y = g), lida em sRGB, duas fatias de azul misturadas.
+float3 lutAt(uint lut, float3 c) {
+  c = saturate(c);
+  const float b = c.b * 31.0;
+  const float b0 = floor(b), b1 = min(b0 + 1.0, 31.0), f = b - b0;
+  const float2 base = float2((c.r * 31.0 + 0.5) / 1024.0, (c.g * 31.0 + 0.5) / 32.0);
+  const float3 s0 = gTextures[lut].SampleLevel(gSamplers[push.samplerIndex], base + float2(b0 * 32.0 / 1024.0, 0.0), 0).rgb;
+  const float3 s1 = gTextures[lut].SampleLevel(gSamplers[push.samplerIndex], base + float2(b1 * 32.0 / 1024.0, 0.0), 0).rgb;
+  return lerp(s0, s1, f);
+}
+
+// O relevo pelo mapa de altura (cinza: claro = alto): a inclinação pelo gradiente vira uma normal; as encostas viradas para o
+// sol clareiam e as opostas escurecem, em relação ao chão plano (que não muda). Sutil: `sun.w` manda.
+float heightRelief(float2 uv, float2 texel, float4 sun) {
+  const float2 d = texel * 2.0;
+  const float l = gTextures[push.heightMap].SampleLevel(gSamplers[push.samplerIndex], uv - float2(d.x, 0), 0).r;
+  const float r = gTextures[push.heightMap].SampleLevel(gSamplers[push.samplerIndex], uv + float2(d.x, 0), 0).r;
+  const float u = gTextures[push.heightMap].SampleLevel(gSamplers[push.samplerIndex], uv - float2(0, d.y), 0).r;
+  const float b = gTextures[push.heightMap].SampleLevel(gSamplers[push.samplerIndex], uv + float2(0, d.y), 0).r;
+  const float3 n = normalize(float3((l - r) * 6.0, (u - b) * 6.0, 1.0));
+  const float flat = max(sun.z, 0.15);
+  return (dot(n, sun.xyz) - sun.z) / flat * sun.w;
+}
+
 float4 overworld(float2 uv, float2 pixel, float2 texel) {
   const float4 tint = param(0);
   const float4 light = param(2);
   const float4 fogColor = param(4), fogShape = param(5), lowColor = param(6), lowShape = param(7);
+  const float4 hourMix = param(13), sun = param(14), lightColor = param(15), clouds = param(16);
+  const float4 mistShape = param(17), mistColor = param(18), water = param(19), party = param(20), moon = param(21);
   const float4 src = mapAt(uv);
-  float3 c = srgbToLinear(src.rgb);
+  // 1. A cor da hora: a LUT de antes e a de depois, misturadas (em sRGB, como as LUTs foram feitas), depois a pintura em linear.
+  float3 graded = src.rgb;
+  if (hasLut()) {
+    const float3 a = lutAt(push.lutA, src.rgb);
+    const float3 b = lutAt(push.lutB, src.rgb);
+    graded = lerp(src.rgb, lerp(a, b, hourMix.x), moon.w);
+  }
+  float3 c = srgbToLinear(graded);
   // Luz por hora do dia: a cor da luz multiplica a pintura (realça em vez de cobrir), o relevo responde à direção da luz.
   const float r = relief(uv, texel, light.xy) * light.z;
   c *= tint.rgb * tint.w * (1.0 + r);
+  // 3. O sol falso: o relevo do mapa de altura, só de dia (à noite a lua não marca encosta), parado quando o sol está baixo.
+  if (hasHeight() && quality() != 0u && sun.w > 0.0) c *= saturate(1.0 + clamp(heightRelief(uv, texel, sun), -0.5, 0.5) * hourMix.z);
+  // 4a. Sombras de nuvem passando, de dia: o ruído grande deriva devagar e escurece de leve.
+  if (clouds.x > 0.0 && hourMix.z > 0.001) {
+    const float2 p = uv * clouds.y + float2(push.time * clouds.z, push.time * clouds.z * 0.23);
+    const float n = fbmQ(p);
+    const float shadow = smoothstep(0.52, 0.78, n) * clouds.x * hourMix.z;
+    c *= 1.0 - shadow;
+  }
+  // 5. A água: de dia um brilho fino que anda; à noite o reflexo pálido da lua, nos pontos altos do mesmo ruído.
+  if (hasWater() && (water.x > 0.0 || water.y > 0.0)) {
+    const float w = gTextures[push.waterMask].SampleLevel(gSamplers[push.samplerIndex], uv, 0).r;
+    if (w > 0.002) {
+      const float2 p = uv * water.z;
+      const float s1 = fine(p + float2(push.time * water.w, push.time * water.w * 0.6));
+      const float s2 = fine(p * 1.7 - float2(push.time * water.w * 0.8, push.time * water.w * 0.35));
+      const float glint = saturate((s1 * s2 - 0.22) * 4.0);
+      c += w * glint * water.x * hourMix.z * tint.rgb * 0.25;
+      c += w * pow(glint, 2.0) * water.y * hourMix.y * moon.rgb;
+    }
+  }
+  // 2. As luzes que acendem à noite: a máscara nítida mais a sua cópia borrada (o halo), com um tremor lento e próprio em cada
+  // ponto; invisíveis de dia (hourMix.y = 0).
+  if (hasLight() && hourMix.y > 0.001 && lightColor.w > 0.0) {
+    const float3 sharp = gTextures[push.lightMask].SampleLevel(gSamplers[push.samplerIndex], uv, 0).rgb;
+    const float3 glow = gTextures[push.lightGlow].SampleLevel(gSamplers[push.samplerIndex], uv, 0).rgb;
+    const float cell = hash21(floor(uv * 160.0));
+    const float flicker = 1.0 - clouds.w * (0.5 + 0.5 * sin(push.time * (5.0 + cell * 4.0) + cell * 6.2831853)) * 0.35;
+    c += (srgbToLinear(sharp) * 1.4 + srgbToLinear(glow) * 0.5) * lightColor.rgb * lightColor.w * hourMix.y * flicker;
+  }
+  // 4b. A névoa pálida da madrugada e da noite, deslizando sobre as baixadas e a água (onde a máscara permite).
+  if (hasMist() && hourMix.w > 0.001 && mistColor.w > 0.0) {
+    const float m = gTextures[push.mistMask].SampleLevel(gSamplers[push.samplerIndex], uv, 0).r;
+    if (m > 0.002) {
+      const float2 drift = float2(push.time * mistShape.y, push.time * mistShape.y * 0.37);
+      const float2 p = uv * mistShape.x + drift;
+      const float2 warp = quality() == 0u ? 0.0 : (noiseAt(p * 0.5 - drift * 0.4).gb - 0.5) * 1.2;
+      const float n = fbmQ(p + warp);
+      const float mist = m * saturate((n - mistShape.z) * 2.4) * mistColor.w * hourMix.w;
+      c = lerp(c, mistColor.rgb * tint.rgb, saturate(mist));
+    }
+  }
+  // 6. A luz em volta do grupo à noite (Opções > Gráficos > Luz do grupo, OFF por padrão): um círculo suave de luz onde o grupo
+  // está, o resto do mapa mais escuro.
+  if (partyLight() && party.w > 0.0 && hourMix.y > 0.001) {
+    const float dist = length((uv - party.xy) * float2(1.0, push.rect.w / max(push.rect.z, 1.0)));
+    const float inside = 1.0 - smoothstep(party.z * 0.5, party.z, dist);
+    const float dark = 1.0 - party.w * hourMix.y;
+    c *= lerp(dark, 1.0 + 0.15 * hourMix.y, inside);
+    c += inside * lightColor.rgb * 0.06 * hourMix.y;
+  }
   // Névoa baixa: rasteira e fina, nas partes baixas (a máscara pintada; sem ela a heurística: o escuro frio da pintura).
   if (lowColor.w > 0.0) {
     float m;

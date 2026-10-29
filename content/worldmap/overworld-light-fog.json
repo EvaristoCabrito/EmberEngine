@@ -1,21 +1,28 @@
-{
-  "_": "Mapa-múndi: a cor da luz por hora do relógio da campanha e a névoa de guerra (render/WorldMapFx.h, shaders/worldmap.hlsl). O usuário, 2026-10-28: 'arrumar as cores do dia como no pedido original sem transformar o mapa' (o pedido original: cores que de fato lembrem horários, sem o escuro que pintava tudo). Só a cor da hora muda: exposure 1, contrast 1, saturation 1, lift 0, gamma 1, relief 0, rays 0, vinheta 0, shoulder 0 em todas as horas; nenhum relevo, nenhuma luz, nada sobre a pintura além da cor. lowFogStrength 0 em todas as horas (no mapa-múndi só existe a névoa de guerra sobre o inexplorado). enabled false = o desenho antigo (cor chapada + névoa de círculos). mask = PNG com R = onde a névoa baixa se acumula; só depois de aprovada.",
+﻿{
+  "_": "Mapa-múndi: o look 2D por hora do relógio da campanha (render/WorldMapFx.h, shaders/worldmap.hlsl; o usuário, 2026-10-28: 'quero 2D mas um 2D de qualidade superior', a especificação colada). A cor da hora vem das LUTs em 'lut' (tools/scripts/worldmap/make_luts.py: madrugada fria, dia cinza plano, entardecer avermelhado, noite azul-acinzentada), misturadas duas a duas; por isso as chaves 'hours' ficam com tint branco (a LUT é a cor). As máscaras em 'masks' são pintadas pelo usuário na proporção da pintura (PNG; lights: preto salvo onde algo brilha, cor permitida; height: cinza, claro = alto; water e mist: cinza, branco = sim); um caminho vazio = aquela parte desligada. enabled false = o desenho antigo. lowFogStrength 0 em todas as horas (a névoa baixa antiga fica desligada: a névoa da hora é 'mist').",
   "enabled": true,
   "mask": "",
   "hourEaseSeconds": 2.5,
+  "lut": [
+    {"hour": 4.5,  "file": "content/worldmap/lut/night-v01.png"},
+    {"hour": 6.5,  "file": "content/worldmap/lut/dawn-v01.png"},
+    {"hour": 10.0, "file": "content/worldmap/lut/day-v01.png"},
+    {"hour": 16.0, "file": "content/worldmap/lut/day-v01.png"},
+    {"hour": 18.5, "file": "content/worldmap/lut/dusk-v01.png"},
+    {"hour": 21.0, "file": "content/worldmap/lut/night-v01.png"}
+  ],
+  "lutStrength": 1.0,
+  "masks": {"lights": "", "height": "", "water": "", "mist": ""},
+  "dayNight": {"nightFrom": 19.5, "nightFull": 21.0, "dayFrom": 5.0, "dayFull": 7.0},
+  "lights": {"color": [1.0, 0.55, 0.28], "strength": 1.0, "flicker": 0.5, "glowRadius": 8, "glowDownsample": 4},
+  "relief": {"strength": 0.35, "sunLean": 0.45},
+  "clouds": {"strength": 0.12, "scale": 3.0, "speed": 0.012},
+  "mist": {"color": [0.78, 0.82, 0.90], "strength": 0.55, "scale": 14, "speed": 0.02, "threshold": 0.36, "dawnFrom": 4.0, "dawnPeak": 6.0, "dawnEnd": 9.0, "night": 0.6},
+  "water": {"shimmer": 0.6, "moon": 0.5, "scale": 60, "speed": 0.05, "moonColor": [0.55, 0.65, 0.90]},
+  "partyLight": {"radius": 0.08, "darkness": 0.45},
   "hours": [
-    {"hour": 0,  "_": "madrugada: azul",                "tint": [0.56, 0.68, 1.0],  "exposure": 1.0, "contrast": 1.0, "saturation": 1.0, "lift": 0.0, "gamma": 1.0, "lightDir": [0.2, -0.98],  "relief": 0.0, "rays": 0.0, "fogColor": [0.004, 0.004, 0.006], "lowFogColor": [0.5, 0.5, 0.5], "lowFogStrength": 0.0},
-    {"hour": 4,  "_": "fim da noite: azul",             "tint": [0.58, 0.68, 1.0],  "exposure": 1.0, "contrast": 1.0, "saturation": 1.0, "lift": 0.0, "gamma": 1.0, "lightDir": [-0.3, -0.95], "relief": 0.0, "rays": 0.0, "fogColor": [0.004, 0.004, 0.006], "lowFogColor": [0.5, 0.5, 0.5], "lowFogStrength": 0.0},
-    {"hour": 5,  "_": "primeira luz: azul-violeta",     "tint": [0.78, 0.70, 1.0],  "exposure": 1.0, "contrast": 1.0, "saturation": 1.0, "lift": 0.0, "gamma": 1.0, "lightDir": [-0.9, -0.44], "relief": 0.0, "rays": 0.0, "fogColor": [0.004, 0.004, 0.006], "lowFogColor": [0.5, 0.5, 0.5], "lowFogStrength": 0.0},
-    {"hour": 6,  "_": "amanhecer: rosa-alaranjado",     "tint": [1.0, 0.76, 0.66],  "exposure": 1.0, "contrast": 1.0, "saturation": 1.0, "lift": 0.0, "gamma": 1.0, "lightDir": [-0.96, -0.28], "relief": 0.0, "rays": 0.0, "fogColor": [0.004, 0.004, 0.006], "lowFogColor": [0.5, 0.5, 0.5], "lowFogStrength": 0.0},
-    {"hour": 7,  "_": "manhã cedo: dourada",            "tint": [1.0, 0.88, 0.72],  "exposure": 1.0, "contrast": 1.0, "saturation": 1.0, "lift": 0.0, "gamma": 1.0, "lightDir": [-0.8, -0.6],  "relief": 0.0, "rays": 0.0, "fogColor": [0.004, 0.004, 0.006], "lowFogColor": [0.5, 0.5, 0.5], "lowFogStrength": 0.0},
-    {"hour": 9,  "_": "manhã: branco levemente quente", "tint": [1.0, 0.97, 0.91],  "exposure": 1.0, "contrast": 1.0, "saturation": 1.0, "lift": 0.0, "gamma": 1.0, "lightDir": [-0.7, -0.7],  "relief": 0.0, "rays": 0.0, "fogColor": [0.004, 0.004, 0.006], "lowFogColor": [0.5, 0.5, 0.5], "lowFogStrength": 0.0},
-    {"hour": 12, "_": "meio-dia: branco neutro",        "tint": [1.0, 1.0, 1.0],    "exposure": 1.0, "contrast": 1.0, "saturation": 1.0, "lift": 0.0, "gamma": 1.0, "lightDir": [0.0, -1.0],   "relief": 0.0, "rays": 0.0, "fogColor": [0.004, 0.004, 0.006], "lowFogColor": [0.5, 0.5, 0.5], "lowFogStrength": 0.0},
-    {"hour": 15, "_": "tarde: amarelando",              "tint": [1.0, 0.96, 0.87],  "exposure": 1.0, "contrast": 1.0, "saturation": 1.0, "lift": 0.0, "gamma": 1.0, "lightDir": [0.6, -0.8],   "relief": 0.0, "rays": 0.0, "fogColor": [0.004, 0.004, 0.006], "lowFogColor": [0.5, 0.5, 0.5], "lowFogStrength": 0.0},
-    {"hour": 17, "_": "fim de tarde: dourado forte",    "tint": [1.0, 0.84, 0.60],  "exposure": 1.0, "contrast": 1.0, "saturation": 1.0, "lift": 0.0, "gamma": 1.0, "lightDir": [0.9, -0.44],  "relief": 0.0, "rays": 0.0, "fogColor": [0.004, 0.004, 0.006], "lowFogColor": [0.5, 0.5, 0.5], "lowFogStrength": 0.0},
-    {"hour": 18, "_": "pôr do sol: laranja",            "tint": [1.0, 0.66, 0.44],  "exposure": 1.0, "contrast": 1.0, "saturation": 1.0, "lift": 0.0, "gamma": 1.0, "lightDir": [0.98, -0.2],  "relief": 0.0, "rays": 0.0, "fogColor": [0.004, 0.004, 0.006], "lowFogColor": [0.5, 0.5, 0.5], "lowFogStrength": 0.0},
-    {"hour": 19, "_": "hora azul: azul-violeta",        "tint": [0.70, 0.66, 1.0],  "exposure": 1.0, "contrast": 1.0, "saturation": 1.0, "lift": 0.0, "gamma": 1.0, "lightDir": [0.8, -0.6],   "relief": 0.0, "rays": 0.0, "fogColor": [0.004, 0.004, 0.006], "lowFogColor": [0.5, 0.5, 0.5], "lowFogStrength": 0.0},
-    {"hour": 21, "_": "noite: azul",                    "tint": [0.56, 0.68, 1.0],  "exposure": 1.0, "contrast": 1.0, "saturation": 1.0, "lift": 0.0, "gamma": 1.0, "lightDir": [0.4, -0.9],   "relief": 0.0, "rays": 0.0, "fogColor": [0.004, 0.004, 0.006], "lowFogColor": [0.5, 0.5, 0.5], "lowFogStrength": 0.0}
+    {"hour": 0,  "tint": [1, 1, 1], "exposure": 1.0, "contrast": 1.0, "saturation": 1.0, "lift": 0.0, "gamma": 1.0, "lightDir": [0.2, -0.98],  "relief": 0.0, "rays": 0.0, "fogColor": [0.004, 0.004, 0.006], "lowFogColor": [0.5, 0.5, 0.5], "lowFogStrength": 0.0},
+    {"hour": 12, "tint": [1, 1, 1], "exposure": 1.0, "contrast": 1.0, "saturation": 1.0, "lift": 0.0, "gamma": 1.0, "lightDir": [0.0, -1.0],   "relief": 0.0, "rays": 0.0, "fogColor": [0.004, 0.004, 0.006], "lowFogColor": [0.5, 0.5, 0.5], "lowFogStrength": 0.0}
   ],
   "fogOfWar": {"density": 1.0, "scale": 9, "wind": 0.02, "edge": 0.22, "volume": 0.35},
   "lowFog": {"scale": 18, "speed": 0.025, "height": 1.0, "threshold": 0.32},

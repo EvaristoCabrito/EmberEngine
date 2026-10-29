@@ -751,6 +751,8 @@ class OptionsDialog {
                               prefs.characters == "alta" ? 0 : prefs.characters == "leve" ? 2 : 1,
                               {{tr("Alta", "High"), true}, {tr("Média", "Medium"), true}, {tr("Leve", "Light"), true}},
                               [&](int v) { prefs.characters = v == 0 ? "alta" : v == 2 ? "leve" : "media", prefsChanged = true; }));
+      // Luz do grupo (ours, the user 2026-10-28): the world map at night lit around the party; OFF by default.
+      s.rows.push_back(toggle("##gfxpartylight", tr("Luz do grupo à noite", "Party light at night"), prefs.partyLight, false, &prefsChanged));
       // Tela cheia: ember-btn ember-btn-ghost ember-btn-sm w-full py-1.5 mt-1
       s.rows.push_back(Row{36.0f, [&](ImVec2 at, float rw) {
                              ImGui::SetCursorScreenPos(at);

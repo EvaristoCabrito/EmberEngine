@@ -34,6 +34,9 @@ struct GamePrefs {
   // Saved as "characterArt"; a file with only the old "characters" keeps an explicit "leve", its "alta" (the old default)
   // becomes the new default.
   std::string characters = "media";
+  // Opções > Gráficos > Luz do grupo (the user, 2026-10-28: "o efeito pode existir guardado para depois"): on the world map at
+  // night, a soft circle of light around the party and the rest of the map darker. OFF by default.
+  bool partyLight = false;
 
   static std::filesystem::path path() {
     const char* base = std::getenv("LOCALAPPDATA");
@@ -60,13 +63,15 @@ struct GamePrefs {
     const std::string art = j.value("characterArt", std::string());
     if (art == "alta" || art == "media" || art == "leve") p.characters = art;
     else if (j.value("characters", std::string()) == "leve") p.characters = "leve";
+    p.partyLight = j.value("partyLight", p.partyLight);
     return p;
   }
   bool save() const {
     const nlohmann::json j = {{"muted", muted},           {"cutsceneEnabled", cutsceneEnabled}, {"music", music},
                               {"sfx", sfx},               {"cutscene", cutscene},               {"uiLanguage", uiLanguage},
                               {"dialogueLanguage", dialogueLanguage}, {"subtitleLanguage", subtitleLanguage},
-                              {"subtitles", subtitles},   {"dialogueScale", dialogueScale},     {"characterArt", characters}};
+                              {"subtitles", subtitles},   {"dialogueScale", dialogueScale},     {"characterArt", characters},
+                              {"partyLight", partyLight}};
     std::error_code ec;
     std::filesystem::create_directories(path().parent_path(), ec);
     const std::filesystem::path tmp = path().string() + ".tmp";

@@ -1730,6 +1730,37 @@ open area with large tables ... some separate rooms for NPCs and services, use t
   photos cut as busts (`game/portraits/isolde-bust-v03.jpg`, `selene-`, `salazar-jovem-`; v01 and v02 were cut too tight / too loose and stay unused; portraits.json + MapStage
   `portraitFileOf` by name).
 
+## Mapa-múndi 2D de qualidade superior: o look por hora (2026-10-28; the user, after regretting a 3D world map: "quero 2D mas um
+2D de qualidade superior", the pasted spec items 1-6, "faz"; item 6 "guardado para depois" with an OFF)
+
+- **This lifts the 2026-10-27 ban on 2D light on the world map (memory note `no-2d-light-effects-world-map`, updated).** Everything
+  lives in the existing pass (`render/WorldMapFx.*`, `shaders/worldmap.hlsl`, `content/worldmap/overworld-light-fog.json`), nothing
+  of the battles' sky / fog / atmosphere is touched.
+- **1. Colour per hour = LUTs:** `tools/scripts/worldmap/make_luts.py` writes `content/worldmap/lut/{dawn,day,dusk,night}-v01.png`
+  (32³ strips, 1024 x 32); the JSON's `lut` list says which LUT at which hour, the CPU picks the two neighbours and the mix
+  (`WorldMapFx::lutMix`), the shader blends them (`lutAt`, sRGB). The old `hours` tints are white now (the LUT is the colour);
+  `lutStrength` 0..1. A new look = new PNGs with a new SUFFIX, never over the old.
+- **2. Lights at night:** `masks.lights` (the user paints it: black except what glows, colour allowed, PNG at the painting's
+  aspect; half the map's resolution is enough). `WorldMapFx::loadLightMask` uploads it sharp and a blurred copy (reduced
+  `glowDownsample` ×, 3 box passes of `glowRadius`, normalised to its peak) = the halo; the shader adds both in the warm `lights.color`
+  with a slow per-spot flicker, scaled by the night ramp (`dayNight`).
+- **3. Fake sun:** `masks.height` (grey, bright = high): the gradient becomes a normal (`heightRelief`), the sun runs east (+x) to
+  west over the south (`relief.sunLean`), slopes toward it lighten and away darken, `relief.strength` 0.35, day only, Qualidade baixa off.
+- **4. Cloud shadows** (day, the noise texture drifting, `clouds`) and **mist** (`masks.mist`; a dawn peak `mist.dawn*` and
+  `mist.night` of it all night; pale `mist.color`, drifting fbm). **5. Water:** `masks.water`: a fine moving shimmer by day
+  (`water.shimmer`), the moon's pale glint at night (`water.moon`, `moonColor`).
+- **6. Luz do grupo à noite:** Opções > Gráficos > "Luz do grupo à noite" (`GamePrefs::partyLight`, OFF by default): a soft circle
+  around the party (`partyLight.radius` in uv, `darkness` for the rest). The party's uv = `partyX_ / partyY_` of the frame before.
+- A mask path empty = that part off (today all four are empty: the user paints them; the LUTs, cloud shadows and the party light work
+  without masks). Push constants: 7 more texture indices (108 bytes of 128); `WorldMapParams` is 24 float4 (slots 13..21 documented in
+  the shader).
+- **Measured (release, 1600 x 900 capture, `--map-ui measure`, GPU scope "ui" = the whole UI pass incl. the map):** pass off 5.13 ms;
+  LUT only 5.7-5.9; LUT + all four test masks 5.9-6.2 ms (night / day / dawn). The look costs 0.6-1.1 ms of the 1.5 ms budget.
+  Captures: scratchpad `cap_worldmap.ps1` (bank copies at 22 / 12 / 6 / 18 h), `measure_masks.ps1` (swaps scratchpad test masks
+  into the JSON for the run and restores it). The test masks are scratchpad-only, never shipped.
+- **Not verified:** the look in the window (the user judges; today only the LUTs and cloud shadows show, the rest waits for the
+  user's masks); the flicker and drift rates in play; the party light on a moving party.
+
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
 - Sprite clip `neera-hydra/atk-short-v01` (2026-10-27): Neera's Hydra+ off-hand (dagger) strike, in use 2026-10-22..27. The user:
