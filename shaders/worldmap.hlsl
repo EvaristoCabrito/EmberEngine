@@ -245,7 +245,7 @@ float4 overworld(float2 uv, float2 pixel, float2 texel) {
       // templos"): rara em toda a terra (0.3 -> 3 % das células), concentrada nos templos (1.0 -> 25 %); o brilho é o mesmo.
       const float fill = zone > 0.65 ? 0.06 : 0.003;  // um punhado: ~5 no mapa inteiro, 3-4 por templo ("enxame", o usuário)
       const float s = sporePoint(p, 5.0, wisp.y, fill, 1.4);
-      const float halo = sporePoint(p, 5.0, wisp.y * 3.0, fill, 1.4);  // a luz visível em volta de cada brasa (mesma semente)
+      const float halo = sporePoint(p, 5.0, wisp.y * 4.5, fill, 1.4);  // a luz visível em volta de cada brasa (mesma semente)
       const float cell = hash21(floor(p));
       const float breathe = 0.7 + 0.3 * sin(push.time * (0.4 + cell * 0.4) + cell * 6.2831853);
       c += (s + halo * 0.5) * breathe * lightColor.rgb * lightColor.w * mistShape.w;
