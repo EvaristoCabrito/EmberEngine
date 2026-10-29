@@ -20,7 +20,7 @@ namespace {
 
 double gHexSize = 5.0;  // the loaded board's "hexSize" (hexToWorld is static)
 constexpr double kRecoveryPct = 0.08;
-constexpr double kBattleEncounterChance = 0.15;
+constexpr double kBattleEncounterChance = 0.10;  // 0.15 before 2026-10-29 (the user: "reduzir batalha normal para 10%")
 constexpr double kTextEncounterChance = 0.25;
 constexpr double kTravelDiseaseChance = 0.02;
 constexpr int kHungerGraceDays = 3;
@@ -28,23 +28,52 @@ constexpr double kHungerPenaltyPerDay = 0.1;
 constexpr double kHungerPenaltyMax = 0.9;
 const char* const kHeroes[] = {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec"};  // HERO_BASE_CLASS order
 
-// overworld.ts ENCOUNTERS (module-private there, so copied as written).
+// The road texts: the eight of the old rule source (any terrain) and, since 2026-10-29 (the user: "criar 5 novos textos com
+// consequências reais para cada tipo de terreno"), five per region of the board (road / mountain / plains / forest), picked
+// only on a hex of that region. Consequences: rations lost (1..rationsDice) or gained (rationsGain), ember gained / gold lost
+// (1..goldLossDice), a loot bag, a potion or lockpick lost, a disease roll, alert days (battles twice as likely).
 struct RoadEncounter {
   const char* text;
   int rationsDice = 0, ember = 0, goldLossDice = 0;
   bool lootBag = false, losePotion = false, loseLockpick = false;
   double diseaseChance = 0;
   int alertDays = 0;
+  const char* region = nullptr;  // null = any hex
+  int rationsGain = 0;
 };
 const RoadEncounter kEncounters[] = {
-    {"Um bando de corvos assusta a coluna e parte das rações se perde na correria.", 8},
-    {"Vestígios de um acampamento abandonado — e uma bolsa esquecida.", 0, 0, 0, true},
-    {"Chuva forte atrasa a marcha, mas ninguém se machuca.", 0, 0, 0, false, false, false, 0.05},
-    {"Pegadas grandes demais cruzam o caminho. O grupo segue mais alerta.", 0, 0, 0, false, false, false, 0, 3},
-    {"Uma carroça atolada cede de vez; comida e mantimentos caem no barro.", 4},
-    {"Um frasco se solta durante a descida e se quebra nas pedras.", 0, 0, 0, false, true},
-    {"Ladrões passam pelo acampamento durante a noite e levam uma gazua.", 0, 0, 0, false, false, true},
-    {"A ponte podre arrebenta sob a carga: parte do ouro e das rações vai para o rio.", 3, 0, 8},
+    {.text = "Um bando de corvos assusta a coluna e parte das rações se perde na correria.", .rationsDice = 8},
+    {.text = "Vestígios de um acampamento abandonado — e uma bolsa esquecida.", .lootBag = true},
+    {.text = "Chuva forte atrasa a marcha, mas ninguém se machuca.", .diseaseChance = 0.05},
+    {.text = "Pegadas grandes demais cruzam o caminho. O grupo segue mais alerta.", .alertDays = 3},
+    {.text = "Uma carroça atolada cede de vez; comida e mantimentos caem no barro.", .rationsDice = 4},
+    {.text = "Um frasco se solta durante a descida e se quebra nas pedras.", .losePotion = true},
+    {.text = "Ladrões passam pelo acampamento durante a noite e levam uma gazua.", .loseLockpick = true},
+    {.text = "A ponte podre arrebenta sob a carga: parte do ouro e das rações vai para o rio.", .rationsDice = 3, .goldLossDice = 8},
+    // estrada
+    {.text = "Um pedágio improvisado: homens armados numa barreira de troncos cobram a passagem.", .goldLossDice = 10, .region = "road"},
+    {.text = "Um mercador ambulante com a roda quebrada; o grupo ajuda e ele paga em moedas.", .ember = 12, .region = "road"},
+    {.text = "Carroça virada na beira da estrada: entre os destroços, um saco de rações intacto.", .region = "road", .rationsGain = 4},
+    {.text = "Poeira e sol a pino o dia inteiro: a marcha cansa e as rações vão embora mais depressa.", .rationsDice = 3, .region = "road"},
+    {.text = "Um batedor de passagem avisa: salteadores à frente, na estrada.", .alertDays = 2, .region = "road"},
+    // montanha
+    {.text = "Uma avalanche de pedras fecha o desfiladeiro; o desvio pelos cumes custa provisões.", .rationsDice = 5, .region = "mountain"},
+    {.text = "Frio cortante nos cumes: alguém passa a noite tremendo.", .diseaseChance = 0.5, .region = "mountain"},
+    {.text = "Numa fenda da rocha, os ossos de um viajante e a bolsa que ele carregava.", .lootBag = true, .region = "mountain"},
+    {.text = "O gelo cede sob um dos mulos: um frasco vai parar no fundo da ravina.", .losePotion = true, .region = "mountain"},
+    {.text = "Vultos nas cristas acompanham a coluna; o grupo dorme em vigília.", .alertDays = 3, .region = "mountain"},
+    // planície
+    {.text = "Um lavrador oferece pão e queijo em troca de um dia de ajuda na colheita.", .region = "plains", .rationsGain = 4},
+    {.text = "Uma nuvem de gafanhotos passa pelo acampamento e devora parte das rações.", .rationsDice = 6, .region = "plains"},
+    {.text = "Um cavalo solto arrasta uma sacola pelo capim: parte do ouro se perde.", .goldLossDice = 6, .region = "plains"},
+    {.text = "Um marco de pedra tombado; debaixo dele, moedas antigas enterradas.", .ember = 8, .region = "plains"},
+    {.text = "Fogueiras na planície, longe demais para serem de lavradores.", .alertDays = 2, .region = "plains"},
+    // floresta
+    {.text = "Cogumelos venenosos misturados às provisões: parte das rações vai fora.", .rationsDice = 4, .region = "forest"},
+    {.text = "Um carrapato no pescoço de alguém: a febre da mata chega à noite.", .diseaseChance = 0.6, .region = "forest"},
+    {.text = "Uma clareira com o esconderijo de caçadores, abandonado há pouco.", .lootBag = true, .region = "forest"},
+    {.text = "Galhos baixos arrancam a gazua do cinto de alguém; ninguém a encontra no mato.", .loseLockpick = true, .region = "forest"},
+    {.text = "Uivos cercam o acampamento a noite inteira.", .alertDays = 3, .region = "forest"},
 };
 
 double jsRound(double v) { return std::floor(v + 0.5); }
@@ -579,7 +608,12 @@ Json Overworld::step(const Json& save, OverworldHex to, Mulberry32& rng, std::op
     event = OverworldEvent{"battle", "", missionId};
   }
   if (!event && !landed && rng() < kTextEncounterChance) {
-    const RoadEncounter& pick = kEncounters[static_cast<size_t>(std::floor(rng() * static_cast<double>(std::size(kEncounters))))];
+    // the hex's region's texts plus the eight of any terrain
+    const std::string& region = cell(to.col, to.row)->region;
+    std::vector<const RoadEncounter*> pool;
+    for (const RoadEncounter& e : kEncounters)
+      if (!e.region || region == e.region) pool.push_back(&e);
+    const RoadEncounter& pick = *pool[static_cast<size_t>(std::floor(rng() * static_cast<double>(pool.size())))];
     if (pick.diseaseChance > 0 && rng() < pick.diseaseChance) {
       std::vector<std::string> still;
       for (const char* hero : kHeroes)
@@ -669,7 +703,7 @@ Json Overworld::step(const Json& save, OverworldHex to, Mulberry32& rng, std::op
       event = OverworldEvent{"encounter", text, ""};
     } else {
       const double rationsLost = pick.rationsDice ? 1 + std::floor(rng() * pick.rationsDice) : 0;
-      rationsDelta = -rationsLost;
+      rationsDelta = -rationsLost + pick.rationsGain;
       const double goldLost = pick.goldLossDice ? std::min(num(save, "ember").value_or(0.0), 1 + std::floor(rng() * pick.goldLossDice)) : 0;
       emberDelta = pick.ember - goldLost;
       std::string lostItem;
@@ -700,7 +734,9 @@ Json Overworld::step(const Json& save, OverworldHex to, Mulberry32& rng, std::op
       if (pick.alertDays) alertStreak = pick.alertDays;
       std::vector<std::string> parts{pick.text};
       if (rationsLost > 0) parts.push_back("−" + jsNumber(rationsLost) + (rationsLost == 1 ? " ração" : " rações"));
+      if (pick.rationsGain > 0) parts.push_back("+" + std::to_string(pick.rationsGain) + " rações");
       if (goldLost > 0) parts.push_back("−" + jsNumber(goldLost) + " Gold");
+      if (pick.ember > 0) parts.push_back("+" + std::to_string(pick.ember) + " Gold");
       if (!lostItem.empty()) parts.push_back(lostItem);
       if (pick.alertDays) parts.push_back("chance de emboscada dobrada por " + std::to_string(pick.alertDays) + " dias");
       std::string text;

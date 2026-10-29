@@ -1862,6 +1862,16 @@ e tem a diretoria macabra do monasterio")
   the small tree at full mesh (0.5 to 4 million triangles each) overflow it ("geometry or material capacity reached"). Geometry
   streaming / a larger buffer is not built.
 
+## Encontros de estrada (2026-10-29; the user: "reduzir batalha normal para 10%, e criar 5 novos textos com consequências reais
+para cada tipo de terreno")
+
+- `engine/world/Overworld.cpp`: `kBattleEncounterChance` 0.15 → 0.10 (0.20 on alert days; halved under the Prece do Caminho);
+  `kEncounters` = the 8 old any-terrain texts + 5 per board region (`road`, `mountain`, `plains`, `forest`: the hex's `region`),
+  picked from the hex's region's texts plus the 8; consequences through the existing fields + `rationsGain` (shown "+N rações",
+  ember gains shown "+N Gold"). **`Cooker check-overworld` no longer matches the old rule source's seeded steps by design**
+  (the battle chance and the text pool changed). The merchants (`random-encounter-11 / -14`) still re-enter the pool every step
+  (not asked). Not verified in play.
+
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
 - `build/release/bin/Sandbox-20261029-1800-in-use.exe` (2026-10-29): the exe the user's game was running, renamed aside to build the
