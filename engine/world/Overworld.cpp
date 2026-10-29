@@ -51,7 +51,7 @@ const RoadEncounter kEncounters[] = {
     {.text = "Ladrões passam pelo acampamento durante a noite e levam uma gazua.", .loseLockpick = true},
     {.text = "A ponte podre arrebenta sob a carga: parte do ouro e das rações vai para o rio.", .rationsDice = 3, .goldLossDice = 8},
     // estrada
-    {.text = "Um pedágio improvisado: homens armados numa barreira de troncos cobram a passagem.", .goldLossDice = 10, .region = "road"},
+    {.text = "Jogo de dados numa taverna de beira de estrada: alguém do grupo aposta e perde.", .goldLossDice = 10, .region = "road"},
     {.text = "Um mercador ambulante com a roda quebrada; o grupo ajuda e ele paga em moedas.", .ember = 12, .region = "road"},
     {.text = "Carroça virada na beira da estrada: entre os destroços, um saco de rações intacto.", .region = "road", .rationsGain = 4},
     {.text = "Poeira e sol a pino o dia inteiro: a marcha cansa e as rações vão embora mais depressa.", .rationsDice = 3, .region = "road"},
