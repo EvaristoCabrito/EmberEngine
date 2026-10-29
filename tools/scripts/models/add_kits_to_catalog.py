@@ -62,6 +62,7 @@ def main(*kits):
                 'id': f'ember-{kit}-{name}', 'name': pt, 'kit': kit, 'model': f'ember-{name}', 'file': f'/game/ember/{kit}/{stem}.glb',
                 'height': height, 'width': width, 'footprint': foot, 'section': over.get('section', section),
                 'blocks': over.get('blocks', height >= 0.5), 'triangles': tris,
+                **({'light': over['light']} if 'light' in over else {}),  # a prop with its own light (models.json "light", like the hearth)
             })
             added += 1
         print(f'{kit}: {added} models catalogued')

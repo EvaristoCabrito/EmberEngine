@@ -117,6 +117,107 @@
       "footprint": "quad"
     },
     {
+      "id": "ember-arch-mosteiro-wall",
+      "name": "Parede do Mosteiro 3D",
+      "model3d": "wall",
+      "emberStyle": "wall",
+      "wallTexture": "/ember/textures/walls/gothic-stone-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.2,
+      "footprint": "one",
+      "pendingTexture": "/ember/textures/walls/mosteiro-v01.jpg (docs/MONASTERY.md: the user's photo; until it arrives, the gothic stone)"
+    },
+    {
+      "id": "ember-arch-mosteiro-window",
+      "name": "Janela do Mosteiro 3D",
+      "model3d": "wall",
+      "emberStyle": "window",
+      "wallTexture": "/ember/textures/walls/gothic-stone-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.2,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-mosteiro-slit",
+      "name": "Seteira do Mosteiro 3D",
+      "model3d": "wall",
+      "emberStyle": "slit",
+      "wallTexture": "/ember/textures/walls/gothic-stone-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.2,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-mosteiro-wall-torch",
+      "name": "Parede com tocha do Mosteiro 3D",
+      "model3d": "wall",
+      "emberStyle": "wall-torch",
+      "wallTexture": "/ember/textures/walls/gothic-stone-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.2,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-mosteiro-portal",
+      "name": "Portal do Mosteiro 3D · 2 hexes",
+      "model3d": "doorway",
+      "emberStyle": "portal",
+      "doorStyle": "watchtower",
+      "wallTexture": "/ember/textures/walls/gothic-stone-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.2,
+      "architectureSpan": 2,
+      "footprint": "pair"
+    },
+    {
+      "id": "ember-arch-mosteiro-door",
+      "name": "Porta do Mosteiro 3D · 2 hexes",
+      "model3d": "door",
+      "emberStyle": "door",
+      "doorStyle": "watchtower",
+      "wallTexture": "/ember/textures/walls/gothic-stone-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.2,
+      "architectureSpan": 2,
+      "footprint": "pair"
+    },
+    {
+      "id": "ember-arch-mosteiro-stairs-up",
+      "name": "Escada que sobe do Mosteiro 3D · 2 hexes",
+      "model3d": "doorway",
+      "emberStyle": "stairs-up",
+      "wallTexture": "/ember/textures/walls/gothic-stone-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.2,
+      "architectureSpan": 2,
+      "footprint": "pair",
+      "connects": false
+    },
+    {
+      "id": "ember-arch-mosteiro-stairs-down",
+      "name": "Escada que desce do Mosteiro 3D · 2 hexes",
+      "model3d": "doorway",
+      "emberStyle": "stairs-down",
+      "wallTexture": "/ember/textures/walls/gothic-stone-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.2,
+      "architectureSpan": 2,
+      "footprint": "pair",
+      "connects": false
+    },
+    {
+      "id": "ember-arch-mosteiro-gate",
+      "name": "Portão do Mosteiro 3D · 4 hexes",
+      "model3d": "doorway",
+      "emberStyle": "gate",
+      "wallTexture": "/ember/textures/walls/gothic-stone-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "heightScale": 1.2,
+      "textureRepeat": 3.2,
+      "architectureSpan": 4,
+      "footprint": "quad"
+    },
+    {
       "id": "ember-arch-gothic-wall",
       "name": "Parede gótica 3D",
       "model3d": "wall",

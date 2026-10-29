@@ -1776,7 +1776,37 @@ open area with large tables ... some separate rooms for NPCs and services, use t
   the Underworld's JSON the old pass (cycle / glow / caveFog) still runs.
   Measured (release, "ui" scope, with the scratchpad's Underworld test masks): see the commit of 2026-10-29.
 
+## O Mosteiro das Cinzas, três andares (2026-10-29; the user: "start working on the map for a area called the Monastery ... part
+exploration / adventure, Talk investigation, part dungeon ... Ashen Devouts and Penitents ... with some conversation and investigations
+you manage to go underground"; then "o andar de cima ... um pouco menor ... e um terceiro ainda menor ... exceto no topo que está trancado
+e tem a diretoria macabra do monasterio")
+
+- **Read `docs/MONASTERY.md`** (the plan of each floor, the investigation's conversations, the kit, the texture prompts, how to open it).
+  Maps `mosteiro` (52 x 46, outdoor, the ground floor: precinct, church, cloister, sacristy, the LOCKED stone door to the crypt stair
+  → `mosteiro-masmorras`, not made), `mosteiro-andar-2` (44 x 36, Interna acima do solo: library, chapter house, guests, cells, office,
+  stairs hall) and `mosteiro-andar-3` (34 x 28: the hall, the LOCKED stone door, the council of the Devotos and the Abbot's chapel),
+  joined by the kit's stairs + floor connectors (down = returnConnector). Generators `tools/scripts/maps/make_monastery.py` /
+  `make_monastery_upper.py [2|3]` on `monastery_lib.py` (walls, footprints, people, reach checks with the locked doors shut and open).
+  Free roam with fog, no foe: the investigation is the NPCs' dialog trees (placeholder sprites: cultistV2 / cultist for the Devotos,
+  shadowScholar, soupLady, ratCatcher, lostCourier, villagerF1, bellCollector, shadyPatron, crazyLady, chainBoundPenitent).
+  **One talking NPC per look on a map** (BattleExport `uniqueNeutralNpcSpawns`: a second dialog NPC with the same sprite is dropped).
+- Kit `ember-arch-mosteiro-*` (architecture.json: the watchtower styles on `gothic-stone-v01.jpg` until the user's `mosteiro-v01.jpg`
+  arrives; no C++, no recook). Props `ember-mosteiro-*` (pew, lectern, votive-rack, saint-statue, bell-cote, scriptorium-desk;
+  `blender/kit_mosteiro.py`, `render_review.py`): **v02 are placeholders the user refused as final art ("low poly trash")**; v01 deleted
+  on their order. Final props come from Meshy / TripoSR / an open library on the user's choice (asked, not answered). NOT cooked into
+  any mesh pack yet (JOGAR mounts props-v12.pak; staging `build/meshes/src-v2/ember/mosteiro/` has the v02 GLBs): the maps warn
+  "not in the mesh pack" for them (and for `ritual-brazier-v02`, `dead-oak-v02`, `funeral-urns-v02`: catalogued props missing from v12).
+- Not in the campaign (no campaign.json mission, no world-map location): open through the Map Editor (Testar) or the Cooker +
+  `--map/--scene/--battle-rules` line in the doc. Verified: the three floors open in release (scene built, every unit in play, the
+  indoor floors with window light + probes), captures `captures/mosteiro/`. Not verified: the conversations and the locked doors in
+  the window, the stairs between floors in play (code path only), the look (the user judges).
+
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
+
+- `content/maps/ember/mosteiro001.json` (2026-10-29: the ground floor before the stairs up to Andar II; 002 plays) and
+  `mosteiro-andar-3001.json` (the Master of Novices as a second cultistV2, dropped by the exporter; 002 plays).
+- `content/models/mosteiro/*-v02` (2026-10-29): the six monastery props built from primitives in Blender (photo materials, subdivided):
+  the user refused them as final art; they stay as placeholders in the maps until the Meshy / TripoSR / library versions replace them.
 
 - Sprite clip `neera-hydra/atk-short-v01` (2026-10-27): Neera's Hydra+ off-hand (dagger) strike, in use 2026-10-22..27. The user:
   "Can we get Neera's Dagger animation back to the previous version?": `attackShort` is neera-v2-001's `atk-short` again

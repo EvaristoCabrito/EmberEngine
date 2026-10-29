@@ -582,5 +582,29 @@
         "blocks": false
       }
     ]
+  },
+  "mosteiro": {
+    "_section": "Mosteiro",
+    "pew": "Banco de igreja 3D",
+    "lectern": "Estante de leitura 3D",
+    "votive-rack": [
+      "Grade de velas votivas 3D",
+      {
+        "light": {
+          "color": [
+            1,
+            0.62,
+            0.3
+          ],
+          "intensity": 3.5,
+          "radius": 3.2,
+          "flicker": 0.5,
+          "minHeight": 0.9
+        }
+      }
+    ],
+    "saint-statue": "Estátua da Santa da Cinza 3D",
+    "bell-cote": "Sineira de pedra 3D",
+    "scriptorium-desk": "Escrivaninha de copista 3D"
   }
 }

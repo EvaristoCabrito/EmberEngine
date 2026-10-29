@@ -3351,6 +3351,95 @@
       "section": "Natureza · Wisp Forest",
       "blocks": true,
       "triangles": 30480
+    },
+    {
+      "id": "ember-mosteiro-bell-cote",
+      "name": "Sineira de pedra 3D",
+      "kit": "mosteiro",
+      "model": "ember-bell-cote",
+      "file": "/game/ember/mosteiro/bell-cote-v02.glb",
+      "height": 2.875,
+      "width": 2.361,
+      "footprint": "pair",
+      "section": "Mosteiro",
+      "blocks": true,
+      "triangles": 107788
+    },
+    {
+      "id": "ember-mosteiro-lectern",
+      "name": "Estante de leitura 3D",
+      "kit": "mosteiro",
+      "model": "ember-lectern",
+      "file": "/game/ember/mosteiro/lectern-v02.glb",
+      "height": 2.231,
+      "width": 0.714,
+      "footprint": "one",
+      "section": "Mosteiro",
+      "blocks": true,
+      "triangles": 15608
+    },
+    {
+      "id": "ember-mosteiro-pew",
+      "name": "Banco de igreja 3D",
+      "kit": "mosteiro",
+      "model": "ember-pew",
+      "file": "/game/ember/mosteiro/pew-v02.glb",
+      "height": 1.1,
+      "width": 2.42,
+      "footprint": "pair",
+      "section": "Mosteiro",
+      "blocks": true,
+      "triangles": 20208
+    },
+    {
+      "id": "ember-mosteiro-saint-statue",
+      "name": "Estátua da Santa da Cinza 3D",
+      "kit": "mosteiro",
+      "model": "ember-saint-statue",
+      "file": "/game/ember/mosteiro/saint-statue-v02.glb",
+      "height": 3.002,
+      "width": 0.978,
+      "footprint": "one",
+      "section": "Mosteiro",
+      "blocks": true,
+      "triangles": 20734
+    },
+    {
+      "id": "ember-mosteiro-scriptorium-desk",
+      "name": "Escrivaninha de copista 3D",
+      "kit": "mosteiro",
+      "model": "ember-scriptorium-desk",
+      "file": "/game/ember/mosteiro/scriptorium-desk-v02.glb",
+      "height": 1.41,
+      "width": 1.101,
+      "footprint": "one",
+      "section": "Mosteiro",
+      "blocks": true,
+      "triangles": 8480
+    },
+    {
+      "id": "ember-mosteiro-votive-rack",
+      "name": "Grade de velas votivas 3D",
+      "kit": "mosteiro",
+      "model": "ember-votive-rack",
+      "file": "/game/ember/mosteiro/votive-rack-v02.glb",
+      "height": 1.148,
+      "width": 1.11,
+      "footprint": "one",
+      "section": "Mosteiro",
+      "blocks": true,
+      "triangles": 20420,
+      "light": {
+        "color": [
+          1,
+          0.62,
+          0.3
+        ],
+        "intensity": 3.5,
+        "radius": 3.2,
+        "flicker": 0.5,
+        "minHeight": 0.9
+      }
     }
   ]
 }
