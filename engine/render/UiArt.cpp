@@ -292,6 +292,35 @@ std::vector<float> uiResampleAxis(const std::vector<float>& src, int srcW, int s
   return dst;
 }
 
+namespace {
+
+// A UI texture released by releaseUiImages that a screen draws again: back on the GPU from the pixels kept in RAM (still there
+// if its destruction has not run yet; else created again before this frame's draw).
+void keepOnGpu(ImTextureData* t) {
+  if (!t || !t->WantDestroyNextFrame) return;
+  t->WantDestroyNextFrame = false;
+  if (t->Status == ImTextureStatus_WantDestroy) t->Status = ImTextureStatus_OK, t->UnusedFrames = 0;
+  else if (t->Status == ImTextureStatus_Destroyed) t->Status = ImTextureStatus_WantCreate, lateTextures().push_back(t);
+}
+
+}  // namespace
+
+void releaseUiImages() {
+  size_t count = 0;
+  uint64_t bytes = 0;
+  const auto drop = [&](ImTextureData* t) {
+    if (!t || t->WantDestroyNextFrame || t->Status == ImTextureStatus_Destroyed) return;
+    t->WantDestroyNextFrame = true;
+    ++count, bytes += static_cast<uint64_t>(t->Width) * static_cast<uint64_t>(t->Height) * 4u;
+  };
+  for (auto& [key, image] : images()) {
+    drop(image.data.get());
+    for (Sized& s : image.exact) drop(s.data.get());
+    for (Sized& s : image.halves) drop(s.data.get());
+  }
+  logInfo("ui: {} images off the GPU ({} MB); each comes back when a screen draws it again", count, bytes >> 20);
+}
+
 void refineUiImages(ImDrawData* drawData) {
   if (!drawData) return;
   collectResampled();
@@ -320,8 +349,12 @@ void refineUiImages(ImDrawData* drawData) {
         needW = std::max(needW, std::sqrt(ux * ux + uy * uy));
         needH = std::max(needH, std::sqrt(vx * vx + vy * vy));
       }
-      if (needW <= 0.0f || needH <= 0.0f) continue;
+      if (needW <= 0.0f || needH <= 0.0f) {
+        keepOnGpu(const_cast<ImTextureData*>(it->first));
+        continue;
+      }
       const ImTextureData* tex = textureFor(*it->second, needW, needH);
+      keepOnGpu(const_cast<ImTextureData*>(tex));
       if (tex != cmd.TexRef._TexData) cmd.TexRef = const_cast<ImTextureData*>(tex)->GetTexRef();
     }
   }

@@ -493,7 +493,7 @@ class MapStage final : public Stage {
       laps.lap("sprites");
       meshes_.update();
       laps.lap("meshes");
-      if (!modelsPlaced_ && meshes_.ready()) placeModels();
+      if (!modelsPlaced_ && meshes_.placeable()) placeModels();
       if (modelsPlaced_) updateDoors(now_);
     }
     uploads_.flush();

@@ -202,6 +202,7 @@ class OverworldStage : public Stage {
       for (const ember::MapLocation& loc : world_.locations())
         if (loc.id == what.substr(6)) enterLocation(loc, locationStatus(loc));
     if (what == "save") slots_.emplace(), slots_->open(SlotScreen::Mode::Save, true);
+    if (what == "releaseui") releaseUiAt_ = 20;  // the loading screen's release mid-run: every UI image off the GPU, then drawn again
     if ((what == "pack" || what == "doll") && hasInn_) inventory_.emplace("Kael", what == "pack");
     if (what.starts_with("status:")) openSheet(what.substr(7));
     if (what.starts_with("inn") && hasInn_) {
@@ -231,6 +232,7 @@ class OverworldStage : public Stage {
 
   void frame(Renderer& renderer, VkExtent2D) override {
     ++frames_;
+    if (frames_ == releaseUiAt_) releaseUiImages();
     if (!fx_) {  // a luz e a névoa das duas telas (render/WorldMapFx.h): o passe, as configurações e as pinturas, uma vez
       fx_.emplace(renderer.context(), renderer.bindless());
       fxConfig_[0] = WorldMapConfig::load("content/worldmap/overworld-light-fog.json", false);
@@ -2788,6 +2790,7 @@ class OverworldStage : public Stage {
   int prevCol_ = 0;
   bool facingLeft_ = false;
   int frames_ = 0;
+  int releaseUiAt_ = -1;  // --map-ui releaseui: the frame the UI images are released (a capture's test of the loading screen's release)
   // A luz e a névoa das duas telas (render/WorldMapFx.h, shaders/worldmap.hlsl): o passe, os dois arquivos de configuração
   // ([0] mapa-múndi, [1] Submundo), as pinturas e máscaras na GPU, o revelado subido quando os hexágonos explorados mudam,
   // a hora suavizada na tela (sem saltos quando o relógio anda horas inteiras num passo).

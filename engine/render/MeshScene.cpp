@@ -95,13 +95,17 @@ const MeshHeader* MeshScene::header(MeshId id) const {
   return id < meshes_.size() && meshes_[id]->parsed ? &meshes_[id]->header : nullptr;
 }
 
-bool MeshScene::ready() const {
+bool MeshScene::placeable() const {
   for (const auto& mesh : meshes_)
     if (!mesh->failed && !mesh->uploaded) return false;
   for (const auto& [id, texture] : textures_)
     if (!texture->failed && texture->index == kNoTextureIndex) return false;
+  return true;
+}
+
+bool MeshScene::ready() const {
   // A gated scene also waits for the first streaming pass: every texture at the size it needs, or the budget reached.
-  return !gated_ || (open_ && settled_);
+  return placeable() && (!gated_ || (open_ && settled_));
 }
 
 std::pair<uint32_t, uint32_t> MeshScene::progress() const {

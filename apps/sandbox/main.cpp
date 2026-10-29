@@ -1414,6 +1414,7 @@ int runWindow(const Options& o) {
   const auto clockNow = [&] { return std::chrono::duration<double>(Clock::now() - loopStart).count(); };
   // A battle: the curtain shown for one frame over a blank screen before the battle is built (building it blocks).
   const auto curtainBeforeBattle = [&] {
+    releaseUiImages();  // the world maps' paintings and the menus' art leave the GPU for the fight (back when drawn again)
     curtain.open(loading::Curtain::Kind::Battle, clockNow());
     stage = std::make_unique<BlankStage>();
     services.frame(ui, renderer, stage.get(), swapchain->extent(), 0.0f, [&] { return renderer.renderFrame(static_cast<float>(clockNow())); });
