@@ -739,10 +739,21 @@ void applySaveHeroes(MapStageOptions& options, const ember::Json& save) {
 // there (a campaign only: Modo teste seats everyone), and the save's party leader walks (partyLeaderOf: the saved leader
 // while recruited, else Kael).
 // `interlude` (docs/INTERLUDE.md): while the historical chapter is on, its own leader walks.
+// Modo teste's party: every hero of the battle file but kTestPartyLeftOut (TestModeStage.h).
+std::set<std::string> testPartyRoster(const ember::Json& battle) {
+  std::set<std::string> roster;
+  if (const auto units = battle.find("units"); units != battle.end() && units->is_array())
+    for (const ember::Json& u : *units)
+      if (u.is_object() && u.value("side", std::string()) == "player") roster.insert(u.value("name", std::string()));
+  for (const char* out : ember::kTestPartyLeftOut) roster.erase(out);
+  return roster;
+}
+
 void setUpExplore(MapStageOptions& options, const ember::Json& save, const ember::Overworld& world, bool test, const ember::InterludeData* interlude = nullptr) {
   std::ifstream in(options.battle, std::ios::binary);
   const ember::Json battle = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
   if (!battle.is_object() || !battle.value("explore", false)) return;
+  if (test && !(interlude && ember::interludeState(save) == ember::InterludeState::Active)) options.partyRoster = testPartyRoster(battle);
   for (const char* hero : {"Neera", "Voss", "Salazar", "Aldric", "Malrec"})
     if (!test && !world.heroRecruited(hero, save)) options.absentNeutrals.insert(hero);
   if (options.leader.empty() && interlude && ember::interludeState(save) == ember::InterludeState::Active) options.leader = interlude->leader;
@@ -769,6 +780,8 @@ void setUpParty(MapStageOptions& options, const ember::Json& save, const ember::
         if (world.heroRecruited(hero, save)) roster.insert(hero);
     }
     options.partyRoster = std::move(roster);
+  } else {
+    options.partyRoster = testPartyRoster(battle);
   }
   if (const auto f = save.find("partyFormation"); f != save.end() && f->is_array())
     for (const ember::Json& cell : *f) options.partyFormation.push_back(cell.is_string() ? cell.get<std::string>() : std::string());
