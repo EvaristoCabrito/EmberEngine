@@ -353,10 +353,13 @@ class MapStage final : public Stage {
     boardWidth_ = static_cast<float>(b.x1 - b.x0);
     boardDepth_ = static_cast<float>(b.z1 - b.z0);
     // The sun's shadow covers the board's bounding sphere (ground from y = 0 to its highest cell).
-    double top = 0, low = 1e9;
-    for (const ember::Cell& c : board_->cells()) top = std::max(top, c.groundY), low = std::min(low, c.groundY);
+    double top = 0;
+    for (const ember::Cell& c : board_->cells()) top = std::max(top, c.groundY);
+    const double low = board_->lowestGround();
     boardTop_ = static_cast<float>(top);
     groundLow_ = static_cast<float>(low);
+    logInfo("board heights: lowest ground {:.2f}{}, highest {:.2f} (the floor image lies under the lowest)", low,
+            board_->draft().emberFloorOverWater ? " (water beds left out)" : "", top);
     boardCenter_ = {target_.x, static_cast<float>(top * 0.5), target_.z};
     boardRadius_ = 0.5f * std::sqrt(boardWidth_ * boardWidth_ + boardDepth_ * boardDepth_ + static_cast<float>(top * top)) + 1.0f;
     target_.x += options.offset.x * boardWidth_;

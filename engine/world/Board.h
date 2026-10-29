@@ -126,6 +126,10 @@ struct MapDraft {
   // EmberEngine's own: the board stands with no side walls under its edges (A Ponte de Pedra 026; the user, 2026-10-25: "a ponte não
   // deve ter laterais", the bridge suspended over the ground): BoardGround adds no closeBoardSides walls. Every other map: false.
   bool emberNoSides = false;
+  // EmberEngine's own: the board's floor image and side walls lie under its lowest DRY ground, not under the water's beds (Wisp Forest
+  // Crossing 021; the user, 2026-10-29: "lower it like most others"): one pond took the whole board's edge 1.35 above its floor. The
+  // beds stay inside the board, enclosed by its banks. Every other map: false (the lowest ground of all, water included).
+  bool emberFloorOverWater = false;
   // EmberEngine's own: an underground map ("Subterrâneo" in the Map Editor's Ambiente; the user, 2026-10-21): the only maps free of
   // the sun, the moon and the sky. Every other map takes the game's real clock (real sun, real moon).
   bool underground = false;
@@ -195,6 +199,15 @@ class Board {
     return cell(c, r);
   }
   bool hasWater() const;
+  // The lowest ground the board's floor image and side walls lie under: every cell's (void cells at 0), or with
+  // MapDraft::emberFloorOverWater every cell's but the water's beds.
+  double lowestGround() const {
+    double low = 0;
+    bool any = false;
+    for (const Cell& c : cells_)
+      if (!(draft_.emberFloorOverWater && c.water)) low = any ? std::min(low, c.groundY) : c.groundY, any = true;
+    return low;
+  }
 
   struct Bounds {
     double x0, x1, z0, z1;

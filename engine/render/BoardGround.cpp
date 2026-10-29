@@ -153,14 +153,15 @@ bool BoardGround::build(const ember::Board& board) {
   // que o resto das bordas"): the vertices from wallFrom on are theirs.
   uint32_t wallFrom = 0;
   if (!board.draft().emberNoSides) {  // a suspended board (the bridge, MapDraft::emberNoSides) stands with no side walls
-    double low = 0;
-    bool any = false;
-    for (const ember::Cell& c : board.cells()) low = any ? std::min(low, c.groundY) : c.groundY, any = true;
+    const double low = board.lowestGround();
     wallFrom = static_cast<uint32_t>(looks[0].vertexCount());
     ember::closeBoardSides(looks[0], low - 0.35);
     // The 3D water ends where the board does: its sheet ran down past the board's bottom and hung under the ground as icicles (the
-    // user, 2026-10-29: "esconde essa água vazando no subterrâneo").
-    boardBottom_ = static_cast<float>(low - 0.35);
+    // user, 2026-10-29: "esconde essa água vazando no subterrâneo"). Under the water's own beds, also where the floor lies over them
+    // (MapDraft::emberFloorOverWater): the sheet stands at the bed + 0.65, never cut by the walls' bottom.
+    double bed = low;
+    for (const ember::Cell& c : board.cells()) bed = std::min(bed, c.groundY);
+    boardBottom_ = static_cast<float>(bed - 0.35);
     if (looks[0].vertexCount() == wallFrom) wallFrom = 0;
   }
   // The walls take no light and no shadow of their own (the user, 2026-10-23: "esse sombreado nas bordas do tabuleiro tem que acabar,
