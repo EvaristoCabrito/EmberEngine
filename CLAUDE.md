@@ -1790,8 +1790,19 @@ e tem a diretoria macabra do monasterio")
   Free roam with fog, no foe: the investigation is the NPCs' dialog trees (placeholder sprites: cultistV2 / cultist for the Devotos,
   shadowScholar, soupLady, ratCatcher, lostCourier, villagerF1, bellCollector, shadyPatron, crazyLady, chainBoundPenitent).
   **One talking NPC per look on a map** (BattleExport `uniqueNeutralNpcSpawns`: a second dialog NPC with the same sprite is dropped).
+- **The Tower's lighting on all three, the yard under the sky (the user: "mapas externos ... sistema similar ao da Torre ... vai ser
+  util na cidade e fazenda"):** `ArchitectureDef::openAir` (architecture.json) = a muralha (`ember-arch-mosteiro-rampart / -rampart-torch /
+  -rampart-gate`): joins, blocks and shadows like a wall but encloses no room (not in MapStage's `roomJoins`: the yard it rings is
+  outside, no shadow skirt). `buildRoof` lays ONE SLAB PER ROOM (the 4-connected groups of `roomCells_`, `roofs_`), so the yards
+  between buildings get the sun; one-room maps (the tower) keep one slab, roomless maps the slab over every piece. An L-shaped room
+  gets its rectangle (a corner of yard under it). **lighting.hlsli:** the probe gate (`probeRoom`) no longer zeroes the sun and the
+  sky OUTSIDE the room: outside = lit as any map (the sun with its shadows: the tower's skirts / plinth still keep it off the outer
+  faces; the sky's own unscaled irradiance, CSAmbient's second record, since a room map sets the passes' ambient to 0). The tower's
+  outer faces and board sides, black before, now take the sky's ambient (`captures/mosteiro/watchtower-gate-floor010-day14.png`).
+  `catalog_models.py` now copies `openAir` into editor.architectureDefs (it was dropped: the first capture still had 7 slabs).
+  Captures at an hour: `--game-hour 14` (`--hour` is another option). Live map: `mosteiro004` (the precinct as `-rampart` pieces).
 - Kit `ember-arch-mosteiro-*` (architecture.json: the watchtower styles on `gothic-stone-v01.jpg` until the user's `mosteiro-v01.jpg`
-  arrives; no C++, no recook). Props `ember-mosteiro-*` (pew, lectern, votive-rack, saint-statue, bell-cote, scriptorium-desk;
+  arrives; no recook). Props `ember-mosteiro-*` (pew, lectern, votive-rack, saint-statue, bell-cote, scriptorium-desk;
   `blender/kit_mosteiro.py`, `render_review.py`): **v02 are placeholders the user refused as final art ("low poly trash")**; v01 deleted
   on their order. Final props come from Meshy / TripoSR / an open library on the user's choice (asked, not answered). NOT cooked into
   any mesh pack yet (JOGAR mounts props-v12.pak; staging `build/meshes/src-v2/ember/mosteiro/` has the v02 GLBs): the maps warn

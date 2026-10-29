@@ -57,6 +57,7 @@ def main(models_path='content/models/models.json', catalog_path='content/data/ed
             'architectureSpan': span, 'doorStyle': None, 'rockStyle': None, 'templeStyle': None, 'castleStyle': None, 'thickWall': False,
             'dungeonReference': False, 'wallTexture': p['wallTexture'], 'connects': p.get('connects', True),
             'emberStyle': p['emberStyle'], 'textureRepeat': p.get('textureRepeat', 3.6),
+            'openAir': p.get('openAir', False),  # a muralha: encloses no room (MapStage roomJoins / buildRoof)
         }
     editor['architectureOrder'] = [p['id'] for p in architecture['pieces']] + editor['architectureOrder']
     # the kit's photographed materials (world/Architecture.h emberMaterialName -> texture URL)

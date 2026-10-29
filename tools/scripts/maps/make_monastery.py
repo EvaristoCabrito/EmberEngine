@@ -32,21 +32,22 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from monastery_lib import (DOOR, GATE, LOCKED, PORTAL, STAIRS_DOWN, STAIRS_UP, Floor, L, R, base_draft, hwall, ring, tree, vwall)  # noqa: E402
+from monastery_lib import (DOOR, LOCKED, PORTAL, RAMPART_GATE, STAIRS_DOWN, STAIRS_UP, Floor, L, R, base_draft, hwall, ring, tree, vwall)  # noqa: E402
 
 PEW, LECTERN, VOTIVE, SAINT, BELL, DESK = ('ember-mosteiro-pew', 'ember-mosteiro-lectern', 'ember-mosteiro-votive-rack',
                                            'ember-mosteiro-saint-statue', 'ember-mosteiro-bell-cote', 'ember-mosteiro-scriptorium-desk')
 f = Floor('mosteiro', 52, 46)
 
 # --- walls --------------------------------------------------------------------------------------------------------------------------
-f.walls |= ring(1, 1, 50, 41)            # the precinct
+f.walls |= ring(1, 1, 50, 41)            # the precinct: the muralha (openAir pieces: the yard inside stays under the sky)
+f.ramparts = ring(1, 1, 50, 41)
 f.walls |= ring(19, 3, 33, 20)           # the church
 f.walls |= ring(35, 3, 47, 15) | hwall(9, 35, 47)   # sacristy (y 3-9) + crypt stair (y 9-15)
 f.walls |= ring(4, 3, 17, 9)             # scriptorium
 f.walls |= ring(4, 26, 17, 34)           # refectory
 f.walls |= ring(35, 17, 47, 24) | vwall(39, 18, 21) | vwall(43, 18, 21)  # dormitory, the cells' partitions (corridor y 22-23)
 f.walls |= ring(35, 26, 47, 34)          # infirmary
-for piece, x, y in ((GATE, 25, 41), (DOOR, 25, 20), (PORTAL, 40, 3), (LOCKED, 40, 9), (PORTAL, 10, 9), (DOOR, 10, 26), (PORTAL, 40, 24), (DOOR, 40, 26)):
+for piece, x, y in ((RAMPART_GATE, 25, 41), (DOOR, 25, 20), (PORTAL, 40, 3), (LOCKED, 40, 9), (PORTAL, 10, 9), (DOOR, 10, 26), (PORTAL, 40, 24), (DOOR, 40, 26)):
     f.opening(piece, x, y)
 f.windows = {(21, 3), (24, 3), (28, 3), (31, 3), (19, 7), (19, 11), (19, 15), (33, 7), (33, 11), (33, 15), (22, 20), (30, 20),  # church
              (37, 3), (44, 3), (47, 6), (47, 12), (47, 20), (47, 30), (35, 20), (35, 30), (38, 26), (44, 26), (38, 34), (44, 34),

@@ -28,6 +28,10 @@ struct ArchitectureDef {
   std::optional<double> architectureSpan;
   std::string doorStyle, rockStyle, templeStyle, castleStyle, wallTexture;
   bool thickWall = false, dungeonReference = false, connects = true;  // connects: joins its neighbours (not rocks / trees / props)
+  // openAir (2026-10-29, the Monastery's precinct; the user: "vai ser util na cidade e fazenda"): a muralha, not a building's wall.
+  // It joins its neighbours, blocks and casts shadow like any wall, but encloses no room: the yard it rings stays under the sky
+  // (no roof slab over it, its hexes outside the probes' room), and it gets no shadow skirt.
+  bool openAir = false;
   // EmberEngine's own pieces (content/models/architecture.json, ids ember-arch-*): "wall" (a joined run with a base and a string
   // course), "window" (a lancet window with a splayed inner embrasure, light through it), "slit" (an arrow loop), "portal" (an
   // arched doorway two hexes wide); the gothic parapet kit: "gothic-wall" (a panelled run: tracery windows on the deck side, tally

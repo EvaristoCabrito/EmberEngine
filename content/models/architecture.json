@@ -206,6 +206,41 @@
       "connects": false
     },
     {
+      "id": "ember-arch-mosteiro-rampart",
+      "name": "Muralha do Mosteiro 3D",
+      "model3d": "wall",
+      "emberStyle": "wall",
+      "openAir": true,
+      "wallTexture": "/ember/textures/walls/gothic-stone-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.2,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-mosteiro-rampart-torch",
+      "name": "Muralha com tocha do Mosteiro 3D",
+      "model3d": "wall",
+      "emberStyle": "wall-torch",
+      "openAir": true,
+      "wallTexture": "/ember/textures/walls/gothic-stone-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.2,
+      "footprint": "one"
+    },
+    {
+      "id": "ember-arch-mosteiro-rampart-gate",
+      "name": "Portão da muralha do Mosteiro 3D · 4 hexes",
+      "model3d": "doorway",
+      "emberStyle": "gate",
+      "openAir": true,
+      "wallTexture": "/ember/textures/walls/gothic-stone-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "heightScale": 1.2,
+      "textureRepeat": 3.2,
+      "architectureSpan": 4,
+      "footprint": "quad"
+    },
+    {
       "id": "ember-arch-mosteiro-gate",
       "name": "Portão do Mosteiro 3D · 4 hexes",
       "model3d": "doorway",

@@ -103,7 +103,33 @@ peças não aparecem (o mesmo aviso para `ritual-brazier-v02`, `dead-oak-v02`, `
 
 Arquitetura: `ember-arch-mosteiro-wall / -window / -slit / -wall-torch / -portal / -door / -stairs-up / -stairs-down / -gate`
 (`content/models/architecture.json`): a geometria da Torre de Vigia com a textura `gothic-stone-v01.jpg` até a do Mosteiro chegar
-(abaixo). Nenhum C++ mudou; nenhum recook do architecture.pak foi preciso.
+(abaixo). Nenhum recook do architecture.pak foi preciso.
+
+## A iluminação da Torre com o pátio ao céu (2026-10-29; o user: "esses são mapas externos e devem usar um sistema similar ao da
+Torre ... sistema de iluminação", depois "pode fazer assim, vai ser util na cidade e fazenda")
+
+Os três andares são "Interna acima do solo" (`environment: indoor` + `aboveGround`): a atmosfera única em cima, a luz do sol e da
+lua só pelas janelas, seteiras e portas, os probes, a laje de sombra que nunca se desenha (a ilusão de corte da Torre). No térreo o
+pátio, o claustro e o cemitério ficam ao céu:
+
+- **`openAir`** (ArchitectureDef, `architecture.json`): uma **muralha** (`ember-arch-mosteiro-rampart`, `-rampart-torch`,
+  `-rampart-gate`): junta-se às vizinhas, bloqueia e faz sombra como qualquer parede, mas **não fecha sala**: o que ela cerca fica
+  fora (sem laje em cima, hexes fora da sala dos probes), e ela não ganha rodapé de sombra. O precinto do térreo é dela
+  (`Floor.ramparts` em `monastery_lib.py`).
+- **Uma laje por sala** (`MapStage::buildRoof`): as salas são os grupos 4-conexos dos hexes fechados por paredes de prédio
+  (`roomCells_`, o flood a partir da borda do tabuleiro passando por cima das muralhas); cada grupo recebe a sua laje (o
+  retângulo dos hexes, mais uma fila de paredes, mais `kRoofMargin`). Um mapa de uma sala só (a Torre) tem uma laje, como antes;
+  um mapa sem sala fechada (caverna) tem a laje sobre todas as peças, como antes. `roofRect_` (o volume dos probes) é a união.
+  Limite: uma sala em L recebe a laje do seu retângulo (um canto de pátio a mais sob a laje).
+- **Fora da sala, a luz de qualquer mapa** (`lighting.hlsli`): o portão dos probes (`probeRoom`) antes zerava o sol e o céu em tudo
+  que estava fora da sala ("100% interior"); agora fora da sala o sol entra com as suas sombras (na Torre os rodapés e o plinto
+  continuam a tirar o sol das faces externas) e o céu ilumina (a irradiância do próprio céu, o segundo registro do CSAmbient, à
+  exposição do frame: o ambiente dos passes é 0 num mapa com sala). Consequência na Torre: as faces externas da muralha e os lados
+  do tabuleiro, antes pretos, recebem o ambiente do céu (captura `captures/mosteiro/watchtower-gate-floor010-day14.png`); o
+  interior não muda. O user julga.
+- A mesma marca serve à cidade e à fazenda: muralha = `openAir`, casas = paredes do kit.
+- Capturas às 14 h (`--game-hour 14`; `--hour` é outra opção): `captures/mosteiro/mosteiro004-day14.png` (pátio, claustro e
+  cemitério ao sol, salas escuras com as tochas, 6 lajes, 599 hexes de sala) e a Torre acima.
 
 ## Texturas e imagens que o user gera (prompts)
 

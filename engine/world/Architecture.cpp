@@ -1527,6 +1527,7 @@ bool ArchitectureDefs::load(const std::filesystem::path& catalogFile) {
     a.doorStyle = s(d, "doorStyle"), a.rockStyle = s(d, "rockStyle"), a.templeStyle = s(d, "templeStyle"), a.castleStyle = s(d, "castleStyle");
     a.wallTexture = s(d, "wallTexture");
     a.thickWall = d.value("thickWall", false), a.dungeonReference = d.value("dungeonReference", false), a.connects = d.value("connects", true);
+    a.openAir = d.value("openAir", false);
     a.emberStyle = s(d, "emberStyle"), a.textureRepeat = n(d, "textureRepeat", 3.6);
     defs.emplace(id, std::move(a));
   }

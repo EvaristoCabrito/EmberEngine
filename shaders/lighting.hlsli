@@ -223,7 +223,8 @@ float3 probeIrradiance(MeshFrame f, float3 p, float3 n, out bool found) {
 }
 
 // The room seen from above (the probes' mask: Renderer::ProbeVolume::mask): 1 inside the room (a wall's inner half included), 0 outside;
-// 1 where the probes carry no mask. Outside the room nothing from outside lights a surface (the user, 2026-10-21: "não renderizar nada
+// 1 where the probes carry no mask. Outside the room the surface takes the sky and the sun as on any map (the yard a muralha rings,
+// 2026-10-29); the sun stays off the tower's outer faces by the skirts and the plinth (the user, 2026-10-21: "não renderizar nada
 // do lado de fora"; 2026-10-22: the sun on the windows' outer faces and the foot of the walls bloomed into white blobs).
 float probeRoom(MeshFrame f, float3 p) {
   const float4 origin = vk::RawBufferLoad<float4>(probesAddress(f));
@@ -241,14 +242,32 @@ float probeRoom(MeshFrame f, float3 p) {
   return float((word >> ((i % 4u) * 8u)) & 0xFFu) / 255.0;
 }
 
-float3 indirectDiffuse(MeshFrame f, Surface s) {
-  if (probesAddress(f) != 0) {
-    bool found;
-    return probeIrradiance(f, s.position, s.normal, found);
+// The sky's (or the hemisphere's) irradiance facing `n`: what lights every surface outside a room.
+float3 outsideIrradiance(MeshFrame f, float3 n) {
+  if (f.atmosphere != 0) {
+    if (probesAddress(f) == 0) return skyIrradiance(f, n);
+    // A map with a room (Luz das janelas) sets the passes' ambient to 0 (the probes carry the sky inside): outside the room read the
+    // sky's own unscaled irradiance (CSAmbient's second record, as probes.hlsl does) at the frame's exposure.
+    const uint64_t sh = loadAtmosphere(f).ambient + 144u;
+    const float b[9] = {0.282095, 0.488603 * n.y, 0.488603 * n.z, 0.488603 * n.x, 1.092548 * n.x * n.y, 1.092548 * n.y * n.z,
+                        0.315392 * (3.0 * n.z * n.z - 1.0), 1.092548 * n.x * n.z, 0.546274 * (n.x * n.x - n.y * n.y)};
+    float3 e = 0.0;
+    [unroll] for (uint c = 0; c < 9; ++c) e += vk::RawBufferLoad<float4>(sh + c * 16).rgb * b[c];
+    return max(e, 0.0) * f.exposure;
   }
-  if (f.atmosphere != 0) return skyIrradiance(f, s.normal);
-  return lerp(f.groundColor, f.skyColor, s.normal.y * 0.5 + 0.5) * f.ambientIntensity;
+  return lerp(f.groundColor, f.skyColor, n.y * 0.5 + 0.5) * f.ambientIntensity;
 }
+// `room` (probeRoom): 1 inside the room (its probes), 0 outside (the sky, as on any map: the yard a muralha rings, the
+// Monastery, 2026-10-29), blended at the mask's edge.
+float3 indirectDiffuse(MeshFrame f, Surface s, float room) {
+  if (probesAddress(f) != 0 && room > 0.0) {
+    bool found;
+    const float3 probe = probeIrradiance(f, s.position, s.normal, found);
+    return room >= 1.0 ? probe : lerp(outsideIrradiance(f, s.normal), probe, room);
+  }
+  return outsideIrradiance(f, s.normal);
+}
+float3 indirectDiffuse(MeshFrame f, Surface s) { return indirectDiffuse(f, s, probesAddress(f) != 0 ? probeRoom(f, s.position) : 1.0); }
 
 // The sky's reflection map (skyreflect.hlsl): a lat-long image of the sky's radiance (clouds in), level 0 sharp and each
 // level above prefiltered for a rougher surface (roughness = level / (levels - 1)). Half a texel in from the poles so the
@@ -276,17 +295,23 @@ float3 skyReflection(MeshFrame f, float3 dir, float roughness) {
 // Prefiltered radiance along the reflection direction: the sky's reflection map when the frame has one (sharp water,
 // polished stone, metal see the real sky, clouds and all), else the sky's irradiance there / pi (a rough reflection;
 // the hemisphere's uniform radiance E / pi without the atmosphere).
-float3 indirectSpecular(MeshFrame f, Surface s, float3 reflected) {
-  if (probesAddress(f) != 0) {  // inside the room: what the probes see that way (no sky but through the openings)
-    bool found;
-    return probeIrradiance(f, s.position, reflected, found) / kPi;
-  }
+float3 outsideReflection(MeshFrame f, Surface s, float3 reflected) {
   if (f.atmosphere != 0) {
+    if (probesAddress(f) != 0) return outsideIrradiance(f, reflected) / kPi;  // the reflection map's scale is 0 on a room map
     if (f.skyReflect != kNoTexture) return skyReflection(f, reflected, s.roughness);
     return skyIrradiance(f, reflected) / kPi;
   }
   return lerp(f.groundColor, f.skyColor, reflected.y * 0.5 + 0.5) * f.ambientIntensity / kPi;
 }
+float3 indirectSpecular(MeshFrame f, Surface s, float3 reflected, float room) {
+  if (probesAddress(f) != 0 && room > 0.0) {  // inside the room: what the probes see that way (no sky but through the openings)
+    bool found;
+    const float3 probe = probeIrradiance(f, s.position, reflected, found) / kPi;
+    return room >= 1.0 ? probe : lerp(outsideReflection(f, s, reflected), probe, room);
+  }
+  return outsideReflection(f, s, reflected);
+}
+float3 indirectSpecular(MeshFrame f, Surface s, float3 reflected) { return indirectSpecular(f, s, reflected, probesAddress(f) != 0 ? probeRoom(f, s.position) : 1.0); }
 
 // --- Tactical visibility (R7) -------------------------------------------------------------------------
 
@@ -319,8 +344,12 @@ float3 shadeInSightSplit(MeshFrame f, Surface s, Sight sight, out float3 local) 
   const float nv = max(dot(s.normal, view), 1e-4);
 
   float3 color = 0.0;
-  const float room = probesAddress(f) != 0 ? probeRoom(f, s.position) : 1.0;  // a room lit through its windows: nothing from outside out of it
-  if ((f.lightingLayers & kLayerSun) && room > 0.0) {
+  // A room lit through its windows (Luz das janelas): inside it (room 1) the sun comes only through the openings (the shadow maps:
+  // the roof, the skirts) and the bounced light from its probes; outside it (room 0) the surface is lit as on any map: the sun with
+  // its shadows and the sky's light (the yard between the Monastery's buildings, 2026-10-29; the tower's outer faces keep the
+  // skirts' and the plinth's shadow, and now take the sky's ambient).
+  const float room = probesAddress(f) != 0 ? probeRoom(f, s.position) : 1.0;
+  if (f.lightingLayers & kLayerSun) {
     const float3 l = f.sunDirection, h = normalize(l + view);
     const float nlRaw = dot(s.normal, l);
     const float nl = saturate(nlRaw), nh = saturate(dot(s.normal, h)), vh = saturate(dot(view, h));
@@ -330,15 +359,15 @@ float3 shadeInSightSplit(MeshFrame f, Surface s, Sight sight, out float3 local) 
       // The shadow maps, then the clouds' (clouds.hlsli): every surface, the cards too.
       const float shadow = (s.receivesShadow > 0.0 ? lerp(1.0, sunShadow(f, s), s.receivesShadow) : 1.0) * cloudShadow(f, s.position);
       color += (diffuseColor * (1.0 - F) / kPi * nlDiffuse + F * ggx(nh, a) * smithVisibility(nv, nl, a) * nl) * f.sunColor *
-               f.sunIntensity * shadow * room;
+               f.sunIntensity * shadow;
     }
   }
   local = sight.local > 0.0 ? localLights(f, s, view, diffuseColor, f0, a, nv) * sight.local : float3(0.0, 0.0, 0.0);
-  if ((f.lightingLayers & kLayerIndirect) && room > 0.0) {
+  if (f.lightingLayers & kLayerIndirect) {
     // Lambert returns albedo * E / pi; the specular lobe sees the environment's radiance through the
     // split-sum BRDF.
-    color += (diffuseColor * indirectDiffuse(f, s) / kPi +
-              envBrdfApprox(f0, s.roughness, nv) * s.specular * indirectSpecular(f, s, reflect(-view, s.normal))) * s.occlusion * room;
+    color += (diffuseColor * indirectDiffuse(f, s, room) / kPi +
+              envBrdfApprox(f0, s.roughness, nv) * s.specular * indirectSpecular(f, s, reflect(-view, s.normal), room)) * s.occlusion;
   }
   color += s.emissive * f.exposure;
   return color;

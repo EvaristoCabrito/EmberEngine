@@ -2251,9 +2251,13 @@ class MapStage final : public Stage {
       const ember::CatalogDecoration* cd = catalog.decoration(p.id);
       if (!def || !cd || !def->connects) continue;
       if (p.id == "watchtower-stone-open-door-2hex" || (!def->emberStyle.empty() && cd->architectureSpan))
-        for (const ember::FootOffset& f : ember::placedFootprint(*cd, p.x, p.y, p.rot)) joins.insert({p.x + f.dx, p.y + f.dy});
+        for (const ember::FootOffset& f : ember::placedFootprint(*cd, p.x, p.y, p.rot)) cells.push_back({p.x + f.dx, p.y + f.dy});
       else
-        joins.insert({p.x, p.y});
+        cells.push_back({p.x, p.y});
+      for (const auto& c : cells) {
+        joins.insert(c);
+        if (!def->openAir) roomJoins.insert(c);
+      }
     }
     // The room's centre (the board's), for the windows' splay.
     const double centreX = 0.5 * (archAt(0, 0).first + archAt(L.cols - 1, 0).first), centreZ = 0.5 * (archAt(0, 0).second + archAt(0, L.rows - 1).second);
@@ -2325,10 +2329,14 @@ class MapStage final : public Stage {
       // (std::optional: a MeshId is the mesh's index and the map's first mesh is 0, so 0 is a real mesh here: on a map with no
       // 3D models the first wall piece used to be dropped as "no mesh", found 2026-10-21 on the gothic bridge test.)
       auto meshOf = [&](const ember::three::Geometry& g, bool footprint) -> std::optional<MeshId> {
+    // ... and of those, the cells of BUILDING walls (ArchitectureDef::openAir left out: a muralha joins its neighbours but encloses
+    // no room: the yard it rings stays under the sky, 2026-10-29, the Monastery's precinct)
+    std::set<std::pair<int, int>> roomJoins;
       static constexpr int kParts = ember::kEmberMaterialTags;  // 0 the masonry, 1 oak, 2 iron, 3 flame, 4 dark oak, 5 a dark void, 6 the steps, 7 the gothic atlas, 8 glass, 9 the Inn's timber, 10 the Inn's door planks
       MeshBuildPart parts[kParts];
       std::map<std::array<float, 8>, uint32_t> weld[kParts];
       size_t triangles = 0;
+      std::vector<std::pair<int, int>> cells;
       for (size_t t = 0; t + 2 < g.count(); t += 3) {
         const glm::vec3 a{g.position[t * 3], g.position[t * 3 + 1], g.position[t * 3 + 2]}, b{g.position[t * 3 + 3], g.position[t * 3 + 4], g.position[t * 3 + 5]},
             c{g.position[t * 3 + 6], g.position[t * 3 + 7], g.position[t * 3 + 8]};
@@ -2477,16 +2485,16 @@ class MapStage final : public Stage {
       // Luz das janelas, 100% interior (the user, 2026-10-21: "a única coisa que vem de fora é a luz em si ... nas superfícies
       // internas"): every piece of the outer ring gets a shadow skirt, a copy of itself kSkirtOffset outside that only casts shadow,
       // so the sun reaches no outer face and comes in only through the openings (the copy keeps their holes).
-      if (!def->emberStyle.empty() && !stairs && !ember::emberAnimatedDoor(def->emberStyle)) {
+      if (!def->emberStyle.empty() && !stairs && !ember::emberAnimatedDoor(def->emberStyle) && !def->openAir) {
         const double a = ember::emberAxisAngle(rot, connections);
         double nx = std::sin(a), nz = std::cos(a);
         if (nx * (x - centreX) + nz * (z - centreZ) < 0.0) nx = -nx, nz = -nz;  // pointing away from the room
         const int sx = std::abs(nx) > std::abs(nz) ? (nx > 0.0 ? 1 : -1) : 0, sy = sx ? 0 : (nz > 0.0 ? 1 : -1);
-        bool outer = true;  // nothing joined between it and the board's edge, that way
+        bool outer = true;  // no building wall between it and the board's edge, that way (a muralha does not count: the yard is outside)
         for (int k = 1; k < L.cols + L.rows && outer; ++k) {
           const int c = p.x + sx * k, r = p.y + sy * k;
           if (!inBoard(c, r)) break;
-          if (joins.contains({c, r})) outer = false;
+          if (roomJoins.contains({c, r})) outer = false;
         }
         if (outer) piece.skirt = glm::vec2(static_cast<float>(nx), static_cast<float>(nz)) * kSkirtOffset, piece.hasSkirt = true;
       }
@@ -2561,24 +2569,25 @@ class MapStage final : public Stage {
       }
     }
     if (missing) logWarn("architecture: {} pieces not in the editor catalog", missing);
-    // The room: every hex the walls enclose (not reached from the board's edge stepping between hexes no wall stands on).
+    // The room: every hex the BUILDING walls enclose (not reached from the board's edge stepping between hexes no such wall stands
+    // on; a muralha (openAir) is stepped over as if it were not there: the yard inside it is outside).
     {
       std::vector<std::pair<int, int>> open;
       std::set<std::pair<int, int>> outside;
       for (int c = 0; c < L.cols; ++c)
         for (int r = 0; r < L.rows; ++r)
-          if ((c == 0 || r == 0 || c == L.cols - 1 || r == L.rows - 1) && !joins.contains({c, r}) && outside.insert({c, r}).second) open.push_back({c, r});
+          if ((c == 0 || r == 0 || c == L.cols - 1 || r == L.rows - 1) && !roomJoins.contains({c, r}) && outside.insert({c, r}).second) open.push_back({c, r});
       while (!open.empty()) {
         const auto [c, r] = open.back();
         open.pop_back();
         for (const auto& [nc, nr] : {std::pair{c - 1, r}, std::pair{c + 1, r}, std::pair{c, r - 1}, std::pair{c, r + 1}})
-          if (inBoard(nc, nr) && !joins.contains({nc, nr}) && outside.insert({nc, nr}).second) open.push_back({nc, nr});
+          if (inBoard(nc, nr) && !roomJoins.contains({nc, nr}) && outside.insert({nc, nr}).second) open.push_back({nc, nr});
       }
       for (int c = 0; c < L.cols; ++c)
         for (int r = 0; r < L.rows; ++r)
-          if (!joins.contains({c, r}) && !outside.contains({c, r})) roomCells_.insert({c, r});
+          if (!roomJoins.contains({c, r}) && !outside.contains({c, r})) roomCells_.insert({c, r});
     }
-    wallCells_ = joins;
+    wallCells_ = roomJoins;
     buildRoof();
     // The probes bake once the first frame has laid the room's fires (buildLights): their light bounces into the probes too.
     probeUploaded_ = false;
@@ -2652,7 +2661,8 @@ class MapStage final : public Stage {
   // camera looks into the room from above), so the sun and the moon reach the floor only through the windows, slits and
   // doorways. Built once per map; placed by placeModels while the light is on.
   void buildRoof() {
-    roofMesh_ = plinthMesh_ = 0;
+    roofs_.clear();
+    plinthMesh_ = 0;
     if (!scene_ || scene_->environment != "indoor") return;
     // The slab spans every wall top: its underside kRoofUnder over the lowest wall's ground (no light under it where walls stand
     // lower: the gate floor's rim walls stand 2 units under its raised floor, and a slab over the floor let the morning in along the
@@ -2665,21 +2675,51 @@ class MapStage final : public Stage {
     }
     roofBottom_ = low;
     const float t = std::max(high - roofBottom_, 0.3f);
-    // The slab reaches the outer walls and no further (kRoofMargin past the outermost piece): an overhang shades the windows from
+    // Each slab reaches its room's outer walls and no further (kRoofMargin past them): an overhang shades the windows from
     // outside (6 units of it kept every sun above 8 degrees out of the west wall's windows, capture 020 of 2026-10-21). A side with
     // no wall is open to the sky, as it would be.
-    float x0 = boardCenter_.x - boardWidth_ * 0.5f, x1 = boardCenter_.x + boardWidth_ * 0.5f, z0 = boardCenter_.z - boardDepth_ * 0.5f, z1 = boardCenter_.z + boardDepth_ * 0.5f;
-    if (!arch_.empty()) {
-      x0 = x1 = arch_.front().x, z0 = z1 = arch_.front().z;
-      for (const ArchPiece& a : arch_) x0 = std::min(x0, a.x), x1 = std::max(x1, a.x), z0 = std::min(z0, a.z), z1 = std::max(z1, a.z);
-      x0 -= kRoofMargin, x1 += kRoofMargin, z0 -= kRoofMargin, z1 += kRoofMargin;
-    }
-    roofCentre_ = {0.5f * (x0 + x1), 0.0f, 0.5f * (z0 + z1)};
-    const float w = x1 - x0, d = z1 - z0;
-    roofMesh_ = shadowBox({w * 0.5f, t * 0.5f, d * 0.5f});
-    roofRect_ = {x0, z0, x1, z1};
-    addProbeBox({x0, roofBottom_, z0}, {x1, roofBottom_ + t, z1});  // the room's ceiling, for its light probes
     roofCentreY_ = roofBottom_ + t * 0.5f;
+    const ember::HexLayout& L = board_->layout();
+    const float sq3 = static_cast<float>(std::sqrt(3.0));
+    const float rowStep = L.rows > 1 ? std::abs(static_cast<float>(board_->cell(0, 1).z - board_->cell(0, 0).z)) : sq3;
+    auto archX = [&](int c) { return sq3 * static_cast<float>(c) - static_cast<float>(L.ox); };  // architectureWorld: rows unshifted
+    std::vector<glm::vec4> rects;
+    if (roomCells_.empty()) {
+      // no enclosed room (a cave, a room open to the board's edge): one slab over every piece, as before
+      float x0 = boardCenter_.x - boardWidth_ * 0.5f, x1 = boardCenter_.x + boardWidth_ * 0.5f, z0 = boardCenter_.z - boardDepth_ * 0.5f, z1 = boardCenter_.z + boardDepth_ * 0.5f;
+      if (!arch_.empty()) {
+        x0 = x1 = arch_.front().x, z0 = z1 = arch_.front().z;
+        for (const ArchPiece& a : arch_) x0 = std::min(x0, a.x), x1 = std::max(x1, a.x), z0 = std::min(z0, a.z), z1 = std::max(z1, a.z);
+        x0 -= kRoofMargin, x1 += kRoofMargin, z0 -= kRoofMargin, z1 += kRoofMargin;
+      }
+      rects.push_back({x0, z0, x1, z1});
+    } else {
+      std::set<std::pair<int, int>> left = roomCells_;
+      while (!left.empty()) {
+        std::vector<std::pair<int, int>> open{*left.begin()};
+        left.erase(left.begin());
+        int c0 = open[0].first, c1 = c0, r0 = open[0].second, r1 = r0;
+        while (!open.empty()) {
+          const auto [c, r] = open.back();
+          open.pop_back();
+          c0 = std::min(c0, c), c1 = std::max(c1, c), r0 = std::min(r0, r), r1 = std::max(r1, r);
+          for (const auto& n : {std::pair{c - 1, r}, std::pair{c + 1, r}, std::pair{c, r - 1}, std::pair{c, r + 1}})
+            if (const auto it = left.find(n); it != left.end()) left.erase(it), open.push_back(n);
+        }
+        // the room's cells, then the walls one hex beyond them on every side, then the margin
+        rects.push_back({archX(c0) - sq3 - kRoofMargin, static_cast<float>(board_->cell(0, r0).z) - rowStep - kRoofMargin,
+                         archX(c1) + sq3 + kRoofMargin, static_cast<float>(board_->cell(0, r1).z) + rowStep + kRoofMargin});
+      }
+    }
+    roofRect_ = rects.front();
+    for (const glm::vec4& r : rects) {
+      roofRect_ = {std::min(roofRect_.x, r.x), std::min(roofRect_.y, r.y), std::max(roofRect_.z, r.z), std::max(roofRect_.w, r.w)};
+      const float w = r.z - r.x, d = r.w - r.y;
+      roofs_.push_back({shadowBox({w * 0.5f, t * 0.5f, d * 0.5f}), {0.5f * (r.x + r.z), roofCentreY_, 0.5f * (r.y + r.w)}, r});
+      addProbeBox({r.x, roofBottom_, r.y}, {r.z, roofBottom_ + t, r.w});  // the room's ceiling, for its light probes
+    }
+    const float x0 = roofRect_.x, z0 = roofRect_.y, x1 = roofRect_.z, z1 = roofRect_.w;
+    const float w = x1 - x0, d = z1 - z0;
     // ... and the plinth: the same rectangle under the board, its top just under the lowest wall's ground, down past the board's base,
     // so the sun reaches none of the board's outer sides below the floor (100% interior; capture skirt-r-day of 2026-10-21: the stone
     // sides under the outer walls lit white).
@@ -2688,7 +2728,7 @@ class MapStage final : public Stage {
     if (arch_.empty()) ground = groundLow_;
     const float top = ground - 0.1f, bottom = std::min(groundLow_, 0.0f) - 3.0f;
     plinthMesh_ = top > bottom ? shadowBox({w * 0.5f, 0.5f * (top - bottom), d * 0.5f}) : MeshId{0};
-    plinthCentreY_ = 0.5f * (top + bottom);
+    plinthCentre_ = {0.5f * (x0 + x1), 0.5f * (top + bottom), 0.5f * (z0 + z1)};
   }
 
   // A box's twelve triangles for the light probes' bake, wound outwards (ProbeBake tells a solid's inside by its back faces).
@@ -2730,6 +2770,10 @@ class MapStage final : public Stage {
     in.origin = {roofRect_.x, lowFloor + 0.5f, roofRect_.y};
     in.dims = {static_cast<int>(std::ceil((roofRect_.z - roofRect_.x) / in.spacing.x)) + 1,
                std::max(1, static_cast<int>(std::floor((roofBottom_ - 0.2f - in.origin.y) / in.spacing.y)) + 1),
+  // One slab per room (2026-10-29, the user: "laje só sobre hexes fechados por paredes ... vai ser util na cidade e fazenda"): the
+  // rooms are the 4-connected groups of roomCells_ (the hexes the building walls enclose; a muralha encloses nothing), each slab the
+  // group's rectangle out to its walls plus kRoofMargin. A yard between the buildings stays under the sky. One building = one slab,
+  // as before.
                static_cast<int>(std::ceil((roofRect_.w - roofRect_.y) / in.spacing.z)) + 1};
     const size_t count = static_cast<size_t>(in.dims.x) * in.dims.y * in.dims.z;
     in.candidate.assign(count, 0);
@@ -3027,27 +3071,31 @@ class MapStage final : public Stage {
         inst.flags = kInstanceShadowOnly | kInstanceAlwaysSeen;
         instances.push_back(inst);
       }
-    if (windowLight() && roofMesh_) {
-      // Centred on the board (boardCenter_), never on the camera's pivot: placed on target_ it followed the party to the south and
+    if (windowLight() && !roofs_.empty()) {
+      // Each slab centred on its room (never on the camera's pivot: placed on target_ it followed the party to the south and
       // left a 5-unit strip of the hall uncovered along the north wall (captures 011-017 of 2026-10-21).
       InstanceGpu inst{};
-      inst.rows[0] = {1, 0, 0, roofCentre_.x};
-      inst.rows[1] = {0, 1, 0, roofCentreY_};
-      inst.rows[2] = {0, 0, 1, roofCentre_.z};
-      inst.mesh = roofMesh_;
       inst.scale = 1;
       inst.flags = kInstanceShadowOnly | kInstanceAlwaysSeen;
-      instances.push_back(inst);
+      for (const RoofSlab& slab : roofs_) {
+        inst.rows[0] = {1, 0, 0, slab.centre.x};
+        inst.rows[1] = {0, 1, 0, slab.centre.y};
+        inst.rows[2] = {0, 0, 1, slab.centre.z};
+        inst.mesh = slab.mesh;
+        instances.push_back(inst);
+      }
       if (plinthMesh_) {
-        inst.rows[1] = {0, 1, 0, plinthCentreY_};
+        inst.rows[0] = {1, 0, 0, plinthCentre_.x};
+        inst.rows[1] = {0, 1, 0, plinthCentre_.y};
+        inst.rows[2] = {0, 0, 1, plinthCentre_.z};
         inst.mesh = plinthMesh_;
         instances.push_back(inst);
       }
     }
     placedWindowLight_ = windowLight();
-    if (windowLight() && roofMesh_)
-      logInfo("window light: roof slab {:.2f} .. {:.2f} (ground top {:.2f}), {} wall pieces (tops at their ground + 4.2), {} instances", roofBottom_,
-              2.0f * roofCentreY_ - roofBottom_, boardTop_, arch_.size(), instances.size());
+    if (windowLight() && !roofs_.empty())
+      logInfo("window light: {} roof slab(s) {:.2f} .. {:.2f} (ground top {:.2f}), {} wall pieces (tops at their ground + 4.2), {} instances", roofs_.size(),
+              roofBottom_, 2.0f * roofCentreY_ - roofBottom_, boardTop_, arch_.size(), instances.size());
     placedInstances_ = std::move(instances);
     meshes_.setInstances(placedInstances_);
     lastHearthFireFrame_ = -1;
@@ -10494,10 +10542,15 @@ class MapStage final : public Stage {
   int floorChoice_ = 1;    // the panel's "Chão do vão" (maps with MapDraft::emberFloor): 0 OFF (mode 5), 1 the painting flat under the board
   int windFogChoice_ = 1;  // the panel's "Névoa do vento" (maps with MapDraft::emberWindFog): 0 OFF, 1 the draft's fog look
   int windowLight_ = 0;    // the panel's "Luz das janelas" (indoor maps): 0 OFF, 1 real (windowLight())
-  MeshId roofMesh_ = 0;    // the shadow-only roof slab (buildRoof); 0 = none
-  MeshId plinthMesh_ = 0;  // ... and the shadow-only plinth under the board
-  float plinthCentreY_ = 0.0f;
-  glm::vec4 roofRect_{0.0f};  // ... its rectangle: x0, z0, x1, z1
+  struct RoofSlab {
+    MeshId mesh;       // the shadow-only slab (buildRoof, one per room)
+    glm::vec3 centre;  // its centre (world x, y, z)
+    glm::vec4 rect;    // its rectangle: x0, z0, x1, z1
+  };
+  std::vector<RoofSlab> roofs_;  // empty = no roof
+  MeshId plinthMesh_ = 0;        // the shadow-only plinth under the board (all the rooms' rectangle)
+  glm::vec3 plinthCentre_{0.0f};
+  glm::vec4 roofRect_{0.0f};  // every slab's rectangle together (the probes' volume): x0, z0, x1, z1
   // Luz das janelas: the room's light probes (startProbeBake / uploadProbes; the bake runs on the workers while probeBusy_).
   std::vector<glm::vec3> probeTris_;          // the room's surfaces in world space: the pieces (buildArchitecture), the roof (buildRoof)
   std::set<std::pair<int, int>> roomCells_;   // the hexes the walls enclose
@@ -10519,7 +10572,6 @@ class MapStage final : public Stage {
   bool probesReleased_ = false;     // the previous map's probes let go in this stage's first frame
   std::vector<uint32_t> probeFloor_;          // per column of the grid, its lowest probe in the room (the camera's meter reads them)
   float roofBottom_ = 0.0f, roofCentreY_ = 0.0f;  // ... its underside and centre (world y)
-  glm::vec3 roofCentre_{0.0f};                     // ... its centre on the board (x, z)
   std::map<std::pair<int, int>, ember::BattleCell> doorCellsBefore_;  // the battle cells under the animated doors before they were made solid
   float lastDoorTime_ = -1.0f;
   bool placedWindowLight_ = false;  // placeModels: whether the roof was placed

@@ -17,9 +17,11 @@ CATALOG = json.load(open(os.path.join(ROOT, 'content', 'data', 'editor-catalog.j
 WALL, WINDOW, SLIT, TORCH = 'ember-arch-mosteiro-wall', 'ember-arch-mosteiro-window', 'ember-arch-mosteiro-slit', 'ember-arch-mosteiro-wall-torch'
 PORTAL, DOOR, GATE = 'ember-arch-mosteiro-portal', 'ember-arch-mosteiro-door', 'ember-arch-mosteiro-gate'
 STAIRS_UP, STAIRS_DOWN = 'ember-arch-mosteiro-stairs-up', 'ember-arch-mosteiro-stairs-down'
+# the precinct's muralha (openAir: joins and shadows like a wall, encloses no room: the yard stays under the sky)
+RAMPART, RAMPART_TORCH, RAMPART_GATE = 'ember-arch-mosteiro-rampart', 'ember-arch-mosteiro-rampart-torch', 'ember-arch-mosteiro-rampart-gate'
 LOCKED = 'dungeon-stone-door'  # a lock: "Arrombar" opens it (BattleExport: every model3d door decoration is a lock)
-ARCH = {WALL, WINDOW, SLIT, TORCH, PORTAL, DOOR, GATE, STAIRS_UP, STAIRS_DOWN, LOCKED}
-OPEN_PIECES = {PORTAL, DOOR, GATE}  # the party passes (the door opens for whoever comes)
+ARCH = {WALL, WINDOW, SLIT, TORCH, PORTAL, DOOR, GATE, STAIRS_UP, STAIRS_DOWN, LOCKED, RAMPART, RAMPART_TORCH, RAMPART_GATE}
+OPEN_PIECES = {PORTAL, DOOR, GATE, RAMPART_GATE}  # the party passes (the door opens for whoever comes)
 PASSABLE_PROPS = {'light-candle', 'ember-interior-worn-rug', 'floor-connector', 'city-shrineCandle', 'ember-nature-leaf-litter'}
 
 
@@ -74,6 +76,7 @@ class Floor:
         self.tiles = [base_tile] * (cols * rows)
         self.walls, self.openings = set(), []
         self.windows, self.slits, self.torches = set(), set(), set()
+        self.ramparts = set()  # wall cells that are the muralha (RAMPART / RAMPART_TORCH instead of WALL / TORCH)
         self.decorations, self.owner, self.people, self.spawns = [], {}, {}, []
         self.neutrals, self.players = [], []
 
@@ -118,6 +121,8 @@ class Floor:
             if (x, y) in taken:
                 continue
             pid = WINDOW if (x, y) in self.windows else SLIT if (x, y) in self.slits else TORCH if (x, y) in self.torches else WALL
+            if (x, y) in self.ramparts:
+                pid = RAMPART_TORCH if (x, y) in self.torches else RAMPART
             vertical = (x, y - 1) in self.walls or (x, y + 1) in self.walls
             horizontal = (x - 1, y) in self.walls or (x + 1, y) in self.walls
             self.decorations.append({'id': pid, 'x': x, 'y': y, 'rot': 0, 'wallOrientation': 'horizontal' if horizontal or not vertical else 'vertical'})
@@ -210,7 +215,7 @@ class Floor:
 
     def show(self):
         grid = [['.'] * self.cols for _ in range(self.rows)]
-        marks = {WINDOW: 'W', SLIT: 's', TORCH: 'T', DOOR: 'D', PORTAL: 'O', GATE: 'G', LOCKED: 'L', STAIRS_DOWN: 'S', STAIRS_UP: 'U'}
+        marks = {WINDOW: 'W', SLIT: 's', TORCH: 'T', DOOR: 'D', PORTAL: 'O', GATE: 'G', RAMPART_GATE: 'G', LOCKED: 'L', STAIRS_DOWN: 'S', STAIRS_UP: 'U', RAMPART: '=', RAMPART_TORCH: 't'}
         for (x, y), i in self.owner.items():
             grid[y][x] = marks.get(i, '#' if i == WALL else 'c' if i == 'light-candle' else 'o')
         for (x, y), who in self.people.items():
