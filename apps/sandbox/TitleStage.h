@@ -35,6 +35,7 @@
 #include "render/Renderer.h"
 #include "render/UiArt.h"
 #include "world/Campaign.h"
+#include "world/Overworld.h"
 
 namespace ember {
 
@@ -331,7 +332,7 @@ class TitleStage : public Stage {
         if (e.is_regular_file() && name.rfind("brief-", 0) == 0 && !uiImageLoaded(e.path())) files.push_back(e.path());
       }
     }
-    if (const auto map = artRoot / "game/assets/world-map.jpg"; !uiImageLoaded(map)) files.push_back(map);
+    if (const std::filesystem::path map = ember::kWorldMapPicture; !uiImageLoaded(map)) files.push_back(map);
     std::sort(files.begin(), files.end());
     if (!uiImageLoaded(backdropFile())) files.insert(files.begin(), backdropFile());
     return files;

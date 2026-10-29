@@ -783,7 +783,7 @@ class OverworldStage : public Stage {
   static constexpr const char* kUnderworldAtlas = "content/worldmap/underworld-atlas-v03.png";
   // v03 = mordavia_mapa_completo_4096_v3 (the user, 2026-10-28): the same map at 4096 px, the house in the middle and the hill's
   // cave redrawn; the pins keep their percent coordinates.
-  static constexpr const char* kWorldMap = "content/worldmap/world-map-v03.jpg";
+  static constexpr const char* kWorldMap = ember::kWorldMapPicture;
   // Whether the word at the upper left switches worlds: Modo teste only, its "go anywhere" (the user, 2026-10-28: "no jogo haverão
   // algumas passagens, não se pode mudar assim, é só no debug"); the campaign crosses by the game's passages (showUnderworld).
   bool underworldOpen() const { return test(); }

@@ -17,6 +17,10 @@
 
 namespace ember {
 
+// The Overworld's painting, the one picture every screen draws it with: the RPG map, Modo teste's classic map and the title's
+// preload (the user, 2026-10-28: "mudar em tudo"). v03 = mordavia_mapa_completo_4096_v3; the pins are in percent of it.
+inline constexpr const char* kWorldMapPicture = "content/worldmap/world-map-v03.jpg";
+
 class Mulberry32;
 
 struct OverworldCell {

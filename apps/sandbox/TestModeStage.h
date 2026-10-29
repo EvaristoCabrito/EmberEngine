@@ -412,7 +412,7 @@ class TestModeStage : public Stage {
 
   void drawMapViewport(ImVec2 a, ImVec2 b) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
-    const UiImage* map = uiImage(underworld_ ? std::filesystem::path(underworld().atlas()) : paths_.artRoot / "game/assets/world-map.jpg");
+    const UiImage* map = uiImage(std::filesystem::path(underworld_ ? underworld().atlas() : std::string(ember::kWorldMapPicture)));
     const float vw = b.x - a.x, vh = b.y - a.y;
     const float imgW = map ? vw * kZoomStops[zoom_] / 100.0f : std::min(vw * 0.7f, 448.0f);
     const float imgH = map ? imgW * static_cast<float>(map->height) / static_cast<float>(map->width) : vh * 0.7f;
@@ -521,7 +521,7 @@ class TestModeStage : public Stage {
 
   // Bottom right: ember-plate p-1 with Aproximar, "n/4" (counted from the wide end) and Afastar.
   void drawZoom(ImVec2 size) {
-    if (!uiImage(paths_.artRoot / "game/assets/world-map.jpg")) return;
+    if (!uiImage(std::filesystem::path(ember::kWorldMapPicture))) return;
     if (worldMapZoomBox(size, zoom_)) recentre_ = true;
   }
 
