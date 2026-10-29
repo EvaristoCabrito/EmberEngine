@@ -52,9 +52,6 @@ namespace ember {
 // GameApp DEFAULT_TEST_LEVEL ("the one place to change the test-mode level") and TEST_EMBER.
 inline constexpr int kDefaultTestLevel = 30;  // was 15 (the user, 2026-10-19: "subir o level dos testes para 30")
 inline constexpr long long kTestEmber = 900000;
-// The heroes Modo teste's party leaves out of its fights and free-roam maps (the user, 2026-10-29: "remove Malrec and Selene from
-// the default Party, its getting too heavy to load"); everyone else of the battle file is seated.
-inline constexpr const char* kTestPartyLeftOut[] = {"Malrec", "Selene"};
 
 struct TestSession {
   ember::Json save;        // GameApp testOverworld (freshTestOverworld on entry)

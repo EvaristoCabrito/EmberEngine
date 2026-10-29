@@ -434,7 +434,10 @@ class OverworldStage : public Stage {
   // --- the save -------------------------------------------------------------------------------------------------------
 
   bool test() const { return testSave_ != nullptr; }
-  bool recruited(const std::string& hero) const { return test() || world_.heroRecruited(hero, save_); }
+  bool recruited(const std::string& hero) const {
+    if (test()) return std::ranges::none_of(ember::kTestPartyLeftOut, [&](const char* out) { return hero == out; });
+    return world_.heroRecruited(hero, save_);
+  }
   std::vector<std::string> partyHeroes() const {
     std::vector<std::string> out;
     for (const char* h : kHeroes)
@@ -1573,8 +1576,10 @@ class OverworldStage : public Stage {
     if (const UiImage* bg = uiImage(paths_.artRoot / "game/ui/map-status-background.jpg")) imageCover(dl, *bg, a, b);
     dl->AddRectFilled(a, b, IM_COL32(17, 17, 17, 64), 0);
     dl->AddRect(a, b, kBorder, 0);
-    // Block input under the panel.
+    // Block input under the panel; the portraits' buttons over it still take their clicks (without the overlap the panel's button
+    // kept the hover and no portrait ever opened its status sheet).
     ImGui::SetCursorScreenPos(a);
+    ImGui::SetNextItemAllowOverlap();
     ImGui::InvisibleButton("##partypanel", {w, h});
     dl->AddText(ui, 12.0f, {a.x + pad, a.y + pad}, kMuted, line.c_str());
     float x = a.x + pad;
