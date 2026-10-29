@@ -421,6 +421,8 @@ void DaggerFx::buildCloud(Cloud& c, float now, const Camera& camera, VfxFrame& f
                         glm::rotate(glm::mat4(1.0f), now * 0.6f, kUp) * glm::scale(glm::mat4(1.0f), {r, 1.0f, r});
     draw(discFirst_, discCount_, m, kModeRing, now, 0.4f, (0.2f + 0.1f * pulse) * env * std::min(1.0f, static_cast<float>(drawn) / 3.0f), kViolet, 0.0f,
          glm::vec4(kVioletCore, 0.8f), c.feet, VfxBlend::Additive);
+    // Under the feet: drawn right before the body's card, so the figure covers it (the user, 2026-10-29).
+    frame.draws.back().behindCard = true, frame.draws.back().cardAt = c.feet;
   }
   lights.push_back({c.feet + kUp * (c.height * 0.52f), kViolet, (0.9f + 0.4f * pulse) * env * std::min(1.0f, static_cast<float>(drawn) / 3.0f), 2.6f * k});
 }
