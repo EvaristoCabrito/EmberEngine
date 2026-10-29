@@ -169,11 +169,15 @@ def surface(a, out, full):
     save_rgb(lights, f"{out}/surface-lights{SUFFIX}.png")
     # A zona dos wisps de ember (o usuário, 2026-10-29: "wisps pequenos aleatórios nesses lugares com mais ember"): uma mancha
     # suave sobre cada lugar habitado, mais densa no castelo; R = quanto wisp cabe ali.
-    wisps = np.zeros((h, w), np.float32)
-    for (x0, y0, x1, y1, _n, _r), strength in zip(buildings, (0.7, 1.0, 0.6, 0.5, 0.6, 0.5, 0.5)):
-        cx, cy, rx, ry = (x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0) / 2 * 1.15, (y1 - y0) / 2 * 1.15
-        wisps = np.maximum(wisps, strength * ellipse(h, w, cx, cy, rx, ry, 0.7))
-    wisps = blur(wisps, 6) * land
+    # (2026-10-29, the user: "poucos wisps random pelo mapa, não existe concentração além dos templos"): R = 0.3 em toda a terra
+    # (poucos, espalhados), 1.0 nos templos (o templo no alto, a ruína a nordeste, a capela do cruzamento), 0 no papel. O shader
+    # lê R só como densidade (0.3 -> rara, 1.0 -> concentrada).
+    temples = [(0.43, 0.01, 0.62, 0.19), (0.71, 0.18, 0.90, 0.34), (0.48, 0.52, 0.54, 0.57)]
+    wisps = 0.3 * np.ones((h, w), np.float32)
+    for (x0, y0, x1, y1) in temples:
+        cx, cy, rx, ry = (x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0) / 2 * 1.1, (y1 - y0) / 2 * 1.1
+        wisps = np.maximum(wisps, ellipse(h, w, cx, cy, rx, ry, 0.5))
+    wisps = blur(wisps, 4) * land
     save_l(wisps, f"{out}/surface-wisps{SUFFIX}.png")
 
     # Relevo: base plana, o morro central, as montanhas do norte com o castelo, a ravina SW baixa, a floresta SE ondulada.

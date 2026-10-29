@@ -153,12 +153,16 @@ float sporePoint(float2 p, float seed, float size, float fill, float wanderAmp) 
       const float2 c = cell + float2(i, j);
       const float h = hash21(c + seed);
       if (h > fill) continue;
-      // o vagueio pela textura de ruído (uma leitura por célula, sem trigonometria por pixel)
-      const float2 wander = (noiseAt(c * 0.37 + seed + push.time * 0.03).gb - 0.5) * wanderAmp;
+      // o vagueio pela textura de ruído (uma leitura por célula, sem trigonometria por pixel); nunca fixa no lugar (o usuário,
+      // 2026-10-29: "ELES NAO DEVEM FICAR FIXADOS"): anda pela célula inteira e, num ciclo próprio, apaga e reacende noutro
+      // ponto (a fase do vagueio salta com a vida)
+      const float life = 0.5 + 0.5 * sin(push.time * (0.18 + h * 0.2) + h * 6.2831853);
+      const float alive = smoothstep(0.15, 0.5, life);
+      const float2 wander = (noiseAt(c * 0.37 + seed + push.time * 0.09 + floor(push.time * 0.03 + h)).gb - 0.5) * wanderAmp;
       const float2 pos = c + 0.5 + wander;
       const float d = length(p - pos);
       const float sz = size * (0.6 + 0.8 * hash21(c * 3.1 + seed));  // tamanhos variados
-      v += (1.0 - smoothstep(0.0, sz, d)) * (0.6 + 0.4 * h);
+      v += (1.0 - smoothstep(0.0, sz, d)) * (0.6 + 0.4 * h) * alive;
     }
   return v;
 }
@@ -236,11 +240,15 @@ float4 overworld(float2 uv, float2 pixel, float2 texel) {
     if (zone > 0.002) {
       const float4 wisp = param(23);
       const float2 p = uv * wisp.x + float2(push.time * wisp.z * 0.4, -push.time * wisp.z);
-      const float s = sporePoint(p, 5.0, wisp.y, 0.3, 1.4);
-      const float halo = sporePoint(p, 5.0, wisp.y * 4.0, 0.3, 1.4);  // a luz suave em volta de cada brasa (mesma semente)
+      // poucas (12 % das células), pequenas, respirando devagar (nunca piscando: "árvore de natal", o usuário, 2026-10-29)
+      // zone.r é só densidade (o usuário, 2026-10-29: "poucos wisps random pelo mapa, não existe concentração além dos
+      // templos"): rara em toda a terra (0.3 -> 3 % das células), concentrada nos templos (1.0 -> 25 %); o brilho é o mesmo.
+      const float fill = zone > 0.65 ? 0.06 : 0.003;  // um punhado: ~5 no mapa inteiro, 3-4 por templo ("enxame", o usuário)
+      const float s = sporePoint(p, 5.0, wisp.y, fill, 1.4);
+      const float halo = sporePoint(p, 5.0, wisp.y * 6.0, fill, 1.4);  // a luz visível em volta de cada brasa (mesma semente)
       const float cell = hash21(floor(p));
-      const float blink = 0.45 + 0.55 * sin(push.time * (1.5 + cell * 2.0) + cell * 6.2831853);
-      c += zone * (s + halo * 0.12) * blink * lightColor.rgb * lightColor.w * mistShape.w;
+      const float breathe = 0.7 + 0.3 * sin(push.time * (0.4 + cell * 0.4) + cell * 6.2831853);
+      c += (s + halo * 0.5) * breathe * lightColor.rgb * lightColor.w * mistShape.w;
     }
   }
   // 4b. A névoa pálida da madrugada e da noite, deslizando sobre as baixadas e a água (onde a máscara permite).
