@@ -417,14 +417,21 @@ bool Overworld::canStep(const Json& save, OverworldHex from, OverworldHex to, bo
   if (!has(completed, "vau")) return false;
   if (wisp_ && from.col <= wisp_->col && to.col > wisp_->col && wispForestUncleared(save)) return false;
   if (has(completed, "estalagem") || from == inn_) return true;
-  if (to.row != start_.row || to.col < start_.col || to.col > inn_.col) return false;
-  // From the start, right up to the Stone Bridge: one hex on the 5 % grid, two on the half grid (hexSize 2.5).
-  const int bridgeCol = start_.col + static_cast<int>(std::lround(5.0 / gHexSize));
-  if (to.col < from.col) return true;
-  if (from.col < bridgeCol) return to.row == from.row && to.col == from.col + 1;
+  // The early road: the start's row from the start to the Inn, and the Stone Bridge's hex (on the start's row on the 5 % grid,
+  // the row below on the half grid). Back (west) always; east up to the bridge; past it once the bridge's missions are done.
+  const MapLocation* bridge = nullptr;
+  for (const MapLocation& l : locations_)
+    if (l.id == "stonebridge") bridge = &l;
+  const bool onBridge = bridge && to.col == bridge->col && to.row == bridge->row;
+  if (!onBridge && (to.row != start_.row || to.col < start_.col || to.col > inn_.col)) return false;
+  const OverworldCell* a = cell(from.col, from.row);
+  const OverworldCell* b = cell(to.col, to.row);
+  const OverworldCell* bridgeCell = bridge ? cell(bridge->col, bridge->row) : nullptr;
+  if (!a || b->x < a->x) return true;
+  if (bridgeCell && a->x < bridgeCell->x) return b->x <= bridgeCell->x;
   for (const std::string& id : stoneBridgeMissionIds_)
     if (!has(completed, id)) return false;
-  return to.col > from.col;
+  return b->x > a->x;
 }
 
 Json Overworld::teleport(const Json& save, OverworldHex to) {
