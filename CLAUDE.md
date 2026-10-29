@@ -1808,8 +1808,11 @@ e tem a diretoria macabra do monasterio")
   on their order. Final props come from Meshy / TripoSR / an open library on the user's choice (asked, not answered). NOT cooked into
   any mesh pack yet (JOGAR mounts props-v12.pak; staging `build/meshes/src-v2/ember/mosteiro/` has the v02 GLBs): the maps warn
   "not in the mesh pack" for them (and for `ritual-brazier-v02`, `dead-oak-v02`, `funeral-urns-v02`: catalogued props missing from v12).
-- Not in the campaign (no campaign.json mission, no world-map location): open through the Map Editor (Testar) or the Cooker +
-  `--map/--scene/--battle-rules` line in the doc. Verified: the three floors open in release (scene built, every unit in play, the
+- **On the world map since 2026-10-29 (the user: two hexes east of the Farm): hex (3, 5)**, `tools/scripts/data/add_monastery_location.py`
+  writes the location (open access, floors as submaps) into overworld.json + campaign.json (+ the three missions, index 64, texts from
+  the newest drafts) and the editor's Locais (editor-catalog `editor.locations` / `locais.submaps`); the pin opens the mission in Modo
+  teste RPG (`--title-screen test-rpg --map-ui location:mosteiro`). The game opens the newest serial (`mosteiro005` = the user's own
+  editor save of 03:50). Also openable through the Map Editor (Testar) or the Cooker + `--map/--scene/--battle-rules` line in the doc. Verified: the three floors open in release (scene built, every unit in play, the
   indoor floors with window light + probes), captures `captures/mosteiro/`. Not verified: the conversations and the locked doors in
   the window, the stairs between floors in play (code path only), the look (the user judges).
 

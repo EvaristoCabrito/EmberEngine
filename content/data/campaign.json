@@ -1645,6 +1645,36 @@
    "objective": "Derrote a Matriarca do Carvão.",
    "win": "escape",
    "mapFile": "C:/EmberEngine/content/maps/ember/deep-ashen-root-sanctuary001.json"
+  },
+  {
+   "id": "mosteiro",
+   "index": 64,
+   "title": "O Mosteiro das Cinzas",
+   "place": "Mosteiro dos Devotos da Cinza, na estrada dos desaparecidos",
+   "briefing": "Na estrada que passa pelo Mosteiro, gente some. Os Devotos da Cinza recebem peregrinos, curam febris e enterram os seus mortos com honra, dizem eles. Entre pelo portão, fale com os irmãos, olhe o que não querem mostrar. A cripta é selada: só os irmãos descem.",
+   "objective": "Investigue o Mosteiro e encontre o caminho para baixo",
+   "win": "rout",
+   "mapFile": "mosteiro005.json"
+  },
+  {
+   "id": "mosteiro-andar-2",
+   "index": 64,
+   "title": "O Mosteiro das Cinzas · Andar II",
+   "place": "Biblioteca, sala do capítulo e quartos dos hóspedes",
+   "briefing": "O andar dos hóspedes. Tudo parece em ordem: a biblioteca copia, o capítulo reza, os peregrinos pagam a cama. Mas há camas vazias com as sacolas ao lado, e um canto que vem do teto. O terceiro andar é do conselho: trancado.",
+   "objective": "Fale com os hóspedes e os irmãos; encontre a escada para o topo",
+   "win": "rout",
+   "mapFile": "mosteiro-andar-2001.json"
+  },
+  {
+   "id": "mosteiro-andar-3",
+   "index": 64,
+   "title": "O Mosteiro das Cinzas · Andar III",
+   "place": "O topo trancado: o capítulo da Cinza e a capela do Abade",
+   "briefing": "O último andar. Uma sala de chegada, um irmão de guarda e uma porta de pedra que não se abre para hóspedes. Atrás dela delibera o conselho dos Devotos: o Prior, o Mestre dos Noviços, a Irmã Superiora. E a Santa, que dorme.",
+   "objective": "Abra a porta de pedra e enfrente o conselho com a verdade",
+   "win": "rout",
+   "mapFile": "mosteiro-andar-3002.json"
   }
  ],
  "locations": [
@@ -1910,6 +1940,28 @@
    ],
    "col": 4,
    "row": 8
+  },
+  {
+   "id": "mosteiro",
+   "name": "Mosteiro das Cinzas",
+   "x": 30.31,
+   "y": 37.5,
+   "missionIds": [
+    "mosteiro"
+   ],
+   "openAccess": true,
+   "submaps": [
+    {
+     "missionId": "mosteiro-andar-2",
+     "floor": 2
+    },
+    {
+     "missionId": "mosteiro-andar-3",
+     "floor": 3
+    }
+   ],
+   "col": 3,
+   "row": 5
   }
  ],
  "slotProgress": [

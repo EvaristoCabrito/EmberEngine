@@ -176,8 +176,13 @@ build\release\bin\Cooker.exe export-battle build\test-maps\maps\<m>.json build\t
 Sandbox.exe --map build/test-maps/maps/<m>.json --scene build/test-maps/scenes/<m>.scene.json --battle-rules build/test-maps/battles/<m>.battle.json --ground build/ground/ground-v55.pak --sprites build/sprites/battle.pak --meshes build/meshes/props-v12.pak --heroes build/scenes/roster.json --game-assets content/assets
 ```
 
-Para entrar na campanha falta: a missão em `content/data/campaign.json` + a localização no mapa-múndi (hex a escolher pelo user) e a
-ligação da estrada.
+**No mapa-múndi (2026-10-29; o user: duas casas à direita da Fazenda):** hex **(3, 5)**, pino x 30,31 y 37,5, acesso livre
+(`openAccess`), os andares como `submaps` (floor 2 / 3). Escrito por `tools/scripts/data/add_monastery_location.py` (idempotente) em
+`content/data/overworld.json` (o pino), `content/data/campaign.json` (a localização + as missões `mosteiro`, `mosteiro-andar-2`,
+`mosteiro-andar-3`, índice 64, textos dos drafts mais novos, `mapFile` = o serial mais alto na hora: o jogo abre sempre o mais novo)
+e `content/data/editor-catalog.json` (`editor.locations` + `editor.locais.submaps`: a lista Locais do editor). No Modo teste RPG o
+pino abre a missão (captura `captures/mosteiro/worldmap-location.png`). `mosteiro005` é um save do user no editor (03:50): é o que
+o jogo abre. Não rodado: `Cooker check-overworld` (o Cooker.exe não estava em `build/release/bin` nessa hora: build de outra sessão).
 
 Verificado (2026-10-29, release, `captures/mosteiro/`): os três abrem (térreo `456 architecture pieces (456 built)`, `14 of 14 units in
 play`; Andar II `330 built`, `8 of 8`, window light + probes; Andar III `180 built`, `7 of 7`, window light + probes). Não verificado:
