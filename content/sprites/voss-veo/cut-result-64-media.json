@@ -135,35 +135,34 @@
   },
   "atk": {
    "video": "Attachments/VeoVoss/CounterDistance/CounterDistanceat420sec.mp4",
-   "first": 101,
-   "last": 212,
+   "first": 146,
+   "last": 186,
    "bootRow": 1193,
    "bootRows": [
     1193,
-    1222
+    1193
    ],
-   "frameCountFrom": 112,
-   "figurePx": 1046.5,
-   "scaledTo": 609.9,
-   "frames": 64,
-   "frameMs": 72.91666666666666,
+   "figurePx": 1044.0,
+   "scaledTo": 610.1,
+   "frames": 41,
+   "frameMs": 41.666666666666664,
    "nat": [
-    419,
-    690
+    404,
+    644
    ],
    "crop": [
-    0,
     3,
-    416,
-    684
+    3,
+    396,
+    638
    ],
    "box": {
-    "w": 1.84611,
-    "h": 3.04013,
-    "foot": 0.04016
+    "w": 1.77846,
+    "h": 2.83498,
+    "foot": 0.01967
    },
-   "pattern": "content/sprites/voss-veo/atk-media64-v01/atk-{}.png",
-   "impact": 0.5446
+   "pattern": "content/sprites/voss-veo/atk-media64-v02/atk-{}.png",
+   "impact": 0.3902
   },
   "counter-staff": {
    "video": "Attachments/VeoVoss/CounterStaff/CounterClseat4sec.mp4",

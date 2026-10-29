@@ -72,10 +72,11 @@
    "kind": "stand",
    "src": "build/video-cut/voss-veo/attack",
    "video": "Attachments/VeoVoss/CounterDistance/CounterDistanceat420sec.mp4",
-   "first": 101,
-   "last": 212,
+   "first": 146,
+   "last": 186,
    "impactFrame": 162,
-   "mode": "once"
+   "mode": "once",
+   "version": "v02"
   },
   {
    "clip": "counter-staff",

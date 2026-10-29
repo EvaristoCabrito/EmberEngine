@@ -27,12 +27,13 @@
    "kind": "stand",
    "src": "build/video-cut/giant-beetle/atkfall",
    "video": "Attachments/GiantBeetle/Giant_beetle_attacking_and_falling_20261026232021.mp4",
-   "first": 0,
-   "last": 140,
+   "first": 18,
+   "last": 74,
    "impactFrame": 58,
    "mode": "once",
    "mirror": true,
-   "scaleTo": 916
+   "scaleTo": 916,
+   "version": "media64-v02"
   },
   {
    "clip": "move",

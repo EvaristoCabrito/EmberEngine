@@ -35,34 +35,34 @@
   },
   "atk": {
    "video": "Attachments/GiantBeetle/Giant_beetle_attacking_and_falling_20261026232021.mp4",
-   "first": 0,
-   "last": 140,
-   "bootRow": 648,
+   "first": 18,
+   "last": 74,
+   "bootRow": 647,
    "bootRows": [
     645,
-    651
+    650
    ],
-   "frameCountFrom": 141,
+   "frameCountFrom": 57,
    "figurePx": 448.0,
    "frames": 36,
-   "frameMs": 163.19444444444446,
+   "frameMs": 65.97222222222223,
    "nat": [
-    957,
+    906,
     626
    ],
    "crop": [
+    6,
     5,
-    5,
-    947,
+    895,
     615
    ],
    "box": {
-    "w": 2.83084,
+    "w": 2.67998,
     "h": 1.85173,
     "foot": 0.06212
    },
-   "pattern": "content/sprites/giant-beetle/atk-media36-v01/atk-{}.png",
-   "impact": 0.4113
+   "pattern": "content/sprites/giant-beetle/atk-media36-v02/atk-{}.png",
+   "impact": 0.7018
   },
   "move": {
    "video": "Attachments/GiantBeetle/GiantBeetleWalk.mp4",

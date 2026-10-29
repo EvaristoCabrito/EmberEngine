@@ -137,36 +137,36 @@
   },
   "atk": {
    "video": "Attachments/VeoVoss/CounterDistance/CounterDistanceat420sec.mp4",
-   "first": 101,
-   "last": 212,
+   "first": 146,
+   "last": 186,
    "bootRow": 1193,
    "bootRows": [
     1193,
-    1222
+    1193
    ],
-   "frameStep": 3,
-   "frameStepFrom": 112,
-   "figurePx": 1046.5,
-   "scaledTo": 609.7,
-   "frames": 38,
-   "frameMs": 125.0,
+   "frameStep": 1,
+   "frameStepFrom": 41,
+   "figurePx": 1044.0,
+   "scaledTo": 610.1,
+   "frames": 41,
+   "frameMs": 41.666666666666664,
    "nat": [
-    418,
-    691
+    404,
+    644
    ],
    "crop": [
-    0,
     3,
-    415,
-    684
+    3,
+    396,
+    638
    ],
    "box": {
-    "w": 1.84097,
-    "h": 3.04333,
-    "foot": 0.04527
+    "w": 1.77846,
+    "h": 2.83498,
+    "foot": 0.01967
    },
-   "pattern": "content/sprites/voss-veo/atk-leve-passo-v01/atk-{}.png",
-   "impact": 0.5446
+   "pattern": "content/sprites/voss-veo/atk-leve-passo-v02/atk-{}.png",
+   "impact": 0.3902
   },
   "counter-staff": {
    "video": "Attachments/VeoVoss/CounterStaff/CounterClseat4sec.mp4",
