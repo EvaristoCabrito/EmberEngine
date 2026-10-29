@@ -25,6 +25,7 @@
   "estalagem-andar-2": ["inn-second-floor-v01.jpg#teto", "inn-second-floor-v01.jpg#piso"],
   "bosque": ["bosque-morto-panorama-v01.png", "bosque-morto-panorama-v02.png", "bosque-morto-panorama-v04-alpha-sol.png"],
   "thebridge": ["bridge-panorama-v02-alpha.png"],
+  "wisp-forest-crossing": ["wisp-forest-crossing-panorama-v04-alpha.png"],
   "random-amanita-glade": ["vau-panorama-tira-teima-v05.png"],
   "random-blightwood-verge": ["vau-panorama-tira-teima-v05.png"],
   "random-broken-antler-grove": ["vau-panorama-tira-teima-v05.png"],
@@ -39,7 +40,11 @@
   "random-mora-hollow-stream": ["vau-panorama-tira-teima-v05.png"],
   "random-mora-rootwatch": ["vau-panorama-tira-teima-v05.png"],
   "random-river-rope-ambush": ["vau-panorama-tira-teima-v05.png"],
-  "farmlands": ["fields-revisited-panorama-v01.png"]
+  "farmlands": ["fields-revisited-panorama-v01.png"],
+  "watchtower-gate-floor": ["watchtower-entry-panorama-v02.png"],
+  "watchtower-barracks": ["watchtower-entry-panorama-v02.png"],
+  "watchtower-command": ["watchtower-entry-panorama-v02.png"],
+  "watchtower-beacon": ["watchtower-entry-panorama-v02.png"]
  },
  "paintings": {
   "inn-panorama-v01.jpg#chao": {
@@ -242,6 +247,21 @@
    "keepSky": true,
    "whole": true
   },
+  "wisp-forest-crossing-panorama-v04-alpha.png": {
+   "horizon": 0.47,
+   "bottom": 1.0,
+   "skyTop": 0.0,
+   "degreesPerHeight": 40.0,
+   "bottomDegrees": 23.6,
+   "spanDegrees": 119.0,
+   "glowColumn": 0.5,
+   "horizonDegrees": 2.0,
+   "alphaSky": true,
+   "ground": "wisp-crossing-ground-v02.png",
+   "groundTile": 16.0,
+   "groundFar": 300.0,
+   "groundFromDegrees": 3.0
+  },
   "thebridge-bg.jpg": {
    "bottom": 1.0,
    "degreesPerHeight": 26.0,
@@ -342,21 +362,6 @@
    "groundFar": 300.0,
    "groundFromDegrees": 3.0
   },
-  "bosque-morto-panorama-v04-alpha-sol.png": {
-    "horizon": 0.55,
-    "bottom": 1.0,
-    "skyTop": 0.0,
-    "degreesPerHeight": 40.0,
-    "bottomDegrees": 23.6,
-    "spanDegrees": 119.0,
-    "glowColumn": 0.5,
-    "horizonDegrees": 2.0,
-    "alphaSky": true,
-    "ground": "bosque-ground-v01.jpg",
-    "groundTile": 16.0,
-    "groundFar": 300.0,
-    "groundFromDegrees": 3.0
-  },
   "bridge-panorama-v02-alpha.png": {
    "horizon": 0.29,
    "bottom": 1.0,
@@ -417,19 +422,62 @@
    "groundFar": 300.0,
    "groundFromDegrees": 3.0
   },
+  "bosque-morto-panorama-v04-alpha-sol.png": {
+   "horizon": 0.55,
+   "bottom": 1,
+   "skyTop": 0,
+   "degreesPerHeight": 40,
+   "bottomDegrees": 23.6,
+   "spanDegrees": 119,
+   "glowColumn": 0.5,
+   "horizonDegrees": 2,
+   "alphaSky": true,
+   "ground": "bosque-ground-v01.jpg",
+   "groundTile": 16,
+   "groundFar": 300,
+   "groundFromDegrees": 3
+  },
   "fields-revisited-panorama-v01.png": {
    "horizon": 0.44,
-   "bottom": 1.0,
-   "skyTop": 0.0,
-   "degreesPerHeight": 40.0,
+   "bottom": 1,
+   "skyTop": 0,
+   "degreesPerHeight": 40,
    "bottomDegrees": 23.6,
-   "spanDegrees": 119.0,
+   "spanDegrees": 119,
    "glowColumn": 0.8,
-   "horizonDegrees": 0.0,
+   "horizonDegrees": 0,
    "ground": "fields-revisited-ground-v03.png",
-   "groundTile": 180.0,
-   "groundFar": 300.0,
-   "groundFromDegrees": 3.0
+   "groundTile": 180,
+   "groundFar": 300,
+   "groundFromDegrees": 3
+  },
+  "watchtower-entry-panorama-v01.png": {
+   "horizon": 0.35,
+   "bottom": 1,
+   "skyTop": 0.3,
+   "degreesPerHeight": 40,
+   "bottomDegrees": 23.6,
+   "spanDegrees": 150,
+   "glowColumn": 0.5,
+   "horizonDegrees": 0,
+   "ground": "watchtower-entry-bg.jpg",
+   "groundTile": 120,
+   "groundFar": 300,
+   "groundFromDegrees": 3
+  },
+  "watchtower-entry-panorama-v02.png": {
+   "horizon": 0.35,
+   "bottom": 1,
+   "skyTop": 0.3,
+   "degreesPerHeight": 40,
+   "bottomDegrees": 23.6,
+   "spanDegrees": 150,
+   "glowColumn": 0.5,
+   "horizonDegrees": 0,
+   "ground": "watchtower-entry-bg.jpg",
+   "groundTile": 120,
+   "groundFar": 300,
+   "groundFromDegrees": 3
   }
  }
 }

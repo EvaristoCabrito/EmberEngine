@@ -25,6 +25,7 @@
   "estalagem-andar-2": ["inn-second-floor-v01.jpg#teto", "inn-second-floor-v01.jpg#piso"],
   "bosque": ["bosque-morto-panorama-v01.png", "bosque-morto-panorama-v02.png", "bosque-morto-panorama-v04-alpha-sol.png"],
   "thebridge": ["bridge-panorama-v02-alpha.png"],
+  "wisp-forest-crossing": ["wisp-forest-crossing-panorama-v04-alpha.png"],
   "random-amanita-glade": ["vau-panorama-tira-teima-v05.png"],
   "random-blightwood-verge": ["vau-panorama-tira-teima-v05.png"],
   "random-broken-antler-grove": ["vau-panorama-tira-teima-v05.png"],
@@ -245,6 +246,21 @@
    "glowColumn": 0.45,
    "keepSky": true,
    "whole": true
+  },
+  "wisp-forest-crossing-panorama-v04-alpha.png": {
+   "horizon": 0.47,
+   "bottom": 1.0,
+   "skyTop": 0.0,
+   "degreesPerHeight": 40.0,
+   "bottomDegrees": 23.6,
+   "spanDegrees": 119.0,
+   "glowColumn": 0.5,
+   "horizonDegrees": 2.0,
+   "alphaSky": true,
+   "ground": "wisp-crossing-ground-v02.png",
+   "groundTile": 16.0,
+   "groundFar": 300.0,
+   "groundFromDegrees": 3.0
   },
   "thebridge-bg.jpg": {
    "bottom": 1.0,
