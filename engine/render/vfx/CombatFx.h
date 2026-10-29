@@ -66,7 +66,8 @@ class CombatFx {
   // A blow lands at `at` on a unit standing at `feet` with its card `height` tall; `from` = where the striker stands
   // (the blow's direction).
   // `strength` < 1: a lesser blow (smaller, dimmer, fewer particles; Voss's plain attack, below his Míssil Mágico).
-  void impact(Kind kind, glm::vec3 feet, float height, glm::vec3 from, float at, const CombatPalette& palette = {}, float strength = 1.0f);
+  // Returns the absolute time when this impact's animation has finished.
+  float impact(Kind kind, glm::vec3 feet, float height, glm::vec3 from, float at, const CombatPalette& palette = {}, float strength = 1.0f);
   // The Arcano bolt: the caster's pose starts at `start`, it lets go at `release`, the bolt lands at `impact` (the
   // stage asks flightSeconds for it).
   void bolt(glm::vec3 casterFeet, float casterHeight, glm::vec3 targetFeet, float targetHeight, float start, float release, float impact,

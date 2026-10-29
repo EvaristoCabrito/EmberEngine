@@ -1077,7 +1077,10 @@ std::optional<json> exportBattle(const json& mapFile, std::string* error, int pl
     if (!r.inSet("chest", id)) continue;
     const int x = integer(d, "x"), y = integer(d, "y");
     const bool betterSpot = std::any_of(betterChests.begin(), betterChests.end(), [&](const json& c) { return integer(c, "x") == x && integer(c, "y") == y; });
-    lockList.push_back({x, y, "chest", id, id == "chest-large" ? "best" : (id == "chest-medium" || betterSpot) ? "better" : "base"});
+    // A chest swapped for a 3D model keeps the level of the 2D chest it replaced in its own "chestTier" (base / better / best).
+    const std::string ownTier = str(d, "chestTier");
+    const std::string tier = !ownTier.empty() ? ownTier : id == "chest-large" ? "best" : (id == "chest-medium" || betterSpot) ? "better" : "base";
+    lockList.push_back({x, y, "chest", id, tier == "base" && betterSpot ? "better" : tier});
   }
   json locks = json::array();
   const json& variants = r.all()["doorVariants"];

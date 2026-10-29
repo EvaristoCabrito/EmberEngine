@@ -25,6 +25,7 @@ GpuTimer::GpuTimer(VulkanContext& context) : context_(context) {
     VK_CHECK(vkCreateQueryPool(context.device, &info, nullptr, &pool));
     vkResetQueryPool(context.device, pool, 0, info.queryCount);
   }
+  logInfo("startup: GPU timer ready");
 }
 
 GpuTimer::~GpuTimer() {

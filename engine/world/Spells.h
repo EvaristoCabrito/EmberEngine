@@ -202,6 +202,12 @@ bool spellWeaponAbility(const std::string& kind);
 bool spellInstant(const std::string& kind);
 // A passive (the Cruzado's Juramento): listed with the unit's spells, never cast, no use spent; it works by itself.
 bool spellPassive(const std::string& kind);
+// A level gained from combat XP. The map stage drains these directly so a level-up cutaway cannot be missed between frames.
+struct LevelUpEvent {
+  std::string unitId;
+  int fromLevel = 0, toLevel = 0;
+};
+std::vector<LevelUpEvent> takeLevelUpEvents();
 // The highest level a class reaches (the Cruzado: 10); every other class the game's own cap (30).
 int classLevelCap(const std::string& classId);
 // The highest level a hero reaches: its class's, or lower for a hero of its own (Selene: 10).

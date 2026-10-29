@@ -163,12 +163,13 @@ float CombatFx::Impact::end() const {
   return at + 1.0f;
 }
 
-void CombatFx::impact(Kind kind, glm::vec3 feet, float height, glm::vec3 from, float at, const CombatPalette& palette, float strength) {
+float CombatFx::impact(Kind kind, glm::vec3 feet, float height, glm::vec3 from, float at, const CombatPalette& palette, float strength) {
   height = std::clamp(height, 1.0f, 4.0f);
   const glm::vec3 dir = flatDir(feet - from, glm::vec3(0.0f, 0.0f, 1.0f));
   // The contact: the middle of the body, on the striker's side.
   const glm::vec3 point = feet + glm::vec3(0.0f, height * 0.5f, 0.0f) - dir * 0.15f;
   impacts_.push_back({kind, point, feet, dir, height, at, palette, 0x51ed27u + 7919u * ++serial_, std::clamp(strength, 0.1f, 1.0f)});
+  return impacts_.back().end();
 }
 
 float CombatFx::flightSeconds(glm::vec3 fromFeet, glm::vec3 toFeet) {

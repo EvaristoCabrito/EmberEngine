@@ -8,7 +8,9 @@
 namespace ember {
 
 namespace {
-constexpr uint32_t kWantedSampledImages = 1u << 18;  // 262,144 textures
+// Keep the bindless layout comfortably above the game's current asset count without asking drivers to reserve their full
+// reported update-after-bind limit (262,144 on the user's RX 6400) during startup.
+constexpr uint32_t kWantedSampledImages = 1u << 16;  // 65,536 textures
 constexpr uint32_t kWantedStorageImages = 1u << 14;
 constexpr uint32_t kWantedSamplers = 256;
 constexpr uint32_t kWantedStorageBuffers = 1u << 12;
@@ -61,7 +63,9 @@ Bindless::Bindless(VulkanContext& context) : context_(context) {
   layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
   layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
   layoutInfo.pBindings = bindings.data();
+  logInfo("bindless: creating descriptor set layout");
   VK_CHECK(vkCreateDescriptorSetLayout(context.device, &layoutInfo, nullptr, &setLayout_));
+  logInfo("bindless: descriptor set layout ready");
 
   const std::array<VkDescriptorPoolSize, 4> sizes{{
       {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, sampled_.capacity},
@@ -74,13 +78,17 @@ Bindless::Bindless(VulkanContext& context) : context_(context) {
   poolInfo.maxSets = 1;
   poolInfo.poolSizeCount = static_cast<uint32_t>(sizes.size());
   poolInfo.pPoolSizes = sizes.data();
+  logInfo("bindless: creating descriptor pool");
   VK_CHECK(vkCreateDescriptorPool(context.device, &poolInfo, nullptr, &pool_));
+  logInfo("bindless: descriptor pool ready");
 
   VkDescriptorSetAllocateInfo allocInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
   allocInfo.descriptorPool = pool_;
   allocInfo.descriptorSetCount = 1;
   allocInfo.pSetLayouts = &setLayout_;
+  logInfo("bindless: allocating descriptor set");
   VK_CHECK(vkAllocateDescriptorSets(context.device, &allocInfo, &set_));
+  logInfo("bindless: descriptor set ready");
 
   const VkPushConstantRange push{kStages, 0, kPushConstantBytes};
   VkPipelineLayoutCreateInfo pipelineLayoutInfo{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
@@ -88,7 +96,9 @@ Bindless::Bindless(VulkanContext& context) : context_(context) {
   pipelineLayoutInfo.pSetLayouts = &setLayout_;
   pipelineLayoutInfo.pushConstantRangeCount = 1;
   pipelineLayoutInfo.pPushConstantRanges = &push;
+  logInfo("bindless: creating pipeline layout");
   VK_CHECK(vkCreatePipelineLayout(context.device, &pipelineLayoutInfo, nullptr, &pipelineLayout_));
+  logInfo("bindless: ready");
 }
 
 Bindless::~Bindless() {

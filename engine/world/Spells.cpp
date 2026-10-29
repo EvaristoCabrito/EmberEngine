@@ -1105,6 +1105,7 @@ double* skillSlot(BattleUnit& u, const std::string& id) {
 // The combat log's notes made while a step resolves (skill points gained, levels reached); the wrappers around
 // resolveStrike / resolveStep / startOfTurnEffects hand them to the battle's log (Ember logSkillGain, the level-up tip).
 std::vector<std::string> gNotes;
+std::vector<LevelUpEvent> gLevelUpEvents;
 bool gLogEnglish = false;  // the combat log's language, set by the window (setCombatLogEnglish)
 const char* pick(const char* pt, const char* en) { return gLogEnglish ? en : pt; }
 // toLocaleString("pt-BR", { maximumFractionDigits: 2 }): a comma, no trailing zeros.
@@ -1279,7 +1280,41 @@ void levelUp(BattleUnit& u) {
   grantClassSpells(u);  // a promotion's spell learned at this level
 }
 
+std::string levelUpLog(const BattleUnit& before, const BattleUnit& after) {
+  std::vector<std::string> gains;
+  const auto stat = [&](const char* pt, const char* en, int delta) {
+    if (delta > 0) gains.push_back(std::format("{} {:+}", gLogEnglish ? en : pt, delta));
+  };
+  stat("VIT", "HP", after.maxHp - before.maxHp);
+  stat("ATK", "ATK", after.atk - before.atk);
+  stat("MAG", "MAG", after.mag - before.mag);
+  stat("DEF", "DEF", after.def - before.def);
+  stat("DEX", "DEX", after.dex - before.dex);
+  stat("MOV", "MOV", after.mov - before.mov);
+  for (int tier = 0; tier < 10; ++tier) {
+    const int delta = after.spells[tier] - before.spells[tier];
+    if (delta > 0)
+      gains.push_back(gLogEnglish ? std::format("+{} Tier {} {}", delta, tier + 1, delta == 1 ? "use" : "uses")
+                                  : std::format("+{} uso{} T{}", delta, delta == 1 ? "" : "s", tier + 1));
+  }
+  for (const std::string& spell : after.spellList)
+    if (std::find(before.spellList.begin(), before.spellList.end(), spell) == before.spellList.end())
+      gains.push_back(std::format("{} {}", gLogEnglish ? "Learned" : "Aprendeu", spellNameIn(spell, gLogEnglish)));
+  if (after.side == "player") gains.push_back(gLogEnglish ? "+3 attribute points" : "+3 pontos de atributo");
+
+  std::string line = gLogEnglish ? std::format("{} reached level {}", after.name, after.level)
+                                 : std::format("{} subiu para o nível {}", after.name, after.level);
+  for (const std::string& gain : gains) line += " · " + gain;
+  return line + ".";
+}
+
 }  // namespace
+
+std::vector<LevelUpEvent> takeLevelUpEvents() {
+  std::vector<LevelUpEvent> events = std::move(gLevelUpEvents);
+  gLevelUpEvents.clear();
+  return events;
+}
 
 // The Cruzado stops at level 10 (the user, 2026-10-25: young Salazar's interlude class); every other class at the game's cap.
 int classLevelCap(const std::string& classId) { return classId == "crusader" ? 10 : kMaxLevel; }
@@ -1299,12 +1334,15 @@ namespace {
 void grantExp(BattleUnit& u, int amount) {
   const int cap = heroLevelCap(u.name, u.classId);
   if (u.level >= cap || amount <= 0) return;
+  const int fromLevel = u.level;
   u.xp += amount;
   while (u.xp >= expToLevel(u.level) && u.level < cap) {
     u.xp -= expToLevel(u.level);
+    const BattleUnit before = u;
     levelUp(u);
-    gNotes.push_back(gLogEnglish ? std::format("{} reached level {}!", u.name, u.level) : std::format("{} subiu para o nível {}!", u.name, u.level));
+    gNotes.push_back(levelUpLog(before, u));
   }
+  if (u.level > fromLevel) gLevelUpEvents.push_back({u.id, fromLevel, u.level});
   if (u.level >= cap) u.xp = 0;
 }
 void gainExp(BattleUnit& u, int targetLevel, int amount, double mul = 1, bool kill = false) {

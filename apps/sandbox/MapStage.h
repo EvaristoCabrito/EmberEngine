@@ -530,30 +530,34 @@ class MapStage final : public Stage {
       captured_ = true, homeYaw_ = yaw_, homePitch_ = pitch_, homeTarget_ = target_, homeDistance_ = distance_;
       cam_ = {target_, yaw_, pitch_, distance_};
     }
-    if (!measuring_) panKeys(dt);
+    if (!measuring_ && (!levelUpMoment_ || levelUpMoment_->phase == LevelUpMoment::Phase::Details)) panKeys(dt);
+    if (levelUpMoment_ && cameraMoved_) levelUpCameraMoved_ = true;
     updatePanHold();
     now_ = time;
     updateHearthFireFlipbook(time);
     laps.lap("camera");
     updateUnits(dt);
     laps.lap("units");
-    updateExchange();
+    if (!levelUpMoment_) updateExchange();
     laps.lap("exchange");
-    updateQuestPickups();
-    if (talkAfterWalk_ >= 0 && !busy()) talkRequest_ = std::exchange(talkAfterWalk_, -1);  // walked up to the NPC: they talk
-    runScript();
-    laps.lap("script");
-    runCutsceneTriggers();
-    runCutsceneQueue();
-    updateCutscene();
-    updateRoaming();
-    laps.lap("roaming");
-    updateTurns();
+    if (!levelUpMoment_) {
+      updateQuestPickups();
+      if (talkAfterWalk_ >= 0 && !busy()) talkRequest_ = std::exchange(talkAfterWalk_, -1);  // walked up to the NPC: they talk
+      runScript();
+      laps.lap("script");
+      runCutsceneTriggers();
+      runCutsceneQueue();
+      updateCutscene();
+      updateRoaming();
+      updateCombatOpening();
+      laps.lap("roaming");
+      updateTurns();
+    }
     laps.lap("turns");
     updateHover();
     laps.lap("hover");
     clampGoal();
-    applyActionShot();  // Câmera de ação: an action's shot takes the goal (and gives it back after)
+    if (!levelUpMoment_) applyActionShot();  // Câmera de ação: an action's shot takes the goal (and gives it back after)
     if (measuring_) {
       cam_ = {target_, yaw, pitch_, distance};  // measurements and captures: exactly the asked view
       shotLift_ = shotLiftGoal_;
@@ -572,6 +576,8 @@ class MapStage final : public Stage {
     const float pivotGround = pivotHeight(cam_.target);
     if (measuring_ || !pivotGlides_) cam_.target.y = pivotGround, pivotGlides_ = true;
     else cam_.target.y += (pivotGround - cam_.target.y) * (1.0f - std::exp(-dt * kGlide));
+    if (levelUpMoment_) updateLevelUpMoment(dt, time);
+    updateCombatIntro();
     noteShotGoal();  // the goal as the shot leaves it this frame: a different one next frame was the player's hand
     // The camera log (the user, 2026-10-25: "faz um novo log"): while the player moves the camera (arrows, drags, the wheel) or the
     // battle script's "pan" holds a key, where the camera is, frame by frame, into the game's log.
@@ -1104,6 +1110,15 @@ class MapStage final : public Stage {
       leftDown_.reset(), endPan();
       return;
     }
+    if (levelUpMoment_) {
+      const bool cameraInput = (e.type == SDL_EVENT_MOUSE_MOTION && (e.motion.state & (SDL_BUTTON_RMASK | SDL_BUTTON_MMASK))) ||
+                               e.type == SDL_EVENT_MOUSE_WHEEL;
+      if (levelUpMoment_->phase != LevelUpMoment::Phase::Details || !cameraInput) {
+        leftDown_.reset(), endPan();
+        return;
+      }
+      levelUpCameraMoved_ = true;
+    }
     // The map editor: a press on a unit or a decoration holds it (MapPreviewCanvas onPointerDownCapture); the camera
     // and the brush never see that press.
     if (options_.editorGrab && e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && (e.button.button == SDL_BUTTON_RIGHT || e.button.button == SDL_BUTTON_LEFT) &&
@@ -1472,6 +1487,10 @@ class MapStage final : public Stage {
 
   void drawPanel() override {
     if (!board_) return;
+    if (levelUpMoment_ && levelUpMoment_->phase == LevelUpMoment::Phase::Details) {
+      drawLevelUpMoment();
+      return;
+    }
     if (hudHidden) return;  // the Inn's menus cover the whole screen (NpcTalk.h)
     if (!result_.empty() && now_ - resultAt_ > kResultDelay) return drawResultScreen();
     if (options_.editorClick) return drawCameraBar();  // the map editor's preview: its own panels around it
@@ -1504,6 +1523,64 @@ class MapStage final : public Stage {
                        },
                        options_.spellsMenuOpen);
     }
+    drawLevelUpMoment();
+  }
+
+  void drawLevelUpMoment() {
+    if (!levelUpMoment_ || levelUpMoment_->phase != LevelUpMoment::Phase::Details) return;
+    const LevelUpInfo& info = levelUpMoment_->info;
+    const ImGuiIO& io = ImGui::GetIO();
+    const float width = std::clamp(io.DisplaySize.x * 0.43f, 460.0f, 620.0f);
+    ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f}, ImGuiCond_Always, {0.5f, 0.5f});
+    ImGui::SetNextWindowSize({width, 0.0f}, ImGuiCond_Always);
+    ImGui::SetNextWindowFocus();
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {26.0f, 22.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.5f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 5.0f);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(14, 13, 12, 250));
+    ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(217, 98, 28, 210));
+    ImGui::Begin("##levelupmoment", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
+                                               ImGuiWindowFlags_AlwaysAutoResize);
+    const std::string title = tr("NÍVEL ALCANÇADO", "LEVEL UP");
+    ImGui::PushFont(uiFont(UiFont::Mark), 24.0f);
+    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - ImGui::CalcTextSize(title.c_str()).x) * 0.5f);
+    ImGui::TextColored(ImColor(255, 177, 98, 255), "%s", title.c_str());
+    ImGui::PopFont();
+    const std::string who = std::format("{}  ·  {} {} → {}", info.name, info.className, info.from, info.to);
+    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - ImGui::CalcTextSize(who.c_str()).x) * 0.5f);
+    ImGui::TextColored(ImColor(235, 222, 201, 255), "%s", who.c_str());
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    const std::array<std::string, 6> statLabels{tr("VIT", "HP"), "ATK", "MAG", "DEF", "DEX", "MOV"};
+    for (size_t i = 0; i < info.statsBefore.size(); ++i)
+      if (info.statsAfter[i] != info.statsBefore[i])
+        ImGui::TextColored(ImColor(232, 215, 187, 255), "%s     %d → %d   (%+d)", statLabels[i].c_str(), info.statsBefore[i], info.statsAfter[i],
+                           info.statsAfter[i] - info.statsBefore[i]);
+    for (size_t tier = 0; tier < info.uses.size(); ++tier)
+      if (info.uses[tier] > 0) {
+        const std::string line = uiEnglish() ? std::format("Tier {} uses   +{}", tier + 1, info.uses[tier])
+                                             : std::format("Usos T{}   +{}", tier + 1, info.uses[tier]);
+        ImGui::TextColored(ImColor(232, 215, 187, 255), "%s", line.c_str());
+      }
+    for (const std::string& spell : info.learnedSpells) {
+      const std::string line = std::format("{}  {}", tr("Nova magia", "New spell"), spell);
+      ImGui::TextColored(ImColor(255, 193, 121, 255), "%s", line.c_str());
+    }
+    if (info.attributePoints > 0) {
+      const std::string points = uiEnglish() ? std::format("+{} attribute points", info.attributePoints)
+                                              : std::format("+{} pontos de atributo", info.attributePoints);
+      ImGui::TextColored(ImColor(255, 193, 121, 255), "%s", points.c_str());
+    }
+    ImGui::Spacing();
+    const std::string label = tr("Continuar", "Continue");
+    const float buttonWidth = spacedTextWidth(uiFont(UiFont::Mark), 16.0f, label.c_str(), 0.06f) + 28.0f;
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, (ImGui::GetContentRegionAvail().x - buttonWidth) * 0.5f));
+    if (emberButton("##levelupcontinue", label.c_str(), true, true, 42.0f)) continueLevelUp();
+    ImGui::End();
+    ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar(3);
   }
 
   // The Escolhas window: the look switches (only in Modo teste's battles; a campaign battle shows only the game).
@@ -1875,6 +1952,8 @@ class MapStage final : public Stage {
     turnUnit_ = snap.value("turnBegan", false) ? battle_->activeUnit() : -1;
     pickActiveOnResume_ = turnUnit_ >= 0;  // the turn is not begun again, but its hero must be picked again
     levelSeen_.clear();  // the saved levels are not level-ups
+    combatOpeningPending_ = false;
+    combatIntroActive_ = false;
     tip_ = tr("Combate retomado.", "Battle resumed."), tipAt_ = now_;
     return true;
   }
@@ -2246,10 +2325,14 @@ class MapStage final : public Stage {
     // architectureWorld: every row at the same x, no odd-row half-hex shift, so walls run straight
     auto archAt = [&](int c, int r) { return std::pair<double, double>{sq3 * c - L.ox, board_->cell(c, r).z}; };
     std::set<std::pair<int, int>> joins;  // the cells a wall joins (architecture, not rocks): anchors, an entrance's two cells
+    // ... and of those, the cells of BUILDING walls (ArchitectureDef::openAir left out: a muralha joins its neighbours but encloses
+    // no room: the yard it rings stays under the sky, 2026-10-29, the Monastery's precinct)
+    std::set<std::pair<int, int>> roomJoins;
     for (const ember::SceneArchitecture& p : scene_->pieces) {
       const ember::ArchitectureDef* def = defs.find(p.id);
       const ember::CatalogDecoration* cd = catalog.decoration(p.id);
       if (!def || !cd || !def->connects) continue;
+      std::vector<std::pair<int, int>> cells;
       if (p.id == "watchtower-stone-open-door-2hex" || (!def->emberStyle.empty() && cd->architectureSpan))
         for (const ember::FootOffset& f : ember::placedFootprint(*cd, p.x, p.y, p.rot)) cells.push_back({p.x + f.dx, p.y + f.dy});
       else
@@ -2329,14 +2412,10 @@ class MapStage final : public Stage {
       // (std::optional: a MeshId is the mesh's index and the map's first mesh is 0, so 0 is a real mesh here: on a map with no
       // 3D models the first wall piece used to be dropped as "no mesh", found 2026-10-21 on the gothic bridge test.)
       auto meshOf = [&](const ember::three::Geometry& g, bool footprint) -> std::optional<MeshId> {
-    // ... and of those, the cells of BUILDING walls (ArchitectureDef::openAir left out: a muralha joins its neighbours but encloses
-    // no room: the yard it rings stays under the sky, 2026-10-29, the Monastery's precinct)
-    std::set<std::pair<int, int>> roomJoins;
       static constexpr int kParts = ember::kEmberMaterialTags;  // 0 the masonry, 1 oak, 2 iron, 3 flame, 4 dark oak, 5 a dark void, 6 the steps, 7 the gothic atlas, 8 glass, 9 the Inn's timber, 10 the Inn's door planks
       MeshBuildPart parts[kParts];
       std::map<std::array<float, 8>, uint32_t> weld[kParts];
       size_t triangles = 0;
-      std::vector<std::pair<int, int>> cells;
       for (size_t t = 0; t + 2 < g.count(); t += 3) {
         const glm::vec3 a{g.position[t * 3], g.position[t * 3 + 1], g.position[t * 3 + 2]}, b{g.position[t * 3 + 3], g.position[t * 3 + 4], g.position[t * 3 + 5]},
             c{g.position[t * 3 + 6], g.position[t * 3 + 7], g.position[t * 3 + 8]};
@@ -2660,6 +2739,10 @@ class MapStage final : public Stage {
   // Luz das janelas: the room's roof, a slab over the whole board at the walls' top that only casts shadow (never drawn: the
   // camera looks into the room from above), so the sun and the moon reach the floor only through the windows, slits and
   // doorways. Built once per map; placed by placeModels while the light is on.
+  // One slab per room (2026-10-29, the user: "laje só sobre hexes fechados por paredes ... vai ser util na cidade e fazenda"): the
+  // rooms are the 4-connected groups of roomCells_ (the hexes the building walls enclose; a muralha encloses nothing), each slab the
+  // group's rectangle out to its walls plus kRoofMargin. A yard between the buildings stays under the sky. One building = one slab,
+  // as before.
   void buildRoof() {
     roofs_.clear();
     plinthMesh_ = 0;
@@ -2770,10 +2853,6 @@ class MapStage final : public Stage {
     in.origin = {roofRect_.x, lowFloor + 0.5f, roofRect_.y};
     in.dims = {static_cast<int>(std::ceil((roofRect_.z - roofRect_.x) / in.spacing.x)) + 1,
                std::max(1, static_cast<int>(std::floor((roofBottom_ - 0.2f - in.origin.y) / in.spacing.y)) + 1),
-  // One slab per room (2026-10-29, the user: "laje só sobre hexes fechados por paredes ... vai ser util na cidade e fazenda"): the
-  // rooms are the 4-connected groups of roomCells_ (the hexes the building walls enclose; a muralha encloses nothing), each slab the
-  // group's rectangle out to its walls plus kRoofMargin. A yard between the buildings stays under the sky. One building = one slab,
-  // as before.
                static_cast<int>(std::ceil((roofRect_.w - roofRect_.y) / in.spacing.z)) + 1};
     const size_t count = static_cast<size_t>(in.dims.x) * in.dims.y * in.dims.z;
     in.candidate.assign(count, 0);
@@ -3000,6 +3079,7 @@ class MapStage final : public Stage {
     pieceBoxes_.clear();
     for (const ember::SceneModel& m : scene_->models) {
       if (lockOpened(m.id, "doorDecor", m.x, m.z)) continue;  // the door was picked open: its closed model is gone
+      if (lockOpened(m.id, "chest", m.x, m.z)) continue;      // a 3D chest opened with a Gazua is gone, like the 2D one
       std::string asset = m.file.substr(std::string("/game/").size());
       asset = "meshes/" + asset.substr(0, asset.size() - 4) + ".mesh";
       const MeshHeader* h = meshes_.header(modelMeshes_.at(asset));
@@ -4241,6 +4321,7 @@ class MapStage final : public Stage {
     battle_->rollInitiative(rng_);
     for (const ember::BattleUnit& u : battle_->units()) startLevel_.emplace_back(u.level, u.xp);
     if (!options_.battleScript.empty()) holdTurns = true;  // --battle-script plays every action itself
+    combatOpeningPending_ = !battle_->roaming() && options_.battleScript.empty() && !options_.editorClick;
   }
 
   int sceneUnitOf(int battleUnit) const {
@@ -4275,6 +4356,168 @@ class MapStage final : public Stage {
     return sum / static_cast<float>(n);
   }
 
+  struct LevelUpInfo {
+    int battleUnit = -1, sceneUnit = -1, from = 1, to = 1, attributePoints = 0;
+    std::string name, className;
+    std::array<int, 6> statsBefore{}, statsAfter{};  // HP, ATK, MAG, DEF, DEX, MOV
+    std::array<int, 10> uses{};
+    std::vector<std::string> learnedSpells;
+  };
+  struct LevelUpMoment {
+    enum class Phase { Focus, Effect, Details } phase = Phase::Focus;
+    LevelUpInfo info;
+    float elapsed = 0.0f, effectEndsAt = 0.0f;
+  };
+  struct LevelUpReturn {
+    glm::vec3 target{0.0f};
+    float yaw = 0.0f, pitch = 0.0f, distance = 0.0f;
+    float turnPauseStartedAt = 0.0f;
+    bool logKeep = false;
+  };
+
+  LevelUpInfo makeLevelUpInfo(size_t battleUnit, int from, int to) const {
+    const ember::BattleUnit& u = battle_->units()[battleUnit];
+    LevelUpInfo info;
+    info.battleUnit = static_cast<int>(battleUnit), info.sceneUnit = sceneUnitOf(static_cast<int>(battleUnit));
+    info.from = from, info.to = to, info.attributePoints = (to - from) * 3;
+    info.name = u.name, info.className = u.className.empty() ? u.classId : u.className;
+    const std::array<int, 6> current{u.maxHp, u.atk, u.mag, u.def, u.dex, u.mov};
+    const std::array<size_t, 6> statRows{0, 1, 2, 3, 4, 15};
+    const bool hasGrowth = from > 0 && static_cast<size_t>(to) <= u.growth.size();
+    for (size_t i = 0; i < current.size(); ++i) {
+      int delta = 0;
+      if (hasGrowth) delta = u.growth[static_cast<size_t>(to - 1)][statRows[i]] - u.growth[static_cast<size_t>(from - 1)][statRows[i]];
+      info.statsBefore[i] = current[i] - delta;
+      info.statsAfter[i] = current[i];
+    }
+    if (hasGrowth)
+      for (size_t tier = 0; tier < info.uses.size(); ++tier)
+        info.uses[tier] = std::max(0, u.growth[static_cast<size_t>(to - 1)][5 + tier] - u.growth[static_cast<size_t>(from - 1)][5 + tier]);
+    const std::vector<std::string> knownBefore = from > 0 ? ember::classSpellsAt(u.classId, from, u.name) : std::vector<std::string>{};
+    const std::vector<std::string> availableAtTo = ember::classSpellsAt(u.classId, to, u.name);
+    for (const std::string& spell : u.spellList)
+      if (std::find(knownBefore.begin(), knownBefore.end(), spell) == knownBefore.end() &&
+          std::find(availableAtTo.begin(), availableAtTo.end(), spell) != availableAtTo.end())
+        info.learnedSpells.push_back(ember::spellNameIn(spell, uiEnglish()));
+    return info;
+  }
+
+  bool levelUpCameraSettled() const {
+    if (!levelUpMoment_ || levelUpMoment_->info.sceneUnit < 0) return true;
+    return glm::distance(glm::vec2(cam_.target.x, cam_.target.z), glm::vec2(target_.x, target_.z)) < 0.12f &&
+           std::abs(std::remainder(cam_.yaw - yaw_, 2.0f * std::numbers::pi_v<float>)) < glm::radians(1.0f) &&
+           std::abs(cam_.pitch - pitch_) < glm::radians(1.0f) && std::abs(cam_.distance - distance_) < 0.12f;
+  }
+
+  void beginLevelUpFx(float fxTime) {
+    if (!levelUpMoment_) return;
+    LevelUpMoment& moment = *levelUpMoment_;
+    moment.phase = LevelUpMoment::Phase::Effect, moment.elapsed = 0.0f;
+    playCues(levelUpSound_);
+    const int ui = moment.info.sceneUnit;
+    if (ui >= 0 && static_cast<size_t>(ui) < scene_->units.size() && battle_->units()[static_cast<size_t>(moment.info.battleUnit)].alive) {
+      const SpellEffects::Spot at = unitSpot(static_cast<size_t>(ui));
+      moment.effectEndsAt = spellFx_.combat().impact(CombatFx::Kind::LevelUp, at.feet, cardHeightOf(at), at.feet - glm::vec3(0.0f, 0.0f, 1.0f), fxTime);
+    } else {
+      moment.phase = LevelUpMoment::Phase::Details;
+    }
+  }
+
+  void startNextLevelUpMoment() {
+    if (levelUpMoment_ || levelUpQueue_.empty()) return;
+    LevelUpInfo info = std::move(levelUpQueue_.front());
+    levelUpQueue_.erase(levelUpQueue_.begin());
+    if (!levelUpReturn_) {
+      LevelUpReturn previous;
+      if (shot_) previous.target = shot_->playerTarget, previous.yaw = shot_->playerYaw, previous.pitch = shot_->playerPitch, previous.distance = shot_->playerDistance;
+      else previous.target = target_, previous.yaw = yaw_, previous.pitch = pitch_, previous.distance = distance_;
+      previous.turnPauseStartedAt = now_;
+      previous.logKeep = logKeep_;
+      levelUpReturn_ = previous;
+      levelUpCameraMoved_ = false;
+    }
+    showLog_ = true, logPinned_ = true, logJustOpened_ = true, logKeep_ = true;
+    shot_.reset();
+    shotLiftGoal_ = 0.0f;
+    LevelUpMoment moment;
+    moment.info = std::move(info);
+    levelUpMoment_ = std::move(moment);
+    const int ui = levelUpMoment_->info.sceneUnit;
+    if (ui >= 0 && static_cast<size_t>(ui) < scene_->units.size() && battle_->units()[static_cast<size_t>(levelUpMoment_->info.battleUnit)].alive) {
+      const SpellEffects::Spot at = unitSpot(static_cast<size_t>(ui));
+      const float h = cardHeightOf(at);
+      target_ = at.feet;
+      if (!flat_) pitch_ = kShotCasterPitch;
+      distance_ = closeDistance(h, 0.0f);
+      if (flat_) distance_ *= std::tan(glm::radians(kFlatFov * 0.5f)) / std::tan(glm::radians(kFov * 0.5f));
+      shotLiftGoal_ = flat_ ? 0.0f : h * 0.4f;
+      clampGoal();
+    } else {
+      levelUpMoment_->phase = LevelUpMoment::Phase::Details;
+    }
+  }
+
+  bool queueChangedLevels() {
+    if (!battle_) {
+      ember::takeLevelUpEvents();
+      return levelUpMoment_.has_value();
+    }
+    std::vector<ember::BattleUnit>& all = battle_->units();
+    levelSeen_.resize(all.size(), -1);
+    std::vector<bool> eventUnits(all.size(), false);
+    for (const ember::LevelUpEvent& event : ember::takeLevelUpEvents()) {
+      const auto it = std::find_if(all.begin(), all.end(), [&](const ember::BattleUnit& u) { return u.id == event.unitId; });
+      if (it == all.end()) continue;
+      const size_t index = static_cast<size_t>(it - all.begin());
+      eventUnits[index] = true;
+      if (it->side == "player" && event.toLevel > event.fromLevel)
+        levelUpQueue_.push_back(makeLevelUpInfo(index, event.fromLevel, event.toLevel));
+      levelSeen_[index] = it->level;
+    }
+    for (size_t b = 0; b < all.size(); ++b) {
+      const int previous = levelSeen_[b];
+      if (!eventUnits[b] && previous >= 0 && all[b].level > previous && all[b].side == "player")
+        levelUpQueue_.push_back(makeLevelUpInfo(b, previous, all[b].level));
+      levelSeen_[b] = all[b].level;
+    }
+    startNextLevelUpMoment();
+    return levelUpMoment_.has_value();
+  }
+
+  void updateLevelUpMoment(float dt, float fxTime) {
+    if (!levelUpMoment_) return;
+    LevelUpMoment& moment = *levelUpMoment_;
+    moment.elapsed += dt;
+    if (moment.phase == LevelUpMoment::Phase::Focus && levelUpCameraSettled()) beginLevelUpFx(fxTime);
+    else if (moment.phase == LevelUpMoment::Phase::Focus && moment.elapsed >= 1.6f) {
+      cam_.target = target_;
+      cam_.target.y = pivotHeight(target_);
+      cam_.yaw = yaw_, cam_.pitch = pitch_, cam_.distance = distance_;
+      shotLift_ = shotLiftGoal_;
+      pivotGlides_ = true;
+      beginLevelUpFx(fxTime);
+    }
+    else if (moment.phase == LevelUpMoment::Phase::Effect && fxTime >= moment.effectEndsAt) {
+      moment.phase = LevelUpMoment::Phase::Details, moment.elapsed = 0.0f;
+      logJustOpened_ = true;
+    }
+  }
+
+  void continueLevelUp() {
+    levelUpMoment_.reset();
+    if (!levelUpQueue_.empty()) return startNextLevelUpMoment();
+    if (levelUpReturn_) {
+      const float turnPause = std::max(0.0f, now_ - levelUpReturn_->turnPauseStartedAt);
+      if (exchange_) exchange_->impact += turnPause, exchange_->end += turnPause, exchange_->release += turnPause;
+      if (!levelUpCameraMoved_)
+        target_ = levelUpReturn_->target, yaw_ = levelUpReturn_->yaw, pitch_ = levelUpReturn_->pitch, distance_ = levelUpReturn_->distance;
+      logKeep_ = levelUpReturn_->logKeep;
+      levelUpReturn_.reset();
+    }
+    shotLiftGoal_ = 0.0f;
+    clampGoal();
+  }
+
   // Ember UnitActor.update for walking units: one hex every 0.22 s; facing and walk direction relative to the camera.
   void updateUnits(float dt) {
     if (!scene_) return;
@@ -4299,22 +4542,7 @@ class MapStage final : public Stage {
       }
       if (w.points.empty() && !w.fadeSound.empty()) AudioMixer::get().fadeSfx(std::exchange(w.fadeSound, {}));
     }
-    // A hero's level-up (levelUp: its cue once per level gained).
-    if (battle_) {
-      std::vector<ember::BattleUnit>& all = battle_->units();
-      levelSeen_.resize(all.size(), -1);
-      for (size_t b = 0; b < all.size(); ++b) {
-        if (levelSeen_[b] >= 0 && all[b].level > levelSeen_[b] && all[b].side == "player") {
-          playCues(levelUpSound_);
-          // ... and its light in 3D (CombatFx LevelUp; the user, 2026-10-20)
-          if (const int ui = sceneUnitOf(static_cast<int>(b)); ui >= 0 && all[b].alive) {
-            const SpellEffects::Spot at = unitSpot(static_cast<size_t>(ui));
-            spellFx_.combat().impact(CombatFx::Kind::LevelUp, at.feet, cardHeightOf(at), at.feet - glm::vec3(0.0f, 0.0f, 1.0f), now_);
-          }
-        }
-        levelSeen_[b] = all[b].level;
-      }
-    }
+    if (!levelUpMoment_) queueChangedLevels();
     if (hero_ >= 0 && path_.size() <= 1) heroAt_ = unitWorld(static_cast<size_t>(hero_));  // the test lights follow it
   }
 
@@ -4960,14 +5188,14 @@ class MapStage final : public Stage {
 
   // Something is playing that input must not cut into: a walk, a strike, an enemy's turn, the battle's end.
   bool busy() const {
-    if (exchange_ || enemyTurn_ || !result_.empty() || sightPause() || cutscene_) return true;
+    if (levelUpMoment_ || exchange_ || enemyTurn_ || !result_.empty() || sightPause() || cutscene_) return true;
     return std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
   }
 
   // Ember's turn loop (tick / beginUnitTurn / startNewRound): whoever is next in the round acts; when everyone has
   // gone a new round starts. The party's unit is picked and waits for the player; an enemy plays its own turn.
   void updateTurns() {
-    if (!battle_ || !scene_ || !result_.empty() || holdTurns || battle_->roaming()) return;
+    if (!battle_ || !scene_ || levelUpMoment_ || !result_.empty() || holdTurns || battle_->roaming()) return;
     const bool walking = std::any_of(unitWalk_.begin(), unitWalk_.end(), [](const Walk& w) { return !w.points.empty(); });
     if (exchange_ || walking || sightPause()) return;
     // A strike the player asked for once the walk to its hex is over.
@@ -5390,6 +5618,67 @@ class MapStage final : public Stage {
     }
   }
 
+  bool combatCameraSettled() const {
+    return glm::distance(glm::vec2(cam_.target.x, cam_.target.z), glm::vec2(target_.x, target_.z)) < 0.3f &&
+           std::abs(cam_.distance - distance_) < 0.35f;
+  }
+
+  void startCombatIntro(const std::vector<int>& enemyBattleUnits, bool opening) {
+    if (!scene_ || !battle_) return;
+    std::unordered_set<int> enemies(enemyBattleUnits.begin(), enemyBattleUnits.end());
+    std::vector<glm::vec3> points;
+    for (size_t ui = 0; ui < scene_->units.size(); ++ui) {
+      if (ui >= unitBattle_.size() || unitBattle_[ui] < 0) continue;
+      const int bi = unitBattle_[ui];
+      const ember::BattleUnit& u = battle_->units()[static_cast<size_t>(bi)];
+      const bool included = u.side == "player" || (enemyBattleUnits.empty() ? u.side != "player" : enemies.contains(bi));
+      if (!included || !u.alive || !unitOnLitHex(ui)) continue;
+      points.push_back(unitWorld(ui));
+    }
+    if (!points.empty()) {
+      float minX = points.front().x, maxX = points.front().x, minZ = points.front().z, maxZ = points.front().z;
+      for (const glm::vec3& p : points) minX = std::min(minX, p.x), maxX = std::max(maxX, p.x), minZ = std::min(minZ, p.z), maxZ = std::max(maxZ, p.z);
+      const float cx = (minX + maxX) * 0.5f, cz = (minZ + maxZ) * 0.5f;
+      const float c = std::cos(yaw_), s = std::sin(yaw_);
+      float screenMinX = 0.0f, screenMaxX = 0.0f, screenMinY = 0.0f, screenMaxY = 0.0f;
+      bool first = true;
+      for (const glm::vec3& p : points) {
+        const float dx = p.x - cx, dz = p.z - cz;
+        const float sx = dx * c - dz * s, sy = dx * s + dz * c;
+        if (first) screenMinX = screenMaxX = sx, screenMinY = screenMaxY = sy, first = false;
+        else screenMinX = std::min(screenMinX, sx), screenMaxX = std::max(screenMaxX, sx), screenMinY = std::min(screenMinY, sy),
+             screenMaxY = std::max(screenMaxY, sy);
+      }
+      const float tanHalf = std::tan(glm::radians(kFov * 0.5f));
+      const float width = screenMaxX - screenMinX + 2.5f;
+      const float depth = screenMaxY - screenMinY + 3.0f;
+      const float fit = std::max({width / (2.0f * std::max(aspect_, 0.75f) * tanHalf), depth / (2.0f * tanHalf), closeDistance(2.4f, 0.0f) * 1.25f});
+      target_ = {cx, pivotHeight({cx, 0.0f, cz}), cz};
+      distance_ = std::clamp(fit, kMinDistance, maxDistance_);
+      clampGoal();
+    }
+    combatOpeningPending_ = false;
+    combatIntroActive_ = true;
+    combatIntroOpening_ = opening;
+    modeSwitchAt_ = now_;
+    combatIntroMinEnd_ = now_ + 2.2f;
+    combatIntroMaxEnd_ = now_ + 3.3f;
+  }
+
+  void updateCombatOpening() {
+    if (!combatOpeningPending_ || !battle_ || !scene_ || !board_ || battle_->roaming() || cutscene_ || !result_.empty() ||
+        options_.editorClick || !options_.battleScript.empty() || readyFrames_ < 30 || !loading().ready || !openingDone_)
+      return;
+    std::vector<int> enemies;
+    for (size_t b = 0; b < battle_->units().size(); ++b)
+      if (battle_->units()[b].side != "player" && battle_->units()[b].alive) enemies.push_back(static_cast<int>(b));
+    startCombatIntro(enemies, true);
+  }
+
+  void updateCombatIntro() {
+    if (combatIntroActive_ && now_ >= combatIntroMinEnd_ && (combatCameraSettled() || now_ >= combatIntroMaxEnd_)) combatIntroActive_ = false;
+  }
+
   void updateRoaming() {
     if (!battle_ || !scene_ || !roams_ || !result_.empty() || cutscene_) return;  // a cutscene: nobody meets anyone meanwhile
     if (fog_ && !noFog_ && !fogReady_) return;  // the fog's first sight decides whether the map opens in free roam or a fight
@@ -5442,9 +5731,8 @@ class MapStage final : public Stage {
     undo_.clear();
     turnUnit_ = -1;
     select(-1);
-    // The user (2026-10-18): the movement pauses and "Inimigos avistados!" shows, then the turns begin (drawModeBanner,
-    // sightPause). Going back to free roam says nothing.
-    modeSwitchAt_ = now_;
+    // Hold the first turn for the battle's establishing shot, then let the initiative begin.
+    startCombatIntro(met, false);
     logInfo("explore: {} in sight: the roaming ends, round {} begins", battle_->units()[static_cast<size_t>(met.front())].name, battle_->round());
   }
 
@@ -7732,6 +8020,7 @@ class MapStage final : public Stage {
         }
       }
     }
+    if (queueChangedLevels()) return;  // a level-up takes over before the next strike, counter or step
     if (now_ < x.end) return;
     if (s.type == ember::BattleStep::Type::Combat && !x.counter && ember::strikesBack(*battle_, s)) {
       x.counter = true;
@@ -9693,16 +9982,16 @@ class MapStage final : public Stage {
     ImGui::PopStyleVar(2);
   }
 
-  // The moment free roam turns into a fight: everything holds for kSightPauseSeconds under a big plate mid-screen, then the
-  // turns begin (the user, 2026-10-18: "dar uma pausa no movimento e dizer Inimigos avistados"); going back to free roam
-  // says nothing.
-  static constexpr float kModeBannerSeconds = 2.0f, kSightPauseSeconds = 1.8f;
-  bool sightPause() const { return now_ - modeSwitchAt_ >= 0.0f && now_ - modeSwitchAt_ < kSightPauseSeconds; }
+  // A battle opens on an establishing camera move; initiative waits until it settles and the player has a moment to read the field.
+  static constexpr float kModeBannerSeconds = 3.2f;
+  bool sightPause() const {
+    return combatIntroActive_ && (now_ < combatIntroMinEnd_ || (!combatCameraSettled() && now_ < combatIntroMaxEnd_));
+  }
   void drawModeBanner() {
     const float age = now_ - modeSwitchAt_;
     if (age < 0.0f || age > kModeBannerSeconds || !result_.empty()) return;
     const ImGuiIO& io = ImGui::GetIO();
-    const std::string text = tr("Inimigos avistados!", "Enemies sighted!");
+    const std::string text = combatIntroOpening_ ? tr("Combate iniciado!", "Battle begins!") : tr("Inimigos avistados!", "Enemies sighted!");
     ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.3f}, ImGuiCond_Always, {0.5f, 0.5f});
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {kPlateGlow, kPlateGlow});
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
@@ -11055,7 +11344,9 @@ class MapStage final : public Stage {
   float scriptPanUntil_ = -1.0f;   // ... until this scene time
   std::unordered_set<int> awake_;         // enemies that have seen the party (fog)
   int roamLeader_ = -1;                   // free roam: the scene unit the party follows
-  float modeSwitchAt_ = -100.0f;          // free roam's last turn into a fight (the banner)
+  float modeSwitchAt_ = -100.0f;          // the encounter camera's opening banner
+  bool combatOpeningPending_ = false, combatIntroActive_ = false, combatIntroOpening_ = false;
+  float combatIntroMinEnd_ = -100.0f, combatIntroMaxEnd_ = -100.0f;
   std::string result_;                    // "victory" / "defeat" once the battle is over
   bool pauseOpen_ = false, titleRequested_ = false, retryRequested_ = false;
   // Ember's menus over the battle (EmberMenus.h) and what they act on.
@@ -11103,6 +11394,10 @@ class MapStage final : public Stage {
   ember::Json levelUpSound_ = ember::Json::array();
   Music music_;
   std::vector<int> levelSeen_;
+  std::vector<LevelUpInfo> levelUpQueue_;
+  std::optional<LevelUpMoment> levelUpMoment_;
+  std::optional<LevelUpReturn> levelUpReturn_;
+  bool levelUpCameraMoved_ = false;
   void loadSounds(const std::filesystem::path& file) {
     std::ifstream in(file, std::ios::binary);
     const ember::Json j = in ? ember::Json::parse(in, nullptr, false) : ember::Json();

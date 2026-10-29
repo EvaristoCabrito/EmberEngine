@@ -383,6 +383,7 @@ void setViewport(VkCommandBuffer cmd, VkExtent2D size) {
 
 Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size)
     : context_(context), swapchain_(swapchain), bindless_(context), gpuTimer_(context) {
+  logInfo("startup: renderer resources begin");
   for (Frame& frame : frames_) {
     VkCommandPoolCreateInfo poolInfo{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
     poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
@@ -414,8 +415,10 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
     frame.atmosphereFrame = createDeviceBuffer(context, sizeof(AtmosphereFrame), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     frame.stars = createHostBuffer(context, sizeof(GpuStar) * kMaxStars, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT);
   }
+  logInfo("startup: renderer frame buffers ready");
   // Atmosfera volumétrica v1: integration point 1 of 3 (docs/ATMOSPHERE.md §4).
   volumetrics_ = std::make_unique<Volumetrics>(context, bindless_);
+  logInfo("startup: renderer volumetrics ready");
   // The atmosphere's tables (GENERAL layout: written as storage, read as textures) and its SH ambient.
   {
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -484,6 +487,7 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   instanceVisibilityIndex_ = bindless_.addStorageBuffer(instanceVisibility_.buffer);
   clusters_ = createDeviceBuffer(context, kClusterBytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT);
   clusterBufferIndex_ = bindless_.addStorageBuffer(clusters_.buffer);
+  logInfo("startup: renderer images and buffers ready");
 
   VkSamplerCreateInfo samplerInfo{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
   samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -531,6 +535,7 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   localShadowMapIndex_ = bindless_.addSampledImage(localShadowMap_.view, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
 
   createTargets(size);
+  logInfo("startup: renderer targets ready");
 
   GraphicsPipelineDesc triangle;
   triangle.vertexShader = "triangle.VSMain";
@@ -634,6 +639,7 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
     vfx.depthTest = depthTested == 1;
     vfxPipelines_[depthTested] = createGraphicsPipeline(context, bindless_.pipelineLayout(), vfx);
   }
+  logInfo("startup: renderer graphics pipelines ready");
 
   // Mesh passes.
   const VkPipelineLayout layout = bindless_.pipelineLayout();
@@ -671,6 +677,7 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
     bankMarchPipelines_.push_back(createComputePipeline(context, layout, std::string(look.shader) + ".CSMarch"));
     bankCompositePipelines_.push_back(createComputePipeline(context, layout, std::string(look.shader) + ".CSComposite"));
   }
+  logInfo("startup: renderer compute pipelines ready");
   GraphicsPipelineDesc meshlet;
   meshlet.taskShader = "meshlet.ASMain";
   meshlet.meshShader = "meshlet.MSMain";
@@ -701,6 +708,7 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   spriteShadow.depthBiasConstant = 1.0f;
   spriteShadow.depthBiasSlope = 1.5f;
   spriteShadowPipeline_ = createGraphicsPipeline(context, layout, spriteShadow);
+  logInfo("startup: renderer ready");
 }
 
 void Renderer::setFogOfWar(const ember::FogMask* mask, uint64_t version, const std::vector<uint16_t>* texels) {
