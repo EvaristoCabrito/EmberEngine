@@ -180,8 +180,13 @@ class Board {
 
   const BoardData& data() const { return data_; }
   const MapDraft& draft() const { return draft_; }
-  // The base levels the ground's heights stand on: the draft's own (MapDraft::emberBaseLevels), else the board's BASE_LEVELS.
-  int baseLevels() const { return draft_.emberBaseLevels.value_or(data_.baseLevels); }
+  // The base levels the ground's heights stand on: the draft's own (MapDraft::emberBaseLevels), else 0 on every map (the user,
+  // 2026-10-29: "nenhum tabuleiro alto em nenhum mapa do jogo", "todos no ground level o mais baixo possível", the maps' own
+  // elevations kept above it); the Inn's floors keep the board's BASE_LEVELS (2) as they were (locked without the user's word).
+  int baseLevels() const {
+    if (draft_.emberBaseLevels) return *draft_.emberBaseLevels;
+    return draft_.id.rfind("estalagem", 0) == 0 ? data_.baseLevels : 0;
+  }
   const HexLayout& layout() const { return layout_; }
   const std::vector<Cell>& cells() const { return cells_; }
   const Cell& cell(int c, int r) const { return cells_[indexOf(layout_, c, r)]; }

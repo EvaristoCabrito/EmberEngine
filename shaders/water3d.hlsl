@@ -33,6 +33,7 @@ struct Push {
   float opacity, normalScale, roughness, modern, v4, repeat;
   uint look;  // 0 rio, 1 leito, 2 rio in look 001 (ember), 3 rio in look 002 (correnteza), 4 rio in look 003 (decente)
   uint backdrop, depthTexture, linearSampler;  // look 4: the scene under the water, its depth, a linear clamp sampler
+  float floorY;  // the board's bottom: nothing of the sheet under it (it hung under the ground as icicles)
 };
 [[vk::push_constant]] Push push;
 
@@ -111,6 +112,7 @@ float4 PSMain(VSOut i) : SV_Target0 {
   const float4 texel = sampleMap(push.colorMap, s, uv + colorFlow, 1.0);
   const float roughTexel = sampleMap(push.roughMap, s, uv, 1.0).r;
   if (i.coverage < 0.05) discard;
+  if (i.world.y < push.floorY) discard;
   if (neverSeen(f, i.world)) discard;  // never-seen water is not drawn (R7)
   if (push.look == 2) return emberWater(f, i.world, float3(0.0, 1.0, 0.0), max(i.depth, 0.0), i.coverage);
   if (push.look == 3) return emberWater002(f, i.world, max(i.depth, 0.0), i.coverage);

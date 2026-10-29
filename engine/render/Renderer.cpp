@@ -174,6 +174,7 @@ struct Water3DPush {  // shaders/water3d.hlsl
   float opacity, normalScale, roughness, modern, v4, repeat;
   uint32_t look;
   uint32_t backdrop, depth, sampler;  // look 4 (look 003): as WaterPush's
+  float floorY;                       // Water3DView::floorY
 };
 static_assert(offsetof(Water3DPush, look) == 72 && sizeof(Water3DPush) <= Bindless::kPushConstantBytes);
 static_assert(sizeof(SpritePush) <= Bindless::kPushConstantBytes);
@@ -2279,7 +2280,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       const Water3DView& w = water3d_;
       const Water3DPush push{bufferAddress(context_, frame.meshFrame), w.vertices, w.indices, w.colorMap, w.normalMap, w.roughMap,
                              {w.color[0], w.color[1], w.color[2]}, w.opacity, w.normalScale, w.roughness, w.modern, w.v4, w.repeat,
-                             w.look, waterBackdropIndex_, depthIndex_, linearClampIndex_};
+                             w.look, waterBackdropIndex_, depthIndex_, linearClampIndex_, w.floorY};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
       vkCmdDraw(cmd, w.count, 1, 0, 0);
       gpuTimer_.end(cmd, scope);

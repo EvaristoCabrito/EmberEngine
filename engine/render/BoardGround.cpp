@@ -158,6 +158,9 @@ bool BoardGround::build(const ember::Board& board) {
     for (const ember::Cell& c : board.cells()) low = any ? std::min(low, c.groundY) : c.groundY, any = true;
     wallFrom = static_cast<uint32_t>(looks[0].vertexCount());
     ember::closeBoardSides(looks[0], low - 0.35);
+    // The 3D water ends where the board does: its sheet ran down past the board's bottom and hung under the ground as icicles (the
+    // user, 2026-10-29: "esconde essa água vazando no subterrâneo").
+    boardBottom_ = static_cast<float>(low - 0.35);
     if (looks[0].vertexCount() == wallFrom) wallFrom = 0;
   }
   // The walls take no light and no shadow of their own (the user, 2026-10-23: "esse sombreado nas bordas do tabuleiro tem que acabar,
@@ -304,6 +307,7 @@ Water3DView BoardGround::water3d(ember::EdgeStyle style) const {
   view.colorMap = textureIndex(ember::groundLayerAsset("water", "color"));
   view.normalMap = textureIndex(ember::groundLayerAsset("water", "normal"));
   view.roughMap = textureIndex(ember::groundLayerAsset("water", "rough"));
+  view.floorY = boardBottom_;
   return view;
 }
 

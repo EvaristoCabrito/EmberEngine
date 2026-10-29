@@ -89,6 +89,7 @@ struct Water3DView {
   float opacity = 0, normalScale = 0, roughness = 0, modern = 0, v4 = 0, repeat = 1;
   uint32_t look = 0;  // shaders/water3d.hlsl: 0 rio (the board's river material), 1 leito (Ember's ThreeWater), 2 / 3 looks
                       // 001 / 002, 4 look 003 "decente" (reads the scene below it: Renderer::waterRefracts)
+  float floorY = -1e30f;  // nothing of the sheet is drawn under this height: the board's own bottom (BoardGround::build)
   explicit operator bool() const { return vertices != 0 && count != 0; }
 };
 
@@ -184,6 +185,7 @@ class BoardGround {
     ImageUpload vertexUpload, indexUpload;
   };
   Water3D water3d_[2];  // smooth, hard (tabletop uses hard's)
+  float boardBottom_ = -1e30f;  // the smooth look's side walls end here (the 3D water's floorY)
   Water3DView water3dMaterial_;
   uint64_t uploadWaitValue_ = 0;
   Stats stats_;
