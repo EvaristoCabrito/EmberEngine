@@ -1152,7 +1152,9 @@ class OverworldStage : public Stage {
     // The leader: idle frames of their own sprite, sliding hex to hex (0.5 s), turned the way they last walked.
     {
       double tx = px, ty = py;
-      if (standing) tx = standing->x, ty = standing->y;
+      // On a location the leader stands on its pin; on the half grid (hexes 2.5 %) a pin can be a whole hex off its cell's centre,
+      // so there the leader stays on the cell, in the middle of its step hexes.
+      if (standing && ember::Overworld::hexSize() >= 5.0) tx = standing->x, ty = standing->y;
       // The first frame stands on the hex in idle: the target too (left at -1 it read as a step and played a walk in place).
       if (partyX_ < 0)
         partyX_ = static_cast<float>(tx), partyY_ = static_cast<float>(ty), fromX_ = partyX_, fromY_ = partyY_, targetX_ = partyX_,
@@ -1407,8 +1409,9 @@ class OverworldStage : public Stage {
       }
   }
 
-  // Test (the user, 2026-10-29: "scale down the character and the movement grid by half"): 1 = the old size.
-  static constexpr float kMapFigureScale = 0.5f;
+  // Test (the user, 2026-10-29: "scale down the character and the movement grid by half", then "deixa o personagem 50% maior"):
+  // 1 = the old size.
+  static constexpr float kMapFigureScale = 0.75f;
   // LeaderMarker: the leader's idle frames (BattleEngine.idleFrame pacing), each cropped to its own box, 48 px tall,
   // its feet on the hex; mirrored when last walking left. Returns the button's box.
   struct Box {

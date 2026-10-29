@@ -9562,7 +9562,7 @@
    "missionIds": [
     "cemiterio-esquecidos"
    ],
-   "col": 19,
+   "col": 20,
    "row": 14
   },
   {
@@ -9596,7 +9596,7 @@
     }
    ],
    "col": 5,
-   "row": 14
+   "row": 13
   },
   {
    "id": "ruins",
@@ -9647,7 +9647,7 @@
    "y": 25,
    "missionIds": [],
    "col": 5,
-   "row": 6
+   "row": 7
   },
   {
    "id": "farm",

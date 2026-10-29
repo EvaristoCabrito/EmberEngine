@@ -1864,6 +1864,9 @@ e tem a diretoria macabra do monasterio")
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
+- `build/release/bin/Sandbox-20261029-1800-in-use.exe` (2026-10-29): the exe the user's game was running, renamed aside to build the
+  half-grid world map's leader fix (its 17:55 build).
+
 - `content/maps/ember/mosteiro001.json` (2026-10-29: the ground floor before the stairs up to Andar II; 002 plays) and
   `mosteiro-andar-3001.json` (the Master of Novices as a second cultistV2, dropped by the exporter; 002 plays).
 - `content/models/mosteiro/*-v02` (2026-10-29): the six monastery props built from primitives in Blender (photo materials, subdivided):

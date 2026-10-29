@@ -66,7 +66,13 @@ def main():
     board["cells"] = cells
     keys = {(c["col"], c["row"]) for c in cells}
     for loc in data["locations"]:
-        loc.update(half(loc))
+        # The hex under the pin (an old hex's centre can be a whole small hex away from its pin); the Stone Bridge keeps the old
+        # hex's centre, on the start's row: the early road (Overworld::canStep) runs along that row, and it is on the painted bridge.
+        if loc["id"] == "stonebridge":
+            loc.update(half(loc))
+        else:
+            near = min(cells, key=lambda c: (c["x"] - loc["x"]) ** 2 + (c["y"] - loc["y"]) ** 2)
+            loc["col"], loc["row"] = near["col"], near["row"]
         assert (loc["col"], loc["row"]) in keys, loc["id"]
     for key in ("startHex", "innHex"):
         assert (board[key]["col"], board[key]["row"]) in keys, key
