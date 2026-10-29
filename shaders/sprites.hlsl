@@ -87,6 +87,16 @@ VSOut VSMain(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
     const float4 feet = mul(float4(eye + d * (1.0 - min(kUnitFront / max(length(d), 1e-3), 0.9)), 1.0), push.viewProjection);
     o.position.z = feet.z / feet.w * o.position.w;
   }
+#ifdef CARD_STANDING_DEPTH
+  // Every map but the Inn's (sprites_standing.VSMain, Renderer::useStandingCards): a leaning card takes the depth of the card
+  // standing upright at its feet, row for row, so the ground behind its feet never cuts into it (the user, 2026-10-29: the city's
+  // huts full of holes with the camera nearly vertical, where the leaning card lies almost flat over the ground's relief). Each pixel
+  // stays where it was (the depth alone changes).
+  else if (!flat && (push.lean & 1u) != 0) {
+    const float4 standing = mul(float4(s.origin + right * ((c.x - 0.5) * s.width) + float3(0, c.y * s.height, 0), 1.0), push.viewProjection);
+    o.position.z = standing.z / max(standing.w, 1e-4) * o.position.w;
+  }
+#endif
   // A card standing on never-seen ground is not drawn: even black, its outline over lit ground would show (R7).
   if (push.frame != 0 && neverSeen(loadFrame(push.frame), s.origin)) o.position = float4(0, 0, -1, 1);
   const float u = (s.flags & 1u) ? 1.0 - c.x : c.x;

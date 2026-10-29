@@ -300,6 +300,9 @@ class Renderer {
   // The background drawn by resolve_panorama.hlsl (resolve.hlsl with the painting's edge rows clamped) instead of resolve.hlsl: every map
   // but the Inn's floors, whose shader never changes (the user, 2026-10-23).
   void usePanoramaShader(bool on) { panoramaShader_ = on; }
+  // The cards drawn by sprites_standing.VSMain (a leaning card takes the depth of the card standing upright at its feet) instead of
+  // sprites.VSMain: every map but the Inn's floors, whose shader never changes (the user, 2026-10-23).
+  void useStandingCards(bool on) { standingCards_ = on; }
   void setBackground(uint32_t background, uint32_t mode = 0, glm::vec4 fitA = {}, glm::vec4 fitB = {}, const BackdropPlane& plane = {}) {
     background_ = background;
     backgroundMode_ = mode;
@@ -612,6 +615,10 @@ class Renderer {
   std::array<glm::vec4, kGroundHoles> groundHoles_{};  // (0, 0, 0, 0) = none
   VkPipeline spritePipeline_ = VK_NULL_HANDLE;
   VkPipeline spriteDepthPipeline_ = VK_NULL_HANDLE;  // the cards' depth, after the cards
+  VkPipeline standingSpritePipeline_ = VK_NULL_HANDLE, standingSpriteDepthPipeline_ = VK_NULL_HANDLE;  // sprites_standing.VSMain
+  bool standingCards_ = false;  // useStandingCards
+  VkPipeline cardPipeline() const { return standingCards_ ? standingSpritePipeline_ : spritePipeline_; }
+  VkPipeline cardDepthPipeline() const { return standingCards_ ? standingSpriteDepthPipeline_ : spriteDepthPipeline_; }
   VkPipeline effectPipeline_ = VK_NULL_HANDLE;
   VkPipeline vfxPipelines_[2] = {};  // depth-tested, over everything
   std::vector<VfxVertex> vfxVertices_;

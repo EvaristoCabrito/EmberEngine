@@ -608,6 +608,11 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   sprites.fragmentShader = "sprites.PSDepth";
   sprites.depthWrite = true;
   spriteDepthPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), sprites);
+  sprites.vertexShader = "sprites_standing.VSMain";
+  standingSpriteDepthPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), sprites);
+  sprites.fragmentShader = "sprites.PSMain";
+  sprites.depthWrite = false;
+  standingSpritePipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), sprites);
 
   // Spell effects: over everything, depth-tested against it (read-only depth, also sampled for the soft fade).
   GraphicsPipelineDesc effects;
@@ -776,6 +781,8 @@ Renderer::~Renderer() {
   vkDestroySampler(context_.device, shadowSampler_, nullptr);
   vkDestroyPipeline(context_.device, spritePipeline_, nullptr);
   vkDestroyPipeline(context_.device, spriteDepthPipeline_, nullptr);
+  vkDestroyPipeline(context_.device, standingSpritePipeline_, nullptr);
+  vkDestroyPipeline(context_.device, standingSpriteDepthPipeline_, nullptr);
   vkDestroyPipeline(context_.device, effectPipeline_, nullptr);
   for (VkPipeline p : vfxPipelines_) vkDestroyPipeline(context_.device, p, nullptr);
   for (VkPipeline p : {cullInstancesPipeline_, cullInstancesLatePipeline_, hizPipeline_, bloomDownPipeline_, bloomUpPipeline_, cullPreparePipeline_,
@@ -2311,7 +2318,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       std::stable_sort(behind.begin(), behind.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
       auto drawCards = [&](uint32_t from, uint32_t to) {
         if (to <= from) return;
-        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spritePipeline_);
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, cardPipeline());
         SpritePush part = spritePush;
         part.instances += static_cast<VkDeviceAddress>(from) * sizeof(SpriteInstance);
         vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(part), &part);
@@ -2338,7 +2345,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       }
       drawCards(from, static_cast<uint32_t>(sprites_.size()));
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(spritePush), &spritePush);
-      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spriteDepthPipeline_);
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, cardDepthPipeline());
       if (effects) {  // the units' cards later, after the effects
         SpritePush depthPush = spritePush;
         depthPush.lean |= 4u;
@@ -2407,7 +2414,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     // Cards over the effects (a caster turned away, in front of what leaves its hands): the same card drawing, read past
     // the frame's cards.
     if (!frontCards_.empty()) {
-      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spritePipeline_);
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, cardPipeline());
       const SpritePush frontPush{camera_.viewProjection(), camera_.right, spriteSamplerIndex_,
                                  bufferAddress(context_, frame.sprites) + sprites_.size() * sizeof(SpriteInstance), bufferAddress(context_, frame.meshFrame),
                                  camera_.forward, cardLean_ ? 1u : 0u};
@@ -2427,7 +2434,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
       fxDepth.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
       vkCmdBeginRendering(cmd, &fxPass);
       setViewport(cmd, size_);
-      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, spriteDepthPipeline_);
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, cardDepthPipeline());
       const SpritePush unitDepth{camera_.viewProjection(), camera_.right, spriteSamplerIndex_, bufferAddress(context_, frame.sprites),
                                  bufferAddress(context_, frame.meshFrame), camera_.forward, (cardLean_ ? 1u : 0u) | 8u};
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(unitDepth), &unitDepth);

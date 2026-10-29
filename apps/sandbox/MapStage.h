@@ -925,6 +925,7 @@ class MapStage final : public Stage {
     // Every map but the Inn's floors draws its background with resolve_panorama.hlsl (the painting's edge rows clamped: no seam across
     // the sky); the Inn keeps resolve.hlsl untouched (the user, 2026-10-23: the Inn is an exception to all rules).
     renderer.usePanoramaShader(!innFloor());
+    renderer.useStandingCards(!innFloor());  // the cards' depth upright at their feet (sprites_standing), the Inn's cards as they were
     if (windowLight() && board_->draft().id != "estalagem") {
       // An interior (the user, 2026-10-23: "INTERNO ambiente INTERNO", "portas e janelas abertas trazem a luz de fora, que nunca é
       // desenhada de fora"): nothing outside is drawn, only the light comes in through the openings. Beyond the walls: the map's own
