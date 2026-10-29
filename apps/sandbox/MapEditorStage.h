@@ -1019,6 +1019,12 @@ class MapEditorStage : public Stage {
     const auto it = editor_.classes.find(classId);
     return it != editor_.classes.end() && it->second.role.starts_with("Civil");
   }
+  // A road NPC's class (the NPC brush's characters): an NPC, never a foe.
+  bool isNpc(const std::string& classId) const {
+    for (const auto& [id, spawn] : editor_.npcSpawn)
+      if (spawn.value("classId", std::string()) == classId) return true;
+    return false;
+  }
   std::string className(const std::string& classId) const {
     const auto it = editor_.classes.find(classId);
     return it == editor_.classes.end() ? classId : it->second.name;
@@ -3104,7 +3110,7 @@ class MapEditorStage : public Stage {
           LetterJump jump;
           jump.begin();
           for (const std::string& c : editor_.classOrder) {
-            if (enemy && (isSummon(c) || isCivil(c))) continue;
+            if (enemy && (isSummon(c) || isCivil(c) || isNpc(c))) continue;
             if (ImGui::Selectable((classLabel(c) + "##" + c).c_str(), c == classId)) beginEdit(), s["classId"] = c, s["useClassSprite"] = true;
             jump.item(classLabel(c));
           }
@@ -3124,7 +3130,7 @@ class MapEditorStage : public Stage {
             // never a named hero's own class for a random foe
             std::vector<std::string> pool;
             for (const std::string& c : editor_.classOrder) {
-              if (isSummon(c) || isCivil(c)) continue;
+              if (isSummon(c) || isCivil(c) || isNpc(c)) continue;
               bool named = false;
               for (const auto& h : editor_.heroes) named = named || h.second == c;
               for (const auto& h : editor_.namedNonHeroes) named = named || h.second == c;
