@@ -798,7 +798,7 @@ class OverworldStage : public Stage {
   // The Underworld's board (world/Underworld, content/data/underworld.json; the user, 2026-10-28: "when I flip to the Underworld
   // Map I want my character in there at the starting position", "também anda"): the leader on the party's hex (Temple Descend the
   // first time), a click on the leader opens the neighbouring cells as step hexes, a click on one walks there (as the Overworld's
-  // leader walks); Temple Descend's pin on the user's mark. A step moves the party only (Underworld::step).
+  // leader walks); Temple Descend's pin on the user's mark. A step moves the party and the campaign's clock (Underworld::step).
   void drawUnderworld(ImDrawList* dl, ImVec2 o, float imgW, float imgH, bool overViewport, bool clicked) {
     if (!hasUnder_) return;
     auto at = [&](double xPct, double yPct) { return ImVec2{o.x + static_cast<float>(xPct) / 100.0f * imgW, o.y + static_cast<float>(yPct) / 100.0f * imgH}; };

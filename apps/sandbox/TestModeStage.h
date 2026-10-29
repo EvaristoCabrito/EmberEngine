@@ -45,6 +45,7 @@
 #include "render/vfx/ElementSprites.h"
 #include "world/Campaign.h"
 #include "world/Overworld.h"
+#include "world/Underworld.h"
 
 namespace ember {
 
@@ -346,7 +347,18 @@ class TestModeStage : public Stage {
     if (emberPlate("##back", {40, 40}, [](ImDrawList* d, ImVec2 a, ImVec2 b, ImU32 ink) { iconChevronLeft(d, {(a.x + b.x) / 2, (a.y + b.y) / 2}, 20, ink); }))
       screen_ = Screen::Menu;  // onBack: testMenu
     emberKicker(dl, {68.0f, top + 4.0f}, 14.0f, "MODO TESTE");
-    emberTitle(dl, {68.0f, top + 22.0f}, 30.0f, "Mapa");
+    // The world's name is the switch, as on the RPG map (the user, 2026-10-28: "in the classic tactical map I also need to be able to
+    // flip between Overworld and Underworld").
+    {
+      const char* word = underworld_ ? "Underworld" : "Overworld";
+      const ImVec2 at{68.0f, top + 22.0f};
+      const ImVec2 ts = uiFont(UiFont::Mark)->CalcTextSizeA(30.0f, FLT_MAX, 0.0f, word);
+      ImGui::SetCursorScreenPos(at);
+      if (ImGui::InvisibleButton("##world", ts)) toggleWorld();
+      const bool hover = ImGui::IsItemHovered();
+      emberTitle(dl, at, 30.0f, word);
+      if (hover) dl->AddLine({at.x, at.y + ts.y + 2.0f}, {at.x + ts.x, at.y + ts.y + 2.0f}, kAccent, 2.0f);
+    }
     ImFont* ui = sans();
     const float h = 36.0f, gap = 12.0f;
     float x = size.x - 16.0f;
@@ -381,9 +393,26 @@ class TestModeStage : public Stage {
     return top + 64.0f + 16.0f;
   }
 
+  // The Underworld's board (content/data/underworld.json: its atlas and places), read the first time it is shown.
+  const ember::Underworld& underworld() {
+    if (!underLoaded_) under_.load("content/data/underworld.json"), underLoaded_ = true;
+    return under_;
+  }
+  // Each world keeps its own view; the Underworld opens on its first place (Temple Descend).
+  void toggleWorld() {
+    underworld_ = !underworld_;
+    std::swap(centreX_, otherCentreX_), std::swap(centreY_, otherCentreY_);
+    if (underworld_ && !underCentred_) {
+      const std::vector<ember::MapLocation>& places = underworld().locations();
+      centreX_ = places.empty() ? 0.5f : static_cast<float>(places[0].x / 100.0), centreY_ = places.empty() ? 0.5f : static_cast<float>(places[0].y / 100.0);
+      underCentred_ = true;
+    }
+    recentre_ = true, open_.reset();
+  }
+
   void drawMapViewport(ImVec2 a, ImVec2 b) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
-    const UiImage* map = uiImage(paths_.artRoot / "game/assets/world-map.jpg");
+    const UiImage* map = uiImage(underworld_ ? std::filesystem::path(underworld().atlas()) : paths_.artRoot / "game/assets/world-map.jpg");
     const float vw = b.x - a.x, vh = b.y - a.y;
     const float imgW = map ? vw * kZoomStops[zoom_] / 100.0f : std::min(vw * 0.7f, 448.0f);
     const float imgH = map ? imgW * static_cast<float>(map->height) / static_cast<float>(map->width) : vh * 0.7f;
@@ -428,7 +457,16 @@ class TestModeStage : public Stage {
     dl->PushClipRect(a, b, true);
     if (map) dl->AddImageRounded(map->texture, o, {o.x + imgW, o.y + imgH}, {0, 0}, {1, 1}, IM_COL32_WHITE, 8.0f);
     std::string clickedId;
+    if (underworld_)  // the Underworld's places: their pins and names (no missions there yet)
+      for (const ember::MapLocation& loc : underworld().locations()) {
+        const ImVec2 c{o.x + static_cast<float>(loc.x) / 100.0f * imgW, o.y + static_cast<float>(loc.y) / 100.0f * imgH};
+        const float r = 20.0f;
+        const bool hover = over && std::hypot(io.MousePos.x - c.x, io.MousePos.y - c.y) <= r;
+        drawPin(dl, c, r * (hover ? 1.1f : 1.0f), "open", false, 0, -1.0f);
+        if (hover) ImGui::SetTooltip("%s", loc.name.c_str());
+      }
     for (const ember::MapLocation& loc : world_.locations()) {
+      if (underworld_) break;  // the Overworld's places only on the Overworld
       const std::string st = world_.locationStatus(loc, realSave(), true);
       const auto missions = world_.visibleMissionsOf(loc, realSave(), true);
       const ImVec2 c{o.x + static_cast<float>(loc.x) / 100.0f * imgW, o.y + static_cast<float>(loc.y) / 100.0f * imgH};
@@ -789,6 +827,9 @@ class TestModeStage : public Stage {
   int zoom_ = 3;  // opens at the biggest stop
   bool centred_ = false, recentre_ = false, dragMoved_ = false;
   float centreX_ = 0.5f, centreY_ = 0.5f, scrollX_ = 0.0f, scrollY_ = 0.0f;
+  bool underworld_ = false, underCentred_ = false, underLoaded_ = false;  // the classic map on the Underworld's atlas (toggleWorld)
+  float otherCentreX_ = 0.5f, otherCentreY_ = 0.5f;                     // the world not on show: where its view was
+  ember::Underworld under_;
   struct Drag {
     float x, y, sx, sy;
   };

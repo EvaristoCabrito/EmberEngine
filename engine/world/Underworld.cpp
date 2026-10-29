@@ -19,6 +19,7 @@ bool Underworld::load(const std::filesystem::path& file) {
     logError("underworld data unreadable: {}", file.string());
     return false;
   }
+  atlas_ = j.value("atlas", std::string());
   hexWidth_ = j.value("hexWidth", 0.0), rowStep_ = j.value("rowStep", 0.0);
   originX_ = j["origin"].value("x", 0.0), originY_ = j["origin"].value("y", 0.0);
   start_ = {j["startHex"].value("col", 0), j["startHex"].value("row", 0)};
@@ -78,6 +79,13 @@ bool Underworld::step(Json& save, OverworldHex to) const {
   const std::vector<OverworldHex> around = Overworld::neighbors(from.col, from.row);
   if (!isCell(to.col, to.row) || std::find(around.begin(), around.end(), to) == around.end()) return false;
   save["underworldPos"] = Json{{"col", to.col}, {"row", to.row}};
+  // Time passes here as on the Overworld (the user, 2026-10-28: "we need the time and moon to count on the underworld map too"):
+  // a step takes the Overworld's 6 hours on the campaign's clock, and every day crossed moves gameClock, which the moon follows.
+  constexpr int kStepHours = 6;
+  const int totalHours = Overworld::campaignHour(save) + kStepHours;
+  const double days = (save.contains("gameClock") && save["gameClock"].is_number() ? save["gameClock"].get<double>() : 0.0) + totalHours / 24;
+  save["gameClock"] = days == std::floor(days) ? Json(static_cast<long long>(days)) : Json(days);
+  save["gameHour"] = totalHours % 24;
   return true;
 }
 

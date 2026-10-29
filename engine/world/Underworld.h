@@ -3,7 +3,8 @@
 // The Underworld's hex board over the Atlas do Submundo (content/data/underworld.json, written by
 // tools/scripts/maps/make_underworld_board.py): the world map's own hexes (pointy-top, odd-r, Overworld::neighbors), laid on
 // the atlas with Temple Descend's hex on the user's mark (the shaft under the temple). The party's place there is the save's
-// "underworldPos". A step moves the party only: no time, hunger, encounters or fog there yet (nothing decided for them).
+// "underworldPos". A step moves the party and the campaign's clock (6 hours, as on the Overworld; the moon follows the days); no
+// hunger, encounters or fog there yet (nothing decided for them).
 
 #include <filesystem>
 #include <optional>
@@ -17,6 +18,7 @@ class Underworld {
  public:
   bool load(const std::filesystem::path& file);
 
+  const std::string& atlas() const { return atlas_; }  // the painting the board lies on (underworld.json "atlas")
   const std::vector<OverworldCell>& cells() const { return cells_; }
   const OverworldCell* cell(int col, int row) const;
   bool isCell(int col, int row) const { return cell(col, row) != nullptr; }
@@ -37,6 +39,7 @@ class Underworld {
   bool step(Json& save, OverworldHex to) const;
 
  private:
+  std::string atlas_;
   std::vector<OverworldCell> cells_;
   std::vector<MapLocation> locations_;
   OverworldHex start_{};
