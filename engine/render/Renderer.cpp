@@ -145,6 +145,7 @@ struct WaterPush {
   VkDeviceAddress indices;
   uint32_t look;  // shaders/water.hlsl: 0 Ember, 1 look 001 "ember", 2 look 002, 3 look 003 "decente"
   uint32_t backdrop, depth, sampler;  // look 003: the scene under the water, the depth, a linear clamp sampler (bindless)
+  float floorY;                       // WaterView::floorY
 };
 
 struct ProbePush {  // shaders/probes.hlsl
@@ -2266,7 +2267,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
         if (count == 0) continue;
         const WaterPush waterPush{bufferAddress(context_, frame.meshFrame), water_.vertices, water_.indices + VkDeviceAddress(first) * 4,
                                   water_.look == 0 ? k : water_.look == WaterView::kOriginalEverywhere ? 0u : water_.look,
-                                  waterBackdropIndex_, depthIndex_, linearClampIndex_};
+                                  waterBackdropIndex_, depthIndex_, linearClampIndex_, water_.floorY};
         vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(waterPush), &waterPush);
         vkCmdDraw(cmd, count, 1, 0, 0);
         first += count;

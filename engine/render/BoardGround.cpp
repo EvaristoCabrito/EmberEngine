@@ -441,6 +441,7 @@ WaterView BoardGround::water(ember::EdgeStyle style) const {
   if (!w.vertexBuffer.buffer || !uploads_.finished(w.vertexUpload) || !uploads_.finished(w.indexUpload)) return {};
   WaterView view{bufferAddress(context_, w.vertexBuffer), bufferAddress(context_, w.indexBuffer), static_cast<uint32_t>(w.indices.size())};
   std::copy(std::begin(w.lookCount), std::end(w.lookCount), view.lookCount);
+  view.floorY = boardBottom_;
   return view;
 }
 

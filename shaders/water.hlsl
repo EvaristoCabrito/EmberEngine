@@ -16,6 +16,7 @@ struct Push {
   uint64_t indices;   // uint[]
   uint look;          // 0 Ember, 1 ember (look 001), 2 correnteza (look 002), 3 decente (look 003)
   uint backdrop, depthTexture, linearSampler;  // look 003: the scene under the water, its depth, a linear clamp sampler
+  float floorY;  // the board's bottom: nothing of the sheet under it (its banks hung under the board as icicles)
 };
 [[vk::push_constant]] Push push;
 
@@ -44,6 +45,7 @@ float rippleHeight(float2 p) {
 float4 PSMain(VSOut i) : SV_Target0 {
   const MeshFrame f = loadFrame(push.frame);
   if (neverSeen(f, i.world)) discard;  // never-seen water is not drawn (R7)
+  if (i.world.y < push.floorY) discard;
   if (push.look == 1) return emberWater(f, i.world, normalize(i.normal), -1.0, 1.0);
   if (push.look == 2) return emberWater002(f, i.world, -1.0, 1.0);
   if (push.look == 3) return emberWater003(f, i.world, i.position, push.backdrop, push.depthTexture, push.linearSampler, 1.0);

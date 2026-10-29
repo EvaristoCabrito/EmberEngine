@@ -67,6 +67,8 @@ struct WaterView {
                        // everywhere; shaders/water.hlsl: 0 the original diorama water, 1 look 001 "ember" (water_look001.hlsli),
                        // 2 look 002, 3 look 003 (reads the scene below it: Renderer::waterRefracts)
   static constexpr uint32_t kOriginalEverywhere = 4;
+  float floorY = -1e30f;  // nothing of the sheet is drawn under this height: the board's own bottom (its banks sink to the lowest
+                          // ground - 1 and hung under the board as icicles; the user, 2026-10-29)
   explicit operator bool() const { return vertices != 0 && count != 0; }
 };
 
