@@ -4374,26 +4374,60 @@ class MapStage final : public Stage {
     const ember::EditorCatalog& catalog = architectureCatalog();
     const ember::HexLayout& L = board_->layout();
     size_t cells = 0;
+    const auto has = [](const std::string& s, std::initializer_list<const char*> words) {
+      std::string low = s;
+      std::transform(low.begin(), low.end(), low.begin(), [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+      return std::any_of(words.begin(), words.end(), [&](const char* w) { return low.find(w) != std::string::npos; });
+    };
     for (const ember::MapDecoration& d : board_->draft().decorations) {
-      if (!d.id.starts_with("ember-")) continue;
       const ember::CatalogDecoration* cd = catalog.decoration(d.id);
       if (!cd) continue;
-      // EmberEngine's walls and doors are solid like Ember's own (hexprops solidArchitecture); an open portal is walked through.
-      // Of the other props only a barricade blocks (the user, 2026-10-25: "a única coisa que bloqueia é barricada"); the editor's blocksPath
-      // mark is ignored.
+      // Walls and doors are solid and stop shots (hexprops solidArchitecture); an open portal is walked through. A barricade blocks.
+      // Every other 3D object blocks the way too (the user, 2026-10-30: "Todo 3D bloqueia", replacing 2026-10-25's "a única coisa que
+      // bloqueia é barricada"), and of those only columns stop shots ("apenas colunas bloqueiam projéteis"). Left walkable: what
+      // lies on the ground (grass, moss, rugs), stairs, and pieces made to stand on. The Inn too (the user gave the Inn's word).
       const bool solidWall = cd->architecture && (cd->model3d == "wall" || cd->model3d == "door" || cd->model3d == "secretDoor");
-      if (!solidWall && d.id.find("barricade") == std::string::npos) continue;
+      const bool barricade = d.id.find("barricade") != std::string::npos;
+      const bool object3d = !cd->architecture && cd->model && !cd->standOn && cd->exitKind.empty() &&
+                            !has(d.id, {"grass", "moss", "rug", "stairs"});
+      if (!solidWall && !barricade && !object3d) continue;
+      const bool stopsShots = solidWall || barricade || has(d.id + " " + cd->name, {"pillar", "column", "coluna", "pilar"});
       for (const ember::FootOffset& f : ember::placedFootprint(*cd, d.x, d.y, d.rot)) {
         const int x = d.x + f.dx, y = d.y + f.dy;
         if (!ember::inBoard(L, x, y)) continue;
         ember::BattleCell c = battle_->cell(x, y);
         if (cd->model3d == "door") doorCellsBefore_.try_emplace({x, y}, c);  // the animated door gives them back while open
-        c.passable = false, c.moveCost = 99, c.blocked = true, c.shot.blocksShot = true;
+        c.passable = false, c.moveCost = 99, c.blocked = true;
+        if (stopsShots) c.shot.blocksShot = true;
         battle_->setCell(y * L.cols + x, c);
         ++cells;
       }
     }
     if (cells) logInfo("battle: {} cells made solid under EmberEngine props", cells);
+    // With the 3D objects solid, a unit nobody can walk up to is a map to fix: walked from the first player unit's hex.
+    const ember::BattleUnit* from = nullptr;
+    for (const ember::BattleUnit& u : battle_->units())
+      if (u.side == "player" && !from) from = &u;
+    if (!from) return;
+    std::vector<uint8_t> reached(static_cast<size_t>(L.cols * L.rows), 0);
+    std::vector<ember::BattleHex> open{{from->x, from->y}};
+    reached[static_cast<size_t>(from->y * L.cols + from->x)] = 1;
+    while (!open.empty()) {
+      const ember::BattleHex h = open.back();
+      open.pop_back();
+      for (const ember::BattleHex& n : ember::Battle::neighbors(h.x, h.y)) {
+        if (!battle_->inBounds(n.x, n.y) || reached[static_cast<size_t>(n.y * L.cols + n.x)] || !battle_->cell(n.x, n.y).passable) continue;
+        reached[static_cast<size_t>(n.y * L.cols + n.x)] = 1;
+        open.push_back(n);
+      }
+    }
+    for (const ember::BattleUnit& u : battle_->units()) {
+      if (u.side == "player") continue;
+      bool near = reached[static_cast<size_t>(u.y * L.cols + u.x)] != 0;
+      for (const ember::BattleHex& n : ember::Battle::neighbors(u.x, u.y))
+        near = near || (battle_->inBounds(n.x, n.y) && reached[static_cast<size_t>(n.y * L.cols + n.x)]);
+      if (!near) logWarn("battle: {} at ({}, {}) cannot be reached on foot from {}", u.name, u.x, u.y, from->name);
+    }
   }
   // The battle: each scene unit finds its battle unit by side and name, in spawn order.
   void setUpBattle(const std::filesystem::path& path) {
