@@ -197,8 +197,8 @@
    "framed": true
   },
   "marshTrapper": {
-   "src": "/game/sprites/marshTrapper/1.png",
-   "framed": false
+   "src": "/game/portraits/gaspar-v01.jpg",
+   "framed": true
   },
   "militia-v2": {
    "src": "/game/portraits/sprites/militia-v2.png?v=1",
@@ -229,8 +229,8 @@
    "framed": true
   },
   "mushroomForager": {
-   "src": "/game/sprites/mushroomForager/1.png",
-   "framed": false
+   "src": "/game/portraits/bento-v01.jpg",
+   "framed": true
   },
   "neera": {
    "src": "/game/portraits/NeeraProperSide-profile.jpg",

@@ -12,7 +12,14 @@ and export_board.ts leave the same ids out themselves, so a re-export does not b
 import json
 import sys
 
-REMOVED = {'wall-3d-low'}
+REMOVED = {
+    'wall-3d-low',
+    'ember-extra-broken-cart-wheel',
+    'ember-nature-dry-bush',
+    'ember-nature-dry-branch-pile',
+    'prop-3d-vau-stone-v01',
+    'prop-3d-vau-well-v01',
+}
 FILES = ['content/data/editor-catalog.json']
 
 

@@ -412,7 +412,7 @@ for (c0, c1, r0, r1, stone, monument) in PLOTS:
 # the dead wood: trees (3D and cards), brambles, fallen logs; denser on the lair's ridge so its rim cannot be seen over
 TREES_3D = ['ember-winter-frost-dead-tree', 'ember-forest-dead-tree']
 TREES_CARD = ['dead-tree', 'wilds-dead-oak', 'wilds-twisted-tree', 'wilds-gibbet-tree']
-UNDER = ['wilds-thorn-bramble', 'wilds-dry-bush', 'ember-frost-snowy-dry-bush', 'ember-frost-frozen-stump', 'ember-nature-dry-branch-pile']
+UNDER = ['wilds-thorn-bramble', 'wilds-dry-bush', 'ember-frost-snowy-dry-bush', 'ember-frost-frozen-stump']
 for (c, r) in cells():
     t = tiles[(c, r)]
     if t not in ('woods', 'hill') or (c, r) in cleft:

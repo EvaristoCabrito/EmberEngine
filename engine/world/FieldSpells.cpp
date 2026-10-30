@@ -98,7 +98,7 @@ int FieldSpells::usesLeft(const Json& save, const std::string& hero, int tier) c
 std::vector<std::string> FieldSpells::healers(const Json& save, bool test) const {
   std::vector<std::string> out;
   for (const char* h : kHeroes) {
-    if (!(test || world_.heroRecruited(h, save))) continue;
+    if (!world_.inParty(h, save, test)) continue;
     if (num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
     if (rulesClass(classOf(save, h)) == "healer") out.push_back(h);
   }
@@ -108,7 +108,7 @@ std::vector<std::string> FieldSpells::healers(const Json& save, bool test) const
 std::vector<std::string> FieldSpells::mages(const Json& save, bool test) const {
   std::vector<std::string> out;
   for (const char* h : kHeroes) {
-    if (!(test || world_.heroRecruited(h, save)) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
+    if (!world_.inParty(h, save, test) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
     if (rulesClass(classOf(save, h)) == "mage" && levelOf(save, h) >= kWarpUnlockLevel) out.push_back(h);
   }
   return out;
@@ -170,7 +170,7 @@ std::string FieldSpells::huntFormula(int level, bool english) {
 std::vector<std::string> FieldSpells::hunters(const Json& save, bool test) const {
   std::vector<std::string> out;
   for (const char* h : kHeroes) {
-    if (!(test || world_.heroRecruited(h, save)) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
+    if (!world_.inParty(h, save, test) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
     if (rulesClass(classOf(save, h)) == "archer" && levelOf(save, h) >= kHuntUnlockLevel) out.push_back(h);
   }
   return out;
@@ -196,7 +196,7 @@ std::optional<Json> FieldSpells::castHunt(const Json& save, const std::string& h
 std::vector<std::string> FieldSpells::campers(const Json& save, bool test) const {
   std::vector<std::string> out;
   for (const char* h : kHeroes) {
-    if (!(test || world_.heroRecruited(h, save)) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
+    if (!world_.inParty(h, save, test) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
     if (rulesClass(classOf(save, h)) == "healer" && levelOf(save, h) >= kCampUnlockLevel) out.push_back(h);
   }
   return out;
@@ -207,7 +207,7 @@ std::vector<std::string> FieldSpells::campers(const Json& save, bool test) const
 bool FieldSpells::canCamp(const Json& save, bool test) const {
   const InnRules rules(inn_, world_);
   for (const char* h : kHeroes) {
-    if (!(test || world_.heroRecruited(h, save)) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
+    if (!world_.inParty(h, save, test) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
     if (rules.statusHp(save, h) < rules.statusMaxHp(save, h)) return true;
   }
   return false;
@@ -220,7 +220,7 @@ std::optional<Json> FieldSpells::castCamp(const Json& save, const std::string& h
   if (!next["unitHp"].is_object()) next["unitHp"] = Json::object();
   int count = 0;
   for (const char* h : kHeroes) {
-    if (!(test || world_.heroRecruited(h, save)) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
+    if (!world_.inParty(h, save, test) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
     const int max = rules.statusMaxHp(save, h);
     if (rules.statusHp(save, h) >= max) continue;
     next["unitHp"][h] = max;
@@ -241,7 +241,7 @@ int FieldSpells::prayerLeft(const Json& save) { return std::max(0, static_cast<i
 std::vector<std::string> FieldSpells::prayers(const Json& save, bool test) const {
   std::vector<std::string> out;
   for (const char* h : kHeroes) {
-    if (!(test || world_.heroRecruited(h, save)) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
+    if (!world_.inParty(h, save, test) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
     if (rulesClass(classOf(save, h)) == "healer" && levelOf(save, h) >= kPrayerUnlockLevel) out.push_back(h);
   }
   return out;
@@ -265,7 +265,7 @@ std::optional<Json> FieldSpells::castPrayer(const Json& save, const std::string&
 std::vector<std::string> FieldSpells::identifiers(const Json& save, bool test) const {
   std::vector<std::string> out;
   for (const char* h : kHeroes) {
-    if (!(test || world_.heroRecruited(h, save)) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
+    if (!world_.inParty(h, save, test) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
     if (rulesClass(classOf(save, h)) == "mage") out.push_back(h);
   }
   return out;
@@ -309,7 +309,7 @@ Json FieldSpells::runeJson(const Rune& r) {
 std::vector<std::string> FieldSpells::runeMarkers(const Json& save, bool test) const {
   std::vector<std::string> out;
   for (const char* h : kHeroes) {
-    if (!(test || world_.heroRecruited(h, save)) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
+    if (!world_.inParty(h, save, test) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
     if (rulesClass(classOf(save, h)) == "conjurer" && levelOf(save, h) >= kRuneUnlockLevel) out.push_back(h);
   }
   return out;
@@ -318,7 +318,7 @@ std::vector<std::string> FieldSpells::runeMarkers(const Json& save, bool test) c
 std::vector<std::string> FieldSpells::recallers(const Json& save, bool test) const {
   std::vector<std::string> out;
   for (const char* h : kHeroes) {
-    if (!(test || world_.heroRecruited(h, save)) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
+    if (!world_.inParty(h, save, test) || num(child(save, "unitHp"), h).value_or(1) <= 0) continue;
     if (rulesClass(classOf(save, h)) == "conjurer" && levelOf(save, h) >= kRecallUnlockLevel) out.push_back(h);
   }
   return out;

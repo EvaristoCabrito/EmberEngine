@@ -617,6 +617,7 @@ class Renderer {
   VkPipeline cardDepthPipeline() const { return standingCards_ ? standingSpriteDepthPipeline_ : spriteDepthPipeline_; }
   VkPipeline effectPipeline_ = VK_NULL_HANDLE;
   VkPipeline vfxPipelines_[2] = {};  // depth-tested, over everything
+  VkPipeline vfxSolidPipeline_ = VK_NULL_HANDLE;  // VfxDraw::solid: depth-tested and written (drawn in the cards' pass)
   std::vector<VfxVertex> vfxVertices_;
   std::vector<VfxInstance> vfxInstances_;
   std::vector<VfxDraw> vfxDraws_;

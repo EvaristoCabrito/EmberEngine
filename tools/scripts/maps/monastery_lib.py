@@ -227,7 +227,8 @@ class Floor:
         draft = dict(base)
         n = self.cols * self.rows
         draft.update({'id': self.id, 'cols': self.cols, 'rows': self.rows, 'tiles': list(self.tiles), 'tileVariants': [None] * n,
-                      'terrainElevations': [0] * n, 'waterLevels': [],  # never a water sheet over the floor (the user, 2026-10-30) 'tileRots': [0] * n, 'decorations': self.decorations,
+                      'terrainElevations': [0] * n, 'waterLevels': [],  # never a water sheet over the floor (the user, 2026-10-30)
+                      'tileRots': [0] * n, 'decorations': self.decorations,
                       'elementalFx': [], 'playerSpawns': self.players, 'enemySpawns': self.enemies, 'neutralSpawns': self.neutrals,
                       'win': 'rout', 'hub': False, 'explore': True, 'locationId': 'mosteiro'})
         for key in ('aboveGround', 'underground', 'emberTiles', 'emberFloor', 'emberBaseLevels'):

@@ -19,6 +19,11 @@
 //                     dagger shatters into spinning steel shards (intercept()).
 //
 // World space (y up). Points on a body are pulled toward the eye (kPull) so they show over the card, as CombatFx does.
+//
+// The dagger itself (the user, 2026-10-29: "Liga a v02"): the Poly Haven ornate_medieval_dagger without its sheath, arcane v02
+// (content/models/polyhaven/ornate_medieval_dagger-v02.glb, cooked into build/meshes/effects.pak), its own textures (Textured
+// material, drawn solid: VfxDraw::solid), handed over by the stage every frame (setModel). Until it is loaded, or without the
+// effects pack, the dagger is the box pieces above (kept as they were).
 
 #include <cstdint>
 #include <vector>
@@ -57,6 +62,11 @@ class DaggerFx {
   bool active(float now) const;  // a cast's burst or a throw still playing (a standing cloud is not "active")
   float latestEnd() const;
   void clear() { clouds_.clear(), throws_.clear(), bursts_.clear(); }
+  // The dagger's model this frame (MeshScene::effect: mesh-space triangles, glTF +Y up, metres; bindless texture indices, which
+  // change as they stream); no triangles or no base colour yet = the box pieces.
+  void setModel(const std::vector<VfxVertex>* triangles, uint32_t baseColor, uint32_t normal, uint32_t orm, uint32_t emissive) {
+    model_ = {triangles, baseColor, normal, orm, emissive};
+  }
   void build(float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
 
  private:
@@ -101,7 +111,12 @@ class DaggerFx {
   // The pieces gathered in these lists as draws (one per piece, then the streaks); behindAt: drawn among the cards, right
   // before the card standing there (VfxDraw::behindCard).
   void emit(VfxFrame& frame, float now, glm::vec3 sight, std::vector<VfxInstance>& streaks, std::vector<VfxInstance>* pieces[5],
-            const glm::vec3* behindAt);
+            std::vector<VfxInstance>& models, const glm::vec3* behindAt);
+  struct Model {
+    const std::vector<VfxVertex>* triangles = nullptr;
+    uint32_t baseColor = 0xFFFFFFFFu, normal = 0xFFFFFFFFu, orm = 0xFFFFFFFFu, emissive = 0xFFFFFFFFu;
+  };
+  bool modelReady() const { return model_.triangles && !model_.triangles->empty() && model_.baseColor != 0xFFFFFFFFu; }
   void buildCloud(Cloud& c, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   void buildThrow(const Throw& t, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
   void buildBurst(const Burst& b, float now, const Camera& camera, VfxFrame& frame, std::vector<VfxLight>& lights);
@@ -117,6 +132,10 @@ class DaggerFx {
   // A cloud's daggers on the far half of the orbit (the user, 2026-10-22: "only the top of the dagger circle should go behind
   // him"), emitted per cloud behind its body's card.
   std::vector<VfxInstance> backStreaks_, backBlades_, backTips_, backGuards_, backGrips_, backPommels_;
+  // The model: one solid draw of all its instances (front half / far half).
+  Model model_;
+  uint32_t modelFirst_ = 0, modelCount_ = 0;
+  std::vector<VfxInstance> models_, backModels_;
 };
 
 }  // namespace ember

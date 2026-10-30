@@ -436,21 +436,24 @@ class OverworldStage : public Stage {
   // --- the save -------------------------------------------------------------------------------------------------------
 
   bool test() const { return testSave_ != nullptr; }
-  bool recruited(const std::string& hero) const {
-    if (test()) return std::ranges::none_of(ember::kTestPartyLeftOut, [&](const char* out) { return hero == out; });
-    return world_.heroRecruited(hero, save_);
-  }
-  std::vector<std::string> partyHeroes() const {
+  bool recruited(const std::string& hero) const { return world_.inParty(hero, save_, test()); }
+  // The active party (Overworld::activeParty: the Party screen's choice, at most six): the map's followers, the leader, the
+  // formation, the fights. The reserve = the rest of the party.
+  std::vector<std::string> partyHeroes() const { return world_.activeParty(save_, test()); }
+  std::vector<std::string> reserveHeroes() const {
+    const std::vector<std::string> active = partyHeroes();
     std::vector<std::string> out;
     for (const char* h : kHeroes)
-      if (recruited(h)) out.push_back(h);
+      if (recruited(h) && std::ranges::find(active, h) == active.end()) out.push_back(h);
     return out;
   }
-  // partyLeaderOf: the saved leader while in the party, else Kael.
+  // partyLeaderOf: the saved leader while in the active party, else Kael, else the first of it.
   std::string leader() const {
+    const std::vector<std::string> active = partyHeroes();
     const ember::Json& l = save_.contains("partyLeader") ? save_["partyLeader"] : ember::Json();
-    if (l.is_string() && recruited(l.get<std::string>())) return l.get<std::string>();
-    return "Kael";
+    if (l.is_string() && std::ranges::find(active, l.get<std::string>()) != active.end()) return l.get<std::string>();
+    if (active.empty() || std::ranges::find(active, "Kael") != active.end()) return "Kael";
+    return active.front();
   }
   void write() {
     if (testSave_) {  // Modo teste: the session's own save, never the real bank
@@ -2355,6 +2358,54 @@ class OverworldStage : public Stage {
   void drawGroupTab(const std::vector<std::string>& heroes, float inner) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     ImFont* ui = uiFont(UiFont::Ui);
+    // Grupo ativo e reserva (the user, 2026-10-30: "active party and reserve party, we can switch which members we are going to use to a
+    // max of 6"): a click on a hero moves it to the other row; the maps seat the active row (save "partyActive", Overworld::activeParty).
+    kicker("Grupo ativo e reserva", 14.0f);
+    {
+      const std::vector<std::string> reserve = reserveHeroes();
+      const ImVec2 a = ImGui::GetCursorScreenPos();
+      slot(a, {a.x + inner, a.y + 236});
+      std::optional<std::string> clicked;
+      auto row = [&](const std::vector<std::string>& list, float y, const char* id) {
+        float x = a.x + 12;
+        for (const std::string& hero : list) {
+          ImGui::SetCursorScreenPos({x, y});
+          ImGui::PushID(id);
+          ImGui::PushID(hero.c_str());
+          if (ImGui::InvisibleButton("##move", {64, 72})) clicked = hero;
+          const bool hover = ImGui::IsItemHovered();
+          ImGui::PopID();
+          ImGui::PopID();
+          emberSlot(dl, {x, y}, {x + 64, y + 72}, hover);
+          portrait(dl, hero, {x + 12, y + 4}, {x + 52, y + 52});
+          const ImVec2 ts = ui->CalcTextSizeA(12.0f, FLT_MAX, 0, hero.c_str());
+          dl->AddText(ui, 12.0f, {x + 32 - ts.x / 2, y + 54}, kFg, hero.c_str());
+          x += 72;
+        }
+      };
+      dl->AddText(ui, 14.0f, {a.x + 12, a.y + 10}, kAccent,
+                  std::format("Grupo ativo · {} de {} (entra nos mapas)", heroes.size(), ember::Overworld::kActivePartyMax).c_str());
+      row(heroes, a.y + 34, "active");
+      dl->AddText(ui, 14.0f, {a.x + 12, a.y + 124}, kMuted, "Reserva · clique num herói para trocá-lo de fila");
+      row(reserve, a.y + 148, "reserve");
+      if (clicked) {
+        std::vector<std::string> active = heroes;
+        if (const auto it = std::ranges::find(active, *clicked); it != active.end()) {
+          if (active.size() > 1) active.erase(it);
+          else showHint("O grupo ativo precisa de pelo menos um herói.");
+        } else if (active.size() < ember::Overworld::kActivePartyMax) {
+          active.push_back(*clicked);
+        } else {
+          showHint("O grupo ativo já tem 6. Mande alguém para a reserva primeiro.");
+        }
+        if (active != heroes) {
+          save_["partyActive"] = active;
+          formation_.clear();  // the formation board is laid again with the new party
+          write();
+        }
+      }
+      ImGui::SetCursorScreenPos({a.x, a.y + 244});
+    }
     // Líder do grupo
     kicker("Líder do grupo", 14.0f);
     {

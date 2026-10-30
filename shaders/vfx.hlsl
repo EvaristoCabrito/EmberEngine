@@ -39,7 +39,7 @@ static const uint kMaterialBasic = 0, kMaterialMissileCore = 1, kMaterialMissile
                   kMaterialStandard = 4, kMaterialFlame = 5, kMaterialImpactParticle = 6, kMaterialImpactFlash = 7,
                   kMaterialBlessWave = 8, kMaterialSpriteSheet = 9, kMaterialVenomSmoke = 10, kMaterialPfTendril = 11, kMaterialPfCore = 12,
                   kMaterialPfShell = 13, kMaterialWebThread = 14, kMaterialFlipbookParticle = 15, kMaterialHoly = 16,
-                  kMaterialCombat = 17, kMaterialIceStorm = 18;
+                  kMaterialCombat = 17, kMaterialIceStorm = 18, kMaterialTextured = 19;
 
 struct Push {
   uint64_t vertices;   // VfxVertex[]
@@ -767,6 +767,44 @@ float4 PSMain(VSOut i) : SV_Target0 {
     s.sightAt = d.sightAt;
     const Sight sight = tacticalSight(f, d.sightAt);
     c = shadeInSight(f, s, sight) + d.params1.rgb * d.params1.a * push.brightness;
+    const float opacity = saturate(d.color.a);
+    return float4(applyVolume(f, c, i.world) * i.sight * opacity, opacity);
+  } else if (d.material == kMaterialTextured) {
+    // Ours: a cooked mesh's own material (MeshScene::addEffect, the Nuvem de Adagas' dagger), read as resolve.hlsl reads it, lit
+    // like Standard. The instance colour scales the colour and the glow (a dagger materializing or dissolving).
+    const MeshFrame f = loadFrame(push.frame);
+    SamplerState smp = gSamplers[f.materialSampler];
+    const uint normalMap = asuint(d.params1.x), ormMap = asuint(d.params1.y), emissiveMap = asuint(d.params1.z);
+    const float3 tint = i.particleC.w > 0.5 ? i.particleC.rgb : 1.0;
+    float3 n = normalize(i.normal);
+    if (dot(n, f.cameraPosition - i.world) < 0.0) n = -n;
+    const float3 albedo = gTextures[NonUniformResourceIndex(d.texture)].Sample(smp, i.uv).rgb * d.color.rgb * tint;
+    Surface s = defaultSurface(i.world, n, albedo);
+    if (ormMap != kNoTexture) {
+      const float3 orm = gTextures[NonUniformResourceIndex(ormMap)].Sample(smp, i.uv).rgb;
+      s.occlusion = orm.r;
+      s.roughness = orm.g;
+      s.metallic = orm.b;
+    }
+    if (normalMap != kNoTexture) {
+      // An effect's vertices carry no tangent: the frame comes from the screen derivatives of the position and the uv. glTF's
+      // uv runs down the image while its normal maps' +Y points up it: the bitangent is the one along -v.
+      const float3 dp1 = ddx(i.world), dp2 = ddy(i.world);
+      const float2 duv1 = ddx(i.uv), duv2 = ddy(i.uv);
+      const float3 dp2perp = cross(dp2, n), dp1perp = cross(n, dp1);
+      const float3 t = dp2perp * duv1.x + dp1perp * duv2.x;
+      const float3 b = dp2perp * duv1.y + dp1perp * duv2.y;
+      const float scale = rsqrt(max(max(dot(t, t), dot(b, b)), 1e-20));
+      const float2 xy = gTextures[NonUniformResourceIndex(normalMap)].Sample(smp, i.uv).rg * 2.0 - 1.0;
+      const float z = sqrt(saturate(1.0 - dot(xy, xy)));
+      s.normal = normalize(t * (scale * xy.x) - b * (scale * xy.y) + n * z);
+    }
+    s.receivesCardShadow = 0.0;
+    s.sightAt = d.sightAt;
+    const Sight sight = tacticalSight(f, d.sightAt);
+    c = shadeInSight(f, s, sight);
+    if (emissiveMap != kNoTexture)
+      c += gTextures[NonUniformResourceIndex(emissiveMap)].Sample(smp, i.uv).rgb * tint * d.params1.w * push.brightness;
     const float opacity = saturate(d.color.a);
     return float4(applyVolume(f, c, i.world) * i.sight * opacity, opacity);
   } else {

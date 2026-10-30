@@ -628,6 +628,13 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
     vfx.depthTest = depthTested == 1;
     vfxPipelines_[depthTested] = createGraphicsPipeline(context, bindless_.pipelineLayout(), vfx);
   }
+  {  // an effect's opaque model (VfxDraw::solid): its own faces hide each other
+    GraphicsPipelineDesc vfx = effects;
+    vfx.vertexShader = "vfx.VSMain";
+    vfx.fragmentShader = "vfx.PSMain";
+    vfx.depthWrite = true;
+    vfxSolidPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), vfx);
+  }
   logInfo("startup: renderer graphics pipelines ready");
 
   // Mesh passes.
@@ -781,6 +788,7 @@ Renderer::~Renderer() {
   vkDestroyPipeline(context_.device, standingSpriteDepthPipeline_, nullptr);
   vkDestroyPipeline(context_.device, effectPipeline_, nullptr);
   for (VkPipeline p : vfxPipelines_) vkDestroyPipeline(context_.device, p, nullptr);
+  vkDestroyPipeline(context_.device, vfxSolidPipeline_, nullptr);
   for (VkPipeline p : {cullInstancesPipeline_, cullInstancesLatePipeline_, hizPipeline_, bloomDownPipeline_, bloomUpPipeline_, cullPreparePipeline_,
                        cullTraversePipeline_, cullPrepareDrawPipeline_, meshletPipeline_, resolvePipeline_, skyPipeline_, panoramaResolvePipeline_,
                        panoramaSkyPipeline_})
@@ -2178,6 +2186,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
   setViewport(cmd, size_);
   // Spell effects this frame: they draw over every unit's card (the units' depth is written after them, below).
   const bool effects = hasScene_ && (!effects_.empty() || !vfxDraws_.empty() || !frontCards_.empty());
+  bool solidDrawn = false;  // the effects' opaque models went with the cards (else the effects pass draws them, depth read-only)
   if (hasScene_) {
     const glm::mat4 viewProjection = camera_.viewProjection();
     if (terrain_) {
@@ -2319,7 +2328,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
         VkPipeline bound = VK_NULL_HANDLE;
         for (; g < behind.size() && behind[g].first >= key - 1e-4f; ++g) {
           const VfxDraw& d = vfxDraws_[behind[g].second];
-          const VkPipeline pipeline = vfxPipelines_[d.depthTest ? 1 : 0];
+          const VkPipeline pipeline = d.solid ? vfxSolidPipeline_ : vfxPipelines_[d.depthTest ? 1 : 0];
           if (pipeline != bound) vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, bound = pipeline);
           const VfxPush push{bufferAddress(context_, frame.vfxVertices), bufferAddress(context_, frame.vfxInstances), bufferAddress(context_, frame.vfxDraws),
                              bufferAddress(context_, frame.meshFrame), behind[g].second, effectBrightness_, spriteSamplerIndex_, 0};
@@ -2328,6 +2337,21 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
         }
       }
       drawCards(from, static_cast<uint32_t>(sprites_.size()));
+      // An effect's opaque model (VfxDraw::solid, the Nuvem de Adagas' dagger): after the cards' colour and before the units'
+      // depth, so it stays over the characters like every effect while writing its own depth (its faces hide each other).
+      {
+        VkPipeline bound = VK_NULL_HANDLE;
+        for (uint32_t i = 0; i < vfxDraws_.size(); ++i) {
+          const VfxDraw& d = vfxDraws_[i];
+          if (!d.solid || d.behindCard || d.underCards) continue;
+          if (bound != vfxSolidPipeline_) vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, bound = vfxSolidPipeline_);
+          const VfxPush push{bufferAddress(context_, frame.vfxVertices), bufferAddress(context_, frame.vfxInstances), bufferAddress(context_, frame.vfxDraws),
+                             bufferAddress(context_, frame.meshFrame), i, effectBrightness_, spriteSamplerIndex_, 0};
+          vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
+          vkCmdDraw(cmd, d.gpu.vertexCount, d.gpu.firstInstance == 0xFFFFFFFFu ? 1u : d.instances, 0, 0);
+        }
+        solidDrawn = true;
+      }
       vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(spritePush), &spritePush);
       vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, cardDepthPipeline());
       if (effects) {  // the units' cards later, after the effects
@@ -2387,7 +2411,7 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
     VkPipeline bound = VK_NULL_HANDLE;
     for (uint32_t i = 0; i < vfxDraws_.size(); ++i) {
       const VfxDraw& d = vfxDraws_[i];
-      if (d.underCards || d.behindCard) continue;  // drawn with the ground / among the cards
+      if (d.underCards || d.behindCard || (d.solid && solidDrawn)) continue;  // drawn with the ground / among the cards
       const VkPipeline pipeline = vfxPipelines_[d.depthTest ? 1 : 0];
       if (pipeline != bound) vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, bound = pipeline);
       const VfxPush push{bufferAddress(context_, frame.vfxVertices), bufferAddress(context_, frame.vfxInstances), bufferAddress(context_, frame.vfxDraws),

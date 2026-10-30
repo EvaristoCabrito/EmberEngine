@@ -11,6 +11,7 @@
 #include "render/MeshFormat.h"
 #include "render/MeshGpu.h"
 #include "render/TextureFormat.h"
+#include "render/VfxDraw.h"
 #include "rhi/Image.h"
 #include "rhi/UploadQueue.h"
 
@@ -40,8 +41,8 @@ struct MeshSceneView {
 // uploaded into the copy no frame in flight is reading, then becomes the active one, so the GPU never
 // reads a table the transfer queue is writing.
 //
-// M3 keeps every added mesh resident (geometry capacity is fixed at creation); world streaming with
-// eviction arrives with the world cells (M4).
+// Geometry has individually reclaimable allocations. Regional scenes keep the camera region
+// resident, retire distant allocations safely, and reload their cooked assets on demand.
 class MeshScene {
  public:
   struct Capacity {
@@ -62,6 +63,17 @@ class MeshScene {
   // A mesh built in memory in the same format (render/MeshBuild.h: the game's own meshes, e.g. Ember's architecture);
   // its textures still come from the packs by asset id.
   MeshId addBuilt(std::vector<uint8_t> bytes);
+  // A cooked mesh a spell effect draws (render/vfx: the Nuvem de Adagas' dagger), never instanced: its full-detail triangles are
+  // kept on the CPU for the effect runtime, and its textures always aim at the quality's cap (it flies close to the camera, and no
+  // instance tells the streaming its size).
+  MeshId addEffect(AssetId meshAsset);
+  struct EffectMesh {
+    const std::vector<VfxVertex>* triangles = nullptr;  // mesh space (glTF: +Y up), three vertices a triangle; null until loaded
+    uint32_t baseColor = kNoTextureIndex, normal = kNoTextureIndex, orm = kNoTextureIndex, emissive = kNoTextureIndex;  // material 0
+    glm::vec3 emissiveFactor{0.0f};
+    explicit operator bool() const { return triangles && !triangles->empty() && baseColor != kNoTextureIndex; }
+  };
+  EffectMesh effect(MeshId id) const;  // the bindless indices change as the textures stream: read it every frame
   bool ready() const;  // every added mesh's geometry and textures are on the GPU
   // Geometry and every texture's base on the GPU: the models can be placed (the textures sharpen later); ready() also waits for
   // the first streaming pass, which a short GPU never settles (the user, 2026-10-29: a map with no 3D, no fog, no monsters).
@@ -83,6 +95,8 @@ class MeshScene {
   void openStreaming() { open_ = true; }
   // The camera this frame: eye position and focal length in pixels (screen height / (2 tan(fov / 2))). Without it, every texture
   // aims at the quality's cap.
+  void setRegionStreaming(bool enabled) { regional_ = enabled; }
+  void setRegionView(const glm::mat4& viewProjection) { regionView_ = viewProjection; regionViewSet_ = true; }
   void setView(const glm::vec3& eye, float focalPixels) { eye_ = eye, focal_ = focalPixels, viewSet_ = true; }
 
   // Once per frame, before rendering.
@@ -99,7 +113,7 @@ class MeshScene {
   Stats stats() const;
 
   static constexpr uint32_t kBaseSize = 256;             // the always-resident base: largest mip at most this many texels
-  static constexpr uint64_t kReserve = 448ull << 20;     // GPU memory left free for everything else (effects, the frame)
+  static constexpr uint64_t kReserve = 128ull << 20;     // GPU memory left free for everything else (effects, the frame)
 
  private:
   struct Texture {
@@ -117,12 +131,19 @@ class MeshScene {
     uint32_t target = UINT32_MAX;        // top mip being loaded (UINT32_MAX = no load)
     uint32_t baseSkip = 0;               // the base's top mip
     uint32_t want = 0;                   // top mip the objects need this tick
+    float screenPixels = 0.0f;
     uint64_t residentBytes = 0;
   };
   struct Retired {
     Image image;
     uint32_t index = kNoTextureIndex;
-    uint64_t freeAtVersion = 0;  // the material table version that no longer names it (then kFramesInFlight more frames)
+    uint64_t freeAtVersion = 0;  // first material version without this image
+    uint64_t safeFrame = UINT64_MAX;
+  };
+
+  struct RetiredGeometry {
+    Buffer buffer;
+    uint64_t version = 0, safeFrame = UINT64_MAX;
   };
 
   struct Mesh {
@@ -131,10 +152,17 @@ class MeshScene {
     std::vector<uint8_t> built;  // addBuilt's bytes (no asset)
     MeshHeader header{};
     bool parsed = false, failed = false;
-    uint64_t offset = 0;  // in the geometry buffer
+    Buffer geometry;
+    uint64_t bytes = 0, lastWanted = 0;
+    bool wanted = true, selected = false;
+    float distance = 0.0f;
     ImageUpload upload;   // geometry bytes
     bool uploaded = false;
     std::vector<Texture*> textures;  // the textures its materials use (streaming: what each instance needs)
+    uint32_t materialBase = 0;
+    bool pinned = false;
+    bool effect = false;                 // addEffect's: triangles kept, textures at the cap
+    std::vector<VfxVertex> triangles;
   };
 
   // A table the shaders read: two device copies, CPU contents, one upload at a time.
@@ -156,6 +184,8 @@ class MeshScene {
   Texture& requestTexture(AssetId asset, uint32_t user);
   void updateTexture(Texture& texture);
   void startUpload(Texture& texture, std::span<const std::byte> bytes, uint32_t skip);
+  void updateGeometry();
+  void retireGeometry(Mesh& mesh, MeshId id);
   void stream();                   // every few frames: wants, then upgrades / downgrades within the budget
   uint64_t freeGpuBytes() const;   // the device-local heap's budget minus its usage (VMA, VK_EXT_memory_budget)
   uint64_t bytesAt(const Texture& texture, uint32_t skip) const;
@@ -169,7 +199,13 @@ class MeshScene {
   UploadQueue& uploads_;
   Capacity capacity_;
 
-  Buffer geometry_;
+  std::vector<RetiredGeometry> retiredGeometry_;
+  bool regional_ = false, instancesSet_ = false, regionViewSet_ = false;
+  // The region streams only a scene whose geometry does not fit the budget (as the textures: everything fits = everything loaded):
+  // the user, 2026-10-30, the Monastery's walls and props gone with the region on while all of it fit in memory.
+  bool overBudget_ = false;
+  bool streamingGeometry() const { return regional_ && overBudget_; }
+  glm::mat4 regionView_{1.0f};
   uint64_t geometryUsed_ = 0;
   std::vector<std::unique_ptr<Mesh>> meshes_;     // stable addresses: uploads point at members
   std::unordered_map<AssetId, std::unique_ptr<Texture>> textures_;

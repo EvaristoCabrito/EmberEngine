@@ -50,6 +50,10 @@ enum class VfxMaterial : uint32_t {
   IceStorm = 18,          // vfx/IceStorm: params0 = time, mode, intensity, opacity. Ours (02): 0 frosted floor (params1.x = cover),
                           // 1 snow, 6 ice dust (billboards), 2 wind bands, 3 crystals, 7 frost rings (instanced meshes, c = alpha,
                           // seed). Ember's Blizzard2D (01): 4 its floor, 5 its sprites (billboards, b.w = kind), over a sheet
+  Textured = 19,          // ours: a cooked mesh's own material (MeshScene::addEffect), lit by the scene like resolve.hlsl: texture =
+                          // base colour, params1.xyz = normal, ORM, emissive (bindless indices as floats' bits, kNoTextureIndex =
+                          // none), params1.w = emissive strength (display-relative, as Standard's); color = base factor + opacity;
+                          // the instance colour scales colour and glow
 };
 
 // Per-instance data (three InstancedMesh matrices, or a particle's attributes). Matches VfxInstance in vfx.hlsl. For
@@ -86,6 +90,9 @@ struct VfxDraw {
   // cardAt, so that body covers it and the cards farther away stay under it (the user, 2026-10-22).
   bool behindCard = false;
   glm::vec3 cardAt{0.0f};
+  // An opaque model (Textured): writes depth, so its own faces hide each other. Drawn in the cards' pass after the cards' colour
+  // (still over every character, like any effect), or among them when behindCard.
+  bool solid = false;
 };
 
 // One frame's effect geometry and draws.

@@ -90,7 +90,16 @@ class Overworld {
   std::vector<const MapMission*> missionsOf(const MapLocation& location) const;  // missionsForLocation
 
   // --- rules -------------------------------------------------------------------------------------------------------
+  // Every hero who can be in the party: the six, then EmberEngine's own (content/ember-classes.json heroes).
+  static constexpr const char* kPartyHeroes[8] = {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec", "Isolde", "Selene"};
   bool heroRecruited(const std::string& hero, const Json& save) const;
+  // In the party (active or reserve): recruited, or anyone in Modo teste (`test`). Every screen asks here.
+  bool inParty(const std::string& hero, const Json& save, bool test) const;
+  // The active party (the user, 2026-10-30: "active party and reserve party ... a max of 6 characters ... the maps must pull this
+  // setup"): the save's "partyActive" (the Party screen's choice), the heroes still in the party, at most kActivePartyMax; without a
+  // choice, the first six of the party. Everyone else in the party is the reserve. Fights and free-roam maps seat only these.
+  static constexpr size_t kActivePartyMax = 6;
+  std::vector<std::string> activeParty(const Json& save, bool test) const;
   int maxHp(const Json& save, const std::string& hero) const;  // statsFor(class, level).hp, 0 without a class
   int classHp(const std::string& classId, int level) const;    // statsFor(classId, level).hp
   bool wispForestUncleared(const Json& save) const;

@@ -63,6 +63,8 @@ const char* requireFeatures(const FeatureChain& have, FeatureChain& wanted) {
   EMBER_REQUIRE(core.features, depthClamp)
   EMBER_REQUIRE(core.features, imageCubeArray)
   EMBER_REQUIRE(core.features, independentBlend)
+  // Mesh fragment pipelines bind RWByteAddressBuffer descriptors (common.hlsli, binding 3).
+  EMBER_REQUIRE(core.features, fragmentStoresAndAtomics)
   EMBER_REQUIRE(core.features, shaderInt64)
   EMBER_REQUIRE(v11, shaderDrawParameters)
   EMBER_REQUIRE(v12, bufferDeviceAddress)

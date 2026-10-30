@@ -515,6 +515,9 @@ struct Services {
       const std::filesystem::path architecture = std::filesystem::path(o.meshes).parent_path() / "architecture.pak";
       std::error_code ec;
       if (std::filesystem::exists(architecture, ec) && !assets.mount(architecture.string())) fatal(std::format("Cannot mount {}", architecture.string()));
+      // The spell effects' own models (Cooker meshes over build/meshes/src-effects: the Nuvem de Adagas' dagger), beside it too.
+      const std::filesystem::path effects = std::filesystem::path(o.meshes).parent_path() / "effects.pak";
+      if (std::filesystem::exists(effects, ec) && !assets.mount(effects.string())) fatal(std::format("Cannot mount {}", effects.string()));
     }
     if (!o.ground.empty() && !assets.mount(o.ground)) fatal(std::format("Cannot mount {}", o.ground));
     for (size_t k = 0; k < o.compare.size() && k < 4; k += 2)
@@ -739,21 +742,18 @@ void applySaveHeroes(MapStageOptions& options, const ember::Json& save) {
 // there (a campaign only: Modo teste seats everyone), and the save's party leader walks (partyLeaderOf: the saved leader
 // while recruited, else Kael).
 // `interlude` (docs/INTERLUDE.md): while the historical chapter is on, its own leader walks.
-// Modo teste's party: every hero of the battle file but kTestPartyLeftOut (TestModeStage.h).
-std::set<std::string> testPartyRoster(const ember::Json& battle) {
-  std::set<std::string> roster;
-  if (const auto units = battle.find("units"); units != battle.end() && units->is_array())
-    for (const ember::Json& u : *units)
-      if (u.is_object() && u.value("side", std::string()) == "player") roster.insert(u.value("name", std::string()));
-  for (const char* out : ember::kTestPartyLeftOut) roster.erase(out);
-  return roster;
+// The heroes a map seats: the Party screen's active party (Overworld::activeParty; the reserve stays out), in the campaign and in
+// Modo teste alike (its save recruits everyone and keeps kTestReserve on the reserve).
+std::set<std::string> activePartyRoster(const ember::Json& save, const ember::Overworld& world, bool test) {
+  const std::vector<std::string> active = world.activeParty(save, test);
+  return {active.begin(), active.end()};
 }
 
 void setUpExplore(MapStageOptions& options, const ember::Json& save, const ember::Overworld& world, bool test, const ember::InterludeData* interlude = nullptr) {
   std::ifstream in(options.battle, std::ios::binary);
   const ember::Json battle = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
   if (!battle.is_object() || !battle.value("explore", false)) return;
-  if (test && !(interlude && ember::interludeState(save) == ember::InterludeState::Active)) options.partyRoster = testPartyRoster(battle);
+  if (!(interlude && ember::interludeState(save) == ember::InterludeState::Active)) options.partyRoster = activePartyRoster(save, world, test);
   for (const char* hero : {"Neera", "Voss", "Salazar", "Aldric", "Malrec"})
     if (!test && !world.heroRecruited(hero, save)) options.absentNeutrals.insert(hero);
   if (options.leader.empty() && interlude && ember::interludeState(save) == ember::InterludeState::Active) options.leader = interlude->leader;
@@ -771,17 +771,12 @@ void setUpParty(MapStageOptions& options, const ember::Json& save, const ember::
   const ember::Json battle = in ? ember::Json::parse(in, nullptr, false) : ember::Json();
   if (!battle.is_object() || battle.value("explore", false)) return;
   const bool interludeOn = interlude && ember::interludeState(save) == ember::InterludeState::Active;
-  if (campaign || interludeOn) {
+  if (interludeOn) {
     std::set<std::string> roster;
-    if (interludeOn) {
-      for (const ember::InterludeHero& h : interlude->party) roster.insert(h.name);
-    } else {
-      for (const char* hero : {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec"})
-        if (world.heroRecruited(hero, save)) roster.insert(hero);
-    }
+    for (const ember::InterludeHero& h : interlude->party) roster.insert(h.name);
     options.partyRoster = std::move(roster);
   } else {
-    options.partyRoster = testPartyRoster(battle);
+    options.partyRoster = activePartyRoster(save, world, !campaign);
   }
   if (const auto f = save.find("partyFormation"); f != save.end() && f->is_array())
     for (const ember::Json& cell : *f) options.partyFormation.push_back(cell.is_string() ? cell.get<std::string>() : std::string());
@@ -1457,6 +1452,8 @@ int runWindow(const Options& o) {
       mixer.update(dt);
     }
     if (!presented && swapchain->recreate(width, height)) renderer.resize(swapchain->extent());
+    // --measure is a bounded live test as well as an off-screen measurement.
+    if (o.measureSeconds > 0.0f && stage && stage->done()) break;
     // Screen changes happen between frames, with the GPU idle: the old screen's resources go before the new one loads.
     std::optional<MapStageOptions> retry;
     if (auto* map = dynamic_cast<MapStage*>(stage.get())) {
@@ -1707,8 +1704,9 @@ int runWindow(const Options& o) {
       backToTitle = false, openMap = false, openTestRpg = false, openSpells = false, openEditor = false;
     }
   }
+  const int testResult = o.measureSeconds > 0.0f && stage && !stage->passed() ? 3 : 0;
   AudioMixer::get().shutdown();  // before SDL closes with the window
-  return 0;
+  return testResult;
 }
 
 }  // namespace

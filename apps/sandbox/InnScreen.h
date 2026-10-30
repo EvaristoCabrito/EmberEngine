@@ -116,7 +116,7 @@ class InnScreen {
 
   std::vector<std::string> roster(const Context& c) const {
     std::vector<std::string> out;
-    for (const char* h : kHeroes)
+    for (const char* h : ember::Overworld::kPartyHeroes)
       if (c.world.heroRecruited(h, c.save)) out.push_back(h);
     return out;
   }

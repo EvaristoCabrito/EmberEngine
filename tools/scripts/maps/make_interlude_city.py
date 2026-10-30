@@ -152,7 +152,7 @@ for r in range(26, 41, 4):
         if house_fits('stone-hut', c, r, margin=0): place('stone-hut', c, r)
 for i in range(14):
     c, r = rng.randrange(4, 27), rng.randrange(24, 41)
-    if not on_street(c, r): place(rng.choice(['ember-extra-firewood-stack', 'ember-structures-animal-trough', 'ember-props-sacks', 'ember-extra-broken-cart-wheel', 'ember-extra-wooden-bucket', 'ember-props-handcart']), c, r)
+    if not on_street(c, r): place(rng.choice(['ember-extra-firewood-stack', 'ember-structures-animal-trough', 'ember-props-sacks', 'ember-extra-wooden-bucket', 'ember-props-handcart']), c, r)
 place('city-stone-trough-fountain', 9, 37)
 
 # --- the temple (SE) --------------------------------------------------------------------------------------------------------------

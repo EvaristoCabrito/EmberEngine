@@ -24,9 +24,10 @@
 
 namespace ember {
 
-// The heroes Modo teste's party leaves out (the user, 2026-10-29: "remove Malrec and Selene from the default Party, its getting too
-// heavy to load"): its fights and free-roam maps (main.cpp) and the world map's party (OverworldStage); everyone else is seated.
-inline constexpr const char* kTestPartyLeftOut[] = {"Malrec", "Selene"};
+// Modo teste's reserve (the user, 2026-10-29: "remove Malrec and Selene from the default Party, its getting too heavy to load"; then
+// 2026-10-30: all eight in the party, these two on the reserve): the fresh test save's active party is everyone else
+// (TestModeStage freshTestSession, "partyActive"); the Party screen moves heroes between the two.
+inline constexpr const char* kTestReserve[] = {"Malrec", "Selene"};
 
 // What a screen knows how to start: a map with its imported scene and (when exported) its battle.
 struct MissionEntry {

@@ -131,6 +131,7 @@ inline const char* classicBriefArt(const std::string& id) {
 inline std::filesystem::path briefArtFile(const std::string& id, const std::filesystem::path& /*artRoot, unused: kept for the callers*/) {
   static const std::pair<const char*, const char*> kOwn[] = {
       {"ashen-forest-crossing", "content/briefings/ashen-forest-brief-v02.jpg"},
+      {"mosteiro", "content/briefings/brief-mosteiro-v01.jpg"},  // the user's MonasteryBrief (Attachments/Monastery, 2026-10-30)
       {"random-encounter-11", "content/backdrops/merchant-road-background-001.jpg"},
       {"random-encounter-14", "content/backdrops/merchant-snow-market-background-001.jpg"},
       {"random-amanita-glade", "content/briefings/brief-random-amanita-glade-v01.jpg"},

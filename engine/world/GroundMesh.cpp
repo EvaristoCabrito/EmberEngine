@@ -5,6 +5,7 @@
 #include <cmath>
 #include <functional>
 #include <limits>
+#include <map>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -256,14 +257,27 @@ void closeBoardSides(GroundGeometry& g, double base) {
     uint32_t p, q, inner;
     int uses;
   };
+  // The smooth ground's lip and void skirts copy their top vertices to keep hard normals.
+  // Count geometric edges, not vertex indices: a copied seam is shared, not another open
+  // edge to extrude. Extruding both copies laid a second wall over the existing skirt.
+  std::map<std::array<float, 3>, uint32_t> points;
+  std::vector<uint32_t> canonical(g.vertexCount());
+  for (uint32_t v = 0; v < g.vertexCount(); ++v) {
+    const std::array<float, 3> point = {g.positions[size_t(v) * 3], g.positions[size_t(v) * 3 + 1], g.positions[size_t(v) * 3 + 2]};
+    canonical[v] = points.try_emplace(point, v).first->second;
+  }
   std::unordered_map<uint64_t, Open> edges;
-  for (size_t i = 0; i + 2 < g.indices.size(); i += 3)
+  for (size_t i = 0; i + 2 < g.indices.size(); i += 3) {
+    const uint32_t a = canonical[g.indices[i]], b = canonical[g.indices[i + 1]], c = canonical[g.indices[i + 2]];
+    if (a == b || b == c || c == a) continue;  // clamped outer-ring triangles have no area
     for (int k = 0; k < 3; ++k) {
       const uint32_t p = g.indices[i + k], q = g.indices[i + (k + 1) % 3], inner = g.indices[i + (k + 2) % 3];
-      const uint64_t key = (uint64_t{std::min(p, q)} << 32) | std::max(p, q);
+      const uint32_t cp = canonical[p], cq = canonical[q];
+      const uint64_t key = (uint64_t{std::min(cp, cq)} << 32) | std::max(cp, cq);
       auto [it, fresh] = edges.try_emplace(key, Open{p, q, inner, 0});
       ++it->second.uses;
     }
+  }
   const auto P = [&](uint32_t v, int j) { return static_cast<double>(g.positions[size_t(v) * 3 + j]); };
   for (const auto& [key, e] : edges) {
     if (e.uses != 1) continue;
@@ -271,6 +285,7 @@ void closeBoardSides(GroundGeometry& g, double base) {
     if (P(p, 1) <= base + 1e-4 && P(q, 1) <= base + 1e-4) continue;
     // the face looks out into the air, away from the ground it hangs from (the void skirt's rule above)
     const double dx = P(q, 0) - P(p, 0), dz = P(q, 2) - P(p, 2);
+    if (std::hypot(dx, dz) < 1e-8) continue;  // an exposed vertical edge cannot form a side quad
     if (dz * (P(e.inner, 0) - P(p, 0)) - dx * (P(e.inner, 2) - P(p, 2)) > 0) std::swap(p, q);
     const uint32_t first = static_cast<uint32_t>(g.vertexCount());
     const double corners[4][3] = {{P(p, 0), P(p, 1), P(p, 2)}, {P(q, 0), P(q, 1), P(q, 2)}, {P(q, 0), base, P(q, 2)}, {P(p, 0), base, P(p, 2)}};

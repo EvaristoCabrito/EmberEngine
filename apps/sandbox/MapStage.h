@@ -285,6 +285,10 @@ class MapStage final : public Stage {
     const std::string& tex = gamePrefs().textures3d;
     meshes_.setQuality(tex == "leve" ? 512u : tex == "media" ? 1024u : 2048u);
     meshes_.setStreamGate(true);
+    meshes_.setRegionStreaming(true);
+    // The Nuvem de Adagas' dagger (the Poly Haven dagger, arcane v02, in build/meshes/effects.pak): loaded with the map's meshes,
+    // drawn by the effect (DaggerFx::setModel); without the pack the effect keeps its box dagger.
+    if (const AssetId dagger = assetId(kDaggerModel); !assets.name(dagger).empty()) daggerModel_ = meshes_.addEffect(dagger);
     lightingMode_ = std::clamp(options.lighting, 0, 3);
     moonPath_ = std::clamp(options.moonPath, 0, 2);
     starLook_ = std::clamp(options.starLook, 1, kStarLooks);
@@ -501,6 +505,7 @@ class MapStage final : public Stage {
     const float time = options_.sceneTime >= 0.0f ? options_.sceneTime
                                                  : std::chrono::duration<float>(std::chrono::steady_clock::now() - start_).count();
     updateFog(time);
+    updateModelVisibility();
     laps.lap("fog");
     const float aspect = static_cast<float>(size.width) / static_cast<float>(size.height);
     if (distance_ <= 0.0f) {
@@ -530,6 +535,19 @@ class MapStage final : public Stage {
       const float k = std::min(t / options_.measureSeconds, 1.0f);
       yaw = yaw_ + k * 2.0f * std::numbers::pi_v<float>;
       distance = distance_ * glm::mix(0.35f, 1.0f, 0.5f + 0.5f * std::cos(k * 4.0f * std::numbers::pi_v<float>));
+      // Explicit live streaming check: traverse the actual map and revisit the
+      // first region. Normal play and the regular performance orbit stay intact.
+      if (std::getenv("EMBER_STREAM_CHECK")) {
+        const auto bounds = board_->bounds();
+        const glm::vec2 stops[] = {{0.12f,0.12f},{0.88f,0.12f},{0.88f,0.88f},{0.12f,0.88f},{0.12f,0.12f},{0.5f,0.5f}};
+        const float phase = k * 5.0f;
+        const int segment = std::min(4, static_cast<int>(phase));
+        const float f = std::clamp((phase - static_cast<float>(segment)) * 2.0f, 0.0f, 1.0f);
+        const glm::vec2 at = glm::mix(stops[segment], stops[segment+1], f);
+        target_.x = glm::mix(bounds.x0, bounds.x1, at.x);
+        target_.z = glm::mix(bounds.z0, bounds.z1, at.y);
+        distance = 18.0f;
+      }
       if (t >= options_.measureSeconds) finishMeasure();
     }
     // The orbit camera: yaw_ / pitch_ / distance_ / target_ are where the user sends it; cam_ follows them with a
@@ -609,6 +627,7 @@ class MapStage final : public Stage {
                                 : Camera::lookAt(eyeOf(eyeView(cam_)) + glm::vec3(0.0f, shotLift_, 0.0f),
                                                  lookTarget(cam_) + glm::vec3(0.0f, shotLift_, 0.0f), glm::radians(kFov), aspect, kNear);
     lastCamera_ = camera;
+    meshes_.setRegionView(camera.viewProjection());
     meshes_.setView(camera.position, static_cast<float>(size.height) / (2.0f * std::tan(glm::radians((flat_ ? kFlatFov : kFov) * 0.5f))));
     if (modelsPlaced_) updateCutaway(camera);
     drawList_.clear();
@@ -643,6 +662,10 @@ class MapStage final : public Stage {
       for (size_t i = 0; i < pendingFx_.size();) {
         if (time >= pendingFx_[i].first) showEffects(pendingFx_[i].second), pendingFx_.erase(pendingFx_.begin() + static_cast<std::ptrdiff_t>(i));
         else ++i;
+      }
+      if (daggerModel_) {
+        const MeshScene::EffectMesh m = meshes_.effect(*daggerModel_);
+        spellFx_.daggers().setModel(m.triangles, m.baseColor, m.normal, m.orm, m.emissive);
       }
       // Tática: the effects lie face up just above every flat card (cards: boardTop + z x the row step).
       spellFx_.build(time, camera, flat_, boardTop_ + 0.2f, effectList_, fxLights_);
@@ -1092,6 +1115,23 @@ class MapStage final : public Stage {
 
   void endFrame(double busyMs) override {
     if (!measuring_) return;
+    if (std::getenv("EMBER_STREAM_CHECK") && measureFrames_ % 60 == 0) {
+      const auto mesh = meshes_.stats();
+      const auto gpu = renderer_.meshStats();
+      if (scene_ && fog_ && measureFrames_ % 300 == 0) {
+        uint32_t trees = 0, unseen = 0;
+        for (const auto& model : scene_->models) {
+          if (model.file.find("tree") == std::string::npos) continue;
+          ++trees;
+          const auto [c, r] = ember::hexAt(board_->layout(), model.x, model.z);
+          if (c < 0 || r < 0 || c >= board_->draft().cols || r >= board_->draft().rows || fog_->state(c, r) == ember::kFogUnseen) ++unseen;
+        }
+        logInfo("stream trees: {} instances, {} anchors never seen by the party (hidden by fog-of-war rule)", trees, unseen);
+      }
+      logInfo("stream frame {}: meshes {}/{}, geometry {:.2f} MB, textures {:.2f} MB ({}/{} at cap), GPU visible {}, clusters {}, triangles {}, queue overflow {}, cluster overflow {}", measureFrames_,
+          mesh.meshesReady, mesh.meshes, mesh.geometryBytes / 1048576.0, mesh.textureBytes / 1048576.0, mesh.texturesFull, mesh.textures,
+          gpu.visibleInstances, gpu.clusters, gpu.triangles, gpu.queueOverflow, gpu.clusterOverflow);
+    }
     if (++measureFrames_ <= 4) return;  // the GPU result is a few frames old
     double gpu = 0.0;
     for (const auto& r : renderer_.gpuTimer().results()) {
@@ -2336,6 +2376,11 @@ class MapStage final : public Stage {
     float angle = 0.0f;      // radians open (0 closed .. kEmberDoorOpenRadians)
     bool passable = false;   // its cells walked and seen through
     std::vector<std::pair<int, int>> cells;
+    // A locked door (ArchitectureDef::locked, 2026-10-30): shut, whoever stands beside it, until the battle's lock at its anchor hex
+    // (kind doorDecor, this id) is picked open with a Gazua; then it opens for anyone like the others.
+    bool locked = false;
+    std::string id;
+    int anchorX = 0, anchorY = 0;
   };
   // A scene model's cooked mesh: "/game/x.glb" -> "meshes/x.mesh" (Cooker meshes).
   static std::string modelAsset(const ember::SceneModel& m) {
@@ -2375,11 +2420,6 @@ class MapStage final : public Stage {
     }
     const ember::EditorCatalog& catalog = architectureCatalog();
     const ember::ArchitectureDefs& defs = architectureDefs();
-    // A locked door (ArchitectureDef::locked, 2026-10-30): shut, whoever stands beside it, until the battle's lock at its anchor hex
-    // (kind doorDecor, this id) is picked open with a Gazua; then it opens for anyone like the others.
-    bool locked = false;
-    std::string id;
-    int anchorX = 0, anchorY = 0;
     const ember::HexLayout& L = board_->layout();
     const double sq3 = std::sqrt(3.0);
     auto inBoard = [&](int c, int r) { return c >= 0 && r >= 0 && c < L.cols && r < L.rows; };
@@ -2699,6 +2739,7 @@ class MapStage final : public Stage {
         const size_t index = arch_.size() - 1;
         DoorState& state = doors_[index];
         for (const ember::FootOffset& f : ember::placedFootprint(*cd, p.x, p.y, p.rot)) state.cells.push_back({p.x + f.dx, p.y + f.dy});
+        state.locked = def->locked, state.id = p.id, state.anchorX = p.x, state.anchorY = p.y;
         for (int side : {-1, 1}) {
           const ember::three::Geometry leafGeometry = ember::emberDoorLeafPiece(*def, rot, side);
           // The leaf closed, for the doors-closed probe bake (startProbeBake: the room's light with the door shut, blended at run
@@ -2738,7 +2779,6 @@ class MapStage final : public Stage {
     }
     wallCells_ = roomJoins;
     buildRoof();
-        state.locked = def->locked, state.id = p.id, state.anchorX = p.x, state.anchorY = p.y;
     // The probes bake once the first frame has laid the room's fires (buildLights): their light bounces into the probes too.
     probeUploaded_ = false;
     probeBakePending_ = true;
@@ -3149,6 +3189,8 @@ class MapStage final : public Stage {
     modelsPlaced_ = true;
     std::vector<InstanceGpu> instances;
     hearthFireInstances_.clear();
+    modelSightCells_.clear();
+    modelSightVersion_ = UINT64_MAX;
     pieceBoxes_.clear();
     for (const ember::SceneModel& m : scene_->models) {
       if (lockOpened(m.id, "doorDecor", m.x, m.z)) continue;  // the door was picked open: its closed model is gone
@@ -3172,6 +3214,24 @@ class MapStage final : public Stage {
       inst.scale = k;
       const uint32_t instanceIndex = static_cast<uint32_t>(instances.size());
       instances.push_back(inst);
+      // Discovery uses the object's footprint, not just a centre buried inside
+      // its own sight-blocking canopy. Once any part is explored, keep the whole
+      // object discoverable; tactical shading still reads the unchanged fog mask.
+      if (fog_) {
+        std::vector<ember::HexPoint> cells;
+        const float hx = (h->boundsMax[0] - h->boundsMin[0]) * 0.5f * k;
+        const float hz = (h->boundsMax[2] - h->boundsMin[2]) * 0.5f * k;
+        const auto append = [&](float x, float z) {
+          const auto [col, row] = ember::hexAt(board_->layout(), m.x + c*x + sn*z, m.z - sn*x + c*z);
+          cells.push_back({col,row});
+        };
+        append(0.0f,0.0f);
+        for (float x = -hx; x <= hx; x += 0.5f)
+          for (float z = -hz; z <= hz; z += 0.5f) append(x,z);
+        std::sort(cells.begin(),cells.end(),[](const auto& a,const auto& b) { return a.r == b.r ? a.c < b.c : a.r < b.r; });
+        cells.erase(std::unique(cells.begin(),cells.end()),cells.end());
+        modelSightCells_.push_back({instanceIndex,std::move(cells)});
+      }
       if (m.id == "ember-tavern-stone-hearth") hearthFireInstances_.push_back(instanceIndex);
       const float half = 0.5f * k * std::max(h->boundsMax[0] - h->boundsMin[0], h->boundsMax[2] - h->boundsMin[2]);
       pieceBoxes_.push_back({m.x, m.z, half, t.y + m.height});
@@ -3254,6 +3314,26 @@ class MapStage final : public Stage {
     placedLook_ = look_;
   }
 
+  // The fog's explored cells are monotonic; GPU instances need changing only
+  // when a new object is discovered, never every frame or on a camera movement.
+  void updateModelVisibility() {
+    if (!fog_ || !modelsPlaced_ || modelSightVersion_ == fog_->version()) return;
+    modelSightVersion_ = fog_->version();
+    bool changed = false;
+    uint32_t discovered = 0;
+    for (const auto& [index,cells] : modelSightCells_) {
+      if (index >= placedInstances_.size()) continue;
+      auto& instance = placedInstances_[index];
+      if (!(instance.flags & kInstanceAlwaysSeen)) {
+        const bool seen = std::any_of(cells.begin(),cells.end(),[&](const auto& cell) { return fog_->state(cell.c,cell.r) != ember::kFogUnseen; });
+        if (seen) { instance.flags |= kInstanceAlwaysSeen; changed = true; }
+      }
+      discovered += (instance.flags & kInstanceAlwaysSeen) ? 1u : 0u;
+    }
+    if (changed) meshes_.setInstances(placedInstances_);
+    if (std::getenv("EMBER_STREAM_CHECK")) logInfo("stream discovery: {}/{} models discovered by explored footprint", discovered, modelSightCells_.size());
+  }
+
   void updateHearthFireFlipbook(float time) {
     if (hearthFireInstances_.empty()) return;
     int frame = static_cast<int>(std::floor(time * 14.0f)) % 16;
@@ -3309,6 +3389,11 @@ class MapStage final : public Stage {
     for (const ember::Battle::Lock& l : battle_->locks()) any = any || l.open;
     if (!any) return false;
     const auto [c, r] = ember::hexAt(board_->layout(), x, z);
+    return lockOpenedAt(id, kind, c, r);
+  }
+  // The same, by the lock's hex.
+  bool lockOpenedAt(const std::string& id, const char* kind, int c, int r) const {
+    if (!battle_) return false;
     for (const ember::Battle::Lock& l : battle_->locks())
       if (l.open && l.kind == kind && l.id == id && l.x == c && l.y == r) return true;
     return false;
@@ -3348,11 +3433,6 @@ class MapStage final : public Stage {
     ImGui::Begin("##chestloot", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::PushFont(uiFont(UiFont::Ui), 16.0f);
     ImGui::TextUnformatted((loot.unit + tr(" arrombou o baú", " picked the chest's lock")).c_str());
-    return lockOpenedAt(id, kind, c, r);
-  }
-  // The same, by the lock's hex.
-  bool lockOpenedAt(const std::string& id, const char* kind, int c, int r) const {
-    if (!battle_) return false;
     ImGui::PopFont();
     ImGui::PushFont(uiFont(UiFont::Ui), 15.0f);
     {  // Ember's GoldAmount: the pile of coins, then "+N Gold"
@@ -10825,6 +10905,8 @@ class MapStage final : public Stage {
   BoardGround ground_;
   SpriteSystem sprites_;
   SpellEffects spellFx_{sprites_};  // spell and strike visuals (the fx clips)
+  static constexpr const char* kDaggerModel = "meshes/polyhaven/ornate_medieval_dagger-v02.mesh";
+  std::optional<MeshId> daggerModel_;  // the Nuvem de Adagas' dagger (MeshScene::addEffect), when the effects pack is mounted
   std::map<int, int> zoneFx_;       // the rules' zone id -> its standing effect (SpellEffects::zoneStart)
   struct IceFx {
     ember::BattleHex center;
@@ -11051,6 +11133,8 @@ class MapStage final : public Stage {
   std::vector<SpriteInstance> drawList_;
   std::vector<SpriteInstance> frontCards_;  // casters drawn again over their own spell (Renderer::setFrontCards)
   std::vector<LocalLight> lights_;
+  std::vector<std::pair<uint32_t,std::vector<ember::HexPoint>>> modelSightCells_;
+  uint64_t modelSightVersion_ = UINT64_MAX;
   bool modelsPlaced_ = false;
   bool meshStreamOpen_ = false;  // MeshScene's 3D textures may grow past their base (the characters' memory is reserved)
   ember::EdgeStyle placedLook_ = ember::EdgeStyle::Smooth;

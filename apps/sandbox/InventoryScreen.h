@@ -94,8 +94,8 @@ class InventoryScreen {
 
   std::vector<std::string> roster(const Context& c) const {
     std::vector<std::string> out;
-    for (const char* h : {"Kael", "Neera", "Voss", "Salazar", "Aldric", "Malrec"})
-      if (c.allHeroes || c.world.heroRecruited(h, c.save)) out.push_back(h);
+    for (const char* h : ember::Overworld::kPartyHeroes)
+      if (c.world.inParty(h, c.save, c.allHeroes)) out.push_back(h);
     return out;
   }
   const UiImage* art(const Context& c, std::string path) const {

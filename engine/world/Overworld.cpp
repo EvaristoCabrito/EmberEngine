@@ -385,6 +385,23 @@ bool Overworld::heroRecruited(const std::string& hero, const Json& save) const {
   return false;
 }
 
+bool Overworld::inParty(const std::string& hero, const Json& save, bool test) const { return test || heroRecruited(hero, save); }
+
+std::vector<std::string> Overworld::activeParty(const Json& save, bool test) const {
+  std::vector<std::string> out;
+  const Json& chosen = child(save, "partyActive");
+  if (chosen.is_array()) {
+    for (const Json& h : chosen)
+      if (h.is_string() && out.size() < kActivePartyMax && inParty(h.get<std::string>(), save, test) &&
+          std::find(out.begin(), out.end(), h.get<std::string>()) == out.end())
+        out.push_back(h.get<std::string>());
+    if (!out.empty()) return out;
+  }
+  for (const char* h : kPartyHeroes)  // no choice saved yet: the first six of the party, in the heroes' order
+    if (out.size() < kActivePartyMax && inParty(h, save, test)) out.push_back(h);
+  return out;
+}
+
 int Overworld::classHp(const std::string& classId, int level) const {
   const Json& c = child(tables_["classes"], classId);
   if (!c.is_object()) return 0;
@@ -439,7 +456,7 @@ bool Overworld::bagHasRoom(const Json& save, int extra, bool test) const {
   const double stacks = std::ceil(rations / tables_.value("rationStackMax", 30));
   int heroes = 0;
   for (const char* h : kHeroes)
-    if (test || heroRecruited(h, save)) ++heroes;
+    if (inParty(h, save, test)) ++heroes;
   double pouches = 0;
   for (const auto& [hero, slots] : child(save, "equipment").items()) {
     const Json& waist = child(slots, "waist");

@@ -1,6 +1,7 @@
 #include "render/vfx/DaggerFx.h"
 
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <numbers>
 
@@ -22,6 +23,10 @@ constexpr float kBury = 0.22f;                       // seconds a thrown dagger 
 constexpr float kOrbitSpeed = 1.5f;                  // radians a second
 constexpr glm::vec3 kViolet{0.62f, 0.4f, 1.0f}, kVioletCore{0.9f, 0.82f, 1.0f}, kWhite{1.0f, 0.98f, 0.94f};
 constexpr glm::vec3 kSteelLit{0.62f, 0.65f, 0.7f}, kBronze{0.55f, 0.4f, 0.2f}, kGrip{0.15f, 0.11f, 0.09f}, kSpark{1.0f, 0.88f, 0.6f};
+// The model (metres, glTF +Y up, the point up): its guard's middle 0.046 m up its axis goes to the pieces' origin, metres to world
+// units (1 unit = 0.68 m): 0.346 m long = 0.51 units at k = 1, the box dagger's length. Its engravings glow at kModelGlow (the
+// emissive map's violet, display-relative like the streaks).
+constexpr float kModelGuard = 0.046f, kModelScale = 1.0f / 0.68f, kModelGlow = 1.5f;
 
 float ease(float edge0, float edge1, float x) {
   const float t = std::clamp((x - edge0) / std::max(edge1 - edge0, 1e-5f), 0.0f, 1.0f);
@@ -268,6 +273,11 @@ glm::vec3 DaggerFx::orbitTangent(const Cloud& c, const Slot& s, float now) const
 
 void DaggerFx::dagger(const glm::mat4& m, float k, float fade, bool behind) {
   const glm::mat4 base = m * glm::scale(glm::mat4(1.0f), glm::vec3(k));
+  if (modelReady()) {
+    const glm::mat4 frame = glm::scale(glm::mat4(1.0f), glm::vec3(kModelScale)) * glm::translate(glm::mat4(1.0f), {0.0f, -kModelGuard, 0.0f});
+    (behind ? backModels_ : models_).push_back(lit(base * frame, glm::vec3(fade)));
+    return;
+  }
   (behind ? backBlades_ : blades_).push_back(lit(base * glm::translate(glm::mat4(1.0f), {0.0f, 0.125f, 0.0f}), kSteelLit * fade));
   (behind ? backTips_ : tips_).push_back(lit(base * glm::translate(glm::mat4(1.0f), {0.0f, 0.245f, 0.0f}), kSteelLit * fade));
   (behind ? backGuards_ : guards_).push_back(lit(base, kBronze * fade));
@@ -276,7 +286,29 @@ void DaggerFx::dagger(const glm::mat4& m, float k, float fade, bool behind) {
 }
 
 void DaggerFx::emit(VfxFrame& frame, float now, glm::vec3 sight, std::vector<VfxInstance>& streaks, std::vector<VfxInstance>* pieces[5],
-                    const glm::vec3* behindAt) {
+                    std::vector<VfxInstance>& models, const glm::vec3* behindAt) {
+  // The model: one solid draw of every dagger in the list, its own textures.
+  if (!models.empty() && modelReady()) {
+    const uint32_t first = static_cast<uint32_t>(frame.instances.size());
+    frame.instances.insert(frame.instances.end(), models.begin(), models.end());
+    VfxDraw d;
+    d.gpu.model = glm::mat4(1.0f);
+    d.gpu.params1 = {std::bit_cast<float>(model_.normal), std::bit_cast<float>(model_.orm), std::bit_cast<float>(model_.emissive), kModelGlow};
+    d.gpu.color = glm::vec4(1.0f);
+    d.gpu.firstVertex = modelFirst_;
+    d.gpu.vertexCount = modelCount_;
+    d.gpu.firstInstance = first;
+    d.gpu.material = static_cast<uint32_t>(VfxMaterial::Textured);
+    d.gpu.texture = model_.baseColor;
+    d.gpu.sightAt = sight;
+    d.instances = static_cast<uint32_t>(models.size());
+    d.blend = VfxBlend::Alpha;
+    d.depthTest = true;
+    d.solid = true;
+    if (behindAt) d.behindCard = true, d.cardAt = *behindAt;
+    frame.draws.push_back(d);
+  }
+  models.clear();
   // The lit pieces, one draw each; then the arcane light over them.
   const uint32_t firsts[5] = {bladeFirst_, tipFirst_, guardFirst_, gripFirst_, pommelFirst_};
   const uint32_t counts[5] = {bladeCount_, tipCount_, guardCount_, gripCount_, pommelCount_};
@@ -329,8 +361,9 @@ void DaggerFx::build(float now, const Camera& camera, VfxFrame& frame, std::vect
   guardFirst_ = frame.addVertices(guardGeometry()), guardCount_ = static_cast<uint32_t>(guardGeometry().size());
   gripFirst_ = frame.addVertices(gripGeometry()), gripCount_ = static_cast<uint32_t>(gripGeometry().size());
   pommelFirst_ = frame.addVertices(pommelGeometry()), pommelCount_ = static_cast<uint32_t>(pommelGeometry().size());
-  streaks_.clear(), blades_.clear(), tips_.clear(), guards_.clear(), grips_.clear(), pommels_.clear();
-  backStreaks_.clear(), backBlades_.clear(), backTips_.clear(), backGuards_.clear(), backGrips_.clear(), backPommels_.clear();
+  if (modelReady()) modelFirst_ = frame.addVertices(*model_.triangles), modelCount_ = static_cast<uint32_t>(model_.triangles->size());
+  streaks_.clear(), blades_.clear(), tips_.clear(), guards_.clear(), grips_.clear(), pommels_.clear(), models_.clear();
+  backStreaks_.clear(), backBlades_.clear(), backTips_.clear(), backGuards_.clear(), backGrips_.clear(), backPommels_.clear(), backModels_.clear();
   glm::vec3 sight = !clouds_.empty() ? clouds_.front().feet : !throws_.empty() ? throws_.front().to : bursts_.front().feet;
   for (Cloud& c : clouds_) buildCloud(c, now, camera, frame, lights);
   for (const Throw& t : throws_)
@@ -338,7 +371,7 @@ void DaggerFx::build(float now, const Camera& camera, VfxFrame& frame, std::vect
   for (const Burst& b : bursts_)
     if (now >= b.impact - 0.5f) buildBurst(b, now, camera, frame, lights);
   std::vector<VfxInstance>* pieces[5] = {&blades_, &tips_, &guards_, &grips_, &pommels_};
-  emit(frame, now, sight, streaks_, pieces, nullptr);
+  emit(frame, now, sight, streaks_, pieces, models_, nullptr);
 }
 
 // --- The cloud ------------------------------------------------------------------------------------------------------------
@@ -410,7 +443,7 @@ void DaggerFx::buildCloud(Cloud& c, float now, const Camera& camera, VfxFrame& f
   // This cloud's far half: among the cards, right before its body's card.
   {
     std::vector<VfxInstance>* back[5] = {&backBlades_, &backTips_, &backGuards_, &backGrips_, &backPommels_};
-    emit(frame, now, c.feet, backStreaks_, back, &c.feet);
+    emit(frame, now, c.feet, backStreaks_, back, backModels_, &c.feet);
   }
   if (drawn == 0 && env <= 0.0f) return;
   // The ring at the feet, turning; the light on the body.
