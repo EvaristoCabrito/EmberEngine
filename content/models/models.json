@@ -1543,6 +1543,19 @@
       "triangles": 103330
     },
     {
+      "id": "ember-polyhaven-crate-chest",
+      "name": "Baú pequeno 3D (caixote)",
+      "kit": "polyhaven",
+      "model": "ember-wooden-crate-01",
+      "file": "/game/ember/polyhaven/wooden_crate_01-v01.glb",
+      "height": 0.515,
+      "width": 1.213,
+      "footprint": "one",
+      "section": "Objetos",
+      "blocks": false,
+      "triangles": 6576
+    },
+    {
       "id": "ember-polyhaven-large-castle-door",
       "name": "Porta grande de castelo 3D",
       "kit": "polyhaven",
