@@ -2,6 +2,7 @@
 
 #include <basisu_bc7e_scalar.h>
 #include <rgbcx.h>
+#include <stb_image_resize2.h>
 
 #include <algorithm>
 #include <cmath>
@@ -67,6 +68,30 @@ Rgba8 halve(const Rgba8& in, TextureFormat format) {
 }
 
 }  // namespace
+
+Rgba8 capTextureSize(Rgba8 image, TextureFormat format, uint32_t maxSize) {
+  uint32_t width = image.width, height = image.height;
+  while (std::max(width, height) > maxSize) width = std::max(1u, width / 2), height = std::max(1u, height / 2);
+  if (width == image.width && height == image.height) return image;
+  Rgba8 out;
+  out.width = width;
+  out.height = height;
+  out.pixels.resize(size_t{width} * height * 4);
+  stbir_resize(image.pixels.data(), static_cast<int>(image.width), static_cast<int>(image.height), static_cast<int>(image.width * 4),
+               out.pixels.data(), static_cast<int>(width), static_cast<int>(height), static_cast<int>(width * 4), STBIR_RGBA,
+               format == TextureFormat::Bc7Srgb ? STBIR_TYPE_UINT8_SRGB : STBIR_TYPE_UINT8, STBIR_EDGE_WRAP, STBIR_FILTER_MITCHELL);
+  if (format == TextureFormat::Bc5Unorm)
+    for (size_t i = 0; i < out.pixels.size(); i += 4) {
+      // Filtered normals are shorter than one: renormalise with the source's own Z (blue).
+      const float x = out.pixels[i] / 127.5f - 1.0f, y = out.pixels[i + 1] / 127.5f - 1.0f, z = out.pixels[i + 2] / 127.5f - 1.0f;
+      const float len = std::sqrt(x * x + y * y + z * z);
+      if (len <= 0.0f) continue;
+      out.pixels[i] = toByte(x / len * 0.5f + 0.5f);
+      out.pixels[i + 1] = toByte(y / len * 0.5f + 0.5f);
+      out.pixels[i + 2] = toByte(z / len * 0.5f + 0.5f);
+    }
+  return out;
+}
 
 std::vector<uint8_t> cookTexture(JobSystem& jobs, const Rgba8& image, TextureFormat format, Bc7Quality quality) {
   static std::once_flag once;

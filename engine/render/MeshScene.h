@@ -74,10 +74,10 @@ class MeshScene {
 
   // --- Texture streaming (the user, 2026-10-29: "faz", the characters' sprites first, some blur on 3D objects accepted) ---------
   // Every texture first lands at its small base (largest mip <= kBaseSize) and grows to the size its objects need on screen, down
-  // to the quality's cap (Opções > Gráficos > Texturas 3D: Média = the cooked size, Leve = one mip under it), as long as the
-  // GPU's free memory stays above kReserve. Short of memory, the most over-detailed textures step down first.
-  // skipTop: mips never loaded at the top (0 = Média, 1 = Leve).
-  void setQuality(uint32_t skipTop) { qualitySkip_ = skipTop; }
+  // to the quality's cap (Opções > Gráficos > Texturas 3D: Alta 2048, Média 1024, Leve 512, all from the one cooked file), as long
+  // as the GPU's free memory stays above kReserve. Short of memory, the most over-detailed textures step down first.
+  // maxSize: the largest side ever loaded; the top mips above it are skipped, a texture already under it keeps its size.
+  void setQuality(uint32_t maxSize) { qualityMaxSize_ = maxSize; }
   // A gated scene (MapStage) keeps every texture at its base until open(): the characters reserve their GPU memory first.
   void setStreamGate(bool gated) { gated_ = gated; }
   void openStreaming() { open_ = true; }
@@ -181,7 +181,7 @@ class MeshScene {
   uint64_t textureBytes_ = 0;
   // streaming
   std::vector<Retired> retired_;  // old images kept until no frame in flight can read them
-  uint32_t qualitySkip_ = 0;
+  uint32_t qualityMaxSize_ = 2048;
   bool gated_ = false, open_ = false, settled_ = false;
   glm::vec3 eye_{0.0f};
   float focal_ = 0.0f;

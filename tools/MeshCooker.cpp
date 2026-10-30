@@ -27,8 +27,9 @@ namespace ember {
 namespace {
 
 // Bump when the cooked output changes for the same source (forces a re-cook of every mesh).
-// 2: protect mask, 3: edge limit, 4: authored LODs skipped, 5: proxy without texture slots, 6: textures shared by content
-constexpr uint32_t kMeshCookerRevision = 6;
+// 2: protect mask, 3: edge limit, 4: authored LODs skipped, 5: proxy without texture slots, 6: textures shared by content,
+// 7: textures at most kMeshTextureMaxSize (2048)
+constexpr uint32_t kMeshCookerRevision = 7;
 
 // One material's triangles, transforms baked in, one entry per unique vertex.
 struct Part {
@@ -431,6 +432,7 @@ class MeshBuilder {
       image.height = static_cast<uint32_t>(ia.height);
       image.pixels = std::move(ia.pixels);
     }
+    image = capTextureSize(std::move(image), format, kMeshTextureMaxSize);
     const uint32_t settings[] = {image.width, image.height, static_cast<uint32_t>(format), static_cast<uint32_t>(options_.quality),
                                  kTextureFormatVersion};
     const uint64_t hash = fnv(fnv(0xcbf29ce484222325ull, settings, sizeof(settings)), image.pixels.data(), image.pixels.size());

@@ -22,4 +22,10 @@ struct Rgba8 {
 // Returns the cooked texture asset (TextureHeader + data). Spread over every core.
 std::vector<uint8_t> cookTexture(JobSystem& jobs, const Rgba8& image, TextureFormat format, Bc7Quality quality);
 
+// The 3D objects' textures are stored at most this size (the user, 2026-10-29: Alta 2K, Média 1K, Leve 512, all from one file).
+constexpr uint32_t kMeshTextureMaxSize = 2048;
+// Halves both sides (one power of two, the aspect kept) until the larger is at most maxSize, filtered (Mitchell) the way the format
+// is read: colour in linear light, data plain, normals as vectors renormalised. Smaller images come back unchanged.
+Rgba8 capTextureSize(Rgba8 image, TextureFormat format, uint32_t maxSize);
+
 }  // namespace ember

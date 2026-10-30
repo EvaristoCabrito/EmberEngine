@@ -751,10 +751,11 @@ class OptionsDialog {
                               prefs.characters == "alta" ? 0 : prefs.characters == "leve" ? 2 : 1,
                               {{tr("Alta", "High"), true}, {tr("Média", "Medium"), true}, {tr("Leve", "Light"), true}},
                               [&](int v) { prefs.characters = v == 0 ? "alta" : v == 2 ? "leve" : "media", prefsChanged = true; }));
-      // Texturas 3D (the user, 2026-10-29): Média = the cooked size (2K), Leve = one size under it; taken when a map opens.
-      s.rows.push_back(select("##gfxtex3d", tr("Texturas 3D", "3D textures"), prefs.textures3d == "leve" ? 1 : 0,
-                              {{tr("Média", "Medium"), true}, {tr("Leve", "Light"), true}},
-                              [&](int v) { prefs.textures3d = v == 1 ? "leve" : "media", prefsChanged = true; }));
+      // Texturas 3D (the user, 2026-10-29): Alta 2K, Média 1K, Leve 512; taken when a map opens.
+      s.rows.push_back(select("##gfxtex3d", tr("Texturas 3D", "3D textures"),
+                              prefs.textures3d == "media" ? 1 : prefs.textures3d == "leve" ? 2 : 0,
+                              {{tr("Alta", "High"), true}, {tr("Média", "Medium"), true}, {tr("Leve", "Light"), true}},
+                              [&](int v) { prefs.textures3d = v == 1 ? "media" : v == 2 ? "leve" : "alta", prefsChanged = true; }));
       // Luz do grupo (ours, the user 2026-10-28): the world map at night lit around the party; OFF by default.
       s.rows.push_back(toggle("##gfxpartylight", tr("Luz do grupo à noite", "Party light at night"), prefs.partyLight, false, &prefsChanged));
       // Tela cheia: ember-btn ember-btn-ghost ember-btn-sm w-full py-1.5 mt-1

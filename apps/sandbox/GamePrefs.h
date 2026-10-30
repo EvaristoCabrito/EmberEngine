@@ -37,10 +37,11 @@ struct GamePrefs {
   // Opções > Gráficos > Luz do grupo (the user, 2026-10-28: "o efeito pode existir guardado para depois"): on the world map at
   // night, a soft circle of light around the party and the rest of the map darker. OFF by default.
   bool partyLight = false;
-  // Opções > Gráficos > Texturas 3D (the user, 2026-10-29: "pode embutir 2K como média uma opção de leve, vou pensar se tentamos a alta
-  // depois"): "media" = the 3D models' cooked size (the Poly Haven models: 2K), "leve" = one size under it. Read when a map opens;
-  // MeshScene streams within it, the characters' sprites served first.
-  std::string textures3d = "media";
+  // Opções > Gráficos > Texturas 3D (the user, 2026-10-29: Alta 2K, Média 1K, Leve 512, all from the one cooked file, capped at 2K):
+  // the largest size any 3D object's texture loads at; a smaller texture keeps its own size. Default Alta (what every map showed
+  // before). Read when a map opens; MeshScene streams within it, the characters' sprites served first. Saved as "meshTextures"; a
+  // file with only the old "textures3d" keeps its look ("media" was the cooked size = Alta, "leve" one size under = Média).
+  std::string textures3d = "alta";
 
   static std::filesystem::path path() {
     const char* base = std::getenv("LOCALAPPDATA");
@@ -68,8 +69,9 @@ struct GamePrefs {
     if (art == "alta" || art == "media" || art == "leve") p.characters = art;
     else if (j.value("characters", std::string()) == "leve") p.characters = "leve";
     p.partyLight = j.value("partyLight", p.partyLight);
-    const std::string tex = j.value("textures3d", std::string());
-    if (tex == "media" || tex == "leve") p.textures3d = tex;
+    const std::string tex = j.value("meshTextures", std::string());
+    if (tex == "alta" || tex == "media" || tex == "leve") p.textures3d = tex;
+    else if (j.value("textures3d", std::string()) == "leve") p.textures3d = "media";
     return p;
   }
   bool save() const {
@@ -77,7 +79,7 @@ struct GamePrefs {
                               {"sfx", sfx},               {"cutscene", cutscene},               {"uiLanguage", uiLanguage},
                               {"dialogueLanguage", dialogueLanguage}, {"subtitleLanguage", subtitleLanguage},
                               {"subtitles", subtitles},   {"dialogueScale", dialogueScale},     {"characterArt", characters},
-                              {"partyLight", partyLight}, {"textures3d", textures3d}};
+                              {"partyLight", partyLight}, {"meshTextures", textures3d}};
     std::error_code ec;
     std::filesystem::create_directories(path().parent_path(), ec);
     const std::filesystem::path tmp = path().string() + ".tmp";

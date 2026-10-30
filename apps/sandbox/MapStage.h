@@ -280,9 +280,10 @@ class MapStage final : public Stage {
         options_(options),
         jobs_(jobs) {
     yaw_ += glm::radians(options.turnDegrees);
-    // 3D textures stream (MeshScene): Opções > Gráficos > Texturas 3D, read when the map opens (Média = the cooked size, Leve = one
-    // mip under it); gated so the characters' sprites reserve their GPU memory first (the user, 2026-10-29).
-    meshes_.setQuality(gamePrefs().textures3d == "leve" ? 1u : 0u);
+    // 3D textures stream (MeshScene): Opções > Gráficos > Texturas 3D, read when the map opens (Alta 2048, Média 1024, Leve 512: the
+    // largest side loaded from the one 2K file); gated so the characters' sprites reserve their GPU memory first (the user, 2026-10-29).
+    const std::string& tex = gamePrefs().textures3d;
+    meshes_.setQuality(tex == "leve" ? 512u : tex == "media" ? 1024u : 2048u);
     meshes_.setStreamGate(true);
     lightingMode_ = std::clamp(options.lighting, 0, 3);
     moonPath_ = std::clamp(options.moonPath, 0, 2);

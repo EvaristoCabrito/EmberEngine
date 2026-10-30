@@ -228,7 +228,11 @@ uint64_t MeshScene::bytesAt(const Texture& t, uint32_t skip) const {
   return t.header.dataBytes - offset;
 }
 
-uint32_t MeshScene::capSkip(const Texture& t) const { return std::min(qualitySkip_, t.baseSkip); }
+uint32_t MeshScene::capSkip(const Texture& t) const {
+  uint32_t skip = 0;
+  while (skip + 1 < t.header.mipCount && std::max(t.header.width >> skip, t.header.height >> skip) > qualityMaxSize_) ++skip;
+  return std::min(skip, t.baseSkip);
+}
 
 uint64_t MeshScene::freeGpuBytes() const {
   const VkPhysicalDeviceMemoryProperties* props = nullptr;
