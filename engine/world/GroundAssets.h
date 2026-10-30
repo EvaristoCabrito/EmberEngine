@@ -162,6 +162,10 @@ inline constexpr EmberGroundTile kEmberGroundTiles[] = {
     {"mosteiro-v01", "nave", "ember-mosteiro-piso-v01", "content/ground/mosteiro-piso-v01.png", 3.2f, true},
     {"mosteiro-v01", "ruins", "ember-mosteiro-ruinas-v01", "content/ground/mosteiro-ruinas-v01.png", 4.0f, true},
     {"mosteiro-v01", "woods", "ember-mosteiro-bosque-v01", "content/ground/mosteiro-bosque-v01.png", 4.5f, true},
+    // A Estalagem's plank floor, a test (the user, 2026-10-30, with the Inn's word): ambientCG Planks037A (CC0, already seamless, its
+    // 2K colour map; ~16 boards, ~2.2 m across) on the salão's plains and the Andar II's nave, over their baked art.
+    {"inn-planks-v01", "plains", "ember-inn-planks-plains-v01", "content/ground/inn-planks-037a-v01.png", 3.4f, true},
+    {"inn-planks-v01", "nave", "ember-inn-planks-nave-v01", "content/ground/inn-planks-037a-v01.png", 3.4f, true},
 };
 
 inline std::string skyMoonAsset(std::string_view phase) { return "sky/moon/" + std::string(phase) + ".tex"; }
