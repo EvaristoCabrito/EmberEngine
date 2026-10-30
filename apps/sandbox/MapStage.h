@@ -357,6 +357,7 @@ class MapStage final : public Stage {
     renderer_.volumetrics().invalidateHistory();
     boardWidth_ = static_cast<float>(b.x1 - b.x0);
     boardDepth_ = static_cast<float>(b.z1 - b.z0);
+    boardZ0_ = static_cast<float>(b.z0);
     // The sun's shadow covers the board's bounding sphere (ground from y = 0 to its highest cell).
     double top = 0;
     for (const ember::Cell& c : board_->cells()) top = std::max(top, c.groundY);
@@ -2222,6 +2223,10 @@ class MapStage final : public Stage {
   static constexpr float kFov = 30.0f, kNear = 0.5f;  // Ember's normal lens
   static constexpr float kFlatFov = 1.0f;             // Ember FLAT_FOV: Tática's long lens
   static constexpr float kFlatRowStep = 0.002f;       // Ember FLAT_ROW_STEP: Tática's height step per unit of depth
+  static constexpr float kFlatLift = 0.01f;           // Tática's first row over the highest ground
+  // Tática's card height at depth z: counted from the board's north edge (2026-10-30, the user: the hero sank under the tiles, more
+  // the further up the map: z is negative there, so boardTop + z * step lay under the ground).
+  float flatY(float z) const { return boardTop_ + kFlatLift + (z - boardZ0_) * kFlatRowStep; }
   // The camera bar (Ember GameApp.tsx + ember-plate): 28 px plates (size-7), 4 px apart (gap-1), 8 px from the
   // corner (inset-x-2, top 0.5rem), 10 px text; the window's padding leaves room for the shadow and glow.
   static constexpr float kPlate = 28.0f, kBarGap = 4.0f, kBarInset = 8.0f, kPlateText = 12.0f, kPlateGlow = 10.0f;
@@ -3505,7 +3510,7 @@ class MapStage final : public Stage {
       if (d.onFloor) {
         // A 3D stair piece (the watchtower's kit) stands over this waypoint: the piece is its look, the card stays for the rules.
         if (std::any_of(stairPieces_.begin(), stairPieces_.end(), [&](const glm::vec2& s) { return glm::distance(s, glm::vec2(d.x, d.z)) < 0.9f; })) continue;
-        const float y = flat_ ? boardTop_ + d.z * kFlatRowStep - 0.5f * kFlatRowStep : groundOf(d.groundSmooth, d.groundHard) + 0.03f;
+        const float y = flat_ ? flatY(d.z) - 0.5f * kFlatRowStep : groundOf(d.groundSmooth, d.groundHard) + 0.03f;
         addCard(clip, {d.x, y, d.z}, {1.0f, 0.0f, 0.0f}, d.w, d.h, {0.0f, -0.5f * d.h, 0.0f}, d.mirror, 0, kSpriteLit | kSpriteFlat, nullptr);
         continue;
       }
@@ -3513,7 +3518,7 @@ class MapStage final : public Stage {
       // ground, each row of depth a step higher so nearer rows cover farther ones; no layer step, no shadow.
       const float yaw = flat_ ? 0.0f : d.lockedYaw.value_or(0.0f);
       const glm::vec3 right{std::cos(yaw), 0.0f, -std::sin(yaw)};
-      const glm::vec3 anchor{d.x, flat_ ? boardTop_ + d.z * kFlatRowStep : groundOf(d.groundSmooth, d.groundHard), d.z};
+      const glm::vec3 anchor{d.x, flat_ ? flatY(d.z) : groundOf(d.groundSmooth, d.groundHard), d.z};
       const glm::vec3 local{(0.5f - d.art.baseU) * d.w, -d.art.baseV * d.h, flat_ ? 0.0f : d.nudge};
       SpriteInstance emit{};
       if (d.light) {
@@ -3648,7 +3653,7 @@ class MapStage final : public Stage {
       const bool reversed = drawnLeft || (unitReversed_[ui] != 0 && !drawnRight);
       const bool mirror = !leftCut && ((unitFacing_[ui] == -1) != reversed);
       // Tática (Ember UnitActor.update with flatTop): flat over its own row's cards by half a row step, no shadow.
-      if (flat_) anchor.y = boardTop_ + anchor.z * kFlatRowStep + kFlatRowStep * 0.5f;
+      if (flat_) anchor.y = flatY(anchor.z) + kFlatRowStep * 0.5f;
       const uint32_t flags = flat_ ? kSpriteLit | kSpriteFlat : kSpriteLit | kSpriteFront | kSpriteCastsShadow;
       const size_t cardsBefore = drawList_.size();
       // Ember centerBody: a sheet that drifts sideways mid-swing (Neera's off-hand dagger) is held on its hex.
@@ -11163,7 +11168,7 @@ class MapStage final : public Stage {
   bool failed_ = false;
   int readyFrames_ = 0;
   glm::vec3 target_{0.0f};
-  float boardWidth_ = 1.0f, boardDepth_ = 1.0f;
+  float boardWidth_ = 1.0f, boardDepth_ = 1.0f, boardZ0_ = 0.0f;
   float yaw_ = glm::radians(-30.0f), pitch_ = glm::radians(20.0f);
   float distance_ = 0.0f, maxDistance_ = 40.0f;
   bool hpSizesBaked_ = false;  // drawHealthBars: the HP number's glyphs at every step size are in the font atlas
