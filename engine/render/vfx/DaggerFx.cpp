@@ -390,10 +390,9 @@ void DaggerFx::buildCloud(Cloud& c, float now, const Camera& camera, VfxFrame& f
     const glm::mat4 m = glm::translate(glm::mat4(1.0f), wp) * alignY(axis) * glm::rotate(glm::mat4(1.0f), roll, kUp) *
                         glm::scale(glm::mat4(1.0f), glm::vec3(0.3f + 0.7f * life));
     dagger(m, k, life, behind);
-    // the violet glint on the point and the wake behind the blade
+    // the violet glint on the point (no wake behind the handle: the user, 2026-10-30)
     const glm::vec3 point = wp + axis * (0.31f * k * (0.3f + 0.7f * life));
     glow.push_back(streak(point, glm::vec3(0.0f), (0.06f + 0.02f * pulse) * k, 0.55f * life, kVioletCore, 2.4f));
-    glow.push_back(streak(wp - tangent * (0.16f * k), -tangent * (0.3f * k), 0.028f * k, 0.3f * life, kViolet, 2.0f));
     // materializing: a flash; dissolving: motes scattering
     if (age < kAppear) {
       const float f = 1.0f - ease(0.0f, kAppear, age);
