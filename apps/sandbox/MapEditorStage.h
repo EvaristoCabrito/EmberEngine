@@ -54,6 +54,7 @@
 #include "DialogEditorUi.h"
 #include "MapExport.h"
 #include "MapStage.h"
+#include "Portraits.h"
 #include "Stage.h"
 #include "core/Log.h"
 #include "render/Renderer.h"
@@ -378,6 +379,9 @@ class MapEditorStage : public Stage {
         addVersionIfMissing(74, "", "content/ground/plains-grass-ground-v03-seamless.png");
         int label = 1;
         for (Version& v : te.versions) v.label = std::format("{:03}", label++);
+        // Planície 017 (variant 74, "Capim de planície · V3 seamless") out of the picker (the user, 2026-10-29: "pode remover a
+        // planicie 017"); the others keep their numbers, and a map already painted with it still draws it.
+        std::erase_if(te.versions, [](const Version& v) { return v.variant == 74; });
         te.variantCount = std::max(te.variantCount, 75);
       }
       if (e.contains("terrainThumb") && e["terrainThumb"].contains(te.id) && e["terrainThumb"][te.id].is_string()) te.thumb = e["terrainThumb"][te.id].get<std::string>();
@@ -1001,8 +1005,9 @@ class MapEditorStage : public Stage {
     if (mode_ == Mode::Summon) {
       spawn = {{"name", std::format("{} {}", className(summonBrush_), summons + 1)}, {"classId", summonBrush_}, {"x", x}, {"y", y},
                {"level", std::string(key) == "playerSpawns" ? editor_.testLevel : editor_.enemyLevel0}};
-    } else if (mode_ == Mode::Player) {
-      spawn = {{"name", std::format("Herói {}", plain + 1)}, {"classId", "swordsman"}, {"x", x}, {"y", y}, {"level", editor_.testLevel}};
+    } else if (mode_ == Mode::Player) {  // the Personagens brush: a named hero keeps its name, a class is "Herói N"
+      spawn = {{"name", allyBrush_.first.empty() ? std::format("Herói {}", plain + 1) : allyBrush_.first}, {"classId", allyBrush_.second}, {"x", x}, {"y", y},
+               {"level", editor_.testLevel}};
     } else if (mode_ == Mode::Npc) {
       if (npcBrush_ == "breadLady" || !editor_.npcSpawn.contains(npcBrush_)) {
         spawn = {{"name", std::format("Civil {}", plain + 1)}, {"classId", "breadLady"}, {"x", x}, {"y", y}, {"level", editor_.enemyLevel0}};
@@ -1011,7 +1016,7 @@ class MapEditorStage : public Stage {
         spawn["x"] = x, spawn["y"] = y, spawn["level"] = editor_.enemyLevel0;
       }
     } else {
-      spawn = {{"name", std::format("Inimigo {}", plain + 1)}, {"classId", "miliciaV2"}, {"x", x}, {"y", y}, {"level", editor_.enemyLevel0}};
+      spawn = {{"name", std::format("Inimigo {}", plain + 1)}, {"classId", enemyBrush_.second}, {"x", x}, {"y", y}, {"level", editor_.enemyLevel0}};
     }
     list.push_back(std::move(spawn));
   }
@@ -2539,10 +2544,11 @@ class MapEditorStage : public Stage {
     const ImVec2 at = ImGui::GetCursorScreenPos();
     const bool clicked = ImGui::InvisibleButton(id, {size, size});
     ImDrawList* dl = ImGui::GetWindowDrawList();
-    constexpr std::string_view decor = "/game/decorations/";
+    constexpr std::string_view decor = "/game/decorations/", ownTexture = "/ember/";  // "/ember/x": the game's own content/x (Cooker architecture)
     constexpr std::string_view ownGround = "content/ground/", ownModel = "content/ui/thumbs3d/";
     const std::filesystem::path projectRoot = base_.artRoot.parent_path().parent_path().parent_path();
     const std::filesystem::path own = thumb.starts_with(decor) ? std::filesystem::path("decoracoes-2d") / thumb.substr(decor.size())
+                                      : thumb.starts_with(ownTexture)                               ? projectRoot / "content" / thumb.substr(ownTexture.size())
                                       : thumb.starts_with(ownGround) || thumb.starts_with(ownModel) ? projectRoot / thumb
                                                                                                      : std::filesystem::path();
     const UiImage* image = thumb.empty() ? nullptr
@@ -2557,13 +2563,44 @@ class MapEditorStage : public Stage {
       if (swatch.size() == 7) c = static_cast<unsigned>(std::strtoul(swatch.c_str() + 1, nullptr, 16));
       dl->AddRectFilled(at, {at.x + size, at.y + size}, IM_COL32((c >> 16) & 255, (c >> 8) & 255, c & 255, 255));
     }
-    if (text) {
+    if (text && !image) {  // (a model's "3D" stands in for a picture it has not got)
       const ImVec2 ts = ImGui::CalcTextSize(text);
       dl->AddText({at.x + (size - ts.x) / 2, at.y + (size - ts.y) / 2}, IM_COL32(240, 240, 240, 255), text);
     }
     dl->AddRect(at, {at.x + size, at.y + size}, selected ? IM_COL32(252, 211, 77, 255) : IM_COL32(74, 74, 74, 255), 0.0f, selected ? 2.0f : 1.0f);
     if (ImGui::IsItemHovered() && !tip.empty()) ImGui::SetTooltip("%s", tip.c_str());
     return clicked;
+  }
+
+  // Personagens (the user, 2026-10-29: "uma sessão de Personagens aliados e Inimigos para colocar no mapa"): every character the side
+  // can field, each with its one portrait (Portraits.h unitPortraitFile), searchable; the picked one is what a click on the board
+  // places. Allies: the named heroes first, then every fighting class; enemies: every fighting class (summons, civilians and road
+  // NPCs have their own brushes).
+  void drawCharacters(bool allies) {
+    ImGui::TextColored(ImColor(180, 180, 180), "%s", allies ? "PERSONAGENS ALIADOS" : "PERSONAGENS INIMIGOS");
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputTextWithHint("##unitsearch", "Procurar…", unitSearch_, sizeof(unitSearch_));
+    std::vector<std::pair<std::string, std::string>> list;  // (a named hero's name or "", class)
+    if (allies)
+      for (const auto& [name, classId] : editor_.heroes) list.push_back({name, classId});
+    for (const std::string& c : editor_.classOrder)
+      if (!isSummon(c) && !isCivil(c) && !isNpc(c)) list.push_back({"", c});
+    const std::string query = lower(unitSearch_);
+    std::pair<std::string, std::string>& brush = allies ? allyBrush_ : enemyBrush_;
+    ImGui::Text("Pincel: %s", (brush.first.empty() ? className(brush.second) : brush.first).c_str());
+    ImGui::BeginChild("##characters", {-1, 220.0f}, ImGuiChildFlags_Borders);
+    const float cell = 64, per = std::max(1.0f, std::floor((ImGui::GetContentRegionAvail().x + 6) / (cell + 8)));
+    int k = 0;
+    for (const auto& [name, classId] : list) {
+      const std::string label = name.empty() ? className(classId) : std::format("{} · {}", name, className(classId));
+      if (!query.empty() && lower(label).find(query) == std::string::npos && classId.find(query) == std::string::npos) continue;
+      if (k++ % static_cast<int>(per)) ImGui::SameLine();
+      const auto cls = editor_.classes.find(classId);
+      const std::string portrait = "/" + unitPortraitFile(name, cls == editor_.classes.end() ? classId : cls->second.sprite);
+      if (thumbButton(std::format("##u{}|{}", name, classId).c_str(), portrait, "#333333", cell, brush == std::pair{name, classId}, label))
+        brush = {name, classId};
+    }
+    ImGui::EndChild();
   }
 
   void drawModePanel() {
@@ -2612,9 +2649,11 @@ class MapEditorStage : public Stage {
     } else if (mode_ == Mode::Decoration || mode_ == Mode::Architecture) {
       drawDecorationPanel();
     } else {
-      if (mode_ == Mode::Player || mode_ == Mode::Enemy)
+      if (mode_ == Mode::Player || mode_ == Mode::Enemy) {
         hint("Clique numa casa vazia pra adicionar %s; clique numa casa ocupada (do mesmo lado) pra remover. Edite nome/classe na lista abaixo.",
                             mode_ == Mode::Player ? "um herói" : "um inimigo");
+        drawCharacters(mode_ == Mode::Player);
+      }
       if (mode_ == Mode::Npc) {
         std::string shown = npcBrush_;
         for (const auto& [id, name] : editor_.npcs)
@@ -2721,22 +2760,22 @@ class MapEditorStage : public Stage {
         if (t.id == brush_ && brush_ != "void") versions = &t.versions, swatch = t.swatch;
     if (versions) {
       ImGui::TextColored(ImColor(180, 180, 180), "VERSÕES");
+      // Each version as a preview of its tile with its number under it (the user, 2026-10-29: "colocar prévia de cada no editor").
       ImGui::BeginChild("##versions", {0, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
-      float x = 0;
-      const float avail = ImGui::GetContentRegionAvail().x;
+      constexpr float kPreview = 72;
+      const float step = kPreview + ImGui::GetStyle().ItemSpacing.x;
+      const int per = std::max(1, static_cast<int>((ImGui::GetContentRegionAvail().x + ImGui::GetStyle().ItemSpacing.x) / step));
+      int k = 0;
       for (const Version& v : *versions) {
-        const std::string text = v.label;
-        const float w = 34 + ImGui::CalcTextSize(text.c_str()).x + 12;
-        if (x > 0 && x + w < avail) ImGui::SameLine();
-        else x = 0;
+        if (k++ % per) ImGui::SameLine();
         ImGui::BeginGroup();
-        if (thumbButton(std::format("##v{}", v.variant).c_str(), v.thumb, brush_ == "plains" ? "#5f8c28" : swatch, 30, variant_ == v.variant,
-                        std::format("{} {}", cityMode_ ? std::string("City ·") : terrainName(brush_), v.label)))
+        if (thumbButton(std::format("##v{}", v.variant).c_str(), v.thumb, brush_ == "plains" ? "#5f8c28" : swatch, kPreview, variant_ == v.variant,
+                        std::format("{} {} · {}", cityMode_ ? std::string("City ·") : terrainName(brush_), v.label, variantName(brush_, v.variant))))
           variant_ = v.variant;
-        ImGui::SameLine();
-        ImGui::TextUnformatted(text.c_str());
+        const float tw = ImGui::CalcTextSize(v.label.c_str()).x;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, (kPreview - tw) * 0.5f));
+        ImGui::TextUnformatted(v.label.c_str());
         ImGui::EndGroup();
-        x += w;
       }
       ImGui::EndChild();
     }
@@ -2809,7 +2848,8 @@ class MapEditorStage : public Stage {
           if (k) ImGui::SameLine();
           const bool armed = decoBrush_ == kit[k].second;
           if (armed) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-          if (ImGui::Button(kit[k].first)) decoBrush_ = kit[k].second, thickWalls_ = false, selected_.reset(), turningDeco_ = false;
+          // (each kit has its own Parede / Janela / Porta: the id keeps the buttons apart, ImGui's "conflicting ID")
+          if (ImGui::Button(std::format("{}##{}", kit[k].first, kit[k].second).c_str())) decoBrush_ = kit[k].second, thickWalls_ = false, selected_.reset(), turningDeco_ = false;
           if (armed) ImGui::PopStyleColor();
         }
       };
@@ -2898,7 +2938,7 @@ class MapEditorStage : public Stage {
       const bool model = !m.model3d.empty();
       const std::string thumb = model ? (m.props3d && m.wallTexture.empty() ? modelThumb(id) : m.wallTexture) : editor_.decoThumb[id];
       if (thumbButton(("##d" + id).c_str(), thumb, "#333333", cell, decoBrush_ == id, std::format("{} · {} hexes", decoName(id), catalog_.decoration(id) ? catalog_.decoration(id)->footprint.size() : 0),
-                      model && thumb.empty() ? "3D" : nullptr))
+                      model ? "3D" : nullptr))
         decoBrush_ = id, selected_.reset(), turningDeco_ = false;
       if (!model) {
         // the dice: in Gerar terreno's draw or out of it
@@ -3151,7 +3191,7 @@ class MapEditorStage : public Stage {
       ImGui::PushID(static_cast<int>(k));
       const DecoMeta& m = meta(id);
       const std::string thumb = !m.model3d.empty() ? m.wallTexture : m.art.empty() ? editor_.decoThumb[id] : m.art;
-      thumbButton("##dl", thumb, "#333333", 22, false, "", !m.model3d.empty() && m.wallTexture.empty() ? "3D" : nullptr);
+      thumbButton("##dl", thumb, "#333333", 22, false, "", !m.model3d.empty() ? "3D" : nullptr);
       ImGui::SameLine();
       ImGui::Text("%s", decoName(id).c_str());
       ImGui::SameLine(ImGui::GetContentRegionAvail().x - 40);
@@ -3718,6 +3758,9 @@ class MapEditorStage : public Stage {
   bool dirty_ = false;
   ember::Json previewSettings_;  // the draft's settings the open preview was made with (previewSettings)
   // The brush stroke (Terreno / Elevação dragged over the preview): the hexes painted so far, the last one, the hexes raised.
+  // Personagens: what a click in Herói / Inimigo places (a named hero's name or "", class), and the palette's search.
+  std::pair<std::string, std::string> allyBrush_{"", "swordsman"}, enemyBrush_{"", "miliciaV2"};
+  char unitSearch_[64] = {};
   bool stroking_ = false, strokeEdited_ = false;
   std::set<int> strokeCells_, strokeRaised_;
   std::optional<std::pair<int, int>> strokeLast_;

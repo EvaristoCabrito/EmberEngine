@@ -74,6 +74,9 @@ inline Stage::Music forMission(const MissionEntry& m) {
   if (!m.battle.empty()) {
     if (const auto it = known.find(m.battle); it != known.end()) return it->second;
     std::ifstream in(m.battle, std::ios::binary);
+    // Not made yet (a map saved in the editor is prepared after its briefing opens): the id's theme for now, the file's own track
+    // once it exists (cached, it kept the theme for the whole session: the editor's Trilha never played in the briefing).
+    if (!in) return forMissionId(m.draftId);
     const nlohmann::json j = in ? nlohmann::json::parse(in, nullptr, false) : nlohmann::json();
     return known[m.battle] = fromBattle(j, forMissionId(m.draftId));
   }

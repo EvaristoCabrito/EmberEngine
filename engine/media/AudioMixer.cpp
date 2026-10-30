@@ -287,6 +287,7 @@ void AudioMixer::playMusic(const std::string& file, float base) {
   }
   t->feeding = true;
   t->wake.notify_all();
+  if (file != current_) logInfo("music: {} ({})", file, t->file.generic_string());  // the track each screen plays, in the game's log
   current_ = file;
   paused_ = false;
 }
