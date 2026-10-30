@@ -1877,6 +1877,10 @@ para cada tipo de terreno")
 
 ## Kept, not in use (the user, 2026-10-22: nothing is thrown away; list here what was made by mistake or is not used)
 
+- `build/meshes/props-v31.pak` + `build/meshes/src-v31/` (hard links) + `props-v31-cook.log` (2026-10-29): props-v16's set + the upright
+  Wisp tree v03, cooked for the tree before the other session's commit removing 158 primitive props (700391d8) was seen. Would bring
+  those back: JOGAR stays on props-v17 (which already carries v03). Not used.
+
 - `content/models/blender/kit_spells.py` (2026-10-29): a dagger of our own built from scratch for the Nuvem de Adagas, written when the
   order was to take the Poly Haven dagger's sheath off first, then try an arcane version (the user: "você está pulando estágios").
   Never run. The order's files: `content/models/polyhaven/ornate_medieval_dagger-v01.glb` (no sheath: import_polyhaven.py with keepNode)
