@@ -156,7 +156,6 @@ std::optional<MapDraft> MapDraft::fromJson(const json& d) {
       m.decorations.push_back(std::move(o));
     }
   m.playerSpawns = spawns(d, "playerSpawns");
-  m.water3d = Water3DMap::fromDraft(d);
   m.enemySpawns = spawns(d, "enemySpawns");
   m.neutralSpawns = spawns(d, "neutralSpawns");
   m.environment = str(d, "environment");

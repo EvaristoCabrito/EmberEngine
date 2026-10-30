@@ -182,6 +182,19 @@
       "footprint": "pair"
     },
     {
+      "id": "ember-arch-mosteiro-door-locked",
+      "name": "Porta trancada do Mosteiro 3D · 2 hexes",
+      "model3d": "door",
+      "emberStyle": "door",
+      "doorStyle": "mosteiro-locked",
+      "locked": true,
+      "wallTexture": "/ember/textures/walls/gothic-stone-v01.jpg",
+      "wallThicknessScale": 1.9,
+      "textureRepeat": 3.2,
+      "architectureSpan": 2,
+      "footprint": "pair"
+    },
+    {
       "id": "ember-arch-mosteiro-stairs-up",
       "name": "Escada que sobe do Mosteiro 3D · 2 hexes",
       "model3d": "doorway",

@@ -38,5 +38,4 @@ ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/resolve.hlsl STAGES cs:CS
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/resolve_panorama.hlsl STAGES cs:CSResolve cs:CSSky)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/terrain.hlsl STAGES vs:VSMain ps:PSMain vs:VSShadow ps:PSShadow)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/water.hlsl STAGES vs:VSMain ps:PSMain)
-ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/water3d.hlsl STAGES vs:VSMain ps:PSMain)
 ember_shaders(Sandbox FILE ${CMAKE_SOURCE_DIR}/shaders/lights.hlsl STAGES cs:CSClusters)

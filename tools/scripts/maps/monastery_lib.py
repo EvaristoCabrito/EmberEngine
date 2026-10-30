@@ -19,7 +19,7 @@ PORTAL, DOOR, GATE = 'ember-arch-mosteiro-portal', 'ember-arch-mosteiro-door', '
 STAIRS_UP, STAIRS_DOWN = 'ember-arch-mosteiro-stairs-up', 'ember-arch-mosteiro-stairs-down'
 # the precinct's muralha (openAir: joins and shadows like a wall, encloses no room: the yard stays under the sky)
 RAMPART, RAMPART_TORCH, RAMPART_GATE = 'ember-arch-mosteiro-rampart', 'ember-arch-mosteiro-rampart-torch', 'ember-arch-mosteiro-rampart-gate'
-LOCKED = 'dungeon-stone-door'  # a lock: "Arrombar" opens it (BattleExport: every model3d door decoration is a lock)
+LOCKED = 'ember-arch-mosteiro-door-locked'  # the kit's locked 3D door (2026-10-30, the user: "we have real 3D doors, stop using 2D props"): a lock, "Arrombar" opens it
 ARCH = {WALL, WINDOW, SLIT, TORCH, PORTAL, DOOR, GATE, STAIRS_UP, STAIRS_DOWN, LOCKED, RAMPART, RAMPART_TORCH, RAMPART_GATE}
 OPEN_PIECES = {PORTAL, DOOR, GATE, RAMPART_GATE}  # the party passes (the door opens for whoever comes)
 PASSABLE_PROPS = {'light-candle', 'ember-interior-worn-rug', 'floor-connector', 'city-shrineCandle', 'ember-nature-leaf-litter'}
@@ -227,7 +227,7 @@ class Floor:
         draft = dict(base)
         n = self.cols * self.rows
         draft.update({'id': self.id, 'cols': self.cols, 'rows': self.rows, 'tiles': list(self.tiles), 'tileVariants': [None] * n,
-                      'terrainElevations': [0] * n, 'waterLevels': [0] * n, 'tileRots': [0] * n, 'decorations': self.decorations,
+                      'terrainElevations': [0] * n, 'waterLevels': [],  # never a water sheet over the floor (the user, 2026-10-30) 'tileRots': [0] * n, 'decorations': self.decorations,
                       'elementalFx': [], 'playerSpawns': self.players, 'enemySpawns': self.enemies, 'neutralSpawns': self.neutrals,
                       'win': 'rout', 'hub': False, 'explore': True, 'locationId': 'mosteiro'})
         for key in ('aboveGround', 'underground', 'emberTiles', 'emberFloor', 'emberBaseLevels'):

@@ -17,7 +17,6 @@
 
 #include <nlohmann/json.hpp>
 
-#include "world/Water3D.h"
 #include "world/Hex.h"
 
 namespace ember {
@@ -150,8 +149,6 @@ struct MapDraft {
   // an image under content/backdrops. This is separate from per-hex tile variants and from emberFloor below the board.
   std::optional<std::string> groundImage;
   std::optional<double> sunIntensity, ambientIntensity, bloomSlider;
-  // Ember's 3D water (the Map Editor's Água 3D: waterLevels, waterFootprints, waterPatches, waterVersion).
-  Water3DMap water3d;
 
   static std::optional<MapDraft> load(const std::filesystem::path& mapJson);
   // The same from a draft already in memory (Ember's MapDraft JSON: the map editor's working copy).

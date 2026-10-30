@@ -1853,6 +1853,20 @@ e tem a diretoria macabra do monasterio")
   editor save of 03:50). Also openable through the Map Editor (Testar) or the Cooker + `--map/--scene/--battle-rules` line in the doc. Verified: the three floors open in release (scene built, every unit in play, the
   indoor floors with window light + probes), captures `captures/mosteiro/`. Not verified: the conversations and the locked doors in
   the window, the stairs between floors in play (code path only), the look (the user judges).
+- **Água 3D REMOVED (2026-10-30, the user: "water 3D não deveria existir, só a água normal do jogo", "remover completamente do jogo"):**
+  the Map Editor's painted water sheet is gone from the game: `engine/world/Water3D.*`, `shaders/water3d.hlsl`, the renderer's
+  water3d pipeline / push / draw, `BoardGround::buildWater3D / water3d()`, `MapDraft::water3d`, the editor's "Água 3D" brush and
+  `Cooker check-water3d` deleted (in git history before this commit). A map's `waterLevels` / `waterFootprints` / `waterPatches` are
+  ignored (the editor drops them on a resize); my generators wrote `waterLevels` = 0 on every cell (mosteiro 001-006, the
+  underground 001s, interlude-city / placeholder 002-003: a sheet over the whole floor): `monastery_lib.py` writes it empty now. The
+  game's water = the water TILES (water.hlsl, the looks in looks/water). Never bring the sheet back.
+- **Locked doors in 3D (2026-10-30, the user: "we have real 3D doors, stop using 2D props"):** `ember-arch-mosteiro-door-locked`
+  (architecture.json `"locked": true` → ArchitectureDef::locked, catalog_models.py copies it): the kit's animated door as a lock. BattleExport
+  lists every locked kit door among the battle's locks (`lockedKitDoors`, read from editor-catalog.json's architectureDefs; kind doorDecor on
+  the anchor hex, no cell changed by the file); MapStage `DoorState::locked` keeps it shut and solid until `lockOpenedAt` (Arrombar), then it
+  opens for anyone. `swap_monastery_locked_doors.py` wrote mosteiro008 / andar-3004 / masmorras002 / laboratorio002 (the 2D
+  `dungeon-stone-door` swapped, nothing else). The kit doors that are NOT locked still open for anyone (no lock). Never place
+  `dungeon-stone-door` on a Monastery map again.
 - **No stairs in combat (2026-10-30, the user: "não seja possível usar escadas no meio do combate, apenas warp", "deve ter uma mensagem
   avisando"):** on every map, with the turns running (`!battle_->roaming()`) a floor connector's prompt is only "Você não pode continuar
   em meio ao combate." + Ok (`drawFinishPrompt`); in free roam the Sim / Não question as before. Proven by release captures

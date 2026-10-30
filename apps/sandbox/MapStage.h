@@ -885,18 +885,14 @@ class MapStage final : public Stage {
     }
     {
       WaterView water = ground_.water(look_);
-      // The panel's one "Água" sets both waters of the map (the user, 2026-10-26: "eu quero todas no mesmo lugar"): 0 padrão =
-      // each water as the map has it (the board's water tiles their own versions, look 003 unless Terreno → Água says otherwise:
-      // WaterView::lookCount; the painted sheet its ThreeWater: shader look 1), 1 original everywhere (the sheet's ThreeWater),
-      // 2..4 = looks 001..003 on all of it (the sheet's shader looks 2..4). The sheet's "rio" (shader look 0) is no longer offered.
+      // The panel's "Água" (the user, 2026-10-26: "eu quero todas no mesmo lugar"): 0 padrão = the board's water tiles as the map
+      // has them (their own versions, look 003 unless Terreno → Água says otherwise: WaterView::lookCount), 1 original everywhere,
+      // 2..4 = looks 001..003 on all of it. The game's water is its water tiles only: the Água 3D sheet is gone (the user,
+      // 2026-10-30: "só a água normal do jogo").
       static constexpr uint32_t kBoardWater[5] = {0u, WaterView::kOriginalEverywhere, 1u, 2u, 3u};
-      static constexpr uint32_t kWater3dShader[5] = {1u, 1u, 2u, 3u, 4u};
       const int choice = std::clamp(waterLook_, 0, 4);
       water.look = kBoardWater[choice];
       renderer.setWater(water);
-      Water3DView water3d = ground_.water3d(look_);
-      water3d.look = kWater3dShader[choice];
-      renderer.setWater3d(water3d);
     }
     // The sky's reflection map and the cloud sheet (panel "Reflexo do céu", "Nuvens"); the sheet sits well above the board.
     renderer.setSkyReflection(skyReflect_ == 1);
@@ -2379,6 +2375,11 @@ class MapStage final : public Stage {
     }
     const ember::EditorCatalog& catalog = architectureCatalog();
     const ember::ArchitectureDefs& defs = architectureDefs();
+    // A locked door (ArchitectureDef::locked, 2026-10-30): shut, whoever stands beside it, until the battle's lock at its anchor hex
+    // (kind doorDecor, this id) is picked open with a Gazua; then it opens for anyone like the others.
+    bool locked = false;
+    std::string id;
+    int anchorX = 0, anchorY = 0;
     const ember::HexLayout& L = board_->layout();
     const double sq3 = std::sqrt(3.0);
     auto inBoard = [&](int c, int r) { return c >= 0 && r >= 0 && c < L.cols && r < L.rows; };
@@ -2737,6 +2738,7 @@ class MapStage final : public Stage {
     }
     wallCells_ = roomJoins;
     buildRoof();
+        state.locked = def->locked, state.id = p.id, state.anchorX = p.x, state.anchorY = p.y;
     // The probes bake once the first frame has laid the room's fires (buildLights): their light bounces into the probes too.
     probeUploaded_ = false;
     probeBakePending_ = true;
@@ -2772,7 +2774,9 @@ class MapStage final : public Stage {
     bool moved = false;
     for (auto& [index, d] : doors_) {
       bool near = false;
-      if (battle_)
+      // A locked door stays shut until its lock is picked (Arrombar); the lock sits on the door's anchor hex.
+      const bool shut = d.locked && !lockOpenedAt(d.id, "doorDecor", d.anchorX, d.anchorY);
+      if (battle_ && !shut)
         for (const ember::BattleUnit& u : battle_->units()) {
           if (!u.alive) continue;
           for (const auto& [cx, cy] : d.cells)
@@ -3344,6 +3348,11 @@ class MapStage final : public Stage {
     ImGui::Begin("##chestloot", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::PushFont(uiFont(UiFont::Ui), 16.0f);
     ImGui::TextUnformatted((loot.unit + tr(" arrombou o baú", " picked the chest's lock")).c_str());
+    return lockOpenedAt(id, kind, c, r);
+  }
+  // The same, by the lock's hex.
+  bool lockOpenedAt(const std::string& id, const char* kind, int c, int r) const {
+    if (!battle_) return false;
     ImGui::PopFont();
     ImGui::PushFont(uiFont(UiFont::Ui), 15.0f);
     {  // Ember's GoldAmount: the pile of coins, then "+N Gold"

@@ -84,6 +84,16 @@ o Mestre Infusor (cultistV2, nível 18), O Açougueiro e um Horror. Sem NPC neut
 Limites: libertar um preso = abrir a cela e falar (nenhuma mecânica de resgate / escolta existe); o chefe não encerra o mapa (os mapas
 de exploração terminam só num waypoint: a escada); os monstros são placeholders do user ("depois troco por mais apropriados").
 
+**Portas trancadas em 3D (2026-10-30, o user: "we have real 3D doors, stop using 2D props"):** a porta de pedra 2D
+(`dungeon-stone-door`) saiu dos cinco mapas; no lugar, a peça nova do kit `ember-arch-mosteiro-door-locked` (architecture.json
+`"locked": true`, par de hexes, a mesma porta animada do kit), uma fechadura: o exportador a lista entre os `locks` do combate
+("Arrombar" ao lado dela, kind doorDecor, no hex âncora: BattleExport `lockedKitDoors`, lidos do catálogo do editor), e o MapStage
+mantém as folhas fechadas e as células sólidas até a Gazua abri-la (`DoorState::locked`, `updateDoors` / `lockOpenedAt`); daí em diante
+abre para quem chega, como as outras. Mapas: `mosteiro008`, `mosteiro-andar-3004`, `mosteiro-masmorras002`, `mosteiro-laboratorio002`
+(`tools/scripts/maps/swap_monastery_locked_doors.py`: o serial mais novo de cada id com as portas trocadas, nada mais; o Andar II não
+tinha porta trancada). `monastery_lib.LOCKED` é a peça nova. Limite: a fechadura fica só no hex âncora (o da esquerda) da porta de
+dois hexes; o editor não tem Abrir porta / Fechar passagem para ela (sem doorVariants).
+
 **Escadas em combate (2026-10-30, o user: "não seja possível usar escadas no meio do combate, apenas warp", "deve ter uma mensagem
 avisando"):** em todo mapa, com os turnos rodando (`!battle_->roaming()`), parar num conector de andar abre só o aviso "Você não pode
 continuar em meio ao combate." com um Ok (`MapStage::drawFinishPrompt`); no movimento livre a pergunta Sim / Não de sempre. Provado nas

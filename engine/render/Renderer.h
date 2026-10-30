@@ -230,8 +230,6 @@ class Renderer {
   }
   // The board's water (BoardGround::water); empty = none.
   void setWater(const WaterView& water) { water_ = water; }
-  // Ember's 3D water (BoardGround::water3d); empty = none.
-  void setWater3d(const Water3DView& water) { water3d_ = water; }
   // The room's diffuse light probes (Luz das janelas; world/ProbeBake.h, shaders/probes.hlsl), after Final Fantasy XV's: the baked
   // grid, relit every frame from the hour's sky (its transfer) and the key light (its bounce, at the key's real direction). `bake`
   // per probe: valid (0 / 1), the 81 transfer numbers, keyDirections.size() x 4 key numbers. Null = none (the sky's SH as before).
@@ -480,7 +478,6 @@ class Renderer {
   VkPipeline terrainPipeline_ = VK_NULL_HANDLE;
   VkPipeline terrainShadowPipeline_ = VK_NULL_HANDLE;
   VkPipeline waterPipeline_ = VK_NULL_HANDLE;
-  VkPipeline water3dPipeline_ = VK_NULL_HANDLE;
   VkPipeline meshShadowPipeline_ = VK_NULL_HANDLE, spriteShadowPipeline_ = VK_NULL_HANDLE, lightsPipeline_ = VK_NULL_HANDLE;
   std::vector<LocalLight> lights_;
   float bloom_ = 0.0f;
@@ -592,7 +589,6 @@ class Renderer {
   uint32_t fogMaskIndex_ = kNoIndex;
   float fogSight(glm::vec3 position) const;  // 1 = in sight .. 0 = remembered or never seen (lighting.hlsli)
   WaterView water_;
-  Water3DView water3d_;
   Image shadowMap_;
   uint32_t shadowMapIndex_ = kNoIndex;
   VkSampler shadowSampler_ = VK_NULL_HANDLE;
@@ -649,7 +645,7 @@ class Renderer {
   Image waterBackdrop_;
   uint32_t waterBackdropIndex_ = kNoIndex;
   bool waterRefracts() const {
-    return (water_ && (water_.look == 3 || (water_.look == 0 && water_.lookCount[3] > 0))) || (water3d_ && water3d_.look == 4);
+    return water_ && (water_.look == 3 || (water_.look == 0 && water_.lookCount[3] > 0));
   }
   VkExtent2D hizSize_{};
   VkSampler minSampler_ = VK_NULL_HANDLE;

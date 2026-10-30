@@ -43,7 +43,6 @@
 #include "world/MapDressing.h"
 #include "ArchitectureCooker.h"
 #include "world/Architecture.h"
-#include "world/Water3D.h"
 #include "PakWriter.h"
 #include "BattleCheck.h"
 #include "world/Campaign.h"
@@ -473,11 +472,6 @@ int checkArchitectureCommand(const std::vector<std::string_view>& args) {
   return ember::checkArchitecture(std::filesystem::path(args[1]), defs) == 0 ? 0 : 1;
 }
 
-int checkWater3DCommand(const std::vector<std::string_view>& args) {
-  if (args.size() != 1) fatal("usage: Cooker check-water3d <water3d-refs.json (export_water3d_refs.ts)>");
-  return ember::checkWater3D(std::string(args[0])) == 0 ? 0 : 1;
-}
-
 int checkDressCommand(const std::vector<std::string_view>& args) {
   if (args.size() != 2) fatal("usage: Cooker check-dress <editor-catalog.json> <dress-refs.json (export_dress_refs.ts)>");
   ember::EditorCatalog catalog;
@@ -517,7 +511,6 @@ int main(int argc, char** argv) {
   if (command == "check-dress") return checkDressCommand(args);
   if (command == "check-architecture") return checkArchitectureCommand(args);
   if (command == "architecture") return architecture(args);
-  if (command == "check-water3d") return checkWater3DCommand(args);
   if (command == "ground") return ground(args);
   ember::logError("unknown command {}", command);
   return 1;

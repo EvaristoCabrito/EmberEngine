@@ -10,7 +10,7 @@
 //               closing dialogues, victory, world-map location (and its planned slots), the switches; lighting
 //   Terreno     paint a terrain with one of its versions (Versões, City, Icelands), turn a hex's art (Girar hex)
 //   Elevação    raise / lower / level a hex and its rings
-//   Água 3D     paint or remove water patches (version, shape, size, level, area)
+
 //   Decoração   the props by section; a click places on the anchor hex or selects one there (Delete removes it),
 //               Girar objeto turns it; the dice keep a prop out of Gerar terreno; the selected prop's rules
 //               (Bloquear caminho, Alto terreno) and a floor connector's target (Passagem de andar)
@@ -164,7 +164,7 @@ class MapEditorStage : public Stage {
       }
       if (step.starts_with("mode:")) {  // a brush's panel opened: paint water deco arch props hero summon
         const std::string m = step.substr(5);
-        mode_ = m == "water" ? Mode::Water : m == "deco" ? Mode::Decoration : m == "arch" || m == "props" ? Mode::Architecture : m == "hero" ? Mode::Player
+        mode_ = m == "deco" ? Mode::Decoration : m == "arch" || m == "props" ? Mode::Architecture : m == "hero" ? Mode::Player
                 : m == "summon" ? Mode::Summon : m == "elev" ? Mode::Elevation : Mode::Paint;
         architectureDecorations_ = m == "props";
         if (m == "arch" || m == "props") decoBrush_ = m == "props" ? "prop-3d-tavern-table" : "wall-3d-stone";
@@ -184,7 +184,6 @@ class MapEditorStage : public Stage {
       else if (mode == "raise" || mode == "lower") mode_ = Mode::Elevation, elevationTool_ = mode == "raise" ? 0 : 1, elevationRadius_ = arg.empty() ? 0 : std::atoi(arg.c_str());
       else if (mode == "deco") mode_ = Mode::Decoration, decoBrush_ = arg;
       else if (mode == "arch") mode_ = Mode::Architecture, decoBrush_ = arg, architectureDecorations_ = meta(arg).props3d;
-      else if (mode == "water") mode_ = Mode::Water, waterLevel_ = arg.empty() ? 0.5 : std::atof(arg.c_str());
       else if (mode == "turn") mode_ = Mode::Decoration, turningDeco_ = true;
       else if (mode == "hero") mode_ = Mode::Player;
       else if (mode == "enemy") mode_ = Mode::Enemy;
@@ -693,7 +692,6 @@ class MapEditorStage : public Stage {
     if (x < 0 || y < 0 || x >= cols() || y >= rows()) return;
     heldUnit_.reset();
     const int i = y * cols() + x;
-    if (mode_ == Mode::Water) return paintWater(x, y, point);
     if (mode_ == Mode::Elevation) return elevate(x, y);
     if (mode_ == Mode::Paint) {
       if (turning_) {
@@ -757,58 +755,6 @@ class MapEditorStage : public Stage {
       }
       frontier = std::move(next);
     }
-  }
-
-  // Água 3D: water patches of the brush's level, size and shape on the hex and its rings (or removed around them),
-  // positioned in Ember's flat map units (the clicked point, else the hex centre).
-  void paintWater(int x, int y, std::optional<glm::vec3> point) {
-    beginEdit();
-    const int n = cols() * rows();
-    ember::Json& levels = boardArray("waterLevels", nullptr);
-    ember::Json& footprints = boardArray("waterFootprints", nullptr);
-    ember::Json patches = arr("waterPatches");
-    const double sq3 = std::sqrt(3.0);
-    std::optional<std::pair<double, double>> at;
-    if (point) {
-      const ember::HexLayout L = ember::makeLayout(cols(), rows());
-      at = std::pair{point->x + L.ox + sq3 / 2, point->z + L.oz + 3.4};
-    }
-    auto dist = [&](const ember::Json& p, double px, double py, bool square) {
-      const double dx = p.value("x", 0.0) - px, dy = p.value("y", 0.0) - py;
-      return square ? std::max(std::abs(dx), std::abs(dy)) : std::hypot(dx, dy);
-    };
-    const std::string shape = waterSquare_ ? "square" : "round";
-    std::vector<std::pair<int, int>> frontier{{x, y}};
-    std::set<int> visited;
-    for (int ring = 0; ring <= waterRadius_; ++ring) {
-      std::vector<std::pair<int, int>> next;
-      for (const auto& [cx, cy] : frontier) {
-        if (cx < 0 || cy < 0 || cx >= cols() || cy >= rows()) continue;
-        const int index = cy * cols() + cx;
-        if (!visited.insert(index).second) continue;
-        if (tileAt(index) != "void" || waterErase_) {
-          double px, py;
-          if (at) px = at->first + sq3 * (cx - x + 0.5 * ((cy & 1) - (y & 1))), py = at->second + 1.5 * (cy - y);
-          else px = sq3 * (cx + 0.5 * (cy & 1) + 0.5), py = 2.4 + 1.5 * cy + 1;
-          ember::Json kept = ember::Json::array();
-          for (const ember::Json& p : patches) {
-            if (waterErase_) {
-              if (dist(p, px, py, at && waterSquare_) > (waterSize_ + p.value("size", 0.0)) * 1.25) kept.push_back(p);
-            } else if (!(std::hypot(p.value("x", 0.0) - px, p.value("y", 0.0) - py) < 0.001 && p.value("size", 0.0) == waterSize_ &&
-                         p.value("shape", "") == shape && p.value("level", 0.0) == waterLevel_)) {
-              kept.push_back(p);
-            }
-          }
-          patches = std::move(kept);
-          if (waterErase_) levels[index] = nullptr, footprints[index] = nullptr;
-          else patches.push_back(ember::Json{{"x", px}, {"y", py}, {"level", waterLevel_}, {"size", waterSize_}, {"shape", shape}});
-        }
-        for (const ember::OverworldHex& nb : ember::Overworld::neighbors(cx, cy)) next.push_back({nb.col, nb.row});
-      }
-      frontier = std::move(next);
-    }
-    (void)n;
-    draft_["waterPatches"] = patches;
   }
 
   // toggleDecoration: a click on a placed prop selects it (another 3D piece over a 3D piece replaces it); elsewhere the
@@ -1139,16 +1085,11 @@ class MapEditorStage : public Stage {
     const int oc = cols(), orows = rows();
     auto get = [&](const char* key, int i) -> ember::Json { return draft_.contains(key) && draft_[key].is_array() && i < static_cast<int>(draft_[key].size()) ? draft_[key][i] : ember::Json(); };
     const bool hadElev = draft_.contains("terrainElevations") && draft_["terrainElevations"].is_array();
-    const bool hadLevels = draft_.contains("waterLevels") && draft_["waterLevels"].is_array();
-    const bool hadFoot = draft_.contains("waterFootprints") && draft_["waterFootprints"].is_array();
-    ember::Json tiles = ember::Json::array(), variants = ember::Json::array(), rots = ember::Json::array(), elev = ember::Json::array(), levels = ember::Json::array(),
-             foot = ember::Json::array();
+    ember::Json tiles = ember::Json::array(), variants = ember::Json::array(), rots = ember::Json::array(), elev = ember::Json::array();
     for (int y = 0; y < r; ++y)
       for (int x = 0; x < c; ++x) {
         const bool in = y < orows && x < oc;
         const int i = y * oc + x;
-        foot.push_back(in && !get("waterFootprints", i).is_null() ? get("waterFootprints", i) : ember::Json());
-        levels.push_back(in && !get("waterLevels", i).is_null() ? get("waterLevels", i) : ember::Json());
         tiles.push_back(in && get("tiles", i).is_string() ? get("tiles", i) : ember::Json(baseTile));
         variants.push_back(in && get("tileVariants", i).is_number() ? get("tileVariants", i) : ember::Json(baseVariant));
         rots.push_back(in && get("tileRots", i).is_number() ? get("tileRots", i) : ember::Json(0));
@@ -1159,16 +1100,8 @@ class MapEditorStage : public Stage {
     draft_["cols"] = c, draft_["rows"] = r;
     draft_["tiles"] = tiles, draft_["tileVariants"] = variants, draft_["tileRots"] = rots;
     if (hadElev) draft_["terrainElevations"] = elev;
-    if (hadLevels) draft_["waterLevels"] = levels;
-    if (hadFoot) draft_["waterFootprints"] = foot;
-    if (draft_.contains("waterPatches") && draft_["waterPatches"].is_array()) {
-      ember::Json kept = ember::Json::array();
-      for (const ember::Json& p : draft_["waterPatches"]) {
-        const double px = p.value("x", 0.0), py = p.value("y", 0.0);
-        if (px >= 0 && px < (c + 0.5) * std::sqrt(3.0) && py >= 2.4 && py < 2.4 + r * 1.5 + 0.5) kept.push_back(p);
-      }
-      draft_["waterPatches"] = kept;
-    }
+    // The Água 3D sheet is gone from the game (the user, 2026-10-30: "só a água normal do jogo"): its fields leave a resized map.
+    for (const char* key : {"waterLevels", "waterFootprints", "waterPatches"}) draft_.erase(key);
     ember::Json decos = ember::Json::array();
     for (const ember::Json& p : arr("decorations")) {
       const ember::CatalogDecoration* def = catalog_.decoration(p.value("id", ""));
@@ -1972,7 +1905,7 @@ class MapEditorStage : public Stage {
 
   // --- the panel (MapEditorScreen's page, left of the board) ---------------------------------------------------------------
 
-  enum class Mode { Paint, Elevation, Water, Decoration, Architecture, Player, Enemy, Npc, Summon };
+  enum class Mode { Paint, Elevation, Decoration, Architecture, Player, Enemy, Npc, Summon };
 
   // Ember's muted help lines (text-muted), wrapped at the panel's edge.
   static void hint(const char* fmt, ...) IM_FMTARGS(1) {
@@ -2505,12 +2438,13 @@ class MapEditorStage : public Stage {
     ImGui::SameLine();
     int grid = -1;
     if (toggleRow({{"Hexágono", !gridSquare_}, {"Quadrado", gridSquare_}}, grid)) gridSquare_ = grid == 1;
-    static const std::pair<int, const char*> kModes[] = {{0, "Terreno"}, {1, "Elevação"}, {2, "Água 3D"},  {3, "Decoração"}, {4, "3D Walls"},
-                                                         {5, "3D Decorations"}, {6, "Herói"}, {7, "Inimigo"}, {8, "NPC"},       {9, "Invocação"}};
+    // (No Água 3D brush: the game draws only its own water tiles; the user, 2026-10-30.)
+    static const std::pair<int, const char*> kModes[] = {{0, "Terreno"}, {1, "Elevação"}, {2, "Decoração"}, {3, "3D Walls"}, {4, "3D Decorations"},
+                                                         {5, "Herói"},   {6, "Inimigo"},  {7, "NPC"},       {8, "Invocação"}};
     std::vector<std::pair<std::string, bool>> items;
     for (const auto& [k, label] : kModes) {
-      const bool on = k == 4 ? mode_ == Mode::Architecture && !architectureDecorations_
-                      : k == 5 ? mode_ == Mode::Architecture && architectureDecorations_
+      const bool on = k == 3 ? mode_ == Mode::Architecture && !architectureDecorations_
+                      : k == 4 ? mode_ == Mode::Architecture && architectureDecorations_
                                : mode_ == modeOf(k);
       items.push_back({label, on});
     }
@@ -2518,11 +2452,11 @@ class MapEditorStage : public Stage {
     if (toggleRow(items, pressed)) {
       turning_ = turningDeco_ = false;
       mode_ = modeOf(pressed);
-      if (pressed == 4 || pressed == 5) {
-        architectureDecorations_ = pressed == 5;
-        decoBrush_ = pressed == 5 ? "prop-3d-tavern-table" : thickWalls_ ? "castle-3d-thick" : "wall-3d-stone";
+      if (pressed == 3 || pressed == 4) {
+        architectureDecorations_ = pressed == 4;
+        decoBrush_ = pressed == 4 ? "prop-3d-tavern-table" : thickWalls_ ? "castle-3d-thick" : "wall-3d-stone";
       }
-      if (pressed == 3 && !meta(decoBrush_).model3d.empty() && !editor_.decorationOrder.empty()) decoBrush_ = editor_.decorationOrder.front();
+      if (pressed == 2 && !meta(decoBrush_).model3d.empty() && !editor_.decorationOrder.empty()) decoBrush_ = editor_.decorationOrder.front();
     }
     const float right = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
     if (ImGui::SmallButton("Party completa")) addHeroes(editor_.heroes);
@@ -2534,8 +2468,8 @@ class MapEditorStage : public Stage {
     hint("Nível de cada um é editável na lista abaixo.");
   }
   static Mode modeOf(int k) {
-    static const Mode m[] = {Mode::Paint, Mode::Elevation, Mode::Water, Mode::Decoration, Mode::Architecture, Mode::Architecture, Mode::Player, Mode::Enemy, Mode::Npc, Mode::Summon};
-    return m[std::clamp(k, 0, 9)];
+    static const Mode m[] = {Mode::Paint, Mode::Elevation, Mode::Decoration, Mode::Architecture, Mode::Architecture, Mode::Player, Mode::Enemy, Mode::Npc, Mode::Summon};
+    return m[std::clamp(k, 0, 8)];
   }
 
   // A small image button for a thumbnail (an Ember public file; a decoration's from decoracoes-2d, the art the game cooks);
@@ -2604,40 +2538,7 @@ class MapEditorStage : public Stage {
   }
 
   void drawModePanel() {
-    if (mode_ == Mode::Water) {
-      int pick = -1;
-      if (toggleRow({{"Pintar água", !waterErase_}, {"Remover água", waterErase_}}, pick)) waterErase_ = pick == 1;
-      static const char* kVersions[4][2] = {{"v1", "Água V1 — clássica"}, {"v2", "Água V2 — lago realista"}, {"v3", "3D Water V3"}, {"v4", "3D Water V4"}};
-      const std::string version = draft_.value("waterVersion", "v2");
-      const char* shown = kVersions[1][1];
-      for (auto& v : kVersions)
-        if (version == v[0]) shown = v[1];
-      ImGui::SetNextItemWidth(200);
-      if (ImGui::BeginCombo("Versão", shown)) {
-        for (auto& v : kVersions)
-          if (ImGui::Selectable(v[1], version == v[0])) beginEdit(), draft_["waterVersion"] = v[0];
-        ImGui::EndCombo();
-      }
-      ImGui::SetNextItemWidth(120);
-      if (ImGui::BeginCombo("Formato", waterSquare_ ? "Quadrado" : "Redondo")) {
-        if (ImGui::Selectable("Redondo", !waterSquare_)) waterSquare_ = false;
-        if (ImGui::Selectable("Quadrado", waterSquare_)) waterSquare_ = true;
-        ImGui::EndCombo();
-      }
-      ImGui::SameLine();
-      ImGui::SetNextItemWidth(90);
-      if (ImGui::BeginCombo("Tamanho", std::format("{}%", static_cast<int>(waterSize_ * 100)).c_str())) {
-        for (double s : {0.25, 0.5, 0.75, 1.0})
-          if (ImGui::Selectable(std::format("{}%", static_cast<int>(s * 100)).c_str(), s == waterSize_)) waterSize_ = s;
-        ImGui::EndCombo();
-      }
-      ImGui::SetNextItemWidth(120);
-      float level = static_cast<float>(waterLevel_);
-      if (ImGui::InputFloat("Nível", &level, 0.25f, 1.0f, "%.2f")) waterLevel_ = std::clamp(static_cast<double>(level), 0.0, 12.0);
-      ImGui::SameLine();
-      ringCombo("Área", waterRadius_);
-      hint("Superfície contínua com ondas. Use o mesmo nível para um lago; o terreno acima da água forma as margens. Ctrl+Z desfaz.");
-    } else if (mode_ == Mode::Elevation) {
+    if (mode_ == Mode::Elevation) {
       int pick = -1;
       if (toggleRow({{"Elevar +1", elevationTool_ == 0}, {"Baixar −1", elevationTool_ == 1}, {"Nivelar", elevationTool_ == 2}}, pick)) elevationTool_ = pick;
       elevationLevel_ = intField("Nível", elevationLevel_, 0, 12, 90);
@@ -3792,9 +3693,6 @@ class MapEditorStage : public Stage {
   int variant_ = 0;
   bool cityMode_ = false, turning_ = false, turningDeco_ = false;
   int elevationTool_ = 0, elevationLevel_ = 0, elevationRadius_ = 0;
-  bool waterErase_ = false, waterSquare_ = false;
-  double waterLevel_ = 0.5, waterSize_ = 1.0;
-  int waterRadius_ = 0;
   bool architectureDecorations_ = false, thickWalls_ = false, wallVertical_ = false;
   int wallTool_ = 0;  // 3D Walls: 0 a click places one piece, 1 Traçar parede (a drag lays a run), 2 Fechar sala (a drag lays a room)
   std::optional<std::pair<int, int>> wallDragFrom_;  // the run's first hex while the left button is held on the preview

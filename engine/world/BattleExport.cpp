@@ -1072,7 +1072,24 @@ std::optional<json> exportBattle(const json& mapFile, std::string* error, int pl
   for (int y = 0; y < f.rows; ++y)
     for (int x = 0; x < f.cols; ++x)
       if (f.tileAt(x, y) == "door") lockList.push_back({x, y, "doorTile", "door", "base"});
-  const auto doorDecor = [&](const json& d) { const json* def = r.decoration(str(d, "id")); const std::string m = def ? str(*def, "model3d") : ""; return m == "door" || m == "secretDoor"; };
+  // EmberEngine's locked 3D doors (content/models/architecture.json "locked", read through the editor catalog's architectureDefs;
+  // 2026-10-30, the user: "we have real 3D doors, stop using 2D props"): the rules' tables know no ember-arch piece, so they are
+  // listed here by id. Each is a lock like a door decoration; opening it changes no cell of this file (the stage makes the kit's door
+  // cells solid itself and gives them back once the lock is open and the leaves swing: MapStage blockEmberProps / updateDoors).
+  std::set<std::string> lockedKitDoors;
+  {
+    std::ifstream cat("content/data/editor-catalog.json", std::ios::binary);
+    const json c = cat ? json::parse(cat, nullptr, false) : json();
+    if (c.is_object() && c.contains("editor") && c["editor"].contains("architectureDefs") && c["editor"]["architectureDefs"].is_object())
+      for (const auto& [id, def] : c["editor"]["architectureDefs"].items())
+        if (def.is_object() && flag(def, "locked")) lockedKitDoors.insert(id);
+  }
+  const auto doorDecor = [&](const json& d) {
+    if (lockedKitDoors.contains(str(d, "id"))) return true;
+    const json* def = r.decoration(str(d, "id"));
+    const std::string m = def ? str(*def, "model3d") : "";
+    return m == "door" || m == "secretDoor";
+  };
   for (const json& d : f.decorations)
     if (doorDecor(d)) lockList.push_back({integer(d, "x"), integer(d, "y"), "doorDecor", str(d, "id"), "base"});
   const std::vector<json> betterChests = listOf(draft, "betterChests");
@@ -1111,7 +1128,10 @@ std::optional<json> exportBattle(const json& mapFile, std::string* error, int pl
         const bool wasChest = std::any_of(g.decorations.begin(), g.decorations.end(), [&](const json& d) { return r.inSet("chest", str(d, "id")) && integer(d, "x") == target->x && integer(d, "y") == target->y; });
         const auto door = std::find_if(g.decorations.begin(), g.decorations.end(), [&](const json& d) { return doorDecor(d) && integer(d, "x") == target->x && integer(d, "y") == target->y; });
         if (!wasChest && door == g.decorations.end()) g.tiles[i] = baseTile.empty() ? "nave" : baseTile;
-        if (door != g.decorations.end()) {
+        if (door != g.decorations.end() && lockedKitDoors.contains(str(*door, "id"))) {
+          g.decorations.erase(door);  // the kit's door: no variant, no cell of this file blocked by it (see above)
+          g.refreshOverlay();
+        } else if (door != g.decorations.end()) {
           const json* def = r.decoration(str(*door, "id"));
           const std::string style = def && has(*def, "doorStyle") ? str(*def, "doorStyle") : "oak";
           if (variants.contains(style)) (*door)["id"] = variants[style]["open"];

@@ -168,16 +168,6 @@ struct SkyReflectPush {  // shaders/skyreflect.hlsl
 constexpr uint32_t kSkyReflectLevels = 6;
 constexpr VkExtent2D kSkyReflectSize{256, 128};
 
-struct Water3DPush {  // shaders/water3d.hlsl
-  VkDeviceAddress frame, vertices, indices;
-  uint32_t colorMap, normalMap, roughMap;
-  float color[3];
-  float opacity, normalScale, roughness, modern, v4, repeat;
-  uint32_t look;
-  uint32_t backdrop, depth, sampler;  // look 4 (look 003): as WaterPush's
-  float floorY;                       // Water3DView::floorY
-};
-static_assert(offsetof(Water3DPush, look) == 72 && sizeof(Water3DPush) <= Bindless::kPushConstantBytes);
 static_assert(sizeof(SpritePush) <= Bindless::kPushConstantBytes);
 
 constexpr VkShaderStageFlags kPushStages = Bindless::kStages;
@@ -597,9 +587,6 @@ Renderer::Renderer(VulkanContext& context, Swapchain* swapchain, VkExtent2D size
   // again, so the bloom knows the water's own pixels and limits their glints (the halo spread over the characters).
   water.alphaMarks = true;
   waterPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), water);
-  water.vertexShader = "water3d.VSMain";
-  water.fragmentShader = "water3d.PSMain";
-  water3dPipeline_ = createGraphicsPipeline(context, bindless_.pipelineLayout(), water);
 
   GraphicsPipelineDesc sprites;
   sprites.vertexShader = "sprites.VSMain";
@@ -777,7 +764,6 @@ Renderer::~Renderer() {
   vkDestroyPipeline(context_.device, terrainPipeline_, nullptr);
   vkDestroyPipeline(context_.device, terrainShadowPipeline_, nullptr);
   vkDestroyPipeline(context_.device, waterPipeline_, nullptr);
-  vkDestroyPipeline(context_.device, water3dPipeline_, nullptr);
   bindless_.removeSampledImage(shadowMapIndex_);
   destroyImage(context_, shadowMap_);
   bindless_.removeSampledImage(cardShadowMapIndex_);
@@ -2273,18 +2259,6 @@ void Renderer::record(Frame& frame, float time, VkImage swapImage, const Buffer*
         first += count;
       }
       gpuTimer_.end(cmd, waterScope);
-    }
-    if (terrain_ && water3d_) {
-      // Ember's 3D water (the Map Editor's Agua 3D): transparent, over the ground and the board's water, under the cards.
-      const uint32_t scope = gpuTimer_.begin(cmd, "water3d");
-      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, water3dPipeline_);
-      const Water3DView& w = water3d_;
-      const Water3DPush push{bufferAddress(context_, frame.meshFrame), w.vertices, w.indices, w.colorMap, w.normalMap, w.roughMap,
-                             {w.color[0], w.color[1], w.color[2]}, w.opacity, w.normalScale, w.roughness, w.modern, w.v4, w.repeat,
-                             w.look, waterBackdropIndex_, depthIndex_, linearClampIndex_, w.floorY};
-      vkCmdPushConstants(cmd, bindless_.pipelineLayout(), kPushStages, 0, sizeof(push), &push);
-      vkCmdDraw(cmd, w.count, 1, 0, 0);
-      gpuTimer_.end(cmd, scope);
     }
     if (refract) {
       // The depth writable again for the cards.

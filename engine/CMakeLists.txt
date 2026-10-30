@@ -67,7 +67,6 @@ add_library(EmberEngine STATIC
   world/ThreeGeometry.cpp
   world/Architecture.cpp
   world/ProbeBake.cpp
-  world/Water3D.cpp
   world/Battle.cpp
   world/CutsceneScript.cpp
   world/Interlude.cpp

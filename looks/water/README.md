@@ -9,11 +9,11 @@ live. A change is a new look, never an edit of a saved one.
   stays in the game as that version and as a panel choice.
 - See them live: panel "Escolhas" → **Água** (padrão / original / 01 / 02 / 03) in a battle; `--water N` (0 padrão = as the map has
   it, 1 the original, 2..4 = looks 001..003). One choice for every water of the map (the user, 2026-10-26: "eu quero todas no mesmo
-  lugar"): the board's water and the Map Editor's painted sheet (the legacy Água 3D brush, untouched) take the same look; "padrão" and
-  "original" keep the sheet's own ThreeWater. The sheet's old "rio" (water3d.hlsl look 0) is no longer offered in the panel; its code
-  stays.
-- Each look: `shaders/water_lookNNN.hlsli` (frozen; called by water.hlsl for the board's water and by water3d.hlsl for the
-  Map Editor's sheet, which also knows its depth), captures here (`NNN/*.png`, local, git-ignored), git tag `water-look-NNN`.
+  lugar"). **The game's water is its water tiles only (the user, 2026-10-30: "water 3D não deveria existir, só a água normal do
+  jogo"):** the Map Editor's painted sheet (the old Água 3D brush: world/Water3D, shaders/water3d.hlsl, the editor's brush, Cooker
+  check-water3d) was removed from the game that day; a map's `waterLevels` / `waterFootprints` / `waterPatches` are ignored.
+- Each look: `shaders/water_lookNNN.hlsli` (frozen; called by water.hlsl for the board's water), captures here (`NNN/*.png`, local,
+  git-ignored), git tag `water-look-NNN`.
 - "Engine2" = Engine2's diorama water (water.hlsl: #2f86a8, roughness 0.5, the 128 px ripple tile scrolling).
 - Captures: `Sandbox --map C:/Engine2/maps/ember/random-rimewater-shrine001.json --ground build/ground/ground-v3.pak --scene
   build/scenes/random-rimewater-shrine001.scene.json --sprites build/sprites/battle.pak --meshes build/meshes/props-v2.pak

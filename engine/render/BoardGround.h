@@ -72,29 +72,6 @@ struct WaterView {
   explicit operator bool() const { return vertices != 0 && count != 0; }
 };
 
-// Ember's 3D water (world/Water3D: the Map Editor's Agua 3D), in this board's world, and Ember's material
-// numbers for the map's water version (ThreeWater.setVersion).
-struct Water3DVertexGpu {
-  float position[3];  // the still surface
-  float coverage;     // brush coverage (edges fade, < 0.05 not drawn)
-  float depth;        // above the ground, in Ember tiles (shore foam)
-  float point[2];     // Ember's tile frame (x, -y): waves and patterns
-  float pad;
-};
-static_assert(sizeof(Water3DVertexGpu) == 32);
-
-struct Water3DView {
-  VkDeviceAddress vertices = 0, indices = 0;
-  uint32_t count = 0;  // indices
-  uint32_t colorMap = 0, normalMap = 0, roughMap = 0;  // bindless
-  float color[3]{};    // linear
-  float opacity = 0, normalScale = 0, roughness = 0, modern = 0, v4 = 0, repeat = 1;
-  uint32_t look = 0;  // shaders/water3d.hlsl: 0 rio (the board's river material), 1 leito (Ember's ThreeWater), 2 / 3 looks
-                      // 001 / 002, 4 look 003 "decente" (reads the scene below it: Renderer::waterRefracts)
-  float floorY = -1e30f;  // nothing of the sheet is drawn under this height: the board's own bottom (BoardGround::build)
-  explicit operator bool() const { return vertices != 0 && count != 0; }
-};
-
 // What the renderer draws (device addresses; empty until everything is resident).
 struct TerrainView {
   VkDeviceAddress record = 0, vertices = 0, indices = 0;
@@ -130,7 +107,6 @@ class BoardGround {
   uint32_t textureIndex(const std::string& asset) const;  // bindless; kNoTextureIndex until resident
   TerrainView view(ember::EdgeStyle style) const;
   WaterView water(ember::EdgeStyle style) const;  // empty when the map has none
-  Water3DView water3d(ember::EdgeStyle style) const;  // empty when the map has no 3D water
   // The renderer must wait for this upload-timeline value before drawing the ground.
   uint64_t uploadWaitValue() const { return uploadWaitValue_; }
 
@@ -165,12 +141,6 @@ class BoardGround {
     Buffer vertexBuffer, indexBuffer;
     ImageUpload vertexUpload, indexUpload;
   };
-  struct Water3D {
-    std::vector<Water3DVertexGpu> vertices;
-    std::vector<uint32_t> indices;
-    Buffer vertexBuffer, indexBuffer;
-    ImageUpload vertexUpload, indexUpload;
-  };
   // One board's geometry and its record (heap: the upload queue points at its members).
   struct Geometry {
     std::vector<std::pair<std::string, size_t>> slots;  // (asset, word in record) to fill once resident
@@ -180,16 +150,13 @@ class BoardGround {
     bool recordQueued = false;
     Mesh meshes[3];  // smooth, hard, tabletop
     Water water[2];
-    Water3D water3d[2];  // smooth, hard (tabletop uses hard's)
-    float boardBottom = -1e30f;  // the smooth look's side walls end here (the 3D water's floorY)
-    Water3DView water3dMaterial;
+    float boardBottom = -1e30f;  // the smooth look's side walls end here (the water's floorY)
   };
 
   void texture(const std::string& asset);  // requests it once
   bool buildInto(Geometry& g, const ember::Board& board);
   void pack(const ember::GroundGeometry& g, const std::vector<int>& palette, Mesh& out);
   void upload(Mesh& mesh);
-  void buildWater3D(Geometry& g, const ember::Board& board);
   void updateTexture(Texture& t);
   bool uploaded(const Geometry& g) const;  // its record, meshes and water on the GPU
   void destroy(Geometry& g);

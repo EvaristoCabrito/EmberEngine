@@ -1654,7 +1654,7 @@
    "briefing": "Na estrada que passa pelo Mosteiro, gente some. Os Devotos da Cinza recebem peregrinos, curam febris e enterram os seus mortos com honra, dizem eles. Entre pelo portão, fale com os irmãos, olhe o que não querem mostrar. A cripta é selada: só os irmãos descem.",
    "objective": "Investigue o Mosteiro e encontre o caminho para baixo",
    "win": "rout",
-   "mapFile": "mosteiro007.json"
+   "mapFile": "mosteiro008.json"
   },
   {
    "id": "mosteiro-andar-2",
@@ -1674,7 +1674,7 @@
    "briefing": "O último andar. Uma sala de chegada, um irmão de guarda e uma porta de pedra que não se abre para hóspedes. Atrás dela delibera o conselho dos Devotos: o Prior, o Mestre dos Noviços, a Irmã Superiora. E a Santa, que dorme.",
    "objective": "Abra a porta de pedra e enfrente o conselho com a verdade",
    "win": "rout",
-   "mapFile": "mosteiro-andar-3003.json"
+   "mapFile": "mosteiro-andar-3004.json"
   },
   {
    "id": "mosteiro-masmorras",
@@ -1684,7 +1684,7 @@
    "briefing": "A escada da cripta não desce a uma cripta. Desce a celas trancadas, a uma sala de ferros, a um poço onde os penitentes são acorrentados antes de descer mais. Os guardas não recebem peregrinos aqui. Quem está nas celas ainda tem a própria voz.",
    "objective": "Liberte quem puder e encontre a descida para o laboratório",
    "win": "rout",
-   "mapFile": "mosteiro-masmorras001.json"
+   "mapFile": "mosteiro-masmorras002.json"
   },
   {
    "id": "mosteiro-laboratorio",
@@ -1694,7 +1694,7 @@
    "briefing": "Abaixo das masmorras, o salão de infusão: tanques de Ember entre pilares, um altar com o relicário, horrores soltos entre as cubas. Nos cercados, os próximos penitentes; atrás da porta de pedra, o Mestre Infusor e o que ele chama de Santa.",
    "objective": "Atravesse o laboratório e derrote o Mestre Infusor",
    "win": "rout",
-   "mapFile": "mosteiro-laboratorio001.json"
+   "mapFile": "mosteiro-laboratorio002.json"
   }
  ],
  "locations": [

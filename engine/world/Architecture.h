@@ -32,6 +32,10 @@ struct ArchitectureDef {
   // It joins its neighbours, blocks and casts shadow like any wall, but encloses no room: the yard it rings stays under the sky
   // (no roof slab over it, its hexes outside the probes' room), and it gets no shadow skirt.
   bool openAir = false;
+  // locked (2026-10-30, the Monastery's locked doors; the user: "we have real 3D doors, stop using 2D props"): an animated door that is
+  // a lock: BattleExport lists it among the battle's locks ("Arrombar" beside it), MapStage keeps its leaves shut and its cells solid
+  // until the lock is picked; from then on it opens for whoever comes, like any animated door.
+  bool locked = false;
   // EmberEngine's own pieces (content/models/architecture.json, ids ember-arch-*): "wall" (a joined run with a base and a string
   // course), "window" (a lancet window with a splayed inner embrasure, light through it), "slit" (an arrow loop), "portal" (an
   // arched doorway two hexes wide); the gothic parapet kit: "gothic-wall" (a panelled run: tracery windows on the deck side, tally
