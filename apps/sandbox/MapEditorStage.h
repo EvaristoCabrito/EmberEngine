@@ -378,9 +378,6 @@ class MapEditorStage : public Stage {
         addVersionIfMissing(74, "", "content/ground/plains-grass-ground-v03-seamless.png");
         int label = 1;
         for (Version& v : te.versions) v.label = std::format("{:03}", label++);
-        // Planície 017 (variant 74, "Capim de planície · V3 seamless") out of the picker (the user, 2026-10-29: "pode remover a
-        // planicie 017"); the others keep their numbers, and a map already painted with it still draws it.
-        std::erase_if(te.versions, [](const Version& v) { return v.variant == 74; });
         te.variantCount = std::max(te.variantCount, 75);
       }
       if (e.contains("terrainThumb") && e["terrainThumb"].contains(te.id) && e["terrainThumb"][te.id].is_string()) te.thumb = e["terrainThumb"][te.id].get<std::string>();
