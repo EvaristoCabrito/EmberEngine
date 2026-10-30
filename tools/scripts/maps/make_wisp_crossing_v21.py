@@ -232,14 +232,13 @@ TREES = ["ember-wisp-crossing-ancient-dead-oak-v02", "ember-wisp-crossing-weepin
          "ember-wisp-crossing-hollow-sentinel-v02", "ember-wisp-revisited-giant-dead-oak-v02", "ember-wisp-revisited-hollow-snag-v02",
          "ember-wisp-revisited-spiral-twisted-v02", "ember-wisp-revisited-tall-burnt-pine-v02", "ember-wisp-revisited-broken-crown-v02",
          "ember-wisp-revisited-uprooted-leaning-v02", "ember-wisp-revisited-root-arch-v02"]
-UNDER = ["ember-nature-ferns", "ember-polyhaven-fern-02-a", "ember-polyhaven-fern-02-b", "ember-polyhaven-fern-02-c",
-         "ember-nature-dense-bush", "ember-nature-exposed-roots", "ember-nature-roots-with-mushrooms", "ember-nature-wild-mushrooms",
-         "ember-wisp-revisited-roots-and-fungi", "ember-nature-leaf-litter", "ember-forest-floor-cluster"]
-LOGS = ["ember-nature-rotten-fallen-log", "ember-polyhaven-dead-tree-trunk-02", "ember-wisp-revisited-rotted-hollow-log-v02",
-        "ember-nature-rotten-stump", "ember-wisp-revisited-broken-stump", "ember-nature-uprooted-tree", "ember-forest-stump"]
+# (the props built from primitives were taken out of the game on the user's order, 2026-10-29: none of them here)
+UNDER = ["ember-polyhaven-fern-02-a", "ember-polyhaven-fern-02-b", "ember-polyhaven-fern-02-c", "ember-polyhaven-fern-02-d",
+         "ember-wisp-revisited-roots-and-fungi", "ember-polyhaven-grass-medium-01-large-a", "ember-polyhaven-grass-medium-01-tall-a"]
+LOGS = ["ember-polyhaven-dead-tree-trunk-02", "ember-wisp-revisited-rotted-hollow-log-v02", "ember-wisp-revisited-broken-stump"]
 ROCKS = ["ember-polyhaven-rock-moss-set-01-rock01", "ember-polyhaven-rock-moss-set-01-rock03", "ember-polyhaven-rock-moss-set-01-rock05",
          "ember-polyhaven-rock-moss-set-02-rock07", "ember-polyhaven-rock-moss-set-02-rock10", "ember-polyhaven-rock-moss-set-02-rock11",
-         "ember-polyhaven-boulder-01", "ember-nature-lichen-rocks", "ember-forest-moss-boulder"]
+         "ember-polyhaven-boulder-01", "ember-polyhaven-namaqualand-boulder"]
 FLOWERS = ["ember-polyhaven-celandine-01-a", "ember-polyhaven-celandine-01-b", "ember-polyhaven-celandine-01-c",
            "ember-polyhaven-grass-medium-01-large-a", "ember-polyhaven-grass-medium-01-tall-a", "ember-farmlands-tall-grass"]
 WISP = ["wilds-wisp-shrine", "wilds-wisp-waystone", "wilds-wisp-lantern-marker", "wilds-lantern-signpost", "wilds-wisp-mushrooms"]
@@ -277,17 +276,12 @@ for i, h in enumerate(side[::7]):
 rng.shuffle(side)
 for h in side[:16]:
     if free(h, 0.6):
-        put(rng.choice(UNDER[:4] + ["ember-nature-exposed-roots", "ember-wisp-revisited-roots-and-fungi"]), h, 0.6)
+        put(rng.choice(UNDER[:5]), h, 0.6)
 grass = [(c, r) for c in range(C) for r in range(R) if tile(c, r) == "plains"]
 rng.shuffle(grass)
 for h in grass[:40]:
     if free(h, 0.9):
         put(rng.choice(FLOWERS), h, 0.9)
-# a log over the stream away from the fords
-for h in stream[2:-2:5]:
-    if h not in fords and free(h, 1.5):
-        put("ember-nature-log-over-stream", h, 1.5)
-        break
 # the old stones: in the ruins only
 ruin_cells = sorted(h for h in ruins if walk(h))
 rng.shuffle(ruin_cells)
