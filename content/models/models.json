@@ -3556,6 +3556,19 @@
       "section": "Natureza",
       "blocks": false,
       "triangles": 442
+    },
+    {
+      "id": "ember-wisp-revisited-uprooted-leaning-v03",
+      "name": "Árvore morta arrancada em pé 3D",
+      "kit": "wisp-forest-revisited",
+      "model": "uprooted-leaning",
+      "file": "/game/ember/wisp-forest-revisited/uprooted-leaning-v03.glb",
+      "height": 9.184,
+      "width": 7.073,
+      "footprint": "one",
+      "section": "Natureza · Wisp Forest",
+      "blocks": true,
+      "triangles": 2632
     }
   ]
 }
