@@ -204,13 +204,17 @@ class MeshScene {
   // The region streams only a scene whose geometry does not fit the budget (as the textures: everything fits = everything loaded):
   // the user, 2026-10-30, the Monastery's walls and props gone with the region on while all of it fit in memory.
   bool overBudget_ = false;
+  uint64_t geometryBudget_ = 0;  // capacity_.geometryBytes, or the test hook's EMBER_GEOMETRY_BUDGET_MB
   bool streamingGeometry() const { return regional_ && overBudget_; }
   glm::mat4 regionView_{1.0f};
   uint64_t geometryUsed_ = 0;
   std::vector<std::unique_ptr<Mesh>> meshes_;     // stable addresses: uploads point at members
   std::unordered_map<AssetId, std::unique_ptr<Texture>> textures_;
   uint32_t materialCount_ = 0;
-  uint32_t instanceCount_ = 0;
+  uint32_t instanceCount_ = 0;     // setInstances' list (allInstances_)
+  std::vector<InstanceGpu> allInstances_;
+  uint32_t gpuInstanceCount_ = 0;  // the GPU's list: the instances whose geometry is resident (update)
+  bool instancesDirty_ = false;
   Table meshTable_, materialTable_, instanceTable_;
   uint64_t frame_ = 0;
   uint64_t uploadWaitValue_ = 0;

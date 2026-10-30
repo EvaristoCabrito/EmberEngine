@@ -14,6 +14,9 @@ namespace ember {
 namespace {
 
 constexpr int32_t kLoadPriority = 150;
+// Geometry sent to the upload queue per frame (its own copy rate is 8 MB a frame). By bytes, not by count: the Monastery's 1068
+// small built pieces at two a frame took 9 s to arrive (2026-10-30: its walls missing whenever the region streamed).
+constexpr uint64_t kGeometryBytesPerFrame = 8ull << 20;
 bool streamTrace() { static const bool enabled = std::getenv("EMBER_STREAM_CHECK") != nullptr; return enabled; }
 
 uint32_t bvhDepth(const MeshNode* nodes, uint32_t index) {
@@ -151,8 +154,8 @@ void MeshScene::setInstances(std::span<const InstanceGpu> instances) {
   EMBER_CHECK(instances.size() <= capacity_.instances, "MeshScene: instance capacity reached");
   instancesSet_ = true;
   instanceCount_ = static_cast<uint32_t>(instances.size());
-  std::memcpy(instanceTable_.cpu.data(), instances.data(), instances.size_bytes());
-  instanceTable_.dirty = true;
+  allInstances_.assign(instances.begin(), instances.end());
+  instancesDirty_ = true;  // the GPU's list is made in update(): only the instances whose geometry is resident
 }
 
 void MeshScene::parse(Mesh& mesh, MeshId id) {
@@ -391,7 +394,7 @@ void MeshScene::stream() {
   for (auto& [id, t] : textures_)
     if (t->known) { t->want = viewSet_ ? t->baseSkip : capSkip(*t); t->screenPixels = 0.0f; }
   if (viewSet_ && focal_ > 0.0f) {
-    const auto* instances = tableData<InstanceGpu>(instanceTable_);
+    const InstanceGpu* instances = allInstances_.data();
     for (uint32_t i = 0; i < instanceCount_; ++i) {
       const InstanceGpu& inst = instances[i];
       if (inst.mesh >= meshes_.size() || (inst.flags & kInstanceShadowOnly)) continue;
@@ -536,6 +539,7 @@ void MeshScene::retireGeometry(Mesh& mesh, MeshId id) {
   mesh.geometry = {};
   mesh.uploaded = false;
   mesh.upload = {};
+  instancesDirty_ = true;
 }
 
 void MeshScene::updateGeometry() {
@@ -559,6 +563,7 @@ void MeshScene::updateGeometry() {
     for (const auto& mesh : meshes_)
       if (mesh->parsed && !mesh->failed) total += mesh->bytes;
     const uint64_t budget = testBudget ? testBudget : capacity_.geometryBytes;
+    geometryBudget_ = budget;
     const bool over = total > budget;
     if (over != overBudget_ && regional_)
       logInfo("meshes: geometry {:.1f} MB {} the {:.1f} MB budget: {}", total / 1048576.0, over ? "over" : "within", budget / 1048576.0,
@@ -570,6 +575,7 @@ void MeshScene::updateGeometry() {
     if (mesh.geometry.buffer && !mesh.uploaded && uploads_.finished(mesh.upload)) {
       if (streamTrace()) logInfo("stream resident {}: {:.2f} MB", assets_.name(mesh.asset), mesh.bytes / 1048576.0);
       mesh.uploaded = true;
+      instancesDirty_ = true;
       uploadWaitValue_ = std::max(uploadWaitValue_, mesh.upload.signalValue);
       if (!mesh.pinned) assets_.release(mesh.handle);
       mesh.handle = {};
@@ -586,7 +592,7 @@ void MeshScene::updateGeometry() {
     glm::vec4 rows[4];
     for (int r = 0; r < 4; ++r) rows[r] = {regionView_[0][r], regionView_[1][r], regionView_[2][r], regionView_[3][r]};
     const glm::vec4 planes[] = {rows[3]+rows[0], rows[3]-rows[0], rows[3]+rows[1], rows[3]-rows[1], rows[2], rows[3]-rows[2]};
-    const auto* instances = tableData<InstanceGpu>(instanceTable_);
+    const InstanceGpu* instances = allInstances_.data();
     for (uint32_t i = 0; i < instanceCount_; ++i) {
       const InstanceGpu& inst = instances[i];
       if (inst.mesh >= meshes_.size()) continue;
@@ -626,7 +632,7 @@ void MeshScene::updateGeometry() {
   }
   // A large tree must still be admissible beside small pinned spell/architecture
   // meshes. The nominal working-set budget is not a permanent asset-size limit.
-  const uint64_t regionBudget = std::max(capacity_.geometryBytes, pinnedBytes + largestWanted);
+  const uint64_t regionBudget = std::max(geometryBudget_, pinnedBytes + largestWanted);
   uint64_t selectedBytes = 0;
   for (MeshId id : order) {
     Mesh& mesh = *meshes_[id];
@@ -644,8 +650,9 @@ void MeshScene::updateGeometry() {
       mesh.handle = {};
     }
   }
-  uint32_t started = 0;
+  uint64_t started = 0;
   for (MeshId id : order) {
+    if (started >= kGeometryBytesPerFrame) break;
     Mesh& mesh = *meshes_[id];
     if (!mesh.selected || mesh.geometry.buffer) continue;
     if (geometryUsed_ && geometryUsed_ + mesh.bytes > regionBudget) continue;
@@ -682,7 +689,7 @@ void MeshScene::updateGeometry() {
     record.nodes = base + s.nodes;
     record.ready = 0;
     meshTable_.dirty = true;
-    if (++started == 2) break;
+    started += mesh.bytes;
   }
 }
 
@@ -713,7 +720,24 @@ void MeshScene::update() {
   // A changed table is re-sent up to its last used entry.
   meshTable_.usedBytes = meshes_.size() * sizeof(MeshGpu);
   materialTable_.usedBytes = uint64_t{materialCount_} * sizeof(MaterialGpu);
-  instanceTable_.usedBytes = uint64_t{instanceCount_} * sizeof(InstanceGpu);
+  // The GPU's instance list: only the instances whose mesh geometry is resident (2026-10-30: an instance placed before its geometry
+  // was on the GPU was never drawn once it arrived: the Monastery's walls and props gone with the region streaming), made again
+  // whenever the list or a mesh's residency changes; each new list also redraws the sun's cached shadow with what arrived.
+  if (instancesDirty_) {
+    instancesDirty_ = false;
+    InstanceGpu* out = tableData<InstanceGpu>(instanceTable_);
+    uint32_t n = 0;
+    for (const InstanceGpu& inst : allInstances_)
+      if (inst.mesh < meshes_.size() && meshes_[inst.mesh]->uploaded) out[n++] = inst;
+    gpuInstanceCount_ = n;
+    instanceTable_.dirty = true;
+    if (streamTrace()) {
+      uint32_t up = 0, pinnedUp = 0, pinned = 0;
+      for (const auto& m : meshes_) up += m->uploaded, pinned += m->pinned, pinnedUp += m->pinned && m->uploaded;
+      logInfo("stream instances: {} of {} on the GPU list, meshes {} of {} resident (built {} of {})", n, instanceCount_, up, meshes_.size(), pinnedUp, pinned);
+    }
+  }
+  instanceTable_.usedBytes = uint64_t{gpuInstanceCount_} * sizeof(InstanceGpu);
   updateTable(meshTable_);
   updateTable(materialTable_);
   updateTable(instanceTable_);
